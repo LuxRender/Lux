@@ -25,7 +25,6 @@
 // fresneldielectric.h*
 #include "lux.h"
 #include "fresnel.h"
-#include "spectrumwavelengths.h"
 
 namespace lux
 {
@@ -33,35 +32,23 @@ namespace lux
 class  FresnelDielectric : public Fresnel {
 public:
 	// FresnelDielectric Public Methods
-	FresnelDielectric(float e, float cB, const SWCSpectrum &k_) : k(k_) {
-		eta_t = e;
-		cb = cB * 1e6f;
-	}
+	FresnelDielectric(float ior, const SWCSpectrum &a_) :
+		eta_t(ior), a(a_), index(ior) { }
+	FresnelDielectric(float ior, const SWCSpectrum &e,
+		const SWCSpectrum &a_) : eta_t(e), a(a_), index(ior) { }
 	virtual ~FresnelDielectric() { }
 	virtual void Evaluate(const TsPack *tspack, float cosi,
 		SWCSpectrum *const f) const;
 	virtual float Index(const TsPack *tspack) const;
 	virtual SWCSpectrum SigmaA(const TsPack *tspack) const {
-		return k / SWCSpectrum(tspack->swl->w) * (4.f * M_PI);
+		return a;
 	}
 	virtual void ComplexEvaluate(const TsPack *tspack,
 		SWCSpectrum *fr, SWCSpectrum *fi) const;
 private:
 	// FresnelDielectric Private Data
-	float eta_t, cb;
-	SWCSpectrum k;
-};
-
-class FresnelDielectricComplement : public FresnelDielectric {
-public:
-	FresnelDielectricComplement(float e, float cB, const SWCSpectrum &k_) :
-		FresnelDielectric(e, cB, k_) { }
-	virtual ~FresnelDielectricComplement() { }
-	virtual void Evaluate(const TsPack *tspack, float cosi,
-		SWCSpectrum *const f) const {
-		FresnelDielectric::Evaluate(tspack, cosi, f);
-		*f = SWCSpectrum(1.f) - *f;		
-	}
+	SWCSpectrum eta_t, a;
+	float index;
 };
 
 }//namespace lux

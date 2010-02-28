@@ -35,7 +35,7 @@ namespace lux
 class ConstantFloatTexture : public Texture<float> {
 public:
 	// ConstantTexture Public Methods
-	ConstantFloatTexture(const float &v) : value(v) { }
+	ConstantFloatTexture(float v) : value(v) { }
 	virtual ~ConstantFloatTexture() { }
 	virtual float Evaluate(const TsPack *tspack,
 		const DifferentialGeometry &) const {
@@ -71,7 +71,8 @@ private:
 class ConstantFresnelTexture : public Texture<const Fresnel *> {
 public:
 	// ConstantTexture Public Methods
-	ConstantFresnelTexture(const float &v) : value(v, 0.f, 0.f), val(v) { }
+	ConstantFresnelTexture(float v) :
+		value(v, SWCSpectrum(v), 0.f), val(v) { }
 	virtual ~ConstantFresnelTexture() { }
 	virtual const Fresnel *Evaluate(const TsPack *tspack,
 		const DifferentialGeometry &) const {

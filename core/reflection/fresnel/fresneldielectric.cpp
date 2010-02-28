@@ -29,55 +29,29 @@ using namespace lux;
 
 void FresnelDielectric::Evaluate(const TsPack *tspack, float cosi, SWCSpectrum *const f) const {
 	// Compute Fresnel reflectance for dielectric
-	if (cb != 0.f && !tspack->swl->single) {
-		SWCSpectrum eta = SWCSpectrum(tspack->swl->w);
-		eta *= eta;
-		eta = SWCSpectrum(eta_t) + SWCSpectrum(cb) / eta;
-		SWCSpectrum cost(sqrtf(max(0.f, 1.f - cosi * cosi)));
-		if (cosi > 0.f)
-			cost /= eta;
-		else
-			cost *= eta;
-		cost = cost.Clamp(0.f, 1.f);
-		cost = (SWCSpectrum(1.f) - cost * cost).Sqrt();
-		FrDiel2(fabsf(cosi), cost, eta, f);
-	} else {
-		// Compute indices of refraction for dielectric
-		bool entering = cosi > 0.f;
-		float eta = eta_t;
-
-		// Handle dispersion using cauchy formula
-		if(cb != 0.f) { // We are already in single mode
-			const float w = tspack->swl->w[tspack->swl->single_w];
-			eta += cb / (w * w);
-		}
-
-		// Compute _sint_ using Snell's law
-		const float sint = (entering ? 1.f / eta : eta) *
-			sqrtf(max(0.f, 1.f - cosi * cosi));
-		// Handle total internal reflection
-		if (sint >= 1.f)
-			*f = SWCSpectrum(1.f);
-		else
-			FrDiel2(fabsf(cosi),
-				SWCSpectrum(sqrtf(max(0.f, 1.f - sint * sint))),
-				SWCSpectrum(eta), f);
-	}
+	SWCSpectrum cost(sqrtf(max(0.f, 1.f - cosi * cosi)));
+	if (cosi > 0.f)
+		cost /= eta_t;
+	else
+		cost *= eta_t;
+	cost = cost.Clamp(0.f, 1.f);
+	cost = (SWCSpectrum(1.f) - cost * cost).Sqrt();
+	FrDiel2(fabsf(cosi), cost, eta_t, f);
 }
 
 float FresnelDielectric::Index(const TsPack *tspack) const
 {
-	const SpectrumWavelengths *swl = tspack->swl;
-	if (swl->single)
-		return (eta_t + cb / (swl->w[swl->single_w] * swl->w[swl->single_w]));
-	return eta_t + cb / (WAVELENGTH_END * WAVELENGTH_START);
+	if (tspack->swl->single)
+		return eta_t.c[tspack->swl->single_w];
+	else
+		return index;
 }
 
 void FresnelDielectric::ComplexEvaluate(const TsPack *tspack,
 	SWCSpectrum *fr, SWCSpectrum *fi) const
 {
-	const float *w = tspack->swl->w;
-	for (u_int i = 0; i < WAVELENGTH_SAMPLES; ++i)
-		fr->c[i] = eta_t + cb / (w[i] * w[i]);
-	*fi = k;
+	*fr = eta_t;
+	// The 4e9*Pi comes from beers law (4*Pi) and unit conversion of w
+	// from nm to m
+	*fi = a * SWCSpectrum(tspack->swl->w) / (4e9f * M_PI);
 }
