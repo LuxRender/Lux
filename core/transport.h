@@ -55,8 +55,11 @@ public:
 	virtual void Transmittance(const TsPack *tspack, const Scene *scene,
 		const Ray &ray, const Sample *sample, float *alpha, SWCSpectrum *const L) const = 0;
 	virtual bool Intersect(const TsPack *tspack, const Scene *scene,
-		const Volume *volume, const Ray &ray, Intersection *isect,
-		SWCSpectrum *L) const;
+		const Volume *volume, const RayDifferential &ray,
+		Intersection *isect, BSDF **bsdf, SWCSpectrum *L) const;
+	virtual bool Connect(const TsPack *tspack, const Scene *scene,
+		const Volume *volume, const Point &p0, const Point &p1,
+		bool clip, SWCSpectrum *f, float *pdf, float *pdfR) const;
 };
 
 SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene,

@@ -27,19 +27,89 @@
 #include "light.h"
 #include "mc.h"
 #include "volume.h"
+#include "camera.h"
+#include "material.h"
 
 namespace lux
 {
 
 // Integrator Method Definitions
 bool VolumeIntegrator::Intersect(const TsPack *tspack, const Scene *scene,
-	const Volume *volume, const Ray &ray, Intersection *isect,
-	SWCSpectrum *L) const
+	const Volume *volume, const RayDifferential &ray, Intersection *isect,
+	BSDF **bsdf, SWCSpectrum *L) const
 {
-	const bool result = scene->Intersect(ray, isect);
+	const bool hit = scene->Intersect(ray, isect);
+	if (hit) {
+		isect->dg.ComputeDifferentials(ray);
+		DifferentialGeometry dgShading;
+		isect->primitive->GetShadingGeometry(isect->WorldToObject.GetInverse(),
+			isect->dg, &dgShading);
+		isect->material->GetShadingGeometry(isect->dg, &dgShading);
+		if (Dot(ray.d, dgShading.nn) > 0.f) {
+			if (!volume)
+				volume = isect->interior;
+			else if (!isect->interior)
+				isect->interior = volume;
+		} else {
+			if (!volume)
+				volume = isect->exterior;
+			else if (!isect->exterior)
+				isect->exterior = volume;
+		}
+		*bsdf = isect->material->GetBSDF(tspack, isect->dg, dgShading,
+			isect->exterior, isect->interior);
+	}
 	if (volume)
 		*L *= Exp(-volume->Tau(tspack, ray));
-	return result;
+	return hit;
+}
+
+bool VolumeIntegrator::Connect(const TsPack *tspack, const Scene *scene,
+	const Volume *volume, const Point &p0, const Point &p1, bool clip,
+	SWCSpectrum *f, float *pdf, float *pdfR) const
+{
+	const Vector w = p1 - p0;
+	const float length = w.Length();
+	const float shadowRayEpsilon = max(MachineEpsilon::E(p0),
+		MachineEpsilon::E(length));
+	if (shadowRayEpsilon >= length * .5f)
+		return false;
+	const float maxt = length - shadowRayEpsilon;
+	RayDifferential ray(Ray(p0, w / length, shadowRayEpsilon, maxt));
+	ray.time = tspack->time;
+	if (clip)
+		tspack->camera->ClampRay(ray);
+	const Vector d(ray.d);
+	Intersection isect;
+	const BxDFType flags(BxDFType(BSDF_SPECULAR | BSDF_TRANSMISSION));
+	// The for loop prevents an infinite sequence when the ray is almost
+	// parallel to the surface and is self shadowed
+	// This should be much less frequent with dynamic epsilon,
+	// but it's safer to keep it
+	for (u_int i = 0; i < 10000; ++i) {
+		BSDF *bsdf;
+		if (!scene->volumeIntegrator->Intersect(tspack, scene, volume,
+			ray, &isect, &bsdf, f))
+			return true;
+
+		*f *= bsdf->f(tspack, d, -d, flags);
+		if (f->Black())
+			return false;
+		const float cost = Dot(bsdf->nn, d);
+		if (cost > 0.f)
+			volume = isect.exterior;
+		else
+			volume = isect.interior;
+		*f *= fabsf(cost);
+		if (pdf)
+			*pdf *= bsdf->Pdf(tspack, d, -d);
+		if (pdfR)
+			*pdfR *= bsdf->Pdf(tspack, -d, d);
+
+		ray.mint = ray.maxt + MachineEpsilon::E(ray.maxt);
+		ray.maxt = maxt;
+	}
+	return false;
 }
 
 // Integrator Utility Functions
