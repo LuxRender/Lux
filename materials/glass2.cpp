@@ -26,7 +26,7 @@
 #include "bxdf.h"
 #include "specularreflection.h"
 #include "speculartransmission.h"
-#include "fresnel.h"
+#include "fresneldielectric.h"
 #include "texture.h"
 #include "volume.h"
 #include "paramset.h"
@@ -40,19 +40,45 @@ BSDF *Glass2::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 	const Volume *exterior, const Volume *interior) const
 {
 	// Allocate _BSDF_
-	const Fresnel *fre = exterior->Fresnel(tspack, dgs.p, Vector(dgs.nn));
-	const Fresnel *fri = interior->Fresnel(tspack, dgs.p, Vector(dgs.nn));
-	const float ior = fri->Index(tspack) / fre->Index(tspack);
+	float ior;
+	const Fresnel *fresnel, *fre, *fri;
+	if (exterior) {
+		fre = exterior->Fresnel(tspack, dgs.p, Vector(dgs.nn));
+		if (interior) {
+			fri = interior->Fresnel(tspack, dgs.p, Vector(dgs.nn));
+			SWCSpectrum fer, fir, f;
+			fre->ComplexEvaluate(tspack, &fer, &f);
+			fri->ComplexEvaluate(tspack, &fir, &f);
+			ior = fri->Index(tspack) / fre->Index(tspack);
+			fresnel = ARENA_ALLOC(tspack->arena, FresnelDielectric)
+				(ior, fir / fer, SWCSpectrum(0.f));
+		} else {
+			SWCSpectrum fer, f;
+			fre->ComplexEvaluate(tspack, &fer, &f);
+			ior = 1.f / fre->Index(tspack);
+			fresnel = ARENA_ALLOC(tspack->arena, FresnelDielectric)
+				(ior, SWCSpectrum(1.f) / fer, SWCSpectrum(0.f));
+		}
+	} else if (interior) {
+		fri = interior->Fresnel(tspack, dgs.p, Vector(dgs.nn));
+		ior = fri->Index(tspack);
+		fresnel = fri;
+	} else {
+		ior = 1.f;
+		fresnel = ARENA_ALLOC(tspack->arena, FresnelDielectric)(ior,
+			SWCSpectrum(ior), SWCSpectrum(0.f));
+	}
+
 	MultiBSDF *bsdf = ARENA_ALLOC(tspack->arena, MultiBSDF)(dgs, dgGeom.nn,
 		ior);
 	if (architectural)
 		bsdf->Add(ARENA_ALLOC(tspack->arena,
-			SimpleArchitecturalReflection)(fri));
+			SimpleArchitecturalReflection)(fresnel));
 	else
 		bsdf->Add(ARENA_ALLOC(tspack->arena,
-			SimpleSpecularReflection)(fri));
+			SimpleSpecularReflection)(fresnel));
 	bsdf->Add(ARENA_ALLOC(tspack->arena,
-		SimpleSpecularTransmission)(fri, dispersion, architectural));
+		SimpleSpecularTransmission)(fresnel, dispersion, architectural));
 
 	// Add ptr to CompositingParams structure
 	bsdf->SetCompositingParams(compParams);
