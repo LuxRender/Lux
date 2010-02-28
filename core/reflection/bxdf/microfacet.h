@@ -30,12 +30,12 @@
 namespace lux
 {
 
-class  Microfacet : public BxDF {
+class  MicrofacetReflection : public BxDF {
 public:
-	// Microfacet Public Methods
-	Microfacet(const SWCSpectrum &reflectance, Fresnel *f,
+	// MicrofacetReflection Public Methods
+	MicrofacetReflection(const SWCSpectrum &reflectance, const Fresnel *f,
 		MicrofacetDistribution *d);
-	virtual ~Microfacet() { }
+	virtual ~MicrofacetReflection() { }
 	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const;
 	float G(const Vector &wo, const Vector &wi,
 			const Vector &wh) const {
@@ -51,12 +51,39 @@ public:
 		bool reverse = false) const;
 	virtual float Pdf(const TsPack *tspack, const Vector &wo, const Vector &wi) const;
 private:
-	// Microfacet Private Data
+	// MicrofacetReflection Private Data
 	SWCSpectrum R;
 	MicrofacetDistribution *distribution;
-	Fresnel *fresnel;
+	const Fresnel *fresnel;
 };
 
+class  MicrofacetTransmission : public BxDF {
+public:
+	// MicrofacetTransmission Public Methods
+	MicrofacetTransmission(const SWCSpectrum &reflectance, const Fresnel *f,
+		MicrofacetDistribution *d);
+	virtual ~MicrofacetTransmission() { }
+	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const;
+	float G(const Vector &wo, const Vector &wi,
+			const Vector &wh) const {
+		const float NdotWh = fabsf(CosTheta(wh));
+		const float NdotWo = fabsf(CosTheta(wo));
+		const float NdotWi = fabsf(CosTheta(wi));
+		const float WOdotWh = AbsDot(wo, wh);
+		const float WIdotWh = AbsDot(wi, wh);
+		return min(1.f, min((2.f * NdotWh * NdotWo / WOdotWh),
+		                (2.f * NdotWh * NdotWi / WIdotWh)));
+	}
+	virtual bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
+		float u1, float u2, SWCSpectrum *const f, float *pdf, float *pdfBack = NULL,
+		bool reverse = false) const;
+	virtual float Pdf(const TsPack *tspack, const Vector &wo, const Vector &wi) const;
+private:
+	// MicrofacetTransmission Private Data
+	SWCSpectrum T;
+	MicrofacetDistribution *distribution;
+	const Fresnel *fresnel;
+};
 
 }//namespace lux
 

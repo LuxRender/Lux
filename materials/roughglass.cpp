@@ -61,18 +61,15 @@ BSDF *RoughGlass::GetBSDF(const TsPack *tspack,
 	else
 		md = ARENA_ALLOC(tspack->arena, Anisotropic)(1.f / urough,
 			1.f / vrough);
+	const Fresnel *fresnel = ARENA_ALLOC(tspack->arena, FresnelCauchy)(ior,
+		cb, 0.f);
 	if (!R.Black()) {
-		Fresnel *fresnel = ARENA_ALLOC(tspack->arena, FresnelCauchy)(ior,
-			cb, 0.f);
-		bsdf->Add(ARENA_ALLOC(tspack->arena, Microfacet)(R, fresnel,
-			md));
+		bsdf->Add(ARENA_ALLOC(tspack->arena, MicrofacetReflection)(R,
+			fresnel, md));
 	}
 	if (!T.Black()) {
-		Fresnel *fresnel = ARENA_ALLOC(tspack->arena,
-			FresnelDielectricComplement)(ior, cb, 0.f);
-		bsdf->Add(ARENA_ALLOC(tspack->arena,
-			BRDFToBTDF)(ARENA_ALLOC(tspack->arena, Microfacet)(T,
-			fresnel, md), 1.f, ior, cb));
+		bsdf->Add(ARENA_ALLOC(tspack->arena, MicrofacetTransmission)(T,
+			fresnel, md));
 	}
 
 	// Add ptr to CompositingParams structure

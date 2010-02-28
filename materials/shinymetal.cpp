@@ -63,7 +63,8 @@ BSDF *ShinyMetal::GetBSDF(const TsPack *tspack,
 		FresnelGeneral)(FresnelApproxEta(spec), FresnelApproxK(spec));
 	Fresnel *frSr = ARENA_ALLOC(tspack->arena,
 		FresnelGeneral)(FresnelApproxEta(R), FresnelApproxK(R));
-	bsdf->Add(ARENA_ALLOC(tspack->arena, Microfacet)(1.f, frMf, md));
+	bsdf->Add(ARENA_ALLOC(tspack->arena, MicrofacetReflection)(1.f, frMf,
+		md));
 	bsdf->Add(ARENA_ALLOC(tspack->arena,
 		SpecularReflection)(1.f, frSr, flm, flmindex));
 

@@ -29,15 +29,14 @@
 
 using namespace lux;
 
-Microfacet::Microfacet(const SWCSpectrum &reflectance,
-	Fresnel *fr,
-	MicrofacetDistribution *d)
+MicrofacetReflection::MicrofacetReflection(const SWCSpectrum &reflectance,
+	const Fresnel *fr, MicrofacetDistribution *d)
 	: BxDF(BxDFType(BSDF_REFLECTION | BSDF_GLOSSY)),
 	  R(reflectance), distribution(d), fresnel(fr)
 {
 }
 
-void Microfacet::f(const TsPack *tspack, const Vector &wo, 
+void MicrofacetReflection::f(const TsPack *tspack, const Vector &wo, 
 	const Vector &wi, SWCSpectrum *const f_) const
 {
 	float cosThetaO = fabsf(CosTheta(wo));
@@ -50,8 +49,8 @@ void Microfacet::f(const TsPack *tspack, const Vector &wo,
 		(4.f * cosThetaI * cosThetaO), R * F);
 }
 
-bool Microfacet::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
-	float u1, float u2, SWCSpectrum *const f_, float *pdf, 
+bool MicrofacetReflection::Sample_f(const TsPack *tspack, const Vector &wo,
+	Vector *wi, float u1, float u2, SWCSpectrum *const f_, float *pdf, 
 	float *pdfBack, bool reverse) const
 {
 	distribution->Sample_f(wo, wi, u1, u2, pdf);
@@ -67,7 +66,7 @@ bool Microfacet::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 		f(tspack, wo, *wi, f_);
 	return true;
 }
-float Microfacet::Pdf(const TsPack *tspack, const Vector &wo,
+float MicrofacetReflection::Pdf(const TsPack *tspack, const Vector &wo,
 	const Vector &wi) const
 {
 	if (!SameHemisphere(wo, wi))
@@ -75,3 +74,86 @@ float Microfacet::Pdf(const TsPack *tspack, const Vector &wo,
 	return distribution->Pdf(wo, wi);
 }
 
+MicrofacetTransmission::MicrofacetTransmission(const SWCSpectrum &transmitance,
+	const Fresnel *fr, MicrofacetDistribution *d)
+	: BxDF(BxDFType(BSDF_TRANSMISSION | BSDF_GLOSSY)),
+	  T(transmitance), distribution(d), fresnel(fr)
+{
+}
+
+void MicrofacetTransmission::f(const TsPack *tspack, const Vector &wo, 
+	const Vector &wi, SWCSpectrum *const f_) const
+{
+	const bool entering = CosTheta(wo) > 0.f;
+	const float eta = entering ?
+		1.f / fresnel->Index(tspack) : fresnel->Index(tspack);
+	Vector wh(eta * wo + wi);
+	if (wh.z < 0.f)
+		wh = -wh;
+	const float lengthSquared = wh.LengthSquared();
+	wh /= sqrtf(lengthSquared);
+	const float cosThetaO = fabsf(CosTheta(wo));
+	const float cosThetaI = fabsf(CosTheta(wi));
+	const float cosThetaIH = AbsDot(wi, wh);
+	const float cosThetaOH = Dot(wo, wh);
+	SWCSpectrum F;
+	fresnel->Evaluate(tspack, cosThetaOH, &F);
+	f_->AddWeighted(fabsf(cosThetaOH) * cosThetaIH * distribution->D(wh) *
+		G(wo, wi, wh) / (cosThetaI * cosThetaO * lengthSquared),
+		T * (SWCSpectrum(1.f) - F));
+}
+
+bool MicrofacetTransmission::Sample_f(const TsPack *tspack, const Vector &wo,
+	Vector *wi, float u1, float u2, SWCSpectrum *const f_, float *pdf, 
+	float *pdfBack, bool reverse) const
+{
+	distribution->Sample_f(wo, wi, u1, u2, pdf);
+	Vector wh(Normalize(wo + *wi));
+	if (wh.z < 0.f)
+		wh = -wh;
+	const bool entering = CosTheta(wo) > 0.f;
+	const float eta = entering ?
+		1.f / fresnel->Index(tspack) : fresnel->Index(tspack);
+	const float cosThetaOH = Dot(wo, wh);
+	const float sinThetaIH2 = eta * eta * max(0.f,
+		1.f - cosThetaOH * cosThetaOH);
+	if (sinThetaIH2 >= 1.f)
+		return false;
+	float cosThetaIH = sqrtf(1.f - sinThetaIH2);
+	if (entering)
+		cosThetaIH = -cosThetaIH;
+	const float length = eta * cosThetaOH + cosThetaIH;
+	*wi = length * wh - eta * wo;
+	const float lengthSquared = length * length;
+	*pdf *= 4.f * fabsf(cosThetaOH * cosThetaIH) / lengthSquared;
+	if (pdfBack)
+		*pdfBack = Pdf(tspack, *wi, wo);
+
+	SWCSpectrum F;
+	if (reverse)
+		fresnel->Evaluate(tspack, cosThetaIH, &F);
+	else
+		fresnel->Evaluate(tspack, cosThetaOH, &F);
+	*f_ = (fabsf(cosThetaOH * cosThetaIH) / fabsf(CosTheta(wo) *
+		CosTheta(*wi) * lengthSquared) * distribution->D(wh) *
+		G(*wi, wo, wh)) * T * (SWCSpectrum(1.f) - F);
+	return true;
+}
+float MicrofacetTransmission::Pdf(const TsPack *tspack, const Vector &wo,
+	const Vector &wi) const
+{
+	if (SameHemisphere(wo, wi))
+		return 0.f;
+	const bool entering = CosTheta(wo) > 0.f;
+	const float eta = entering ?
+		1.f / fresnel->Index(tspack) : fresnel->Index(tspack);
+	Vector wh(eta * wo + wi);
+	if (wh.z < 0.f)
+		wh = -wh;
+	const float lengthSquared = wh.LengthSquared();
+	wh /= sqrtf(lengthSquared);
+	const float cosThetaOH = Dot(wo, wh);
+	const float cosThetaIH = AbsDot(wi, wh);
+	return distribution->Pdf(wo, 2.f * cosThetaOH * wh - wo) *
+		4.f * fabsf(cosThetaOH) * cosThetaIH / lengthSquared;
+}

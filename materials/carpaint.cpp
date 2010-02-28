@@ -113,7 +113,7 @@ BSDF *CarPaint::GetBSDF(const TsPack *tspack,
 
 	// Broad gloss layers
 	for (int i = 0; i < 2; i++) {
-		bsdf->Add(ARENA_ALLOC(tspack->arena, Microfacet)(lobe_ks[i], lobe_fres[i], lobe_dist[i]));
+		bsdf->Add(ARENA_ALLOC(tspack->arena, MicrofacetReflection)(lobe_ks[i], lobe_fres[i], lobe_dist[i]));
 	}
 
 	// Clear coat and lambertian base

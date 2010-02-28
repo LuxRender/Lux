@@ -68,7 +68,8 @@ BSDF *Metal::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 		md = ARENA_ALLOC(tspack->arena, Anisotropic)(1.f / u, 1.f / v);
 
 	Fresnel *fresnel = ARENA_ALLOC(tspack->arena, FresnelConductor)(n, k);
-	BxDF *bxdf = ARENA_ALLOC(tspack->arena, Microfacet)(1.f, fresnel, md);
+	BxDF *bxdf = ARENA_ALLOC(tspack->arena, MicrofacetReflection)(1.f,
+		fresnel, md);
 	SingleBSDF *bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dgs,
 		dgGeom.nn, bxdf);
 
