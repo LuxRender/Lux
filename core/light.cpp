@@ -49,10 +49,11 @@ bool VisibilityTester::TestOcclusion(const TsPack *tspack, const Scene *scene,
 	// parallel to the surface and is self shadowed
 	// This should be much less frequent with dynamic epsilon,
 	// but it's safer to keep it
+	const Volume *vol = volume;
+	BSDF *bsdf;
 	for (u_int i = 0; i < 10000; ++i) {
-		if (!scene->Intersect(ray, &isect))
+		if (!scene->Intersect(tspack, vol, ray, &isect, &bsdf, f))
 			return true;
-		BSDF *bsdf = isect.GetBSDF(tspack, ray);
 
 		*f *= bsdf->f(tspack, d, -d, flags);
 		if (f->Black())
@@ -65,6 +66,7 @@ bool VisibilityTester::TestOcclusion(const TsPack *tspack, const Scene *scene,
 
 		ray.mint = ray.maxt + MachineEpsilon::E(ray.maxt);
 		ray.maxt = r.maxt;
+		vol = bsdf->GetVolume(d);
 	}
 	return false;
 }

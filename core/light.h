@@ -111,12 +111,14 @@ struct VisibilityTester {
 		r = Ray(p1, w / length, shadowRayEpsilon,
 			length - shadowRayEpsilon);
 		r.time = time;
+		volume = NULL;
 	}
 
 	void SetRay(const Point &p, const Vector & w, float time) {
 		r = Ray(p, Normalize(w));
 		r.time = time;
 		cameraClip = false;
+		volume = NULL;
 	}
 
 	bool Unoccluded(const Scene * scene) const;
@@ -127,6 +129,7 @@ struct VisibilityTester {
 		const Sample *sample, SWCSpectrum *const L) const;
 	Ray r;
 	bool cameraClip;
+	const Volume *volume;
 };
 
 class AreaLight : public Light {

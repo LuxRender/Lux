@@ -52,20 +52,23 @@ void DirectLightingIntegrator::Preprocess(const TsPack *tspack, const Scene *sce
 	hints.InitStrategies(scene);
 }
 
-u_int DirectLightingIntegrator::LiInternal(const TsPack *tspack, const Scene *scene,
-		const RayDifferential &ray, const Sample *sample,
-		vector<SWCSpectrum> &L, float *alpha, float &distance, u_int rayDepth) const {
+u_int DirectLightingIntegrator::LiInternal(const TsPack *tspack,
+	const Scene *scene, const Volume *volume, const RayDifferential &ray,
+	const Sample *sample, vector<SWCSpectrum> &L, float *alpha,
+	float &distance, u_int rayDepth) const
+{
 	u_int nContribs = 0;
 	Intersection isect;
+	BSDF *bsdf;
 	const float time = ray.time; // save time for motion blur
 	const float nLights = scene->lights.size();
+	SWCSpectrum Lt(1.f);
 
-	if (scene->Intersect(ray, &isect)) {
+	if (scene->Intersect(tspack, volume, ray, &isect, &bsdf, &Lt)) {
 		if (rayDepth == 0)
 			distance = ray.maxt * ray.d.Length();
 
 		// Evaluate BSDF at hit point
-		BSDF *bsdf = isect.GetBSDF(tspack, ray);
 		Vector wo = -ray.d;
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;
@@ -96,25 +99,12 @@ u_int DirectLightingIntegrator::LiInternal(const TsPack *tspack, const Scene *sc
 				// Compute ray differential _rd_ for specular reflection
 				RayDifferential rd(p, wi);
 				rd.time = time;
-				rd.hasDifferentials = true;
-				rd.rx.o = p + isect.dg.dpdx;
-				rd.ry.o = p + isect.dg.dpdy;
-				// Compute differential reflected directions
-				Normal dndx = bsdf->dgShading.dndu * bsdf->dgShading.dudx +
-					bsdf->dgShading.dndv * bsdf->dgShading.dvdx;
-				Normal dndy = bsdf->dgShading.dndu * bsdf->dgShading.dudy +
-					bsdf->dgShading.dndv * bsdf->dgShading.dvdy;
-				Vector dwodx = -ray.rx.d - wo, dwody = -ray.ry.d - wo;
-				float dDNdx = Dot(dwodx, n) + Dot(wo, dndx);
-				float dDNdy = Dot(dwody, n) + Dot(wo, dndy);
-				rd.rx.d = wi - dwodx +
-					2 * Vector(Dot(wo, n) * dndx + dDNdx * n);
-				rd.ry.d = wi - dwody +
-					2 * Vector(Dot(wo, n) * dndy + dDNdy * n);
+				bsdf->ComputeReflectionDifferentials(ray, rd);
 				vector<SWCSpectrum> Lr(scene->lightGroups.size(), SWCSpectrum(0.f));
-				u_int nc = LiInternal(tspack, scene, rd, sample, Lr, alpha, distance, rayDepth + 1);
+				u_int nc = LiInternal(tspack, scene, bsdf->GetVolume(wi), rd, sample, Lr, alpha, distance, rayDepth + 1);
 				if (nc > 0) {
-					SWCSpectrum filter(f * AbsDot(wi, n));
+					SWCSpectrum filter(f *
+						(AbsDot(wi, n) / pdf));
 					for (u_int i = 0; i < L.size(); ++i)
 						L[i] += Lr[i] * filter;
 					nContribs += nc;
@@ -125,33 +115,14 @@ u_int DirectLightingIntegrator::LiInternal(const TsPack *tspack, const Scene *sc
 				// Compute ray differential _rd_ for specular transmission
 				RayDifferential rd(p, wi);
 				rd.time = time;
-				rd.hasDifferentials = true;
-				rd.rx.o = p + isect.dg.dpdx;
-				rd.ry.o = p + isect.dg.dpdy;
-				
-				float eta = bsdf->eta;
-				Vector w = -wo;
-				if (Dot(wo, n) < 0) eta = 1.f / eta;
-				
-				Normal dndx = bsdf->dgShading.dndu * bsdf->dgShading.dudx + bsdf->dgShading.dndv * bsdf->dgShading.dvdx;
-				Normal dndy = bsdf->dgShading.dndu * bsdf->dgShading.dudy + bsdf->dgShading.dndv * bsdf->dgShading.dvdy;
-				
-				Vector dwodx = -ray.rx.d - wo, dwody = -ray.ry.d - wo;
-				float dDNdx = Dot(dwodx, n) + Dot(wo, dndx);
-				float dDNdy = Dot(dwody, n) + Dot(wo, dndy);
-				
-				float mu = eta * Dot(w, n) - Dot(wi, n);
-				float dmudx = (eta - (eta*eta*Dot(w,n))/Dot(wi, n)) * dDNdx;
-				float dmudy = (eta - (eta*eta*Dot(w,n))/Dot(wi, n)) * dDNdy;
-				
-				rd.rx.d = wi + eta * dwodx - Vector(mu * dndx + dmudx * n);
-				rd.ry.d = wi + eta * dwody - Vector(mu * dndy + dmudy * n);
-				vector<SWCSpectrum> Lt(scene->lightGroups.size(), SWCSpectrum(0.f));
-				u_int nc = LiInternal(tspack, scene, rd, sample, Lt, alpha, distance, rayDepth + 1);
+				bsdf->ComputeTransmissionDifferentials(tspack, ray, rd);
+				vector<SWCSpectrum> Lr(scene->lightGroups.size(), SWCSpectrum(0.f));
+				u_int nc = LiInternal(tspack, scene, bsdf->GetVolume(wi), rd, sample, Lr, alpha, distance, rayDepth + 1);
 				if (nc > 0) {
-					SWCSpectrum filter(f * AbsDot(wi, n));
+					SWCSpectrum filter(f *
+						(AbsDot(wi, n) / pdf));
 					for (u_int i = 0; i < L.size(); ++i)
-						L[i] += Lt[i] * filter;
+						L[i] += Lr[i] * filter;
 					nContribs += nc;
 				}
 			}
@@ -172,7 +143,6 @@ u_int DirectLightingIntegrator::LiInternal(const TsPack *tspack, const Scene *sc
 	}
 
 	if (nContribs > 0) {
-		SWCSpectrum Lt(1.f);
 		scene->volumeIntegrator->Transmittance(tspack, scene, ray, sample, alpha, &Lt);
 		for (u_int i = 0; i < L.size(); ++i)
 			L[i] *= Lt;
@@ -206,7 +176,7 @@ u_int DirectLightingIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	vector<SWCSpectrum> L(scene->lightGroups.size(), SWCSpectrum(0.f));
 	float alpha = 1.f;
 	float distance;
-	u_int nContribs = LiInternal(tspack, scene, ray,sample, L, &alpha, distance, 0);
+	u_int nContribs = LiInternal(tspack, scene, NULL, ray, sample, L, &alpha, distance, 0);
 
 	for (u_int i = 0; i < scene->lightGroups.size(); ++i)
 		sample->AddContribution(sample->imageX, sample->imageY,

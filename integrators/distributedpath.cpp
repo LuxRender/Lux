@@ -180,16 +180,18 @@ void DistributedPath::Reject(const TsPack *tspack, vector< vector<SWCSpectrum> >
 }
 
 void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
-		const RayDifferential &ray, const Sample *sample,
-		vector<SWCSpectrum> &L, float *alpha, float *zdepth, u_int rayDepth,
-		bool includeEmit, u_int &nrContribs) const
+		const Volume *volume, const RayDifferential &ray,
+		const Sample *sample, vector<SWCSpectrum> &L, float *alpha,
+		float *zdepth, u_int rayDepth, bool includeEmit,
+		u_int &nrContribs) const
 {
 	Intersection isect;
+	BSDF *bsdf;
 	const float time = ray.time; // save time for motion blur
+	SWCSpectrum Lt(1.f);
 
-	if (scene->Intersect(ray, &isect)) {
+	if (scene->Intersect(tspack, volume, ray, &isect, &bsdf, &Lt)) {
 		// Evaluate BSDF at hit point
-		BSDF *bsdf = isect.GetBSDF(tspack, ray);
 		Vector wo = -ray.d;
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;
@@ -198,12 +200,6 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 			// Set Zbuf depth
 			const Vector zv(p - ray.o);
 			*zdepth = zv.Length();
-
-			// Chroma Keying
-//			if(bsdf->compParams->K) {
-//				L[0] = SWCSpectrum(tspack, bsdf->compParams->Kc); // TODO write to separate channel
-//				return;
-//			}
 
 			// Override alpha
 			if(bsdf->compParams->oA)
@@ -325,7 +321,7 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 					RayDifferential rd(p, wi);
 					rd.time = time;
 					vector<SWCSpectrum> Ll(L.size(), SWCSpectrum(0.f));
-					LiInternal(tspack, scene, rd, sample, Ll, alpha, zdepth, rayDepth + 1, false, nrContribs);
+					LiInternal(tspack, scene, bsdf->GetVolume(wi), rd, sample, Ll, alpha, zdepth, rayDepth + 1, false, nrContribs);
 					f *= invsamples * AbsDot(wi, n) / pdf;
 					if (diffusereflectReject && (rayDepth == 0 || includeEmit)) {
 						for (u_int j = 0; j < Ll.size(); ++j)
@@ -367,7 +363,7 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 					RayDifferential rd(p, wi);
 					rd.time = time;
 					vector<SWCSpectrum> Ll(L.size(), SWCSpectrum(0.f));
-					LiInternal(tspack, scene, rd, sample, Ll, alpha, zdepth, rayDepth + 1, false, nrContribs);
+					LiInternal(tspack, scene, bsdf->GetVolume(wi), rd, sample, Ll, alpha, zdepth, rayDepth + 1, false, nrContribs);
 					f *= invsamples * AbsDot(wi, n) / pdf;
 					if (diffuserefractReject && (rayDepth == 0 || includeEmit)) {
 						for (u_int j = 0; j < Ll.size(); ++j)
@@ -411,7 +407,7 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 					RayDifferential rd(p, wi);
 					rd.time = time;
 					vector<SWCSpectrum> Ll(L.size(), SWCSpectrum(0.f));
-					LiInternal(tspack, scene, rd, sample, Ll, alpha, zdepth, rayDepth + 1, false, nrContribs);
+					LiInternal(tspack, scene, bsdf->GetVolume(wi), rd, sample, Ll, alpha, zdepth, rayDepth + 1, false, nrContribs);
 					f *= invsamples * AbsDot(wi, n) / pdf;
 					if (glossyreflectReject && (rayDepth == 0 || includeEmit)) {
 						for (u_int j = 0; j < Ll.size(); ++j)
@@ -453,7 +449,7 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 					RayDifferential rd(p, wi);
 					rd.time = time;
 					vector<SWCSpectrum> Ll(L.size(), SWCSpectrum(0.f));
-					LiInternal(tspack, scene, rd, sample, Ll, alpha, zdepth, rayDepth + 1, false, nrContribs);
+					LiInternal(tspack, scene, bsdf->GetVolume(wi), rd, sample, Ll, alpha, zdepth, rayDepth + 1, false, nrContribs);
 					f *= invsamples * AbsDot(wi, n) / pdf;
 					if (glossyrefractReject && (rayDepth == 0 || includeEmit)) {
 						for (u_int j = 0; j < Ll.size(); ++j)
@@ -477,7 +473,7 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 				RayDifferential rd(p, wi);
 				rd.time = time;
 				vector<SWCSpectrum> Ll(L.size(), SWCSpectrum(0.f));
-				LiInternal(tspack, scene, rd, sample, Ll, alpha, zdepth, rayDepth + 1, true, nrContribs);
+				LiInternal(tspack, scene, bsdf->GetVolume(wi), rd, sample, Ll, alpha, zdepth, rayDepth + 1, true, nrContribs);
 				f *= AbsDot(wi, n);
 				for (u_int j = 0; j < L.size(); ++j)
 					L[j] += f * Ll[j];
@@ -489,7 +485,7 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 				RayDifferential rd(p, wi);
 				rd.time = time;
 				vector<SWCSpectrum> Ll(L.size(), SWCSpectrum(0.f));
-				LiInternal(tspack, scene, rd, sample, Ll, alpha, zdepth, rayDepth + 1, true, nrContribs);
+				LiInternal(tspack, scene, bsdf->GetVolume(wi), rd, sample, Ll, alpha, zdepth, rayDepth + 1, true, nrContribs);
 				f *= AbsDot(wi, n);
 				for (u_int j = 0; j < L.size(); ++j)
 					L[j] += f * Ll[j];
@@ -509,7 +505,6 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 			*alpha = 0.f;
 	}
 
-	SWCSpectrum Lt(1.f);
 	scene->volumeIntegrator->Transmittance(tspack, scene, ray, sample, alpha, &Lt);
 	for (u_int i = 0; i < L.size(); ++i)
 		L[i] *= Lt;
@@ -538,7 +533,7 @@ u_int DistributedPath::Li(const TsPack *tspack, const Scene *scene,
 
 	vector<SWCSpectrum> L(scene->lightGroups.size(), SWCSpectrum(0.f));
 	float alpha = 1.f;
-	LiInternal(tspack, scene, ray, sample, L, &alpha, &zdepth, 0, true, nrContribs);
+	LiInternal(tspack, scene, NULL, ray, sample, L, &alpha, &zdepth, 0, true, nrContribs);
 
 	for (u_int i = 0; i < L.size(); ++i)
 		sample->AddContribution(sample->imageX, sample->imageY,

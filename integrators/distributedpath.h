@@ -51,7 +51,8 @@ public:
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 
 private:
-	void LiInternal(const TsPack *tspack, const Scene *scene, const RayDifferential &ray,
+	void LiInternal(const TsPack *tspack, const Scene *scene,
+		const Volume *volume, const RayDifferential &ray,
 		const Sample *sample, vector<SWCSpectrum> &L, float *alpha, float *zdepth, u_int rayDepth, bool includeEmit, u_int &nrContribs) const;
 	void Reject(const TsPack *tspack, vector< vector<SWCSpectrum> > &LL, vector<SWCSpectrum> &L, float rejectrange) const;
 

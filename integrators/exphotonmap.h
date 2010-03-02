@@ -59,7 +59,8 @@ public:
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 private:
     SWCSpectrum LiDirectLightingMode(const TsPack *tspack, const Scene *scene, 
-		const RayDifferential &ray, const Sample *sample, float *alpha,
+		const Volume *volume, const RayDifferential &ray,
+		const Sample *sample, float *alpha,
 		const u_int reflectionDepth, const bool specularBounce) const;
     SWCSpectrum LiPathMode(const TsPack *tspack, const Scene *scene,
 		const RayDifferential &ray, const Sample *sample, float *alpha) const;

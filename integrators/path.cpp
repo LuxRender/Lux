@@ -92,11 +92,14 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	float alpha = 1.f;
 	float distance = INFINITY;
 	u_int through = 0;
+	const Volume *volume = NULL;
 
 	for (u_int pathLength = 0; ; ++pathLength) {
 		// Find next vertex of path
 		Intersection isect;
-		if (!scene->Intersect(ray, &isect)) {
+		BSDF *bsdf;
+		if (!scene->Intersect(tspack, volume, ray, &isect, &bsdf,
+			&pathThroughput)) {
 			if (pathLength == 0) {
 				// Dade - now I know ray.maxt and I can call volumeIntegrator
 				SWCSpectrum Lv;
@@ -161,7 +164,6 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 			break;
 		// Evaluate BSDF at hit point
 		const float *data = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, pathLength);
-		BSDF *bsdf = isect.GetBSDF(tspack, ray);
 		// Sample illumination from lights to find path contribution
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;
@@ -222,6 +224,7 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 
 		ray = RayDifferential(p, wi);
 		ray.time = r.time;
+		volume = bsdf->GetVolume(wi);
 	}
 	for (u_int i = 0; i < lightGroupCount; ++i) {
 		if (!L[i].Black())

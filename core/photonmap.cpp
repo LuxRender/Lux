@@ -567,8 +567,11 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 			// Follow photon path through scene and record intersections
 			bool specularPath = false;
 			Intersection photonIsect;
+			const Volume *volume = NULL; //FIXME: try to get volume from light
+			BSDF *photonBSDF;
 			u_int nIntersections = 0;
-			while (scene->Intersect(photonRay, &photonIsect)) {
+			while (scene->Intersect(tspack, volume, photonRay,
+				&photonIsect, &photonBSDF, &alpha)) {
 				++nIntersections;
 
 				// Handle photon/surface intersection
@@ -576,7 +579,6 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 				//scene->Transmittance(tspack, photonRay, NULL, alpha);
 				Vector wo = -photonRay.d;
 
-				BSDF *photonBSDF = photonIsect.GetBSDF(tspack, photonRay);
 				if (photonBSDF->NumComponents(photonBxdfType) > 0) {
 					// Deposit photon at surface
 					LightPhoton photon(tspack, photonIsect.dg.p, alpha, wo);
@@ -668,6 +670,7 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 				specularPath = (nIntersections == 1 || specularPath) &&
 					((flags & BSDF_SPECULAR) != 0 || pdfo > 100.f);
 				photonRay = RayDifferential(photonIsect.dg.p, wi);
+				volume = photonBSDF->GetVolume(photonRay.d);
 			}
 		}
 
@@ -886,7 +889,8 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const TsPack* tspack,
 			// Trace BSDF final gather ray and accumulate radiance
 			RayDifferential bounceRay(p, wi);
 			Intersection gatherIsect;
-			if (scene->Intersect(bounceRay, &gatherIsect)) {
+			if (scene->Intersect(tspack, bsdf->GetVolume(wi),
+				bounceRay, &gatherIsect, NULL, &fr)) {
 				// Compute exitant radiance using precomputed irradiance
 				Normal nGather = gatherIsect.dg.nn;
 				if (Dot(nGather, bounceRay.d) > 0)
@@ -968,7 +972,8 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const TsPack* tspack,
 
 			RayDifferential bounceRay(p, wi);
 			Intersection gatherIsect;
-			if (scene->Intersect(bounceRay, &gatherIsect)) {
+			if (scene->Intersect(tspack, bsdf->GetVolume(wi),
+				bounceRay, &gatherIsect, NULL, &fr)) {
 				// Compute exitant radiance using precomputed irradiance
 				Normal nGather = gatherIsect.dg.nn;
 				if (Dot(nGather, bounceRay.d) > 0)
@@ -1047,7 +1052,8 @@ SWCSpectrum PhotonMapFinalGather(const TsPack *tspack, const Scene *scene,
 			// Trace BSDF final gather ray and accumulate radiance
 			RayDifferential bounceRay(p, wi);
 			Intersection gatherIsect;
-			if (scene->Intersect(bounceRay, &gatherIsect)) {
+			if (scene->Intersect(tspack, bsdf->GetVolume(wi),
+				bounceRay, &gatherIsect, NULL, &fr)) {
 				// Compute exitant radiance using precomputed irradiance
 				Normal nGather = gatherIsect.dg.nn;
 				if (Dot(nGather, bounceRay.d) > 0)

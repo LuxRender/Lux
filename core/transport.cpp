@@ -89,8 +89,7 @@ bool VolumeIntegrator::Connect(const TsPack *tspack, const Scene *scene,
 	// but it's safer to keep it
 	for (u_int i = 0; i < 10000; ++i) {
 		BSDF *bsdf;
-		if (!scene->volumeIntegrator->Intersect(tspack, scene, volume,
-			ray, &isect, &bsdf, f))
+		if (!scene->Intersect(tspack, volume, ray, &isect, &bsdf, f))
 			return true;
 
 		*f *= bsdf->f(tspack, d, -d, flags);
@@ -170,6 +169,7 @@ SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light
 		if (lightPdf > 0.f && !Li.Black()) {
 			SWCSpectrum f = bsdf->f(tspack, wi, wo);
 			SWCSpectrum fO(1.f);
+			visibility.volume = bsdf->GetVolume(wi);
 			if (!f.Black() && visibility.TestOcclusion(tspack, scene, &fO)) {
 				// Add light's contribution to reflected radiance
 				visibility.Transmittance(tspack, scene, sample, &Li);
@@ -189,6 +189,7 @@ SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light
 		if (lightPdf > 0.f && !Li.Black()) {
 			SWCSpectrum f = bsdf->f(tspack, wi, wo, noSpecular);
 			SWCSpectrum fO(1.f);
+			visibility.volume = bsdf->GetVolume(wi);
 			if (!f.Black() && visibility.TestOcclusion(tspack, scene, &fO)) {
 				// Add light's contribution to reflected radiance
 				visibility.Transmittance(tspack, scene, sample, &Li);
@@ -203,13 +204,15 @@ SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light
 			SWCSpectrum fBSDF;
 			if (bsdf->Sample_f(tspack, wo, &wi,	bs1, bs2, bcs, &fBSDF, &bsdfPdf, noSpecular, NULL, NULL, true)) {
 				lightPdf = light->Pdf(tspack, p, n, wi);
-				if (lightPdf > 0.) {
+				if (lightPdf > 0.f) {
 					// Add light contribution from BSDF sampling
 					float weight = PowerHeuristic(1, bsdfPdf, 1, lightPdf);
 					Intersection lightIsect;
 					Li = SWCSpectrum(1.f);
 					RayDifferential ray(p, wi);
 					ray.time = tspack->time;
+					const Volume *volume = bsdf->GetVolume(wi);
+					BSDF *ibsdf;
 					const BxDFType flags(BxDFType(BSDF_SPECULAR | BSDF_TRANSMISSION));
 					// The for loop prevents an infinite
 					// loop when the ray is almost parallel
@@ -217,14 +220,13 @@ SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light
 					// It should much less frequent with
 					// dynamic epsilon, but it's safer
 					for (u_int i = 0; i < 10000; ++i) {
-						if (!scene->Intersect(ray, &lightIsect)) {
+						if (!scene->Intersect(tspack, volume, ray, &lightIsect, &ibsdf, &Li)) {
 							Li *= light->Le(tspack, ray);
 							break;
 						} else if (lightIsect.arealight == light) {
 							Li *= lightIsect.Le(tspack, -wi);
 							break;
 						}
-						BSDF *ibsdf = lightIsect.GetBSDF(tspack, ray);
 
 						Li *= ibsdf->f(tspack, wi, -wi, flags);
 						if (Li.Black())
@@ -233,6 +235,7 @@ SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light
 
 						ray.mint = ray.maxt + MachineEpsilon::E(ray.maxt);
 						ray.maxt = INFINITY;
+						volume = ibsdf->GetVolume(wi);
 					}
 					if (!Li.Black()) {
 						scene->Transmittance(tspack, ray, sample, &Li);

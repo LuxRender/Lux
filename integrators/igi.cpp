@@ -124,13 +124,14 @@ void IGIIntegrator::Preprocess(const TsPack *tspack, const Scene *scene)
 				continue;
 			alpha /= pdf * lightPdf;
 			Intersection isect;
+			BSDF *bsdf;
+			const Volume *volume = NULL; //FIXME: get it from the light
 			u_int nIntersections = 0;
-			while (scene->Intersect(ray, &isect) &&
-				!alpha.Black()) {
+			while (scene->Intersect(tspack, volume, ray, &isect,
+				&bsdf, &alpha) && !alpha.Black()) {
 				++nIntersections;
 //				alpha *= scene->Transmittance(ray);
 				Vector wo = -ray.d;
-				BSDF *bsdf = isect.GetBSDF(tspack, ray);
 				// Create virtual light at ray intersection point
 				SWCSpectrum Le = alpha * bsdf->rho(tspack, wo) / M_PI;
 				virtualLights[s].push_back(
@@ -153,6 +154,7 @@ void IGIIntegrator::Preprocess(const TsPack *tspack, const Scene *scene)
 					break;
 				alpha *= anew / r;
 				ray = RayDifferential(isect.dg.p, wi);
+				volume = bsdf->GetVolume(wi);
 			}
 		}
 	}
@@ -179,9 +181,12 @@ u_int IGIIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	RayDifferential ray(r);
 	SWCSpectrum L(0.f), pathThroughput(1.f);
 	float alpha = 1.f;
+	const Volume *volume = NULL;
 	for (u_int depth = 0; ; ++depth) {
 		Intersection isect;
-		if (!scene->Intersect(r, &isect)) {
+		BSDF *bsdf;
+		if (!scene->Intersect(tspack, volume, r, &isect, &bsdf,
+			&pathThroughput)) {
 			// Handle ray with no intersection
 			if (depth == 0)
 				alpha = 0.f;
@@ -193,7 +198,6 @@ u_int IGIIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		// Compute emitted light if ray hit an area light source
 		L += pathThroughput * isect.Le(tspack, wo);
 		// Evaluate BSDF at hit point
-		BSDF *bsdf = isect.GetBSDF(tspack, r);
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;
 		for (u_int i = 0; i < scene->lights.size(); ++i) {
@@ -226,12 +230,12 @@ u_int IGIIntegrator::Li(const TsPack *tspack, const Scene *scene,
 			float G = AbsDot(wi, n) * AbsDot(wi, vl.n) / d2;
 			SWCSpectrum Llight = f * vl.GetSWCSpectrum(tspack) *
 				(G / virtualLights[lSet].size());
-			scene->Transmittance(tspack, Ray(p, vl.p - p),
-				sample, &Llight);
-			const float rayEpsilon = MachineEpsilon::E(p);
-			if (!scene->IntersectP(Ray(p, vl.p - p, rayEpsilon,
-				1.f - rayEpsilon)))
+			if (scene->Connect(tspack, bsdf->GetVolume(wi),
+				p, vl.p, false, &Llight, NULL, NULL)) {
+				scene->Transmittance(tspack, Ray(p, vl.p - p),
+					sample, &Llight);
 				L += pathThroughput * Llight;
+			}
 		}
 		// Trace rays for specular reflection and refraction
 		if (depth >= maxSpecularDepth)
@@ -246,6 +250,7 @@ u_int IGIIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		r = RayDifferential(p, wi);
 		r.time = ray.time;
 		pathThroughput *= f * (AbsDot(wi, n) / pdf);
+		volume = bsdf->GetVolume(wi);
 	}
 	const XYZColor color(tspack, L);
 	sample->AddContribution(sample->imageX, sample->imageY,
