@@ -53,8 +53,10 @@ public:
 		const Vector &w) const { return SigmaA(tspack, p, w); }
 	virtual SWCSpectrum Tau(const TsPack *tspack, const Ray &ray,
 		float step = 1.f, float offset = .5f) const {
-		return SigmaT(tspack, ray.o, ray.d) * ray.d.Length() *
-			(ray.maxt - ray.mint);
+		const SWCSpectrum sigma(SigmaT(tspack, ray.o, ray.d));
+		if (sigma.Black())
+			return SWCSpectrum(0.f);
+		return sigma * ray.d.Length() * (ray.maxt - ray.mint);
 	}
 	virtual const lux::Fresnel *Fresnel(const TsPack *tspack, const Point &p,
 		const Vector &) const {
