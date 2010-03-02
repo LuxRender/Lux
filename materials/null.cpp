@@ -37,7 +37,8 @@ BSDF *Null::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 {
 	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
 	SingleBSDF *bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dgShading,
-		dgGeom.nn, ARENA_ALLOC(tspack->arena, NullTransmission)());
+		dgGeom.nn, ARENA_ALLOC(tspack->arena, NullTransmission)(),
+		exterior, interior);
 
 	// Add ptr to CompositingParams structure
 	bsdf->SetCompositingParams(compParams);

@@ -65,7 +65,7 @@ BSDF *Glossy::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 		md = ARENA_ALLOC(tspack->arena, Anisotropic)(1.f / u, 1.f / v);
 	SingleBSDF *bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dgs,
 		dgGeom.nn, ARENA_ALLOC(tspack->arena, FresnelBlend)(d, s, a, ld,
-		md));
+		md), exterior, interior);
 
 	// Add ptr to CompositingParams structure
 	bsdf->SetCompositingParams(compParams);

@@ -64,7 +64,7 @@ BSDF *Glossy2::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 		bxdf = ARENA_ALLOC(tspack->arena, SchlickBRDF)(d, s, a, ld,
 			sqrtf(u * v), v / u - 1.f);
 	SingleBSDF *bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dgs,
-		dgGeom.nn, bxdf);
+		dgGeom.nn, bxdf, exterior, interior);
 
 	// Add ptr to CompositingParams structure
 	bsdf->SetCompositingParams(compParams);

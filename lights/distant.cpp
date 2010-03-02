@@ -111,7 +111,7 @@ SWCSpectrum DistantLight::Le(const TsPack *tspack, const Scene *scene, const Ray
 	Normal ns(-lightDir);
 	DifferentialGeometry dg(ps, ns, -x, y, Normal(0, 0, 0), Normal(0, 0, 0),
 		0, 0, NULL);
-	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns, bxdf);
+	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns, bxdf, NULL, NULL);
 	if (!havePortalShape)
 		*pdf = 1.f / (M_PI * worldRadius * worldRadius);
 	else {
@@ -235,7 +235,7 @@ bool DistantLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1,
 
 	DifferentialGeometry dg(ps, ns, -x, y, Normal(0, 0, 0), Normal(0, 0, 0),
 		0, 0, NULL);
-	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns, bxdf);
+	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns, bxdf, NULL, NULL);
 
 	*Le = Lbase->Evaluate(tspack, dg) * gain * UniformConePdf(cosThetaMax);
 	return true;
@@ -261,7 +261,7 @@ bool DistantLight::Sample_L(const TsPack *tspack, const Scene *scene,
 
 	DifferentialGeometry dg(ps, ns, -x, y, Normal(0, 0, 0), Normal(0, 0, 0),
 		0, 0, NULL);
-	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns, bxdf);
+	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns, bxdf, NULL, NULL);
 	if (!havePortalShape)
 		*pdf = 1.f / (M_PI * worldRadius * worldRadius);
 	else {

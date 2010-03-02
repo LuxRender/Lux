@@ -224,7 +224,7 @@ SWCSpectrum InfiniteAreaLight::Le(const TsPack *tspack, const Scene *scene,
 	if (!havePortalShape) {
 		*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
 			ARENA_ALLOC(tspack->arena, InfiniteBxDF)(*this,
-			WorldToLight, dpdu, dpdv, Vector(ns)));
+			WorldToLight, dpdu, dpdv, Vector(ns)), NULL, NULL);
 		*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 		*pdfDirect = AbsDot(r.d, n) * INV_TWOPI * AbsDot(r.d, ns) /
 			DistanceSquared(r.o, ps);
@@ -232,7 +232,7 @@ SWCSpectrum InfiniteAreaLight::Le(const TsPack *tspack, const Scene *scene,
 		*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
 			ARENA_ALLOC(tspack->arena, InfinitePortalBxDF)(*this,
 			WorldToLight, dpdu, dpdv, Vector(ns), ps, PortalShapes,
-			~0U, 0.f));
+			~0U, 0.f), NULL, NULL);
 		*pdf = 0.f;
 		*pdfDirect = 0.f;
 		DifferentialGeometry dgs;
@@ -460,7 +460,7 @@ bool InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene,
 		*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
 			ARENA_ALLOC(tspack->arena,
 			InfiniteBxDF)(*this, WorldToLight, dpdu, dpdv,
-			Vector(ns)));
+			Vector(ns)), NULL, NULL);
 		*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	} else {
 		// Sample a random Portal
@@ -491,7 +491,7 @@ bool InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene,
 		*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
 			ARENA_ALLOC(tspack->arena,
 			InfinitePortalBxDF)(*this, WorldToLight, dpdu, dpdv,
-			Vector(ns), ps, PortalShapes, shapeIndex, u3));
+			Vector(ns), ps, PortalShapes, shapeIndex, u3), NULL, NULL);
 		*pdf = AbsDot(ns, wi) / (distance * distance);
 		for (u_int i = 0; i < nrPortalShapes; ++i) {
 			if (i == shapeIndex)
@@ -569,13 +569,13 @@ bool InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene,
 		*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
 			ARENA_ALLOC(tspack->arena,
 			InfiniteBxDF)(*this, WorldToLight, dpdu, dpdv,
-			Vector(ns)));
+			Vector(ns)), NULL, NULL);
 		*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	} else {
 		*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
 			ARENA_ALLOC(tspack->arena,
 			InfinitePortalBxDF)(*this, WorldToLight, dpdu, dpdv,
-			Vector(ns), ps, PortalShapes, shapeIndex, u3));
+			Vector(ns), ps, PortalShapes, shapeIndex, u3), NULL, NULL);
 		*pdf = 0.f;
 		DifferentialGeometry dgs;
 		dgs.time = tspack->time;

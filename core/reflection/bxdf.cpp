@@ -26,6 +26,8 @@
 #include "spectrumwavelengths.h"
 #include "mc.h"
 #include "sampling.h"
+#include "fresnel.h"
+#include "volume.h"
 
 using namespace lux;
 
@@ -96,12 +98,83 @@ float BxDF::Weight(const TsPack *tspack, const Vector &wo) const
 {
 	return 1.f;
 }
-BSDF::BSDF(const DifferentialGeometry &dg, const Normal &ngeom, float e)
-	: nn(dg.nn), ng(ngeom), dgShading(dg), eta(e)
+BSDF::BSDF(const DifferentialGeometry &dg, const Normal &ngeom,
+	const Volume *ex, const Volume *in)
+	: nn(dg.nn), ng(ngeom), dgShading(dg), exterior(ex), interior(in)
 {
 	sn = Normalize(dgShading.dpdu);
 	tn = Cross(nn, sn);
 	compParams = NULL; 
+}
+float BSDF::Eta(const TsPack *tspack) const
+{
+	if (exterior) {
+		const Fresnel *fre = exterior->Fresnel(tspack, dgShading.p,
+			Vector(dgShading.nn));
+		if (interior) {
+			const Fresnel *fri = interior->Fresnel(tspack,
+				dgShading.p, Vector(dgShading.nn));
+			return fri->Index(tspack) / fre->Index(tspack);
+		}
+		return 1.f / fre->Index(tspack);
+	} else if (interior) {
+		const Fresnel *fri = interior->Fresnel(tspack, dgShading.p,
+			Vector(dgShading.nn));
+		return fri->Index(tspack);
+	}
+	return 1.f;
+}
+void BSDF::ComputeReflectionDifferentials(const RayDifferential &ray,
+	RayDifferential &rd) const
+{
+	if (!ray.hasDifferentials)
+		return;
+	rd.rx.o = rd.o + dgShading.dpdx;
+	rd.ry.o = rd.o + dgShading.dpdy;
+	// Compute differential reflected directions
+	const Normal dndx(dgShading.dndu * dgShading.dudx +
+		dgShading.dndv * dgShading.dvdx);
+	const Normal dndy(dgShading.dndu * dgShading.dudy +
+		dgShading.dndv * dgShading.dvdy);
+	const Vector dwodx(ray.d - ray.rx.d), dwody(ray.d - ray.ry.d);
+	const float dDNdx = Dot(dwodx, nn) - Dot(ray.d, dndx);
+	const float dDNdy = Dot(dwody, nn) - Dot(ray.d, dndy);
+	rd.rx.d = rd.d - dwodx +
+		2.f * Vector(Dot(ray.d, nn) * dndx + dDNdx * nn);
+	rd.ry.d = rd.d - dwody +
+		2.f * Vector(Dot(ray.d, nn) * dndy + dDNdy * nn);
+	rd.hasDifferentials = true;
+}
+void BSDF::ComputeTransmissionDifferentials(const TsPack *tspack,
+	const RayDifferential &ray, RayDifferential &rd) const
+{
+	if (!ray.hasDifferentials)
+		return;
+	rd.rx.o = rd.o + dgShading.dpdx;
+	rd.ry.o = rd.o + dgShading.dpdy;
+
+	const float cosi = Dot(ray.d, nn), coso = Dot(rd.d, nn);
+	float eta = Eta(tspack);
+	if (cosi > 0.f)
+		eta = 1.f / eta;
+
+	const Normal dndx(dgShading.dndu * dgShading.dudx +
+		dgShading.dndv * dgShading.dvdx);
+	const Normal dndy(dgShading.dndu * dgShading.dudy +
+		dgShading.dndv * dgShading.dvdy);
+
+	const Vector dwodx(ray.d - ray.rx.d), dwody(ray.d - ray.ry.d);
+	const float dDNdx = Dot(dwodx, nn) - Dot(ray.d, dndx);
+	const float dDNdy = Dot(dwody, nn) - Dot(ray.d, dndy);
+
+	const float mu = eta * cosi - coso;
+	const float dmudn = -mu * eta / coso;
+	const float dmudx = dmudn * dDNdx;
+	const float dmudy = dmudn * dDNdy;
+
+	rd.rx.d = rd.d + eta * dwodx - Vector(mu * dndx + dmudx * nn);
+	rd.ry.d = rd.d + eta * dwody - Vector(mu * dndy + dmudy * nn);
+	rd.hasDifferentials = true;
 }
 bool SingleBSDF::Sample_f(const TsPack *tspack, const Vector &woW, Vector *wiW,
 	float u1, float u2, float u3, SWCSpectrum *const f_, float *pdf,
@@ -172,7 +245,8 @@ SWCSpectrum SingleBSDF::rho(const TsPack *tspack, const Vector &woW,
 	return bxdf->rho(tspack, WorldToLocal(woW));
 }
 MultiBSDF::MultiBSDF(const DifferentialGeometry &dg, const Normal &ngeom,
-	float e) : BSDF(dg, ngeom, e)
+	const Volume *exterior, const Volume *interior) :
+	BSDF(dg, ngeom, exterior, interior)
 {
 	nBxDFs = 0;
 }
@@ -320,8 +394,9 @@ SWCSpectrum MultiBSDF::rho(const TsPack *tspack, const Vector &woW,
 	return ret;
 }
 
-MixBSDF::MixBSDF(const DifferentialGeometry &dgs, const Normal &ngeom) :
-	BSDF(dgs, ngeom, 1.f), totalWeight(1.f)
+MixBSDF::MixBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
+	const Volume *exterior, const Volume *interior) :
+	BSDF(dgs, ngeom, exterior, interior), totalWeight(1.f)
 {
 	// totalWeight is initialized to 1 to avoid divisions by 0 when there
 	// are no components in the mix

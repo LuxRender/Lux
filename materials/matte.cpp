@@ -49,7 +49,7 @@ BSDF *Matte::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 	else
 		bxdf = ARENA_ALLOC(tspack->arena, OrenNayar)(r, sig);
 	SingleBSDF *bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dgs,
-		dgGeom.nn, bxdf);
+		dgGeom.nn, bxdf, exterior, interior);
 
 	// Add ptr to CompositingParams structure
 	bsdf->SetCompositingParams(compParams);

@@ -828,7 +828,6 @@ void Film::AddSample(Contribution *contrib) {
 				ZBuffer->Add(x - xPixelStart, y - yPixelStart, contrib->zdepth, 1.0f);
 		}
 	}
-
 }
 
 

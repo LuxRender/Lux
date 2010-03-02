@@ -36,7 +36,7 @@ BSDF *MixMaterial::GetBSDF(const TsPack *tspack,
 	const DifferentialGeometry &dgShading,
 	const Volume *exterior, const Volume *interior) const {
 	MixBSDF *bsdf = ARENA_ALLOC(tspack->arena, MixBSDF)(dgShading,
-		dgGeom.nn);
+		dgGeom.nn, exterior, interior);
 	float amt = amount->Evaluate(tspack, dgShading);
 	bsdf->Add(1.f - amt, mat1->GetBSDF(tspack, dgGeom, dgShading,
 		exterior, interior));

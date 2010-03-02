@@ -26,7 +26,6 @@
 #include "bxdf.h"
 #include "brdftobtdf.h"
 #include "fresnelcauchy.h"
-#include "fresneldielectric.h"
 #include "microfacet.h"
 #include "blinn.h"
 #include "anisotropic.h"
@@ -48,7 +47,7 @@ BSDF *RoughGlass::GetBSDF(const TsPack *tspack,
 	float ior = index->Evaluate(tspack, dgs);
 	float cb = cauchyb->Evaluate(tspack, dgs);
 	MultiBSDF *bsdf = ARENA_ALLOC(tspack->arena, MultiBSDF)(dgs, dgGeom.nn,
-		ior);
+		exterior, interior);
 	// NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
 	SWCSpectrum R = Kr->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
 	SWCSpectrum T = Kt->Evaluate(tspack, dgs).Clamp(0.f, 1.f);

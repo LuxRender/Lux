@@ -248,7 +248,7 @@ bool PerspectiveCamera::Sample_W(const TsPack *tspack, const Scene *scene, float
 	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, normal,
 		ARENA_ALLOC(tspack->arena, PerspectiveBxDF)(LensRadius > 0.f, FocalDistance,
 		fov, Apixel, psC, RasterToCameraBidir,
-		xStart, xEnd, yStart, yEnd));
+		xStart, xEnd, yStart, yEnd), NULL, NULL);
 	*pdf = posPdf;
 	*We = SWCSpectrum(posPdf);
 	return true;
@@ -266,7 +266,7 @@ bool PerspectiveCamera::Sample_W(const TsPack *tspack, const Scene *scene, const
 	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, normal,
 		ARENA_ALLOC(tspack->arena, PerspectiveBxDF)(LensRadius > 0.f, FocalDistance,
 		fov, Apixel, psC, RasterToCameraBidir,
-		xStart, xEnd, yStart, yEnd));
+		xStart, xEnd, yStart, yEnd), NULL, NULL);
 	*pdf = posPdf;
 	*pdfDirect = posPdf;
 	visibility->SetSegment(ps, p, tspack->time, true);

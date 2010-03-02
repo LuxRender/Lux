@@ -70,7 +70,7 @@ BSDF *Glass2::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 	}
 
 	MultiBSDF *bsdf = ARENA_ALLOC(tspack->arena, MultiBSDF)(dgs, dgGeom.nn,
-		ior);
+		exterior, interior);
 	if (architectural)
 		bsdf->Add(ARENA_ALLOC(tspack->arena,
 			SimpleArchitecturalReflection)(fresnel));

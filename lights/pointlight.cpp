@@ -144,10 +144,10 @@ bool PointLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, fl
 		Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
 	if(func)
 		*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
-			ARENA_ALLOC(tspack->arena, GonioBxDF)(WorldToLight, func));
+			ARENA_ALLOC(tspack->arena, GonioBxDF)(WorldToLight, func), NULL, NULL);
 	else
 		*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
-			ARENA_ALLOC(tspack->arena, UniformBxDF)());
+			ARENA_ALLOC(tspack->arena, UniformBxDF)(), NULL, NULL);
 	*Le = Lbase->Evaluate(tspack, dg) * gain;
 	return true;
 }
@@ -163,10 +163,10 @@ bool PointLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point 
 	*pdf = 1.f;
 	if (func)
 		*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
-			ARENA_ALLOC(tspack->arena, GonioBxDF)(WorldToLight, func));
+			ARENA_ALLOC(tspack->arena, GonioBxDF)(WorldToLight, func), NULL, NULL);
 	else
 		*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
-			ARENA_ALLOC(tspack->arena, UniformBxDF)());
+			ARENA_ALLOC(tspack->arena, UniformBxDF)(), NULL, NULL);
 	visibility->SetSegment(p, lightPos, tspack->time);
 	*Le = Lbase->Evaluate(tspack, dg) * gain;
 	return true;

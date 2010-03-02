@@ -179,7 +179,7 @@ bool ProjectionLight::Sample_L(const TsPack *tspack, const Scene *scene, float u
 	DifferentialGeometry dg(lightPos, ns, dpdu, dpdv, Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
 	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
 		ARENA_ALLOC(tspack->arena, ProjectionBxDF)(area, projectionMap,
-			lightProjection, screenX0, screenX1, screenY0, screenY1));
+			lightProjection, screenX0, screenX1, screenY0, screenY1), NULL, NULL);
 	*pdf = 1.f;
 	*Le = Lbase->Evaluate(tspack, dg) * gain;
 	return true;
@@ -197,7 +197,7 @@ bool ProjectionLight::Sample_L(const TsPack *tspack, const Scene *scene, const P
 	DifferentialGeometry dg(lightPos, ns, dpdu, dpdv, Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
 	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
 		ARENA_ALLOC(tspack->arena, ProjectionBxDF)(area, projectionMap,
-			lightProjection, screenX0, screenX1, screenY0, screenY1));
+			lightProjection, screenX0, screenX1, screenY0, screenY1), NULL, NULL);
 	visibility->SetSegment(p, lightPos, tspack->time);
 	*Le = Lbase->Evaluate(tspack, dg) * gain;
 	return true;

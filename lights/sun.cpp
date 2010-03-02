@@ -175,7 +175,7 @@ SWCSpectrum SunLight::Le(const TsPack *tspack, const Scene *scene, const Ray &r,
 	Normal ns(-sundir);
 	DifferentialGeometry dg(ps, ns, -x, y, Normal(0, 0, 0), Normal (0, 0, 0), 0, 0, NULL);
 	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
-		ARENA_ALLOC(tspack->arena, SunBxDF)(sin2ThetaMax, worldRadius));
+		ARENA_ALLOC(tspack->arena, SunBxDF)(sin2ThetaMax, worldRadius), NULL, NULL);
 	if (!havePortalShape)
 		*pdf = 1.f / (M_PI * worldRadius * worldRadius);
 	else {
@@ -370,7 +370,7 @@ bool SunLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, floa
 
 	DifferentialGeometry dg(ps, ns, -x, y, Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
 	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
-		ARENA_ALLOC(tspack->arena, SunBxDF)(sin2ThetaMax, worldRadius));
+		ARENA_ALLOC(tspack->arena, SunBxDF)(sin2ThetaMax, worldRadius), NULL, NULL);
 
 	*Le = SWCSpectrum(tspack, *LSPD);
 	return true;
@@ -401,7 +401,7 @@ bool SunLight::Sample_L(const TsPack *tspack, const Scene *scene,
 
 	DifferentialGeometry dg(ps, ns, -x, y, Normal(0, 0, 0), Normal (0, 0, 0), 0, 0, NULL);
 	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
-		ARENA_ALLOC(tspack->arena, SunBxDF)(sin2ThetaMax, worldRadius));
+		ARENA_ALLOC(tspack->arena, SunBxDF)(sin2ThetaMax, worldRadius), NULL, NULL);
 	if (!havePortalShape)
 		*pdf = 1.f / (M_PI * worldRadius * worldRadius);
 	else {

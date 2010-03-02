@@ -84,7 +84,7 @@ class  BSDF {
 public:
 	// BSDF Public Methods
 	BSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
-		float eta = 1.f);
+		const Volume *exterior, const Volume *interior);
 	virtual u_int NumComponents() const = 0;
 	virtual u_int NumComponents(BxDFType flags) const = 0;
 	virtual inline void SetCompositingParams(CompositingParams *cp) {
@@ -101,6 +101,14 @@ public:
 		              sn.y * v.x + tn.y * v.y + nn.y * v.z,
 		              sn.z * v.x + tn.z * v.y + nn.z * v.z);
 	}
+	float Eta(const TsPack *tspack) const;
+	const Volume *GetVolume(const Vector &w) const {
+		return Dot(w, nn) > 0.f ? exterior : interior;
+	}
+	void ComputeReflectionDifferentials(const RayDifferential &ray,
+		RayDifferential &rd) const;
+	void ComputeTransmissionDifferentials(const TsPack *tspack, const RayDifferential &ray,
+		RayDifferential &rd) const;
 	/**
 	 * Samples the BSDF.
 	 * Returns the result of the BSDF for the sampled direction in f.
@@ -121,7 +129,7 @@ public:
 	// BSDF Public Data
 	const Normal nn, ng;
 	const DifferentialGeometry dgShading;
-	const float eta;
+	const Volume *exterior, *interior;
 
 	// Compositing Parameters pointer
 	CompositingParams *compParams;
@@ -138,7 +146,8 @@ class  SingleBSDF : public BSDF  {
 public:
 	// StackedBSDF Public Methods
 	SingleBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
-		const BxDF *b, float e = 1.f) : BSDF(dgs, ngeom, e), bxdf(b) { }
+		const BxDF *b, const Volume *exterior, const Volume *interior) :
+		BSDF(dgs, ngeom, exterior, interior), bxdf(b) { }
 	virtual inline u_int NumComponents() const { return 1; }
 	virtual inline u_int NumComponents(BxDFType flags) const {
 		return bxdf->MatchesFlags(flags) ? 1U : 0U;
@@ -172,7 +181,7 @@ class  MultiBSDF : public BSDF  {
 public:
 	// MultiBSDF Public Methods
 	MultiBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
-		float eta = 1.f);
+		const Volume *exterior, const Volume *interior);
 	inline void Add(BxDF *bxdf);
 	virtual inline u_int NumComponents() const { return nBxDFs; }
 	virtual inline u_int NumComponents(BxDFType flags) const;
@@ -206,7 +215,8 @@ protected:
 class MixBSDF : public BSDF {
 public:
 	// MixBSDF Public Methods
-	MixBSDF(const DifferentialGeometry &dgs, const Normal &ngeom);
+	MixBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
+		const Volume *exterior, const Volume *interior);
 	inline void Add(float weight, BSDF *bsdf);
 	virtual inline u_int NumComponents() const;
 	virtual inline u_int NumComponents(BxDFType flags) const;

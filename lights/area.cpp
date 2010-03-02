@@ -162,10 +162,12 @@ bool AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, flo
 	prim->Sample(u1, u2, u3, &dg);
 	if(func)
 		*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, dg.nn,
-			ARENA_ALLOC(tspack->arena, GonioAreaBxDF)(func));
+			ARENA_ALLOC(tspack->arena, GonioAreaBxDF)(func),
+			prim->GetExterior(), prim->GetInterior());
 	else
 		*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, dg.nn,
-			ARENA_ALLOC(tspack->arena, Lambertian)(SWCSpectrum(1.f)));
+			ARENA_ALLOC(tspack->arena, Lambertian)(SWCSpectrum(1.f)),
+			prim->GetExterior(), prim->GetInterior());
 	*pdf = prim->Pdf(dg.p);
 	if (*pdf > 0.f) {
 		*Le = this->Le->Evaluate(tspack, dg) * gain * M_PI;
@@ -187,10 +189,12 @@ bool AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &
 	if (*pdfDirect > 0.f) {
 		if(func)
 			*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, dg.nn,
-				ARENA_ALLOC(tspack->arena, GonioAreaBxDF)(func));
+				ARENA_ALLOC(tspack->arena, GonioAreaBxDF)(func),
+				prim->GetExterior(), prim->GetInterior());
 		else
 			*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, dg.nn,
-				ARENA_ALLOC(tspack->arena, Lambertian)(SWCSpectrum(1.f)));
+				ARENA_ALLOC(tspack->arena, Lambertian)(SWCSpectrum(1.f)),
+				prim->GetExterior(), prim->GetInterior());
 		visibility->SetSegment(p, dg.p, tspack->time);
 		*Le = this->Le->Evaluate(tspack, dg) * gain * M_PI;
 		return true;
@@ -208,11 +212,13 @@ SWCSpectrum AreaLight::L(const TsPack *tspack, const Ray &ray, const Differentia
 	SWCSpectrum Ll(Le->Evaluate(tspack, dg) * gain);
 	if(func) {
 		*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, dg.nn,
-			ARENA_ALLOC(tspack->arena, GonioAreaBxDF)(func));
+			ARENA_ALLOC(tspack->arena, GonioAreaBxDF)(func),
+			prim->GetExterior(), prim->GetInterior());
 		Ll *= (*bsdf)->f(tspack, Vector(dg.nn), -ray.d);
 	} else
 		*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, dg.nn,
-			ARENA_ALLOC(tspack->arena, Lambertian)(SWCSpectrum(1.f)));
+			ARENA_ALLOC(tspack->arena, Lambertian)(SWCSpectrum(1.f)),
+			prim->GetExterior(), prim->GetInterior());
 	*pdf = prim->Pdf(dg.p);
 	*pdfDirect = prim->Pdf(ray.o, dg.p);
 	return Ll;

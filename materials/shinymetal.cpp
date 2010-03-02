@@ -43,7 +43,8 @@ BSDF *ShinyMetal::GetBSDF(const TsPack *tspack,
 	const Volume *exterior, const Volume *interior) const
 {
 	// Allocate _BSDF_
-	MultiBSDF *bsdf = ARENA_ALLOC(tspack->arena, MultiBSDF)(dgs, dgGeom.nn);
+	MultiBSDF *bsdf = ARENA_ALLOC(tspack->arena, MultiBSDF)(dgs, dgGeom.nn,
+		exterior, interior);
 	SWCSpectrum spec = Ks->Evaluate(tspack, dgs).Clamp();
 	SWCSpectrum R = Kr->Evaluate(tspack, dgs).Clamp();
 

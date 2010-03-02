@@ -151,7 +151,7 @@ SWCSpectrum InfiniteAreaLightIS::Le(const TsPack *tspack, const Scene *scene,
 	dg.time = tspack->time;
 	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
 		ARENA_ALLOC(tspack->arena, InfiniteISBxDF)(*this, WorldToLight,
-		dpdu, dpdv, Vector(ns)));
+		dpdu, dpdv, Vector(ns)), NULL, NULL);
 	*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	if (radianceMap != NULL) {
 		const Vector wh = Normalize(WorldToLight(r.d));
@@ -255,7 +255,7 @@ bool InfiniteAreaLightIS::Sample_L(const TsPack *tspack, const Scene *scene,
 		Normal (0, 0, 0), 0, 0, NULL);
 	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
 		ARENA_ALLOC(tspack->arena, InfiniteISBxDF)(*this, WorldToLight,
-		dpdu, dpdv, Vector(ns)));
+		dpdu, dpdv, Vector(ns)), NULL, NULL);
 	*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	*Le = SWCSpectrum(tspack, SPDbase) * M_PI;
 	return true;
@@ -293,7 +293,7 @@ bool InfiniteAreaLightIS::Sample_L(const TsPack *tspack, const Scene *scene,
 		Normal (0, 0, 0), 0, 0, NULL);
 	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
 		ARENA_ALLOC(tspack->arena, InfiniteISBxDF)(*this, WorldToLight,
-		dpdu, dpdv, Vector(ns)));
+		dpdu, dpdv, Vector(ns)), NULL, NULL);
 	*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	*pdfDirect *= AbsDot(wi, ns) / (distance * distance);
 	visibility->SetSegment(p, ps, tspack->time);

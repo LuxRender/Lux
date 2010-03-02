@@ -71,7 +71,7 @@ BSDF *Metal::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 	BxDF *bxdf = ARENA_ALLOC(tspack->arena, MicrofacetReflection)(1.f,
 		fresnel, md);
 	SingleBSDF *bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dgs,
-		dgGeom.nn, bxdf);
+		dgGeom.nn, bxdf, exterior, interior);
 
 	// Add ptr to CompositingParams structure
 	bsdf->SetCompositingParams(compParams);

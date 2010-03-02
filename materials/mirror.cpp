@@ -47,7 +47,7 @@ BSDF *Mirror::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 	BxDF *bxdf = ARENA_ALLOC(tspack->arena, SpecularReflection)(R,
 		ARENA_ALLOC(tspack->arena, FresnelNoOp)(), flm, flmindex);
 	SingleBSDF *bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dgs,
-		dgGeom.nn, bxdf);
+		dgGeom.nn, bxdf, exterior, interior);
 
 	// Add ptr to CompositingParams structure
 	bsdf->SetCompositingParams(compParams);
