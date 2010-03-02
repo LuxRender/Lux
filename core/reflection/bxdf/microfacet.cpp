@@ -42,6 +42,8 @@ void MicrofacetReflection::f(const TsPack *tspack, const Vector &wo,
 	float cosThetaO = fabsf(CosTheta(wo));
 	float cosThetaI = fabsf(CosTheta(wi));
 	Vector wh = Normalize(wi + wo);
+	if (wh.z < 0.f)
+		wh = -wh;
 	float cosThetaH = Dot(wi, wh);
 	SWCSpectrum F;
 	fresnel->Evaluate(tspack, cosThetaH, &F);
@@ -54,11 +56,11 @@ bool MicrofacetReflection::Sample_f(const TsPack *tspack, const Vector &wo,
 	float *pdfBack, bool reverse) const
 {
 	distribution->Sample_f(wo, wi, u1, u2, pdf);
-	if (pdfBack)
-		*pdfBack = Pdf(tspack, *wi, wo);
 	if (!SameHemisphere(wo, *wi)) 
 		return false;
 
+	if (pdfBack)
+		*pdfBack = Pdf(tspack, *wi, wo);
 	*f_ = SWCSpectrum(0.f);
 	if (reverse)
 		f(tspack, *wi, wo, f_);
