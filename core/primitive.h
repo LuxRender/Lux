@@ -43,6 +43,8 @@ public:
 	 * Returns the world bounds of this primitive.
 	 */
 	virtual BBox WorldBound() const = 0;
+	virtual Volume *GetExterior() const { return NULL; }
+	virtual Volume *GetInterior() const { return NULL; }
 	/**
 	 * Refines this primitive to a number of primitives that are intersectable and
 	 * satisfy all the given hints if possible.
@@ -205,6 +207,8 @@ public:
 	virtual ~AreaLightPrimitive() { }
 
 	virtual BBox WorldBound() const { return prim->WorldBound(); };
+	virtual Volume *GetExterior() const { return prim->GetExterior(); }
+	virtual Volume *GetInterior() const { return prim->GetInterior(); }
 	virtual void Refine(vector<boost::shared_ptr<Primitive> > &refined,
 		const PrimitiveRefinementHints& refineHints,
 		const boost::shared_ptr<Primitive> &thisPtr);
@@ -266,6 +270,12 @@ public:
 
 	virtual BBox WorldBound() const  {
 		return InstanceToWorld(instance->WorldBound());
+	}
+	virtual Volume *GetExterior() const {
+		return exterior ? exterior.get() : instance->GetExterior();
+	}
+	virtual Volume *GetInterior() const {
+		return interior ? interior.get() : instance->GetInterior();
 	}
 
 	virtual bool CanIntersect() const { return instance->CanIntersect(); }
@@ -354,6 +364,12 @@ public:
 	virtual ~MotionPrimitive() { }
 
 	virtual BBox WorldBound() const;
+	virtual Volume *GetExterior() const {
+		return exterior ? exterior.get() : instance->GetExterior();
+	}
+	virtual Volume *GetInterior() const {
+		return interior ? interior.get() : instance->GetInterior();
+	}
 
 	virtual bool CanIntersect() const { return instance->CanIntersect(); }
 	virtual bool Intersect(const Ray &r, Intersection *in) const;

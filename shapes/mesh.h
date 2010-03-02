@@ -33,15 +33,15 @@ public:
 	enum MeshAccelType { ACCEL_KDTREE, ACCEL_QBVH, ACCEL_NONE, ACCEL_GRID, ACCEL_BRUTEFORCE, ACCEL_AUTO };
 	enum MeshSubdivType { SUBDIV_LOOP };
 
-	Mesh(const Transform &o2w, bool ro,
-			MeshAccelType acceltype,
-			u_int nv, const Point *P, const Normal *N, const float *UV,
-			MeshTriangleType tritype, u_int trisCount, const int *tris,
-			MeshQuadType quadtype, u_int nquadsCount, const int *quads,
-			MeshSubdivType subdivType, u_int nsubdivlevels,
-			boost::shared_ptr<Texture<float> > &displacementMap,
-			float displacementMapScale, float displacementMapOffset,
-			bool displacementMapNormalSmooth, bool displacementMapSharpBoundary);
+	Mesh(const Transform &o2w, bool ro, MeshAccelType acceltype,
+		u_int nv, const Point *P, const Normal *N, const float *UV,
+		MeshTriangleType tritype, u_int trisCount, const int *tris,
+		MeshQuadType quadtype, u_int nquadsCount, const int *quads,
+		MeshSubdivType subdivType, u_int nsubdivlevels,
+		boost::shared_ptr<Texture<float> > &displacementMap,
+		float displacementMapScale, float displacementMapOffset,
+		bool displacementMapNormalSmooth,
+		bool displacementMapSharpBoundary);
 	virtual ~Mesh();
 
 	virtual BBox ObjectBound() const;
@@ -56,21 +56,25 @@ public:
 	friend class MeshBaryTriangle;
 	friend class MeshQuadrilateral;
 
-	static Shape* CreateShape(const Transform &o2w, bool reverseOrientation, const ParamSet &params);
+	static Shape* CreateShape(const Transform &o2w, bool reverseOrientation,
+		const ParamSet &params);
 
 	class BaryMesh {
 	public:
-		static Shape* CreateShape(const Transform &o2w, bool reverseOrientation, const ParamSet &params);
+		static Shape* CreateShape(const Transform &o2w,
+			bool reverseOrientation, const ParamSet &params);
 	};
 
 	class WaldMesh {
 	public:
-		static Shape* CreateShape(const Transform &o2w, bool reverseOrientation, const ParamSet &params);
+		static Shape* CreateShape(const Transform &o2w,
+			bool reverseOrientation, const ParamSet &params);
 	};
 
 	class LoopMesh {
 	public:
-		static Shape* CreateShape(const Transform &o2w, bool reverseOrientation, const ParamSet &params);
+		static Shape* CreateShape(const Transform &o2w,
+			bool reverseOrientation, const ParamSet &params);
 	};
 
 protected:
@@ -115,23 +119,26 @@ public:
 		: mesh(m), v(&(mesh->triVertexIndex[3 * n])) {
 		if (mesh->reverseOrientation ^ mesh->transformSwapsHandedness)
 			swap(const_cast<int *>(v)[1], const_cast<int *>(v)[2]);
-    }
-    virtual ~MeshBaryTriangle() { }
+	}
+	virtual ~MeshBaryTriangle() { }
 
-    virtual BBox ObjectBound() const;
-    virtual BBox WorldBound() const;
+	virtual BBox ObjectBound() const;
+	virtual BBox WorldBound() const;
+	virtual Volume *GetExterior() const { return mesh->GetExterior(); }
+	virtual Volume *GetInterior() const { return mesh->GetInterior(); }
 
-    virtual bool CanIntersect() const { return true; }
-    virtual bool Intersect(const Ray &ray, Intersection *isect) const;
-    virtual bool IntersectP(const Ray &ray) const;
+	virtual bool CanIntersect() const { return true; }
+	virtual bool Intersect(const Ray &ray, Intersection *isect) const;
+	virtual bool IntersectP(const Ray &ray) const;
 
-    virtual void GetShadingGeometry(const Transform &obj2world,
-            const DifferentialGeometry &dg,
-            DifferentialGeometry *dgShading) const;
+	virtual void GetShadingGeometry(const Transform &obj2world,
+		const DifferentialGeometry &dg,
+		DifferentialGeometry *dgShading) const;
 
-    virtual bool CanSample() const { return true; }
-    virtual float Area() const;
-    virtual void Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const;
+	virtual bool CanSample() const { return true; }
+	virtual float Area() const;
+	virtual void Sample(float u1, float u2, float u3,
+		DifferentialGeometry *dg) const;
 
 	virtual bool isDegenerate() const {
 		return false; //TODO check degenerate
@@ -170,7 +177,8 @@ public:
 	virtual bool Intersect(const Ray &ray, Intersection *isect) const;
 	virtual bool IntersectP(const Ray &ray) const;
 
-	virtual void Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const;
+	virtual void Sample(float u1, float u2, float u3,
+		DifferentialGeometry *dg) const;
 	virtual bool isDegenerate() const;
 private:
 	// WaldTriangle Data
