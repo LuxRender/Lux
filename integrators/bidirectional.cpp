@@ -222,8 +222,11 @@ static bool evalPath(const TsPack *tspack, const Scene *scene,
 	const float lpdf = lightV.bsdf->Pdf(tspack, lightV.wi, lwo, lightV.flags);
 	float ltPdf = 1.f;
 	float etPdfR = 1.f;
-	if (!scene->volumeIntegrator->Connect(tspack, scene, NULL,
-		eyeV.p, lightV.p, nEye == 1, L, &ltPdf, &etPdfR))
+	const Volume *volume = eyeV.bsdf->GetVolume(ewi);
+	if (!volume)
+		volume = lightV.bsdf->GetVolume(lwo);
+	if (!scene->Connect(tspack, volume, eyeV.p, lightV.p, nEye == 1, L,
+		&ltPdf, &etPdfR))
 		return false;
 	// Prepare eye vertex for connection
 	const float ecosi = AbsDot(ewi, eyeV.bsdf->ng);
