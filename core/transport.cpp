@@ -56,10 +56,11 @@ bool VolumeIntegrator::Intersect(const TsPack *tspack, const Scene *scene,
 			else if (!isect->exterior)
 				isect->exterior = volume;
 		}
-		*bsdf = isect->material->GetBSDF(tspack, isect->dg, dgShading,
-			isect->exterior, isect->interior);
+		if (bsdf)
+			*bsdf = isect->material->GetBSDF(tspack, isect->dg,
+				dgShading, isect->exterior, isect->interior);
 	}
-	if (volume)
+	if (volume && L)
 		*L *= Exp(-volume->Tau(tspack, ray));
 	return hit;
 }
