@@ -20,41 +20,50 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// sopratexture.h*
+// sellmeiertexture.h*
 #include "lux.h"
-#include "memory.h"
 #include "texture.h"
-#include "irregular.h"
-#include "fresnelgeneral.h"
+#include "fresnelcauchy.h"
+#include "memory.h"
 #include "paramset.h"
 
 namespace lux
 {
 
-// CauchyTexture Declarations
-class SopraTexture : public Texture<const Fresnel *> {
+// SellmeierTexture Declarations
+class SellmeierTexture : public Texture<const Fresnel *> {
 public:
-	// ConstantTexture Public Methods
-	SopraTexture(const vector<float> &wl, const vector<float> &n,
-		const vector<float> &k) :
-		N(&wl[0], &n[0], wl.size()), K(&wl[0], &k[0], wl.size()),
-		index(N.Filter()) { }
-	virtual ~SopraTexture() { }
+	// SellmeierTexture Public Methods
+	SellmeierTexture(float a_, u_int n, const float *b_, const float *c_) :
+		b(b_, b_ + n), c(c_, c_ + n), a(a_) {
+		// Sellmeier expects wavelength in µm but we have it in nm
+		for (u_int i = 0; i < n; ++i)
+			c[i] *= 1e6f;
+		// Compute the mean value of the ior
+		index = 0.f;
+		for (u_int i = WAVELENGTH_START; i < WAVELENGTH_END; ++i) {
+			float i2 = a;
+			for (u_int j = 0; j < n; ++j)
+				i2 += b[j] / (1.f - c[j] / (i * i));
+			index += sqrtf(i2);
+		}
+		index /= (WAVELENGTH_END - WAVELENGTH_START);
+	}
+	virtual ~SellmeierTexture() { }
 	virtual const Fresnel *Evaluate(const TsPack *tspack,
-		const DifferentialGeometry &) const {
-		// FIXME - Try to detect the best model to use
-		// FIXME - FresnelGeneral should take a float index for accurate
-		// non dispersive behaviour
-		return ARENA_ALLOC(tspack->arena,
-			FresnelGeneral)(SWCSpectrum(tspack, N),
-			SWCSpectrum(tspack, K));
+		const DifferentialGeometry &dg) const {
+		SWCSpectrum ior2(a), w2(tspack->swl->w * tspack->swl->w);
+		for (u_int i = 0; i < b.size(); ++i)
+			ior2 += b[i] * w2 / (w2 - SWCSpectrum(c[i]));
+		return ARENA_ALLOC(tspack->arena, FresnelDielectric)(index,
+			ior2.Sqrt(), SWCSpectrum(0.f));
 	}
 	virtual float Y() const { return index; }
 
 	static Texture<const Fresnel *> *CreateFresnelTexture(const Transform &tex2world, const ParamSet &tp);
 private:
-	IrregularSPD N, K;
-	float index;
+	vector<float> b, c;
+	float a, index;
 };
 
 }//namespace lux
