@@ -329,7 +329,7 @@ public:
 		boost::python::list params)
 	{
 		EXTRACT_PARAMETERS(params);
-		context->MakeNamediVolume(id, name, PASS_PARAMSET);
+		context->MakeNamedVolume(id, name, PASS_PARAMSET);
 		memoryPool.purge_memory();
 	}
 
@@ -342,7 +342,7 @@ public:
 
 	void exterior(const char *name)
 	{
-		context->Exterior(name, PASS_PARAMSET);
+		context->Exterior(name);
 	}
 
 	void interior(const char *name)
