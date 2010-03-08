@@ -23,7 +23,8 @@
 // sellmeiertexture.h*
 #include "lux.h"
 #include "texture.h"
-#include "fresnelcauchy.h"
+#include "fresneldielectric.h"
+#include "spectrumwavelengths.h"
 #include "memory.h"
 #include "paramset.h"
 
@@ -52,7 +53,9 @@ public:
 	virtual ~SellmeierTexture() { }
 	virtual const Fresnel *Evaluate(const TsPack *tspack,
 		const DifferentialGeometry &dg) const {
-		SWCSpectrum ior2(a), w2(tspack->swl->w * tspack->swl->w);
+		const SWCSpectrum w(tspack->swl->w);
+		const SWCSpectrum w2(w * w);
+		SWCSpectrum ior2(a);
 		for (u_int i = 0; i < b.size(); ++i)
 			ior2 += b[i] * w2 / (w2 - SWCSpectrum(c[i]));
 		return ARENA_ALLOC(tspack->arena, FresnelDielectric)(index,

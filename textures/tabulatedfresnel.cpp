@@ -194,7 +194,7 @@ Texture<const Fresnel *> *LuxpopTexture::CreateFresnelTexture(const Transform &t
 	return new TabulatedFresnel(wl, n, k);
 }
 
-static const float AmorphousCarbonSamples = 15;
+static const u_int AmorphousCarbonSamples = 15;
 static const float AmorphousCarbonWavelengths[] = {
 	247.96, 309.95, 326.263, 344.389, 364.647, 387.438, 413.267, 442.786,
 	476.846, 516.583, 563.545, 619.9, 688.778, 774.875, 885.571 };
@@ -205,7 +205,7 @@ static const float AmorphousCarbonK[] = {
 	0.712, 0.808, 0.91, 0.92, 0.92, 0.91, 0.9, 0.89, 0.88, 0.87, 0.82,
 	0.75, 0.7, 0.71 };
 
-static const float SopraSamples = 56;
+static const u_int SopraSamples = 56;
 static const float SopraWavelengths[] = {
 	298.7570554, 302.4004341, 306.1337728, 309.960445, 313.8839949,
 	317.9081487, 322.036826, 326.2741526, 330.6244747, 335.092373,
