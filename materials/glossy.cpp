@@ -60,9 +60,9 @@ BSDF *Glossy::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 
 	MicrofacetDistribution *md;
 	if (u == v)
-		md = ARENA_ALLOC(tspack->arena, Blinn)(1.f / u);
+		md = ARENA_ALLOC(tspack->arena, Blinn)(2.f / (u * u) - 2.f);
 	else
-		md = ARENA_ALLOC(tspack->arena, Anisotropic)(1.f / u, 1.f / v);
+		md = ARENA_ALLOC(tspack->arena, Anisotropic)(2.f / (u * u) - 2.f, 2.f / (v * v) - 2.f);
 	SingleBSDF *bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dgs,
 		dgGeom.nn, ARENA_ALLOC(tspack->arena, FresnelBlend)(d, s, a, ld,
 		md), exterior, interior);
