@@ -145,6 +145,7 @@ LightSource 		{ return LIGHTSOURCE;		}
 LookAt			{ return LOOKAT;		}
 Material		{ return MATERIAL;		}
 MakeNamedMaterial	{ return MAKENAMEDMATERIAL;	}
+MakeNamedVolume		{ return MAKENAMEDVOLUME;	}
 NamedMaterial		{ return NAMEDMATERIAL;		}
 ObjectBegin 		{ return OBJECTBEGIN;		}
 ObjectEnd 		{ return OBJECTEND;		}

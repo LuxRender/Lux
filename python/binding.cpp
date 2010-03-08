@@ -325,6 +325,14 @@ public:
 
 	void reverseOrientation() { context->ReverseOrientation(); }
 
+	void makeNamedVolume(const char *id, const char *name,
+		boost::python::list params)
+	{
+		EXTRACT_PARAMETERS(params);
+		context->MakeNamediVolume(id, name, PASS_PARAMSET);
+		memoryPool.purge_memory();
+	}
+
 	void volume(const char *name, boost::python::list params)
 	{
 		EXTRACT_PARAMETERS(params);
@@ -332,18 +340,14 @@ public:
 		memoryPool.purge_memory();
 	}
 
-	void exterior(const char *name, boost::python::list params)
+	void exterior(const char *name)
 	{
-		EXTRACT_PARAMETERS(params);
 		context->Exterior(name, PASS_PARAMSET);
-		memoryPool.purge_memory();
 	}
 
-	void interior(const char *name, boost::python::list params)
+	void interior(const char *name)
 	{
-		EXTRACT_PARAMETERS(params);
-		context->Interior(name, PASS_PARAMSET);
-		memoryPool.purge_memory();
+		context->Interior(name);
 	}
 
 	void objectBegin(const char *name) { context->ObjectBegin(std::string(name)); }
@@ -677,6 +681,7 @@ BOOST_PYTHON_MODULE(pylux)
 		.def("portalShape", &PyContext::portalShape)
 		.def("shape", &PyContext::shape)
 		.def("reverseOrientation", &PyContext::reverseOrientation)
+		.def("makeNamedVolume", &PyContext::makeNamedVolume)
 		.def("volume", &PyContext::volume)
 		.def("exterior", &PyContext::exterior)
 		.def("interior", &PyContext::interior)

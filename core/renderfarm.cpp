@@ -522,6 +522,18 @@ void RenderFarm::send(const string &command, const string &name,
 	}
 }
 
+void RenderFarm::send(const string &command, const string &id,
+	const string &name, const ParamSet &params)
+{
+	try {
+		netBuffer << command << endl << id << endl << name << endl;
+		sendParams(params);
+		netBuffer << "\n";
+	} catch (exception& e) {
+		luxError(LUX_SYSTEM, LUX_ERROR, e.what());
+	}
+}
+
 void RenderFarm::send(const string &command, const string &name) {
 	try {
 		netBuffer << command << endl << name << endl;

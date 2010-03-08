@@ -433,7 +433,8 @@ void Context::Material(const string &n, const ParamSet &params) {
 	graphicsState->material = MakeMaterial(n, curTransform, params);
 }
 
-void Context::MakeNamedMaterial(const string &n, const ParamSet &_params) {
+void Context::MakeNamedMaterial(const string &n, const ParamSet &_params)
+{
 	VERIFY_WORLD("MakeNamedMaterial");
 	ParamSet params=_params;
 	renderFarm->send("luxMakeNamedMaterial", n, params);
@@ -447,6 +448,19 @@ void Context::MakeNamedMaterial(const string &n, const ParamSet &_params) {
 	params.EraseString("type");
 	graphicsState->namedMaterials[n] = MakeMaterial(type, curTransform,
 		params);
+}
+
+void Context::MakeNamedVolume(const string &id, const string &name,
+	const ParamSet &params)
+{
+	VERIFY_WORLD("MakeNamedVolume");
+	renderFarm->send("luxMakeNamedVolume", id, name, params);
+	if (graphicsState->namedVolumes.find(id) !=
+		graphicsState->namedVolumes.end()) {
+		LOG(LUX_WARNING, LUX_SYNTAX) << "Named volume '" << id <<
+			"' being redefined.";
+	}
+	graphicsState->namedVolumes[id] = MakeVolume(name, curTransform, params);
 }
 
 void Context::NamedMaterial(const string &n) {
@@ -614,19 +628,33 @@ void Context::Volume(const string &n, const ParamSet &params) {
 	if (vr)
 		renderOptions->volumeRegions.push_back(vr);
 }
-void Context::Exterior(const string &n, const ParamSet &params) {
+void Context::Exterior(const string &n) {
 	VERIFY_WORLD("Exterior");
-	renderFarm->send("luxExterior", n, params);
-	boost::shared_ptr<lux::Volume> vr(MakeVolume(n, curTransform, params));
-	if (vr)
-		graphicsState->exterior = vr;
+	renderFarm->send("luxExterior", n);
+	if (graphicsState->namedVolumes.find(n) !=
+		graphicsState->namedVolumes.end()) {
+		// Create a temporary to increase share count
+		// The copy operator is just a swap
+		boost::shared_ptr<lux::Volume> v(graphicsState->namedVolumes[n]);
+		graphicsState->exterior = v;
+	} else {
+		LOG(LUX_ERROR, LUX_SYNTAX) << "Exterior named volume '" << n <<
+			"' unknown";
+	}
 }
-void Context::Interior(const string &n, const ParamSet &params) {
+void Context::Interior(const string &n) {
 	VERIFY_WORLD("Interior");
-	renderFarm->send("luxInterior", n, params);
-	boost::shared_ptr<lux::Volume> vr(MakeVolume(n, curTransform, params));
-	if (vr)
-		graphicsState->interior = vr;
+	renderFarm->send("luxInterior", n);
+	if (graphicsState->namedVolumes.find(n) !=
+		graphicsState->namedVolumes.end()) {
+		// Create a temporary to increase share count
+		// The copy operator is just a swap
+		boost::shared_ptr<lux::Volume> v(graphicsState->namedVolumes[n]);
+		graphicsState->interior = v;
+	} else {
+		LOG(LUX_ERROR, LUX_SYNTAX) << "Interior named volume '" << n <<
+			"' unknown";
+	}
 }
 void Context::ObjectBegin(const string &n) {
 	VERIFY_WORLD("ObjectBegin");

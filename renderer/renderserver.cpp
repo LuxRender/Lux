@@ -201,7 +201,7 @@ static void processCommandFilm(bool isLittleEndian,
 	params.AddBool("write_tga_ZBuf", &no);
 	params.AddBool("write_resume_flm", &no);
 
-	(Context::GetActive()->*f)(type.c_str(), params);
+	(Context::GetActive()->*f)(type, params);
 }
 
 static void processFile(const string &fileParam, ParamSet &params, vector<string> &tmpFileList, basic_istream<char> &stream)
@@ -277,28 +277,12 @@ static void processCommand(bool isLittleEndian,
 	(Context::GetActive()->*f)(type, params);
 }
 
-static void processCommand(bool isLittleEndian,
-	void (Context::*f)(const string &, ParamSet &),
-	vector<string> &tmpFileList, basic_istream<char> &stream)
-{
-	string type;
-	getline(stream, type);
-
-	ParamSet params;
-	processCommandParams(isLittleEndian, params, stream);
-
-	processFile("mapname", params, tmpFileList, stream);
-	processFile("iesname", params, tmpFileList, stream);
-
-	(Context::GetActive()->*f)(type, params);
-}
-
 static void processCommand(void (Context::*f)(const string &), basic_istream<char> &stream)
 {
 	string type;
 	getline(stream, type);
 
-	(Context::GetActive()->*f)(type.c_str());
+	(Context::GetActive()->*f)(type);
 }
 
 static void processCommand(void (Context::*f)(float, float), basic_istream<char> &stream)
@@ -402,6 +386,7 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread)
 		CMD_LUXPORTALSHAPE = 3416559329U,
 		CMD_LUXSHAPE = 1943702863U,
 		CMD_LUXREVERSEORIENTATION = 2027239206U,
+		CMD_LUXMAKENAMEDVOLUME = 2393963353U,
 		CMD_LUXVOLUME = 4138761078U,
 		CMD_LUXEXTERIOR = 2058668912U,
 		CMD_LUXINTERIOR = 703971178U,
@@ -587,7 +572,7 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread)
 
 					processFile("filename", params, tmpFileList, stream);
 
-					Context::GetActive()->Texture(name.c_str(), type.c_str(), texname.c_str(), params);
+					Context::GetActive()->Texture(name, type, texname, params);
 					break;
 				}
 				case CMD_LUXMATERIAL:
@@ -617,14 +602,28 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread)
 				case CMD_LUXREVERSEORIENTATION:
 					luxReverseOrientation();
 					break;
+				case CMD_LUXMAKENAMEDVOLUME: {
+					string id, name;
+					ParamSet params;
+					getline(stream, id);
+					getline(stream, name);
+
+					processCommandParams(isLittleEndian,
+						params, stream);
+
+					Context::GetActive()->MakeNamedVolume(id, name, params);
+					break;
+				}
 				case CMD_LUXVOLUME:
 					processCommand(isLittleEndian, &Context::Volume, tmpFileList, stream);
 					break;
 				case CMD_LUXEXTERIOR:
-					processCommand(isLittleEndian, &Context::Exterior, tmpFileList, stream);
+					processCommand(&Context::Exterior,
+						stream);
 					break;
 				case CMD_LUXINTERIOR:
-					processCommand(isLittleEndian, &Context::Interior, tmpFileList, stream);
+					processCommand(&Context::Interior,
+						stream);
 					break;
 				case CMD_LUXOBJECTBEGIN:
 					processCommand(&Context::ObjectBegin, stream);

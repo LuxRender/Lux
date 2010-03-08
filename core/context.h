@@ -91,15 +91,17 @@ public:
 	void ConcatTransform(float transform[16]);
 	void CoordinateSystem(const string &);
 	void CoordSysTransform(const string &);
-	void Exterior(const string &name, const ParamSet &params);
+	void Exterior(const string &name);
 	void Film(const string &type, const ParamSet &params);
 	void Identity();
-	void Interior(const string &name, const ParamSet &params);
+	void Interior(const string &name);
 	void LightGroup(const string &name, const ParamSet &params);
 	void LightSource(const string &name, const ParamSet &params);
 	void LookAt(float ex, float ey, float ez, float lx, float ly, float lz,
 		float ux, float uy, float uz);
 	void MakeNamedMaterial(const string &name, const ParamSet &params);
+	void MakeNamedVolume(const string &id, const string &name,
+		const ParamSet &params);
 	void Material(const string &name, const ParamSet &params);
 	void MotionInstance(const string &name, float startTime, float endTime,
 		const string &toTransform);
@@ -250,6 +252,7 @@ private:
 		map<string, boost::shared_ptr<lux::Texture<SWCSpectrum> > > colorTextures;
 		map<string, boost::shared_ptr<lux::Texture<const Fresnel *> > > fresnelTextures;
 		map<string, boost::shared_ptr<lux::Material> > namedMaterials;
+		map<string, boost::shared_ptr<lux::Volume> > namedVolumes;
 		boost::shared_ptr<lux::Volume> exterior;
 		boost::shared_ptr<lux::Volume> interior;
 		boost::shared_ptr<lux::Material> material;

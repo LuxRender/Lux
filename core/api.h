@@ -81,12 +81,13 @@ void luxPortalShapeV(const char *name, unsigned int n, const LuxToken tokens[], 
 void luxShape(const char *name, ...);
 void luxShapeV(const char *name, unsigned int n, const LuxToken tokens[], const LuxPointer params[]);
 void luxReverseOrientation();
+void luxMakeNamedVolume(const char *id, const char *name, ...);
+void luxMakeNamedVolumeV(const char *id, const char *name, unsigned int n,
+	const LuxToken tokens[], const LuxPointer params[]);
 void luxVolume(const char *name, ...);
 void luxVolumeV(const char *name, unsigned int n, const LuxToken tokens[], const LuxPointer params[]);
-void luxExterior(const char *name, ...);
-void luxExteriorV(const char *name, unsigned int n, const LuxToken tokens[], const LuxPointer params[]);
-void luxInterior(const char *name, ...);
-void luxInteriorV(const char *name, unsigned int n, const LuxToken tokens[], const LuxPointer params[]);
+void luxExterior(const char *name);
+void luxInterior(const char *name);
 void luxObjectBegin(const char *name);
 void luxObjectEnd();
 void luxObjectInstance(const char *name);

@@ -359,6 +359,18 @@ extern "C" void luxReverseOrientation() {
 	Context::GetActive()->ReverseOrientation();
 }
 
+extern "C" void luxMakeNamedVolume(const char *id, const char *name, ...)
+{
+	EXTRACT_PARAMETERS(name);
+	luxMakeNamedVolumeV(id, name, PASS_PARAMETERS);
+}
+
+extern "C" void luxMakeNamedVolumeV(const char *id, const char *name,
+	unsigned int n, const LuxToken tokens[], const LuxPointer params[])
+{
+	ParamSet p(n, name, tokens, params);
+	Context::GetActive()->MakeNamedVolume(id, name, p);
+}
 extern "C" void luxVolume(const char *name, ...)
 {
 	EXTRACT_PARAMETERS(name);
@@ -371,28 +383,14 @@ extern "C" void luxVolumeV(const char *name, unsigned int n,
 	Context::GetActive()->Volume(name, ParamSet(n, name, tokens, params));
 }
 
-extern "C" void luxExterior(const char *name, ...)
+extern "C" void luxExterior(const char *name)
 {
-	EXTRACT_PARAMETERS(name);
-	luxExteriorV(name, PASS_PARAMETERS);
+	Context::GetActive()->Exterior(name);
 }
 
-extern "C" void luxExteriorV(const char *name, unsigned int n,
-	const LuxToken tokens[], const LuxPointer params[])
+extern "C" void luxInterior(const char *name)
 {
-	Context::GetActive()->Exterior(name, ParamSet(n, name, tokens, params));
-}
-
-extern "C" void luxInterior(const char *name, ...)
-{
-	EXTRACT_PARAMETERS(name);
-	luxInteriorV(name, PASS_PARAMETERS);
-}
-
-extern "C" void luxInteriorV(const char *name, unsigned int n,
-	const LuxToken tokens[], const LuxPointer params[])
-{
-	Context::GetActive()->Interior(name, ParamSet(n, name, tokens, params));
+	Context::GetActive()->Interior(name);
 }
 
 extern "C" void luxObjectBegin(const char *name)

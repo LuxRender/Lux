@@ -29,6 +29,7 @@
 #include "shape.h"
 #include "material.h"
 #include "texture.h"
+#include "volume.h"
 
 namespace lux {
 
@@ -158,20 +159,18 @@ Region *MakeVolumeRegion(const string &name,
 	return NULL;
 }
 
-Volume *MakeVolume(const string &name,
+boost::shared_ptr<Volume> MakeVolume(const string &name,
 	const Transform &volume2world, const ParamSet &paramSet)
 {
 	if (DynamicLoader::registeredVolumes().find(name) !=
 		DynamicLoader::registeredVolumes().end()) {
-		Volume *ret =
-			DynamicLoader::registeredVolumes()[name](volume2world,
-				paramSet);
+		boost::shared_ptr<Volume> ret(DynamicLoader::registeredVolumes()[name](volume2world, paramSet));
 		paramSet.ReportUnused();
 		return ret;
 	}
 
 	LoadError("volume", name);
-	return NULL;
+	return boost::shared_ptr<Volume>();
 }
 
 SurfaceIntegrator *MakeSurfaceIntegrator(const string &name,

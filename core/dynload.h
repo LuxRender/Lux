@@ -52,7 +52,7 @@ AreaLight *MakeAreaLight(const string &name,
 	const boost::shared_ptr<Primitive> &prim);
 Region *MakeVolumeRegion(const string &name,
 	const Transform &light2world, const ParamSet &paramSet);
-Volume *MakeVolume(const string &name,
+boost::shared_ptr<Volume> MakeVolume(const string &name,
 	const Transform &light2world, const ParamSet &paramSet);
 SurfaceIntegrator *MakeSurfaceIntegrator(const string &name,
 	const ParamSet &paramSet);
