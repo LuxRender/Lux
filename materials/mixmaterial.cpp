@@ -38,9 +38,13 @@ BSDF *MixMaterial::GetBSDF(const TsPack *tspack,
 	MixBSDF *bsdf = ARENA_ALLOC(tspack->arena, MixBSDF)(dgShading,
 		dgGeom.nn, exterior, interior);
 	float amt = amount->Evaluate(tspack, dgShading);
-	bsdf->Add(1.f - amt, mat1->GetBSDF(tspack, dgGeom, dgShading,
+	DifferentialGeometry dgS = dgShading;
+	mat1->GetShadingGeometry(tspack, dgGeom.nn, &dgS);
+	bsdf->Add(1.f - amt, mat1->GetBSDF(tspack, dgGeom, dgS,
 		exterior, interior));
-	bsdf->Add(amt, mat2->GetBSDF(tspack, dgGeom, dgShading,
+	dgS = dgShading;
+	mat2->GetShadingGeometry(tspack, dgGeom.nn, &dgS);
+	bsdf->Add(amt, mat2->GetBSDF(tspack, dgGeom, dgS,
 		exterior, interior));
 	bsdf->SetCompositingParams(compParams);
 	return bsdf;

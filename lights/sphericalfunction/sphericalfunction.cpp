@@ -26,21 +26,25 @@
 #include "mcdistribution.h"
 #include "paramset.h"
 #include "imagereader.h"
+#include "spectrumwavelengths.h"
 
 namespace lux {
 
-	// MipMapSphericalFunction
+// MipMapSphericalFunction
 
-	MipMapSphericalFunction::MipMapSphericalFunction() {
-	}
+MipMapSphericalFunction::MipMapSphericalFunction()
+{
+}
 
-	MipMapSphericalFunction::MipMapSphericalFunction( boost::shared_ptr< const MIPMap<RGBColor> > &aMipMap, bool flipZ ) {
-		SetMipMap( aMipMap );
-	}
+MipMapSphericalFunction::MipMapSphericalFunction(boost::shared_ptr<const MIPMap> &aMipMap, bool flipZ )
+{
+	SetMipMap(aMipMap);
+}
 
-	RGBColor MipMapSphericalFunction::f(float phi, float theta) const {
-		return mipMap->Lookup( phi * INV_TWOPI, theta * INV_PI );
-	}
+SWCSpectrum MipMapSphericalFunction::f(const TsPack *tspack, float phi, float theta) const
+{
+	return mipMap->LookupSpectrum(tspack, phi * INV_TWOPI, theta * INV_PI);
+}
 
 // SampleableSphericalFunction
 SampleableSphericalFunction::SampleableSphericalFunction(
@@ -48,12 +52,17 @@ SampleableSphericalFunction::SampleableSphericalFunction(
 	u_int xRes, u_int yRes) : func(aFunc)
 {
 	// Compute scalar-valued image
+	TsPack tspack;
+	SpectrumWavelengths swl;
+	tspack.swl = &swl;
+	swl.Sample(.5f);
 	float *img = new float[xRes * yRes];
 	for (u_int y = 0; y < yRes; ++y) {
 		float yp = M_PI * (y + .5f) / yRes;
 		for (u_int x = 0; x < xRes; ++x) {
 			float xp = 2.f * M_PI * (x + .5f) / xRes;
-			img[x + y * xRes] = func->f(xp, yp).Y() * sin(yp);
+			img[x + y * xRes] = func->f(&tspack, xp, yp).Y(&tspack) *
+				sin(yp);
 		}
 	}
 	// Initialize sampling PDFs
@@ -64,13 +73,13 @@ SampleableSphericalFunction::~SampleableSphericalFunction() {
 	delete uvDistrib;
 }
 
-RGBColor SampleableSphericalFunction::f(float phi, float theta) const
+SWCSpectrum SampleableSphericalFunction::f(const TsPack *tspack, float phi, float theta) const
 {
-	return func->f(phi, theta);
+	return func->f(tspack, phi, theta);
 }
 
-RGBColor SampleableSphericalFunction::Sample_f(float u1, float u2, Vector *w,
-	float *pdf) const
+SWCSpectrum SampleableSphericalFunction::Sample_f(const TsPack *tspack,
+	float u1, float u2, Vector *w, float *pdf) const
 {
 	// Find floating-point $(u,v)$ sample coordinates
 	float uv[2];
@@ -83,7 +92,7 @@ RGBColor SampleableSphericalFunction::Sample_f(float u1, float u2, Vector *w,
 	// Compute PDF for sampled direction
 	*pdf /= 2.f * M_PI * M_PI * sintheta;
 	// Return value for direction
-	return f(phi, theta);
+	return f(tspack, phi, theta);
 }
 
 float SampleableSphericalFunction::Pdf(const Vector& w) const
@@ -93,7 +102,8 @@ float SampleableSphericalFunction::Pdf(const Vector& w) const
 		(2.f * M_PI * M_PI * sinf(theta));
 }
 
-float SampleableSphericalFunction::Average_f() const {
+float SampleableSphericalFunction::Average_f() const
+{
 	return uvDistrib->Average();
 }
 
@@ -108,8 +118,7 @@ SphericalFunction *CreateSphericalFunction(const ParamSet &paramSet)
 	if (texname.length() > 0) {
 		auto_ptr<ImageData> imgdata(ReadImage(texname));
 		if (imgdata.get() != NULL) {
-			boost::shared_ptr<const MIPMap<RGBColor> > mm(
-				imgdata->createMIPMap<RGBColor>());
+			boost::shared_ptr<const MIPMap> mm(imgdata->createMIPMap());
 			mipmapFunc = new MipMapSphericalFunction(mm, flipZ);
 		}
 	}
@@ -118,11 +127,10 @@ SphericalFunction *CreateSphericalFunction(const ParamSet &paramSet)
 	if (iesname.length() > 0) {
 		PhotometricDataIES data(iesname.c_str());
 		if (data.IsValid()) {
-			iesFunc = new IESSphericalFunction( data, flipZ );
+			iesFunc = new IESSphericalFunction(data, flipZ);
 		} else {
-			stringstream ss;
-			ss << "Invalid IES file: " << iesname;
-			luxError( LUX_BADFILE, LUX_WARNING, ss.str().c_str() );
+			LOG(LUX_WARNING, LUX_BADFILE) <<
+				"Invalid IES file: " << iesname;
 		}
 	}
 

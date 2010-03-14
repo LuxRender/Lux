@@ -42,6 +42,9 @@ public:
 	}
 	virtual float Y() const { return BBSPD.Y(); }
 	virtual float Filter() const { return BBSPD.Filter(); }
+	virtual void GetDuv(const TsPack *tspack,
+		const DifferentialGeometry &dg, float delta,
+		float *du, float *dv) const { *du = *dv = 0.f; }
 	static Texture<SWCSpectrum> *CreateSWCSpectrumTexture(const Transform &tex2world, const ParamSet &tp);
 
 private:

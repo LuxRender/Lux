@@ -29,17 +29,16 @@
 
 namespace lux {
 
-	/**
-	 * A spherical function based on measured IES data.
-	 */
-	class IESSphericalFunction : public MipMapSphericalFunction {
-	public:
-		IESSphericalFunction();
-		IESSphericalFunction(const PhotometricDataIES& data, bool flipZ);
-	private:
-		void initDummy();
-	};
-
+/**
+ * A spherical function based on measured IES data.
+ */
+class IESSphericalFunction : public MipMapSphericalFunction {
+public:
+	IESSphericalFunction();
+	IESSphericalFunction(const PhotometricDataIES& data, bool flipZ);
+private:
+	void initDummy();
+};
 
 } //namespace lux
 

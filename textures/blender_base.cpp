@@ -21,6 +21,7 @@
  ***************************************************************************/
 
 #include "blender_base.h"
+#include "geometry/raydifferential.h"
 #include <sstream>
 
 using namespace blender;
@@ -29,6 +30,46 @@ using std::stringstream;
 namespace lux {
 
 typedef map<string, short> mapstsh;
+
+void BlenderTexture3D::GetDuv(const TsPack *tspack,
+	const DifferentialGeometry &dg, float delta, float *du, float *dv) const
+{
+	// Calculate values at intersection point (copy of Evaluate)
+	const Point P(mapping.Map(dg));
+
+	const float a = GetF(P);
+
+	const float e = tex2->Evaluate(tspack, dg) - tex1->Evaluate(tspack, dg);
+	float du1, dv1, du2, dv2;
+	tex1->GetDuv(tspack, dg, delta, &du1, &dv1);
+	tex2->GetDuv(tspack, dg, delta, &du2, &dv2);
+
+	// Compute offset positions and evaluate displacement texture
+	DifferentialGeometry dgTemp = dg;
+	const Point origP(dgTemp.p);
+	const Normal origN(dgTemp.nn);
+	const float origU = dgTemp.u;
+
+	// Shift _dgTemp_ _du_ in the $u$ direction and calculate value
+	const float uu = delta / dgTemp.dpdu.Length();
+	dgTemp.p += uu * dgTemp.dpdu;
+	dgTemp.u += uu;
+	dgTemp.nn = Normalize(origN + uu * dgTemp.dndu);
+	const Point Pu(mapping.Map(dgTemp));
+	const float dau = (GetF(Pu) - a) / uu;
+
+	// Shift _dgTemp_ _dv_ in the $v$ direction and calculate value
+	const float vv = delta / dgTemp.dpdv.Length();
+	dgTemp.p = origP + vv * dgTemp.dpdv;
+	dgTemp.u = origU;
+	dgTemp.v += vv;
+	dgTemp.nn = Normalize(origN + vv * dgTemp.dndv);
+	const Point Pv(mapping.Map(dgTemp));
+	const float dav = (GetF(Pv) - a) / vv;
+
+	*du = Lerp(a, du1, du2) + dau * e;
+	*dv = Lerp(a, dv1, dv2) + dav * e;
+}
 
 static short GetValue(const mapstsh &m, const string &type, const string &name)
 {

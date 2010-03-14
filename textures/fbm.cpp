@@ -26,5 +26,4 @@
 
 using namespace lux;
 
-static DynamicLoader::RegisterFloatTexture<FBmTexture<float> > r1("fbm");
-static DynamicLoader::RegisterSWCSpectrumTexture<FBmTexture<SWCSpectrum> > r2("fbm");
+static DynamicLoader::RegisterFloatTexture<FBmTexture> r("fbm");

@@ -51,46 +51,19 @@ void Material::FindCompositingParams(const ParamSet &mp, CompositingParams *cp)
 	cp->A = mp.FindOneFloat("compo_override_alpha_value", 0.f);
 }
 
-void Material::Bump(const boost::shared_ptr<Texture<float> > &d,
-		const DifferentialGeometry &dgGeom,
-		DifferentialGeometry *dgBump) const {
-	// Calculate bump map value at intersection point
-	float displace = d->Evaluate(NULL, *dgBump);
-
-	// Compute offset positions and evaluate displacement texture
-	const Point origP(dgBump->p);
-	const Normal origN(dgBump->nn);
-	const float origU = dgBump->u, origV = dgBump->v;
-
-	// Shift _dgEval_ _du_ in the $u$ direction and calculate bump map value
-	float du = .5f * (fabsf(dgBump->dudx) + fabsf(dgBump->dudy));
-	if (du == 0.f)
-		du = bumpmapSampleDistance;
-	dgBump->p += du * dgBump->dpdu;
-	dgBump->u += du;
-	dgBump->nn = Normalize(origN + du * dgBump->dndu);
-	float uDisplace = d->Evaluate(NULL, *dgBump);
-
-	// Shift _dgEval_ _dv_ in the $v$ direction and calculate bump map value
-	float dv = .5f * (fabsf(dgBump->dvdx) + fabsf(dgBump->dvdy));
-	if (dv == 0.f)
-		dv = bumpmapSampleDistance;
-	dgBump->p = origP + dv * dgBump->dpdv;
-	dgBump->u = origU;
-	dgBump->v += dv;
-	dgBump->nn = Normalize(origN + dv * dgBump->dndv);
-	float vDisplace = d->Evaluate(NULL, *dgBump);
-
-	// Compute bump-mapped differential geometry
-	dgBump->p = origP;
-	dgBump->v = origV;
-	dgBump->dpdu += (uDisplace - displace) / du * Vector(origN);   // different to book, as displace*dgs.dndu creates artefacts
-	dgBump->dpdv += (vDisplace - displace) / dv * Vector(origN);   // different to book, as displace*dgs.dndv creates artefacts
+void Material::Bump(const TsPack *tspack,
+	const boost::shared_ptr<Texture<float> > &d, const Normal &nGeom,
+	DifferentialGeometry *dgBump) const
+{
+	float du, dv;
+	d->GetDuv(tspack, *dgBump, bumpmapSampleDistance, &du, &dv);
+	dgBump->dpdu += du * Vector(dgBump->nn);   // different to book, as displace*dgs.dndu creates artefacts
+	dgBump->dpdv += dv * Vector(dgBump->nn);   // different to book, as displace*dgs.dndv creates artefacts
 	dgBump->nn = Normal(Normalize(Cross(dgBump->dpdu, dgBump->dpdv)));
 	// INFO: We don't compute dgBump->dndu and dgBump->dndv as we need this
 	//       only here.
 
 	// Orient shading normal to match geometric normal
-	if (Dot(dgGeom.nn, dgBump->nn) < 0.f)
+	if (Dot(nGeom, dgBump->nn) < 0.f)
 		dgBump->nn *= -1.f;
 }

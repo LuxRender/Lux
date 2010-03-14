@@ -25,6 +25,7 @@
 #include "mcdistribution.h"
 
 namespace lux {
+
 IESSphericalFunction::IESSphericalFunction()
 {
 	initDummy();
@@ -34,7 +35,7 @@ IESSphericalFunction::IESSphericalFunction(const PhotometricDataIES& data,
 	bool flipZ)
 {
 	if (data.m_PhotometricType != PhotometricDataIES::PHOTOMETRIC_TYPE_C) {
-		luxError(LUX_UNIMPLEMENT, LUX_WARNING, "unsupported photometric type IES file, result may be wrong");
+		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "unsupported photometric type IES file, result may be wrong";
 	}
 	vector<double> vertAngles = data.m_VerticalAngles;
 	vector<double> horizAngles = data.m_HorizontalAngles;
@@ -87,12 +88,14 @@ IESSphericalFunction::IESSphericalFunction(const PhotometricDataIES& data,
 			}
 		}
 		if (horizAngles.back() != 360.) {
-			luxError(LUX_UNIMPLEMENT, LUX_ERROR, "unsupported horizontal angles in IES file");
+			LOG(LUX_ERROR, LUX_UNIMPLEMENT) <<
+				"unsupported horizontal angles in IES file";
 			initDummy();
 			return;
 		}
 	} else {
-		luxError(LUX_BADFILE, LUX_ERROR, "invalid horizontal angles in IES file");
+		LOG(LUX_ERROR, LUX_BADFILE) <<
+			"invalid horizontal angles in IES file";
 		initDummy();
 		return;
 	}
@@ -148,8 +151,7 @@ IESSphericalFunction::IESSphericalFunction(const PhotometricDataIES& data,
 		delete vFuncs[i];
 	delete[] vFuncs;
 
-	boost::shared_ptr<const MIPMap<RGBColor> > ptr(new MIPMapFastImpl<RGBColor,
-		TextureColor<float, 1> >(BILINEAR, xRes, yRes, &img[0]));
+	boost::shared_ptr<const MIPMap> ptr(new MIPMapFastImpl<TextureColor<float, 1> >(BILINEAR, xRes, yRes, &img[0]));
 	SetMipMap(ptr);
 
 	delete[] img;
@@ -158,8 +160,7 @@ IESSphericalFunction::IESSphericalFunction(const PhotometricDataIES& data,
 void IESSphericalFunction::initDummy()
 {
 	TextureColor<float, 1> img[1] = {1.f};
-	boost::shared_ptr<const MIPMap<RGBColor> > ptr(new MIPMapFastImpl<RGBColor,
-		TextureColor<float, 1> >(NEAREST, 1, 1, &img[0]));
+	boost::shared_ptr<const MIPMap> ptr(new MIPMapFastImpl<TextureColor<float, 1> >(NEAREST, 1, 1, &img[0]));
 	SetMipMap(ptr);
 }
 

@@ -24,7 +24,7 @@
 #include "lux.h"
 #include "spectrum.h"
 #include "texture.h"
-#include "equalspd.h"
+#include "geometry/raydifferential.h"
 #include "paramset.h"
 
 // TODO - radiance - add methods for Power and Illuminant propagation
@@ -33,27 +33,52 @@ namespace lux
 {
 
 // FBmTexture Declarations
-template <class T> class FBmTexture : public Texture<T> {
+class FBmTexture : public Texture<float> {
 public:
 	// FBmTexture Public Methods
-	virtual ~FBmTexture() {
-		delete mapping;
-	}
 	FBmTexture(int oct, float roughness, TextureMapping3D *map) {
 		omega = roughness;
 		octaves = oct;
 		mapping = map;
 	}
-	virtual T Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
+	virtual ~FBmTexture() { delete mapping; }
+	virtual float Evaluate(const TsPack *tspack,
+		const DifferentialGeometry &dg) const {
 		Vector dpdx, dpdy;
-		Point P = mapping->Map(dg, &dpdx, &dpdy);
+		const Point P(mapping->MapDxy(dg, &dpdx, &dpdy));
 		return FBm(P, dpdx, dpdy, omega, octaves);
 	}
-	virtual float Y() const { return EqualSPD(.5f).Y(); }
-	virtual float Filter() const { return .5f; }
-	
+	virtual float Y() const { return .5f; }
+	virtual void GetDuv(const TsPack *tspack,
+		const DifferentialGeometry &dg, float delta,
+		float *du, float *dv) const {
+		//FIXME: Generic derivative computation, replace with exact
+		DifferentialGeometry dgTemp = dg;
+		// Calculate bump map value at intersection point
+		const float base = Evaluate(tspack, dg);
+
+		// Compute offset positions and evaluate displacement texture
+		const Point origP(dgTemp.p);
+		const Normal origN(dgTemp.nn);
+		const float origU = dgTemp.u;
+
+		// Shift _dgTemp_ _du_ in the $u$ direction and calculate value
+		const float uu = delta / dgTemp.dpdu.Length();
+		dgTemp.p += uu * dgTemp.dpdu;
+		dgTemp.u += uu;
+		dgTemp.nn = Normalize(origN + uu * dgTemp.dndu);
+		*du = (Evaluate(tspack, dgTemp) - base) / uu;
+
+		// Shift _dgTemp_ _dv_ in the $v$ direction and calculate value
+		const float vv = delta / dgTemp.dpdv.Length();
+		dgTemp.p = origP + vv * dgTemp.dpdv;
+		dgTemp.u = origU;
+		dgTemp.v += vv;
+		dgTemp.nn = Normalize(origN + vv * dgTemp.dndv);
+		*dv = (Evaluate(tspack, dgTemp) - base) / vv;
+	}
+
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const ParamSet &tp);
-	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const ParamSet &tp);
 	
 private:
 	// FBmTexture Private Data
@@ -63,28 +88,14 @@ private:
 };
 
 // FBmTexture Method Definitions
-template <class T> Texture<float> * FBmTexture<T>::CreateFloatTexture(const Transform &tex2world,
+Texture<float> * FBmTexture::CreateFloatTexture(const Transform &tex2world,
 	const ParamSet &tp) {
-	// Initialize 3D texture mapping _map_ from _tp_
-	TextureMapping3D *map = new IdentityMapping3D(tex2world);
 	// Apply texture specified transformation option for 3D mapping
-	IdentityMapping3D *imap = (IdentityMapping3D*) map;
+	IdentityMapping3D *imap = new IdentityMapping3D(tex2world);
 	imap->Apply3DTextureMappingOptions(tp);
 
-	return new FBmTexture<float>(tp.FindOneInt("octaves", 8),
-		tp.FindOneFloat("roughness", .5f), map);
-}
-
-template <class T> Texture<SWCSpectrum> * FBmTexture<T>::CreateSWCSpectrumTexture(const Transform &tex2world,
-	const ParamSet &tp) {
-	// Initialize 3D texture mapping _map_ from _tp_
-	TextureMapping3D *map = new IdentityMapping3D(tex2world);
-	// Apply texture specified transformation option for 3D mapping
-	IdentityMapping3D *imap = (IdentityMapping3D*) map;
-	imap->Apply3DTextureMappingOptions(tp);
-
-	return new FBmTexture<SWCSpectrum>(tp.FindOneInt("octaves", 8),
-		tp.FindOneFloat("roughness", .5f), map);
+	return new FBmTexture(tp.FindOneInt("octaves", 8),
+		tp.FindOneFloat("roughness", .5f), imap);
 }
 
 }//namespace lux

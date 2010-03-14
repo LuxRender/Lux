@@ -44,7 +44,8 @@ bool VolumeIntegrator::Intersect(const TsPack *tspack, const Scene *scene,
 		DifferentialGeometry dgShading;
 		isect->primitive->GetShadingGeometry(isect->WorldToObject.GetInverse(),
 			isect->dg, &dgShading);
-		isect->material->GetShadingGeometry(isect->dg, &dgShading);
+		isect->material->GetShadingGeometry(tspack, isect->dg.nn,
+			&dgShading);
 		if (Dot(ray.d, dgShading.nn) > 0.f) {
 			if (!volume)
 				volume = isect->interior;

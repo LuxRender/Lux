@@ -71,8 +71,12 @@ Mesh::Mesh(const Transform &o2w, bool ro, MeshAccelType acceltype,
 		n = new Normal[nverts];
 		if (!mustSubdivide) {
 			// Dade - transform mesh normals to world space
-			for (u_int i  = 0; i < nverts; ++i)
-				n[i] = Normalize(ObjectToWorld(N[i]));
+			for (u_int i  = 0; i < nverts; ++i) {
+				if (ro)
+					n[i] = Normalize(-ObjectToWorld(N[i]));
+				else
+					n[i] = Normalize(ObjectToWorld(N[i]));
+			}
 		} else {
 			// Dont transform the mesh normals to world space yet if subdivision is required
 			memcpy(n, N, nverts * sizeof(Normal));

@@ -26,5 +26,4 @@
 
 using namespace lux;
 
-static DynamicLoader::RegisterFloatTexture<WrinkledTexture<float> > r1("wrinkled");
-static DynamicLoader::RegisterSWCSpectrumTexture<WrinkledTexture<SWCSpectrum> > r2("wrinkled");
+static DynamicLoader::RegisterFloatTexture<WrinkledTexture> r("wrinkled");

@@ -32,56 +32,105 @@ namespace lux
 {
 
 // DotsTexture Declarations
-template <class T> class DotsTexture : public Texture<T> {
+class DotsTexture : public Texture<float> {
 public:
 	// DotsTexture Public Methods
-	virtual ~DotsTexture() {
-		delete mapping;
-	}
-	DotsTexture(TextureMapping2D *m, boost::shared_ptr<Texture<T> > &c1,
-		boost::shared_ptr<Texture<T> > &c2) : outsideDot(c1),
-		insideDot(c2) {
-		mapping = m;
-	}
-	virtual T Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
+	DotsTexture(TextureMapping2D *m, boost::shared_ptr<Texture<float> > &c1,
+		boost::shared_ptr<Texture<float> > &c2) :
+		outsideDot(c1), insideDot(c2), mapping(m) { }
+	virtual ~DotsTexture() { delete mapping; }
+	virtual float Evaluate(const TsPack *tspack,
+		const DifferentialGeometry &dg) const {
 		// Compute cell indices for dots
-		float s, t, dsdx, dtdx, dsdy, dtdy;
-		mapping->Map(dg, &s, &t, &dsdx, &dtdx, &dsdy, &dtdy);
-		int sCell = Floor2Int(s + .5f), tCell = Floor2Int(t + .5f);
+		float s, t;
+		mapping->Map(dg, &s, &t);
+		const int sCell = Floor2Int(s + .5f);
+		const int tCell = Floor2Int(t + .5f);
 		// Return _insideDot_ result if point is inside dot
-		if (Noise(sCell+.5f, tCell+.5f) > 0) {
-			float radius = .35f;
-			float maxShift = 0.5f - radius;
-			float sCenter = sCell + maxShift *
+		if (Noise(sCell + .5f, tCell + .5f) > 0.f) {
+			const float radius = .35f;
+			const float maxShift = 0.5f - radius;
+			const float sCenter = sCell + maxShift *
 				Noise(sCell + 1.5f, tCell + 2.8f);
-			float tCenter = tCell + maxShift *
+			const float tCenter = tCell + maxShift *
 				Noise(sCell + 4.5f, tCell + 9.8f);
-			float ds = s - sCenter, dt = t - tCenter;
-			if (ds*ds + dt*dt < radius*radius)
+			const float ds = s - sCenter, dt = t - tCenter;
+			if (ds * ds + dt * dt < radius * radius)
 				return insideDot->Evaluate(tspack, dg);
 		}
 		return outsideDot->Evaluate(tspack, dg);
 	}
-	virtual float Y() const { return (insideDot->Y() + outsideDot->Y()) / 2.f; }
-	virtual float Filter() const { return (insideDot->Filter() + outsideDot->Filter()) / 2.f; }
+	virtual float Y() const {
+		return (insideDot->Y() + outsideDot->Y()) * .5f;
+	}
+	virtual float Filter() const {
+		return (insideDot->Filter() + outsideDot->Filter()) * .5f; }
+	virtual void GetDuv(const TsPack *tspack,
+		const DifferentialGeometry &dg, float delta,
+		float *du, float *dv) const {
+		// Compute cell indices for dots
+		float s, t, dsdu, dtdu, dsdv, dtdv;
+		mapping->MapDuv(dg, &s, &t, &dsdu, &dtdu, &dsdv, &dtdv);
+		const int sCell = Floor2Int(s + .5f);
+		const int tCell = Floor2Int(t + .5f);
+		// Return _insideDot_ result if point is inside dot
+		if (Noise(sCell + .5f, tCell + .5f) <= 0.f) {
+			*du = *dv = 0.f;
+			return;
+		}
+		const float radius = .35f;
+		const float maxShift = 0.5f - radius;
+		const float sCenter = sCell + maxShift *
+			Noise(sCell + 1.5f, tCell + 2.8f);
+		const float tCenter = tCell + maxShift *
+			Noise(sCell + 4.5f, tCell + 9.8f);
+		const float ds = s - sCenter, dt = t - tCenter;
+		const float r2 = ds * ds + dt * dt;
+		const float radius2 = radius * radius;
+		const float dst = (fabsf(dsdu) + fabsf(dsdv) + fabsf(dtdu) +
+			fabsf(dtdv)) * delta;
+		if (ds < 0.f) {
+			dsdu = -dsdu;
+			dsdv = -dsdv;
+		}
+		if (dt < 0.f) {
+			dtdu = -dtdu;
+			dtdv = -dtdv;
+		}
+		const float dst2 = dst * dst * .25f;
+		if (r2 < radius2) {
+			insideDot->GetDuv(tspack, dg, delta, du, dv);
+			if (r2 > radius2 + dst2 - dst * radius) {
+				const float d = (outsideDot->Evaluate(tspack, dg) - insideDot->Evaluate(tspack, dg)) / (sqrtf(r2) * delta);
+				*du += d * (dsdu + dtdu);
+				*dv += d * (dsdv + dtdv);
+			}
+		} else {
+			outsideDot->GetDuv(tspack, dg, delta, du, dv);
+			if (r2 < radius2 + dst2 + dst * radius) {
+				const float d = (outsideDot->Evaluate(tspack, dg) - insideDot->Evaluate(tspack, dg)) / (sqrtf(r2) * delta);
+				*du -= d * (dsdu + dtdu);
+				*dv -= d * (dsdv + dtdv);
+			}
+		}
+	}
 	virtual void SetIlluminant() {
 		// Update sub-textures
 		outsideDot->SetIlluminant();
 		insideDot->SetIlluminant();
 	}
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const ParamSet &tp);
-	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const ParamSet &tp);
 	
 private:
 	// DotsTexture Private Data
-	boost::shared_ptr<Texture<T> > outsideDot, insideDot;
+	boost::shared_ptr<Texture<float> > outsideDot, insideDot;
 	TextureMapping2D *mapping;
 };
 
 
 // DotsTexture Method Definitions
-template <class T> inline Texture<float> * DotsTexture<T>::CreateFloatTexture(const Transform &tex2world,
-		const ParamSet &tp) {
+inline Texture<float> * DotsTexture::CreateFloatTexture(const Transform &tex2world,
+	const ParamSet &tp) {
 	// Initialize 2D texture mapping _map_ from _tp_
 	TextureMapping2D *map = NULL;
 	string type = tp.FindOneString("mapping", "uv");
@@ -108,39 +157,7 @@ template <class T> inline Texture<float> * DotsTexture<T>::CreateFloatTexture(co
 	}
 	boost::shared_ptr<Texture<float> > in(tp.GetFloatTexture("inside", 1.f)),
 		out(tp.GetFloatTexture("outside", 0.f));
-	return new DotsTexture<float>(map, in, out);
-}
-
-template <class T> inline Texture<SWCSpectrum> * DotsTexture<T>::CreateSWCSpectrumTexture(const Transform &tex2world,
-		const ParamSet &tp) {
-	// Initialize 2D texture mapping _map_ from _tp_
-	TextureMapping2D *map = NULL;
-	string type = tp.FindOneString("mapping", "uv");
-	if (type == "uv") {
-		float su = tp.FindOneFloat("uscale", 1.f);
-		float sv = tp.FindOneFloat("vscale", 1.f);
-		float du = tp.FindOneFloat("udelta", 0.f);
-		float dv = tp.FindOneFloat("vdelta", 0.f);
-		map = new UVMapping2D(su, sv, du, dv);
-	} else if (type == "spherical")
-		map = new SphericalMapping2D(tex2world.GetInverse());
-	else if (type == "cylindrical")
-		map = new CylindricalMapping2D(tex2world.GetInverse());
-	else if (type == "planar")
-		map = new PlanarMapping2D(tp.FindOneVector("v1", Vector(1,0,0)),
-			tp.FindOneVector("v2", Vector(0,1,0)),
-			tp.FindOneFloat("udelta", 0.f),
-			tp.FindOneFloat("vdelta", 0.f));
-	else {
-		std::stringstream ss;
-		ss << "2D texture mapping  '" << type << "' unknown";
-		luxError(LUX_BADTOKEN, LUX_ERROR, ss.str().c_str());
-		map = new UVMapping2D;
-	}
-	boost::shared_ptr<Texture<SWCSpectrum> >
-		in(tp.GetSWCSpectrumTexture("inside", RGBColor(1.f))),
-		out(tp.GetSWCSpectrumTexture("outside", RGBColor(0.f)));
-	return new DotsTexture<SWCSpectrum>(map, in, out);
+	return new DotsTexture(map, in, out);
 }
 
 }//namespace lux

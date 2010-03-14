@@ -26,5 +26,4 @@
 
 using namespace lux;
 
-static DynamicLoader::RegisterFloatTexture<WindyTexture<float> > r1("windy");
-static DynamicLoader::RegisterSWCSpectrumTexture<WindyTexture<SWCSpectrum> > r2("windy");
+static DynamicLoader::RegisterFloatTexture<WindyTexture> r("windy");

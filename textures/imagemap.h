@@ -26,7 +26,6 @@
 #include "texture.h"
 #include "mipmap.h"
 #include "imagereader.h"
-#include "equalspd.h"
 #include "paramset.h"
 #include "error.h"
 #include <map>
@@ -37,221 +36,181 @@ using std::map;
 namespace lux
 {
 
-// ImageTexture Declarations
-class ImageFloatTexture : public Texture<float> {
+class ImageTexture {
 public:
-	// ImageFloatTexture Public Methods
-	ImageFloatTexture(
-			TextureMapping2D *m,
-			ImageTextureFilterType type,
-			const string &filename,
-			float maxAniso,
-			ImageWrap wrapMode,
-			float gain,
-			float gamma) {
-				filterType = type;
-				mapping = m;
-				mipmap = GetTexture(filterType, filename, maxAniso, wrapMode, gain, gamma);
-	};
+	// ImageTexture Public Methods
+	ImageTexture(TextureMapping2D *m, ImageTextureFilterType type,
+		const string &filename, float maxAniso, ImageWrap wrapMode,
+		float gain, float gamma) {
+		filterType = type;
+		mapping = m;
+		mipmap = GetTexture(filterType, filename, maxAniso, wrapMode,
+			gain, gamma);
+	}
+	virtual ~ImageTexture() {
+		delete mapping;
+		delete mipmap;
+	}
 
-	virtual ~ImageFloatTexture() { delete mapping; };
-
-	virtual float Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
-		float s, t, dsdx, dtdx, dsdy, dtdy;
-		mapping->Map(dg, &s, &t, &dsdx, &dtdx, &dsdy, &dtdy);
-		return mipmap->Lookup(s, t, dsdx, dtdx, dsdy, dtdy);
-	};
-	virtual float Y() const { return EqualSPD(1.f).Y(); }
-	virtual float Filter() const { return mipmap->Lookup(.5f, .5f, .5f); }
-	
-	u_int getMemoryUsed() const {
+	u_int GetMemoryUsed() const {
 		if (mipmap)
-			return mipmap->getMemoryUsed();
+			return mipmap->GetMemoryUsed();
 		else
 			return 0;
 	}
-
-	void discardMipmaps(int n) {
+	void DiscardMipmaps(int n) {
 		if (mipmap)
-			mipmap->discardMipmaps(n);
+			mipmap->DiscardMipmaps(n);
 	}
-	
+
+private:
+	class TexInfo {
+	public:
+		TexInfo(ImageTextureFilterType type, const string &f, float ma,
+			ImageWrap wm, float ga, float gam) :
+			filterType(type), filename(f), maxAniso(ma),
+			wrapMode(wm), gain(ga), gamma(gam) { }
+
+		ImageTextureFilterType filterType;
+		string filename;
+		float maxAniso;
+		ImageWrap wrapMode;
+		float gain;
+		float gamma;
+
+		bool operator<(const TexInfo &t2) const {
+			if (filterType != t2.filterType)
+				return filterType < t2.filterType;
+			if (filename != t2.filename)
+				return filename < t2.filename;
+			if (maxAniso != t2.maxAniso)
+				return maxAniso < t2.maxAniso;
+			if (wrapMode != t2.wrapMode)
+				return wrapMode < t2.wrapMode;
+			if (gain != t2.gain)
+				return gain < t2.gain;
+			return gamma < t2.gamma;
+		}
+	};
+
+	// ImageTexture Private Methods
+	static MIPMap *GetTexture(ImageTextureFilterType filterType,
+		const string &filename, float maxAniso, ImageWrap wrap,
+		float gain, float gamma);
+
+protected:
+	// ImageTexture Protected Data
+	ImageTextureFilterType filterType;
+	MIPMap *mipmap;
+	TextureMapping2D *mapping;
+};
+
+// ImageTexture Declarations
+class ImageFloatTexture : public Texture<float>, public ImageTexture {
+public:
+	// ImageFloatTexture Public Methods
+	ImageFloatTexture(TextureMapping2D *m, ImageTextureFilterType type,
+		const string &filename, float maxAniso, ImageWrap wrapMode,
+		Channel ch, float gain, float gamma) :
+		ImageTexture(m, type, filename, maxAniso, wrapMode,
+			gain, gamma) { channel = ch; }
+
+	virtual ~ImageFloatTexture() { }
+
+	virtual float Evaluate(const TsPack *tspack,
+		const DifferentialGeometry &dg) const {
+		float s, t, dsdx, dtdx, dsdy, dtdy;
+		mapping->MapDxy(dg, &s, &t, &dsdx, &dtdx, &dsdy, &dtdy);
+		return mipmap->LookupFloat(channel, s, t,
+			dsdx, dtdx, dsdy, dtdy);
+	}
+	virtual float Y() const {
+		return mipmap->LookupFloat(channel, .5f, .5f, .5f);
+	}
+	virtual void GetDuv(const TsPack *tspack,
+		const DifferentialGeometry &dg, float delta,
+		float *du, float *dv) const {
+		float s, t, dsdu, dtdu, dsdv, dtdv;
+		mapping->MapDuv(dg, &s, &t, &dsdu, &dtdu, &dsdv, &dtdv);
+		float ds, dt;
+		mipmap->GetDifferentials(channel, s, t, &ds, &dt);
+		*du = ds * dsdu + dt * dtdu;
+		*dv = ds * dsdv + dt * dtdv;
+	}
+
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const ParamSet &tp);
 
 private:
-	// ImageFloatTexture Private Methods
-	static MIPMap<float> *GetTexture(
-		ImageTextureFilterType filterType,
-		const string &filename,
-		float maxAniso,
-		ImageWrap wrap,
-		float gain,
-		float gamma);
-	static void convert(const RGBColor &from, RGBColor *to) {
-		*to = from;
-	}
-	static void convert(const RGBColor &from, float *to) {
-		*to = from.Y();
-	}
-		
 	// ImageFloatTexture Private Data
-	ImageTextureFilterType filterType;
-	MIPMap<float> *mipmap;
-	TextureMapping2D *mapping;
+	Channel channel;
 };
 
-class ImageSpectrumTexture : public Texture<SWCSpectrum> {
+class ImageSpectrumTexture : public Texture<SWCSpectrum>, public ImageTexture {
 public:
 	// ImageSpectrumTexture Public Methods
-	ImageSpectrumTexture(
-			TextureMapping2D *m,
-			ImageTextureFilterType type,
-			const string &filename,
-			float maxAniso,
-			ImageWrap wrapMode,
-			float gain,
-			float gamma) {
-				filterType = type;
-				mapping = m;
-				mipmap = GetTexture(filterType, filename, maxAniso, wrapMode, gain, gamma);
-	};
+	ImageSpectrumTexture(TextureMapping2D *m, ImageTextureFilterType type,
+		const string &filename, float maxAniso, ImageWrap wrapMode,
+		float gain, float gamma) :
+		ImageTexture(m, type, filename, maxAniso, wrapMode,
+			gain, gamma) { }
 
-	virtual ~ImageSpectrumTexture() { delete mapping; };
+	virtual ~ImageSpectrumTexture() { }
 
-	virtual SWCSpectrum Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
+	virtual SWCSpectrum Evaluate(const TsPack *tspack,
+		const DifferentialGeometry &dg) const {
 		float s, t, dsdx, dtdx, dsdy, dtdy;
-		mapping->Map(dg, &s, &t, &dsdx, &dtdx, &dsdy, &dtdy);
-		return SWCSpectrum(tspack, mipmap->Lookup(s, t, dsdx, dtdx, dsdy, dtdy));
-	};
-	virtual float Y() const { return EqualSPD(1.f).Y(); }
-	
-	u_int getMemoryUsed() const {
-		if (mipmap)
-			return mipmap->getMemoryUsed();
-		else
-			return 0;
+		mapping->MapDxy(dg, &s, &t, &dsdx, &dtdx, &dsdy, &dtdy);
+		return mipmap->LookupSpectrum(tspack, s, t,
+			dsdx, dtdx, dsdy, dtdy);
+	}
+	virtual float Y() const {
+		return mipmap->LookupFloat(CHANNEL_WMEAN, .5f, .5f, .5f);
+	}
+	virtual float Filter() const {
+		return mipmap->LookupFloat(CHANNEL_MEAN, .5f, .5f, .5f);
+	}
+	virtual void GetDuv(const TsPack *tspack,
+		const DifferentialGeometry &dg, float delta,
+		float *du, float *dv) const {
+		float s, t, dsdu, dtdu, dsdv, dtdv;
+		mapping->MapDuv(dg, &s, &t, &dsdu, &dtdu, &dsdv, &dtdv);
+		float ds, dt;
+		mipmap->GetDifferentials(tspack, s, t, &ds, &dt);
+		*du = ds * dsdu + dt * dtdu;
+		*dv = ds * dsdv + dt * dtdv;
 	}
 
-	void discardMipmaps(int n) {
-		if (mipmap)
-			mipmap->discardMipmaps(n);
-	}
-	
 	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const ParamSet &tp);
-
-private:
-	// ImageSpectrumTexture Private Methods
-	static MIPMap<RGBColor> *GetTexture(
-		ImageTextureFilterType filterType,
-		const string &filename,
-		float maxAniso,
-		ImageWrap wrap,
-		float gain,
-		float gamma);
-	static void convert(const RGBColor &from, RGBColor *to) {
-		*to = from;
-	}
-	static void convert(const RGBColor &from, float *to) {
-		*to = from.Y();
-	}
-		
-	// ImageSpectrumTexture Private Data
-	ImageTextureFilterType filterType;
-	MIPMap<RGBColor> *mipmap;
-	TextureMapping2D *mapping;
 };
 
-// ImageMapTexture Method Definitions
-
-struct TexInfo {
-	TexInfo(ImageTextureFilterType type, const string &f, float ma,
-			ImageWrap wm, float ga, float gam)
-		: filterType(type), filename(f), maxAniso(ma),
-			wrapMode(wm), gain(ga), gamma(gam) { }
-
-	ImageTextureFilterType filterType;
-	string filename;
-	float maxAniso;
-	ImageWrap wrapMode;
-	float gain;
-	float gamma;
-
-	bool operator<(const TexInfo &t2) const {
-		if (filterType != t2.filterType) return filterType < t2.filterType;
-		if (filename != t2.filename) return filename < t2.filename;
-		if (maxAniso != t2.maxAniso) return maxAniso < t2.maxAniso;
-		if (wrapMode != t2.wrapMode) return wrapMode < t2.wrapMode;
-		if (gain != t2.gain) return gain < t2.gain;
-
-		return gamma < t2.gamma;
-	}
-};
-
-inline MIPMap<float> *ImageFloatTexture::
-	GetTexture(
-		ImageTextureFilterType filterType,
-		const string &filename,
-		float maxAniso,
-		ImageWrap wrap,
-		float gain,
-		float gamma) {
+// ImageTexture Method Definitions
+inline MIPMap *ImageTexture::GetTexture(ImageTextureFilterType filterType,
+	const string &filename, float maxAniso, ImageWrap wrap, float gain,
+	float gamma)
+{
 	// Look for texture in texture cache
-	static map<TexInfo, MIPMap<float> *> textures;
+	static map<TexInfo, MIPMap *> textures;
 	TexInfo texInfo(filterType, filename, maxAniso, wrap, gain, gamma);
 	if (textures.find(texInfo) != textures.end())
 		return textures[texInfo];
 	int width, height;
 	auto_ptr<ImageData> imgdata(ReadImage(filename));
-	MIPMap<float> *ret = NULL;
+	MIPMap *ret = NULL;
 	if (imgdata.get() != NULL) {
 		width=imgdata->getWidth();
 		height=imgdata->getHeight();
-		ret = imgdata->createMIPMap<float>(filterType, maxAniso, wrap, gain, gamma);
+		ret = imgdata->createMIPMap(filterType, maxAniso, wrap, gain,
+			gamma);
 	} else {
 		// Create one-valued _MIPMap_
-		float *oneVal = new float[1];
-		oneVal[0] = 1.;
+		TextureColor<float, 1> oneVal(1.f);
 
-		ret = new MIPMapFastImpl<float,float>(filterType, 1, 1, oneVal);
-
-		delete[] oneVal;
+		ret = new MIPMapFastImpl<TextureColor<float, 1> >(filterType,
+			1, 1, &oneVal);
 	}
-	textures[texInfo] = ret;
-	
-	return ret;
-}
+	if (ret != NULL)
+		textures[texInfo] = ret;
 
-inline MIPMap<RGBColor> *ImageSpectrumTexture::
-	GetTexture(
-		ImageTextureFilterType filterType,
-		const string &filename,
-		float maxAniso,
-		ImageWrap wrap,
-		float gain,
-		float gamma) {
-	// Look for texture in texture cache
-	static map<TexInfo, MIPMap<RGBColor> *> textures;
-	TexInfo texInfo(filterType, filename, maxAniso, wrap, gain, gamma);
-	if (textures.find(texInfo) != textures.end())
-		return textures[texInfo];
-	int width, height;
-	auto_ptr<ImageData> imgdata(ReadImage(filename));
-	MIPMap<RGBColor> *ret = NULL;
-	if (imgdata.get() != NULL) {
-		width=imgdata->getWidth();
-		height=imgdata->getHeight();
-		ret = imgdata->createMIPMap<RGBColor>(filterType, maxAniso, wrap, gain, gamma);
-	} else {
-		// Create one-valued _MIPMap_
-		RGBColor *oneVal = new RGBColor[1];
-		oneVal[0] = 1.;
-
-		ret = new MIPMapFastImpl<RGBColor,RGBColor>(filterType, 1, 1, oneVal);
-
-		delete[] oneVal;
-	}
-	textures[texInfo] = ret;
-	
 	return ret;
 }
 

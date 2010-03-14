@@ -73,7 +73,7 @@ public:
 	static Light *CreateLight(const Transform &light2world,
 		const ParamSet &paramSet);
 
-	MIPMap<RGBColor> *radianceMap;
+	MIPMap *radianceMap;
 	EnvironmentMapping *mapping;
 private:
 	// InfiniteAreaLight Private Data

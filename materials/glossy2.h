@@ -44,10 +44,10 @@ public:
 		compParams = new CompositingParams(cp);
 	}
 	virtual ~Glossy2() { }
-	virtual void GetShadingGeometry(const DifferentialGeometry &dgGeom,
-		DifferentialGeometry *dgBump) const {
+	virtual void GetShadingGeometry(const TsPack *tspack,
+		const Normal &nGeom, DifferentialGeometry *dgBump) const {
 		if (bumpMap)
-			Bump(bumpMap, dgGeom, dgBump);
+			Bump(tspack, bumpMap, nGeom, dgBump);
 	}
 	virtual BSDF *GetBSDF(const TsPack *tspack,
 		const DifferentialGeometry &dgGeom,

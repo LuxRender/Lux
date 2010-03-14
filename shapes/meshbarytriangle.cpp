@@ -26,6 +26,40 @@
 
 using namespace lux;
 
+MeshBaryTriangle::MeshBaryTriangle(const Mesh *m, u_int n) :
+	mesh(m), v(&(mesh->triVertexIndex[3 * n]))
+{
+	int *v_ = const_cast<int *>(v);
+	if (m->reverseOrientation ^ m->transformSwapsHandedness)
+		swap(v_[1], v_[2]);
+	// Reorder vertices if geometric normal doesn't match shading normal
+	if (m->n) {
+		const Point &v0 = m->p[v[0]];
+		const Point &v1 = m->p[v[1]];
+		const Point &v2 = m->p[v[2]];
+		Vector e1 = v1 - v0;
+		Vector e2 = v2 - v0;
+
+		Normal normalizedNormal(Normalize(Cross(e1, e2)));
+		const float cos0 = Dot(normalizedNormal, m->n[v[0]]);
+		if (cos0 < 0.f) {
+			if (Dot(normalizedNormal, m->n[v[1]]) < 0.f &&
+				Dot(normalizedNormal, m->n[v[2]]) > 0.f)
+				swap(v_[1], v_[2]);
+			else {
+				LOG(LUX_WARNING, LUX_CONSISTENCY) <<
+					"Inconsistent shading normals";
+			}
+		} else if (cos0 > 0.f) {
+			if (!(Dot(normalizedNormal, m->n[v[1]]) > 0.f &&
+				Dot(normalizedNormal, m->n[v[2]]) > 0.f)) {
+				LOG(LUX_WARNING, LUX_CONSISTENCY) <<
+					"Inconsistent shading normals";
+			}
+		}
+	}
+}
+
 BBox MeshBaryTriangle::ObjectBound() const
 {
 	// Get triangle vertices in _p1_, _p2_, and _p3_

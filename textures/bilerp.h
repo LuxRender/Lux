@@ -36,26 +36,34 @@ class BilerpFloatTexture : public Texture<float> {
 public:
 	// BilerpTexture Public Methods
 	BilerpFloatTexture(TextureMapping2D *m,
-				  const float &t00, const float &t01,
-			      const float &t10, const float &t11) {
+		float t00, float t01, float t10, float t11) {
 		mapping = m;
 		v00 = t00;
 		v01 = t01;
 		v10 = t10;
 		v11 = t11;
 	}
-	virtual ~BilerpFloatTexture() {
-		delete mapping;
-	}
-	virtual float Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
-		float s, t, dsdx, dtdx, dsdy, dtdy;
-		mapping->Map(dg, &s, &t, &dsdx, &dtdx, &dsdy, &dtdy);
-		return (1-s)*(1-t) * v00 +
-		       (1-s)*(  t) * v01 +
-			   (  s)*(1-t) * v10 +
-			   (  s)*(  t) * v11;
+	virtual ~BilerpFloatTexture() { delete mapping; }
+	virtual float Evaluate(const TsPack *tspack,
+		const DifferentialGeometry &dg) const {
+		float s, t;
+		mapping->Map(dg, &s, &t);
+		s -= Floor2Int(s);
+		t -= Floor2Int(t);
+		return (1.f - s) * (1.f - t) * v00 + (1.f - s) * t * v01 +
+			s * (1.f - t) * v10 + s * t * v11;
 	}
 	virtual float Y() const { return (v00 + v01 + v10 + v11) / 4.f; }
+	virtual void GetDuv(const TsPack *tspack, const DifferentialGeometry &dg,
+		float delta, float *du, float *dv) const {
+		float s, t, dsdu, dtdu, dsdv, dtdv;
+		mapping->MapDuv(dg, &s, &t, &dsdu, &dtdu, &dsdv, &dtdv);
+		s -= Floor2Int(s);
+		t -= Floor2Int(t);
+		const float d = v00 + v11 - v01 - v10;
+		*du = dsdu * (v10 - v00 + t * d) + dtdu * (v01 - v00 + s * d);
+		*dv = dsdv * (v10 - v00 + t * d) + dtdv * (v01 - v00 + s * d);
+	}
 	
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const ParamSet &tp);
 	
@@ -69,27 +77,43 @@ class BilerpSpectrumTexture : public Texture<SWCSpectrum> {
 public:
 	// BilerpTexture Public Methods
 	BilerpSpectrumTexture(TextureMapping2D *m,
-				  const RGBColor &t00, const RGBColor &t01,
-			      const RGBColor &t10, const RGBColor &t11) {
+		const RGBColor &t00, const RGBColor &t01,
+		const RGBColor &t10, const RGBColor &t11) {
 		mapping = m;
 		v00 = t00;
 		v01 = t01;
 		v10 = t10;
 		v11 = t11;
 	}
-	virtual ~BilerpSpectrumTexture() {
-		delete mapping;
+	virtual ~BilerpSpectrumTexture() { delete mapping; }
+	virtual SWCSpectrum Evaluate(const TsPack *tspack,
+		const DifferentialGeometry &dg) const {
+		float s, t;
+		mapping->Map(dg, &s, &t);
+		s -= Floor2Int(s);
+		t -= Floor2Int(t);
+		return SWCSpectrum(tspack, (1.f - s) * (1.f - t) * v00 +
+			(1.f - s) * t * v01 + s * (1.f - t) * v10 +
+			s * t * v11);
 	}
-	virtual SWCSpectrum Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
-		float s, t, dsdx, dtdx, dsdy, dtdy;
-		mapping->Map(dg, &s, &t, &dsdx, &dtdx, &dsdy, &dtdy);
-		return SWCSpectrum(tspack, (1-s)*(1-t) * v00 +
-		       (1-s)*(  t) * v01 +
-			   (  s)*(1-t) * v10 +
-			   (  s)*(  t) * v11 );
+	virtual float Y() const {
+		return RGBColor(v00 + v01 + v10 + v11).Y() / 4.f;
 	}
-	virtual float Y() const { return RGBColor(v00 + v01 + v10 + v11).Y() / 4.f; }
-	virtual float Filter() const { return RGBColor(v00 + v01 + v10 + v11).Filter() / 4.f; }
+	virtual float Filter() const {
+		return RGBColor(v00 + v01 + v10 + v11).Filter() / 4.f;
+	}
+	virtual void GetDuv(const TsPack *tspack, const DifferentialGeometry &dg,
+		float delta, float *du, float *dv) const {
+		float s, t, dsdu, dtdu, dsdv, dtdv;
+		mapping->MapDuv(dg, &s, &t, &dsdu, &dtdu, &dsdv, &dtdv);
+		s -= Floor2Int(s);
+		t -= Floor2Int(t);
+		const float d = RGBColor(v00 + v11 - v01 - v10).Filter();
+		const float d1 = RGBColor(v10 - v00).Filter();
+		const float d2 = RGBColor(v01 - v00).Filter();
+		*du = dsdu * (d1 + t * d) + dtdu * (d2 + s * d);
+		*dv = dsdv * (d1 + t * d) + dtdv * (d2 + s * d);
+	}
 	
 	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const ParamSet &tp);
 	

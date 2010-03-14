@@ -193,11 +193,10 @@ private:
 class  RGBColor : public Color {
 public:
 	// RGBColor Public Methods
-	RGBColor(float v = 0.f) {
-			c[0] = v; c[1] = v; c[2] = v;
-	}
+	RGBColor(float v = 0.f) { c[0] = v; c[1] = v; c[2] = v; }
+	RGBColor(float r, float g, float b) { c[0] = r; c[1] = g; c[2] = b; }
 	RGBColor(const float cs[3]) {
-			c[0] = cs[0]; c[1] = cs[1]; c[2] = cs[2];
+		c[0] = cs[0]; c[1] = cs[1]; c[2] = cs[2];
 	}
 	RGBColor(const Color &color) { // so that operators work
 		c[0] = color.c[0]; c[1] = color.c[1]; c[2] = color.c[2];

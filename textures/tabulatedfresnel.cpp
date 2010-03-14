@@ -203,7 +203,7 @@ static const float AmorphousCarbonN[] = {
 	2.43, 2.33, 2.24 };
 static const float AmorphousCarbonK[] = {
 	0.712, 0.808, 0.91, 0.92, 0.92, 0.91, 0.9, 0.89, 0.88, 0.87, 0.82,
-	0.75, 0.7, 0.71 };
+	0.75, 0.7, 0.71, 0.7 }; // jeanphi - 1 value was missing, added 0.7 at the end
 
 static const u_int SopraSamples = 56;
 static const float SopraWavelengths[] = {

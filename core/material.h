@@ -54,11 +54,11 @@ public:
 		const DifferentialGeometry &dgGeom,
 		const DifferentialGeometry &dgShading,
 		const Volume *exterior, const Volume *interior) const = 0;
-	void Bump(const boost::shared_ptr<Texture<float> > &d,
-		const DifferentialGeometry &dgGeom,
-		DifferentialGeometry *dgBump) const;
-	virtual void GetShadingGeometry(const DifferentialGeometry &dgGeom,
-		DifferentialGeometry *dgBump) const { }
+	void Bump(const TsPack *tspack,
+		const boost::shared_ptr<Texture<float> > &d,
+		const Normal &nGeom, DifferentialGeometry *dgBump) const;
+	virtual void GetShadingGeometry(const TsPack *tspack,
+		const Normal &nGeom, DifferentialGeometry *dgBump) const { }
 
 	static void FindCompositingParams(const ParamSet &mp, CompositingParams *cp);
 

@@ -24,6 +24,8 @@
 #include "texture.h"
 #include "paramset.h"
 #include "shape.h"
+#include "spectrum.h"
+#include "fresnel.h"
 
 namespace lux
 {
@@ -64,100 +66,175 @@ static int NoisePerm[2 * NOISE_PERM_SIZE] = {
 	   138, 236, 205, 93, 222, 114, 67, 29, 24, 72, 243, 141, 128, 195, 78, 66, 215, 61, 156, 180
 };
 // Texture Method Definitions
-UVMapping2D::UVMapping2D(float _su, float _sv,
-		float _du, float _dv) {
-	su = _su; sv = _sv;
-	du = _du; dv = _dv;
+UVMapping2D::UVMapping2D(float _su, float _sv, float _du, float _dv)
+{
+	su = _su;
+	sv = _sv;
+	du = _du;
+	dv = _dv;
 }
-void UVMapping2D::Map(const DifferentialGeometry &dg,
-		float *s, float *t, float *dsdx, float *dtdx,
-		float *dsdy, float *dtdy) const {
+void UVMapping2D::Map(const DifferentialGeometry &dg, float *s, float *t) const
+{
 	*s = su * dg.u + du;
 	*t = sv * dg.v + dv;
+}
+void UVMapping2D::MapDxy(const DifferentialGeometry &dg, float *s, float *t,
+	float *dsdx, float *dtdx, float *dsdy, float *dtdy) const
+{
+	Map(dg, s, t);
 	// Compute texture differentials for 2D identity mapping
 	*dsdx = su * dg.dudx;
 	*dtdx = sv * dg.dvdx;
 	*dsdy = su * dg.dudy;
 	*dtdy = sv * dg.dvdy;
 }
+void UVMapping2D::MapDuv(const DifferentialGeometry &dg, float *s, float *t,
+	float *dsdu, float *dtdu, float *dsdv, float *dtdv) const
+{
+	Map(dg, s, t);
+	// Compute texture differentials for 2D identity mapping
+	*dsdu = su;
+	*dsdv = 0.f;
+	*dtdu = 0.f;
+	*dtdv = sv;
+}
+
 void SphericalMapping2D::Map(const DifferentialGeometry &dg,
-		float *s, float *t, float *dsdx, float *dtdx,
-		float *dsdy, float *dtdy) const {
-	sphere(dg.p, s, t);
+	float *s, float *t) const
+{
+	const Vector vec(Normalize(Vector(WorldToTexture(dg.p))));
+	*s = SphericalTheta(vec) * INV_PI;
+	*t = SphericalPhi(vec) * INV_TWOPI;
+}
+void SphericalMapping2D::MapDxy(const DifferentialGeometry &dg,
+	float *s, float *t,
+	float *dsdx, float *dtdx, float *dsdy, float *dtdy) const
+{
+	const Vector p(Normalize(Vector(WorldToTexture(dg.p))));
+	*s = SphericalTheta(p) * INV_PI;
+	*t = SphericalPhi(p) * INV_TWOPI;
 	// Compute texture coordinate differentials for sphere $(u,v)$ mapping
-	float sx, tx, sy, ty;
-	const float delta = .1f;
-	sphere(dg.p + delta * dg.dpdx, &sx, &tx);
-	*dsdx = (sx - *s) / delta;
-	*dtdx = (tx - *t) / delta;
-	if (*dtdx > .5) *dtdx = 1.f - *dtdx;
-	else if (*dtdx < -.5f) *dtdx = -(*dtdx + 1);
-	sphere(dg.p + delta * dg.dpdy, &sy, &ty);
-	*dsdy = (sy - *s) / delta;
-	*dtdy = (ty - *t) / delta;
-	if (*dtdy > .5) *dtdy = 1.f - *dtdy;
-	else if (*dtdy < -.5f) *dtdy = -(*dtdy + 1);
+	const Vector dpdx(WorldToTexture(dg.dpdx));
+	const Vector dpdy(WorldToTexture(dg.dpdy));
+	const float xy2 = p.x * p.x + p.y * p.y;
+	const float z2 = p.z * p.z;
+	*dsdx = INV_PI * dpdx.z / sqrtf(1.f - z2);
+	*dsdy = INV_PI * dpdy.z / sqrtf(1.f - z2);
+	*dtdx = INV_TWOPI * (dpdx.y * p.x - p.y * dpdx.x) / xy2;
+	*dtdy = INV_TWOPI * (dpdy.y * p.x - p.y * dpdy.x) / xy2;
 }
-void SphericalMapping2D::sphere(const Point &p, float *s,
-		float *t) const {
-	Vector vec =
-		Normalize(WorldToTexture(p) - Point(0,0,0));
-	float theta = SphericalTheta(vec);
-	float phi = SphericalPhi(vec);
-	*s = theta * INV_PI;
-	*t = phi * INV_TWOPI;
+void SphericalMapping2D::MapDuv(const DifferentialGeometry &dg,
+	float *s, float *t,
+	float *dsdu, float *dtdu, float *dsdv, float *dtdv) const
+{
+	const Vector p(Normalize(Vector(WorldToTexture(dg.p))));
+	*s = SphericalTheta(p) * INV_PI;
+	*t = SphericalPhi(p) * INV_TWOPI;
+	// Compute texture coordinate differentials for sphere $(u,v)$ mapping
+	const Vector dpdu(WorldToTexture(dg.dpdu));
+	const Vector dpdv(WorldToTexture(dg.dpdv));
+	const float xy2 = p.x * p.x + p.y * p.y;
+	const float z2 = p.z * p.z;
+	*dsdu = INV_PI * dpdu.z / sqrtf(1.f - z2);
+	*dsdv = INV_PI * dpdv.z / sqrtf(1.f - z2);
+	*dtdu = INV_TWOPI * (dpdu.y * p.x - p.y * dpdu.x) / xy2;
+	*dtdv = INV_TWOPI * (dpdv.y * p.x - p.y * dpdv.x) / xy2;
 }
-void
-CylindricalMapping2D::Map(const DifferentialGeometry &dg,
-		float *s, float *t, float *dsdx, float *dtdx,
-		float *dsdy, float *dtdy) const {
-	cylinder(dg.p, s, t);
+
+void CylindricalMapping2D::Map(const DifferentialGeometry &dg,
+	float *s, float *t) const
+{
+	const Vector p(Normalize(Vector(WorldToTexture(p))));
+	*s = .5f + atan2f(p.y, p.x) * INV_TWOPI;
+	*t = p.z;
+}
+void CylindricalMapping2D::MapDxy(const DifferentialGeometry &dg,
+	float *s, float *t,
+	float *dsdx, float *dtdx, float *dsdy, float *dtdy) const
+{
+	const Vector p(Normalize(Vector(WorldToTexture(p))));
+	*s = .5f + atan2f(p.y, p.x) * INV_TWOPI;
+	*t = p.z;
 	// Compute texture coordinate differentials for cylinder $(u,v)$ mapping
-	float sx, tx, sy, ty;
-	const float delta = .01f;
-	cylinder(dg.p + delta * dg.dpdx, &sx, &tx);
-	*dsdx = (sx - *s) / delta;
-	*dtdx = (tx - *t) / delta;
-	if (*dtdx > .5) *dtdx = 1.f - *dtdx;
-	else if (*dtdx < -.5f) *dtdx = -(*dtdx + 1);
-	cylinder(dg.p + delta * dg.dpdy, &sy, &ty);
-	*dsdy = (sy - *s) / delta;
-	*dtdy = (ty - *t) / delta;
-	if (*dtdy > .5) *dtdy = 1.f - *dtdy;
-	else if (*dtdy < -.5f) *dtdy = -(*dtdy + 1);
+	const Vector dpdx(WorldToTexture(dg.dpdx));
+	const Vector dpdy(WorldToTexture(dg.dpdy));
+	const float xy2 = p.x * p.x + p.y * p.y;
+	*dsdx = INV_TWOPI * (dpdx.y * p.x - p.y * dpdx.x) / xy2;
+	*dsdy = INV_TWOPI * (dpdy.y * p.x - p.y * dpdy.x) / xy2;
+	*dtdx = dpdx.z;
+	*dtdy = dpdy.z;
 }
-void CylindricalMapping2D::cylinder(const Point &p,
-		float *s, float *t) const {
-	Vector vec =
-		Normalize(WorldToTexture(p) - Point(0,0,0));
-	*s = (M_PI + atan2f(vec.y, vec.x)) / (2.f * M_PI);
-	*t = vec.z;
+void CylindricalMapping2D::MapDuv(const DifferentialGeometry &dg,
+	float *s, float *t,
+	float *dsdu, float *dtdu, float *dsdv, float *dtdv) const
+{
+	const Vector p(Normalize(Vector(WorldToTexture(p))));
+	*s = .5f + atan2f(p.y, p.x) * INV_TWOPI;
+	*t = p.z;
+	// Compute texture coordinate differentials for cylinder $(u,v)$ mapping
+	const Vector dpdu(WorldToTexture(dg.dpdu));
+	const Vector dpdv(WorldToTexture(dg.dpdv));
+	const float xy2 = p.x * p.x + p.y * p.y;
+	*dsdu = INV_TWOPI * (dpdu.y * p.x - p.y * dpdu.x) / xy2;
+	*dsdv = INV_TWOPI * (dpdv.y * p.x - p.y * dpdv.x) / xy2;
+	*dtdu = dpdu.z;
+	*dtdv = dpdv.z;
 }
-PlanarMapping2D::PlanarMapping2D(const Vector &_v1,
-		const Vector &_v2, float _ds, float _dt) {
+
+PlanarMapping2D::PlanarMapping2D(const Vector &_v1, const Vector &_v2,
+	float _ds, float _dt)
+{
 	vs = _v1;
 	vt = _v2;
 	ds = _ds;
 	dt = _dt;
 }
 void PlanarMapping2D::Map(const DifferentialGeometry &dg,
-		float *s, float *t, float *dsdx, float *dtdx,
-		float *dsdy, float *dtdy) const {
-	Vector vec = dg.p - Point(0,0,0);
-	*s = ds + Dot(vec, vs);
-	*t = dt + Dot(vec, vt);
+	float *s, float *t) const
+{
+	const Vector p(dg.p);
+	*s = ds + Dot(p, vs);
+	*t = dt + Dot(p, vt);
+}
+void PlanarMapping2D::MapDxy(const DifferentialGeometry &dg, float *s, float *t,
+	float *dsdx, float *dtdx, float *dsdy, float *dtdy) const
+{
+	Map(dg, s, t);
 	*dsdx = Dot(dg.dpdx, vs);
 	*dtdx = Dot(dg.dpdx, vt);
 	*dsdy = Dot(dg.dpdy, vs);
 	*dtdy = Dot(dg.dpdy, vt);
 }
-Point IdentityMapping3D::Map(const DifferentialGeometry &dg,
-		Vector *dpdx, Vector *dpdy) const {
-	*dpdx = WorldToTexture(dg.dpdx);
-	*dpdy = WorldToTexture(dg.dpdy);
+void PlanarMapping2D::MapDuv(const DifferentialGeometry &dg, float *s, float *t,
+	float *dsdu, float *dtdu, float *dsdv, float *dtdv) const
+{
+	Map(dg, s, t);
+	*dsdu = Dot(dg.dpdu, vs);
+	*dtdu = Dot(dg.dpdu, vt);
+	*dsdv = Dot(dg.dpdv, vs);
+	*dtdv = Dot(dg.dpdv, vt);
+}
+
+Point IdentityMapping3D::Map(const DifferentialGeometry &dg) const
+{
 	return WorldToTexture(dg.p);
 }
-void IdentityMapping3D::Apply3DTextureMappingOptions(const ParamSet &tp) {
+Point IdentityMapping3D::MapDxy(const DifferentialGeometry &dg,
+	Vector *dpdx, Vector *dpdy) const
+{
+	*dpdx = WorldToTexture(dg.dpdx);
+	*dpdy = WorldToTexture(dg.dpdy);
+	return Map(dg);
+}
+Point IdentityMapping3D::MapDuv(const DifferentialGeometry &dg,
+	Vector *dpdu, Vector *dpdv) const
+{
+	*dpdu = WorldToTexture(dg.dpdu);
+	*dpdv = WorldToTexture(dg.dpdv);
+	return Map(dg);
+}
+void IdentityMapping3D::Apply3DTextureMappingOptions(const ParamSet &tp)
+{
 	// Apply inverted scale
 	Vector scale = tp.FindOneVector("scale", Vector(1.f, 1.f, 1.f));
 	WorldToTexture = WorldToTexture * Scale(1.f / scale.x, 1.f / scale.y,
@@ -171,6 +248,7 @@ void IdentityMapping3D::Apply3DTextureMappingOptions(const ParamSet &tp) {
 	Vector translate = tp.FindOneVector("translate", Vector(0.f, 0.f, 0.f));
 	WorldToTexture = WorldToTexture * Translate(-translate);
 }
+
 void LatLongMapping::Map(const Vector &wh, float *s, float *t, float *pdf) const
 {
 	const float theta = SphericalTheta(wh);
@@ -188,6 +266,7 @@ void LatLongMapping::Map(float s, float t, Vector *wh, float *pdf) const
 	if (pdf)
 		*pdf = INV_TWOPI * INV_PI / sinTheta;
 }
+
 void AngularMapping::Map(const Vector &wh, float *s, float *t, float *pdf) const
 {
 	const float sinTheta = sqrtf(wh.y*wh.y + wh.z*wh.z);
@@ -231,6 +310,7 @@ void AngularMapping::Map(float s, float t, Vector *wh, float *pdf) const
 			*pdf = 1.f;
 	}
 }
+
 void VerticalCrossMapping::Map(const Vector &wh, float *s, float *t, float *pdf) const {
 	int axis = 0;
 	float ma = fabsf(wh.x);
@@ -330,7 +410,21 @@ void VerticalCrossMapping::Map(float s, float t, Vector *wh, float *pdf) const
 	if (pdf)
 		*pdf = ima * ima * ima / 48.f;
 }
- float Noise(float x, float y, float z) {
+
+template<> float Texture<SWCSpectrum>::EvalFloat(const TsPack *tspack,
+	const DifferentialGeometry &dg) const
+{
+	return Evaluate(tspack, dg).Filter(tspack);
+}
+template<> float Texture<const Fresnel *>::EvalFloat(const TsPack *tspack,
+	const DifferentialGeometry &dg) const
+{
+	return Evaluate(tspack, dg)->Index(tspack);
+}
+
+// Texture Function Definitions
+float Noise(float x, float y, float z)
+{
 	// Compute noise cell coordinates and offsets
 	int ix = Floor2Int(x);
 	int iy = Floor2Int(y);
@@ -360,23 +454,29 @@ void VerticalCrossMapping::Map(float s, float t, Vector *wh, float *pdf) const
 	const float y1 = Lerp(wy, x01, x11);
 	return Lerp(wz, y0, y1);
 }
- float Noise(const Point &P) {
+float Noise(const Point &P)
+{
 	return Noise(P.x, P.y, P.z);
 }
-inline float Grad(int x, int y, int z, float dx,
-		float dy, float dz) {
+
+inline float Grad(int x, int y, int z, float dx, float dy, float dz)
+{
  	const int h = NoisePerm[NoisePerm[NoisePerm[x] + y] + z] & 15;
 	const float u = h < 8 || h == 12 || h == 13 ? dx : dy;
 	const float v = h < 4 || h == 12 || h == 13 ? dy : dz;
 	return ((h&1) ? -u : u) + ((h&2) ? -v : v);
 }
-inline float NoiseWeight(float t) {
+
+inline float NoiseWeight(float t)
+{
 	const float t3 = t * t * t;
 	const float t4 = t3 * t;
 	return 6.f*t4*t - 15.f*t4 + 10.f*t3;
 }
- float FBm(const Point &P, const Vector &dpdx,
-		const Vector &dpdy, float omega, int maxOctaves) {
+
+float FBm(const Point &P, const Vector &dpdx, const Vector &dpdy,
+	float omega, int maxOctaves)
+{
 	// Compute number of octaves for anti-aliased FBm
 	const float s2 = max(dpdx.LengthSquared(), dpdy.LengthSquared());
 	const float foctaves = min(static_cast<float>(maxOctaves),
@@ -394,8 +494,10 @@ inline float NoiseWeight(float t) {
 	       Noise(lambda * P);
 	return sum;
 }
- float Turbulence(const Point &P, const Vector &dpdx,
-		const Vector &dpdy, float omega, int maxOctaves) {
+
+float Turbulence(const Point &P, const Vector &dpdx, const Vector &dpdy,
+	float omega, int maxOctaves)
+{
 	// Compute number of octaves for anti-aliased FBm
 	const float s2 = max(dpdx.LengthSquared(), dpdy.LengthSquared());
 	const float foctaves = min(static_cast<float>(maxOctaves),
@@ -413,8 +515,9 @@ inline float NoiseWeight(float t) {
 	       fabsf(Noise(lambda * P));
 	return sum;
 }
-// Texture Function Definitions
- float Lanczos(float x, float tau) {
+
+float Lanczos(float x, float tau)
+{
 	x = fabsf(x);
 	if (x < 1e-5f)
 		return 1.f;

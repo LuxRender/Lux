@@ -40,6 +40,9 @@ public:
 	virtual const Fresnel *Evaluate(const TsPack *tspack,
 		const DifferentialGeometry &dg) const { return &fresnel; }
 	virtual float Y() const { return index; }
+	virtual void GetDuv(const TsPack *tspack,
+		const DifferentialGeometry &dg, float delta,
+		float *du, float *dv) const { *du = *dv = 0.f; }
 
 	static Texture<const Fresnel *> *CreateFresnelTexture(const Transform &tex2world, const ParamSet &tp);
 private:

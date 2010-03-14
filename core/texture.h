@@ -35,8 +35,13 @@ public:
 	// TextureMapping2D Interface
 	virtual ~TextureMapping2D() { }
 	virtual void Map(const DifferentialGeometry &dg,
+		float *s, float *t) const = 0;
+	virtual void MapDxy(const DifferentialGeometry &dg,
 		float *s, float *t, float *dsdx, float *dtdx,
 		float *dsdy, float *dtdy) const = 0;
+	virtual void MapDuv(const DifferentialGeometry &dg,
+		float *s, float *t, float *dsdu, float *dtdu,
+		float *dsdv, float *dtdv) const = 0;
 };
 class  UVMapping2D : public TextureMapping2D {
 public:
@@ -44,9 +49,14 @@ public:
 	UVMapping2D(float su = 1, float sv = 1,
 		float du = 0, float dv = 0);
 	virtual ~UVMapping2D() { }
-	virtual void Map(const DifferentialGeometry &dg, float *s, float *t,
-		float *dsdx, float *dtdx,
+	virtual void Map(const DifferentialGeometry &dg,
+		float *s, float *t) const;
+	virtual void MapDxy(const DifferentialGeometry &dg,
+		float *s, float *t, float *dsdx, float *dtdx,
 		float *dsdy, float *dtdy) const;
+	virtual void MapDuv(const DifferentialGeometry &dg,
+		float *s, float *t, float *dsdu, float *dtdu,
+		float *dsdv, float *dtdv) const;
 private:
 	float su, sv, du, dv;
 };
@@ -57,26 +67,33 @@ public:
 		: WorldToTexture(toSph) {
 	}
 	virtual ~SphericalMapping2D() { }
-	virtual void Map(const DifferentialGeometry &dg, float *s, float *t,
-		float *dsdx, float *dtdx,
+	virtual void Map(const DifferentialGeometry &dg,
+		float *s, float *t) const;
+	virtual void MapDxy(const DifferentialGeometry &dg,
+		float *s, float *t, float *dsdx, float *dtdx,
 		float *dsdy, float *dtdy) const;
+	virtual void MapDuv(const DifferentialGeometry &dg,
+		float *s, float *t, float *dsdu, float *dtdu,
+		float *dsdv, float *dtdv) const;
 private:
-	void sphere(const Point &P, float *s, float *t) const;
 	Transform WorldToTexture;
 };
-class
- CylindricalMapping2D : public TextureMapping2D {
+class CylindricalMapping2D : public TextureMapping2D {
 public:
 	// CylindricalMapping2D Public Methods
 	CylindricalMapping2D(const Transform &toCyl)
 		: WorldToTexture(toCyl) {
 	}
 	virtual ~CylindricalMapping2D() { }
-	virtual void Map(const DifferentialGeometry &dg, float *s, float *t,
-		float *dsdx, float *dtdx,
+	virtual void Map(const DifferentialGeometry &dg,
+		float *s, float *t) const;
+	virtual void MapDxy(const DifferentialGeometry &dg,
+		float *s, float *t, float *dsdx, float *dtdx,
 		float *dsdy, float *dtdy) const;
+	virtual void MapDuv(const DifferentialGeometry &dg,
+		float *s, float *t, float *dsdu, float *dtdu,
+		float *dsdv, float *dtdv) const;
 private:
-	void cylinder(const Point &P, float *s, float *t) const;
 	Transform WorldToTexture;
 };
 class  PlanarMapping2D : public TextureMapping2D {
@@ -85,9 +102,14 @@ public:
 	PlanarMapping2D(const Vector &v1, const Vector &v2,
 		float du = 0, float dv = 0);
 	virtual ~PlanarMapping2D() { }
-	virtual void Map(const DifferentialGeometry &dg, float *s, float *t,
-		float *dsdx, float *dtdx,
+	virtual void Map(const DifferentialGeometry &dg,
+		float *s, float *t) const;
+	virtual void MapDxy(const DifferentialGeometry &dg,
+		float *s, float *t, float *dsdx, float *dtdx,
 		float *dsdy, float *dtdy) const;
+	virtual void MapDuv(const DifferentialGeometry &dg,
+		float *s, float *t, float *dsdu, float *dtdu,
+		float *dsdv, float *dtdv) const;
 private:
 	Vector vs, vt;
 	float ds, dt;
@@ -96,17 +118,23 @@ class  TextureMapping3D {
 public:
 	// TextureMapping3D Interface
 	virtual ~TextureMapping3D() { }
-	virtual Point Map(const DifferentialGeometry &dg,
+	virtual Point Map(const DifferentialGeometry &dg) const = 0;
+	virtual Point MapDxy(const DifferentialGeometry &dg,
 		Vector *dpdx, Vector *dpdy) const = 0;
+	virtual Point MapDuv(const DifferentialGeometry &dg,
+		Vector *dpdu, Vector *dpdv) const = 0;
 };
 class  IdentityMapping3D : public TextureMapping3D {
 public:
 	IdentityMapping3D(const Transform &x)
 		: WorldToTexture(x) { }
 	virtual ~IdentityMapping3D() { }
-	virtual Point Map(const DifferentialGeometry &dg, Vector *dpdx,
-		Vector *dpdy) const;
-		void Apply3DTextureMappingOptions(const ParamSet &tp);
+	virtual Point Map(const DifferentialGeometry &dg) const;
+	virtual Point MapDxy(const DifferentialGeometry &dg,
+		Vector *dpdx, Vector *dpdy) const;
+	virtual Point MapDuv(const DifferentialGeometry &dg,
+		Vector *dpdu, Vector *dpdv) const;
+	void Apply3DTextureMappingOptions(const ParamSet &tp);
 //private:
 	Transform WorldToTexture;
 };
@@ -151,20 +179,32 @@ template <class T> class Texture {
 public:
 	//typedef boost::shared_ptr<Texture> TexturePtr; <<! Not working with GCC
 	// Texture Interface
-	virtual T Evaluate(const TsPack *tspack, const DifferentialGeometry &) const = 0;
+	virtual T Evaluate(const TsPack *tspack,
+		const DifferentialGeometry &) const = 0;
+	float EvalFloat(const TsPack *tspack,
+		const DifferentialGeometry &dg) const;
 	virtual float Y() const = 0;
 	virtual float Filter() const { return Y(); }
 	virtual void SetIlluminant() { }
+	virtual void GetDuv(const TsPack *tspack,
+		const DifferentialGeometry &dg, float delta,
+		float *du, float *dv) const = 0;
 	virtual ~Texture() { }
 };
 
-  float Noise(float x, float y = .5f, float z = .5f);
-  float Noise(const Point &P);
-  float FBm(const Point &P, const Vector &dpdx, const Vector &dpdy,
+template<> inline float Texture<float>::EvalFloat(const TsPack *tspack,
+	const DifferentialGeometry &dg) const
+{
+	return Evaluate(tspack, dg);
+}
+
+float Noise(float x, float y = .5f, float z = .5f);
+float Noise(const Point &P);
+float FBm(const Point &P, const Vector &dpdx, const Vector &dpdy,
 	float omega, int octaves);
-  float Turbulence(const Point &P, const Vector &dpdx, const Vector &dpdy,
+float Turbulence(const Point &P, const Vector &dpdx, const Vector &dpdy,
 	float omega, int octaves);
-  float Lanczos(float, float tau=2);
+float Lanczos(float, float tau=2);
 
 }//namespace lux
 

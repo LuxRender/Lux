@@ -39,7 +39,7 @@ public:
 		Vector *wi, float u1, float u2, SWCSpectrum *const f_,
 		float *pdf, float *pdfBack = NULL, bool reverse = false) const {
 		Vector w;
-		*f_ += SWCSpectrum(tspack, sf->Sample_f(u1, u2, &w, pdf));
+		*f_ += sf->Sample_f(tspack, u1, u2, &w, pdf);
 		*wi = Normalize(WorldToLight.GetInverse()(w));
 		*f_ /= fabsf(wi->z);
 		*pdfBack = 0.f;
@@ -48,7 +48,7 @@ public:
 	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const F) const {
 		// Transform to light coordinate system
 		const Vector wL(Normalize(WorldToLight(wi)));
-		*F += SWCSpectrum(tspack, sf->f(wL)) / fabsf(wi.z);
+		*F += sf->f(tspack, wL) / fabsf(wi.z);
 	}
 	virtual float Pdf(const TsPack *tspack, const Vector &wi,
 		const Vector &wo) const {
@@ -115,11 +115,10 @@ SWCSpectrum PointLight::Sample_L(const TsPack *tspack, const Scene *scene, float
 	ray->o = lightPos;
 	if(func) {
 		Vector w;
-		RGBColor f = func->Sample_f(u1, u2, &w, pdf);
+		SWCSpectrum f(func->Sample_f(tspack, u1, u2, &w, pdf));
 		ray->d = LightToWorld(w);
-		return Lbase->Evaluate(tspack, dummydg) * gain * SWCSpectrum(tspack, f);
-	}
-	else {
+		return Lbase->Evaluate(tspack, dummydg) * gain * f;
+	} else {
 		ray->d = UniformSampleSphere(u1, u2);
 		*pdf = UniformSpherePdf();
 		return Lbase->Evaluate(tspack, dummydg) * gain;
@@ -134,7 +133,8 @@ float PointLight::Pdf(const TsPack *tspack, const Point &p, const Normal &n,
 	return 1.f;
 }
 SWCSpectrum PointLight::L(const TsPack *tspack, const Vector &w) const {
-	return Lbase->Evaluate(tspack, dummydg) * SWCSpectrum(tspack, gain * (func ? func->f(w) : 1.f));
+	return Lbase->Evaluate(tspack, dummydg) * gain *
+		(func ? func->f(tspack, w) : 1.f);
 }
 bool PointLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *Le) const
 {

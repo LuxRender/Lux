@@ -60,9 +60,8 @@ Texture<float> *ImageFloatTexture::CreateFloatTexture(const Transform &tex2world
 			tp.FindOneFloat("udelta", 0.f),
 			tp.FindOneFloat("vdelta", 0.f));
 	else {
-		std::stringstream ss;
-		ss << "2D texture mapping  '" << type << "' unknown";
-		luxError(LUX_BADTOKEN, LUX_ERROR, ss.str().c_str());
+		LOG(LUX_ERROR, LUX_BADTOKEN) << "2D texture mapping  '" <<
+			type << "' unknown";
 		map = new UVMapping2D;
 	}
 
@@ -83,22 +82,39 @@ Texture<float> *ImageFloatTexture::CreateFloatTexture(const Transform &tex2world
 	string filename = tp.FindOneString("filename", "");
 	int discardmm = tp.FindOneInt("discardmipmaps", 0);
 
+	string channel = tp.FindOneString("channel", "mean");
+	Channel ch;
+	if (channel == "red")
+		ch = CHANNEL_RED;
+	else if (channel == "green")
+		ch = CHANNEL_GREEN;
+	else if (channel == "blue")
+		ch = CHANNEL_BLUE;
+	else if (channel == "alpha")
+		ch = CHANNEL_ALPHA;
+	else if (channel == "mean")
+		ch = CHANNEL_MEAN;
+	else if (channel == "colored_mean")
+		ch = CHANNEL_WMEAN;
+	else {
+		LOG(LUX_WARNING, LUX_BADTOKEN) << "Unknown image channel '" <<
+			channel << "' using 'mean' instead";
+		ch = CHANNEL_MEAN;
+	}
+
 	ImageFloatTexture *tex = new ImageFloatTexture(map, filterType,
-		filename, maxAniso, wrapMode, gain, gamma);
+		filename, maxAniso, wrapMode, ch, gain, gamma);
 
 	if (discardmm > 0 &&
 		(filterType == MIPMAP_TRILINEAR || filterType == MIPMAP_EWA)) {
-		tex->discardMipmaps(discardmm);
+		tex->DiscardMipmaps(discardmm);
 
-		std::stringstream ss;
-		ss << "Discarded " << discardmm << " mipmap levels";
-		luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+		LOG(LUX_INFO, LUX_NOERROR) << "Discarded " << discardmm <<
+			" mipmap levels";
 	}
 
-	std::stringstream ss;
-	ss << "Memory used for imagemap '" << filename << "': " <<
-		(tex->getMemoryUsed() / 1024) << "KBytes";
-	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+	LOG(LUX_INFO, LUX_NOERROR) << "Memory used for imagemap '" << filename
+		<< "': " << (tex->GetMemoryUsed() / 1024) << "KBytes";
 
 	return tex;
 }
@@ -137,9 +153,8 @@ Texture<SWCSpectrum> *ImageSpectrumTexture::CreateSWCSpectrumTexture(const Trans
 			tp.FindOneFloat("udelta", 0.f),
 			tp.FindOneFloat("vdelta", 0.f));
 	else {
-		std::stringstream ss;
-		ss << "2D texture mapping  '" << type << "' unknown";
-		luxError(LUX_BADTOKEN, LUX_ERROR, ss.str().c_str());
+		LOG(LUX_ERROR, LUX_BADTOKEN) << "2D texture mapping  '" <<
+			type << "' unknown";
 		map = new UVMapping2D;
 	}
 
@@ -165,17 +180,14 @@ Texture<SWCSpectrum> *ImageSpectrumTexture::CreateSWCSpectrumTexture(const Trans
 
 	if (discardmm > 0 &&
 		(filterType == MIPMAP_TRILINEAR || filterType == MIPMAP_EWA)) {
-		tex->discardMipmaps(discardmm);
+		tex->DiscardMipmaps(discardmm);
 
-		std::stringstream ss;
-		ss << "Discarded " << discardmm << " mipmap levels";
-		luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+		LOG(LUX_INFO, LUX_NOERROR) << "Discarded " << discardmm <<
+			" mipmap levels";
 	}
 
-	std::stringstream ss;
-	ss << "Memory used for imagemap '" << filename << "': " <<
-		(tex->getMemoryUsed() / 1024) << "KBytes";
-	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+	LOG(LUX_INFO, LUX_NOERROR) << "Memory used for imagemap '" << filename
+		<< "': " << (tex->GetMemoryUsed() / 1024) << "KBytes";
 
 	return tex;
 }

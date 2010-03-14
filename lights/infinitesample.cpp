@@ -51,8 +51,7 @@ public:
 		Vector wh = Normalize(WorldToLight(-w));
 		float s, t, dummy;
 		light.mapping->Map(wh, &s, &t, &dummy);
-		*f += SWCSpectrum(tspack, light.radianceMap->Lookup(s, t)) *
-			INV_PI;
+		*f += light.radianceMap->LookupSpectrum(tspack, s, t) * INV_PI;
 	}
 private:
 	const InfiniteAreaLightIS &light;
@@ -83,8 +82,8 @@ InfiniteAreaLightIS::InfiniteAreaLightIS(const Transform &light2world,
 		if (imgdata.get() != NULL) {
 			nu = imgdata->getWidth();
 			nv = imgdata->getHeight();
-			radianceMap = imgdata->createMIPMap<RGBColor>(BILINEAR,
-				8.f, TEXTURE_REPEAT, 1.f, gamma);
+			radianceMap = imgdata->createMIPMap(BILINEAR, 8.f,
+				TEXTURE_REPEAT, 1.f, gamma);
 		} else
 			radianceMap = NULL;
 	}
@@ -106,8 +105,8 @@ InfiniteAreaLightIS::InfiniteAreaLightIS(const Transform &light2world,
 			if (!(pdf > 0.f))
 				img[y + x * nv] = 0.f;
 			else if (radianceMap)
-				img[y + x * nv] = radianceMap->Lookup(xp, yp,
-					filter).Y() / pdf;
+				img[y + x * nv] = radianceMap->LookupFloat(CHANNEL_WMEAN,
+					xp, yp, filter) / pdf;
 			else
 				img[y + x * nv] = 1.f / pdf;
 		}
@@ -125,7 +124,7 @@ SWCSpectrum InfiniteAreaLightIS::Le(const TsPack *tspack,
 		float s = SphericalPhi(wh) * INV_TWOPI;
 		float t = SphericalTheta(wh) * INV_PI;
 		return SWCSpectrum(tspack, SPDbase) *
-			SWCSpectrum(tspack, radianceMap->Lookup(s, t));
+			radianceMap->LookupSpectrum(tspack, s, t);
 	}
 	return SWCSpectrum(tspack, SPDbase);
 }
@@ -160,7 +159,7 @@ SWCSpectrum InfiniteAreaLightIS::Le(const TsPack *tspack, const Scene *scene,
 		*pdfDirect = uvDistrib->Pdf(s, t) * pdfMap *
 			AbsDot(r.d, ns) / DistanceSquared(r.o, ps);
 		return SWCSpectrum(tspack, SPDbase) *
-			SWCSpectrum(tspack, radianceMap->Lookup(s, t));
+			radianceMap->LookupSpectrum(tspack, s, t);
 	} else {
 		*pdfDirect = AbsDot(r.d, n) * INV_TWOPI *
 			AbsDot(r.d, ns) / DistanceSquared(r.o, ps);
@@ -186,7 +185,7 @@ SWCSpectrum InfiniteAreaLightIS::Sample_L(const TsPack *tspack, const Point &p, 
 	visibility->SetRay(p, *wi, tspack->time);
 	if (radianceMap)
 		return SWCSpectrum(tspack, SPDbase) *
-			SWCSpectrum(tspack, radianceMap->Lookup(uv[0], uv[1]));
+			radianceMap->LookupSpectrum(tspack, uv[0], uv[1]);
 	else
 		return SWCSpectrum(tspack, SPDbase);
 }

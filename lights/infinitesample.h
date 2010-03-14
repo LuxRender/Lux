@@ -44,7 +44,7 @@ public:
 		float worldRadius;
 		scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
 		return SPDbase.Y() *
-			radianceMap->Lookup(.5f, .5f, .5f).Filter() *
+			radianceMap->LookupFloat(CHANNEL_WMEAN, .5f, .5f, .5f) *
 			M_PI * worldRadius * worldRadius;
 	}
 	virtual bool IsDeltaLight() const { return false; }
@@ -71,7 +71,7 @@ public:
 	static Light *CreateLight(const Transform &light2world,
 		const ParamSet &paramSet);
 
-	MIPMap<RGBColor> *radianceMap;
+	MIPMap *radianceMap;
 	EnvironmentMapping *mapping;
 private:
 	// InfiniteAreaLightIS Private Data

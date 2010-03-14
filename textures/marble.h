@@ -25,6 +25,7 @@
 #include "spectrum.h"
 #include "texture.h"
 #include "color.h"
+#include "geometry/raydifferential.h"
 #include "paramset.h"
 
 // TODO - radiance - add methods for Power and Illuminant propagation
@@ -36,11 +37,9 @@ namespace lux
 class MarbleTexture : public Texture<SWCSpectrum> {
 public:
 	// MarbleTexture Public Methods
-	virtual ~MarbleTexture() {
-		delete mapping;
-	}
+	virtual ~MarbleTexture() { delete mapping; }
 	MarbleTexture(int oct, float roughness, float sc, float var,
-			TextureMapping3D *map) {
+		TextureMapping3D *map) {
 		omega = roughness;
 		octaves = oct;
 		mapping = map;
@@ -49,7 +48,7 @@ public:
 	}
 	virtual SWCSpectrum Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
 		Vector dpdx, dpdy;
-		Point P = mapping->Map(dg, &dpdx, &dpdy);
+		Point P = mapping->MapDxy(dg, &dpdx, &dpdy);
 		P *= scale;
 		float marble = P.y + variation * FBm(P, scale * dpdx,
 			scale * dpdy, omega, octaves);
@@ -64,13 +63,13 @@ public:
 		t = (t * NSEG - first);
 		RGBColor c0(c[first]), c1(c[first+1]), c2(c[first+2]), c3(c[first+3]);
 		// Bezier spline evaluated with de Castilejau's algorithm
-		RGBColor s0 = (1.f - t) * c0 + t * c1;
-		RGBColor s1 = (1.f - t) * c1 + t * c2;
-		RGBColor s2 = (1.f - t) * c2 + t * c3;
-		s0 = (1.f - t) * s0 + t * s1;
-		s1 = (1.f - t) * s1 + t * s2;
+		RGBColor s0(Lerp(t, c0, c1));
+		RGBColor s1(Lerp(t, c1, c2));
+		RGBColor s2(Lerp(t, c2, c3));
+		s0 = Lerp(t, s0, s1);
+		s1 = Lerp(t, s1, s2);
 		// Extra scale of 1.5 to increase variation among colors
-		return SWCSpectrum(tspack, 1.5f * ((1.f - t) * s0 + t * s1));
+		return SWCSpectrum(tspack, 1.5f * Lerp(t, s0, s1));
 	}
 	virtual float Y() const {
 		static float c[][3] = { { .58f, .58f, .6f }, { .58f, .58f, .6f }, { .58f, .58f, .6f },
@@ -89,6 +88,34 @@ public:
 		for (u_int i = 0; i < NC; ++i)
 			cs += RGBColor(c[i]);
 		return cs.Filter() / NC;
+	}
+	virtual void GetDuv(const TsPack *tspack,
+		const DifferentialGeometry &dg, float delta,
+		float *du, float *dv) const {
+		//FIXME: Generic derivative computation, replace with exact
+		DifferentialGeometry dgTemp = dg;
+		// Calculate bump map value at intersection point
+		const float base = EvalFloat(tspack, dg);
+
+		// Compute offset positions and evaluate displacement texture
+		const Point origP(dgTemp.p);
+		const Normal origN(dgTemp.nn);
+		const float origU = dgTemp.u;
+
+		// Shift _dgTemp_ _du_ in the $u$ direction and calculate value
+		const float uu = delta / dgTemp.dpdu.Length();
+		dgTemp.p += uu * dgTemp.dpdu;
+		dgTemp.u += uu;
+		dgTemp.nn = Normalize(origN + uu * dgTemp.dndu);
+		*du = (EvalFloat(tspack, dgTemp) - base) / uu;
+
+		// Shift _dgTemp_ _dv_ in the $v$ direction and calculate value
+		const float vv = delta / dgTemp.dpdv.Length();
+		dgTemp.p = origP + vv * dgTemp.dpdv;
+		dgTemp.u = origU;
+		dgTemp.v += vv;
+		dgTemp.nn = Normalize(origN + vv * dgTemp.dndv);
+		*dv = (EvalFloat(tspack, dgTemp) - base) / vv;
 	}
 	
 	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const ParamSet &tp);

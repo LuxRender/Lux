@@ -32,21 +32,21 @@ using namespace lux;
 void HighContrastOp::Map(vector<XYZColor> &xyz, u_int xRes, u_int yRes,
 		float maxDisplayY) const {
 	const u_int numPixels = xRes * yRes;
-	float *lum = new float[numPixels];
+	TextureColor<float, 1> *lum = new TextureColor<float, 1>[numPixels];
 	// Find minimum and maximum image luminances
 	float minY = INFINITY, maxY = 0.f;
 	for (u_int i = 0; i < numPixels; ++i) {
-		lum[i] = xyz[i].Y() * 683.f;
-		minY = min(minY, lum[i]);
-		maxY = max(maxY, lum[i]);
+		lum[i].c[0] = xyz[i].Y() * 683.f;
+		minY = min(minY, lum[i].c[0]);
+		maxY = max(maxY, lum[i].c[0]);
 	}
 	float CYmin = C(minY), CYmax = C(maxY);
 	// Build luminance image pyramid
-	MIPMapImpl<float, float> pyramid(MIPMAP_EWA, xRes, yRes, lum, 4.f,
-		TEXTURE_CLAMP);
+	MIPMapFastImpl<TextureColor<float, 1> > pyramid(MIPMAP_EWA, xRes, yRes,
+		lum, 4.f, TEXTURE_CLAMP);
 	delete[] lum;
 	// Apply high contrast tone mapping operator
-	ProgressReporter progress(xRes*yRes, "Tone Mapping"); // NOBOOK
+	ProgressReporter progress(xRes * yRes, "Tone Mapping"); // NOBOOK
 	for (u_int y = 0; y < yRes; ++y) {
 		float yc = (float(y) + .5f) / float(yRes);
 		for (u_int x = 0; x < xRes; ++x) {
@@ -60,17 +60,17 @@ void HighContrastOp::Map(vector<XYZColor> &xyz, u_int xRes, u_int yRes,
 			const float maxLocalContrast = .5f;
 			while (1) {
 				// Compute local contrast at $(x,y)$
-				float b0 = pyramid.Lookup(xc, yc, width,
-					0.f, 0.f, width);
-				float b1 = pyramid.Lookup(xc, yc, 2.f * width,
-					0.f, 0.f, 2.f * width);
+				float b0 = pyramid.LookupFloat(CHANNEL_MEAN,
+					xc, yc, width, 0.f, 0.f, width);
+				float b1 = pyramid.LookupFloat(CHANNEL_MEAN,
+					xc, yc, 2.f * width, 0.f, 0.f, 2.f * width);
 				float lc = fabsf((b0 - b1) / b0);
 				// If maximum contrast is exceeded, compute adaptation luminance
 				if (lc > maxLocalContrast) {
 					float t = (maxLocalContrast - prevlc) / (lc - prevlc);
 					float w = Lerp(t, prevWidth, width);
-					Yadapt = pyramid.Lookup(xc, yc, w,
-						0.f, 0.f, w);
+					Yadapt = pyramid.LookupFloat(CHANNEL_MEAN,
+						xc, yc, w, 0.f, 0.f, w);
 					break;
 				}
 				// Increase search region and prepare to compute contrast again
@@ -78,13 +78,13 @@ void HighContrastOp::Map(vector<XYZColor> &xyz, u_int xRes, u_int yRes,
 				prevWidth = width;
 				width += dwidth;
 				if (width >= maxWidth) {
-					Yadapt = pyramid.Lookup(xc, yc, maxWidth,
-						0.f, 0.f, maxWidth);
+					Yadapt = pyramid.LookupFloat(CHANNEL_MEAN,
+						xc, yc, maxWidth, 0.f, 0.f, maxWidth);
 					break;
 				}
 			}
 			// Apply tone mapping based on local adaptation luminance
-			xyz[x + y*xRes] *= T(Yadapt, CYmin, CYmax) * 683.f /
+			xyz[x + y * xRes] *= T(Yadapt, CYmin, CYmax) * 683.f /
 				Yadapt;
 		}
 		progress.Update(xRes); // NOBOOK

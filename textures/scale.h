@@ -49,6 +49,17 @@ public:
 	// In Y() one of the textures must use Filter to avoid double W->lm conv
 	virtual float Y() const { return tex1->Filter() * tex2->Y(); }
 	virtual float Filter() const { return tex1->Filter() * tex2->Filter(); }
+	virtual void GetDuv(const TsPack *tspack,
+		const DifferentialGeometry &dg, float delta,
+		float *du, float *dv) const {
+		float du1, dv1, du2, dv2;
+		tex1->GetDuv(tspack, dg, delta, &du1, &dv1);
+		tex2->GetDuv(tspack, dg, delta, &du2, &dv2);
+		float t1 = tex1->EvalFloat(tspack, dg);
+		float t2 = tex2->EvalFloat(tspack, dg);
+		*du = t1 * du2 + t2 * du1;
+		*dv = t1 * dv2 + t2 * dv1;
+	}
 	virtual void SetIlluminant() {
 		// Update sub-textures
 		tex1->SetIlluminant();

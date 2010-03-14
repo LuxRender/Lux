@@ -44,7 +44,7 @@ public:
 		BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)), sf(func) {}
 	virtual ~GonioAreaBxDF() { }
 	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const F) const {
-		*F += SWCSpectrum(tspack, sf->f(wi)) * INV_PI;
+		*F += sf->f(tspack, wi) * INV_PI;
 	}
 private:
 	const SampleableSphericalFunction *sf;
@@ -95,7 +95,7 @@ SWCSpectrum AreaLight::L(const TsPack *tspack, const DifferentialGeometry &dg,
 			// Transform to the local coordinate system around the point
 			const Vector wLocal(Dot(dg.dpdu, w), Dot(dg.dpdv, w),
 				Dot(dg.nn, w));
-			Ll *= SWCSpectrum(tspack, func->f(wLocal));
+			Ll *= func->f(tspack, wLocal);
 		}
 		return Ll;
 	}
@@ -227,8 +227,8 @@ SWCSpectrum AreaLight::L(const TsPack *tspack, const Ray &ray, const Differentia
 class HemiSphereSphericalFunction : public SphericalFunction {
 public:
 	HemiSphereSphericalFunction(const boost::shared_ptr<const SphericalFunction> &aSF) : sf(aSF) {}
-	RGBColor f(float phi, float theta) const {
-		return theta > 0.f ? sf->f(phi, theta) : 0.f;
+	SWCSpectrum f(const TsPack *tspack, float phi, float theta) const {
+		return theta > 0.f ? sf->f(tspack, phi, theta) : 0.f;
 	}
 private:
 	const boost::shared_ptr<const SphericalFunction> sf;

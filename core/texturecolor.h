@@ -24,6 +24,8 @@
 #define LUX_COLORBASE_H
 // color.h*
 #include "lux.h"
+#include "color.h"
+#include "spectrum.h"
 
 #include <boost/serialization/access.hpp>
 
@@ -35,138 +37,288 @@
 
 namespace lux
 {
-	class TextureColorBase
-	{
-	public:
-		TextureColorBase(){};
-	};
 
-	template <class T, u_int colorSamples> class TextureColor : public TextureColorBase {
-			friend class boost::serialization::access;
-		public:
-			TextureColor(T v = 0) {
-				for (u_int i = 0; i < colorSamples; ++i)
-					c[i] = v;
-			}
-			TextureColor(T cs[colorSamples]) {
-				for (u_int i = 0; i < colorSamples; ++i)
-					c[i] = cs[i];
-			}
+typedef enum {
+	CHANNEL_RED,
+	CHANNEL_GREEN,
+	CHANNEL_BLUE,
+	CHANNEL_ALPHA,
+	CHANNEL_MEAN,
+	CHANNEL_WMEAN
+} Channel;
 
-			TextureColor<T,colorSamples> &operator+=(const TextureColor<T,colorSamples> &s2) {
-			for (u_int i = 0; i < colorSamples; ++i)
-				if (c[i] > std::numeric_limits<T>::max() - s2.c[i])
-					c[i] = std::numeric_limits<T>::max();
-				else
-					c[i] += s2.c[i];
-			return *this;
-			}
-			TextureColor<T,colorSamples> &operator-=(const TextureColor<T,colorSamples> &s2) {
-			for (u_int i = 0; i < colorSamples; ++i)
-				if (c[i] < std::numeric_limits<T>::min() + s2.c[i])
-					c[i] = std::numeric_limits<T>::min();
-				else
-					c[i] -= s2.c[i];
-			return *this;
-			}
-			TextureColor<T,colorSamples> operator+(const TextureColor<T,colorSamples>  &s2) const {
-				TextureColor<T,colorSamples> ret = *this;
-				for (u_int i = 0; i < colorSamples; ++i)
-					if (ret.c[i] > std::numeric_limits<T>::max() - s2.c[i])
-						ret.c[i] = std::numeric_limits<T>::max();
-					else
-						ret.c[i] += s2.c[i];
-				return ret;
-			}
-			TextureColor<T,colorSamples> operator-(const TextureColor<T,colorSamples>  &s2) const {
-				TextureColor<T,colorSamples> ret = *this;
-				for (u_int i = 0; i < colorSamples; ++i)
-					if (c[i] < s2.c[i])
-						ret.c[i] = 0;
-					else
-						ret.c[i] -= s2.c[i];
-				return ret;
-			}
-			TextureColor<T,colorSamples> operator/(const TextureColor<T,colorSamples>  &s2) const {
-				TextureColor<T,colorSamples> ret = *this;
-				for (u_int i = 0; i < colorSamples; ++i)
-					ret.c[i] /= s2.c[i];
-				return ret;
-			}
-			TextureColor<T,colorSamples> operator*(const TextureColor<T,colorSamples> &sp) const {
-				TextureColor<T,colorSamples> ret = *this;
-				for (u_int i = 0; i < colorSamples; ++i)
-					if (ret.c[i] * sp.c[i] > std::numeric_limits<T>::max())
-						ret.c[i] = std::numeric_limits<T>::max();
-					else
-						ret.c[i] *= sp.c[i];
-				return ret;
-			}
-			TextureColor<T,colorSamples> &operator*=(const TextureColor<T,colorSamples> &sp) {
-				for (u_int i = 0; i < colorSamples; ++i)
-				if (c[i] * sp.c[i] > std::numeric_limits<T>::max())
-					c[i] = std::numeric_limits<T>::max();
-				else
-					c[i] *= sp.c[i];
-				return *this;
-			}
-			TextureColor<T,colorSamples> operator*(float a) const {
-				TextureColor<T,colorSamples> ret = *this;
-				for (u_int i = 0; i < colorSamples; ++i)
-					if (a*ret.c[i] > std::numeric_limits<T>::max())
-						ret.c[i] = std::numeric_limits<T>::max();
-					else
-						ret.c[i] = a * ret.c[i];
-				return ret;
-			}
-			TextureColor<T, colorSamples> &operator*=(float a) {
-				for (u_int i = 0; i < colorSamples; ++i)
-					if (a*c[i] > std::numeric_limits<T>::max())
-						c[i] = std::numeric_limits<T>::max();
-					else
-						c[i] *= a;
-				return *this;
-			}
-			friend inline
-			TextureColor<T,colorSamples> operator*(float a, const TextureColor<T,colorSamples> &s) {
-				return s * a;
-			}
-			TextureColor<T,colorSamples> operator/(float a) const {
-				return *this * (1.f / a);
-			}
-			TextureColor<T,colorSamples> &operator/=(float a) {
-				const float inv = 1.f / a;
-				for (u_int i = 0; i < colorSamples; ++i)
-					c[i] *= inv;
-				return *this;
-			}
-			void AddWeighted(float w, const TextureColor<T,colorSamples> &s) {
-				for (u_int i = 0; i < colorSamples; ++i)
-					c[i] += w * s.c[i];
-			}
-			bool operator==(const TextureColor<T,colorSamples> &sp) const {
-				for (u_int i = 0; i < colorSamples; ++i)
-					if (c[i] != sp.c[i]) return false;
-				return true;
-			}
-			bool operator!=(const TextureColor<T,colorSamples> &sp) const {
-				return !(*this == sp);
-			}
-			TextureColor<T,colorSamples> operator-() const {
-				TextureColor<T,colorSamples> ret;
-				for (u_int i = 0; i < colorSamples; ++i)
-					ret.c[i] = -c[i];
-				return ret;
-			}
-			TextureColor<T,colorSamples> Clamp(float low = 0.f,
-						   float high = INFINITY) const {
-				TextureColor<T,colorSamples> ret;
-				for (u_int i = 0; i < colorSamples; ++i)
-					ret.c[i] = ::Clamp<float>(c[i], low, high);
-				return ret;
-			}
-			// Color Public Data
-			T c[colorSamples];
-		};
+class TextureColorBase
+{
+public:
+	TextureColorBase() { }
+	virtual ~TextureColorBase() { }
+
+	virtual SWCSpectrum GetSpectrum(const TsPack *tspack) const = 0;
+	virtual float GetFloat(Channel channel) const = 0;
+};
+
+template <class T, u_int colorSamples> class TextureColor : public TextureColorBase {
+	friend class boost::serialization::access;
+public:
+	TextureColor(T v = 0) {
+		for (u_int i = 0; i < colorSamples; ++i)
+			c[i] = v;
+	}
+	TextureColor(T cs[colorSamples]) {
+		for (u_int i = 0; i < colorSamples; ++i)
+			c[i] = cs[i];
+	}
+	virtual ~TextureColor() { }
+
+	virtual SWCSpectrum GetSpectrum(const TsPack *tspack) const;
+	virtual float GetFloat(Channel channel) const;
+
+	TextureColor<T, colorSamples> &operator+=(const TextureColor<T, colorSamples> &s2) {
+		for (u_int i = 0; i < colorSamples; ++i)
+			c[i] += min<T>(s2.c[i],
+				std::numeric_limits<T>::max() - c[i]);
+		return *this;
+	}
+	TextureColor<T, colorSamples> &operator-=(const TextureColor<T, colorSamples> &s2) {
+		for (u_int i = 0; i < colorSamples; ++i)
+			c[i] -= min<T>(s2.c[i],
+				c[i] - std::numeric_limits<T>::min());
+		return *this;
+	}
+	TextureColor<T, colorSamples> operator+(const TextureColor<T, colorSamples> &s2) const {
+		TextureColor<T, colorSamples> ret = *this;
+		ret += s2;
+		return ret;
+	}
+	TextureColor<T, colorSamples> operator-(const TextureColor<T, colorSamples> &s2) const {
+		TextureColor<T, colorSamples> ret = *this;
+		ret -= s2;
+		return ret;
+	}
+	TextureColor<T, colorSamples> operator/(const TextureColor<T, colorSamples> &s2) const {
+		TextureColor<T, colorSamples> ret = *this;
+		for (u_int i = 0; i < colorSamples; ++i)
+			ret.c[i] /= s2.c[i];
+		return ret;
+	}
+	TextureColor<T, colorSamples> operator*(const TextureColor<T, colorSamples> &sp) const {
+		TextureColor<T, colorSamples> ret = *this;
+		ret *= sp;
+		return ret;
+	}
+	TextureColor<T, colorSamples> &operator*=(const TextureColor<T, colorSamples> &sp) {
+		for (u_int i = 0; i < colorSamples; ++i)
+			if (sp.c[i] > std::numeric_limits<T>::max() / c[i])
+				c[i] = std::numeric_limits<T>::max();
+			else
+				c[i] *= sp.c[i];
+		return *this;
+	}
+	TextureColor<T, colorSamples> operator*(float a) const {
+		return *this * TextureColor<T, colorSamples>(a);
+	}
+	TextureColor<T, colorSamples> &operator*=(float a) {
+		return *this *= TextureColor<T, colorSamples>(a);
+	}
+	friend inline TextureColor<T, colorSamples> operator*(float a, const TextureColor<T, colorSamples> &s) {
+		return s * a;
+	}
+	TextureColor<T,colorSamples> operator/(float a) const {
+		return *this * (1.f / a);
+	}
+	TextureColor<T,colorSamples> &operator/=(float a) {
+		return *this *= 1.f / a;
+	}
+	void AddWeighted(float w, const TextureColor<T, colorSamples> &s) {
+		*this += s * w;
+	}
+	bool operator==(const TextureColor<T, colorSamples> &sp) const {
+		for (u_int i = 0; i < colorSamples; ++i)
+			if (c[i] != sp.c[i])
+				return false;
+		return true;
+	}
+	bool operator!=(const TextureColor<T,colorSamples> &sp) const {
+		for (u_int i = 0; i < colorSamples; ++i)
+			if (c[i] == sp.c[i])
+				return false;
+		return true;
+	}
+	TextureColor<T, colorSamples> operator-() const {
+		TextureColor<T, colorSamples> ret;
+		for (u_int i = 0; i < colorSamples; ++i)
+			ret.c[i] = -c[i];
+		return ret;
+	}
+	TextureColor<T, colorSamples> Clamp(float low = 0.f,
+		float high = INFINITY) const {
+		TextureColor<T, colorSamples> ret;
+		for (u_int i = 0; i < colorSamples; ++i)
+			ret.c[i] = ::Clamp<float>(c[i], low, high);
+		return ret;
+	}
+	// Color Public Data
+	T c[colorSamples];
+};
+
+// Specializations
+// unsigned char
+template<> inline SWCSpectrum TextureColor<unsigned char, 1>::GetSpectrum(const TsPack *tspack) const {
+	const float norm = 1.f / std::numeric_limits<unsigned char>::max();
+	return SWCSpectrum(c[0] * norm);
+}
+template<> inline float TextureColor<unsigned char, 1>::GetFloat(Channel channel) const {
+	const float norm = 1.f / std::numeric_limits<unsigned char>::max();
+	return c[0] * norm;
+}
+template<> inline SWCSpectrum TextureColor<unsigned char, 3>::GetSpectrum(const TsPack *tspack) const {
+	const float norm = 1.f / std::numeric_limits<unsigned char>::max();
+	return SWCSpectrum(tspack,
+		RGBColor(c[0], c[1], c[2]) * norm);
+}
+template<> inline float TextureColor<unsigned char, 3>::GetFloat(Channel channel) const {
+	const float norm = 1.f / std::numeric_limits<unsigned char>::max();
+	switch (channel) {
+		case CHANNEL_RED:
+			return c[0] * norm;
+		case CHANNEL_GREEN:
+			return c[1] * norm;
+		case CHANNEL_BLUE:
+			return c[2] * norm;
+		case CHANNEL_ALPHA:
+			return 1.f;
+		case CHANNEL_MEAN:
+			return RGBColor(c[0], c[1], c[2]).Filter() * norm;
+		case CHANNEL_WMEAN:
+			return RGBColor(c[0], c[1], c[2]).Y() * norm;
+	}
+	return 1.f;
+}
+template<> inline SWCSpectrum TextureColor<unsigned char, 4>::GetSpectrum(const TsPack *tspack) const {
+	const float norm = 1.f / std::numeric_limits<unsigned char>::max();
+	return SWCSpectrum(tspack,
+		RGBColor(c[0], c[1], c[2]) * norm);
+}
+template<> inline float TextureColor<unsigned char, 4>::GetFloat(Channel channel) const {
+	const float norm = 1.f / std::numeric_limits<unsigned char>::max();
+	switch (channel) {
+		case CHANNEL_RED:
+			return c[0] * norm;
+		case CHANNEL_GREEN:
+			return c[1] * norm;
+		case CHANNEL_BLUE:
+			return c[2] * norm;
+		case CHANNEL_ALPHA:
+			return c[3] * norm;
+		case CHANNEL_MEAN:
+			return RGBColor(c[0], c[1], c[2]).Filter() * norm;
+		case CHANNEL_WMEAN:
+			return RGBColor(c[0], c[1], c[2]).Y() * norm;
+	}
+	return 1.f;
+}
+
+// unsigned short
+template<> inline SWCSpectrum TextureColor<unsigned short, 1>::GetSpectrum(const TsPack *tspack) const {
+	const float norm = 1.f / std::numeric_limits<unsigned short>::max();
+	return SWCSpectrum(c[0] * norm);
+}
+template<> inline float TextureColor<unsigned short, 1>::GetFloat(Channel channel) const {
+	const float norm = 1.f / std::numeric_limits<unsigned short>::max();
+	return c[0] * norm;
+}
+template<> inline SWCSpectrum TextureColor<unsigned short, 3>::GetSpectrum(const TsPack *tspack) const {
+	const float norm = 1.f / std::numeric_limits<unsigned short>::max();
+	return SWCSpectrum(tspack, RGBColor(c[0], c[1], c[2]) * norm);
+}
+template<> inline float TextureColor<unsigned short, 3>::GetFloat(Channel channel) const {
+	const float norm = 1.f / std::numeric_limits<unsigned short>::max();
+	switch (channel) {
+		case CHANNEL_RED:
+			return c[0] * norm;
+		case CHANNEL_GREEN:
+			return c[1] * norm;
+		case CHANNEL_BLUE:
+			return c[2] * norm;
+		case CHANNEL_ALPHA:
+			return 1.f;
+		case CHANNEL_MEAN:
+			return RGBColor(c[0], c[1], c[2]).Filter() * norm;
+		case CHANNEL_WMEAN:
+			return RGBColor(c[0], c[1], c[2]).Y() * norm;
+	}
+	return 1.f;
+}
+template<> inline SWCSpectrum TextureColor<unsigned short, 4>::GetSpectrum(const TsPack *tspack) const {
+	const float norm = 1.f / std::numeric_limits<unsigned short>::max();
+	return SWCSpectrum(tspack, RGBColor(c[0], c[1], c[2]) * norm);
+}
+template<> inline float TextureColor<unsigned short, 4>::GetFloat(Channel channel) const {
+	const float norm = 1.f / std::numeric_limits<unsigned short>::max();
+	switch (channel) {
+		case CHANNEL_RED:
+			return c[0] * norm;
+		case CHANNEL_GREEN:
+			return c[1] * norm;
+		case CHANNEL_BLUE:
+			return c[2] * norm;
+		case CHANNEL_ALPHA:
+			return c[3] * norm;
+		case CHANNEL_MEAN:
+			return RGBColor(c[0], c[1], c[2]).Filter() * norm;
+		case CHANNEL_WMEAN:
+			return RGBColor(c[0], c[1], c[2]).Y() * norm;
+	}
+	return 1.f;
+}
+
+// float
+template<> inline SWCSpectrum TextureColor<float, 1>::GetSpectrum(const TsPack *tspack) const {
+	return SWCSpectrum(c[0]);
+}
+template<> inline float TextureColor<float, 1>::GetFloat(Channel channel) const {
+	return c[0];
+}
+template<> inline SWCSpectrum TextureColor<float, 3>::GetSpectrum(const TsPack *tspack) const {
+	return SWCSpectrum(tspack, RGBColor(c[0], c[1], c[2]));
+}
+template<> inline float TextureColor<float, 3>::GetFloat(Channel channel) const {
+	switch (channel) {
+		case CHANNEL_RED:
+			return c[0];
+		case CHANNEL_GREEN:
+			return c[1];
+		case CHANNEL_BLUE:
+			return c[2];
+		case CHANNEL_ALPHA:
+			return 1.f;
+		case CHANNEL_MEAN:
+			return RGBColor(c[0], c[1], c[2]).Filter();
+		case CHANNEL_WMEAN:
+			return RGBColor(c[0], c[1], c[2]).Y();
+	}
+	return 1.f;
+}
+template<> inline SWCSpectrum TextureColor<float, 4>::GetSpectrum(const TsPack *tspack) const {
+	return SWCSpectrum(tspack, RGBColor(c[0], c[1], c[2]));
+}
+template<> inline float TextureColor<float, 4>::GetFloat(Channel channel) const {
+	switch (channel) {
+		case CHANNEL_RED:
+			return c[0];
+		case CHANNEL_GREEN:
+			return c[1];
+		case CHANNEL_BLUE:
+			return c[2];
+		case CHANNEL_ALPHA:
+			return c[3];
+		case CHANNEL_MEAN:
+			return RGBColor(c[0], c[1], c[2]).Filter();
+		case CHANNEL_WMEAN:
+			return RGBColor(c[0], c[1], c[2]).Y();
+	}
+	return 1.f;
+}
+
 }
 #endif // LUX_COLORBASE_H

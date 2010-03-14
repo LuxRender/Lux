@@ -49,9 +49,25 @@ public:
 
 	virtual float Evaluate(const TsPack *tspack,
 		const DifferentialGeometry &dg) const {
-		Vector dpdx, dpdy;
-		const Point P = mapping.Map(dg, &dpdx, &dpdy);
+		const Point P = mapping.Map(dg);
+		const float t1 = tex1->Evaluate(tspack, dg);
+		const float t2 = tex2->Evaluate(tspack, dg);
 
+		return Lerp(GetF(P), t1, t2);
+	}
+	virtual float Y() const { return (tex1->Y() + tex2->Y()) * .5f; }
+	virtual float Filter() const {
+		return (tex1->Filter() + tex2->Filter()) * .5f;
+	}
+	virtual void GetDuv(const TsPack *tspack, const DifferentialGeometry &dg,
+		float delta, float *du, float *dv) const;
+	virtual void SetIlluminant() {
+		// Update sub-textures
+		tex1->SetIlluminant();
+		tex2->SetIlluminant();
+	}
+protected:
+	float GetF(const Point &P) const {
 		blender::TexResult texres;
 		const int resultType = multitex(&tex, &P.x, &texres);
 
@@ -59,20 +75,8 @@ public:
 			texres.tin = min(0.35f * texres.tr + 0.45f * texres.tg +
 				0.2f * texres.tb, 1.f); // values are already >0
 
-		const float t1 = tex1->Evaluate(tspack, dg);
-		const float t2 = tex2->Evaluate(tspack, dg);
-		return Lerp(Clamp(texres.tin, 0.f, 1.f), t1, t2);
+		return texres.tin;
 	}
-	virtual float Y() const { return (tex1->Y() + tex2->Y()) * .5f; }
-	virtual float Filter() const {
-		return (tex1->Filter() + tex2->Filter()) * .5f;
-	}
-	virtual void SetIlluminant() {
-		// Update sub-textures
-		tex1->SetIlluminant();
-		tex2->SetIlluminant();
-	}
-protected:
 	static short GetBlendType(const string &name);
 	static short GetCloudType(const string &name);
 	static short GetMarbleType(const string &name);

@@ -45,8 +45,23 @@ public:
 		float amt = amount->Evaluate(tspack, dg);
 		return Lerp(amt, t1, t2);
 	}
-	virtual float Y() const { return Lerp(amount->Y(), tex1->Y(), tex2->Y()); }
-	virtual float Filter() const { return Lerp(amount->Y(), tex1->Filter(), tex2->Filter()); }
+	virtual float Y() const { return Lerp(amount->Y(), tex1->Y(),
+		tex2->Y()); }
+	virtual float Filter() const { return Lerp(amount->Y(), tex1->Filter(),
+		tex2->Filter()); }
+	virtual void GetDuv(const TsPack *tspack,
+		const DifferentialGeometry &dg, float delta,
+		float *du, float *dv) const {
+		float dua, dva, du1, dv1, du2, dv2;
+		amount->GetDuv(tspack, dg, delta, &dua, &dva);
+		tex1->GetDuv(tspack, dg, delta, &du1, &dv1);
+		tex2->GetDuv(tspack, dg, delta, &du2, &dv2);
+		float a = amount->Evaluate(tspack, dg);
+		float d = tex2->EvalFloat(tspack, dg) -
+			tex1->EvalFloat(tspack, dg);
+		*du = Lerp(a, du1, du2) + d * dua;
+		*dv = Lerp(a, dv1, dv2) + d * dva;
+	}
 	virtual void SetIlluminant() {
 		// Update sub-textures
 		tex1->SetIlluminant();

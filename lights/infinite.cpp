@@ -49,8 +49,7 @@ public:
 		Vector wh = Normalize(WorldToLight(-w));
 		float s, t, dummy;
 		light.mapping->Map(wh, &s, &t, &dummy);
-		*f += SWCSpectrum(tspack, light.radianceMap->Lookup(s, t)) *
-			INV_PI;
+		*f += light.radianceMap->LookupSpectrum(tspack, s, t) * INV_PI;
 	}
 private:
 	const InfiniteAreaLight &light;
@@ -83,8 +82,8 @@ public:
 			Vector wh = Normalize(WorldToLight(-wiW));
 			float s, t, dummy;
 			light.mapping->Map(wh, &s, &t, &dummy);
-			*f = SWCSpectrum(tspack,
-				light.radianceMap->Lookup(s, t)) * INV_PI;
+			*f = light.radianceMap->LookupSpectrum(tspack, s, t) *
+				INV_PI;
 		} else
 			*f = SWCSpectrum(INV_PI);
 		wi->x = Dot(wiW, X);
@@ -120,8 +119,7 @@ public:
 		const Vector wh = Normalize(WorldToLight(-w));
 		float s, t, dummy;
 		light.mapping->Map(wh, &s, &t, &dummy);
-		*f += SWCSpectrum(tspack, light.radianceMap->Lookup(s, t)) *
-			INV_PI;
+		*f += light.radianceMap->LookupSpectrum(tspack, s, t) * INV_PI;
 	}
 	virtual float Pdf(const TsPack *tspack, const Vector &wi,
 		const Vector &wo) const {
@@ -169,8 +167,8 @@ InfiniteAreaLight::InfiniteAreaLight(const Transform &light2world,
 	if (texmap != "") {
 		auto_ptr<ImageData> imgdata(ReadImage(texmap));
 		if (imgdata.get() != NULL) {
-			radianceMap = imgdata->createMIPMap<RGBColor>(BILINEAR,
-				8.f, TEXTURE_REPEAT, 1.f, gamma);
+			radianceMap = imgdata->createMIPMap(BILINEAR, 8.f,
+				TEXTURE_REPEAT, 1.f, gamma);
 		} else
 			radianceMap = NULL;
 	}
@@ -184,7 +182,7 @@ float InfiniteAreaLight::Power(const Scene *scene) const
 // FIXME - adjust according to portals
 	float power = SPDbase.Y() * M_PI * worldRadius * worldRadius;
 	if (radianceMap != NULL)
-		power *= radianceMap->Lookup(.5f, .5f, .5f).Filter();
+		power *= radianceMap->LookupFloat(CHANNEL_MEAN, .5f, .5f, .5f);
 	return power;
 }
 
@@ -197,7 +195,7 @@ SWCSpectrum InfiniteAreaLight::Le(const TsPack *tspack,
 		float s, t, dummy;
 		mapping->Map(wh, &s, &t, &dummy);
 		return SWCSpectrum(tspack, SPDbase) *
-			SWCSpectrum(tspack, radianceMap->Lookup(s, t));
+			radianceMap->LookupSpectrum(tspack, s, t);
 	} else
 		return SWCSpectrum(tspack, SPDbase);
 }
@@ -263,7 +261,7 @@ SWCSpectrum InfiniteAreaLight::Le(const TsPack *tspack, const Scene *scene,
 		float s, t, dummy;
 		mapping->Map(wh, &s, &t, &dummy);
 		return SWCSpectrum(tspack, SPDbase) *
-			SWCSpectrum(tspack, radianceMap->Lookup(s, t));
+			radianceMap->LookupSpectrum(tspack, s, t);
 	} else
 		return SWCSpectrum(tspack, SPDbase);
 }

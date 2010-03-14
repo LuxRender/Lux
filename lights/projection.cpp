@@ -25,6 +25,7 @@
 #include "imagereader.h"
 #include "bxdf.h"
 #include "mc.h"
+#include "color.h"
 #include "paramset.h"
 #include "dynload.h"
 #include "epsilon.h"
@@ -34,7 +35,7 @@ using namespace lux;
 class ProjectionBxDF : public BxDF
 {
 public:
-	ProjectionBxDF(float A, const MIPMap<RGBColor> *map,
+	ProjectionBxDF(float A, const MIPMap *map,
 		const Transform &proj, float xS, float xE, float yS, float yE) :
 		BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)),
 		xStart(xS), xEnd(xE), yStart(yS), yEnd(yE), Area(A),
@@ -55,7 +56,7 @@ public:
 			const float s = (p0.x - xStart) / (xEnd - xStart);
 			const float t = (p0.y - yStart) / (yEnd - yStart);
 			f->AddWeighted(1.f / (Area * cos2 * cos2),
-				SWCSpectrum(tspack, projectionMap->Lookup(s, t)));
+				projectionMap->LookupSpectrum(tspack, s, t));
 		}
 	}
 	virtual bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi, float u1, float u2,
@@ -71,7 +72,7 @@ public:
 		if (!projectionMap)
 			*f = SWCSpectrum(1.f / (Area * cos2 * cos2));
 		else
-			*f = SWCSpectrum(tspack, projectionMap->Lookup(u1, u2)) /
+			*f = projectionMap->LookupSpectrum(tspack, u1, u2) /
 				(Area * cos2 * cos2);
 		return true;
 	}
@@ -90,12 +91,11 @@ public:
 private:
 	float xStart, xEnd, yStart, yEnd, Area;
 	const Transform &Projection;
-	const MIPMap<RGBColor> *projectionMap;
+	const MIPMap *projectionMap;
 };
 
 // ProjectionLight Method Definitions
-ProjectionLight::
-	ProjectionLight(const Transform &light2world,
+ProjectionLight::ProjectionLight(const Transform &light2world,
 		const boost::shared_ptr< Texture<SWCSpectrum> > &L, 
 		float g, const string &texname,
 		float fov)
@@ -109,9 +109,8 @@ ProjectionLight::
 	if (imgdata.get()!=NULL) {
 		width=imgdata->getWidth();
 		height=imgdata->getHeight();
-		projectionMap =imgdata->createMIPMap<RGBColor>();
-	}
-	else 
+		projectionMap =imgdata->createMIPMap();
+	} else 
 		projectionMap = NULL;
 
 	// Initialize _ProjectionLight_ projection matrix
@@ -134,18 +133,22 @@ ProjectionLight::
 	area = 4.f * opposite * opposite / aspect;
 }
 ProjectionLight::~ProjectionLight() { delete projectionMap; }
-RGBColor ProjectionLight::Projection(const Vector &w) const {
+SWCSpectrum ProjectionLight::Projection(const TsPack *tspack,
+	const Vector &w) const
+{
 	Vector wl = WorldToLight(w);
 	// Discard directions behind projection light
-	if (wl.z < hither) return 0.;
+	if (wl.z < hither) return SWCSpectrum(0.f);
 	// Project point on to projection plane and compute light
 	Point Pl = lightProjection(Point(wl.x, wl.y, wl.z));
 	if (Pl.x < screenX0 || Pl.x > screenX1 ||
-		Pl.y < screenY0 || Pl.y > screenY1) return 0.;
-	if (!projectionMap) return 1;
+		Pl.y < screenY0 || Pl.y > screenY1)
+		return SWCSpectrum(0.f);
+	if (!projectionMap)
+		return SWCSpectrum(1.f);
 	float s = (Pl.x - screenX0) / (screenX1 - screenX0);
 	float t = (Pl.y - screenY0) / (screenY1 - screenY0);
-	return projectionMap->Lookup(s, t);
+	return projectionMap->LookupSpectrum(tspack, s, t);
 }
 SWCSpectrum ProjectionLight::Sample_L(const TsPack *tspack, const Point &p, float u1, float u2,
 		float u3, Vector *wi, float *pdf,
@@ -153,7 +156,7 @@ SWCSpectrum ProjectionLight::Sample_L(const TsPack *tspack, const Point &p, floa
 	*wi = Normalize(lightPos - p);
 	*pdf = 1.f;
 	visibility->SetSegment(p, lightPos, tspack->time);
-	return Lbase->Evaluate(tspack, dummydg) * gain * SWCSpectrum(tspack, Projection(-*wi)) / DistanceSquared(lightPos, p);
+	return Lbase->Evaluate(tspack, dummydg) * gain * Projection(tspack, -*wi) / DistanceSquared(lightPos, p);
 }
 SWCSpectrum ProjectionLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2,
 		float u3, float u4, Ray *ray, float *pdf) const {
@@ -161,10 +164,10 @@ SWCSpectrum ProjectionLight::Sample_L(const TsPack *tspack, const Scene *scene, 
 	Vector v = UniformSampleCone(u1, u2, cosTotalWidth);
 	ray->d = LightToWorld(v);
 	*pdf = UniformConePdf(cosTotalWidth);
-	return Lbase->Evaluate(tspack, dummydg) * gain * SWCSpectrum(tspack, Projection(ray->d));
+	return Lbase->Evaluate(tspack, dummydg) * gain * Projection(tspack, ray->d);
 }
 float ProjectionLight::Pdf(const TsPack *, const Point &, const Vector &) const {
-	return 0.;
+	return 0.f;
 }
 float ProjectionLight::Pdf(const TsPack *tspack, const Point &p, const Normal &n,
 	const Point &po, const Normal &ns) const

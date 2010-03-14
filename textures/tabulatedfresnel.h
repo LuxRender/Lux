@@ -50,6 +50,9 @@ public:
 			SWCSpectrum(tspack, K));
 	}
 	virtual float Y() const { return index; }
+	virtual void GetDuv(const TsPack *tspack,
+		const DifferentialGeometry &dg, float delta,
+		float *du, float *dv) const { *du = *dv = 0.f; }
 
 private:
 	IrregularSPD N, K;

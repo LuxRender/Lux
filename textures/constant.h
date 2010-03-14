@@ -42,6 +42,9 @@ public:
 		return value;
 	}
 	virtual float Y() const { return value; }
+	virtual void GetDuv(const TsPack *tspack,
+		const DifferentialGeometry &dg, float delta,
+		float *du, float *dv) const { *du = *dv = 0.f; }
 private:
 	float value;
 };
@@ -59,6 +62,9 @@ public:
 	}
 	virtual float Y() const { return RGBSPD->Y(); }
 	virtual float Filter() const { return RGBSPD->Filter(); }
+	virtual void GetDuv(const TsPack *tspack,
+		const DifferentialGeometry &dg, float delta,
+		float *du, float *dv) const { *du = *dv = 0.f; }
 	virtual void SetIlluminant() {
 		delete RGBSPD;
 		RGBSPD = new RGBIllumSPD(color);
@@ -79,6 +85,9 @@ public:
 		return &value;
 	}
 	virtual float Y() const { return val; }
+	virtual void GetDuv(const TsPack *tspack,
+		const DifferentialGeometry &dg, float delta,
+		float *du, float *dv) const { *du = *dv = 0.f; }
 private:
 	FresnelDielectric value;
 	float val;

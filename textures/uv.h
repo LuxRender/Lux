@@ -43,19 +43,24 @@ public:
 		delete mapping;
 	}
 	virtual SWCSpectrum Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
-		float s, t, dsdx, dtdx, dsdy, dtdy;
-		mapping->Map(dg, &s, &t, &dsdx, &dtdx, &dsdy, &dtdy);
-		float cs[COLOR_SAMPLES];
-		memset(cs, 0, COLOR_SAMPLES * sizeof(float));
-		cs[0] = s - Floor2Int(s);
-		cs[1] = t - Floor2Int(t);
+		float s, t;
+		mapping->Map(dg, &s, &t);
+		const float cs[COLOR_SAMPLES] = { s - Floor2Int(s), t - Floor2Int(t), 0.f };
 		return SWCSpectrum(tspack, RGBColor(cs));
 	}
 	virtual float Y() const {
-		const float cs[COLOR_SAMPLES] = {1.f, 1.f, 0.f};
-		return RGBColor(cs).Y() / 2.f;
+		const float cs[COLOR_SAMPLES] = {.5f, .5f, 0.f};
+		return RGBColor(cs).Y();
 	}
 	virtual float Filter() const { return 2.f / 3.f; }
+	virtual void GetDuv(const TsPack *tspack,
+		const DifferentialGeometry &dg, float delta,
+		float *du, float *dv) const {
+		float s, t, dsdu, dtdu, dsdv, dtdv;
+		mapping->MapDuv(dg, &s, &t, &dsdu, &dtdu, &dsdv, &dtdv);
+		*du = dsdu + dtdu;
+		*dv = dsdv + dtdv;
+	}
 	
 	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const ParamSet &tp);
 private:
