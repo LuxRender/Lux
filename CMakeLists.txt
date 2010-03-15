@@ -602,6 +602,7 @@ SET(lux_uniform_textures_src
 	textures/irregulardata.cpp
 	textures/lampspectrum.cpp
 	textures/regulardata.cpp
+	textures/tabulateddata.cpp
 	)
 SET(lux_fresnel_textures_src
 	textures/cauchytexture.cpp
