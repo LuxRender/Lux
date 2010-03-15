@@ -144,7 +144,7 @@ void SphericalMapping2D::MapDuv(const DifferentialGeometry &dg,
 void CylindricalMapping2D::Map(const DifferentialGeometry &dg,
 	float *s, float *t) const
 {
-	const Vector p(Normalize(Vector(WorldToTexture(p))));
+	const Vector p(Normalize(Vector(WorldToTexture(dg.p))));
 	*s = .5f + atan2f(p.y, p.x) * INV_TWOPI;
 	*t = p.z;
 }
@@ -152,7 +152,7 @@ void CylindricalMapping2D::MapDxy(const DifferentialGeometry &dg,
 	float *s, float *t,
 	float *dsdx, float *dtdx, float *dsdy, float *dtdy) const
 {
-	const Vector p(Normalize(Vector(WorldToTexture(p))));
+	const Vector p(Normalize(Vector(WorldToTexture(dg.p))));
 	*s = .5f + atan2f(p.y, p.x) * INV_TWOPI;
 	*t = p.z;
 	// Compute texture coordinate differentials for cylinder $(u,v)$ mapping
@@ -168,7 +168,7 @@ void CylindricalMapping2D::MapDuv(const DifferentialGeometry &dg,
 	float *s, float *t,
 	float *dsdu, float *dtdu, float *dsdv, float *dtdv) const
 {
-	const Vector p(Normalize(Vector(WorldToTexture(p))));
+	const Vector p(Normalize(Vector(WorldToTexture(dg.p))));
 	*s = .5f + atan2f(p.y, p.x) * INV_TWOPI;
 	*t = p.z;
 	// Compute texture coordinate differentials for cylinder $(u,v)$ mapping
