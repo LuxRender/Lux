@@ -985,6 +985,32 @@ public:
 		return (gain * MIPMapFastImpl<T>::LookupSpectrum(tspack, s, t,
 			ds0, dt0, ds1, dt1)).Pow(gamma);
 	}
+	virtual void GetDifferentials(Channel channel, float s, float t,
+		float *ds, float *dt) const {
+		MIPMapFastImpl<T>::GetDifferentials(channel, s, t, ds, dt);
+		*ds *= gain;
+		*dt *= gain;
+		if (gamma != 1.f) {
+			const float factor = gamma *
+				powf(MIPMapFastImpl<T>::LookupFloat(channel,
+					s, t), gamma - 1.f);
+			*ds *= factor;
+			*dt *= factor;
+		}
+	}
+	virtual void GetDifferentials(const TsPack *tspack, float s, float t,
+		float *ds, float *dt) const {
+		MIPMapFastImpl<T>::GetDifferentials(tspack, s, t, ds, dt);
+		*ds *= gain;
+		*dt *= gain;
+		if (gamma != 1.f) {
+			const float factor = gamma *
+				powf(MIPMapFastImpl<T>::LookupFloat(CHANNEL_MEAN,
+					s, t), gamma - 1.f);
+			*ds *= factor;
+			*dt *= factor;
+		}
+	}
 private:
 	float gain, gamma;
 };
