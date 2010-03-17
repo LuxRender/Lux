@@ -205,7 +205,7 @@ Camera* RealisticCamera::CreateCamera(const Transform &world2camStart, const Tra
 	if (shutterdistribution == "uniform") shutterdist = 0;
 	else if (shutterdistribution == "gaussian") shutterdist = 1;
 	else {
-		LOG(LUX_WARNING,LUX_BADTOKEN)<<"Distribution  '"<<shutterdistribution<<"' for perspective camera shutter sampling unknown. Using \"uniform\".";
+		LOG(LUX_WARNING,LUX_BADTOKEN)<<"Distribution  '"<<shutterdistribution<<"' for realistic camera shutter sampling unknown. Using \"uniform\".";
 		shutterdist = 0;
 	}
 
