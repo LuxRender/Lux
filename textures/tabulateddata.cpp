@@ -63,37 +63,18 @@ Texture<SWCSpectrum> *TabulatedDataTexture::CreateSWCSpectrumTexture(const Trans
 	// resampling resolution in nm
 	const float resolution = tp.FindOneFloat("resolution", 5);
 
-	const string wlunit = tp.FindOneString("wlunit", "nm");	
+	boost::smatch m;
+
+	// wavelength: <unit> data: <tag>
+	boost::regex header_expr("wavelength:\\s*(eV|um|cm-1|nm)(\\s*[,;]\\s*|\\s+)data:\\s*(\\S+)");
+
+	// two floats separated by whitespace, comma or semicolon
+	boost::regex sample_expr("\\s*(\\d*\\.?\\d+(?:[eE]-?\\d+)?)(\\s*[,;]\\s*|\\s+)(-?\\d*\\.?\\d+(?:[eE]-?\\d+)?)");
+
 
 	// used to convert file units to wavelength in nm
 	float (*tolambda)(float) = NULL;
 
-	if (wlunit == "eV") {
-		// lambda in eV
-		// low eV -> high lambda
-		tolambda = &eVtolambda;
-	} else if (wlunit == "um") {
-		// lambda in um
-		tolambda = &umtolambda;
-	} else if (wlunit == "cm-1") {
-		// lambda in cm-1
-		tolambda = &invcmtolambda;
-	} else if (wlunit == "nm") {
-		// lambda in nm
-		tolambda = &nmtolambda;
-	} else {
-		LOG(LUX_ERROR, LUX_SYNTAX) << "Unknown wavelength unit '" <<
-			wlunit << "', assuming nm.";
-		tolambda = &nmtolambda;
-	}
-
-	//float lambda_start = tp.FindOneFloat("start", 380.f);
-	//float lambda_end = tp.FindOneFloat("end", 720.f);
-
-	boost::smatch m;
-
-	// two floats separated by whitespace, comma or semicolon
-	boost::regex sample_expr("\\s*(\\d*\\.?\\d+)(\\s*[,;]\\s*|\\s+)(\\d*\\.?\\d+)");
 
 	vector<float> wl;
 	vector<float> data;
@@ -103,16 +84,50 @@ Texture<SWCSpectrum> *TabulatedDataTexture::CreateSWCSpectrumTexture(const Trans
 	fs.open(filename.c_str());
 	string line;
 
+	bool parsingdata = false;
 	int n = 0;
 	while(getline(fs, line).good()) {
 
-		// ignore unparseable lines
-		if (!boost::regex_search(line, m, sample_expr)) {
+		if (!parsingdata && boost::regex_search(line, m, header_expr)) {		
+			const string wlunit = m[1];	
+			if (wlunit == "eV") {
+				// lambda in eV
+				// low eV -> high lambda
+				tolambda = &eVtolambda;
+			} else if (wlunit == "um") {
+				// lambda in um
+				tolambda = &umtolambda;
+			} else if (wlunit == "cm-1") {
+				// lambda in cm-1
+				tolambda = &invcmtolambda;
+			} else if (wlunit == "nm") {
+				// lambda in nm
+				tolambda = &nmtolambda;
+			} else {
+				LOG(LUX_ERROR, LUX_BADFILE) << "Unknown wavelength unit '" <<
+					wlunit << "', assuming nm.";
+				tolambda = &nmtolambda;
+			}
+			parsingdata = true;
 			continue;
 		}
 
-		// linearly interpolate units in file
-		// then convert to wavelength in nm
+		if (!boost::regex_search(line, m, sample_expr)) {
+			if (parsingdata)
+				break;
+			else
+				// ignore unparseable lines at start of file
+				continue;
+		}
+
+		parsingdata = true;
+		
+		if (!tolambda) {
+			// no header found
+			LOG(LUX_INFO, LUX_NOERROR) << "Unknown wavelength unit in '" << filename << "', assuming nm.";
+			tolambda = &nmtolambda;			
+		}
+
 		wl.push_back(tolambda(boost::lexical_cast<float>(m[1])));
 		data.push_back(boost::lexical_cast<float>(m[3]));
 		n++;
@@ -130,9 +145,23 @@ Texture<SWCSpectrum> *TabulatedDataTexture::CreateSWCSpectrumTexture(const Trans
 	}
 
 	// possibly reorder data so wavelength is increasing
-	if (wl[0] > wl[1]) {
+	if (wl.front() > wl.back()) {
 		std::reverse(wl.begin(), wl.end());
 		std::reverse(data.begin(), data.end());
+	}
+
+	if (wl.front() >= WAVELENGTH_END || wl.back() <= WAVELENGTH_START) {
+		LOG(LUX_ERROR, LUX_RANGE) << "Spectral data file '" << filename 
+			<< "' does not contain data in the visible spectrum (" << WAVELENGTH_START << '-' << WAVELENGTH_END << "nm)";
+		const float default_wl[] = {380.f, 720.f};
+		const float default_data[] = {1.f, 1.f};
+		return new IrregularDataTexture(2, default_wl, default_data);
+	}
+
+	if (wl.front() >= WAVELENGTH_START || wl.back() <= WAVELENGTH_END) {
+		LOG(LUX_INFO, LUX_CONSISTENCY) << "Spectral data file '" << filename 
+			<< "' does not cover the entire visible spectrum (" << WAVELENGTH_START << '-' << WAVELENGTH_END << "nm)"
+			<< ", this may yield unintented results.";
 	}
 
 	return new IrregularDataTexture(n, &wl[0], &data[0], resolution);
