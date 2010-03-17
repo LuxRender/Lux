@@ -60,9 +60,6 @@ static float nmtolambda(float nm)
 Texture<SWCSpectrum> *TabulatedDataTexture::CreateSWCSpectrumTexture(const Transform &tex2world,
 	const ParamSet &tp)
 {
-	// resampling resolution in nm
-	const float resolution = tp.FindOneFloat("resolution", 5);
-
 	boost::smatch m;
 
 	// wavelength: <unit> data: <tag>
@@ -79,7 +76,7 @@ Texture<SWCSpectrum> *TabulatedDataTexture::CreateSWCSpectrumTexture(const Trans
 	vector<float> wl;
 	vector<float> data;
 
-	const string filename = tp.FindOneString("name", "");
+	const string filename = tp.FindOneString("filename", "");
 	std::ifstream fs;
 	fs.open(filename.c_str());
 	string line;
@@ -164,7 +161,7 @@ Texture<SWCSpectrum> *TabulatedDataTexture::CreateSWCSpectrumTexture(const Trans
 			<< ", this may yield unintented results.";
 	}
 
-	return new IrregularDataTexture(n, &wl[0], &data[0], resolution);
+	return new IrregularDataTexture(n, &wl[0], &data[0]);
 }
 
 static DynamicLoader::RegisterSWCSpectrumTexture<TabulatedDataTexture> r("tabulateddata");
