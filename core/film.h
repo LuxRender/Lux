@@ -31,6 +31,7 @@
 
 #include <boost/serialization/split_member.hpp>
 #include <boost/thread/mutex.hpp>
+#include <boost/thread/xtime.hpp>
 
 namespace lux {
 
