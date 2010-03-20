@@ -21,6 +21,8 @@
  ***************************************************************************/
 
 // qbvhaccel.h*
+#ifndef LUX_QBVHACCEL_H
+#define LUX_QBVHACCEL_H
 
 #include "lux.h"
 #include "memory.h"
@@ -424,3 +426,4 @@ private:
 };
 
 } // namespace lux
+#endif //LUX_QBVHACCEL_H
