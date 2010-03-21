@@ -20,68 +20,76 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#ifndef LIGHTGROUPWIDGET_H
-#define LIGHTGROUPWIDGET_H
+#ifndef COLORSPACEWIDGET_H
+#define COLORSPACEWIDGET_H
 
 #include <QtGui/QWidget>
-#include <QtGui/QColorDialog>
+
+#define TORGB_XWHITE_RANGE 1.0f
+#define TORGB_YWHITE_RANGE 1.0f
+#define TORGB_XRED_RANGE 1.0f
+#define TORGB_YRED_RANGE 1.0f
+#define TORGB_XGREEN_RANGE 1.0f
+#define TORGB_YGREEN_RANGE 1.0f
+#define TORGB_XBLUE_RANGE 1.0f
+#define TORGB_YBLUE_RANGE 1.0f
 
 namespace Ui
 {
-	class LightGroupWidget;
+	class ColorSpaceWidget;
 }
 
-class LightGroupWidget : public QWidget
+class ColorSpaceWidget : public QWidget
 {
 	Q_OBJECT
 
 public:
 
-	LightGroupWidget(QWidget *parent = 0);
-	~LightGroupWidget();
+	ColorSpaceWidget(QWidget *parent = 0);
+	~ColorSpaceWidget();
 
-	QString GetTitle();
-	int GetIndex();
-	void SetIndex(int index);
-	void UpdateWidgetValues();
-	void ResetValues();
-	void ResetValuesFromFilm(bool useDefaults);
-	void SetWidgetsEnabled(bool enabled);
+	//void SetWidgetsEnabled(bool enabled);
+    
+	void updateWidgetValues();
+	void resetValues();
+	void resetFromFilm (bool useDefaults);
+
+	double m_TORGB_xwhite, m_TORGB_ywhite;
+	double m_TORGB_xred, m_TORGB_yred;
+	double m_TORGB_xgreen, m_TORGB_ygreen;
+	double m_TORGB_xblue, m_TORGB_yblue;
+
+private:
+
+	Ui::ColorSpaceWidget *ui;
 
 signals:
 	void valuesChanged();
 
-private:
-
-	Ui::LightGroupWidget *ui;
-	
-	QString title;
-
-	int m_Index;
-
-	bool m_LG_enable;
-	double m_LG_scale;
-	bool m_LG_temperature_enabled;
-	double m_LG_temperature;
-	bool m_LG_rgb_enabled;
-	double m_LG_scaleRed, m_LG_scaleGreen, m_LG_scaleBlue;
-	double m_LG_scaleX, m_LG_scaleY;
-
-	float SliderValToScale(int sliderval);
-	int ScaleToSliderVal(float scale);
-
 private slots:
 
-	void rgbEnabledChanged(int);
-	void bbEnabledChanged(int);
-
-	void gainChanged(int value);
-	void gainChanged(double value);
-	void colortempChanged(int value);
-	void colortempChanged(double value);
-	void colorPicker();
+	// Colorspace slots
+	void setColorSpacePreset (int choice);
+	void setWhitepointPreset (int choice);
+	void whitePointXChanged (int value);
+	void whitePointXChanged (double value);
+	void whitePointYChanged (int value);
+	void whitePointYChanged (double value);
+	
+	void redXChanged (int value);
+	void redXChanged (double value);
+	void redYChanged (int value);
+	void redYChanged (double value);
+	void blueXChanged (int value);
+	void blueXChanged (double value);
+	void blueYChanged (int value);
+	void blueYChanged (double value);
+	void greenXChanged (int value);
+	void greenXChanged (double value);
+	void greenYChanged (int value);
+	void greenYChanged (double value);
 
 };
 
-#endif // LIGHTGROUPWIDGET_H
+#endif // COLORSPACEWIDGET_H
 

@@ -20,68 +20,63 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#ifndef LIGHTGROUPWIDGET_H
-#define LIGHTGROUPWIDGET_H
+#include "ui_gamma.h"
+#include "gammawidget.hxx"
 
-#include <QtGui/QWidget>
-#include <QtGui/QColorDialog>
+#include "mainwindow.hxx"
 
-namespace Ui
-{
-	class LightGroupWidget;
+#include "api.h"
+
+template<class T> inline T Clamp(T val, T low, T high) {
+	return val > low ? (val < high ? val : high) : low;
 }
 
-class LightGroupWidget : public QWidget
+GammaWidget::GammaWidget(QWidget *parent) : QWidget(parent), ui(new Ui::GammaWidget)
 {
-	Q_OBJECT
-
-public:
-
-	LightGroupWidget(QWidget *parent = 0);
-	~LightGroupWidget();
-
-	QString GetTitle();
-	int GetIndex();
-	void SetIndex(int index);
-	void UpdateWidgetValues();
-	void ResetValues();
-	void ResetValuesFromFilm(bool useDefaults);
-	void SetWidgetsEnabled(bool enabled);
-
-signals:
-	void valuesChanged();
-
-private:
-
-	Ui::LightGroupWidget *ui;
+	ui->setupUi(this);
 	
-	QString title;
+	connect(ui->slider_gamma, SIGNAL(valueChanged(int)), this, SLOT(gammaChanged(int)));
+	connect(ui->spinBox_gamma, SIGNAL(valueChanged(double)), this, SLOT(gammaChanged(double)));
+}
 
-	int m_Index;
+GammaWidget::~GammaWidget()
+{
+}
 
-	bool m_LG_enable;
-	double m_LG_scale;
-	bool m_LG_temperature_enabled;
-	double m_LG_temperature;
-	bool m_LG_rgb_enabled;
-	double m_LG_scaleRed, m_LG_scaleGreen, m_LG_scaleBlue;
-	double m_LG_scaleX, m_LG_scaleY;
+void GammaWidget::updateWidgetValues()
+{
+	// Gamma widgets
+	updateWidgetValue(ui->slider_gamma, (int)((FLOAT_SLIDER_RES / TORGB_GAMMA_RANGE) * m_TORGB_gamma));
+	updateWidgetValue(ui->spinBox_gamma, m_TORGB_gamma);
+}
 
-	float SliderValToScale(int sliderval);
-	int ScaleToSliderVal(float scale);
+void GammaWidget::resetValues()
+{
+	m_TORGB_gamma = 2.2f;
+}
 
-private slots:
+void GammaWidget::resetFromFilm (bool useDefaults)
+{
+	m_TORGB_gamma =  retrieveParam( useDefaults, LUX_FILM, LUX_FILM_TORGB_GAMMA);
 
-	void rgbEnabledChanged(int);
-	void bbEnabledChanged(int);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_TORGB_GAMMA, m_TORGB_gamma);
+}
 
-	void gainChanged(int value);
-	void gainChanged(double value);
-	void colortempChanged(int value);
-	void colortempChanged(double value);
-	void colorPicker();
+void GammaWidget::gammaChanged (int value)
+{
+	gammaChanged ( (double)value / ( FLOAT_SLIDER_RES / TORGB_GAMMA_RANGE ) );
+}
 
-};
+void GammaWidget::gammaChanged (double value)
+{
+	m_TORGB_gamma = value;
 
-#endif // LIGHTGROUPWIDGET_H
+	int sliderval = (int)((FLOAT_SLIDER_RES / TORGB_GAMMA_RANGE) * m_TORGB_gamma);
 
+	updateWidgetValue(ui->slider_gamma, sliderval);
+	updateWidgetValue(ui->spinBox_gamma, m_TORGB_gamma);
+
+	updateParam (LUX_FILM, LUX_FILM_TORGB_GAMMA, m_TORGB_gamma);
+
+	emit valuesChanged ();
+}

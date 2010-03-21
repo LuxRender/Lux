@@ -20,68 +20,49 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#ifndef LIGHTGROUPWIDGET_H
-#define LIGHTGROUPWIDGET_H
+#ifndef GAMMAWIDGET_H
+#define GAMMAWIDGET_H
 
 #include <QtGui/QWidget>
-#include <QtGui/QColorDialog>
+
+#define TORGB_GAMMA_RANGE 5.0f
 
 namespace Ui
 {
-	class LightGroupWidget;
+	class GammaWidget;
 }
 
-class LightGroupWidget : public QWidget
+class GammaWidget : public QWidget
 {
 	Q_OBJECT
 
 public:
 
-	LightGroupWidget(QWidget *parent = 0);
-	~LightGroupWidget();
+	GammaWidget(QWidget *parent = 0);
+	~GammaWidget();
 
-	QString GetTitle();
-	int GetIndex();
-	void SetIndex(int index);
-	void UpdateWidgetValues();
-	void ResetValues();
-	void ResetValuesFromFilm(bool useDefaults);
-	void SetWidgetsEnabled(bool enabled);
+	//void SetWidgetsEnabled(bool enabled);
+    
+	void updateWidgetValues();
+	void resetValues();
+	void resetFromFilm (bool useDefaults);
+
+	bool m_Gamma_enabled;
+	double m_TORGB_gamma;
 
 signals:
 	void valuesChanged();
 
 private:
 
-	Ui::LightGroupWidget *ui;
-	
-	QString title;
-
-	int m_Index;
-
-	bool m_LG_enable;
-	double m_LG_scale;
-	bool m_LG_temperature_enabled;
-	double m_LG_temperature;
-	bool m_LG_rgb_enabled;
-	double m_LG_scaleRed, m_LG_scaleGreen, m_LG_scaleBlue;
-	double m_LG_scaleX, m_LG_scaleY;
-
-	float SliderValToScale(int sliderval);
-	int ScaleToSliderVal(float scale);
+	Ui::GammaWidget *ui;
 
 private slots:
 
-	void rgbEnabledChanged(int);
-	void bbEnabledChanged(int);
-
-	void gainChanged(int value);
-	void gainChanged(double value);
-	void colortempChanged(int value);
-	void colortempChanged(double value);
-	void colorPicker();
+	void gammaChanged (int value);
+	void gammaChanged (double value);
 
 };
 
-#endif // LIGHTGROUPWIDGET_H
+#endif // GAMMAWIDGET_H
 

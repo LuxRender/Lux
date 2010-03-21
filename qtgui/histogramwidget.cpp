@@ -20,68 +20,52 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#ifndef LIGHTGROUPWIDGET_H
-#define LIGHTGROUPWIDGET_H
+#include "ui_histogram.h"
+#include "histogramwidget.hxx"
 
-#include <QtGui/QWidget>
-#include <QtGui/QColorDialog>
+#include "mainwindow.hxx"
 
-namespace Ui
-{
-	class LightGroupWidget;
+#include "api.h"
+
+template<class T> inline T Clamp(T val, T low, T high) {
+	return val > low ? (val < high ? val : high) : low;
 }
 
-class LightGroupWidget : public QWidget
+HistogramWidget::HistogramWidget(QWidget *parent) : QWidget(parent), ui(new Ui::HistogramWidget)
 {
-	Q_OBJECT
-
-public:
-
-	LightGroupWidget(QWidget *parent = 0);
-	~LightGroupWidget();
-
-	QString GetTitle();
-	int GetIndex();
-	void SetIndex(int index);
-	void UpdateWidgetValues();
-	void ResetValues();
-	void ResetValuesFromFilm(bool useDefaults);
-	void SetWidgetsEnabled(bool enabled);
-
-signals:
-	void valuesChanged();
-
-private:
-
-	Ui::LightGroupWidget *ui;
+	ui->setupUi(this);
 	
-	QString title;
+	histogramView = new HistogramView(ui->frame_histogram);
+	ui->histogramLayout->addWidget(histogramView, 0, 0, 1, 1);
+	
+	connect(ui->comboBox_histogramChannel, SIGNAL(currentIndexChanged(int)), this, SLOT(SetOption(int)));
+	connect(ui->checkBox_histogramLog, SIGNAL(stateChanged(int)), this, SLOT(LogChanged(int)));
 
-	int m_Index;
+	histogramView->SetEnabled (true);
+	histogramView->show ();
+}
 
-	bool m_LG_enable;
-	double m_LG_scale;
-	bool m_LG_temperature_enabled;
-	double m_LG_temperature;
-	bool m_LG_rgb_enabled;
-	double m_LG_scaleRed, m_LG_scaleGreen, m_LG_scaleBlue;
-	double m_LG_scaleX, m_LG_scaleY;
+HistogramWidget::~HistogramWidget()
+{
+	delete histogramView;
+}
 
-	float SliderValToScale(int sliderval);
-	int ScaleToSliderVal(float scale);
+void HistogramWidget::Update()
+{
+	histogramView->Update ();
+}
 
-private slots:
+void HistogramWidget::SetEnabled(bool enabled)
+{
+	histogramView->SetEnabled(enabled);
+}
 
-	void rgbEnabledChanged(int);
-	void bbEnabledChanged(int);
+void HistogramWidget::SetOption(int option)
+{
+	histogramView->SetOption(option);
+}
 
-	void gainChanged(int value);
-	void gainChanged(double value);
-	void colortempChanged(int value);
-	void colortempChanged(double value);
-	void colorPicker();
-
-};
-
-#endif // LIGHTGROUPWIDGET_H
-
+void HistogramWidget::LogChanged(int value)
+{
+	histogramView->LogChanged(value);
+}

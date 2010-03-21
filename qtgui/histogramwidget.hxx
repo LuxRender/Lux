@@ -20,68 +20,41 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#ifndef LIGHTGROUPWIDGET_H
-#define LIGHTGROUPWIDGET_H
+#ifndef HISTOGRAMWIDGET_H
+#define HISTOGRAMWIDGET_H
 
 #include <QtGui/QWidget>
-#include <QtGui/QColorDialog>
+
+#include "histogramview.hxx"
 
 namespace Ui
 {
-	class LightGroupWidget;
+	class HistogramWidget;
 }
 
-class LightGroupWidget : public QWidget
+class HistogramWidget : public QWidget
 {
 	Q_OBJECT
 
 public:
 
-	LightGroupWidget(QWidget *parent = 0);
-	~LightGroupWidget();
+	HistogramWidget(QWidget *parent = 0);
+	~HistogramWidget();
 
-	QString GetTitle();
-	int GetIndex();
-	void SetIndex(int index);
-	void UpdateWidgetValues();
-	void ResetValues();
-	void ResetValuesFromFilm(bool useDefaults);
-	void SetWidgetsEnabled(bool enabled);
-
-signals:
-	void valuesChanged();
+	void Update();
+	void SetEnabled(bool enabled);
 
 private:
 
-	Ui::LightGroupWidget *ui;
-	
-	QString title;
-
-	int m_Index;
-
-	bool m_LG_enable;
-	double m_LG_scale;
-	bool m_LG_temperature_enabled;
-	double m_LG_temperature;
-	bool m_LG_rgb_enabled;
-	double m_LG_scaleRed, m_LG_scaleGreen, m_LG_scaleBlue;
-	double m_LG_scaleX, m_LG_scaleY;
-
-	float SliderValToScale(int sliderval);
-	int ScaleToSliderVal(float scale);
+	Ui::HistogramWidget *ui;
+	HistogramView *histogramView;
 
 private slots:
 
-	void rgbEnabledChanged(int);
-	void bbEnabledChanged(int);
-
-	void gainChanged(int value);
-	void gainChanged(double value);
-	void colortempChanged(int value);
-	void colortempChanged(double value);
-	void colorPicker();
+	void SetOption(int option);
+	void LogChanged(int value);
 
 };
 
-#endif // LIGHTGROUPWIDGET_H
+#endif // HISTOGRAMWIDGET_H
 

@@ -1,0 +1,357 @@
+/***************************************************************************
+ *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *                                                                         *
+ *   This file is part of LuxRender.                                       *
+ *                                                                         *
+ *   Lux Renderer is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 3 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ *   Lux Renderer is distributed in the hope that it will be useful,       *
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+ *   GNU General Public License for more details.                          *
+ *                                                                         *
+ *   You should have received a copy of the GNU General Public License     *
+ *   along with this program.  If not, see <http://www.gnu.org/licenses/>. *
+ *                                                                         *
+ *   This project is based on PBRT ; see http://www.pbrt.org               *
+ *   Lux Renderer website : http://www.luxrender.net                       *
+ ***************************************************************************/
+
+#include "ui_lenseffects.h"
+#include "lenseffectswidget.hxx"
+
+#include "mainwindow.hxx"
+
+#include "api.h"
+
+template<class T> inline T Clamp(T val, T low, T high) {
+	return val > low ? (val < high ? val : high) : low;
+}
+
+LensEffectsWidget::LensEffectsWidget(QWidget *parent) : QWidget(parent), ui(new Ui::LensEffectsWidget)
+{
+	ui->setupUi(this);
+	
+	// Bloom
+	connect(ui->slider_gaussianAmount, SIGNAL(valueChanged(int)), this, SLOT(gaussianAmountChanged(int)));
+	connect(ui->spinBox_gaussianAmount, SIGNAL(valueChanged(double)), this, SLOT(gaussianAmountChanged(double)));
+	connect(ui->slider_gaussianRadius, SIGNAL(valueChanged(int)), this, SLOT(gaussianRadiusChanged(int)));
+	connect(ui->spinBox_gaussianRadius, SIGNAL(valueChanged(double)), this, SLOT(gaussianRadiusChanged(double)));
+	connect(ui->button_gaussianComputeLayer, SIGNAL(clicked()), this, SLOT(computeBloomLayer()));
+	connect(ui->button_gaussianDeleteLayer, SIGNAL(clicked()), this, SLOT(deleteBloomLayer()));
+	
+	// Vignetting
+	connect(ui->slider_vignettingAmount, SIGNAL(valueChanged(int)), this, SLOT(vignettingAmountChanged(int)));
+	connect(ui->spinBox_vignettingAmount, SIGNAL(valueChanged(double)), this, SLOT(vignettingAmountChanged(double)));
+	connect(ui->checkBox_vignettingEnabled, SIGNAL(stateChanged(int)), this, SLOT(vignettingEnabledChanged(int)));
+	
+	// Chromatic abberration
+	connect(ui->slider_caAmount, SIGNAL(valueChanged(int)), this, SLOT(caAmountChanged(int)));
+	connect(ui->spinBox_caAmount, SIGNAL(valueChanged(double)), this, SLOT(caAmountChanged(double)));
+	connect(ui->checkBox_caEnabled, SIGNAL(stateChanged(int)), this, SLOT(caEnabledChanged(int)));
+
+	// Glare
+	connect(ui->slider_glareAmount, SIGNAL(valueChanged(int)), this, SLOT(glareAmountChanged(int)));
+	connect(ui->spinBox_glareAmount, SIGNAL(valueChanged(double)), this, SLOT(glareAmountChanged(double)));
+	connect(ui->slider_glareRadius, SIGNAL(valueChanged(int)), this, SLOT(glareRadiusChanged(int)));
+	connect(ui->spinBox_glareRadius, SIGNAL(valueChanged(double)), this, SLOT(glareRadiusChanged(double)));
+	connect(ui->spinBox_glareBlades, SIGNAL(valueChanged(int)), this, SLOT(glareBladesChanged(int)));
+	connect(ui->button_glareComputeLayer, SIGNAL(clicked()), this, SLOT(computeGlareLayer()));
+	connect(ui->button_glareDeleteLayer, SIGNAL(clicked()), this, SLOT(deleteGlareLayer()));
+}
+
+LensEffectsWidget::~LensEffectsWidget()
+{
+}
+
+void LensEffectsWidget::updateWidgetValues()
+{
+	int sliderval;
+
+	// Bloom widgets
+	updateWidgetValue (ui->slider_gaussianAmount, (int)((FLOAT_SLIDER_RES / BLOOMWEIGHT_RANGE) * m_bloomweight));
+	updateWidgetValue (ui->spinBox_gaussianAmount, m_bloomweight);
+
+	updateWidgetValue (ui->slider_gaussianRadius, (int)((FLOAT_SLIDER_RES / BLOOMRADIUS_RANGE) * m_bloomweight));
+	updateWidgetValue (ui->spinBox_gaussianRadius, m_bloomradius);
+
+	// Vignetting
+	if (m_Vignetting_Scale >= 0.f)
+		sliderval = (int) (FLOAT_SLIDER_RES/2) + (( (FLOAT_SLIDER_RES/2) / VIGNETTING_SCALE_RANGE ) * (m_Vignetting_Scale));
+	else
+		sliderval = (int)(( FLOAT_SLIDER_RES/2 * VIGNETTING_SCALE_RANGE ) * (1.f - fabsf(m_Vignetting_Scale)));
+	
+	updateWidgetValue (ui->slider_vignettingAmount, sliderval);
+	updateWidgetValue (ui->spinBox_vignettingAmount, m_Vignetting_Scale);
+
+	// Chromatic aberration
+	updateWidgetValue(ui->slider_caAmount, (int) (( FLOAT_SLIDER_RES / ABERRATION_AMOUNT_RANGE ) * (m_Aberration_amount)));
+	updateWidgetValue(ui->spinBox_caAmount, m_Aberration_amount);
+	
+	// Glare
+	updateWidgetValue(ui->slider_glareAmount, (int)((FLOAT_SLIDER_RES / GLARE_AMOUNT_RANGE) * m_Glare_amount));
+	updateWidgetValue(ui->spinBox_glareAmount, m_Glare_amount);
+	
+	updateWidgetValue(ui->slider_glareRadius, (int)((FLOAT_SLIDER_RES / GLARE_RADIUS_RANGE) * m_Glare_radius));
+	updateWidgetValue(ui->spinBox_glareRadius, m_Glare_radius);
+	
+	updateWidgetValue(ui->spinBox_glareBlades, m_Glare_blades);
+}
+
+void LensEffectsWidget::resetValues()
+{
+	m_bloomradius = 0.07f;
+	m_bloomweight = 0.25f;
+
+	m_Vignetting_Enabled = false;
+	m_Vignetting_Scale = 0.4;
+	
+	m_Aberration_enabled = false;
+	m_Aberration_amount = 0.5;
+
+	m_Glare_amount = 0.03f;
+	m_Glare_radius = 0.03f;
+	m_Glare_blades = 3;
+}
+
+void LensEffectsWidget::resetFromFilm (bool useDefaults)
+{
+	double t;
+
+	m_bloomradius = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_BLOOMRADIUS);
+	m_bloomweight = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_BLOOMWEIGHT);
+
+	t = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_VIGNETTING_ENABLED);
+	m_Vignetting_Enabled = t != 0.0;
+	m_Vignetting_Scale = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_VIGNETTING_SCALE);
+
+	t = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_ABERRATION_ENABLED);
+	m_Aberration_enabled = t != 0.0;
+	m_Aberration_amount = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_ABERRATION_AMOUNT);
+
+	m_Glare_amount = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_GLARE_AMOUNT);
+	m_Glare_radius = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_GLARE_RADIUS);
+	m_Glare_blades = (int)retrieveParam( useDefaults, LUX_FILM, LUX_FILM_GLARE_BLADES);
+
+	luxSetParameterValue(LUX_FILM, LUX_FILM_BLOOMRADIUS, m_bloomradius);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_BLOOMWEIGHT, m_bloomweight);
+
+	luxSetParameterValue(LUX_FILM, LUX_FILM_VIGNETTING_ENABLED, m_Vignetting_Enabled);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_VIGNETTING_SCALE, m_Vignetting_Scale);
+
+	luxSetParameterValue(LUX_FILM, LUX_FILM_ABERRATION_ENABLED, m_Aberration_enabled);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_ABERRATION_AMOUNT, m_Aberration_amount);
+
+	luxSetParameterValue(LUX_FILM, LUX_FILM_GLARE_AMOUNT, m_Glare_amount);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_GLARE_RADIUS, m_Glare_radius);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_GLARE_BLADES, m_Glare_blades);
+}
+
+void LensEffectsWidget::gaussianAmountChanged (int value)
+{
+	gaussianAmountChanged ( (double)value / ( FLOAT_SLIDER_RES / BLOOMWEIGHT_RANGE ) );
+}
+
+void LensEffectsWidget::gaussianAmountChanged (double value)
+{
+	m_bloomweight = value;
+
+	int sliderval = (int)((FLOAT_SLIDER_RES / BLOOMWEIGHT_RANGE) * m_bloomweight);
+
+	updateWidgetValue(ui->slider_gaussianAmount, sliderval);
+	updateWidgetValue(ui->spinBox_gaussianAmount, m_bloomweight);
+
+	updateParam (LUX_FILM, LUX_FILM_BLOOMWEIGHT, m_bloomweight);
+
+	emit valuesChanged ();
+}
+
+void LensEffectsWidget::gaussianRadiusChanged (int value)
+{
+	gaussianRadiusChanged ( (double)value / ( FLOAT_SLIDER_RES / BLOOMRADIUS_RANGE ) );
+}
+
+void LensEffectsWidget::gaussianRadiusChanged (double value)
+{
+	m_bloomradius = value;
+
+	int sliderval = (int)((FLOAT_SLIDER_RES / BLOOMRADIUS_RANGE) * m_bloomradius);
+
+	updateWidgetValue(ui->slider_gaussianRadius, sliderval);
+	updateWidgetValue(ui->spinBox_gaussianRadius, m_bloomradius);
+
+	updateParam (LUX_FILM, LUX_FILM_BLOOMRADIUS, m_bloomradius);
+}
+
+void LensEffectsWidget::computeBloomLayer()
+{
+	// Signal film to update bloom layer at next tonemap
+	updateParam(LUX_FILM, LUX_FILM_UPDATEBLOOMLAYER, 1.0f);
+	ui->button_gaussianDeleteLayer->setEnabled (true);
+	ui->slider_gaussianAmount->setEnabled(true);
+	ui->spinBox_gaussianAmount->setEnabled(true);
+
+	emit forceUpdate ();
+}
+
+void LensEffectsWidget::deleteBloomLayer()
+{
+	// Signal film to delete bloom layer
+	updateParam(LUX_FILM, LUX_FILM_DELETEBLOOMLAYER, 1.0f);
+	ui->button_gaussianDeleteLayer->setEnabled (false);
+	ui->slider_gaussianAmount->setEnabled(false);
+	ui->spinBox_gaussianAmount->setEnabled(false);
+
+	emit forceUpdate ();
+}
+
+void LensEffectsWidget::vignettingAmountChanged(int value)
+{
+	vignettingAmountChanged ( (double)value / FLOAT_SLIDER_RES );
+}
+
+void LensEffectsWidget::vignettingAmountChanged(double value)
+{
+	double pos = value;
+	pos -= 0.5f;
+	pos *= VIGNETTING_SCALE_RANGE * 2.f;
+	m_Vignetting_Scale = pos;
+	
+	int sliderval; 
+	if (m_Vignetting_Scale >= 0.f)
+		sliderval = (int) (FLOAT_SLIDER_RES/2) + (( (FLOAT_SLIDER_RES/2) / VIGNETTING_SCALE_RANGE ) * (m_Vignetting_Scale));
+	else
+		sliderval = (int)(( FLOAT_SLIDER_RES/2 * VIGNETTING_SCALE_RANGE ) * (1.f - fabsf(m_Vignetting_Scale)));
+
+	updateWidgetValue(ui->slider_vignettingAmount, sliderval);
+	updateWidgetValue(ui->spinBox_vignettingAmount, m_Vignetting_Scale);
+
+	updateParam (LUX_FILM, LUX_FILM_VIGNETTING_SCALE, m_Vignetting_Scale);
+
+	if (m_Vignetting_Enabled)
+		emit valuesChanged();
+}
+
+void LensEffectsWidget::vignettingEnabledChanged(int value)
+{
+	if (value == Qt::Checked)
+		m_Vignetting_Enabled = true;
+	else
+		m_Vignetting_Enabled = false;
+
+	updateParam (LUX_FILM, LUX_FILM_VIGNETTING_ENABLED, m_Vignetting_Enabled);
+	
+	emit valuesChanged();
+}
+
+void LensEffectsWidget::caAmountChanged (int value)
+{
+	caAmountChanged ( (double)value / ( FLOAT_SLIDER_RES / ABERRATION_AMOUNT_RANGE ) );
+}
+
+void LensEffectsWidget::caAmountChanged (double value)
+{
+	m_Aberration_amount = value;
+
+	if (m_Aberration_amount > ABERRATION_AMOUNT_RANGE) 
+		m_Aberration_amount = ABERRATION_AMOUNT_RANGE;
+	else if (m_Aberration_amount < 0.0f) 
+		m_Aberration_amount = 0.0f;
+
+	int sliderval = (int) (( FLOAT_SLIDER_RES / ABERRATION_AMOUNT_RANGE ) * (m_Aberration_amount));
+
+	updateWidgetValue(ui->slider_caAmount, sliderval);
+	updateWidgetValue(ui->spinBox_caAmount, m_Aberration_amount);
+
+	updateParam(LUX_FILM, LUX_FILM_ABERRATION_AMOUNT, ABERRATION_AMOUNT_FACTOR * m_Aberration_amount);
+	
+	if (m_Aberration_enabled)
+		emit valuesChanged();
+}
+
+void LensEffectsWidget::caEnabledChanged(int value)
+{
+	if (value == Qt::Checked)
+		m_Aberration_enabled = true;
+	else
+		m_Aberration_enabled = false;
+
+	updateParam (LUX_FILM, LUX_FILM_ABERRATION_ENABLED, m_Aberration_enabled);
+	
+	emit valuesChanged();
+}
+
+void LensEffectsWidget::glareAmountChanged (int value)
+{
+	glareAmountChanged ( (double)value / ( FLOAT_SLIDER_RES / GLARE_AMOUNT_RANGE ) );
+}
+
+void LensEffectsWidget::glareAmountChanged (double value)
+{
+	m_Glare_amount = value;
+
+	int sliderval = (int)((FLOAT_SLIDER_RES / GLARE_AMOUNT_RANGE) * m_Glare_amount);
+
+	updateWidgetValue(ui->slider_glareAmount, sliderval);
+	updateWidgetValue(ui->spinBox_glareAmount, m_Glare_amount);
+
+	updateParam (LUX_FILM, LUX_FILM_GLARE_AMOUNT, m_Glare_amount);
+
+	emit valuesChanged();
+}
+
+void LensEffectsWidget::glareRadiusChanged (int value)
+{
+	glareRadiusChanged ( (double)value / ( FLOAT_SLIDER_RES / GLARE_RADIUS_RANGE ) );
+}
+
+void LensEffectsWidget::glareRadiusChanged (double value)
+{
+	m_Glare_radius = value;
+
+	int sliderval = (int)((FLOAT_SLIDER_RES / GLARE_RADIUS_RANGE) * m_Glare_radius);
+
+	updateWidgetValue(ui->slider_glareRadius, sliderval);
+	updateWidgetValue(ui->spinBox_glareRadius, m_Glare_radius);
+
+	updateParam (LUX_FILM, LUX_FILM_GLARE_RADIUS, m_Glare_radius);
+}
+
+void LensEffectsWidget::glareBladesChanged(int value)
+{
+	m_Glare_blades = value;
+
+	if (m_Glare_blades > GLARE_BLADES_MAX) 
+		m_Glare_blades = GLARE_BLADES_MAX;
+	else if (m_Glare_blades < GLARE_BLADES_MIN)
+		m_Glare_blades = GLARE_BLADES_MIN;
+
+	updateParam (LUX_FILM, LUX_FILM_GLARE_BLADES, m_Glare_blades);
+
+	emit valuesChanged();
+}
+
+void LensEffectsWidget::computeGlareLayer()
+{
+	// Signal film to update glare layer at next tonemap
+	updateParam(LUX_FILM, LUX_FILM_UPDATEGLARELAYER, 1.0f);
+	ui->button_glareDeleteLayer->setEnabled (true);
+	ui->slider_glareAmount->setEnabled(true);
+	ui->spinBox_glareAmount->setEnabled(true);
+
+	emit forceUpdate ();
+}
+
+void LensEffectsWidget::deleteGlareLayer()
+{
+	// Signal film to delete glare layer
+	updateParam(LUX_FILM, LUX_FILM_DELETEGLARELAYER, 1.0f);
+	ui->button_glareDeleteLayer->setEnabled (false);
+	ui->slider_glareAmount->setEnabled(false);
+	ui->spinBox_glareAmount->setEnabled(false);
+
+	emit forceUpdate ();
+}

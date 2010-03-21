@@ -52,57 +52,15 @@
 
 #include "api.h"
 #include "renderview.hxx"
-#include "histogramview.hxx"
 #include "lightgroupwidget.hxx"
+#include "tonemapwidget.hxx"
+#include "lenseffectswidget.hxx"
+#include "colorspacewidget.hxx"
+#include "gammawidget.hxx"
+#include "noisereductionwidget.hxx"
+#include "histogramwidget.hxx"
 
 #define FLOAT_SLIDER_RES 512.f
-
-#define TM_REINHARD_YWA_RANGE 1.0f
-#define TM_REINHARD_PRESCALE_RANGE 8.0f
-#define TM_REINHARD_POSTSCALE_RANGE 8.0f
-#define TM_REINHARD_BURN_RANGE 12.0f
-
-#define TM_LINEAR_EXPOSURE_LOG_MIN -3.f
-#define TM_LINEAR_EXPOSURE_LOG_MAX 2.f
-#define TM_LINEAR_SENSITIVITY_RANGE 1000.0f
-#define TM_LINEAR_FSTOP_RANGE 64.0f
-#define TM_LINEAR_GAMMA_RANGE 5.0f
-
-#define TM_CONTRAST_YWA_LOG_MIN -4.f
-#define TM_CONTRAST_YWA_LOG_MAX 4.f
-
-#define TORGB_XWHITE_RANGE 1.0f
-#define TORGB_YWHITE_RANGE 1.0f
-#define TORGB_XRED_RANGE 1.0f
-#define TORGB_YRED_RANGE 1.0f
-#define TORGB_XGREEN_RANGE 1.0f
-#define TORGB_YGREEN_RANGE 1.0f
-#define TORGB_XBLUE_RANGE 1.0f
-#define TORGB_YBLUE_RANGE 1.0f
-
-#define TORGB_GAMMA_RANGE 5.0f
-
-#define BLOOMRADIUS_RANGE 1.0f
-#define BLOOMWEIGHT_RANGE 1.0f
-
-#define VIGNETTING_SCALE_RANGE 1.0f
-#define ABERRATION_AMOUNT_RANGE 1.0f
-#define ABERRATION_AMOUNT_FACTOR 0.01f
-
-#define GLARE_AMOUNT_RANGE 0.3f
-#define GLARE_RADIUS_RANGE 0.2f
-#define GLARE_BLADES_MIN 3
-#define GLARE_BLADES_MAX 100
-
-#define GREYC_AMPLITUDE_RANGE 200.0f
-#define GREYC_SHARPNESS_RANGE 2.0f
-#define GREYC_ANISOTROPY_RANGE 1.0f
-#define GREYC_ALPHA_RANGE 12.0f
-#define GREYC_SIGMA_RANGE 12.0f
-#define GREYC_GAUSSPREC_RANGE 12.0f
-#define GREYC_DL_RANGE 1.0f
-#define GREYC_DA_RANGE 90.0f
-#define GREYC_NB_ITER_RANGE 16.0f
 
 #define CHIU_RADIUS_MIN 1
 #define CHIU_RADIUS_MAX 9
@@ -156,6 +114,17 @@ public:
 	double m_numberOfSamplesReceived;
 };
 
+void updateWidgetValue(QSlider *slider, int value);
+void updateWidgetValue(QDoubleSpinBox *spinbox, double value);
+void updateWidgetValue(QSpinBox *spinbox, int value);
+
+int ValueToLogSliderVal(float value, const float logLowerBound, const float logUpperBound);
+float LogSliderValToValue(int sliderval, const float logLowerBound, const float logUpperBound);
+
+void updateParam(luxComponent comp, luxComponentParameters param, double value, int index = 0);
+void updateParam(luxComponent comp, luxComponentParameters param, const char* value, int index = 0);
+double retrieveParam (bool useDefault, luxComponent comp, luxComponentParameters param, int index = 0);
+
 class MainWindow : public QMainWindow
 {
 	Q_OBJECT
@@ -170,24 +139,18 @@ public:
 	void renderScenefile(QString filename);
 	void changeRenderState (LuxGuiRenderState state);
 	void endRenderingSession ();
+	
 	void updateTonemapWidgetValues ();
-	void updateLenseffectsWidgetValues();
-	void UpdatedTonemapParam();
-	static void updateParam(luxComponent comp, luxComponentParameters param, double value, int index = 0);
-	static void updateParam(luxComponent comp, luxComponentParameters param, const char* value, int index = 0);
-	static double retrieveParam (bool useDefault, luxComponent comp, luxComponentParameters param, int index = 0);
 
 	void resetToneMappingFromFilm (bool useDefaults);
-
-	static void updateWidgetValue(QSlider *slider, int value);
-	static void updateWidgetValue(QDoubleSpinBox *spinbox, double value);
-	static void updateWidgetValue(QSpinBox *spinbox, int value);
 
 	void UpdateNetworkTree();
 
 	void ShowDialogBox(const std::string &msg, const std::string &caption = "LuxRender");
 	void ShowWarningDialogBox(const std::string &msg, const std::string &caption = "LuxRender");
 	void ShowErrorDialogBox(const std::string &msg, const std::string &caption = "LuxRender");
+
+	bool m_auto_tonemap;
 
 private:
 	Ui::MainWindow *ui;
@@ -196,8 +159,14 @@ private:
 	QLabel *statsMessage;
 	
 	RenderView *renderView;
-	HistogramView *histogramView;
 	QString m_CurrentFile;
+    
+	ToneMapWidget *tonemapwidget;
+	LensEffectsWidget *lenseffectswidget;
+	ColorSpaceWidget *colorspacewidget;
+	GammaWidget *gammawidget;
+	NoiseReductionWidget *noisereductionwidget;
+	HistogramWidget *histogramwidget;
 
 	QVector<LightGroupWidget*> m_LightGroupWidgets;
 
@@ -215,52 +184,7 @@ private:
 	
 	boost::thread *m_engineThread, *m_updateThread, *m_flmloadThread, *m_flmsaveThread;
 
-	// Tonemapping/ToRGB variables
-	bool m_auto_tonemap;
-	int m_TM_kernel;
 	bool m_opengl;
-
-	double m_TM_reinhard_prescale;
-	double m_TM_reinhard_postscale;
-	double m_TM_reinhard_burn;
-
-	double m_TM_linear_exposure;
-	double m_TM_linear_sensitivity;
-	double m_TM_linear_fstop;
-	double m_TM_linear_gamma;
-
-	double m_TM_contrast_ywa;
-
-	double m_TORGB_xwhite, m_TORGB_ywhite;
-	double m_TORGB_xred, m_TORGB_yred;
-	double m_TORGB_xgreen, m_TORGB_ygreen;
-	double m_TORGB_xblue, m_TORGB_yblue;
-
-	bool m_Gamma_enabled;
-	double m_TORGB_gamma;
-
-	bool m_Lenseffects_enabled;
-
-	double m_bloomradius, m_bloomweight;
-
-	bool m_Vignetting_Enabled;
-	double m_Vignetting_Scale;
-
-	bool m_Aberration_enabled;
-	double m_Aberration_amount;
-
-	double m_Glare_amount, m_Glare_radius;
-	int m_Glare_blades;
-
-	bool m_Noisereduction_enabled;
-
-	bool m_GREYC_enabled, m_GREYC_fast_approx;
-	double m_GREYC_amplitude, m_GREYC_sharpness, m_GREYC_anisotropy, m_GREYC_alpha, m_GREYC_sigma, m_GREYC_gauss_prec, m_GREYC_dl, m_GREYC_da;
-	double m_GREYC_nb_iter;
-	int m_GREYC_interp;
-
-	bool m_Chiu_enabled, m_Chiu_includecenter;
-	double m_Chiu_radius;
 	
 	static void LuxGuiErrorHandler(int code, int severity, const char *msg);
 	
@@ -273,9 +197,6 @@ private:
 
 	void logEvent(LuxLogEvent *event);
 
-	int ValueToLogSliderVal(float value, const float logLowerBound, const float logUpperBound);
-	float LogSliderValToValue(int sliderval, const float logLowerBound, const float logUpperBound);
-
 	bool canStopRendering ();
 
 	void UpdateLightGroupWidgetValues();
@@ -284,6 +205,11 @@ private:
 
 	void ReadSettings();
 	void WriteSettings();
+
+public slots:
+
+	void applyTonemapping (bool withlayercomputation = false);
+	void resetToneMapping ();
 
 private slots:
 
@@ -308,109 +234,17 @@ private slots:
 	void saveTimeout ();
 	void netTimeout ();
 
-	void autoEnabledChanged (int value);
-
-	// Tonemapping slots
-	void setTonemapKernel (int choice);
-	void applyTonemapping (bool withlayercomputation = false);
-	void resetToneMapping ();
-
 	void addThread ();
 	void removeThread ();
 
-	void prescaleChanged (int value);
-	void prescaleChanged (double value);
-	void postscaleChanged (int value);
-	void postscaleChanged (double value);
-	void burnChanged (int value);
-	void burnChanged (double value);
+	// Tonemapping slots
+	void toneMapParamsChanged();
+	void forceToneMapUpdate();
 
-	void sensitivityChanged (int value);
-	void sensitivityChanged (double value);
-	void exposureChanged (int value);
-	void exposureChanged (double value);
-	void fstopChanged (int value);
-	void fstopChanged (double value);
-	void gammaLinearChanged (int value);
-	void gammaLinearChanged (double value);
+	void autoEnabledChanged (int value);
 
-	void ywaChanged (int value);
-	void ywaChanged (double value);
-	
-	// Lens effects slots
-	void gaussianAmountChanged (int value);
-	void gaussianAmountChanged (double value);
-	void gaussianRadiusChanged (int value);
-	void gaussianRadiusChanged (double value);
-	void computeBloomLayer ();
-	void deleteBloomLayer ();
-	void vignettingAmountChanged (int value);
-	void vignettingAmountChanged (double value);
-	void vignettingEnabledChanged (int value);
-	void caAmountChanged (int value);
-	void caAmountChanged (double value);
-	void caEnabledChanged (int value);
-	void glareAmountChanged (int value);
-	void glareAmountChanged (double value);
-	void glareRadiusChanged (int value);
-	void glareRadiusChanged (double value);
-	void glareBladesChanged (int value);
-	void computeGlareLayer ();
-	void deleteGlareLayer ();
-	
-	// Colorspace slots
-	void setColorSpacePreset (int choice);
-	void setWhitepointPreset (int choice);
-	void whitePointXChanged (int value);
-	void whitePointXChanged (double value);
-	void whitePointYChanged (int value);
-	void whitePointYChanged (double value);
-	
-	void redXChanged (int value);
-	void redXChanged (double value);
-	void redYChanged (int value);
-	void redYChanged (double value);
-	void blueXChanged (int value);
-	void blueXChanged (double value);
-	void blueYChanged (int value);
-	void blueYChanged (double value);
-	void greenXChanged (int value);
-	void greenXChanged (double value);
-	void greenYChanged (int value);
-	void greenYChanged (double value);
 
-	void gammaChanged (int value);
-	void gammaChanged (double value);
 
-	void SetOption(int option);
-	void LogChanged(int value);
-
-	void regularizationEnabledChanged(int value);
-	void fastApproximationEnabledChanged(int value);
-	void chiuEnabledChanged(int value);
-	void includeCenterEnabledChanged(int value);
-	void iterationsChanged(int value);
-	void iterationsChanged(double value);
-	void amplitudeChanged(int value);
-	void amplitudeChanged(double value);
-	void precisionChanged(int value);
-	void precisionChanged(double value);
-	void alphaChanged(int value);
-	void alphaChanged(double value);
-	void sigmaChanged(int value);
-	void sigmaChanged(double value);
-	void sharpnessChanged(int value);
-	void sharpnessChanged(double value);
-	void anisoChanged(int value);
-	void anisoChanged(double value);
-	void spatialChanged(int value);
-	void spatialChanged(double value);
-	void angularChanged(int value);
-	void angularChanged(double value);
-	void setInterpolType(int value);
-	void chiuRadiusChanged(int value);
-	void chiuRadiusChanged(double value);
-	
 	void addServer();
 	void removeServer();
 	void updateIntervalChanged(int value);

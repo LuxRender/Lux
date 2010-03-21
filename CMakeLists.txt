@@ -681,32 +681,50 @@ INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/core
 	)
 
 SET( LUXQTGUI_SRCS
-    qtgui/main.cpp
-    qtgui/histogramview.cpp
-    qtgui/mainwindow.cpp
-    qtgui/renderview.cpp
-    qtgui/luxapp.cpp
-    qtgui/aboutdialog.cpp
-    qtgui/lightgroupwidget.cpp
-    )
+	qtgui/main.cpp
+	qtgui/histogramview.cpp
+	qtgui/mainwindow.cpp
+	qtgui/renderview.cpp
+	qtgui/luxapp.cpp
+	qtgui/aboutdialog.cpp
+	qtgui/lightgroupwidget.cpp
+	qtgui/tonemapwidget.cpp
+	qtgui/lenseffectswidget.cpp
+	qtgui/colorspacewidget.cpp
+	qtgui/gammawidget.cpp
+	qtgui/noisereductionwidget.cpp
+	qtgui/histogramwidget.cpp
+	)
 SET( LUXQTGUI_MOC
-    qtgui/histogramview.hxx
-    qtgui/mainwindow.hxx
-    qtgui/aboutdialog.hxx
-    qtgui/luxapp.hxx
-    qtgui/renderview.hxx
-    qtgui/lightgroupwidget.hxx
-    )
+	qtgui/histogramview.hxx
+	qtgui/mainwindow.hxx
+	qtgui/aboutdialog.hxx
+	qtgui/luxapp.hxx
+	qtgui/renderview.hxx
+	qtgui/lightgroupwidget.hxx
+	qtgui/tonemapwidget.hxx
+	qtgui/lenseffectswidget.hxx
+	qtgui/colorspacewidget.hxx
+	qtgui/gammawidget.hxx
+	qtgui/noisereductionwidget.hxx
+	qtgui/histogramwidget.hxx
+	)
 SET(LUXQTGUI_UIS
-    qtgui/luxrender.ui
-    qtgui/aboutdialog.ui
-    qtgui/lightgroup.ui
-    )
+	qtgui/luxrender.ui
+	qtgui/aboutdialog.ui
+	qtgui/lightgroup.ui
+	qtgui/tonemap.ui
+	qtgui/lenseffects.ui
+	qtgui/colorspace.ui
+	qtgui/gamma.ui
+	qtgui/noisereduction.ui
+	qtgui/histogram.ui
+	)
 SET( LUXQTGUI_RCS
-    qtgui/icons.qrc
-    qtgui/splash.qrc
-    qtgui/images.qrc
-    )
+	qtgui/icons.qrc
+	qtgui/splash.qrc
+	qtgui/images.qrc
+	)
 
 #############################################################################
 #############################################################################

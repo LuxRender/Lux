@@ -20,68 +20,87 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#ifndef LIGHTGROUPWIDGET_H
-#define LIGHTGROUPWIDGET_H
+#ifndef TONEMAPWIDGET_H
+#define TONEMAPWIDGET_H
 
 #include <QtGui/QWidget>
-#include <QtGui/QColorDialog>
+
+#define TM_REINHARD_YWA_RANGE 1.0f
+#define TM_REINHARD_PRESCALE_RANGE 8.0f
+#define TM_REINHARD_POSTSCALE_RANGE 8.0f
+#define TM_REINHARD_BURN_RANGE 12.0f
+
+#define TM_LINEAR_EXPOSURE_LOG_MIN -3.f
+#define TM_LINEAR_EXPOSURE_LOG_MAX 2.f
+#define TM_LINEAR_SENSITIVITY_RANGE 1000.0f
+#define TM_LINEAR_FSTOP_RANGE 64.0f
+#define TM_LINEAR_GAMMA_RANGE 5.0f
+
+#define TM_CONTRAST_YWA_LOG_MIN -4.f
+#define TM_CONTRAST_YWA_LOG_MAX 4.f
 
 namespace Ui
 {
-	class LightGroupWidget;
+	class ToneMapWidget;
 }
 
-class LightGroupWidget : public QWidget
+class ToneMapWidget : public QWidget
 {
 	Q_OBJECT
 
 public:
 
-	LightGroupWidget(QWidget *parent = 0);
-	~LightGroupWidget();
+	ToneMapWidget(QWidget *parent = 0);
+	~ToneMapWidget();
 
-	QString GetTitle();
-	int GetIndex();
-	void SetIndex(int index);
-	void UpdateWidgetValues();
-	void ResetValues();
-	void ResetValuesFromFilm(bool useDefaults);
-	void SetWidgetsEnabled(bool enabled);
+	//void SetWidgetsEnabled(bool enabled);
+    
+	void updateWidgetValues();
+	void resetValues();
+	void resetFromFilm (bool useDefaults);
+
+private:
+
+	Ui::ToneMapWidget *ui;
+
+	int m_TM_kernel;
+	double m_TM_reinhard_prescale;
+	double m_TM_reinhard_postscale;
+	double m_TM_reinhard_burn;
+
+	double m_TM_linear_exposure;
+	double m_TM_linear_sensitivity;
+	double m_TM_linear_fstop;
+	double m_TM_linear_gamma;
+
+	double m_TM_contrast_ywa;
 
 signals:
 	void valuesChanged();
 
-private:
-
-	Ui::LightGroupWidget *ui;
-	
-	QString title;
-
-	int m_Index;
-
-	bool m_LG_enable;
-	double m_LG_scale;
-	bool m_LG_temperature_enabled;
-	double m_LG_temperature;
-	bool m_LG_rgb_enabled;
-	double m_LG_scaleRed, m_LG_scaleGreen, m_LG_scaleBlue;
-	double m_LG_scaleX, m_LG_scaleY;
-
-	float SliderValToScale(int sliderval);
-	int ScaleToSliderVal(float scale);
-
 private slots:
 
-	void rgbEnabledChanged(int);
-	void bbEnabledChanged(int);
+	void setTonemapKernel (int choice);
+	void prescaleChanged (int value);
+	void prescaleChanged (double value);
+	void postscaleChanged (int value);
+	void postscaleChanged (double value);
+	void burnChanged (int value);
+	void burnChanged (double value);
 
-	void gainChanged(int value);
-	void gainChanged(double value);
-	void colortempChanged(int value);
-	void colortempChanged(double value);
-	void colorPicker();
+	void sensitivityChanged (int value);
+	void sensitivityChanged (double value);
+	void exposureChanged (int value);
+	void exposureChanged (double value);
+	void fstopChanged (int value);
+	void fstopChanged (double value);
+	void gammaLinearChanged (int value);
+	void gammaLinearChanged (double value);
+
+	void ywaChanged (int value);
+	void ywaChanged (double value);
 
 };
 
-#endif // LIGHTGROUPWIDGET_H
+#endif // TONEMAPWIDGET_H
 

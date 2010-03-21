@@ -20,68 +20,88 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#ifndef LIGHTGROUPWIDGET_H
-#define LIGHTGROUPWIDGET_H
+#ifndef LENSEFFECTSWIDGET_H
+#define LENSEFFECTSWIDGET_H
 
 #include <QtGui/QWidget>
-#include <QtGui/QColorDialog>
+
+#define BLOOMRADIUS_RANGE 1.0f
+#define BLOOMWEIGHT_RANGE 1.0f
+
+#define VIGNETTING_SCALE_RANGE 1.0f
+#define ABERRATION_AMOUNT_RANGE 1.0f
+#define ABERRATION_AMOUNT_FACTOR 0.01f
+
+#define GLARE_AMOUNT_RANGE 0.3f
+#define GLARE_RADIUS_RANGE 0.2f
+#define GLARE_BLADES_MIN 3
+#define GLARE_BLADES_MAX 100
 
 namespace Ui
 {
-	class LightGroupWidget;
+	class LensEffectsWidget;
 }
 
-class LightGroupWidget : public QWidget
+class LensEffectsWidget : public QWidget
 {
 	Q_OBJECT
 
 public:
 
-	LightGroupWidget(QWidget *parent = 0);
-	~LightGroupWidget();
+	LensEffectsWidget(QWidget *parent = 0);
+	~LensEffectsWidget();
 
-	QString GetTitle();
-	int GetIndex();
-	void SetIndex(int index);
-	void UpdateWidgetValues();
-	void ResetValues();
-	void ResetValuesFromFilm(bool useDefaults);
-	void SetWidgetsEnabled(bool enabled);
+	//void SetWidgetsEnabled(bool enabled);
+    
+	void updateWidgetValues();
+	void resetValues();
+	void resetFromFilm (bool useDefaults);
+
+	bool m_Lenseffects_enabled;
 
 signals:
 	void valuesChanged();
+	void forceUpdate();
 
 private:
 
-	Ui::LightGroupWidget *ui;
-	
-	QString title;
+	Ui::LensEffectsWidget *ui;
 
-	int m_Index;
+	double m_bloomradius, m_bloomweight;
 
-	bool m_LG_enable;
-	double m_LG_scale;
-	bool m_LG_temperature_enabled;
-	double m_LG_temperature;
-	bool m_LG_rgb_enabled;
-	double m_LG_scaleRed, m_LG_scaleGreen, m_LG_scaleBlue;
-	double m_LG_scaleX, m_LG_scaleY;
+	bool m_Vignetting_Enabled;
+	double m_Vignetting_Scale;
 
-	float SliderValToScale(int sliderval);
-	int ScaleToSliderVal(float scale);
+	bool m_Aberration_enabled;
+	double m_Aberration_amount;
+
+	double m_Glare_amount, m_Glare_radius;
+	int m_Glare_blades;
 
 private slots:
 
-	void rgbEnabledChanged(int);
-	void bbEnabledChanged(int);
-
-	void gainChanged(int value);
-	void gainChanged(double value);
-	void colortempChanged(int value);
-	void colortempChanged(double value);
-	void colorPicker();
+	// Lens effects slots
+	void gaussianAmountChanged (int value);
+	void gaussianAmountChanged (double value);
+	void gaussianRadiusChanged (int value);
+	void gaussianRadiusChanged (double value);
+	void computeBloomLayer ();
+	void deleteBloomLayer ();
+	void vignettingAmountChanged (int value);
+	void vignettingAmountChanged (double value);
+	void vignettingEnabledChanged (int value);
+	void caAmountChanged (int value);
+	void caAmountChanged (double value);
+	void caEnabledChanged (int value);
+	void glareAmountChanged (int value);
+	void glareAmountChanged (double value);
+	void glareRadiusChanged (int value);
+	void glareRadiusChanged (double value);
+	void glareBladesChanged (int value);
+	void computeGlareLayer ();
+	void deleteGlareLayer ();
 
 };
 
-#endif // LIGHTGROUPWIDGET_H
+#endif // LENSEFFECTSWIDGET_H
 

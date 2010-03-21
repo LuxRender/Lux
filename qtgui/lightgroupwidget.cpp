@@ -31,7 +31,7 @@ template<class T> inline T Clamp(T val, T low, T high) {
 	return val > low ? (val < high ? val : high) : low;
 }
 
-LightGroupWidget::LightGroupWidget(QWidget *parent, MainWindow *mw) : QWidget(parent), ui(new Ui::LightGroupWidget), mainwin(mw)
+LightGroupWidget::LightGroupWidget(QWidget *parent) : QWidget(parent), ui(new Ui::LightGroupWidget)
 {
 	ui->setupUi(this);
 	
@@ -58,13 +58,13 @@ void LightGroupWidget::rgbEnabledChanged(int value)
 	else
 		m_LG_rgb_enabled = false;
 
-	MainWindow::updateParam(LUX_FILM, LUX_FILM_LG_SCALE_RED, (m_LG_rgb_enabled ? m_LG_scaleRed : 1.0), m_Index);
-	MainWindow::updateParam(LUX_FILM, LUX_FILM_LG_SCALE_GREEN, (m_LG_rgb_enabled ? m_LG_scaleGreen : 1.0), m_Index);
-	MainWindow::updateParam(LUX_FILM, LUX_FILM_LG_SCALE_BLUE, (m_LG_rgb_enabled ? m_LG_scaleBlue : 1.0), m_Index);
+	updateParam(LUX_FILM, LUX_FILM_LG_SCALE_RED, (m_LG_rgb_enabled ? m_LG_scaleRed : 1.0), m_Index);
+	updateParam(LUX_FILM, LUX_FILM_LG_SCALE_GREEN, (m_LG_rgb_enabled ? m_LG_scaleGreen : 1.0), m_Index);
+	updateParam(LUX_FILM, LUX_FILM_LG_SCALE_BLUE, (m_LG_rgb_enabled ? m_LG_scaleBlue : 1.0), m_Index);
 
 	ui->toolButton_colorpicker->setEnabled(m_LG_rgb_enabled);
 
-	mainwin->UpdatedTonemapParam();
+	emit valuesChanged();
 }
 
 void LightGroupWidget::bbEnabledChanged(int value)
@@ -77,9 +77,9 @@ void LightGroupWidget::bbEnabledChanged(int value)
 	ui->slider_colortemp->setEnabled(m_LG_temperature_enabled);
 	ui->spinBox_colortemp->setEnabled(m_LG_temperature_enabled);
 
-	MainWindow::updateParam(LUX_FILM, LUX_FILM_LG_TEMPERATURE, (m_LG_temperature_enabled ? m_LG_temperature : 0.0), m_Index);
+	updateParam(LUX_FILM, LUX_FILM_LG_TEMPERATURE, (m_LG_temperature_enabled ? m_LG_temperature : 0.0), m_Index);
 
-	mainwin->UpdatedTonemapParam();
+	emit valuesChanged();
 }
 
 float LightGroupWidget::SliderValToScale(int sliderval)
@@ -115,11 +115,12 @@ void LightGroupWidget::gainChanged(double value)
 	
 	int sliderval = ScaleToSliderVal(m_LG_scale);
 
-	MainWindow::updateWidgetValue(ui->slider_gain, sliderval);
-	MainWindow::updateWidgetValue(ui->spinBox_gain, m_LG_scale);
+	updateWidgetValue(ui->slider_gain, sliderval);
+	updateWidgetValue(ui->spinBox_gain, m_LG_scale);
 
-	MainWindow::updateParam(LUX_FILM, LUX_FILM_LG_SCALE, m_LG_scale, m_Index);
-	mainwin->UpdatedTonemapParam();
+	updateParam(LUX_FILM, LUX_FILM_LG_SCALE, m_LG_scale, m_Index);
+
+	emit valuesChanged();
 }
 
 void LightGroupWidget::colortempChanged(int value)
@@ -138,13 +139,13 @@ void LightGroupWidget::colortempChanged(double value)
 
 	int sliderval = (int)(((m_LG_temperature - LG_TEMPERATURE_MIN) / (LG_TEMPERATURE_MAX - LG_TEMPERATURE_MIN)) * FLOAT_SLIDER_RES);
 
-	MainWindow::updateWidgetValue(ui->slider_colortemp, sliderval);
-	MainWindow::updateWidgetValue(ui->spinBox_colortemp, m_LG_temperature);
+	updateWidgetValue(ui->slider_colortemp, sliderval);
+	updateWidgetValue(ui->spinBox_colortemp, m_LG_temperature);
 
-	MainWindow::updateParam(LUX_FILM, LUX_FILM_LG_TEMPERATURE, (m_LG_temperature_enabled ? m_LG_temperature : 0.0), m_Index);
+	updateParam(LUX_FILM, LUX_FILM_LG_TEMPERATURE, (m_LG_temperature_enabled ? m_LG_temperature : 0.0), m_Index);
 
 	if (m_LG_temperature_enabled)
-		mainwin->UpdatedTonemapParam();
+		emit valuesChanged();
 }
 
 void LightGroupWidget::colorPicker()
@@ -158,12 +159,12 @@ void LightGroupWidget::colorPicker()
 	m_LG_scaleGreen = color.green() / 255.0;
 	m_LG_scaleBlue = color.blue() / 255.0;
 
-	MainWindow::updateParam(LUX_FILM, LUX_FILM_LG_SCALE_RED, (m_LG_rgb_enabled ? m_LG_scaleRed : 1.0), m_Index);
-	MainWindow::updateParam(LUX_FILM, LUX_FILM_LG_SCALE_GREEN, (m_LG_rgb_enabled ? m_LG_scaleGreen : 1.0), m_Index);
-	MainWindow::updateParam(LUX_FILM, LUX_FILM_LG_SCALE_BLUE, (m_LG_rgb_enabled ? m_LG_scaleBlue : 1.0), m_Index);
+	updateParam(LUX_FILM, LUX_FILM_LG_SCALE_RED, (m_LG_rgb_enabled ? m_LG_scaleRed : 1.0), m_Index);
+	updateParam(LUX_FILM, LUX_FILM_LG_SCALE_GREEN, (m_LG_rgb_enabled ? m_LG_scaleGreen : 1.0), m_Index);
+	updateParam(LUX_FILM, LUX_FILM_LG_SCALE_BLUE, (m_LG_rgb_enabled ? m_LG_scaleBlue : 1.0), m_Index);
 
 	if (m_LG_rgb_enabled)
-		mainwin->UpdatedTonemapParam();
+		emit valuesChanged();
 }
 
 QString LightGroupWidget::GetTitle()
@@ -185,12 +186,11 @@ void LightGroupWidget::UpdateWidgetValues()
 {
 	SetWidgetsEnabled(m_LG_enable);
 
-	MainWindow::updateWidgetValue(ui->slider_gain, ScaleToSliderVal(m_LG_scale));
-	MainWindow::updateWidgetValue(ui->spinBox_gain, m_LG_scale);
+	updateWidgetValue(ui->slider_gain, ScaleToSliderVal(m_LG_scale));
+	updateWidgetValue(ui->spinBox_gain, m_LG_scale);
 
-	MainWindow::updateWidgetValue(ui->slider_colortemp,
-		(int)(((m_LG_temperature - LG_TEMPERATURE_MIN) / (LG_TEMPERATURE_MAX - LG_TEMPERATURE_MIN)) * FLOAT_SLIDER_RES));
-	MainWindow::updateWidgetValue(ui->spinBox_colortemp, m_LG_temperature);
+	updateWidgetValue(ui->slider_colortemp, (int)(((m_LG_temperature - LG_TEMPERATURE_MIN) / (LG_TEMPERATURE_MAX - LG_TEMPERATURE_MIN)) * FLOAT_SLIDER_RES));
+	updateWidgetValue(ui->spinBox_colortemp, m_LG_temperature);
 	
 	/*wxString st;
 	wxColour colour(Clamp(int(m_LG_scaleRed * 255.0), 0, 255),
@@ -221,14 +221,14 @@ void LightGroupWidget::ResetValuesFromFilm(bool useDefaults)
 	title = QString(tmpStr);
 	
 	//m_LG_name->SetLabel(wxString::FromAscii(tmpStr));
-	m_LG_enable = MainWindow::retrieveParam( useDefaults, LUX_FILM, LUX_FILM_LG_ENABLE, m_Index) != 0.f;
-	m_LG_scale = MainWindow::retrieveParam( useDefaults, LUX_FILM, LUX_FILM_LG_SCALE, m_Index);
-	double t = MainWindow::retrieveParam( useDefaults, LUX_FILM, LUX_FILM_LG_TEMPERATURE, m_Index);
+	m_LG_enable = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_LG_ENABLE, m_Index) != 0.f;
+	m_LG_scale = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_LG_SCALE, m_Index);
+	double t = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_LG_TEMPERATURE, m_Index);
 	m_LG_temperature_enabled = t != 0.0;
 	m_LG_temperature = m_LG_temperature_enabled ? t : m_LG_temperature;
-	double r = MainWindow::retrieveParam( useDefaults, LUX_FILM, LUX_FILM_LG_SCALE_RED, m_Index);
-	double g = MainWindow::retrieveParam( useDefaults, LUX_FILM, LUX_FILM_LG_SCALE_GREEN, m_Index);
-	double b = MainWindow::retrieveParam( useDefaults, LUX_FILM, LUX_FILM_LG_SCALE_BLUE, m_Index);
+	double r = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_LG_SCALE_RED, m_Index);
+	double g = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_LG_SCALE_GREEN, m_Index);
+	double b = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_LG_SCALE_BLUE, m_Index);
 
 	m_LG_rgb_enabled = (r != 1.0) && (g != 1.0) && (b != 1.0);
 	
