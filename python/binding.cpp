@@ -85,6 +85,7 @@ int getParametersFromPython(boost::python::list& pList, std::vector<LuxToken>& a
 		boost::python::extract<int> intExtractor(l[1]);
 		boost::python::extract<float> floatExtractor(l[1]);
 		boost::python::extract<boost::python::tuple> tupleExtractor(l[1]);
+		boost::python::extract<boost::python::list> listExtractor(l[1]);
 		boost::python::extract<std::string> stringExtractor(l[1]);
 
 		//Automatic type detection
@@ -123,6 +124,25 @@ int getParametersFromPython(boost::python::list& pList, std::vector<LuxToken>& a
 				//jromang - Assuming floats here, but do we only have floats in tuples ?
 				BOOST_ASSERT(tupleFloatExtractor.check());
 				pFloat[j]=tupleFloatExtractor();
+				//std::cout<<pFloat[j]<<';';
+			}
+			//std::cout<<std::endl;
+
+			aValues.push_back((LuxPointer)pFloat);
+		}
+		else if(listExtractor.check())
+		{
+			//std::cout<<"this is a LIST - WARNING ASSUMING FLOATS :";
+			boost::python::list t=listExtractor();
+			boost::python::ssize_t listSize=boost::python::len(t);
+			float *pFloat=(float *)memoryPool.ordered_malloc(sizeof(float)*listSize);
+
+			for(boost::python::ssize_t j=0;j<listSize;j++)
+			{
+				boost::python::extract<float> listFloatExtractor(t[j]);
+				//jromang - Assuming floats here, but do we only have floats in lists ?
+				BOOST_ASSERT(listFloatExtractor.check());
+				pFloat[j]=listFloatExtractor();
 				//std::cout<<pFloat[j]<<';';
 			}
 			//std::cout<<std::endl;
@@ -197,13 +217,19 @@ public:
 
 	void greet() { LOG(LUX_INFO,LUX_NOERROR)<<"Hello from context '"<<context->GetName()<<"' !"; }
 
-	int parse(const char *filename)
+	int parse(const char *filename, bool async)
 	{
 		//TODO jromang - add thread lock here (we can only parse in one context)
 		Context::SetActive(context);
-		pyLuxWorldEndThreads.push_back(new boost::thread( boost::bind(luxParse, filename) ));
-		//return luxParse(filename);
-		return true;
+		if (async)
+		{
+			pyLuxWorldEndThreads.push_back(new boost::thread( boost::bind(luxParse, filename) ));
+			return true;
+		}
+		else
+		{
+			return luxParse(filename);
+		}
 	}
 
 	void cleanup() { context->Cleanup(); }
