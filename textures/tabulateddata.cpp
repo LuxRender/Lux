@@ -66,7 +66,7 @@ Texture<SWCSpectrum> *TabulatedDataTexture::CreateSWCSpectrumTexture(const Trans
 	boost::regex header_expr("wavelength:\\s*(eV|um|cm-1|nm)(\\s*[,;]\\s*|\\s+)data:\\s*(\\S+)");
 
 	// two floats separated by whitespace, comma or semicolon
-	boost::regex sample_expr("\\s*(\\d*\\.?\\d+(?:[eE]-?\\d+)?)(\\s*[,;]\\s*|\\s+)(-?\\d*\\.?\\d+(?:[eE]-?\\d+)?)");
+	boost::regex sample_expr("^\\s*(\\d*\\.?\\d+(?:[eE]-?\\d+)?)(\\s*[,;]\\s*|\\s+)(-?\\d*\\.?\\d+(?:[eE]-?\\d+)?)");
 
 
 	// used to convert file units to wavelength in nm
@@ -147,7 +147,7 @@ Texture<SWCSpectrum> *TabulatedDataTexture::CreateSWCSpectrumTexture(const Trans
 		std::reverse(data.begin(), data.end());
 	}
 
-	if (wl.front() >= WAVELENGTH_END || wl.back() <= WAVELENGTH_START) {
+	if (wl.front() > WAVELENGTH_END || wl.back() < WAVELENGTH_START) {
 		LOG(LUX_ERROR, LUX_RANGE) << "Spectral data file '" << filename 
 			<< "' does not contain data in the visible spectrum (" << WAVELENGTH_START << '-' << WAVELENGTH_END << "nm)";
 		const float default_wl[] = {380.f, 720.f};
@@ -155,9 +155,10 @@ Texture<SWCSpectrum> *TabulatedDataTexture::CreateSWCSpectrumTexture(const Trans
 		return new IrregularDataTexture(2, default_wl, default_data);
 	}
 
-	if (wl.front() >= WAVELENGTH_START || wl.back() <= WAVELENGTH_END) {
+	if (wl.front() > WAVELENGTH_START || wl.back() < WAVELENGTH_END) {
 		LOG(LUX_INFO, LUX_CONSISTENCY) << "Spectral data file '" << filename 
 			<< "' does not cover the entire visible spectrum (" << WAVELENGTH_START << '-' << WAVELENGTH_END << "nm)"
+			<< ": " << wl.front() << '-' << wl.back() << "nm"
 			<< ", this may yield unintented results.";
 	}
 
