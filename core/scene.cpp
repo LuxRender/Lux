@@ -63,9 +63,7 @@ void Scene::Exit() {
 }
 
 u_int Scene::GetThreadsStatus(RenderingThreadInfo *info, u_int maxInfoCount) {
-#if !defined(WIN32)
 	boost::mutex::scoped_lock lock(renderThreadsMutex);
-#endif
 
 	for (size_t i = 0; i < min<size_t>(renderThreads.size(), maxInfoCount); ++i) {
 		info[i].threadIndex = renderThreads[i]->n;
@@ -239,9 +237,7 @@ double Scene::Statistics_Efficiency()
 }
 
 void Scene::SignalThreads(ThreadSignals signal) {
-#if !defined(WIN32)
 	boost::mutex::scoped_lock lock(renderThreadsMutex);
-#endif
 
     for(unsigned int i=0;i<renderThreads.size();i++) {
 		if(renderThreads[i])
@@ -392,9 +388,7 @@ u_int Scene::CreateRenderThread()
 	if (IsFilmOnly())
 		return 0;
 
-#if !defined(WIN32)
 	boost::mutex::scoped_lock lock(renderThreadsMutex);
-#endif
 
 	// Avoid to create the thread in case signal is EXIT. for instance, it
 	// can happen when the rendering is done.
@@ -412,9 +406,7 @@ u_int Scene::CreateRenderThread()
 
 void Scene::RemoveRenderThread()
 {
-#if !defined(WIN32)
 	boost::mutex::scoped_lock lock(renderThreadsMutex);
-#endif
 
 	if (renderThreads.size() == 0)
 		return;
@@ -487,9 +479,7 @@ void Scene::Render() {
 
 		// rendering done, now I can remove all rendering threads
 		{
-#if !defined(WIN32)
 			boost::mutex::scoped_lock lock(renderThreadsMutex);
-#endif
 
 			// wait for all threads to finish their job
 			for (u_int i = 0; i < renderThreads.size(); ++i) {
