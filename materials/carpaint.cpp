@@ -29,6 +29,7 @@
 #include "bxdf.h"
 #include "blinn.h"
 #include "fresnelslick.h"
+#include "lambertian.h"
 #include "microfacet.h"
 #include "textures/constant.h"
 #include "fresnelblend.h"
@@ -67,60 +68,43 @@ BSDF *CarPaint::GetBSDF(const TsPack *tspack,
 	MultiBSDF *bsdf = ARENA_ALLOC(tspack->arena, MultiBSDF)(dgs, dgGeom.nn,
 		exterior, interior);
 
-	// NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
-	SWCSpectrum kd = Kd->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
-	SWCSpectrum ka = Ka->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
-
-	float ld = depth->Evaluate(tspack, dgs);
-
-	SWCSpectrum ks1 = Ks1->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
-	SWCSpectrum ks2 = Ks2->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
-	SWCSpectrum ks3 = Ks3->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
-
-	// NOTE - lordcrc - added clamping to 0..1 to avoid >1 reflection
-	float r1 = Clamp(R1->Evaluate(tspack, dgs), 0.f, 1.f);
-	float r2 = Clamp(R2->Evaluate(tspack, dgs), 0.f, 1.f);
-	float r3 = Clamp(R3->Evaluate(tspack, dgs), 0.f, 1.f);
-
-	float m1 = M1->Evaluate(tspack, dgs);
-	float m2 = M2->Evaluate(tspack, dgs);
-	float m3 = M3->Evaluate(tspack, dgs);
-
-	MicrofacetDistribution *md1 = ARENA_ALLOC(tspack->arena, Blinn)((2.f * M_PI / (m1 * m1)) - 1.f);
-	MicrofacetDistribution *md2 = ARENA_ALLOC(tspack->arena, Blinn)((2.f * M_PI / (m2 * m2)) - 1.f);
-	MicrofacetDistribution *md3 = ARENA_ALLOC(tspack->arena, Blinn)((2.f * M_PI / (m3 * m3)) - 1.f);
-
-	// The Slick approximation is much faster and visually almost the same
-	Fresnel *fr1 = ARENA_ALLOC(tspack->arena, FresnelSlick)(r1, 0.f);
-	Fresnel *fr2 = ARENA_ALLOC(tspack->arena, FresnelSlick)(r2, 0.f);
-	Fresnel *fr3 = ARENA_ALLOC(tspack->arena, FresnelSlick)(r3, 0.f);
-
 	// The Carpaint BRDF is really a Multi-lobe Microfacet model with a Lambertian base
+	// NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
+	const SWCSpectrum kd(Kd->Evaluate(tspack, dgs).Clamp(0.f, 1.f));
+	const SWCSpectrum ka(Ka->Evaluate(tspack, dgs).Clamp(0.f, 1.f));
+	const float ld = depth->Evaluate(tspack, dgs);
 
-	SWCSpectrum *lobe_ks = static_cast<SWCSpectrum *>(tspack->arena->Alloc(3 * sizeof(SWCSpectrum)));
-	lobe_ks[0] = ks1;
-	lobe_ks[1] = ks2;
-	lobe_ks[2] = ks3;
-
-	MicrofacetDistribution **lobe_dist = static_cast<MicrofacetDistribution **>(tspack->arena->Alloc(3 * sizeof(MicrofacetDistribution *)));
-	lobe_dist[0] = md1;
-	lobe_dist[1] = md2;
-	lobe_dist[2] = md3;
-
-	Fresnel **lobe_fres = static_cast<Fresnel **>(tspack->arena->Alloc(3 * sizeof(Fresnel *)));
-	lobe_fres[0] = fr1;
-	lobe_fres[1] = fr2;
-	lobe_fres[2] = fr3;
-
-	// Broad gloss layers
-	for (int i = 0; i < 2; i++) {
-		bsdf->Add(ARENA_ALLOC(tspack->arena, MicrofacetReflection)(lobe_ks[i], lobe_fres[i], lobe_dist[i]));
+	const SWCSpectrum ks1(Ks1->Evaluate(tspack, dgs).Clamp(0.f, 1.f));
+	const float r1 = Clamp(R1->Evaluate(tspack, dgs), 0.f, 1.f);
+	const float m1 = M1->Evaluate(tspack, dgs);
+	if (ks1.Filter(tspack) > 0.f && m1 > 0.f) {
+		MicrofacetDistribution *md1 = ARENA_ALLOC(tspack->arena, Blinn)((2.f * M_PI / (m1 * m1)) - 1.f);
+		Fresnel *fr1 = ARENA_ALLOC(tspack->arena, FresnelSlick)(r1, 0.f);
+		bsdf->Add(ARENA_ALLOC(tspack->arena, MicrofacetReflection)(ks1, fr1, md1));
 	}
 
-	// Clear coat and lambertian base
-	bsdf->Add(ARENA_ALLOC(tspack->arena, FresnelBlend)(kd, lobe_ks[2], ka, ld, lobe_dist[2]));
+	const SWCSpectrum ks2(Ks2->Evaluate(tspack, dgs).Clamp(0.f, 1.f));
+	const float r2 = Clamp(R2->Evaluate(tspack, dgs), 0.f, 1.f);
+	const float m2 = M2->Evaluate(tspack, dgs);
+	if (ks2.Filter(tspack) > 0.f && m2 > 0.f) {
+		MicrofacetDistribution *md2 = ARENA_ALLOC(tspack->arena, Blinn)((2.f * M_PI / (m2 * m2)) - 1.f);
+		Fresnel *fr2 = ARENA_ALLOC(tspack->arena, FresnelSlick)(r2, 0.f);
+		bsdf->Add(ARENA_ALLOC(tspack->arena, MicrofacetReflection)(ks2, fr2, md2));
+	}
 
-	//bsdf->Add(ARENA_ALLOC(tspack->arena, CookTorrance)(kd, 3, lobe_ks, lobe_dist, lobe_fres));
+	const SWCSpectrum ks3(Ks3->Evaluate(tspack, dgs).Clamp(0.f, 1.f));
+	const float r3 = Clamp(R3->Evaluate(tspack, dgs), 0.f, 1.f);
+	const float m3 = M3->Evaluate(tspack, dgs);
+	if (ks3.Filter(tspack) > 0.f && m3 > 0.f) {
+		MicrofacetDistribution *md3 = ARENA_ALLOC(tspack->arena, Blinn)((2.f * M_PI / (m3 * m3)) - 1.f);
+		// The fresnel function is created by the FresnelBlend model
+		//Fresnel *fr3 = ARENA_ALLOC(tspack->arena, FresnelSlick)(r3, 0.f);
+		// Clear coat and lambertian base
+		bsdf->Add(ARENA_ALLOC(tspack->arena, FresnelBlend)(kd, ks3 * r3, ka, ld, md3));
+	} else {
+		// Lambertian base only
+		bsdf->Add(ARENA_ALLOC(tspack->arena, Lambertian)(kd));
+	}
 
 	// Add ptr to CompositingParams structure
 	bsdf->SetCompositingParams(compParams);
