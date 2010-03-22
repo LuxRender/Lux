@@ -216,12 +216,13 @@ static void processFile(const string &fileParam, ParamSet &params, vector<string
 
 		// Dade - replace the file name with a temporary name
 		char buf[64];
+		// MSVC doesn't support z length modifier (size_t) for snprintf, so workaround by casting to unsigned long...
 		if (tmpFileList.size())
-			snprintf(buf, 64, "%5s_%08zu%s", tmpFileList[0].c_str(),
-				tmpFileList.size(), fileExt.c_str()); // %08zu should be ued but it could be not supported by the compiler
+			snprintf(buf, 64, "%5s_%08lu%s", tmpFileList[0].c_str(),
+				((unsigned long)tmpFileList.size()), fileExt.c_str()); // %08zu should be ued but it could be not supported by the compiler
 		else
-			snprintf(buf, 64, "00000_%08zu%s",
-				tmpFileList.size(), fileExt.c_str()); // %08zu should be ued but it could be not supported by the compiler
+			snprintf(buf, 64, "00000_%08lu%s",
+				((unsigned long)tmpFileList.size()), fileExt.c_str()); // %08zu should be ued but it could be not supported by the compiler
 		string file = string(buf);
 
 		// Dade - replace the filename parameter
