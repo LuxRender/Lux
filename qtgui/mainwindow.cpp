@@ -140,7 +140,9 @@ MainWindow::MainWindow(QWidget *parent, bool opengl, bool copylog2console) : QMa
 
 	// Remove the default page - gets created dynamically later
 	ui->toolBox_lightgroups->removeItem(0);
-	
+
+	createActions();
+
 	// File menu slots
 	connect(ui->action_openFile, SIGNAL(triggered()), this, SLOT(openFile()));
 	connect(ui->action_resumeFLM, SIGNAL(triggered()), this, SLOT(resumeFLM()));
@@ -309,6 +311,19 @@ MainWindow::~MainWindow()
 	delete histogramwidget;
 }
 
+void MainWindow::createActions()
+{
+	for (int i = 0; i < MaxRecentFiles; ++i) {
+	    m_recentFileActions[i] = new QAction(this);
+	    m_recentFileActions[i]->setVisible(false);
+	    connect(m_recentFileActions[i], SIGNAL(triggered()), this, SLOT(openRecentFile()));
+	}
+
+	for (int i = 0; i < MaxRecentFiles; ++i) {
+		ui->menuOpen_Recent->addAction(m_recentFileActions[i]);
+	}
+}
+
 void MainWindow::ReadSettings()
 {
 	QSettings settings("luxrender.net", "LuxRender GUI");
@@ -316,7 +331,11 @@ void MainWindow::ReadSettings()
 	settings.beginGroup("MainWindow");
 	restoreGeometry(settings.value("geometry").toByteArray());
 	ui->splitter->restoreState(settings.value("splittersizes").toByteArray());
+	m_recentFiles = settings.value("recentFiles").toStringList();
+	m_lastOpendir = settings.value("lastOpenDir","").toString();
 	settings.endGroup();
+
+	updateRecentFileActions();
 }
 
 void MainWindow::WriteSettings()
@@ -326,6 +345,8 @@ void MainWindow::WriteSettings()
 	settings.beginGroup("MainWindow");
 	settings.setValue("geometry", saveGeometry());
 	settings.setValue("splittersizes", ui->splitter->saveState());
+	settings.setValue("recentFiles", m_recentFiles);
+	settings.setValue("lastOpenDir", m_lastOpendir);
 	settings.endGroup();
 }
 
@@ -421,11 +442,21 @@ void MainWindow::openFile()
 	if (!canStopRendering())
 		return;
 
-	QString fileName = QFileDialog::getOpenFileName(this, tr("Choose a scene file to open"), "", tr("LuxRender Files (*.lxs)"));
+	QString fileName = QFileDialog::getOpenFileName(this, tr("Choose a scene file to open"), m_lastOpendir, tr("LuxRender Files (*.lxs)"));
 
 	if(!fileName.isNull()) {
 		endRenderingSession();
 		renderScenefile(fileName);
+	}
+}
+
+void MainWindow::openRecentFile()
+{
+	QAction *action = qobject_cast<QAction *>(sender());
+
+	if (action) {
+		endRenderingSession();
+		renderScenefile(action->data().toString());
 	}
 }
 
@@ -434,12 +465,12 @@ void MainWindow::resumeFLM()
 	if (!canStopRendering())
 		return;
 
-	QString lxsFileName = QFileDialog::getOpenFileName(this, tr("Choose a scene file to open"), "", tr("LuxRender Files (*.lxs)"));
+	QString lxsFileName = QFileDialog::getOpenFileName(this, tr("Choose a scene file to open"), m_lastOpendir, tr("LuxRender Files (*.lxs)"));
 
 	if(lxsFileName.isNull())
 		return;
 	
-	QString flmFileName = QFileDialog::getOpenFileName(this, tr("Choose an FLM file to open"), "", tr("LuxRender FLM files (*.flm)"));
+	QString flmFileName = QFileDialog::getOpenFileName(this, tr("Choose an FLM file to open"), m_lastOpendir, tr("LuxRender FLM files (*.flm)"));
 
 	if(flmFileName.isNull())
 		return;
@@ -453,7 +484,7 @@ void MainWindow::loadFLM()
 	if (!canStopRendering())
 		return;
 
-	QString flmFileName = QFileDialog::getOpenFileName(this, tr("Choose an FLM file to open"), "", tr("LuxRender FLM files (*.flm)"));
+	QString flmFileName = QFileDialog::getOpenFileName(this, tr("Choose an FLM file to open"), m_lastOpendir, tr("LuxRender FLM files (*.flm)"));
 
 	if(flmFileName.isNull())
 		return;
@@ -481,7 +512,7 @@ void MainWindow::saveFLM()
 	if( m_guiRenderState == WAITING )
 		return;
 
-	QString flmFileName = QFileDialog::getSaveFileName(this, tr("Choose an FLM file to save to"), "", tr("LuxRender FLM files (*.flm)"));
+	QString flmFileName = QFileDialog::getSaveFileName(this, tr("Choose an FLM file to save to"), m_lastOpendir, tr("LuxRender FLM files (*.flm)"));
 
 	if(flmFileName.isNull())
 		return;
@@ -707,7 +738,7 @@ void MainWindow::updateStatistics()
 	statsMessage->setText(QString("%1:%2:%3 - %4 S/s - %5 TotS/s - %6 S/px - %7% eff - EV = %8").arg(hours,2,10,QChar('0')).arg(mins, 2,10,QChar('0')).arg(secs,2,10,QChar('0')).arg(samplesSec).arg(samplesTotSec).arg(samplesPx,0,'g',3).arg(efficiency).arg(EV));
 }
 
-void MainWindow::renderScenefile(QString sceneFilename, QString flmFilename)
+void MainWindow::renderScenefile(const QString& sceneFilename, const QString& flmFilename)
 {
 	// Get the absolute path of the flm file
 	boost::filesystem::path fullPath(boost::filesystem::initial_path());
@@ -720,10 +751,48 @@ void MainWindow::renderScenefile(QString sceneFilename, QString flmFilename)
 	renderScenefile(sceneFilename);
 }
 
-void MainWindow::renderScenefile(QString filename)
+void MainWindow::setCurrentFile(const QString& filename)
+{
+	m_CurrentFile = filename;
+	setWindowModified(false);
+	QString showName = "Untitled";
+
+	if (!m_CurrentFile.isEmpty()) {
+		QFileInfo info(m_CurrentFile);
+		showName = info.fileName();
+		m_lastOpendir = info.filePath();
+		m_recentFiles.removeAll(m_CurrentFile);
+		m_recentFiles.prepend(m_CurrentFile);
+		updateRecentFileActions();
+	}
+
+	setWindowTitle(tr("%1[*]").arg(showName));
+}
+
+void MainWindow::updateRecentFileActions()
+{
+	QMutableStringListIterator i(m_recentFiles);
+	while (i.hasNext()) {
+		if (!QFile::exists(i.next())) {
+			i.remove();
+		}
+	}
+
+	for (int j = 0; j < MaxRecentFiles; ++j) {
+		if (j < m_recentFiles.count()) {
+			QString text = tr("&%1 %2").arg(j + 1).arg( QFileInfo(m_recentFiles[j]).fileName());
+			m_recentFileActions[j]->setText(text);
+			m_recentFileActions[j]->setData(m_recentFiles[j]);
+			m_recentFileActions[j]->setVisible(true);
+		} else
+			m_recentFileActions[j]->setVisible(false);
+	}
+}
+
+void MainWindow::renderScenefile(const QString& filename)
 {
 	// CF
-	m_CurrentFile = filename;
+	setCurrentFile(filename);
 
 	changeRenderState(PARSING);
 

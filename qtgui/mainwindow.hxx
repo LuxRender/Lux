@@ -135,8 +135,8 @@ public:
 
 	void SetRenderThreads(int num);
 	void updateStatistics();
-	void renderScenefile(QString sceneFilename, QString flmFilename);
-	void renderScenefile(QString filename);
+	void renderScenefile(const QString& sceneFilename, const QString& flmFilename);
+	void renderScenefile(const QString& filename);
 	void changeRenderState (LuxGuiRenderState state);
 	void endRenderingSession ();
 	
@@ -152,6 +152,12 @@ public:
 
 	bool m_auto_tonemap;
 
+protected:
+	
+	void setCurrentFile(const QString& filename);
+	void updateRecentFileActions();
+	void createActions();
+	
 private:
 	Ui::MainWindow *ui;
 
@@ -184,6 +190,12 @@ private:
 	
 	boost::thread *m_engineThread, *m_updateThread, *m_flmloadThread, *m_flmsaveThread;
 
+	// Directory Handling
+	enum { MaxRecentFiles = 5 };
+	QString m_lastOpendir;
+	QStringList m_recentFiles;
+	QAction *m_recentFileActions[MaxRecentFiles];
+
 	bool m_opengl;
 	
 	static void LuxGuiErrorHandler(int code, int severity, const char *msg);
@@ -215,6 +227,7 @@ private slots:
 
 	void exitApp ();
 	void openFile ();
+	void openRecentFile();
 	void resumeFLM ();
 	void loadFLM ();
 	void saveFLM ();

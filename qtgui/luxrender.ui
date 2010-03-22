@@ -720,18 +720,6 @@
      <height>23</height>
     </rect>
    </property>
-   <widget class="QMenu" name="menu_file">
-    <property name="title">
-     <string>File</string>
-    </property>
-    <addaction name="action_openFile"/>
-    <addaction name="separator"/>
-    <addaction name="action_resumeFLM"/>
-    <addaction name="action_loadFLM"/>
-    <addaction name="action_saveFLM"/>
-    <addaction name="separator"/>
-    <addaction name="action_exitApp"/>
-   </widget>
    <widget class="QMenu" name="menu_render">
     <property name="title">
      <string>Render</string>
@@ -757,6 +745,24 @@
     <addaction name="action_forums"/>
     <addaction name="separator"/>
     <addaction name="action_aboutDialog"/>
+   </widget>
+   <widget class="QMenu" name="menu_file">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <widget class="QMenu" name="menuOpen_Recent" >
+     <property name="title" >
+      <string>Open Recent</string>
+     </property>
+    </widget>
+    <addaction name="action_openFile"/>
+    <addaction name="menuOpen_Recent" />
+    <addaction name="separator"/>
+    <addaction name="action_resumeFLM"/>
+    <addaction name="action_loadFLM"/>
+    <addaction name="action_saveFLM"/>
+    <addaction name="separator"/>
+    <addaction name="action_exitApp"/>
    </widget>
    <addaction name="menu_file"/>
    <addaction name="menu_render"/>
@@ -923,6 +929,11 @@
   <action name="action_forums">
    <property name="text">
     <string>Forums</string>
+   </property>
+  </action>
+  <action name="actionOpen_Recent">
+   <property name="text">
+    <string>Open Recent</string>
    </property>
   </action>
  </widget>
