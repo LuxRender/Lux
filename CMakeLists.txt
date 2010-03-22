@@ -366,30 +366,30 @@ SET_SOURCE_FILES_PROPERTIES(${CMAKE_BINARY_DIR}/core/luxparse.cpp GENERATED)
 #############################################################################
 #############################################################################
 IF(APPLE)
+	ADD_CUSTOM_TARGET(dist DEPENDS luxrenderwx)
+	ADD_CUSTOM_COMMAND(
+	TARGET dist POST_BUILD
+	COMMAND rm -rf LuxRenderwx.app 
+	COMMAND mkdir LuxRenderwx.app 
+	COMMAND mkdir LuxRenderwx.app/Contents 
+	COMMAND mkdir LuxRenderwx.app/Contents/MacOS 
+	COMMAND mkdir LuxRenderwx.app/Contents/Resources
+	COMMAND cp ../macos/Info.plist LuxRenderwx.app/Contents
+	COMMAND cp LuxRender.icns LuxRenderwx.app/Contents/Resources
+	COMMAND echo APPLnone > LuxRenderwx.app/Contents/PkgInfo
+	COMMAND cp luxrenderwx LuxRenderwx.app/Contents/MacOS/LuxRenderwx)
 	ADD_CUSTOM_TARGET(dist DEPENDS luxrender)
 	ADD_CUSTOM_COMMAND(
 	TARGET dist POST_BUILD
-	COMMAND rm -rf LuxRender.app 
-	COMMAND mkdir LuxRender.app 
-	COMMAND mkdir LuxRender.app/Contents 
-	COMMAND mkdir LuxRender.app/Contents/MacOS 
-	COMMAND mkdir LuxRender.app/Contents/Resources
-	COMMAND cp ../macos/Info.plist LuxRender.app/Contents
-	COMMAND cp LuxRender.icns LuxRender.app/Contents/Resources
-	COMMAND echo APPLnone > LuxRender.app/Contents/PkgInfo
-	COMMAND cp luxrender LuxRender.app/Contents/MacOS/LuxRender)
-	ADD_CUSTOM_TARGET(dist DEPENDS luxrenderqt)
-	ADD_CUSTOM_COMMAND(
-	TARGET dist POST_BUILD
-	COMMAND rm -rf luxrenderqt.app 
-	COMMAND mkdir luxrenderqt.app 
-	COMMAND mkdir luxrenderqt.app/Contents 
-	COMMAND mkdir luxrenderqt.app/Contents/MacOS 
-	COMMAND mkdir luxrenderqt.app/Contents/Resources
-	COMMAND cp ../macos/Info.plist luxrenderqt.app/Contents
-	COMMAND cp luxrender.icns luxrenderqt.app/Contents/Resources
-	COMMAND echo APPLnone > luxrenderqt.app/Contents/PkgInfo
-	COMMAND cp luxrenderqt luxrenderqt.app/Contents/MacOS/luxrenderqt)
+	COMMAND rm -rf luxrender.app 
+	COMMAND mkdir luxrender.app 
+	COMMAND mkdir luxrender.app/Contents 
+	COMMAND mkdir luxrender.app/Contents/MacOS 
+	COMMAND mkdir luxrender.app/Contents/Resources
+	COMMAND cp ../macos/Info.plist luxrender.app/Contents
+	COMMAND cp luxrender.icns luxrender.app/Contents/Resources
+	COMMAND echo APPLnone > luxrender.app/Contents/PkgInfo
+	COMMAND cp luxrender luxrender.app/Contents/MacOS/luxrender)
 ENDIF(APPLE)
 
 
@@ -881,7 +881,7 @@ IF(wxWidgets_FOUND)
 	INCLUDE(${wxWidgets_USE_FILE})
 	MESSAGE( STATUS "wxWidgets include directory: " ${wxWidgets_INCLUDE_DIRS} )
 
-	ADD_EXECUTABLE(luxrender ${GUI_TYPE} renderer/wxluxapp.cpp renderer/wxluxgui.cpp renderer/wxluxframe.cpp renderer/wxglviewer.cpp renderer/wxviewer.cpp)
+	ADD_EXECUTABLE(luxrenderwx ${GUI_TYPE} renderer/wxluxapp.cpp renderer/wxluxgui.cpp renderer/wxluxframe.cpp renderer/wxglviewer.cpp renderer/wxviewer.cpp)
 	INCLUDE_DIRECTORIES(SYSTEM ${wxWidgets_INCLUDE_DIRS} )
 
 	IF(APPLE)
@@ -901,9 +901,9 @@ IF(wxWidgets_FOUND)
 		MARK_AS_ADVANCED (AGL_LIBRARY)
 		MARK_AS_ADVANCED (APP_SERVICES_LIBRARY)
 		SET(EXTRA_LIBS ${CARBON_LIBRARY} ${QUICKTIME_LIBRARY} ${OPENGL_LIBRARY} ${AGL_LIBRARY} ${APP_SERVICES_LIBRARY})
-		TARGET_LINK_LIBRARIES(luxrender -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${wxWidgets_LIBRARIES} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${BZ2_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
+		TARGET_LINK_LIBRARIES(luxrenderwx -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${wxWidgets_LIBRARIES} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${BZ2_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
 	ELSE(APPLE)
-		TARGET_LINK_LIBRARIES(luxrender -Wl,--whole-archive lux -Wl,--no-whole-archive ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARY} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES})
+		TARGET_LINK_LIBRARIES(luxrenderwx -Wl,--whole-archive lux -Wl,--no-whole-archive ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARY} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES})
 	ENDIF(APPLE)
 ELSE(wxWidgets_FOUND)
 	MESSAGE( STATUS "Warning : could not find wxWidgets - not building GUI")
@@ -933,7 +933,7 @@ IF(QT4_FOUND)
 	file (GLOB TRANSLATIONS_FILES qtgui/translations/*.ts)
 	qt4_create_translation(QM_FILES ${FILES_TO_TRANSLATE} ${TRANSLATIONS_FILES})
 
-	ADD_EXECUTABLE(luxrenderqt ${GUI_TYPE} ${LUXQTGUI_SRCS} ${LUXQTGUI_MOC_SRCS} ${LUXQTGUI_RC_SRCS} ${LUXQTGUI_UI_HDRS} ${QM_FILES})
+	ADD_EXECUTABLE(luxrender ${GUI_TYPE} ${LUXQTGUI_SRCS} ${LUXQTGUI_MOC_SRCS} ${LUXQTGUI_RC_SRCS} ${LUXQTGUI_UI_HDRS} ${QM_FILES})
 	IF(APPLE)
 		INCLUDE_DIRECTORIES (SYSTEM /Developer/Headers/FlatCarbon /usr/local/include)
 		FIND_LIBRARY(CARBON_LIBRARY Carbon)
@@ -953,9 +953,9 @@ IF(QT4_FOUND)
 		MARK_AS_ADVANCED (AGL_LIBRARY)
 		MARK_AS_ADVANCED (APP_SERVICES_LIBRARY)
 		SET(EXTRA_LIBS ${CARBON_LIBRARY}  ${QUICKTIME_LIBRARY} ${QT_LIBRARY} ${OPENGL_LIBRARY} ${AGL_LIBRARY} ${APP_SERVICES_LIBRARY})
-		TARGET_LINK_LIBRARIES(luxrenderqt -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${QT_LIBRARIES} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${BZ2_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
+		TARGET_LINK_LIBRARIES(luxrender -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${QT_LIBRARIES} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${BZ2_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
 	ELSE(APPLE)
-	TARGET_LINK_LIBRARIES(luxrenderqt -Wl,--whole-archive lux -Wl,--no-whole-archive ${QT_LIBRARIES} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} ${ZLIB_LIBRARIES} ${BZ2_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES}  ${OPENGL_LIBRARY})
+	TARGET_LINK_LIBRARIES(luxrender -Wl,--whole-archive lux -Wl,--no-whole-archive ${QT_LIBRARIES} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} ${ZLIB_LIBRARIES} ${BZ2_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES}  ${OPENGL_LIBRARY})
 	ENDIF(APPLE)
 ELSE(QT4_FOUND)
 	MESSAGE( STATUS "Warning : could not find Qt - not building Qt GUI")
@@ -964,7 +964,7 @@ ENDIF(QT4_FOUND)
 #############################################################################
 
 #Install target
-INSTALL(TARGETS luxrender luxrenderqt luxconsole luxmerger
+INSTALL(TARGETS luxrender luxrenderwx luxconsole luxmerger
         RUNTIME DESTINATION bin
 )
 
