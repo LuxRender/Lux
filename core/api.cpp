@@ -417,7 +417,7 @@ extern "C" void luxWorldEnd() {
 
 extern "C" const char *luxVersion()
 {
-	static const char *version = LUX_VERSION_STRING;
+	static const char version[] = LUX_VERSION_STRING;
 	return version;
 }
 
