@@ -4,7 +4,7 @@ IF(COMMAND cmake_policy)
 ENDIF(COMMAND cmake_policy)
 
 PROJECT(lux)
-SET(VERSION 0.6)
+SET(VERSION 0.7)
 
 # Dade - uncomment to obtain verbose building output
 #SET(CMAKE_VERBOSE_MAKEFILE true)
@@ -31,31 +31,32 @@ ENDIF(APPLE)
 #############################################################################
 #############################################################################
 
-EXECUTE_PROCESS(
-    COMMAND ${CMAKE_C_COMPILER} -dumpmachine
-    OUTPUT_VARIABLE MACHINE
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-MESSAGE(STATUS "Building for target ${MACHINE}")
+IF(NOT APPLE)
+	EXECUTE_PROCESS(
+		COMMAND ${CMAKE_C_COMPILER} -dumpmachine
+		OUTPUT_VARIABLE MACHINE
+		OUTPUT_STRIP_TRAILING_WHITESPACE
+	)
+	MESSAGE(STATUS "Building for target ${MACHINE}")
 
-STRING(REGEX MATCH "(i.86-*)|(athlon-*)|(pentium-*)" _mach_x86 ${MACHINE})
-IF (_mach_x86)
-    SET(ARCH_X86 1)
-ENDIF (_mach_x86)
+	STRING(REGEX MATCH "(i.86-*)|(athlon-*)|(pentium-*)" _mach_x86 ${MACHINE})
+	IF (_mach_x86)
+		SET(ARCH_X86 1)
+	ENDIF (_mach_x86)
 
-STRING(REGEX MATCH "(x86_64-*)|(X86_64-*)|(AMD64-*)|(amd64-*)" _mach_x86_64 ${MACHINE})
-IF (_mach_x86_64)
-    SET(ARCH_X86_64 1)
+	STRING(REGEX MATCH "(x86_64-*)|(X86_64-*)|(AMD64-*)|(amd64-*)" _mach_x86_64 ${MACHINE})
+	IF (_mach_x86_64)
+		SET(ARCH_X86_64 1)
     SET(LIB_SUFFIX 64)
-    #jromang - Hack to avoid boost bug on x64  Ubuntu 8.10 and Fedora 10 (http://www.luxrender.net/mantis/view.php?id=433)
-    ADD_DEFINITIONS(-DBOOST_NO_INTRINSIC_INT64_T)
-ENDIF (_mach_x86_64)
+		#jromang - Hack to avoid boost bug on x64  Ubuntu 8.10 and Fedora 10 (http://www.luxrender.net/mantis/view.php?id=433)
+		ADD_DEFINITIONS(-DBOOST_NO_INTRINSIC_INT64_T)
+	ENDIF (_mach_x86_64)
 
-STRING(REGEX MATCH "(ppc-*)|(powerpc-*)" _mach_ppc ${MACHINE})
-IF (_mach_ppc)
-    SET(ARCH_PPC 1)
-ENDIF (_mach_ppc)
-
+	STRING(REGEX MATCH "(ppc-*)|(powerpc-*)" _mach_ppc ${MACHINE})
+	IF (_mach_ppc)
+		SET(ARCH_PPC 1)
+	ENDIF (_mach_ppc)
+ENDIF(NOT APPLE)
 
 #############################################################################
 #############################################################################
@@ -369,15 +370,15 @@ IF(APPLE)
 	ADD_CUSTOM_TARGET(dist DEPENDS luxrenderwx)
 	ADD_CUSTOM_COMMAND(
 	TARGET dist POST_BUILD
-	COMMAND rm -rf LuxRenderwx.app 
-	COMMAND mkdir LuxRenderwx.app 
-	COMMAND mkdir LuxRenderwx.app/Contents 
-	COMMAND mkdir LuxRenderwx.app/Contents/MacOS 
-	COMMAND mkdir LuxRenderwx.app/Contents/Resources
-	COMMAND cp ../macos/Info.plist LuxRenderwx.app/Contents
-	COMMAND cp LuxRender.icns LuxRenderwx.app/Contents/Resources
-	COMMAND echo APPLnone > LuxRenderwx.app/Contents/PkgInfo
-	COMMAND cp luxrenderwx LuxRenderwx.app/Contents/MacOS/LuxRenderwx)
+	COMMAND rm -rf luxrenderwx.app 
+	COMMAND mkdir luxrenderwx.app 
+	COMMAND mkdir luxrenderwx.app/Contents 
+	COMMAND mkdir luxrenderwx.app/Contents/MacOS 
+	COMMAND mkdir luxrenderwx.app/Contents/Resources
+	COMMAND cp ../macos/Info.plist luxrenderwx.app/Contents
+	COMMAND cp luxrender.icns luxrenderwx.app/Contents/Resources
+	COMMAND echo APPLnone > luxrenderwx.app/Contents/PkgInfo
+	COMMAND cp luxrenderwx luxrenderwx.app/Contents/MacOS/luxrenderwx)
 	ADD_CUSTOM_TARGET(dist DEPENDS luxrender)
 	ADD_CUSTOM_COMMAND(
 	TARGET dist POST_BUILD
@@ -757,9 +758,9 @@ IF(APPLE)
 	SET(MACOSX_BUNDLE_SHORT_VERSION_STRING "${VERSION}")
 	# Bundle version is the version the OS looks at.
 	SET(MACOSX_BUNDLE_BUNDLE_VERSION "${VERSION}")
-	SET(MACOSX_BUNDLE_GUI_IDENTIFIER "org.LuxRender.LuxRender" )
-	SET(MACOSX_BUNDLE_BUNDLE_NAME "LuxRender" )
-	SET(MACOSX_BUNDLE_ICON_FILE "LuxRender.icns")
+	SET(MACOSX_BUNDLE_GUI_IDENTIFIER "org.luxrender.luxrender" )
+	SET(MACOSX_BUNDLE_BUNDLE_NAME "luxrender" )
+	SET(MACOSX_BUNDLE_ICON_FILE "luxrender.icns")
 	# SET(MACOSX_BUNDLE_COPYRIGHT "")
 	# SET(MACOSX_BUNDLE_INFO_STRING "Info string, localized?")
 ENDIF(APPLE)
@@ -782,9 +783,9 @@ IF(APPLE)
 	SET(MACOSX_BUNDLE_SHORT_VERSION_STRING "${VERSION}")
 	# Bundle version is the version the OS looks at.
 	SET(MACOSX_BUNDLE_BUNDLE_VERSION "${VERSION}")
-	SET(MACOSX_BUNDLE_GUI_IDENTIFIER "org.LuxRender.LuxRender" )
-	SET(MACOSX_BUNDLE_BUNDLE_NAME "LuxRender" )
-	SET(MACOSX_BUNDLE_ICON_FILE "LuxRender.icns")
+	SET(MACOSX_BUNDLE_GUI_IDENTIFIER "org.luxrender.luxrender" )
+	SET(MACOSX_BUNDLE_BUNDLE_NAME "luxrender" )
+	SET(MACOSX_BUNDLE_ICON_FILE "luxrender.icns")
 	# SET(MACOSX_BUNDLE_COPYRIGHT "")
 	# SET(MACOSX_BUNDLE_INFO_STRING "Info string, localized?")
 ENDIF(APPLE)
@@ -809,7 +810,7 @@ IF(APPLE)
 	SET(MACOSX_BUNDLE_BUNDLE_VERSION "${VERSION}")
 	SET(MACOSX_BUNDLE_GUI_IDENTIFIER "org.luxrender.luxrender" )
 	SET(MACOSX_BUNDLE_BUNDLE_NAME "luxrender" )
-	SET(MACOSX_BUNDLE_ICON_FILE "LuxRender.icns")
+	SET(MACOSX_BUNDLE_ICON_FILE "luxrender.icns")
 	# SET(MACOSX_BUNDLE_COPYRIGHT "")
 	# SET(MACOSX_BUNDLE_INFO_STRING "Info string, localized?")
 ENDIF(APPLE)
