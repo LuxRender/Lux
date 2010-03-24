@@ -35,9 +35,10 @@ void ClickableLabel::mouseReleaseEvent(QMouseEvent* event)
 	emit clicked();
 }
 
-PaneWidget::PaneWidget(QWidget *parent, const QString& label, const QString& icon) : QWidget(parent), ui(new Ui::PaneWidget)
+PaneWidget::PaneWidget(QWidget *parent, const QString& label, const QString& icon, bool onoffbutton) : QWidget(parent), ui(new Ui::PaneWidget)
 {
 	expanded = false;
+	onofflabel = NULL;
 
 	ui->setupUi(this);
 	if (!icon.isEmpty())
@@ -47,13 +48,21 @@ PaneWidget::PaneWidget(QWidget *parent, const QString& label, const QString& ico
 		ui->labelPaneName->setText(label);
 
 	expandlabel = new ClickableLabel(">", this);
+	expandlabel->setPixmap(QPixmap(":/icons/expandedicon.png"));
 	ui->gridLayout->addWidget(expandlabel, 0, 3, 1, 1);
 
 	connect(expandlabel, SIGNAL(clicked()), this, SLOT(expandClicked()));
+	
+	if (onoffbutton)
+		showOnOffButton();
 }
 
 PaneWidget::~PaneWidget()
 {
+	delete expandlabel;
+
+	if (onofflabel != NULL)
+		delete onofflabel;
 }
 
 void PaneWidget::setTitle(const QString& title)
@@ -64,6 +73,37 @@ void PaneWidget::setTitle(const QString& title)
 void PaneWidget::setIcon(const QString& icon)
 {
 	ui->labelPaneIcon->setPixmap(QPixmap(icon));
+}
+
+void PaneWidget::showOnOffButton(bool showbutton)
+{
+	if (onofflabel == NULL) {
+		onofflabel = new ClickableLabel("*", this);
+		onofflabel->setPixmap(QPixmap(":/icons/poweronicon.png"));
+		ui->gridLayout->removeWidget(expandlabel);
+		ui->gridLayout->addWidget(onofflabel, 0, 3, 1, 1);
+		ui->gridLayout->addWidget(expandlabel, 0, 4, 1, 1);
+		connect(onofflabel, SIGNAL(clicked()), this, SLOT(onoffClicked()));
+	}
+
+	if (showbutton)
+		onofflabel->show();
+	else
+		onofflabel->hide();
+}
+
+void PaneWidget::onoffClicked()
+{
+	if (mainwidget->isEnabled()) {
+		mainwidget->setEnabled(false);
+		onofflabel->setPixmap(QPixmap(":/icons/powerofficon.png"));
+		emit turnedOff();
+	}
+	else {
+		mainwidget->setEnabled(true);
+		onofflabel->setPixmap(QPixmap(":/icons/poweronicon.png"));
+		emit turnedOn();
+	}
 }
 
 void PaneWidget::expandClicked()
@@ -79,13 +119,14 @@ void PaneWidget::expand()
 {
 	expanded = true;
 	expandlabel->setText("v");
+	expandlabel->setPixmap(QPixmap(":/icons/expandedicon.png"));
 	mainwidget->show();
 }
 
 void PaneWidget::collapse()
 {
 	expanded = false;
-	expandlabel->setText(">");
+	expandlabel->setPixmap(QPixmap(":/icons/collapsedicon.png"));
 	mainwidget->hide();
 }
 

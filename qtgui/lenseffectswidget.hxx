@@ -63,6 +63,10 @@ signals:
 	void valuesChanged();
 	void forceUpdate();
 
+protected:
+
+	void changeEvent(QEvent * event);
+
 private:
 
 	Ui::LensEffectsWidget *ui;

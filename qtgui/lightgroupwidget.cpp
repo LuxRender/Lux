@@ -51,6 +51,15 @@ LightGroupWidget::~LightGroupWidget()
 {
 }
 
+void LightGroupWidget::changeEvent(QEvent *event)
+{
+	m_LG_enable = this->isEnabled();
+	if (event->type() == QEvent::EnabledChange) {
+		luxSetParameterValue(LUX_FILM, LUX_FILM_LG_ENABLE, this->isEnabled(), m_Index);
+		emit valuesChanged ();
+	}
+}
+
 void LightGroupWidget::rgbEnabledChanged(int value)
 {
 	if (value == Qt::Checked)
@@ -248,6 +257,7 @@ void LightGroupWidget::ResetValuesFromFilm(bool useDefaults)
 
 void LightGroupWidget::SetWidgetsEnabled(bool enabled)
 {
+	
 	ui->slider_gain->setEnabled(enabled);
 	ui->label_gain->setEnabled(enabled);
 	ui->spinBox_gain->setEnabled(enabled);

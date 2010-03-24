@@ -69,6 +69,16 @@ NoiseReductionWidget::~NoiseReductionWidget()
 {
 }
 
+void NoiseReductionWidget::changeEvent(QEvent *event)
+{
+	if (event->type() == QEvent::EnabledChange) {
+		updateParam(LUX_FILM, LUX_FILM_NOISE_GREYC_ENABLED, m_GREYC_enabled && this->isEnabled());
+		updateParam(LUX_FILM, LUX_FILM_NOISE_CHIU_ENABLED, m_Chiu_enabled && this->isEnabled());
+		
+		emit valuesChanged ();
+	}
+}
+
 void NoiseReductionWidget::updateWidgetValues()
 {
 	// GREYC widgets

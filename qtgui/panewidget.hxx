@@ -58,7 +58,7 @@ class PaneWidget : public QWidget
 
 public:
 
-	PaneWidget(QWidget *parent, const QString& label = "", const QString& icon = "");
+	PaneWidget(QWidget *parent, const QString& label = "", const QString& icon = "", bool onoffbutton=false);
 	~PaneWidget();
 
 	void setTitle(const QString& title);
@@ -67,6 +67,7 @@ public:
 	void setWidget(QWidget *widget);
 	QWidget *getWidget();
 
+	void showOnOffButton(bool showbutton = true);
 	void expand();
 	void collapse();
 
@@ -75,13 +76,21 @@ private:
 	Ui::PaneWidget *ui;
 
 	QWidget *mainwidget;
+	QPixmap expandedicon, collapsedicon;
 	ClickableLabel *expandlabel;
+	ClickableLabel *onofflabel;
 
 	bool expanded;
+
+signals:
+
+	void turnedOn();
+	void turnedOff();
 
 private slots:
 
 	void expandClicked();
+	void onoffClicked();
   
 };
 

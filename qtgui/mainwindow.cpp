@@ -169,11 +169,11 @@ MainWindow::MainWindow(QWidget *parent, bool opengl, bool copylog2console) : QMa
 
 	// Panes
 	panes[0] = new PaneWidget(ui->panesAreaContents, "Tonemap", ":/icons/tonemapicon.png");
-	panes[1] = new PaneWidget(ui->panesAreaContents, "Lens Effects", ":/icons/lenseffectsicon.png");
+	panes[1] = new PaneWidget(ui->panesAreaContents, "Lens Effects", ":/icons/lenseffectsicon.png", true);
 	panes[2] = new PaneWidget(ui->panesAreaContents, "Colorspace", ":/icons/colorspaceicon.png");
-	panes[3] = new PaneWidget(ui->panesAreaContents, "Gamma", ":/icons/gammaicon.png");
+	panes[3] = new PaneWidget(ui->panesAreaContents, "Gamma", ":/icons/gammaicon.png", true);
 	panes[4] = new PaneWidget(ui->panesAreaContents, "HDR Histogram", ":/icons/histogramicon.png");
-	panes[5] = new PaneWidget(ui->panesAreaContents, "Noise Reduction", ":/icons/noisereductionicon.png");
+	panes[5] = new PaneWidget(ui->panesAreaContents, "Noise Reduction", ":/icons/noisereductionicon.png", true);
 
 	// Tonemap page
 	tonemapwidget = new ToneMapWidget(panes[0]);
@@ -325,7 +325,6 @@ MainWindow::~MainWindow()
 	delete colorspacewidget;
 	delete noisereductionwidget;
 	delete histogramwidget;
-	delete spacer;
 
 	for (int i = 0; i < NumPanes; i++)
 		delete panes[i];
@@ -1229,6 +1228,7 @@ void MainWindow::ResetLightGroupsFromFilm( bool useDefaults )
 	int numLightGroups = (int)luxGetParameterValue(LUX_FILM, LUX_FILM_LG_COUNT);
 	for (int i = 0; i < numLightGroups; i++) {
 		PaneWidget *pane = new PaneWidget(ui->lightGroupsAreaContents);
+		pane->showOnOffButton();
 		LightGroupWidget *currWidget = new LightGroupWidget(pane);
 		currWidget->SetIndex(i);
 		currWidget->ResetValuesFromFilm( useDefaults );

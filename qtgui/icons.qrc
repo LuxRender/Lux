@@ -1,5 +1,9 @@
 <RCC>
-  <qresource prefix="/" >
+  <qresource prefix="/">
+    <file>icons/collapsedicon.png</file>
+    <file>icons/powerofficon.png</file>
+    <file>icons/expandedicon.png</file>
+    <file>icons/poweronicon.png</file>
     <file>icons/luxrender.png</file>
     <file>icons/clipboardicon.png</file>
     <file>icons/colorspaceicon.png</file>

@@ -24,6 +24,7 @@
 #define GAMMAWIDGET_H
 
 #include <QtGui/QWidget>
+#include <QEvent>
 
 #define TORGB_GAMMA_RANGE 5.0f
 
@@ -56,6 +57,10 @@ signals:
 private:
 
 	Ui::GammaWidget *ui;
+
+protected:
+
+	void changeEvent(QEvent * event);
 
 private slots:
 

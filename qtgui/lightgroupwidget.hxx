@@ -51,6 +51,10 @@ public:
 signals:
 	void valuesChanged();
 
+protected:
+
+	void changeEvent(QEvent * event);
+
 private:
 
 	Ui::LightGroupWidget *ui;

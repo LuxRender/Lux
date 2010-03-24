@@ -67,6 +67,22 @@ LensEffectsWidget::~LensEffectsWidget()
 {
 }
 
+void LensEffectsWidget::changeEvent(QEvent *event)
+{
+	if (event->type() == QEvent::EnabledChange) {
+		updateParam(LUX_FILM, LUX_FILM_VIGNETTING_ENABLED, m_Vignetting_Enabled && this->isEnabled());
+		updateParam(LUX_FILM, LUX_FILM_ABERRATION_ENABLED, m_Aberration_enabled && this->isEnabled());
+		updateParam(LUX_FILM, LUX_FILM_GLARE_AMOUNT, this->isEnabled() ? m_Glare_amount : 0.0);
+		updateParam(LUX_FILM, LUX_FILM_BLOOMWEIGHT, this->isEnabled() ? m_bloomweight : 0.0);
+
+		if (!this->isEnabled())
+			// prevent bloom update
+			updateParam(LUX_FILM, LUX_FILM_UPDATEBLOOMLAYER, 0.0);
+		
+		emit valuesChanged ();
+	}
+}
+
 void LensEffectsWidget::updateWidgetValues()
 {
 	int sliderval;
