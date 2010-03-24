@@ -20,27 +20,83 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#include <QTranslator>
+#include "ui_pane.h"
+#include "panewidget.hxx"
 
-#include "luxapp.hxx"
+#include <iostream>
 
-int main(int argc, char *argv[])
-{
-	Q_INIT_RESOURCE(icons);
+using namespace std;
 
-	LuxGuiApp application(argc, argv);
-
-/*	QString locale = QLocale::system().name();
-
-	QTranslator translator;
-	if (translator.load(QString("luxrender_") + locale))
-		application.installTranslator(&translator);
-*/	
-	application.init();
-	
-	if (application.mainwin != NULL)
-		return application.exec();
-	else
-		return 0;
+ClickableLabel::ClickableLabel(const QString& label, QWidget *parent) : QLabel(label,parent) {
 }
 
+void ClickableLabel::mouseReleaseEvent(QMouseEvent* event) 
+{
+	emit clicked();
+}
+
+PaneWidget::PaneWidget(QWidget *parent, const QString& label, const QString& icon) : QWidget(parent), ui(new Ui::PaneWidget)
+{
+	expanded = false;
+
+	ui->setupUi(this);
+	if (!icon.isEmpty())
+		ui->labelPaneIcon->setPixmap(QPixmap(icon));
+	
+	if (!label.isEmpty())
+		ui->labelPaneName->setText(label);
+
+	expandlabel = new ClickableLabel(">", this);
+	ui->gridLayout->addWidget(expandlabel, 0, 3, 1, 1);
+
+	connect(expandlabel, SIGNAL(clicked()), this, SLOT(expandClicked()));
+}
+
+PaneWidget::~PaneWidget()
+{
+}
+
+void PaneWidget::setTitle(const QString& title)
+{
+	ui->labelPaneName->setText(title);
+}
+
+void PaneWidget::setIcon(const QString& icon)
+{
+	ui->labelPaneIcon->setPixmap(QPixmap(icon));
+}
+
+void PaneWidget::expandClicked()
+{
+	if (expanded)
+		collapse();
+	else
+		expand();
+
+}
+
+void PaneWidget::expand()
+{
+	expanded = true;
+	expandlabel->setText("v");
+	mainwidget->show();
+}
+
+void PaneWidget::collapse()
+{
+	expanded = false;
+	expandlabel->setText(">");
+	mainwidget->hide();
+}
+
+void PaneWidget::setWidget(QWidget *widget)
+{
+	mainwidget = widget;
+	ui->paneLayout->addWidget(widget);
+	mainwidget->hide();
+}
+
+QWidget *PaneWidget::getWidget()
+{
+	return mainwidget;
+}

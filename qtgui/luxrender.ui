@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1024</width>
-    <height>768</height>
+    <height>746</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -291,175 +291,32 @@
               </widget>
              </item>
              <item row="0" column="0" colspan="3">
-              <widget class="QToolBox" name="toolBox">
-               <property name="enabled">
+              <widget class="QScrollArea" name="panesArea">
+               <property name="frameShape">
+                <enum>QFrame::NoFrame</enum>
+               </property>
+               <property name="widgetResizable">
                 <bool>true</bool>
                </property>
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="minimumSize">
-                <size>
-                 <width>300</width>
-                 <height>0</height>
-                </size>
-               </property>
-               <property name="currentIndex">
-                <number>0</number>
-               </property>
-               <widget class="QWidget" name="page_toneMap">
-                <property name="enabled">
-                 <bool>true</bool>
-                </property>
+               <widget class="QWidget" name="panesAreaContents">
                 <property name="geometry">
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>571</width>
-                  <height>390</height>
+                  <width>581</width>
+                  <height>552</height>
                  </rect>
                 </property>
                 <property name="sizePolicy">
-                 <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                 <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
                   <horstretch>0</horstretch>
                   <verstretch>0</verstretch>
                  </sizepolicy>
                 </property>
-                <attribute name="icon">
-                 <iconset resource="icons.qrc">
-                  <normaloff>:/icons/tonemapicon.png</normaloff>:/icons/tonemapicon.png</iconset>
-                </attribute>
-                <attribute name="label">
-                 <string>Tonemap</string>
-                </attribute>
-                <layout class="QVBoxLayout" name="toneMapLayout"/>
-               </widget>
-               <widget class="QWidget" name="page_lensEffects">
-                <property name="enabled">
-                 <bool>true</bool>
-                </property>
-                <property name="geometry">
-                 <rect>
-                  <x>0</x>
-                  <y>0</y>
-                  <width>571</width>
-                  <height>390</height>
-                 </rect>
-                </property>
-                <attribute name="icon">
-                 <iconset resource="icons.qrc">
-                  <normaloff>:/icons/lenseffectsicon.png</normaloff>:/icons/lenseffectsicon.png</iconset>
-                </attribute>
-                <attribute name="label">
-                 <string>Lens Effects</string>
-                </attribute>
-                <layout class="QVBoxLayout" name="lensEffectsLayout">
-                 <property name="margin">
-                  <number>0</number>
-                 </property>
-                </layout>
-               </widget>
-               <widget class="QWidget" name="page_colorSpace">
-                <property name="enabled">
-                 <bool>true</bool>
-                </property>
-                <property name="geometry">
-                 <rect>
-                  <x>0</x>
-                  <y>0</y>
-                  <width>571</width>
-                  <height>390</height>
-                 </rect>
-                </property>
-                <attribute name="icon">
-                 <iconset resource="icons.qrc">
-                  <normaloff>:/icons/colorspaceicon.png</normaloff>:/icons/colorspaceicon.png</iconset>
-                </attribute>
-                <attribute name="label">
-                 <string>Colorspace</string>
-                </attribute>
-                <layout class="QGridLayout" name="colorSpaceLayout">
-                 <property name="margin">
-                  <number>0</number>
-                 </property>
-                </layout>
-               </widget>
-               <widget class="QWidget" name="page_gamma">
-                <property name="enabled">
-                 <bool>true</bool>
-                </property>
-                <property name="geometry">
-                 <rect>
-                  <x>0</x>
-                  <y>0</y>
-                  <width>571</width>
-                  <height>390</height>
-                 </rect>
-                </property>
-                <attribute name="icon">
-                 <iconset resource="icons.qrc">
-                  <normaloff>:/icons/gammaicon.png</normaloff>:/icons/gammaicon.png</iconset>
-                </attribute>
-                <attribute name="label">
-                 <string>Gamma</string>
-                </attribute>
-                <layout class="QVBoxLayout" name="gammaLayout">
-                 <property name="margin">
-                  <number>0</number>
-                 </property>
-                </layout>
-               </widget>
-               <widget class="QWidget" name="page_histogram">
-                <property name="enabled">
-                 <bool>true</bool>
-                </property>
-                <property name="geometry">
-                 <rect>
-                  <x>0</x>
-                  <y>0</y>
-                  <width>571</width>
-                  <height>390</height>
-                 </rect>
-                </property>
-                <attribute name="icon">
-                 <iconset resource="icons.qrc">
-                  <normaloff>:/icons/histogramicon.png</normaloff>:/icons/histogramicon.png</iconset>
-                </attribute>
-                <attribute name="label">
-                 <string>HDR Histogram</string>
-                </attribute>
-                <layout class="QVBoxLayout" name="histogramLayout">
-                 <property name="margin">
-                  <number>0</number>
-                 </property>
-                </layout>
-               </widget>
-               <widget class="QWidget" name="page_noiseReduction">
-                <property name="enabled">
-                 <bool>true</bool>
-                </property>
-                <property name="geometry">
-                 <rect>
-                  <x>0</x>
-                  <y>0</y>
-                  <width>571</width>
-                  <height>390</height>
-                 </rect>
-                </property>
-                <attribute name="icon">
-                 <iconset resource="icons.qrc">
-                  <normaloff>:/icons/noisereductionicon.png</normaloff>:/icons/noisereductionicon.png</iconset>
-                </attribute>
-                <attribute name="label">
-                 <string>Noise Reduction</string>
-                </attribute>
-                <layout class="QGridLayout" name="noiseReductionLayout">
-                 <property name="margin">
-                  <number>0</number>
-                 </property>
+                <layout class="QVBoxLayout" name="verticalLayout">
+                 <item>
+                  <layout class="QVBoxLayout" name="panesLayout"/>
+                 </item>
                 </layout>
                </widget>
               </widget>
@@ -482,38 +339,29 @@
             </attribute>
             <layout class="QVBoxLayout" name="verticalLayout_15">
              <item>
-              <widget class="QToolBox" name="toolBox_lightgroups">
-               <property name="currentIndex">
-                <number>0</number>
+              <widget class="QScrollArea" name="lightGroupsArea">
+               <property name="frameShape">
+                <enum>QFrame::NoFrame</enum>
                </property>
-               <widget class="QWidget" name="page_2">
+               <property name="widgetResizable">
+                <bool>true</bool>
+               </property>
+               <widget class="QWidget" name="lightGroupsAreaContents">
                 <property name="geometry">
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>571</width>
-                  <height>261</height>
+                  <width>581</width>
+                  <height>582</height>
                  </rect>
                 </property>
-                <attribute name="label">
-                 <string>Default lightgroup</string>
-                </attribute>
-                <layout class="QGridLayout" name="gridLayout_19"/>
+                <layout class="QVBoxLayout" name="verticalLayout_3">
+                 <item>
+                  <layout class="QVBoxLayout" name="lightGroupsLayout"/>
+                 </item>
+                </layout>
                </widget>
               </widget>
-             </item>
-             <item>
-              <spacer name="verticalSpacer_12">
-               <property name="orientation">
-                <enum>Qt::Vertical</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>20</width>
-                 <height>40</height>
-                </size>
-               </property>
-              </spacer>
              </item>
             </layout>
            </widget>
@@ -750,13 +598,13 @@
     <property name="title">
      <string>File</string>
     </property>
-    <widget class="QMenu" name="menuOpen_Recent" >
-     <property name="title" >
+    <widget class="QMenu" name="menuOpen_Recent">
+     <property name="title">
       <string>Open Recent</string>
      </property>
     </widget>
     <addaction name="action_openFile"/>
-    <addaction name="menuOpen_Recent" />
+    <addaction name="menuOpen_Recent"/>
     <addaction name="separator"/>
     <addaction name="action_resumeFLM"/>
     <addaction name="action_loadFLM"/>

@@ -35,6 +35,7 @@
 #include <QtGui/QSpinBox>
 #include <QtGui/QDoubleSpinBox>
 #include <QtGui/QCheckBox>
+#include <QSpacerItem>
 #include <QTimer>
 #include <QEvent>
 #include <QGraphicsPixmapItem>
@@ -52,6 +53,7 @@
 
 #include "api.h"
 #include "renderview.hxx"
+#include "panewidget.hxx"
 #include "lightgroupwidget.hxx"
 #include "tonemapwidget.hxx"
 #include "lenseffectswidget.hxx"
@@ -163,10 +165,15 @@ private:
 
 	QLabel *statusMessage;
 	QLabel *statsMessage;
+	QSpacerItem *spacer;
 	
 	RenderView *renderView;
 	QString m_CurrentFile;
-    
+
+	enum { NumPanes = 6 };
+
+	PaneWidget *panes[NumPanes];
+
 	ToneMapWidget *tonemapwidget;
 	LensEffectsWidget *lenseffectswidget;
 	ColorSpaceWidget *colorspacewidget;
@@ -174,7 +181,7 @@ private:
 	NoiseReductionWidget *noisereductionwidget;
 	HistogramWidget *histogramwidget;
 
-	QVector<LightGroupWidget*> m_LightGroupWidgets;
+	QVector<PaneWidget*> m_LightGroupPanes;
 
 	int m_numThreads;
 	bool m_copyLog2Console;

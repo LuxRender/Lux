@@ -290,7 +290,7 @@ ADD_DEFINITIONS(-O3 -msse2 -mfpmath=sse -ftree-vectorize -funroll-loops -Wall -f
 #ADD_DEFINITIONS(-DHAVE_PTHREAD_H)
 
 # Dade - GCC Profiling (remember to uncomment the line at the end of file too)
-#ADD_DEFINITIONS(-pg -g -O2 -march=-msse -mfpmath=sse -ftree-vectorize -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
+#ADD_DEFINITIONS(-pg -g -O2 -msse2 -mfpmath=sse -ftree-vectorize -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
 
 # Dade - GCC 2 pass optimization (remember to uncomment the line at the end of file too)
 #ADD_DEFINITIONS(-O3 --coverage -march=prescott -mfpmath=sse -ftree-vectorize -funroll-loops -ffast-math -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
@@ -695,6 +695,7 @@ SET( LUXQTGUI_SRCS
 	qtgui/gammawidget.cpp
 	qtgui/noisereductionwidget.cpp
 	qtgui/histogramwidget.cpp
+	qtgui/panewidget.cpp
 	)
 SET( LUXQTGUI_MOC
 	qtgui/histogramview.hxx
@@ -709,6 +710,7 @@ SET( LUXQTGUI_MOC
 	qtgui/gammawidget.hxx
 	qtgui/noisereductionwidget.hxx
 	qtgui/histogramwidget.hxx
+	qtgui/panewidget.hxx
 	)
 SET(LUXQTGUI_UIS
 	qtgui/luxrender.ui
@@ -720,6 +722,7 @@ SET(LUXQTGUI_UIS
 	qtgui/gamma.ui
 	qtgui/noisereduction.ui
 	qtgui/histogram.ui
+	qtgui/pane.ui
 	)
 SET( LUXQTGUI_RCS
 	qtgui/icons.qrc

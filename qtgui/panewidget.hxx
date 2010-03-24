@@ -20,27 +20,70 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#include <QTranslator>
+#ifndef PANEWIDGET_H
+#define PANEWIDGET_H
 
-#include "luxapp.hxx"
+#include <QtGui/QWidget>
+#include <QtGui/QPixmap>
+#include <QtGui/QLabel>
 
-int main(int argc, char *argv[])
+namespace Ui
 {
-	Q_INIT_RESOURCE(icons);
-
-	LuxGuiApp application(argc, argv);
-
-/*	QString locale = QLocale::system().name();
-
-	QTranslator translator;
-	if (translator.load(QString("luxrender_") + locale))
-		application.installTranslator(&translator);
-*/	
-	application.init();
-	
-	if (application.mainwin != NULL)
-		return application.exec();
-	else
-		return 0;
+	class PaneWidget;
+	class ClickableLabel;
 }
+
+class ClickableLabel : public QLabel
+{
+    Q_OBJECT
+
+public:
+
+	ClickableLabel(const QString& label = "", QWidget *parent = 0);
+	~ClickableLabel() {};
+
+protected:
+
+	void mouseReleaseEvent(QMouseEvent* event);
+
+signals:
+
+	void clicked();
+
+};
+
+class PaneWidget : public QWidget
+{
+	Q_OBJECT
+
+public:
+
+	PaneWidget(QWidget *parent, const QString& label = "", const QString& icon = "");
+	~PaneWidget();
+
+	void setTitle(const QString& title);
+	void setIcon(const QString& icon);
+
+	void setWidget(QWidget *widget);
+	QWidget *getWidget();
+
+	void expand();
+	void collapse();
+
+private:
+
+	Ui::PaneWidget *ui;
+
+	QWidget *mainwidget;
+	ClickableLabel *expandlabel;
+
+	bool expanded;
+
+private slots:
+
+	void expandClicked();
+  
+};
+
+#endif // PANEWIDGET_H
 

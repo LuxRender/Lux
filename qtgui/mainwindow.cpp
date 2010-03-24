@@ -138,9 +138,6 @@ MainWindow::MainWindow(QWidget *parent, bool opengl, bool copylog2console) : QMa
 	
 	ui->setupUi(this);
 
-	// Remove the default page - gets created dynamically later
-	ui->toolBox_lightgroups->removeItem(0);
-
 	createActions();
 
 	// File menu slots
@@ -170,38 +167,57 @@ MainWindow::MainWindow(QWidget *parent, bool opengl, bool copylog2console) : QMa
 	
 	connect(ui->checkBox_imagingAuto, SIGNAL(stateChanged(int)), this, SLOT(autoEnabledChanged(int)));
 
+	// Panes
+	panes[0] = new PaneWidget(ui->panesAreaContents, "Tonemap", ":/icons/tonemapicon.png");
+	panes[1] = new PaneWidget(ui->panesAreaContents, "Lens Effects", ":/icons/lenseffectsicon.png");
+	panes[2] = new PaneWidget(ui->panesAreaContents, "Colorspace", ":/icons/colorspaceicon.png");
+	panes[3] = new PaneWidget(ui->panesAreaContents, "Gamma", ":/icons/gammaicon.png");
+	panes[4] = new PaneWidget(ui->panesAreaContents, "HDR Histogram", ":/icons/histogramicon.png");
+	panes[5] = new PaneWidget(ui->panesAreaContents, "Noise Reduction", ":/icons/noisereductionicon.png");
+
 	// Tonemap page
-	
-	tonemapwidget = new ToneMapWidget(ui->page_toneMap);
-	ui->toneMapLayout->addWidget(tonemapwidget);
+	tonemapwidget = new ToneMapWidget(panes[0]);
+	panes[0]->setWidget(tonemapwidget);
+	ui->panesLayout->addWidget(panes[0]);
+	panes[0]->expand();
 	connect(tonemapwidget, SIGNAL(valuesChanged()), this, SLOT(toneMapParamsChanged()));
-	
+
 	// Lens effects page
-	
-	lenseffectswidget = new LensEffectsWidget(ui->page_lensEffects);
-	ui->lensEffectsLayout->addWidget(lenseffectswidget);
+	lenseffectswidget = new LensEffectsWidget(panes[1]);
+	panes[1]->setWidget(lenseffectswidget);
+	ui->panesLayout->addWidget(panes[1]);
 	connect(lenseffectswidget, SIGNAL(forceUpdate()), this, SLOT(forceToneMapUpdate()));
 	connect(lenseffectswidget, SIGNAL(valuesChanged()), this, SLOT(toneMapParamsChanged()));
 
 	// Colourspace
-	colorspacewidget = new ColorSpaceWidget(ui->page_colorSpace);
-	ui->colorSpaceLayout->addWidget(colorspacewidget);
+	colorspacewidget = new ColorSpaceWidget(panes[2]);
+	panes[2]->setWidget(colorspacewidget);
+	ui->panesLayout->addWidget(panes[2]);
 	connect(colorspacewidget, SIGNAL(valuesChanged()), this, SLOT(toneMapParamsChanged()));
 
 	// Gamma
-	gammawidget = new GammaWidget(ui->page_gamma);
-	ui->gammaLayout->addWidget(gammawidget);
+	gammawidget = new GammaWidget(panes[3]);
+	panes[3]->setWidget(gammawidget);
+	ui->panesLayout->addWidget(panes[3]);
 	connect(gammawidget, SIGNAL(valuesChanged()), this, SLOT(toneMapParamsChanged()));
 
 	// Histogram
-	histogramwidget = new HistogramWidget(ui->page_histogram);
-	ui->histogramLayout->addWidget(histogramwidget);
+	histogramwidget = new HistogramWidget(panes[4]);
+	panes[4]->setWidget(histogramwidget);
+	ui->panesLayout->addWidget(panes[4]);
 
 	// Noise reduction
-	noisereductionwidget = new NoiseReductionWidget(ui->page_noiseReduction);
-	ui->noiseReductionLayout->addWidget(noisereductionwidget);
+	noisereductionwidget = new NoiseReductionWidget(panes[5]);
+	panes[5]->setWidget(noisereductionwidget);
+	ui->panesLayout->addWidget(panes[5]);
 	connect(noisereductionwidget, SIGNAL(valuesChanged()), this, SLOT(toneMapParamsChanged()));
 	
+	ui->panesLayout->setAlignment(Qt::AlignTop);
+	ui->panesLayout->addItem(new QSpacerItem( 20, 20, QSizePolicy::Minimum, QSizePolicy::Expanding));
+	
+	ui->lightGroupsLayout->setAlignment(Qt::AlignTop);
+	spacer = new QSpacerItem( 20, 20, QSizePolicy::Minimum, QSizePolicy::Expanding);
+
 	// Network tab
 	connect(ui->button_addServer, SIGNAL(clicked()), this, SLOT(addServer()));
 	connect(ui->lineEdit_server, SIGNAL(returnPressed()), this, SLOT(addServer()));
@@ -287,12 +303,12 @@ MainWindow::~MainWindow()
 	if (m_guiRenderState != WAITING)
 		endRenderingSession();
 
-	for (QVector<LightGroupWidget*>::iterator it = m_LightGroupWidgets.begin(); it != m_LightGroupWidgets.end(); it++) {
-		LightGroupWidget *currWidget = *it;
-		ui->toolBox_lightgroups->removeItem(currWidget->GetIndex());
+	for (QVector<PaneWidget*>::iterator it = m_LightGroupPanes.begin(); it != m_LightGroupPanes.end(); it++) {
+		PaneWidget *currWidget = *it;
+		ui->lightGroupsLayout->removeWidget(currWidget);
 		delete currWidget;
 	}
-	m_LightGroupWidgets.clear();
+	m_LightGroupPanes.clear();
 
 	WriteSettings();
 
@@ -309,6 +325,10 @@ MainWindow::~MainWindow()
 	delete colorspacewidget;
 	delete noisereductionwidget;
 	delete histogramwidget;
+	delete spacer;
+
+	for (int i = 0; i < NumPanes; i++)
+		delete panes[i];
 }
 
 void MainWindow::createActions()
@@ -1167,8 +1187,10 @@ void MainWindow::resetToneMappingFromFilm (bool useDefaults)
 
 void MainWindow::UpdateLightGroupWidgetValues()
 {
-	for (QVector<LightGroupWidget*>::iterator it = m_LightGroupWidgets.begin(); it != m_LightGroupWidgets.end(); it++) {
-		(*it)->UpdateWidgetValues();
+	for (QVector<PaneWidget*>::iterator it = m_LightGroupPanes.begin(); it != m_LightGroupPanes.end(); it++) {
+		PaneWidget *pane = (*it);
+		LightGroupWidget *widget = (LightGroupWidget *)pane->getWidget();
+		widget->UpdateWidgetValues();
 	}
 }
 
@@ -1180,36 +1202,46 @@ void MainWindow::ResetLightGroups( void )
 	}
 
 	// Remove the lightgroups
-	for (QVector<LightGroupWidget*>::iterator it = m_LightGroupWidgets.begin(); it != m_LightGroupWidgets.end(); it++) {
-		LightGroupWidget *currWidget = *it;
-		ui->toolBox_lightgroups->removeItem(currWidget->GetIndex());
+	for (QVector<PaneWidget*>::iterator it = m_LightGroupPanes.begin(); it != m_LightGroupPanes.end(); it++) {
+		PaneWidget *pane = (*it);
+		LightGroupWidget *currWidget = (LightGroupWidget *)pane->getWidget();
+		ui->lightGroupsLayout->removeWidget(pane);
 		delete currWidget;
 	}
-
-	m_LightGroupWidgets.clear();
+	ui->lightGroupsLayout->removeItem(spacer);
+	m_LightGroupPanes.clear();
 }
 
 void MainWindow::ResetLightGroupsFromFilm( bool useDefaults )
 {
 	// Remove the old lightgroups
-	for (QVector<LightGroupWidget*>::iterator it = m_LightGroupWidgets.begin(); it != m_LightGroupWidgets.end(); it++) {
-		LightGroupWidget *currWidget = *it;
-		ui->toolBox_lightgroups->removeItem(currWidget->GetIndex());
-		delete currWidget;
+	for (QVector<PaneWidget*>::iterator it = m_LightGroupPanes.begin(); it != m_LightGroupPanes.end(); it++) {
+		PaneWidget *pane = *it;
+		ui->lightGroupsLayout->removeWidget(pane);
+		delete pane;
 	}
+	
+	ui->lightGroupsLayout->removeItem(spacer);
 
-	m_LightGroupWidgets.clear();
+	m_LightGroupPanes.clear();
 
 	// Add the new lightgroups
 	int numLightGroups = (int)luxGetParameterValue(LUX_FILM, LUX_FILM_LG_COUNT);
 	for (int i = 0; i < numLightGroups; i++) {
-		LightGroupWidget *currWidget = new LightGroupWidget(this);
+		PaneWidget *pane = new PaneWidget(ui->lightGroupsAreaContents);
+		LightGroupWidget *currWidget = new LightGroupWidget(pane);
 		currWidget->SetIndex(i);
 		currWidget->ResetValuesFromFilm( useDefaults );
+		pane->setTitle(currWidget->GetTitle());
+		pane->setIcon(":/icons/lightgroupsicon.png");
+		pane->setWidget(currWidget);
 		connect(currWidget, SIGNAL(valuesChanged()), this, SLOT(toneMapParamsChanged()));
-		ui->toolBox_lightgroups->addItem(currWidget, currWidget->GetTitle());
-		m_LightGroupWidgets.push_back(currWidget);
+		ui->lightGroupsLayout->addWidget(pane);
+		if (i == 0)
+			pane->expand();
+		m_LightGroupPanes.push_back(pane);
 	}
+	ui->lightGroupsLayout->addItem(spacer);
 
 	// Update
 	UpdateLightGroupWidgetValues();
