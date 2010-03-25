@@ -94,37 +94,35 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	u_int through = 0;
 	const Volume *volume = NULL;
 
-	for (u_int pathLength = 0; ; ++pathLength) {
+	for (u_int pathLength = 0; ;) {
 		// Find next vertex of path
 		Intersection isect;
 		BSDF *bsdf;
 		if (!scene->Intersect(tspack, volume, ray, &isect, &bsdf,
 			&pathThroughput)) {
-			if (pathLength == 0) {
-				// Dade - now I know ray.maxt and I can call volumeIntegrator
-				SWCSpectrum Lv;
-				u_int g = scene->volumeIntegrator->Li(tspack, scene, ray, sample, &Lv, &alpha);
-				if (!Lv.Black()) {
-					L[g] = Lv;
-					V[g] += Lv.Filter(tspack) * VContrib;
-					++nrContribs;
-				}
-				pathThroughput = 1.f;
-				scene->volumeIntegrator->Transmittance(tspack, scene, ray, sample, &alpha, &pathThroughput);
+			// Dade - now I know ray.maxt and I can call volumeIntegrator
+			SWCSpectrum Lv;
+			u_int g = scene->volumeIntegrator->Li(tspack, scene,
+				ray, sample, &Lv, &alpha);
+			if (!Lv.Black()) {
+				L[g] = Lv;
+				V[g] += Lv.Filter(tspack) * VContrib;
+				++nrContribs;
 			}
+			scene->volumeIntegrator->Transmittance(tspack, scene,
+				ray, sample, &alpha, &pathThroughput);
 
 			// Stop path sampling since no intersection was found
 			// Possibly add horizon in render & reflections
-			if (includeEnvironment || pathLength > 0) {
-				if (specularBounce) {
-					for (u_int i = 0; i < nLights; ++i) {
-						SWCSpectrum Le(scene->lights[i]->Le(tspack, ray));
-						Le *= pathThroughput;
-						if (!Le.Black()) {
-							L[scene->lights[i]->group] += Le;
-							V[scene->lights[i]->group] += Le.Filter(tspack) * VContrib;
-							++nrContribs;
-						}
+			if ((includeEnvironment || pathLength > 0) &&
+				specularBounce) {
+				for (u_int i = 0; i < nLights; ++i) {
+					SWCSpectrum Le(scene->lights[i]->Le(tspack, ray));
+					Le *= pathThroughput;
+					if (!Le.Black()) {
+						L[scene->lights[i]->group] += Le;
+						V[scene->lights[i]->group] += Le.Filter(tspack) * VContrib;
+						++nrContribs;
 					}
 				}
 			}
@@ -209,6 +207,7 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 				pathThroughput /= continueProbability;
 			}
 		}
+		++pathLength;
 
 		if (flags == (BSDF_TRANSMISSION | BSDF_SPECULAR) && bsdf->Pdf(tspack, wi, wo, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) > 0.f) {
 			if (through++ > passThroughLimit)

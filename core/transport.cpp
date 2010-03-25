@@ -188,7 +188,7 @@ SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light
 		SWCSpectrum Li = light->Sample_L(tspack, p, n,
 			ls1, ls2, ls3, &wi, &lightPdf, &visibility);
 		if (lightPdf > 0.f && !Li.Black()) {
-			SWCSpectrum f = bsdf->f(tspack, wi, wo, noSpecular);
+			SWCSpectrum f = bsdf->f(tspack, wi, wo);
 			SWCSpectrum fO(1.f);
 			visibility.volume = bsdf->GetVolume(wi);
 			if (!f.Black() && visibility.TestOcclusion(tspack, scene, &fO)) {
@@ -196,52 +196,51 @@ SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light
 				visibility.Transmittance(tspack, scene, sample, &Li);
 				Li *= fO;
 
-				bsdfPdf = bsdf->Pdf(tspack, wi, wo, noSpecular);
+				bsdfPdf = bsdf->Pdf(tspack, wi, wo);
 				float weight = PowerHeuristic(1, lightPdf, 1, bsdfPdf);
 				Ld += f * Li * (AbsDot(wi, n) * weight / lightPdf);
 			}
 
 			// Sample BSDF with multiple importance sampling
 			SWCSpectrum fBSDF;
-			if (bsdf->Sample_f(tspack, wo, &wi,	bs1, bs2, bcs, &fBSDF, &bsdfPdf, noSpecular, NULL, NULL, true)) {
+			BxDFType sampledType;
+			if (bsdf->Sample_f(tspack, wo, &wi, bs1, bs2, bcs, &fBSDF, &bsdfPdf, BSDF_ALL, &sampledType, NULL, true) && (sampledType & BSDF_SPECULAR) == 0) {
 				lightPdf = light->Pdf(tspack, p, n, wi);
-				if (lightPdf > 0.f) {
-					// Add light contribution from BSDF sampling
-					float weight = PowerHeuristic(1, bsdfPdf, 1, lightPdf);
-					Intersection lightIsect;
-					Li = SWCSpectrum(1.f);
-					RayDifferential ray(p, wi);
-					ray.time = tspack->time;
-					const Volume *volume = bsdf->GetVolume(wi);
-					BSDF *ibsdf;
-					const BxDFType flags(BxDFType(BSDF_SPECULAR | BSDF_TRANSMISSION));
-					// The for loop prevents an infinite
-					// loop when the ray is almost parallel
-					// to the surface
-					// It should much less frequent with
-					// dynamic epsilon, but it's safer
-					for (u_int i = 0; i < 10000; ++i) {
-						if (!scene->Intersect(tspack, volume, ray, &lightIsect, &ibsdf, &Li)) {
-							Li *= light->Le(tspack, ray);
-							break;
-						} else if (lightIsect.arealight == light) {
-							Li *= lightIsect.Le(tspack, -wi);
-							break;
-						}
-
-						Li *= ibsdf->f(tspack, wi, -wi, flags);
-						if (Li.Black())
-							break;
-						Li *= AbsDot(ibsdf->dgShading.nn, wi);
-
-						ray.mint = ray.maxt + MachineEpsilon::E(ray.maxt);
-						ray.maxt = INFINITY;
-						volume = ibsdf->GetVolume(wi);
+				// Add light contribution from BSDF sampling
+				float weight = PowerHeuristic(1, bsdfPdf, 1, lightPdf);
+				Intersection lightIsect;
+				Li = SWCSpectrum(1.f);
+				RayDifferential ray(p, wi);
+				ray.time = tspack->time;
+				const Volume *volume = bsdf->GetVolume(wi);
+				BSDF *ibsdf;
+				const BxDFType flags(BxDFType(BSDF_SPECULAR | BSDF_TRANSMISSION));
+				// The for loop prevents an infinite
+				// loop when the ray is almost parallel
+				// to the surface
+				// It should much less frequent with
+				// dynamic epsilon, but it's safer
+				for (u_int i = 0; i < 10000; ++i) {
+					if (!scene->Intersect(tspack, volume, ray, &lightIsect, &ibsdf, &Li)) {
+						Li *= light->Le(tspack, ray);
+						break;
+					} else if (lightIsect.arealight == light) {
+						Li *= lightIsect.Le(tspack, -wi);
+						break;
 					}
-					if (!Li.Black()) {
-						scene->Transmittance(tspack, ray, sample, &Li);
-						Ld += fBSDF * Li * (AbsDot(wi, n) * weight / bsdfPdf);
-					}
+
+					Li *= ibsdf->f(tspack, wi, -wi, flags);
+					if (Li.Black())
+						break;
+					Li *= AbsDot(ibsdf->dgShading.nn, wi);
+
+					ray.mint = ray.maxt + MachineEpsilon::E(ray.maxt);
+					ray.maxt = INFINITY;
+					volume = ibsdf->GetVolume(wi);
+				}
+				if (!Li.Black()) {
+					scene->Transmittance(tspack, ray, sample, &Li);
+					Ld += fBSDF * Li * (AbsDot(wi, n) * weight / bsdfPdf);
 				}
 			}
 		}
