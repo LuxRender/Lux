@@ -47,6 +47,9 @@
       <enum>QFrame::Raised</enum>
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout">
+      <property name="margin">
+       <number>4</number>
+      </property>
       <item>
        <layout class="QGridLayout" name="gridLayout">
         <item row="0" column="2">
