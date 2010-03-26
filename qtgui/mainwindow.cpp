@@ -212,7 +212,7 @@ MainWindow::MainWindow(QWidget *parent, bool opengl, bool copylog2console) : QMa
 	ui->panesLayout->addItem(new QSpacerItem( 20, 20, QSizePolicy::Minimum, QSizePolicy::Expanding));
 	
 	ui->lightGroupsLayout->setAlignment(Qt::AlignTop);
-	spacer = new QSpacerItem( 20, 20, QSizePolicy::Minimum, QSizePolicy::Expanding);
+	spacer = new QSpacerItem( 20, 20, QSizePolicy::Expanding, QSizePolicy::Expanding);
 
 	// Network tab
 	connect(ui->button_addServer, SIGNAL(clicked()), this, SLOT(addServer()));
