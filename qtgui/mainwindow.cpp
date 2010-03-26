@@ -784,6 +784,13 @@ void MainWindow::setCurrentFile(const QString& filename)
 	if (!m_CurrentFile.isEmpty()) {
 		QFileInfo info(m_CurrentFile);
 		showName = info.fileName();
+		if (filename == "-"){
+			showName = "LuxRender - rendering piped scene";
+			}
+		else {
+			showName = "LuxRender - rendering: " + showName;
+			}
+
 		m_lastOpendir = info.filePath();
 		m_recentFiles.removeAll(m_CurrentFile);
 		m_recentFiles.prepend(m_CurrentFile);
