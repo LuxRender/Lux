@@ -300,7 +300,7 @@ void NoiseReductionWidget::precisionChanged(double value)
 
 void NoiseReductionWidget::alphaChanged(int value)
 {
-	precisionChanged ( (double)value / ( FLOAT_SLIDER_RES / GREYC_ALPHA_RANGE ) );
+	alphaChanged ( (double)value / ( FLOAT_SLIDER_RES / GREYC_ALPHA_RANGE ) );
 }
 
 void NoiseReductionWidget::alphaChanged(double value)
