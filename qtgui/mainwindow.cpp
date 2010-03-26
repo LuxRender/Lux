@@ -186,6 +186,7 @@ MainWindow::MainWindow(QWidget *parent, bool opengl, bool copylog2console) : QMa
 	lenseffectswidget = new LensEffectsWidget(panes[1]);
 	panes[1]->setWidget(lenseffectswidget);
 	ui->panesLayout->addWidget(panes[1]);
+	panes[1]->collapse();
 	connect(lenseffectswidget, SIGNAL(forceUpdate()), this, SLOT(forceToneMapUpdate()));
 	connect(lenseffectswidget, SIGNAL(valuesChanged()), this, SLOT(toneMapParamsChanged()));
 
@@ -193,23 +194,27 @@ MainWindow::MainWindow(QWidget *parent, bool opengl, bool copylog2console) : QMa
 	colorspacewidget = new ColorSpaceWidget(panes[2]);
 	panes[2]->setWidget(colorspacewidget);
 	ui->panesLayout->addWidget(panes[2]);
+	panes[2]->collapse();
 	connect(colorspacewidget, SIGNAL(valuesChanged()), this, SLOT(toneMapParamsChanged()));
 
 	// Gamma
 	gammawidget = new GammaWidget(panes[3]);
 	panes[3]->setWidget(gammawidget);
 	ui->panesLayout->addWidget(panes[3]);
+	panes[3]->collapse();
 	connect(gammawidget, SIGNAL(valuesChanged()), this, SLOT(toneMapParamsChanged()));
 
 	// Histogram
 	histogramwidget = new HistogramWidget(panes[4]);
 	panes[4]->setWidget(histogramwidget);
 	ui->panesLayout->addWidget(panes[4]);
+	panes[4]->collapse();
 
 	// Noise reduction
 	noisereductionwidget = new NoiseReductionWidget(panes[5]);
 	panes[5]->setWidget(noisereductionwidget);
 	ui->panesLayout->addWidget(panes[5]);
+	panes[5]->collapse();
 	connect(noisereductionwidget, SIGNAL(valuesChanged()), this, SLOT(toneMapParamsChanged()));
 	
 	ui->panesLayout->setAlignment(Qt::AlignTop);

@@ -26,7 +26,7 @@
 
 int main(int argc, char *argv[])
 {
-	Q_INIT_RESOURCE(icons);
+//	Q_INIT_RESOURCE(icons);
 
 	LuxGuiApp application(argc, argv);
 
