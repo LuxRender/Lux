@@ -940,13 +940,12 @@ bool MainWindow::event (QEvent *event)
 	else if (eventtype == EVT_LUX_FINISHED) {
 		if (m_guiRenderState == RENDERING) {
 			// Ignoring finished events if another file is being opened (state != RENDERING)
-			ShowDialogBox("Rendering is finished.");
-			changeRenderState(FINISHED);
 			// Stop timers and update output one last time.
-			m_renderTimer->stop();
-			//wxTimerEvent rendUpdEvent(ID_RENDERUPDATE, GetId());
-			//wxTimerEvent statUpdEvent(ID_STATSUPDATE, GetId());
-			//GetEventHandler()->AddPendingEvent(statUpdEvent);
+			stopRender();
+
+			changeRenderState(FINISHED);
+			
+			ShowDialogBox("Rendering is finished.");
 		}
 		retval = TRUE;
 	}
@@ -1063,7 +1062,7 @@ void MainWindow::statsTimeout()
 {
 	if(luxStatistics("sceneIsReady") || luxStatistics("filmIsReady")) {
 		updateStatistics();
-		if(m_guiRenderState == STOPPING && m_samplesSec == 0.0) {
+		if ((m_guiRenderState == STOPPING || m_guiRenderState == FINISHED) && m_samplesSec == 0.0) {
 			// Render threads stopped, do one last render update
 			luxError(LUX_NOERROR, LUX_INFO, tr("GUI: Updating framebuffer...").toLatin1().data());
 			statusMessage->setText(tr("Tonemapping..."));
@@ -1071,9 +1070,14 @@ void MainWindow::statsTimeout()
 			m_updateThread = new boost::thread(boost::bind(&MainWindow::updateThread, this));
 			m_statsTimer->stop();
 			luxPause();
-			luxError(LUX_NOERROR, LUX_INFO, tr("Rendering stopped by user.").toLatin1().data());
-			changeRenderState(STOPPED);
+			if (m_guiRenderState == FINISHED)
+				luxError(LUX_NOERROR, LUX_INFO, tr("Rendering finished.").toLatin1().data());
+			else {
+				luxError(LUX_NOERROR, LUX_INFO, tr("Rendering stopped by user.").toLatin1().data());
+				changeRenderState(STOPPED);
+			}
 		}
+		
 	}
 }
 
