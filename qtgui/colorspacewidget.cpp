@@ -27,9 +27,9 @@
 
 #include "api.h"
 
-template<class T> inline T Clamp(T val, T low, T high) {
-	return val > low ? (val < high ? val : high) : low;
-}
+#include <iostream>
+
+using namespace std;
 
 ColorSpaceWidget::ColorSpaceWidget(QWidget *parent) : QWidget(parent), ui(new Ui::ColorSpaceWidget)
 {

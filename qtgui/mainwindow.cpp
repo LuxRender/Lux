@@ -43,10 +43,6 @@
 #define chdir _chdir
 #endif
 
-template<class T> inline T Clamp(T val, T low, T high) {
-	return val > low ? (val < high ? val : high) : low;
-}
-
 inline int Floor2Int(float val) {
 	return static_cast<int>(floorf(val));
 }

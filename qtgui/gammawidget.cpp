@@ -27,10 +27,6 @@
 
 #include "api.h"
 
-template<class T> inline T Clamp(T val, T low, T high) {
-	return val > low ? (val < high ? val : high) : low;
-}
-
 GammaWidget::GammaWidget(QWidget *parent) : QWidget(parent), ui(new Ui::GammaWidget)
 {
 	ui->setupUi(this);

@@ -27,10 +27,6 @@
 
 #include "api.h"
 
-template<class T> inline T Clamp(T val, T low, T high) {
-	return val > low ? (val < high ? val : high) : low;
-}
-
 NoiseReductionWidget::NoiseReductionWidget(QWidget *parent) : QWidget(parent), ui(new Ui::NoiseReductionWidget)
 {
 	ui->setupUi(this);

@@ -72,6 +72,10 @@
 #define LG_TEMPERATURE_MIN 1000.f
 #define LG_TEMPERATURE_MAX 10000.f
 
+template<class T> inline T Clamp(T val, T low, T high) {
+	return val > low ? (val < high ? val : high) : low;
+}
+
 enum LuxGuiRenderState
 {
 	WAITING,
