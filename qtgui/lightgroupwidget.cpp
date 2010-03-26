@@ -168,6 +168,8 @@ void LightGroupWidget::colorPicker()
 	updateParam(LUX_FILM, LUX_FILM_LG_SCALE_GREEN, (m_LG_rgb_enabled ? m_LG_scaleGreen : 1.0), m_Index);
 	updateParam(LUX_FILM, LUX_FILM_LG_SCALE_BLUE, (m_LG_rgb_enabled ? m_LG_scaleBlue : 1.0), m_Index);
 
+	ui->toolButton_colorpicker->setPalette(QPalette(color));
+
 	if (m_LG_rgb_enabled)
 		emit valuesChanged();
 }

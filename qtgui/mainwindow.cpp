@@ -974,8 +974,6 @@ bool MainWindow::event (QEvent *event)
 
 void MainWindow::logEvent(LuxLogEvent *event)
 {
-	QPalette p = ui->textEdit_log->palette();
-
 	static const QColor debugColour = Qt::black;
 	static const QColor infoColour = Qt::green;
 	static const QColor warningColour = Qt::darkYellow;
