@@ -48,7 +48,7 @@ PaneWidget::PaneWidget(QWidget *parent, const QString& label, const QString& ico
 		ui->labelPaneName->setText(label);
 
 	expandlabel = new ClickableLabel(">", this);
-	expandlabel->setPixmap(QPixmap(":/icons/expandedicon.png"));
+	expandlabel->setPixmap(QPixmap(":/icons/collapsedicon.png"));
 	ui->gridLayout->addWidget(expandlabel, 0, 3, 1, 1);
 
 	connect(expandlabel, SIGNAL(clicked()), this, SLOT(expandClicked()));
@@ -118,7 +118,6 @@ void PaneWidget::expandClicked()
 void PaneWidget::expand()
 {
 	expanded = true;
-	expandlabel->setText("v");
 	expandlabel->setPixmap(QPixmap(":/icons/expandedicon.png"));
 	mainwidget->show();
 }
@@ -134,7 +133,10 @@ void PaneWidget::setWidget(QWidget *widget)
 {
 	mainwidget = widget;
 	ui->paneLayout->addWidget(widget);
-	mainwidget->hide();
+	if (expanded)
+		mainwidget->show();
+	else
+		mainwidget->hide();
 }
 
 QWidget *PaneWidget::getWidget()

@@ -186,7 +186,6 @@ MainWindow::MainWindow(QWidget *parent, bool opengl, bool copylog2console) : QMa
 	lenseffectswidget = new LensEffectsWidget(panes[1]);
 	panes[1]->setWidget(lenseffectswidget);
 	ui->panesLayout->addWidget(panes[1]);
-	panes[1]->collapse();
 	connect(lenseffectswidget, SIGNAL(forceUpdate()), this, SLOT(forceToneMapUpdate()));
 	connect(lenseffectswidget, SIGNAL(valuesChanged()), this, SLOT(toneMapParamsChanged()));
 
@@ -194,27 +193,23 @@ MainWindow::MainWindow(QWidget *parent, bool opengl, bool copylog2console) : QMa
 	colorspacewidget = new ColorSpaceWidget(panes[2]);
 	panes[2]->setWidget(colorspacewidget);
 	ui->panesLayout->addWidget(panes[2]);
-	panes[2]->collapse();
 	connect(colorspacewidget, SIGNAL(valuesChanged()), this, SLOT(toneMapParamsChanged()));
 
 	// Gamma
 	gammawidget = new GammaWidget(panes[3]);
 	panes[3]->setWidget(gammawidget);
 	ui->panesLayout->addWidget(panes[3]);
-	panes[3]->collapse();
 	connect(gammawidget, SIGNAL(valuesChanged()), this, SLOT(toneMapParamsChanged()));
 
 	// Histogram
 	histogramwidget = new HistogramWidget(panes[4]);
 	panes[4]->setWidget(histogramwidget);
 	ui->panesLayout->addWidget(panes[4]);
-	panes[4]->collapse();
 
 	// Noise reduction
 	noisereductionwidget = new NoiseReductionWidget(panes[5]);
 	panes[5]->setWidget(noisereductionwidget);
 	ui->panesLayout->addWidget(panes[5]);
-	panes[5]->collapse();
 	connect(noisereductionwidget, SIGNAL(valuesChanged()), this, SLOT(toneMapParamsChanged()));
 	
 	ui->panesLayout->setAlignment(Qt::AlignTop);
@@ -517,8 +512,8 @@ void MainWindow::loadFLM()
 
 	//SetTitle(wxT("LuxRender - ")+fn.GetName());
 
-	m_progDialog = new QProgressDialog(tr("Loading FLM..."),QString(),0,0,NULL);
-	m_progDialog->setWindowModality(Qt::WindowModal);
+	m_progDialog = new QProgressDialog(tr("Loading FLM..."),QString(),0,0,this);
+	m_progDialog->setWindowFlags(m_progDialog->windowFlags() & ~Qt::WindowContextHelpButtonHint);
 	m_progDialog->show();
 
 	// Start load thread
@@ -542,8 +537,8 @@ void MainWindow::saveFLM()
 		return;
 
 	// Start save thread
-	m_progDialog = new QProgressDialog(tr("Saving FLM..."),QString(),0,0,NULL);
-	m_progDialog->setWindowModality(Qt::WindowModal);
+	m_progDialog = new QProgressDialog(tr("Saving FLM..."),QString(),0,0,this);
+	m_progDialog->setWindowFlags(m_progDialog->windowFlags() & ~Qt::WindowContextHelpButtonHint);
 	m_progDialog->show();
 	m_saveTimer->start(1000);
 
@@ -784,12 +779,10 @@ void MainWindow::setCurrentFile(const QString& filename)
 	if (!m_CurrentFile.isEmpty()) {
 		QFileInfo info(m_CurrentFile);
 		showName = info.fileName();
-		if (filename == "-"){
-			showName = "LuxRender - rendering piped scene";
-			}
-		else {
-			showName = "LuxRender - rendering: " + showName;
-			}
+		if (filename == "-")
+			showName = "LuxRender - Piped Scene";
+		else
+			showName = "LuxRender - " + showName;
 
 		m_lastOpendir = info.filePath();
 		m_recentFiles.removeAll(m_CurrentFile);
@@ -830,8 +823,9 @@ void MainWindow::renderScenefile(const QString& filename)
 	// NOTE - lordcrc - create progress dialog before starting engine thread
 	//                  so we don't try to destroy it before it's properly created
 	
-	m_progDialog = new QProgressDialog(tr("Loading scene..."),QString(),0,0,NULL);
-	m_progDialog->setWindowModality(Qt::WindowModal);
+	m_progDialog = new QProgressDialog(tr("Loading scene..."),QString(),0,0,this);
+	m_progDialog->setWindowFlags(m_progDialog->windowFlags() & ~Qt::WindowContextHelpButtonHint);
+
 	m_progDialog->show();
 
 	m_loadTimer->start(1000);
@@ -1249,7 +1243,6 @@ void MainWindow::ResetLightGroupsFromFilm( bool useDefaults )
 		pane->setWidget(currWidget);
 		connect(currWidget, SIGNAL(valuesChanged()), this, SLOT(toneMapParamsChanged()));
 		ui->lightGroupsLayout->addWidget(pane);
-		pane->collapse();
 		if (i == 0)
 			pane->expand();
 		m_LightGroupPanes.push_back(pane);
