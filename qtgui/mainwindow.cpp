@@ -1242,6 +1242,7 @@ void MainWindow::ResetLightGroupsFromFilm( bool useDefaults )
 		pane->setWidget(currWidget);
 		connect(currWidget, SIGNAL(valuesChanged()), this, SLOT(toneMapParamsChanged()));
 		ui->lightGroupsLayout->addWidget(pane);
+		pane->collapse();
 		if (i == 0)
 			pane->expand();
 		m_LightGroupPanes.push_back(pane);
