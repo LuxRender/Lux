@@ -961,9 +961,11 @@ bool MainWindow::event (QEvent *event)
 		m_flmsaveThread = NULL;
 		retval = TRUE;
 	}
-	else if (eventtype == EVT_LUX_LOGEVENT)
+	else if (eventtype == EVT_LUX_LOGEVENT){
 		logEvent((LuxLogEvent *)event);
-
+		retval = TRUE;
+		}
+	
 	if (retval)
 		// Was our event, stop the event propagation
 		event->accept();
