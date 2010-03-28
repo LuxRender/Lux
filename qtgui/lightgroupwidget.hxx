@@ -85,6 +85,7 @@ private slots:
 	void colortempChanged(double value);
 	void colorPicker();
 
+    void colorSelected(const QColor & color);
 };
 
 #endif // LIGHTGROUPWIDGET_H

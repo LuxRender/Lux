@@ -153,13 +153,7 @@ void LightGroupWidget::colortempChanged(double value)
 		emit valuesChanged();
 }
 
-void LightGroupWidget::colorPicker()
-{
-	
-	
-	QColor color = QColorDialog::getColor(QColor((int)(m_LG_scaleRed * 255.0),
-		(int)(m_LG_scaleGreen * 255.0),(int)(m_LG_scaleBlue * 255.0)), this, "Pick a color");
-
+void LightGroupWidget::colorSelected(const QColor & color){
 	m_LG_scaleRed = color.red() / 255.0;
 	m_LG_scaleGreen = color.green() / 255.0;
 	m_LG_scaleBlue = color.blue() / 255.0;
@@ -172,6 +166,20 @@ void LightGroupWidget::colorPicker()
 	ui->toolButton_colorfield->setAutoFillBackground(true);
 	if (m_LG_rgb_enabled)
 		emit valuesChanged();
+}
+
+void LightGroupWidget::colorPicker()
+{
+	
+	QColor dcolor((int)(m_LG_scaleRed * 255.0),
+                  (int)(m_LG_scaleGreen * 255.0),
+                  (int)(m_LG_scaleBlue * 255.0));
+	QColorDialog colorDlg(dcolor,this);
+	connect(&colorDlg, SIGNAL(colorSelected(const QColor &)), this, SLOT(colorSelected(const QColor &)));
+	connect(&colorDlg, SIGNAL(currentColorChanged(const QColor &)), this, SLOT(colorSelected(const QColor &)));
+    colorDlg.exec();
+    disconnect(&colorDlg, SIGNAL(colorSelected(const QColor &)));
+    disconnect(&colorDlg, SIGNAL(currentColorChanged(const QColor &)));
 }
 
 QString LightGroupWidget::GetTitle()
