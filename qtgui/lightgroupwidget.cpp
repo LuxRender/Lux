@@ -175,14 +175,14 @@ void LightGroupWidget::colorPicker()
                   (int)(m_LG_scaleGreen * 255.0),
                   (int)(m_LG_scaleBlue * 255.0));
 	QColorDialog colorDlg(dcolor,this);
-	if (__APPLE__)	
+#if defined(__APPLE__)
 		colorDlg.setOptions( QColorDialog::NoButtons | QColorDialog::DontUseNativeDialog );
-	
+#endif
 	connect(&colorDlg, SIGNAL(colorSelected(const QColor &)), this, SLOT(colorSelected(const QColor &)));
 	connect(&colorDlg, SIGNAL(currentColorChanged(const QColor &)), this, SLOT(colorSelected(const QColor &)));
-    colorDlg.exec();
-    disconnect(&colorDlg, SIGNAL(colorSelected(const QColor &)));
-    disconnect(&colorDlg, SIGNAL(currentColorChanged(const QColor &)));
+	colorDlg.exec();
+	disconnect(&colorDlg, SIGNAL(colorSelected(const QColor &)));
+	disconnect(&colorDlg, SIGNAL(currentColorChanged(const QColor &)));
 }
 
 QString LightGroupWidget::GetTitle()
