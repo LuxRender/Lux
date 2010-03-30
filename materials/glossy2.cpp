@@ -41,8 +41,8 @@ BSDF *Glossy2::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 {
 	// Allocate _BSDF_
 	// NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
-	SWCSpectrum d = Kd->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
-	SWCSpectrum s = Ks->Evaluate(tspack, dgs);
+	SWCSpectrum d(Kd->Evaluate(tspack, dgs).Clamp(0.f, 1.f));
+	SWCSpectrum s(Ks->Evaluate(tspack, dgs));
 	float i = index->Evaluate(tspack, dgs);
 	if (i > 0.f) {
 		const float ti = (i - 1.f) / (i + 1.f);
@@ -50,19 +50,21 @@ BSDF *Glossy2::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 	}
 	s = s.Clamp(0.f, 1.f);
 
-	SWCSpectrum a = Ka->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
+	SWCSpectrum a(Ka->Evaluate(tspack, dgs).Clamp(0.f, 1.f));
 
-	float u = min(1.f, nu->Evaluate(tspack, dgs));
-	float v = min(1.f, nv->Evaluate(tspack, dgs));
+	const float u = min(1.f, nu->Evaluate(tspack, dgs));
+	const float v = min(1.f, nv->Evaluate(tspack, dgs));
+	const float u2 = u * u;
+	const float v2 = v * v;
 	float ld = depth->Evaluate(tspack, dgs);
 
 	BxDF *bxdf;
 	if (u < v)
 		bxdf = ARENA_ALLOC(tspack->arena, SchlickBRDF)(d, s, a, ld,
-			sqrtf(u * v), 1.f - u / v);
+			u * v, 1.f - u2 / v2);
 	else
 		bxdf = ARENA_ALLOC(tspack->arena, SchlickBRDF)(d, s, a, ld,
-			sqrtf(u * v), v / u - 1.f);
+			u * v, v2 / u2 - 1.f);
 	SingleBSDF *bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dgs,
 		dgGeom.nn, bxdf, exterior, interior);
 
