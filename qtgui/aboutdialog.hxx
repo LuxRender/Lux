@@ -6,19 +6,25 @@
 #include <QtGui/QGraphicsScene>
 #include <QtGui/QFrame>
 #include <QtGui/QImage>
+#include <QGraphicsTextItem>
+#include <QTimer>
+
+#include <iostream>
+
+using namespace std;
 
 namespace Ui
 {
-    class AboutDialog;
+	class AboutDialog;
 }
 
 class AboutDialog : public QDialog
 {
-    Q_OBJECT
+	Q_OBJECT
 
 public:
-    AboutDialog(QWidget *parent = 0);
-    ~AboutDialog();
+	AboutDialog(QWidget *parent = 0);
+	~AboutDialog();
 
 private:
 	QGraphicsView *imageview;
@@ -32,20 +38,27 @@ private slots:
 
 class AboutImage : public QGraphicsView
 {
-    Q_OBJECT
+	Q_OBJECT
 
 public:
-    AboutImage(QWidget *parent = 0);
-    ~AboutImage();
+	AboutImage(QWidget *parent = 0);
+	~AboutImage();
 
 protected:
 	void mousePressEvent(QMouseEvent* event);
 
 private:
-  QGraphicsScene *scene;
+	QGraphicsScene *scene;
+	QGraphicsTextItem *authors;
+	QTimer *scrolltimer;
+
+private slots:
+
+	void scrollTimeout();
 
 signals:
-    void clicked();
+
+	void clicked();
 
 };
 
