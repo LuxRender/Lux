@@ -55,7 +55,7 @@ void AboutImage::scrollTimeout()
 	else
 		xpos = xpos - 1.0f;
 	
-	authors->setX(xpos);
+	authors->setPos(xpos, authors->y());
 }
 
 void AboutImage::mousePressEvent(QMouseEvent* event) 
