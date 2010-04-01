@@ -87,14 +87,14 @@ ENDIF (NOT FLEX_EXECUTABLE)
 #############################################################################
 #############################################################################
 
-FIND_PACKAGE(Boost 1.39.0 REQUIRED COMPONENTS python)
+FIND_PACKAGE(Boost 1.42.0 REQUIRED COMPONENTS python)
 
 SET(Boost_python_FOUND ${Boost_FOUND})
 SET(Boost_python_LIBRARIES ${Boost_LIBRARIES})
 SET(Boost_FOUND)
 SET(Boost_LIBRARIES)
 
-FIND_PACKAGE(Boost 1.39.0 REQUIRED COMPONENTS thread program_options filesystem serialization iostreams regex system)
+FIND_PACKAGE(Boost 1.42.0 REQUIRED COMPONENTS thread program_options filesystem serialization iostreams regex system)
 
 IF(Boost_FOUND)
 	MESSAGE(STATUS "Boost library directory: " ${Boost_LIBRARY_DIRS})
@@ -939,7 +939,7 @@ IF(QT4_FOUND)
 		FIND_LIBRARY(CARBON_LIBRARY Carbon)
 		FIND_LIBRARY(QUICKTIME_LIBRARY QuickTime )
 		FIND_LIBRARY(PYTHON_LIBRARY Python )
-		FIND_LIBRARY(QT_LIBRARY QTCore QTGui QTOpenGL)
+		FIND_LIBRARY(QT_LIBRARY QtCore QtGui QtOpenGL)
 		FIND_LIBRARY(OPENGL_LIBRARY OpenGL )
 		FIND_LIBRARY(AGL_LIBRARY AGL )
 		FIND_LIBRARY(APP_SERVICES_LIBRARY ApplicationServices )
