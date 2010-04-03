@@ -47,17 +47,8 @@ typedef enum {
 	CHANNEL_WMEAN
 } Channel;
 
-class TextureColorBase
+template <class T, u_int colorSamples> class TextureColor
 {
-public:
-	TextureColorBase() { }
-	virtual ~TextureColorBase() { }
-
-	virtual SWCSpectrum GetSpectrum(const TsPack *tspack) const = 0;
-	virtual float GetFloat(Channel channel) const = 0;
-};
-
-template <class T, u_int colorSamples> class TextureColor : public TextureColorBase {
 	friend class boost::serialization::access;
 public:
 	TextureColor(T v = 0) {
@@ -68,10 +59,10 @@ public:
 		for (u_int i = 0; i < colorSamples; ++i)
 			c[i] = cs[i];
 	}
-	virtual ~TextureColor() { }
+	~TextureColor() { }
 
-	virtual SWCSpectrum GetSpectrum(const TsPack *tspack) const;
-	virtual float GetFloat(Channel channel) const;
+	SWCSpectrum GetSpectrum(const TsPack *tspack) const;
+	float GetFloat(Channel channel) const;
 
 	TextureColor<T, colorSamples> &operator+=(const TextureColor<T, colorSamples> &s2) {
 		for (u_int i = 0; i < colorSamples; ++i)

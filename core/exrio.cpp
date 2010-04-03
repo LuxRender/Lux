@@ -175,7 +175,7 @@ template <typename T> ImageData *createImageData(const string& name,
 	LOG(LUX_INFO, LUX_NOERROR) << width << "x" << height <<
 		" (" << noChannels << " channels of size " << size << ")";
 
-	TextureColorBase* ret;
+	void* ret;
 	// Dade - we support 1, 3 and 4 channel images
 	switch (noChannels) {
 		case 1:
@@ -194,8 +194,6 @@ template <typename T> ImageData *createImageData(const string& name,
 	}
 
 	ImageData* data = new ImageData(width, height, type, noChannels, ret);
-	T *c = new T[noChannels];
-	c[0] = 0;
 	//XXX should do real RGB -> RGBColor conversion here
 	for (u_int i = 0; i < width; ++i) {
 		for (u_int j = 0; j < height; ++j) {
@@ -219,8 +217,6 @@ template <typename T> ImageData *createImageData(const string& name,
 			}
 		}
 	}
-	delete[] c;
-
 	return data;
 }
 

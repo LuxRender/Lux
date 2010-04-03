@@ -39,7 +39,7 @@ public:
 		FLOAT_TYPE
 	};
 
-	ImageData(u_int width, u_int height, PixelDataType type, u_int noChannels, TextureColorBase* data) {
+	ImageData(u_int width, u_int height, PixelDataType type, u_int noChannels, void *data) {
 		width_ = width;
 		height_ = height;
 		pixel_type_ = type;
@@ -70,7 +70,7 @@ public:
 		return pixel_type_;
 	}
 
-	TextureColorBase * getData() {
+	void *getData() {
 		return data_;
 	}
 
@@ -206,7 +206,7 @@ private:
 	u_int width_;
 	u_int height_;
 	u_int noChannels_;
-	TextureColorBase *data_;
+	void *data_;
 	PixelDataType pixel_type_;
 	bool isExrImage_;
 };
