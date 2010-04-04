@@ -31,6 +31,8 @@
 #include <vector>
 #include <cstdarg>
 
+#include <FreeImage.h>
+
 using namespace lux;
 
 #define	EXTRACT_PARAMETERS(_start) \
@@ -103,8 +105,11 @@ extern "C" void luxCleanup()
 {
 	// Context ::luxCleanup reinitializes the core
 	// so we must NOT change initialized to false
-	if (initialized == true)
+	if (initialized == true) {
 		Context::GetActive()->Cleanup();
+
+		FreeImage_DeInitialise();
+	}
 	else
 		LOG(LUX_ERROR,LUX_NOTSTARTED)<<"luxCleanup() called without luxInit().";
 }
@@ -444,6 +449,8 @@ extern "C" void luxInit()
 		{LOG(LUX_ERROR,LUX_ILLSTATE)<<"luxInit() has already been called.";}
 	else
 		Context::SetActive(new Context());
+
+	FreeImage_Initialise(true);
 
 	initialized = true;
 }

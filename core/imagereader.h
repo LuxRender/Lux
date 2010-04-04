@@ -219,16 +219,5 @@ public:
 	virtual ImageData* read(const string &name) = 0;
 };
 
-class ExrImageReader : public ImageReader {
-public:
-
-	virtual ~ExrImageReader() {
-	}
-
-	ExrImageReader() {
-	};
-	virtual ImageData* read(const string &name);
-};
-
 }
 #endif // LUX_IMAGEREADER_H
