@@ -16,11 +16,11 @@ ENDIF(APPLE)
 #Setting Universal Binary Properties, only for Mac OS X
 IF(APPLE)
 	IF(APPLE_64)
-		SET(CMAKE_OSX_ARCHITECTURES ppc64;x86_64)
+		SET(CMAKE_OSX_ARCHITECTURES x86_64)
 		SET(CMAKE_OSX_SYSROOT /Developer/SDKs/MacOSX10.5.sdk)
 	ELSE(APPLE_64)
-		SET(CMAKE_OSX_ARCHITECTURES ppc;i386)
-		SET(CMAKE_OSX_SYSROOT /Developer/SDKs/MacOSX10.4u.sdk)
+		SET(CMAKE_OSX_ARCHITECTURES i386)
+		SET(CMAKE_OSX_SYSROOT /Developer/SDKs/MacOSX10.5.sdk)
 	ENDIF(APPLE_64)
 ENDIF(APPLE)
 
@@ -106,94 +106,11 @@ ENDIF(Boost_FOUND)
 
 #############################################################################
 #############################################################################
-######################### OPENEXR LIBRARIES SETUP ###########################
+###########################   FREEIMAGE LIBRARIES    ###########################
 #############################################################################
 #############################################################################
-FIND_PATH(OPENEXR_INCLUDE_DIRS
-	ImfXdr.h
-	PATHS
-	/usr/local/include/OpenEXR
-	/usr/include/OpenEXR
-	/sw/include/OpenEXR
-	/opt/local/include/OpenEXR
-	/opt/csw/include/OpenEXR
-	/opt/include/OpenEXR
-) 
-IF(APPLE)
-   SET(OPENEXR_LIBRARIES Half IlmImf Iex Imath IlmThread)
 
-ELSE(APPLE)
-   SET(OPENEXR_LIBRARIES Half IlmImf Iex Imath)
-ENDIF(APPLE)
-
-#############################################################################
-#############################################################################
-########################### PNG   LIBRARIES SETUP ###########################
-#############################################################################
-#############################################################################
-# - Find the native PNG includes and library
-#
-# This module defines
-#  PNG_INCLUDE_DIR, where to find png.h, etc.
-#  PNG_LIBRARIES, the libraries to link against to use PNG.
-#  PNG_DEFINITIONS - You should ADD_DEFINITONS(${PNG_DEFINITIONS}) before compiling code that includes png library files.
-#  PNG_FOUND, If false, do not try to use PNG.
-# also defined, but not for general use are
-#  PNG_LIBRARY, where to find the PNG library.
-# None of the above will be defined unles zlib can be found.
-# PNG depends on Zlib
-INCLUDE(FindPNG)
-IF(PNG_FOUND)
-ELSE(PNG_FOUND)
-	MESSAGE( STATUS "Warning : could not find PNG - building without png support")
-ENDIF(PNG_FOUND)
-#FIND_PACKAGE(PNG REQUIRED)
-
-
-#############################################################################
-#############################################################################
-########################### TIFF  LIBRARIES SETUP ###########################
-#############################################################################
-#############################################################################
-# - Find TIFF library
-# Find the native TIFF includes and library
-# This module defines
-#  TIFF_INCLUDE_DIR, where to find tiff.h, etc.
-#  TIFF_LIBRARIES, libraries to link against to use TIFF.
-#  TIFF_FOUND, If false, do not try to use TIFF.
-# also defined, but not for general use are
-#  TIFF_LIBRARY, where to find the TIFF library.
-INCLUDE(FindTIFF)
-#FIND_PACKAGE(TIFF REQUIRED)
-IF(TIFF_FOUND)
-	MESSAGE( STATUS "Found TIFF: " ${TIFF_LIBRARIES} )
-ELSE(TIFF_FOUND)
-	MESSAGE( STATUS "Warning : could not find TIFF - building without tiff support")
-ENDIF(TIFF_FOUND)
-
-
-#############################################################################
-#############################################################################
-########################### JPEG  LIBRARIES SETUP ###########################
-#############################################################################
-#############################################################################
-# - Find JPEG
-# Find the native JPEG includes and library
-# This module defines
-#  JPEG_INCLUDE_DIR, where to find jpeglib.h, etc.
-#  JPEG_LIBRARIES, the libraries needed to use JPEG.
-#  JPEG_FOUND, If false, do not try to use JPEG.
-# also defined, but not for general use are
-#  JPEG_LIBRARY, where to find the JPEG library.
-INCLUDE(FindJPEG)
-#FIND_PACKAGE(JPEG REQUIRED)
-IF(JPEG_FOUND)
-	MESSAGE( STATUS "JPEG include directory: " ${JPEG_INCLUDE_DIR} )
-ELSE(JPEG_FOUND)
-	MESSAGE( STATUS "Warning : could not find JPEG - building without jpeg support")
-ENDIF(JPEG_FOUND)
-
-
+SET(FREEIMAGE_LIBRARIES freeimage)
 
 #############################################################################
 #############################################################################
@@ -736,7 +653,7 @@ LINK_DIRECTORIES(${LINK_DIRECTORIES} ${Boost_LIBRARY_DIRS} ${OPENEXR_LIB_DIRS} $
 
 #Here we build the core library
 ADD_LIBRARY(lux STATIC ${lux_lib_src} )
-#TARGET_LINK_LIBRARIES(lux ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} )
+#TARGET_LINK_LIBRARIES(lux ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} )
 
 
 #############################################################################
@@ -744,9 +661,9 @@ ADD_LIBRARY(lux STATIC ${lux_lib_src} )
 #############################################################################
 ADD_EXECUTABLE(luxconsole renderer/luxconsole.cpp)
 IF(APPLE)
-	TARGET_LINK_LIBRARIES(luxconsole -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES} z ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
+	TARGET_LINK_LIBRARIES(luxconsole -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} z ${Boost_LIBRARIES} )
 ELSE(APPLE)
-	TARGET_LINK_LIBRARIES(luxconsole -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES})
+	TARGET_LINK_LIBRARIES(luxconsole -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES}  ${SYS_LIBRARIES})
 ENDIF(APPLE)
 
 IF(APPLE)
@@ -769,9 +686,9 @@ ENDIF(APPLE)
 #############################################################################
 ADD_EXECUTABLE(luxmerger tools/luxmerger.cpp)
 IF(APPLE)
-	TARGET_LINK_LIBRARIES(luxmerger -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES} z ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
+	TARGET_LINK_LIBRARIES(luxmerger -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} z ${Boost_LIBRARIES} )
 ELSE(APPLE)
-	TARGET_LINK_LIBRARIES(luxmerger -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES})
+	TARGET_LINK_LIBRARIES(luxmerger -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES}  ${SYS_LIBRARIES})
 ENDIF(APPLE)
 
 IF(APPLE)
@@ -794,9 +711,9 @@ ENDIF(APPLE)
 #############################################################################
 ADD_EXECUTABLE(luxcomp tools/luxcomp.cpp)
 IF(APPLE)
-	TARGET_LINK_LIBRARIES(luxcomp -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES} z ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
+	TARGET_LINK_LIBRARIES(luxcomp -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} z ${Boost_LIBRARIES} )
 ELSE(APPLE)
-	TARGET_LINK_LIBRARIES(luxcomp -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES})
+	TARGET_LINK_LIBRARIES(luxcomp -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES}  ${SYS_LIBRARIES})
 ENDIF(APPLE)
 
 IF(APPLE)
@@ -831,14 +748,14 @@ IF(PYTHONLIBS_FOUND)
 	INCLUDE_DIRECTORIES(SYSTEM ${PYTHON_INCLUDE_PATH})
 	IF(APPLE)
 		ADD_LIBRARY(pylux MODULE python/binding.cpp)
-		TARGET_LINK_LIBRARIES(pylux -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z bz2 ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES} ${PYTHON_LIBRARIES} ${Boost_python_LIBRARIES})
+		TARGET_LINK_LIBRARIES(pylux -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z bz2  ${SYS_LIBRARIES} ${PYTHON_LIBRARIES} ${Boost_python_LIBRARIES})
 		ADD_CUSTOM_COMMAND(
 			TARGET pylux POST_BUILD
 			COMMAND mv release/libpylux.so release/pylux.so
 		)
 	ELSE(APPLE)
 		ADD_LIBRARY(pylux SHARED python/binding.cpp)
-		TARGET_LINK_LIBRARIES(pylux -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES} ${PYTHON_LIBRARIES} ${Boost_python_LIBRARIES})
+		TARGET_LINK_LIBRARIES(pylux -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES}  ${SYS_LIBRARIES} ${PYTHON_LIBRARIES} ${Boost_python_LIBRARIES})
 		ADD_CUSTOM_COMMAND(
 			TARGET pylux POST_BUILD
 			COMMAND mv libpylux.so pylux.so
@@ -901,9 +818,9 @@ IF(wxWidgets_FOUND)
 		MARK_AS_ADVANCED (AGL_LIBRARY)
 		MARK_AS_ADVANCED (APP_SERVICES_LIBRARY)
 		SET(EXTRA_LIBS ${CARBON_LIBRARY} ${QUICKTIME_LIBRARY} ${OPENGL_LIBRARY} ${AGL_LIBRARY} ${APP_SERVICES_LIBRARY})
-		TARGET_LINK_LIBRARIES(luxrenderwx -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${wxWidgets_LIBRARIES} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${BZ2_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
+		TARGET_LINK_LIBRARIES(luxrenderwx -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${wxWidgets_LIBRARIES} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${BZ2_LIBRARIES} )
 	ELSE(APPLE)
-		TARGET_LINK_LIBRARIES(luxrenderwx -Wl,--whole-archive lux -Wl,--no-whole-archive ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARY} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES})
+		TARGET_LINK_LIBRARIES(luxrenderwx -Wl,--whole-archive lux -Wl,--no-whole-archive ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES}  ${SYS_LIBRARIES})
 	ENDIF(APPLE)
 ELSE(wxWidgets_FOUND)
 	MESSAGE( STATUS "Warning : could not find wxWidgets - not building GUI")
@@ -953,9 +870,9 @@ IF(QT4_FOUND)
 		MARK_AS_ADVANCED (AGL_LIBRARY)
 		MARK_AS_ADVANCED (APP_SERVICES_LIBRARY)
 		SET(EXTRA_LIBS ${CARBON_LIBRARY}  ${QUICKTIME_LIBRARY} ${QT_LIBRARY} ${OPENGL_LIBRARY} ${AGL_LIBRARY} ${APP_SERVICES_LIBRARY})
-		TARGET_LINK_LIBRARIES(luxrender -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${QT_LIBRARIES} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${BZ2_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
+		TARGET_LINK_LIBRARIES(luxrender -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${QT_LIBRARIES} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${BZ2_LIBRARIES} )
 	ELSE(APPLE)
-	TARGET_LINK_LIBRARIES(luxrender -Wl,--whole-archive lux -Wl,--no-whole-archive ${QT_LIBRARIES} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} ${ZLIB_LIBRARIES} ${BZ2_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES}  ${OPENGL_LIBRARY})
+	TARGET_LINK_LIBRARIES(luxrender -Wl,--whole-archive lux -Wl,--no-whole-archive ${QT_LIBRARIES} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} ${ZLIB_LIBRARIES} ${BZ2_LIBRARIES}  ${SYS_LIBRARIES}  ${OPENGL_LIBRARY})
 	ENDIF(APPLE)
 ELSE(QT4_FOUND)
 	MESSAGE( STATUS "Warning : could not find Qt - not building Qt GUI")
