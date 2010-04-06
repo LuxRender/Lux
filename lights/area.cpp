@@ -86,59 +86,16 @@ AreaLight::~AreaLight()
 	delete func;
 }
 
-SWCSpectrum AreaLight::L(const TsPack *tspack, const DifferentialGeometry &dg,
-	const Vector& w) const
-{
-	if (Dot(dg.nn, w) > 0.f) {
-		SWCSpectrum Ll(Le->Evaluate(tspack, dg) * gain);
-		if (func) {
-			// Transform to the local coordinate system around the point
-			const Vector wLocal(Dot(dg.dpdu, w), Dot(dg.dpdv, w),
-				Dot(dg.nn, w));
-			Ll *= func->f(tspack, wLocal);
-		}
-		return Ll;
-	}
-	return SWCSpectrum(0.f);
-}
-
 float AreaLight::Power(const Scene *scene) const
 {
 	return Le->Y() * gain * area * M_PI *
 		(func ? 2.f * func->Average_f() : 1.f);
 }
 
-SWCSpectrum AreaLight::Sample_L(const TsPack *tspack, const Point &p,
-	const Normal &n, float u1, float u2, float u3, Vector *wi, float *pdf,
-	VisibilityTester *visibility) const
-{
-	DifferentialGeometry dg;
-	dg.time = tspack->time;
-	prim->Sample(tspack, p, u1, u2, u3, &dg);
-	*wi = Normalize(dg.p - p);
-	*pdf = prim->Pdf(p, *wi);
-	visibility->SetSegment(p, dg.p, tspack->time);
-	return L(tspack, dg, -*wi);
-}
-float AreaLight::Pdf(const TsPack *tspack, const Point &p, const Normal &N,
-		const Vector &wi) const {
-	return prim->Pdf(p, wi);
-}
 float AreaLight::Pdf(const TsPack *tspack, const Point &p, const Normal &N,
 	const Point &po, const Normal &ns) const
 {
 	return prim->Pdf(p, po);
-}
-SWCSpectrum AreaLight::Sample_L(const TsPack *tspack, const Point &P,
-		float u1, float u2, float u3, Vector *wo, float *pdf,
-		VisibilityTester *visibility) const {
-	DifferentialGeometry dg;
-	dg.time = tspack->time;
-	prim->Sample(tspack, P, u1, u2, u3, &dg);
-	*wo = Normalize(dg.p - P);
-	*pdf = prim->Pdf(P, *wo);
-	visibility->SetSegment(P, dg.p, tspack->time);
-	return L(tspack, dg, -*wo);
 }
 SWCSpectrum AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1,
 		float u2, float u3, float u4,
@@ -150,10 +107,17 @@ SWCSpectrum AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, float 
 	ray->d = UniformSampleSphere(u3, u4);
 	if (Dot(ray->d, dg.nn) < 0.) ray->d *= -1;
 	*pdf = prim->Pdf(ray->o) * INV_TWOPI;
-	return L(tspack, dg, ray->d);
-}
-float AreaLight::Pdf(const TsPack *tspack, const Point &P, const Vector &w) const {
-	return prim->Pdf(P, w);
+	if (Dot(dg.nn, ray->d) > 0.f) {
+		SWCSpectrum Ll(Le->Evaluate(tspack, dg) * gain);
+		if (func) {
+			// Transform to the local coordinate system around the point
+			const Vector wLocal(Dot(dg.dpdu, ray->d),
+				Dot(dg.dpdv, ray->d), Dot(dg.nn, ray->d));
+			Ll *= func->f(tspack, wLocal);
+		}
+		return Ll;
+	}
+	return SWCSpectrum(0.f);
 }
 bool AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *Le) const
 {

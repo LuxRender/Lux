@@ -75,7 +75,9 @@ u_int DirectLightingIntegrator::LiInternal(const TsPack *tspack,
 
 		// Compute emitted light if ray hit an area light source
 		if (isect.arealight) {
-			L[isect.arealight->group] += isect.Le(tspack, wo);
+			BSDF *lightBSDF;
+			float dummyPdf;
+			L[isect.arealight->group] += isect.Le(tspack, ray, Normal(ray.d), &lightBSDF, &dummyPdf, &dummyPdf);
 			++nContribs;
 		}
 
@@ -84,7 +86,7 @@ u_int DirectLightingIntegrator::LiInternal(const TsPack *tspack,
 			const u_int lightGroupCount = scene->lightGroups.size();
 			vector<SWCSpectrum> Ld(lightGroupCount, 0.f);
 			nContribs += hints.SampleLights(tspack, scene, p, n, wo, bsdf,
-					sample, rayDepth, 1.f, Ld);
+					sample, rayDepth, 1.f, true, Ld);
 
 			for (u_int i = 0; i < lightGroupCount; ++i)
 				L[i] += Ld[i];
@@ -130,7 +132,9 @@ u_int DirectLightingIntegrator::LiInternal(const TsPack *tspack,
 	} else {
 		// Handle ray with no intersection
 		for (u_int i = 0; i < nLights; ++i) {
-			SWCSpectrum Le(scene->lights[i]->Le(tspack, ray));
+			BSDF *lightBSDF;
+			float dummyPdf;
+			const SWCSpectrum Le(scene->lights[i]->Le(tspack, scene, ray, Normal(ray.d), &lightBSDF, &dummyPdf, &dummyPdf));
 			if (!Le.Black()) {
 				L[scene->lights[i]->group] += Le;
 				++nContribs;

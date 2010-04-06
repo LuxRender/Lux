@@ -87,17 +87,6 @@ SpotLight::~SpotLight() {}
 float SpotLight::Falloff(const Vector &w) const {
 	return LocalFalloff(Normalize(WorldToLight(w)), cosTotalWidth, cosFalloffStart);
 }
-SWCSpectrum SpotLight::Sample_L(const TsPack *tspack, const Point &p, float u1, float u2, float u3,
-		Vector *wi, float *pdf, VisibilityTester *visibility) const {
-	*pdf = 1.f;
-	*wi = Normalize(lightPos - p);
-	visibility->SetSegment(p, lightPos, tspack->time);
-	return Lbase->Evaluate(tspack, dummydg) * gain * Falloff(-*wi) /
-		DistanceSquared(lightPos, p);
-}
-float SpotLight::Pdf(const TsPack *tspack, const Point &, const Vector &) const {
-	return 0.;
-}
 float SpotLight::Pdf(const TsPack *tspack, const Point &p, const Normal &n,
 	const Point &po, const Normal &ns) const
 {

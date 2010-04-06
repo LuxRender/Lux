@@ -65,7 +65,7 @@ public:
 		const u_int shadowRayCount, const Point &p, const Normal &n,
 		const Vector &wo, BSDF *bsdf, const Sample *sample,
 		const float *sampleData, const SWCSpectrum &scale,
-		vector<SWCSpectrum> &L) const = 0;
+		bool exclusive, vector<SWCSpectrum> &L) const = 0;
 };
 
 class LSSAllUniform : public LightsSamplingStrategy {
@@ -74,13 +74,13 @@ public:
 	virtual ~LSSAllUniform() { }
 	virtual void RequestSamples(const Scene *scene, vector<u_int> &structure) const;
 	virtual u_int RequestSamplesCount(const Scene *scene) const {
-		return 6;
+		return 3;
 	}
 	virtual u_int SampleLights(const TsPack *tspack, const Scene *scene,
 		const u_int shadowRayCount, const Point &p, const Normal &n,
 		const Vector &wo, BSDF *bsdf, const Sample *sample,
 		const float *sampleData, const SWCSpectrum &scale,
-		vector<SWCSpectrum> &L) const;
+		bool exclusive, vector<SWCSpectrum> &L) const;
 };
 
 class LSSOneUniform : public LightsSamplingStrategy {
@@ -88,12 +88,12 @@ public:
 	LSSOneUniform() : LightsSamplingStrategy() { }
 	virtual ~LSSOneUniform() { }
 	virtual void RequestSamples(const Scene *scene, vector<u_int> &structure) const;
-	virtual u_int RequestSamplesCount(const Scene *scene) const { return 6; }
+	virtual u_int RequestSamplesCount(const Scene *scene) const { return 3; }
 	virtual u_int SampleLights(const TsPack *tspack, const Scene *scene,
 		const u_int shadowRayCount, const Point &p, const Normal &n,
 		const Vector &wo, BSDF *bsdf, const Sample *sample,
 		const float *sampleData, const SWCSpectrum &scale,
-		vector<SWCSpectrum> &L) const;
+		bool exclusive, vector<SWCSpectrum> &L) const;
 };
 
 class LSSAuto : public LightsSamplingStrategy {
@@ -113,9 +113,9 @@ public:
 		const u_int shadowRayCount, const Point &p, const Normal &n,
 		const Vector &wo, BSDF *bsdf, const Sample *sample,
 		const float *sampleData, const SWCSpectrum &scale,
-		vector<SWCSpectrum> &L) const {
+		bool exclusive, vector<SWCSpectrum> &L) const {
 		return strategy->SampleLights(tspack, scene, shadowRayCount,
-			p, n, wo, bsdf, sample, sampleData, scale, L);
+			p, n, wo, bsdf, sample, sampleData, scale, exclusive, L);
 	}
 
 private:
@@ -129,12 +129,12 @@ public:
 	virtual void Init(const Scene *scene);
 
 	virtual void RequestSamples(const Scene *scene, vector<u_int> &structure) const;
-	virtual u_int RequestSamplesCount(const Scene *scene) const { return 6; }
+	virtual u_int RequestSamplesCount(const Scene *scene) const { return 3; }
 	virtual u_int SampleLights(const TsPack *tspack, const Scene *scene,
 		const u_int shadowRayCount, const Point &p, const Normal &n,
 		const Vector &wo, BSDF *bsdf, const Sample *sample,
 		const float *sampleData, const SWCSpectrum &scale,
-		vector<SWCSpectrum> &L) const;
+		bool exclusive, vector<SWCSpectrum> &L) const;
 
 private:
 	Distribution1D *lightDistribution;
@@ -147,13 +147,13 @@ public:
 	virtual void Init(const Scene *scene);
 
 	virtual void RequestSamples(const Scene *scene, vector<u_int> &structure) const;
-	virtual u_int RequestSamplesCount(const Scene *scene) const { return 6; }
+	virtual u_int RequestSamplesCount(const Scene *scene) const { return 3; }
 	// Note: results are added to L
 	virtual u_int SampleLights(const TsPack *tspack, const Scene *scene,
 		const u_int shadowRayCount, const Point &p, const Normal &n,
 		const Vector &wo, BSDF *bsdf, const Sample *sample,
 		const float *sampleData, const SWCSpectrum &scale,
-		vector<SWCSpectrum> &L) const;
+		bool exclusive, vector<SWCSpectrum> &L) const;
 
 protected:
 	Distribution1D *lightDistribution;
@@ -168,7 +168,7 @@ public:
 		const u_int shadowRayCount, const Point &p, const Normal &n,
 		const Vector &wo, BSDF *bsdf, const Sample *sample,
 		const float *sampleData, const SWCSpectrum &scale,
-		vector<SWCSpectrum> &L) const;
+		bool exclusive, vector<SWCSpectrum> &L) const;
 };
 
 class LSSOneLogPowerImportance : public LSSOnePowerImportance {
@@ -223,7 +223,7 @@ public:
 	u_int SampleLights(const TsPack *tspack, const Scene *scene,
 		const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
 		const Sample *sample, u_int depth, const SWCSpectrum &scale,
-		vector<SWCSpectrum> &L, vector<float> *V = NULL) const;
+		bool exclusive, vector<SWCSpectrum> &L, vector<float> *V = NULL) const;
 
 private:
 	// Light Strategies

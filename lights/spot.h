@@ -44,11 +44,8 @@ public:
 		return Lbase->Y() * gain * 2.f * M_PI *
 			(1.f - .5f * (cosFalloffStart + cosTotalWidth));
 	}
-	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Point &P, float u1, float u2, float u3,
-			Vector *wo, float *pdf, VisibilityTester *visibility) const;
 	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2,
 			float u3, float u4, Ray *ray, float *pdf) const;
-	virtual float Pdf(const TsPack *tspack, const Point &, const Vector &) const;
 	virtual float Pdf(const TsPack *tspack, const Point &p, const Normal &n,
 		const Point &po, const Normal &ns) const;
 	virtual bool Sample_L(const TsPack *tspack, const Scene *scene,

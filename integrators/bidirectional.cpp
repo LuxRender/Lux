@@ -823,7 +823,7 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 
 		// Check if the scattering is a passthrough event
 		if (v.flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) ||
-			!(v.bsdf->Pdf(tspack, v.wi, v.wo, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) > 0.f)) {
+			!(v.bsdf->Pdf(tspack, v.wo, v.wi, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) > 0.f)) {
 			eyePath[nEye - 2].dAWeight = v.pdf * v.tPdf *
 				eyePath[nEye - 2].cosi /
 				eyePath[nEye - 2].d2;

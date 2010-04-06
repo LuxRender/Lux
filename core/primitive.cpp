@@ -99,11 +99,6 @@ BSDF *Intersection::GetBSDF(const TsPack *tspack,
 	return material->GetBSDF(tspack, dg, dgShading, exterior, interior);
 }
 
-SWCSpectrum Intersection::Le(const TsPack *tspack, const Vector &w) const
-{
-	return arealight ? arealight->L(tspack, dg, w) : SWCSpectrum(0.f);
-}
-
 SWCSpectrum Intersection::Le(const TsPack *tspack, const Ray &ray,
 	const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const
 {

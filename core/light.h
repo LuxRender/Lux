@@ -49,23 +49,9 @@ public:
 	virtual float Power(const Scene *scene) const = 0;
 	virtual bool IsDeltaLight() const = 0;
 	virtual bool IsEnvironmental() const = 0;
-	virtual SWCSpectrum Le(const TsPack *tspack,
-		const RayDifferential &r) const;
 	virtual SWCSpectrum Le(const TsPack *tspack, const Scene *scene,
 		const Ray &r, const Normal &n, BSDF **bsdf, float *pdf,
 		float *pdfDirect) const;
-	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Point &p,
-		float u1, float u2, float u3, Vector *wi, float *pdf,
-		VisibilityTester *vis) const = 0;
-	virtual float Pdf(const TsPack *tspack, const Point &p,
-		const Vector &wi) const = 0;
-	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Point &p,
-		const Normal &n, float u1, float u2, float u3, Vector *wi,
-		float *pdf, VisibilityTester *visibility) const {
-		return Sample_L(tspack, p, u1, u2, u3, wi, pdf, visibility);
-	}
-	virtual float Pdf(const TsPack *tspack, const Point &p, const Normal &n,
-		const Vector &wi) const { return Pdf(tspack, p, wi); }
 	virtual float Pdf(const TsPack *tspack, const Point &p, const Normal &n,
 		const Point &po, const Normal &ns) const = 0;
 	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Scene *scene,
@@ -140,26 +126,14 @@ public:
 		float pow, float e, SampleableSphericalFunction *ssf,
 		u_int ns, const boost::shared_ptr<Primitive> &prim);
 	virtual ~AreaLight();
-	virtual SWCSpectrum L(const TsPack *tspack,
-		const DifferentialGeometry &dg, const Vector& w) const;
 	virtual SWCSpectrum L(const TsPack *tspack, const Ray &ray,
 		const DifferentialGeometry &dg, const Normal &n, BSDF **bsdf,
 		float *pdf, float *pdfDirect) const;
 	virtual float Power(const Scene *scene) const;
 	virtual bool IsDeltaLight() const { return false; }
 	virtual bool IsEnvironmental() const { return false; }
-	virtual float Pdf(const TsPack *tspack, const Point &,
-		const Vector &) const;
-	virtual float Pdf(const TsPack *, const Point &, const Normal &,
-		const Vector &) const;
 	virtual float Pdf(const TsPack *tspack, const Point &p, const Normal &n,
 		const Point &po, const Normal &ns) const;
-	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Point &P,
-		const Normal &N, float u1, float u2, float u3, Vector *wo,
-		float *pdf, VisibilityTester *visibility) const;
-	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Point &P,
-		float u1, float u2, float u3, Vector *wo, float *pdf,
-		VisibilityTester *visibility) const;
 	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Scene *scene,
 		float u1, float u2, float u3, float u4, Ray *ray,
 		float *pdf) const;

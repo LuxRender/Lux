@@ -67,13 +67,11 @@ void IGIIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 	// Request samples for area light sampling
 	u_int nLights = scene->lights.size();
 	lightSampleOffset = new u_int[nLights];
-	bsdfSampleOffset = new u_int[nLights];
-	bsdfComponentOffset = new u_int[nLights];
+	lightNumOffset = new u_int[nLights];
 	for (u_int i = 0; i < nLights; ++i) {
 		u_int lightSamples = 1;
 		lightSampleOffset[i] = sample->Add2D(lightSamples);
-		bsdfSampleOffset[i] = sample->Add2D(lightSamples);
-		bsdfComponentOffset[i] = sample->Add1D(lightSamples);
+		lightNumOffset[i] = sample->Add1D(lightSamples);
 	}
 	vlSetOffset = sample->Add1D(1);
 }
@@ -190,24 +188,28 @@ u_int IGIIntegrator::Li(const TsPack *tspack, const Scene *scene,
 			// Handle ray with no intersection
 			if (depth == 0)
 				alpha = 0.f;
-			for (u_int i = 0; i < scene->lights.size(); ++i)
-				L += pathThroughput * scene->lights[i]->Le(tspack, r);
+			for (u_int i = 0; i < scene->lights.size(); ++i) {
+				BSDF *lightBSDF;
+				float dummyPdf;
+				L += pathThroughput * scene->lights[i]->Le(tspack, scene, r, Normal(r.d), &lightBSDF, &dummyPdf, &dummyPdf);
+			}
 			break;
 		}
 		Vector wo = -r.d;
 		// Compute emitted light if ray hit an area light source
-		L += pathThroughput * isect.Le(tspack, wo);
+		if (isect.arealight) {
+			BSDF *lightBSDF;
+			float dummyPdf;
+			L += pathThroughput * isect.Le(tspack, r, Normal(r.d), &lightBSDF, &dummyPdf, &dummyPdf);
+		}
 		// Evaluate BSDF at hit point
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;
 		for (u_int i = 0; i < scene->lights.size(); ++i) {
 			SWCSpectrum Ld(0.f);
-			float ln = Clamp((i + tspack->rng->floatValue()) / scene->lights.size(), 0.f, 1.f);
 			UniformSampleOneLight(tspack, scene, p, n, wo, bsdf,
 				sample, sample->twoD[lightSampleOffset[i]],
-				&ln,
-				sample->twoD[bsdfSampleOffset[i]],
-				sample->oneD[bsdfComponentOffset[i]], &Ld);
+				sample->oneD[lightNumOffset[i]], true, &Ld);
 			L += pathThroughput * Ld / scene->lights.size();
 		}
 		// Compute indirect illumination with virtual lights

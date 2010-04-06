@@ -76,10 +76,6 @@ void VisibilityTester::Transmittance(const TsPack *tspack, const Scene *scene,
 {
 	scene->Transmittance(tspack, r, sample, L);
 }
-SWCSpectrum Light::Le(const TsPack *tspack, const RayDifferential &) const
-{
-	return SWCSpectrum(0.f);
-}
 SWCSpectrum Light::Le(const TsPack *tspack, const Scene *scene, const Ray &r,
 	const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const
 {

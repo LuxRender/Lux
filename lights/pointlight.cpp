@@ -102,14 +102,6 @@ PointLight::~PointLight() {
 float PointLight::Power(const Scene *) const {
 	return Lbase->Y() * gain * 4.f * M_PI * (func ? func->Average_f() : 1.f);
 }
-SWCSpectrum PointLight::Sample_L(const TsPack *tspack, const Point &P, float u1, float u2,
-		float u3, Vector *wo, float *pdf,
-		VisibilityTester *visibility) const {
-	*wo = Normalize(lightPos - P);
-	*pdf = 1.f;
-	visibility->SetSegment(P, lightPos, tspack->time);
-	return L(tspack, WorldToLight(-*wo)) / DistanceSquared(lightPos, P);
-}
 SWCSpectrum PointLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2,
 		float u3, float u4, Ray *ray, float *pdf) const {
 	ray->o = lightPos;
@@ -124,17 +116,10 @@ SWCSpectrum PointLight::Sample_L(const TsPack *tspack, const Scene *scene, float
 		return Lbase->Evaluate(tspack, dummydg) * gain;
 	}
 }
-float PointLight::Pdf(const TsPack *, const Point &, const Vector &) const {
-	return 0.;
-}
 float PointLight::Pdf(const TsPack *tspack, const Point &p, const Normal &n,
 	const Point &po, const Normal &ns) const
 {
 	return 1.f;
-}
-SWCSpectrum PointLight::L(const TsPack *tspack, const Vector &w) const {
-	return Lbase->Evaluate(tspack, dummydg) * gain *
-		(func ? func->f(tspack, w) : 1.f);
 }
 bool PointLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *Le) const
 {

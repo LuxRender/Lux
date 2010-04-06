@@ -27,6 +27,7 @@
 #include "bxdf.h"
 #include "light.h"
 #include "camera.h"
+#include "mc.h"
 #include "paramset.h"
 #include "dynload.h"
 
@@ -93,6 +94,9 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	float distance = INFINITY;
 	u_int through = 0;
 	const Volume *volume = NULL;
+	Point prevP(ray.o);
+	Normal prevN(0, 0, 0);
+	float prevPdf = 1.f;
 
 	for (u_int pathLength = 0; ;) {
 		// Find next vertex of path
@@ -114,11 +118,19 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 
 			// Stop path sampling since no intersection was found
 			// Possibly add horizon in render & reflections
-			if ((includeEnvironment || pathLength > 0) &&
-				specularBounce) {
+			if (includeEnvironment || pathLength > 0) {
 				for (u_int i = 0; i < nLights; ++i) {
-					SWCSpectrum Le(scene->lights[i]->Le(tspack, ray));
-					Le *= pathThroughput;
+					BSDF *lightBSDF;
+					float dummyPdf, lightPdf;
+					SWCSpectrum Le(scene->lights[i]->Le(tspack, scene, ray, prevN, &lightBSDF, &dummyPdf, &lightPdf));
+					float weight;
+					if (specularBounce)
+						weight = 1.f;
+					else {
+						lightPdf *= DistanceSquared(prevP, lightBSDF->dgShading.p) / AbsDot(ray.d, lightBSDF->nn);
+						weight = PowerHeuristic(1, prevPdf, 1, lightPdf);
+					}
+					Le *= pathThroughput * weight;
 					if (!Le.Black()) {
 						L[scene->lights[i]->group] += Le;
 						V[scene->lights[i]->group] += Le.Filter(tspack) * VContrib;
@@ -149,14 +161,22 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 
 		// Possibly add emitted light at path vertex
 		Vector wo(-ray.d);
-		if (specularBounce) {
-			SWCSpectrum Le(isect.Le(tspack, wo));
-			if (!Le.Black()) {
-				Le *= pathThroughput;
-				L[isect.arealight->group] += Le;
-				V[isect.arealight->group] += Le.Filter(tspack) * VContrib;
-				++nrContribs;
+		BSDF *lightBSDF;
+		float dummyPdf, lightPdf;
+		SWCSpectrum Le(isect.Le(tspack, ray, prevN,
+			&lightBSDF, &dummyPdf, &lightPdf));
+		if (!Le.Black()) {
+			float weight;
+			if (specularBounce)
+				weight = 1.f;
+			else {
+				lightPdf *= DistanceSquared(prevP, lightBSDF->dgShading.p) / AbsDot(ray.d, lightBSDF->nn);
+				weight = PowerHeuristic(1, prevPdf, 1, lightPdf);
 			}
+			Le *= pathThroughput * weight;
+			L[isect.arealight->group] += Le;
+			V[isect.arealight->group] += Le.Filter(tspack) * VContrib;
+			++nrContribs;
 		}
 		if (pathLength == maxDepth)
 			break;
@@ -174,7 +194,7 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 			}
 
 			nrContribs += hints.SampleLights(tspack, scene, p, n, wo, bsdf,
-				sample, pathLength, pathThroughput, Ld, &Vd);
+				sample, pathLength, pathThroughput, false, Ld, &Vd);
 
 			for (u_int i = 0; i < lightGroupCount; ++i) {
 				L[i] += Ld[i];
@@ -190,31 +210,37 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		if (!bsdf->Sample_f(tspack, wo, &wi, data[0], data[1], data[2], &f, &pdf, BSDF_ALL, &flags, NULL, true))
 			break;
 
-		const float dp = AbsDot(wi, n) / pdf;
+		float dp = AbsDot(wi, n);
 
 		// Possibly terminate the path
 		if (pathLength > 3) {
 			if (rrStrategy == RR_EFFICIENCY) { // use efficiency optimized RR
-				const float q = min<float>(1.f, f.Filter(tspack) * dp);
+				const float q = min<float>(1.f, f.Filter(tspack) * dp / pdf);
 				if (q < data[3])
 					break;
 				// increase path contribution
-				pathThroughput /= q;
+				pdf *= q;
 			} else if (rrStrategy == RR_PROBABILITY) { // use normal/probability RR
 				if (continueProbability < data[3])
 					break;
 				// increase path contribution
-				pathThroughput /= continueProbability;
+				pdf *= continueProbability;
 			}
 		}
+		dp /= pdf;
 		++pathLength;
 
 		if (flags == (BSDF_TRANSMISSION | BSDF_SPECULAR) && bsdf->Pdf(tspack, wi, wo, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) > 0.f) {
 			if (through++ > passThroughLimit)
 				break;
 			--pathLength;
-		} else
+			prevPdf *= pdf;
+		} else {
 			specularBounce = (flags & BSDF_SPECULAR) != 0;
+			prevP = p;
+			prevN = n;
+			prevPdf = pdf;
+		}
 		specular = specular && specularBounce;
 		pathThroughput *= f;
 		pathThroughput *= dp;

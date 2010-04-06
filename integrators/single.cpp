@@ -25,6 +25,7 @@
 #include "randomgen.h"
 #include "light.h"
 #include "sampling.h"
+#include "bxdf.h"
 #include "paramset.h"
 #include "dynload.h"
 
@@ -100,23 +101,26 @@ u_int SingleScattering::Li(const TsPack *tspack, const Scene *scene,
 		const SWCSpectrum ss(vr->SigmaS(tspack, r.o, w));
 		if (!ss.Black()) {
 			// Add contribution of _light_ due to scattering at _p_
-			float pdf;
+			BSDF *lightBSDF;
+			float dummyPdf, lightPdf;
 			VisibilityTester vis;
-			Vector wo;
 			float u1 = samp[sampOffset], u2 = samp[sampOffset + 1],
 				u3 = samp[sampOffset + 2];
-			const SWCSpectrum L(light->Sample_L(tspack, r.o, u1, u2,
-				u3, &wo, &pdf, &vis));
-
-			// Dade - use the new TestOcclusion() method
-			SWCSpectrum occlusion(1.f);
-			if ((!L.Black()) && (pdf > 0.0f) &&
-				vis.TestOcclusion(tspack, scene, &occlusion)) {	
-				SWCSpectrum Ld = L * occlusion;
-				vis.Transmittance(tspack, scene, sample, &Ld);
-				*Lv += Tr * ss * Ld *
-					(vr->P(tspack, r.o, w, -wo) * nLights /
-					pdf);
+			SWCSpectrum L;
+			if (light->Sample_L(tspack, scene, r.o, Normal(r.d), u1, u2,
+				u3, &lightBSDF, &dummyPdf, &lightPdf, &vis, &L)) {
+				Vector wo(lightBSDF->dgShading.p - r.o);
+				const float d2 = wo.LengthSquared();
+				wo /= sqrtf(d2);
+				L *= lightBSDF->f(tspack, Vector(lightBSDF->nn), -wo);
+				// Test the occlusion
+				float oPdf = 1.f;
+				if (!L.Black() && Connect(tspack, scene, NULL, r.o, lightBSDF->dgShading.p, false, &L, &dummyPdf, &oPdf)) {	
+					vis.Transmittance(tspack, scene, sample, &L);
+					*Lv += Tr * ss * L *
+						(vr->P(tspack, r.o, w, -wo) *
+						nLights / lightPdf);
+				}
 			}
 		}
 		sampOffset += 3;

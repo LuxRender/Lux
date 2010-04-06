@@ -211,8 +211,11 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(const TsPack *tspack,
 		Vector wo = -ray.d;
 
 		// Compute emitted light if ray hit an area light source
-		if (specularBounce)
-			L += isect.Le(tspack, wo);
+		if (specularBounce) {
+			BSDF *lightBSDF;
+			float dummyPdf;
+			L += isect.Le(tspack, ray, Normal(ray.d), &lightBSDF, &dummyPdf, &dummyPdf);
+		}
 
 		// Evaluate BSDF at hit point
 		const Point &p = bsdf->dgShading.p;
@@ -225,7 +228,7 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(const TsPack *tspack,
 				Ld[i] = 0.f;
 
 			hints.SampleLights(tspack, scene, p, ns, wo, bsdf,
-					sample, reflectionDepth, 1.f, Ld);
+					sample, reflectionDepth, 1.f, true, Ld);
 
 			for (u_int i = 0; i < lightGroupCount; ++i)
 				L += Ld[i];
@@ -295,8 +298,11 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(const TsPack *tspack,
 	} else {
 		// Handle ray with no intersection
 		if (specularBounce) {
-			for (u_int i = 0; i < nLights; ++i)
-				L += scene->lights[i]->Le(tspack, ray);
+			for (u_int i = 0; i < nLights; ++i) {
+				BSDF *lightBSDF;
+				float dummyPdf;
+				L += scene->lights[i]->Le(tspack, scene, ray, Normal(ray.d), &lightBSDF, &dummyPdf, &dummyPdf);
+			}
 		}
 
 		if (reflectionDepth == 0)
@@ -323,6 +329,9 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const TsPack *tspack,
 	SWCSpectrum pathThroughput(1.f);
 	bool specularBounce = true, specular = true;
 	const Volume *volume = NULL;
+	Point prevP(ray.o);
+	Normal prevN(0, 0, 0);
+	float prevPdf = 1.f;
 
 	for (u_int pathLength = 0; ; ++pathLength) {
 		// Find next vertex of path
@@ -337,14 +346,23 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const TsPack *tspack,
 			L += Lv;
 
 			// Possibly add emitted light if this was a specular reflection
-			if (specularBounce) {
-				scene->volumeIntegrator->Transmittance(tspack, scene, ray, sample, alpha, &pathThroughput);
+			scene->volumeIntegrator->Transmittance(tspack, scene, ray, sample, alpha, &pathThroughput);
 
-				SWCSpectrum Le(0.f);
-				for (u_int i = 0; i < nLights; ++i)
-					Le += scene->lights[i]->Le(tspack, ray);
-				L += Le * pathThroughput;
+			SWCSpectrum Le(0.f);
+			for (u_int i = 0; i < nLights; ++i) {
+				BSDF *lightBSDF;
+				float dummyPdf, lightPdf;
+				const SWCSpectrum le(scene->lights[i]->Le(tspack, scene, ray, prevN, &lightBSDF, &dummyPdf, &lightPdf));
+				float weight;
+				if (specularBounce)
+					weight = 1.f;
+				else {
+					lightPdf *= DistanceSquared(prevP, lightBSDF->dgShading.p) / AbsDot(ray.d, lightBSDF->nn);
+					weight = PowerHeuristic(1, prevPdf, 1, lightPdf);
+				}
+				Le += le * weight;
 			}
+			L += Le * pathThroughput;
 
 			// Set alpha channel
 			if (pathLength == 0)
@@ -365,8 +383,20 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const TsPack *tspack,
 
 		// Possibly add emitted light at path vertex
 		Vector wo(-ray.d);
-		if (specularBounce)
-			currL += isect.Le(tspack, wo);
+		BSDF *lightBSDF;
+		float dummyPdf, lightPdf;
+		SWCSpectrum Le(isect.Le(tspack, ray, prevN,
+			&lightBSDF, &dummyPdf, &lightPdf));
+		if (!Le.Black()) {
+			float weight;
+			if (specularBounce)
+				weight = 1.f;
+			else {
+				lightPdf *= DistanceSquared(prevP, lightBSDF->dgShading.p) / AbsDot(ray.d, lightBSDF->nn);
+				weight = PowerHeuristic(1, prevPdf, 1, lightPdf);
+			}
+			currL += Le * weight;
+		}
 
 		if (pathLength == maxDepth) {
 			L += currL * pathThroughput;
@@ -396,7 +426,7 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const TsPack *tspack,
 			vector<SWCSpectrum> Ld(lightGroupCount, 0.f);
 		// Sample illumination from lights to find path contribution
 			hints.SampleLights(tspack, scene, p, n, wo, bsdf,
-					sample, pathLength, 1.f, Ld);
+					sample, pathLength, 1.f, false, Ld);
 
 			for (u_int i = 0; i < lightGroupCount; ++i)
 				currL += Ld[i];
@@ -506,6 +536,9 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const TsPack *tspack,
 
 		ray = RayDifferential(p, wi);
 		volume = bsdf->GetVolume(wi);
+		prevP = p;
+		prevN = n;
+		prevPdf = pdf;
 	}
 
 	return L;

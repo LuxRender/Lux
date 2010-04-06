@@ -40,23 +40,15 @@ public:
 	virtual float Power(const Scene *scene) const;
 	virtual bool IsDeltaLight() const { return false; }
 	virtual bool IsEnvironmental() const { return true; }
-	virtual SWCSpectrum Le(const TsPack *tspack, const RayDifferential &r) const;
 	virtual SWCSpectrum Le(const TsPack *tspack, const Scene *scene, const Ray &r,
 		const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const;
-	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Point &p, const Normal &n,
-		float u1, float u2, float u3, Vector *wi, float *pdf,
-		VisibilityTester *visibility) const;
-	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Point &p, float u1, float u2, float u3,
-		Vector *wi, float *pdf, VisibilityTester *visibility) const;
 	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2,
 		float u3, float u4, Ray *ray, float *pdf) const;
-	virtual float Pdf(const TsPack *, const Point &, const Normal &, const Vector &) const;
-	virtual float Pdf(const TsPack *, const Point &, const Vector &) const;
 	virtual float Pdf(const TsPack *tspack, const Point &p, const Normal &n,
 		const Point &po, const Normal &ns) const;
 	virtual bool Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *Le) const;
 	virtual bool Sample_L(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility, SWCSpectrum *Le) const;
-	void		GetSkySpectralRadiance(const TsPack *tspack, const float theta, const float phi, SWCSpectrum * const dst_spect) const;
+	void GetSkySpectralRadiance(const TsPack *tspack, const float theta, const float phi, SWCSpectrum * const dst_spect) const;
 
 	static Light *CreateLight(const Transform &light2world,
 		const ParamSet &paramSet);
@@ -68,7 +60,7 @@ private:
 	RGBColor	GetSunSpectralRadiance() const;
 	float		GetSunSolidAngle() const;
 	void		GetAtmosphericEffects(const Vector &viewer, const Vector &source,
-									RGBColor &atmAttenuation, RGBColor &atmInscatter ) const;
+									RGBColor &atmAttenuation, RGBColor &atmInscatter) const;
 
 	void		InitSunThetaPhi();
 	void		ChromaticityToSpectrum(const TsPack *tspack, const float x, const float y, SWCSpectrum * const dst_spect) const;

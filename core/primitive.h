@@ -170,7 +170,6 @@ public:
 	Intersection() : primitive(NULL), material(NULL), exterior(NULL),
 		interior(NULL), arealight(NULL) { }
 	BSDF *GetBSDF(const TsPack *tspack, const RayDifferential &ray) const;
-	SWCSpectrum Le(const TsPack *tspack, const Vector &wo) const;
 	SWCSpectrum Le(const TsPack *tspack, const Ray &ray, const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const;
 
 	void Set(const Transform& world2object,

@@ -20,8 +20,6 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
  
-// TODO - Port SPD interfaces
-
 // infinitesample.cpp*
 #include "infinitesample.h"
 #include "imagereader.h"
@@ -114,20 +112,6 @@ InfiniteAreaLightIS::InfiniteAreaLightIS(const Transform &light2world,
 	uvDistrib = new Distribution2D(img, nu, nv);
 	delete[] img;
 }
-SWCSpectrum InfiniteAreaLightIS::Le(const TsPack *tspack,
-	const RayDifferential &r) const
-{
-	Vector w = r.d;
-	// Compute infinite light radiance for direction
-	if (radianceMap != NULL) {
-		Vector wh = Normalize(WorldToLight(w));
-		float s = SphericalPhi(wh) * INV_TWOPI;
-		float t = SphericalTheta(wh) * INV_PI;
-		return SWCSpectrum(tspack, SPDbase) *
-			radianceMap->LookupSpectrum(tspack, s, t);
-	}
-	return SWCSpectrum(tspack, SPDbase);
-}
 
 SWCSpectrum InfiniteAreaLightIS::Le(const TsPack *tspack, const Scene *scene,
 	const Ray &r, const Normal &n, BSDF **bsdf, float *pdf,
@@ -167,37 +151,6 @@ SWCSpectrum InfiniteAreaLightIS::Le(const TsPack *tspack, const Scene *scene,
 	}
 }
 
-SWCSpectrum InfiniteAreaLightIS::Sample_L(const TsPack *tspack, const Point &p, float u1,
-		float u2, float u3, Vector *wi, float *pdf,
-		VisibilityTester *visibility) const {
-	// Find floating-point $(u,v)$ sample coordinates
-	float uv[2];
-	uvDistrib->SampleContinuous(u1, u2, uv, pdf);
-	// Convert sample point to direction on the unit sphere
-	const float theta = uv[1] * M_PI;
-	const float phi = uv[0] * 2.f * M_PI;
-	const float costheta = cosf(theta), sintheta = sinf(theta);
-	*wi = LightToWorld(SphericalDirection(sintheta, costheta, phi));
-	// Compute PDF for sampled direction
-	// FIXME - use mapping
-	*pdf /= (2.f * M_PI * M_PI * sintheta);
-	// Return radiance value for direction
-	visibility->SetRay(p, *wi, tspack->time);
-	if (radianceMap)
-		return SWCSpectrum(tspack, SPDbase) *
-			radianceMap->LookupSpectrum(tspack, uv[0], uv[1]);
-	else
-		return SWCSpectrum(tspack, SPDbase);
-}
-float InfiniteAreaLightIS::Pdf(const TsPack *tspack, const Point &,
-		const Vector &w) const {
-	Vector wi = WorldToLight(w);
-	float theta = SphericalTheta(wi), phi = SphericalPhi(wi);
-	// FIXME - use pdf from mapping
-	return uvDistrib->Pdf(phi * INV_TWOPI, theta * INV_PI) /
-		(2.f * M_PI * M_PI * sin(theta));
-}
-
 float InfiniteAreaLightIS::Pdf(const TsPack *tspack, const Point &p,
 	const Normal &n, const Point &po, const Normal &ns) const
 {
@@ -235,7 +188,15 @@ SWCSpectrum InfiniteAreaLightIS::Sample_L(const TsPack *tspack, const Scene *sce
 	float costheta = AbsDot(to_center,ray->d);
 	*pdf =
 		costheta / ((4.f * M_PI * worldRadius * worldRadius));
-	return Le(tspack, RayDifferential(ray->o, -ray->d));
+	// Compute infinite light radiance for direction
+	if (radianceMap != NULL) {
+		Vector wh = Normalize(WorldToLight(-ray->d));
+		float s, t, dummy;
+		mapping->Map(wh, &s, &t, &dummy);
+		return SWCSpectrum(tspack, SPDbase) *
+			radianceMap->LookupSpectrum(tspack, s, t);
+	} else
+		return SWCSpectrum(tspack, SPDbase);
 }
 
 bool InfiniteAreaLightIS::Sample_L(const TsPack *tspack, const Scene *scene,

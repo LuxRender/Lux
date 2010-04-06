@@ -150,14 +150,6 @@ SWCSpectrum ProjectionLight::Projection(const TsPack *tspack,
 	float t = (Pl.y - screenY0) / (screenY1 - screenY0);
 	return projectionMap->LookupSpectrum(tspack, s, t);
 }
-SWCSpectrum ProjectionLight::Sample_L(const TsPack *tspack, const Point &p, float u1, float u2,
-		float u3, Vector *wi, float *pdf,
-		VisibilityTester *visibility) const {
-	*wi = Normalize(lightPos - p);
-	*pdf = 1.f;
-	visibility->SetSegment(p, lightPos, tspack->time);
-	return Lbase->Evaluate(tspack, dummydg) * gain * Projection(tspack, -*wi) / DistanceSquared(lightPos, p);
-}
 SWCSpectrum ProjectionLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2,
 		float u3, float u4, Ray *ray, float *pdf) const {
 	ray->o = lightPos;
@@ -165,9 +157,6 @@ SWCSpectrum ProjectionLight::Sample_L(const TsPack *tspack, const Scene *scene, 
 	ray->d = LightToWorld(v);
 	*pdf = UniformConePdf(cosTotalWidth);
 	return Lbase->Evaluate(tspack, dummydg) * gain * Projection(tspack, ray->d);
-}
-float ProjectionLight::Pdf(const TsPack *, const Point &, const Vector &) const {
-	return 0.f;
 }
 float ProjectionLight::Pdf(const TsPack *tspack, const Point &p, const Normal &n,
 	const Point &po, const Normal &ns) const

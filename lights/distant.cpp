@@ -133,18 +133,6 @@ SWCSpectrum DistantLight::Le(const TsPack *tspack, const Scene *scene, const Ray
 	return Lbase->Evaluate(tspack, dg) * gain * UniformConePdf(cosThetaMax);
 }
 
-SWCSpectrum DistantLight::Sample_L(const TsPack *tspack, const Point &p, float u1, float u2, float u3,
-		Vector *wi, float *pdf, VisibilityTester *visibility) const {
-	*pdf = 1.f;
-	*wi = lightDir;
-	visibility->SetRay(p, *wi, tspack->time);
-	return Lbase->Evaluate(tspack, dummydg) * gain;
-}
-
-float DistantLight::Pdf(const TsPack *tspack, const Point &, const Vector &) const {
-	return 0.f;
-}
-
 float DistantLight::Pdf(const TsPack *tspack, const Point &p, const Normal &n,
 	const Point &po, const Normal &ns) const
 {

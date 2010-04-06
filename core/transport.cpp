@@ -116,24 +116,22 @@ bool VolumeIntegrator::Connect(const TsPack *tspack, const Scene *scene,
 // Integrator Utility Functions
 SWCSpectrum UniformSampleAllLights(const TsPack *tspack, const Scene *scene,
 	const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
-	const Sample *sample,
-	const float *lightSample, const float *lightNum,
-	const float *bsdfSample, const float *bsdfComponent)
+	const Sample *sample, const float *lightSample, const float *lightNum,
+	bool exclusive)
 {
 	SWCSpectrum L(0.f);
 	for (u_int i = 0; i < scene->lights.size(); ++i) {
-		L += EstimateDirect(tspack, scene, scene->lights[i], p, n, wo, bsdf,
-			sample, lightSample[0], lightSample[1], *lightNum,
-			bsdfSample[0], bsdfSample[1], *bsdfComponent);
+		L += EstimateDirect(tspack, scene, scene->lights[i], p, n, wo,
+			bsdf, sample, lightSample[0], lightSample[1], *lightNum,
+			exclusive);
 	}
 	return L;
 }
 
 u_int UniformSampleOneLight(const TsPack *tspack, const Scene *scene,
 	const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
-	const Sample *sample,
-	const float *lightSample, const float *lightNum,
-	const float *bsdfSample, const float *bsdfComponent, SWCSpectrum *L)
+	const Sample *sample, const float *lightSample, const float *lightNum,
+	bool exclusive, SWCSpectrum *L)
 {
 	// Randomly choose a single light to sample, _light_
 	u_int nLights = scene->lights.size();
@@ -147,106 +145,39 @@ u_int UniformSampleOneLight(const TsPack *tspack, const Scene *scene,
 	Light *light = scene->lights[lightNumber];
 	*L = static_cast<float>(nLights) * EstimateDirect(tspack, scene, light,
 		p, n, wo, bsdf, sample, lightSample[0], lightSample[1], ls3,
-		bsdfSample[0], bsdfSample[1], *bsdfComponent);
+		exclusive);
 	return scene->lights[lightNumber]->group;
 }
 
-SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light *light,
-	const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf, const Sample *sample, 
-	float ls1, float ls2, float ls3, float bs1, float bs2, float bcs)
+SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene,
+	const Light *light, const Point &p, const Normal &n, const Vector &wo,
+	BSDF *bsdf, const Sample *sample, float ls1, float ls2, float ls3,
+	bool exclusive)
 {
-	SWCSpectrum Ld(0.f);
+	BSDF *lightBSDF;
+	float lightPdf, dummyPdf;
+	VisibilityTester visibility;
+	SWCSpectrum Li;
+	if (light->Sample_L(tspack, scene, p, n, ls1, ls2, ls3,
+		&lightBSDF, &dummyPdf, &lightPdf, &visibility, &Li)) {
 
-	// Dade - use MIS only if it is worth doing
-	BxDFType noDiffuse = BxDFType(BSDF_ALL & ~(BSDF_DIFFUSE));
-	if (light->IsDeltaLight() || (bsdf->NumComponents(noDiffuse) == 0)) {
-
-		// Dade - trace only a single shadow ray
-		Vector wi;
-		float lightPdf;
-		VisibilityTester visibility;
-		SWCSpectrum Li = light->Sample_L(tspack, p, n,
-			ls1, ls2, ls3, &wi, &lightPdf, &visibility);
-		if (lightPdf > 0.f && !Li.Black()) {
-			SWCSpectrum f = bsdf->f(tspack, wi, wo);
-			SWCSpectrum fO(1.f);
-			visibility.volume = bsdf->GetVolume(wi);
-			if (!f.Black() && visibility.TestOcclusion(tspack, scene, &fO)) {
-				// Add light's contribution to reflected radiance
-				visibility.Transmittance(tspack, scene, sample, &Li);
-				Li *= fO;
-				Ld += f * Li * (AbsDot(wi, n) / lightPdf);
-			}
-		}
-	} else {
-		// Dade - trace 2 shadow rays and use MIS
-		// Sample light source with multiple importance sampling
-		const BxDFType noSpecular = BxDFType(BSDF_ALL & ~BSDF_SPECULAR);
-		Vector wi;
-		float lightPdf, bsdfPdf;
-		VisibilityTester visibility;
-		SWCSpectrum Li = light->Sample_L(tspack, p, n,
-			ls1, ls2, ls3, &wi, &lightPdf, &visibility);
-		if (lightPdf > 0.f && !Li.Black()) {
-			SWCSpectrum f = bsdf->f(tspack, wi, wo);
-			SWCSpectrum fO(1.f);
-			visibility.volume = bsdf->GetVolume(wi);
-			if (!f.Black() && visibility.TestOcclusion(tspack, scene, &fO)) {
-				// Add light's contribution to reflected radiance
-				visibility.Transmittance(tspack, scene, sample, &Li);
-				Li *= fO;
-
-				bsdfPdf = bsdf->Pdf(tspack, wi, wo);
-				float weight = PowerHeuristic(1, lightPdf, 1, bsdfPdf);
-				Ld += f * Li * (AbsDot(wi, n) * weight / lightPdf);
-			}
-
-			// Sample BSDF with multiple importance sampling
-			SWCSpectrum fBSDF;
-			BxDFType sampledType;
-			if (bsdf->Sample_f(tspack, wo, &wi, bs1, bs2, bcs, &fBSDF, &bsdfPdf, BSDF_ALL, &sampledType, NULL, true) && (sampledType & BSDF_SPECULAR) == 0) {
-				lightPdf = light->Pdf(tspack, p, n, wi);
-				// Add light contribution from BSDF sampling
-				float weight = PowerHeuristic(1, bsdfPdf, 1, lightPdf);
-				Intersection lightIsect;
-				Li = SWCSpectrum(1.f);
-				RayDifferential ray(p, wi);
-				ray.time = tspack->time;
-				const Volume *volume = bsdf->GetVolume(wi);
-				BSDF *ibsdf;
-				const BxDFType flags(BxDFType(BSDF_SPECULAR | BSDF_TRANSMISSION));
-				// The for loop prevents an infinite
-				// loop when the ray is almost parallel
-				// to the surface
-				// It should much less frequent with
-				// dynamic epsilon, but it's safer
-				for (u_int i = 0; i < 10000; ++i) {
-					if (!scene->Intersect(tspack, volume, ray, &lightIsect, &ibsdf, &Li)) {
-						Li *= light->Le(tspack, ray);
-						break;
-					} else if (lightIsect.arealight == light) {
-						Li *= lightIsect.Le(tspack, -wi);
-						break;
-					}
-
-					Li *= ibsdf->f(tspack, wi, -wi, flags);
-					if (Li.Black())
-						break;
-					Li *= AbsDot(ibsdf->dgShading.nn, wi);
-
-					ray.mint = ray.maxt + MachineEpsilon::E(ray.maxt);
-					ray.maxt = INFINITY;
-					volume = ibsdf->GetVolume(wi);
-				}
-				if (!Li.Black()) {
-					scene->Transmittance(tspack, ray, sample, &Li);
-					Ld += fBSDF * Li * (AbsDot(wi, n) * weight / bsdfPdf);
-				}
-			}
+		Vector wi(lightBSDF->dgShading.p - p);
+		const float d2 = wi.LengthSquared();
+		wi /= sqrtf(d2);
+		Li *= lightBSDF->f(tspack, Vector(lightBSDF->nn), -wi);
+		SWCSpectrum f(bsdf->f(tspack, wi, wo));
+		float bsdfPdf = 1.f;
+		if (!f.Black() && scene->volumeIntegrator->Connect(tspack, scene, bsdf->GetVolume(wi), p, lightBSDF->dgShading.p, false, &f, &dummyPdf, &bsdfPdf)) {
+			Li *= f;
+			visibility.Transmittance(tspack, scene, sample, &Li);
+			bsdfPdf *= bsdf->Pdf(tspack, wo, wi);
+			lightPdf *= d2 / AbsDot(wi, lightBSDF->nn);
+			const float weight = exclusive ? 1.f :
+				PowerHeuristic(1, lightPdf, 1, bsdfPdf);
+			return Li * (AbsDot(wi, n) * weight / lightPdf);
 		}
 	}
-
-	return Ld;
+	return SWCSpectrum(0.f);
 }
 
 }//namespace lux

@@ -52,8 +52,7 @@ public:
 	IGIIntegrator(u_int nl, u_int ns, u_int d, float md);
 	virtual ~IGIIntegrator () {
 		delete[] lightSampleOffset;
-		delete[] bsdfSampleOffset;
-		delete[] bsdfComponentOffset;
+		delete[] lightNumOffset;
 	}
 	virtual u_int Li(const TsPack *tspack, const Scene *scene, const Sample *sample) const;
 	virtual void RequestSamples(Sample *sample, const Scene *scene);
@@ -67,8 +66,7 @@ private:
 	float minDist2;
 	u_int vlSetOffset, bufferId;
 
-	u_int *lightSampleOffset;
-	u_int *bsdfSampleOffset, *bsdfComponentOffset;
+	u_int *lightSampleOffset, *lightNumOffset;
 };
 
 }//namespace lux

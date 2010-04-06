@@ -65,17 +65,15 @@ public:
 SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene,
 	const Light *light, const Point &p, const Normal &n, const Vector &wo,
 	BSDF *bsdf, const Sample *sample, float ls1, float ls2, float ls3,
-	float bs1, float bs2, float bcs);
+	bool exclusive);
 SWCSpectrum UniformSampleAllLights(const TsPack *tspack, const Scene *scene,
 	const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
-	const Sample *sample, const float *lightSample = NULL,
-	const float *lightNum = NULL, const float *bsdfSample = NULL,
-	const float *bsdfComponent = NULL);
+	const Sample *sample, const float *lightSample, const float *lightNum,
+	bool exclusive);
 u_int UniformSampleOneLight(const TsPack *tspack, const Scene *scene,
 	const Point &p,	const Normal &n, const Vector &wo, BSDF *bsdf,
-	const Sample *sample, const float *lightSample,
-	const float *lightNum, const float *bsdfSample,
-	const float *bsdfComponent, SWCSpectrum *L);
+	const Sample *sample, const float *lightSample, const float *lightNum,
+	bool exclusive, SWCSpectrum *L);
 
 }//namespace lux
  
