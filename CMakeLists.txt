@@ -6,6 +6,9 @@ ENDIF(COMMAND cmake_policy)
 PROJECT(lux)
 SET(VERSION 0.7)
 
+SET(LUX_CMAKE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${LUX_CMAKE_DIR}")
+
 # Dade - uncomment to obtain verbose building output
 #SET(CMAKE_VERBOSE_MAKEFILE true)
 
@@ -79,7 +82,49 @@ IF (NOT FLEX_EXECUTABLE)
 	MESSAGE(FATAL_ERROR "flex not found - aborting")
 ENDIF (NOT FLEX_EXECUTABLE)
 
+#############################################################################
+#############################################################################
+######################### OPENEXR LIBRARIES SETUP ###########################
+#############################################################################
+#############################################################################
+FIND_PATH(OPENEXR_INCLUDE_DIRS
+    ImfXdr.h
+    PATHS
+    /usr/local/include/OpenEXR
+    /usr/include/OpenEXR
+    /sw/include/OpenEXR
+    /opt/local/include/OpenEXR
+    /opt/csw/include/OpenEXR
+    /opt/include/OpenEXR
+) 
+IF(APPLE)
+   SET(OPENEXR_LIBRARIES Half IlmImf Iex Imath IlmThread)
+ELSE(APPLE)
+   SET(OPENEXR_LIBRARIES Half IlmImf Iex Imath)
+ENDIF(APPLE)
 
+#############################################################################
+#############################################################################
+########################### PNG   LIBRARIES SETUP ###########################
+#############################################################################
+#############################################################################
+# - Find the native PNG includes and library
+#
+# This module defines
+#  PNG_INCLUDE_DIR, where to find png.h, etc.
+#  PNG_LIBRARIES, the libraries to link against to use PNG.
+#  PNG_DEFINITIONS - You should ADD_DEFINITONS(${PNG_DEFINITIONS}) before compiling code that includes png library files.
+#  PNG_FOUND, If false, do not try to use PNG.
+# also defined, but not for general use are
+#  PNG_LIBRARY, where to find the PNG library.
+# None of the above will be defined unles zlib can be found.
+# PNG depends on Zlib
+INCLUDE(FindPNG)
+IF(PNG_FOUND)
+ELSE(PNG_FOUND)
+    MESSAGE( STATUS "Warning : could not find PNG - building without png support")
+ENDIF(PNG_FOUND)
+#FIND_PACKAGE(PNG REQUIRED)
 
 #############################################################################
 #############################################################################
@@ -110,7 +155,14 @@ ENDIF(Boost_FOUND)
 #############################################################################
 #############################################################################
 
-SET(FREEIMAGE_LIBRARIES freeimage)
+FIND_PACKAGE(FreeImage REQUIRED)
+
+IF(FREEIMAGE_FOUND)
+    MESSAGE(STATUS "FreeImage library directory: " ${FREEIMAGE_LIBRARIES})
+    MESSAGE(STATUS "FreeImage include directory: " ${FREEIMAGE_INCLUDE_PATH})
+ELSE(FREEIMAGE_FOUND)
+    MESSAGE(FATAL_ERROR "Could not find FreeImage")
+ENDIF(FREEIMAGE_FOUND)
 
 #############################################################################
 #############################################################################
@@ -649,7 +701,7 @@ SET( LUXQTGUI_RCS
 #############################################################################
 #############################################################################
 
-LINK_DIRECTORIES(${LINK_DIRECTORIES} ${Boost_LIBRARY_DIRS} ${OPENEXR_LIB_DIRS} ${PNG_LIBRARY} ${TIFF_LIBRARY} ${JPEG_LIBRARY} )
+LINK_DIRECTORIES(${LINK_DIRECTORIES} ${Boost_LIBRARY_DIRS} )
 
 #Here we build the core library
 ADD_LIBRARY(lux STATIC ${lux_lib_src} )
@@ -663,7 +715,7 @@ ADD_EXECUTABLE(luxconsole renderer/luxconsole.cpp)
 IF(APPLE)
 	TARGET_LINK_LIBRARIES(luxconsole -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} z ${Boost_LIBRARIES} )
 ELSE(APPLE)
-	TARGET_LINK_LIBRARIES(luxconsole -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES}  ${SYS_LIBRARIES})
+	TARGET_LINK_LIBRARIES(luxconsole -Wl,--whole-archive lux -Wl,--no-whole-archive libfreeimage.a ${CMAKE_THREAD_LIBS_INIT} ${PNG_LIBRARIES} ${Boost_LIBRARIES}  ${SYS_LIBRARIES})
 ENDIF(APPLE)
 
 IF(APPLE)
@@ -688,7 +740,7 @@ ADD_EXECUTABLE(luxmerger tools/luxmerger.cpp)
 IF(APPLE)
 	TARGET_LINK_LIBRARIES(luxmerger -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} z ${Boost_LIBRARIES} )
 ELSE(APPLE)
-	TARGET_LINK_LIBRARIES(luxmerger -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES}  ${SYS_LIBRARIES})
+	TARGET_LINK_LIBRARIES(luxmerger -Wl,--whole-archive lux -Wl,--no-whole-archive libfreeimage.a ${CMAKE_THREAD_LIBS_INIT} ${Boost_LIBRARIES}  ${SYS_LIBRARIES})
 ENDIF(APPLE)
 
 IF(APPLE)
@@ -713,7 +765,7 @@ ADD_EXECUTABLE(luxcomp tools/luxcomp.cpp)
 IF(APPLE)
 	TARGET_LINK_LIBRARIES(luxcomp -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} z ${Boost_LIBRARIES} )
 ELSE(APPLE)
-	TARGET_LINK_LIBRARIES(luxcomp -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES}  ${SYS_LIBRARIES})
+	TARGET_LINK_LIBRARIES(luxcomp -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES}  ${Boost_LIBRARIES}  ${SYS_LIBRARIES})
 ENDIF(APPLE)
 
 IF(APPLE)
@@ -755,7 +807,7 @@ IF(PYTHONLIBS_FOUND)
 		)
 	ELSE(APPLE)
 		ADD_LIBRARY(pylux SHARED python/binding.cpp)
-		TARGET_LINK_LIBRARIES(pylux -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES}  ${SYS_LIBRARIES} ${PYTHON_LIBRARIES} ${Boost_python_LIBRARIES})
+		TARGET_LINK_LIBRARIES(pylux -Wl,--whole-archive lux -Wl,--no-whole-archive libfreeimage.a ${CMAKE_THREAD_LIBS_INIT} ${Boost_LIBRARIES}  ${SYS_LIBRARIES} ${PYTHON_LIBRARIES} ${Boost_python_LIBRARIES})
 		ADD_CUSTOM_COMMAND(
 			TARGET pylux POST_BUILD
 			COMMAND mv libpylux.so pylux.so
@@ -820,7 +872,7 @@ IF(wxWidgets_FOUND)
 		SET(EXTRA_LIBS ${CARBON_LIBRARY} ${QUICKTIME_LIBRARY} ${OPENGL_LIBRARY} ${AGL_LIBRARY} ${APP_SERVICES_LIBRARY})
 		TARGET_LINK_LIBRARIES(luxrenderwx -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${wxWidgets_LIBRARIES} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${BZ2_LIBRARIES} )
 	ELSE(APPLE)
-		TARGET_LINK_LIBRARIES(luxrenderwx -Wl,--whole-archive lux -Wl,--no-whole-archive ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES}  ${SYS_LIBRARIES})
+		TARGET_LINK_LIBRARIES(luxrenderwx -Wl,--whole-archive lux -Wl,--no-whole-archive libfreeimage.a ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARY} ${Boost_LIBRARIES}  ${SYS_LIBRARIES})
 	ENDIF(APPLE)
 ELSE(wxWidgets_FOUND)
 	MESSAGE( STATUS "Warning : could not find wxWidgets - not building GUI")
@@ -872,7 +924,7 @@ IF(QT4_FOUND)
 		SET(EXTRA_LIBS ${CARBON_LIBRARY}  ${QUICKTIME_LIBRARY} ${QT_LIBRARY} ${OPENGL_LIBRARY} ${AGL_LIBRARY} ${APP_SERVICES_LIBRARY})
 		TARGET_LINK_LIBRARIES(luxrender -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${QT_LIBRARIES} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${BZ2_LIBRARIES} )
 	ELSE(APPLE)
-	TARGET_LINK_LIBRARIES(luxrender -Wl,--whole-archive lux -Wl,--no-whole-archive ${QT_LIBRARIES} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} ${ZLIB_LIBRARIES} ${BZ2_LIBRARIES}  ${SYS_LIBRARIES}  ${OPENGL_LIBRARY})
+	TARGET_LINK_LIBRARIES(luxrender -Wl,--whole-archive lux -Wl,--no-whole-archive libfreeimage.a ${QT_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} ${ZLIB_LIBRARIES} ${BZ2_LIBRARIES}  ${SYS_LIBRARIES}  ${OPENGL_LIBRARY})
 	ENDIF(APPLE)
 ELSE(QT4_FOUND)
 	MESSAGE( STATUS "Warning : could not find Qt - not building Qt GUI")
