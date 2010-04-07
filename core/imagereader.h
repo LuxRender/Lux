@@ -51,7 +51,32 @@ public:
 	}
 
 	~ImageData() {
-//		delete[] data_;//Disabled because it otherwise segfaults
+		switch (pixel_type_) {
+		case UNSIGNED_CHAR_TYPE:
+			if (noChannels_ == 1)
+				delete[] (TextureColor<unsigned char, 1>*)data_;
+			else if (noChannels_ == 3)
+				delete[] (TextureColor<unsigned char, 3>*)data_;
+			else if (noChannels_ == 4)
+				delete[] (TextureColor<unsigned char, 4>*)data_;
+			break;
+		case UNSIGNED_SHORT_TYPE:
+			if (noChannels_ == 1)
+				delete[] (TextureColor<unsigned short, 1>*)data_;
+			else if (noChannels_ == 3)
+				delete[] (TextureColor<unsigned short, 3>*)data_;
+			else if (noChannels_ == 4)
+				delete[] (TextureColor<unsigned short, 4>*)data_;
+			break;
+		case FLOAT_TYPE:
+			if (noChannels_ == 1)
+				delete[] (TextureColor<float, 1>*)data_;
+			else if (noChannels_ == 3)
+				delete[] (TextureColor<float, 3>*)data_;
+			else if (noChannels_ == 4)
+				delete[] (TextureColor<float, 4>*)data_;
+			break;
+		}
 	}
 
 	u_int getWidth() {

@@ -49,7 +49,6 @@ public:
 	}
 	virtual ~ImageTexture() {
 		delete mapping;
-		delete mipmap;
 	}
 
 	u_int GetMemoryUsed() const {
@@ -94,14 +93,14 @@ private:
 	};
 
 	// ImageTexture Private Methods
-	static MIPMap *GetTexture(ImageTextureFilterType filterType,
+	static boost::shared_ptr<MIPMap> GetTexture(ImageTextureFilterType filterType,
 		const string &filename, float maxAniso, ImageWrap wrap,
 		float gain, float gamma);
 
 protected:
 	// ImageTexture Protected Data
 	ImageTextureFilterType filterType;
-	MIPMap *mipmap;
+	boost::shared_ptr<MIPMap> mipmap;
 	TextureMapping2D *mapping;
 };
 
@@ -184,34 +183,34 @@ public:
 };
 
 // ImageTexture Method Definitions
-inline MIPMap *ImageTexture::GetTexture(ImageTextureFilterType filterType,
+inline boost::shared_ptr<MIPMap> ImageTexture::GetTexture(ImageTextureFilterType filterType,
 	const string &filename, float maxAniso, ImageWrap wrap, float gain,
 	float gamma)
 {
 	// Look for texture in texture cache
-	static map<TexInfo, MIPMap *> textures;
+	static map<TexInfo, boost::shared_ptr<MIPMap> > textures;
 	TexInfo texInfo(filterType, filename, maxAniso, wrap, gain, gamma);
 	if (textures.find(texInfo) != textures.end())
 		return textures[texInfo];
 	int width, height;
 	auto_ptr<ImageData> imgdata(ReadImage(filename));
-	MIPMap *ret = NULL;
+	boost::shared_ptr<MIPMap> ret;
 	if (imgdata.get() != NULL) {
 		width=imgdata->getWidth();
 		height=imgdata->getHeight();
-		ret = imgdata->createMIPMap(filterType, maxAniso, wrap, gain,
-			gamma);
+		ret = boost::shared_ptr<MIPMap>(imgdata->createMIPMap(filterType, maxAniso, wrap, gain, gamma));
 	} else {
 		// Create one-valued _MIPMap_
 		TextureColor<float, 1> oneVal(1.f);
 
-		ret = new MIPMapFastImpl<TextureColor<float, 1> >(filterType,
-			1, 1, &oneVal);
+		ret = boost::shared_ptr<MIPMap>(new MIPMapFastImpl<TextureColor<float, 1> >(filterType, 1, 1, &oneVal));
 	}
-	if (ret != NULL)
+	if (ret) {
 		textures[texInfo] = ret;
+		return textures[texInfo];
+	}
 
-	return ret;
+	return boost::shared_ptr<MIPMap>();
 }
 
 }//namespace lux
