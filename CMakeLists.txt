@@ -271,6 +271,9 @@ ADD_DEFINITIONS(-DLUX_USE_CONFIG_H)
 #############################################################################
 # Dade - default compiler options
 ADD_DEFINITIONS(-O3 -msse2 -mfpmath=sse -ftree-vectorize -funroll-loops -Wall -fPIC -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
+# The QBVH accelerator needs to be compiled with much reduced optimizations
+# otherwise gcc produces incorrect code and ruins the render on 64bits machines
+SET_SOURCE_FILES_PROPERTIES(accelerators/qbvhaccel.cpp COMPILE_FLAGS "-O1")
 
 
 #############################################################################
