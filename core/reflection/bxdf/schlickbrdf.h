@@ -46,7 +46,7 @@ public:
 	}
 	float SchlickZ(float cosNH) const {
 		const float d = 1.f + (roughness - 1) * cosNH * cosNH;
-		return roughness / (d * d);
+		return roughness > 0.f ? roughness / (d * d) : INFINITY;
 	}
 	float SchlickA(const Vector &H) const {
 		const float h = sqrtf(H.x * H.x + H.y * H.y);

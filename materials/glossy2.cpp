@@ -58,15 +58,11 @@ BSDF *Glossy2::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 	const float v2 = v * v;
 	float ld = depth->Evaluate(tspack, dgs);
 
-	BxDF *bxdf;
-	if (u < v)
-		bxdf = ARENA_ALLOC(tspack->arena, SchlickBRDF)(d, s, a, ld,
-			u * v, 1.f - u2 / v2);
-	else
-		bxdf = ARENA_ALLOC(tspack->arena, SchlickBRDF)(d, s, a, ld,
-			u * v, v2 / u2 - 1.f);
+	const float anisotropy = u2 < v2 ? 1.f - u2 / v2 :
+		u2 > 0.f ? v2 / u2 - 1.f : 1.f;
 	SingleBSDF *bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dgs,
-		dgGeom.nn, bxdf, exterior, interior);
+		dgGeom.nn, ARENA_ALLOC(tspack->arena, SchlickBRDF)(d, s, a, ld,
+		u * v, anisotropy), exterior, interior);
 
 	// Add ptr to CompositingParams structure
 	bsdf->SetCompositingParams(compParams);
