@@ -118,7 +118,7 @@ public:
 					Texel(channel, 0, s0, it + 1)) *
 					uSize(0);
 				*dt = Lerp(as, Texel(channel, 0, is, t1) -
-					Texel(channel, 0, is, t1),
+					Texel(channel, 0, is, t0),
 					Texel(channel, 0, is + 1, t1) -
 					Texel(channel, 0, is + 1, t0)) *
 					vSize(0);
@@ -154,7 +154,7 @@ public:
 					Texel(channel, s0, it + 1)) *
 					singleMap->uSize();
 				*dt = Lerp(as, Texel(channel, is, t1) -
-					Texel(channel, is, t1),
+					Texel(channel, is, t0),
 					Texel(channel, is + 1, t1) -
 					Texel(channel, is + 1, t0)) *
 					singleMap->vSize();
@@ -195,7 +195,7 @@ public:
 					Texel(tspack, 0, s0, it + 1).Filter(tspack)) *
 					uSize(0);
 				*dt = Lerp(as, Texel(tspack, 0, is, t1).Filter(tspack) -
-					Texel(tspack, 0, is, t1).Filter(tspack),
+					Texel(tspack, 0, is, t0).Filter(tspack),
 					Texel(tspack, 0, is + 1, t1).Filter(tspack) -
 					Texel(tspack, 0, is + 1, t0).Filter(tspack)) *
 					vSize(0);
@@ -231,7 +231,7 @@ public:
 					Texel(tspack, 0, s0, it + 1).Filter(tspack)) *
 					singleMap->uSize();
 				*dt = Lerp(as, Texel(tspack, 0, is, t1).Filter(tspack) -
-					Texel(tspack, 0, is, t1).Filter(tspack),
+					Texel(tspack, 0, is, t0).Filter(tspack),
 					Texel(tspack, 0, is + 1, t1).Filter(tspack) -
 					Texel(tspack, 0, is + 1, t0).Filter(tspack)) *
 					singleMap->vSize();
