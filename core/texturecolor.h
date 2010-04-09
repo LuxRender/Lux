@@ -99,7 +99,7 @@ public:
 	}
 	TextureColor<T, colorSamples> &operator*=(const TextureColor<T, colorSamples> &sp) {
 		for (u_int i = 0; i < colorSamples; ++i)
-			if (sp.c[i] > std::numeric_limits<T>::max() / c[i])
+			if (c[i] != 0 && sp.c[i] > std::numeric_limits<T>::max() / c[i])
 				c[i] = std::numeric_limits<T>::max();
 			else
 				c[i] *= sp.c[i];
