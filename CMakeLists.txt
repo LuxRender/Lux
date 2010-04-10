@@ -87,6 +87,8 @@ ENDIF (NOT FLEX_EXECUTABLE)
 ######################### OPENEXR LIBRARIES SETUP ###########################
 #############################################################################
 #############################################################################
+
+# !!!!freeimage needs headers from openEXR 1.6x !!!!
 FIND_PATH(OPENEXR_INCLUDE_DIRS
     ImfXdr.h
     PATHS
@@ -765,7 +767,7 @@ ADD_EXECUTABLE(luxcomp tools/luxcomp.cpp)
 IF(APPLE)
 	TARGET_LINK_LIBRARIES(luxcomp -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} z ${Boost_LIBRARIES} )
 ELSE(APPLE)
-	TARGET_LINK_LIBRARIES(luxcomp -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES}  ${Boost_LIBRARIES}  ${SYS_LIBRARIES})
+	TARGET_LINK_LIBRARIES(luxcomp -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES}  ${SYS_LIBRARIES})
 ENDIF(APPLE)
 
 IF(APPLE)
@@ -933,9 +935,15 @@ ENDIF(QT4_FOUND)
 #############################################################################
 
 #Install target
-INSTALL(TARGETS luxrender luxrenderwx luxconsole luxmerger
-        RUNTIME DESTINATION bin
-)
+IF(wxWidgets_FOUND)
+	INSTALL(TARGETS luxrender luxrenderwx luxconsole luxmerger
+      	  RUNTIME DESTINATION bin
+	)
+ELSE(wxWidgets_FOUND)
+	INSTALL(TARGETS luxrender luxconsole luxmerger
+      	  RUNTIME DESTINATION bin
+	)
+ENDIF(wxWidgets_FOUND)
 
 #Install API/Library
 INSTALL(FILES ${CMAKE_SOURCE_DIR}/core/api.h DESTINATION include/luxrender/)
