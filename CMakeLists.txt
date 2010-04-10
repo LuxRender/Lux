@@ -967,9 +967,15 @@ ENDIF(QT4_FOUND)
 #############################################################################
 
 #Install target
-INSTALL(TARGETS luxrender luxrenderwx luxconsole luxmerger
-        RUNTIME DESTINATION bin
-)
+IF(wxWidgets_FOUND)
+	INSTALL(TARGETS luxrender luxrenderwx luxconsole luxmerger
+      	  RUNTIME DESTINATION bin
+	)
+ELSE(wxWidgets_FOUND)
+	INSTALL(TARGETS luxrender luxconsole luxmerger
+      	  RUNTIME DESTINATION bin
+	)
+ENDIF(wxWidgets_FOUND)
 
 #Install API/Library
 INSTALL(FILES ${CMAKE_SOURCE_DIR}/core/api.h DESTINATION include/luxrender/)
