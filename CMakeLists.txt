@@ -9,19 +9,11 @@ SET(VERSION 0.7)
 # Dade - uncomment to obtain verbose building output
 #SET(CMAKE_VERBOSE_MAKEFILE true)
 
-IF(APPLE)
-SET(APPLE_64 0)
-ENDIF(APPLE)
-
 #Setting Universal Binary Properties, only for Mac OS X
 IF(APPLE)
-	IF(APPLE_64)
-		SET(CMAKE_OSX_ARCHITECTURES ppc64;x86_64)
-		SET(CMAKE_OSX_SYSROOT /Developer/SDKs/MacOSX10.5.sdk)
-	ELSE(APPLE_64)
-		SET(CMAKE_OSX_ARCHITECTURES ppc;i386)
-		SET(CMAKE_OSX_SYSROOT /Developer/SDKs/MacOSX10.4u.sdk)
-	ENDIF(APPLE_64)
+	SET(CMAKE_OSX_DEPLOYMENT_TARGET 10.5)
+	SET(CMAKE_OSX_ARCHITECTURES i386;x86_64)
+	SET(CMAKE_OSX_SYSROOT /Developer/SDKs/MacOSX10.5.sdk)
 ENDIF(APPLE)
 
 
@@ -200,8 +192,16 @@ ENDIF(JPEG_FOUND)
 ############################ THREADING LIBRARIES ############################
 #############################################################################
 #############################################################################
-
-FIND_PACKAGE(Threads REQUIRED)
+IF(APPLE)
+    FIND_PATH(THREADS_INCLUDE_DIRS
+    pthread.h
+    PATHS
+    /usr/include/pthread
+    )
+	SET(THREADS_LIBRARIES pthread)
+ELSE(APPLE)
+	FIND_PACKAGE(Threads REQUIRED)
+ENDIF(APPLE)
 
 #############################################################################
 #############################################################################
@@ -362,7 +362,7 @@ SET_SOURCE_FILES_PROPERTIES(${CMAKE_BINARY_DIR}/core/luxparse.cpp GENERATED)
 
 #############################################################################
 #############################################################################
-#########################      APPLE CUSTOM PKG   ###########################
+##################  APPLE CUSTOM GUI_TYPE MACOSX_BUNDLE  ####################
 #############################################################################
 #############################################################################
 IF(APPLE)
@@ -390,6 +390,19 @@ IF(APPLE)
 	COMMAND cp luxrender.icns luxrender.app/Contents/Resources
 	COMMAND echo APPLnone > luxrender.app/Contents/PkgInfo
 	COMMAND cp luxrender luxrender.app/Contents/MacOS/luxrender)
+
+	SET(GUI_TYPE MACOSX_BUNDLE)
+	# SET(MACOSX_BUNDLE_LONG_VERSION_STRING "${OPENSCENEGRAPH_MAJOR_VERSION}.${OPENSCENEGRAPH_MINOR_VERSION}.${OPENSCENEGRAPH_PATCH_VERSION}")
+	# Short Version is the "marketing version". It is the version
+	# the user sees in an information panel.
+	SET(MACOSX_BUNDLE_SHORT_VERSION_STRING "${VERSION}")
+	# Bundle version is the version the OS looks at.
+	SET(MACOSX_BUNDLE_BUNDLE_VERSION "${VERSION}")
+	SET(MACOSX_BUNDLE_GUI_IDENTIFIER "org.luxrender.luxrender" )
+	SET(MACOSX_BUNDLE_BUNDLE_NAME "luxrender" )
+	SET(MACOSX_BUNDLE_ICON_FILE "luxrender.icns")
+	# SET(MACOSX_BUNDLE_COPYRIGHT "")
+	# SET(MACOSX_BUNDLE_INFO_STRING "Info string, localized?")
 ENDIF(APPLE)
 
 
@@ -752,21 +765,6 @@ ELSE(APPLE)
 	TARGET_LINK_LIBRARIES(luxconsole -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES})
 ENDIF(APPLE)
 
-IF(APPLE)
-	SET(GUI_TYPE MACOSX_BUNDLE)
-	# SET(MACOSX_BUNDLE_LONG_VERSION_STRING "${OPENSCENEGRAPH_MAJOR_VERSION}.${OPENSCENEGRAPH_MINOR_VERSION}.${OPENSCENEGRAPH_PATCH_VERSION}")
-	# Short Version is the "marketing version". It is the version
-	# the user sees in an information panel.
-	SET(MACOSX_BUNDLE_SHORT_VERSION_STRING "${VERSION}")
-	# Bundle version is the version the OS looks at.
-	SET(MACOSX_BUNDLE_BUNDLE_VERSION "${VERSION}")
-	SET(MACOSX_BUNDLE_GUI_IDENTIFIER "org.luxrender.luxrender" )
-	SET(MACOSX_BUNDLE_BUNDLE_NAME "luxrender" )
-	SET(MACOSX_BUNDLE_ICON_FILE "luxrender.icns")
-	# SET(MACOSX_BUNDLE_COPYRIGHT "")
-	# SET(MACOSX_BUNDLE_INFO_STRING "Info string, localized?")
-ENDIF(APPLE)
-
 #############################################################################
 #Here we build the LuxMerger executable
 #############################################################################
@@ -777,21 +775,6 @@ ELSE(APPLE)
 	TARGET_LINK_LIBRARIES(luxmerger -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES})
 ENDIF(APPLE)
 
-IF(APPLE)
-	SET(GUI_TYPE MACOSX_BUNDLE)
-	# SET(MACOSX_BUNDLE_LONG_VERSION_STRING "${OPENSCENEGRAPH_MAJOR_VERSION}.${OPENSCENEGRAPH_MINOR_VERSION}.${OPENSCENEGRAPH_PATCH_VERSION}")
-	# Short Version is the "marketing version". It is the version
-	# the user sees in an information panel.
-	SET(MACOSX_BUNDLE_SHORT_VERSION_STRING "${VERSION}")
-	# Bundle version is the version the OS looks at.
-	SET(MACOSX_BUNDLE_BUNDLE_VERSION "${VERSION}")
-	SET(MACOSX_BUNDLE_GUI_IDENTIFIER "org.luxrender.luxrender" )
-	SET(MACOSX_BUNDLE_BUNDLE_NAME "luxrender" )
-	SET(MACOSX_BUNDLE_ICON_FILE "luxrender.icns")
-	# SET(MACOSX_BUNDLE_COPYRIGHT "")
-	# SET(MACOSX_BUNDLE_INFO_STRING "Info string, localized?")
-ENDIF(APPLE)
-
 #############################################################################
 #Here we build the LuxComp executable
 #############################################################################
@@ -800,21 +783,6 @@ IF(APPLE)
 	TARGET_LINK_LIBRARIES(luxcomp -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES} z ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
 ELSE(APPLE)
 	TARGET_LINK_LIBRARIES(luxcomp -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES})
-ENDIF(APPLE)
-
-IF(APPLE)
-	SET(GUI_TYPE MACOSX_BUNDLE)
-	# SET(MACOSX_BUNDLE_LONG_VERSION_STRING "${OPENSCENEGRAPH_MAJOR_VERSION}.${OPENSCENEGRAPH_MINOR_VERSION}.${OPENSCENEGRAPH_PATCH_VERSION}")
-	# Short Version is the "marketing version". It is the version
-	# the user sees in an information panel.
-	SET(MACOSX_BUNDLE_SHORT_VERSION_STRING "${VERSION}")
-	# Bundle version is the version the OS looks at.
-	SET(MACOSX_BUNDLE_BUNDLE_VERSION "${VERSION}")
-	SET(MACOSX_BUNDLE_GUI_IDENTIFIER "org.luxrender.luxrender" )
-	SET(MACOSX_BUNDLE_BUNDLE_NAME "luxrender" )
-	SET(MACOSX_BUNDLE_ICON_FILE "luxrender.icns")
-	# SET(MACOSX_BUNDLE_COPYRIGHT "")
-	# SET(MACOSX_BUNDLE_INFO_STRING "Info string, localized?")
 ENDIF(APPLE)
 
 #############################################################################
@@ -890,7 +858,6 @@ IF(wxWidgets_FOUND)
 	IF(APPLE)
 		INCLUDE_DIRECTORIES (SYSTEM /Developer/Headers/FlatCarbon /usr/local/include)
 		FIND_LIBRARY(CARBON_LIBRARY Carbon)
-		FIND_LIBRARY(QUICKTIME_LIBRARY QuickTime )
 		FIND_LIBRARY(PYTHON_LIBRARY Python )
 		FIND_LIBRARY(OPENGL_LIBRARY OpenGL )
 		FIND_LIBRARY(AGL_LIBRARY AGL )
@@ -898,12 +865,11 @@ IF(wxWidgets_FOUND)
 
 		MESSAGE(STATUS ${CARBON_LIBRARY})
 		MARK_AS_ADVANCED (CARBON_LIBRARY)
-		MARK_AS_ADVANCED (QUICKTIME_LIBRARY)
 		MARK_AS_ADVANCED (PYTHON_LIBRARY)
 		MARK_AS_ADVANCED (OPENGL_LIBRARY)
 		MARK_AS_ADVANCED (AGL_LIBRARY)
 		MARK_AS_ADVANCED (APP_SERVICES_LIBRARY)
-		SET(EXTRA_LIBS ${CARBON_LIBRARY} ${QUICKTIME_LIBRARY} ${OPENGL_LIBRARY} ${AGL_LIBRARY} ${APP_SERVICES_LIBRARY})
+		SET(EXTRA_LIBS ${CARBON_LIBRARY} ${OPENGL_LIBRARY} ${AGL_LIBRARY} ${APP_SERVICES_LIBRARY})
 		TARGET_LINK_LIBRARIES(luxrenderwx -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${wxWidgets_LIBRARIES} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${BZ2_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
 	ELSE(APPLE)
 		TARGET_LINK_LIBRARIES(luxrenderwx -Wl,--whole-archive lux -Wl,--no-whole-archive ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARY} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES})
@@ -940,7 +906,6 @@ IF(QT4_FOUND)
 	IF(APPLE)
 		INCLUDE_DIRECTORIES (SYSTEM /Developer/Headers/FlatCarbon /usr/local/include)
 		FIND_LIBRARY(CARBON_LIBRARY Carbon)
-		FIND_LIBRARY(QUICKTIME_LIBRARY QuickTime )
 		FIND_LIBRARY(PYTHON_LIBRARY Python )
 		FIND_LIBRARY(QT_LIBRARY QtCore QtGui QtOpenGL)
 		FIND_LIBRARY(OPENGL_LIBRARY OpenGL )
@@ -949,13 +914,12 @@ IF(QT4_FOUND)
 
 		MESSAGE(STATUS ${CARBON_LIBRARY})
 		MARK_AS_ADVANCED (CARBON_LIBRARY)
-		MARK_AS_ADVANCED (QUICKTIME_LIBRARY)
 		MARK_AS_ADVANCED (PYTHON_LIBRARY)
 		MARK_AS_ADVANCED (QT_LIBRARY)
 		MARK_AS_ADVANCED (OPENGL_LIBRARY)
 		MARK_AS_ADVANCED (AGL_LIBRARY)
 		MARK_AS_ADVANCED (APP_SERVICES_LIBRARY)
-		SET(EXTRA_LIBS ${CARBON_LIBRARY}  ${QUICKTIME_LIBRARY} ${QT_LIBRARY} ${OPENGL_LIBRARY} ${AGL_LIBRARY} ${APP_SERVICES_LIBRARY})
+		SET(EXTRA_LIBS ${CARBON_LIBRARY} ${QT_LIBRARY} ${OPENGL_LIBRARY} ${AGL_LIBRARY} ${APP_SERVICES_LIBRARY})
 		TARGET_LINK_LIBRARIES(luxrender -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${QT_LIBRARIES} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${BZ2_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES})
 	ELSE(APPLE)
 	TARGET_LINK_LIBRARIES(luxrender -Wl,--whole-archive lux -Wl,--no-whole-archive ${QT_LIBRARIES} ${OPENEXR_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} ${ZLIB_LIBRARIES} ${BZ2_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES} ${JPEG_LIBRARIES} ${SYS_LIBRARIES}  ${OPENGL_LIBRARY})
