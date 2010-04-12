@@ -763,7 +763,7 @@ MIPMapFastImpl<T>::MIPMapFastImpl(ImageTextureFilterType type, u_int sres, u_int
 						if (origS >= 0 && origS < static_cast<int>(sres)) {
 							if (sWeights[s].weight[j] > 0.f)
 								resampledImage[t * sPow2 + s] += sWeights[s].weight[j] * img[t * sres + origS];
-							else /* TextureColor cannot be negative so we invert and subtract */
+							else // TextureColor cannot be negative so we invert and subtract
 								resampledImage[t * sPow2 + s] -= (-sWeights[s].weight[j]) * img[t * sres + origS];
 						}
 					}
@@ -796,7 +796,7 @@ MIPMapFastImpl<T>::MIPMapFastImpl(ImageTextureFilterType type, u_int sres, u_int
 						if (origT >= 0 && origT < static_cast<int>(tres)) {
 							if(tWeights[t].weight[j] > 0.f)
 								workData[t] += tWeights[t].weight[j] * resampledImage[origT * sPow2 + s];
-							else /* TextureColor cannot be negative so we invert and subtract */
+							else // TextureColor cannot be negative so we invert and subtract
 								workData[t] -= (-tWeights[t].weight[j]) * resampledImage[origT * sPow2 + s];
 						}
 					}
