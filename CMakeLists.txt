@@ -86,7 +86,7 @@ SET(Boost_python_LIBRARIES ${Boost_LIBRARIES})
 SET(Boost_FOUND)
 SET(Boost_LIBRARIES)
 
-FIND_PACKAGE(Boost 1.42.0 REQUIRED COMPONENTS thread program_options filesystem serialization iostreams regex system)
+FIND_PACKAGE(Boost 1.41 REQUIRED COMPONENTS thread program_options filesystem serialization iostreams regex system)
 
 IF(Boost_FOUND)
 	MESSAGE(STATUS "Boost library directory: " ${Boost_LIBRARY_DIRS})
