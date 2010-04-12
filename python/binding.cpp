@@ -238,8 +238,52 @@ public:
 	void rotate(float angle, float ax, float ay, float az) { context->Rotate(angle,ax,ay,az); }
 	void scale(float sx, float sy, float sz) { context->Scale(sx,sy,sz); }
 	void lookAt(float ex, float ey, float ez, float lx, float ly, float lz, float ux, float uy, float uz) { context->LookAt(ex, ey, ez, lx, ly, lz, ux, uy, uz); }
-	void concatTransform(float transform[16]) { context->ConcatTransform(transform); }
-	void transform(float transform[16]) { context->Transform(transform); }
+
+	//void concatTransform(float transform[16]) { context->ConcatTransform(transform); }
+	void concatTransform(boost::python::list tx)
+	{
+		boost::python::extract<boost::python::list> listExtractor(tx);
+
+                //std::cout<<"this is a LIST - WARNING ASSUMING FLOATS :";
+                boost::python::list t=listExtractor();
+                boost::python::ssize_t listSize=boost::python::len(t);
+                float *pFloat=(float *)memoryPool.ordered_malloc(sizeof(float)*listSize);
+                for(boost::python::ssize_t j=0;j<listSize;j++)
+                {
+                        boost::python::extract<float> listFloatExtractor(t[j]);
+                        //jromang - Assuming floats here, but do we only have floats in lists ?
+                        BOOST_ASSERT(listFloatExtractor.check());
+                        pFloat[j]=listFloatExtractor();
+                        //std::cout<<pFloat[j]<<';';
+                }
+                //std::cout<<std::endl;
+
+		context->ConcatTransform(pFloat);
+                memoryPool.purge_memory();
+	}
+
+	void transform(boost::python::list tx)
+	{
+		boost::python::extract<boost::python::list> listExtractor(tx);
+
+                //std::cout<<"this is a LIST - WARNING ASSUMING FLOATS :";
+                boost::python::list t=listExtractor();
+                boost::python::ssize_t listSize=boost::python::len(t);
+                float *pFloat=(float *)memoryPool.ordered_malloc(sizeof(float)*listSize);
+                for(boost::python::ssize_t j=0;j<listSize;j++)
+                {
+                        boost::python::extract<float> listFloatExtractor(t[j]);
+                        //jromang - Assuming floats here, but do we only have floats in lists ?
+                        BOOST_ASSERT(listFloatExtractor.check());
+                        pFloat[j]=listFloatExtractor();
+                        //std::cout<<pFloat[j]<<';';
+                }
+                //std::cout<<std::endl;
+
+		context->Transform(pFloat);
+                memoryPool.purge_memory();
+	}
+
 	void coordinateSystem(const char *name) { context->CoordinateSystem(std::string(name)); }
 	void coordSysTransform(const char *name) { context->CoordSysTransform(std::string(name)); }
 
