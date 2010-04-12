@@ -79,7 +79,7 @@ ENDIF (NOT FLEX_EXECUTABLE)
 #############################################################################
 #############################################################################
 
-FIND_PACKAGE(Boost 1.42.0 REQUIRED COMPONENTS python)
+FIND_PACKAGE(Boost 1.41 REQUIRED COMPONENTS python)
 
 SET(Boost_python_FOUND ${Boost_FOUND})
 SET(Boost_python_LIBRARIES ${Boost_LIBRARIES})
