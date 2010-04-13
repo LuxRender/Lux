@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>598</width>
-    <height>226</height>
+    <height>255</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -23,7 +23,7 @@
       </sizepolicy>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="tab_GREYC">
       <attribute name="title">
@@ -42,7 +42,7 @@
           </sizepolicy>
          </property>
          <property name="currentIndex">
-          <number>0</number>
+          <number>1</number>
          </property>
          <widget class="QWidget" name="tab_regularization">
           <attribute name="title">
@@ -115,6 +115,9 @@
                <property name="toolTip">
                 <string>Adjust number of Iterations Value</string>
                </property>
+               <property name="keyboardTracking">
+                <bool>false</bool>
+               </property>
                <property name="maximum">
                 <double>16.000000000000000</double>
                </property>
@@ -151,6 +154,9 @@
                <property name="toolTip">
                 <string>Adjust Filter Strength/Amplitude Value</string>
                </property>
+               <property name="keyboardTracking">
+                <bool>false</bool>
+               </property>
                <property name="maximum">
                 <double>200.000000000000000</double>
                </property>
@@ -186,6 +192,9 @@
               <widget class="QDoubleSpinBox" name="spinBox_precision">
                <property name="toolTip">
                 <string>Adjust precision of Gaussian Filter Kernel Value</string>
+               </property>
+               <property name="keyboardTracking">
+                <bool>false</bool>
                </property>
                <property name="maximum">
                 <double>12.000000000000000</double>
@@ -258,6 +267,9 @@
                     <property name="toolTip">
                      <string>Amount of Spatial Integration Value</string>
                     </property>
+                    <property name="keyboardTracking">
+                     <bool>false</bool>
+                    </property>
                     <property name="decimals">
                      <number>3</number>
                     </property>
@@ -296,6 +308,9 @@
                    <widget class="QDoubleSpinBox" name="spinBox_angular">
                     <property name="toolTip">
                      <string>Amount of Angular Integration Value</string>
+                    </property>
+                    <property name="keyboardTracking">
+                     <bool>false</bool>
                     </property>
                     <property name="decimals">
                      <number>1</number>
@@ -394,6 +409,9 @@
                <property name="toolTip">
                 <string>Adjust Gaussian Filter Alpha Value</string>
                </property>
+               <property name="keyboardTracking">
+                <bool>false</bool>
+               </property>
                <property name="maximum">
                 <double>12.000000000000000</double>
                </property>
@@ -416,6 +434,9 @@
               <widget class="QDoubleSpinBox" name="spinBox_sigma">
                <property name="toolTip">
                 <string>Adjust Gaussian Filter Sigma Value</string>
+               </property>
+               <property name="keyboardTracking">
+                <bool>false</bool>
                </property>
                <property name="maximum">
                 <double>12.000000000000000</double>
@@ -453,6 +474,9 @@
                <property name="toolTip">
                 <string>Adjust Sharpness Value</string>
                </property>
+               <property name="keyboardTracking">
+                <bool>false</bool>
+               </property>
                <property name="maximum">
                 <double>2.000000000000000</double>
                </property>
@@ -488,6 +512,9 @@
               <widget class="QDoubleSpinBox" name="spinBox_aniso">
                <property name="toolTip">
                 <string>Adjust Filter Anisotropy Value</string>
+               </property>
+               <property name="keyboardTracking">
+                <bool>false</bool>
                </property>
                <property name="decimals">
                 <number>3</number>
@@ -604,6 +631,9 @@
           <widget class="QDoubleSpinBox" name="spinBox_chiuRadius">
            <property name="toolTip">
             <string>Adjust Filter Radius Value</string>
+           </property>
+           <property name="keyboardTracking">
+            <bool>false</bool>
            </property>
            <property name="minimum">
             <double>1.000000000000000</double>

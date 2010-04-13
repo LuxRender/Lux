@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>486</width>
-    <height>354</height>
+    <height>469</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -107,6 +107,9 @@
             <property name="toolTip">
              <string>Adjust Reinhard Prescale Value</string>
             </property>
+            <property name="keyboardTracking">
+             <bool>false</bool>
+            </property>
             <property name="decimals">
              <number>3</number>
             </property>
@@ -143,6 +146,9 @@
             <property name="toolTip">
              <string>Adjust Reinhard Postscale Value</string>
             </property>
+            <property name="keyboardTracking">
+             <bool>false</bool>
+            </property>
             <property name="decimals">
              <number>3</number>
             </property>
@@ -178,6 +184,9 @@
            <widget class="QDoubleSpinBox" name="spinBox_burn">
             <property name="toolTip">
              <string>Adjust Reinhard Burn Value</string>
+            </property>
+            <property name="keyboardTracking">
+             <bool>false</bool>
             </property>
             <property name="decimals">
              <number>3</number>
@@ -231,6 +240,9 @@
             <property name="toolTip">
              <string>Adjust Sensitivity Value</string>
             </property>
+            <property name="keyboardTracking">
+             <bool>false</bool>
+            </property>
             <property name="decimals">
              <number>1</number>
             </property>
@@ -269,6 +281,9 @@
            <widget class="QDoubleSpinBox" name="spinBox_exposure">
             <property name="toolTip">
              <string>Adjust Exposure Value</string>
+            </property>
+            <property name="keyboardTracking">
+             <bool>false</bool>
             </property>
             <property name="decimals">
              <number>3</number>
@@ -312,6 +327,9 @@
             <property name="toolTip">
              <string>Adjust FStopValue</string>
             </property>
+            <property name="keyboardTracking">
+             <bool>false</bool>
+            </property>
             <property name="maximum">
              <double>64.000000000000000</double>
             </property>
@@ -344,6 +362,9 @@
            <widget class="QDoubleSpinBox" name="spinBox_gamma_linear">
             <property name="toolTip">
              <string>Adjust Gamma Value</string>
+            </property>
+            <property name="keyboardTracking">
+             <bool>false</bool>
             </property>
             <property name="maximum">
              <double>5.000000000000000</double>
@@ -396,6 +417,9 @@
            <widget class="QDoubleSpinBox" name="spinBox_ywa">
             <property name="toolTip">
              <string>Adjust Ywa Value</string>
+            </property>
+            <property name="keyboardTracking">
+             <bool>false</bool>
             </property>
             <property name="decimals">
              <number>4</number>

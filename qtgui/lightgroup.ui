@@ -68,6 +68,9 @@
        <property name="toolTip">
         <string>Adjust LightGroup Gain/Intensity Value</string>
        </property>
+       <property name="keyboardTracking">
+        <bool>false</bool>
+       </property>
        <property name="decimals">
         <number>7</number>
        </property>
@@ -165,6 +168,9 @@
        </property>
        <property name="toolTip">
         <string>Adjust BlackBody Temperature Value</string>
+       </property>
+       <property name="keyboardTracking">
+        <bool>false</bool>
        </property>
        <property name="decimals">
         <number>0</number>

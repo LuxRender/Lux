@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>501</width>
-    <height>200</height>
+    <height>253</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -79,7 +79,7 @@
      <item row="1" column="0" colspan="2">
       <widget class="QTabWidget" name="tabs_colorSpaceTabs">
        <property name="currentIndex">
-        <number>0</number>
+        <number>1</number>
        </property>
        <widget class="QWidget" name="tab_whitepoint">
         <attribute name="title">
@@ -196,6 +196,9 @@
              <property name="toolTip">
               <string>White X</string>
              </property>
+             <property name="keyboardTracking">
+              <bool>false</bool>
+             </property>
              <property name="maximum">
               <double>1.000000000000000</double>
              </property>
@@ -231,6 +234,9 @@
             <widget class="QDoubleSpinBox" name="spinBox_whitePointY">
              <property name="toolTip">
               <string>White Y</string>
+             </property>
+             <property name="keyboardTracking">
+              <bool>false</bool>
              </property>
              <property name="maximum">
               <double>1.000000000000000</double>
@@ -289,6 +295,9 @@
              <property name="toolTip">
               <string>Red X</string>
              </property>
+             <property name="keyboardTracking">
+              <bool>false</bool>
+             </property>
              <property name="maximum">
               <double>1.000000000000000</double>
              </property>
@@ -314,6 +323,9 @@
             <widget class="QDoubleSpinBox" name="spinBox_redY">
              <property name="toolTip">
               <string>Red Y</string>
+             </property>
+             <property name="keyboardTracking">
+              <bool>false</bool>
              </property>
              <property name="maximum">
               <double>1.000000000000000</double>
@@ -341,6 +353,9 @@
              <property name="toolTip">
               <string>Green X</string>
              </property>
+             <property name="keyboardTracking">
+              <bool>false</bool>
+             </property>
              <property name="maximum">
               <double>1.000000000000000</double>
              </property>
@@ -366,6 +381,9 @@
             <widget class="QDoubleSpinBox" name="spinBox_greenY">
              <property name="toolTip">
               <string>Green Y</string>
+             </property>
+             <property name="keyboardTracking">
+              <bool>false</bool>
              </property>
              <property name="maximum">
               <double>1.000000000000000</double>
@@ -393,6 +411,9 @@
              <property name="toolTip">
               <string>Blue X</string>
              </property>
+             <property name="keyboardTracking">
+              <bool>false</bool>
+             </property>
              <property name="maximum">
               <double>1.000000000000000</double>
              </property>
@@ -418,6 +439,9 @@
             <widget class="QDoubleSpinBox" name="spinBox_blueY">
              <property name="toolTip">
               <string>Blue Y</string>
+             </property>
+             <property name="keyboardTracking">
+              <bool>false</bool>
              </property>
              <property name="maximum">
               <double>1.000000000000000</double>

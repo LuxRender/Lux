@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>374</width>
-    <height>48</height>
+    <height>63</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -35,6 +35,9 @@
         <widget class="QDoubleSpinBox" name="spinBox_gamma">
          <property name="toolTip">
           <string>Adjust Gamma Correction Value</string>
+         </property>
+         <property name="keyboardTracking">
+          <bool>false</bool>
          </property>
          <property name="maximum">
           <double>5.000000000000000</double>

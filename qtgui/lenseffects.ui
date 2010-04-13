@@ -20,7 +20,7 @@
       <bool>true</bool>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>3</number>
      </property>
      <widget class="QWidget" name="tab_gaussianBloom">
       <attribute name="title">
@@ -70,6 +70,9 @@
            <property name="toolTip">
             <string>Adjust Image length Bloom Radius Value</string>
            </property>
+           <property name="keyboardTracking">
+            <bool>false</bool>
+           </property>
            <property name="maximum">
             <double>1.000000000000000</double>
            </property>
@@ -108,6 +111,9 @@
            </property>
            <property name="toolTip">
             <string>Adjust Bloom amount Value</string>
+           </property>
+           <property name="keyboardTracking">
+            <bool>false</bool>
            </property>
            <property name="maximum">
             <double>1.000000000000000</double>
@@ -244,6 +250,9 @@
            <property name="toolTip">
             <string>Adjust Vignetting Amount Value</string>
            </property>
+           <property name="keyboardTracking">
+            <bool>false</bool>
+           </property>
            <property name="decimals">
             <number>3</number>
            </property>
@@ -352,6 +361,9 @@
           <widget class="QDoubleSpinBox" name="spinBox_caAmount">
            <property name="toolTip">
             <string>Adjust Chromatic Abberation Amount Value</string>
+           </property>
+           <property name="keyboardTracking">
+            <bool>false</bool>
            </property>
            <property name="decimals">
             <number>3</number>
@@ -462,6 +474,9 @@
            <property name="toolTip">
             <string>Adjust Image length Glare Value</string>
            </property>
+           <property name="keyboardTracking">
+            <bool>false</bool>
+           </property>
            <property name="decimals">
             <number>3</number>
            </property>
@@ -516,6 +531,9 @@
            </property>
            <property name="toolTip">
             <string>Adjust Glare amount Value</string>
+           </property>
+           <property name="keyboardTracking">
+            <bool>false</bool>
            </property>
            <property name="decimals">
             <number>3</number>
