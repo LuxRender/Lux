@@ -201,6 +201,7 @@ MainWindow::MainWindow(QWidget *parent, bool opengl, bool copylog2console) : QMa
 	histogramwidget = new HistogramWidget(panes[4]);
 	panes[4]->setWidget(histogramwidget);
 	ui->panesLayout->addWidget(panes[4]);
+    panes[4]->expand();
 
 	// Noise reduction
 	noisereductionwidget = new NoiseReductionWidget(panes[5]);
@@ -1160,7 +1161,7 @@ void MainWindow::resetToneMapping()
 	noisereductionwidget->resetValues();
 
 	updateTonemapWidgetValues ();
-
+    
 	ui->outputTabs->setEnabled (false);
 }
 
