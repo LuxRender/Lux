@@ -303,8 +303,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>581</width>
-                  <height>552</height>
+                  <width>517</width>
+                  <height>499</height>
                  </rect>
                 </property>
                 <property name="sizePolicy">
@@ -351,8 +351,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>581</width>
-                  <height>582</height>
+                  <width>517</width>
+                  <height>533</height>
                  </rect>
                 </property>
                 <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -565,7 +565,7 @@
      <x>0</x>
      <y>0</y>
      <width>1024</width>
-     <height>23</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_render">
@@ -741,6 +741,15 @@
   <action name="action_fullScreen">
    <property name="text">
     <string>Full screen</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+F</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::TextHeuristicRole</enum>
    </property>
   </action>
   <action name="action_rulerDisabled">

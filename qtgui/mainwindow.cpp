@@ -644,6 +644,19 @@ void MainWindow::clearLog()
 
 void MainWindow::fullScreen()
 {
+        if ( renderView->isFullScreen() )
+        {
+            delete renderView;
+            renderView = new RenderView(ui->frame_render, m_opengl);
+            ui->renderLayout->addWidget(renderView, 0, 0, 1, 1);
+            renderView->reload();
+            renderView->show ();
+        }
+        else
+        {
+            renderView->setParent( NULL );
+            renderView->showFullScreen();
+        }
 }
 
 // Help menu slots
