@@ -162,6 +162,8 @@ double Scene::Statistics(const string &statName) {
 		return DisplayInterval();
 	else if(statName == "filmEV")
 		return camera->film->EV;
+	else if (statName == "enoughSamples")
+		return camera->film->enoughSamplePerPixel;
 	else {
 		std::string eString("luxStatistics - requested an invalid data : ");
 		eString+=statName;
