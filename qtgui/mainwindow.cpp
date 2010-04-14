@@ -646,7 +646,7 @@ void MainWindow::fullScreen()
 {
         if ( renderView->isFullScreen() )
         {
-            delete renderView;
+            delete renderView; // delete and reinitialize to recenter render
             renderView = new RenderView(ui->frame_render, m_opengl);
             ui->renderLayout->addWidget(renderView, 0, 0, 1, 1);
             renderView->reload();

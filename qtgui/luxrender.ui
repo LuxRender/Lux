@@ -657,6 +657,9 @@
    <property name="text">
     <string>Resume</string>
    </property>
+   <property name="shortcut">
+    <string>Meta+R</string>
+   </property>
   </action>
   <action name="action_pauseRender">
    <property name="icon">
@@ -666,6 +669,9 @@
    <property name="text">
     <string>Pause</string>
    </property>
+   <property name="shortcut">
+    <string>Meta+P</string>
+   </property>
   </action>
   <action name="action_stopRender">
    <property name="icon">
@@ -674,6 +680,9 @@
    </property>
    <property name="text">
     <string>Stop</string>
+   </property>
+   <property name="shortcut">
+    <string>Meta+S</string>
    </property>
   </action>
   <action name="action_viewToolbar">
@@ -732,10 +741,16 @@
    <property name="text">
     <string>Copy</string>
    </property>
+   <property name="shortcut">
+    <string>Meta+C</string>
+   </property>
   </action>
   <action name="action_clearLog">
    <property name="text">
     <string>Clear log</string>
+   </property>
+   <property name="shortcut">
+    <string>Meta+W</string>
    </property>
   </action>
   <action name="action_fullScreen">
@@ -743,7 +758,7 @@
     <string>Full screen</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+F</string>
+    <string>Meta+F</string>
    </property>
    <property name="shortcutContext">
     <enum>Qt::ApplicationShortcut</enum>
