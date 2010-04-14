@@ -389,10 +389,8 @@ void ApplyImagingPipeline(vector<XYZColor> &xyzpixels,
 		aberrationImage.clear();
 	}
 
-	// Calculate histogram
-	if (HistogramEnabled) {
-		if (!histogram)
-			histogram = new Histogram();
+	// Calculate histogram (if it is enabled and exists)
+	if (HistogramEnabled && histogram) {
 		histogram->Calculate(rgbpixels, xResolution, yResolution);
 	}
 
@@ -1485,6 +1483,7 @@ bool Film::LoadResumeFilm(const string &filename)
 
 void Film::getHistogramImage(unsigned char *outPixels, u_int width, u_int height, int options)
 {
+    boost::mutex::scoped_lock lock(histMutex);
 	if (!histogram)
 		histogram = new Histogram();
 	histogram->MakeImage(outPixels, width, height, options);
@@ -1539,11 +1538,11 @@ void Histogram::CheckBucketNr()
 
 void Histogram::Calculate(vector<RGBColor> &pixels, u_int width, u_int height)
 {
+	boost::mutex::scoped_lock lock(this->m_mutex);
 	if (pixels.empty() || width == 0 || height == 0)
 		return;
 	u_int pixelNr = width * height;
 	float value;
-	boost::mutex::scoped_lock lock(m_mutex);
 
 	CheckBucketNr();
 
@@ -1571,6 +1570,7 @@ void Histogram::Calculate(vector<RGBColor> &pixels, u_int width, u_int height)
 }
 
 void Histogram::MakeImage(unsigned char *outPixels, u_int canvasW, u_int canvasH, int options){
+    boost::mutex::scoped_lock lock(this->m_mutex);
 	#define PIXELIDX(x,y,w) ((y)*(w)*3+(x)*3)
 	#define GETMAX(x,y) ((x)>(y)?(x):(y))
 	if (canvasW < 50 || canvasH < 25)
@@ -1579,7 +1579,7 @@ void Histogram::MakeImage(unsigned char *outPixels, u_int canvasW, u_int canvasH
 	const u_int guideW = 3; //size of the brightness guide bar in pixels
 	const u_int plotH = canvasH - borderW - (guideW + 2) - (borderW - 1);
 	const u_int plotW = canvasW - 2 * borderW;
-	boost::mutex::scoped_lock lock(m_mutex);
+   
 	if (canvasW - 2 * borderW != m_bucketNr)
 		m_newBucketNr = canvasW - 2 * borderW;
 

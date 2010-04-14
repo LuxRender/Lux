@@ -483,6 +483,8 @@ public:
 	Scene *scene;
 	Histogram *histogram;
 	bool enoughSamplePerPixel; // At the end to get better data alignment
+private:
+	boost::mutex histMutex;
 };
 
 // Image Pipeline Declarations
