@@ -1573,6 +1573,7 @@ void Histogram::MakeImage(unsigned char *outPixels, u_int canvasW, u_int canvasH
     boost::mutex::scoped_lock lock(this->m_mutex);
 	#define PIXELIDX(x,y,w) ((y)*(w)*3+(x)*3)
 	#define GETMAX(x,y) ((x)>(y)?(x):(y))
+	#define OPTIONS_CHANNELS_MASK (LUX_HISTOGRAM_LOG-1)
 	if (canvasW < 50 || canvasH < 25)
 		return; //too small
 	const u_int borderW = 3; //size of the plot border in pixels
@@ -1605,7 +1606,7 @@ void Histogram::MakeImage(unsigned char *outPixels, u_int canvasW, u_int canvasH
 
 	//draw histogram bars
 	u_int channel = 0;
-	switch (options) {
+	switch (options & OPTIONS_CHANNELS_MASK) {
 		case LUX_HISTOGRAM_RGB: {
 			//get maxima for scaling
 			float max = 0.f;
