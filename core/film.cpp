@@ -1691,7 +1691,7 @@ void Histogram::MakeImage(unsigned char *outPixels, u_int canvasW, u_int canvasH
 		for (u_int y = plotH + 2; y < plotH + 2 + guideW; ++y) {
 			const u_int idx = PIXELIDX(x + borderW, y + borderW, canvasW);
 			const unsigned char color = static_cast<unsigned char>(Clamp(expf(bucket * m_bucketSize + m_lowRange) * 256.f, 0.f, 255.f)); //no need to gamma-correct, as we're already in display-gamma space
-			switch (options) {
+			switch (options & OPTIONS_CHANNELS_MASK) {
 				case LUX_HISTOGRAM_RED:
 					outPixels[idx] = color;
 					outPixels[idx + 1] = 0;
