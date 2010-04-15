@@ -20,7 +20,7 @@
       <bool>true</bool>
      </property>
      <property name="currentIndex">
-      <number>3</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="tab_gaussianBloom">
       <attribute name="title">
@@ -314,14 +314,14 @@
          <item row="0" column="0">
           <widget class="QLabel" name="label_caAmountMin">
            <property name="text">
-            <string>-1.0</string>
+            <string>0.0</string>
            </property>
           </widget>
          </item>
          <item row="0" column="1">
           <widget class="QLabel" name="label_caAmountMed">
            <property name="text">
-            <string>0.0</string>
+            <string/>
            </property>
            <property name="alignment">
             <set>Qt::AlignCenter</set>
@@ -331,7 +331,7 @@
          <item row="0" column="2">
           <widget class="QLabel" name="checkBox_caAmountMax">
            <property name="text">
-            <string>+1.0</string>
+            <string>1.0</string>
            </property>
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -350,10 +350,10 @@
             <enum>Qt::Horizontal</enum>
            </property>
            <property name="tickPosition">
-            <enum>QSlider::TicksAbove</enum>
+            <enum>QSlider::NoTicks</enum>
            </property>
            <property name="tickInterval">
-            <number>10</number>
+            <number>0</number>
            </property>
           </widget>
          </item>
