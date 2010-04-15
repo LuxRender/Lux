@@ -655,6 +655,8 @@ void MainWindow::fullScreen()
         else
         {
             renderView->setParent( NULL );
+            renderView->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
+            renderView->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
             renderView->showFullScreen();
         }
 }
