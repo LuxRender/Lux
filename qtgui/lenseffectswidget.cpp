@@ -222,21 +222,16 @@ void LensEffectsWidget::deleteBloomLayer()
 
 void LensEffectsWidget::vignettingAmountChanged(int value)
 {
-	vignettingAmountChanged ( (double)value / FLOAT_SLIDER_RES );
+	double dvalue = -1.0f + (2.0f * (double)value / FLOAT_SLIDER_RES);
+	vignettingAmountChanged ( dvalue );
 }
 
 void LensEffectsWidget::vignettingAmountChanged(double value)
 {
-	double pos = value;
-	pos -= 0.5f;
-	pos *= VIGNETTING_SCALE_RANGE * 2.f;
-	m_Vignetting_Scale = pos;
+	m_Vignetting_Scale = value;
 	
 	int sliderval; 
-	if (m_Vignetting_Scale >= 0.f)
-		sliderval = (int) (FLOAT_SLIDER_RES/2) + (( (FLOAT_SLIDER_RES/2) / VIGNETTING_SCALE_RANGE ) * (m_Vignetting_Scale));
-	else
-		sliderval = (int)(( FLOAT_SLIDER_RES/2 * VIGNETTING_SCALE_RANGE ) * (1.f - fabsf(m_Vignetting_Scale)));
+	sliderval = (int)(0.5f * (value + 1.0f) * FLOAT_SLIDER_RES);
 
 	updateWidgetValue(ui->slider_vignettingAmount, sliderval);
 	updateWidgetValue(ui->spinBox_vignettingAmount, m_Vignetting_Scale);
