@@ -31,6 +31,9 @@
        <property name="toolTip">
         <string>Pick a channel displayed on the histogram</string>
        </property>
+       <property name="currentIndex">
+        <number>1</number>
+       </property>
        <item>
         <property name="text">
          <string>R+G+B</string>
