@@ -25,8 +25,10 @@
 #include "api.h"
 
 RenderView::RenderView(QWidget *parent, bool opengl) : QGraphicsView(parent) {
+#if !defined(__APPLE__)
     if (opengl)
 		setViewport(new QGLWidget);
+#endif
 
 	renderscene = new QGraphicsScene();
 	renderscene->setBackgroundBrush(QColor(127,127,127));

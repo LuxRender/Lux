@@ -17,6 +17,9 @@
    <iconset resource="icons.qrc">
     <normaloff>:/icons/luxrender.png</normaloff>:/icons/luxrender.png</iconset>
   </property>
+  <property name="unifiedTitleAndToolBarOnMac">
+   <bool>false</bool>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <property name="sizePolicy">
     <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
@@ -351,8 +354,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>100</width>
-                  <height>30</height>
+                  <width>517</width>
+                  <height>533</height>
                  </rect>
                 </property>
                 <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -568,6 +571,9 @@
      <height>22</height>
     </rect>
    </property>
+   <property name="nativeMenuBar">
+    <bool>true</bool>
+   </property>
    <widget class="QMenu" name="menu_render">
     <property name="title">
      <string>Render</string>
@@ -584,6 +590,7 @@
     <addaction name="action_clearLog"/>
     <addaction name="separator"/>
     <addaction name="action_fullScreen"/>
+    <addaction name="action_normalScreen"/>
    </widget>
    <widget class="QMenu" name="menu_help">
     <property name="title">
@@ -812,6 +819,23 @@
   <action name="actionOpen_Recent">
    <property name="text">
     <string>Open Recent</string>
+   </property>
+  </action>
+  <action name="action_normalScreen">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Normal sceen</string>
+   </property>
+   <property name="shortcut">
+    <string>Esc</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+   <property name="iconVisibleInMenu">
+    <bool>true</bool>
    </property>
   </action>
  </widget>

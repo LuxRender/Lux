@@ -155,6 +155,7 @@ MainWindow::MainWindow(QWidget *parent, bool opengl, bool copylog2console) : QMa
 	connect(ui->action_copyLog, SIGNAL(triggered()), this, SLOT(copyLog()));
 	connect(ui->action_clearLog, SIGNAL(triggered()), this, SLOT(clearLog()));
 	connect(ui->action_fullScreen, SIGNAL(triggered()), this, SLOT(fullScreen()));
+    connect(ui->action_normalScreen, SIGNAL(triggered()), this, SLOT(normalScreen()));
 	
 	// Help menu slots
 	connect(ui->action_aboutDialog, SIGNAL(triggered()), this, SLOT(aboutDialog()));
@@ -654,12 +655,26 @@ void MainWindow::fullScreen()
         }
         else
         {
+            ui->action_normalScreen->setEnabled (true);
             renderView->setParent( NULL );
             renderView->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
             renderView->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
             renderView->showFullScreen();
         }
 }
+
+void MainWindow::normalScreen()
+{
+    if ( renderView->isFullScreen() )
+    {
+        delete renderView; // delete and reinitialize to recenter render
+        renderView = new RenderView(ui->frame_render, m_opengl);
+        ui->renderLayout->addWidget(renderView, 0, 0, 1, 1);
+        renderView->reload();
+        renderView->show ();
+    }
+}
+
 
 // Help menu slots
 void MainWindow::aboutDialog()

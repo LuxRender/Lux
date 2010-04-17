@@ -248,6 +248,7 @@ private slots:
 	void copyLog ();
 	void clearLog ();
 	void fullScreen ();
+    void normalScreen ();
 	void aboutDialog ();
 	void openDocumentation ();
 	void openForums ();
