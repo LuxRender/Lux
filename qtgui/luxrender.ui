@@ -351,8 +351,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>517</width>
-                  <height>533</height>
+                  <width>100</width>
+                  <height>30</height>
                  </rect>
                 </property>
                 <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -652,7 +652,7 @@
     <enum>Qt::ApplicationShortcut</enum>
    </property>
    <property name="menuRole">
-    <enum>QAction::PreferencesRole</enum>
+    <enum>QAction::QuitRole</enum>
    </property>
   </action>
   <action name="action_resumeRender">
