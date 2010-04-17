@@ -652,14 +652,15 @@ void MainWindow::fullScreen()
             ui->renderLayout->addWidget(renderView, 0, 0, 1, 1);
             renderView->reload();
             renderView->show ();
+            ui->action_normalScreen->setEnabled (false);
         }
         else
         {
-            ui->action_normalScreen->setEnabled (true);
             renderView->setParent( NULL );
             renderView->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
             renderView->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
             renderView->showFullScreen();
+            ui->action_normalScreen->setEnabled (true);
         }
 }
 
@@ -672,6 +673,7 @@ void MainWindow::normalScreen()
         ui->renderLayout->addWidget(renderView, 0, 0, 1, 1);
         renderView->reload();
         renderView->show ();
+        ui->action_normalScreen->setEnabled (false);
     }
 }
 
