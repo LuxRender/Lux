@@ -50,16 +50,23 @@ Texture<float> *ImageFloatTexture::CreateFloatTexture(const Transform &tex2world
 		float du = tp.FindOneFloat("udelta", 0.f);
 		float dv = tp.FindOneFloat("vdelta", 0.f);
 		map = new UVMapping2D(su, sv, du, dv);
-	} else if (type == "spherical")
-		map = new SphericalMapping2D(tex2world.GetInverse());
-	else if (type == "cylindrical")
-		map = new CylindricalMapping2D(tex2world.GetInverse());
-	else if (type == "planar")
+	} else if (type == "spherical") {
+		float su = tp.FindOneFloat("uscale", 1.f);
+		float sv = tp.FindOneFloat("vscale", 1.f);
+		float du = tp.FindOneFloat("udelta", 0.f);
+		float dv = tp.FindOneFloat("vdelta", 0.f);
+		map = new SphericalMapping2D(tex2world.GetInverse(),
+		                             su, sv, du, dv);
+	} else if (type == "cylindrical") {
+		float su = tp.FindOneFloat("uscale", 1.f);
+		float du = tp.FindOneFloat("udelta", 0.f);
+		map = new CylindricalMapping2D(tex2world.GetInverse(), su, du);
+	} else if (type == "planar") {
 		map = new PlanarMapping2D(tp.FindOneVector("v1", Vector(1,0,0)),
 			tp.FindOneVector("v2", Vector(0,1,0)),
 			tp.FindOneFloat("udelta", 0.f),
 			tp.FindOneFloat("vdelta", 0.f));
-	else {
+	} else {
 		LOG(LUX_ERROR, LUX_BADTOKEN) << "2D texture mapping  '" <<
 			type << "' unknown";
 		map = new UVMapping2D;
@@ -143,16 +150,23 @@ Texture<SWCSpectrum> *ImageSpectrumTexture::CreateSWCSpectrumTexture(const Trans
 		float du = tp.FindOneFloat("udelta", 0.f);
 		float dv = tp.FindOneFloat("vdelta", 0.f);
 		map = new UVMapping2D(su, sv, du, dv);
-	} else if (type == "spherical")
-		map = new SphericalMapping2D(tex2world.GetInverse());
-	else if (type == "cylindrical")
-		map = new CylindricalMapping2D(tex2world.GetInverse());
-	else if (type == "planar")
+	} else if (type == "spherical") {
+		float su = tp.FindOneFloat("uscale", 1.f);
+		float sv = tp.FindOneFloat("vscale", 1.f);
+		float du = tp.FindOneFloat("udelta", 0.f);
+		float dv = tp.FindOneFloat("vdelta", 0.f);
+		map = new SphericalMapping2D(tex2world.GetInverse(),
+		                             su, sv, du, dv);
+	} else if (type == "cylindrical") {
+		float su = tp.FindOneFloat("uscale", 1.f);
+		float du = tp.FindOneFloat("udelta", 0.f);
+		map = new CylindricalMapping2D(tex2world.GetInverse(), su, du);
+	} else if (type == "planar") {
 		map = new PlanarMapping2D(tp.FindOneVector("v1", Vector(1,0,0)),
 			tp.FindOneVector("v2", Vector(0,1,0)),
 			tp.FindOneFloat("udelta", 0.f),
 			tp.FindOneFloat("vdelta", 0.f));
-	else {
+	} else {
 		LOG(LUX_ERROR, LUX_BADTOKEN) << "2D texture mapping  '" <<
 			type << "' unknown";
 		map = new UVMapping2D;

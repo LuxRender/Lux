@@ -63,9 +63,13 @@ private:
 class  SphericalMapping2D : public TextureMapping2D {
 public:
 	// SphericalMapping2D Public Methods
-	SphericalMapping2D(const Transform &toSph)
-		: WorldToTexture(toSph) {
-	}
+	SphericalMapping2D(const Transform &toSph,
+	                   float _su = 1.f, float _sv = 1.f,
+	                   float _du = 0.f, float _dv = 0.f)
+		: WorldToTexture(toSph),
+		  du(_du), dv(_dv),
+		  scaledInvTwoPi(INV_TWOPI * _su), scaledInvPi(INV_PI * _sv)
+	{ }
 	virtual ~SphericalMapping2D() { }
 	virtual void Map(const DifferentialGeometry &dg,
 		float *s, float *t) const;
@@ -77,13 +81,19 @@ public:
 		float *dsdv, float *dtdv) const;
 private:
 	Transform WorldToTexture;
+	float     du, dv;
+	float     scaledInvTwoPi, scaledInvPi;
+
 };
 class CylindricalMapping2D : public TextureMapping2D {
 public:
 	// CylindricalMapping2D Public Methods
-	CylindricalMapping2D(const Transform &toCyl)
-		: WorldToTexture(toCyl) {
-	}
+	CylindricalMapping2D(const Transform &toCyl,
+	                     float _su = 1.f, float _du = 0.f)
+		: WorldToTexture(toCyl),
+		  du(_du),
+		  scaledInvTwoPi(INV_TWOPI * _su)
+	{	}
 	virtual ~CylindricalMapping2D() { }
 	virtual void Map(const DifferentialGeometry &dg,
 		float *s, float *t) const;
@@ -95,6 +105,7 @@ public:
 		float *dsdv, float *dtdv) const;
 private:
 	Transform WorldToTexture;
+	float     du, scaledInvTwoPi;
 };
 class  PlanarMapping2D : public TextureMapping2D {
 public:
