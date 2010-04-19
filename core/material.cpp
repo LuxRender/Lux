@@ -62,8 +62,4 @@ void Material::Bump(const TsPack *tspack,
 	dgBump->nn = Normal(Normalize(Cross(dgBump->dpdu, dgBump->dpdv)));
 	// INFO: We don't compute dgBump->dndu and dgBump->dndv as we need this
 	//       only here.
-
-	// Orient shading normal to match geometric normal
-	if (Dot(nGeom, dgBump->nn) < 0.f)
-		dgBump->nn *= -1.f;
 }
