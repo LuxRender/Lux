@@ -34,7 +34,7 @@ class  MicrofacetReflection : public BxDF {
 public:
 	// MicrofacetReflection Public Methods
 	MicrofacetReflection(const SWCSpectrum &reflectance, const Fresnel *f,
-		MicrofacetDistribution *d);
+		MicrofacetDistribution *d, bool oneS = false);
 	virtual ~MicrofacetReflection() { }
 	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const;
 	float G(const Vector &wo, const Vector &wi,
@@ -55,6 +55,7 @@ private:
 	SWCSpectrum R;
 	MicrofacetDistribution *distribution;
 	const Fresnel *fresnel;
+	bool oneSided;
 };
 
 class  MicrofacetTransmission : public BxDF {

@@ -80,7 +80,7 @@ BSDF *CarPaint::GetBSDF(const TsPack *tspack,
 	if (ks1.Filter(tspack) > 0.f && m1 > 0.f) {
 		MicrofacetDistribution *md1 = ARENA_ALLOC(tspack->arena, Blinn)((2.f * M_PI / (m1 * m1)) - 1.f);
 		Fresnel *fr1 = ARENA_ALLOC(tspack->arena, FresnelSlick)(r1, 0.f);
-		bsdf->Add(ARENA_ALLOC(tspack->arena, MicrofacetReflection)(ks1, fr1, md1));
+		bsdf->Add(ARENA_ALLOC(tspack->arena, MicrofacetReflection)(ks1, fr1, md1, true));
 	}
 
 	const SWCSpectrum ks2(Ks2->Evaluate(tspack, dgs).Clamp(0.f, 1.f));
@@ -89,7 +89,7 @@ BSDF *CarPaint::GetBSDF(const TsPack *tspack,
 	if (ks2.Filter(tspack) > 0.f && m2 > 0.f) {
 		MicrofacetDistribution *md2 = ARENA_ALLOC(tspack->arena, Blinn)((2.f * M_PI / (m2 * m2)) - 1.f);
 		Fresnel *fr2 = ARENA_ALLOC(tspack->arena, FresnelSlick)(r2, 0.f);
-		bsdf->Add(ARENA_ALLOC(tspack->arena, MicrofacetReflection)(ks2, fr2, md2));
+		bsdf->Add(ARENA_ALLOC(tspack->arena, MicrofacetReflection)(ks2, fr2, md2, true));
 	}
 
 	const SWCSpectrum ks3(Ks3->Evaluate(tspack, dgs).Clamp(0.f, 1.f));
