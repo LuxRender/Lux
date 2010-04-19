@@ -89,6 +89,10 @@ void RenderView::resetZoom () {
 	setMatrix (QMatrix());
 } 
 
+void RenderView::mousePressEvent(QResizeEvent *event) {
+    QGraphicsView::resizeEvent(event);
+}
+
 void RenderView::wheelEvent (QWheelEvent* event) {
    if (!zoomEnabled)
 	   return;
@@ -108,6 +112,8 @@ void RenderView::mousePressEvent (QMouseEvent *event) {
 	//			setCursor(Qt::ClosedHandCursor);
 				break;
 			case Qt::MidButton:
+                fitInView(renderscene->sceneRect(), Qt::KeepAspectRatio);
+                break;
 			case Qt::RightButton:
 				resetZoom ();
 				break;

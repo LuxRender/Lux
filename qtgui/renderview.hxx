@@ -45,6 +45,7 @@ public:
     ~RenderView ();
 
 	void resetZoom ();
+    void mousePressEvent(QResizeEvent *event);
 	void setZoomEnabled (bool enabled = true) { zoomEnabled = enabled; };
 	void reload ();
 	void setLogoMode ();
