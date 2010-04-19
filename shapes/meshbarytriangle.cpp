@@ -251,7 +251,10 @@ void MeshBaryTriangle::GetShadingGeometry(const Transform &obj2world,
 	Vector ss(Cross(ts, ns));
 	// Lotus - the length of dpdu/dpdv can be important for bumpmapping
 	ss *= dg.dpdu.Length();
-	ts *= dg.dpdv.Length();
+	if (Dot(dg.dpdv, ts) < 0.f)
+		ts *= -dg.dpdv.Length();
+	else
+		ts *= dg.dpdv.Length();
 
 	Normal dndu, dndv;
 	// Compute \dndu and \dndv for triangle shading geometry
