@@ -52,14 +52,14 @@ BSDF *Glossy2::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 
 	SWCSpectrum a(Ka->Evaluate(tspack, dgs).Clamp(0.f, 1.f));
 
-	const float u = min(1.f, nu->Evaluate(tspack, dgs));
-	const float v = min(1.f, nv->Evaluate(tspack, dgs));
+	// Clamp roughness values to avoid artifacts with too small values
+	const float u = Clamp(nu->Evaluate(tspack, dgs), 1e-4f, 1.f);
+	const float v = Clamp(nv->Evaluate(tspack, dgs), 1e-4f, 1.f);
 	const float u2 = u * u;
 	const float v2 = v * v;
 	float ld = depth->Evaluate(tspack, dgs);
 
-	const float anisotropy = u2 < v2 ? 1.f - u2 / v2 :
-		u2 > 0.f ? v2 / u2 - 1.f : 1.f;
+	const float anisotropy = u2 < v2 ? 1.f - u2 / v2 : v2 / u2 - 1.f;
 	SingleBSDF *bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dgs,
 		dgGeom.nn, ARENA_ALLOC(tspack->arena, SchlickBRDF)(d, s, a, ld,
 		u * v, anisotropy), exterior, interior);
