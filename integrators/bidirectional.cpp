@@ -545,9 +545,6 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 						++nrContribs;
 				}
 
-				// Possibly terminate path sampling
-				if (nLight == maxLightDepth)
-					break;
 				data = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleLightOffset, nLight - 1);
 				SWCSpectrum f;
 				if (!v.bsdf->Sample_f(tspack, v.wi, &v.wo,
@@ -558,6 +555,9 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 				// Check if the scattering is a passthrough event
 				if (v.flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) ||
 					!(v.bsdf->Pdf(tspack, v.wi, v.wo, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) > 0.f)) {
+					// Possibly terminate path sampling
+					if (nLight == maxLightDepth)
+						break;
 					lightPath[nLight - 2].dARWeight =
 						v.pdfR * v.tPdfR *
 						lightPath[nLight - 2].coso /
@@ -636,37 +636,36 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 					continue;
 				RayDifferential r(eyePath[nEye - 1].p, eyePath[nEye - 1].wi);
 				r.time = tspack->time;
-				BSDF *eBsdf;
 				float ePdfDirect;
 				SWCSpectrum Le(light->Le(tspack, scene, r,
-					eyePath[nEye - 1].bsdf->ng, &eBsdf,
+					eyePath[nEye - 1].bsdf->ng, &v.bsdf,
 					&v.dAWeight, &ePdfDirect));
 				// No check for dAWeight > 0
 				// in the case of portal, the eye path can hit
 				// the light outside portals
-				if (eBsdf == NULL || Le.Black())
+				if (v.bsdf == NULL || Le.Black())
 					continue;
 				v.wo = -ray.d;
 				v.flags = BxDFType(~BSDF_SPECULAR);
-				v.pdf = eBsdf->Pdf(tspack, Vector(eBsdf->nn), v.wo,
-					v.flags);
-				// No check for pdf > 0
-				// in the case of portal, the eye path can hit
-				// the light outside portals
-				v.p = eBsdf->dgShading.p;
-				v.coso = AbsDot(v.wo, eBsdf->ng);
+				v.p = v.bsdf->dgShading.p;
+				v.coso = AbsDot(v.wo, v.bsdf->ng);
 				eyePath[nEye - 1].d2 =
 					DistanceSquared(eyePath[nEye - 1].p, v.p);
+				// Evaluate factors for path weighting
 				v.dARWeight = eyePath[nEye - 1].pdfR *
 					eyePath[nEye - 1].tPdfR *
 					v.coso / eyePath[nEye - 1].d2;
-				Le *= v.flux;
-				// Evaluate factors for path weighting
+				v.pdf = v.bsdf->Pdf(tspack, Vector(v.bsdf->nn),
+					v.wo);
+				// No check for pdf > 0
+				// in the case of portal, the eye path can hit
+				// the light outside portals
 				v.dAWeight /= scene->lights.size();
 				ePdfDirect *= directWeight;
 				eyePath[nEye - 1].dAWeight = v.pdf * v.tPdf *
 					eyePath[nEye - 1].cosi /
 					eyePath[nEye - 1].d2;
+				Le *= v.flux;
 				vector<BidirVertex> path(0);
 				const float w = weightPath(eyePath,
 					nEye + 1, maxEyeDepth, path, 0,
@@ -674,7 +673,7 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 					false);
 				const u_int eGroup = light->group;
 				Le /= w;
-				vecV[eGroup] += Le.Filter(tspack);
+				vecV[eGroup] += Le.Filter(tspack) / w;
 				vecL[eGroup] += Le;
 				++nrContribs;
 			}
@@ -812,9 +811,6 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 			}
 		}
 
-		// Possibly terminate path sampling
-		if (nEye == maxEyeDepth)
-			break;
 		data = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleEyeOffset, nEye - 1);
 		SWCSpectrum f;
 		if (!v.bsdf->Sample_f(tspack, v.wo, &v.wi, data[1], data[2],
@@ -823,7 +819,10 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 
 		// Check if the scattering is a passthrough event
 		if (v.flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) ||
-			!(v.bsdf->Pdf(tspack, v.wi, v.wo, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) > 0.f)) {
+			!(v.bsdf->Pdf(tspack, v.wo, v.wi, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) > 0.f)) {
+			// Possibly terminate path sampling
+			if (nEye == maxEyeDepth)
+				break;
 			eyePath[nEye - 2].dAWeight = v.pdf * v.tPdf *
 				eyePath[nEye - 2].cosi /
 				eyePath[nEye - 2].d2;
