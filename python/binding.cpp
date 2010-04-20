@@ -75,18 +75,36 @@ int getParametersFromPython(boost::python::list& pList, std::vector<LuxToken>& a
 
 	for(boost::python::ssize_t i=0;i<n;i++)
 	{
-		boost::python::tuple l=boost::python::extract<boost::python::tuple>(pList[i]);
-		std::string tokenString=boost::python::extract<std::string>(l[0]);
+		boost::python::extract<boost::python::object> objectExtractor(pList[i]);
+		boost::python::object o=objectExtractor();
+		std::string object_classname = boost::python::extract<std::string>(o.attr("__class__").attr("__name__"));
+		//std::cout<<"this is an Object: "<<object_classname<<std::endl;
+
+		std::string tokenString;
+		boost::python::object parameter_value;
+
+		if (object_classname == "ParamSetItem")
+		{
+			tokenString = boost::python::extract<std::string>(o.attr("type_name"));
+			parameter_value = boost::python::extract<boost::python::object>(o.attr("value"));
+		}
+		else
+		{
+			boost::python::tuple l=boost::python::extract<boost::python::tuple>(pList[i]);
+			tokenString = boost::python::extract<std::string>(l[0]);
+			parameter_value = boost::python::extract<boost::python::object>(l[1]);
+		}
+
 		char *tok=(char *)memoryPool.ordered_malloc(sizeof(char)*tokenString.length()+1);
 		strcpy(tok,tokenString.c_str());
 		aTokens.push_back(tok);
 		//std::cout<<"We have a nice parameter : ["<<tokenString<<']'<<std::endl;
 
-		boost::python::extract<int> intExtractor(l[1]);
-		boost::python::extract<float> floatExtractor(l[1]);
-		boost::python::extract<boost::python::tuple> tupleExtractor(l[1]);
-		boost::python::extract<boost::python::list> listExtractor(l[1]);
-		boost::python::extract<std::string> stringExtractor(l[1]);
+		boost::python::extract<int> intExtractor(parameter_value);
+		boost::python::extract<float> floatExtractor(parameter_value);
+		boost::python::extract<boost::python::tuple> tupleExtractor(parameter_value);
+		boost::python::extract<boost::python::list> listExtractor(parameter_value);
+		boost::python::extract<std::string> stringExtractor(parameter_value);
 
 		//Automatic type detection
 		if(intExtractor.check())
