@@ -30,6 +30,48 @@
 
 namespace lux {
 
+// ParamSet Helper
+bool LookupType(const char *token, ParamType *type, string &name)
+{
+	BOOST_ASSERT(token != NULL);
+	*type = ParamType(0);
+	const char *strp = token;
+	while (*strp && isspace(*strp))
+		++strp;
+	if (!*strp) {
+		std::stringstream ss;
+		ss << "Parameter '" << token <<
+			"' doesn't have a type declaration?!";
+		luxError(LUX_SYNTAX, LUX_ERROR, ss.str().c_str());
+		name = string(token);
+		return false;
+	}
+#define TRY_DECODING_TYPE(name, mask) \
+	if (strncmp(name, strp, strlen(name)) == 0) { \
+		*type = mask; strp += strlen(name); \
+	}
+	TRY_DECODING_TYPE("float", PARAM_TYPE_FLOAT)
+	else TRY_DECODING_TYPE("integer", PARAM_TYPE_INT)
+	else TRY_DECODING_TYPE("bool", PARAM_TYPE_BOOL)
+	else TRY_DECODING_TYPE("point", PARAM_TYPE_POINT)
+	else TRY_DECODING_TYPE("vector", PARAM_TYPE_VECTOR)
+	else TRY_DECODING_TYPE("normal", PARAM_TYPE_NORMAL)
+	else TRY_DECODING_TYPE("string", PARAM_TYPE_STRING)
+	else TRY_DECODING_TYPE("texture", PARAM_TYPE_TEXTURE)
+	else TRY_DECODING_TYPE("color", PARAM_TYPE_COLOR)
+	else {
+		std::stringstream ss;
+		ss << "Unable to decode type for token '" << token << "'";
+		luxError(LUX_SYNTAX, LUX_ERROR, ss.str().c_str());
+		name = string(token);
+		return false;
+	}
+	while (*strp && isspace(*strp))
+		++strp;
+	name = string(strp);
+	return true;
+}
+
 // ParamSet Macros
 template <class T> inline void DelParams(vector<ParamSetItem<T> *> &vec)
 {
@@ -142,7 +184,95 @@ ParamSet::ParamSet(u_int n, const char * pluginName, const char * const tokens[]
 	
 	for(u_int i = 0; i < n; ++i)
 	{
-		std::string s(tokens[i]);
+		ParamType type;
+		std::string s;
+		bool typed = LookupType(tokens[i], &type, s);
+		if (typed) {
+			switch (type) {
+			case PARAM_TYPE_INT: {
+				u_int np = 1;
+				if (s == "indices")
+					np = FindOneInt("ntris", 1);  // [add this special 'ntris' parameter when using the API]
+				else if (s == "quadindices")
+					np = FindOneInt("nquads", 1);  // [add this special 'nquads' parameter when using the API]
+				else if (s == "triindices")
+					np = FindOneInt("ntris", 1);  // [add this special 'ntris' parameter when using the API]
+				AddInt(s, (int*)(params[i]), np);
+				break;
+			}
+			case PARAM_TYPE_BOOL: {
+				u_int np = 1;
+				AddBool(s, (bool*)(params[i]), np);
+				break;
+			}
+			case PARAM_TYPE_FLOAT: {
+				u_int np = 1;
+				if (s == "Pw")
+					np = 4 * FindOneInt("nu", 1) *
+						FindOneInt("nv", 1);
+				else if (s == "Pz")
+					np = FindOneInt("nu", 1) *
+						FindOneInt("nv", 1);
+				else if (s == "data" || s == "wavelengths")
+					np = FindOneInt("nvalues", 1);  // [add this special 'nvalues' parameter when using the API]
+				else if (s == "density")
+					np = FindOneInt("nx", 1) *
+						FindOneInt("ny", 1) *
+						FindOneInt("nz", 1);
+				else if (s == "screenwindow")
+					np = 4;
+				else if (s == "st" || s == "uv")
+					np = FindOneInt("nvertices", 1); // [add this special 'nvertices' parameter when using the API]
+				else if (s == "uknots")
+					np = FindOneInt("nu", 1) +
+						FindOneInt("uorder", 1);
+				else if (s == "vknots")
+					np = FindOneInt("nv", 1) +
+						FindOneInt("vorder", 1);
+				AddFloat(s, (float*)(params[i]), np);
+				break;
+			}
+			case PARAM_TYPE_POINT: {
+				u_int np = 1;
+				if (s == "P") {
+					if (pn == "nurbs")
+						np = FindOneInt("nu", 1) *
+							FindOneInt("nv", 1);
+					else
+						np = FindOneInt("nvertices", 1);  // [add this special 'nvertices' parameter when using the API]
+				}
+				AddPoint(s, (Point*)(params[i]), np);
+				break;
+			}
+			case PARAM_TYPE_VECTOR: {
+				u_int np = 1;
+				AddVector(s, (Vector*)(params[i]), np);
+				break;
+			}
+			case PARAM_TYPE_NORMAL: {
+				u_int np = 1;
+				if (s == "N")
+					np = FindOneInt("nvertices", 1);  // [add this special 'nvertices' parameter when using the API]
+				AddNormal(s, (Normal*)(params[i]), np);
+				break;
+			}
+			case PARAM_TYPE_COLOR: {
+				AddRGBColor(s, new RGBColor((float*)(params[i])));
+				break;
+			}
+			case PARAM_TYPE_STRING: {
+				AddString(s, new std::string((char*)(params[i])));
+				break;
+			}
+			case PARAM_TYPE_TEXTURE: {
+				AddTexture(s, std::string((char*)(params[i])));
+				break;
+			}
+			default:
+				break;
+			}
+			continue;
+		}
 		//float parameters
 		if (s == "B")
 			AddFloat(s,(float*)(params[i]));
@@ -200,7 +330,7 @@ ParamSet::ParamSet(u_int n, const char * pluginName, const char * const tokens[]
 			AddFloat(s, (float*)(params[i]));*/ //FIXME - there's currently no way of getting the array length for regular and irregular spectrum data
 		if (s == "dconst")
 			AddFloat(s, (float*)(params[i]));
-		if (s == "density") AddFloat(s, (float*)(params[i]), FindOneInt("nx", i) * FindOneInt("ny", i) * FindOneInt("ny", i));
+		if (s == "density") AddFloat(s, (float*)(params[i]), FindOneInt("nx", i) * FindOneInt("ny", i) * FindOneInt("nz", i));
 		if (s == "diffusereflectreject_threshold")
 			AddFloat(s, (float*)(params[i]));
 		if (s == "diffuserefractreject_threshold")

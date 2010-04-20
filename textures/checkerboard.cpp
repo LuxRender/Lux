@@ -55,11 +55,12 @@ Texture<float> * Checkerboard::CreateFloatTexture(const Transform &tex2world,
 			float du = tp.FindOneFloat("udelta", 0.f);
 			float dv = tp.FindOneFloat("vdelta", 0.f);
 			map = new SphericalMapping2D(tex2world.GetInverse(),
-			                             su, sv, du, dv);
+				su, sv, du, dv);
 		} else if (type == "cylindrical") {
-		float su = tp.FindOneFloat("uscale", 1.f);
-		float du = tp.FindOneFloat("udelta", 0.f);
-		map = new CylindricalMapping2D(tex2world.GetInverse(), su, du);
+			float su = tp.FindOneFloat("uscale", 1.f);
+			float du = tp.FindOneFloat("udelta", 0.f);
+			map = new CylindricalMapping2D(tex2world.GetInverse(),
+				su, du);
 		} else if (type == "planar") {
 			map = new PlanarMapping2D(tp.FindOneVector("v1",
 				Vector(1, 0, 0)),

@@ -37,6 +37,12 @@ using std::map;
 namespace lux
 {
 
+// ParamSet Helper
+typedef enum { PARAM_TYPE_INT, PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT,
+	PARAM_TYPE_POINT, PARAM_TYPE_VECTOR, PARAM_TYPE_NORMAL,
+	PARAM_TYPE_COLOR, PARAM_TYPE_STRING, PARAM_TYPE_TEXTURE } ParamType;
+bool LookupType(const char *token, ParamType *type, string &name);
+
 // ParamSet Declarations
 template <class T> struct ParamSetItem {
 	// ParamSetItem Public Methods

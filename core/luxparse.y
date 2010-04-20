@@ -141,11 +141,7 @@ static bool VerifyArrayLength(ParamArray *arr, u_int required,
 	}
 	return true;
 }
-enum { PARAM_TYPE_INT, PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_POINT,
-	PARAM_TYPE_VECTOR, PARAM_TYPE_NORMAL, PARAM_TYPE_COLOR,
-	PARAM_TYPE_STRING, PARAM_TYPE_TEXTURE };
 static void InitParamSet(ParamSet &ps, u_int count, ParamListElem *list);
-static bool LookupType(const char *token, int *type, string &name);
 #define YYPRINT(file, type, value)  \
 { \
 	if ((type) == ID || (type) == STRING) \
@@ -535,7 +531,7 @@ ri_stmt: ACCELERATOR STRING paramlist
 static void InitParamSet(ParamSet &ps, u_int count, ParamListElem *list) {
 	ps.Clear();
 	for (u_int i = 0; i < count; ++i) {
-		int type;
+		ParamType type;
 		string name;
 		if (!LookupType(list[i].token, &type, name)) {
 			std::stringstream ss;
@@ -611,41 +607,4 @@ static void InitParamSet(ParamSet &ps, u_int count, ParamListElem *list) {
 			}
 		}
 	}
-}
-static bool LookupType(const char *token, int *type, string &name) {
-	BOOST_ASSERT(token != NULL);
-	*type = 0;
-	const char *strp = token;
-	while (*strp && isspace(*strp))
-		++strp;
-	if (!*strp) {
-		std::stringstream ss;
-		ss << "Parameter '" << token <<
-			"' doesn't have a type declaration?!";
-		luxError(LUX_SYNTAX, LUX_ERROR, ss.str().c_str());
-		return false;
-	}
-#define TRY_DECODING_TYPE(name, mask) \
-	if (strncmp(name, strp, strlen(name)) == 0) { \
-		*type = mask; strp += strlen(name); \
-	}
-	TRY_DECODING_TYPE("float", PARAM_TYPE_FLOAT)
-	else TRY_DECODING_TYPE("integer", PARAM_TYPE_INT)
-	else TRY_DECODING_TYPE("bool", PARAM_TYPE_BOOL)
-	else TRY_DECODING_TYPE("point", PARAM_TYPE_POINT)
-	else TRY_DECODING_TYPE("vector", PARAM_TYPE_VECTOR)
-	else TRY_DECODING_TYPE("normal", PARAM_TYPE_NORMAL)
-	else TRY_DECODING_TYPE("string", PARAM_TYPE_STRING)
-	else TRY_DECODING_TYPE("texture", PARAM_TYPE_TEXTURE)
-	else TRY_DECODING_TYPE("color", PARAM_TYPE_COLOR)
-	else {
-		std::stringstream ss;
-		ss << "Unable to decode type for token '" << token << "'";
-		luxError(LUX_SYNTAX, LUX_ERROR, ss.str().c_str());
-		return false;
-	}
-	while (*strp && isspace(*strp))
-		++strp;
-	name = string(strp);
-	return true;
 }
