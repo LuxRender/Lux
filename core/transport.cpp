@@ -181,7 +181,6 @@ SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light
 	} else {
 		// Dade - trace 2 shadow rays and use MIS
 		// Sample light source with multiple importance sampling
-		const BxDFType noSpecular = BxDFType(BSDF_ALL & ~BSDF_SPECULAR);
 		Vector wi;
 		float lightPdf, bsdfPdf;
 		VisibilityTester visibility;
@@ -196,7 +195,7 @@ SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light
 				visibility.Transmittance(tspack, scene, sample, &Li);
 				Li *= fO;
 
-				bsdfPdf = bsdf->Pdf(tspack, wi, wo);
+				bsdfPdf = bsdf->Pdf(tspack, wo, wi);
 				float weight = PowerHeuristic(1, lightPdf, 1, bsdfPdf);
 				Ld += f * Li * (AbsDot(wi, n) * weight / lightPdf);
 			}
@@ -204,7 +203,10 @@ SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light
 			// Sample BSDF with multiple importance sampling
 			SWCSpectrum fBSDF;
 			BxDFType sampledType;
-			if (bsdf->Sample_f(tspack, wo, &wi, bs1, bs2, bcs, &fBSDF, &bsdfPdf, BSDF_ALL, &sampledType, NULL, true) && (sampledType & BSDF_SPECULAR) == 0) {
+			if (bsdf->Sample_f(tspack, wo, &wi, bs1, bs2, bcs,
+				&fBSDF, &bsdfPdf, BSDF_ALL, &sampledType,
+				NULL, true) &&
+				(sampledType & BSDF_SPECULAR) == 0) {
 				lightPdf = light->Pdf(tspack, p, n, wi);
 				// Add light contribution from BSDF sampling
 				float weight = PowerHeuristic(1, bsdfPdf, 1, lightPdf);

@@ -80,11 +80,10 @@ float Primitive::Pdf(const Point &p, const Vector &wi) const
 	if (!Intersect(ray, &isect))
 		return 0.f;
 	// Convert light sample weight to solid angle measure
-	float pdf = DistanceSquared(p, ray(ray.maxt)) /
-		(AbsDot(isect.dg.nn, -wi) * Area());
-	if (AbsDot(isect.dg.nn, -wi) == 0.f)
-		pdf = INFINITY;
-	return pdf;
+	const float cost = AbsDot(isect.dg.nn, -wi);
+	if (cost == 0.f)
+		return INFINITY;
+	return DistanceSquared(p, isect.dg.p) / (cost * Area());
 }
 
 // Intersection Method Definitions

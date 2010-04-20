@@ -297,7 +297,9 @@ public:
 		dg->dndu = InstanceToWorld(dg->dndu);
 		dg->dndv = InstanceToWorld(dg->dndv);
 	}
-	virtual float Pdf(const Point &p) const { return instance->Pdf(p); }
+	virtual float Pdf(const Point &p) const {
+		return instance->Pdf(WorldToInstance(p));
+	}
 	virtual void Sample(const TsPack *tspack, const Point &P,
 		float u1, float u2, float u3, DifferentialGeometry *dg) const {
 		instance->Sample(tspack, WorldToInstance(P), u1, u2, u3, dg);
@@ -309,10 +311,11 @@ public:
 		dg->dndv = InstanceToWorld(dg->dndv);
 	}
 	virtual float Pdf(const Point &p, const Vector &wi) const {
-		return instance->Pdf(p, wi);
+		return instance->Pdf(WorldToInstance(p), WorldToInstance(wi));
 	}
+	//FIXME: The various pdf computations should be adapted for scaling
 	virtual float Pdf(const Point &p, const Point &po) const {
-		return instance->Pdf(p, po);
+		return instance->Pdf(WorldToInstance(p), WorldToInstance(po));
 	}
 private:
 	// InstancePrimitive Private Data
@@ -391,7 +394,9 @@ public:
 		dg->dndu = InstanceToWorld(dg->dndu);
 		dg->dndv = InstanceToWorld(dg->dndv);
 	}
-	virtual float Pdf(const Point &p) const { return instance->Pdf(p); }
+	virtual float Pdf(const Point &p) const {
+		return instance->Pdf(p);
+	}
 	virtual void Sample(const TsPack *tspack, const Point &P,
 		float u1, float u2, float u3, DifferentialGeometry *dg) const {
 		Transform InstanceToWorld = motionSystem.Sample(dg->time);
@@ -407,6 +412,10 @@ public:
 	virtual float Pdf(const Point &p, const Vector &wi) const {
 		return instance->Pdf(p, wi);
 	}
+	//FIXME: The various pdf computations should be adapted for scaling
+	//FIXME: The various pdf parameters should be converted to instance
+	// space however there's currently no way to get the current time
+	// the API will have to be adapted
 	virtual float Pdf(const Point &p, const Point &po) const {
 		return instance->Pdf(p, po);
 	}
