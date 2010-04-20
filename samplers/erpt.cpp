@@ -218,22 +218,21 @@ void ERPTSampler::AddSample(const Sample &sample)
 			weight = 0.f;
 		}
 		if (mutation == ~0U) {
-			contribBuffer->AddSampleCount(1.f);
-			++sampleCount;
 			if (!(newLY > 0.f)) {
 				newContributions.clear();
 				return;
 			}
+			contribBuffer->AddSampleCount(1.f);
+			++sampleCount;
 			totalLY += newLY;
 			const float meanIntensity = totalLY > 0. ? static_cast<float>(totalLY / sampleCount) : 1.f;
 			// calculate the number of chains on a new seed
 			quantum = newLY / meanIntensity;
 			numChains = max(1U, Floor2UInt(quantum + .5f));
-			if (numChains > 100) {
-				printf("%d chains -> %d\n", numChains, totalMutations);
-				numChains = totalMutations;
-			}
-			quantum /= (numChains * totalSamples);
+			// The following line avoids to block on a pixel
+			// if the initial sample is extremely bright
+			numChains = min(numChains, totalMutations);
+			quantum /= (numChains * totalMutations);
 			baseLY = newLY;
 			baseContributions = newContributions;
 			baseImage[0] = sample.imageX;
