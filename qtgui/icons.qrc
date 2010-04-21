@@ -14,6 +14,8 @@
     <file>icons/lightgroupsicon.png</file>
     <file>icons/logtabicon.png</file>
     <file>icons/minusicon.png</file>
+    <file>icons/erroricon.png</file>
+    <file>icons/warningicon.png</file>
     <file>icons/networktabicon.png</file>
     <file>icons/noisereductionicon.png</file>
     <file>icons/pauseicon.png</file>

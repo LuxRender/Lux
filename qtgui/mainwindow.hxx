@@ -152,10 +152,8 @@ public:
 
 	void UpdateNetworkTree();
 
-	void ShowDialogBox(const std::string &msg, const std::string &caption = "LuxRender");
-	void ShowWarningDialogBox(const std::string &msg, const std::string &caption = "LuxRender");
-	void ShowErrorDialogBox(const std::string &msg, const std::string &caption = "LuxRender");
-
+    void ShowTabLogIcon( int index , const QIcon & icon);
+    void ShowTabLogText( int index , const QString & label);
 	bool m_auto_tonemap;
 
 protected:
