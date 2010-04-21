@@ -139,41 +139,91 @@ int getParametersFromPython(boost::python::list& pList, std::vector<LuxToken>& a
 		}
 		else if(tupleExtractor.check())
 		{
-			//std::cout<<"this is a TUPLE - WARNING ASSUMING FLOATS :";
 			boost::python::tuple t=tupleExtractor();
-			boost::python::ssize_t tupleSize=boost::python::len(t);
-			float *pFloat=(float *)memoryPool.ordered_malloc(sizeof(float)*tupleSize);
+			boost::python::ssize_t data_length=boost::python::len(t);
 
-			for(boost::python::ssize_t j=0;j<tupleSize;j++)
+			// check 1st item for the data type in this tuple
+			boost::python::extract<boost::python::object> tupleItemExtractor(t[0]);
+			boost::python::object first_item=tupleItemExtractor();
+
+			// find out its class name
+			std::string first_item_classname = boost::python::extract<std::string>(first_item.attr("__class__").attr("__name__"));
+
+			if (first_item_classname == "float")
 			{
-				boost::python::extract<float> tupleFloatExtractor(t[j]);
-				//jromang - Assuming floats here, but do we only have floats in tuples ?
-				BOOST_ASSERT(tupleFloatExtractor.check());
-				pFloat[j]=tupleFloatExtractor();
-				//std::cout<<pFloat[j]<<';';
+				float *pFloat=(float *)memoryPool.ordered_malloc(sizeof(float)*data_length);
+				for(boost::python::ssize_t j=0;j<data_length;j++)
+				{
+					boost::python::extract<float> dataFloatExtractor(t[j]);
+					BOOST_ASSERT(dataFloatExtractor.check());
+					pFloat[j]=dataFloatExtractor();
+					//std::cout<<pFloat[j]<<';';
+				}
+				//std::cout<<std::endl;
+				aValues.push_back((LuxPointer)pFloat);
 			}
-			//std::cout<<std::endl;
-
-			aValues.push_back((LuxPointer)pFloat);
+			else if (first_item_classname == "int")
+			{
+				int *pInt=(int *)memoryPool.ordered_malloc(sizeof(int)*data_length);
+				for(boost::python::ssize_t j=0;j<data_length;j++)
+				{
+					boost::python::extract<int> dataIntExtractor(t[j]);
+					BOOST_ASSERT(dataIntExtractor.check());
+					pInt[j]=dataIntExtractor();
+				}
+				aValues.push_back((LuxPointer)pInt);
+			}
+			else
+			{
+				//Unrecognised data type : we throw an error
+				std::ostringstream o;
+				o<< "Passing unrecognised data type '"<<first_item_classname<<"' in tuple to Python API for '"<<tokenString<<"' token.";
+				luxError(LUX_CONSISTENCY, LUX_SEVERE, const_cast<char *>(o.str().c_str()));
+			}
 		}
 		else if(listExtractor.check())
 		{
-			//std::cout<<"this is a LIST - WARNING ASSUMING FLOATS :";
 			boost::python::list t=listExtractor();
-			boost::python::ssize_t listSize=boost::python::len(t);
-			float *pFloat=(float *)memoryPool.ordered_malloc(sizeof(float)*listSize);
+			boost::python::ssize_t data_length=boost::python::len(t);
 
-			for(boost::python::ssize_t j=0;j<listSize;j++)
+			// check 1st item for the data type in this list
+			boost::python::extract<boost::python::object> listItemExtractor(t[0]);
+			boost::python::object first_item=listItemExtractor();
+
+			// find out its class name
+			std::string first_item_classname = boost::python::extract<std::string>(first_item.attr("__class__").attr("__name__"));
+
+			if (first_item_classname == "float")
 			{
-				boost::python::extract<float> listFloatExtractor(t[j]);
-				//jromang - Assuming floats here, but do we only have floats in lists ?
-				BOOST_ASSERT(listFloatExtractor.check());
-				pFloat[j]=listFloatExtractor();
-				//std::cout<<pFloat[j]<<';';
+				float *pFloat=(float *)memoryPool.ordered_malloc(sizeof(float)*data_length);
+				for(boost::python::ssize_t j=0;j<data_length;j++)
+				{
+					boost::python::extract<float> dataFloatExtractor(t[j]);
+					BOOST_ASSERT(dataFloatExtractor.check());
+					pFloat[j]=dataFloatExtractor();
+					//std::cout<<pFloat[j]<<';';
+				}
+				//std::cout<<std::endl;
+				aValues.push_back((LuxPointer)pFloat);
 			}
-			//std::cout<<std::endl;
-
-			aValues.push_back((LuxPointer)pFloat);
+			else if (first_item_classname == "int")
+			{
+				int *pInt=(int *)memoryPool.ordered_malloc(sizeof(int)*data_length);
+				for(boost::python::ssize_t j=0;j<data_length;j++)
+				{
+					boost::python::extract<int> dataIntExtractor(t[j]);
+					BOOST_ASSERT(dataIntExtractor.check());
+					pInt[j]=dataIntExtractor();
+				}
+				aValues.push_back((LuxPointer)pInt);
+			}
+			else
+			{
+				//Unrecognised data type : we throw an error
+				std::ostringstream o;
+				o<< "Passing unrecognised data type '"<<first_item_classname<<"' in list to Python API for '"<<tokenString<<"' token.";
+				luxError(LUX_CONSISTENCY, LUX_SEVERE, const_cast<char *>(o.str().c_str()));
+			}
 		}
 		else
 		{
