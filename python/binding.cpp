@@ -679,6 +679,7 @@ private:
 	std::vector<boost::thread *> pyLuxWorldEndThreads; //hold pointers to the worldend threads
 	void pyWorldEnd()
 	{
+		Context::SetActive(context);
 		context->WorldEnd();
 	}
 };
