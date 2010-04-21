@@ -239,7 +239,7 @@ ParamSet::ParamSet(u_int n, const char * pluginName, const char * const tokens[]
 						np = FindOneInt("nu", 1) *
 							FindOneInt("nv", 1);
 					else
-						np = 3 * FindOneInt("nvertices", 1);  // [add this special 'nvertices' parameter when using the API]
+						np = FindOneInt("nvertices", 1);  // [add this special 'nvertices' parameter when using the API]
 				}
 				AddPoint(s, (Point*)(params[i]), np);
 				break;
@@ -252,7 +252,7 @@ ParamSet::ParamSet(u_int n, const char * pluginName, const char * const tokens[]
 			case PARAM_TYPE_NORMAL: {
 				u_int np = 1;
 				if (s == "N")
-					np = 3 * FindOneInt("nvertices", 1);  // [add this special 'nvertices' parameter when using the API]
+					np = FindOneInt("nvertices", 1);  // [add this special 'nvertices' parameter when using the API]
 				AddNormal(s, (Normal*)(params[i]), np);
 				break;
 			}
