@@ -308,64 +308,91 @@ public:
 		}
 	}
 
-	void cleanup() { context->Cleanup(); }
-	void identity() { context->Identity(); }
-	void translate(float dx, float dy, float dz) { context->Translate(dx,dy,dz); }
-	void rotate(float angle, float ax, float ay, float az) { context->Rotate(angle,ax,ay,az); }
-	void scale(float sx, float sy, float sz) { context->Scale(sx,sy,sz); }
-	void lookAt(float ex, float ey, float ez, float lx, float ly, float lz, float ux, float uy, float uz) { context->LookAt(ex, ey, ez, lx, ly, lz, ux, uy, uz); }
+	void cleanup() {
+		Context::SetActive(context);
+		context->Cleanup();
+	}
+	void identity() {
+		Context::SetActive(context);
+		context->Identity();
+	}
+	void translate(float dx, float dy, float dz) {
+		Context::SetActive(context);
+		context->Translate(dx,dy,dz);
+	}
+	void rotate(float angle, float ax, float ay, float az) {
+		Context::SetActive(context);
+		context->Rotate(angle,ax,ay,az);
+	}
+	void scale(float sx, float sy, float sz) {
+		Context::SetActive(context);
+		context->Scale(sx,sy,sz);
+	}
+	void lookAt(float ex, float ey, float ez, float lx, float ly, float lz, float ux, float uy, float uz) {
+		Context::SetActive(context);
+		context->LookAt(ex, ey, ez, lx, ly, lz, ux, uy, uz);
+	}
 
-	//void concatTransform(float transform[16]) { context->ConcatTransform(transform); }
 	void concatTransform(boost::python::list tx)
 	{
+
 		boost::python::extract<boost::python::list> listExtractor(tx);
 
-                //std::cout<<"this is a LIST - WARNING ASSUMING FLOATS :";
-                boost::python::list t=listExtractor();
-                boost::python::ssize_t listSize=boost::python::len(t);
-                float *pFloat=(float *)memoryPool.ordered_malloc(sizeof(float)*listSize);
-                for(boost::python::ssize_t j=0;j<listSize;j++)
-                {
-                        boost::python::extract<float> listFloatExtractor(t[j]);
-                        //jromang - Assuming floats here, but do we only have floats in lists ?
-                        BOOST_ASSERT(listFloatExtractor.check());
-                        pFloat[j]=listFloatExtractor();
-                        //std::cout<<pFloat[j]<<';';
-                }
-                //std::cout<<std::endl;
+		//std::cout<<"this is a LIST - WARNING ASSUMING FLOATS :";
+		boost::python::list t=listExtractor();
+		boost::python::ssize_t listSize=boost::python::len(t);
+		float *pFloat=(float *)memoryPool.ordered_malloc(sizeof(float)*listSize);
+		for(boost::python::ssize_t j=0;j<listSize;j++)
+		{
+				boost::python::extract<float> listFloatExtractor(t[j]);
+				//jromang - Assuming floats here, but do we only have floats in lists ?
+				BOOST_ASSERT(listFloatExtractor.check());
+				pFloat[j]=listFloatExtractor();
+				//std::cout<<pFloat[j]<<';';
+		}
+		//std::cout<<std::endl;
 
+		Context::SetActive(context);
 		context->ConcatTransform(pFloat);
-                memoryPool.purge_memory();
+		memoryPool.purge_memory();
 	}
 
 	void transform(boost::python::list tx)
 	{
 		boost::python::extract<boost::python::list> listExtractor(tx);
 
-                //std::cout<<"this is a LIST - WARNING ASSUMING FLOATS :";
-                boost::python::list t=listExtractor();
-                boost::python::ssize_t listSize=boost::python::len(t);
-                float *pFloat=(float *)memoryPool.ordered_malloc(sizeof(float)*listSize);
-                for(boost::python::ssize_t j=0;j<listSize;j++)
-                {
-                        boost::python::extract<float> listFloatExtractor(t[j]);
-                        //jromang - Assuming floats here, but do we only have floats in lists ?
-                        BOOST_ASSERT(listFloatExtractor.check());
-                        pFloat[j]=listFloatExtractor();
-                        //std::cout<<pFloat[j]<<';';
-                }
-                //std::cout<<std::endl;
+		//std::cout<<"this is a LIST - WARNING ASSUMING FLOATS :";
+		boost::python::list t=listExtractor();
+		boost::python::ssize_t listSize=boost::python::len(t);
+		float *pFloat=(float *)memoryPool.ordered_malloc(sizeof(float)*listSize);
+		for(boost::python::ssize_t j=0;j<listSize;j++)
+		{
+				boost::python::extract<float> listFloatExtractor(t[j]);
+				//jromang - Assuming floats here, but do we only have floats in lists ?
+				BOOST_ASSERT(listFloatExtractor.check());
+				pFloat[j]=listFloatExtractor();
+				//std::cout<<pFloat[j]<<';';
+		}
+		//std::cout<<std::endl;
 
+		Context::SetActive(context);
 		context->Transform(pFloat);
                 memoryPool.purge_memory();
 	}
 
-	void coordinateSystem(const char *name) { context->CoordinateSystem(std::string(name)); }
-	void coordSysTransform(const char *name) { context->CoordSysTransform(std::string(name)); }
+	void coordinateSystem(const char *name) {
+		Context::SetActive(context);
+		context->CoordinateSystem(std::string(name));
+	}
+	void coordSysTransform(const char *name) {
+		Context::SetActive(context);
+		context->CoordSysTransform(std::string(name));
+	}
 
 	void pixelFilter(const char *name, boost::python::list params)
 	{
 		EXTRACT_PARAMETERS(params);
+		Context::SetActive(context);
 		context->PixelFilter(name,PASS_PARAMSET);
 		memoryPool.purge_memory();
 	}
@@ -373,6 +400,7 @@ public:
 	void film(const char *name, boost::python::list params)
 	{
 		EXTRACT_PARAMETERS(params);
+		Context::SetActive(context);
 		context->Film(name, PASS_PARAMSET);
 		memoryPool.purge_memory();
 	}
@@ -380,6 +408,7 @@ public:
 	void sampler(const char *name, boost::python::list params)
 	{
 		EXTRACT_PARAMETERS(params);
+		Context::SetActive(context);
 		context->Sampler(name, PASS_PARAMSET);
 		memoryPool.purge_memory();
 	}
@@ -387,6 +416,7 @@ public:
 	void accelerator(const char *name, boost::python::list params)
 	{
 		EXTRACT_PARAMETERS(params);
+		Context::SetActive(context);
 		context->Accelerator(name, PASS_PARAMSET);
 		memoryPool.purge_memory();
 	}
@@ -394,6 +424,7 @@ public:
 	void surfaceIntegrator(const char *name, boost::python::list params)
 	{
 		EXTRACT_PARAMETERS(params);
+		Context::SetActive(context);
 		context->SurfaceIntegrator(name, PASS_PARAMSET);
 		memoryPool.purge_memory();
 	}
@@ -401,6 +432,7 @@ public:
 	void volumeIntegrator(const char *name, boost::python::list params)
 	{
 		EXTRACT_PARAMETERS(params);
+		Context::SetActive(context);
 		context->VolumeIntegrator(name,PASS_PARAMSET);
 		memoryPool.purge_memory();
 	}
@@ -408,26 +440,45 @@ public:
 	void camera(const char *name, boost::python::list params)
 	{
 		EXTRACT_PARAMETERS(params);
+		Context::SetActive(context);
 		context->Camera(name, PASS_PARAMSET);
 		memoryPool.purge_memory();
 	}
 
-	void worldBegin() { context->WorldBegin(); }
-	void attributeBegin() { context->AttributeBegin(); }
-	void attributeEnd() { context->AttributeEnd(); }
-	void transformBegin() { context->TransformBegin(); }
-	void transformEnd() { context->TransformEnd(); }
+	void worldBegin() {
+		Context::SetActive(context);
+		context->WorldBegin();
+	}
+	void attributeBegin() {
+		Context::SetActive(context);
+		context->AttributeBegin();
+	}
+	void attributeEnd() {
+		Context::SetActive(context);
+		context->AttributeEnd();
+	}
+	void transformBegin() {
+		Context::SetActive(context);
+		context->TransformBegin();
+	}
+	void transformEnd() {
+		Context::SetActive(context);
+		context->TransformEnd();
+	}
 
 	void texture(const char *name, const char *type, const char *texname, boost::python::list params)
 	{
 		EXTRACT_PARAMETERS(params);
+		Context::SetActive(context);
 		context->Texture(name, type, texname, PASS_PARAMSET);
 		memoryPool.purge_memory();
 	}
 
 	void material(const char *name, boost::python::list params)
 	{
+
 		EXTRACT_PARAMETERS(params);
+		Context::SetActive(context);
 		context->Material(name, PASS_PARAMSET);
 		memoryPool.purge_memory();
 	}
@@ -435,15 +486,20 @@ public:
 	void makeNamedMaterial(const char *name, boost::python::list params)
 	{
 		EXTRACT_PARAMETERS(params);
+		Context::SetActive(context);
 		context->MakeNamedMaterial(name, PASS_PARAMSET);
 		memoryPool.purge_memory();
 	}
 
-	void namedMaterial(const char *name) { context->NamedMaterial(name); }
+	void namedMaterial(const char *name) {
+		Context::SetActive(context);
+		context->NamedMaterial(name);
+	}
 
 	void lightSource(const char *name, boost::python::list params)
 	{
 		EXTRACT_PARAMETERS(params);
+		Context::SetActive(context);
 		context->LightSource(name, PASS_PARAMSET);
 		memoryPool.purge_memory();
 	}
@@ -451,6 +507,7 @@ public:
 	void areaLightSource(const char *name, boost::python::list params)
 	{
 		EXTRACT_PARAMETERS(params);
+		Context::SetActive(context);
 		context->AreaLightSource(name, PASS_PARAMSET);
 		memoryPool.purge_memory();
 	}
@@ -458,6 +515,7 @@ public:
 	void portalShape(const char *name, boost::python::list params)
 	{
 		EXTRACT_PARAMETERS(params);
+		Context::SetActive(context);
 		context->PortalShape(name, PASS_PARAMSET);
 		memoryPool.purge_memory();
 	}
@@ -465,16 +523,20 @@ public:
 	void shape(const char *name, boost::python::list params)
 	{
 		EXTRACT_PARAMETERS(params);
+		Context::SetActive(context);
 		context->Shape(name, PASS_PARAMSET);
 		memoryPool.purge_memory();
 	}
 
-	void reverseOrientation() { context->ReverseOrientation(); }
+	void reverseOrientation() {
+		Context::SetActive(context);
+		context->ReverseOrientation();
+	}
 
-	void makeNamedVolume(const char *id, const char *name,
-		boost::python::list params)
+	void makeNamedVolume(const char *id, const char *name, boost::python::list params)
 	{
 		EXTRACT_PARAMETERS(params);
+		Context::SetActive(context);
 		context->MakeNamedVolume(id, name, PASS_PARAMSET);
 		memoryPool.purge_memory();
 	}
@@ -482,26 +544,39 @@ public:
 	void volume(const char *name, boost::python::list params)
 	{
 		EXTRACT_PARAMETERS(params);
+		Context::SetActive(context);
 		context->Volume(name, PASS_PARAMSET);
 		memoryPool.purge_memory();
 	}
 
 	void exterior(const char *name)
 	{
+		Context::SetActive(context);
 		context->Exterior(name);
 	}
 
 	void interior(const char *name)
 	{
+		Context::SetActive(context);
 		context->Interior(name);
 	}
 
-	void objectBegin(const char *name) { context->ObjectBegin(std::string(name)); }
-	void objectEnd() { context->ObjectEnd(); }
-	void objectInstance(const char *name) { context->ObjectInstance(std::string(name)); }
+	void objectBegin(const char *name) {
+		Context::SetActive(context);
+		context->ObjectBegin(std::string(name));
+	}
+	void objectEnd() {
+		Context::SetActive(context);
+		context->ObjectEnd();
+	}
+	void objectInstance(const char *name) {
+		Context::SetActive(context);
+		context->ObjectInstance(std::string(name));
+	}
 
 	void motionInstance(const char *name, float startTime, float endTime, const char *toTransform)
 	{
+		Context::SetActive(context);
 		context->MotionInstance(std::string(name), startTime, endTime, std::string(toTransform));
 	}
 
@@ -510,33 +585,66 @@ public:
 		pyLuxWorldEndThreads.push_back(new boost::thread( boost::bind(&PyContext::pyWorldEnd,this) ));
 	}
 
-	void loadFLM(const char* name) { context->LoadFLM(std::string(name)); }
-	void saveFLM(const char* name) { context->SaveFLM(std::string(name)); }
-	void overrideResumeFLM(const char *name) { context->OverrideResumeFLM(string(name)); }
-	void start() { context->Start(); }
-	void pause() { context->Pause(); }
-	void exit() { context->Exit(); }
-	void wait() { context->Wait(); }
+	void loadFLM(const char* name) {
+		Context::SetActive(context);
+		context->LoadFLM(std::string(name));
+	}
+	void saveFLM(const char* name) {
+		Context::SetActive(context);
+		context->SaveFLM(std::string(name));
+	}
+	void overrideResumeFLM(const char *name) {
+		Context::SetActive(context);
+		context->OverrideResumeFLM(string(name));
+	}
+	void start() {
+		Context::SetActive(context);
+		context->Start();
+	}
+	void pause() {
+		Context::SetActive(context);
+		context->Pause();
+	}
+	void exit() {
+		Context::SetActive(context);
+		context->Exit();
+	}
+	void wait() {
+		Context::SetActive(context);
+		context->Wait();
+	}
 
 	void setHaltSamplePerPixel(int haltspp, bool haveEnoughSamplePerPixel, bool suspendThreadsWhenDone)
 	{
+		Context::SetActive(context);
 		context->SetHaltSamplePerPixel(haltspp, haveEnoughSamplePerPixel, suspendThreadsWhenDone);
 	}
 
-	unsigned int addThread() { return context->AddThread(); }
-	void removeThread() { context->RemoveThread(); }
+	unsigned int addThread() {
+		Context::SetActive(context);
+		return context->AddThread();
+	}
+	void removeThread() {
+		Context::SetActive(context);
+		context->RemoveThread();
+	}
 
 	void setEpsilon(const float minValue, const float maxValue)
 	{
+		Context::SetActive(context);
 		context->SetEpsilon(minValue < 0.f ? DEFAULT_EPSILON_MIN : minValue, maxValue < 0.f ? DEFAULT_EPSILON_MAX : maxValue);
 	}
 
 	unsigned int getRenderingThreadsStatus(RenderingThreadInfo *info, unsigned int maxInfoCount)
 	{
+		Context::SetActive(context);
 		return context->GetRenderingThreadsStatus(info, maxInfoCount);
 	}
 
-	void updateFramebuffer() { context->UpdateFramebuffer(); }
+	void updateFramebuffer() {
+		Context::SetActive(context);
+		context->UpdateFramebuffer();
+	}
 
 	boost::python::list framebuffer()
 	{
@@ -551,33 +659,38 @@ public:
 
 	void getHistogramImage(unsigned char *outPixels, unsigned int width, unsigned int height, int options)
 	{
+		Context::SetActive(context);
 		context->GetHistogramImage(outPixels, width, height, options);
 	}
 
 	void setParameterValue(luxComponent comp, luxComponentParameters param, double value, unsigned int index)
 	{
+		Context::SetActive(context);
 		return context->SetParameterValue(comp, param, value, index);
 	}
 
 	double getParameterValue(luxComponent comp, luxComponentParameters param, unsigned int index)
 	{
+		Context::SetActive(context);
 		return context->GetParameterValue(comp, param, index);
 	}
 
 	double getDefaultParameterValue(luxComponent comp, luxComponentParameters param, unsigned int index)
 	{
+		Context::SetActive(context);
 		return context->GetDefaultParameterValue(comp, param, index);
 	}
 
 	void setStringParameterValue(luxComponent comp, luxComponentParameters param, const char* value, unsigned int index)
 	{
+		Context::SetActive(context);
 		return context->SetStringParameterValue(comp, param, value, index);
 	}
 
 	unsigned int getStringParameterValue(luxComponent comp, luxComponentParameters param, char* dst, unsigned int dstlen, unsigned int index)
 	{
-		const string str = context->GetStringParameterValue(comp,
-			param, index);
+		Context::SetActive(context);
+		const string str = context->GetStringParameterValue(comp, param, index);
 		unsigned int nToCopy = str.length() < dstlen ?
 			str.length() + 1 : dstlen;
 		if (nToCopy > 0) {
@@ -589,6 +702,7 @@ public:
 
 	unsigned int getDefaultStringParameterValue(luxComponent comp, luxComponentParameters param, char* dst, unsigned int dstlen, unsigned int index)
 	{
+		Context::SetActive(context);
 		const string str = context->GetDefaultStringParameterValue(comp, param, index);
 		unsigned int nToCopy = str.length() < dstlen ?
 			str.length() + 1 : dstlen;
@@ -599,7 +713,10 @@ public:
 		return str.length();
 	}
 
-	const char* getOptions() { return context->registry.GetContent(); }
+	const char* getOptions() {
+		Context::SetActive(context);
+		return context->registry.GetContent();
+	}
 
 	//Queryable objects
 	//Here I do a special handling for python :
@@ -609,6 +726,7 @@ public:
 	//This function handles all types
 	boost::python::object getOption(const char *objectName, const char *attributeName)
 	{
+		Context::SetActive(context);
 		Queryable *object=context->registry[objectName];
 		if(object!=0)
 		{
@@ -625,7 +743,8 @@ public:
 	void setOption(const char * objectName, const char * attributeName, boost::python::object value)
 	{
 		//void luxSetOption(const char * objectName, const char * attributeName, int n, void *values); /* Sets an option value */
-		Queryable *object=Context::GetActive()->registry[objectName];
+		Context::SetActive(context);
+		Queryable *object=context->registry[objectName];
 		if(object!=0)
 		{
 			QueryableAttribute &attribute=(*object)[attributeName];
@@ -656,22 +775,50 @@ public:
 	}
 
 
-	void addServer(const char * name) { context->AddServer(std::string(name)); }
-	void removeServer(const char * name) { context->RemoveServer(std::string(name)); }
-	unsigned int getServerCount() { return context->GetServerCount(); }
-	void updateFilmFromNetwork() { context->UpdateFilmFromNetwork(); }
-	void setNetworkServerUpdateInterval(int updateInterval) { context->SetNetworkServerUpdateInterval(updateInterval); }
-	int getNetworkServerUpdateInterval() { return context->GetNetworkServerUpdateInterval(); }
+	void addServer(const char * name) {
+		Context::SetActive(context);
+		context->AddServer(std::string(name));
+	}
+	void removeServer(const char * name) {
+		Context::SetActive(context);
+		context->RemoveServer(std::string(name));
+	}
+	unsigned int getServerCount() {
+		Context::SetActive(context);
+		return context->GetServerCount();
+	}
+	void updateFilmFromNetwork() {
+		Context::SetActive(context);
+		context->UpdateFilmFromNetwork();
+	}
+	void setNetworkServerUpdateInterval(int updateInterval) {
+		Context::SetActive(context);
+		context->SetNetworkServerUpdateInterval(updateInterval);
+	}
+	int getNetworkServerUpdateInterval() {
+		Context::SetActive(context);
+		return context->GetNetworkServerUpdateInterval();
+	}
 
 	unsigned int getRenderingServersStatus(RenderingServerInfo *info, unsigned int maxInfoCount)
 	{
+		Context::SetActive(context);
 		return context->GetRenderingServersStatus(info, maxInfoCount);
 	}
 
-	double statistics(const char *statName) { return context->Statistics(statName); }
+	double statistics(const char *statName) {
+		Context::SetActive(context);
+		return context->Statistics(statName);
+	}
 
-	void enableDebugMode() { context->EnableDebugMode(); }
-	void disableRandomMode() { context->DisableRandomMode(); }
+	void enableDebugMode() {
+		Context::SetActive(context);
+		context->EnableDebugMode();
+	}
+	void disableRandomMode() {
+		Context::SetActive(context);
+		context->DisableRandomMode();
+	}
 
 private:
 	Context *context;
