@@ -192,7 +192,7 @@ ParamSet::ParamSet(u_int n, const char * pluginName, const char * const tokens[]
 			case PARAM_TYPE_INT: {
 				u_int np = 1;
 				if (s == "indices")
-					np = FindOneInt("nindices", 1);  // [add this special 'nindices' parameter when using the API]
+					np = FindOneInt("ntris", 1);  // [add this special 'ntris' parameter when using the API]
 				else if (s == "quadindices")
 					np = FindOneInt("nquads", 1);  // [add this special 'nquads' parameter when using the API]
 				else if (s == "triindices")
