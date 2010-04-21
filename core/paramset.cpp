@@ -192,7 +192,7 @@ ParamSet::ParamSet(u_int n, const char * pluginName, const char * const tokens[]
 			case PARAM_TYPE_INT: {
 				u_int np = 1;
 				if (s == "indices")
-					np = FindOneInt("ntris", 1);  // [add this special 'ntris' parameter when using the API]
+					np = FindOneInt("nindices", 1);  // [add this special 'nindices' parameter when using the API]
 				else if (s == "quadindices")
 					np = FindOneInt("nquads", 1);  // [add this special 'nquads' parameter when using the API]
 				else if (s == "triindices")
@@ -222,7 +222,7 @@ ParamSet::ParamSet(u_int n, const char * pluginName, const char * const tokens[]
 				else if (s == "screenwindow")
 					np = 4;
 				else if (s == "st" || s == "uv")
-					np = FindOneInt("nvertices", 1); // [add this special 'nvertices' parameter when using the API]
+					np = 2 * FindOneInt("nvertices", 1); // [add this special 'nvertices' parameter when using the API]
 				else if (s == "uknots")
 					np = FindOneInt("nu", 1) +
 						FindOneInt("uorder", 1);
@@ -239,7 +239,7 @@ ParamSet::ParamSet(u_int n, const char * pluginName, const char * const tokens[]
 						np = FindOneInt("nu", 1) *
 							FindOneInt("nv", 1);
 					else
-						np = FindOneInt("nvertices", 1);  // [add this special 'nvertices' parameter when using the API]
+						np = 3 * FindOneInt("nvertices", 1);  // [add this special 'nvertices' parameter when using the API]
 				}
 				AddPoint(s, (Point*)(params[i]), np);
 				break;
@@ -252,7 +252,7 @@ ParamSet::ParamSet(u_int n, const char * pluginName, const char * const tokens[]
 			case PARAM_TYPE_NORMAL: {
 				u_int np = 1;
 				if (s == "N")
-					np = FindOneInt("nvertices", 1);  // [add this special 'nvertices' parameter when using the API]
+					np = 3 * FindOneInt("nvertices", 1);  // [add this special 'nvertices' parameter when using the API]
 				AddNormal(s, (Normal*)(params[i]), np);
 				break;
 			}
