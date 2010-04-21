@@ -367,18 +367,14 @@ void MainWindow::WriteSettings()
 	settings.endGroup();
 }
 
-void MainWindow::ShowDialogBox(const std::string &msg, const std::string &caption) {
-    QMessageBox::information(this, caption.c_str(), msg.c_str());
+void MainWindow::ShowTabLogIcon ( int index, const QIcon & icon ) {
+    ui->tabs_main->setTabIcon(index, icon);
 }
 
-void MainWindow::ShowWarningDialogBox(const std::string &msg, const std::string &caption) {
-    QMessageBox::warning(this, caption.c_str(), msg.c_str());
+void MainWindow::ShowTabLogText ( int index, const QString & label ) {
+    ui->tabs_main->setTabText(index, label);
 }
-
-void MainWindow::ShowErrorDialogBox(const std::string &msg, const std::string &caption) {
-    QMessageBox::critical(this, caption.c_str(), msg.c_str());
-}
-
+ 
 void MainWindow::toneMapParamsChanged()
 {
 	if (m_auto_tonemap)
@@ -460,7 +456,7 @@ void MainWindow::openFile()
 		return;
 
 	QString fileName = QFileDialog::getOpenFileName(this, tr("Choose a scene file to open"), m_lastOpendir, tr("LuxRender Files (*.lxs)"));
-
+    
 	if(!fileName.isNull()) {
 		endRenderingSession();
 		renderScenefile(fileName);
@@ -812,7 +808,11 @@ void MainWindow::setCurrentFile(const QString& filename)
 			showName = "LuxRender - Piped Scene";
 		else
 			showName = "LuxRender - " + showName;
-
+        
+        static const QIcon icon(":/icons/logtabicon.png");
+        ShowTabLogIcon(1, icon);
+        ShowTabLogText(1 ,"Log: o.k.");
+        
 		m_lastOpendir = info.filePath();
 		m_recentFiles.removeAll(m_CurrentFile);
 		m_recentFiles.prepend(m_CurrentFile);
@@ -961,7 +961,9 @@ bool MainWindow::event (QEvent *event)
 		retval = TRUE;
 	}
 	else if (eventtype == EVT_LUX_FLMLOADERROR) {
-		ShowErrorDialogBox("FLM load error.\nSee log for details.");
+        static const QIcon icon(":/icons/erroricon.png");
+        ShowTabLogIcon(1, icon);
+        ShowTabLogText(1 ,"Log: FLM load error !!!");
 		if (m_flmloadThread) {
 			m_flmloadThread->join();
 			delete m_flmloadThread;
@@ -978,7 +980,9 @@ bool MainWindow::event (QEvent *event)
 
 			changeRenderState(FINISHED);
 			
-			ShowDialogBox("Rendering is finished.");
+            static const QIcon icon(":/icons/logtabicon.png");
+            ShowTabLogIcon(1, icon);
+            ShowTabLogText(1 ,"Log: Rendering finished");
 		}
 		retval = TRUE;
 	}
@@ -1076,9 +1080,13 @@ void MainWindow::logEvent(LuxLogEvent *event)
 	if (m_showWarningDialog && event->getSeverity() > LUX_INFO) {
 		m_showWarningDialog = false;
 		if (event->getSeverity() < LUX_SEVERE) {
-			ShowWarningDialogBox("There was an abnormal condition reported. Please, check the Log tab for more information.");
+            static const QIcon icon(":/icons/erroricon.png");
+            ShowTabLogIcon(1, icon);
+            ShowTabLogText(1 ,"Log: Errors !!!");
 		} else {
-			ShowErrorDialogBox("There was severe error reported. Please, check the Log tab for more information.");
+            static const QIcon icon(":/icons/warningicon.png");
+            ShowTabLogIcon(1, icon);
+            ShowTabLogText(1 ,"Log: Warnings !!");  
 		}
 	}
 }
