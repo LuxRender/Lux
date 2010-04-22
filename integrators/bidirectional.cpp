@@ -341,6 +341,7 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	const u_int nGroups = scene->lightGroups.size();
 	const u_int numberOfLights = scene->lights.size();
 	// If there are no lights, the scene is black
+	//FIXME: unless there are emissive volumes
 	if (numberOfLights == 0)
 		return nrContribs;
 	const float directWeight = (lightStrategy == SAMPLE_ONE_UNIFORM) ?
@@ -353,7 +354,7 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	SWCSpectrum We;
 	const float posX = tspack->camera->IsLensBased() ? sample->lensU : sample->imageX;
 	const float posY = tspack->camera->IsLensBased() ? sample->lensV : sample->imageY;
-	//Jeanphi - Replace dummy .5f by a sampled value if needed
+	//FIXME: Replace dummy .5f by a sampled value if needed
 	//FIXME: the return is not necessary if direct connection to the camera
 	// is implemented
 	if (!tspack->camera->Sample_W(tspack, scene,

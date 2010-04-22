@@ -192,30 +192,30 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 
 		const float dp = AbsDot(wi, n) / pdf;
 
-		// Possibly terminate the path
-		if (pathLength > 3) {
-			if (rrStrategy == RR_EFFICIENCY) { // use efficiency optimized RR
-				const float q = min<float>(1.f, f.Filter(tspack) * dp);
-				if (q < data[3])
-					break;
-				// increase path contribution
-				pathThroughput /= q;
-			} else if (rrStrategy == RR_PROBABILITY) { // use normal/probability RR
-				if (continueProbability < data[3])
-					break;
-				// increase path contribution
-				pathThroughput /= continueProbability;
-			}
-		}
-		++pathLength;
-
 		if (flags == (BSDF_TRANSMISSION | BSDF_SPECULAR) && bsdf->Pdf(tspack, wi, wo, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) > 0.f) {
 			if (through++ > passThroughLimit)
 				break;
-			--pathLength;
-		} else
+		} else {
+			// Possibly terminate the path
+			if (pathLength > 3) {
+				if (rrStrategy == RR_EFFICIENCY) { // use efficiency optimized RR
+					const float q = min<float>(1.f, f.Filter(tspack) * dp);
+					if (q < data[3])
+						break;
+					// increase path contribution
+					pathThroughput /= q;
+				} else if (rrStrategy == RR_PROBABILITY) { // use normal/probability RR
+					if (continueProbability < data[3])
+						break;
+					// increase path contribution
+					pathThroughput /= continueProbability;
+				}
+			}
+			++pathLength;
+
 			specularBounce = (flags & BSDF_SPECULAR) != 0;
-		specular = specular && specularBounce;
+			specular = specular && specularBounce;
+		}
 		pathThroughput *= f;
 		pathThroughput *= dp;
 		if (!specular)
