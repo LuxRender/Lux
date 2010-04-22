@@ -153,7 +153,7 @@ public:
 	void UpdateNetworkTree();
 
     void ShowTabLogIcon( int index , const QIcon & icon);
-    void ShowTabLogText( int index , const QString & label);
+
 	bool m_auto_tonemap;
 
 protected:
@@ -165,6 +165,7 @@ protected:
 private:
 	Ui::MainWindow *ui;
 
+    QLabel *activityMessage;
 	QLabel *statusMessage;
 	QLabel *statsMessage;
 	QSpacerItem *spacer;
@@ -247,6 +248,7 @@ private slots:
 	void stopRender ();
 	void copyLog ();
 	void clearLog ();
+    void resetBlink ();
 	void fullScreen ();
     void normalScreen ();
 	void aboutDialog ();
