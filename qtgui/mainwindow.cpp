@@ -257,6 +257,10 @@ MainWindow::MainWindow(QWidget *parent, bool opengl, bool copylog2console) : QMa
 
 	m_netTimer = new QTimer();
 	connect(m_netTimer, SIGNAL(timeout()), SLOT(netTimeout()));
+    
+	m_blinkTimer = new QTimer();
+	connect(m_blinkTimer, SIGNAL(timeout()), SLOT(blinkTimeout()));
+
 
 	// Init render area
 	renderView = new RenderView(ui->frame_render, m_opengl);
@@ -465,6 +469,9 @@ void MainWindow::openFile()
 
 void MainWindow::openRecentFile()
 {
+    if (!canStopRendering())
+		return;
+    
 	QAction *action = qobject_cast<QAction *>(sender());
 
 	if (action) {
@@ -603,6 +610,7 @@ void MainWindow::endRenderingSession()
 		m_renderTimer->stop ();
 		m_statsTimer->stop ();
 		m_netTimer->stop ();
+        m_blinkTimer->stop ();
 
 		if (m_flmloadThread)
 			m_flmloadThread->join();
@@ -809,10 +817,6 @@ void MainWindow::setCurrentFile(const QString& filename)
 		else
 			showName = "LuxRender - " + showName;
         
-        static const QIcon icon(":/icons/logtabicon.png");
-        ShowTabLogIcon(1, icon);
-        ShowTabLogText(1 ,"Log: o.k.");
-        
 		m_lastOpendir = info.filePath();
 		m_recentFiles.removeAll(m_CurrentFile);
 		m_recentFiles.prepend(m_CurrentFile);
@@ -961,9 +965,8 @@ bool MainWindow::event (QEvent *event)
 		retval = TRUE;
 	}
 	else if (eventtype == EVT_LUX_FLMLOADERROR) {
-        static const QIcon icon(":/icons/erroricon.png");
-        ShowTabLogIcon(1, icon);
-        ShowTabLogText(1 ,"Log: FLM load error !!!");
+        m_blinkTimer->start(1000);
+        blinkTimeout();
 		if (m_flmloadThread) {
 			m_flmloadThread->join();
 			delete m_flmloadThread;
@@ -980,9 +983,6 @@ bool MainWindow::event (QEvent *event)
 
 			changeRenderState(FINISHED);
 			
-            static const QIcon icon(":/icons/logtabicon.png");
-            ShowTabLogIcon(1, icon);
-            ShowTabLogText(1 ,"Log: Rendering finished");
 		}
 		retval = TRUE;
 	}
@@ -1079,16 +1079,31 @@ void MainWindow::logEvent(LuxLogEvent *event)
 	
 	if (m_showWarningDialog && event->getSeverity() > LUX_INFO) {
 		m_showWarningDialog = false;
+        blink = false;
+        static const QIcon icon(":/icons/logtabicon.png");
+        ShowTabLogIcon(1, icon);
 		if (event->getSeverity() < LUX_SEVERE) {
-            static const QIcon icon(":/icons/erroricon.png");
-            ShowTabLogIcon(1, icon);
-            ShowTabLogText(1 ,"Log: Errors !!!");
+            m_blinkTimer->start(1000);
+            blinkTimeout();
 		} else {
             static const QIcon icon(":/icons/warningicon.png");
-            ShowTabLogIcon(1, icon);
-            ShowTabLogText(1 ,"Log: Warnings !!");  
+            ShowTabLogIcon(1, icon);  
 		}
 	}
+}
+
+// Icon blinking flipflop
+void MainWindow::blinkTimeout()
+{
+    blink = !blink;
+    if (blink) {
+        static const QIcon icon(":/icons/erroricon.png");
+        ShowTabLogIcon(1, icon);
+    }
+    else {
+        static const QIcon icon(":/icons/logtabicon.png");
+        ShowTabLogIcon(1, icon);
+    }
 }
 
 void MainWindow::renderTimeout()

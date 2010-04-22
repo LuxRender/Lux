@@ -195,7 +195,7 @@ private:
 	LuxGuiRenderState m_guiRenderState;
 	
 	QProgressDialog *m_progDialog;
-	QTimer *m_renderTimer, *m_statsTimer, *m_loadTimer, *m_saveTimer, *m_netTimer;
+	QTimer *m_renderTimer, *m_statsTimer, *m_loadTimer, *m_saveTimer, *m_netTimer, *m_blinkTimer;
 	
 	boost::thread *m_engineThread, *m_updateThread, *m_flmloadThread, *m_flmsaveThread;
 
@@ -219,7 +219,9 @@ private:
 	void logEvent(LuxLogEvent *event);
 
 	bool canStopRendering ();
-
+    
+    bool blink;
+    
 	void UpdateLightGroupWidgetValues();
 	void ResetLightGroups(void);
 	void ResetLightGroupsFromFilm(bool useDefaults);
@@ -256,6 +258,7 @@ private slots:
 	void loadTimeout ();
 	void saveTimeout ();
 	void netTimeout ();
+    void blinkTimeout ();
 
 	void addThread ();
 	void removeThread ();
