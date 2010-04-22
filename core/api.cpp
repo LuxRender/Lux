@@ -454,6 +454,7 @@ int luxParse(const char *filename)
 	extern FILE *yyin;
 	extern int yyparse(void);
 	extern void yyrestart( FILE *new_file );
+	extern void include_clear();
 	extern string currentFile;
 	extern u_int lineNum;
 
@@ -468,8 +469,13 @@ int luxParse(const char *filename)
 		lineNum = 1;
 		// make sure to flush any buffers
 		// before parsing
+		include_clear();
 		yyrestart(yyin);
-		yyparse();
+		if (yyparse() != 0) {
+			// syntax error
+			Context::GetActive()->Free();
+			Context::GetActive()->Init();
+		}
 		if (yyin != stdin)
 			fclose(yyin);
 	} else {

@@ -108,6 +108,14 @@ void include_pop(void)
 	lineNum = includeStack.back().lineNum;
 	includeStack.pop_back();
 }
+
+void include_clear()
+{
+	while (!includeStack.empty()) {
+		yy_delete_buffer(includeStack.back().bufState);
+		includeStack.pop_back();		
+	}
+}
 %}
 %option nounput
 WHITESPACE [ \t\0xa]+
