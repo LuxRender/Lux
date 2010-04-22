@@ -617,7 +617,7 @@ void MainWindow::endRenderingSession()
 		m_renderTimer->stop ();
 		m_statsTimer->stop ();
 		m_netTimer->stop ();
-        resetBlink();
+        clearLog();
 
 		if (m_flmloadThread)
 			m_flmloadThread->join();
