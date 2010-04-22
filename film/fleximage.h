@@ -147,6 +147,7 @@ private:
 	float m_GlareAmount, d_GlareAmount;
 	float m_GlareRadius, d_GlareRadius;
 	u_int m_GlareBlades, d_GlareBlades;
+	float m_GlareThreshold, d_GlareThreshold;
 	bool m_GlareUpdateLayer;
 	bool m_GlareDeleteLayer;
 	bool m_HaveGlareImage;

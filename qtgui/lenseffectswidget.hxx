@@ -36,6 +36,7 @@
 #define GLARE_RADIUS_RANGE 0.2f
 #define GLARE_BLADES_MIN 3
 #define GLARE_BLADES_MAX 100
+#define GLARE_THRESHOLD_RANGE 1.0f
 
 namespace Ui
 {
@@ -81,6 +82,7 @@ private:
 
 	double m_Glare_amount, m_Glare_radius;
 	int m_Glare_blades;
+	double m_Glare_threshold;
 
 private slots:
 
@@ -102,6 +104,8 @@ private slots:
 	void glareRadiusChanged (int value);
 	void glareRadiusChanged (double value);
 	void glareBladesChanged (int value);
+	void glareThresholdSliderChanged (int value);
+	void glareThresholdSpinBoxChanged (double value);
 	void computeGlareLayer ();
 	void deleteGlareLayer ();
 

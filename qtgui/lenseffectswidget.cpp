@@ -55,6 +55,8 @@ LensEffectsWidget::LensEffectsWidget(QWidget *parent) : QWidget(parent), ui(new 
 	connect(ui->slider_glareRadius, SIGNAL(valueChanged(int)), this, SLOT(glareRadiusChanged(int)));
 	connect(ui->spinBox_glareRadius, SIGNAL(valueChanged(double)), this, SLOT(glareRadiusChanged(double)));
 	connect(ui->spinBox_glareBlades, SIGNAL(valueChanged(int)), this, SLOT(glareBladesChanged(int)));
+	connect(ui->slider_glareThreshold, SIGNAL(valueChanged(int)), this, SLOT(glareThresholdSliderChanged(int)));
+	connect(ui->spinBox_glareThreshold, SIGNAL(valueChanged(double)), this, SLOT(glareThresholdSpinBoxChanged(double)));
 	connect(ui->button_glareComputeLayer, SIGNAL(clicked()), this, SLOT(computeGlareLayer()));
 	connect(ui->button_glareDeleteLayer, SIGNAL(clicked()), this, SLOT(deleteGlareLayer()));
 }
@@ -111,6 +113,9 @@ void LensEffectsWidget::updateWidgetValues()
 	updateWidgetValue(ui->spinBox_glareRadius, m_Glare_radius);
 	
 	updateWidgetValue(ui->spinBox_glareBlades, m_Glare_blades);
+	
+	updateWidgetValue(ui->slider_glareThreshold, (int)((FLOAT_SLIDER_RES / GLARE_THRESHOLD_RANGE) * m_Glare_threshold));
+	updateWidgetValue(ui->spinBox_glareThreshold, m_Glare_threshold);
 }
 
 void LensEffectsWidget::resetValues()
@@ -127,6 +132,7 @@ void LensEffectsWidget::resetValues()
 	m_Glare_amount = 0.03f;
 	m_Glare_radius = 0.03f;
 	m_Glare_blades = 3;
+	m_Glare_threshold = 0.5f;
 }
 
 void LensEffectsWidget::resetFromFilm (bool useDefaults)
@@ -339,6 +345,23 @@ void LensEffectsWidget::glareBladesChanged(int value)
 	updateParam (LUX_FILM, LUX_FILM_GLARE_BLADES, m_Glare_blades);
 
 	emit valuesChanged();
+}
+
+void LensEffectsWidget::glareThresholdSliderChanged(int value)
+{
+	glareThresholdSpinBoxChanged( (double)value / FLOAT_SLIDER_RES * GLARE_THRESHOLD_RANGE );
+}
+
+void LensEffectsWidget::glareThresholdSpinBoxChanged(double value)
+{
+	m_Glare_threshold = value;
+	
+	int sliderval = (int)(FLOAT_SLIDER_RES / GLARE_THRESHOLD_RANGE * m_Glare_threshold);
+	
+	updateWidgetValue(ui->slider_glareThreshold, sliderval);
+	updateWidgetValue(ui->spinBox_glareThreshold, m_Glare_threshold);
+	
+	updateParam (LUX_FILM, LUX_FILM_GLARE_THRESHOLD, m_Glare_threshold);
 }
 
 void LensEffectsWidget::computeGlareLayer()

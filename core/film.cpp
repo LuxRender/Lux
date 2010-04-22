@@ -192,7 +192,7 @@ void ApplyImagingPipeline(vector<XYZColor> &xyzpixels,
 	bool VignettingEnabled, float VignetScale,
 	bool aberrationEnabled, float aberrationAmount,
 	bool &haveGlareImage, XYZColor *&glareImage, bool glareUpdate,
-	float glareAmount, float glareRadius, u_int glareBlades,
+	float glareAmount, float glareRadius, u_int glareBlades, float glareThreshold,
 	const char *toneMapName, const ParamSet *toneMapParams,
 	float gamma, float dither)
 {
@@ -276,8 +276,29 @@ void ApplyImagingPipeline(vector<XYZColor> &xyzpixels,
 
 			std::vector<XYZColor> rotatedImage(nPix2);
 			std::vector<XYZColor> blurredImage(nPix2);
+			std::vector<XYZColor> darkenedImage(nPix);
 			for(u_int i = 0; i < nPix; ++i)
 				glareImage[i] = XYZColor(0.f);
+			
+			// Search for the brightest pixel in the image
+			u_int max = 0;
+			for(u_int i = 1; i < nPix; ++i) {
+				if (xyzpixels[i].c[1] > xyzpixels[max].c[1])
+					max = i;
+			}
+			
+			// glareThreshold ranges between 0-1,
+			// but this relative value has to be converted to
+			//an absolute value fitting the image being processed
+			float glareAbsoluteThreshold = xyzpixels[max].c[1] *
+				glareThreshold;
+			// Every pixel that is not bright enough is made black
+			for(u_int i = 0; i < nPix; ++i) {
+				if(xyzpixels[i].c[1] < glareAbsoluteThreshold)
+					darkenedImage[i] = XYZColor(0.f);
+				else
+					darkenedImage[i] = xyzpixels[i];
+			}
 
 			const float radius = maxRes * glareRadius;
 
@@ -285,7 +306,7 @@ void ApplyImagingPipeline(vector<XYZColor> &xyzpixels,
 			const float invBlades = 1.f / glareBlades;
 			float angle = 0.f;
 			for (u_int i = 0; i < glareBlades; ++i) {
-				rotateImage(xyzpixels, rotatedImage, xResolution, yResolution, angle);
+				rotateImage(darkenedImage, rotatedImage, xResolution, yResolution, angle);
 				horizontalGaussianBlur(rotatedImage, blurredImage, maxRes, maxRes, radius);
 				rotateImage(blurredImage, rotatedImage, maxRes, maxRes, -angle);
 
@@ -295,7 +316,7 @@ void ApplyImagingPipeline(vector<XYZColor> &xyzpixels,
 						const u_int sx = x + (maxRes - xResolution) / 2;
 						const u_int sy = y + (maxRes - yResolution) / 2;
 
-						glareImage[y*xResolution+x] += rotatedImage[sy*maxRes + sx];
+						glareImage[y * xResolution + x] += rotatedImage[sy * maxRes + sx];
 					}
 				}
 				angle += 2.f * M_PI * invBlades;
@@ -307,11 +328,13 @@ void ApplyImagingPipeline(vector<XYZColor> &xyzpixels,
 
 			rotatedImage.clear();
 			blurredImage.clear();
+			darkenedImage.clear();
 		}
 
 		if (haveGlareImage && glareImage != NULL) {
-			for(u_int i = 0; i < nPix; ++i)
-				xyzpixels[i] = Lerp(glareAmount, xyzpixels[i], glareImage[i]);
+			for(u_int i = 0; i < nPix; ++i) {
+				xyzpixels[i] += glareAmount * glareImage[i];
+			}
 		}
 	}
 
@@ -1232,6 +1255,7 @@ void Film::TransmitFilm(
 		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_GLARE_AMOUNT, 0));
 		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_GLARE_RADIUS, 0));
 		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_GLARE_BLADES, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_GLARE_THRESHOLD, 0));
 
 		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_CHIU_ENABLED, 0));
 		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_CHIU_RADIUS, 0));

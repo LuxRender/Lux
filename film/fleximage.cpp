@@ -129,6 +129,7 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, const float c
 	m_GlareAmount = d_GlareAmount = 0.03f;
 	m_GlareRadius = d_GlareRadius = 0.03f;
 	m_GlareBlades = d_GlareBlades = 3;
+	m_GlareThreshold = d_GlareThreshold = .5f;
 
 	m_HistogramEnabled = d_HistogramEnabled = false;
 
@@ -239,13 +240,16 @@ void FlexImageFilm::SetParameterValue(luxComponentParameters param, double value
 			m_GlareDeleteLayer = (value != 0.f);
 			break;
 		case LUX_FILM_GLARE_AMOUNT:
-			 m_GlareAmount = value;
+			m_GlareAmount = value;
 			break;
 		case LUX_FILM_GLARE_RADIUS:
-			 m_GlareRadius = value;
+			m_GlareRadius = value;
 			break;
 		case LUX_FILM_GLARE_BLADES:
-			 m_GlareBlades = Round2UInt(value);
+			m_GlareBlades = Round2UInt(value);
+			break;
+		case LUX_FILM_GLARE_THRESHOLD:
+			m_GlareThreshold = value;
 			break;
 
 		case LUX_FILM_HISTOGRAM_ENABLED:
@@ -433,6 +437,9 @@ double FlexImageFilm::GetParameterValue(luxComponentParameters param, u_int inde
 		case LUX_FILM_GLARE_BLADES:
 			return m_GlareBlades;
 			break;
+		case LUX_FILM_GLARE_THRESHOLD:
+			return m_GlareThreshold;
+			break;
 
 		case LUX_FILM_HISTOGRAM_ENABLED:
 			return m_HistogramEnabled;
@@ -612,6 +619,9 @@ double FlexImageFilm::GetDefaultParameterValue(luxComponentParameters param, u_i
 			break;
 		case LUX_FILM_GLARE_BLADES:
 			return d_GlareBlades;
+			break;
+		case LUX_FILM_GLARE_THRESHOLD:
+			return d_GlareThreshold;
 			break;
 
 		case LUX_FILM_HISTOGRAM_ENABLED:
@@ -821,7 +831,7 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 		ApplyImagingPipeline(xyzcolor, xPixelCount, yPixelCount, m_GREYCStorationParams, m_chiuParams,
 			colorSpace, histogram, m_HistogramEnabled, m_HaveBloomImage, m_bloomImage, m_BloomUpdateLayer,
 			m_BloomRadius, m_BloomWeight, m_VignettingEnabled, m_VignettingScale, m_AberrationEnabled, m_AberrationAmount,
-			m_HaveGlareImage, m_glareImage, m_GlareUpdateLayer, m_GlareAmount, m_GlareRadius, m_GlareBlades,
+			m_HaveGlareImage, m_glareImage, m_GlareUpdateLayer, m_GlareAmount, m_GlareRadius, m_GlareBlades, m_GlareThreshold,
 			tmkernel.c_str(), &toneParams, m_Gamma, 0.f);
 
 		// DO NOT USE xyzcolor ANYMORE AFTER THIS POINT
