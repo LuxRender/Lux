@@ -453,6 +453,7 @@ int luxParse(const char *filename)
 {
 	extern FILE *yyin;
 	extern int yyparse(void);
+	extern void yyrestart( FILE *new_file );
 	extern string currentFile;
 	extern u_int lineNum;
 
@@ -465,6 +466,9 @@ int luxParse(const char *filename)
 		if (yyin == stdin)
 			currentFile = "<standard input>";
 		lineNum = 1;
+		// make sure to flush any buffers
+		// before parsing
+		yyrestart(yyin);
 		yyparse();
 		if (yyin != stdin)
 			fclose(yyin);
