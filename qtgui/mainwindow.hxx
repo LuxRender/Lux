@@ -26,7 +26,7 @@
 #include <boost/thread.hpp>
 
 #include <QtGui/QMainWindow>
-#include <QtGui/QProgressDialog>
+#include <QtGui/QProgressBar>
 #include <QtGui/QGraphicsView>
 #include <QtGui/QGraphicsScene>
 #include <QtGui/QMessageBox>
@@ -165,8 +165,12 @@ protected:
 private:
 	Ui::MainWindow *ui;
 
+    QLabel *activityLabel;
+    QLabel *statusLabel;
+    QLabel *statsLabel;
     QLabel *activityMessage;
-	QLabel *statusMessage;
+    QLabel *statusMessage;
+	QProgressBar *statusProgress;
 	QLabel *statsMessage;
 	QSpacerItem *spacer;
 	
@@ -195,7 +199,6 @@ private:
 	
 	LuxGuiRenderState m_guiRenderState;
 	
-	QProgressDialog *m_progDialog;
 	QTimer *m_renderTimer, *m_statsTimer, *m_loadTimer, *m_saveTimer, *m_netTimer, *m_blinkTimer;
 	
 	boost::thread *m_engineThread, *m_updateThread, *m_flmloadThread, *m_flmsaveThread;
@@ -234,6 +237,8 @@ public slots:
 
 	void applyTonemapping (bool withlayercomputation = false);
 	void resetToneMapping ();
+    void indicateActivity ();
+    void indicateInactiv ();
 
 private slots:
 

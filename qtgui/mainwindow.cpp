@@ -234,17 +234,39 @@ MainWindow::MainWindow(QWidget *parent, bool opengl, bool copylog2console) : QMa
 	// Clipboard
 	connect(ui->button_copyToClipboard, SIGNAL(clicked()), this, SLOT(copyToClipboard()));
 
+    
 	// Statusbar
+    activityLabel = new QLabel(tr("  Status:"));
     activityMessage = new QLabel();
-	statusMessage = new QLabel();
+    statusLabel = new QLabel(tr(" Activity:"));
+    statusMessage = new QLabel();
+	statusProgress = new QProgressBar();
+    statsLabel = new QLabel(tr(" Counts:"));
 	statsMessage = new QLabel();
+    
+    activityLabel->setMaximumWidth(60);
 	activityMessage->setFrameStyle(QFrame::Panel | QFrame::Sunken);
+    activityMessage->setMaximumWidth(140);
+    statusLabel->setMaximumWidth(60);
     statusMessage->setFrameStyle(QFrame::Panel | QFrame::Sunken);
+    statusMessage->setMaximumWidth(320);
+    statusProgress->setMaximumWidth(100);
+    statusProgress->setRange(0, 100);
+    statsLabel->setMaximumWidth(60);
 	statsMessage->setFrameStyle(QFrame::Panel | QFrame::Sunken);
+    
+    ui->statusbar->addPermanentWidget(activityLabel, 1);
     ui->statusbar->addPermanentWidget(activityMessage, 1);
+    
+    ui->statusbar->addPermanentWidget(statusLabel, 1);
 	ui->statusbar->addPermanentWidget(statusMessage, 1);
+    ui->statusbar->addPermanentWidget(statusProgress, 1);
+    ui->statusbar->addPermanentWidget(statsLabel, 1);
 	ui->statusbar->addPermanentWidget(statsMessage, 1);
-	
+
+    
+    
+
 	// Update timers
 	m_renderTimer = new QTimer();
 	connect(m_renderTimer, SIGNAL(timeout()), SLOT(renderTimeout()));
@@ -392,6 +414,16 @@ void MainWindow::toneMapParamsChanged()
 		applyTonemapping();
 }
 
+void MainWindow::indicateActivity()
+{
+    statusProgress->setRange(0, 0);
+}
+
+void MainWindow::indicateInactiv()  // reset progressindicator
+{
+    statusProgress->setRange(0, 100);
+}
+
 void MainWindow::forceToneMapUpdate()
 {
 	applyTonemapping(true);
@@ -520,10 +552,8 @@ void MainWindow::loadFLM()
 
 	//SetTitle(wxT("LuxRender - ")+fn.GetName());
 
-	m_progDialog = new QProgressDialog(tr("Loading FLM..."),QString(),0,0,this);
-	m_progDialog->setWindowFlags(m_progDialog->windowFlags() & ~Qt::WindowContextHelpButtonHint);
-	m_progDialog->show();
-
+    indicateActivity ();
+    statusMessage->setText("Loading FLM...");
 	// Start load thread
 	m_loadTimer->start(1000);
 
@@ -545,9 +575,10 @@ void MainWindow::saveFLM()
 		return;
 
 	// Start save thread
-	m_progDialog = new QProgressDialog(tr("Saving FLM..."),QString(),0,0,this);
-	m_progDialog->setWindowFlags(m_progDialog->windowFlags() & ~Qt::WindowContextHelpButtonHint);
-	m_progDialog->show();
+    
+    indicateActivity ();
+    statusMessage->setText("Saving FLM...");
+    
 	m_saveTimer->start(1000);
 
 	delete m_flmsaveThread;
@@ -705,9 +736,11 @@ void MainWindow::applyTonemapping(bool withlayercomputation)
 		if (!withlayercomputation) {
 			luxError(LUX_NOERROR, LUX_INFO, tr("GUI: Updating framebuffer...").toLatin1().data());
 			statusMessage->setText(tr("Tonemapping..."));
+            indicateActivity ();
 		} else {
 			luxError(LUX_NOERROR, LUX_INFO, tr("GUI: Updating framebuffer/Computing Lens Effect Layer(s)...").toLatin1().data());
 			statusMessage->setText(tr("Computing Lens Effect Layer(s) & Tonemapping..."));
+            indicateActivity ();
 		}
 		m_updateThread = new boost::thread(boost::bind(&MainWindow::updateThread, this));
 	}
@@ -864,12 +897,10 @@ void MainWindow::renderScenefile(const QString& filename)
 	// NOTE - lordcrc - create progress dialog before starting engine thread
 	//                  so we don't try to destroy it before it's properly created
 	
-	m_progDialog = new QProgressDialog(tr("Loading scene..."),QString(),0,0,this);
-	m_progDialog->setWindowFlags(m_progDialog->windowFlags() & ~Qt::WindowContextHelpButtonHint);
-
-	m_progDialog->show();
-
-	m_loadTimer->start(1000);
+    indicateActivity ();
+	statusMessage->setText("Loading scene...");
+    
+    m_loadTimer->start(1000);
 
 	m_showParseWarningDialog = true;
 	m_showParseErrorDialog = true;
@@ -895,6 +926,7 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			ui->action_stopRender->setEnabled (false);
 			ui->button_copyToClipboard->setEnabled (false);
             activityMessage->setText("Idle");
+            statusProgress->setRange(0, 100);
             break;
 		case PARSING:
 			// Waiting for input file. Most controls disabled.
@@ -981,14 +1013,12 @@ bool MainWindow::event (QEvent *event)
 		delete m_updateThread;
 		m_updateThread = NULL;
 		statusMessage->setText("");
+        indicateInactiv(); // reset progressindicator
 		renderView->reload();
 		histogramwidget->Update();
 		retval = TRUE;
 	}
 	else if (eventtype == EVT_LUX_PARSEERROR) {
-		m_progDialog->cancel();
-		delete m_progDialog;
-		m_progDialog = NULL;
 		m_loadTimer->stop();
 
 		changeRenderState(FINISHED);
@@ -1016,9 +1046,6 @@ bool MainWindow::event (QEvent *event)
 		retval = TRUE;
 	}
 	else if (eventtype == EVT_LUX_SAVEDFLM) {
-		m_progDialog->cancel();
-		delete m_progDialog;
-		m_progDialog = NULL;
 		m_saveTimer->stop();
 
 		if (m_flmsaveThread)
@@ -1114,11 +1141,11 @@ void MainWindow::logEvent(LuxLogEvent *event)
 		if (event->getSeverity() < LUX_SEVERE) {
             m_blinkTimer->start(1000);
             blinkTimeout();
-            activityMessage->setText("Check Log for errors !!!");
+            activityMessage->setText("Errors !!!");
 		} else {
             static const QIcon icon(":/icons/warningicon.png");
             ShowTabLogIcon(1, icon);
-            activityMessage->setText("Check Log for warnings !!!");
+            activityMessage->setText("Warnings !!!");
 		}
 	}
 }
@@ -1172,11 +1199,9 @@ void MainWindow::statsTimeout()
 
 void MainWindow::loadTimeout()
 {
-	m_progDialog->setValue(m_progDialog->value()+1);
 	if(luxStatistics("sceneIsReady") || m_guiRenderState == FINISHED) {
-		m_progDialog->cancel();
-		delete m_progDialog;
-		m_progDialog = NULL;
+        indicateInactiv();
+        statusMessage->setText("");
 		m_loadTimer->stop();
 
 		if (luxStatistics("sceneIsReady")) {
@@ -1198,9 +1223,8 @@ void MainWindow::loadTimeout()
 		}
 	}
 	else if ( luxStatistics("filmIsReady") ) {
-		m_progDialog->cancel();
-		delete m_progDialog;
-		m_progDialog = NULL;
+        indicateInactiv();
+        statusMessage->setText("");
 		m_loadTimer->stop();
 
 		if(m_flmloadThread) {
@@ -1225,7 +1249,8 @@ void MainWindow::loadTimeout()
 
 void MainWindow::saveTimeout()
 {
-	m_progDialog->setValue(m_progDialog->value()+1);
+    indicateInactiv();
+    statusMessage->setText("");
 }
 
 void MainWindow::netTimeout()
