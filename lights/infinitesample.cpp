@@ -95,20 +95,20 @@ InfiniteAreaLightIS::InfiniteAreaLightIS(const Transform &light2world,
 	// Initialize sampling PDFs for infinite area light
 	float filter = 1.f / max(nu, nv);
 	float *img = new float[nu * nv];
-	for (u_int x = 0; x < nu; ++x) {
-		float xp = (x + .5f) / nu;
-		for (u_int y = 0; y < nv; ++y) {
-			float yp = (y + .5f) / nv;
+	for (u_int y = 0; y < nv; ++y) {
+		float yp = (y + .5f) / nv;
+		for (u_int x = 0; x < nu; ++x) {
+			float xp = (x + .5f) / nu;
 			Vector dummy;
 			float pdf;
 			mapping->Map(xp, yp, &dummy, &pdf);
 			if (!(pdf > 0.f))
-				img[y + x * nv] = 0.f;
+				img[x + y * nu] = 0.f;
 			else if (radianceMap)
-				img[y + x * nv] = radianceMap->LookupFloat(CHANNEL_WMEAN,
+				img[x + y * nu] = radianceMap->LookupFloat(CHANNEL_WMEAN,
 					xp, yp, filter) / pdf;
 			else
-				img[y + x * nv] = 1.f / pdf;
+				img[x + y * nu] = 1.f / pdf;
 		}
 	}
 	uvDistrib = new Distribution2D(img, nu, nv);
