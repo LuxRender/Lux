@@ -420,6 +420,11 @@ void MainWindow::indicateActivity()
     statusProgress->setRange(0, 0);
 }
 
+void MainWindow::indicateInactiv()
+{
+    statusProgress->setRange(0, 100);
+}
+
 void MainWindow::forceToneMapUpdate()
 {
 	applyTonemapping(true);
@@ -550,10 +555,8 @@ void MainWindow::loadFLM()
 
 	//SetTitle(wxT("LuxRender - ")+fn.GetName());
 
-	m_progDialog = new QProgressDialog(tr("Loading FLM..."),QString(),0,0,this);
-	m_progDialog->setWindowFlags(m_progDialog->windowFlags() & ~Qt::WindowContextHelpButtonHint);
-	m_progDialog->show();
-    
+    indicateActivity ();
+    statusMessage->setText("Loading FLM...");
 	// Start load thread
 	m_loadTimer->start(1000);
 
@@ -575,9 +578,10 @@ void MainWindow::saveFLM()
 		return;
 
 	// Start save thread
-	m_progDialog = new QProgressDialog(tr("Saving FLM..."),QString(),0,0,this);
-	m_progDialog->setWindowFlags(m_progDialog->windowFlags() & ~Qt::WindowContextHelpButtonHint);
-	m_progDialog->show();
+    
+    indicateActivity ();
+    statusMessage->setText("Saving FLM...");
+    
 	m_saveTimer->start(1000);
 
 	delete m_flmsaveThread;
@@ -894,12 +898,10 @@ void MainWindow::renderScenefile(const QString& filename)
 	// NOTE - lordcrc - create progress dialog before starting engine thread
 	//                  so we don't try to destroy it before it's properly created
 	
-	m_progDialog = new QProgressDialog(tr("Loading scene..."),QString(),0,0,this);
-	m_progDialog->setWindowFlags(m_progDialog->windowFlags() & ~Qt::WindowContextHelpButtonHint);
-
-	m_progDialog->show();
-
-	m_loadTimer->start(1000);
+    indicateActivity ();
+	statusMessage->setText("Loading scene...");
+    
+    m_loadTimer->start(1000);
 
 	m_showParseWarningDialog = true;
 	m_showParseErrorDialog = true;
@@ -1018,9 +1020,6 @@ bool MainWindow::event (QEvent *event)
 		retval = TRUE;
 	}
 	else if (eventtype == EVT_LUX_PARSEERROR) {
-		m_progDialog->cancel();
-		delete m_progDialog;
-		m_progDialog = NULL;
 		m_loadTimer->stop();
 
 		changeRenderState(FINISHED);
@@ -1048,9 +1047,6 @@ bool MainWindow::event (QEvent *event)
 		retval = TRUE;
 	}
 	else if (eventtype == EVT_LUX_SAVEDFLM) {
-		m_progDialog->cancel();
-		delete m_progDialog;
-		m_progDialog = NULL;
 		m_saveTimer->stop();
 
 		if (m_flmsaveThread)
@@ -1204,11 +1200,9 @@ void MainWindow::statsTimeout()
 
 void MainWindow::loadTimeout()
 {
-	m_progDialog->setValue(m_progDialog->value()+1);
 	if(luxStatistics("sceneIsReady") || m_guiRenderState == FINISHED) {
-		m_progDialog->cancel();
-		delete m_progDialog;
-		m_progDialog = NULL;
+        indicateInactiv();
+        statusMessage->setText("");
 		m_loadTimer->stop();
 
 		if (luxStatistics("sceneIsReady")) {
@@ -1230,9 +1224,8 @@ void MainWindow::loadTimeout()
 		}
 	}
 	else if ( luxStatistics("filmIsReady") ) {
-		m_progDialog->cancel();
-		delete m_progDialog;
-		m_progDialog = NULL;
+        indicateInactiv();
+        statusMessage->setText("");
 		m_loadTimer->stop();
 
 		if(m_flmloadThread) {
@@ -1257,7 +1250,8 @@ void MainWindow::loadTimeout()
 
 void MainWindow::saveTimeout()
 {
-	m_progDialog->setValue(m_progDialog->value()+1);
+    indicateInactiv();
+    statusMessage->setText("");
 }
 
 void MainWindow::netTimeout()

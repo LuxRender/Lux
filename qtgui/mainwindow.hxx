@@ -26,7 +26,6 @@
 #include <boost/thread.hpp>
 
 #include <QtGui/QMainWindow>
-#include <QtGui/QProgressDialog>
 #include <QtGui/QProgressBar>
 #include <QtGui/QGraphicsView>
 #include <QtGui/QGraphicsScene>
@@ -200,7 +199,6 @@ private:
 	
 	LuxGuiRenderState m_guiRenderState;
 	
-	QProgressDialog *m_progDialog;
 	QTimer *m_renderTimer, *m_statsTimer, *m_loadTimer, *m_saveTimer, *m_netTimer, *m_blinkTimer;
 	
 	boost::thread *m_engineThread, *m_updateThread, *m_flmloadThread, *m_flmsaveThread;
@@ -227,7 +225,6 @@ private:
 	bool canStopRendering ();
     
     bool blink;
-    int progress;
     
 	void UpdateLightGroupWidgetValues();
 	void ResetLightGroups(void);
@@ -241,6 +238,7 @@ public slots:
 	void applyTonemapping (bool withlayercomputation = false);
 	void resetToneMapping ();
     void indicateActivity ();
+    void indicateInactiv ();
 
 private slots:
 
