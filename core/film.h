@@ -391,7 +391,7 @@ public:
 	virtual void WriteFilm(const string &fname) { WriteResumeFilm(fname); }
 	virtual void CheckWriteOuputInterval() { }
 	// Dade - method useful for transmitting the samples to a client
-	virtual void TransmitFilm(std::basic_ostream<char> &stream, bool clearBuffers = true, bool transmitParams = false);
+	virtual bool TransmitFilm(std::basic_ostream<char> &stream, bool clearBuffers = true, bool transmitParams = false);
 	virtual double UpdateFilm(std::basic_istream<char> &stream);
 	virtual void WriteResumeFilm(const string &filename);
 	virtual bool LoadResumeFilm(const string &filename);

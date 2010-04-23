@@ -855,21 +855,34 @@ void Film::AddSample(Contribution *contrib) {
 void Film::WriteResumeFilm(const string &filename)
 {
 	// Dade - save the status of the film to the file
-	luxError(LUX_NOERROR, LUX_INFO, (std::string("Writing film status to file ") +
-			filename).c_str());
+	LOG(LUX_INFO, LUX_NOERROR) << "Writing film status to file";
 
-    std::ofstream filestr(filename.c_str(), std::ios_base::out | std::ios_base::binary);
+	string tempfilename = filename + ".temp";
+
+    std::ofstream filestr(tempfilename.c_str(), std::ios_base::out | std::ios_base::binary);
 	if(!filestr) {
 		std::stringstream ss;
-	 	ss << "Cannot open file '" << filename << "' for writing resume film";
+	 	ss << "Cannot open file '" << tempfilename << "' for writing resume film";
 		luxError(LUX_SYSTEM, LUX_SEVERE, ss.str().c_str());
 
 		return;
 	}
 
-    TransmitFilm(filestr,false,true);
+	bool writeSuccessful = TransmitFilm(filestr,false,true);
 
     filestr.close();
+
+	if (writeSuccessful) {
+		if (remove(filename.c_str())) {
+			LOG(LUX_ERROR, LUX_SYSTEM) << "Failed to remove old resume film: '" << filename << "', leaving new resume film as '" << tempfilename << "'";
+			return;
+		}
+		if (rename(tempfilename.c_str(), filename.c_str())) {
+			LOG(LUX_ERROR, LUX_SYSTEM) << "Failed to rename new resume, leaving new resume film as '" << tempfilename << "'";
+			return;
+		}
+		LOG(LUX_INFO, LUX_NOERROR) << "Film status written to '" << filename << "'";
+	}
 }
 
 
@@ -1191,7 +1204,7 @@ void FlmHeader::Write(std::basic_ostream<char> &os, bool isLittleEndian) const
 	}
 }
 
-void Film::TransmitFilm(
+bool Film::TransmitFilm(
         std::basic_ostream<char> &stream,
         bool clearBuffers,
 		bool transmitParams) 
@@ -1338,7 +1351,7 @@ void Film::TransmitFilm(
 
 	if (!os.good()) {
 		luxError(LUX_SYSTEM, LUX_SEVERE, "Error while preparing film data for transmission");
-		return;
+		return false;
 	}
 
 	ss.str("");
@@ -1351,12 +1364,13 @@ void Film::TransmitFilm(
 	std::streamsize size = boost::iostreams::copy(in, stream);
 	if (!stream.good()) {
 		luxError(LUX_SYSTEM, LUX_SEVERE, "Error while transmitting film");
-		return;
+		return false;
 	}
 
 	ss.str("");
 	ss << "Film transmission done (" << (size / 1024) << " Kbytes sent)";
 	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+	return true;
 }
 
 
