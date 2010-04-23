@@ -496,6 +496,14 @@ public:
 		context->NamedMaterial(name);
 	}
 
+	void lightGroup(const char *name, boost::python::list params)
+	{
+		EXTRACT_PARAMETERS(params);
+		Context::SetActive(context);
+		context->LightGroup(name, PASS_PARAMSET);
+		memoryPool.purge_memory();
+	}
+
 	void lightSource(const char *name, boost::python::list params)
 	{
 		EXTRACT_PARAMETERS(params);
@@ -971,6 +979,7 @@ BOOST_PYTHON_MODULE(pylux)
 		.def("material", &PyContext::material)
 		.def("makeNamedMaterial", &PyContext::makeNamedMaterial)
 		.def("namedMaterial", &PyContext::namedMaterial)
+		.def("lightGroup", &PyContext::lightGroup)
 		.def("lightSource", &PyContext::lightSource)
 		.def("areaLightSource", &PyContext::areaLightSource)
 		.def("portalShape", &PyContext::portalShape)
