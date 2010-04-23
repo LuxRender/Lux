@@ -116,6 +116,8 @@ int main(int ac, char *av[]) {
 		boost::scoped_ptr<FlexImageFilm> film;
 		int mergedCount = 0;
 
+		luxInit();
+
 		if (vm.count("input-file")) {
 			const std::vector<std::string> &v = vm["input-file"].as < vector<string> > ();
 			for (unsigned int i = 0; i < v.size(); i++) {
@@ -166,6 +168,8 @@ int main(int ac, char *av[]) {
 
 				mergedCount++;
 			}
+
+			luxCleanup();
 
 			if (!film) {
 				ss.str("");
