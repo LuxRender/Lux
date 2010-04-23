@@ -27,6 +27,7 @@
 
 #include <QtGui/QMainWindow>
 #include <QtGui/QProgressDialog>
+#include <QtGui/QProgressBar>
 #include <QtGui/QGraphicsView>
 #include <QtGui/QGraphicsScene>
 #include <QtGui/QMessageBox>
@@ -165,8 +166,12 @@ protected:
 private:
 	Ui::MainWindow *ui;
 
+    QLabel *activityLabel;
+    QLabel *statusLabel;
+    QLabel *statsLabel;
     QLabel *activityMessage;
-	QLabel *statusMessage;
+    QLabel *statusMessage;
+	QProgressBar *statusProgress;
 	QLabel *statsMessage;
 	QSpacerItem *spacer;
 	
@@ -222,6 +227,7 @@ private:
 	bool canStopRendering ();
     
     bool blink;
+    int progress;
     
 	void UpdateLightGroupWidgetValues();
 	void ResetLightGroups(void);
@@ -234,6 +240,7 @@ public slots:
 
 	void applyTonemapping (bool withlayercomputation = false);
 	void resetToneMapping ();
+    void indicateActivity ();
 
 private slots:
 

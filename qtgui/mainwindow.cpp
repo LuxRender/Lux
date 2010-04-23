@@ -234,17 +234,39 @@ MainWindow::MainWindow(QWidget *parent, bool opengl, bool copylog2console) : QMa
 	// Clipboard
 	connect(ui->button_copyToClipboard, SIGNAL(clicked()), this, SLOT(copyToClipboard()));
 
+    
 	// Statusbar
+    activityLabel = new QLabel(tr("  Status:"));
     activityMessage = new QLabel();
-	statusMessage = new QLabel();
+    statusLabel = new QLabel(tr(" Activity:"));
+    statusMessage = new QLabel();
+	statusProgress = new QProgressBar();
+    statsLabel = new QLabel(tr(" Counts:"));
 	statsMessage = new QLabel();
+    
+    activityLabel->setMaximumWidth(60);
 	activityMessage->setFrameStyle(QFrame::Panel | QFrame::Sunken);
+    activityMessage->setMaximumWidth(140);
+    statusLabel->setMaximumWidth(60);
     statusMessage->setFrameStyle(QFrame::Panel | QFrame::Sunken);
+    statusMessage->setMaximumWidth(310);
+    statusProgress->setMaximumWidth(100);
+    statusProgress->setRange(0, 100);
+    statsLabel->setMaximumWidth(60);
 	statsMessage->setFrameStyle(QFrame::Panel | QFrame::Sunken);
+    
+    ui->statusbar->addPermanentWidget(activityLabel, 1);
     ui->statusbar->addPermanentWidget(activityMessage, 1);
+    
+    ui->statusbar->addPermanentWidget(statusLabel, 1);
 	ui->statusbar->addPermanentWidget(statusMessage, 1);
+    ui->statusbar->addPermanentWidget(statusProgress, 1);
+    ui->statusbar->addPermanentWidget(statsLabel, 1);
 	ui->statusbar->addPermanentWidget(statsMessage, 1);
-	
+
+    
+    
+
 	// Update timers
 	m_renderTimer = new QTimer();
 	connect(m_renderTimer, SIGNAL(timeout()), SLOT(renderTimeout()));
@@ -390,11 +412,18 @@ void MainWindow::toneMapParamsChanged()
 {
 	if (m_auto_tonemap)
 		applyTonemapping();
+        indicateActivity();
+}
+
+void MainWindow::indicateActivity()
+{
+    statusProgress->setRange(0, 0);
 }
 
 void MainWindow::forceToneMapUpdate()
 {
 	applyTonemapping(true);
+    indicateActivity();
 }
 
 void MainWindow::openDocumentation ()
@@ -433,6 +462,7 @@ void MainWindow::autoEnabledChanged (int value)
 
 	if (m_auto_tonemap)
 		applyTonemapping();
+        indicateActivity();
 }
 
 void MainWindow::LuxGuiErrorHandler(int code, int severity, const char *msg)
@@ -523,7 +553,7 @@ void MainWindow::loadFLM()
 	m_progDialog = new QProgressDialog(tr("Loading FLM..."),QString(),0,0,this);
 	m_progDialog->setWindowFlags(m_progDialog->windowFlags() & ~Qt::WindowContextHelpButtonHint);
 	m_progDialog->show();
-
+    
 	// Start load thread
 	m_loadTimer->start(1000);
 
@@ -895,6 +925,7 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			ui->action_stopRender->setEnabled (false);
 			ui->button_copyToClipboard->setEnabled (false);
             activityMessage->setText("Idle");
+            statusProgress->setRange(0, 100);
             break;
 		case PARSING:
 			// Waiting for input file. Most controls disabled.
@@ -981,6 +1012,7 @@ bool MainWindow::event (QEvent *event)
 		delete m_updateThread;
 		m_updateThread = NULL;
 		statusMessage->setText("");
+        statusProgress->setRange(0, 100); // reset progressindicator
 		renderView->reload();
 		histogramwidget->Update();
 		retval = TRUE;
@@ -1114,11 +1146,11 @@ void MainWindow::logEvent(LuxLogEvent *event)
 		if (event->getSeverity() < LUX_SEVERE) {
             m_blinkTimer->start(1000);
             blinkTimeout();
-            activityMessage->setText("Check Log for errors !!!");
+            activityMessage->setText("Check Log for errors");
 		} else {
             static const QIcon icon(":/icons/warningicon.png");
             ShowTabLogIcon(1, icon);
-            activityMessage->setText("Check Log for warnings !!!");
+            activityMessage->setText("Check Log for warnings");
 		}
 	}
 }
@@ -1275,6 +1307,7 @@ void MainWindow::resetToneMappingFromFilm (bool useDefaults)
 
 	if (m_auto_tonemap)
 		applyTonemapping();
+        indicateActivity();
 }
 
 void MainWindow::UpdateLightGroupWidgetValues()
