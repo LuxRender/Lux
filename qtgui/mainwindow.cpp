@@ -249,7 +249,7 @@ MainWindow::MainWindow(QWidget *parent, bool opengl, bool copylog2console) : QMa
     activityMessage->setMaximumWidth(140);
     statusLabel->setMaximumWidth(60);
     statusMessage->setFrameStyle(QFrame::Panel | QFrame::Sunken);
-    statusMessage->setMaximumWidth(310);
+    statusMessage->setMaximumWidth(320);
     statusProgress->setMaximumWidth(100);
     statusProgress->setRange(0, 100);
     statsLabel->setMaximumWidth(60);
@@ -412,7 +412,6 @@ void MainWindow::toneMapParamsChanged()
 {
 	if (m_auto_tonemap)
 		applyTonemapping();
-        indicateActivity();
 }
 
 void MainWindow::indicateActivity()
@@ -420,7 +419,7 @@ void MainWindow::indicateActivity()
     statusProgress->setRange(0, 0);
 }
 
-void MainWindow::indicateInactiv()
+void MainWindow::indicateInactiv()  // reset progressindicator
 {
     statusProgress->setRange(0, 100);
 }
@@ -428,7 +427,6 @@ void MainWindow::indicateInactiv()
 void MainWindow::forceToneMapUpdate()
 {
 	applyTonemapping(true);
-    indicateActivity();
 }
 
 void MainWindow::openDocumentation ()
@@ -467,7 +465,6 @@ void MainWindow::autoEnabledChanged (int value)
 
 	if (m_auto_tonemap)
 		applyTonemapping();
-        indicateActivity();
 }
 
 void MainWindow::LuxGuiErrorHandler(int code, int severity, const char *msg)
@@ -739,9 +736,11 @@ void MainWindow::applyTonemapping(bool withlayercomputation)
 		if (!withlayercomputation) {
 			luxError(LUX_NOERROR, LUX_INFO, tr("GUI: Updating framebuffer...").toLatin1().data());
 			statusMessage->setText(tr("Tonemapping..."));
+            indicateActivity ();
 		} else {
 			luxError(LUX_NOERROR, LUX_INFO, tr("GUI: Updating framebuffer/Computing Lens Effect Layer(s)...").toLatin1().data());
 			statusMessage->setText(tr("Computing Lens Effect Layer(s) & Tonemapping..."));
+            indicateActivity ();
 		}
 		m_updateThread = new boost::thread(boost::bind(&MainWindow::updateThread, this));
 	}
@@ -1014,7 +1013,7 @@ bool MainWindow::event (QEvent *event)
 		delete m_updateThread;
 		m_updateThread = NULL;
 		statusMessage->setText("");
-        statusProgress->setRange(0, 100); // reset progressindicator
+        indicateInactiv(); // reset progressindicator
 		renderView->reload();
 		histogramwidget->Update();
 		retval = TRUE;
@@ -1142,11 +1141,11 @@ void MainWindow::logEvent(LuxLogEvent *event)
 		if (event->getSeverity() < LUX_SEVERE) {
             m_blinkTimer->start(1000);
             blinkTimeout();
-            activityMessage->setText("Check Log for errors");
+            activityMessage->setText("Errors !!!");
 		} else {
             static const QIcon icon(":/icons/warningicon.png");
             ShowTabLogIcon(1, icon);
-            activityMessage->setText("Check Log for warnings");
+            activityMessage->setText("Warnings !!!");
 		}
 	}
 }
@@ -1301,7 +1300,6 @@ void MainWindow::resetToneMappingFromFilm (bool useDefaults)
 
 	if (m_auto_tonemap)
 		applyTonemapping();
-        indicateActivity();
 }
 
 void MainWindow::UpdateLightGroupWidgetValues()
