@@ -152,7 +152,7 @@ public:
 
 	void UpdateNetworkTree();
 
-    void ShowTabLogIcon( int index , const QIcon & icon);
+	void ShowTabLogIcon( int index , const QIcon & icon);
 
 	bool m_auto_tonemap;
 
@@ -165,11 +165,11 @@ protected:
 private:
 	Ui::MainWindow *ui;
 
-    QLabel *activityLabel;
-    QLabel *statusLabel;
-    QLabel *statsLabel;
-    QLabel *activityMessage;
-    QLabel *statusMessage;
+	QLabel *activityLabel;
+	QLabel *statusLabel;
+	QLabel *statsLabel;
+	QLabel *activityMessage;
+	QLabel *statusMessage;
 	QProgressBar *statusProgress;
 	QLabel *statsMessage;
 	QSpacerItem *spacer;
@@ -224,7 +224,7 @@ private:
 
 	bool canStopRendering ();
     
-    bool blink;
+	bool blink;
     
 	void UpdateLightGroupWidgetValues();
 	void ResetLightGroups(void);
@@ -237,8 +237,7 @@ public slots:
 
 	void applyTonemapping (bool withlayercomputation = false);
 	void resetToneMapping ();
-    void indicateActivity ();
-    void indicateInactiv ();
+	void indicateActivity (bool active = true);
 
 private slots:
 
@@ -253,9 +252,9 @@ private slots:
 	void stopRender ();
 	void copyLog ();
 	void clearLog ();
-    void resetBlink ();
+	void resetBlink ();
 	void fullScreen ();
-    void normalScreen ();
+	void normalScreen ();
 	void aboutDialog ();
 	void openDocumentation ();
 	void openForums ();
@@ -265,7 +264,7 @@ private slots:
 	void loadTimeout ();
 	void saveTimeout ();
 	void netTimeout ();
-    void blinkTimeout ();
+	void blinkTimeout ();
 
 	void addThread ();
 	void removeThread ();
@@ -275,8 +274,6 @@ private slots:
 	void forceToneMapUpdate();
 
 	void autoEnabledChanged (int value);
-
-
 
 	void addServer();
 	void removeServer();

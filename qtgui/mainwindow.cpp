@@ -234,38 +234,34 @@ MainWindow::MainWindow(QWidget *parent, bool opengl, bool copylog2console) : QMa
 	// Clipboard
 	connect(ui->button_copyToClipboard, SIGNAL(clicked()), this, SLOT(copyToClipboard()));
 
-    
 	// Statusbar
-    activityLabel = new QLabel(tr("  Status:"));
-    activityMessage = new QLabel();
-    statusLabel = new QLabel(tr(" Activity:"));
-    statusMessage = new QLabel();
+	activityLabel = new QLabel(tr("  Status:"));
+	activityMessage = new QLabel();
+	statusLabel = new QLabel(tr(" Activity:"));
+	statusMessage = new QLabel();
 	statusProgress = new QProgressBar();
-    statsLabel = new QLabel(tr(" Counts:"));
+	statsLabel = new QLabel(tr(" Stats:"));
 	statsMessage = new QLabel();
     
-    activityLabel->setMaximumWidth(60);
+	activityLabel->setMaximumWidth(60);
 	activityMessage->setFrameStyle(QFrame::Panel | QFrame::Sunken);
-    activityMessage->setMaximumWidth(140);
-    statusLabel->setMaximumWidth(60);
-    statusMessage->setFrameStyle(QFrame::Panel | QFrame::Sunken);
-    statusMessage->setMaximumWidth(320);
-    statusProgress->setMaximumWidth(100);
-    statusProgress->setRange(0, 100);
-    statsLabel->setMaximumWidth(60);
+	activityMessage->setMaximumWidth(140);
+	statusLabel->setMaximumWidth(60);
+	statusMessage->setFrameStyle(QFrame::Panel | QFrame::Sunken);
+	statusMessage->setMaximumWidth(320);
+	statusProgress->setMaximumWidth(100);
+	statusProgress->setRange(0, 100);
+	statsLabel->setMaximumWidth(60);
 	statsMessage->setFrameStyle(QFrame::Panel | QFrame::Sunken);
     
-    ui->statusbar->addPermanentWidget(activityLabel, 1);
-    ui->statusbar->addPermanentWidget(activityMessage, 1);
+	ui->statusbar->addPermanentWidget(activityLabel, 1);
+	ui->statusbar->addPermanentWidget(activityMessage, 1);
     
-    ui->statusbar->addPermanentWidget(statusLabel, 1);
+	ui->statusbar->addPermanentWidget(statusLabel, 1);
 	ui->statusbar->addPermanentWidget(statusMessage, 1);
-    ui->statusbar->addPermanentWidget(statusProgress, 1);
-    ui->statusbar->addPermanentWidget(statsLabel, 1);
+	ui->statusbar->addPermanentWidget(statusProgress, 1);
+	ui->statusbar->addPermanentWidget(statsLabel, 1);
 	ui->statusbar->addPermanentWidget(statsMessage, 1);
-
-    
-    
 
 	// Update timers
 	m_renderTimer = new QTimer();
@@ -398,14 +394,14 @@ void MainWindow::WriteSettings()
 
 void MainWindow::ShowTabLogIcon ( int index, const QIcon & icon )
 {
-    ui->tabs_main->setTabIcon(index, icon);
+	ui->tabs_main->setTabIcon(index, icon);
 }
 
 void MainWindow::resetBlink () 
 {
-    m_blinkTimer->stop();
-    static const QIcon icon(":/icons/logtabicon.png");
-    ShowTabLogIcon(1, icon);
+	m_blinkTimer->stop();
+	static const QIcon icon(":/icons/logtabicon.png");
+	ShowTabLogIcon(1, icon);
 }
 
 void MainWindow::toneMapParamsChanged()
@@ -414,14 +410,16 @@ void MainWindow::toneMapParamsChanged()
 		applyTonemapping();
 }
 
-void MainWindow::indicateActivity()
+void MainWindow::indicateActivity(bool active)
 {
-    statusProgress->setRange(0, 0);
-}
-
-void MainWindow::indicateInactiv()  // reset progressindicator
-{
-    statusProgress->setRange(0, 100);
+	if (active) {
+		statusProgress->show ();
+		statusProgress->setRange(0, 0);
+	}
+	else {
+		statusProgress->hide ();
+		statusProgress->setRange(0, 100);
+	}
 }
 
 void MainWindow::forceToneMapUpdate()
@@ -472,8 +470,8 @@ void MainWindow::LuxGuiErrorHandler(int code, int severity, const char *msg)
 	if (copyLog2Console)
 	    luxErrorPrint(code, severity, msg);
 	
-    foreach (QWidget *widget, qApp->topLevelWidgets())
-  	    qApp->postEvent(widget, new LuxLogEvent(code,severity,QString(msg)));
+	foreach (QWidget *widget, qApp->topLevelWidgets())
+		qApp->postEvent(widget, new LuxLogEvent(code,severity,QString(msg)));
 }
 
 bool MainWindow::canStopRendering()
@@ -508,7 +506,7 @@ void MainWindow::openFile()
 
 void MainWindow::openRecentFile()
 {
-    if (!canStopRendering())
+	if (!canStopRendering())
 		return;
     
 	QAction *action = qobject_cast<QAction *>(sender());
@@ -552,8 +550,8 @@ void MainWindow::loadFLM()
 
 	//SetTitle(wxT("LuxRender - ")+fn.GetName());
 
-    indicateActivity ();
-    statusMessage->setText("Loading FLM...");
+	indicateActivity ();
+	statusMessage->setText("Loading FLM...");
 	// Start load thread
 	m_loadTimer->start(1000);
 
@@ -576,8 +574,8 @@ void MainWindow::saveFLM()
 
 	// Start save thread
     
-    indicateActivity ();
-    statusMessage->setText("Saving FLM...");
+	indicateActivity ();
+	statusMessage->setText("Saving FLM...");
     
 	m_saveTimer->start(1000);
 
@@ -648,7 +646,7 @@ void MainWindow::endRenderingSession()
 		m_renderTimer->stop ();
 		m_statsTimer->stop ();
 		m_netTimer->stop ();
-        clearLog();
+		clearLog();
 
 		if (m_flmloadThread)
 			m_flmloadThread->join();
@@ -683,41 +681,38 @@ void MainWindow::copyLog()
 void MainWindow::clearLog()
 {
 	ui->textEdit_log->setPlainText("");
-    resetBlink();
+	resetBlink();
 }
 
 void MainWindow::fullScreen()
 {
-        if ( renderView->isFullScreen() )
-        {
-            delete renderView; // delete and reinitialize to recenter render
-            renderView = new RenderView(ui->frame_render, m_opengl);
-            ui->renderLayout->addWidget(renderView, 0, 0, 1, 1);
-            renderView->reload();
-            renderView->show ();
-            ui->action_normalScreen->setEnabled (false);
-        }
-        else
-        {
-            renderView->setParent( NULL );
-            renderView->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
-            renderView->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
-            renderView->showFullScreen();
-            ui->action_normalScreen->setEnabled (true);
-        }
+	if (renderView->isFullScreen()) {
+		delete renderView; // delete and reinitialize to recenter render
+		renderView = new RenderView(ui->frame_render, m_opengl);
+		ui->renderLayout->addWidget(renderView, 0, 0, 1, 1);
+		renderView->reload();
+		renderView->show ();
+		ui->action_normalScreen->setEnabled (false);
+	}
+	else {
+		renderView->setParent( NULL );
+		renderView->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
+		renderView->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
+		renderView->showFullScreen();
+		ui->action_normalScreen->setEnabled (true);
+	}
 }
 
 void MainWindow::normalScreen()
 {
-    if ( renderView->isFullScreen() )
-    {
-        delete renderView; // delete and reinitialize to recenter render
-        renderView = new RenderView(ui->frame_render, m_opengl);
-        ui->renderLayout->addWidget(renderView, 0, 0, 1, 1);
-        renderView->reload();
-        renderView->show ();
-        ui->action_normalScreen->setEnabled (false);
-    }
+	if (renderView->isFullScreen()) {
+		delete renderView; // delete and reinitialize to recenter render
+		renderView = new RenderView(ui->frame_render, m_opengl);
+		ui->renderLayout->addWidget(renderView, 0, 0, 1, 1);
+		renderView->reload();
+		renderView->show ();
+		ui->action_normalScreen->setEnabled (false);
+	}
 }
 
 
@@ -900,7 +895,7 @@ void MainWindow::renderScenefile(const QString& filename)
     indicateActivity ();
 	statusMessage->setText("Loading scene...");
     
-    m_loadTimer->start(1000);
+	m_loadTimer->start(1000);
 
 	m_showParseWarningDialog = true;
 	m_showParseErrorDialog = true;
@@ -918,16 +913,16 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 {
 	switch (state) {
 		case WAITING:
-            ui->button_resume->setEnabled (false);
+			ui->button_resume->setEnabled (false);
 			ui->action_resumeRender->setEnabled (false);
 			ui->button_pause->setEnabled (false);
 			ui->action_pauseRender->setEnabled (false);
 			ui->button_stop->setEnabled (false);
 			ui->action_stopRender->setEnabled (false);
 			ui->button_copyToClipboard->setEnabled (false);
-            activityMessage->setText("Idle");
-            statusProgress->setRange(0, 100);
-            break;
+			activityMessage->setText("Idle");
+			statusProgress->setRange(0, 100);
+			break;
 		case PARSING:
 			// Waiting for input file. Most controls disabled.
 			ui->button_resume->setEnabled (false);
@@ -938,7 +933,7 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			ui->action_stopRender->setEnabled(false);
 			ui->button_copyToClipboard->setEnabled (false);
 			//m_viewerToolBar->Disable();
-            activityMessage->setText("Parsing scenefile");
+			activityMessage->setText("Parsing scenefile");
 			renderView->setLogoMode();
 			break;
 		case RENDERING:
@@ -950,19 +945,19 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			ui->button_stop->setEnabled (true);
 			ui->action_stopRender->setEnabled (true);
 			ui->button_copyToClipboard->setEnabled (true);
-            activityMessage->setText("Rendering...");
+			activityMessage->setText("Rendering...");
 			break;
 		case TONEMAPPING:
 		case FINISHED:
-            ui->button_resume->setEnabled (false);
+			ui->button_resume->setEnabled (false);
 			ui->action_resumeRender->setEnabled (false);
 			ui->button_pause->setEnabled (false);
 			ui->action_pauseRender->setEnabled (false);
 			ui->button_stop->setEnabled (false);
 			ui->action_stopRender->setEnabled (false);
 			ui->button_copyToClipboard->setEnabled (true);
-            activityMessage->setText("Render is finished");
-            break;
+			activityMessage->setText("Render is finished");
+			break;
 		case STOPPING:
 			// Rendering is being stopped.
 			ui->button_resume->setEnabled (false);
@@ -982,7 +977,7 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			ui->button_stop->setEnabled (false);
 			ui->action_stopRender->setEnabled (false);
 			ui->button_copyToClipboard->setEnabled (true);
-            activityMessage->setText("Render is stopped");
+			activityMessage->setText("Render is stopped");
 			break;
 		case PAUSED:
 			// Rendering is paused.
@@ -993,7 +988,7 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			ui->button_stop->setEnabled (true);
 			ui->action_stopRender->setEnabled (true);
 			ui->button_copyToClipboard->setEnabled (true);
-            activityMessage->setText("Render is paused");
+			activityMessage->setText("Render is paused");
 			break;
 	}
 	m_guiRenderState = state;
@@ -1013,24 +1008,24 @@ bool MainWindow::event (QEvent *event)
 		delete m_updateThread;
 		m_updateThread = NULL;
 		statusMessage->setText("");
-        indicateInactiv(); // reset progressindicator
+		// reset progressindicator
+		indicateActivity(false);
 		renderView->reload();
 		histogramwidget->Update();
 		retval = TRUE;
 	}
 	else if (eventtype == EVT_LUX_PARSEERROR) {
 		m_loadTimer->stop();
-        blinkTimeout();
-        indicateInactiv();
-        statusMessage->setText("Loading aborted");
-
+		blinkTimeout();
+		indicateActivity(false);
+		statusMessage->setText("Loading aborted");
 		changeRenderState(FINISHED);
 		retval = TRUE;
 	}
 	else if (eventtype == EVT_LUX_FLMLOADERROR) {
-        blinkTimeout();
-        indicateInactiv();
-        statusMessage->setText("Loading aborted");
+		blinkTimeout();
+		indicateActivity(false);
+		statusMessage->setText("Loading aborted");
 		if (m_flmloadThread) {
 			m_flmloadThread->join();
 			delete m_flmloadThread;
@@ -1058,7 +1053,7 @@ bool MainWindow::event (QEvent *event)
 		m_flmsaveThread = NULL;
 		retval = TRUE;
 	}
-	else if (eventtype == EVT_LUX_LOGEVENT){
+	else if (eventtype == EVT_LUX_LOGEVENT) {
 		logEvent((LuxLogEvent *)event);
 		retval = TRUE;
 		}
@@ -1091,7 +1086,7 @@ void MainWindow::logEvent(LuxLogEvent *event)
 		startPos = ui->textEdit_log->textCursor().selectionStart();
 		endPos = ui->textEdit_log->textCursor().selectionEnd();
 	}
-	
+
 	// Append log message to end of document
 	ui->textEdit_log->moveCursor(QTextCursor::End);
 
@@ -1139,30 +1134,30 @@ void MainWindow::logEvent(LuxLogEvent *event)
 	
 	if (m_showWarningDialog && event->getSeverity() > LUX_INFO && event->getSeverity() < LUX_ERROR) {
 		m_showWarningDialog = false;
-        blink = false;
-        static const QIcon icon(":/icons/warningicon.png");
-        ShowTabLogIcon(1, icon);
-        activityMessage->setText("Warnings in Log");
+		blink = false;
+		static const QIcon icon(":/icons/warningicon.png");
+		ShowTabLogIcon(1, icon);
+		activityMessage->setText("Warnings in Log");
     }
-    else if (event->getSeverity() > LUX_WARNING) {
-        blinkTimeout();
-        activityMessage->setText("Errors in Log");
-    }
+	else if (event->getSeverity() > LUX_WARNING) {
+		blinkTimeout();
+		activityMessage->setText("Errors in Log");
+	}
 }
 
 // Icon blinking flipflop
 void MainWindow::blinkTimeout()
 {
-    m_blinkTimer->start(1000);
-    blink = !blink;
-    if (blink) {
-        static const QIcon icon(":/icons/erroricon.png");
-        ShowTabLogIcon(1, icon);
-    }
-    else {
-        static const QIcon icon(":/icons/logtabicon.png");
-        ShowTabLogIcon(1, icon);
-    }
+	m_blinkTimer->start(1000);
+	blink = !blink;
+	if (blink) {
+		static const QIcon icon(":/icons/erroricon.png");
+		ShowTabLogIcon(1, icon);
+	}
+	else {
+		static const QIcon icon(":/icons/logtabicon.png");
+		ShowTabLogIcon(1, icon);
+	}
 }
 
 void MainWindow::renderTimeout()
@@ -1201,8 +1196,8 @@ void MainWindow::statsTimeout()
 void MainWindow::loadTimeout()
 {
 	if(luxStatistics("sceneIsReady") || m_guiRenderState == FINISHED) {
-        indicateInactiv();
-        statusMessage->setText("");
+		indicateActivity(false);
+		statusMessage->setText("");
 		m_loadTimer->stop();
 
 		if (luxStatistics("sceneIsReady")) {
@@ -1224,8 +1219,8 @@ void MainWindow::loadTimeout()
 		}
 	}
 	else if ( luxStatistics("filmIsReady") ) {
-        indicateInactiv();
-        statusMessage->setText("");
+		indicateActivity(false);
+		statusMessage->setText("");
 		m_loadTimer->stop();
 
 		if(m_flmloadThread) {
@@ -1250,8 +1245,8 @@ void MainWindow::loadTimeout()
 
 void MainWindow::saveTimeout()
 {
-    indicateInactiv();
-    statusMessage->setText("");
+	indicateActivity(false);
+	statusMessage->setText("");
 }
 
 void MainWindow::netTimeout()
