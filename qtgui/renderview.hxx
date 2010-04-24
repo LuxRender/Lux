@@ -42,10 +42,9 @@ class RenderView : public QGraphicsView
 public:
 
 	RenderView(QWidget *parent = 0, bool opengl = false);
-    ~RenderView ();
+	~RenderView ();
 
-	void resetZoom ();
-    void mousePressEvent(QResizeEvent *event);
+	void mousePressEvent(QResizeEvent *event);
 	void setZoomEnabled (bool enabled = true) { zoomEnabled = enabled; };
 	void reload ();
 	void setLogoMode ();

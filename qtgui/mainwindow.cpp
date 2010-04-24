@@ -1216,6 +1216,8 @@ void MainWindow::loadTimeout()
 			ui->outputTabs->setEnabled (true);
 			resetToneMappingFromFilm (false);
 			ResetLightGroupsFromFilm (false);
+			
+			renderView->resetTransform();
 		}
 	}
 	else if ( luxStatistics("filmIsReady") ) {
@@ -1237,6 +1239,7 @@ void MainWindow::loadTimeout()
 		ResetLightGroupsFromFilm( false );
 		// Update framebuffer
 		luxUpdateFramebuffer();
+		renderView->resetTransform();
 		renderView->reload();
 		// Update stats
 		updateStatistics();

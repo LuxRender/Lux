@@ -21,8 +21,11 @@
  ***************************************************************************/
 
 #include "renderview.hxx"
-
 #include "api.h"
+
+#include <iostream>
+
+using namespace std;
 
 RenderView::RenderView(QWidget *parent, bool opengl) : QGraphicsView(parent) {
 #if !defined(__APPLE__)
@@ -35,6 +38,8 @@ RenderView::RenderView(QWidget *parent, bool opengl) : QGraphicsView(parent) {
 	luxlogo = renderscene->addPixmap(QPixmap(":/images/luxlogo_bg.png"));
 	luxfb = renderscene->addPixmap(QPixmap(":/images/luxlogo_bg.png"));
 	luxfb->hide ();
+	renderscene->setSceneRect (0.0f, 0.0f, 416, 389);
+	centerOn(luxlogo);
 	setScene(renderscene);
 }
 
@@ -61,13 +66,21 @@ void RenderView::reload () {
 		int w = luxStatistics("filmXres"), h = luxStatistics("filmYres");
 		unsigned char* fb = luxFramebuffer();
 
+		if (!fb)
+			return;
+			
 		if (luxlogo->isVisible ())
 			luxlogo->hide ();
 
 		luxfb->setPixmap(QPixmap::fromImage(QImage(fb, w, h, w * 3, QImage::Format_RGB888)));
 
-		if (!luxfb->isVisible())
+		if (!luxfb->isVisible()) {
+			resetTransform ();
 			luxfb->show ();
+			renderscene->setSceneRect (0.0f, 0.0f, w, h);
+			centerOn(luxfb);
+			fitInView(luxfb, Qt::KeepAspectRatio);
+		}
 		zoomEnabled = true;
 		setDragMode(QGraphicsView::ScrollHandDrag);
 		setInteractive(true);
@@ -75,19 +88,18 @@ void RenderView::reload () {
 }
 
 void RenderView::setLogoMode () {
+	resetTransform ();
 	if (luxfb->isVisible()) {
 		luxfb->hide ();
 		zoomEnabled = false;
 	}
-	if (!luxlogo->isVisible ())
+	if (!luxlogo->isVisible ()) {
 		luxlogo->show ();
-	resetZoom ();
+		renderscene->setSceneRect (0.0f, 0.0f, 416, 389);
+		centerOn(luxlogo);
+	}
 	setInteractive(false);
 }
-
-void RenderView::resetZoom () {
-	setMatrix (QMatrix());
-} 
 
 void RenderView::mousePressEvent(QResizeEvent *event) {
     QGraphicsView::resizeEvent(event);
@@ -109,13 +121,12 @@ void RenderView::mousePressEvent (QMouseEvent *event) {
 		switch (event->button()) {
 			case Qt::LeftButton:
 				currentpos = event->pos();
-	//			setCursor(Qt::ClosedHandCursor);
 				break;
 			case Qt::MidButton:
-                fitInView(renderscene->sceneRect(), Qt::KeepAspectRatio);
-                break;
+				fitInView(renderscene->sceneRect(), Qt::KeepAspectRatio);
+				break;
 			case Qt::RightButton:
-				resetZoom ();
+				resetTransform ();
 				break;
 		}
 	}
