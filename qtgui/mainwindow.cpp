@@ -1029,6 +1029,8 @@ bool MainWindow::event (QEvent *event)
 	}
 	else if (eventtype == EVT_LUX_FLMLOADERROR) {
         blinkTimeout();
+        indicateInactiv();
+        statusMessage->setText("Loading aborted");
 		if (m_flmloadThread) {
 			m_flmloadThread->join();
 			delete m_flmloadThread;
@@ -1135,18 +1137,17 @@ void MainWindow::logEvent(LuxLogEvent *event)
 
 	ui->textEdit_log->ensureCursorVisible();
 	
-	if (m_showWarningDialog && event->getSeverity() > LUX_INFO) {
+	if (m_showWarningDialog && event->getSeverity() > LUX_INFO && event->getSeverity() < LUX_ERROR) {
 		m_showWarningDialog = false;
         blink = false;
-		if (event->getSeverity() < LUX_SEVERE) {
-            static const QIcon icon(":/icons/warningicon.png");
-            ShowTabLogIcon(1, icon);
-            activityMessage->setText("Warnings !");
-		} else {
-            blinkTimeout();
-            activityMessage->setText("Severe Errors !");
-		}
-	}
+        static const QIcon icon(":/icons/warningicon.png");
+        ShowTabLogIcon(1, icon);
+        activityMessage->setText("Warnings in Log");
+    }
+    else if (event->getSeverity() > LUX_WARNING) {
+        blinkTimeout();
+        activityMessage->setText("Errors in Log");
+    }
 }
 
 // Icon blinking flipflop
