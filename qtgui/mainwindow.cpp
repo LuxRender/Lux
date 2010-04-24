@@ -1020,12 +1020,14 @@ bool MainWindow::event (QEvent *event)
 	}
 	else if (eventtype == EVT_LUX_PARSEERROR) {
 		m_loadTimer->stop();
+        blinkTimeout();
+        indicateInactiv();
+        statusMessage->setText("Loading aborted");
 
 		changeRenderState(FINISHED);
 		retval = TRUE;
 	}
 	else if (eventtype == EVT_LUX_FLMLOADERROR) {
-        m_blinkTimer->start(1000);
         blinkTimeout();
 		if (m_flmloadThread) {
 			m_flmloadThread->join();
@@ -1104,7 +1106,7 @@ void MainWindow::logEvent(LuxLogEvent *event)
 		case LUX_WARNING:
 			ss << tr("Warning: ");
 			ui->textEdit_log->setTextColor(warningColour);
-			warning = true;
+			warning = true;            
 			break;
 		case LUX_ERROR:
 			ss << tr("Error: ");
@@ -1136,16 +1138,13 @@ void MainWindow::logEvent(LuxLogEvent *event)
 	if (m_showWarningDialog && event->getSeverity() > LUX_INFO) {
 		m_showWarningDialog = false;
         blink = false;
-        static const QIcon icon(":/icons/logtabicon.png");
-        ShowTabLogIcon(1, icon);
 		if (event->getSeverity() < LUX_SEVERE) {
-            m_blinkTimer->start(1000);
-            blinkTimeout();
-            activityMessage->setText("Errors !!!");
-		} else {
             static const QIcon icon(":/icons/warningicon.png");
             ShowTabLogIcon(1, icon);
-            activityMessage->setText("Warnings !!!");
+            activityMessage->setText("Warnings !");
+		} else {
+            blinkTimeout();
+            activityMessage->setText("Severe Errors !");
 		}
 	}
 }
@@ -1153,6 +1152,7 @@ void MainWindow::logEvent(LuxLogEvent *event)
 // Icon blinking flipflop
 void MainWindow::blinkTimeout()
 {
+    m_blinkTimer->start(1000);
     blink = !blink;
     if (blink) {
         static const QIcon icon(":/icons/erroricon.png");
