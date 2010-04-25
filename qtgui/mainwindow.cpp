@@ -734,6 +734,7 @@ void MainWindow::applyTonemapping(bool withlayercomputation)
 		} else {
 			luxError(LUX_NOERROR, LUX_INFO, tr("GUI: Updating framebuffer/Computing Lens Effect Layer(s)...").toLatin1().data());
 			statusMessage->setText(tr("Computing Lens Effect Layer(s) & Tonemapping..."));
+			indicateActivity();
 		}
 		m_updateThread = new boost::thread(boost::bind(&MainWindow::updateThread, this));
 	}
