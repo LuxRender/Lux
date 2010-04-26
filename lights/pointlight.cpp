@@ -32,31 +32,27 @@ using namespace lux;
 
 class GonioBxDF : public BxDF {
 public:
-	GonioBxDF(const Transform &WToL, const SampleableSphericalFunction *func) :
-		BxDF(BxDFType(BSDF_DIFFUSE)), WorldToLight(WToL), sf(func) { }
+	GonioBxDF(const SampleableSphericalFunction *func) :
+		BxDF(BxDFType(BSDF_DIFFUSE)), sf(func) { }
 	virtual ~GonioBxDF() { }
 	virtual bool Sample_f(const TsPack *tspack, const Vector &wo,
 		Vector *wi, float u1, float u2, SWCSpectrum *const f_,
 		float *pdf, float *pdfBack = NULL, bool reverse = false) const {
 		Vector w;
-		*f_ += sf->Sample_f(tspack, u1, u2, &w, pdf);
-		*wi = Normalize(WorldToLight.GetInverse()(w));
-		*f_ /= fabsf(wi->z);
+		SWCSpectrum ff(sf->Sample_f(tspack, u1, u2, wi, pdf));
+		*f_ += ff / fabsf(wi->z);
 		*pdfBack = 0.f;
 		return true;
 	}
 	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const F) const {
 		// Transform to light coordinate system
-		const Vector wL(Normalize(WorldToLight(wi)));
-		*F += sf->f(tspack, wL) / fabsf(wi.z);
+		*F += sf->f(tspack, wi) / fabsf(wi.z);
 	}
 	virtual float Pdf(const TsPack *tspack, const Vector &wi,
 		const Vector &wo) const {
-		const Vector wL(Normalize(WorldToLight(wi)));
-		return sf->Pdf(wL);
+		return sf->Pdf(wo);
 	}
 private:
-	const Transform &WorldToLight;
 	const SampleableSphericalFunction *sf;
 };
 
@@ -146,7 +142,7 @@ bool PointLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, fl
 		Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
 	if(func)
 		*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
-			ARENA_ALLOC(tspack->arena, GonioBxDF)(WorldToLight, func), NULL, NULL);
+			ARENA_ALLOC(tspack->arena, GonioBxDF)(func), NULL, NULL);
 	else
 		*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
 			ARENA_ALLOC(tspack->arena, UniformBxDF)(), NULL, NULL);
@@ -167,7 +163,7 @@ bool PointLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point 
 	*pdf = 1.f;
 	if (func)
 		*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
-			ARENA_ALLOC(tspack->arena, GonioBxDF)(WorldToLight, func), NULL, NULL);
+			ARENA_ALLOC(tspack->arena, GonioBxDF)(func), NULL, NULL);
 	else
 		*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
 			ARENA_ALLOC(tspack->arena, UniformBxDF)(), NULL, NULL);
