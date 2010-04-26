@@ -1143,16 +1143,17 @@ void MainWindow::logEvent(LuxLogEvent *event)
 
 	ui->textEdit_log->ensureCursorVisible();
 	
-	if (m_showWarningDialog && event->getSeverity() > LUX_INFO && event->getSeverity() < LUX_ERROR) {
+	if (m_showWarningDialog && event->getSeverity() > LUX_INFO) {
 		m_showWarningDialog = false;
 		blink = false;
-		static const QIcon icon(":/icons/warningicon.png");
-		ShowTabLogIcon(1, icon);
-		activityMessage->setText("Warnings in Log");
-    }
-	else if (event->getSeverity() > LUX_WARNING) {
-		blinkTimeout();
-		activityMessage->setText("Errors in Log");
+		if (event->getSeverity() < LUX_ERROR) {
+			static const QIcon icon(":/icons/warningicon.png");
+			ShowTabLogIcon(1, icon);
+			activityMessage->setText("Warnings in Log");
+		} else {
+			blinkTimeout();
+			activityMessage->setText("Errors in Log");
+		}
 	}
 }
 
