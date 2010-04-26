@@ -140,7 +140,9 @@ bool PointLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, fl
 {
 	*pdf = 1.f;
 	const Normal ns(0, 0, 1);
-	DifferentialGeometry dg(lightPos, ns, Vector(1, 0, 0), Vector(0, 1, 0),
+	DifferentialGeometry dg(lightPos, Normalize(LightToWorld(ns)),
+		Normalize(LightToWorld(Vector(1, 0, 0))),
+		Normalize(LightToWorld(Vector(0, 1, 0))),
 		Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
 	if(func)
 		*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
@@ -157,7 +159,9 @@ bool PointLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point 
 {
 	const Normal ns(0, 0, 1);
 	Vector dpdu, dpdv;
-	DifferentialGeometry dg(lightPos, ns, Vector(1, 0, 0), Vector(0, 1, 0),
+	DifferentialGeometry dg(lightPos, Normalize(LightToWorld(ns)),
+		Normalize(LightToWorld(Vector(1, 0, 0))),
+		Normalize(LightToWorld(Vector(0, 1, 0))),
 		Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
 	*pdfDirect = 1.f;
 	*pdf = 1.f;
