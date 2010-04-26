@@ -1649,7 +1649,7 @@ void Histogram::MakeImage(unsigned char *outPixels, u_int canvasW, u_int canvasH
 		case LUX_HISTOGRAM_RGB: {
 			//get maxima for scaling
 			float max = 0.f;
-			for (u_int i = 0; i < (m_bucketNr - 1) * 4; ++i) {
+			for (u_int i = 0; i < m_bucketNr * 4; ++i) {
 				if (i % 4 != 3 && buckets[i] > max)
 					max = buckets[i];
 			}
@@ -1672,7 +1672,7 @@ void Histogram::MakeImage(unsigned char *outPixels, u_int canvasW, u_int canvasH
 		case LUX_HISTOGRAM_RED: {
 			//get maxima for scaling
 			float max = 0.f;
-			for (u_int i = 0; i < m_bucketNr-1; ++i) {
+			for (u_int i = 0; i < m_bucketNr; ++i) {
 				if (buckets[i * 4 + channel] > max)
 					max = buckets[i * 4 + channel];
 			}
@@ -1695,7 +1695,7 @@ void Histogram::MakeImage(unsigned char *outPixels, u_int canvasW, u_int canvasH
 		case LUX_HISTOGRAM_RGB_ADD: {
 			//calculate maxima for scaling
 			float max = 0.f;
-			for (u_int i = 0; i < m_bucketNr - 1; ++i) {
+			for (u_int i = 0; i < m_bucketNr; ++i) {
 				const float val = buckets[i * 4] + buckets[i * 4 + 1] + buckets[i * 4 + 2];
 				if (val > max)
 					max = val;
