@@ -79,7 +79,7 @@ void RenderView::reload () {
 			luxfb->show ();
 			renderscene->setSceneRect (0.0f, 0.0f, w, h);
 			centerOn(luxfb);
-			fitInView(luxfb, Qt::KeepAspectRatio);
+//			fitInView(luxfb, Qt::KeepAspectRatio);
 		}
 		zoomEnabled = true;
 		setDragMode(QGraphicsView::ScrollHandDrag);

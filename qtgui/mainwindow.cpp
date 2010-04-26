@@ -240,7 +240,11 @@ MainWindow::MainWindow(QWidget *parent, bool opengl, bool copylog2console) : QMa
 	statusLabel = new QLabel(tr(" Activity:"));
 	statusMessage = new QLabel();
 	statusProgress = new QProgressBar();
+#if defined(__APPLE__)
+	statsLabel = new QLabel(tr(" Statistics:"));
+#else
 	statsLabel = new QLabel(tr(" Stats:"));
+#endif
 	statsMessage = new QLabel();
     
 	activityLabel->setMaximumWidth(60);
@@ -251,7 +255,11 @@ MainWindow::MainWindow(QWidget *parent, bool opengl, bool copylog2console) : QMa
 	statusMessage->setMaximumWidth(320);
 	statusProgress->setMaximumWidth(100);
 	statusProgress->setRange(0, 100);
+#if defined(__APPLE__)
+	statsLabel->setMaximumWidth(70);
+#else
 	statsLabel->setMaximumWidth(60);
+#endif
 	statsMessage->setFrameStyle(QFrame::Panel | QFrame::Sunken);
     
 	ui->statusbar->addPermanentWidget(activityLabel, 1);
@@ -413,11 +421,15 @@ void MainWindow::toneMapParamsChanged()
 void MainWindow::indicateActivity(bool active)
 {
 	if (active) {
+#if !defined(__APPLE__)
 		statusProgress->show ();
+#endif
 		statusProgress->setRange(0, 0);
 	}
 	else {
+#if !defined(__APPLE__)
 		statusProgress->hide ();
+#endif
 		statusProgress->setRange(0, 100);
 	}
 }
