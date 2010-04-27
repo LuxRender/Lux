@@ -1139,7 +1139,6 @@ void MainWindow::logEvent(LuxLogEvent *event)
 	
 	int currentIndex = ui->tabs_main->currentIndex();
 	if (currentIndex != 1 && m_showWarningDialog && event->getSeverity() > LUX_INFO) {
-		m_showWarningDialog = false;
 		blink = true;
 		if (event->getSeverity() < LUX_ERROR) {
 			static const QIcon icon(":/icons/warningicon.png");
