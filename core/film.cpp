@@ -48,7 +48,6 @@
 #include <boost/iostreams/filter/zlib.hpp>
 #include <boost/iostreams/filter/bzip2.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
-#include <boost/filesystem.hpp> 
 
 #define cimg_display_type  0
 
@@ -874,12 +873,11 @@ void Film::WriteResumeFilm(const string &filename)
     filestr.close();
 
 	if (writeSuccessful) {
-		if (boost::filesystem::exists(filename) && remove(filename.c_str())) {
-			LOG(LUX_ERROR, LUX_SYSTEM) << "Failed to remove old resume film: '" << filename << "', leaving new resume film as '" << tempfilename << "'";
-			return;
-		}
+		// if remove fails, rename might depending on platform fail, catch error there
+		remove(filename.c_str());
 		if (rename(tempfilename.c_str(), filename.c_str())) {
-			LOG(LUX_ERROR, LUX_SYSTEM) << "Failed to rename new resume, leaving new resume film as '" << tempfilename << "'";
+			LOG(LUX_ERROR, LUX_SYSTEM) << 
+				"Failed to rename new resume film, leaving new resume film as '" << tempfilename << "'";
 			return;
 		}
 		LOG(LUX_INFO, LUX_NOERROR) << "Film status written to '" << filename << "'";
