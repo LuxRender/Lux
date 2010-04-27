@@ -50,6 +50,7 @@
 #include <QVector>
 #include <QSettings>
 #include <QTextCursor>
+#include <QtGui/QTabBar>
 
 #include "api.h"
 #include "renderview.hxx"
@@ -252,6 +253,7 @@ private slots:
 	void stopRender ();
 	void copyLog ();
 	void clearLog ();
+	void tabChanged (int);
 	void fullScreen ();
 	void normalScreen ();
 	void aboutDialog ();

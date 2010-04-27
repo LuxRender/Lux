@@ -226,6 +226,7 @@ MainWindow::MainWindow(QWidget *parent, bool opengl, bool copylog2console) : QMa
 	// Buttons
 	connect(ui->button_imagingApply, SIGNAL(clicked()), this, SLOT(applyTonemapping()));
 	connect(ui->button_imagingReset, SIGNAL(clicked()), this, SLOT(resetToneMapping()));
+	connect(ui->tabs_main, SIGNAL(currentChanged(int)), this, SLOT(tabChanged(int)));
 
 	// Render threads
 	connect(ui->button_addThread, SIGNAL(clicked()), this, SLOT(addThread()));
@@ -1136,19 +1137,31 @@ void MainWindow::logEvent(LuxLogEvent *event)
 
 	ui->textEdit_log->ensureCursorVisible();
 	
-	if (m_showWarningDialog && event->getSeverity() > LUX_INFO) {
+	int currentIndex = ui->tabs_main->currentIndex();
+	if (currentIndex != 1 && m_showWarningDialog && event->getSeverity() > LUX_INFO) {
 		m_showWarningDialog = false;
 		if (event->getSeverity() < LUX_ERROR) {
 			static const QIcon icon(":/icons/warningicon.png");
 			ShowTabLogIcon(1, icon);
-			activityMessage->setText("Warnings in Log");
 		} else {
 			blinkTrigger();
-			activityMessage->setText("Errors in Log");
+			statusMessage->setText("Check Log Please");
 		}
 	}
 }
 
+//user acknowledged error/warning-conditions 
+void MainWindow::tabChanged(int)
+{ 
+	int currentIndex = ui->tabs_main->currentIndex();
+	if (currentIndex) {
+		blinkTrigger(false);
+		static const QIcon icon(":/icons/logtabicon.png");
+		ShowTabLogIcon(1, icon);
+		statusMessage->setText("Checking Log acknowleded");
+	}
+}
+	
 // Icon blinking flipflop
 void MainWindow::blinkTrigger(bool active)
 {
@@ -1272,6 +1285,7 @@ void MainWindow::resetToneMapping()
 {
 	if (luxStatistics("sceneIsReady") || luxStatistics("filmIsReady")) {
 		resetToneMappingFromFilm( true );
+		statusMessage->setText("Reloading Tonemapping from Film");
 		return;
 	}
 
