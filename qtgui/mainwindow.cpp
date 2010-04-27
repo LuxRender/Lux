@@ -288,7 +288,7 @@ MainWindow::MainWindow(QWidget *parent, bool opengl, bool copylog2console) : QMa
 	connect(m_netTimer, SIGNAL(timeout()), SLOT(netTimeout()));
     
 	m_blinkTimer = new QTimer();
-	connect(m_blinkTimer, SIGNAL(timeout()), SLOT(blinkTimeout()));
+	connect(m_blinkTimer, SIGNAL(timeout()), SLOT(blinkTrigger()));
 
 
 	// Init render area
@@ -403,13 +403,6 @@ void MainWindow::WriteSettings()
 void MainWindow::ShowTabLogIcon ( int index, const QIcon & icon )
 {
 	ui->tabs_main->setTabIcon(index, icon);
-}
-
-void MainWindow::resetBlink () 
-{
-	m_blinkTimer->stop();
-	static const QIcon icon(":/icons/logtabicon.png");
-	ShowTabLogIcon(1, icon);
 }
 
 void MainWindow::toneMapParamsChanged()
@@ -693,7 +686,7 @@ void MainWindow::copyLog()
 void MainWindow::clearLog()
 {
 	ui->textEdit_log->setPlainText("");
-	resetBlink();
+	blinkTrigger(false);
 }
 
 void MainWindow::fullScreen()
@@ -1027,14 +1020,14 @@ bool MainWindow::event (QEvent *event)
 	}
 	else if (eventtype == EVT_LUX_PARSEERROR) {
 		m_loadTimer->stop();
-		blinkTimeout();
+		blinkTrigger();
 		indicateActivity(false);
 		statusMessage->setText("Loading aborted");
 		changeRenderState(FINISHED);
 		retval = TRUE;
 	}
 	else if (eventtype == EVT_LUX_FLMLOADERROR) {
-		blinkTimeout();
+		blinkTrigger();
 		indicateActivity(false);
 		statusMessage->setText("Loading aborted");
 		if (m_flmloadThread) {
@@ -1145,28 +1138,34 @@ void MainWindow::logEvent(LuxLogEvent *event)
 	
 	if (m_showWarningDialog && event->getSeverity() > LUX_INFO) {
 		m_showWarningDialog = false;
-		blink = false;
 		if (event->getSeverity() < LUX_ERROR) {
 			static const QIcon icon(":/icons/warningicon.png");
 			ShowTabLogIcon(1, icon);
 			activityMessage->setText("Warnings in Log");
 		} else {
-			blinkTimeout();
+			blinkTrigger();
 			activityMessage->setText("Errors in Log");
 		}
 	}
 }
 
 // Icon blinking flipflop
-void MainWindow::blinkTimeout()
+void MainWindow::blinkTrigger(bool active)
 {
-	m_blinkTimer->start(1000);
-	blink = !blink;
-	if (blink) {
-		static const QIcon icon(":/icons/erroricon.png");
-		ShowTabLogIcon(1, icon);
-	}
-	else {
+	if (active) {
+		m_blinkTimer->start(1000);
+		blink = !blink;
+		if (blink) {
+			static const QIcon icon(":/icons/erroricon.png");
+			ShowTabLogIcon(1, icon);
+		}
+		else {
+			static const QIcon icon(":/icons/logtabicon.png");
+			ShowTabLogIcon(1, icon);
+		}
+	} else {
+		m_blinkTimer->stop();
+		blink = false;
 		static const QIcon icon(":/icons/logtabicon.png");
 		ShowTabLogIcon(1, icon);
 	}

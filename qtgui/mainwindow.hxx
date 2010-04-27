@@ -252,7 +252,6 @@ private slots:
 	void stopRender ();
 	void copyLog ();
 	void clearLog ();
-	void resetBlink ();
 	void fullScreen ();
 	void normalScreen ();
 	void aboutDialog ();
@@ -264,7 +263,7 @@ private slots:
 	void loadTimeout ();
 	void saveTimeout ();
 	void netTimeout ();
-	void blinkTimeout ();
+	void blinkTrigger (bool active = true);
 
 	void addThread ();
 	void removeThread ();
