@@ -1158,7 +1158,7 @@ void MainWindow::tabChanged(int)
 		blinkTrigger(false);
 		static const QIcon icon(":/icons/logtabicon.png");
 		ShowTabLogIcon(1, icon);
-		statusMessage->setText("Checking Log acknowleded");
+		statusMessage->setText("Checking Log acknowledged");
 	}
 }
 	
