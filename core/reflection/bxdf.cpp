@@ -418,9 +418,10 @@ bool MixBSDF::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 		}
 		u3 -= weights[i];
 	}
+	BxDFType sType;
 	if (!bsdfs[which]->Sample_f(tspack,
 		wo, wi, u1, u2, u3 / weights[which], f_, pdf, flags,
-		sampledType, pdfBack, reverse))
+		&sType, pdfBack, reverse))
 		return false;
 	// To make bump map work, we must compensate for the shading normal
 	// that can be different in the sub BSDF than in the mix. The values
@@ -438,8 +439,8 @@ bool MixBSDF::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 	*pdf *= weights[which];
 	if (pdfBack)
 		*pdfBack *= weights[which];
-	if (*sampledType & BSDF_SPECULAR)
-		flags = BxDFType(flags & ~(BSDF_DIFFUSE | BSDF_GLOSSY));
+	if (sType & BSDF_SPECULAR)
+		flags = sType;
 	for (u_int i = 0; i < nBSDFs; ++i) {
 		if (i == which)
 			continue;
@@ -461,6 +462,8 @@ bool MixBSDF::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 	*pdf /= totalWeight;
 	if (pdfBack)
 		*pdfBack /= totalWeight;
+	if (sampledType)
+		*sampledType = sType;
 	return true;
 }
 float MixBSDF::Pdf(const TsPack *tspack, const Vector &wo, const Vector &wi,
