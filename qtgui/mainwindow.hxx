@@ -142,6 +142,7 @@ public:
 
 	void SetRenderThreads(int num);
 	void updateStatistics();
+	void showRenderresolution();
 	void renderScenefile(const QString& sceneFilename, const QString& flmFilename);
 	void renderScenefile(const QString& filename);
 	void changeRenderState (LuxGuiRenderState state);
@@ -164,6 +165,11 @@ protected:
 	void createActions();
 	
 private:
+	Ui::MainWindow *thorizontalLayout_4;
+	
+	QLabel *resLabel;
+	QLabel *resinfoLabel;
+	
 	Ui::MainWindow *ui;
 
 	QLabel *activityLabel;

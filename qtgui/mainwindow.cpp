@@ -234,7 +234,15 @@ MainWindow::MainWindow(QWidget *parent, bool opengl, bool copylog2console) : QMa
 	
 	// Clipboard
 	connect(ui->button_copyToClipboard, SIGNAL(clicked()), this, SLOT(copyToClipboard()));
-
+	
+	// Resolution-Info
+	resLabel = new QLabel(tr(" Resolution:"));
+	resinfoLabel = new QLabel();
+	resinfoLabel->setFrameStyle(QFrame::Panel | QFrame::Sunken);
+	resinfoLabel->setMinimumWidth(100);
+	ui->horizontalLayout_4->addWidget(resLabel, 0);
+	ui->horizontalLayout_4->addWidget(resinfoLabel, 0);	
+	
 	// Statusbar
 	activityLabel = new QLabel(tr("  Status:"));
 	activityMessage = new QLabel();
@@ -607,7 +615,7 @@ void MainWindow::resumeRender()
 		
 		if (m_guiRenderState == STOPPED)
 			luxSetHaltSamplePerPixel(-1, false, false);
-		
+		showRenderresolution();
 		changeRenderState(RENDERING);
 	}
 }
@@ -818,7 +826,7 @@ void MainWindow::updateStatistics()
 	m_samplesSec = luxStatistics("samplesSec");
 	int samplesSec = Floor2Int(m_samplesSec);
 	int samplesTotSec = Floor2Int(luxStatistics("samplesTotSec"));
-	int secElapsed = Floor2Int(luxStatistics("secElapsed"));
+	int secElapsed =  Floor2Int(luxStatistics("secElapsed"));
 	int samplesPx = Floor2Int(luxStatistics("samplesPx"));
 	int efficiency = Floor2Int(luxStatistics("efficiency"));
 	int EV = luxStatistics("filmEV");
@@ -828,6 +836,13 @@ void MainWindow::updateStatistics()
 	int hours = (secElapsed / 3600);
 
 	statsMessage->setText(QString("%1:%2:%3 - %4 S/s - %5 TotS/s - %6 S/px - %7% eff - EV = %8").arg(hours,2,10,QChar('0')).arg(mins, 2,10,QChar('0')).arg(secs,2,10,QChar('0')).arg(samplesSec).arg(samplesTotSec).arg(samplesPx).arg(efficiency).arg(EV));
+}
+
+// show the render-resolution
+void MainWindow::showRenderresolution()
+{
+int w = luxStatistics("filmXres"), h = luxStatistics("filmYres");
+resinfoLabel->setText(QString("%1 x %2").arg(w).arg(h));
 }
 
 void MainWindow::renderScenefile(const QString& sceneFilename, const QString& flmFilename)
