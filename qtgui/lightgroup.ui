@@ -98,7 +98,7 @@
         <string>Enable BlackBody Temperature Adjustment</string>
        </property>
        <property name="text">
-        <string>Black Body temperature</string>
+        <string>Black Body Temperature</string>
        </property>
       </widget>
      </item>

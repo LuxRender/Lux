@@ -165,9 +165,9 @@ MainWindow::MainWindow(QWidget *parent, bool opengl, bool copylog2console) : QMa
 	connect(ui->checkBox_imagingAuto, SIGNAL(stateChanged(int)), this, SLOT(autoEnabledChanged(int)));
 
 	// Panes
-	panes[0] = new PaneWidget(ui->panesAreaContents, "Tonemap", ":/icons/tonemapicon.png");
+	panes[0] = new PaneWidget(ui->panesAreaContents, "Tone Mapping", ":/icons/tonemapicon.png");
 	panes[1] = new PaneWidget(ui->panesAreaContents, "Lens Effects", ":/icons/lenseffectsicon.png", true);
-	panes[2] = new PaneWidget(ui->panesAreaContents, "Colorspace", ":/icons/colorspaceicon.png");
+	panes[2] = new PaneWidget(ui->panesAreaContents, "Color Space", ":/icons/colorspaceicon.png");
 	panes[3] = new PaneWidget(ui->panesAreaContents, "Gamma", ":/icons/gammaicon.png", true);
 	panes[4] = new PaneWidget(ui->panesAreaContents, "HDR Histogram", ":/icons/histogramicon.png");
 	panes[5] = new PaneWidget(ui->panesAreaContents, "Noise Reduction", ":/icons/noisereductionicon.png", true);
@@ -311,7 +311,6 @@ MainWindow::MainWindow(QWidget *parent, bool opengl, bool copylog2console) : QMa
 	m_auto_tonemap = false;
 	resetToneMapping();
 	m_auto_tonemap = true;
-	m_showWarningDialog = true;
 
 	copyLog2Console = m_copyLog2Console;
 	luxErrorHandler(&LuxGuiErrorHandler);
@@ -902,9 +901,6 @@ void MainWindow::renderScenefile(const QString& filename)
     
 	m_loadTimer->start(1000);
 
-	m_showParseWarningDialog = true;
-	m_showParseErrorDialog = true;
-	m_showWarningDialog = true;
 
 	// Start main render thread
 	if (m_engineThread)
@@ -1138,7 +1134,7 @@ void MainWindow::logEvent(LuxLogEvent *event)
 	ui->textEdit_log->ensureCursorVisible();
 	
 	int currentIndex = ui->tabs_main->currentIndex();
-	if (currentIndex != 1 && m_showWarningDialog && event->getSeverity() > LUX_INFO) {
+	if (currentIndex != 1 && event->getSeverity() > LUX_INFO) {
 		blink = true;
 		if (event->getSeverity() < LUX_ERROR) {
 			static const QIcon icon(":/icons/warningicon.png");

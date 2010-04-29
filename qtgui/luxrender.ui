@@ -338,7 +338,7 @@
               <normaloff>:/icons/lightgroupsicon.png</normaloff>:/icons/lightgroupsicon.png</iconset>
             </attribute>
             <attribute name="title">
-             <string>Lightgroups</string>
+             <string>Light Groups</string>
             </attribute>
             <layout class="QVBoxLayout" name="verticalLayout_15">
              <item>

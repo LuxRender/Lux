@@ -193,9 +193,7 @@ private:
 
 	int m_numThreads;
 	bool m_copyLog2Console;
-	bool m_showParseWarningDialog;
-	bool m_showParseErrorDialog;
-	bool m_showWarningDialog;
+
 	double m_samplesSec;
 	
 	LuxGuiRenderState m_guiRenderState;
