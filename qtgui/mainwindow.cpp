@@ -186,7 +186,7 @@ MainWindow::MainWindow(QWidget *parent, bool opengl, bool copylog2console) : QMa
 	connect(lenseffectswidget, SIGNAL(forceUpdate()), this, SLOT(forceToneMapUpdate()));
 	connect(lenseffectswidget, SIGNAL(valuesChanged()), this, SLOT(toneMapParamsChanged()));
 
-	// Colourspace
+	// Colorspace
 	colorspacewidget = new ColorSpaceWidget(panes[2]);
 	panes[2]->setWidget(colorspacewidget);
 	ui->panesLayout->addWidget(panes[2]);
@@ -826,7 +826,7 @@ void MainWindow::updateStatistics()
 	m_samplesSec = luxStatistics("samplesSec");
 	int samplesSec = Floor2Int(m_samplesSec);
 	int samplesTotSec = Floor2Int(luxStatistics("samplesTotSec"));
-	int secElapsed =  Floor2Int(luxStatistics("secElapsed"));
+	int secElapsed = Floor2Int(luxStatistics("secElapsed"));
 	int samplesPx = Floor2Int(luxStatistics("samplesPx"));
 	int efficiency = Floor2Int(luxStatistics("efficiency"));
 	int EV = luxStatistics("filmEV");
