@@ -158,7 +158,7 @@ public:
 	void UpdateNetworkTree();
 
 	void ShowTabLogIcon( int index , const QIcon & icon);
-
+	
 	bool m_auto_tonemap;
 
 protected:
@@ -166,7 +166,7 @@ protected:
 	void setCurrentFile(const QString& filename);
 	void updateRecentFileActions();
 	void createActions();
-	
+
 private:
 	Ui::MainWindow *thorizontalLayout_4;
 	
@@ -240,6 +240,7 @@ private:
 	bool blink;
 	int viewportw, viewporth;
 	int zoomfactor;
+	float factor;
     
 	void UpdateLightGroupWidgetValues();
 	void ResetLightGroups(void);

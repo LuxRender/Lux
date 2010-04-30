@@ -236,9 +236,7 @@ MainWindow::MainWindow(QWidget *parent, bool opengl, bool copylog2console) : QMa
 	connect(ui->button_copyToClipboard, SIGNAL(clicked()), this, SLOT(copyToClipboard()));
 	
 	// Resolution-Info
-//	connect(RenderView, SIGNAL(sceneRectChanged(renderView)), this, SLOT(viewportChanged())); //void QGraphicsScene::sceneRectChanged ( const QRectF & rect )   [signal]
-	connect(ui->splitter, SIGNAL(splitterMoved(int, int)), this, SLOT(viewportChanged()));
-	
+		connect(ui->splitter, SIGNAL(splitterMoved(int, int)), this, SLOT(viewportChanged())); // for testing
 	resinfospacer = new QSpacerItem( 0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
 	resLabel = new QLabel(tr(" Resolution:"));
 	resinfoLabel = new QLabel();
@@ -644,9 +642,12 @@ void MainWindow::resumeRender()
 void MainWindow::pauseRender()
 {
 	if (m_guiRenderState != PAUSED && m_guiRenderState != TONEMAPPING) {
-		// Stop display update timer
-		m_renderTimer->stop();
-		m_statsTimer->stop();
+		// We have to check if network rendering is enabled. In this case,
+		// we don't stop timer in order to save the image to the disk, etc.
+		if (luxGetServerCount() < 1) {
+			m_renderTimer->stop();
+			m_statsTimer->stop();
+		}
 		
 		if (m_guiRenderState == RENDERING)
 			luxPause();
@@ -868,18 +869,20 @@ void MainWindow::showRenderresolution()
 // show the zoom-factor in viewport TODO !!!
 void MainWindow::showZoomfactor()
 {
-//	zoomfactor->(QPixmap::width ());
-//	zoominfoLabel->setText(QString("%1").arg(zoomfactor));	
+	qreal zoomfactor = 100.0f;
+	zoomfactor = factor * zoomfactor ;
+	zoominfoLabel->setText(QString("%1").arg(zoomfactor));
 }
 // show the actual viewportsize
 void MainWindow::viewportChanged()
-{	
+{
+	showZoomfactor();
 	showViewportsize();
 }
 
 void MainWindow::showViewportsize()
 {
-	int viewportw = renderView->width(), viewporth = renderView->height();
+	int viewportw = (luxStatistics("filmXres") * zoomfactor), viewporth = (luxStatistics("filmYres") * zoomfactor);
 	viewportinfoLabel->setText(QString("%1 x %2").arg(viewportw).arg(viewporth));
 }
 
