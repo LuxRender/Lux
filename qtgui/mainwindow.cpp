@@ -236,7 +236,6 @@ MainWindow::MainWindow(QWidget *parent, bool opengl, bool copylog2console) : QMa
 	connect(ui->button_copyToClipboard, SIGNAL(clicked()), this, SLOT(copyToClipboard()));
 	
 	// Resolution-Info
-		connect(ui->splitter, SIGNAL(splitterMoved(int, int)), this, SLOT(viewportChanged())); // for testing
 	resinfospacer = new QSpacerItem( 0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
 	resLabel = new QLabel(tr(" Resolution:"));
 	resinfoLabel = new QLabel();
@@ -320,6 +319,7 @@ MainWindow::MainWindow(QWidget *parent, bool opengl, bool copylog2console) : QMa
 	// Init render area
 	renderView = new RenderView(ui->frame_render, m_opengl);
 	ui->renderLayout->addWidget(renderView, 0, 0, 1, 1);
+	connect(renderView, SIGNAL(viewChanged()), this, SLOT(viewportChanged()));
 	renderView->show ();
 
 	ui->outputTabs->setEnabled (false);
@@ -869,21 +869,16 @@ void MainWindow::showRenderresolution()
 // show the zoom-factor in viewport TODO !!!
 void MainWindow::showZoomfactor()
 {
-	qreal zoomfactor = 100.0f;
-	zoomfactor = factor * zoomfactor ;
-	zoominfoLabel->setText(QString("%1").arg(zoomfactor));
+	zoominfoLabel->setText(QString("%1").arg(renderView->getZoomFactor()));
 }
 // show the actual viewportsize
-void MainWindow::viewportChanged()
-{
+void MainWindow::viewportChanged() {
 	showZoomfactor();
 	showViewportsize();
 }
 
-void MainWindow::showViewportsize()
-{
-	int viewportw = (luxStatistics("filmXres") * zoomfactor), viewporth = (luxStatistics("filmYres") * zoomfactor);
-	viewportinfoLabel->setText(QString("%1 x %2").arg(viewportw).arg(viewporth));
+void MainWindow::showViewportsize() {
+	viewportinfoLabel->setText(QString("%1 x %2").arg(renderView->getWidth()).arg(renderView->getHeight()));
 }
 
 void MainWindow::renderScenefile(const QString& sceneFilename, const QString& flmFilename)

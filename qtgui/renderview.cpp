@@ -41,6 +41,7 @@ RenderView::RenderView(QWidget *parent, bool opengl) : QGraphicsView(parent) {
 	renderscene->setSceneRect (0.0f, 0.0f, 416, 389);
 	centerOn(luxlogo);
 	setScene(renderscene);
+	zoomfactor = 100.0f;
 }
 
 RenderView::~RenderView () {
@@ -101,8 +102,21 @@ void RenderView::setLogoMode () {
 	setInteractive(false);
 }
 
-void RenderView::mousePressEvent(QResizeEvent *event) {
-    QGraphicsView::resizeEvent(event);
+void RenderView::resizeEvent(QResizeEvent *event) {
+	QGraphicsView::resizeEvent(event);
+	emit viewChanged ();
+}
+
+float RenderView::getZoomFactor () {
+	return zoomfactor;
+}
+
+int RenderView::getWidth () {
+	return width();
+}
+
+int RenderView::getHeight () {
+	return height();
 }
 
 void RenderView::wheelEvent (QWheelEvent* event) {
@@ -112,7 +126,10 @@ void RenderView::wheelEvent (QWheelEvent* event) {
 	qreal factor = 1.2;
 	if (event->delta() < 0)
 		factor = 1.0 / factor;
+	zoomfactor *= factor;
 	scale(factor, factor);
+
+	emit viewChanged ();
 }
 
 void RenderView::mousePressEvent (QMouseEvent *event) {
@@ -124,9 +141,14 @@ void RenderView::mousePressEvent (QMouseEvent *event) {
 				break;
 			case Qt::MidButton:
 				fitInView(renderscene->sceneRect(), Qt::KeepAspectRatio);
+				// TODO: compute correct zoomfactor
+				zoomfactor = 100.0f;
+				emit viewChanged ();
 				break;
 			case Qt::RightButton:
 				resetTransform ();
+				zoomfactor = 100.0f;
+				emit viewChanged ();
 				break;
 		}
 	}
