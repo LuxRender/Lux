@@ -851,107 +851,153 @@ BOOST_PYTHON_MODULE(pylux)
 {
     using namespace boost::python;
     using namespace lux;
+    docstring_options doc_options(
+    	true	/* show user defined docstrings */,
+    	true	/* show python signatures */,
+    	false	/* show c++ signatures */
+    );
+
+    scope().attr("__doc__") = "LuxRender Python Bindings\n\nProvides access to the LuxRender API in python\n\nTODO: Docstrings marked (+) need verification.";
 
     //Direct python module calls
-    def("greet", greet); //Simple test function to check the module is imported
-    def("version", luxVersion);
+    // def("greet", greet); //Simple test function to check the module is imported
+    def("version", luxVersion, "Returns the pylux/LuxRender version");
 
     // Information about the threads
-    enum_<ThreadSignals>("ThreadSignals")
+    enum_<ThreadSignals>("ThreadSignals", "(+) Valid signals to send to rendering threads")
         .value("RUN", RUN)
         .value("PAUSE", PAUSE)
         .value("EXIT", EXIT)
         ;
-    class_<RenderingThreadInfo>("RenderingThreadInfo")
+    class_<RenderingThreadInfo>("RenderingThreadInfo", "Container class for information about rendering threads")
 			.def_readonly("threadIndex", &RenderingThreadInfo::threadIndex)
 			.def_readonly("status", &RenderingThreadInfo::status);
         ;
 
     // Parameter access
-    enum_<luxComponent>("luxComponent")
-            .value("LUX_FILM", LUX_FILM)
-            ;
-    enum_<luxComponentParameters>("luxComponentParameters")
-                .value("LUX_FILM_TM_TONEMAPKERNEL",LUX_FILM_TM_TONEMAPKERNEL)
-                .value("LUX_FILM_TM_REINHARD_PRESCALE",LUX_FILM_TM_REINHARD_PRESCALE)
-                .value("LUX_FILM_TM_REINHARD_POSTSCALE",LUX_FILM_TM_REINHARD_POSTSCALE)
-                .value("LUX_FILM_TM_REINHARD_BURN",LUX_FILM_TM_REINHARD_BURN)
-                .value("LUX_FILM_TM_LINEAR_SENSITIVITY",LUX_FILM_TM_LINEAR_SENSITIVITY)
-                .value("LUX_FILM_TM_LINEAR_EXPOSURE",LUX_FILM_TM_LINEAR_EXPOSURE)
-                .value("LUX_FILM_TM_LINEAR_FSTOP",LUX_FILM_TM_LINEAR_FSTOP)
-                .value("LUX_FILM_TM_LINEAR_GAMMA",LUX_FILM_TM_LINEAR_GAMMA)
-                .value("LUX_FILM_TM_CONTRAST_YWA",LUX_FILM_TM_CONTRAST_YWA)
-                .value("LUX_FILM_TORGB_X_WHITE",LUX_FILM_TORGB_X_WHITE)
-                .value("LUX_FILM_TORGB_Y_WHITE",LUX_FILM_TORGB_Y_WHITE)
-                .value("LUX_FILM_TORGB_X_RED",LUX_FILM_TORGB_X_RED)
-                .value("LUX_FILM_TORGB_Y_RED",LUX_FILM_TORGB_Y_RED)
-                .value("LUX_FILM_TORGB_X_GREEN",LUX_FILM_TORGB_X_GREEN)
-                .value("LUX_FILM_TORGB_Y_GREEN",LUX_FILM_TORGB_Y_GREEN)
-                .value("LUX_FILM_TORGB_X_BLUE",LUX_FILM_TORGB_X_BLUE)
-                .value("LUX_FILM_TORGB_Y_BLUE",LUX_FILM_TORGB_Y_BLUE)
-                .value("LUX_FILM_TORGB_GAMMA",LUX_FILM_TORGB_GAMMA)
-                .value("LUX_FILM_UPDATEBLOOMLAYER",LUX_FILM_UPDATEBLOOMLAYER)
-                .value("LUX_FILM_DELETEBLOOMLAYER",LUX_FILM_DELETEBLOOMLAYER)
-                .value("LUX_FILM_BLOOMRADIUS",LUX_FILM_BLOOMRADIUS)
-                .value("LUX_FILM_BLOOMWEIGHT",LUX_FILM_BLOOMWEIGHT)
-                .value("LUX_FILM_VIGNETTING_ENABLED",LUX_FILM_VIGNETTING_ENABLED)
-                .value("LUX_FILM_VIGNETTING_SCALE",LUX_FILM_VIGNETTING_SCALE)
-                .value("LUX_FILM_ABERRATION_ENABLED",LUX_FILM_ABERRATION_ENABLED)
-                .value("LUX_FILM_ABERRATION_AMOUNT",LUX_FILM_ABERRATION_AMOUNT)
-                .value("LUX_FILM_UPDATEGLARELAYER",LUX_FILM_UPDATEGLARELAYER)
-                .value("LUX_FILM_DELETEGLARELAYER",LUX_FILM_DELETEGLARELAYER)
-                .value("LUX_FILM_GLARE_AMOUNT",LUX_FILM_GLARE_AMOUNT)
-                .value("LUX_FILM_GLARE_RADIUS",LUX_FILM_GLARE_RADIUS)
-                .value("LUX_FILM_GLARE_BLADES",LUX_FILM_GLARE_BLADES)
-                .value("LUX_FILM_GLARE_THRESHOLD",LUX_FILM_GLARE_THRESHOLD)
-                .value("LUX_FILM_HISTOGRAM_ENABLED",LUX_FILM_HISTOGRAM_ENABLED)
-                .value("LUX_FILM_NOISE_CHIU_ENABLED",LUX_FILM_NOISE_CHIU_ENABLED)
-                .value("LUX_FILM_NOISE_CHIU_RADIUS",LUX_FILM_NOISE_CHIU_RADIUS)
-                .value("LUX_FILM_NOISE_CHIU_INCLUDECENTER",LUX_FILM_NOISE_CHIU_INCLUDECENTER)
-                .value("LUX_FILM_NOISE_GREYC_ENABLED",LUX_FILM_NOISE_GREYC_ENABLED)
-                .value("LUX_FILM_NOISE_GREYC_AMPLITUDE",LUX_FILM_NOISE_GREYC_AMPLITUDE)
-                .value("LUX_FILM_NOISE_GREYC_NBITER",LUX_FILM_NOISE_GREYC_NBITER)
-                .value("LUX_FILM_NOISE_GREYC_SHARPNESS",LUX_FILM_NOISE_GREYC_SHARPNESS)
-                .value("LUX_FILM_NOISE_GREYC_ANISOTROPY",LUX_FILM_NOISE_GREYC_ANISOTROPY)
-                .value("LUX_FILM_NOISE_GREYC_ALPHA",LUX_FILM_NOISE_GREYC_ALPHA)
-                .value("LUX_FILM_NOISE_GREYC_SIGMA",LUX_FILM_NOISE_GREYC_SIGMA)
-                .value("LUX_FILM_NOISE_GREYC_FASTAPPROX",LUX_FILM_NOISE_GREYC_FASTAPPROX)
-                .value("LUX_FILM_NOISE_GREYC_GAUSSPREC",LUX_FILM_NOISE_GREYC_GAUSSPREC)
-                .value("LUX_FILM_NOISE_GREYC_DL",LUX_FILM_NOISE_GREYC_DL)
-                .value("LUX_FILM_NOISE_GREYC_DA",LUX_FILM_NOISE_GREYC_DA)
-                .value("LUX_FILM_NOISE_GREYC_INTERP",LUX_FILM_NOISE_GREYC_INTERP)
-                .value("LUX_FILM_NOISE_GREYC_TILE",LUX_FILM_NOISE_GREYC_TILE)
-                .value("LUX_FILM_NOISE_GREYC_BTILE",LUX_FILM_NOISE_GREYC_BTILE)
-                .value("LUX_FILM_NOISE_GREYC_THREADS",LUX_FILM_NOISE_GREYC_THREADS)
-                .value("LUX_FILM_LG_COUNT",LUX_FILM_LG_COUNT)
-                .value("LUX_FILM_LG_ENABLE",LUX_FILM_LG_ENABLE)
-                .value("LUX_FILM_LG_NAME",LUX_FILM_LG_NAME)
-                .value("LUX_FILM_LG_SCALE",LUX_FILM_LG_SCALE)
-                .value("LUX_FILM_LG_SCALE_RED",LUX_FILM_LG_SCALE_RED)
-                .value("LUX_FILM_LG_SCALE_BLUE",LUX_FILM_LG_SCALE_BLUE)
-                .value("LUX_FILM_LG_SCALE_GREEN",LUX_FILM_LG_SCALE_GREEN)
-                .value("LUX_FILM_LG_TEMPERATURE",LUX_FILM_LG_TEMPERATURE)
-                .value("LUX_FILM_LG_SCALE_X",LUX_FILM_LG_SCALE_X)
-                .value("LUX_FILM_LG_SCALE_Y",LUX_FILM_LG_SCALE_Y)
-                .value("LUX_FILM_LG_SCALE_Z",LUX_FILM_LG_SCALE_Z)
-                ;
+    enum_<luxComponent>(
+    	"luxComponent",
+    	"(+) LuxRender Components available to modify at render-time"
+    	)
+        .value("LUX_FILM", LUX_FILM)
+        ;
 
-    class_<RenderingServerInfo>("RenderingServerInfo")
-				.def_readonly("serverIndex", &RenderingServerInfo::serverIndex)
-    			.def_readonly("name", &RenderingServerInfo::name)
-    			.def_readonly("port", &RenderingServerInfo::port)
-				.def_readonly("sid", &RenderingServerInfo::sid)
-				.def_readonly("numberOfSamplesReceived", &RenderingServerInfo::numberOfSamplesReceived)
-				.def_readonly("secsSinceLastContact", &RenderingServerInfo::secsSinceLastContact)
-            ;
+    enum_<luxComponentParameters>(
+    	"luxComponentParameters",
+    	"(+) Parameters of luxComponents available to modify at render time"
+    	)
+		.value("LUX_FILM_TM_TONEMAPKERNEL",LUX_FILM_TM_TONEMAPKERNEL)
+		.value("LUX_FILM_TM_REINHARD_PRESCALE",LUX_FILM_TM_REINHARD_PRESCALE)
+		.value("LUX_FILM_TM_REINHARD_POSTSCALE",LUX_FILM_TM_REINHARD_POSTSCALE)
+		.value("LUX_FILM_TM_REINHARD_BURN",LUX_FILM_TM_REINHARD_BURN)
+		.value("LUX_FILM_TM_LINEAR_SENSITIVITY",LUX_FILM_TM_LINEAR_SENSITIVITY)
+		.value("LUX_FILM_TM_LINEAR_EXPOSURE",LUX_FILM_TM_LINEAR_EXPOSURE)
+		.value("LUX_FILM_TM_LINEAR_FSTOP",LUX_FILM_TM_LINEAR_FSTOP)
+		.value("LUX_FILM_TM_LINEAR_GAMMA",LUX_FILM_TM_LINEAR_GAMMA)
+		.value("LUX_FILM_TM_CONTRAST_YWA",LUX_FILM_TM_CONTRAST_YWA)
+		.value("LUX_FILM_TORGB_X_WHITE",LUX_FILM_TORGB_X_WHITE)
+		.value("LUX_FILM_TORGB_Y_WHITE",LUX_FILM_TORGB_Y_WHITE)
+		.value("LUX_FILM_TORGB_X_RED",LUX_FILM_TORGB_X_RED)
+		.value("LUX_FILM_TORGB_Y_RED",LUX_FILM_TORGB_Y_RED)
+		.value("LUX_FILM_TORGB_X_GREEN",LUX_FILM_TORGB_X_GREEN)
+		.value("LUX_FILM_TORGB_Y_GREEN",LUX_FILM_TORGB_Y_GREEN)
+		.value("LUX_FILM_TORGB_X_BLUE",LUX_FILM_TORGB_X_BLUE)
+		.value("LUX_FILM_TORGB_Y_BLUE",LUX_FILM_TORGB_Y_BLUE)
+		.value("LUX_FILM_TORGB_GAMMA",LUX_FILM_TORGB_GAMMA)
+		.value("LUX_FILM_UPDATEBLOOMLAYER",LUX_FILM_UPDATEBLOOMLAYER)
+		.value("LUX_FILM_DELETEBLOOMLAYER",LUX_FILM_DELETEBLOOMLAYER)
+		.value("LUX_FILM_BLOOMRADIUS",LUX_FILM_BLOOMRADIUS)
+		.value("LUX_FILM_BLOOMWEIGHT",LUX_FILM_BLOOMWEIGHT)
+		.value("LUX_FILM_VIGNETTING_ENABLED",LUX_FILM_VIGNETTING_ENABLED)
+		.value("LUX_FILM_VIGNETTING_SCALE",LUX_FILM_VIGNETTING_SCALE)
+		.value("LUX_FILM_ABERRATION_ENABLED",LUX_FILM_ABERRATION_ENABLED)
+		.value("LUX_FILM_ABERRATION_AMOUNT",LUX_FILM_ABERRATION_AMOUNT)
+		.value("LUX_FILM_UPDATEGLARELAYER",LUX_FILM_UPDATEGLARELAYER)
+		.value("LUX_FILM_DELETEGLARELAYER",LUX_FILM_DELETEGLARELAYER)
+		.value("LUX_FILM_GLARE_AMOUNT",LUX_FILM_GLARE_AMOUNT)
+		.value("LUX_FILM_GLARE_RADIUS",LUX_FILM_GLARE_RADIUS)
+		.value("LUX_FILM_GLARE_BLADES",LUX_FILM_GLARE_BLADES)
+		.value("LUX_FILM_GLARE_THRESHOLD",LUX_FILM_GLARE_THRESHOLD)
+		.value("LUX_FILM_HISTOGRAM_ENABLED",LUX_FILM_HISTOGRAM_ENABLED)
+		.value("LUX_FILM_NOISE_CHIU_ENABLED",LUX_FILM_NOISE_CHIU_ENABLED)
+		.value("LUX_FILM_NOISE_CHIU_RADIUS",LUX_FILM_NOISE_CHIU_RADIUS)
+		.value("LUX_FILM_NOISE_CHIU_INCLUDECENTER",LUX_FILM_NOISE_CHIU_INCLUDECENTER)
+		.value("LUX_FILM_NOISE_GREYC_ENABLED",LUX_FILM_NOISE_GREYC_ENABLED)
+		.value("LUX_FILM_NOISE_GREYC_AMPLITUDE",LUX_FILM_NOISE_GREYC_AMPLITUDE)
+		.value("LUX_FILM_NOISE_GREYC_NBITER",LUX_FILM_NOISE_GREYC_NBITER)
+		.value("LUX_FILM_NOISE_GREYC_SHARPNESS",LUX_FILM_NOISE_GREYC_SHARPNESS)
+		.value("LUX_FILM_NOISE_GREYC_ANISOTROPY",LUX_FILM_NOISE_GREYC_ANISOTROPY)
+		.value("LUX_FILM_NOISE_GREYC_ALPHA",LUX_FILM_NOISE_GREYC_ALPHA)
+		.value("LUX_FILM_NOISE_GREYC_SIGMA",LUX_FILM_NOISE_GREYC_SIGMA)
+		.value("LUX_FILM_NOISE_GREYC_FASTAPPROX",LUX_FILM_NOISE_GREYC_FASTAPPROX)
+		.value("LUX_FILM_NOISE_GREYC_GAUSSPREC",LUX_FILM_NOISE_GREYC_GAUSSPREC)
+		.value("LUX_FILM_NOISE_GREYC_DL",LUX_FILM_NOISE_GREYC_DL)
+		.value("LUX_FILM_NOISE_GREYC_DA",LUX_FILM_NOISE_GREYC_DA)
+		.value("LUX_FILM_NOISE_GREYC_INTERP",LUX_FILM_NOISE_GREYC_INTERP)
+		.value("LUX_FILM_NOISE_GREYC_TILE",LUX_FILM_NOISE_GREYC_TILE)
+		.value("LUX_FILM_NOISE_GREYC_BTILE",LUX_FILM_NOISE_GREYC_BTILE)
+		.value("LUX_FILM_NOISE_GREYC_THREADS",LUX_FILM_NOISE_GREYC_THREADS)
+		.value("LUX_FILM_LG_COUNT",LUX_FILM_LG_COUNT)
+		.value("LUX_FILM_LG_ENABLE",LUX_FILM_LG_ENABLE)
+		.value("LUX_FILM_LG_NAME",LUX_FILM_LG_NAME)
+		.value("LUX_FILM_LG_SCALE",LUX_FILM_LG_SCALE)
+		.value("LUX_FILM_LG_SCALE_RED",LUX_FILM_LG_SCALE_RED)
+		.value("LUX_FILM_LG_SCALE_BLUE",LUX_FILM_LG_SCALE_BLUE)
+		.value("LUX_FILM_LG_SCALE_GREEN",LUX_FILM_LG_SCALE_GREEN)
+		.value("LUX_FILM_LG_TEMPERATURE",LUX_FILM_LG_TEMPERATURE)
+		.value("LUX_FILM_LG_SCALE_X",LUX_FILM_LG_SCALE_X)
+		.value("LUX_FILM_LG_SCALE_Y",LUX_FILM_LG_SCALE_Y)
+		.value("LUX_FILM_LG_SCALE_Z",LUX_FILM_LG_SCALE_Z)
+		;
+
+    class_<RenderingServerInfo>(
+    	"RenderingServerInfo",
+    	"(+) Container class for information about rendering servers"
+    	)
+		.def_readonly("serverIndex", &RenderingServerInfo::serverIndex)
+		.def_readonly("name", &RenderingServerInfo::name)
+		.def_readonly("port", &RenderingServerInfo::port)
+		.def_readonly("sid", &RenderingServerInfo::sid)
+		.def_readonly("numberOfSamplesReceived", &RenderingServerInfo::numberOfSamplesReceived)
+		.def_readonly("secsSinceLastContact", &RenderingServerInfo::secsSinceLastContact)
+		;
 
     //Error handling in python
-    def("errorHandler",pyLuxErrorHandler);
+    def("errorHandler",
+    	pyLuxErrorHandler,
+    	"Specify an alternate error handler (logging) function for LuxRender engine output. By default the render engine will print to stdout"
+    );
 
     //PyContext class
-    class_<PyContext>("Context", init<std::string>())
-        .def("greet", &PyContext::greet)
-        .def("parse", &PyContext::parse)
+    class_<PyContext>(
+    	"Context",
+    	"An instance of a LuxRender rendering context",
+    	init<std::string>(
+    		args("Context", "name"),
+    		"Create a new rendering Context object with the given name"
+			)
+    	)
+        //.def("greet", &PyContext::greet)
+    	.def("accelerator",
+    		&PyContext::accelerator,
+    		args("type", "ParamSet"),
+    		"Initialise geometry acceleration structure type"
+    	)
+    	.def("addServer",
+    		&PyContext::addServer,
+    		//args("<UNKNOWN>"),
+    		"Add a (remote) rendering server to the context"
+    	)
+    	.def("addThread",
+    		&PyContext::addThread,
+    		//args(),
+    		"Add a local rendering thread to the context"
+    	)
+    	.def("parse",
+        	&PyContext::parse,
+        	args("filename", "asynchronous"),
+        	"Parse the given filename. If done asynchronously, control will pass immediately back to the python interpreter, otherwise this function blocks."
+        )
         .def("cleanup", &PyContext::cleanup)
         .def("identity", &PyContext::identity)
         .def("translate", &PyContext::translate)
@@ -965,7 +1011,6 @@ BOOST_PYTHON_MODULE(pylux)
 		.def("pixelFilter", &PyContext::pixelFilter)
 		.def("film", &PyContext::film)
 		.def("sampler", &PyContext::sampler)
-		.def("accelerator", &PyContext::accelerator)
 		.def("surfaceIntegrator", &PyContext::surfaceIntegrator)
 		.def("volumeIntegrator", &PyContext::volumeIntegrator)
 		.def("camera", &PyContext::camera)
@@ -1001,7 +1046,6 @@ BOOST_PYTHON_MODULE(pylux)
 		.def("exit", &PyContext::exit)
 		.def("wait", &PyContext::wait)
 		.def("setHaltSamplePerPixel", &PyContext::setHaltSamplePerPixel)
-		.def("addThread", &PyContext::addThread)
 		.def("removeThread", &PyContext::removeThread)
 		.def("setEpsilon", &PyContext::setEpsilon)
 		.def("getRenderingThreadsStatus", &PyContext::getRenderingThreadsStatus)
@@ -1017,7 +1061,6 @@ BOOST_PYTHON_MODULE(pylux)
 		.def("getOptions", &PyContext::getOptions)
 		.def("getOption", &PyContext::getOption)
 		.def("setOption", &PyContext::setOption)
-		.def("addServer", &PyContext::addServer)
 		.def("removeServer", &PyContext::removeServer)
 		.def("getServerCount", &PyContext::getServerCount)
 		.def("updateFilmFromNetwork", &PyContext::updateFilmFromNetwork)
