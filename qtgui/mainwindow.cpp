@@ -236,12 +236,31 @@ MainWindow::MainWindow(QWidget *parent, bool opengl, bool copylog2console) : QMa
 	connect(ui->button_copyToClipboard, SIGNAL(clicked()), this, SLOT(copyToClipboard()));
 	
 	// Resolution-Info
+//	connect(RenderView, SIGNAL(sceneRectChanged(renderView)), this, SLOT(viewportChanged())); //void QGraphicsScene::sceneRectChanged ( const QRectF & rect )   [signal]
+	connect(ui->splitter, SIGNAL(splitterMoved(int, int)), this, SLOT(viewportChanged()));
+	
+	resinfospacer = new QSpacerItem( 0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
 	resLabel = new QLabel(tr(" Resolution:"));
 	resinfoLabel = new QLabel();
+	zoomLabel = new QLabel(tr(" Zoom Factor:"));
+	zoominfoLabel = new QLabel();
+	viewportLabel = new QLabel(tr(" Viewportsize:"));
+	viewportinfoLabel = new QLabel();
+
 	resinfoLabel->setFrameStyle(QFrame::Panel | QFrame::Sunken);
 	resinfoLabel->setMinimumWidth(100);
+	zoominfoLabel->setFrameStyle(QFrame::Panel | QFrame::Sunken);
+	zoominfoLabel->setMinimumWidth(100);
+	viewportinfoLabel->setFrameStyle(QFrame::Panel | QFrame::Sunken);
+	viewportinfoLabel->setMinimumWidth(100);
+
+	ui->horizontalLayout_4->addItem(new QSpacerItem( 0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum));
 	ui->horizontalLayout_4->addWidget(resLabel, 0);
 	ui->horizontalLayout_4->addWidget(resinfoLabel, 0);	
+	ui->horizontalLayout_4->addWidget(zoomLabel, 0);
+	ui->horizontalLayout_4->addWidget(zoominfoLabel, 0);
+	ui->horizontalLayout_4->addWidget(viewportLabel, 0);
+	ui->horizontalLayout_4->addWidget(viewportinfoLabel, 0);	
 	
 	// Statusbar
 	activityLabel = new QLabel(tr("  Status:"));
@@ -615,8 +634,10 @@ void MainWindow::resumeRender()
 		
 		if (m_guiRenderState == STOPPED)
 			luxSetHaltSamplePerPixel(-1, false, false);
-		showRenderresolution();
 		changeRenderState(RENDERING);
+		showRenderresolution();
+		showZoomfactor();
+		showViewportsize();
 	}
 }
 
@@ -841,8 +862,25 @@ void MainWindow::updateStatistics()
 // show the render-resolution
 void MainWindow::showRenderresolution()
 {
-int w = luxStatistics("filmXres"), h = luxStatistics("filmYres");
-resinfoLabel->setText(QString("%1 x %2").arg(w).arg(h));
+	int w = luxStatistics("filmXres"), h = luxStatistics("filmYres");
+	resinfoLabel->setText(QString("%1 x %2").arg(w).arg(h));
+}
+// show the zoom-factor in viewport TODO !!!
+void MainWindow::showZoomfactor()
+{
+//	zoomfactor->(QPixmap::width ());
+//	zoominfoLabel->setText(QString("%1").arg(zoomfactor));	
+}
+// show the actual viewportsize
+void MainWindow::viewportChanged()
+{	
+	showViewportsize();
+}
+
+void MainWindow::showViewportsize()
+{
+	int viewportw = renderView->width(), viewporth = renderView->height();
+	viewportinfoLabel->setText(QString("%1 x %2").arg(viewportw).arg(viewporth));
 }
 
 void MainWindow::renderScenefile(const QString& sceneFilename, const QString& flmFilename)

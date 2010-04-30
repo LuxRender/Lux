@@ -52,6 +52,7 @@
 #include <QTextCursor>
 #include <QtGui/QTabBar>
 
+
 #include "api.h"
 #include "renderview.hxx"
 #include "panewidget.hxx"
@@ -143,6 +144,8 @@ public:
 	void SetRenderThreads(int num);
 	void updateStatistics();
 	void showRenderresolution();
+	void showZoomfactor();
+	void showViewportsize();
 	void renderScenefile(const QString& sceneFilename, const QString& flmFilename);
 	void renderScenefile(const QString& filename);
 	void changeRenderState (LuxGuiRenderState state);
@@ -167,8 +170,13 @@ protected:
 private:
 	Ui::MainWindow *thorizontalLayout_4;
 	
+	QSpacerItem *resinfospacer;
 	QLabel *resLabel;
 	QLabel *resinfoLabel;
+	QLabel *zoomLabel;
+	QLabel *zoominfoLabel;
+	QLabel *viewportLabel;
+	QLabel *viewportinfoLabel;
 	
 	Ui::MainWindow *ui;
 
@@ -230,6 +238,8 @@ private:
 	bool canStopRendering ();
     
 	bool blink;
+	int viewportw, viewporth;
+	int zoomfactor;
     
 	void UpdateLightGroupWidgetValues();
 	void ResetLightGroups(void);
@@ -258,6 +268,7 @@ private slots:
 	void copyLog ();
 	void clearLog ();
 	void tabChanged (int);
+	void viewportChanged ();
 	void fullScreen ();
 	void normalScreen ();
 	void aboutDialog ();
