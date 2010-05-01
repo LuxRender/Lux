@@ -48,6 +48,7 @@
 #include <boost/iostreams/filter/zlib.hpp>
 #include <boost/iostreams/filter/bzip2.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
+#include <boost/filesystem.hpp>
 
 #define cimg_display_type  0
 
@@ -629,18 +630,27 @@ void Film::CreateBuffers()
 		ZBuffer = new PerPixelNormalizedFloatBuffer(xPixelCount,yPixelCount);
 
     // Dade - check if we have to resume a rendering and restore the buffers
-    if(writeResumeFlm && !restartResumeFlm) {
-        // Dade - check if the film file exists
-        string fname = filename+".flm";
-		std::ifstream ifs(fname.c_str(), std::ios_base::in | std::ios_base::binary);
+    if(writeResumeFlm) {
+		const string fname = filename+".flm";
+		if (restartResumeFlm) {
+			const string oldfname = fname + "1";
+			if (boost::filesystem::exists(fname)) {
+				if (boost::filesystem::exists(oldfname))
+					remove(oldfname);
+				rename(fname, oldfname);
+			}
+		} else {
+			// Dade - check if the film file exists
+			std::ifstream ifs(fname.c_str(), std::ios_base::in | std::ios_base::binary);
 
-        if(ifs.good()) {
-            // Dade - read the data
-            luxError(LUX_NOERROR, LUX_INFO, (std::string("Reading film status from file ")+fname).c_str());
-            UpdateFilm(ifs);
-        }
+			if(ifs.good()) {
+				// Dade - read the data
+				luxError(LUX_NOERROR, LUX_INFO, (std::string("Reading film status from file ")+fname).c_str());
+				UpdateFilm(ifs);
+			}
 
-        ifs.close();
+			ifs.close();
+		}
     }
 }
 
