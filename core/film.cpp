@@ -636,8 +636,8 @@ void Film::CreateBuffers()
 			const string oldfname = fname + "1";
 			if (boost::filesystem::exists(fname)) {
 				if (boost::filesystem::exists(oldfname))
-					remove(oldfname);
-				rename(fname, oldfname);
+					remove(oldfname.c_str());
+				rename(fname.c_str(), oldfname.c_str());
 			}
 		} else {
 			// Dade - check if the film file exists
