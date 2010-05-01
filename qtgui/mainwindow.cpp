@@ -877,13 +877,10 @@ void MainWindow::viewportChanged() {
 	showZoomfactor();
 	showViewportsize();
 }
-// calculate representationsize in viewport
+// actual viewportsize
 void MainWindow::showViewportsize() {
-	zoomfactor = renderView->getZoomFactor();
-	int w = Floor2Int(luxStatistics("filmXres") * (zoomfactor/100)) , h = Floor2Int(luxStatistics("filmYres") * (zoomfactor/100));
-	viewportinfoLabel->setText(QString("%1 x %2").arg(w).arg(h));
-
-	
+	int viewportw = renderView->width(), viewporth = renderView->height();
+	viewportinfoLabel->setText(QString("%1 x %2").arg(viewportw).arg(viewporth));
 }
 
 void MainWindow::renderScenefile(const QString& sceneFilename, const QString& flmFilename)
