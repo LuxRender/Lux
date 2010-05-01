@@ -744,6 +744,7 @@ void MainWindow::normalScreen()
 		delete renderView; // delete and reinitialize to recenter render
 		renderView = new RenderView(ui->frame_render, m_opengl);
 		ui->renderLayout->addWidget(renderView, 0, 0, 1, 1);
+		connect(renderView, SIGNAL(viewChanged()), this, SLOT(viewportChanged())); // reconnect
 		renderView->reload();
 		renderView->show ();
 		ui->action_normalScreen->setEnabled (false);
@@ -866,19 +867,20 @@ void MainWindow::showRenderresolution()
 	int w = luxStatistics("filmXres"), h = luxStatistics("filmYres");
 	resinfoLabel->setText(QString("%1 x %2").arg(w).arg(h));
 }
-// show the zoom-factor in viewport TODO !!!
+// show the zoom-factor in viewport
 void MainWindow::showZoomfactor()
 {
-	zoominfoLabel->setText(QString("%1").arg(renderView->getZoomFactor()));
+	zoominfoLabel->setText((QString("%1").arg(renderView->getZoomFactor()))+ "%");
 }
 // show the actual viewportsize
 void MainWindow::viewportChanged() {
 	showZoomfactor();
 	showViewportsize();
 }
-
+// actual viewportsize
 void MainWindow::showViewportsize() {
-	viewportinfoLabel->setText(QString("%1 x %2").arg(renderView->getWidth()).arg(renderView->getHeight()));
+	int viewportw = renderView->width(), viewporth = renderView->height();
+	viewportinfoLabel->setText(QString("%1 x %2").arg(viewportw).arg(viewporth));
 }
 
 void MainWindow::renderScenefile(const QString& sceneFilename, const QString& flmFilename)

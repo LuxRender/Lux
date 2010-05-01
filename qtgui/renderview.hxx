@@ -51,7 +51,7 @@ public:
 	int getWidth ();
 	int getHeight ();
 	void copyToClipboard ();
-
+	float origh;
 private:
 
 	bool zoomEnabled;
