@@ -51,7 +51,6 @@ public:
 	int getWidth ();
 	int getHeight ();
 	void copyToClipboard ();
-	float factor;
 	float origh;
 private:
 
