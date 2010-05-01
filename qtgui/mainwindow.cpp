@@ -744,6 +744,7 @@ void MainWindow::normalScreen()
 		delete renderView; // delete and reinitialize to recenter render
 		renderView = new RenderView(ui->frame_render, m_opengl);
 		ui->renderLayout->addWidget(renderView, 0, 0, 1, 1);
+		connect(renderView, SIGNAL(viewChanged()), this, SLOT(viewportChanged())); // reconnect
 		renderView->reload();
 		renderView->show ();
 		ui->action_normalScreen->setEnabled (false);
