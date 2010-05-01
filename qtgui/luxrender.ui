@@ -192,7 +192,7 @@
            </property>
            <property name="minimumSize">
             <size>
-             <width>320</width>
+             <width>380</width>
              <height>0</height>
             </size>
            </property>
@@ -283,6 +283,12 @@
               <widget class="QPushButton" name="button_imagingApply">
                <property name="enabled">
                 <bool>true</bool>
+               </property>
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
                </property>
                <property name="minimumSize">
                 <size>
