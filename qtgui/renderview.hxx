@@ -44,16 +44,18 @@ public:
 	RenderView(QWidget *parent = 0, bool opengl = false);
 	~RenderView ();
 
-	void mousePressEvent(QResizeEvent *event);
 	void setZoomEnabled (bool enabled = true) { zoomEnabled = enabled; };
 	void reload ();
 	void setLogoMode ();
-
+	float getZoomFactor ();
+	int getWidth ();
+	int getHeight ();
 	void copyToClipboard ();
-
+	float origh;
 private:
 
 	bool zoomEnabled;
+	float zoomfactor;
 	QPoint currentpos;
 
 	QGraphicsScene *renderscene;
@@ -62,8 +64,12 @@ private:
 
 	void wheelEvent (QWheelEvent *event);
 	void mousePressEvent (QMouseEvent *event);
-	//void mouseReleaseEvent (QMouseEvent* event);
-	//void mouseMoveEvent (QMouseEvent* event);
+	void resizeEvent(QResizeEvent *event);
+
+signals:
+
+	void viewChanged ();
+
 };
 
 #endif // RENDERVIEW_H
