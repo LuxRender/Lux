@@ -93,6 +93,7 @@ void RenderView::setLogoMode () {
 	if (luxfb->isVisible()) {
 		luxfb->hide ();
 		zoomEnabled = false;
+		zoomfactor = 100.0f;
 	}
 	if (!luxlogo->isVisible ()) {
 		luxlogo->show ();
@@ -141,8 +142,9 @@ void RenderView::mousePressEvent (QMouseEvent *event) {
 				break;
 			case Qt::MidButton:
 				fitInView(renderscene->sceneRect(), Qt::KeepAspectRatio);
-				// TODO: compute correct zoomfactor
-				zoomfactor = 100.0f;
+				// compute correct zoomfactor
+				origh = luxStatistics("filmYres")/height();
+				zoomfactor = 100.0f/origh;
 				emit viewChanged ();
 				break;
 			case Qt::RightButton:

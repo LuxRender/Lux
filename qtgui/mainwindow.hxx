@@ -239,7 +239,7 @@ private:
     
 	bool blink;
 	int viewportw, viewporth;
-	int zoomfactor;
+	float zoomfactor;
 	float factor;
     
 	void UpdateLightGroupWidgetValues();
