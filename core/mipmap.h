@@ -45,6 +45,7 @@ enum ImageTextureFilterType {
 typedef enum {
 	TEXTURE_REPEAT,
 	TEXTURE_BLACK,
+	TEXTURE_WHITE,
 	TEXTURE_CLAMP
 } ImageWrap;
 
@@ -757,6 +758,7 @@ MIPMapFastImpl<T>::MIPMapFastImpl(ImageTextureFilterType type, u_int sres, u_int
 							origS = Clamp(origS, 0, static_cast<int>(sres - 1));
 							break;
 						case TEXTURE_BLACK:
+						case TEXTURE_WHITE:
 							break;
 						}
 
@@ -790,6 +792,7 @@ MIPMapFastImpl<T>::MIPMapFastImpl(ImageTextureFilterType type, u_int sres, u_int
 							origT = Clamp(origT, 0, static_cast<int>(tres - 1));
 							break;
 						case TEXTURE_BLACK:
+						case TEXTURE_WHITE:
 							break;
 						}
 
@@ -882,6 +885,10 @@ float MIPMapFastImpl<T>::Texel(Channel channel, u_int level, int s, int t) const
 			if (s < 0 || s >= static_cast<int>(l.uSize()) ||
 				t < 0 || t >= static_cast<int>(l.vSize()))
 			return 0.f;
+		case TEXTURE_WHITE:
+			if (s < 0 || s >= static_cast<int>(l.uSize()) ||
+				t < 0 || t >= static_cast<int>(l.vSize()))
+			return 1.f;
 	}
 
 	return l(s, t).GetFloat(channel);
@@ -905,6 +912,10 @@ SWCSpectrum MIPMapFastImpl<T>::Texel(const TsPack *tspack, u_int level,
 			if (s < 0 || s >= static_cast<int>(l.uSize()) ||
 				t < 0 || t >= static_cast<int>(l.vSize()))
 			return SWCSpectrum(0.f);
+		case TEXTURE_WHITE:
+			if (s < 0 || s >= static_cast<int>(l.uSize()) ||
+				t < 0 || t >= static_cast<int>(l.vSize()))
+			return SWCSpectrum(1.f);
 	}
 
 	return l(s, t).GetSpectrum(tspack);
@@ -928,6 +939,10 @@ float MIPMapFastImpl<T>::Texel(Channel channel, int s, int t) const
 			if (s < 0 || s >= static_cast<int>(l.uSize()) ||
 				t < 0 || t >= static_cast<int>(l.vSize()))
 			return 0.f;
+		case TEXTURE_WHITE:
+			if (s < 0 || s >= static_cast<int>(l.uSize()) ||
+				t < 0 || t >= static_cast<int>(l.vSize()))
+			return 1.f;
 	}
 
 	return l(s, t).GetFloat(channel);
@@ -950,6 +965,10 @@ SWCSpectrum MIPMapFastImpl<T>::Texel(const TsPack *tspack, int s, int t) const
 			if (s < 0 || s >= static_cast<int>(l.uSize()) ||
 				t < 0 || t >= static_cast<int>(l.vSize()))
 			return SWCSpectrum(0.f);
+		case TEXTURE_WHITE:
+			if (s < 0 || s >= static_cast<int>(l.uSize()) ||
+				t < 0 || t >= static_cast<int>(l.vSize()))
+			return SWCSpectrum(1.f);
 	}
 
 	return l(s, t).GetSpectrum(tspack);

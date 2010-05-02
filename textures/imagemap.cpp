@@ -80,6 +80,8 @@ Texture<float> *ImageFloatTexture::CreateFloatTexture(const Transform &tex2world
 		wrapMode = TEXTURE_REPEAT;
 	else if (wrap == "black")
 		wrapMode = TEXTURE_BLACK;
+	else if (wrap == "white")
+		wrapMode = TEXTURE_WHITE;
 	else if (wrap == "clamp")
 		wrapMode = TEXTURE_CLAMP;
 
@@ -180,6 +182,8 @@ Texture<SWCSpectrum> *ImageSpectrumTexture::CreateSWCSpectrumTexture(const Trans
 		wrapMode = TEXTURE_REPEAT;
 	else if (wrap == "black")
 		wrapMode = TEXTURE_BLACK;
+	else if (wrap == "white")
+		wrapMode = TEXTURE_WHITE;
 	else if (wrap == "clamp")
 		wrapMode = TEXTURE_CLAMP;
 
