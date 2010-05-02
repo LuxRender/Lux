@@ -153,14 +153,24 @@ ENDIF(PNG_FOUND)
 #############################################################################
 #############################################################################
 
-FIND_PACKAGE(FreeImage REQUIRED)
+IF(APPLE)
+    FIND_PATH(FREEIMAGE_INCLUDE_DIRS
+    freeimage.h
+    PATHS
+    /usr/local/include/
+    /usr/include/
+    )
+    SET(FREEIMAGE_LIBRARIES freeimage)
+ELSE(APPLE)
+    FIND_PACKAGE(FreeImage REQUIRED)
 
-IF(FREEIMAGE_FOUND)
-    MESSAGE(STATUS "FreeImage library directory: " ${FREEIMAGE_LIBRARIES})
-    MESSAGE(STATUS "FreeImage include directory: " ${FREEIMAGE_INCLUDE_PATH})
-ELSE(FREEIMAGE_FOUND)
-    MESSAGE(FATAL_ERROR "Could not find FreeImage")
-ENDIF(FREEIMAGE_FOUND)
+    IF(FREEIMAGE_FOUND)
+        MESSAGE(STATUS "FreeImage library directory: " ${FREEIMAGE_LIBRARIES})
+        MESSAGE(STATUS "FreeImage include directory: " ${FREEIMAGE_INCLUDE_PATH})
+    ELSE(FREEIMAGE_FOUND)
+        MESSAGE(FATAL_ERROR "Could not find FreeImage")
+    ENDIF(FREEIMAGE_FOUND)
+ENDIF(APPLE)
 
 #############################################################################
 #############################################################################
@@ -248,8 +258,9 @@ ADD_DEFINITIONS(-DLUX_USE_CONFIG_H)
 ADD_DEFINITIONS(-O3 -msse2 -mfpmath=sse -ftree-vectorize -funroll-loops -Wall -fPIC -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
 # The QBVH accelerator needs to be compiled with much reduced optimizations
 # otherwise gcc produces incorrect code and ruins the render on 64bits machines
-SET_SOURCE_FILES_PROPERTIES(accelerators/qbvhaccel.cpp COMPILE_FLAGS "-O1")
-
+IF(NOT APPLE)
+	SET_SOURCE_FILES_PROPERTIES(accelerators/qbvhaccel.cpp COMPILE_FLAGS "-O1")
+ENDIF(NOT APPLE)
 
 #############################################################################
 # Compiler flags for specific setup
@@ -738,7 +749,7 @@ ADD_EXECUTABLE(luxconsole renderer/luxconsole.cpp)
 IF(APPLE)
 	TARGET_LINK_LIBRARIES(luxconsole -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} z ${Boost_LIBRARIES} )
 ELSE(APPLE)
-	TARGET_LINK_LIBRARIES(luxconsole -Wl,--whole-archive lux -Wl,--no-whole-archive libfreeimage.a ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${Boost_LIBRARIES}  ${SYS_LIBRARIES})
+	TARGET_LINK_LIBRARIES(luxconsole -Wl,--whole-archive lux -Wl,--no-whole-archive libfreeimage.a ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES}  ${SYS_LIBRARIES})
 ENDIF(APPLE)
 
 #############################################################################
@@ -748,7 +759,7 @@ ADD_EXECUTABLE(luxmerger tools/luxmerger.cpp)
 IF(APPLE)
 	TARGET_LINK_LIBRARIES(luxmerger -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} z ${Boost_LIBRARIES} )
 ELSE(APPLE)
-	TARGET_LINK_LIBRARIES(luxmerger -Wl,--whole-archive lux -Wl,--no-whole-archive libfreeimage.a ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${Boost_LIBRARIES}  ${SYS_LIBRARIES})
+	TARGET_LINK_LIBRARIES(luxmerger -Wl,--whole-archive lux -Wl,--no-whole-archive libfreeimage.a ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES}  ${SYS_LIBRARIES})
 ENDIF(APPLE)
 
 #############################################################################
@@ -758,7 +769,7 @@ ADD_EXECUTABLE(luxcomp tools/luxcomp.cpp)
 IF(APPLE)
 	TARGET_LINK_LIBRARIES(luxcomp -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} z ${Boost_LIBRARIES} )
 ELSE(APPLE)
-	TARGET_LINK_LIBRARIES(luxcomp -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${Boost_LIBRARIES}  ${SYS_LIBRARIES})
+	TARGET_LINK_LIBRARIES(luxcomp -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES}  ${SYS_LIBRARIES})
 ENDIF(APPLE)
 
 #############################################################################
@@ -779,13 +790,14 @@ IF(PYTHONLIBS_FOUND)
 	IF(APPLE)
 		ADD_LIBRARY(pylux MODULE python/binding.cpp)
 		TARGET_LINK_LIBRARIES(pylux -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z bz2  ${SYS_LIBRARIES} ${PYTHON_LIBRARIES} ${Boost_python_LIBRARIES})
-		ADD_CUSTOM_COMMAND(
-			TARGET pylux POST_BUILD
-			COMMAND mv release/libpylux.so release/pylux.so
-		)
+### if XCode used for compiling ###
+#		ADD_CUSTOM_COMMAND(
+#			TARGET pylux POST_BUILD
+#			COMMAND mv release/libpylux.so release/pylux.so
+#		)
 	ELSE(APPLE)
 		ADD_LIBRARY(pylux SHARED python/binding.cpp)
-		TARGET_LINK_LIBRARIES(pylux -Wl,--whole-archive lux -Wl,--no-whole-archive libfreeimage.a ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${Boost_LIBRARIES}  ${SYS_LIBRARIES} ${PYTHON_LIBRARIES} ${Boost_python_LIBRARIES})
+		TARGET_LINK_LIBRARIES(pylux -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${SYS_LIBRARIES} ${PYTHON_LIBRARIES} ${Boost_python_LIBRARIES})
 		ADD_CUSTOM_COMMAND(
 			TARGET pylux POST_BUILD
 			COMMAND mv libpylux.so pylux.so
@@ -848,7 +860,7 @@ IF(wxWidgets_FOUND)
 		SET(EXTRA_LIBS ${CARBON_LIBRARY} ${OPENGL_LIBRARY} ${AGL_LIBRARY} ${APP_SERVICES_LIBRARY})
 		TARGET_LINK_LIBRARIES(luxrenderwx -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${wxWidgets_LIBRARIES} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${BZ2_LIBRARIES} )
 	ELSE(APPLE)
-		TARGET_LINK_LIBRARIES(luxrenderwx -Wl,--whole-archive lux -Wl,--no-whole-archive libfreeimage.a ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${Boost_LIBRARIES}  ${SYS_LIBRARIES})
+		TARGET_LINK_LIBRARIES(luxrenderwx -Wl,--whole-archive lux -Wl,--no-whole-archive ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES}  ${SYS_LIBRARIES})
 	ENDIF(APPLE)
 ELSE(wxWidgets_FOUND)
 	MESSAGE( STATUS "Warning : could not find wxWidgets - not building GUI")
@@ -897,8 +909,16 @@ IF(QT4_FOUND)
 		MARK_AS_ADVANCED (APP_SERVICES_LIBRARY)
 		SET(EXTRA_LIBS ${CARBON_LIBRARY} ${QT_LIBRARY} ${OPENGL_LIBRARY} ${AGL_LIBRARY} ${APP_SERVICES_LIBRARY})
 		TARGET_LINK_LIBRARIES(luxrender -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${QT_LIBRARIES} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${BZ2_LIBRARIES} )
+### if XCode used for compiling ###
+#		ADD_CUSTOM_COMMAND(
+#			TARGET luxrender POST_BUILD
+#			COMMAND rm -rf release/luxrender.app/Contents/Resources
+#			COMMAND mkdir release/luxrender.app/Contents/Resources
+#			COMMAND cp ../macos/luxrender.icns release/luxrender.app/Contents/Resources
+#			COMMAND cp ../macos/luxscene.icns release/luxrender.app/Contents/Resources
+#			)
 	ELSE(APPLE)
-	TARGET_LINK_LIBRARIES(luxrender -Wl,--whole-archive lux -Wl,--no-whole-archive libfreeimage.a ${QT_LIBRARIES} ${FREEIMAGE_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} ${ZLIB_LIBRARIES} ${BZ2_LIBRARIES}  ${SYS_LIBRARIES}  ${OPENGL_LIBRARY})
+	TARGET_LINK_LIBRARIES(luxrender -Wl,--whole-archive lux -Wl,--no-whole-archive ${QT_LIBRARIES} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} ${ZLIB_LIBRARIES} ${BZ2_LIBRARIES}  ${SYS_LIBRARIES}  ${OPENGL_LIBRARY})
 	ENDIF(APPLE)
 ELSE(QT4_FOUND)
 	MESSAGE( STATUS "Warning : could not find Qt - not building Qt GUI")
