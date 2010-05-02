@@ -28,6 +28,8 @@
 #include "imagereader.h"
 #include <algorithm>
 
+#include <FreeImage.h>
+
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/convenience.hpp>
 
@@ -83,7 +85,7 @@ using namespace lux;
 
 namespace lux {
 
-template <class T> class StandardImageReader : public ImageReader {
+class StandardImageReader : public ImageReader {
 public:
 	StandardImageReader() { };
 	virtual ~StandardImageReader() { }
@@ -91,67 +93,169 @@ public:
 	virtual ImageData* read(const string &name);
 };
 	
-template <class T> ImageData* createImageData(const string &name,
-	const CImg<T> &image);
+ImageData* createImageData(const string &name,
+	FIBITMAP *image);
 
-// EXR Function Definitions
+/**
+FreeImage error handler
+@param fif Format / Plugin responsible for the error
+@param message Error message
+*/
+void FreeImageErrorHandler(FREE_IMAGE_FORMAT fif, const char *message) {
+	LOG(LUX_INFO, LUX_SYSTEM) << "FreeImage error, " <<
+		"format: " << (fif != FIF_UNKNOWN ? FreeImage_GetFormatFromFIF(fif) : "Unknown") << ": '" << message << "'";
+}
 
-ImageData *ExrImageReader::read(const string &name)
-{
-	try {
-		LOG(LUX_INFO, LUX_NOERROR) << "Loading OpenEXR Texture: '" <<
-			name << "'...";
+template <typename T, int C> void* readImageData(FIBITMAP *image, const u_int *channelMapping) {
 
-		InputFile file(name.c_str());
-		Box2i dw = file.header().dataWindow();
-		u_int width = dw.max.x - dw.min.x + 1;
-		u_int height = dw.max.y - dw.min.y + 1;
-		//TODO verify if this is always correct
-		u_int noChannels = 3;
+	u_int width = FreeImage_GetWidth(image);
+	u_int height = FreeImage_GetHeight(image);
 
-		LOG(LUX_INFO, LUX_NOERROR) <<  width << "x" << height <<
-			" (" << noChannels << " channels)";
+	void* ret = new TextureColor<T, C>[width * height];
 
-		half *rgb = new half[noChannels * width * height];
-
-		FrameBuffer frameBuffer;
-		frameBuffer.insert("R", Slice(HALF, (char *)rgb,
-			3 * sizeof(half), width * 3 * sizeof(half), 1, 1, 0.));
-		frameBuffer.insert("G", Slice(HALF, (char *)rgb + sizeof(half),
-			3 * sizeof(half), width * 3 * sizeof(half), 1, 1, 0.));
-		frameBuffer.insert("B", Slice(HALF, (char *)rgb + 2 * sizeof(half),
-			3 * sizeof(half), width * 3 * sizeof(half), 1, 1, 0.));
-
-		file.setFrameBuffer(frameBuffer);
-		file.readPixels(dw.min.y, dw.max.y);
-		TextureColor<float, 3> *ret = new TextureColor<float, 3>[width * height];
-		ImageData* data = new ImageData(width, height,
-			ImageData::FLOAT_TYPE, noChannels, ret);
-
-		//XXX should do real RGB -> RGBColor conversion here
-		for (u_int i = 0; i < width * height; ++i) {
-			float c[3] = { rgb[3 * i], rgb[3 * i + 1], rgb[3 * i + 2] };
-			ret[i] = TextureColor<float, 3> (c);
-
+	u_int bpp = FreeImage_GetBPP(image) / 8;
+	for (u_int i = 0; i < height; ++i) {
+		// FreeImage stores images bottom-up
+		BYTE *bits = FreeImage_GetScanLine(image, height-i-1);
+		for (u_int j = 0; j < width; ++j) {
+			// bpp/bytesPerChannel may not equal noChannels
+			T *src = reinterpret_cast<T*>(&bits[j * bpp]);
+			for (u_int k = 0; k < C; ++k)
+				((TextureColor<T, C> *)ret)[j+(i*width)].c[k] = src[channelMapping[k]];
 		}
+	}
+	
+	return ret;
+}
 
-		delete[] rgb;
-
-		return data;
-	} catch (const std::exception &e) {
-		LOG(LUX_ERROR, LUX_BUG) << "Unable to read EXR image file '" <<
-			name << "': " << e.what();
-		return NULL;
+template <typename T> void* readImageData(FIBITMAP *image, const u_int noChannels, const u_int *channelMapping) {
+	switch (noChannels) {
+		case 1:
+			return readImageData<T,1>(image, channelMapping);
+		case 3:
+			return readImageData<T,3>(image, channelMapping);
+		case 4:
+			return readImageData<T,4>(image, channelMapping);
+		default:
+			return NULL;
 	}
 }
 
-template <typename T> ImageData *createImageData(const string& name,
-	const CImg<T>& image )
-{
-	size_t size = sizeof(T);
+void* readImageData(FIBITMAP *image, const u_int bytesPerChannel, const u_int noChannels, const u_int *channelMapping) {
+	switch (bytesPerChannel) {
+		case 1:
+			return readImageData<unsigned char>(image, noChannels, channelMapping);
+		case 2:
+			return readImageData<unsigned short>(image, noChannels, channelMapping);
+		case 4:
+			return readImageData<float>(image, noChannels, channelMapping);
+		default:
+			return NULL;
+	}
+}
+
+
+ImageData *createImageData(const std::string &name, FIBITMAP *image) {
+
+	// convert if we need to
+	FREE_IMAGE_TYPE fit = FreeImage_GetImageType(image);
+	FREE_IMAGE_COLOR_TYPE fic = FreeImage_GetColorType(image);
+
+	u_int bytesPerChannel = 0;
+	u_int noChannels = 0;
+	bool useChannelMapping = false;
+
+	// determine bytesPerChannel and noChannels
+	// as well as convert image if necessary
+
+	// temporary image used for conversion
+	FIBITMAP *timage = NULL;
+
+	switch (fit) {
+		case FIT_BITMAP: 
+			{
+				// Standard image: 1-, 4-, 8-, 16-, 24-, 32-bit
+				u_int bpp = FreeImage_GetBPP(image);
+				bool trans = FreeImage_IsTransparent(image);
+
+				// standardize formats
+				if (fic == FIC_PALETTE || bpp < 24) {
+					if (trans) {
+						timage = FreeImage_ConvertTo32Bits(image);
+						noChannels = 4;
+					}
+					else {
+						timage = FreeImage_ConvertTo24Bits(image);
+						noChannels = 3;
+					}
+					image = timage;
+
+				} else if (fic == FIC_RGB) {
+					noChannels = 3;
+				} else if (fic == FIC_RGBALPHA) {
+					noChannels = 4;
+				} else {
+					LOG(LUX_ERROR, LUX_BADFILE) <<
+						"Unsupported color type (type=" << fic << ")";
+					image = NULL; // signal error
+				}
+				bytesPerChannel = 1;
+				useChannelMapping = true;
+			}
+			break;			
+
+		case FIT_FLOAT:		// Array of float: 32-bit IEEE floating point
+			bytesPerChannel = 4;
+			noChannels = 1;
+			break;
+
+		case FIT_UINT16:	// Array of unsigned short: unsigned 16-bit
+			bytesPerChannel = 2;
+			noChannels = 1;
+			break;
+
+		case FIT_INT16:		// Array of short: signed 16-bit
+		case FIT_UINT32:	// Array of unsigned long: unsigned 32-bit
+		case FIT_INT32:		// Array of long: signed 32-bit
+		case FIT_DOUBLE:	// Array of double: 64-bit IEEE floating point
+			{
+				// can't handle these directly, convert to float
+				timage = FreeImage_ConvertToType(image, FIT_FLOAT);
+				image = timage;
+				bytesPerChannel = 4;
+				noChannels = 1;
+			}
+			break;
+
+		case FIT_RGB16:		// 48-bit RGB image: 3 x 16-bit
+			noChannels = 3;
+			bytesPerChannel = 2;
+			break;
+
+		case FIT_RGBA16:	// 64-bit RGBA image: 4 x 16-bit
+			noChannels = 4;
+			bytesPerChannel = 2;
+			break;
+
+		case FIT_RGBF:		// 96-bit RGB float image: 3 x 32-bit IEEE floating point
+			noChannels = 3;
+			bytesPerChannel = 4;
+			break;
+
+		case FIT_RGBAF:		// 128-bit RGBA float image: 4 x 32-bit IEEE floating point
+			noChannels = 4;
+			bytesPerChannel = 4;
+			break;
+
+		default:
+			// FIT_UNKNOWN Unknown format (returned value only, never use it as input value)
+			// FIT_COMPLEX Array of FICOMPLEX: 2 x 64-bit IEEE floating point
+			LOG(LUX_ERROR, LUX_BADFILE) << "Image unsupported";
+			return NULL;
+	}
 
 	ImageData::PixelDataType type;
-	switch(size) {
+	switch(bytesPerChannel) {
 		case 1:
 			type = ImageData::UNSIGNED_CHAR_TYPE;
 			break;
@@ -163,92 +267,97 @@ template <typename T> ImageData *createImageData(const string& name,
 			break;
 		default:
 			LOG(LUX_ERROR, LUX_SYSTEM) <<
-				"Unsupported pixel type (size=" << size << ")";
-			return NULL;
+				"Unsupported pixel type (size=" << bytesPerChannel << ")";
+			image = NULL;
+	}	
+
+	// something went wrong above
+	if (!image) {	
+		if (timage)			
+			// already printed error
+			FreeImage_Unload(timage);
+		else
+			LOG(LUX_ERROR, LUX_SYSTEM) << "Unable to convert image data";
+
+		return NULL;
 	}
-
-	u_int width = image.dimx();
-	u_int height = image.dimy();
-	u_int noChannels = image.dimv();
-	u_int pixels = width * height;
-
-	LOG(LUX_INFO, LUX_NOERROR) << width << "x" << height <<
-		" (" << noChannels << " channels of size " << size << ")";
+	
+	u_int width = FreeImage_GetWidth(image);
+	u_int height = FreeImage_GetHeight(image);
 
 	void* ret;
-	// Dade - we support 1, 3 and 4 channel images
-	switch (noChannels) {
-		case 1:
-			ret = new TextureColor<T, 1>[width * height];
-			break;
-		case 3:
-			ret = new TextureColor<T, 3>[width * height];
-			break;
-		case 4:
-			ret = new TextureColor<T, 4>[width * height];
-			break;
-		default:
-			LOG(LUX_ERROR, LUX_SYSTEM) <<
-				"Unsupported channel count in StandardImageReader::read(" << name << "): " << noChannels;
-			return NULL;
+
+	if (useChannelMapping) {
+		const u_int bmpChannelMapping[] = {FI_RGBA_RED, FI_RGBA_GREEN, FI_RGBA_BLUE, FI_RGBA_ALPHA};
+		ret = readImageData(image, bytesPerChannel, noChannels, bmpChannelMapping);
+	} else {
+		const u_int stdChannelMapping[] = {0, 1, 2, 3};
+		ret = readImageData(image, bytesPerChannel, noChannels, stdChannelMapping);
 	}
 
+	if (timage)
+		FreeImage_Unload(timage);
+	
+	if (!ret) {
+		LOG(LUX_ERROR, LUX_SYSTEM) << "Unable to read image data";
+		return NULL;
+	}
+	
 	ImageData* data = new ImageData(width, height, type, noChannels, ret);
-	//XXX should do real RGB -> RGBColor conversion here
-	for (u_int i = 0; i < width; ++i) {
-		for (u_int j = 0; j < height; ++j) {
-			for (u_int k = 0; k < noChannels; ++k) {
-				// assuming that cimg depth is 1 (single layer)
-				u_int off = i + (j * width) + (k * pixels);
 
-				switch (noChannels) {
-				case 1:
-					((TextureColor<T, 1> *)ret)[i + (j * width)].c[k] = image[off];
-					break;
-				case 3:
-					((TextureColor<T, 3> *)ret)[i + (j * width)].c[k] = image[off];
-					break;
-				case 4:
-					((TextureColor<T, 4> *)ret)[i + (j * width)].c[k] = image[off];
-					break;
-				default:
-					break;
-				}
-			}
-		}
-	}
 	return data;
 }
 
-template <typename T> ImageData *StandardImageReader<T>::read(const string &name)
+ImageData *StandardImageReader::read(const string &name)
 {
-	try {
-		LOG(LUX_INFO, LUX_NOERROR) << "Loading Cimg Texture: '" <<
-			name << "'...";
+	LOG(LUX_INFO, LUX_NOERROR) << "Loading FreeImage Texture: '" <<
+		name << "'...";
 
-		CImg<T> image(name.c_str());
-		size_t size = sizeof(T);
-
-		if (size != 1) {
-			// Check if conversion to a smaller type
-			// is possible without data loss
-			T maxVal = image.max();
-			if (maxVal <= cimg::type<unsigned char>::max()) {
-				CImg<unsigned char> tmpImage = image;
-				return createImageData(name, tmpImage);
-			}
-		}
-		return createImageData(name, image);
-	} catch (CImgIOException &e) {
-		LOG(LUX_ERROR, LUX_BUG) << "Unable to read Cimg image file '" <<
-			name << "': " << e.message;
+	FREE_IMAGE_FORMAT fif = FIF_UNKNOWN;
+	// check the file signature and deduce its format
+	// (the second argument is currently not used by FreeImage)
+	fif = FreeImage_GetFileType(name.c_str(), 0);
+	if (fif == FIF_UNKNOWN) {
+		// no signature ?
+		// try to guess the file format from the file extension
+		fif = FreeImage_GetFIFFromFilename(name.c_str());
+	}
+	// check that the plugin has reading capabilities ...
+	if (!((fif != FIF_UNKNOWN) && FreeImage_FIFSupportsReading(fif))) {
+		LOG(LUX_ERROR, LUX_BADFILE) << "Image type unknown or unsupported";
 		return NULL;
 	}
-	return NULL;
+
+	int flags;
+
+	switch (fif) {
+		case FIF_ICO:
+			flags = ICO_MAKEALPHA;
+		case FIF_JPEG:
+			flags = JPEG_ACCURATE;
+		case FIF_PNG:
+			flags = PNG_IGNOREGAMMA;
+		default:
+			flags = 0;
+	}
+
+	// ok, let's load the file
+	FIBITMAP *image = FreeImage_Load(fif, name.c_str(), flags);
+	// unless a bad file format, we are done !
+	
+	ImageData *data = createImageData(name, image);		
+	
+	// data may be NULL in case of error
+
+	FreeImage_Unload(image);
+
+	return data;
 }
 
 ImageData *ReadImage(const string &name)
 {
+	FreeImage_SetOutputMessage(FreeImageErrorHandler);
+
 	try {
 		boost::filesystem::path imagePath(name);
 		// boost::filesystem::exists() can throw an exception under Windows
@@ -268,48 +377,8 @@ ImageData *ReadImage(const string &name)
 		std::transform(extension.begin(), extension.end(), extension.begin(), (int(*)(int)) std::tolower);
 #endif
 
-		if (extension == "exr") {
-			ExrImageReader exrReader;
-			ImageData* data = exrReader.read(name);
-			data->setIsExrImage(true);
-
-			return data;
-		}
-		/*
-		The CImg Library can NATIVELY handle the following file formats:
-		 * RAW : a very simple ascii header, then the image data.
-		 * ASC (Ascii)
-		 * HDR (Analyze 7.5)
-		 * INR (Inrimage)
-		 * PPM/PGM (Portable Pixmap)
-		 * BMP (uncompressed)
-		 * PAN (Pandore-5)
-		 * DLM (Matlab ASCII)*/
-		if ((extension == "raw") ||
-			(extension == "asc") ||
-			(extension == "hdr") ||
-			(extension == "inr") ||
-			(extension == "ppm") ||
-			(extension == "pgm") ||
-			(extension == "bmp") ||
-			(extension == "pan") ||
-			(extension == "dlm")) {
-			StandardImageReader<unsigned char> stdImageReader;
-			return stdImageReader.read(name);
-		}
-		// linked formats
-		if ((extension == "jpg") ||
-			(extension == "jpeg")) {
-			StandardImageReader<unsigned char> stdImageReader;
-			return stdImageReader.read(name);
-		}
-		// handle potential 16 bit image types separately
-		if((extension == "png") ||
-			(extension == "tif") || (extension == "tiff") ||
-			(extension == "tga") ) {
-			StandardImageReader<unsigned short> stdImageReader;
-			return stdImageReader.read(name);
-		}
+		StandardImageReader stdImageReader;
+		return stdImageReader.read(name);
 
 		LOG(LUX_ERROR, LUX_BADFILE) <<
 			"Cannot recognise file format for image '" <<
