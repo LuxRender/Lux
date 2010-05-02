@@ -631,7 +631,9 @@ void Context::Volume(const string &n, const ParamSet &params) {
 void Context::Exterior(const string &n) {
 	VERIFY_WORLD("Exterior");
 	renderFarm->send("luxExterior", n);
-	if (graphicsState->namedVolumes.find(n) !=
+	if (n == "")
+		graphicsState->interior = boost::shared_ptr<lux::Volume>();
+	else if (graphicsState->namedVolumes.find(n) !=
 		graphicsState->namedVolumes.end()) {
 		// Create a temporary to increase share count
 		// The copy operator is just a swap
@@ -645,7 +647,9 @@ void Context::Exterior(const string &n) {
 void Context::Interior(const string &n) {
 	VERIFY_WORLD("Interior");
 	renderFarm->send("luxInterior", n);
-	if (graphicsState->namedVolumes.find(n) !=
+	if (n == "")
+		graphicsState->interior = boost::shared_ptr<lux::Volume>();
+	else if (graphicsState->namedVolumes.find(n) !=
 		graphicsState->namedVolumes.end()) {
 		// Create a temporary to increase share count
 		// The copy operator is just a swap
