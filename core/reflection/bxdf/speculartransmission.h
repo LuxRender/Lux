@@ -46,7 +46,7 @@ public:
 	virtual float Pdf(const TsPack *tspack, const Vector &wo,
 		const Vector &wi) const {
 		return (architectural &&
-			Dot(wo, wi) < MachineEpsilon::E(1.f) - 1.f) ? 1.f : 0.f;
+			(wo - wi).LengthSquared() < MachineEpsilon::E(1.f)) ? 1.f : 0.f;
 	}
 protected:
 	// SpecularTransmission Private Data
