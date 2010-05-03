@@ -171,6 +171,10 @@ MainWindow::MainWindow(QWidget *parent, bool opengl, bool copylog2console) : QMa
 	panes[3] = new PaneWidget(ui->panesAreaContents, "Gamma", ":/icons/gammaicon.png", true);
 	panes[4] = new PaneWidget(ui->panesAreaContents, "HDR Histogram", ":/icons/histogramicon.png");
 	panes[5] = new PaneWidget(ui->panesAreaContents, "Noise Reduction", ":/icons/noisereductionicon.png", true);
+	
+#if defined(__APPLE__)
+	ui->outputTabs->setFont(QFont  ("Lucida Grande", 11));
+#endif
 
 	// Tonemap page
 	tonemapwidget = new ToneMapWidget(panes[0]);
@@ -234,42 +238,14 @@ MainWindow::MainWindow(QWidget *parent, bool opengl, bool copylog2console) : QMa
 	
 	// Clipboard
 	connect(ui->button_copyToClipboard, SIGNAL(clicked()), this, SLOT(copyToClipboard()));
-	
-	// Resolution-Info
-	resinfospacer = new QSpacerItem( 0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
-	resLabel = new QLabel(tr(" Resolution:"));
-	resinfoLabel = new QLabel();
-	zoomLabel = new QLabel(tr(" Zoom Factor:"));
-	zoominfoLabel = new QLabel();
-	viewportLabel = new QLabel(tr(" Viewportsize:"));
-	viewportinfoLabel = new QLabel();
-
-	resinfoLabel->setFrameStyle(QFrame::Panel | QFrame::Sunken);
-	resinfoLabel->setMinimumWidth(100);
-	zoominfoLabel->setFrameStyle(QFrame::Panel | QFrame::Sunken);
-	zoominfoLabel->setMinimumWidth(100);
-	viewportinfoLabel->setFrameStyle(QFrame::Panel | QFrame::Sunken);
-	viewportinfoLabel->setMinimumWidth(100);
-
-	ui->horizontalLayout_4->addItem(new QSpacerItem( 0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum));
-	ui->horizontalLayout_4->addWidget(resLabel, 0);
-	ui->horizontalLayout_4->addWidget(resinfoLabel, 0);	
-	ui->horizontalLayout_4->addWidget(zoomLabel, 0);
-	ui->horizontalLayout_4->addWidget(zoominfoLabel, 0);
-	ui->horizontalLayout_4->addWidget(viewportLabel, 0);
-	ui->horizontalLayout_4->addWidget(viewportinfoLabel, 0);	
-	
+		
 	// Statusbar
 	activityLabel = new QLabel(tr("  Status:"));
 	activityMessage = new QLabel();
 	statusLabel = new QLabel(tr(" Activity:"));
 	statusMessage = new QLabel();
 	statusProgress = new QProgressBar();
-#if defined(__APPLE__)
 	statsLabel = new QLabel(tr(" Statistics:"));
-#else
-	statsLabel = new QLabel(tr(" Stats:"));
-#endif
 	statsMessage = new QLabel();
     
 	activityLabel->setMaximumWidth(60);
@@ -280,11 +256,7 @@ MainWindow::MainWindow(QWidget *parent, bool opengl, bool copylog2console) : QMa
 	statusMessage->setMaximumWidth(320);
 	statusProgress->setMaximumWidth(100);
 	statusProgress->setRange(0, 100);
-#if defined(__APPLE__)
 	statsLabel->setMaximumWidth(70);
-#else
-	statsLabel->setMaximumWidth(60);
-#endif
 	statsMessage->setFrameStyle(QFrame::Panel | QFrame::Sunken);
     
 	ui->statusbar->addPermanentWidget(activityLabel, 1);
@@ -866,12 +838,12 @@ void MainWindow::updateStatistics()
 void MainWindow::showRenderresolution()
 {
 	int w = luxStatistics("filmXres"), h = luxStatistics("filmYres");
-	resinfoLabel->setText(QString("%1 x %2").arg(w).arg(h));
+	ui->resinfoLabel->setText(QString("Resolution: %1 x %2").arg(w).arg(h));
 }
 // show the zoom-factor in viewport
 void MainWindow::showZoomfactor()
 {
-	zoominfoLabel->setText((QString("%1").arg(renderView->getZoomFactor()))+ "%");
+	ui->zoominfoLabel->setText((QString("Zoom Factor: %1").arg(renderView->getZoomFactor()))+ "%");
 }
 // show the actual viewportsize
 void MainWindow::viewportChanged() {
@@ -881,7 +853,7 @@ void MainWindow::viewportChanged() {
 // actual viewportsize
 void MainWindow::showViewportsize() {
 	int viewportw = renderView->width(), viewporth = renderView->height();
-	viewportinfoLabel->setText(QString("%1 x %2").arg(viewportw).arg(viewporth));
+	ui->viewportinfoLabel->setText(QString("Viewportsize: %1 x %2").arg(viewportw).arg(viewporth));
 }
 
 void MainWindow::renderScenefile(const QString& sceneFilename, const QString& flmFilename)

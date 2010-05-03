@@ -168,15 +168,12 @@ protected:
 	void createActions();
 
 private:
-	Ui::MainWindow *thorizontalLayout_4;
 	
-	QSpacerItem *resinfospacer;
-	QLabel *resLabel;
+	Ui::MainWindow *thorizontalLayout_5;
+	
 	QLabel *resinfoLabel;
-	QLabel *zoomLabel;
 	QLabel *zoominfoLabel;
-	QLabel *viewportLabel;
-	QLabel *viewportinfoLabel;
+	QLabel *viewportinfoLabel; 
 	
 	Ui::MainWindow *ui;
 

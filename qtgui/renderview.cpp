@@ -108,7 +108,7 @@ void RenderView::resizeEvent(QResizeEvent *event) {
 	emit viewChanged ();
 }
 
-float RenderView::getZoomFactor () {
+int RenderView::getZoomFactor () {
 	return zoomfactor;
 }
 

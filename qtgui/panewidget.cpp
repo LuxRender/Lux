@@ -68,6 +68,9 @@ PaneWidget::~PaneWidget()
 void PaneWidget::setTitle(const QString& title)
 {
 	ui->labelPaneName->setText(title);
+#if defined(__APPLE__)
+	ui->labelPaneName->setFont(QFont  ("Lucida Grande", 11, QFont::Bold));
+#endif
 }
 
 void PaneWidget::setIcon(const QString& icon)

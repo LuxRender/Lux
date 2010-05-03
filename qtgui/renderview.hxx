@@ -47,7 +47,7 @@ public:
 	void setZoomEnabled (bool enabled = true) { zoomEnabled = enabled; };
 	void reload ();
 	void setLogoMode ();
-	float getZoomFactor ();
+	int getZoomFactor ();
 	int getWidth ();
 	int getHeight ();
 	void copyToClipboard ();

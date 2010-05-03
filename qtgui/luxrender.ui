@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1024</width>
-    <height>746</height>
+    <width>947</width>
+    <height>736</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -57,6 +57,9 @@
         <string>Render</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_12">
+        <property name="margin">
+         <number>12</number>
+        </property>
         <item row="0" column="0">
          <layout class="QHBoxLayout" name="horizontalLayout_4">
           <item>
@@ -166,7 +169,7 @@
           </item>
          </layout>
         </item>
-        <item row="1" column="0" colspan="2">
+        <item row="1" column="0" colspan="4">
          <widget class="QSplitter" name="splitter">
           <property name="enabled">
            <bool>true</bool>
@@ -317,8 +320,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>529</width>
-                  <height>515</height>
+                  <width>468</width>
+                  <height>517</height>
                  </rect>
                 </property>
                 <property name="sizePolicy">
@@ -332,7 +335,11 @@
                   <number>4</number>
                  </property>
                  <item>
-                  <layout class="QVBoxLayout" name="panesLayout"/>
+                  <layout class="QVBoxLayout" name="panesLayout">
+                   <property name="rightMargin">
+                    <number>0</number>
+                   </property>
+                  </layout>
                  </item>
                 </layout>
                </widget>
@@ -384,13 +391,29 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>533</width>
-                  <height>549</height>
+                  <width>472</width>
+                  <height>547</height>
                  </rect>
                 </property>
                 <layout class="QVBoxLayout" name="verticalLayout_3">
+                 <property name="leftMargin">
+                  <number>4</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>4</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>0</number>
+                 </property>
                  <item>
-                  <layout class="QVBoxLayout" name="lightGroupsLayout"/>
+                  <layout class="QVBoxLayout" name="lightGroupsLayout">
+                   <property name="rightMargin">
+                    <number>0</number>
+                   </property>
+                  </layout>
                  </item>
                 </layout>
                </widget>
@@ -431,6 +454,95 @@
            </layout>
           </widget>
          </widget>
+        </item>
+        <item row="0" column="3">
+         <layout class="QHBoxLayout" name="horizontalLayout_5" stretch="0,0,0">
+          <property name="spacing">
+           <number>0</number>
+          </property>
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="QLabel" name="resinfoLabel">
+            <property name="minimumSize">
+             <size>
+              <width>160</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="frameShape">
+             <enum>QFrame::Box</enum>
+            </property>
+            <property name="frameShadow">
+             <enum>QFrame::Sunken</enum>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="zoominfoLabel">
+            <property name="minimumSize">
+             <size>
+              <width>140</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="frameShape">
+             <enum>QFrame::Box</enum>
+            </property>
+            <property name="frameShadow">
+             <enum>QFrame::Sunken</enum>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="viewportinfoLabel">
+            <property name="minimumSize">
+             <size>
+              <width>160</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="frameShape">
+             <enum>QFrame::Box</enum>
+            </property>
+            <property name="frameShadow">
+             <enum>QFrame::Sunken</enum>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="0" column="2">
+         <spacer name="horizontalSpacer_2">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
         </item>
        </layout>
       </widget>
@@ -597,7 +709,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1024</width>
+     <width>947</width>
      <height>22</height>
     </rect>
    </property>
