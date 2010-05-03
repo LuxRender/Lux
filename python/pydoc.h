@@ -1,6 +1,8 @@
 // Python dosctrings for pylux Module
 // Try to keep within 80 columns
 // ref: http://epydoc.sourceforge.net/manual-epytext.html
+// ref: https://renderman.pixar.com/products/rispec/rispec_pdf/RISpec3_2.pdf
+// ref: http://www.luxrender.net/wiki/index.php?title=Scene_file_format
 // -----------------------------------------------------------------------------
 
 const char * ds_pylux =
