@@ -37,14 +37,14 @@ public:
 		: BxDF(BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) {}
 	virtual ~NullTransmission() { }
 	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f_) const {
-		if (Dot(wo,wi) < MachineEpsilon::E(1.f) - 1.f)
+		if ((wo - wi).LengthSquared() < MachineEpsilon::E(1.f))
 			*f_ += SWCSpectrum(1.f / fabsf(CosTheta(wi)));
 	}
 	virtual bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 		float u1, float u2, SWCSpectrum *const f, float *pdf, float *pdfBack = NULL,
 		bool reverse = false) const;
 	virtual float Pdf(const TsPack *tspack, const Vector &wo, const Vector &wi) const {
-		return Dot(wo,wi) < MachineEpsilon::E(1.f) - 1.f ? 1.f : 0.f;
+		return (wo - wi).LengthSquared() < MachineEpsilon::E(1.f) ? 1.f : 0.f;
 	}
 private:
 	// NullTransmission Private Data
