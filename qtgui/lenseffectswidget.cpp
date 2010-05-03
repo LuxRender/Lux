@@ -64,7 +64,7 @@ LensEffectsWidget::LensEffectsWidget(QWidget *parent) : QWidget(parent), ui(new 
 	ui->button_gaussianComputeLayer->setFont(QFont  ("Lucida Grande", 11));
 	ui->button_gaussianDeleteLayer->setFont(QFont  ("Lucida Grande", 11));
 	ui->button_glareComputeLayer->setFont(QFont  ("Lucida Grande", 11));
-	ui->button_glareComputeLayer->setFont(QFont  ("Lucida Grande", 11));
+	ui->button_glareDeleteLayer->setFont(QFont  ("Lucida Grande", 11));
 #endif
 }
 
