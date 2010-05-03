@@ -12,7 +12,7 @@ const char * ds_pylux_version =
 "Returns the pylux/LuxRender version";
 
 const char * ds_pylux_ThreadSignals =
-"(+) Valid signals to send to rendering threads";
+"Valid states for rendering threads";
 
 const char * ds_pylux_RenderingThreadInfo =
 "Container class for information about rendering threads";
@@ -37,7 +37,12 @@ const char * ds_pylux_Context_init =
 "Create a new rendering Context object with the given name";
 
 const char * ds_pylux_Context_accelerator =
-"Initialise geometry acceleration structure type";
+"Initialise geometry acceleration structure type. Valid types are\n"
+"- bruteforce\n"
+"- bvh\n"
+"- grid\n"
+"- qbvh\n"
+"- tabreckdtree (or kdtree)";
 
 const char * ds_pylux_Context_addServer =
 "Add a (remote) rendering server to the context";
@@ -46,46 +51,57 @@ const char * ds_pylux_Context_addThread =
 "Add a local rendering thread to the context";
 
 const char * ds_pylux_Context_areaLightSource =
-"";
+"Attach a light source to the current geometry definition. (See: RiSpec 3.2 p.43)";
 
 const char * ds_pylux_Context_attributeBegin =
-"";
+"Begin a new Attribute scope.";
 
 const char * ds_pylux_Context_attributeEnd =
-"";
+"End an Attribute scope.";
 
 const char * ds_pylux_Context_camera =
-"";
+"Add a camera to the scene. Valid types are:\n"
+"- environment\n"
+"- orthographic\n"
+"- perspective\n"
+"- realistic";
 
 const char * ds_pylux_Context_cleanup =
-"";
+"Clean up and reset the renderer state after rendering.";
 
 const char * ds_pylux_Context_concatTransform =
-"";
+"Concatenate the given transformation onto the current transformation. The\n"
+"transformation is applied before all previously applied transformations, that\n"
+"is, before the current transformation. (Ref: RiSpec 3.2 p.56)";
 
 const char * ds_pylux_Context_coordSysTransform =
-"";
+"Replaces the current transformation matrix with the matrix that forms the named\n"
+"coordinate system. This permits objects to be placed directly into special or\n"
+"user-defined coordinate systems by their names. (Ref: RiSpec 3.2 p.57)";
 
 const char * ds_pylux_Context_coordinateSystem =
-"";
+"This function marks the coordinate system defined by the current transformation\n"
+"with the name space and saves it. (Ref: RiSpec 3.2 p.58)";
 
 const char * ds_pylux_Context_disableRandomMode =
-"";
+"Disables random mode in the renderer core.";
 
 const char * ds_pylux_Context_enableDebugMode =
-"";
+"Puts the renderer core into Debug mode.";
 
 const char * ds_pylux_Context_exit =
-"";
+"Stop the current rendering.";
 
 const char * ds_pylux_Context_exterior =
-"";
+"Sets the current Exterior volume shader. (Ref: RiSpec 3.2 p.48)";
 
 const char * ds_pylux_Context_film =
-"";
+"Initialise the Film for rendering. Valid types are:\n"
+"- fleximage.";
 
 const char * ds_pylux_Context_framebuffer =
-"";
+"Returns the current post-processed LDR framebuffer in RGB888 format as a list.\n"
+"It is advisable to call updateFramebuffer() before calling this function.";
 
 const char * ds_pylux_Context_getDefaultParameterValue =
 "";

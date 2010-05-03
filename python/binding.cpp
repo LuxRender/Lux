@@ -660,6 +660,8 @@ public:
 	{
 		boost::python::list pyFrameBuffer;
 		int nvalues=((int)luxStatistics("filmXres")) * ((int)luxStatistics("filmYres")) * 3; //get the number of values to copy
+
+		Context::SetActive(context);
 		unsigned char* framebuffer=luxFramebuffer(); //get the framebuffer
 		//copy the values
 		for(int i=0;i<nvalues;i++)
@@ -667,10 +669,19 @@ public:
 		return pyFrameBuffer;
 	}
 
-	void getHistogramImage(unsigned char *outPixels, unsigned int width, unsigned int height, int options)
+	boost::python::list getHistogramImage(unsigned int width, unsigned int height, int options)
 	{
+		boost::python::list pyHistogramImage;
+		int nvalues=width*height;
+		unsigned char* outPixels;
+
 		Context::SetActive(context);
 		context->GetHistogramImage(outPixels, width, height, options);
+
+		for(int i=0;i<nvalues;i++)
+			pyHistogramImage.append(outPixels[i]);
+
+		return pyHistogramImage;
 	}
 
 	void setParameterValue(luxComponent comp, luxComponentParameters param, double value, unsigned int index)
@@ -1064,7 +1075,7 @@ BOOST_PYTHON_MODULE(pylux)
 		)
 		.def("getHistogramImage",
 			&PyContext::getHistogramImage,
-			args("Context"),
+			args("Context", "width", "height", "options"),
 			ds_pylux_Context_getHistogramImage
 		)
 		.def("getNetworkServerUpdateInterval",
