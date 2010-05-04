@@ -135,7 +135,7 @@ const char * ds_pylux_Context_getRenderingThreadsStatus =
 "";
 
 const char * ds_pylux_Context_getServerCount =
-"";
+"Return the number of remote slaves contributing towards the current rendering.";
 
 const char * ds_pylux_Context_getStringParameterValue =
 "";
@@ -192,20 +192,22 @@ const char * ds_pylux_Context_material =
 "- shinymetal";
 
 const char * ds_pylux_Context_motionInstance =
-"";
+"Instantiates a moving object. See also objectInstance(). (Sim.: RiSpec 3.2 p.96).";
 
 const char * ds_pylux_Context_namedMaterial =
 "Instantiate a named material in the current scope as if it were defined with\n"
 "material().";
 
 const char * ds_pylux_Context_objectBegin =
-"";
+"Define a named object that can be re-used with objectInstance().\n"
+"(Ref: RiSpec 3.2 p.94).";
 
 const char * ds_pylux_Context_objectEnd =
-"";
+"End a named object definition.";
 
 const char * ds_pylux_Context_objectInstance =
-"";
+"Instatiate a named object defined within an objectBegin()/objectEnd() pair in\n"
+"the current scope. (Ref: RiSpec 3.2 p.95)";
 
 const char * ds_pylux_Context_overrideResumeFLM =
 "";
@@ -226,7 +228,7 @@ const char * ds_pylux_Context_pixelFilter =
 "- sinc";
 
 const char * ds_pylux_Context_portalShape =
-"";
+"Define geometry as an \"Exit Portal\" shape. See shape().";
 
 const char * ds_pylux_Context_removeServer =
 "Remote a remote rendering slave from the current rendering process.";
@@ -235,14 +237,19 @@ const char * ds_pylux_Context_removeThread =
 "Remove a local rendering thread from the current rendering process.";
 
 const char * ds_pylux_Context_reverseOrientation =
-"";
+"Causes the orientation in the current scope to be reversed left->right or\n"
+"right->left handed. (Ref: RiSpec 3.2 p.53).";
 
 const char * ds_pylux_Context_rotate =
 "Concatenate a rotation of the given angle, about the given axis onto the current\n"
 "scope's transformation. (Ref: RiSpec 3.2 p.57)";
 
 const char * ds_pylux_Context_sampler =
-"";
+"Initialise the sampler to use for rendering. Valid types are:\n"
+"- random\n"
+"- lowdiscrepancy\n"
+"- metropolis\n"
+"- erpt";
 
 const char * ds_pylux_Context_saveFLM =
 "Save the current virtual film to an FLM file.";
@@ -270,7 +277,19 @@ const char * ds_pylux_Context_setStringParameterValue =
 "";
 
 const char * ds_pylux_Context_shape =
-"";
+"Define a geometry primitive in the current scope. Valid types are:\n"
+"- cone\n"
+"- cylinder\n"
+"- disk\n"
+"- heightfield\n"
+"- lenscomponent\n"
+"- loopsubdiv\n"
+"- nurbs\n"
+"- paraboloid\n"
+"- plymesh\n"
+"- sphere\n"
+"- trianglemesh\n"
+"- mesh";
 
 const char * ds_pylux_Context_start =
 "(+) Re-start local rendering threads after a pause()";
@@ -300,7 +319,30 @@ const char * ds_pylux_Context_surfaceIntegrator =
 "- distributedpath";
 
 const char * ds_pylux_Context_texture =
-"";
+"Define a texture shader in the current scope. Valid types are:\n"
+"- bilerp\n"
+"- checkerboard\n"
+"- constant\n"
+"- dots\n"
+"- fbm\n"
+"- imagemap\n"
+"- marble\n"
+"- mix\n"
+"- scale\n"
+"- uv\n"
+"- windy\n"
+"- wrinkled\n"
+"Lux also supports the textures found in Blender, prefixed with the name \"blender_\":\n"
+"- blender_blend\n"
+"- blender_clouds\n"
+"- blender_distortednoise\n"
+"- blender_magic\n"
+"- blender_marble\n"
+"- blender_musgrave\n"
+"- blender_noise\n"
+"- blender_stucci\n"
+"- blender_voronoi\n"
+"- blender_wood";
 
 const char * ds_pylux_Context_transform =
 "Set the current scope's transformation matrix. (Ref: RiSpec 3.2 p.56)";
