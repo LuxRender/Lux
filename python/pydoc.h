@@ -56,10 +56,12 @@ const char * ds_pylux_Context_areaLightSource =
 "Attach a light source to the current geometry definition. (See: RiSpec 3.2 p.43)";
 
 const char * ds_pylux_Context_attributeBegin =
-"Begin a new Attribute scope.";
+"Begin a new Attribute scope, inheriting attributes from parent scope.\n"
+"(See: RiSpec 3.2 p.38)";
 
 const char * ds_pylux_Context_attributeEnd =
-"End an Attribute scope.";
+"End an Attribute scope, reverting attributes to parent scope.\n"
+"(See: RiSpec 3.2 p.38)";
 
 const char * ds_pylux_Context_camera =
 "Add a camera to the scene. Valid types are:\n"
@@ -139,37 +141,62 @@ const char * ds_pylux_Context_getStringParameterValue =
 "";
 
 const char * ds_pylux_Context_identity =
-"";
+"Set the current transform to the identity matrix.";
 
 const char * ds_pylux_Context_interior =
-"";
+"Set the current Interior volume shader. (Ref: RiSpec 3.2 p.47)";
 
 const char * ds_pylux_Context_lightGroup =
-"";
+"Change the named group of all following light sources in this scope.";
 
 const char * ds_pylux_Context_lightSource =
-"";
+"Create a light source of the specified type. Valid types are:\n"
+"- area\n"
+"- distant\n"
+"- goniometric\n"
+"- infinite\n"
+"- point\n"
+"- projection\n"
+"- sky\n"
+"- sun\n"
+"- sunsky (shortcut for sun + sky)\n"
+"- spot";
 
 const char * ds_pylux_Context_loadFLM =
-"";
+"Load an FLM film file into the context for tonemapping/post-processing purposes.";
 
 const char * ds_pylux_Context_lookAt =
-"";
+"Specify the position, target and up vector of the scene's camera.";
 
 const char * ds_pylux_Context_makeNamedMaterial =
-"";
+"Define a named material with the given name and type. See also material().";
 
 const char * ds_pylux_Context_makeNamedVolume =
-"";
+"Define a named volume with the given name and type. Not to be confused with the\n"
+"volume() system.";
 
 const char * ds_pylux_Context_material =
-"";
+"Define a material of the given type in the current scope. Valid types are:\n"
+"- carpaint\n"
+"- glass\n"
+"- glass2\n"
+"- glossy_lossy\n"
+"- glossy\n"
+"- matte\n"
+"- mattetranslucent\n"
+"- metal\n"
+"- mirror\n"
+"- mix\n"
+"- null\n"
+"- roughglass\n"
+"- shinymetal";
 
 const char * ds_pylux_Context_motionInstance =
 "";
 
 const char * ds_pylux_Context_namedMaterial =
-"";
+"Instantiate a named material in the current scope as if it were defined with\n"
+"material().";
 
 const char * ds_pylux_Context_objectBegin =
 "";
@@ -188,34 +215,41 @@ const char * ds_pylux_Context_parse =
 "immediately back to the python interpreter, otherwise this function blocks.";
 
 const char * ds_pylux_Context_pause =
-"";
+"(+) Pause all local rendering threads.";
 
 const char * ds_pylux_Context_pixelFilter =
-"";
+"Initialise the pixel filter to use for rendering. Valid types are:\n"
+"- box\n"
+"- triangle\n"
+"- gaussian\n"
+"- mitchell\n"
+"- sinc";
 
 const char * ds_pylux_Context_portalShape =
 "";
 
 const char * ds_pylux_Context_removeServer =
-"";
+"Remote a remote rendering slave from the current rendering process.";
 
 const char * ds_pylux_Context_removeThread =
-"";
+"Remove a local rendering thread from the current rendering process.";
 
 const char * ds_pylux_Context_reverseOrientation =
 "";
 
 const char * ds_pylux_Context_rotate =
-"";
+"Concatenate a rotation of the given angle, about the given axis onto the current\n"
+"scope's transformation. (Ref: RiSpec 3.2 p.57)";
 
 const char * ds_pylux_Context_sampler =
 "";
 
 const char * ds_pylux_Context_saveFLM =
-"";
+"Save the current virtual film to an FLM file.";
 
 const char * ds_pylux_Context_scale =
-"";
+"Concatenate a scaling onto the current scope's transformation.\n"
+"(Ref: RiSpec 3.2 p.57)";
 
 const char * ds_pylux_Context_setEpsilon =
 "";
@@ -239,46 +273,75 @@ const char * ds_pylux_Context_shape =
 "";
 
 const char * ds_pylux_Context_start =
-"";
+"(+) Re-start local rendering threads after a pause()";
 
 const char * ds_pylux_Context_statistics =
-"";
+"Return the named statistic from the current rendering. Valid statistic names are:\n"
+"- sceneIsReady : returns truthy if the scene has been built and is ready for rendering\n"
+"- filmIsReady : ?\n"
+"- terminated : ?\n"
+"- secElapsed : number of seconds since the rendering started\n"
+"- samplesSec : current local rendering speed in samples per second\n"
+"- samplesTotSec : current average total rendering speed in samples per second\n"
+"- samplesPx : current number of samples per pixel\n"
+"- efficiency : current rendering efficiency in percent\n"
+"- filmXres : current film X resolution\n"
+"- filmYres : current film Y resolution\n"
+"- displayInterval : current framebuffer update/display interval in seconds\n"
+"- filmEV : current film Exposure Value\n"
+"- enoughSamples : returns truthy if the rendering has reached a haltspp condition";
 
 const char * ds_pylux_Context_surfaceIntegrator =
-"";
+"Initialise the surface integrator to use for rendering. Valid types are:\n"
+"- bidirectional\n"
+"- directlighting\n"
+"- exphotonmap\n"
+"- path\n"
+"- distributedpath";
 
 const char * ds_pylux_Context_texture =
 "";
 
 const char * ds_pylux_Context_transform =
-"";
+"Set the current scope's transformation matrix. (Ref: RiSpec 3.2 p.56)";
 
 const char * ds_pylux_Context_transformBegin =
-"";
+"Begin a new transformation scope, inheriting the transform from the parent scope.\n"
+"(Ref: RiSpec 3.2 p.59).";
 
 const char * ds_pylux_Context_transformEnd =
-"";
+"End the current transformation scope, reverting to the transformation of the parent\n"
+"scope. (Ref: RiSpec 3.2 p.59).";
 
 const char * ds_pylux_Context_translate =
-"";
+"Concatenate a translation onto the current scope's transformation.\n"
+"(Ref: RiSpec 3.2 p.57)";
 
 const char * ds_pylux_Context_updateFilmFromNetwork =
-"";
+"Update the current virtual film with contributions from attached network slaves.";
 
 const char * ds_pylux_Context_updateFramebuffer =
-"";
+"Process the raw virtual film through the tonemapping post-processing pipeline\n"
+"into the LDR framebuffer. Results can be fetched with the frameBuffer() call.";
 
 const char * ds_pylux_Context_volume =
-"";
+"Define a bound volume object for volumetric effects. Valid types are:\n"
+"- exponential\n"
+"- homogenous";
 
 const char * ds_pylux_Context_volumeIntegrator =
-"";
+"Initialise the volume integrator to use for rendering. Valid types are:\n"
+"- emission\n"
+"- single";
 
 const char * ds_pylux_Context_wait =
-"";
+"Wait for rendering threads to complete. Unless some halt condition is set, or\n"
+"the process is otherwise interrupted, expect to wait() forever.";
 
 const char * ds_pylux_Context_worldBegin =
-"";
+"Specify that all rendering options shall be frozen, and that what commences is\n"
+"the description for the scene to be rendered. (Ref: RiSpec 3.2 p.17)";
 
 const char * ds_pylux_Context_worldEnd =
-"";
+"Ends the current scene description and starts the rendering process asynchronously\n"
+"in a single local thread. (Ref: RiSpec 3.2 p.17)";
