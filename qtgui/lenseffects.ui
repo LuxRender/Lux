@@ -6,14 +6,17 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>656</width>
-    <height>485</height>
+    <width>664</width>
+    <height>311</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="margin">
+    <number>12</number>
+   </property>
    <item>
     <widget class="QTabWidget" name="tabs_lensEffects">
      <property name="enabled">
@@ -24,9 +27,12 @@
      </property>
      <widget class="QWidget" name="tab_gaussianBloom">
       <attribute name="title">
-       <string>Gaussian Bloom</string>
+       <string>Bloom</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_16">
+       <property name="margin">
+        <number>4</number>
+       </property>
        <item row="0" column="0">
         <layout class="QGridLayout" name="gridLayout_20">
          <item row="2" column="3" colspan="2">
@@ -286,7 +292,7 @@
      </widget>
      <widget class="QWidget" name="tab_chromaticAbberationTab">
       <attribute name="title">
-       <string>C. Abberration</string>
+       <string>C. Aberration</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_5">
        <item>
