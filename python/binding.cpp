@@ -673,14 +673,14 @@ public:
 	{
 		boost::python::list pyHistogramImage;
 		int nvalues=width*height;
-		unsigned char* outPixels;
+		unsigned char* outPixels = new unsigned char[nvalues];
 
 		Context::SetActive(context);
 		context->GetHistogramImage(outPixels, width, height, options);
 
 		for(int i=0;i<nvalues;i++)
 			pyHistogramImage.append(outPixels[i]);
-
+		delete[] outPixels;
 		return pyHistogramImage;
 	}
 
