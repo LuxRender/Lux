@@ -535,6 +535,7 @@ void MainWindow::resumeFLM()
 		return;
 	
 	endRenderingSession ();
+
 	renderScenefile (lxsFileName, flmFileName);
 }
 
