@@ -535,6 +535,9 @@ void MainWindow::resumeFLM()
 		return;
 	
 	endRenderingSession ();
+	showRenderresolution();
+	showZoomfactor();
+	showViewportsize();
 	renderScenefile (lxsFileName, flmFileName);
 }
 
