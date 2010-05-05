@@ -109,6 +109,8 @@ boost::shared_ptr<BVHAccelTreeNode> BVHAccel::BuildHierarchy(vector<boost::share
 
 	boost::shared_ptr<BVHAccelTreeNode> parent(new BVHAccelTreeNode());
 	parent->primitive = NULL;
+	if (end == begin) // Empty tree
+		return parent;
 
 	vector<u_int> splits;
 	splits.reserve(treeType + 1);
