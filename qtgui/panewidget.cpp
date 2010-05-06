@@ -41,12 +41,25 @@ PaneWidget::PaneWidget(QWidget *parent, const QString& label, const QString& ico
 	onofflabel = NULL;
 
 	ui->setupUi(this);
+	
+#if defined(__APPLE__)
+	ui->frame->setStyleSheet(QString::fromUtf8(" QFrame {\n""background-color: qlineargradient(spread:pad, x1:1, y1:0, x2:0, y2:0, stop:0 rgb(120, 120, 120), stop:0.8 rgb(230, 230, 230))\n""}\n"""));
+	ui->frame->setLineWidth(2);
+	if (!icon.isEmpty())
+		ui->labelPaneIcon->setPixmap(QPixmap(icon));
+		ui->labelPaneIcon->setStyleSheet(QString::fromUtf8(" QFrame {\n""background-color: rgba(232, 232, 232, 0)\n""}"));
+	
+	if (!label.isEmpty())
+		ui->labelPaneName->setText(label);
+		ui->labelPaneName->setStyleSheet(QString::fromUtf8(" QFrame {\n""background-color: rgba(232, 232, 232, 0)\n""}"));
+#else
 	if (!icon.isEmpty())
 		ui->labelPaneIcon->setPixmap(QPixmap(icon));
 	
 	if (!label.isEmpty())
 		ui->labelPaneName->setText(label);
-
+#endif
+	
 	expandlabel = new ClickableLabel(">", this);
 	expandlabel->setPixmap(QPixmap(":/icons/collapsedicon.png"));
 	ui->gridLayout->addWidget(expandlabel, 0, 3, 1, 1);
@@ -83,6 +96,9 @@ void PaneWidget::showOnOffButton(bool showbutton)
 	if (onofflabel == NULL) {
 		onofflabel = new ClickableLabel("*", this);
 		onofflabel->setPixmap(QPixmap(":/icons/poweronicon.png"));
+#if defined(__APPLE__)
+		onofflabel->setStyleSheet(QString::fromUtf8(" QFrame {\n""background-color: rgba(232, 232, 232, 0)\n""}"));
+#endif
 		ui->gridLayout->removeWidget(expandlabel);
 		ui->gridLayout->addWidget(onofflabel, 0, 3, 1, 1);
 		ui->gridLayout->addWidget(expandlabel, 0, 4, 1, 1);
@@ -136,6 +152,9 @@ void PaneWidget::setWidget(QWidget *widget)
 {
 	mainwidget = widget;
 	ui->paneLayout->addWidget(widget);
+#if defined(__APPLE__)
+	expandlabel->setStyleSheet(QString::fromUtf8(" QFrame {\n""background-color: rgba(232, 232, 232, 0)\n""}"));
+#endif
 	if (expanded)
 		mainwidget->show();
 	else
