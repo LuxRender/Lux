@@ -549,6 +549,7 @@ void MainWindow::loadFLM()
 	if(flmFileName.isNull())
 		return;
 	
+	setCurrentFile(flmFileName); // show flm-name in windowheader
 	endRenderingSession();
 
 	//SetTitle(wxT("LuxRender - ")+fn.GetName());
@@ -887,7 +888,9 @@ void MainWindow::setCurrentFile(const QString& filename)
 		m_lastOpendir = info.filePath();
 		m_recentFiles.removeAll(m_CurrentFile);
 		m_recentFiles.prepend(m_CurrentFile);
-		updateRecentFileActions();
+		
+		if (!filename.endsWith("flm"))
+			updateRecentFileActions(); // not to recentlist, causes parse-error
 	}
 
 	setWindowTitle(tr("%1[*]").arg(showName));
