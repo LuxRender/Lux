@@ -949,6 +949,7 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			ui->action_stopRender->setEnabled (false);
 			ui->button_copyToClipboard->setEnabled (false);
 			activityMessage->setText("Idle");
+			showRenderresolution();
 			statusProgress->setRange(0, 100);
 			break;
 		case PARSING:
