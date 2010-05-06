@@ -984,6 +984,7 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			ui->button_stop->setEnabled (false);
 			ui->action_stopRender->setEnabled (false);
 			ui->button_copyToClipboard->setEnabled (true);
+			showRenderresolution();
 			activityMessage->setText("Render is finished");
 			break;
 		case STOPPING:
