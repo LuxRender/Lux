@@ -529,6 +529,8 @@ void MainWindow::resumeFLM()
 	if(lxsFileName.isNull())
 		return;
 	
+	setCurrentFile(lxsFileName); // make sure m_lastOpendir stays at lxs-location
+	
 	QString flmFileName = QFileDialog::getOpenFileName(this, tr("Choose an FLM file to open"), m_lastOpendir, tr("LuxRender FLM files (*.flm)"));
 
 	if(flmFileName.isNull())
