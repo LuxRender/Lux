@@ -497,13 +497,19 @@ void MainWindow::openFile()
 {
 	if (!canStopRendering())
 		return;
-
+#if defined(__APPLE__)	
+	pauseRender();
+#endif	
 	QString fileName = QFileDialog::getOpenFileName(this, tr("Choose a scene file to open"), m_lastOpendir, tr("LuxRender Files (*.lxs)"));
     
 	if(!fileName.isNull()) {
 		endRenderingSession();
 		renderScenefile(fileName);
+#if defined(__APPLE__)		
+	} else {
+		resumeRender();
 	}
+#endif
 }
 
 void MainWindow::openRecentFile()
@@ -523,19 +529,31 @@ void MainWindow::resumeFLM()
 {
 	if (!canStopRendering())
 		return;
+#if defined(__APPLE__)	
+	pauseRender();
 
 	QString lxsFileName = QFileDialog::getOpenFileName(this, tr("Choose a scene file to open"), m_lastOpendir, tr("LuxRender Files (*.lxs)"));
 
+	if(lxsFileName.isNull()) {
+		resumeRender();
+		return;
+	}
+#else
+	QString lxsFileName = QFileDialog::getOpenFileName(this, tr("Choose a scene file to open"), m_lastOpendir, tr("LuxRender Files (*.lxs)"));
+	
 	if(lxsFileName.isNull())
 		return;
+#endif
 	
 	setCurrentFile(lxsFileName); // make sure m_lastOpendir stays at lxs-location
 	
 	QString flmFileName = QFileDialog::getOpenFileName(this, tr("Choose an FLM file to open"), m_lastOpendir, tr("LuxRender FLM files (*.flm)"));
-
+#if defined(__APPLE__)	
+	resumeRender();
+#endif	
 	if(flmFileName.isNull())
 		return;
-	
+
 	endRenderingSession ();
 
 	renderScenefile (lxsFileName, flmFileName);
@@ -545,13 +563,20 @@ void MainWindow::loadFLM()
 {
 	if (!canStopRendering())
 		return;
-
+#if defined(__APPLE__)	
+	pauseRender();
+	
 	QString flmFileName = QFileDialog::getOpenFileName(this, tr("Choose an FLM file to open"), m_lastOpendir, tr("LuxRender FLM files (*.flm)"));
-
+	
+	resumeRender();
+#else
+	QString flmFileName = QFileDialog::getOpenFileName(this, tr("Choose an FLM file to open"), m_lastOpendir, tr("LuxRender FLM files (*.flm)"));
+#endif	
 	if(flmFileName.isNull())
 		return;
 	
 	setCurrentFile(flmFileName); // show flm-name in windowheader
+
 	endRenderingSession();
 
 	//SetTitle(wxT("LuxRender - ")+fn.GetName());
@@ -569,12 +594,16 @@ void MainWindow::saveFLM()
 {
 	if( !luxStatistics("sceneIsReady") && !luxStatistics("filmIsReady") )
 		return;
-
+#if defined(__APPLE__)	
+	pauseRender();
+#endif
 	if( m_guiRenderState == WAITING )
 		return;
 
 	QString flmFileName = QFileDialog::getSaveFileName(this, tr("Choose an FLM file to save to"), m_lastOpendir, tr("LuxRender FLM files (*.flm)"));
-
+#if defined(__APPLE__)	
+	resumeRender();
+#endif
 	if(flmFileName.isNull())
 		return;
 
@@ -891,10 +920,10 @@ void MainWindow::setCurrentFile(const QString& filename)
 		if (!filename.endsWith("flm")) {
 			m_recentFiles.removeAll(m_CurrentFile);
 			m_recentFiles.prepend(m_CurrentFile);
-			
+		
 			updateRecentFileActions(); // no flm to recentlist, causes parse-error
 		}
-		
+
 	}
 
 	setWindowTitle(tr("%1[*]").arg(showName));
