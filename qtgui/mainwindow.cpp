@@ -888,11 +888,13 @@ void MainWindow::setCurrentFile(const QString& filename)
 			showName = "LuxRender - " + showName;
         
 		m_lastOpendir = info.filePath();
-		m_recentFiles.removeAll(m_CurrentFile);
-		m_recentFiles.prepend(m_CurrentFile);
+		if (!filename.endsWith("flm")) {
+			m_recentFiles.removeAll(m_CurrentFile);
+			m_recentFiles.prepend(m_CurrentFile);
+			
+			updateRecentFileActions(); // no flm to recentlist, causes parse-error
+		}
 		
-		if (!filename.endsWith("flm"))
-			updateRecentFileActions(); // not to recentlist, causes parse-error
 	}
 
 	setWindowTitle(tr("%1[*]").arg(showName));
