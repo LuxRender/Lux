@@ -43,11 +43,10 @@ void GammaWidget::changeEvent(QEvent *event)
 {
 	if (event->type() == QEvent::EnabledChange) {
 		// Reset from film when enabling in case values were not properly initialized
-		if (this->isEnabled())
-			resetFromFilm(false);
 		updateParam(LUX_FILM, LUX_FILM_TORGB_GAMMA, (this->isEnabled() ? m_TORGB_gamma : 1.0));
-		emit valuesChanged ();
+		
 	}
+	emit valuesChanged ();
 }
 
 void GammaWidget::updateWidgetValues()
