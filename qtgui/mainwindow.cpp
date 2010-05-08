@@ -1285,6 +1285,7 @@ void MainWindow::loadTimeout()
 		indicateActivity(false);
 		statusMessage->setText("");
 		m_loadTimer->stop();
+		gammawidget->resetFromFilm(true);
 
 		if (luxStatistics("sceneIsReady")) {
 			// Scene file loaded
