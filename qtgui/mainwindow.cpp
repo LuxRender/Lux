@@ -505,8 +505,9 @@ void MainWindow::openFile()
 	if(!fileName.isNull()) {
 		endRenderingSession();
 		renderScenefile(fileName);
+	}
 #if defined(__APPLE__)		
-	} else {
+	else {
 		resumeRender();
 	}
 #endif
