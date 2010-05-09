@@ -497,18 +497,17 @@ void MainWindow::openFile()
 {
 	if (!canStopRendering())
 		return;
-#if defined(__APPLE__)	
-	if(!m_guiRenderState == WAITING )
-		pauseRender();
+#if defined(__APPLE__)
+	if(! m_guiRenderState == WAITING )
+	pauseRender();
 #endif	
 	QString fileName = QFileDialog::getOpenFileName(this, tr("Choose a scene file to open"), m_lastOpendir, tr("LuxRender Files (*.lxs)"));
     
 	if(!fileName.isNull()) {
 		endRenderingSession();
 		renderScenefile(fileName);
-	}
 #if defined(__APPLE__)		
-	else {
+	} else {
 		resumeRender();
 	}
 #endif
@@ -531,8 +530,8 @@ void MainWindow::resumeFLM()
 {
 	if (!canStopRendering())
 		return;
-#if defined(__APPLE__)	
-	if(!m_guiRenderState == WAITING )
+#if defined(__APPLE__)
+	if(! m_guiRenderState == WAITING )
 		pauseRender();
 
 	QString lxsFileName = QFileDialog::getOpenFileName(this, tr("Choose a scene file to open"), m_lastOpendir, tr("LuxRender Files (*.lxs)"));
@@ -566,8 +565,8 @@ void MainWindow::loadFLM()
 {
 	if (!canStopRendering())
 		return;
-#if defined(__APPLE__)	
-	if(!m_guiRenderState == WAITING )
+#if defined(__APPLE__)
+	if(! m_guiRenderState == WAITING )
 		pauseRender();
 	
 	QString flmFileName = QFileDialog::getOpenFileName(this, tr("Choose an FLM file to open"), m_lastOpendir, tr("LuxRender FLM files (*.flm)"));
