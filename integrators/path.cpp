@@ -91,10 +91,10 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	bool specularBounce = true, specular = true;
 	float alpha = 1.f;
 	float distance = INFINITY;
-	u_int through = 0;
+	u_int vertexIndex = 0;
 	const Volume *volume = NULL;
 
-	for (u_int pathLength = 0; ;) {
+	for (u_int pathLength = 0; ; ++pathLength) {
 		// Find next vertex of path
 		Intersection isect;
 		BSDF *bsdf;
@@ -114,7 +114,7 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 
 			// Stop path sampling since no intersection was found
 			// Possibly add horizon in render & reflections
-			if ((includeEnvironment || pathLength > 0) &&
+			if ((includeEnvironment || vertexIndex > 0) &&
 				specularBounce) {
 				for (u_int i = 0; i < nLights; ++i) {
 					SWCSpectrum Le(scene->lights[i]->Le(tspack, ray));
@@ -128,11 +128,11 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 			}
 
 			// Set alpha channel
-			if (pathLength == 0)
+			if (vertexIndex == 0)
 				alpha = 0.f;
 			break;
 		}
-		if (pathLength == 0 && through == 0) {
+		if (vertexIndex == 0) {
 			r.maxt = ray.maxt;
 			distance = ray.maxt * ray.d.Length();
 		}
@@ -192,12 +192,9 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 
 		const float dp = AbsDot(wi, n) / pdf;
 
-		if (flags == (BSDF_TRANSMISSION | BSDF_SPECULAR) && bsdf->Pdf(tspack, wi, wo, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) > 0.f) {
-			if (through++ > passThroughLimit)
-				break;
-		} else {
+		if (flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) || bsdf->Pdf(tspack, wi, wo, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) > 0.f) {
 			// Possibly terminate the path
-			if (pathLength > 3) {
+			if (vertexIndex > 3) {
 				if (rrStrategy == RR_EFFICIENCY) { // use efficiency optimized RR
 					const float q = min<float>(1.f, f.Filter(tspack) * dp);
 					if (q < data[3])
@@ -211,7 +208,7 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 					pathThroughput /= continueProbability;
 				}
 			}
-			++pathLength;
+			++vertexIndex;
 
 			specularBounce = (flags & BSDF_SPECULAR) != 0;
 			specular = specular && specularBounce;
