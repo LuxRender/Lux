@@ -192,7 +192,7 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 
 		const float dp = AbsDot(wi, n) / pdf;
 
-		if (flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) || bsdf->Pdf(tspack, wi, wo, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) > 0.f) {
+		if (flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) || !(bsdf->Pdf(tspack, wi, wo, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) > 0.f)) {
 			// Possibly terminate the path
 			if (vertexIndex > 3) {
 				if (rrStrategy == RR_EFFICIENCY) { // use efficiency optimized RR
