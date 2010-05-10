@@ -59,7 +59,13 @@ void Material::Bump(const TsPack *tspack,
 	d->GetDuv(tspack, *dgBump, bumpmapSampleDistance, &du, &dv);
 	dgBump->dpdu += du * Vector(dgBump->nn);   // different to book, as displace*dgs.dndu creates artefacts
 	dgBump->dpdv += dv * Vector(dgBump->nn);   // different to book, as displace*dgs.dndv creates artefacts
+	const Normal nn(dgBump->nn);
 	dgBump->nn = Normal(Normalize(Cross(dgBump->dpdu, dgBump->dpdv)));
 	// INFO: We don't compute dgBump->dndu and dgBump->dndv as we need this
 	//       only here.
+	// The above transform keeps the normal in the original normal
+	// hemisphere. If they are opposed, it means UVN was indirect and
+	// the normal needs to be reversed
+	if (Dot(nn, dgBump->nn) < 0.f)
+		dgBump->nn = -dgBump->nn;
 }
