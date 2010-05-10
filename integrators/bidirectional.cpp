@@ -503,11 +503,10 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 			RayDifferential ray(light0.p, light0.wo);
 			ray.time = tspack->time;
 			Intersection isect;
-			u_int through = 0;
 			lightPath[nLight].flux = light0.flux;
 
 			// Trace light subpath and connect to eye vertex
-			while (true) {
+			for (u_int sampleIndex = 0;; ++sampleIndex) {
 				BidirVertex &v = lightPath[nLight];
 				if (!scene->Intersect(tspack,
 					lightPath[nLight - 1].bsdf->GetVolume(ray.d),
@@ -546,7 +545,10 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 						++nrContribs;
 				}
 
-				data = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleLightOffset, nLight - 1);
+				// Break out if path is too long
+				if (sampleIndex >= maxLightDepth)
+					break;
+				data = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleLightOffset, sampleIndex);
 				SWCSpectrum f;
 				if (!v.bsdf->Sample_f(tspack, v.wi, &v.wo,
 					data[1], data[2], data[3], &f, &v.pdf,
@@ -578,16 +580,17 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 						v.flux /= v.rr;
 					}
 					lightPath[nLight].flux = v.flux;
-					through = 0;
 				} else {
+					--nLight;
 					const float cosins = AbsDot(v.wi, v.bsdf->nn);
 					// No need to do '/ v.cosi * v.coso' since cosi==coso
 					v.flux *= f * (cosins / v.pdf);
-					lightPath[nLight - 2].tPdf *= v.pdf;
+					lightPath[nLight - 1].tPdf *= v.pdf;
 					v.tPdfR *= v.pdfR;
-					--nLight;
-					if (through++ > passThroughLimit)
+					if (sampleIndex + 1 >= maxLightDepth) {
+						lightPath[nLight - 1].rr = 0.f;
 						break;
+					}
 				}
 
 				// Initialize _ray_ for next segment of path
@@ -619,13 +622,12 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	tspack->camera->ClampRay(ray);
 	Intersection isect;
 	u_int nEye = 1;
-	u_int through = 0;
 	eyePath[nEye].flux = eye0.flux;
 
 	// Trace eye subpath and connect to light subpath
 	SWCSpectrum &L(vecL[lightGroup]);
 	float &variance(vecV[lightGroup]);
-	while (true) {
+	for (u_int sampleIndex = 0;; ++sampleIndex) {
 		BidirVertex &v = eyePath[nEye];
 		if (!scene->Intersect(tspack,
 			eyePath[nEye - 1].bsdf->GetVolume(ray.d), ray, &isect,
@@ -733,8 +735,47 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 			}
 		}
 
+		// Connect eye subpath to light subpath
+		if (nLight > 0) {
+			// Compute direct lighting pdf for first light vertex
+			float directPdf = light->Pdf(tspack, v.p, v.bsdf->ng, lightPath[0].p,
+				lightPath[0].bsdf->ng) * directWeight;
+			// Go through all light vertices
+			for (u_int j = 1; j <= nLight; ++j) {
+				// Use general direct lighting pdf
+				if (j >= 2)
+					directPdf = lightDirectPdf;
+				if (v.bsdf->NumComponents(BxDFType(~BSDF_SPECULAR)) == 0 || lightPath[j - 1].bsdf->NumComponents(BxDFType(~BSDF_SPECULAR)) == 0)
+					continue;
+				SWCSpectrum Ll(Le);
+				float weight;
+				// Save data modified by evalPath
+				BidirVertex &vL(lightPath[j - 1]);
+				const BxDFType lflags = vL.flags;
+				const float lrr = vL.rr;
+				const float lrrR = vL.rrR;
+				const float ldARWeight = vL.dARWeight;
+				if (evalPath(tspack, scene, *this,
+					eyePath, nEye, lightPath, j,
+					directPdf, false, &weight, &Ll)) {
+					L += Ll;
+					variance += weight * Ll.Filter(tspack);
+					++nrContribs;
+				}
+				// Restore modified data
+				vL.flags = lflags;
+				vL.rr = lrr;
+				vL.rrR = lrrR;
+				vL.dARWeight = ldARWeight;
+			}
+		}
+
+		// Break out if path is too long
+		if (sampleIndex >= maxEyeDepth)
+			break;
+
 		// Do direct lighting
-		const float *directData = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleDirectOffset, nEye - 1);
+		const float *directData = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleDirectOffset, sampleIndex);
 		switch (lightStrategy) {
 			case SAMPLE_ONE_UNIFORM: {
 				SWCSpectrum Ld;
@@ -777,42 +818,7 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 				break;
 		}
 
-		// Connect eye subpath to light subpath
-		if (nLight > 0) {
-			// Compute direct lighting pdf for first light vertex
-			float directPdf = light->Pdf(tspack, v.p, v.bsdf->ng, lightPath[0].p,
-				lightPath[0].bsdf->ng) * directWeight;
-			// Go through all light vertices
-			for (u_int j = 1; j <= nLight; ++j) {
-				// Use general direct lighting pdf
-				if (j >= 2)
-					directPdf = lightDirectPdf;
-				if (v.bsdf->NumComponents(BxDFType(~BSDF_SPECULAR)) == 0 || lightPath[j - 1].bsdf->NumComponents(BxDFType(~BSDF_SPECULAR)) == 0)
-					continue;
-				SWCSpectrum Ll(Le);
-				float weight;
-				// Save data modified by evalPath
-				BidirVertex &vL(lightPath[j - 1]);
-				const BxDFType lflags = vL.flags;
-				const float lrr = vL.rr;
-				const float lrrR = vL.rrR;
-				const float ldARWeight = vL.dARWeight;
-				if (evalPath(tspack, scene, *this,
-					eyePath, nEye, lightPath, j,
-					directPdf, false, &weight, &Ll)) {
-					L += Ll;
-					variance += weight * Ll.Filter(tspack);
-					++nrContribs;
-				}
-				// Restore modified data
-				vL.flags = lflags;
-				vL.rr = lrr;
-				vL.rrR = lrrR;
-				vL.dARWeight = ldARWeight;
-			}
-		}
-
-		data = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleEyeOffset, nEye - 1);
+		data = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleEyeOffset, sampleIndex);
 		SWCSpectrum f;
 		if (!v.bsdf->Sample_f(tspack, v.wo, &v.wi, data[1], data[2],
 			data[3], &f, &v.pdfR, BSDF_ALL, &v.flags, &v.pdf, true))
@@ -840,15 +846,16 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 				v.flux /= v.rrR;
 			}
 			eyePath[nEye].flux = v.flux;
-			through = 0;
 		} else {
+			--nEye;
 			const float cosins = AbsDot(v.wi, v.bsdf->nn);
 			v.flux *= f * (cosins / v.pdfR);
-			eyePath[nEye - 2].tPdfR *= v.pdfR;
+			eyePath[nEye - 1].tPdfR *= v.pdfR;
 			v.tPdf *= v.pdf;
-			--nEye;
-			if (through++ > passThroughLimit)
+			if (sampleIndex + 1 >= maxEyeDepth) {
+				eyePath[nEye - 1].rrR = 0.f;
 				break;
+			}
 		}
 
 		// Initialize _ray_ for next segment of path
