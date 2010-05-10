@@ -112,18 +112,7 @@ Texture<float> *ImageFloatTexture::CreateFloatTexture(const Transform &tex2world
 	}
 
 	ImageFloatTexture *tex = new ImageFloatTexture(map, filterType,
-		filename, maxAniso, wrapMode, ch, gain, gamma);
-
-	if (discardmm > 0 &&
-		(filterType == MIPMAP_TRILINEAR || filterType == MIPMAP_EWA)) {
-		tex->DiscardMipmaps(discardmm);
-
-		LOG(LUX_INFO, LUX_NOERROR) << "Discarded " << discardmm <<
-			" mipmap levels";
-	}
-
-	LOG(LUX_INFO, LUX_NOERROR) << "Memory used for imagemap '" << filename
-		<< "': " << (tex->GetMemoryUsed() / 1024) << "KBytes";
+		filename, discardmm, maxAniso, wrapMode, ch, gain, gamma);
 
 	return tex;
 }
@@ -194,18 +183,7 @@ Texture<SWCSpectrum> *ImageSpectrumTexture::CreateSWCSpectrumTexture(const Trans
 	int discardmm = tp.FindOneInt("discardmipmaps", 0);
 
 	ImageSpectrumTexture *tex = new ImageSpectrumTexture(map, filterType,
-		filename, maxAniso, wrapMode, gain, gamma);
-
-	if (discardmm > 0 &&
-		(filterType == MIPMAP_TRILINEAR || filterType == MIPMAP_EWA)) {
-		tex->DiscardMipmaps(discardmm);
-
-		LOG(LUX_INFO, LUX_NOERROR) << "Discarded " << discardmm <<
-			" mipmap levels";
-	}
-
-	LOG(LUX_INFO, LUX_NOERROR) << "Memory used for imagemap '" << filename
-		<< "': " << (tex->GetMemoryUsed() / 1024) << "KBytes";
+		filename, discardmm, maxAniso, wrapMode, gain, gamma);
 
 	return tex;
 }
