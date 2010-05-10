@@ -104,7 +104,7 @@ float SimpleSpecularTransmission::Weight(const TsPack *tspack,
 void SimpleSpecularTransmission::f(const TsPack *tspack, const Vector &wo, 
 	const Vector &wi, SWCSpectrum *const f_) const
 {
-	if (!(architectural && (wo - wi).LengthSquared() < MachineEpsilon::E(1.f)))
+	if (!(architectural && Dot(wo, wi) <= -1.f + MachineEpsilon::E(1.f)))
 		return;
 	// Figure out which $\eta$ is incident and which is transmitted
 	const bool entering = CosTheta(wo) > 0.f;
