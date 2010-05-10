@@ -45,6 +45,7 @@ PaneWidget::PaneWidget(QWidget *parent, const QString& label, const QString& ico
 #if defined(__APPLE__)
 	ui->frame->setStyleSheet(QString::fromUtf8(" QFrame {\n""background-color: qlineargradient(spread:pad, x1:1, y1:0, x2:0, y2:0, stop:0 rgb(120, 120, 120), stop:0.8 rgb(230, 230, 230))\n""}\n"""));
 	ui->frame->setLineWidth(2);
+	ui->labelPaneName->setFont(QFont  ("Lucida Grande", 11, QFont::Bold));
 	if (!icon.isEmpty())
 		ui->labelPaneIcon->setPixmap(QPixmap(icon));
 		ui->labelPaneIcon->setStyleSheet(QString::fromUtf8(" QFrame {\n""background-color: rgba(232, 232, 232, 0)\n""}"));
@@ -81,9 +82,6 @@ PaneWidget::~PaneWidget()
 void PaneWidget::setTitle(const QString& title)
 {
 	ui->labelPaneName->setText(title);
-#if defined(__APPLE__)
-	ui->labelPaneName->setFont(QFont  ("Lucida Grande", 11, QFont::Bold));
-#endif
 }
 
 void PaneWidget::setIcon(const QString& icon)
