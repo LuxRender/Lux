@@ -487,7 +487,7 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 
 		// Sample light subpath initial direction and
 		// finish vertex initialization if needed
-		data = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleLightOffset, nLight - 1);
+		data = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleLightOffset, 0);
 		if (maxLightDepth > 1 && light0.bsdf->Sample_f(tspack,
 			light0.wi, &light0.wo, data[1], data[2], data[3],
 			&light0.flux, &light0.pdf, BSDF_ALL, &light0.flags,
@@ -506,7 +506,7 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 			lightPath[nLight].flux = light0.flux;
 
 			// Trace light subpath and connect to eye vertex
-			for (u_int sampleIndex = 0;; ++sampleIndex) {
+			for (u_int sampleIndex = 1;; ++sampleIndex) {
 				BidirVertex &v = lightPath[nLight];
 				if (!scene->Intersect(tspack,
 					lightPath[nLight - 1].bsdf->GetVolume(ray.d),
@@ -627,7 +627,7 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	// Trace eye subpath and connect to light subpath
 	SWCSpectrum &L(vecL[lightGroup]);
 	float &variance(vecV[lightGroup]);
-	for (u_int sampleIndex = 0;; ++sampleIndex) {
+	for (u_int sampleIndex = 1;; ++sampleIndex) {
 		BidirVertex &v = eyePath[nEye];
 		if (!scene->Intersect(tspack,
 			eyePath[nEye - 1].bsdf->GetVolume(ray.d), ray, &isect,
