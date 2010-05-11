@@ -33,7 +33,7 @@
 #define TM_LINEAR_EXPOSURE_LOG_MIN -3.f
 #define TM_LINEAR_EXPOSURE_LOG_MAX 2.f
 #define TM_LINEAR_SENSITIVITY_RANGE 1000.0f
-#define TM_LINEAR_FSTOP_RANGE 64.0f
+#define TM_LINEAR_FSTOP_RANGE 128.0f
 #define TM_LINEAR_GAMMA_RANGE 5.0f
 
 #define TM_CONTRAST_YWA_LOG_MIN -4.f
@@ -81,6 +81,9 @@ signals:
 private slots:
 
 	void setTonemapKernel (int choice);
+	void setSensitivityPreset (int choice);
+	void setExposurePreset (int choice);
+	void setFStopPreset (int choice);
 	void prescaleChanged (int value);
 	void prescaleChanged (double value);
 	void postscaleChanged (int value);
