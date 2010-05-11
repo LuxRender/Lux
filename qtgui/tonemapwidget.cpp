@@ -460,6 +460,7 @@ void ToneMapWidget::sensitivityChanged (double value)
 
 	updateWidgetValue(ui->slider_sensitivity, sliderval);
 	updateWidgetValue(ui->spinBox_sensitivity, m_TM_linear_sensitivity);
+	ui->comboBox_SensitivityPreset->setCurrentIndex(0);
 
 	updateParam (LUX_FILM, LUX_FILM_TM_LINEAR_SENSITIVITY, m_TM_linear_sensitivity);
 
@@ -479,6 +480,7 @@ void ToneMapWidget::exposureChanged (double value)
 
 	updateWidgetValue(ui->slider_exposure, sliderval);
 	updateWidgetValue(ui->spinBox_exposure, m_TM_linear_exposure);
+	ui->comboBox_ExposurePreset->setCurrentIndex(0);
 
 	updateParam (LUX_FILM, LUX_FILM_TM_LINEAR_EXPOSURE, m_TM_linear_exposure);
 
@@ -498,6 +500,7 @@ void ToneMapWidget::fstopChanged (double value)
 
 	updateWidgetValue(ui->slider_fstop, sliderval);
 	updateWidgetValue(ui->spinBox_fstop, m_TM_linear_fstop);
+	ui->comboBox_FStopPreset->setCurrentIndex(0);
 
 	updateParam (LUX_FILM, LUX_FILM_TM_LINEAR_FSTOP, m_TM_linear_fstop);
 
