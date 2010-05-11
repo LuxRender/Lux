@@ -52,6 +52,7 @@ public:
 	int getHeight ();
 	void copyToClipboard ();
 	float origh;
+	float origw;
 private:
 
 	bool zoomEnabled;

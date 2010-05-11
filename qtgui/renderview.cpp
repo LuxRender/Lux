@@ -143,8 +143,13 @@ void RenderView::mousePressEvent (QMouseEvent *event) {
 			case Qt::MidButton:
 				fitInView(renderscene->sceneRect(), Qt::KeepAspectRatio);
 				// compute correct zoomfactor
-				origh = luxStatistics("filmYres")/height();
-				zoomfactor = 100.0f/origh;
+				origw = (luxStatistics("filmXres")/width());
+				origh = (luxStatistics("filmYres")/height());
+				if (origh > origw)
+					zoomfactor = 100.0f/(origh);
+				else
+					zoomfactor = 100.0f/(origw);
+				
 				emit viewChanged ();
 				break;
 			case Qt::RightButton:
