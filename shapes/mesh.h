@@ -225,12 +225,12 @@ public:
 		const Point &p0 = mesh->p[idx[0]];
 		const Point &p1 = mesh->p[idx[1]];
 		const Point &p2 = mesh->p[idx[2]];
-	    const Point &p3 = mesh->p[idx[3]];
+		const Point &p3 = mesh->p[idx[3]];
 
-	    float b0 = (1.f-u1)*(1.f-u2);
-	    float b1 = u1*(1.f-u2);
-	    float b2 = u1*u2;
-	    float b3 = (1.f-u1)*u2;
+		float b0 = (1.f-u1)*(1.f-u2);
+		float b1 = u1*(1.f-u2);
+		float b2 = u1*u2;
+		float b3 = (1.f-u1)*u2;
 
 		dg->p = b0*p0 + b1*p1 +b2*p2 + b3*p3;
 
@@ -241,6 +241,12 @@ public:
 		if (mesh->reverseOrientation ^ mesh->transformSwapsHandedness)
 			dg->nn = -dg->nn;
 		CoordinateSystem(Vector(dg->nn), &dg->dpdu, &dg->dpdv);
+		dg->dndu = dg->dndv = Normal(0, 0, 0);
+		dg->dpdx = dg->dpdy = Vector(0, 0, 0);
+
+		dg->handle = this;
+
+		dg->dudx = dg->dudy = dg->dvdx = dg->dvdy = 0.f;
 
 		float uv[4][2];
 		GetUVs(uv);
