@@ -336,6 +336,7 @@ void ColorSpaceWidget::whitePointXChanged(double value)
 
 	updateWidgetValue(ui->slider_whitePointX, sliderval);
 	updateWidgetValue(ui->spinBox_whitePointX, m_TORGB_xwhite);
+	ui->comboBox_whitePointPreset->setCurrentIndex(0);
 
 	updateParam (LUX_FILM, LUX_FILM_TORGB_X_WHITE, m_TORGB_xwhite);
 
@@ -355,6 +356,7 @@ void ColorSpaceWidget::whitePointYChanged (double value)
 
 	updateWidgetValue(ui->slider_whitePointY, sliderval);
 	updateWidgetValue(ui->spinBox_whitePointY, m_TORGB_ywhite);
+	ui->comboBox_whitePointPreset->setCurrentIndex(0);
 
 	updateParam (LUX_FILM, LUX_FILM_TORGB_Y_WHITE, m_TORGB_ywhite);
 
