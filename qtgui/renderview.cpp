@@ -141,6 +141,8 @@ void RenderView::mousePressEvent (QMouseEvent *event) {
 				currentpos = event->pos();
 				break;
 			case Qt::MidButton:
+				setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
+				setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
 				fitInView(renderscene->sceneRect(), Qt::KeepAspectRatio);
 				// compute correct zoomfactor
 				origw = (luxStatistics("filmXres")/width());
@@ -149,6 +151,8 @@ void RenderView::mousePressEvent (QMouseEvent *event) {
 					zoomfactor = 100.0f/(origh);
 				else
 					zoomfactor = 100.0f/(origw);
+				setHorizontalScrollBarPolicy( Qt::ScrollBarAsNeeded );
+				setVerticalScrollBarPolicy( Qt::ScrollBarAsNeeded );
 				
 				emit viewChanged ();
 				break;
