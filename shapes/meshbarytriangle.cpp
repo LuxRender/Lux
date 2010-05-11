@@ -225,10 +225,16 @@ void MeshBaryTriangle::Sample(float u1, float u2, float u3, DifferentialGeometry
 		dg->dpdu = ( dv2 * dp1 - dv1 * dp2) * invdet;
 		dg->dpdv = (-du2 * dp1 + du1 * dp2) * invdet;
 	}
+	dg->dndu = dg->dndv = Normal(0, 0, 0);
+	dg->dpdx = dg->dpdy = Vector(0, 0, 0);
 
 	// Interpolate $(u,v)$ triangle parametric coordinates
 	dg->u = b1 * uvs[0][0] + b2 * uvs[1][0] + b3 * uvs[2][0];
 	dg->v = b1 * uvs[0][1] + b2 * uvs[1][1] + b3 * uvs[2][1];
+
+	dg->handle = this;
+
+	dg->dudx = dg->dudy = dg->dvdx = dg->dvdy = 0.f;
 
 	dg->triangleBaryCoords[0] = b1;
 	dg->triangleBaryCoords[1] = b2;

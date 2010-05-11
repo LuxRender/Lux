@@ -188,5 +188,7 @@ Texture<SWCSpectrum> *ImageSpectrumTexture::CreateSWCSpectrumTexture(const Trans
 	return tex;
 }
 
+map<ImageTexture::TexInfo, boost::shared_ptr<MIPMap> > ImageTexture::textures;
+
 static DynamicLoader::RegisterFloatTexture<ImageFloatTexture> r1("imagemap");
 static DynamicLoader::RegisterSWCSpectrumTexture<ImageSpectrumTexture> r2("imagemap");

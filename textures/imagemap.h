@@ -48,6 +48,16 @@ public:
 			wrapMode, gain, gamma);
 	}
 	virtual ~ImageTexture() {
+		// If the map isn't used anymore, remove it from the cache
+		// The last user still has 2 references:
+		// 1 from the texture and 1 from the dictionnary
+		for (map<TexInfo, boost::shared_ptr<MIPMap> >::iterator t = textures.begin(); t != textures.end(); ++t) {
+			if ((*t).second.get() == mipmap.get() &&
+				(*t).second.use_count() == 2) {
+				textures.erase(t);
+				break;
+			}
+		}
 		delete mapping;
 	}
 
@@ -83,6 +93,7 @@ private:
 			return gamma < t2.gamma;
 		}
 	};
+	static map<TexInfo, boost::shared_ptr<MIPMap> > textures;
 
 	// ImageTexture Private Methods
 	static boost::shared_ptr<MIPMap> GetTexture(ImageTextureFilterType filterType,
@@ -180,7 +191,6 @@ inline boost::shared_ptr<MIPMap> ImageTexture::GetTexture(ImageTextureFilterType
 	float gamma)
 {
 	// Look for texture in texture cache
-	static map<TexInfo, boost::shared_ptr<MIPMap> > textures;
 	TexInfo texInfo(filterType, filename, discardmm, maxAniso, wrap, gain, gamma);
 	if (textures.find(texInfo) != textures.end()) {
 		LOG(LUX_INFO, LUX_NOERROR) << "Reusing data for imagemap '" <<

@@ -296,24 +296,35 @@ bool MeshWaldTriangle::IntersectP(const Ray &ray) const
 	return true;
 }
 
-void MeshWaldTriangle::Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const {
-    float b1, b2;
+void MeshWaldTriangle::Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const
+{
+	float b1, b2;
 	UniformSampleTriangle(u1, u2, &b1, &b2);
 	// Get triangle vertices in _p1_, _p2_, and _p3_
 	const Point &p1 = mesh->p[v[0]];
 	const Point &p2 = mesh->p[v[1]];
 	const Point &p3 = mesh->p[v[2]];
-	float b3 = 1.f - b1 - b2;
+	const float b3 = 1.f - b1 - b2;
 	dg->p = b1 * p1 + b2 * p2 + b3 * p3;
 
 	dg->nn = normalizedNormal;
 	dg->dpdu = dpdu;
 	dg->dpdv = dpdv;
+	dg->dndu = dg->dndv = Normal(0, 0, 0);
+	dg->dpdx = dg->dpdy = Vector(0, 0, 0);
 
 	float uv[3][2];
 	GetUVs(uv);
 	dg->u = b1 * uv[0][0] + b2 * uv[1][0] + b3 * uv[2][0];
 	dg->v = b1 * uv[0][1] + b2 * uv[1][1] + b3 * uv[2][1];
+
+	dg->handle = this;
+
+	dg->dudx = dg->dudy = dg->dvdx = dg->dvdy = 0.f;
+
+	dg->triangleBaryCoords[0] = b1;
+	dg->triangleBaryCoords[1] = b2;
+	dg->triangleBaryCoords[2] = b3;
 }
 
 bool MeshWaldTriangle::isDegenerate() const {
