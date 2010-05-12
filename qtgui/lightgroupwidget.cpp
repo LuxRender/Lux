@@ -38,6 +38,10 @@ LightGroupWidget::LightGroupWidget(QWidget *parent) : QWidget(parent), ui(new Ui
 	connect(ui->slider_colortemp, SIGNAL(valueChanged(int)), this, SLOT(colortempChanged(int)));
 	connect(ui->spinBox_colortemp, SIGNAL(valueChanged(double)), this, SLOT(colortempChanged(double)));
 	connect(ui->toolButton_colorpicker, SIGNAL(clicked()), this, SLOT(colorPicker()));
+	
+#if defined(__APPLE__)
+	setFont(QFont  ("Lucida Grande", 11));
+#endif
 
 	m_Index = -1;
 	ResetValues();
