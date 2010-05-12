@@ -63,7 +63,9 @@ ToneMapWidget::ToneMapWidget(QWidget *parent) : QWidget(parent), ui(new Ui::Tone
 	connect(ui->spinBox_ywa, SIGNAL(valueChanged(double)), this, SLOT(ywaChanged(double)));
 	
 #if defined(__APPLE__)
+	ui->frame_toneMapReinhard->setFont(QFont  ("Lucida Grande", 11));
 	ui->frame_toneMapLinear->setFont(QFont  ("Lucida Grande", 11));
+	ui->frame_toneMapContrast->setFont(QFont  ("Lucida Grande", 11));
 #endif
 	
 }
@@ -239,7 +241,7 @@ void ToneMapWidget::setExposurePreset(int choice)
 }
 
 void ToneMapWidget::setFStopPreset(int choice)
-{
+{	
 	ui->comboBox_FStopPreset->blockSignals(true);
 	ui->comboBox_FStopPreset->setCurrentIndex(choice);
 	ui->comboBox_FStopPreset->blockSignals(false);
@@ -340,6 +342,9 @@ void ToneMapWidget::resetFromFilm (bool useDefaults)
 	m_TM_linear_sensitivity = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_TM_LINEAR_SENSITIVITY);
 	m_TM_linear_fstop = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_TM_LINEAR_FSTOP);
 	m_TM_linear_gamma = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_TM_LINEAR_GAMMA);
+	ui->comboBox_SensitivityPreset->setCurrentIndex(0);
+	ui->comboBox_ExposurePreset->setCurrentIndex(0);
+	ui->comboBox_FStopPreset->setCurrentIndex(0);
 
 	m_TM_contrast_ywa = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_TM_CONTRAST_YWA);
 
