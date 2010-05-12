@@ -54,6 +54,11 @@ ColorSpaceWidget::ColorSpaceWidget(QWidget *parent) : QWidget(parent), ui(new Ui
 	connect(ui->spinBox_greenX, SIGNAL(valueChanged(double)), this, SLOT(greenXChanged(double)));
 	connect(ui->slider_greenY, SIGNAL(valueChanged(int)), this, SLOT(greenYChanged(int)));
 	connect(ui->spinBox_greenY, SIGNAL(valueChanged(double)), this, SLOT(greenYChanged(double)));
+	
+#if defined(__APPLE__)
+	ui->tab_whitepoint->setFont(QFont  ("Lucida Grande", 11));
+	ui->tab_rgb->setFont(QFont  ("Lucida Grande", 11));
+#endif
 }
 
 ColorSpaceWidget::~ColorSpaceWidget()
@@ -115,6 +120,8 @@ void ColorSpaceWidget::resetFromFilm (bool useDefaults)
 	luxSetParameterValue(LUX_FILM, LUX_FILM_TORGB_Y_GREEN, m_TORGB_ygreen);
 	luxSetParameterValue(LUX_FILM, LUX_FILM_TORGB_X_BLUE, m_TORGB_xblue);
 	luxSetParameterValue(LUX_FILM, LUX_FILM_TORGB_Y_BLUE, m_TORGB_yblue);
+	
+	ui->comboBox_whitePointPreset->setCurrentIndex(0);
 }
 
 void ColorSpaceWidget::setColorSpacePreset(int choice)

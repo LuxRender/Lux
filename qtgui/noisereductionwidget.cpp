@@ -58,6 +58,14 @@ NoiseReductionWidget::NoiseReductionWidget(QWidget *parent) : QWidget(parent), u
 	connect(ui->comboBox_interpolType, SIGNAL(currentIndexChanged(int)), this, SLOT(setInterpolType(int)));
 	connect(ui->slider_chiuRadius, SIGNAL(valueChanged(int)), this, SLOT(chiuRadiusChanged(int)));
 	connect(ui->spinBox_chiuRadius, SIGNAL(valueChanged(double)), this, SLOT(chiuRadiusChanged(double)));
+	
+#if defined(__APPLE__)
+	ui->tab_chiu->setFont(QFont  ("Lucida Grande", 11));
+	ui->tab_regularization->setFont(QFont  ("Lucida Grande", 11));
+	ui->tab_adv->setFont(QFont  ("Lucida Grande", 11));
+	ui->groupBox_integration->setFont(QFont  ("Lucida Grande", 11));
+	ui->tab_filter->setFont(QFont  ("Lucida Grande", 11));
+#endif
 
 }
 

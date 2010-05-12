@@ -61,10 +61,10 @@ LensEffectsWidget::LensEffectsWidget(QWidget *parent) : QWidget(parent), ui(new 
 	connect(ui->button_glareDeleteLayer, SIGNAL(clicked()), this, SLOT(deleteGlareLayer()));
 	
 #if defined(__APPLE__) // for better design on OSX
-	ui->button_gaussianComputeLayer->setFont(QFont  ("Lucida Grande", 11));
-	ui->button_gaussianDeleteLayer->setFont(QFont  ("Lucida Grande", 11));
-	ui->button_glareComputeLayer->setFont(QFont  ("Lucida Grande", 11));
-	ui->button_glareDeleteLayer->setFont(QFont  ("Lucida Grande", 11));
+	ui->tab_gaussianBloom->setFont(QFont  ("Lucida Grande", 11));
+	ui->tab_vignetting->setFont(QFont  ("Lucida Grande", 11));
+	ui->tab_chromaticAbberationTab->setFont(QFont  ("Lucida Grande", 11));
+	ui->tab_glare->setFont(QFont  ("Lucida Grande", 11));
 #endif
 }
 

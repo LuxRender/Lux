@@ -36,6 +36,10 @@ HistogramWidget::HistogramWidget(QWidget *parent) : QWidget(parent), ui(new Ui::
 	
 	connect(ui->comboBox_histogramChannel, SIGNAL(currentIndexChanged(int)), this, SLOT(SetOption(int)));
 	connect(ui->checkBox_histogramLog, SIGNAL(stateChanged(int)), this, SLOT(LogChanged(int)));
+	
+#if defined(__APPLE__)
+	setFont(QFont  ("Lucida Grande", 11));
+#endif
 
 	histogramView->SetEnabled (true);
 	histogramView->show ();
