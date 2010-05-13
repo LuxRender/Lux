@@ -22,10 +22,23 @@
 
 #include "ui_tonemap.h"
 #include "tonemapwidget.hxx"
-
 #include "mainwindow.hxx"
 
-#include "api.h"
+#include <iostream>
+
+static double sensitivity_presets[NUM_SENSITITIVITY_PRESETS] = {20.0f, 25.0f, 32.0f, 40.0f, 50.0f, 64.0f, 80.0f, 100.0f, 125.0f, 160.0f, 200.0f, 250.0f, 320.0f, 400.0f, 500.0f, 640.0f, 800.0f, 1000.0f, 1250.0f, 1600.0f, 2000.0f, 2500.0f, 3200.0f, 4000.0f, 5000.0f, 6400.0f};
+
+static double exposure_presets[NUM_EXPOSURE_PRESETS] = {1.0f, 0.5f, 0.25f, 0.125f, 0.066f, 0.033f, 0.016f, 0.008f, 0.004f, 0.002f, 0.001f};
+
+static double fstop_presets[NUM_FSTOP_PRESETS] = {0.5, 0.7, 1.0, 1.4, 2.0, 2.8, 4.0, 5.6, 8.0, 11.0, 16.0, 22.0, 32.0, 45.0, 64.0, 90.0, 128.0};
+
+#define DEFAULT_EPSILON_MIN 1e-7f
+static bool EqualDouble(const double a, const double b)
+{
+	return (fabs(a-b) < DEFAULT_EPSILON_MIN);
+}
+
+using namespace std;
 
 ToneMapWidget::ToneMapWidget(QWidget *parent) : QWidget(parent), ui(new Ui::ToneMapWidget)
 {
@@ -118,92 +131,10 @@ void ToneMapWidget::setSensitivityPreset(int choice)
 	if (choice < 1)
 		return;
 	
-	switch (choice-1) {
-		case 0: {
-			m_TM_linear_sensitivity = 20.0f; }
-			break;
-		case 1: {
-			m_TM_linear_sensitivity = 25.0f; }
-			break;
-		case 2: {
-			m_TM_linear_sensitivity = 32.0f; }
-			break;
-		case 3: {
-			m_TM_linear_sensitivity = 40.0f; }
-			break;
-		case 4: {
-			m_TM_linear_sensitivity = 50.0f; }
-			break;
-		case 5: {
-			m_TM_linear_sensitivity = 64.0f; }
-			break;
-		case 6: {
-			m_TM_linear_sensitivity = 80.0f; }
-			break;
-		case 7: {
-			m_TM_linear_sensitivity = 100.0f; }
-			break;
-		case 8: {
-			m_TM_linear_sensitivity = 125.0f; }
-			break;
-		case 9: {
-			m_TM_linear_sensitivity = 160.0f; }
-			break;
-		case 10: {
-			m_TM_linear_sensitivity = 200.0f; }
-			break;
-		case 11: {
-			m_TM_linear_sensitivity = 250.0f; }
-			break;
-		case 12: {
-			m_TM_linear_sensitivity = 320.0f; }
-			break;
-		case 13: {
-			m_TM_linear_sensitivity = 400.0f; }
-			break;
-		case 14: {
-			m_TM_linear_sensitivity = 500.0f; }
-			break;
-		case 15: {
-			m_TM_linear_sensitivity = 640.0f; }
-			break;
-		case 16: {
-			m_TM_linear_sensitivity = 800.0f; }
-			break;
-		case 17: {
-			m_TM_linear_sensitivity = 1000.0f; }
-			break;
-		case 18: {
-			m_TM_linear_sensitivity = 1250.0f; }
-			break;
-		case 19: {
-			m_TM_linear_sensitivity = 1600.0f; }
-			break;
-		case 20: {
-			m_TM_linear_sensitivity = 2000.0f; }
-			break;
-		case 21: {
-			m_TM_linear_sensitivity = 2500.0f; }
-			break;
-		case 22: {
-			m_TM_linear_sensitivity = 3200.0f; }
-			break;
-		case 23: {
-			m_TM_linear_sensitivity = 4000.0f; }
-			break;
-		case 24: {
-			m_TM_linear_sensitivity = 5000.0f; }
-			break;
-		case 25: {
-			m_TM_linear_sensitivity = 6400.0f; }
-			break;
-		default:
-			break;
-	}
+	m_TM_linear_sensitivity = sensitivity_presets[choice-1];
 	
 	// Update values in film trough API
 	updateParam (LUX_FILM, LUX_FILM_TM_LINEAR_SENSITIVITY, m_TM_linear_sensitivity);
-	
 	
 	updateWidgetValues ();
 	
@@ -220,48 +151,10 @@ void ToneMapWidget::setExposurePreset(int choice)
 	if (choice < 1)
 		return;
 	
-	switch (choice-1) {
-		case 0: {
-			m_TM_linear_exposure = 1.0f; } // 1sec / 1 fps
-			break;
-		case 1: {
-			m_TM_linear_exposure = 0.5f; }
-			break;
-		case 2: {
-			m_TM_linear_exposure = 0.25f; }
-			break;
-		case 3: {
-			m_TM_linear_exposure = 0.125f; }
-			break;
-		case 4: {
-			m_TM_linear_exposure = 0.066f; }
-			break;
-		case 5: {
-			m_TM_linear_exposure = 0.033f; }
-			break;
-		case 6: {
-			m_TM_linear_exposure = 0.016f; }
-			break;
-		case 7: {
-			m_TM_linear_exposure = 0.008f; }
-			break;
-		case 8: {
-			m_TM_linear_exposure = 0.004f; }
-			break;
-		case 9: {
-			m_TM_linear_exposure = 0.002f; }
-			break;
-		case 10: {
-			m_TM_linear_exposure = 0.001f; }
-			break;
-		default:
-			break;
-	}
+	m_TM_linear_exposure = exposure_presets[choice-1];
 	
 	// Update values in film trough API
 	updateParam (LUX_FILM, LUX_FILM_TM_LINEAR_EXPOSURE, m_TM_linear_exposure);
-	
-	
 	updateWidgetValues ();
 	
 	emit valuesChanged();
@@ -277,70 +170,16 @@ void ToneMapWidget::setFStopPreset(int choice)
 	if (choice < 1)
 		return;
 	
-	switch (choice-1) {
-		case 0: {
-			m_TM_linear_fstop = 0.5f; }
-			break;
-		case 1: {
-			m_TM_linear_fstop = 0.7f; }
-			break;
-		case 2: {
-			m_TM_linear_fstop = 1.0f; }
-			break;
-		case 3: {
-			m_TM_linear_fstop = 1.4f; }
-			break;
-		case 4: {
-			m_TM_linear_fstop = 2.0f; }
-			break;
-		case 5: {
-			m_TM_linear_fstop = 2.8f; }
-			break;
-		case 6: {
-			m_TM_linear_fstop = 4.0f; }
-			break;
-		case 7: {
-			m_TM_linear_fstop = 5.6f; }
-			break;
-		case 8: {
-			m_TM_linear_fstop = 8.0f; }
-			break;
-		case 9: {
-			m_TM_linear_fstop = 11.0f; }
-			break;
-		case 10: {
-			m_TM_linear_fstop = 16.0f; }
-			break;
-		case 11: {
-			m_TM_linear_fstop = 22.0f; }
-			break;
-		case 12: {
-			m_TM_linear_fstop = 32.0f; }
-			break;
-		case 13: {
-			m_TM_linear_fstop = 45.0f; }
-			break;
-		case 14: {
-			m_TM_linear_fstop = 64.0f; }
-			break;
-		case 15: {
-			m_TM_linear_fstop = 90.0f; }
-			break;
-		case 16: {
-			m_TM_linear_fstop = 128.0f; }
-			break;
-		default:
-			break;
-	}
+	m_TM_linear_fstop = fstop_presets[choice-1];
 	
 	// Update values in film trough API
 	updateParam (LUX_FILM, LUX_FILM_TM_LINEAR_FSTOP, m_TM_linear_fstop);
-
 	
 	updateWidgetValues ();
 	
 	emit valuesChanged();
 }
+
 void ToneMapWidget::resetValues()
 {
 	m_TM_kernel = 0;
@@ -349,12 +188,54 @@ void ToneMapWidget::resetValues()
 	m_TM_reinhard_postscale = 1.0;
 	m_TM_reinhard_burn = 6.0;
 
-	m_TM_linear_exposure = 1.0f;
-	m_TM_linear_sensitivity = 50.0f;
+	m_TM_linear_exposure = 1.0;
+	m_TM_linear_sensitivity = 50.0;
 	m_TM_linear_fstop = 2.8;
 	m_TM_linear_gamma = 1.0;
 
 	m_TM_contrast_ywa = 0.1;
+}
+
+int ToneMapWidget::sensitivityToPreset(double value)
+{
+	int i = 0;
+	while (i < NUM_SENSITITIVITY_PRESETS) {
+		if (EqualDouble(value, sensitivity_presets[i]))
+			break;
+		i++;
+	}
+	if (i == NUM_SENSITITIVITY_PRESETS)
+		i = -1;
+
+	return i+1;
+}
+
+int ToneMapWidget::exposureToPreset(double value)
+{
+	int i = 0;
+	while (i < NUM_EXPOSURE_PRESETS) {
+		if (EqualDouble(value, exposure_presets[i]))
+			break;
+		i++;
+	}
+	if (i == NUM_EXPOSURE_PRESETS)
+		i = -1;
+
+	return i+1;
+}
+
+int ToneMapWidget::fstopToPreset(double value)
+{
+	int i = 0;
+	while (i < NUM_FSTOP_PRESETS) {
+		if (EqualDouble(value, fstop_presets[i]))
+			break;
+		i++;
+	}
+	if (i == NUM_FSTOP_PRESETS)
+		i = -1;
+
+	return i+1;
 }
 
 void ToneMapWidget::resetFromFilm (bool useDefaults)
@@ -367,11 +248,12 @@ void ToneMapWidget::resetFromFilm (bool useDefaults)
 
 	m_TM_linear_exposure = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_TM_LINEAR_EXPOSURE);
 	m_TM_linear_sensitivity = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_TM_LINEAR_SENSITIVITY);
-	m_TM_linear_fstop = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_TM_LINEAR_FSTOP);
+	m_TM_linear_fstop = (double)retrieveParam( useDefaults, LUX_FILM, LUX_FILM_TM_LINEAR_FSTOP);
 	m_TM_linear_gamma = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_TM_LINEAR_GAMMA);
-	ui->comboBox_SensitivityPreset->setCurrentIndex(0);
-	ui->comboBox_ExposurePreset->setCurrentIndex(0);
-	ui->comboBox_FStopPreset->setCurrentIndex(0);
+
+	ui->comboBox_SensitivityPreset->setCurrentIndex(sensitivityToPreset(m_TM_linear_sensitivity));
+	ui->comboBox_ExposurePreset->setCurrentIndex(exposureToPreset(m_TM_linear_exposure));
+	ui->comboBox_FStopPreset->setCurrentIndex(fstopToPreset(m_TM_linear_fstop));
 
 	m_TM_contrast_ywa = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_TM_CONTRAST_YWA);
 
@@ -492,7 +374,10 @@ void ToneMapWidget::sensitivityChanged (double value)
 
 	updateWidgetValue(ui->slider_sensitivity, sliderval);
 	updateWidgetValue(ui->spinBox_sensitivity, m_TM_linear_sensitivity);
-	ui->comboBox_SensitivityPreset->setCurrentIndex(0);
+	// Don't trigger yet another event
+	ui->comboBox_SensitivityPreset->blockSignals(true);
+	ui->comboBox_SensitivityPreset->setCurrentIndex(sensitivityToPreset(m_TM_linear_sensitivity));
+	ui->comboBox_SensitivityPreset->blockSignals(false);
 
 	updateParam (LUX_FILM, LUX_FILM_TM_LINEAR_SENSITIVITY, m_TM_linear_sensitivity);
 
@@ -512,7 +397,10 @@ void ToneMapWidget::exposureChanged (double value)
 
 	updateWidgetValue(ui->slider_exposure, sliderval);
 	updateWidgetValue(ui->spinBox_exposure, m_TM_linear_exposure);
-	ui->comboBox_ExposurePreset->setCurrentIndex(0);
+	// Don't trigger yet another event
+	ui->comboBox_ExposurePreset->blockSignals(true);
+	ui->comboBox_ExposurePreset->setCurrentIndex(exposureToPreset(m_TM_linear_exposure));
+	ui->comboBox_ExposurePreset->blockSignals(false);
 
 	updateParam (LUX_FILM, LUX_FILM_TM_LINEAR_EXPOSURE, m_TM_linear_exposure);
 
@@ -532,7 +420,10 @@ void ToneMapWidget::fstopChanged (double value)
 
 	updateWidgetValue(ui->slider_fstop, sliderval);
 	updateWidgetValue(ui->spinBox_fstop, m_TM_linear_fstop);
-	ui->comboBox_FStopPreset->setCurrentIndex(0);
+	// Don't trigger yet another event
+	ui->comboBox_FStopPreset->blockSignals(true);
+	ui->comboBox_FStopPreset->setCurrentIndex(fstopToPreset(m_TM_linear_fstop));
+	ui->comboBox_FStopPreset->blockSignals(false);
 
 	updateParam (LUX_FILM, LUX_FILM_TM_LINEAR_FSTOP, m_TM_linear_fstop);
 

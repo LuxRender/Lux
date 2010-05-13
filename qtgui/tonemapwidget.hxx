@@ -39,6 +39,10 @@
 #define TM_CONTRAST_YWA_LOG_MIN -4.f
 #define TM_CONTRAST_YWA_LOG_MAX 4.f
 
+#define NUM_SENSITITIVITY_PRESETS 26
+#define NUM_EXPOSURE_PRESETS 11
+#define NUM_FSTOP_PRESETS 17
+
 namespace Ui
 {
 	class ToneMapWidget;
@@ -74,6 +78,10 @@ private:
 	double m_TM_linear_gamma;
 
 	double m_TM_contrast_ywa;
+
+	int sensitivityToPreset(double value);
+	int exposureToPreset(double value);
+	int fstopToPreset(double value);
 
 signals:
 	void valuesChanged();
