@@ -36,6 +36,11 @@
        </property>
        <item>
         <property name="text">
+         <string>User-defined</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
          <string>sRGB - HDTV (ITU-R BT.709-5)</string>
         </property>
        </item>
@@ -111,7 +116,7 @@
              </property>
              <item>
               <property name="text">
-               <string/>
+               <string>User-defined</string>
               </property>
              </item>
              <item>

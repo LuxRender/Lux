@@ -133,8 +133,12 @@ void ColorSpaceWidget::setColorSpacePreset(int choice)
 	ui->comboBox_colorSpacePreset->blockSignals(true);
 	ui->comboBox_whitePointPreset->setCurrentIndex(0);
 	ui->comboBox_colorSpacePreset->blockSignals(false);
+	
+	// first choice is "none"
+	if (choice < 1)
+		return;
 
-	switch (choice) {
+	switch (choice - 1) {
 		case 0: {
 				// sRGB - HDTV (ITU-R BT.709-5)
 				m_TORGB_xwhite = 0.314275f; m_TORGB_ywhite = 0.329411f;
@@ -343,6 +347,7 @@ void ColorSpaceWidget::whitePointXChanged(double value)
 
 	updateWidgetValue(ui->slider_whitePointX, sliderval);
 	updateWidgetValue(ui->spinBox_whitePointX, m_TORGB_xwhite);
+	ui->comboBox_colorSpacePreset->setCurrentIndex(0);
 	ui->comboBox_whitePointPreset->setCurrentIndex(0);
 
 	updateParam (LUX_FILM, LUX_FILM_TORGB_X_WHITE, m_TORGB_xwhite);
@@ -363,6 +368,7 @@ void ColorSpaceWidget::whitePointYChanged (double value)
 
 	updateWidgetValue(ui->slider_whitePointY, sliderval);
 	updateWidgetValue(ui->spinBox_whitePointY, m_TORGB_ywhite);
+	ui->comboBox_colorSpacePreset->setCurrentIndex(0);
 	ui->comboBox_whitePointPreset->setCurrentIndex(0);
 
 	updateParam (LUX_FILM, LUX_FILM_TORGB_Y_WHITE, m_TORGB_ywhite);
@@ -383,6 +389,7 @@ void ColorSpaceWidget::redYChanged (double value)
 
 	updateWidgetValue(ui->slider_redY, sliderval);
 	updateWidgetValue(ui->spinBox_redY, m_TORGB_yred);
+	ui->comboBox_colorSpacePreset->setCurrentIndex(0);
 
 	updateParam (LUX_FILM, LUX_FILM_TORGB_Y_RED, m_TORGB_yred);
 
@@ -402,6 +409,7 @@ void ColorSpaceWidget::redXChanged (double value)
 
 	updateWidgetValue(ui->slider_redX, sliderval);
 	updateWidgetValue(ui->spinBox_redX, m_TORGB_xred);
+	ui->comboBox_colorSpacePreset->setCurrentIndex(0);
 
 	updateParam (LUX_FILM, LUX_FILM_TORGB_X_RED, m_TORGB_xred);
 
@@ -421,6 +429,7 @@ void ColorSpaceWidget::blueYChanged (double value)
 
 	updateWidgetValue(ui->slider_blueY, sliderval);
 	updateWidgetValue(ui->spinBox_blueY, m_TORGB_yblue);
+	ui->comboBox_colorSpacePreset->setCurrentIndex(0);
 
 	updateParam (LUX_FILM, LUX_FILM_TORGB_Y_BLUE, m_TORGB_yblue);
 
@@ -440,6 +449,7 @@ void ColorSpaceWidget::blueXChanged (double value)
 
 	updateWidgetValue(ui->slider_blueX, sliderval);
 	updateWidgetValue(ui->spinBox_blueX, m_TORGB_xblue);
+	ui->comboBox_colorSpacePreset->setCurrentIndex(0);
 
 	updateParam (LUX_FILM, LUX_FILM_TORGB_X_BLUE, m_TORGB_xblue);
 
@@ -459,6 +469,7 @@ void ColorSpaceWidget::greenYChanged (double value)
 
 	updateWidgetValue(ui->slider_greenY, sliderval);
 	updateWidgetValue(ui->spinBox_greenY, m_TORGB_ygreen);
+	ui->comboBox_colorSpacePreset->setCurrentIndex(0);
 
 	updateParam (LUX_FILM, LUX_FILM_TORGB_Y_GREEN, m_TORGB_ygreen);
 
@@ -478,6 +489,7 @@ void ColorSpaceWidget::greenXChanged (double value)
 
 	updateWidgetValue(ui->slider_greenX, sliderval);
 	updateWidgetValue(ui->spinBox_greenX, m_TORGB_xgreen);
+	ui->comboBox_colorSpacePreset->setCurrentIndex(0);
 
 	updateParam (LUX_FILM, LUX_FILM_TORGB_X_GREEN, m_TORGB_xgreen);
 
