@@ -413,7 +413,7 @@
             </property>
             <item>
              <property name="text">
-              <string>Free</string>
+              <string>User</string>
              </property>
             </item>
             <item>
@@ -569,7 +569,7 @@
             </property>
             <item>
              <property name="text">
-              <string>Free</string>
+              <string>User</string>
              </property>
             </item>
             <item>
@@ -650,7 +650,7 @@
             </property>
             <item>
              <property name="text">
-              <string>Free</string>
+              <string>User</string>
              </property>
             </item>
             <item>
