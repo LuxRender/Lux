@@ -256,10 +256,10 @@
              <number>1</number>
             </property>
             <property name="maximum">
-             <double>1000.000000000000000</double>
+             <double>6400.000000000000000</double>
             </property>
             <property name="singleStep">
-             <double>100.000000000000000</double>
+             <double>10.000000000000000</double>
             </property>
            </widget>
           </item>
@@ -342,6 +342,9 @@
             <property name="maximum">
              <double>128.000000000000000</double>
             </property>
+            <property name="singleStep">
+             <double>1.000000000000000</double>
+            </property>
            </widget>
           </item>
           <item row="3" column="0">
@@ -406,7 +409,7 @@
              <number>0</number>
             </property>
             <property name="maxVisibleItems">
-             <number>18</number>
+             <number>26</number>
             </property>
             <item>
              <property name="text">
@@ -501,6 +504,46 @@
             <item>
              <property name="text">
               <string>1000</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>1250</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>1600</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>2000</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>2500</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>3200</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>4000</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>5000</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>6400</string>
              </property>
             </item>
            </widget>

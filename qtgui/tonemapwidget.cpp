@@ -173,6 +173,30 @@ void ToneMapWidget::setSensitivityPreset(int choice)
 		case 17: {
 			m_TM_linear_sensitivity = 1000.0f; }
 			break;
+		case 18: {
+			m_TM_linear_sensitivity = 1250.0f; }
+			break;
+		case 19: {
+			m_TM_linear_sensitivity = 1600.0f; }
+			break;
+		case 20: {
+			m_TM_linear_sensitivity = 2000.0f;}
+			break;
+		case 21: {
+			m_TM_linear_sensitivity = 2500.0f;}
+			break;
+		case 22: {
+			m_TM_linear_sensitivity = 3200.0f;}
+			break;
+		case 23: {
+			m_TM_linear_sensitivity = 4000.0f; }
+			break;
+		case 24: {
+			m_TM_linear_sensitivity = 5000.0f; }
+			break;
+		case 25: {
+			m_TM_linear_sensitivity = 6400.0f; }
+			break;
 		default:
 			break;
 	}
