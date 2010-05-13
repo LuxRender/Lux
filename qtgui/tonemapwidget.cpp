@@ -126,13 +126,13 @@ void ToneMapWidget::setSensitivityPreset(int choice)
 			m_TM_linear_sensitivity = 25.0f; }
 			break;
 		case 2: {
-			m_TM_linear_sensitivity = 32.0f;}
+			m_TM_linear_sensitivity = 32.0f; }
 			break;
 		case 3: {
-			m_TM_linear_sensitivity = 40.0f;}
+			m_TM_linear_sensitivity = 40.0f; }
 			break;
 		case 4: {
-			m_TM_linear_sensitivity = 50.0f;}
+			m_TM_linear_sensitivity = 50.0f; }
 			break;
 		case 5: {
 			m_TM_linear_sensitivity = 64.0f; }
@@ -180,13 +180,13 @@ void ToneMapWidget::setSensitivityPreset(int choice)
 			m_TM_linear_sensitivity = 1600.0f; }
 			break;
 		case 20: {
-			m_TM_linear_sensitivity = 2000.0f;}
+			m_TM_linear_sensitivity = 2000.0f; }
 			break;
 		case 21: {
-			m_TM_linear_sensitivity = 2500.0f;}
+			m_TM_linear_sensitivity = 2500.0f; }
 			break;
 		case 22: {
-			m_TM_linear_sensitivity = 3200.0f;}
+			m_TM_linear_sensitivity = 3200.0f; }
 			break;
 		case 23: {
 			m_TM_linear_sensitivity = 4000.0f; }
@@ -228,13 +228,13 @@ void ToneMapWidget::setExposurePreset(int choice)
 			m_TM_linear_exposure = 0.5f; }
 			break;
 		case 2: {
-			m_TM_linear_exposure = 0.25f;}
+			m_TM_linear_exposure = 0.25f; }
 			break;
 		case 3: {
-			m_TM_linear_exposure = 0.125f;}
+			m_TM_linear_exposure = 0.125f; }
 			break;
 		case 4: {
-			m_TM_linear_exposure = 0.066f;}
+			m_TM_linear_exposure = 0.066f; }
 			break;
 		case 5: {
 			m_TM_linear_exposure = 0.033f; }
@@ -285,13 +285,13 @@ void ToneMapWidget::setFStopPreset(int choice)
 			m_TM_linear_fstop = 0.7f; }
 			break;
 		case 2: {
-			m_TM_linear_fstop = 1.0f;}
+			m_TM_linear_fstop = 1.0f; }
 			break;
 		case 3: {
-			m_TM_linear_fstop = 1.4f;}
+			m_TM_linear_fstop = 1.4f; }
 			break;
 		case 4: {
-			m_TM_linear_fstop = 2.0f;}
+			m_TM_linear_fstop = 2.0f; }
 			break;
 		case 5: {
 			m_TM_linear_fstop = 2.8f; }
