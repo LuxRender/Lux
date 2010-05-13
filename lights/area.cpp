@@ -38,6 +38,28 @@
 
 using namespace lux;
 
+class UniformBxDF : public BxDF {
+public:
+	UniformBxDF() : BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)) { }
+	virtual ~UniformBxDF() { }
+	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const F) const {
+		*F += SWCSpectrum(INV_TWOPI);
+	}
+	virtual float Pdf(const TsPack *tspack, const Vector &wo, const Vector &wi) const {
+		return INV_TWOPI;
+	}
+	virtual bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi, float u1, float u2, SWCSpectrum *const F, float *pdf, float *pdfBack, bool reverse) const {
+		*wi = UniformSampleSphere(u1, u2);
+		if (wi->z < 0.f)
+			wi->z = -wi->z;
+		*pdf = INV_TWOPI;
+		if (pdfBack)
+			*pdfBack = INV_TWOPI;
+		*F = SWCSpectrum(INV_TWOPI);
+		return true;
+	}
+};
+
 class GonioAreaBxDF : public BxDF {
 public:
 	GonioAreaBxDF(const SampleableSphericalFunction *func) :
@@ -104,8 +126,8 @@ SWCSpectrum AreaLight::L(const TsPack *tspack, const DifferentialGeometry &dg,
 
 float AreaLight::Power(const Scene *scene) const
 {
-	return Le->Y() * gain * area * M_PI *
-		(func ? 2.f * func->Average_f() : 1.f);
+	return Le->Y() * gain * 2.f * M_PI * area *
+		(func ? func->Average_f() : 1.f);
 }
 
 SWCSpectrum AreaLight::Sample_L(const TsPack *tspack, const Point &p,
@@ -166,11 +188,11 @@ bool AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, flo
 			prim->GetExterior(), prim->GetInterior());
 	else
 		*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, dg.nn,
-			ARENA_ALLOC(tspack->arena, Lambertian)(SWCSpectrum(1.f)),
+			ARENA_ALLOC(tspack->arena, UniformBxDF)(),
 			prim->GetExterior(), prim->GetInterior());
 	*pdf = prim->Pdf(dg.p);
 	if (*pdf > 0.f) {
-		*Le = this->Le->Evaluate(tspack, dg) * gain * M_PI;
+		*Le = this->Le->Evaluate(tspack, dg) * (gain * 2.f * M_PI);
 		return true;
 	}
 	*Le = 0.f;
@@ -193,10 +215,10 @@ bool AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &
 				prim->GetExterior(), prim->GetInterior());
 		else
 			*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, dg.nn,
-				ARENA_ALLOC(tspack->arena, Lambertian)(SWCSpectrum(1.f)),
+				ARENA_ALLOC(tspack->arena, UniformBxDF)(),
 				prim->GetExterior(), prim->GetInterior());
 		visibility->SetSegment(p, dg.p, tspack->time);
-		*Le = this->Le->Evaluate(tspack, dg) * gain * M_PI;
+		*Le = this->Le->Evaluate(tspack, dg) * (gain * 2.f * M_PI);
 		return true;
 	}
 	*Le = 0.f;
@@ -217,7 +239,7 @@ SWCSpectrum AreaLight::L(const TsPack *tspack, const Ray &ray, const Differentia
 		Ll *= (*bsdf)->f(tspack, Vector(dg.nn), -ray.d);
 	} else
 		*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, dg.nn,
-			ARENA_ALLOC(tspack->arena, Lambertian)(SWCSpectrum(1.f)),
+			ARENA_ALLOC(tspack->arena, UniformBxDF)(),
 			prim->GetExterior(), prim->GetInterior());
 	*pdf = prim->Pdf(dg.p);
 	*pdfDirect = prim->Pdf(ray.o, dg.p);
