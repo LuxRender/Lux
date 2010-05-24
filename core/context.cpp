@@ -331,7 +331,7 @@ void Context::Camera(const string &n, const ParamSet &params) {
 	renderOptions->worldToCamera = curTransform;
 	namedCoordinateSystems["camera"] = curTransform.GetInverse();
 
-	string endTransform = params.FindOneString("endtransform", "");
+	string endTransform = renderOptions->cameraParams.FindOneString("endtransform", "");
 
 	if (namedCoordinateSystems.find(endTransform) != namedCoordinateSystems.end())
 		renderOptions->worldToCameraEnd = namedCoordinateSystems[endTransform];
