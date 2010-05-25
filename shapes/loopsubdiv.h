@@ -53,7 +53,7 @@ struct SDVertex {
 	float u, v;
 	SDFace *startFace;
 	SDVertex *child;
-	bool regular, boundary, hasUV;
+	bool regular, boundary;
 };
 
 struct SDFace {

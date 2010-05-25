@@ -67,8 +67,11 @@ LoopSubdiv::LoopSubdiv(const Transform &o2w, bool ro,
 		for (u_int j = 0; j < 3; ++j) {
 			SDVertex *v = vertices[vp[j]];
 			f->v[j] = v;
+			f->f[j] = NULL;
+			f->children[i] = NULL;
 			v->startFace = f;
 		}
+		f->children[3] = NULL;
 		vp += 3;
 	}
 
@@ -172,14 +175,14 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 
 		// Allocate next level of children in mesh tree
 		for (u_int j = 0; j < v.size(); ++j) {
-			v[j]->child = vertexArena.malloc();//new (vertexArena) SDVertex;
+			v[j]->child = vertexArena.construct();//new (vertexArena) SDVertex;
 			v[j]->child->regular = v[j]->regular;
 			v[j]->child->boundary = v[j]->boundary;
 			newVertices.push_back(v[j]->child);
 		}
 		for (u_int j = 0; j < f.size(); ++j)
 			for (u_int k = 0; k < 4; ++k) {
-				f[j]->children[k] = faceArena.malloc();//new (faceArena) SDFace;
+				f[j]->children[k] = faceArena.construct();//new (faceArena) SDFace;
 				newFaces.push_back(f[j]->children[k]);
 			}
 
@@ -208,7 +211,7 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 				SDVertex *vert = edgeVerts[edge];
 				if (!vert) {
 					// Create and initialize new odd vertex
-					vert = vertexArena.malloc();//new (vertexArena) SDVertex;
+					vert = vertexArena.construct();//new (vertexArena) SDVertex;
 					newVertices.push_back(vert);
 					vert->regular = true;
 					vert->boundary = (face->f[k] == NULL);
