@@ -68,7 +68,7 @@ LoopSubdiv::LoopSubdiv(const Transform &o2w, bool ro,
 			SDVertex *v = vertices[vp[j]];
 			f->v[j] = v;
 			f->f[j] = NULL;
-			f->children[i] = NULL;
+			f->children[j] = NULL;
 			v->startFace = f;
 		}
 		f->children[3] = NULL;
