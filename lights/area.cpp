@@ -55,7 +55,7 @@ public:
 		*pdf = INV_TWOPI;
 		if (pdfBack)
 			*pdfBack = INV_TWOPI;
-		*F = SWCSpectrum(INV_TWOPI);
+		*F = SWCSpectrum(INV_TWOPI) / wi->z;
 		return true;
 	}
 };
