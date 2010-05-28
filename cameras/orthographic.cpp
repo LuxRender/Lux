@@ -50,6 +50,18 @@ OrthoCamera::OrthoCamera(const Transform &world2camStart,
 	WorldToRasterBidir = RasterToCameraBidir.GetInverse() * WorldToCamera;
 }
 
+void OrthoCamera::SampleMotion(float time)
+{
+	if (!CameraMotion.isActive)
+		return;
+
+	// call base method to sample transform
+	ProjectiveCamera::SampleMotion(time);
+	// then update derivative transforms
+	normal = CameraToWorld(Normal(0,0,1));
+	WorldToRasterBidir = RasterToCameraBidir.GetInverse() * WorldToCamera;
+}
+
 void OrthoCamera::AutoFocus(Scene* scene)
 {
 	if (autoFocus) {

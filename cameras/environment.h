@@ -33,6 +33,9 @@ public:
 	EnvironmentCamera(const Transform &world2camStart, const Transform &world2camEnd, float hither,
 		float yon, float sopen, float sclose, int sdist, Film *film);
 	virtual ~EnvironmentCamera() { }
+
+	virtual void SampleMotion(float time);
+
 	virtual float GenerateRay(const Sample &sample, Ray *) const;
 	virtual bool Sample_W(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *We) const;
 	virtual bool Sample_W(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility, SWCSpectrum *We) const;

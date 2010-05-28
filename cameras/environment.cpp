@@ -51,6 +51,18 @@ EnvironmentCamera::
 	: Camera(world2camStart, world2camEnd, hither, yon, sopen, sclose, sdist, film) {
 		pos = CameraToWorld(Point(0, 0, 0));
 }
+
+void EnvironmentCamera::SampleMotion(float time)
+{
+	if (!CameraMotion.isActive)
+		return;
+
+	// call base method to sample transform
+	Camera::SampleMotion(time);
+	// then update derivative transforms
+	pos = CameraToWorld(Point(0,0,0));
+}
+
 float EnvironmentCamera::GenerateRay(const Sample &sample,
 		Ray *ray) const {
 	ray->o = CameraToWorld(Point(0,0,0));

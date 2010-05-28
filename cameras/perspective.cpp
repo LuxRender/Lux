@@ -30,14 +30,10 @@
 #include "light.h"
 #include "paramset.h"
 #include "dynload.h"
-#include "shapes/disk.h"
 #include "error.h"
 #include "epsilon.h"
 
 using namespace lux;
-
-#define honeyRad 0.866025403f
-#define radIndex 57.2957795f
 
 class PerspectiveBxDF : public BxDF
 {
@@ -125,10 +121,6 @@ PerspectiveCamera::
 	normal = CameraToWorld(Normal(0,0,1));
 	fov = Radians(fov1);
 
-	ParamSet paramSet;
-	paramSet.AddFloat("radius", &LensRadius);
-	lens = boost::shared_ptr<Shape>(Disk::CreateShape(CameraToWorld, false, paramSet));
-
 	if (LensRadius > 0.f)
 		posPdf = 1.0f/(M_PI*LensRadius*LensRadius);
 	else
@@ -148,6 +140,19 @@ PerspectiveCamera::
 		(yEnd - yStart) / f->yResolution;
 	Apixel = xPixelWidth * yPixelHeight;
 	RasterToCameraBidir = Perspective(fov1, 1.f, 2.f).GetInverse() * RasterToScreen;
+	WorldToRasterBidir = RasterToCameraBidir.GetInverse() * WorldToCamera;
+}
+
+void PerspectiveCamera::SampleMotion(float time)
+{
+	if (!CameraMotion.isActive)
+		return;
+
+	// call base method to sample transform
+	ProjectiveCamera::SampleMotion(time);
+	// then update derivative transforms
+	pos = CameraToWorld(Point(0,0,0));
+	normal = CameraToWorld(Normal(0,0,1));
 	WorldToRasterBidir = RasterToCameraBidir.GetInverse() * WorldToCamera;
 }
 
@@ -207,7 +212,7 @@ float PerspectiveCamera::GenerateRay(const Sample &sample, Ray *ray) const
 	// Set ray time value
 	ray->time = GetTime(sample.time);
 	// Modify ray for depth of field
-	if (LensRadius > 0.)
+	if (LensRadius > 0.f)
 	{
 		Point lenP;
 		Point lenPCamera;
@@ -319,21 +324,14 @@ void PerspectiveCamera::SampleLens(float u1, float u2, float *dx, float *dy) con
 		return;
 	}
 
-	static const int subDiv = 360 / (shape * 2);
-	static const float index = subDiv / radIndex;
-	static const float honeyRadius = cosf(index);
+	static const float halfAngle = M_PI / shape;
+	static const float honeyRadius = cosf(halfAngle);
 
-	int temp = min(Floor2Int(2.f * shape * u2), 2 * shape - 1);
+	const float theta = 2.f * M_PI * u2;
 
-	float theta;
-	if (shape == 3 && temp % 2 == 0)
-		theta = 2.f * M_PI * (temp + sqrtf(2.f * shape * u2 - temp)) / (shape * 2);
-	else
-		theta = 2.f * M_PI * u2;
-
-	const int sector = Floor2Int(theta / index);
-	const float rho = (sector % 2 == 0) ? theta - sector * index :
-		(sector - 1) * index - theta;
+	const u_int sector = Floor2UInt(theta / halfAngle);
+	const float rho = (sector % 2 == 0) ? theta - sector * halfAngle :
+		(sector + 1) * halfAngle - theta;
 
 	float r = honeyRadius / cosf(rho);
 	switch (distribution) {

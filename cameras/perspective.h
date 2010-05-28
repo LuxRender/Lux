@@ -20,7 +20,7 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// perspective.cpp*
+// perspective.h*
 #include "camera.h"
 
 namespace lux
@@ -38,6 +38,9 @@ public:
 		int distribution, int shape, int power,
 		Film *film);
 	virtual ~PerspectiveCamera() { }
+
+	virtual void SampleMotion(float time);
+
 	virtual float GenerateRay(const Sample &sample, Ray *) const;
 	virtual bool Sample_W(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *We) const;
 	virtual bool Sample_W(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility, SWCSpectrum *We) const;
@@ -66,8 +69,6 @@ private:
 
 	// Dade - field used for autofocus feature
 	bool autoFocus;
-
-	boost::shared_ptr<Shape> lens;
 };
 
 }//namespace lux

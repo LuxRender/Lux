@@ -88,8 +88,9 @@ public:
 		float hither, float yon,
 		float sopen, float sclose, int sdist,
 		float lensr, float focald, Film *film);
+	virtual ~ProjectiveCamera() { }
 
-	void SampleMotion(float time);
+	virtual void SampleMotion(float time);
 
 protected:
 	bool GenerateSample(const Point &p, Sample *sample) const;
