@@ -174,6 +174,11 @@
                <string>F11 - narrow threeband fluorescent</string>
               </property>
              </item>
+             <item>
+              <property name="text">
+               <string>9300</string>
+              </property>
+             </item>
             </widget>
            </item>
            <item row="1" column="0" colspan="2">
@@ -206,6 +211,9 @@
              </property>
              <property name="keyboardTracking">
               <bool>false</bool>
+             </property>
+             <property name="decimals">
+              <number>3</number>
              </property>
              <property name="maximum">
               <double>1.000000000000000</double>
@@ -245,6 +253,9 @@
              </property>
              <property name="keyboardTracking">
               <bool>false</bool>
+             </property>
+             <property name="decimals">
+              <number>3</number>
              </property>
              <property name="maximum">
               <double>1.000000000000000</double>
@@ -306,6 +317,9 @@
              <property name="keyboardTracking">
               <bool>false</bool>
              </property>
+             <property name="decimals">
+              <number>3</number>
+             </property>
              <property name="maximum">
               <double>1.000000000000000</double>
              </property>
@@ -334,6 +348,9 @@
              </property>
              <property name="keyboardTracking">
               <bool>false</bool>
+             </property>
+             <property name="decimals">
+              <number>3</number>
              </property>
              <property name="maximum">
               <double>1.000000000000000</double>
@@ -364,6 +381,9 @@
              <property name="keyboardTracking">
               <bool>false</bool>
              </property>
+             <property name="decimals">
+              <number>3</number>
+             </property>
              <property name="maximum">
               <double>1.000000000000000</double>
              </property>
@@ -392,6 +412,9 @@
              </property>
              <property name="keyboardTracking">
               <bool>false</bool>
+             </property>
+             <property name="decimals">
+              <number>3</number>
              </property>
              <property name="maximum">
               <double>1.000000000000000</double>
@@ -422,6 +445,9 @@
              <property name="keyboardTracking">
               <bool>false</bool>
              </property>
+             <property name="decimals">
+              <number>3</number>
+             </property>
              <property name="maximum">
               <double>1.000000000000000</double>
              </property>
@@ -451,11 +477,20 @@
              <property name="keyboardTracking">
               <bool>false</bool>
              </property>
+             <property name="decimals">
+              <number>3</number>
+             </property>
+             <property name="minimum">
+              <double>0.000000000000000</double>
+             </property>
              <property name="maximum">
               <double>1.000000000000000</double>
              </property>
              <property name="singleStep">
               <double>0.010000000000000</double>
+             </property>
+             <property name="value">
+              <double>0.000000000000000</double>
              </property>
             </widget>
            </item>

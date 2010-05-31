@@ -34,6 +34,9 @@
 #define TORGB_XBLUE_RANGE 1.0f
 #define TORGB_YBLUE_RANGE 1.0f
 
+#define NUM_COLORSPACE_PRESETS 8
+#define NUM_WHITEPOINT_PRESETS 12
+
 namespace Ui
 {
 	class ColorSpaceWidget;
@@ -62,6 +65,10 @@ public:
 private:
 
 	Ui::ColorSpaceWidget *ui;
+	
+    int colorspaceToPreset(double value);
+	int whitepointToPreset(double value);
+	
 
 signals:
 	void valuesChanged();
