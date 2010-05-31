@@ -46,7 +46,7 @@ static double whitepoint_presets[2][NUM_WHITEPOINT_PRESETS] = {
 	{0.448f, 0.348f, 0.310f, 0.316f, 0.332f, 0.313f, 0.299f, 0.333f, 0.372f, 0.313f, 0.381f, 0.285f}, //xwhite
 	{0.407f, 0.352f, 0.316f, 0.359f, 0.347f, 0.329f, 0.315f, 0.333f, 0.375f, 0.329f, 0.377f, 0.293f}  //ywhite
 };
-#define DEFAULT_EPSILON_MIN 1e-7f
+#define DEFAULT_EPSILON_MIN 0.000005f
 static bool EqualDouble(const double a, const double b)
 {
 	return (fabs(a-b) < DEFAULT_EPSILON_MIN);
@@ -64,6 +64,7 @@ ColorSpaceWidget::ColorSpaceWidget(QWidget *parent) : QWidget(parent), ui(new Ui
 	connect(ui->spinBox_whitePointX, SIGNAL(valueChanged(double)), this, SLOT(whitePointXChanged(double)));
 	connect(ui->slider_whitePointY, SIGNAL(valueChanged(int)), this, SLOT(whitePointYChanged(int)));
 	connect(ui->spinBox_whitePointY, SIGNAL(valueChanged(double)), this, SLOT(whitePointYChanged(double)));
+	connect(ui->checkbox_precisionEdit, SIGNAL(stateChanged(int)), this, SLOT(precisionChanged(int)));
 	
 	connect(ui->slider_redX, SIGNAL(valueChanged(int)), this, SLOT(redXChanged(int)));
 	connect(ui->spinBox_redX, SIGNAL(valueChanged(double)), this, SLOT(redXChanged(double)));
@@ -82,10 +83,36 @@ ColorSpaceWidget::ColorSpaceWidget(QWidget *parent) : QWidget(parent), ui(new Ui
 	ui->tab_whitepoint->setFont(QFont  ("Lucida Grande", 11));
 	ui->tab_rgb->setFont(QFont  ("Lucida Grande", 11));
 #endif
+
 }
 
 ColorSpaceWidget::~ColorSpaceWidget()
 {
+}
+
+void ColorSpaceWidget::precisionChanged(int value)
+{
+	if (value == Qt::Checked) {
+		ui->spinBox_whitePointX->setDecimals(5);ui->spinBox_whitePointX->setSingleStep(0.0001);
+		ui->spinBox_whitePointY->setDecimals(5);ui->spinBox_whitePointY->setSingleStep(0.0001);
+		ui->spinBox_redX->setDecimals(5);ui->spinBox_redX->setSingleStep(0.0001);
+		ui->spinBox_redY->setDecimals(5);ui->spinBox_redY->setSingleStep(0.0001);
+		ui->spinBox_greenX->setDecimals(5);ui->spinBox_greenX->setSingleStep(0.0001);
+		ui->spinBox_greenY->setDecimals(5);ui->spinBox_greenY->setSingleStep(0.0001);
+		ui->spinBox_blueX->setDecimals(5);ui->spinBox_blueX->setSingleStep(0.0001);
+		ui->spinBox_blueY->setDecimals(5);ui->spinBox_blueY->setSingleStep(0.0001);
+	}else {
+		ui->spinBox_whitePointX->setDecimals(3);ui->spinBox_whitePointX->setSingleStep(0.010);
+		ui->spinBox_whitePointY->setDecimals(3);ui->spinBox_whitePointY->setSingleStep(0.010);
+		ui->spinBox_redX->setDecimals(3);ui->spinBox_redX->setSingleStep(0.010);
+		ui->spinBox_redY->setDecimals(3);ui->spinBox_redY->setSingleStep(0.010);
+		ui->spinBox_greenX->setDecimals(3);ui->spinBox_greenX->setSingleStep(0.010);
+		ui->spinBox_greenY->setDecimals(3);ui->spinBox_greenY->setSingleStep(0.010);
+		ui->spinBox_blueX->setDecimals(3);ui->spinBox_blueX->setSingleStep(0.010);
+		ui->spinBox_blueY->setDecimals(3);ui->spinBox_blueY->setSingleStep(0.010);
+	}
+
+
 }
 
 void ColorSpaceWidget::updateWidgetValues()

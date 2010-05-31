@@ -68,7 +68,7 @@ private:
 	
     int colorspaceToPreset(double value);
 	int whitepointToPreset(double value);
-	
+
 
 signals:
 	void valuesChanged();
@@ -82,6 +82,8 @@ private slots:
 	void whitePointXChanged (double value);
 	void whitePointYChanged (int value);
 	void whitePointYChanged (double value);
+	
+	void precisionChanged(int value);
 	
 	void redXChanged (int value);
 	void redXChanged (double value);
