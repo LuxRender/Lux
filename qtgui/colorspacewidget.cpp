@@ -29,6 +29,29 @@
 
 #include <iostream>
 
+// colorspacepresets and colorspace whitepoints
+static double colorspace_presets[8][NUM_COLORSPACE_PRESETS] = {
+	{0.314275f, 0.3460f, 0.313f, 0.313f, 0.310f, 0.313f, 0.313f, 0.3330f}, //xwhite
+	{0.329411f, 0.3590f, 0.329f, 0.329f, 0.316f, 0.329f, 0.329f, 0.3330f}, //ywhite
+	{0.630000f, 0.7347f, 0.640f, 0.625f, 0.670f, 0.630f, 0.640f, 0.7347f}, //xred
+	{0.340000f, 0.2653f, 0.340f, 0.340f, 0.330f, 0.340f, 0.330f, 0.2653f}, //yred
+	{0.310000f, 0.1596f, 0.210f, 0.280f, 0.210f, 0.310f, 0.290f, 0.2738f}, //xgreen
+	{0.595000f, 0.8404f, 0.710f, 0.595f, 0.710f, 0.595f, 0.600f, 0.7174f}, //ygreen
+	{0.155000f, 0.0366f, 0.150f, 0.155f, 0.140f, 0.155f, 0.150f, 0.1666f}, //xblue
+	{0.070000f, 0.0001f, 0.060f, 0.070f, 0.080f, 0.070f, 0.060f, 0.0089f}  //yblue
+};
+	
+// standard whitepoints
+static double whitepoint_presets[2][NUM_WHITEPOINT_PRESETS] = {
+	{0.448f, 0.348f, 0.310f, 0.316f, 0.332f, 0.313f, 0.299f, 0.333f, 0.372f, 0.313f, 0.381f, 0.285f}, //xwhite
+	{0.407f, 0.352f, 0.316f, 0.359f, 0.347f, 0.329f, 0.315f, 0.333f, 0.375f, 0.329f, 0.377f, 0.293f}  //ywhite
+};
+#define DEFAULT_EPSILON_MIN 1e-7f
+static bool EqualDouble(const double a, const double b)
+{
+	return (fabs(a-b) < DEFAULT_EPSILON_MIN);
+}
+
 using namespace std;
 
 ColorSpaceWidget::ColorSpaceWidget(QWidget *parent) : QWidget(parent), ui(new Ui::ColorSpaceWidget)
@@ -91,26 +114,54 @@ void ColorSpaceWidget::updateWidgetValues()
 
 void ColorSpaceWidget::resetValues()
 {
-	m_TORGB_xwhite = 0.314275f;
-	m_TORGB_ywhite = 0.329411f;
-	m_TORGB_xred = 0.63f;
-	m_TORGB_yred = 0.34f;
-	m_TORGB_xgreen = 0.31f;
-	m_TORGB_ygreen = 0.595f;
-	m_TORGB_xblue = 0.155f;
-	m_TORGB_yblue = 0.07f;
+	m_TORGB_xwhite = 0.314275;
+	m_TORGB_ywhite = 0.329411;
+	m_TORGB_xred = 0.63;
+	m_TORGB_yred = 0.34;
+	m_TORGB_xgreen = 0.31;
+	m_TORGB_ygreen = 0.595;
+	m_TORGB_xblue = 0.155;
+	m_TORGB_yblue = 0.07;
+}
+
+int ColorSpaceWidget::colorspaceToPreset(double value)
+{
+	int i = 0;
+	while (i < NUM_COLORSPACE_PRESETS) {
+		if (EqualDouble(m_TORGB_xwhite, colorspace_presets[0][i])&& EqualDouble(m_TORGB_ywhite, colorspace_presets[1][i])&&EqualDouble(m_TORGB_xred, colorspace_presets[2][i])&& EqualDouble(m_TORGB_yred, colorspace_presets[3][i])&& EqualDouble(m_TORGB_xgreen, colorspace_presets[4][i])&& EqualDouble(m_TORGB_ygreen, colorspace_presets[5][i])&& EqualDouble(m_TORGB_xblue, colorspace_presets[6][i])&& EqualDouble(m_TORGB_yblue, colorspace_presets[7][i]))
+			break;
+		i++;
+	}
+	if (i == NUM_COLORSPACE_PRESETS)
+		i = -1;
+	
+	return i+1;
+}
+
+int ColorSpaceWidget::whitepointToPreset(double value)
+{
+	int i = 0;
+	while (i < NUM_WHITEPOINT_PRESETS) {
+		if (EqualDouble(m_TORGB_xwhite, whitepoint_presets[0][i]) && EqualDouble(m_TORGB_ywhite, whitepoint_presets[1][i]))
+			break;
+		i++;
+	}
+	if (i == NUM_WHITEPOINT_PRESETS)
+		i = -1;
+	
+	return i+1;
 }
 
 void ColorSpaceWidget::resetFromFilm (bool useDefaults)
 {
-	m_TORGB_xwhite = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_TORGB_X_WHITE);
-	m_TORGB_ywhite = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_TORGB_Y_WHITE);
-	m_TORGB_xred = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_TORGB_X_RED);
-	m_TORGB_yred = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_TORGB_Y_RED);
-	m_TORGB_xgreen = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_TORGB_X_GREEN);
-	m_TORGB_ygreen = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_TORGB_Y_GREEN);
-	m_TORGB_xblue = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_TORGB_X_BLUE);
-	m_TORGB_yblue = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_TORGB_Y_BLUE);
+	m_TORGB_xwhite = (double)retrieveParam( useDefaults, LUX_FILM, LUX_FILM_TORGB_X_WHITE);
+	m_TORGB_ywhite = (double)retrieveParam( useDefaults, LUX_FILM, LUX_FILM_TORGB_Y_WHITE);
+	m_TORGB_xred = (double)retrieveParam( useDefaults, LUX_FILM, LUX_FILM_TORGB_X_RED);
+	m_TORGB_yred = (double)retrieveParam( useDefaults, LUX_FILM, LUX_FILM_TORGB_Y_RED);
+	m_TORGB_xgreen = (double)retrieveParam( useDefaults, LUX_FILM, LUX_FILM_TORGB_X_GREEN);
+	m_TORGB_ygreen = (double)retrieveParam( useDefaults, LUX_FILM, LUX_FILM_TORGB_Y_GREEN);
+	m_TORGB_xblue = (double)retrieveParam( useDefaults, LUX_FILM, LUX_FILM_TORGB_X_BLUE);
+	m_TORGB_yblue = (double)retrieveParam( useDefaults, LUX_FILM, LUX_FILM_TORGB_Y_BLUE);
 
 	luxSetParameterValue(LUX_FILM, LUX_FILM_TORGB_X_WHITE, m_TORGB_xwhite);
 	luxSetParameterValue(LUX_FILM, LUX_FILM_TORGB_Y_WHITE, m_TORGB_ywhite);
@@ -121,7 +172,8 @@ void ColorSpaceWidget::resetFromFilm (bool useDefaults)
 	luxSetParameterValue(LUX_FILM, LUX_FILM_TORGB_X_BLUE, m_TORGB_xblue);
 	luxSetParameterValue(LUX_FILM, LUX_FILM_TORGB_Y_BLUE, m_TORGB_yblue);
 	
-	ui->comboBox_whitePointPreset->setCurrentIndex(0);
+	ui->comboBox_whitePointPreset->setCurrentIndex(whitepointToPreset(m_TORGB_xwhite));
+	ui->comboBox_colorSpacePreset->setCurrentIndex(colorspaceToPreset(m_TORGB_xwhite));
 }
 
 void ColorSpaceWidget::setColorSpacePreset(int choice)
@@ -134,70 +186,19 @@ void ColorSpaceWidget::setColorSpacePreset(int choice)
 	ui->comboBox_whitePointPreset->setCurrentIndex(0);
 	ui->comboBox_colorSpacePreset->blockSignals(false);
 	
-	// first choice is "none"
+	// first choice is "User-defined"
 	if (choice < 1)
 		return;
-
-	switch (choice - 1) {
-		case 0: {
-				// sRGB - HDTV (ITU-R BT.709-5)
-				m_TORGB_xwhite = 0.314275f; m_TORGB_ywhite = 0.329411f;
-				m_TORGB_xred = 0.63f; m_TORGB_yred = 0.34f;
-				m_TORGB_xgreen = 0.31f; m_TORGB_ygreen = 0.595f;
-				m_TORGB_xblue = 0.155f; m_TORGB_yblue = 0.07f; }
-			break;
-		case 1: {
-				// ROMM RGB
-				m_TORGB_xwhite = 0.346f; m_TORGB_ywhite = 0.359f;
-				m_TORGB_xred = 0.7347f; m_TORGB_yred = 0.2653f;
-				m_TORGB_xgreen = 0.1596f; m_TORGB_ygreen = 0.8404f;
-				m_TORGB_xblue = 0.0366f; m_TORGB_yblue = 0.0001f; }
-			break;
-		case 2: {
-				// Adobe RGB 98
-				m_TORGB_xwhite = 0.313f; m_TORGB_ywhite = 0.329f;
-				m_TORGB_xred = 0.64f; m_TORGB_yred = 0.34f;
-				m_TORGB_xgreen = 0.21f; m_TORGB_ygreen = 0.71f;
-				m_TORGB_xblue = 0.15f; m_TORGB_yblue = 0.06f; }
-			break;
-		case 3: {
-				// Apple RGB
-				m_TORGB_xwhite = 0.313f; m_TORGB_ywhite = 0.329f;
-				m_TORGB_xred = 0.625f; m_TORGB_yred = 0.34f;
-				m_TORGB_xgreen = 0.28f; m_TORGB_ygreen = 0.595f;
-				m_TORGB_xblue = 0.155f; m_TORGB_yblue = 0.07f; }
-			break;
-		case 4: {
-				// NTSC (FCC 1953, ITU-R BT.470-2 System M)
-				m_TORGB_xwhite = 0.310f; m_TORGB_ywhite = 0.316f;
-				m_TORGB_xred = 0.67f; m_TORGB_yred = 0.33f;
-				m_TORGB_xgreen = 0.21f; m_TORGB_ygreen = 0.71f;
-				m_TORGB_xblue = 0.14f; m_TORGB_yblue = 0.08f; }
-			break;
-		case 5: {
-				// NTSC (1979) (SMPTE C, SMPTE-RP 145)
-				m_TORGB_xwhite = 0.313f; m_TORGB_ywhite = 0.329f;
-				m_TORGB_xred = 0.63f; m_TORGB_yred = 0.34f;
-				m_TORGB_xgreen = 0.31f; m_TORGB_ygreen = 0.595f;
-				m_TORGB_xblue = 0.155f; m_TORGB_yblue = 0.07f; }
-			break;
-		case 6: {
-				// PAL/SECAM (EBU 3213, ITU-R BT.470-6)
-				m_TORGB_xwhite = 0.313f; m_TORGB_ywhite = 0.329f;
-				m_TORGB_xred = 0.64f; m_TORGB_yred = 0.33f;
-				m_TORGB_xgreen = 0.29f; m_TORGB_ygreen = 0.60f;
-				m_TORGB_xblue = 0.15f; m_TORGB_yblue = 0.06f; }
-			break;
-		case 7: {
-				// CIE (1931) E
-				m_TORGB_xwhite = 0.333f; m_TORGB_ywhite = 0.333f;
-				m_TORGB_xred = 0.7347f; m_TORGB_yred = 0.2653f;
-				m_TORGB_xgreen = 0.2738f; m_TORGB_ygreen = 0.7174f;
-				m_TORGB_xblue = 0.1666f; m_TORGB_yblue = 0.0089f; }
-			break;
-		default:
-			break;
-	}
+	
+	m_TORGB_xwhite = colorspace_presets[0][choice-1];
+	m_TORGB_ywhite = colorspace_presets[1][choice-1];
+	m_TORGB_xred = colorspace_presets[2][choice-1];
+	m_TORGB_yred = colorspace_presets[3][choice-1];
+	m_TORGB_xgreen = colorspace_presets[4][choice-1];
+	m_TORGB_ygreen = colorspace_presets[5][choice-1];
+	m_TORGB_xblue = colorspace_presets[6][choice-1];
+	m_TORGB_yblue = colorspace_presets[7][choice-1];
+	
 
 	// Update values in film trough API
 	updateParam (LUX_FILM, LUX_FILM_TORGB_X_WHITE, m_TORGB_xwhite);
@@ -219,111 +220,13 @@ void ColorSpaceWidget::setWhitepointPreset(int choice)
 	ui->comboBox_whitePointPreset->blockSignals(true);
 	ui->comboBox_whitePointPreset->setCurrentIndex(choice);
 	ui->comboBox_whitePointPreset->blockSignals(false);
-
-	// first choice is "none"
+	
+	// first choice is "User-defined"
 	if (choice < 1)
 		return;
 
-	// default to E
-	float x = 1;
-	float y = 1;
-	float z = 1;
-
-	switch (choice - 1) {
-		case 0: 
-			{
-				// A
-				x = 1.09850;
-				y = 1.00000;
-				z = 0.35585;
-			}
-			break;
-		case 1: 
-			{
-				// B
-				x = 0.99072;
-				y = 1.00000;
-				z = 0.85223;
-			}
-			break;
-		case 2: 
-			{
-				// C
-				x = 0.98074;
-				y = 1.00000;
-				z = 1.18232;
-			}
-			break;
-		case 3: 
-			{
-				// D50
-				x = 0.96422;
-				y = 1.00000;
-				z = 0.82521;
-			}
-			break;
-		case 4: 
-			{
-				// D55
-				x = 0.95682;
-				y = 1.00000;
-				z = 0.92149;
-			}
-			break;
-		case 5: 
-			{
-				// D65
-				x = 0.95047;
-				y = 1.00000;
-				z = 1.08883;
-			}
-			break;
-		case 6: 
-			{
-				// D75
-				x = 0.94972;
-				y = 1.00000;
-				z = 1.22638;
-			}
-			break;
-		case 7: 
-			{
-				// E
-				x = 1.00000;
-				y = 1.00000;
-				z = 1.00000;
-			}
-			break;
-		case 8: 
-			{
-				// F2
-				x = 0.99186;
-				y = 1.00000;
-				z = 0.67393;
-			}
-			break;
-		case 9: 
-			{
-				// F7
-				x = 0.95041;
-				y = 1.00000;
-				z = 1.08747;
-			}
-			break;
-		case 10: 
-			{
-				// F11
-				x = 1.00962;
-				y = 1.00000;
-				z = 0.64350;
-			}
-			break;
-		default:
-			break;
-	}
-
-	m_TORGB_xwhite = x / (x+y+z);
-	m_TORGB_ywhite = y / (x+y+z);
+	m_TORGB_xwhite = whitepoint_presets[0][choice-1];
+	m_TORGB_ywhite = whitepoint_presets[1][choice-1];
 
 	// Update values in film trough API
 	updateParam (LUX_FILM, LUX_FILM_TORGB_X_WHITE, m_TORGB_xwhite);
@@ -347,8 +250,16 @@ void ColorSpaceWidget::whitePointXChanged(double value)
 
 	updateWidgetValue(ui->slider_whitePointX, sliderval);
 	updateWidgetValue(ui->spinBox_whitePointX, m_TORGB_xwhite);
-	ui->comboBox_colorSpacePreset->setCurrentIndex(0);
-	ui->comboBox_whitePointPreset->setCurrentIndex(0);
+	
+	// Don't trigger yet another event
+	ui->comboBox_colorSpacePreset->blockSignals(true);
+	ui->comboBox_colorSpacePreset->setCurrentIndex(colorspaceToPreset(m_TORGB_xwhite));
+	ui->comboBox_colorSpacePreset->blockSignals(false);
+	
+	// Don't trigger yet another event
+	ui->comboBox_whitePointPreset->blockSignals(true);
+	ui->comboBox_whitePointPreset->setCurrentIndex(whitepointToPreset(m_TORGB_xwhite));
+	ui->comboBox_whitePointPreset->blockSignals(false);
 
 	updateParam (LUX_FILM, LUX_FILM_TORGB_X_WHITE, m_TORGB_xwhite);
 
@@ -368,8 +279,16 @@ void ColorSpaceWidget::whitePointYChanged (double value)
 
 	updateWidgetValue(ui->slider_whitePointY, sliderval);
 	updateWidgetValue(ui->spinBox_whitePointY, m_TORGB_ywhite);
-	ui->comboBox_colorSpacePreset->setCurrentIndex(0);
-	ui->comboBox_whitePointPreset->setCurrentIndex(0);
+	
+	// Don't trigger yet another event
+	ui->comboBox_colorSpacePreset->blockSignals(true);
+	ui->comboBox_colorSpacePreset->setCurrentIndex(colorspaceToPreset(m_TORGB_ywhite));
+	ui->comboBox_colorSpacePreset->blockSignals(false);
+
+	// Don't trigger yet another event
+	ui->comboBox_whitePointPreset->blockSignals(true);
+	ui->comboBox_whitePointPreset->setCurrentIndex(whitepointToPreset(m_TORGB_ywhite));
+	ui->comboBox_whitePointPreset->blockSignals(false);
 
 	updateParam (LUX_FILM, LUX_FILM_TORGB_Y_WHITE, m_TORGB_ywhite);
 
@@ -389,8 +308,12 @@ void ColorSpaceWidget::redYChanged (double value)
 
 	updateWidgetValue(ui->slider_redY, sliderval);
 	updateWidgetValue(ui->spinBox_redY, m_TORGB_yred);
-	ui->comboBox_colorSpacePreset->setCurrentIndex(0);
 
+	// Don't trigger yet another event
+	ui->comboBox_colorSpacePreset->blockSignals(true);
+	ui->comboBox_colorSpacePreset->setCurrentIndex(colorspaceToPreset(m_TORGB_yred));
+	ui->comboBox_colorSpacePreset->blockSignals(false);
+	
 	updateParam (LUX_FILM, LUX_FILM_TORGB_Y_RED, m_TORGB_yred);
 
 	emit valuesChanged();
@@ -409,8 +332,12 @@ void ColorSpaceWidget::redXChanged (double value)
 
 	updateWidgetValue(ui->slider_redX, sliderval);
 	updateWidgetValue(ui->spinBox_redX, m_TORGB_xred);
-	ui->comboBox_colorSpacePreset->setCurrentIndex(0);
-
+	
+	// Don't trigger yet another event
+	ui->comboBox_colorSpacePreset->blockSignals(true);
+	ui->comboBox_colorSpacePreset->setCurrentIndex(colorspaceToPreset(m_TORGB_xred));
+	ui->comboBox_colorSpacePreset->blockSignals(false);
+	
 	updateParam (LUX_FILM, LUX_FILM_TORGB_X_RED, m_TORGB_xred);
 
 	emit valuesChanged();
@@ -429,8 +356,12 @@ void ColorSpaceWidget::blueYChanged (double value)
 
 	updateWidgetValue(ui->slider_blueY, sliderval);
 	updateWidgetValue(ui->spinBox_blueY, m_TORGB_yblue);
-	ui->comboBox_colorSpacePreset->setCurrentIndex(0);
-
+	
+	// Don't trigger yet another event
+	ui->comboBox_colorSpacePreset->blockSignals(true);
+	ui->comboBox_colorSpacePreset->setCurrentIndex(colorspaceToPreset(m_TORGB_yblue));
+	ui->comboBox_colorSpacePreset->blockSignals(false);
+	
 	updateParam (LUX_FILM, LUX_FILM_TORGB_Y_BLUE, m_TORGB_yblue);
 
 	emit valuesChanged();
@@ -449,8 +380,12 @@ void ColorSpaceWidget::blueXChanged (double value)
 
 	updateWidgetValue(ui->slider_blueX, sliderval);
 	updateWidgetValue(ui->spinBox_blueX, m_TORGB_xblue);
-	ui->comboBox_colorSpacePreset->setCurrentIndex(0);
-
+	
+	// Don't trigger yet another event
+	ui->comboBox_colorSpacePreset->blockSignals(true);
+	ui->comboBox_colorSpacePreset->setCurrentIndex(colorspaceToPreset(m_TORGB_xblue));
+	ui->comboBox_colorSpacePreset->blockSignals(false);
+	
 	updateParam (LUX_FILM, LUX_FILM_TORGB_X_BLUE, m_TORGB_xblue);
 
 	emit valuesChanged();
@@ -469,8 +404,12 @@ void ColorSpaceWidget::greenYChanged (double value)
 
 	updateWidgetValue(ui->slider_greenY, sliderval);
 	updateWidgetValue(ui->spinBox_greenY, m_TORGB_ygreen);
-	ui->comboBox_colorSpacePreset->setCurrentIndex(0);
-
+	
+	// Don't trigger yet another event
+	ui->comboBox_colorSpacePreset->blockSignals(true);
+	ui->comboBox_colorSpacePreset->setCurrentIndex(colorspaceToPreset(m_TORGB_ygreen));
+	ui->comboBox_colorSpacePreset->blockSignals(false);
+	
 	updateParam (LUX_FILM, LUX_FILM_TORGB_Y_GREEN, m_TORGB_ygreen);
 
 	emit valuesChanged();
@@ -489,7 +428,11 @@ void ColorSpaceWidget::greenXChanged (double value)
 
 	updateWidgetValue(ui->slider_greenX, sliderval);
 	updateWidgetValue(ui->spinBox_greenX, m_TORGB_xgreen);
-	ui->comboBox_colorSpacePreset->setCurrentIndex(0);
+	
+	// Don't trigger yet another event
+	ui->comboBox_colorSpacePreset->blockSignals(true);
+	ui->comboBox_colorSpacePreset->setCurrentIndex(colorspaceToPreset(m_TORGB_xgreen));
+	ui->comboBox_colorSpacePreset->blockSignals(false);
 
 	updateParam (LUX_FILM, LUX_FILM_TORGB_X_GREEN, m_TORGB_xgreen);
 
