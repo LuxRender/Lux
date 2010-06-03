@@ -391,8 +391,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>472</width>
-                  <height>547</height>
+                  <width>100</width>
+                  <height>30</height>
                  </rect>
                 </property>
                 <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -470,7 +470,7 @@
            <widget class="QLabel" name="resinfoLabel">
             <property name="minimumSize">
              <size>
-              <width>160</width>
+              <width>0</width>
               <height>0</height>
              </size>
             </property>
@@ -489,7 +489,7 @@
            <widget class="QLabel" name="zoominfoLabel">
             <property name="minimumSize">
              <size>
-              <width>140</width>
+              <width>0</width>
               <height>0</height>
              </size>
             </property>
@@ -511,7 +511,7 @@
            <widget class="QLabel" name="viewportinfoLabel">
             <property name="minimumSize">
              <size>
-              <width>160</width>
+              <width>0</width>
               <height>0</height>
              </size>
             </property>
