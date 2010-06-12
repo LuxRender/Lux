@@ -155,6 +155,7 @@ public:
 private:
 	Distribution2D* uvDistrib;
 	boost::shared_ptr<const SphericalFunction> func;
+	float average;
 };
 
 /**

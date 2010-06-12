@@ -57,14 +57,21 @@ SampleableSphericalFunction::SampleableSphericalFunction(
 	tspack.swl = &swl;
 	swl.Sample(.5f);
 	float *img = new float[xRes * yRes];
+	average = 0.f;
+	float normalize = 0.f;
 	for (u_int y = 0; y < yRes; ++y) {
-		float yp = M_PI * (y + .5f) / yRes;
+		const float yp = M_PI * (y + .5f) / yRes;
+		const float weight = sinf(yp);
+		normalize += xRes * weight;
 		for (u_int x = 0; x < xRes; ++x) {
-			float xp = 2.f * M_PI * (x + .5f) / xRes;
-			img[x + y * xRes] = func->f(&tspack, xp, yp).Y(&tspack) *
+			const float xp = 2.f * M_PI * (x + .5f) / xRes;
+			const float value = func->f(&tspack, xp, yp).Filter(&tspack);
+			average += value * weight;
+			img[x + y * xRes] = func->f(&tspack, xp, yp).Filter(&tspack) *
 				sin(yp);
 		}
 	}
+	average *= 4.f * M_PI / normalize;
 	// Initialize sampling PDFs
 	uvDistrib = new Distribution2D(img, xRes, yRes);
 	delete[] img;
@@ -104,7 +111,7 @@ float SampleableSphericalFunction::Pdf(const Vector& w) const
 
 float SampleableSphericalFunction::Average_f() const
 {
-	return uvDistrib->Average();
+	return average;
 }
 
 SphericalFunction *CreateSphericalFunction(const ParamSet &paramSet)
