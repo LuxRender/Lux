@@ -32,18 +32,17 @@ namespace lux
 // Kelemen and Szirmay-Kalos / Microfacet Based BRDF Model, Eurographics 2001
 class  WardIsotropic : public MicrofacetDistribution {
 public:
+	WardIsotropic(float rms);
+	virtual ~WardIsotropic() { }
 
-  WardIsotropic (float rms);
-  virtual ~WardIsotropic() { }
-
-  // WardIsotropic Public Methods
-  virtual float D (const Vector &wh) const;
-  virtual void Sample_f (const Vector &wi, Vector *sampled_f, float u1, float u2, float *pdf) const;
-  virtual float Pdf (const Vector &wi, const Vector &wo) const;
+	// WardIsotropic Public Methods
+	virtual float D(const Vector &wh) const;
+	virtual void SampleH(float u1, float u2, Vector *wh, float *d,
+		float *pdf) const;
+	virtual float Pdf(const Vector &wh) const;
 
 private:
-
-  float r;
+	float r;
 };
 
 }//namespace lux

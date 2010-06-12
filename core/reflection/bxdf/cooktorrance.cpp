@@ -37,7 +37,9 @@ CookTorrance::CookTorrance(const SWCSpectrum &ks, MicrofacetDistribution *dist,
 void CookTorrance::f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f_) const {
 	const float cosThetaO = fabsf(CosTheta(wo));
 	const float cosThetaI = fabsf(CosTheta(wi));
-	const Vector wh(Normalize(wi + wo));
+	Vector wh(Normalize(wi + wo));
+	if (wh.z < 0.f)
+		wh = -wh;
 	const float cosThetaH = Dot(wi, wh);
 	const float cG = G(wo, wi, wh);
 
@@ -57,20 +59,26 @@ float CookTorrance::G(const Vector &wo, const Vector &wi, const Vector &wh) cons
 
 bool CookTorrance::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi, float u1, float u2, SWCSpectrum *const f_, float *pdf, float *pdfBack, bool reverse) const
 {
-	distribution->Sample_f(wo, wi, u1, u2, pdf);
+	Vector wh;
+	float d;
+	distribution->SampleH(u1, u2, &wh, &d, pdf);
+	if (wh.z < 0.f)
+		wh = -wh;
+	*wi = 2.f * Dot(wo, wh) * wh - wo;
 	if (*pdf == 0.f) {
 		if (pdfBack)
 			*pdfBack = 0.f;
 		return false;
 	}
+	const float cosThetaH = Dot(wo, wh);
+	*pdf /= 4.f * fabsf(cosThetaH);
 	if (pdfBack)
-		*pdfBack = Pdf(tspack, *wi, wo);
+		*pdfBack = *pdf;
 
-	*f_ = SWCSpectrum(0.f);
-	if (reverse)
-		f(tspack, *wi, wo, f_);
-	else
-		f(tspack, wo, *wi, f_);
+	SWCSpectrum F;
+	fresnel->Evaluate(tspack, cosThetaH, &F);
+	*f_ = (d * G(wo, *wi, wh)  / (M_PI * fabsf(wi->z) * fabsf(wo.z))) *
+		(KS * F);
 	return true;
 }
 
@@ -79,6 +87,9 @@ float CookTorrance::Pdf(const TsPack *tspack, const Vector &wo, const Vector &wi
 	if (!SameHemisphere(wo, wi))
 		return 0.f;
 
-	return distribution->Pdf(wo, wi);
+	Vector wh(Normalize(wi + wo));
+	if (wh.z < 0.f)
+		wh = -wh;
+	return distribution->Pdf(wh) / (4.f * AbsDot(wo, wh));
 }
 

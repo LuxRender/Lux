@@ -39,15 +39,17 @@ public:
 	}
 	virtual ~Anisotropic() { }
 	virtual float D(const Vector &wh) const {
-		const float costhetah = fabsf(CosTheta(wh));
+		const float cosTheta = fabsf(wh.z);
 		const float e = (ex * wh.x * wh.x + ey * wh.y * wh.y) /
-			(1.f - costhetah * costhetah);
-		return sqrtf((ex + 2.f) * (ey + 2.f)) * INV_TWOPI * powf(costhetah, e);
+			max(0.f, 1.f - cosTheta * cosTheta);
+		return sqrtf((ex + 2.f) * (ey + 2.f)) * INV_TWOPI *
+			powf(cosTheta, e);
 	}
-	virtual void Sample_f(const Vector &wo, Vector *wi, float u1, float u2, float *pdf) const;
-	virtual float Pdf(const Vector &wo, const Vector &wi) const;
+	virtual void SampleH(float u1, float u2, Vector *wh, float *d,
+		float *pdf) const;
+	virtual float Pdf(const Vector &wh) const;
 private:
-	void sampleFirstQuadrant(float u1, float u2, float *phi, float *costheta) const;
+	void SampleFirstQuadrant(float u1, float u2, float *phi, float *cosTheta) const;
 	float ex, ey;
 };
 

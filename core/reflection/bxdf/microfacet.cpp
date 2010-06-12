@@ -58,25 +58,35 @@ bool MicrofacetReflection::Sample_f(const TsPack *tspack, const Vector &wo,
 	Vector *wi, float u1, float u2, SWCSpectrum *const f_, float *pdf, 
 	float *pdfBack, bool reverse) const
 {
-	distribution->Sample_f(wo, wi, u1, u2, pdf);
-	if (wo.z <= 0.f || !SameHemisphere(wo, *wi)) 
+	Vector wh;
+	float d;
+	distribution->SampleH(u1, u2, &wh, &d, pdf);
+	if (wh.z < 0.f)
+		wh = -wh;
+	*wi = 2.f * Dot(wo, wh) * wh - wo;
+	if ((oneSided && wo.z <= 0.f) || !SameHemisphere(wo, *wi)) 
 		return false;
 
+	const float cosThetaH = Dot(wo, wh);
+	*pdf /= 4.f * fabsf(cosThetaH);
 	if (pdfBack)
-		*pdfBack = Pdf(tspack, *wi, wo);
-	*f_ = SWCSpectrum(0.f);
-	if (reverse)
-		f(tspack, *wi, wo, f_);
-	else
-		f(tspack, wo, *wi, f_);
+		*pdfBack = *pdf;
+	SWCSpectrum F;
+	fresnel->Evaluate(tspack, cosThetaH, &F);
+	*f_ = (d * G(wo, *wi, wh) / (4.f * fabsf(wo.z) * fabsf(wi->z))) *
+		(R * F);
 	return true;
 }
 float MicrofacetReflection::Pdf(const TsPack *tspack, const Vector &wo,
 	const Vector &wi) const
 {
-	if (wo.z <= 0.f || !SameHemisphere(wo, wi))
-		return 0.f;
-	return distribution->Pdf(wo, wi);
+	Vector wh = Normalize(wi + wo);
+	if (wh.z < 0.f) {
+		if (oneSided)
+			return 0.f;
+		wh = -wh;
+	}
+	return distribution->Pdf(wh) / (4.f * AbsDot(wo, wh));
 }
 
 MicrofacetTransmission::MicrofacetTransmission(const SWCSpectrum &transmitance,
@@ -112,8 +122,9 @@ bool MicrofacetTransmission::Sample_f(const TsPack *tspack, const Vector &wo,
 	Vector *wi, float u1, float u2, SWCSpectrum *const f_, float *pdf, 
 	float *pdfBack, bool reverse) const
 {
-	distribution->Sample_f(wo, wi, u1, u2, pdf);
-	Vector wh(Normalize(wo + *wi));
+	Vector wh;
+	float d;
+	distribution->SampleH(u1, u2, &wh, &d, pdf);
 	if (wh.z < 0.f)
 		wh = -wh;
 	const bool entering = CosTheta(wo) > 0.f;
@@ -130,18 +141,18 @@ bool MicrofacetTransmission::Sample_f(const TsPack *tspack, const Vector &wo,
 	const float length = eta * cosThetaOH + cosThetaIH;
 	*wi = length * wh - eta * wo;
 	const float lengthSquared = length * length;
-	*pdf *= 4.f * fabsf(cosThetaOH * cosThetaIH) / lengthSquared;
 	if (pdfBack)
-		*pdfBack = Pdf(tspack, *wi, wo);
+		*pdfBack = *pdf * fabsf(cosThetaOH) * eta * eta / lengthSquared;
+	*pdf *= fabsf(cosThetaIH) / lengthSquared;
 
 	SWCSpectrum F;
 	if (reverse)
 		fresnel->Evaluate(tspack, cosThetaIH, &F);
 	else
 		fresnel->Evaluate(tspack, cosThetaOH, &F);
-	*f_ = (fabsf(cosThetaOH * cosThetaIH) / fabsf(CosTheta(wo) *
-		CosTheta(*wi) * lengthSquared) * distribution->D(wh) *
-		G(*wi, wo, wh)) * T * (SWCSpectrum(1.f) - F);
+	*f_ = (fabsf(cosThetaOH * cosThetaIH / (CosTheta(wo) * CosTheta(*wi) *
+		lengthSquared)) * d * G(*wi, wo, wh)) *
+		(T * (SWCSpectrum(1.f) - F));
 	return true;
 }
 float MicrofacetTransmission::Pdf(const TsPack *tspack, const Vector &wo,
@@ -157,8 +168,6 @@ float MicrofacetTransmission::Pdf(const TsPack *tspack, const Vector &wo,
 		wh = -wh;
 	const float lengthSquared = wh.LengthSquared();
 	wh /= sqrtf(lengthSquared);
-	const float cosThetaOH = Dot(wo, wh);
 	const float cosThetaIH = AbsDot(wi, wh);
-	return distribution->Pdf(wo, 2.f * cosThetaOH * wh - wo) *
-		4.f * fabsf(cosThetaOH) * cosThetaIH / lengthSquared;
+	return distribution->Pdf(wh) * cosThetaIH / lengthSquared;
 }

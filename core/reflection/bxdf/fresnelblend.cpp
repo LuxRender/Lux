@@ -54,42 +54,52 @@ void FresnelBlend::f(const TsPack *tspack, const Vector &wo,
 		(1.f - powf(1.f - .5f * fabsf(CosTheta(wo)), 5.f)) *
 		(28.f/(23.f*M_PI)), a * Rd * (SWCSpectrum(1.f) - Rs));
 
-	Vector H = Normalize(wi + wo);
+	Vector wh = Normalize(wi + wo);
+	if (wh.z < 0.f)
+		wh = -wh;
 	// specular part
-	f_->AddWeighted(distribution->D(H) /
-		(4.f * AbsDot(wi, H) *
+	f_->AddWeighted(distribution->D(wh) /
+		(4.f * AbsDot(wi, wh) *
 		max(fabsf(CosTheta(wi)), fabsf(CosTheta(wo)))),
-		SchlickFresnel(Dot(wi, H)));	
+		SchlickFresnel(AbsDot(wi, wh)));	
 }
 
 bool FresnelBlend::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 	float u1, float u2, SWCSpectrum *const f_, float *pdf, 
 	float *pdfBack, bool reverse) const
 {
+	Vector wh;
+	float d;
 	u1 *= 2.f;
 	if (u1 < 1.f) {
 		// Cosine-sample the hemisphere, flipping the direction if necessary
 		*wi = CosineSampleHemisphere(u1, u2);
 		if (wo.z < 0.f)
 			wi->z *= -1.f;
+		Vector wh = Normalize(*wi + wo);
+		if (wh.z < 0.f)
+			wh = -wh;
+		d = distribution->D(wh);
+		*pdf = distribution->Pdf(wh);
 	} else {
 		u1 -= 1.f;
-		distribution->Sample_f(wo, wi, u1, u2, pdf);
+		distribution->SampleH(u1, u2, &wh, &d, pdf);
+		*wi = 2.f * Dot(wo, wh) * wh - wo;
 	}
-	*pdf = Pdf(tspack, wo, *wi);
 	if (*pdf == 0.f) {
 		if (pdfBack)
 			*pdfBack = 0.f;
 		return false;
 	}
 	if (pdfBack)
-		*pdfBack = Pdf(tspack, *wi, wo);
+		*pdfBack = .5f * (fabsf(wo.z) * INV_PI +
+			*pdf / (4.f * AbsDot(*wi, wh)));
+	*pdf = .5f * (fabsf(wi->z) * INV_PI +
+		*pdf / (4.f * AbsDot(wo, wh)));
 
 	*f_ = SWCSpectrum(0.f);
-	if (reverse)
-		f(tspack, *wi, wo, f_);
-	else
-		f(tspack, wo, *wi, f_);
+	// FresnelBlend::f is symetric, no need to special case for revert
+	f(tspack, wo, *wi, f_);
 	return true;
 }
 float FresnelBlend::Pdf(const TsPack *tspack, const Vector &wo,
@@ -97,6 +107,10 @@ float FresnelBlend::Pdf(const TsPack *tspack, const Vector &wo,
 {
 	if (!SameHemisphere(wo, wi))
 		return 0.f;
-	return .5f * (fabsf(wi.z) * INV_PI + distribution->Pdf(wo, wi));
+	Vector wh = Normalize(wi + wo);
+	if (wh.z < 0.f)
+		wh = -wh;
+	return .5f * (fabsf(wi.z) * INV_PI +
+		distribution->Pdf(wh) / (4.f * AbsDot(wo, wh)));
 }
 

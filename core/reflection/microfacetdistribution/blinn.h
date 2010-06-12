@@ -36,13 +36,12 @@ public:
 	virtual ~Blinn() { }
 	// Blinn Public Methods
 	virtual float D(const Vector &wh) const {
-		float costhetah = fabsf(CosTheta(wh));
-		return (exponent+2) *
-		       INV_TWOPI *
-			   powf(costhetah, exponent);
+		float cosTheta = fabsf(wh.z);
+		return (exponent + 2.f) * powf(cosTheta, exponent) * INV_TWOPI;
 	}
-	virtual void Sample_f(const Vector &wi, Vector *sampled_f, float u1, float u2, float *pdf) const;
-	virtual float Pdf(const Vector &wi, const Vector &wo) const;
+	virtual void SampleH(float u1, float u2, Vector *wh, float *d,
+		float *pdf) const;
+	virtual float Pdf(const Vector &wh) const;
 private:
 	float exponent;
 };
