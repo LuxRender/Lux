@@ -103,7 +103,7 @@ public:
 	}
 	float Eta(const TsPack *tspack) const;
 	const Volume *GetVolume(const Vector &w) const {
-		return Dot(w, nn) > 0.f ? exterior : interior;
+		return Dot(w, ng) > 0.f ? exterior : interior;
 	}
 	void ComputeReflectionDifferentials(const RayDifferential &ray,
 		RayDifferential &rd) const;
