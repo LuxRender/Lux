@@ -33,30 +33,77 @@
 using namespace lux;
 
 //FIXME - do proper sampling
-class InfiniteISBxDF : public BxDF
-{
+class  InfiniteISBSDF : public BSDF  {
 public:
-	InfiniteISBxDF(const InfiniteAreaLightIS &l, const Transform &WL,
-		const Vector &x, const Vector &y, const Vector &z) :
-		BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)), light(l),
-		WorldToLight(WL), X(x), Y(y), Z(z) { }
-	virtual ~InfiniteISBxDF() { }
-	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi,
-		SWCSpectrum *const f) const {
+	// InfiniteISBSDF Public Methods
+	InfiniteISBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
+		const Volume *exterior, const Volume *interior,
+		const InfiniteAreaLightIS &l, const Transform &WL) :
+		BSDF(dgs, ngeom, exterior, interior), light(l),
+		WorldToLight(WL) { }
+	virtual inline u_int NumComponents() const { return 1; }
+	virtual inline u_int NumComponents(BxDFType flags) const {
+		return (flags & (BSDF_REFLECTION | BSDF_DIFFUSE)) ==
+			(BSDF_REFLECTION | BSDF_DIFFUSE) ? 1U : 0U;
+	}
+	virtual bool Sample_f(const TsPack *tspack, const Vector &woW, Vector *wiW,
+		float u1, float u2, float u3, SWCSpectrum *const f_, float *pdf,
+		BxDFType flags = BSDF_ALL, BxDFType *sampledType = NULL,
+		float *pdfBack = NULL, bool reverse = false) const {
+		if (reverse || NumComponents(flags) == 0)
+			return false;
+		*wiW = Normalize(LocalToWorld(CosineSampleHemisphere(u1, u2)));
+		if (!(Dot(*wiW, ng) > 0.f))
+			return false;
+		if (!(Dot(*wiW, nn) > 0.f))
+			return false;
+		if (sampledType)
+			*sampledType = BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE);
+		*pdf = AbsDot(*wiW, nn) * INV_PI;
+		if (pdfBack)
+			*pdfBack = 0.f;
 		if (light.radianceMap == NULL) {
-			*f += SWCSpectrum(INV_PI);
-			return;
+			*f_ = SWCSpectrum(INV_PI);
+			return true;
 		}
-		Vector w(wi.x * X + wi.y * Y + wi.z * Z);
-		Vector wh = Normalize(WorldToLight(-w));
+		const Vector wh = Normalize(WorldToLight(-(*wiW)));
 		float s, t, dummy;
 		light.mapping->Map(wh, &s, &t, &dummy);
-		*f += light.radianceMap->LookupSpectrum(tspack, s, t) * INV_PI;
+		*f_ = light.radianceMap->LookupSpectrum(tspack, s, t) *
+			INV_PI;
+		return true;
 	}
-private:
+	virtual float Pdf(const TsPack *tspack, const Vector &woW,
+		const Vector &wiW, BxDFType flags = BSDF_ALL) const {
+		if (NumComponents(flags) == 1 &&
+			Dot(wiW, ng) > 0.f && Dot(wiW, nn) > 0.f)
+			return AbsDot(wiW, nn) * INV_PI;
+		return 0.f;
+	}
+	virtual SWCSpectrum f(const TsPack *tspack, const Vector &woW,
+		const Vector &wiW, BxDFType flags = BSDF_ALL) const {
+		if (NumComponents(flags) == 1 && Dot(wiW, ng) > 0.f) {
+			if (light.radianceMap == NULL) {
+				return SWCSpectrum(INV_PI);
+			}
+			const Vector wh = Normalize(WorldToLight(-wiW));
+			float s, t, dummy;
+			light.mapping->Map(wh, &s, &t, &dummy);
+			return light.radianceMap->LookupSpectrum(tspack, s, t) *
+				INV_PI;
+		}
+		return SWCSpectrum(0.f);
+	}
+	virtual SWCSpectrum rho(const TsPack *tspack,
+		BxDFType flags = BSDF_ALL) const { return SWCSpectrum(1.f); }
+	virtual SWCSpectrum rho(const TsPack *tspack, const Vector &woW,
+		BxDFType flags = BSDF_ALL) const { return SWCSpectrum(1.f); }
+
+protected:
+	// InfiniteISBSDF Private Methods
+	virtual ~InfiniteISBSDF() { }
 	const InfiniteAreaLightIS &light;
 	const Transform &WorldToLight;
-	Vector X, Y, Z;
 };
 
 // InfiniteAreaLightIS Method Definitions
@@ -148,9 +195,8 @@ SWCSpectrum InfiniteAreaLightIS::Le(const TsPack *tspack, const Scene *scene,
 	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Normal(0, 0, 0),
 		Normal(0, 0, 0), 0, 0, NULL);
 	dg.time = tspack->time;
-	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
-		ARENA_ALLOC(tspack->arena, InfiniteISBxDF)(*this, WorldToLight,
-		dpdu, dpdv, Vector(ns)), NULL, NULL);
+	*bsdf = ARENA_ALLOC(tspack->arena, InfiniteISBSDF)(dg, ns,
+		NULL, NULL, *this, WorldToLight);
 	*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	if (radianceMap != NULL) {
 		const Vector wh = Normalize(WorldToLight(r.d));
@@ -252,9 +298,8 @@ bool InfiniteAreaLightIS::Sample_L(const TsPack *tspack, const Scene *scene,
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Normal(0, 0, 0),
 		Normal (0, 0, 0), 0, 0, NULL);
-	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
-		ARENA_ALLOC(tspack->arena, InfiniteISBxDF)(*this, WorldToLight,
-		dpdu, dpdv, Vector(ns)), NULL, NULL);
+	*bsdf = ARENA_ALLOC(tspack->arena, InfiniteISBSDF)(dg, ns,
+		NULL, NULL, *this, WorldToLight);
 	*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	*Le = SWCSpectrum(tspack, SPDbase) * M_PI;
 	return true;
@@ -290,9 +335,8 @@ bool InfiniteAreaLightIS::Sample_L(const TsPack *tspack, const Scene *scene,
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Normal(0, 0, 0),
 		Normal (0, 0, 0), 0, 0, NULL);
-	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
-		ARENA_ALLOC(tspack->arena, InfiniteISBxDF)(*this, WorldToLight,
-		dpdu, dpdv, Vector(ns)), NULL, NULL);
+	*bsdf = ARENA_ALLOC(tspack->arena, InfiniteISBSDF)(dg, ns,
+		NULL, NULL, *this, WorldToLight);
 	*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	*pdfDirect *= AbsDot(wi, ns) / (distance * distance);
 	visibility->SetSegment(p, ps, tspack->time);
