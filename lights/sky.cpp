@@ -35,7 +35,167 @@
 
 using namespace lux;
 
-class SkyBxDF : public BxDF
+class  SkyBSDF : public BSDF  {
+public:
+	// SkyBSDF Public Methods
+	SkyBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
+		const Volume *exterior, const Volume *interior,
+		const SkyLight &l, const Transform &WL) :
+		BSDF(dgs, ngeom, exterior, interior), light(l),
+		WorldToLight(WL) { }
+	virtual inline u_int NumComponents() const { return 1; }
+	virtual inline u_int NumComponents(BxDFType flags) const {
+		return (flags & (BSDF_REFLECTION | BSDF_DIFFUSE)) ==
+			(BSDF_REFLECTION | BSDF_DIFFUSE) ? 1U : 0U;
+	}
+	virtual bool Sample_f(const TsPack *tspack, const Vector &woW, Vector *wiW,
+		float u1, float u2, float u3, SWCSpectrum *const f_, float *pdf,
+		BxDFType flags = BSDF_ALL, BxDFType *sampledType = NULL,
+		float *pdfBack = NULL, bool reverse = false) const {
+		if (reverse || NumComponents(flags) == 0)
+			return false;
+		*wiW = Normalize(LocalToWorld(CosineSampleHemisphere(u1, u2)));
+		if (!(Dot(*wiW, ng) > 0.f))
+			return false;
+		if (!(Dot(*wiW, nn) > 0.f))
+			return false;
+		if (sampledType)
+			*sampledType = BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE);
+		*pdf = AbsDot(*wiW, nn) * INV_PI;
+		if (pdfBack)
+			*pdfBack = 0.f;
+		const Vector w(Normalize(WorldToLight(-(*wiW))));
+		const float phi = SphericalPhi(w);
+		const float theta = SphericalTheta(w);
+		light.GetSkySpectralRadiance(tspack, theta, phi, f_);
+		return true;
+	}
+	virtual float Pdf(const TsPack *tspack, const Vector &woW,
+		const Vector &wiW, BxDFType flags = BSDF_ALL) const {
+		if (NumComponents(flags) == 1 &&
+			Dot(wiW, ng) > 0.f && Dot(wiW, nn) > 0.f)
+			return AbsDot(wiW, nn) * INV_PI;
+		return 0.f;
+	}
+	virtual SWCSpectrum f(const TsPack *tspack, const Vector &woW,
+		const Vector &wiW, BxDFType flags = BSDF_ALL) const {
+		if (NumComponents(flags) == 1 && Dot(wiW, ng) > 0.f) {
+			const Vector w(Normalize(WorldToLight(-wiW)));
+			const float phi = SphericalPhi(w);
+			const float theta = SphericalTheta(w);
+			SWCSpectrum L;
+			light.GetSkySpectralRadiance(tspack, theta, phi, &L);
+			return L;
+		}
+		return SWCSpectrum(0.f);
+	}
+	virtual SWCSpectrum rho(const TsPack *tspack,
+		BxDFType flags = BSDF_ALL) const { return SWCSpectrum(1.f); }
+	virtual SWCSpectrum rho(const TsPack *tspack, const Vector &woW,
+		BxDFType flags = BSDF_ALL) const { return SWCSpectrum(1.f); }
+
+protected:
+	// SkyBSDF Private Methods
+	virtual ~SkyBSDF() { }
+	const SkyLight &light;
+	const Transform &WorldToLight;
+};
+class  SkyPortalBSDF : public BSDF  {
+public:
+	// SkyPortalBSDF Public Methods
+	SkyPortalBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
+		const Volume *exterior, const Volume *interior,
+		const SkyLight &l, const Transform &WL,
+		const Point &p,
+		const vector<boost::shared_ptr<Primitive> > &portalList,
+		u_int portal) :
+		BSDF(dgs, ngeom, exterior, interior), light(l),
+		WorldToLight(WL), ps(p), PortalShapes(portalList),
+		shapeIndex(portal) { }
+	virtual inline u_int NumComponents() const { return 1; }
+	virtual inline u_int NumComponents(BxDFType flags) const {
+		return (flags & (BSDF_REFLECTION | BSDF_DIFFUSE)) ==
+			(BSDF_REFLECTION | BSDF_DIFFUSE) ? 1U : 0U;
+	}
+	virtual bool Sample_f(const TsPack *tspack, const Vector &woW, Vector *wiW,
+		float u1, float u2, float u3, SWCSpectrum *const f_, float *pdf,
+		BxDFType flags = BSDF_ALL, BxDFType *sampledType = NULL,
+		float *pdfBack = NULL, bool reverse = false) const {
+		if (shapeIndex == ~0U || reverse || NumComponents(flags) == 0)
+			return false;
+		DifferentialGeometry dg;
+		dg.time = tspack->time;
+		PortalShapes[shapeIndex]->Sample(tspack, ps, u1, u2, u3, &dg);
+		*wiW = Normalize(dg.p - ps);
+		if (!(Dot(*wiW, nn) > 0.f))
+			return false;
+		const Vector w(Normalize(WorldToLight(-(*wiW))));
+		const float phi = SphericalPhi(w);
+		const float theta = SphericalTheta(w);
+		light.GetSkySpectralRadiance(tspack, theta, phi, f_);
+		*pdf = PortalShapes[shapeIndex]->Pdf(ps, dg.p) *
+			DistanceSquared(ps, dg.p) / AbsDot(*wiW, dg.nn);
+		for (u_int i = 0; i < PortalShapes.size(); ++i) {
+			if (i == shapeIndex)
+				continue;
+			Intersection isect;
+			RayDifferential ray(ps, *wiW);
+			ray.mint = -INFINITY;
+			if (PortalShapes[i]->Intersect(ray, &isect) &&
+				Dot(*wiW, isect.dg.nn) > 0.f)
+				*pdf += PortalShapes[i]->Pdf(ps, isect.dg.p) *
+					DistanceSquared(ps, isect.dg.p) /
+					AbsDot(*wiW, isect.dg.nn);
+		}
+		*pdf /= PortalShapes.size();
+		if (pdfBack)
+			*pdfBack = 0.f;
+		return true;
+	}
+	virtual float Pdf(const TsPack *tspack, const Vector &woW,
+		const Vector &wiW, BxDFType flags = BSDF_ALL) const {
+		if (NumComponents(flags) == 0 && !(Dot(wiW, nn) > 0.f))
+			return 0.f;
+		float pdf = 0.f;
+		for (u_int i = 0; i < PortalShapes.size(); ++i) {
+			Intersection isect;
+			RayDifferential ray(ps, wiW);
+			ray.mint = -INFINITY;
+			if (PortalShapes[i]->Intersect(ray, &isect) &&
+				Dot(wiW, isect.dg.nn) > 0.f)
+				pdf += PortalShapes[i]->Pdf(ps, isect.dg.p) *
+					DistanceSquared(ps, isect.dg.p) /
+					AbsDot(wiW, isect.dg.nn);
+		}
+		return pdf / PortalShapes.size();
+	}
+	virtual SWCSpectrum f(const TsPack *tspack, const Vector &woW,
+		const Vector &wiW, BxDFType flags = BSDF_ALL) const {
+		if (NumComponents(flags) == 1 && Dot(wiW, ng) > 0.f) {
+			const Vector w(Normalize(WorldToLight(-wiW)));
+			const float phi = SphericalPhi(w);
+			const float theta = SphericalTheta(w);
+			SWCSpectrum L;
+			light.GetSkySpectralRadiance(tspack, theta, phi, &L);
+			return L;
+		}
+		return SWCSpectrum(0.f);
+	}
+	virtual SWCSpectrum rho(const TsPack *tspack,
+		BxDFType flags = BSDF_ALL) const { return SWCSpectrum(1.f); }
+	virtual SWCSpectrum rho(const TsPack *tspack, const Vector &woW,
+		BxDFType flags = BSDF_ALL) const { return SWCSpectrum(1.f); }
+
+protected:
+	// SkyPortalBSDF Private Methods
+	virtual ~SkyPortalBSDF() { }
+	const SkyLight &light;
+	const Transform &WorldToLight;
+	Point ps;
+	const vector<boost::shared_ptr<Primitive> > &PortalShapes;
+	u_int shapeIndex;
+};
+/*class SkyBxDF : public BxDF
 {
 public:
 	SkyBxDF(const SkyLight &sky, const Transform &WL,
@@ -57,7 +217,7 @@ private:
 	const SkyLight &skyLight;
 	const Transform &WorldToLight;
 	Vector X, Y, Z;
-};
+};*/
 
 class SkyPortalBxDF : public BxDF
 {
@@ -282,14 +442,14 @@ SWCSpectrum SkyLight::Le(const TsPack *tspack, const Scene *scene, const Ray &r,
 		Normal(0, 0, 0), 0, 0, NULL);
 	dg.time = tspack->time;
 	if (!havePortalShape) {
-		*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
-			ARENA_ALLOC(tspack->arena, SkyBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns)), NULL, NULL);
+		*bsdf = ARENA_ALLOC(tspack->arena, SkyBSDF)(dg, ns,
+			NULL, NULL, *this, WorldToLight);
 		*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 		*pdfDirect = AbsDot(r.d, n) * INV_TWOPI * AbsDot(r.d, ns) /
 			DistanceSquared(r.o, ps);
 	} else {
-		*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
-			ARENA_ALLOC(tspack->arena, SkyPortalBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns), ps, PortalShapes, ~0U, 0.f), NULL, NULL);
+		*bsdf = ARENA_ALLOC(tspack->arena, SkyPortalBSDF)(dg, ns,
+			NULL, NULL, *this, WorldToLight, ps, PortalShapes, ~0U);
 		*pdf = 0.f;
 		*pdfDirect = 0.f;
 		for (u_int i = 0; i < nrPortalShapes; ++i) {
@@ -491,8 +651,8 @@ bool SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, floa
 		CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 		DifferentialGeometry dg(ps, ns, dpdu, dpdv, Normal(0, 0, 0),
 			Normal (0, 0, 0), 0, 0, NULL);
-		*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
-			ARENA_ALLOC(tspack->arena, SkyBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns)), NULL, NULL);
+		*bsdf = ARENA_ALLOC(tspack->arena, SkyBSDF)(dg, ns,
+			NULL, NULL, *this, WorldToLight);
 		*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	} else {
 		// Sample a random Portal
@@ -520,8 +680,8 @@ bool SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, floa
 		CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 		DifferentialGeometry dg(ps, ns, dpdu, dpdv, Normal(0, 0, 0),
 			Normal (0, 0, 0), 0, 0, NULL);
-		*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
-			ARENA_ALLOC(tspack->arena, SkyPortalBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns), ps, PortalShapes, shapeIndex, u3), NULL, NULL);
+		*bsdf = ARENA_ALLOC(tspack->arena, SkyPortalBSDF)(dg, ns,
+			NULL, NULL, *this, WorldToLight, ps, PortalShapes, shapeIndex);
 		*pdf = AbsDot(ns, wi) / (distance * distance);
 		for (u_int i = 0; i < nrPortalShapes; ++i) {
 			if (i == shapeIndex)
@@ -594,12 +754,12 @@ bool SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p
 	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Normal(0, 0, 0),
 		Normal(0, 0, 0), 0, 0, NULL);
 	if (!havePortalShape) {
-		*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
-			ARENA_ALLOC(tspack->arena, SkyBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns)), NULL, NULL);
+		*bsdf = ARENA_ALLOC(tspack->arena, SkyBSDF)(dg, ns,
+			NULL, NULL, *this, WorldToLight);
 		*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	} else {
-		*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
-			ARENA_ALLOC(tspack->arena, SkyPortalBxDF)(*this, WorldToLight, dpdu, dpdv, Vector(ns), ps, PortalShapes, shapeIndex, u3), NULL, NULL);
+		*bsdf = ARENA_ALLOC(tspack->arena, SkyPortalBSDF)(dg, ns,
+			NULL, NULL, *this, WorldToLight, ps, PortalShapes, shapeIndex);
 		*pdf = 0.f;
 		DifferentialGeometry dgs;
 		dgs.time = tspack->time;

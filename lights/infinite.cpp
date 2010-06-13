@@ -180,7 +180,7 @@ public:
 		const Vector &wiW, BxDFType flags = BSDF_ALL) const {
 		if (NumComponents(flags) == 1 && Dot(wiW, ng) > 0.f) {
 			if (light.radianceMap == NULL) {
-				return SWCSpectrum(INV_TWOPI);
+				return SWCSpectrum(INV_PI);
 			}
 			const Vector wh = Normalize(WorldToLight(-wiW));
 			float s, t, dummy;

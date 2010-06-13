@@ -506,7 +506,7 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 			lightPath[nLight].flux = light0.flux;
 
 			// Trace light subpath and connect to eye vertex
-			for (u_int sampleIndex = 1;; ++sampleIndex) {
+			for (u_int sampleIndex = 1; sampleIndex < maxLightDepth; ++sampleIndex) {
 				BidirVertex &v = lightPath[nLight];
 				if (!scene->Intersect(tspack,
 					lightPath[nLight - 1].bsdf->GetVolume(ray.d),
@@ -627,7 +627,7 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	// Trace eye subpath and connect to light subpath
 	SWCSpectrum &L(vecL[lightGroup]);
 	float &variance(vecV[lightGroup]);
-	for (u_int sampleIndex = 1;; ++sampleIndex) {
+	for (u_int sampleIndex = 1; sampleIndex < maxEyeDepth; ++sampleIndex) {
 		BidirVertex &v = eyePath[nEye];
 		if (!scene->Intersect(tspack,
 			eyePath[nEye - 1].bsdf->GetVolume(ray.d), ray, &isect,
