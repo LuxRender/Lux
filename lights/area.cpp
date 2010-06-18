@@ -241,10 +241,12 @@ SWCSpectrum AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, float 
 	dg.time = tspack->time;
 	prim->Sample(u1, u2, tspack->rng->floatValue(), &dg); // TODO - REFACT - add passed value from sample
 	ray->o = dg.p;
-	ray->d = UniformSampleSphere(u3, u4);
-	if (Dot(ray->d, dg.nn) < 0.) ray->d *= -1;
-	*pdf = prim->Pdf(ray->o) * INV_TWOPI;
-	return L(tspack, dg, ray->d);
+	ray->d = CosineSampleHemisphere(u3, u4);
+	const float coso = ray->d.z;
+	ray->d = ray->d.x * Normalize(dg.dpdu) + ray->d.y * Normalize(dg.dpdv) +
+		ray->d.z * Vector(dg.nn);
+	*pdf = prim->Pdf(ray->o) * coso * INV_PI;
+	return L(tspack, dg, ray->d) * coso;
 }
 float AreaLight::Pdf(const TsPack *tspack, const Point &P, const Vector &w) const {
 	return prim->Pdf(P, w);
