@@ -97,6 +97,7 @@ protected:
 	// ProjectiveCamera Protected Data
 	Transform CameraToScreen, WorldToScreen, RasterToCamera;
 	Transform ScreenToRaster, RasterToScreen;
+public:
 	Transform WorldToRaster, RasterToWorld;
 	float LensRadius, FocalDistance;
 };

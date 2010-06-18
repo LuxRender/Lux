@@ -46,8 +46,6 @@ OrthoCamera::OrthoCamera(const Transform &world2camStart,
 	screenDy = Screen[3] - Screen[2];//FixMe: 3-2 or 2-3
 	posPdf = (film->xResolution * film->yResolution) / (screenDx * screenDy);
 	normal = CameraToWorld(Normal(0, 0, 1));
-	RasterToCameraBidir = Orthographic(0.f, 1e30f).GetInverse() * RasterToScreen;
-	WorldToRasterBidir = RasterToCameraBidir.GetInverse() * WorldToCamera;
 }
 
 void OrthoCamera::SampleMotion(float time)
@@ -59,7 +57,6 @@ void OrthoCamera::SampleMotion(float time)
 	ProjectiveCamera::SampleMotion(time);
 	// then update derivative transforms
 	normal = CameraToWorld(Normal(0,0,1));
-	WorldToRasterBidir = RasterToCameraBidir.GetInverse() * WorldToCamera;
 }
 
 void OrthoCamera::AutoFocus(Scene* scene)
@@ -143,8 +140,9 @@ float OrthoCamera::GenerateRay(const Sample &sample, Ray *ray) const
 
 bool OrthoCamera::Sample_W(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *We) const
 {
-	Point psC(RasterToCameraBidir(Point(u1, u2, 0.f)));
-	Point ps = CameraToWorld(psC);
+	Point psC(RasterToCamera(Point(u1, u2, 0.f)));
+	psC.z = 0.f;
+	const Point ps(CameraToWorld(psC));
 	DifferentialGeometry dg(ps, normal, CameraToWorld(Vector(1, 0, 0)), CameraToWorld(Vector(0, 1, 0)), Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
 	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, normal,
 		ARENA_ALLOC(tspack->arena, SpecularReflection)(SWCSpectrum(1.f),
@@ -161,7 +159,7 @@ bool OrthoCamera::GetSamplePosition(const Point &p, const Vector &wi, float dist
 {
 	if (Dot(wi, normal) < 1.f - MachineEpsilon::E(1.f) || (!isinf(distance) && (distance < ClipHither || distance > ClipYon)))
 		return false;
-	Point ps(WorldToRasterBidir(p));
+	Point ps(WorldToRaster(p));
 	*x = ps.x;
 	*y = ps.y;
 	return true;
