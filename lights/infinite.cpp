@@ -571,7 +571,6 @@ bool InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene,
 	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
 	if(!havePortalShape) {
 		// Sample cosine-weighted direction on unit sphere
-		float x, y, z;
 		wi = CosineSampleHemisphere(u1, u2);
 		// Compute _pdf_ for cosine-weighted infinite light direction
 		*pdfDirect = fabsf(wi.z) * INV_PI;

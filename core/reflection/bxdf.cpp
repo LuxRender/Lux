@@ -185,13 +185,12 @@ bool SingleBSDF::Sample_f(const TsPack *tspack, const Vector &woW, Vector *wiW,
 	if (!bxdf->MatchesFlags(flags))
 		return false;
 	// Sample chosen _BxDF_
-	Vector wi;
-	if (!bxdf->Sample_f(tspack, WorldToLocal(woW), &wi, u1, u2, f_,
+	if (!bxdf->Sample_f(tspack, WorldToLocal(woW), wiW, u1, u2, f_,
 		pdf, pdfBack, reverse))
 		return false;
 	if (sampledType)
 		*sampledType = bxdf->type;
-	*wiW = LocalToWorld(wi);
+	*wiW = LocalToWorld(*wiW);
 	const float sideTest = Dot(*wiW, ng) * Dot(woW, ng);
 	if (sideTest > 0.f) {
 		// ignore BTDFs
@@ -289,12 +288,10 @@ bool MultiBSDF::Sample_f(const TsPack *tspack, const Vector &woW, Vector *wiW,
 	BOOST_ASSERT(bxdf); // NOBOOK
 	// Sample chosen _BxDF_
 	Vector wi;
-	*pdf = 0.f;
-	if (pdfBack)
-		*pdfBack = 0.f;
 	if (!bxdf->Sample_f(tspack, wo, &wi, u1, u2, f_, pdf, pdfBack, reverse))
 		return false;
-	if (sampledType) *sampledType = bxdf->type;
+	if (sampledType)
+		*sampledType = bxdf->type;
 	*wiW = LocalToWorld(wi);
 	*pdf *= weights[which];
 	float totalWeightR = bxdfs[which]->Weight(tspack, wi);
@@ -312,9 +309,9 @@ bool MultiBSDF::Sample_f(const TsPack *tspack, const Vector &woW, Vector *wiW,
 		flags2 = BxDFType(flags & ~BSDF_REFLECTION);
 	else
 		return false;
+	if (!bxdf->MatchesFlags(flags2))
+		return false;
 	if (!(bxdf->type & BSDF_SPECULAR) && matchingComps > 1) {
-		if (!bxdf->MatchesFlags(flags2))
-			*f_ = SWCSpectrum(0.f);
 		for (u_int i = 0; i < nBxDFs; ++i) {
 			if (i== which)
 				continue;
