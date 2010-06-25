@@ -96,7 +96,7 @@ protected:
 
 class  GonioAreaBSDF : public BSDF  {
 public:
-	// UniformBSDF Public Methods
+	// GonioBSDF Public Methods
 	GonioAreaBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
 		const Volume *exterior, const Volume *interior,
 		const SampleableSphericalFunction *func) :
@@ -129,8 +129,8 @@ public:
 	virtual SWCSpectrum f(const TsPack *tspack, const Vector &woW,
 		const Vector &wiW, BxDFType flags = BSDF_ALL) const {
 		if (NumComponents(flags) == 1)
-			return 2.f * sf->f(tspack, WorldToLocal(wiW)) /
-				(sf->Average_f() * AbsDot(wiW, nn));
+			return sf->f(tspack, WorldToLocal(wiW)) *
+				(2.f / (sf->Average_f() * AbsDot(wiW, nn)));
 		return SWCSpectrum(0.f);
 	}
 	virtual SWCSpectrum rho(const TsPack *tspack,
