@@ -35,83 +35,72 @@
 
 using namespace lux;
 
-class  PerspectiveBSDF : public BSDF  {
+class PerspectiveBxDF : public BxDF
+{
 public:
-	// PerspectiveBSDF Public Methods
-	PerspectiveBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
-		const Volume *exterior, const Volume *interior,
-		const PerspectiveCamera &cam, bool lens, const Point &pL) :
-		BSDF(dgs, ngeom, exterior, interior), camera(cam),
-		hasLens(lens), p(pL) { }
-	virtual inline u_int NumComponents() const { return 1; }
-	virtual inline u_int NumComponents(BxDFType flags) const {
-		return (flags & (BSDF_REFLECTION | BSDF_DIFFUSE)) ==
-			(BSDF_REFLECTION | BSDF_DIFFUSE) ? 1U : 0U;
+	PerspectiveBxDF(bool lens, float FD, float f, float A, const Point &pL,
+		const Transform &R2C, float xS, float xE, float yS, float yE) :
+		BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)), hasLens(lens),
+		FocalDistance(FD), fov(f), xStart(xS), xEnd(xE),
+		yStart(yS), yEnd(yE), Area(A),
+		p(pL), RasterToCamera(R2C) { }
+	virtual ~PerspectiveBxDF() { }
+	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const
+	{
+		if (wo.z <= 0.f)
+			return;
+		Vector wo0(wo.x, -wo.y, wo.z); //FIXME: inverted Y axis
+		if (hasLens) {
+			wo0 += Vector(p.x, p.y, p.z) * (wo.z / FocalDistance);
+			wo0 = Normalize(wo0);
+		}
+		const float cos = wo0.z;
+		const float cos2 = cos * cos;
+		const Point p0(RasterToCamera.GetInverse()(Point(wo0.x, wo0.y, wo0.z)));
+		if (p0.x < xStart || p0.x >= xEnd || p0.y < yStart || p0.y >= yEnd)
+			return;
+		*f += SWCSpectrum(1.f / (Area * cos2 * cos2));
 	}
-	virtual bool Sample_f(const TsPack *tspack, const Vector &woW, Vector *wiW,
-		float u1, float u2, float u3, SWCSpectrum *const f_, float *pdf,
-		BxDFType flags = BSDF_ALL, BxDFType *sampledType = NULL,
-		float *pdfBack = NULL, bool reverse = false) const {
-		if (!reverse || NumComponents(flags) == 0)
-			return false;
-		Point pS(camera.RasterToWorld(Point(u1, u2, 0.f)));
-		*wiW = pS - camera.pos;
-		if (hasLens)
-			*wiW -= (p - camera.pos) * (Dot(*wiW, nn) / camera.FocalDistance);
-		*wiW = Normalize(*wiW);
-		const float cosi = Dot(*wiW, nn);
-		const float cosi2 = cosi * cosi;
-		*pdf = 1.f / (camera.Apixel * cosi2 * cosi);
+	virtual bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi, float u1, float u2,
+		SWCSpectrum *const f, float *pdf, float *pdfBack = NULL, bool reverse = false) const
+	{
+		Point pS(RasterToCamera(Point(u1, u2, 0.f)));
+		*wi = Normalize(Vector(pS.x, pS.y, pS.z));
+		const float cos = wi->z;
+		const float cos2 = cos * cos;
+		if (hasLens) {
+			*wi -= Vector(p.x, p.y, p.z) * (wi->z / FocalDistance);
+			*wi = Normalize(*wi);
+		}
+		wi->y = -wi->y;//FIXME
+		*pdf = 1.f / (Area * cos2 * cos);
 		if (pdfBack)
 			*pdfBack = 0.f;
-		*f_ = SWCSpectrum(*pdf / cosi);
+		*f = SWCSpectrum(1.f / (Area * cos2 * cos2));
 		return true;
 	}
-	virtual float Pdf(const TsPack *tspack, const Vector &woW,
-		const Vector &wiW, BxDFType flags = BSDF_ALL) const {
-		const float coso = Dot(woW, nn);
-		if (NumComponents(flags) == 1 && coso > 0.f) {
-			Point pO;
-			if (hasLens)
-				camera.WorldToRaster(p + woW * (camera.FocalDistance / coso), &pO);
-			else
-				camera.WorldToRaster(camera.pos + woW, &pO);
-			if (pO.x < camera.xStart || pO.x >= camera.xEnd ||
-				pO.y < camera.yStart || pO.y >= camera.yEnd)
-				return 0.f;
-			const float coso2 = coso * coso;
-			return 1.f / (camera.Apixel * coso2 * coso);
+	virtual float Pdf(const TsPack *tspack, const Vector &wi, const Vector &wo) const
+	{
+		if (wo.z <= 0.f)
+			return 0.f;
+		Vector wi0(wi.x, -wi.y, wi.z); //FIXME: inverted Y axis
+		if (hasLens) {
+			wi0 += Vector(p.x, p.y, p.z) * (wi.z / FocalDistance);
+			wi0 = Normalize(wi0);
 		}
-		return 0.f;
+		const float cos = wi0.z;
+		const float cos2 = cos * cos;
+		const Point p0(RasterToCamera.GetInverse()(Point(wi0.x, wi0.y, wi0.z)));
+		if (p0.x < xStart || p0.x >= xEnd || p0.y < yStart || p0.y >= yEnd)
+			return 0.f;
+		else 
+			return 1.f / (Area * cos2 * cos);
 	}
-	virtual SWCSpectrum f(const TsPack *tspack, const Vector &woW,
-		const Vector &wiW, BxDFType flags = BSDF_ALL) const {
-		const float coso = Dot(woW, nn);
-		if (NumComponents(flags) == 1 && coso > 0.f) {
-			Point pO;
-			if (hasLens)
-				camera.WorldToRaster(p + woW * (camera.FocalDistance / coso), &pO);
-			else
-				camera.WorldToRaster(camera.pos + woW, &pO);
-			if (pO.x < camera.xStart || pO.x >= camera.xEnd ||
-				pO.y < camera.yStart || pO.y >= camera.yEnd)
-				return SWCSpectrum(0.f);
-			const float coso2 = coso * coso;
-			return SWCSpectrum(1.f / (camera.Apixel * coso2 * coso2));
-		}
-		return SWCSpectrum(0.f);
-	}
-	virtual SWCSpectrum rho(const TsPack *tspack,
-		BxDFType flags = BSDF_ALL) const { return SWCSpectrum(1.f); }
-	virtual SWCSpectrum rho(const TsPack *tspack, const Vector &woW,
-		BxDFType flags = BSDF_ALL) const { return SWCSpectrum(1.f); }
-
-protected:
-	// PerspectiveBSDF Private Methods
-	virtual ~PerspectiveBSDF() { }
-	const PerspectiveCamera &camera;
+private:
 	bool hasLens;
+	float FocalDistance, fov, xStart, xEnd, yStart, yEnd, Area;
 	Point p;
+	const Transform &RasterToCamera;
 };
 
 // PerspectiveCamera Method Definitions
@@ -137,19 +126,21 @@ PerspectiveCamera::
 	else
 		posPdf = 1.f;
 
+	R = 1.f;
+	float templength = R * tanf(fov / 2.f) * 2.f;	
 	int xS, xE, yS, yE;
 	f->GetSampleExtent(&xS, &xE, &yS, &yE);
 	xStart = xS;
 	xEnd = xE;
 	yStart = yS;
 	yEnd = yE;
-	const float R = 1.f;
-	const float templength = R * tanf(fov / 2.f) * 2.f;	
-	const float xPixelWidth = templength * (Screen[1] - Screen[0]) / 2.f *
+	xPixelWidth = templength * (Screen[1] - Screen[0]) / 2.f *
 		(xEnd - xStart) / f->xResolution;
-	const float yPixelHeight = templength * (Screen[3] - Screen[2]) / 2.f *
+	yPixelHeight = templength * (Screen[3] - Screen[2]) / 2.f *
 		(yEnd - yStart) / f->yResolution;
 	Apixel = xPixelWidth * yPixelHeight;
+	RasterToCameraBidir = Perspective(fov1, 1.f, 2.f).GetInverse() * RasterToScreen;
+	WorldToRasterBidir = RasterToCameraBidir.GetInverse() * WorldToCamera;
 }
 
 void PerspectiveCamera::SampleMotion(float time)
@@ -162,6 +153,7 @@ void PerspectiveCamera::SampleMotion(float time)
 	// then update derivative transforms
 	pos = CameraToWorld(Point(0,0,0));
 	normal = CameraToWorld(Normal(0,0,1));
+	WorldToRasterBidir = RasterToCameraBidir.GetInverse() * WorldToCamera;
 }
 
 void PerspectiveCamera::AutoFocus(Scene* scene)
@@ -175,6 +167,11 @@ void PerspectiveCamera::AutoFocus(Scene* scene)
 		film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
 		Point Pras((xend - xstart) / 2, (yend - ystart) / 2, 0);
 
+		// Dade - debug code
+		//ss.str("");
+		//ss << "Raster point: " << Pras;
+		//luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+		
 		Point Pcamera;
 		RasterToCamera(Pras, &Pcamera);
 		Ray ray;
@@ -188,6 +185,11 @@ void PerspectiveCamera::AutoFocus(Scene* scene)
 		ray.mint = 0.f;
 		ray.maxt = (ClipYon - ClipHither) / ray.d.z;
 		CameraToWorld(ray, &ray);
+
+		// Dade - debug code
+		//ss.str("");
+		//ss << "Ray.o: " << ray.o << " Ray.d: " << ray.d;
+		//luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
 		Intersection isect;
 		if (scene->Intersect(ray, &isect))
@@ -248,8 +250,10 @@ bool PerspectiveCamera::Sample_W(const TsPack *tspack, const Scene *scene, float
 	}
 	Point ps = CameraToWorld(psC);
 	DifferentialGeometry dg(ps, normal, CameraToWorld(Vector(1, 0, 0)), CameraToWorld(Vector(0, 1, 0)), Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
-	*bsdf = ARENA_ALLOC(tspack->arena, PerspectiveBSDF)(dg, normal,
-		NULL, NULL, *this, LensRadius > 0.f, ps);
+	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, normal,
+		ARENA_ALLOC(tspack->arena, PerspectiveBxDF)(LensRadius > 0.f, FocalDistance,
+		fov, Apixel, psC, RasterToCameraBidir,
+		xStart, xEnd, yStart, yEnd), NULL, NULL);
 	*pdf = posPdf;
 	*We = SWCSpectrum(posPdf);
 	return true;
@@ -264,8 +268,10 @@ bool PerspectiveCamera::Sample_W(const TsPack *tspack, const Scene *scene, const
 	}
 	Point ps = CameraToWorld(psC);
 	DifferentialGeometry dg(ps, normal, CameraToWorld(Vector(1, 0, 0)), CameraToWorld(Vector(0, 1, 0)), Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
-	*bsdf = ARENA_ALLOC(tspack->arena, PerspectiveBSDF)(dg, normal,
-		NULL, NULL, *this, LensRadius > 0.f, ps);
+	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, normal,
+		ARENA_ALLOC(tspack->arena, PerspectiveBxDF)(LensRadius > 0.f, FocalDistance,
+		fov, Apixel, psC, RasterToCameraBidir,
+		xStart, xEnd, yStart, yEnd), NULL, NULL);
 	*pdf = posPdf;
 	*pdfDirect = posPdf;
 	visibility->SetSegment(ps, p, tspack->time, true);
@@ -285,16 +291,19 @@ BBox PerspectiveCamera::Bounds() const
 bool PerspectiveCamera::GetSamplePosition(const Point &p, const Vector &wi,
 	float distance, float *x, float *y) const
 {
-	const Vector direction(normal);
+	Vector direction(normal);
 	const float cosi = Dot(wi, direction);
 	if (cosi <= 0.f || (!isinf(distance) && (distance * cosi < ClipHither || distance * cosi > ClipYon)))
 		return false;
 	if (LensRadius > 0.f) {
-		const Point pO(WorldToRaster(p + wi * (FocalDistance / cosi)));
+		Point pFC(p + wi * (FocalDistance / Dot(wi, direction)));
+		Vector wi0(pFC - pos);
+		Point pO(pos + wi0 / Dot(wi0, direction));
+		WorldToRasterBidir(pO, &pO);
 		*x = pO.x;
 		*y = pO.y;
 	} else {
-		const Point pO(WorldToRaster(pos + wi / cosi));
+		Point pO = WorldToRasterBidir(pos + wi / Dot(wi, direction));
 		*x = pO.x;
 		*y = pO.y;
 	}
@@ -353,8 +362,8 @@ Camera* PerspectiveCamera::CreateCamera(const Transform &world2camStart, const T
 	Film *film)
 {
 	// Extract common camera parameters from _ParamSet_
-	float hither = max(1e-3f, params.FindOneFloat("hither", 1e-3f));
-	float yon = Clamp(params.FindOneFloat("yon", 1e30f), hither, 1e30f);
+	float hither = max(1e-4f, params.FindOneFloat("hither", 1e-3f));
+	float yon = min(params.FindOneFloat("yon", 1e30f), 1e30f);
 
 	float shutteropen = params.FindOneFloat("shutteropen", 0.f);
 	float shutterclose = params.FindOneFloat("shutterclose", 1.f);

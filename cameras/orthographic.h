@@ -59,6 +59,7 @@ private:
 
 	float screenDx,screenDy, posPdf;
 	Normal normal;
+	Transform RasterToCameraBidir, WorldToRasterBidir;
 };
 
 }//namespace lux

@@ -57,12 +57,14 @@ public:
 
 	static Camera *CreateCamera(const Transform &world2camStart, const Transform &world2camEnd, const ParamSet &params, Film *film);
 
-	Point pos;
-	float Apixel, xStart, xEnd, yStart, yEnd;
 private:
+	Point pos;
 	Normal normal;
+	Transform RasterToCameraBidir, WorldToRasterBidir;
 	float fov;
 	float posPdf;
+	float xStart, xEnd, yStart, yEnd;
+	float R, xPixelWidth, yPixelHeight, Apixel;
 	int distribution, shape, power;
 
 	// Dade - field used for autofocus feature
