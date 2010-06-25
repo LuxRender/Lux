@@ -30,53 +30,103 @@
 
 using namespace lux;
 
-class GonioBxDF : public BxDF {
+class  UniformBSDF : public BSDF  {
 public:
-	GonioBxDF(const SampleableSphericalFunction *func) :
-		BxDF(BxDFType(BSDF_DIFFUSE)), sf(func) { }
-	virtual ~GonioBxDF() { }
-	virtual bool Sample_f(const TsPack *tspack, const Vector &wo,
-		Vector *wi, float u1, float u2, SWCSpectrum *const f_,
-		float *pdf, float *pdfBack = NULL, bool reverse = false) const {
-		Vector w;
-		SWCSpectrum ff(sf->Sample_f(tspack, u1, u2, wi, pdf));
-		*f_ += ff / fabsf(wi->z);
-		*pdfBack = 0.f;
+	// UniformBSDF Public Methods
+	UniformBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
+		const Volume *exterior, const Volume *interior) :
+		BSDF(dgs, ngeom, exterior, interior) { }
+	virtual inline u_int NumComponents() const { return 1; }
+	virtual inline u_int NumComponents(BxDFType flags) const {
+		return (flags & BSDF_DIFFUSE) == BSDF_DIFFUSE ? 1U : 0U;
+	}
+	virtual bool Sample_f(const TsPack *tspack, const Vector &woW, Vector *wiW,
+		float u1, float u2, float u3, SWCSpectrum *const f_, float *pdf,
+		BxDFType flags = BSDF_ALL, BxDFType *sampledType = NULL,
+		float *pdfBack = NULL, bool reverse = false) const {
+		if (reverse || NumComponents(flags) == 0)
+			return false;
+		*wiW = UniformSampleSphere(u1, u2);
+		const float cosi = AbsDot(*wiW, nn);
+		if (sampledType)
+			*sampledType = BSDF_DIFFUSE;
+		*pdf = INV_TWOPI;
+		if (pdfBack)
+			*pdfBack = 0.f;
+		*f_ = SWCSpectrum(INV_PI) / cosi;
 		return true;
 	}
-	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const F) const {
-		// Transform to light coordinate system
-		*F += sf->f(tspack, wi) / fabsf(wi.z);
+	virtual float Pdf(const TsPack *tspack, const Vector &woW,
+		const Vector &wiW, BxDFType flags = BSDF_ALL) const {
+		if (NumComponents(flags) == 1)
+			return INV_TWOPI;
+		return 0.f;
 	}
-	virtual float Pdf(const TsPack *tspack, const Vector &wi,
-		const Vector &wo) const {
-		return sf->Pdf(wo);
+	virtual SWCSpectrum f(const TsPack *tspack, const Vector &woW,
+		const Vector &wiW, BxDFType flags = BSDF_ALL) const {
+		if (NumComponents(flags) == 1)
+			return SWCSpectrum(INV_PI / AbsDot(wiW, nn));
+		return SWCSpectrum(0.f);
 	}
-private:
-	const SampleableSphericalFunction *sf;
+	virtual SWCSpectrum rho(const TsPack *tspack,
+		BxDFType flags = BSDF_ALL) const { return SWCSpectrum(1.f); }
+	virtual SWCSpectrum rho(const TsPack *tspack, const Vector &woW,
+		BxDFType flags = BSDF_ALL) const { return SWCSpectrum(1.f); }
+
+protected:
+	// UniformBSDF Private Methods
+	virtual ~UniformBSDF() { }
 };
 
-class UniformBxDF : public BxDF {
+class  GonioBSDF : public BSDF  {
 public:
-	UniformBxDF() : BxDF(BSDF_DIFFUSE) { }
-	virtual ~UniformBxDF() { }
-	virtual bool Sample_f(const TsPack *tspack, const Vector &wo,
-		Vector *wi, float u1, float u2, SWCSpectrum *const f_,
-		float *pdf, float *pdfBack = NULL, bool reverse = false) const {
-		*wi = UniformSampleSphere(u1, u2);
-		*pdf = UniformSpherePdf();
-		*f_ += 1.f / fabsf(wi->z);
-		*pdfBack = 0.f;
+	// GonioBSDF Public Methods
+	GonioBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
+		const Volume *exterior, const Volume *interior,
+		const SampleableSphericalFunction *func) :
+		BSDF(dgs, ngeom, exterior, interior), sf(func) { }
+	virtual inline u_int NumComponents() const { return 1; }
+	virtual inline u_int NumComponents(BxDFType flags) const {
+		return (flags & BSDF_DIFFUSE) == BSDF_DIFFUSE ? 1U : 0U;
+	}
+	virtual bool Sample_f(const TsPack *tspack, const Vector &woW, Vector *wiW,
+		float u1, float u2, float u3, SWCSpectrum *const f_, float *pdf,
+		BxDFType flags = BSDF_ALL, BxDFType *sampledType = NULL,
+		float *pdfBack = NULL, bool reverse = false) const {
+		if (reverse || NumComponents(flags) == 0)
+			return false;
+		*f_ = sf->Sample_f(tspack, u1, u2, wiW, pdf);
+		*f_ *= 2.f / (sf->Average_f() * fabsf(wiW->z));
+		*wiW = LocalToWorld(*wiW);
+		if (sampledType)
+			*sampledType = BSDF_DIFFUSE;
+		if (pdfBack)
+			*pdfBack = 0.f;
 		return true;
 	}
-	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const F) const {
-		// Transform to light coordinate system
-		*F += 1.f / fabsf(wi.z);
+	virtual float Pdf(const TsPack *tspack, const Vector &woW,
+		const Vector &wiW, BxDFType flags = BSDF_ALL) const {
+		if (NumComponents(flags) == 1)
+			return sf->Pdf(WorldToLocal(wiW));
+		return 0.f;
 	}
-	virtual float Pdf(const TsPack *tspack, const Vector &wi,
-		const Vector &wo) const {
-		return UniformSpherePdf();
+	virtual SWCSpectrum f(const TsPack *tspack, const Vector &woW,
+		const Vector &wiW, BxDFType flags = BSDF_ALL) const {
+		if (NumComponents(flags) == 1)
+			return sf->f(tspack, WorldToLocal(wiW)) *
+				(2.f / (sf->Average_f() * AbsDot(wiW, nn)));
+		return SWCSpectrum(0.f);
 	}
+	virtual SWCSpectrum rho(const TsPack *tspack,
+		BxDFType flags = BSDF_ALL) const { return SWCSpectrum(2.f); }
+	virtual SWCSpectrum rho(const TsPack *tspack, const Vector &woW,
+		BxDFType flags = BSDF_ALL) const { return SWCSpectrum(2.f); }
+
+protected:
+	// GonioBSDF Private Methods
+	virtual ~GonioBSDF() { }
+	//GonioBSDF Private Data
+	const SampleableSphericalFunction *sf;
 };
 
 // PointLight Method Definitions
@@ -141,11 +191,11 @@ bool PointLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, fl
 		Normalize(LightToWorld(Vector(0, 1, 0))),
 		Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
 	if(func)
-		*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
-			ARENA_ALLOC(tspack->arena, GonioBxDF)(func), NULL, NULL);
+		*bsdf = ARENA_ALLOC(tspack->arena, GonioBSDF)(dg, ns,
+			NULL, NULL, func);
 	else
-		*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
-			ARENA_ALLOC(tspack->arena, UniformBxDF)(), NULL, NULL);
+		*bsdf = ARENA_ALLOC(tspack->arena, UniformBSDF)(dg, ns,
+			NULL, NULL);
 	*Le = Lbase->Evaluate(tspack, dg) * gain;
 	return true;
 }
@@ -162,11 +212,11 @@ bool PointLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point 
 	*pdfDirect = 1.f;
 	*pdf = 1.f;
 	if (func)
-		*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
-			ARENA_ALLOC(tspack->arena, GonioBxDF)(func), NULL, NULL);
+		*bsdf = ARENA_ALLOC(tspack->arena, GonioBSDF)(dg, ns,
+			NULL, NULL, func);
 	else
-		*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
-			ARENA_ALLOC(tspack->arena, UniformBxDF)(), NULL, NULL);
+		*bsdf = ARENA_ALLOC(tspack->arena, UniformBSDF)(dg, ns,
+			NULL, NULL);
 	visibility->SetSegment(p, lightPos, tspack->time);
 	*Le = Lbase->Evaluate(tspack, dg) * gain;
 	return true;
