@@ -100,7 +100,8 @@ ProjectiveCamera::ProjectiveCamera(const Transform &w2cs,
 				1.f / (Screen[2] - Screen[3]), 1.f) *
 		 Translate(Vector(-Screen[0], -Screen[3], 0.f));
 	RasterToScreen = ScreenToRaster.GetInverse();
-	RasterToCamera = CameraToScreen.GetInverse() * RasterToScreen;
+	CameraToRaster = ScreenToRaster * CameraToScreen;
+	RasterToCamera = CameraToRaster.GetInverse();
 	WorldToRaster = ScreenToRaster * WorldToScreen;
 	RasterToWorld = WorldToRaster.GetInverse();
 }
@@ -113,7 +114,7 @@ void ProjectiveCamera::SampleMotion(float time) {
 	Camera::SampleMotion(time);
 	// then update derivative transforms
 	WorldToScreen = CameraToScreen * WorldToCamera;
-	WorldToRaster = ScreenToRaster * WorldToScreen;
+	WorldToRaster = CameraToRaster * WorldToCamera;
 	RasterToWorld = WorldToRaster.GetInverse();
 }
 bool ProjectiveCamera::GenerateSample(const Point &p, Sample *sample) const

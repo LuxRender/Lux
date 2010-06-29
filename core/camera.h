@@ -70,9 +70,9 @@ public:
 
 	// Camera Public Data
 	Film *film;
+	Transform WorldToCamera, CameraToWorld;
 protected:
 	// Camera Protected Data
-	Transform WorldToCamera, CameraToWorld;
 	MotionSystem CameraMotion;
 	float ClipHither, ClipYon;
 	float ShutterOpen, ShutterClose;
@@ -95,8 +95,10 @@ public:
 protected:
 	bool GenerateSample(const Point &p, Sample *sample) const;
 	// ProjectiveCamera Protected Data
-	Transform CameraToScreen, WorldToScreen, RasterToCamera;
+	Transform CameraToScreen, WorldToScreen;
 	Transform ScreenToRaster, RasterToScreen;
+public:
+	Transform CameraToRaster, RasterToCamera;
 	Transform WorldToRaster, RasterToWorld;
 	float LensRadius, FocalDistance;
 };
