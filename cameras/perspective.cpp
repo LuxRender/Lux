@@ -35,7 +35,7 @@
 
 using namespace lux;
 
-class  PerspectiveBSDF : public BSDF  {
+class  PerspectiveBSDF : public BSDF {
 public:
 	// PerspectiveBSDF Public Methods
 	PerspectiveBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
@@ -68,6 +68,8 @@ public:
 		if (pdfBack)
 			*pdfBack = 0.f;
 		*f_ = SWCSpectrum(*pdf / cosi);
+		if (sampledType)
+			*sampledType = BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE);
 		return true;
 	}
 	virtual float Pdf(const TsPack *tspack, const Vector &woW,
@@ -116,8 +118,7 @@ protected:
 };
 
 // PerspectiveCamera Method Definitions
-PerspectiveCamera::
-    PerspectiveCamera(const Transform &world2camStart,
+PerspectiveCamera::PerspectiveCamera(const Transform &world2camStart,
 		const Transform &world2camEnd,
 		const float Screen[4], float hither, float yon,
 		float sopen, float sclose, int sdist,
