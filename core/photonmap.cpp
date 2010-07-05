@@ -444,8 +444,9 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 	bool computeRadianceMap = (nRadiancePhotons > 0);
 
 	// Dade - shoot photons
+	const u_int targetPhotons = nCausticPhotons + nIndirectPhotons;
 	ss.str("");
-	ss << "Shooting photons (target: " << (nCausticPhotons + nIndirectPhotons) << ")...";
+	ss << "Shooting photons (target: " << targetPhotons << ")...";
 	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
 	vector<LightPhoton> directPhotons;
@@ -521,7 +522,7 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 		++nshot;
 
 		// Give up if we're not storing enough photons
-		if (nshot > 500000) {
+		if (nshot > max(500000U, targetPhotons * 10)) {
 			if (indirectDone && unsuccessful(nCausticPhotons, causticPhotons.size(), nshot)) {
 				// Dade - disable castic photon map: we are unable to store
 				// enough photons
@@ -818,7 +819,7 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const TsPack* tspack,
 	SWCSpectrum L(0.f);
 
 	// Do one-bounce final gather for photon map
-	if (bsdf->NumComponents(bxdfType) > 0) {
+	if (bsdf->NumComponents(bxdfType) > 0 && !indirectMap->IsEmpty()) {
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;
 
@@ -1012,7 +1013,7 @@ SWCSpectrum PhotonMapFinalGather(const TsPack *tspack, const Scene *scene,
 	SWCSpectrum L(0.f);
 
 	// Do one-bounce final gather for photon map
-	if (bsdf->NumComponents(bxdfType) > 0) {
+	if (bsdf->NumComponents(bxdfType) > 0 && !radianceMap->IsEmpty()) {
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;
 

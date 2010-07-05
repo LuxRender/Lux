@@ -245,7 +245,7 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(const TsPack *tspack,
 				L += proc.photon->GetSWCSpectrum(tspack, 1);
 		}
 
-		if (debugEnableCaustic && (!causticMap->isEmpty())) {
+		if (debugEnableCaustic && (!causticMap->IsEmpty())) {
 			// Compute indirect lighting for photon map integrator
 			L += causticMap->LDiffusePhoton(tspack, bsdf, isect, wo);
 		}
@@ -458,7 +458,7 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const TsPack *tspack,
 		BxDFType componentsToSample = BSDF_ALL;
 		if (sampledDiffuse) {
 			// Dade - add caustic
-			if (debugEnableCaustic && (!causticMap->isEmpty())) {
+			if (debugEnableCaustic && (!causticMap->IsEmpty())) {
 				currL += causticMap->LDiffusePhoton(tspack, bsdf, isect, wo);
 			}
 
