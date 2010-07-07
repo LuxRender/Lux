@@ -302,12 +302,17 @@ class RadiancePhotonMap : public PhotonMap<RadiancePhoton, NearPhotonProcess<Rad
 public:
 	RadiancePhotonMap(u_int nl, float md) :
 		PhotonMap<RadiancePhoton, NearPhotonProcess<RadiancePhoton> >(),
-		nLookup(nl), maxDistSquared(md) { }
+		nLookup(nl), maxDistSquared(md), empty(true) { }
 	virtual ~RadiancePhotonMap() { }
 
 	void init(const vector<RadiancePhoton> &photons) {
 		photonCount = photons.size();
 		photonmap = new KdTree<RadiancePhoton, NearPhotonProcess<RadiancePhoton> >(photons);
+		empty = false;
+	}
+
+	bool IsEmpty() const {
+		return empty;
 	}
 
 	/**
@@ -332,6 +337,7 @@ public:
 	// Dade - used only to build the map (lookup in the direct map) but not for lookup
 	const u_int nLookup;
 	const float maxDistSquared;
+	bool empty;
 };
 
 class LightPhotonMap : public PhotonMap<LightPhoton, NearSetPhotonProcess<LightPhoton> > {
@@ -347,7 +353,7 @@ public:
 		photonmap = new KdTree<LightPhoton, NearSetPhotonProcess<LightPhoton> >(photons);
 	}
 
-	bool isEmpty() {
+	bool IsEmpty() const {
 		return (nPaths == 0);
 	}
 

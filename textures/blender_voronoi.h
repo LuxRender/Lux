@@ -37,7 +37,7 @@ public:
 		tex.vn_distm = GetVoronoiType(tp.FindOneString("distmetric",
 			"actual_distance"));
 		tex.vn_coltype = tp.FindOneInt("coltype", 0);
-		tex.vn_mexp = tp.FindOneFloat("minkowsky_exp", 2.5f);
+		tex.vn_mexp = tp.FindOneFloat("minkovsky_exp", 2.5f);
 		tex.ns_outscale = tp.FindOneFloat("outscale", 1.f);
 		tex.noisesize = tp.FindOneFloat("noisesize", 0.25f);
 		tex.nabla = tp.FindOneFloat("nabla", 0.025f);;

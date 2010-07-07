@@ -63,6 +63,8 @@ public:
 		// Approximate pdf value accounting for the fact that theta max
 		// is very small
 		*pdf = INV_PI / sin2ThetaMax;
+		if (sampledType)
+			*sampledType = BxDFType(BSDF_REFLECTION | BSDF_GLOSSY);
 		if (pdfBack)
 			*pdfBack = 0.f;
 		*f_ = SWCSpectrum(*pdf);
