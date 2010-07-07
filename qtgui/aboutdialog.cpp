@@ -7,7 +7,7 @@ AboutDialog::AboutDialog(QWidget *parent)
 	ui->setupUi(this);
 	
 	imageview = new AboutImage(this);
-	imageview->setFixedSize(500, 270);
+	imageview->setFixedSize(550, 330);
 	imageview->setFrameShape(QFrame::NoFrame);
 	imageview->show();
 	
@@ -22,7 +22,7 @@ AboutDialog::~AboutDialog()
 
 AboutImage::AboutImage(QWidget *parent) : QGraphicsView(parent) {
 	scene = new QGraphicsScene;
-	scene->setSceneRect(0, 0, 500, 270);
+	scene->setSceneRect(0, 0, 550, 330);
 	this->setScene(scene);
 	this->setBackgroundBrush(QImage(":/images/splash.png"));
 	this->setCacheMode(QGraphicsView::CacheBackground);
@@ -30,7 +30,7 @@ AboutImage::AboutImage(QWidget *parent) : QGraphicsView(parent) {
 	authors = new QGraphicsTextItem(QString::fromUtf8("Jean-Philippe Grimaldi, David Bucciarelli, Asbjørn Heid, Tom Bech, Jean-François Romang, Doug Hammond, Jens Verwiebe, Vlad Miller, Matt Pharr, Greg Humphreys, Thomas De Bodt, David Washington, Abel Groenewolt, Liang Ma, Peter Bienkowski, Pascal Aebischer, Michael Gangolf, Anir-Ban Deb, Terrence Vergauwen, Ricardo Lipas Augusto, Campbell Barton"));
 	authors->setDefaultTextColor(Qt::white);
 	scene->addItem(authors);
-	authors->setPos(510,240);
+	authors->setPos(540,297);
 
 	scrolltimer = new QTimer();
 	scrolltimer->start(10);
@@ -51,7 +51,7 @@ void AboutImage::scrollTimeout()
 	qreal endpos = xpos+authors->sceneBoundingRect().width();
 
 	if (endpos < 0)
-		xpos = 510.0f;
+		xpos = 540.0f;
 	else
 		xpos = xpos - 1.0f;
 	
