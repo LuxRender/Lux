@@ -108,7 +108,8 @@ extern "C" void luxCleanup()
 	if (initialized == true) {
 		Context::GetActive()->Cleanup();
 
-		FreeImage_DeInitialise();
+		// TODO - find proper place for FreeImage_DeInitialise
+		//FreeImage_DeInitialise();
 	}
 	else
 		LOG(LUX_ERROR,LUX_NOTSTARTED)<<"luxCleanup() called without luxInit().";
