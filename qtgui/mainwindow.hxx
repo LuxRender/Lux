@@ -188,6 +188,7 @@ private:
 	
 	RenderView *renderView;
 	QString m_CurrentFile;
+	QString m_CurrentFileBaseName;
 
 	enum { NumPanes = 6 };
 

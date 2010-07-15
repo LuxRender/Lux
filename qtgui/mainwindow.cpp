@@ -531,7 +531,11 @@ void MainWindow::resumeFLM()
 	
 	setCurrentFile(lxsFileName); // make sure m_lastOpendir stays at lxs-location
 	
-	QString flmFileName = QFileDialog::getOpenFileName(this, tr("Choose an FLM file to open"), m_lastOpendir, tr("LuxRender FLM files (*.flm)"));
+	// suggest .flm file with same name if it exists
+	QFileInfo openDirFile(m_lastOpendir + "/" + m_CurrentFileBaseName + ".flm");
+	QString openDirName = openDirFile.exists() ? openDirFile.absoluteFilePath() : m_lastOpendir;
+
+	QString flmFileName = QFileDialog::getOpenFileName(this, tr("Choose an FLM file to open"), openDirName, tr("LuxRender FLM files (*.flm)"));
 	
 	if(flmFileName.isNull())
 		return;
@@ -574,7 +578,10 @@ void MainWindow::saveFLM()
 	if(m_guiRenderState == WAITING )
 		return;
 
-	QString flmFileName = QFileDialog::getSaveFileName(this, tr("Choose an FLM file to save to"), m_lastOpendir, tr("LuxRender FLM files (*.flm)"));
+	// add filename suggestion 
+	QString saveDirName = (m_CurrentFile.isEmpty() || m_CurrentFile == "-") ? m_lastOpendir : m_lastOpendir + "/" + m_CurrentFileBaseName + ".flm";
+
+	QString flmFileName = QFileDialog::getSaveFileName(this, tr("Choose an FLM file to save to"), saveDirName, tr("LuxRender FLM files (*.flm)"));
 
 	if(flmFileName.isNull())
 		return;
@@ -888,7 +895,9 @@ void MainWindow::setCurrentFile(const QString& filename)
 		else
 			showName = "LuxRender - " + showName;
         
-		m_lastOpendir = info.filePath();
+		m_CurrentFileBaseName = info.completeBaseName();
+
+		m_lastOpendir = info.absolutePath();
 		if (!filename.endsWith("flm")) {
 			m_recentFiles.removeAll(m_CurrentFile);
 			m_recentFiles.prepend(m_CurrentFile);
