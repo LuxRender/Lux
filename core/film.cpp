@@ -1220,11 +1220,14 @@ bool Film::TransmitFilm(
 {
 	const bool isLittleEndian = osIsLittleEndian();
 
-	std::stringstream ss;
-	ss << "Transmitting film (little endian=" <<(isLittleEndian ? "true" : "false") << ")";
-	luxError(LUX_NOERROR, LUX_DEBUG, ss.str().c_str());
+	LOG(LUX_DEBUG,LUX_NOERROR)<< "Transmitting film (little endian=" <<(isLittleEndian ? "true" : "false") << ")";
 
-	std::stringstream os(std::stringstream::in | std::stringstream::out | std::stringstream::binary);
+	std::streampos stream_startpos = stream.tellp();
+
+	filtering_stream<output> os;
+	os.push(gzip_compressor(9));
+	os.push(stream);
+
 	// Write the header
 	FlmHeader header;
 	header.magicNumber = FLM_MAGIC_NUMBER;
@@ -1347,10 +1350,8 @@ bool Film::TransmitFilm(
 		}
 
 		totNumberOfSamples += bufferGroup.numberOfSamples;
-		ss.str("");
-		ss << "Transmitted " << bufferGroup.numberOfSamples << " samples for buffer group " << i <<
+		LOG(LUX_DEBUG,LUX_NOERROR) << "Transmitted " << bufferGroup.numberOfSamples << " samples for buffer group " << i <<
 			" (buffer config size: " << bufferConfigs.size() << ")";
-		luxError(LUX_NOERROR, LUX_DEBUG, ss.str().c_str());
 
 		if (clearBuffers) {
 			// Dade - reset the rendering buffer
@@ -1359,26 +1360,21 @@ bool Film::TransmitFilm(
 	}
 
 	if (!os.good()) {
-		luxError(LUX_SYSTEM, LUX_SEVERE, "Error while preparing film data for transmission");
+		LOG(LUX_SEVERE,LUX_SYSTEM) << "Error while preparing film data for transmission";
 		return false;
 	}
 
-	ss.str("");
-	ss << "Transmitted a film with " << totNumberOfSamples << " samples";
-	luxError(LUX_NOERROR, LUX_DEBUG, ss.str().c_str());
-
-	filtering_streambuf<input> in;
-	in.push(gzip_compressor(9));
-	in.push(os);
-	std::streamsize size = boost::iostreams::copy(in, stream);
-	if (!stream.good()) {
-		luxError(LUX_SYSTEM, LUX_SEVERE, "Error while transmitting film");
+	
+	LOG(LUX_DEBUG,LUX_NOERROR) << "Transmitted a film with " << totNumberOfSamples << " samples";
+	
+	if (!flush(os) || !stream.good()) {
+		LOG(LUX_SEVERE,LUX_SYSTEM) << "Error while transmitting film";
 		return false;
 	}
 
-	ss.str("");
-	ss << "Film transmission done (" << (size / 1024) << " Kbytes sent)";
-	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+	std::streamsize size = stream.tellp() - stream_startpos;
+
+	LOG(LUX_INFO,LUX_NOERROR) << "Film transmission done (" << (size / 1024) << " Kbytes sent)";
 	return true;
 }
 
