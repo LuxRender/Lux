@@ -1218,13 +1218,13 @@ bool Film::TransmitFilm(
         bool clearBuffers,
 		bool transmitParams) 
 {
-    const bool isLittleEndian = osIsLittleEndian();
+	const bool isLittleEndian = osIsLittleEndian();
 
-    std::stringstream ss;
-    ss << "Transmitting film (little endian=" <<(isLittleEndian ? "true" : "false") << ")";
-    luxError(LUX_NOERROR, LUX_DEBUG, ss.str().c_str());
+	std::stringstream ss;
+	ss << "Transmitting film (little endian=" <<(isLittleEndian ? "true" : "false") << ")";
+	luxError(LUX_NOERROR, LUX_DEBUG, ss.str().c_str());
 
-    std::stringstream os(std::stringstream::in | std::stringstream::out | std::stringstream::binary);
+	std::stringstream os(std::stringstream::in | std::stringstream::out | std::stringstream::binary);
 	// Write the header
 	FlmHeader header;
 	header.magicNumber = FLM_MAGIC_NUMBER;
