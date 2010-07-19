@@ -1213,20 +1213,14 @@ void FlmHeader::Write(std::basic_ostream<char> &os, bool isLittleEndian) const
 	}
 }
 
-bool Film::TransmitFilm(
-        std::basic_ostream<char> &stream,
-        bool clearBuffers,
-		bool transmitParams) 
+double Film::DoTransmitFilm(
+		std::basic_ostream<char> &os,
+		bool clearBuffers,
+		bool transmitParams)
 {
 	const bool isLittleEndian = osIsLittleEndian();
 
 	LOG(LUX_DEBUG,LUX_NOERROR)<< "Transmitting film (little endian=" <<(isLittleEndian ? "true" : "false") << ")";
-
-	std::streampos stream_startpos = stream.tellp();
-
-	filtering_stream<output> os;
-	os.push(gzip_compressor(9));
-	os.push(stream);
 
 	// Write the header
 	FlmHeader header;
@@ -1359,15 +1353,63 @@ bool Film::TransmitFilm(
 		}
 	}
 
-	if (!os.good()) {
+	return totNumberOfSamples;
+
+}
+
+bool Film::TransmitFilm(
+        std::basic_ostream<char> &stream,
+        bool clearBuffers,
+		bool transmitParams,
+		bool useCompression, 
+		bool directWrite)
+{
+	std::streampos stream_startpos = stream.tellp();
+
+	double totNumberOfSamples = 0;
+
+	bool transmitError = true;
+
+	if (directWrite) {
+		if (useCompression) {
+			filtering_stream<output> fs;
+			fs.push(gzip_compressor(9));
+			fs.push(stream);
+			totNumberOfSamples = DoTransmitFilm(fs, clearBuffers, transmitParams);
+
+			flush(fs);
+
+			transmitError = !fs.good();
+		} else {
+			totNumberOfSamples = DoTransmitFilm(stream, clearBuffers, transmitParams);
+			transmitError = !stream.good();
+		}
+	} else {
+		std::stringstream ss(std::stringstream::in | std::stringstream::out | std::stringstream::binary);
+		totNumberOfSamples = DoTransmitFilm(ss, clearBuffers, transmitParams);
+
+		transmitError = !ss.good();
+		
+		if (!transmitError) {
+			if (useCompression) {
+				filtering_streambuf<input> in;
+				in.push(gzip_compressor(9));
+				in.push(ss);
+				boost::iostreams::copy(in, stream);
+			} else {
+				boost::iostreams::copy(ss, stream);
+			}
+		}
+	}
+
+	if (transmitError) {
 		LOG(LUX_SEVERE,LUX_SYSTEM) << "Error while preparing film data for transmission";
 		return false;
 	}
 
-	
 	LOG(LUX_DEBUG,LUX_NOERROR) << "Transmitted a film with " << totNumberOfSamples << " samples";
 	
-	if (!flush(os) || !stream.good()) {
+	if (!stream.good()) {
 		LOG(LUX_SEVERE,LUX_SYSTEM) << "Error while transmitting film";
 		return false;
 	}
