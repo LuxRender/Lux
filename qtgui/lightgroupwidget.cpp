@@ -180,7 +180,7 @@ void LightGroupWidget::colorPicker()
                   (int)(m_LG_scaleBlue * 255.0));
 	QColorDialog colorDlg(dcolor,this);
 #if defined(__APPLE__)
-		colorDlg.setOptions( QColorDialog::NoButtons | QColorDialog::DontUseNativeDialog );
+		colorDlg.setOptions( QColorDialog::NoButtons );
 #endif
 	connect(&colorDlg, SIGNAL(colorSelected(const QColor &)), this, SLOT(colorSelected(const QColor &)));
 	connect(&colorDlg, SIGNAL(currentColorChanged(const QColor &)), this, SLOT(colorSelected(const QColor &)));

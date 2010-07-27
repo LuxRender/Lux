@@ -497,22 +497,13 @@ void MainWindow::openFile()
 {
 	if (!canStopRendering())
 		return;
-#if defined(__APPLE__)	
-	if(m_guiRenderState == RENDERING )
-		pauseRender();
-#endif	
+	
 	QString fileName = QFileDialog::getOpenFileName(this, tr("Choose a scene file to open"), m_lastOpendir, tr("LuxRender Files (*.lxs)"));
     
 	if(!fileName.isNull()) {
 		endRenderingSession();
 		renderScenefile(fileName);
 	}
-#if defined(__APPLE__)		
-	else {
-		if(m_guiRenderState == PAUSED )
-			resumeRender();
-	}
-#endif
 }
 
 void MainWindow::openRecentFile()
@@ -532,31 +523,20 @@ void MainWindow::resumeFLM()
 {
 	if (!canStopRendering())
 		return;
-#if defined(__APPLE__)	
-	if(m_guiRenderState == RENDERING )
-		pauseRender();
 
-	QString lxsFileName = QFileDialog::getOpenFileName(this, tr("Choose a scene file to open"), m_lastOpendir, tr("LuxRender Files (*.lxs)"));
-
-	if(lxsFileName.isNull()) {
-		if(m_guiRenderState == PAUSED )
-			resumeRender();
-		return;
-	}
-#else
 	QString lxsFileName = QFileDialog::getOpenFileName(this, tr("Choose a scene file to open"), m_lastOpendir, tr("LuxRender Files (*.lxs)"));
 	
 	if(lxsFileName.isNull())
 		return;
-#endif
 	
 	setCurrentFile(lxsFileName); // make sure m_lastOpendir stays at lxs-location
 	
-	QString flmFileName = QFileDialog::getOpenFileName(this, tr("Choose an FLM file to open"), m_lastOpendir, tr("LuxRender FLM files (*.flm)"));
-#if defined(__APPLE__)
-	if(m_guiRenderState == PAUSED )
-		resumeRender();
-#endif	
+	// suggest .flm file with same name if it exists
+	QFileInfo openDirFile(m_lastOpendir + "/" + m_CurrentFileBaseName + ".flm");
+	QString openDirName = openDirFile.exists() ? openDirFile.absoluteFilePath() : m_lastOpendir;
+
+	QString flmFileName = QFileDialog::getOpenFileName(this, tr("Choose an FLM file to open"), openDirName, tr("LuxRender FLM files (*.flm)"));
+	
 	if(flmFileName.isNull())
 		return;
 
@@ -569,16 +549,9 @@ void MainWindow::loadFLM()
 {
 	if (!canStopRendering())
 		return;
-#if defined(__APPLE__)	
-	if(m_guiRenderState == RENDERING )
-		pauseRender();
+
+	QString flmFileName = QFileDialog::getOpenFileName(this, tr("Choose an FLM file to open"), m_lastOpendir, tr("LuxRender FLM files (*.flm)"));
 	
-	QString flmFileName = QFileDialog::getOpenFileName(this, tr("Choose an FLM file to open"), m_lastOpendir, tr("LuxRender FLM files (*.flm)"));
-	if(m_guiRenderState == PAUSED )	
-		resumeRender();
-#else
-	QString flmFileName = QFileDialog::getOpenFileName(this, tr("Choose an FLM file to open"), m_lastOpendir, tr("LuxRender FLM files (*.flm)"));
-#endif	
 	if(flmFileName.isNull())
 		return;
 	
@@ -601,18 +574,15 @@ void MainWindow::saveFLM()
 {
 	if( !luxStatistics("sceneIsReady") && !luxStatistics("filmIsReady") )
 		return;
-#if defined(__APPLE__)
-	if(m_guiRenderState == RENDERING )
-	pauseRender();
-#endif
+
 	if(m_guiRenderState == WAITING )
 		return;
 
-	QString flmFileName = QFileDialog::getSaveFileName(this, tr("Choose an FLM file to save to"), m_lastOpendir, tr("LuxRender FLM files (*.flm)"));
-#if defined(__APPLE__)
-	if(m_guiRenderState == PAUSED )
-		resumeRender();
-#endif
+	// add filename suggestion 
+	QString saveDirName = (m_CurrentFile.isEmpty() || m_CurrentFile == "-") ? m_lastOpendir : m_lastOpendir + "/" + m_CurrentFileBaseName + ".flm";
+
+	QString flmFileName = QFileDialog::getSaveFileName(this, tr("Choose an FLM file to save to"), saveDirName, tr("LuxRender FLM files (*.flm)"));
+
 	if(flmFileName.isNull())
 		return;
 
@@ -925,7 +895,9 @@ void MainWindow::setCurrentFile(const QString& filename)
 		else
 			showName = "LuxRender - " + showName;
         
-		m_lastOpendir = info.filePath();
+		m_CurrentFileBaseName = info.completeBaseName();
+
+		m_lastOpendir = info.absolutePath();
 		if (!filename.endsWith("flm")) {
 			m_recentFiles.removeAll(m_CurrentFile);
 			m_recentFiles.prepend(m_CurrentFile);
