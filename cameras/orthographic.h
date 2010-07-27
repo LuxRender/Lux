@@ -30,19 +30,23 @@ namespace lux
 class OrthoCamera : public ProjectiveCamera {
 public:
 	// OrthoCamera Public Methods
-	OrthoCamera(const Transform &world2camStart, const Transform &world2camEnd,
-	            const float Screen[4],
-		        float hither, float yon,
-				float sopen, float sclose, int sdist, 
-				float lensr, float focald, bool autofocus, Film *film);
+	OrthoCamera(const Transform &world2camStart,
+		const Transform &world2camEnd, const float Screen[4],
+		float hither, float yon, float sopen, float sclose, int sdist, 
+		float lensr, float focald, bool autofocus, Film *film);
 	virtual ~OrthoCamera() { }
 
 	virtual void SampleMotion(float time);
 
-	virtual float GenerateRay(const Sample &sample, Ray *) const;
-	virtual bool Sample_W(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *We) const;
-	virtual bool Sample_W(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility, SWCSpectrum *We) const;
-	virtual bool GetSamplePosition(const Point &p, const Vector &wi, float distance, float *x, float *y) const;
+	virtual bool Sample_W(const TsPack *tspack, const Scene *scene,
+		float u1, float u2, float u3, BSDF **bsdf, float *pdf,
+		SWCSpectrum *We) const;
+	virtual bool Sample_W(const TsPack *tspack, const Scene *scene,
+		const Point &p, const Normal &n, float u1, float u2, float u3,
+		BSDF **bsdf, float *pdf, float *pdfDirect,
+		SWCSpectrum *We) const;
+	virtual bool GetSamplePosition(const Point &p, const Vector &wi,
+		float distance, float *x, float *y) const;
 	virtual void ClampRay(Ray &ray) const;
 	virtual bool IsDelta() const { return false; }
 	virtual bool IsLensBased() const { return false; }
@@ -51,9 +55,11 @@ public:
 
 	virtual OrthoCamera* Clone() const { return new OrthoCamera(*this); }
 
-	static Camera *CreateCamera(const Transform &world2camStart, const Transform &world2camEnd, const ParamSet &params, Film *film);
+	static Camera *CreateCamera(const Transform &world2camStart,
+		const Transform &world2camEnd, const ParamSet &params,
+		Film *film);
 
-private:	
+private:
 	// Dade - field used for autofocus feature
 	bool autoFocus;
 

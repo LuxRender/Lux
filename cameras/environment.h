@@ -30,16 +30,22 @@ namespace lux
 class EnvironmentCamera : public Camera {
 public:
 	// EnvironmentCamera Public Methods
-	EnvironmentCamera(const Transform &world2camStart, const Transform &world2camEnd, float hither,
-		float yon, float sopen, float sclose, int sdist, Film *film);
+	EnvironmentCamera(const Transform &world2camStart,
+		const Transform &world2camEnd, float hither, float yon,
+		float sopen, float sclose, int sdist, Film *film);
 	virtual ~EnvironmentCamera() { }
 
 	virtual void SampleMotion(float time);
 
-	virtual float GenerateRay(const Sample &sample, Ray *) const;
-	virtual bool Sample_W(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *We) const;
-	virtual bool Sample_W(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility, SWCSpectrum *We) const;
-	virtual bool GetSamplePosition(const Point &p, const Vector &wi, float distance, float *x, float *y) const;
+	virtual bool Sample_W(const TsPack *tspack, const Scene *scene,
+		float u1, float u2, float u3, BSDF **bsdf, float *pdf,
+		SWCSpectrum *We) const;
+	virtual bool Sample_W(const TsPack *tspack, const Scene *scene,
+		const Point &p, const Normal &n, float u1, float u2, float u3,
+		BSDF **bsdf, float *pdf, float *pdfDirect,
+		SWCSpectrum *We) const;
+	virtual bool GetSamplePosition(const Point &p, const Vector &wi,
+		float distance, float *x, float *y) const;
 	virtual void ClampRay(Ray &ray) const;
 	virtual bool IsDelta() const { return true; }
 	virtual bool IsLensBased() const { return false; }
@@ -49,7 +55,9 @@ public:
 		return new EnvironmentCamera(*this);
 	}
 
-	static Camera *CreateCamera(const Transform &world2camStart, const Transform &world2camEnd, const ParamSet &params, Film *film);
+	static Camera *CreateCamera(const Transform &world2camStart,
+		const Transform &world2camEnd, const ParamSet &params,
+		Film *film);
 
 private:
 	Point pos;

@@ -195,52 +195,17 @@ void PerspectiveCamera::AutoFocus(Scene* scene)
 		if (scene->Intersect(ray, &isect))
 			FocalDistance = ray.maxt;
 		else
-			LOG(LUX_WARNING,LUX_NOERROR)<<"Unable to define the Autofocus focal distance";
+			LOG(LUX_WARNING, LUX_NOERROR) <<
+				"Unable to define the Autofocus focal distance";
 
-		LOG(LUX_INFO,LUX_NOERROR)<<"Autofocus focal distance: " << FocalDistance;
+		LOG(LUX_INFO, LUX_NOERROR) << "Autofocus focal distance: " <<
+			FocalDistance;
 	}
 }
 
-float PerspectiveCamera::GenerateRay(const Sample &sample, Ray *ray) const
-{
-	// Generate raster and camera samples
-	Point Pras(sample.imageX, sample.imageY, 0);
-	Point Pcamera;
-	RasterToCamera(Pras, &Pcamera);
-	ray->o = Pcamera;
-	ray->d = Vector(Pcamera.x, Pcamera.y, Pcamera.z);
-	// Set ray time value
-	ray->time = GetTime(sample.time);
-	// Modify ray for depth of field
-	if (LensRadius > 0.f)
-	{
-		Point lenP;
-		Point lenPCamera;
-		// Sample point on lens
-		SampleLens(sample.lensU, sample.lensV, &(lenPCamera.x), &(lenPCamera.y));
-		lenPCamera.x *= LensRadius;
-		lenPCamera.y *= LensRadius;
-		lenPCamera.z = 0;
-		CameraToWorld(lenPCamera, &lenP);
-		float lensU = lenPCamera.x;
-		float lensV = lenPCamera.y;
-
-		// Compute point on plane of focus
-		float ft = (FocalDistance - ClipHither) / ray->d.z;
-		Point Pfocus = (*ray)(ft);
-		// Update ray for effect of lens
-		ray->o.x += lensU * (FocalDistance - ClipHither) / FocalDistance;
-		ray->o.y += lensV * (FocalDistance - ClipHither) / FocalDistance;
-		ray->d = Pfocus - ray->o;
-	}
-	ray->d = Normalize(ray->d);
-	ray->mint = 0.;
-	ray->maxt = (ClipYon - ClipHither) / ray->d.z;
-	CameraToWorld(*ray, ray);
-	return 1.f;
-}
-
-bool PerspectiveCamera::Sample_W(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *We) const
+bool PerspectiveCamera::Sample_W(const TsPack *tspack, const Scene *scene,
+	float u1, float u2, float u3, BSDF **bsdf, float *pdf,
+	SWCSpectrum *We) const
 {
 	Point psC(0.f);
 	if (LensRadius > 0.f) {
@@ -249,14 +214,18 @@ bool PerspectiveCamera::Sample_W(const TsPack *tspack, const Scene *scene, float
 		psC.y *= LensRadius;
 	}
 	Point ps = CameraToWorld(psC);
-	DifferentialGeometry dg(ps, normal, CameraToWorld(Vector(1, 0, 0)), CameraToWorld(Vector(0, 1, 0)), Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
+	DifferentialGeometry dg(ps, normal, CameraToWorld(Vector(1, 0, 0)),
+		CameraToWorld(Vector(0, 1, 0)), Normal(0, 0, 0),
+		Normal(0, 0, 0), 0, 0, NULL);
 	*bsdf = ARENA_ALLOC(tspack->arena, PerspectiveBSDF)(dg, normal,
 		NULL, NULL, *this, LensRadius > 0.f, psC);
 	*pdf = posPdf;
 	*We = SWCSpectrum(posPdf);
 	return true;
 }
-bool PerspectiveCamera::Sample_W(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility, SWCSpectrum *We) const
+bool PerspectiveCamera::Sample_W(const TsPack *tspack, const Scene *scene,
+	const Point &p, const Normal &n, float u1, float u2, float u3,
+	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *We) const
 {
 	Point psC(0.f);
 	if (LensRadius > 0.f) {
@@ -270,7 +239,6 @@ bool PerspectiveCamera::Sample_W(const TsPack *tspack, const Scene *scene, const
 		NULL, NULL, *this, LensRadius > 0.f, psC);
 	*pdf = posPdf;
 	*pdfDirect = posPdf;
-	visibility->SetSegment(ps, p, tspack->time, true);
 	*We = SWCSpectrum(posPdf);
 	return true;
 }
@@ -288,9 +256,11 @@ bool PerspectiveCamera::GetSamplePosition(const Point &p, const Vector &wi,
 	float distance, float *x, float *y) const
 {
 	const float cosi = Dot(wi, normal);
-	if (cosi <= 0.f || (!isinf(distance) && (distance * cosi < ClipHither || distance * cosi > ClipYon)))
+	if (cosi <= 0.f || (!isinf(distance) && (distance * cosi < ClipHither ||
+		distance * cosi > ClipYon)))
 		return false;
-	const Point pO(WorldToRaster(p + (LensRadius > 0.f ? wi * (FocalDistance / cosi) : wi)));
+	const Point pO(WorldToRaster(p + (LensRadius > 0.f ?
+		wi * (FocalDistance / cosi) : wi)));
 	*x = pO.x;
 	*y = pO.y;
 	return true;
@@ -344,21 +314,25 @@ void PerspectiveCamera::SampleLens(float u1, float u2, float *dx, float *dy) con
 	*dy = r * sinf(theta);
 }
 
-Camera* PerspectiveCamera::CreateCamera(const Transform &world2camStart, const Transform &world2camEnd, const ParamSet &params,
-	Film *film)
+Camera* PerspectiveCamera::CreateCamera(const Transform &world2camStart,
+	const Transform &world2camEnd, const ParamSet &params, Film *film)
 {
 	// Extract common camera parameters from _ParamSet_
-	float hither = max(1e-3f, params.FindOneFloat("hither", 1e-3f));
+	float hither = max(1e-4f, params.FindOneFloat("hither", 1e-3f));
 	float yon = Clamp(params.FindOneFloat("yon", 1e30f), hither, 1e30f);
 
 	float shutteropen = params.FindOneFloat("shutteropen", 0.f);
 	float shutterclose = params.FindOneFloat("shutterclose", 1.f);
 	int shutterdist = 0;
 	string shutterdistribution = params.FindOneString("shutterdistribution", "uniform");
-	if (shutterdistribution == "uniform") shutterdist = 0;
-	else if (shutterdistribution == "gaussian") shutterdist = 1;
+	if (shutterdistribution == "uniform")
+		shutterdist = 0;
+	else if (shutterdistribution == "gaussian")
+		shutterdist = 1;
 	else {
-		LOG(LUX_WARNING,LUX_BADTOKEN)<<"Distribution  '"<<shutterdistribution<<"' for perspective camera shutter sampling unknown. Using \"uniform\".";
+		LOG(LUX_WARNING, LUX_BADTOKEN) << "Distribution  '" <<
+			shutterdistribution <<
+			"' for perspective camera shutter sampling unknown. Using \"uniform\".";
 		shutterdist = 0;
 	}
 
@@ -366,15 +340,14 @@ Camera* PerspectiveCamera::CreateCamera(const Transform &world2camStart, const T
 	float focaldistance = params.FindOneFloat("focaldistance", 1e30f);
 	bool autofocus = params.FindOneBool("autofocus", false);
 	float frame = params.FindOneFloat("frameaspectratio",
-		float(film->xResolution)/float(film->yResolution));
+		float(film->xResolution) / float(film->yResolution));
 	float screen[4];
 	if (frame > 1.f) {
 		screen[0] = -frame;
 		screen[1] =  frame;
 		screen[2] = -1.f;
 		screen[3] =  1.f;
-	}
-	else {
+	} else {
 		screen[0] = -1.f;
 		screen[1] =  1.f;
 		screen[2] = -1.f / frame;
@@ -388,22 +361,29 @@ Camera* PerspectiveCamera::CreateCamera(const Transform &world2camStart, const T
 
 	int distribution = 0;
 	string dist = params.FindOneString("distribution", "uniform");
-	if (dist == "uniform") distribution = 0;
-	else if (dist == "exponential") distribution = 1;
-	else if (dist == "inverse exponential") distribution = 2;
-	else if (dist == "gaussian") distribution = 3;
-	else if (dist == "inverse gaussian") distribution = 4;
+	if (dist == "uniform")
+		distribution = 0;
+	else if (dist == "exponential")
+		distribution = 1;
+	else if (dist == "inverse exponential")
+		distribution = 2;
+	else if (dist == "gaussian")
+		distribution = 3;
+	else if (dist == "inverse gaussian")
+		distribution = 4;
 	else {
-		LOG(LUX_WARNING,LUX_BADTOKEN)<<"Distribution  '"<<dist<<"' for perspective camera DOF sampling unknown. Using \"uniform\".";
+		LOG(LUX_WARNING, LUX_BADTOKEN) << "Distribution  '" << dist <<
+			"' for perspective camera DOF sampling unknown. Using \"uniform\".";
 		distribution = 0;
 	}
 
 	int shape = params.FindOneInt("blades", 0);
 	int power = params.FindOneInt("power", 3);
 
-	return new PerspectiveCamera(world2camStart, world2camEnd, screen, hither, yon,
-		shutteropen, shutterclose, shutterdist, lensradius, focaldistance, autofocus,
-		fov, distribution, shape, power, film);
+	return new PerspectiveCamera(world2camStart, world2camEnd, screen,
+		hither, yon, shutteropen, shutterclose, shutterdist, lensradius,
+		focaldistance, autofocus, fov, distribution, shape, power,
+		film);
 }
 
 static DynamicLoader::RegisterCamera<PerspectiveCamera> r("perspective");

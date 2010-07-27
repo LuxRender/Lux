@@ -24,9 +24,10 @@
 #include "lux.h"
 #include "camera.h"
 #include "film.h"
-#include "sampling.h"
-#include "error.h"
 #include "mc.h"
+#include "geometry/raydifferential.h"
+#include "sampling.h"
+#include "bxdf.h"
 
 using namespace lux;
 
@@ -47,12 +48,64 @@ Camera::Camera(const Transform &w2cstart,
 	ShutterClose = sclose;
 	ShutterDistribution = sdist;
 	film = f;
-	warnOnce = false;
 }
-bool Camera::IsDelta() const {
-	LOG(LUX_SEVERE,LUX_BUG)<<"Unimplemented Camera::IsDelta() method called";
+
+float Camera::GenerateRay(const TsPack *tspack, const Scene *scene,
+	const Sample &sample, RayDifferential *ray) const
+{
+	if (IsLensBased()) {
+		const float o1 = sample.lensU;
+		const float o2 = sample.lensV;
+		const float d1 = sample.imageX;
+		const float d2 = sample.imageY;
+		if (!GenerateRay(tspack, scene, o1, o2, d1, d2, ray))
+			return 0.f;
+		if (GenerateRay(tspack, scene, o1, o2, d1 + 1, d2, &(ray->rx)) &&
+			GenerateRay(tspack, scene, o1, o2, d1, d2 + 1, &(ray->ry)))
+			ray->hasDifferentials = true;
+	} else {
+		const float o1 = sample.imageX;
+		const float o2 = sample.imageY;
+		const float d1 = sample.lensU;
+		const float d2 = sample.lensV;
+		if (!GenerateRay(tspack, scene, o1, o2, d1, d2, ray))
+			return 0.f;
+		if (GenerateRay(tspack, scene, o1, o2, d1 + 1, d2, &(ray->rx)) &&
+			GenerateRay(tspack, scene, o1, o2, d1, d2 + 1, &(ray->ry)))
+			ray->hasDifferentials = true;
+	}
+
+	// Set ray time value
+	ray->time = GetTime(sample.time);
+	ray->rx.time = ray->ry.time = ray->time;
+
+	return 1.f;
+}
+
+bool Camera::GenerateRay(const TsPack *tspack, const Scene *scene,
+	float o1, float o2, float d1, float d2, Ray *ray) const
+{
+	SWCSpectrum We;
+	BSDF *bsdf;
+	float pdf;
+	// Sample ray origin
+	//FIXME: Replace dummy .5f by a sampled value if needed
+	if (!Sample_W(tspack, scene, o1, o2, .5f, &bsdf, &pdf, &We))
+		return false;
+	ray->o = bsdf->dgShading.p;
+
+	// Sample ray direction
+	//FIXME: Replace dummy .5f by a sampled value if needed
+	if (!bsdf->Sample_f(tspack, Vector(bsdf->nn), &(ray->d), d1, d2, .5f,
+		&We, &pdf, BSDF_ALL, NULL, NULL, true))
+		return false;
+
+	// Do depth clamping
+	ClampRay(*ray);
+
 	return true;
 }
+
 void Camera::SampleMotion(float time) {
 	if (!CameraMotion.isActive)
 		return;
@@ -116,20 +169,4 @@ void ProjectiveCamera::SampleMotion(float time) {
 	WorldToScreen = CameraToScreen * WorldToCamera;
 	WorldToRaster = CameraToRaster * WorldToCamera;
 	RasterToWorld = WorldToRaster.GetInverse();
-}
-bool ProjectiveCamera::GenerateSample(const Point &p, Sample *sample) const
-{
-	Point p_raster = WorldToRaster(p);
-	sample->imageX = p_raster.x;
-	sample->imageY = p_raster.y;
-
-	//if (sample->imageX>=film->xPixelStart && sample->imageX<film->xPixelStart+film->xPixelCount &&
-	//	sample->imageY>=film->yPixelStart && sample->imageY<film->yPixelStart+film->yPixelCount )
-	if (sample->imageX>=0 && sample->imageX<film->xResolution &&
-		sample->imageY>=0 && sample->imageY<film->yResolution )
-		return true;
-	else
-		return false;
-
-	return true;
 }

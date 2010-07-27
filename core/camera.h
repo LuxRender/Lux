@@ -26,7 +26,6 @@
 #include "lux.h"
 #include "geometry/transform.h"
 #include "motionsystem.h"
-#include "error.h"
 
 namespace lux
 {
@@ -34,33 +33,25 @@ namespace lux
 class  Camera {
 public:
 	// Camera Interface
-	Camera(const Transform &w2cstart, const Transform &w2cend, float hither, float yon,
-		float sopen, float sclose, int sdist, Film *film);
+	Camera(const Transform &w2cstart, const Transform &w2cend, float hither,
+		float yon, float sopen, float sclose, int sdist, Film *film);
 	virtual ~Camera();
-	virtual float GenerateRay(const Sample &sample, Ray *ray) const = 0;
-	virtual bool Sample_W(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *We) const {
-		if (!warnOnce)
-		{
-			LOG(LUX_SEVERE,LUX_BUG)<<"Unimplemented Camera::Sample_W";
-		}
-		warnOnce = true;
-		return false;
-	}
-	virtual bool Sample_W(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility, SWCSpectrum *We) const {
-		if (!warnOnce)
-		{
-			LOG(LUX_SEVERE,LUX_BUG)<<"Unimplemented Camera::Sample_W";
-		}
-		warnOnce = true;
-		return false;
-	}
+	float GenerateRay(const TsPack *tspack, const Scene *scene,
+		const Sample &sample, RayDifferential *ray) const;
+	virtual bool Sample_W(const TsPack *tspack, const Scene *scene,
+		float u1, float u2, float u3, BSDF **bsdf, float *pdf,
+		SWCSpectrum *We) const = 0;
+	virtual bool Sample_W(const TsPack *tspack, const Scene *scene,
+		const Point &p, const Normal &n, float u1, float u2, float u3,
+		BSDF **bsdf, float *pdf, float *pdfDirect,
+		SWCSpectrum *We) const = 0;
 	virtual bool GetSamplePosition(const Point &p, const Vector &wi,
-		float distance, float *x, float *y) const { return false; }
+		float distance, float *x, float *y) const = 0;
 	virtual void ClampRay(Ray &ray) const { }
-	virtual bool IsDelta() const;
-	virtual bool IsLensBased() const { return true; }
+	virtual bool IsDelta() const = 0;
+	virtual bool IsLensBased() const = 0;
 	virtual void AutoFocus(Scene* scene) { }
-	virtual BBox Bounds() const { return BBox(); }
+	virtual BBox Bounds() const = 0;
 
 	float GetTime(float u1) const;
 
@@ -72,12 +63,13 @@ public:
 	Film *film;
 	Transform WorldToCamera, CameraToWorld;
 protected:
+	bool GenerateRay(const TsPack *tspack, const Scene *scene,
+		float o1, float o2, float d1, float d2, Ray *ray) const;
 	// Camera Protected Data
 	MotionSystem CameraMotion;
 	float ClipHither, ClipYon;
 	float ShutterOpen, ShutterClose;
 	int ShutterDistribution;
-	mutable bool warnOnce;
 };
 class  ProjectiveCamera : public Camera {
 public:
@@ -93,7 +85,6 @@ public:
 	virtual void SampleMotion(float time);
 
 protected:
-	bool GenerateSample(const Point &p, Sample *sample) const;
 	// ProjectiveCamera Protected Data
 	Transform CameraToScreen, WorldToScreen;
 	Transform ScreenToRaster, RasterToScreen;

@@ -44,11 +44,12 @@ public:
 };
 
 // EnvironmentCamera Method Definitions
-EnvironmentCamera::
-    EnvironmentCamera(const Transform &world2camStart, const Transform &world2camEnd, 
-		float hither, float yon, float sopen, float sclose, int sdist,
-		Film *film)
-	: Camera(world2camStart, world2camEnd, hither, yon, sopen, sclose, sdist, film) {
+EnvironmentCamera::EnvironmentCamera(const Transform &world2camStart,
+	const Transform &world2camEnd, float hither, float yon, float sopen,
+	float sclose, int sdist, Film *film)
+	: Camera(world2camStart, world2camEnd, hither, yon, sopen, sclose,
+		sdist, film)
+{
 		pos = CameraToWorld(Point(0, 0, 0));
 }
 
@@ -63,23 +64,9 @@ void EnvironmentCamera::SampleMotion(float time)
 	pos = CameraToWorld(Point(0,0,0));
 }
 
-float EnvironmentCamera::GenerateRay(const Sample &sample,
-		Ray *ray) const {
-	ray->o = CameraToWorld(Point(0,0,0));
-	// Generate environment camera ray direction
-	float theta = M_PI * sample.imageY / film->yResolution;
-	float phi = 2 * M_PI * sample.imageX / film->xResolution;
-	Vector dir(sinf(theta) * cosf(phi), cosf(theta),
-		sinf(theta) * sinf(phi));
-	CameraToWorld(dir, &ray->d);
-	// Set ray time value
-	ray->time = GetTime(sample.time);
-	ray->mint = ClipHither;
-	ray->maxt = ClipYon;
-	return 1.f;
-}
-	
-bool EnvironmentCamera::Sample_W(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *We) const
+bool EnvironmentCamera::Sample_W(const TsPack *tspack, const Scene *scene,
+	float u1, float u2, float u3, BSDF **bsdf, float *pdf,
+	SWCSpectrum *We) const
 {
 	const float theta = M_PI * u2 / film->yResolution;
 	const float phi = 2 * M_PI * u1 / film->xResolution;
@@ -95,7 +82,9 @@ bool EnvironmentCamera::Sample_W(const TsPack *tspack, const Scene *scene, float
 	*We = SWCSpectrum(*pdf);
 	return true;
 }
-bool EnvironmentCamera::Sample_W(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility, SWCSpectrum *We) const
+bool EnvironmentCamera::Sample_W(const TsPack *tspack, const Scene *scene,
+	const Point &p, const Normal &n, float u1, float u2, float u3,
+	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *We) const
 {
 	const Vector w(p - pos);
 	Normal ns(Normalize(w));
@@ -106,7 +95,6 @@ bool EnvironmentCamera::Sample_W(const TsPack *tspack, const Scene *scene, const
 		ARENA_ALLOC(tspack->arena, EnvironmentBxDF)(), NULL, NULL);
 	*pdf = 1.f / (2.f * M_PI * M_PI * sqrtf(max(0.f, 1.f - ns.y * ns.y)));
 	*pdfDirect = 1.f;
-	visibility->SetSegment(pos, p, tspack->time, true);
 	*We = SWCSpectrum(*pdf);
 	return true;
 }
@@ -145,8 +133,8 @@ void EnvironmentCamera::ClampRay(Ray &ray) const
 	ray.maxt = min(ray.maxt, ClipYon);
 }
 
-Camera* EnvironmentCamera::CreateCamera(const Transform &world2camStart, const Transform &world2camEnd, 
-	const ParamSet &params,	Film *film)
+Camera* EnvironmentCamera::CreateCamera(const Transform &world2camStart,
+	const Transform &world2camEnd, const ParamSet &params, Film *film)
 {
 	// Extract common camera parameters from _ParamSet_
 	float hither = max(1e-4f, params.FindOneFloat("hither", 1e-3f));
@@ -159,7 +147,9 @@ Camera* EnvironmentCamera::CreateCamera(const Transform &world2camStart, const T
 	if (shutterdistribution == "uniform") shutterdist = 0;
 	else if (shutterdistribution == "gaussian") shutterdist = 1;
 	else {
-		LOG(LUX_WARNING,LUX_BADTOKEN)<<"Distribution  '"<<shutterdistribution<<"' for environment camera shutter sampling unknown. Using \"uniform\".";
+		LOG(LUX_WARNING,LUX_BADTOKEN) << "Distribution  '" <<
+			shutterdistribution <<
+			"' for environment camera shutter sampling unknown. Using \"uniform\".";
 		shutterdist = 0;
 	}
 

@@ -39,9 +39,10 @@ OrthoCamera::OrthoCamera(const Transform &world2camStart,
 	const float Screen[4], float hither, float yon,
 	float sopen, float sclose, int sdist, float lensr,
 	float focald, bool autofocus, Film *f)
-	: ProjectiveCamera(world2camStart, world2camEnd, Orthographic(hither, yon),
-		Screen, hither, yon, sopen, sclose, sdist,
-		lensr, focald, f), autoFocus(autofocus) {
+	: ProjectiveCamera(world2camStart, world2camEnd,
+		Orthographic(hither, yon), Screen, hither, yon, sopen, sclose,
+		sdist, lensr, focald, f), autoFocus(autofocus)
+{
 	screenDx = Screen[1] - Screen[0];
 	screenDy = Screen[3] - Screen[2];
 	posPdf = (film->xResolution * film->yResolution) / (screenDx * screenDy);
@@ -70,11 +71,6 @@ void OrthoCamera::AutoFocus(Scene* scene)
 		film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
 		Point Pras((xend - xstart) / 2, (yend - ystart) / 2, 0);
 
-		// Dade - debug code
-		//ss.str("");
-		//ss << "Raster point: " << Pras;
-		//luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
-
 		Point Pcamera;
 		RasterToCamera(Pras, &Pcamera);
 		Ray ray;
@@ -88,62 +84,28 @@ void OrthoCamera::AutoFocus(Scene* scene)
 		ray.maxt = ClipYon - ClipHither;
 		CameraToWorld(ray, &ray);
 
-		// Dade - debug code
-		//ss.str("");
-		//ss << "Ray.o: " << ray.o << " Ray.d: " << ray.d;
-		//luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
-
 		Intersection isect;
 		if (scene->Intersect(ray, &isect))
 			FocalDistance = ray.maxt;
 		else
-			LOG(LUX_WARNING,LUX_NOERROR)<<"Unable to define the Autofocus focal distance";
+			LOG(LUX_WARNING, LUX_NOERROR) <<
+				"Unable to define the Autofocus focal distance";
 
-		LOG(LUX_INFO,LUX_NOERROR)<< "Autofocus focal distance: " << FocalDistance;
+		LOG(LUX_INFO, LUX_NOERROR) << "Autofocus focal distance: " <<
+			FocalDistance;
 	}
 }
 
-float OrthoCamera::GenerateRay(const Sample &sample, Ray *ray) const
-{
-	// Generate raster and camera samples
-	Point Pras(sample.imageX, sample.imageY, 0);
-	Point Pcamera;
-	RasterToCamera(Pras, &Pcamera);
-	ray->o = Pcamera;
-	ray->d = Vector(0,0,1);
-	// Set ray time value
-	ray->time = GetTime(sample.time);
-
-	// Modify ray for depth of field
-	if (LensRadius > 0.) {
-		// Sample point on lens
-		float lensU, lensV;
-		ConcentricSampleDisk(sample.lensU, sample.lensV,
-		                     &lensU, &lensV);
-		lensU *= LensRadius;
-		lensV *= LensRadius;
-		// Compute point on plane of focus
-		float ft = (FocalDistance - ClipHither) / ray->d.z;
-		Point Pfocus = (*ray)(ft);
-		// Update ray for effect of lens
-		ray->o.x += lensU * (FocalDistance - ClipHither) / FocalDistance;
-		ray->o.y += lensV * (FocalDistance - ClipHither) / FocalDistance;
-		ray->d = Pfocus - ray->o;
-	}
-
-	ray->mint = 0.;
-	ray->maxt = ClipYon - ClipHither;
-	ray->d = Normalize(ray->d);
-	CameraToWorld(*ray, ray);
-	return 1.f;
-}
-
-bool OrthoCamera::Sample_W(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *We) const
+bool OrthoCamera::Sample_W(const TsPack *tspack, const Scene *scene,
+	float u1, float u2, float u3, BSDF **bsdf, float *pdf,
+	SWCSpectrum *We) const
 {
 	Point psC(RasterToCamera(Point(u1, u2, 0.f)));
 	psC.z = 0.f;
 	const Point ps(CameraToWorld(psC));
-	DifferentialGeometry dg(ps, normal, CameraToWorld(Vector(1, 0, 0)), CameraToWorld(Vector(0, 1, 0)), Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
+	DifferentialGeometry dg(ps, normal, CameraToWorld(Vector(1, 0, 0)),
+		CameraToWorld(Vector(0, 1, 0)), Normal(0, 0, 0),
+		Normal(0, 0, 0), 0, 0, NULL);
 	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, normal,
 		ARENA_ALLOC(tspack->arena, SpecularReflection)(SWCSpectrum(1.f),
 		ARENA_ALLOC(tspack->arena, FresnelNoOp)(), 0.f, 0.f), NULL, NULL);
@@ -151,13 +113,20 @@ bool OrthoCamera::Sample_W(const TsPack *tspack, const Scene *scene, float u1, f
 	*We = SWCSpectrum(posPdf);
 	return true;
 }
-bool OrthoCamera::Sample_W(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility, SWCSpectrum *We) const
+
+bool OrthoCamera::Sample_W(const TsPack *tspack, const Scene *scene,
+	const Point &p, const Normal &n, float u1, float u2, float u3,
+	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *We) const
 {
 	return false;
 }
-bool OrthoCamera::GetSamplePosition(const Point &p, const Vector &wi, float distance, float *x, float *y) const
+
+bool OrthoCamera::GetSamplePosition(const Point &p, const Vector &wi,
+	float distance, float *x, float *y) const
 {
-	if (Dot(wi, normal) < 1.f - MachineEpsilon::E(1.f) || (!isinf(distance) && (distance < ClipHither || distance > ClipYon)))
+	if (Dot(wi, normal) < 1.f - MachineEpsilon::E(1.f) ||
+		(!isinf(distance) && (distance < ClipHither ||
+		distance > ClipYon)))
 		return false;
 	Point ps(WorldToRaster(p));
 	*x = ps.x;
@@ -179,8 +148,8 @@ BBox OrthoCamera::Bounds() const
 	return bound;
 }
 
-Camera* OrthoCamera::CreateCamera(const Transform &world2camStart, const Transform &world2camEnd,
-	const ParamSet &params,	Film *film)
+Camera* OrthoCamera::CreateCamera(const Transform &world2camStart,
+	const Transform &world2camEnd, const ParamSet &params, Film *film)
 {
 	// Extract common camera parameters from _ParamSet_
 	float hither = max(1e-4f, params.FindOneFloat("hither", 1e-3f));
@@ -193,7 +162,9 @@ Camera* OrthoCamera::CreateCamera(const Transform &world2camStart, const Transfo
 	if (shutterdistribution == "uniform") shutterdist = 0;
 	else if (shutterdistribution == "gaussian") shutterdist = 1;
 	else {
-		LOG(LUX_WARNING,LUX_BADTOKEN)<<"Distribution  '"<<shutterdistribution<<"' for orthographic camera shutter sampling unknown. Using \"uniform\".";
+		LOG(LUX_WARNING, LUX_BADTOKEN) << "Distribution  '" <<
+			shutterdistribution <<
+			"' for orthographic camera shutter sampling unknown. Using \"uniform\".";
 		shutterdist = 0;
 	}
 
@@ -208,8 +179,7 @@ Camera* OrthoCamera::CreateCamera(const Transform &world2camStart, const Transfo
 		screen[1] =  frame;
 		screen[2] = -1.f;
 		screen[3] =  1.f;
-	}
-	else {
+	} else {
 		screen[0] = -1.f;
 		screen[1] =  1.f;
 		screen[2] = -1.f / frame;
@@ -219,9 +189,9 @@ Camera* OrthoCamera::CreateCamera(const Transform &world2camStart, const Transfo
 	const float *sw = params.FindFloat("screenwindow", &swi);
 	if (sw && swi == 4)
 		memcpy(screen, sw, 4*sizeof(float));
-	return new OrthoCamera(world2camStart, world2camEnd, screen, hither, yon,
-		shutteropen, shutterclose, shutterdist, lensradius, focaldistance, autofocus,
-		film);
+	return new OrthoCamera(world2camStart, world2camEnd, screen, hither,
+		yon, shutteropen, shutterclose, shutterdist, lensradius,
+		focaldistance, autofocus, film);
 }
 
 static DynamicLoader::RegisterCamera<OrthoCamera> r("orthographic");
