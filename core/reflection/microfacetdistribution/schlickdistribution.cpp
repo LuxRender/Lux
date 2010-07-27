@@ -20,39 +20,39 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#ifndef LUX_NULLTRANSMISSION_H
-#define LUX_NULLTRANSMISSION_H
-// nulltransmission.h*
-#include "lux.h"
-#include "bxdf.h"
-#include "spectrum.h"
+// schlickdistribution.cpp*
+#include "schlickdistribution.h"
 
-namespace lux
+using namespace lux;
+
+static float GetPhi(float a, float b)
 {
+	return M_PI * .5f * sqrtf(a * b / (1.f - a * (1.f - b)));
+}
 
-class  NullTransmission : public BxDF {
-public:
-	// NullTransmission Public Methods
-	NullTransmission()
-		: BxDF(BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) {}
-	virtual ~NullTransmission() { }
-	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi,
-		SWCSpectrum *const f_) const {
-		if (Dot(wo, wi) <= -1.f + MachineEpsilon::E(1.f))
-			*f_ += SWCSpectrum(1.f / fabsf(CosTheta(wi)));
+void SchlickDistribution::SampleH(float u1, float u2, Vector *wh, float *d, float *pdf) const
+{
+	u2 *= 4.f;
+	const float cos2Theta = u1 / (roughness * (1 - u1) + u1);
+	const float cosTheta = sqrtf(cos2Theta);
+	const float sinTheta = sqrtf(1.f - cos2Theta);
+	const float p = 1.f - fabsf(anisotropy);
+	float phi;
+	if (u2 < 1.f) {
+		phi = GetPhi(u2 * u2, p * p);
+	} else if (u2 < 2.f) {
+		u2 = 2.f - u2;
+		phi = M_PI - GetPhi(u2 * u2, p * p);
+	} else if (u2 < 3.f) {
+		u2 -= 2.f;
+		phi = M_PI + GetPhi(u2 * u2, p * p);
+	} else {
+		u2 = 4.f - u2;
+		phi = M_PI * 2.f - GetPhi(u2 * u2, p * p);
 	}
-	virtual bool Sample_f(const TsPack *tspack, const Vector &wo,
-		Vector *wi, float u1, float u2, SWCSpectrum *const f,
-		float *pdf, float *pdfBack = NULL, bool reverse = false) const;
-	virtual float Pdf(const TsPack *tspack, const Vector &wo,
-		const Vector &wi) const {
-		return Dot(wo, wi) <= -1.f + MachineEpsilon::E(1.f) ? 1.f : 0.f;
-	}
-private:
-	// NullTransmission Private Data
-};
-
-}//namespace lux
-
-#endif // LUX_NULLTRANSMISSION_H
-
+	if (anisotropy > 0.f)
+		phi += M_PI * .5f;
+	*wh = Vector(sinTheta * cosf(phi), sinTheta * sinf(phi), cosTheta);
+	*d = SchlickZ(cosTheta) * SchlickA(*wh) * INV_PI;
+	*pdf = *d;
+}

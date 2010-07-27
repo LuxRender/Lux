@@ -26,8 +26,7 @@
 #include "bxdf.h"
 #include "fresnelconductor.h"
 #include "microfacet.h"
-#include "blinn.h"
-#include "anisotropic.h"
+#include "schlickdistribution.h"
 #include "texture.h"
 #include "paramset.h"
 #include "dynload.h"
@@ -60,15 +59,14 @@ BSDF *Metal::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 
 	float u = nu->Evaluate(tspack, dgs);
 	float v = nv->Evaluate(tspack, dgs);
+	const float u2 = u * u;
+	const float v2 = v * v;
 
-	MicrofacetDistribution *md;
-	if (u == v)
-		md = ARENA_ALLOC(tspack->arena, Blinn)(1.f / u);
-	else
-		md = ARENA_ALLOC(tspack->arena, Anisotropic)(1.f / u, 1.f / v);
+	const float anisotropy = u2 < v2 ? 1.f - u2 / v2 : v2 / u2 - 1.f;
+	SchlickDistribution *md = ARENA_ALLOC(tspack->arena, SchlickDistribution)(u * v, anisotropy);
 
-	Fresnel *fresnel = ARENA_ALLOC(tspack->arena, FresnelConductor)(n, k);
-	BxDF *bxdf = ARENA_ALLOC(tspack->arena, MicrofacetReflection)(1.f,
+	FresnelConductor *fresnel = ARENA_ALLOC(tspack->arena, FresnelConductor)(n, k);
+	MicrofacetReflection *bxdf = ARENA_ALLOC(tspack->arena, MicrofacetReflection)(1.f,
 		fresnel, md);
 	SingleBSDF *bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dgs,
 		dgGeom.nn, bxdf, exterior, interior);

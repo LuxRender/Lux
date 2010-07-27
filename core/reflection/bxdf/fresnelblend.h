@@ -34,21 +34,21 @@ class  FresnelBlend : public BxDF
 {
 public:
 	// FresnelBlend Public Methods
-	FresnelBlend(const SWCSpectrum &Rd,
-	             const SWCSpectrum &Rs,
-	             const SWCSpectrum &Alpha,
-	             float d,
-				 MicrofacetDistribution *dist);
+	FresnelBlend(const SWCSpectrum &Rd, const SWCSpectrum &Rs,
+		const SWCSpectrum &Alpha, float d,
+		MicrofacetDistribution *dist);
 	virtual ~FresnelBlend() { }
-	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const;
+	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi,
+		SWCSpectrum *const f) const;
 	SWCSpectrum SchlickFresnel(float costheta) const {
 		return Rs + powf(1.f - costheta, 5.f) * (SWCSpectrum(1.f) - Rs);
 	}
-	virtual bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
-		float u1, float u2, SWCSpectrum *const f, float *pdf, float *pdfBack = NULL,
-		bool reverse = false) const;
-	virtual float Pdf(const TsPack *tspack, const Vector &wi, const Vector &wo) const;
-	
+	virtual bool Sample_f(const TsPack *tspack, const Vector &wo,
+		Vector *wi, float u1, float u2, SWCSpectrum *const f,
+		float *pdf, float *pdfBack = NULL, bool reverse = false) const;
+	virtual float Pdf(const TsPack *tspack, const Vector &wi,
+		const Vector &wo) const;
+
 private:
 	// FresnelBlend Private Data
 	SWCSpectrum Rd, Rs, Alpha;

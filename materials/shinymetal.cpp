@@ -25,8 +25,7 @@
 #include "memory.h"
 #include "bxdf.h"
 #include "fresnelgeneral.h"
-#include "blinn.h"
-#include "anisotropic.h"
+#include "schlickdistribution.h"
 #include "microfacet.h"
 #include "specularreflection.h"
 #include "texture.h"
@@ -48,26 +47,25 @@ BSDF *ShinyMetal::GetBSDF(const TsPack *tspack,
 	SWCSpectrum spec = Ks->Evaluate(tspack, dgs).Clamp();
 	SWCSpectrum R = Kr->Evaluate(tspack, dgs).Clamp();
 
-	float u = nu->Evaluate(tspack, dgs);
-	float v = nv->Evaluate(tspack, dgs);
-
 	float flm = film->Evaluate(tspack, dgs);
 	float flmindex = filmindex->Evaluate(tspack, dgs);
 
-	MicrofacetDistribution *md;
-	if (u == v)
-		md = ARENA_ALLOC(tspack->arena, Blinn)(1.f / u);
-	else
-		md = ARENA_ALLOC(tspack->arena, Anisotropic)(1.f / u, 1.f / v);
+	float u = nu->Evaluate(tspack, dgs);
+	float v = nv->Evaluate(tspack, dgs);
+	const float u2 = u * u;
+	const float v2 = v * v;
 
-	Fresnel *frMf = ARENA_ALLOC(tspack->arena,
+	const float anisotropy = u2 < v2 ? 1.f - u2 / v2 : v2 / u2 - 1.f;
+	SchlickDistribution *md = ARENA_ALLOC(tspack->arena, SchlickDistribution)(u * v, anisotropy);
+
+	FresnelGeneral *frMf = ARENA_ALLOC(tspack->arena,
 		FresnelGeneral)(FresnelApproxEta(spec), FresnelApproxK(spec));
-	Fresnel *frSr = ARENA_ALLOC(tspack->arena,
+	FresnelGeneral *frSr = ARENA_ALLOC(tspack->arena,
 		FresnelGeneral)(FresnelApproxEta(R), FresnelApproxK(R));
 	bsdf->Add(ARENA_ALLOC(tspack->arena, MicrofacetReflection)(1.f, frMf,
 		md));
-	bsdf->Add(ARENA_ALLOC(tspack->arena,
-		SpecularReflection)(1.f, frSr, flm, flmindex));
+	bsdf->Add(ARENA_ALLOC(tspack->arena, SpecularReflection)(1.f, frSr,
+		flm, flmindex));
 
 	// Add ptr to CompositingParams structure
 	bsdf->SetCompositingParams(compParams);

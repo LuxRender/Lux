@@ -34,34 +34,36 @@ FresnelBlend::FresnelBlend(const SWCSpectrum &d,
 	float dep,
 	MicrofacetDistribution *dist)
 	: BxDF(BxDFType(BSDF_REFLECTION | BSDF_GLOSSY)),
-	  Rd(d), Rs(s), Alpha(a), depth(dep)
+	  Rd(d), Rs(s), Alpha(a), depth(dep), distribution(dist)
 {
-	distribution = dist;
 }
-void FresnelBlend::f(const TsPack *tspack, const Vector &wo, 
-	 const Vector &wi, SWCSpectrum *const f_) const
+
+void FresnelBlend::f(const TsPack *tspack, const Vector &wo, const Vector &wi,
+	SWCSpectrum *const f_) const
 {
+	const float cosi = fabsf(CosTheta(wi));
+	const float coso = fabsf(CosTheta(wo));
+
 	// absorption
 	SWCSpectrum a(1.f);
-	
 	if (depth > 0.f) {
-		float depthfactor = depth * (1.f / fabsf(CosTheta(wi)) + 1.f / fabsf(CosTheta(wo)));
+		// 1/cosi + 1/coso = (cosi+coso)/(cosi*coso)
+		float depthfactor = depth * (cosi + coso) / (cosi * coso);
 		a = Exp(Alpha * -depthfactor);
 	}
 
 	// diffuse part
-	f_->AddWeighted((1.f - powf(1.f - .5f * fabsf(CosTheta(wi)), 5.f)) *
-		(1.f - powf(1.f - .5f * fabsf(CosTheta(wo)), 5.f)) *
-		(28.f/(23.f*M_PI)), a * Rd * (SWCSpectrum(1.f) - Rs));
+	f_->AddWeighted((1.f - powf(1.f - .5f * cosi, 5.f)) *
+		(1.f - powf(1.f - .5f * coso, 5.f)) *
+		(28.f / (23.f * M_PI)), a * Rd * (SWCSpectrum(1.f) - Rs));
 
 	Vector wh = Normalize(wi + wo);
 	if (wh.z < 0.f)
 		wh = -wh;
 	// specular part
-	f_->AddWeighted(distribution->D(wh) /
-		(4.f * AbsDot(wi, wh) *
-		max(fabsf(CosTheta(wi)), fabsf(CosTheta(wo)))),
-		SchlickFresnel(AbsDot(wi, wh)));	
+	const float cosih = AbsDot(wi, wh);
+	f_->AddWeighted(distribution->D(wh) / (4.f * cosih * max(cosi, coso)),
+		SchlickFresnel(cosih));
 }
 
 bool FresnelBlend::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
@@ -75,7 +77,7 @@ bool FresnelBlend::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 		// Cosine-sample the hemisphere, flipping the direction if necessary
 		*wi = CosineSampleHemisphere(u1, u2);
 		if (wo.z < 0.f)
-			wi->z *= -1.f;
+			wi->z = -wi->z;
 		Vector wh = Normalize(*wi + wo);
 		if (wh.z < 0.f)
 			wh = -wh;
@@ -86,11 +88,8 @@ bool FresnelBlend::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 		distribution->SampleH(u1, u2, &wh, &d, pdf);
 		*wi = 2.f * Dot(wo, wh) * wh - wo;
 	}
-	if (*pdf == 0.f) {
-		if (pdfBack)
-			*pdfBack = 0.f;
+	if (*pdf == 0.f)
 		return false;
-	}
 	if (pdfBack)
 		*pdfBack = .5f * (fabsf(wo.z) * INV_PI +
 			*pdf / (4.f * AbsDot(*wi, wh)));

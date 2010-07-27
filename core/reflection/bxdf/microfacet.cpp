@@ -50,7 +50,7 @@ void MicrofacetReflection::f(const TsPack *tspack, const Vector &wo,
 	float cosThetaH = Dot(wi, wh);
 	SWCSpectrum F;
 	fresnel->Evaluate(tspack, cosThetaH, &F);
-	f_->AddWeighted(distribution->D(wh) * G(wo, wi, wh) /
+	f_->AddWeighted(distribution->D(wh) * distribution->G(wo, wi, wh) /
 		(4.f * cosThetaI * cosThetaO), R * F);
 }
 
@@ -73,8 +73,8 @@ bool MicrofacetReflection::Sample_f(const TsPack *tspack, const Vector &wo,
 		*pdfBack = *pdf;
 	SWCSpectrum F;
 	fresnel->Evaluate(tspack, cosThetaH, &F);
-	*f_ = (d * G(wo, *wi, wh) / (4.f * fabsf(wo.z) * fabsf(wi->z))) *
-		(R * F);
+	*f_ = (d * distribution->G(wo, *wi, wh) /
+		(4.f * fabsf(wo.z) * fabsf(wi->z))) * (R * F);
 	return true;
 }
 float MicrofacetReflection::Pdf(const TsPack *tspack, const Vector &wo,
@@ -114,7 +114,8 @@ void MicrofacetTransmission::f(const TsPack *tspack, const Vector &wo,
 	SWCSpectrum F;
 	fresnel->Evaluate(tspack, cosThetaOH, &F);
 	f_->AddWeighted(fabsf(cosThetaOH) * cosThetaIH * distribution->D(wh) *
-		G(wo, wi, wh) / (cosThetaI * cosThetaO * lengthSquared),
+		distribution->G(wo, wi, wh) /
+		(cosThetaI * cosThetaO * lengthSquared),
 		T * (SWCSpectrum(1.f) - F));
 }
 
@@ -151,7 +152,7 @@ bool MicrofacetTransmission::Sample_f(const TsPack *tspack, const Vector &wo,
 	else
 		fresnel->Evaluate(tspack, cosThetaOH, &F);
 	*f_ = (fabsf(cosThetaOH * cosThetaIH / (CosTheta(wo) * CosTheta(*wi) *
-		lengthSquared)) * d * G(*wi, wo, wh)) *
+		lengthSquared)) * d * distribution->G(*wi, wo, wh)) *
 		(T * (SWCSpectrum(1.f) - F));
 	return true;
 }

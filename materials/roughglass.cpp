@@ -24,11 +24,9 @@
 #include "roughglass.h"
 #include "memory.h"
 #include "bxdf.h"
-#include "brdftobtdf.h"
 #include "fresnelcauchy.h"
 #include "microfacet.h"
-#include "blinn.h"
-#include "anisotropic.h"
+#include "schlickdistribution.h"
 #include "texture.h"
 #include "color.h"
 #include "paramset.h"
@@ -51,17 +49,15 @@ BSDF *RoughGlass::GetBSDF(const TsPack *tspack,
 	// NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
 	SWCSpectrum R = Kr->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
 	SWCSpectrum T = Kt->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
-	float urough = uroughness->Evaluate(tspack, dgs);
-	float vrough = vroughness->Evaluate(tspack, dgs);
-	MicrofacetDistribution *md;
-	// Radiance - NOTE - added use of blinn if roughness is isotropic for efficiency reasons
-	if(urough == vrough)
-		md = ARENA_ALLOC(tspack->arena, Blinn)(1.f / urough);
-	else
-		md = ARENA_ALLOC(tspack->arena, Anisotropic)(1.f / urough,
-			1.f / vrough);
-	const Fresnel *fresnel = ARENA_ALLOC(tspack->arena, FresnelCauchy)(ior,
-		cb, 0.f);
+	float u = uroughness->Evaluate(tspack, dgs);
+	float v = vroughness->Evaluate(tspack, dgs);
+	const float u2 = u * u;
+	const float v2 = v * v;
+
+	const float anisotropy = u2 < v2 ? 1.f - u2 / v2 : v2 / u2 - 1.f;
+	SchlickDistribution *md = ARENA_ALLOC(tspack->arena, SchlickDistribution)(u * v, anisotropy);
+	const FresnelCauchy *fresnel = ARENA_ALLOC(tspack->arena, FresnelCauchy)
+		(ior, cb, 0.f);
 	if (!R.Black()) {
 		bsdf->Add(ARENA_ALLOC(tspack->arena, MicrofacetReflection)(R,
 			fresnel, md));

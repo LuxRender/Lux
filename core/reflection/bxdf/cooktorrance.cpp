@@ -41,20 +41,11 @@ void CookTorrance::f(const TsPack *tspack, const Vector &wo, const Vector &wi, S
 	if (wh.z < 0.f)
 		wh = -wh;
 	const float cosThetaH = Dot(wi, wh);
-	const float cG = G(wo, wi, wh);
+	const float cG = distribution->G(wo, wi, wh);
 
 	SWCSpectrum F;
 	fresnel->Evaluate(tspack, cosThetaH, &F);
 	f_->AddWeighted(distribution->D(wh) * cG  / (M_PI * cosThetaI * cosThetaO), KS * F);
-}
-
-float CookTorrance::G(const Vector &wo, const Vector &wi, const Vector &wh) const
-{
-	const float NdotWh = fabsf(CosTheta(wh));
-	const float NdotWo = fabsf(CosTheta(wo));
-	const float NdotWi = fabsf(CosTheta(wi));
-	const float WodotWh = AbsDot(wo, wh);
-	return min(1.f, min((2.f * NdotWh * NdotWo / WodotWh), (2.f * NdotWh * NdotWi / WodotWh)));
 }
 
 bool CookTorrance::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi, float u1, float u2, SWCSpectrum *const f_, float *pdf, float *pdfBack, bool reverse) const
@@ -64,20 +55,17 @@ bool CookTorrance::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi, 
 	distribution->SampleH(u1, u2, &wh, &d, pdf);
 	if (wh.z < 0.f)
 		wh = -wh;
-	*wi = 2.f * Dot(wo, wh) * wh - wo;
-	if (*pdf == 0.f) {
-		if (pdfBack)
-			*pdfBack = 0.f;
-		return false;
-	}
 	const float cosThetaH = Dot(wo, wh);
+	*wi = 2.f * cosThetaH * wh - wo;
+	if (*pdf == 0.f)
+		return false;
 	*pdf /= 4.f * fabsf(cosThetaH);
 	if (pdfBack)
 		*pdfBack = *pdf;
 
 	SWCSpectrum F;
 	fresnel->Evaluate(tspack, cosThetaH, &F);
-	*f_ = (d * G(wo, *wi, wh)  / (M_PI * fabsf(wi->z) * fabsf(wo.z))) *
+	*f_ = (d * distribution->G(wo, *wi, wh) / (M_PI * fabsf(wi->z * wo.z))) *
 		(KS * F);
 	return true;
 }

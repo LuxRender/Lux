@@ -27,10 +27,10 @@
 #include "carpaint.h"
 #include "memory.h"
 #include "bxdf.h"
-#include "blinn.h"
+#include "schlickdistribution.h"
 #include "fresnelslick.h"
-#include "lambertian.h"
 #include "microfacet.h"
+#include "lambertian.h"
 #include "textures/constant.h"
 #include "fresnelblend.h"
 #include "paramset.h"
@@ -78,8 +78,8 @@ BSDF *CarPaint::GetBSDF(const TsPack *tspack,
 	const float r1 = Clamp(R1->Evaluate(tspack, dgs), 0.f, 1.f);
 	const float m1 = M1->Evaluate(tspack, dgs);
 	if (ks1.Filter(tspack) > 0.f && m1 > 0.f) {
-		MicrofacetDistribution *md1 = ARENA_ALLOC(tspack->arena, Blinn)((2.f * M_PI / (m1 * m1)) - 1.f);
-		Fresnel *fr1 = ARENA_ALLOC(tspack->arena, FresnelSlick)(r1, 0.f);
+		SchlickDistribution *md1 = ARENA_ALLOC(tspack->arena, SchlickDistribution)(m1 * m1, 0.f);
+		FresnelSlick *fr1 = ARENA_ALLOC(tspack->arena, FresnelSlick)(r1, 0.f);
 		bsdf->Add(ARENA_ALLOC(tspack->arena, MicrofacetReflection)(ks1, fr1, md1, true));
 	}
 
@@ -87,8 +87,8 @@ BSDF *CarPaint::GetBSDF(const TsPack *tspack,
 	const float r2 = Clamp(R2->Evaluate(tspack, dgs), 0.f, 1.f);
 	const float m2 = M2->Evaluate(tspack, dgs);
 	if (ks2.Filter(tspack) > 0.f && m2 > 0.f) {
-		MicrofacetDistribution *md2 = ARENA_ALLOC(tspack->arena, Blinn)((2.f * M_PI / (m2 * m2)) - 1.f);
-		Fresnel *fr2 = ARENA_ALLOC(tspack->arena, FresnelSlick)(r2, 0.f);
+		SchlickDistribution *md2 = ARENA_ALLOC(tspack->arena, SchlickDistribution)(m2 * m2, 0.f);
+		FresnelSlick *fr2 = ARENA_ALLOC(tspack->arena, FresnelSlick)(r2, 0.f);
 		bsdf->Add(ARENA_ALLOC(tspack->arena, MicrofacetReflection)(ks2, fr2, md2, true));
 	}
 
@@ -96,7 +96,7 @@ BSDF *CarPaint::GetBSDF(const TsPack *tspack,
 	const float r3 = Clamp(R3->Evaluate(tspack, dgs), 0.f, 1.f);
 	const float m3 = M3->Evaluate(tspack, dgs);
 	if (ks3.Filter(tspack) > 0.f && m3 > 0.f) {
-		MicrofacetDistribution *md3 = ARENA_ALLOC(tspack->arena, Blinn)((2.f * M_PI / (m3 * m3)) - 1.f);
+		SchlickDistribution *md3 = ARENA_ALLOC(tspack->arena, SchlickDistribution)(m3 * m3, 0.f);
 		// The fresnel function is created by the FresnelBlend model
 		//Fresnel *fr3 = ARENA_ALLOC(tspack->arena, FresnelSlick)(r3, 0.f);
 		// Clear coat and lambertian base

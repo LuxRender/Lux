@@ -37,11 +37,14 @@ SchlickBRDF::SchlickBRDF(const SWCSpectrum &d, const SWCSpectrum &s,
 void SchlickBRDF::f(const TsPack *tspack, const Vector &wo, 
 	 const Vector &wi, SWCSpectrum *const f_) const
 {
+	const float cosi = fabsf(CosTheta(wi));
+	const float coso = fabsf(CosTheta(wo));
 	// absorption
 	SWCSpectrum a(1.f);
 	
 	if (depth > 0.f) {
-		float depthfactor = depth * (1.f / fabsf(CosTheta(wi)) + 1.f / fabsf(CosTheta(wo)));
+		// 1/cosi+1/coso=(cosi+coso)/(cosi*coso)
+		float depthfactor = depth * (cosi + coso) / (cosi * coso);
 		a = Exp(Alpha * -depthfactor);
 	}
 	const Vector H(Normalize(wo + wi));
@@ -52,7 +55,7 @@ void SchlickBRDF::f(const TsPack *tspack, const Vector &wo,
 	f_->AddWeighted(INV_PI, a * Rd * (SWCSpectrum(1.f) - S));
 
 	// specular part
-	f_->AddWeighted(SchlickD(fabsf(wi.z), fabsf(wo.z), H), S);	
+	f_->AddWeighted(SchlickD(cosi, coso, H), S);	
 }
 
 static float GetPhi(float a, float b)
@@ -97,12 +100,10 @@ bool SchlickBRDF::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 		if (anisotropy > 0.f)
 			phi += M_PI * .5f;
 		H = Vector(sintheta * cosf(phi), sintheta * sinf(phi), costheta);
-		if (wo.z < 0.f)
-			H.z = -H.z;
-		cosWH = AbsDot(wo, H);
+		cosWH = Dot(wo, H);
 		*wi = 2.f * cosWH * H - wo;
 	}
-	const float specPdf = SchlickZ(fabsf(H.z)) * SchlickA(H) /
+	const float specPdf = SchlickZ(H.z) * SchlickA(H) /
 		(8.f * M_PI * fabsf(cosWH));
 	*pdf = fabsf(wi->z) * INV_TWOPI + specPdf;
 	if (!(*pdf > 0.f))

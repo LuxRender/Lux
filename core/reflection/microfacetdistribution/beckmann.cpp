@@ -72,3 +72,18 @@ float Beckmann::Pdf(const Vector &wh) const
 	return D(wh);
 }
 
+float Beckmann::HalfG(const Vector &w, const Vector &h) const
+{
+	if (!SameHemisphere(w, h))
+		return 0.f;
+	const float cosTheta = w.z;
+	const float theta = acosf(cosTheta);
+	const float tanTheta = tanf(theta);
+	const float a = 1.f / (r * tanTheta);
+	if (a >= 1.6f)
+		return 1.f;
+	// The true formula is:
+	// 2/(1+erf(a)+exp(-a*a)/(a*sqrt(pi)))
+	// This approximation has a relative error less than 0.35%
+	return a * (3.535f + a * 2.181) / (1 + a * (2.276f + a * 2.577f));
+}

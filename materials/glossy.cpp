@@ -27,8 +27,7 @@
 #include "memory.h"
 #include "bxdf.h"
 #include "fresnelblend.h"
-#include "blinn.h"
-#include "anisotropic.h"
+#include "schlickdistribution.h"
 #include "texture.h"
 #include "color.h"
 #include "paramset.h"
@@ -56,13 +55,13 @@ BSDF *Glossy::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 
 	float u = nu->Evaluate(tspack, dgs);
 	float v = nv->Evaluate(tspack, dgs);
+	const float u2 = u * u;
+	const float v2 = v * v;
 	float ld = depth->Evaluate(tspack, dgs);
 
-	MicrofacetDistribution *md;
-	if (u == v)
-		md = ARENA_ALLOC(tspack->arena, Blinn)(2.f / (u * u) - 2.f);
-	else
-		md = ARENA_ALLOC(tspack->arena, Anisotropic)(2.f / (u * u) - 2.f, 2.f / (v * v) - 2.f);
+	const float anisotropy = u2 < v2 ? 1.f - u2 / v2 : v2 / u2 - 1.f;
+
+	SchlickDistribution *md = ARENA_ALLOC(tspack->arena, SchlickDistribution)(u * v, anisotropy);
 	SingleBSDF *bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dgs,
 		dgGeom.nn, ARENA_ALLOC(tspack->arena, FresnelBlend)(d, s, a, ld,
 		md), exterior, interior);

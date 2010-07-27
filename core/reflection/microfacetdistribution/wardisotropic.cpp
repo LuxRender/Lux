@@ -62,3 +62,13 @@ float WardIsotropic::Pdf(const Vector &wh) const
 	return D(wh);
 }
 
+float WardIsotropic::G(const Vector &wo, const Vector &wi, const Vector &wh) const
+{
+	const float NdotWh = fabsf(CosTheta(wh));
+	const float NdotWo = fabsf(CosTheta(wo));
+	const float NdotWi = fabsf(CosTheta(wi));
+	const float WOdotWh = AbsDot(wo, wh);
+	const float WIdotWh = AbsDot(wi, wh);
+	return min(1.f, min((2.f * NdotWh * NdotWo / WOdotWh),
+	                (2.f * NdotWh * NdotWi / WIdotWh)));
+}

@@ -20,39 +20,52 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#ifndef LUX_NULLTRANSMISSION_H
-#define LUX_NULLTRANSMISSION_H
-// nulltransmission.h*
+#ifndef LUX_SCHLICKDISTRIBUTION_H
+#define LUX_SCHLICKDISTRIBUTION_H
+// schlickdistribution.h*
 #include "lux.h"
-#include "bxdf.h"
-#include "spectrum.h"
+#include "microfacetdistribution.h"
+#include "geometry/vector.h"
 
 namespace lux
 {
 
-class  NullTransmission : public BxDF {
+class  SchlickDistribution : public MicrofacetDistribution {
 public:
-	// NullTransmission Public Methods
-	NullTransmission()
-		: BxDF(BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) {}
-	virtual ~NullTransmission() { }
-	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi,
-		SWCSpectrum *const f_) const {
-		if (Dot(wo, wi) <= -1.f + MachineEpsilon::E(1.f))
-			*f_ += SWCSpectrum(1.f / fabsf(CosTheta(wi)));
+	SchlickDistribution(float r, float a) : roughness(r), anisotropy(a) { }
+	virtual ~SchlickDistribution() { }
+	// SchlickDistribution Public Methods
+	virtual void SampleH(float u1, float u2, Vector *wh, float *d,
+		float *pdf) const;
+	virtual float D(const Vector &wh) const {
+		const float cosTheta = fabsf(wh.z);
+		return SchlickZ(cosTheta) * SchlickA(wh) * INV_PI;
 	}
-	virtual bool Sample_f(const TsPack *tspack, const Vector &wo,
-		Vector *wi, float u1, float u2, SWCSpectrum *const f,
-		float *pdf, float *pdfBack = NULL, bool reverse = false) const;
-	virtual float Pdf(const TsPack *tspack, const Vector &wo,
-		const Vector &wi) const {
-		return Dot(wo, wi) <= -1.f + MachineEpsilon::E(1.f) ? 1.f : 0.f;
+	virtual float Pdf(const Vector &wh) const { return D(wh); }
+	virtual float G(const Vector &wo, const Vector &wi, const Vector &wh) const {
+		return SchlickG(fabsf(wo.z)) * SchlickG(fabsf(wi.z));
 	}
 private:
-	// NullTransmission Private Data
+	float SchlickG(float costheta) const {
+		return costheta / (costheta * (1.f - roughness) + roughness);
+	}
+	float SchlickZ(float cosNH) const {
+		const float d = 1.f + (roughness - 1) * cosNH * cosNH;
+		return roughness > 0.f ? roughness / (d * d) : INFINITY;
+	}
+	float SchlickA(const Vector &H) const {
+		const float h = sqrtf(H.x * H.x + H.y * H.y);
+		if (h > 0.f) {
+			const float w = (anisotropy > 0.f ? H.x : H.y) / h;
+			const float p = 1.f - fabsf(anisotropy);
+			return sqrtf(p / (p * p + w * w * (1.f - p * p)));
+		}
+		return 1.f;
+	}
+	float roughness, anisotropy;
 };
 
 }//namespace lux
 
-#endif // LUX_NULLTRANSMISSION_H
+#endif // LUX_SCHLICKDISTRIBUTION_H
 

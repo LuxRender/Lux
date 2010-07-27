@@ -422,6 +422,7 @@ SET(lux_core_reflection_src
 	core/reflection/microfacetdistribution/anisotropic.cpp
 	core/reflection/microfacetdistribution/beckmann.cpp
 	core/reflection/microfacetdistribution/blinn.cpp
+	core/reflection/microfacetdistribution/schlickdistribution.cpp
 	core/reflection/microfacetdistribution/wardisotropic.cpp
 	)
 SET(lux_core_src

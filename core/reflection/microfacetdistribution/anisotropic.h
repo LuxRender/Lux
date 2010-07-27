@@ -48,6 +48,15 @@ public:
 	virtual void SampleH(float u1, float u2, Vector *wh, float *d,
 		float *pdf) const;
 	virtual float Pdf(const Vector &wh) const;
+	virtual float G(const Vector &wo, const Vector &wi, const Vector &wh) const {
+		const float NdotWh = fabsf(CosTheta(wh));
+		const float NdotWo = fabsf(CosTheta(wo));
+		const float NdotWi = fabsf(CosTheta(wi));
+		const float WOdotWh = AbsDot(wo, wh);
+		const float WIdotWh = AbsDot(wi, wh);
+		return min(1.f, min((2.f * NdotWh * NdotWo / WOdotWh),
+		                (2.f * NdotWh * NdotWi / WIdotWh)));
+	}
 private:
 	void SampleFirstQuadrant(float u1, float u2, float *phi, float *cosTheta) const;
 	float ex, ey;

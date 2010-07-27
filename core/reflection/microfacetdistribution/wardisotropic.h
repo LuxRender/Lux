@@ -40,6 +40,7 @@ public:
 	virtual void SampleH(float u1, float u2, Vector *wh, float *d,
 		float *pdf) const;
 	virtual float Pdf(const Vector &wh) const;
+	virtual float G(const Vector &wo, const Vector &wi, const Vector &wh) const;
 
 private:
 	float r;

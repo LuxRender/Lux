@@ -27,21 +27,26 @@
 
 using namespace lux;
 
-Lafortune::Lafortune(const SWCSpectrum &xx, const SWCSpectrum &yy, const SWCSpectrum &zz,
-	const SWCSpectrum &e, BxDFType t)
-	: BxDF(t), x(xx), y(yy), z(zz), exponent(e)
+Lafortune::Lafortune(const SWCSpectrum &xx, const SWCSpectrum &yy,
+	const SWCSpectrum &zz, const SWCSpectrum &e)
+	: BxDF(BxDFType(BSDF_REFLECTION | BSDF_GLOSSY)), x(xx), y(yy), z(zz),
+	exponent(e)
 {
 }
-void Lafortune::f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f_) const {
+void Lafortune::f(const TsPack *tspack, const Vector &wo, const Vector &wi,
+	SWCSpectrum *const f_) const
+{
 	SWCSpectrum v(x * (wo.x * wi.x) + y * (wo.y * wi.y) + z * (wo.z * wi.z));
 	*f_ += v.Pow(exponent);
 }
 
 bool Lafortune::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
-		float u1, float u2, SWCSpectrum *const f_, float *pdf, float *pdfBack, bool reverse) const {
-	const float xlum = x.Y(tspack);
-	const float ylum = y.Y(tspack);
-	const float zlum = z.Y(tspack);
+	float u1, float u2, SWCSpectrum *const f_, float *pdf, float *pdfBack,
+	bool reverse) const
+{
+	const float xlum = x.Filter(tspack);
+	const float ylum = y.Filter(tspack);
+	const float zlum = z.Filter(tspack);
 	const float costheta = powf(u1, 1.f / (.8f * exponent.Filter(tspack) + 1.f));
 	const float sintheta = sqrtf(max(0.f, 1.f - costheta * costheta));
 	const float phi = u2 * 2.f * M_PI;
@@ -65,12 +70,13 @@ bool Lafortune::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 
 
 float Lafortune::Pdf(const TsPack *tspack, const Vector &wo, const Vector &wi) const {
-	if (!SameHemisphere(wo, wi)) return 0.f;
-	const float xlum = x.Y(tspack);
-	const float ylum = y.Y(tspack);
-	const float zlum = z.Y(tspack);
+	if (!SameHemisphere(wo, wi))
+		return 0.f;
+	const float xlum = x.Filter(tspack);
+	const float ylum = y.Filter(tspack);
+	const float zlum = z.Filter(tspack);
 	const Vector lobeCenter(Normalize(Vector(wo.x * xlum, wo.y * ylum, wo.z * zlum)));
-	const float e = .8f * exponent.Y(tspack);
+	const float e = .8f * exponent.Filter(tspack);
 	return (e + 1.f) * powf(max(0.f, Dot(wi, lobeCenter)), e);
 }
 
