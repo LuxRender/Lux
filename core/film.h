@@ -391,7 +391,8 @@ public:
 	virtual void WriteFilm(const string &fname) { WriteResumeFilm(fname); }
 	virtual void CheckWriteOuputInterval() { }
 	// Dade - method useful for transmitting the samples to a client
-	virtual bool TransmitFilm(std::basic_ostream<char> &stream, bool clearBuffers = true, bool transmitParams = false);
+	bool TransmitFilm(std::basic_ostream<char> &stream, bool clearBuffers = true, bool transmitParams = false, 
+		bool useCompression = true, bool directWrite = false);
 	virtual double UpdateFilm(std::basic_istream<char> &stream);
 	virtual void WriteResumeFilm(const string &filename);
 	virtual bool LoadResumeFilm(const string &filename);
@@ -434,6 +435,10 @@ public:
 	virtual double GetDefaultParameterValue(luxComponentParameters param, u_int index) = 0;
 	virtual void SetStringParameterValue(luxComponentParameters param, const string& value, u_int index) = 0;
 	virtual string GetStringParameterValue(luxComponentParameters param, u_int index) = 0;
+
+protected:
+	double DoTransmitFilm(std::basic_ostream<char> &stream, bool clearBuffers = true, bool transmitParams = false);
+
 
 public:
 	// Film Public Data

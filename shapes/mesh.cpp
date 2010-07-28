@@ -352,10 +352,8 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 			concreteAccelType = ACCEL_NONE;
 		else if (refinedPrims.size() <= 500000)
 			concreteAccelType = ACCEL_KDTREE;
-		else if (refinedPrims.size() <= 8000000)
-			concreteAccelType = ACCEL_QBVH;
 		else
-			concreteAccelType = ACCEL_GRID;
+			concreteAccelType = ACCEL_QBVH;
 	}
 
 	// Report selections used

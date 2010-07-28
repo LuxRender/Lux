@@ -1213,18 +1213,15 @@ void FlmHeader::Write(std::basic_ostream<char> &os, bool isLittleEndian) const
 	}
 }
 
-bool Film::TransmitFilm(
-        std::basic_ostream<char> &stream,
-        bool clearBuffers,
-		bool transmitParams) 
+double Film::DoTransmitFilm(
+		std::basic_ostream<char> &os,
+		bool clearBuffers,
+		bool transmitParams)
 {
-    const bool isLittleEndian = osIsLittleEndian();
+	const bool isLittleEndian = osIsLittleEndian();
 
-    std::stringstream ss;
-    ss << "Transmitting film (little endian=" <<(isLittleEndian ? "true" : "false") << ")";
-    luxError(LUX_NOERROR, LUX_DEBUG, ss.str().c_str());
+	LOG(LUX_DEBUG,LUX_NOERROR)<< "Transmitting film (little endian=" <<(isLittleEndian ? "true" : "false") << ")";
 
-    std::stringstream os(std::stringstream::in | std::stringstream::out | std::stringstream::binary);
 	// Write the header
 	FlmHeader header;
 	header.magicNumber = FLM_MAGIC_NUMBER;
@@ -1347,10 +1344,8 @@ bool Film::TransmitFilm(
 		}
 
 		totNumberOfSamples += bufferGroup.numberOfSamples;
-		ss.str("");
-		ss << "Transmitted " << bufferGroup.numberOfSamples << " samples for buffer group " << i <<
+		LOG(LUX_DEBUG,LUX_NOERROR) << "Transmitted " << bufferGroup.numberOfSamples << " samples for buffer group " << i <<
 			" (buffer config size: " << bufferConfigs.size() << ")";
-		luxError(LUX_NOERROR, LUX_DEBUG, ss.str().c_str());
 
 		if (clearBuffers) {
 			// Dade - reset the rendering buffer
@@ -1358,27 +1353,70 @@ bool Film::TransmitFilm(
 		}
 	}
 
-	if (!os.good()) {
-		luxError(LUX_SYSTEM, LUX_SEVERE, "Error while preparing film data for transmission");
+	return totNumberOfSamples;
+
+}
+
+bool Film::TransmitFilm(
+        std::basic_ostream<char> &stream,
+        bool clearBuffers,
+		bool transmitParams,
+		bool useCompression, 
+		bool directWrite)
+{
+	std::streampos stream_startpos = stream.tellp();
+
+	double totNumberOfSamples = 0;
+
+	bool transmitError = true;
+
+	if (directWrite) {
+		if (useCompression) {
+			filtering_stream<output> fs;
+			fs.push(gzip_compressor(9));
+			fs.push(stream);
+			totNumberOfSamples = DoTransmitFilm(fs, clearBuffers, transmitParams);
+
+			flush(fs);
+
+			transmitError = !fs.good();
+		} else {
+			totNumberOfSamples = DoTransmitFilm(stream, clearBuffers, transmitParams);
+			transmitError = !stream.good();
+		}
+	} else {
+		std::stringstream ss(std::stringstream::in | std::stringstream::out | std::stringstream::binary);
+		totNumberOfSamples = DoTransmitFilm(ss, clearBuffers, transmitParams);
+
+		transmitError = !ss.good();
+		
+		if (!transmitError) {
+			if (useCompression) {
+				filtering_streambuf<input> in;
+				in.push(gzip_compressor(9));
+				in.push(ss);
+				boost::iostreams::copy(in, stream);
+			} else {
+				boost::iostreams::copy(ss, stream);
+			}
+		}
+	}
+
+	if (transmitError) {
+		LOG(LUX_SEVERE,LUX_SYSTEM) << "Error while preparing film data for transmission";
 		return false;
 	}
 
-	ss.str("");
-	ss << "Transmitted a film with " << totNumberOfSamples << " samples";
-	luxError(LUX_NOERROR, LUX_DEBUG, ss.str().c_str());
-
-	filtering_streambuf<input> in;
-	in.push(gzip_compressor(9));
-	in.push(os);
-	std::streamsize size = boost::iostreams::copy(in, stream);
+	LOG(LUX_DEBUG,LUX_NOERROR) << "Transmitted a film with " << totNumberOfSamples << " samples";
+	
 	if (!stream.good()) {
-		luxError(LUX_SYSTEM, LUX_SEVERE, "Error while transmitting film");
+		LOG(LUX_SEVERE,LUX_SYSTEM) << "Error while transmitting film";
 		return false;
 	}
 
-	ss.str("");
-	ss << "Film transmission done (" << (size / 1024) << " Kbytes sent)";
-	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+	std::streamsize size = stream.tellp() - stream_startpos;
+
+	LOG(LUX_INFO,LUX_NOERROR) << "Film transmission done (" << (size / 1024) << " Kbytes sent)";
 	return true;
 }
 
