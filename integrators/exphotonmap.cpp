@@ -201,14 +201,15 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(const TsPack *tspack,
 	if (scene->Intersect(tspack, volume, ray, &isect, &bsdf, &Lt)) {
 		Vector wo = -ray.d;
 
-		// Compute emitted light if ray hit an area light source
-		if (specularBounce)
-			L += isect.Le(tspack, wo);
-
-		// Evaluate BSDF at hit point
 		const Point &p = bsdf->dgShading.p;
 		const Normal &ns = bsdf->dgShading.nn;
 		const Normal &ng = isect.dg.nn;
+
+		// Compute emitted light if ray hit an area light source
+		if (specularBounce && isect.arealight) {
+			BSDF *ibsdf;
+			L += isect.Le(tspack, ray, &ibsdf, NULL, NULL);
+		}
 
 		// Compute direct lighting
 		if (debugEnableDirect && (nLights > 0)) {
@@ -286,15 +287,19 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(const TsPack *tspack,
 	} else {
 		// Handle ray with no intersection
 		if (specularBounce) {
-			for (u_int i = 0; i < nLights; ++i)
-				L += scene->lights[i]->Le(tspack, ray);
+			BSDF *ibsdf;
+			for (u_int i = 0; i < nLights; ++i) {
+				SWCSpectrum Le(1.f);
+				if (scene->lights[i]->Le(tspack, scene, ray,
+					&ibsdf, NULL, NULL, &Le))
+					L += Le;
+			}
 		}
 
 		if (reflectionDepth == 0)
 			*alpha = 0.f;
 	}
 
-	scene->volumeIntegrator->Transmittance(tspack, scene, ray, sample, alpha, &Lt);
 	SWCSpectrum Lv;
 	scene->volumeIntegrator->Li(tspack, scene, ray, sample, &Lv, alpha);
 	return L * Lt + Lv;
@@ -329,11 +334,15 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const TsPack *tspack,
 
 			// Possibly add emitted light if this was a specular reflection
 			if (specularBounce) {
-				scene->volumeIntegrator->Transmittance(tspack, scene, ray, sample, alpha, &pathThroughput);
-
 				SWCSpectrum Le(0.f);
-				for (u_int i = 0; i < nLights; ++i)
-					Le += scene->lights[i]->Le(tspack, ray);
+				BSDF *ibsdf;
+				for (u_int i = 0; i < nLights; ++i) {
+					SWCSpectrum Ll(1.f);
+					if (scene->lights[i]->Le(tspack, scene,
+						ray, &ibsdf, NULL, NULL,
+						&Ll))
+						Le += Ll;
+				}
 				L += Le * pathThroughput;
 			}
 
@@ -350,14 +359,15 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const TsPack *tspack,
 		Lv *= pathThroughput;
 		L += Lv;
 
-		scene->volumeIntegrator->Transmittance(tspack, scene, ray, sample, alpha, &pathThroughput);
-
 		SWCSpectrum currL(0.f);
 
 		// Possibly add emitted light at path vertex
 		Vector wo(-ray.d);
-		if (specularBounce)
-			currL += isect.Le(tspack, wo);
+		
+		if (specularBounce && isect.arealight) {
+			BSDF *ibsdf;
+			L += isect.Le(tspack, ray, &ibsdf, NULL, NULL);
+		}
 
 		if (pathLength == maxDepth) {
 			L += currL * pathThroughput;
@@ -376,12 +386,10 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const TsPack *tspack,
 			rrSample = &sampleData[6];
 		else
 			rrSample = NULL;
-		
-		// Evaluate BSDF at hit point
-		const Point &p = bsdf->dgShading.p;
-		const Normal &n = bsdf->dgShading.nn;
 
 		// Compute direct lighting
+		const Point &p = bsdf->dgShading.p;
+		const Normal &n = bsdf->dgShading.nn;
 		if (debugEnableDirect && (nLights > 0)) {
 			const u_int lightGroupCount = scene->lightGroups.size();
 			vector<SWCSpectrum> Ld(lightGroupCount, 0.f);

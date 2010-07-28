@@ -44,7 +44,8 @@ void EmissionIntegrator::Transmittance(const TsPack *tspack, const Scene *scene,
 	if (!scene->volumeRegion) 
 		return;
 	const float step = stepSize;
-	const float offset = sample->oneD[tauSampleOffset][0];
+	const float offset = sample ? sample->oneD[tauSampleOffset][0] :
+		tspack->rng->floatValue();
 	const SWCSpectrum tau(scene->volumeRegion->Tau(tspack, ray, step,
 		offset));
 	*L *= Exp(-tau);

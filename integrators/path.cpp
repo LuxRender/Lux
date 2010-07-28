@@ -107,10 +107,11 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 			// Possibly add horizon in render & reflections
 			if ((includeEnvironment || vertexIndex > 0) &&
 				specularBounce) {
+				BSDF *ibsdf;
 				for (u_int i = 0; i < nLights; ++i) {
-					SWCSpectrum Le(scene->lights[i]->Le(tspack, ray));
-					Le *= pathThroughput;
-					if (!Le.Black()) {
+					SWCSpectrum Le(pathThroughput);
+					if (scene->lights[i]->Le(tspack, scene,
+						ray, &ibsdf, NULL, NULL, &Le)) {
 						L[scene->lights[i]->group] += Le;
 						V[scene->lights[i]->group] += Le.Filter(tspack) * VContrib;
 						++nrContribs;
@@ -136,12 +137,13 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 			V[g] += Lv.Filter(tspack) * VContrib;
 			++nrContribs;
 		}
-		scene->volumeIntegrator->Transmittance(tspack, scene, ray, sample, &alpha, &pathThroughput);
 
 		// Possibly add emitted light at path vertex
 		Vector wo(-ray.d);
-		if (specularBounce) {
-			SWCSpectrum Le(isect.Le(tspack, wo));
+		if (specularBounce && isect.arealight) {
+			BSDF *ibsdf;
+			SWCSpectrum Le(isect.Le(tspack, ray, &ibsdf, NULL, 
+				NULL));
 			if (!Le.Black()) {
 				Le *= pathThroughput;
 				L[isect.arealight->group] += Le;
@@ -153,11 +155,10 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 			break;
 		// Evaluate BSDF at hit point
 		const float *data = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, pathLength);
-		// Sample illumination from lights to find path contribution
-		const Point &p = bsdf->dgShading.p;
-		const Normal &n = bsdf->dgShading.nn;
 
 		// Estimate direct lighting
+		const Point &p = bsdf->dgShading.p;
+		const Normal &n = bsdf->dgShading.nn;
 		if (nLights > 0) {
 			for (u_int i = 0; i < lightGroupCount; ++i) {
 				Ld[i] = 0.f;

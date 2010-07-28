@@ -20,8 +20,6 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
  
-// TODO - Port SPD interfaces
-
 // infinitesample.cpp*
 #include "infinitesample.h"
 #include "imagereader.h"
@@ -131,8 +129,7 @@ InfiniteAreaLightIS::InfiniteAreaLightIS(const Transform &light2world,
 			nv = imgdata->getHeight();
 			radianceMap = imgdata->createMIPMap(BILINEAR, 8.f,
 				TEXTURE_REPEAT, 1.f, gamma);
-		} else
-			radianceMap = NULL;
+		}
 	}
 	if (radianceMap == NULL) {
 		// Set default sampling array size
@@ -161,24 +158,10 @@ InfiniteAreaLightIS::InfiniteAreaLightIS(const Transform &light2world,
 	uvDistrib = new Distribution2D(img, nu, nv);
 	delete[] img;
 }
-SWCSpectrum InfiniteAreaLightIS::Le(const TsPack *tspack,
-	const RayDifferential &r) const
-{
-	Vector w = r.d;
-	// Compute infinite light radiance for direction
-	if (radianceMap != NULL) {
-		Vector wh = Normalize(WorldToLight(w));
-		float s = SphericalPhi(wh) * INV_TWOPI;
-		float t = SphericalTheta(wh) * INV_PI;
-		return SWCSpectrum(tspack, SPDbase) *
-			radianceMap->LookupSpectrum(tspack, s, t);
-	}
-	return SWCSpectrum(tspack, SPDbase);
-}
 
-SWCSpectrum InfiniteAreaLightIS::Le(const TsPack *tspack, const Scene *scene,
-	const Ray &r, const Normal &n, BSDF **bsdf, float *pdf,
-	float *pdfDirect) const
+bool InfiniteAreaLightIS::Le(const TsPack *tspack, const Scene *scene,
+	const Ray &r, BSDF **bsdf, float *pdf, float *pdfDirect,
+	SWCSpectrum *L) const
 {
 	Point worldCenter;
 	float worldRadius;
@@ -197,91 +180,29 @@ SWCSpectrum InfiniteAreaLightIS::Le(const TsPack *tspack, const Scene *scene,
 	dg.time = tspack->time;
 	*bsdf = ARENA_ALLOC(tspack->arena, InfiniteISBSDF)(dg, ns,
 		NULL, NULL, *this, WorldToLight);
-	*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
-	if (radianceMap != NULL) {
-		const Vector wh = Normalize(WorldToLight(r.d));
-		float s, t, pdfMap;
-		mapping->Map(wh, &s, &t, &pdfMap);
+	*L *= SWCSpectrum(tspack, SPDbase);
+	const Vector wh = Normalize(WorldToLight(r.d));
+	float s, t, pdfMap;
+	mapping->Map(wh, &s, &t, &pdfMap);
+	if (radianceMap != NULL)
+		*L *= radianceMap->LookupSpectrum(tspack, s, t);
+	if (pdf)
+		*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
+	if (pdfDirect)
 		*pdfDirect = uvDistrib->Pdf(s, t) * pdfMap *
 			AbsDot(r.d, ns) / DistanceSquared(r.o, ps);
-		return SWCSpectrum(tspack, SPDbase) *
-			radianceMap->LookupSpectrum(tspack, s, t);
-	} else {
-		*pdfDirect = AbsDot(r.d, n) * INV_TWOPI *
-			AbsDot(r.d, ns) / DistanceSquared(r.o, ps);
-		return SWCSpectrum(tspack, SPDbase);
-	}
-}
-
-SWCSpectrum InfiniteAreaLightIS::Sample_L(const TsPack *tspack, const Point &p, float u1,
-		float u2, float u3, Vector *wi, float *pdf,
-		VisibilityTester *visibility) const {
-	// Find floating-point $(u,v)$ sample coordinates
-	float uv[2];
-	uvDistrib->SampleContinuous(u1, u2, uv, pdf);
-	// Convert sample point to direction on the unit sphere
-	const float theta = uv[1] * M_PI;
-	const float phi = uv[0] * 2.f * M_PI;
-	const float costheta = cosf(theta), sintheta = sinf(theta);
-	*wi = LightToWorld(SphericalDirection(sintheta, costheta, phi));
-	// Compute PDF for sampled direction
-	// FIXME - use mapping
-	*pdf /= (2.f * M_PI * M_PI * sintheta);
-	// Return radiance value for direction
-	visibility->SetRay(p, *wi, tspack->time);
-	if (radianceMap)
-		return SWCSpectrum(tspack, SPDbase) *
-			radianceMap->LookupSpectrum(tspack, uv[0], uv[1]);
-	else
-		return SWCSpectrum(tspack, SPDbase);
-}
-float InfiniteAreaLightIS::Pdf(const TsPack *tspack, const Point &,
-		const Vector &w) const {
-	Vector wi = WorldToLight(w);
-	float theta = SphericalTheta(wi), phi = SphericalPhi(wi);
-	// FIXME - use pdf from mapping
-	return uvDistrib->Pdf(phi * INV_TWOPI, theta * INV_PI) /
-		(2.f * M_PI * M_PI * sin(theta));
+	return true;
 }
 
 float InfiniteAreaLightIS::Pdf(const TsPack *tspack, const Point &p,
-	const Normal &n, const Point &po, const Normal &ns) const
+	const Point &po, const Normal &ns) const
 {
 	const Vector d(Normalize(po - p));
-	if (radianceMap != NULL) {
-		const Vector wh = Normalize(WorldToLight(d));
-		float s, t, pdf;
-		mapping->Map(wh, &s, &t, &pdf);
-		return uvDistrib->Pdf(s, t) * pdf *
-			AbsDot(d, ns) / DistanceSquared(p, po);
-	} else {
-		return AbsDot(d, n) * INV_TWOPI *
-			AbsDot(d, ns) / DistanceSquared(p, po);
-	}
-}
-
-SWCSpectrum InfiniteAreaLightIS::Sample_L(const TsPack *tspack, const Scene *scene,
-		float u1, float u2, float u3, float u4,
-		Ray *ray, float *pdf) const {
-	// Choose two points _p1_ and _p2_ on scene bounding sphere
-	Point worldCenter;
-	float worldRadius;
-	scene->WorldBound().BoundingSphere(&worldCenter,
-		&worldRadius);
-	worldRadius *= 1.01f;
-	Point p1 = worldCenter + worldRadius *
-		UniformSampleSphere(u1, u2);
-	Point p2 = worldCenter + worldRadius *
-		UniformSampleSphere(u3, u4);
-	// Construct ray between _p1_ and _p2_
-	ray->o = p1;
-	ray->d = Normalize(p2-p1);
-	// Compute _InfiniteAreaLightIS_ ray weight
-	Vector to_center = Normalize(worldCenter - p1);
-	float costheta = AbsDot(to_center,ray->d);
-	*pdf =
-		costheta / ((4.f * M_PI * worldRadius * worldRadius));
-	return Le(tspack, RayDifferential(ray->o, -ray->d));
+	const Vector wh = Normalize(WorldToLight(d));
+	float s, t, pdf;
+	mapping->Map(wh, &s, &t, &pdf);
+	return uvDistrib->Pdf(s, t) * pdf * AbsDot(d, ns) /
+		DistanceSquared(p, po);
 }
 
 bool InfiniteAreaLightIS::Sample_L(const TsPack *tspack, const Scene *scene,
@@ -306,9 +227,8 @@ bool InfiniteAreaLightIS::Sample_L(const TsPack *tspack, const Scene *scene,
 }
 
 bool InfiniteAreaLightIS::Sample_L(const TsPack *tspack, const Scene *scene,
-	const Point &p, const Normal &n, float u1, float u2, float u3,
-	BSDF **bsdf, float *pdf, float *pdfDirect,
-	VisibilityTester *visibility, SWCSpectrum *Le) const
+	const Point &p, float u1, float u2, float u3,
+	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *Le) const
 {
 	Point worldCenter;
 	float worldRadius;
@@ -337,9 +257,9 @@ bool InfiniteAreaLightIS::Sample_L(const TsPack *tspack, const Scene *scene,
 		Normal (0, 0, 0), 0, 0, NULL);
 	*bsdf = ARENA_ALLOC(tspack->arena, InfiniteISBSDF)(dg, ns,
 		NULL, NULL, *this, WorldToLight);
-	*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
+	if (pdf)
+		*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	*pdfDirect *= AbsDot(wi, ns) / (distance * distance);
-	visibility->SetSegment(p, ps, tspack->time);
 	*Le = SWCSpectrum(tspack, SPDbase) * M_PI;
 	return true;
 }

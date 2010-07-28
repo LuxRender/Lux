@@ -308,11 +308,10 @@ static bool getDirectLight(const TsPack *tspack, const Scene *scene,
 	vector<BidirVertex> lightPath(1);
 	BidirVertex &vE(eyePath[length - 1]);
 	BidirVertex &vL(lightPath[0]);
-	VisibilityTester visibility;
 	float ePdfDirect;
 	// Sample the chosen light
-	if (!light->Sample_L(tspack, scene, vE.p, vE.bsdf->ng, u0, u1, portal,
-		&vL.bsdf, &vL.dAWeight, &ePdfDirect, &visibility, Ld))
+	if (!light->Sample_L(tspack, scene, vE.p, u0, u1, portal,
+		&vL.bsdf, &vL.dAWeight, &ePdfDirect, Ld))
 		return false;
 	vL.p = vL.bsdf->dgShading.p;
 	vL.wi = Vector(vL.bsdf->nn);
@@ -472,7 +471,7 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 
 		// Connect light vertex to eye vertex
 		// Compute direct lighting pdf for first light vertex
-		const float directPdf = light->Pdf(tspack, eye0.p, eye0.bsdf->ng,
+		const float directPdf = light->Pdf(tspack, eye0.p,
 			light0.p, light0.bsdf->ng) * directWeight;
 		SWCSpectrum Ll(Le);
 		float weight;
@@ -527,7 +526,7 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 				// the first 2 vertices
 				if (nLight == 2)
 					lightDirectPdf = light->Pdf(tspack, v.p,
-						v.bsdf->ng, lightPath[0].p,
+						lightPath[0].p,
 						lightPath[0].bsdf->ng) * directWeight;
 
 				// Connect light subpath to eye vertex
@@ -640,13 +639,12 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 				RayDifferential r(eyePath[nEye - 1].p, eyePath[nEye - 1].wi);
 				r.time = tspack->time;
 				float ePdfDirect;
-				SWCSpectrum Le(light->Le(tspack, scene, r,
-					eyePath[nEye - 1].bsdf->ng, &v.bsdf,
-					&v.dAWeight, &ePdfDirect));
+				SWCSpectrum Le(v.flux);
 				// No check for dAWeight > 0
 				// in the case of portal, the eye path can hit
 				// the light outside portals
-				if (v.bsdf == NULL || Le.Black())
+				if (!light->Le(tspack, scene, r,
+					&v.bsdf, &v.dAWeight, &ePdfDirect, &Le))
 					continue;
 				v.wo = -ray.d;
 				v.flags = BxDFType(~BSDF_SPECULAR);
@@ -668,7 +666,6 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 				eyePath[nEye - 1].dAWeight = v.pdf * v.tPdf *
 					eyePath[nEye - 1].cosi /
 					eyePath[nEye - 1].d2;
-				Le *= v.flux;
 				vector<BidirVertex> path(0);
 				const float w = weightPath(eyePath,
 					nEye + 1, maxEyeDepth, path, 0,
@@ -709,8 +706,7 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 			BSDF *eBsdf;
 			float ePdfDirect;
 			SWCSpectrum Ll(isect.Le(tspack, r,
-				eyePath[nEye - 2].bsdf->ng, &eBsdf, &v.dAWeight,
-				&ePdfDirect));
+				&eBsdf, &v.dAWeight, &ePdfDirect));
 			if (eBsdf && !Ll.Black()) {
 				v.flags = BxDFType(~BSDF_SPECULAR);
 				v.pdf = eBsdf->Pdf(tspack, Vector(eBsdf->nn), v.wo,
@@ -738,7 +734,7 @@ u_int BidirIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		// Connect eye subpath to light subpath
 		if (nLight > 0) {
 			// Compute direct lighting pdf for first light vertex
-			float directPdf = light->Pdf(tspack, v.p, v.bsdf->ng, lightPath[0].p,
+			float directPdf = light->Pdf(tspack, v.p, lightPath[0].p,
 				lightPath[0].bsdf->ng) * directWeight;
 			// Go through all light vertices
 			for (u_int j = 1; j <= nLight; ++j) {

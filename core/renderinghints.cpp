@@ -192,7 +192,6 @@ u_int LSSOneImportance::SampleLights(const TsPack *tspack, const Scene *scene,
 	const float *sampleData, const SWCSpectrum &scale,
 	vector<SWCSpectrum> &L) const {
 	// Choose a single light to sample according the importance
-	const u_int nLights = scene->lights.size();
 	const SWCSpectrum newScale = scale / shadowRayCount;
 	const u_int sampleCount = this->RequestSamplesCount(scene);
 	u_int nContribs = 0;
@@ -258,7 +257,6 @@ u_int LSSOnePowerImportance::SampleLights(
 	const Sample *sample, const float *sampleData, const SWCSpectrum &scale,
 	vector<SWCSpectrum> &L) const {
 	// Choose a single light to sample according the importance
-	const u_int nLights = scene->lights.size();
 	const SWCSpectrum newScale = scale / shadowRayCount;
 	const u_int sampleCount = this->RequestSamplesCount(scene);
 	u_int nContribs = 0;

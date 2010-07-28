@@ -23,7 +23,6 @@
 // sky.cpp*
 #include "sky.h"
 #include "memory.h"
-#include "randomgen.h"
 #include "mc.h"
 #include "spectrumwavelengths.h"
 #include "paramset.h"
@@ -67,6 +66,7 @@ public:
 		const Vector w(Normalize(WorldToLight(-(*wiW))));
 		const float phi = SphericalPhi(w);
 		const float theta = SphericalTheta(w);
+		*f_ = SWCSpectrum(1.f);
 		light.GetSkySpectralRadiance(tspack, theta, phi, f_);
 		return true;
 	}
@@ -83,7 +83,7 @@ public:
 			const Vector w(Normalize(WorldToLight(-wiW)));
 			const float phi = SphericalPhi(w);
 			const float theta = SphericalTheta(w);
-			SWCSpectrum L;
+			SWCSpectrum L(1.f);
 			light.GetSkySpectralRadiance(tspack, theta, phi, &L);
 			return L;
 		}
@@ -132,6 +132,7 @@ public:
 		const Vector w(Normalize(WorldToLight(-(*wiW))));
 		const float phi = SphericalPhi(w);
 		const float theta = SphericalTheta(w);
+		*f_ = SWCSpectrum(1.f);
 		light.GetSkySpectralRadiance(tspack, theta, phi, f_);
 		*pdf = PortalShapes[shapeIndex]->Pdf(ps, dg.p) *
 			DistanceSquared(ps, dg.p) / AbsDot(*wiW, dg.nn);
@@ -175,7 +176,7 @@ public:
 			const Vector w(Normalize(WorldToLight(-wiW)));
 			const float phi = SphericalPhi(w);
 			const float theta = SphericalTheta(w);
-			SWCSpectrum L;
+			SWCSpectrum L(1.f);
 			light.GetSkySpectralRadiance(tspack, theta, phi, &L);
 			return L;
 		}
@@ -221,12 +222,13 @@ static const float S1Y = S1.Y();
 static const float S2Y = S2.Y();
 
 // SkyLight Method Definitions
-SkyLight::~SkyLight() {
+SkyLight::~SkyLight()
+{
 }
 
-SkyLight::SkyLight(const Transform &light2world,
-		                const float skyscale, u_int ns, Vector sd, float turb,
-										float aconst, float bconst, float cconst, float dconst, float econst)
+SkyLight::SkyLight(const Transform &light2world, float skyscale, u_int ns,
+	Vector sd, float turb,
+	float aconst, float bconst, float cconst, float dconst, float econst)
 	: Light(light2world, ns) {
 	skyScale = skyscale;
 	sundir = sd;
@@ -302,22 +304,8 @@ float SkyLight::Power(const Scene *scene) const
 	return power * (havePortalShape ? PortalArea : 4.f * M_PI * worldRadius * worldRadius) * 2.f * M_PI;
 }
 
-SWCSpectrum SkyLight::Le(const TsPack *tspack, const RayDifferential &r) const {
-	Vector w = r.d;
-	// Compute sky light radiance for direction
-
-	Vector wh = Normalize(WorldToLight(w));
-	const float phi = SphericalPhi(wh);
-	const float theta = SphericalTheta(wh);
-
-	SWCSpectrum L;
-	GetSkySpectralRadiance(tspack, theta, phi, &L);
-	L *= skyScale;
-
-	return L;
-}
-SWCSpectrum SkyLight::Le(const TsPack *tspack, const Scene *scene, const Ray &r,
-	const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const
+bool SkyLight::Le(const TsPack *tspack, const Scene *scene, const Ray &r,
+	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *L) const
 {
 	Point worldCenter;
 	float worldRadius;
@@ -337,111 +325,62 @@ SWCSpectrum SkyLight::Le(const TsPack *tspack, const Scene *scene, const Ray &r,
 	if (!havePortalShape) {
 		*bsdf = ARENA_ALLOC(tspack->arena, SkyBSDF)(dg, ns,
 			NULL, NULL, *this, WorldToLight);
-		*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
-		*pdfDirect = AbsDot(r.d, n) * INV_TWOPI * AbsDot(r.d, ns) /
-			DistanceSquared(r.o, ps);
+		if (pdf)
+			*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
+		if (pdfDirect)
+			*pdfDirect = AbsDot(r.d, ns) /
+			(4.f * M_PI * DistanceSquared(r.o, ps));
 	} else {
 		*bsdf = ARENA_ALLOC(tspack->arena, SkyPortalBSDF)(dg, ns,
 			NULL, NULL, *this, WorldToLight, ps, PortalShapes, ~0U);
-		*pdf = 0.f;
-		*pdfDirect = 0.f;
+		if (pdf)
+			*pdf = 0.f;
+		if (pdfDirect)
+			*pdfDirect = 0.f;
 		for (u_int i = 0; i < nrPortalShapes; ++i) {
-			PortalShapes[i]->Sample(.5f, .5f, .5f, &dg);
-			const Vector w(dg.p - ps);
-			if (Dot(w, dg.nn) > 0.f) {
-				const float distance = w.LengthSquared();
-				*pdf += AbsDot(ns, w) /
-					(sqrtf(distance) * distance);
+			if (pdf) {
+				PortalShapes[i]->Sample(.5f, .5f, .5f, &dg);
+				const Vector w(dg.p - ps);
+				if (Dot(w, dg.nn) > 0.f) {
+					const float distance = w.LengthSquared();
+					*pdf += AbsDot(ns, w) /
+						(sqrtf(distance) * distance);
+				}
 			}
-			Intersection isect;
-			RayDifferential ray(r);
-			ray.mint = -INFINITY;
-			if (PortalShapes[i]->Intersect(ray, &isect) &&
-				Dot(r.d, isect.dg.nn) < 0.f)
-				*pdfDirect += PortalShapes[i]->Pdf(r.o,
-					isect.dg.p) * DistanceSquared(r.o,
-					isect.dg.p) / AbsDot(r.d, isect.dg.nn);
+			if (pdfDirect) {
+				Intersection isect;
+				RayDifferential ray(r);
+				ray.mint = -INFINITY;
+				if (PortalShapes[i]->Intersect(ray, &isect) &&
+					Dot(r.d, isect.dg.nn) < 0.f)
+					*pdfDirect += PortalShapes[i]->Pdf(r.o,
+						isect.dg.p) * DistanceSquared(r.o,
+						isect.dg.p) / AbsDot(r.d, isect.dg.nn);
+			}
 		}
-		*pdf *= INV_TWOPI / nrPortalShapes;
-		*pdfDirect *= AbsDot(r.d, ns) /
-			(DistanceSquared(r.o, ps) * nrPortalShapes);
+		if (pdf)
+			*pdf *= INV_TWOPI / nrPortalShapes;
+		if (pdfDirect)
+			*pdfDirect *= AbsDot(r.d, ns) /
+				(DistanceSquared(r.o, ps) * nrPortalShapes);
 	}
 	const Vector wh = Normalize(WorldToLight(r.d));
 	const float phi = SphericalPhi(wh);
 	const float theta = SphericalTheta(wh);
-	SWCSpectrum L;
-	GetSkySpectralRadiance(tspack, theta, phi, &L);
-	L *= skyScale;
-	return L;
+	GetSkySpectralRadiance(tspack, theta, phi, L);
+	*L *= skyScale;
+	return true;
 }
 
-SWCSpectrum SkyLight::Sample_L(const TsPack *tspack, const Point &p,
-		const Normal &n, float u1, float u2, float u3,
-		Vector *wi, float *pdf,
-		VisibilityTester *visibility) const {
-	if(!havePortalShape) {
-		// Sample cosine-weighted direction on unit sphere
-		float x, y, z;
-		ConcentricSampleDisk(u1, u2, &x, &y);
-		z = sqrtf(max(0.f, 1.f - x*x - y*y));
-		if (u3 < .5) z *= -1;
-		*wi = Vector(x, y, z);
-		// Compute _pdf_ for cosine-weighted infinite light direction
-		*pdf = fabsf(wi->z) * INV_TWOPI;
-		// Transform direction to world space
-		Vector v1, v2;
-		CoordinateSystem(Normalize(Vector(n)), &v1, &v2);
-		*wi = Vector(v1.x * wi->x + v2.x * wi->y + n.x * wi->z,
-					 v1.y * wi->x + v2.y * wi->y + n.y * wi->z,
-					 v1.z * wi->x + v2.z * wi->y + n.z * wi->z);
-	} else {
-		// Sample a random Portal
-		u_int shapeIndex = 0;
-		if(nrPortalShapes > 1) {
-			shapeIndex = min(nrPortalShapes - 1,
-					Floor2UInt(u3 * nrPortalShapes));
-			u3 *= nrPortalShapes;
-			u3 -= shapeIndex;
-		}
-		DifferentialGeometry dg;
-		dg.time = tspack->time;
-		PortalShapes[shapeIndex]->Sample(tspack, p, u1, u2, u3, &dg);
-		Point ps = dg.p;
-		*wi = Normalize(ps - p);
-		if (Dot(*wi, dg.nn) < 0.f)
-			*pdf = PortalShapes[shapeIndex]->Pdf(p, *wi) / nrPortalShapes;
-		else {
-			*pdf = 0.f;
-			return 0.f;
-		}
-	}
-	visibility->SetRay(p, *wi, tspack->time);
-	return Le(tspack, RayDifferential(p, *wi));
-}
-float SkyLight::Pdf(const TsPack *tspack, const Point &p, const Normal &n,
-		const Vector &wi) const {
-	if (!havePortalShape)
-		return AbsDot(n, wi) * INV_TWOPI;
-	else {
-		float pdf = 0.f;
-		for (u_int i = 0; i < nrPortalShapes; ++i) {
-			Intersection isect;
-			RayDifferential ray(p, wi);
-			if (PortalShapes[i]->Intersect(ray, &isect) && Dot(wi, isect.dg.nn) < .0f)
-				pdf += PortalShapes[i]->Pdf(p, wi);
-		}
-		pdf /= nrPortalShapes;
-		return pdf;
-	}
-}
-float SkyLight::Pdf(const TsPack *tspack, const Point &p, const Normal &n,
+float SkyLight::Pdf(const TsPack *tspack, const Point &p,
 	const Point &po, const Normal &ns) const
 {
 	const Vector wi(po - p);
 	if (!havePortalShape) {
 		const float d2 = wi.LengthSquared();
-		return AbsDot(n, wi) * INV_TWOPI * AbsDot(wi, ns) / (d2 * d2);
+		return AbsDot(wi, ns) / (4.f * M_PI * sqrtf(d2) * d2);
 	} else {
+		const float d2 = wi.LengthSquared();
 		float pdf = 0.f;
 		for (u_int i = 0; i < nrPortalShapes; ++i) {
 			Intersection isect;
@@ -454,83 +393,11 @@ float SkyLight::Pdf(const TsPack *tspack, const Point &p, const Normal &n,
 					AbsDot(wi, isect.dg.nn);
 		}
 		pdf *= AbsDot(wi, ns) /
-			(DistanceSquared(p, po) * nrPortalShapes);
+			(d2 * d2 * nrPortalShapes);
 		return pdf;
 	}
 }
-SWCSpectrum SkyLight::Sample_L(const TsPack *tspack, const Point &p,
-		float u1, float u2, float u3, Vector *wi, float *pdf,
-		VisibilityTester *visibility) const {
-	if(!havePortalShape) {
-		*wi = UniformSampleSphere(u1, u2);
-		*pdf = UniformSpherePdf();
-	} else {
-		// Sample a random Portal
-		u_int shapeIndex = 0;
-		if(nrPortalShapes > 1) {
-			shapeIndex = min(nrPortalShapes - 1,
-					Floor2UInt(u3 * nrPortalShapes));
-			u3 *= nrPortalShapes;
-			u3 -= shapeIndex;
-		}
-		DifferentialGeometry dg;
-		dg.time = tspack->time;
-		PortalShapes[shapeIndex]->Sample(tspack, p, u1, u2, u3, &dg);
-		Point ps = dg.p;
-		*wi = Normalize(ps - p);
-		if (Dot(*wi, dg.nn) < 0.f)
-			*pdf = PortalShapes[shapeIndex]->Pdf( p, *wi) / nrPortalShapes;
-		else {
-			*pdf = 0.f;
-			return 0.f;
-		}
-	}
-	visibility->SetRay(p, *wi, tspack->time);
-	return Le(tspack, RayDifferential(p, *wi));
-}
-float SkyLight::Pdf(const TsPack *tspack, const Point &, const Vector &) const {
-	return 1.f / (4.f * M_PI);
-}
-SWCSpectrum SkyLight::Sample_L(const TsPack *tspack, const Scene *scene,
-		float u1, float u2, float u3, float u4,
-		Ray *ray, float *pdf) const {
-	if (!havePortalShape) {
-		// Choose two points _p1_ and _p2_ on scene bounding sphere
-		Point worldCenter;
-		float worldRadius;
-		scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
-		worldRadius *= 1.01f;
-		Point p1 = worldCenter + worldRadius *
-			UniformSampleSphere(u1, u2);
-		Point p2 = worldCenter + worldRadius *
-			UniformSampleSphere(u3, u4);
-		// Construct ray between _p1_ and _p2_
-		ray->o = p1;
-		ray->d = Normalize(p2-p1);
-		// Compute _SkyLight_ ray weight
-		Vector to_center = Normalize(worldCenter - p1);
-		float costheta = AbsDot(to_center,ray->d);
-		*pdf = costheta / ((4.f * M_PI * worldRadius * worldRadius));
-	} else {
-		// Dade - choose a random portal. This strategy is quite bad if there
-		// is more than one portal.
-		u_int shapeidx = 0;
-		if (nrPortalShapes > 1)
-			shapeidx = min(nrPortalShapes - 1,
-				Floor2UInt(tspack->rng->floatValue() * nrPortalShapes));  // TODO - REFACT - add passed value from sample
 
-		DifferentialGeometry dg;
-		dg.time = tspack->time;
-		PortalShapes[shapeidx]->Sample(u1, u2, tspack->rng->floatValue(), &dg); // TODO - REFACT - add passed value from sample
-		ray->o = dg.p;
-		ray->d = UniformSampleSphere(u3, u4); //Jeanphi - FIXME this is wrong as it doesn't take the portal normal into account
-		if (Dot(ray->d, dg.nn) < 0.) ray->d *= -1;
-
-		*pdf = PortalShapes[shapeidx]->Pdf(ray->o) * INV_TWOPI / nrPortalShapes;
-	}
-
-	return Le(tspack, RayDifferential(ray->o, -ray->d));
-}
 bool SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *Le) const
 {
 	Point worldCenter;
@@ -592,9 +459,9 @@ bool SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, floa
 	*Le = SWCSpectrum(skyScale);
 	return true;
 }
-bool SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n,
-	float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect,
-	VisibilityTester *visibility, SWCSpectrum *Le) const
+bool SkyLight::Sample_L(const TsPack *tspack, const Scene *scene,
+	const Point &p, float u1, float u2, float u3,
+	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *Le) const
 {
 	Vector wi;
 	u_int shapeIndex = 0;
@@ -602,19 +469,10 @@ bool SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p
 	float worldRadius;
 	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
 	if(!havePortalShape) {
-		// Sample cosine-weighted direction on unit sphere
-		float x, y, z;
-		ConcentricSampleDisk(u1, u2, &x, &y);
-		z = sqrtf(max(0.f, 1.f - x*x - y*y));
-		if (u3 < .5f)
-			z = -z;
-		wi = Vector(x, y, z);
+		// Sample uniform direction on unit sphere
+		wi = UniformSampleSphere(u1, u2);
 		// Compute _pdf_ for cosine-weighted infinite light direction
-		*pdfDirect = fabsf(wi.z) * INV_TWOPI;
-		// Transform direction to world space
-		Vector v1, v2;
-		CoordinateSystem(Normalize(Vector(n)), &v1, &v2);
-		wi = Vector(v1 * wi.x + v2 * wi.y + Vector(n) * wi.z);
+		*pdfDirect = .25f * INV_PI;
 	} else {
 		// Sample a random Portal
 		if (nrPortalShapes > 1) {
@@ -630,10 +488,8 @@ bool SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p
 		if (Dot(wi, dg.nn) < 0.f) {
 			*pdfDirect = PortalShapes[shapeIndex]->Pdf(p, ps) *
 				DistanceSquared(p, ps) / AbsDot(wi, dg.nn);
-		} else {
-			*Le = 0.f;
+		} else
 			return false;
-		}
 	}
 	const Vector toCenter(worldCenter - p);
 	const float centerDistance = Dot(toCenter, toCenter);
@@ -649,19 +505,23 @@ bool SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p
 	if (!havePortalShape) {
 		*bsdf = ARENA_ALLOC(tspack->arena, SkyBSDF)(dg, ns,
 			NULL, NULL, *this, WorldToLight);
-		*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
+		if (pdf)
+			*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	} else {
 		*bsdf = ARENA_ALLOC(tspack->arena, SkyPortalBSDF)(dg, ns,
 			NULL, NULL, *this, WorldToLight, ps, PortalShapes, shapeIndex);
-		*pdf = 0.f;
+		if (pdf)
+			*pdf = 0.f;
 		DifferentialGeometry dgs;
 		dgs.time = tspack->time;
 		for (u_int i = 0; i < nrPortalShapes; ++i) {
-			PortalShapes[i]->Sample(.5f, .5f, .5f, &dgs);
-			Vector w(ps - dgs.p);
-			if (Dot(wi, dgs.nn) < 0.f) {
-				float distance = w.LengthSquared();
-				*pdf += AbsDot(ns, w) / (sqrtf(distance) * distance);
+			if (pdf) {
+				PortalShapes[i]->Sample(.5f, .5f, .5f, &dgs);
+				Vector w(ps - dgs.p);
+				if (Dot(wi, dgs.nn) < 0.f) {
+					float distance = w.LengthSquared();
+					*pdf += AbsDot(ns, w) / (sqrtf(distance) * distance);
+				}
 			}
 			if (i == shapeIndex)
 				continue;
@@ -674,11 +534,11 @@ bool SkyLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p
 					isect.dg.p) * DistanceSquared(p,
 					isect.dg.p) / AbsDot(wi, isect.dg.nn);
 		}
-		*pdf *= INV_TWOPI / nrPortalShapes;
+		if (pdf)
+			*pdf *= INV_TWOPI / nrPortalShapes;
 		*pdfDirect /= nrPortalShapes;
 	}
 	*pdfDirect *= AbsDot(wi, ns) / (distance * distance);
-	visibility->SetSegment(p, ps, tspack->time);
 	*Le = SWCSpectrum(skyScale);
 	return true;
 }
@@ -746,7 +606,7 @@ void SkyLight::ChromaticityToSpectrum(const TsPack *tspack, const float x, const
 
 	for (unsigned int j = 0; j < WAVELENGTH_SAMPLES; ++j) {
 		const float w = tspack->swl->w[j];
-		dst_spect->c[j] = S0.sample(w) + M1 * S1.sample(w) +
+		dst_spect->c[j] *= S0.sample(w) + M1 * S1.sample(w) +
 			M2 * S2.sample(w);
 	}
 	*dst_spect /= S0Y + M1 * S1Y + M2 * S2Y;

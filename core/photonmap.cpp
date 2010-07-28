@@ -542,27 +542,36 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 		thr_wl->Sample(RadicalInverse(nshot, 2));
 
 		// Trace a photon path and store contribution
-		// Choose 4D sample values for photon
-		float u[4];
+		// Choose 6D sample values for photon
+		float u[6];
 		u[0] = RadicalInverse(nshot, 3);
 		u[1] = RadicalInverse(nshot, 5);
 		u[2] = RadicalInverse(nshot, 7);
 		u[3] = RadicalInverse(nshot, 11);
+		u[4] = RadicalInverse(nshot, 13);
+		u[5] = RadicalInverse(nshot, 17);
 
 		// Choose light to shoot photon from
 		float lightPdf;
-		float uln = RadicalInverse(nshot, 13);
+		float uln = RadicalInverse(nshot, 19);
 		u_int lightNum = lightCDF.SampleDiscrete(uln, &lightPdf);
 		const Light *light = scene->lights[lightNum];
 
 		// Generate _photonRay_ from light source and initialize _alpha_
-		RayDifferential photonRay;
+		BSDF *bsdf;
 		float pdf;
-		SWCSpectrum alpha = light->Sample_L(tspack, scene,
-			u[0], u[1], u[2], u[3], &photonRay, &pdf);
-		if (pdf == 0.f || alpha.Black())
+		SWCSpectrum alpha;
+		if (!light->Sample_L(tspack, scene, u[0], u[1], u[2], &bsdf, &pdf, &alpha))
 			continue;
-		alpha /= pdf * lightPdf;
+		RayDifferential photonRay;
+		photonRay.o = bsdf->dgShading.p;
+		float pdf2;
+		SWCSpectrum alpha2;
+		if (!bsdf->Sample_f(tspack, Vector(bsdf->nn), &photonRay.d,
+			u[3], u[4], u[5], &alpha2, &pdf2))
+			continue;
+		alpha *= alpha2;
+		alpha /= pdf2 * pdf * lightPdf;
 
 		if (!alpha.Black()) {
 			// Follow photon path through scene and record intersections
@@ -650,9 +659,9 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 				// Get random numbers for sampling outgoing photon direction
 				float u1, u2, u3;
 				if (nIntersections == 1) {
-					u1 = RadicalInverse(nshot, 17);
-					u2 = RadicalInverse(nshot, 19);
-					u3 = RadicalInverse(nshot, 23);
+					u1 = RadicalInverse(nshot, 23);
+					u2 = RadicalInverse(nshot, 29);
+					u3 = RadicalInverse(nshot, 31);
 				} else {
 					u1 = tspack->rng->floatValue();
 					u2 = tspack->rng->floatValue();
@@ -663,11 +672,14 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 				SWCSpectrum fr;
 				if (!photonBSDF->Sample_f(tspack, wo, &wi, u1, u2, u3, &fr, &pdfo, BSDF_ALL, &flags))
 					break;
-				SWCSpectrum anew = alpha * fr * AbsDot(wi, photonIsect.dg.nn) * AbsDot(wo, photonBSDF->dgShading.nn) / (AbsDot(wo, photonIsect.dg.nn) * pdfo);
-				float continueProb = min(1.f, anew.Filter(tspack) / alpha.Filter(tspack));
+				SWCSpectrum anew = fr *
+					(AbsDot(wi, photonBSDF->ng) *
+					AbsDot(wo, photonBSDF->nn) /
+					(AbsDot(wo, photonBSDF->ng) * pdfo));
+				float continueProb = min(1.f, anew.Filter(tspack));
 				if (tspack->rng->floatValue() > continueProb || nIntersections > maxDepth)
 					break;
-				alpha = anew / continueProb;
+				alpha *= anew / continueProb;
 				specularPath = (nIntersections == 1 || specularPath) &&
 					((flags & BSDF_SPECULAR) != 0 || pdfo > 100.f);
 				photonRay = RayDifferential(photonIsect.dg.p, wi);

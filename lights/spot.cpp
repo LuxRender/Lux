@@ -83,36 +83,19 @@ SpotLight::SpotLight(const Transform &light2world,
 	cosTotalWidth = cosf(Radians(width));
 	cosFalloffStart = cosf(Radians(fall));
 }
-SpotLight::~SpotLight() {}
-float SpotLight::Falloff(const Vector &w) const {
-	return LocalFalloff(Normalize(WorldToLight(w)), cosTotalWidth, cosFalloffStart);
+SpotLight::~SpotLight()
+{
 }
-SWCSpectrum SpotLight::Sample_L(const TsPack *tspack, const Point &p, float u1, float u2, float u3,
-		Vector *wi, float *pdf, VisibilityTester *visibility) const {
-	*pdf = 1.f;
-	*wi = Normalize(lightPos - p);
-	visibility->SetSegment(p, lightPos, tspack->time);
-	return Lbase->Evaluate(tspack, dummydg) * gain * Falloff(-*wi) /
-		DistanceSquared(lightPos, p);
-}
-float SpotLight::Pdf(const TsPack *tspack, const Point &, const Vector &) const {
-	return 0.;
-}
-float SpotLight::Pdf(const TsPack *tspack, const Point &p, const Normal &n,
+
+float SpotLight::Pdf(const TsPack *tspack, const Point &p,
 	const Point &po, const Normal &ns) const
 {
 	return 1.f;
 }
-SWCSpectrum SpotLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1,
-		float u2, float u3, float u4,
-		Ray *ray, float *pdf) const {
-	ray->o = lightPos;
-	Vector v = UniformSampleCone(u1, u2, cosTotalWidth);
-	ray->d = LightToWorld(v);
-	*pdf = UniformConePdf(cosTotalWidth);
-	return Lbase->Evaluate(tspack, dummydg) * gain * Falloff(ray->d);
-}
-bool SpotLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *Le) const
+
+bool SpotLight::Sample_L(const TsPack *tspack, const Scene *scene,
+	float u1, float u2, float u3, BSDF **bsdf, float *pdf,
+	SWCSpectrum *Le) const
 {
 	Normal ns = LightToWorld(Normal(0, 0, 1));
 	Vector dpdu, dpdv;
@@ -124,27 +107,22 @@ bool SpotLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, flo
 	*Le = Lbase->Evaluate(tspack, dg) * gain;
 	return true;
 }
-bool SpotLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n,
-	float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect,
-	VisibilityTester *visibility, SWCSpectrum *Le) const
+bool SpotLight::Sample_L(const TsPack *tspack, const Scene *scene,
+	const Point &p, float u1, float u2, float u3,
+	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *Le) const
 {
 	const Vector w(p - lightPos);
 	*pdfDirect = 1.f;
 	Normal ns = LightToWorld(Normal(0, 0, 1));
-	*pdf = 1.f;
+	if (pdf)
+		*pdf = 1.f;
 	Vector dpdu, dpdv;
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 	DifferentialGeometry dg(lightPos, ns, dpdu, dpdv, Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
 	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
 		ARENA_ALLOC(tspack->arena, SpotBxDF)(cosTotalWidth, cosFalloffStart), NULL, NULL);
-	visibility->SetSegment(p, lightPos, tspack->time);
 	*Le = Lbase->Evaluate(tspack, dg) * gain;
 	return true;
-}
-SWCSpectrum SpotLight::Le(const TsPack *tspack, const Scene *scene, const Ray &r,
-	const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const
-{
-	return SWCSpectrum(0.f);
 }
 Light* SpotLight::CreateLight(const Transform &l2w, const ParamSet &paramSet)
 {

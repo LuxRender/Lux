@@ -24,6 +24,7 @@
 #include "single.h"
 #include "randomgen.h"
 #include "light.h"
+#include "bxdf.h"
 #include "sampling.h"
 #include "paramset.h"
 #include "dynload.h"
@@ -44,7 +45,8 @@ void SingleScattering::Transmittance(const TsPack *tspack, const Scene *scene,
 	if (!scene->volumeRegion) 
 		return;
 	const float step = stepSize; // TODO - handle varying step size
-	const float offset = sample->oneD[tauSampleOffset][0];
+	const float offset = sample ? sample->oneD[tauSampleOffset][0] :
+		tspack->rng->floatValue();
 	const SWCSpectrum tau(scene->volumeRegion->Tau(tspack, ray, step,
 		offset));
 	*L *= Exp(-tau);
@@ -101,22 +103,19 @@ u_int SingleScattering::Li(const TsPack *tspack, const Scene *scene,
 		if (!ss.Black()) {
 			// Add contribution of _light_ due to scattering at _p_
 			float pdf;
-			VisibilityTester vis;
 			Vector wo;
 			float u1 = samp[sampOffset], u2 = samp[sampOffset + 1],
 				u3 = samp[sampOffset + 2];
-			const SWCSpectrum L(light->Sample_L(tspack, r.o, u1, u2,
-				u3, &wo, &pdf, &vis));
-
-			// Dade - use the new TestOcclusion() method
-			SWCSpectrum occlusion(1.f);
-			if ((!L.Black()) && (pdf > 0.0f) &&
-				vis.TestOcclusion(tspack, scene, &occlusion)) {	
-				SWCSpectrum Ld = L * occlusion;
-				vis.Transmittance(tspack, scene, sample, &Ld);
-				*Lv += Tr * ss * Ld *
-					(vr->P(tspack, r.o, w, -wo) * nLights /
-					pdf);
+			BSDF *ibsdf;
+			SWCSpectrum L;
+			if (light->Sample_L(tspack, scene, r.o, u1, u2, u3,
+				&ibsdf, NULL, &pdf, &L)) {
+				if (scene->Connect(tspack, NULL, r.o,
+					ibsdf->dgShading.p, false, &L, NULL,
+					NULL))
+					*Lv += Tr * ss * L *
+						(vr->P(tspack, r.o, w, -wo) *
+						 nLights / pdf);
 			}
 		}
 		sampOffset += 3;

@@ -142,51 +142,25 @@ PointLight::PointLight(
 	func = ssf;
 }
 PointLight::~PointLight() {
-	if(func)
-		delete func;
+	delete func;
 }
 float PointLight::Power(const Scene *) const {
 	return Lbase->Y() * gain * 4.f * M_PI * (func ? func->Average_f() : 1.f);
 }
-SWCSpectrum PointLight::Sample_L(const TsPack *tspack, const Point &P, float u1, float u2,
-		float u3, Vector *wo, float *pdf,
-		VisibilityTester *visibility) const {
-	*wo = Normalize(lightPos - P);
-	*pdf = 1.f;
-	visibility->SetSegment(P, lightPos, tspack->time);
-	return L(tspack, WorldToLight(-*wo)) / DistanceSquared(lightPos, P);
-}
-SWCSpectrum PointLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2,
-		float u3, float u4, Ray *ray, float *pdf) const {
-	ray->o = lightPos;
-	if(func) {
-		Vector w;
-		SWCSpectrum f(func->Sample_f(tspack, u1, u2, &w, pdf));
-		ray->d = LightToWorld(w);
-		return Lbase->Evaluate(tspack, dummydg) * gain * f;
-	} else {
-		ray->d = UniformSampleSphere(u1, u2);
-		*pdf = UniformSpherePdf();
-		return Lbase->Evaluate(tspack, dummydg) * gain;
-	}
-}
-float PointLight::Pdf(const TsPack *, const Point &, const Vector &) const {
-	return 0.;
-}
-float PointLight::Pdf(const TsPack *tspack, const Point &p, const Normal &n,
+
+float PointLight::Pdf(const TsPack *tspack, const Point &p,
 	const Point &po, const Normal &ns) const
 {
 	return 1.f;
 }
-SWCSpectrum PointLight::L(const TsPack *tspack, const Vector &w) const {
-	return Lbase->Evaluate(tspack, dummydg) * gain *
-		(func ? func->f(tspack, w) : 1.f);
-}
-bool PointLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *Le) const
+
+bool PointLight::Sample_L(const TsPack *tspack, const Scene *scene,
+	float u1, float u2, float u3, BSDF **bsdf, float *pdf,
+	SWCSpectrum *Le) const
 {
 	*pdf = 1.f;
 	const Normal ns(0, 0, 1);
-	DifferentialGeometry dg(lightPos, Normalize(LightToWorld(ns)),
+	const DifferentialGeometry dg(lightPos, Normalize(LightToWorld(ns)),
 		Normalize(LightToWorld(Vector(1, 0, 0))),
 		Normalize(LightToWorld(Vector(0, 1, 0))),
 		Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
@@ -199,32 +173,27 @@ bool PointLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, fl
 	*Le = Lbase->Evaluate(tspack, dg) * gain;
 	return true;
 }
-bool PointLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n,
-	float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect,
-	VisibilityTester *visibility, SWCSpectrum *Le) const
+bool PointLight::Sample_L(const TsPack *tspack, const Scene *scene,
+	const Point &p, float u1, float u2, float u3,
+	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *Le) const
 {
 	const Normal ns(0, 0, 1);
 	Vector dpdu, dpdv;
-	DifferentialGeometry dg(lightPos, Normalize(LightToWorld(ns)),
+	const DifferentialGeometry dg(lightPos, Normalize(LightToWorld(ns)),
 		Normalize(LightToWorld(Vector(1, 0, 0))),
 		Normalize(LightToWorld(Vector(0, 1, 0))),
 		Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
 	*pdfDirect = 1.f;
-	*pdf = 1.f;
+	if (pdf)
+		*pdf = 1.f;
 	if (func)
 		*bsdf = ARENA_ALLOC(tspack->arena, GonioBSDF)(dg, ns,
 			NULL, NULL, func);
 	else
 		*bsdf = ARENA_ALLOC(tspack->arena, UniformBSDF)(dg, ns,
 			NULL, NULL);
-	visibility->SetSegment(p, lightPos, tspack->time);
 	*Le = Lbase->Evaluate(tspack, dg) * gain;
 	return true;
-}
-SWCSpectrum PointLight::Le(const TsPack *tspack, const Scene *scene, const Ray &r,
-	const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const
-{
-	return SWCSpectrum(0.f);
 }
 Light* PointLight::CreateLight(const Transform &light2world,
 		const ParamSet &paramSet) {

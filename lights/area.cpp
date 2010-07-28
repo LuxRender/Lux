@@ -181,76 +181,17 @@ AreaLight::~AreaLight()
 	delete func;
 }
 
-SWCSpectrum AreaLight::L(const TsPack *tspack, const DifferentialGeometry &dg,
-	const Vector& w) const
-{
-	if (Dot(dg.nn, w) > 0.f) {
-		SWCSpectrum Ll(Le->Evaluate(tspack, dg) * gain);
-		if (func) {
-			// Transform to the local coordinate system around the point
-			const Vector wLocal(Dot(dg.dpdu, w), Dot(dg.dpdv, w),
-				Dot(dg.nn, w));
-			Ll *= func->f(tspack, wLocal);
-		}
-		return Ll;
-	}
-	return SWCSpectrum(0.f);
-}
-
 float AreaLight::Power(const Scene *scene) const
 {
 	return gain * area * M_PI * Le->Y() * (func ? 2.f : 1.f);
 }
 
-SWCSpectrum AreaLight::Sample_L(const TsPack *tspack, const Point &p,
-	const Normal &n, float u1, float u2, float u3, Vector *wi, float *pdf,
-	VisibilityTester *visibility) const
-{
-	DifferentialGeometry dg;
-	dg.time = tspack->time;
-	prim->Sample(tspack, p, u1, u2, u3, &dg);
-	*wi = Normalize(dg.p - p);
-	*pdf = prim->Pdf(p, *wi);
-	visibility->SetSegment(p, dg.p, tspack->time);
-	return L(tspack, dg, -*wi);
-}
-float AreaLight::Pdf(const TsPack *tspack, const Point &p, const Normal &N,
-		const Vector &wi) const {
-	return prim->Pdf(p, wi);
-}
-float AreaLight::Pdf(const TsPack *tspack, const Point &p, const Normal &N,
+float AreaLight::Pdf(const TsPack *tspack, const Point &p,
 	const Point &po, const Normal &ns) const
 {
 	return prim->Pdf(p, po);
 }
-SWCSpectrum AreaLight::Sample_L(const TsPack *tspack, const Point &P,
-		float u1, float u2, float u3, Vector *wo, float *pdf,
-		VisibilityTester *visibility) const {
-	DifferentialGeometry dg;
-	dg.time = tspack->time;
-	prim->Sample(tspack, P, u1, u2, u3, &dg);
-	*wo = Normalize(dg.p - P);
-	*pdf = prim->Pdf(P, *wo);
-	visibility->SetSegment(P, dg.p, tspack->time);
-	return L(tspack, dg, -*wo);
-}
-SWCSpectrum AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1,
-		float u2, float u3, float u4,
-		Ray *ray, float *pdf) const {
-	DifferentialGeometry dg;
-	dg.time = tspack->time;
-	prim->Sample(u1, u2, tspack->rng->floatValue(), &dg); // TODO - REFACT - add passed value from sample
-	ray->o = dg.p;
-	ray->d = CosineSampleHemisphere(u3, u4);
-	const float coso = ray->d.z;
-	ray->d = ray->d.x * Normalize(dg.dpdu) + ray->d.y * Normalize(dg.dpdv) +
-		ray->d.z * Vector(dg.nn);
-	*pdf = prim->Pdf(ray->o) * coso * INV_PI;
-	return L(tspack, dg, ray->d) * coso;
-}
-float AreaLight::Pdf(const TsPack *tspack, const Point &P, const Vector &w) const {
-	return prim->Pdf(P, w);
-}
+
 bool AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *Le) const
 {
 	DifferentialGeometry dg;
@@ -270,58 +211,57 @@ bool AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, flo
 	*Le = 0.f;
 	return false;
 }
-bool AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n,
+bool AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p,
 	float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect,
-	VisibilityTester *visibility, SWCSpectrum *Le) const
+	SWCSpectrum *Le) const
 {
 	DifferentialGeometry dg;
 	dg.time = tspack->time;
 	prim->Sample(tspack, p, u1, u2, u3, &dg);
 	Vector wo(Normalize(dg.p - p));
-	*pdf = prim->Pdf(dg.p);
-	*pdfDirect = prim->Pdf(p, dg.p);
-	if (*pdfDirect > 0.f) {
+	const float pdfd = prim->Pdf(p, dg.p);
+	if (pdfd > 0.f) {
+		if (pdf)
+			*pdf = prim->Pdf(dg.p);
+		if (pdfDirect)
+			*pdfDirect = pdfd;
 		if(func)
 			*bsdf = ARENA_ALLOC(tspack->arena, GonioAreaBSDF)(dg, dg.nn,
 				prim->GetExterior(), prim->GetInterior(), func);
 		else
 			*bsdf = ARENA_ALLOC(tspack->arena, UniformBSDF)(dg, dg.nn,
 				prim->GetExterior(), prim->GetInterior());
-		visibility->SetSegment(p, dg.p, tspack->time);
 		*Le = this->Le->Evaluate(tspack, dg) * (gain * M_PI);
 		return true;
 	}
 	*Le = 0.f;
 	return false;
 }
-SWCSpectrum AreaLight::L(const TsPack *tspack, const Ray &ray, const DifferentialGeometry &dg, const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const
+SWCSpectrum AreaLight::L(const TsPack *tspack, const Ray &ray,
+	const DifferentialGeometry &dg, BSDF **bsdf, float *pdf,
+	float *pdfDirect) const
 {
 	if(func) {
 		*bsdf = ARENA_ALLOC(tspack->arena, GonioAreaBSDF)(dg, dg.nn,
 			prim->GetExterior(), prim->GetInterior(), func);
 	} else {
 		if (!(Dot(dg.nn, ray.d) < 0.f)) {
-			*pdfDirect = *pdf = 0.f;
+			if (pdf)
+				*pdf = 0.f;
+			if (pdfDirect)
+				*pdfDirect = 0.f;
 			*bsdf = NULL;
 			return SWCSpectrum(tspack, 0.f);
 		}
 		*bsdf = ARENA_ALLOC(tspack->arena, UniformBSDF)(dg, dg.nn,
 			prim->GetExterior(), prim->GetInterior());
 	}
-	*pdf = prim->Pdf(dg.p);
-	*pdfDirect = prim->Pdf(ray.o, dg.p);
+	if (pdf)
+		*pdf = prim->Pdf(dg.p);
+	if (pdfDirect)
+		*pdfDirect = prim->Pdf(ray.o, dg.p);
 	return Le->Evaluate(tspack, dg) * (gain * M_PI) * (*bsdf)->f(tspack, Vector(dg.nn), -ray.d);
 }
-
-class HemiSphereSphericalFunction : public SphericalFunction {
-public:
-	HemiSphereSphericalFunction(const boost::shared_ptr<const SphericalFunction> &aSF) : sf(aSF) {}
-	SWCSpectrum f(const TsPack *tspack, float phi, float theta) const {
-		return theta > 0.f ? sf->f(tspack, phi, theta) : 0.f;
-	}
-private:
-	const boost::shared_ptr<const SphericalFunction> sf;
-};
 
 AreaLight* AreaLight::CreateAreaLight(const Transform &light2world,
 	const ParamSet &paramSet, const boost::shared_ptr<Primitive> &prim)
@@ -335,10 +275,8 @@ AreaLight* AreaLight::CreateAreaLight(const Transform &light2world,
 
 	boost::shared_ptr<const SphericalFunction> sf(CreateSphericalFunction(paramSet));
 	SampleableSphericalFunction *ssf = NULL;
-	if (sf) {
-		boost::shared_ptr<const SphericalFunction> hf(new HemiSphereSphericalFunction(sf));
-		ssf = new SampleableSphericalFunction(hf);
-	}
+	if (sf)
+		ssf = new SampleableSphericalFunction(sf);
 
 	int nSamples = paramSet.FindOneInt("nsamples", 1);
 

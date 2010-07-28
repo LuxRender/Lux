@@ -89,11 +89,15 @@ void IGIIntegrator::Preprocess(const TsPack *tspack, const Scene *scene)
 		return;
 	// Compute samples for emitted rays from lights
 	float *lightNum = new float[nLightPaths * nLightSets];
-	float *lightSamp0 = new float[2 * nLightPaths *	nLightSets];
+	float *lightSamp0 = new float[2 * nLightPaths * nLightSets];
+	float *lightSamp0b = new float[nLightPaths * nLightSets];
 	float *lightSamp1 = new float[2 * nLightPaths * nLightSets];
+	float *lightSamp1b = new float[nLightPaths * nLightSets];
 	LDShuffleScrambled1D(tspack, nLightPaths, nLightSets, lightNum);
 	LDShuffleScrambled2D(tspack, nLightPaths, nLightSets, lightSamp0);
+	LDShuffleScrambled1D(tspack, nLightPaths, nLightSets, lightSamp0b);
 	LDShuffleScrambled2D(tspack, nLightPaths, nLightSets, lightSamp1);
+	LDShuffleScrambled1D(tspack, nLightPaths, nLightSets, lightSamp1b);
 	// Precompute information for light sampling densities
 	tspack->swl->Sample(.5f);
 	u_int nLights = scene->lights.size();
@@ -112,25 +116,31 @@ void IGIIntegrator::Preprocess(const TsPack *tspack, const Scene *scene)
 			u_int lNum = lightCDF.SampleDiscrete(lightNum[sampOffset], &lightPdf);
 			Light *light = scene->lights[lNum];
 			// Sample ray leaving light source
-			RayDifferential ray;
+			BSDF *bsdf;
 			float pdf;
-			SWCSpectrum alpha(light->Sample_L(tspack, scene,
-				lightSamp0[2 * sampOffset],
+			SWCSpectrum alpha;
+			if (!light->Sample_L(tspack, scene,
+				lightSamp0[2 * sampOffset ],
 				lightSamp0[2 * sampOffset + 1],
+				lightSamp0b[sampOffset], &bsdf, &pdf, &alpha))
+				continue;
+			RayDifferential ray;
+			ray.o = bsdf->dgShading.p;
+			SWCSpectrum f;
+			float pdf2;
+			if (!bsdf->Sample_f(tspack, Vector(bsdf->nn), &ray.d,
 				lightSamp1[2 * sampOffset],
 				lightSamp1[2 * sampOffset + 1],
-				&ray, &pdf));
-			if (pdf == 0.f || alpha.Black())
+				lightSamp1b[sampOffset], &f, &pdf2))
 				continue;
-			alpha /= pdf * lightPdf;
+			alpha *= f;
+			alpha /= pdf2 * pdf * lightPdf;
 			Intersection isect;
-			BSDF *bsdf;
 			const Volume *volume = NULL; //FIXME: get it from the light
 			u_int nIntersections = 0;
 			while (scene->Intersect(tspack, volume, ray, &isect,
 				&bsdf, &alpha) && !alpha.Black()) {
 				++nIntersections;
-//				alpha *= scene->Transmittance(ray);
 				Vector wo = -ray.d;
 				// Create virtual light at ray intersection point
 				SWCSpectrum Le = alpha * bsdf->rho(tspack, wo) / M_PI;
@@ -160,7 +170,9 @@ void IGIIntegrator::Preprocess(const TsPack *tspack, const Scene *scene)
 	}
 	delete[] lightNum; // NOBOOK
 	delete[] lightSamp0; // NOBOOK
+	delete[] lightSamp0b; // NOBOOK
 	delete[] lightSamp1; // NOBOOK
+	delete[] lightSamp1b; // NOBOOK
 }
 u_int IGIIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	const Sample *sample) const
@@ -181,16 +193,24 @@ u_int IGIIntegrator::Li(const TsPack *tspack, const Scene *scene,
 			// Handle ray with no intersection
 			if (depth == 0)
 				alpha = 0.f;
-			for (u_int i = 0; i < scene->lights.size(); ++i)
-				L += pathThroughput * scene->lights[i]->Le(tspack, r);
+			BSDF *ibsdf;
+			for (u_int i = 0; i < scene->lights.size(); ++i) {
+				SWCSpectrum Le(pathThroughput);
+				if (scene->lights[i]->Le(tspack, scene, r,
+					&ibsdf, NULL, NULL, &Le))
+					L += Le;
+			}
 			break;
 		}
 		Vector wo = -r.d;
-		// Compute emitted light if ray hit an area light source
-		L += pathThroughput * isect.Le(tspack, wo);
-		// Evaluate BSDF at hit point
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;
+		// Compute emitted light if ray hit an area light source
+		if (isect.arealight) {
+			BSDF *ibsdf;
+			L += pathThroughput * isect.Le(tspack, r, &ibsdf,
+				NULL, NULL);
+		}
 		for (u_int i = 0; i < scene->lights.size(); ++i) {
 			SWCSpectrum Ld(0.f);
 			float ln = Clamp((i + tspack->rng->floatValue()) / scene->lights.size(), 0.f, 1.f);

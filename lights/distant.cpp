@@ -89,18 +89,14 @@ DistantLight::~DistantLight()
 	delete bxdf;
 }
 
-SWCSpectrum DistantLight::Le(const TsPack *tspack, const Scene *scene, const Ray &r,
-	const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const
+bool DistantLight::Le(const TsPack *tspack, const Scene *scene, const Ray &r,
+	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *L) const
 {
 	const float xD = Dot(r.d, x);
 	const float yD = Dot(r.d, y);
 	const float cosRay = Dot(r.d, lightDir);
-	if (cosRay <= 0.f || (xD * xD + yD * yD) > sin2ThetaMax) {
-		*bsdf = NULL;
-		*pdf = 0.f;
-		*pdfDirect = 0.f;
-		return SWCSpectrum(0.f);
-	}
+	if (cosRay <= 0.f || (xD * xD + yD * yD) > sin2ThetaMax)
+		return false;
 	Point worldCenter;
 	float worldRadius;
 	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
@@ -112,40 +108,32 @@ SWCSpectrum DistantLight::Le(const TsPack *tspack, const Scene *scene, const Ray
 	DifferentialGeometry dg(ps, ns, -x, y, Normal(0, 0, 0), Normal(0, 0, 0),
 		0, 0, NULL);
 	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns, bxdf, NULL, NULL);
-	if (!havePortalShape)
-		*pdf = 1.f / (M_PI * worldRadius * worldRadius);
-	else {
-		*pdf = 0.f;
-		for (u_int i = 0; i < nrPortalShapes; ++i) {
-			Intersection isect;
-			RayDifferential ray(ps, lightDir);
-			ray.mint = -INFINITY;
-			if (PortalShapes[i]->Intersect(ray, &isect)) {
-				float cosPortal = -Dot(lightDir, isect.dg.nn);
-				if (cosPortal > 0.f)
-					*pdf += PortalShapes[i]->Pdf(isect.dg.p) / cosPortal;
+	if (pdf) {
+		if (!havePortalShape)
+			*pdf = 1.f / (M_PI * worldRadius * worldRadius);
+		else {
+			*pdf = 0.f;
+			for (u_int i = 0; i < nrPortalShapes; ++i) {
+				Intersection isect;
+				RayDifferential ray(ps, lightDir);
+				ray.mint = -INFINITY;
+				if (PortalShapes[i]->Intersect(ray, &isect)) {
+					float cosPortal = -Dot(lightDir, isect.dg.nn);
+					if (cosPortal > 0.f)
+						*pdf += PortalShapes[i]->Pdf(isect.dg.p) / cosPortal;
+				}
 			}
+			*pdf /= nrPortalShapes;
 		}
-		*pdf /= nrPortalShapes;
 	}
-	*pdfDirect = UniformConePdf(cosThetaMax) * fabsf(cosRay) /
+	if (pdfDirect)
+		*pdfDirect = UniformConePdf(cosThetaMax) * fabsf(cosRay) /
 		(distance * distance);
-	return Lbase->Evaluate(tspack, dg) * gain * UniformConePdf(cosThetaMax);
+	*L *= Lbase->Evaluate(tspack, dg) * gain * UniformConePdf(cosThetaMax);
+	return true;
 }
 
-SWCSpectrum DistantLight::Sample_L(const TsPack *tspack, const Point &p, float u1, float u2, float u3,
-		Vector *wi, float *pdf, VisibilityTester *visibility) const {
-	*pdf = 1.f;
-	*wi = lightDir;
-	visibility->SetRay(p, *wi, tspack->time);
-	return Lbase->Evaluate(tspack, dummydg) * gain;
-}
-
-float DistantLight::Pdf(const TsPack *tspack, const Point &, const Vector &) const {
-	return 0.f;
-}
-
-float DistantLight::Pdf(const TsPack *tspack, const Point &p, const Normal &n,
+float DistantLight::Pdf(const TsPack *tspack, const Point &p,
 	const Point &po, const Normal &ns) const
 {
 	const Vector w(p - po);
@@ -155,27 +143,6 @@ float DistantLight::Pdf(const TsPack *tspack, const Point &p, const Normal &n,
 		return 0.f;
 	else
 		return UniformConePdf(cosThetaMax) * cosRay / d2;
-}
-
-SWCSpectrum DistantLight::Sample_L(const TsPack *tspack, const Scene *scene,
-		float u1, float u2, float u3, float u4,
-		Ray *ray, float *pdf) const {
-	// Choose point on disk oriented toward infinite light direction
-	Point worldCenter;
-	float worldRadius;
-	scene->WorldBound().BoundingSphere(&worldCenter,
-	                                   &worldRadius);
-	Vector v1, v2;
-	CoordinateSystem(lightDir, &v1, &v2);
-	float d1, d2;
-	ConcentricSampleDisk(u1, u2, &d1, &d2);
-	Point Pdisk =
-		worldCenter + worldRadius * (d1 * v1 + d2 * v2);
-	// Set ray origin and direction for infinite light ray
-	ray->o = Pdisk + worldRadius * lightDir;
-	ray->d = -lightDir;
-	*pdf = 1.f / (M_PI * worldRadius * worldRadius);
-	return Lbase->Evaluate(tspack, dummydg) * gain;
 }
 
 bool DistantLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1,
@@ -242,12 +209,10 @@ bool DistantLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1,
 }
 
 bool DistantLight::Sample_L(const TsPack *tspack, const Scene *scene,
-	const Point &p, const Normal &n, float u1, float u2, float u3,
-	BSDF **bsdf, float *pdf, float *pdfDirect,
-	VisibilityTester *visibility, SWCSpectrum *Le) const
+	const Point &p, float u1, float u2, float u3,
+	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *Le) const
 {
 	const Vector wi(UniformSampleCone(u1, u2, cosThetaMax, x, y, lightDir));
-	*pdfDirect = UniformConePdf(cosThetaMax);
 
 	const float cosRay = Dot(wi, lightDir);
 	Point worldCenter;
@@ -262,24 +227,27 @@ bool DistantLight::Sample_L(const TsPack *tspack, const Scene *scene,
 	DifferentialGeometry dg(ps, ns, -x, y, Normal(0, 0, 0), Normal(0, 0, 0),
 		0, 0, NULL);
 	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns, bxdf, NULL, NULL);
-	if (!havePortalShape)
-		*pdf = 1.f / (M_PI * worldRadius * worldRadius);
-	else {
-		*pdf = 0.f;
-		for (u_int i = 0; i < nrPortalShapes; ++i) {
-			Intersection isect;
-			RayDifferential ray(ps, lightDir);
-			ray.mint = -INFINITY;
-			if (PortalShapes[i]->Intersect(ray, &isect)) {
-				float cosPortal = Dot(ns, isect.dg.nn);
-				if (cosPortal > 0.f)
-					*pdf += PortalShapes[i]->Pdf(isect.dg.p) / cosPortal;
+	if (pdf) {
+		if (!havePortalShape)
+			*pdf = 1.f / (M_PI * worldRadius * worldRadius);
+		else {
+			*pdf = 0.f;
+			for (u_int i = 0; i < nrPortalShapes; ++i) {
+				Intersection isect;
+				RayDifferential ray(ps, lightDir);
+				ray.mint = -INFINITY;
+				if (PortalShapes[i]->Intersect(ray, &isect)) {
+					float cosPortal = Dot(ns, isect.dg.nn);
+					if (cosPortal > 0.f)
+						*pdf += PortalShapes[i]->Pdf(isect.dg.p) / cosPortal;
+				}
 			}
+			*pdf /= nrPortalShapes;
 		}
-		*pdf /= nrPortalShapes;
 	}
-	*pdfDirect *= cosRay / (distance * distance);
-	visibility->SetSegment(p, ps, tspack->time);
+	if (pdfDirect)
+		*pdfDirect = UniformConePdf(cosThetaMax) * cosRay /
+			(distance * distance);
 
 	*Le = Lbase->Evaluate(tspack, dg) * gain * UniformConePdf(cosThetaMax);
 	return true;

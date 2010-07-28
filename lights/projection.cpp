@@ -106,75 +106,48 @@ ProjectionLight::ProjectionLight(const Transform &light2world,
 	// Create _ProjectionLight_ MIP-map
 	int width = 0, height = 0;
 	auto_ptr<ImageData> imgdata(ReadImage(texname));
-	if (imgdata.get()!=NULL) {
-		width=imgdata->getWidth();
-		height=imgdata->getHeight();
-		projectionMap =imgdata->createMIPMap();
+	if (imgdata.get() != NULL) {
+		width = imgdata->getWidth();
+		height = imgdata->getHeight();
+		projectionMap = imgdata->createMIPMap();
 	} else 
 		projectionMap = NULL;
 
 	// Initialize _ProjectionLight_ projection matrix
 	float aspect = float(width) / float(height);
 	if (aspect > 1.f)  {
-		screenX0 = -aspect;  screenX1 =  aspect;
-		screenY0 = -1.f;     screenY1 =  1.f;
-	}
-	else {
-		screenX0 = -1.f;            screenX1 =  1.f;
-		screenY0 = -1.f / aspect;   screenY1 =  1.f / aspect;
+		screenX0 = -aspect;
+		screenX1 = aspect;
+		screenY0 = -1.f;
+		screenY1 = 1.f;
+	} else {
+		screenX0 = -1.f;
+		screenX1 = 1.f;
+		screenY0 = -1.f / aspect;
+		screenY1 = 1.f / aspect;
 	}
 	hither = DEFAULT_EPSILON_STATIC;
 	yon = 1e30f;
 	lightProjection = Perspective(fov, hither, yon);
 	// Compute cosine of cone surrounding projection directions
 	float opposite = tanf(Radians(fov) / 2.f);
-	float tanDiag = opposite * sqrtf(1.f + 1.f/(aspect*aspect));
+	float tanDiag = opposite * sqrtf(1.f + 1.f / (aspect * aspect));
 	cosTotalWidth = cosf(atanf(tanDiag));
 	area = 4.f * opposite * opposite / aspect;
 }
-ProjectionLight::~ProjectionLight() { delete projectionMap; }
-SWCSpectrum ProjectionLight::Projection(const TsPack *tspack,
-	const Vector &w) const
+ProjectionLight::~ProjectionLight()
 {
-	Vector wl = WorldToLight(w);
-	// Discard directions behind projection light
-	if (wl.z < hither) return SWCSpectrum(0.f);
-	// Project point on to projection plane and compute light
-	Point Pl = lightProjection(Point(wl.x, wl.y, wl.z));
-	if (Pl.x < screenX0 || Pl.x > screenX1 ||
-		Pl.y < screenY0 || Pl.y > screenY1)
-		return SWCSpectrum(0.f);
-	if (!projectionMap)
-		return SWCSpectrum(1.f);
-	float s = (Pl.x - screenX0) / (screenX1 - screenX0);
-	float t = (Pl.y - screenY0) / (screenY1 - screenY0);
-	return projectionMap->LookupSpectrum(tspack, s, t);
+	delete projectionMap;
 }
-SWCSpectrum ProjectionLight::Sample_L(const TsPack *tspack, const Point &p, float u1, float u2,
-		float u3, Vector *wi, float *pdf,
-		VisibilityTester *visibility) const {
-	*wi = Normalize(lightPos - p);
-	*pdf = 1.f;
-	visibility->SetSegment(p, lightPos, tspack->time);
-	return Lbase->Evaluate(tspack, dummydg) * gain * Projection(tspack, -*wi) / DistanceSquared(lightPos, p);
-}
-SWCSpectrum ProjectionLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2,
-		float u3, float u4, Ray *ray, float *pdf) const {
-	ray->o = lightPos;
-	Vector v = UniformSampleCone(u1, u2, cosTotalWidth);
-	ray->d = LightToWorld(v);
-	*pdf = UniformConePdf(cosTotalWidth);
-	return Lbase->Evaluate(tspack, dummydg) * gain * Projection(tspack, ray->d);
-}
-float ProjectionLight::Pdf(const TsPack *, const Point &, const Vector &) const {
-	return 0.f;
-}
-float ProjectionLight::Pdf(const TsPack *tspack, const Point &p, const Normal &n,
+
+float ProjectionLight::Pdf(const TsPack *tspack, const Point &p,
 	const Point &po, const Normal &ns) const
 {
 	return 1.f;
 }
-bool ProjectionLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *Le) const
+bool ProjectionLight::Sample_L(const TsPack *tspack, const Scene *scene,
+	float u1, float u2, float u3, BSDF **bsdf, float *pdf,
+	SWCSpectrum *Le) const
 {
 	Normal ns = LightToWorld(Normal(0, 0, 1));
 	Vector dpdu, dpdv;
@@ -182,33 +155,28 @@ bool ProjectionLight::Sample_L(const TsPack *tspack, const Scene *scene, float u
 	DifferentialGeometry dg(lightPos, ns, dpdu, dpdv, Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
 	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
 		ARENA_ALLOC(tspack->arena, ProjectionBxDF)(area, projectionMap,
-			lightProjection, screenX0, screenX1, screenY0, screenY1), NULL, NULL);
+		lightProjection, screenX0, screenX1, screenY0, screenY1), NULL, NULL);
 	*pdf = 1.f;
 	*Le = Lbase->Evaluate(tspack, dg) * gain;
 	return true;
 }
-bool ProjectionLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n,
-	float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect,
-	VisibilityTester *visibility, SWCSpectrum *Le) const
+bool ProjectionLight::Sample_L(const TsPack *tspack, const Scene *scene,
+	const Point &p, float u1, float u2, float u3,
+	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *Le) const
 {
 	const Vector w(p - lightPos);
 	*pdfDirect = 1.f;
 	Normal ns = LightToWorld(Normal(0, 0, 1));
-	*pdf = 1.f;
+	if (pdf)
+		*pdf = 1.f;
 	Vector dpdu, dpdv;
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 	DifferentialGeometry dg(lightPos, ns, dpdu, dpdv, Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
 	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
 		ARENA_ALLOC(tspack->arena, ProjectionBxDF)(area, projectionMap,
-			lightProjection, screenX0, screenX1, screenY0, screenY1), NULL, NULL);
-	visibility->SetSegment(p, lightPos, tspack->time);
+		lightProjection, screenX0, screenX1, screenY0, screenY1), NULL, NULL);
 	*Le = Lbase->Evaluate(tspack, dg) * gain;
 	return true;
-}
-SWCSpectrum ProjectionLight::Le(const TsPack *tspack, const Scene *scene, const Ray &r,
-	const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const
-{
-	return SWCSpectrum(0.f);
 }
 
 Light* ProjectionLight::CreateLight(const Transform &light2world,

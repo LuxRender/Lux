@@ -63,6 +63,8 @@ bool VolumeIntegrator::Intersect(const TsPack *tspack, const Scene *scene,
 	}
 	if (volume && L)
 		*L *= Exp(-volume->Tau(tspack, ray));
+	if (L)
+		Transmittance(tspack, scene, ray, NULL, NULL, L);
 	return hit;
 }
 
@@ -94,6 +96,7 @@ bool VolumeIntegrator::Connect(const TsPack *tspack, const Scene *scene,
 			return true;
 
 		*f *= bsdf->f(tspack, d, -d, flags);
+		Transmittance(tspack, scene, ray, NULL, NULL, f);
 		if (f->Black())
 			return false;
 		const float cost = Dot(bsdf->nn, d);
@@ -157,93 +160,71 @@ SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light
 {
 	SWCSpectrum Ld(0.f);
 
-	// Dade - use MIS only if it is worth doing
-	BxDFType noDiffuse = BxDFType(BSDF_ALL & ~(BSDF_DIFFUSE));
-	if (light->IsDeltaLight() || (bsdf->NumComponents(noDiffuse) == 0)) {
-
-		// Dade - trace only a single shadow ray
-		Vector wi;
-		float lightPdf;
-		VisibilityTester visibility;
-		SWCSpectrum Li = light->Sample_L(tspack, p, n,
-			ls1, ls2, ls3, &wi, &lightPdf, &visibility);
-		if (lightPdf > 0.f && !Li.Black()) {
-			SWCSpectrum f = bsdf->f(tspack, wi, wo);
-			SWCSpectrum fO(1.f);
-			visibility.volume = bsdf->GetVolume(wi);
-			if (!f.Black() && visibility.TestOcclusion(tspack, scene, &fO)) {
-				// Add light's contribution to reflected radiance
-				visibility.Transmittance(tspack, scene, sample, &Li);
-				Li *= fO;
-				Ld += f * Li * (AbsDot(wi, n) / lightPdf);
+	// Check if MIS is needed
+	const BxDFType noDiffuse = BxDFType(BSDF_ALL & ~(BSDF_DIFFUSE));
+	const bool mis = light->IsDeltaLight() || (bsdf->NumComponents(noDiffuse) == 0);
+	// Trace a shadow ray by sampling the light source
+	float lightPdf;
+	SWCSpectrum Li;
+	BSDF *lightBsdf;
+	if (light->Sample_L(tspack, scene, p, ls1, ls2, ls3, &lightBsdf,
+		NULL, &lightPdf, &Li)) {
+		const Point &pL(lightBsdf->dgShading.p);
+		const Vector wi0(pL - p);
+		const Volume *volume = bsdf->GetVolume(wi0);
+		if (!volume)
+			volume = lightBsdf->GetVolume(-wi0);
+		if (scene->Connect(tspack, volume, p, pL, false, &Li, NULL,
+			NULL)) {
+			const float d2 = wi0.LengthSquared();
+			const Vector wi(wi0 / sqrtf(d2));
+			Li *= lightBsdf->f(tspack, Vector(lightBsdf->nn), -wi);
+			Li *= bsdf->f(tspack, wi, wo);
+			if (!Li.Black()) {
+				const float lightPdf2 = lightPdf * d2 /
+					AbsDot(wi, lightBsdf->nn);
+				if (mis) {
+					const float bsdfPdf = bsdf->Pdf(tspack,
+						wo, wi);
+					Li *= PowerHeuristic(1, lightPdf2,
+						1, bsdfPdf);
+				}
+				// Add light's contribution
+				Ld += Li * (AbsDot(wi, n) / lightPdf2);
 			}
 		}
-	} else {
-		// Dade - trace 2 shadow rays and use MIS
-		// Sample light source with multiple importance sampling
+	}
+	if (mis) {
+		// Trace a second shadow ray by sampling the BSDF
 		Vector wi;
-		float lightPdf, bsdfPdf;
-		VisibilityTester visibility;
-		SWCSpectrum Li = light->Sample_L(tspack, p, n,
-			ls1, ls2, ls3, &wi, &lightPdf, &visibility);
-		if (lightPdf > 0.f && !Li.Black()) {
-			SWCSpectrum f = bsdf->f(tspack, wi, wo);
-			SWCSpectrum fO(1.f);
-			visibility.volume = bsdf->GetVolume(wi);
-			if (!f.Black() && visibility.TestOcclusion(tspack, scene, &fO)) {
-				// Add light's contribution to reflected radiance
-				visibility.Transmittance(tspack, scene, sample, &Li);
-				Li *= fO;
-
-				bsdfPdf = bsdf->Pdf(tspack, wo, wi);
-				float weight = PowerHeuristic(1, lightPdf, 1, bsdfPdf);
-				Ld += f * Li * (AbsDot(wi, n) * weight / lightPdf);
+		float bsdfPdf;
+		BxDFType sampledType;
+		if (bsdf->Sample_f(tspack, wo, &wi, bs1, bs2, bcs,
+			&Li, &bsdfPdf, BSDF_ALL, &sampledType, NULL, true) &&
+			(sampledType & BSDF_SPECULAR) == 0) {
+			// Add light contribution from BSDF sampling
+			Intersection lightIsect;
+			RayDifferential ray(p, wi);
+			ray.time = tspack->time;
+			BSDF *ibsdf;
+			const Volume *volume = bsdf->GetVolume(wi);
+			bool lit = false;
+			if (!scene->Intersect(tspack, volume, ray, &lightIsect,
+				&ibsdf, &Li))
+				lit = light->Le(tspack, scene, ray, &ibsdf,
+					NULL, &lightPdf, &Li);
+			else if (lightIsect.arealight == light) {
+				Li *= lightIsect.Le(tspack, ray, &ibsdf,
+					NULL, &lightPdf);
+				lit = !Li.Black();
 			}
-
-			// Sample BSDF with multiple importance sampling
-			SWCSpectrum fBSDF;
-			BxDFType sampledType;
-			if (bsdf->Sample_f(tspack, wo, &wi, bs1, bs2, bcs,
-				&fBSDF, &bsdfPdf, BSDF_ALL, &sampledType,
-				NULL, true) &&
-				(sampledType & BSDF_SPECULAR) == 0) {
-				lightPdf = light->Pdf(tspack, p, n, wi);
-				// Add light contribution from BSDF sampling
-				float weight = PowerHeuristic(1, bsdfPdf, 1, lightPdf);
-				Intersection lightIsect;
-				Li = SWCSpectrum(1.f);
-				RayDifferential ray(p, wi);
-				ray.time = tspack->time;
-				const Volume *volume = bsdf->GetVolume(wi);
-				BSDF *ibsdf;
-				const BxDFType flags(BxDFType(BSDF_SPECULAR | BSDF_TRANSMISSION));
-				// The for loop prevents an infinite
-				// loop when the ray is almost parallel
-				// to the surface
-				// It should much less frequent with
-				// dynamic epsilon, but it's safer
-				for (u_int i = 0; i < 10000; ++i) {
-					if (!scene->Intersect(tspack, volume, ray, &lightIsect, &ibsdf, &Li)) {
-						Li *= light->Le(tspack, ray);
-						break;
-					} else if (lightIsect.arealight == light) {
-						Li *= lightIsect.Le(tspack, -wi);
-						break;
-					}
-
-					Li *= ibsdf->f(tspack, wi, -wi, flags);
-					if (Li.Black())
-						break;
-					Li *= AbsDot(ibsdf->dgShading.nn, wi);
-
-					ray.mint = ray.maxt + MachineEpsilon::E(ray.maxt);
-					ray.maxt = INFINITY;
-					volume = ibsdf->GetVolume(wi);
-				}
-				if (!Li.Black()) {
-					scene->Transmittance(tspack, ray, sample, &Li);
-					Ld += fBSDF * Li * (AbsDot(wi, n) * weight / bsdfPdf);
-				}
+			if (lit) {
+				const float d2 = DistanceSquared(p, ibsdf->dgShading.p);
+				const float lightPdf2 = lightPdf * d2 /
+					AbsDot(wi, lightBsdf->nn);
+				const float weight = PowerHeuristic(1, bsdfPdf,
+					1, lightPdf2);
+				Ld += Li * (AbsDot(wi, n) * weight / bsdfPdf);
 			}
 		}
 	}

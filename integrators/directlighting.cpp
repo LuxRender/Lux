@@ -70,16 +70,18 @@ u_int DirectLightingIntegrator::LiInternal(const TsPack *tspack,
 
 		// Evaluate BSDF at hit point
 		Vector wo = -ray.d;
-		const Point &p = bsdf->dgShading.p;
-		const Normal &n = bsdf->dgShading.nn;
 
 		// Compute emitted light if ray hit an area light source
 		if (isect.arealight) {
-			L[isect.arealight->group] += isect.Le(tspack, wo);
+			BSDF *ibsdf;
+			L[isect.arealight->group] += isect.Le(tspack, ray,
+				&ibsdf, NULL, NULL);
 			++nContribs;
 		}
 
 		// Compute direct lighting
+		const Point &p = bsdf->dgShading.p;
+		const Normal &n = bsdf->dgShading.nn;
 		if (nLights > 0) {
 			const u_int lightGroupCount = scene->lightGroups.size();
 			vector<SWCSpectrum> Ld(lightGroupCount, 0.f);
@@ -129,9 +131,11 @@ u_int DirectLightingIntegrator::LiInternal(const TsPack *tspack,
 		}
 	} else {
 		// Handle ray with no intersection
+		BSDF *ibsdf;
 		for (u_int i = 0; i < nLights; ++i) {
-			SWCSpectrum Le(scene->lights[i]->Le(tspack, ray));
-			if (!Le.Black()) {
+			SWCSpectrum Le(1.f);
+			if (scene->lights[i]->Le(tspack, scene, ray, &ibsdf,
+				NULL, NULL, &Le)) {
 				L[scene->lights[i]->group] += Le;
 				++nContribs;
 			}
@@ -143,7 +147,6 @@ u_int DirectLightingIntegrator::LiInternal(const TsPack *tspack,
 	}
 
 	if (nContribs > 0) {
-		scene->volumeIntegrator->Transmittance(tspack, scene, ray, sample, alpha, &Lt);
 		for (u_int i = 0; i < L.size(); ++i)
 			L[i] *= Lt;
 	}

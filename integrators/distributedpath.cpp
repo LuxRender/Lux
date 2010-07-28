@@ -206,8 +206,11 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 				*alpha = bsdf->compParams->A;
 
 			// Compute emitted light if ray hit an area light source with Visibility check
-			if(bsdf->compParams->tVl && includeEmit) {
-				const SWCSpectrum Le(isect.Le(tspack, wo));
+			if(bsdf->compParams->tVl && includeEmit &&
+				isect.arealight) {
+				BSDF *ibsdf;
+				const SWCSpectrum Le(isect.Le(tspack, ray,
+					&ibsdf, NULL, NULL));
 				if (Le.Filter(tspack) > 0.f) {
 					L[isect.arealight->group] += Le;
 					++nrContribs;
@@ -223,8 +226,11 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 		} else {
 
 			// Compute emitted light if ray hit an area light source with Visibility check
-			if(bsdf->compParams->tiVl && includeEmit) {
-				const SWCSpectrum Le(isect.Le(tspack, wo));
+			if(bsdf->compParams->tiVl && includeEmit &&
+				isect.arealight) {
+				BSDF *ibsdf;
+				const SWCSpectrum Le(isect.Le(tspack, ray,
+					&ibsdf, NULL, NULL));
 				if (Le.Filter(tspack) > 0.f) {
 					L[isect.arealight->group] += Le;
 					++nrContribs;
@@ -494,9 +500,11 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 
 	} else {
 		// Handle ray with no intersection
+		BSDF *ibsdf;
 		for (u_int i = 0; i < scene->lights.size(); ++i) {
-			const SWCSpectrum Le(scene->lights[i]->Le(tspack, ray));
-			if (Le.Filter(tspack) > 0.f) {
+			SWCSpectrum Le(1.f);
+			if (scene->lights[i]->Le(tspack, scene, ray,
+				&ibsdf, NULL, NULL, &Le)) {
 				L[scene->lights[i]->group] += Le;
 				++nrContribs;
 			}
@@ -505,7 +513,6 @@ void DistributedPath::LiInternal(const TsPack *tspack, const Scene *scene,
 			*alpha = 0.f;
 	}
 
-	scene->volumeIntegrator->Transmittance(tspack, scene, ray, sample, alpha, &Lt);
 	for (u_int i = 0; i < L.size(); ++i)
 		L[i] *= Lt;
 	SWCSpectrum Lv(0.f);
