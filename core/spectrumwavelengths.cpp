@@ -23,55 +23,37 @@
 // Spectrumwavelengths.cpp*
 #include "spectrumwavelengths.h"
 #include "regular.h"
-#include "spd.h"
 #include "memory.h"
 
 using namespace lux;
 
 #include "data/rgbE_32.h"
 
-// SpectrumWavelengths Public Methods
-SpectrumWavelengths::SpectrumWavelengths() {
-	single = false;
-	single_w = 0;
+const RegularSPD SpectrumWavelengths::spd_w(refrgb2spect_white,
+	refrgb2spect_start, refrgb2spect_end, refrgb2spect_bins,
+	refrgb2spect_scale);
 
-	spd_w = new RegularSPD(refrgb2spect_white, 
-		refrgb2spect_start, refrgb2spect_end, refrgb2spect_bins);
-	spd_w->Scale(refrgb2spect_scale);
+const RegularSPD SpectrumWavelengths::spd_c(refrgb2spect_cyan,
+	refrgb2spect_start, refrgb2spect_end, refrgb2spect_bins,
+	refrgb2spect_scale);
 
-	spd_c = new RegularSPD(refrgb2spect_cyan,
-		refrgb2spect_start, refrgb2spect_end, refrgb2spect_bins);
-	spd_c->Scale(refrgb2spect_scale);
+const RegularSPD SpectrumWavelengths::spd_m(refrgb2spect_magenta,
+	refrgb2spect_start, refrgb2spect_end, refrgb2spect_bins,
+	refrgb2spect_scale);
 
-	spd_m = new RegularSPD(refrgb2spect_magenta,
-		refrgb2spect_start, refrgb2spect_end, refrgb2spect_bins);
-	spd_m->Scale(refrgb2spect_scale);
+const RegularSPD SpectrumWavelengths::spd_y(refrgb2spect_yellow,
+	refrgb2spect_start, refrgb2spect_end, refrgb2spect_bins,
+	refrgb2spect_scale);
 
-	spd_y = new RegularSPD(refrgb2spect_yellow,
-		refrgb2spect_start, refrgb2spect_end, refrgb2spect_bins);
-	spd_y->Scale(refrgb2spect_scale);
+const RegularSPD SpectrumWavelengths::spd_r(refrgb2spect_red,
+	refrgb2spect_start, refrgb2spect_end, refrgb2spect_bins,
+	refrgb2spect_scale);
 
-	spd_r = new RegularSPD(refrgb2spect_red,
-		refrgb2spect_start, refrgb2spect_end, refrgb2spect_bins);
-	spd_r->Scale(refrgb2spect_scale);
+const RegularSPD SpectrumWavelengths::spd_g(refrgb2spect_green,
+	refrgb2spect_start, refrgb2spect_end, refrgb2spect_bins,
+	refrgb2spect_scale);
 
-	spd_g = new RegularSPD(refrgb2spect_green,
-		refrgb2spect_start, refrgb2spect_end, refrgb2spect_bins);
-	spd_g->Scale(refrgb2spect_scale);
-
-	spd_b = new RegularSPD(refrgb2spect_blue,
-		refrgb2spect_start, refrgb2spect_end, refrgb2spect_bins);
-	spd_b->Scale(refrgb2spect_scale);
-}
-
-SpectrumWavelengths::~SpectrumWavelengths()
-{
-	delete spd_w;
-	delete spd_c;
-	delete spd_m;
-	delete spd_y;
-	delete spd_r;
-	delete spd_g;
-	delete spd_b;
-}
+const RegularSPD SpectrumWavelengths::spd_b(refrgb2spect_blue,
+	refrgb2spect_start, refrgb2spect_end, refrgb2spect_bins,
+	refrgb2spect_scale);
 

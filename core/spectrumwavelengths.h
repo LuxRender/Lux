@@ -25,7 +25,7 @@
 // Spectrumwavelengths.h*
 #include "lux.h"
 #include "spectrum.h"
-#include "spd.h"
+#include "regular.h"
 
 #include "data/xyzbasis.h"
 
@@ -36,8 +36,8 @@ class	SpectrumWavelengths {
 public:
 
 	// SpectrumWavelengths Public Methods
-	SpectrumWavelengths();
-	~SpectrumWavelengths();
+	SpectrumWavelengths() : single_w(0), single(false) { }
+	~SpectrumWavelengths() { }
 
 	inline void Sample(float u1) {
 		single = false;
@@ -51,13 +51,13 @@ public:
 		float waveln = WAVELENGTH_START + u1 * offset;
 		for (u_int i = 0; i < WAVELENGTH_SAMPLES; ++i) {
 			// Interpolate RGB Conversion SPDs
-			spect_w.c[i] = spd_w->sample(waveln);
-			spect_c.c[i] = spd_c->sample(waveln);
-			spect_m.c[i] = spd_m->sample(waveln);
-			spect_y.c[i] = spd_y->sample(waveln);
-			spect_r.c[i] = spd_r->sample(waveln);
-			spect_g.c[i] = spd_g->sample(waveln);
-			spect_b.c[i] = spd_b->sample(waveln);
+			spect_w.c[i] = spd_w.sample(waveln);
+			spect_c.c[i] = spd_c.sample(waveln);
+			spect_m.c[i] = spd_m.sample(waveln);
+			spect_y.c[i] = spd_y.sample(waveln);
+			spect_r.c[i] = spd_r.sample(waveln);
+			spect_g.c[i] = spd_g.sample(waveln);
+			spect_b.c[i] = spd_b.sample(waveln);
 			// Interpolate XYZ Conversion weights
 			const float w0 = waveln - CIEstart;
 			int i0 = max(Floor2Int(w0), 0);
@@ -94,8 +94,8 @@ public:
 
 
 private:
-	SPD *spd_w, *spd_c, *spd_m, *spd_y,
-		*spd_r, *spd_g, *spd_b;
+	static const RegularSPD spd_w, spd_c, spd_m, spd_y,
+		spd_r, spd_g, spd_b;
 };
 
 
