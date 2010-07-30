@@ -56,8 +56,8 @@ using boost::asio::ip::tcp;
 // RenderServer
 //------------------------------------------------------------------------------
 
-RenderServer::RenderServer(int tCount, int port) : threadCount(tCount),
-	tcpPort(port), state(UNSTARTED), serverThread(NULL)
+RenderServer::RenderServer(int tCount, int port, bool wFlmFile) : threadCount(tCount),
+	tcpPort(port), writeFlmFile(wFlmFile), state(UNSTARTED), serverThread(NULL)
 {
 }
 
@@ -136,6 +136,39 @@ static void printInfoThread()
 				<< luxStatistics("samplesPx") << " samples/pix";
 			luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 		}
+	}
+}
+
+static void writeTransmitFilm(basic_ostream<char> &stream, const string &filename)
+{
+	string file = filename;
+	string tempfile = file + ".temp";
+
+	LOG(LUX_NOERROR, LUX_DEBUG) << "Writing film samples to file '" << tempfile << "'";
+
+	ofstream out(tempfile.c_str(), ios::out | ios::binary);
+	Context::GetActive()->TransmitFilm(out, true, true);
+	out.close();							
+
+	if (!out.fail()) {
+		remove(file.c_str());
+		if (rename(tempfile.c_str(), file.c_str())) {
+			LOG(LUX_ERROR, LUX_SYSTEM) << 
+				"Failed to rename new film file, leaving new film file as '" << tempfile << "'";
+			file = tempfile;
+		}
+
+		LOG(LUX_NOERROR, LUX_DEBUG) << "Transmitting film samples from file '" << file << "'";
+		ifstream in(file.c_str(), ios::in | ios::binary);
+
+		boost::iostreams::copy(in, stream);
+
+		if (in.fail())
+			LOG(LUX_ERROR, LUX_SYSTEM) << "There was an error while transmitting from file '" << file << "'";
+
+		in.close();
+	} else {
+		LOG(LUX_ERROR, LUX_SYSTEM) << "There was an error while writing file '" << tempfile << "'";
 	}
 }
 
@@ -670,7 +703,16 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread)
 
 						luxError(LUX_NOERROR, LUX_INFO, "Transmitting film samples");
 
-						Context::GetActive()->TransmitFilm(stream);
+						if (serverThread->renderServer->writeFlmFile) {
+							string file = "server_resume";
+							if (tmpFileList.size())
+								file += "_" + tmpFileList[0];
+							file += ".flm";
+
+							writeTransmitFilm(stream, file);						
+						} else {
+							Context::GetActive()->TransmitFilm(stream);
+						}
 						stream.close();
 
 						luxError(LUX_NOERROR, LUX_INFO, "Finished film samples transmission");

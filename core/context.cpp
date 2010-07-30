@@ -1066,6 +1066,10 @@ void Context::TransmitFilm(std::basic_ostream<char> &stream) {
 	luxCurrentScene->camera->film->TransmitFilm(stream);
 }
 
+void Context::TransmitFilm(std::basic_ostream<char> &stream, bool useCompression, bool directWrite) {
+	luxCurrentScene->camera->film->TransmitFilm(stream, true, false, useCompression, directWrite);
+}
+
 void Context::UpdateFilmFromNetwork() {
 	renderFarm->updateFilm(luxCurrentScene);
 }

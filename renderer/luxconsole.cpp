@@ -125,6 +125,7 @@ int main(int ac, char *av[]) {
 				("useserver,u", po::value< std::vector<std::string> >()->composing(), "Specify the adress of a rendering server to use.")
 				("serverinterval,i", po::value < int >(), "Specify the number of seconds between requests to rendering servers.")
 				("serverport,p", po::value < int >(), "Specify the tcp port used in server mode.")
+				("serverwriteflm,W", "Write film to disk before transmitting in server mode.")
 				;
 
 		// Hidden options, will be allowed both on command line and
@@ -319,7 +320,8 @@ int main(int ac, char *av[]) {
 				luxCleanup();
 			}
 		} else if (vm.count("server")) {
-			RenderServer *renderServer = new RenderServer(threads, serverPort);
+			bool writeFlmFile = vm.count("serverwriteflm") != 0;
+			RenderServer *renderServer = new RenderServer(threads, serverPort, writeFlmFile);
 			renderServer->start();
 			renderServer->join();
 			delete renderServer;
