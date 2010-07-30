@@ -28,6 +28,7 @@
 using namespace lux;
 
 #include "data/rgbE_32.h"
+#include "data/xyzbasis.h"
 
 const RegularSPD SpectrumWavelengths::spd_w(refrgb2spect_white,
 	refrgb2spect_start, refrgb2spect_end, refrgb2spect_bins,
@@ -57,3 +58,11 @@ const RegularSPD SpectrumWavelengths::spd_b(refrgb2spect_blue,
 	refrgb2spect_start, refrgb2spect_end, refrgb2spect_bins,
 	refrgb2spect_scale);
 
+const RegularSPD SpectrumWavelengths::spd_ciex(CIE_X, CIEstart, CIEend, nCIE,
+	683.f * float(WAVELENGTH_END - WAVELENGTH_START) / WAVELENGTH_SAMPLES);
+
+const RegularSPD SpectrumWavelengths::spd_ciey(CIE_Y, CIEstart, CIEend, nCIE,
+	683.f * float(WAVELENGTH_END - WAVELENGTH_START) / WAVELENGTH_SAMPLES);
+
+const RegularSPD SpectrumWavelengths::spd_ciez(CIE_Z, CIEstart, CIEend, nCIE,
+	683.f * float(WAVELENGTH_END - WAVELENGTH_START) / WAVELENGTH_SAMPLES);

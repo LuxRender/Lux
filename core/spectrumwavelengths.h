@@ -27,8 +27,6 @@
 #include "spectrum.h"
 #include "regular.h"
 
-#include "data/xyzbasis.h"
-
 namespace lux
 {
 
@@ -47,38 +45,17 @@ public:
 
 		// Sample new stratified wavelengths and precompute RGB/XYZ data
 		const float offset = float(WAVELENGTH_END - WAVELENGTH_START) * inv_WAVELENGTH_SAMPLES;
-		const float scale = 683.f * offset;
 		float waveln = WAVELENGTH_START + u1 * offset;
 		for (u_int i = 0; i < WAVELENGTH_SAMPLES; ++i) {
-			// Interpolate RGB Conversion SPDs
-			spect_w.c[i] = spd_w.sample(waveln);
-			spect_c.c[i] = spd_c.sample(waveln);
-			spect_m.c[i] = spd_m.sample(waveln);
-			spect_y.c[i] = spd_y.sample(waveln);
-			spect_r.c[i] = spd_r.sample(waveln);
-			spect_g.c[i] = spd_g.sample(waveln);
-			spect_b.c[i] = spd_b.sample(waveln);
-			// Interpolate XYZ Conversion weights
-			const float w0 = waveln - CIEstart;
-			int i0 = max(Floor2Int(w0), 0);
-			const float b0 = w0 - i0;
-			cie_X[i] = Lerp(b0, CIE_X[i0], CIE_X[i0 + 1]) * scale;
-			cie_Y[i] = Lerp(b0, CIE_Y[i0], CIE_Y[i0 + 1]) * scale;
-			cie_Z[i] = Lerp(b0, CIE_Z[i0], CIE_Z[i0 + 1]) * scale;
 			w[i] = waveln;
 			waveln += offset;
 		}
+		spd_w.Offsets(WAVELENGTH_SAMPLES, w, binsRGB, offsetsRGB);
+		spd_ciex.Offsets(WAVELENGTH_SAMPLES, w, binsXYZ, offsetsXYZ);
 	}
 
 	inline float SampleSingle() {
-		if (!single) {
-			single = true;
-			for (int i = 0; i < WAVELENGTH_SAMPLES; ++i) {
-				cie_X[i] *= WAVELENGTH_SAMPLES;
-				cie_Y[i] *= WAVELENGTH_SAMPLES;
-				cie_Z[i] *= WAVELENGTH_SAMPLES;
-			}
-		}
+		single = true;
 		return w[single_w];
 	}
 
@@ -87,15 +64,11 @@ public:
 	u_int  single_w; // Chosen single wavelength bin
 	bool single; // Split to single
 
-	float cie_X[WAVELENGTH_SAMPLES], cie_Y[WAVELENGTH_SAMPLES], cie_Z[WAVELENGTH_SAMPLES]; // CIE XYZ weights
-	SWCSpectrum spect_w, spect_c, spect_m;	// white, cyan, magenta
-	SWCSpectrum spect_y, spect_r, spect_g;	// yellow, red, green
-	SWCSpectrum spect_b;	// blue
+	int binsRGB[WAVELENGTH_SAMPLES], binsXYZ[WAVELENGTH_SAMPLES];
+	float offsetsRGB[WAVELENGTH_SAMPLES], offsetsXYZ[WAVELENGTH_SAMPLES];
 
-
-private:
 	static const RegularSPD spd_w, spd_c, spd_m, spd_y,
-		spd_r, spd_g, spd_b;
+		spd_r, spd_g, spd_b, spd_ciex, spd_ciey, spd_ciez;
 };
 
 

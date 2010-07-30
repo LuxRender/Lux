@@ -36,15 +36,28 @@ XYZColor::XYZColor(const TsPack *tspack, const SWCSpectrum &s)
 	SpectrumWavelengths *sw = tspack->swl;
 	if (sw->single) {
 		const u_int j = sw->single_w;
-		c[0] = sw->cie_X[j] * s.c[j];
-		c[1] = sw->cie_Y[j] * s.c[j];
-		c[2] = sw->cie_Z[j] * s.c[j];
+		SpectrumWavelengths::spd_ciex.Sample(1, sw->binsXYZ + j,
+			sw->offsetsXYZ + j, c);
+		SpectrumWavelengths::spd_ciey.Sample(1, sw->binsXYZ + j,
+			sw->offsetsXYZ + j, c + 1);
+		SpectrumWavelengths::spd_ciez.Sample(1, sw->binsXYZ + j,
+			sw->offsetsXYZ + j, c + 2);
+		c[0] *= s.c[j] * WAVELENGTH_SAMPLES;
+		c[1] *= s.c[j] * WAVELENGTH_SAMPLES;
+		c[2] *= s.c[j] * WAVELENGTH_SAMPLES;
 	} else {
+		SWCSpectrum x, y, z;
+		SpectrumWavelengths::spd_ciex.Sample(WAVELENGTH_SAMPLES,
+			sw->binsXYZ, sw->offsetsXYZ, x.c);
+		SpectrumWavelengths::spd_ciey.Sample(WAVELENGTH_SAMPLES,
+			sw->binsXYZ, sw->offsetsXYZ, y.c);
+		SpectrumWavelengths::spd_ciez.Sample(WAVELENGTH_SAMPLES,
+			sw->binsXYZ, sw->offsetsXYZ, z.c);
 		c[0] = c[1] = c[2] = 0.f;
 		for (u_int j = 0; j < WAVELENGTH_SAMPLES; ++j) {
-			c[0] += sw->cie_X[j] * s.c[j];
-			c[1] += sw->cie_Y[j] * s.c[j];
-			c[2] += sw->cie_Z[j] * s.c[j];
+			c[0] += x.c[j] * s.c[j];
+			c[1] += y.c[j] * s.c[j];
+			c[2] += z.c[j] * s.c[j];
 		}
 	}
 }
@@ -53,7 +66,7 @@ XYZColor::XYZColor(const SPD &s)
 {
 	c[0] = c[1] = c[2] = 0.f;
 	for (u_int i = 0; i < nCIE; ++i) {
-		const float v = s.sample(i + CIEstart);
+		const float v = s.Sample(i + CIEstart);
 		c[0] += v * CIE_X[i];
 		c[1] += v * CIE_Y[i];
 		c[2] += v * CIE_Z[i];

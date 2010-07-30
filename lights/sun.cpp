@@ -156,17 +156,17 @@ SunLight::SunLight(const Transform &light2world, const float sunscale,
 			// Attenuation due to ozone absorption
 			// lOzone - amount of ozone in cm(NTP)
 		const float lOzone = .35f;
-		tauO = expf(-m * k_oCurve.sample(lambda) * lOzone);
+		tauO = expf(-m * k_oCurve.Sample(lambda) * lOzone);
 			// Attenuation due to mixed gases absorption
-		tauG = expf(-1.41f * k_gCurve.sample(lambda) * m / powf(1.f +
-			118.93f * k_gCurve.sample(lambda) * m, 0.45f));
+		tauG = expf(-1.41f * k_gCurve.Sample(lambda) * m / powf(1.f +
+			118.93f * k_gCurve.Sample(lambda) * m, 0.45f));
 			// Attenuation due to water vapor absorbtion
 			// w - precipitable water vapor in centimeters (standard = 2)
 		const float w = 2.0f;
-		tauWA = expf(-0.2385f * k_waCurve.sample(lambda) * w * m /
-		powf(1.f + 20.07f * k_waCurve.sample(lambda) * w * m, 0.45f));
+		tauWA = expf(-0.2385f * k_waCurve.Sample(lambda) * w * m /
+		powf(1.f + 20.07f * k_waCurve.Sample(lambda) * w * m, 0.45f));
 
-		Ldata[i] = (solCurve.sample(lambda) *
+		Ldata[i] = (solCurve.Sample(lambda) *
 			tauR * tauA * tauO * tauG * tauWA);
 	}
 	LSPD = new RegularSPD(Ldata, 350,800,91);

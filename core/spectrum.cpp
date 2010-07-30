@@ -35,10 +35,15 @@ Scalar SWCSpectrum::Y(const TsPack *tspack) const {
 
 	if (sw->single) {
 		const u_int j = sw->single_w;
-		y = sw->cie_Y[j] * c[j];
+		SpectrumWavelengths::spd_ciey.Sample(1,
+			sw->binsXYZ + j, sw->offsetsXYZ + j, &y);
+		y *= c[j] * WAVELENGTH_SAMPLES;
 	} else {
+		SWCSpectrum ciey;
+		SpectrumWavelengths::spd_ciey.Sample(WAVELENGTH_SAMPLES,
+			sw->binsXYZ, sw->offsetsXYZ, ciey.c);
 		for (u_int j = 0; j < WAVELENGTH_SAMPLES; ++j) {
-			y += sw->cie_Y[j] * c[j];
+			y += ciey.c[j] * c[j];
 		}
 	}
 
@@ -61,7 +66,7 @@ Scalar SWCSpectrum::Filter(const TsPack *tspack) const
 SWCSpectrum::SWCSpectrum(const TsPack *tspack, const SPD &s) {
 	SpectrumWavelengths *sw = tspack->swl;
 	for (u_int j = 0; j < WAVELENGTH_SAMPLES; ++j)
-		c[j] = s.sample(sw->w[j]);
+		c[j] = s.Sample(sw->w[j]);
 }
 
 SWCSpectrum::SWCSpectrum(const TsPack *tspack, const RGBColor &s) {
@@ -69,53 +74,60 @@ SWCSpectrum::SWCSpectrum(const TsPack *tspack, const RGBColor &s) {
 	const float r = s.c[0];
 	const float g = s.c[1];
 	const float b = s.c[2];
+	SWCSpectrum min, med, max;
+
+	SpectrumWavelengths::spd_w.Sample(WAVELENGTH_SAMPLES,
+		sw->binsRGB, sw->offsetsRGB, min.c);
+	if (r <= g && r <= b) {
+		min *= r;
+
+		SpectrumWavelengths::spd_c.Sample(WAVELENGTH_SAMPLES,
+			sw->binsRGB, sw->offsetsRGB, med.c);
+		if (g <= b) {
+			med *= g - r;
+			SpectrumWavelengths::spd_b.Sample(WAVELENGTH_SAMPLES,
+				sw->binsRGB, sw->offsetsRGB, max.c);
+			max *= b - g;
+		} else {
+			med *= b - r;
+			SpectrumWavelengths::spd_g.Sample(WAVELENGTH_SAMPLES,
+				sw->binsRGB, sw->offsetsRGB, max.c);
+			max *= g - b;
+		}
+	} else if (g <= r && g <= b) {
+		min *= g;
+
+		SpectrumWavelengths::spd_m.Sample(WAVELENGTH_SAMPLES,
+			sw->binsRGB, sw->offsetsRGB, med.c);
+		if (r <= b) {
+			med *= r - g;
+			SpectrumWavelengths::spd_b.Sample(WAVELENGTH_SAMPLES,
+				sw->binsRGB, sw->offsetsRGB, max.c);
+			max *= b - r;
+		} else {
+			med *= b - g;
+			SpectrumWavelengths::spd_r.Sample(WAVELENGTH_SAMPLES,
+				sw->binsRGB, sw->offsetsRGB, max.c);
+			max *= r - b;
+		}
+	} else {	// blue <= red && blue <= green
+		min *= b;
+
+		SpectrumWavelengths::spd_y.Sample(WAVELENGTH_SAMPLES,
+			sw->binsRGB, sw->offsetsRGB, med.c);
+		if (r <= g) {
+			med *= r - b;
+			SpectrumWavelengths::spd_g.Sample(WAVELENGTH_SAMPLES,
+				sw->binsRGB, sw->offsetsRGB, max.c);
+			max *= g - r;
+		} else {
+			med *= g - b;
+			SpectrumWavelengths::spd_r.Sample(WAVELENGTH_SAMPLES,
+				sw->binsRGB, sw->offsetsRGB, max.c);
+			max *= r - g;
+		}
+	}
 
 	for (u_int j = 0; j < WAVELENGTH_SAMPLES; ++j)
-		c[j] = 0.;
-
-	if (r <= g && r <= b)
-	{
-		AddWeighted(r, sw->spect_w);
-
-		if (g <= b)
-		{
-			AddWeighted(g - r, sw->spect_c);
-			AddWeighted(b - g, sw->spect_b);
-		}
-		else
-		{
-			AddWeighted(b - r, sw->spect_c);
-			AddWeighted(g - b, sw->spect_g);
-		}
-	}
-	else if (g <= r && g <= b)
-	{
-		AddWeighted(g, sw->spect_w);
-
-		if (r <= b)
-		{
-			AddWeighted(r - g, sw->spect_m);
-			AddWeighted(b - r, sw->spect_b);
-		}
-		else
-		{
-			AddWeighted(b - g, sw->spect_m);
-			AddWeighted(r - b, sw->spect_r);
-		}
-	}
-	else // blue <= red && blue <= green
-	{
-		AddWeighted(b, sw->spect_w);
-
-		if (r <= g)
-		{
-			AddWeighted(r - b, sw->spect_y);
-			AddWeighted(g - r, sw->spect_g);
-		}
-		else
-		{
-			AddWeighted(g - b, sw->spect_y);
-			AddWeighted(r - g, sw->spect_r);
-		}
-	}
+		c[j] = min.c[j] + med.c[j] + max.c[j];
 }

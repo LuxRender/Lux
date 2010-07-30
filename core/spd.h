@@ -37,7 +37,7 @@ public:
 	virtual ~SPD() { FreeSamples(); }
 
 	// samples the SPD by performing a linear interpolation on the data
-	inline float sample(const float lambda) const {
+	inline float Sample(const float lambda) const {
 		if (nSamples <= 1 || lambda < lambdaMin || lambda > lambdaMax)
 			return 0.f;
 
@@ -49,7 +49,7 @@ public:
 		return Lerp(dx, samples[b0], samples[b1]);
 	}
 
-	inline void sample(u_int n, const float lambda[], float *p) const {
+	inline void Sample(u_int n, const float lambda[], float *p) const {
 		for (u_int i = 0; i < n; ++i) {
 			if (nSamples <= 1 || lambda[i] < lambdaMin ||
 				lambda[i] > lambdaMax) {
@@ -63,6 +63,32 @@ public:
 			const u_int b1 = min(b0 + 1, nSamples - 1);
 			const float dx = x - b0;
 			p[i] = Lerp(dx, samples[b0], samples[b1]);
+		}
+	}
+
+	// Get offsets for fast sampling
+	inline void Offsets(u_int n, const float lambda[], int *bins, float *offsets) const {
+		for (u_int i = 0; i < n; ++i) {
+			if (nSamples <= 1 || lambda[i] < lambdaMin ||
+				lambda[i] > lambdaMax) {
+				bins[i] = -1;
+				continue;
+			}
+
+			const float x = (lambda[i] - lambdaMin) * invDelta;
+			bins[i] = Floor2UInt(x);
+			offsets[i] = x - bins[i];
+		}
+	}
+
+	// Fast sampling
+	inline void Sample(u_int n, const int bins[], const float offsets[], float *p) const {
+		for (u_int i = 0; i < n; ++i) {
+			if (bins[i] < 0 || bins[i] >= static_cast<int>(nSamples - 1)) {
+				p[i] = 0.f;
+				continue;
+			}
+			p[i] = Lerp(offsets[i], samples[bins[i]], samples[bins[i] + 1]);
 		}
 	}
 

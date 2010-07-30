@@ -91,7 +91,7 @@ float SPD::Y() const
 {
 	float y = 0.f;
 	for (u_int i = 0; i < nCIE; ++i)
-		y += sample(i + CIEstart) * CIE_Y[i];
+		y += Sample(i + CIEstart) * CIE_Y[i];
 	return y * 683.f;
 }
 float SPD::Filter() const
