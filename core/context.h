@@ -177,6 +177,7 @@ public:
 	void SetNetworkServerUpdateInterval(int updateInterval);
 	int GetNetworkServerUpdateInterval();
 	void TransmitFilm(std::basic_ostream<char> &stream);
+	void TransmitFilm(std::basic_ostream<char> &stream, bool useCompression, bool directWrite);
 	void AddServer(const string &name);
 	void RemoveServer(const string &name);
 	u_int GetServerCount();

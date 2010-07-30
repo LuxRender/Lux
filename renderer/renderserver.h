@@ -85,7 +85,7 @@ public:
 
     enum ServerState { UNSTARTED, READY, BUSY, STOPPED };
 
-    RenderServer(int threadCount, int tcpPort = DEFAULT_TCP_PORT);
+    RenderServer(int threadCount, int tcpPort = DEFAULT_TCP_PORT, bool writeFlmFile = false);
     ~RenderServer();
 
     void start();
@@ -104,6 +104,7 @@ private:
 
     int threadCount;
     int tcpPort;
+	bool writeFlmFile;
     ServerState state;
 	string currentSID;
     NetworkRenderServerThread *serverThread;
