@@ -147,7 +147,7 @@ static void writeTransmitFilm(basic_ostream<char> &stream, const string &filenam
 	LOG(LUX_NOERROR, LUX_DEBUG) << "Writing film samples to file '" << tempfile << "'";
 
 	ofstream out(tempfile.c_str(), ios::out | ios::binary);
-	Context::GetActive()->TransmitFilm(out, true, true);
+	Context::GetActive()->TransmitFilm(out, true, false);
 	out.close();							
 
 	if (!out.fail()) {
