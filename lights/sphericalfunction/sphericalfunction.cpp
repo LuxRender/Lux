@@ -65,13 +65,12 @@ SampleableSphericalFunction::SampleableSphericalFunction(
 		normalize += xRes * weight;
 		for (u_int x = 0; x < xRes; ++x) {
 			const float xp = 2.f * M_PI * (x + .5f) / xRes;
-			const float value = func->f(&tspack, xp, yp).Filter(&tspack);
-			average += value * weight;
-			img[x + y * xRes] = func->f(&tspack, xp, yp).Filter(&tspack) *
-				sin(yp);
+			const float value = func->f(&tspack, xp, yp).Filter(&tspack) * weight;
+			average += value;
+			img[x + y * xRes] = value;
 		}
 	}
-	average *= 4.f * M_PI / normalize;
+	average /= 4.f * M_PI * normalize;
 	// Initialize sampling PDFs
 	uvDistrib = new Distribution2D(img, xRes, yRes);
 	delete[] img;

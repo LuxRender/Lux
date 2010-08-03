@@ -44,7 +44,9 @@ public:
 	virtual float Power(const Scene *) const;
 	virtual float Pdf(const TsPack *tspack, const Point &p,
 		const Point &po, const Normal &ns) const;
-	virtual bool Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *Le) const;
+	virtual bool Sample_L(const TsPack *tspack, const Scene *scene,
+		float u1, float u2, float u3, BSDF **bsdf, float *pdf,
+		SWCSpectrum *Le) const;
 	virtual bool Sample_L(const TsPack *tspack, const Scene *scene,
 		const Point &p, float u1, float u2, float u3,
 		BSDF **bsdf, float *pdf, float *pdfDirect,
@@ -55,9 +57,7 @@ public:
 private:
 	// PointLight Private Data
 	Point lightPos;
-	bool flipZ;
 	boost::shared_ptr< Texture<SWCSpectrum> > Lbase;
-	DifferentialGeometry dummydg;
 	float gain;
 	SampleableSphericalFunction *func;
 };

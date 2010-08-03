@@ -50,22 +50,22 @@ public:
 		const float cosi = AbsDot(*wiW, nn);
 		if (sampledType)
 			*sampledType = BSDF_DIFFUSE;
-		*pdf = INV_TWOPI;
+		*pdf = .25f * INV_PI;
 		if (pdfBack)
 			*pdfBack = 0.f;
-		*f_ = SWCSpectrum(INV_PI) / cosi;
+		*f_ = SWCSpectrum(.25f * INV_PI / cosi);
 		return true;
 	}
 	virtual float Pdf(const TsPack *tspack, const Vector &woW,
 		const Vector &wiW, BxDFType flags = BSDF_ALL) const {
 		if (NumComponents(flags) == 1)
-			return INV_TWOPI;
+			return .25f * INV_PI;
 		return 0.f;
 	}
 	virtual SWCSpectrum f(const TsPack *tspack, const Vector &woW,
 		const Vector &wiW, BxDFType flags = BSDF_ALL) const {
 		if (NumComponents(flags) == 1)
-			return SWCSpectrum(INV_PI / AbsDot(wiW, nn));
+			return SWCSpectrum(.25f * INV_PI / AbsDot(wiW, nn));
 		return SWCSpectrum(0.f);
 	}
 	virtual SWCSpectrum rho(const TsPack *tspack,
@@ -96,8 +96,8 @@ public:
 		if (reverse || NumComponents(flags) == 0)
 			return false;
 		*f_ = sf->Sample_f(tspack, u1, u2, wiW, pdf);
-		*f_ *= 2.f / (sf->Average_f() * fabsf(wiW->z));
-		*wiW = LocalToWorld(*wiW);
+		*f_ /= sf->Average_f() * fabsf(wiW->z);
+		*wiW = Normalize(LocalToWorld(*wiW));
 		if (sampledType)
 			*sampledType = BSDF_DIFFUSE;
 		if (pdfBack)
@@ -113,14 +113,14 @@ public:
 	virtual SWCSpectrum f(const TsPack *tspack, const Vector &woW,
 		const Vector &wiW, BxDFType flags = BSDF_ALL) const {
 		if (NumComponents(flags) == 1)
-			return sf->f(tspack, WorldToLocal(wiW)) *
-				(2.f / (sf->Average_f() * AbsDot(wiW, nn)));
+			return sf->f(tspack, WorldToLocal(wiW)) /
+				(sf->Average_f() * AbsDot(wiW, nn));
 		return SWCSpectrum(0.f);
 	}
 	virtual SWCSpectrum rho(const TsPack *tspack,
-		BxDFType flags = BSDF_ALL) const { return SWCSpectrum(2.f); }
+		BxDFType flags = BSDF_ALL) const { return SWCSpectrum(1.f); }
 	virtual SWCSpectrum rho(const TsPack *tspack, const Vector &woW,
-		BxDFType flags = BSDF_ALL) const { return SWCSpectrum(2.f); }
+		BxDFType flags = BSDF_ALL) const { return SWCSpectrum(1.f); }
 
 protected:
 	// GonioBSDF Private Methods
@@ -135,17 +135,15 @@ PointLight::PointLight(
 		const boost::shared_ptr< Texture<SWCSpectrum> > &L,
 		float g,
 		SampleableSphericalFunction *ssf)
-	: Light(light2world), Lbase(L) {
+	: Light(light2world), Lbase(L), gain(g), func(ssf) {
 	lightPos = LightToWorld(Point(0,0,0));
 	Lbase->SetIlluminant();
-	gain = g;
-	func = ssf;
 }
 PointLight::~PointLight() {
 	delete func;
 }
 float PointLight::Power(const Scene *) const {
-	return Lbase->Y() * gain * 4.f * M_PI * (func ? func->Average_f() : 1.f);
+	return Lbase->Y() * gain * 4.f * M_PI;
 }
 
 float PointLight::Pdf(const TsPack *tspack, const Point &p,
@@ -170,7 +168,7 @@ bool PointLight::Sample_L(const TsPack *tspack, const Scene *scene,
 	else
 		*bsdf = ARENA_ALLOC(tspack->arena, UniformBSDF)(dg, ns,
 			NULL, NULL);
-	*Le = Lbase->Evaluate(tspack, dg) * gain;
+	*Le = Lbase->Evaluate(tspack, dg) * (gain * 4.f * M_PI);
 	return true;
 }
 bool PointLight::Sample_L(const TsPack *tspack, const Scene *scene,
@@ -178,7 +176,6 @@ bool PointLight::Sample_L(const TsPack *tspack, const Scene *scene,
 	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *Le) const
 {
 	const Normal ns(0, 0, 1);
-	Vector dpdu, dpdv;
 	const DifferentialGeometry dg(lightPos, Normalize(LightToWorld(ns)),
 		Normalize(LightToWorld(Vector(1, 0, 0))),
 		Normalize(LightToWorld(Vector(0, 1, 0))),
@@ -192,7 +189,7 @@ bool PointLight::Sample_L(const TsPack *tspack, const Scene *scene,
 	else
 		*bsdf = ARENA_ALLOC(tspack->arena, UniformBSDF)(dg, ns,
 			NULL, NULL);
-	*Le = Lbase->Evaluate(tspack, dg) * gain;
+	*Le = Lbase->Evaluate(tspack, dg) * (gain * 4.f * M_PI);
 	return true;
 }
 Light* PointLight::CreateLight(const Transform &light2world,
