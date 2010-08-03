@@ -70,9 +70,7 @@ private:
 	SWCSpectrum L(const TsPack *tspack, const Vector& w) const;
 	// PointLight Private Data
 	Point lightPos;
-	bool flipZ;
 	boost::shared_ptr< Texture<SWCSpectrum> > Lbase;
-	DifferentialGeometry dummydg;
 	float gain;
 	SampleableSphericalFunction *func;
 };
