@@ -42,24 +42,18 @@ namespace lux
 
 SWCSpectrum BasicColorPhoton::GetSWCSpectrum(const TsPack* tspack, u_int nb) const
 {
-	SWCSpectrum result(0.f);
-	for (u_int i = 0; i < WAVELENGTH_SAMPLES; ++i) {
-		if (i > 0) {
-			const float delta0 = 1.f - (fabsf(tspack->swl->w[i] - w[i - 1]) * WAVELENGTH_SAMPLES) /
-				((WAVELENGTH_END - WAVELENGTH_START) * nb);
-			if (delta0 > 0.f)
-				result.c[i] += delta0 * alpha.c[i - 1];
-		}
-		const float delta1 = 1.f - (fabsf(tspack->swl->w[i] - w[i]) * WAVELENGTH_SAMPLES) /
-			((WAVELENGTH_END - WAVELENGTH_START) * nb);
-		if (delta1 > 0.f)
-			result.c[i] += delta1 * alpha.c[i];
-		if (i < WAVELENGTH_SAMPLES - 1) {
-			const float delta2 = 1.f - (fabsf(tspack->swl->w[i] - w[i + 1]) * WAVELENGTH_SAMPLES) /
-				((WAVELENGTH_END - WAVELENGTH_START) * nb);
-			if (delta2 > 0.f)
-				result.c[i] += delta2 * alpha.c[i + 1];
-		}
+	const float delta = (tspack->swl->w[0] - w[0]) * WAVELENGTH_SAMPLES /
+		(WAVELENGTH_END - WAVELENGTH_START);
+	SWCSpectrum result;
+	if (delta < 0.f) {
+		result.c[0] = Lerp(-delta, alpha.c[0], 0.f);
+		for (u_int i = 1; i < WAVELENGTH_SAMPLES; ++i)
+			result.c[i] = Lerp(-delta, alpha.c[i], alpha.c[i - 1]);
+	} else {
+		for (u_int i = 0; i < WAVELENGTH_SAMPLES - 1; ++i)
+			result.c[i] = Lerp(delta, alpha.c[i], alpha.c[i + 1]);
+		result.c[WAVELENGTH_SAMPLES - 1] = Lerp(delta,
+			alpha.c[WAVELENGTH_SAMPLES - 1], 0.f);
 	}
 	return result;
 }
