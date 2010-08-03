@@ -162,7 +162,8 @@ SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light
 
 	// Check if MIS is needed
 	const BxDFType noDiffuse = BxDFType(BSDF_ALL & ~(BSDF_DIFFUSE));
-	const bool mis = light->IsDeltaLight() || (bsdf->NumComponents(noDiffuse) == 0);
+	const bool mis = !(light->IsDeltaLight()) &&
+		(bsdf->NumComponents(noDiffuse) > 0);
 	// Trace a shadow ray by sampling the light source
 	float lightPdf;
 	SWCSpectrum Li;
