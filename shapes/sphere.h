@@ -73,21 +73,11 @@ public:
 		if (reverseOrientation) *ns *= -1.f;
 		return ps;
 	}
-	virtual float Pdf(const Point &p, const Vector &wi) const {
-		Point Pcenter = ObjectToWorld(Point(0,0,0));
-		// Return uniform weight if point inside sphere
-		if (DistanceSquared(p, Pcenter) - radius*radius < 1e-4f)
-			return Shape::Pdf(p, wi);
-		// Compute general sphere weight
-		float cosThetaMax = sqrtf(max(0.f, 1.f - radius*radius /
-			DistanceSquared(p, Pcenter)));
-		return UniformConePdf(cosThetaMax);
-	}
 	virtual float Pdf(const Point &p, const Point &po) const {
 		Point Pcenter = ObjectToWorld(Point(0,0,0));
 		// Return uniform weight if point inside sphere
 		if (DistanceSquared(p, Pcenter) - radius*radius < 1e-4f)
-			return Shape::Pdf(p, po);
+			return 1.f / Area();
 		// Compute general sphere weight
 		const float cosThetaMax = sqrtf(max(0.f, 1.f - radius*radius /
 			DistanceSquared(p, Pcenter)));

@@ -70,14 +70,15 @@ public:
 		vector<boost::shared_ptr<Shape> > todo;
 		Refine(todo); // Use shape refine method
 		for (u_int i = 0; i < todo.size(); ++i) {
-			boost::shared_ptr<Shape> shape(todo[i]);
+			boost::shared_ptr<Shape> &shape(todo[i]);
 			shape->SetMaterial(material);
+			shape->SetExterior(exterior);
+			shape->SetInterior(interior);
 			if (shape->CanIntersect()) {
 				refined.push_back(shape);
 			} else {
 				// Use primitive refine method
-				boost::shared_ptr<Primitive> p(shape);
-				shape->Refine(refined, refineHints, p);
+				shape->Refine(refined, refineHints, shape);
 			}
 		}
 	}

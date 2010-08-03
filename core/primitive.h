@@ -106,12 +106,12 @@ public:
 	 * @param u1 The point coordinate in the first dimension.
 	 * @param u2 The point coordinate in the second dimension.
 	 * @param u3 The subprimitive to sample.
-	 * @param dg The destination to store the sampled point in.
+	 * @param dg The destination to store the sampled point data in.
 	 */
 	virtual void Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const;
 	/**
 	 * Returns the probablity density for sampling the given point
-	 * (@see Primitive::Sample(float,float,float,Normal*) const).
+	 * (@see Primitive::Sample(float,float,float,DifferentialGeometry*) const).
 	 * @param p The point that was sampled.
 	 * @return The pdf value (w.r.t. surface area) for the given point.
 	 */
@@ -121,11 +121,12 @@ public:
 	 * from a given point. Only the p, nn, dpdu, dpdv, u and v need to be
 	 * calculated.
 	 *
+	 * @param tspack Thread data
 	 * @param p  The point that will be tested for visibility with the result.
 	 * @param u1 The point coordinate in the first dimension.
 	 * @param u2 The point coordinate in the second dimension.
 	 * @param u3 The subprimitive to sample.
-	 * @param dg The destination to store the sampled point in.
+	 * @param dg The destination to store the sampled point data in.
 	 */
 	virtual void Sample(const TsPack *tspack, const Point &p,
 		float u1, float u2, float u3, DifferentialGeometry *dg) const {
@@ -133,15 +134,7 @@ public:
 	}
 	/**
 	 * Returns the probability density for sampling the given point.
-	 * (@see Primitive::Sample(Point&,float,float,float,Normal*) const).
-	 * @param p  The point that was to be tested for visibility with the result.
-	 * @param wi The direction from the above point to the sampled point.
-	 * @return The pdf value (w.r.t. solid angle) for the given point.
-	 */
-	virtual float Pdf(const Point &p, const Vector &wi) const;
-	/**
-	 * Returns the probability density for sampling the given point.
-	 * (@see Primitive::Sample(Point&,float,float,float,Normal*) const).
+	 * (@see Primitive::Sample(const TsPack*,const Point&,float,float,float,DifferentialGeometry*) const).
 	 * No visibility test is done here.
 	 * @param p  The point that was to be tested for visibility with the result.
 	 * @param po The point that was sampled.
@@ -232,9 +225,6 @@ public:
 			float u1, float u2, float u3, DifferentialGeometry *dg) const {
 		prim->Sample(tspack, P, u1, u2, u3, dg);
 	}
-	virtual float Pdf(const Point &p, const Vector &wi) const {
-		return prim->Pdf(p, wi);
-	}
 	virtual float Pdf(const Point &p, const Point &po) const {
 		return prim->Pdf(p, po);
 	}
@@ -309,9 +299,6 @@ public:
 		dg->dpdv = InstanceToWorld(dg->dpdv);
 		dg->dndu = InstanceToWorld(dg->dndu);
 		dg->dndv = InstanceToWorld(dg->dndv);
-	}
-	virtual float Pdf(const Point &p, const Vector &wi) const {
-		return instance->Pdf(WorldToInstance(p), WorldToInstance(wi));
 	}
 	//FIXME: The various pdf computations should be adapted for scaling
 	virtual float Pdf(const Point &p, const Point &po) const {
@@ -408,9 +395,6 @@ public:
 		dg->dpdv = InstanceToWorld(dg->dpdv);
 		dg->dndu = InstanceToWorld(dg->dndu);
 		dg->dndv = InstanceToWorld(dg->dndv);
-	}
-	virtual float Pdf(const Point &p, const Vector &wi) const {
-		return instance->Pdf(p, wi);
 	}
 	//FIXME: The various pdf computations should be adapted for scaling
 	//FIXME: The various pdf parameters should be converted to instance

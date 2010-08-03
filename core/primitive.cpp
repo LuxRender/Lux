@@ -72,20 +72,6 @@ void Primitive::Sample(float u1, float u2, float u3,
 		"Unimplemented Primitive::Sample method called!");
 }
 
-float Primitive::Pdf(const Point &p, const Vector &wi) const
-{
-	// Intersect sample ray with area light geometry
-	Intersection isect;
-	Ray ray(p, wi);
-	if (!Intersect(ray, &isect))
-		return 0.f;
-	// Convert light sample weight to solid angle measure
-	const float cost = AbsDot(isect.dg.nn, -wi);
-	if (cost == 0.f)
-		return INFINITY;
-	return DistanceSquared(p, isect.dg.p) / (cost * Area());
-}
-
 // Intersection Method Definitions
 BSDF *Intersection::GetBSDF(const TsPack *tspack,
 	const RayDifferential &ray) const
