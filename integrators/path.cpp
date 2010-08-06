@@ -64,9 +64,10 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 {
 	u_int nrContribs = 0;
 	// Declare common path integration variables
+	const SpectrumWavelengths &sw(sample->swl);
 	RayDifferential r;
-	float rayWeight = tspack->camera->GenerateRay(tspack, scene, *sample,
-		&r);
+	float rayWeight = sample->camera->GenerateRay(tspack->arena, scene,
+		*sample, &r);
 
 	const float nLights = scene->lights.size();
 	const u_int lightGroupCount = scene->lightGroups.size();
@@ -89,19 +90,17 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		// Find next vertex of path
 		Intersection isect;
 		BSDF *bsdf;
-		if (!scene->Intersect(tspack, volume, ray, &isect, &bsdf,
-			&pathThroughput)) {
+		if (!scene->Intersect(tspack, sample, volume, ray, &isect,
+			&bsdf, &pathThroughput)) {
 			// Dade - now I know ray.maxt and I can call volumeIntegrator
 			SWCSpectrum Lv;
 			u_int g = scene->volumeIntegrator->Li(tspack, scene,
 				ray, sample, &Lv, &alpha);
 			if (!Lv.Black()) {
 				L[g] = Lv;
-				V[g] += Lv.Filter(tspack) * VContrib;
+				V[g] += Lv.Filter(sw) * VContrib;
 				++nrContribs;
 			}
-			scene->volumeIntegrator->Transmittance(tspack, scene,
-				ray, sample, &alpha, &pathThroughput);
 
 			// Stop path sampling since no intersection was found
 			// Possibly add horizon in render & reflections
@@ -110,10 +109,11 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 				BSDF *ibsdf;
 				for (u_int i = 0; i < nLights; ++i) {
 					SWCSpectrum Le(pathThroughput);
-					if (scene->lights[i]->Le(tspack, scene,
-						ray, &ibsdf, NULL, NULL, &Le)) {
+					if (scene->lights[i]->Le(tspack->arena,
+						scene, sample, ray, &ibsdf,
+						NULL, NULL, &Le)) {
 						L[scene->lights[i]->group] += Le;
-						V[scene->lights[i]->group] += Le.Filter(tspack) * VContrib;
+						V[scene->lights[i]->group] += Le.Filter(sw) * VContrib;
 						++nrContribs;
 					}
 				}
@@ -134,7 +134,7 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		if (!Lv.Black()) {
 			Lv *= pathThroughput;
 			L[g] += Lv;
-			V[g] += Lv.Filter(tspack) * VContrib;
+			V[g] += Lv.Filter(sw) * VContrib;
 			++nrContribs;
 		}
 
@@ -142,12 +142,12 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		Vector wo(-ray.d);
 		if (specularBounce && isect.arealight) {
 			BSDF *ibsdf;
-			SWCSpectrum Le(isect.Le(tspack, ray, &ibsdf, NULL, 
-				NULL));
+			SWCSpectrum Le(isect.Le(tspack->arena, sample, ray,
+				&ibsdf, NULL, NULL));
 			if (!Le.Black()) {
 				Le *= pathThroughput;
 				L[isect.arealight->group] += Le;
-				V[isect.arealight->group] += Le.Filter(tspack) * VContrib;
+				V[isect.arealight->group] += Le.Filter(sw) * VContrib;
 				++nrContribs;
 			}
 		}
@@ -179,16 +179,18 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		float pdf;
 		BxDFType flags;
 		SWCSpectrum f;
-		if (!bsdf->Sample_f(tspack, wo, &wi, data[0], data[1], data[2], &f, &pdf, BSDF_ALL, &flags, NULL, true))
+		if (!bsdf->Sample_f(sw, wo, &wi, data[0], data[1], data[2], &f,
+			&pdf, BSDF_ALL, &flags, NULL, true))
 			break;
 
 		const float dp = AbsDot(wi, n) / pdf;
 
-		if (flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) || !(bsdf->Pdf(tspack, wi, wo, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) > 0.f)) {
+		if (flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) ||
+			!(bsdf->Pdf(sw, wi, wo, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) > 0.f)) {
 			// Possibly terminate the path
 			if (vertexIndex > 3) {
 				if (rrStrategy == RR_EFFICIENCY) { // use efficiency optimized RR
-					const float q = min<float>(1.f, f.Filter(tspack) * dp);
+					const float q = min<float>(1.f, f.Filter(sw) * dp);
 					if (q < data[3])
 						break;
 					// increase path contribution
@@ -216,9 +218,9 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	}
 	for (u_int i = 0; i < lightGroupCount; ++i) {
 		if (!L[i].Black())
-			V[i] /= L[i].Filter(tspack);
+			V[i] /= L[i].Filter(sw);
 		sample->AddContribution(sample->imageX, sample->imageY,
-			XYZColor(tspack, L[i]) * rayWeight, alpha, distance,
+			XYZColor(sw, L[i]) * rayWeight, alpha, distance,
 			V[i], bufferId, i);
 	}
 

@@ -40,43 +40,51 @@ public:
 	UVMaskTexture(TextureMapping2D *m,
 	              boost::shared_ptr<Texture<T> > &_innerTex,
 	              boost::shared_ptr<Texture<T> > &_outerTex)
-	: innerTex(_innerTex),
-	  outerTex(_outerTex)
-	{
-		mapping = m;
-	}
+	: innerTex(_innerTex), outerTex(_outerTex) { mapping = m; }
 
-	virtual ~UVMaskTexture()
-	{
-		delete mapping;
-	}
+	virtual ~UVMaskTexture() { delete mapping; }
 
-	virtual float Evaluate(const TsPack               *tspack,
-	                       const DifferentialGeometry &dg) const
-	{
+	virtual float Evaluate(const SpectrumWavelengths &sw,
+		const DifferentialGeometry &dg) const {
 		float s, t;
 		mapping->Map(dg, &s, &t);
-		if (s<0.f || s>1.f || t<0.f || t>1.f)
-			return outerTex->Evaluate(tspack, dg);
+		if (s < 0.f || s > 1.f || t < 0.f || t > 1.f)
+			return outerTex->Evaluate(sw, dg);
 		else
-			return innerTex->Evaluate(tspack, dg);
+			return innerTex->Evaluate(sw, dg);
 	}
 
-	virtual float Y() const
-	{
-		return (innerTex->Y()+outerTex->Y()) * .5f;
-	}
+	virtual float Y() const { return (innerTex->Y() + outerTex->Y()) * .5f; }
 
-	virtual void GetDuv(const TsPack               *tspack,
-	                    const DifferentialGeometry &dg,
-	                    float                      delta,
-	                    float                      *du,
-	                    float                      *dv) const
-	{
+	virtual void GetDuv(const SpectrumWavelengths &sw,
+		const DifferentialGeometry &dg,
+		float delta, float *du, float *dv) const {
 		float s, t, dsdu, dtdu, dsdv, dtdv;
-		mapping->MapDuv(dg, &s, &t, &dsdu, &dtdu, &dsdv, &dtdv);
-		*du = dsdu + dtdu;
-		*dv = dsdv + dtdv;
+		mapping->MapDxy(dg, &s, &t, &dsdu, &dtdu, &dsdv, &dtdv);
+		const float ds = delta * (dsdu + dsdv);
+		const float dt = delta * (dtdu + dtdv);
+		*du = 0.f;
+		*dv = 0.f;
+		if (fabsf(s) < ds) {
+			*du += dsdu;
+			*dv += dsdv;
+		} else if (fabsf(s - 1.f) < ds) {
+			*du -= dsdu;
+			*dv -= dsdv;
+		}
+		if (fabsf(t) < dt) {
+			*du += dtdu;
+			*dv += dtdv;
+		} else if (fabsf(t - 1.f) < dt) {
+			*du -= dtdu;
+			*dv -= dtdv;
+		}
+		if (*du || *dv) {
+			const float d = (innerTex->EvalFloat(sw, dg) -
+				outerTex->EvalFloat(sw, dg)) / delta;
+			*du *= d;
+			*dv *= d;
+		}
 	}
 
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world,

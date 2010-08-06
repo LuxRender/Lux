@@ -49,18 +49,17 @@ public:
 	virtual float Power(const Scene *scene) const = 0;
 	virtual bool IsDeltaLight() const = 0;
 	virtual bool IsEnvironmental() const = 0;
-	virtual bool Le(const TsPack *tspack, const Scene *scene,
-		const Ray &r, BSDF **bsdf, float *pdf,
+	virtual bool Le(MemoryArena *arena, const Scene *scene,
+		const Sample *sample, const Ray &r, BSDF **bsdf, float *pdf,
 		float *pdfDirect, SWCSpectrum *L) const { return false; }
-	virtual float Pdf(const TsPack *tspack, const Point &p,
-		const Point &po, const Normal &ns) const = 0;
-	virtual bool Sample_L(const TsPack *tspack, const Scene *scene,
+	virtual float Pdf(const Point &p, const Point &po, const Normal &ns) const = 0;
+	virtual bool Sample_L(MemoryArena *arena, const Scene *scene,
+		const Sample *sample, float u1, float u2, float u3, BSDF **bsdf,
+		float *pdf, SWCSpectrum *L) const = 0;
+	virtual bool Sample_L(MemoryArena *arena, const Scene *scene,
+		const Sample *sample, const Point &p,
 		float u1, float u2, float u3, BSDF **bsdf, float *pdf,
-		SWCSpectrum *L) const = 0;
-	virtual bool Sample_L(const TsPack *tspack, const Scene *scene,
-		const Point &p, float u1, float u2, float u3,
-		BSDF **bsdf, float *pdf, float *pdfDirect,
-		SWCSpectrum *L) const = 0;
+		float *pdfDirect, SWCSpectrum *L) const = 0;
 	const LightRenderingHints *GetRenderingHints() const { return &hints; }
 
 	void AddPortalShape(boost::shared_ptr<Primitive> &shape);
@@ -87,21 +86,20 @@ public:
 		float pow, float e, SampleableSphericalFunction *ssf,
 		u_int ns, const boost::shared_ptr<Primitive> &prim);
 	virtual ~AreaLight();
-	virtual SWCSpectrum L(const TsPack *tspack, const Ray &ray,
-		const DifferentialGeometry &dg, BSDF **bsdf,
+	virtual SWCSpectrum L(MemoryArena *arena, const Sample *sample,
+		const Ray &ray, const DifferentialGeometry &dg, BSDF **bsdf,
 		float *pdf, float *pdfDirect) const;
 	virtual float Power(const Scene *scene) const;
 	virtual bool IsDeltaLight() const { return false; }
 	virtual bool IsEnvironmental() const { return false; }
-	virtual float Pdf(const TsPack *tspack, const Point &p,
-		const Point &po, const Normal &ns) const;
-	virtual bool Sample_L(const TsPack *tspack, const Scene *scene,
+	virtual float Pdf(const Point &p, const Point &po, const Normal &ns) const;
+	virtual bool Sample_L(MemoryArena *arena, const Scene *scene,
+		const Sample *sample, float u1, float u2, float u3, BSDF **bsdf,
+		float *pdf, SWCSpectrum *Le) const;
+	virtual bool Sample_L(MemoryArena *arena, const Scene *scene,
+		const Sample *sample, const Point &p,
 		float u1, float u2, float u3, BSDF **bsdf, float *pdf,
-		SWCSpectrum *Le) const;
-	virtual bool Sample_L(const TsPack *tspack, const Scene *scene,
-		const Point &p, float u1, float u2, float u3,
-		BSDF **bsdf, float *pdf, float *pdfDirect,
-		SWCSpectrum *Le) const;
+		float *pdfDirect, SWCSpectrum *Le) const;
 	static AreaLight *CreateAreaLight(const Transform &light2world,
 		const ParamSet &paramSet,
 		const boost::shared_ptr<Primitive> &prim);

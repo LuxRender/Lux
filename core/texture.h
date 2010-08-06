@@ -190,23 +190,23 @@ template <class T> class Texture {
 public:
 	//typedef boost::shared_ptr<Texture> TexturePtr; <<! Not working with GCC
 	// Texture Interface
-	virtual T Evaluate(const TsPack *tspack,
+	virtual T Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &) const = 0;
-	float EvalFloat(const TsPack *tspack,
+	float EvalFloat(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const;
 	virtual float Y() const = 0;
 	virtual float Filter() const { return Y(); }
 	virtual void SetIlluminant() { }
-	virtual void GetDuv(const TsPack *tspack,
+	virtual void GetDuv(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg, float delta,
 		float *du, float *dv) const = 0;
 	virtual ~Texture() { }
 };
 
-template<> inline float Texture<float>::EvalFloat(const TsPack *tspack,
+template<> inline float Texture<float>::EvalFloat(const SpectrumWavelengths &sw,
 	const DifferentialGeometry &dg) const
 {
-	return Evaluate(tspack, dg);
+	return Evaluate(sw, dg);
 }
 
 float Noise(float x, float y = .5f, float z = .5f);

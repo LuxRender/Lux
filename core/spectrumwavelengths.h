@@ -54,7 +54,7 @@ public:
 		spd_ciex.Offsets(WAVELENGTH_SAMPLES, w, binsXYZ, offsetsXYZ);
 	}
 
-	inline float SampleSingle() {
+	inline float SampleSingle() const {
 		single = true;
 		return w[single_w];
 	}
@@ -62,7 +62,7 @@ public:
 	float w[WAVELENGTH_SAMPLES]; // Wavelengths in nm
 
 	u_int  single_w; // Chosen single wavelength bin
-	bool single; // Split to single
+	mutable bool single; // Split to single
 
 	int binsRGB[WAVELENGTH_SAMPLES], binsXYZ[WAVELENGTH_SAMPLES];
 	float offsetsRGB[WAVELENGTH_SAMPLES], offsetsXYZ[WAVELENGTH_SAMPLES];

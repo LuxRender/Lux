@@ -41,9 +41,10 @@ MipMapSphericalFunction::MipMapSphericalFunction(boost::shared_ptr<const MIPMap>
 	SetMipMap(aMipMap);
 }
 
-SWCSpectrum MipMapSphericalFunction::f(const TsPack *tspack, float phi, float theta) const
+SWCSpectrum MipMapSphericalFunction::f(const SpectrumWavelengths &sw,
+	float phi, float theta) const
 {
-	return mipMap->LookupSpectrum(tspack, phi * INV_TWOPI, theta * INV_PI);
+	return mipMap->LookupSpectrum(sw, phi * INV_TWOPI, theta * INV_PI);
 }
 
 // SampleableSphericalFunction
@@ -52,9 +53,7 @@ SampleableSphericalFunction::SampleableSphericalFunction(
 	u_int xRes, u_int yRes) : func(aFunc)
 {
 	// Compute scalar-valued image
-	TsPack tspack;
 	SpectrumWavelengths swl;
-	tspack.swl = &swl;
 	swl.Sample(.5f);
 	float *img = new float[xRes * yRes];
 	average = 0.f;
@@ -65,7 +64,8 @@ SampleableSphericalFunction::SampleableSphericalFunction(
 		normalize += xRes * weight;
 		for (u_int x = 0; x < xRes; ++x) {
 			const float xp = 2.f * M_PI * (x + .5f) / xRes;
-			const float value = func->f(&tspack, xp, yp).Filter(&tspack) * weight;
+			const float value = func->f(swl, xp, yp).Filter(swl) *
+				weight;
 			average += value;
 			img[x + y * xRes] = value;
 		}
@@ -79,12 +79,13 @@ SampleableSphericalFunction::~SampleableSphericalFunction() {
 	delete uvDistrib;
 }
 
-SWCSpectrum SampleableSphericalFunction::f(const TsPack *tspack, float phi, float theta) const
+SWCSpectrum SampleableSphericalFunction::f(const SpectrumWavelengths &sw,
+	float phi, float theta) const
 {
-	return func->f(tspack, phi, theta);
+	return func->f(sw, phi, theta);
 }
 
-SWCSpectrum SampleableSphericalFunction::Sample_f(const TsPack *tspack,
+SWCSpectrum SampleableSphericalFunction::Sample_f(const SpectrumWavelengths &sw,
 	float u1, float u2, Vector *w, float *pdf) const
 {
 	// Find floating-point $(u,v)$ sample coordinates
@@ -98,7 +99,7 @@ SWCSpectrum SampleableSphericalFunction::Sample_f(const TsPack *tspack,
 	// Compute PDF for sampled direction
 	*pdf /= 2.f * M_PI * M_PI * sintheta;
 	// Return value for direction
-	return f(tspack, phi, theta);
+	return f(sw, phi, theta);
 }
 
 float SampleableSphericalFunction::Pdf(const Vector& w) const

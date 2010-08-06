@@ -37,8 +37,8 @@ public:
 	SchlickBRDF(const SWCSpectrum &Rd, const SWCSpectrum &Rs,
 		const SWCSpectrum &Alpha, float d, float r, float p);
 	virtual ~SchlickBRDF() { }
-	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi,
-		SWCSpectrum *const f) const;
+	virtual void f(const SpectrumWavelengths &sw, const Vector &wo,
+		const Vector &wi, SWCSpectrum *const f) const;
 	SWCSpectrum SchlickFresnel(float costheta) const {
 		return Rs + powf(1.f - costheta, 5.f) * (SWCSpectrum(1.f) - Rs);
 	}
@@ -66,10 +66,10 @@ public:
 		return G * SchlickZ(fabsf(H.z)) * SchlickA(H) /
 			(4.f * M_PI * cos1 * cos2);
 	}
-	virtual bool Sample_f(const TsPack *tspack, const Vector &wo,
+	virtual bool Sample_f(const SpectrumWavelengths &sw, const Vector &wo,
 		Vector *wi, float u1, float u2, SWCSpectrum *const f,
 		float *pdf, float *pdfBack = NULL, bool reverse = false) const;
-	virtual float Pdf(const TsPack *tspack, const Vector &wi,
+	virtual float Pdf(const SpectrumWavelengths &sw, const Vector &wi,
 		const Vector &wo) const;
 
 private:

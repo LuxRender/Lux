@@ -46,7 +46,8 @@ public:
 		scale = sc;
 		variation = var;
 	}
-	virtual SWCSpectrum Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
+	virtual SWCSpectrum Evaluate(const SpectrumWavelengths &sw,
+		const DifferentialGeometry &dg) const {
 		Vector dpdx, dpdy;
 		Point P = mapping->MapDxy(dg, &dpdx, &dpdy);
 		P *= scale;
@@ -69,7 +70,7 @@ public:
 		s0 = Lerp(t, s0, s1);
 		s1 = Lerp(t, s1, s2);
 		// Extra scale of 1.5 to increase variation among colors
-		return SWCSpectrum(tspack, 1.5f * Lerp(t, s0, s1));
+		return SWCSpectrum(sw, 1.5f * Lerp(t, s0, s1));
 	}
 	virtual float Y() const {
 		static float c[][3] = { { .58f, .58f, .6f }, { .58f, .58f, .6f }, { .58f, .58f, .6f },
@@ -89,13 +90,13 @@ public:
 			cs += RGBColor(c[i]);
 		return cs.Filter() / NC;
 	}
-	virtual void GetDuv(const TsPack *tspack,
+	virtual void GetDuv(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg, float delta,
 		float *du, float *dv) const {
 		//FIXME: Generic derivative computation, replace with exact
 		DifferentialGeometry dgTemp = dg;
 		// Calculate bump map value at intersection point
-		const float base = EvalFloat(tspack, dg);
+		const float base = EvalFloat(sw, dg);
 
 		// Compute offset positions and evaluate displacement texture
 		const Point origP(dgTemp.p);
@@ -107,7 +108,7 @@ public:
 		dgTemp.p += uu * dgTemp.dpdu;
 		dgTemp.u += uu;
 		dgTemp.nn = Normalize(origN + uu * dgTemp.dndu);
-		*du = (EvalFloat(tspack, dgTemp) - base) / uu;
+		*du = (EvalFloat(sw, dgTemp) - base) / uu;
 
 		// Shift _dgTemp_ _dv_ in the $v$ direction and calculate value
 		const float vv = delta / dgTemp.dpdv.Length();
@@ -115,7 +116,7 @@ public:
 		dgTemp.u = origU;
 		dgTemp.v += vv;
 		dgTemp.nn = Normalize(origN + vv * dgTemp.dndv);
-		*dv = (EvalFloat(tspack, dgTemp) - base) / vv;
+		*dv = (EvalFloat(sw, dgTemp) - base) / vv;
 	}
 	
 	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const ParamSet &tp);

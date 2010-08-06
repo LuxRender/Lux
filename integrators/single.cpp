@@ -45,9 +45,8 @@ void SingleScattering::Transmittance(const TsPack *tspack, const Scene *scene,
 	if (!scene->volumeRegion) 
 		return;
 	const float step = stepSize; // TODO - handle varying step size
-	const float offset = sample ? sample->oneD[tauSampleOffset][0] :
-		tspack->rng->floatValue();
-	const SWCSpectrum tau(scene->volumeRegion->Tau(tspack, ray, step,
+	const float offset = sample->oneD[tauSampleOffset][0];
+	const SWCSpectrum tau(scene->volumeRegion->Tau(sample->swl, ray, step,
 		offset));
 	*L *= Exp(-tau);
 }
@@ -65,6 +64,7 @@ u_int SingleScattering::Li(const TsPack *tspack, const Scene *scene,
 	// Prepare for volume integration stepping
 	const u_int N = Ceil2UInt((t1 - t0) / stepSize);
 	const float step = (t1 - t0) / N;
+	const SpectrumWavelengths &sw(sample->swl);
 	SWCSpectrum Tr(1.f);
 	Vector w = -ray.d;
 	t0 += sample->oneD[tauSampleOffset][0] * step;
@@ -77,29 +77,28 @@ u_int SingleScattering::Li(const TsPack *tspack, const Scene *scene,
 	// Compute sample patterns for single scattering samples
 	// FIXME - use real samples
 	float *samp = static_cast<float *>(alloca(3 * N * sizeof(float)));
-	LatinHypercube(tspack, samp, N, 3);
+	LatinHypercube(*(tspack->rng), samp, N, 3);
 	u_int sampOffset = 0;
 	for (u_int i = 0; i < N; ++i, t0 += step) {
 		// Advance to sample at _t0_ and update _T_
 		r.o = ray(t0);
 
 		// Ray is already offset above, no need to do it again
-		const SWCSpectrum stepTau(vr->Tau(tspack, r,
-			.5f * stepSize, 0.f));
+		const SWCSpectrum stepTau(vr->Tau(sw, r, .5f * stepSize, 0.f));
 		Tr *= Exp(-stepTau);
 		// Possibly terminate raymarching if transmittance is small
-		if (Tr.Filter(tspack) < 1e-3f) {
+		if (Tr.Filter(sw) < 1e-3f) {
 			const float continueProb = .5f;
 			if (tspack->rng->floatValue() > continueProb) break; // TODO - REFACT - remove and add random value from sample
 			Tr /= continueProb;
 		}
 
 		// Compute single-scattering source term at _p_
-		*Lv += Tr * vr->Lve(tspack, r.o, w);
+		*Lv += Tr * vr->Lve(sw, r.o, w);
 
 		if (scene->lights.size() == 0)
 			continue;
-		const SWCSpectrum ss(vr->SigmaS(tspack, r.o, w));
+		const SWCSpectrum ss(vr->SigmaS(sw, r.o, w));
 		if (!ss.Black()) {
 			// Add contribution of _light_ due to scattering at _p_
 			float pdf;
@@ -108,13 +107,13 @@ u_int SingleScattering::Li(const TsPack *tspack, const Scene *scene,
 				u3 = samp[sampOffset + 2];
 			BSDF *ibsdf;
 			SWCSpectrum L;
-			if (light->Sample_L(tspack, scene, r.o, u1, u2, u3,
-				&ibsdf, NULL, &pdf, &L)) {
-				if (scene->Connect(tspack, NULL, r.o,
+			if (light->Sample_L(tspack->arena, scene, sample, r.o,
+				u1, u2, u3, &ibsdf, NULL, &pdf, &L)) {
+				if (Connect(tspack, scene, sample, NULL, r.o,
 					ibsdf->dgShading.p, false, &L, NULL,
 					NULL))
 					*Lv += Tr * ss * L *
-						(vr->P(tspack, r.o, w, -wo) *
+						(vr->P(sw, r.o, w, -wo) *
 						 nLights / pdf);
 			}
 		}

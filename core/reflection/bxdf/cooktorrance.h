@@ -37,12 +37,12 @@ public:
 	CookTorrance(const SWCSpectrum &ks, MicrofacetDistribution *dist,
 		Fresnel *fres);
 	virtual ~CookTorrance() { }
-	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi,
-		SWCSpectrum *const f) const;
-	virtual bool Sample_f(const TsPack *tspack, const Vector &wi,
+	virtual void f(const SpectrumWavelengths &sw, const Vector &wo,
+		const Vector &wi, SWCSpectrum *const f) const;
+	virtual bool Sample_f(const SpectrumWavelengths &sw, const Vector &wi,
 		Vector *sampled_f, float u1, float u2, SWCSpectrum *const f,
 		float *pdf, float *pdfBack = NULL, bool reverse = false) const;
-	virtual float Pdf(const TsPack *tspack, const Vector &wi,
+	virtual float Pdf(const SpectrumWavelengths &sw, const Vector &wi,
 		const Vector &wo) const;
 private:
 	// Cook-Torrance Private Data

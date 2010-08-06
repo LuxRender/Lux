@@ -42,18 +42,19 @@ public:
 	virtual ~UVTexture() {
 		delete mapping;
 	}
-	virtual SWCSpectrum Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
+	virtual SWCSpectrum Evaluate(const SpectrumWavelengths &sw,
+		const DifferentialGeometry &dg) const {
 		float s, t;
 		mapping->Map(dg, &s, &t);
 		const float cs[COLOR_SAMPLES] = { s - Floor2Int(s), t - Floor2Int(t), 0.f };
-		return SWCSpectrum(tspack, RGBColor(cs));
+		return SWCSpectrum(sw, RGBColor(cs));
 	}
 	virtual float Y() const {
 		const float cs[COLOR_SAMPLES] = {.5f, .5f, 0.f};
 		return RGBColor(cs).Y();
 	}
 	virtual float Filter() const { return 2.f / 3.f; }
-	virtual void GetDuv(const TsPack *tspack,
+	virtual void GetDuv(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg, float delta,
 		float *du, float *dv) const {
 		float s, t, dsdu, dtdu, dsdv, dtdv;

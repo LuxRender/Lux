@@ -44,9 +44,8 @@ void EmissionIntegrator::Transmittance(const TsPack *tspack, const Scene *scene,
 	if (!scene->volumeRegion) 
 		return;
 	const float step = stepSize;
-	const float offset = sample ? sample->oneD[tauSampleOffset][0] :
-		tspack->rng->floatValue();
-	const SWCSpectrum tau(scene->volumeRegion->Tau(tspack, ray, step,
+	const float offset = sample->oneD[tauSampleOffset][0];
+	const SWCSpectrum tau(scene->volumeRegion->Tau(sample->swl, ray, step,
 		offset));
 	*L *= Exp(-tau);
 }
@@ -71,17 +70,17 @@ u_int EmissionIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		// Advance to sample at _t0_ and update _T_
 		r.o = ray(t0);
 		// Ray is already offset above, no need to do it again
-		const SWCSpectrum stepTau(vr->Tau(tspack, r,
+		const SWCSpectrum stepTau(vr->Tau(sample->swl, r,
 			.5f * stepSize, 0.f));
 		Tr *= Exp(-stepTau);
 		// Possibly terminate raymarching if transmittance is small
-		if (Tr.Filter(tspack) < 1e-3f) {
+		if (Tr.Filter(sample->swl) < 1e-3f) {
 			const float continueProb = .5f;
 			if (tspack->rng->floatValue() > continueProb) break; // TODO - REFACT - remove and add random value from sample
 			Tr /= continueProb;
 		}
 		// Compute emission-only source term at _p_
-		*Lv += Tr * vr->Lve(tspack, r.o, w);
+		*Lv += Tr * vr->Lve(sample->swl, r.o, w);
 	}
 	*Lv *= step;
 	return group;

@@ -49,26 +49,27 @@ Metal::Metal(boost::shared_ptr<SPD > &n, boost::shared_ptr<SPD > &k,
 	compParams = new CompositingParams(cp);
 }
 
-BSDF *Metal::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
+BSDF *Metal::GetBSDF(MemoryArena *arena, const SpectrumWavelengths &sw,
+	const DifferentialGeometry &dgGeom,
 	const DifferentialGeometry &dgs,
 	const Volume *exterior, const Volume *interior) const
 {
 	// Allocate _BSDF_
-	SWCSpectrum n(tspack, *N);
-	SWCSpectrum k(tspack, *K);
+	SWCSpectrum n(sw, *N);
+	SWCSpectrum k(sw, *K);
 
-	float u = nu->Evaluate(tspack, dgs);
-	float v = nv->Evaluate(tspack, dgs);
+	float u = nu->Evaluate(sw, dgs);
+	float v = nv->Evaluate(sw, dgs);
 	const float u2 = u * u;
 	const float v2 = v * v;
 
 	const float anisotropy = u2 < v2 ? 1.f - u2 / v2 : v2 / u2 - 1.f;
-	SchlickDistribution *md = ARENA_ALLOC(tspack->arena, SchlickDistribution)(u * v, anisotropy);
+	SchlickDistribution *md = ARENA_ALLOC(arena, SchlickDistribution)(u * v, anisotropy);
 
-	FresnelConductor *fresnel = ARENA_ALLOC(tspack->arena, FresnelConductor)(n, k);
-	MicrofacetReflection *bxdf = ARENA_ALLOC(tspack->arena, MicrofacetReflection)(1.f,
+	FresnelConductor *fresnel = ARENA_ALLOC(arena, FresnelConductor)(n, k);
+	MicrofacetReflection *bxdf = ARENA_ALLOC(arena, MicrofacetReflection)(1.f,
 		fresnel, md);
-	SingleBSDF *bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dgs,
+	SingleBSDF *bsdf = ARENA_ALLOC(arena, SingleBSDF)(dgs,
 		dgGeom.nn, bxdf, exterior, interior);
 
 	// Add ptr to CompositingParams structure

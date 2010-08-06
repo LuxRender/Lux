@@ -27,7 +27,7 @@
 
 using namespace lux;
 
-void Lambertian::f(const TsPack *tspack, const Vector &wo, 
+void Lambertian::f(const SpectrumWavelengths &sw, const Vector &wo, 
 	const Vector &wi, SWCSpectrum *const f_) const
 {
 	*f_ += RoverPI;

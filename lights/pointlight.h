@@ -23,10 +23,6 @@
 // point.cpp*
 #include "lux.h"
 #include "light.h"
-#include "shape.h"
-#include "scene.h"
-#include "texture.h"
-#include "sphericalfunction.h"
 
 namespace lux
 {
@@ -42,14 +38,14 @@ public:
 	virtual bool IsDeltaLight() const { return true; }
 	virtual bool IsEnvironmental() const { return false; }
 	virtual float Power(const Scene *) const;
-	virtual float Pdf(const TsPack *tspack, const Point &p,
-		const Point &po, const Normal &ns) const;
-	virtual bool Sample_L(const TsPack *tspack, const Scene *scene,
-		float u1, float u2, float u3, BSDF **bsdf, float *pdf,
-		SWCSpectrum *Le) const;
-	virtual bool Sample_L(const TsPack *tspack, const Scene *scene,
-		const Point &p, float u1, float u2, float u3,
-		BSDF **bsdf, float *pdf, float *pdfDirect,
+	virtual float Pdf(const Point &p, const Point &po,
+		const Normal &ns) const;
+	virtual bool Sample_L(MemoryArena *arena, const Scene *scene,
+		const Sample *sample, float u1, float u2, float u3, BSDF **bsdf,
+		float *pdf, SWCSpectrum *Le) const;
+	virtual bool Sample_L(MemoryArena *arena, const Scene *scene,
+		const Sample *sample, const Point &p, float u1, float u2,
+		float u3, BSDF **bsdf, float *pdf, float *pdfDirect,
 		SWCSpectrum *Le) const;
 	
 	static Light *CreateLight(const Transform &light2world,

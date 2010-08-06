@@ -39,21 +39,23 @@ public:
 	static Vector otherHemisphere(const Vector &w) {
 		return Vector(w.x, w.y, -w.z);
 	}
-	virtual SWCSpectrum rho(const TsPack *tspack, const Vector &w, u_int nSamples,
-			float *samples) const {
-		return brdf->rho(tspack, otherHemisphere(w), nSamples, samples);
+	virtual SWCSpectrum rho(const SpectrumWavelengths &sw, const Vector &w,
+		u_int nSamples, float *samples) const {
+		return brdf->rho(sw, otherHemisphere(w), nSamples, samples);
 	}
-	virtual SWCSpectrum rho(const TsPack *tspack, u_int nSamples, float *samples) const {
-		return brdf->rho(tspack, nSamples, samples);
+	virtual SWCSpectrum rho(const SpectrumWavelengths &sw, u_int nSamples,
+		float *samples) const {
+		return brdf->rho(sw, nSamples, samples);
 	}
-	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const;
-	virtual bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
-		float u1, float u2, SWCSpectrum *const f, float *pdf, float *pdfBack = NULL,
-		bool reverse = false) const;
-	virtual float Weight(const TsPack *tspack, const Vector &wo) const {
-		return brdf->Weight(tspack, wo);
-	}
-	virtual float Pdf(const TsPack *tspack, const Vector &wo, const Vector &wi) const;
+	virtual void f(const SpectrumWavelengths &sw, const Vector &wo,
+		const Vector &wi, SWCSpectrum *const f) const;
+	virtual bool Sample_f(const SpectrumWavelengths &sw, const Vector &wo,
+		Vector *wi, float u1, float u2, SWCSpectrum *const f,
+		float *pdf, float *pdfBack = NULL, bool reverse = false) const;
+	virtual float Weight(const SpectrumWavelengths &sw,
+		const Vector &wo) const { return brdf->Weight(sw, wo); }
+	virtual float Pdf(const SpectrumWavelengths &sw, const Vector &wo,
+		const Vector &wi) const;
 private:
 	float etai, etat, cb;
 	BxDF *brdf;

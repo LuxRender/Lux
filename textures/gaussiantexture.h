@@ -36,13 +36,13 @@ public:
 	// GaussianTexture Public Methods
 	GaussianTexture(float m, float w, float r) : GSPD(m, w, r) { }
 	virtual ~GaussianTexture() { }
-	virtual SWCSpectrum Evaluate(const TsPack *tspack,
+	virtual SWCSpectrum Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &) const {
-		return SWCSpectrum(tspack, GSPD);
+		return SWCSpectrum(sw, GSPD);
 	}
 	virtual float Y() const { return GSPD.Y(); }
 	virtual float Filter() const { return GSPD.Filter(); }
-	virtual void GetDuv(const TsPack *tspack,
+	virtual void GetDuv(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg, float delta,
 		float *du, float *dv) const { *du = *dv = 0.f; }
 	static Texture<SWCSpectrum> *CreateSWCSpectrumTexture(const Transform &tex2world, const ParamSet &tp);

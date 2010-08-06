@@ -35,35 +35,35 @@
 using namespace lux;
 
 // RoughGlass Method Definitions
-BSDF *RoughGlass::GetBSDF(const TsPack *tspack,
+BSDF *RoughGlass::GetBSDF(MemoryArena *arena, const SpectrumWavelengths &sw,
 	const DifferentialGeometry &dgGeom,
 	const DifferentialGeometry &dgs,
 	const Volume *exterior, const Volume *interior) const
 {
 	// Allocate _BSDF_
 	// NOTE - lordcrc - Bugfix, pbrt tracker id 0000078: index of refraction swapped and not recorded
-	float ior = index->Evaluate(tspack, dgs);
-	float cb = cauchyb->Evaluate(tspack, dgs);
-	MultiBSDF *bsdf = ARENA_ALLOC(tspack->arena, MultiBSDF)(dgs, dgGeom.nn,
+	float ior = index->Evaluate(sw, dgs);
+	float cb = cauchyb->Evaluate(sw, dgs);
+	MultiBSDF *bsdf = ARENA_ALLOC(arena, MultiBSDF)(dgs, dgGeom.nn,
 		exterior, interior);
 	// NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
-	SWCSpectrum R = Kr->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
-	SWCSpectrum T = Kt->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
-	float u = uroughness->Evaluate(tspack, dgs);
-	float v = vroughness->Evaluate(tspack, dgs);
+	SWCSpectrum R = Kr->Evaluate(sw, dgs).Clamp(0.f, 1.f);
+	SWCSpectrum T = Kt->Evaluate(sw, dgs).Clamp(0.f, 1.f);
+	float u = uroughness->Evaluate(sw, dgs);
+	float v = vroughness->Evaluate(sw, dgs);
 	const float u2 = u * u;
 	const float v2 = v * v;
 
 	const float anisotropy = u2 < v2 ? 1.f - u2 / v2 : v2 / u2 - 1.f;
-	SchlickDistribution *md = ARENA_ALLOC(tspack->arena, SchlickDistribution)(u * v, anisotropy);
-	const FresnelCauchy *fresnel = ARENA_ALLOC(tspack->arena, FresnelCauchy)
+	SchlickDistribution *md = ARENA_ALLOC(arena, SchlickDistribution)(u * v, anisotropy);
+	const FresnelCauchy *fresnel = ARENA_ALLOC(arena, FresnelCauchy)
 		(ior, cb, 0.f);
 	if (!R.Black()) {
-		bsdf->Add(ARENA_ALLOC(tspack->arena, MicrofacetReflection)(R,
+		bsdf->Add(ARENA_ALLOC(arena, MicrofacetReflection)(R,
 			fresnel, md));
 	}
 	if (!T.Black()) {
-		bsdf->Add(ARENA_ALLOC(tspack->arena, MicrofacetTransmission)(T,
+		bsdf->Add(ARENA_ALLOC(arena, MicrofacetTransmission)(T,
 			fresnel, md));
 	}
 

@@ -462,7 +462,7 @@ u_int SurfaceIntegratorRenderingHints::SampleLights(const TsPack *tspack,
 
 	if (V) {
 		for (u_int i = 0; i < scene->lightGroups.size(); ++i)
-			(*V)[i] += L[i].Filter(tspack);
+			(*V)[i] += L[i].Filter(sample->swl);
 	}
 
 	return nContribs;

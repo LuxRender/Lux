@@ -237,11 +237,8 @@ namespace lux
 // Initialized per thread in scene.cpp/RenderThread::RenderThread and passed where needed.
 	struct TsPack {
 		// Thread specific data
-		SpectrumWavelengths *swl;
 		RandomGenerator *rng;
 		MemoryArena *arena;
-		Camera *camera;
-		float time;
 	};
 
 }

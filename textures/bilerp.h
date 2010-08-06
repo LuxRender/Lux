@@ -44,7 +44,7 @@ public:
 		v11 = t11;
 	}
 	virtual ~BilerpFloatTexture() { delete mapping; }
-	virtual float Evaluate(const TsPack *tspack,
+	virtual float Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
 		float s, t;
 		mapping->Map(dg, &s, &t);
@@ -54,7 +54,8 @@ public:
 			s * (1.f - t) * v10 + s * t * v11;
 	}
 	virtual float Y() const { return (v00 + v01 + v10 + v11) / 4.f; }
-	virtual void GetDuv(const TsPack *tspack, const DifferentialGeometry &dg,
+	virtual void GetDuv(const SpectrumWavelengths &sw,
+		const DifferentialGeometry &dg,
 		float delta, float *du, float *dv) const {
 		float s, t, dsdu, dtdu, dsdv, dtdv;
 		mapping->MapDuv(dg, &s, &t, &dsdu, &dtdu, &dsdv, &dtdv);
@@ -86,13 +87,13 @@ public:
 		v11 = t11;
 	}
 	virtual ~BilerpSpectrumTexture() { delete mapping; }
-	virtual SWCSpectrum Evaluate(const TsPack *tspack,
+	virtual SWCSpectrum Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
 		float s, t;
 		mapping->Map(dg, &s, &t);
 		s -= Floor2Int(s);
 		t -= Floor2Int(t);
-		return SWCSpectrum(tspack, (1.f - s) * (1.f - t) * v00 +
+		return SWCSpectrum(sw, (1.f - s) * (1.f - t) * v00 +
 			(1.f - s) * t * v01 + s * (1.f - t) * v10 +
 			s * t * v11);
 	}
@@ -102,7 +103,8 @@ public:
 	virtual float Filter() const {
 		return RGBColor(v00 + v01 + v10 + v11).Filter() / 4.f;
 	}
-	virtual void GetDuv(const TsPack *tspack, const DifferentialGeometry &dg,
+	virtual void GetDuv(const SpectrumWavelengths &sw,
+		const DifferentialGeometry &dg,
 		float delta, float *du, float *dv) const {
 		float s, t, dsdu, dtdu, dsdv, dtdv;
 		mapping->MapDuv(dg, &s, &t, &dsdu, &dtdu, &dsdv, &dtdv);

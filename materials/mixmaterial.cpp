@@ -31,20 +31,20 @@
 using namespace lux;
 
 // MixMaterial Method Definitions
-BSDF *MixMaterial::GetBSDF(const TsPack *tspack,
+BSDF *MixMaterial::GetBSDF(MemoryArena *arena, const SpectrumWavelengths &sw,
 	const DifferentialGeometry &dgGeom,
 	const DifferentialGeometry &dgShading,
 	const Volume *exterior, const Volume *interior) const {
-	MixBSDF *bsdf = ARENA_ALLOC(tspack->arena, MixBSDF)(dgShading,
-		dgGeom.nn, exterior, interior);
-	float amt = amount->Evaluate(tspack, dgShading);
+	MixBSDF *bsdf = ARENA_ALLOC(arena, MixBSDF)(dgShading, dgGeom.nn,
+		exterior, interior);
+	float amt = amount->Evaluate(sw, dgShading);
 	DifferentialGeometry dgS = dgShading;
-	mat1->GetShadingGeometry(tspack, dgGeom.nn, &dgS);
-	bsdf->Add(1.f - amt, mat1->GetBSDF(tspack, dgGeom, dgS,
+	mat1->GetShadingGeometry(sw, dgGeom.nn, &dgS);
+	bsdf->Add(1.f - amt, mat1->GetBSDF(arena, sw, dgGeom, dgS,
 		exterior, interior));
 	dgS = dgShading;
-	mat2->GetShadingGeometry(tspack, dgGeom.nn, &dgS);
-	bsdf->Add(amt, mat2->GetBSDF(tspack, dgGeom, dgS,
+	mat2->GetShadingGeometry(sw, dgGeom.nn, &dgS);
+	bsdf->Add(amt, mat2->GetBSDF(arena, sw, dgGeom, dgS,
 		exterior, interior));
 	bsdf->SetCompositingParams(compParams);
 	return bsdf;

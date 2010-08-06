@@ -36,12 +36,12 @@ public:
 	MicrofacetReflection(const SWCSpectrum &reflectance, const Fresnel *f,
 		MicrofacetDistribution *d, bool oneS = false);
 	virtual ~MicrofacetReflection() { }
-	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi,
-		SWCSpectrum *const f) const;
-	virtual bool Sample_f(const TsPack *tspack, const Vector &wo,
+	virtual void f(const SpectrumWavelengths &sw, const Vector &wo,
+		const Vector &wi, SWCSpectrum *const f) const;
+	virtual bool Sample_f(const SpectrumWavelengths &sw, const Vector &wo,
 		Vector *wi, float u1, float u2, SWCSpectrum *const f,
 		float *pdf, float *pdfBack = NULL, bool reverse = false) const;
-	virtual float Pdf(const TsPack *tspack, const Vector &wo,
+	virtual float Pdf(const SpectrumWavelengths &sw, const Vector &wo,
 		const Vector &wi) const;
 private:
 	// MicrofacetReflection Private Data
@@ -57,12 +57,12 @@ public:
 	MicrofacetTransmission(const SWCSpectrum &reflectance, const Fresnel *f,
 		MicrofacetDistribution *d);
 	virtual ~MicrofacetTransmission() { }
-	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi,
-		SWCSpectrum *const f) const;
-	virtual bool Sample_f(const TsPack *tspack, const Vector &wo,
+	virtual void f(const SpectrumWavelengths &sw, const Vector &wo,
+		const Vector &wi, SWCSpectrum *const f) const;
+	virtual bool Sample_f(const SpectrumWavelengths &sw, const Vector &wo,
 		Vector *wi, float u1, float u2, SWCSpectrum *const f,
 		float *pdf, float *pdfBack = NULL, bool reverse = false) const;
-	virtual float Pdf(const TsPack *tspack, const Vector &wo,
+	virtual float Pdf(const SpectrumWavelengths &sw, const Vector &wo,
 		const Vector &wi) const;
 private:
 	// MicrofacetTransmission Private Data

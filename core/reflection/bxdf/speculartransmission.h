@@ -37,13 +37,14 @@ public:
 		BxDF(BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)),
 		fresnel(fr), dispersive(disp), architectural(archi) { }
 	virtual ~SimpleSpecularTransmission() { }
-	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi,
-		SWCSpectrum *const f) const;
-	virtual bool Sample_f(const TsPack *tspack, const Vector &wo,
+	virtual void f(const SpectrumWavelengths &sw, const Vector &wo,
+		const Vector &wi, SWCSpectrum *const f) const;
+	virtual bool Sample_f(const SpectrumWavelengths &sw, const Vector &wo,
 		Vector *wi, float u1, float u2, SWCSpectrum *const f,
 		float *pdf, float *pdfBack = NULL, bool reverse = false) const;
-	virtual float Weight(const TsPack *tspack, const Vector &wo) const;
-	virtual float Pdf(const TsPack *tspack, const Vector &wo,
+	virtual float Weight(const SpectrumWavelengths &sw,
+		const Vector &wo) const;
+	virtual float Pdf(const SpectrumWavelengths &sw, const Vector &wo,
 		const Vector &wi) const {
 		return (architectural &&
 			Dot(wo, wi) <= -1.f + MachineEpsilon::E(1.f)) ? 1.f : 0.f;
@@ -61,9 +62,9 @@ public:
 		bool archi = false) :
 		SimpleSpecularTransmission(fr, disp, archi), T(t) { }
 	virtual ~SpecularTransmission() { }
-	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi,
-		SWCSpectrum *const f) const;
-	virtual bool Sample_f(const TsPack *tspack, const Vector &wo,
+	virtual void f(const SpectrumWavelengths &sw, const Vector &wo,
+		const Vector &wi, SWCSpectrum *const f) const;
+	virtual bool Sample_f(const SpectrumWavelengths &sw, const Vector &wo,
 		Vector *wi, float u1, float u2, SWCSpectrum *const f,
 		float *pdf, float *pdfBack = NULL, bool reverse = false) const;
 private:

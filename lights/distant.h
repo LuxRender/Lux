@@ -23,7 +23,6 @@
 // distant.cpp*
 #include "lux.h"
 #include "light.h"
-#include "shape.h"
 #include "scene.h"
 #include "texture.h"
 
@@ -46,17 +45,19 @@ public:
 		scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
 		return Lbase->Y() * gain * M_PI * worldRadius * worldRadius;
 	}
-	virtual bool Le(const TsPack *tspack, const Scene *scene, const Ray &r,
-		BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *L) const;
-	virtual float Pdf(const TsPack *tspack, const Point &p,
-		const Point &po, const Normal &ns) const;
+	virtual bool Le(MemoryArena *arena, const Scene *scene,
+		const Sample *sample, const Ray &r, BSDF **bsdf, float *pdf,
+		float *pdfDirect, SWCSpectrum *L) const;
+	virtual float Pdf(const Point &p, const Point &po,
+		const Normal &ns) const;
 
-	virtual bool Sample_L(const TsPack *tspack, const Scene *scene,
-		float u1, float u2, float u3, BSDF **bsdf, float *pdf,
+	virtual bool Sample_L(MemoryArena *arena, const Scene *scene,
+		const Sample *sample, float u1, float u2, float u3, BSDF **bsdf,
+		float *pdf, SWCSpectrum *Le) const;
+	virtual bool Sample_L(MemoryArena *arena, const Scene *scene,
+		const Sample *sample, const Point &p, float u1, float u2,
+		float u3, BSDF **bsdf, float *pdf, float *pdfDirect,
 		SWCSpectrum *Le) const;
-	virtual bool Sample_L(const TsPack *tspack, const Scene *scene,
-		const Point &p, float u1, float u2, float u3, BSDF **bsdf,
-		float *pdf, float *pdfDirect, SWCSpectrum *Le) const;
 	
 	static Light *CreateLight(const Transform &light2world,
 		const ParamSet &paramSet);

@@ -146,7 +146,7 @@ public:
 		GetFloatTexture(const string &name) const;
 	boost::shared_ptr<Texture<float> >
 		GetFloatTexture(const string &name, float def) const;
-	boost::shared_ptr<Texture<const Fresnel *> >
+	boost::shared_ptr<Texture<FresnelGeneral> >
 		GetFresnelTexture(const string &name, float def) const;
 	boost::shared_ptr<Material> GetMaterial(const string &name) const;
 	void ReportUnused() const;

@@ -26,7 +26,7 @@
 
 using namespace lux;
 
-bool NullTransmission::Sample_f(const TsPack *tspack, const Vector &wo,
+bool NullTransmission::Sample_f(const SpectrumWavelengths &sw, const Vector &wo,
 	Vector *wi, float u1, float u2, SWCSpectrum *const f_, float *pdf, 
 	float *pdfBack,	bool reverse) const
 {

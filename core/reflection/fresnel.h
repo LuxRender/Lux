@@ -33,12 +33,13 @@ class  Fresnel {
 public:
 	// Fresnel Interface
 	virtual ~Fresnel() { }
-	virtual void Evaluate(const TsPack *tspack, float cosi, SWCSpectrum *const f) const = 0;
-	virtual float Index(const TsPack *tspack) const = 0;
-	virtual SWCSpectrum SigmaA(const TsPack *tspack) const {
+	virtual void Evaluate(const SpectrumWavelengths &sw, float cosi,
+		SWCSpectrum *const f) const = 0;
+	virtual float Index(const SpectrumWavelengths &sw) const = 0;
+	virtual SWCSpectrum SigmaA(const SpectrumWavelengths &sw) const {
 		return SWCSpectrum(0.f);
 	}
-	virtual void ComplexEvaluate(const TsPack *tspack,
+	virtual void ComplexEvaluate(const SpectrumWavelengths &sw,
 		SWCSpectrum *fr, SWCSpectrum *fi) const = 0;
 };
 

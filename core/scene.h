@@ -75,17 +75,17 @@ public:
 	bool Intersect(const Ray &ray, Intersection *isect) const {
 		return aggregate->Intersect(ray, isect);
 	}
-	bool Intersect(const TsPack *tspack, const Volume *volume,
-		const RayDifferential &ray, Intersection *isect, BSDF **bsdf,
-		SWCSpectrum *f) const {
-		return volumeIntegrator->Intersect(tspack, this, volume, ray,
-			isect, bsdf, f);
+	bool Intersect(const TsPack *tspack, const Sample *sample,
+		const Volume *volume, const RayDifferential &ray,
+		Intersection *isect, BSDF **bsdf, SWCSpectrum *f) const {
+		return volumeIntegrator->Intersect(tspack, this, sample, volume,
+			ray, isect, bsdf, f);
 	}
-	bool Connect(const TsPack *tspack, const Volume *volume,
-		const Point &p0, const Point &p1, bool clip, SWCSpectrum *f,
-		float *pdf, float *pdfR) const {
-		return volumeIntegrator->Connect(tspack, this, volume, p0, p1,
-			clip, f, pdf, pdfR);
+	bool Connect(const TsPack *tspack, const Sample *sample,
+		const Volume *volume, const Point &p0, const Point &p1,
+		bool clip, SWCSpectrum *f, float *pdf, float *pdfR) const {
+		return volumeIntegrator->Connect(tspack, this, sample, volume,
+			p0, p1, clip, f, pdf, pdfR);
 	}
 	bool IntersectP(const Ray &ray) const {
 		return aggregate->IntersectP(ray);

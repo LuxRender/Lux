@@ -46,8 +46,8 @@ public:
 		if (reverseOrientation) *ns *= -1.f;
 		return ObjectToWorld(p);
 	}
-	virtual Point Sample(const TsPack *tspack, const Point &p,
-			float u1, float u2, float u3, Normal *ns) const {
+	virtual Point Sample(const Point &p, float u1, float u2, float u3,
+		Normal *ns) const {
 		// Compute coordinate system for sphere sampling
 		Point Pcenter = ObjectToWorld(Point(0,0,0));
 		Vector wc = Normalize(Pcenter - p);

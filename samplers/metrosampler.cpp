@@ -155,7 +155,7 @@ bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
 	if (sampleImage == NULL) {
 		// If this is the original sampler, shuffle the QR sequence
 		if (!timeImage)
-			Shuffle(tspack, rngSamples, rngN, 1);
+			Shuffle(*(tspack->rng), rngSamples, rngN, 1);
 		initMetropolis(this, sample);
 		large = true;
 	}

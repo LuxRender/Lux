@@ -96,9 +96,9 @@ void OrthoCamera::AutoFocus(Scene* scene)
 	}
 }
 
-bool OrthoCamera::Sample_W(const TsPack *tspack, const Scene *scene,
-	float u1, float u2, float u3, BSDF **bsdf, float *pdf,
-	SWCSpectrum *We) const
+bool OrthoCamera::Sample_W(MemoryArena *arena, const SpectrumWavelengths &sw,
+	const Scene *scene, float u1, float u2, float u3, BSDF **bsdf,
+	float *pdf, SWCSpectrum *We) const
 {
 	Point psC(RasterToCamera(Point(u1, u2, 0.f)));
 	psC.z = 0.f;
@@ -106,16 +106,17 @@ bool OrthoCamera::Sample_W(const TsPack *tspack, const Scene *scene,
 	DifferentialGeometry dg(ps, normal, CameraToWorld(Vector(1, 0, 0)),
 		CameraToWorld(Vector(0, 1, 0)), Normal(0, 0, 0),
 		Normal(0, 0, 0), 0, 0, NULL);
-	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, normal,
-		ARENA_ALLOC(tspack->arena, SpecularReflection)(SWCSpectrum(1.f),
-		ARENA_ALLOC(tspack->arena, FresnelNoOp)(), 0.f, 0.f), NULL, NULL);
+	*bsdf = ARENA_ALLOC(arena, SingleBSDF)(dg, normal,
+		ARENA_ALLOC(arena, SpecularReflection)(SWCSpectrum(1.f),
+		ARENA_ALLOC(arena, FresnelNoOp)(), 0.f, 0.f), NULL, NULL);
 	*pdf = posPdf;
 	*We = SWCSpectrum(posPdf);
 	return true;
 }
 
-bool OrthoCamera::Sample_W(const TsPack *tspack, const Scene *scene,
-	const Point &p, const Normal &n, float u1, float u2, float u3,
+bool OrthoCamera::Sample_W(MemoryArena *arena, const SpectrumWavelengths &sw,
+	const Scene *scene, const Point &p, const Normal &n,
+	float u1, float u2, float u3,
 	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *We) const
 {
 	return false;

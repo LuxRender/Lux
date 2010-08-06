@@ -33,13 +33,13 @@ namespace lux
 // IGI Local Structures
 struct VirtualLight {
 	VirtualLight() { }
-	VirtualLight(const TsPack *tspack, const Point &pp, const Normal &nn,
-		const SWCSpectrum &le)
+	VirtualLight(const SpectrumWavelengths &sw, const Point &pp,
+		const Normal &nn, const SWCSpectrum &le)
 		: Le(le), p(pp), n(nn) {
 		for (u_int i = 0; i < WAVELENGTH_SAMPLES; ++i)
-			w[i] = tspack->swl->w[i];
+			w[i] = sw.w[i];
 	}
-	SWCSpectrum GetSWCSpectrum(const TsPack *tspack) const;
+	SWCSpectrum GetSWCSpectrum(const SpectrumWavelengths &sw) const;
 	SWCSpectrum Le;
 	float w[WAVELENGTH_SAMPLES];
 	Point p;

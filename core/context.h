@@ -64,7 +64,7 @@ public:
 	static map<string, boost::shared_ptr<lux::Texture<SWCSpectrum> > > *GetActiveColorTextures() {
 		return &(activeContext->graphicsState->colorTextures);
 	}
-	static map<string, boost::shared_ptr<lux::Texture<const Fresnel *> > > *GetActiveFresnelTextures() {
+	static map<string, boost::shared_ptr<lux::Texture<FresnelGeneral> > > *GetActiveFresnelTextures() {
 		return &(activeContext->graphicsState->fresnelTextures);
 	}
 	static u_int GetActiveLightGroup() {
@@ -73,7 +73,7 @@ public:
 
 	boost::shared_ptr<lux::Texture<float> > GetFloatTexture(const string &n) const;
 	boost::shared_ptr<lux::Texture<SWCSpectrum> > GetColorTexture(const string &n) const;
-	boost::shared_ptr<lux::Texture<const Fresnel *> > GetFresnelTexture(const string &n) const;
+	boost::shared_ptr<lux::Texture<FresnelGeneral> > GetFresnelTexture(const string &n) const;
 	boost::shared_ptr<lux::Material > GetMaterial(const string &n) const;
 
 	void Init();
@@ -251,7 +251,7 @@ private:
 		// Graphics State
 		map<string, boost::shared_ptr<lux::Texture<float> > > floatTextures;
 		map<string, boost::shared_ptr<lux::Texture<SWCSpectrum> > > colorTextures;
-		map<string, boost::shared_ptr<lux::Texture<const Fresnel *> > > fresnelTextures;
+		map<string, boost::shared_ptr<lux::Texture<FresnelGeneral> > > fresnelTextures;
 		map<string, boost::shared_ptr<lux::Material> > namedMaterials;
 		map<string, boost::shared_ptr<lux::Volume> > namedVolumes;
 		boost::shared_ptr<lux::Volume> exterior;

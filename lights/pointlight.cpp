@@ -24,7 +24,8 @@
 #include "pointlight.h"
 #include "mc.h"
 #include "reflection/bxdf.h"
-#include "reflection/bxdf/lambertian.h"
+#include "sphericalfunction.h"
+#include "sampling.h"
 #include "paramset.h"
 #include "dynload.h"
 
@@ -40,10 +41,11 @@ public:
 	virtual inline u_int NumComponents(BxDFType flags) const {
 		return (flags & BSDF_DIFFUSE) == BSDF_DIFFUSE ? 1U : 0U;
 	}
-	virtual bool Sample_f(const TsPack *tspack, const Vector &woW, Vector *wiW,
-		float u1, float u2, float u3, SWCSpectrum *const f_, float *pdf,
-		BxDFType flags = BSDF_ALL, BxDFType *sampledType = NULL,
-		float *pdfBack = NULL, bool reverse = false) const {
+	virtual bool Sample_f(const SpectrumWavelengths &sw, const Vector &woW,
+		Vector *wiW, float u1, float u2, float u3,
+		SWCSpectrum *const f_, float *pdf, BxDFType flags = BSDF_ALL,
+		BxDFType *sampledType = NULL, float *pdfBack = NULL,
+		bool reverse = false) const {
 		if (reverse || NumComponents(flags) == 0)
 			return false;
 		*wiW = UniformSampleSphere(u1, u2);
@@ -56,22 +58,24 @@ public:
 		*f_ = SWCSpectrum(.25f * INV_PI / cosi);
 		return true;
 	}
-	virtual float Pdf(const TsPack *tspack, const Vector &woW,
+	virtual float Pdf(const SpectrumWavelengths &sw, const Vector &woW,
 		const Vector &wiW, BxDFType flags = BSDF_ALL) const {
 		if (NumComponents(flags) == 1)
 			return .25f * INV_PI;
 		return 0.f;
 	}
-	virtual SWCSpectrum f(const TsPack *tspack, const Vector &woW,
+	virtual SWCSpectrum f(const SpectrumWavelengths &sw, const Vector &woW,
 		const Vector &wiW, BxDFType flags = BSDF_ALL) const {
 		if (NumComponents(flags) == 1)
 			return SWCSpectrum(.25f * INV_PI / AbsDot(wiW, nn));
 		return SWCSpectrum(0.f);
 	}
-	virtual SWCSpectrum rho(const TsPack *tspack,
+	virtual SWCSpectrum rho(const SpectrumWavelengths &sw,
 		BxDFType flags = BSDF_ALL) const { return SWCSpectrum(1.f); }
-	virtual SWCSpectrum rho(const TsPack *tspack, const Vector &woW,
-		BxDFType flags = BSDF_ALL) const { return SWCSpectrum(1.f); }
+	virtual SWCSpectrum rho(const SpectrumWavelengths &sw,
+		const Vector &woW, BxDFType flags = BSDF_ALL) const {
+		return SWCSpectrum(1.f);
+	}
 
 protected:
 	// UniformBSDF Private Methods
@@ -89,13 +93,14 @@ public:
 	virtual inline u_int NumComponents(BxDFType flags) const {
 		return (flags & BSDF_DIFFUSE) == BSDF_DIFFUSE ? 1U : 0U;
 	}
-	virtual bool Sample_f(const TsPack *tspack, const Vector &woW, Vector *wiW,
-		float u1, float u2, float u3, SWCSpectrum *const f_, float *pdf,
-		BxDFType flags = BSDF_ALL, BxDFType *sampledType = NULL,
-		float *pdfBack = NULL, bool reverse = false) const {
+	virtual bool Sample_f(const SpectrumWavelengths &sw, const Vector &woW,
+		Vector *wiW, float u1, float u2, float u3,
+		SWCSpectrum *const f_, float *pdf, BxDFType flags = BSDF_ALL,
+		BxDFType *sampledType = NULL, float *pdfBack = NULL,
+		bool reverse = false) const {
 		if (reverse || NumComponents(flags) == 0)
 			return false;
-		*f_ = sf->Sample_f(tspack, u1, u2, wiW, pdf);
+		*f_ = sf->Sample_f(sw, u1, u2, wiW, pdf);
 		*f_ /= sf->Average_f() * fabsf(wiW->z);
 		*wiW = Normalize(LocalToWorld(*wiW));
 		if (sampledType)
@@ -104,23 +109,25 @@ public:
 			*pdfBack = 0.f;
 		return true;
 	}
-	virtual float Pdf(const TsPack *tspack, const Vector &woW,
+	virtual float Pdf(const SpectrumWavelengths &sw, const Vector &woW,
 		const Vector &wiW, BxDFType flags = BSDF_ALL) const {
 		if (NumComponents(flags) == 1)
 			return sf->Pdf(WorldToLocal(wiW));
 		return 0.f;
 	}
-	virtual SWCSpectrum f(const TsPack *tspack, const Vector &woW,
+	virtual SWCSpectrum f(const SpectrumWavelengths &sw, const Vector &woW,
 		const Vector &wiW, BxDFType flags = BSDF_ALL) const {
 		if (NumComponents(flags) == 1)
-			return sf->f(tspack, WorldToLocal(wiW)) /
+			return sf->f(sw, WorldToLocal(wiW)) /
 				(sf->Average_f() * AbsDot(wiW, nn));
 		return SWCSpectrum(0.f);
 	}
-	virtual SWCSpectrum rho(const TsPack *tspack,
+	virtual SWCSpectrum rho(const SpectrumWavelengths &sw,
 		BxDFType flags = BSDF_ALL) const { return SWCSpectrum(1.f); }
-	virtual SWCSpectrum rho(const TsPack *tspack, const Vector &woW,
-		BxDFType flags = BSDF_ALL) const { return SWCSpectrum(1.f); }
+	virtual SWCSpectrum rho(const SpectrumWavelengths &sw,
+		const Vector &woW, BxDFType flags = BSDF_ALL) const {
+		return SWCSpectrum(1.f);
+	}
 
 protected:
 	// GonioBSDF Private Methods
@@ -146,50 +153,51 @@ float PointLight::Power(const Scene *) const {
 	return Lbase->Y() * gain * 4.f * M_PI;
 }
 
-float PointLight::Pdf(const TsPack *tspack, const Point &p,
-	const Point &po, const Normal &ns) const
+float PointLight::Pdf(const Point &p, const Point &po, const Normal &ns) const
 {
 	return 1.f;
 }
 
-bool PointLight::Sample_L(const TsPack *tspack, const Scene *scene,
-	float u1, float u2, float u3, BSDF **bsdf, float *pdf,
-	SWCSpectrum *Le) const
+bool PointLight::Sample_L(MemoryArena *arena, const Scene *scene,
+	const Sample *sample, float u1, float u2, float u3, BSDF **bsdf,
+	float *pdf, SWCSpectrum *Le) const
 {
 	*pdf = 1.f;
 	const Normal ns(0, 0, 1);
-	const DifferentialGeometry dg(lightPos, Normalize(LightToWorld(ns)),
+	DifferentialGeometry dg(lightPos, Normalize(LightToWorld(ns)),
 		Normalize(LightToWorld(Vector(1, 0, 0))),
 		Normalize(LightToWorld(Vector(0, 1, 0))),
 		Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
+	dg.time = sample->realTime;
 	if(func)
-		*bsdf = ARENA_ALLOC(tspack->arena, GonioBSDF)(dg, ns,
+		*bsdf = ARENA_ALLOC(arena, GonioBSDF)(dg, ns,
 			NULL, NULL, func);
 	else
-		*bsdf = ARENA_ALLOC(tspack->arena, UniformBSDF)(dg, ns,
+		*bsdf = ARENA_ALLOC(arena, UniformBSDF)(dg, ns,
 			NULL, NULL);
-	*Le = Lbase->Evaluate(tspack, dg) * (gain * 4.f * M_PI);
+	*Le = Lbase->Evaluate(sample->swl, dg) * (gain * 4.f * M_PI);
 	return true;
 }
-bool PointLight::Sample_L(const TsPack *tspack, const Scene *scene,
-	const Point &p, float u1, float u2, float u3,
+bool PointLight::Sample_L(MemoryArena *arena, const Scene *scene,
+	const Sample *sample, const Point &p, float u1, float u2, float u3,
 	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *Le) const
 {
 	const Normal ns(0, 0, 1);
-	const DifferentialGeometry dg(lightPos, Normalize(LightToWorld(ns)),
+	DifferentialGeometry dg(lightPos, Normalize(LightToWorld(ns)),
 		Normalize(LightToWorld(Vector(1, 0, 0))),
 		Normalize(LightToWorld(Vector(0, 1, 0))),
 		Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
+	dg.time = sample->realTime;
 	*pdfDirect = 1.f;
 	if (pdf)
 		*pdf = 1.f;
 	if (func)
-		*bsdf = ARENA_ALLOC(tspack->arena, GonioBSDF)(dg, ns,
+		*bsdf = ARENA_ALLOC(arena, GonioBSDF)(dg, ns,
 			NULL, NULL, func);
 	else
-		*bsdf = ARENA_ALLOC(tspack->arena, UniformBSDF)(dg, ns,
+		*bsdf = ARENA_ALLOC(arena, UniformBSDF)(dg, ns,
 			NULL, NULL);
-	*Le = Lbase->Evaluate(tspack, dg) * (gain * 4.f * M_PI);
+	*Le = Lbase->Evaluate(sample->swl, dg) * (gain * 4.f * M_PI);
 	return true;
 }
 Light* PointLight::CreateLight(const Transform &light2world,

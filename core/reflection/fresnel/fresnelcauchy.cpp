@@ -27,56 +27,57 @@
 
 using namespace lux;
 
-void FresnelCauchy::Evaluate(const TsPack *tspack, float cosi, SWCSpectrum *const f) const {
+void FresnelCauchy::Evaluate(const SpectrumWavelengths &sw, float cosi,
+	SWCSpectrum *const f) const
+{
 	// Compute Fresnel reflectance for dielectric
-	if (cb != 0.f && !tspack->swl->single) {
-		SWCSpectrum eta = SWCSpectrum(tspack->swl->w);
+	if (cb != 0.f && !sw.single) {
+		SWCSpectrum eta(sw.w);
 		eta *= eta;
 		eta = SWCSpectrum(eta_t) + SWCSpectrum(cb) / eta;
-		SWCSpectrum cost(sqrtf(max(0.f, 1.f - cosi * cosi)));
+		SWCSpectrum cost(max(0.f, 1.f - cosi * cosi));
 		if (cosi > 0.f)
-			cost /= eta;
+			cost /= eta * eta;
 		else
-			cost *= eta;
+			cost *= eta * eta;
 		cost = cost.Clamp(0.f, 1.f);
-		cost = (SWCSpectrum(1.f) - cost * cost).Sqrt();
-		FrDiel2(fabsf(cosi), cost, eta, f);
+		cost = (SWCSpectrum(1.f) - cost).Sqrt();
+		FrDiel2(fabsf(cosi), cost, cosi > 0.f ? eta : SWCSpectrum(1.f) / eta, f);
 	} else {
 		// Compute indices of refraction for dielectric
 		bool entering = cosi > 0.f;
 		float eta = eta_t;
 
 		// Handle dispersion using cauchy formula
-		if(cb != 0.f) { // We are already in single mode
-			const float w = tspack->swl->w[tspack->swl->single_w];
+		if (cb != 0.f) { // We are already in single mode
+			const float w = sw.w[sw.single_w];
 			eta += cb / (w * w);
 		}
 
 		// Compute _sint_ using Snell's law
-		const float sint = (entering ? 1.f / eta : eta) *
-			sqrtf(max(0.f, 1.f - cosi * cosi));
+		const float sint2 = (entering ? 1.f / (eta * eta) : eta * eta) *
+			max(0.f, 1.f - cosi * cosi);
 		// Handle total internal reflection
-		if (sint >= 1.f)
+		if (sint2 >= 1.f)
 			*f = SWCSpectrum(1.f);
 		else
 			FrDiel2(fabsf(cosi),
-				SWCSpectrum(sqrtf(max(0.f, 1.f - sint * sint))),
-				SWCSpectrum(eta), f);
+				SWCSpectrum(sqrtf(max(0.f, 1.f - sint2))),
+				entering ? eta : SWCSpectrum(1.f) / eta, f);
 	}
 }
 
-float FresnelCauchy::Index(const TsPack *tspack) const
+float FresnelCauchy::Index(const SpectrumWavelengths &sw) const
 {
-	const SpectrumWavelengths *swl = tspack->swl;
-	if (swl->single)
-		return (eta_t + cb / (swl->w[swl->single_w] * swl->w[swl->single_w]));
+	if (sw.single)
+		return (eta_t + cb / (sw.w[sw.single_w] * sw.w[sw.single_w]));
 	return eta_t + cb / (WAVELENGTH_END * WAVELENGTH_START);
 }
 
-void FresnelCauchy::ComplexEvaluate(const TsPack *tspack,
+void FresnelCauchy::ComplexEvaluate(const SpectrumWavelengths &sw,
 	SWCSpectrum *fr, SWCSpectrum *fi) const
 {
-	const float *w = tspack->swl->w;
+	const float *w = sw.w;
 	for (u_int i = 0; i < WAVELENGTH_SAMPLES; ++i)
 		fr->c[i] = eta_t + cb / (w[i] * w[i]);
 	// The 4e9*Pi comes from Beers law (4*Pi) and unit conversion of w

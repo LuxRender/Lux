@@ -36,35 +36,34 @@
 using namespace lux;
 
 // ShinyMetal Method Definitions
-BSDF *ShinyMetal::GetBSDF(const TsPack *tspack,
+BSDF *ShinyMetal::GetBSDF(MemoryArena *arena, const SpectrumWavelengths &sw,
 	const DifferentialGeometry &dgGeom,
 	const DifferentialGeometry &dgs,
 	const Volume *exterior, const Volume *interior) const
 {
 	// Allocate _BSDF_
-	MultiBSDF *bsdf = ARENA_ALLOC(tspack->arena, MultiBSDF)(dgs, dgGeom.nn,
+	MultiBSDF *bsdf = ARENA_ALLOC(arena, MultiBSDF)(dgs, dgGeom.nn,
 		exterior, interior);
-	SWCSpectrum spec = Ks->Evaluate(tspack, dgs).Clamp();
-	SWCSpectrum R = Kr->Evaluate(tspack, dgs).Clamp();
+	SWCSpectrum spec = Ks->Evaluate(sw, dgs).Clamp();
+	SWCSpectrum R = Kr->Evaluate(sw, dgs).Clamp();
 
-	float flm = film->Evaluate(tspack, dgs);
-	float flmindex = filmindex->Evaluate(tspack, dgs);
+	float flm = film->Evaluate(sw, dgs);
+	float flmindex = filmindex->Evaluate(sw, dgs);
 
-	float u = nu->Evaluate(tspack, dgs);
-	float v = nv->Evaluate(tspack, dgs);
+	float u = nu->Evaluate(sw, dgs);
+	float v = nv->Evaluate(sw, dgs);
 	const float u2 = u * u;
 	const float v2 = v * v;
 
 	const float anisotropy = u2 < v2 ? 1.f - u2 / v2 : v2 / u2 - 1.f;
-	SchlickDistribution *md = ARENA_ALLOC(tspack->arena, SchlickDistribution)(u * v, anisotropy);
+	SchlickDistribution *md = ARENA_ALLOC(arena, SchlickDistribution)(u * v, anisotropy);
 
-	FresnelGeneral *frMf = ARENA_ALLOC(tspack->arena,
-		FresnelGeneral)(FresnelApproxEta(spec), FresnelApproxK(spec));
-	FresnelGeneral *frSr = ARENA_ALLOC(tspack->arena,
-		FresnelGeneral)(FresnelApproxEta(R), FresnelApproxK(R));
-	bsdf->Add(ARENA_ALLOC(tspack->arena, MicrofacetReflection)(1.f, frMf,
-		md));
-	bsdf->Add(ARENA_ALLOC(tspack->arena, SpecularReflection)(1.f, frSr,
+	FresnelGeneral *frMf = ARENA_ALLOC(arena, FresnelGeneral)(AUTO_FRESNEL,
+		FresnelApproxEta(spec), FresnelApproxK(spec));
+	FresnelGeneral *frSr = ARENA_ALLOC(arena, FresnelGeneral)(AUTO_FRESNEL,
+		FresnelApproxEta(R), FresnelApproxK(R));
+	bsdf->Add(ARENA_ALLOC(arena, MicrofacetReflection)(1.f, frMf, md));
+	bsdf->Add(ARENA_ALLOC(arena, SpecularReflection)(1.f, frSr,
 		flm, flmindex));
 
 	// Add ptr to CompositingParams structure

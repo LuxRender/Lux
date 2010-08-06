@@ -26,9 +26,9 @@
 #include "bxdf.h"
 #include "mc.h"
 #include "color.h"
+#include "sampling.h"
 #include "paramset.h"
 #include "dynload.h"
-#include "epsilon.h"
 
 using namespace lux;
 
@@ -41,7 +41,8 @@ public:
 		xStart(xS), xEnd(xE), yStart(yS), yEnd(yE), Area(A),
 		Projection(proj), projectionMap(map) { }
 	virtual ~ProjectionBxDF() { }
-	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const
+	virtual void f(const SpectrumWavelengths &sw, const Vector &wo,
+		const Vector &wi, SWCSpectrum *const f) const
 	{
 		const float cos = wi.z;
 		if (cos < 0.f)
@@ -56,11 +57,12 @@ public:
 			const float s = (p0.x - xStart) / (xEnd - xStart);
 			const float t = (p0.y - yStart) / (yEnd - yStart);
 			f->AddWeighted(1.f / (Area * cos2 * cos2),
-				projectionMap->LookupSpectrum(tspack, s, t));
+				projectionMap->LookupSpectrum(sw, s, t));
 		}
 	}
-	virtual bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi, float u1, float u2,
-		SWCSpectrum *const f, float *pdf, float *pdfBack = NULL, bool reverse = false) const
+	virtual bool Sample_f(const SpectrumWavelengths &sw, const Vector &wo,
+		Vector *wi, float u1, float u2, SWCSpectrum *const f_,
+		float *pdf, float *pdfBack = NULL, bool reverse = false) const
 	{
 		const Point pS(Projection.GetInverse()(Point(u1 * (xEnd - xStart) + xStart, u2 * (yEnd - yStart) + yStart, 0.f)));
 		*wi = Normalize(Vector(pS.x, pS.y, pS.z));
@@ -70,13 +72,13 @@ public:
 		if (pdfBack)
 			*pdfBack = 0.f;
 		if (!projectionMap)
-			*f = SWCSpectrum(1.f / (Area * cos2 * cos2));
+			*f_ = SWCSpectrum(1.f / (Area * cos2 * cos2));
 		else
-			*f = projectionMap->LookupSpectrum(tspack, u1, u2) /
+			*f_ = projectionMap->LookupSpectrum(sw, u1, u2) /
 				(Area * cos2 * cos2);
 		return true;
 	}
-	virtual float Pdf(const TsPack *tspack, const Vector &wi, const Vector &wo) const
+	virtual float Pdf(const SpectrumWavelengths &sw, const Vector &wi, const Vector &wo) const
 	{
 		const float cos = wo.z;
 		if (cos < 0.f)
@@ -140,28 +142,29 @@ ProjectionLight::~ProjectionLight()
 	delete projectionMap;
 }
 
-float ProjectionLight::Pdf(const TsPack *tspack, const Point &p,
-	const Point &po, const Normal &ns) const
+float ProjectionLight::Pdf(const Point &p, const Point &po,
+	const Normal &ns) const
 {
 	return 1.f;
 }
-bool ProjectionLight::Sample_L(const TsPack *tspack, const Scene *scene,
-	float u1, float u2, float u3, BSDF **bsdf, float *pdf,
-	SWCSpectrum *Le) const
+bool ProjectionLight::Sample_L(MemoryArena *arena, const Scene *scene,
+	const Sample *sample, float u1, float u2, float u3, BSDF **bsdf,
+	float *pdf, SWCSpectrum *Le) const
 {
 	Normal ns = LightToWorld(Normal(0, 0, 1));
 	Vector dpdu, dpdv;
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 	DifferentialGeometry dg(lightPos, ns, dpdu, dpdv, Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
-	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
-		ARENA_ALLOC(tspack->arena, ProjectionBxDF)(area, projectionMap,
+	dg.time = sample->realTime;
+	*bsdf = ARENA_ALLOC(arena, SingleBSDF)(dg, ns,
+		ARENA_ALLOC(arena, ProjectionBxDF)(area, projectionMap,
 		lightProjection, screenX0, screenX1, screenY0, screenY1), NULL, NULL);
 	*pdf = 1.f;
-	*Le = Lbase->Evaluate(tspack, dg) * gain;
+	*Le = Lbase->Evaluate(sample->swl, dg) * gain;
 	return true;
 }
-bool ProjectionLight::Sample_L(const TsPack *tspack, const Scene *scene,
-	const Point &p, float u1, float u2, float u3,
+bool ProjectionLight::Sample_L(MemoryArena *arena, const Scene *scene,
+	const Sample *sample, const Point &p, float u1, float u2, float u3,
 	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *Le) const
 {
 	const Vector w(p - lightPos);
@@ -172,10 +175,11 @@ bool ProjectionLight::Sample_L(const TsPack *tspack, const Scene *scene,
 	Vector dpdu, dpdv;
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 	DifferentialGeometry dg(lightPos, ns, dpdu, dpdv, Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
-	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
-		ARENA_ALLOC(tspack->arena, ProjectionBxDF)(area, projectionMap,
+	dg.time = sample->realTime;
+	*bsdf = ARENA_ALLOC(arena, SingleBSDF)(dg, ns,
+		ARENA_ALLOC(arena, ProjectionBxDF)(area, projectionMap,
 		lightProjection, screenX0, screenX1, screenY0, screenY1), NULL, NULL);
-	*Le = Lbase->Evaluate(tspack, dg) * gain;
+	*Le = Lbase->Evaluate(sample->swl, dg) * gain;
 	return true;
 }
 

@@ -119,7 +119,7 @@ public:
 
 	virtual ~ImageFloatTexture() { }
 
-	virtual float Evaluate(const TsPack *tspack,
+	virtual float Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
 		float s, t, dsdx, dtdx, dsdy, dtdy;
 		mapping->MapDxy(dg, &s, &t, &dsdx, &dtdx, &dsdy, &dtdy);
@@ -129,7 +129,7 @@ public:
 	virtual float Y() const {
 		return mipmap->LookupFloat(channel, .5f, .5f, .5f);
 	}
-	virtual void GetDuv(const TsPack *tspack,
+	virtual void GetDuv(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg, float delta,
 		float *du, float *dv) const {
 		float s, t, dsdu, dtdu, dsdv, dtdv;
@@ -158,11 +158,11 @@ public:
 
 	virtual ~ImageSpectrumTexture() { }
 
-	virtual SWCSpectrum Evaluate(const TsPack *tspack,
+	virtual SWCSpectrum Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
 		float s, t, dsdx, dtdx, dsdy, dtdy;
 		mapping->MapDxy(dg, &s, &t, &dsdx, &dtdx, &dsdy, &dtdy);
-		return mipmap->LookupSpectrum(tspack, s, t,
+		return mipmap->LookupSpectrum(sw, s, t,
 			dsdx, dtdx, dsdy, dtdy);
 	}
 	virtual float Y() const {
@@ -171,13 +171,13 @@ public:
 	virtual float Filter() const {
 		return mipmap->LookupFloat(CHANNEL_MEAN, .5f, .5f, .5f);
 	}
-	virtual void GetDuv(const TsPack *tspack,
+	virtual void GetDuv(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg, float delta,
 		float *du, float *dv) const {
 		float s, t, dsdu, dtdu, dsdv, dtdv;
 		mapping->MapDuv(dg, &s, &t, &dsdu, &dtdu, &dsdv, &dtdv);
 		float ds, dt;
-		mipmap->GetDifferentials(tspack, s, t, &ds, &dt);
+		mipmap->GetDifferentials(sw, s, t, &ds, &dt);
 		*du = ds * dsdu + dt * dtdu;
 		*dv = ds * dsdv + dt * dtdv;
 	}

@@ -36,15 +36,15 @@ public:
 	Camera(const Transform &w2cstart, const Transform &w2cend, float hither,
 		float yon, float sopen, float sclose, int sdist, Film *film);
 	virtual ~Camera();
-	float GenerateRay(const TsPack *tspack, const Scene *scene,
+	float GenerateRay(MemoryArena *arena, const Scene *scene,
 		const Sample &sample, RayDifferential *ray) const;
-	virtual bool Sample_W(const TsPack *tspack, const Scene *scene,
+	virtual bool Sample_W(MemoryArena *arena, const SpectrumWavelengths &sw,
+		const Scene *scene, float u1, float u2, float u3, BSDF **bsdf,
+		float *pdf, SWCSpectrum *We) const = 0;
+	virtual bool Sample_W(MemoryArena *arena, const SpectrumWavelengths &sw,
+		const Scene *scene, const Point &p, const Normal &n,
 		float u1, float u2, float u3, BSDF **bsdf, float *pdf,
-		SWCSpectrum *We) const = 0;
-	virtual bool Sample_W(const TsPack *tspack, const Scene *scene,
-		const Point &p, const Normal &n, float u1, float u2, float u3,
-		BSDF **bsdf, float *pdf, float *pdfDirect,
-		SWCSpectrum *We) const = 0;
+		float *pdfDirect, SWCSpectrum *We) const = 0;
 	virtual bool GetSamplePosition(const Point &p, const Vector &wi,
 		float distance, float *x, float *y) const = 0;
 	virtual void ClampRay(Ray &ray) const { }
@@ -63,8 +63,9 @@ public:
 	Film *film;
 	Transform WorldToCamera, CameraToWorld;
 protected:
-	bool GenerateRay(const TsPack *tspack, const Scene *scene,
-		float o1, float o2, float d1, float d2, Ray *ray) const;
+	bool GenerateRay(MemoryArena *arena, const SpectrumWavelengths &sw,
+		const Scene *scene, float o1, float o2, float d1, float d2,
+		Ray *ray) const;
 	// Camera Protected Data
 	MotionSystem CameraMotion;
 	float ClipHither, ClipYon;

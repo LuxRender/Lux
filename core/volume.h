@@ -27,6 +27,7 @@
 #include "geometry/transform.h"
 #include "geometry/bbox.h"
 #include "spectrum.h"
+#include "fresnelgeneral.h"
 #include "color.h"
 
 namespace lux
@@ -44,22 +45,22 @@ class Volume {
 public:
 	// Volume Interface
 	virtual ~Volume() { }
-	virtual SWCSpectrum SigmaA(const TsPack *tspack, const Point &,
+	virtual SWCSpectrum SigmaA(const SpectrumWavelengths &sw, const Point &,
 		const Vector &) const = 0;
-	virtual SWCSpectrum SigmaS(const TsPack *tspack, const Point &,
+	virtual SWCSpectrum SigmaS(const SpectrumWavelengths &sw, const Point &,
 		const Vector &) const = 0;
-	virtual SWCSpectrum Lve(const TsPack *tspack, const Point &,
+	virtual SWCSpectrum Lve(const SpectrumWavelengths &sw, const Point &,
 		const Vector &) const = 0;
-	virtual float P(const TsPack *tspack, const Point &, const Vector &,
-		const Vector &) const = 0;
-	virtual SWCSpectrum SigmaT(const TsPack *tspack, const Point &p,
-		const Vector &w) const {
-		return SigmaA(tspack, p, w) + SigmaS(tspack, p, w);
+	virtual float P(const SpectrumWavelengths &sw, const Point &,
+		const Vector &, const Vector &) const = 0;
+	virtual SWCSpectrum SigmaT(const SpectrumWavelengths &sw,
+		const Point &p, const Vector &w) const {
+		return SigmaA(sw, p, w) + SigmaS(sw, p, w);
 	}
-	virtual SWCSpectrum Tau(const TsPack *tspack, const Ray &ray,
+	virtual SWCSpectrum Tau(const SpectrumWavelengths &sw, const Ray &ray,
 		float step = 1.f, float offset = 0.5f) const = 0;
-	virtual const lux::Fresnel *Fresnel(const TsPack *tspack, const Point &,
-		const Vector &) const = 0;
+	virtual FresnelGeneral Fresnel(const SpectrumWavelengths &sw,
+		const Point &, const Vector &) const = 0;
 };
 
 class RGBVolume : public Volume {
@@ -67,30 +68,33 @@ public:
 	RGBVolume(const RGBColor &sA, const RGBColor &sS, const RGBColor &l,
 		float gg) : sigA(sA), sigS(sS), le(l), g(gg) { }
 	virtual ~RGBVolume() { }
-	virtual SWCSpectrum SigmaA(const TsPack *tspack, const Point &p,
-		const Vector &) const {
-		return SWCSpectrum(tspack, sigA);
+	virtual SWCSpectrum SigmaA(const SpectrumWavelengths &sw,
+		const Point &p, const Vector &) const {
+		return SWCSpectrum(sw, sigA);
 	}
-	virtual SWCSpectrum SigmaS(const TsPack *tspack, const Point &p,
-		const Vector &) const {
-		return SWCSpectrum(tspack, sigS);
+	virtual SWCSpectrum SigmaS(const SpectrumWavelengths &sw,
+		const Point &p, const Vector &) const {
+		return SWCSpectrum(sw, sigS);
 	}
-	virtual SWCSpectrum Lve(const TsPack *tspack, const Point &p,
+	virtual SWCSpectrum Lve(const SpectrumWavelengths &sw, const Point &p,
 		const Vector &) const {
 		//FIXME - use a D65 white point instead of the E white point
-		return SWCSpectrum(tspack, le);
+		return SWCSpectrum(sw, le);
 	}
-	virtual float P(const TsPack *tspack, const Point &p, const Vector &w,
-		const Vector &wp) const {
+	virtual float P(const SpectrumWavelengths &sw, const Point &p,
+		const Vector &w, const Vector &wp) const {
 		return PhaseHG(w, wp, g);
 	}
-	virtual SWCSpectrum Tau(const TsPack *tspack, const Ray &ray,
+	virtual SWCSpectrum Tau(const SpectrumWavelengths &sw, const Ray &ray,
 		float step = 1.f, float offset = 0.5f) const {
-		return SigmaT(tspack, ray.o, -ray.d) *
+		return SigmaT(sw, ray.o, -ray.d) *
 			(ray.d.Length() * (ray.maxt - ray.mint));
 	}
-	virtual const lux::Fresnel *Fresnel(const TsPack *tspack, const Point &,
-		const Vector &) const { return NULL; } //FIXME
+	virtual FresnelGeneral Fresnel(const SpectrumWavelengths &sw,
+		const Point &, const Vector &) const {
+		return FresnelGeneral(DIELECTRIC_FRESNEL,
+			SWCSpectrum(1.f), SWCSpectrum(0.f));
+	}
 private:
 	RGBColor sigA, sigS, le;
 	float g;
@@ -119,31 +123,31 @@ public:
 	virtual bool IntersectP(const Ray &ray, float *t0, float *t1) const {
 		return region.IntersectP(WorldToVolume(ray), t0, t1);
 	}
-	virtual SWCSpectrum SigmaA(const TsPack *tspack, const Point &p,
+	virtual SWCSpectrum SigmaA(const SpectrumWavelengths &sw,
+		const Point &p, const Vector &w) const {
+		return region.Inside(WorldToVolume(p)) ?
+			volume.SigmaA(sw, p, w) : SWCSpectrum(0.f);
+	}
+	virtual SWCSpectrum SigmaS(const SpectrumWavelengths &sw,
+		const Point &p, const Vector &w) const {
+		return region.Inside(WorldToVolume(p)) ?
+			volume.SigmaA(sw, p, w) : SWCSpectrum(0.f);
+	}
+	virtual SWCSpectrum SigmaT(const SpectrumWavelengths &sw,
+		const Point &p, const Vector &w) const {
+		return region.Inside(WorldToVolume(p)) ?
+			volume.SigmaT(sw, p, w) : SWCSpectrum(0.f);
+	}
+	virtual SWCSpectrum Lve(const SpectrumWavelengths &sw, const Point &p,
 		const Vector &w) const {
 		return region.Inside(WorldToVolume(p)) ?
-			volume.SigmaA(tspack, p, w) : SWCSpectrum(0.f);
+			volume.Lve(sw, p, w) : SWCSpectrum(0.f);
 	}
-	virtual SWCSpectrum SigmaS(const TsPack *tspack, const Point &p,
-		const Vector &w) const {
-		return region.Inside(WorldToVolume(p)) ?
-			volume.SigmaA(tspack, p, w) : SWCSpectrum(0.f);
+	virtual float P(const SpectrumWavelengths &sw, const Point &p,
+		const Vector &w, const Vector &wp) const {
+		return volume.P(sw, p, w, wp);
 	}
-	virtual SWCSpectrum SigmaT(const TsPack *tspack, const Point &p,
-		const Vector &w) const {
-		return region.Inside(WorldToVolume(p)) ?
-			volume.SigmaT(tspack, p, w) : SWCSpectrum(0.f);
-	}
-	virtual SWCSpectrum Lve(const TsPack *tspack, const Point &p,
-		const Vector &w) const {
-		return region.Inside(WorldToVolume(p)) ?
-			volume.Lve(tspack, p, w) : SWCSpectrum(0.f);
-	}
-	virtual float P(const TsPack *tspack, const Point &p, const Vector &w,
-		const Vector &wp) const {
-		return volume.P(tspack, p, w, wp);
-	}
-	virtual SWCSpectrum Tau(const TsPack *tspack, const Ray &r,
+	virtual SWCSpectrum Tau(const SpectrumWavelengths &sw, const Ray &r,
 		float stepSize, float offset) const {
 		float t0, t1;
 		Ray rn(r);
@@ -151,11 +155,11 @@ public:
 			return SWCSpectrum(0.f);
 		rn.mint = t0;
 		rn.maxt = t1;
-		return volume.Tau(tspack, rn, stepSize, offset);
+		return volume.Tau(sw, rn, stepSize, offset);
 	}
-	virtual const lux::Fresnel *Fresnel(const TsPack *tspack,
+	virtual FresnelGeneral Fresnel(const SpectrumWavelengths &sw,
 		const Point &p, const Vector &w) const {
-		return volume.Fresnel(tspack, p, w);
+		return volume.Fresnel(sw, p, w);
 	}
 protected:
 	Transform WorldToVolume;
@@ -169,39 +173,39 @@ public:
 	DensityVolume(const T &v) : volume(v) { }
 	virtual ~DensityVolume() { }
 	virtual float Density(const Point &Pobj) const = 0;
-	virtual SWCSpectrum SigmaA(const TsPack *tspack, const Point &p,
+	virtual SWCSpectrum SigmaA(const SpectrumWavelengths &sw,
+		const Point &p, const Vector &w) const {
+		return Density(p) * volume.SigmaA(sw, p, w);
+	}
+	virtual SWCSpectrum SigmaS(const SpectrumWavelengths &sw,
+		const Point &p, const Vector &w) const {
+		return Density(p) * volume.SigmaA(sw, p, w);
+	}
+	virtual SWCSpectrum SigmaT(const SpectrumWavelengths &sw,
+		const Point &p, const Vector &w) const {
+		return Density(p) * volume.SigmaT(sw, p, w);
+	}
+	virtual SWCSpectrum Lve(const SpectrumWavelengths &sw, const Point &p,
 		const Vector &w) const {
-		return Density(p) * volume.SigmaA(tspack, p, w);
+		return Density(p) * volume.Lve(sw, p, w);
 	}
-	virtual SWCSpectrum SigmaS(const TsPack *tspack, const Point &p,
-		const Vector &w) const {
-		return Density(p) * volume.SigmaA(tspack, p, w);
+	virtual float P(const SpectrumWavelengths &sw, const Point &p,
+		const Vector &w, const Vector &wp) const {
+		return volume.P(sw, p, w, wp);
 	}
-	virtual SWCSpectrum SigmaT(const TsPack *tspack, const Point &p,
-		const Vector &w) const {
-		return Density(p) * volume.SigmaT(tspack, p, w);
-	}
-	virtual SWCSpectrum Lve(const TsPack *tspack, const Point &p,
-		const Vector &w) const {
-		return Density(p) * volume.Lve(tspack, p, w);
-	}
-	virtual float P(const TsPack *tspack, const Point &p, const Vector &w,
-		const Vector &wp) const {
-		return volume.P(tspack, p, w, wp);
-	}
-	virtual SWCSpectrum Tau(const TsPack *tspack, const Ray &r,
+	virtual SWCSpectrum Tau(const SpectrumWavelengths &sw, const Ray &r,
 		float stepSize, float offset) const {
 		if (!(r.d.Length() > 0.f))
 			return SWCSpectrum(0.f);
 		const float step = stepSize / r.d.Length();
 		SWCSpectrum tau(0.f);
 		for (float t0 = r.mint + offset * step; t0 < r.maxt; t0 += step)
-			tau += SigmaT(tspack, r(t0), -r.d);
+			tau += SigmaT(sw, r(t0), -r.d);
 		return tau * stepSize;
 	}
-	virtual const lux::Fresnel *Fresnel(const TsPack *tspack,
+	virtual FresnelGeneral Fresnel(const SpectrumWavelengths &sw,
 		const Point &p, const Vector &w) const {
-		return volume.Fresnel(tspack, p, w);
+		return volume.Fresnel(sw, p, w);
 	}
 protected:
 	// DensityVolume Protected Data
@@ -214,20 +218,23 @@ public:
 	AggregateRegion(const vector<Region *> &r);
 	virtual ~AggregateRegion();
 	virtual bool IntersectP(const Ray &ray, float *t0, float *t1) const;
-	virtual SWCSpectrum SigmaA(const TsPack *tspack, const Point &,
+	virtual SWCSpectrum SigmaA(const SpectrumWavelengths &sw, const Point &,
 		const Vector &) const;
-	virtual SWCSpectrum SigmaS(const TsPack *tspack, const Point &,
+	virtual SWCSpectrum SigmaS(const SpectrumWavelengths &sw, const Point &,
 		const Vector &) const;
-	virtual SWCSpectrum Lve(const TsPack *tspack, const Point &,
+	virtual SWCSpectrum Lve(const SpectrumWavelengths &sw, const Point &,
 		const Vector &) const;
-	virtual float P(const TsPack *tspack, const Point &, const Vector &,
+	virtual float P(const SpectrumWavelengths &sw, const Point &,
+		const Vector &, const Vector &) const;
+	virtual SWCSpectrum SigmaT(const SpectrumWavelengths &sw, const Point &,
 		const Vector &) const;
-	virtual SWCSpectrum SigmaT(const TsPack *tspack, const Point &,
-		const Vector &) const;
-	virtual SWCSpectrum Tau(const TsPack *tspack, const Ray &ray,
+	virtual SWCSpectrum Tau(const SpectrumWavelengths &sw, const Ray &ray,
 		float stepSize, float u) const;
-	virtual const lux::Fresnel *Fresnel(const TsPack *tspack, const Point &,
-		const Vector &) const { return NULL; } //FIXME
+	virtual FresnelGeneral Fresnel(const SpectrumWavelengths &sw,
+		const Point &, const Vector &) const {
+		return FresnelGeneral(DIELECTRIC_FRESNEL,
+			SWCSpectrum(1.f), SWCSpectrum(0.f));
+	}
 private:
 	// AggregateRegion Private Data
 	vector<Region *> regions;

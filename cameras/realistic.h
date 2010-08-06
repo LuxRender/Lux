@@ -46,13 +46,15 @@ public:
 		float filmdiag, Film *film);
 	virtual ~RealisticCamera(void);
 	virtual float GenerateRay(const Sample &sample, Ray *) const;
-	virtual bool Sample_W(const TsPack *tspack, const Scene *scene,
+	virtual bool Sample_W(MemoryArena *arena, const SpectrumWavelengths &sw,
+		const Scene *scene, float u1, float u2, float u3,
+		BSDF **bsdf, float *pdf, SWCSpectrum *We) const {
+		return false;
+	}
+	virtual bool Sample_W(MemoryArena *arena, const SpectrumWavelengths &sw,
+		const Scene *scene, const Point &p, const Normal &n,
 		float u1, float u2, float u3, BSDF **bsdf, float *pdf,
-		SWCSpectrum *We) const { return false; }
-	virtual bool Sample_W(const TsPack *tspack, const Scene *scene,
-		const Point &p, const Normal &n, float u1, float u2, float u3,
-		BSDF **bsdf, float *pdf, float *pdfDirect,
-		SWCSpectrum *We) const { return false; }
+		float *pdfDirect, SWCSpectrum *We) const { return false; }
 	virtual bool GetSamplePosition(const Point &p, const Vector &wi,
 		float distance, float *x, float *y) const { return false; }
 	virtual bool IsDelta() const { return apertureDiameter == 0.f; }

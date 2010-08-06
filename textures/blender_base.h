@@ -47,11 +47,11 @@ public:
 		tex.bfac = 1.0f;
 	}
 
-	virtual float Evaluate(const TsPack *tspack,
+	virtual float Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
 		const Point P = mapping.Map(dg);
-		const float t1 = tex1->Evaluate(tspack, dg);
-		const float t2 = tex2->Evaluate(tspack, dg);
+		const float t1 = tex1->Evaluate(sw, dg);
+		const float t2 = tex2->Evaluate(sw, dg);
 
 		return Lerp(GetF(P), t1, t2);
 	}
@@ -59,7 +59,8 @@ public:
 	virtual float Filter() const {
 		return (tex1->Filter() + tex2->Filter()) * .5f;
 	}
-	virtual void GetDuv(const TsPack *tspack, const DifferentialGeometry &dg,
+	virtual void GetDuv(const SpectrumWavelengths &sw,
+		const DifferentialGeometry &dg,
 		float delta, float *du, float *dv) const;
 	virtual void SetIlluminant() {
 		// Update sub-textures

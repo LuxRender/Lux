@@ -35,33 +35,34 @@
 using namespace lux;
 
 // Glass Method Definitions
-BSDF *Glass::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
+BSDF *Glass::GetBSDF(MemoryArena *arena, const SpectrumWavelengths &sw,
+	const DifferentialGeometry &dgGeom,
 	const DifferentialGeometry &dgs,
 	const Volume *exterior, const Volume *interior) const
 {
 	// Allocate _BSDF_
 	// NOTE - lordcrc - Bugfix, pbrt tracker id 0000078: index of refraction swapped and not recorded
-	float ior = index->Evaluate(tspack, dgs);
-	float cb = cauchyb->Evaluate(tspack, dgs);
+	float ior = index->Evaluate(sw, dgs);
+	float cb = cauchyb->Evaluate(sw, dgs);
 
-	float flm = film->Evaluate(tspack, dgs);
-	float flmindex = filmindex->Evaluate(tspack, dgs);
+	float flm = film->Evaluate(sw, dgs);
+	float flmindex = filmindex->Evaluate(sw, dgs);
 
-	MultiBSDF *bsdf = ARENA_ALLOC(tspack->arena, MultiBSDF)(dgs, dgGeom.nn, exterior, interior);
+	MultiBSDF *bsdf = ARENA_ALLOC(arena, MultiBSDF)(dgs, dgGeom.nn, exterior, interior);
     // NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
-	SWCSpectrum R = Kr->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
-	SWCSpectrum T = Kt->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
-	Fresnel *fresnel = ARENA_ALLOC(tspack->arena, FresnelCauchy)(ior, cb, 0.f);
+	SWCSpectrum R = Kr->Evaluate(sw, dgs).Clamp(0.f, 1.f);
+	SWCSpectrum T = Kt->Evaluate(sw, dgs).Clamp(0.f, 1.f);
+	Fresnel *fresnel = ARENA_ALLOC(arena, FresnelCauchy)(ior, cb, 0.f);
 	if (!R.Black()) {
 		if (architectural)
-			bsdf->Add(ARENA_ALLOC(tspack->arena, ArchitecturalReflection)(R,
+			bsdf->Add(ARENA_ALLOC(arena, ArchitecturalReflection)(R,
 				fresnel, flm, flmindex));
 		else
-			bsdf->Add(ARENA_ALLOC(tspack->arena, SpecularReflection)(R,
+			bsdf->Add(ARENA_ALLOC(arena, SpecularReflection)(R,
 				fresnel, flm, flmindex));
 	}
 	if (!T.Black())
-		bsdf->Add(ARENA_ALLOC(tspack->arena, SpecularTransmission)(T, fresnel, cb != 0.f, architectural));
+		bsdf->Add(ARENA_ALLOC(arena, SpecularTransmission)(T, fresnel, cb != 0.f, architectural));
 
 	// Add ptr to CompositingParams structure
 	bsdf->SetCompositingParams(compParams);

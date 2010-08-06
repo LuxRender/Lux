@@ -35,34 +35,35 @@
 using namespace lux;
 
 // Glossy Method Definitions
-BSDF *Glossy2::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
+BSDF *Glossy2::GetBSDF(MemoryArena *arena, const SpectrumWavelengths &sw,
+	const DifferentialGeometry &dgGeom,
 	const DifferentialGeometry &dgs,
 	const Volume *exterior, const Volume *interior) const
 {
 	// Allocate _BSDF_
 	// NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
-	SWCSpectrum d(Kd->Evaluate(tspack, dgs).Clamp(0.f, 1.f));
-	SWCSpectrum s(Ks->Evaluate(tspack, dgs));
-	float i = index->Evaluate(tspack, dgs);
+	SWCSpectrum d(Kd->Evaluate(sw, dgs).Clamp(0.f, 1.f));
+	SWCSpectrum s(Ks->Evaluate(sw, dgs));
+	float i = index->Evaluate(sw, dgs);
 	if (i > 0.f) {
 		const float ti = (i - 1.f) / (i + 1.f);
 		s *= ti * ti;
 	}
 	s = s.Clamp(0.f, 1.f);
 
-	SWCSpectrum a(Ka->Evaluate(tspack, dgs).Clamp(0.f, 1.f));
+	SWCSpectrum a(Ka->Evaluate(sw, dgs).Clamp(0.f, 1.f));
 
 	// Clamp roughness values to avoid artifacts with too small values
-	const float u = Clamp(nu->Evaluate(tspack, dgs), 1e-4f, 1.f);
-	const float v = Clamp(nv->Evaluate(tspack, dgs), 1e-4f, 1.f);
+	const float u = Clamp(nu->Evaluate(sw, dgs), 1e-4f, 1.f);
+	const float v = Clamp(nv->Evaluate(sw, dgs), 1e-4f, 1.f);
 	const float u2 = u * u;
 	const float v2 = v * v;
-	float ld = depth->Evaluate(tspack, dgs);
+	float ld = depth->Evaluate(sw, dgs);
 
 	const float anisotropy = u2 < v2 ? 1.f - u2 / v2 : v2 / u2 - 1.f;
-	SingleBSDF *bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dgs,
-		dgGeom.nn, ARENA_ALLOC(tspack->arena, SchlickBRDF)(d, s, a, ld,
-		u * v, anisotropy), exterior, interior);
+	SingleBSDF *bsdf = ARENA_ALLOC(arena, SingleBSDF)(dgs,
+		dgGeom.nn, ARENA_ALLOC(arena, SchlickBRDF)(d, s, a, ld, u * v,
+		anisotropy), exterior, interior);
 
 	// Add ptr to CompositingParams structure
 	bsdf->SetCompositingParams(compParams);

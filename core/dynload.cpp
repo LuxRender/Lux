@@ -99,18 +99,18 @@ boost::shared_ptr<Texture<SWCSpectrum> > MakeSWCSpectrumTexture(const string &na
 	return boost::shared_ptr<Texture<SWCSpectrum> >();
 }
 
-boost::shared_ptr<Texture<const Fresnel *> > MakeFresnelTexture(const string &name,
+boost::shared_ptr<Texture<FresnelGeneral> > MakeFresnelTexture(const string &name,
 	const Transform &tex2world, const ParamSet &tp)
 {
 	if (DynamicLoader::registeredFresnelTextures().find(name) !=
 		DynamicLoader::registeredFresnelTextures().end()) {
-		boost::shared_ptr<Texture<const Fresnel *> > ret(DynamicLoader::registeredFresnelTextures()[name](tex2world, tp));
+		boost::shared_ptr<Texture<FresnelGeneral> > ret(DynamicLoader::registeredFresnelTextures()[name](tex2world, tp));
 		tp.ReportUnused();
 		return ret;
 	}
 
 	LoadError("fresnel texture", name);
-	return boost::shared_ptr<Texture<const Fresnel *> >();
+	return boost::shared_ptr<Texture<FresnelGeneral> >();
 }
 
 Light *MakeLight(const string &name,

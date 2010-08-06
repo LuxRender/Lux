@@ -137,15 +137,16 @@ bool LDSampler::GetNextSample(Sample *sample, u_int *use_pos) {
 
 		samplePos = 0;
 		// Generate low-discrepancy samples for pixel
-		LDShuffleScrambled2D(tspack, 1, pixelSamples, imageSamples);
-		LDShuffleScrambled2D(tspack, 1, pixelSamples, lensSamples);
-		LDShuffleScrambled1D(tspack, 1, pixelSamples, timeSamples);
-		LDShuffleScrambled1D(tspack, 1, pixelSamples, wavelengthsSamples);
+		const RandomGenerator &rng(*(tspack->rng));
+		LDShuffleScrambled2D(rng, 1, pixelSamples, imageSamples);
+		LDShuffleScrambled2D(rng, 1, pixelSamples, lensSamples);
+		LDShuffleScrambled1D(rng, 1, pixelSamples, timeSamples);
+		LDShuffleScrambled1D(rng, 1, pixelSamples, wavelengthsSamples);
 		for (u_int i = 0; i < sample->n1D.size(); ++i)
-			LDShuffleScrambled1D(tspack, sample->n1D[i], pixelSamples,
+			LDShuffleScrambled1D(rng, sample->n1D[i], pixelSamples,
 				oneDSamples[i]);
 		for (u_int i = 0; i < sample->n2D.size(); ++i)
-			LDShuffleScrambled2D(tspack, sample->n2D[i], pixelSamples,
+			LDShuffleScrambled2D(rng, sample->n2D[i], pixelSamples,
 				twoDSamples[i]);
 		float *xDSamp;
 		for (u_int i = 0; i < sample->nxD.size(); ++i) {
@@ -153,12 +154,12 @@ bool LDSampler::GetNextSample(Sample *sample, u_int *use_pos) {
 			for (u_int j = 0; j < sample->sxD[i].size(); ++j) {
 				switch (sample->sxD[i][j]) {
 				case 1: {
-					LDShuffleScrambled1D(tspack, sample->nxD[i],
+					LDShuffleScrambled1D(rng, sample->nxD[i],
 						pixelSamples, xDSamp);
 					xDSamp += sample->nxD[i] * pixelSamples;
 					break; }
 				case 2: {
-					LDShuffleScrambled2D(tspack, sample->nxD[i],
+					LDShuffleScrambled2D(rng, sample->nxD[i],
 						pixelSamples, xDSamp);
 					xDSamp += 2 * sample->nxD[i] * pixelSamples;
 					break; }

@@ -24,7 +24,6 @@
 #include "lux.h"
 #include "light.h"
 #include "texture.h"
-#include "geometry/raydifferential.h"
 
 namespace lux
 {
@@ -43,14 +42,14 @@ public:
 		return Lbase->Y() * gain * 2.f * M_PI *
 			(1.f - .5f * (cosFalloffStart + cosTotalWidth));
 	}
-	virtual float Pdf(const TsPack *tspack, const Point &p,
-		const Point &po, const Normal &ns) const;
-	virtual bool Sample_L(const TsPack *tspack, const Scene *scene,
-		float u1, float u2, float u3, BSDF **bsdf, float *pdf,
-		SWCSpectrum *Le) const;
-	virtual bool Sample_L(const TsPack *tspack, const Scene *scene,
-		const Point &p, float u1, float u2, float u3,
-		BSDF **bsdf, float *pdf, float *pdfDirect,
+	virtual float Pdf(const Point &p, const Point &po,
+		const Normal &ns) const;
+	virtual bool Sample_L(MemoryArena *arena, const Scene *scene,
+		const Sample *sample, float u1, float u2, float u3, BSDF **bsdf,
+		float *pdf, SWCSpectrum *Le) const;
+	virtual bool Sample_L(MemoryArena *arena, const Scene *scene,
+		const Sample *sample, const Point &p, float u1, float u2,
+		float u3, BSDF **bsdf, float *pdf, float *pdfDirect,
 		SWCSpectrum *Le) const;
 	
 	static Light *CreateLight(const Transform &light2world,

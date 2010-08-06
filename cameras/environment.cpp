@@ -38,7 +38,8 @@ public:
 	EnvironmentBxDF() :
 		BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)) {}
 	virtual ~EnvironmentBxDF() { }
-	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const F) const {
+	virtual void f(const SpectrumWavelengths &sw, const Vector &wo,
+		const Vector &wi, SWCSpectrum *const F) const {
 		*F += SWCSpectrum(SameHemisphere(wo, wi) ? fabsf(wi.z) * INV_PI : 0.f);
 	}
 };
@@ -64,7 +65,8 @@ void EnvironmentCamera::SampleMotion(float time)
 	pos = CameraToWorld(Point(0,0,0));
 }
 
-bool EnvironmentCamera::Sample_W(const TsPack *tspack, const Scene *scene,
+bool EnvironmentCamera::Sample_W(MemoryArena *arena,
+	const SpectrumWavelengths &sw, const Scene *scene,
 	float u1, float u2, float u3, BSDF **bsdf, float *pdf,
 	SWCSpectrum *We) const
 {
@@ -76,13 +78,14 @@ bool EnvironmentCamera::Sample_W(const TsPack *tspack, const Scene *scene,
 	Vector dpdu, dpdv;
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 	DifferentialGeometry dg(pos, ns, dpdu, dpdv, Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
-	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
-		ARENA_ALLOC(tspack->arena, EnvironmentBxDF)(), NULL, NULL);
+	*bsdf = ARENA_ALLOC(arena, SingleBSDF)(dg, ns,
+		ARENA_ALLOC(arena, EnvironmentBxDF)(), NULL, NULL);
 	*pdf = 1.f / (2.f * M_PI * M_PI * sinf(theta));
 	*We = SWCSpectrum(*pdf);
 	return true;
 }
-bool EnvironmentCamera::Sample_W(const TsPack *tspack, const Scene *scene,
+bool EnvironmentCamera::Sample_W(MemoryArena *arena,
+	const SpectrumWavelengths &sw, const Scene *scene,
 	const Point &p, const Normal &n, float u1, float u2, float u3,
 	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *We) const
 {
@@ -91,8 +94,8 @@ bool EnvironmentCamera::Sample_W(const TsPack *tspack, const Scene *scene,
 	Vector dpdu, dpdv;
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 	DifferentialGeometry dg(pos, ns, dpdu, dpdv, Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
-	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, ns,
-		ARENA_ALLOC(tspack->arena, EnvironmentBxDF)(), NULL, NULL);
+	*bsdf = ARENA_ALLOC(arena, SingleBSDF)(dg, ns,
+		ARENA_ALLOC(arena, EnvironmentBxDF)(), NULL, NULL);
 	*pdf = 1.f / (2.f * M_PI * M_PI * sqrtf(max(0.f, 1.f - ns.y * ns.y)));
 	*pdfDirect = 1.f;
 	*We = SWCSpectrum(*pdf);

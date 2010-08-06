@@ -46,9 +46,11 @@ public:
 		// Select anti-aliasing method for _Checkerboard2D_
 		if (aa == "none")
 			aaMethod = NONE;
-		else if (aa == "supersample")
-			aaMethod = SUPERSAMPLE;
-		else if (aa == "closedform")
+		else if (aa == "supersample") {
+			LOG(LUX_WARNING, LUX_BADTOKEN) <<
+				"Anti-aliasing mode 'supersample' is deprecated, using 'closedform' instead";
+			aaMethod = CLOSEDFORM;
+		} else if (aa == "closedform")
 			aaMethod = CLOSEDFORM;
 		else {
 			LOG(LUX_WARNING, LUX_BADTOKEN) <<
@@ -60,7 +62,7 @@ public:
 	virtual ~Checkerboard2D() {
 		delete mapping;
 	}
-	virtual float Evaluate(const TsPack *tspack,
+	virtual float Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
 		switch (aaMethod) {
 			case CLOSEDFORM: {
@@ -71,34 +73,34 @@ public:
 				// _Checkerboard2D_ value
 				// Evaluate single check if filter is entirely
 				// inside one of them
-				float ds = max(fabsf(dsdx), fabsf(dsdy));
-				float dt = max(fabsf(dtdx), fabsf(dtdy));
-				float s0 = s - ds, s1 = s + ds;
-				float t0 = t - dt, t1 = t + dt;
+				const float ds = max(fabsf(dsdx), fabsf(dsdy));
+				const float dt = max(fabsf(dtdx), fabsf(dtdy));
+				const float s0 = s - ds, s1 = s + ds;
+				const float t0 = t - dt, t1 = t + dt;
 				if (Floor2Int(s0) == Floor2Int(s1) &&
 					Floor2Int(t0) == Floor2Int(t1)) {
 					// Point sample _Checkerboard2D_
 					if ((Floor2Int(s) + Floor2Int(t)) %
 						2 == 0)
-						return tex1->Evaluate(tspack,
-							dg);
-					return tex2->Evaluate(tspack, dg);
+						return tex1->Evaluate(sw, dg);
+					return tex2->Evaluate(sw, dg);
 				}
 				// Apply box-filter to checkerboard region
 #define BUMPINT(x) \
 	(Floor2Int((x) / 2) + \
 	2.f * max(((x) / 2) - Floor2Int((x) / 2) - .5f, 0.f))
-				float sint = (BUMPINT(s1) - BUMPINT(s0)) /
+				const float sint = (BUMPINT(s1) - BUMPINT(s0)) /
 					(2.f * ds);
-				float tint = (BUMPINT(t1) - BUMPINT(t0)) /
+				const float tint = (BUMPINT(t1) - BUMPINT(t0)) /
 					(2.f * dt);
+#undef BUMPINT
 				float area2 = sint + tint - 2.f * sint * tint;
 				if (ds > 1.f || dt > 1.f)
 					area2 = .5f;
-				return Lerp(area2, tex1->Evaluate(tspack, dg),
-					tex2->Evaluate(tspack, dg));
+				return Lerp(area2, tex1->Evaluate(sw, dg),
+					tex2->Evaluate(sw, dg));
 			}
-			case SUPERSAMPLE: {
+/*			case SUPERSAMPLE: {
 				// Supersample _Checkerboard2D_
 #define SQRT_SAMPLES 4
 #define N_SAMPLES (SQRT_SAMPLES * SQRT_SAMPLES)
@@ -128,21 +130,21 @@ public:
 					filterSum += wt;
 					if ((Floor2Int(s) + Floor2Int(t)) %
 						2 == 0)
-						value += wt * tex1->Evaluate(tspack, dgs);
+						value += wt * tex1->Evaluate(sw, dgs);
 					else
-						value += wt * tex2->Evaluate(tspack, dgs);
+						value += wt * tex2->Evaluate(sw, dgs);
 				}
 				return value / filterSum;
 #undef N_SAMPLES // NOBOOK
-			}
+			}*/
 			case NONE:
 			default: {
 				// Point sample _Checkerboard2D_
 				float s, t;
 				mapping->Map(dg, &s, &t);
 				if ((Floor2Int(s) + Floor2Int(t)) % 2 == 0)
-					return tex1->Evaluate(tspack, dg);
-				return tex2->Evaluate(tspack, dg);
+					return tex1->Evaluate(sw, dg);
+				return tex2->Evaluate(sw, dg);
 			}
 		}
 	}
@@ -150,24 +152,25 @@ public:
 	virtual float Filter() const {
 		return (tex1->Filter() + tex2->Filter()) * .5f;
 	}
-	virtual void GetDuv(const TsPack *tspack, const DifferentialGeometry &dg,
+	virtual void GetDuv(const SpectrumWavelengths &sw,
+		const DifferentialGeometry &dg,
 		float delta, float *du, float *dv) const {
 		float s, t, dsdu, dtdu, dsdv, dtdv;
 		mapping->MapDuv(dg, &s, &t, &dsdu, &dtdu, &dsdv, &dtdv);
 		const int is = Floor2Int(s), it = Floor2Int(t);
 		const bool first = (is + it) % 2 == 0;
 		if (first)
-			tex1->GetDuv(tspack, dg, delta, du, dv);
+			tex1->GetDuv(sw, dg, delta, du, dv);
 		else
-			tex2->GetDuv(tspack, dg, delta, du, dv);
+			tex2->GetDuv(sw, dg, delta, du, dv);
 		const float ds = delta * (dsdu + dsdv);
 		const float dt = delta * (dtdu + dtdv);
 		const bool bs = s - is < ds / 2.f ||
 			s - is > 1.f - ds / 2.f;
 		const bool bt = t - it < dt / 2.f ||
 			t - it > 1.f - dt / 2.f;
-		const float d = (tex2->Evaluate(tspack, dg) -
-			tex1->Evaluate(tspack, dg)) / delta;
+		const float d = (tex2->Evaluate(sw, dg) -
+			tex1->Evaluate(sw, dg)) / delta;
 		if (bs) {
 			if (first ^ (s - is < .5f)) {
 				*du += d * dsdu;
@@ -209,9 +212,43 @@ public:
 		boost::shared_ptr<Texture<float> > &c2) :
 		tex1(c1), tex2(c2), mapping(m) { }
 	virtual ~Checkerboard3D() { delete mapping; }
-	virtual float Evaluate(const TsPack *tspack,
+	virtual float Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
-		// Supersample _Checkerboard3D_
+		Vector dpdx, dpdy;
+		const Point p(mapping->MapDxy(dg, &dpdx, &dpdy));
+		// Compute closed form box-filtered _Checkerboard3D_ value
+		// Evaluate single check if filter is entirely
+		// inside one of them
+		const float dx = max(fabsf(dpdx.x), fabsf(dpdy.x));
+		const float dy = max(fabsf(dpdx.y), fabsf(dpdy.y));
+		const float dz = max(fabsf(dpdx.z), fabsf(dpdy.z));
+		const float x0 = p.x - dx, x1 = p.x + dx;
+		const float y0 = p.y - dy, y1 = p.y + dy;
+		const float z0 = p.z - dz, z1 = p.z + dz;
+		if (Floor2Int(x0) == Floor2Int(x1) &&
+			Floor2Int(y0) == Floor2Int(y1) &&
+			Floor2Int(z0) == Floor2Int(z1)) {
+			// Point sample _Checkerboard3D_
+			if ((Floor2Int(p.x) + Floor2Int(p.y) + Floor2Int(p.z)) %
+				2 == 0)
+				return tex1->Evaluate(sw, dg);
+			return tex2->Evaluate(sw, dg);
+		}
+		// Apply box-filter to checkerboard region
+#define BUMPINT(x) \
+	(Floor2Int((x) / 2) + \
+	2.f * max(((x) / 2) - Floor2Int((x) / 2) - .5f, 0.f))
+		const float xint = (BUMPINT(x1) - BUMPINT(x0)) / (2.f * dx);
+		const float yint = (BUMPINT(y1) - BUMPINT(y0)) / (2.f * dy);
+		const float zint = (BUMPINT(z1) - BUMPINT(z0)) / (2.f * dz);
+#undef BUMPINT
+		float vol = xint + yint + zint - xint * (yint + zint) -
+			yint * zint;
+		if (dx > 1.f || dy > 1.f || dz > 1.f)
+			vol = .5f;
+		return Lerp(vol, tex1->Evaluate(sw, dg),
+			tex2->Evaluate(sw, dg));
+/*		// Supersample _Checkerboard3D_
 #define N_SAMPLES 4
 		float samples[2 * N_SAMPLES * N_SAMPLES];
 		StratifiedSample2D(tspack, samples, N_SAMPLES, N_SAMPLES);
@@ -235,17 +272,18 @@ public:
 			filterSum += wt;
 			if ((Floor2Int(PP.x) + Floor2Int(PP.y) +
 				Floor2Int(PP.z)) % 2 == 0)
-				value += wt * tex1->Evaluate(tspack, dgs);
+				value += wt * tex1->Evaluate(sw, dgs);
 			else
-				value += wt * tex2->Evaluate(tspack, dgs);
+				value += wt * tex2->Evaluate(sw, dgs);
 		}
-		return value / filterSum;
+		return value / filterSum;*/
 	}
 	virtual float Y() const { return (tex1->Y() + tex2->Y()) * .5f; }
 	virtual float Filter() const {
 		return (tex1->Filter() + tex2->Filter()) * .5f;
 	}
-	virtual void GetDuv(const TsPack *tspack, const DifferentialGeometry &dg,
+	virtual void GetDuv(const SpectrumWavelengths &sw,
+		const DifferentialGeometry &dg,
 		float delta, float *du, float *dv) const {
 		Vector dpdu, dpdv;
 		const Point p(mapping->MapDuv(dg, &dpdu, &dpdv));
@@ -253,9 +291,9 @@ public:
 			iz = Floor2Int(p.z);
 		const bool first = (ix + iy + iz) % 2 == 0;
 		if (first)
-			tex1->GetDuv(tspack, dg, delta, du, dv);
+			tex1->GetDuv(sw, dg, delta, du, dv);
 		else
-			tex2->GetDuv(tspack, dg, delta, du, dv);
+			tex2->GetDuv(sw, dg, delta, du, dv);
 		const float dx = delta * (dpdu.x + dpdv.x);
 		const float dy = delta * (dpdu.y + dpdv.y);
 		const float dz = delta * (dpdu.z + dpdv.z);
@@ -265,8 +303,8 @@ public:
 			p.y - iy > 1.f - dy / 2.f;
 		const bool bz = p.z - iz < dz / 2.f ||
 			p.z - iz > 1.f - dz / 2.f;
-		const float d = (tex2->Evaluate(tspack, dg) -
-			tex1->Evaluate(tspack, dg)) / delta;
+		const float d = (tex2->Evaluate(sw, dg) -
+			tex1->Evaluate(sw, dg)) / delta;
 		if (bx) {
 			if (first ^ (p.x - ix < .5f)) {
 				*du += d * dpdu.x;

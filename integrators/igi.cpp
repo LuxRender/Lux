@@ -35,9 +35,9 @@
 
 using namespace lux;
 
-SWCSpectrum VirtualLight::GetSWCSpectrum(const TsPack* tspack) const
+SWCSpectrum VirtualLight::GetSWCSpectrum(const SpectrumWavelengths &sw) const
 {
-	const float delta = (tspack->swl->w[0] - w[0]) * WAVELENGTH_SAMPLES /
+	const float delta = (sw.w[0] - w[0]) * WAVELENGTH_SAMPLES /
 		(WAVELENGTH_END - WAVELENGTH_START);
 	SWCSpectrum result;
 	if (delta < 0.f) {
@@ -93,13 +93,15 @@ void IGIIntegrator::Preprocess(const TsPack *tspack, const Scene *scene)
 	float *lightSamp0b = new float[nLightPaths * nLightSets];
 	float *lightSamp1 = new float[2 * nLightPaths * nLightSets];
 	float *lightSamp1b = new float[nLightPaths * nLightSets];
-	LDShuffleScrambled1D(tspack, nLightPaths, nLightSets, lightNum);
-	LDShuffleScrambled2D(tspack, nLightPaths, nLightSets, lightSamp0);
-	LDShuffleScrambled1D(tspack, nLightPaths, nLightSets, lightSamp0b);
-	LDShuffleScrambled2D(tspack, nLightPaths, nLightSets, lightSamp1);
-	LDShuffleScrambled1D(tspack, nLightPaths, nLightSets, lightSamp1b);
+	const RandomGenerator &rng(*(tspack->rng));
+	LDShuffleScrambled1D(rng, nLightPaths, nLightSets, lightNum);
+	LDShuffleScrambled2D(rng, nLightPaths, nLightSets, lightSamp0);
+	LDShuffleScrambled1D(rng, nLightPaths, nLightSets, lightSamp0b);
+	LDShuffleScrambled2D(rng, nLightPaths, nLightSets, lightSamp1);
+	LDShuffleScrambled1D(rng, nLightPaths, nLightSets, lightSamp1b);
 	// Precompute information for light sampling densities
-	tspack->swl->Sample(.5f);
+	Sample sample(scene->surfaceIntegrator, scene->volumeIntegrator, scene);
+	SpectrumWavelengths &sw(sample.swl);
 	u_int nLights = scene->lights.size();
 	float *lightPower = new float[nLights];
 	for (u_int i = 0; i < nLights; ++i)
@@ -108,7 +110,7 @@ void IGIIntegrator::Preprocess(const TsPack *tspack, const Scene *scene)
 	delete[] lightPower;
 	for (u_int s = 0; s < nLightSets; ++s) {
 		for (u_int i = 0; i < nLightPaths; ++i) {
-			tspack->swl->Sample(tspack->rng->floatValue());
+			sw.Sample(rng.floatValue());
 			// Follow path _i_ from light to create virtual lights
 			u_int sampOffset = s * nLightPaths + i;
 			// Choose light source to trace path from
@@ -119,7 +121,7 @@ void IGIIntegrator::Preprocess(const TsPack *tspack, const Scene *scene)
 			BSDF *bsdf;
 			float pdf;
 			SWCSpectrum alpha;
-			if (!light->Sample_L(tspack, scene,
+			if (!light->Sample_L(tspack->arena, scene, &sample,
 				lightSamp0[2 * sampOffset ],
 				lightSamp0[2 * sampOffset + 1],
 				lightSamp0b[sampOffset], &bsdf, &pdf, &alpha))
@@ -128,7 +130,7 @@ void IGIIntegrator::Preprocess(const TsPack *tspack, const Scene *scene)
 			ray.o = bsdf->dgShading.p;
 			SWCSpectrum f;
 			float pdf2;
-			if (!bsdf->Sample_f(tspack, Vector(bsdf->nn), &ray.d,
+			if (!bsdf->Sample_f(sw, Vector(bsdf->nn), &ray.d,
 				lightSamp1[2 * sampOffset],
 				lightSamp1[2 * sampOffset + 1],
 				lightSamp1b[sampOffset], &f, &pdf2))
@@ -138,29 +140,29 @@ void IGIIntegrator::Preprocess(const TsPack *tspack, const Scene *scene)
 			Intersection isect;
 			const Volume *volume = NULL; //FIXME: get it from the light
 			u_int nIntersections = 0;
-			while (scene->Intersect(tspack, volume, ray, &isect,
-				&bsdf, &alpha) && !alpha.Black()) {
+			while (scene->Intersect(tspack, &sample, volume, ray,
+				&isect, &bsdf, &alpha) && !alpha.Black()) {
 				++nIntersections;
 				Vector wo = -ray.d;
 				// Create virtual light at ray intersection point
-				SWCSpectrum Le = alpha * bsdf->rho(tspack, wo) / M_PI;
-				virtualLights[s].push_back(
-					VirtualLight(tspack, isect.dg.p,
-					isect.dg.nn, Le));
+				SWCSpectrum Le = alpha * bsdf->rho(sw, wo) *
+					INV_PI;
+				virtualLights[s].push_back(VirtualLight(sw,
+					isect.dg.p, isect.dg.nn, Le));
 				// Sample new ray direction and update weight
 				Vector wi;
 				float pdf;
 				BxDFType flags;
 				SWCSpectrum fr;
-			       	if (!bsdf->Sample_f(tspack, wo, &wi,
-					tspack->rng->floatValue(),
-					tspack->rng->floatValue(),
-					tspack->rng->floatValue(),
+			       	if (!bsdf->Sample_f(sw, wo, &wi,
+					rng.floatValue(),
+					rng.floatValue(),
+					rng.floatValue(),
 					&fr, &pdf, BSDF_ALL, &flags))
 					break;
 				SWCSpectrum anew = fr * AbsDot(wi, bsdf->dgShading.nn) / pdf;
-				float r = min(1.f, anew.Filter(tspack));
-				if (tspack->rng->floatValue() > r)
+				float r = min(1.f, anew.Filter(sw));
+				if (rng.floatValue() > r)
 					break;
 				alpha *= anew / r;
 				ray = RayDifferential(isect.dg.p, wi);
@@ -178,17 +180,18 @@ u_int IGIIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	const Sample *sample) const
 {
 	RayDifferential r;
-	float rayWeight = tspack->camera->GenerateRay(tspack, scene, *sample,
-		&r);
+	float rayWeight = sample->camera->GenerateRay(tspack->arena, scene,
+		*sample, &r);
 
 	RayDifferential ray(r);
+	const SpectrumWavelengths &sw(sample->swl);
 	SWCSpectrum L(0.f), pathThroughput(1.f);
 	float alpha = 1.f;
 	const Volume *volume = NULL;
 	for (u_int depth = 0; ; ++depth) {
 		Intersection isect;
 		BSDF *bsdf;
-		if (!scene->Intersect(tspack, volume, r, &isect, &bsdf,
+		if (!scene->Intersect(tspack, sample, volume, r, &isect, &bsdf,
 			&pathThroughput)) {
 			// Handle ray with no intersection
 			if (depth == 0)
@@ -196,8 +199,8 @@ u_int IGIIntegrator::Li(const TsPack *tspack, const Scene *scene,
 			BSDF *ibsdf;
 			for (u_int i = 0; i < scene->lights.size(); ++i) {
 				SWCSpectrum Le(pathThroughput);
-				if (scene->lights[i]->Le(tspack, scene, r,
-					&ibsdf, NULL, NULL, &Le))
+				if (scene->lights[i]->Le(tspack->arena, scene,
+					sample, r, &ibsdf, NULL, NULL, &Le))
 					L += Le;
 			}
 			break;
@@ -208,8 +211,8 @@ u_int IGIIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		// Compute emitted light if ray hit an area light source
 		if (isect.arealight) {
 			BSDF *ibsdf;
-			L += pathThroughput * isect.Le(tspack, r, &ibsdf,
-				NULL, NULL);
+			L += pathThroughput * isect.Le(tspack->arena, sample, r,
+				&ibsdf, NULL, NULL);
 		}
 		for (u_int i = 0; i < scene->lights.size(); ++i) {
 			SWCSpectrum Ld(0.f);
@@ -222,9 +225,9 @@ u_int IGIIntegrator::Li(const TsPack *tspack, const Scene *scene,
 			L += pathThroughput * Ld / scene->lights.size();
 		}
 		// Compute indirect illumination with virtual lights
-		size_t lSet = min<size_t>(Floor2UInt(sample->oneD[vlSetOffset][0] * nLightSets),
-			max<size_t>(1U, virtualLights.size()) - 1U);
-		for (size_t i = 0; i < virtualLights[lSet].size(); ++i) {
+		u_int lSet = min(Floor2UInt(sample->oneD[vlSetOffset][0] * nLightSets),
+			max(1U, virtualLights.size()) - 1U);
+		for (u_int i = 0; i < virtualLights[lSet].size(); ++i) {
 			const VirtualLight &vl = virtualLights[lSet][i];
 			// Add contribution from _VirtualLight_ _vl_
 			// Ignore light if it's too close
@@ -235,16 +238,15 @@ u_int IGIIntegrator::Li(const TsPack *tspack, const Scene *scene,
 				1.2f * minDist2, d2);
 			// Compute virtual light's tentative contribution _Llight_
 			Vector wi = Normalize(vl.p - p);
-			SWCSpectrum f = distScale * bsdf->f(tspack, wi, wo, BxDFType(~BSDF_SPECULAR));
+			SWCSpectrum f = distScale * bsdf->f(sw, wi, wo,
+				BxDFType(~BSDF_SPECULAR));
 			if (f.Black())
 				continue;
 			float G = AbsDot(wi, n) * AbsDot(wi, vl.n) / d2;
-			SWCSpectrum Llight = f * vl.GetSWCSpectrum(tspack) *
+			SWCSpectrum Llight = f * vl.GetSWCSpectrum(sw) *
 				(G / virtualLights[lSet].size());
-			if (scene->Connect(tspack, bsdf->GetVolume(wi),
+			if (scene->Connect(tspack, sample, bsdf->GetVolume(wi),
 				p, vl.p, false, &Llight, NULL, NULL)) {
-				scene->Transmittance(tspack, Ray(p, vl.p - p),
-					sample, &Llight);
 				L += pathThroughput * Llight;
 			}
 		}
@@ -255,7 +257,9 @@ u_int IGIIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		// Trace rays for specular reflection and refraction
 		SWCSpectrum f;
 		float pdf;
-		if (!bsdf->Sample_f(tspack, wo, &wi, .5f, .5f, tspack->rng->floatValue(), &f, &pdf, BxDFType(BSDF_SPECULAR | BSDF_REFLECTION | BSDF_TRANSMISSION)))
+		if (!bsdf->Sample_f(sw, wo, &wi, .5f, .5f,
+			tspack->rng->floatValue(), &f, &pdf,
+			BxDFType(BSDF_SPECULAR | BSDF_REFLECTION | BSDF_TRANSMISSION)))
 			break;
 		// Compute ray differential _rd_ for specular reflection
 		r = RayDifferential(p, wi);
@@ -263,7 +267,7 @@ u_int IGIIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		pathThroughput *= f * (AbsDot(wi, n) / pdf);
 		volume = bsdf->GetVolume(wi);
 	}
-	const XYZColor color(tspack, L);
+	const XYZColor color(sw, L);
 	sample->AddContribution(sample->imageX, sample->imageY,
 		color * rayWeight, alpha, bufferId, 0U);
 	return L.Black() ? 0 : 1;

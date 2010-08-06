@@ -37,13 +37,12 @@ public:
 		compParams = new CompositingParams(cp);
 	}
 	virtual ~Glass2() { }
-	virtual void GetShadingGeometry(const TsPack *tspack,
-		const Normal &nGeom,
-		DifferentialGeometry *dgBump) const {
+	virtual void GetShadingGeometry(const SpectrumWavelengths &sw,
+		const Normal &nGeom, DifferentialGeometry *dgBump) const {
 		if (bumpMap)
-			Bump(tspack, bumpMap, nGeom, dgBump);
+			Bump(sw, bumpMap, nGeom, dgBump);
 	}
-	virtual BSDF *GetBSDF(const TsPack *tspack,
+	virtual BSDF *GetBSDF(MemoryArena *arena, const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dgGeom,
 		const DifferentialGeometry &dgShading,
 		const Volume *exterior, const Volume *interior) const;

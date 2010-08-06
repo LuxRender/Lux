@@ -25,7 +25,7 @@
 #include "paramset.h"
 #include "shape.h"
 #include "spectrum.h"
-#include "fresnel.h"
+#include "fresnelgeneral.h"
 
 namespace lux
 {
@@ -418,15 +418,15 @@ void VerticalCrossMapping::Map(float s, float t, Vector *wh, float *pdf) const
 		*pdf = ima * ima * ima / 48.f;
 }
 
-template<> float Texture<SWCSpectrum>::EvalFloat(const TsPack *tspack,
+template<> float Texture<SWCSpectrum>::EvalFloat(const SpectrumWavelengths &sw,
 	const DifferentialGeometry &dg) const
 {
-	return Evaluate(tspack, dg).Filter(tspack);
+	return Evaluate(sw, dg).Filter(sw);
 }
-template<> float Texture<const Fresnel *>::EvalFloat(const TsPack *tspack,
+template<> float Texture<FresnelGeneral>::EvalFloat(const SpectrumWavelengths &sw,
 	const DifferentialGeometry &dg) const
 {
-	return Evaluate(tspack, dg)->Index(tspack);
+	return Evaluate(sw, dg).Index(sw);
 }
 
 // Texture Function Definitions

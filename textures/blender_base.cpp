@@ -31,7 +31,7 @@ namespace lux {
 
 typedef map<string, short> mapstsh;
 
-void BlenderTexture3D::GetDuv(const TsPack *tspack,
+void BlenderTexture3D::GetDuv(const SpectrumWavelengths &sw,
 	const DifferentialGeometry &dg, float delta, float *du, float *dv) const
 {
 	// Calculate values at intersection point (copy of Evaluate)
@@ -39,10 +39,10 @@ void BlenderTexture3D::GetDuv(const TsPack *tspack,
 
 	const float a = GetF(P);
 
-	const float e = tex2->Evaluate(tspack, dg) - tex1->Evaluate(tspack, dg);
+	const float e = tex2->Evaluate(sw, dg) - tex1->Evaluate(sw, dg);
 	float du1, dv1, du2, dv2;
-	tex1->GetDuv(tspack, dg, delta, &du1, &dv1);
-	tex2->GetDuv(tspack, dg, delta, &du2, &dv2);
+	tex1->GetDuv(sw, dg, delta, &du1, &dv1);
+	tex2->GetDuv(sw, dg, delta, &du2, &dv2);
 
 	// Compute offset positions and evaluate displacement texture
 	DifferentialGeometry dgTemp = dg;

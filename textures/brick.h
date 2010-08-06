@@ -82,7 +82,7 @@ public:
 
 #define BRICK_EPSILON 1e-3f
 
-	virtual T Evaluate(const TsPack *tspack,
+	virtual T Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
 		const Point P(mapping->Map(dg));
 
@@ -144,11 +144,11 @@ public:
 			DifferentialGeometry dg2 = dg;
 			dg2.p += Vector(o, o, o);*/
 			// Brick texture * Modulation texture
-			return tex1->Evaluate(tspack, dg) *
-				tex3->Evaluate(tspack,dgb);
+			return tex1->Evaluate(sw, dg) *
+				tex3->Evaluate(sw, dgb);
 		} else {
 			// Mortar texture
-			return tex2->Evaluate(tspack, dg);
+			return tex2->Evaluate(sw, dg);
 		}
 	}
 	virtual float Y() const {
@@ -159,12 +159,13 @@ public:
 		const float m = powf(Clamp(1.f - mortarsize, 0.f, 1.f), 3);
 		return Lerp(m, tex2->Filter(), tex1->Filter());
 	}
-	virtual void GetDuv(const TsPack *tspack, const DifferentialGeometry &dg,
+	virtual void GetDuv(const SpectrumWavelengths &sw,
+		const DifferentialGeometry &dg,
 		float delta, float *du, float *dv) const {
 		//FIXME: Generic derivative computation, replace with exact
 		DifferentialGeometry dgTemp = dg;
 		// Calculate bump map value at intersection point
-		const float base = Texture<T>::EvalFloat(tspack, dg);
+		const float base = Texture<T>::EvalFloat(sw, dg);
 
 		// Compute offset positions and evaluate displacement texture
 		const Point origP(dgTemp.p);
@@ -176,7 +177,7 @@ public:
 		dgTemp.p += uu * dgTemp.dpdu;
 		dgTemp.u += uu;
 		dgTemp.nn = Normalize(origN + uu * dgTemp.dndu);
-		*du = (Texture<T>::EvalFloat(tspack, dgTemp) - base) / uu;
+		*du = (Texture<T>::EvalFloat(sw, dgTemp) - base) / uu;
 
 		// Shift _dgTemp_ _dv_ in the $v$ direction and calculate value
 		const float vv = delta / dgTemp.dpdv.Length();
@@ -184,7 +185,7 @@ public:
 		dgTemp.u = origU;
 		dgTemp.v += vv;
 		dgTemp.nn = Normalize(origN + vv * dgTemp.dndv);
-		*dv = (Texture<T>::EvalFloat(tspack, dgTemp) - base) / vv;
+		*dv = (Texture<T>::EvalFloat(sw, dgTemp) - base) / vv;
 	}
 	virtual void SetIlluminant() {
 		// Update sub-textures

@@ -56,7 +56,7 @@ static float nmtolambda(float nm)
 }
 
 // SopraTexture Method Definitions
-Texture<const Fresnel *> *SopraTexture::CreateFresnelTexture(const Transform &tex2world,
+Texture<FresnelGeneral> *SopraTexture::CreateFresnelTexture(const Transform &tex2world,
 	const ParamSet &tp)
 {
 	const string filename = tp.FindOneString("filename", "");
@@ -149,7 +149,7 @@ Texture<const Fresnel *> *SopraTexture::CreateFresnelTexture(const Transform &te
 }
 
 // LuxpopTexture Method Definitions
-Texture<const Fresnel *> *LuxpopTexture::CreateFresnelTexture(const Transform &tex2world,
+Texture<FresnelGeneral> *LuxpopTexture::CreateFresnelTexture(const Transform &tex2world,
 	const ParamSet &tp)
 {
 	const string filename = tp.FindOneString("filename", "");
@@ -287,7 +287,7 @@ static const float AluminiumK[] = {
 	7.15, 7.31, 7.48, 7.65, 7.82, 8.01, 8.21, 8.39, 8.57, 8.62, 8.6, 8.45,
 	8.31, 8.21, 8.21 };
 
-Texture<const Fresnel *> *FresnelPreset::CreateFresnelTexture(const Transform &tex2world,
+Texture<FresnelGeneral> *FresnelPreset::CreateFresnelTexture(const Transform &tex2world,
 	const ParamSet &tp)
 {
 	const string name = tp.FindOneString("name", "");

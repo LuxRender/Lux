@@ -40,25 +40,26 @@ public:
 		boost::shared_ptr<Texture<float> > &amt) : tex1(t1), tex2(t2),
 		amount(amt) { }
 	virtual ~MixTexture() { }
-	virtual T Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
-		T t1 = tex1->Evaluate(tspack, dg), t2 = tex2->Evaluate(tspack, dg);
-		float amt = amount->Evaluate(tspack, dg);
+	virtual T Evaluate(const SpectrumWavelengths &sw,
+		const DifferentialGeometry &dg) const {
+		T t1 = tex1->Evaluate(sw, dg), t2 = tex2->Evaluate(sw, dg);
+		float amt = amount->Evaluate(sw, dg);
 		return Lerp(amt, t1, t2);
 	}
 	virtual float Y() const { return Lerp(amount->Y(), tex1->Y(),
 		tex2->Y()); }
 	virtual float Filter() const { return Lerp(amount->Y(), tex1->Filter(),
 		tex2->Filter()); }
-	virtual void GetDuv(const TsPack *tspack,
+	virtual void GetDuv(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg, float delta,
 		float *du, float *dv) const {
 		float dua, dva, du1, dv1, du2, dv2;
-		amount->GetDuv(tspack, dg, delta, &dua, &dva);
-		tex1->GetDuv(tspack, dg, delta, &du1, &dv1);
-		tex2->GetDuv(tspack, dg, delta, &du2, &dv2);
-		float a = amount->Evaluate(tspack, dg);
-		float d = tex2->EvalFloat(tspack, dg) -
-			tex1->EvalFloat(tspack, dg);
+		amount->GetDuv(sw, dg, delta, &dua, &dva);
+		tex1->GetDuv(sw, dg, delta, &du1, &dv1);
+		tex2->GetDuv(sw, dg, delta, &du2, &dv2);
+		float a = amount->Evaluate(sw, dg);
+		float d = tex2->EvalFloat(sw, dg) -
+			tex1->EvalFloat(sw, dg);
 		*du = Lerp(a, du1, du2) + d * dua;
 		*dv = Lerp(a, dv1, dv2) + d * dva;
 	}

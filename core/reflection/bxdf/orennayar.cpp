@@ -27,7 +27,7 @@
 
 using namespace lux;
 
-void OrenNayar::f(const TsPack *tspack, const Vector &wo, 
+void OrenNayar::f(const SpectrumWavelengths &sw, const Vector &wo, 
 	const Vector &wi, SWCSpectrum *const f_) const
 {
 	float sinthetai = SinTheta(wi);

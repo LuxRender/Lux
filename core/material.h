@@ -50,14 +50,14 @@ public:
 
 	void InitGeneralParams(const ParamSet &mp);
 
-	virtual BSDF *GetBSDF(const TsPack *tspack,
+	virtual BSDF *GetBSDF(MemoryArena *arena, const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dgGeom,
 		const DifferentialGeometry &dgShading,
 		const Volume *exterior, const Volume *interior) const = 0;
-	void Bump(const TsPack *tspack,
+	void Bump(const SpectrumWavelengths &sw,
 		const boost::shared_ptr<Texture<float> > &d,
 		const Normal &nGeom, DifferentialGeometry *dgBump) const;
-	virtual void GetShadingGeometry(const TsPack *tspack,
+	virtual void GetShadingGeometry(const SpectrumWavelengths &sw,
 		const Normal &nGeom, DifferentialGeometry *dgBump) const { }
 
 	static void FindCompositingParams(const ParamSet &mp, CompositingParams *cp);

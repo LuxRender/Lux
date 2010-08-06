@@ -22,18 +22,15 @@
 
 // area.cpp*
 #include "light.h"
-#include "randomgen.h" //FIXME
 #include "mc.h"
 #include "shape.h"
 #include "context.h"
 #include "paramset.h"
-#include "rgbillum.h"
-#include "blackbodyspd.h"
 #include "reflection/bxdf.h"
-#include "reflection/bxdf/lambertian.h"
 #include "spectrum.h"
 #include "texture.h"
 #include "sphericalfunction.h"
+#include "sampling.h"
 #include "dynload.h"
 
 using namespace lux;
@@ -49,10 +46,11 @@ public:
 		return (flags & (BSDF_REFLECTION | BSDF_DIFFUSE)) ==
 			(BSDF_REFLECTION | BSDF_DIFFUSE) ? 1U : 0U;
 	}
-	virtual bool Sample_f(const TsPack *tspack, const Vector &woW, Vector *wiW,
-		float u1, float u2, float u3, SWCSpectrum *const f_, float *pdf,
-		BxDFType flags = BSDF_ALL, BxDFType *sampledType = NULL,
-		float *pdfBack = NULL, bool reverse = false) const {
+	virtual bool Sample_f(const SpectrumWavelengths &sw, const Vector &woW,
+		Vector *wiW, float u1, float u2, float u3,
+		SWCSpectrum *const f_, float *pdf, BxDFType flags = BSDF_ALL,
+		BxDFType *sampledType = NULL, float *pdfBack = NULL,
+		bool reverse = false) const {
 		if (reverse || NumComponents(flags) == 0)
 			return false;
 		*wiW = CosineSampleHemisphere(u1, u2);
@@ -68,7 +66,7 @@ public:
 		*f_ = SWCSpectrum(INV_PI);
 		return true;
 	}
-	virtual float Pdf(const TsPack *tspack, const Vector &woW,
+	virtual float Pdf(const SpectrumWavelengths &sw, const Vector &woW,
 		const Vector &wiW, BxDFType flags = BSDF_ALL) const {
 		if (NumComponents(flags) == 1 &&
 			Dot(wiW, ng) > 0.f) {
@@ -78,16 +76,18 @@ public:
 		}
 		return 0.f;
 	}
-	virtual SWCSpectrum f(const TsPack *tspack, const Vector &woW,
+	virtual SWCSpectrum f(const SpectrumWavelengths &sw, const Vector &woW,
 		const Vector &wiW, BxDFType flags = BSDF_ALL) const {
 		if (NumComponents(flags) == 1 && Dot(wiW, ng) > 0.f)
 			return SWCSpectrum(INV_PI);
 		return SWCSpectrum(0.f);
 	}
-	virtual SWCSpectrum rho(const TsPack *tspack,
+	virtual SWCSpectrum rho(const SpectrumWavelengths &sw,
 		BxDFType flags = BSDF_ALL) const { return SWCSpectrum(1.f); }
-	virtual SWCSpectrum rho(const TsPack *tspack, const Vector &woW,
-		BxDFType flags = BSDF_ALL) const { return SWCSpectrum(1.f); }
+	virtual SWCSpectrum rho(const SpectrumWavelengths &sw,
+		const Vector &woW, BxDFType flags = BSDF_ALL) const {
+		return SWCSpectrum(1.f);
+	}
 
 protected:
 	// UniformAreaBSDF Private Methods
@@ -105,13 +105,14 @@ public:
 	virtual inline u_int NumComponents(BxDFType flags) const {
 		return (flags & BSDF_DIFFUSE) == BSDF_DIFFUSE ? 1U : 0U;
 	}
-	virtual bool Sample_f(const TsPack *tspack, const Vector &woW, Vector *wiW,
-		float u1, float u2, float u3, SWCSpectrum *const f_, float *pdf,
-		BxDFType flags = BSDF_ALL, BxDFType *sampledType = NULL,
-		float *pdfBack = NULL, bool reverse = false) const {
+	virtual bool Sample_f(const SpectrumWavelengths &sw, const Vector &woW,
+		Vector *wiW, float u1, float u2, float u3,
+		SWCSpectrum *const f_, float *pdf, BxDFType flags = BSDF_ALL,
+		BxDFType *sampledType = NULL, float *pdfBack = NULL,
+		bool reverse = false) const {
 		if (reverse || NumComponents(flags) == 0)
 			return false;
-		*f_ = sf->Sample_f(tspack, u1, u2, wiW, pdf);
+		*f_ = sf->Sample_f(sw, u1, u2, wiW, pdf);
 		*f_ *= 2.f / (sf->Average_f() * fabsf(wiW->z));
 		*wiW = LocalToWorld(*wiW);
 		if (sampledType)
@@ -120,23 +121,25 @@ public:
 			*pdfBack = 0.f;
 		return true;
 	}
-	virtual float Pdf(const TsPack *tspack, const Vector &woW,
+	virtual float Pdf(const SpectrumWavelengths &sw, const Vector &woW,
 		const Vector &wiW, BxDFType flags = BSDF_ALL) const {
 		if (NumComponents(flags) == 1)
 			return sf->Pdf(WorldToLocal(wiW));
 		return 0.f;
 	}
-	virtual SWCSpectrum f(const TsPack *tspack, const Vector &woW,
+	virtual SWCSpectrum f(const SpectrumWavelengths &sw, const Vector &woW,
 		const Vector &wiW, BxDFType flags = BSDF_ALL) const {
 		if (NumComponents(flags) == 1)
-			return sf->f(tspack, WorldToLocal(wiW)) *
+			return sf->f(sw, WorldToLocal(wiW)) *
 				(2.f / (sf->Average_f() * AbsDot(wiW, nn)));
 		return SWCSpectrum(0.f);
 	}
-	virtual SWCSpectrum rho(const TsPack *tspack,
+	virtual SWCSpectrum rho(const SpectrumWavelengths &sw,
 		BxDFType flags = BSDF_ALL) const { return SWCSpectrum(2.f); }
-	virtual SWCSpectrum rho(const TsPack *tspack, const Vector &woW,
-		BxDFType flags = BSDF_ALL) const { return SWCSpectrum(2.f); }
+	virtual SWCSpectrum rho(const SpectrumWavelengths &sw,
+		const Vector &woW, BxDFType flags = BSDF_ALL) const {
+		return SWCSpectrum(2.f);
+	}
 
 protected:
 	// GonioAreaBSDF Private Methods
@@ -186,38 +189,39 @@ float AreaLight::Power(const Scene *scene) const
 	return gain * area * M_PI * Le->Y() * (func ? 2.f : 1.f);
 }
 
-float AreaLight::Pdf(const TsPack *tspack, const Point &p,
-	const Point &po, const Normal &ns) const
+float AreaLight::Pdf(const Point &p, const Point &po, const Normal &ns) const
 {
 	return prim->Pdf(p, po);
 }
 
-bool AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *Le) const
+bool AreaLight::Sample_L(MemoryArena *arena, const Scene *scene,
+	const Sample *sample, float u1, float u2, float u3,
+	BSDF **bsdf, float *pdf, SWCSpectrum *Le) const
 {
 	DifferentialGeometry dg;
-	dg.time = tspack->time;
+	dg.time = sample->realTime;
 	prim->Sample(u1, u2, u3, &dg);
 	if(func)
-		*bsdf = ARENA_ALLOC(tspack->arena, GonioAreaBSDF)(dg, dg.nn,
+		*bsdf = ARENA_ALLOC(arena, GonioAreaBSDF)(dg, dg.nn,
 			prim->GetExterior(), prim->GetInterior(), func);
 	else
-		*bsdf = ARENA_ALLOC(tspack->arena, UniformAreaBSDF)(dg, dg.nn,
+		*bsdf = ARENA_ALLOC(arena, UniformAreaBSDF)(dg, dg.nn,
 			prim->GetExterior(), prim->GetInterior());
 	*pdf = prim->Pdf(dg.p);
 	if (*pdf > 0.f) {
-		*Le = this->Le->Evaluate(tspack, dg) * (gain * M_PI);
+		*Le = this->Le->Evaluate(sample->swl, dg) * (gain * M_PI);
 		return true;
 	}
 	*Le = 0.f;
 	return false;
 }
-bool AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &p,
-	float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect,
-	SWCSpectrum *Le) const
+bool AreaLight::Sample_L(MemoryArena *arena, const Scene *scene,
+	const Sample *sample, const Point &p, float u1, float u2, float u3,
+	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *Le) const
 {
 	DifferentialGeometry dg;
-	dg.time = tspack->time;
-	prim->Sample(tspack, p, u1, u2, u3, &dg);
+	dg.time = sample->realTime;
+	prim->Sample(p, u1, u2, u3, &dg);
 	Vector wo(Normalize(dg.p - p));
 	const float pdfd = prim->Pdf(p, dg.p);
 	if (pdfd > 0.f) {
@@ -226,23 +230,23 @@ bool AreaLight::Sample_L(const TsPack *tspack, const Scene *scene, const Point &
 		if (pdfDirect)
 			*pdfDirect = pdfd;
 		if(func)
-			*bsdf = ARENA_ALLOC(tspack->arena, GonioAreaBSDF)(dg, dg.nn,
+			*bsdf = ARENA_ALLOC(arena, GonioAreaBSDF)(dg, dg.nn,
 				prim->GetExterior(), prim->GetInterior(), func);
 		else
-			*bsdf = ARENA_ALLOC(tspack->arena, UniformAreaBSDF)(dg, dg.nn,
+			*bsdf = ARENA_ALLOC(arena, UniformAreaBSDF)(dg, dg.nn,
 				prim->GetExterior(), prim->GetInterior());
-		*Le = this->Le->Evaluate(tspack, dg) * (gain * M_PI);
+		*Le = this->Le->Evaluate(sample->swl, dg) * (gain * M_PI);
 		return true;
 	}
 	*Le = 0.f;
 	return false;
 }
-SWCSpectrum AreaLight::L(const TsPack *tspack, const Ray &ray,
-	const DifferentialGeometry &dg, BSDF **bsdf, float *pdf,
+SWCSpectrum AreaLight::L(MemoryArena *arena, const Sample *sample,
+	const Ray &ray, const DifferentialGeometry &dg, BSDF **bsdf, float *pdf,
 	float *pdfDirect) const
 {
 	if(func) {
-		*bsdf = ARENA_ALLOC(tspack->arena, GonioAreaBSDF)(dg, dg.nn,
+		*bsdf = ARENA_ALLOC(arena, GonioAreaBSDF)(dg, dg.nn,
 			prim->GetExterior(), prim->GetInterior(), func);
 	} else {
 		if (!(Dot(dg.nn, ray.d) < 0.f)) {
@@ -251,16 +255,16 @@ SWCSpectrum AreaLight::L(const TsPack *tspack, const Ray &ray,
 			if (pdfDirect)
 				*pdfDirect = 0.f;
 			*bsdf = NULL;
-			return SWCSpectrum(tspack, 0.f);
+			return SWCSpectrum(0.f);
 		}
-		*bsdf = ARENA_ALLOC(tspack->arena, UniformAreaBSDF)(dg, dg.nn,
+		*bsdf = ARENA_ALLOC(arena, UniformAreaBSDF)(dg, dg.nn,
 			prim->GetExterior(), prim->GetInterior());
 	}
 	if (pdf)
 		*pdf = prim->Pdf(dg.p);
 	if (pdfDirect)
 		*pdfDirect = prim->Pdf(ray.o, dg.p);
-	return Le->Evaluate(tspack, dg) * (gain * M_PI) * (*bsdf)->f(tspack, Vector(dg.nn), -ray.d);
+	return Le->Evaluate(sample->swl, dg) * (gain * M_PI) * (*bsdf)->f(sample->swl, Vector(dg.nn), -ray.d);
 }
 
 AreaLight* AreaLight::CreateAreaLight(const Transform &light2world,

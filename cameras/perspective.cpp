@@ -48,10 +48,11 @@ public:
 		return (flags & (BSDF_REFLECTION | BSDF_DIFFUSE)) ==
 			(BSDF_REFLECTION | BSDF_DIFFUSE) ? 1U : 0U;
 	}
-	virtual bool Sample_f(const TsPack *tspack, const Vector &woW, Vector *wiW,
-		float u1, float u2, float u3, SWCSpectrum *const f_, float *pdf,
-		BxDFType flags = BSDF_ALL, BxDFType *sampledType = NULL,
-		float *pdfBack = NULL, bool reverse = false) const {
+	virtual bool Sample_f(const SpectrumWavelengths &sw, const Vector &woW,
+		Vector *wiW, float u1, float u2, float u3,
+		SWCSpectrum *const f_, float *pdf, BxDFType flags = BSDF_ALL,
+		BxDFType *sampledType = NULL, float *pdfBack = NULL,
+		bool reverse = false) const {
 		if (!reverse || NumComponents(flags) == 0)
 			return false;
 		// Don't transform directly in world coordinates
@@ -72,7 +73,7 @@ public:
 			*sampledType = BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE);
 		return true;
 	}
-	virtual float Pdf(const TsPack *tspack, const Vector &woW,
+	virtual float Pdf(const SpectrumWavelengths &sw, const Vector &woW,
 		const Vector &wiW, BxDFType flags = BSDF_ALL) const {
 		const Vector wi(camera.WorldToCamera(wiW));
 		const float cosi = wi.z;
@@ -88,7 +89,7 @@ public:
 		}
 		return 0.f;
 	}
-	virtual SWCSpectrum f(const TsPack *tspack, const Vector &woW,
+	virtual SWCSpectrum f(const SpectrumWavelengths &sw, const Vector &woW,
 		const Vector &wiW, BxDFType flags = BSDF_ALL) const {
 		const Vector wo(camera.WorldToCamera(woW));
 		const float coso = wo.z;
@@ -104,10 +105,12 @@ public:
 		}
 		return SWCSpectrum(0.f);
 	}
-	virtual SWCSpectrum rho(const TsPack *tspack,
+	virtual SWCSpectrum rho(const SpectrumWavelengths &sw,
 		BxDFType flags = BSDF_ALL) const { return SWCSpectrum(1.f); }
-	virtual SWCSpectrum rho(const TsPack *tspack, const Vector &woW,
-		BxDFType flags = BSDF_ALL) const { return SWCSpectrum(1.f); }
+	virtual SWCSpectrum rho(const SpectrumWavelengths &sw,
+		const Vector &woW, BxDFType flags = BSDF_ALL) const {
+		return SWCSpectrum(1.f);
+	}
 
 protected:
 	// PerspectiveBSDF Private Methods
@@ -203,7 +206,8 @@ void PerspectiveCamera::AutoFocus(Scene* scene)
 	}
 }
 
-bool PerspectiveCamera::Sample_W(const TsPack *tspack, const Scene *scene,
+bool PerspectiveCamera::Sample_W(MemoryArena *arena,
+	const SpectrumWavelengths &sw, const Scene *scene,
 	float u1, float u2, float u3, BSDF **bsdf, float *pdf,
 	SWCSpectrum *We) const
 {
@@ -217,13 +221,14 @@ bool PerspectiveCamera::Sample_W(const TsPack *tspack, const Scene *scene,
 	DifferentialGeometry dg(ps, normal, CameraToWorld(Vector(1, 0, 0)),
 		CameraToWorld(Vector(0, 1, 0)), Normal(0, 0, 0),
 		Normal(0, 0, 0), 0, 0, NULL);
-	*bsdf = ARENA_ALLOC(tspack->arena, PerspectiveBSDF)(dg, normal,
+	*bsdf = ARENA_ALLOC(arena, PerspectiveBSDF)(dg, normal,
 		NULL, NULL, *this, LensRadius > 0.f, psC);
 	*pdf = posPdf;
 	*We = SWCSpectrum(posPdf);
 	return true;
 }
-bool PerspectiveCamera::Sample_W(const TsPack *tspack, const Scene *scene,
+bool PerspectiveCamera::Sample_W(MemoryArena *arena,
+	const SpectrumWavelengths &sw, const Scene *scene,
 	const Point &p, const Normal &n, float u1, float u2, float u3,
 	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *We) const
 {
@@ -235,7 +240,7 @@ bool PerspectiveCamera::Sample_W(const TsPack *tspack, const Scene *scene,
 	}
 	Point ps = CameraToWorld(psC);
 	DifferentialGeometry dg(ps, normal, CameraToWorld(Vector(1, 0, 0)), CameraToWorld(Vector(0, 1, 0)), Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
-	*bsdf = ARENA_ALLOC(tspack->arena, PerspectiveBSDF)(dg, normal,
+	*bsdf = ARENA_ALLOC(arena, PerspectiveBSDF)(dg, normal,
 		NULL, NULL, *this, LensRadius > 0.f, psC);
 	*pdf = posPdf;
 	*pdfDirect = posPdf;

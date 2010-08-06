@@ -50,28 +50,29 @@ Camera::Camera(const Transform &w2cstart,
 	film = f;
 }
 
-float Camera::GenerateRay(const TsPack *tspack, const Scene *scene,
+float Camera::GenerateRay(MemoryArena *arena, const Scene *scene,
 	const Sample &sample, RayDifferential *ray) const
 {
+	const SpectrumWavelengths &sw(sample.swl);
 	if (IsLensBased()) {
 		const float o1 = sample.lensU;
 		const float o2 = sample.lensV;
 		const float d1 = sample.imageX;
 		const float d2 = sample.imageY;
-		if (!GenerateRay(tspack, scene, o1, o2, d1, d2, ray))
+		if (!GenerateRay(arena, sw, scene, o1, o2, d1, d2, ray))
 			return 0.f;
-		if (GenerateRay(tspack, scene, o1, o2, d1 + 1, d2, &(ray->rx)) &&
-			GenerateRay(tspack, scene, o1, o2, d1, d2 + 1, &(ray->ry)))
+		if (GenerateRay(arena, sw, scene, o1, o2, d1 + 1, d2, &(ray->rx)) &&
+			GenerateRay(arena, sw, scene, o1, o2, d1, d2 + 1, &(ray->ry)))
 			ray->hasDifferentials = true;
 	} else {
 		const float o1 = sample.imageX;
 		const float o2 = sample.imageY;
 		const float d1 = sample.lensU;
 		const float d2 = sample.lensV;
-		if (!GenerateRay(tspack, scene, o1, o2, d1, d2, ray))
+		if (!GenerateRay(arena, sw, scene, o1, o2, d1, d2, ray))
 			return 0.f;
-		if (GenerateRay(tspack, scene, o1, o2, d1 + 1, d2, &(ray->rx)) &&
-			GenerateRay(tspack, scene, o1, o2, d1, d2 + 1, &(ray->ry)))
+		if (GenerateRay(arena, sw, scene, o1, o2, d1 + 1, d2, &(ray->rx)) &&
+			GenerateRay(arena, sw, scene, o1, o2, d1, d2 + 1, &(ray->ry)))
 			ray->hasDifferentials = true;
 	}
 
@@ -82,21 +83,21 @@ float Camera::GenerateRay(const TsPack *tspack, const Scene *scene,
 	return 1.f;
 }
 
-bool Camera::GenerateRay(const TsPack *tspack, const Scene *scene,
-	float o1, float o2, float d1, float d2, Ray *ray) const
+bool Camera::GenerateRay(MemoryArena *arena, const SpectrumWavelengths &sw,
+	const Scene *scene, float o1, float o2, float d1, float d2, Ray *ray) const
 {
 	SWCSpectrum We;
 	BSDF *bsdf;
 	float pdf;
 	// Sample ray origin
 	//FIXME: Replace dummy .5f by a sampled value if needed
-	if (!Sample_W(tspack, scene, o1, o2, .5f, &bsdf, &pdf, &We))
+	if (!Sample_W(arena, sw, scene, o1, o2, .5f, &bsdf, &pdf, &We))
 		return false;
 	ray->o = bsdf->dgShading.p;
 
 	// Sample ray direction
 	//FIXME: Replace dummy .5f by a sampled value if needed
-	if (!bsdf->Sample_f(tspack, Vector(bsdf->nn), &(ray->d), d1, d2, .5f,
+	if (!bsdf->Sample_f(sw, Vector(bsdf->nn), &(ray->d), d1, d2, .5f,
 		&We, &pdf, BSDF_ALL, NULL, NULL, true))
 		return false;
 

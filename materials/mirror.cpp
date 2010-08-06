@@ -34,19 +34,20 @@
 using namespace lux;
 
 // Mirror Method Definitions
-BSDF *Mirror::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
+BSDF *Mirror::GetBSDF(MemoryArena *arena, const SpectrumWavelengths &sw,
+	const DifferentialGeometry &dgGeom,
 	const DifferentialGeometry &dgs,
 	const Volume *exterior, const Volume *interior) const
 {
 	// Allocate _BSDF_
-	float flm = film->Evaluate(tspack, dgs);
-	float flmindex = filmindex->Evaluate(tspack, dgs);
+	float flm = film->Evaluate(sw, dgs);
+	float flmindex = filmindex->Evaluate(sw, dgs);
 
 	// NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
-	SWCSpectrum R = Kr->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
-	BxDF *bxdf = ARENA_ALLOC(tspack->arena, SpecularReflection)(R,
-		ARENA_ALLOC(tspack->arena, FresnelNoOp)(), flm, flmindex);
-	SingleBSDF *bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dgs,
+	SWCSpectrum R = Kr->Evaluate(sw, dgs).Clamp(0.f, 1.f);
+	BxDF *bxdf = ARENA_ALLOC(arena, SpecularReflection)(R,
+		ARENA_ALLOC(arena, FresnelNoOp)(), flm, flmindex);
+	SingleBSDF *bsdf = ARENA_ALLOC(arena, SingleBSDF)(dgs,
 		dgGeom.nn, bxdf, exterior, interior);
 
 	// Add ptr to CompositingParams structure

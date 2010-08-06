@@ -54,6 +54,11 @@ public:
 		buf = lux::AllocAligned<unsigned long>(RAN_BUFFER_AMOUNT);
 		bufid = RAN_BUFFER_AMOUNT;
 	}
+	RandomGenerator(unsigned long tn) {
+		buf = lux::AllocAligned<unsigned long>(RAN_BUFFER_AMOUNT);
+		bufid = RAN_BUFFER_AMOUNT;
+		taus113_set(tn);
+	}
 
 	~RandomGenerator() { lux::FreeAligned(buf); }
 
@@ -61,7 +66,7 @@ public:
 		taus113_set(tn);
 	}
 
-	inline unsigned long uintValue() {
+	inline unsigned long uintValue() const {
 		// Repopulate buffer if necessary
 		if (bufid == RAN_BUFFER_AMOUNT) {
 			for(int i = 0; i < RAN_BUFFER_AMOUNT; ++i)
@@ -72,7 +77,7 @@ public:
 		return buf[bufid++];
 	}
 
-	inline float floatValue() {
+	inline float floatValue() const {
 		return (uintValue() & FLOATMASK) * invUI; 
 	}
 
@@ -102,7 +107,7 @@ private:
 			nobuf_generateUInt();
 	}
 
-	inline unsigned long nobuf_generateUInt() {
+	inline unsigned long nobuf_generateUInt() const {
 		const unsigned long b1 = ((((z1 << 6UL) & MASK) ^ z1) >> 13UL);
 		z1 = ((((z1 & 4294967294UL) << 18UL) & MASK) ^ b1);
 
@@ -118,9 +123,9 @@ private:
 		return (z1 ^ z2 ^ z3 ^ z4);
 	}
 
-	unsigned long z1, z2, z3, z4;
+	mutable unsigned long z1, z2, z3, z4;
 	unsigned long *buf;
-	int bufid;
+	mutable int bufid;
 };
 
 namespace random {
@@ -128,17 +133,13 @@ namespace random {
 static RandomGenerator* PGen;
 // request RN's during engine initialization (pre threads)
 inline unsigned long uintValueP() { 
-	if (!PGen) {
-		PGen = new RandomGenerator();
-		PGen->init(1);
-	}
+	if (!PGen)
+		PGen = new RandomGenerator(1);
 	return PGen->uintValue();
 }
 inline float floatValueP() { 
-	if (!PGen) {
-		PGen = new RandomGenerator();
-		PGen->init(1);
-	}
+	if (!PGen)
+		PGen = new RandomGenerator(1);
 	return PGen->floatValue();
 }
 

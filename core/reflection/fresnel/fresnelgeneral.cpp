@@ -26,13 +26,38 @@
 
 using namespace lux;
 
-void FresnelGeneral::Evaluate(const TsPack *tspack, float cosi, SWCSpectrum *const f) const {
-	SWCSpectrum cost(sqrtf(max(0.f, 1.f - cosi * cosi)));
+void FresnelGeneral::Evaluate(const SpectrumWavelengths &sw, float cosi,
+	SWCSpectrum *const f) const
+{
+	if (model == CONDUCTOR_FRESNEL) {
+		if (cosi > 0.f)
+			FrCond(cosi, eta, k, f);
+		else
+			*f = SWCSpectrum(0.f);
+		return;
+	}
+	SWCSpectrum sint2(max(0.f, 1.f - cosi * cosi));
 	if (cosi > 0.f)
-		cost = cost / eta;
+		sint2 /= eta * eta;
 	else
-		cost = cost * eta;
-	cost = cost.Clamp(0.f, 1.f);
-	cost = (SWCSpectrum(1.f) - cost * cost).Sqrt();
-	FrFull(fabsf(cosi), cost, eta, k, f);
+		sint2 *= eta * eta;
+	sint2 = sint2.Clamp(0.f, 1.f);
+	const SWCSpectrum cost2 = (SWCSpectrum(1.f) - sint2);
+	if (cosi > 0.f) {
+		if (model == DIELECTRIC_FRESNEL)
+			FrDiel2(cosi, cost2.Sqrt(), eta, f);
+		else {
+			const SWCSpectrum a(2.f * k * k * sint2);
+			FrFull(cosi, (cost2 + (cost2 * cost2 + a * a).Sqrt()).Sqrt(), eta, k, f);
+		}
+	} else {
+		if (model == DIELECTRIC_FRESNEL)
+			FrDiel2(-cosi, cost2.Sqrt(), SWCSpectrum(1.f) / eta, f);
+		else {
+			const SWCSpectrum a(2.f * k * k * sint2);
+			const SWCSpectrum d2 = eta * eta + k * k;
+			FrFull(-cosi, (cost2 + (cost2 * cost2 + a * a).Sqrt()).Sqrt(), eta / d2, -k / d2, f);
+			FrFull(-cosi, cost2.Sqrt(), eta / d2, -k / d2, f);
+		}
+	}
 }

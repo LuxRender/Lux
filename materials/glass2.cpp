@@ -35,49 +35,48 @@
 using namespace lux;
 
 // Glass Method Definitions
-BSDF *Glass2::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
+BSDF *Glass2::GetBSDF(MemoryArena *arena, const SpectrumWavelengths &sw,
+	const DifferentialGeometry &dgGeom,
 	const DifferentialGeometry &dgs,
 	const Volume *exterior, const Volume *interior) const
 {
 	// Allocate _BSDF_
-	float ior;
-	const Fresnel *fresnel, *fre, *fri;
+	Fresnel *fresnel;
 	if (exterior) {
-		fre = exterior->Fresnel(tspack, dgs.p, Vector(dgs.nn));
+		const FresnelGeneral fre(exterior->Fresnel(sw, dgs.p,
+			Vector(dgs.nn)));
 		if (interior) {
-			fri = interior->Fresnel(tspack, dgs.p, Vector(dgs.nn));
+			const FresnelGeneral fri(interior->Fresnel(sw, dgs.p,
+				Vector(dgs.nn)));
 			SWCSpectrum fer, fir, f;
-			fre->ComplexEvaluate(tspack, &fer, &f);
-			fri->ComplexEvaluate(tspack, &fir, &f);
-			ior = fri->Index(tspack) / fre->Index(tspack);
-			fresnel = ARENA_ALLOC(tspack->arena, FresnelDielectric)
+			fre.ComplexEvaluate(sw, &fer, &f);
+			fri.ComplexEvaluate(sw, &fir, &f);
+			const float ior = fri.Index(sw) / fre.Index(sw);
+			fresnel = ARENA_ALLOC(arena, FresnelDielectric)
 				(ior, fir / fer, SWCSpectrum(0.f));
 		} else {
 			SWCSpectrum fer, f;
-			fre->ComplexEvaluate(tspack, &fer, &f);
-			ior = 1.f / fre->Index(tspack);
-			fresnel = ARENA_ALLOC(tspack->arena, FresnelDielectric)
+			fre.ComplexEvaluate(sw, &fer, &f);
+			const float ior = 1.f / fre.Index(sw);
+			fresnel = ARENA_ALLOC(arena, FresnelDielectric)
 				(ior, SWCSpectrum(1.f) / fer, SWCSpectrum(0.f));
 		}
-	} else if (interior) {
-		fri = interior->Fresnel(tspack, dgs.p, Vector(dgs.nn));
-		ior = fri->Index(tspack);
-		fresnel = fri;
-	} else {
-		ior = 1.f;
-		fresnel = ARENA_ALLOC(tspack->arena, FresnelDielectric)(ior,
-			SWCSpectrum(ior), SWCSpectrum(0.f));
-	}
+	} else if (interior)
+		fresnel = ARENA_ALLOC(arena, FresnelGeneral)
+			(interior->Fresnel(sw, dgs.p, Vector(dgs.nn)));
+	else
+		fresnel = ARENA_ALLOC(arena, FresnelDielectric)(1.f,
+			SWCSpectrum(1.f), SWCSpectrum(0.f));
 
-	MultiBSDF *bsdf = ARENA_ALLOC(tspack->arena, MultiBSDF)(dgs, dgGeom.nn,
+	MultiBSDF *bsdf = ARENA_ALLOC(arena, MultiBSDF)(dgs, dgGeom.nn,
 		exterior, interior);
 	if (architectural)
-		bsdf->Add(ARENA_ALLOC(tspack->arena,
+		bsdf->Add(ARENA_ALLOC(arena,
 			SimpleArchitecturalReflection)(fresnel));
 	else
-		bsdf->Add(ARENA_ALLOC(tspack->arena,
+		bsdf->Add(ARENA_ALLOC(arena,
 			SimpleSpecularReflection)(fresnel));
-	bsdf->Add(ARENA_ALLOC(tspack->arena,
+	bsdf->Add(ARENA_ALLOC(arena,
 		SimpleSpecularTransmission)(fresnel, dispersion, architectural));
 
 	// Add ptr to CompositingParams structure
@@ -85,6 +84,7 @@ BSDF *Glass2::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 
 	return bsdf;
 }
+
 Material* Glass2::CreateMaterial(const Transform &xform,
 	const ParamSet &mp)
 {

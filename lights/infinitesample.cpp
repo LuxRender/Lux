@@ -26,6 +26,7 @@
 #include "mcdistribution.h"
 #include "paramset.h"
 #include "reflection/bxdf.h"
+#include "sampling.h"
 #include "dynload.h"
 
 using namespace lux;
@@ -44,10 +45,11 @@ public:
 		return (flags & (BSDF_REFLECTION | BSDF_DIFFUSE)) ==
 			(BSDF_REFLECTION | BSDF_DIFFUSE) ? 1U : 0U;
 	}
-	virtual bool Sample_f(const TsPack *tspack, const Vector &woW, Vector *wiW,
-		float u1, float u2, float u3, SWCSpectrum *const f_, float *pdf,
-		BxDFType flags = BSDF_ALL, BxDFType *sampledType = NULL,
-		float *pdfBack = NULL, bool reverse = false) const {
+	virtual bool Sample_f(const SpectrumWavelengths &sw, const Vector &woW,
+		Vector *wiW, float u1, float u2, float u3,
+		SWCSpectrum *const f_, float *pdf, BxDFType flags = BSDF_ALL,
+		BxDFType *sampledType = NULL, float *pdfBack = NULL,
+		bool reverse = false) const {
 		if (reverse || NumComponents(flags) == 0)
 			return false;
 		*wiW = Normalize(LocalToWorld(CosineSampleHemisphere(u1, u2)));
@@ -67,18 +69,18 @@ public:
 		const Vector wh = Normalize(WorldToLight(-(*wiW)));
 		float s, t, dummy;
 		light.mapping->Map(wh, &s, &t, &dummy);
-		*f_ = light.radianceMap->LookupSpectrum(tspack, s, t) *
+		*f_ = light.radianceMap->LookupSpectrum(sw, s, t) *
 			INV_PI;
 		return true;
 	}
-	virtual float Pdf(const TsPack *tspack, const Vector &woW,
+	virtual float Pdf(const SpectrumWavelengths &sw, const Vector &woW,
 		const Vector &wiW, BxDFType flags = BSDF_ALL) const {
 		if (NumComponents(flags) == 1 &&
 			Dot(wiW, ng) > 0.f && Dot(wiW, nn) > 0.f)
 			return AbsDot(wiW, nn) * INV_PI;
 		return 0.f;
 	}
-	virtual SWCSpectrum f(const TsPack *tspack, const Vector &woW,
+	virtual SWCSpectrum f(const SpectrumWavelengths &sw, const Vector &woW,
 		const Vector &wiW, BxDFType flags = BSDF_ALL) const {
 		if (NumComponents(flags) == 1 && Dot(wiW, ng) > 0.f) {
 			if (light.radianceMap == NULL) {
@@ -87,15 +89,17 @@ public:
 			const Vector wh = Normalize(WorldToLight(-wiW));
 			float s, t, dummy;
 			light.mapping->Map(wh, &s, &t, &dummy);
-			return light.radianceMap->LookupSpectrum(tspack, s, t) *
+			return light.radianceMap->LookupSpectrum(sw, s, t) *
 				INV_PI;
 		}
 		return SWCSpectrum(0.f);
 	}
-	virtual SWCSpectrum rho(const TsPack *tspack,
+	virtual SWCSpectrum rho(const SpectrumWavelengths &sw,
 		BxDFType flags = BSDF_ALL) const { return SWCSpectrum(1.f); }
-	virtual SWCSpectrum rho(const TsPack *tspack, const Vector &woW,
-		BxDFType flags = BSDF_ALL) const { return SWCSpectrum(1.f); }
+	virtual SWCSpectrum rho(const SpectrumWavelengths &sw,
+		const Vector &woW, BxDFType flags = BSDF_ALL) const {
+		return SWCSpectrum(1.f);
+	}
 
 protected:
 	// InfiniteISBSDF Private Methods
@@ -159,9 +163,9 @@ InfiniteAreaLightIS::InfiniteAreaLightIS(const Transform &light2world,
 	delete[] img;
 }
 
-bool InfiniteAreaLightIS::Le(const TsPack *tspack, const Scene *scene,
-	const Ray &r, BSDF **bsdf, float *pdf, float *pdfDirect,
-	SWCSpectrum *L) const
+bool InfiniteAreaLightIS::Le(MemoryArena *arena, const Scene *scene,
+	const Sample *sample, const Ray &r, BSDF **bsdf, float *pdf,
+	float *pdfDirect, SWCSpectrum *L) const
 {
 	Point worldCenter;
 	float worldRadius;
@@ -177,15 +181,15 @@ bool InfiniteAreaLightIS::Le(const TsPack *tspack, const Scene *scene,
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Normal(0, 0, 0),
 		Normal(0, 0, 0), 0, 0, NULL);
-	dg.time = tspack->time;
-	*bsdf = ARENA_ALLOC(tspack->arena, InfiniteISBSDF)(dg, ns,
+	dg.time = sample->realTime;
+	*bsdf = ARENA_ALLOC(arena, InfiniteISBSDF)(dg, ns,
 		NULL, NULL, *this, WorldToLight);
-	*L *= SWCSpectrum(tspack, SPDbase);
+	*L *= SWCSpectrum(sample->swl, SPDbase);
 	const Vector wh = Normalize(WorldToLight(r.d));
 	float s, t, pdfMap;
 	mapping->Map(wh, &s, &t, &pdfMap);
 	if (radianceMap != NULL)
-		*L *= radianceMap->LookupSpectrum(tspack, s, t);
+		*L *= radianceMap->LookupSpectrum(sample->swl, s, t);
 	if (pdf)
 		*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	if (pdfDirect)
@@ -194,8 +198,8 @@ bool InfiniteAreaLightIS::Le(const TsPack *tspack, const Scene *scene,
 	return true;
 }
 
-float InfiniteAreaLightIS::Pdf(const TsPack *tspack, const Point &p,
-	const Point &po, const Normal &ns) const
+float InfiniteAreaLightIS::Pdf(const Point &p, const Point &po,
+	const Normal &ns) const
 {
 	const Vector d(Normalize(po - p));
 	const Vector wh = Normalize(WorldToLight(d));
@@ -205,9 +209,9 @@ float InfiniteAreaLightIS::Pdf(const TsPack *tspack, const Point &p,
 		DistanceSquared(p, po);
 }
 
-bool InfiniteAreaLightIS::Sample_L(const TsPack *tspack, const Scene *scene,
-	float u1, float u2, float u3, BSDF **bsdf, float *pdf,
-	SWCSpectrum *Le) const
+bool InfiniteAreaLightIS::Sample_L(MemoryArena *arena, const Scene *scene,
+	const Sample *sample, float u1, float u2, float u3, BSDF **bsdf,
+	float *pdf, SWCSpectrum *Le) const
 {
 	Point worldCenter;
 	float worldRadius;
@@ -219,15 +223,16 @@ bool InfiniteAreaLightIS::Sample_L(const TsPack *tspack, const Scene *scene,
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Normal(0, 0, 0),
 		Normal (0, 0, 0), 0, 0, NULL);
-	*bsdf = ARENA_ALLOC(tspack->arena, InfiniteISBSDF)(dg, ns,
+	dg.time = sample->realTime;
+	*bsdf = ARENA_ALLOC(arena, InfiniteISBSDF)(dg, ns,
 		NULL, NULL, *this, WorldToLight);
 	*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
-	*Le = SWCSpectrum(tspack, SPDbase) * M_PI;
+	*Le = SWCSpectrum(sample->swl, SPDbase) * M_PI;
 	return true;
 }
 
-bool InfiniteAreaLightIS::Sample_L(const TsPack *tspack, const Scene *scene,
-	const Point &p, float u1, float u2, float u3,
+bool InfiniteAreaLightIS::Sample_L(MemoryArena *arena, const Scene *scene,
+	const Sample *sample, const Point &p, float u1, float u2, float u3,
 	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *Le) const
 {
 	Point worldCenter;
@@ -255,12 +260,13 @@ bool InfiniteAreaLightIS::Sample_L(const TsPack *tspack, const Scene *scene,
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Normal(0, 0, 0),
 		Normal (0, 0, 0), 0, 0, NULL);
-	*bsdf = ARENA_ALLOC(tspack->arena, InfiniteISBSDF)(dg, ns,
+	dg.time = sample->realTime;
+	*bsdf = ARENA_ALLOC(arena, InfiniteISBSDF)(dg, ns,
 		NULL, NULL, *this, WorldToLight);
 	if (pdf)
 		*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	*pdfDirect *= AbsDot(wi, ns) / (distance * distance);
-	*Le = SWCSpectrum(tspack, SPDbase) * M_PI;
+	*Le = SWCSpectrum(sample->swl, SPDbase) * M_PI;
 	return true;
 }
 

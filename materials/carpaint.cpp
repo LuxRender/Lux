@@ -59,51 +59,51 @@ CarPaint::CarPaint(boost::shared_ptr<Texture<SWCSpectrum> > &kd,
 }
 
 // CarPaint Method Definitions
-BSDF *CarPaint::GetBSDF(const TsPack *tspack,
+BSDF *CarPaint::GetBSDF(MemoryArena *arena, const SpectrumWavelengths &sw,
 	const DifferentialGeometry &dgGeom,
 	const DifferentialGeometry &dgs,
 	const Volume *exterior, const Volume *interior) const {
 
 	// Allocate _BSDF_
-	MultiBSDF *bsdf = ARENA_ALLOC(tspack->arena, MultiBSDF)(dgs, dgGeom.nn,
+	MultiBSDF *bsdf = ARENA_ALLOC(arena, MultiBSDF)(dgs, dgGeom.nn,
 		exterior, interior);
 
 	// The Carpaint BRDF is really a Multi-lobe Microfacet model with a Lambertian base
 	// NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
-	const SWCSpectrum kd(Kd->Evaluate(tspack, dgs).Clamp(0.f, 1.f));
-	const SWCSpectrum ka(Ka->Evaluate(tspack, dgs).Clamp(0.f, 1.f));
-	const float ld = depth->Evaluate(tspack, dgs);
+	const SWCSpectrum kd(Kd->Evaluate(sw, dgs).Clamp(0.f, 1.f));
+	const SWCSpectrum ka(Ka->Evaluate(sw, dgs).Clamp(0.f, 1.f));
+	const float ld = depth->Evaluate(sw, dgs);
 
-	const SWCSpectrum ks1(Ks1->Evaluate(tspack, dgs).Clamp(0.f, 1.f));
-	const float r1 = Clamp(R1->Evaluate(tspack, dgs), 0.f, 1.f);
-	const float m1 = M1->Evaluate(tspack, dgs);
-	if (ks1.Filter(tspack) > 0.f && m1 > 0.f) {
-		SchlickDistribution *md1 = ARENA_ALLOC(tspack->arena, SchlickDistribution)(m1 * m1, 0.f);
-		FresnelSlick *fr1 = ARENA_ALLOC(tspack->arena, FresnelSlick)(r1, 0.f);
-		bsdf->Add(ARENA_ALLOC(tspack->arena, MicrofacetReflection)(ks1, fr1, md1, true));
+	const SWCSpectrum ks1(Ks1->Evaluate(sw, dgs).Clamp(0.f, 1.f));
+	const float r1 = Clamp(R1->Evaluate(sw, dgs), 0.f, 1.f);
+	const float m1 = M1->Evaluate(sw, dgs);
+	if (ks1.Filter(sw) > 0.f && m1 > 0.f) {
+		SchlickDistribution *md1 = ARENA_ALLOC(arena, SchlickDistribution)(m1 * m1, 0.f);
+		FresnelSlick *fr1 = ARENA_ALLOC(arena, FresnelSlick)(r1, 0.f);
+		bsdf->Add(ARENA_ALLOC(arena, MicrofacetReflection)(ks1, fr1, md1, true));
 	}
 
-	const SWCSpectrum ks2(Ks2->Evaluate(tspack, dgs).Clamp(0.f, 1.f));
-	const float r2 = Clamp(R2->Evaluate(tspack, dgs), 0.f, 1.f);
-	const float m2 = M2->Evaluate(tspack, dgs);
-	if (ks2.Filter(tspack) > 0.f && m2 > 0.f) {
-		SchlickDistribution *md2 = ARENA_ALLOC(tspack->arena, SchlickDistribution)(m2 * m2, 0.f);
-		FresnelSlick *fr2 = ARENA_ALLOC(tspack->arena, FresnelSlick)(r2, 0.f);
-		bsdf->Add(ARENA_ALLOC(tspack->arena, MicrofacetReflection)(ks2, fr2, md2, true));
+	const SWCSpectrum ks2(Ks2->Evaluate(sw, dgs).Clamp(0.f, 1.f));
+	const float r2 = Clamp(R2->Evaluate(sw, dgs), 0.f, 1.f);
+	const float m2 = M2->Evaluate(sw, dgs);
+	if (ks2.Filter(sw) > 0.f && m2 > 0.f) {
+		SchlickDistribution *md2 = ARENA_ALLOC(arena, SchlickDistribution)(m2 * m2, 0.f);
+		FresnelSlick *fr2 = ARENA_ALLOC(arena, FresnelSlick)(r2, 0.f);
+		bsdf->Add(ARENA_ALLOC(arena, MicrofacetReflection)(ks2, fr2, md2, true));
 	}
 
-	const SWCSpectrum ks3(Ks3->Evaluate(tspack, dgs).Clamp(0.f, 1.f));
-	const float r3 = Clamp(R3->Evaluate(tspack, dgs), 0.f, 1.f);
-	const float m3 = M3->Evaluate(tspack, dgs);
-	if (ks3.Filter(tspack) > 0.f && m3 > 0.f) {
-		SchlickDistribution *md3 = ARENA_ALLOC(tspack->arena, SchlickDistribution)(m3 * m3, 0.f);
+	const SWCSpectrum ks3(Ks3->Evaluate(sw, dgs).Clamp(0.f, 1.f));
+	const float r3 = Clamp(R3->Evaluate(sw, dgs), 0.f, 1.f);
+	const float m3 = M3->Evaluate(sw, dgs);
+	if (ks3.Filter(sw) > 0.f && m3 > 0.f) {
+		SchlickDistribution *md3 = ARENA_ALLOC(arena, SchlickDistribution)(m3 * m3, 0.f);
 		// The fresnel function is created by the FresnelBlend model
 		//Fresnel *fr3 = ARENA_ALLOC(tspack->arena, FresnelSlick)(r3, 0.f);
 		// Clear coat and lambertian base
-		bsdf->Add(ARENA_ALLOC(tspack->arena, FresnelBlend)(kd, ks3 * r3, ka, ld, md3));
+		bsdf->Add(ARENA_ALLOC(arena, FresnelBlend)(kd, ks3 * r3, ka, ld, md3));
 	} else {
 		// Lambertian base only
-		bsdf->Add(ARENA_ALLOC(tspack->arena, Lambertian)(kd));
+		bsdf->Add(ARENA_ALLOC(arena, Lambertian)(kd));
 	}
 
 	// Add ptr to CompositingParams structure

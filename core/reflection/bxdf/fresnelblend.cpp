@@ -38,8 +38,8 @@ FresnelBlend::FresnelBlend(const SWCSpectrum &d,
 {
 }
 
-void FresnelBlend::f(const TsPack *tspack, const Vector &wo, const Vector &wi,
-	SWCSpectrum *const f_) const
+void FresnelBlend::f(const SpectrumWavelengths &sw, const Vector &wo,
+	const Vector &wi, SWCSpectrum *const f_) const
 {
 	const float cosi = fabsf(CosTheta(wi));
 	const float coso = fabsf(CosTheta(wo));
@@ -66,8 +66,8 @@ void FresnelBlend::f(const TsPack *tspack, const Vector &wo, const Vector &wi,
 		SchlickFresnel(cosih));
 }
 
-bool FresnelBlend::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
-	float u1, float u2, SWCSpectrum *const f_, float *pdf, 
+bool FresnelBlend::Sample_f(const SpectrumWavelengths &sw, const Vector &wo,
+	Vector *wi, float u1, float u2, SWCSpectrum *const f_, float *pdf, 
 	float *pdfBack, bool reverse) const
 {
 	Vector wh;
@@ -98,10 +98,10 @@ bool FresnelBlend::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 
 	*f_ = SWCSpectrum(0.f);
 	// FresnelBlend::f is symetric, no need to special case for revert
-	f(tspack, wo, *wi, f_);
+	f(sw, wo, *wi, f_);
 	return true;
 }
-float FresnelBlend::Pdf(const TsPack *tspack, const Vector &wo,
+float FresnelBlend::Pdf(const SpectrumWavelengths &sw, const Vector &wo,
 	const Vector &wi) const
 {
 	if (!SameHemisphere(wo, wi))

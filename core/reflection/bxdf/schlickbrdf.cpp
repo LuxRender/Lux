@@ -34,7 +34,7 @@ SchlickBRDF::SchlickBRDF(const SWCSpectrum &d, const SWCSpectrum &s,
 	  Rd(d), Rs(s), Alpha(a), depth(dep), roughness(r), anisotropy(p)
 {
 }
-void SchlickBRDF::f(const TsPack *tspack, const Vector &wo, 
+void SchlickBRDF::f(const SpectrumWavelengths &sw, const Vector &wo, 
 	 const Vector &wi, SWCSpectrum *const f_) const
 {
 	const float cosi = fabsf(CosTheta(wi));
@@ -63,8 +63,8 @@ static float GetPhi(float a, float b)
 	return M_PI * .5f * sqrtf(a * b / (1.f - a * (1.f - b)));
 }
 
-bool SchlickBRDF::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
-	float u1, float u2, SWCSpectrum *const f_, float *pdf, 
+bool SchlickBRDF::Sample_f(const SpectrumWavelengths &sw, const Vector &wo,
+	Vector *wi, float u1, float u2, SWCSpectrum *const f_, float *pdf, 
 	float *pdfBack, bool reverse) const
 {
 	Vector H;
@@ -114,10 +114,10 @@ bool SchlickBRDF::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 	*f_ = SWCSpectrum(0.f);
 	// No need to check for the reverse flag as the BRDF is identical in
 	// both cases
-	f(tspack, *wi, wo, f_);
+	f(sw, *wi, wo, f_);
 	return true;
 }
-float SchlickBRDF::Pdf(const TsPack *tspack, const Vector &wo,
+float SchlickBRDF::Pdf(const SpectrumWavelengths &sw, const Vector &wo,
 	const Vector &wi) const
 {
 	if (!SameHemisphere(wo, wi))

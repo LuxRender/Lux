@@ -42,7 +42,8 @@ public:
 		B = 0.45f * sigma2 / (sigma2 + 0.09f);
 	}
 	virtual ~OrenNayar() { }
-	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi, SWCSpectrum *const f) const;
+	virtual void f(const SpectrumWavelengths &sw, const Vector &wo,
+		const Vector &wi, SWCSpectrum *const f) const;
 private:
 	// OrenNayar Private Data
 	SWCSpectrum R;

@@ -23,6 +23,7 @@
 // loopsubdiv.cpp*
 #include "loopsubdiv.h"
 #include "context.h"
+#include "spectrumwavelengths.h"
 #include "paramset.h"
 #include "dynload.h"
 
@@ -440,6 +441,8 @@ void LoopSubdiv::ApplyDisplacementMap(
 	std::stringstream ss;
 	ss << "Applying displacement map to " << verts.size() << " vertices";
 	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+	SpectrumWavelengths swl;
+	swl.Sample(.5f);
 
 	for (u_int i = 0; i < verts.size(); i++) {
 		Point pp = ObjectToWorld(verts[i]->P);
@@ -465,7 +468,7 @@ void LoopSubdiv::ApplyDisplacementMap(
 
 		Vector displacement(nn);
 		displacement *=	- (
-				displacementMap.get()->Evaluate(NULL, dg) * displacementMapScale +
+				displacementMap.get()->Evaluate(swl, dg) * displacementMapScale +
 				displacementMapOffset);
 
 		verts[i]->P += displacement;

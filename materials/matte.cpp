@@ -34,21 +34,22 @@
 using namespace lux;
 
 // Matte Method Definitions
-BSDF *Matte::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
+BSDF *Matte::GetBSDF(MemoryArena *arena, const SpectrumWavelengths &sw,
+	const DifferentialGeometry &dgGeom,
 	const DifferentialGeometry &dgs,
 	const Volume *exterior, const Volume *interior) const
 {
 	// Allocate _BSDF_
 	// Evaluate textures for _Matte_ material and allocate BRDF
 	// NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
-	SWCSpectrum r = Kd->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
-	float sig = Clamp(sigma->Evaluate(tspack, dgs), 0.f, 90.f);
+	SWCSpectrum r = Kd->Evaluate(sw, dgs).Clamp(0.f, 1.f);
+	float sig = Clamp(sigma->Evaluate(sw, dgs), 0.f, 90.f);
 	BxDF *bxdf;
 	if (sig == 0.f)
-		bxdf = ARENA_ALLOC(tspack->arena, Lambertian)(r);
+		bxdf = ARENA_ALLOC(arena, Lambertian)(r);
 	else
-		bxdf = ARENA_ALLOC(tspack->arena, OrenNayar)(r, sig);
-	SingleBSDF *bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dgs,
+		bxdf = ARENA_ALLOC(arena, OrenNayar)(r, sig);
+	SingleBSDF *bsdf = ARENA_ALLOC(arena, SingleBSDF)(dgs,
 		dgGeom.nn, bxdf, exterior, interior);
 
 	// Add ptr to CompositingParams structure

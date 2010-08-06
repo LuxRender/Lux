@@ -96,7 +96,7 @@ boost::shared_ptr<lux::Texture<SWCSpectrum> > Context::GetColorTexture(const str
 	}
 	return boost::shared_ptr<lux::Texture<SWCSpectrum> >();
 }
-boost::shared_ptr<lux::Texture<const Fresnel *> > Context::GetFresnelTexture(const string &n) const
+boost::shared_ptr<lux::Texture<FresnelGeneral> > Context::GetFresnelTexture(const string &n) const
 {
 	if (n != "") {
 		if (graphicsState->fresnelTextures.find(n) !=
@@ -106,7 +106,7 @@ boost::shared_ptr<lux::Texture<const Fresnel *> > Context::GetFresnelTexture(con
 		ss << "Couldn't find fresnel texture named '" << n << "'";
 		luxError(LUX_BADTOKEN, LUX_ERROR, ss.str().c_str());
 	}
-	return boost::shared_ptr<lux::Texture<const Fresnel *> >();
+	return boost::shared_ptr<lux::Texture<FresnelGeneral> >();
 }
 boost::shared_ptr<lux::Material > Context::GetMaterial(const string &n) const
 {
@@ -417,7 +417,7 @@ void Context::Texture(const string &n, const string &type,
 			ss << "Fresnel texture '" << n << "' being redefined.";
 			luxError(LUX_SYNTAX, LUX_WARNING, ss.str().c_str());
 		}
-		boost::shared_ptr<lux::Texture<const Fresnel *> > fr(
+		boost::shared_ptr<lux::Texture<FresnelGeneral> > fr(
 			MakeFresnelTexture(texname, curTransform, params));
 		if (fr)
 			graphicsState->fresnelTextures[n] = fr;

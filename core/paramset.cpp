@@ -1316,15 +1316,15 @@ boost::shared_ptr<Texture<float> >
 	float val = FindOneFloat(n, def);
 	return boost::shared_ptr<Texture<float> >(new ConstantFloatTexture(val));
 }
-boost::shared_ptr<Texture<const Fresnel *> >
+boost::shared_ptr<Texture<FresnelGeneral> >
 	ParamSet::GetFresnelTexture(const string &n, float def) const
 {
-	boost::shared_ptr<Texture<const Fresnel *> > texture(
+	boost::shared_ptr<Texture<FresnelGeneral> > texture(
 		Context::GetActive()->GetFresnelTexture(FindTexture(n)));
 	if (texture)
 		return texture;
 	float val = FindOneFloat(n, def);
-	return boost::shared_ptr<Texture<const Fresnel *> >(new ConstantFresnelTexture(val));
+	return boost::shared_ptr<Texture<FresnelGeneral> >(new ConstantFresnelTexture(val));
 }
 boost::shared_ptr<Material> ParamSet::GetMaterial(const string &n) const
 {

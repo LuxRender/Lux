@@ -36,35 +36,36 @@
 using namespace lux;
 
 // Glossy Method Definitions
-BSDF *Glossy::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
+BSDF *Glossy::GetBSDF(MemoryArena *arena, const SpectrumWavelengths &sw,
+	const DifferentialGeometry &dgGeom,
 	const DifferentialGeometry &dgs,
 	const Volume *exterior, const Volume *interior) const
 {
 	// Allocate _BSDF_
 	// NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
-	SWCSpectrum d = Kd->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
-	SWCSpectrum s = Ks->Evaluate(tspack, dgs);
-	float i = index->Evaluate(tspack, dgs);
+	SWCSpectrum d = Kd->Evaluate(sw, dgs).Clamp(0.f, 1.f);
+	SWCSpectrum s = Ks->Evaluate(sw, dgs);
+	float i = index->Evaluate(sw, dgs);
 	if (i > 0.f) {
 		const float ti = (i-1)/(i+1);
 		s *= ti*ti;
 	}
 	s = s.Clamp(0.f, 1.f);
 
-	SWCSpectrum a = Ka->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
+	SWCSpectrum a = Ka->Evaluate(sw, dgs).Clamp(0.f, 1.f);
 
-	float u = nu->Evaluate(tspack, dgs);
-	float v = nv->Evaluate(tspack, dgs);
+	float u = nu->Evaluate(sw, dgs);
+	float v = nv->Evaluate(sw, dgs);
 	const float u2 = u * u;
 	const float v2 = v * v;
-	float ld = depth->Evaluate(tspack, dgs);
+	float ld = depth->Evaluate(sw, dgs);
 
 	const float anisotropy = u2 < v2 ? 1.f - u2 / v2 : v2 / u2 - 1.f;
 
-	SchlickDistribution *md = ARENA_ALLOC(tspack->arena, SchlickDistribution)(u * v, anisotropy);
-	SingleBSDF *bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dgs,
-		dgGeom.nn, ARENA_ALLOC(tspack->arena, FresnelBlend)(d, s, a, ld,
-		md), exterior, interior);
+	SchlickDistribution *md = ARENA_ALLOC(arena, SchlickDistribution)(u * v, anisotropy);
+	SingleBSDF *bsdf = ARENA_ALLOC(arena, SingleBSDF)(dgs,
+		dgGeom.nn, ARENA_ALLOC(arena, FresnelBlend)(d, s, a, ld, md),
+		exterior, interior);
 
 	// Add ptr to CompositingParams structure
 	bsdf->SetCompositingParams(compParams);

@@ -287,12 +287,11 @@ void RenderThread::Render(RenderThread *myThread) {
 	// initialize the threads tspack
 	myThread->tspack = new TsPack();	// TODO - radiance - remove
 
-	myThread->tspack->swl = new SpectrumWavelengths();
 	myThread->tspack->rng = new RandomGenerator();
 	myThread->tspack->rng->init(seed);
 	myThread->tspack->arena = new MemoryArena();
-	myThread->tspack->camera = myThread->scene->camera->Clone();
-	myThread->tspack->time = 0.f;
+	myThread->sample->camera = myThread->scene->camera->Clone();
+	myThread->sample->realTime = 0.f;
 
 	myThread->sampler->SetTsPack(myThread->tspack);
 
@@ -326,12 +325,12 @@ void RenderThread::Render(RenderThread *myThread) {
 		}
 
 		// save ray time value to tspack for later use
-		myThread->tspack->time = myThread->tspack->camera->GetTime(myThread->sample->time);
+		myThread->sample->realTime = myThread->sample->camera->GetTime(myThread->sample->time);
 		// sample camera transformation
-		myThread->tspack->camera->SampleMotion(myThread->tspack->time);
+		myThread->sample->camera->SampleMotion(myThread->sample->realTime);
 
 		// Sample new SWC thread wavelengths
-		myThread->tspack->swl->Sample(myThread->sample->wavelengths);
+		myThread->sample->swl.Sample(myThread->sample->wavelengths);
 
 		while (myThread->signal == PAUSE) {
 			boost::xtime xt;
@@ -377,10 +376,9 @@ void RenderThread::Render(RenderThread *myThread) {
 
 	delete useSampPos;
 
-	delete myThread->tspack->swl;
 	delete myThread->tspack->rng;
 	delete myThread->tspack->arena;
-//	delete myThread->tspack->camera; //FIXME deleting the camera clone would delete the film!
+//	delete myThread->sample->camera; //FIXME deleting the camera clone would delete the film!
 	delete myThread->tspack;
 	return;
 }
@@ -442,7 +440,6 @@ void Scene::Render() {
 
 	// initialize the preprocess thread's tspack
 	tspack = new TsPack();
-	tspack->swl = new SpectrumWavelengths();
 	tspack->rng = new RandomGenerator();
 	tspack->rng->init(seed);
 	tspack->arena = new MemoryArena();
@@ -500,7 +497,6 @@ void Scene::Render() {
 		contribPool->Delete();
 	}
 
-	delete tspack->swl;
 	delete tspack->rng;
 	delete tspack->arena;
 	delete tspack;

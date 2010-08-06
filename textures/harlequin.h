@@ -52,12 +52,13 @@ public:
 	}
 	virtual ~HarlequinTexture() { }
 
-	virtual SWCSpectrum Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
+	virtual SWCSpectrum Evaluate(const SpectrumWavelengths &sw,
+		const DifferentialGeometry &dg) const {
 		// Dade - I assume object are 8 bytes aligned
 		u_long lookupIndex = (((u_long)dg.handle) &
 				((HARLEQUIN_TEXTURE_PALETTE_SIZE-1) << 3)) >> 3;
 
-		return SWCSpectrum(tspack, ColorLookupTable[lookupIndex]);
+		return SWCSpectrum(sw, ColorLookupTable[lookupIndex]);
 	}
 	virtual float Y() const {
 		float y = 0.f;
@@ -71,7 +72,7 @@ public:
 			y += ColorLookupTable[i].Filter();
 		return y / HARLEQUIN_TEXTURE_PALETTE_SIZE;
 	}
-	virtual void GetDuv(const TsPack *tspack,
+	virtual void GetDuv(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg, float delta,
 		float *du, float *dv) const { *du = *dv = 0.f; }
 

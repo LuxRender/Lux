@@ -23,10 +23,6 @@
 // sky.h*
 #include "lux.h"
 #include "light.h"
-#include "texture.h"
-#include "shape.h"
-#include "scene.h"
-#include "spd.h"
 
 namespace lux
 {
@@ -42,19 +38,21 @@ public:
 	virtual float Power(const Scene *scene) const;
 	virtual bool IsDeltaLight() const { return false; }
 	virtual bool IsEnvironmental() const { return true; }
-	virtual bool Le(const TsPack *tspack, const Scene *scene, const Ray &r,
-		BSDF **bsdf, float *pdf, float *pdfDirect,
-		SWCSpectrum *L) const;
-	virtual float Pdf(const TsPack *tspack, const Point &p,
-		const Point &po, const Normal &ns) const;
-	virtual bool Sample_L(const TsPack *tspack, const Scene *scene,
-		float u1, float u2, float u3, BSDF **bsdf, float *pdf,
+	virtual bool Le(MemoryArena *arena, const Scene *scene,
+		const Sample *sample, const Ray &r, BSDF **bsdf, float *pdf,
+		float *pdfDirect, SWCSpectrum *L) const;
+	virtual float Pdf(const Point &p, const Point &po,
+		const Normal &ns) const;
+	virtual bool Sample_L(MemoryArena *arena, const Scene *scene,
+		const Sample *sample, float u1, float u2, float u3, BSDF **bsdf,
+		float *pdf, SWCSpectrum *Le) const;
+	virtual bool Sample_L(MemoryArena *arena, const Scene *scene,
+		const Sample *sample, const Point &p, float u1, float u2,
+		float u3, BSDF **bsdf, float *pdf, float *pdfDirect,
 		SWCSpectrum *Le) const;
-	virtual bool Sample_L(const TsPack *tspack, const Scene *scene,
-		const Point &p, float u1, float u2, float u3,
-		BSDF **bsdf, float *pdf, float *pdfDirect,
-		SWCSpectrum *Le) const;
-	void GetSkySpectralRadiance(const TsPack *tspack, const float theta, const float phi, SWCSpectrum * const dst_spect) const;
+	void GetSkySpectralRadiance(const SpectrumWavelengths &sw,
+		const float theta, const float phi,
+		SWCSpectrum *const dst_spect) const;
 
 	static Light *CreateLight(const Transform &light2world,
 		const ParamSet &paramSet);
@@ -65,7 +63,9 @@ private:
 	void SunThetaPhi(float &theta, float &phi) const;
 
 	void InitSunThetaPhi();
-	void ChromaticityToSpectrum(const TsPack *tspack, const float x, const float y, SWCSpectrum * const dst_spect) const;
+	void ChromaticityToSpectrum(const SpectrumWavelengths &sw,
+		const float x, const float y,
+		SWCSpectrum *const dst_spect) const;
 
 	// SkyLight Private Data
 	float skyScale;

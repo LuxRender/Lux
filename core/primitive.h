@@ -121,20 +121,19 @@ public:
 	 * from a given point. Only the p, nn, dpdu, dpdv, u and v need to be
 	 * calculated.
 	 *
-	 * @param tspack Thread data
 	 * @param p  The point that will be tested for visibility with the result.
 	 * @param u1 The point coordinate in the first dimension.
 	 * @param u2 The point coordinate in the second dimension.
 	 * @param u3 The subprimitive to sample.
 	 * @param dg The destination to store the sampled point data in.
 	 */
-	virtual void Sample(const TsPack *tspack, const Point &p,
-		float u1, float u2, float u3, DifferentialGeometry *dg) const {
+	virtual void Sample(const Point &p, float u1, float u2, float u3,
+		DifferentialGeometry *dg) const {
 		Sample(u1, u2, u3, dg);
 	}
 	/**
 	 * Returns the probability density for sampling the given point.
-	 * (@see Primitive::Sample(const TsPack*,const Point&,float,float,float,DifferentialGeometry*) const).
+	 * (@see Primitive::Sample(const Point&,float,float,float,DifferentialGeometry*) const).
 	 * No visibility test is done here.
 	 * @param p  The point that was to be tested for visibility with the result.
 	 * @param po The point that was sampled.
@@ -162,9 +161,10 @@ public:
 	// Intersection Public Methods
 	Intersection() : primitive(NULL), material(NULL), exterior(NULL),
 		interior(NULL), arealight(NULL) { }
-	BSDF *GetBSDF(const TsPack *tspack, const RayDifferential &ray) const;
-	SWCSpectrum Le(const TsPack *tspack, const Ray &ray,
-		BSDF **bsdf, float *pdf, float *pdfDirect) const;
+	BSDF *GetBSDF(MemoryArena *arena, const SpectrumWavelengths &sw,
+		const RayDifferential &ray) const;
+	SWCSpectrum Le(MemoryArena *arena, const Sample *sample,
+		const Ray &ray, BSDF **bsdf, float *pdf, float *pdfDirect) const;
 
 	void Set(const Transform& world2object,
 			const Primitive* prim, const Material* mat,
@@ -221,9 +221,9 @@ public:
 		prim->Sample(u1, u2, u3, dg);
 	}
 	virtual float Pdf(const Point &p) const { return prim->Pdf(p); }
-	virtual void Sample(const TsPack *tspack, const Point &P,
-			float u1, float u2, float u3, DifferentialGeometry *dg) const {
-		prim->Sample(tspack, P, u1, u2, u3, dg);
+	virtual void Sample(const Point &P, float u1, float u2, float u3,
+		DifferentialGeometry *dg) const {
+		prim->Sample(P, u1, u2, u3, dg);
 	}
 	virtual float Pdf(const Point &p, const Point &po) const {
 		return prim->Pdf(p, po);
@@ -290,9 +290,9 @@ public:
 	virtual float Pdf(const Point &p) const {
 		return instance->Pdf(WorldToInstance(p));
 	}
-	virtual void Sample(const TsPack *tspack, const Point &P,
-		float u1, float u2, float u3, DifferentialGeometry *dg) const {
-		instance->Sample(tspack, WorldToInstance(P), u1, u2, u3, dg);
+	virtual void Sample(const Point &P, float u1, float u2, float u3,
+		DifferentialGeometry *dg) const {
+		instance->Sample(WorldToInstance(P), u1, u2, u3, dg);
 		dg->p = InstanceToWorld(dg->p);
 		dg->nn = Normalize(InstanceToWorld(dg->nn));
 		dg->dpdu = InstanceToWorld(dg->dpdu);
@@ -384,10 +384,10 @@ public:
 	virtual float Pdf(const Point &p) const {
 		return instance->Pdf(p);
 	}
-	virtual void Sample(const TsPack *tspack, const Point &P,
-		float u1, float u2, float u3, DifferentialGeometry *dg) const {
+	virtual void Sample(const Point &P, float u1, float u2, float u3,
+		DifferentialGeometry *dg) const {
 		Transform InstanceToWorld = motionSystem.Sample(dg->time);
-		instance->Sample(tspack, InstanceToWorld.GetInverse()(P),
+		instance->Sample(InstanceToWorld.GetInverse()(P),
 			u1, u2, u3, dg);
 		dg->p = InstanceToWorld(dg->p);
 		dg->nn = Normalize(InstanceToWorld(dg->nn));

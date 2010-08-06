@@ -36,15 +36,15 @@ public:
 	NullTransmission()
 		: BxDF(BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) {}
 	virtual ~NullTransmission() { }
-	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi,
-		SWCSpectrum *const f_) const {
+	virtual void f(const SpectrumWavelengths &sw, const Vector &wo,
+		const Vector &wi, SWCSpectrum *const f_) const {
 		if (Dot(wo, wi) <= -1.f + MachineEpsilon::E(1.f))
 			*f_ += SWCSpectrum(1.f / fabsf(CosTheta(wi)));
 	}
-	virtual bool Sample_f(const TsPack *tspack, const Vector &wo,
+	virtual bool Sample_f(const SpectrumWavelengths &sw, const Vector &wo,
 		Vector *wi, float u1, float u2, SWCSpectrum *const f,
 		float *pdf, float *pdfBack = NULL, bool reverse = false) const;
-	virtual float Pdf(const TsPack *tspack, const Vector &wo,
+	virtual float Pdf(const SpectrumWavelengths &sw, const Vector &wo,
 		const Vector &wi) const {
 		return Dot(wo, wi) <= -1.f + MachineEpsilon::E(1.f) ? 1.f : 0.f;
 	}

@@ -31,13 +31,14 @@
 using namespace lux;
 
 // Glass Method Definitions
-BSDF *Null::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
+BSDF *Null::GetBSDF(MemoryArena *arena, const SpectrumWavelengths &sw,
+	const DifferentialGeometry &dgGeom,
 	const DifferentialGeometry &dgShading,
 	const Volume *exterior, const Volume *interior) const
 {
 	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
-	SingleBSDF *bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dgShading,
-		dgGeom.nn, ARENA_ALLOC(tspack->arena, NullTransmission)(),
+	SingleBSDF *bsdf = ARENA_ALLOC(arena, SingleBSDF)(dgShading,
+		dgGeom.nn, ARENA_ALLOC(arena, NullTransmission)(),
 		exterior, interior);
 
 	// Add ptr to CompositingParams structure
