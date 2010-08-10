@@ -249,29 +249,24 @@ void Scene::SignalThreads(ThreadSignals signal) {
 }
 
 // Scene Methods -----------------------
-RenderThread::RenderThread(u_int _n, ThreadSignals _signal,
-	SurfaceIntegrator* _Si, VolumeIntegrator* _Vi, Sampler* _Splr,
-	Camera* _Cam, Scene* _Scn) : n(_n), signal(_signal),
-	surfaceIntegrator(_Si), volumeIntegrator(_Vi), sample(NULL),
-	sampler(_Splr->clone()), camera(_Cam), scene(_Scn), thread(NULL),
-	samples(0.), blackSamples(0.)
+RenderThread::RenderThread(u_int _n, ThreadSignals _signal, Scene* _Scn) :
+	n(_n), signal(_signal), scene(_Scn), thread(NULL), samples(0.), blackSamples(0.)
 {
-	sample = new Sample(surfaceIntegrator, volumeIntegrator, scene);
 }
 
 RenderThread::~RenderThread()
 {
-//	delete sampler; //FIXME some samplers don't clone the data pointers so deleting here will result in a double free in Scene::~Scene and use of freed memory in other render threads
-	delete sample;
-	delete thread;
 }
 
 void RenderThread::Render(RenderThread *myThread) {
-	if (myThread->scene->IsFilmOnly())
+	Scene *scene = myThread->scene;
+	if (scene->IsFilmOnly())
 		return;
+	Sampler *sampler = scene->sampler->clone();
+	Sample sample(scene->surfaceIntegrator, scene->volumeIntegrator, scene);
 
 	// Dade - wait the end of the preprocessing phase
-	while (!myThread->scene->preprocessDone) {
+	while (!scene->preprocessDone) {
 		boost::xtime xt;
 		boost::xtime_get(&xt, boost::TIME_UTC);
 		++xt.sec;
@@ -279,33 +274,33 @@ void RenderThread::Render(RenderThread *myThread) {
 	}
 
 	// initialize the thread's rangen
-	u_long seed = myThread->scene->seedBase + myThread->n;
+	u_long seed = scene->seedBase + myThread->n;
 	std::stringstream ss;
 	ss << "Thread " << myThread->n << " uses seed: " << seed;
 	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
 	// initialize the threads tspack
-	myThread->tspack = new TsPack();	// TODO - radiance - remove
+	TsPack tspack;	// TODO - radiance - remove
 
-	myThread->tspack->rng = new RandomGenerator();
-	myThread->tspack->rng->init(seed);
-	myThread->tspack->arena = new MemoryArena();
-	myThread->sample->camera = myThread->scene->camera->Clone();
-	myThread->sample->realTime = 0.f;
+	RandomGenerator rng(seed);
+	tspack.rng = &rng;
+	MemoryArena arena;
+	tspack.arena = &arena;
+	sample.camera = scene->camera->Clone();
+	sample.realTime = 0.f;
 
-	myThread->sampler->SetTsPack(myThread->tspack);
+	sampler->SetTsPack(&tspack);
 
 	// allocate sample pos
-	u_int *useSampPos = new u_int();
-	*useSampPos = 0;
-	u_int maxSampPos = myThread->sampler->GetTotalSamplePos();
+	u_int usePos = 0;
+	u_int maxSampPos = sampler->GetTotalSamplePos();
 
 	// Trace rays: The main loop
 	while (true) {
-		if (!myThread->sampler->GetNextSample(myThread->sample, useSampPos)) {
+		if (!sampler->GetNextSample(&sample, &usePos)) {
 
 			// Dade - we have done, check what we have to do now
-			if (myThread->scene->suspendThreadsWhenDone) {
+			if (scene->suspendThreadsWhenDone) {
 				myThread->signal = PAUSE;
 
 				// Dade - wait for a resume rendering or exit
@@ -325,12 +320,12 @@ void RenderThread::Render(RenderThread *myThread) {
 		}
 
 		// save ray time value to tspack for later use
-		myThread->sample->realTime = myThread->sample->camera->GetTime(myThread->sample->time);
+		sample.realTime = sample.camera->GetTime(sample.time);
 		// sample camera transformation
-		myThread->sample->camera->SampleMotion(myThread->sample->realTime);
+		sample.camera->SampleMotion(sample.realTime);
 
 		// Sample new SWC thread wavelengths
-		myThread->sample->swl.Sample(myThread->sample->wavelengths);
+		sample.swl.Sample(sample.wavelengths);
 
 		while (myThread->signal == PAUSE) {
 			boost::xtime xt;
@@ -344,26 +339,26 @@ void RenderThread::Render(RenderThread *myThread) {
 		// Evaluate radiance along camera ray
 		// Jeanphi - Hijack statistics until volume integrator revamp
 		{
-			const u_int nContribs = myThread->surfaceIntegrator->Li(myThread->tspack,
-				myThread->scene, myThread->sample);
+			const u_int nContribs = scene->surfaceIntegrator->Li(&tspack,
+				scene, &sample);
 			// update samples statistics
 			fast_mutex::scoped_lock lockStats(myThread->statLock);
 			myThread->blackSamples += nContribs;
 			++(myThread->samples);
 		}
 
-		myThread->sampler->AddSample(*(myThread->sample));
+		sampler->AddSample(sample);
 
 		// Free BSDF memory from computing image sample value
-		myThread->tspack->arena->FreeAll();
+		arena.FreeAll();
 
 		// increment (locked) global sample pos if necessary (eg maxSampPos != 0)
-		if (*useSampPos == ~0U && maxSampPos != 0) {
+		if (usePos == ~0U && maxSampPos != 0) {
 			fast_mutex::scoped_lock lock(sampPosMutex);
 			sampPos++;
 			if (sampPos == maxSampPos)
 				sampPos = 0;
-			*useSampPos = sampPos;
+			usePos = sampPos;
 		}
 
 #ifdef WIN32
@@ -372,15 +367,10 @@ void RenderThread::Render(RenderThread *myThread) {
 #endif
 	}
 
-	myThread->sampler->Cleanup();
+	sampler->Cleanup();
 
-	delete useSampPos;
-
-	delete myThread->tspack->rng;
-	delete myThread->tspack->arena;
 //	delete myThread->sample->camera; //FIXME deleting the camera clone would delete the film!
-	delete myThread->tspack;
-	return;
+//	delete sampler; //FIXME some samplers don't clone the data pointers so deleting here will result in a double free in Scene::~Scene and use of freed memory in other render threads
 }
 
 u_int Scene::CreateRenderThread()
@@ -394,8 +384,7 @@ u_int Scene::CreateRenderThread()
 	// can happen when the rendering is done.
 	if (CurThreadSignal != EXIT) {
 		RenderThread *rt = new  RenderThread(renderThreads.size(),
-			CurThreadSignal, surfaceIntegrator, volumeIntegrator,
-			sampler, camera, this);
+			CurThreadSignal, this);
 
 		renderThreads.push_back(rt);
 		rt->thread = new boost::thread(boost::bind(RenderThread::Render, rt));
@@ -434,24 +423,21 @@ void Scene::Render() {
 	ss << "Preprocess thread uses seed: " << seed;
 	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
-	// initialize the contribution pool
-	contribPool = new ContributionPool();
-	contribPool->SetFilm(camera->film);
-
 	// initialize the preprocess thread's tspack
-	tspack = new TsPack();
-	tspack->rng = new RandomGenerator();
-	tspack->rng->init(seed);
-	tspack->arena = new MemoryArena();
+	TsPack tspack;
+	RandomGenerator rng(seed);
+	tspack.rng = &rng;
+	MemoryArena arena;
+	tspack.arena = &arena;
 
-	sampler->SetTsPack(tspack);
+	sampler->SetTsPack(&tspack);
 
 	// integrator preprocessing
 	camera->film->SetScene(this);
 	sampler->SetFilm(camera->film);
 	sampler->SetContributionPool(contribPool);
-	surfaceIntegrator->Preprocess(tspack, this);
-	volumeIntegrator->Preprocess(tspack, this);
+	surfaceIntegrator->Preprocess(&tspack, this);
+	volumeIntegrator->Preprocess(&tspack, this);
 	camera->film->CreateBuffers();
 
 	// Dade - to support autofocus for some camera model
@@ -497,9 +483,6 @@ void Scene::Render() {
 		contribPool->Delete();
 	}
 
-	delete tspack->rng;
-	delete tspack->arena;
-	delete tspack;
 }
 
 Scene::~Scene() {
@@ -520,7 +503,7 @@ Scene::Scene(Camera *cam, SurfaceIntegrator *si, VolumeIntegrator *vi,
 	stat_Samples(0.), stat_blackSamples(0.), aggregate(accel), lights(lts),
 	lightGroups(lg), camera(cam), volumeRegion(vr), surfaceIntegrator(si),
 	volumeIntegrator(vi), sampler(s), contribPool(NULL),
-	CurThreadSignal(PAUSE), tspack(NULL), filmOnly(false),
+	CurThreadSignal(PAUSE), filmOnly(false),
 	preprocessDone(false), suspendThreadsWhenDone(false)
 {
 	s_Timer.Reset();
@@ -533,6 +516,10 @@ Scene::Scene(Camera *cam, SurfaceIntegrator *si, VolumeIntegrator *vi,
 	seedBase = rand();
 
 	camera->film->RequestBufferGroups(lightGroups);
+
+	// initialize the contribution pool
+	contribPool = new ContributionPool();
+	contribPool->SetFilm(camera->film);
 }
 
 Scene::Scene(Camera *cam) :
@@ -540,7 +527,7 @@ Scene::Scene(Camera *cam) :
 	stat_Samples(0.), stat_blackSamples(0.), camera(cam),
 	volumeRegion(NULL), surfaceIntegrator(NULL),
 	volumeIntegrator(NULL), sampler(NULL), contribPool(NULL),
-	CurThreadSignal(PAUSE), tspack(NULL), filmOnly(true),
+	CurThreadSignal(PAUSE), filmOnly(true),
 	preprocessDone(false), suspendThreadsWhenDone(false)
 {
 	for(u_int i = 0; i < cam->film->GetNumBufferGroups(); i++)

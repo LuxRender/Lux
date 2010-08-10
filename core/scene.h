@@ -39,9 +39,7 @@ namespace lux {
 
 class RenderThread : public boost::noncopyable {
 public:
-	RenderThread(u_int _n, ThreadSignals _signal, SurfaceIntegrator* _Si,
-		VolumeIntegrator* _Vi, Sampler* _Splr, Camera* _Cam,
-		Scene* _Scn);
+	RenderThread(u_int _n, ThreadSignals _signal, Scene* _Scn);
 
 	~RenderThread();
 
@@ -49,13 +47,7 @@ public:
 
 	u_int  n;
 	ThreadSignals signal;
-	SurfaceIntegrator *surfaceIntegrator;
-	VolumeIntegrator *volumeIntegrator;
-	Sample *sample;
-	Sampler *sampler;
-	Camera *camera;
 	Scene *scene;
-	TsPack *tspack;
 	boost::thread *thread; // keep pointer to delete the thread object
 	double samples, blackSamples;
 	fast_mutex statLock;
@@ -168,7 +160,6 @@ private:
 	boost::mutex renderThreadsMutex;
 	std::vector<RenderThread*> renderThreads;
 	ThreadSignals CurThreadSignal;
-	TsPack *tspack;
 	bool filmOnly; // whether this scene has entire scene (incl. geometry, ..) or only a film
 
 public: // Put them last for better data alignment
