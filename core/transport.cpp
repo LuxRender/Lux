@@ -214,14 +214,14 @@ SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light
 			if (!scene->Intersect(tspack, sample, volume, ray, &lightIsect,
 				&ibsdf, &Li))
 				lit = light->Le(tspack->arena, scene, sample,
-					ray, &ibsdf, NULL, &lightPdf, &Li);
+					ray, &lightBsdf, NULL, &lightPdf, &Li);
 			else if (lightIsect.arealight == light) {
 				Li *= lightIsect.Le(tspack->arena, sample, ray,
-					&ibsdf, NULL, &lightPdf);
+					&lightBsdf, NULL, &lightPdf);
 				lit = !Li.Black();
 			}
 			if (lit) {
-				const float d2 = DistanceSquared(p, ibsdf->dgShading.p);
+				const float d2 = DistanceSquared(p, lightBsdf->dgShading.p);
 				const float lightPdf2 = lightPdf * d2 /
 					AbsDot(wi, lightBsdf->nn);
 				const float weight = PowerHeuristic(1, bsdfPdf,
