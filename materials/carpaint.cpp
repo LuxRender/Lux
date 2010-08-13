@@ -59,7 +59,7 @@ CarPaint::CarPaint(boost::shared_ptr<Texture<SWCSpectrum> > &kd,
 }
 
 // CarPaint Method Definitions
-BSDF *CarPaint::GetBSDF(MemoryArena *arena, const SpectrumWavelengths &sw,
+BSDF *CarPaint::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 	const DifferentialGeometry &dgGeom,
 	const DifferentialGeometry &dgs,
 	const Volume *exterior, const Volume *interior) const {

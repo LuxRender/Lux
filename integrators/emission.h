@@ -34,10 +34,11 @@ public:
 	// EmissionIntegrator Public Methods
 	EmissionIntegrator(float ss, u_int g) : group(g) { stepSize = ss; }
 	virtual ~EmissionIntegrator() { }
-	virtual void RequestSamples(Sample *sample, const Scene *scene);
-	virtual void Transmittance(const TsPack *tspack, const Scene *, const Ray &ray,
-		const Sample *sample, float *alpha, SWCSpectrum *const L) const;
-	virtual u_int Li(const TsPack *tspack, const Scene *, const RayDifferential &ray, const Sample *sample, SWCSpectrum *L, float *alpha) const;
+	virtual void RequestSamples(Sample *sample, const Scene &scene);
+	virtual void Transmittance(const Scene &, const Ray &ray,
+		const Sample &sample, float *alpha, SWCSpectrum *const L) const;
+	virtual u_int Li(const Scene &, const RayDifferential &ray,
+		const Sample &sample, SWCSpectrum *L, float *alpha) const;
 	static VolumeIntegrator *CreateVolumeIntegrator(const ParamSet &params);
 private:
 	// EmissionIntegrator Private Data

@@ -37,35 +37,36 @@ DirectLightingIntegrator::DirectLightingIntegrator(u_int md) {
 	maxDepth = md;
 }
 
-void DirectLightingIntegrator::RequestSamples(Sample *sample, const Scene *scene) {
+void DirectLightingIntegrator::RequestSamples(Sample *sample, const Scene &scene) {
 	// Allocate and request samples for light sampling
 	hints.RequestSamples(sample, scene, maxDepth + 1);
 }
 
-void DirectLightingIntegrator::Preprocess(const TsPack *tspack, const Scene *scene)
+void DirectLightingIntegrator::Preprocess(const RandomGenerator &rng,
+	const Scene &scene)
 {
 	// Prepare image buffers
 	BufferType type = BUF_TYPE_PER_PIXEL;
-	scene->sampler->GetBufferType(&type);
-	bufferId = scene->camera->film->RequestBuffer(type, BUF_FRAMEBUFFER, "eye");
+	scene.sampler->GetBufferType(&type);
+	bufferId = scene.camera->film->RequestBuffer(type, BUF_FRAMEBUFFER, "eye");
 
 	hints.InitStrategies(scene);
 }
 
-u_int DirectLightingIntegrator::LiInternal(const TsPack *tspack,
-	const Scene *scene, const Volume *volume, const RayDifferential &ray,
-	const Sample *sample, vector<SWCSpectrum> &L, float *alpha,
-	float &distance, u_int rayDepth) const
+u_int DirectLightingIntegrator::LiInternal(const Scene &scene,
+	const Sample &sample, const Volume *volume, const RayDifferential &ray,
+	vector<SWCSpectrum> &L, float *alpha, float &distance,
+	u_int rayDepth) const
 {
 	u_int nContribs = 0;
 	Intersection isect;
 	BSDF *bsdf;
 	const float time = ray.time; // save time for motion blur
-	const float nLights = scene->lights.size();
-	const SpectrumWavelengths &sw(sample->swl);
+	const float nLights = scene.lights.size();
+	const SpectrumWavelengths &sw(sample.swl);
 	SWCSpectrum Lt(1.f);
 
-	if (scene->Intersect(tspack, sample, volume, ray, &isect, &bsdf, &Lt)) {
+	if (scene.Intersect(sample, volume, ray, &isect, &bsdf, &Lt)) {
 		if (rayDepth == 0)
 			distance = ray.maxt * ray.d.Length();
 
@@ -75,8 +76,8 @@ u_int DirectLightingIntegrator::LiInternal(const TsPack *tspack,
 		// Compute emitted light if ray hit an area light source
 		if (isect.arealight) {
 			BSDF *ibsdf;
-			L[isect.arealight->group] += isect.Le(tspack->arena,
-				sample, ray, &ibsdf, NULL, NULL);
+			L[isect.arealight->group] += isect.Le(sample, ray,
+				&ibsdf, NULL, NULL);
 			++nContribs;
 		}
 
@@ -84,10 +85,10 @@ u_int DirectLightingIntegrator::LiInternal(const TsPack *tspack,
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;
 		if (nLights > 0) {
-			const u_int lightGroupCount = scene->lightGroups.size();
+			const u_int lightGroupCount = scene.lightGroups.size();
 			vector<SWCSpectrum> Ld(lightGroupCount, 0.f);
-			nContribs += hints.SampleLights(tspack, scene, p, n, wo, bsdf,
-					sample, rayDepth, 1.f, Ld);
+			nContribs += hints.SampleLights(scene, sample, p, n, wo,
+				bsdf, rayDepth, 1.f, Ld);
 
 			for (u_int i = 0; i < lightGroupCount; ++i)
 				L[i] += Ld[i];
@@ -105,8 +106,11 @@ u_int DirectLightingIntegrator::LiInternal(const TsPack *tspack,
 				RayDifferential rd(p, wi);
 				rd.time = time;
 				bsdf->ComputeReflectionDifferentials(ray, rd);
-				vector<SWCSpectrum> Lr(scene->lightGroups.size(), SWCSpectrum(0.f));
-				u_int nc = LiInternal(tspack, scene, bsdf->GetVolume(wi), rd, sample, Lr, alpha, distance, rayDepth + 1);
+				vector<SWCSpectrum> Lr(scene.lightGroups.size(),
+					SWCSpectrum(0.f));
+				u_int nc = LiInternal(scene, sample,
+					bsdf->GetVolume(wi), rd, Lr, alpha,
+					distance, rayDepth + 1);
 				if (nc > 0) {
 					SWCSpectrum filter(f *
 						(AbsDot(wi, n) / pdf));
@@ -123,8 +127,11 @@ u_int DirectLightingIntegrator::LiInternal(const TsPack *tspack,
 				RayDifferential rd(p, wi);
 				rd.time = time;
 				bsdf->ComputeTransmissionDifferentials(sw, ray, rd);
-				vector<SWCSpectrum> Lr(scene->lightGroups.size(), SWCSpectrum(0.f));
-				u_int nc = LiInternal(tspack, scene, bsdf->GetVolume(wi), rd, sample, Lr, alpha, distance, rayDepth + 1);
+				vector<SWCSpectrum> Lr(scene.lightGroups.size(),
+					SWCSpectrum(0.f));
+				u_int nc = LiInternal(scene, sample,
+					bsdf->GetVolume(wi), rd, Lr, alpha,
+					distance, rayDepth + 1);
 				if (nc > 0) {
 					SWCSpectrum filter(f *
 						(AbsDot(wi, n) / pdf));
@@ -139,9 +146,9 @@ u_int DirectLightingIntegrator::LiInternal(const TsPack *tspack,
 		BSDF *ibsdf;
 		for (u_int i = 0; i < nLights; ++i) {
 			SWCSpectrum Le(1.f);
-			if (scene->lights[i]->Le(tspack->arena, scene, sample,
-				ray, &ibsdf, NULL, NULL, &Le)) {
-				L[scene->lights[i]->group] += Le;
+			if (scene.lights[i]->Le(scene, sample, ray, &ibsdf,
+				NULL, NULL, &Le)) {
+				L[scene.lights[i]->group] += Le;
 				++nContribs;
 			}
 		}
@@ -156,7 +163,7 @@ u_int DirectLightingIntegrator::LiInternal(const TsPack *tspack,
 			L[i] *= Lt;
 	}
 	SWCSpectrum VLi(0.f);
-	u_int g = scene->volumeIntegrator->Li(tspack, scene, ray, sample, &VLi, alpha);
+	u_int g = scene.volumeIntegrator->Li(scene, ray, sample, &VLi, alpha);
 	if (!VLi.Black()) {
 		L[g] += VLi;
 		++nContribs;
@@ -165,21 +172,21 @@ u_int DirectLightingIntegrator::LiInternal(const TsPack *tspack,
 	return nContribs;
 }
 
-u_int DirectLightingIntegrator::Li(const TsPack *tspack, const Scene *scene,
-	const Sample *sample) const
+u_int DirectLightingIntegrator::Li(const Scene &scene,
+	const Sample &sample) const
 {
         RayDifferential ray;
-        float rayWeight = sample->camera->GenerateRay(tspack->arena, scene,
-		*sample, &ray);
+        float rayWeight = sample.camera->GenerateRay(scene, sample, &ray);
 
-	vector<SWCSpectrum> L(scene->lightGroups.size(), SWCSpectrum(0.f));
+	vector<SWCSpectrum> L(scene.lightGroups.size(), SWCSpectrum(0.f));
 	float alpha = 1.f;
 	float distance;
-	u_int nContribs = LiInternal(tspack, scene, NULL, ray, sample, L, &alpha, distance, 0);
+	u_int nContribs = LiInternal(scene, sample, NULL, ray, L, &alpha,
+		distance, 0);
 
-	for (u_int i = 0; i < scene->lightGroups.size(); ++i)
-		sample->AddContribution(sample->imageX, sample->imageY,
-			XYZColor(sample->swl, L[i]) * rayWeight, alpha,
+	for (u_int i = 0; i < scene.lightGroups.size(); ++i)
+		sample.AddContribution(sample.imageX, sample.imageY,
+			XYZColor(sample.swl, L[i]) * rayWeight, alpha,
 			distance, 0.f, bufferId, i);
 
 	return nContribs;

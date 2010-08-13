@@ -169,7 +169,7 @@ void PerspectiveCamera::SampleMotion(float time)
 	normal = CameraToWorld(Normal(0,0,1));
 }
 
-void PerspectiveCamera::AutoFocus(Scene* scene)
+void PerspectiveCamera::AutoFocus(const Scene &scene)
 {
 	if (autoFocus) {
 		std::stringstream ss;
@@ -195,7 +195,7 @@ void PerspectiveCamera::AutoFocus(Scene* scene)
 		CameraToWorld(ray, &ray);
 
 		Intersection isect;
-		if (scene->Intersect(ray, &isect))
+		if (scene.Intersect(ray, &isect))
 			FocalDistance = ray.maxt;
 		else
 			LOG(LUX_WARNING, LUX_NOERROR) <<
@@ -206,8 +206,8 @@ void PerspectiveCamera::AutoFocus(Scene* scene)
 	}
 }
 
-bool PerspectiveCamera::Sample_W(MemoryArena *arena,
-	const SpectrumWavelengths &sw, const Scene *scene,
+bool PerspectiveCamera::Sample_W(MemoryArena &arena,
+	const SpectrumWavelengths &sw, const Scene &scene,
 	float u1, float u2, float u3, BSDF **bsdf, float *pdf,
 	SWCSpectrum *We) const
 {
@@ -227,8 +227,8 @@ bool PerspectiveCamera::Sample_W(MemoryArena *arena,
 	*We = SWCSpectrum(posPdf);
 	return true;
 }
-bool PerspectiveCamera::Sample_W(MemoryArena *arena,
-	const SpectrumWavelengths &sw, const Scene *scene,
+bool PerspectiveCamera::Sample_W(MemoryArena &arena,
+	const SpectrumWavelengths &sw, const Scene &scene,
 	const Point &p, const Normal &n, float u1, float u2, float u3,
 	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *We) const
 {

@@ -37,7 +37,7 @@ public:
 
 	virtual u_int GetTotalSamplePos();
 	virtual bool GetNextSample(Sample *sample, u_int *use_pos);
-	virtual float *GetLazyValues(Sample *sample, u_int num, u_int pos);
+	virtual float *GetLazyValues(const Sample &sample, u_int num, u_int pos);
 	virtual u_int RoundSize(u_int sz) const { return sz; }
 	virtual void GetBufferType(BufferType *type) {*type = BUF_TYPE_PER_PIXEL;}
 	virtual RandomSampler* clone() const; // Lux (copy) constructor for multithreading

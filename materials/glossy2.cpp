@@ -35,7 +35,7 @@
 using namespace lux;
 
 // Glossy Method Definitions
-BSDF *Glossy2::GetBSDF(MemoryArena *arena, const SpectrumWavelengths &sw,
+BSDF *Glossy2::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 	const DifferentialGeometry &dgGeom,
 	const DifferentialGeometry &dgs,
 	const Volume *exterior, const Volume *interior) const

@@ -42,7 +42,7 @@ public:
 	virtual u_int GetTotalSamplePos() { return 0; }
 	virtual u_int RoundSize(u_int size) const { return size; }
 	virtual bool GetNextSample(Sample *sample, u_int *use_pos);
-	virtual float *GetLazyValues(Sample *sample, u_int num, u_int pos);
+	virtual float *GetLazyValues(const Sample &sample, u_int num, u_int pos);
 	virtual void AddSample(const Sample &sample);
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
 	virtual bool IsMutating() { return true; }

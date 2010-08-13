@@ -39,37 +39,35 @@ public:
 	enum RenderingMode { RM_DIRECTLIGHTING, RM_PATH };
 
 	// ExPhotonIntegrator Public Methods
-	ExPhotonIntegrator(
-			RenderingMode rm,
-			u_int ndir, u_int ncaus, u_int nindir, u_int nrad,
-			u_int nLookup, u_int mdepth, u_int mpdepth,
-			float maxdist, bool finalGather, u_int gatherSamples, float ga,
-			PhotonMapRRStrategy rrstrategy, float rrcontprob,
-			float distThreshold,
-			string *mapsFileName,
-			bool dbgEnableDirect, bool dbgEnableDirectMap, bool dbgEnableCaustic,
-			bool dbgEnableIndirect, bool dbgEnableSpecular);
+	ExPhotonIntegrator( RenderingMode rm, u_int ndir, u_int ncaus,
+		u_int nindir, u_int nrad, u_int nLookup, u_int mdepth,
+		u_int mpdepth, float maxdist, bool finalGather,
+		u_int gatherSamples, float ga, PhotonMapRRStrategy rrstrategy,
+		float rrcontprob, float distThreshold, string *mapsFileName,
+		bool dbgEnableDirect, bool dbgEnableDirectMap,
+		bool dbgEnableCaustic, bool dbgEnableIndirect,
+		bool dbgEnableSpecular);
 	virtual ~ExPhotonIntegrator();
 
-	virtual u_int Li(const TsPack *tspack, const Scene *scene,
-		const Sample *sample) const;
-	virtual void RequestSamples(Sample *sample, const Scene *scene);
-	virtual void Preprocess(const TsPack *tspack, const Scene *scene);
+	virtual u_int Li(const Scene &scene, const Sample &sample) const;
+	virtual void RequestSamples(Sample *sample, const Scene &scene);
+	virtual void Preprocess(const RandomGenerator &rng, const Scene &scene);
 
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 private:
-    SWCSpectrum LiDirectLightingMode(const TsPack *tspack, const Scene *scene, 
-		const Volume *volume, const RayDifferential &ray,
-		const Sample *sample, float *alpha,
+	SWCSpectrum LiDirectLightingMode(const Scene &scene,
+		const Sample &sample, const Volume *volume,
+		const RayDifferential &ray, float *alpha,
 		const u_int reflectionDepth, const bool specularBounce) const;
-    SWCSpectrum LiPathMode(const TsPack *tspack, const Scene *scene,
-		const RayDifferential &ray, const Sample *sample, float *alpha) const;
+	SWCSpectrum LiPathMode(const Scene &scene, const Sample &sample,
+		const RayDifferential &ray, float *alpha) const;
 
 	// ExPhotonIntegrator Private Data
 	SurfaceIntegratorRenderingHints hints;
 
 	RenderingMode renderingMode;
-	u_int nDirectPhotons, nCausticPhotons, nIndirectPhotons, nRadiancePhotons;
+	u_int nDirectPhotons, nCausticPhotons, nIndirectPhotons,
+	      nRadiancePhotons;
 	u_int nLookup;
 	u_int maxDepth, maxPhotonDepth;
 	float maxDistSquared;
@@ -86,7 +84,7 @@ private:
 
 	// Dade - debug flags
 	bool debugEnableDirect, debugUseRadianceMap, debugEnableCaustic,
-			debugEnableIndirect, debugEnableSpecular;
+		debugEnableIndirect, debugEnableSpecular;
 
 	u_int bufferId;
 

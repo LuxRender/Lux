@@ -43,7 +43,7 @@ public:
 	virtual void GetBufferType(BufferType *type) {*type = BUF_TYPE_PER_PIXEL;}
 	virtual u_int GetTotalSamplePos();
 	virtual bool GetNextSample(Sample *sample, u_int *use_pos);
-	virtual float *GetLazyValues(Sample *sample, u_int num, u_int pos);
+	virtual float *GetLazyValues(const Sample &sample, u_int num, u_int pos);
 	virtual LDSampler* clone() const; // Lux (copy) constructor for multithreading
 
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);

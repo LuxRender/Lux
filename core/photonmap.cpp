@@ -326,7 +326,7 @@ static bool unsuccessful(u_int needed, u_int found, u_int shot)
 	return (found < needed && (found == 0 || found < shot / 1024));
 }
 
-void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene, 
+void PhotonMapPreprocess(const RandomGenerator &rng, const Scene &scene, 
 	const string *mapFileName, const BxDFType photonBxdfType,
 	const BxDFType radianceBxdfType, u_int nDirectPhotons,
 	u_int nRadiancePhotons, RadiancePhotonMap *radianceMap,
@@ -334,7 +334,7 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 	u_int nCausticPhotons, LightPhotonMap *causticMap,
 	u_int maxDepth)
 {
-	if (scene->lights.size() == 0)
+	if (scene.lights.size() == 0)
 		return;
 
 	std::stringstream ss;
@@ -379,7 +379,7 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 				//TODO should compare a scene hash or something
 				u_int storedNLights;
 				storedNLights = osReadLittleEndianUInt(isLittleEndian, ifs);
-				if (storedNLights != scene->lights.size() ) {
+				if (storedNLights != scene.lights.size() ) {
 					luxError(LUX_NOERROR, LUX_INFO, "Scene changed, rebuilding photon maps...");
 					ok = false;
 				}
@@ -461,17 +461,17 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 	bool radianceDone = (nRadiancePhotons == 0);
 
 	// Dade - initialize SpectrumWavelengths
-	Sample sample(scene->surfaceIntegrator, scene->volumeIntegrator, scene);
+	Sample sample(scene.surfaceIntegrator, scene.volumeIntegrator, scene);
 	SpectrumWavelengths &sw(sample.swl);
-	sample.camera = scene->camera->Clone();
+	sample.camera = scene.camera->Clone();
 	sample.realTime = sample.camera->GetTime(.5f); //FIXME sample it
 	sample.camera->SampleMotion(sample.realTime);
 
 	// Compute light power CDF for photon shooting
-	u_int nLights = scene->lights.size();
+	u_int nLights = scene.lights.size();
 	float *lightPower = new float[nLights];
 	for (u_int i = 0; i < nLights; ++i)
-		lightPower[i] = scene->lights[i]->Power(scene);
+		lightPower[i] = scene.lights[i]->Power(scene);
 	Distribution1D lightCDF(lightPower, nLights);
 	delete[] lightPower;
 
@@ -554,14 +554,14 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 		float lightPdf;
 		float uln = RadicalInverse(nshot, 19);
 		u_int lightNum = lightCDF.SampleDiscrete(uln, &lightPdf);
-		const Light *light = scene->lights[lightNum];
+		const Light *light = scene.lights[lightNum];
 
 		// Generate _photonRay_ from light source and initialize _alpha_
 		BSDF *bsdf;
 		float pdf;
 		SWCSpectrum alpha;
-		if (!light->Sample_L(tspack->arena, scene, &sample,
-			u[0], u[1], u[2], &bsdf, &pdf, &alpha))
+		if (!light->Sample_L(scene, sample, u[0], u[1], u[2],
+			&bsdf, &pdf, &alpha))
 			continue;
 		RayDifferential photonRay;
 		photonRay.o = bsdf->dgShading.p;
@@ -580,13 +580,11 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 			const Volume *volume = NULL; //FIXME: try to get volume from light
 			BSDF *photonBSDF;
 			u_int nIntersections = 0;
-			while (scene->Intersect(tspack, &sample, volume,
+			while (scene.Intersect(sample, volume,
 				photonRay, &photonIsect, &photonBSDF, &alpha)) {
 				++nIntersections;
 
 				// Handle photon/surface intersection
-				//Lotus - disabled due to lack of non-optional sample
-				//scene->Transmittance(tspack, photonRay, NULL, alpha);
 				Vector wo = -photonRay.d;
 
 				if (photonBSDF->NumComponents(photonBxdfType) > 0) {
@@ -630,7 +628,7 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 					if (computeRadianceMap && 
 						(!radianceDone) && 
 						(photonBSDF->NumComponents(radianceBxdfType) > 0) && 
-						(tspack->rng->floatValue() < 0.125f)) {
+						(rng.floatValue() < 0.125f)) {
 						SWCSpectrum rho_t =
 							photonBSDF->rho(sw, BxDFType(radianceBxdfType & BSDF_ALL_TRANSMISSION));
 						SWCSpectrum rho_r = 
@@ -663,9 +661,9 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 					u2 = RadicalInverse(nshot, 29);
 					u3 = RadicalInverse(nshot, 31);
 				} else {
-					u1 = tspack->rng->floatValue();
-					u2 = tspack->rng->floatValue();
-					u3 = tspack->rng->floatValue();
+					u1 = rng.floatValue();
+					u2 = rng.floatValue();
+					u3 = rng.floatValue();
 				}
 
 				// Compute new photon weight and possibly terminate with RR
@@ -677,7 +675,7 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 					AbsDot(wo, photonBSDF->nn) /
 					(AbsDot(wo, photonBSDF->ng) * pdfo));
 				float continueProb = min(1.f, anew.Filter(sw));
-				if (tspack->rng->floatValue() > continueProb || nIntersections > maxDepth)
+				if (rng.floatValue() > continueProb || nIntersections > maxDepth)
 					break;
 				alpha *= anew / continueProb;
 				specularPath = (nIntersections == 1 || specularPath) &&
@@ -687,7 +685,7 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 			}
 		}
 
-		tspack->arena->FreeAll();
+		sample.arena.FreeAll();
 	}
 
 	boost::xtime photonShootingEndTime;
@@ -773,7 +771,7 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 			osWriteLittleEndianUInt(isLittleEndian, ofs, nRadiancePhotons);
 			osWriteLittleEndianUInt(isLittleEndian, ofs, nIndirectPhotons);
 			osWriteLittleEndianUInt(isLittleEndian, ofs, nCausticPhotons);
-			osWriteLittleEndianUInt(isLittleEndian, ofs, scene->lights.size());
+			osWriteLittleEndianUInt(isLittleEndian, ofs, scene.lights.size());
 
 			// Dade - write the data
 			// Dade - save radiance photon map
@@ -821,8 +819,8 @@ void PhotonMapPreprocess(const TsPack *tspack, const Scene *scene,
 	}
 }
 
-SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const TsPack* tspack,
-	const Scene *scene, const Sample *sample, u_int sampleFinalGather1Offset,
+SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const Scene &scene,
+	const Sample &sample, u_int sampleFinalGather1Offset,
 	u_int sampleFinalGather2Offset, u_int gatherSamples, float cosGatherAngle,
 	PhotonMapRRStrategy rrStrategy, float rrContinueProbability,
 	const LightPhotonMap *indirectMap, const RadiancePhotonMap *radianceMap,
@@ -866,12 +864,12 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const TsPack* tspack,
 			photonDirs[i] = proc.photons[i].photon->wi;
 
 		const float scaledCosGatherAngle = 0.999f * cosGatherAngle;
-		const SpectrumWavelengths &sw(sample->swl);
+		const SpectrumWavelengths &sw(sample.swl);
 		// Use BSDF to do final gathering
 		SWCSpectrum Li(0.f);
 		for (u_int i = 0; i < gatherSamples ; ++i) {
-			float *sampleFGData = sample->sampler->GetLazyValues(
-				const_cast<Sample *>(sample), sampleFinalGather1Offset, i);
+			float *sampleFGData = sample.sampler->GetLazyValues(
+				sample, sampleFinalGather1Offset, i);
 
 			// Sample random direction from BSDF for final gather ray
 			Vector wi;
@@ -903,9 +901,8 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const TsPack* tspack,
 			// Trace BSDF final gather ray and accumulate radiance
 			RayDifferential bounceRay(p, wi);
 			Intersection gatherIsect;
-			if (scene->Intersect(tspack, sample,
-				bsdf->GetVolume(wi), bounceRay, &gatherIsect,
-				NULL, &fr)) {
+			if (scene.Intersect(sample, bsdf->GetVolume(wi),
+				bounceRay, &gatherIsect, NULL, &fr)) {
 				// Compute exitant radiance using precomputed irradiance
 				Normal nGather = gatherIsect.dg.nn;
 				if (Dot(nGather, bounceRay.d) > 0)
@@ -917,7 +914,6 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const TsPack* tspack,
 				if (procir.photon) {
 					SWCSpectrum Lindir = procir.photon->GetSWCSpectrum(sw);
 
-					scene->Transmittance(tspack, bounceRay, sample, &Lindir);
 					// Compute MIS weight for BSDF-sampled gather ray
 					// Compute PDF for photon-sampling of direction _wi_
 					float photonPdf = 0.f;
@@ -940,8 +936,8 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const TsPack* tspack,
 		// Use nearby photons to do final gathering
 		Li = 0.f;
 		for (u_int i = 0; i < gatherSamples; ++i) {
-			float *sampleFGData = sample->sampler->GetLazyValues(
-				const_cast<Sample *>(sample), sampleFinalGather2Offset, i);
+			float *sampleFGData = sample.sampler->GetLazyValues(
+				sample, sampleFinalGather2Offset, i);
 
 			// Sample random direction using photons for final gather ray
 			float u1 = sampleFGData[2];
@@ -987,9 +983,8 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const TsPack* tspack,
 
 			RayDifferential bounceRay(p, wi);
 			Intersection gatherIsect;
-			if (scene->Intersect(tspack, sample,
-				bsdf->GetVolume(wi), bounceRay, &gatherIsect,
-				NULL, &fr)) {
+			if (scene.Intersect(sample, bsdf->GetVolume(wi),
+				bounceRay, &gatherIsect, NULL, &fr)) {
 				// Compute exitant radiance using precomputed irradiance
 				Normal nGather = gatherIsect.dg.nn;
 				if (Dot(nGather, bounceRay.d) > 0)
@@ -1001,7 +996,6 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const TsPack* tspack,
 				if (procir.photon) {
 					SWCSpectrum Lindir = procir.photon->GetSWCSpectrum(sw);
 
-					scene->Transmittance(tspack, bounceRay, sample, &Lindir);
 					// Compute MIS weight for photon-sampled gather ray
 					float bsdfPdf = bsdf->Pdf(sw, wi, wo, bxdfType);
 					float wt = PowerHeuristic(gatherSamples, photonPdf, gatherSamples, bsdfPdf);
@@ -1019,8 +1013,8 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const TsPack* tspack,
 	return L;
 }
 
-SWCSpectrum PhotonMapFinalGather(const TsPack *tspack, const Scene *scene,
-	const Sample *sample, u_int sampleFinalGatherOffset, u_int gatherSamples,
+SWCSpectrum PhotonMapFinalGather(const Scene &scene, const Sample &sample,
+	u_int sampleFinalGatherOffset, u_int gatherSamples,
 	PhotonMapRRStrategy rrStrategy, float rrContinueProbability,
 	const LightPhotonMap *indirectMap, const RadiancePhotonMap *radianceMap,
 	const Vector &wo, const BSDF *bsdf, const BxDFType bxdfType) 
@@ -1031,13 +1025,13 @@ SWCSpectrum PhotonMapFinalGather(const TsPack *tspack, const Scene *scene,
 	if (bsdf->NumComponents(bxdfType) > 0 && !radianceMap->IsEmpty()) {
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;
-		const SpectrumWavelengths &sw(sample->swl);
+		const SpectrumWavelengths &sw(sample.swl);
 
 		// Use BSDF to do final gathering
 		SWCSpectrum Li(0.f);
 		for (u_int i = 0; i < gatherSamples ; ++i) {
-			float *sampleFGData = sample->sampler->GetLazyValues(
-				const_cast<Sample *>(sample), sampleFinalGatherOffset, i);
+			float *sampleFGData = sample.sampler->GetLazyValues(
+				sample, sampleFinalGatherOffset, i);
 
 			// Sample random direction from BSDF for final gather ray
 			Vector wi;
@@ -1069,9 +1063,8 @@ SWCSpectrum PhotonMapFinalGather(const TsPack *tspack, const Scene *scene,
 			// Trace BSDF final gather ray and accumulate radiance
 			RayDifferential bounceRay(p, wi);
 			Intersection gatherIsect;
-			if (scene->Intersect(tspack, sample,
-				bsdf->GetVolume(wi), bounceRay, &gatherIsect,
-				NULL, &fr)) {
+			if (scene.Intersect(sample, bsdf->GetVolume(wi),
+				bounceRay, &gatherIsect, NULL, &fr)) {
 				// Compute exitant radiance using precomputed irradiance
 				Normal nGather = gatherIsect.dg.nn;
 				if (Dot(nGather, bounceRay.d) > 0)
@@ -1082,7 +1075,6 @@ SWCSpectrum PhotonMapFinalGather(const TsPack *tspack, const Scene *scene,
 				radianceMap->lookup(gatherIsect.dg.p, proc, md2);
 				if (proc.photon) {
 					SWCSpectrum Lindir = proc.photon->GetSWCSpectrum(sw);
-					scene->Transmittance(tspack, bounceRay, sample, &Lindir);
 
 					Li += fr * Lindir * (AbsDot(wi, n) / pdf);
 				}

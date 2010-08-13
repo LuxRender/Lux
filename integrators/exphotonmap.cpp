@@ -83,7 +83,7 @@ ExPhotonIntegrator::~ExPhotonIntegrator()
 	delete radianceMap;
 }
 
-void ExPhotonIntegrator::RequestSamples(Sample *sample, const Scene *scene)
+void ExPhotonIntegrator::RequestSamples(Sample *sample, const Scene &scene)
 {
 	// Dade - allocate and request samples
 	if (renderingMode == RM_DIRECTLIGHTING) {
@@ -131,11 +131,13 @@ void ExPhotonIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 	hints.RequestSamples(sample, scene, maxDepth + 1);
 }
 
-void ExPhotonIntegrator::Preprocess(const TsPack *tspack, const Scene *scene) {
+void ExPhotonIntegrator::Preprocess(const RandomGenerator &rng,
+	const Scene &scene)
+{
 	// Prepare image buffers
 	BufferType type = BUF_TYPE_PER_PIXEL;
-	scene->sampler->GetBufferType(&type);
-	bufferId = scene->camera->film->RequestBuffer(type, BUF_FRAMEBUFFER, "eye");
+	scene.sampler->GetBufferType(&type);
+	bufferId = scene.camera->film->RequestBuffer(type, BUF_FRAMEBUFFER, "eye");
 
 	hints.InitStrategies(scene);
 
@@ -150,56 +152,55 @@ void ExPhotonIntegrator::Preprocess(const TsPack *tspack, const Scene *scene) {
 		nRadiancePhotons = 0;
 	}
 
-	PhotonMapPreprocess(tspack, scene, mapsFileName,
+	PhotonMapPreprocess(rng, scene, mapsFileName,
 		BxDFType(BSDF_DIFFUSE | BSDF_GLOSSY | BSDF_REFLECTION | BSDF_TRANSMISSION),
 		BxDFType(BSDF_ALL),
 		nDirectPhotons, nRadiancePhotons, radianceMap, nIndirectPhotons,
 		indirectMap, nCausticPhotons, causticMap, maxPhotonDepth);
 }
 
-u_int ExPhotonIntegrator::Li(const TsPack *tspack, const Scene *scene, 
-	const Sample *sample) const 
+u_int ExPhotonIntegrator::Li(const Scene &scene, const Sample &sample) const 
 {
 	RayDifferential ray;
-	float rayWeight = sample->camera->GenerateRay(tspack->arena, scene,
-		*sample, &ray);
+	float rayWeight = sample.camera->GenerateRay(scene, sample, &ray);
 
 	SWCSpectrum L(0.f);
 	float alpha = 1.f;
 	switch (renderingMode) {
 		case RM_DIRECTLIGHTING:
-			L = LiDirectLightingMode(tspack, scene, NULL, ray, sample, &alpha, 0, true);
+			L = LiDirectLightingMode(scene, sample, NULL, ray,
+				&alpha, 0, true);
 			break;
 		case RM_PATH:
-			L = LiPathMode(tspack, scene, ray, sample, &alpha);
+			L = LiPathMode(scene, sample, ray, &alpha);
 			break;
 		default:
 			BOOST_ASSERT(false);
 	}
 
-	sample->AddContribution(sample->imageX, sample->imageY,
-		XYZColor(sample->swl, L) * rayWeight, alpha, bufferId);
+	sample.AddContribution(sample.imageX, sample.imageY,
+		XYZColor(sample.swl, L) * rayWeight, alpha, bufferId);
 
 	return L.Black() ? 0 : 1;
 }
 
-SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(const TsPack *tspack,
-	const Scene *scene, const Volume *volume, const RayDifferential &ray,
-	const Sample *sample, float *alpha, const u_int reflectionDepth,
+SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(const Scene &scene,
+	const Sample &sample, const Volume *volume, const RayDifferential &ray,
+	float *alpha, const u_int reflectionDepth,
 	const bool specularBounce) const 
 {
 	// Compute reflected radiance with photon map
 	SWCSpectrum L(0.f), Lt(1.f);
 	// TODO
 	//u_int nContribs = 0;
-	const float nLights = scene->lights.size();
-	const u_int lightGroupCount = scene->lightGroups.size();
-	const SpectrumWavelengths &sw(sample->swl);
+	const float nLights = scene.lights.size();
+	const u_int lightGroupCount = scene.lightGroups.size();
+	const SpectrumWavelengths &sw(sample.swl);
 	vector<SWCSpectrum> Ld(lightGroupCount, 0.f);
 
 	Intersection isect;
 	BSDF *bsdf;
-	if (scene->Intersect(tspack, sample, volume, ray, &isect, &bsdf, &Lt)) {
+	if (scene.Intersect(sample, volume, ray, &isect, &bsdf, &Lt)) {
 		Vector wo = -ray.d;
 
 		const Point &p = bsdf->dgShading.p;
@@ -209,7 +210,7 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(const TsPack *tspack,
 		// Compute emitted light if ray hit an area light source
 		if (specularBounce && isect.arealight) {
 			BSDF *ibsdf;
-			L += isect.Le(tspack->arena, sample, ray, &ibsdf, NULL, NULL);
+			L += isect.Le(sample, ray, &ibsdf, NULL, NULL);
 		}
 
 		// Compute direct lighting
@@ -217,8 +218,8 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(const TsPack *tspack,
 			for (u_int i = 0; i < lightGroupCount; ++i)
 				Ld[i] = 0.f;
 
-			hints.SampleLights(tspack, scene, p, ns, wo, bsdf,
-					sample, reflectionDepth, 1.f, Ld);
+			hints.SampleLights(scene, sample, p, ns, wo, bsdf,
+				reflectionDepth, 1.f, Ld);
 
 			for (u_int i = 0; i < lightGroupCount; ++i)
 				L += Ld[i];
@@ -246,8 +247,7 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(const TsPack *tspack,
 		if (debugEnableIndirect) {
 			if (finalGather)
 				L += PhotonMapFinalGatherWithImportaceSampling(
-					tspack, scene, sample,
-					sampleFinalGather1Offset,
+					scene, sample, sampleFinalGather1Offset,
 					sampleFinalGather2Offset, gatherSamples,
 					cosGatherAngle, rrStrategy,
 					rrContinueProbability, indirectMap,
@@ -260,7 +260,7 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(const TsPack *tspack,
 
         if (debugEnableSpecular && (reflectionDepth < maxDepth)) {
 			// Collect samples
-			const float *sampleData = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, reflectionDepth);
+			const float *sampleData = sample.sampler->GetLazyValues(sample, sampleOffset, reflectionDepth);
 
 			float u1 = sampleData[0];
 			float u2 = sampleData[1];
@@ -279,8 +279,8 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(const TsPack *tspack,
 					bsdf->ComputeReflectionDifferentials(ray, rd);
 				else if (sampledType & BSDF_TRANSMISSION)
 					bsdf->ComputeTransmissionDifferentials(sw, ray, rd);
-				L += LiDirectLightingMode(tspack, scene,
-					bsdf->GetVolume(wi), rd, sample, alpha,
+				L += LiDirectLightingMode(scene, sample,
+					bsdf->GetVolume(wi), rd, alpha,
 					reflectionDepth + 1,
 					(sampledType & BSDF_SPECULAR) != 0) *
 					f * (AbsDot(wi, ns) / pdf);
@@ -292,8 +292,8 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(const TsPack *tspack,
 			BSDF *ibsdf;
 			for (u_int i = 0; i < nLights; ++i) {
 				SWCSpectrum Le(1.f);
-				if (scene->lights[i]->Le(tspack->arena, scene,
-					sample, ray, &ibsdf, NULL, NULL, &Le))
+				if (scene.lights[i]->Le(scene, sample, ray,
+					&ibsdf, NULL, NULL, &Le))
 					L += Le;
 			}
 		}
@@ -303,22 +303,21 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(const TsPack *tspack,
 	}
 
 	SWCSpectrum Lv;
-	scene->volumeIntegrator->Li(tspack, scene, ray, sample, &Lv, alpha);
+	scene.volumeIntegrator->Li(scene, ray, sample, &Lv, alpha);
 	return L * Lt + Lv;
 }
 
-SWCSpectrum ExPhotonIntegrator::LiPathMode(const TsPack *tspack,
-	const Scene *scene, const RayDifferential &r, const Sample *sample,
-	float *alpha) const
+SWCSpectrum ExPhotonIntegrator::LiPathMode(const Scene &scene,
+	const Sample &sample, const RayDifferential &r, float *alpha) const
 {
 	SWCSpectrum L(0.f);
 	// TODO
 	//u_int nContribs = 0;
-	const float nLights = scene->lights.size();
+	const float nLights = scene.lights.size();
 
 	// Declare common path integration variables
 	RayDifferential ray(r);
-	const SpectrumWavelengths &sw(sample->swl);
+	const SpectrumWavelengths &sw(sample.swl);
 	SWCSpectrum pathThroughput(1.f);
 	bool specularBounce = true, specular = true;
 	const Volume *volume = NULL;
@@ -327,11 +326,12 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const TsPack *tspack,
 		// Find next vertex of path
 		Intersection isect;
 		BSDF *bsdf;
-		if (!scene->Intersect(tspack, sample, volume, ray, &isect,
-			&bsdf, &pathThroughput)) {
+		if (!scene.Intersect(sample, volume, ray, &isect, &bsdf,
+			&pathThroughput)) {
 			// Stop path sampling since no intersection was found
 			SWCSpectrum Lv;
-			scene->volumeIntegrator->Li(tspack, scene, ray, sample, &Lv, alpha);
+			scene.volumeIntegrator->Li(scene, ray, sample, &Lv,
+				alpha);
 			Lv *= pathThroughput;
 			L += Lv;
 
@@ -341,9 +341,8 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const TsPack *tspack,
 				BSDF *ibsdf;
 				for (u_int i = 0; i < nLights; ++i) {
 					SWCSpectrum Ll(1.f);
-					if (scene->lights[i]->Le(tspack->arena,
-						scene, sample, ray, &ibsdf,
-						NULL, NULL, &Ll))
+					if (scene.lights[i]->Le(scene, sample,
+						ray, &ibsdf, NULL, NULL, &Ll))
 						Le += Ll;
 				}
 				L += Le * pathThroughput;
@@ -358,7 +357,7 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const TsPack *tspack,
 			r.maxt = ray.maxt;
 
 		SWCSpectrum Lv;
-		scene->volumeIntegrator->Li(tspack, scene, ray, sample, &Lv, alpha);
+		scene.volumeIntegrator->Li(scene, ray, sample, &Lv, alpha);
 		Lv *= pathThroughput;
 		L += Lv;
 
@@ -369,7 +368,7 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const TsPack *tspack,
 		
 		if (specularBounce && isect.arealight) {
 			BSDF *ibsdf;
-			L += isect.Le(tspack->arena, sample, ray, &ibsdf, NULL, NULL);
+			L += isect.Le(sample, ray, &ibsdf, NULL, NULL);
 		}
 
 		if (pathLength == maxDepth) {
@@ -378,7 +377,8 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const TsPack *tspack,
 		}
 
 		// Dade - collect samples
-		float *sampleData = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, pathLength);
+		float *sampleData = sample.sampler->GetLazyValues(sample,
+			sampleOffset, pathLength);
 		const float *pathSample = &sampleData[0];
 		const float *pathComponent = &sampleData[2];
 		const float *indirectSample = &sampleData[3];
@@ -394,11 +394,11 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const TsPack *tspack,
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;
 		if (debugEnableDirect && (nLights > 0)) {
-			const u_int lightGroupCount = scene->lightGroups.size();
+			const u_int lightGroupCount = scene.lightGroups.size();
 			vector<SWCSpectrum> Ld(lightGroupCount, 0.f);
 		// Sample illumination from lights to find path contribution
-			hints.SampleLights(tspack, scene, p, n, wo, bsdf,
-					sample, pathLength, 1.f, Ld);
+			hints.SampleLights(scene, sample, p, n, wo, bsdf,
+				pathLength, 1.f, Ld);
 
 			for (u_int i = 0; i < lightGroupCount; ++i)
 				currL += Ld[i];
@@ -432,8 +432,7 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const TsPack *tspack,
 						RayDifferential bounceRay(p, wi);
 
 						Intersection gatherIsect;
-						if (scene->Intersect(tspack,
-							sample,
+						if (scene.Intersect(sample,
 							bsdf->GetVolume(wi),
 							bounceRay, &gatherIsect,
 							NULL, &fr)) {
@@ -446,7 +445,7 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const TsPack *tspack,
 								SWCSpectrum Lindir = radianceMap->LPhoton(sw, gatherIsect, 
 									-bounceRay.d, BSDF_ALL);
 								if (!Lindir.Black()) {
-									scene->Transmittance(tspack, bounceRay, sample, &Lindir);
+									scene.Transmittance(bounceRay, sample, &Lindir);
 									currL += fr * Lindir * (AbsDot(wi, n) / pdf);
 								}
 							} else {

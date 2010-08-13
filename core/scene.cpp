@@ -259,14 +259,14 @@ RenderThread::~RenderThread()
 }
 
 void RenderThread::Render(RenderThread *myThread) {
-	Scene *scene = myThread->scene;
-	if (scene->IsFilmOnly())
+	Scene &scene(*(myThread->scene));
+	if (scene.IsFilmOnly())
 		return;
-	Sampler *sampler = scene->sampler->clone();
-	Sample sample(scene->surfaceIntegrator, scene->volumeIntegrator, scene);
+	Sampler *sampler = scene.sampler->clone();
+	Sample sample(scene.surfaceIntegrator, scene.volumeIntegrator, scene);
 
 	// Dade - wait the end of the preprocessing phase
-	while (!scene->preprocessDone) {
+	while (!scene.preprocessDone) {
 		boost::xtime xt;
 		boost::xtime_get(&xt, boost::TIME_UTC);
 		++xt.sec;
@@ -274,22 +274,16 @@ void RenderThread::Render(RenderThread *myThread) {
 	}
 
 	// initialize the thread's rangen
-	u_long seed = scene->seedBase + myThread->n;
+	u_long seed = scene.seedBase + myThread->n;
 	std::stringstream ss;
 	ss << "Thread " << myThread->n << " uses seed: " << seed;
 	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
-	// initialize the threads tspack
-	TsPack tspack;	// TODO - radiance - remove
-
 	RandomGenerator rng(seed);
-	tspack.rng = &rng;
-	MemoryArena arena;
-	tspack.arena = &arena;
-	sample.camera = scene->camera->Clone();
+	sample.camera = scene.camera->Clone();
 	sample.realTime = 0.f;
 
-	sampler->SetTsPack(&tspack);
+	sampler->SetRng(rng);
 
 	// allocate sample pos
 	u_int usePos = 0;
@@ -300,7 +294,7 @@ void RenderThread::Render(RenderThread *myThread) {
 		if (!sampler->GetNextSample(&sample, &usePos)) {
 
 			// Dade - we have done, check what we have to do now
-			if (scene->suspendThreadsWhenDone) {
+			if (scene.suspendThreadsWhenDone) {
 				myThread->signal = PAUSE;
 
 				// Dade - wait for a resume rendering or exit
@@ -319,7 +313,7 @@ void RenderThread::Render(RenderThread *myThread) {
 				break;
 		}
 
-		// save ray time value to tspack for later use
+		// save ray time value
 		sample.realTime = sample.camera->GetTime(sample.time);
 		// sample camera transformation
 		sample.camera->SampleMotion(sample.realTime);
@@ -339,8 +333,7 @@ void RenderThread::Render(RenderThread *myThread) {
 		// Evaluate radiance along camera ray
 		// Jeanphi - Hijack statistics until volume integrator revamp
 		{
-			const u_int nContribs = scene->surfaceIntegrator->Li(&tspack,
-				scene, &sample);
+			const u_int nContribs = scene.surfaceIntegrator->Li(scene, sample);
 			// update samples statistics
 			fast_mutex::scoped_lock lockStats(myThread->statLock);
 			myThread->blackSamples += nContribs;
@@ -350,7 +343,7 @@ void RenderThread::Render(RenderThread *myThread) {
 		sampler->AddSample(sample);
 
 		// Free BSDF memory from computing image sample value
-		arena.FreeAll();
+		sample.arena.FreeAll();
 
 		// increment (locked) global sample pos if necessary (eg maxSampPos != 0)
 		if (usePos == ~0U && maxSampPos != 0) {
@@ -423,25 +416,20 @@ void Scene::Render() {
 	ss << "Preprocess thread uses seed: " << seed;
 	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
-	// initialize the preprocess thread's tspack
-	TsPack tspack;
 	RandomGenerator rng(seed);
-	tspack.rng = &rng;
-	MemoryArena arena;
-	tspack.arena = &arena;
 
-	sampler->SetTsPack(&tspack);
+	sampler->SetRng(rng);
 
 	// integrator preprocessing
 	camera->film->SetScene(this);
 	sampler->SetFilm(camera->film);
 	sampler->SetContributionPool(contribPool);
-	surfaceIntegrator->Preprocess(&tspack, this);
-	volumeIntegrator->Preprocess(&tspack, this);
+	surfaceIntegrator->Preprocess(rng, *this);
+	volumeIntegrator->Preprocess(rng, *this);
 	camera->film->CreateBuffers();
 
 	// Dade - to support autofocus for some camera model
-	camera->AutoFocus(this);
+	camera->AutoFocus(*this);
 
 	sampPos = 0;
 
@@ -539,7 +527,7 @@ Scene::Scene(Camera *cam) :
 }
 
 SWCSpectrum Scene::Li(const RayDifferential &ray,
-		const Sample *sample, float *alpha) const {
+		const Sample &sample, float *alpha) const {
 //  NOTE - radiance - leave these off for now, should'nt be used (broken with multithreading)
 //  TODO - radiance - cleanup / reimplement into integrators
 //	SWCSpectrum Lo = surfaceIntegrator->Li(this, ray, sample, alpha);
@@ -549,7 +537,7 @@ SWCSpectrum Scene::Li(const RayDifferential &ray,
 	return 0.f;
 }
 
-void Scene::Transmittance(const TsPack *tsp, const Ray &ray, 
-	const Sample *sample, SWCSpectrum *const L) const {
-    volumeIntegrator->Transmittance(tsp, this, ray, sample, NULL, L);
+void Scene::Transmittance(const Ray &ray, const Sample &sample,
+	SWCSpectrum *const L) const {
+	volumeIntegrator->Transmittance(*this, ray, sample, NULL, L);
 }

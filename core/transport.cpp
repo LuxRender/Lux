@@ -35,17 +35,17 @@ namespace lux
 {
 
 // Integrator Method Definitions
-bool VolumeIntegrator::Intersect(const TsPack *tspack, const Scene *scene,
-	const Sample *sample, const Volume *volume, const RayDifferential &ray,
+bool VolumeIntegrator::Intersect(const Scene &scene, const Sample &sample,
+	const Volume *volume, const RayDifferential &ray,
 	Intersection *isect, BSDF **bsdf, SWCSpectrum *L) const
 {
-	const bool hit = scene->Intersect(ray, isect);
+	const bool hit = scene.Intersect(ray, isect);
 	if (hit) {
 		isect->dg.ComputeDifferentials(ray);
 		DifferentialGeometry dgShading;
 		isect->primitive->GetShadingGeometry(isect->WorldToObject.GetInverse(),
 			isect->dg, &dgShading);
-		isect->material->GetShadingGeometry(sample->swl, isect->dg.nn,
+		isect->material->GetShadingGeometry(sample.swl, isect->dg.nn,
 			&dgShading);
 		if (Dot(ray.d, dgShading.nn) > 0.f) {
 			if (!volume)
@@ -59,19 +59,19 @@ bool VolumeIntegrator::Intersect(const TsPack *tspack, const Scene *scene,
 				isect->exterior = volume;
 		}
 		if (bsdf)
-			*bsdf = isect->material->GetBSDF(tspack->arena,
-				sample->swl, isect->dg, dgShading,
+			*bsdf = isect->material->GetBSDF(sample.arena,
+				sample.swl, isect->dg, dgShading,
 				isect->exterior, isect->interior);
 	}
 	if (volume && L)
-		*L *= Exp(-volume->Tau(sample->swl, ray));
+		*L *= Exp(-volume->Tau(sample.swl, ray));
 	if (L)
-		Transmittance(tspack, scene, ray, sample, NULL, L);
+		Transmittance(scene, ray, sample, NULL, L);
 	return hit;
 }
 
-bool VolumeIntegrator::Connect(const TsPack *tspack, const Scene *scene,
-	const Sample *sample, const Volume *volume, const Point &p0, const Point &p1, bool clip,
+bool VolumeIntegrator::Connect(const Scene &scene, const Sample &sample,
+	const Volume *volume, const Point &p0, const Point &p1, bool clip,
 	SWCSpectrum *f, float *pdf, float *pdfR) const
 {
 	const Vector w = p1 - p0;
@@ -82,9 +82,9 @@ bool VolumeIntegrator::Connect(const TsPack *tspack, const Scene *scene,
 		return false;
 	const float maxt = length - shadowRayEpsilon;
 	RayDifferential ray(Ray(p0, w / length, shadowRayEpsilon, maxt));
-	ray.time = sample->realTime;
+	ray.time = sample.realTime;
 	if (clip)
-		sample->camera->ClampRay(ray);
+		sample.camera->ClampRay(ray);
 	const Vector d(ray.d);
 	Intersection isect;
 	const BxDFType flags(BxDFType(BSDF_SPECULAR | BSDF_TRANSMISSION));
@@ -94,10 +94,10 @@ bool VolumeIntegrator::Connect(const TsPack *tspack, const Scene *scene,
 	// but it's safer to keep it
 	for (u_int i = 0; i < 10000; ++i) {
 		BSDF *bsdf;
-		if (!Intersect(tspack, scene, sample, volume, ray, &isect, &bsdf, f))
+		if (!Intersect(scene, sample, volume, ray, &isect, &bsdf, f))
 			return true;
 
-		*f *= bsdf->f(sample->swl, d, -d, flags);
+		*f *= bsdf->f(sample.swl, d, -d, flags);
 		if (f->Black())
 			return false;
 		const float cost = Dot(bsdf->nn, d);
@@ -107,9 +107,9 @@ bool VolumeIntegrator::Connect(const TsPack *tspack, const Scene *scene,
 			volume = isect.interior;
 		*f *= fabsf(cost);
 		if (pdf)
-			*pdf *= bsdf->Pdf(sample->swl, d, -d);
+			*pdf *= bsdf->Pdf(sample.swl, d, -d);
 		if (pdfR)
-			*pdfR *= bsdf->Pdf(sample->swl, -d, d);
+			*pdfR *= bsdf->Pdf(sample.swl, -d, d);
 
 		ray.mint = ray.maxt + MachineEpsilon::E(ray.maxt);
 		ray.maxt = maxt;
@@ -118,29 +118,27 @@ bool VolumeIntegrator::Connect(const TsPack *tspack, const Scene *scene,
 }
 
 // Integrator Utility Functions
-SWCSpectrum UniformSampleAllLights(const TsPack *tspack, const Scene *scene,
+SWCSpectrum UniformSampleAllLights(const Scene &scene, const Sample &sample,
 	const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
-	const Sample *sample,
 	const float *lightSample, const float *lightNum,
 	const float *bsdfSample, const float *bsdfComponent)
 {
 	SWCSpectrum L(0.f);
-	for (u_int i = 0; i < scene->lights.size(); ++i) {
-		L += EstimateDirect(tspack, scene, scene->lights[i], p, n, wo, bsdf,
-			sample, lightSample[0], lightSample[1], *lightNum,
+	for (u_int i = 0; i < scene.lights.size(); ++i) {
+		L += EstimateDirect(scene, *(scene.lights[i]), sample, p, n, wo,
+			bsdf, lightSample[0], lightSample[1], *lightNum,
 			bsdfSample[0], bsdfSample[1], *bsdfComponent);
 	}
 	return L;
 }
 
-u_int UniformSampleOneLight(const TsPack *tspack, const Scene *scene,
+u_int UniformSampleOneLight(const Scene &scene, const Sample &sample,
 	const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
-	const Sample *sample,
 	const float *lightSample, const float *lightNum,
 	const float *bsdfSample, const float *bsdfComponent, SWCSpectrum *L)
 {
 	// Randomly choose a single light to sample, _light_
-	u_int nLights = scene->lights.size();
+	u_int nLights = scene.lights.size();
 	if (nLights == 0) {
 		*L = 0.f;
 		return 0;
@@ -148,45 +146,46 @@ u_int UniformSampleOneLight(const TsPack *tspack, const Scene *scene,
 	float ls3 = *lightNum * nLights;
 	const u_int lightNumber = min(Floor2UInt(ls3), nLights - 1);
 	ls3 -= lightNumber;
-	Light *light = scene->lights[lightNumber];
-	*L = static_cast<float>(nLights) * EstimateDirect(tspack, scene, light,
-		p, n, wo, bsdf, sample, lightSample[0], lightSample[1], ls3,
+	const Light &light(*(scene.lights[lightNumber]));
+	*L = static_cast<float>(nLights) * EstimateDirect(scene, light, sample,
+		p, n, wo, bsdf, lightSample[0], lightSample[1], ls3,
 		bsdfSample[0], bsdfSample[1], *bsdfComponent);
-	return scene->lights[lightNumber]->group;
+	return light.group;
 }
 
-SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light *light,
-	const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf, const Sample *sample, 
-	float ls1, float ls2, float ls3, float bs1, float bs2, float bcs)
+SWCSpectrum EstimateDirect(const Scene &scene, const Light &light,
+	const Sample &sample, const Point &p, const Normal &n, const Vector &wo,
+	BSDF *bsdf, float ls1, float ls2, float ls3,
+	float bs1, float bs2, float bcs)
 {
 	SWCSpectrum Ld(0.f);
 
 	// Check if MIS is needed
 	const BxDFType noDiffuse = BxDFType(BSDF_ALL & ~(BSDF_DIFFUSE));
-	const bool mis = !(light->IsDeltaLight()) &&
+	const bool mis = !(light.IsDeltaLight()) &&
 		(bsdf->NumComponents(noDiffuse) > 0);
 	// Trace a shadow ray by sampling the light source
 	float lightPdf;
 	SWCSpectrum Li;
 	BSDF *lightBsdf;
-	if (light->Sample_L(tspack->arena, scene, sample, p, ls1, ls2, ls3,
+	if (light.Sample_L(scene, sample, p, ls1, ls2, ls3,
 		&lightBsdf, NULL, &lightPdf, &Li)) {
 		const Point &pL(lightBsdf->dgShading.p);
 		const Vector wi0(pL - p);
 		const Volume *volume = bsdf->GetVolume(wi0);
 		if (!volume)
 			volume = lightBsdf->GetVolume(-wi0);
-		if (scene->Connect(tspack, sample, volume, p, pL, false, &Li, NULL,
+		if (scene.Connect(sample, volume, p, pL, false, &Li, NULL,
 			NULL)) {
 			const float d2 = wi0.LengthSquared();
 			const Vector wi(wi0 / sqrtf(d2));
-			Li *= lightBsdf->f(sample->swl, Vector(lightBsdf->nn), -wi);
-			Li *= bsdf->f(sample->swl, wi, wo);
+			Li *= lightBsdf->f(sample.swl, Vector(lightBsdf->nn), -wi);
+			Li *= bsdf->f(sample.swl, wi, wo);
 			if (!Li.Black()) {
 				const float lightPdf2 = lightPdf * d2 /
 					AbsDot(wi, lightBsdf->nn);
 				if (mis) {
-					const float bsdfPdf = bsdf->Pdf(sample->swl,
+					const float bsdfPdf = bsdf->Pdf(sample.swl,
 						wo, wi);
 					Li *= PowerHeuristic(1, lightPdf2,
 						1, bsdfPdf);
@@ -201,23 +200,23 @@ SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene, const Light
 		Vector wi;
 		float bsdfPdf;
 		BxDFType sampledType;
-		if (bsdf->Sample_f(sample->swl, wo, &wi, bs1, bs2, bcs,
+		if (bsdf->Sample_f(sample.swl, wo, &wi, bs1, bs2, bcs,
 			&Li, &bsdfPdf, BSDF_ALL, &sampledType, NULL, true) &&
 			(sampledType & BSDF_SPECULAR) == 0) {
 			// Add light contribution from BSDF sampling
 			Intersection lightIsect;
 			RayDifferential ray(p, wi);
-			ray.time = sample->time;
+			ray.time = sample.time;
 			BSDF *ibsdf;
 			const Volume *volume = bsdf->GetVolume(wi);
 			bool lit = false;
-			if (!scene->Intersect(tspack, sample, volume, ray, &lightIsect,
+			if (!scene.Intersect(sample, volume, ray, &lightIsect,
 				&ibsdf, &Li))
-				lit = light->Le(tspack->arena, scene, sample,
-					ray, &lightBsdf, NULL, &lightPdf, &Li);
-			else if (lightIsect.arealight == light) {
-				Li *= lightIsect.Le(tspack->arena, sample, ray,
-					&lightBsdf, NULL, &lightPdf);
+				lit = light.Le(scene, sample, ray, &lightBsdf,
+					NULL, &lightPdf, &Li);
+			else if (lightIsect.arealight == &light) {
+				Li *= lightIsect.Le(sample, ray, &lightBsdf,
+					NULL, &lightPdf);
 				lit = !Li.Black();
 			}
 			if (lit) {

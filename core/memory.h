@@ -230,7 +230,7 @@ private:
 	int8_t *currentBlock;
 	vector<int8_t *> usedBlocks, availableBlocks;
 };
-#define ARENA_ALLOC(ARENA,T)  new ((ARENA)->Alloc(sizeof(T))) T
+#define ARENA_ALLOC(ARENA,T)  new ((ARENA).Alloc(sizeof(T))) T
 
 template<class T, int logBlockSize> class BlockedArray {
 public:

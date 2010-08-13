@@ -150,12 +150,12 @@ static void initMetropolis(MetropolisSampler *sampler, const Sample *sample)
 bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
 {
 	sample->sampler = this;
-	const float mutationSelector = tspack->rng->floatValue();
+	const float mutationSelector = rng->floatValue();
 	large = (mutationSelector < pLarge);
 	if (sampleImage == NULL) {
 		// If this is the original sampler, shuffle the QR sequence
 		if (!timeImage)
-			Shuffle(*(tspack->rng), rngSamples, rngN, 1);
+			Shuffle(*rng, rngSamples, rngN, 1);
 		initMetropolis(this, sample);
 		large = true;
 	}
@@ -174,7 +174,7 @@ bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
 		if (film->enoughSamplePerPixel)
 			return false;
 		for (u_int i = 0; i < totalSamples; ++i)
-			rngRotation[i] = tspack->rng->floatValue();
+			rngRotation[i] = rng->floatValue();
 	}
 	if (large) {
 		// *** large mutation ***
@@ -213,30 +213,30 @@ bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
 	return true;
 }
 
-float *MetropolisSampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
+float *MetropolisSampler::GetLazyValues(const Sample &sample, u_int num, u_int pos)
 {
 	// Get size and position of current lazy values node
-	const u_int size = sample->dxD[num];
-	float *data = sample->xD[num] + pos * size;
+	const u_int size = sample.dxD[num];
+	float *data = sample.xD[num] + pos * size;
 	// Get the reference number of mutations
-	const int stampLimit = sample->stamp;
+	const int stampLimit = sample.stamp;
 	// If we are at the target, don't do anything
-	if (sample->timexD[num][pos] != stampLimit) {
+	if (sample.timexD[num][pos] != stampLimit) {
 		// If the node has not yet been initialized, do it now
 		// otherwise get the last known value from the sample image
-		if (sample->timexD[num][pos] == -1) {
+		if (sample.timexD[num][pos] == -1) {
 			for (u_int i = 0; i < size; ++i)
 				data[i] = rngGet(normalSamples + pos * size + i);
-			sample->timexD[num][pos] = 0;
+			sample.timexD[num][pos] = 0;
 		} else {
 			float *image = sampleImage + offset[num] + pos * size;
 			for (u_int i = 0; i < size; ++i)
 				data[i] = image[i];
 		}
 		// Mutate as needed
-		for (; sample->timexD[num][pos] < stampLimit; ++(sample->timexD[num][pos])) {
+		for (; sample.timexD[num][pos] < stampLimit; ++(sample.timexD[num][pos])) {
 			for (u_int i = 0; i < size; ++i)
-				data[i] = mutate(data[i], rngGet2(normalSamples + pos * size + i, rngOffset * static_cast<u_int>(stampLimit - sample->timexD[num][pos] + 1)));
+				data[i] = mutate(data[i], rngGet2(normalSamples + pos * size + i, rngOffset * static_cast<u_int>(stampLimit - sample.timexD[num][pos] + 1)));
 		}
 	}
 	return data;
@@ -274,7 +274,7 @@ void MetropolisSampler::AddSample(const Sample &sample)
 	const float newWeight = accProb + (large ? 1.f : 0.f);
 	weight += 1.f - accProb;
 	// try or force accepting of the new sample
-	if (accProb == 1.f || tspack->rng->floatValue() < accProb) {
+	if (accProb == 1.f || rng->floatValue() < accProb) {
 		// Add accumulated contribution of previous reference sample
 		const float norm = weight / (LY / meanIntensity + pLarge);
 		if (norm > 0.f) {

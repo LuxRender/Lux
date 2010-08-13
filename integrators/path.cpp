@@ -35,7 +35,7 @@ using namespace lux;
 static const u_int passThroughLimit = 10000;
 
 // PathIntegrator Method Definitions
-void PathIntegrator::RequestSamples(Sample *sample, const Scene *scene)
+void PathIntegrator::RequestSamples(Sample *sample, const Scene &scene)
 {
 	vector<u_int> structure;
 	structure.push_back(2);	// bsdf direction sample for path
@@ -49,28 +49,26 @@ void PathIntegrator::RequestSamples(Sample *sample, const Scene *scene)
 	hints.RequestSamples(sample, scene, maxDepth + 1);
 }
 
-void PathIntegrator::Preprocess(const TsPack *tspack, const Scene *scene)
+void PathIntegrator::Preprocess(const RandomGenerator &rng, const Scene &scene)
 {
 	// Prepare image buffers
 	BufferType type = BUF_TYPE_PER_PIXEL;
-	scene->sampler->GetBufferType(&type);
-	bufferId = scene->camera->film->RequestBuffer(type, BUF_FRAMEBUFFER, "eye");
+	scene.sampler->GetBufferType(&type);
+	bufferId = scene.camera->film->RequestBuffer(type, BUF_FRAMEBUFFER, "eye");
 
 	hints.InitStrategies(scene);
 }
 
-u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
-	const Sample *sample) const
+u_int PathIntegrator::Li(const Scene &scene, const Sample &sample) const
 {
 	u_int nrContribs = 0;
 	// Declare common path integration variables
-	const SpectrumWavelengths &sw(sample->swl);
+	const SpectrumWavelengths &sw(sample.swl);
 	RayDifferential r;
-	float rayWeight = sample->camera->GenerateRay(tspack->arena, scene,
-		*sample, &r);
+	float rayWeight = sample.camera->GenerateRay(scene, sample, &r);
 
-	const float nLights = scene->lights.size();
-	const u_int lightGroupCount = scene->lightGroups.size();
+	const float nLights = scene.lights.size();
+	const u_int lightGroupCount = scene.lightGroups.size();
 	// Direct lighting
 	vector<SWCSpectrum> Ld(lightGroupCount, 0.f);
 	// Direct lighting samples variance
@@ -90,12 +88,12 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		// Find next vertex of path
 		Intersection isect;
 		BSDF *bsdf;
-		if (!scene->Intersect(tspack, sample, volume, ray, &isect,
-			&bsdf, &pathThroughput)) {
+		if (!scene.Intersect(sample, volume, ray, &isect, &bsdf,
+			&pathThroughput)) {
 			// Dade - now I know ray.maxt and I can call volumeIntegrator
 			SWCSpectrum Lv;
-			u_int g = scene->volumeIntegrator->Li(tspack, scene,
-				ray, sample, &Lv, &alpha);
+			u_int g = scene.volumeIntegrator->Li(scene, ray, sample,
+				&Lv, &alpha);
 			if (!Lv.Black()) {
 				L[g] = Lv;
 				V[g] += Lv.Filter(sw) * VContrib;
@@ -109,11 +107,10 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 				BSDF *ibsdf;
 				for (u_int i = 0; i < nLights; ++i) {
 					SWCSpectrum Le(pathThroughput);
-					if (scene->lights[i]->Le(tspack->arena,
-						scene, sample, ray, &ibsdf,
-						NULL, NULL, &Le)) {
-						L[scene->lights[i]->group] += Le;
-						V[scene->lights[i]->group] += Le.Filter(sw) * VContrib;
+					if (scene.lights[i]->Le(scene, sample,
+						ray, &ibsdf, NULL, NULL, &Le)) {
+						L[scene.lights[i]->group] += Le;
+						V[scene.lights[i]->group] += Le.Filter(sw) * VContrib;
 						++nrContribs;
 					}
 				}
@@ -130,7 +127,8 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		}
 
 		SWCSpectrum Lv;
-		const u_int g = scene->volumeIntegrator->Li(tspack, scene, ray, sample, &Lv, &alpha);
+		const u_int g = scene.volumeIntegrator->Li(scene, ray, sample,
+			&Lv, &alpha);
 		if (!Lv.Black()) {
 			Lv *= pathThroughput;
 			L[g] += Lv;
@@ -142,8 +140,8 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		Vector wo(-ray.d);
 		if (specularBounce && isect.arealight) {
 			BSDF *ibsdf;
-			SWCSpectrum Le(isect.Le(tspack->arena, sample, ray,
-				&ibsdf, NULL, NULL));
+			SWCSpectrum Le(isect.Le(sample, ray, &ibsdf, NULL,
+				NULL));
 			if (!Le.Black()) {
 				Le *= pathThroughput;
 				L[isect.arealight->group] += Le;
@@ -154,7 +152,8 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		if (pathLength == maxDepth)
 			break;
 		// Evaluate BSDF at hit point
-		const float *data = sample->sampler->GetLazyValues(const_cast<Sample *>(sample), sampleOffset, pathLength);
+		const float *data = sample.sampler->GetLazyValues(sample,
+			sampleOffset, pathLength);
 
 		// Estimate direct lighting
 		const Point &p = bsdf->dgShading.p;
@@ -165,8 +164,8 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 				Vd[i] = 0.f;
 			}
 
-			nrContribs += hints.SampleLights(tspack, scene, p, n, wo, bsdf,
-				sample, pathLength, pathThroughput, Ld, &Vd);
+			nrContribs += hints.SampleLights(scene, sample, p, n,
+				wo, bsdf, pathLength, pathThroughput, Ld, &Vd);
 
 			for (u_int i = 0; i < lightGroupCount; ++i) {
 				L[i] += Ld[i];
@@ -219,7 +218,7 @@ u_int PathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	for (u_int i = 0; i < lightGroupCount; ++i) {
 		if (!L[i].Black())
 			V[i] /= L[i].Filter(sw);
-		sample->AddContribution(sample->imageX, sample->imageY,
+		sample.AddContribution(sample.imageX, sample.imageY,
 			XYZColor(sw, L[i]) * rayWeight, alpha, distance,
 			V[i], bufferId, i);
 	}

@@ -38,21 +38,20 @@ public:
 		u_int ns, const string &texmap, EnvironmentMapping *m,
 		float gain, float gamma);
 	virtual ~InfiniteAreaLight();
-	virtual float Power(const Scene *scene) const;
+	virtual float Power(const Scene &scene) const;
 	virtual bool IsDeltaLight() const { return false; }
 	virtual bool IsEnvironmental() const { return true; }
-	virtual bool Le(MemoryArena *arean, const Scene *scene,
-		const Sample *arena, const Ray &r, BSDF **bsdf, float *pdf,
-		float *pdfDirect, SWCSpectrum *L) const;
+	virtual bool Le(const Scene &scene, const Sample &arena, const Ray &r,
+		BSDF **bsdf, float *pdf, float *pdfDirect,
+		SWCSpectrum *L) const;
 	virtual float Pdf(const Point &p, const Point &po,
 		const Normal &ns) const;
-	virtual bool Sample_L(MemoryArena *arena, const Scene *scene,
-		const Sample *sample, float u1, float u2, float u3, BSDF **bsdf,
-		float *pdf, SWCSpectrum *Le) const;
-	virtual bool Sample_L(MemoryArena *arena, const Scene *scene,
-		const Sample *sample, const Point &p, float u1, float u2,
-		float u3, BSDF **bsdf, float *pdf, float *pdfDirect,
+	virtual bool Sample_L(const Scene &scene, const Sample &sample,
+		float u1, float u2, float u3, BSDF **bsdf, float *pdf,
 		SWCSpectrum *Le) const;
+	virtual bool Sample_L(const Scene &scene, const Sample &sample,
+		const Point &p, float u1, float u2, float u3, BSDF **bsdf,
+		float *pdf, float *pdfDirect, SWCSpectrum *Le) const;
 	
 	static Light *CreateLight(const Transform &light2world,
 		const ParamSet &paramSet);

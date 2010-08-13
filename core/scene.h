@@ -67,27 +67,27 @@ public:
 	bool Intersect(const Ray &ray, Intersection *isect) const {
 		return aggregate->Intersect(ray, isect);
 	}
-	bool Intersect(const TsPack *tspack, const Sample *sample,
-		const Volume *volume, const RayDifferential &ray,
-		Intersection *isect, BSDF **bsdf, SWCSpectrum *f) const {
-		return volumeIntegrator->Intersect(tspack, this, sample, volume,
-			ray, isect, bsdf, f);
+	bool Intersect(const Sample &sample, const Volume *volume,
+		const RayDifferential &ray, Intersection *isect, BSDF **bsdf,
+		SWCSpectrum *f) const {
+		return volumeIntegrator->Intersect(*this, sample, volume, ray,
+			isect, bsdf, f);
 	}
-	bool Connect(const TsPack *tspack, const Sample *sample,
-		const Volume *volume, const Point &p0, const Point &p1,
-		bool clip, SWCSpectrum *f, float *pdf, float *pdfR) const {
-		return volumeIntegrator->Connect(tspack, this, sample, volume,
+	bool Connect(const Sample &sample, const Volume *volume,
+		const Point &p0, const Point &p1, bool clip,
+		SWCSpectrum *f, float *pdf, float *pdfR) const {
+		return volumeIntegrator->Connect(*this, sample, volume,
 			p0, p1, clip, f, pdf, pdfR);
 	}
 	bool IntersectP(const Ray &ray) const {
 		return aggregate->IntersectP(ray);
 	}
 	const BBox &WorldBound() const { return bound; }
-	SWCSpectrum Li(const RayDifferential &ray, const Sample *sample,
+	SWCSpectrum Li(const RayDifferential &ray, const Sample &sample,
 		float *alpha = NULL) const;
 	// modulates the supplied SWCSpectrum with the transmittance along the ray
-	void Transmittance(const TsPack *tspack, const Ray &ray,
-		const Sample *sample, SWCSpectrum *const L) const;
+	void Transmittance(const Ray &ray, const Sample &sample,
+		SWCSpectrum *const L) const;
 
 	//Control methods
 	void Start();

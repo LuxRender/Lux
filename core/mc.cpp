@@ -54,11 +54,11 @@ float SampleStep1d(const float *f, const float *cdf, float c, u_int nSteps,
 	*pdf = f[offset] / c;
 	return (offset + u) / nSteps;
 }
-void RejectionSampleDisk(const TsPack *tspack, float *x, float *y) {
+void RejectionSampleDisk(const RandomGenerator &rng, float *x, float *y) {
 	float sx, sy;
 	do {
-		sx = 1.f - 2.f * tspack->rng->floatValue();
-		sy = 1.f - 2.f * tspack->rng->floatValue();
+		sx = 1.f - 2.f * rng.floatValue();
+		sy = 1.f - 2.f * rng.floatValue();
 	} while (sx*sx + sy*sy > 1.f);
 	*x = sx;
 	*y = sy;

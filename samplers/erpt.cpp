@@ -115,7 +115,7 @@ static void initERPT(ERPTSampler *sampler, const Sample *sample)
 	sampler->baseImage = AllocAligned<float>(sampler->totalSamples);
 	sampler->timeImage = AllocAligned<int>(sampler->totalTimes);
 	sampler->baseTimeImage = AllocAligned<int>(sampler->totalTimes);
-	sampler->baseSampler->SetTsPack(sampler->tspack);
+	sampler->baseSampler->SetRng(*(sampler->rng));
 	sampler->baseSampler->SetFilm(sampler->film);
 	sampler->mutation = ~0U;
 
@@ -158,38 +158,38 @@ bool ERPTSampler::GetNextSample(Sample *sample, u_int *use_pos)
 		}
 		// *** small mutation ***
 		// mutate current sample
-		sample->imageX = mutateScaled(currentImage[0], tspack->rng->floatValue(), xPixelStart, xPixelEnd, range);
-		sample->imageY = mutateScaled(currentImage[1], tspack->rng->floatValue(), yPixelStart, yPixelEnd, range);
-		sample->lensU = mutate(currentImage[2], tspack->rng->floatValue());
-		sample->lensV = mutate(currentImage[3], tspack->rng->floatValue());
-		sample->time = mutate(currentImage[4], tspack->rng->floatValue());
-		sample->wavelengths = mutate(currentImage[5], tspack->rng->floatValue());
+		sample->imageX = mutateScaled(currentImage[0], rng->floatValue(), xPixelStart, xPixelEnd, range);
+		sample->imageY = mutateScaled(currentImage[1], rng->floatValue(), yPixelStart, yPixelEnd, range);
+		sample->lensU = mutate(currentImage[2], rng->floatValue());
+		sample->lensV = mutate(currentImage[3], rng->floatValue());
+		sample->time = mutate(currentImage[4], rng->floatValue());
+		sample->wavelengths = mutate(currentImage[5], rng->floatValue());
 		for (u_int i = SAMPLE_FLOATS; i < normalSamples; ++i)
-				sample->oneD[0][i - SAMPLE_FLOATS] = mutate(currentImage[i], tspack->rng->floatValue());
+				sample->oneD[0][i - SAMPLE_FLOATS] = mutate(currentImage[i], rng->floatValue());
 		++(sample->stamp);
 	}
 
 	return true;
 }
 
-float *ERPTSampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
+float *ERPTSampler::GetLazyValues(const Sample &sample, u_int num, u_int pos)
 {
-	const u_int size = sample->dxD[num];
-	float *data = sample->xD[num] + pos * size;
-	const int stampLimit = sample->stamp;
-	if (sample->timexD[num][pos] != stampLimit) {
-		if (sample->timexD[num][pos] == -1) {
+	const u_int size = sample.dxD[num];
+	float *data = sample.xD[num] + pos * size;
+	const int stampLimit = sample.stamp;
+	if (sample.timexD[num][pos] != stampLimit) {
+		if (sample.timexD[num][pos] == -1) {
 			baseSampler->GetLazyValues(sample, num, pos);
-			sample->timexD[num][pos] = 0;
+			sample.timexD[num][pos] = 0;
 		} else {
 			const u_int start = offset[num] + pos * size;
 			float *image = currentImage + start;
 			for (u_int i = 0; i < size; ++i)
 				data[i] = image[i];
 		}
-		for (int &time = sample->timexD[num][pos]; time < stampLimit; ++time) {
+		for (int &time = sample.timexD[num][pos]; time < stampLimit; ++time) {
 			for (u_int i = 0; i < size; ++i)
-				data[i] = mutate(data[i], tspack->rng->floatValue());
+				data[i] = mutate(data[i], rng->floatValue());
 		}
 	}
 	return data;
@@ -262,7 +262,7 @@ void ERPTSampler::AddSample(const Sample &sample)
 	weight += 1.f - accProb;
 
 	// try accepting of the new sample
-	if (accProb == 1.f || tspack->rng->floatValue() < accProb) {
+	if (accProb == 1.f || rng->floatValue() < accProb) {
 		// Add accumulated contribution of previous reference sample
 		weight *= quantum / LY;
 		if (!isinf(weight) && LY > 0.f) {

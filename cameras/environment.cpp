@@ -65,8 +65,8 @@ void EnvironmentCamera::SampleMotion(float time)
 	pos = CameraToWorld(Point(0,0,0));
 }
 
-bool EnvironmentCamera::Sample_W(MemoryArena *arena,
-	const SpectrumWavelengths &sw, const Scene *scene,
+bool EnvironmentCamera::Sample_W(MemoryArena &arena,
+	const SpectrumWavelengths &sw, const Scene &scene,
 	float u1, float u2, float u3, BSDF **bsdf, float *pdf,
 	SWCSpectrum *We) const
 {
@@ -84,8 +84,8 @@ bool EnvironmentCamera::Sample_W(MemoryArena *arena,
 	*We = SWCSpectrum(*pdf);
 	return true;
 }
-bool EnvironmentCamera::Sample_W(MemoryArena *arena,
-	const SpectrumWavelengths &sw, const Scene *scene,
+bool EnvironmentCamera::Sample_W(MemoryArena &arena,
+	const SpectrumWavelengths &sw, const Scene &scene,
 	const Point &p, const Normal &n, float u1, float u2, float u3,
 	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *We) const
 {

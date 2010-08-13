@@ -35,7 +35,7 @@
 using namespace lux;
 
 // Matte Method Definitions
-BSDF *MatteTranslucent::GetBSDF(MemoryArena *arena,
+BSDF *MatteTranslucent::GetBSDF(MemoryArena &arena,
 	const SpectrumWavelengths &sw,
 	const DifferentialGeometry &dgGeom,
 	const DifferentialGeometry &dgs,

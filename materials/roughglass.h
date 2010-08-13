@@ -47,7 +47,7 @@ public:
 		if (bumpMap)
 			Bump(sw, bumpMap, nGeom, dgBump);
 	}
-	virtual BSDF *GetBSDF(MemoryArena *arena, const SpectrumWavelengths &sw,
+	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dgGeom,
 		const DifferentialGeometry &dgShading,
 		const Volume *exterior, const Volume *interior) const;

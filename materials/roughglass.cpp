@@ -35,7 +35,7 @@
 using namespace lux;
 
 // RoughGlass Method Definitions
-BSDF *RoughGlass::GetBSDF(MemoryArena *arena, const SpectrumWavelengths &sw,
+BSDF *RoughGlass::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 	const DifferentialGeometry &dgGeom,
 	const DifferentialGeometry &dgs,
 	const Volume *exterior, const Volume *interior) const

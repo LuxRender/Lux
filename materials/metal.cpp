@@ -49,7 +49,7 @@ Metal::Metal(boost::shared_ptr<SPD > &n, boost::shared_ptr<SPD > &k,
 	compParams = new CompositingParams(cp);
 }
 
-BSDF *Metal::GetBSDF(MemoryArena *arena, const SpectrumWavelengths &sw,
+BSDF *Metal::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 	const DifferentialGeometry &dgGeom,
 	const DifferentialGeometry &dgs,
 	const Volume *exterior, const Volume *interior) const

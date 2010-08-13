@@ -177,9 +177,8 @@ SunLight::SunLight(const Transform &light2world, const float sunscale,
 	LSPD->Scale(sunscale);
 }
 
-bool SunLight::Le(MemoryArena *arena, const Scene *scene, const Sample *sample,
-	const Ray &r, BSDF **bsdf, float *pdf, float *pdfDirect,
-	SWCSpectrum *L) const
+bool SunLight::Le(const Scene &scene, const Sample &sample, const Ray &r,
+	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *L) const
 {
 	const float xD = Dot(r.d, x);
 	const float yD = Dot(r.d, y);
@@ -189,15 +188,15 @@ bool SunLight::Le(MemoryArena *arena, const Scene *scene, const Sample *sample,
 		return false;
 	Point worldCenter;
 	float worldRadius;
-	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
+	scene.WorldBound().BoundingSphere(&worldCenter, &worldRadius);
 	Vector toCenter(worldCenter - r.o);
 	float approach = Dot(toCenter, sundir);
 	float distance = (approach + worldRadius) / zD;
 	Point ps(r.o + distance * r.d);
 	Normal ns(-sundir);
 	DifferentialGeometry dg(ps, ns, -x, y, Normal(0, 0, 0), Normal (0, 0, 0), 0, 0, NULL);
-	dg.time = sample->realTime;
-	*bsdf = ARENA_ALLOC(arena, SunBSDF)(dg, ns, NULL, NULL,
+	dg.time = sample.realTime;
+	*bsdf = ARENA_ALLOC(sample.arena, SunBSDF)(dg, ns, NULL, NULL,
 		sin2ThetaMax);
 	if (pdf) {
 		if (!havePortalShape)
@@ -208,7 +207,7 @@ bool SunLight::Le(MemoryArena *arena, const Scene *scene, const Sample *sample,
 				Intersection isect;
 				RayDifferential ray(ps, sundir);
 				ray.mint = -INFINITY;
-				ray.time = sample->realTime;
+				ray.time = sample.realTime;
 				if (PortalShapes[i]->Intersect(ray, &isect)) {
 					float cosPortal = Dot(-sundir, isect.dg.nn);
 					if (cosPortal > 0.f)
@@ -220,7 +219,7 @@ bool SunLight::Le(MemoryArena *arena, const Scene *scene, const Sample *sample,
 	}
 	if (pdfDirect)
 		*pdfDirect = INV_PI * zD / (sin2ThetaMax * DistanceSquared(r.o, ps));
-	*L = SWCSpectrum(sample->swl, *LSPD);
+	*L = SWCSpectrum(sample.swl, *LSPD);
 	return true;
 }
 
@@ -233,13 +232,13 @@ float SunLight::Pdf(const Point &p, const Point &po, const Normal &ns) const
 		return INV_PI * cosTheta / (sin2ThetaMax * DistanceSquared(p, po));
 }
 
-bool SunLight::Sample_L(MemoryArena *arena, const Scene *scene,
-	const Sample *sample, float u1, float u2, float u3, BSDF **bsdf,
-	float *pdf, SWCSpectrum *Le) const
+bool SunLight::Sample_L(const Scene &scene, const Sample &sample,
+	float u1, float u2, float u3, BSDF **bsdf, float *pdf,
+	SWCSpectrum *Le) const
 {
 	Point worldCenter;
 	float worldRadius;
-	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
+	scene.WorldBound().BoundingSphere(&worldCenter, &worldRadius);
 
 	Point ps;
 	Normal ns(-sundir);
@@ -258,7 +257,7 @@ bool SunLight::Sample_L(MemoryArena *arena, const Scene *scene,
 		}
 
 		DifferentialGeometry dg;
-		dg.time = sample->realTime;
+		dg.time = sample.realTime;
 		PortalShapes[shapeIndex]->Sample(u1, u2, u3, &dg);
 		ps = dg.p;
 		const float cosPortal = Dot(ns, dg.nn);
@@ -272,7 +271,7 @@ bool SunLight::Sample_L(MemoryArena *arena, const Scene *scene,
 			Intersection isect;
 			RayDifferential ray(ps, sundir);
 			ray.mint = -INFINITY;
-			ray.time = sample->realTime;
+			ray.time = sample.realTime;
 			if (PortalShapes[i]->Intersect(ray, &isect)) {
 				float cosP = Dot(ns, isect.dg.nn);
 				if (cosP > 0.f)
@@ -287,17 +286,17 @@ bool SunLight::Sample_L(MemoryArena *arena, const Scene *scene,
 	}
 
 	DifferentialGeometry dg(ps, ns, -x, y, Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
-	dg.time = sample->realTime;
-	*bsdf = ARENA_ALLOC(arena, SunBSDF)(dg, ns, NULL, NULL,
+	dg.time = sample.realTime;
+	*bsdf = ARENA_ALLOC(sample.arena, SunBSDF)(dg, ns, NULL, NULL,
 		sin2ThetaMax);
 
-	*Le = SWCSpectrum(sample->swl, *LSPD) * (M_PI * sin2ThetaMax);
+	*Le = SWCSpectrum(sample.swl, *LSPD) * (M_PI * sin2ThetaMax);
 	return true;
 }
 
-bool SunLight::Sample_L(MemoryArena *arena, const Scene *scene,
-	const Sample *sample, const Point &p, float u1, float u2, float u3,
-	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *Le) const
+bool SunLight::Sample_L(const Scene &scene, const Sample &sample,
+	const Point &p, float u1, float u2, float u3, BSDF **bsdf, float *pdf,
+	float *pdfDirect, SWCSpectrum *Le) const
 {
 	Vector wi;
 	if(cosThetaMax == 1.f) {
@@ -315,7 +314,7 @@ bool SunLight::Sample_L(MemoryArena *arena, const Scene *scene,
 
 	Point worldCenter;
 	float worldRadius;
-	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
+	scene.WorldBound().BoundingSphere(&worldCenter, &worldRadius);
 	Vector toCenter(worldCenter - p);
 	float approach = Dot(toCenter, sundir);
 	float distance = (approach + worldRadius) / Dot(wi, sundir);
@@ -323,8 +322,8 @@ bool SunLight::Sample_L(MemoryArena *arena, const Scene *scene,
 	Normal ns(-sundir);
 
 	DifferentialGeometry dg(ps, ns, -x, y, Normal(0, 0, 0), Normal (0, 0, 0), 0, 0, NULL);
-	dg.time = sample->realTime;
-	*bsdf = ARENA_ALLOC(arena, SunBSDF)(dg, ns, NULL, NULL, sin2ThetaMax);
+	dg.time = sample.realTime;
+	*bsdf = ARENA_ALLOC(sample.arena, SunBSDF)(dg, ns, NULL, NULL, sin2ThetaMax);
 	if (pdf) {
 		if (!havePortalShape)
 			*pdf = 1.f / (M_PI * worldRadius * worldRadius);
@@ -334,7 +333,7 @@ bool SunLight::Sample_L(MemoryArena *arena, const Scene *scene,
 				Intersection isect;
 				RayDifferential ray(ps, sundir);
 				ray.mint = -INFINITY;
-				ray.time = sample->realTime;
+				ray.time = sample.realTime;
 				if (PortalShapes[i]->Intersect(ray, &isect)) {
 					float cosPortal = Dot(ns, isect.dg.nn);
 					if (cosPortal > 0.f)
@@ -344,10 +343,10 @@ bool SunLight::Sample_L(MemoryArena *arena, const Scene *scene,
 			*pdf /= nrPortalShapes;
 		}
 	}
-	if (pdfDirect && cosThetaMax < 1.f)
+	if (cosThetaMax < 1.f)
 		*pdfDirect *= AbsDot(wi, ns) / DistanceSquared(p, ps);
 
-	*Le = SWCSpectrum(sample->swl, *LSPD) * (M_PI * sin2ThetaMax);
+	*Le = SWCSpectrum(sample.swl, *LSPD) * (M_PI * sin2ThetaMax);
 	return true;
 }
 

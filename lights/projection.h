@@ -39,20 +39,19 @@ public:
 	virtual ~ProjectionLight();
 	virtual bool IsDeltaLight() const { return true; }
 	virtual bool IsEnvironmental() const { return false; }
-	virtual float Power(const Scene *) const {
+	virtual float Power(const Scene &) const {
 		return Lbase->Y() * gain * 
 			2.f * M_PI * (1.f - cosTotalWidth) *
 			projectionMap->LookupFloat(CHANNEL_WMEAN, .5f, .5f, .5f);
 	}
 	virtual float Pdf(const Point &p, const Point &po,
 		const Normal &ns) const;
-	virtual bool Sample_L(MemoryArena *arena, const Scene *scene,
-		const Sample *sample, float u1, float u2, float u3, BSDF **bsdf,
-		float *pdf, SWCSpectrum *Le) const;
-	virtual bool Sample_L(MemoryArena *arena, const Scene *scene,
-		const Sample *sample, const Point &p, float u1, float u2,
-		float u3, BSDF **bsdf, float *pdf, float *pdfDirect,
+	virtual bool Sample_L(const Scene &scene, const Sample &sample,
+		float u1, float u2, float u3, BSDF **bsdf, float *pdf,
 		SWCSpectrum *Le) const;
+	virtual bool Sample_L(const Scene &scene, const Sample &sample,
+		const Point &p, float u1, float u2, float u3, BSDF **bsdf,
+		float *pdf, float *pdfDirect, SWCSpectrum *Le) const;
 	
 	static Light *CreateLight(const Transform &light2world,
 		const ParamSet &paramSet);

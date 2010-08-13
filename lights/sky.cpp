@@ -289,11 +289,11 @@ SkyLight::SkyLight(const Transform &light2world, float skyscale, u_int ns,
 	zenith_y /= PerezBase(perez_y, 0, thetaS);
 }
 
-float SkyLight::Power(const Scene *scene) const
+float SkyLight::Power(const Scene &scene) const
 {
 	Point worldCenter;
 	float worldRadius;
-	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
+	scene.WorldBound().BoundingSphere(&worldCenter, &worldRadius);
 
 	const u_int steps = 100;
 	const float deltaStep = 2.f / steps;
@@ -315,13 +315,12 @@ float SkyLight::Power(const Scene *scene) const
 	return power * (havePortalShape ? PortalArea : 4.f * M_PI * worldRadius * worldRadius) * 2.f * M_PI;
 }
 
-bool SkyLight::Le(MemoryArena *arena, const Scene *scene, const Sample *sample,
-	const Ray &r, BSDF **bsdf, float *pdf, float *pdfDirect,
-	SWCSpectrum *L) const
+bool SkyLight::Le(const Scene &scene, const Sample &sample, const Ray &r,
+	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *L) const
 {
 	Point worldCenter;
 	float worldRadius;
-	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
+	scene.WorldBound().BoundingSphere(&worldCenter, &worldRadius);
 	const Vector toCenter(worldCenter - r.o);
 	const float centerDistance = Dot(toCenter, toCenter);
 	const float approach = Dot(toCenter, r.d);
@@ -333,9 +332,9 @@ bool SkyLight::Le(MemoryArena *arena, const Scene *scene, const Sample *sample,
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Normal(0, 0, 0),
 		Normal(0, 0, 0), 0, 0, NULL);
-	dg.time = sample->realTime;
+	dg.time = sample.realTime;
 	if (!havePortalShape) {
-		*bsdf = ARENA_ALLOC(arena, SkyBSDF)(dg, ns,
+		*bsdf = ARENA_ALLOC(sample.arena, SkyBSDF)(dg, ns,
 			NULL, NULL, *this, WorldToLight);
 		if (pdf)
 			*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
@@ -343,7 +342,7 @@ bool SkyLight::Le(MemoryArena *arena, const Scene *scene, const Sample *sample,
 			*pdfDirect = AbsDot(r.d, ns) /
 			(4.f * M_PI * DistanceSquared(r.o, ps));
 	} else {
-		*bsdf = ARENA_ALLOC(arena, SkyPortalBSDF)(dg, ns,
+		*bsdf = ARENA_ALLOC(sample.arena, SkyPortalBSDF)(dg, ns,
 			NULL, NULL, *this, WorldToLight, ps, PortalShapes, ~0U);
 		if (pdf)
 			*pdf = 0.f;
@@ -363,7 +362,7 @@ bool SkyLight::Le(MemoryArena *arena, const Scene *scene, const Sample *sample,
 				Intersection isect;
 				RayDifferential ray(r);
 				ray.mint = -INFINITY;
-				ray.time = sample->realTime;
+				ray.time = sample.realTime;
 				if (PortalShapes[i]->Intersect(ray, &isect) &&
 					Dot(r.d, isect.dg.nn) < 0.f)
 					*pdfDirect += PortalShapes[i]->Pdf(r.o,
@@ -380,7 +379,7 @@ bool SkyLight::Le(MemoryArena *arena, const Scene *scene, const Sample *sample,
 	const Vector wh = Normalize(WorldToLight(r.d));
 	const float phi = SphericalPhi(wh);
 	const float theta = SphericalTheta(wh);
-	GetSkySpectralRadiance(sample->swl, theta, phi, L);
+	GetSkySpectralRadiance(sample.swl, theta, phi, L);
 	*L *= skyScale;
 	return true;
 }
@@ -410,13 +409,13 @@ float SkyLight::Pdf(const Point &p, const Point &po, const Normal &ns) const
 	}
 }
 
-bool SkyLight::Sample_L(MemoryArena *arena, const Scene *scene,
-	const Sample *sample, float u1, float u2, float u3,
-	BSDF **bsdf, float *pdf, SWCSpectrum *Le) const
+bool SkyLight::Sample_L(const Scene &scene, const Sample &sample,
+	float u1, float u2, float u3, BSDF **bsdf, float *pdf,
+	SWCSpectrum *Le) const
 {
 	Point worldCenter;
 	float worldRadius;
-	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
+	scene.WorldBound().BoundingSphere(&worldCenter, &worldRadius);
 	if (!havePortalShape) {
 		const Point ps = worldCenter +
 			worldRadius * UniformSampleSphere(u1, u2);
@@ -425,8 +424,8 @@ bool SkyLight::Sample_L(MemoryArena *arena, const Scene *scene,
 		CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 		DifferentialGeometry dg(ps, ns, dpdu, dpdv, Normal(0, 0, 0),
 			Normal (0, 0, 0), 0, 0, NULL);
-		dg.time = sample->realTime;
-		*bsdf = ARENA_ALLOC(arena, SkyBSDF)(dg, ns,
+		dg.time = sample.realTime;
+		*bsdf = ARENA_ALLOC(sample.arena, SkyBSDF)(dg, ns,
 			NULL, NULL, *this, WorldToLight);
 		*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	} else {
@@ -438,7 +437,7 @@ bool SkyLight::Sample_L(MemoryArena *arena, const Scene *scene,
 			u3 -= shapeIndex;
 		}
 		DifferentialGeometry dgs;
-		dgs.time = sample->realTime;
+		dgs.time = sample.realTime;
 		PortalShapes[shapeIndex]->Sample(.5f, .5f, .5f, &dgs);
 		Vector wi(UniformSampleHemisphere(u1, u2));
 		wi = Normalize(wi.x * Normalize(dgs.dpdu) +
@@ -455,8 +454,8 @@ bool SkyLight::Sample_L(MemoryArena *arena, const Scene *scene,
 		CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 		DifferentialGeometry dg(ps, ns, dpdu, dpdv, Normal(0, 0, 0),
 			Normal (0, 0, 0), 0, 0, NULL);
-		dg.time = sample->realTime;
-		*bsdf = ARENA_ALLOC(arena, SkyPortalBSDF)(dg, ns,
+		dg.time = sample.realTime;
+		*bsdf = ARENA_ALLOC(sample.arena, SkyPortalBSDF)(dg, ns,
 			NULL, NULL, *this, WorldToLight, ps, PortalShapes, shapeIndex);
 		*pdf = AbsDot(ns, wi) / (distance * distance);
 		for (u_int i = 0; i < nrPortalShapes; ++i) {
@@ -475,16 +474,16 @@ bool SkyLight::Sample_L(MemoryArena *arena, const Scene *scene,
 	*Le = SWCSpectrum(skyScale);
 	return true;
 }
-bool SkyLight::Sample_L(MemoryArena *arena, const Scene *scene,
-	const Sample *sample, const Point &p, float u1, float u2, float u3,
-	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *Le) const
+bool SkyLight::Sample_L(const Scene &scene, const Sample &sample,
+	const Point &p, float u1, float u2, float u3, BSDF **bsdf, float *pdf,
+	float *pdfDirect, SWCSpectrum *Le) const
 {
 	Vector wi;
 	u_int shapeIndex = 0;
 	Point worldCenter;
 	float worldRadius;
-	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
-	if(!havePortalShape) {
+	scene.WorldBound().BoundingSphere(&worldCenter, &worldRadius);
+	if (!havePortalShape) {
 		// Sample uniform direction on unit sphere
 		wi = UniformSampleSphere(u1, u2);
 		// Compute _pdf_ for cosine-weighted infinite light direction
@@ -497,7 +496,7 @@ bool SkyLight::Sample_L(MemoryArena *arena, const Scene *scene,
 			u3 -= shapeIndex;
 		}
 		DifferentialGeometry dg;
-		dg.time = sample->realTime;
+		dg.time = sample.realTime;
 		PortalShapes[shapeIndex]->Sample(p, u1, u2, u3, &dg);
 		Point ps = dg.p;
 		wi = Normalize(ps - p);
@@ -518,19 +517,19 @@ bool SkyLight::Sample_L(MemoryArena *arena, const Scene *scene,
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Normal(0, 0, 0),
 		Normal(0, 0, 0), 0, 0, NULL);
-	dg.time = sample->realTime;
+	dg.time = sample.realTime;
 	if (!havePortalShape) {
-		*bsdf = ARENA_ALLOC(arena, SkyBSDF)(dg, ns,
+		*bsdf = ARENA_ALLOC(sample.arena, SkyBSDF)(dg, ns,
 			NULL, NULL, *this, WorldToLight);
 		if (pdf)
 			*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	} else {
-		*bsdf = ARENA_ALLOC(arena, SkyPortalBSDF)(dg, ns,
+		*bsdf = ARENA_ALLOC(sample.arena, SkyPortalBSDF)(dg, ns,
 			NULL, NULL, *this, WorldToLight, ps, PortalShapes, shapeIndex);
 		if (pdf)
 			*pdf = 0.f;
 		DifferentialGeometry dgs;
-		dgs.time = sample->realTime;
+		dgs.time = sample.realTime;
 		for (u_int i = 0; i < nrPortalShapes; ++i) {
 			if (pdf) {
 				PortalShapes[i]->Sample(.5f, .5f, .5f, &dgs);
@@ -545,7 +544,7 @@ bool SkyLight::Sample_L(MemoryArena *arena, const Scene *scene,
 			Intersection isect;
 			RayDifferential ray(p, wi);
 			ray.mint = -INFINITY;
-			ray.time = sample->realTime;
+			ray.time = sample.realTime;
 			if (PortalShapes[i]->Intersect(ray, &isect) &&
 				Dot(wi, isect.dg.nn) < 0.f)
 				*pdfDirect += PortalShapes[i]->Pdf(p,

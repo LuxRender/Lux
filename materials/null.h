@@ -35,7 +35,7 @@ public:
 		compParams = new CompositingParams(cp);
 	}
 	virtual ~Null() { }
-	virtual BSDF *GetBSDF(MemoryArena *arena, const SpectrumWavelengths &sw,
+	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dgGeom,
 		const DifferentialGeometry &dgShading,
 		const Volume *exterior, const Volume *interior) const;

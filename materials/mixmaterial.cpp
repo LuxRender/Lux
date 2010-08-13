@@ -31,7 +31,7 @@
 using namespace lux;
 
 // MixMaterial Method Definitions
-BSDF *MixMaterial::GetBSDF(MemoryArena *arena, const SpectrumWavelengths &sw,
+BSDF *MixMaterial::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 	const DifferentialGeometry &dgGeom,
 	const DifferentialGeometry &dgShading,
 	const Volume *exterior, const Volume *interior) const {

@@ -39,9 +39,9 @@ Sampler::Sampler(int xstart, int xend, int ystart, int yend,
 	yPixelEnd = max(ystart, yend);
 	samplesPerPixel = spp;
 }
-float *Sampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
+float *Sampler::GetLazyValues(const Sample &sample, u_int num, u_int pos)
 {
-	return sample->xD[num] + pos * sample->dxD[num];
+	return sample.xD[num] + pos * sample.dxD[num];
 }
 void Sampler::AddSample(const Sample &sample)
 {
@@ -58,7 +58,7 @@ void Sampler::AddSample(const Sample &sample)
 
 // Sample Method Definitions
 Sample::Sample(SurfaceIntegrator *surf, VolumeIntegrator *vol,
-	const Scene *scene)
+	const Scene &scene)
 {
 	stamp = 0;
 	sampler = NULL;

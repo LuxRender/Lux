@@ -31,7 +31,7 @@
 using namespace lux;
 
 // Glass Method Definitions
-BSDF *Null::GetBSDF(MemoryArena *arena, const SpectrumWavelengths &sw,
+BSDF *Null::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 	const DifferentialGeometry &dgGeom,
 	const DifferentialGeometry &dgShading,
 	const Volume *exterior, const Volume *interior) const

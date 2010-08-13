@@ -90,9 +90,8 @@ DistantLight::~DistantLight()
 	delete bxdf;
 }
 
-bool DistantLight::Le(MemoryArena *arena, const Scene *scene,
-	const Sample *sample, const Ray &r, BSDF **bsdf, float *pdf,
-	float *pdfDirect, SWCSpectrum *L) const
+bool DistantLight::Le(const Scene &scene, const Sample &sample, const Ray &r,
+	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *L) const
 {
 	const float xD = Dot(r.d, x);
 	const float yD = Dot(r.d, y);
@@ -101,7 +100,7 @@ bool DistantLight::Le(MemoryArena *arena, const Scene *scene,
 		return false;
 	Point worldCenter;
 	float worldRadius;
-	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
+	scene.WorldBound().BoundingSphere(&worldCenter, &worldRadius);
 	Vector toCenter(worldCenter - r.o);
 	float approach = Dot(toCenter, lightDir);
 	float distance = (approach + worldRadius) / cosRay;
@@ -109,8 +108,8 @@ bool DistantLight::Le(MemoryArena *arena, const Scene *scene,
 	Normal ns(-lightDir);
 	DifferentialGeometry dg(ps, ns, -x, y, Normal(0, 0, 0), Normal(0, 0, 0),
 		0, 0, NULL);
-	dg.time = sample->realTime;
-	*bsdf = ARENA_ALLOC(arena, SingleBSDF)(dg, ns, bxdf, NULL, NULL);
+	dg.time = sample.realTime;
+	*bsdf = ARENA_ALLOC(sample.arena, SingleBSDF)(dg, ns, bxdf, NULL, NULL);
 	if (pdf) {
 		if (!havePortalShape)
 			*pdf = 1.f / (M_PI * worldRadius * worldRadius);
@@ -120,7 +119,7 @@ bool DistantLight::Le(MemoryArena *arena, const Scene *scene,
 				Intersection isect;
 				RayDifferential ray(ps, lightDir);
 				ray.mint = -INFINITY;
-				ray.time = sample->realTime;
+				ray.time = sample.realTime;
 				if (PortalShapes[i]->Intersect(ray, &isect)) {
 					float cosPortal = -Dot(lightDir, isect.dg.nn);
 					if (cosPortal > 0.f)
@@ -133,7 +132,7 @@ bool DistantLight::Le(MemoryArena *arena, const Scene *scene,
 	if (pdfDirect)
 		*pdfDirect = UniformConePdf(cosThetaMax) * fabsf(cosRay) /
 		(distance * distance);
-	*L *= Lbase->Evaluate(sample->swl, dg) *
+	*L *= Lbase->Evaluate(sample.swl, dg) *
 		(gain * UniformConePdf(cosThetaMax));
 	return true;
 }
@@ -149,13 +148,13 @@ float DistantLight::Pdf(const Point &p, const Point &po, const Normal &ns) const
 		return UniformConePdf(cosThetaMax) * cosRay / d2;
 }
 
-bool DistantLight::Sample_L(MemoryArena *arena, const Scene *scene,
-	const Sample *sample, float u1, float u2, float u3, BSDF **bsdf,
-	float *pdf, SWCSpectrum *Le) const
+bool DistantLight::Sample_L(const Scene &scene, const Sample &sample,
+	float u1, float u2, float u3, BSDF **bsdf, float *pdf,
+	SWCSpectrum *Le) const
 {
 	Point worldCenter;
 	float worldRadius;
-	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
+	scene.WorldBound().BoundingSphere(&worldCenter, &worldRadius);
 
 	Point ps;
 	Normal ns(-lightDir);
@@ -174,7 +173,7 @@ bool DistantLight::Sample_L(MemoryArena *arena, const Scene *scene,
 		}
 
 		DifferentialGeometry dg;
-		dg.time = sample->realTime;
+		dg.time = sample.realTime;
 		PortalShapes[shapeIndex]->Sample(u1, u2, u3, &dg);
 		ps = dg.p;
 		const float cosPortal = Dot(ns, dg.nn);
@@ -188,7 +187,7 @@ bool DistantLight::Sample_L(MemoryArena *arena, const Scene *scene,
 			Intersection isect;
 			RayDifferential ray(ps, lightDir);
 			ray.mint = -INFINITY;
-			ray.time = sample->realTime;
+			ray.time = sample.realTime;
 			if (PortalShapes[i]->Intersect(ray, &isect)) {
 				float cosP = Dot(ns, isect.dg.nn);
 				if (cosP > 0.f)
@@ -204,16 +203,16 @@ bool DistantLight::Sample_L(MemoryArena *arena, const Scene *scene,
 
 	DifferentialGeometry dg(ps, ns, -x, y, Normal(0, 0, 0), Normal(0, 0, 0),
 		0, 0, NULL);
-	dg.time = sample->time;
-	*bsdf = ARENA_ALLOC(arena, SingleBSDF)(dg, ns, bxdf, NULL, NULL);
+	dg.time = sample.time;
+	*bsdf = ARENA_ALLOC(sample.arena, SingleBSDF)(dg, ns, bxdf, NULL, NULL);
 
-	*Le = Lbase->Evaluate(sample->swl, dg) *
+	*Le = Lbase->Evaluate(sample.swl, dg) *
 		(gain * UniformConePdf(cosThetaMax));
 	return true;
 }
 
-bool DistantLight::Sample_L(MemoryArena *arena, const Scene *scene,
-	const Sample *sample, const Point &p, float u1, float u2, float u3,
+bool DistantLight::Sample_L(const Scene &scene, const Sample &sample,
+	const Point &p, float u1, float u2, float u3,
 	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *Le) const
 {
 	const Vector wi(UniformSampleCone(u1, u2, cosThetaMax, x, y, lightDir));
@@ -221,7 +220,7 @@ bool DistantLight::Sample_L(MemoryArena *arena, const Scene *scene,
 	const float cosRay = Dot(wi, lightDir);
 	Point worldCenter;
 	float worldRadius;
-	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
+	scene.WorldBound().BoundingSphere(&worldCenter, &worldRadius);
 	Vector toCenter(worldCenter - p);
 	float approach = Dot(toCenter, lightDir);
 	float distance = (approach + worldRadius) / cosRay;
@@ -230,8 +229,8 @@ bool DistantLight::Sample_L(MemoryArena *arena, const Scene *scene,
 
 	DifferentialGeometry dg(ps, ns, -x, y, Normal(0, 0, 0), Normal(0, 0, 0),
 		0, 0, NULL);
-	dg.time = sample->realTime;
-	*bsdf = ARENA_ALLOC(arena, SingleBSDF)(dg, ns, bxdf, NULL, NULL);
+	dg.time = sample.realTime;
+	*bsdf = ARENA_ALLOC(sample.arena, SingleBSDF)(dg, ns, bxdf, NULL, NULL);
 	if (pdf) {
 		if (!havePortalShape)
 			*pdf = 1.f / (M_PI * worldRadius * worldRadius);
@@ -241,7 +240,7 @@ bool DistantLight::Sample_L(MemoryArena *arena, const Scene *scene,
 				Intersection isect;
 				RayDifferential ray(ps, lightDir);
 				ray.mint = -INFINITY;
-				ray.time = sample->realTime;
+				ray.time = sample.realTime;
 				if (PortalShapes[i]->Intersect(ray, &isect)) {
 					float cosPortal = Dot(ns, isect.dg.nn);
 					if (cosPortal > 0.f)
@@ -255,7 +254,7 @@ bool DistantLight::Sample_L(MemoryArena *arena, const Scene *scene,
 		*pdfDirect = UniformConePdf(cosThetaMax) * cosRay /
 			(distance * distance);
 
-	*Le = Lbase->Evaluate(sample->swl, dg) *
+	*Le = Lbase->Evaluate(sample.swl, dg) *
 		(gain * UniformConePdf(cosThetaMax));
 	return true;
 }

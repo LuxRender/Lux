@@ -163,13 +163,13 @@ InfiniteAreaLightIS::InfiniteAreaLightIS(const Transform &light2world,
 	delete[] img;
 }
 
-bool InfiniteAreaLightIS::Le(MemoryArena *arena, const Scene *scene,
-	const Sample *sample, const Ray &r, BSDF **bsdf, float *pdf,
-	float *pdfDirect, SWCSpectrum *L) const
+bool InfiniteAreaLightIS::Le(const Scene &scene, const Sample &sample,
+	const Ray &r, BSDF **bsdf, float *pdf, float *pdfDirect,
+	SWCSpectrum *L) const
 {
 	Point worldCenter;
 	float worldRadius;
-	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
+	scene.WorldBound().BoundingSphere(&worldCenter, &worldRadius);
 	const Vector toCenter(worldCenter - r.o);
 	const float centerDistance = Dot(toCenter, toCenter);
 	const float approach = Dot(toCenter, r.d);
@@ -181,15 +181,15 @@ bool InfiniteAreaLightIS::Le(MemoryArena *arena, const Scene *scene,
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Normal(0, 0, 0),
 		Normal(0, 0, 0), 0, 0, NULL);
-	dg.time = sample->realTime;
-	*bsdf = ARENA_ALLOC(arena, InfiniteISBSDF)(dg, ns,
+	dg.time = sample.realTime;
+	*bsdf = ARENA_ALLOC(sample.arena, InfiniteISBSDF)(dg, ns,
 		NULL, NULL, *this, WorldToLight);
-	*L *= SWCSpectrum(sample->swl, SPDbase);
+	*L *= SWCSpectrum(sample.swl, SPDbase);
 	const Vector wh = Normalize(WorldToLight(r.d));
 	float s, t, pdfMap;
 	mapping->Map(wh, &s, &t, &pdfMap);
 	if (radianceMap != NULL)
-		*L *= radianceMap->LookupSpectrum(sample->swl, s, t);
+		*L *= radianceMap->LookupSpectrum(sample.swl, s, t);
 	if (pdf)
 		*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	if (pdfDirect)
@@ -209,13 +209,13 @@ float InfiniteAreaLightIS::Pdf(const Point &p, const Point &po,
 		DistanceSquared(p, po);
 }
 
-bool InfiniteAreaLightIS::Sample_L(MemoryArena *arena, const Scene *scene,
-	const Sample *sample, float u1, float u2, float u3, BSDF **bsdf,
-	float *pdf, SWCSpectrum *Le) const
+bool InfiniteAreaLightIS::Sample_L(const Scene &scene, const Sample &sample,
+	float u1, float u2, float u3, BSDF **bsdf, float *pdf,
+	SWCSpectrum *Le) const
 {
 	Point worldCenter;
 	float worldRadius;
-	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
+	scene.WorldBound().BoundingSphere(&worldCenter, &worldRadius);
 	const Point ps = worldCenter +
 		worldRadius * UniformSampleSphere(u1, u2);
 	const Normal ns = Normal(Normalize(worldCenter - ps));
@@ -223,21 +223,21 @@ bool InfiniteAreaLightIS::Sample_L(MemoryArena *arena, const Scene *scene,
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Normal(0, 0, 0),
 		Normal (0, 0, 0), 0, 0, NULL);
-	dg.time = sample->realTime;
-	*bsdf = ARENA_ALLOC(arena, InfiniteISBSDF)(dg, ns,
+	dg.time = sample.realTime;
+	*bsdf = ARENA_ALLOC(sample.arena, InfiniteISBSDF)(dg, ns,
 		NULL, NULL, *this, WorldToLight);
 	*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
-	*Le = SWCSpectrum(sample->swl, SPDbase) * M_PI;
+	*Le = SWCSpectrum(sample.swl, SPDbase) * M_PI;
 	return true;
 }
 
-bool InfiniteAreaLightIS::Sample_L(MemoryArena *arena, const Scene *scene,
-	const Sample *sample, const Point &p, float u1, float u2, float u3,
-	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *Le) const
+bool InfiniteAreaLightIS::Sample_L(const Scene &scene, const Sample &sample,
+	const Point &p, float u1, float u2, float u3, BSDF **bsdf, float *pdf,
+	float *pdfDirect, SWCSpectrum *Le) const
 {
 	Point worldCenter;
 	float worldRadius;
-	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
+	scene.WorldBound().BoundingSphere(&worldCenter, &worldRadius);
 	// Find floating-point $(u,v)$ sample coordinates
 	float uv[2];
 	uvDistrib->SampleContinuous(u1, u2, uv, pdfDirect);
@@ -260,13 +260,13 @@ bool InfiniteAreaLightIS::Sample_L(MemoryArena *arena, const Scene *scene,
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Normal(0, 0, 0),
 		Normal (0, 0, 0), 0, 0, NULL);
-	dg.time = sample->realTime;
-	*bsdf = ARENA_ALLOC(arena, InfiniteISBSDF)(dg, ns,
+	dg.time = sample.realTime;
+	*bsdf = ARENA_ALLOC(sample.arena, InfiniteISBSDF)(dg, ns,
 		NULL, NULL, *this, WorldToLight);
 	if (pdf)
 		*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	*pdfDirect *= AbsDot(wi, ns) / (distance * distance);
-	*Le = SWCSpectrum(sample->swl, SPDbase) * M_PI;
+	*Le = SWCSpectrum(sample.swl, SPDbase) * M_PI;
 	return true;
 }
 

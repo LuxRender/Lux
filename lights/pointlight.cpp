@@ -149,7 +149,7 @@ PointLight::PointLight(
 PointLight::~PointLight() {
 	delete func;
 }
-float PointLight::Power(const Scene *) const {
+float PointLight::Power(const Scene &) const {
 	return Lbase->Y() * gain * 4.f * M_PI;
 }
 
@@ -158,46 +158,46 @@ float PointLight::Pdf(const Point &p, const Point &po, const Normal &ns) const
 	return 1.f;
 }
 
-bool PointLight::Sample_L(MemoryArena *arena, const Scene *scene,
-	const Sample *sample, float u1, float u2, float u3, BSDF **bsdf,
-	float *pdf, SWCSpectrum *Le) const
+bool PointLight::Sample_L(const Scene &scene, const Sample &sample,
+	float u1, float u2, float u3, BSDF **bsdf, float *pdf,
+	SWCSpectrum *Le) const
 {
 	*pdf = 1.f;
-	const Normal ns(0, 0, 1);
-	DifferentialGeometry dg(lightPos, Normalize(LightToWorld(ns)),
+	const Normal ns(Normalize(LightToWorld(Normal(0, 0, 1))));
+	DifferentialGeometry dg(lightPos, ns,
 		Normalize(LightToWorld(Vector(1, 0, 0))),
 		Normalize(LightToWorld(Vector(0, 1, 0))),
 		Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
-	dg.time = sample->realTime;
+	dg.time = sample.realTime;
 	if(func)
-		*bsdf = ARENA_ALLOC(arena, GonioBSDF)(dg, ns,
+		*bsdf = ARENA_ALLOC(sample.arena, GonioBSDF)(dg, ns,
 			NULL, NULL, func);
 	else
-		*bsdf = ARENA_ALLOC(arena, UniformBSDF)(dg, ns,
+		*bsdf = ARENA_ALLOC(sample.arena, UniformBSDF)(dg, ns,
 			NULL, NULL);
-	*Le = Lbase->Evaluate(sample->swl, dg) * (gain * 4.f * M_PI);
+	*Le = Lbase->Evaluate(sample.swl, dg) * (gain * 4.f * M_PI);
 	return true;
 }
-bool PointLight::Sample_L(MemoryArena *arena, const Scene *scene,
-	const Sample *sample, const Point &p, float u1, float u2, float u3,
-	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *Le) const
+bool PointLight::Sample_L(const Scene &scene, const Sample &sample,
+	const Point &p, float u1, float u2, float u3, BSDF **bsdf, float *pdf,
+	float *pdfDirect, SWCSpectrum *Le) const
 {
-	const Normal ns(0, 0, 1);
-	DifferentialGeometry dg(lightPos, Normalize(LightToWorld(ns)),
+	const Normal ns(Normalize(LightToWorld(Normal(0, 0, 1))));
+	DifferentialGeometry dg(lightPos, ns,
 		Normalize(LightToWorld(Vector(1, 0, 0))),
 		Normalize(LightToWorld(Vector(0, 1, 0))),
 		Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
-	dg.time = sample->realTime;
+	dg.time = sample.realTime;
 	*pdfDirect = 1.f;
 	if (pdf)
 		*pdf = 1.f;
 	if (func)
-		*bsdf = ARENA_ALLOC(arena, GonioBSDF)(dg, ns,
+		*bsdf = ARENA_ALLOC(sample.arena, GonioBSDF)(dg, ns,
 			NULL, NULL, func);
 	else
-		*bsdf = ARENA_ALLOC(arena, UniformBSDF)(dg, ns,
+		*bsdf = ARENA_ALLOC(sample.arena, UniformBSDF)(dg, ns,
 			NULL, NULL);
-	*Le = Lbase->Evaluate(sample->swl, dg) * (gain * 4.f * M_PI);
+	*Le = Lbase->Evaluate(sample.swl, dg) * (gain * 4.f * M_PI);
 	return true;
 }
 Light* PointLight::CreateLight(const Transform &light2world,

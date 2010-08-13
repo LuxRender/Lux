@@ -55,9 +55,9 @@ public:
 		delete[] bsdfSampleOffset;
 		delete[] bsdfComponentOffset;
 	}
-	virtual u_int Li(const TsPack *tspack, const Scene *scene, const Sample *sample) const;
-	virtual void RequestSamples(Sample *sample, const Scene *scene);
-	virtual void Preprocess(const TsPack *tspack, const Scene *scene);
+	virtual u_int Li(const Scene &scene, const Sample &sample) const;
+	virtual void RequestSamples(Sample *sample, const Scene &scene);
+	virtual void Preprocess(const RandomGenerator &rng, const Scene &scene);
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 private:
 	// IGI Private Data
@@ -65,9 +65,9 @@ private:
 	vector<vector<VirtualLight> > virtualLights;
 	u_int maxSpecularDepth;
 	float minDist2;
-	u_int vlSetOffset, bufferId;
+	u_int vlSetOffset, bufferId, sampleOffset;
 
-	u_int *lightSampleOffset;
+	u_int *lightSampleOffset, *lightSampleNumber;
 	u_int *bsdfSampleOffset, *bsdfComponentOffset;
 };
 

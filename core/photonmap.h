@@ -148,7 +148,7 @@ public:
 	virtual void save(bool isLittleEndian, std::basic_ostream<char> &stream) {
 	}
 
-	float Sample(const TsPack *tspack, Vector *wi, float u1, float u2, float u3) const {
+	float Sample(Vector *wi, float u1, float u2, float u3) const {
 		size_t dn = Clamp<size_t>(static_cast<size_t>(
 			std::upper_bound(dirs.begin(), dirs.end(), Direction(u3)) - dirs.begin()),
 			0U, dirs.size() - 1);
@@ -157,9 +157,9 @@ public:
 		CoordinateSystem(dirs[dn].dir, &vx, &vy);
 		*wi = UniformSampleCone(u1, u2, dirs[dn].cosRadius, vx, vy, dirs[dn].dir);
 
-		return Pdf(tspack, *wi);
+		return Pdf(*wi);
 	}
-	float Pdf(const TsPack *tspack, const Vector &wi) const {
+	float Pdf(const Vector &wi) const {
 		float pdf = 0.f;
 		for (u_int i = 0; i < dirs.size(); ++i) {
 			if (Dot(dirs[i].dir, wi) > dirs[i].cosRadius)
@@ -447,7 +447,7 @@ enum PhotonMapRRStrategy { RR_EFFICIENCY, RR_PROBABILITY, RR_NONE };
  * Creates a number of photonmaps. This function should be called during 
  * the preprocess step of an integrator.
  *
- * @param tspack           The thread specific pack.
+ * @param rng              The random generator to use
  * @param scene            The scene to build the photon maps for.
  * @param mapFileName      The file to load photonmaps from and store them to.
  * @param photonBxdfType   The bxdf types where photons should be stored.
@@ -463,8 +463,8 @@ enum PhotonMapRRStrategy { RR_EFFICIENCY, RR_PROBABILITY, RR_NONE };
  * @param causticMap       The target map for the caustic photons.
  */
 extern void PhotonMapPreprocess(
-	const TsPack* tspack, 
-	const Scene *scene, 
+	const RandomGenerator &rng,
+	const Scene &scene, 
 	const string *mapFileName,
 	const BxDFType photonBxdfType,
 	const BxDFType radianceBxdfType,
@@ -479,7 +479,6 @@ extern void PhotonMapPreprocess(
  * by performing a final gather using sampling with nearby photons and 
  * sampling of the bsdf.
  *
- * @param tspack                   A thread specific pack.
  * @param scene                    The scene.
  * @param sample                   The sample containing all necessary samples.
  * @param sampleFinalGather1Offset The offset for sampling the bsdf. For each 
@@ -500,9 +499,8 @@ extern void PhotonMapPreprocess(
  * @return A radiance estimate.
  */
 extern SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(
-	const TsPack* tspack,
-	const Scene *scene,
-	const Sample *sample,
+	const Scene &scene,
+	const Sample &sample,
 	u_int sampleFinalGather1Offset,
 	u_int sampleFinalGather2Offset,
 	u_int gatherSamples,
@@ -519,7 +517,6 @@ extern SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(
  * Estimates the outgoing radiance from a surface point in a single direction 
  * by performing a final gather using only sampling of the bsdf.
  *
- * @param tspack                  A thread specific pack.
  * @param scene                   The scene.
  * @param sample                  The sample containing all necessary samples.
  * @param sampleFinalGatherOffset The offset for sampling the bsdf. For each 
@@ -536,9 +533,8 @@ extern SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(
  * @return A radiance estimate.
  */
 extern SWCSpectrum PhotonMapFinalGather(
-	const TsPack* tspack,
-	const Scene *scene,
-	const Sample *sample,
+	const Scene &scene,
+	const Sample &sample,
 	u_int sampleFinalGatherOffset,
 	u_int gatherSamples,
 	PhotonMapRRStrategy rrStrategy,

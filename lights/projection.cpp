@@ -147,39 +147,39 @@ float ProjectionLight::Pdf(const Point &p, const Point &po,
 {
 	return 1.f;
 }
-bool ProjectionLight::Sample_L(MemoryArena *arena, const Scene *scene,
-	const Sample *sample, float u1, float u2, float u3, BSDF **bsdf,
-	float *pdf, SWCSpectrum *Le) const
+bool ProjectionLight::Sample_L(const Scene &scene, const Sample &sample,
+	float u1, float u2, float u3, BSDF **bsdf, float *pdf,
+	SWCSpectrum *Le) const
 {
-	Normal ns = LightToWorld(Normal(0, 0, 1));
+	Normal ns(Normalize(LightToWorld(Normal(0, 0, 1))));
 	Vector dpdu, dpdv;
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 	DifferentialGeometry dg(lightPos, ns, dpdu, dpdv, Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
-	dg.time = sample->realTime;
-	*bsdf = ARENA_ALLOC(arena, SingleBSDF)(dg, ns,
-		ARENA_ALLOC(arena, ProjectionBxDF)(area, projectionMap,
+	dg.time = sample.realTime;
+	*bsdf = ARENA_ALLOC(sample.arena, SingleBSDF)(dg, ns,
+		ARENA_ALLOC(sample.arena, ProjectionBxDF)(area, projectionMap,
 		lightProjection, screenX0, screenX1, screenY0, screenY1), NULL, NULL);
 	*pdf = 1.f;
-	*Le = Lbase->Evaluate(sample->swl, dg) * gain;
+	*Le = Lbase->Evaluate(sample.swl, dg) * gain;
 	return true;
 }
-bool ProjectionLight::Sample_L(MemoryArena *arena, const Scene *scene,
-	const Sample *sample, const Point &p, float u1, float u2, float u3,
-	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *Le) const
+bool ProjectionLight::Sample_L(const Scene &scene, const Sample &sample,
+	const Point &p, float u1, float u2, float u3, BSDF **bsdf, float *pdf,
+	float *pdfDirect, SWCSpectrum *Le) const
 {
 	const Vector w(p - lightPos);
 	*pdfDirect = 1.f;
-	Normal ns = LightToWorld(Normal(0, 0, 1));
+	Normal ns(Normalize(LightToWorld(Normal(0, 0, 1))));
 	if (pdf)
 		*pdf = 1.f;
 	Vector dpdu, dpdv;
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 	DifferentialGeometry dg(lightPos, ns, dpdu, dpdv, Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
-	dg.time = sample->realTime;
-	*bsdf = ARENA_ALLOC(arena, SingleBSDF)(dg, ns,
-		ARENA_ALLOC(arena, ProjectionBxDF)(area, projectionMap,
+	dg.time = sample.realTime;
+	*bsdf = ARENA_ALLOC(sample.arena, SingleBSDF)(dg, ns,
+		ARENA_ALLOC(sample.arena, ProjectionBxDF)(area, projectionMap,
 		lightProjection, screenX0, screenX1, screenY0, screenY1), NULL, NULL);
-	*Le = Lbase->Evaluate(sample->swl, dg) * gain;
+	*Le = Lbase->Evaluate(sample.swl, dg) * gain;
 	return true;
 }
 

@@ -32,31 +32,30 @@
 using namespace lux;
 
 // SingleScattering Method Definitions
-void SingleScattering::RequestSamples(Sample *sample,
-		const Scene *scene) {
+void SingleScattering::RequestSamples(Sample *sample, const Scene &scene)
+{
 	tauSampleOffset = sample->Add1D(1);
 	scatterSampleOffset = sample->Add1D(1);
 }
 
-void SingleScattering::Transmittance(const TsPack *tspack, const Scene *scene,
-	const Ray &ray, const Sample *sample,
-	float *alpha, SWCSpectrum *const L) const
+void SingleScattering::Transmittance(const Scene &scene, const Ray &ray,
+	const Sample &sample, float *alpha, SWCSpectrum *const L) const
 {
-	if (!scene->volumeRegion) 
+	if (!scene.volumeRegion) 
 		return;
 	const float step = stepSize; // TODO - handle varying step size
-	const float offset = sample->oneD[tauSampleOffset][0];
-	const SWCSpectrum tau(scene->volumeRegion->Tau(sample->swl, ray, step,
+	const float offset = sample.oneD[tauSampleOffset][0];
+	const SWCSpectrum tau(scene.volumeRegion->Tau(sample.swl, ray, step,
 		offset));
 	*L *= Exp(-tau);
 }
 
-u_int SingleScattering::Li(const TsPack *tspack, const Scene *scene,
-	const RayDifferential &ray, const Sample *sample,
-	SWCSpectrum *Lv, float *alpha) const
+u_int SingleScattering::Li(const Scene &scene, const RayDifferential &ray,
+	const Sample &sample, SWCSpectrum *Lv, float *alpha) const
 {
+	static RandomGenerator rng(1); //FIXME
 	*Lv = 0.f;
-	Region *vr = scene->volumeRegion;
+	Region *vr = scene.volumeRegion;
 	float t0, t1;
 	if (!vr || !vr->IntersectP(ray, &t0, &t1))
 		return 0;
@@ -64,20 +63,20 @@ u_int SingleScattering::Li(const TsPack *tspack, const Scene *scene,
 	// Prepare for volume integration stepping
 	const u_int N = Ceil2UInt((t1 - t0) / stepSize);
 	const float step = (t1 - t0) / N;
-	const SpectrumWavelengths &sw(sample->swl);
+	const SpectrumWavelengths &sw(sample.swl);
 	SWCSpectrum Tr(1.f);
 	Vector w = -ray.d;
-	t0 += sample->oneD[tauSampleOffset][0] * step;
+	t0 += sample.oneD[tauSampleOffset][0] * step;
 	Ray r(ray(t0), ray.d * (step / ray.d.Length()), 0.f, 1.f);
-	const u_int nLights = scene->lights.size();
+	const u_int nLights = scene.lights.size();
 	const u_int lightNum = min(nLights - 1,
-		Floor2UInt(sample->oneD[scatterSampleOffset][0] * nLights));
-	Light *light = scene->lights[lightNum];
+		Floor2UInt(sample.oneD[scatterSampleOffset][0] * nLights));
+	Light *light = scene.lights[lightNum];
 
 	// Compute sample patterns for single scattering samples
 	// FIXME - use real samples
 	float *samp = static_cast<float *>(alloca(3 * N * sizeof(float)));
-	LatinHypercube(*(tspack->rng), samp, N, 3);
+	LatinHypercube(rng, samp, N, 3);
 	u_int sampOffset = 0;
 	for (u_int i = 0; i < N; ++i, t0 += step) {
 		// Advance to sample at _t0_ and update _T_
@@ -89,14 +88,14 @@ u_int SingleScattering::Li(const TsPack *tspack, const Scene *scene,
 		// Possibly terminate raymarching if transmittance is small
 		if (Tr.Filter(sw) < 1e-3f) {
 			const float continueProb = .5f;
-			if (tspack->rng->floatValue() > continueProb) break; // TODO - REFACT - remove and add random value from sample
+			if (rng.floatValue() > continueProb) break; // TODO - REFACT - remove and add random value from sample
 			Tr /= continueProb;
 		}
 
 		// Compute single-scattering source term at _p_
 		*Lv += Tr * vr->Lve(sw, r.o, w);
 
-		if (scene->lights.size() == 0)
+		if (scene.lights.size() == 0)
 			continue;
 		const SWCSpectrum ss(vr->SigmaS(sw, r.o, w));
 		if (!ss.Black()) {
@@ -107,9 +106,9 @@ u_int SingleScattering::Li(const TsPack *tspack, const Scene *scene,
 				u3 = samp[sampOffset + 2];
 			BSDF *ibsdf;
 			SWCSpectrum L;
-			if (light->Sample_L(tspack->arena, scene, sample, r.o,
-				u1, u2, u3, &ibsdf, NULL, &pdf, &L)) {
-				if (Connect(tspack, scene, sample, NULL, r.o,
+			if (light->Sample_L(scene, sample, r.o, u1, u2, u3,
+				&ibsdf, NULL, &pdf, &L)) {
+				if (Connect(scene, sample, NULL, r.o,
 					ibsdf->dgShading.p, false, &L, NULL,
 					NULL))
 					*Lv += Tr * ss * L *

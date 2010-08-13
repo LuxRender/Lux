@@ -50,8 +50,8 @@ Camera::Camera(const Transform &w2cstart,
 	film = f;
 }
 
-float Camera::GenerateRay(MemoryArena *arena, const Scene *scene,
-	const Sample &sample, RayDifferential *ray) const
+float Camera::GenerateRay(const Scene &scene, const Sample &sample,
+	RayDifferential *ray) const
 {
 	const SpectrumWavelengths &sw(sample.swl);
 	if (IsLensBased()) {
@@ -59,20 +59,20 @@ float Camera::GenerateRay(MemoryArena *arena, const Scene *scene,
 		const float o2 = sample.lensV;
 		const float d1 = sample.imageX;
 		const float d2 = sample.imageY;
-		if (!GenerateRay(arena, sw, scene, o1, o2, d1, d2, ray))
+		if (!GenerateRay(sample.arena, sw, scene, o1, o2, d1, d2, ray))
 			return 0.f;
-		if (GenerateRay(arena, sw, scene, o1, o2, d1 + 1, d2, &(ray->rx)) &&
-			GenerateRay(arena, sw, scene, o1, o2, d1, d2 + 1, &(ray->ry)))
+		if (GenerateRay(sample.arena, sw, scene, o1, o2, d1 + 1, d2, &(ray->rx)) &&
+			GenerateRay(sample.arena, sw, scene, o1, o2, d1, d2 + 1, &(ray->ry)))
 			ray->hasDifferentials = true;
 	} else {
 		const float o1 = sample.imageX;
 		const float o2 = sample.imageY;
 		const float d1 = sample.lensU;
 		const float d2 = sample.lensV;
-		if (!GenerateRay(arena, sw, scene, o1, o2, d1, d2, ray))
+		if (!GenerateRay(sample.arena, sw, scene, o1, o2, d1, d2, ray))
 			return 0.f;
-		if (GenerateRay(arena, sw, scene, o1, o2, d1 + 1, d2, &(ray->rx)) &&
-			GenerateRay(arena, sw, scene, o1, o2, d1, d2 + 1, &(ray->ry)))
+		if (GenerateRay(sample.arena, sw, scene, o1, o2, d1 + 1, d2, &(ray->rx)) &&
+			GenerateRay(sample.arena, sw, scene, o1, o2, d1, d2 + 1, &(ray->ry)))
 			ray->hasDifferentials = true;
 	}
 
@@ -83,8 +83,8 @@ float Camera::GenerateRay(MemoryArena *arena, const Scene *scene,
 	return 1.f;
 }
 
-bool Camera::GenerateRay(MemoryArena *arena, const SpectrumWavelengths &sw,
-	const Scene *scene, float o1, float o2, float d1, float d2, Ray *ray) const
+bool Camera::GenerateRay(MemoryArena &arena, const SpectrumWavelengths &sw,
+	const Scene &scene, float o1, float o2, float d1, float d2, Ray *ray) const
 {
 	SWCSpectrum We;
 	BSDF *bsdf;

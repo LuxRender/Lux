@@ -31,30 +31,29 @@
 using namespace lux;
 
 // EmissionIntegrator Method Definitions
-void EmissionIntegrator::RequestSamples(Sample *sample, const Scene *scene)
+void EmissionIntegrator::RequestSamples(Sample *sample, const Scene &scene)
 {
 	tauSampleOffset = sample->Add1D(1);
 	scatterSampleOffset = sample->Add1D(1);
 }
 
-void EmissionIntegrator::Transmittance(const TsPack *tspack, const Scene *scene,
-	const Ray &ray, const Sample *sample, float *alpha,
-	SWCSpectrum *const L) const
+void EmissionIntegrator::Transmittance(const Scene &scene, const Ray &ray,
+	const Sample &sample, float *alpha, SWCSpectrum *const L) const
 {
-	if (!scene->volumeRegion) 
+	if (!scene.volumeRegion)
 		return;
 	const float step = stepSize;
-	const float offset = sample->oneD[tauSampleOffset][0];
-	const SWCSpectrum tau(scene->volumeRegion->Tau(sample->swl, ray, step,
+	const float offset = sample.oneD[tauSampleOffset][0];
+	const SWCSpectrum tau(scene.volumeRegion->Tau(sample.swl, ray, step,
 		offset));
 	*L *= Exp(-tau);
 }
-u_int EmissionIntegrator::Li(const TsPack *tspack, const Scene *scene,
-	const RayDifferential &ray, const Sample *sample,
-	SWCSpectrum *Lv, float *alpha) const
+u_int EmissionIntegrator::Li(const Scene &scene, const RayDifferential &ray,
+	const Sample &sample, SWCSpectrum *Lv, float *alpha) const
 {
+	static RandomGenerator rng(1); //FIXME
 	*Lv = 0.f;
-	Region *vr = scene->volumeRegion;
+	Region *vr = scene.volumeRegion;
 	float t0, t1;
 	if (!vr || !vr->IntersectP(ray, &t0, &t1))
 		return 0;
@@ -64,23 +63,23 @@ u_int EmissionIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	const float step = (t1 - t0) / N;
 	SWCSpectrum Tr(1.f);
 	const Vector w = -ray.d;
-	t0 += sample->oneD[scatterSampleOffset][0] * step;
+	t0 += sample.oneD[scatterSampleOffset][0] * step;
 	Ray r(ray(t0), ray.d * (step / ray.d.Length()), 0.f, 1.f);
 	for (u_int i = 0; i < N; ++i, t0 += step) {
 		// Advance to sample at _t0_ and update _T_
 		r.o = ray(t0);
 		// Ray is already offset above, no need to do it again
-		const SWCSpectrum stepTau(vr->Tau(sample->swl, r,
+		const SWCSpectrum stepTau(vr->Tau(sample.swl, r,
 			.5f * stepSize, 0.f));
 		Tr *= Exp(-stepTau);
 		// Possibly terminate raymarching if transmittance is small
-		if (Tr.Filter(sample->swl) < 1e-3f) {
+		if (Tr.Filter(sample.swl) < 1e-3f) {
 			const float continueProb = .5f;
-			if (tspack->rng->floatValue() > continueProb) break; // TODO - REFACT - remove and add random value from sample
+			if (rng.floatValue() > continueProb) break; // TODO - REFACT - remove and add random value from sample
 			Tr /= continueProb;
 		}
 		// Compute emission-only source term at _p_
-		*Lv += Tr * vr->Lve(sample->swl, r.o, w);
+		*Lv += Tr * vr->Lve(sample.swl, r.o, w);
 	}
 	*Lv *= step;
 	return group;

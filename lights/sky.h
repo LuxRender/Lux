@@ -35,21 +35,20 @@ public:
 		Vector sd, float turb, float aconst, float bconst,
 		float cconst, float dconst, float econst);
 	virtual ~SkyLight();
-	virtual float Power(const Scene *scene) const;
+	virtual float Power(const Scene &scene) const;
 	virtual bool IsDeltaLight() const { return false; }
 	virtual bool IsEnvironmental() const { return true; }
-	virtual bool Le(MemoryArena *arena, const Scene *scene,
-		const Sample *sample, const Ray &r, BSDF **bsdf, float *pdf,
-		float *pdfDirect, SWCSpectrum *L) const;
+	virtual bool Le(const Scene &scene, const Sample &sample, const Ray &r,
+		BSDF **bsdf, float *pdf, float *pdfDirect,
+		SWCSpectrum *L) const;
 	virtual float Pdf(const Point &p, const Point &po,
 		const Normal &ns) const;
-	virtual bool Sample_L(MemoryArena *arena, const Scene *scene,
-		const Sample *sample, float u1, float u2, float u3, BSDF **bsdf,
-		float *pdf, SWCSpectrum *Le) const;
-	virtual bool Sample_L(MemoryArena *arena, const Scene *scene,
-		const Sample *sample, const Point &p, float u1, float u2,
-		float u3, BSDF **bsdf, float *pdf, float *pdfDirect,
+	virtual bool Sample_L(const Scene &scene, const Sample &sample,
+		float u1, float u2, float u3, BSDF **bsdf, float *pdf,
 		SWCSpectrum *Le) const;
+	virtual bool Sample_L(const Scene &scene, const Sample &sample,
+		const Point &p, float u1, float u2, float u3, BSDF **bsdf,
+		float *pdf, float *pdfDirect, SWCSpectrum *Le) const;
 	void GetSkySpectralRadiance(const SpectrumWavelengths &sw,
 		const float theta, const float phi,
 		SWCSpectrum *const dst_spect) const;

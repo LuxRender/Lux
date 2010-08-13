@@ -240,24 +240,24 @@ InfiniteAreaLight::InfiniteAreaLight(const Transform &light2world,
 	}
 }
 
-float InfiniteAreaLight::Power(const Scene *scene) const
+float InfiniteAreaLight::Power(const Scene &scene) const
 {
 	Point worldCenter;
 	float worldRadius;
-	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
+	scene.WorldBound().BoundingSphere(&worldCenter, &worldRadius);
 	float power = SPDbase.Y() * M_PI * 4.f * M_PI * worldRadius * worldRadius;
 	if (radianceMap != NULL)
 		power *= radianceMap->LookupFloat(CHANNEL_MEAN, .5f, .5f, .5f);
 	return power;
 }
 
-bool InfiniteAreaLight::Le(MemoryArena *arena, const Scene *scene,
-	const Sample *sample, const Ray &r, BSDF **bsdf, float *pdf,
-	float *pdfDirect, SWCSpectrum *L) const
+bool InfiniteAreaLight::Le(const Scene &scene, const Sample &sample,
+	const Ray &r, BSDF **bsdf, float *pdf, float *pdfDirect,
+	SWCSpectrum *L) const
 {
 	Point worldCenter;
 	float worldRadius;
-	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
+	scene.WorldBound().BoundingSphere(&worldCenter, &worldRadius);
 	const Vector toCenter(worldCenter - r.o);
 	const float centerDistance = Dot(toCenter, toCenter);
 	const float approach = Dot(toCenter, r.d);
@@ -269,9 +269,9 @@ bool InfiniteAreaLight::Le(MemoryArena *arena, const Scene *scene,
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Normal(0, 0, 0),
 		Normal(0, 0, 0), 0, 0, NULL);
-	dg.time = sample->realTime;
+	dg.time = sample.realTime;
 	if (!havePortalShape) {
-		*bsdf = ARENA_ALLOC(arena, InfiniteBSDF)(dg, ns,
+		*bsdf = ARENA_ALLOC(sample.arena, InfiniteBSDF)(dg, ns,
 			NULL, NULL, *this, WorldToLight);
 		if (pdf)
 			*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
@@ -279,7 +279,7 @@ bool InfiniteAreaLight::Le(MemoryArena *arena, const Scene *scene,
 			*pdfDirect = AbsDot(r.d, ns) /
 				(4.f * M_PI * DistanceSquared(r.o, ps));
 	} else {
-		*bsdf = ARENA_ALLOC(arena, InfinitePortalBSDF)(dg, ns,
+		*bsdf = ARENA_ALLOC(sample.arena, InfinitePortalBSDF)(dg, ns,
 			NULL, NULL, *this, WorldToLight, ps, PortalShapes,
 			~0U);
 		if (pdf)
@@ -287,7 +287,7 @@ bool InfiniteAreaLight::Le(MemoryArena *arena, const Scene *scene,
 		if (pdfDirect)
 			*pdfDirect = 0.f;
 		DifferentialGeometry dgs;
-		dgs.time = sample->realTime;
+		dgs.time = sample.realTime;
 		for (u_int i = 0; i < nrPortalShapes; ++i) {
 			if (pdf) {
 				PortalShapes[i]->Sample(.5f, .5f, .5f, &dgs);
@@ -302,7 +302,7 @@ bool InfiniteAreaLight::Le(MemoryArena *arena, const Scene *scene,
 				Intersection isect;
 				RayDifferential ray(r);
 				ray.mint = -INFINITY;
-				ray.time = sample->realTime;
+				ray.time = sample.realTime;
 				if (PortalShapes[i]->Intersect(ray, &isect) &&
 					Dot(r.d, isect.dg.nn) < 0.f)
 					*pdfDirect += PortalShapes[i]->Pdf(r.o,
@@ -317,12 +317,12 @@ bool InfiniteAreaLight::Le(MemoryArena *arena, const Scene *scene,
 		if (pdfDirect)
 			*pdfDirect /= nrPortalShapes;
 	}
-	*L *= SWCSpectrum(sample->swl, SPDbase);
+	*L *= SWCSpectrum(sample.swl, SPDbase);
 	if (radianceMap != NULL) {
 		const Vector wh = Normalize(WorldToLight(r.d));
 		float s, t, dummy;
 		mapping->Map(wh, &s, &t, &dummy);
-		*L *= radianceMap->LookupSpectrum(sample->swl, s, t);
+		*L *= radianceMap->LookupSpectrum(sample.swl, s, t);
 	}
 	return true;
 }
@@ -353,13 +353,13 @@ float InfiniteAreaLight::Pdf(const Point &p, const Point &po,
 	}
 }
 
-bool InfiniteAreaLight::Sample_L(MemoryArena *arena, const Scene *scene,
-	const Sample *sample, float u1, float u2, float u3, BSDF **bsdf,
-	float *pdf, SWCSpectrum *Le) const
+bool InfiniteAreaLight::Sample_L(const Scene &scene, const Sample &sample,
+	float u1, float u2, float u3, BSDF **bsdf, float *pdf,
+	SWCSpectrum *Le) const
 {
 	Point worldCenter;
 	float worldRadius;
-	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
+	scene.WorldBound().BoundingSphere(&worldCenter, &worldRadius);
 	if (!havePortalShape) {
 		const Point ps = worldCenter +
 			worldRadius * UniformSampleSphere(u1, u2);
@@ -368,8 +368,8 @@ bool InfiniteAreaLight::Sample_L(MemoryArena *arena, const Scene *scene,
 		CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 		DifferentialGeometry dg(ps, ns, dpdu, dpdv, Normal(0, 0, 0),
 			Normal (0, 0, 0), 0, 0, NULL);
-		dg.time = sample->realTime;
-		*bsdf = ARENA_ALLOC(arena, InfiniteBSDF)(dg, ns,
+		dg.time = sample.realTime;
+		*bsdf = ARENA_ALLOC(sample.arena, InfiniteBSDF)(dg, ns,
 			NULL, NULL, *this, WorldToLight);
 		*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	} else {
@@ -381,7 +381,7 @@ bool InfiniteAreaLight::Sample_L(MemoryArena *arena, const Scene *scene,
 			u3 -= shapeIndex;
 		}
 		DifferentialGeometry dgs;
-		dgs.time = sample->realTime;
+		dgs.time = sample.realTime;
 		PortalShapes[shapeIndex]->Sample(.5f, .5f, .5f, &dgs);
 		Vector wi(UniformSampleHemisphere(u1, u2));
 		wi = Normalize(wi.x * Normalize(dgs.dpdu) +
@@ -398,8 +398,8 @@ bool InfiniteAreaLight::Sample_L(MemoryArena *arena, const Scene *scene,
 		CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 		DifferentialGeometry dg(ps, ns, dpdu, dpdv, Normal(0, 0, 0),
 			Normal(0, 0, 0), 0, 0, NULL);
-		dg.time = sample->realTime;
-		*bsdf = ARENA_ALLOC(arena, InfinitePortalBSDF)(dg, ns,
+		dg.time = sample.realTime;
+		*bsdf = ARENA_ALLOC(sample.arena, InfinitePortalBSDF)(dg, ns,
 			NULL, NULL, *this, WorldToLight, ps, PortalShapes,
 			shapeIndex);
 		*pdf = AbsDot(ns, wi) / (distance * distance);
@@ -416,18 +416,18 @@ bool InfiniteAreaLight::Sample_L(MemoryArena *arena, const Scene *scene,
 		}
 		*pdf *= INV_TWOPI / nrPortalShapes;
 	}
-	*Le = SWCSpectrum(sample->swl, SPDbase) * M_PI;
+	*Le = SWCSpectrum(sample.swl, SPDbase) * M_PI;
 	return true;
 }
-bool InfiniteAreaLight::Sample_L(MemoryArena *arena, const Scene *scene,
-	const Sample *sample, const Point &p, float u1, float u2, float u3,
+bool InfiniteAreaLight::Sample_L(const Scene &scene, const Sample &sample,
+	const Point &p, float u1, float u2, float u3,
 	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *Le) const
 {
 	Vector wi;
 	u_int shapeIndex = 0;
 	Point worldCenter;
 	float worldRadius;
-	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
+	scene.WorldBound().BoundingSphere(&worldCenter, &worldRadius);
 	if(!havePortalShape) {
 		// Sample uniform direction on unit sphere
 		wi = UniformSampleSphere(u1, u2);
@@ -441,7 +441,7 @@ bool InfiniteAreaLight::Sample_L(MemoryArena *arena, const Scene *scene,
 			u3 -= shapeIndex;
 		}
 		DifferentialGeometry dg;
-		dg.time = sample->realTime;
+		dg.time = sample.realTime;
 		PortalShapes[shapeIndex]->Sample(p, u1, u2, u3, &dg);
 		Point ps = dg.p;
 		wi = Normalize(ps - p);
@@ -465,20 +465,20 @@ bool InfiniteAreaLight::Sample_L(MemoryArena *arena, const Scene *scene,
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Normal(0, 0, 0),
 		Normal (0, 0, 0), 0, 0, NULL);
-	dg.time = sample->realTime;
+	dg.time = sample.realTime;
 	if (!havePortalShape) {
-		*bsdf = ARENA_ALLOC(arena, InfiniteBSDF)(dg, ns,
+		*bsdf = ARENA_ALLOC(sample.arena, InfiniteBSDF)(dg, ns,
 			NULL, NULL, *this, WorldToLight);
 		if (pdf)
 			*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	} else {
-		*bsdf = ARENA_ALLOC(arena, InfinitePortalBSDF)(dg, ns,
+		*bsdf = ARENA_ALLOC(sample.arena, InfinitePortalBSDF)(dg, ns,
 			NULL, NULL, *this, WorldToLight, ps, PortalShapes,
 			shapeIndex);
 		if (pdf) {
 			*pdf = 0.f;
 			DifferentialGeometry dgs;
-			dgs.time = sample->realTime;
+			dgs.time = sample.realTime;
 			for (u_int i = 0; i < nrPortalShapes; ++i) {
 				PortalShapes[i]->Sample(.5f, .5f, .5f, &dgs);
 				Vector w(ps - dgs.p);
@@ -497,7 +497,7 @@ bool InfiniteAreaLight::Sample_L(MemoryArena *arena, const Scene *scene,
 			Intersection isect;
 			RayDifferential ray(p, wi);
 			ray.mint = -INFINITY;
-			ray.time = sample->realTime;
+			ray.time = sample.realTime;
 			if (PortalShapes[i]->Intersect(ray, &isect) &&
 				Dot(wi, isect.dg.nn) < 0.f)
 				*pdfDirect += PortalShapes[i]->Pdf(p,
@@ -507,7 +507,7 @@ bool InfiniteAreaLight::Sample_L(MemoryArena *arena, const Scene *scene,
 		*pdfDirect /= nrPortalShapes;
 	}
 	*pdfDirect *= AbsDot(wi, ns) / (distance * distance);
-	*Le = SWCSpectrum(sample->swl, SPDbase) * M_PI;
+	*Le = SWCSpectrum(sample.swl, SPDbase) * M_PI;
 	return true;
 }
 

@@ -34,50 +34,44 @@ class  Integrator {
 public:
 	// Integrator Interface
 	virtual ~Integrator() { }
-	virtual void Preprocess(const TsPack *tspack, const Scene *scene) { }
-	virtual void RequestSamples(Sample *sample, const Scene *scene) { }
+	virtual void Preprocess(const RandomGenerator &rng, const Scene &scene) { }
+	virtual void RequestSamples(Sample *sample, const Scene &scene) { }
 };
 
 class SurfaceIntegrator : public Integrator {
 public:
 	virtual ~SurfaceIntegrator() { }
-	virtual u_int Li(const TsPack *tspack, const Scene *scene,
-		const Sample *sample) const = 0;
+	virtual u_int Li(const Scene &scene, const Sample &sample) const = 0;
 };
 
 class VolumeIntegrator : public Integrator {
 public:
 	virtual ~VolumeIntegrator() { }
-	virtual u_int Li(const TsPack *tspack, const Scene *scene,
-		const RayDifferential &ray, const Sample *sample,
-		SWCSpectrum *L, float *alpha) const = 0;
+	virtual u_int Li(const Scene &scene, const RayDifferential &ray,
+		const Sample &sample, SWCSpectrum *L, float *alpha) const = 0;
 	// modulates the supplied SWCSpectrum with the transmittance along the ray
-	virtual void Transmittance(const TsPack *tspack, const Scene *scene,
-		const Ray &ray, const Sample *sample, float *alpha, SWCSpectrum *const L) const = 0;
-	virtual bool Intersect(const TsPack *tspack, const Scene *scene,
-		const Sample *sample, const Volume *volume,
-		const RayDifferential &ray, Intersection *isect, BSDF **bsdf,
-		SWCSpectrum *L) const;
-	virtual bool Connect(const TsPack *tspack, const Scene *scene,
-		const Sample *sample, const Volume *volume, const Point &p0,
-		const Point &p1, bool clip, SWCSpectrum *f, float *pdf,
-		float *pdfR) const;
+	virtual void Transmittance(const Scene &scene, const Ray &ray,
+		const Sample &sample, float *alpha, SWCSpectrum *const L) const = 0;
+	virtual bool Intersect(const Scene &scene, const Sample &sample,
+		const Volume *volume, const RayDifferential &ray,
+		Intersection *isect, BSDF **bsdf, SWCSpectrum *L) const;
+	virtual bool Connect(const Scene &scene, const Sample &sample,
+		const Volume *volume, const Point &p0, const Point &p1,
+		bool clip, SWCSpectrum *f, float *pdf, float *pdfR) const;
 };
 
-SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene,
-	const Light *light, const Point &p, const Normal &n, const Vector &wo,
-	BSDF *bsdf, const Sample *sample, float ls1, float ls2, float ls3,
+SWCSpectrum EstimateDirect(const Scene &scene, const Light &light,
+	const Sample &sample, const Point &p, const Normal &n, const Vector &wo,
+	BSDF *bsdf, float ls1, float ls2, float ls3,
 	float bs1, float bs2, float bcs);
-SWCSpectrum UniformSampleAllLights(const TsPack *tspack, const Scene *scene,
+SWCSpectrum UniformSampleAllLights(const Scene &scene, const Sample &sample,
 	const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
-	const Sample *sample, const float *lightSample = NULL,
-	const float *lightNum = NULL, const float *bsdfSample = NULL,
-	const float *bsdfComponent = NULL);
-u_int UniformSampleOneLight(const TsPack *tspack, const Scene *scene,
+	const float *lightSample, const float *lightNum,
+	const float *bsdfSample, const float *bsdfComponent);
+u_int UniformSampleOneLight(const Scene &scene, const Sample &sample,
 	const Point &p,	const Normal &n, const Vector &wo, BSDF *bsdf,
-	const Sample *sample, const float *lightSample,
-	const float *lightNum, const float *bsdfSample,
-	const float *bsdfComponent, SWCSpectrum *L);
+	const float *lightSample, const float *lightNum,
+	const float *bsdfSample, const float *bsdfComponent, SWCSpectrum *L);
 
 }//namespace lux
  

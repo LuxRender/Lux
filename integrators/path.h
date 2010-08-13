@@ -39,9 +39,9 @@ public:
 		hints(), rrStrategy(rst), maxDepth(md), continueProbability(cp),
 		sampleOffset(0), bufferId(0), includeEnvironment(ie) { }
 
-	virtual u_int Li(const TsPack *tspack, const Scene *scene, const Sample *sample) const;
-	virtual void RequestSamples(Sample *sample, const Scene *scene);
-	virtual void Preprocess(const TsPack *tspack, const Scene *scene);
+	virtual u_int Li(const Scene &scene, const Sample &sample) const;
+	virtual void RequestSamples(Sample *sample, const Scene &scene);
+	virtual void Preprocess(const RandomGenerator &rng, const Scene &scene);
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 
 private:

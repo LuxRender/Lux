@@ -60,7 +60,7 @@ void OrthoCamera::SampleMotion(float time)
 	normal = CameraToWorld(Normal(0,0,1));
 }
 
-void OrthoCamera::AutoFocus(Scene* scene)
+void OrthoCamera::AutoFocus(const Scene &scene)
 {
 	if (autoFocus) {
 		std::stringstream ss;
@@ -85,7 +85,7 @@ void OrthoCamera::AutoFocus(Scene* scene)
 		CameraToWorld(ray, &ray);
 
 		Intersection isect;
-		if (scene->Intersect(ray, &isect))
+		if (scene.Intersect(ray, &isect))
 			FocalDistance = ray.maxt;
 		else
 			LOG(LUX_WARNING, LUX_NOERROR) <<
@@ -96,8 +96,8 @@ void OrthoCamera::AutoFocus(Scene* scene)
 	}
 }
 
-bool OrthoCamera::Sample_W(MemoryArena *arena, const SpectrumWavelengths &sw,
-	const Scene *scene, float u1, float u2, float u3, BSDF **bsdf,
+bool OrthoCamera::Sample_W(MemoryArena &arena, const SpectrumWavelengths &sw,
+	const Scene &scene, float u1, float u2, float u3, BSDF **bsdf,
 	float *pdf, SWCSpectrum *We) const
 {
 	Point psC(RasterToCamera(Point(u1, u2, 0.f)));
@@ -114,8 +114,8 @@ bool OrthoCamera::Sample_W(MemoryArena *arena, const SpectrumWavelengths &sw,
 	return true;
 }
 
-bool OrthoCamera::Sample_W(MemoryArena *arena, const SpectrumWavelengths &sw,
-	const Scene *scene, const Point &p, const Normal &n,
+bool OrthoCamera::Sample_W(MemoryArena &arena, const SpectrumWavelengths &sw,
+	const Scene &scene, const Point &p, const Normal &n,
 	float u1, float u2, float u3,
 	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *We) const
 {

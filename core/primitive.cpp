@@ -73,7 +73,7 @@ void Primitive::Sample(float u1, float u2, float u3,
 }
 
 // Intersection Method Definitions
-BSDF *Intersection::GetBSDF(MemoryArena *arena, const SpectrumWavelengths &sw,
+BSDF *Intersection::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 	const RayDifferential &ray) const
 {
 	dg.ComputeDifferentials(ray);
@@ -84,11 +84,11 @@ BSDF *Intersection::GetBSDF(MemoryArena *arena, const SpectrumWavelengths &sw,
 	return material->GetBSDF(arena, sw, dg, dgShading, exterior, interior);
 }
 
-SWCSpectrum Intersection::Le(MemoryArena *arena, const Sample *sample,
-	const Ray &ray, BSDF **bsdf, float *pdf, float *pdfDirect) const
+SWCSpectrum Intersection::Le(const Sample &sample, const Ray &ray,
+	BSDF **bsdf, float *pdf, float *pdfDirect) const
 {
 	if (arealight)
-		return arealight->L(arena, sample, ray, dg, bsdf, pdf, pdfDirect);
+		return arealight->L(sample, ray, dg, bsdf, pdf, pdfDirect);
 	*pdf = *pdfDirect = 0.f;
 	*bsdf = NULL;
 	return 0.f;

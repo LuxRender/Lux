@@ -35,17 +35,17 @@ public:
 	// DirectLightingIntegrator Public Methods
 	DirectLightingIntegrator(u_int md);
 
-	virtual u_int Li(const TsPack *tspack, const Scene *scene,
-		const Sample *sample) const;
-	virtual void RequestSamples(Sample *sample, const Scene *scene);
-	virtual void Preprocess(const TsPack *tspack, const Scene *scene);
+	virtual u_int Li(const Scene &scene, const Sample &sample) const;
+	virtual void RequestSamples(Sample *sample, const Scene &scene);
+	virtual void Preprocess(const RandomGenerator &rng, const Scene &scene);
 
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 
 private:
-	u_int LiInternal(const TsPack *tspack, const Scene *scene,
+	u_int LiInternal(const Scene &scene, const Sample &sample,
 		const Volume *volume, const RayDifferential &ray,
-		const Sample *sample, vector<SWCSpectrum> &L, float *alpha, float &distance, u_int rayDepth) const;
+		vector<SWCSpectrum> &L, float *alpha, float &distance,
+		u_int rayDepth) const;
 
 	SurfaceIntegratorRenderingHints hints;
 

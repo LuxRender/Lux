@@ -36,7 +36,7 @@
 using namespace lux;
 
 // ShinyMetal Method Definitions
-BSDF *ShinyMetal::GetBSDF(MemoryArena *arena, const SpectrumWavelengths &sw,
+BSDF *ShinyMetal::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 	const DifferentialGeometry &dgGeom,
 	const DifferentialGeometry &dgs,
 	const Volume *exterior, const Volume *interior) const

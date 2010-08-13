@@ -233,14 +233,6 @@ namespace lux
 
 	ImageData *ReadImage(const string &name);
 
-// Radiance - Thread specific pack of pointers to eliminate use of boost tss smart pointers.
-// Initialized per thread in scene.cpp/RenderThread::RenderThread and passed where needed.
-	struct TsPack {
-		// Thread specific data
-		RandomGenerator *rng;
-		MemoryArena *arena;
-	};
-
 }
 
 // Global Inline Functions
