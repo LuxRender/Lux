@@ -150,12 +150,12 @@ static void initMetropolis(MetropolisSampler *sampler, const Sample *sample)
 bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
 {
 	sample->sampler = this;
-	const float mutationSelector = rng->floatValue();
+	const float mutationSelector = sample->rng->floatValue();
 	large = (mutationSelector < pLarge);
 	if (sampleImage == NULL) {
 		// If this is the original sampler, shuffle the QR sequence
 		if (!timeImage)
-			Shuffle(*rng, rngSamples, rngN, 1);
+			Shuffle(*(sample->rng), rngSamples, rngN, 1);
 		initMetropolis(this, sample);
 		large = true;
 	}
@@ -174,7 +174,7 @@ bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
 		if (film->enoughSamplePerPixel)
 			return false;
 		for (u_int i = 0; i < totalSamples; ++i)
-			rngRotation[i] = rng->floatValue();
+			rngRotation[i] = sample->rng->floatValue();
 	}
 	if (large) {
 		// *** large mutation ***
@@ -274,7 +274,7 @@ void MetropolisSampler::AddSample(const Sample &sample)
 	const float newWeight = accProb + (large ? 1.f : 0.f);
 	weight += 1.f - accProb;
 	// try or force accepting of the new sample
-	if (accProb == 1.f || rng->floatValue() < accProb) {
+	if (accProb == 1.f || sample.rng->floatValue() < accProb) {
 		// Add accumulated contribution of previous reference sample
 		const float norm = weight / (LY / meanIntensity + pLarge);
 		if (norm > 0.f) {

@@ -115,7 +115,6 @@ static void initERPT(ERPTSampler *sampler, const Sample *sample)
 	sampler->baseImage = AllocAligned<float>(sampler->totalSamples);
 	sampler->timeImage = AllocAligned<int>(sampler->totalTimes);
 	sampler->baseTimeImage = AllocAligned<int>(sampler->totalTimes);
-	sampler->baseSampler->SetRng(*(sampler->rng));
 	sampler->baseSampler->SetFilm(sampler->film);
 	sampler->mutation = ~0U;
 
@@ -126,6 +125,7 @@ static void initERPT(ERPTSampler *sampler, const Sample *sample)
 // interface for new ray/samples from scene
 bool ERPTSampler::GetNextSample(Sample *sample, u_int *use_pos)
 {
+	const RandomGenerator *rng = sample->rng;
 	sample->sampler = this;
 	if (sampleImage == NULL) {
 		initERPT(this, sample);
@@ -189,7 +189,7 @@ float *ERPTSampler::GetLazyValues(const Sample &sample, u_int num, u_int pos)
 		}
 		for (int &time = sample.timexD[num][pos]; time < stampLimit; ++time) {
 			for (u_int i = 0; i < size; ++i)
-				data[i] = mutate(data[i], rng->floatValue());
+				data[i] = mutate(data[i], sample.rng->floatValue());
 		}
 	}
 	return data;
@@ -262,7 +262,7 @@ void ERPTSampler::AddSample(const Sample &sample)
 	weight += 1.f - accProb;
 
 	// try accepting of the new sample
-	if (accProb == 1.f || rng->floatValue() < accProb) {
+	if (accProb == 1.f || sample.rng->floatValue() < accProb) {
 		// Add accumulated contribution of previous reference sample
 		weight *= quantum / LY;
 		if (!isinf(weight) && LY > 0.f) {

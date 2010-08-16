@@ -112,7 +112,7 @@ bool RandomSampler::GetNextSample(Sample *sample, u_int *use_pos)
 			haveMoreSample = (!pixelSampler->renderingDone);
 
 		for (u_int i = 0; i < 6 * pixelSamples; ++i) {
-			imageSamples[i] = rng->floatValue();
+			imageSamples[i] = sample->rng->floatValue();
 		}
 
 		samplePos = 0;
@@ -130,11 +130,11 @@ bool RandomSampler::GetNextSample(Sample *sample, u_int *use_pos)
 	// Generate stratified samples for integrators
 	for (u_int i = 0; i < sample->n1D.size(); ++i) {
 		for (u_int j = 0; j < sample->n1D[i]; ++j)
-			sample->oneD[i][j] = rng->floatValue();
+			sample->oneD[i][j] = sample->rng->floatValue();
 	}
 	for (u_int i = 0; i < sample->n2D.size(); ++i) {
 		for (u_int j = 0; j < 2*sample->n2D[i]; ++j)
-			sample->twoD[i][j] = rng->floatValue();
+			sample->twoD[i][j] = sample->rng->floatValue();
 	}
 
 	++samplePos;
@@ -146,7 +146,7 @@ float *RandomSampler::GetLazyValues(const Sample &sample, u_int num, u_int pos)
 {
 	float *data = sample.xD[num] + pos * sample.dxD[num];
 	for (u_int i = 0; i < sample.dxD[num]; ++i)
-		data[i] = rng->floatValue();
+		data[i] = sample.rng->floatValue();
 	return data;
 }
 

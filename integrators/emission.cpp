@@ -51,7 +51,6 @@ void EmissionIntegrator::Transmittance(const Scene &scene, const Ray &ray,
 u_int EmissionIntegrator::Li(const Scene &scene, const RayDifferential &ray,
 	const Sample &sample, SWCSpectrum *Lv, float *alpha) const
 {
-	static RandomGenerator rng(1); //FIXME
 	*Lv = 0.f;
 	Region *vr = scene.volumeRegion;
 	float t0, t1;
@@ -75,7 +74,7 @@ u_int EmissionIntegrator::Li(const Scene &scene, const RayDifferential &ray,
 		// Possibly terminate raymarching if transmittance is small
 		if (Tr.Filter(sample.swl) < 1e-3f) {
 			const float continueProb = .5f;
-			if (rng.floatValue() > continueProb) break; // TODO - REFACT - remove and add random value from sample
+			if (sample.rng->floatValue() > continueProb) break; // TODO - REFACT - remove and add random value from sample
 			Tr /= continueProb;
 		}
 		// Compute emission-only source term at _p_

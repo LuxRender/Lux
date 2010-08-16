@@ -462,6 +462,7 @@ void PhotonMapPreprocess(const RandomGenerator &rng, const Scene &scene,
 
 	// Dade - initialize SpectrumWavelengths
 	Sample sample(scene.surfaceIntegrator, scene.volumeIntegrator, scene);
+	sample.rng = &rng;
 	SpectrumWavelengths &sw(sample.swl);
 	sample.camera = scene.camera->Clone();
 	sample.realTime = sample.camera->GetTime(.5f); //FIXME sample it

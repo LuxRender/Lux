@@ -106,6 +106,7 @@ void IGIIntegrator::Preprocess(const RandomGenerator &rng, const Scene &scene)
 	LDShuffleScrambled1D(rng, nLightPaths, nLightSets, lightSamp1b);
 	// Precompute information for light sampling densities
 	Sample sample(scene.surfaceIntegrator, scene.volumeIntegrator, scene);
+	sample.rng = &rng;
 	SpectrumWavelengths &sw(sample.swl);
 	u_int nLights = scene.lights.size();
 	float *lightPower = new float[nLights];

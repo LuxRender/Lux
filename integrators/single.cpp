@@ -53,7 +53,6 @@ void SingleScattering::Transmittance(const Scene &scene, const Ray &ray,
 u_int SingleScattering::Li(const Scene &scene, const RayDifferential &ray,
 	const Sample &sample, SWCSpectrum *Lv, float *alpha) const
 {
-	static RandomGenerator rng(1); //FIXME
 	*Lv = 0.f;
 	Region *vr = scene.volumeRegion;
 	float t0, t1;
@@ -76,7 +75,7 @@ u_int SingleScattering::Li(const Scene &scene, const RayDifferential &ray,
 	// Compute sample patterns for single scattering samples
 	// FIXME - use real samples
 	float *samp = static_cast<float *>(alloca(3 * N * sizeof(float)));
-	LatinHypercube(rng, samp, N, 3);
+	LatinHypercube(*(sample.rng), samp, N, 3);
 	u_int sampOffset = 0;
 	for (u_int i = 0; i < N; ++i, t0 += step) {
 		// Advance to sample at _t0_ and update _T_
@@ -88,7 +87,7 @@ u_int SingleScattering::Li(const Scene &scene, const RayDifferential &ray,
 		// Possibly terminate raymarching if transmittance is small
 		if (Tr.Filter(sw) < 1e-3f) {
 			const float continueProb = .5f;
-			if (rng.floatValue() > continueProb) break; // TODO - REFACT - remove and add random value from sample
+			if (sample.rng->floatValue() > continueProb) break; // TODO - REFACT - remove and add random value from sample
 			Tr /= continueProb;
 		}
 

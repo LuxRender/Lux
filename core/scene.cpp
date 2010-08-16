@@ -283,7 +283,7 @@ void RenderThread::Render(RenderThread *myThread) {
 	sample.camera = scene.camera->Clone();
 	sample.realTime = 0.f;
 
-	sampler->SetRng(rng);
+	sample.rng = &rng;
 
 	// allocate sample pos
 	u_int usePos = 0;
@@ -417,8 +417,6 @@ void Scene::Render() {
 	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
 	RandomGenerator rng(seed);
-
-	sampler->SetRng(rng);
 
 	// integrator preprocessing
 	camera->film->SetScene(this);
