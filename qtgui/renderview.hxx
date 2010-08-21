@@ -33,7 +33,6 @@
 #include <QMatrix>
 #include <QPoint>
 #include <QClipboard>
-#include <QtOpenGL/QGLWidget>
 
 class RenderView : public QGraphicsView
 {
@@ -41,7 +40,7 @@ class RenderView : public QGraphicsView
 
 public:
 
-	RenderView(QWidget *parent = 0, bool opengl = false);
+	RenderView(QWidget *parent = 0);
 	~RenderView ();
 
 	void setZoomEnabled (bool enabled = true) { zoomEnabled = enabled; };

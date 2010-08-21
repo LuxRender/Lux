@@ -27,12 +27,7 @@
 
 using namespace std;
 
-RenderView::RenderView(QWidget *parent, bool opengl) : QGraphicsView(parent) {
-#if !defined(__APPLE__)
-    if (opengl)
-		setViewport(new QGLWidget);
-#endif
-
+RenderView::RenderView(QWidget *parent) : QGraphicsView(parent) {
 	renderscene = new QGraphicsScene();
 	renderscene->setBackgroundBrush(QColor(127,127,127));
 	luxlogo = renderscene->addPixmap(QPixmap(":/images/luxlogo_bg.png"));
