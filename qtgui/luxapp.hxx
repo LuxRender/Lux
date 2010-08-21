@@ -44,7 +44,7 @@ private:
 	int m_argc;
 	char **m_argv;
 	int m_threads;
-	bool m_useServer, m_openglEnabled, m_copyLog2Console;
+	bool m_useServer, m_copyLog2Console;
 	QString m_inputFile;
 
 	bool ProcessCommandLine (void);

@@ -127,7 +127,7 @@ double retrieveParam(bool useDefault, luxComponent comp, luxComponentParameters 
 		return luxGetParameterValue(comp, param, index);
 }
 
-MainWindow::MainWindow(QWidget *parent, bool opengl, bool copylog2console) : QMainWindow(parent), ui(new Ui::MainWindow), m_copyLog2Console(copylog2console), m_opengl(opengl)
+MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(parent), ui(new Ui::MainWindow), m_copyLog2Console(copylog2console)
 {
 	
 	luxErrorHandler(&MainWindow::LuxGuiErrorHandler);
@@ -289,7 +289,7 @@ MainWindow::MainWindow(QWidget *parent, bool opengl, bool copylog2console) : QMa
 
 
 	// Init render area
-	renderView = new RenderView(ui->frame_render, m_opengl);
+	renderView = new RenderView(ui->frame_render);
 	ui->renderLayout->addWidget(renderView, 0, 0, 1, 1);
 	connect(renderView, SIGNAL(viewChanged()), this, SLOT(viewportChanged()));
 	renderView->show ();
@@ -707,7 +707,7 @@ void MainWindow::fullScreen()
 {
 	if (renderView->isFullScreen()) {
 		delete renderView; // delete and reinitialize to recenter render
-		renderView = new RenderView(ui->frame_render, m_opengl);
+		renderView = new RenderView(ui->frame_render);
 		ui->renderLayout->addWidget(renderView, 0, 0, 1, 1);
 		connect(renderView, SIGNAL(viewChanged()), this, SLOT(viewportChanged())); // reconnect
 		renderView->reload();
@@ -727,7 +727,7 @@ void MainWindow::normalScreen()
 {
 	if (renderView->isFullScreen()) {
 		delete renderView; // delete and reinitialize to recenter render
-		renderView = new RenderView(ui->frame_render, m_opengl);
+		renderView = new RenderView(ui->frame_render);
 		ui->renderLayout->addWidget(renderView, 0, 0, 1, 1);
 		connect(renderView, SIGNAL(viewChanged()), this, SLOT(viewportChanged())); // reconnect
 		renderView->reload();
