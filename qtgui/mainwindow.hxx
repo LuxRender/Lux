@@ -138,7 +138,7 @@ class MainWindow : public QMainWindow
 	Q_OBJECT
 
 public:
-	MainWindow(QWidget *parent = 0, bool opengl = false, bool copylog2console = FALSE);
+	MainWindow(QWidget *parent = 0, bool copylog2console = FALSE);
 	~MainWindow();
 
 	void SetRenderThreads(int num);
@@ -220,8 +220,6 @@ private:
 	QStringList m_recentFiles;
 	QAction *m_recentFileActions[MaxRecentFiles];
 
-	bool m_opengl;
-	
 	static void LuxGuiErrorHandler(int code, int severity, const char *msg);
 	
 	void engineThread(QString filename);

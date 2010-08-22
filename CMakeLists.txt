@@ -255,7 +255,7 @@ ADD_DEFINITIONS(-DLUX_USE_CONFIG_H)
 #############################################################################
 #############################################################################
 # Dade - default compiler options
-ADD_DEFINITIONS(-O3 -msse2 -mfpmath=sse -ftree-vectorize -funroll-loops -Wall -fPIC -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
+ADD_DEFINITIONS(-O3 -msse2 -mfpmath=sse -ftree-vectorize -funroll-loops -Wall -fPIC -DHAVE_PTHREAD_H)
 # The QBVH accelerator needs to be compiled with much reduced optimizations
 # otherwise gcc produces incorrect code and ruins the render on 64bits machines
 IF(NOT APPLE)
@@ -352,18 +352,6 @@ SET_SOURCE_FILES_PROPERTIES(${CMAKE_BINARY_DIR}/core/luxparse.cpp GENERATED)
 #############################################################################
 #############################################################################
 IF(APPLE)
-	ADD_CUSTOM_TARGET(dist DEPENDS luxrenderwx)
-	ADD_CUSTOM_COMMAND(
-	TARGET dist POST_BUILD
-	COMMAND rm -rf luxrenderwx.app 
-	COMMAND mkdir luxrenderwx.app 
-	COMMAND mkdir luxrenderwx.app/Contents 
-	COMMAND mkdir luxrenderwx.app/Contents/MacOS 
-	COMMAND mkdir luxrenderwx.app/Contents/Resources
-	COMMAND cp ../macos/Info.plist luxrenderwx.app/Contents
-	COMMAND cp luxrender.icns luxrenderwx.app/Contents/Resources
-	COMMAND echo APPLnone > luxrenderwx.app/Contents/PkgInfo
-	COMMAND cp luxrenderwx luxrenderwx.app/Contents/MacOS/luxrenderwx)
 	ADD_CUSTOM_TARGET(dist DEPENDS luxrender)
 	ADD_CUSTOM_COMMAND(
 	TARGET dist POST_BUILD
@@ -808,65 +796,6 @@ ELSE(PYTHONLIBS_FOUND)
 	MESSAGE( STATUS "Warning : could not find Python libraries - not building python module")
 ENDIF(PYTHONLIBS_FOUND)
 
-
-#############################################################################
-#Here we build the wxWidgets GUI executable
-#############################################################################
-
-#############################################################################
-#############################################################################
-###########################      Find OpenGL       ##########################
-#############################################################################
-#############################################################################
-SET(OPENGL_LIBRARY ${CMAKE_ROOT}/Modules/FindOpenGL.cmake)
-INCLUDE(${CMAKE_ROOT}/Modules/FindOpenGL.cmake)
-
-MESSAGE(STATUS "OpenGL include directory: " ${OPENGL_INCLUDE_DIR})
-
-INCLUDE_DIRECTORIES(SYSTEM ${OPENGL_INCLUDE_DIR})
-
-#############################################################################
-#############################################################################
-######################### wxWidgets LIBRARIES SETUP #########################
-#############################################################################
-#############################################################################
-# Here you can define what libraries of wxWidgets you need for your
-# application. You can figure out what libraries you need here;
-# http://www.wxwidgets.org/manuals/2.8/wx_librarieslist.html
-SET(wxWidgets_USE_LIBS base core gl aui adv )
-FIND_PACKAGE(wxWidgets)
-
-IF(wxWidgets_FOUND)
-	# Include wxWidgets macros
-	INCLUDE(${wxWidgets_USE_FILE})
-	MESSAGE( STATUS "wxWidgets include directory: " ${wxWidgets_INCLUDE_DIRS} )
-
-	ADD_EXECUTABLE(luxrenderwx ${GUI_TYPE} renderer/wxluxapp.cpp renderer/wxluxgui.cpp renderer/wxluxframe.cpp renderer/wxglviewer.cpp renderer/wxviewer.cpp)
-	INCLUDE_DIRECTORIES(SYSTEM ${wxWidgets_INCLUDE_DIRS} )
-
-	IF(APPLE)
-		INCLUDE_DIRECTORIES (SYSTEM /Developer/Headers/FlatCarbon /usr/local/include)
-		FIND_LIBRARY(CARBON_LIBRARY Carbon)
-		FIND_LIBRARY(PYTHON_LIBRARY Python )
-		FIND_LIBRARY(OPENGL_LIBRARY OpenGL )
-		FIND_LIBRARY(AGL_LIBRARY AGL )
-		FIND_LIBRARY(APP_SERVICES_LIBRARY ApplicationServices )
-
-		MESSAGE(STATUS ${CARBON_LIBRARY})
-		MARK_AS_ADVANCED (CARBON_LIBRARY)
-		MARK_AS_ADVANCED (PYTHON_LIBRARY)
-		MARK_AS_ADVANCED (OPENGL_LIBRARY)
-		MARK_AS_ADVANCED (AGL_LIBRARY)
-		MARK_AS_ADVANCED (APP_SERVICES_LIBRARY)
-		SET(EXTRA_LIBS ${CARBON_LIBRARY} ${OPENGL_LIBRARY} ${AGL_LIBRARY} ${APP_SERVICES_LIBRARY})
-		TARGET_LINK_LIBRARIES(luxrenderwx -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${wxWidgets_LIBRARIES} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${BZ2_LIBRARIES} )
-	ELSE(APPLE)
-		TARGET_LINK_LIBRARIES(luxrenderwx -Wl,--whole-archive lux -Wl,--no-whole-archive ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES}  ${SYS_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARY})
-	ENDIF(APPLE)
-ELSE(wxWidgets_FOUND)
-	MESSAGE( STATUS "Warning : could not find wxWidgets - not building GUI")
-ENDIF(wxWidgets_FOUND)
-
 #############################################################################
 #Here we build the QT4 GUI executable
 #############################################################################
@@ -881,7 +810,7 @@ FIND_PACKAGE(Qt4)
 IF(QT4_FOUND)
 	MESSAGE(STATUS "Qt library directory: " ${QT_LIBRARY_DIR} )
 	MESSAGE( STATUS "Qt include directory: " ${QT_INCLUDE_DIR} )
-	SET(QT_USE_QTOPENGL TRUE)
+	SET(QT_USE_QTOPENGL FALSE)
 	INCLUDE(${QT_USE_FILE})
 
 	QT4_ADD_RESOURCES( LUXQTGUI_RC_SRCS ${LUXQTGUI_RCS}) 
@@ -897,8 +826,7 @@ IF(QT4_FOUND)
 		INCLUDE_DIRECTORIES (SYSTEM /Developer/Headers/FlatCarbon /usr/local/include)
 		FIND_LIBRARY(CARBON_LIBRARY Carbon)
 		FIND_LIBRARY(PYTHON_LIBRARY Python )
-		FIND_LIBRARY(QT_LIBRARY QtCore QtGui QtOpenGL)
-		FIND_LIBRARY(OPENGL_LIBRARY OpenGL )
+		FIND_LIBRARY(QT_LIBRARY QtCore QtGui)
 		FIND_LIBRARY(AGL_LIBRARY AGL )
 		FIND_LIBRARY(APP_SERVICES_LIBRARY ApplicationServices )
 
@@ -906,10 +834,9 @@ IF(QT4_FOUND)
 		MARK_AS_ADVANCED (CARBON_LIBRARY)
 		MARK_AS_ADVANCED (PYTHON_LIBRARY)
 		MARK_AS_ADVANCED (QT_LIBRARY)
-		MARK_AS_ADVANCED (OPENGL_LIBRARY)
 		MARK_AS_ADVANCED (AGL_LIBRARY)
 		MARK_AS_ADVANCED (APP_SERVICES_LIBRARY)
-		SET(EXTRA_LIBS ${CARBON_LIBRARY} ${QT_LIBRARY} ${OPENGL_LIBRARY} ${AGL_LIBRARY} ${APP_SERVICES_LIBRARY})
+		SET(EXTRA_LIBS ${CARBON_LIBRARY} ${QT_LIBRARY} ${AGL_LIBRARY} ${APP_SERVICES_LIBRARY})
 		TARGET_LINK_LIBRARIES(luxrender -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${QT_LIBRARIES} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${BZ2_LIBRARIES} )
 ### if XCode used for compiling ###
 #		ADD_CUSTOM_COMMAND(
@@ -920,7 +847,7 @@ IF(QT4_FOUND)
 #			COMMAND cp ../macos/luxscene.icns release/luxrender.app/Contents/Resources
 #			)
 	ELSE(APPLE)
-	TARGET_LINK_LIBRARIES(luxrender -Wl,--whole-archive lux -Wl,--no-whole-archive ${QT_LIBRARIES} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} ${ZLIB_LIBRARIES} ${BZ2_LIBRARIES}  ${SYS_LIBRARIES}  ${OPENGL_LIBRARY} ${OPENEXR_LIBRARIES} ${PNG_LIBRARY})
+	TARGET_LINK_LIBRARIES(luxrender -Wl,--whole-archive lux -Wl,--no-whole-archive ${QT_LIBRARIES} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} ${ZLIB_LIBRARIES} ${BZ2_LIBRARIES}  ${SYS_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARY})
 	ENDIF(APPLE)
 ELSE(QT4_FOUND)
 	MESSAGE( STATUS "Warning : could not find Qt - not building Qt GUI")
@@ -929,15 +856,7 @@ ENDIF(QT4_FOUND)
 #############################################################################
 
 #Install target
-IF(wxWidgets_FOUND)
-	INSTALL(TARGETS luxrender luxrenderwx luxconsole luxmerger
-      	  RUNTIME DESTINATION bin
-	)
-ELSE(wxWidgets_FOUND)
-	INSTALL(TARGETS luxrender luxconsole luxmerger
-      	  RUNTIME DESTINATION bin
-	)
-ENDIF(wxWidgets_FOUND)
+INSTALL(TARGETS luxrender luxconsole luxmerger RUNTIME DESTINATION bin)
 
 #Install API/Library
 INSTALL(FILES ${CMAKE_SOURCE_DIR}/core/api.h DESTINATION include/luxrender/)

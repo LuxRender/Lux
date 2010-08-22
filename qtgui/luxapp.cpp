@@ -65,10 +65,9 @@ void LuxGuiApp::init(void) {
 	setlocale(LC_ALL, "C");
 	
 	luxInit();
-	m_openglEnabled = true;
 
 	if (ProcessCommandLine()) {
-		mainwin = new MainWindow(0,m_openglEnabled,m_copyLog2Console);
+		mainwin = new MainWindow(0,m_copyLog2Console);
 		mainwin->show();
 		mainwin->SetRenderThreads(m_threads);
 		if (!m_inputFile.isEmpty())
@@ -118,16 +117,6 @@ bool LuxGuiApp::ProcessCommandLine(void)
 		hidden.add_options()
 			("input-file", po::value < vector < string > >(), "input file")
 		;
-
-		#ifdef LUX_USE_OPENGL
-			generic.add_options()
-				("noopengl", "Disable OpenGL to display the image")
-			;
-		#else
-			hidden.add_options()
-				("noopengl", "Disable OpenGL to display the image")
-			;
-		#endif // LUX_USE_OPENGL
 
 		po::options_description cmdline_options(line_length);
 		cmdline_options.add(generic).add(config).add(hidden);
@@ -221,13 +210,6 @@ bool LuxGuiApp::ProcessCommandLine(void)
 			luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 		} else {
 			m_useServer = false;
-		}
-
-		if(vm.count("noopengl")) {
-			m_openglEnabled = false;
-			luxError(LUX_SYSTEM, LUX_INFO, "OpenGL support will not be used.");
-		} else {
-			m_openglEnabled = true;
 		}
 
 		if(vm.count("input-file")) {
