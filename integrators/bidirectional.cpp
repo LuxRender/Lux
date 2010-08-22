@@ -370,7 +370,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 	eye0.flux = SWCSpectrum(1.f);
 
 	// Do eye vertex direct lighting
-	const float *directData0 = sample.sampler->GetLazyValues(sample,
+	const float *directData0 = scene.sampler->GetLazyValues(sample,
 		sampleDirectOffset, 0);
 	switch (lightStrategy) {
 		case SAMPLE_ONE_UNIFORM: {
@@ -484,7 +484,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 
 		// Sample light subpath initial direction and
 		// finish vertex initialization if needed
-		data = sample.sampler->GetLazyValues(sample, sampleLightOffset, 0);
+		data = scene.sampler->GetLazyValues(sample, sampleLightOffset, 0);
 		if (maxLightDepth > 1 && light0.bsdf->Sample_f(sw, light0.wi,
 			&light0.wo, data[1], data[2], data[3],
 			&light0.flux, &light0.pdf, BSDF_ALL, &light0.flags,
@@ -545,7 +545,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 				// Break out if path is too long
 				if (sampleIndex >= maxLightDepth)
 					break;
-				data = sample.sampler->GetLazyValues(sample,
+				data = scene.sampler->GetLazyValues(sample,
 					sampleLightOffset, sampleIndex);
 				SWCSpectrum f;
 				if (!v.bsdf->Sample_f(sw, v.wi, &v.wo,
@@ -770,7 +770,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 			break;
 
 		// Do direct lighting
-		const float *directData = sample.sampler->GetLazyValues(sample,
+		const float *directData = scene.sampler->GetLazyValues(sample,
 			sampleDirectOffset, sampleIndex);
 		switch (lightStrategy) {
 			case SAMPLE_ONE_UNIFORM: {
@@ -814,7 +814,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 				break;
 		}
 
-		data = sample.sampler->GetLazyValues(sample, sampleEyeOffset,
+		data = scene.sampler->GetLazyValues(sample, sampleEyeOffset,
 			sampleIndex);
 		SWCSpectrum f;
 		if (!v.bsdf->Sample_f(sw, v.wo, &v.wi, data[1], data[2],

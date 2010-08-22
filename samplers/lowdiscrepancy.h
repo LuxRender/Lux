@@ -31,12 +31,28 @@ namespace lux
 // LDSampler Declarations
 class LDSampler : public Sampler {
 public:
+	class LDData {
+	public:
+		LDData(const Sample &sample, int xPixelStart, int yPixelStart,
+			u_int pixelSamples);
+		~LDData();
+		int xPos, yPos;
+		u_int samplePos;
+		float *imageSamples, *lensSamples, *timeSamples,
+			*wavelengthsSamples, *singleWavelengthSamples;
+		float **oneDSamples, **twoDSamples, **xDSamples;
+		u_int n1D, n2D, nxD;
+	};
 	// LDSampler Public Methods
 	LDSampler(int xstart, int xend,
 	          int ystart, int yend,
 			  u_int nsamp, string pixelsampler);
 	virtual ~LDSampler();
 
+	virtual void InitSample(Sample *sample) const {
+		sample->samplerData = new LDData(*sample, xPixelStart,
+			yPixelStart, pixelSamples);
+	}
 	virtual u_int RoundSize(u_int size) const {
 		return RoundUpPow2(size);
 	}
@@ -44,18 +60,11 @@ public:
 	virtual u_int GetTotalSamplePos();
 	virtual bool GetNextSample(Sample *sample, u_int *use_pos);
 	virtual float *GetLazyValues(const Sample &sample, u_int num, u_int pos);
-	virtual LDSampler* clone() const; // Lux (copy) constructor for multithreading
 
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
 private:
 	// LDSampler Private Data
-	int xPos, yPos;
-	u_int pixelSamples, samplePos;
-	float *imageSamples, *lensSamples, *timeSamples, *wavelengthsSamples,
-		*singleWavelengthSamples;
-	float **oneDSamples, **twoDSamples, **xDSamples;
-	u_int n1D, n2D, nxD;
-	u_int TotalPixels;
+	u_int pixelSamples, totalPixels;
 	PixelSampler* pixelSampler;
 };
 

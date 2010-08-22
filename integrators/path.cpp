@@ -152,7 +152,7 @@ u_int PathIntegrator::Li(const Scene &scene, const Sample &sample) const
 		if (pathLength == maxDepth)
 			break;
 		// Evaluate BSDF at hit point
-		const float *data = sample.sampler->GetLazyValues(sample,
+		const float *data = scene.sampler->GetLazyValues(sample,
 			sampleOffset, pathLength);
 
 		// Estimate direct lighting

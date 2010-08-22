@@ -260,7 +260,7 @@ u_int IGIIntegrator::Li(const Scene &scene, const Sample &sample) const
 		// Trace rays for specular reflection and refraction
 		SWCSpectrum f;
 		float pdf;
-		float *data = sample.sampler->GetLazyValues(sample, sampleOffset, depth);
+		float *data = scene.sampler->GetLazyValues(sample, sampleOffset, depth);
 		if (!bsdf->Sample_f(sw, wo, &wi, .5f, .5f, *data, &f, &pdf,
 			BxDFType(BSDF_SPECULAR | BSDF_REFLECTION | BSDF_TRANSMISSION)))
 			break;

@@ -262,8 +262,10 @@ void RenderThread::Render(RenderThread *myThread) {
 	Scene &scene(*(myThread->scene));
 	if (scene.IsFilmOnly())
 		return;
-	Sampler *sampler = scene.sampler->clone();
+	Sampler *sampler = scene.sampler;
 	Sample sample(scene.surfaceIntegrator, scene.volumeIntegrator, scene);
+	sample.contribBuffer = scene.contribPool->Next(NULL);
+	sampler->InitSample(&sample);
 
 	// Dade - wait the end of the preprocessing phase
 	while (!scene.preprocessDone) {
@@ -360,10 +362,10 @@ void RenderThread::Render(RenderThread *myThread) {
 #endif
 	}
 
-	sampler->Cleanup();
+	scene.contribPool->End(sample.contribBuffer);
+	sample.contribBuffer = NULL;
 
 //	delete myThread->sample->camera; //FIXME deleting the camera clone would delete the film!
-//	delete sampler; //FIXME some samplers don't clone the data pointers so deleting here will result in a double free in Scene::~Scene and use of freed memory in other render threads
 }
 
 u_int Scene::CreateRenderThread()
@@ -421,7 +423,6 @@ void Scene::Render() {
 	// integrator preprocessing
 	camera->film->SetScene(this);
 	sampler->SetFilm(camera->film);
-	sampler->SetContributionPool(contribPool);
 	surfaceIntegrator->Preprocess(rng, *this);
 	volumeIntegrator->Preprocess(rng, *this);
 	camera->film->CreateBuffers();

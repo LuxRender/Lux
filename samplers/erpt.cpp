@@ -62,110 +62,91 @@ static float mutateScaled(const float x, const float randomValue, const float mi
 	}
 }
 
+ERPTSampler::ERPTData::ERPTData(const Sample &sample) :
+	currentImage(NULL), currentTimeImage(NULL), numChains(0), chain(0),
+	mutation(~0U), stamp(0), baseLY(0.f), quantum(0.f), weight(0.f),
+	LY(0.f), alpha(0.f), totalLY(0.), sampleCount(0.)
+{
+	u_int i;
+	normalSamples = SAMPLE_FLOATS;
+	for (i = 0; i < sample.n1D.size(); ++i)
+		normalSamples += sample.n1D[i];
+	for (i = 0; i < sample.n2D.size(); ++i)
+		normalSamples += 2 * sample.n2D[i];
+	totalSamples = normalSamples;
+	offset = new u_int[sample.nxD.size()];
+	totalTimes = 0;
+	for (i = 0; i < sample.nxD.size(); ++i) {
+		offset[i] = totalSamples;
+		totalTimes += sample.nxD[i];
+		totalSamples += sample.dxD[i] * sample.nxD[i];
+	}
+	sampleImage = AllocAligned<float>(totalSamples);
+	baseImage = AllocAligned<float>(totalSamples);
+	timeImage = AllocAligned<int>(totalTimes);
+	baseTimeImage = AllocAligned<int>(totalTimes);
+}
+ERPTSampler::ERPTData::~ERPTData()
+{
+	FreeAligned(baseTimeImage);
+	FreeAligned(timeImage);
+	FreeAligned(baseImage);
+	FreeAligned(sampleImage);
+	delete[] offset;
+}
+
 // Metropolis method definitions
-ERPTSampler::ERPTSampler(u_int totMutations, float rng,
-	Sampler *sampler) :
- Sampler(sampler->xPixelStart, sampler->xPixelEnd,
+ERPTSampler::ERPTSampler(u_int totMutations, float rng, Sampler *sampler) :
+	Sampler(sampler->xPixelStart, sampler->xPixelEnd,
 	sampler->yPixelStart, sampler->yPixelEnd, sampler->samplesPerPixel),
- normalSamples(0), totalSamples(0), totalTimes(0), totalMutations(totMutations),
- range(rng), baseSampler(sampler),
- baseImage(NULL), sampleImage(NULL), currentImage(NULL),
- baseTimeImage(NULL), timeImage(NULL), currentTimeImage(NULL), offset(NULL),
- numChains(0), chain(0), mutation(~0U), stamp(0),
- baseLY(0.f), quantum(0.f), weight(0.f), LY(0.f), alpha(0.f),
- totalLY(0.), sampleCount(0.)
+	totalMutations(totMutations), range(rng), baseSampler(sampler)
 {
 }
 
 ERPTSampler::~ERPTSampler() {
-	FreeAligned(sampleImage);
-	FreeAligned(baseImage);
-	FreeAligned(timeImage);
-	FreeAligned(baseTimeImage);
 	delete baseSampler;
-}
-
-// Copy
-ERPTSampler* ERPTSampler::clone() const
-{
-	ERPTSampler *newSampler = new ERPTSampler(*this);
-	newSampler->baseSampler = baseSampler->clone();
-	newSampler->totalSamples = 0;
-	newSampler->sampleImage = NULL;
-	return newSampler;
-}
-
-static void initERPT(ERPTSampler *sampler, const Sample *sample)
-{
-	u_int i;
-	sampler->normalSamples = SAMPLE_FLOATS;
-	for (i = 0; i < sample->n1D.size(); ++i)
-		sampler->normalSamples += sample->n1D[i];
-	for (i = 0; i < sample->n2D.size(); ++i)
-		sampler->normalSamples += 2 * sample->n2D[i];
-	sampler->totalSamples = sampler->normalSamples;
-	sampler->offset = new u_int[sample->nxD.size()];
-	sampler->totalTimes = 0;
-	for (i = 0; i < sample->nxD.size(); ++i) {
-		sampler->offset[i] = sampler->totalSamples;
-		sampler->totalTimes += sample->nxD[i];
-		sampler->totalSamples += sample->dxD[i] * sample->nxD[i];
-	}
-	sampler->sampleImage = AllocAligned<float>(sampler->totalSamples);
-	sampler->baseImage = AllocAligned<float>(sampler->totalSamples);
-	sampler->timeImage = AllocAligned<int>(sampler->totalTimes);
-	sampler->baseTimeImage = AllocAligned<int>(sampler->totalTimes);
-	sampler->baseSampler->SetFilm(sampler->film);
-	sampler->mutation = ~0U;
-
-	// Fetch first contribution buffer from pool
-	sampler->contribBuffer = sampler->film->scene->contribPool->Next(NULL);
 }
 
 // interface for new ray/samples from scene
 bool ERPTSampler::GetNextSample(Sample *sample, u_int *use_pos)
 {
 	const RandomGenerator *rng = sample->rng;
-	sample->sampler = this;
-	if (sampleImage == NULL) {
-		initERPT(this, sample);
-	}
+	ERPTData *data = (ERPTData *)(sample->samplerData);
 
-	if (mutation == ~0U) {
+	if (data->mutation == ~0U) {
 		// Dade - we are at a valid checkpoint where we can stop the
 		// rendering. Check if we have enough samples per pixel in the film.
 		if (film->enoughSamplePerPixel)
 			return false;
 
 		const bool ret = baseSampler->GetNextSample(sample, use_pos);
-		sample->sampler = this;
-		for (u_int i = 0; i < totalTimes; ++i)
+		for (u_int i = 0; i < data->totalTimes; ++i)
 			sample->timexD[0][i] = -1;
 		sample->stamp = 0;
-		currentImage = baseImage;
-		currentTimeImage = baseTimeImage;
-		stamp = 0;
+		data->currentImage = data->baseImage;
+		data->currentTimeImage = data->baseTimeImage;
+		data->stamp = 0;
 		return ret;
 	} else {
-		if (mutation == 0) {
+		if (data->mutation == 0) {
 			// *** new chain ***
-			for (u_int i = 0; i < totalTimes; ++i)
-				sample->timexD[0][i] = baseTimeImage[i];
+			for (u_int i = 0; i < data->totalTimes; ++i)
+				sample->timexD[0][i] = data->baseTimeImage[i];
 			sample->stamp = 0;
-			currentImage = baseImage;
-			currentTimeImage = baseTimeImage;
-			stamp = 0;
+			data->currentImage = data->baseImage;
+			data->currentTimeImage = data->baseTimeImage;
+			data->stamp = 0;
 		}
 		// *** small mutation ***
 		// mutate current sample
-		sample->imageX = mutateScaled(currentImage[0], rng->floatValue(), xPixelStart, xPixelEnd, range);
-		sample->imageY = mutateScaled(currentImage[1], rng->floatValue(), yPixelStart, yPixelEnd, range);
-		sample->lensU = mutate(currentImage[2], rng->floatValue());
-		sample->lensV = mutate(currentImage[3], rng->floatValue());
-		sample->time = mutate(currentImage[4], rng->floatValue());
-		sample->wavelengths = mutate(currentImage[5], rng->floatValue());
-		for (u_int i = SAMPLE_FLOATS; i < normalSamples; ++i)
-				sample->oneD[0][i - SAMPLE_FLOATS] = mutate(currentImage[i], rng->floatValue());
+		sample->imageX = mutateScaled(data->currentImage[0], rng->floatValue(), xPixelStart, xPixelEnd, range);
+		sample->imageY = mutateScaled(data->currentImage[1], rng->floatValue(), yPixelStart, yPixelEnd, range);
+		sample->lensU = mutate(data->currentImage[2], rng->floatValue());
+		sample->lensV = mutate(data->currentImage[3], rng->floatValue());
+		sample->time = mutate(data->currentImage[4], rng->floatValue());
+		sample->wavelengths = mutate(data->currentImage[5], rng->floatValue());
+		for (u_int i = SAMPLE_FLOATS; i < data->normalSamples; ++i)
+				sample->oneD[0][i - SAMPLE_FLOATS] = mutate(data->currentImage[i], rng->floatValue());
 		++(sample->stamp);
 	}
 
@@ -174,147 +155,149 @@ bool ERPTSampler::GetNextSample(Sample *sample, u_int *use_pos)
 
 float *ERPTSampler::GetLazyValues(const Sample &sample, u_int num, u_int pos)
 {
+	ERPTData *data = (ERPTData *)(sample.samplerData);
 	const u_int size = sample.dxD[num];
-	float *data = sample.xD[num] + pos * size;
+	float *sd = sample.xD[num] + pos * size;
 	const int stampLimit = sample.stamp;
 	if (sample.timexD[num][pos] != stampLimit) {
 		if (sample.timexD[num][pos] == -1) {
 			baseSampler->GetLazyValues(sample, num, pos);
 			sample.timexD[num][pos] = 0;
 		} else {
-			const u_int start = offset[num] + pos * size;
-			float *image = currentImage + start;
+			const u_int start = data->offset[num] + pos * size;
+			float *image = data->currentImage + start;
 			for (u_int i = 0; i < size; ++i)
-				data[i] = image[i];
+				sd[i] = image[i];
 		}
 		for (int &time = sample.timexD[num][pos]; time < stampLimit; ++time) {
 			for (u_int i = 0; i < size; ++i)
-				data[i] = mutate(data[i], sample.rng->floatValue());
+				sd[i] = mutate(sd[i], sample.rng->floatValue());
 		}
 	}
-	return data;
+	return sd;
 }
 
 // interface for adding/accepting a new image sample.
 void ERPTSampler::AddSample(const Sample &sample)
 {
+	ERPTData *data = (ERPTData *)(sample.samplerData);
 	vector<Contribution> &newContributions(sample.contributions);
 	float newLY = 0.0f;
 	for(u_int i = 0; i < newContributions.size(); ++i)
 		newLY += newContributions[i].color.Y();
-	if (mutation == 0U || mutation == ~0U) {
-		if (weight > 0.f) {
+	if (data->mutation == 0U || data->mutation == ~0U) {
+		if (data->weight > 0.f) {
 			// Add accumulated contribution of previous reference sample
-			weight *= quantum / LY;
-			if (!isinf(weight) && LY > 0.f) {
-				for(u_int i = 0; i < oldContributions.size(); ++i) {
+			data->weight *= data->quantum / data->LY;
+			if (!isinf(data->weight) && data->LY > 0.f) {
+				for(u_int i = 0; i < data->oldContributions.size(); ++i) {
 					// Radiance - added new use of contributionpool/buffers
-					if(&oldContributions && !contribBuffer->Add(&oldContributions[i], weight)) {
-						contribBuffer = film->scene->contribPool->Next(contribBuffer);
-						contribBuffer->Add(&oldContributions[i], weight);
+					if(!sample.contribBuffer->Add(&(data->oldContributions[i]), data->weight)) {
+						sample.contribBuffer = film->scene->contribPool->Next(sample.contribBuffer);
+						sample.contribBuffer->Add(&(data->oldContributions[i]), data->weight);
 					}
 				}
 			}
-			weight = 0.f;
+			data->weight = 0.f;
 		}
-		if (mutation == ~0U) {
+		if (data->mutation == ~0U) {
 			if (!(newLY > 0.f)) {
 				newContributions.clear();
 				return;
 			}
-			contribBuffer->AddSampleCount(1.f);
-			++sampleCount;
-			totalLY += newLY;
-			const float meanIntensity = totalLY > 0. ? static_cast<float>(totalLY / sampleCount) : 1.f;
+			sample.contribBuffer->AddSampleCount(1.f);
+			++(data->sampleCount);
+			data->totalLY += newLY;
+			const float meanIntensity = data->totalLY > 0. ? static_cast<float>(data->totalLY / data->sampleCount) : 1.f;
 			// calculate the number of chains on a new seed
-			quantum = newLY / meanIntensity;
-			numChains = max(1U, Floor2UInt(quantum + .5f));
+			data->quantum = newLY / meanIntensity;
+			data->numChains = max(1U, Floor2UInt(data->quantum + .5f));
 			// The following line avoids to block on a pixel
 			// if the initial sample is extremely bright
-			numChains = min(numChains, totalMutations);
-			quantum /= (numChains * totalMutations);
-			baseLY = newLY;
-			baseContributions = newContributions;
-			baseImage[0] = sample.imageX;
-			baseImage[1] = sample.imageY;
-			baseImage[2] = sample.lensU;
-			baseImage[3] = sample.lensV;
-			baseImage[4] = sample.time;
-			baseImage[5] = sample.wavelengths;
-			for (u_int i = SAMPLE_FLOATS; i < totalSamples; ++i)
-				baseImage[i] = sample.oneD[0][i - SAMPLE_FLOATS];
-			for (u_int i = 0 ; i < totalTimes; ++i)
-				baseTimeImage[i] = sample.timexD[0][i];
-			mutation = 0;
+			data->numChains = min(data->numChains, totalMutations);
+			data->quantum /= (data->numChains * totalMutations);
+			data->baseLY = newLY;
+			data->baseContributions = newContributions;
+			data->baseImage[0] = sample.imageX;
+			data->baseImage[1] = sample.imageY;
+			data->baseImage[2] = sample.lensU;
+			data->baseImage[3] = sample.lensV;
+			data->baseImage[4] = sample.time;
+			data->baseImage[5] = sample.wavelengths;
+			for (u_int i = SAMPLE_FLOATS; i < data->totalSamples; ++i)
+				data->baseImage[i] = sample.oneD[0][i - SAMPLE_FLOATS];
+			for (u_int i = 0 ; i < data->totalTimes; ++i)
+				data->baseTimeImage[i] = sample.timexD[0][i];
+			data->mutation = 0;
 			newContributions.clear();
 			return;
 		}
-		LY = baseLY;
-		oldContributions = baseContributions;
+		data->LY = data->baseLY;
+		data->oldContributions = data->baseContributions;
 	}
 	// calculate accept probability from old and new image sample
 	float accProb;
-	if (LY > 0.f)
-		accProb = min(1.f, newLY / LY);
+	if (data->LY > 0.f)
+		accProb = min(1.f, newLY / data->LY);
 	else
 		accProb = 1.f;
 	float newWeight = accProb;
-	weight += 1.f - accProb;
+	data->weight += 1.f - accProb;
 
 	// try accepting of the new sample
 	if (accProb == 1.f || sample.rng->floatValue() < accProb) {
 		// Add accumulated contribution of previous reference sample
-		weight *= quantum / LY;
-		if (!isinf(weight) && LY > 0.f) {
-			for(u_int i = 0; i < oldContributions.size(); ++i) {
+		data->weight *= data->quantum / data->LY;
+		if (!isinf(data->weight) && data->LY > 0.f) {
+			for(u_int i = 0; i < data->oldContributions.size(); ++i) {
 				// Radiance - added new use of contributionpool/buffers
-				if(&oldContributions && !contribBuffer->Add(&oldContributions[i], weight)) {
-					contribBuffer = film->scene->contribPool->Next(contribBuffer);
-					contribBuffer->Add(&oldContributions[i], weight);
+				if(!sample.contribBuffer->Add(&(data->oldContributions[i]), data->weight)) {
+					sample.contribBuffer = film->scene->contribPool->Next(sample.contribBuffer);
+					sample.contribBuffer->Add(&(data->oldContributions[i]), data->weight);
 				}
 			}
 		}
-		weight = newWeight;
-		LY = newLY;
-		oldContributions = newContributions;
+		data->weight = newWeight;
+		data->LY = newLY;
+		data->oldContributions = newContributions;
 
 		// Save new contributions for reference
-		sampleImage[0] = sample.imageX;
-		sampleImage[1] = sample.imageY;
-		sampleImage[2] = sample.lensU;
-		sampleImage[3] = sample.lensV;
-		sampleImage[4] = sample.time;
-		sampleImage[5] = sample.wavelengths;
-		for (u_int i = SAMPLE_FLOATS; i < totalSamples; ++i)
-			sampleImage[i] = sample.oneD[0][i - SAMPLE_FLOATS];
-		for (u_int i = 0 ; i < totalTimes; ++i)
-			timeImage[i] = sample.timexD[0][i];
-		stamp = sample.stamp;
-		currentImage = sampleImage;
-		currentTimeImage = timeImage;
+		data->sampleImage[0] = sample.imageX;
+		data->sampleImage[1] = sample.imageY;
+		data->sampleImage[2] = sample.lensU;
+		data->sampleImage[3] = sample.lensV;
+		data->sampleImage[4] = sample.time;
+		data->sampleImage[5] = sample.wavelengths;
+		for (u_int i = SAMPLE_FLOATS; i < data->totalSamples; ++i)
+			data->sampleImage[i] = sample.oneD[0][i - SAMPLE_FLOATS];
+		for (u_int i = 0 ; i < data->totalTimes; ++i)
+			data->timeImage[i] = sample.timexD[0][i];
+		data->stamp = sample.stamp;
+		data->currentImage = data->sampleImage;
+		data->currentTimeImage = data->timeImage;
 	} else {
 		// Add contribution of new sample before rejecting it
-		newWeight *= quantum / newLY;
+		newWeight *= data->quantum / newLY;
 		if (!isinf(newWeight) && newLY > 0.f) {
 			for(u_int i = 0; i < newContributions.size(); ++i) {
 				// Radiance - added new use of contributionpool/buffers
-				if(!contribBuffer->Add(&newContributions[i], newWeight)) {
-					contribBuffer = film->scene->contribPool->Next(contribBuffer);
-					contribBuffer->Add(&newContributions[i], newWeight);
+				if(!sample.contribBuffer->Add(&newContributions[i], newWeight)) {
+					sample.contribBuffer = film->scene->contribPool->Next(sample.contribBuffer);
+					sample.contribBuffer->Add(&newContributions[i], newWeight);
 				}
 			}
 		}
 
 		// Restart from previous reference
-		for (u_int i = 0; i < totalTimes; ++i)
-			sample.timexD[0][i] = currentTimeImage[i];
-		sample.stamp = stamp;
+		for (u_int i = 0; i < data->totalTimes; ++i)
+			sample.timexD[0][i] = data->currentTimeImage[i];
+		sample.stamp = data->stamp;
 	}
-	if (++mutation >= totalMutations) {
-		mutation = 0;
-		if (++chain >= numChains) {
-			chain = 0;
-			mutation = ~0U;
+	if (++(data->mutation) >= totalMutations) {
+		data->mutation = 0;
+		if (++(data->chain) >= data->numChains) {
+			data->chain = 0;
+			data->mutation = ~0U;
 		}
 	}
 	newContributions.clear();

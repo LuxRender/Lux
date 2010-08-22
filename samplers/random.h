@@ -31,29 +31,34 @@ namespace lux
 class RandomSampler : public Sampler
 {
 public:
+	class RandomData {
+	public:
+		RandomData(int xPixelStart, int yPixelStart, u_int pixelSamples);
+		~RandomData();
+		int xPos, yPos;
+		u_int samplePos;
+	};
 	RandomSampler(int xstart, int xend, int ystart, int yend,
 		u_int ps, string pixelsampler);
 	virtual ~RandomSampler();
 
+	virtual void InitSample(Sample *sample) const {
+		sample->samplerData = new RandomData(xPixelStart, yPixelStart,
+			pixelSamples);
+	}
 	virtual u_int GetTotalSamplePos();
 	virtual bool GetNextSample(Sample *sample, u_int *use_pos);
 	virtual float *GetLazyValues(const Sample &sample, u_int num, u_int pos);
 	virtual u_int RoundSize(u_int sz) const { return sz; }
 	virtual void GetBufferType(BufferType *type) {*type = BUF_TYPE_PER_PIXEL;}
-	virtual RandomSampler* clone() const; // Lux (copy) constructor for multithreading
 
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
 private:
 	// RandomSampler Private Data
 	bool jitterSamples;
-	int xPos, yPos;
 	u_int pixelSamples;
-	float *imageSamples, *lensSamples, *timeSamples, *wavelengthsSamples,
-		*singleWavelengthSamples;
-	u_int samplePos;
-	u_int TotalPixels;
+	u_int totalPixels;
 	PixelSampler* pixelSampler;
-	bool init;
 };
 
 }//namespace lux

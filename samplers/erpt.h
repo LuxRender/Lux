@@ -34,10 +34,27 @@ namespace lux
 
 class ERPTSampler : public Sampler {
 public:
+	class ERPTData {
+	public:
+		ERPTData(const Sample &sample);
+		~ERPTData();
+		u_int normalSamples, totalSamples, totalTimes;
+		float *baseImage, *sampleImage, *currentImage;
+		int *baseTimeImage, *timeImage, *currentTimeImage;
+		u_int *offset;
+		u_int numChains, chain, mutation;
+		int stamp;
+		float baseLY, quantum, weight, LY, alpha;
+		vector<Contribution> oldContributions, baseContributions;
+		double totalLY, sampleCount;
+	};
 	ERPTSampler(u_int totMutations, float rng, Sampler *sampler);
 	virtual ~ERPTSampler();
 
-	virtual ERPTSampler* clone() const;
+	virtual void InitSample(Sample *sample) const {
+		sample->samplerData = new ERPTData(*sample);
+	}
+	virtual void SetFilm(Film* f) { film = f; baseSampler->SetFilm(f); }
 	virtual void GetBufferType(BufferType *type) {*type = BUF_TYPE_PER_SCREEN;}
 	virtual u_int GetTotalSamplePos() { return baseSampler->GetTotalSamplePos(); }
 	virtual u_int RoundSize(u_int size) const { return baseSampler->RoundSize(size); }
@@ -47,19 +64,9 @@ public:
 	virtual void AddSample(const Sample &sample);
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
 
-	virtual bool IsMutating() { return true; }
-
-	u_int normalSamples, totalSamples, totalTimes, totalMutations;
+	u_int totalMutations;
 	float pMicro, range;
 	Sampler *baseSampler;
-	float *baseImage, *sampleImage, *currentImage;
-	int *baseTimeImage, *timeImage, *currentTimeImage;
-	u_int *offset;
-	u_int numChains, chain, mutation;
-	int stamp;
-	float baseLY, quantum, weight, LY, alpha;
-	vector<Contribution> oldContributions, baseContributions;
-	double totalLY, sampleCount;
 };
 
 }//namespace lux

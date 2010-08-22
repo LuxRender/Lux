@@ -34,21 +34,22 @@
 
 using namespace lux;
 
-// Lux (copy) constructor
-RandomSampler* RandomSampler::clone() const
- {
-   return new RandomSampler(*this);
- }
+RandomSampler::RandomData::RandomData(int xPixelStart, int yPixelStart,
+	u_int pixelSamples)
+{
+	xPos = xPixelStart;
+	yPos = yPixelStart;
+	samplePos = pixelSamples;
+}
+RandomSampler::RandomData::~RandomData()
+{
+}
 
 RandomSampler::RandomSampler(int xstart, int xend,
                              int ystart, int yend, u_int ps, string pixelsampler)
         : Sampler(xstart, xend, ystart, yend, ps)
 {
-	xPos = xPixelStart;
-	yPos = yPixelStart;
 	pixelSamples = ps;
-
-	init = true;
 
 	// Initialize PixelSampler
 	if(pixelsampler == "vegas")
@@ -64,43 +65,28 @@ RandomSampler::RandomSampler(int xstart, int xend,
 	else
 		pixelSampler = new LinearPixelSampler(xstart, xend, ystart, yend);
 
-	TotalPixels = pixelSampler->GetTotalPixels();
-
-	// Get storage for a pixel's worth of stratified samples
-	imageSamples = AllocAligned<float>(6 * pixelSamples);
-	lensSamples = imageSamples + 2 * pixelSamples;
-	timeSamples = lensSamples +  2 * pixelSamples;
-	wavelengthsSamples = timeSamples + pixelSamples;
-
-	samplePos = pixelSamples;
+	totalPixels = pixelSampler->GetTotalPixels();
 }
 
 RandomSampler::~RandomSampler()
 {
-	FreeAligned(imageSamples);
 }
 
 // return TotalPixels so scene shared thread increment knows total sample positions
 u_int RandomSampler::GetTotalSamplePos()
 {
-	return TotalPixels;
+	return totalPixels;
 }
 
 bool RandomSampler::GetNextSample(Sample *sample, u_int *use_pos)
 {
-	sample->sampler = this;
-
-	if(init) {
-		init = false;
-		// Fetch first contribution buffer from pool
-		contribBuffer = film->scene->contribPool->Next(NULL);
-	}
+	RandomData *data = (RandomData *)(sample->samplerData);
 
 	// Compute new set of samples if needed for next pixel
 	bool haveMoreSample = true;
-	if (samplePos == pixelSamples) {
+	if (data->samplePos == pixelSamples) {
 		// fetch next pixel from pixelsampler
-		if(!pixelSampler->GetNextPixel(xPos, yPos, use_pos)) {
+		if(!pixelSampler->GetNextPixel(data->xPos, data->yPos, use_pos)) {
 			// Dade - we are at a valid checkpoint where we can stop the
 			// rendering. Check if we have enough samples per pixel in the film.
 			if (film->enoughSamplePerPixel) {
@@ -111,22 +97,18 @@ bool RandomSampler::GetNextSample(Sample *sample, u_int *use_pos)
 		} else
 			haveMoreSample = (!pixelSampler->renderingDone);
 
-		for (u_int i = 0; i < 6 * pixelSamples; ++i) {
-			imageSamples[i] = sample->rng->floatValue();
-		}
-
-		samplePos = 0;
+		data->samplePos = 0;
 	}
 	// reset so scene knows to increment
-	if (samplePos >= pixelSamples-1)
+	if (data->samplePos >= pixelSamples-1)
 		*use_pos = ~0U;
 	// Return next \mono{RandomSampler} sample point
-	sample->imageX = xPos + imageSamples[2*samplePos];
-	sample->imageY = yPos + imageSamples[2*samplePos+1];
-	sample->lensU = lensSamples[2*samplePos];
-	sample->lensV = lensSamples[2*samplePos+1];
-	sample->time = timeSamples[samplePos];
-	sample->wavelengths = wavelengthsSamples[samplePos];
+	sample->imageX = data->xPos + sample->rng->floatValue();
+	sample->imageY = data->yPos + sample->rng->floatValue();
+	sample->lensU = sample->rng->floatValue();
+	sample->lensV = sample->rng->floatValue();
+	sample->time = sample->rng->floatValue();
+	sample->wavelengths = sample->rng->floatValue();
 	// Generate stratified samples for integrators
 	for (u_int i = 0; i < sample->n1D.size(); ++i) {
 		for (u_int j = 0; j < sample->n1D[i]; ++j)
@@ -137,7 +119,7 @@ bool RandomSampler::GetNextSample(Sample *sample, u_int *use_pos)
 			sample->twoD[i][j] = sample->rng->floatValue();
 	}
 
-	++samplePos;
+	++(data->samplePos);
 
 	return haveMoreSample;
 }

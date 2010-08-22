@@ -869,7 +869,7 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const Scene &scene,
 		// Use BSDF to do final gathering
 		SWCSpectrum Li(0.f);
 		for (u_int i = 0; i < gatherSamples ; ++i) {
-			float *sampleFGData = sample.sampler->GetLazyValues(
+			float *sampleFGData = scene.sampler->GetLazyValues(
 				sample, sampleFinalGather1Offset, i);
 
 			// Sample random direction from BSDF for final gather ray
@@ -937,7 +937,7 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const Scene &scene,
 		// Use nearby photons to do final gathering
 		Li = 0.f;
 		for (u_int i = 0; i < gatherSamples; ++i) {
-			float *sampleFGData = sample.sampler->GetLazyValues(
+			float *sampleFGData = scene.sampler->GetLazyValues(
 				sample, sampleFinalGather2Offset, i);
 
 			// Sample random direction using photons for final gather ray
@@ -1031,7 +1031,7 @@ SWCSpectrum PhotonMapFinalGather(const Scene &scene, const Sample &sample,
 		// Use BSDF to do final gathering
 		SWCSpectrum Li(0.f);
 		for (u_int i = 0; i < gatherSamples ; ++i) {
-			float *sampleFGData = sample.sampler->GetLazyValues(
+			float *sampleFGData = scene.sampler->GetLazyValues(
 				sample, sampleFinalGatherOffset, i);
 
 			// Sample random direction from BSDF for final gather ray

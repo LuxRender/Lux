@@ -453,7 +453,7 @@ u_int SurfaceIntegratorRenderingHints::SampleLights(const Scene &scene,
 
 	const u_int nContribs = lsStrategy->SampleLights(scene, sample,
 		shadowRayCount, p, n, wo, bsdf,
-		sample.sampler->GetLazyValues(sample, lightSampleOffset,
+		scene.sampler->GetLazyValues(sample, lightSampleOffset,
 		depth), scale, L);
 
 	if (V) {

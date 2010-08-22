@@ -260,7 +260,7 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(const Scene &scene,
 
         if (debugEnableSpecular && (reflectionDepth < maxDepth)) {
 			// Collect samples
-			const float *sampleData = sample.sampler->GetLazyValues(sample, sampleOffset, reflectionDepth);
+			const float *sampleData = scene.sampler->GetLazyValues(sample, sampleOffset, reflectionDepth);
 
 			float u1 = sampleData[0];
 			float u2 = sampleData[1];
@@ -377,7 +377,7 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const Scene &scene,
 		}
 
 		// Dade - collect samples
-		float *sampleData = sample.sampler->GetLazyValues(sample,
+		float *sampleData = scene.sampler->GetLazyValues(sample,
 			sampleOffset, pathLength);
 		const float *pathSample = &sampleData[0];
 		const float *pathComponent = &sampleData[2];
