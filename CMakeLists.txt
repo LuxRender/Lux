@@ -459,7 +459,7 @@ SET(lux_core_src
 	core/transport.cpp
 	core/util.cpp
 	core/volume.cpp
-	renderer/renderserver.cpp
+	server/renderserver.cpp
 	)
 SET(lux_accelerators_src
 	accelerators/bruteforce.cpp
@@ -738,7 +738,7 @@ ADD_LIBRARY(lux STATIC ${lux_lib_src} )
 #############################################################################
 #Here we build the console executable
 #############################################################################
-ADD_EXECUTABLE(luxconsole renderer/luxconsole.cpp)
+ADD_EXECUTABLE(luxconsole console/luxconsole.cpp)
 IF(APPLE)
 	TARGET_LINK_LIBRARIES(luxconsole -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} z ${Boost_LIBRARIES} )
 ELSE(APPLE)
@@ -870,8 +870,8 @@ INSTALL(TARGETS lux DESTINATION lib${LIB_SUFFIX})
 
 
 #Install Desktop files
-INSTALL(FILES ${CMAKE_SOURCE_DIR}/renderer/luxrender.svg DESTINATION share/pixmaps/)
-INSTALL(FILES ${CMAKE_SOURCE_DIR}/renderer/luxrender.desktop DESTINATION share/applications/)
+INSTALL(FILES ${CMAKE_SOURCE_DIR}/wxgui/luxrender.svg DESTINATION share/pixmaps/)
+INSTALL(FILES ${CMAKE_SOURCE_DIR}/wxgui/luxrender.desktop DESTINATION share/applications/)
 
 #Source package target
 ADD_CUSTOM_TARGET(package mkdir lux-${VERSION}

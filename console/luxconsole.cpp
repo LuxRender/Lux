@@ -37,7 +37,7 @@
 #include <boost/filesystem/operations.hpp>
 
 #include "api.h"
-#include "renderserver.h"
+#include "server/renderserver.h"
 
 #if defined(WIN32) && !defined(__CYGWIN__) /* We need the following two to set stdout to binary */
 #include <io.h>
