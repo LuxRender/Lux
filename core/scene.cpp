@@ -30,48 +30,15 @@
 #include "sampling.h"
 #include "volume.h"
 #include "error.h"
-#include "context.h"
 #include "bxdf.h"
 #include "light.h"
 #include "spectrumwavelengths.h"
 #include "transport.h"
 
-#include "randomgen.h"
-
-#include "fastmutex.h"
-
 #include <boost/thread/xtime.hpp>
 #include <boost/bind.hpp>
 
 using namespace lux;
-
-// global sample pos/mutex
-static u_int sampPos;
-static fast_mutex sampPosMutex;
-
-// Engine Control (start/pause/restart) methods
-void Scene::Start() {
-    SignalThreads(RUN);
-}
-
-void Scene::Pause() {
-    SignalThreads(PAUSE);
-}
-
-void Scene::Exit() {
-    SignalThreads(EXIT);
-}
-
-u_int Scene::GetThreadsStatus(RenderingThreadInfo *info, u_int maxInfoCount) {
-	boost::mutex::scoped_lock lock(renderThreadsMutex);
-
-	for (size_t i = 0; i < min<size_t>(renderThreads.size(), maxInfoCount); ++i) {
-		info[i].threadIndex = renderThreads[i]->n;
-		info[i].status = renderThreads[i]->signal;
-	}
-
-	return renderThreads.size();
-}
 
 void Scene::SaveFLM( const string& filename ) {
 	camera->film->WriteFilm(filename);
@@ -138,340 +105,6 @@ u_int Scene::FilmYres() {
     return camera->film->GetYPixelCount();
 }
 
-// Statistics Access
-double Scene::Statistics(const string &statName) {
-	if(statName=="secElapsed") {
-		// Dade - s_Timer is inizialized only after the preprocess phase
-		if (preprocessDone)
-			return s_Timer.Time();
-		else
-			return 0.0;
-	} else if(statName=="samplesSec")
-		return Statistics_SamplesPSec();
-	else if(statName=="samplesTotSec")
-		return Statistics_SamplesPTotSec();
-	else if(statName=="samplesPx")
-		return Statistics_SamplesPPx();
-	else if(statName=="efficiency")
-		return Statistics_Efficiency();
-	else if(statName=="filmXres")
-		return FilmXres();
-	else if(statName=="filmYres")
-		return FilmYres();
-	else if(statName=="displayInterval")
-		return DisplayInterval();
-	else if(statName == "filmEV")
-		return camera->film->EV;
-	else if (statName == "enoughSamples")
-		return camera->film->enoughSamplePerPixel;
-	else {
-		std::string eString("luxStatistics - requested an invalid data : ");
-		eString+=statName;
-		luxError(LUX_BADTOKEN, LUX_ERROR, eString.c_str());
-		return 0.;
-	}
-}
-
-// Control Implementations in Scene:
-double Scene::GetNumberOfSamples()
-{
-	if (s_Timer.Time() - lastTime > .5f) {
-		boost::mutex::scoped_lock lockThreads(renderThreadsMutex);
-		for (u_int i = 0; i < renderThreads.size(); ++i) {
-			fast_mutex::scoped_lock lockStats(renderThreads[i]->statLock);
-			stat_Samples += renderThreads[i]->samples;
-			stat_blackSamples += renderThreads[i]->blackSamples;
-			renderThreads[i]->samples = 0.;
-			renderThreads[i]->blackSamples = 0.;
-		}
-	}
-
-	return stat_Samples + numberOfSamplesFromNetwork;
-}
-
-double Scene::Statistics_SamplesPPx()
-{
-	// divide by total pixels
-	int xstart, xend, ystart, yend;
-	camera->film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
-	return GetNumberOfSamples() / ((xend - xstart) * (yend - ystart));
-}
-
-double Scene::Statistics_SamplesPSec()
-{
-	// Dade - s_Timer is inizialized only after the preprocess phase
-	if (!preprocessDone)
-		return 0.0;
-
-	double samples = GetNumberOfSamples();
-	double time = s_Timer.Time();
-	double dif_samples = samples - lastSamples;
-	double elapsed = time - lastTime;
-	lastSamples = samples;
-	lastTime = time;
-
-	// return current samples / sec total
-	if (elapsed == 0.0)
-		return 0.0;
-	else
-		return dif_samples / elapsed;
-}
-
-double Scene::Statistics_SamplesPTotSec()
-{
-	// Dade - s_Timer is inizialized only after the preprocess phase
-	if (!preprocessDone)
-		return 0.0;
-
-	double samples = GetNumberOfSamples();
-	double time = s_Timer.Time();
-
-	// return current samples / total elapsed secs
-	return samples / time;
-}
-
-double Scene::Statistics_Efficiency()
-{
-	if (stat_Samples == 0.0)
-		return 0.0;
-
-	return (100.f * stat_blackSamples) / stat_Samples;
-}
-
-void Scene::SignalThreads(ThreadSignals signal) {
-	boost::mutex::scoped_lock lock(renderThreadsMutex);
-
-    for(unsigned int i=0;i<renderThreads.size();i++) {
-		if(renderThreads[i])
-			renderThreads[i]->signal=signal;
-    }
-    CurThreadSignal = signal;
-}
-
-// Scene Methods -----------------------
-RenderThread::RenderThread(u_int _n, ThreadSignals _signal, Scene* _Scn) :
-	n(_n), signal(_signal), scene(_Scn), thread(NULL), samples(0.), blackSamples(0.)
-{
-}
-
-RenderThread::~RenderThread()
-{
-}
-
-void RenderThread::Render(RenderThread *myThread) {
-	Scene &scene(*(myThread->scene));
-	if (scene.IsFilmOnly())
-		return;
-	Sampler *sampler = scene.sampler;
-	Sample sample(scene.surfaceIntegrator, scene.volumeIntegrator, scene);
-	sample.contribBuffer = scene.contribPool->Next(NULL);
-	sampler->InitSample(&sample);
-
-	// Dade - wait the end of the preprocessing phase
-	while (!scene.preprocessDone) {
-		boost::xtime xt;
-		boost::xtime_get(&xt, boost::TIME_UTC);
-		++xt.sec;
-		boost::thread::sleep(xt);
-	}
-
-	// initialize the thread's rangen
-	u_long seed = scene.seedBase + myThread->n;
-	std::stringstream ss;
-	ss << "Thread " << myThread->n << " uses seed: " << seed;
-	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
-
-	RandomGenerator rng(seed);
-	sample.camera = scene.camera->Clone();
-	sample.realTime = 0.f;
-
-	sample.rng = &rng;
-
-	// allocate sample pos
-	u_int usePos = 0;
-	u_int maxSampPos = sampler->GetTotalSamplePos();
-
-	// Trace rays: The main loop
-	while (true) {
-		if (!sampler->GetNextSample(&sample, &usePos)) {
-
-			// Dade - we have done, check what we have to do now
-			if (scene.suspendThreadsWhenDone) {
-				myThread->signal = PAUSE;
-
-				// Dade - wait for a resume rendering or exit
-				while (myThread->signal == PAUSE) {
-					boost::xtime xt;
-					boost::xtime_get(&xt, boost::TIME_UTC);
-					xt.sec += 1;
-					boost::thread::sleep(xt);
-				}
-
-				if (myThread->signal == EXIT)
-					break;
-				else
-					continue;
-			} else
-				break;
-		}
-
-		// save ray time value
-		sample.realTime = sample.camera->GetTime(sample.time);
-		// sample camera transformation
-		sample.camera->SampleMotion(sample.realTime);
-
-		// Sample new SWC thread wavelengths
-		sample.swl.Sample(sample.wavelengths);
-
-		while (myThread->signal == PAUSE) {
-			boost::xtime xt;
-			boost::xtime_get(&xt, boost::TIME_UTC);
-			xt.sec += 1;
-			boost::thread::sleep(xt);
-		}
-		if (myThread->signal == EXIT)
-			break;
-
-		// Evaluate radiance along camera ray
-		// Jeanphi - Hijack statistics until volume integrator revamp
-		{
-			const u_int nContribs = scene.surfaceIntegrator->Li(scene, sample);
-			// update samples statistics
-			fast_mutex::scoped_lock lockStats(myThread->statLock);
-			myThread->blackSamples += nContribs;
-			++(myThread->samples);
-		}
-
-		sampler->AddSample(sample);
-
-		// Free BSDF memory from computing image sample value
-		sample.arena.FreeAll();
-
-		// increment (locked) global sample pos if necessary (eg maxSampPos != 0)
-		if (usePos == ~0U && maxSampPos != 0) {
-			fast_mutex::scoped_lock lock(sampPosMutex);
-			sampPos++;
-			if (sampPos == maxSampPos)
-				sampPos = 0;
-			usePos = sampPos;
-		}
-
-#ifdef WIN32
-		//Work around Windows bad scheduling -- Jeanphi
-		myThread->thread->yield();
-#endif
-	}
-
-	scene.contribPool->End(sample.contribBuffer);
-	sample.contribBuffer = NULL;
-
-//	delete myThread->sample->camera; //FIXME deleting the camera clone would delete the film!
-}
-
-u_int Scene::CreateRenderThread()
-{
-	if (IsFilmOnly())
-		return 0;
-
-	boost::mutex::scoped_lock lock(renderThreadsMutex);
-
-	// Avoid to create the thread in case signal is EXIT. for instance, it
-	// can happen when the rendering is done.
-	if (CurThreadSignal != EXIT) {
-		RenderThread *rt = new  RenderThread(renderThreads.size(),
-			CurThreadSignal, this);
-
-		renderThreads.push_back(rt);
-		rt->thread = new boost::thread(boost::bind(RenderThread::Render, rt));
-	}
-
-	return renderThreads.size();
-}
-
-void Scene::RemoveRenderThread()
-{
-	boost::mutex::scoped_lock lock(renderThreadsMutex);
-
-	if (renderThreads.size() == 0)
-		return;
-	renderThreads.back()->signal = EXIT;
-	renderThreads.back()->thread->join();
-	delete renderThreads.back();
-	renderThreads.pop_back();
-}
-
-void Scene::Render() {
-	if (IsFilmOnly())
-		return;
-
-	if (lights.size() == 0) {
-		luxError(LUX_MISSINGDATA, LUX_SEVERE, "No light sources defined in scene; nothing to render.");
-		return;
-	}
-
-	// Dade - I have to do initiliaziation here for the current thread.
-	// It can be used by the Preprocess() methods.
-
-	// initialize the thread's rangen
-	u_long seed = seedBase - 1;
-	std::stringstream ss;
-	ss << "Preprocess thread uses seed: " << seed;
-	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
-
-	RandomGenerator rng(seed);
-
-	// integrator preprocessing
-	camera->film->SetScene(this);
-	sampler->SetFilm(camera->film);
-	surfaceIntegrator->Preprocess(rng, *this);
-	volumeIntegrator->Preprocess(rng, *this);
-	camera->film->CreateBuffers();
-
-	// Dade - to support autofocus for some camera model
-	camera->AutoFocus(*this);
-
-	sampPos = 0;
-
-	//start the timer
-	s_Timer.Start();
-
-	// Dade - preprocessing done
-	preprocessDone = true;
-	Context::GetActive()->SceneReady();
-
-	// initial thread signal is paused
-	CurThreadSignal = RUN;
-
-	// add a thread
-	if (CreateRenderThread() > 0) {
-
-		// The first thread can not be removed
-		// it will terminate when the rendering is finished
-		renderThreads[0]->thread->join();
-
-		// rendering done, now I can remove all rendering threads
-		{
-			boost::mutex::scoped_lock lock(renderThreadsMutex);
-
-			// wait for all threads to finish their job
-			for (u_int i = 0; i < renderThreads.size(); ++i) {
-				renderThreads[i]->thread->join();
-				delete renderThreads[i];
-			}
-			renderThreads.clear();
-
-			// I change the current signal to exit in order to disable the creation
-			// of new threads after this point
-			CurThreadSignal = EXIT;
-		}
-
-		// Flush the contribution pool
-		contribPool->Flush();
-		contribPool->Delete();
-	}
-
-}
-
 Scene::~Scene() {
 	delete camera;
 	delete sampler;
@@ -486,14 +119,12 @@ Scene::~Scene() {
 Scene::Scene(Camera *cam, SurfaceIntegrator *si, VolumeIntegrator *vi,
 	Sampler *s, boost::shared_ptr<Primitive> &accel,
 	const vector<Light *> &lts, const vector<string> &lg, Region *vr) :
-	lastSamples(0.), lastTime(0.), numberOfSamplesFromNetwork(0.),
-	stat_Samples(0.), stat_blackSamples(0.), aggregate(accel), lights(lts),
+	aggregate(accel), lights(lts),
 	lightGroups(lg), camera(cam), volumeRegion(vr), surfaceIntegrator(si),
 	volumeIntegrator(vi), sampler(s), contribPool(NULL),
-	CurThreadSignal(PAUSE), filmOnly(false),
-	preprocessDone(false), suspendThreadsWhenDone(false)
+	filmOnly(false)
 {
-	s_Timer.Reset();
+
 	// Scene Constructor Implementation
 	bound = Union(aggregate->WorldBound(), camera->Bounds());
 	if (volumeRegion)
@@ -510,16 +141,12 @@ Scene::Scene(Camera *cam, SurfaceIntegrator *si, VolumeIntegrator *vi,
 }
 
 Scene::Scene(Camera *cam) :
-	lastSamples(0.), lastTime(0.), numberOfSamplesFromNetwork(0.),
-	stat_Samples(0.), stat_blackSamples(0.), camera(cam),
-	volumeRegion(NULL), surfaceIntegrator(NULL),
+	camera(cam), volumeRegion(NULL), surfaceIntegrator(NULL),
 	volumeIntegrator(NULL), sampler(NULL), contribPool(NULL),
-	CurThreadSignal(PAUSE), filmOnly(true),
-	preprocessDone(false), suspendThreadsWhenDone(false)
+	filmOnly(true)
 {
 	for(u_int i = 0; i < cam->film->GetNumBufferGroups(); i++)
 		lightGroups.push_back( cam->film->GetGroupName(i) );
-	s_Timer.Reset();
 
 	// Dade - Initialize the base seed with the standard C lib random number generator
 	seedBase = rand();

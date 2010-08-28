@@ -152,4 +152,4 @@ private:
 
 }//namespace lux
 
-#endif //LUX_ERROR_H
+#endif //LUX_RENDERFARM_H

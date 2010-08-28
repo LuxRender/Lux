@@ -25,7 +25,6 @@
 #include "randomgen.h"
 #include "dynload.h"
 #include "paramset.h"
-#include "scene.h"		// for Scene
 #include "tonemap.h"
 #include "filter.h"
 #include "contribution.h"
@@ -548,7 +547,7 @@ Film::Film(u_int xres, u_int yres, Filter *filt, const float crop[4],
 		   bool w_resume_FLM, bool restart_resume_FLM, int haltspp, int halttime,
 		   int reject_warmup, bool debugmode) :
 	Queryable("film"),
-	xResolution(xres), yResolution(yres),
+	xResolution(xres), yResolution(yres), numberOfSamplesFromNetwork(0),
 	filter(filt), filename(filename1),
 	colorSpace(0.63f, 0.34f, 0.31f, 0.595f, 0.155f, 0.07f, 0.314275f, 0.329411f), // default is SMPTE
 	ZBuffer(NULL), use_Zbuf(useZbuffer),
@@ -556,8 +555,7 @@ Film::Film(u_int xres, u_int yres, Filter *filt, const float crop[4],
 	warmupComplete(false), reject_warmup_samples(reject_warmup),
 	writeResumeFlm(w_resume_FLM), restartResumeFlm(restart_resume_FLM),
 	haltSamplePerPixel(haltspp), haltTime(halttime),
-	EV(0.f), scene(NULL), histogram(NULL),
-	enoughSamplePerPixel(false)
+	EV(0.f), histogram(NULL), enoughSamplePerPixel(false)
 {
 	//Queryable parameters
 //	AddIntAttribute("xResolution", boost::bind(&Film::GetXResolution, boost::ref(*this)) );
@@ -1513,8 +1511,7 @@ double Film::UpdateFilm(std::basic_istream<char> &stream) {
 			maxTotNumberOfSamples = max(maxTotNumberOfSamples, bufferGroupNumSamples[i]);
 		}
 
-		if (scene != NULL)
-			scene->numberOfSamplesFromNetwork += maxTotNumberOfSamples;
+		numberOfSamplesFromNetwork += maxTotNumberOfSamples;
 
 		ss.str("");
 		ss << "Received film with " << totNumberOfSamples << " samples";

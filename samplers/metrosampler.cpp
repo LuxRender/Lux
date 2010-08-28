@@ -225,7 +225,7 @@ float *MetropolisSampler::GetLazyValues(const Sample &sample, u_int num, u_int p
 	return sd;
 }
 
-void MetropolisSampler::AddSample(const Sample &sample)
+void MetropolisSampler::AddSample(const Sample &sample, Scene &scene)
 {
 	MetropolisData *data = (MetropolisData *)(sample.samplerData);
 	vector<Contribution> &newContributions(sample.contributions);
@@ -265,7 +265,7 @@ void MetropolisSampler::AddSample(const Sample &sample)
 			for(u_int i = 0; i < data->oldContributions.size(); ++i) {
 				// Radiance - added new use of contributionpool/buffers
 				if (!sample.contribBuffer->Add(&(data->oldContributions[i]), norm)) {
-					sample.contribBuffer = film->scene->contribPool->Next(sample.contribBuffer);
+					sample.contribBuffer = scene.contribPool->Next(sample.contribBuffer);
 					sample.contribBuffer->Add(&(data->oldContributions[i]), norm);
 				}
 			}
@@ -294,7 +294,7 @@ void MetropolisSampler::AddSample(const Sample &sample)
 			for(u_int i = 0; i < newContributions.size(); ++i) {
 				// Radiance - added new use of contributionpool/buffers
 				if(!sample.contribBuffer->Add(&newContributions[i], norm)) {
-					sample.contribBuffer = film->scene->contribPool->Next(sample.contribBuffer);
+					sample.contribBuffer = scene.contribPool->Next(sample.contribBuffer);
 					sample.contribBuffer->Add(&newContributions[i], norm);
 				}
 			}

@@ -27,9 +27,6 @@
 #include "api.h"
 #include "primitive.h"
 #include "transport.h"
-#include "timer.h"
-
-#include "fastmutex.h"
 
 #include <boost/thread/thread.hpp>
 #include <boost/noncopyable.hpp>
@@ -37,27 +34,10 @@
 
 namespace lux {
 
-class RenderThread : public boost::noncopyable {
-public:
-	RenderThread(u_int _n, ThreadSignals _signal, Scene* _Scn);
-
-	~RenderThread();
-
-	static void Render(RenderThread *r);
-
-	u_int  n;
-	ThreadSignals signal;
-	Scene *scene;
-	boost::thread *thread; // keep pointer to delete the thread object
-	double samples, blackSamples;
-	fast_mutex statLock;
-};
-
 // Scene Declarations
 class  Scene {
 public:
 	// Scene Public Methods
-	void Render();
 	Scene(Camera *c, SurfaceIntegrator *in, VolumeIntegrator *vi,
 		Sampler *s, boost::shared_ptr<Primitive> &accel,
 		const vector<Light *> &lts, const vector<string> &lg,
@@ -89,16 +69,6 @@ public:
 	void Transmittance(const Ray &ray, const Sample &sample,
 		SWCSpectrum *const L) const;
 
-	//Control methods
-	void Start();
-	void Pause();
-	void Exit();
-
-	u_int CreateRenderThread();
-	void RemoveRenderThread();
-	void SignalThreads(ThreadSignals signal);
-	u_int GetThreadsStatus(RenderingThreadInfo *info, u_int maxInfoCount);
-
 	//framebuffer access
 	void UpdateFramebuffer();
 	unsigned char* GetFramebuffer();
@@ -126,22 +96,9 @@ public:
 	u_int FilmXres();
 	u_int FilmYres();
 
-	//statistics
-	double Statistics(const string &statName);
-	double GetNumberOfSamples();
-	double Statistics_SamplesPSec();
-	double Statistics_SamplesPTotSec();
-	double Statistics_Efficiency();
-	double Statistics_SamplesPPx();
 	bool IsFilmOnly() const { return filmOnly; }
 
 	// Scene Data
-	// Put those first for better data alignment
-	Timer s_Timer;
-	double lastSamples, lastTime;
-	double numberOfSamplesFromNetwork;
-	double stat_Samples, stat_blackSamples;
-
 	boost::shared_ptr<Primitive> aggregate;
 	vector<Light *> lights;
 	vector<string> lightGroups;
@@ -156,18 +113,7 @@ public:
 	ContributionPool *contribPool;
 
 private:
-	// mutex used for adding/removing threads
-	boost::mutex renderThreadsMutex;
-	std::vector<RenderThread*> renderThreads;
-	ThreadSignals CurThreadSignal;
 	bool filmOnly; // whether this scene has entire scene (incl. geometry, ..) or only a film
-
-public: // Put them last for better data alignment
-	// used to suspend render threads until the preprocessing phase is done
-	bool preprocessDone;
-
-	// tell rendering threads what to do when they have done
-	bool suspendThreadsWhenDone;
 };
 
 }//namespace lux

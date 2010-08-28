@@ -519,7 +519,7 @@ extern "C" void luxOverrideResumeFLM(const char *name)
 //user interactive thread functions
 extern "C" void luxStart()
 {
-	Context::GetActive()->Start();
+	Context::GetActive()->Resume();
 }
 
 extern "C" void luxPause()
@@ -552,13 +552,6 @@ extern "C" unsigned int luxAddThread()
 extern "C" void luxRemoveThread()
 {
 	Context::GetActive()->RemoveThread();
-}
-
-extern "C" unsigned int luxGetRenderingThreadsStatus(RenderingThreadInfo *info,
-	unsigned int maxInfoCount)
-{
-	return Context::GetActive()->GetRenderingThreadsStatus(info,
-		maxInfoCount);
 }
 
 //framebuffer access

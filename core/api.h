@@ -115,15 +115,6 @@ void luxRemoveThread();
 /* Set the minimum and maximum value used for epsilon */
 void luxSetEpsilon(const float minValue, const float maxValue);
 
-enum ThreadSignals { RUN, PAUSE, EXIT};
-struct RenderingThreadInfo {
-	unsigned int threadIndex;
-	ThreadSignals status;
-};
-// Dade - return the number of rendering threads and fill the info buffer with
-// information about the threads
-unsigned int luxGetRenderingThreadsStatus(RenderingThreadInfo *info, unsigned int maxInfoCount);
-
 /* Framebuffer access */
 void luxUpdateFramebuffer();
 unsigned char* luxFramebuffer();

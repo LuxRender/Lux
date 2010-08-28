@@ -39,17 +39,19 @@ Sampler::Sampler(int xstart, int xend, int ystart, int yend,
 	yPixelEnd = max(ystart, yend);
 	samplesPerPixel = spp;
 }
+
 float *Sampler::GetLazyValues(const Sample &sample, u_int num, u_int pos)
 {
 	return sample.xD[num] + pos * sample.dxD[num];
 }
-void Sampler::AddSample(const Sample &sample)
+
+void Sampler::AddSample(const Sample &sample, Scene &scene)
 {
 	sample.contribBuffer->AddSampleCount(1.f);
 	for (u_int i=0; i<sample.contributions.size(); i++) {
 			// Radiance - added new use of contributionpool/buffers
 			if(!sample.contribBuffer->Add(&sample.contributions[i], 1.f)) {
-				sample.contribBuffer = film->scene->contribPool->Next(sample.contribBuffer);
+				sample.contribBuffer = scene.contribPool->Next(sample.contribBuffer);
 				sample.contribBuffer->Add(&sample.contributions[i], 1.f);
 			}
 	}
@@ -58,8 +60,7 @@ void Sampler::AddSample(const Sample &sample)
 
 // Sample Method Definitions
 Sample::Sample(SurfaceIntegrator *surf, VolumeIntegrator *vol,
-	const Scene &scene)
-{
+	const Scene &scene) {
 	stamp = 0;
 	samplerData = NULL;
 	surf->RequestSamples(this, scene);

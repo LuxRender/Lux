@@ -36,6 +36,7 @@
 #include "renderfarm.h"
 #include "film/fleximage.h"
 #include "epsilon.h"
+#include "engines/samplerrenderer.h"
 
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filtering_streambuf.hpp>
@@ -125,6 +126,7 @@ void Context::Init() {
 	// Dade - reinitialize
 	terminated = false;
 	currentApiState = STATE_OPTIONS_BLOCK;
+	luxCurrentRenderer = NULL;
 	luxCurrentScene = NULL;
 	luxCurrentSceneReady = false;
 	curTransform = lux::Transform();
@@ -140,6 +142,9 @@ void Context::Init() {
 void Context::Free() {
 	// Dade - free memory
 	luxCurrentSceneReady = false;
+
+	delete luxCurrentRenderer;
+	luxCurrentRenderer = NULL;
 
 	delete luxCurrentScene;
 	luxCurrentScene = NULL;
@@ -784,15 +789,18 @@ void Context::WorldEnd() {
 		pushedGraphicsStates.pop_back();
 		pushedTransforms.pop_back();
 	}
+
 	if (!terminated) {
 		// Create scene and render
 		luxCurrentScene = renderOptions->MakeScene();
 		if (luxCurrentScene) {
+			luxCurrentRenderer = new SamplerRenderer();
+
 			// Dade - check if we have to start the network rendering updater thread
 			if (renderFarm->getServerCount() > 0)
 				renderFarm->startFilmUpdater(luxCurrentScene);
 
-			luxCurrentScene->Render();
+			luxCurrentRenderer->Render(luxCurrentScene);
 
 			// Check if we have to stop the network rendering updater thread
 			if (GetServerCount() > 0) {
@@ -909,12 +917,12 @@ void Context::OverrideResumeFLM(const string &flmFileName) {
 }
 
 //user interactive thread functions
-void Context::Start() {
-	luxCurrentScene->Start();
+void Context::Resume() {
+	luxCurrentRenderer->Resume();
 }
 
 void Context::Pause() {
-	luxCurrentScene->Pause();
+	luxCurrentRenderer->Pause();
 }
 
 void Context::SetHaltSamplePerPixel(int haltspp, bool haveEnoughSamplePerPixel,
@@ -922,7 +930,8 @@ void Context::SetHaltSamplePerPixel(int haltspp, bool haveEnoughSamplePerPixel,
 	lux::Film *film = luxCurrentScene->camera->film;
 	film->haltSamplePerPixel = haltspp;
 	film->enoughSamplePerPixel = haveEnoughSamplePerPixel;
-	luxCurrentScene->suspendThreadsWhenDone = suspendThreadsWhenDone;
+	// TOFIX
+	((SamplerRenderer *)luxCurrentRenderer)->SuspendThreadsWhenDone(suspendThreadsWhenDone);
 }
 
 void Context::Wait() {
@@ -945,28 +954,27 @@ void Context::Exit() {
 	MachineEpsilon::SetMin(DEFAULT_EPSILON_MIN);
 	MachineEpsilon::SetMax(DEFAULT_EPSILON_MAX);
 
-	if (!luxCurrentScene)
-		return;
-
-	luxCurrentScene->Exit();
+	if (luxCurrentRenderer)
+		luxCurrentRenderer->Terminate();
 }
 
 //controlling number of threads
 u_int Context::AddThread() {
-	return luxCurrentScene->CreateRenderThread();
+	const vector<RendererHostDescrition *> &hosts = luxCurrentRenderer->GetHostDescs();
+
+	// TOFIX
+	const SRDeviceDescription *desc = (SRDeviceDescription *)hosts[0]->GetDeviceDescs()[0];
+	desc->SetUsedUnitsCount(desc->GetUsedUnitsCount() + 1);
+
+	return desc->GetUsedUnitsCount();
 }
 
 void Context::RemoveThread() {
-	luxCurrentScene->RemoveRenderThread();
-}
+	const vector<RendererHostDescrition *> &hosts = luxCurrentRenderer->GetHostDescs();
 
-u_int Context::GetRenderingThreadsStatus(RenderingThreadInfo *info,
-	u_int maxInfoCount)
-{
-	if (!luxCurrentScene)
-		return 0;
-
-	return luxCurrentScene->GetThreadsStatus(info, maxInfoCount);
+	// TOFIX
+	const SRDeviceDescription *desc = (SRDeviceDescription *)hosts[0]->GetDeviceDescs()[0];
+	desc->SetUsedUnitsCount(max(desc->GetUsedUnitsCount() - 1, 1u));
 }
 
 //framebuffer access
@@ -1053,8 +1061,9 @@ double Context::Statistics(const string &statName) {
 			luxCurrentScene->IsFilmOnly());
 	else if (statName == "terminated")
 		return terminated;
-	else if (luxCurrentScene != NULL)
-		return luxCurrentScene->Statistics(statName);
+	else if (luxCurrentRenderer != NULL)
+		// TOFIX
+		return ((SamplerRenderer *)luxCurrentRenderer)->Statistics(statName);
 	else
 		return 0;
 }

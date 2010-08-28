@@ -609,7 +609,7 @@ public:
 	}
 	void start() {
 		Context::SetActive(context);
-		context->Start();
+		context->Resume();
 	}
 	void pause() {
 		Context::SetActive(context);
@@ -643,12 +643,6 @@ public:
 	{
 		Context::SetActive(context);
 		context->SetEpsilon(minValue < 0.f ? DEFAULT_EPSILON_MIN : minValue, maxValue < 0.f ? DEFAULT_EPSILON_MAX : maxValue);
-	}
-
-	unsigned int getRenderingThreadsStatus(RenderingThreadInfo *info, unsigned int maxInfoCount)
-	{
-		Context::SetActive(context);
-		return context->GetRenderingThreadsStatus(info, maxInfoCount);
 	}
 
 	void updateFramebuffer() {
@@ -874,17 +868,6 @@ BOOST_PYTHON_MODULE(pylux)
 	// def("greet", greet); //Simple test function to check the module is imported
 	def("version", luxVersion, ds_pylux_version);
 
-	// Information about the threads
-	enum_<ThreadSignals>("ThreadSignals", ds_pylux_ThreadSignals)
-		.value("RUN", RUN)
-		.value("PAUSE", PAUSE)
-		.value("EXIT", EXIT)
-		;
-	class_<RenderingThreadInfo>("RenderingThreadInfo", ds_pylux_RenderingThreadInfo)
-		.def_readonly("threadIndex", &RenderingThreadInfo::threadIndex)
-		.def_readonly("status", &RenderingThreadInfo::status);
-		;
-
 	// Parameter access
 	enum_<luxComponent>("luxComponent", ds_pylux_luxComponent)
 		.value("LUX_FILM", LUX_FILM)
@@ -1102,11 +1085,6 @@ BOOST_PYTHON_MODULE(pylux)
 			&PyContext::getRenderingServersStatus,
 			args("Context", "ServerStatusObject", "index"),
 			ds_pylux_Context_getRenderingServersStatus
-		)
-		.def("getRenderingThreadsStatus",
-			&PyContext::getRenderingThreadsStatus,
-			args("Context", "ThreadStatusObject", "index"),
-			ds_pylux_Context_getRenderingThreadsStatus
 		)
 		.def("getServerCount",
 			&PyContext::getServerCount,

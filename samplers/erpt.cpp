@@ -178,7 +178,7 @@ float *ERPTSampler::GetLazyValues(const Sample &sample, u_int num, u_int pos)
 }
 
 // interface for adding/accepting a new image sample.
-void ERPTSampler::AddSample(const Sample &sample)
+void ERPTSampler::AddSample(const Sample &sample, Scene &scene)
 {
 	ERPTData *data = (ERPTData *)(sample.samplerData);
 	vector<Contribution> &newContributions(sample.contributions);
@@ -193,7 +193,7 @@ void ERPTSampler::AddSample(const Sample &sample)
 				for(u_int i = 0; i < data->oldContributions.size(); ++i) {
 					// Radiance - added new use of contributionpool/buffers
 					if(!sample.contribBuffer->Add(&(data->oldContributions[i]), data->weight)) {
-						sample.contribBuffer = film->scene->contribPool->Next(sample.contribBuffer);
+						sample.contribBuffer = scene.contribPool->Next(sample.contribBuffer);
 						sample.contribBuffer->Add(&(data->oldContributions[i]), data->weight);
 					}
 				}
@@ -252,7 +252,7 @@ void ERPTSampler::AddSample(const Sample &sample)
 			for(u_int i = 0; i < data->oldContributions.size(); ++i) {
 				// Radiance - added new use of contributionpool/buffers
 				if(!sample.contribBuffer->Add(&(data->oldContributions[i]), data->weight)) {
-					sample.contribBuffer = film->scene->contribPool->Next(sample.contribBuffer);
+					sample.contribBuffer = scene.contribPool->Next(sample.contribBuffer);
 					sample.contribBuffer->Add(&(data->oldContributions[i]), data->weight);
 				}
 			}
@@ -282,7 +282,7 @@ void ERPTSampler::AddSample(const Sample &sample)
 			for(u_int i = 0; i < newContributions.size(); ++i) {
 				// Radiance - added new use of contributionpool/buffers
 				if(!sample.contribBuffer->Add(&newContributions[i], newWeight)) {
-					sample.contribBuffer = film->scene->contribPool->Next(sample.contribBuffer);
+					sample.contribBuffer = scene.contribPool->Next(sample.contribBuffer);
 					sample.contribBuffer->Add(&newContributions[i], newWeight);
 				}
 			}

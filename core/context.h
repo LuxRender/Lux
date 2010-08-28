@@ -136,10 +136,10 @@ public:
 
 	//CORE engine control
 	//user interactive thread functions
-	void Start();
+	void Resume();
 	void Pause();
-	void Exit();
 	void Wait();
+	void Exit();
 
 	void SetHaltSamplePerPixel(int haltspp, bool haveEnoughSamplePerPixel,
 		bool suspendThreadsWhenDone);
@@ -147,7 +147,7 @@ public:
 	//controlling number of threads
 	u_int AddThread();
 	void RemoveThread();
-	u_int GetRenderingThreadsStatus(RenderingThreadInfo *info, u_int maxInfoCount);
+
 
 	//framebuffer access
 	void UpdateFramebuffer();
@@ -271,6 +271,7 @@ private:
 
 	static Context *activeContext;
 	string name;
+	Renderer *luxCurrentRenderer;
 	Scene *luxCurrentScene;
 	int currentApiState;
 	lux::Transform curTransform;

@@ -427,8 +427,6 @@ public:
 	virtual int getldrDisplayInterval() = 0;
 	void getHistogramImage(unsigned char *outPixels, u_int width, u_int height, int options);
 
-	void SetScene(Scene *scene1) { scene = scene1; }
-
 	// Parameter Access functions
 	virtual void SetParameterValue(luxComponentParameters param, double value, u_int index) = 0;
 	virtual double GetParameterValue(luxComponentParameters param, u_int index) = 0;
@@ -446,6 +444,9 @@ public:
 	u_int GetYResolution();
 
 	u_int xResolution, yResolution;
+
+	// Statistic
+	double numberOfSamplesFromNetwork;
 
 protected: // Put it here for better data alignment
 	// Dade - (xResolution + filter->xWidth) * (yResolution + filter->yWidth)
@@ -485,9 +486,9 @@ public:
 	// Seconds to wait before to stop. Any value <= 0 will never stop the rendering
 	int haltTime;
 	float EV;
-	Scene *scene;
 	Histogram *histogram;
 	bool enoughSamplePerPixel; // At the end to get better data alignment
+
 private:
 	boost::mutex histMutex;
 };
