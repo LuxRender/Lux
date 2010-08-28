@@ -395,6 +395,8 @@ void SamplerRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 	// Trace rays: The main loop
 	while (true) {
 		if (!sampler->GetNextSample(&sample, &usePos)) {
+			renderer->Pause();
+
 			// Dade - we have done, check what we have to do now
 			if (renderer->suspendThreadsWhenDone) {
 				// Dade - wait for a resume rendering or exit
