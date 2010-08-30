@@ -36,7 +36,7 @@
 #include "renderfarm.h"
 #include "film/fleximage.h"
 #include "epsilon.h"
-#include "engines/samplerrenderer.h"
+#include "renderers/samplerrenderer.h"
 
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filtering_streambuf.hpp>

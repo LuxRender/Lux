@@ -631,15 +631,15 @@ SET(lux_volumes_src
 	volumes/homogeneous.cpp
 	volumes/volumegrid.cpp
 	)
-SET(lux_engines_src
-	engines/samplerrenderer.cpp
+SET(lux_renderers_src
+	renderers/samplerrenderer.cpp
 	)
 
 SET(lux_lib_src
 	${lux_core_src}
 	${lux_accelerators_src}
 	${lux_cameras_src}
-	${lux_engines_src}
+	${lux_renderers_src}
 	${lux_films_src}
 	${lux_filters_src}
 	${lux_integrators_src}
