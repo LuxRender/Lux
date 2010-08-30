@@ -110,8 +110,6 @@ public:
 	BBox bound;
 	u_long seedBase;
 
-	ContributionPool *contribPool;
-
 private:
 	bool filmOnly; // whether this scene has entire scene (incl. geometry, ..) or only a film
 };

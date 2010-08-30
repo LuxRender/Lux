@@ -61,7 +61,7 @@ public:
 	virtual bool GetNextSample(Sample *sample, u_int *use_pos);
 	virtual float *GetLazyValues(const Sample &sample, u_int num, u_int pos);
 	//void AddSample(float imageX, float imageY, const Sample &sample, const Ray &ray, const XYZColor &L, float alpha, int id=0);
-	virtual void AddSample(const Sample &sample, Scene &scene);
+	virtual void AddSample(const Sample &sample, Film &film);
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
 
 	u_int totalMutations;

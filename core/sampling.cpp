@@ -45,13 +45,13 @@ float *Sampler::GetLazyValues(const Sample &sample, u_int num, u_int pos)
 	return sample.xD[num] + pos * sample.dxD[num];
 }
 
-void Sampler::AddSample(const Sample &sample, Scene &scene)
+void Sampler::AddSample(const Sample &sample, Film &film)
 {
 	sample.contribBuffer->AddSampleCount(1.f);
 	for (u_int i=0; i<sample.contributions.size(); i++) {
 			// Radiance - added new use of contributionpool/buffers
 			if(!sample.contribBuffer->Add(&sample.contributions[i], 1.f)) {
-				sample.contribBuffer = scene.contribPool->Next(sample.contribBuffer);
+				sample.contribBuffer = film.contribPool->Next(sample.contribBuffer);
 				sample.contribBuffer->Add(&sample.contributions[i], 1.f);
 			}
 	}

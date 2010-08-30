@@ -448,6 +448,8 @@ public:
 	// Statistic
 	double numberOfSamplesFromNetwork;
 
+	ContributionPool *contribPool;
+
 protected: // Put it here for better data alignment
 	// Dade - (xResolution + filter->xWidth) * (yResolution + filter->yWidth)
 	double samplePerPass;

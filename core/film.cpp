@@ -593,6 +593,10 @@ Film::Film(u_int xres, u_int yres, Filter *filt, const float crop[4],
 			*ftp++ = filter->Evaluate(fx, fy);
 		}
 	}
+
+	// initialize the contribution pool
+	contribPool = new ContributionPool();
+	contribPool->SetFilm(this);
 }
 
 Film::~Film()
@@ -600,7 +604,8 @@ Film::~Film()
 	delete[] filterTable;
 	delete filter;
 	delete ZBuffer;
-	delete histogram; 
+	delete histogram;
+	delete contribPool;
 }
 
 void Film::RequestBufferGroups(const vector<string> &bg)

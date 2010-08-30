@@ -123,7 +123,7 @@ public:
 	virtual u_int RoundSize(u_int size) const = 0;
 	virtual void SetFilm(Film* f) { film = f; }
 	virtual void GetBufferType(BufferType *t) { }
-	virtual void AddSample(const Sample &sample, Scene &scene);
+	virtual void AddSample(const Sample &sample, Film &film);
 
 	// Sampler Public Data
 	int xPixelStart, xPixelEnd, yPixelStart, yPixelEnd;

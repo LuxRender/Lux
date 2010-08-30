@@ -50,8 +50,8 @@ void Scene::UpdateFramebuffer() {
 
 	// I have to call ContributionPool method here in order
 	// to acquire splattingMutex lock
-	if (contribPool)
-		contribPool->CheckFilmWriteOuputInterval();
+	if (camera->film->contribPool)
+		camera->film->contribPool->CheckFilmWriteOuputInterval();
 }
 
 unsigned char* Scene::GetFramebuffer() {
@@ -110,7 +110,6 @@ Scene::~Scene() {
 	delete sampler;
 	delete surfaceIntegrator;
 	delete volumeIntegrator;
-	delete contribPool;
 	delete volumeRegion;
 	for (u_int i = 0; i < lights.size(); ++i)
 		delete lights[i];
@@ -121,7 +120,7 @@ Scene::Scene(Camera *cam, SurfaceIntegrator *si, VolumeIntegrator *vi,
 	const vector<Light *> &lts, const vector<string> &lg, Region *vr) :
 	aggregate(accel), lights(lts),
 	lightGroups(lg), camera(cam), volumeRegion(vr), surfaceIntegrator(si),
-	volumeIntegrator(vi), sampler(s), contribPool(NULL),
+	volumeIntegrator(vi), sampler(s),
 	filmOnly(false)
 {
 
@@ -134,15 +133,11 @@ Scene::Scene(Camera *cam, SurfaceIntegrator *si, VolumeIntegrator *vi,
 	seedBase = rand();
 
 	camera->film->RequestBufferGroups(lightGroups);
-
-	// initialize the contribution pool
-	contribPool = new ContributionPool();
-	contribPool->SetFilm(camera->film);
 }
 
 Scene::Scene(Camera *cam) :
 	camera(cam), volumeRegion(NULL), surfaceIntegrator(NULL),
-	volumeIntegrator(NULL), sampler(NULL), contribPool(NULL),
+	volumeIntegrator(NULL), sampler(NULL),
 	filmOnly(true)
 {
 	for(u_int i = 0; i < cam->film->GetNumBufferGroups(); i++)

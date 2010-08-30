@@ -196,8 +196,8 @@ void SamplerRenderer::Render(Scene *s) {
 		}
 
 		// Flush the contribution pool
-		scene->contribPool->Flush();
-		scene->contribPool->Delete();
+		scene->camera->film->contribPool->Flush();
+		scene->camera->film->contribPool->Delete();
 	}
 }
 
@@ -365,7 +365,7 @@ void SamplerRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 
 	Sampler *sampler = scene.sampler;
 	Sample sample(scene.surfaceIntegrator, scene.volumeIntegrator, scene);
-	sample.contribBuffer = scene.contribPool->Next(NULL);
+	sample.contribBuffer = scene.camera->film->contribPool->Next(NULL);
 	sampler->InitSample(&sample);
 
 	// Dade - wait the end of the preprocessing phase
@@ -442,7 +442,7 @@ void SamplerRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 			++(myThread->samples);
 		}
 
-		sampler->AddSample(sample, *(renderer->scene));
+		sampler->AddSample(sample, *(renderer->scene->camera->film));
 
 		// Free BSDF memory from computing image sample value
 		sample.arena.FreeAll();
@@ -462,7 +462,7 @@ void SamplerRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 #endif
 	}
 
-	scene.contribPool->End(sample.contribBuffer);
+	scene.camera->film->contribPool->End(sample.contribBuffer);
 	sample.contribBuffer = NULL;
 
 	//delete myThread->sample->camera; //FIXME deleting the camera clone would delete the film!
