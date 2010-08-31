@@ -35,13 +35,13 @@ namespace lux
 {
 
 class SamplerRenderer;
-class SRHostDescrition;
+class SRHostDescription;
 
 //------------------------------------------------------------------------------
 // SRDeviceDescription
 //------------------------------------------------------------------------------
 
-class SRDeviceDescription : protected RendererDeviceDescrition {
+class SRDeviceDescription : protected RendererDeviceDescription {
 public:
 	const string &GetName() const { return name; }
 
@@ -52,37 +52,37 @@ public:
 	void SetUsedUnitsCount(const unsigned int units) const;
 
 	friend class SamplerRenderer;
-	friend class SRHostDescrition;
+	friend class SRHostDescription;
 
 private:
-	SRDeviceDescription(SRHostDescrition *h, const string &n) :
+	SRDeviceDescription(SRHostDescription *h, const string &n) :
 		host(h), name(n) { }
 	~SRDeviceDescription() { }
 
-	SRHostDescrition *host;
+	SRHostDescription *host;
 	string name;
 };
 
 //------------------------------------------------------------------------------
-// SRHostDescrition
+// SRHostDescription
 //------------------------------------------------------------------------------
 
-class SRHostDescrition : protected RendererHostDescrition {
+class SRHostDescription : protected RendererHostDescription {
 public:
 	const string &GetName() const { return name; }
 
-	const vector<RendererDeviceDescrition *> &GetDeviceDescs() const { return devs; }
+	const vector<RendererDeviceDescription *> &GetDeviceDescs() const { return devs; }
 
 	friend class SamplerRenderer;
 	friend class SRDeviceDescription;
 
 private:
-	SRHostDescrition(SamplerRenderer *r, const string &n);
-	~SRHostDescrition();
+	SRHostDescription(SamplerRenderer *r, const string &n);
+	~SRHostDescription();
 
 	SamplerRenderer *renderer;
 	string name;
-	vector<RendererDeviceDescrition *> devs;
+	vector<RendererDeviceDescription *> devs;
 };
 
 //------------------------------------------------------------------------------
@@ -97,7 +97,7 @@ public:
 	RendererType GetType() const;
 
 	RendererState GetState() const;
-	const vector<RendererHostDescrition *> &GetHostDescs() const;
+	const vector<RendererHostDescription *> &GetHostDescs() const;
 
 	void Render(Scene *scene);
 
@@ -116,7 +116,7 @@ public:
 	void SuspendThreadsWhenDone(bool v) { suspendThreadsWhenDone = v; }
 
 	friend class SRDeviceDescription;
-	friend class SRHostDescrition;
+	friend class SRHostDescription;
 
 private:
 	//--------------------------------------------------------------------------
@@ -145,7 +145,7 @@ private:
 	mutable boost::mutex classWideMutex;
 
 	RendererState state;
-	vector<RendererHostDescrition *> hosts;
+	vector<RendererHostDescription *> hosts;
 	vector<RenderThread *> renderThreads;
 	Scene *scene;
 

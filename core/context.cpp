@@ -960,7 +960,7 @@ void Context::Exit() {
 
 //controlling number of threads
 u_int Context::AddThread() {
-	const vector<RendererHostDescrition *> &hosts = luxCurrentRenderer->GetHostDescs();
+	const vector<RendererHostDescription *> &hosts = luxCurrentRenderer->GetHostDescs();
 
 	// TOFIX
 	const SRDeviceDescription *desc = (SRDeviceDescription *)hosts[0]->GetDeviceDescs()[0];
@@ -970,7 +970,7 @@ u_int Context::AddThread() {
 }
 
 void Context::RemoveThread() {
-	const vector<RendererHostDescrition *> &hosts = luxCurrentRenderer->GetHostDescs();
+	const vector<RendererHostDescription *> &hosts = luxCurrentRenderer->GetHostDescs();
 
 	// TOFIX
 	const SRDeviceDescription *desc = (SRDeviceDescription *)hosts[0]->GetDeviceDescs()[0];

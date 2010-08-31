@@ -32,9 +32,9 @@ namespace lux
 
 /*! \brief The interface for accessing to a device information.
  */
-class RendererDeviceDescrition {
+class RendererDeviceDescription {
 public:
-	virtual ~RendererDeviceDescrition() { }
+	virtual ~RendererDeviceDescription() { }
 
 	/*! \brief return the name of the device.
 	*/
@@ -47,15 +47,15 @@ public:
 
 /*! \brief The interface for accessing to an host information.
  */
-class RendererHostDescrition {
+class RendererHostDescription {
 public:
-	virtual ~RendererHostDescrition() { }
+	virtual ~RendererHostDescription() { }
 
 	/*! \brief return the name of the host.
 	 */
 	virtual const string &GetName() const = 0;
 
-	virtual const vector<RendererDeviceDescrition *> &GetDeviceDescs() const = 0;
+	virtual const vector<RendererDeviceDescription *> &GetDeviceDescs() const = 0;
 };
 
 /*! \brief The interface for rendering a scene.
@@ -92,7 +92,7 @@ public:
 	 *
 	 * Must be thread-safe. Can be called in any state.
 	 */
-	virtual const vector<RendererHostDescrition *> &GetHostDescs() const = 0;
+	virtual const vector<RendererHostDescription *> &GetHostDescs() const = 0;
 
 	/*! \brief Starts the rendering of a Scene.
 	 *

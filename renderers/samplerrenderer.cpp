@@ -56,15 +56,15 @@ void SRDeviceDescription::SetUsedUnitsCount(const unsigned int units) const {
 }
 
 //------------------------------------------------------------------------------
-// SRHostDescrition
+// SRHostDescription
 //------------------------------------------------------------------------------
 
-SRHostDescrition::SRHostDescrition(SamplerRenderer *r, const string &n) : renderer(r), name(n) {
+SRHostDescription::SRHostDescription(SamplerRenderer *r, const string &n) : renderer(r), name(n) {
 	SRDeviceDescription *desc = new SRDeviceDescription(this, "CPUs");
 	devs.push_back(desc);
 }
 
-SRHostDescrition::~SRHostDescrition() {
+SRHostDescription::~SRHostDescription() {
 	for (size_t i = 0; i < devs.size(); ++i)
 		delete devs[i];
 }
@@ -76,7 +76,7 @@ SRHostDescrition::~SRHostDescrition() {
 SamplerRenderer::SamplerRenderer() {
 	state = INIT;
 
-	SRHostDescrition *host = new SRHostDescrition(this, "Localhost");
+	SRHostDescription *host = new SRHostDescription(this, "Localhost");
 	hosts.push_back(host);
 
 	preprocessDone = false;
@@ -108,7 +108,7 @@ Renderer::RendererState SamplerRenderer::GetState() const {
 	return state;
 }
 
-const vector<RendererHostDescrition *> &SamplerRenderer::GetHostDescs() const {
+const vector<RendererHostDescription *> &SamplerRenderer::GetHostDescs() const {
 	boost::mutex::scoped_lock lock(classWideMutex);
 
 	return hosts;
