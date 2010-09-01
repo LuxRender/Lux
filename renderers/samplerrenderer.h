@@ -99,22 +99,15 @@ public:
 
 	RendererState GetState() const;
 	const vector<RendererHostDescription *> &GetHostDescs() const;
+	void SuspendWhenDone(bool v);
+
+	double Statistics(const string &statName);
 
 	void Render(Scene *scene);
 
 	void Pause();
 	void Resume();
 	void Terminate();
-
-	// Statistics (not yet part of the Renderer interface)
-	double Statistics(const string &statName);
-	double GetNumberOfSamples();
-	double Statistics_SamplesPSec();
-	double Statistics_SamplesPTotSec();
-	double Statistics_Efficiency();
-	double Statistics_SamplesPPx();
-
-	void SuspendThreadsWhenDone(bool v) { suspendThreadsWhenDone = v; }
 
 	friend class SRDeviceDescription;
 	friend class SRHostDescription;
@@ -142,6 +135,12 @@ private:
 
 	void CreateRenderThread();
 	void RemoveRenderThread();
+
+	double Statistics_GetNumberOfSamples();
+	double Statistics_SamplesPSec();
+	double Statistics_SamplesPTotSec();
+	double Statistics_Efficiency();
+	double Statistics_SamplesPPx();
 
 	//--------------------------------------------------------------------------
 

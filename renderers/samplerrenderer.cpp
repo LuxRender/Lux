@@ -114,6 +114,11 @@ const vector<RendererHostDescription *> &SamplerRenderer::GetHostDescs() const {
 	return hosts;
 }
 
+void SamplerRenderer::SuspendWhenDone(bool v) {
+	boost::mutex::scoped_lock lock(classWideMutex);
+	suspendThreadsWhenDone = v;
+}
+
 void SamplerRenderer::Render(Scene *s) {
 	{
 		// Section under mutex
@@ -254,7 +259,7 @@ double SamplerRenderer::Statistics(const string &statName) {
 	}
 }
 
-double SamplerRenderer::GetNumberOfSamples() {
+double SamplerRenderer::Statistics_GetNumberOfSamples() {
 	if (s_Timer.Time() - lastTime > .5f) {
 		boost::mutex::scoped_lock lock(classWideMutex);
 
@@ -274,7 +279,7 @@ double SamplerRenderer::Statistics_SamplesPPx() {
 	// divide by total pixels
 	int xstart, xend, ystart, yend;
 	scene->camera->film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
-	return GetNumberOfSamples() / ((xend - xstart) * (yend - ystart));
+	return Statistics_GetNumberOfSamples() / ((xend - xstart) * (yend - ystart));
 }
 
 double SamplerRenderer::Statistics_SamplesPSec() {
@@ -282,7 +287,7 @@ double SamplerRenderer::Statistics_SamplesPSec() {
 	if (!preprocessDone)
 		return 0.0;
 
-	double samples = GetNumberOfSamples();
+	double samples = Statistics_GetNumberOfSamples();
 	double time = s_Timer.Time();
 	double dif_samples = samples - lastSamples;
 	double elapsed = time - lastTime;
@@ -301,7 +306,7 @@ double SamplerRenderer::Statistics_SamplesPTotSec() {
 	if (!preprocessDone)
 		return 0.0;
 
-	double samples = GetNumberOfSamples();
+	double samples = Statistics_GetNumberOfSamples();
 	double time = s_Timer.Time();
 
 	// return current samples / total elapsed secs

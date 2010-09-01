@@ -941,8 +941,7 @@ void Context::SetHaltSamplePerPixel(int haltspp, bool haveEnoughSamplePerPixel,
 	lux::Film *film = luxCurrentScene->camera->film;
 	film->haltSamplePerPixel = haltspp;
 	film->enoughSamplePerPixel = haveEnoughSamplePerPixel;
-	// TOFIX
-	((SamplerRenderer *)luxCurrentRenderer)->SuspendThreadsWhenDone(suspendThreadsWhenDone);
+	luxCurrentRenderer->SuspendWhenDone(suspendThreadsWhenDone);
 }
 
 void Context::Wait() {
@@ -1054,7 +1053,7 @@ u_int Context::GetLightGroup() {
 			std::stringstream ss;
 			ss << "Undefined lightgroup '" <<
 				graphicsState->currentLightGroup <<
-			"', using 'default' instead";
+				"', using 'default' instead";
 			luxError(LUX_BADFILE,LUX_ERROR, ss.str().c_str());
 			graphicsState->currentLightGroup == "";
 			lg = GetLightGroup();
@@ -1073,8 +1072,7 @@ double Context::Statistics(const string &statName) {
 	else if (statName == "terminated")
 		return terminated;
 	else if (luxCurrentRenderer != NULL)
-		// TOFIX
-		return ((SamplerRenderer *)luxCurrentRenderer)->Statistics(statName);
+		return luxCurrentRenderer->Statistics(statName);
 	else
 		return 0;
 }

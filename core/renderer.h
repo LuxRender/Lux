@@ -94,6 +94,19 @@ public:
 	 */
 	virtual const vector<RendererHostDescription *> &GetHostDescs() const = 0;
 
+	/*! \brief Tell the Renderer what to when an halt condition has been met.
+	 *
+	 * Must be thread-safe. Can be called in any state.
+	 */
+	virtual void SuspendWhenDone(bool v) = 0;
+
+	/*! \brief Return the value of a statistic.
+	 *
+	 * Must be thread-safe. Can be called in any state. The list of values supported
+	 * by statName is related to the type of Renderer used.
+	 */
+	virtual double Statistics(const string &statName) = 0;
+
 	/*! \brief Starts the rendering of a Scene.
 	 *
 	 * Must be thread-safe. Change the state from INIT to RUN. Can be called only
