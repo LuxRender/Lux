@@ -27,6 +27,7 @@
 #include "context.h"
 #include "dynload.h"
 #include "api.h"
+#include "renderer.h"
 #include "camera.h"
 #include "light.h"
 #include "shape.h"
@@ -621,6 +622,12 @@ void Context::Shape(const string &n, const ParamSet &params) {
 	} else
 		renderOptions->primitives.push_back(pr);
 }
+void Context::Renderer(const string &n, const ParamSet &params) {
+	VERIFY_OPTIONS("Renderer");
+	renderFarm->send("luxRenderer", n, params);
+	renderOptions->rendererName = n;
+	renderOptions->rendererParams = params;
+}
 void Context::ReverseOrientation() {
 	VERIFY_WORLD("ReverseOrientation");
 	renderFarm->send("luxReverseOrientation");
@@ -794,7 +801,7 @@ void Context::WorldEnd() {
 		// Create scene and render
 		luxCurrentScene = renderOptions->MakeScene();
 		if (luxCurrentScene) {
-			luxCurrentRenderer = new SamplerRenderer();
+			luxCurrentRenderer = renderOptions->MakeRenderer();
 
 			// Dade - check if we have to start the network rendering updater thread
 			if (renderFarm->getServerCount() > 0)
@@ -876,6 +883,10 @@ Scene *Context::RenderOptions::MakeScene() const {
 		ret->seedBase = 1000;
 
 	return ret;
+}
+
+Renderer *Context::RenderOptions::MakeRenderer() const {
+	return lux::MakeRenderer(rendererName, rendererParams);
 }
 
 // Load/save FLM file

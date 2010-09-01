@@ -160,6 +160,7 @@ ObjectEnd 		{ return OBJECTEND;		}
 ObjectInstance 		{ return OBJECTINSTANCE;	}
 MotionInstance 		{ return MOTIONINSTANCE;	}
 PixelFilter 		{ return PIXELFILTER; 		}
+Renderer		{ return RENDERER;	}
 ReverseOrientation 	{ return REVERSEORIENTATION;	}
 Rotate			{ return ROTATE;		}
 Sampler			{ return SAMPLER;		}

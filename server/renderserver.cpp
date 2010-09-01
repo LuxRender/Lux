@@ -434,7 +434,8 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread)
 		CMD_VOID = 5381U,
 		CMD_SPACE = 177605U,
 		CMD_MOTIONINSTANCE = 4223946185U,
-		CMD_LUXSETEPSILON = 3945573060U;
+		CMD_LUXSETEPSILON = 3945573060U,
+		CMD_LUXRENDERER = 3043102805U;
 
 	const int listenPort = serverThread->renderServer->tcpPort;
 	const bool isLittleEndian = osIsLittleEndian();
@@ -458,7 +459,7 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread)
 			//reading the command
 			string command;
 			while (getline(stream, command)) {
-				unsigned int hash = DJBHash(command);
+				const unsigned int hash = DJBHash(command);
 
 				if ((command != "") && (command != " ")) {
 					ss.str("");
@@ -724,6 +725,9 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread)
 				}
 				case CMD_LUXSETEPSILON:
 					processCommand(&Context::SetEpsilon, stream);
+					break;
+				case CMD_LUXRENDERER:
+					processCommand(isLittleEndian, &Context::Renderer, tmpFileList, stream);
 					break;
 				default:
 					ss.str("");

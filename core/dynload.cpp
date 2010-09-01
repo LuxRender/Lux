@@ -310,6 +310,20 @@ PixelSampler *MakePixelSampler(const string &name,
 	return NULL;
 }
 
+Renderer *MakeRenderer(const string &name,
+	const ParamSet &paramSet)
+{
+	if (DynamicLoader::registeredRenderer().find(name) !=
+		DynamicLoader::registeredRenderer().end()) {
+		Renderer *ret = DynamicLoader::registeredRenderer()[name](paramSet);
+		paramSet.ReportUnused();
+		return ret;
+	}
+
+	LoadError("renderer", name);
+	return NULL;
+}
+
 map<string, DynamicLoader::CreateShape> &DynamicLoader::registeredShapes()
 {
 	static map<string, DynamicLoader::CreateShape> *Map = new map<string, DynamicLoader::CreateShape>;
@@ -398,6 +412,11 @@ map<string, DynamicLoader::CreateFilm> &DynamicLoader::registeredFilms()
 map<string, DynamicLoader::CreatePixelSampler> &DynamicLoader::registeredPixelSamplers()
 {
 	static map<string, DynamicLoader::CreatePixelSampler> *Map = new map<string, DynamicLoader::CreatePixelSampler>;
+	return *Map;
+}
+map<string, DynamicLoader::CreateRenderer> &DynamicLoader::registeredRenderer()
+{
+	static map<string, DynamicLoader::CreateRenderer> *Map = new map<string, DynamicLoader::CreateRenderer>;
 	return *Map;
 }
 

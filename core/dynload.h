@@ -69,6 +69,7 @@ Filter *MakeFilter(const string &name, const ParamSet &paramSet);
 ToneMap *MakeToneMap(const string &name, const ParamSet &paramSet);
 Film *MakeFilm(const string &name, const ParamSet &paramSet, Filter *filt);
 PixelSampler *MakePixelSampler(const string &name, const ParamSet &paramSet);
+Renderer *MakeRenderer(const string &name, const ParamSet &paramSet);
 
 class DynamicLoader {
 	template <class T> class RegisterLoader {
@@ -250,6 +251,15 @@ public:
 		RegisterPixelSampler<T>(const string &name) :
 			RegisterLoader<CreatePixelSampler>(registeredPixelSamplers(), name, &T::CreatePixelSampler) {}
 		virtual ~RegisterPixelSampler<T>() {}
+	};
+
+	typedef Renderer *(*CreateRenderer)(const ParamSet&);
+	static map<string, CreateRenderer> &registeredRenderer();
+	template <class T> class RegisterRenderer : public RegisterLoader<CreateRenderer> {
+	public:
+		RegisterRenderer<T>(const string &name) :
+			RegisterLoader<CreateRenderer>(registeredRenderer(), name, &T::CreateRenderer) {}
+		virtual ~RegisterRenderer<T>() {}
 	};
 };
 

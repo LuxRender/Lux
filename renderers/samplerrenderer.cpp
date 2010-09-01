@@ -467,3 +467,9 @@ void SamplerRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 
 	//delete myThread->sample->camera; //FIXME deleting the camera clone would delete the film!
 }
+
+Renderer *SamplerRenderer::CreateRenderer(const ParamSet &params) {
+	return new SamplerRenderer();
+}
+
+static DynamicLoader::RegisterRenderer<SamplerRenderer> r("sampler");

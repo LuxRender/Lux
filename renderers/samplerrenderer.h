@@ -30,6 +30,7 @@
 #include "renderer.h"
 #include "fastmutex.h"
 #include "timer.h"
+#include "dynload.h"
 
 namespace lux
 {
@@ -117,6 +118,8 @@ public:
 
 	friend class SRDeviceDescription;
 	friend class SRHostDescription;
+
+	static Renderer *CreateRenderer(const ParamSet &params);
 
 private:
 	//--------------------------------------------------------------------------

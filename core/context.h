@@ -111,6 +111,7 @@ public:
 	void ObjectBegin(const string &name);
 	void ObjectEnd();
 	void ObjectInstance(const string &name);
+	void Renderer(const string &, const ParamSet &params);
 	void ReverseOrientation();
 	void Rotate(float angle, float ax, float ay, float az);
 	void Sampler(const string &name, const ParamSet &params);
@@ -209,12 +210,15 @@ private:
 			surfIntegratorName = "path";
 			volIntegratorName = "emission";
 			cameraName = "perspective";
+			rendererName = "sampler";
 			currentInstance = NULL;
 			debugMode = false;
 			randomMode = true;
 		}
 
 		Scene *MakeScene() const;
+		lux::Renderer *MakeRenderer() const;
+
 		// RenderOptions Public Data
 		string filterName;
 		ParamSet filterParams;
@@ -228,6 +232,8 @@ private:
 		ParamSet surfIntegratorParams, volIntegratorParams;
 		string cameraName;
 		ParamSet cameraParams;
+		string rendererName;
+		ParamSet rendererParams;
 		lux::Transform worldToCamera;
 		lux::Transform worldToCameraEnd;
 		mutable vector<Light *> lights;
@@ -271,7 +277,7 @@ private:
 
 	static Context *activeContext;
 	string name;
-	Renderer *luxCurrentRenderer;
+	lux::Renderer *luxCurrentRenderer;
 	Scene *luxCurrentScene;
 	int currentApiState;
 	lux::Transform curTransform;

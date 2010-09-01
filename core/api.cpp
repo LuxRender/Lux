@@ -361,6 +361,18 @@ extern "C" void luxShapeV(const char *name, unsigned int n,
 	Context::GetActive()->Shape(name, ParamSet(n, name, tokens, params));
 }
 
+extern "C" void luxRenderer(const char *name, ...)
+{
+	EXTRACT_PARAMETERS(name)
+	luxRendererV(name, PASS_PARAMETERS);
+}
+
+extern "C" void luxRendererV(const char *name, unsigned int n,
+	const LuxToken tokens[], const LuxPointer params[])
+{
+	Context::GetActive()->Renderer(name, ParamSet(n, name, tokens, params));
+}
+
 extern "C" void luxReverseOrientation() {
 	Context::GetActive()->ReverseOrientation();
 }

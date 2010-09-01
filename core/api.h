@@ -80,6 +80,8 @@ void luxPortalShape(const char *name, ...);
 void luxPortalShapeV(const char *name, unsigned int n, const LuxToken tokens[], const LuxPointer params[]);
 void luxShape(const char *name, ...);
 void luxShapeV(const char *name, unsigned int n, const LuxToken tokens[], const LuxPointer params[]);
+void luxRenderer(const char *name, ...);
+void luxRendererV(const char *name, unsigned int n, const LuxToken tokens[], const LuxPointer params[]);
 void luxReverseOrientation();
 void luxMakeNamedVolume(const char *id, const char *name, ...);
 void luxMakeNamedVolumeV(const char *id, const char *name, unsigned int n,
