@@ -71,7 +71,7 @@ public:
 	/*! The type of known renderers.
 	 */
 	typedef enum {
-		SAMPLER, DATA_PARALLEL
+		SAMPLER, HYBRID
 	} RendererType;
 
     virtual ~Renderer() { }

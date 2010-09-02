@@ -53,11 +53,55 @@ IF(NOT APPLE)
 	ENDIF (_mach_ppc)
 ENDIF(NOT APPLE)
 
+
+#############################################################################
+#############################################################################
+##########################      Find LuxRays       ##########################
+#############################################################################
+#############################################################################
+
+FIND_PATH(LUXRAYS_INCLUDE_DIRS NAMES luxrays/luxrays.h PATHS ../luxrays/include)
+FIND_LIBRARY(LUXRAYS_LIBRARY luxrays ../luxrays/lib)
+
+MESSAGE(STATUS "LuxRays include directory: " ${LUXRAYS_INCLUDE_DIRS})
+MESSAGE(STATUS "LuxRays library directory: " ${LUXRAYS_LIBRARY})
+
+
+#############################################################################
+#############################################################################
+###########################      Find OpenCL       ##########################
+#############################################################################
+#############################################################################
+
+if(LUXRAYS_DISABLE_OPENCL)
+    set(OCL_LIBRARY "")
+else(LUXRAYS_DISABLE_OPENCL)
+    FIND_PATH(OPENCL_INCLUDE_DIRS NAMES CL/cl.hpp OpenCL/cl.hpp PATHS /home/david/src/ati-stream-sdk-v2.2-lnx64/include /usr/local/cuda/include)
+    FIND_LIBRARY(OPENCL_LIBRARY OpenCL /home/david/src/ati-stream-sdk-v2.2-lnx64/lib/x86_64)
+
+    MESSAGE(STATUS "OpenCL include directory: " ${OPENCL_INCLUDE_DIRS})
+    MESSAGE(STATUS "OpenCL library directory: " ${OPENCL_LIBRARY})
+endif(LUXRAYS_DISABLE_OPENCL)
+
+
+#############################################################################
+#############################################################################
+###########################      Find OpenCL       ##########################
+#############################################################################
+#############################################################################
+
+FIND_PACKAGE(OpenGL)
+
+message(STATUS "OpenGL include directory: " "${OPENGL_INCLUDE_DIRS}")
+message(STATUS "OpenGL library: " "${OPENGL_LIBRARY}")
+
+
 #############################################################################
 #############################################################################
 ###########################      Find BISON       ###########################
 #############################################################################
 #############################################################################
+
 FIND_PROGRAM(BISON_EXECUTABLE bison)
 IF (NOT BISON_EXECUTABLE)
 	MESSAGE(FATAL_ERROR "bison not found - aborting")
@@ -69,6 +113,7 @@ ENDIF (NOT BISON_EXECUTABLE)
 ###########################      Find FLEX        ###########################
 #############################################################################
 #############################################################################
+
 FIND_PROGRAM(FLEX_EXECUTABLE flex)
 IF (NOT FLEX_EXECUTABLE)
 	MESSAGE(FATAL_ERROR "flex not found - aborting")
@@ -632,6 +677,7 @@ SET(lux_volumes_src
 	volumes/volumegrid.cpp
 	)
 SET(lux_renderers_src
+	renderers/hybridrenderer.cpp
 	renderers/samplerrenderer.cpp
 	)
 
@@ -660,6 +706,8 @@ INCLUDE_DIRECTORIES(SYSTEM
 	${TIFF_INCLUDE_DIR}
 	${PNG_INCLUDE_DIR}
 	${OPENEXR_INCLUDE_DIRS}
+	${LUXRAYS_INCLUDE_DIRS}
+	${OPENCL_INCLUDE_DIRS}
 	)
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/core
 	${CMAKE_SOURCE_DIR}/core/queryable
@@ -740,9 +788,9 @@ ADD_LIBRARY(lux STATIC ${lux_lib_src} )
 #############################################################################
 ADD_EXECUTABLE(luxconsole console/luxconsole.cpp)
 IF(APPLE)
-	TARGET_LINK_LIBRARIES(luxconsole -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} z ${Boost_LIBRARIES} )
+	TARGET_LINK_LIBRARIES(luxconsole -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} z ${Boost_LIBRARIES} )
 ELSE(APPLE)
-	TARGET_LINK_LIBRARIES(luxconsole -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES}  ${SYS_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARY})
+	TARGET_LINK_LIBRARIES(luxconsole -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES}  ${SYS_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARY})
 ENDIF(APPLE)
 
 #############################################################################
@@ -750,9 +798,9 @@ ENDIF(APPLE)
 #############################################################################
 ADD_EXECUTABLE(luxmerger tools/luxmerger.cpp)
 IF(APPLE)
-	TARGET_LINK_LIBRARIES(luxmerger -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} z ${Boost_LIBRARIES} )
+	TARGET_LINK_LIBRARIES(luxmerger -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} z ${Boost_LIBRARIES} )
 ELSE(APPLE)
-	TARGET_LINK_LIBRARIES(luxmerger -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES}  ${SYS_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARY})
+	TARGET_LINK_LIBRARIES(luxmerger -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES}  ${SYS_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARY})
 ENDIF(APPLE)
 
 #############################################################################
@@ -760,9 +808,9 @@ ENDIF(APPLE)
 #############################################################################
 ADD_EXECUTABLE(luxcomp tools/luxcomp.cpp)
 IF(APPLE)
-	TARGET_LINK_LIBRARIES(luxcomp -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} z ${Boost_LIBRARIES} )
+	TARGET_LINK_LIBRARIES(luxcomp -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} z ${Boost_LIBRARIES} )
 ELSE(APPLE)
-	TARGET_LINK_LIBRARIES(luxcomp -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES}  ${SYS_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARY})
+	TARGET_LINK_LIBRARIES(luxcomp -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES}  ${SYS_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARY})
 ENDIF(APPLE)
 
 #############################################################################
@@ -782,7 +830,7 @@ IF(PYTHONLIBS_FOUND)
 	INCLUDE_DIRECTORIES(SYSTEM ${PYTHON_INCLUDE_PATH})
 	IF(APPLE)
 		ADD_LIBRARY(pylux MODULE python/binding.cpp)
-		TARGET_LINK_LIBRARIES(pylux -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z bz2  ${SYS_LIBRARIES} ${PYTHON_LIBRARIES} ${Boost_python_LIBRARIES})
+		TARGET_LINK_LIBRARIES(pylux -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z bz2  ${SYS_LIBRARIES} ${PYTHON_LIBRARIES} ${Boost_python_LIBRARIES})
 ### if XCode used for compiling ###
 #		ADD_CUSTOM_COMMAND(
 #			TARGET pylux POST_BUILD
@@ -790,7 +838,7 @@ IF(PYTHONLIBS_FOUND)
 #		)
 	ELSE(APPLE)
 		ADD_LIBRARY(pylux SHARED python/binding.cpp)
-		TARGET_LINK_LIBRARIES(pylux -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${SYS_LIBRARIES} ${PYTHON_LIBRARIES} ${Boost_python_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARY})
+		TARGET_LINK_LIBRARIES(pylux -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${SYS_LIBRARIES} ${PYTHON_LIBRARIES} ${Boost_python_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARY})
 		ADD_CUSTOM_COMMAND(
 			TARGET pylux POST_BUILD
 			COMMAND mv libpylux.so pylux.so
@@ -841,7 +889,7 @@ IF(QT4_FOUND)
 		MARK_AS_ADVANCED (AGL_LIBRARY)
 		MARK_AS_ADVANCED (APP_SERVICES_LIBRARY)
 		SET(EXTRA_LIBS ${CARBON_LIBRARY} ${QT_LIBRARY} ${AGL_LIBRARY} ${APP_SERVICES_LIBRARY})
-		TARGET_LINK_LIBRARIES(luxrender -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${QT_LIBRARIES} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${BZ2_LIBRARIES} )
+		TARGET_LINK_LIBRARIES(luxrender -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${QT_LIBRARIES} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${BZ2_LIBRARIES} )
 ### if XCode used for compiling ###
 #		ADD_CUSTOM_COMMAND(
 #			TARGET luxrender POST_BUILD
@@ -851,7 +899,7 @@ IF(QT4_FOUND)
 #			COMMAND cp ../macos/luxscene.icns release/luxrender.app/Contents/Resources
 #			)
 	ELSE(APPLE)
-	TARGET_LINK_LIBRARIES(luxrender -Wl,--whole-archive lux -Wl,--no-whole-archive ${QT_LIBRARIES} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} ${ZLIB_LIBRARIES} ${BZ2_LIBRARIES}  ${SYS_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARY})
+	TARGET_LINK_LIBRARIES(luxrender -Wl,--whole-archive lux -Wl,--no-whole-archive ${QT_LIBRARIES} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} ${ZLIB_LIBRARIES} ${BZ2_LIBRARIES}  ${SYS_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARY})
 	ENDIF(APPLE)
 ELSE(QT4_FOUND)
 	MESSAGE( STATUS "Warning : could not find Qt - not building Qt GUI")
