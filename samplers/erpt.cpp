@@ -178,7 +178,7 @@ float *ERPTSampler::GetLazyValues(const Sample &sample, u_int num, u_int pos)
 }
 
 // interface for adding/accepting a new image sample.
-void ERPTSampler::AddSample(const Sample &sample, Film &film)
+void ERPTSampler::AddSample(const Sample &sample)
 {
 	ERPTData *data = (ERPTData *)(sample.samplerData);
 	vector<Contribution> &newContributions(sample.contributions);
@@ -190,13 +190,8 @@ void ERPTSampler::AddSample(const Sample &sample, Film &film)
 			// Add accumulated contribution of previous reference sample
 			data->weight *= data->quantum / data->LY;
 			if (!isinf(data->weight) && data->LY > 0.f) {
-				for(u_int i = 0; i < data->oldContributions.size(); ++i) {
-					// Radiance - added new use of contributionpool/buffers
-					if(!sample.contribBuffer->Add(&(data->oldContributions[i]), data->weight)) {
-						sample.contribBuffer = film.contribPool->Next(sample.contribBuffer);
-						sample.contribBuffer->Add(&(data->oldContributions[i]), data->weight);
-					}
-				}
+				for(u_int i = 0; i < data->oldContributions.size(); ++i)
+					sample.contribBuffer->Add(data->oldContributions[i], data->weight);
 			}
 			data->weight = 0.f;
 		}
@@ -249,13 +244,8 @@ void ERPTSampler::AddSample(const Sample &sample, Film &film)
 		// Add accumulated contribution of previous reference sample
 		data->weight *= data->quantum / data->LY;
 		if (!isinf(data->weight) && data->LY > 0.f) {
-			for(u_int i = 0; i < data->oldContributions.size(); ++i) {
-				// Radiance - added new use of contributionpool/buffers
-				if(!sample.contribBuffer->Add(&(data->oldContributions[i]), data->weight)) {
-					sample.contribBuffer = film.contribPool->Next(sample.contribBuffer);
-					sample.contribBuffer->Add(&(data->oldContributions[i]), data->weight);
-				}
-			}
+			for(u_int i = 0; i < data->oldContributions.size(); ++i)
+				sample.contribBuffer->Add(data->oldContributions[i], data->weight);
 		}
 		data->weight = newWeight;
 		data->LY = newLY;
@@ -279,13 +269,8 @@ void ERPTSampler::AddSample(const Sample &sample, Film &film)
 		// Add contribution of new sample before rejecting it
 		newWeight *= data->quantum / newLY;
 		if (!isinf(newWeight) && newLY > 0.f) {
-			for(u_int i = 0; i < newContributions.size(); ++i) {
-				// Radiance - added new use of contributionpool/buffers
-				if(!sample.contribBuffer->Add(&newContributions[i], newWeight)) {
-					sample.contribBuffer = film.contribPool->Next(sample.contribBuffer);
-					sample.contribBuffer->Add(&newContributions[i], newWeight);
-				}
-			}
+			for(u_int i = 0; i < newContributions.size(); ++i)
+				sample.contribBuffer->Add(newContributions[i], newWeight);
 		}
 
 		// Restart from previous reference

@@ -58,6 +58,7 @@ public:
 };
 
 class ContributionBuffer {
+	friend class ContributionPool;
 	class Buffer {
 	public:
 		Buffer() : pos(0) {
@@ -68,16 +69,12 @@ class ContributionBuffer {
 			FreeAligned(contribs);
 		}
 
-		bool Add(Contribution* c, float weight=1.f) {
-			if(pos == CONTRIB_BUF_SIZE)
-				return false;
-
-			contribs[pos] = *c;
+		bool Add(const Contribution &c, float weight=1.f) {
+			contribs[pos] = c;
 			contribs[pos].variance = weight;
 
 			++pos;
-
-			return true;
+			return pos < CONTRIB_BUF_SIZE;
 		}
 
 		void Splat(Film *film);
@@ -87,44 +84,32 @@ class ContributionBuffer {
 		Contribution *contribs;
 	};
 public:
-	ContributionBuffer() : sampleCount(0.f), buffers(0) { }
+	ContributionBuffer(ContributionPool *p);
 
-	~ContributionBuffer() {
-		for (u_int i = 0; i < buffers.size(); ++i) {
-			for (u_int j = 0; j < buffers[i].size(); ++j)
-				delete buffers[i][j];
-		}
-	}
+	~ContributionBuffer();
 
-	bool Add(Contribution* c, float weight=1.f) {
-		while (c->bufferGroup >= buffers.size())
-			buffers.push_back(vector<Buffer *>(0));
-		while (c->buffer >= buffers[c->bufferGroup].size())
-			buffers[c->bufferGroup].push_back(new Buffer());
-		return buffers[c->bufferGroup][c->buffer]->Add(c, weight);
-	}
+	inline void Add(const Contribution &c, float weight=1.f);
 
 	void AddSampleCount(float c) {
 		sampleCount += c;
 	}
 
-	void Splat(Film *film);
-
 private:
 	float sampleCount;
 	vector<vector<Buffer *> > buffers;
+	ContributionPool *pool;
 };
 
 class ContributionPool {
+	friend class ContributionBuffer;
 public:
 
-	ContributionPool();
-
-	void SetFilm(Film *f) { film = f; }
+	ContributionPool(Film *f);
 
 	void End(ContributionBuffer *c);
 
-	ContributionBuffer* Next(ContributionBuffer *c);
+	void Next(ContributionBuffer::Buffer **b, float sc, u_int bufferGroup,
+		u_int buffer);
 
 	// Flush() and Delete() are not thread safe,
 	// they can only be called by Scene after rendering is finished.
@@ -137,14 +122,24 @@ public:
 
 private:
 	unsigned int total;
-	vector<ContributionBuffer*> CFree; // Emptied/available buffers
-	vector<ContributionBuffer*> CFull; // Full buffers
-	vector<ContributionBuffer*> CSplat; // Buffers being splat
+	float sampleCount;
+	vector<ContributionBuffer::Buffer*> CFree; // Emptied/available buffers
+	vector<vector<vector<ContributionBuffer::Buffer*> > > CFull; // Full buffers
+	vector<ContributionBuffer::Buffer*> CSplat; // Buffers being splat
 
 	Film *film;
 	fast_mutex poolMutex;
 	boost::mutex splattingMutex;
 };
+
+inline void ContributionBuffer::Add(const Contribution &c, float weight)
+{
+	Buffer **buf = &(buffers[c.bufferGroup][c.buffer]);
+	if (!(*buf)->Add(c, weight)) {
+		pool->Next(buf, sampleCount, c.bufferGroup, c.buffer);
+		sampleCount = 0.f;
+	}
+}
 
 }//namespace lux
 

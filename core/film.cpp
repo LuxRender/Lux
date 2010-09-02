@@ -593,10 +593,6 @@ Film::Film(u_int xres, u_int yres, Filter *filt, const float crop[4],
 			*ftp++ = filter->Evaluate(fx, fy);
 		}
 	}
-
-	// initialize the contribution pool
-	contribPool = new ContributionPool();
-	contribPool->SetFilm(this);
 }
 
 Film::~Film()
@@ -655,6 +651,9 @@ void Film::CreateBuffers()
 			ifs.close();
 		}
     }
+
+	// initialize the contribution pool
+	contribPool = new ContributionPool(this);
 }
 
 void Film::SetGroupName(u_int index, const string& name) 
@@ -800,9 +799,10 @@ void Film::AddSample(Contribution *contrib) {
 	}
 
 	// Reject samples higher than max Y() after warmup period
-	if (warmupComplete && xyz.Y() > maxY)
-		return;
-	else {
+	if (warmupComplete) {
+		if(xyz.Y() > maxY)
+			return;
+	} else {
 	 	maxY = max(maxY, xyz.Y());
 		++warmupSamples;
 	 	if (warmupSamples >= reject_warmup_samples)

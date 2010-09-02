@@ -35,44 +35,59 @@ void ContributionBuffer::Buffer::Splat(Film *film)
 	pos = 0;
 }
 
-void ContributionBuffer::Splat(Film *film)
+ContributionBuffer::ContributionBuffer(ContributionPool *p) :
+	sampleCount(0.f), buffers(0), pool(p)
 {
+	buffers.resize(pool->CFull.size());
 	for (u_int i = 0; i < buffers.size(); ++i) {
+		buffers[i].resize(pool->CFull[i].size());
 		for (u_int j = 0; j < buffers[i].size(); ++j)
-			buffers[i][j]->Splat(film);
+			buffers[i][j] = new Buffer();
 	}
-	film->AddSampleCount(sampleCount);
-	sampleCount = 0.f;
 }
 
-ContributionPool::ContributionPool() {
-	total = 0;
-	while (total < CONTRIB_BUF_KEEPALIVE) {
+ContributionBuffer::~ContributionBuffer()
+{
+	pool->End(this);
+	// Since End gives a reference to the buffers to the pool,
+	// buffers freeing is going to be handled by the pool
+}
+
+ContributionPool::ContributionPool(Film *f) : sampleCount(0.f), film(f)
+{
+	for (u_int total = 0; total < CONTRIB_BUF_KEEPALIVE; ++total) {
 		// Add free buffers to both CFree and CSplat
 		// so we can ping-pong between them.
-		CFree.push_back(new ContributionBuffer());
-		CSplat.push_back(new ContributionBuffer());
-		++total;
+		CFree.push_back(new ContributionBuffer::Buffer());
+		CSplat.push_back(new ContributionBuffer::Buffer());
 	}
+	CFull.resize(film->GetNumBufferGroups());
+	for (u_int i = 0; i < CFull.size(); ++i)
+		CFull[i].resize(film->GetBufferGroup(i).buffers.size());
 }
 
 void ContributionPool::End(ContributionBuffer *c)
 {
 	fast_mutex::scoped_lock poolAction(poolMutex);
 
-	if (c)
-		CFull.push_back(c);
+	for (u_int i = 0; i < c->buffers.size(); ++i) {
+		for (u_int j = 0; j < c->buffers[i].size(); ++j)
+			CFull[i][j].push_back(c->buffers[i][j]);
+	}
+	sampleCount = c->sampleCount;
+	c->sampleCount = 0.f;
 
 	// Any splatting not done by other threads 
 	// will be done in Flush.
 }
 
-ContributionBuffer* ContributionPool::Next(ContributionBuffer *c)
+void ContributionPool::Next(ContributionBuffer::Buffer **b, float sc,
+	u_int bufferGroup, u_int buffer)
 {
 	fast_mutex::scoped_lock poolAction(poolMutex);
 
-	if (c)
-		CFull.push_back(c);
+	sampleCount += sc;
+	CFull[bufferGroup][buffer].push_back(*b);
 
 	// If there are no free buffers, perform splat
 	if (CFree.empty()) {
@@ -87,58 +102,65 @@ ContributionBuffer* ContributionPool::Next(ContributionBuffer *c)
 		// from last splatting.
 		// CFull contains filled buffers ready for splatting.
 		// CFree is empty.
-		CSplat.swap(CFull);
-		CFull.swap(CFree);
+		CSplat.swap(CFree);
+		for (u_int i = 0; i < CFull.size(); ++i) {
+			for (u_int j = 0; j < CFull[i].size(); ++j) {
+				CSplat.insert(CSplat.end(),
+					CFull[i][j].begin(), CFull[i][j].end());
+				CFull[i][j].clear();
+			}
+		}
 		// CSplat now contains filled buffers,
 		// CFull is empty and
 		// CFree contains available buffers.
 
 		// Dade - Bug 582 fix: allocate a new buffer if CFree is empty.
-		ContributionBuffer *cold;
 		if (CFree.empty())
-			cold = new ContributionBuffer();
+			*b = new ContributionBuffer::Buffer();
 		else {
 			// Store one free buffer for later, this way
 			// we don't have to lock the pool lock again.
-			cold = CFree.back();
+			*b = CFree.back();
 			CFree.pop_back();
 		}
+
+		const float count = sampleCount;
+		sampleCount = 0.f;
 
 		// release the pool lock
 		poolAction.unlock();
 
+		film->AddSampleCount(count);
 		for(u_int i = 0; i < CSplat.size(); ++i)
 			CSplat[i]->Splat(film);
 
 		film->CheckWriteOuputInterval();
-
-		// return previously obtained buffer
-		return cold;
+		return;
 	}
 
-	ContributionBuffer *cold = CFree.back();
+	*b = CFree.back();
 	CFree.pop_back();
-
-	return cold;
 }
 
 void ContributionPool::Flush()
 {
-	for(u_int i = 0; i < CFull.size(); ++i)
-		CSplat.push_back(CFull[i]);
-
-	CFull.clear();
-
-	for(u_int i = 0; i < CSplat.size(); ++i)
-		CSplat[i]->Splat(film);
+	for (u_int i = 0; i < CFull.size(); ++i) {
+		for (u_int j = 0; j < CFull[i].size(); ++j) {
+			for (u_int k = 0; k < CFull[i][j].size(); ++k)
+				CFull[i][j][k]->Splat(film);
+			CFree.insert(CFree.end(),
+				CFull[i][j].begin(), CFull[i][j].end());
+			CFull[i][j].clear();
+		}
+	}
 }
 
 void ContributionPool::Delete()
 {
+	Flush();
+	// At this point CFull doesn't hold any buffer
 	for(u_int i = 0; i < CFree.size(); ++i)
 		delete CFree[i];
-	for(u_int i = 0; i < CFull.size(); ++i)
-		delete CFull[i];
 	for(u_int i = 0; i < CSplat.size(); ++i)
 		delete CSplat[i];
 }

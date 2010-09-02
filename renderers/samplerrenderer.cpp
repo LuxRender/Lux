@@ -370,7 +370,6 @@ void SamplerRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 
 	Sampler *sampler = scene.sampler;
 	Sample sample(scene.surfaceIntegrator, scene.volumeIntegrator, scene);
-	sample.contribBuffer = scene.camera->film->contribPool->Next(NULL);
 	sampler->InitSample(&sample);
 
 	// Dade - wait the end of the preprocessing phase
@@ -380,6 +379,11 @@ void SamplerRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 		++xt.sec;
 		boost::thread::sleep(xt);
 	}
+
+	// ContribBuffer has to wait until the end of the preprocessing
+	// It depends on the fact that the film buffers have been created
+	// This is done during the preprocessing phase
+	sample.contribBuffer = new ContributionBuffer(scene.camera->film->contribPool);
 
 	// initialize the thread's rangen
 	u_long seed = scene.seedBase + myThread->n;
@@ -447,7 +451,7 @@ void SamplerRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 			++(myThread->samples);
 		}
 
-		sampler->AddSample(sample, *(renderer->scene->camera->film));
+		sampler->AddSample(sample);
 
 		// Free BSDF memory from computing image sample value
 		sample.arena.FreeAll();

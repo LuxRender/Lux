@@ -225,7 +225,7 @@ float *MetropolisSampler::GetLazyValues(const Sample &sample, u_int num, u_int p
 	return sd;
 }
 
-void MetropolisSampler::AddSample(const Sample &sample, Film &film)
+void MetropolisSampler::AddSample(const Sample &sample)
 {
 	MetropolisData *data = (MetropolisData *)(sample.samplerData);
 	vector<Contribution> &newContributions(sample.contributions);
@@ -262,13 +262,8 @@ void MetropolisSampler::AddSample(const Sample &sample, Film &film)
 		// Add accumulated contribution of previous reference sample
 		const float norm = data->weight / (data->LY / meanIntensity + pLarge);
 		if (norm > 0.f) {
-			for(u_int i = 0; i < data->oldContributions.size(); ++i) {
-				// Radiance - added new use of contributionpool/buffers
-				if (!sample.contribBuffer->Add(&(data->oldContributions[i]), norm)) {
-					sample.contribBuffer = film.contribPool->Next(sample.contribBuffer);
-					sample.contribBuffer->Add(&(data->oldContributions[i]), norm);
-				}
-			}
+			for(u_int i = 0; i < data->oldContributions.size(); ++i)
+				sample.contribBuffer->Add(data->oldContributions[i], norm);
 		}
 		// Save new contributions for reference
 		data->weight = newWeight;
@@ -291,13 +286,8 @@ void MetropolisSampler::AddSample(const Sample &sample, Film &film)
 		// Add contribution of new sample before rejecting it
 		const float norm = newWeight / (newLY / meanIntensity + pLarge);
 		if (norm > 0.f) {
-			for(u_int i = 0; i < newContributions.size(); ++i) {
-				// Radiance - added new use of contributionpool/buffers
-				if(!sample.contribBuffer->Add(&newContributions[i], norm)) {
-					sample.contribBuffer = film.contribPool->Next(sample.contribBuffer);
-					sample.contribBuffer->Add(&newContributions[i], norm);
-				}
-			}
+			for(u_int i = 0; i < newContributions.size(); ++i)
+				sample.contribBuffer->Add(newContributions[i], norm);
 		}
 		// Restart from previous reference
 		for (u_int i = 0; i < data->totalTimes; ++i)

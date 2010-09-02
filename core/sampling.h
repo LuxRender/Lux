@@ -24,7 +24,6 @@
 #define LUX_SAMPLING_H
 // sampling.h*
 #include "lux.h"
-#include "memory.h"
 #include "randomgen.h"
 #include "contribution.h"
 #include "spectrumwavelengths.h"
@@ -47,6 +46,7 @@ public:
 	// Sample Public Methods
 	Sample(SurfaceIntegrator *surf, VolumeIntegrator *vol,
 		const Scene &scene);
+	~Sample();
 
 	u_int Add1D(u_int num) {
 		n1D.push_back(num);
@@ -72,16 +72,6 @@ public:
 	void AddContribution(float x, float y, const XYZColor &c, float a, float zd,
 		float v, u_int b = 0, u_int g = 0) const {
 		contributions.push_back(Contribution(x, y, c, a, zd, v, b, g));
-	}
-	~Sample() {
-		if (oneD != NULL) {
-			FreeAligned(oneD[0]);
-			FreeAligned(oneD);
-		}
-		if (timexD != NULL) {
-			FreeAligned(timexD[0]);
-			FreeAligned(timexD);
-		}
 	}
 
 	//Sample public data
@@ -123,7 +113,7 @@ public:
 	virtual u_int RoundSize(u_int size) const = 0;
 	virtual void SetFilm(Film* f) { film = f; }
 	virtual void GetBufferType(BufferType *t) { }
-	virtual void AddSample(const Sample &sample, Film &film);
+	virtual void AddSample(const Sample &sample);
 
 	// Sampler Public Data
 	int xPixelStart, xPixelEnd, yPixelStart, yPixelEnd;

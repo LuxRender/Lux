@@ -22,6 +22,7 @@
 
 // sampling.cpp*
 #include "lux.h"
+#include "memory.h"
 #include "sampling.h"
 #include "scene.h"
 #include "transport.h"
@@ -45,22 +46,18 @@ float *Sampler::GetLazyValues(const Sample &sample, u_int num, u_int pos)
 	return sample.xD[num] + pos * sample.dxD[num];
 }
 
-void Sampler::AddSample(const Sample &sample, Film &film)
+void Sampler::AddSample(const Sample &sample)
 {
 	sample.contribBuffer->AddSampleCount(1.f);
-	for (u_int i=0; i<sample.contributions.size(); i++) {
-			// Radiance - added new use of contributionpool/buffers
-			if(!sample.contribBuffer->Add(&sample.contributions[i], 1.f)) {
-				sample.contribBuffer = film.contribPool->Next(sample.contribBuffer);
-				sample.contribBuffer->Add(&sample.contributions[i], 1.f);
-			}
-	}
+	for (u_int i = 0; i < sample.contributions.size(); ++i)
+		sample.contribBuffer->Add(sample.contributions[i], 1.f);
 	sample.contributions.clear();
 }
 
 // Sample Method Definitions
 Sample::Sample(SurfaceIntegrator *surf, VolumeIntegrator *vol,
-	const Scene &scene) {
+	const Scene &scene)
+{
 	stamp = 0;
 	samplerData = NULL;
 	surf->RequestSamples(this, scene);
@@ -106,6 +103,18 @@ Sample::Sample(SurfaceIntegrator *surf, VolumeIntegrator *vol,
 		mem += dxD[i] * nxD[i];
 		timexD[i] = tmem;
 		tmem += nxD[i];
+	}
+}
+
+Sample::~Sample()
+{
+	if (oneD != NULL) {
+		FreeAligned(oneD[0]);
+		FreeAligned(oneD);
+	}
+	if (timexD != NULL) {
+		FreeAligned(timexD[0]);
+		FreeAligned(timexD);
 	}
 }
 
