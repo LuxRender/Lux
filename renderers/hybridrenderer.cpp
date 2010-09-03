@@ -43,12 +43,32 @@ void LuxRaysDebugHandler(const char *msg) {
 // HRDeviceDescription
 //------------------------------------------------------------------------------
 
-unsigned int HRDeviceDescription::GetUsedUnitsCount() const {
+HRHardwareDeviceDescription::HRHardwareDeviceDescription(HRHostDescription *h, luxrays::DeviceDescription *desc) :
+	HRDeviceDescription(h, desc->GetName()) {
+	devDesc = desc;
+	enabled = true;
+}
+
+void HRHardwareDeviceDescription::SetUsedUnitsCount(const unsigned int units) {
+	// I assume there is only one single virtual device in use
+	if ((units < 0) || (units > 1))
+		throw std::runtime_error("A not valid amount of units used in HRDeviceDescription::SetUsedUnitsCount()");
+
+	enabled = (units == 1);
+}
+
+HRVirtualDeviceDescription::HRVirtualDeviceDescription(HRHostDescription *h, const string &name) :
+	HRDeviceDescription(h, name) {
+}
+
+unsigned int HRVirtualDeviceDescription::GetUsedUnitsCount() const {
+	// I assume there is only one single virtual device in use
 	boost::mutex::scoped_lock lock(host->renderer->classWideMutex);
 	return host->renderer->renderThreads.size();
 }
 
-void HRDeviceDescription::SetUsedUnitsCount(const unsigned int units) const {
+void HRVirtualDeviceDescription::SetUsedUnitsCount(const unsigned int units) {
+	// I assume there is only one single virtual device in use
 	boost::mutex::scoped_lock lock(host->renderer->classWideMutex);
 
 	unsigned int target = max(units, 1u);
@@ -68,13 +88,15 @@ void HRDeviceDescription::SetUsedUnitsCount(const unsigned int units) const {
 //------------------------------------------------------------------------------
 
 HRHostDescription::HRHostDescription(HybridRenderer *r, const string &n) : renderer(r), name(n) {
-	HRDeviceDescription *desc = new HRDeviceDescription(this, "CPUs");
-	devs.push_back(desc);
 }
 
 HRHostDescription::~HRHostDescription() {
 	for (size_t i = 0; i < devs.size(); ++i)
 		delete devs[i];
+}
+
+void HRHostDescription::AddDevice(HRDeviceDescription *devDesc) {
+	devs.push_back(devDesc);
 }
 
 //------------------------------------------------------------------------------
@@ -87,8 +109,19 @@ HybridRenderer::HybridRenderer() {
 	// Create the LuxRays context
 	ctx = new luxrays::Context(LuxRaysDebugHandler);
 
+	// Create the device descriptions
 	HRHostDescription *host = new HRHostDescription(this, "Localhost");
 	hosts.push_back(host);
+
+	// Add one virtual device to feed all the OpenCL devices
+	host->AddDevice(new HRVirtualDeviceDescription(host, "VirtualGPU"));
+
+	// Get the list of devices available
+	std::vector<luxrays::DeviceDescription *> deviceDescs = std::vector<luxrays::DeviceDescription *>(ctx->GetAvailableDeviceDescriptions());
+
+	// Add all the OpenCL devices
+	for (size_t i = 0; i < deviceDescs.size(); ++i)
+		host->AddDevice(new HRHardwareDeviceDescription(host, deviceDescs[i]));
 
 	preprocessDone = false;
 	suspendThreadsWhenDone = false;
@@ -121,7 +154,7 @@ Renderer::RendererState HybridRenderer::GetState() const {
 	return state;
 }
 
-const vector<RendererHostDescription *> &HybridRenderer::GetHostDescs() const {
+vector<RendererHostDescription *> &HybridRenderer::GetHostDescs() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 
 	return hosts;

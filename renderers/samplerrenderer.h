@@ -50,7 +50,7 @@ public:
 		return max(boost::thread::hardware_concurrency(), 1u);
 	}
 	unsigned int GetUsedUnitsCount() const;
-	void SetUsedUnitsCount(const unsigned int units) const;
+	void SetUsedUnitsCount(const unsigned int units);
 
 	friend class SamplerRenderer;
 	friend class SRHostDescription;
@@ -72,7 +72,7 @@ class SRHostDescription : protected RendererHostDescription {
 public:
 	const string &GetName() const { return name; }
 
-	const vector<RendererDeviceDescription *> &GetDeviceDescs() const { return devs; }
+	vector<RendererDeviceDescription *> &GetDeviceDescs() { return devs; }
 
 	friend class SamplerRenderer;
 	friend class SRDeviceDescription;
@@ -98,7 +98,7 @@ public:
 	RendererType GetType() const;
 
 	RendererState GetState() const;
-	const vector<RendererHostDescription *> &GetHostDescs() const;
+	vector<RendererHostDescription *> &GetHostDescs();
 	void SuspendWhenDone(bool v);
 
 	double Statistics(const string &statName);

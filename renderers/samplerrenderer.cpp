@@ -40,7 +40,7 @@ unsigned int SRDeviceDescription::GetUsedUnitsCount() const {
 	return host->renderer->renderThreads.size();
 }
 
-void SRDeviceDescription::SetUsedUnitsCount(const unsigned int units) const {
+void SRDeviceDescription::SetUsedUnitsCount(const unsigned int units) {
 	boost::mutex::scoped_lock lock(host->renderer->classWideMutex);
 
 	unsigned int target = max(units, 1u);
@@ -108,7 +108,7 @@ Renderer::RendererState SamplerRenderer::GetState() const {
 	return state;
 }
 
-const vector<RendererHostDescription *> &SamplerRenderer::GetHostDescs() const {
+vector<RendererHostDescription *> &SamplerRenderer::GetHostDescs() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 
 	return hosts;

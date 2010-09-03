@@ -42,7 +42,7 @@ public:
 
 	virtual unsigned int GetAvailableUnitsCount() const = 0;
 	virtual unsigned int GetUsedUnitsCount() const = 0;
-	virtual void SetUsedUnitsCount(const unsigned int units) const = 0;
+	virtual void SetUsedUnitsCount(const unsigned int units) = 0;
 };
 
 /*! \brief The interface for accessing to an host information.
@@ -55,7 +55,7 @@ public:
 	 */
 	virtual const string &GetName() const = 0;
 
-	virtual const vector<RendererDeviceDescription *> &GetDeviceDescs() const = 0;
+	virtual vector<RendererDeviceDescription *> &GetDeviceDescs() = 0;
 };
 
 /*! \brief The interface for rendering a scene.
@@ -92,7 +92,7 @@ public:
 	 *
 	 * Must be thread-safe. Can be called in any state.
 	 */
-	virtual const vector<RendererHostDescription *> &GetHostDescs() const = 0;
+	virtual vector<RendererHostDescription *> &GetHostDescs() = 0;
 
 	/*! \brief Tell the Renderer what to when an halt condition has been met.
 	 *

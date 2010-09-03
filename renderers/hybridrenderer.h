@@ -33,6 +33,7 @@
 #include "dynload.h"
 
 #include "luxrays/luxrays.h"
+#include "luxrays/core/device.h"
 
 namespace lux
 {
@@ -48,22 +49,47 @@ class HRDeviceDescription : protected RendererDeviceDescription {
 public:
 	const string &GetName() const { return name; }
 
-	unsigned int GetAvailableUnitsCount() const {
-		return max(boost::thread::hardware_concurrency(), 1u);
-	}
-	unsigned int GetUsedUnitsCount() const;
-	void SetUsedUnitsCount(const unsigned int units) const;
+	friend class HybridRenderer;
+	friend class HRHostDescription;
+
+protected:
+	HRDeviceDescription(HRHostDescription *h, const string &n) : host(h), name(n) { }
+
+	HRHostDescription *host;
+	string name;
+};
+
+class HRHardwareDeviceDescription : protected HRDeviceDescription {
+public:
+	unsigned int GetAvailableUnitsCount() const { return 1;	}
+	unsigned int GetUsedUnitsCount() const { return enabled ? 1 : 0; }
+	void SetUsedUnitsCount(const unsigned int units);
 
 	friend class HybridRenderer;
 	friend class HRHostDescription;
 
 private:
-	HRDeviceDescription(HRHostDescription *h, const string &n) :
-		host(h), name(n) { }
-	~HRDeviceDescription() { }
+	HRHardwareDeviceDescription(HRHostDescription *h, luxrays::DeviceDescription *desc);
+	~HRHardwareDeviceDescription() { }
 
-	HRHostDescription *host;
-	string name;
+	luxrays::DeviceDescription *devDesc;
+	bool enabled;
+};
+
+class HRVirtualDeviceDescription : protected HRDeviceDescription {
+public:
+	unsigned int GetAvailableUnitsCount() const {
+		return max(boost::thread::hardware_concurrency(), 1u);
+	}
+	unsigned int GetUsedUnitsCount() const;
+	void SetUsedUnitsCount(const unsigned int units);
+
+	friend class HybridRenderer;
+	friend class HRHostDescription;
+
+private:
+	HRVirtualDeviceDescription(HRHostDescription *h, const string &n);
+	~HRVirtualDeviceDescription() { }
 };
 
 //------------------------------------------------------------------------------
@@ -74,14 +100,18 @@ class HRHostDescription : protected RendererHostDescription {
 public:
 	const string &GetName() const { return name; }
 
-	const vector<RendererDeviceDescription *> &GetDeviceDescs() const { return devs; }
+	vector<RendererDeviceDescription *> &GetDeviceDescs() { return devs; }
 
 	friend class HybridRenderer;
 	friend class HRDeviceDescription;
+	friend class HRHardwareDeviceDescription;
+	friend class HRVirtualDeviceDescription;
 
 private:
 	HRHostDescription(HybridRenderer *r, const string &n);
 	~HRHostDescription();
+
+	void AddDevice(HRDeviceDescription *devDesc);
 
 	HybridRenderer *renderer;
 	string name;
@@ -100,7 +130,7 @@ public:
 	RendererType GetType() const;
 
 	RendererState GetState() const;
-	const vector<RendererHostDescription *> &GetHostDescs() const;
+	vector<RendererHostDescription *> &GetHostDescs();
 	void SuspendWhenDone(bool v);
 
 	double Statistics(const string &statName);
@@ -112,6 +142,8 @@ public:
 	void Terminate();
 
 	friend class HRDeviceDescription;
+	friend class HRHardwareDeviceDescription;
+	friend class HRVirtualDeviceDescription;
 	friend class HRHostDescription;
 
 	static Renderer *CreateRenderer(const ParamSet &params);
