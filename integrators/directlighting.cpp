@@ -54,7 +54,7 @@ void DirectLightingIntegrator::Preprocess(const RandomGenerator &rng,
 }
 
 u_int DirectLightingIntegrator::LiInternal(const Scene &scene,
-	const Sample &sample, const Volume *volume, const RayDifferential &ray,
+	const Sample &sample, const Volume *volume, const Ray &ray,
 	vector<SWCSpectrum> &L, float *alpha, float &distance,
 	u_int rayDepth) const
 {
@@ -103,9 +103,8 @@ u_int DirectLightingIntegrator::LiInternal(const Scene &scene,
 				BxDFType(BSDF_REFLECTION | BSDF_SPECULAR), NULL,
 				NULL, true)) {
 				// Compute ray differential _rd_ for specular reflection
-				RayDifferential rd(p, wi);
+				Ray rd(p, wi);
 				rd.time = time;
-				bsdf->ComputeReflectionDifferentials(ray, rd);
 				vector<SWCSpectrum> Lr(scene.lightGroups.size(),
 					SWCSpectrum(0.f));
 				u_int nc = LiInternal(scene, sample,
@@ -124,9 +123,8 @@ u_int DirectLightingIntegrator::LiInternal(const Scene &scene,
 				BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR),
 				NULL, NULL, true)) {
 				// Compute ray differential _rd_ for specular transmission
-				RayDifferential rd(p, wi);
+				Ray rd(p, wi);
 				rd.time = time;
-				bsdf->ComputeTransmissionDifferentials(sw, ray, rd);
 				vector<SWCSpectrum> Lr(scene.lightGroups.size(),
 					SWCSpectrum(0.f));
 				u_int nc = LiInternal(scene, sample,
@@ -175,7 +173,7 @@ u_int DirectLightingIntegrator::LiInternal(const Scene &scene,
 u_int DirectLightingIntegrator::Li(const Scene &scene,
 	const Sample &sample) const
 {
-        RayDifferential ray;
+        Ray ray;
         float rayWeight = sample.camera->GenerateRay(scene, sample, &ray);
 
 	vector<SWCSpectrum> L(scene.lightGroups.size(), SWCSpectrum(0.f));

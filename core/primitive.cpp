@@ -74,9 +74,8 @@ void Primitive::Sample(float u1, float u2, float u3,
 
 // Intersection Method Definitions
 BSDF *Intersection::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
-	const RayDifferential &ray) const
+	const Ray &ray) const
 {
-	dg.ComputeDifferentials(ray);
 	DifferentialGeometry dgShading;
 	primitive->GetShadingGeometry(WorldToObject.GetInverse(), dg,
 		&dgShading);
@@ -169,8 +168,6 @@ void InstancePrimitive::GetShadingGeometry(const Transform &obj2world,
 	dgShading->dpdv = InstanceToWorld(dgShading->dpdv);
 	dgShading->dndu = InstanceToWorld(dgShading->dndu);
 	dgShading->dndv = InstanceToWorld(dgShading->dndv);
-	dgShading->dpdx = InstanceToWorld(dgShading->dpdx);
-	dgShading->dpdy = InstanceToWorld(dgShading->dpdy);
 }
 
 // MotionPrimitive Method Definitions
@@ -232,8 +229,6 @@ void MotionPrimitive::GetShadingGeometry(const Transform &obj2world,
 	dgShading->dpdv = InstanceToWorld(dgShading->dpdv);
 	dgShading->dndu = InstanceToWorld(dgShading->dndu);
 	dgShading->dndv = InstanceToWorld(dgShading->dndv);
-	dgShading->dpdx = InstanceToWorld(dgShading->dpdx);
-	dgShading->dpdy = InstanceToWorld(dgShading->dpdy);
 }
 
 BBox MotionPrimitive::WorldBound() const

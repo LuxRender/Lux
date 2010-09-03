@@ -497,7 +497,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 				(light0.pdf * light0.cosi);
 			light0.rr = min(1.f, max(lightThreshold,
 				light0.flux.Filter(sw)));
-			RayDifferential ray(light0.p, light0.wo);
+			Ray ray(light0.p, light0.wo);
 			ray.time = sample.realTime;
 			Intersection isect;
 			lightPath[nLight].flux = light0.flux;
@@ -592,7 +592,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 				}
 
 				// Initialize _ray_ for next segment of path
-				ray = RayDifferential(v.p, v.wo);
+				ray = Ray(v.p, v.wo);
 				ray.time = sample.realTime;
 			}
 		}
@@ -615,7 +615,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 		eye0.flux.Filter(sw) * (cosins0 * eye0.coso / (eye0.cosi * eye0.pdf))));
 	eye0.flux *= (cosins0 / eye0.pdfR);
 	eye0.rrR = min(1.f, max(eyeThreshold, eye0.flux.Filter(sw)));
-	RayDifferential ray(eyePath[0].p, eyePath[0].wi);
+	Ray ray(eyePath[0].p, eyePath[0].wi);
 	ray.time = sample.realTime;
 	sample.camera->ClampRay(ray);
 	Intersection isect;
@@ -635,7 +635,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 				const Light *light = scene.lights[lightNumber];
 				if (!light->IsEnvironmental())
 					continue;
-				RayDifferential r(eyePath[nEye - 1].p, eyePath[nEye - 1].wi);
+				Ray r(eyePath[nEye - 1].p, eyePath[nEye - 1].wi);
 				r.time = sample.realTime;
 				float ePdfDirect;
 				SWCSpectrum Le(v.flux);
@@ -700,7 +700,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 
 		// Test intersection with a light source
 		if (isect.arealight) {
-			RayDifferential r(eyePath[nEye - 2].p, eyePath[nEye - 2].wi);
+			Ray r(eyePath[nEye - 2].p, eyePath[nEye - 2].wi);
 			r.time = sample.realTime;
 			BSDF *eBsdf;
 			float ePdfDirect;
@@ -856,7 +856,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 		}
 
 		// Initialize _ray_ for next segment of path
-		ray = RayDifferential(v.p, v.wi);
+		ray = Ray(v.p, v.wi);
 		ray.time = sample.realTime;
 	}
 	const float d = sqrtf(eyePath[0].d2);

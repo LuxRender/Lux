@@ -60,7 +60,7 @@ public:
 		const DifferentialGeometry &dg,
 		float delta, float *du, float *dv) const {
 		float s, t, dsdu, dtdu, dsdv, dtdv;
-		mapping->MapDxy(dg, &s, &t, &dsdu, &dtdu, &dsdv, &dtdv);
+		mapping->MapDuv(dg, &s, &t, &dsdu, &dtdu, &dsdv, &dtdv);
 		const float ds = delta * (dsdu + dsdv);
 		const float dt = delta * (dtdu + dtdv);
 		*du = 0.f;

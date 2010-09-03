@@ -182,7 +182,7 @@ void DistributedPath::Reject(const SpectrumWavelengths &sw,
 }
 
 void DistributedPath::LiInternal(const Scene &scene, const Sample &sample,
-		const Volume *volume, const RayDifferential &ray,
+		const Volume *volume, const Ray &ray,
 		vector<SWCSpectrum> &L, float *alpha, float *zdepth,
 		u_int rayDepth, bool includeEmit, u_int &nrContribs) const
 {
@@ -325,7 +325,7 @@ void DistributedPath::LiInternal(const Scene &scene, const Sample &sample,
 
 				if (bsdf->Sample_f(sw, wo, &wi, u1, u2, u3, &f, 
 					 &pdf, BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE), &flags, NULL, true)) {
-					RayDifferential rd(p, wi);
+					Ray rd(p, wi);
 					rd.time = time;
 					vector<SWCSpectrum> Ll(L.size(),
 						SWCSpectrum(0.f));
@@ -372,7 +372,7 @@ void DistributedPath::LiInternal(const Scene &scene, const Sample &sample,
 
 				if (bsdf->Sample_f(sw, wo, &wi, u1, u2, u3, &f, 
 					 &pdf, BxDFType(BSDF_TRANSMISSION | BSDF_DIFFUSE), &flags, NULL, true)) {
-					RayDifferential rd(p, wi);
+					Ray rd(p, wi);
 					rd.time = time;
 					vector<SWCSpectrum> Ll(L.size(),
 						SWCSpectrum(0.f));
@@ -421,7 +421,7 @@ void DistributedPath::LiInternal(const Scene &scene, const Sample &sample,
 
 				if (bsdf->Sample_f(sw, wo, &wi, u1, u2, u3, &f, 
 					 &pdf, BxDFType(BSDF_REFLECTION | BSDF_GLOSSY), &flags, NULL, true)) {
-					RayDifferential rd(p, wi);
+					Ray rd(p, wi);
 					rd.time = time;
 					vector<SWCSpectrum> Ll(L.size(),
 						SWCSpectrum(0.f));
@@ -468,7 +468,7 @@ void DistributedPath::LiInternal(const Scene &scene, const Sample &sample,
 
 				if (bsdf->Sample_f(sw, wo, &wi, u1, u2, u3, &f, 
 					&pdf, BxDFType(BSDF_TRANSMISSION | BSDF_GLOSSY), &flags, NULL, true)) {
-					RayDifferential rd(p, wi);
+					Ray rd(p, wi);
 					rd.time = time;
 					vector<SWCSpectrum> Ll(L.size(),
 						SWCSpectrum(0.f));
@@ -497,7 +497,7 @@ void DistributedPath::LiInternal(const Scene &scene, const Sample &sample,
 		if (rayDepth < specularreflectDepth) {
 			if (bsdf->Sample_f(sw, wo, &wi, 1.f, 1.f, 1.f, &f, 
 				 &pdf, BxDFType(BSDF_REFLECTION | BSDF_SPECULAR), NULL, NULL, true)) {
-				RayDifferential rd(p, wi);
+				Ray rd(p, wi);
 				rd.time = time;
 				vector<SWCSpectrum> Ll(L.size(),
 					SWCSpectrum(0.f));
@@ -512,7 +512,7 @@ void DistributedPath::LiInternal(const Scene &scene, const Sample &sample,
 		if (rayDepth < specularrefractDepth) {
 			if (bsdf->Sample_f(sw, wo, &wi, 1.f, 1.f, 1.f, &f, 
 				 &pdf, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR), NULL, NULL, true)) {
-				RayDifferential rd(p, wi);
+				Ray rd(p, wi);
 				rd.time = time;
 				vector<SWCSpectrum> Ll(L.size(),
 					SWCSpectrum(0.f));
@@ -551,7 +551,7 @@ u_int DistributedPath::Li(const Scene &scene, const Sample &sample) const
 {
 	u_int nrContribs = 0;
 	float zdepth = 0.f;
-	RayDifferential ray;
+	Ray ray;
 	float rayWeight = sample.camera->GenerateRay(scene, sample, &ray);
 
 	vector<SWCSpectrum> L(scene.lightGroups.size(), SWCSpectrum(0.f));

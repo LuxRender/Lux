@@ -152,7 +152,7 @@ public:
 			if (i == shapeIndex)
 				continue;
 			Intersection isect;
-			RayDifferential ray(ps, *wiW);
+			Ray ray(ps, *wiW);
 			ray.mint = -INFINITY;
 			ray.time = dgShading.time;
 			if (PortalShapes[i]->Intersect(ray, &isect) &&
@@ -173,7 +173,7 @@ public:
 		float pdf = 0.f;
 		for (u_int i = 0; i < PortalShapes.size(); ++i) {
 			Intersection isect;
-			RayDifferential ray(ps, wiW);
+			Ray ray(ps, wiW);
 			ray.mint = -INFINITY;
 			ray.time = dgShading.time;
 			if (PortalShapes[i]->Intersect(ray, &isect) &&
@@ -300,7 +300,7 @@ bool InfiniteAreaLight::Le(const Scene &scene, const Sample &sample,
 			}
 			if (pdfDirect) {
 				Intersection isect;
-				RayDifferential ray(r);
+				Ray ray(r);
 				ray.mint = -INFINITY;
 				ray.time = sample.realTime;
 				if (PortalShapes[i]->Intersect(ray, &isect) &&
@@ -338,7 +338,7 @@ float InfiniteAreaLight::Pdf(const Point &p, const Point &po,
 		float pdf = 0.f;
 		for (u_int i = 0; i < nrPortalShapes; ++i) {
 			Intersection isect;
-			RayDifferential ray(p, wi);
+			Ray ray(p, wi);
 			ray.mint = -INFINITY;
 			if (PortalShapes[i]->Intersect(ray, &isect) &&
 				Dot(wi, isect.dg.nn) < 0.f)
@@ -495,7 +495,7 @@ bool InfiniteAreaLight::Sample_L(const Scene &scene, const Sample &sample,
 			if (i == shapeIndex)
 				continue;
 			Intersection isect;
-			RayDifferential ray(p, wi);
+			Ray ray(p, wi);
 			ray.mint = -INFINITY;
 			ray.time = sample.realTime;
 			if (PortalShapes[i]->Intersect(ray, &isect) &&

@@ -106,22 +106,18 @@ public:
 		dg->p = Sample(u1, u2, u3, &dg->nn);
 		CoordinateSystem(Vector(dg->nn), &dg->dpdu, &dg->dpdv);
 		dg->dndu = dg->dndv = Normal(0, 0, 0);
-		dg->dpdx = dg->dpdy = Vector(0, 0, 0);
 		//TODO fill in uv coordinates
 		dg->u = dg->v = .5f;
 		dg->handle = this;
-		dg->dudx = dg->dudy = dg->dvdx = dg->dvdy = 0.f;
 	}
 	virtual void Sample(const Point &p, float u1, float u2, float u3,
 		DifferentialGeometry *dg) const {
 		dg->p = Sample(p, u1, u2, u3, &dg->nn);
 		CoordinateSystem(Vector(dg->nn), &dg->dpdu, &dg->dpdv);
 		dg->dndu = dg->dndv = Normal(0, 0, 0);
-		dg->dpdx = dg->dpdy = Vector(0, 0, 0);
 		//TODO fill in uv coordinates
 		dg->u = dg->v = .5f;
 		dg->handle = this;
-		dg->dudx = dg->dudy = dg->dvdx = dg->dvdy = 0.f;
 	}
 
 	// Old PBRT Shape interface methods

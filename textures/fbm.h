@@ -44,9 +44,8 @@ public:
 	virtual ~FBmTexture() { delete mapping; }
 	virtual float Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
-		Vector dpdx, dpdy;
-		const Point P(mapping->MapDxy(dg, &dpdx, &dpdy));
-		return FBm(P, dpdx, dpdy, omega, octaves);
+		const Point P(mapping->Map(dg));
+		return FBm(P, 0.f, 0.f, omega, octaves);
 	}
 	virtual float Y() const { return .5f; }
 	virtual void GetDuv(const SpectrumWavelengths &sw,

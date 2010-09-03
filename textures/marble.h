@@ -48,11 +48,10 @@ public:
 	}
 	virtual SWCSpectrum Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
-		Vector dpdx, dpdy;
-		Point P = mapping->MapDxy(dg, &dpdx, &dpdy);
+		Point P(mapping->Map(dg));
 		P *= scale;
-		float marble = P.y + variation * FBm(P, scale * dpdx,
-			scale * dpdy, omega, octaves);
+		float marble = P.y + variation * FBm(P, 0.f, 0.f, omega,
+			octaves);
 		float t = .5f + .5f * sinf(marble);
 		// Evaluate marble spline at _t_
 		static float c[][3] = { { .58f, .58f, .6f }, { .58f, .58f, .6f }, { .58f, .58f, .6f },

@@ -102,14 +102,9 @@ public:
 		              sn.y * v.x + tn.y * v.y + nn.y * v.z,
 		              sn.z * v.x + tn.z * v.y + nn.z * v.z);
 	}
-	float Eta(const SpectrumWavelengths &sw) const;
 	const Volume *GetVolume(const Vector &w) const {
 		return Dot(w, ng) > 0.f ? exterior : interior;
 	}
-	void ComputeReflectionDifferentials(const RayDifferential &ray,
-		RayDifferential &rd) const;
-	void ComputeTransmissionDifferentials(const SpectrumWavelengths &sw,
-		const RayDifferential &ray, RayDifferential &rd) const;
 	/**
 	 * Samples the BSDF.
 	 * Returns the result of the BSDF for the sampled direction in f.

@@ -48,11 +48,13 @@ public:
 			aaMethod = NONE;
 		else if (aa == "supersample") {
 			LOG(LUX_WARNING, LUX_BADTOKEN) <<
-				"Anti-aliasing mode 'supersample' is deprecated, using 'closedform' instead";
-			aaMethod = CLOSEDFORM;
-		} else if (aa == "closedform")
-			aaMethod = CLOSEDFORM;
-		else {
+				"Anti-aliasing mode 'supersample' is deprecated, using 'none' instead";
+			aaMethod = NONE;
+		} else if (aa == "closedform") {
+			LOG(LUX_WARNING, LUX_BADTOKEN) <<
+				"Anti-aliasing mode 'closedform' is deprecated, using 'none' instead";
+			aaMethod = NONE;
+		} else {
 			LOG(LUX_WARNING, LUX_BADTOKEN) <<
 				"Anti-aliasing mode '" << aa <<
 				"' not understood by Checkerboard2D, defaulting to 'none'";
@@ -65,7 +67,7 @@ public:
 	virtual float Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
 		switch (aaMethod) {
-			case CLOSEDFORM: {
+/*			case CLOSEDFORM: {
 				float s, t, dsdx, dtdx, dsdy, dtdy;
 				mapping->MapDxy(dg, &s, &t, &dsdx, &dtdx,
 					&dsdy, &dtdy);
@@ -100,7 +102,7 @@ public:
 				return Lerp(area2, tex1->Evaluate(sw, dg),
 					tex2->Evaluate(sw, dg));
 			}
-/*			case SUPERSAMPLE: {
+			case SUPERSAMPLE: {
 				// Supersample _Checkerboard2D_
 #define SQRT_SAMPLES 4
 #define N_SAMPLES (SQRT_SAMPLES * SQRT_SAMPLES)
@@ -214,7 +216,11 @@ public:
 	virtual ~Checkerboard3D() { delete mapping; }
 	virtual float Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
-		Vector dpdx, dpdy;
+		const Point p(mapping->Map(dg));
+		if ((Floor2Int(p.x) + Floor2Int(p.y) + Floor2Int(p.z)) % 2 == 0)
+			return tex1->Evaluate(sw, dg);
+		return tex2->Evaluate(sw, dg);
+/*		Vector dpdx, dpdy;
 		const Point p(mapping->MapDxy(dg, &dpdx, &dpdy));
 		// Compute closed form box-filtered _Checkerboard3D_ value
 		// Evaluate single check if filter is entirely
@@ -247,7 +253,7 @@ public:
 		if (dx > 1.f || dy > 1.f || dz > 1.f)
 			vol = .5f;
 		return Lerp(vol, tex1->Evaluate(sw, dg),
-			tex2->Evaluate(sw, dg));
+			tex2->Evaluate(sw, dg));*/
 /*		// Supersample _Checkerboard3D_
 #define N_SAMPLES 4
 		float samples[2 * N_SAMPLES * N_SAMPLES];

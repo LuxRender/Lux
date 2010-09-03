@@ -43,7 +43,7 @@ public:
 
 private:
 	u_int LiInternal(const Scene &scene, const Sample &sample,
-		const Volume *volume, const RayDifferential &ray,
+		const Volume *volume, const Ray &ray,
 		vector<SWCSpectrum> &L, float *alpha, float &distance,
 		u_int rayDepth) const;
 

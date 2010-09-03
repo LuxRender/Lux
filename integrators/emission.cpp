@@ -48,7 +48,7 @@ void EmissionIntegrator::Transmittance(const Scene &scene, const Ray &ray,
 		offset));
 	*L *= Exp(-tau);
 }
-u_int EmissionIntegrator::Li(const Scene &scene, const RayDifferential &ray,
+u_int EmissionIntegrator::Li(const Scene &scene, const Ray &ray,
 	const Sample &sample, SWCSpectrum *Lv, float *alpha) const
 {
 	*Lv = 0.f;

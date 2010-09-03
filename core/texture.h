@@ -36,9 +36,6 @@ public:
 	virtual ~TextureMapping2D() { }
 	virtual void Map(const DifferentialGeometry &dg,
 		float *s, float *t) const = 0;
-	virtual void MapDxy(const DifferentialGeometry &dg,
-		float *s, float *t, float *dsdx, float *dtdx,
-		float *dsdy, float *dtdy) const = 0;
 	virtual void MapDuv(const DifferentialGeometry &dg,
 		float *s, float *t, float *dsdu, float *dtdu,
 		float *dsdv, float *dtdv) const = 0;
@@ -51,9 +48,6 @@ public:
 	virtual ~UVMapping2D() { }
 	virtual void Map(const DifferentialGeometry &dg,
 		float *s, float *t) const;
-	virtual void MapDxy(const DifferentialGeometry &dg,
-		float *s, float *t, float *dsdx, float *dtdx,
-		float *dsdy, float *dtdy) const;
 	virtual void MapDuv(const DifferentialGeometry &dg,
 		float *s, float *t, float *dsdu, float *dtdu,
 		float *dsdv, float *dtdv) const;
@@ -73,9 +67,6 @@ public:
 	virtual ~SphericalMapping2D() { }
 	virtual void Map(const DifferentialGeometry &dg,
 		float *s, float *t) const;
-	virtual void MapDxy(const DifferentialGeometry &dg,
-		float *s, float *t, float *dsdx, float *dtdx,
-		float *dsdy, float *dtdy) const;
 	virtual void MapDuv(const DifferentialGeometry &dg,
 		float *s, float *t, float *dsdu, float *dtdu,
 		float *dsdv, float *dtdv) const;
@@ -97,9 +88,6 @@ public:
 	virtual ~CylindricalMapping2D() { }
 	virtual void Map(const DifferentialGeometry &dg,
 		float *s, float *t) const;
-	virtual void MapDxy(const DifferentialGeometry &dg,
-		float *s, float *t, float *dsdx, float *dtdx,
-		float *dsdy, float *dtdy) const;
 	virtual void MapDuv(const DifferentialGeometry &dg,
 		float *s, float *t, float *dsdu, float *dtdu,
 		float *dsdv, float *dtdv) const;
@@ -115,9 +103,6 @@ public:
 	virtual ~PlanarMapping2D() { }
 	virtual void Map(const DifferentialGeometry &dg,
 		float *s, float *t) const;
-	virtual void MapDxy(const DifferentialGeometry &dg,
-		float *s, float *t, float *dsdx, float *dtdx,
-		float *dsdy, float *dtdy) const;
 	virtual void MapDuv(const DifferentialGeometry &dg,
 		float *s, float *t, float *dsdu, float *dtdu,
 		float *dsdv, float *dtdv) const;
@@ -130,8 +115,6 @@ public:
 	// TextureMapping3D Interface
 	virtual ~TextureMapping3D() { }
 	virtual Point Map(const DifferentialGeometry &dg) const = 0;
-	virtual Point MapDxy(const DifferentialGeometry &dg,
-		Vector *dpdx, Vector *dpdy) const = 0;
 	virtual Point MapDuv(const DifferentialGeometry &dg,
 		Vector *dpdu, Vector *dpdv) const = 0;
 };
@@ -141,8 +124,6 @@ public:
 		: WorldToTexture(x) { }
 	virtual ~IdentityMapping3D() { }
 	virtual Point Map(const DifferentialGeometry &dg) const;
-	virtual Point MapDxy(const DifferentialGeometry &dg,
-		Vector *dpdx, Vector *dpdy) const;
 	virtual Point MapDuv(const DifferentialGeometry &dg,
 		Vector *dpdu, Vector *dpdv) const;
 	void Apply3DTextureMappingOptions(const ParamSet &tp);

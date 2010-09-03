@@ -311,7 +311,6 @@ void MeshWaldTriangle::Sample(float u1, float u2, float u3, DifferentialGeometry
 	dg->dpdu = dpdu;
 	dg->dpdv = dpdv;
 	dg->dndu = dg->dndv = Normal(0, 0, 0);
-	dg->dpdx = dg->dpdy = Vector(0, 0, 0);
 
 	float uv[3][2];
 	GetUVs(uv);
@@ -319,8 +318,6 @@ void MeshWaldTriangle::Sample(float u1, float u2, float u3, DifferentialGeometry
 	dg->v = b1 * uv[0][1] + b2 * uv[1][1] + b3 * uv[2][1];
 
 	dg->handle = this;
-
-	dg->dudx = dg->dudy = dg->dvdx = dg->dvdy = 0.f;
 
 	dg->triangleBaryCoords[0] = b1;
 	dg->triangleBaryCoords[1] = b2;

@@ -36,12 +36,11 @@ namespace lux
 
 // Integrator Method Definitions
 bool VolumeIntegrator::Intersect(const Scene &scene, const Sample &sample,
-	const Volume *volume, const RayDifferential &ray,
-	Intersection *isect, BSDF **bsdf, SWCSpectrum *L) const
+	const Volume *volume, const Ray &ray, Intersection *isect, BSDF **bsdf,
+	SWCSpectrum *L) const
 {
 	const bool hit = scene.Intersect(ray, isect);
 	if (hit) {
-		isect->dg.ComputeDifferentials(ray);
 		DifferentialGeometry dgShading;
 		isect->primitive->GetShadingGeometry(isect->WorldToObject.GetInverse(),
 			isect->dg, &dgShading);
@@ -81,7 +80,7 @@ bool VolumeIntegrator::Connect(const Scene &scene, const Sample &sample,
 	if (shadowRayEpsilon >= length * .5f)
 		return false;
 	const float maxt = length - shadowRayEpsilon;
-	RayDifferential ray(Ray(p0, w / length, shadowRayEpsilon, maxt));
+	Ray ray(p0, w / length, shadowRayEpsilon, maxt);
 	ray.time = sample.realTime;
 	if (clip)
 		sample.camera->ClampRay(ray);
@@ -205,7 +204,7 @@ SWCSpectrum EstimateDirect(const Scene &scene, const Light &light,
 			(sampledType & BSDF_SPECULAR) == 0) {
 			// Add light contribution from BSDF sampling
 			Intersection lightIsect;
-			RayDifferential ray(p, wi);
+			Ray ray(p, wi);
 			ray.time = sample.time;
 			BSDF *ibsdf;
 			const Volume *volume = bsdf->GetVolume(wi);

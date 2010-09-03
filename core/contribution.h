@@ -121,7 +121,6 @@ public:
 	void CheckFilmWriteOuputInterval();
 
 private:
-	unsigned int total;
 	float sampleCount;
 	vector<ContributionBuffer::Buffer*> CFree; // Emptied/available buffers
 	vector<vector<vector<ContributionBuffer::Buffer*> > > CFull; // Full buffers

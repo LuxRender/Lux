@@ -26,6 +26,7 @@
 #include "lux.h"
 #include "bxdf.h"
 #include "spectrum.h"
+#include "epsilon.h"
 
 namespace lux
 {

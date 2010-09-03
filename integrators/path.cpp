@@ -64,8 +64,8 @@ u_int PathIntegrator::Li(const Scene &scene, const Sample &sample) const
 	u_int nrContribs = 0;
 	// Declare common path integration variables
 	const SpectrumWavelengths &sw(sample.swl);
-	RayDifferential r;
-	float rayWeight = sample.camera->GenerateRay(scene, sample, &r);
+	Ray ray;
+	float rayWeight = sample.camera->GenerateRay(scene, sample, &ray);
 
 	const float nLights = scene.lights.size();
 	const u_int lightGroupCount = scene.lightGroups.size();
@@ -73,7 +73,6 @@ u_int PathIntegrator::Li(const Scene &scene, const Sample &sample) const
 	vector<SWCSpectrum> Ld(lightGroupCount, 0.f);
 	// Direct lighting samples variance
 	vector<float> Vd(lightGroupCount, 0.f);
-	RayDifferential ray(r);
 	SWCSpectrum pathThroughput(1.0f);
 	vector<SWCSpectrum> L(lightGroupCount, 0.f);
 	vector<float> V(lightGroupCount, 0.f);
@@ -122,7 +121,6 @@ u_int PathIntegrator::Li(const Scene &scene, const Sample &sample) const
 			break;
 		}
 		if (vertexIndex == 0) {
-			r.maxt = ray.maxt;
 			distance = ray.maxt * ray.d.Length();
 		}
 
@@ -211,8 +209,8 @@ u_int PathIntegrator::Li(const Scene &scene, const Sample &sample) const
 		if (!specular)
 			VContrib += dp;
 
-		ray = RayDifferential(p, wi);
-		ray.time = r.time;
+		ray = Ray(p, wi);
+		ray.time = sample.realTime;
 		volume = bsdf->GetVolume(wi);
 	}
 	for (u_int i = 0; i < lightGroupCount; ++i) {

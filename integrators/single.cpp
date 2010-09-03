@@ -50,7 +50,7 @@ void SingleScattering::Transmittance(const Scene &scene, const Ray &ray,
 	*L *= Exp(-tau);
 }
 
-u_int SingleScattering::Li(const Scene &scene, const RayDifferential &ray,
+u_int SingleScattering::Li(const Scene &scene, const Ray &ray,
 	const Sample &sample, SWCSpectrum *Lv, float *alpha) const
 {
 	*Lv = 0.f;

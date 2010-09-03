@@ -162,7 +162,7 @@ public:
 	Intersection() : primitive(NULL), material(NULL), exterior(NULL),
 		interior(NULL), arealight(NULL) { }
 	BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
-		const RayDifferential &ray) const;
+		const Ray &ray) const;
 	SWCSpectrum Le(const Sample &sample, const Ray &ray, BSDF **bsdf, float *pdf, float *pdfDirect) const;
 
 	void Set(const Transform& world2object,

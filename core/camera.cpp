@@ -51,7 +51,7 @@ Camera::Camera(const Transform &w2cstart,
 }
 
 float Camera::GenerateRay(const Scene &scene, const Sample &sample,
-	RayDifferential *ray) const
+	Ray *ray) const
 {
 	const SpectrumWavelengths &sw(sample.swl);
 	if (IsLensBased()) {
@@ -61,9 +61,6 @@ float Camera::GenerateRay(const Scene &scene, const Sample &sample,
 		const float d2 = sample.imageY;
 		if (!GenerateRay(sample.arena, sw, scene, o1, o2, d1, d2, ray))
 			return 0.f;
-		if (GenerateRay(sample.arena, sw, scene, o1, o2, d1 + 1, d2, &(ray->rx)) &&
-			GenerateRay(sample.arena, sw, scene, o1, o2, d1, d2 + 1, &(ray->ry)))
-			ray->hasDifferentials = true;
 	} else {
 		const float o1 = sample.imageX;
 		const float o2 = sample.imageY;
@@ -71,14 +68,10 @@ float Camera::GenerateRay(const Scene &scene, const Sample &sample,
 		const float d2 = sample.lensV;
 		if (!GenerateRay(sample.arena, sw, scene, o1, o2, d1, d2, ray))
 			return 0.f;
-		if (GenerateRay(sample.arena, sw, scene, o1, o2, d1 + 1, d2, &(ray->rx)) &&
-			GenerateRay(sample.arena, sw, scene, o1, o2, d1, d2 + 1, &(ray->ry)))
-			ray->hasDifferentials = true;
 	}
 
 	// Set ray time value
 	ray->time = GetTime(sample.time);
-	ray->rx.time = ray->ry.time = ray->time;
 
 	return 1.f;
 }

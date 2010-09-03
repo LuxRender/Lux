@@ -242,11 +242,9 @@ public:
 			dg->nn = -dg->nn;
 		CoordinateSystem(Vector(dg->nn), &dg->dpdu, &dg->dpdv);
 		dg->dndu = dg->dndv = Normal(0, 0, 0);
-		dg->dpdx = dg->dpdy = Vector(0, 0, 0);
 
 		dg->handle = this;
 
-		dg->dudx = dg->dudy = dg->dvdx = dg->dvdy = 0.f;
 
 		float uv[4][2];
 		GetUVs(uv);

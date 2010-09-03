@@ -161,7 +161,7 @@ void ExPhotonIntegrator::Preprocess(const RandomGenerator &rng,
 
 u_int ExPhotonIntegrator::Li(const Scene &scene, const Sample &sample) const 
 {
-	RayDifferential ray;
+	Ray ray;
 	float rayWeight = sample.camera->GenerateRay(scene, sample, &ray);
 
 	SWCSpectrum L(0.f);
@@ -185,7 +185,7 @@ u_int ExPhotonIntegrator::Li(const Scene &scene, const Sample &sample) const
 }
 
 SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(const Scene &scene,
-	const Sample &sample, const Volume *volume, const RayDifferential &ray,
+	const Sample &sample, const Volume *volume, const Ray &ray,
 	float *alpha, const u_int reflectionDepth,
 	const bool specularBounce) const 
 {
@@ -274,11 +274,7 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(const Scene &scene,
 			if (bsdf->Sample_f(sw, wo, &wi, u1, u2, u3, &f, &pdf,
 				BxDFType(BSDF_REFLECTION | BSDF_TRANSMISSION | BSDF_SPECULAR | BSDF_GLOSSY), &sampledType, NULL, true)) {
 				// Compute ray differential _rd_ for specular reflection
-				RayDifferential rd(p, wi);
-				if (sampledType & BSDF_REFLECTION)
-					bsdf->ComputeReflectionDifferentials(ray, rd);
-				else if (sampledType & BSDF_TRANSMISSION)
-					bsdf->ComputeTransmissionDifferentials(sw, ray, rd);
+				Ray rd(p, wi);
 				L += LiDirectLightingMode(scene, sample,
 					bsdf->GetVolume(wi), rd, alpha,
 					reflectionDepth + 1,
@@ -308,7 +304,7 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(const Scene &scene,
 }
 
 SWCSpectrum ExPhotonIntegrator::LiPathMode(const Scene &scene,
-	const Sample &sample, const RayDifferential &r, float *alpha) const
+	const Sample &sample, const Ray &r, float *alpha) const
 {
 	SWCSpectrum L(0.f);
 	// TODO
@@ -316,7 +312,7 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const Scene &scene,
 	const float nLights = scene.lights.size();
 
 	// Declare common path integration variables
-	RayDifferential ray(r);
+	Ray ray(r);
 	const SpectrumWavelengths &sw(sample.swl);
 	SWCSpectrum pathThroughput(1.f);
 	bool specularBounce = true, specular = true;
@@ -429,7 +425,7 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const Scene &scene,
 					if (bsdf->Sample_f(sw, wo, &wi, u1, u2,
 						u3, &fr, &pdf, diffuseType,
 						NULL, NULL, true)) {
-						RayDifferential bounceRay(p, wi);
+						Ray bounceRay(p, wi);
 
 						Intersection gatherIsect;
 						if (scene.Intersect(sample,
@@ -511,7 +507,7 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const Scene &scene,
 		pathThroughput *= f;
 		pathThroughput *= dp;
 
-		ray = RayDifferential(p, wi);
+		ray = Ray(p, wi);
 		volume = bsdf->GetVolume(wi);
 	}
 

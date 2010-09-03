@@ -36,7 +36,7 @@ void ContributionBuffer::Buffer::Splat(Film *film)
 }
 
 ContributionBuffer::ContributionBuffer(ContributionPool *p) :
-	sampleCount(0.f), buffers(0), pool(p)
+	sampleCount(0.f), pool(p)
 {
 	buffers.resize(pool->CFull.size());
 	for (u_int i = 0; i < buffers.size(); ++i) {

@@ -205,7 +205,7 @@ bool SunLight::Le(const Scene &scene, const Sample &sample, const Ray &r,
 			*pdf = 0.f;
 			for (u_int i = 0; i < nrPortalShapes; ++i) {
 				Intersection isect;
-				RayDifferential ray(ps, sundir);
+				Ray ray(ps, sundir);
 				ray.mint = -INFINITY;
 				ray.time = sample.realTime;
 				if (PortalShapes[i]->Intersect(ray, &isect)) {
@@ -269,7 +269,7 @@ bool SunLight::Sample_L(const Scene &scene, const Sample &sample,
 			if (i == shapeIndex)
 				continue;
 			Intersection isect;
-			RayDifferential ray(ps, sundir);
+			Ray ray(ps, sundir);
 			ray.mint = -INFINITY;
 			ray.time = sample.realTime;
 			if (PortalShapes[i]->Intersect(ray, &isect)) {
@@ -331,7 +331,7 @@ bool SunLight::Sample_L(const Scene &scene, const Sample &sample,
 			*pdf = 0.f;
 			for (u_int i = 0; i < nrPortalShapes; ++i) {
 				Intersection isect;
-				RayDifferential ray(ps, sundir);
+				Ray ray(ps, sundir);
 				ray.mint = -INFINITY;
 				ray.time = sample.realTime;
 				if (PortalShapes[i]->Intersect(ray, &isect)) {

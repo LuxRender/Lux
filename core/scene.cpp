@@ -147,8 +147,8 @@ Scene::Scene(Camera *cam) :
 	seedBase = rand();
 }
 
-SWCSpectrum Scene::Li(const RayDifferential &ray,
-		const Sample &sample, float *alpha) const {
+SWCSpectrum Scene::Li(const Ray &ray, const Sample &sample, float *alpha) const
+{
 //  NOTE - radiance - leave these off for now, should'nt be used (broken with multithreading)
 //  TODO - radiance - cleanup / reimplement into integrators
 //	SWCSpectrum Lo = surfaceIntegrator->Li(this, ray, sample, alpha);

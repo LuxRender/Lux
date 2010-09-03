@@ -78,16 +78,6 @@ void UVMapping2D::Map(const DifferentialGeometry &dg, float *s, float *t) const
 	*s = su * dg.u + du;
 	*t = sv * dg.v + dv;
 }
-void UVMapping2D::MapDxy(const DifferentialGeometry &dg, float *s, float *t,
-	float *dsdx, float *dtdx, float *dsdy, float *dtdy) const
-{
-	Map(dg, s, t);
-	// Compute texture differentials for 2D identity mapping
-	*dsdx = su * dg.dudx;
-	*dtdx = sv * dg.dvdx;
-	*dsdy = su * dg.dudy;
-	*dtdy = sv * dg.dvdy;
-}
 void UVMapping2D::MapDuv(const DifferentialGeometry &dg, float *s, float *t,
 	float *dsdu, float *dtdu, float *dsdv, float *dtdv) const
 {
@@ -105,23 +95,6 @@ void SphericalMapping2D::Map(const DifferentialGeometry &dg,
 	const Vector p(Normalize(Vector(WorldToTexture(dg.p))));
 	*s = SphericalPhi(p)   * scaledInvTwoPi + du;
 	*t = SphericalTheta(p) * scaledInvPi    + dv;
-}
-void SphericalMapping2D::MapDxy(const DifferentialGeometry &dg,
-	float *s, float *t,
-	float *dsdx, float *dtdx, float *dsdy, float *dtdy) const
-{
-	const Vector p(Normalize(Vector(WorldToTexture(dg.p))));
-	*s = SphericalPhi(p)   * scaledInvTwoPi + du;
-	*t = SphericalTheta(p) * scaledInvPi    + dv;
-	// Compute texture coordinate differentials for sphere $(u,v)$ mapping
-	const Vector dpdx(WorldToTexture(dg.dpdx));
-	const Vector dpdy(WorldToTexture(dg.dpdy));
-	const float scaledInvTwoPiOverXY2 = scaledInvTwoPi / (p.x * p.x + p.y * p.y);
-	*dsdx = (dpdx.y * p.x - p.y * dpdx.x) * scaledInvTwoPiOverXY2;
-	*dsdy = (dpdy.y * p.x - p.y * dpdy.x) * scaledInvTwoPiOverXY2;
-	const float scaledInvPiOverHypo = scaledInvPi / sqrtf(1.f - p.z * p.z);
-	*dtdx = dpdx.z * scaledInvPiOverHypo;
-	*dtdy = dpdy.z * scaledInvPiOverHypo;
 }
 void SphericalMapping2D::MapDuv(const DifferentialGeometry &dg,
 	float *s, float *t,
@@ -150,24 +123,6 @@ void CylindricalMapping2D::Map(const DifferentialGeometry &dg,
 	p.y /= lenXY;
 	*s = SphericalPhi(p) * scaledInvTwoPi + du;
 	*t = 0.5f - 0.5f * p.z;
-}
-void CylindricalMapping2D::MapDxy(const DifferentialGeometry &dg,
-	float *s, float *t,
-	float *dsdx, float *dtdx, float *dsdy, float *dtdy) const
-{
-	Vector p(WorldToTexture(dg.p));
-	const float lenXY = sqrtf(p.x * p.x + p.y * p.y);
-	p.x /= lenXY;
-	p.y /= lenXY;
-	*s = SphericalPhi(p) * scaledInvTwoPi + du;
-	*t = 0.5f - 0.5f * p.z;
-	// Compute texture coordinate differentials for cylinder $(u,v)$ mapping
-	const Vector dpdx(WorldToTexture(dg.dpdx));
-	const Vector dpdy(WorldToTexture(dg.dpdy));
-	*dsdx = (dpdx.y * p.x - p.y * dpdx.x) * scaledInvTwoPi;
-	*dsdy = (dpdy.y * p.x - p.y * dpdy.x) * scaledInvTwoPi;
-	*dtdx = -0.5f * dpdx.z;
-	*dtdy = -0.5f * dpdy.z;
 }
 void CylindricalMapping2D::MapDuv(const DifferentialGeometry &dg,
 	float *s, float *t,
@@ -203,15 +158,6 @@ void PlanarMapping2D::Map(const DifferentialGeometry &dg,
 	*s = ds + Dot(p, vs);
 	*t = dt + Dot(p, vt);
 }
-void PlanarMapping2D::MapDxy(const DifferentialGeometry &dg, float *s, float *t,
-	float *dsdx, float *dtdx, float *dsdy, float *dtdy) const
-{
-	Map(dg, s, t);
-	*dsdx = Dot(dg.dpdx, vs);
-	*dtdx = Dot(dg.dpdx, vt);
-	*dsdy = Dot(dg.dpdy, vs);
-	*dtdy = Dot(dg.dpdy, vt);
-}
 void PlanarMapping2D::MapDuv(const DifferentialGeometry &dg, float *s, float *t,
 	float *dsdu, float *dtdu, float *dsdv, float *dtdv) const
 {
@@ -225,13 +171,6 @@ void PlanarMapping2D::MapDuv(const DifferentialGeometry &dg, float *s, float *t,
 Point IdentityMapping3D::Map(const DifferentialGeometry &dg) const
 {
 	return WorldToTexture(dg.p);
-}
-Point IdentityMapping3D::MapDxy(const DifferentialGeometry &dg,
-	Vector *dpdx, Vector *dpdy) const
-{
-	*dpdx = WorldToTexture(dg.dpdx);
-	*dpdy = WorldToTexture(dg.dpdy);
-	return Map(dg);
 }
 Point IdentityMapping3D::MapDuv(const DifferentialGeometry &dg,
 	Vector *dpdu, Vector *dpdv) const

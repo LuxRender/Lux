@@ -121,10 +121,9 @@ public:
 
 	virtual float Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
-		float s, t, dsdx, dtdx, dsdy, dtdy;
-		mapping->MapDxy(dg, &s, &t, &dsdx, &dtdx, &dsdy, &dtdy);
-		return mipmap->LookupFloat(channel, s, t,
-			dsdx, dtdx, dsdy, dtdy);
+		float s, t;
+		mapping->Map(dg, &s, &t);
+		return mipmap->LookupFloat(channel, s, t);
 	}
 	virtual float Y() const {
 		return mipmap->LookupFloat(channel, .5f, .5f, .5f);
@@ -160,10 +159,9 @@ public:
 
 	virtual SWCSpectrum Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
-		float s, t, dsdx, dtdx, dsdy, dtdy;
-		mapping->MapDxy(dg, &s, &t, &dsdx, &dtdx, &dsdy, &dtdy);
-		return mipmap->LookupSpectrum(sw, s, t,
-			dsdx, dtdx, dsdy, dtdy);
+		float s, t;
+		mapping->Map(dg, &s, &t);
+		return mipmap->LookupSpectrum(sw, s, t);
 	}
 	virtual float Y() const {
 		return mipmap->LookupFloat(CHANNEL_WMEAN, .5f, .5f, .5f);

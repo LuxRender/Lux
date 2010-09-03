@@ -48,7 +48,7 @@ public:
 		return aggregate->Intersect(ray, isect);
 	}
 	bool Intersect(const Sample &sample, const Volume *volume,
-		const RayDifferential &ray, Intersection *isect, BSDF **bsdf,
+		const Ray &ray, Intersection *isect, BSDF **bsdf,
 		SWCSpectrum *f) const {
 		return volumeIntegrator->Intersect(*this, sample, volume, ray,
 			isect, bsdf, f);
@@ -63,7 +63,7 @@ public:
 		return aggregate->IntersectP(ray);
 	}
 	const BBox &WorldBound() const { return bound; }
-	SWCSpectrum Li(const RayDifferential &ray, const Sample &sample,
+	SWCSpectrum Li(const Ray &ray, const Sample &sample,
 		float *alpha = NULL) const;
 	// modulates the supplied SWCSpectrum with the transmittance along the ray
 	void Transmittance(const Ray &ray, const Sample &sample,

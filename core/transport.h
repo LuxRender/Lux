@@ -47,13 +47,13 @@ public:
 class VolumeIntegrator : public Integrator {
 public:
 	virtual ~VolumeIntegrator() { }
-	virtual u_int Li(const Scene &scene, const RayDifferential &ray,
+	virtual u_int Li(const Scene &scene, const Ray &ray,
 		const Sample &sample, SWCSpectrum *L, float *alpha) const = 0;
 	// modulates the supplied SWCSpectrum with the transmittance along the ray
 	virtual void Transmittance(const Scene &scene, const Ray &ray,
 		const Sample &sample, float *alpha, SWCSpectrum *const L) const = 0;
 	virtual bool Intersect(const Scene &scene, const Sample &sample,
-		const Volume *volume, const RayDifferential &ray,
+		const Volume *volume, const Ray &ray,
 		Intersection *isect, BSDF **bsdf, SWCSpectrum *L) const;
 	virtual bool Connect(const Scene &scene, const Sample &sample,
 		const Volume *volume, const Point &p0, const Point &p1,

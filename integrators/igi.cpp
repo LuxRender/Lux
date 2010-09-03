@@ -132,7 +132,7 @@ void IGIIntegrator::Preprocess(const RandomGenerator &rng, const Scene &scene)
 				lightSamp0[2 * sampOffset + 1],
 				lightSamp0b[sampOffset], &bsdf, &pdf, &alpha))
 				continue;
-			RayDifferential ray;
+			Ray ray;
 			ray.o = bsdf->dgShading.p;
 			SWCSpectrum f;
 			float pdf2;
@@ -171,7 +171,7 @@ void IGIIntegrator::Preprocess(const RandomGenerator &rng, const Scene &scene)
 				if (rng.floatValue() > r)
 					break;
 				alpha *= anew / r;
-				ray = RayDifferential(isect.dg.p, wi);
+				ray = Ray(isect.dg.p, wi);
 				volume = bsdf->GetVolume(wi);
 			}
 		}
@@ -184,10 +184,8 @@ void IGIIntegrator::Preprocess(const RandomGenerator &rng, const Scene &scene)
 }
 u_int IGIIntegrator::Li(const Scene &scene, const Sample &sample) const
 {
-	RayDifferential r;
-	float rayWeight = sample.camera->GenerateRay(scene, sample, &r);
-
-	RayDifferential ray(r);
+	Ray ray;
+	float rayWeight = sample.camera->GenerateRay(scene, sample, &ray);
 	const SpectrumWavelengths &sw(sample.swl);
 	SWCSpectrum L(0.f), pathThroughput(1.f);
 	float alpha = 1.f;
@@ -195,7 +193,7 @@ u_int IGIIntegrator::Li(const Scene &scene, const Sample &sample) const
 	for (u_int depth = 0; ; ++depth) {
 		Intersection isect;
 		BSDF *bsdf;
-		if (!scene.Intersect(sample, volume, r, &isect, &bsdf,
+		if (!scene.Intersect(sample, volume, ray, &isect, &bsdf,
 			&pathThroughput)) {
 			// Handle ray with no intersection
 			if (depth == 0)
@@ -203,20 +201,20 @@ u_int IGIIntegrator::Li(const Scene &scene, const Sample &sample) const
 			BSDF *ibsdf;
 			for (u_int i = 0; i < scene.lights.size(); ++i) {
 				SWCSpectrum Le(pathThroughput);
-				if (scene.lights[i]->Le(scene, sample, r,
+				if (scene.lights[i]->Le(scene, sample, ray,
 					&ibsdf, NULL, NULL, &Le))
 					L += Le;
 			}
 			break;
 		}
-		Vector wo = -r.d;
+		Vector wo = -ray.d;
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;
 		// Compute emitted light if ray hit an area light source
 		if (isect.arealight) {
 			BSDF *ibsdf;
-			L += pathThroughput * isect.Le(sample, r, &ibsdf, NULL,
-				NULL);
+			L += pathThroughput * isect.Le(sample, ray, &ibsdf,
+				NULL, NULL);
 		}
 		for (u_int i = 0; i < scene.lights.size(); ++i) {
 			SWCSpectrum Ld(0.f);
@@ -265,8 +263,8 @@ u_int IGIIntegrator::Li(const Scene &scene, const Sample &sample) const
 			BxDFType(BSDF_SPECULAR | BSDF_REFLECTION | BSDF_TRANSMISSION)))
 			break;
 		// Compute ray differential _rd_ for specular reflection
-		r = RayDifferential(p, wi);
-		r.time = ray.time;
+		ray = Ray(p, wi);
+		ray.time = sample.realTime;
 		pathThroughput *= f * (AbsDot(wi, n) / pdf);
 		volume = bsdf->GetVolume(wi);
 	}

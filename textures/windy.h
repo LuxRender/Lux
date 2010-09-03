@@ -40,10 +40,9 @@ public:
 	virtual ~WindyTexture() { delete mapping; }
 	virtual float Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
-		Vector dpdx, dpdy;
-		Point P = mapping->MapDxy(dg, &dpdx, &dpdy);
-		float windStrength = FBm(.1f * P, .1f * dpdx, .1f * dpdy, .5f, 3);
-		float waveHeight = FBm(P, dpdx, dpdy, .5f, 6);
+		Point P(mapping->Map(dg));
+		float windStrength = FBm(.1f * P, 0.f, 0.f, .5f, 3);
+		float waveHeight = FBm(P, 0.f, 0.f, .5f, 6);
 		return fabsf(windStrength) * waveHeight;
 	}
 	virtual float Y() const { return .5f; }

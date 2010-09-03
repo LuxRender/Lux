@@ -44,9 +44,8 @@ public:
 	virtual ~WrinkledTexture() { delete mapping; }
 	virtual float Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
-		Vector dpdx, dpdy;
-		Point P = mapping->MapDxy(dg, &dpdx, &dpdy);
-		return Turbulence(P, dpdx, dpdy, omega, octaves);
+		Point P(mapping->Map(dg));
+		return Turbulence(P, 0.f, 0.f, omega, octaves);
 	}
 	virtual float Y() const { return .5f; }
 	virtual void GetDuv(const SpectrumWavelengths &sw,

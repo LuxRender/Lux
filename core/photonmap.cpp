@@ -564,7 +564,7 @@ void PhotonMapPreprocess(const RandomGenerator &rng, const Scene &scene,
 		if (!light->Sample_L(scene, sample, u[0], u[1], u[2],
 			&bsdf, &pdf, &alpha))
 			continue;
-		RayDifferential photonRay;
+		Ray photonRay;
 		photonRay.o = bsdf->dgShading.p;
 		float pdf2;
 		SWCSpectrum alpha2;
@@ -681,7 +681,7 @@ void PhotonMapPreprocess(const RandomGenerator &rng, const Scene &scene,
 				alpha *= anew / continueProb;
 				specularPath = (nIntersections == 1 || specularPath) &&
 					((flags & BSDF_SPECULAR) != 0 || pdfo > 100.f);
-				photonRay = RayDifferential(photonIsect.dg.p, wi);
+				photonRay = Ray(photonIsect.dg.p, wi);
 				volume = photonBSDF->GetVolume(photonRay.d);
 			}
 		}
@@ -900,7 +900,7 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const Scene &scene,
 			}
 
 			// Trace BSDF final gather ray and accumulate radiance
-			RayDifferential bounceRay(p, wi);
+			Ray bounceRay(p, wi);
 			Intersection gatherIsect;
 			if (scene.Intersect(sample, bsdf->GetVolume(wi),
 				bounceRay, &gatherIsect, NULL, &fr)) {
@@ -982,7 +982,7 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const Scene &scene,
 				fr /= rrContinueProbability;
 			}
 
-			RayDifferential bounceRay(p, wi);
+			Ray bounceRay(p, wi);
 			Intersection gatherIsect;
 			if (scene.Intersect(sample, bsdf->GetVolume(wi),
 				bounceRay, &gatherIsect, NULL, &fr)) {
@@ -1062,7 +1062,7 @@ SWCSpectrum PhotonMapFinalGather(const Scene &scene, const Sample &sample,
 			}
 
 			// Trace BSDF final gather ray and accumulate radiance
-			RayDifferential bounceRay(p, wi);
+			Ray bounceRay(p, wi);
 			Intersection gatherIsect;
 			if (scene.Intersect(sample, bsdf->GetVolume(wi),
 				bounceRay, &gatherIsect, NULL, &fr)) {

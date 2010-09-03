@@ -37,7 +37,7 @@ public:
 		float yon, float sopen, float sclose, int sdist, Film *film);
 	virtual ~Camera();
 	float GenerateRay(const Scene &scene, const Sample &sample,
-		RayDifferential *ray) const;
+		Ray *ray) const;
 	virtual bool Sample_W(MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Scene &scene, float u1, float u2, float u3, BSDF **bsdf,
 		float *pdf, SWCSpectrum *We) const = 0;

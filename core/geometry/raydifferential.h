@@ -27,29 +27,9 @@
 #include "vector.h"
 #include "point.h"
 #include "normal.h"
-#include "ray.h"
 
 namespace lux
 {
-
-class  RayDifferential : public Ray {
-public:
-	// RayDifferential Methods
-	RayDifferential() { hasDifferentials = false; }
-
-	RayDifferential(const Point &org, const Vector &dir)
-		: Ray(org, dir) {
-		hasDifferentials = false;
-	}
-
-	explicit RayDifferential(const Ray &ray) : Ray(ray) {
-		hasDifferentials = false;
-	}
-	// RayDifferential Public Data
-	
-	Ray rx, ry;
-	bool hasDifferentials;
-};
 
 // DifferentialGeometry Declarations
 class DifferentialGeometry {
@@ -76,16 +56,13 @@ public:
 			nn.z = -nn.z;
 		}
 	}
-	void ComputeDifferentials(const RayDifferential &r) const;
 	// DifferentialGeometry Public Data
 	Point p;
 	Normal nn;
 	Vector dpdu, dpdv;
 	Normal dndu, dndv;
-	mutable Vector dpdx, dpdy;
 	float u, v;
 	const void* handle;
-	mutable float dudx, dvdx, dudy, dvdy;
 	float time;
 
 	// Dade - shape specific data, useful to "transport" informatin between

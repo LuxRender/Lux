@@ -57,10 +57,10 @@ public:
 private:
 	SWCSpectrum LiDirectLightingMode(const Scene &scene,
 		const Sample &sample, const Volume *volume,
-		const RayDifferential &ray, float *alpha,
+		const Ray &ray, float *alpha,
 		const u_int reflectionDepth, const bool specularBounce) const;
 	SWCSpectrum LiPathMode(const Scene &scene, const Sample &sample,
-		const RayDifferential &ray, float *alpha) const;
+		const Ray &ray, float *alpha) const;
 
 	// ExPhotonIntegrator Private Data
 	SurfaceIntegratorRenderingHints hints;
