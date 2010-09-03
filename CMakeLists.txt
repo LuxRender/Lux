@@ -402,6 +402,7 @@ SET(lux_core_reflection_src
 	core/reflection/bxdf.cpp
 	core/reflection/fresnel.cpp
 	core/reflection/microfacetdistribution.cpp
+	core/reflection/bxdf/asperity.cpp
 	core/reflection/bxdf/brdftobtdf.cpp
 	core/reflection/bxdf/cooktorrance.cpp
 	core/reflection/bxdf/fresnelblend.cpp
