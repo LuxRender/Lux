@@ -45,8 +45,8 @@ void Asperity::f(const SpectrumWavelengths &sw, const Vector &wo,
 	p = (p * delta) / (CosTheta(wo) * CosTheta(wi));
 
 	// Clamp the BRDF (page 7)
-	if (p > 2.0f)
-		p = 2.0f;
+	if (p > 1.0f)
+		p = 1.0f;
 	else if (p < 0.0f)
 		p = 0.0f;
 	
