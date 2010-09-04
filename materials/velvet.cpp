@@ -61,8 +61,8 @@ BSDF *Velvet::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 Material* Velvet::CreateMaterial(const Transform &xform,
 		const ParamSet &mp) {
 	boost::shared_ptr<Texture<SWCSpectrum> > Kd(mp.GetSWCSpectrumTexture("Kd", RGBColor(.3f)));
-	boost::shared_ptr<Texture<float> > P1(mp.GetFloatTexture("p1", 2.f));
-	boost::shared_ptr<Texture<float> > P2(mp.GetFloatTexture("p2", 10.f));
+	boost::shared_ptr<Texture<float> > P1(mp.GetFloatTexture("p1", -2.f));
+	boost::shared_ptr<Texture<float> > P2(mp.GetFloatTexture("p2", 20.f));
 	boost::shared_ptr<Texture<float> > P3(mp.GetFloatTexture("p2", 2.f));
 	boost::shared_ptr<Texture<float> > Thickness(mp.GetFloatTexture("thickness", 0.1f));
 	boost::shared_ptr<Texture<float> > bumpMap(mp.GetFloatTexture("bumpmap"));
