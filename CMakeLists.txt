@@ -535,6 +535,7 @@ SET(lux_materials_src
 	materials/null.cpp
 	materials/roughglass.cpp
 	materials/shinymetal.cpp
+	materials/velvet.cpp
 	)
 SET(lux_pixelsamplers_src
 	pixelsamplers/hilbertpx.cpp
