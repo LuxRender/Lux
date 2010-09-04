@@ -34,6 +34,7 @@
 
 #include "luxrays/luxrays.h"
 #include "luxrays/core/device.h"
+#include "luxrays/core/intersectiondevice.h"
 
 namespace lux
 {
@@ -155,14 +156,15 @@ private:
 
 	class RenderThread : public boost::noncopyable {
 	public:
-		RenderThread(u_int index, HybridRenderer *renderer);
+		RenderThread(u_int index, HybridRenderer *renderer, luxrays::IntersectionDevice * idev);
 		~RenderThread();
 
 		static void RenderImpl(RenderThread *r);
 
 		u_int  n;
-		HybridRenderer *renderer;
 		boost::thread *thread; // keep pointer to delete the thread object
+		HybridRenderer *renderer;
+		luxrays::IntersectionDevice * iDevice;
 		double samples, blackSamples;
 		fast_mutex statLock;
 	};
@@ -183,6 +185,8 @@ private:
 	luxrays::Context *ctx;
 
 	RendererState state;
+	// LuxRays virtual device used to feed all HardwareIntersectionDevice
+	luxrays::VirtualM2OHardwareIntersectionDevice *virtualIDevice;
 	vector<RendererHostDescription *> hosts;
 	vector<RenderThread *> renderThreads;
 	Scene *scene;

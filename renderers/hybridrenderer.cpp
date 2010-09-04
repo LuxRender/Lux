@@ -30,6 +30,7 @@
 #include "context.h"
 
 #include "luxrays/core/context.h"
+#include "luxrays/core/virtualdevice.h"
 
 using namespace lux;
 
@@ -122,6 +123,13 @@ HybridRenderer::HybridRenderer() {
 	// Add all the OpenCL devices
 	for (size_t i = 0; i < deviceDescs.size(); ++i)
 		host->AddDevice(new HRHardwareDeviceDescription(host, deviceDescs[i]));
+
+	// Create the virtual device to feed all hardware device
+	std::vector<luxrays::DeviceDescription *> hwDeviceDescs = deviceDescs;
+	luxrays::DeviceDescription::Filter(luxrays::DEVICE_TYPE_OPENCL, hwDeviceDescs);
+	ctx->AddVirtualM2OIntersectionDevices(0, hwDeviceDescs);
+
+	virtualIDevice = ctx->GetVirtualM2OIntersectionDevices()[0];
 
 	preprocessDone = false;
 	suspendThreadsWhenDone = false;
@@ -377,7 +385,10 @@ void HybridRenderer::CreateRenderThread() {
 	// Avoid to create the thread in case signal is EXIT. For instance, it
 	// can happen when the rendering is done.
 	if ((state != TERMINATE) || (state != INIT)) {
-		RenderThread *rt = new  RenderThread(renderThreads.size(), this);
+		// Add an instance to the LuxRays virtual device
+		luxrays::IntersectionDevice * idev = virtualIDevice->AddVirtualDevice();
+
+		RenderThread *rt = new  RenderThread(renderThreads.size(), this, idev);
 
 		renderThreads.push_back(rt);
 		rt->thread = new boost::thread(boost::bind(RenderThread::RenderImpl, rt));
@@ -398,8 +409,8 @@ void HybridRenderer::RemoveRenderThread() {
 // RenderThread methods
 //------------------------------------------------------------------------------
 
-HybridRenderer::RenderThread::RenderThread(u_int index, HybridRenderer *r) :
-	n(index), renderer(r), thread(NULL), samples(0.), blackSamples(0.) {
+HybridRenderer::RenderThread::RenderThread(u_int index, HybridRenderer *r, luxrays::IntersectionDevice * idev) :
+	n(index), thread(NULL), renderer(r), iDevice(idev), samples(0.), blackSamples(0.) {
 }
 
 HybridRenderer::RenderThread::~RenderThread() {
