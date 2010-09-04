@@ -35,8 +35,9 @@ public:
 		boost::shared_ptr<Texture<SWCSpectrum> > &kt,
 		boost::shared_ptr<Texture<float> > &sig,
 		boost::shared_ptr<Texture<float> > &bump,
+		bool conserving,
 		const CompositingParams &cp) : Kr(kr), Kt(kt), sigma(sig),
-		bumpMap(bump) {
+		bumpMap(bump), energyConserving(conserving) {
 		compParams = new CompositingParams(cp);
 	}
 	virtual ~MatteTranslucent() { }
@@ -56,6 +57,7 @@ private:
 	// MatteTranslucent Private Data
 	boost::shared_ptr<Texture<SWCSpectrum> > Kr, Kt;
 	boost::shared_ptr<Texture<float> > sigma, bumpMap;
+	bool energyConserving;
 };
 
 }//namespace lux
