@@ -46,8 +46,9 @@ BSDF *MatteTranslucent::GetBSDF(MemoryArena &arena,
 		exterior, interior);
 	// NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
 	SWCSpectrum R = Kr->Evaluate(sw, dgs).Clamp(0.f, 1.f);
-	SWCSpectrum T = Kt->Evaluate(sw, dgs).Clamp(0.f, 1.f) *
-		(SWCSpectrum(1.f) - R);
+	SWCSpectrum T = Kt->Evaluate(sw, dgs).Clamp(0.f, 1.f);
+	if (energyConserving)
+		T *= SWCSpectrum(1.f) - R;
 	float sig = Clamp(sigma->Evaluate(sw, dgs), 0.f, 90.f);
 
 	if (!R.Black()) {
@@ -76,12 +77,13 @@ Material* MatteTranslucent::CreateMaterial(const Transform &xform,
 	boost::shared_ptr<Texture<SWCSpectrum> > Kt(mp.GetSWCSpectrumTexture("Kt", RGBColor(1.f)));
 	boost::shared_ptr<Texture<float> > sigma(mp.GetFloatTexture("sigma", 0.f));
 	boost::shared_ptr<Texture<float> > bumpMap(mp.GetFloatTexture("bumpmap"));
+	bool conserving = mp.FindBool("energyconserving", false);
 
 	// Get Compositing Params
 	CompositingParams cP;
 	FindCompositingParams(mp, &cP);
 
-	return new MatteTranslucent(Kr, Kt, sigma, bumpMap, cP);
+	return new MatteTranslucent(Kr, Kt, sigma, bumpMap, conserving, cP);
 }
 
 static DynamicLoader::RegisterMaterial<MatteTranslucent> r("mattetranslucent");
