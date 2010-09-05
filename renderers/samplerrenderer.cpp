@@ -139,6 +139,9 @@ void SamplerRenderer::Render(Scene *s) {
 
 		state = RUN;
 
+		// I can clear the list of the original primitives. They are not used here.
+		scene->primitives.clear();
+
 		// Initialize the stats
 		lastSamples = 0.;
 		lastTime = 0.;

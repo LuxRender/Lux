@@ -116,9 +116,9 @@ Scene::~Scene() {
 }
 
 Scene::Scene(Camera *cam, SurfaceIntegrator *si, VolumeIntegrator *vi,
-	Sampler *s, boost::shared_ptr<Primitive> &accel,
+	Sampler *s, vector<boost::shared_ptr<Primitive> > prims, boost::shared_ptr<Primitive> &accel,
 	const vector<Light *> &lts, const vector<string> &lg, Region *vr) :
-	aggregate(accel), lights(lts),
+	aggregate(accel), primitives(prims), lights(lts),
 	lightGroups(lg), camera(cam), volumeRegion(vr), surfaceIntegrator(si),
 	volumeIntegrator(vi), sampler(s),
 	filmOnly(false)

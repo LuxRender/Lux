@@ -27,6 +27,8 @@
 #include "motionsystem.h"
 #include "geometry/raydifferential.h"
 
+#include "luxrays/luxrays.h"
+
 namespace lux
 {
 
@@ -141,6 +143,15 @@ public:
 	 */
 	virtual float Pdf(const Point &p, const Point &po) const {
 		return 1.f / Area();
+	}
+	/**
+	 * Add a tasselated approximation of current primitive to list passed as
+	 * argument. It can do nothing in case tasselation is not supported.
+	 * @param meshList      The vector where the mesh.
+	 * @param primitiveLsit The vector of primitive pointers where to add each a pointer to each primitive tasselated in the corrisponding mesh.
+	 */
+	virtual void Tasselate(vector<luxrays::TriangleMesh *> *meshList,
+		vector<const Primitive *> *primitiveList) const {
 	}
 };
 
@@ -322,7 +333,7 @@ public:
 	 * Gives all primitives in this aggregate.
 	 * @param prims The destination list for the primitives.
 	 */
-	virtual void GetPrimitives(vector<boost::shared_ptr<Primitive> > &prims) = 0;
+	virtual void GetPrimitives(vector<boost::shared_ptr<Primitive> > &prims) const = 0;
 };
 
 

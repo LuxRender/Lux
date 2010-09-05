@@ -89,7 +89,7 @@ public:
 				return true;
 		return false;
 	}
-        virtual void GetPrimitives(vector<boost::shared_ptr<Primitive> > &prims)
+	virtual void GetPrimitives(vector<boost::shared_ptr<Primitive> > &prims) const
 	{
 		prims.reserve(prims.size() + 4);
 		for (u_int i = 0; i < 4; ++i)
@@ -748,7 +748,7 @@ BBox QBVHAccel::WorldBound() const
 	return worldBound;
 }
 
-void QBVHAccel::GetPrimitives(vector<boost::shared_ptr<Primitive> > &primitives)
+void QBVHAccel::GetPrimitives(vector<boost::shared_ptr<Primitive> > &primitives) const
 {
 	primitives.reserve(primitives.size() + nPrims);
 	for(u_int i = 0; i < nPrims; ++i)

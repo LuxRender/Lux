@@ -25,6 +25,8 @@
 #include "context.h"
 #include "loopsubdiv.h"
 
+#include "luxrays/core/trianglemesh.h"
+
 using namespace lux;
 
 Mesh::Mesh(const Transform &o2w, bool ro, MeshAccelType acceltype,
@@ -434,6 +436,16 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 		else
 			refined.push_back(accel);
 	}
+}
+
+void Mesh::Tasselate(vector<luxrays::TriangleMesh *> *meshList, vector<const Primitive *> *primitiveList) const {
+	// A little hack with pointers
+	luxrays::TriangleMesh *tm = new luxrays::TriangleMesh(
+			nverts, ntris,
+			(luxrays::Point *)p, (luxrays::Triangle *)triVertexIndex);
+
+	meshList->push_back(tm);
+	primitiveList->push_back(this);
 }
 
 static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const ParamSet &params,

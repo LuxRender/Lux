@@ -23,6 +23,8 @@
 #include "shape.h"
 #include "paramset.h"
 
+#include "luxrays/luxrays.h"
+
 namespace lux
 {
 
@@ -51,6 +53,8 @@ public:
 		const PrimitiveRefinementHints &refineHints,
 		const boost::shared_ptr<Primitive> &thisPtr);
 	virtual bool CanSample() const { return false; }
+
+	void Tasselate(vector<luxrays::TriangleMesh *> *meshList, vector<const Primitive *> *primitiveList) const;
 
 	friend class MeshWaldTriangle;
 	friend class MeshBaryTriangle;

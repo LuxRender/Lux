@@ -302,7 +302,7 @@ bool BVHAccel::IntersectP(const Ray &ray) const {
 	return false;
 }
 
-void BVHAccel::GetPrimitives(vector<boost::shared_ptr<Primitive> > &primitives) {
+void BVHAccel::GetPrimitives(vector<boost::shared_ptr<Primitive> > &primitives) const {
 	primitives.reserve(nPrims);
 	for(u_int i=0; i<nPrims; i++) {
 		primitives.push_back(prims[i]);

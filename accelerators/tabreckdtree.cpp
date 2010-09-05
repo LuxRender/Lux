@@ -479,7 +479,7 @@ bool TaBRecKdTreeAccel::IntersectP(const Ray &ray) const {
     return false;
 }
 
-void TaBRecKdTreeAccel::GetPrimitives(vector<boost::shared_ptr<Primitive> > &primitives) {
+void TaBRecKdTreeAccel::GetPrimitives(vector<boost::shared_ptr<Primitive> > &primitives) const {
 	primitives.reserve(nPrims);
 	for(u_int i=0; i<nPrims; i++) {
 		primitives.push_back(prims[i]);

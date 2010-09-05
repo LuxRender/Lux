@@ -235,4 +235,3 @@ BBox MotionPrimitive::WorldBound() const
 {
 	return motionSystem.Bound(instance->WorldBound());
 }
-

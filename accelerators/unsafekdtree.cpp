@@ -388,7 +388,7 @@ bool UnsafeKdTreeAccel::IntersectP(const Ray &ray) const {
     return false;
 }
 
-void UnsafeKdTreeAccel::GetPrimitives(vector<boost::shared_ptr<Primitive> > &primitives) {
+void UnsafeKdTreeAccel::GetPrimitives(vector<boost::shared_ptr<Primitive> > &primitives) const {
 	primitives.reserve(nMailboxes);
 	for(u_int i=0; i < nMailboxes; i++) {
 		primitives.push_back(mailboxPrims[i].primitive);

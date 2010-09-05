@@ -174,6 +174,8 @@ void HybridRenderer::SuspendWhenDone(bool v) {
 }
 
 void HybridRenderer::Render(Scene *s) {
+	luxrays::DataSet *dataSet;
+
 	{
 		// Section under mutex
 		boost::mutex::scoped_lock lock(classWideMutex);
@@ -203,7 +205,7 @@ void HybridRenderer::Render(Scene *s) {
 		// Dade - I have to do initiliaziation here for the current thread.
 		// It can be used by the Preprocess() methods.
 
-		// initialize the thread's rangen
+		// initialize the thread's RandomGenerator
 		u_long seed = scene->seedBase - 1;
 		std::stringstream ss;
 		ss << "Preprocess thread uses seed: " << seed;
@@ -221,6 +223,33 @@ void HybridRenderer::Render(Scene *s) {
 		scene->camera->AutoFocus(*scene);
 
 		sampPos = 0;
+
+		//----------------------------------------------------------------------
+		// Compile the scene geometries in a LuxRays compatible format
+		//----------------------------------------------------------------------
+
+		vector<luxrays::TriangleMesh *> meshList;
+		vector<const Primitive *> primitiveList;
+
+		ss.str("");
+		ss << "Tasselating " << scene->primitives.size() << " primitives";
+		luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+
+		for (size_t i = 0; i < scene->primitives.size(); ++i)
+			scene->primitives[i]->Tasselate(&meshList, &primitiveList);
+
+		// Create the DataSet
+        dataSet = new luxrays::DataSet(ctx);
+
+		// Add all mesh
+        for (std::vector<luxrays::TriangleMesh *>::const_iterator obj = meshList.begin(); obj != meshList.end(); ++obj)
+			dataSet->Add(*obj);
+
+        dataSet->Preprocess();
+
+		// I can free temporary data
+		for (std::vector<luxrays::TriangleMesh *>::const_iterator obj = meshList.begin(); obj != meshList.end(); ++obj)
+			delete *obj;
 
 		// start the timer
 		s_Timer.Start();
@@ -258,6 +287,8 @@ void HybridRenderer::Render(Scene *s) {
 		scene->camera->film->contribPool->Flush();
 		scene->camera->film->contribPool->Delete();
 	}
+
+	delete dataSet;
 }
 
 void HybridRenderer::Pause() {

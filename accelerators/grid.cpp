@@ -345,7 +345,7 @@ bool Voxel::IntersectP(const Ray &ray, int rayId) {
 	}
 	return false;
 }
-void GridAccel::GetPrimitives(vector<boost::shared_ptr<Primitive> > &primitives) {
+void GridAccel::GetPrimitives(vector<boost::shared_ptr<Primitive> > &primitives) const {
 	primitives.reserve(nMailboxes);
 	for(u_int i=0; i < nMailboxes; i++) {
 		primitives.push_back(mailboxes[i].primitive);

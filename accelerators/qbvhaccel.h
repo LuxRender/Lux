@@ -266,7 +266,7 @@ public:
 	   Fills an array with the primitives
 	   @param prims vector to be filled
 	*/
-	virtual void GetPrimitives(vector<boost::shared_ptr<Primitive> > &prims);
+	virtual void GetPrimitives(vector<boost::shared_ptr<Primitive> > &prims) const;
 
 	/**
 	   Read configuration parameters and create a new QBVH accelerator
