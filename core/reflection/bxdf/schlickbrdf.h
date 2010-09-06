@@ -61,8 +61,8 @@ public:
 		const float G = SchlickG(cos1) * SchlickG(cos2);
 		// Alternative with interreflection in the coating creases
 		if (multibounce)
-			return INV_PI * (1.f - G * (1.f - SchlickZ(fabsf(H.z)) *
-				SchlickA(H) / (4.f * cos1 * cos2)));
+			return (1.f - G * (1.f - SchlickZ(fabsf(H.z)) *
+				SchlickA(H))) / (4.f * M_PI * cos1 * cos2);
 		else
 			return G * SchlickZ(fabsf(H.z)) * SchlickA(H) /
 				(4.f * M_PI * cos1 * cos2);

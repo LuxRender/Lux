@@ -103,13 +103,13 @@ bool SchlickBRDF::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 		cosWH = AbsDot(wo, H);
 		*wi = 2.f * cosWH * H - wo;
 	}
-	const float specPdf = SchlickZ(fabsf(H.z)) * SchlickA(H) /
-		(8.f * M_PI * fabsf(cosWH));
-	*pdf = fabsf(wi->z) * INV_TWOPI + specPdf;
+	const float specPdf = SchlickZ(H.z) * SchlickA(H) /
+		(8.f * M_PI);
+	*pdf = fabsf(wi->z) * INV_TWOPI + specPdf / fabsf(wo.z);
 	if (!(*pdf > 0.f))
 		return false;
 	if (pdfBack)
-		*pdfBack = fabsf(wo.z) * INV_TWOPI + specPdf;
+		*pdfBack = fabsf(wo.z) * INV_TWOPI + specPdf / fabsf(wi->z);
 
 	*f_ = SWCSpectrum(0.f);
 	// No need to check for the reverse flag as the BRDF is identical in
@@ -124,6 +124,6 @@ float SchlickBRDF::Pdf(const TsPack *tspack, const Vector &wo,
 		return 0.f;
 	const Vector H(Normalize(wo + wi));
 	return fabsf(wi.z) * INV_TWOPI + SchlickZ(fabsf(H.z)) * SchlickA(H) /
-		(8.f * M_PI * AbsDot(wi, H));
+		(8.f * M_PI * fabsf(wo.z));
 }
 
