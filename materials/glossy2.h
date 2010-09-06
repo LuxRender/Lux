@@ -38,9 +38,10 @@ public:
 		boost::shared_ptr<Texture<float> > &d,
 		boost::shared_ptr<Texture<float> > &u,
 		boost::shared_ptr<Texture<float> > &v,
+		bool mb,
 		boost::shared_ptr<Texture<float> > &bump,
 		const CompositingParams &cp) : Kd(kd), Ks(ks), Ka(ka), depth(d),
-		index(i), nu(u), nv(v), bumpMap(bump) {
+		index(i), nu(u), nv(v), bumpMap(bump), multibounce(mb) {
 		compParams = new CompositingParams(cp);
 	}
 	virtual ~Glossy2() { }
@@ -62,6 +63,7 @@ private:
 	boost::shared_ptr<Texture<float> > depth, index;
 	boost::shared_ptr<Texture<float> > nu, nv;
 	boost::shared_ptr<Texture<float> > bumpMap;
+	bool multibounce;
 };
 
 }//namespace lux

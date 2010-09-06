@@ -29,9 +29,10 @@
 using namespace lux;
 
 SchlickBRDF::SchlickBRDF(const SWCSpectrum &d, const SWCSpectrum &s,
-	const SWCSpectrum &a, float dep, float r, float p)
+	const SWCSpectrum &a, float dep, float r, float p, bool mb)
 	: BxDF(BxDFType(BSDF_REFLECTION | BSDF_GLOSSY)),
-	  Rd(d), Rs(s), Alpha(a), depth(dep), roughness(r), anisotropy(p)
+	Rd(d), Rs(s), Alpha(a), depth(dep), roughness(r), anisotropy(p),
+	multibounce(mb)
 {
 }
 void SchlickBRDF::f(const SpectrumWavelengths &sw, const Vector &wo, 

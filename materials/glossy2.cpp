@@ -63,7 +63,7 @@ BSDF *Glossy2::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 	const float anisotropy = u2 < v2 ? 1.f - u2 / v2 : v2 / u2 - 1.f;
 	SingleBSDF *bsdf = ARENA_ALLOC(arena, SingleBSDF)(dgs,
 		dgGeom.nn, ARENA_ALLOC(arena, SchlickBRDF)(d, s, a, ld, u * v,
-		anisotropy), exterior, interior);
+		anisotropy, multibounce), exterior, interior);
 
 	// Add ptr to CompositingParams structure
 	bsdf->SetCompositingParams(compParams);
@@ -80,12 +80,13 @@ Material* Glossy2::CreateMaterial(const Transform &xform,
 	boost::shared_ptr<Texture<float> > uroughness(mp.GetFloatTexture("uroughness", .1f));
 	boost::shared_ptr<Texture<float> > vroughness(mp.GetFloatTexture("vroughness", .1f));
 	boost::shared_ptr<Texture<float> > bumpMap(mp.GetFloatTexture("bumpmap"));
+	bool mb = mp.FindOneBool("multibounce", false);
 
 	// Get Compositing Params
 	CompositingParams cP;
 	FindCompositingParams(mp, &cP);
 
-	return new Glossy2(Kd, Ks, Ka, i, d, uroughness, vroughness, bumpMap, cP);
+	return new Glossy2(Kd, Ks, Ka, i, d, uroughness, vroughness, mb, bumpMap, cP);
 }
 
 static DynamicLoader::RegisterMaterial<Glossy2> r("glossy");
