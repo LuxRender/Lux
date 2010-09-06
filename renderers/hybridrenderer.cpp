@@ -229,7 +229,7 @@ void HybridRenderer::Render(Scene *s) {
 		//----------------------------------------------------------------------
 
 		vector<luxrays::TriangleMesh *> meshList;
-		vector<const Primitive *> primitiveList;
+		primitiveList.clear();
 
 		ss.str("");
 		ss << "Tasselating " << scene->primitives.size() << " primitives";
@@ -289,6 +289,7 @@ void HybridRenderer::Render(Scene *s) {
 	}
 
 	delete dataSet;
+	primitiveList.clear();
 }
 
 void HybridRenderer::Pause() {
@@ -453,7 +454,7 @@ void HybridRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 	if (scene.IsFilmOnly())
 		return;
 
-	// To avoid interrupt excpetion
+	// To avoid interrupt exception
 	boost::this_thread::disable_interruption di;
 
 	Sampler *sampler = scene.sampler;

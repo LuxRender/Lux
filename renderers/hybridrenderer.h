@@ -190,6 +190,7 @@ private:
 	vector<RendererHostDescription *> hosts;
 	vector<RenderThread *> renderThreads;
 	Scene *scene;
+	vector<const Primitive *> primitiveList;
 
 	fast_mutex sampPosMutex;
 	u_int sampPos;

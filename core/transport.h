@@ -26,6 +26,8 @@
 #include "lux.h"
 #include "spectrum.h"
 
+#include "luxrays/luxrays.h"
+
 namespace lux
 {
 
@@ -38,10 +40,26 @@ public:
 	virtual void RequestSamples(Sample *sample, const Scene &scene) { }
 };
 
+class SurfaceIntegratorState {
+public:
+	virtual ~SurfaceIntegratorState() { }
+
+	virtual bool Init(const Scene &scene, u_int *usePos) = 0;
+};
+
 class SurfaceIntegrator : public Integrator {
 public:
 	virtual ~SurfaceIntegrator() { }
 	virtual u_int Li(const Scene &scene, const Sample &sample) const = 0;
+
+	// DataParallel interface, optionally supported, used by HybridRenderer
+	virtual bool IsDataParallelSupported() const { return false; }
+	virtual bool GenerateRays(SurfaceIntegratorState *state, luxrays::RayBuffer *rayBuffer) {
+		throw std::runtime_error("Internal error: called SurfaceIntegrator::GenerateRays()");
+	}
+	virtual void NextState(SurfaceIntegratorState *state, luxrays::RayBuffer *rayBuffer) {
+		throw std::runtime_error("Internal error: called SurfaceIntegrator::NextState()");
+	}
 };
 
 class VolumeIntegrator : public Integrator {
