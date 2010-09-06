@@ -145,12 +145,12 @@ public:
 		return 1.f / Area();
 	}
 	/**
-	 * Add a tasselated approximation of current primitive to list passed as
+	 * Add a tesselated approximation of current primitive to list passed as
 	 * argument. It can do nothing in case tasselation is not supported.
 	 * @param meshList      The vector where the mesh.
-	 * @param primitiveLsit The vector of primitive pointers where to add each a pointer to each primitive tasselated in the corrisponding mesh.
+	 * @param primitiveLsit The vector of primitive pointers where to add each a pointer to each primitive tesselated in the corrisponding mesh.
 	 */
-	virtual void Tasselate(vector<luxrays::TriangleMesh *> *meshList,
+	virtual void Tesselate(vector<luxrays::TriangleMesh *> *meshList,
 		vector<const Primitive *> *primitiveList) const {
 	}
 };

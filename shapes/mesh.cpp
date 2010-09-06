@@ -438,7 +438,7 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 	}
 }
 
-void Mesh::Tasselate(vector<luxrays::TriangleMesh *> *meshList, vector<const Primitive *> *primitiveList) const {
+void Mesh::Tesselate(vector<luxrays::TriangleMesh *> *meshList, vector<const Primitive *> *primitiveList) const {
 	// A little hack with pointers
 	luxrays::TriangleMesh *tm = new luxrays::TriangleMesh(
 			nverts, ntris,

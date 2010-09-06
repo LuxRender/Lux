@@ -54,7 +54,7 @@ public:
 		const boost::shared_ptr<Primitive> &thisPtr);
 	virtual bool CanSample() const { return false; }
 
-	void Tasselate(vector<luxrays::TriangleMesh *> *meshList, vector<const Primitive *> *primitiveList) const;
+	void Tesselate(vector<luxrays::TriangleMesh *> *meshList, vector<const Primitive *> *primitiveList) const;
 
 	friend class MeshWaldTriangle;
 	friend class MeshBaryTriangle;

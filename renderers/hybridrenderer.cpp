@@ -236,7 +236,7 @@ void HybridRenderer::Render(Scene *s) {
 		luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
 		for (size_t i = 0; i < scene->primitives.size(); ++i)
-			scene->primitives[i]->Tasselate(&meshList, &primitiveList);
+			scene->primitives[i]->Tesselate(&meshList, &primitiveList);
 
 		// Create the DataSet
         dataSet = new luxrays::DataSet(ctx);
