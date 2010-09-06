@@ -76,7 +76,7 @@ Material* MatteTranslucent::CreateMaterial(const Transform &xform,
 	boost::shared_ptr<Texture<SWCSpectrum> > Kt(mp.GetSWCSpectrumTexture("Kt", RGBColor(1.f)));
 	boost::shared_ptr<Texture<float> > sigma(mp.GetFloatTexture("sigma", 0.f));
 	boost::shared_ptr<Texture<float> > bumpMap(mp.GetFloatTexture("bumpmap"));
-	bool conserving = mp.FindBool("energyconserving", false);
+	bool conserving = mp.FindOneBool("energyconserving", false);
 
 	// Get Compositing Params
 	CompositingParams cP;
