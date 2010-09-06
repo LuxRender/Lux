@@ -21,7 +21,6 @@
  ***************************************************************************/
 
 // path.cpp*
-#include "path.h"
 #include "sampling.h"
 #include "scene.h"
 #include "bxdf.h"
@@ -29,6 +28,7 @@
 #include "camera.h"
 #include "paramset.h"
 #include "dynload.h"
+#include "path.h"
 
 using namespace lux;
 
@@ -58,6 +58,10 @@ void PathIntegrator::Preprocess(const RandomGenerator &rng, const Scene &scene)
 
 	hints.InitStrategies(scene);
 }
+
+//------------------------------------------------------------------------------
+// SamplerRenderer integrator code
+//------------------------------------------------------------------------------
 
 u_int PathIntegrator::Li(const Scene &scene, const Sample &sample) const
 {
@@ -223,6 +227,57 @@ u_int PathIntegrator::Li(const Scene &scene, const Sample &sample) const
 
 	return nrContribs;
 }
+
+//------------------------------------------------------------------------------
+// DataParallel integrator code
+//------------------------------------------------------------------------------
+
+PathState::PathState(const Scene &scene, ContributionBuffer *contribBuffer, RandomGenerator *rng) : state(TO_INIT),
+	sample(scene.surfaceIntegrator, scene.volumeIntegrator, scene) {
+	scene.sampler->InitSample(&sample);
+	sample.contribBuffer = contribBuffer;
+	sample.camera = scene.camera->Clone();
+	sample.realTime = 0.f;
+	sample.rng = rng;
+}
+
+bool PathState::Init(const Scene &scene, u_int *usePos) {
+	if (!scene.sampler->GetNextSample(&sample, usePos))
+		return false;
+
+	state = EYE_VERTEX;
+	// The sample is initialized befor to call this method
+
+	// save ray time value
+	sample.realTime = sample.camera->GetTime(sample.time);
+	// sample camera transformation
+	sample.camera->SampleMotion(sample.realTime);
+
+	// Sample new SWC thread wavelengths
+	sample.swl.Sample(sample.wavelengths);
+
+	sw = sample.swl;
+	eyeRayWeight = sample.camera->GenerateRay(scene, sample, &pathRay);
+
+	return true;
+}
+
+bool PathIntegrator::GenerateRays(SurfaceIntegratorState *s, luxrays::RayBuffer *rayBuffer) {
+	PathState *state = (PathState *)s;
+	const unsigned int leftSpace = rayBuffer->LeftSpace();
+	if ((state->state == PathState::EYE_VERTEX) && (1 > leftSpace))
+		return false;
+
+	// A pointer trick
+	luxrays::Ray *ray = (luxrays::Ray *)&state->pathRay;
+	state->currentPathRayIndex = rayBuffer->AddRay(*ray);
+	return true;
+}
+
+//------------------------------------------------------------------------------
+// Integrator parsing code
+//------------------------------------------------------------------------------
+
 SurfaceIntegrator* PathIntegrator::CreateSurfaceIntegrator(const ParamSet &params)
 {
 	// general
