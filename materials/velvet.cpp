@@ -41,9 +41,9 @@ BSDF *Velvet::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 	// Allocate _BSDF_
 	SWCSpectrum r = Kd->Evaluate(sw, dgs).Clamp(0.f, 1.f);
 	
-	float p1 = Clamp(P1->Evaluate(sw, dgs), 0.f, 100.f);
-	float p2 = Clamp(P2->Evaluate(sw, dgs), 0.f, 100.f);
-	float p3 = Clamp(P3->Evaluate(sw, dgs), 0.f, 100.f);
+	float p1 = Clamp(P1->Evaluate(sw, dgs), -100.f, 100.f);
+	float p2 = Clamp(P2->Evaluate(sw, dgs), -100.f, 100.f);
+	float p3 = Clamp(P3->Evaluate(sw, dgs), -100.f, 100.f);
 	
 	float thickness = Clamp(Thickness->Evaluate(sw, dgs), 0.0f, 1.f);
 	

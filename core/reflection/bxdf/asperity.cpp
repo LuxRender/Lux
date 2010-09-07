@@ -37,9 +37,9 @@ void Asperity::f(const SpectrumWavelengths &sw, const Vector &wo,
 
 	// Compute phase function
 
-	float p;
+	float B = 3.0f * costheta;
 
-	p = 1.0f + A1 * costheta + A2 * 0.5f * (3.0f * powf(costheta, 2.0f) - 1.0f) + A3 * 0.5 * (5.0f * powf(costheta, 3.0f) - 3.0f * costheta);
+	float p = 1.0f + A1 * costheta + A2 * 0.5f * (B * costheta - 1.0f) + A3 * 0.5 * (5.0f * costheta * costheta * costheta - B);
 	p = p / (4.0f * M_PI);
  
 	p = (p * delta) / (CosTheta(wo) * CosTheta(wi));
