@@ -219,6 +219,11 @@ const char * ds_pylux_Context_parse =
 const char * ds_pylux_Context_pause =
 "(+) Pause all local rendering threads.";
 
+const char * ds_pylux_Context_renderer =
+"Choose the internal Renderer type. Valid types are:\n"
+"- sampler (traditional CPU renderer)\n"
+"- hybrid (combined CPU+GPU renderer)";
+
 const char * ds_pylux_Context_pixelFilter =
 "Initialise the pixel filter to use for rendering. Valid types are:\n"
 "- box\n"

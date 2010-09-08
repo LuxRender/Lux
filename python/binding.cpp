@@ -390,6 +390,14 @@ public:
 		Context::SetActive(context);
 		context->CoordSysTransform(std::string(name));
 	}
+	
+	void renderer(const char *name, boost::python::list params)
+	{
+		EXTRACT_PARAMETERS(params);
+		Context::SetActive(context);
+		context->Renderer(name,PASS_PARAMSET);
+		memoryPool.purge_memory();
+	}
 
 	void pixelFilter(const char *name, boost::python::list params)
 	{
@@ -1180,6 +1188,11 @@ BOOST_PYTHON_MODULE(pylux)
 			&PyContext::pause,
 			args("Context"),
 			ds_pylux_Context_pause
+		)
+		.def("renderer",
+			&PyContext::renderer,
+			args("Context", "type", "ParamSet"),
+			ds_pylux_Context_renderer
 		)
 		.def("pixelFilter",
 			&PyContext::pixelFilter,
