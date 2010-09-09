@@ -30,13 +30,13 @@ namespace lux
 
 class PathState : public SurfaceIntegratorState {
 	enum PathStateType {
-		TO_INIT, EYE_VERTEX
+		TO_INIT, EYE_VERTEX, TERMINATE
 	};
 
 	PathState(const Scene &scene, ContributionBuffer *contribBuffer, RandomGenerator *rng);
 	~PathState() { }
 
-	bool Init(const Scene &scene, u_int *usePos);
+	bool Init(const Scene &scene);
 
 	friend class PathIntegrator;
 
@@ -44,9 +44,7 @@ private:
 	PathStateType state;
 	Sample sample;
 
-	SpectrumWavelengths sw;
 	float eyeRayWeight;
-
 	Ray pathRay;
 	unsigned int currentPathRayIndex;
 };
@@ -67,9 +65,10 @@ public:
 	virtual void Preprocess(const RandomGenerator &rng, const Scene &scene);
 
 	// DataParallel interface
-	bool IsDataParallelSupported() const { return true; }
-	bool GenerateRays(SurfaceIntegratorState *state, luxrays::RayBuffer *rayBuffer);
-	void NextState(SurfaceIntegratorState *state, luxrays::RayBuffer *rayBuffer) { }
+	virtual bool IsDataParallelSupported() const { return true; }
+	virtual SurfaceIntegratorState *NewState(const Scene &scene, ContributionBuffer *contribBuffer, RandomGenerator *rng);
+	virtual bool GenerateRays(const Scene &scene, SurfaceIntegratorState *state, luxrays::RayBuffer *rayBuffer);
+	virtual bool NextState(const Scene &scene, SurfaceIntegratorState *state, luxrays::RayBuffer *rayBuffer);
 
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 

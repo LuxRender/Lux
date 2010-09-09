@@ -241,9 +241,12 @@ PathState::PathState(const Scene &scene, ContributionBuffer *contribBuffer, Rand
 	sample.rng = rng;
 }
 
-bool PathState::Init(const Scene &scene, u_int *usePos) {
-	if (!scene.sampler->GetNextSample(&sample, usePos))
-		return false;
+bool PathState::Init(const Scene &scene) {
+	u_int unused = 0;
+	const bool result = scene.sampler->GetNextSample(&sample, &unused);
+
+	// Free BSDF memory from computing image sample value
+	sample.arena.FreeAll();
 
 	state = EYE_VERTEX;
 	// The sample is initialized befor to call this method
@@ -256,13 +259,17 @@ bool PathState::Init(const Scene &scene, u_int *usePos) {
 	// Sample new SWC thread wavelengths
 	sample.swl.Sample(sample.wavelengths);
 
-	sw = sample.swl;
 	eyeRayWeight = sample.camera->GenerateRay(scene, sample, &pathRay);
 
-	return true;
+	return result;
 }
 
-bool PathIntegrator::GenerateRays(SurfaceIntegratorState *s, luxrays::RayBuffer *rayBuffer) {
+SurfaceIntegratorState *PathIntegrator::NewState(
+	const Scene &scene, ContributionBuffer *contribBuffer, RandomGenerator *rng) {
+	return new PathState(scene, contribBuffer, rng);
+}
+
+bool PathIntegrator::GenerateRays(const Scene &, SurfaceIntegratorState *s, luxrays::RayBuffer *rayBuffer) {
 	PathState *state = (PathState *)s;
 	const unsigned int leftSpace = rayBuffer->LeftSpace();
 	if ((state->state == PathState::EYE_VERTEX) && (1 > leftSpace))
@@ -271,6 +278,58 @@ bool PathIntegrator::GenerateRays(SurfaceIntegratorState *s, luxrays::RayBuffer 
 	// A pointer trick
 	luxrays::Ray *ray = (luxrays::Ray *)&state->pathRay;
 	state->currentPathRayIndex = rayBuffer->AddRay(*ray);
+
+	return true;
+}
+
+bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, luxrays::RayBuffer *rayBuffer) {
+	PathState *state = (PathState *)s;
+	const luxrays::RayHit *rayHit = rayBuffer->GetRayHit(state->currentPathRayIndex);
+
+	SWCSpectrum L;
+	if (rayHit->Miss())
+		L = SWCSpectrum(state->sample.swl, RGBColor(0.f, 0.f, 0.f));
+	else {
+		switch (rayHit->index & 0x7) {
+			case 0:
+				L = SWCSpectrum(state->sample.swl, RGBColor(1.f, 0.f, 0.f));
+				break;
+			case 1:
+				L = SWCSpectrum(state->sample.swl, RGBColor(0.f, 1.f, 0.f));
+				break;
+			case 2:
+				L = SWCSpectrum(state->sample.swl, RGBColor(0.f, 0.f, 1.f));
+				break;
+			case 3:
+				L = SWCSpectrum(state->sample.swl, RGBColor(0.f, 1.f, 1.f));
+				break;
+			case 4:
+				L = SWCSpectrum(state->sample.swl, RGBColor(1.f, 0.f, 1.f));
+				break;
+			case 5:
+				L = SWCSpectrum(state->sample.swl, RGBColor(1.f, 1.f, 0.f));
+				break;
+			case 6:
+				L = SWCSpectrum(state->sample.swl, RGBColor(.25f, .25f, .25f));
+				break;
+			case 7:
+				L = SWCSpectrum(state->sample.swl, RGBColor(.75f, .75f, .75f));
+				break;
+			default:
+				L = SWCSpectrum(state->sample.swl, RGBColor(1.f, 1.f, 1.f));
+				break;
+		}
+	}
+
+	//L = SWCSpectrum(state->sample.swl, RGBColor(fabsf(state->sample.imageX), fabsf(state->sample.imageY), 0.f));
+	state->sample.AddContribution(state->sample.imageX, state->sample.imageY,
+			XYZColor(state->sample.swl, L) * state->eyeRayWeight, 1.f,
+		rayHit->t, 0.f, bufferId, 0);
+
+	scene.sampler->AddSample(state->sample);
+
+	state->state = PathState::TERMINATE;
+
 	return true;
 }
 

@@ -59,6 +59,9 @@ private:
 	u_int pixelSamples;
 	u_int totalPixels;
 	PixelSampler* pixelSampler;
+
+	fast_mutex sampPosMutex;
+	u_int sampPos;
 };
 
 }//namespace lux

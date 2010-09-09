@@ -127,6 +127,12 @@ HybridRenderer::HybridRenderer() {
 	// Create the virtual device to feed all hardware device
 	std::vector<luxrays::DeviceDescription *> hwDeviceDescs = deviceDescs;
 	luxrays::DeviceDescription::Filter(luxrays::DEVICE_TYPE_OPENCL, hwDeviceDescs);
+	luxrays::OpenCLDeviceDescription::Filter(luxrays::OCL_DEVICE_TYPE_GPU, hwDeviceDescs);
+
+	if (hwDeviceDescs.size() < 1)
+		throw std::runtime_error("Unable to find an OpenCL GPU device.");
+	hwDeviceDescs.resize(1);
+
 	ctx->AddVirtualM2OIntersectionDevices(0, hwDeviceDescs);
 
 	virtualIDevice = ctx->GetVirtualM2OIntersectionDevices()[0];
@@ -193,6 +199,12 @@ void HybridRenderer::Render(Scene *s) {
 			return;
 		}
 
+		if (scene->surfaceIntegrator->IsDataParallelSupported() == 0) {
+			luxError(LUX_ERROR, LUX_SEVERE, "The SurfaceIntegrator doesn't support HybridRenderer.");
+			state = TERMINATE;
+			return;
+		}
+
 		state = RUN;
 
 		// Initialize the stats
@@ -222,8 +234,6 @@ void HybridRenderer::Render(Scene *s) {
 		// Dade - to support autofocus for some camera model
 		scene->camera->AutoFocus(*scene);
 
-		sampPos = 0;
-
 		//----------------------------------------------------------------------
 		// Compile the scene geometries in a LuxRays compatible format
 		//----------------------------------------------------------------------
@@ -246,6 +256,8 @@ void HybridRenderer::Render(Scene *s) {
 			dataSet->Add(*obj);
 
         dataSet->Preprocess();
+		ctx->SetDataSet(dataSet);
+        ctx->Start();
 
 		// I can free temporary data
 		for (std::vector<luxrays::TriangleMesh *>::const_iterator obj = meshList.begin(); obj != meshList.end(); ++obj)
@@ -288,6 +300,10 @@ void HybridRenderer::Render(Scene *s) {
 		scene->camera->film->contribPool->Delete();
 	}
 
+	luxError(LUX_NOERROR, LUX_INFO, "Work in progress: exit");
+	exit(0);
+
+	ctx->Stop();
 	delete dataSet;
 	primitiveList.clear();
 }
@@ -448,18 +464,14 @@ HybridRenderer::RenderThread::RenderThread(u_int index, HybridRenderer *r, luxra
 HybridRenderer::RenderThread::~RenderThread() {
 }
 
-void HybridRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
-	HybridRenderer *renderer = myThread->renderer;
+void HybridRenderer::RenderThread::RenderImpl(RenderThread *renderThread) {
+	HybridRenderer *renderer = renderThread->renderer;
 	Scene &scene(*(renderer->scene));
 	if (scene.IsFilmOnly())
 		return;
 
 	// To avoid interrupt exception
 	boost::this_thread::disable_interruption di;
-
-	Sampler *sampler = scene.sampler;
-	Sample sample(scene.surfaceIntegrator, scene.volumeIntegrator, scene);
-	sampler->InitSample(&sample);
 
 	// Dade - wait the end of the preprocessing phase
 	while (!renderer->preprocessDone) {
@@ -472,55 +484,29 @@ void HybridRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 	// ContribBuffer has to wait until the end of the preprocessing
 	// It depends on the fact that the film buffers have been created
 	// This is done during the preprocessing phase
-	sample.contribBuffer = new ContributionBuffer(scene.camera->film->contribPool);
+	ContributionBuffer *contribBuffer = new ContributionBuffer(scene.camera->film->contribPool);
 
 	// initialize the thread's rangen
-	u_long seed = scene.seedBase + myThread->n;
+	u_long seed = scene.seedBase + renderThread->n;
 	std::stringstream ss;
-	ss << "Thread " << myThread->n << " uses seed: " << seed;
+	ss << "Thread " << renderThread->n << " uses seed: " << seed;
 	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
 	RandomGenerator rng(seed);
-	sample.camera = scene.camera->Clone();
-	sample.realTime = 0.f;
 
-	sample.rng = &rng;
+	luxrays::RayBuffer *rayBuffer = renderThread->iDevice->NewRayBuffer();
 
-	// allocate sample pos
-	u_int usePos = 0;
-	u_int maxSampPos = sampler->GetTotalSamplePos();
+	// Init all PathState
+	vector<SurfaceIntegratorState *> integratorState(rayBuffer->GetSize());
+	for (size_t i = 0; i < integratorState.size(); ++i) {
+		integratorState[i] = scene.surfaceIntegrator->NewState(scene, contribBuffer, &rng);
+		integratorState[i]->Init(scene);
+	}
 
-	// Trace rays: The main loop
-	while (true) {
-		if (!sampler->GetNextSample(&sample, &usePos)) {
-			renderer->Pause();
-
-			// Dade - we have done, check what we have to do now
-			if (renderer->suspendThreadsWhenDone) {
-				// Dade - wait for a resume rendering or exit
-				while (renderer->state == PAUSE) {
-					boost::xtime xt;
-					boost::xtime_get(&xt, boost::TIME_UTC);
-					xt.sec += 1;
-					boost::thread::sleep(xt);
-				}
-
-				if (renderer->state == TERMINATE)
-					break;
-				else
-					continue;
-			} else
-				break;
-		}
-
-		// save ray time value
-		sample.realTime = sample.camera->GetTime(sample.time);
-		// sample camera transformation
-		sample.camera->SampleMotion(sample.realTime);
-
-		// Sample new SWC thread wavelengths
-		sample.swl.Sample(sample.wavelengths);
-
+	size_t currentGenerateIndex = 0;
+	size_t currentNextIndex = 0;
+	bool renderIsOver = false;
+	while (!renderIsOver) {
 		while (renderer->state == PAUSE) {
 			boost::xtime xt;
 			boost::xtime_get(&xt, boost::TIME_UTC);
@@ -530,40 +516,60 @@ void HybridRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 		if ((renderer->state == TERMINATE) || boost::this_thread::interruption_requested())
 			break;
 
-		// Evaluate radiance along camera ray
-		// Jeanphi - Hijack statistics until volume integrator revamp
-		{
-			const u_int nContribs = scene.surfaceIntegrator->Li(scene, sample);
-			// update samples statistics
-			fast_mutex::scoped_lock lockStats(myThread->statLock);
-			myThread->blackSamples += nContribs;
-			++(myThread->samples);
+		while (rayBuffer->LeftSpace() > 0) {
+			if (!scene.surfaceIntegrator->GenerateRays(scene, integratorState[currentGenerateIndex], rayBuffer)) {
+				// The RayBuffer is full
+				break;
+			}
+
+			currentGenerateIndex = (currentGenerateIndex + 1) % integratorState.size();
 		}
 
-		sampler->AddSample(sample);
+		// Trace the RayBuffer
+		renderThread->iDevice->PushRayBuffer(rayBuffer);
+		rayBuffer = renderThread->iDevice->PopRayBuffer();
 
-		// Free BSDF memory from computing image sample value
-		sample.arena.FreeAll();
+		// Advance the next step
+		for (size_t i = 0; i < rayBuffer->GetRayCount(); ++i) {
+			if (scene.surfaceIntegrator->NextState(scene, integratorState[currentNextIndex], rayBuffer)) {
+				// The path is finished
+				if (!integratorState[currentNextIndex]->Init(scene)) {
+					renderer->Pause();
 
-		// increment (locked) global sample pos if necessary (eg maxSampPos != 0)
-		if (usePos == ~0U && maxSampPos != 0) {
-			fast_mutex::scoped_lock lock(renderer->sampPosMutex);
-			renderer->sampPos++;
-			if (renderer->sampPos == maxSampPos)
-				renderer->sampPos = 0;
-			usePos = renderer->sampPos;
+					// Dade - we have done, check what we have to do now
+					if (renderer->suspendThreadsWhenDone) {
+						// Dade - wait for a resume rendering or exit
+						while (renderer->state == PAUSE) {
+							boost::xtime xt;
+							boost::xtime_get(&xt, boost::TIME_UTC);
+							xt.sec += 1;
+							boost::thread::sleep(xt);
+						}
+
+						if (renderer->state == TERMINATE) {
+							renderIsOver = true;
+							break;
+						} else
+							continue;
+					} else {
+						renderIsOver = true;
+						break;
+					}
+				}
+			}
+
+			currentNextIndex = (currentNextIndex + 1) % integratorState.size();
 		}
 
-#ifdef WIN32
-		// Work around Windows bad scheduling -- Jeanphi
-		myThread->thread->yield();
-#endif
+		rayBuffer->Reset();
 	}
 
-	scene.camera->film->contribPool->End(sample.contribBuffer);
-	sample.contribBuffer = NULL;
+	scene.camera->film->contribPool->End(contribBuffer);
 
-	//delete myThread->sample->camera; //FIXME deleting the camera clone would delete the film!
+	// Free memory
+	for (size_t i = 0; i < integratorState.size(); ++i)
+		delete integratorState[i];
+	delete rayBuffer;
 }
 
 Renderer *HybridRenderer::CreateRenderer(const ParamSet &params) {

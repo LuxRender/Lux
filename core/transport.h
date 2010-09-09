@@ -44,7 +44,7 @@ class SurfaceIntegratorState {
 public:
 	virtual ~SurfaceIntegratorState() { }
 
-	virtual bool Init(const Scene &scene, u_int *usePos) = 0;
+	virtual bool Init(const Scene &scene) = 0;
 };
 
 class SurfaceIntegrator : public Integrator {
@@ -54,10 +54,13 @@ public:
 
 	// DataParallel interface, optionally supported, used by HybridRenderer
 	virtual bool IsDataParallelSupported() const { return false; }
-	virtual bool GenerateRays(SurfaceIntegratorState *state, luxrays::RayBuffer *rayBuffer) {
+	virtual SurfaceIntegratorState *NewState(const Scene &scene, ContributionBuffer *contribBuffer, RandomGenerator *rng) {
+		throw std::runtime_error("Internal error: called SurfaceIntegrator::NewSurfaceIntegratorState()");
+	}
+	virtual bool GenerateRays(const Scene &scene, SurfaceIntegratorState *state, luxrays::RayBuffer *rayBuffer) {
 		throw std::runtime_error("Internal error: called SurfaceIntegrator::GenerateRays()");
 	}
-	virtual void NextState(SurfaceIntegratorState *state, luxrays::RayBuffer *rayBuffer) {
+	virtual bool NextState(const Scene &scene, SurfaceIntegratorState *state, luxrays::RayBuffer *rayBuffer) {
 		throw std::runtime_error("Internal error: called SurfaceIntegrator::NextState()");
 	}
 };

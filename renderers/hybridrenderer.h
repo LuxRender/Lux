@@ -192,9 +192,6 @@ private:
 	Scene *scene;
 	vector<const Primitive *> primitiveList;
 
-	fast_mutex sampPosMutex;
-	u_int sampPos;
-
 	Timer s_Timer;
 	double lastSamples, lastTime;
 	double stat_Samples, stat_blackSamples;
