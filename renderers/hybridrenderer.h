@@ -165,8 +165,10 @@ private:
 		boost::thread *thread; // keep pointer to delete the thread object
 		HybridRenderer *renderer;
 		luxrays::IntersectionDevice * iDevice;
-		double samples, blackSamples;
+
+		// Rendering statistics
 		fast_mutex statLock;
+		double samples, blackSamples;
 	};
 
 	void CreateRenderThread();

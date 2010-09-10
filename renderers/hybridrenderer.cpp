@@ -527,9 +527,14 @@ void HybridRenderer::RenderThread::RenderImpl(RenderThread *renderThread) {
 		rayBuffer = renderThread->iDevice->PopRayBuffer();
 
 		// Advance the next step
+		u_int nrContribs = 0;
+		u_int nrSamples = 0;
 		for (size_t i = 0; i < rayBuffer->GetRayCount(); ++i) {
-			if (scene.surfaceIntegrator->NextState(scene, integratorState[currentNextIndex], rayBuffer)) {
-				// The path is finished
+			u_int count;
+			if (scene.surfaceIntegrator->NextState(scene, integratorState[currentNextIndex], rayBuffer, &count)) {
+				// The sample is finished
+				++nrSamples;
+
 				if (!integratorState[currentNextIndex]->Init(scene)) {
 					renderer->Pause();
 
@@ -555,7 +560,16 @@ void HybridRenderer::RenderThread::RenderImpl(RenderThread *renderThread) {
 				}
 			}
 
+			nrContribs += count;
 			currentNextIndex = (currentNextIndex + 1) % integratorState.size();
+		}
+
+		// Jeanphi - Hijack statistics until volume integrator revamp
+		{
+			// update samples statistics
+			fast_mutex::scoped_lock lockStats(renderThread->statLock);
+			renderThread->blackSamples += nrContribs;
+			renderThread->samples += nrSamples;
 		}
 
 		rayBuffer->Reset();

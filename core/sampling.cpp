@@ -56,7 +56,7 @@ void Sampler::AddSample(const Sample &sample)
 
 // Sample Method Definitions
 Sample::Sample(SurfaceIntegrator *surf, VolumeIntegrator *vol,
-	const Scene &scene)
+	const Scene &scene) : arena(2048)
 {
 	stamp = 0;
 	samplerData = NULL;

@@ -282,7 +282,7 @@ bool PathIntegrator::GenerateRays(const Scene &, SurfaceIntegratorState *s, luxr
 	return true;
 }
 
-bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, luxrays::RayBuffer *rayBuffer) {
+bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, luxrays::RayBuffer *rayBuffer, u_int *nrContribs) {
 	PathState *state = (PathState *)s;
 	const luxrays::RayHit *rayHit = rayBuffer->GetRayHit(state->currentPathRayIndex);
 
@@ -329,6 +329,7 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 	scene.sampler->AddSample(state->sample);
 
 	state->state = PathState::TERMINATE;
+	*nrContribs = 1;
 
 	return true;
 }
