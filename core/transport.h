@@ -60,7 +60,7 @@ public:
 	virtual bool GenerateRays(const Scene &scene, SurfaceIntegratorState *state, luxrays::RayBuffer *rayBuffer) {
 		throw std::runtime_error("Internal error: called SurfaceIntegrator::GenerateRays()");
 	}
-	virtual bool NextState(const Scene &scene, SurfaceIntegratorState *state, luxrays::RayBuffer *rayBuffer) {
+	virtual bool NextState(const Scene &scene, SurfaceIntegratorState *state, luxrays::RayBuffer *rayBuffer, u_int *nrContribs) {
 		throw std::runtime_error("Internal error: called SurfaceIntegrator::NextState()");
 	}
 };

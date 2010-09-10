@@ -68,7 +68,7 @@ public:
 	virtual bool IsDataParallelSupported() const { return true; }
 	virtual SurfaceIntegratorState *NewState(const Scene &scene, ContributionBuffer *contribBuffer, RandomGenerator *rng);
 	virtual bool GenerateRays(const Scene &scene, SurfaceIntegratorState *state, luxrays::RayBuffer *rayBuffer);
-	virtual bool NextState(const Scene &scene, SurfaceIntegratorState *state, luxrays::RayBuffer *rayBuffer);
+	virtual bool NextState(const Scene &scene, SurfaceIntegratorState *state, luxrays::RayBuffer *rayBuffer, u_int *nrContribs);
 
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 
