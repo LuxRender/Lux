@@ -300,9 +300,6 @@ void HybridRenderer::Render(Scene *s) {
 		scene->camera->film->contribPool->Delete();
 	}
 
-	luxError(LUX_NOERROR, LUX_INFO, "Work in progress: exit");
-	exit(0);
-
 	ctx->Stop();
 	delete dataSet;
 	primitiveList.clear();
