@@ -58,7 +58,7 @@ public:
 	virtual void GetBufferType(BufferType *type) {*type = BUF_TYPE_PER_SCREEN;}
 	virtual u_int GetTotalSamplePos() { return baseSampler->GetTotalSamplePos(); }
 	virtual u_int RoundSize(u_int size) const { return baseSampler->RoundSize(size); }
-	virtual bool GetNextSample(Sample *sample, u_int *use_pos);
+	virtual bool GetNextSample(Sample *sample);
 	virtual float *GetLazyValues(const Sample &sample, u_int num, u_int pos);
 	//void AddSample(float imageX, float imageY, const Sample &sample, const Ray &ray, const XYZColor &L, float alpha, int id=0);
 	virtual void AddSample(const Sample &sample);

@@ -104,7 +104,7 @@ public:
 	virtual ~Sampler() {}
 	Sampler(int xstart, int xend, int ystart, int yend, u_int spp);
 	virtual void InitSample(Sample *sample) const = 0;
-	virtual bool GetNextSample(Sample *sample, u_int *use_pos) = 0;
+	virtual bool GetNextSample(Sample *sample) = 0;
 	virtual float *GetLazyValues(const Sample &sample, u_int num, u_int pos);
 	virtual u_int GetTotalSamplePos() = 0;
 	u_int TotalSamples() const {
@@ -132,7 +132,7 @@ public:
 	virtual ~PixelSampler() {}
 
 	virtual u_int GetTotalPixels() = 0;
-	virtual bool GetNextPixel(int &xPos, int &yPos, u_int *use_pos) = 0;
+	virtual bool GetNextPixel(int *xPos, int *yPos, const u_int usePos) = 0;
 
 	// Dade - used by sampler to store the renderingDone condition. Placed here
 	// because PixelSampler is shared among threads

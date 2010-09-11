@@ -58,7 +58,7 @@ public:
 	}
 	virtual void GetBufferType(BufferType *type) {*type = BUF_TYPE_PER_PIXEL;}
 	virtual u_int GetTotalSamplePos();
-	virtual bool GetNextSample(Sample *sample, u_int *use_pos);
+	virtual bool GetNextSample(Sample *sample);
 	virtual float *GetLazyValues(const Sample &sample, u_int num, u_int pos);
 
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
@@ -66,6 +66,9 @@ private:
 	// LDSampler Private Data
 	u_int pixelSamples, totalPixels;
 	PixelSampler* pixelSampler;
+
+	fast_mutex sampPixelPosMutex;
+	u_int sampPixelPos;
 };
 
 }//namespace lux

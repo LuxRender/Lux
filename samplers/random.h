@@ -47,7 +47,7 @@ public:
 			pixelSamples);
 	}
 	virtual u_int GetTotalSamplePos();
-	virtual bool GetNextSample(Sample *sample, u_int *use_pos);
+	virtual bool GetNextSample(Sample *sample);
 	virtual float *GetLazyValues(const Sample &sample, u_int num, u_int pos);
 	virtual u_int RoundSize(u_int sz) const { return sz; }
 	virtual void GetBufferType(BufferType *type) {*type = BUF_TYPE_PER_PIXEL;}
@@ -60,8 +60,8 @@ private:
 	u_int totalPixels;
 	PixelSampler* pixelSampler;
 
-	fast_mutex sampPosMutex;
-	u_int sampPos;
+	fast_mutex sampPixelPosMutex;
+	u_int sampPixelPos;
 };
 
 }//namespace lux

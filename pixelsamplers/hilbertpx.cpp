@@ -108,12 +108,10 @@ u_int HilbertPixelSampler::GetTotalPixels()
 	return TotalPx;
 }
 
-bool HilbertPixelSampler::GetNextPixel(int &xPos, int &yPos, u_int *use_pos)
+bool HilbertPixelSampler::GetNextPixel(int *xPos, int *yPos, const u_int usePos)
 {
-	const u_int pos = (*use_pos);
+	*xPos = Pxa[usePos].x;
+	*yPos = Pxa[usePos].y;
 
-	xPos = Pxa[pos].x;
-	yPos = Pxa[pos].y;
-
-	return pos != TotalPx - 1;
+	return usePos != TotalPx - 1;
 }

@@ -242,8 +242,7 @@ PathState::PathState(const Scene &scene, ContributionBuffer *contribBuffer, Rand
 }
 
 bool PathState::Init(const Scene &scene) {
-	u_int unused = 0;
-	const bool result = scene.sampler->GetNextSample(&sample, &unused);
+	const bool result = scene.sampler->GetNextSample(&sample);
 
 	// Free BSDF memory from computing image sample value
 	sample.arena.FreeAll();

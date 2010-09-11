@@ -38,7 +38,7 @@ public:
 	}
 
 	virtual u_int GetTotalPixels();
-	virtual bool GetNextPixel(int &xPos, int &yPos, u_int *use_pos);
+	virtual bool GetNextPixel(int *xPos, int *yPos, const u_int usePos);
 
 private:
 	// VegasPixelSampler Private Data

@@ -400,13 +400,9 @@ void SamplerRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 
 	sample.rng = &rng;
 
-	// allocate sample pos
-	u_int usePos = 0;
-	u_int maxSampPos = sampler->GetTotalSamplePos();
-
 	// Trace rays: The main loop
 	while (true) {
-		if (!sampler->GetNextSample(&sample, &usePos)) {
+		if (!sampler->GetNextSample(&sample)) {
 			renderer->Terminate();
 
 			// Dade - we have done, check what we have to do now
@@ -458,15 +454,6 @@ void SamplerRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 
 		// Free BSDF memory from computing image sample value
 		sample.arena.FreeAll();
-
-		// increment (locked) global sample pos if necessary (eg maxSampPos != 0)
-		if (usePos == ~0U && maxSampPos != 0) {
-			fast_mutex::scoped_lock lock(renderer->sampPosMutex);
-			renderer->sampPos++;
-			if (renderer->sampPos == maxSampPos)
-				renderer->sampPos = 0;
-			usePos = renderer->sampPos;
-		}
 
 #ifdef WIN32
 		// Work around Windows bad scheduling -- Jeanphi

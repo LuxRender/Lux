@@ -108,7 +108,7 @@ ERPTSampler::~ERPTSampler() {
 }
 
 // interface for new ray/samples from scene
-bool ERPTSampler::GetNextSample(Sample *sample, u_int *use_pos)
+bool ERPTSampler::GetNextSample(Sample *sample)
 {
 	const RandomGenerator *rng = sample->rng;
 	ERPTData *data = (ERPTData *)(sample->samplerData);
@@ -119,7 +119,7 @@ bool ERPTSampler::GetNextSample(Sample *sample, u_int *use_pos)
 		if (film->enoughSamplePerPixel)
 			return false;
 
-		const bool ret = baseSampler->GetNextSample(sample, use_pos);
+		const bool ret = baseSampler->GetNextSample(sample);
 		for (u_int i = 0; i < data->totalTimes; ++i)
 			sample->timexD[0][i] = -1;
 		sample->stamp = 0;

@@ -66,7 +66,7 @@ RandomSampler::RandomSampler(int xstart, int xend,
 		pixelSampler = new LinearPixelSampler(xstart, xend, ystart, yend);
 
 	totalPixels = pixelSampler->GetTotalPixels();
-	sampPos = 0;
+	sampPixelPos = 0;
 }
 
 RandomSampler::~RandomSampler()
@@ -79,24 +79,23 @@ u_int RandomSampler::GetTotalSamplePos()
 	return totalPixels;
 }
 
-// TMP: use_pos not used
-bool RandomSampler::GetNextSample(Sample *sample, u_int *use_pos)
+bool RandomSampler::GetNextSample(Sample *sample)
 {
 	RandomData *data = (RandomData *)(sample->samplerData);
 
 	// Compute new set of samples if needed for next pixel
 	bool haveMoreSample = true;
 	if (data->samplePos == pixelSamples) {
-		u_int sampPosToUse;
+		u_int sampPixelPosToUse;
 		// Move to the next pixel
 		{
-			fast_mutex::scoped_lock lock(sampPosMutex);
-			sampPosToUse = sampPos;
-			sampPos = (sampPos + 1) % totalPixels;
+			fast_mutex::scoped_lock lock(sampPixelPosMutex);
+			sampPixelPosToUse = sampPixelPos;
+			sampPixelPos = (sampPixelPos + 1) % totalPixels;
 		}
 
 		// fetch next pixel from pixelsampler
-		if(!pixelSampler->GetNextPixel(data->xPos, data->yPos, &sampPosToUse)) {
+		if(!pixelSampler->GetNextPixel(&data->xPos, &data->yPos, sampPixelPosToUse)) {
 			// Dade - we are at a valid checkpoint where we can stop the
 			// rendering. Check if we have enough samples per pixel in the film.
 			if (film->enoughSamplePerPixel) {

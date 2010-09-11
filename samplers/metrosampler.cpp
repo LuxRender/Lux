@@ -138,7 +138,7 @@ MetropolisSampler::~MetropolisSampler() {
 }
 
 // interface for new ray/samples from scene
-bool MetropolisSampler::GetNextSample(Sample *sample, u_int *use_pos)
+bool MetropolisSampler::GetNextSample(Sample *sample)
 {
 	MetropolisData *data = (MetropolisData *)(sample->samplerData);
 

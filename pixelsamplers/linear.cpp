@@ -54,14 +54,13 @@ u_int LinearPixelSampler::GetTotalPixels() {
 	return TotalPx;
 }
 
-bool LinearPixelSampler::GetNextPixel(int &xPos, int &yPos, u_int *use_pos) {
-	u_int pos = (*use_pos);
+bool LinearPixelSampler::GetNextPixel(int *xPos, int *yPos, const u_int use_pos) {
 	bool hasMorePixel = true;
-	if(pos == TotalPx - 1)
+	if(use_pos == TotalPx - 1)
 		hasMorePixel = false;
 
-	xPos = Pxa[*use_pos].x;
-	yPos = Pxa[*use_pos].y;
+	*xPos = Pxa[use_pos].x;
+	*yPos = Pxa[use_pos].y;
 
 	return hasMorePixel;
 }

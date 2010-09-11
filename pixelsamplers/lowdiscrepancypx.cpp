@@ -47,7 +47,7 @@ u_int LowdiscrepancyPixelSampler::GetTotalPixels() {
 	return std::numeric_limits<unsigned int>::max();
 }
 
-bool LowdiscrepancyPixelSampler::GetNextPixel(int &xPos, int &yPos, u_int *use_pos) {
+bool LowdiscrepancyPixelSampler::GetNextPixel(int *xPos, int *yPos, const u_int usePos) {
 	bool hasMorePixel = true;
 	if(pixelCounter == TotalPx) {
 		pixelCounter = 0;
@@ -56,8 +56,8 @@ bool LowdiscrepancyPixelSampler::GetNextPixel(int &xPos, int &yPos, u_int *use_p
 
 	pixelCounter++;
 
-	xPos = xPixelStart + Floor2Int(VanDerCorput(*use_pos, xSeed) * (xPixelEnd - xPixelStart));
-	yPos = yPixelStart + Floor2Int(Sobol2(*use_pos, ySeed) * (yPixelEnd - yPixelStart));
+	*xPos = xPixelStart + Floor2Int(VanDerCorput(usePos, xSeed) * (xPixelEnd - xPixelStart));
+	*yPos = yPixelStart + Floor2Int(Sobol2(usePos, ySeed) * (yPixelEnd - yPixelStart));
 
 	return hasMorePixel;
 }

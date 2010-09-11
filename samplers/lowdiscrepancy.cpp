@@ -99,6 +99,7 @@ LDSampler::LDSampler(int xstart, int xend,
 		pixelSamples = RoundUpPow2(ps);
 	} else
 		pixelSamples = ps;
+	sampPixelPos = 0;
 }
 
 LDSampler::~LDSampler() {
@@ -109,14 +110,22 @@ u_int LDSampler::GetTotalSamplePos() {
 	return totalPixels;
 }
 
-bool LDSampler::GetNextSample(Sample *sample, u_int *use_pos) {
+bool LDSampler::GetNextSample(Sample *sample) {
 	LDData *data = (LDData *)(sample->samplerData);
 	const RandomGenerator &rng(*(sample->rng));
 
 	bool haveMoreSample = true;
 	if (data->samplePos == pixelSamples) {
+		u_int sampPixelPosToUse;
+		// Move to the next pixel
+		{
+			fast_mutex::scoped_lock lock(sampPixelPosMutex);
+			sampPixelPosToUse = sampPixelPos;
+			sampPixelPos = (sampPixelPos + 1) % totalPixels;
+		}
+
 		// fetch next pixel from pixelsampler
-		if(!pixelSampler->GetNextPixel(data->xPos, data->yPos, use_pos)) {
+		if(!pixelSampler->GetNextPixel(&data->xPos, &data->yPos, sampPixelPosToUse)) {
 			// Dade - we are at a valid checkpoint where we can stop the
 			// rendering. Check if we have enough samples per pixel in the film.
 			if (film->enoughSamplePerPixel) {
@@ -163,9 +172,6 @@ bool LDSampler::GetNextSample(Sample *sample, u_int *use_pos) {
 		}
 	}
 
-	// reset so scene knows to increment
-	if (data->samplePos >= pixelSamples - 1)
-		*use_pos = ~0U;
 	// Copy low-discrepancy samples from tables
 	sample->imageX = data->xPos + data->imageSamples[2 * data->samplePos];
 	sample->imageY = data->yPos + data->imageSamples[2 * data->samplePos + 1];
