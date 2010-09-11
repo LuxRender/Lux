@@ -448,6 +448,74 @@ void Mesh::Tesselate(vector<luxrays::TriangleMesh *> *meshList, vector<const Pri
 	primitiveList->push_back(this);
 }
 
+void Mesh::GetIntersection(const luxrays::RayHit &rayHit, const u_int index, Intersection *isect) const {
+	const u_int triIndex = index * 3;
+	const u_int v0 = triVertexIndex[triIndex];
+	const u_int v1 = triVertexIndex[triIndex + 1];
+	const u_int v2 = triVertexIndex[triIndex + 2];
+	const Point &p1 = p[v0];
+	const Point &p2 = p[v1];
+	const Point &p3 = p[v2];
+	const Vector e1 = p2 - p1;
+	const Vector e2 = p3 - p1;
+
+	// Fill in _DifferentialGeometry_ from triangle hit
+	// Compute triangle partial derivatives
+	Vector dpdu, dpdv;
+	float uv[3][2];
+	if (uvs) {
+		uv[0][0] = uvs[2 * v0];
+		uv[0][1] = uvs[2 * v0 + 1];
+		uv[1][0] = uvs[2 * v1];
+		uv[1][1] = uvs[2 * v1 + 1];
+		uv[2][0] = uvs[2 * v2];
+		uv[2][1] = uvs[2 * v2 + 1];
+	} else {
+		uv[0][0] = .5f;//mesh->p[v[0]].x;
+		uv[0][1] = .5f;//mesh->p[v[0]].y;
+		uv[1][0] = .5f;//mesh->p[v[1]].x;
+		uv[1][1] = .5f;//mesh->p[v[1]].y;
+		uv[2][0] = .5f;//mesh->p[v[2]].x;
+		uv[2][1] = .5f;//mesh->p[v[2]].y;
+	}
+
+	// Compute deltas for triangle partial derivatives
+	const float du1 = uv[0][0] - uv[2][0];
+	const float du2 = uv[1][0] - uv[2][0];
+	const float dv1 = uv[0][1] - uv[2][1];
+	const float dv2 = uv[1][1] - uv[2][1];
+	const Vector dp1 = p1 - p3, dp2 = p2 - p3;
+	const float determinant = du1 * dv2 - dv1 * du2;
+	if (determinant == 0.f) {
+		// Handle 0 determinant for triangle partial derivative matrix
+		CoordinateSystem(Normalize(Cross(e1, e2)), &dpdu, &dpdv);
+	} else {
+		const float invdet = 1.f / determinant;
+		dpdu = ( dv2 * dp1 - dv1 * dp2) * invdet;
+		dpdv = (-du2 * dp1 + du1 * dp2) * invdet;
+	}
+
+	const float b0 = 1.f - (rayHit.b1 + rayHit.b2);
+	const float b1 = rayHit.b1;
+	const float b2 = rayHit.b2;
+
+	// Interpolate $(u,v)$ triangle parametric coordinates
+	const float tu = b0 * uv[0][0] + b1 * uv[1][0] + b2 * uv[2][0];
+	const float tv = b0 * uv[0][1] + b1 * uv[1][1] + b2 * uv[2][1];
+
+	const Normal nn = Normal(Normalize(Cross(e1, e2)));
+	const Point pp(p1 + b1 * e1 + b2 * e2);
+
+	isect->dg = DifferentialGeometry(pp, nn, dpdu, dpdv,
+		Normal(0, 0, 0), Normal(0, 0, 0), tu, tv, this);
+
+	isect->Set(WorldToObject, this, GetMaterial(),
+		GetExterior(), GetInterior());
+	isect->dg.triangleBaryCoords[0] = b0;
+	isect->dg.triangleBaryCoords[1] = b1;
+	isect->dg.triangleBaryCoords[2] = b2;
+}
+
 static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const ParamSet &params,
 						   const string& accelTypeStr, const string& triTypeStr,
 						   const int* triIndices, u_int triIndicesCount,

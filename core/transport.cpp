@@ -69,6 +69,40 @@ bool VolumeIntegrator::Intersect(const Scene &scene, const Sample &sample,
 	return hit;
 }
 
+bool VolumeIntegrator::Intersect(const Scene &scene, const Sample &sample,
+	const Volume *volume, const Ray &ray, const luxrays::RayHit &rayHit, Intersection *isect, BSDF **bsdf,
+	SWCSpectrum *L) const
+{
+	const bool hit = scene.Intersect(rayHit, isect);
+	if (hit) {
+		DifferentialGeometry dgShading;
+		isect->primitive->GetShadingGeometry(isect->WorldToObject.GetInverse(),
+			isect->dg, &dgShading);
+		isect->material->GetShadingGeometry(sample.swl, isect->dg.nn,
+			&dgShading);
+		if (Dot(ray.d, dgShading.nn) > 0.f) {
+			if (!volume)
+				volume = isect->interior;
+			else if (!isect->interior)
+				isect->interior = volume;
+		} else {
+			if (!volume)
+				volume = isect->exterior;
+			else if (!isect->exterior)
+				isect->exterior = volume;
+		}
+		if (bsdf)
+			*bsdf = isect->material->GetBSDF(sample.arena,
+				sample.swl, isect->dg, dgShading,
+				isect->exterior, isect->interior);
+	}
+	if (volume && L)
+		*L *= Exp(-volume->Tau(sample.swl, ray));
+	if (L)
+		Transmittance(scene, ray, sample, NULL, L);
+	return hit;
+}
+
 bool VolumeIntegrator::Connect(const Scene &scene, const Sample &sample,
 	const Volume *volume, const Point &p0, const Point &p1, bool clip,
 	SWCSpectrum *f, float *pdf, float *pdfR) const

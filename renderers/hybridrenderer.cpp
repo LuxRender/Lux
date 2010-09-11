@@ -199,8 +199,13 @@ void HybridRenderer::Render(Scene *s) {
 			return;
 		}
 
-		if (scene->surfaceIntegrator->IsDataParallelSupported() == 0) {
+		if (!scene->surfaceIntegrator->IsDataParallelSupported()) {
 			luxError(LUX_ERROR, LUX_SEVERE, "The SurfaceIntegrator doesn't support HybridRenderer.");
+			state = TERMINATE;
+			return;
+		}
+
+		if (!scene->surfaceIntegrator->CheckLightStrategy()) {
 			state = TERMINATE;
 			return;
 		}
@@ -239,14 +244,13 @@ void HybridRenderer::Render(Scene *s) {
 		//----------------------------------------------------------------------
 
 		vector<luxrays::TriangleMesh *> meshList;
-		primitiveList.clear();
 
 		ss.str("");
-		ss << "Tasselating " << scene->primitives.size() << " primitives";
+		ss << "Tesselating " << scene->primitives.size() << " primitives";
 		luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
 		for (size_t i = 0; i < scene->primitives.size(); ++i)
-			scene->primitives[i]->Tesselate(&meshList, &primitiveList);
+			scene->primitives[i]->Tesselate(&meshList, &scene->tesselatePrimitives);
 
 		// Create the DataSet
         dataSet = new luxrays::DataSet(ctx);
@@ -256,6 +260,7 @@ void HybridRenderer::Render(Scene *s) {
 			dataSet->Add(*obj);
 
         dataSet->Preprocess();
+		scene->dataSet = dataSet;
 		ctx->SetDataSet(dataSet);
         ctx->Start();
 
@@ -302,7 +307,8 @@ void HybridRenderer::Render(Scene *s) {
 
 	ctx->Stop();
 	delete dataSet;
-	primitiveList.clear();
+	scene->tesselatePrimitives.clear();
+	scene->dataSet = NULL;
 }
 
 void HybridRenderer::Pause() {

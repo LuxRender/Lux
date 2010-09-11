@@ -30,23 +30,48 @@ namespace lux
 
 class PathState : public SurfaceIntegratorState {
 	enum PathStateType {
-		TO_INIT, EYE_VERTEX, TERMINATE
+		TO_INIT, EYE_VERTEX, NEXT_VERTEX, TERMINATE
 	};
 
 	PathState(const Scene &scene, ContributionBuffer *contribBuffer, RandomGenerator *rng);
-	~PathState() { }
+	~PathState();
 
 	bool Init(const Scene &scene);
 
 	friend class PathIntegrator;
 
 private:
-	PathStateType state;
+	void Terminate(const Scene &scene, const u_int bufferId);
+
 	Sample sample;
 
+	// Path status information
+	u_int pathLength;
+	float alpha;
+	float distance;
+	float VContrib;
+	SWCSpectrum pathThroughput;
+	const Volume *volume;
+	vector<SWCSpectrum> L;
+	vector<float> V;
+
+	// Next path vertex ray
 	float eyeRayWeight;
 	Ray pathRay;
-	unsigned int currentPathRayIndex;
+	u_int currentPathRayIndex;
+
+	// Direct lighting
+	//SWCSpectrum *Ld;
+	//float *Vd;
+	vector<SWCSpectrum> Ld;
+	vector<float> Vd;
+	// Direct light sampling rays
+	u_int tracedShadowRayCount;
+	Ray *shadowRay;
+	u_int *currentShadowRayIndex;
+
+	PathStateType state;
+	bool specularBounce, specular;
 };
 
 // PathIntegrator Declarations
@@ -66,9 +91,25 @@ public:
 
 	// DataParallel interface
 	virtual bool IsDataParallelSupported() const { return true; }
-	virtual SurfaceIntegratorState *NewState(const Scene &scene, ContributionBuffer *contribBuffer, RandomGenerator *rng);
-	virtual bool GenerateRays(const Scene &scene, SurfaceIntegratorState *state, luxrays::RayBuffer *rayBuffer);
-	virtual bool NextState(const Scene &scene, SurfaceIntegratorState *state, luxrays::RayBuffer *rayBuffer, u_int *nrContribs);
+	// TOFIX: just to check SurfaceIntegratorRenderingHints light strategy, to remove
+	virtual bool CheckLightStrategy() const {
+		if (hints.GetLightStrategy() != LightsSamplingStrategy::SAMPLE_ONE_UNIFORM) {
+			luxError(LUX_ERROR, LUX_SEVERE, "The LightsSamplingStrategy must be ONE_UNIFORM.");
+			return false;
+		}
+
+		if (hints.GetShadowRaysCount() != 1) {
+			luxError(LUX_ERROR, LUX_SEVERE, "The shadow rays count of LightsSamplingStrategy must be 1.");
+			return false;
+		}
+
+		return true;
+	}
+	virtual SurfaceIntegratorState *NewState(const Scene &,
+		ContributionBuffer *contribBuffer, RandomGenerator *rng);
+	virtual bool GenerateRays(const Scene &,
+		SurfaceIntegratorState *state, luxrays::RayBuffer *rayBuffer);
+	virtual bool NextState(const Scene &, SurfaceIntegratorState *state, luxrays::RayBuffer *rayBuffer, u_int *nrContribs);
 
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 

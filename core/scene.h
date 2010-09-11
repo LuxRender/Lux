@@ -32,6 +32,8 @@
 #include <boost/noncopyable.hpp>
 #include <boost/thread/mutex.hpp>
 
+#include "luxrays/core/dataset.h"
+
 namespace lux {
 
 // Scene Declarations
@@ -48,10 +50,31 @@ public:
 	bool Intersect(const Ray &ray, Intersection *isect) const {
 		return aggregate->Intersect(ray, isect);
 	}
+	bool Intersect(const luxrays::RayHit &rayHit, Intersection *isect) const {
+		if (rayHit.Miss())
+			return false;
+		else {
+			// Something was hit
+			const unsigned int currentTriangleIndex = rayHit.index;
+			const unsigned int currentPrimIndex = dataSet->GetMeshID(currentTriangleIndex);
+			const unsigned int triIndex = dataSet->GetMeshTriangleID(currentTriangleIndex);
+
+			tesselatePrimitives[currentPrimIndex]->GetIntersection(rayHit, triIndex, isect);
+
+			return true;
+		}
+	}
 	bool Intersect(const Sample &sample, const Volume *volume,
 		const Ray &ray, Intersection *isect, BSDF **bsdf,
 		SWCSpectrum *f) const {
 		return volumeIntegrator->Intersect(*this, sample, volume, ray,
+			isect, bsdf, f);
+	}
+	// Used to complete intersection data with LuxRays
+	bool Intersect(const Sample &sample, const Volume *volume,
+		const Ray &ray, const luxrays::RayHit &rayHit, Intersection *isect, BSDF **bsdf,
+		SWCSpectrum *f) const {
+		return volumeIntegrator->Intersect(*this, sample, volume, ray, rayHit,
 			isect, bsdf, f);
 	}
 	bool Connect(const Sample &sample, const Volume *volume,
@@ -101,9 +124,6 @@ public:
 
 	// Scene Data
 	boost::shared_ptr<Primitive> aggregate;
-	// The list of original primitives. It is required by LuxRays to build the DataSet.
-	// It will be cleared after the preprocess phase.
-	vector<boost::shared_ptr<Primitive> >  primitives;
 	vector<Light *> lights;
 	vector<string> lightGroups;
 	Camera *camera;
@@ -113,6 +133,12 @@ public:
 	Sampler *sampler;
 	BBox bound;
 	u_long seedBase;
+
+	// The following data are using when tracing rays with LuxRays
+	// The list of original primitives. It is required by LuxRays to build the DataSet.
+	vector<boost::shared_ptr<Primitive> >  primitives;
+	vector<const Primitive *> tesselatePrimitives;
+	luxrays::DataSet *dataSet;
 
 private:
 	bool filmOnly; // whether this scene has entire scene (incl. geometry, ..) or only a film

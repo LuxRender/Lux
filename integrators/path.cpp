@@ -30,6 +30,8 @@
 #include "dynload.h"
 #include "path.h"
 
+#include "luxrays/core/dataset.h"
+
 using namespace lux;
 
 static const u_int passThroughLimit = 10000;
@@ -229,26 +231,39 @@ u_int PathIntegrator::Li(const Scene &scene, const Sample &sample) const
 }
 
 //------------------------------------------------------------------------------
-// DataParallel integrator code
+// DataParallel integrator PathState code
 //------------------------------------------------------------------------------
 
-PathState::PathState(const Scene &scene, ContributionBuffer *contribBuffer, RandomGenerator *rng) : state(TO_INIT),
-	sample(scene.surfaceIntegrator, scene.volumeIntegrator, scene) {
+PathState::PathState(const Scene &scene, ContributionBuffer *contribBuffer, RandomGenerator *rng) :
+	sample(scene.surfaceIntegrator, scene.volumeIntegrator, scene), state(TO_INIT) {
 	scene.sampler->InitSample(&sample);
 	sample.contribBuffer = contribBuffer;
 	sample.camera = scene.camera->Clone();
 	sample.realTime = 0.f;
 	sample.rng = rng;
+
+	const u_int lightGroupCount = scene.lightGroups.size();
+	L.resize(lightGroupCount, 0.f);
+	V.resize(lightGroupCount, 0.f);
+	Ld.resize(lightGroupCount, 0.f);
+	Vd.resize(lightGroupCount, 0.f);
+
+	//Ld = new SWCSpectrum[1];
+	//Vd = new float[1];
+	shadowRay = new Ray[1];
+}
+
+PathState::~PathState() {
+	//delete[] Ld;
+	//delete[] Vd;
+	delete[] shadowRay;
 }
 
 bool PathState::Init(const Scene &scene) {
-	const bool result = scene.sampler->GetNextSample(&sample);
-
 	// Free BSDF memory from computing image sample value
 	sample.arena.FreeAll();
 
-	state = EYE_VERTEX;
-	// The sample is initialized befor to call this method
+	const bool result = scene.sampler->GetNextSample(&sample);
 
 	// save ray time value
 	sample.realTime = sample.camera->GetTime(sample.time);
@@ -258,79 +273,290 @@ bool PathState::Init(const Scene &scene) {
 	// Sample new SWC thread wavelengths
 	sample.swl.Sample(sample.wavelengths);
 
+	pathLength = 0;
+	alpha = 1.f;
+	distance = INFINITY;
+	VContrib = .1f;
+	pathThroughput = 1.f;
+	volume = NULL;
+	specularBounce = true;
+	specular = true;
+
+	const u_int lightGroupCount = scene.lightGroups.size();
+	for (u_int i = 0; i < lightGroupCount; ++i) {
+		L[i] = 0.f;
+		V[i] = 0.f;
+
+		Ld[i] = 0.f;
+		Vd[i] = 0.f;
+	}
+
 	eyeRayWeight = sample.camera->GenerateRay(scene, sample, &pathRay);
+
+	state = EYE_VERTEX;
 
 	return result;
 }
 
-SurfaceIntegratorState *PathIntegrator::NewState(
-	const Scene &scene, ContributionBuffer *contribBuffer, RandomGenerator *rng) {
+void PathState::Terminate(const Scene &scene, const u_int bufferId) {
+	const u_int lightGroupCount = scene.lightGroups.size();
+	for (u_int i = 0; i < lightGroupCount; ++i) {
+		if (!L[i].Black())
+			V[i] /= L[i].Filter(sample.swl);
+
+		sample.AddContribution(sample.imageX, sample.imageY,
+			XYZColor(sample.swl, L[i]) * eyeRayWeight, alpha, distance,
+			V[i], bufferId, i);
+	}
+	scene.sampler->AddSample(sample);
+	state = PathState::TERMINATE;
+}
+
+//------------------------------------------------------------------------------
+// DataParallel integrator PathIntegrator code
+//------------------------------------------------------------------------------
+
+SurfaceIntegratorState *PathIntegrator::NewState(const Scene &scene,
+		ContributionBuffer *contribBuffer, RandomGenerator *rng) {
 	return new PathState(scene, contribBuffer, rng);
 }
 
-bool PathIntegrator::GenerateRays(const Scene &, SurfaceIntegratorState *s, luxrays::RayBuffer *rayBuffer) {
+bool PathIntegrator::GenerateRays(const Scene &,
+		SurfaceIntegratorState *s, luxrays::RayBuffer *rayBuffer) {
 	PathState *state = (PathState *)s;
-	const unsigned int leftSpace = rayBuffer->LeftSpace();
-	if ((state->state == PathState::EYE_VERTEX) && (1 > leftSpace))
-		return false;
+	const u_int leftSpace = rayBuffer->LeftSpace();
 
-	// A pointer trick
-	luxrays::Ray *ray = (luxrays::Ray *)&state->pathRay;
-	state->currentPathRayIndex = rayBuffer->AddRay(*ray);
+	switch (state->state) {
+		case PathState::EYE_VERTEX: {
+			if (1 > leftSpace)
+				return false;
+
+			// A pointer trick
+			luxrays::Ray *ray = (luxrays::Ray *)&state->pathRay;
+			state->currentPathRayIndex = rayBuffer->AddRay(*ray);
+			break;
+		}
+		case PathState::NEXT_VERTEX: {
+			if (1 + state->tracedShadowRayCount > leftSpace)
+				return false;
+
+			// A pointer trick
+			luxrays::Ray *ray = (luxrays::Ray *)&state->pathRay;
+			state->currentPathRayIndex = rayBuffer->AddRay(*ray);
+
+			for (u_int i = 0; i < state->tracedShadowRayCount; ++i) {
+				// A pointer trick
+				luxrays::Ray *ray = (luxrays::Ray *)&state->shadowRay[i];
+				state->currentShadowRayIndex[i] = rayBuffer->AddRay(*ray);
+			}
+			break;
+		}
+		default:
+			throw std::runtime_error("Internal error in PathIntegrator::GenerateRays(): unknown path state.");
+	}
 
 	return true;
 }
 
 bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, luxrays::RayBuffer *rayBuffer, u_int *nrContribs) {
 	PathState *state = (PathState *)s;
+
 	const luxrays::RayHit *rayHit = rayBuffer->GetRayHit(state->currentPathRayIndex);
+	const float nLights = scene.lights.size();
+	const SpectrumWavelengths &sw(state->sample.swl);
 
-	SWCSpectrum L;
-	if (rayHit->Miss())
-		L = SWCSpectrum(state->sample.swl, RGBColor(0.f, 0.f, 0.f));
-	else {
-		switch (rayHit->index & 0x7) {
-			case 0:
-				L = SWCSpectrum(state->sample.swl, RGBColor(1.f, 0.f, 0.f));
-				break;
-			case 1:
-				L = SWCSpectrum(state->sample.swl, RGBColor(0.f, 1.f, 0.f));
-				break;
-			case 2:
-				L = SWCSpectrum(state->sample.swl, RGBColor(0.f, 0.f, 1.f));
-				break;
-			case 3:
-				L = SWCSpectrum(state->sample.swl, RGBColor(0.f, 1.f, 1.f));
-				break;
-			case 4:
-				L = SWCSpectrum(state->sample.swl, RGBColor(1.f, 0.f, 1.f));
-				break;
-			case 5:
-				L = SWCSpectrum(state->sample.swl, RGBColor(1.f, 1.f, 0.f));
-				break;
-			case 6:
-				L = SWCSpectrum(state->sample.swl, RGBColor(.25f, .25f, .25f));
-				break;
-			case 7:
-				L = SWCSpectrum(state->sample.swl, RGBColor(.75f, .75f, .75f));
-				break;
-			default:
-				L = SWCSpectrum(state->sample.swl, RGBColor(1.f, 1.f, 1.f));
-				break;
+	*nrContribs = 0;
+
+	//--------------------------------------------------------------------------
+	// Finish direct light sampling
+	//--------------------------------------------------------------------------
+
+	/*if ((state->state == PathState::NEXT_VERTEX) && (state->tracedShadowRayCount > 0)) {
+		for (u_int i = 0; i < state->tracedShadowRayCount; ++i) {
+
 		}
+	}*/
+
+	//--------------------------------------------------------------------------
+	// Calculate next step
+	//--------------------------------------------------------------------------
+
+	BSDF *bsdf;
+	Intersection isect;
+	if (!scene.Intersect(state->sample, state->volume, state->pathRay, *rayHit, &isect, &bsdf, &state->pathThroughput)) {
+		// Stop path sampling since no intersection was found
+		// Possibly add horizon in render & reflections
+		if ((includeEnvironment || state->pathLength > 0) && state->specularBounce) {
+			BSDF *ibsdf;
+			for (u_int i = 0; i < nLights; ++i) {
+				SWCSpectrum Le(state->pathThroughput);
+				if (scene.lights[i]->Le(scene, state->sample,
+					state->pathRay, &ibsdf, NULL, NULL, &Le)) {
+					state->L[scene.lights[i]->group] += Le;
+					state->V[scene.lights[i]->group] += Le.Filter(sw) * state->VContrib;
+					++(*nrContribs);
+				}
+			}
+		}
+
+		// Set alpha channel
+		if (state->pathLength == 0)
+			state->alpha = 0.f;
+
+		// The path is finished
+		state->Terminate(scene, bufferId);
+
+		return true;
+	} else {
+		if (state->pathLength == 0)
+			state->distance = rayHit->t * state->pathRay.d.Length();
+
+		// Possibly add emitted light at path vertex
+		Vector wo(-state->pathRay.d);
+
+		if (state->specularBounce && isect.arealight) {
+			BSDF *ibsdf;
+			SWCSpectrum Le(isect.Le(state->sample, state->pathRay, &ibsdf, NULL, NULL));
+
+			if (!Le.Black()) {
+				Le *= state->pathThroughput;
+				state->L[isect.arealight->group] += Le;
+				state->V[isect.arealight->group] += Le.Filter(sw) * state->VContrib;
+				++(*nrContribs);
+			}
+		}
+
+		// Check if we have reached the max. path depth
+		if (state->pathLength == maxDepth) {
+			state->Terminate(scene, bufferId);
+			return true;
+		}
+
+		const Point &p = bsdf->dgShading.p;
+		const Normal &n = bsdf->dgShading.nn;
+
+		// Direct light sampling
+		// TOFIX: to port to GPU ray tracing
+		state->tracedShadowRayCount = 0;
+		if (nLights > 0) {
+			const u_int lightGroupCount = scene.lightGroups.size();
+
+			for (u_int i = 0; i < lightGroupCount; ++i) {
+				state->Ld[i] = 0.f;
+				state->Vd[i] = 0.f;
+			}
+
+			*nrContribs += hints.SampleLights(scene, state->sample, p, n,
+				wo, bsdf, state->pathLength, state->pathThroughput, state->Ld, &state->Vd);
+
+			for (u_int i = 0; i < lightGroupCount; ++i) {
+				state->L[i] += state->Ld[i];
+				state->V[i] += state->Vd[i] * state->VContrib;
+			}
+		}
+
+		/*if (nLights > 0) {
+			const float *sampleData = scene.sampler->GetLazyValues(state->sample,
+					hints.lightSampleOffset, state->pathLength);
+
+			const float lightNum = sampleData[0];
+
+			// Select a light source to sample
+			const u_int nLights = scene.lights.size();
+			const u_int lightNumber = min(Floor2UInt(lightNum * nLights), nLights - 1);
+			const Light &light(*(scene.lights[lightNumber]));
+
+			// Check if I need direct light sampling
+			if (light.IsDeltaLight() || (bsdf->NumComponents(BSDF_DIFFUSE) > 0)) {
+				const float lightSample0 = sampleData[1];
+				const float lightSample1 = sampleData[2];
+				const float lightSample2 = sampleData[3];
+
+				// Trace a shadow ray by sampling the light source
+				float lightPdf;
+				SWCSpectrum Li;
+				BSDF *lightBsdf;
+				if (light.Sample_L(scene, state->sample, p, lightSample0, lightSample1, lightSample2,
+					&lightBsdf, NULL, &lightPdf, &Li)) {
+					const Point &pL(lightBsdf->dgShading.p);
+					const Vector wi0(pL - p);
+					const Volume *volume = bsdf->GetVolume(wi0);
+
+					if (!volume)
+						volume = lightBsdf->GetVolume(-wi0);
+
+					// TOFIX: Connect trace ray on the CPU
+					if (scene.Connect(state->sample, volume, p, pL, false, &Li, NULL, NULL)) {
+						const float d2 = wi0.LengthSquared();
+						const Vector wi(wi0 / sqrtf(d2));
+						Li *= lightBsdf->f(sw, Vector(lightBsdf->nn), -wi);
+						Li *= bsdf->f(sw, wi, wo);
+						if (!Li.Black()) {
+							const float lightPdf2 = lightPdf * d2 /	AbsDot(wi, lightBsdf->nn);
+
+							// Add light's contribution
+							L[light.group] += Li * (AbsDot(wi, n) / lightPdf2);
+						}
+					}
+				}
+			}
+		}*/
+
+		// Evaluate BSDF at hit point
+		const float *data = scene.sampler->GetLazyValues(state->sample,
+				sampleOffset, state->pathLength);
+
+		// Sample BSDF to get new path direction
+		Vector wi;
+		float pdf;
+		BxDFType flags;
+		SWCSpectrum f;
+		if (!bsdf->Sample_f(sw, wo, &wi, data[0], data[1], data[2], &f,
+			&pdf, BSDF_ALL, &flags, NULL, true)) {
+			state->Terminate(scene, bufferId);
+			return true;
+		}
+
+		const float dp = AbsDot(wi, n) / pdf;
+
+		if (flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) ||
+			!(bsdf->Pdf(sw, wi, wo, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) > 0.f)) {
+			// Possibly terminate the path
+			if (state->pathLength > 3) {
+				if (rrStrategy == RR_EFFICIENCY) { // use efficiency optimized RR
+					const float q = min<float>(1.f, f.Filter(sw) * dp);
+					if (q < data[3]) {
+						state->Terminate(scene, bufferId);
+						return true;
+					}
+					// increase path contribution
+					state->pathThroughput /= q;
+				} else if (rrStrategy == RR_PROBABILITY) { // use normal/probability RR
+					if (continueProbability < data[3]) {
+						state->Terminate(scene, bufferId);
+						return true;
+					}
+					// increase path contribution
+					state->pathThroughput /= continueProbability;
+				}
+			}
+			++(state->pathLength);
+
+			state->specularBounce = (flags & BSDF_SPECULAR) != 0;
+			state->specular = state->specular && state->specularBounce;
+		}
+		state->pathThroughput *= f;
+		state->pathThroughput *= dp;
+		if (!state->specular)
+			state->VContrib += dp;
+
+		state->pathRay = Ray(p, wi);
+		state->pathRay.time = state->sample.realTime;
+		state->volume = bsdf->GetVolume(wi);
+		state->state = PathState::NEXT_VERTEX;
+
+		return false;
 	}
-
-	//L = SWCSpectrum(state->sample.swl, RGBColor(fabsf(state->sample.imageX), fabsf(state->sample.imageY), 0.f));
-	state->sample.AddContribution(state->sample.imageX, state->sample.imageY,
-			XYZColor(state->sample.swl, L) * state->eyeRayWeight, 1.f,
-		rayHit->t, 0.f, bufferId, 0);
-
-	scene.sampler->AddSample(state->sample);
-
-	state->state = PathState::TERMINATE;
-	*nrContribs = 1;
-
-	return true;
 }
 
 //------------------------------------------------------------------------------

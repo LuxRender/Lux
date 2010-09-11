@@ -54,13 +54,17 @@ public:
 
 	// DataParallel interface, optionally supported, used by HybridRenderer
 	virtual bool IsDataParallelSupported() const { return false; }
-	virtual SurfaceIntegratorState *NewState(const Scene &scene, ContributionBuffer *contribBuffer, RandomGenerator *rng) {
+	// TOFIX: just to check SurfaceIntegratorRenderingHints light strategy, to remove
+	virtual bool CheckLightStrategy() const { return false; }
+	virtual SurfaceIntegratorState *NewState(const Scene &,
+		ContributionBuffer *contribBuffer, RandomGenerator *rng) {
 		throw std::runtime_error("Internal error: called SurfaceIntegrator::NewSurfaceIntegratorState()");
 	}
-	virtual bool GenerateRays(const Scene &scene, SurfaceIntegratorState *state, luxrays::RayBuffer *rayBuffer) {
+	virtual bool GenerateRays(const Scene &,
+		SurfaceIntegratorState *state, luxrays::RayBuffer *rayBuffer) {
 		throw std::runtime_error("Internal error: called SurfaceIntegrator::GenerateRays()");
 	}
-	virtual bool NextState(const Scene &scene, SurfaceIntegratorState *state, luxrays::RayBuffer *rayBuffer, u_int *nrContribs) {
+	virtual bool NextState(const Scene &, SurfaceIntegratorState *state, luxrays::RayBuffer *rayBuffer, u_int *nrContribs) {
 		throw std::runtime_error("Internal error: called SurfaceIntegrator::NextState()");
 	}
 };
@@ -75,6 +79,10 @@ public:
 		const Sample &sample, float *alpha, SWCSpectrum *const L) const = 0;
 	virtual bool Intersect(const Scene &scene, const Sample &sample,
 		const Volume *volume, const Ray &ray,
+		Intersection *isect, BSDF **bsdf, SWCSpectrum *L) const;
+	// Used to complete intersection data with LuxRays
+	virtual bool Intersect(const Scene &scene, const Sample &sample,
+		const Volume *volume, const Ray &ray, const luxrays::RayHit &rayHit,
 		Intersection *isect, BSDF **bsdf, SWCSpectrum *L) const;
 	virtual bool Connect(const Scene &scene, const Sample &sample,
 		const Volume *volume, const Point &p0, const Point &p1,

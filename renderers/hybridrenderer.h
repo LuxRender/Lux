@@ -192,7 +192,6 @@ private:
 	vector<RendererHostDescription *> hosts;
 	vector<RenderThread *> renderThreads;
 	Scene *scene;
-	vector<const Primitive *> primitiveList;
 
 	Timer s_Timer;
 	double lastSamples, lastTime;
