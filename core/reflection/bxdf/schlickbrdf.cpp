@@ -53,7 +53,9 @@ void SchlickBRDF::f(const TsPack *tspack, const Vector &wo,
 	f_->AddWeighted(INV_PI, a * Rd * (SWCSpectrum(1.f) - S));
 
 	// specular part
-	f_->AddWeighted(SchlickD(fabsf(wi.z), fabsf(wo.z), H), S);	
+	if (wi.z <= 0.f || wo.z <= 0.f)
+		return;
+	f_->AddWeighted(SchlickD(fabsf(wi.z), fabsf(wo.z), H), S);
 }
 
 static float GetPhi(float a, float b)
@@ -103,6 +105,9 @@ bool SchlickBRDF::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 		cosWH = AbsDot(wo, H);
 		*wi = 2.f * cosWH * H - wo;
 	}
+	if (!SameHemisphere(wo, *wi))
+		return false;
+
 	const float specPdf = SchlickZ(H.z) * SchlickA(H) /
 		(8.f * M_PI);
 	*pdf = fabsf(wi->z) * INV_TWOPI + specPdf / fabsf(wo.z);
