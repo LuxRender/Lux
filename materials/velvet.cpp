@@ -33,23 +33,22 @@
 using namespace lux;
 
 // Velvet Method Definitions
-BSDF *Velvet::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
-	const DifferentialGeometry &dgGeom,
+BSDF *Velvet::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 	const DifferentialGeometry &dgs,
 	const Volume *exterior, const Volume *interior) const
 {
 	// Allocate _BSDF_
-	SWCSpectrum r = Kd->Evaluate(sw, dgs).Clamp(0.f, 1.f);
+	SWCSpectrum r = Kd->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
 	
-	float p1 = Clamp(P1->Evaluate(sw, dgs), -100.f, 100.f);
-	float p2 = Clamp(P2->Evaluate(sw, dgs), -100.f, 100.f);
-	float p3 = Clamp(P3->Evaluate(sw, dgs), -100.f, 100.f);
+	float p1 = Clamp(P1->Evaluate(tspack, dgs), -100.f, 100.f);
+	float p2 = Clamp(P2->Evaluate(tspack, dgs), -100.f, 100.f);
+	float p3 = Clamp(P3->Evaluate(tspack, dgs), -100.f, 100.f);
 	
-	float thickness = Clamp(Thickness->Evaluate(sw, dgs), 0.0f, 1.f);
+	float thickness = Clamp(Thickness->Evaluate(tspack, dgs), 0.0f, 1.f);
 	
-	BxDF *bxdf = ARENA_ALLOC(arena, Asperity)(r, p1, p2, p3, thickness);
+	BxDF *bxdf = ARENA_ALLOC(tspack->arena, Asperity)(r, p1, p2, p3, thickness);
 
-	SingleBSDF *bsdf = ARENA_ALLOC(arena, SingleBSDF)(dgs,
+	SingleBSDF *bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dgs,
 		dgGeom.nn, bxdf, exterior, interior);
 
 	// Add ptr to CompositingParams structure

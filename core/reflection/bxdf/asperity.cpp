@@ -30,7 +30,7 @@
 
 using namespace lux;
 
-void Asperity::f(const SpectrumWavelengths &sw, const Vector &wo, 
+void Asperity::f(const TsPack *tspack, const Vector &wo, 
 	const Vector &wi, SWCSpectrum *const f_) const
 {
 	float costheta = Dot(-wo, wi);

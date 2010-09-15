@@ -42,12 +42,12 @@ public:
 		compParams = new CompositingParams(cp);
 	}
 	virtual ~Velvet() { }
-	virtual void GetShadingGeometry(const SpectrumWavelengths &sw,
+	virtual void GetShadingGeometry(const TsPack *tspack,
 		const Normal &nGeom, DifferentialGeometry *dgBump) const {
 		if (bumpMap)
-			Bump(sw, bumpMap, nGeom, dgBump);
+			Bump(tspack, bumpMap, nGeom, dgBump);
 	}
-	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
+	virtual BSDF *GetBSDF(const TsPack *tspack,
 		const DifferentialGeometry &dgGeom,
 		const DifferentialGeometry &dgShading,
 		const Volume *exterior, const Volume *interior) const;

@@ -37,7 +37,7 @@ public:
 		  R(reflectance), A1(a1), A2(a2), A3(a3), delta(d) {
 	}
 	virtual ~Asperity() { }
-	virtual void f(const SpectrumWavelengths &sw, const Vector &wo,
+	virtual void f(const TsPack *tspack, const Vector &wo,
 		const Vector &wi, SWCSpectrum *const f) const;
 private:
 	// Asperity Private Data

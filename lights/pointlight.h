@@ -71,6 +71,7 @@ private:
 	// PointLight Private Data
 	Point lightPos;
 	boost::shared_ptr< Texture<SWCSpectrum> > Lbase;
+	DifferentialGeometry dummydg;
 	float gain;
 	SampleableSphericalFunction *func;
 };
