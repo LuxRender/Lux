@@ -91,7 +91,7 @@ public:
 
 	// DataParallel interface
 	virtual bool IsDataParallelSupported() const { return true; }
-	// TOFIX: just to check SurfaceIntegratorRenderingHints light strategy, to remove
+	//FIXME: just to check SurfaceIntegratorRenderingHints light strategy, to remove
 	virtual bool CheckLightStrategy() const {
 		if (hints.GetLightStrategy() != LightsSamplingStrategy::SAMPLE_ONE_UNIFORM) {
 			luxError(LUX_ERROR, LUX_SEVERE, "The LightsSamplingStrategy must be ONE_UNIFORM.");

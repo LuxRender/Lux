@@ -54,7 +54,7 @@ public:
 
 	// DataParallel interface, optionally supported, used by HybridRenderer
 	virtual bool IsDataParallelSupported() const { return false; }
-	// TOFIX: just to check SurfaceIntegratorRenderingHints light strategy, to remove
+	//FIXME: just to check SurfaceIntegratorRenderingHints light strategy, to remove
 	virtual bool CheckLightStrategy() const { return false; }
 	virtual SurfaceIntegratorState *NewState(const Scene &,
 		ContributionBuffer *contribBuffer, RandomGenerator *rng) {

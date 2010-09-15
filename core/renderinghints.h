@@ -218,7 +218,7 @@ public:
 		u_int depth, const SWCSpectrum &scale,
 		vector<SWCSpectrum> &L, vector<float> *V = NULL) const;
 
-	// TOFIX: temporary until the implementation of DataParallel interface
+	//FIXME: temporary until the implementation of DataParallel interface
 	friend class PathIntegrator;
 private:
 	// Light Strategies

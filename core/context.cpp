@@ -972,7 +972,7 @@ void Context::Exit() {
 u_int Context::AddThread() {
 	const vector<RendererHostDescription *> &hosts = luxCurrentRenderer->GetHostDescs();
 
-	// TOFIX
+	//FIXME
 	SRDeviceDescription *desc = (SRDeviceDescription *)hosts[0]->GetDeviceDescs()[0];
 	desc->SetUsedUnitsCount(desc->GetUsedUnitsCount() + 1);
 
@@ -982,7 +982,7 @@ u_int Context::AddThread() {
 void Context::RemoveThread() {
 	const vector<RendererHostDescription *> &hosts = luxCurrentRenderer->GetHostDescs();
 
-	// TOFIX
+	//FIXME
 	SRDeviceDescription *desc = (SRDeviceDescription *)hosts[0]->GetDeviceDescs()[0];
 	desc->SetUsedUnitsCount(max(desc->GetUsedUnitsCount() - 1, 1u));
 }

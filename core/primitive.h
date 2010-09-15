@@ -157,9 +157,9 @@ public:
 	 * This must be implemented if Tesselate() is supported. Translate a LuxRays hit
 	 * in a LuxRender Intersection.
 	 * @param dataSet LuxRays DataSet used to trace the ray.
-     * @param rayHit Intersection hit point information.
+	 * @param rayHit Intersection hit point information.
 	 * @param in The destination of the intersection information.
-     */
+	 */
 	virtual void GetIntersection(const luxrays::RayHit &rayHit, const u_int index, Intersection *in) const {
 		throw std::runtime_error("Internal error: called Primitives::GetIntersection().");
 	}
