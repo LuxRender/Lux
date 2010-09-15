@@ -241,10 +241,6 @@ ENDIF(APPLE)
 IF(APPLE)
 	SET(SYS_LIBRARIES z bz2)
 ENDIF(APPLE)
-IF(CYGWIN)
-	SET(SYS_LIBRARIES wsock32 ws2_32)
-	ADD_DEFINITIONS(-D_WIN32_WINNT=0x0551 -D__USE_W32_SOCKETS -D_GLIBCXX__PTHREADS)
-ENDIF(CYGWIN)
 
 #############################################################################
 #############################################################################
@@ -364,7 +360,6 @@ COMMAND ${FLEX_EXECUTABLE}
 ARGS -o${CMAKE_BINARY_DIR}/luxlex.cpp
       ${CMAKE_SOURCE_DIR}/core/luxlex.l
 TARGET LuxLexer
-#DEPENDS ${CMAKE_BINARY_DIR}/core/pbrtparse.cpp ${lux_BINARY_DIR}/core/pbrtparse.h
 OUTPUTS ${CMAKE_BINARY_DIR}/luxlex.cpp)
 SET_SOURCE_FILES_PROPERTIES(${CMAKE_BINARY_DIR}/luxlex.cpp GENERATED)
 
@@ -578,6 +573,16 @@ SET(lux_pixelsamplers_src
 	pixelsamplers/tilepx.cpp
 	pixelsamplers/vegas.cpp
 	)
+if(LUXRAYS_DISABLE_OPENCL)
+SET(lux_renderers_src
+	renderers/samplerrenderer.cpp
+	)
+else(LUXRAYS_DISABLE_OPENCL)
+SET(lux_renderers_src
+	renderers/hybridrenderer.cpp
+	renderers/samplerrenderer.cpp
+	)
+endif(LUXRAYS_DISABLE_OPENCL)
 SET(lux_samplers_src
 	samplers/erpt.cpp
 	samplers/lowdiscrepancy.cpp
@@ -678,22 +683,18 @@ SET(lux_volumes_src
 	volumes/homogeneous.cpp
 	volumes/volumegrid.cpp
 	)
-SET(lux_renderers_src
-	renderers/hybridrenderer.cpp
-	renderers/samplerrenderer.cpp
-	)
 
 SET(lux_lib_src
 	${lux_core_src}
 	${lux_accelerators_src}
 	${lux_cameras_src}
-	${lux_renderers_src}
 	${lux_films_src}
 	${lux_filters_src}
 	${lux_integrators_src}
 	${lux_lights_src}
 	${lux_materials_src}
 	${lux_pixelsamplers_src}
+	${lux_renderers_src}
 	${lux_samplers_src}
 	${lux_shapes_src}
 	${lux_spds_src}
@@ -841,10 +842,17 @@ IF(PYTHONLIBS_FOUND)
 	ELSE(APPLE)
 		ADD_LIBRARY(pylux SHARED python/binding.cpp)
 		TARGET_LINK_LIBRARIES(pylux -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${SYS_LIBRARIES} ${PYTHON_LIBRARIES} ${Boost_python_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARY})
-		ADD_CUSTOM_COMMAND(
-			TARGET pylux POST_BUILD
-			COMMAND mv libpylux.so pylux.so
-			)
+		IF(CYGWIN)
+			ADD_CUSTOM_COMMAND(
+				TARGET pylux POST_BUILD
+				COMMAND mv cygpylux.dll pylux.dll
+				)
+		ELSE(CYGWIN)
+			ADD_CUSTOM_COMMAND(
+				TARGET pylux POST_BUILD
+				COMMAND mv libpylux.so pylux.so
+				)
+		ENDIF(CYGWIN)
 	ENDIF(APPLE)
 ELSE(PYTHONLIBS_FOUND)
 	MESSAGE( STATUS "Warning : could not find Python libraries - not building python module")
