@@ -57,7 +57,6 @@ void FresnelGeneral::Evaluate(const SpectrumWavelengths &sw, float cosi,
 			const SWCSpectrum a(2.f * k * k * sint2);
 			const SWCSpectrum d2 = eta * eta + k * k;
 			FrFull(-cosi, (cost2 + (cost2 * cost2 + a * a).Sqrt()).Sqrt(), eta / d2, -k / d2, f);
-			FrFull(-cosi, cost2.Sqrt(), eta / d2, -k / d2, f);
 		}
 	}
 }
