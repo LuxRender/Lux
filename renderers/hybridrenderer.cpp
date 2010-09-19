@@ -20,6 +20,8 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
+#include <iomanip>
+
 #include "api.h"
 #include "scene.h"
 #include "camera.h"
@@ -497,14 +499,22 @@ void HybridRenderer::RenderThread::RenderImpl(RenderThread *renderThread) {
 
 	RandomGenerator rng(seed);
 
-	luxrays::RayBuffer *rayBuffer = renderThread->iDevice->NewRayBuffer();
+	//luxrays::RayBuffer *rayBuffer = renderThread->iDevice->NewRayBuffer();
+	luxrays::RayBuffer *rayBuffer = new luxrays::RayBuffer(32768);
 
 	// Init all PathState
+	const double t0 = luxrays::WallClockTime();
 	vector<SurfaceIntegratorState *> integratorState(rayBuffer->GetSize());
 	for (size_t i = 0; i < integratorState.size(); ++i) {
 		integratorState[i] = scene.surfaceIntegrator->NewState(scene, contribBuffer, &rng);
 		integratorState[i]->Init(scene);
 	}
+
+	ss.str("");
+	ss << "Thread " << renderThread->n << " initialization time: " <<
+			std::setiosflags(std::ios::fixed) << std::setprecision(2) <<
+			luxrays::WallClockTime() - t0 << " secs";
+	luxError(LUX_NOERROR, LUX_DEBUG, ss.str().c_str());
 
 	size_t currentGenerateIndex = 0;
 	size_t currentNextIndex = 0;
@@ -535,7 +545,7 @@ void HybridRenderer::RenderThread::RenderImpl(RenderThread *renderThread) {
 		// Advance the next step
 		u_int nrContribs = 0;
 		u_int nrSamples = 0;
-		for (size_t i = 0; i < rayBuffer->GetRayCount(); ++i) {
+		do {
 			u_int count;
 			if (scene.surfaceIntegrator->NextState(scene, integratorState[currentNextIndex], rayBuffer, &count)) {
 				// The sample is finished
@@ -568,7 +578,7 @@ void HybridRenderer::RenderThread::RenderImpl(RenderThread *renderThread) {
 
 			nrContribs += count;
 			currentNextIndex = (currentNextIndex + 1) % integratorState.size();
-		}
+		} while (currentNextIndex != currentGenerateIndex);
 
 		// Jeanphi - Hijack statistics until volume integrator revamp
 		{

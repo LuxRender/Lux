@@ -245,18 +245,20 @@ PathState::PathState(const Scene &scene, ContributionBuffer *contribBuffer, Rand
 	const u_int lightGroupCount = scene.lightGroups.size();
 	L.resize(lightGroupCount, 0.f);
 	V.resize(lightGroupCount, 0.f);
-	Ld.resize(lightGroupCount, 0.f);
-	Vd.resize(lightGroupCount, 0.f);
 
-	//Ld = new SWCSpectrum[1];
-	//Vd = new float[1];
+	Ld = new SWCSpectrum[1];
+	Vd = new float[1];
+	LdGroup = new u_int[1];
 	shadowRay = new Ray[1];
+	currentShadowRayIndex = new u_int[1];
 }
 
 PathState::~PathState() {
-	//delete[] Ld;
-	//delete[] Vd;
+	delete[] Ld;
+	delete[] Vd;
+	delete[] LdGroup;
 	delete[] shadowRay;
+	delete[] currentShadowRayIndex;
 }
 
 bool PathState::Init(const Scene &scene) {
@@ -286,9 +288,6 @@ bool PathState::Init(const Scene &scene) {
 	for (u_int i = 0; i < lightGroupCount; ++i) {
 		L[i] = 0.f;
 		V[i] = 0.f;
-
-		Ld[i] = 0.f;
-		Vd[i] = 0.f;
 	}
 
 	eyeRayWeight = sample.camera->GenerateRay(scene, sample, &pathRay);
@@ -362,7 +361,7 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 	PathState *state = (PathState *)s;
 
 	const luxrays::RayHit *rayHit = rayBuffer->GetRayHit(state->currentPathRayIndex);
-	const float nLights = scene.lights.size();
+	const u_int nLights = scene.lights.size();
 	const SpectrumWavelengths &sw(state->sample.swl);
 
 	*nrContribs = 0;
@@ -371,11 +370,15 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 	// Finish direct light sampling
 	//--------------------------------------------------------------------------
 
-	/*if ((state->state == PathState::NEXT_VERTEX) && (state->tracedShadowRayCount > 0)) {
+	if ((state->state == PathState::NEXT_VERTEX) && (state->tracedShadowRayCount > 0)) {
 		for (u_int i = 0; i < state->tracedShadowRayCount; ++i) {
-
+			if (rayBuffer->GetRayHit(state->currentShadowRayIndex[i])->Miss()) {
+				const u_int group = state->LdGroup[i];
+				state->L[group] += state->Ld[i];
+				state->V[group] += state->Vd[i];
+			}
 		}
-	}*/
+	}
 
 	//--------------------------------------------------------------------------
 	// Calculate next step
@@ -436,38 +439,19 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 		const Normal &n = bsdf->dgShading.nn;
 
 		// Direct light sampling
-		// TOFIX: to port to GPU ray tracing
 		state->tracedShadowRayCount = 0;
 		if (nLights > 0) {
-			const u_int lightGroupCount = scene.lightGroups.size();
-
-			for (u_int i = 0; i < lightGroupCount; ++i) {
-				state->Ld[i] = 0.f;
-				state->Vd[i] = 0.f;
-			}
-
-			*nrContribs += hints.SampleLights(scene, state->sample, p, n,
-				wo, bsdf, state->pathLength, state->pathThroughput, state->Ld, &state->Vd);
-
-			for (u_int i = 0; i < lightGroupCount; ++i) {
-				state->L[i] += state->Ld[i];
-				state->V[i] += state->Vd[i] * state->VContrib;
-			}
-		}
-
-		/*if (nLights > 0) {
 			const float *sampleData = scene.sampler->GetLazyValues(state->sample,
 					hints.lightSampleOffset, state->pathLength);
 
 			const float lightNum = sampleData[0];
 
 			// Select a light source to sample
-			const u_int nLights = scene.lights.size();
 			const u_int lightNumber = min(Floor2UInt(lightNum * nLights), nLights - 1);
 			const Light &light(*(scene.lights[lightNumber]));
 
 			// Check if I need direct light sampling
-			if (light.IsDeltaLight() || (bsdf->NumComponents(BSDF_DIFFUSE) > 0)) {
+			if (bsdf->NumComponents(BxDFType(BSDF_REFLECTION | BSDF_TRANSMISSION | BSDF_DIFFUSE | BSDF_GLOSSY)) > 0) {
 				const float lightSample0 = sampleData[1];
 				const float lightSample1 = sampleData[2];
 				const float lightSample2 = sampleData[3];
@@ -480,27 +464,32 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 					&lightBsdf, NULL, &lightPdf, &Li)) {
 					const Point &pL(lightBsdf->dgShading.p);
 					const Vector wi0(pL - p);
-					const Volume *volume = bsdf->GetVolume(wi0);
+					const float d2 = wi0.LengthSquared();
+					const float length = sqrtf(d2);
+					const Vector wi(wi0 / length);
 
-					if (!volume)
-						volume = lightBsdf->GetVolume(-wi0);
+					Li *= lightBsdf->f(sw, Vector(lightBsdf->nn), -wi);
+					Li *= bsdf->f(sw, wi, wo);
 
-					// TOFIX: Connect trace ray on the CPU
-					if (scene.Connect(state->sample, volume, p, pL, false, &Li, NULL, NULL)) {
-						const float d2 = wi0.LengthSquared();
-						const Vector wi(wi0 / sqrtf(d2));
-						Li *= lightBsdf->f(sw, Vector(lightBsdf->nn), -wi);
-						Li *= bsdf->f(sw, wi, wo);
-						if (!Li.Black()) {
+					if (!Li.Black()) {
+						const float shadowRayEpsilon = max(MachineEpsilon::E(pL),
+								MachineEpsilon::E(length));
+
+						if (shadowRayEpsilon < length * .5f) {
 							const float lightPdf2 = lightPdf * d2 /	AbsDot(wi, lightBsdf->nn);
 
-							// Add light's contribution
-							L[light.group] += Li * (AbsDot(wi, n) / lightPdf2);
+							// Store light's contribution
+							state->Ld[0] = state->pathThroughput * Li * (AbsDot(wi, n) / lightPdf2);
+							state->Vd[0] = state->Ld[0].Filter(sw) * state->VContrib;
+							state->LdGroup[0] = light.group;
+
+							state->shadowRay[0] = Ray(p, wi, shadowRayEpsilon, length, state->sample.time);
+							state->tracedShadowRayCount = 1;
 						}
 					}
 				}
 			}
-		}*/
+		}
 
 		// Evaluate BSDF at hit point
 		const float *data = scene.sampler->GetLazyValues(state->sample,

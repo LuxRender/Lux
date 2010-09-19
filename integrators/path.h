@@ -61,10 +61,9 @@ private:
 	u_int currentPathRayIndex;
 
 	// Direct lighting
-	//SWCSpectrum *Ld;
-	//float *Vd;
-	vector<SWCSpectrum> Ld;
-	vector<float> Vd;
+	SWCSpectrum *Ld;
+	float *Vd;
+	u_int *LdGroup;
 	// Direct light sampling rays
 	u_int tracedShadowRayCount;
 	Ray *shadowRay;
