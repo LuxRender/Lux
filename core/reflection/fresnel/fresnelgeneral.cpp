@@ -48,7 +48,7 @@ void FresnelGeneral::Evaluate(const SpectrumWavelengths &sw, float cosi,
 			FrDiel2(cosi, cost2.Sqrt(), eta, f);
 		else {
 			const SWCSpectrum a(2.f * k * k * sint2);
-			FrFull(cosi, (cost2 + (cost2 * cost2 + a * a).Sqrt()).Sqrt(), eta, k, f);
+			FrFull(cosi, ((cost2 + (cost2 * cost2 + a * a).Sqrt()) / 2.f).Sqrt(), eta, k, f);
 		}
 	} else {
 		if (model == DIELECTRIC_FRESNEL)
@@ -56,7 +56,7 @@ void FresnelGeneral::Evaluate(const SpectrumWavelengths &sw, float cosi,
 		else {
 			const SWCSpectrum a(2.f * k * k * sint2);
 			const SWCSpectrum d2 = eta * eta + k * k;
-			FrFull(-cosi, (cost2 + (cost2 * cost2 + a * a).Sqrt()).Sqrt(), eta / d2, -k / d2, f);
+			FrFull(-cosi, ((cost2 + (cost2 * cost2 + a * a).Sqrt()) / 2.f).Sqrt(), eta / d2, -k / d2, f);
 		}
 	}
 }
