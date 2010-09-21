@@ -567,11 +567,17 @@ Light* SkyLight::CreateLight(const Transform &light2world,
 	Vector sundir = paramSet.FindOneVector("sundir", Vector(0,0,1));	// direction vector of the sun
 	Normalize(sundir);
 	float turb = paramSet.FindOneFloat("turbidity", 2.0f);			// [in] turb  Turbidity (1.0,30+) 2-6 are most useful for clear days.
-	float aconst = paramSet.FindOneFloat("aconst", 1.0f);				// Perez function multiplicative constants
-	float bconst = paramSet.FindOneFloat("bconst", 1.0f);
-	float cconst = paramSet.FindOneFloat("cconst", 1.0f);
-	float dconst = paramSet.FindOneFloat("dconst", 1.0f);
-	float econst = paramSet.FindOneFloat("econst", 1.0f);
+	// Perez function multiplicative constants
+	float aconst = paramSet.FindOneFloat("aconst",
+		paramSet.FindOneFloat("horizonbrightness", 1.0f));
+	float bconst = paramSet.FindOneFloat("bconst",
+		paramSet.FindOneFloat("horizonsize", 1.0f));
+	float cconst = paramSet.FindOneFloat("cconst",
+		paramSet.FindOneFloat("sunhalobrightness", 1.0f));
+	float dconst = paramSet.FindOneFloat("dconst",
+		paramSet.FindOneFloat("sunhalosize", 1.0f));
+	float econst = paramSet.FindOneFloat("econst",
+		paramSet.FindOneFloat("backscattering", 1.0f));
 
 	SkyLight *l = new SkyLight(light2world, scale, nSamples, sundir, turb, aconst, bconst, cconst, dconst, econst);
 	l->hints.InitParam(paramSet);
