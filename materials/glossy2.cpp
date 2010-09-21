@@ -54,8 +54,8 @@ BSDF *Glossy2::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 	SWCSpectrum a(Ka->Evaluate(sw, dgs).Clamp(0.f, 1.f));
 
 	// Clamp roughness values to avoid artifacts with too small values
-	const float u = Clamp(nu->Evaluate(sw, dgs), 1e-4f, 1.f);
-	const float v = Clamp(nv->Evaluate(sw, dgs), 1e-4f, 1.f);
+	const float u = Clamp(nu->Evaluate(sw, dgs), 6e-3f, 1.f);
+	const float v = Clamp(nv->Evaluate(sw, dgs), 6e-3f, 1.f);
 	const float u2 = u * u;
 	const float v2 = v * v;
 	float ld = depth->Evaluate(sw, dgs);
