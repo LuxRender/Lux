@@ -342,7 +342,7 @@ ENDIF(NOT APPLE)
 #ADD_DEFINITIONS(-fPIC)
 
 # Jens - default Mac compiler options with OpenGL
-ADD_DEFINITIONS(-O3 -ftree-vectorize -msse -msse2 -msse3 -mssse3 -fvariable-expansion-in-unroller -fpic -Wall -DHAVE_PTHREAD_H )
+#ADD_DEFINITIONS(-O3 -ftree-vectorize -msse -msse2 -msse3 -mssse3 -fvariable-expansion-in-unroller -fpic -Wall -DHAVE_PTHREAD_H )
 # Jens - testing Mac compiler options (debug)
 #ADD_DEFINITIONS(-DHAVE_PTHREAD_H)
 
