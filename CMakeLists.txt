@@ -133,8 +133,8 @@ ENDIF (NOT FLEX_EXECUTABLE)
 #############################################################################
 
 IF(APPLE)
-SET(BOOST_ROOT ../macos)
-ENDIFIF(APPLE)
+	SET(BOOST_ROOT ../macos)
+ENDIF(APPLE)
 
 FIND_PACKAGE(Boost 1.43 REQUIRED COMPONENTS python)
 
