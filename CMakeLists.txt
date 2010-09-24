@@ -82,14 +82,18 @@ ENDIF (NOT FLEX_EXECUTABLE)
 #############################################################################
 #############################################################################
 
-FIND_PACKAGE(Boost 1.41 REQUIRED COMPONENTS python)
+IF(APPLE)
+	SET(BOOST_ROOT ../macos)
+ENDIF(APPLE)
+
+FIND_PACKAGE(Boost 1.43 REQUIRED COMPONENTS python)
 
 SET(Boost_python_FOUND ${Boost_FOUND})
 SET(Boost_python_LIBRARIES ${Boost_LIBRARIES})
 SET(Boost_FOUND)
 SET(Boost_LIBRARIES)
 
-FIND_PACKAGE(Boost 1.41 REQUIRED COMPONENTS thread program_options filesystem serialization iostreams regex system)
+FIND_PACKAGE(Boost 1.43 REQUIRED COMPONENTS thread program_options filesystem serialization iostreams regex system)
 
 IF(Boost_FOUND)
 	MESSAGE(STATUS "Boost library directory: " ${Boost_LIBRARY_DIRS})
@@ -105,20 +109,25 @@ ENDIF(Boost_FOUND)
 #############################################################################
 #############################################################################
 
-# !!!!freeimage needs headers from openEXR 1.6x !!!!
-FIND_PATH(OPENEXR_INCLUDE_DIRS
-    ImfXdr.h
-    PATHS
-    /usr/local/include/OpenEXR
-    /usr/include/OpenEXR
-    /sw/include/OpenEXR
-    /opt/local/include/OpenEXR
-    /opt/csw/include/OpenEXR
-    /opt/include/OpenEXR
-) 
+# !!!!freeimage needs headers from or matched with freeimage !!!!
 IF(APPLE)
-   SET(OPENEXR_LIBRARIES Half IlmImf Iex Imath IlmThread)
+	FIND_PATH(OPENEXR_INCLUDE_DIRS
+		OpenEXRConfig.h
+		PATHS
+		../macos/include/OpenEXR
+		NO_DEFAULT_PATH
+	)
 ELSE(APPLE)
+	FIND_PATH(OPENEXR_INCLUDE_DIRS
+  	  ImfXdr.h
+  	  PATHS
+  	  /usr/local/include/OpenEXR
+   	 /usr/include/OpenEXR
+  	  /sw/include/OpenEXR
+  	 /opt/local/include/OpenEXR
+   	 /opt/csw/include/OpenEXR
+  	 /opt/include/OpenEXR
+	) 
    SET(OPENEXR_LIBRARIES Half IlmImf Iex Imath)
 ENDIF(APPLE)
 
@@ -138,12 +147,21 @@ ENDIF(APPLE)
 #  PNG_LIBRARY, where to find the PNG library.
 # None of the above will be defined unles zlib can be found.
 # PNG depends on Zlib
-INCLUDE(FindPNG)
-IF(PNG_FOUND)
-ELSE(PNG_FOUND)
-    MESSAGE( STATUS "Warning : could not find PNG - building without png support")
-ENDIF(PNG_FOUND)
-#FIND_PACKAGE(PNG REQUIRED)
+IF(APPLE)
+	FIND_PATH(PNG_INCLUDE_DIR
+		pngconf.h
+		PATHS
+		../macos//include
+		NO_DEFAULT_PATH
+	)
+ELSE(APPLE)
+	INCLUDE(FindPNG)
+	IF(PNG_FOUND)
+	ELSE(PNG_FOUND)
+   	 MESSAGE( STATUS "Warning : could not find PNG - building without png support")
+	ENDIF(PNG_FOUND)
+	#FIND_PACKAGE(PNG REQUIRED)
+ENDIF(APPLE)
 
 
 
@@ -155,12 +173,17 @@ ENDIF(PNG_FOUND)
 
 IF(APPLE)
     FIND_PATH(FREEIMAGE_INCLUDE_DIRS
-    freeimage.h
-    PATHS
-    /usr/local/include/
-    /usr/include/
+    	freeimage.h
+    	PATHS
+	../macos//include	
+	NO_DEFAULT_PATH
     )
-    SET(FREEIMAGE_LIBRARIES freeimage)
+    FIND_LIBRARY(FREEIMAGE_LIBRARIES
+    	libfreeimage.a
+    	PATHS
+	../macos//lib	
+	NO_DEFAULT_PATH
+    )
 ELSE(APPLE)
     FIND_PACKAGE(FreeImage REQUIRED)
 
@@ -254,11 +277,14 @@ ADD_DEFINITIONS(-DLUX_USE_CONFIG_H)
 #########################      COMPILER FLAGS     ###########################
 #############################################################################
 #############################################################################
-# Dade - default compiler options
-ADD_DEFINITIONS(-O3 -msse2 -mfpmath=sse -ftree-vectorize -funroll-loops -Wall -fPIC -DHAVE_PTHREAD_H)
-# The QBVH accelerator needs to be compiled with much reduced optimizations
-# otherwise gcc produces incorrect code and ruins the render on 64bits machines
-IF(NOT APPLE)
+IF(APPLE)
+	# Jens - default Mac compiler options
+	ADD_DEFINITIONS(-O3 -ftree-vectorize -msse -msse2 -msse3 -mssse3 -fvariable-expansion-in-unroller -fpic -Wall -DHAVE_PTHREAD_H )
+ELSE(APPLE)
+	# Dade - default compiler options
+	ADD_DEFINITIONS(-O3 -msse2 -mfpmath=sse -ftree-vectorize -funroll-loops -Wall -fPIC -DHAVE_PTHREAD_H)
+	# The QBVH accelerator needs to be compiled with much reduced optimizations
+	# otherwise gcc produces incorrect code and ruins the render on 64bits machines
 	SET_SOURCE_FILES_PROPERTIES(accelerators/qbvhaccel.cpp COMPILE_FLAGS "-O1")
 ENDIF(NOT APPLE)
 
@@ -270,7 +296,7 @@ ENDIF(NOT APPLE)
 #ADD_DEFINITIONS(-fPIC)
 
 # Jens - default Mac compiler options with OpenGL
-#ADD_DEFINITIONS(-O3 -ftree-vectorize -msse -msse2 -msse3 -mssse3 -fvariable-expansion-in-unroller -fpic -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H )
+ADD_DEFINITIONS(-O3 -ftree-vectorize -msse -msse2 -msse3 -mssse3 -fvariable-expansion-in-unroller -fpic -Wall -DHAVE_PTHREAD_H )
 # Jens - testing Mac compiler options (debug)
 #ADD_DEFINITIONS(-DHAVE_PTHREAD_H)
 
@@ -793,10 +819,10 @@ IF(PYTHONLIBS_FOUND)
 		ADD_LIBRARY(pylux MODULE python/binding.cpp)
 		TARGET_LINK_LIBRARIES(pylux -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z bz2  ${SYS_LIBRARIES} ${PYTHON_LIBRARIES} ${Boost_python_LIBRARIES})
 ### if XCode used for compiling ###
-#		ADD_CUSTOM_COMMAND(
-#			TARGET pylux POST_BUILD
-#			COMMAND mv release/libpylux.so release/pylux.so
-#		)
+		ADD_CUSTOM_COMMAND(
+			TARGET pylux POST_BUILD
+			COMMAND mv release/libpylux.so release/pylux.so
+		)
 	ELSE(APPLE)
 		ADD_LIBRARY(pylux SHARED python/binding.cpp)
 		TARGET_LINK_LIBRARIES(pylux -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${SYS_LIBRARIES} ${PYTHON_LIBRARIES} ${Boost_python_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARY})
@@ -911,13 +937,13 @@ IF(QT4_FOUND)
 		SET(EXTRA_LIBS ${CARBON_LIBRARY} ${QT_LIBRARY} ${AGL_LIBRARY} ${APP_SERVICES_LIBRARY})
 		TARGET_LINK_LIBRARIES(luxrender -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${QT_LIBRARIES} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${BZ2_LIBRARIES} )
 ### if XCode used for compiling ###
-#		ADD_CUSTOM_COMMAND(
-#			TARGET luxrender POST_BUILD
-#			COMMAND rm -rf release/luxrender.app/Contents/Resources
-#			COMMAND mkdir release/luxrender.app/Contents/Resources
-#			COMMAND cp ../macos/luxrender.icns release/luxrender.app/Contents/Resources
-#			COMMAND cp ../macos/luxscene.icns release/luxrender.app/Contents/Resources
-#			)
+		ADD_CUSTOM_COMMAND(
+			TARGET luxrender POST_BUILD
+			COMMAND rm -rf release/luxrender.app/Contents/Resources
+			COMMAND mkdir release/luxrender.app/Contents/Resources
+			COMMAND cp ../macos/icons/luxrender.icns release/luxrender.app/Contents/Resources
+			COMMAND cp ../macos/icons/luxscene.icns release/luxrender.app/Contents/Resources
+			)
 	ELSE(APPLE)
 	TARGET_LINK_LIBRARIES(luxrender -Wl,--whole-archive lux -Wl,--no-whole-archive ${QT_LIBRARIES} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} ${ZLIB_LIBRARIES} ${BZ2_LIBRARIES}  ${SYS_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARY})
 	ENDIF(APPLE)
