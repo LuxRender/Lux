@@ -332,7 +332,7 @@ ELSE(APPLE)
 	# The QBVH accelerator needs to be compiled with much reduced optimizations
 	# otherwise gcc produces incorrect code and ruins the render on 64bits machines
 	SET_SOURCE_FILES_PROPERTIES(accelerators/qbvhaccel.cpp COMPILE_FLAGS "-O1")
-ENDIF(NOT APPLE)
+ENDIF(APPLE)
 
 #############################################################################
 # Compiler flags for specific setup
