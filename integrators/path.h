@@ -30,7 +30,7 @@ namespace lux
 
 class PathState : public SurfaceIntegratorState {
 	enum PathStateType {
-		TO_INIT, EYE_VERTEX, NEXT_VERTEX, TERMINATE
+		TO_INIT, EYE_VERTEX, NEXT_VERTEX, CONTINUE_SHADOWRAY, TERMINATE
 	};
 
 	PathState(const Scene &scene, ContributionBuffer *contribBuffer, RandomGenerator *rng);
@@ -58,6 +58,7 @@ private:
 	// Next path vertex ray
 	float eyeRayWeight;
 	Ray pathRay;
+	luxrays::RayHit pathRayHit; // Used when in  CONTINUE_SHADOWRAY state
 	u_int currentPathRayIndex;
 
 	// Direct lighting

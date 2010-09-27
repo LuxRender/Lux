@@ -350,6 +350,17 @@ bool PathIntegrator::GenerateRays(const Scene &,
 			}
 			break;
 		}
+		case PathState::CONTINUE_SHADOWRAY: {
+			if (state->tracedShadowRayCount > leftSpace)
+				return false;
+
+			for (u_int i = 0; i < state->tracedShadowRayCount; ++i) {
+				// A pointer trick
+				luxrays::Ray *ray = (luxrays::Ray *)&state->shadowRay[i];
+				state->currentShadowRayIndex[i] = rayBuffer->AddRay(*ray);
+			}
+			break;
+		}
 		default:
 			throw std::runtime_error("Internal error in PathIntegrator::GenerateRays(): unknown path state.");
 	}
@@ -370,13 +381,33 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 	// Finish direct light sampling
 	//--------------------------------------------------------------------------
 
-	if ((state->state == PathState::NEXT_VERTEX) && (state->tracedShadowRayCount > 0)) {
+	if (((state->state == PathState::NEXT_VERTEX) || (state->state == PathState::CONTINUE_SHADOWRAY)) &&
+			(state->tracedShadowRayCount > 0)) {
+		u_int leftShadowRaysToTrace = 0;
+
 		for (u_int i = 0; i < state->tracedShadowRayCount; ++i) {
-			if (rayBuffer->GetRayHit(state->currentShadowRayIndex[i])->Miss()) {
+			int result = scene.Connect(state->sample, state->volume, state->shadowRay[i],
+					*(rayBuffer->GetRayHit(state->currentShadowRayIndex[i])), &state->Ld[i], NULL, NULL);
+			if (result == 1) {
 				const u_int group = state->LdGroup[i];
 				state->L[group] += state->Ld[i];
 				state->V[group] += state->Vd[i];
+			} else if (result == 0) {
+				// I have to continue to trace the ray
+				state->shadowRay[leftShadowRaysToTrace] = state->shadowRay[i];
+				++leftShadowRaysToTrace;
 			}
+		}
+
+		if (leftShadowRaysToTrace > 0) {
+			// I have to continue to trace shadow rays
+			state->state = PathState::CONTINUE_SHADOWRAY;
+			state->tracedShadowRayCount = leftShadowRaysToTrace;
+
+			// Save the path ray hit
+			state->pathRayHit = *rayHit;
+
+			return false;
 		}
 	}
 
