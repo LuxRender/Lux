@@ -150,6 +150,35 @@ bool VolumeIntegrator::Connect(const Scene &scene, const Sample &sample,
 	return false;
 }
 
+int VolumeIntegrator::Connect(const Scene &scene, const Sample &sample,
+	const Volume *volume, const Ray &ray, const luxrays::RayHit &rayHit,
+	SWCSpectrum *f, float *pdf, float *pdfR) const
+{
+	BSDF *bsdf;
+	Intersection isect;
+	if (!Intersect(scene, sample, volume, ray, rayHit, &isect, &bsdf, f))
+		return 1;
+
+	const Vector d(ray.d);
+	const BxDFType flags(BxDFType(BSDF_SPECULAR | BSDF_TRANSMISSION));
+	*f *= bsdf->f(sample.swl, d, -d, flags);
+	if (f->Black())
+		return -1;
+	const float cost = Dot(bsdf->nn, d);
+	if (cost > 0.f)
+		volume = isect.exterior;
+	else
+		volume = isect.interior;
+	*f *= fabsf(cost);
+	if (pdf)
+		*pdf *= bsdf->Pdf(sample.swl, d, -d);
+	if (pdfR)
+		*pdfR *= bsdf->Pdf(sample.swl, -d, d);
+
+	ray.mint = rayHit.t + MachineEpsilon::E(rayHit.t);
+	return 0;
+}
+
 // Integrator Utility Functions
 SWCSpectrum UniformSampleAllLights(const Scene &scene, const Sample &sample,
 	const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,

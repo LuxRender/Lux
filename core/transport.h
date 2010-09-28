@@ -87,6 +87,11 @@ public:
 	virtual bool Connect(const Scene &scene, const Sample &sample,
 		const Volume *volume, const Point &p0, const Point &p1,
 		bool clip, SWCSpectrum *f, float *pdf, float *pdfR) const;
+	// Used with LuxRays, returns 1 if can connect, -1 if not and 0 if I have
+	// to continue to trace the ray
+	virtual int Connect(const Scene &scene, const Sample &sample,
+		const Volume *volume, const Ray &ray, const luxrays::RayHit &rayHit,
+		SWCSpectrum *f, float *pdf, float *pdfR) const;
 };
 
 SWCSpectrum EstimateDirect(const Scene &scene, const Light &light,

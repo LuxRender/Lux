@@ -83,6 +83,13 @@ public:
 		return volumeIntegrator->Connect(*this, sample, volume,
 			p0, p1, clip, f, pdf, pdfR);
 	}
+	// Used with LuxRays
+	int Connect(const Sample &sample, const Volume *volume,
+		const Ray &ray, const luxrays::RayHit &rayHit,
+		SWCSpectrum *f, float *pdf, float *pdfR) const {
+		return volumeIntegrator->Connect(*this, sample, volume,
+			ray, rayHit, f, pdf, pdfR);
+	}
 	bool IntersectP(const Ray &ray) const {
 		return aggregate->IntersectP(ray);
 	}
