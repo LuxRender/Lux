@@ -113,8 +113,8 @@ public:
 		if (reverse || NumComponents(flags) == 0)
 			return false;
 		*f_ = sf->Sample_f(sw, u1, u2, wiW, pdf);
-		*f_ *= 2.f / (sf->Average_f() * fabsf(wiW->z));
-		*wiW = LocalToWorld(*wiW);
+		*f_ /= sf->Average_f() * fabsf(wiW->z);
+		*wiW = Normalize(LocalToWorld(*wiW));
 		if (sampledType)
 			*sampledType = BSDF_DIFFUSE;
 		if (pdfBack)
@@ -130,15 +130,15 @@ public:
 	virtual SWCSpectrum f(const SpectrumWavelengths &sw, const Vector &woW,
 		const Vector &wiW, BxDFType flags = BSDF_ALL) const {
 		if (NumComponents(flags) == 1)
-			return sf->f(sw, WorldToLocal(wiW)) *
-				(2.f / (sf->Average_f() * AbsDot(wiW, nn)));
+			return sf->f(sw, WorldToLocal(wiW)) /
+				(sf->Average_f() * AbsDot(wiW, nn));
 		return SWCSpectrum(0.f);
 	}
 	virtual SWCSpectrum rho(const SpectrumWavelengths &sw,
-		BxDFType flags = BSDF_ALL) const { return SWCSpectrum(2.f); }
+		BxDFType flags = BSDF_ALL) const { return SWCSpectrum(1.f); }
 	virtual SWCSpectrum rho(const SpectrumWavelengths &sw,
 		const Vector &woW, BxDFType flags = BSDF_ALL) const {
-		return SWCSpectrum(2.f);
+		return SWCSpectrum(1.f);
 	}
 
 protected:
@@ -174,7 +174,7 @@ AreaLight::AreaLight(const Transform &light2world,
 	area = prim->Area();
 	Le->SetIlluminant(); // Illuminant must be set before calling Le->Y()
 	const float gainFactor = power * efficacy /
-		(area * M_PI * Le->Y() * (func ? 2.f : 1.f));
+		(area * M_PI * Le->Y());
 	if (gainFactor > 0.f && !isinf(gainFactor))
 		gain *= gainFactor;
 }
@@ -186,7 +186,7 @@ AreaLight::~AreaLight()
 
 float AreaLight::Power(const Scene &scene) const
 {
-	return gain * area * M_PI * Le->Y() * (func ? 2.f : 1.f);
+	return gain * area * M_PI * Le->Y();
 }
 
 float AreaLight::Pdf(const Point &p, const Point &po, const Normal &ns) const
