@@ -938,6 +938,8 @@ IF(QT4_FOUND)
 			COMMAND mkdir release/luxrender.app/Contents/Resources
 			COMMAND cp ../macos/icons/luxrender.icns release/luxrender.app/Contents/Resources
 			COMMAND cp ../macos/icons/luxscene.icns release/luxrender.app/Contents/Resources
+			COMMAND cp ../macos/plists/08/Info.plist release/luxrender.app/Contents
+			COMMAND mv release/luxrender.app release/LuxRender.app
 			)
 	ELSE(APPLE)
 	TARGET_LINK_LIBRARIES(luxrender -Wl,--whole-archive lux -Wl,--no-whole-archive ${QT_LIBRARIES} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} ${ZLIB_LIBRARIES} ${BZ2_LIBRARIES}  ${SYS_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARY})
