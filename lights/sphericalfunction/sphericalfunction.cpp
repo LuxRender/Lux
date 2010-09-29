@@ -70,7 +70,7 @@ SampleableSphericalFunction::SampleableSphericalFunction(
 			img[x + y * xRes] = value;
 		}
 	}
-	average /= 4.f * M_PI * normalize;
+	average *= 4.f * M_PI / normalize;
 	// Initialize sampling PDFs
 	uvDistrib = new Distribution2D(img, xRes, yRes);
 	delete[] img;
