@@ -110,7 +110,7 @@ extern "C" {
 //#define INFINITY std::numeric_limits<float>::max()
 #endif
 #define LUX_VERSION 0.7
-#define LUX_VERSION_STRING "0.7"
+#define LUX_VERSION_STRING "0.7.1"
 #define COLOR_SAMPLES 3
 #if defined(WIN32) && !defined(__CYGWIN__)
 #  define LUX_PATH_SEP ";"
