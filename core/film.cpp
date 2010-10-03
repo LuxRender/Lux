@@ -555,7 +555,7 @@ Film::Film(u_int xres, u_int yres, Filter *filt, const float crop[4],
 	warmupComplete(false), reject_warmup_samples(reject_warmup),
 	writeResumeFlm(w_resume_FLM), restartResumeFlm(restart_resume_FLM),
 	haltSamplePerPixel(haltspp), haltTime(halttime),
-	EV(0.f), histogram(NULL), enoughSamplePerPixel(false)
+	EV(0.f), filmLuminance(0.f), histogram(NULL), enoughSamplePerPixel(false)
 {
 	//Queryable parameters
 //	AddIntAttribute("xResolution", boost::bind(&Film::GetXResolution, boost::ref(*this)) );

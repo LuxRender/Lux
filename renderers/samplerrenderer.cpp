@@ -249,6 +249,8 @@ double SamplerRenderer::Statistics(const string &statName) {
 		return scene->DisplayInterval();
 	else if(statName == "filmEV")
 		return scene->camera->film->EV;
+	else if(statName == "filmLuminance")
+		return scene->camera->film->filmLuminance;
 	else if (statName == "enoughSamples")
 		return scene->camera->film->enoughSamplePerPixel;
 	else {

@@ -299,6 +299,11 @@ void ToneMapWidget::setTonemapKernel(int choice)
 			ui->frame_toneMapLinear->hide();
 			ui->frame_toneMapContrast->hide();
 			break;
+		case 4:
+			// Auto Linear
+			ui->frame_toneMapReinhard->hide();
+			ui->frame_toneMapLinear->hide();
+			ui->frame_toneMapContrast->hide();
 		default:
 			break;
 	}

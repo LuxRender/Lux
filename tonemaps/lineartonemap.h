@@ -24,11 +24,53 @@
 #include "lux.h"
 #include "tonemap.h"
 #include "color.h"
+#include "context.h"
+// #include <math.h>
 
 namespace lux
 {
 
-// MaxWhiteOp Declarations
+// EVOp Declarations
+class EVOp : public ToneMap {
+public:
+	// EVOp Public Methods
+	// Applies a linear factor to the image, determined by the raw film's EV
+	EVOp() { }
+	virtual ~EVOp() { }
+	
+	virtual void Map(vector<XYZColor> &xyz, u_int xRes, u_int yRes, float maxDisplayY) const {
+		// read data from film
+		float gamma = luxGetParameterValue(LUX_FILM, LUX_FILM_TORGB_GAMMA);
+		float Y =  Context::GetActive()->Statistics("filmLuminance");
+		
+		/*
+		(fstop * fstop) / exposure = Y*sensitivity/K
+
+		take K = 12.5
+
+		(fstop * fstop) / exposure = Y * sensitivity / 12.5
+
+		exposure = 12.5*(fstop * fstop) / Y * sensitivity
+
+		*/
+
+		// linear tonemap operation
+		//float factor = (exposure / (fstop * fstop) * sensitivity / 10.f * powf(118.f / 255.f, gamma));
+		
+		// substitute exposure, fstop and sensitivity cancel out; collect constants
+		float factor = (1.25f / Y * powf(118.f / 255.f, gamma));
+
+		const u_int numPixels = xRes * yRes;
+		for (u_int i = 0; i < numPixels; ++i)
+			xyz[i] *= factor;
+	}
+	
+	static ToneMap *CreateToneMap(const ParamSet &ps);
+private:
+};
+
+
+// LinearOp Declarations
 class LinearOp : public ToneMap {
 public:
 	// LinearOp Public Methods

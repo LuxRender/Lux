@@ -488,6 +488,7 @@ public:
 	// Seconds to wait before to stop. Any value <= 0 will never stop the rendering
 	int haltTime;
 	float EV;
+	float filmLuminance;
 	Histogram *histogram;
 	bool enoughSamplePerPixel; // At the end to get better data alignment
 

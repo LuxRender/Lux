@@ -805,9 +805,12 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 			// Contrast Tonemapper
 			toneParams.AddFloat("ywa", &m_ContrastYwa, 1);
 			tmkernel = "contrast";
-		} else {		
+		} else if(m_TonemapKernel == 3) {		
 			// MaxWhite Tonemapper
 			tmkernel = "maxwhite";
+		} else {
+			// Auto Linear Tonemapper
+			tmkernel = "autolinear";
 		}
 
 		// Delete bloom/glare layers if requested
@@ -940,6 +943,7 @@ void FlexImageFilm::WriteImage(ImageType type)
 	// where L is the luminance, S is the ISO speed and K is a constant
 	// usually S is taken to be 100 and K to be 12.5
 	EV = logf(Y * 8.f) / logf(2.f);
+	filmLuminance = Y;
 }
 
 // GUI LDR framebuffer access methods
@@ -1226,6 +1230,7 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 	else if (tmkernelStr == "linear") s_TonemapKernel = 1;
 	else if (tmkernelStr == "contrast") s_TonemapKernel = 2;
 	else if (tmkernelStr == "maxwhite") s_TonemapKernel = 3;
+	else if (tmkernelStr == "autolinear") s_TonemapKernel = 4;
 	else {
 		std::stringstream ss;
 		ss << "Tonemap kernel  '" << tmkernelStr << "' unknown. Using \"reinhard\".";

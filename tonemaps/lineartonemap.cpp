@@ -27,7 +27,12 @@
 
 using namespace lux;
 
-// MaxWhiteOp Method Definitions
+// EVOp Method Definitions
+ToneMap * EVOp::CreateToneMap(const ParamSet &ps) {
+	return new EVOp();
+}
+
+// LinearOp Method Definitions
 ToneMap * LinearOp::CreateToneMap(const ParamSet &ps) {
 	float sensitivity = ps.FindOneFloat("sensitivity", 100.f);
 	float exposure = ps.FindOneFloat("exposure", 1.f / 1000.f);
@@ -36,4 +41,5 @@ ToneMap * LinearOp::CreateToneMap(const ParamSet &ps) {
 	return new LinearOp(sensitivity, exposure, fstop, gamma);
 }
 
-static DynamicLoader::RegisterToneMap<LinearOp> r("linear");
+static DynamicLoader::RegisterToneMap<EVOp> r1("autolinear");
+static DynamicLoader::RegisterToneMap<LinearOp> r2("linear");
