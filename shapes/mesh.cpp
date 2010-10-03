@@ -471,12 +471,12 @@ void Mesh::GetIntersection(const luxrays::RayHit &rayHit, const u_int index, Int
 		uv[2][0] = uvs[2 * v2];
 		uv[2][1] = uvs[2 * v2 + 1];
 	} else {
-		uv[0][0] = .5f;//mesh->p[v[0]].x;
-		uv[0][1] = .5f;//mesh->p[v[0]].y;
-		uv[1][0] = .5f;//mesh->p[v[1]].x;
-		uv[1][1] = .5f;//mesh->p[v[1]].y;
-		uv[2][0] = .5f;//mesh->p[v[2]].x;
-		uv[2][1] = .5f;//mesh->p[v[2]].y;
+		uv[0][0] = .5f;//p[v[0]].x;
+		uv[0][1] = .5f;//p[v[0]].y;
+		uv[1][0] = .5f;//p[v[1]].x;
+		uv[1][1] = .5f;//p[v[1]].y;
+		uv[2][0] = .5f;//p[v[2]].x;
+		uv[2][1] = .5f;//p[v[2]].y;
 	}
 
 	// Compute deltas for triangle partial derivatives
@@ -511,9 +511,75 @@ void Mesh::GetIntersection(const luxrays::RayHit &rayHit, const u_int index, Int
 
 	isect->Set(WorldToObject, this, GetMaterial(),
 		GetExterior(), GetInterior());
-	isect->dg.triangleBaryCoords[0] = b0;
-	isect->dg.triangleBaryCoords[1] = b1;
-	isect->dg.triangleBaryCoords[2] = b2;
+	isect->dg.iData.mesh.coords[0] = b0;
+	isect->dg.iData.mesh.coords[1] = b1;
+	isect->dg.iData.mesh.coords[2] = b2;
+	isect->dg.iData.mesh.triIndex = triIndex;
+}
+
+void Mesh::GetShadingGeometry(const Transform &obj2world,
+	const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const
+{
+	if (!n) {
+		*dgShading = dg;
+		return;
+	}
+
+	const u_int v0 = triVertexIndex[dg.iData.mesh.triIndex];
+	const u_int v1 = triVertexIndex[dg.iData.mesh.triIndex + 1];
+	const u_int v2 = triVertexIndex[dg.iData.mesh.triIndex + 2];
+
+	// Use _n_ to compute shading tangents for triangle, _ss_ and _ts_
+	const Normal ns = Normalize(dg.iData.mesh.coords[0] * n[v0] +
+		dg.iData.mesh.coords[1] * n[v1] + dg.iData.mesh.coords[2] * n[v2]);
+
+	Vector ts(Normalize(Cross(ns, dg.dpdu)));
+	Vector ss(Cross(ts, ns));
+	// Lotus - the length of dpdu/dpdv can be important for bumpmapping
+	ss *= dg.dpdu.Length();
+	if (Dot(dg.dpdv, ts) < 0.f)
+		ts *= -dg.dpdv.Length();
+	else
+		ts *= dg.dpdv.Length();
+
+	Normal dndu, dndv;
+	// Compute \dndu and \dndv for triangle shading geometry
+	float uv[3][2];
+	if (uvs) {
+		uv[0][0] = uvs[2 * v0];
+		uv[0][1] = uvs[2 * v0 + 1];
+		uv[1][0] = uvs[2 * v1];
+		uv[1][1] = uvs[2 * v1 + 1];
+		uv[2][0] = uvs[2 * v2];
+		uv[2][1] = uvs[2 * v2 + 1];
+	} else {
+		uv[0][0] = .5f;//p[v[0]].x;
+		uv[0][1] = .5f;//p[v[0]].y;
+		uv[1][0] = .5f;//p[v[1]].x;
+		uv[1][1] = .5f;//p[v[1]].y;
+		uv[2][0] = .5f;//p[v[2]].x;
+		uv[2][1] = .5f;//p[v[2]].y;
+	}
+
+	// Compute deltas for triangle partial derivatives of normal
+	const float du1 = uv[0][0] - uv[2][0];
+	const float du2 = uv[1][0] - uv[2][0];
+	const float dv1 = uv[0][1] - uv[2][1];
+	const float dv2 = uv[1][1] - uv[2][1];
+	const Normal dn1 = n[v0] - n[v2];
+	const Normal dn2 = n[v1] - n[v2];
+	const float determinant = du1 * dv2 - dv1 * du2;
+
+	if (determinant == 0.f)
+		dndu = dndv = Normal(0, 0, 0);
+	else {
+		const float invdet = 1.f / determinant;
+		dndu = ( dv2 * dn1 - dv1 * dn2) * invdet;
+		dndv = (-du2 * dn1 + du1 * dn2) * invdet;
+	}
+
+	*dgShading = DifferentialGeometry(dg.p, ns, ss, ts,
+		dndu, dndv, dg.u, dg.v, this);
 }
 
 static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const ParamSet &params,

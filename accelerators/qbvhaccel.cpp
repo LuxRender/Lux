@@ -242,9 +242,9 @@ public:
 			triangle->mesh->GetMaterial(),
 			triangle->mesh->GetExterior(),
 			triangle->mesh->GetInterior());
-		isect->dg.triangleBaryCoords[0] = _b0;
-		isect->dg.triangleBaryCoords[1] = _b1;
-		isect->dg.triangleBaryCoords[2] = _b2;
+		isect->dg.iData.baryTriangle.coords[0] = _b0;
+		isect->dg.iData.baryTriangle.coords[1] = _b1;
+		isect->dg.iData.baryTriangle.coords[2] = _b2;
 
 		return true;
 	}

@@ -123,7 +123,6 @@ Scene::Scene(Camera *cam, SurfaceIntegrator *si, VolumeIntegrator *vi,
 	volumeIntegrator(vi), sampler(s),
 	primitives(prims), filmOnly(false)
 {
-
 	// Scene Constructor Implementation
 	bound = Union(aggregate->WorldBound(), camera->Bounds());
 	if (volumeRegion)

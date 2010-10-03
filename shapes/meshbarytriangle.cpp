@@ -20,7 +20,6 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-
 #include "mesh.h"
 #include "mc.h"
 
@@ -145,9 +144,9 @@ bool MeshBaryTriangle::Intersect(const Ray &ray, Intersection* isect) const
 
 	isect->Set(mesh->WorldToObject, this, mesh->GetMaterial(),
 		mesh->GetExterior(), mesh->GetInterior());
-	isect->dg.triangleBaryCoords[0] = b0;
-	isect->dg.triangleBaryCoords[1] = b1;
-	isect->dg.triangleBaryCoords[2] = b2;
+	isect->dg.iData.baryTriangle.coords[0] = b0;
+	isect->dg.iData.baryTriangle.coords[1] = b1;
+	isect->dg.iData.baryTriangle.coords[2] = b2;
 	ray.maxt = t;
 
 	return true;
@@ -233,9 +232,9 @@ void MeshBaryTriangle::Sample(float u1, float u2, float u3, DifferentialGeometry
 
 	dg->handle = this;
 
-	dg->triangleBaryCoords[0] = b1;
-	dg->triangleBaryCoords[1] = b2;
-	dg->triangleBaryCoords[2] = b3;
+	dg->iData.baryTriangle.coords[0] = b1;
+	dg->iData.baryTriangle.coords[1] = b2;
+	dg->iData.baryTriangle.coords[2] = b3;
 }
 
 void MeshBaryTriangle::GetShadingGeometry(const Transform &obj2world,
@@ -247,8 +246,8 @@ void MeshBaryTriangle::GetShadingGeometry(const Transform &obj2world,
 	}
 
 	// Use _n_ to compute shading tangents for triangle, _ss_ and _ts_
-	const Normal ns = Normalize(dg.triangleBaryCoords[0] * mesh->n[v[0]] +
-		dg.triangleBaryCoords[1] * mesh->n[v[1]] + dg.triangleBaryCoords[2] * mesh->n[v[2]]);
+	const Normal ns = Normalize(dg.iData.baryTriangle.coords[0] * mesh->n[v[0]] +
+		dg.iData.baryTriangle.coords[1] * mesh->n[v[1]] + dg.iData.baryTriangle.coords[2] * mesh->n[v[2]]);
 
 	Vector ts(Normalize(Cross(ns, dg.dpdu)));
 	Vector ss(Cross(ts, ns));

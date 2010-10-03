@@ -34,6 +34,16 @@ namespace lux
 // DifferentialGeometry Declarations
 class DifferentialGeometry {
 public:
+	typedef union {
+		struct {
+			float coords[3];
+		} baryTriangle;
+		struct {
+			float coords[3];
+			u_int triIndex;
+		} mesh;
+	} IntersectionData;
+
 	DifferentialGeometry() { u = v = 0.; handle = NULL; }
 	// DifferentialGeometry Public Methods
 	DifferentialGeometry(
@@ -67,9 +77,7 @@ public:
 
 	// Dade - shape specific data, useful to "transport" informatin between
 	// shape intersection method and GetShadingGeometry()
-	union {
-		float triangleBaryCoords[3];
-	};
+	IntersectionData iData;
 };
 
 }//namespace lux

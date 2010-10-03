@@ -158,8 +158,9 @@ void InstancePrimitive::GetShadingGeometry(const Transform &obj2world,
 		WorldToInstance(dg.dpdu), WorldToInstance(dg.dpdv),
 		WorldToInstance(dg.dndu), WorldToInstance(dg.dndv),
 		dg.u, dg.v, dg.handle);
-	memcpy(dgl.triangleBaryCoords, dg.triangleBaryCoords,
-		3 * sizeof(float));
+	memcpy(&dgl.iData, &dg.iData,
+		sizeof(DifferentialGeometry::IntersectionData));
+
 	reinterpret_cast<const Primitive *>(dg.handle)->GetShadingGeometry(o2w,
 		dgl, dgShading);
 	dgShading->p = InstanceToWorld(dgShading->p);
@@ -219,8 +220,9 @@ void MotionPrimitive::GetShadingGeometry(const Transform &obj2world,
 		WorldToInstance(dg.dpdu), WorldToInstance(dg.dpdv),
 		WorldToInstance(dg.dndu), WorldToInstance(dg.dndv),
 		dg.u, dg.v, dg.handle);
-	memcpy(dgl.triangleBaryCoords, dg.triangleBaryCoords,
-		3 * sizeof(float));
+	memcpy(&dgl.iData, &dg.iData,
+		sizeof(DifferentialGeometry::IntersectionData));
+
 	reinterpret_cast<const Primitive *>(dg.handle)->GetShadingGeometry(o2w,
 		dgl, dgShading);
 	dgShading->p = InstanceToWorld(dgShading->p);

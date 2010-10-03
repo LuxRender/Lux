@@ -20,7 +20,6 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-
 #include "mesh.h"
 #include "mc.h"
 
@@ -228,9 +227,9 @@ bool MeshWaldTriangle::Intersect(const Ray &ray, Intersection *isect) const
 		Normal(0, 0, 0), Normal(0, 0, 0), tu, tv, this);
 	isect->Set(mesh->WorldToObject, this, mesh->GetMaterial(),
 		mesh->GetExterior(), mesh->GetInterior());
-	isect->dg.triangleBaryCoords[0] = b0;
-	isect->dg.triangleBaryCoords[1] = uu;
-	isect->dg.triangleBaryCoords[2] = vv;
+	isect->dg.iData.baryTriangle.coords[0] = b0;
+	isect->dg.iData.baryTriangle.coords[1] = uu;
+	isect->dg.iData.baryTriangle.coords[2] = vv;
 	ray.maxt = tt;
 
 	return true;
@@ -319,9 +318,9 @@ void MeshWaldTriangle::Sample(float u1, float u2, float u3, DifferentialGeometry
 
 	dg->handle = this;
 
-	dg->triangleBaryCoords[0] = b1;
-	dg->triangleBaryCoords[1] = b2;
-	dg->triangleBaryCoords[2] = b3;
+	dg->iData.baryTriangle.coords[0] = b1;
+	dg->iData.baryTriangle.coords[1] = b2;
+	dg->iData.baryTriangle.coords[2] = b3;
 }
 
 bool MeshWaldTriangle::isDegenerate() const {
