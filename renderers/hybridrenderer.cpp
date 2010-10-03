@@ -499,7 +499,7 @@ void HybridRenderer::RenderThread::RenderImpl(RenderThread *renderThread) {
 	RandomGenerator rng(seed);
 
 	//luxrays::RayBuffer *rayBuffer = renderThread->iDevice->NewRayBuffer();
-	luxrays::RayBuffer *rayBuffer = new luxrays::RayBuffer(32768);
+	luxrays::RayBuffer *rayBuffer = new luxrays::RayBuffer(8192);
 
 	// Init all PathState
 	const double t0 = luxrays::WallClockTime();
