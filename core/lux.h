@@ -26,8 +26,7 @@
 // lux.h*
 // Global Include Files
 #include <cmath>
-using std::isinf;
-using std::isnan;
+
 #ifdef __CYGWIN__
 #include <ieeefp.h>
 #endif
@@ -57,12 +56,16 @@ using std::sort;
 #  pragma warning (disable: 4996) // deprecated functions (VS2005) - Radiance
 #  pragma warning (disable: 4267) // conversion from 'size_t' [asio\detail\socket_ops.hpp; boost\serialization\collections_save_imp.hpp] - zcott
 #  pragma warning (disable: 4311) // pointer truncation from 'void *' to 'long' [Fl_Widget.H; Fl_Menu_Item.H;; asio\detail\win_iocp_socket_service.hpp] - zcott
-#  pragma warning(disable : 4312) // conversion from 'long' to 'void *' of greater size [Fl_Widget.H; Fl_Menu_Item.H; asio\detail\win_iocp_socket_service.hpp] - zcott
+#  pragma warning (disable : 4312) // conversion from 'long' to 'void *' of greater size [Fl_Widget.H; Fl_Menu_Item.H; asio\detail\win_iocp_socket_service.hpp] - zcott
 //note: the above are duplicated in compiler options, kept here for reference only - zcott
 #  pragma warning (disable: 4267 4251 4065 4102)
 #  pragma warning (disable: 4190) // extern "C" nonsense when returning a template
+#  pragma warning (disable: 4290) // C++ exception specification ignored except to indicate a function is not __declspec(nothrow) ; pointless warning
 //#define WIN32_LEAN_AND_MEAN //defined in project properties
 #  include <windows.h>
+#else
+using std::isinf;
+using std::isnan;
 #endif
 #if defined (__INTEL_COMPILER) && !defined(WIN32)
 // Dade - to fix a problem with expf undefined with Intel CC
