@@ -468,7 +468,7 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const Scene &scene,
 			componentsToSample = BxDFType(componentsToSample & (~BSDF_DIFFUSE));
 		}
 		if (!debugEnableSpecular)
-			componentsToSample = BxDFType(componentsToSample & (~(BSDF_GLOSSY & BSDF_SPECULAR)));
+			componentsToSample = BxDFType(componentsToSample & (~(BSDF_GLOSSY | BSDF_SPECULAR)));
 
 		L += currL * pathThroughput;
 
