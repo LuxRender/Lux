@@ -172,10 +172,6 @@ public:
 			if (isnan(c[i])) return true;
 		return false;
 	}
-	void Print(FILE *f) const {
-		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
-			fprintf(f, "%f ", c[i]);
-	}
 	Scalar Y(const SpectrumWavelengths &sw) const;
 	Scalar Filter(const SpectrumWavelengths &sw) const;
 

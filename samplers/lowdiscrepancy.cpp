@@ -164,7 +164,7 @@ bool LDSampler::GetNextSample(Sample *sample) {
 					xDSamp += 2 * sample->nxD[i] * pixelSamples;
 					break; }
 				default:
-					printf("Unsupported dimension\n");
+					LOG(LUX_ERROR, LUX_LIMIT) << "Unsupported dimension";
 					xDSamp += sample->sxD[i][j] * sample->nxD[i] * pixelSamples;
 					break;
 				}

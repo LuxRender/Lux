@@ -25,6 +25,9 @@
 
 #include "mc.h"
 
+#include <cstring>
+using std::memcpy;
+
 namespace lux {
 
 /**

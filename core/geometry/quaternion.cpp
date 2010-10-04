@@ -24,6 +24,9 @@
 #include "quaternion.h"
 #include "geometry/matrix4x4.h"
 
+#include <cstring>
+using std::memset;
+
 namespace lux
 {
 

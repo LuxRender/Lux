@@ -32,6 +32,7 @@ namespace lux
 
 // Color Declarations
 class  Color {
+#define COLOR_SAMPLES 3
     // Dade - serialization here is required by network rendering
 	friend class boost::serialization::access;
 
@@ -169,10 +170,6 @@ public:
 			if (isnan(c[1])) return true;
 			if (isnan(c[2])) return true;
 		return false;
-	}
-	void Print(FILE *f) const {
-		for (int i = 0; i < 3; ++i)
-			fprintf(f, "%f ", c[i]);
 	}
 
 	friend class lux::ParamSet;

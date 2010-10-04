@@ -29,7 +29,15 @@
 
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <vector>
+using std::vector;
+#include <string>
+using std::string;
+#include <iostream>
+using std::cerr;
+using std::endl;
 #include <cstdarg>
+#include <cstdio>
+using std::FILE;
 
 #include <FreeImage.h>
 
@@ -39,8 +47,8 @@ using namespace lux;
 	va_list	pArgs; \
 	va_start( pArgs, _start ); \
 \
-	std::vector<LuxToken> aTokens; \
-	std::vector<LuxPointer> aValues; \
+	vector<LuxToken> aTokens; \
+	vector<LuxPointer> aValues; \
 	unsigned int count = buildParameterList( pArgs, aTokens, aValues );
 
 #define PASS_PARAMETERS \
@@ -54,7 +62,7 @@ namespace lux
 // Helper function to build a parameter list to pass on to the V style functions.
 // returns a parameter count.
 
-static unsigned int buildParameterList( va_list pArgs, std::vector<LuxToken>& aTokens, std::vector<LuxPointer>& aValues )
+static unsigned int buildParameterList( va_list pArgs, vector<LuxToken>& aTokens, vector<LuxPointer>& aValues )
 {
     unsigned int count = 0;
     LuxToken pToken = va_arg( pArgs, LuxToken );
@@ -81,12 +89,12 @@ static bool initialized = false;
 
 extern "C" void luxAddServer(const char * name)
 {
-	Context::GetActive()->AddServer(std::string(name));
+	Context::GetActive()->AddServer(string(name));
 }
 
 extern "C" void luxRemoveServer(const char * name)
 {
-	Context::GetActive()->RemoveServer(std::string(name));
+	Context::GetActive()->RemoveServer(string(name));
 }
 
 extern "C" unsigned int luxGetServerCount()
@@ -145,11 +153,11 @@ extern "C" void luxLookAt(float ex, float ey, float ez,
 }
 extern "C" void luxCoordinateSystem(const char *name)
 {
-	Context::GetActive()->CoordinateSystem(std::string(name));
+	Context::GetActive()->CoordinateSystem(string(name));
 }
 extern "C" void luxCoordSysTransform(const char *name)
 {
-	Context::GetActive()->CoordSysTransform(std::string(name));
+	Context::GetActive()->CoordSysTransform(string(name));
 }
 extern "C" void luxPixelFilter(const char *name, ...)
 {
@@ -413,7 +421,7 @@ extern "C" void luxInterior(const char *name)
 
 extern "C" void luxObjectBegin(const char *name)
 {
-	Context::GetActive()->ObjectBegin(std::string(name));
+	Context::GetActive()->ObjectBegin(string(name));
 }
 extern "C" void luxObjectEnd()
 {
@@ -421,13 +429,13 @@ extern "C" void luxObjectEnd()
 }
 extern "C" void luxObjectInstance(const char *name)
 {
-	Context::GetActive()->ObjectInstance(std::string(name));
+	Context::GetActive()->ObjectInstance(string(name));
 }
 extern "C" void luxMotionInstance(const char *name, float startTime,
 	float endTime, const char *toTransform)
 {
-	Context::GetActive()->MotionInstance(std::string(name), startTime,
-		endTime, std::string(toTransform));
+	Context::GetActive()->MotionInstance(string(name), startTime,
+		endTime, string(toTransform));
 }
 extern "C" void luxWorldEnd() {
 	Context::GetActive()->WorldEnd();
@@ -757,51 +765,51 @@ extern "C" void luxErrorIgnore(int code, int severity, const char *message)
 extern "C" void luxErrorPrint(int code, int severity, const char *message)
 {
 	luxLastError = code;
-	std::cerr<<"[";
+	cerr<<"[";
 #ifndef WIN32 //windows does not support ANSI escape codes
 	//set the color
 	switch (severity) {
 	case LUX_DEBUG:
-		std::cerr<<"\033[0;34m";
+		cerr<<"\033[0;34m";
 		break;
 	case LUX_INFO:
-		std::cerr<<"\033[0;32m";
+		cerr<<"\033[0;32m";
 		break;
 	case LUX_WARNING:
-		std::cerr<<"\033[0;33m";
+		cerr<<"\033[0;33m";
 		break;
 	case LUX_ERROR:
-		std::cerr<<"\033[0;31m";
+		cerr<<"\033[0;31m";
 		break;
 	case LUX_SEVERE:
-		std::cerr<<"\033[0;31m";
+		cerr<<"\033[0;31m";
 		break;
 	}
 #endif
-	std::cerr<<"Lux ";
-	std::cerr<<boost::posix_time::second_clock::local_time()<<' ';
+	cerr<<"Lux ";
+	cerr<<boost::posix_time::second_clock::local_time()<<' ';
 	switch (severity) {
 	case LUX_DEBUG:
-		std::cerr<<"DEBUG";
+		cerr<<"DEBUG";
 		break;
 	case LUX_INFO:
-		std::cerr<<"INFO";
+		cerr<<"INFO";
 		break;
 	case LUX_WARNING:
-		std::cerr<<"WARNING";
+		cerr<<"WARNING";
 		break;
 	case LUX_ERROR:
-		std::cerr<<"ERROR";
+		cerr<<"ERROR";
 		break;
 	case LUX_SEVERE:
-		std::cerr<<"SEVERE ERROR";
+		cerr<<"SEVERE ERROR";
 		break;
 	}
-	std::cerr<<" : "<<code;
+	cerr<<" : "<<code;
 #ifndef WIN32 //windows does not support ANSI escape codes
-	std::cerr<<"\033[0m";
+	cerr<<"\033[0m";
 #endif
-	std::cerr<<"] "<<message<<std::endl;
+	cerr<<"] "<<message<<endl;
 }
 
 extern "C" void luxSetEpsilon(const float minValue, const float maxValue)

@@ -23,93 +23,25 @@
 // util.cpp*
 #include "lux.h"
 #include "stats.h"
-
 #include "timer.h"
+
 #include <map>
 using std::map;
-// Error Reporting Includes
-#include <cstdarg>
-
-
-using namespace lux;
-
-#if 0
-// Error Reporting Definitions
-#define LUX_ERROR_IGNORE 0
-#define LUX_ERROR_CONTINUE 1
-#define LUX_ERROR_ABORT 2
-// Error Reporting Functions
-static void processError(const char *format, va_list args,
-		const char *message, int disposition) {
-#ifndef WIN32
-	char *errorBuf;
-	vasprintf(&errorBuf, format, args);
-#else
-	char errorBuf[2048];
-	_vsnprintf(errorBuf, sizeof(errorBuf), format, args);
-#endif
-	// Report error
-	switch (disposition) {
-	case LUX_ERROR_IGNORE:
-		return;
-	case LUX_ERROR_CONTINUE:
-		fprintf(stderr, "%s: %s\n", message, errorBuf);
-		// Print scene file and line number, if appropriate
-		extern u_int line_num;
-		if (line_num != 0) {
-			extern string current_file;
-			fprintf(stderr, "\tLine %d, file %s\n", line_num,
-				current_file.c_str());
-		}
-		break;
-	case LUX_ERROR_ABORT:
-		fprintf(stderr, "%s: %s\n", message, errorBuf);
-		// Print scene file and line number, if appropriate
-		extern u_int line_num;
-		if (line_num != 0) {
-			extern string current_file;
-			fprintf(stderr, "\tLine %d, file %s\n", line_num,
-				current_file.c_str());
-		}
-		exit(1);
-	}
-#ifndef WIN32
-	free(errorBuf);
-#endif
-}
-#endif
+#include <iomanip>
+using std::endl;
+using std::setw;
+using std::left;
+using std::setfill;
+using std::setprecision;
+using std::flush;
+using std::cout;
 
 namespace lux
 {
-#if 0
- void Info(const char *format, ...) {
-	va_list args;
-	va_start(args, format);
-	processError(format, args, "Notice", LUX_ERROR_CONTINUE);
-	va_end(args);
-}
- void Warning(const char *format, ...) {
-	va_list args;
-	va_start(args, format);
-	processError(format, args, "Warning", LUX_ERROR_CONTINUE);
-	va_end(args);
-}
- void Error(const char *format, ...) {
-	va_list args;
-	va_start(args, format);
-	processError(format, args, "Error", LUX_ERROR_CONTINUE);
-	va_end(args);
-}
- void Severe(const char *format, ...) {
-	va_list args;
-	va_start(args, format);
-	processError(format, args, "Fatal Error", LUX_ERROR_ABORT);
-	va_end(args);
-}
-#endif
+
 // Matrix Method Definitions
- bool SolveLinearSystem2x2(const float A[2][2],
-		const float B[2], float x[2]) {
+bool SolveLinearSystem2x2(const float A[2][2], const float B[2], float x[2])
+{
 	float det = A[0][0]*A[1][1] - A[0][1]*A[1][0];
 	if (fabsf(det) < 1e-5)
 		return false;
@@ -117,8 +49,6 @@ namespace lux
 	x[0] = (A[1][1]*B[0] - A[0][1]*B[1]) * invDet;
 	x[1] = (A[0][0]*B[1] - A[1][0]*B[0]) * invDet;
 	return true;
-}
-
 }
 
 // Statistics Definitions
@@ -132,7 +62,8 @@ struct  StatTracker {
 };
 typedef map<std::pair<string, string>, StatTracker *> TrackerMap;
 static TrackerMap trackers;
-static void addTracker(StatTracker *newTracker) {
+static void addTracker(StatTracker *newTracker)
+{
 	std::pair<string, string> s = std::make_pair(newTracker->category, newTracker->name);
 	if (trackers.find(s) != trackers.end()) {
 		newTracker->ptra = trackers[s]->ptra;
@@ -141,85 +72,89 @@ static void addTracker(StatTracker *newTracker) {
 	}
 	trackers[s] = newTracker;
 }
-namespace lux {
-static void StatsPrintVal(FILE *f, StatsCounterType v);
-static void StatsPrintVal(FILE *f, StatsCounterType v1, StatsCounterType v2);
-}
+static void StatsPrintVal(ostream &f, StatsCounterType v);
+static void StatsPrintVal(ostream &f, StatsCounterType v1, StatsCounterType v2);
 // Statistics Functions
 StatTracker::StatTracker(const string &cat, const string &n,
-                         StatsCounterType *pa, StatsCounterType *pb, bool p) {
+	StatsCounterType *pa, StatsCounterType *pb, bool p)
+{
 	category = cat;
 	name = n;
 	ptra = pa;
 	ptrb = pb;
 	percentage = p;
 }
-StatsCounter::StatsCounter(const string &category, const string &name) {
+StatsCounter::StatsCounter(const string &category, const string &name)
+{
 	num = 0;
 	addTracker(new StatTracker(category, name, &num));
 }
-StatsRatio::StatsRatio(const string &category, const string &name) {
+StatsRatio::StatsRatio(const string &category, const string &name)
+{
 	na = nb = 0;
 	addTracker(new StatTracker(category, name, &na, &nb, false));
 }
-StatsPercentage::StatsPercentage(const string &category, const string &name) {
+StatsPercentage::StatsPercentage(const string &category, const string &name)
+{
 	na = nb = 0;
 	addTracker(new StatTracker(category, name, &na, &nb, true));
 }
 
-namespace lux {
-
-void StatsPrint(FILE *dest) {
+void StatsPrint(ostream &dest)
+{
 	TrackerMap::iterator iter = trackers.begin();
     if(iter != trackers.end())
-        fprintf(dest, "Statistics:\n");
+        dest << "Statistics:" << endl;
 
 	string lastCategory;
 	while (iter != trackers.end()) {
 		// Print statistic
 		StatTracker *tr = iter->second;
 		if (tr->category != lastCategory) {
-			fprintf(dest, "%s\n", tr->category.c_str());
+			dest << tr->category.c_str() << endl;
 			lastCategory = tr->category;
 		}
-		fprintf(dest, "    %s", tr->name.c_str());
-		// Pad out to results column
-		u_int resultsColumn = 56;
-		u_int paddingSpaces = resultsColumn - tr->name.size();
-		while (paddingSpaces-- > 0)
-			putc(' ', dest);
+		dest << "    " << setw(56) << left << tr->name;
 		if (tr->ptrb == NULL)
 			StatsPrintVal(dest, *tr->ptra);
 		else {
+			StatsPrintVal(dest, *tr->ptra, *tr->ptrb);
 			if (*tr->ptrb > 0) {
-				float ratio = static_cast<float>(*tr->ptra) /
+				const float ratio = static_cast<float>(*tr->ptra) /
 					static_cast<float>(*tr->ptrb);
-				StatsPrintVal(dest, *tr->ptra, *tr->ptrb);
+				dest << setprecision(2);
 				if (tr->percentage)
-					fprintf(dest, " (%3.2f%%)", 100. * ratio);
+					dest << " (" << setw(3) << (100.f * ratio) << "%)";
 				else
-					fprintf(dest, " (%.2fx)", ratio);
+					dest << " (" << ratio << "x)";
 			}
-			else
-				StatsPrintVal(dest, *tr->ptra, *tr->ptrb);
 		}
-		fprintf(dest, "\n");
+		dest << endl;
 		++iter;
 	}
 }
-static void StatsPrintVal(FILE *f, StatsCounterType v) {
-	if (v > 1e9) fprintf(f, "%.3fB", v / 1e9f);
-	else if (v > 1e6) fprintf(f, "%.3fM", v / 1e6f);
-	else if (v > 1e4) fprintf(f, "%.1fk", v / 1e3f);
-	else fprintf(f, "%.0f", v);
+static void StatsPrintVal(ostream &f, StatsCounterType v)
+{
+	if (v > 1e9f)
+		f << setprecision(3) << (v * 1e-9f) << "B";
+	else if (v > 1e6f)
+		f << setprecision(3) << (v * 1e-6f) << "M";
+	else if (v > 1e4f)
+		f << setprecision(1) << (v * 1e-3f) << "k";
+	else
+		f << setprecision(0) << v;
 }
-static void StatsPrintVal(FILE *f, StatsCounterType v1,
-		StatsCounterType v2) {
+static void StatsPrintVal(ostream &f, StatsCounterType v1, StatsCounterType v2)
+{
 	StatsCounterType m = min(v1, v2);
-	if (m > 1e9) fprintf(f, "%.3fB:%.3fB", v1 / 1e9f, v2 / 1e9f);
-	else if (m > 1e6) fprintf(f, "%.3fM:%.3fM", v1 / 1e6f, v2 / 1e6f);
-	else if (m > 1e4) fprintf(f, "%.1fk:%.1fk", v1 / 1e3f, v2 / 1e3f);
-	else fprintf(f, "%.0f:%.0f", v1, v2);
+	if (m > 1e9f)
+		f << setprecision(3) << (v1 * 1e-9f) << "B:" << (v2 * 1e-9f) << "B";
+	else if (m > 1e6f)
+		f << setprecision(3) << (v1 * 1e-6f) << "M:" << (v2 * 1e-6f) << "M";
+	else if (m > 1e4f)
+		f << setprecision(1) << (v1 * 1e-3f) << "k:" << (v2 * 1e-3f) << "k";
+	else
+		f << setprecision(0) << v1 << ":" << v2;
 }
 void StatsCleanup() {
 	TrackerMap::iterator iter = trackers.begin();
@@ -231,66 +166,47 @@ void StatsCleanup() {
 	trackers.erase(trackers.begin(), trackers.end());
 }
 
-}
-
 // ProgressReporter Method Definitions
-ProgressReporter::ProgressReporter(u_int totalWork, const string &title, u_int bar_length)
-	: totalPlusses(bar_length - title.size()) {
+ProgressReporter::ProgressReporter(u_int totalWork, const string &title_, u_int bar_length)
+	: totalPlusses(bar_length - title.size()), title(title_) {
 	plussesPrinted = 0;
 	frequency = static_cast<float>(totalWork) / static_cast<float>(totalPlusses);
 	count = frequency;
 	timer = new Timer();
 	timer->Start();
-	outFile = stdout;
 	// Initialize progress string
-	const u_int bufLen = title.size() + totalPlusses + 64;
-	buf = new char[bufLen];
-	snprintf(buf, bufLen, "\r%s: [", title.c_str());
-	curSpace = buf + strlen(buf);
-	char *s = curSpace;
-	for (u_int i = 0; i < totalPlusses; ++i)
-		*s++ = ' ';
-	*s++ = ']';
-	*s++ = ' ';
-	*s++ = '\0';
-	fputs(buf, outFile);
-	fflush(outFile);
+	cout << "\r" << title << ": [" << setw(totalPlusses) << "" << "]" << flush;
 }
-ProgressReporter::~ProgressReporter() { delete[] buf; delete timer; }
+ProgressReporter::~ProgressReporter() { delete timer; }
 void ProgressReporter::Update(u_int num) const {
 	count -= static_cast<float>(num);
 	bool updatedAny = false;
 	while (count <= 0.f) {
 		count += frequency;
-		if (plussesPrinted++ < totalPlusses)
-			*curSpace++ = '+';
+		if (++plussesPrinted >= totalPlusses)
+			break;
 		updatedAny = true;
 	}
 	if (updatedAny) {
-		fputs(buf, outFile);
+		cout << "\r" << title << ": [" << setfill('+') << setw(plussesPrinted) << "" << setfill(' ') << setw(totalPlusses - plussesPrinted) << "" << "] (";
 		// Update elapsed time and estimated time to completion
-		float percentDone = static_cast<float>(plussesPrinted) /
+		const float percentDone = static_cast<float>(plussesPrinted) /
 			static_cast<float>(totalPlusses);
-		float seconds = static_cast<float>(timer->Time());
-		float estRemaining = seconds / percentDone - seconds;
+		const float seconds = static_cast<float>(timer->Time());
+		const float estRemaining = seconds / percentDone - seconds;
+		cout << setprecision(1) << seconds;
 		if (percentDone == 1.f)
-			fprintf(outFile, " (%.1fs)       ", seconds);
+			cout << "s)";
 		else
-			fprintf(outFile, " (%.1fs|%.1fs)  ", seconds, max(0.f, estRemaining));
-		fflush(outFile);
+			cout << "s|" << estRemaining << "s)  ";
+		cout << flush;
 	}
 }
 void ProgressReporter::Done() const {
-	while (plussesPrinted++ < totalPlusses)
-		*curSpace++ = '+';
-	fputs(buf, outFile);
-	float seconds = static_cast<float>(timer->Time());
-	fprintf(outFile, " (%.1fs)       \n", seconds);
-	fflush(outFile);
+	const float seconds = static_cast<float>(timer->Time());
+	cout << "\r" << title << ": [" << setfill('+') << setw(totalPlusses) << "" << "] (" << setprecision(1) << seconds << "s)       " << flush;
 }
 
-namespace lux
-{
 /* string hashing function
  * An algorithm produced by Professor Daniel J. Bernstein and shown first to the world on the usenet newsgroup comp.lang.c. It is one of the most efficient hash functions ever published.
  */
@@ -305,15 +221,13 @@ unsigned int DJBHash(const std::string& str)
 
    return hash;
 }
-}
 
 //error.h nullstream
-namespace lux
+struct nullstream : std::ostream
 {
-	struct nullstream : std::ostream
-	{
-		nullstream(): std::ios(0), std::ostream(0) {}
-	} nullStream;
+	nullstream(): std::ios(0), std::ostream(0) {}
+} nullStream;
+
 }
 
 

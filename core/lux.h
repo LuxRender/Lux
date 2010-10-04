@@ -26,29 +26,32 @@
 // lux.h*
 // Global Include Files
 #include <cmath>
+using std::isinf;
+using std::isnan;
 #ifdef __CYGWIN__
 #include <ieeefp.h>
 #endif
+#include <string>
+using std::string;
+#include <vector>
+using std::vector;
+#include <iostream>
+using std::ostream;
+#include <algorithm>
+using std::min;
+using std::max;
+using std::swap;
+using std::sort;
+
 
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
 
-#if defined (__INTEL_COMPILER) && !defined(WIN32)
-// Dade - to fix a problem with expf undefined with Intel CC
-inline float expf(float a) { return exp(a); }
-#endif
-
-#if !defined(__APPLE__) && !defined(__OpenBSD__) && !defined(__FreeBSD__)
-#  include <malloc.h> // for _alloca, memalign
-#  if !defined(WIN32) || defined(__CYGWIN__)
-#    include <alloca.h>
-#  endif
-#endif
-#if defined(__FreeBSD__)
-#  define memalign(A,B)  malloc(B)
-#endif
+// Platform-specific definitions
 #if defined(WIN32) && !defined(__CYGWIN__)
 #  include <float.h>
+#  define isnan _isnan
+#  define isinf(f) (!_finite((f)))
 #  pragma warning (disable: 4244) // conversion from double to float (VS2005) - Radiance
 #  pragma warning (disable: 4305) // truncation from double to float (VS2005) - Radiance
 #  pragma warning (disable: 4996) // deprecated functions (VS2005) - Radiance
@@ -61,41 +64,9 @@ inline float expf(float a) { return exp(a); }
 //#define WIN32_LEAN_AND_MEAN //defined in project properties
 #  include <windows.h>
 #endif
-#include <stdlib.h>
-#define _GNU_SOURCE 1 //NOBOOK
-#include <stdio.h>
-#include <string.h>
-#include <string>
-using std::string;
-#include <vector>
-using std::vector;
-#include <iostream>
-using std::ostream;
-#include <algorithm>
-using std::min;
-using std::max;
-using std::swap;
-using std::sort;
-#include <assert.h>
-
-// Platform-specific definitions
-#if defined(WIN32) && !defined(__CYGWIN__)
-#  define memalign(a,b) _aligned_malloc(b, a)
-#  define alloca _alloca
-#  define isnan _isnan
-#  define isinf(f) (!_finite((f)))
-#elif defined(__APPLE__)
-#  define memalign(a,b) valloc(b)
-#  if (__GNUC__ == 3) || (__GNUC__ == 4)
-extern "C" {
-  int isinf(double);
-  int isnan(double);
-}
-#  endif // ONLY GCC 3
-#elif defined(__OpenBSD__)
-#  define memalign(a,b) malloc(b)
-#elif defined(sgi)
-#  define for if (0) ; else for
+#if defined (__INTEL_COMPILER) && !defined(WIN32)
+// Dade - to fix a problem with expf undefined with Intel CC
+inline float expf(float a) { return exp(a); }
 #endif
 
 // Global Constants
@@ -111,7 +82,6 @@ extern "C" {
 #endif
 #define LUX_VERSION 0.8
 #define LUX_VERSION_STRING "0.8(dev)"
-#define COLOR_SAMPLES 3
 #if defined(WIN32) && !defined(__CYGWIN__)
 #  define LUX_PATH_SEP ";"
 #else
@@ -119,7 +89,6 @@ extern "C" {
 #endif
 
 // Global Type Declarations
-typedef double StatsCounterType;
 typedef unsigned char u_char;
 typedef unsigned short u_short;
 typedef unsigned int u_int;
@@ -132,10 +101,6 @@ typedef vector<int> SampleGrid[BC_GRID_SIZE][BC_GRID_SIZE];
 class Timer;
 class MemoryArena;
 template<class T, int logBlockSize = 2> class BlockedArray;
-class ProgressReporter;
-class StatsCounter;
-class StatsRatio;
-class StatsPercentage;
 
 namespace lux
 {
@@ -225,6 +190,11 @@ namespace lux
   class IrregularDistribution1D;
   class MachineEpsilon;
   class SampleableSphericalFunction;
+  class ProgressReporter;
+  class StatsCounter;
+  typedef double StatsCounterType;
+  class StatsRatio;
+  class StatsPercentage;
 
 // Global Function Declarations
   //string hashing function

@@ -26,29 +26,29 @@
 // stats.h*
 
 #include "lux.h"
+#include <ostream>
+using std::ostream;
 
 namespace lux
 {
-  void StatsPrint(FILE *dest);
-  void StatsCleanup();
-}
+
+void StatsPrint(ostream &dest);
+void StatsCleanup();
 
 class ProgressReporter {
 public:
 	// ProgressReporter Public Methods
-	ProgressReporter(u_int totalWork, const string &title, u_int barLength=58);
+	ProgressReporter(u_int totalWork, const string &title_, u_int barLength=58);
 	~ProgressReporter();
 	void Update(u_int num = 1) const;
 	void Done() const;
 	// ProgressReporter Data
 	const u_int totalPlusses;
 	float frequency;
+	string title;
 	mutable float count;
 	mutable u_int plussesPrinted;
 	mutable Timer *timer;
-	FILE *outFile;
-	char *buf;
-	mutable char *curSpace;
 };
 class StatsCounter {
 public:
@@ -81,6 +81,8 @@ private:
 	// StatsPercentage Private Data
 	StatsCounterType na, nb;
 };
+
+}
 
 #endif // LUX_STATS_H
 

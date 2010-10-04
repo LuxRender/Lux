@@ -25,6 +25,14 @@
 #include "error.h"
 #include "color.h"
 
+#include <cstring>
+using std::memset;
+#include <cstdio>
+using std::FILE;
+using std::fopen;
+using std::fputc;
+using std::fclose;
+
 using namespace lux;
 
 namespace lux

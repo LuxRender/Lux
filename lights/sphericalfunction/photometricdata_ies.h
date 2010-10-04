@@ -27,6 +27,9 @@
 #include <fstream>
 #include <map>
 
+#include <cstring>
+using std::memcpy;
+
 namespace lux {
 
 class PhotometricDataIES {

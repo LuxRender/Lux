@@ -827,7 +827,7 @@ void Context::WorldEnd() {
 	//delete scene;
 	// Clean up after rendering
 	currentApiState = STATE_OPTIONS_BLOCK;
-	StatsPrint(stdout);
+	StatsPrint(std::cout);
 	curTransform = lux::Transform();
 	namedCoordinateSystems.erase(namedCoordinateSystems.begin(),
 		namedCoordinateSystems.end());

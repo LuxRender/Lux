@@ -21,9 +21,6 @@
  ***************************************************************************/
 
 // igiio.cpp*
-#include <algorithm>
-#include <fstream>
-
 #include "lux.h"
 #include "error.h"
 #include "color.h"
@@ -31,6 +28,10 @@
 
 #include "igiio.h"
 
+#include <algorithm>
+#include <fstream>
+#include <cstring>
+using std::memset;
 
 using namespace lux;
 // Indigo Image File Format IO - Based on code from GPL Violet Tonemapper.

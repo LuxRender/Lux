@@ -27,6 +27,9 @@
 #include "matrix4x4.h"
 #include "error.h"
 
+#include <cstring>
+using std::memset;
+
 namespace lux
 {
 

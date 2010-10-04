@@ -26,6 +26,9 @@
 #include "dynload.h"
 #include "error.h"
 
+#include <cstring>
+using std::memset;
+
 using namespace lux;
 
 // VolumeGrid Method Definitions

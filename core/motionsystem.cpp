@@ -24,6 +24,9 @@
 #include "motionsystem.h"
 #include "error.h"
 
+#include <cstring>
+using std::memset;
+
 using namespace lux;
 
 MotionSystem::MotionSystem(float st, float et,
