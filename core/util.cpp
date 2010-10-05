@@ -175,20 +175,24 @@ ProgressReporter::ProgressReporter(u_int totalWork, const string &title_, u_int 
 	timer = new Timer();
 	timer->Start();
 	// Initialize progress string
-	cout << "\r" << title << ": [" << setw(totalPlusses) << "" << "]" << flush;
+	cout << "\r" << title << ": [" << string(totalPlusses, ' ') << "]" << flush;
 }
 ProgressReporter::~ProgressReporter() { delete timer; }
 void ProgressReporter::Update(u_int num) const {
 	count -= static_cast<float>(num);
 	bool updatedAny = false;
-	while (count <= 0.f) {
+	while (count <= 0.f && plussesPrinted < totalPlusses) {
 		count += frequency;
-		if (++plussesPrinted >= totalPlusses)
-			break;
+		++plussesPrinted;
 		updatedAny = true;
 	}
 	if (updatedAny) {
-		cout << "\r" << title << ": [" << setfill('+') << setw(plussesPrinted) << "" << setfill(' ') << setw(totalPlusses - plussesPrinted) << "" << "] (";
+		cout << "\r" << title << ": [";
+		if (plussesPrinted > 0)
+			cout << string(plussesPrinted, '+');
+		if (plussesPrinted < totalPlusses)
+			cout << string(totalPlusses - plussesPrinted, ' ');
+		cout << "] (";
 		// Update elapsed time and estimated time to completion
 		const float percentDone = static_cast<float>(plussesPrinted) /
 			static_cast<float>(totalPlusses);
@@ -203,8 +207,9 @@ void ProgressReporter::Update(u_int num) const {
 	}
 }
 void ProgressReporter::Done() const {
+	timer->Stop();
 	const float seconds = static_cast<float>(timer->Time());
-	cout << "\r" << title << ": [" << setfill('+') << setw(totalPlusses) << "" << "] (" << setprecision(1) << seconds << "s)       " << flush;
+	cout << "\r" << title << ": [" << string(totalPlusses, '+') << "] (" << setprecision(1) << seconds << "s)       " << flush;
 }
 
 /* string hashing function
