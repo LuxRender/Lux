@@ -33,7 +33,7 @@ public:
 	VolumeGrid(const RGBColor &sa, const RGBColor &ss, float gg,
  		const RGBColor &emit, const BBox &e, const Transform &v2w,
 		int nx, int ny, int nz, const float *d);
-	virtual ~VolumeGrid() { delete[] density; }
+	virtual ~VolumeGrid() { }
 	virtual float Density(const Point &Pobj) const;
 	float D(int x, int y, int z) const {
 		x = Clamp(x, 0, nx - 1);
@@ -45,7 +45,7 @@ public:
 	static Region *CreateVolumeRegion(const Transform &volume2world, const ParamSet &params);
 private:
 	// VolumeGrid Private Data
-	float *density;
+	std::vector<float> density;
 	const int nx, ny, nz;
 	const BBox extent;
 	Transform WorldToVolume;
