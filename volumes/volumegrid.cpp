@@ -26,6 +26,9 @@
 #include "dynload.h"
 #include "error.h"
 
+#include <cstring>
+using std::memset;
+
 using namespace lux;
 
 // VolumeGrid Method Definitions
@@ -35,8 +38,7 @@ VolumeGrid::VolumeGrid(const RGBColor &sa, const RGBColor &ss, float gg,
 	: DensityVolume<RGBVolume>(RGBVolume(sa, ss, emit, gg)),
 	nx(x), ny(y), nz(z), extent(e), WorldToVolume(v2w.GetInverse())
 {
-	density = new float[nx * ny * nz];
-	memcpy(density, d, nx * ny * nz * sizeof(float));
+	density.assign(d, d+(nx*ny*nz));
 }
 float VolumeGrid::Density(const Point &p) const
 {
