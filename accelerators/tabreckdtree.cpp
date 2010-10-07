@@ -312,7 +312,7 @@ bool TaBRecKdTreeAccel::Intersect(const Ray &ray, Intersection *isect) const {
         bool hit = false;
 
         // Dade - debugging code
-        //LOG(LUX_NOERROR,LUX_INFO))<<"\n-----------------------------------------------------\n"<<
+        //LOG(LUX_INFO,LUX_NOERROR))<<"\n-----------------------------------------------------\n"<<
         //	"nPrims = "<<nPrimitives<<" hit = "<<hit<<
         //   //" ray.mint = "<<ray.mint<<" ray.maxt = "<<ray.maxt<<
         //    " tmin = "<<tmin<<" tmax = "<<tmax;
@@ -433,7 +433,7 @@ bool TaBRecKdTreeAccel::IntersectP(const Ray &ray) const {
         u_int nPrimitives = currNode->nPrimitives();
 
         // Dade - debugging code
-        //LOG(LUX_NOERROR,LUX_INFO)<<"\n-----------------------------------------------------\n"<<
+        //LOG(LUX_INFO,LUX_NOERROR)<<"\n-----------------------------------------------------\n"<<
         //       "nPrims = "<<nPrimitives<<
         //        " ray.mint = "<<ray.mint<<" ray.maxt = "<<ray.maxt;
 

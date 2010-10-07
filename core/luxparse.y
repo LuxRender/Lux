@@ -48,7 +48,7 @@ void yyerror(const char *str)
 	if (lineNum > 0)
 		ss << " at line " << lineNum;
 	ss << ": " << str;
-	LOG(LUX_SYNTAX, LUX_SEVERE)<< ss.str().c_str();
+	LOG(LUX_SEVERE,LUX_SYNTAX)<< ss.str().c_str();
 }
 
 class ParamListElem {
@@ -134,7 +134,7 @@ static bool VerifyArrayLength(ParamArray *arr, u_int required,
 	const char *command)
 {
 	if (arr->nelems != required) {
-		LOG(LUX_SYNTAX, LUX_SEVERE)
+		LOG( LUX_SEVERE,LUX_SYNTAX)
 			<< command << " requires a(n) "
 			<< required << " element array!";
 		return false;
@@ -541,13 +541,13 @@ static void InitParamSet(ParamSet &ps, u_int count, ParamListElem *list) {
 		ParamType type;
 		string name;
 		if (!LookupType(list[i].token, &type, name)) {
-			LOG(LUX_SYNTAX, LUX_WARNING)
+			LOG( LUX_WARNING,LUX_SYNTAX)
 				<< "Type of parameter '" << list[i].token << "' is unknown";
 			continue;
 		}
 		if (list[i].textureHelper && type != PARAM_TYPE_TEXTURE &&
 			type != PARAM_TYPE_STRING) {
-			LOG(LUX_SYNTAX, LUX_WARNING)
+			LOG( LUX_WARNING,LUX_SYNTAX)
 				<< "Bad type for " << name << ". Changing it to a texture.";
 			type = PARAM_TYPE_TEXTURE;
 		}
@@ -571,7 +571,7 @@ static void InitParamSet(ParamSet &ps, u_int count, ParamListElem *list) {
 				else if (s == "false")
 					bdata[j] = false;
 				else {
-					LOG(LUX_SYNTAX, LUX_WARNING)
+					LOG( LUX_WARNING,LUX_SYNTAX)
 						<< "Value '" << s << "' unknown for boolean parameter '" <<
 						list[i].token << "'. Using 'false'.";
 					bdata[j] = false;
@@ -600,7 +600,7 @@ static void InitParamSet(ParamSet &ps, u_int count, ParamListElem *list) {
 				string val(*static_cast<const char **>(data));
 				ps.AddTexture(name, val);
 			} else {
-				LOG(LUX_SYNTAX, LUX_ERROR) << "Only one string allowed for 'texture' parameter " << name;
+				LOG( LUX_ERROR,LUX_SYNTAX) << "Only one string allowed for 'texture' parameter " << name;
 			}
 		}
 	}

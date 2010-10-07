@@ -37,7 +37,7 @@
 using namespace lux;
 
 void LuxRaysDebugHandler(const char *msg) {
-	LOG(LUX_NOERROR, LUX_DEBUG) << "[LuxRays] " << msg;
+	LOG( LUX_DEBUG,LUX_NOERROR) << "[LuxRays] " << msg;
 }
 
 //------------------------------------------------------------------------------
@@ -194,13 +194,13 @@ void HybridRenderer::Render(Scene *s) {
 		}
 
 		if (scene->lights.size() == 0) {
-			LOG(LUX_MISSINGDATA, LUX_SEVERE)<< "No light sources defined in scene; nothing to render.";
+			LOG( LUX_SEVERE,LUX_MISSINGDATA)<< "No light sources defined in scene; nothing to render.";
 			state = TERMINATE;
 			return;
 		}
 
 		if (!scene->surfaceIntegrator->IsDataParallelSupported()) {
-			LOG(LUX_ERROR, LUX_SEVERE)<< "The SurfaceIntegrator doesn't support HybridRenderer.";
+			LOG( LUX_SEVERE,LUX_ERROR)<< "The SurfaceIntegrator doesn't support HybridRenderer.";
 			state = TERMINATE;
 			return;
 		}
@@ -224,7 +224,7 @@ void HybridRenderer::Render(Scene *s) {
 
 		// initialize the thread's RandomGenerator
 		u_long seed = scene->seedBase - 1;
-		LOG(LUX_NOERROR, LUX_INFO) << "Preprocess thread uses seed: " << seed;
+		LOG( LUX_INFO,LUX_NOERROR) << "Preprocess thread uses seed: " << seed;
 
 		RandomGenerator rng(seed);
 
@@ -243,7 +243,7 @@ void HybridRenderer::Render(Scene *s) {
 
 		vector<luxrays::TriangleMesh *> meshList;
 
-		LOG(LUX_NOERROR, LUX_INFO) << "Tesselating " << scene->primitives.size() << " primitives";
+		LOG(LUX_INFO,LUX_NOERROR) << "Tesselating " << scene->primitives.size() << " primitives";
 
 		for (size_t i = 0; i < scene->primitives.size(); ++i)
 			scene->primitives[i]->Tesselate(&meshList, &scene->tesselatedPrimitives);
@@ -354,7 +354,7 @@ double HybridRenderer::Statistics(const string &statName) {
 	else if (statName == "enoughSamples")
 		return scene->camera->film->enoughSamplePerPixel;
 	else {
-		LOG(LUX_BADTOKEN, LUX_ERROR)<< "luxStatistics - requested an invalid data : " << statName;
+		LOG( LUX_ERROR,LUX_BADTOKEN)<< "luxStatistics - requested an invalid data : " << statName;
 		return 0.;
 	}
 }
@@ -486,7 +486,7 @@ void HybridRenderer::RenderThread::RenderImpl(RenderThread *renderThread) {
 
 	// initialize the thread's rangen
 	u_long seed = scene.seedBase + renderThread->n;
-	LOG(LUX_NOERROR, LUX_INFO) << "Thread " << renderThread->n << " uses seed: " << seed;
+	LOG( LUX_INFO,LUX_NOERROR) << "Thread " << renderThread->n << " uses seed: " << seed;
 
 	RandomGenerator rng(seed);
 
@@ -501,7 +501,7 @@ void HybridRenderer::RenderThread::RenderImpl(RenderThread *renderThread) {
 		integratorState[i]->Init(scene);
 	}
 
-	LOG(LUX_NOERROR, LUX_DEBUG) << "Thread " << renderThread->n << " initialization time: " <<
+	LOG( LUX_DEBUG,LUX_NOERROR) << "Thread " << renderThread->n << " initialization time: " <<
 			std::setiosflags(std::ios::fixed) << std::setprecision(2) <<
 			luxrays::WallClockTime() - t0 << " secs";
 

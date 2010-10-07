@@ -36,7 +36,7 @@ Texture<SWCSpectrum> *RegularDataTexture::CreateSWCSpectrumTexture(const Transfo
 	u_int dataCount = 0;
 	const float *data = tp.FindFloat("data", &dataCount);
 	if (dataCount < 2) {
-		LOG(LUX_MISSINGDATA, LUX_ERROR)<< "Insufficient data in regulardata texture";
+		LOG( LUX_ERROR,LUX_MISSINGDATA)<< "Insufficient data in regulardata texture";
 		const float default_data[] = {1.f, 1.f};
 		return new RegularDataTexture(start, end, 2, default_data);
 	}

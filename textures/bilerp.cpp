@@ -55,7 +55,7 @@ Texture<float>* BilerpFloatTexture::CreateFloatTexture(const Transform &tex2worl
 			tp.FindOneFloat("udelta", 0.f),
 			tp.FindOneFloat("vdelta", 0.f));
 	} else {
-		LOG(LUX_UNIMPLEMENT, LUX_ERROR) << "2D texture mapping '" << type << "' unknown";
+		LOG( LUX_ERROR,LUX_UNIMPLEMENT) << "2D texture mapping '" << type << "' unknown";
 		map = new UVMapping2D;
 	}
 	return new BilerpFloatTexture(map,
@@ -92,7 +92,7 @@ Texture<SWCSpectrum>* BilerpSpectrumTexture::CreateSWCSpectrumTexture(const Tran
 			tp.FindOneFloat("udelta", 0.f),
 			tp.FindOneFloat("vdelta", 0.f));
 	} else {
-		LOG(LUX_UNIMPLEMENT, LUX_ERROR) << "2D texture mapping '" << type << "' unknown";
+		LOG( LUX_ERROR,LUX_UNIMPLEMENT) << "2D texture mapping '" << type << "' unknown";
 		map = new UVMapping2D;
 	}
 	return new BilerpSpectrumTexture(map,

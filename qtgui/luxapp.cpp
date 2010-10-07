@@ -175,7 +175,7 @@ bool LuxGuiApp::ProcessCommandLine(void)
 		}
 
 		if(vm.count("debug")) {
-			LOG(LUX_NOERROR, LUX_INFO)<< "Debug mode enabled";
+			LOG( LUX_INFO,LUX_NOERROR)<< "Debug mode enabled";
 			luxEnableDebugMode();
 		}
 
@@ -196,7 +196,7 @@ bool LuxGuiApp::ProcessCommandLine(void)
 			vector<string> names = vm["useserver"].as<vector<string> >();
 
 			for(vector<string>::iterator i = names.begin(); i < names.end(); i++) {
-				LOG(LUX_NOERROR, LUX_INFO) << "Connecting to server '" <<(*i) << "'";
+				LOG(LUX_INFO,LUX_NOERROR) << "Connecting to server '" <<(*i) << "'";
 
 				//TODO jromang : try to connect to the server, and get version number. display message to see if it was successfull
 				luxAddServer((*i).c_str());
@@ -204,7 +204,7 @@ bool LuxGuiApp::ProcessCommandLine(void)
 
 			m_useServer = true;
 
-			LOG(LUX_NOERROR, LUX_INFO) << "Server requests interval:  " << serverInterval << " secs";
+			LOG( LUX_INFO,LUX_NOERROR) << "Server requests interval:  " << serverInterval << " secs";
 		} else {
 			m_useServer = false;
 		}
@@ -212,7 +212,7 @@ bool LuxGuiApp::ProcessCommandLine(void)
 		if(vm.count("input-file")) {
 			const vector<string> &v = vm["input-file"].as<vector<string> >();
 			if(v.size() > 1) {
-				LOG(LUX_SYSTEM, LUX_SEVERE)<< "More than one file passed on command line : rendering the first one.";
+				LOG( LUX_SEVERE,LUX_SYSTEM)<< "More than one file passed on command line : rendering the first one.";
 			}
 
 			m_inputFile = QString(v[0].c_str());

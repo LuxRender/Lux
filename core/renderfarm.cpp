@@ -91,7 +91,7 @@ void RenderFarm::startFilmUpdater(Scene *scene) {
 		filmUpdateThread->thread = new boost::thread(boost::bind(
 			FilmUpdaterThread::updateFilm, filmUpdateThread));
 	} else {
-		LOG(LUX_ILLSTATE,LUX_ERROR)<<"RenderFarm::startFilmUpdater() called but update thread already started.";
+		LOG(LUX_ERROR,LUX_ILLSTATE)<<"RenderFarm::startFilmUpdater() called but update thread already started.";
 	}
 }
 
@@ -104,7 +104,7 @@ void RenderFarm::stopFilmUpdater() {
 	// Dade - stopFilmUpdater() is called multiple times at the moment (for instance
 	// haltspp + luxconsole)
 	/*else {
-		LOG(LUX_ILLSTATE,LUX_ERROR)<<"RenderFarm::stopFilmUpdater() called but update thread not started.";
+		LOG(LUX_ERROR,LUX_ILLSTATE)<<"RenderFarm::stopFilmUpdater() called but update thread not started.";
 	}*/
 }
 
@@ -127,7 +127,7 @@ bool RenderFarm::connect(ExtRenderingServerInfo &serverInfo) {
 	string serverName = serverInfo.name + ":" + serverInfo.port;
 
 	try {
-		LOG(LUX_NOERROR, LUX_INFO) << "Connecting server: " << serverName;
+		LOG( LUX_INFO,LUX_NOERROR) << "Connecting server: " << serverName;
 
 		tcp::iostream stream(serverInfo.name, serverInfo.port);
 		stream << "ServerConnect" << std::endl;
@@ -136,33 +136,33 @@ bool RenderFarm::connect(ExtRenderingServerInfo &serverInfo) {
 
 		string result;
 		if (!getline(stream, result)) {
-			LOG(LUX_SYSTEM, LUX_ERROR) << "Unable to connect server: " << serverName;
+			LOG( LUX_ERROR,LUX_SYSTEM) << "Unable to connect server: " << serverName;
 			return false;
 		}
 
-		LOG(LUX_NOERROR, LUX_INFO) << "Server connect result: " << result;
+		LOG( LUX_INFO,LUX_NOERROR) << "Server connect result: " << result;
 
 		string sid;
 		if ("OK" != result) {
-			LOG(LUX_SYSTEM, LUX_ERROR) << "Unable to connect server: " << serverName;
+			LOG( LUX_ERROR,LUX_SYSTEM) << "Unable to connect server: " << serverName;
 
 			return false;
 		} else {
 			// Dade - read the session ID
 			if (!getline(stream, result)) {
-				LOG(LUX_SYSTEM, LUX_ERROR) << "Unable read session ID from server: " << serverName;
+				LOG( LUX_ERROR,LUX_SYSTEM) << "Unable read session ID from server: " << serverName;
 				return false;
 			}
 
 			sid = result;
-			LOG(LUX_NOERROR, LUX_INFO) << "Server session ID: " << sid;
+			LOG( LUX_INFO,LUX_NOERROR) << "Server session ID: " << sid;
 		}
 
 		serverInfo.sid = sid;
 		serverInfo.flushed = false;
 	} catch (exception& e) {
-		LOG(LUX_SYSTEM, LUX_ERROR) << "Unable to connect server: " << serverName;
-		LOG(LUX_SYSTEM, LUX_ERROR)<< e.what();
+		LOG(LUX_ERROR,LUX_SYSTEM) << "Unable to connect server: " << serverName;
+		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
 		return false;
 	}
 
@@ -183,8 +183,8 @@ bool RenderFarm::connect(const string &serverName) {
 
 			serverInfoList.push_back(serverInfo);
 		} catch (exception& e) {
-			LOG(LUX_SYSTEM, LUX_ERROR) << "Unable to connect server: " << serverName;
-			LOG(LUX_SYSTEM, LUX_ERROR)<< e.what();
+			LOG(LUX_ERROR,LUX_SYSTEM) << "Unable to connect server: " << serverName;
+			LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
 			return false;
 		}
 	}
@@ -221,7 +221,7 @@ void RenderFarm::disconnect(const string &serverName) {
 void RenderFarm::disconnect(const ExtRenderingServerInfo &serverInfo) {
 	stringstream ss;
 	try {
-		LOG(LUX_NOERROR, LUX_INFO)
+		LOG( LUX_INFO,LUX_NOERROR)
 			<< "Disconnect from server: "
 			<< serverInfo.name << ":" << serverInfo.port;
 
@@ -229,7 +229,7 @@ void RenderFarm::disconnect(const ExtRenderingServerInfo &serverInfo) {
 		stream << "ServerDisconnect" << endl;
 		stream << serverInfo.sid << endl;
 	} catch (exception& e) {
-		LOG(LUX_SYSTEM, LUX_ERROR)<< e.what();
+		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
 	}
 }
 
@@ -238,13 +238,13 @@ void RenderFarm::flushImpl() {
 	// Dade - the buffers with all commands
 	string commands = netBuffer.str();
 
-	LOG(LUX_NOERROR, LUX_DEBUG) << "Compiled scene size: " << (commands.size() / 1024) << "KBytes";
+	LOG(LUX_DEBUG,LUX_NOERROR) << "Compiled scene size: " << (commands.size() / 1024) << "KBytes";
 
 	//flush network buffer
 	for (size_t i = 0; i < serverInfoList.size(); i++) {
 		if(serverInfoList[i].flushed == false) {
 			try {
-				LOG(LUX_NOERROR, LUX_INFO) << "Sending commands to server: " <<
+				LOG( LUX_INFO,LUX_NOERROR) << "Sending commands to server: " <<
 						serverInfoList[i].name << ":" << serverInfoList[i].port;
 
 				tcp::iostream stream(serverInfoList[i].name, serverInfoList[i].port);
@@ -252,14 +252,14 @@ void RenderFarm::flushImpl() {
 
 				serverInfoList[i].flushed = true;
 			} catch (exception& e) {
-				LOG(LUX_SYSTEM, LUX_ERROR)<< e.what();
+				LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
 			}
 		}
 	}
 
 	// Dade - write info only if there was the communication with some server
 	if (serverInfoList.size() > 0) {
-		LOG(LUX_NOERROR, LUX_INFO) << "All servers are aligned";
+		LOG( LUX_INFO,LUX_NOERROR) << "All servers are aligned";
 	}
 }
 
@@ -281,7 +281,7 @@ void RenderFarm::updateFilm(Scene *scene) {
 	stringstream ss;
 	for (size_t i = 0; i < serverInfoList.size(); i++) {
 		try {
-			LOG(LUX_NOERROR, LUX_INFO) << "Getting samples from: " <<
+			LOG( LUX_INFO,LUX_NOERROR) << "Getting samples from: " <<
 					serverInfoList[i].name << ":" << serverInfoList[i].port;
 
 			// I'm using directly a tcp::socket here in order to be able to enable
@@ -345,19 +345,19 @@ void RenderFarm::updateFilm(Scene *scene) {
 				throw string("Received 0 samples from server");
 			serverInfoList[i].numberOfSamplesReceived += sampleCount;
 
-			LOG(LUX_NOERROR, LUX_INFO) << "Samples received from '" <<
+			LOG( LUX_INFO,LUX_NOERROR) << "Samples received from '" <<
 					serverInfoList[i].name << ":" << serverInfoList[i].port << "' (" <<
 					(compressedSize / 1024) << " Kbytes)";
 
 			serverInfoList[i].timeLastContact = second_clock::local_time();
 		} catch (string s) {
-			LOG(LUX_SYSTEM, LUX_ERROR)<< s.c_str();
+			LOG(LUX_ERROR,LUX_SYSTEM)<< s.c_str();
 			// Add the index to the list of failed slves
 			failedServerIndexList.push_back(i);
 		} catch (std::exception& e) {
-			LOG(LUX_SYSTEM, LUX_ERROR) << "Error while communicating with server: " <<
+			LOG( LUX_ERROR,LUX_SYSTEM) << "Error while communicating with server: " <<
 					serverInfoList[i].name << ":" << serverInfoList[i].port;
-			LOG(LUX_SYSTEM, LUX_ERROR)<< e.what();
+			LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
 
 			// Add the index to the list of failed slves
 			failedServerIndexList.push_back(i);
@@ -370,16 +370,16 @@ void RenderFarm::updateFilm(Scene *scene) {
 		for (size_t i = 0; i < failedServerIndexList.size(); ++i) {
 			ExtRenderingServerInfo *serverInfo = &serverInfoList[failedServerIndexList[i]];
 			try {
-				LOG(LUX_NOERROR, LUX_INFO)
+				LOG(LUX_INFO,LUX_NOERROR)
 					<< "Trying to reconnect server: "
 					<< serverInfo->name << ":" << serverInfo->port;
 
 				this->connect(*serverInfo);
 			} catch (std::exception& e) {
-				LOG(LUX_SYSTEM, LUX_ERROR)
+				LOG(LUX_ERROR,LUX_SYSTEM)
 					<< "Error while reconnecting with server: "
 					<< serverInfo->name << ":" << serverInfo->port;
-				LOG(LUX_SYSTEM, LUX_ERROR)<< e.what();
+				LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
 			}
 		}
 
@@ -431,7 +431,7 @@ void RenderFarm::sendFile(const string file) {
 	in.seekg (0, std::ifstream::beg);
 
 	if (in.fail()) {
-		LOG(LUX_SYSTEM, LUX_ERROR) << "There was an error while checking the size of file '" << file << "'";
+		LOG( LUX_ERROR,LUX_SYSTEM) << "There was an error while checking the size of file '" << file << "'";
 
 		// Send an empty file ot the server
 		netBuffer << "0\n";
@@ -442,7 +442,7 @@ void RenderFarm::sendFile(const string file) {
 		in.read(buf, len);
 
 		if (in.fail()) {
-			LOG(LUX_SYSTEM, LUX_ERROR) << "There was an error while reading file '" << file << "'";
+			LOG( LUX_ERROR,LUX_SYSTEM) << "There was an error while reading file '" << file << "'";
 
 			// Send an empty file to the server
 			netBuffer << "0\n";
@@ -479,7 +479,7 @@ void RenderFarm::send(const string &command, const string &name,
 		if (file.size())
 			sendFile(file);
 	} catch (exception& e) {
-		LOG(LUX_SYSTEM, LUX_ERROR)<< e.what();
+		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
 	}
 }
 
@@ -491,7 +491,7 @@ void RenderFarm::send(const string &command, const string &id,
 		sendParams(params);
 		netBuffer << "\n";
 	} catch (exception& e) {
-		LOG(LUX_SYSTEM, LUX_ERROR)<< e.what();
+		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
 	}
 }
 
@@ -499,7 +499,7 @@ void RenderFarm::send(const string &command, const string &name) {
 	try {
 		netBuffer << command << endl << name << endl;
 	} catch (exception& e) {
-		LOG(LUX_SYSTEM, LUX_ERROR)<< e.what();
+		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
 	}
 }
 
@@ -507,7 +507,7 @@ void RenderFarm::send(const string &command, float x, float y, float z) {
 	try {
 		netBuffer << command << endl << x << ' ' << y << ' ' << z << endl;
 	} catch (exception& e) {
-		LOG(LUX_SYSTEM, LUX_ERROR)<< e.what();
+		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
 	}
 }
 
@@ -515,7 +515,7 @@ void RenderFarm::send(const string &command, float x, float y) {
 	try {
 		netBuffer << command << endl << x << ' ' << y << endl;
 	} catch (exception& e) {
-		LOG(LUX_SYSTEM, LUX_ERROR)<< e.what();
+		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
 	}
 }
 
@@ -524,7 +524,7 @@ void RenderFarm::send(const string &command, float a, float x, float y,
 	try {
 		netBuffer << command << endl << a << ' ' << x << ' ' << y << ' ' << z << endl;
 	} catch (exception& e) {
-		LOG(LUX_SYSTEM, LUX_ERROR)<< e.what();
+		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
 	}
 }
 
@@ -533,7 +533,7 @@ void RenderFarm::send(const string &command, float ex, float ey, float ez,
 	try {
 		netBuffer << command << endl << ex << ' ' << ey << ' ' << ez << ' ' << lx << ' ' << ly << ' ' << lz << ' ' << ux << ' ' << uy << ' ' << uz << endl;
 	} catch (exception& e) {
-		LOG(LUX_SYSTEM, LUX_ERROR)<< e.what();
+		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
 	}
 }
 
@@ -544,7 +544,7 @@ void RenderFarm::send(const string &command, float tr[16]) {
 			netBuffer << tr[i] << ' ';
 		netBuffer << endl;
 	} catch (exception& e) {
-		LOG(LUX_SYSTEM, LUX_ERROR)<< e.what();
+		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
 	}
 }
 
@@ -561,7 +561,7 @@ void RenderFarm::send(const string &command, const string &name,
 		if (file.size())
 			sendFile(file);
 	} catch (std::exception& e) {
-		LOG(LUX_SYSTEM, LUX_ERROR)<< e.what();
+		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
 	}
 }
 
@@ -569,7 +569,7 @@ void RenderFarm::send(const string &command, const string &name, float a, float 
 	try {
 		netBuffer << command << endl << name << ' ' << a << ' ' << b << ' ' << transform << endl;
 	} catch (exception& e) {
-		LOG(LUX_SYSTEM, LUX_ERROR)<< e.what();
+		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
 	}
 }
 

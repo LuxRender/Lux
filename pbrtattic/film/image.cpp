@@ -67,17 +67,17 @@ void ImageFilm::AddSample(float sX, float sY,
 
 	// Issue warning if unexpected radiance value returned
 	if (L.IsNaN()) {
-		//LOG(LUX_BUG,LUX_ERROR)<<"THR"<<myThread->n+1<<": Nan radiance value returned.";
+		//LOG(LUX_ERROR,LUX_BUG)<<"THR"<<myThread->n+1<<": Nan radiance value returned.";
 		//L = Spectrum(0.f);
 		return;
 	}
 	else if (L.y() < -1e-5) {
-		//LOG(LUX_BUG,LUX_ERROR)<<"THR"<<myThread->n+1<<": NegLum value, "<<Ls.y()<<" returned.";
+		//LOG(LUX_ERROR,LUX_BUG)<<"THR"<<myThread->n+1<<": NegLum value, "<<Ls.y()<<" returned.";
 		//L = Spectrum(0.f);
 		return;
 	}
 	else if (isinf(L.y())) {
-		//LOG(LUX_BUG,LUX_ERROR)<<"InfinLum value returned.";
+		//LOG(LUX_ERROR,LUX_BUG)<<"InfinLum value returned.";
 		//L = Spectrum(0.f);
 		return;
 	}
@@ -194,7 +194,7 @@ void ImageFilm::WriteImage() {
 	}
 	// Write RGBA image
 	//printf("\n\nWriting OpenEXR(RGBA) image to file \"%s\"...\n", filename.c_str());
-	LOG(LUX_NOERROR, LUX_INFO)<< "Writing OpenEXR(RGBA) image to file "<< filename;
+	LOG(LUX_INFO,LUX_NOERROR)<< "Writing OpenEXR(RGBA) image to file "<< filename;
 	WriteRGBAImage(filename, rgb, alpha,
 		xPixelCount, yPixelCount,
 		xResolution, yResolution,

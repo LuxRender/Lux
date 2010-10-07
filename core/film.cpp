@@ -644,7 +644,7 @@ void Film::CreateBuffers()
 
 			if(ifs.good()) {
 				// Dade - read the data
-				LOG(LUX_NOERROR, LUX_INFO)<< "Reading film status from file " << fname;
+				LOG(LUX_INFO,LUX_NOERROR)<< "Reading film status from file " << fname;
 				UpdateFilm(ifs);
 			}
 
@@ -770,7 +770,7 @@ void Film::AddSample(Contribution *contrib) {
 	// Issue warning if unexpected radiance value returned
 	if (!(xyz.Y() >= 0.f) || isinf(xyz.Y())) {
 		if(debug_mode) {
-			LOG(LUX_LIMIT, LUX_WARNING) << "Out of bound intensity in Film::AddSample: "
+			LOG(LUX_WARNING,LUX_LIMIT) << "Out of bound intensity in Film::AddSample: "
 			   << xyz.Y() << ", sample discarded";
 		}
 		return;
@@ -778,7 +778,7 @@ void Film::AddSample(Contribution *contrib) {
 
 	if (!(alpha >= 0.f) || isinf(alpha)) {
 		if(debug_mode) {
-			LOG(LUX_LIMIT, LUX_WARNING) << "Out of bound  alpha in Film::AddSample: "
+			LOG(LUX_WARNING,LUX_LIMIT) << "Out of bound  alpha in Film::AddSample: "
 			   << alpha << ", sample discarded";
 		}
 		return;
@@ -786,7 +786,7 @@ void Film::AddSample(Contribution *contrib) {
 
 	if (!(weight >= 0.f) || isinf(weight)) {
 		if(debug_mode) {
-			LOG(LUX_LIMIT, LUX_WARNING) << "Out of bound  weight in Film::AddSample: "
+			LOG(LUX_WARNING,LUX_LIMIT) << "Out of bound  weight in Film::AddSample: "
 			   << weight << ", sample discarded";
 		}
 		return;
@@ -868,7 +868,7 @@ void Film::WriteResumeFilm(const string &filename)
 
     std::ofstream filestr(tempfilename.c_str(), std::ios_base::out | std::ios_base::binary);
 	if(!filestr) {
-		LOG(LUX_SYSTEM, LUX_SEVERE) << "Cannot open file '" << tempfilename << "' for writing resume film";
+		LOG(LUX_SEVERE,LUX_SYSTEM) << "Cannot open file '" << tempfilename << "' for writing resume film";
 
 		return;
 	}
@@ -955,7 +955,7 @@ public:
 				size = stringValue.size();
 				break;
 			default: {
-				LOG(LUX_SYSTEM, LUX_ERROR) << "Invalid parameter type (expected value in [0,1], got=" << type << ")";
+				LOG(LUX_ERROR,LUX_SYSTEM) << "Invalid parameter type (expected value in [0,1], got=" << type << ")";
 				break;
 			}
 		}
@@ -980,28 +980,28 @@ public:
 		tmpType = osReadLittleEndianInt(isLittleEndian, is);
 		type = FlmParameterType(tmpType);
 		if (!is.good()) {
-			LOG(LUX_SYSTEM, LUX_ERROR)<< "Error while receiving film";
+			LOG(LUX_ERROR,LUX_SYSTEM)<< "Error while receiving film";
 			return false;
 		}
 		size = osReadLittleEndianUInt(isLittleEndian, is);
 		if (!is.good()) {
-			LOG(LUX_SYSTEM, LUX_ERROR)<< "Error while receiving film";
+			LOG(LUX_ERROR,LUX_SYSTEM)<< "Error while receiving film";
 			return false;
 		}
 		id = static_cast<luxComponentParameters>(osReadLittleEndianInt(isLittleEndian, is));
 		if (!is.good()) {
-			LOG(LUX_SYSTEM, LUX_ERROR)<< "Error while receiving film";
+			LOG(LUX_ERROR,LUX_SYSTEM)<< "Error while receiving film";
 			return false;
 		}
 		index = osReadLittleEndianUInt(isLittleEndian, is);
 		if (!is.good()) {
-			LOG(LUX_SYSTEM, LUX_ERROR)<< "Error while receiving film";
+			LOG(LUX_ERROR,LUX_SYSTEM)<< "Error while receiving film";
 			return false;
 		}
 		switch (type) {
 			case FLM_PARAMETER_TYPE_FLOAT:
 				if (size != 4) {
-					LOG(LUX_SYSTEM, LUX_ERROR) << "Invalid parameter size (expected value for float is 4, received=" << size << ")";
+					LOG(LUX_ERROR,LUX_SYSTEM) << "Invalid parameter size (expected value for float is 4, received=" << size << ")";
 					return false;
 				}
 				floatValue = osReadLittleEndianFloat(isLittleEndian, is);
@@ -1015,7 +1015,7 @@ public:
 				break;
 			}
 			default: {
-				LOG(LUX_SYSTEM, LUX_ERROR) << "Invalid parameter type (expected value in [0,1], received=" << tmpType << ")";
+				LOG(LUX_ERROR,LUX_SYSTEM) << "Invalid parameter type (expected value in [0,1], received=" << tmpType << ")";
 				return false;
 			}
 		}
@@ -1070,21 +1070,21 @@ bool FlmHeader::Read(filtering_stream<input> &in, bool isLittleEndian, Film *fil
 	// Read and verify magic number and version
 	magicNumber = osReadLittleEndianInt(isLittleEndian, in);
 	if (!in.good()) {
-		LOG(LUX_SYSTEM, LUX_ERROR)<< "Error while receiving film";
+		LOG(LUX_ERROR,LUX_SYSTEM)<< "Error while receiving film";
 		return false;
 	}
 	if (magicNumber != FLM_MAGIC_NUMBER) {
-		LOG(LUX_SYSTEM, LUX_ERROR) << "Invalid FLM magic number (expected=" << FLM_MAGIC_NUMBER 
+		LOG(LUX_ERROR,LUX_SYSTEM) << "Invalid FLM magic number (expected=" << FLM_MAGIC_NUMBER 
 			<< ", received=" << magicNumber << ")";
 		return false;
 	}
 	versionNumber = osReadLittleEndianInt(isLittleEndian, in);
 	if (!in.good()) {
-		LOG(LUX_SYSTEM, LUX_ERROR)<< "Error while receiving film";
+		LOG(LUX_ERROR,LUX_SYSTEM)<< "Error while receiving film";
 		return false;
 	}
 	if (versionNumber != FLM_VERSION) {
-		LOG(LUX_SYSTEM, LUX_ERROR) << "Invalid FLM version (expected=" << FLM_VERSION 
+		LOG(LUX_ERROR,LUX_SYSTEM) << "Invalid FLM version (expected=" << FLM_VERSION 
 			<< ", received=" << versionNumber << ")";
 		return false;
 	}
@@ -1092,7 +1092,7 @@ bool FlmHeader::Read(filtering_stream<input> &in, bool isLittleEndian, Film *fil
 	xResolution = osReadLittleEndianUInt(isLittleEndian, in);
 	yResolution = osReadLittleEndianUInt(isLittleEndian, in);
 	if (xResolution == 0 || yResolution == 0 ) {
-		LOG(LUX_SYSTEM, LUX_ERROR)
+		LOG(LUX_ERROR,LUX_SYSTEM)
 			<< "Invalid resolution (expected positive resolution, received="
 			<< xResolution << "x" << yResolution
 			<< ")";
@@ -1101,7 +1101,7 @@ bool FlmHeader::Read(filtering_stream<input> &in, bool isLittleEndian, Film *fil
 	if (film != NULL &&
 		(xResolution != film->GetXPixelCount() ||
 		yResolution != film->GetYPixelCount())) {
-		LOG(LUX_SYSTEM, LUX_ERROR)
+		LOG(LUX_ERROR,LUX_SYSTEM)
 			<< "Invalid resolution (expected=" << film->GetXPixelCount() << "x" << film->GetYPixelCount()
 			<< ", received=" << xResolution << "x" << yResolution << ")";
 		return false;
@@ -1109,22 +1109,22 @@ bool FlmHeader::Read(filtering_stream<input> &in, bool isLittleEndian, Film *fil
 	// Read and verify #buffer groups and buffer configs
 	numBufferGroups = osReadLittleEndianUInt(isLittleEndian, in);
 	if (!in.good()) {
-		LOG(LUX_SYSTEM, LUX_ERROR)<< "Error while receiving film";
+		LOG(LUX_ERROR,LUX_SYSTEM)<< "Error while receiving film";
 		return false;
 	}
 	if (film != NULL && numBufferGroups != film->GetNumBufferGroups()) {
-		LOG(LUX_SYSTEM, LUX_ERROR)
+		LOG(LUX_ERROR,LUX_SYSTEM)
 			<< "Invalid number of buffer groups (expected=" << film->GetNumBufferGroups() 
 			<< ", received=" << numBufferGroups << ")";
 		return false;
 	}
 	numBufferConfigs = osReadLittleEndianUInt(isLittleEndian, in);
 	if (!in.good()) {
-		LOG(LUX_SYSTEM, LUX_ERROR)<< "Error while receiving film";
+		LOG(LUX_ERROR,LUX_SYSTEM)<< "Error while receiving film";
 		return false;
 	}
 	if (film != NULL && numBufferConfigs != film->GetNumBufferConfigs()) {
-		LOG(LUX_SYSTEM, LUX_ERROR)
+		LOG(LUX_ERROR,LUX_SYSTEM)
 			<< "Invalid number of buffers (expected=" << film->GetNumBufferConfigs()
 			<< ", received=" << numBufferConfigs << ")";
 		return false;
@@ -1133,15 +1133,15 @@ bool FlmHeader::Read(filtering_stream<input> &in, bool isLittleEndian, Film *fil
 		int type;
 		type = osReadLittleEndianInt(isLittleEndian, in);
 		if (!in.good()) {
-			LOG(LUX_SYSTEM, LUX_ERROR)<< "Error while receiving film";
+			LOG(LUX_ERROR,LUX_SYSTEM)<< "Error while receiving film";
 			return false;
 		}
 		if (type < 0 || type >= NUM_OF_BUFFER_TYPES) {
-			LOG(LUX_SYSTEM, LUX_ERROR) << "Invalid buffer type for buffer " << i << "(expected number in [0," << NUM_OF_BUFFER_TYPES << "[, received=" << type << ")";
+			LOG(LUX_ERROR,LUX_SYSTEM) << "Invalid buffer type for buffer " << i << "(expected number in [0," << NUM_OF_BUFFER_TYPES << "[, received=" << type << ")";
 			return false;
 		}
 		if (film != NULL && type != film->GetBufferConfig(i).type) {
-			LOG(LUX_SYSTEM, LUX_ERROR) << "Invalid buffer type for buffer " << i << " (expected=" << film->GetBufferConfig(i).type
+			LOG(LUX_ERROR,LUX_SYSTEM) << "Invalid buffer type for buffer " << i << " (expected=" << film->GetBufferConfig(i).type
 				<< ", received=" << type << ")";
 			return false;
 		}
@@ -1150,7 +1150,7 @@ bool FlmHeader::Read(filtering_stream<input> &in, bool isLittleEndian, Film *fil
 	// Read parameters
 	numParams = osReadLittleEndianUInt(isLittleEndian, in);
 	if (!in.good()) {
-		LOG(LUX_SYSTEM, LUX_ERROR)<< "Error while receiving film";
+		LOG( LUX_ERROR,LUX_SYSTEM)<< "Error while receiving film";
 		return false;
 	}
 	params.reserve(numParams);
@@ -1158,11 +1158,11 @@ bool FlmHeader::Read(filtering_stream<input> &in, bool isLittleEndian, Film *fil
 		FlmParameter param;
 		bool ok = param.Read(in, isLittleEndian, film);
 		if (!in.good()) {
-			LOG(LUX_SYSTEM, LUX_ERROR)<< "Error while receiving film";
+			LOG( LUX_ERROR,LUX_SYSTEM)<< "Error while receiving film";
 			return false;
 		}
 		if(!ok) {
-			//LOG(LUX_SYSTEM, LUX_ERROR) << "Invalid parameter (id=" << param.id << ", index=" << param.index << ", value=" << param.value << ")";
+			//LOG(LUX_ERROR,LUX_SYSTEM) << "Invalid parameter (id=" << param.id << ", index=" << param.index << ", value=" << param.value << ")";
 			return false;
 		}
 		params.push_back(param);
@@ -1405,7 +1405,7 @@ double Film::UpdateFilm(std::basic_istream<char> &stream) {
 	in.push(gzip_decompressor());
 	in.push(stream);
 
-	LOG(LUX_NOERROR, LUX_DEBUG) << "Receiving film (little endian=" << (isLittleEndian ? "true" : "false") << ")";
+	LOG(LUX_DEBUG,LUX_NOERROR) << "Receiving film (little endian=" << (isLittleEndian ? "true" : "false") << ")";
 
 	// Read header
 	FlmHeader header;
@@ -1445,7 +1445,7 @@ double Film::UpdateFilm(std::basic_istream<char> &stream) {
 		if (!in.good())
 			break;
 
-		LOG(LUX_NOERROR, LUX_DEBUG)
+		LOG( LUX_DEBUG,LUX_NOERROR)
 			<< "Received " << bufferGroupNumSamples[i] << " samples for buffer group " << i
 			<< " (buffer config size: " << bufferConfigs.size() << ")";
 	}
@@ -1489,9 +1489,9 @@ double Film::UpdateFilm(std::basic_istream<char> &stream) {
 
 		numberOfSamplesFromNetwork += maxTotNumberOfSamples;
 
-		LOG(LUX_NOERROR, LUX_DEBUG) << "Received film with " << totNumberOfSamples << " samples";
+		LOG( LUX_DEBUG,LUX_NOERROR) << "Received film with " << totNumberOfSamples << " samples";
 	} else
-		LOG(LUX_SYSTEM, LUX_ERROR)<< "IO error while receiving film buffers";
+		LOG( LUX_ERROR,LUX_SYSTEM)<< "IO error while receiving film buffers";
 
 	// Clean up
 	for (u_int i = 0; i < tmpPixelArrays.size(); ++i)

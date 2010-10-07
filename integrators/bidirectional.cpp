@@ -886,7 +886,7 @@ SurfaceIntegrator* BidirIntegrator::CreateSurfaceIntegrator(const ParamSet &para
 	else if (st == "all") estrategy = SAMPLE_ALL_UNIFORM;
 	else if (st == "auto") estrategy = SAMPLE_AUTOMATIC;
 	else {
-		LOG(LUX_BADTOKEN,LUX_WARNING)<<"Strategy  '"<<st<<"' for direct lighting unknown. Using \"auto\".";
+		LOG(LUX_WARNING,LUX_BADTOKEN)<<"Strategy  '"<<st<<"' for direct lighting unknown. Using \"auto\".";
 		estrategy = SAMPLE_AUTOMATIC;
 	}
 	bool debug = params.FindOneBool("debug", false);

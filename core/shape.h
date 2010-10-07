@@ -122,19 +122,19 @@ public:
 
 	// Old PBRT Shape interface methods
 	virtual BBox ObjectBound() const {
-		LOG(LUX_BUG, LUX_SEVERE)<<"Unimplemented Shape::ObjectBound method called!";
+		LOG( LUX_SEVERE,LUX_BUG)<<"Unimplemented Shape::ObjectBound method called!";
 		return BBox();
 	}
 	virtual void Refine(vector<boost::shared_ptr<Shape> > &refined) const {
-		LOG(LUX_BUG, LUX_SEVERE)<<"Unimplemented Shape::Refine() method called";
+		LOG(LUX_SEVERE,LUX_BUG)<<"Unimplemented Shape::Refine() method called";
 	}
 	virtual bool Intersect(const Ray &ray, float *t_hitp,
 		DifferentialGeometry *dg) const {
-		LOG(LUX_BUG, LUX_SEVERE)<<"Unimplemented Shape::Intersect() method called";
+		LOG(LUX_SEVERE,LUX_BUG)<<"Unimplemented Shape::Intersect() method called";
 		return false;
 	}
 	virtual Point Sample(float u1, float u2, float u3, Normal *Ns) const {
-		LOG(LUX_BUG, LUX_SEVERE)<<"Unimplemented Shape::Sample() method called";
+		LOG(LUX_SEVERE,LUX_BUG)<<"Unimplemented Shape::Sample() method called";
 		return Point();
 	}
 	virtual Point Sample(const Point &p, float u1, float u2, float u3,

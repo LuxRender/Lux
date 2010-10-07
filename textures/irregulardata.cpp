@@ -36,13 +36,13 @@ Texture<SWCSpectrum> *IrregularDataTexture::CreateSWCSpectrumTexture(const Trans
 	u_int dataCount = 0;
 	const float *data = tp.FindFloat("data", &dataCount);
 	if (wlCount != dataCount) {
-		LOG(LUX_BADTOKEN, LUX_ERROR) << "Number of wavelengths '" << wlCount <<
+		LOG( LUX_ERROR,LUX_BADTOKEN) << "Number of wavelengths '" << wlCount <<
 			"' does not match number of data values '" <<
 			dataCount << "' in irregulardata texture definition.";
 		wlCount = dataCount = 0;
 	}
 	if (dataCount < 2 || wlCount < 2) {
-		LOG(LUX_MISSINGDATA, LUX_ERROR)<< "Insufficient data in irregulardata texture";
+		LOG( LUX_ERROR,LUX_MISSINGDATA)<< "Insufficient data in irregulardata texture";
 		const float default_wl[] = {380.f, 720.f};
 		const float default_data[] = {1.f, 1.f};
 		return new IrregularDataTexture(2, default_wl, default_data);

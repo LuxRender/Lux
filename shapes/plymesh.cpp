@@ -112,16 +112,16 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 	string filename = params.FindOneString("filename", "none");
 	bool smooth = params.FindOneBool("smooth", false);
 
-	LOG(LUX_NOERROR, LUX_INFO) << "Loading PLY mesh file: '" << filename << "'...";
+	LOG( LUX_INFO,LUX_NOERROR) << "Loading PLY mesh file: '" << filename << "'...";
 
 	p_ply plyfile = ply_open(filename.c_str(), NULL);
 	if (!plyfile) {
-		LOG(LUX_SYSTEM, LUX_ERROR) << "Unable to read PLY mesh file '" << filename << "'";
+		LOG( LUX_ERROR,LUX_SYSTEM) << "Unable to read PLY mesh file '" << filename << "'";
 		return NULL;
 	}
 
 	if (!ply_read_header(plyfile)) {
-		LOG(LUX_BADFILE, LUX_ERROR) << "Unable to read PLY header from '" << filename << "'";
+		LOG( LUX_ERROR,LUX_BADFILE) << "Unable to read PLY header from '" << filename << "'";
 		return NULL;
 	}
 
@@ -131,7 +131,7 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 	ply_set_read_cb(plyfile, "vertex", "y", VertexCB, &p, 1);
 	ply_set_read_cb(plyfile, "vertex", "z", VertexCB, &p, 2);
 	if (plyNbVerts <= 0) {
-		LOG(LUX_BADFILE, LUX_ERROR) << "No vertices found in '" << filename << "'";
+		LOG( LUX_ERROR,LUX_BADFILE) << "No vertices found in '" << filename << "'";
 		return NULL;
 	}
 
@@ -139,7 +139,7 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 	long plyNbTris = ply_set_read_cb(plyfile, "face", "vertex_indices",
 		FaceCB, &vertexIndex, 0);
 	if (plyNbTris <= 0) {
-		LOG(LUX_BADFILE, LUX_ERROR) << "No triangles found in '" << filename << "'";
+		LOG( LUX_ERROR,LUX_BADFILE) << "No triangles found in '" << filename << "'";
 		return NULL;
 	}
 
@@ -157,7 +157,7 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 		n = new Normal[plyNbNormals];
 
 	if (!ply_read(plyfile)) {
-		LOG(LUX_SYSTEM, LUX_ERROR) << "Unable to parse PLY file '" << filename << "'";
+		LOG( LUX_ERROR,LUX_SYSTEM) << "Unable to parse PLY file '" << filename << "'";
 		delete[] p;
 		delete[] vertexIndex;
 		delete[] n;
@@ -168,7 +168,7 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 
 	if (smooth || plyNbVerts != plyNbNormals) {
 		if (n) {
-			LOG(LUX_NOERROR, LUX_WARNING) << "Overriding plymesh normals";
+			LOG( LUX_WARNING,LUX_NOERROR) << "Overriding plymesh normals";
 			delete[] n;
 		}
 		// generate face normals

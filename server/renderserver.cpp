@@ -69,7 +69,7 @@ RenderServer::~RenderServer()
 
 void RenderServer::start() {
 	if (state != UNSTARTED) {
-		LOG(LUX_SYSTEM, LUX_ERROR) << "Can not start a rendering server in state: " << state;
+		LOG( LUX_ERROR,LUX_SYSTEM) << "Can not start a rendering server in state: " << state;
 		return;
 	}
 
@@ -84,7 +84,7 @@ void RenderServer::start() {
 void RenderServer::join()
 {
 	if ((state != READY) && (state != BUSY)) {
-		LOG(LUX_SYSTEM, LUX_ERROR) << "Can not join a rendering server in state: " << state;
+		LOG( LUX_ERROR,LUX_SYSTEM) << "Can not join a rendering server in state: " << state;
 		return;
 	}
 
@@ -94,7 +94,7 @@ void RenderServer::join()
 void RenderServer::stop()
 {
 	if ((state != READY) && (state != BUSY)) {
-		LOG(LUX_SYSTEM, LUX_ERROR) << "Can not stop a rendering server in state: " << state;
+		LOG( LUX_ERROR,LUX_SYSTEM) << "Can not stop a rendering server in state: " << state;
 		return;
 	}
 
@@ -122,7 +122,7 @@ static void printInfoThread()
 		int sampleSec = static_cast<int>(luxStatistics("samplesSec"));
 		// Dade - print only if we are rendering something
 		if (sampleSec > 0) {
-			LOG(LUX_NOERROR, LUX_INFO) << td << "  " << sampleSec << " samples/sec " << " "
+			LOG( LUX_INFO,LUX_NOERROR) << td << "  " << sampleSec << " samples/sec " << " "
 				<< luxStatistics("samplesPx") << " samples/pix";
 		}
 	}
@@ -133,7 +133,7 @@ static void writeTransmitFilm(basic_ostream<char> &stream, const string &filenam
 	string file = filename;
 	string tempfile = file + ".temp";
 
-	LOG(LUX_NOERROR, LUX_DEBUG) << "Writing film samples to file '" << tempfile << "'";
+	LOG( LUX_DEBUG,LUX_NOERROR) << "Writing film samples to file '" << tempfile << "'";
 
 	ofstream out(tempfile.c_str(), ios::out | ios::binary);
 	Context::GetActive()->TransmitFilm(out, true, false);
@@ -147,7 +147,7 @@ static void writeTransmitFilm(basic_ostream<char> &stream, const string &filenam
 			file = tempfile;
 		}
 
-		LOG(LUX_NOERROR, LUX_DEBUG) << "Transmitting film samples from file '" << file << "'";
+		LOG( LUX_DEBUG,LUX_NOERROR) << "Transmitting film samples from file '" << file << "'";
 		ifstream in(file.c_str(), ios::in | ios::binary);
 
 		boost::iostreams::copy(in, stream);
@@ -194,7 +194,7 @@ static void processCommandFilm(bool isLittleEndian,
 	getline(stream, type);
 
 	if((type != "fleximage") && (type != "multiimage")) {
-		LOG(LUX_SYSTEM, LUX_ERROR) << "Unsupported film type for server rendering: " << type;
+		LOG( LUX_ERROR,LUX_SYSTEM) << "Unsupported film type for server rendering: " << type;
 		return;
 	}
 
@@ -254,7 +254,7 @@ static void processFile(const string &fileParam, ParamSet &params, vector<string
 		// Limiting the file size to 2G should be a problem
 		int len = atoi(slen.c_str());
 
-		LOG(LUX_NOERROR, LUX_INFO) << "Receiving file: '" << originalFile << "' (in '" <<
+		LOG( LUX_INFO,LUX_NOERROR) << "Receiving file: '" << originalFile << "' (in '" <<
 			file << "' size: " << (len / 1024) << " Kbytes)";
 
 		// Dade - fix for bug 514: avoid to create the file if it is empty
@@ -269,7 +269,7 @@ static void processFile(const string &fileParam, ParamSet &params, vector<string
 			tmpFileList.push_back(file);
 
 			if (out.fail()) {
-				LOG(LUX_SYSTEM, LUX_ERROR) << "There was an error while writing file '" << file << "'";
+				LOG( LUX_ERROR,LUX_SYSTEM) << "There was an error while writing file '" << file << "'";
 			}
 
 			delete buf;
@@ -350,7 +350,7 @@ string RenderServer::createNewSessionID() {
 
 bool RenderServer::validateAccess(basic_istream<char> &stream) const {
 	if (serverThread->renderServer->state != RenderServer::BUSY) {
-		LOG(LUX_NOERROR, LUX_INFO)<< "Slave does not have an active session";
+		LOG( LUX_INFO,LUX_NOERROR)<< "Slave does not have an active session";
 		return false;
 	}
 
@@ -358,7 +358,7 @@ bool RenderServer::validateAccess(basic_istream<char> &stream) const {
 	if (!getline(stream, sid))
 		return false;
 
-	LOG(LUX_NOERROR, LUX_INFO) << "Validating SID: " << sid << " = " << currentSID;
+	LOG( LUX_INFO,LUX_NOERROR) << "Validating SID: " << sid << " = " << currentSID;
 
 	return (sid == currentSID);
 }
@@ -419,7 +419,7 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread)
 
 	const int listenPort = serverThread->renderServer->tcpPort;
 	const bool isLittleEndian = osIsLittleEndian();
-	LOG(LUX_NOERROR, LUX_INFO) << "Launching server [" << serverThread->renderServer->threadCount <<
+	LOG( LUX_INFO,LUX_NOERROR) << "Launching server [" << serverThread->renderServer->threadCount <<
 		" threads] mode on port '" << listenPort << "'.";
 
 	vector<string> tmpFileList;
@@ -436,12 +436,12 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread)
 
 			//reading the command
 			string command;
-			LOG(LUX_NOERROR, LUX_INFO) << "Server receiving commands...";
+			LOG( LUX_INFO,LUX_NOERROR) << "Server receiving commands...";
 			while (getline(stream, command)) {
 				const unsigned int hash = DJBHash(command);
 
 				if ((command != "") && (command != " ")) {
-					LOG(LUX_NOERROR, LUX_DEBUG) << "... processing command: '" << command << "' (hash: " << hash << ")";
+					LOG(LUX_DEBUG,LUX_NOERROR) << "... processing command: '" << command << "' (hash: " << hash << ")";
 				}
 
 				//processing the command
@@ -472,7 +472,7 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread)
 						// Dade - generate the session ID
 						serverThread->renderServer->currentSID =
 							RenderServer::createNewSessionID();
-						LOG(LUX_NOERROR, LUX_INFO) << "New session ID: " << serverThread->renderServer->currentSID;
+						LOG( LUX_INFO,LUX_NOERROR) << "New session ID: " << serverThread->renderServer->currentSID;
 						stream << serverThread->renderServer->currentSID << endl;
 
 						tmpFileList.clear();
@@ -483,7 +483,7 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread)
 						stream << "BUSY" << endl;
 					break;
 				case CMD_LUXINIT:
-					LOG(LUX_BUG, LUX_SEVERE)<< "Server already initialized";
+					LOG( LUX_SEVERE,LUX_BUG)<< "Server already initialized";
 					break;
 				case CMD_LUXTRANSLATE:
 					processCommand(&Context::Translate, stream);
@@ -671,12 +671,12 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread)
 					// Dade - check if we are rendering something
 					if (serverThread->renderServer->state == RenderServer::BUSY) {
 						if (!serverThread->renderServer->validateAccess(stream)) {
-							LOG(LUX_SYSTEM, LUX_ERROR)<< "Unknown session ID";
+							LOG( LUX_ERROR,LUX_SYSTEM)<< "Unknown session ID";
 							stream.close();
 							break;
 						}
 
-						LOG(LUX_NOERROR, LUX_INFO)<< "Transmitting film samples";
+						LOG( LUX_INFO,LUX_NOERROR)<< "Transmitting film samples";
 
 						if (serverThread->renderServer->writeFlmFile) {
 							string file = "server_resume";
@@ -690,9 +690,9 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread)
 						}
 						stream.close();
 
-						LOG(LUX_NOERROR, LUX_INFO)<< "Finished film samples transmission";
+						LOG( LUX_INFO,LUX_NOERROR)<< "Finished film samples transmission";
 					} else {
-						LOG(LUX_SYSTEM, LUX_ERROR)<< "Received a GetFilm command after a ServerDisconnect";
+						LOG( LUX_ERROR,LUX_SYSTEM)<< "Received a GetFilm command after a ServerDisconnect";
 						stream.close();
 					}
 					break;
@@ -704,7 +704,7 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread)
 					processCommand(isLittleEndian, &Context::Renderer, tmpFileList, stream);
 					break;
 				default:
-					LOG(LUX_BUG, LUX_SEVERE) << "Unknown command '" << command << "'. Ignoring";
+					LOG( LUX_SEVERE,LUX_BUG) << "Unknown command '" << command << "'. Ignoring";
 					break;
 				}
 
@@ -712,6 +712,6 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread)
 			}
 		}
 	} catch (exception& e) {
-		LOG(LUX_BUG, LUX_ERROR) << "Internal error: " << e.what();
+		LOG(LUX_ERROR,LUX_BUG) << "Internal error: " << e.what();
 	}
 }

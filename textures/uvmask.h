@@ -128,7 +128,7 @@ Texture<float> * UVMaskTexture<T>::CreateFloatTexture(const Transform &tex2world
 			tp.FindOneFloat("udelta", 0.f),
 			tp.FindOneFloat("vdelta", 0.f));
 	} else {
-		LOG(LUX_BADTOKEN, LUX_ERROR) << "2D texture mapping '" << type << "' unknown";
+		LOG( LUX_ERROR,LUX_BADTOKEN) << "2D texture mapping '" << type << "' unknown";
 		map = new UVMapping2D;
 	}
 

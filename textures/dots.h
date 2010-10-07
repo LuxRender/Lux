@@ -161,7 +161,7 @@ inline Texture<float> * DotsTexture::CreateFloatTexture(const Transform &tex2wor
 			tp.FindOneFloat("udelta", 0.f),
 			tp.FindOneFloat("vdelta", 0.f));
 	} else {
-		LOG(LUX_BADTOKEN, LUX_ERROR) << "2D texture mapping  '" << type << "' unknown";
+		LOG( LUX_ERROR,LUX_BADTOKEN) << "2D texture mapping  '" << type << "' unknown";
 		map = new UVMapping2D;
 	}
 	boost::shared_ptr<Texture<float> > in(tp.GetFloatTexture("inside", 1.f)),

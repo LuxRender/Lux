@@ -69,7 +69,7 @@ PrimitiveSet::PrimitiveSet(const vector<boost::shared_ptr<Primitive> > &p) :
 		accelerator = boost::shared_ptr<Primitive>(
 			MakeAccelerator("kdtree", primitives, ParamSet()));
 		if (!accelerator)
-			LOG(LUX_BUG, LUX_SEVERE)<<"Unable to find \"kdtree\" accelerator";
+			LOG( LUX_SEVERE,LUX_BUG)<<"Unable to find \"kdtree\" accelerator";
 	}
 }
 

@@ -76,7 +76,7 @@ static short GetValue(const mapstsh &m, const string &type, const string &name)
 	mapstsh::const_iterator t = m.find(name);
 	if (t != m.end())
 		return (*t).second;
-	LOG(LUX_BADTOKEN, LUX_ERROR) << "Unknown " << type << " '" << name << "'";
+	LOG( LUX_ERROR,LUX_BADTOKEN) << "Unknown " << type << " '" << name << "'";
 	return (*m.find("")).second;
 }
 

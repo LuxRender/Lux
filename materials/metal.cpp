@@ -315,7 +315,7 @@ void IORFromName(const string name, vector<float> &wl, vector<float> &n, vector<
 	} else {
 		if (name != "aluminium") {
 			// NOTE - lordcrc - added warning
-			LOG(LUX_NOERROR, LUX_WARNING)<< "Metal '" << name << "' not found, using default (" << DEFAULT_METAL << ").";
+			LOG(LUX_WARNING,LUX_NOERROR)<< "Metal '" << name << "' not found, using default (" << DEFAULT_METAL << ").";
 		}
 		ns = SopraSamples;
 		sw = SopraWavelengths;
@@ -372,7 +372,7 @@ Material *Metal::CreateMaterial(const Transform &xform, const ParamSet &tp) {
 	int result = IORFromFile(metalname, s_wl, s_n, s_k);
 	switch (result) {
 	case 0: {
-		LOG(LUX_NOERROR, LUX_WARNING)<< "Error loading data file '" << metalname << "'. Using default (" << DEFAULT_METAL << ").";
+		LOG(LUX_WARNING,LUX_NOERROR)<< "Error loading data file '" << metalname << "'. Using default (" << DEFAULT_METAL << ").";
 		metalname = DEFAULT_METAL;
 			}
 	case -1:

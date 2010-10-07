@@ -64,7 +64,7 @@ void WriteIgiImage(const string &name, vector<RGBColor> &pixels,
 
 	std::ofstream file(name.c_str(), std::ios::binary);
 	if (!file) {
-		LOG(LUX_SYSTEM, LUX_SEVERE)<< "Cannot open file '"<<name<<"' for output";
+		LOG( LUX_SEVERE,LUX_SYSTEM)<< "Cannot open file '"<<name<<"' for output";
 		return;
 	}
 
@@ -87,7 +87,7 @@ void WriteIgiImage(const string &name, vector<RGBColor> &pixels,
 	file.write(reinterpret_cast<char *>(&xyz[0]), header.image_data_size);
 
 	if (!file.good()) {
-		LOG(LUX_SYSTEM, LUX_SEVERE)<< "Error writing IGI output file '"<<name<<"'";
+		LOG( LUX_SEVERE,LUX_SYSTEM)<< "Error writing IGI output file '"<<name<<"'";
 		return;
 	}
 

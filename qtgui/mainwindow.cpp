@@ -686,7 +686,7 @@ void MainWindow::endRenderingSession()
 			m_engineThread->join();
 		delete m_engineThread;
 		m_engineThread = NULL;
-		LOG(LUX_NOERROR, LUX_INFO)<< "Freeing resources.";
+		LOG( LUX_INFO,LUX_NOERROR)<< "Freeing resources.";
 		luxCleanup ();
 		changeRenderState (WAITING);
 		renderView->setLogoMode ();
@@ -752,10 +752,10 @@ void MainWindow::applyTonemapping(bool withlayercomputation)
 	if (m_updateThread == NULL && ( luxStatistics("sceneIsReady") || luxStatistics("filmIsReady") ) &&
     (!isMinimized () || m_guiRenderState == FINISHED)) {
 		if (!withlayercomputation) {
-			LOG(LUX_NOERROR, LUX_INFO)<< tr("GUI: Updating framebuffer...").toLatin1().data();
+			LOG(LUX_INFO,LUX_NOERROR)<< tr("GUI: Updating framebuffer...").toLatin1().data();
 			statusMessage->setText(tr("Tonemapping..."));
 		} else {
-			LOG(LUX_NOERROR, LUX_INFO)<< tr("GUI: Updating framebuffer/Computing Lens Effect Layer(s)...").toLatin1().data();
+			LOG(LUX_INFO,LUX_NOERROR)<< tr("GUI: Updating framebuffer/Computing Lens Effect Layer(s)...").toLatin1().data();
 			statusMessage->setText(tr("Computing Lens Effect Layer(s) & Tonemapping..."));
 			indicateActivity();
 		}
@@ -788,7 +788,7 @@ void MainWindow::engineThread(QString filename)
 	} else {
 		luxWait();
 		qApp->postEvent(this, new QEvent((QEvent::Type)EVT_LUX_FINISHED));
-		LOG(LUX_NOERROR, LUX_INFO)<< tr("Rendering done.").toLatin1().data();
+		LOG(LUX_INFO,LUX_NOERROR)<< tr("Rendering done.").toLatin1().data();
 	}
 }
 
@@ -1232,7 +1232,7 @@ void MainWindow::renderTimeout()
 {
 	if (m_updateThread == NULL && (luxStatistics("sceneIsReady") || luxStatistics("filmIsReady")) &&
 		(!isMinimized () || m_guiRenderState == FINISHED)) {
-		LOG(LUX_NOERROR, LUX_INFO)<< tr("GUI: Updating framebuffer...").toLatin1().data();
+		LOG(LUX_INFO,LUX_NOERROR)<< tr("GUI: Updating framebuffer...").toLatin1().data();
 		statusMessage->setText("Tonemapping...");
 		m_updateThread = new boost::thread(boost::bind(&MainWindow::updateThread, this));
 	}
@@ -1244,16 +1244,16 @@ void MainWindow::statsTimeout()
 		updateStatistics();
 		if ((m_guiRenderState == STOPPING || m_guiRenderState == FINISHED) && m_samplesSec == 0.0) {
 			// Render threads stopped, do one last render update
-			LOG(LUX_NOERROR, LUX_INFO)<< tr("GUI: Updating framebuffer...").toLatin1().data();
+			LOG(LUX_INFO,LUX_NOERROR)<< tr("GUI: Updating framebuffer...").toLatin1().data();
 			statusMessage->setText(tr("Tonemapping..."));
 			delete m_updateThread;
 			m_updateThread = new boost::thread(boost::bind(&MainWindow::updateThread, this));
 			m_statsTimer->stop();
 			luxPause();
 			if (m_guiRenderState == FINISHED)
-				LOG(LUX_NOERROR, LUX_INFO)<< tr("Rendering finished.").toLatin1().data();
+				LOG(LUX_INFO,LUX_NOERROR)<< tr("Rendering finished.").toLatin1().data();
 			else {
-				LOG(LUX_NOERROR, LUX_INFO)<< tr("Rendering stopped by user.").toLatin1().data();
+				LOG(LUX_INFO,LUX_NOERROR)<< tr("Rendering stopped by user.").toLatin1().data();
 				changeRenderState(STOPPED);
 			}
 		}

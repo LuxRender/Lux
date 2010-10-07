@@ -80,7 +80,7 @@ void infoThread() {
 			int sampleSec = (int)luxStatistics("samplesSec");
 			// Dade - print only if we are rendering something
 			if (sampleSec > 0) {
-				LOG(LUX_NOERROR, LUX_INFO) << '[' << threads << " threads] " << td << " "
+				LOG(LUX_INFO,LUX_NOERROR) << '[' << threads << " threads] " << td << " "
 						<< sampleSec << " samples/sec " << " "
 						<< (int) luxStatistics("samplesTotSec") << " samples/totsec " << " "
 						<< (float) luxStatistics("samplesPx") << " samples/pix";
@@ -156,14 +156,14 @@ int main(int ac, char *av[]) {
 		notify(vm);
 
 		if (vm.count("help")) {
-			LOG(LUX_SYSTEM, LUX_ERROR)<< "Usage: luxconsole [options] file...\n" << visible;
+			LOG(LUX_ERROR,LUX_SYSTEM)<< "Usage: luxconsole [options] file...\n" << visible;
 			return 0;
 		}
 
 		if (vm.count("verbosity"))
 			luxErrorFilter(vm["verbosity"].as<int>());
 
-		LOG(LUX_NOERROR, LUX_INFO) << "Lux version " << luxVersion() << " of " << __DATE__ << " at " << __TIME__;
+		LOG(LUX_INFO,LUX_NOERROR) << "Lux version " << luxVersion() << " of " << __DATE__ << " at " << __TIME__;
 		
 		if (vm.count("version"))
 			return 0;
@@ -177,10 +177,10 @@ int main(int ac, char *av[]) {
 				threads = 1;
 		}
 
-		LOG(LUX_NOERROR, LUX_INFO) << "Threads: " << threads;
+		LOG(LUX_INFO,LUX_NOERROR) << "Threads: " << threads;
 
 		if (vm.count("debug")) {
-			LOG(LUX_NOERROR, LUX_INFO)<< "Debug mode enabled";
+			LOG(LUX_INFO,LUX_NOERROR)<< "Debug mode enabled";
 			luxEnableDebugMode();
 		}
 
@@ -188,7 +188,7 @@ int main(int ac, char *av[]) {
 			if (!vm.count("server"))
 				luxDisableRandomMode();
 			else // Slaves should always have a different seed than the master
-				LOG(LUX_CONSISTENCY, LUX_WARNING)<< "Using random seed for server";
+				LOG(LUX_WARNING,LUX_CONSISTENCY)<< "Using random seed for server";
 		}
 
 		int serverInterval;
@@ -204,7 +204,7 @@ int main(int ac, char *av[]) {
 			for (std::vector<std::string>::iterator i = names.begin(); i < names.end(); i++)
 				luxAddServer((*i).c_str());
 
-			LOG(LUX_NOERROR, LUX_INFO) << "Server requests interval: " << serverInterval << " secs";
+			LOG(LUX_INFO,LUX_NOERROR) << "Server requests interval: " << serverInterval << " secs";
 		}
 
 		int serverPort = RenderServer::DEFAULT_TCP_PORT;
@@ -235,13 +235,13 @@ int main(int ac, char *av[]) {
 				fullPath = boost::filesystem::system_complete(boost::filesystem::path(v[i], boost::filesystem::native));
 
 				if (!boost::filesystem::exists(fullPath) && v[i] != "-") {
-					LOG(LUX_NOFILE, LUX_SEVERE) << "Unable to open scenefile '" << fullPath.string() << "'";
+					LOG(LUX_SEVERE,LUX_NOFILE) << "Unable to open scenefile '" << fullPath.string() << "'";
 					continue;
 				}
 
 				sceneFileName = fullPath.leaf();
 				if (chdir(fullPath.branch_path().string().c_str())) {
-					LOG(LUX_NOFILE, LUX_SEVERE) << "Unable to go into directory '" << fullPath.branch_path().string() << "'";
+					LOG(LUX_SEVERE,LUX_NOFILE) << "Unable to go into directory '" << fullPath.branch_path().string() << "'";
 				}
 
 				parseError = false;
@@ -256,7 +256,7 @@ int main(int ac, char *av[]) {
 				}
 
 				if (parseError) {
-					LOG(LUX_BADFILE, LUX_SEVERE) << "Skipping invalid scenefile '" << fullPath.string() << "'";
+					LOG(LUX_SEVERE,LUX_BADFILE) << "Skipping invalid scenefile '" << fullPath.string() << "'";
 					continue;
 				}
 
@@ -281,7 +281,7 @@ int main(int ac, char *av[]) {
 				boost::posix_time::time_duration td(0, 0,
 						(int) luxStatistics("secElapsed"), 0);
 
-				LOG(LUX_NOERROR, LUX_INFO) << "100% rendering done [" << threads << " threads] " << td;
+				LOG(LUX_INFO,LUX_NOERROR) << "100% rendering done [" << threads << " threads] " << td;
 
 				if (vm.count("bindump")) {
 					// Get pointer to framebuffer data if needed
@@ -308,11 +308,11 @@ int main(int ac, char *av[]) {
 			renderServer->join();
 			delete renderServer;
 		} else {
-			LOG(LUX_SYSTEM, LUX_ERROR) << "luxconsole: no input file";
+			LOG(LUX_ERROR,LUX_SYSTEM) << "luxconsole: no input file";
 		}
 
 	} catch (std::exception & e) {
-		LOG(LUX_SYNTAX, LUX_SEVERE) << "Command line argument parsing failed with error '" << e.what() << "', please use the --help option to view the allowed syntax.";
+		LOG(LUX_SEVERE,LUX_SYNTAX) << "Command line argument parsing failed with error '" << e.what() << "', please use the --help option to view the allowed syntax.";
 		return 1;
 	}
 	return 0;

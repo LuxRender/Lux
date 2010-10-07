@@ -39,7 +39,7 @@ bool LookupType(const char *token, ParamType *type, string &name)
 	while (*strp && isspace(*strp))
 		++strp;
 	if (!*strp) {
-		LOG(LUX_SYNTAX, LUX_ERROR)
+		LOG( LUX_ERROR,LUX_SYNTAX)
 			<< "Parameter '" << token <<
 			"' doesn't have a type declaration?!";
 		name = string(token);
@@ -59,7 +59,7 @@ bool LookupType(const char *token, ParamType *type, string &name)
 	else TRY_DECODING_TYPE("texture", PARAM_TYPE_TEXTURE)
 	else TRY_DECODING_TYPE("color", PARAM_TYPE_COLOR)
 	else {
-		LOG(LUX_SYNTAX, LUX_ERROR) << "Unable to decode type for token '" << token << "'";
+		LOG( LUX_ERROR,LUX_SYNTAX) << "Unable to decode type for token '" << token << "'";
 		name = string(token);
 		return false;
 	}
@@ -118,7 +118,7 @@ template <class T> inline void CheckUnused(const vector<ParamSetItem<T> *> &vec)
 {
 	for (u_int i = 0; i < vec.size(); ++i)
 		if (!vec[i]->lookedUp) {
-			LOG(LUX_NOERROR, LUX_WARNING) << "Parameter '" << vec[i]->name << "' not used";
+			LOG( LUX_WARNING,LUX_NOERROR) << "Parameter '" << vec[i]->name << "' not used";
 		}
 }
 
@@ -1003,7 +1003,7 @@ ParamSet::ParamSet(u_int n, const char * pluginName, const char * const tokens[]
 		/*
 		else
 		{
-			LOG(LUX_SYNTAX,LUX_ERROR)<<"Unknown parameter '"<<p<<":"<<s<<"', Ignoring.";
+			LOG(LUX_ERROR,LUX_SYNTAX)<<"Unknown parameter '"<<p<<":"<<s<<"', Ignoring.";
 		}*/
 	}
 }

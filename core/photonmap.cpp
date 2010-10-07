@@ -345,7 +345,7 @@ void PhotonMapPreprocess(const RandomGenerator &rng, const Scene &scene,
 		std::ifstream ifs(mapFileName->c_str(), std::ios_base::in | std::ios_base::binary);
 
 		if (ifs.good()) {
-			LOG(LUX_NOERROR, LUX_INFO) << "Found photon maps file: " << *mapFileName;
+			LOG( LUX_INFO,LUX_NOERROR) << "Found photon maps file: " << *mapFileName;
 
 			bool isLittleEndian = osIsLittleEndian();
 
@@ -370,7 +370,7 @@ void PhotonMapPreprocess(const RandomGenerator &rng, const Scene &scene,
 				storedNRadiancePhotons != nRadiancePhotons ||
 				storedNIndirectPhotons != nIndirectPhotons ||
 				storedNCausticPhotons != nCausticPhotons) {
-				LOG(LUX_NOERROR, LUX_INFO)<< "Some photon map settings changed, rebuilding photon maps...";
+				LOG( LUX_INFO,LUX_NOERROR)<< "Some photon map settings changed, rebuilding photon maps...";
 				ok = false;
 			}
 			if (ok) {
@@ -378,39 +378,39 @@ void PhotonMapPreprocess(const RandomGenerator &rng, const Scene &scene,
 				u_int storedNLights;
 				storedNLights = osReadLittleEndianUInt(isLittleEndian, ifs);
 				if (storedNLights != scene.lights.size() ) {
-					LOG(LUX_NOERROR, LUX_INFO)<< "Scene changed, rebuilding photon maps...";
+					LOG( LUX_INFO,LUX_NOERROR)<< "Scene changed, rebuilding photon maps...";
 					ok = false;
 				}
 			}
 
 			// Dade - read the data
 			if (ok) {
-				LOG(LUX_NOERROR, LUX_INFO)<< "Reading radiance photon map...";
+				LOG( LUX_INFO,LUX_NOERROR)<< "Reading radiance photon map...";
 				RadiancePhotonMap::load(ifs, radianceMap);
-				LOG(LUX_NOERROR, LUX_INFO) << "Read " << radianceMap->getPhotonCount() << " radiance photons";
+				LOG(LUX_INFO,LUX_NOERROR) << "Read " << radianceMap->getPhotonCount() << " radiance photons";
 
 				if (!ifs.good()) {
-					LOG(LUX_NOERROR, LUX_INFO)<< "Failed to read all photon maps";
+					LOG( LUX_INFO,LUX_NOERROR)<< "Failed to read all photon maps";
 					ok = false;
 				}
 			}
 			if (ok) {
-				LOG(LUX_NOERROR, LUX_INFO)<< "Reading indirect photon map...";
+				LOG( LUX_INFO,LUX_NOERROR)<< "Reading indirect photon map...";
 				LightPhotonMap::load(ifs, indirectMap);
-				LOG(LUX_NOERROR, LUX_INFO) << "Read " << indirectMap->getPhotonCount() << " light photons";
+				LOG(LUX_INFO,LUX_NOERROR) << "Read " << indirectMap->getPhotonCount() << " light photons";
 
 				if (!ifs.good()) {
-					LOG(LUX_NOERROR, LUX_INFO)<< "Failed to read all photon maps";
+					LOG( LUX_INFO,LUX_NOERROR)<< "Failed to read all photon maps";
 					ok = false;
 				}
 			}
 			if (ok) {
-				LOG(LUX_NOERROR, LUX_INFO)<< "Reading caustic photon map...";
+				LOG( LUX_INFO,LUX_NOERROR)<< "Reading caustic photon map...";
 				LightPhotonMap::load(ifs, causticMap);
-				LOG(LUX_NOERROR, LUX_INFO) << "Read " << causticMap->getPhotonCount() << " light photons";
+				LOG(LUX_INFO,LUX_NOERROR) << "Read " << causticMap->getPhotonCount() << " light photons";
 
 				if (!ifs.good()) {
-					LOG(LUX_NOERROR, LUX_INFO)<< "Failed to read all photon maps";
+					LOG( LUX_INFO,LUX_NOERROR)<< "Failed to read all photon maps";
 					ok = false;
 				}
 			}
@@ -422,7 +422,7 @@ void PhotonMapPreprocess(const RandomGenerator &rng, const Scene &scene,
 			if (ok)
 				return;
 		} else {
-			LOG(LUX_NOERROR, LUX_INFO)<< "Photon maps file doesn't exist yet";
+			LOG( LUX_INFO,LUX_NOERROR)<< "Photon maps file doesn't exist yet";
 			ifs.close();
 		}
 	}
@@ -432,7 +432,7 @@ void PhotonMapPreprocess(const RandomGenerator &rng, const Scene &scene,
 
 	// Dade - shoot photons
 	const u_int targetPhotons = nCausticPhotons + nIndirectPhotons;
-	LOG(LUX_NOERROR, LUX_INFO) << "Shooting photons (target: " << targetPhotons << ")...";
+	LOG(LUX_INFO,LUX_NOERROR) << "Shooting photons (target: " << targetPhotons << ")...";
 
 	vector<LightPhoton> directPhotons;
 	directPhotons.reserve(nDirectPhotons);
@@ -504,7 +504,7 @@ void PhotonMapPreprocess(const RandomGenerator &rng, const Scene &scene,
 			else
 				ss << " (100% limit)";
 			ss << "]";
-			LOG(LUX_NOERROR, LUX_INFO)<< ss.str().c_str();
+			LOG(LUX_INFO,LUX_NOERROR)<< ss.str().c_str();
 
 			lastUpdateTime = currentTime;
 		}
@@ -516,7 +516,7 @@ void PhotonMapPreprocess(const RandomGenerator &rng, const Scene &scene,
 			if (indirectDone && unsuccessful(nCausticPhotons, causticPhotons.size(), nshot)) {
 				// Dade - disable castic photon map: we are unable to store
 				// enough photons
-				LOG(LUX_CONSISTENCY, LUX_WARNING)<< "Unable to store enough photons in the caustic photonmap. Giving up and disabling the map.";
+				LOG( LUX_WARNING,LUX_CONSISTENCY)<< "Unable to store enough photons in the caustic photonmap. Giving up and disabling the map.";
 
 				causticPhotons.clear();
 				causticDone = true;
@@ -524,7 +524,7 @@ void PhotonMapPreprocess(const RandomGenerator &rng, const Scene &scene,
 			}
 
 			if (unsuccessful(nIndirectPhotons, indirectPhotons.size(), nshot)) {
-				LOG(LUX_CONSISTENCY, LUX_ERROR)<< "Unable to store enough photons in the indirect photonmap. Unable to render the image.";
+				LOG( LUX_ERROR,LUX_CONSISTENCY)<< "Unable to store enough photons in the indirect photonmap. Unable to render the image.";
 				return;
 			}
 		}
@@ -681,10 +681,10 @@ void PhotonMapPreprocess(const RandomGenerator &rng, const Scene &scene,
 
 	boost::xtime photonShootingEndTime;
 	boost::xtime_get(&photonShootingEndTime, boost::TIME_UTC);
-	LOG(LUX_NOERROR, LUX_INFO) << "Photon shooting done (" << ( photonShootingEndTime.sec - photonShootingStartTime.sec ) << "s)";
+	LOG(LUX_INFO,LUX_NOERROR) << "Photon shooting done (" << ( photonShootingEndTime.sec - photonShootingStartTime.sec ) << "s)";
 
 	if (computeRadianceMap) {
-		LOG(LUX_NOERROR, LUX_INFO)<< "Computing radiance photon map...";
+		LOG( LUX_INFO,LUX_NOERROR)<< "Computing radiance photon map...";
 
 		// Precompute radiance at a subset of the photons
 		LightPhotonMap directMap(radianceMap->nLookup, radianceMap->maxDistSquared);
@@ -695,7 +695,7 @@ void PhotonMapPreprocess(const RandomGenerator &rng, const Scene &scene,
 			boost::xtime currentTime;
 			boost::xtime_get(&currentTime, boost::TIME_UTC);
 			if (currentTime.sec - lastUpdateTime.sec > 5) {
-				LOG(LUX_NOERROR, LUX_INFO) << "Radiance photon map computation progress: " << i << " (" << (100 * i / radiancePhotons.size()) << "%)";
+				LOG(LUX_INFO,LUX_NOERROR) << "Radiance photon map computation progress: " << i << " (" << (100 * i / radiancePhotons.size()) << "%)";
 
 				lastUpdateTime = currentTime;
 			}
@@ -734,16 +734,16 @@ void PhotonMapPreprocess(const RandomGenerator &rng, const Scene &scene,
 
 		boost::xtime radianceComputeEndTime;
 		boost::xtime_get(&radianceComputeEndTime, boost::TIME_UTC);
-		LOG(LUX_NOERROR, LUX_INFO) << "Radiance photon map computed (" << ( radianceComputeEndTime.sec - photonShootingEndTime.sec ) << "s)";
+		LOG(LUX_INFO,LUX_NOERROR) << "Radiance photon map computed (" << ( radianceComputeEndTime.sec - photonShootingEndTime.sec ) << "s)";
 	}
 
 	// Dade - check if we have to save maps to a file
 	if (mapFileName) {
-		LOG(LUX_NOERROR, LUX_INFO)<< "Saving photon maps to file";
+		LOG( LUX_INFO,LUX_NOERROR)<< "Saving photon maps to file";
 
 		std::ofstream ofs(mapFileName->c_str(), std::ios_base::out | std::ios_base::binary);
 		if(ofs.good()) {
-			LOG(LUX_NOERROR, LUX_INFO)<< "Writing photon maps to '" << (*mapFileName) << "'...";
+			LOG(LUX_INFO,LUX_NOERROR)<< "Writing photon maps to '" << (*mapFileName) << "'...";
 
 			bool isLittleEndian = osIsLittleEndian();
 
@@ -761,7 +761,7 @@ void PhotonMapPreprocess(const RandomGenerator &rng, const Scene &scene,
 			if (radianceMap) {
 				radianceMap->save(ofs);
 
-				LOG(LUX_NOERROR, LUX_INFO) << "Written " << radianceMap->getPhotonCount() << " radiance photons";
+				LOG(LUX_INFO,LUX_NOERROR) << "Written " << radianceMap->getPhotonCount() << " radiance photons";
 			} else
 				osWriteLittleEndianInt(isLittleEndian, ofs, 0);
 
@@ -769,7 +769,7 @@ void PhotonMapPreprocess(const RandomGenerator &rng, const Scene &scene,
 			if (indirectMap) {
 				indirectMap->save(ofs);
 
-				LOG(LUX_NOERROR, LUX_INFO) << "Written " << indirectMap->getPhotonCount() << " indirect photons";
+				LOG(LUX_INFO,LUX_NOERROR) << "Written " << indirectMap->getPhotonCount() << " indirect photons";
 			} else
 				osWriteLittleEndianInt(isLittleEndian, ofs, 0);
 
@@ -777,17 +777,17 @@ void PhotonMapPreprocess(const RandomGenerator &rng, const Scene &scene,
 			if (causticMap) {
 				causticMap->save(ofs);
 
-				LOG(LUX_NOERROR, LUX_INFO) << "Written " << causticMap->getPhotonCount() << " caustic photons";
+				LOG(LUX_INFO,LUX_NOERROR) << "Written " << causticMap->getPhotonCount() << " caustic photons";
 			} else
 				osWriteLittleEndianInt(isLittleEndian, ofs, 0);
 
 			if(!ofs.good()) {
-				LOG(LUX_SYSTEM, LUX_SEVERE) << "Error while writing photon maps to file";
+				LOG( LUX_SEVERE,LUX_SYSTEM) << "Error while writing photon maps to file";
 			}
 
 			ofs.close();
 		} else {
-			LOG(LUX_SYSTEM, LUX_SEVERE)<< "Cannot open file '" << (*mapFileName) << "' for writing photon maps";
+			LOG(LUX_SEVERE,LUX_SYSTEM)<< "Cannot open file '" << (*mapFileName) << "' for writing photon maps";
 		}
 	}
 }
@@ -823,7 +823,7 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const Scene &scene,
 
 			if (sanityCheckIndex++ > 32) {
 				// Dade - something wrong here
-				LOG(LUX_SYSTEM, LUX_ERROR)
+				LOG( LUX_ERROR,LUX_SYSTEM)
 					<< "Internal error in photonmap: point = (" <<
 					p << ") searchDist2 = " << searchDist2;
 				break;

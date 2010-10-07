@@ -389,7 +389,7 @@ void SurfaceIntegratorRenderingHints::InitParam(const ParamSet &params) {
 	else if (st == "allpowerimp") lightStrategyType = LightsSamplingStrategy::SAMPLE_ALL_POWER_IMPORTANCE;
 	else if (st == "logpowerimp") lightStrategyType = LightsSamplingStrategy::SAMPLE_ONE_LOG_POWER_IMPORTANCE;
 	else {
-		LOG(LUX_BADTOKEN, LUX_WARNING) << "Strategy  '" << st << "' unknown. Using \"auto\".";
+		LOG( LUX_WARNING,LUX_BADTOKEN) << "Strategy  '" << st << "' unknown. Using \"auto\".";
 		lightStrategyType = LightsSamplingStrategy::SAMPLE_AUTOMATIC;
 	}
 
