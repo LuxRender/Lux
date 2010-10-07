@@ -94,12 +94,12 @@ public:
 	//FIXME: just to check SurfaceIntegratorRenderingHints light strategy, to remove
 	virtual bool CheckLightStrategy() const {
 		if (hints.GetLightStrategy() != LightsSamplingStrategy::SAMPLE_ONE_UNIFORM) {
-			luxError(LUX_ERROR, LUX_SEVERE, "The LightsSamplingStrategy must be ONE_UNIFORM.");
+			LOG(LUX_ERROR, LUX_SEVERE)<< "The LightsSamplingStrategy must be ONE_UNIFORM.";
 			return false;
 		}
 
 		if (hints.GetShadowRaysCount() != 1) {
-			luxError(LUX_ERROR, LUX_SEVERE, "The shadow rays count of LightsSamplingStrategy must be 1.");
+			LOG(LUX_ERROR, LUX_SEVERE)<< "The shadow rays count of LightsSamplingStrategy must be 1.";
 			return false;
 		}
 

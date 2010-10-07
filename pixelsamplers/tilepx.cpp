@@ -30,10 +30,8 @@ TilePixelSampler::TilePixelSampler(
         int xStart, int xEnd,
         int yStart, int yEnd) {
     // Dade - debugging code
-    //std::stringstream ss;
-    //ss << "xstart: " << xstart << " xend: " << xend <<
+    //LOG(LUX_NOERROR, LUX_INFO) << "xstart: " << xstart << " xend: " << xend <<
     //        " ystart: " << ystart << " yend: " << yend;
-    //luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
     int xSize = xEnd - xStart;
     int ySize = yEnd - yStart;
@@ -42,9 +40,7 @@ TilePixelSampler::TilePixelSampler(
     int tileYSize = ySize / TILEPX_SIZE + ((ySize % TILEPX_SIZE == 0) ? 0 : 1);
     
     // Dade - debugging code
-    //ss.str("");
-    //ss << "tileXSize: " << tileXSize << " tileYSize: " << tileYSize;
-    //luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+    //LOG(LUX_NOERROR, LUX_INFO) << "tileXSize: " << tileXSize << " tileYSize: " << tileYSize;
 
     TotalPx = 0;
     for(int yg = 0; yg < tileYSize; yg++) {

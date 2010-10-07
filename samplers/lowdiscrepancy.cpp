@@ -95,7 +95,7 @@ LDSampler::LDSampler(int xstart, int xend,
 
 	// check/round pixelsamples to power of 2
 	if (!IsPowerOf2(ps)) {
-		luxError(LUX_CONSISTENCY,LUX_WARNING,"Pixel samples being rounded up to power of 2");
+		LOG(LUX_CONSISTENCY,LUX_WARNING)<<"Pixel samples being rounded up to power of 2";
 		pixelSamples = RoundUpPow2(ps);
 	} else
 		pixelSamples = ps;

@@ -38,6 +38,7 @@ using std::stringstream;
 #include <QtGui/QMessageBox>
 
 #include "api.h"
+#include "error.h"
 
 #include "mainwindow.hxx"
 #include "luxapp.hxx"
@@ -174,7 +175,7 @@ bool LuxGuiApp::ProcessCommandLine(void)
 		}
 
 		if(vm.count("debug")) {
-			luxError(LUX_NOERROR, LUX_INFO, "Debug mode enabled");
+			LOG(LUX_NOERROR, LUX_INFO)<< "Debug mode enabled";
 			luxEnableDebugMode();
 		}
 
@@ -195,9 +196,7 @@ bool LuxGuiApp::ProcessCommandLine(void)
 			vector<string> names = vm["useserver"].as<vector<string> >();
 
 			for(vector<string>::iterator i = names.begin(); i < names.end(); i++) {
-				ss.str("");
-				ss << "Connecting to server '" <<(*i) << "'";
-				luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+				LOG(LUX_NOERROR, LUX_INFO) << "Connecting to server '" <<(*i) << "'";
 
 				//TODO jromang : try to connect to the server, and get version number. display message to see if it was successfull
 				luxAddServer((*i).c_str());
@@ -205,9 +204,7 @@ bool LuxGuiApp::ProcessCommandLine(void)
 
 			m_useServer = true;
 
-			ss.str("");
-			ss << "Server requests interval:  " << serverInterval << " secs";
-			luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+			LOG(LUX_NOERROR, LUX_INFO) << "Server requests interval:  " << serverInterval << " secs";
 		} else {
 			m_useServer = false;
 		}
@@ -215,7 +212,7 @@ bool LuxGuiApp::ProcessCommandLine(void)
 		if(vm.count("input-file")) {
 			const vector<string> &v = vm["input-file"].as<vector<string> >();
 			if(v.size() > 1) {
-				luxError(LUX_SYSTEM, LUX_SEVERE, "More than one file passed on command line : rendering the first one.");
+				LOG(LUX_SYSTEM, LUX_SEVERE)<< "More than one file passed on command line : rendering the first one.";
 			}
 
 			m_inputFile = QString(v[0].c_str());

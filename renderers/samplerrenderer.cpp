@@ -132,7 +132,7 @@ void SamplerRenderer::Render(Scene *s) {
 		}
 
 		if (scene->lights.size() == 0) {
-			luxError(LUX_MISSINGDATA, LUX_SEVERE, "No light sources defined in scene; nothing to render.");
+			LOG(LUX_MISSINGDATA, LUX_SEVERE)<< "No light sources defined in scene; nothing to render.";
 			state = TERMINATE;
 			return;
 		}
@@ -151,9 +151,7 @@ void SamplerRenderer::Render(Scene *s) {
 
 		// initialize the thread's rangen
 		u_long seed = scene->seedBase - 1;
-		std::stringstream ss;
-		ss << "Preprocess thread uses seed: " << seed;
-		luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+		LOG(LUX_NOERROR, LUX_INFO) << "Preprocess thread uses seed: " << seed;
 
 		RandomGenerator rng(seed);
 
@@ -254,9 +252,7 @@ double SamplerRenderer::Statistics(const string &statName) {
 	else if (statName == "enoughSamples")
 		return scene->camera->film->enoughSamplePerPixel;
 	else {
-		std::string eString("luxStatistics - requested an invalid data : ");
-		eString+=statName;
-		luxError(LUX_BADTOKEN, LUX_ERROR, eString.c_str());
+		LOG(LUX_BADTOKEN, LUX_ERROR)<< "luxStatistics - requested an invalid data : "<< statName;
 		return 0.;
 	}
 }
@@ -389,9 +385,7 @@ void SamplerRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 
 	// initialize the thread's rangen
 	u_long seed = scene.seedBase + myThread->n;
-	std::stringstream ss;
-	ss << "Thread " << myThread->n << " uses seed: " << seed;
-	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+	LOG(LUX_NOERROR, LUX_INFO) << "Thread " << myThread->n << " uses seed: " << seed;
 
 	RandomGenerator rng(seed);
 	sample.camera = scene.camera->Clone();

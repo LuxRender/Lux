@@ -144,8 +144,7 @@ Sampler* RandomSampler::CreateSampler(const ParamSet &params, const Film *film)
 	int nsamp = params.FindOneInt("pixelsamples", -1);
 	// for backwards compatibility
 	if (nsamp < 0) {
-		luxError(LUX_NOERROR, LUX_WARNING, 
-			"Parameters 'xsamples' and 'ysamples' are deprecated, use 'pixelsamples' instead");
+		LOG(LUX_NOERROR, LUX_WARNING)<< "Parameters 'xsamples' and 'ysamples' are deprecated, use 'pixelsamples' instead";
 		int xsamp = params.FindOneInt("xsamples", 2);
 		int ysamp = params.FindOneInt("ysamples", 2);
 		nsamp = xsamp*ysamp;

@@ -600,9 +600,7 @@ SurfaceIntegrator* DistributedPath::CreateSurfaceIntegrator(const ParamSet &para
 	else if (st == "all") estrategy = SAMPLE_ALL_UNIFORM;
 	else if (st == "auto") estrategy = SAMPLE_AUTOMATIC;
 	else {
-		std::stringstream ss;
-		ss<<"Strategy  '"<<st<<"' for direct lighting unknown. Using \"auto\".";
-		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
+		LOG(LUX_BADTOKEN,LUX_WARNING)<<"Strategy  '"<<st<<"' for direct lighting unknown. Using \"auto\".";
 		estrategy = SAMPLE_AUTOMATIC;
 	}
 

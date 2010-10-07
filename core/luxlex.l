@@ -60,7 +60,7 @@ int str_pos;
 void add_string_char( char c )
 {
 	if (str_pos == 1023) {
-		luxError(LUX_LIMIT, LUX_ERROR, "String is too long.");
+		LOG(LUX_LIMIT, LUX_ERROR)<< "String is too long.";
 		++str_pos;
 	} else if (str_pos < 1023) {
 		yylval.string[str_pos++] = c;
@@ -73,7 +73,7 @@ extern void yyerror( const char *str );
 
 void include_push(char *filename) {
 	if (includeStack.size() > 32)
-		luxError(LUX_NESTING,LUX_SEVERE,"Only 32 levels of nested Include allowed in scene files.");
+		LOG(LUX_NESTING,LUX_SEVERE)<< "Only 32 levels of nested Include allowed in scene files.";
     else {
         // Dade - Fix for BUG 570: including not existing files doesn't lead
         // anymore to a crash
@@ -81,9 +81,7 @@ void include_push(char *filename) {
         FILE *newFile = fopen(filename, "r");
         if (!newFile) {
             //Severe("Unable to open included scene file \"%s\"", filename);
-            std::stringstream ss;
-            ss<<"Unable to open included scene file "<<filename;
-            luxError(LUX_NOFILE,LUX_SEVERE,ss.str().c_str());
+            LOG(LUX_NOFILE,LUX_SEVERE)<<"Unable to open included scene file "<<filename;
         } else {
             IncludeInfo ii;
             ii.filename = currentFile;
@@ -126,9 +124,9 @@ IDENT [a-zA-Z_][a-zA-Z_0-9]*
 Include { BEGIN(INCL); }
 <INCL>{WHITESPACE} ;
 <INCL>\" { BEGIN(INCL_FILE); }
-<INCL>. { luxError( LUX_SYNTAX,LUX_SEVERE,"Illegal character following Include directive" ); }
+<INCL>. { LOG(LUX_SYNTAX,LUX_SEVERE)<<"Illegal character following Include directive"; }
 <INCL_FILE>\" { BEGIN INITIAL; }
-<INCL_FILE>. { luxError( LUX_SYNTAX,LUX_SEVERE,"Illegal character in Include file name" ); }
+<INCL_FILE>. { LOG(LUX_SYNTAX,LUX_SEVERE)<<"Illegal character in Include file name"; }
 <INCL_FILE>[^\n\"]+ {
 	BEGIN(INITIAL);
 	include_push(yytext);
@@ -208,9 +206,9 @@ WorldEnd 		{ return WORLDEND;		}
 <STR>\\. { add_string_char(yytext[1]);}
 <STR>\" {BEGIN INITIAL; return STRING;}
 <STR>. {add_string_char(yytext[0]);}
-<STR>\n {luxError( LUX_SYNTAX,LUX_SEVERE,"Unterminated string!");}
+<STR>\n { LOG(LUX_SYNTAX,LUX_SEVERE)<<"Unterminated string!";}
 
-. { std::stringstream ss; ss<<"Illegal character: "<<yytext[0]; luxError( LUX_SYNTAX,LUX_SEVERE,ss.str().c_str()); }
+. { LOG(LUX_SYNTAX,LUX_SEVERE)<<"Illegal character: "<<yytext[0]; }
 %%
 int yywrap(void)
 {

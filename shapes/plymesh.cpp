@@ -112,22 +112,16 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 	string filename = params.FindOneString("filename", "none");
 	bool smooth = params.FindOneBool("smooth", false);
 
-	std::stringstream ss;
-	ss << "Loading PLY mesh file: '" << filename << "'...";
-	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+	LOG(LUX_NOERROR, LUX_INFO) << "Loading PLY mesh file: '" << filename << "'...";
 
 	p_ply plyfile = ply_open(filename.c_str(), NULL);
 	if (!plyfile) {
-		ss.str("");
-		ss << "Unable to read PLY mesh file '" << filename << "'";
-		luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
+		LOG(LUX_SYSTEM, LUX_ERROR) << "Unable to read PLY mesh file '" << filename << "'";
 		return NULL;
 	}
 
 	if (!ply_read_header(plyfile)) {
-		ss.str("");
-		ss << "Unable to read PLY header from '" << filename << "'";
-		luxError(LUX_BADFILE, LUX_ERROR, ss.str().c_str());
+		LOG(LUX_BADFILE, LUX_ERROR) << "Unable to read PLY header from '" << filename << "'";
 		return NULL;
 	}
 
@@ -137,9 +131,7 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 	ply_set_read_cb(plyfile, "vertex", "y", VertexCB, &p, 1);
 	ply_set_read_cb(plyfile, "vertex", "z", VertexCB, &p, 2);
 	if (plyNbVerts <= 0) {
-		ss.str("");
-		ss << "No vertices found in '" << filename << "'";
-		luxError(LUX_BADFILE, LUX_ERROR, ss.str().c_str());
+		LOG(LUX_BADFILE, LUX_ERROR) << "No vertices found in '" << filename << "'";
 		return NULL;
 	}
 
@@ -147,9 +139,7 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 	long plyNbTris = ply_set_read_cb(plyfile, "face", "vertex_indices",
 		FaceCB, &vertexIndex, 0);
 	if (plyNbTris <= 0) {
-		ss.str("");
-		ss << "No triangles found in '" << filename << "'";
-		luxError(LUX_BADFILE, LUX_ERROR, ss.str().c_str());
+		LOG(LUX_BADFILE, LUX_ERROR) << "No triangles found in '" << filename << "'";
 		return NULL;
 	}
 
@@ -167,9 +157,7 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 		n = new Normal[plyNbNormals];
 
 	if (!ply_read(plyfile)) {
-		ss.str("");
-		ss << "Unable to parse PLY file '" << filename << "'";
-		luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
+		LOG(LUX_SYSTEM, LUX_ERROR) << "Unable to parse PLY file '" << filename << "'";
 		delete[] p;
 		delete[] vertexIndex;
 		delete[] n;
@@ -180,9 +168,7 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 
 	if (smooth || plyNbVerts != plyNbNormals) {
 		if (n) {
-			ss.str("");
-			ss << "Overriding plymesh normals";
-			luxError(LUX_NOERROR, LUX_WARNING, ss.str().c_str());
+			LOG(LUX_NOERROR, LUX_WARNING) << "Overriding plymesh normals";
 			delete[] n;
 		}
 		// generate face normals

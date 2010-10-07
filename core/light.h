@@ -41,7 +41,7 @@ public:
 		: nSamples(max(1U, ns)), LightToWorld(l2w),
 		  WorldToLight(l2w.GetInverse()) {
 		if (WorldToLight.HasScale())
-			luxError(LUX_UNIMPLEMENT,LUX_DEBUG,"Scaling detected in world-to-light transformation! Some lights might not support it yet.");
+			LOG(LUX_UNIMPLEMENT,LUX_DEBUG)<< "Scaling detected in world-to-light transformation! Some lights might not support it yet.";
 		havePortalShape = false;
 		nrPortalShapes = 0;
 		PortalArea = 0;

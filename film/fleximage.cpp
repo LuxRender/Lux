@@ -976,7 +976,7 @@ unsigned char* FlexImageFilm::getFrameBuffer()
 void FlexImageFilm::WriteTGAImage(vector<RGBColor> &rgb, vector<float> &alpha, const string &filename)
 {
 	// Write Truevision Targa TGA image
-	luxError(LUX_NOERROR, LUX_INFO, (std::string("Writing Tonemapped TGA image to file ")+filename).c_str());
+	LOG(LUX_NOERROR, LUX_INFO)<< "Writing Tonemapped TGA image to file "<< filename;
 	WriteTargaImage(write_TGA_channels, write_TGA_ZBuf, filename, rgb, alpha,
 		xPixelCount, yPixelCount,
 		xResolution, yResolution,
@@ -986,7 +986,7 @@ void FlexImageFilm::WriteTGAImage(vector<RGBColor> &rgb, vector<float> &alpha, c
 void FlexImageFilm::WritePNGImage(vector<RGBColor> &rgb, vector<float> &alpha, const string &filename)
 {
 	// Write Portable Network Graphics PNG image
-	luxError(LUX_NOERROR, LUX_INFO, (std::string("Writing Tonemapped PNG image to file ")+filename).c_str());
+	LOG(LUX_NOERROR, LUX_INFO)<< "Writing Tonemapped PNG image to file "<< filename;
 	WritePngImage(write_PNG_channels, write_PNG_16bit, write_PNG_ZBuf, filename, rgb, alpha,
 		xPixelCount, yPixelCount,
 		xResolution, yResolution,
@@ -1015,7 +1015,7 @@ void FlexImageFilm::WriteEXRImage(vector<RGBColor> &rgb, vector<float> &alpha, c
 			for (u_int i=0; i<nPix; i++)
 				zBuf[i] = (zbuf[i]-min) / (max-min);
 
-			luxError(LUX_NOERROR, LUX_INFO, (std::string("Writing OpenEXR image to file ")+filename).c_str());
+			LOG(LUX_NOERROR, LUX_INFO)<< "Writing OpenEXR image to file "<< filename;
 			WriteOpenEXRImage(write_EXR_channels, write_EXR_halftype, write_EXR_ZBuf, write_EXR_compressiontype, filename, rgb, alpha,
 				xPixelCount, yPixelCount,
 				xResolution, yResolution,
@@ -1025,7 +1025,7 @@ void FlexImageFilm::WriteEXRImage(vector<RGBColor> &rgb, vector<float> &alpha, c
 	}
 
 	// Write OpenEXR RGBA image
-	luxError(LUX_NOERROR, LUX_INFO, (std::string("Writing OpenEXR image to file ")+filename).c_str());
+	LOG(LUX_NOERROR, LUX_INFO)<< "Writing OpenEXR image to file "<< filename;
 	WriteOpenEXRImage(write_EXR_channels, write_EXR_halftype, write_EXR_ZBuf, write_EXR_compressiontype, filename, rgb, alpha,
 		xPixelCount, yPixelCount,
 		xResolution, yResolution,
@@ -1070,9 +1070,7 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 	else if (clampMethodString == "cut")
 		clampMethod = 2;
 	else {
-		std::stringstream ss;
-		ss << "LDR clamping method  '" << clampMethodString << "' unknown. Using \"lum\".";
-		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
+		LOG(LUX_BADTOKEN,LUX_WARNING)<< "LDR clamping method  '" << clampMethodString << "' unknown. Using \"lum\".";
 	}
 
 	// OpenEXR
@@ -1085,9 +1083,7 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 	else if (w_EXR_channelsStr == "RGB") w_EXR_channels = RGB;
 	else if (w_EXR_channelsStr == "RGBA") w_EXR_channels = RGBA;
 	else {
-		std::stringstream ss;
-		ss << "OpenEXR Output Channels  '" << w_EXR_channelsStr << "' unknown. Using \"RGB\".";
-		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
+		LOG(LUX_BADTOKEN,LUX_WARNING) << "OpenEXR Output Channels  '" << w_EXR_channelsStr << "' unknown. Using \"RGB\".";
 		w_EXR_channels = RGB;
 	}
 
@@ -1101,9 +1097,7 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 	else if (w_EXR_compressiontypeStr == "Pxr24 (lossy)") w_EXR_compressiontype = 3;
 	else if (w_EXR_compressiontypeStr == "None") w_EXR_compressiontype = 4;
 	else {
-		std::stringstream ss;
-		ss << "OpenEXR Compression Type '" << w_EXR_compressiontypeStr << "' unknown. Using \"PIZ (lossless)\".";
-		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
+		LOG(LUX_BADTOKEN,LUX_WARNING) << "OpenEXR Compression Type '" << w_EXR_compressiontypeStr << "' unknown. Using \"PIZ (lossless)\".";
 		w_EXR_compressiontype = 1;
 	}
 
@@ -1118,9 +1112,7 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 	else if (w_EXR_ZBuf_normalizationtypeStr == "Camera Start/End clip") w_EXR_ZBuf_normalizationtype = CameraStartEnd;
 	else if (w_EXR_ZBuf_normalizationtypeStr == "Min/Max") w_EXR_ZBuf_normalizationtype = MinMax;
 	else {
-		std::stringstream ss;
-		ss << "OpenEXR ZBuf Normalization Type '" << w_EXR_ZBuf_normalizationtypeStr << "' unknown. Using \"None\".";
-		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
+		LOG(LUX_BADTOKEN,LUX_WARNING) << "OpenEXR ZBuf Normalization Type '" << w_EXR_ZBuf_normalizationtypeStr << "' unknown. Using \"None\".";
 		w_EXR_ZBuf_normalizationtype = None;
 	}
 
@@ -1134,9 +1126,7 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 	else if (w_PNG_channelsStr == "RGB") w_PNG_channels = RGB;
 	else if (w_PNG_channelsStr == "RGBA") w_PNG_channels = RGBA;
 	else {
-		std::stringstream ss;
-		ss << "PNG Output Channels  '" << w_PNG_channelsStr << "' unknown. Using \"RGB\".";
-		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
+		LOG(LUX_BADTOKEN,LUX_WARNING) << "PNG Output Channels  '" << w_PNG_channelsStr << "' unknown. Using \"RGB\".";
 		w_PNG_channels = RGB;
 	}
 
@@ -1151,9 +1141,7 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 	else if (w_PNG_ZBuf_normalizationtypeStr == "Camera Start/End clip") w_PNG_ZBuf_normalizationtype = CameraStartEnd;
 	else if (w_PNG_ZBuf_normalizationtypeStr == "Min/Max") w_PNG_ZBuf_normalizationtype = MinMax;
 	else {
-		std::stringstream ss;
-		ss << "PNG ZBuf Normalization Type '" << w_PNG_ZBuf_normalizationtypeStr << "' unknown. Using \"Min/Max\".";
-		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
+		LOG(LUX_BADTOKEN,LUX_WARNING) << "PNG ZBuf Normalization Type '" << w_PNG_ZBuf_normalizationtypeStr << "' unknown. Using \"Min/Max\".";
 		w_PNG_ZBuf_normalizationtype = MinMax;
 	}
 
@@ -1166,9 +1154,7 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 	else if (w_TGA_channelsStr == "RGB") w_TGA_channels = RGB;
 	else if (w_TGA_channelsStr == "RGBA") w_TGA_channels = RGBA;
 	else {
-		std::stringstream ss;
-		ss << "TGA Output Channels  '" << w_TGA_channelsStr << "' unknown. Using \"RGB\".";
-		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
+		LOG(LUX_BADTOKEN,LUX_WARNING) << "TGA Output Channels  '" << w_TGA_channelsStr << "' unknown. Using \"RGB\".";
 		w_TGA_channels = RGB;
 	}
 
@@ -1182,9 +1168,7 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 	else if (w_TGA_ZBuf_normalizationtypeStr == "Camera Start/End clip") w_TGA_ZBuf_normalizationtype = CameraStartEnd;
 	else if (w_TGA_ZBuf_normalizationtypeStr == "Min/Max") w_TGA_ZBuf_normalizationtype = MinMax;
 	else {
-		std::stringstream ss;
-		ss << "TGA ZBuf Normalization Type '" << w_TGA_ZBuf_normalizationtypeStr << "' unknown. Using \"Min/Max\".";
-		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
+		LOG(LUX_BADTOKEN,LUX_WARNING) << "TGA ZBuf Normalization Type '" << w_TGA_ZBuf_normalizationtypeStr << "' unknown. Using \"Min/Max\".";
 		w_TGA_ZBuf_normalizationtype = MinMax;
 	}
 
@@ -1232,9 +1216,7 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 	else if (tmkernelStr == "maxwhite") s_TonemapKernel = 3;
 	else if (tmkernelStr == "autolinear") s_TonemapKernel = 4;
 	else {
-		std::stringstream ss;
-		ss << "Tonemap kernel  '" << tmkernelStr << "' unknown. Using \"reinhard\".";
-		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
+		LOG(LUX_BADTOKEN,LUX_WARNING) << "Tonemap kernel  '" << tmkernelStr << "' unknown. Using \"reinhard\".";
 		s_TonemapKernel = 0;
 	}
 

@@ -72,7 +72,7 @@ struct SDFace {
 			if (v[i] == vert)
 				return i;
 		}
-		luxError(LUX_BUG,LUX_SEVERE,"Basic logic error in SDFace::vnum()");
+		LOG(LUX_BUG,LUX_SEVERE)<<"Basic logic error in SDFace::vnum()";
 		return 0;
 	}
 	SDFace *nextFace(SDVertex *vert) {
@@ -92,7 +92,7 @@ struct SDFace {
 			if (v[i] != v0 && v[i] != v1)
 				return v[i];
 		}
-		luxError(LUX_BUG,LUX_SEVERE,"Basic logic error in SDVertex::otherVert()");
+		LOG(LUX_BUG,LUX_SEVERE)<<"Basic logic error in SDVertex::otherVert()";
 		return NULL;
 	}
 	SDVertex *v[3];

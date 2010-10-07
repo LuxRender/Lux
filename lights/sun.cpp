@@ -120,10 +120,7 @@ SunLight::SunLight(const Transform &light2world, const float sunscale,
 		sin2ThetaMax *= sin2ThetaMax;
 		cosThetaMax = sqrtf(1.f - sin2ThetaMax);
 	} else {
-		std::stringstream ss;
-		ss << "Reducing relative sun size to " <<
-			sunMeanDistance / sunRadius;
-		luxError(LUX_LIMIT, LUX_WARNING, ss.str().c_str());
+		LOG(LUX_LIMIT, LUX_WARNING) << "Reducing relative sun size to " << sunMeanDistance / sunRadius;
 		cosThetaMax = 0.f;
 		sin2ThetaMax = 1.f;
 	}

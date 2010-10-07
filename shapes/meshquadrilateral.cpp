@@ -187,15 +187,15 @@ MeshQuadrilateral::MeshQuadrilateral(const Mesh *m, u_int n)
 	const Point &p3 = mesh->WorldToObject(mesh->p[idx[3]]);
 
 	if (IsDegenerate(p0, p1, p2, p3)) {
-		luxError(LUX_CONSISTENCY, LUX_ERROR, string("Degenerate quadrilateral detected").c_str());
+		LOG(LUX_CONSISTENCY, LUX_ERROR)<< "Degenerate quadrilateral detected";
 		idx = NULL;
 	}
 	else if (!IsPlanar(p0, p1, p2, p3)) {
-		luxError(LUX_CONSISTENCY, LUX_ERROR, string("Non-planar quadrilateral detected").c_str());
+		LOG(LUX_CONSISTENCY, LUX_ERROR)<< "Non-planar quadrilateral detected";
 		idx = NULL;
 	}
 	else if (!IsConvex(p0, p1, p2, p3)) {
-		luxError(LUX_CONSISTENCY, LUX_ERROR, string("Non-convex quadrilateral detected").c_str());
+		LOG(LUX_CONSISTENCY, LUX_ERROR)<< "Non-convex quadrilateral detected";
 		idx = NULL;
 	}
 

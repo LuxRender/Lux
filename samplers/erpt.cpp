@@ -297,7 +297,7 @@ Sampler* ERPTSampler::CreateSampler(const ParamSet &params, const Film *film)
 	string base = params.FindOneString("basesampler", "random");	// sampler for new chain seed
 	Sampler *sampler = MakeSampler(base, params, film);
 	if (sampler == NULL) {
-		luxError(LUX_SYSTEM, LUX_SEVERE, "ERPTSampler: Could not obtain a valid sampler");
+		LOG(LUX_SYSTEM, LUX_SEVERE)<< "ERPTSampler: Could not obtain a valid sampler";
 		return NULL;
 	}
 	return new ERPTSampler(max(totMutations, 0), range, sampler);

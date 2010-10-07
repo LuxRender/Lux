@@ -134,7 +134,7 @@ Mesh::Mesh(const Transform &o2w, bool ro, MeshAccelType acceltype,
 			ss << " to allow subdivision";
 		else
 			ss << " because they are non-planar";
-		luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+		LOG(LUX_NOERROR, LUX_INFO)<< ss.str().c_str();
 	}
 
 	// Dade - copy triangle data
@@ -254,9 +254,7 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 				break;
 			}
 			default: {
-				std::stringstream ss;
-				ss << "Unknow subdivision type in a mesh: " << concreteSubdivType;
-				luxError(LUX_CONSISTENCY, LUX_ERROR, ss.str().c_str());
+				LOG(LUX_CONSISTENCY, LUX_ERROR) << "Unknow subdivision type in a mesh: " << concreteSubdivType;
 				break;
 			}
 		}
@@ -311,9 +309,7 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 			}
 			break;
 		default: {
-			std::stringstream ss;
-			ss << "Unknow triangle type in a mesh: " << concreteTriType;
-			luxError(LUX_CONSISTENCY, LUX_ERROR, ss.str().c_str());
+			LOG(LUX_CONSISTENCY, LUX_ERROR) << "Unknow triangle type in a mesh: " << concreteTriType;
 			break;
 		}
 	}
@@ -339,9 +335,7 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 			}
 			break;
 		default: {
-			std::stringstream ss;
-			ss << "Unknow quad type in a mesh: " << quadType;
-			luxError(LUX_CONSISTENCY, LUX_ERROR, ss.str().c_str());
+			LOG(LUX_CONSISTENCY, LUX_ERROR) << "Unknow quad type in a mesh: " << quadType;
 			break;
 		}
 	}
@@ -399,7 +393,7 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 		default:
 			ss << "?";
 	}
-	luxError(LUX_NOERROR, LUX_DEBUG, ss.str().c_str());
+	LOG(LUX_NOERROR, LUX_DEBUG)<< ss.str().c_str();
 
 	// Build acceleration structure
 	if (concreteAccelType == ACCEL_NONE) {
@@ -426,9 +420,7 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 				accel = MakeAccelerator("bruteforce", refinedPrims, paramset);
 				break;
 			default:
-				std::stringstream ss;
-				ss << "Unknow accel type in a mesh: " << concreteAccelType;
-				luxError(LUX_CONSISTENCY, LUX_ERROR, ss.str().c_str());
+				LOG(LUX_CONSISTENCY, LUX_ERROR) << "Unknow accel type in a mesh: " << concreteAccelType;
 		}
 		if (refineHints.forSampling)
 			// Lotus - create primitive set to allow sampling
@@ -602,9 +594,7 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 	else if (accelTypeStr == "auto")
 		accelType = Mesh::ACCEL_AUTO;
 	else {
-		std::stringstream ss;
-		ss << "Acceleration structure type  '" << accelTypeStr << "' unknown. Using \"auto\".";
-		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
+		LOG(LUX_BADTOKEN,LUX_WARNING) << "Acceleration structure type  '" << accelTypeStr << "' unknown. Using \"auto\".";
 		accelType = Mesh::ACCEL_AUTO;
 	}
 
@@ -614,7 +604,7 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 
 	// NOTE - lordcrc - Bugfix, pbrt tracker id 0000085: check for correct number of uvs
 	if (UV && (UVCount != npi * 2)) {
-		luxError(LUX_CONSISTENCY, LUX_ERROR, "Number of \"UV\"s for mesh must match \"P\"s");
+		LOG(LUX_CONSISTENCY, LUX_ERROR)<< "Number of \"UV\"s for mesh must match \"P\"s";
 		UV = NULL;
 	}
 	if (!P)
@@ -623,7 +613,7 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 	u_int nni;
 	const Normal *N = params.FindNormal("N", &nni);
 	if (N && (nni != npi)) {
-		luxError(LUX_CONSISTENCY, LUX_ERROR, "Number of \"N\"s for mesh must match \"P\"s");
+		LOG(LUX_CONSISTENCY, LUX_ERROR)<< "Number of \"N\"s for mesh must match \"P\"s";
 		N = NULL;
 	}
 
@@ -636,19 +626,15 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 	else if (triTypeStr == "auto")
 		triType = Mesh::TRI_AUTO;
 	else {
-		std::stringstream ss;
-		ss << "Triangle type  '" << triTypeStr << "' unknown. Using \"auto\".";
-		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
+		LOG(LUX_BADTOKEN,LUX_WARNING) << "Triangle type  '" << triTypeStr << "' unknown. Using \"auto\".";
 		triType = Mesh::TRI_AUTO;
 	}
 
 	if (triIndices) {
 		for (u_int i = 0; i < triIndicesCount; ++i) {
 			if (static_cast<u_int>(triIndices[i]) >= npi) {
-				std::stringstream ss;
-				ss << "Mesh has out of-bounds triangle vertex index " << triIndices[i] <<
+				LOG(LUX_CONSISTENCY, LUX_ERROR) << "Mesh has out of-bounds triangle vertex index " << triIndices[i] <<
 						" (" << npi << "  \"P\" values were given";
-				luxError(LUX_CONSISTENCY, LUX_ERROR, ss.str().c_str());
 				return NULL;
 			}
 		}
@@ -662,9 +648,7 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 	string quadTypeStr = params.FindOneString("quadtype", "quadrilateral");
 	if (quadTypeStr == "quadrilateral") quadType = Mesh::QUAD_QUADRILATERAL;
 	else {
-		std::stringstream ss;
-		ss << "Quad type  '" << quadTypeStr << "' unknown. Using \"quadrilateral\".";
-		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
+		LOG(LUX_BADTOKEN,LUX_WARNING) << "Quad type  '" << quadTypeStr << "' unknown. Using \"quadrilateral\".";
 		quadType = Mesh::QUAD_QUADRILATERAL;
 	}
 
@@ -673,10 +657,8 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 	if (quadIndices) {
 		for (u_int i = 0; i < quadIndicesCount; ++i) {
 			if (static_cast<u_int>(quadIndices[i]) >= npi) {
-				std::stringstream ss;
-				ss << "Mesh has out of-bounds quad vertex index " << quadIndices[i] <<
+				LOG(LUX_CONSISTENCY, LUX_ERROR) << "Mesh has out of-bounds quad vertex index " << quadIndices[i] <<
 						" (" << npi << "  \"P\" values were given";
-				luxError(LUX_CONSISTENCY, LUX_ERROR, ss.str().c_str());
 				return NULL;
 			}
 		}
@@ -704,9 +686,7 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 		displacementMap = dm;
 
 		if (displacementMap.get() == NULL) {
-			std::stringstream ss;
-			ss << "Unknow float texture '" << displacementMapName << "' in a Mesh shape.";
-			luxError(LUX_SYNTAX, LUX_WARNING, ss.str().c_str());
+			LOG(LUX_SYNTAX, LUX_WARNING) << "Unknow float texture '" << displacementMapName << "' in a Mesh shape.";
 		}
 	}
 
@@ -715,9 +695,7 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 	if (subdivSchemeStr == "loop")
 		subdivType = Mesh::SUBDIV_LOOP;
 	else {
-		std::stringstream ss;
-		ss << "Subdivision type  '" << subdivSchemeStr << "' unknown. Using \"loop\".";
-		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
+		LOG(LUX_BADTOKEN,LUX_WARNING) << "Subdivision type  '" << subdivSchemeStr << "' unknown. Using \"loop\".";
 		subdivType = Mesh::SUBDIV_LOOP;
 	}
 

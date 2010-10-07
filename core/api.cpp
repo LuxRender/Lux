@@ -731,7 +731,7 @@ int luxLastError = LUX_NOERROR;
 
 namespace lux
 {
-	int luxLogFilter = LUX_DEBUG; //jromang TODO : should set filter to DEBUG only if there is a 'DEBUG' compile time option, otherwise set to LUX_INFO
+	int luxLogFilter = LUX_INFO; //jromang TODO : should set filter to DEBUG only if there is a 'DEBUG' compile time option, otherwise set to LUX_INFO
 }
 
 extern "C" void luxErrorFilter(int severity)

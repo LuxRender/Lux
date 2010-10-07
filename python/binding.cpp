@@ -178,9 +178,7 @@ int getParametersFromPython(boost::python::list& pList, std::vector<LuxToken>& a
 			else
 			{
 				//Unrecognised data type : we throw an error
-				std::ostringstream o;
-				o<< "Passing unrecognised data type '"<<first_item_classname<<"' in tuple to Python API for '"<<tokenString<<"' token.";
-				luxError(LUX_CONSISTENCY, LUX_SEVERE, const_cast<char *>(o.str().c_str()));
+				LOG(LUX_CONSISTENCY, LUX_SEVERE)<< "Passing unrecognised data type '"<<first_item_classname<<"' in tuple to Python API for '"<<tokenString<<"' token.";
 			}
 		}
 		else if(listExtractor.check())
@@ -222,17 +220,13 @@ int getParametersFromPython(boost::python::list& pList, std::vector<LuxToken>& a
 			else
 			{
 				//Unrecognised data type : we throw an error
-				std::ostringstream o;
-				o<< "Passing unrecognised data type '"<<first_item_classname<<"' in list to Python API for '"<<tokenString<<"' token.";
-				luxError(LUX_CONSISTENCY, LUX_SEVERE, const_cast<char *>(o.str().c_str()));
+				LOG(LUX_CONSISTENCY, LUX_SEVERE)<< "Passing unrecognised data type '"<<first_item_classname<<"' in list to Python API for '"<<tokenString<<"' token.";
 			}
 		}
 		else
 		{
 			//Unrecognised parameter type : we throw an error
-			std::ostringstream o;
-			o<< "Passing unrecognised parameter type to Python API for '"<<tokenString<<"' token.";
-			luxError(LUX_CONSISTENCY, LUX_SEVERE, const_cast<char *>(o.str().c_str()));
+			LOG(LUX_CONSISTENCY, LUX_SEVERE)<< "Passing unrecognised parameter type to Python API for '"<<tokenString<<"' token.";
 		}
 
 	}

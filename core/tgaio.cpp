@@ -45,9 +45,7 @@ void WriteTargaImage(int channeltype, bool savezbuf, const string &name, vector<
 	// Open file
 	FILE* tgaFile = fopen(name.c_str(),"wb");
 	if (!tgaFile) {
-		std::stringstream ss;
-		ss<< "Cannot open file '"<<name<<"' for output";
-		luxError(LUX_SYSTEM, LUX_SEVERE, ss.str().c_str());
+		LOG(LUX_SYSTEM, LUX_SEVERE)<< "Cannot open file '"<<name<<"' for output";
 		return;
 	}
 

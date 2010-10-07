@@ -101,7 +101,7 @@ LoopSubdiv::LoopSubdiv(const Transform &o2w, bool ro,
 				u_int otherv0 = e.f[0]->vnum(f->v[v0]);
 				u_int otherv1 = e.f[0]->vnum(f->v[v1]);
 				if (PREV(otherv0) != otherv1) {
-					luxError(LUX_CONSISTENCY, LUX_ERROR, "Inconsistent vertex winding in mesh, aborting subdivision.");
+					LOG(LUX_CONSISTENCY, LUX_ERROR)<< "Inconsistent vertex winding in mesh, aborting subdivision.";
 					// prevent subdivision
 					nLevels = 0;
 					return;
@@ -160,9 +160,7 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 		return boost::shared_ptr<LoopSubdiv::SubdivResult>();
 	}
 
-	std::stringstream ss;
-	ss << "Applying " << nLevels << " levels of loop subdivision to " << faces.size() << " triangles";
-	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+	LOG(LUX_NOERROR, LUX_INFO) << "Applying " << nLevels << " levels of loop subdivision to " << faces.size() << " triangles";
 
 	vector<SDFace *> f = faces;
 	vector<SDVertex *> v = vertices;
@@ -337,9 +335,7 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 		}
 	}
 
-	ss.str("");
-	ss << "Subdivision complete, got " << ntris << " triangles";
-	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+	LOG(LUX_NOERROR, LUX_INFO) << "Subdivision complete, got " << ntris << " triangles";
 
 	if (displacementMap.get() != NULL) {
 		// Dade - apply the displacement map
@@ -438,9 +434,7 @@ void LoopSubdiv::ApplyDisplacementMap(
 		const Normal *norms,
 		const float *uvs) const {
 	// Dade - apply the displacement map
-	std::stringstream ss;
-	ss << "Applying displacement map to " << verts.size() << " vertices";
-	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+	LOG(LUX_NOERROR, LUX_INFO) << "Applying displacement map to " << verts.size() << " vertices";
 	SpectrumWavelengths swl;
 	swl.Sample(.5f);
 
@@ -594,9 +588,7 @@ Shape *LoopSubdiv::CreateShape(
 		displacementMap = dm;
 
 		if (displacementMap.get() == NULL) {
-            std::stringstream ss;
-            ss << "Unknown float texture '" << displacementMapName << "' in a LoopSubdiv shape.";
-            luxError(LUX_SYNTAX, LUX_WARNING, ss.str().c_str());
+            LOG(LUX_SYNTAX, LUX_WARNING) << "Unknown float texture '" << displacementMapName << "' in a LoopSubdiv shape.";
 		}
 	}
 

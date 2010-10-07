@@ -595,9 +595,7 @@ SurfaceIntegrator* PathIntegrator::CreateSurfaceIntegrator(const ParamSet &param
 	else if (rst == "probability") rstrategy = RR_PROBABILITY;
 	else if (rst == "none") rstrategy = RR_NONE;
 	else {
-		std::stringstream ss;
-		ss<<"Strategy  '" << rst <<"' for russian roulette path termination unknown. Using \"efficiency\".";
-		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
+		LOG(LUX_BADTOKEN,LUX_WARNING)<<"Strategy  '" << rst <<"' for russian roulette path termination unknown. Using \"efficiency\".";
 		rstrategy = RR_EFFICIENCY;
 	}
 	bool include_environment = params.FindOneBool("includeenvironment", true);

@@ -312,12 +312,10 @@ bool TaBRecKdTreeAccel::Intersect(const Ray &ray, Intersection *isect) const {
         bool hit = false;
 
         // Dade - debugging code
-        //std::stringstream ss;
-        //ss<<"\n-----------------------------------------------------\n"<<
+        //LOG(LUX_NOERROR,LUX_INFO))<<"\n-----------------------------------------------------\n"<<
         //	"nPrims = "<<nPrimitives<<" hit = "<<hit<<
         //   //" ray.mint = "<<ray.mint<<" ray.maxt = "<<ray.maxt<<
         //    " tmin = "<<tmin<<" tmax = "<<tmax;
-        //luxError(LUX_NOERROR,LUX_INFO,ss.str().c_str());
 
         if (nPrimitives == 1) {
             hit |= currNode->onePrimitive->Intersect(ray, isect);
@@ -435,11 +433,9 @@ bool TaBRecKdTreeAccel::IntersectP(const Ray &ray) const {
         u_int nPrimitives = currNode->nPrimitives();
 
         // Dade - debugging code
-        //std::stringstream ss;
-        //ss<<"\n-----------------------------------------------------\n"<<
+        //LOG(LUX_NOERROR,LUX_INFO)<<"\n-----------------------------------------------------\n"<<
         //       "nPrims = "<<nPrimitives<<
         //        " ray.mint = "<<ray.mint<<" ray.maxt = "<<ray.maxt;
-        //luxError(LUX_NOERROR,LUX_INFO,ss.str().c_str());
 
         if (nPrimitives == 1) {
             Primitive *pp = currNode->onePrimitive;

@@ -37,6 +37,7 @@
 #include <boost/filesystem/operations.hpp>
 
 #include "api.h"
+#include "error.h"
 #include "server/renderserver.h"
 
 #if defined(WIN32) && !defined(__CYGWIN__) /* We need the following two to set stdout to binary */
@@ -79,12 +80,10 @@ void infoThread() {
 			int sampleSec = (int)luxStatistics("samplesSec");
 			// Dade - print only if we are rendering something
 			if (sampleSec > 0) {
-				std::stringstream ss;
-				ss << '[' << threads << " threads] " << td << " "
+				LOG(LUX_NOERROR, LUX_INFO) << '[' << threads << " threads] " << td << " "
 						<< sampleSec << " samples/sec " << " "
 						<< (int) luxStatistics("samplesTotSec") << " samples/totsec " << " "
 						<< (float) luxStatistics("samplesPx") << " samples/pix";
-				luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 			}
 		} catch(boost::thread_interrupted ex) {
 			break;
@@ -99,8 +98,6 @@ int main(int ac, char *av[]) {
 	luxInit();
 
 	try {
-		std::stringstream ss;
-
 		// Declare a group of options that will be
 		// allowed only on command line
 		po::options_description generic("Generic options");
@@ -159,18 +156,15 @@ int main(int ac, char *av[]) {
 		notify(vm);
 
 		if (vm.count("help")) {
-			ss.str("");
-			ss << "Usage: luxconsole [options] file...\n" << visible;
-			luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
+			LOG(LUX_SYSTEM, LUX_ERROR)<< "Usage: luxconsole [options] file...\n" << visible;
 			return 0;
 		}
 
 		if (vm.count("verbosity"))
 			luxErrorFilter(vm["verbosity"].as<int>());
 
-		ss.str("");
-		ss << "Lux version " << luxVersion() << " of " << __DATE__ << " at " << __TIME__;
-		luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+		LOG(LUX_NOERROR, LUX_INFO) << "Lux version " << luxVersion() << " of " << __DATE__ << " at " << __TIME__;
+		
 		if (vm.count("version"))
 			return 0;
 
@@ -183,12 +177,10 @@ int main(int ac, char *av[]) {
 				threads = 1;
 		}
 
-		ss.str("");
-		ss << "Threads: " << threads;
-		luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+		LOG(LUX_NOERROR, LUX_INFO) << "Threads: " << threads;
 
 		if (vm.count("debug")) {
-			luxError(LUX_NOERROR, LUX_INFO, "Debug mode enabled");
+			LOG(LUX_NOERROR, LUX_INFO)<< "Debug mode enabled";
 			luxEnableDebugMode();
 		}
 
@@ -196,7 +188,7 @@ int main(int ac, char *av[]) {
 			if (!vm.count("server"))
 				luxDisableRandomMode();
 			else // Slaves should always have a different seed than the master
-				luxError(LUX_CONSISTENCY, LUX_WARNING, "Using random seed for server");
+				LOG(LUX_CONSISTENCY, LUX_WARNING)<< "Using random seed for server";
 		}
 
 		int serverInterval;
@@ -212,9 +204,7 @@ int main(int ac, char *av[]) {
 			for (std::vector<std::string>::iterator i = names.begin(); i < names.end(); i++)
 				luxAddServer((*i).c_str());
 
-			ss.str("");
-			ss << "Server requests interval: " << serverInterval << " secs";
-			luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+			LOG(LUX_NOERROR, LUX_INFO) << "Server requests interval: " << serverInterval << " secs";
 		}
 
 		int serverPort = RenderServer::DEFAULT_TCP_PORT;
@@ -245,17 +235,13 @@ int main(int ac, char *av[]) {
 				fullPath = boost::filesystem::system_complete(boost::filesystem::path(v[i], boost::filesystem::native));
 
 				if (!boost::filesystem::exists(fullPath) && v[i] != "-") {
-					ss.str("");
-					ss << "Unable to open scenefile '" << fullPath.string() << "'";
-					luxError(LUX_NOFILE, LUX_SEVERE, ss.str().c_str());
+					LOG(LUX_NOFILE, LUX_SEVERE) << "Unable to open scenefile '" << fullPath.string() << "'";
 					continue;
 				}
 
 				sceneFileName = fullPath.leaf();
 				if (chdir(fullPath.branch_path().string().c_str())) {
-					ss.str("");
-					ss << "Unable to go into directory '" << fullPath.branch_path().string() << "'";
-					luxError(LUX_NOFILE, LUX_SEVERE, ss.str().c_str());
+					LOG(LUX_NOFILE, LUX_SEVERE) << "Unable to go into directory '" << fullPath.branch_path().string() << "'";
 				}
 
 				parseError = false;
@@ -270,9 +256,7 @@ int main(int ac, char *av[]) {
 				}
 
 				if (parseError) {
-					std::stringstream ss;
-					ss << "Skipping invalid scenefile '" << fullPath.string() << "'";
-					luxError(LUX_BADFILE, LUX_SEVERE, ss.str().c_str());
+					LOG(LUX_BADFILE, LUX_SEVERE) << "Skipping invalid scenefile '" << fullPath.string() << "'";
 					continue;
 				}
 
@@ -297,9 +281,7 @@ int main(int ac, char *av[]) {
 				boost::posix_time::time_duration td(0, 0,
 						(int) luxStatistics("secElapsed"), 0);
 
-				ss.str("");
-				ss << "100% rendering done [" << threads << " threads] " << td;
-				luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+				LOG(LUX_NOERROR, LUX_INFO) << "100% rendering done [" << threads << " threads] " << td;
 
 				if (vm.count("bindump")) {
 					// Get pointer to framebuffer data if needed
@@ -326,15 +308,11 @@ int main(int ac, char *av[]) {
 			renderServer->join();
 			delete renderServer;
 		} else {
-			ss.str("");
-			ss << "luxconsole: no input file";
-			luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
+			LOG(LUX_SYSTEM, LUX_ERROR) << "luxconsole: no input file";
 		}
 
 	} catch (std::exception & e) {
-		std::stringstream ss;
-		ss << "Command line argument parsing failed with error '" << e.what() << "', please use the --help option to view the allowed syntax.";
-		luxError(LUX_SYNTAX, LUX_SEVERE, ss.str().c_str());
+		LOG(LUX_SYNTAX, LUX_SEVERE) << "Command line argument parsing failed with error '" << e.what() << "', please use the --help option to view the allowed syntax.";
 		return 1;
 	}
 	return 0;

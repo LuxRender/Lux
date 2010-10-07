@@ -57,47 +57,34 @@ void CheckFilePath(const std::string fileName) {
 			fileName, boost::filesystem::native));
 
 	if (!boost::filesystem::exists(fullPath)) {
-		std::stringstream ss;
-		ss << "Unable to open file '" << fullPath.string() << "'";
-		luxError(LUX_NOFILE, LUX_SEVERE, ss.str().c_str());
+		LOG(LUX_NOFILE, LUX_SEVERE) << "Unable to open file '" << fullPath.string() << "'";
 		exit(2);
 	}
 }
 
 void PrintFilmInfo(const FlexImageFilm &film) {
-	std::stringstream ss;
-
-	ss << "Film Width x Height: " << film.GetXPixelCount() << "x" << film.GetYPixelCount();
-	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+	LOG(LUX_NOERROR, LUX_INFO) << "Film Width x Height: " << film.GetXPixelCount() << "x" << film.GetYPixelCount();
 
 	u_int bufferCount = film.GetNumBufferConfigs();
-	ss.str("");
-	ss << "Buffer Config count: " << bufferCount;
-	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+	LOG(LUX_NOERROR, LUX_INFO) << "Buffer Config count: " << bufferCount;
 
 	for (u_int i = 0; i < bufferCount; i++) {
 		const BufferConfig &bc = film.GetBufferConfig(i);
 
-		ss.str("");
-		ss << "Buffer Config index " << i << ": type=" << bc.type <<
+		LOG(LUX_NOERROR, LUX_INFO) << "Buffer Config index " << i << ": type=" << bc.type <<
 				", output=" << bc.output <<
 				", postfix=" << bc.postfix;
-		luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 	}
 
 	u_int bufferGroupCount = film.GetNumBufferGroups();
-	ss.str("");
-	ss << "Buffer Group count: " << bufferGroupCount;
-	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+	LOG(LUX_NOERROR, LUX_INFO) << "Buffer Group count: " << bufferGroupCount;
 
 	for (u_int i = 0; i < bufferGroupCount; i++) {
-		ss.str("");
-		ss << "Buffer Group index " << i << ": name=" << film.GetGroupName(i) <<
+		LOG(LUX_NOERROR, LUX_INFO) << "Buffer Group index " << i << ": name=" << film.GetGroupName(i) <<
 				", enable=" << film.GetGroupEnable(i) <<
 				", scale=" << film.GetGroupScale(i) <<
 				", RGBScale=(" << film.GetGroupRGBScale(i) << ")" <<
 				", temperature=" << film.GetGroupTemperature(i);
-		luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 	}
 }
 
@@ -113,16 +100,12 @@ bool CheckFilms(u_int bufferIndex, FlexImageFilm &refFilm, FlexImageFilm &testFi
 	Buffer *testBuf = testFilm.GetBufferGroup(0).getBuffer(bufferIndex);
 
 	if (refBuf->xPixelCount != testBuf->xPixelCount) {
-		ss.str("");
-		ss << "Wrong film width: " << refBuf->xPixelCount << "!=" << testBuf->xPixelCount;
-		luxError(LUX_NOERROR, LUX_WARNING, ss.str().c_str());
+		LOG(LUX_NOERROR, LUX_WARNING) << "Wrong film width: " << refBuf->xPixelCount << "!=" << testBuf->xPixelCount;
 		return false;
 	}
 
 	if (refBuf->yPixelCount != testBuf->yPixelCount) {
-		ss.str("");
-		ss << "Wrong film height: " << refBuf->yPixelCount << "!=" << testBuf->yPixelCount;
-		luxError(LUX_NOERROR, LUX_WARNING, ss.str().c_str());
+		LOG(LUX_NOERROR, LUX_WARNING) << "Wrong film height: " << refBuf->yPixelCount << "!=" << testBuf->yPixelCount;
 		return false;
 	}
 
@@ -178,25 +161,12 @@ double CompareFilmWithMSE(u_int bufferIndex, FlexImageFilm &refFilm, FlexImageFi
 	const u_int compCount = 3 * pixelCount;
 	mse /= compCount;
 
-	std::stringstream ss;
-	ss << "Big diff.: " << bigDiff << " (" << (100.0 * bigDiff / compCount) << "%)";
-	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
-	ss.str("");
-	ss << "Small diff.: " << smallDiff << " (" << (100.0 * smallDiff / compCount) << "%)";
-	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
-	ss.str("");
-	ss << "Avg. reference: " << avg1;
-	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
-	ss.str("");
-	ss << "Avg. test: " << avg2;
-	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
-	ss.str("");
-	ss << "Avg. delta: " << avgDelta;
-	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
-	ss.str("");
-	ss << "MSE: " << mse;
-	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
-
+	LOG(LUX_NOERROR, LUX_INFO) << "Big diff.: " << bigDiff << " (" << (100.0 * bigDiff / compCount) << "%)";
+	LOG(LUX_NOERROR, LUX_INFO) << "Small diff.: " << smallDiff << " (" << (100.0 * smallDiff / compCount) << "%)";
+	LOG(LUX_NOERROR, LUX_INFO) << "Avg. reference: " << avg1;
+	LOG(LUX_NOERROR, LUX_INFO) << "Avg. test: " << avg2;
+	LOG(LUX_NOERROR, LUX_INFO) << "Avg. delta: " << avgDelta;
+	LOG(LUX_NOERROR, LUX_INFO) << "MSE: " << mse;
 	return mse;
 }
 
@@ -242,39 +212,33 @@ int main(int ac, char *av[]) {
 				options(cmdline_options).positional(p).run(), vm);
 
 		if (vm.count("help")) {
-			ss.str("");
-			ss << "Usage: luxcomp [options] <reference film file> <test film file>\n" << visible;
-			luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
+			LOG(LUX_SYSTEM, LUX_ERROR) << "Usage: luxcomp [options] <reference film file> <test film file>\n" << visible;
 			return 0;
 		}
 
 		if (vm.count("verbosity"))
 			luxErrorFilter(vm["verbosity"].as<int>());
 
-		ss.str("");
-		ss << "Lux version " << luxVersion() << " of " << __DATE__ << " at " << __TIME__;
-		luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+		LOG(LUX_NOERROR, LUX_INFO) << "Lux version " << luxVersion() << " of " << __DATE__ << " at " << __TIME__;
+		
 		if (vm.count("version"))
 			return 0;
 
 		ComparisonTypes compType = TYPE_MSE;
 		if (vm.count("type"))
 			compType = (ComparisonTypes)vm["type"].as<int>();
-		ss.str("");
-		ss << "Comparison type: " << compType;
-		luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
-
+		
+		LOG(LUX_NOERROR, LUX_INFO) << "Comparison type: " << compType;
+		
 		if (vm.count("input-file")) {
 			const std::vector<std::string> &v = vm["input-file"].as < vector<string> > ();
 
 			if ((v.size() == 1)  || (v.size() == 2)) {
-				luxError(LUX_NOERROR, LUX_INFO, "-------------------------------");
+				LOG(LUX_NOERROR, LUX_INFO)<< "-------------------------------";
 
 				// Dade - read the reference film
 				std::string refFileName = v[0];
-				ss.str("");
-				ss << "Reference file name: '" << refFileName << "'";
-				luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+				LOG(LUX_NOERROR, LUX_INFO) << "Reference file name: '" << refFileName << "'";
 
 				// Dade - check if the file exist
 				CheckFilePath(refFileName);
@@ -283,22 +247,18 @@ int main(int ac, char *av[]) {
 				boost::scoped_ptr<FlexImageFilm> refFilm;
 				refFilm.reset((FlexImageFilm *)FlexImageFilm::CreateFilmFromFLM(refFileName));
 				if (!refFilm) {
-					ss.str("");
-					ss << "Error reading reference FLM file '" << refFileName << "'";
-					luxError(LUX_NOFILE, LUX_SEVERE, ss.str().c_str());
+					LOG(LUX_NOFILE, LUX_SEVERE) << "Error reading reference FLM file '" << refFileName << "'";
 					return 3;
 				}
 
 				PrintFilmInfo(*refFilm);
 
 				if (v.size() == 2) {
-					luxError(LUX_NOERROR, LUX_INFO, "-------------------------------");
+					LOG(LUX_NOERROR, LUX_INFO)<< "-------------------------------";
 
 					// Dade - read the film to test
 					std::string testFileName = v[1];
-					ss.str("");
-					ss << "Test file name: '" << testFileName << "'";
-					luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+					LOG(LUX_NOERROR, LUX_INFO) << "Test file name: '" << testFileName << "'";
 
 					// Dade - check if the file exist
 					CheckFilePath(testFileName);
@@ -307,15 +267,13 @@ int main(int ac, char *av[]) {
 					boost::scoped_ptr<FlexImageFilm> testFilm;
 					testFilm.reset((FlexImageFilm *)FlexImageFilm::CreateFilmFromFLM(testFileName));
 					if (!testFilm) {
-						ss.str("");
-						ss << "Error reading test FLM file '" << testFilm << "'";
-						luxError(LUX_NOFILE, LUX_SEVERE, ss.str().c_str());
+						LOG(LUX_NOFILE, LUX_SEVERE) << "Error reading test FLM file '" << testFilm << "'";
 						return 3;
 					}
 
 					PrintFilmInfo(*testFilm);
 
-					luxError(LUX_NOERROR, LUX_INFO, "-------------------------------");
+					LOG(LUX_NOERROR, LUX_INFO)<< "-------------------------------";
 
 					float result = 0.0f;
 					for (u_int i = 0; i < refFilm->GetNumBufferConfigs(); i++) {
@@ -329,40 +287,29 @@ int main(int ac, char *av[]) {
 						}
 
 						result = max(bufResult, result);
-						ss.str("");
-						ss << "Result buffer index " << i << ": " << bufResult <<
+						LOG(LUX_NOERROR, LUX_INFO) << "Result buffer index " << i << ": " << bufResult <<
 								" (" << result << ")";
-						luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
-
 					}
 					std::cout << result << std::endl;
 
 					if (vm.count("error")) {
 						double treshold = vm["error"].as<double>();
 						if (result >= treshold) {
-							ss.str("");
-							ss << "luxcomp: error above the treshold";
-							luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
+							LOG(LUX_SYSTEM, LUX_ERROR) << "luxcomp: error above the treshold";
 							return 10;
 						}
 					}
 				}
 			} else {
-				ss.str("");
-				ss << "luxcomp: wrong input files count";
-				luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
+				LOG(LUX_SYSTEM, LUX_ERROR) << "luxcomp: wrong input files count";
 				return 1;
 			}
 		} else {
-			ss.str("");
-			ss << "luxcomp: missing input files";
-			luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
+			LOG(LUX_SYSTEM, LUX_ERROR) << "luxcomp: missing input files";
 			return 1;
 		}
 	} catch (std::exception & e) {
-		std::stringstream ss;
-		ss << "Command line argument parsing failed with error '" << e.what() << "', please use the --help option to view the allowed syntax.";
-		luxError(LUX_SYNTAX, LUX_SEVERE, ss.str().c_str());
+		LOG(LUX_SYNTAX, LUX_SEVERE) << "Command line argument parsing failed with error '" << e.what() << "', please use the --help option to view the allowed syntax.";
 		return 1;
 	}
 

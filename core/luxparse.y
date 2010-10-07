@@ -48,7 +48,7 @@ void yyerror(const char *str)
 	if (lineNum > 0)
 		ss << " at line " << lineNum;
 	ss << ": " << str;
-	luxError(LUX_SYNTAX, LUX_SEVERE, ss.str().c_str());
+	LOG(LUX_SYNTAX, LUX_SEVERE)<< ss.str().c_str();
 }
 
 class ParamListElem {
@@ -134,10 +134,9 @@ static bool VerifyArrayLength(ParamArray *arr, u_int required,
 	const char *command)
 {
 	if (arr->nelems != required) {
-		std::stringstream ss;
-		ss << command << " requires a(n) " << required <<
-			" element array!";
-		luxError(LUX_SYNTAX, LUX_SEVERE, ss.str().c_str());
+		LOG(LUX_SYNTAX, LUX_SEVERE)
+			<< command << " requires a(n) "
+			<< required << " element array!";
 		return false;
 	}
 	return true;
@@ -542,18 +541,14 @@ static void InitParamSet(ParamSet &ps, u_int count, ParamListElem *list) {
 		ParamType type;
 		string name;
 		if (!LookupType(list[i].token, &type, name)) {
-			std::stringstream ss;
-			ss << "Type of parameter '" << list[i].token <<
-				"' is unknown";
-			luxError(LUX_SYNTAX, LUX_WARNING, ss.str().c_str());
+			LOG(LUX_SYNTAX, LUX_WARNING)
+				<< "Type of parameter '" << list[i].token << "' is unknown";
 			continue;
 		}
 		if (list[i].textureHelper && type != PARAM_TYPE_TEXTURE &&
 			type != PARAM_TYPE_STRING) {
-			std::stringstream ss;
-			ss << "Bad type for " << name <<
-				". Changing it to a texture.";
-			luxError(LUX_SYNTAX, LUX_WARNING, ss.str().c_str());
+			LOG(LUX_SYNTAX, LUX_WARNING)
+				<< "Bad type for " << name << ". Changing it to a texture.";
 			type = PARAM_TYPE_TEXTURE;
 		}
 		void *data = list[i].arg;
@@ -576,12 +571,9 @@ static void InitParamSet(ParamSet &ps, u_int count, ParamListElem *list) {
 				else if (s == "false")
 					bdata[j] = false;
 				else {
-					std::stringstream ss;
-					ss << "Value '" << s << "' unknown for boolean parameter '" <<
-						list[i].token <<
-						"'. Using 'false'.";
-					luxError(LUX_SYNTAX, LUX_WARNING,
-						ss.str().c_str());
+					LOG(LUX_SYNTAX, LUX_WARNING)
+						<< "Value '" << s << "' unknown for boolean parameter '" <<
+						list[i].token << "'. Using 'false'.";
 					bdata[j] = false;
 				}
 			}
@@ -608,10 +600,7 @@ static void InitParamSet(ParamSet &ps, u_int count, ParamListElem *list) {
 				string val(*static_cast<const char **>(data));
 				ps.AddTexture(name, val);
 			} else {
-				std::stringstream ss;
-				ss << "Only one string allowed for 'texture' parameter " << name;
-				luxError(LUX_SYNTAX, LUX_ERROR,
-					ss.str().c_str());
+				LOG(LUX_SYNTAX, LUX_ERROR) << "Only one string allowed for 'texture' parameter " << name;
 			}
 		}
 	}

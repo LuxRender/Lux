@@ -32,9 +32,7 @@ namespace lux {
 
 void lux_png_error(png_structp png_, png_const_charp msg)
 {
-		std::stringstream ss;
-		ss<< "Cannot open PNG file '"<<msg<<"' for output";
-		luxError(LUX_SYSTEM, LUX_SEVERE, ss.str().c_str());
+		LOG(LUX_SYSTEM, LUX_SEVERE)<< "Cannot open PNG file '"<<msg<<"' for output";
 }
 
 
@@ -53,9 +51,7 @@ void lux_png_error(png_structp png_, png_const_charp msg)
 
     FILE *fp = fopen(name.c_str(), "wb");
 	if (!fp) {
-		std::stringstream ss;
-		ss << "Cannot open PNG file '" << name << "' for output";
-		luxError(LUX_SYSTEM, LUX_SEVERE, ss.str().c_str());
+		LOG(LUX_SYSTEM, LUX_SEVERE) << "Cannot open PNG file '" << name << "' for output";
 		return;
 	}
 

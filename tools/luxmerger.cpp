@@ -92,23 +92,19 @@ int main(int ac, char *av[]) {
 				options(cmdline_options).positional(p).run(), vm);
 
 		if (vm.count("help")) {
-			ss.str("");
-			ss << "Usage: luxmerger [options] file...\n" << visible;
-			luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
+			LOG(LUX_SYSTEM, LUX_ERROR) << "Usage: luxmerger [options] file...\n" << visible;
 			return 0;
 		}
 
 		if (vm.count("verbosity"))
 			luxErrorFilter(vm["verbosity"].as<int>());
 
-		ss.str("");
-		ss << "Lux version " << luxVersion() << " of " << __DATE__ << " at " << __TIME__;
-		luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+		LOG(LUX_NOERROR, LUX_INFO) << "Lux version " << luxVersion() << " of " << __DATE__ << " at " << __TIME__;
 		if (vm.count("version"))
 			return 0;
 
 		if (vm.count("debug")) {
-			luxError(LUX_NOERROR, LUX_INFO, "Debug mode enabled");
+			LOG(LUX_NOERROR, LUX_INFO)<< "Debug mode enabled";
 		}
 
 		string outputFileName = vm["output"].as<string>();
@@ -125,9 +121,7 @@ int main(int ac, char *av[]) {
 				fullPath = boost::filesystem::system_complete(boost::filesystem::path(v[i], boost::filesystem::native));
 
 				if (!boost::filesystem::exists(fullPath) && v[i] != "-") {
-					ss.str("");
-					ss << "Unable to open file '" << fullPath.string() << "'";
-					luxError(LUX_NOFILE, LUX_SEVERE, ss.str().c_str());
+					LOG(LUX_NOFILE, LUX_SEVERE) << "Unable to open file '" << fullPath.string() << "'";
 					continue;
 				}
 
@@ -137,9 +131,7 @@ int main(int ac, char *av[]) {
 					// initial flm file
 					film.reset((FlexImageFilm*)FlexImageFilm::CreateFilmFromFLM(flmFileName));
 					if (!film) {
-						ss.str("");
-						ss << "Error reading FLM file '" << flmFileName << "'";
-						luxError(LUX_NOFILE, LUX_SEVERE, ss.str().c_str());
+						LOG(LUX_NOFILE, LUX_SEVERE) << "Error reading FLM file '" << flmFileName << "'";
 						continue;
 					}
 				} else {
@@ -148,18 +140,14 @@ int main(int ac, char *av[]) {
 
 					if(ifs.good()) {
 						// read the data
-						luxError(LUX_NOERROR, LUX_INFO, (std::string("Merging FLM file ") + flmFileName).c_str());
+						LOG(LUX_NOERROR, LUX_INFO)<< "Merging FLM file " << flmFileName;
 						float newSamples = film->UpdateFilm(ifs);
 						if (newSamples <= 0) {
-							ss.str("");
-							ss << "Error reading FLM file '" << flmFileName << "'";
-							luxError(LUX_NOFILE, LUX_SEVERE, ss.str().c_str());
+							LOG(LUX_NOFILE, LUX_SEVERE) << "Error reading FLM file '" << flmFileName << "'";
 							ifs.close();
 							continue;
 						} else {
-							ss.str("");
-							ss << "Merged " << newSamples << " samples from FLM file";
-							luxError(LUX_NOERROR, LUX_DEBUG, ss.str().c_str());
+							LOG(LUX_NOERROR, LUX_DEBUG) << "Merged " << newSamples << " samples from FLM file";
 						}
 					}
 
@@ -172,27 +160,21 @@ int main(int ac, char *av[]) {
 			luxCleanup();
 
 			if (!film) {
-				ss.str("");
-				ss << "No files merged";
-				luxError(LUX_NOERROR, LUX_WARNING, ss.str().c_str());
+				LOG(LUX_NOERROR, LUX_WARNING) << "No files merged";
 				return 2;
 			}
 
-			ss.str("");
-			ss << "Merged " << mergedCount << " FLM files, writing merged FLM to " << outputFileName;
-			luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+			LOG(LUX_NOERROR, LUX_INFO) << "Merged " << mergedCount << " FLM files, writing merged FLM to " << outputFileName;
 
 			film->WriteFilm(outputFileName);
 		} else {
-			ss.str("");
-			ss << "luxmerger: no input file";
-			luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
+			LOG(LUX_SYSTEM, LUX_ERROR) << "luxmerger: no input file";
 		}
 
 	} catch (std::exception & e) {
-		std::stringstream ss;
-		ss << "Command line argument parsing failed with error '" << e.what() << "', please use the --help option to view the allowed syntax.";
-		luxError(LUX_SYNTAX, LUX_SEVERE, ss.str().c_str());
+		LOG(LUX_SYNTAX, LUX_SEVERE)
+			<< "Command line argument parsing failed with error '" << e.what()
+			<< "', please use the --help option to view the allowed syntax.";
 		return 1;
 	}
 	return 0;

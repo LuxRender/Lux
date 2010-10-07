@@ -33,43 +33,37 @@ void Primitive::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 	const PrimitiveRefinementHints& refineHints,
 	const boost::shared_ptr<Primitive> &thisPtr)
 {
-	luxError(LUX_BUG, LUX_SEVERE,
-		"Unimplemented Primitive::Refine method called!");
+	LOG(LUX_BUG, LUX_SEVERE)<< "Unimplemented Primitive::Refine method called!";
 }
 
 bool Primitive::Intersect(const Ray &r, Intersection *in) const
 {
-	luxError(LUX_BUG, LUX_SEVERE,
-		"Unimplemented Primitive::Intersect method called!");
+	LOG(LUX_BUG, LUX_SEVERE)<< "Unimplemented Primitive::Intersect method called!";
 	return false;
 }
 
 bool Primitive::IntersectP(const Ray &r) const
 {
-	luxError(LUX_BUG, LUX_SEVERE,
-		"Unimplemented Primitive::IntersectP method called!");
+	LOG(LUX_BUG, LUX_SEVERE)<< "Unimplemented Primitive::IntersectP method called!";
 	return false;
 }
 
 void Primitive::GetShadingGeometry(const Transform &obj2world,
 	const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const
 {
-	luxError(LUX_BUG, LUX_SEVERE,
-		"Unimplemented Primitive::GetShadingGeometry method called!");
+	LOG(LUX_BUG, LUX_SEVERE)<< "Unimplemented Primitive::GetShadingGeometry method called!";
 }
 
 float Primitive::Area() const
 {
-	luxError(LUX_BUG, LUX_SEVERE,
-		"Unimplemented Primitive::Area method called!");
+	LOG(LUX_BUG, LUX_SEVERE)<< "Unimplemented Primitive::Area method called!";
 	return 0.f;
 }
 
 void Primitive::Sample(float u1, float u2, float u3,
 	DifferentialGeometry *dg) const
 {
-	luxError(LUX_BUG, LUX_SEVERE,
-		"Unimplemented Primitive::Sample method called!");
+	LOG(LUX_BUG, LUX_SEVERE)<< "Unimplemented Primitive::Sample method called!";
 }
 
 // Intersection Method Definitions

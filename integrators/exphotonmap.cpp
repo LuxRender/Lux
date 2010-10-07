@@ -540,9 +540,7 @@ SurfaceIntegrator* ExPhotonIntegrator::CreateSurfaceIntegrator(const ParamSet &p
 		renderingMode = RM_PATH;
 		finalGather = true;
 	} else {
-		std::stringstream ss;
-		ss<<"Strategy  '" << smode << "' for rendering mode unknown. Using \"path\".";
-		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
+		LOG(LUX_BADTOKEN,LUX_WARNING)<<"Strategy  '" << smode << "' for rendering mode unknown. Using \"path\".";
 		renderingMode = RM_PATH;
 	}
 
@@ -557,9 +555,7 @@ SurfaceIntegrator* ExPhotonIntegrator::CreateSurfaceIntegrator(const ParamSet &p
 	else if (rst == "none")
 		rstrategy = RR_NONE;
 	else {
-		std::stringstream ss;
-		ss<<"Strategy  '" << rst << "' for russian roulette path termination unknown. Using \"efficiency\".";
-		luxError(LUX_BADTOKEN,LUX_WARNING,ss.str().c_str());
+		LOG(LUX_BADTOKEN,LUX_WARNING)<<"Strategy  '" << rst << "' for russian roulette path termination unknown. Using \"efficiency\".";
 		rstrategy = RR_EFFICIENCY;
 	}
 	// continueprobability for plain RR (0.0-1.0)

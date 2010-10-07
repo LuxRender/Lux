@@ -77,7 +77,7 @@ Region * VolumeGrid::CreateVolumeRegion(const Transform &volume2world,
 	u_int nitems;
 	const float *data = params.FindFloat("density", &nitems);
 	if (!data) {
-		luxError(LUX_MISSINGDATA,LUX_ERROR,"No \"density\" values provided for volume grid?");
+		LOG(LUX_MISSINGDATA,LUX_ERROR)<< "No \"density\" values provided for volume grid?";
 		return NULL;
 	}
 	int nx = params.FindOneInt("nx", 1);
@@ -86,9 +86,7 @@ Region * VolumeGrid::CreateVolumeRegion(const Transform &volume2world,
 	if (nitems != static_cast<u_int>(nx * ny * nz)) {
 		//Error("VolumeGrid has %d density values but nx*ny*nz = %d",
 		//	nitems, nx*ny*nz);
-		std::stringstream ss;
-		ss<<"VolumeGrid has "<<nitems<<" density values but nx*ny*nz = "<<nx*ny*nz;
-		luxError(LUX_CONSISTENCY,LUX_ERROR,ss.str().c_str());
+		LOG(LUX_CONSISTENCY,LUX_ERROR)<<"VolumeGrid has "<<nitems<<" density values but nx*ny*nz = "<<nx*ny*nz;
 		return NULL;
 	}
 	return new VolumeRegion<VolumeGrid>(volume2world, BBox(p0, p1),

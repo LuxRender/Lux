@@ -44,11 +44,11 @@ MotionSystem::MotionSystem(float st, float et,
 		hasScaleX = hasScaleY = hasScaleZ = hasRotation = isActive = false;
 
 	if (!DecomposeMatrix(startMat, startT)) {
-		luxError(LUX_MATH, LUX_WARNING, "Singular start matrix in MotionSystem, interpolation disabled");
+		LOG(LUX_MATH, LUX_WARNING)<< "Singular start matrix in MotionSystem, interpolation disabled";
 		return;
 	}
 	if (!DecomposeMatrix(endMat, endT)) {
-		luxError(LUX_MATH, LUX_WARNING, "Singular end matrix in MotionSystem, interpolation disabled");
+		LOG(LUX_MATH, LUX_WARNING)<< "Singular end matrix in MotionSystem, interpolation disabled";
 		return;
 	}
 
