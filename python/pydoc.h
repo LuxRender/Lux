@@ -129,7 +129,7 @@ const char * ds_pylux_Context_getParameterValue =
 "";
 
 const char * ds_pylux_Context_getRenderingServersStatus =
-"";
+"Returns a list of (address, port) tuples of currently connected servers.";
 
 const char * ds_pylux_Context_getRenderingThreadsStatus =
 "";

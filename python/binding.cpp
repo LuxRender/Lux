@@ -817,10 +817,27 @@ public:
 		return context->GetNetworkServerUpdateInterval();
 	}
 
-	unsigned int getRenderingServersStatus(RenderingServerInfo *info, unsigned int maxInfoCount)
+	boost::python::list getRenderingServersStatus()
 	{
 		Context::SetActive(context);
-		return context->GetRenderingServersStatus(info, maxInfoCount);
+		int nServers = context->GetServerCount();
+
+		RenderingServerInfo *pInfoList = new RenderingServerInfo[nServers];
+		
+		Context::SetActive(context);
+		nServers = context->GetRenderingServersStatus( pInfoList, nServers );
+		
+		boost::python::list server_list;
+		for( int n = 0; n < nServers; n++ ) {
+			boost::python::list server_info;
+			server_info.append( pInfoList[n].name );
+			server_info.append( pInfoList[n].port );
+			server_list.append( boost::python::tuple( server_info) );
+		}
+
+		delete[] pInfoList;
+		
+		return server_list;
 	}
 
 	double statistics(const char *statName) {
@@ -1085,7 +1102,7 @@ BOOST_PYTHON_MODULE(pylux)
 		)
 		.def("getRenderingServersStatus",
 			&PyContext::getRenderingServersStatus,
-			args("Context", "ServerStatusObject", "index"),
+			args("Context"),
 			ds_pylux_Context_getRenderingServersStatus
 		)
 		.def("getServerCount",
