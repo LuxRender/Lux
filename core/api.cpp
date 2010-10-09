@@ -28,6 +28,7 @@
 #include "error.h"
 
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/thread/mutex.hpp>
 #include <vector>
 using std::vector;
 #include <string>
@@ -762,27 +763,49 @@ extern "C" void luxErrorIgnore(int code, int severity, const char *message)
 	luxLastError = code;
 }
 
+boost::mutex stdout_mutex;
+
 extern "C" void luxErrorPrint(int code, int severity, const char *message)
 {
+	boost::mutex::scoped_lock lock(stdout_mutex);
+
 	luxLastError = code;
 	cerr<<"[";
-#ifndef WIN32 //windows does not support ANSI escape codes
+#ifndef WIN32 //windows does not support ANSI escape codes ...
 	//set the color
 	switch (severity) {
 	case LUX_DEBUG:
-		cerr<<"\033[0;34m";
+		cerr<<"\033[0;34m";		// BLUE
 		break;
 	case LUX_INFO:
-		cerr<<"\033[0;32m";
+		cerr<<"\033[0;32m";		// GREEN
 		break;
 	case LUX_WARNING:
-		cerr<<"\033[0;33m";
+		cerr<<"\033[0;33m";		// YELLOW
 		break;
 	case LUX_ERROR:
-		cerr<<"\033[0;31m";
+		cerr<<"\033[0;31m";		// RED
 		break;
 	case LUX_SEVERE:
-		cerr<<"\033[0;31m";
+		cerr<<"\033[0;31m";		// RED
+		break;
+	}
+#else // ... but it does have it's own console API
+	switch (severity) {
+	case LUX_DEBUG:
+		w32util::ChangeConsoleColor( FOREGROUND_BLUE );
+		break;
+	case LUX_INFO:
+		w32util::ChangeConsoleColor( FOREGROUND_GREEN );
+		break;
+	case LUX_WARNING:
+		w32util::ChangeConsoleColor( FOREGROUND_YELLOW );
+		break;
+	case LUX_ERROR:
+		w32util::ChangeConsoleColor( FOREGROUND_RED );
+		break;
+	case LUX_SEVERE:
+		w32util::ChangeConsoleColor( FOREGROUND_RED );
 		break;
 	}
 #endif
@@ -806,8 +829,10 @@ extern "C" void luxErrorPrint(int code, int severity, const char *message)
 		break;
 	}
 	cerr<<" : "<<code;
-#ifndef WIN32 //windows does not support ANSI escape codes
+#ifndef WIN32 // windows does not support ANSI escape codes ...
 	cerr<<"\033[0m";
+#else // ... but it does have it's own console API
+	w32util::ChangeConsoleColor( FOREGROUND_WHITE );
 #endif
 	cerr<<"] "<<message<<endl;
 }

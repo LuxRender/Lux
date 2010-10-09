@@ -63,6 +63,19 @@ using std::sort;
 #  pragma warning (disable: 4290) // C++ exception specification ignored except to indicate a function is not __declspec(nothrow) ; pointless warning
 //#define WIN32_LEAN_AND_MEAN //defined in project properties
 #  include <windows.h>
+
+namespace w32util
+{
+# include <stdio.h>
+# include <wincon.h>
+#define FOREGROUND_YELLOW FOREGROUND_RED | FOREGROUND_GREEN
+#define FOREGROUND_WHITE FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE
+inline void ChangeConsoleColor(WORD col)
+{
+	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	SetConsoleTextAttribute(hConsole, col);
+}
+}
 #else
 using std::isinf;
 using std::isnan;
