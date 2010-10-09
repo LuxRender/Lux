@@ -98,7 +98,8 @@ bool LuxGuiApp::ProcessCommandLine(void)
 			("fixedseed,f", "Disable random seed mode")
 			("minepsilon,e", po::value< float >(), "Set minimum epsilon")
 			("maxepsilon,E", po::value< float >(), "Set maximum epsilon")
-			("verbosity,V", po::value< int >(), "Log output verbosity")
+			("verbose,V", "Increase output verbosity (show DEBUG messages)")
+			("quiet,q", "Reduce output verbosity (hide INFO messages)") // (give once for WARNING only, twice for ERROR only)")
 		;
 
 		// Declare a group of options that will be
@@ -150,9 +151,6 @@ bool LuxGuiApp::ProcessCommandLine(void)
 			return false;
 		}
 
-		if (vm.count("verbosity"))
-			luxErrorFilter(vm["verbosity"].as<int>());
-
 		if(vm.count("version")) {
 			stringstream ss;
 			ss << "Lux version " << luxVersion() << " of " << __DATE__ << " at " << __TIME__ << endl;
@@ -177,6 +175,14 @@ bool LuxGuiApp::ProcessCommandLine(void)
 		if(vm.count("debug")) {
 			LOG( LUX_INFO,LUX_NOERROR)<< "Debug mode enabled";
 			luxEnableDebugMode();
+		}
+
+		if (vm.count("verbose")) {
+			luxErrorFilter(LUX_DEBUG);
+		}
+
+		if (vm.count("quiet")) {
+			luxErrorFilter(LUX_WARNING);
 		}
 
 		if (vm.count("fixedseed"))

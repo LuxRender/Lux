@@ -66,7 +66,8 @@ int main(int ac, char *av[]) {
 				("help,h", "Produce help message")
 				("debug,d", "Enable debug mode")
 				("output,o", po::value< std::string >()->default_value("merged.flm"), "Output file")
-				("verbosity,V", po::value< int >(), "Log output verbosity")
+				("verbose,V", "Increase output verbosity (show DEBUG messages)")
+				("quiet,q", "Reduce output verbosity (hide INFO messages)") // (give once for WARNING only, twice for ERROR only)")
 				;
 
 		// Hidden options, will be allowed both on command line and
@@ -96,15 +97,20 @@ int main(int ac, char *av[]) {
 			return 0;
 		}
 
-		if (vm.count("verbosity"))
-			luxErrorFilter(vm["verbosity"].as<int>());
-
 		LOG(LUX_INFO,LUX_NOERROR) << "Lux version " << luxVersion() << " of " << __DATE__ << " at " << __TIME__;
 		if (vm.count("version"))
 			return 0;
 
 		if (vm.count("debug")) {
 			LOG( LUX_INFO,LUX_NOERROR)<< "Debug mode enabled";
+		}
+
+		if (vm.count("verbose")) {
+			luxErrorFilter(LUX_DEBUG);
+		}
+
+		if (vm.count("quiet")) {
+			luxErrorFilter(LUX_WARNING);
 		}
 
 		string outputFileName = vm["output"].as<string>();

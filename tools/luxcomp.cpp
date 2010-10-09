@@ -185,7 +185,8 @@ int main(int ac, char *av[]) {
 		generic.add_options()
 				("version,v", "Print version string")
 				("help,h", "Produce help message")
-				("verbosity,V", po::value< int >(), "Log output verbosity")
+				("verbose,V", "Increase output verbosity (show DEBUG messages)")
+				("quiet,q", "Reduce output verbosity (hide INFO messages)") // (give once for WARNING only, twice for ERROR only)")
 				("type,t", po::value< int >(), "Select the type of comparison")
 				("error,e", po::value< double >(), "Error treshold for a failure")
 				;
@@ -216,13 +217,18 @@ int main(int ac, char *av[]) {
 			return 0;
 		}
 
-		if (vm.count("verbosity"))
-			luxErrorFilter(vm["verbosity"].as<int>());
-
 		LOG(LUX_INFO,LUX_NOERROR) << "Lux version " << luxVersion() << " of " << __DATE__ << " at " << __TIME__;
 		
 		if (vm.count("version"))
 			return 0;
+
+		if (vm.count("verbose")) {
+			luxErrorFilter(LUX_DEBUG);
+		}
+
+		if (vm.count("quiet")) {
+			luxErrorFilter(LUX_WARNING);
+		}
 
 		ComparisonTypes compType = TYPE_MSE;
 		if (vm.count("type"))
