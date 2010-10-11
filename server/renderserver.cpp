@@ -428,7 +428,7 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread)
 		tcp::endpoint endpoint(tcp::v4(), listenPort);
 		tcp::acceptor acceptor(io_service, endpoint);
 
-		while (true) {
+		while (serverThread->signal == SIG_NONE) {
 			tcp::iostream stream;
 			acceptor.accept(*stream.rdbuf());
 			stream.setf(ios::scientific, ios::floatfield);

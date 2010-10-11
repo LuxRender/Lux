@@ -32,6 +32,27 @@ const char * ds_pylux_errorHandler =
 "Specify an alternate error handler (logging) function for LuxRender engine\n"
 "output. By default the render engine will print to stdout";
 
+const char * ds_pylux_RenderServerState =
+"Valid states for LuxRender Network Server";
+
+const char * ds_pylux_RenderServer =
+"An instance of a LuxRender Network Server";
+
+const char * ds_pylux_RenderServer_getServerPort =
+"Get the port that this server is listening on";
+
+const char * ds_pylux_RenderServer_getServerState =
+"Get the state of this server";
+
+const char * ds_pylux_RenderServer_start = 
+"Start this server";
+
+const char * ds_pylux_RenderServer_stop =
+"Stop this server";
+
+const char * ds_pylux_RenderServer_join =
+"Join this server thread";
+
 const char * ds_pylux_Context =
 "An instance of a LuxRender rendering context";
 

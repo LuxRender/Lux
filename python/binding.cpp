@@ -37,6 +37,7 @@
 #include <boost/assert.hpp>
 #include "api.h"
 #include "context.h"
+#include "server/renderserver.h"
 #include "queryable.h"
 
 #include "pydoc.h"
@@ -972,8 +973,53 @@ BOOST_PYTHON_MODULE(pylux)
 		args("function"),
 		ds_pylux_errorHandler
 	);
-
+	
+	// RenderServer
+	
+	enum_<RenderServer::ServerState>(
+		"RenderServerState", ds_pylux_RenderServerState
+		)
+		.value("UNSTARTED", RenderServer::UNSTARTED)
+		.value("READY", RenderServer::READY)
+		.value("BUSY", RenderServer::BUSY)
+		.value("STOPPED", RenderServer::STOPPED)
+		;
+	
+	class_<RenderServer>(
+		"RenderServer",
+		ds_pylux_RenderServer,
+		init<int, optional<int,bool> >(args("RenderServer", "threadCount", "tcpPort", "writeFlmFile"))
+		)
+		/* .def_readonly("DEFAULT_TCP_PORT", &RenderServer::DEFAULT_TCP_PORT) // Doesn't currently work */
+		.def("getServerPort",
+			&RenderServer::getServerPort,
+			args("RenderServer"),
+			ds_pylux_RenderServer_getServerPort
+		)
+		.def("getServerState",
+			&RenderServer::getServerState,
+			args("RenderServer"),
+			ds_pylux_RenderServer_getServerState
+		)
+		.def("start",
+			&RenderServer::start,
+			args("RenderServer"),
+			ds_pylux_RenderServer_start
+		)
+		.def("stop",
+			&RenderServer::stop,
+			args("RenderServer"),
+			ds_pylux_RenderServer_stop
+		)
+		.def("join",
+			&RenderServer::join,
+			args("RenderServer"),
+			ds_pylux_RenderServer_join
+		)
+		;
+	
 	//PyContext class
+	
 	class_<PyContext>(
 		"Context",
 		ds_pylux_Context,
