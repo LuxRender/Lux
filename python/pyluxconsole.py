@@ -274,14 +274,14 @@ if __name__ == '__main__':
 	if options.serverinterval is not None:
 		ctx.setNetworkServerUpdateInterval(options.serverinterval)
 	
-	if options.useserver is not None:
-		for srv in options.useserver:
-			ctx.addServer(srv)
-	
 	for scene_file in args:
 		if not os.path.exists(scene_file):
 			log('Scene file to render "%s" does not exist, skipping.'%scene_file)
 			continue
+		
+		if options.useserver is not None:
+			for srv in options.useserver:
+				ctx.addServer(srv)
 		
 		os.chdir(os.path.dirname(scene_file))
 		
@@ -319,8 +319,8 @@ if __name__ == '__main__':
 		stats_thread.join()
 		
 		ctx.cleanup()
-	
-	if options.useserver is not None:
-		for srv in options.useserver:
-			ctx.removeServer(srv)
+		
+		if options.useserver is not None:
+			for srv in options.useserver:
+				ctx.removeServer(srv)
 	
