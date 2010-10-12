@@ -24,7 +24,7 @@
 #------------------------------------------------------------------------------ 
 # System imports
 #------------------------------------------------------------------------------ 
-import optparse, datetime, os, sys, threading, time
+import optparse, datetime, os, signal, sys, threading, time
 
 #------------------------------------------------------------------------------ 
 # Lux imports
@@ -158,9 +158,43 @@ class LuxAPIStats(TimerThread):
 		if network_servers > 0:
 			self.stats_string += ' - %i Network Servers Active' % network_servers
 
-def log(str, module_name='Lux'):
-	print("[%s %s] %s" % (module_name, time.strftime('%Y-%b-%d %H:%M:%S'), str))
+class RenderEndException(Exception):
+	pass
 
+class RenderSkipException(Exception):
+	pass
+
+class luxconsole(object):
+	
+	# SIGBREAK only on windows and SIGHUP only on *nix
+	SIGSKIP = signal.SIGBREAK if 'SIGBREAK' in dir(signal) else signal.SIGHUP
+	
+	stop_queue = False
+	wait_timer = None
+	stats_thread = None
+	
+	@staticmethod
+	def log(str, module_name='Lux'):
+		print("[%s %s] %s" % (module_name, time.strftime('%Y-%b-%d %H:%M:%S'), str))
+	
+	@classmethod
+	def set_interrupt(cls, sig, frame):
+		if cls.wait_timer is not None and cls.wait_timer.isAlive():
+			cls.wait_timer.cancel()
+		
+		if sig == cls.SIGSKIP:
+			# Move on to the next queued file
+			raise RenderSkipException('Caught signal %s'%sig)
+		else:
+			# Stop all rendering
+			raise RenderEndException('Caught signal %s'%sig)
+	
+	@classmethod
+	def print_stats(cls):
+		if cls.stats_thread is not None:
+			cls.stats_thread.kick()
+			cls.log(cls.stats_thread.stats_string)
+	
 if __name__ == '__main__':
 	# Set up command line options
 	parser = optparse.OptionParser(
@@ -237,7 +271,6 @@ if __name__ == '__main__':
 		help = 'Number of rendering threads'
 	)
 	
-	
 	(options, args) = parser.parse_args()
 	
 	if len(sys.argv) < 2:
@@ -255,7 +288,7 @@ if __name__ == '__main__':
 	#print(args)
 	
 	if len(args) < 1:
-		log('No files to render!')
+		luxconsole.log('No files to render!')
 		sys.exit()
 	
 	ctx = pylux.Context('pyluxconsole')
@@ -274,9 +307,14 @@ if __name__ == '__main__':
 	if options.serverinterval is not None:
 		ctx.setNetworkServerUpdateInterval(options.serverinterval)
 	
+	# External signal handlers
+	signal.signal(signal.SIGINT,		luxconsole.set_interrupt)
+	signal.signal(signal.SIGTERM,		luxconsole.set_interrupt)
+	signal.signal(luxconsole.SIGSKIP,	luxconsole.set_interrupt)
+	
 	for scene_file in args:
 		if not os.path.exists(scene_file):
-			log('Scene file to render "%s" does not exist, skipping.'%scene_file)
+			luxconsole.log('Scene file to render "%s" does not exist, skipping.'%scene_file)
 			continue
 		
 		if options.useserver is not None:
@@ -285,43 +323,53 @@ if __name__ == '__main__':
 		
 		os.chdir(os.path.dirname(scene_file))
 		
-		stats_thread = LuxAPIStats({
+		luxconsole.stats_thread = LuxAPIStats({
 			'lux_context': ctx
 		})
 		
 		ctx.parse(scene_file, True) # asynchronous parse (ie. don't wait)
 		
-		#stats_thread.start()
-		
 		# wait here for parsing to complete
 		while ctx.statistics('sceneIsReady') != 1.0:
 			time.sleep(0.3)
+		
+		# Get the resolution for use later
+		xres = ctx.getAttribute('film', 'xResolution')
+		yres = ctx.getAttribute('film', 'yResolution')
 		
 		# TODO: add support to pylux for reporting parse errors after async parse
 		
 		for i in range(threads):
 			ctx.addThread()
 		
-		while ctx.statistics('filmIsReady') != 1.0 and \
-			  ctx.statistics('terminated') != 1.0 and \
-			  ctx.statistics('enoughSamples') != 1.0:
-			try:
-				time.sleep(5)
-				stats_thread.kick()
-				log(stats_thread.stats_string)
-			except KeyboardInterrupt:
-				log('Stopping render...')
-				break
+		try:
+			# Render wait loop
+			while ctx.statistics('filmIsReady') != 1.0 and \
+				  ctx.statistics('terminated') != 1.0 and \
+				  ctx.statistics('enoughSamples') != 1.0:
+				luxconsole.wait_timer = threading.Timer(5, luxconsole.print_stats)
+				luxconsole.wait_timer.start()
+				if luxconsole.wait_timer.isAlive(): luxconsole.wait_timer.join()
+		except RenderSkipException as StopReason:
+			luxconsole.log('Stopping this render... (%s)' % StopReason)
+			# continue
+		except RenderEndException as StopReason:
+			luxconsole.log('Stopping all rendering... (%s)' % StopReason)
+			luxconsole.stop_queue = True
 		
+		luxconsole.stats_thread.kick()
 		ctx.exit()
 		ctx.wait()
 		
-		#stats_thread.stop()
-		#stats_thread.join()
+		# Calculate actual overall render speed
+		samples, sec = xres*yres*luxconsole.stats_thread.stats_dict['samplesPx'], luxconsole.stats_thread.stats_dict['secElapsed']
+		luxconsole.log('Render finished after %s at %0.2f Samples/Sec' % (format_elapsed_time(sec), samples/sec))
 		
 		ctx.cleanup()
 		
 		if options.useserver is not None:
 			for srv in options.useserver:
 				ctx.removeServer(srv)
-	
+		
+		if luxconsole.stop_queue:
+			break
