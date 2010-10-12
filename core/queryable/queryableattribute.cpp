@@ -26,14 +26,19 @@
 namespace lux
 {
 
+void QueryableAttribute::ReadOnlyStringError(std::string s)
+{
+	LOG(LUX_ERROR,LUX_BADTOKEN)<<"Queryable attributes : cannot change read-only string value :"<<s;
+}
+
 void QueryableAttribute::ReadOnlyFloatError(float f)
 {
-	LOG(LUX_ERROR,LUX_BADTOKEN)<<"Queryable attributes : cannot change read only float value :"<<f;
+	LOG(LUX_ERROR,LUX_BADTOKEN)<<"Queryable attributes : cannot change read-only float value :"<<f;
 }
 
 void QueryableAttribute::ReadOnlyIntError(int i)
 {
-	LOG(LUX_ERROR,LUX_BADTOKEN)<<"Queryable attributes : cannot change read only int value :"<<i;
+	LOG(LUX_ERROR,LUX_BADTOKEN)<<"Queryable attributes : cannot change read-only int value :"<<i;
 }
 
 }//namespace lux

@@ -341,10 +341,6 @@ double HybridRenderer::Statistics(const string &statName) {
 		return Statistics_SamplesPPx();
 	else if(statName=="efficiency")
 		return Statistics_Efficiency();
-	else if(statName=="filmXres")
-		return scene->FilmXres();
-	else if(statName=="filmYres")
-		return scene->FilmYres();
 	else if(statName=="displayInterval")
 		return scene->DisplayInterval();
 	else if(statName == "filmEV")

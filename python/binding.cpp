@@ -656,7 +656,7 @@ public:
 	boost::python::list framebuffer()
 	{
 		boost::python::list pyFrameBuffer;
-		int nvalues=((int)luxStatistics("filmXres")) * ((int)luxStatistics("filmYres")) * 3; //get the number of values to copy
+		int nvalues=(luxGetIntAttribute("film", "xResolution")) * (luxGetIntAttribute("film", "yResolution")) * 3; //get the number of values to copy
 
 		Context::SetActive(context);
 		unsigned char* framebuffer=luxFramebuffer(); //get the framebuffer

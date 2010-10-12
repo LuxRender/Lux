@@ -655,23 +655,55 @@ extern "C" double luxStatistics(const char *statName)
 	return 0.;
 }
 
-extern "C" const char* luxGetOptions()
+extern "C" const char* luxGetAttributes()
 {
 	return Context::GetActive()->registry.GetContent();
 }
 
-extern "C" int luxGetIntOption(const char * objectName, const char * attributeName)
+extern "C" bool luxHasObject(const char * objectName)
 {
-	Queryable *object=Context::GetActive()->registry[objectName];
-	if(object!=0) return (*object)[attributeName].IntValue();
-	else return 0;
+	return Context::GetActive()->registry[objectName] != NULL;
 }
 
-extern "C" void luxSetOption(const char * objectName, const char * attributeName, int n, void *values)
+extern "C" int luxGetStringAttribute(const char * objectName, const char * attributeName, char * dest, unsigned int destlen) 
 {
 	Queryable *object=Context::GetActive()->registry[objectName];
-	if(object!=0)
-	{
+	if (object) {
+		string str = (*object)[attributeName].Value();
+		unsigned int copylen = str.length() < destlen ? str.length() + 1 : destlen;
+		if (copylen > 0) {
+			strncpy(dest, str.c_str(), copylen - 1);
+			dest[copylen - 1] = '\0';
+			return copylen;
+		}
+		return 0;
+	}
+
+	return 0;
+}
+
+extern "C" float luxGetFloatAttribute(const char * objectName, const char * attributeName)
+{
+	Queryable *object=Context::GetActive()->registry[objectName];
+	if (object) 
+		return (*object)[attributeName].FloatValue();
+
+	return 0;
+}
+
+extern "C" int luxGetIntAttribute(const char * objectName, const char * attributeName)
+{
+	Queryable *object=Context::GetActive()->registry[objectName];
+	if (object) 
+		return (*object)[attributeName].IntValue();
+
+	return 0;
+}
+
+extern "C" void luxSetAttribute(const char * objectName, const char * attributeName, int n, void *values)
+{
+	Queryable *object=Context::GetActive()->registry[objectName];
+	if (object) {
 		QueryableAttribute &attribute=(*object)[attributeName];
 		//return (*object)[attributeName].IntValue();
 		switch(attribute.type)
@@ -696,8 +728,7 @@ extern "C" void luxSetOption(const char * objectName, const char * attributeName
 			LOG(LUX_ERROR,LUX_BUG)<<"Unknown attribute type for '"<<attributeName<<"' in object '"<<objectName<<"'";
 		}
 	}
-	else
-	{
+	else {
 		LOG(LUX_ERROR,LUX_BADTOKEN)<<"Unknown object '"<<objectName<<"'";
 	}
 }

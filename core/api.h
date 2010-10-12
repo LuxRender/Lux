@@ -213,9 +213,15 @@ unsigned int luxGetStringParameterValue(luxComponent comp, luxComponentParameter
 unsigned int luxGetDefaultStringParameterValue(luxComponent comp, luxComponentParameters param, char* dst, unsigned int dstlen, unsigned int index = 0);
 
 /* Queryable objects */
-const char* luxGetOptions(); /* Returns an XML string containing all queryable data of the current context */
-int luxGetIntOption(const char * objectName, const char * attributeName); /* Returns the value of an int option */
-void luxSetOption(const char * objectName, const char * attributeName, int n, void *values); /* Sets an option value */
+const char* luxGetAttributes(); /* Returns an XML string containing all queryable data of the current context */
+bool luxHasObject(const char * objectName); /* Returns true if the given object exists in the registry */
+
+/* Copies the the value of a string attribute into dest, returns number of characters copied. */
+int luxGetStringAttribute(const char * objectName, const char * attributeName, char * dest, unsigned int destlen); 
+
+float luxGetFloatAttribute(const char * objectName, const char * attributeName); /* Returns the value of a float attribute */
+int luxGetIntAttribute(const char * objectName, const char * attributeName); /* Returns the value of an int attribute */
+void luxSetAttribute(const char * objectName, const char * attributeName, int n, void *values); /* Sets an attribute value */
 
 /* Networking */
 void luxAddServer(const char * name);

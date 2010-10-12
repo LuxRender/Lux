@@ -80,7 +80,6 @@ public:
     iterator end() { return attributes.end(); }
     const_iterator end() const { return attributes.end(); }
 
-
     //If s matches the name of an attribute in this object, the function returns a reference to its QueryableAttribute.
     //Otherwise, it throws an error.
 	QueryableAttribute& operator[] (const std::string &s)
@@ -100,17 +99,51 @@ public:
 		return name;
 	}
 
-/*	void AddFloatAttribute(std::string attributeName, boost::function<float (void)> getFunc, boost::function<void (float)> setFunc=boost::bind(&QueryableAttribute::ReadOnlyFloatError,_1))
-	{
-		QueryableAttribute tmpAttribute(attributeName,ATTRIBUTE_FLOAT);
-		tmpAttribute.setFloatFunc=setFunc;
-		tmpAttribute.getFloatFunc=getFunc;
-		AddAttribute(tmpAttribute);
-	}*/
+	enum AttributeAccess { ReadOnlyAccess, ReadWriteAccess };
+
+	template<class T> friend void AddStringAttribute(T &object,
+		const std::string &name, const std::string &description,
+		std::string T::*s, AttributeAccess access = ReadOnlyAccess) {
+
+		QueryableAttribute tmpAttribute(name, ATTRIBUTE_STRING, description);
+		if (access == ReadWriteAccess)
+			tmpAttribute.setStringFunc = boost::bind(s, boost::ref(object));
+		else
+			tmpAttribute.setStringFunc = boost::bind(&QueryableAttribute::ReadOnlyStringError, _1);
+		tmpAttribute.getStringFunc = boost::bind(s, boost::ref(object));
+		object.AddAttribute(tmpAttribute);
+	}
+	template<class T> friend void AddStringAttribute(T &object,
+		const std::string &name, const std::string &description,
+		std::string (T::*get)(), void (T::*set)(std::string) = NULL) {
+
+		QueryableAttribute tmpAttribute(name, ATTRIBUTE_STRING, description);
+		if (set)
+			tmpAttribute.setStringFunc = boost::bind(set,
+				boost::ref(object), _1);
+		else
+			tmpAttribute.setStringFunc = boost::bind(&QueryableAttribute::ReadOnlyStringError, _1);
+		tmpAttribute.getStringFunc = boost::bind(get, boost::ref(object));
+		object.AddAttribute(tmpAttribute);
+	}
+
 	template<class T> friend void AddFloatAttribute(T &object,
-		const std::string &name, float (T::*get)(),
-		void (T::*set)(float) = NULL) {
-		QueryableAttribute tmpAttribute(name, ATTRIBUTE_FLOAT);
+		const std::string &name, const std::string &description,
+		float T::*f, AttributeAccess access = ReadOnlyAccess) {
+
+		QueryableAttribute tmpAttribute(name, ATTRIBUTE_FLOAT, description);
+		if (access == ReadWriteAccess)
+			tmpAttribute.setFloatFunc = boost::bind(f, boost::ref(object));
+		else
+			tmpAttribute.setFloatFunc = boost::bind(&QueryableAttribute::ReadOnlyFloatError, _1);
+		tmpAttribute.getFloatFunc = boost::bind(f, boost::ref(object));
+		object.AddAttribute(tmpAttribute);
+	}
+	template<class T> friend void AddFloatAttribute(T &object,
+		const std::string &name, const std::string &description,
+		float (T::*get)(), void (T::*set)(float) = NULL) {
+
+		QueryableAttribute tmpAttribute(name, ATTRIBUTE_FLOAT, description);
 		if (set)
 			tmpAttribute.setFloatFunc = boost::bind(set,
 				boost::ref(object), _1);
@@ -120,17 +153,23 @@ public:
 		object.AddAttribute(tmpAttribute);
 	}
 
-/*	void AddIntAttribute(std::string attributeName, boost::function<int (void)> getFunc, boost::function<void (int)> setFunc=boost::bind(&QueryableAttribute::ReadOnlyIntError, _1))
-	{
-		QueryableAttribute tmpAttribute(attributeName,ATTRIBUTE_INT);
-		tmpAttribute.setIntFunc=setFunc;
-		tmpAttribute.getIntFunc=getFunc;
-		AddAttribute(tmpAttribute);
-	}*/
 	template<class T> friend void AddIntAttribute(T &object,
-		const std::string &name, unsigned int (T::*get)(),
-		void (T::*set)(unsigned int) = NULL) {
-		QueryableAttribute tmpAttribute(name, ATTRIBUTE_INT);
+		const std::string &name, const std::string &description,
+		int T::*i, AttributeAccess access = ReadOnlyAccess) {
+
+		QueryableAttribute tmpAttribute(name, ATTRIBUTE_INT, description);
+		if (access == ReadWriteAccess)
+			tmpAttribute.setFloatFunc = boost::bind(i, boost::ref(object));
+		else
+			tmpAttribute.setIntFunc = boost::bind(&QueryableAttribute::ReadOnlyIntError, _1);
+		tmpAttribute.getIntFunc = boost::bind(i, boost::ref(object));
+		object.AddAttribute(tmpAttribute);
+	}
+	template<class T> friend void AddIntAttribute(T &object,
+		const std::string &name, const std::string &description,
+		unsigned int (T::*get)(), void (T::*set)(unsigned int) = NULL) {
+
+		QueryableAttribute tmpAttribute(name, ATTRIBUTE_INT, description);
 		if (set)
 			tmpAttribute.setIntFunc = boost::bind(set,
 				boost::ref(object), _1);
@@ -140,9 +179,10 @@ public:
 		object.AddAttribute(tmpAttribute);
 	}
 	template<class T> friend void AddIntAttribute(T &object,
-		const std::string &name, int (T::*get)(),
-		void (T::*set)(int) = NULL) {
-		QueryableAttribute tmpAttribute(name, ATTRIBUTE_INT);
+		const std::string &name, const std::string &description,
+		int (T::*get)(), void (T::*set)(int) = NULL) {
+
+		QueryableAttribute tmpAttribute(name, ATTRIBUTE_INT, description);
 		if (set)
 			tmpAttribute.setIntFunc = boost::bind(set,
 				boost::ref(object), _1);

@@ -330,8 +330,6 @@ const char * ds_pylux_Context_statistics =
 "- samplesTotSec : current average total rendering speed in samples per second\n"
 "- samplesPx : current number of samples per pixel\n"
 "- efficiency : current rendering efficiency in percent\n"
-"- filmXres : current film X resolution\n"
-"- filmYres : current film Y resolution\n"
 "- displayInterval : current framebuffer update/display interval in seconds\n"
 "- filmEV : current film Exposure Value\n"
 "- enoughSamples : returns truthy if the rendering has reached a haltspp condition";

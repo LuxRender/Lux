@@ -560,9 +560,10 @@ Film::Film(u_int xres, u_int yres, Filter *filt, const float crop[4],
 	//Queryable parameters
 //	AddIntAttribute("xResolution", boost::bind(&Film::GetXResolution, boost::ref(*this)) );
 //	AddIntAttribute("yResolution", boost::bind(&Film::GetYResolution, boost::ref(*this)) );
-	AddIntAttribute(*this, "xResolution", &Film::GetXResolution);
-	AddIntAttribute(*this, "yResolution", &Film::GetYResolution);
-
+	AddIntAttribute(*this, "xResolution", "Horizontal resolution (pixels)", &Film::GetXResolution);
+	AddIntAttribute(*this, "yResolution", "Vertical resolution (pixels)", &Film::GetYResolution);
+	AddStringAttribute(*this, "filename", "Output filename", &Film::filename);
+	AddFloatAttribute(*this, "EV", "Exposure value", &Film::EV);
 
 	// Compute film image extent
 	memcpy(cropWindow, crop, 4 * sizeof(float));

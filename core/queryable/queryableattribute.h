@@ -33,7 +33,7 @@
 namespace lux
 {
 
-typedef enum {ATTRIBUTE_NONE, ATTRIBUTE_INT,ATTRIBUTE_FLOAT,ATTRIBUTE_STRING} AttributeType;
+typedef enum {ATTRIBUTE_NONE, ATTRIBUTE_INT, ATTRIBUTE_FLOAT, ATTRIBUTE_STRING} AttributeType;
 
 
 /*
@@ -55,8 +55,8 @@ public:
 		type=ATTRIBUTE_NONE;
 	}
 
-	QueryableAttribute(const std::string &n, AttributeType t)
-		: name(n), type(t)
+	QueryableAttribute(const std::string &n, AttributeType t, const std::string &d)
+		: name(n), type(t), description(d)
 	{
 
 	}
@@ -66,6 +66,7 @@ public:
 	{
 		switch(type)
 		{
+			case ATTRIBUTE_STRING: return getStringFunc();
 			case ATTRIBUTE_FLOAT: return boost::lexical_cast<std::string>(getFloatFunc());
 			case ATTRIBUTE_INT: return boost::lexical_cast<std::string>(getIntFunc());
 			default:
@@ -113,17 +114,23 @@ public:
 	//functions pointing to the object's methods
 	boost::function<void (int)> setIntFunc;
 	boost::function<int (void)> getIntFunc;
+
 	boost::function<void (float)> setFloatFunc;
 	boost::function<float (void)> getFloatFunc;
+
+	boost::function<void (std::string)> setStringFunc;
+	boost::function<std::string (void)> getStringFunc;
 	//...TODO add all types here
 
 	//Default error functions for readonly attributes
-	static void ReadOnlyFloatError(float f);
 	static void ReadOnlyIntError(int i);
+	static void ReadOnlyFloatError(float f);
+	static void ReadOnlyStringError(std::string s);
 
 //private:
 	std::string name;
 	AttributeType type;
+	std::string description;
 
 };
 

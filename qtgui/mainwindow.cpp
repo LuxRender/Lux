@@ -839,7 +839,7 @@ void MainWindow::updateStatistics()
 	int secElapsed = Floor2Int(luxStatistics("secElapsed"));
 	double samplesPx = luxStatistics("samplesPx");
 	int efficiency = Floor2Int(luxStatistics("efficiency"));
-	int EV = luxStatistics("filmEV");
+	int EV = luxGetFloatAttribute("film", "EV");
 
 	int secs = (secElapsed) % 60;
 	int mins = (secElapsed / 60) % 60;
@@ -851,8 +851,14 @@ void MainWindow::updateStatistics()
 // show the render-resolution
 void MainWindow::showRenderresolution()
 {
-	int w = luxStatistics("filmXres"), h = luxStatistics("filmYres");
-	ui->resinfoLabel->setText(QString("Resolution: %1 x %2").arg(w).arg(h));
+	if (luxHasObject("film")) {
+		int w = luxGetIntAttribute("film", "xResolution");
+		int h = luxGetIntAttribute("film", "yResolution");
+		ui->resinfoLabel->setText(QString("Resolution: %1 x %2").arg(w).arg(h));
+		ui->resinfoLabel->setVisible(true);
+	} else {
+		ui->resinfoLabel->setVisible(false);
+	}
 }
 // show the zoom-factor in viewport
 void MainWindow::showZoomfactor()
@@ -1449,7 +1455,7 @@ void MainWindow::UpdateNetworkTree()
 
 	ui->table_servers->setRowCount(nServers);
 
-	double totalpixels = luxStatistics("filmXres") * luxStatistics("filmYres");
+	double totalpixels = luxGetIntAttribute("film", "xResolution") * luxGetIntAttribute("film", "yResolution");
 	double spp;
 	
 	for( int n = 0; n < nServers; n++ ) {
