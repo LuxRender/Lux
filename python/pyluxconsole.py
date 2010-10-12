@@ -95,7 +95,7 @@ def format_elapsed_time(t):
 	min = td.days*1440  + td.seconds/60.0
 	hrs = td.days*24	+ td.seconds/3600.0
 	
-	return '%i:%02i:%02i Elapsed' % (hrs, min%60, td.seconds%60)
+	return '%i:%02i:%02i' % (hrs, min%60, td.seconds%60)
 
 class LuxAPIStats(TimerThread):
 	'''
@@ -109,7 +109,7 @@ class LuxAPIStats(TimerThread):
 		'samplesSec',
 		'samplesTotSec',
 		'samplesPx',
-		'efficiency',
+		#'efficiency',
 	]
 	
 	stats_dict = {
@@ -117,7 +117,7 @@ class LuxAPIStats(TimerThread):
 		'samplesSec':		0.0,
 		'samplesTotSec':	0.0,
 		'samplesPx':		0.0,
-		'efficiency':		0.0,
+		#'efficiency':		0.0,
 		#'filmXres':		0.0,
 		#'filmYres':		0.0,
 		#'displayInterval':	0.0,
@@ -133,7 +133,7 @@ class LuxAPIStats(TimerThread):
 		'samplesSec':		lambda x: 'Samples/Sec: %0.2f'%x,
 		'samplesTotSec':	lambda x: 'Total Samples/Sec: %0.2f'%x,
 		'samplesPx':		lambda x: 'Samples/Px: %0.2f'%x,
-		'efficiency':		lambda x: 'Efficiency: %0.2f %%'%x,
+		#'efficiency':		lambda x: 'Efficiency: %0.2f %%'%x,
 		#'filmEV':			lambda x: 'EV: %0.2f'%x,
 		#'sceneIsReady':	lambda x: 'SIR: '+ ('True' if x else 'False'),
 		#'filmIsReady':		lambda x: 'FIR: %f'%x,
@@ -291,7 +291,7 @@ if __name__ == '__main__':
 		
 		ctx.parse(scene_file, True) # asynchronous parse (ie. don't wait)
 		
-		stats_thread.start()
+		#stats_thread.start()
 		
 		# wait here for parsing to complete
 		while ctx.statistics('sceneIsReady') != 1.0:
@@ -307,6 +307,7 @@ if __name__ == '__main__':
 			  ctx.statistics('enoughSamples') != 1.0:
 			try:
 				time.sleep(5)
+				stats_thread.kick()
 				log(stats_thread.stats_string)
 			except KeyboardInterrupt:
 				log('Stopping render...')
@@ -315,8 +316,8 @@ if __name__ == '__main__':
 		ctx.exit()
 		ctx.wait()
 		
-		stats_thread.stop()
-		stats_thread.join()
+		#stats_thread.stop()
+		#stats_thread.join()
 		
 		ctx.cleanup()
 		
