@@ -24,7 +24,7 @@
 #------------------------------------------------------------------------------ 
 # System imports
 #------------------------------------------------------------------------------ 
-import optparse, datetime, os, signal, sys, threading, time
+import optparse, datetime, multiprocessing, os, signal, sys, threading, time
 
 #------------------------------------------------------------------------------ 
 # Lux imports
@@ -290,9 +290,9 @@ if __name__ == '__main__':
 	ctx = pylux.Context('pyluxconsole')
 	
 	if options.threads is None:
-		threads = 0
+		threads = multiprocessing.cpu_count()
 	else:
-		threads = options.threads - 1
+		threads = options.threads
 	
 	if options.debug:
 		ctx.enableDebugMode()
@@ -335,7 +335,7 @@ if __name__ == '__main__':
 		
 		# TODO: add support to pylux for reporting parse errors after async parse
 		
-		for i in range(threads):
+		for i in range(threads-1):
 			ctx.addThread()
 		
 		try:
