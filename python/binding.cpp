@@ -731,7 +731,7 @@ public:
 		return str.length();
 	}
 
-	const char* getOptions() {
+	const char* getAttributes() {
 		Context::SetActive(context);
 		return context->registry.GetContent();
 	}
@@ -742,7 +742,7 @@ public:
 	//Python variables may hold an integer, a float, list, dict, tuple, str, long etc., among other things.
 	//So we don't need a getINT, getFLOAT, getXXX in the python api
 	//This function handles all types
-	boost::python::object getOption(const char *objectName, const char *attributeName)
+	boost::python::object getAttribute(const char *objectName, const char *attributeName)
 	{
 		Context::SetActive(context);
 		Queryable *object=context->registry[objectName];
@@ -758,9 +758,9 @@ public:
 		return boost::python::object(0);
 	}
 
-	void setOption(const char * objectName, const char * attributeName, boost::python::object value)
+	void setAttribute(const char * objectName, const char * attributeName, boost::python::object value)
 	{
-		//void luxSetOption(const char * objectName, const char * attributeName, int n, void *values); /* Sets an option value */
+		//void luxSetAttribute(const char * objectName, const char * attributeName, int n, void *values); /* Sets an option value */
 		Context::SetActive(context);
 		Queryable *object=context->registry[objectName];
 		if(object!=0)
@@ -1131,15 +1131,15 @@ BOOST_PYTHON_MODULE(pylux)
 			args("Context"),
 			ds_pylux_Context_getNetworkServerUpdateInterval
 		)
-		.def("getOption",
-			&PyContext::getOption,
+		.def("getAttribute",
+			&PyContext::getAttribute,
 			args("Context"),
-			ds_pylux_Context_getOption
+			ds_pylux_Context_getAttribute
 		)
-		.def("getOptions",
-			&PyContext::getOptions,
+		.def("getAttributes",
+			&PyContext::getAttributes,
 			args("Context"),
-			ds_pylux_Context_getOptions
+			ds_pylux_Context_getAttributes
 		)
 		.def("getParameterValue",
 			&PyContext::getParameterValue,
@@ -1311,10 +1311,10 @@ BOOST_PYTHON_MODULE(pylux)
 			args("Context"),
 			ds_pylux_Context_setNetworkServerUpdateInterval
 		)
-		.def("setOption",
-			&PyContext::setOption,
+		.def("setAttribute",
+			&PyContext::setAttribute,
 			args("Context"),
-			ds_pylux_Context_setOption
+			ds_pylux_Context_setAttribute
 		)
 		.def("setParameterValue",
 			&PyContext::setParameterValue,
