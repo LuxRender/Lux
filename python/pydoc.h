@@ -140,10 +140,10 @@ const char * ds_pylux_Context_getHistogramImage =
 const char * ds_pylux_Context_getNetworkServerUpdateInterval =
 "";
 
-const char * ds_pylux_Context_getOption =
+const char * ds_pylux_Context_getAttribute =
 "";
 
-const char * ds_pylux_Context_getOptions =
+const char * ds_pylux_Context_getAttributes =
 "";
 
 const char * ds_pylux_Context_getParameterValue =
@@ -293,7 +293,7 @@ const char * ds_pylux_Context_setHaltSamplePerPixel =
 const char * ds_pylux_Context_setNetworkServerUpdateInterval =
 "";
 
-const char * ds_pylux_Context_setOption =
+const char * ds_pylux_Context_setAttribute =
 "";
 
 const char * ds_pylux_Context_setParameterValue =
