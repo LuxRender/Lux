@@ -420,7 +420,7 @@ void SamplerRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 		// Sample new SWC thread wavelengths
 		sample.swl.Sample(sample.wavelengths);
 
-		while (renderer->state == PAUSE) {
+		while (renderer->state == PAUSE && !boost::this_thread::interruption_requested()) {
 			boost::xtime xt;
 			boost::xtime_get(&xt, boost::TIME_UTC);
 			xt.sec += 1;
