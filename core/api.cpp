@@ -439,6 +439,8 @@ extern "C" void luxMotionInstance(const char *name, float startTime,
 		endTime, string(toTransform));
 }
 extern "C" void luxWorldEnd() {
+	// initialize rand() number generator
+	srand(time(NULL));
 	Context::GetActive()->WorldEnd();
 }
 
