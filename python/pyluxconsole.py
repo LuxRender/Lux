@@ -170,7 +170,6 @@ class luxconsole(object):
 	SIGSKIP = signal.SIGBREAK if 'SIGBREAK' in dir(signal) else signal.SIGHUP
 	
 	stop_queue = False
-	wait_timer = None
 	stats_thread = None
 	
 	@staticmethod
@@ -179,9 +178,6 @@ class luxconsole(object):
 	
 	@classmethod
 	def set_interrupt(cls, sig, frame):
-		if cls.wait_timer is not None and cls.wait_timer.isAlive():
-			cls.wait_timer.cancel()
-		
 		if sig == cls.SIGSKIP:
 			# Move on to the next queued file
 			raise RenderSkipException('Caught signal %s'%sig)
@@ -347,9 +343,8 @@ if __name__ == '__main__':
 			while ctx.statistics('filmIsReady') != 1.0 and \
 				  ctx.statistics('terminated') != 1.0 and \
 				  ctx.statistics('enoughSamples') != 1.0:
-				luxconsole.wait_timer = threading.Timer(5, luxconsole.print_stats)
-				luxconsole.wait_timer.start()
-				if luxconsole.wait_timer.isAlive(): luxconsole.wait_timer.join()
+				time.sleep(5)
+				luxconsole.print_stats()
 		except RenderSkipException as StopReason:
 			luxconsole.log('Stopping this render... (%s)' % StopReason)
 			# continue
