@@ -482,6 +482,7 @@ extern "C" void luxInit()
 // Parsing Global Interface
 int luxParse(const char *filename)
 {
+	//TODO jromang - add thread lock here (we can only parse in one context)
 	extern FILE *yyin;
 	extern int yyparse(void);
 	extern void yyrestart( FILE *new_file );
