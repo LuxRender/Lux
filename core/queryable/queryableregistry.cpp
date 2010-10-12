@@ -65,6 +65,7 @@ const char * QueryableRegistry::GetContent()
 			XMLOutput<<"    <attribute>"<<std::endl;
 			XMLOutput<<"      <name>"<< pairQAttribute.second.name <<"</name>"<<std::endl;
 			XMLOutput<<"      <type>"<< typeString[pairQAttribute.second.type] <<"</type>"<<std::endl;
+			XMLOutput<<"      <description>"<< pairQAttribute.second.description <<"</description>"<<std::endl;
 			XMLOutput<<"      <value>"<< pairQAttribute.second.Value() <<"</value>"<<std::endl;
 			XMLOutput<<"    </attribute>"<<std::endl;
 		}
