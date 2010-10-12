@@ -362,9 +362,9 @@ if __name__ == '__main__':
 		
 		ctx.cleanup()
 		
-		if options.useserver is not None:
-			for srv in options.useserver:
-				ctx.removeServer(srv)
+		# disconnect all servers
+		for srv_info in ctx.getRenderingServersStatus():
+			ctx.removeServer(srv_info.name)
 		
 		if luxconsole.stop_queue:
 			break
