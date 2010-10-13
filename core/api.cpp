@@ -805,7 +805,7 @@ extern "C" void luxErrorPrint(int code, int severity, const char *message)
 
 	luxLastError = code;
 	cerr<<"[";
-#ifndef WIN32 //windows does not support ANSI escape codes ...
+#if !defined(WIN32) || defined(__CYGWIN__) //windows does not support ANSI escape codes (but CYGWIN does) ...
 	//set the color
 	switch (severity) {
 	case LUX_DEBUG:
@@ -863,7 +863,7 @@ extern "C" void luxErrorPrint(int code, int severity, const char *message)
 		break;
 	}
 	cerr<<" : "<<code;
-#ifndef WIN32 // windows does not support ANSI escape codes ...
+#if !defined(WIN32) || defined(__CYGWIN__) // windows does not support ANSI escape codes (but CYGWIN does) ...
 	cerr<<"\033[0m";
 #else // ... but it does have it's own console API
 	w32util::ChangeConsoleColor( FOREGROUND_WHITE );
