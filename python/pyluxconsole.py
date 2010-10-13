@@ -156,7 +156,7 @@ class LuxAPIStats(TimerThread):
 		
 		network_servers = self.LocalStorage['lux_context'].getServerCount()
 		if network_servers > 0:
-			self.stats_string += ' - %i Network Servers Active' % network_servers
+			self.stats_string += ' - %i Active Slaves' % network_servers
 
 class RenderEndException(Exception):
 	pass
@@ -375,7 +375,11 @@ if __name__ == '__main__':
 		
 		ctx.cleanup()
 		
-		# deleting the context will disconnect all servers being used and free memory
+		# Disconnect all connected servers
+		for rsi in ctx.getRenderingServersStatus():
+			ctx.removeServer(rsi.name)
+		
+		# deleting the context will free memory
 		del ctx
 		
 		if luxconsole.stop_queue:
