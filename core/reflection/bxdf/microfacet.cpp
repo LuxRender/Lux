@@ -39,9 +39,14 @@ MicrofacetReflection::MicrofacetReflection(const SWCSpectrum &reflectance,
 void MicrofacetReflection::f(const SpectrumWavelengths &sw, const Vector &wo, 
 	const Vector &wi, SWCSpectrum *const f_) const
 {
-	float cosThetaO = fabsf(CosTheta(wo));
-	float cosThetaI = fabsf(CosTheta(wi));
-	Vector wh = Normalize(wi + wo);
+	const float cosThetaO = fabsf(CosTheta(wo));
+	const float cosThetaI = fabsf(CosTheta(wi));
+	if (cosThetaO == 0.f || cosThetaI == 0.f)
+		return;
+	Vector wh = wi + wo;
+	if (wh == Vector(0.f))
+		return;
+	wh = Normalize(wh);
 	if (wh.z < 0.f) {
 		if (oneSided)
 			return;
@@ -80,7 +85,10 @@ bool MicrofacetReflection::Sample_f(const SpectrumWavelengths &sw,
 float MicrofacetReflection::Pdf(const SpectrumWavelengths &sw, const Vector &wo,
 	const Vector &wi) const
 {
-	Vector wh = Normalize(wi + wo);
+	Vector wh = wi + wo;
+	if (wh == Vector(0.f))
+		return 0.f;
+	wh = Normalize(wh);
 	if (wh.z < 0.f) {
 		if (oneSided)
 			return 0.f;
@@ -106,6 +114,8 @@ void MicrofacetTransmission::f(const SpectrumWavelengths &sw, const Vector &wo,
 	if (wh.z < 0.f)
 		wh = -wh;
 	const float lengthSquared = wh.LengthSquared();
+	if (!(lengthSquared > 0.f))
+		return;
 	wh /= sqrtf(lengthSquared);
 	const float cosThetaO = fabsf(CosTheta(wo));
 	const float cosThetaI = fabsf(CosTheta(wi));
@@ -168,6 +178,8 @@ float MicrofacetTransmission::Pdf(const SpectrumWavelengths &sw,
 	if (wh.z < 0.f)
 		wh = -wh;
 	const float lengthSquared = wh.LengthSquared();
+	if (!(lengthSquared > 0.f))
+		return 0.f;
 	wh /= sqrtf(lengthSquared);
 	const float cosThetaIH = AbsDot(wi, wh);
 	return distribution->Pdf(wh) * cosThetaIH / lengthSquared;

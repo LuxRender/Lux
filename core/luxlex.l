@@ -116,7 +116,7 @@ void include_clear()
 }
 %}
 %option nounput
-WHITESPACE [ \t\0xa]+
+WHITESPACE [ \t\r]+
 NUMBER [-+]?([0-9]+|(([0-9]+\.[0-9]*)|(\.[0-9]+)))([eE][-+]?[0-9]+)?
 IDENT [a-zA-Z_][a-zA-Z_0-9]*
 %x STR COMMENT INCL INCL_FILE
@@ -177,7 +177,6 @@ VolumeIntegrator	{ return VOLUMEINTEGRATOR;	}
 WorldBegin 		{ return WORLDBEGIN; 		}
 WorldEnd 		{ return WORLDEND;		}
 {WHITESPACE} /* do nothing */
-\r /* jromang - do nothing */
 \n { lineNum++; }
 {NUMBER} {
   yylval.num = static_cast<float>(atof(yytext));

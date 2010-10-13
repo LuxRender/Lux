@@ -54,11 +54,11 @@ SWCSpectrum VirtualLight::GetSWCSpectrum(const SpectrumWavelengths &sw) const
 }
 
 // IGIIntegrator Implementation
-IGIIntegrator::IGIIntegrator(u_int nl, u_int ns, u_int d, float md)
+IGIIntegrator::IGIIntegrator(u_int nl, u_int ns, u_int d, float gl)
 {
 	nLightPaths = RoundUpPow2(nl);
 	nLightSets = RoundUpPow2(ns);
-	minDist2 = md * md;
+	gLimit = gl;
 	maxSpecularDepth = d;
 	virtualLights.resize(nLightSets);
 }
@@ -233,36 +233,31 @@ u_int IGIIntegrator::Li(const Scene &scene, const Sample &sample) const
 			// Add contribution from _VirtualLight_ _vl_
 			// Ignore light if it's too close
 			float d2 = DistanceSquared(p, vl.p);
-			if (d2 < .8f * minDist2)
-				continue;
-			float distScale = SmoothStep(.8f * minDist2,
-				1.2f * minDist2, d2);
-			// Compute virtual light's tentative contribution _Llight_
 			Vector wi = Normalize(vl.p - p);
-			SWCSpectrum f = distScale * bsdf->f(sw, wi, wo,
-				BxDFType(~BSDF_SPECULAR));
-			if (f.Black())
-				continue;
 			float G = AbsDot(wi, n) * AbsDot(wi, vl.n) / d2;
+			G = min(G, gLimit);
+			// Compute virtual light's tentative contribution _Llight_
+			SWCSpectrum f = bsdf->f(sw, wi, wo,
+				BxDFType(~BSDF_SPECULAR));
+			if (!(G > 0.f) || f.Black())
+				continue;
 			SWCSpectrum Llight = f * vl.GetSWCSpectrum(sw) *
-				(G / virtualLights[lSet].size());
+				(G / nLightPaths);
 			if (scene.Connect(sample, bsdf->GetVolume(wi), p, vl.p,
 				false, &Llight, NULL, NULL)) {
 				L += pathThroughput * Llight;
 			}
 		}
-		// Trace rays for specular reflection and refraction
 		if (depth >= maxSpecularDepth)
 			break;
 		Vector wi;
-		// Trace rays for specular reflection and refraction
 		SWCSpectrum f;
 		float pdf;
+		// Trace rays for specular reflection and refraction
 		float *data = scene.sampler->GetLazyValues(sample, sampleOffset, depth);
 		if (!bsdf->Sample_f(sw, wo, &wi, .5f, .5f, *data, &f, &pdf,
 			BxDFType(BSDF_SPECULAR | BSDF_REFLECTION | BSDF_TRANSMISSION)))
 			break;
-		// Compute ray differential _rd_ for specular reflection
 		ray = Ray(p, wi);
 		ray.time = sample.realTime;
 		pathThroughput *= f * (AbsDot(wi, n) / pdf);
@@ -278,8 +273,9 @@ SurfaceIntegrator* IGIIntegrator::CreateSurfaceIntegrator(const ParamSet &params
 	int nLightSets = params.FindOneInt("nsets", 4);
 	int nLightPaths = params.FindOneInt("nlights", 64);
 	int maxDepth = params.FindOneInt("maxdepth", 5);
-	float minDist = params.FindOneFloat("mindist", .1f);
-	return new IGIIntegrator(max(nLightPaths, 0), max(nLightSets, 0), max(maxDepth, 0), minDist);
+	float maxG = params.FindOneFloat("glimit",
+		1.f / params.FindOneFloat("mindist", .1f));
+	return new IGIIntegrator(max(nLightPaths, 0), max(nLightSets, 0), max(maxDepth, 0), maxG);
 }
 
 static DynamicLoader::RegisterSurfaceIntegrator<IGIIntegrator> r("igi");

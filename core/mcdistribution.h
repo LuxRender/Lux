@@ -119,7 +119,7 @@ public:
 	 */ 
 	float SampleContinuous(float u, float *pdf, u_int *off = NULL) const {
 		// Find surrounding CDF segments and _offset_
-		float *ptr = std::lower_bound(cdf, cdf + count + 1, u);
+		float *ptr = std::upper_bound(cdf, cdf + count + 1, u);
 		u_int offset = max<int>(0, ptr - cdf - 1);
 
 		// Compute offset along CDF segment
@@ -149,7 +149,7 @@ public:
 	 */ 
 	u_int SampleDiscrete(float u, float *pdf, float *du = NULL) const {
 		// Find surrounding CDF segments and _offset_
-		float *ptr = std::lower_bound(cdf, cdf + count + 1, u);
+		float *ptr = std::upper_bound(cdf, cdf + count + 1, u);
 		u_int offset = max<int>(0, ptr - cdf - 1);
 
 		// Compute offset along CDF segment
@@ -426,7 +426,7 @@ public:
 		}
 
 		float *ptr = std::upper_bound(xFunc, xFunc+count, x);
-		int offset = (int) (ptr-xFunc-1);
+		int offset = max(0, (int) (ptr-xFunc-1));
 
 		*d = (x - xFunc[offset]) / (xFunc[offset+1] - xFunc[offset]);
 		return offset;

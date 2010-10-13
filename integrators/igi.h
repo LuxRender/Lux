@@ -64,7 +64,7 @@ private:
 	u_int nLightPaths, nLightSets;
 	vector<vector<VirtualLight> > virtualLights;
 	u_int maxSpecularDepth;
-	float minDist2;
+	float gLimit;
 	u_int vlSetOffset, bufferId, sampleOffset;
 
 	u_int *lightSampleOffset, *lightSampleNumber;

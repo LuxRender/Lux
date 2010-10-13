@@ -169,20 +169,22 @@ inline float SphericalPhi(const Vector &v) {
 
 inline float CosTheta(const Vector &w) { return w.z; }
 
-inline float SinTheta(const Vector &w) {
-	return sqrtf(max(0.f, 1.f - w.z*w.z));
+inline float SinTheta2(const Vector &w) {
+	return max(0.f, 1.f - CosTheta(w)*CosTheta(w));
 }
 
-inline float SinTheta2(const Vector &w) {
-	return 1.f - CosTheta(w)*CosTheta(w);
+inline float SinTheta(const Vector &w) {
+	return sqrtf(SinTheta2(w));
 }
 
 inline float CosPhi(const Vector &w) {
-	return w.x / SinTheta(w);
+	const float sinTheta = SinTheta(w);
+	return sinTheta > 0.f ? Clamp(w.x / sinTheta, -1.f, 1.f) : w.x;
 }
 
 inline float SinPhi(const Vector &w) {
-	return w.y / SinTheta(w);
+	const float sinTheta = SinTheta(w);
+	return sinTheta > 0.f ? Clamp(w.y / sinTheta, -1.f, 1.f) : w.y;
 }
 
 inline bool SameHemisphere(const Vector &w,
