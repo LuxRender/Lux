@@ -151,10 +151,12 @@ void IGIIntegrator::Preprocess(const RandomGenerator &rng, const Scene &scene)
 				++nIntersections;
 				Vector wo = -ray.d;
 				// Create virtual light at ray intersection point
-				SWCSpectrum Le = alpha * bsdf->rho(sw, wo) *
-					INV_PI;
-				virtualLights[s].push_back(VirtualLight(sw,
-					isect.dg.p, isect.dg.nn, Le));
+				if (bsdf->NumComponents(BxDFType(~BSDF_SPECULAR))) {
+					const SWCSpectrum Le(alpha *
+						bsdf->rho(sw, wo) * INV_PI);
+					virtualLights[s].push_back(VirtualLight(sw,
+						isect.dg.p, isect.dg.nn, Le));
+				}
 				// Sample new ray direction and update weight
 				Vector wi;
 				float pdf;
