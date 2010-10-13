@@ -191,6 +191,25 @@ class luxconsole(object):
 			cls.stats_thread.kick()
 			cls.log(cls.stats_thread.stats_string)
 	
+	@staticmethod
+	def context_factory(options, name):
+		ctx = pylux.Context(name)
+		
+		if options.debug:
+			ctx.enableDebugMode()
+		
+		if options.fixedseed and not options.server:
+			ctx.disableRandomMode()
+		
+		if options.serverinterval is not None:
+			ctx.setNetworkServerUpdateInterval(options.serverinterval)
+		
+		if options.useserver is not None:
+			for srv in options.useserver:
+				ctx.addServer(srv)
+		
+		return ctx
+	
 if __name__ == '__main__':
 	# Set up command line options
 	parser = optparse.OptionParser(
@@ -287,58 +306,51 @@ if __name__ == '__main__':
 		luxconsole.log('No files to render!')
 		sys.exit()
 	
-	ctx = pylux.Context('pyluxconsole')
-	
 	if options.threads is None:
 		threads = multiprocessing.cpu_count()
 	else:
 		threads = options.threads
-	
-	if options.debug:
-		ctx.enableDebugMode()
-	
-	if options.fixedseed and not options.server:
-		ctx.disableRandomMode()
-	
-	if options.serverinterval is not None:
-		ctx.setNetworkServerUpdateInterval(options.serverinterval)
 	
 	# External signal handlers
 	signal.signal(signal.SIGINT,		luxconsole.set_interrupt)
 	signal.signal(signal.SIGTERM,		luxconsole.set_interrupt)
 	signal.signal(luxconsole.SIGSKIP,	luxconsole.set_interrupt)
 	
+	# All options are now set, lets start rendering... !
 	for scene_file in args:
 		if not os.path.exists(scene_file):
 			luxconsole.log('Scene file to render "%s" does not exist, skipping.'%scene_file)
 			continue
 		
-		if options.useserver is not None:
-			for srv in options.useserver:
-				ctx.addServer(srv)
-		
-		os.chdir(os.path.dirname(scene_file))
-		
-		luxconsole.stats_thread = LuxAPIStats({
-			'lux_context': ctx
-		})
-		
-		ctx.parse(scene_file, True) # asynchronous parse (ie. don't wait)
-		
-		# wait here for parsing to complete
-		while ctx.statistics('sceneIsReady') != 1.0:
-			time.sleep(0.3)
-		
-		# Get the resolution for use later
-		xres = ctx.getAttribute('film', 'xResolution')
-		yres = ctx.getAttribute('film', 'yResolution')
-		
-		# TODO: add support to pylux for reporting parse errors after async parse
-		
-		for i in range(threads-1):
-			ctx.addThread()
+		# Create and (later) delete a context for each render
+		ctx = luxconsole.context_factory(options, scene_file)
 		
 		try:
+			xres = yres = 0
+			
+			os.chdir(os.path.dirname(scene_file))
+			
+			luxconsole.stats_thread = LuxAPIStats({
+				'lux_context': ctx
+			})
+			
+			ctx.parse(scene_file, True) # asynchronous parse (ie. don't wait)
+			
+			# wait here for parsing to complete
+			while ctx.statistics('sceneIsReady') != 1.0:
+				time.sleep(0.3)
+				if not ctx.parseSuccessful():
+					raise RenderSkipException('Skipping bad scene file')
+			
+			# Get the resolution for use later
+			xres = ctx.getAttribute('film', 'xResolution')
+			yres = ctx.getAttribute('film', 'yResolution')
+			
+			# TODO: add support to pylux for reporting parse errors after async parse
+			
+			for i in range(threads-1):
+				ctx.addThread()
+			
 			# Render wait loop
 			while ctx.statistics('filmIsReady') != 1.0 and \
 				  ctx.statistics('terminated') != 1.0 and \
@@ -352,19 +364,19 @@ if __name__ == '__main__':
 			luxconsole.log('Stopping all rendering... (%s)' % StopReason)
 			luxconsole.stop_queue = True
 		
-		luxconsole.stats_thread.kick()
 		ctx.exit()
 		ctx.wait()
 		
-		# Calculate actual overall render speed
-		samples, sec = xres*yres*luxconsole.stats_thread.stats_dict['samplesPx'], luxconsole.stats_thread.stats_dict['secElapsed']
-		luxconsole.log('Render finished after %s at %0.2f Samples/Sec' % (format_elapsed_time(sec), samples/sec))
+		if xres > 0 and yres > 0:
+			# Calculate actual overall render speed
+			luxconsole.stats_thread.kick()
+			samples, sec = xres*yres*luxconsole.stats_thread.stats_dict['samplesPx'], luxconsole.stats_thread.stats_dict['secElapsed']
+			luxconsole.log('Render finished after %s at %0.2f Samples/Sec' % (format_elapsed_time(sec), samples/sec))
 		
 		ctx.cleanup()
 		
-		# disconnect all servers
-		for srv_info in ctx.getRenderingServersStatus():
-			ctx.removeServer(srv_info.name)
+		# deleting the context will disconnect all servers being used and free memory
+		del ctx
 		
 		if luxconsole.stop_queue:
 			break

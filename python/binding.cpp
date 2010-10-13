@@ -289,6 +289,10 @@ public:
 			RenderingServerInfo RSI = boost::python::extract<RenderingServerInfo>(server_list[n]);
 			context->RemoveServer( RSI.name );
 		}
+
+		// free the context
+		delete context;
+		context = NULL;
 	}
 
 	/**
@@ -302,18 +306,23 @@ public:
 		return boost::python::str(o.str().c_str());
 	}
 
-	int parse(const char *filename, bool async)
+	bool parse(const char *filename, bool async)
 	{
 		Context::SetActive(context);
 		if (async)
 		{
 			pyLuxWorldEndThreads.push_back(new boost::thread( boost::bind(luxParse, filename) ));
-			return true;
+			return true;	// Real parse status can be checked later with parseSuccess()
 		}
 		else
 		{
 			return luxParse(filename);
 		}
+	}
+
+	bool parseSuccessful()
+	{
+		return context->currentApiState != STATE_PARSE_FAIL;
 	}
 
 	void cleanup()
@@ -924,8 +933,9 @@ public:
 		context->DisableRandomMode();
 	}
 
-private:
 	std::string name;
+
+private:
 	Context *context;
 
 	std::vector<boost::thread *> pyLuxWorldEndThreads; //hold pointers to the worldend threads
@@ -1104,6 +1114,9 @@ BOOST_PYTHON_MODULE(pylux)
 		"Context",
 		ds_pylux_Context,
 		init<std::string>(args("Context", "name"), ds_pylux_Context_init)
+		)
+		.def_readonly("name",
+			&PyContext::name
 		)
 		.def("__repr__",
 			&PyContext::repr,
@@ -1323,6 +1336,10 @@ BOOST_PYTHON_MODULE(pylux)
 			&PyContext::parse,
 			args("Context", "filename", "asynchronous"),
 			ds_pylux_Context_parse
+			)
+		.def("parseSuccessful",
+			&PyContext::parseSuccessful,
+			args("Context")
 			)
 		.def("pause",
 			&PyContext::pause,

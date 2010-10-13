@@ -482,6 +482,8 @@ extern "C" void luxInit()
 // Parsing Global Interface
 int luxParse(const char *filename)
 {
+	bool parse_success = false;
+
 	//TODO jromang - add thread lock here (we can only parse in one context)
 	extern FILE *yyin;
 	extern int yyparse(void);
@@ -503,21 +505,22 @@ int luxParse(const char *filename)
 		// before parsing
 		include_clear();
 		yyrestart(yyin);
-		if (yyparse() != 0) {
+		parse_success = (yyparse() == 0);
+		if (!parse_success) {
 			// syntax error
 			Context::GetActive()->Free();
 			Context::GetActive()->Init();
+			Context::GetActive()->currentApiState = STATE_PARSE_FAIL;
 		}
 		if (yyin != stdin)
 			fclose(yyin);
 	} else {
-		LOG(LUX_SEVERE, LUX_NOFILE) << "Unable to read scenefile '" <<
-			filename << "'";
+		LOG(LUX_SEVERE, LUX_NOFILE) << "Unable to read scenefile '" << filename << "'";
 	}
 
 	currentFile = "";
 	lineNum = 0;
-	return (yyin != NULL);
+	return (yyin != NULL) && parse_success;
 }
 
 // Load/save FLM file

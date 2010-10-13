@@ -36,6 +36,7 @@ using std::map;
 #define STATE_UNINITIALIZED  0
 #define STATE_OPTIONS_BLOCK  1
 #define STATE_WORLD_BLOCK    2
+#define STATE_PARSE_FAIL     3
 
 namespace lux {
 
@@ -197,6 +198,8 @@ public:
 	//! \author jromang
 	QueryableRegistry registry;
 
+	int currentApiState;
+
 private:
 	// API Local Classes
 	struct RenderOptions {
@@ -279,7 +282,6 @@ private:
 	string name;
 	lux::Renderer *luxCurrentRenderer;
 	Scene *luxCurrentScene;
-	int currentApiState;
 	lux::Transform curTransform;
 	map<string, lux::Transform> namedCoordinateSystems;
 	RenderOptions *renderOptions;
