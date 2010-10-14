@@ -41,7 +41,7 @@ public:
 	virtual void Map(vector<XYZColor> &xyz, u_int xRes, u_int yRes, float maxDisplayY) const {
 		// read data from film
 		float gamma = luxGetParameterValue(LUX_FILM, LUX_FILM_TORGB_GAMMA);
-		float Y =  Context::GetActive()->Statistics("filmLuminance");
+		float Y =  Context::GetActive()->Statistics("averageLuminance");
 		
 		/*
 		(fstop * fstop) / exposure = Y*sensitivity/K

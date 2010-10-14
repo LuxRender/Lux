@@ -445,8 +445,11 @@ public:
 
 	u_int xResolution, yResolution;
 
-	// Statistic
+	// Statistics
+	float EV;
+	float averageLuminance;
 	double numberOfSamplesFromNetwork;
+	double numberOfLocalSamples;
 
 	ContributionPool *contribPool;
 
@@ -487,9 +490,7 @@ public:
 	int haltSamplePerPixel;
 	// Seconds to wait before to stop. Any value <= 0 will never stop the rendering
 	int haltTime;
-	float EV;
-	float filmLuminance;
-	double totalSamplesCount;
+
 	Histogram *histogram;
 	bool enoughSamplePerPixel; // At the end to get better data alignment
 

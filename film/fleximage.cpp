@@ -943,7 +943,7 @@ void FlexImageFilm::WriteImage(ImageType type)
 	// where L is the luminance, S is the ISO speed and K is a constant
 	// usually S is taken to be 100 and K to be 12.5
 	EV = logf(Y * 8.f) / logf(2.f);
-	filmLuminance = Y;
+	averageLuminance = Y;
 }
 
 // GUI LDR framebuffer access methods

@@ -137,7 +137,7 @@ static void writeTransmitFilm(basic_ostream<char> &stream, const string &filenam
 
 	ofstream out(tempfile.c_str(), ios::out | ios::binary);
 	Context::GetActive()->TransmitFilm(out, true, false);
-	out.close();							
+	out.close();
 
 	if (!out.fail()) {
 		remove(file.c_str());

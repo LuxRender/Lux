@@ -123,7 +123,7 @@ class LuxAPIStats(TimerThread):
 			self.px = ctx.getAttribute('film', 'xResolution') * ctx.getAttribute('film', 'yResolution')
 		
 		self.secelapsed = ctx.statistics('secElapsed')
-		self.localsamples = ctx.statistics('totalSamplesCount')
+		self.localsamples = ctx.getAttribute('film', 'numberOfLocalSamples')
 		
 		self.stats_string  = '%s [Local: %0.2f S/Px - %0.2f S/Sec]' % (
 			format_elapsed_time(self.secelapsed),
@@ -133,10 +133,7 @@ class LuxAPIStats(TimerThread):
 		
 		network_servers = ctx.getServerCount()
 		if network_servers > 0:
-			
-			self.netsamples = 0
-			for rsi in ctx.getRenderingServersStatus():
-				self.netsamples += rsi.numberOfSamplesReceived
+			self.netsamples = ctx.getAttribute('film', 'numberOfSamplesFromNetwork')
 			self.stats_string += ' [Net (%i): %0.2f S/Px - %0.2f S/Sec]' % (
 				network_servers,
 				self.netsamples / self.px,
@@ -313,7 +310,9 @@ if __name__ == '__main__':
 		try:
 			aborted = False
 			
-			os.chdir(os.path.dirname(scene_file))
+			scene_path = os.path.dirname(scene_file)
+			if scene_path !='':
+				os.chdir(scene_path)
 			
 			luxconsole.stats_thread = LuxAPIStats({
 				'lux_context': ctx
@@ -354,17 +353,17 @@ if __name__ == '__main__':
 		ctx.exit()
 		ctx.wait()
 		
-		if not aborted:
-			# Calculate actual overall render speed (network inclusive)
-			sec = luxconsole.stats_thread.secelapsed
-			samples = luxconsole.stats_thread.localsamples + luxconsole.stats_thread.netsamples
-			luxconsole.log(
-				'Image rendered to %0.2f S/Px after %s at %0.2f Samples/Sec' % (
-					samples/luxconsole.stats_thread.px,
-					format_elapsed_time(sec),
-					samples/sec
-				)
-			)
+#		if not aborted:
+#			# Calculate actual overall render speed (network inclusive)
+#			sec = luxconsole.stats_thread.secelapsed
+#			samples = luxconsole.stats_thread.localsamples + luxconsole.stats_thread.netsamples
+#			luxconsole.log(
+#				'Image rendered to %0.2f S/Px after %s at %0.2f Samples/Sec' % (
+#					samples/luxconsole.stats_thread.px,
+#					format_elapsed_time(sec),
+#					samples/sec
+#				)
+#			)
 		
 		ctx.cleanup()
 		
