@@ -817,6 +817,7 @@ public:
 			QueryableAttribute attr=(*object)[attributeName];
 			if(attr.type==ATTRIBUTE_INT) return boost::python::object(attr.IntValue());
 			if(attr.type==ATTRIBUTE_FLOAT) return boost::python::object(attr.FloatValue());
+			if(attr.type==ATTRIBUTE_DOUBLE) return boost::python::object(attr.DoubleValue());
 			if(attr.type==ATTRIBUTE_STRING) return boost::python::object(attr.Value());
 
 			LOG(LUX_ERROR,LUX_BUG)<<"Unknown attribute type in pyLuxGetOption";
@@ -841,6 +842,10 @@ public:
 
 			case ATTRIBUTE_FLOAT :
 				attribute.SetValue(boost::python::extract<float>(value));
+				break;
+
+			case ATTRIBUTE_DOUBLE :
+				attribute.SetValue(boost::python::extract<double>(value));
 				break;
 
 			case ATTRIBUTE_STRING :

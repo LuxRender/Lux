@@ -153,6 +153,32 @@ public:
 		object.AddAttribute(tmpAttribute);
 	}
 
+	template<class T> friend void AddDoubleAttribute(T &object,
+		const std::string &name, const std::string &description,
+		double T::*f, AttributeAccess access = ReadOnlyAccess) {
+
+		QueryableAttribute tmpAttribute(name, ATTRIBUTE_DOUBLE, description);
+		if (access == ReadWriteAccess)
+			tmpAttribute.setDoubleFunc = boost::bind(f, boost::ref(object));
+		else
+			tmpAttribute.setDoubleFunc = boost::bind(&QueryableAttribute::ReadOnlyFloatError, _1);
+		tmpAttribute.getDoubleFunc = boost::bind(f, boost::ref(object));
+		object.AddAttribute(tmpAttribute);
+	}
+	template<class T> friend void AddDoubleAttribute(T &object,
+		const std::string &name, const std::string &description,
+		double (T::*get)(), void (T::*set)(double) = NULL) {
+
+		QueryableAttribute tmpAttribute(name, ATTRIBUTE_DOUBLE, description);
+		if (set)
+			tmpAttribute.setDoubleFunc = boost::bind(set,
+				boost::ref(object), _1);
+		else
+			tmpAttribute.setDoubleFunc = boost::bind(&QueryableAttribute::ReadOnlyFloatError, _1);
+		tmpAttribute.getDoubleFunc = boost::bind(get, boost::ref(object));
+		object.AddAttribute(tmpAttribute);
+	}
+
 	template<class T> friend void AddIntAttribute(T &object,
 		const std::string &name, const std::string &description,
 		int T::*i, AttributeAccess access = ReadOnlyAccess) {

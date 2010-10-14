@@ -33,7 +33,7 @@
 namespace lux
 {
 
-typedef enum {ATTRIBUTE_NONE, ATTRIBUTE_INT, ATTRIBUTE_FLOAT, ATTRIBUTE_STRING} AttributeType;
+typedef enum {ATTRIBUTE_NONE, ATTRIBUTE_INT, ATTRIBUTE_FLOAT, ATTRIBUTE_DOUBLE, ATTRIBUTE_STRING} AttributeType;
 
 
 /*
@@ -68,6 +68,7 @@ public:
 		{
 			case ATTRIBUTE_STRING: return getStringFunc();
 			case ATTRIBUTE_FLOAT: return boost::lexical_cast<std::string>(getFloatFunc());
+			case ATTRIBUTE_DOUBLE: return boost::lexical_cast<std::string>(getDoubleFunc());
 			case ATTRIBUTE_INT: return boost::lexical_cast<std::string>(getIntFunc());
 			default:
 				LOG(LUX_SEVERE,LUX_BUG)<< "QueryableAttribute has invalid attribute type";
@@ -79,6 +80,12 @@ public:
 	{
 		BOOST_ASSERT(type==ATTRIBUTE_FLOAT);
 		return getFloatFunc();
+	}
+
+	float DoubleValue()
+	{
+		BOOST_ASSERT(type==ATTRIBUTE_DOUBLE);
+		return getDoubleFunc();
 	}
 
 	int IntValue()
@@ -94,6 +101,7 @@ public:
 		switch(type)
 		{
 			case ATTRIBUTE_FLOAT: setFloatFunc(boost::lexical_cast<float>(value));
+			case ATTRIBUTE_DOUBLE: setDoubleFunc(boost::lexical_cast<double>(value));
 			case ATTRIBUTE_INT: setIntFunc(boost::lexical_cast<int>(value));
 			default: LOG(LUX_SEVERE,LUX_BUG)<< "QueryableAttribute has invalid attribute type";
 		}
@@ -103,6 +111,12 @@ public:
 	{
 		BOOST_ASSERT(type==ATTRIBUTE_FLOAT);
 		setFloatFunc(f);
+	}
+
+	void SetValue(double f)
+	{
+		BOOST_ASSERT(type==ATTRIBUTE_DOUBLE);
+		setDoubleFunc(f);
 	}
 
 	void SetValue(int i)
@@ -118,6 +132,9 @@ public:
 	boost::function<void (float)> setFloatFunc;
 	boost::function<float (void)> getFloatFunc;
 
+	boost::function<void (double)> setDoubleFunc;
+	boost::function<double (void)> getDoubleFunc;
+
 	boost::function<void (std::string)> setStringFunc;
 	boost::function<std::string (void)> getStringFunc;
 	//...TODO add all types here
@@ -125,6 +142,7 @@ public:
 	//Default error functions for readonly attributes
 	static void ReadOnlyIntError(int i);
 	static void ReadOnlyFloatError(float f);
+	static void ReadOnlyDoubleError(double f);
 	static void ReadOnlyStringError(std::string s);
 
 //private:
