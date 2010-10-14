@@ -287,7 +287,7 @@ public:
 		for(boost::python::ssize_t n=0; n<boost::python::len(server_list); n++)
 		{
 			RenderingServerInfo RSI = boost::python::extract<RenderingServerInfo>(server_list[n]);
-			context->RemoveServer( RSI.name );
+			context->RemoveServer( RSI );
 		}
 
 		// free the context

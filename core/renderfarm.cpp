@@ -218,6 +218,21 @@ void RenderFarm::disconnect(const string &serverName) {
 	}
 }
 
+void RenderFarm::disconnect(const RenderingServerInfo &serverInfo) {
+	stringstream ss;
+	try {
+		LOG( LUX_INFO,LUX_NOERROR)
+			<< "Disconnect from server: "
+			<< serverInfo.name << ":" << serverInfo.port;
+
+		tcp::iostream stream(serverInfo.name, serverInfo.port);
+		stream << "ServerDisconnect" << endl;
+		stream << serverInfo.sid << endl;
+	} catch (exception& e) {
+		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
+	}
+}
+
 void RenderFarm::disconnect(const ExtRenderingServerInfo &serverInfo) {
 	stringstream ss;
 	try {

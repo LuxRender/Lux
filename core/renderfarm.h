@@ -76,6 +76,7 @@ public:
 	// Dade - Disconnect from all servers
 	void disconnectAll();
 	void disconnect(const string &serverName);
+	void disconnect(const RenderingServerInfo &serverInfo);
 
 	void send(const std::string &command);
 	void send(const std::string &command,

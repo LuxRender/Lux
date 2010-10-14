@@ -181,6 +181,7 @@ public:
 	void TransmitFilm(std::basic_ostream<char> &stream);
 	void TransmitFilm(std::basic_ostream<char> &stream, bool useCompression, bool directWrite);
 	void AddServer(const string &name);
+	void RemoveServer(const RenderingServerInfo &rsi);
 	void RemoveServer(const string &name);
 	u_int GetServerCount();
 	u_int GetRenderingServersStatus(RenderingServerInfo *info, u_int maxInfoCount);

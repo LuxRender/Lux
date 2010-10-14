@@ -159,6 +159,14 @@ void Context::AddServer(const string &n) {
 		renderFarm->startFilmUpdater(luxCurrentScene);
 }
 
+void Context::RemoveServer(const RenderingServerInfo &rsi) {
+	renderFarm->disconnect(rsi);
+
+	// NOTE - Ratow - if this is the last server, make sure update thread is stopped
+	if (GetServerCount() == 0)
+		renderFarm->stopFilmUpdater();
+}
+
 void Context::RemoveServer(const string &n) {
 	renderFarm->disconnect(n);
 
