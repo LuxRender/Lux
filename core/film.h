@@ -489,6 +489,7 @@ public:
 	int haltTime;
 	float EV;
 	float filmLuminance;
+	double totalSamplesCount;
 	Histogram *histogram;
 	bool enoughSamplePerPixel; // At the end to get better data alignment
 

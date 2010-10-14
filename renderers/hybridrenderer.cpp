@@ -347,6 +347,8 @@ double HybridRenderer::Statistics(const string &statName) {
 		return scene->camera->film->EV;
 	else if(statName == "filmLuminance")
 		return scene->camera->film->filmLuminance;
+	else if(statName == "totalSamplesCount")
+		return scene->camera->film->totalSamplesCount;
 	else if (statName == "enoughSamples")
 		return scene->camera->film->enoughSamplePerPixel;
 	else {
