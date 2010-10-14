@@ -547,18 +547,20 @@ void LoopSubdiv::weightBoundary(SDVertex *destVert,  SDVertex *vert,
 		P += beta * Vring[0]->P;
 		P += beta * Vring[valence - 1]->P;
 		destVert->P = P;
-	} else
+
+		float u = (1 - 2 * beta) * vert->u;
+		float v = (1 - 2 * beta) * vert->v;
+		u += beta * Vring[0]->u;
+		v += beta * Vring[0]->v;
+		u += beta * Vring[valence - 1]->u;
+		v += beta * Vring[valence - 1]->v;
+		destVert->u = u;
+		destVert->v = v;
+	} else {
 		destVert->P = vert->P;
-
-	float u = (1 - 2 * beta) * vert->u;
-	float v = (1 - 2 * beta) * vert->v;
-	u += beta * Vring[0]->u;
-	v += beta * Vring[0]->v;
-	u += beta * Vring[valence - 1]->u;
-	v += beta * Vring[valence - 1]->v;
-
-	destVert->u = u;
-	destVert->v = v;
+		destVert->u = vert->u;
+		destVert->v = vert->v;
+	}
 }
 
 Shape *LoopSubdiv::CreateShape(
