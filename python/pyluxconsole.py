@@ -134,11 +134,16 @@ class LuxAPIStats(TimerThread):
 		network_servers = ctx.getServerCount()
 		if network_servers > 0:
 			self.netsamples = ctx.getAttribute('film', 'numberOfSamplesFromNetwork')
-			self.stats_string += ' [Net (%i): %0.2f S/Px - %0.2f S/Sec]' % (
-				network_servers,
-				self.netsamples / self.px,
-				self.netsamples / self.secelapsed
-			)
+			if self.netsamples == 0:
+				self.stats_string += ' [Net (%i): Waiting for first update...]' % (
+					network_servers
+				)
+			else:
+				self.stats_string += ' [Net (%i): %0.2f S/Px - %0.2f S/Sec]' % (
+					network_servers,
+					self.netsamples / self.px,
+					self.netsamples / self.secelapsed
+				)
 
 class RenderEndException(Exception):
 	pass
@@ -353,17 +358,17 @@ if __name__ == '__main__':
 		ctx.exit()
 		ctx.wait()
 		
-#		if not aborted:
-#			# Calculate actual overall render speed (network inclusive)
-#			sec = luxconsole.stats_thread.secelapsed
-#			samples = luxconsole.stats_thread.localsamples + luxconsole.stats_thread.netsamples
-#			luxconsole.log(
-#				'Image rendered to %0.2f S/Px after %s at %0.2f Samples/Sec' % (
-#					samples/luxconsole.stats_thread.px,
-#					format_elapsed_time(sec),
-#					samples/sec
-#				)
-#			)
+		if not aborted:
+			# Calculate actual overall render speed (network inclusive)
+			sec = luxconsole.stats_thread.secelapsed
+			samples = luxconsole.stats_thread.localsamples + luxconsole.stats_thread.netsamples
+			luxconsole.log(
+				'Image rendered to %0.2f S/Px after %s at %0.2f Samples/Sec' % (
+					samples/luxconsole.stats_thread.px,
+					format_elapsed_time(sec),
+					samples/sec
+				)
+			)
 		
 		ctx.cleanup()
 		
