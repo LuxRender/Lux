@@ -104,44 +104,12 @@ class LuxAPIStats(TimerThread):
 	
 	KICK_PERIOD = 0.5
 	
-	stats_order = [
-		'secElapsed',
-		'samplesSec',
-		'samplesTotSec',
-		'samplesPx',
-		#'efficiency',
-	]
-	
-	stats_dict = {
-		'secElapsed':		0.0,
-		'samplesSec':		0.0,
-		'samplesTotSec':	0.0,
-		'samplesPx':		0.0,
-		#'efficiency':		0.0,
-		#'filmXres':		0.0,
-		#'filmYres':		0.0,
-		#'displayInterval':	0.0,
-		#'filmEV':			0.0,
-		#'sceneIsReady':	0.0,
-		#'filmIsReady':		0.0,
-		#'terminated':		0.0,
-		#'enoughSamples':	0.0,
-	}
-	
-	stats_format = {
-		'secElapsed':		format_elapsed_time,
-		'samplesSec':		lambda x: 'Samples/Sec: %0.2f'%x,
-		'samplesTotSec':	lambda x: 'Total Samples/Sec: %0.2f'%x,
-		'samplesPx':		lambda x: 'Samples/Px: %0.2f'%x,
-		#'efficiency':		lambda x: 'Efficiency: %0.2f %%'%x,
-		#'filmEV':			lambda x: 'EV: %0.2f'%x,
-		#'sceneIsReady':	lambda x: 'SIR: '+ ('True' if x else 'False'),
-		#'filmIsReady':		lambda x: 'FIR: %f'%x,
-		#'terminated':		lambda x: 'TERM: %f'%x,
-		#'enoughSamples':	lambda x: 'HALT: '+ ('True' if x else 'False'),
-	}
-	
 	stats_string = ''
+	
+	px = 0
+	secelapsed = 0
+	localsamples = 0
+	netsamples = 0
 	
 	def stop(self):
 		self.active = False
@@ -149,14 +117,31 @@ class LuxAPIStats(TimerThread):
 			self.timer.cancel()
 			
 	def kick(self):
-		for k in self.stats_dict.keys():
-			self.stats_dict[k] = self.LocalStorage['lux_context'].statistics(k)
+		ctx = self.LocalStorage['lux_context']
 		
-		self.stats_string = ' - '.join(['%s'%self.stats_format[k](self.stats_dict[k]) for k in self.stats_order])
+		if self.px == 0:
+			self.px = ctx.getAttribute('film', 'xResolution') * ctx.getAttribute('film', 'yResolution')
 		
-		network_servers = self.LocalStorage['lux_context'].getServerCount()
+		self.secelapsed = ctx.statistics('secElapsed')
+		self.localsamples = ctx.statistics('totalSamplesCount')
+		
+		self.stats_string  = '%s [Local: %0.2f S/Px - %0.2f S/Sec]' % (
+			format_elapsed_time(self.secelapsed),
+			self.localsamples / self.px,
+			self.localsamples / self.secelapsed
+		)
+		
+		network_servers = ctx.getServerCount()
 		if network_servers > 0:
-			self.stats_string += ' - %i Active Slaves' % network_servers
+			
+			self.netsamples = 0
+			for rsi in ctx.getRenderingServersStatus():
+				self.netsamples += rsi.numberOfSamplesReceived
+			self.stats_string += ' [Net (%i): %0.2f S/Px - %0.2f S/Sec]' % (
+				network_servers,
+				self.netsamples / self.px,
+				self.netsamples / self.secelapsed
+			)
 
 class RenderEndException(Exception):
 	pass
@@ -326,7 +311,7 @@ if __name__ == '__main__':
 		ctx = luxconsole.context_factory(options, scene_file)
 		
 		try:
-			xres = yres = 0
+			aborted = False
 			
 			os.chdir(os.path.dirname(scene_file))
 			
@@ -360,26 +345,30 @@ if __name__ == '__main__':
 		except RenderSkipException as StopReason:
 			luxconsole.log('Stopping this render... (%s)' % StopReason)
 			# continue
+			aborted = True
 		except RenderEndException as StopReason:
 			luxconsole.log('Stopping all rendering... (%s)' % StopReason)
+			aborted = True
 			luxconsole.stop_queue = True
 		
 		ctx.exit()
 		ctx.wait()
 		
-		if xres > 0 and yres > 0:
-			# Calculate actual overall render speed
-			luxconsole.stats_thread.kick()
-			samples, sec = xres*yres*luxconsole.stats_thread.stats_dict['samplesPx'], luxconsole.stats_thread.stats_dict['secElapsed']
-			luxconsole.log('Render finished after %s at %0.2f Samples/Sec' % (format_elapsed_time(sec), samples/sec))
+		if not aborted:
+			# Calculate actual overall render speed (network inclusive)
+			sec = luxconsole.stats_thread.secelapsed
+			samples = luxconsole.stats_thread.localsamples + luxconsole.stats_thread.netsamples
+			luxconsole.log(
+				'Image rendered to %0.2f S/Px after %s at %0.2f Samples/Sec' % (
+					samples/luxconsole.stats_thread.px,
+					format_elapsed_time(sec),
+					samples/sec
+				)
+			)
 		
 		ctx.cleanup()
 		
-		# Disconnect all connected servers
-		for rsi in ctx.getRenderingServersStatus():
-			ctx.removeServer(rsi.name)
-		
-		# deleting the context will free memory
+		# deleting the context will disconnect all connected servers and free memory
 		del ctx
 		
 		if luxconsole.stop_queue:
