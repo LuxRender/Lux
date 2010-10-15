@@ -59,14 +59,15 @@ const char * QueryableRegistry::GetContent()
 		XMLOutput << "  <object>"<<std::endl;
 		XMLOutput << "    <name>"<<pairQObject.first<<"</name>"<<std::endl;
 
-		std::pair<std::string, QueryableAttribute> pairQAttribute;
+		std::pair<std::string, boost::shared_ptr<QueryableAttribute> > pairQAttribute;
 		BOOST_FOREACH( pairQAttribute, *(pairQObject.second) )
 		{
 			XMLOutput<<"    <attribute>"<<std::endl;
-			XMLOutput<<"      <name>"<< pairQAttribute.second.name <<"</name>"<<std::endl;
-			XMLOutput<<"      <type>"<< typeString[pairQAttribute.second.type] <<"</type>"<<std::endl;
-			XMLOutput<<"      <description>"<< pairQAttribute.second.description <<"</description>"<<std::endl;
-			XMLOutput<<"      <value>"<< pairQAttribute.second.Value() <<"</value>"<<std::endl;
+			XMLOutput<<"      <name>"<< pairQAttribute.second->name <<"</name>"<<std::endl;
+			XMLOutput<<"      <type>"<< pairQAttribute.second->TypeStr() <<"</type>"<<std::endl;
+			XMLOutput<<"      <description>"<< pairQAttribute.second->description <<"</description>"<<std::endl;
+			XMLOutput<<"      <value>"<< pairQAttribute.second->Value() <<"</value>"<<std::endl;
+			XMLOutput<<"      <default>"<< pairQAttribute.second->DefaultValue() <<"</default>"<<std::endl;
 			XMLOutput<<"    </attribute>"<<std::endl;
 		}
 

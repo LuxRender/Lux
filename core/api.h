@@ -221,6 +221,7 @@ int luxGetStringAttribute(const char * objectName, const char * attributeName, c
 
 float luxGetFloatAttribute(const char * objectName, const char * attributeName); /* Returns the value of a float attribute */
 int luxGetIntAttribute(const char * objectName, const char * attributeName); /* Returns the value of an int attribute */
+void luxSetIntAttribute(const char * objectName, const char * attributeName, int value); /* Sets an int attribute value */
 void luxSetAttribute(const char * objectName, const char * attributeName, int n, void *values); /* Sets an attribute value */
 
 /* Networking */

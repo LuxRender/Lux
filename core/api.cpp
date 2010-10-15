@@ -673,16 +673,20 @@ extern "C" bool luxHasObject(const char * objectName)
 
 extern "C" int luxGetStringAttribute(const char * objectName, const char * attributeName, char * dest, unsigned int destlen) 
 {
-	Queryable *object=Context::GetActive()->registry[objectName];
-	if (object) {
-		string str = (*object)[attributeName].Value();
-		unsigned int copylen = str.length() < destlen ? str.length() + 1 : destlen;
-		if (copylen > 0) {
-			strncpy(dest, str.c_str(), copylen - 1);
-			dest[copylen - 1] = '\0';
-			return copylen;
+	try { 
+		Queryable *object=Context::GetActive()->registry[objectName];
+		if (object) {
+			string str = (*object)[attributeName].Value();
+			unsigned int copylen = str.length() < destlen ? str.length() + 1 : destlen;
+			if (copylen > 0) {
+				strncpy(dest, str.c_str(), copylen - 1);
+				dest[copylen - 1] = '\0';
+				return copylen;
+			}
+			return 0;
 		}
-		return 0;
+	} catch (std::runtime_error e) {
+		LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
 	}
 
 	return 0;
@@ -690,20 +694,42 @@ extern "C" int luxGetStringAttribute(const char * objectName, const char * attri
 
 extern "C" float luxGetFloatAttribute(const char * objectName, const char * attributeName)
 {
-	Queryable *object=Context::GetActive()->registry[objectName];
-	if (object) 
-		return (*object)[attributeName].FloatValue();
+	try { 
+		Queryable *object=Context::GetActive()->registry[objectName];
+		if (object) 
+			return (*object)[attributeName].FloatValue();
+	} catch (std::runtime_error e) {
+		LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
+	}
 
 	return 0;
 }
 
 extern "C" int luxGetIntAttribute(const char * objectName, const char * attributeName)
 {
-	Queryable *object=Context::GetActive()->registry[objectName];
-	if (object) 
-		return (*object)[attributeName].IntValue();
+	try { 
+		Queryable *object=Context::GetActive()->registry[objectName];
+		if (object) 
+			return (*object)[attributeName].IntValue();
+	} catch (std::runtime_error e) {
+		LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
+	}
 
 	return 0;
+}
+
+extern "C" void luxSetIntAttribute(const char * objectName, const char * attributeName, int value)
+{
+	Queryable *object=Context::GetActive()->registry[objectName];
+	if (object) {
+		try {
+			(*object)[attributeName] = value;
+		} catch (std::runtime_error e) {
+			LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
+		}
+	} else {
+		LOG(LUX_ERROR,LUX_BADTOKEN)<<"Unknown object '"<<objectName<<"'";
+	}
 }
 
 extern "C" void luxSetAttribute(const char * objectName, const char * attributeName, int n, void *values)
@@ -711,25 +737,24 @@ extern "C" void luxSetAttribute(const char * objectName, const char * attributeN
 	Queryable *object=Context::GetActive()->registry[objectName];
 	if (object) {
 		QueryableAttribute &attribute=(*object)[attributeName];
-		//return (*object)[attributeName].IntValue();
-		switch(attribute.type)
+		switch(attribute.Type())
 		{
-		case ATTRIBUTE_INT :
+		case AttributeType::Int :
 			BOOST_ASSERT(n==1);
-			attribute.SetValue(*((int*)values));
+			attribute = (*((int*)values));
 			break;
 
-		case ATTRIBUTE_FLOAT :
+		case AttributeType::Float :
 			BOOST_ASSERT(n==1);
-			attribute.SetValue(*((float*)values));
+			attribute = (*((float*)values));
 			break;
 
-		case ATTRIBUTE_STRING :
+		case AttributeType::String :
 			BOOST_ASSERT(n==1);
-			attribute.SetValue((char*)values);
+			attribute = ((char*)values);
 			break;
 
-		case ATTRIBUTE_NONE :
+		case AttributeType::None :
 		default:
 			LOG(LUX_ERROR,LUX_BUG)<<"Unknown attribute type for '"<<attributeName<<"' in object '"<<objectName<<"'";
 		}

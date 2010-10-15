@@ -558,8 +558,6 @@ Film::Film(u_int xres, u_int yres, Filter *filt, const float crop[4],
 	EV(0.f), averageLuminance(0.f), numberOfLocalSamples(0), histogram(NULL), enoughSamplePerPixel(false)
 {
 	//Queryable parameters
-//	AddIntAttribute("xResolution", boost::bind(&Film::GetXResolution, boost::ref(*this)) );
-//	AddIntAttribute("yResolution", boost::bind(&Film::GetYResolution, boost::ref(*this)) );
 	AddIntAttribute(*this, "xResolution", "Horizontal resolution (pixels)", &Film::GetXResolution);
 	AddIntAttribute(*this, "yResolution", "Vertical resolution (pixels)", &Film::GetYResolution);
 	AddStringAttribute(*this, "filename", "Output filename", &Film::filename);
@@ -567,6 +565,7 @@ Film::Film(u_int xres, u_int yres, Filter *filt, const float crop[4],
 	AddFloatAttribute(*this, "averageLuminance", "Average Image Luminance", &Film::averageLuminance);
 	AddDoubleAttribute(*this, "numberOfLocalSamples", "Number of samples contributed to film on the local machine", &Film::numberOfLocalSamples);
 	AddDoubleAttribute(*this, "numberOfSamplesFromNetwork", "Number of samples contributed from network slaves", &Film::numberOfSamplesFromNetwork);
+	AddBoolAttribute(*this, "enoughSamples", "Indicates if the halt condition been reached", &Film::enoughSamplePerPixel);
 
 	// Compute film image extent
 	memcpy(cropWindow, crop, 4 * sizeof(float));

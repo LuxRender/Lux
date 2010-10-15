@@ -262,15 +262,14 @@ pylux.worldEnd()
 class PyContext
 {
 public:
-	PyContext(std::string _name)
+	PyContext(std::string name)
 	{
 		//System wide init
 		boost::call_once(&luxInit, luxInitFlag);
 
 		//Here we create a new context
-		name = _name;
-		context=new Context(_name);
-		// LOG(LUX_INFO,LUX_NOERROR)<<"Created new context : '"<<name<<"'";
+		context=new Context(name);
+		LOG(LUX_INFO,LUX_NOERROR)<<"Created new context : '"<<name<<"'";
 	}
 
 	~PyContext()
@@ -281,38 +280,18 @@ public:
 			delete(t);
 		}
 		pyLuxWorldEndThreads.clear();
-
-		// Close any active net connections
-		boost::python::list server_list( getRenderingServersStatus() );
-		for(boost::python::ssize_t n=0; n<boost::python::len(server_list); n++)
-		{
-			RenderingServerInfo RSI = boost::python::extract<RenderingServerInfo>(server_list[n]);
-			context->RemoveServer( RSI );
-		}
-
-		// free the context
-		delete context;
-		context = NULL;
 	}
 
-	/**
-	 * Return a useful string to represent Context objects:
-	 *  <pylux.Context name>
-	 */
-	boost::python::str repr()
-	{
-		std::stringstream o(std::ios_base::out);
-		o << "<pylux.Context " << name << ">";
-		return boost::python::str(o.str().c_str());
-	}
+	void greet() { LOG(LUX_INFO,LUX_NOERROR)<<"Hello from context '"<<context->GetName()<<"' !"; }
 
-	bool parse(const char *filename, bool async)
+	int parse(const char *filename, bool async)
 	{
+		//TODO jromang - add thread lock here (we can only parse in one context)
 		Context::SetActive(context);
 		if (async)
 		{
 			pyLuxWorldEndThreads.push_back(new boost::thread( boost::bind(luxParse, filename) ));
-			return true;	// Real parse status can be checked later with parseSuccess()
+			return true;
 		}
 		else
 		{
@@ -320,49 +299,34 @@ public:
 		}
 	}
 
-	bool parseSuccessful()
-	{
-		return context->currentApiState != STATE_PARSE_FAIL;
-	}
-
-	void cleanup()
-	{
+	void cleanup() {
 		Context::SetActive(context);
 		context->Cleanup();
 	}
-
-	void identity()
-	{
+	void identity() {
 		Context::SetActive(context);
 		context->Identity();
 	}
-
-	void translate(float dx, float dy, float dz)
-	{
+	void translate(float dx, float dy, float dz) {
 		Context::SetActive(context);
 		context->Translate(dx,dy,dz);
 	}
-
-	void rotate(float angle, float ax, float ay, float az)
-	{
+	void rotate(float angle, float ax, float ay, float az) {
 		Context::SetActive(context);
 		context->Rotate(angle,ax,ay,az);
 	}
-
-	void scale(float sx, float sy, float sz)
-	{
+	void scale(float sx, float sy, float sz) {
 		Context::SetActive(context);
 		context->Scale(sx,sy,sz);
 	}
-
-	void lookAt(float ex, float ey, float ez, float lx, float ly, float lz, float ux, float uy, float uz)
-	{
+	void lookAt(float ex, float ey, float ez, float lx, float ly, float lz, float ux, float uy, float uz) {
 		Context::SetActive(context);
 		context->LookAt(ex, ey, ez, lx, ly, lz, ux, uy, uz);
 	}
 
 	void concatTransform(boost::python::list tx)
 	{
+
 		boost::python::extract<boost::python::list> listExtractor(tx);
 
 		//std::cout<<"this is a LIST - WARNING ASSUMING FLOATS :";
@@ -407,14 +371,11 @@ public:
 				memoryPool.purge_memory();
 	}
 
-	void coordinateSystem(const char *name)
-	{
+	void coordinateSystem(const char *name) {
 		Context::SetActive(context);
 		context->CoordinateSystem(std::string(name));
 	}
-
-	void coordSysTransform(const char *name)
-	{
+	void coordSysTransform(const char *name) {
 		Context::SetActive(context);
 		context->CoordSysTransform(std::string(name));
 	}
@@ -483,32 +444,23 @@ public:
 		memoryPool.purge_memory();
 	}
 
-	void worldBegin()
-	{
+	void worldBegin() {
 		Context::SetActive(context);
 		context->WorldBegin();
 	}
-
-	void attributeBegin()
-	{
+	void attributeBegin() {
 		Context::SetActive(context);
 		context->AttributeBegin();
 	}
-
-	void attributeEnd()
-	{
+	void attributeEnd() {
 		Context::SetActive(context);
 		context->AttributeEnd();
 	}
-
-	void transformBegin()
-	{
+	void transformBegin() {
 		Context::SetActive(context);
 		context->TransformBegin();
 	}
-
-	void transformEnd()
-	{
+	void transformEnd() {
 		Context::SetActive(context);
 		context->TransformEnd();
 	}
@@ -523,6 +475,7 @@ public:
 
 	void material(const char *name, boost::python::list params)
 	{
+
 		EXTRACT_PARAMETERS(params);
 		Context::SetActive(context);
 		context->Material(name, PASS_PARAMSET);
@@ -537,8 +490,7 @@ public:
 		memoryPool.purge_memory();
 	}
 
-	void namedMaterial(const char *name)
-	{
+	void namedMaterial(const char *name) {
 		Context::SetActive(context);
 		context->NamedMaterial(name);
 	}
@@ -583,8 +535,7 @@ public:
 		memoryPool.purge_memory();
 	}
 
-	void reverseOrientation()
-	{
+	void reverseOrientation() {
 		Context::SetActive(context);
 		context->ReverseOrientation();
 	}
@@ -617,20 +568,15 @@ public:
 		context->Interior(name);
 	}
 
-	void objectBegin(const char *name)
-	{
+	void objectBegin(const char *name) {
 		Context::SetActive(context);
 		context->ObjectBegin(std::string(name));
 	}
-
-	void objectEnd()
-	{
+	void objectEnd() {
 		Context::SetActive(context);
 		context->ObjectEnd();
 	}
-
-	void objectInstance(const char *name)
-	{
+	void objectInstance(const char *name) {
 		Context::SetActive(context);
 		context->ObjectInstance(std::string(name));
 	}
@@ -646,44 +592,31 @@ public:
 		pyLuxWorldEndThreads.push_back(new boost::thread( boost::bind(&PyContext::pyWorldEnd,this) ));
 	}
 
-	void loadFLM(const char* name)
-	{
+	void loadFLM(const char* name) {
 		Context::SetActive(context);
 		context->LoadFLM(std::string(name));
 	}
-
-	void saveFLM(const char* name)
-	{
+	void saveFLM(const char* name) {
 		Context::SetActive(context);
 		context->SaveFLM(std::string(name));
 	}
-
-	void overrideResumeFLM(const char *name)
-	{
+	void overrideResumeFLM(const char *name) {
 		Context::SetActive(context);
 		context->OverrideResumeFLM(string(name));
 	}
-
-	void start()
-	{
+	void start() {
 		Context::SetActive(context);
 		context->Resume();
 	}
-
-	void pause() 
-	{
+	void pause() {
 		Context::SetActive(context);
 		context->Pause();
 	}
-
-	void exit()
-	{
+	void exit() {
 		Context::SetActive(context);
 		context->Exit();
 	}
-
-	void wait()
-	{
+	void wait() {
 		Context::SetActive(context);
 		context->Wait();
 	}
@@ -694,14 +627,11 @@ public:
 		context->SetHaltSamplePerPixel(haltspp, haveEnoughSamplePerPixel, suspendThreadsWhenDone);
 	}
 
-	unsigned int addThread()
-	{
+	unsigned int addThread() {
 		Context::SetActive(context);
 		return context->AddThread();
 	}
-
-	void removeThread()
-	{
+	void removeThread() {
 		Context::SetActive(context);
 		context->RemoveThread();
 	}
@@ -712,8 +642,7 @@ public:
 		context->SetEpsilon(minValue < 0.f ? DEFAULT_EPSILON_MIN : minValue, maxValue < 0.f ? DEFAULT_EPSILON_MAX : maxValue);
 	}
 
-	void updateFramebuffer()
-	{
+	void updateFramebuffer() {
 		Context::SetActive(context);
 		context->UpdateFramebuffer();
 	}
@@ -796,8 +725,7 @@ public:
 		return str.length();
 	}
 
-	const char* getAttributes()
-	{
+	const char* getAttributes() {
 		Context::SetActive(context);
 		return context->registry.GetContent();
 	}
@@ -814,13 +742,24 @@ public:
 		Queryable *object=context->registry[objectName];
 		if(object!=0)
 		{
-			QueryableAttribute attr=(*object)[attributeName];
-			if(attr.type==ATTRIBUTE_INT) return boost::python::object(attr.IntValue());
-			if(attr.type==ATTRIBUTE_FLOAT) return boost::python::object(attr.FloatValue());
-			if(attr.type==ATTRIBUTE_DOUBLE) return boost::python::object(attr.DoubleValue());
-			if(attr.type==ATTRIBUTE_STRING) return boost::python::object(attr.Value());
+			QueryableAttribute &attr=(*object)[attributeName];
+			switch (attr.Type()) {
+				case AttributeType::Bool:
+					return boost::python::object(attr.BoolValue());
+				case AttributeType::Int:
+					return boost::python::object(attr.IntValue());
+				case AttributeType::Float:
+					return boost::python::object(attr.FloatValue());
+				case AttributeType::Double:
+					return boost::python::object(attr.DoubleValue());
+				case AttributeType::String:
+					return boost::python::object(attr.Value());
 
-			LOG(LUX_ERROR,LUX_BUG)<<"Unknown attribute type in pyLuxGetOption";
+				case AttributeType::None:
+					break;
+				default:
+					LOG(LUX_ERROR,LUX_BUG)<<"Unknown attribute type in pyLuxGetOption";
+			}
 		}
 		return boost::python::object(0);
 	}
@@ -833,28 +772,31 @@ public:
 		if(object!=0)
 		{
 			QueryableAttribute &attribute=(*object)[attributeName];
-			//return (*object)[attributeName].IntValue();
-			switch(attribute.type)
+			switch(attribute.Type())
 			{
-			case ATTRIBUTE_INT :
-				attribute.SetValue(boost::python::extract<int>(value));
-				break;
+				case AttributeType::Bool :
+					attribute = boost::python::extract<bool>(value);
+					break;
 
-			case ATTRIBUTE_FLOAT :
-				attribute.SetValue(boost::python::extract<float>(value));
-				break;
+				case AttributeType::Int :
+					attribute = boost::python::extract<int>(value);
+					break;
 
-			case ATTRIBUTE_DOUBLE :
-				attribute.SetValue(boost::python::extract<double>(value));
-				break;
+				case AttributeType::Float :
+					attribute = boost::python::extract<float>(value);
+					break;
 
-			case ATTRIBUTE_STRING :
-				attribute.SetValue(boost::python::extract<std::string>(value));
-				break;
+				case AttributeType::Double :
+					attribute = boost::python::extract<double>(value);
+					break;
 
-			case ATTRIBUTE_NONE :
-			default:
-				LOG(LUX_ERROR,LUX_BUG)<<"Unknown attribute type for '"<<attributeName<<"' in object '"<<objectName<<"'";
+				case AttributeType::String :
+					attribute = boost::python::extract<std::string>(value);
+					break;
+
+				case AttributeType::None :
+				default:
+					LOG(LUX_ERROR,LUX_BUG)<<"Unknown attribute type for '"<<attributeName<<"' in object '"<<objectName<<"'";
 			}
 		}
 		else
@@ -863,43 +805,33 @@ public:
 		}
 	}
 
-	void addServer(const char * name)
-	{
+
+	void addServer(const char * name) {
 		Context::SetActive(context);
 		context->AddServer(std::string(name));
 	}
-
-	void removeServer(const char * name)
-	{
+	void removeServer(const char * name) {
 		Context::SetActive(context);
 		context->RemoveServer(std::string(name));
 	}
-
-	unsigned int getServerCount()
-	{
+	unsigned int getServerCount() {
 		Context::SetActive(context);
 		return context->GetServerCount();
 	}
-
-	void updateFilmFromNetwork()
-	{
+	void updateFilmFromNetwork() {
 		Context::SetActive(context);
 		context->UpdateFilmFromNetwork();
 	}
-
-	void setNetworkServerUpdateInterval(int updateInterval)
-	{
+	void setNetworkServerUpdateInterval(int updateInterval) {
 		Context::SetActive(context);
 		context->SetNetworkServerUpdateInterval(updateInterval);
 	}
-
-	int getNetworkServerUpdateInterval()
-	{
+	int getNetworkServerUpdateInterval() {
 		Context::SetActive(context);
 		return context->GetNetworkServerUpdateInterval();
 	}
 
-	boost::python::tuple getRenderingServersStatus()
+	boost::python::list getRenderingServersStatus()
 	{
 		Context::SetActive(context);
 		int nServers = context->GetServerCount();
@@ -910,35 +842,31 @@ public:
 		nServers = context->GetRenderingServersStatus( pInfoList, nServers );
 		
 		boost::python::list server_list;
-
 		for( int n = 0; n < nServers; n++ ) {
-			server_list.append( pInfoList[n] );
+			boost::python::list server_info;
+			server_info.append( pInfoList[n].name );
+			server_info.append( pInfoList[n].port );
+			server_list.append( boost::python::tuple( server_info) );
 		}
 
 		delete[] pInfoList;
 		
-		return boost::python::tuple( server_list );
+		return server_list;
 	}
 
-	double statistics(const char *statName)
-	{
+	double statistics(const char *statName) {
 		Context::SetActive(context);
 		return context->Statistics(statName);
 	}
 
-	void enableDebugMode()
-	{
+	void enableDebugMode() {
 		Context::SetActive(context);
 		context->EnableDebugMode();
 	}
-
-	void disableRandomMode()
-	{
+	void disableRandomMode() {
 		Context::SetActive(context);
 		context->DisableRandomMode();
 	}
-
-	std::string name;
 
 private:
 	Context *context;
@@ -951,16 +879,6 @@ private:
 	}
 };
 
-/**
- * Return a useful string to represent RenderingServerInfo objects:
- *  <RenderingServerInfo index:server:port>
- */
-boost::python::str RenderingServerInfo_repr(RenderingServerInfo const &rsi)
-{
-	std::stringstream o(std::ios_base::out);
-	o << "<RenderingServerInfo " << rsi.serverIndex << ":" << rsi.name << ":" << rsi.port << ">";
-	return boost::python::str(o.str().c_str());
-};
 
 }//namespace lux
 
@@ -980,6 +898,7 @@ BOOST_PYTHON_MODULE(pylux)
 	scope().attr("__doc__") = ds_pylux;
 
 	//Direct python module calls
+	// def("greet", greet); //Simple test function to check the module is imported
 	def("version", luxVersion, ds_pylux_version);
 
 	// Parameter access
@@ -1059,7 +978,6 @@ BOOST_PYTHON_MODULE(pylux)
 		.def_readonly("sid", &RenderingServerInfo::sid)
 		.def_readonly("numberOfSamplesReceived", &RenderingServerInfo::numberOfSamplesReceived)
 		.def_readonly("secsSinceLastContact", &RenderingServerInfo::secsSinceLastContact)
-		.def("__repr__", RenderingServerInfo_repr)
 		;
 
 	//Error handling in python
@@ -1120,13 +1038,7 @@ BOOST_PYTHON_MODULE(pylux)
 		ds_pylux_Context,
 		init<std::string>(args("Context", "name"), ds_pylux_Context_init)
 		)
-		.def_readonly("name",
-			&PyContext::name
-		)
-		.def("__repr__",
-			&PyContext::repr,
-			args("Context")
-		)
+		//.def("greet", &PyContext::greet)
 		.def("accelerator",
 			&PyContext::accelerator,
 			args("Context", "type", "ParamSet"),
@@ -1342,10 +1254,6 @@ BOOST_PYTHON_MODULE(pylux)
 			args("Context", "filename", "asynchronous"),
 			ds_pylux_Context_parse
 			)
-		.def("parseSuccessful",
-			&PyContext::parseSuccessful,
-			args("Context")
-			)
 		.def("pause",
 			&PyContext::pause,
 			args("Context"),
@@ -1388,7 +1296,7 @@ BOOST_PYTHON_MODULE(pylux)
 		)
 		.def("sampler",
 			&PyContext::sampler,
-			args("Context", "type", "ParamSet"),
+			args("Context", "type", "ParaSet"),
 			ds_pylux_Context_sampler
 		)
 		.def("saveFLM",
