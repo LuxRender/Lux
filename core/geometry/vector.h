@@ -179,12 +179,12 @@ inline float SinTheta(const Vector &w) {
 
 inline float CosPhi(const Vector &w) {
 	const float sinTheta = SinTheta(w);
-	return sinTheta > 0.f ? Clamp(w.x / sinTheta, -1.f, 1.f) : w.x;
+	return sinTheta > 0.f ? Clamp(w.x / sinTheta, -1.f, 1.f) : 1.f;
 }
 
 inline float SinPhi(const Vector &w) {
 	const float sinTheta = SinTheta(w);
-	return sinTheta > 0.f ? Clamp(w.y / sinTheta, -1.f, 1.f) : w.y;
+	return sinTheta > 0.f ? Clamp(w.y / sinTheta, -1.f, 1.f) : 0.f;
 }
 
 inline bool SameHemisphere(const Vector &w,
