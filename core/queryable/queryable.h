@@ -249,7 +249,7 @@ public:
 	}
 
 private:
-	std::map<std::string, boost::shared_ptr<QueryableAttribute>> attributes;
+	std::map<std::string, boost::shared_ptr<QueryableAttribute> > attributes;
 	std::string name;
 	NullAttribute nullAttribute;
 };
