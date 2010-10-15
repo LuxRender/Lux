@@ -1066,7 +1066,7 @@ BOOST_PYTHON_MODULE(pylux)
 		.value("LUX_FILM_LG_SCALE_Z",LUX_FILM_LG_SCALE_Z)
 		;
 
-	class_<RenderingServerInfo>("RenderingServerInfo", ds_pylux_RenderingServerInfo)
+	class_<RenderingServerInfo>("RenderingServerInfo", ds_pylux_RenderingServerInfo, no_init)
 		.def_readonly("serverIndex", &RenderingServerInfo::serverIndex)
 		.def_readonly("name", &RenderingServerInfo::name)
 		.def_readonly("port", &RenderingServerInfo::port)
