@@ -1109,7 +1109,9 @@ const char* Context::PrintableStatistics(const bool add_total) {
 		}
 	}
 
-	return ss.str().c_str();
+	statsString = ss.str();
+
+	return statsString.c_str();
 }
 
 void Context::TransmitFilm(std::basic_ostream<char> &stream) {

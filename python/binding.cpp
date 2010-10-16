@@ -940,7 +940,7 @@ public:
 		return context->Statistics(statName);
 	}
 
-	std::string printableStatistics(const bool add_total)
+	const char* printableStatistics(const bool add_total)
 	{
 		return context->PrintableStatistics(add_total);
 	}

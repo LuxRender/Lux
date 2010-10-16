@@ -299,6 +299,8 @@ private:
 	mutable boost::mutex renderingMutex;
 	bool luxCurrentSceneReady;
 	bool terminated;
+
+	string statsString;
 };
 
 }
