@@ -351,6 +351,8 @@ double HybridRenderer::Statistics(const string &statName) {
 		return scene->camera->film->numberOfLocalSamples;
 	else if (statName == "enoughSamples")
 		return scene->camera->film->enoughSamplePerPixel;
+	else if (statName == "threadCount")
+		return renderThreads.size();
 	else {
 		LOG( LUX_ERROR,LUX_BADTOKEN)<< "luxStatistics - requested an invalid data : " << statName;
 		return 0.;

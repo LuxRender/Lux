@@ -1080,9 +1080,7 @@ const char* Context::PrintableStatistics(const bool add_total) {
 	ss.precision(2);
 	ss.setf(std::stringstream::fixed);
 
-	// TODO: add interface to get current number of rendering threads
-	// (" << luxCurrentRenderer->renderThreads.size() << ")
-	ss << td << " Local: " << magnitude_reduce(local_spp) << " "<< magnitude_prefix(local_spp) << "S/Px " << magnitude_reduce(local_sps) << " " << magnitude_prefix(local_sps) << "S/Sec";
+	ss << td << " Local (" << (int)luxStatistics("threadCount") << "): " << magnitude_reduce(local_spp) << " "<< magnitude_prefix(local_spp) << "S/Px " << magnitude_reduce(local_sps) << " " << magnitude_prefix(local_sps) << "S/Sec";
 
 	u_int server_count = GetServerCount();
 	if (server_count > 0)
