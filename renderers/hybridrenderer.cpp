@@ -414,6 +414,8 @@ double HybridRenderer::Statistics_SamplesPTotSec() {
 }
 
 double HybridRenderer::Statistics_Efficiency() {
+	double sv = Statistics_GetNumberOfSamples();	// required before eff can be calculated.
+
 	if (stat_Samples == 0.0)
 		return 0.0;
 

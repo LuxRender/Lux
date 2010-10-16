@@ -1080,7 +1080,12 @@ const char* Context::PrintableStatistics(const bool add_total) {
 	ss.precision(2);
 	ss.setf(std::stringstream::fixed);
 
-	ss << td << " Local (" << (int)luxStatistics("threadCount") << "): " << magnitude_reduce(local_spp) << " "<< magnitude_prefix(local_spp) << "S/Px " << magnitude_reduce(local_sps) << " " << magnitude_prefix(local_sps) << "S/Sec";
+	float eff = luxStatistics("efficiency");
+
+	ss << td << " Loc (" << (int)luxStatistics("threadCount") << "): "
+			<< magnitude_reduce(local_spp) << " " << magnitude_prefix(local_spp) << "S/Px "
+			<< magnitude_reduce(local_sps) << " " << magnitude_prefix(local_sps) << "S/Sec "
+			<< eff << "% Eff";
 
 	u_int server_count = GetServerCount();
 	if (server_count > 0)
@@ -1091,14 +1096,18 @@ const char* Context::PrintableStatistics(const bool add_total) {
 			float network_spp = netsamples / px;
 			float network_sps = netsamples / secelapsed;
 
-			ss << " - Net (" << server_count << "): " << magnitude_reduce(network_spp) << " " << magnitude_prefix(network_spp) << "S/Px "<< magnitude_reduce(network_sps) << " "<< magnitude_prefix(network_sps) << "S/Sec";
+			ss << " - Net (" << server_count << "): "
+					<< magnitude_reduce(network_spp) << " " << magnitude_prefix(network_spp) << "S/Px "
+					<< magnitude_reduce(network_sps) << " " << magnitude_prefix(network_sps) << "S/Sec";
 
 			if (add_total)
 			{
 				float total_spp = (localsamples + netsamples) / px;
 				float total_sps = (localsamples + netsamples) / secelapsed;
 
-				ss << " - Total: " << magnitude_reduce(total_spp) << " " << magnitude_prefix(total_spp) << "S/Px " << magnitude_reduce(total_sps) << " " << magnitude_prefix(total_sps) << "S/Sec";
+				ss << " - Tot: "
+						<< magnitude_reduce(total_spp) << " " << magnitude_prefix(total_spp) << "S/Px "
+						<< magnitude_reduce(total_sps) << " " << magnitude_prefix(total_sps) << "S/Sec";
 			}
 		}
 		else

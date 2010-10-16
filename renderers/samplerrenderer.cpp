@@ -312,6 +312,8 @@ double SamplerRenderer::Statistics_SamplesPTotSec() {
 }
 
 double SamplerRenderer::Statistics_Efficiency() {
+	double sv = Statistics_GetNumberOfSamples();	// required before eff can be calculated.
+
 	if (stat_Samples == 0.0)
 		return 0.0;
 
