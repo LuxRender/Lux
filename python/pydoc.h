@@ -334,6 +334,10 @@ const char * ds_pylux_Context_statistics =
 "- filmEV : current film Exposure Value\n"
 "- enoughSamples : returns truthy if the rendering has reached a haltspp condition";
 
+const char * ds_pylux_Context_printable_statistics =
+"Return a formatted statistics string. If add_total=True, then the Local and Net"
+" stats will be summed and also shown.";
+
 const char * ds_pylux_Context_surfaceIntegrator =
 "Initialise the surface integrator to use for rendering. Valid types are:\n"
 "- bidirectional\n"

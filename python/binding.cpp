@@ -940,6 +940,11 @@ public:
 		return context->Statistics(statName);
 	}
 
+	std::string printableStatistics(const bool add_total)
+	{
+		return context->PrintableStatistics(add_total);
+	}
+
 	void enableDebugMode()
 	{
 		Context::SetActive(context);
@@ -1459,6 +1464,11 @@ BOOST_PYTHON_MODULE(pylux)
 			&PyContext::statistics,
 			args("Context", "name"),
 			ds_pylux_Context_statistics
+		)
+		.def("printableStatistics",
+			&PyContext::printableStatistics,
+			args("Context", "add_total"),
+			ds_pylux_Context_printable_statistics
 		)
 		.def("surfaceIntegrator",
 			&PyContext::surfaceIntegrator,

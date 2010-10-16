@@ -190,6 +190,8 @@ public:
 	double Statistics(const string &statName);
 	void SceneReady();
 
+	const char* PrintableStatistics(const bool add_total);
+
 	void EnableDebugMode();
 	void DisableRandomMode();
 

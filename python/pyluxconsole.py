@@ -106,11 +106,6 @@ class LuxAPIStats(TimerThread):
 	
 	stats_string = ''
 	
-	px = 0
-	secelapsed = 0
-	localsamples = 0
-	netsamples = 0
-	
 	def stop(self):
 		self.active = False
 		if self.timer is not None:
@@ -118,32 +113,7 @@ class LuxAPIStats(TimerThread):
 			
 	def kick(self):
 		ctx = self.LocalStorage['lux_context']
-		
-		if self.px == 0:
-			self.px = ctx.getAttribute('film', 'xResolution') * ctx.getAttribute('film', 'yResolution')
-		
-		self.secelapsed = ctx.statistics('secElapsed')
-		self.localsamples = ctx.getAttribute('film', 'numberOfLocalSamples')
-		
-		self.stats_string  = '%s [Local: %0.2f S/Px - %0.2f S/Sec]' % (
-			format_elapsed_time(self.secelapsed),
-			self.localsamples / self.px,
-			self.localsamples / self.secelapsed
-		)
-		
-		network_servers = ctx.getServerCount()
-		if network_servers > 0:
-			self.netsamples = ctx.getAttribute('film', 'numberOfSamplesFromNetwork')
-			if self.netsamples == 0:
-				self.stats_string += ' [Net (%i): Waiting for first update...]' % (
-					network_servers
-				)
-			else:
-				self.stats_string += ' [Net (%i): %0.2f S/Px - %0.2f S/Sec]' % (
-					network_servers,
-					self.netsamples / self.px,
-					self.netsamples / self.secelapsed
-				)
+		self.stats_string = ctx.printableStatistics(True)
 
 class RenderEndException(Exception):
 	pass
@@ -360,11 +330,11 @@ if __name__ == '__main__':
 		
 		if not aborted:
 			# Calculate actual overall render speed (network inclusive)
-			sec = luxconsole.stats_thread.secelapsed
-			samples = luxconsole.stats_thread.localsamples + luxconsole.stats_thread.netsamples
+			sec = ctx.statistics('secElapsed')
+			samples = ctx.getAttribute("film", "numberOfLocalSamples") + ctx.getDoubleAttribute("film", "numberOfSamplesFromNetwork")
 			luxconsole.log(
 				'Image rendered to %0.2f S/Px after %s at %0.2f Samples/Sec' % (
-					samples/luxconsole.stats_thread.px,
+					samples/(xres*yres),
 					format_elapsed_time(sec),
 					samples/sec
 				)

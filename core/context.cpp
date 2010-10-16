@@ -39,10 +39,12 @@
 #include "epsilon.h"
 #include "renderers/samplerrenderer.h"
 
+#include <sstream>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filtering_streambuf.hpp>
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/zlib.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 using namespace boost::iostreams;
 using namespace lux;
@@ -1030,6 +1032,84 @@ double Context::Statistics(const string &statName) {
 }
 void Context::SceneReady() {
 	luxCurrentSceneReady = true;
+}
+
+float magnitude_reduce(const float number) {
+	if (number < 1024.f)
+		return number;
+
+	if ( number < 1048576.f)
+		return number / 1024.f;
+
+	return number / 1048576.f;
+}
+
+const char* magnitude_prefix(float number) {
+	if (number < 1024.f)
+		return "";
+
+	if ( number < 1048576.f)
+		return "k";
+
+	return "M";
+}
+
+const char* Context::PrintableStatistics(const bool add_total) {
+	Context::SetActive(this);
+	int px = luxGetIntAttribute("film", "xResolution") * luxGetIntAttribute("film", "yResolution");
+	double secelapsed = Statistics("secElapsed");
+	double localsamples = luxGetDoubleAttribute("film", "numberOfLocalSamples");
+
+	float local_spp;
+	float local_sps;
+
+	if (secelapsed > 0)
+	{
+		local_spp = localsamples / px;
+		local_sps = localsamples / secelapsed;
+	}
+	else
+	{
+		local_spp = 0.f;
+		local_sps = 0.f;
+	}
+
+	boost::posix_time::time_duration td(0, 0, (int) luxStatistics("secElapsed"), 0);
+
+	std::stringstream ss;
+	ss.precision(2);
+	ss.setf(std::stringstream::fixed);
+
+	// TODO: add interface to get current number of rendering threads
+	// (" << luxCurrentRenderer->renderThreads.size() << ")
+	ss << td << " Local: " << magnitude_reduce(local_spp) << " "<< magnitude_prefix(local_spp) << "S/Px " << magnitude_reduce(local_sps) << " " << magnitude_prefix(local_sps) << "S/Sec";
+
+	u_int server_count = GetServerCount();
+	if (server_count > 0)
+	{
+		double netsamples = luxGetDoubleAttribute("film", "numberOfSamplesFromNetwork");
+		if (netsamples > 0 && secelapsed > 0)
+		{
+			float network_spp = netsamples / px;
+			float network_sps = netsamples / secelapsed;
+
+			ss << " - Net (" << server_count << "): " << magnitude_reduce(network_spp) << " " << magnitude_prefix(network_spp) << "S/Px "<< magnitude_reduce(network_sps) << " "<< magnitude_prefix(network_sps) << "S/Sec";
+
+			if (add_total)
+			{
+				float total_spp = (localsamples + netsamples) / px;
+				float total_sps = (localsamples + netsamples) / secelapsed;
+
+				ss << " - Total: " << magnitude_reduce(total_spp) << " " << magnitude_prefix(total_spp) << "S/Px " << magnitude_reduce(total_sps) << " " << magnitude_prefix(total_sps) << "S/Sec";
+			}
+		}
+		else
+		{
+			ss << " - Net (" << server_count << "): Waiting for first update...";
+		}
+	}
+
+	return ss.str().c_str();
 }
 
 void Context::TransmitFilm(std::basic_ostream<char> &stream) {

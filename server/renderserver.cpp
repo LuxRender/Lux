@@ -116,15 +116,7 @@ static void printInfoThread()
 		xt.sec += 5;
 		boost::thread::sleep(xt);
 
-		boost::posix_time::time_duration td(0, 0,
-			static_cast<int>(luxStatistics("secElapsed")), 0);
-
-		int sampleSec = static_cast<int>(luxStatistics("samplesSec"));
-		// Dade - print only if we are rendering something
-		if (sampleSec > 0) {
-			LOG( LUX_INFO,LUX_NOERROR) << td << "  " << sampleSec << " samples/sec " << " "
-				<< luxStatistics("samplesPx") << " samples/pix";
-		}
+		LOG( LUX_INFO,LUX_NOERROR) << luxPrintableStatistics(true);
 	}
 }
 

@@ -74,17 +74,7 @@ void infoThread() {
 			xt.sec += 5;
 			boost::thread::sleep(xt);
 
-			boost::posix_time::time_duration td(0, 0,
-					(int) luxStatistics("secElapsed"), 0);
-
-			int sampleSec = (int)luxStatistics("samplesSec");
-			// Dade - print only if we are rendering something
-			if (sampleSec > 0) {
-				LOG(LUX_INFO,LUX_NOERROR) << '[' << threads << " threads] " << td << " "
-						<< sampleSec << " samples/sec " << " "
-						<< (int) luxStatistics("samplesTotSec") << " samples/totsec " << " "
-						<< (float) luxStatistics("samplesPx") << " samples/pix";
-			}
+			LOG(LUX_INFO,LUX_NOERROR) << luxPrintableStatistics(true);
 		} catch(boost::thread_interrupted ex) {
 			break;
 		}

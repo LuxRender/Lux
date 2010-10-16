@@ -661,6 +661,14 @@ extern "C" double luxStatistics(const char *statName)
 	return 0.;
 }
 
+extern "C" const char* luxPrintableStatistics(const bool add_total)
+{
+	if (initialized)
+		return Context::GetActive()->PrintableStatistics(add_total);
+	LOG(LUX_SEVERE,LUX_NOTSTARTED)<<"luxInit() must be called before calling 'luxStatistics'. Ignoring.";
+	return "";
+}
+
 extern "C" const char* luxGetAttributes()
 {
 	return Context::GetActive()->registry.GetContent();
@@ -698,6 +706,19 @@ extern "C" float luxGetFloatAttribute(const char * objectName, const char * attr
 		Queryable *object=Context::GetActive()->registry[objectName];
 		if (object) 
 			return (*object)[attributeName].FloatValue();
+	} catch (std::runtime_error e) {
+		LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
+	}
+
+	return 0;
+}
+
+extern "C" double luxGetDoubleAttribute(const char * objectName, const char * attributeName)
+{
+	try {
+		Queryable *object=Context::GetActive()->registry[objectName];
+		if (object)
+			return (*object)[attributeName].DoubleValue();
 	} catch (std::runtime_error e) {
 		LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
 	}

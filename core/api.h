@@ -220,6 +220,7 @@ bool luxHasObject(const char * objectName); /* Returns true if the given object 
 int luxGetStringAttribute(const char * objectName, const char * attributeName, char * dest, unsigned int destlen); 
 
 float luxGetFloatAttribute(const char * objectName, const char * attributeName); /* Returns the value of a float attribute */
+double luxGetDoubleAttribute(const char * objectName, const char * attributeName); /* Returns the value of a double attribute */
 int luxGetIntAttribute(const char * objectName, const char * attributeName); /* Returns the value of an int attribute */
 void luxSetIntAttribute(const char * objectName, const char * attributeName, int value); /* Sets an int attribute value */
 void luxSetAttribute(const char * objectName, const char * attributeName, int n, void *values); /* Sets an attribute value */
@@ -249,6 +250,7 @@ unsigned int luxGetRenderingServersStatus(RenderingServerInfo *info, unsigned in
 
 /* Informations and statistics */
 double luxStatistics(const char *statName);
+const char* luxPrintableStatistics(const bool add_total);
 
 // Dade - enable debug mode
 void luxEnableDebugMode();
