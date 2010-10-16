@@ -126,7 +126,6 @@ class luxconsole(object):
 	# SIGBREAK only on windows and SIGHUP only on *nix
 	SIGSKIP = signal.SIGBREAK if 'SIGBREAK' in dir(signal) else signal.SIGHUP
 	
-	stop_queue = False
 	stats_thread = None
 	
 	@staticmethod
@@ -283,8 +282,6 @@ if __name__ == '__main__':
 		ctx = luxconsole.context_factory(options, scene_file)
 		
 		try:
-			aborted = False
-			
 			scene_path = os.path.dirname(scene_file)
 			if scene_path !='':
 				os.chdir(scene_path)
@@ -316,24 +313,26 @@ if __name__ == '__main__':
 				  ctx.statistics('enoughSamples') != 1.0:
 				time.sleep(5)
 				luxconsole.print_stats()
-		except RenderSkipException as StopReason:
-			luxconsole.log('Stopping this render... (%s)' % StopReason)
-			# continue
-			aborted = True
-		except RenderEndException as StopReason:
-			luxconsole.log('Stopping all rendering... (%s)' % StopReason)
-			aborted = True
-			luxconsole.stop_queue = True
+			halt_reason = 'RENDER_FINISHED'
+		except RenderSkipException as StopException:
+			luxconsole.log('Stopping this render... (%s)' % StopException)
+			halt_reason = 'RENDER_SKIPPED'
+		except RenderEndException as StopException:
+			luxconsole.log('Stopping all rendering... (%s)' % StopException)
+			halt_reason = 'RENDER_ABORTED'
+		except Exception as StopException:
+			luxconsole.log('Encountered fatal error... (%s)' % StopException)
+			halt_reason = 'FATAL_ERROR'
 		
 		ctx.exit()
 		ctx.wait()
 		
-		if not aborted:
+		if halt_reason not in ['FATAL_ERROR']:
 			# Calculate actual overall render speed (network inclusive)
 			sec = ctx.statistics('secElapsed')
-			samples = ctx.getAttribute("film", "numberOfLocalSamples") + ctx.getDoubleAttribute("film", "numberOfSamplesFromNetwork")
+			samples = ctx.getAttribute("film", "numberOfLocalSamples") + ctx.getAttribute("film", "numberOfSamplesFromNetwork")
 			luxconsole.log(
-				'Image rendered to %0.2f S/Px after %s at %0.2f Samples/Sec' % (
+				'Image rendered to %0.2f S/Px after %s at %0.2f S/Sec' % (
 					samples/(xres*yres),
 					format_elapsed_time(sec),
 					samples/sec
@@ -345,5 +344,5 @@ if __name__ == '__main__':
 		# deleting the context will disconnect all connected servers and free memory
 		del ctx
 		
-		if luxconsole.stop_queue:
+		if halt_reason in ['RENDER_ABORTED', 'FATAL_ERROR']:
 			break
