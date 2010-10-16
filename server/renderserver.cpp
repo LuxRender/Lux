@@ -116,7 +116,10 @@ static void printInfoThread()
 		xt.sec += 5;
 		boost::thread::sleep(xt);
 
-		LOG( LUX_INFO,LUX_NOERROR) << luxPrintableStatistics(true);
+		int sampleSec = static_cast<int>(luxStatistics("samplesSec"));
+		// Print only if we are rendering something
+		if (sampleSec > 0)
+			LOG( LUX_INFO,LUX_NOERROR) << luxPrintableStatistics(true);
 	}
 }
 
