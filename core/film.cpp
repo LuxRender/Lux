@@ -554,8 +554,8 @@ Film::Film(u_int xres, u_int yres, Filter *filt, const float crop[4],
 	debug_mode(debugmode), premultiplyAlpha(premult),
 	warmupComplete(false), reject_warmup_samples(reject_warmup),
 	writeResumeFlm(w_resume_FLM), restartResumeFlm(restart_resume_FLM),
-	haltSamplePerPixel(haltspp), haltTime(halttime),
-	EV(0.f), averageLuminance(0.f), numberOfLocalSamples(0), histogram(NULL), enoughSamplePerPixel(false)
+	haltSamplePerPixel(haltspp), EV(0.f), haltTime(halttime),
+	averageLuminance(0.f), numberOfLocalSamples(0), histogram(NULL), enoughSamplePerPixel(false)
 {
 	//Queryable parameters
 	AddIntAttribute(*this, "xResolution", "Horizontal resolution (pixels)", &Film::GetXResolution);
