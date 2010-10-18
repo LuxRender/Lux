@@ -136,6 +136,10 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	
 	ui->setupUi(this);
 
+#if defined(__APPLE__)
+	ui->menubar->setNativeMenuBar(true);
+#endif
+
 	createActions();
 
 	// File menu slots

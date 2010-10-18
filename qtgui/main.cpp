@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
 	QTranslator translator;
 	if (translator.load(QString("luxrender_") + locale))
 		application.installTranslator(&translator);
-*/	
+*/
 	application.init();
 	
 	if (application.mainwin != NULL)
