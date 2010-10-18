@@ -761,8 +761,15 @@
     <addaction name="separator"/>
     <addaction name="action_exitApp"/>
    </widget>
+   <widget class="QMenu" name="menuImage">
+    <property name="title">
+     <string>Image</string>
+    </property>
+    <addaction name="action_outputTonemapped"/>
+   </widget>
    <addaction name="menu_file"/>
    <addaction name="menu_render"/>
+   <addaction name="menuImage"/>
    <addaction name="menu_view"/>
    <addaction name="menu_help"/>
   </widget>
@@ -981,6 +988,14 @@
    </property>
    <property name="iconVisibleInMenu">
     <bool>true</bool>
+   </property>
+  </action>
+  <action name="action_outputTonemapped">
+   <property name="text">
+    <string>Save Tonemapped Image</string>
+   </property>
+   <property name="toolTip">
+    <string>Save the current framebuffer (with tonemapping) to a standard image file.</string>
    </property>
   </action>
  </widget>

@@ -145,6 +145,9 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	connect(ui->action_saveFLM, SIGNAL(triggered()), this, SLOT(saveFLM()));
 	connect(ui->action_exitApp, SIGNAL(triggered()), this, SLOT(exitApp()));
 	
+	// Image menu slots
+	connect(ui->action_outputTonemapped, SIGNAL(triggered()), this, SLOT(outputTonemapped()));
+
 	// Render menu slots
 	connect(ui->action_resumeRender, SIGNAL(triggered()), this, SLOT(resumeRender()));
 	connect(ui->button_resume, SIGNAL(clicked()), this, SLOT(resumeRender()));
@@ -658,6 +661,14 @@ void MainWindow::stopRender()
 	}
 }
 
+void MainWindow::outputTonemapped()
+{
+	QString fileName = QFileDialog::getSaveFileName(this, tr("Save Tonemapped Image"), m_lastOpendir, tr("PNG Image (*.png);;JPEG Image (*.jpg);;Windows Bitmap (*.bmp);;TIFF Image (*.tif)"));
+	if(fileName.isNull() || fileName.isEmpty()) return;
+	if(renderView->outputTonemapped(fileName)) statusMessage->setText(tr("Tonemapped image saved to '%1'").arg(fileName));
+	else statusMessage->setText(tr("ERROR: Tonemapped image NOT saved. May be an unsupported image type."));
+}
+
 // Stop rendering session entirely - this is different from stopping it; it's not resumable
 void MainWindow::endRenderingSession()
 {
@@ -973,6 +984,7 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			ui->button_stop->setEnabled (false);
 			ui->action_stopRender->setEnabled (false);
 			ui->button_copyToClipboard->setEnabled (false);
+			ui->action_outputTonemapped->setEnabled (false);
 			activityMessage->setText("Idle");
 			showRenderresolution();
 			statusProgress->setRange(0, 100);
@@ -986,6 +998,7 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			ui->button_stop->setEnabled (false);
 			ui->action_stopRender->setEnabled(false);
 			ui->button_copyToClipboard->setEnabled (false);
+			ui->action_outputTonemapped->setEnabled (false);
 			//m_viewerToolBar->Disable();
 			activityMessage->setText("Parsing scenefile");
 			renderView->setLogoMode();
@@ -999,6 +1012,7 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			ui->button_stop->setEnabled (true);
 			ui->action_stopRender->setEnabled (true);
 			ui->button_copyToClipboard->setEnabled (true);
+			ui->action_outputTonemapped->setEnabled (true);
 			activityMessage->setText("Rendering...");
 			break;
 		case TONEMAPPING:
@@ -1010,6 +1024,7 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			ui->button_stop->setEnabled (false);
 			ui->action_stopRender->setEnabled (false);
 			ui->button_copyToClipboard->setEnabled (true);
+			ui->action_outputTonemapped->setEnabled (true);
 			showRenderresolution();
 			activityMessage->setText("Render is finished");
 			break;
@@ -1022,6 +1037,7 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			ui->button_stop->setEnabled (false);
 			ui->action_stopRender->setEnabled (false);
 			ui->button_copyToClipboard->setEnabled (true);
+			ui->action_outputTonemapped->setEnabled (true);
 			break;
 		case STOPPED:
 			// Rendering is stopped.
@@ -1032,6 +1048,7 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			ui->button_stop->setEnabled (false);
 			ui->action_stopRender->setEnabled (false);
 			ui->button_copyToClipboard->setEnabled (true);
+			ui->action_outputTonemapped->setEnabled (true);
 			activityMessage->setText("Render is stopped");
 			break;
 		case PAUSED:
@@ -1043,6 +1060,7 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			ui->button_stop->setEnabled (true);
 			ui->action_stopRender->setEnabled (true);
 			ui->button_copyToClipboard->setEnabled (true);
+			ui->action_outputTonemapped->setEnabled (true);
 			activityMessage->setText("Render is paused");
 			break;
 	}

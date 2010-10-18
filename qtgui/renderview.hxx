@@ -49,6 +49,7 @@ public:
 	int getZoomFactor ();
 	int getWidth ();
 	int getHeight ();
+	bool outputTonemapped (const QString &filename);
 	void copyToClipboard ();
 	float origh;
 	float origw;

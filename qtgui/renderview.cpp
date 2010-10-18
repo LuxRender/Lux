@@ -58,6 +58,18 @@ void RenderView::copyToClipboard()
 	}
 }
 
+bool RenderView::outputTonemapped(const QString &filename)
+{
+	if (luxStatistics("sceneIsReady") || luxStatistics("filmIsReady")) {
+		int w = luxGetIntAttribute("film", "xResolution");
+		int h = luxGetIntAttribute("film", "yResolution");
+		unsigned char* fb = luxFramebuffer();
+		QImage image = QImage(fb, w, h, QImage::Format_RGB888);
+		return image.save(filename);
+	}
+	return false;
+}
+
 void RenderView::reload () {
 	if (luxStatistics("sceneIsReady") || luxStatistics("filmIsReady")) {
 		int w = luxGetIntAttribute("film", "xResolution");

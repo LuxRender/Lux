@@ -262,6 +262,7 @@ private slots:
 	void resumeRender ();
 	void pauseRender ();
 	void stopRender ();
+	void outputTonemapped ();
 	void copyLog ();
 	void clearLog ();
 	void tabChanged (int);
