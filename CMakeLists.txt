@@ -938,6 +938,7 @@ IF(QT4_FOUND)
 			COMMAND mkdir release/luxrender.app/Contents/Resources
 			COMMAND cp ../macos/icons/luxrender.icns release/luxrender.app/Contents/Resources
 			COMMAND cp ../macos/icons/luxscene.icns release/luxrender.app/Contents/Resources
+			COMMAND cp ../macos/icons/luxfilm.icns release/luxrender.app/Contents/Resources
 			COMMAND cp ../macos/plists/08/Info.plist release/luxrender.app/Contents
 			COMMAND mv release/luxrender.app release/LuxRender.app
 			)
