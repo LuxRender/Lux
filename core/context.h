@@ -40,6 +40,23 @@ using std::map;
 
 namespace lux {
 
+/**
+ * Store a few pieces of stats info in order to
+ * allow a simple bit of prediction between network
+ * updates. One of these objects is kept per Context
+ * instance.
+ */
+class StatsData {
+public:
+	StatsData() : previousNetworkSamplesSec(0), previousNetworkSamples(0), lastUpdateSecElapsed(0) {};
+	~StatsData() {};
+
+	string formattedStatsString;
+	float previousNetworkSamplesSec;
+	double previousNetworkSamples;
+	double lastUpdateSecElapsed;
+};
+	
 class Context {
 public:
 
@@ -300,7 +317,7 @@ private:
 	bool luxCurrentSceneReady;
 	bool terminated;
 
-	string statsString;
+	StatsData *statsData;
 };
 
 }

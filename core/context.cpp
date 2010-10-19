@@ -126,6 +126,8 @@ void Context::Init() {
 	pushedTransforms.clear();
 	renderFarm = new RenderFarm();
 	filmOverrideParams = NULL;
+
+	statsData = new StatsData();
 }
 
 void Context::Free() {
@@ -149,6 +151,9 @@ void Context::Free() {
 
 	delete filmOverrideParams;
 	filmOverrideParams = NULL;
+
+	delete statsData;
+	statsData = NULL;
 }
 
 // API Function Definitions
@@ -1077,48 +1082,83 @@ const char* Context::PrintableStatistics(const bool add_total) {
 	boost::posix_time::time_duration td(0, 0, (int) luxStatistics("secElapsed"), 0);
 
 	std::stringstream ss;
-	ss.precision(2);
 	ss.setf(std::stringstream::fixed);
 
 	float eff = luxStatistics("efficiency");
 
-	ss << td << " Loc (" << (int)luxStatistics("threadCount") << "): "
-			<< magnitude_reduce(local_spp) << " " << magnitude_prefix(local_spp) << "S/Px "
-			<< magnitude_reduce(local_sps) << " " << magnitude_prefix(local_sps) << "S/Sec "
-			<< eff << "% Eff";
+	ss.precision(2);
+	ss << td << " - " << (int)luxStatistics("threadCount") << "T: "
+			<< magnitude_reduce(local_spp) << magnitude_prefix(local_spp) << "S/p ";
+
+	ss.precision(0);
+	ss	<< magnitude_reduce(local_sps) << magnitude_prefix(local_sps) << "S/s "
+		<< eff << "% Eff";
 
 	u_int server_count = GetServerCount();
 	if (server_count > 0)
 	{
 		double netsamples = luxGetDoubleAttribute("film", "numberOfSamplesFromNetwork");
+		
+		ss << " - " << server_count << "N: ";
+		
 		if (netsamples > 0 && secelapsed > 0)
 		{
-			float network_spp = netsamples / px;
-			float network_sps = netsamples / secelapsed;
+			float network_spp;
+			float network_sps;
+			bool network_predicted = true;	// default to true since prediction will occur more frequently
 
-			ss << " - Net (" << server_count << "): "
-					<< magnitude_reduce(network_spp) << " " << magnitude_prefix(network_spp) << "S/Px "
-					<< magnitude_reduce(network_sps) << " " << magnitude_prefix(network_sps) << "S/Sec";
+			if (netsamples == statsData->previousNetworkSamples)
+			{
+				// Predict based on last reading
+				netsamples = ((secelapsed - statsData->lastUpdateSecElapsed) * statsData->previousNetworkSamplesSec) +
+								statsData->previousNetworkSamples;
+				network_spp = netsamples / px;
+				network_sps = statsData->previousNetworkSamplesSec;
+
+				ss << "~";
+			}
+			else
+			{
+				// Use real data
+				network_spp = netsamples / px;
+				network_sps = netsamples / secelapsed;
+
+				statsData->previousNetworkSamples = netsamples;
+				statsData->previousNetworkSamplesSec = network_sps;
+				statsData->lastUpdateSecElapsed = secelapsed;
+				
+				network_predicted = false;
+			}
+
+			ss.precision(2);
+			ss<< magnitude_reduce(network_spp) << magnitude_prefix(network_spp) << "S/p ";
+			ss.precision(0);
+			ss << magnitude_reduce(network_sps) << magnitude_prefix(network_sps) << "S/s";
 
 			if (add_total)
 			{
 				float total_spp = (localsamples + netsamples) / px;
 				float total_sps = (localsamples + netsamples) / secelapsed;
 
-				ss << " - Tot: "
-						<< magnitude_reduce(total_spp) << " " << magnitude_prefix(total_spp) << "S/Px "
-						<< magnitude_reduce(total_sps) << " " << magnitude_prefix(total_sps) << "S/Sec";
+				ss << " - Tot: ";
+
+				if (network_predicted) ss << "~";
+				
+				ss.precision(2);
+				ss << magnitude_reduce(total_spp) << magnitude_prefix(total_spp) << "S/p ";
+				ss.precision(0);
+				ss << magnitude_reduce(total_sps) << magnitude_prefix(total_sps) << "S/s";
 			}
 		}
 		else
 		{
-			ss << " - Net (" << server_count << "): Waiting for first update...";
+			ss << "Waiting for first update...";
 		}
 	}
 
-	statsString = ss.str();
+	statsData->formattedStatsString = ss.str();
 
-	return statsString.c_str();
+	return statsData->formattedStatsString.c_str();
 }
 
 void Context::TransmitFilm(std::basic_ostream<char> &stream) {
