@@ -44,7 +44,6 @@
 #include <boost/iostreams/filtering_streambuf.hpp>
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/zlib.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
 
 using namespace boost::iostreams;
 using namespace lux;
@@ -1039,124 +1038,21 @@ void Context::SceneReady() {
 	luxCurrentSceneReady = true;
 }
 
-float magnitude_reduce(const float number) {
-	if (number < 1024.f)
-		return number;
 
-	if ( number < 1048576.f)
-		return number / 1024.f;
-
-	return number / 1048576.f;
-}
-
-const char* magnitude_prefix(float number) {
-	if (number < 1024.f)
-		return "";
-
-	if ( number < 1048576.f)
-		return "k";
-
-	return "M";
-}
 
 const char* Context::PrintableStatistics(const bool add_total) {
 	Context::SetActive(this);
-	int px = luxGetIntAttribute("film", "xResolution") * luxGetIntAttribute("film", "yResolution");
-	double secelapsed = Statistics("secElapsed");
-	double localsamples = luxGetDoubleAttribute("film", "numberOfLocalSamples");
 
-	float local_spp;
-	float local_sps;
-
-	if (secelapsed > 0)
-	{
-		local_spp = localsamples / px;
-		local_sps = localsamples / secelapsed;
-	}
-	else
-	{
-		local_spp = 0.f;
-		local_sps = 0.f;
-	}
-
-	boost::posix_time::time_duration td(0, 0, (int) luxStatistics("secElapsed"), 0);
-
-	std::stringstream ss;
-	ss.setf(std::stringstream::fixed);
-
-	float eff = luxStatistics("efficiency");
-
-	ss.precision(2);
-	ss << td << " - " << (int)luxStatistics("threadCount") << "T: "
-			<< magnitude_reduce(local_spp) << magnitude_prefix(local_spp) << "S/p ";
-
-	ss.precision(0);
-	ss	<< magnitude_reduce(local_sps) << magnitude_prefix(local_sps) << "S/s "
-		<< eff << "% Eff";
-
-	u_int server_count = GetServerCount();
-	if (server_count > 0)
-	{
-		double netsamples = luxGetDoubleAttribute("film", "numberOfSamplesFromNetwork");
-		
-		ss << " - " << server_count << "N: ";
-		
-		if (netsamples > 0 && secelapsed > 0)
-		{
-			float network_spp;
-			float network_sps;
-			bool network_predicted = true;	// default to true since prediction will occur more frequently
-
-			if (netsamples == statsData->previousNetworkSamples)
-			{
-				// Predict based on last reading
-				netsamples = ((secelapsed - statsData->lastUpdateSecElapsed) * statsData->previousNetworkSamplesSec) +
-								statsData->previousNetworkSamples;
-				network_spp = netsamples / px;
-				network_sps = statsData->previousNetworkSamplesSec;
-
-				ss << "~";
-			}
-			else
-			{
-				// Use real data
-				network_spp = netsamples / px;
-				network_sps = netsamples / secelapsed;
-
-				statsData->previousNetworkSamples = netsamples;
-				statsData->previousNetworkSamplesSec = network_sps;
-				statsData->lastUpdateSecElapsed = secelapsed;
-				
-				network_predicted = false;
-			}
-
-			ss.precision(2);
-			ss<< magnitude_reduce(network_spp) << magnitude_prefix(network_spp) << "S/p ";
-			ss.precision(0);
-			ss << magnitude_reduce(network_sps) << magnitude_prefix(network_sps) << "S/s";
-
-			if (add_total)
-			{
-				float total_spp = (localsamples + netsamples) / px;
-				float total_sps = (localsamples + netsamples) / secelapsed;
-
-				ss << " - Tot: ";
-
-				if (network_predicted) ss << "~";
-				
-				ss.precision(2);
-				ss << magnitude_reduce(total_spp) << magnitude_prefix(total_spp) << "S/p ";
-				ss.precision(0);
-				ss << magnitude_reduce(total_sps) << magnitude_prefix(total_sps) << "S/s";
-			}
-		}
-		else
-		{
-			ss << "Waiting for first update...";
-		}
-	}
-
-	statsData->formattedStatsString = ss.str();
+	statsData->updateData(
+		luxGetIntAttribute("film", "xResolution") * luxGetIntAttribute("film", "yResolution"),	// px
+		luxStatistics("secElapsed"),															// secelapsed
+		luxGetDoubleAttribute("film", "numberOfLocalSamples"),									// localsamples
+		luxStatistics("efficiency"),															// eff
+		luxStatistics("threadCount"),															// threadCount
+		GetServerCount(),																		// serverCount
+		luxGetDoubleAttribute("film", "numberOfSamplesFromNetwork"),							// netsamples
+		add_total
+	);
 
 	return statsData->formattedStatsString.c_str();
 }
