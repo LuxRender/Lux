@@ -547,15 +547,15 @@ Film::Film(u_int xres, u_int yres, Filter *filt, const float crop[4],
 		   bool w_resume_FLM, bool restart_resume_FLM, int haltspp, int halttime,
 		   int reject_warmup, bool debugmode) :
 	Queryable("film"),
-	xResolution(xres), yResolution(yres), numberOfSamplesFromNetwork(0),
+	xResolution(xres), yResolution(yres),
+	EV(0.f), averageLuminance(0.f),  numberOfSamplesFromNetwork(0), numberOfLocalSamples(0),
 	filter(filt), filename(filename1),
 	colorSpace(0.63f, 0.34f, 0.31f, 0.595f, 0.155f, 0.07f, 0.314275f, 0.329411f), // default is SMPTE
 	ZBuffer(NULL), use_Zbuf(useZbuffer),
 	debug_mode(debugmode), premultiplyAlpha(premult),
 	warmupComplete(false), reject_warmup_samples(reject_warmup),
 	writeResumeFlm(w_resume_FLM), restartResumeFlm(restart_resume_FLM),
-	haltSamplePerPixel(haltspp), EV(0.f), haltTime(halttime),
-	averageLuminance(0.f), numberOfLocalSamples(0), histogram(NULL), enoughSamplePerPixel(false)
+	haltSamplePerPixel(haltspp), haltTime(halttime), histogram(NULL), enoughSamplePerPixel(false)
 {
 	//Queryable parameters
 	AddIntAttribute(*this, "xResolution", "Horizontal resolution (pixels)", &Film::GetXResolution);
