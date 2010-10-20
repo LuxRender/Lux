@@ -1038,8 +1038,6 @@ void Context::SceneReady() {
 	luxCurrentSceneReady = true;
 }
 
-
-
 const char* Context::PrintableStatistics(const bool add_total) {
 	Context::SetActive(this);
 

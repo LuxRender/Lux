@@ -113,7 +113,7 @@ class LuxAPIStats(TimerThread):
 			
 	def kick(self):
 		ctx = self.LocalStorage['lux_context']
-		self.stats_string = ctx.printableStatistics(True)
+		self.stats_string = ctx.printableStatistics(False) # Don't include total
 
 class RenderEndException(Exception):
 	pass
