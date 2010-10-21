@@ -135,6 +135,9 @@
             <property name="prefix">
              <string/>
             </property>
+            <property name="minimum">
+             <number>1</number>
+            </property>
             <property name="maximum">
              <number>32</number>
             </property>
