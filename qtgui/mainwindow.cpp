@@ -848,19 +848,20 @@ void MainWindow::SetRenderThreads(int num)
 
 void MainWindow::updateStatistics()
 {
-	m_samplesSec = luxStatistics("samplesSec");
-	int samplesSec = Floor2Int(m_samplesSec);
-	int samplesTotSec = Floor2Int(luxStatistics("samplesTotSec"));
-	int secElapsed = Floor2Int(luxStatistics("secElapsed"));
-	double samplesPx = luxStatistics("samplesPx");
-	int efficiency = Floor2Int(luxStatistics("efficiency"));
-	int EV = luxGetFloatAttribute("film", "EV");
-
-	int secs = (secElapsed) % 60;
-	int mins = (secElapsed / 60) % 60;
-	int hours = (secElapsed / 3600);
-
-	statsMessage->setText(QString("%1:%2:%3 - %4 S/s - %5 TotS/s - %6 S/px - %7% eff - EV = %8").arg(hours,2,10,QChar('0')).arg(mins, 2,10,QChar('0')).arg(secs,2,10,QChar('0')).arg(samplesSec).arg(samplesTotSec).arg(samplesPx, 0, 'f', 2).arg(efficiency).arg(EV));
+//	m_samplesSec = luxStatistics("samplesSec");
+//	int samplesSec = Floor2Int(m_samplesSec);
+//	int samplesTotSec = Floor2Int(luxStatistics("samplesTotSec"));
+//	int secElapsed = Floor2Int(luxStatistics("secElapsed"));
+//	double samplesPx = luxStatistics("samplesPx");
+//	int efficiency = Floor2Int(luxStatistics("efficiency"));
+//	int EV = luxGetFloatAttribute("film", "EV");
+//
+//	int secs = (secElapsed) % 60;
+//	int mins = (secElapsed / 60) % 60;
+//	int hours = (secElapsed / 3600);
+//
+//	statsMessage->setText(QString("%1:%2:%3 - %4 S/s - %5 TotS/s - %6 S/px - %7% eff - EV = %8").arg(hours,2,10,QChar('0')).arg(mins, 2,10,QChar('0')).arg(secs,2,10,QChar('0')).arg(samplesSec).arg(samplesTotSec).arg(samplesPx, 0, 'f', 2).arg(efficiency).arg(EV));
+	statsMessage->setText(QString( luxPrintableStatistics(true) ));
 }
 
 // show the render-resolution

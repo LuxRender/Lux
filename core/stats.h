@@ -23,11 +23,13 @@
 #ifndef LUX_STATS_H
 #define LUX_STATS_H
 
-// stats.h*
+// stats.h
 
 #include "lux.h"
 #include <ostream>
+#include <iomanip>
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/format.hpp>
 using std::ostream;
 
 namespace lux
@@ -41,7 +43,16 @@ namespace lux
  */
 class StatsData {
 public:
-	StatsData() : network_predicted(false), previousNetworkSamplesSec(0), previousNetworkSamples(0), lastUpdateSecElapsed(0) {};
+	StatsData() :
+		template_string_local("%1% - %2%T: %3$0.2f %4%S/p %5$0.2f %6%S/s %7$0.2f%% Eff"),
+		template_string_network_waiting("%1% - %2%T: %3$0.2f %4%S/p %5$0.2f %6%S/s %7$0.2f%% Eff - %8%N: Waiting for first update..."),
+		template_string_network("%1% - %2%T: %3$0.2f %4%S/p %5$0.2f %6%S/s %7$0.2f%% Eff - %8%N: %9%%10$0.2f %11%S/p %12$0.2f %13%S/s"),
+		template_string_total("%1% - %2%T: %3$0.2f %4%S/p %5$0.2f %6%S/s %7$0.2f%% Eff - %8%N: %9%%10$0.2f %11%S/p %12$0.2f %13%S/s - Tot: %9%%14$0.2f %15%S/p %16$0.2f %17%S/s"),
+		network_predicted(false),
+		previousNetworkSamplesSec(0),
+		previousNetworkSamples(0),
+		lastUpdateSecElapsed(0)
+	{};
 	~StatsData() {};
 
 	/**
@@ -70,10 +81,35 @@ public:
 		FormatStatsString();
 	}
 
+	void setTemplateString(int type, const string template_string)
+	{
+		switch(type)
+		{
+			case FORMAT_LOCAL:
+				template_string_local = template_string;
+				break;
+			case FORMAT_NETWORK_WAITING:
+				template_string_network_waiting = template_string;
+				break;
+			case FORMAT_NETWORK:
+				template_string_network = template_string;
+				break;
+			case FORMAT_TOTAL:
+				template_string_total = template_string;
+				break;
+		}
+	}
+
 	// Outputs
 	string formattedStatsString;
 
 private:
+	enum {
+		FORMAT_LOCAL,
+		FORMAT_NETWORK_WAITING,
+		FORMAT_NETWORK,
+		FORMAT_TOTAL
+	} TemplateType;
 
 	/**
 	 * Format the input data into a readable string. Predict the network
@@ -82,6 +118,8 @@ private:
 	 */
 	void FormatStatsString()
 	{
+		int FORMAT_TEMPLATE = FORMAT_LOCAL;
+
 		if (secelapsed > 0)
 		{
 			local_spp = localsamples / px;
@@ -93,28 +131,12 @@ private:
 			local_sps = 0.f;
 		}
 
-		boost::posix_time::time_duration td(0, 0, secelapsed, 0);
-
-		std::stringstream ss;
-		ss.setf(std::stringstream::fixed);
-
-		ss.precision(0);
-		ss << td << " - " << threadCount << "T: ";
-		ss.precision( magnitude_dp(local_spp) );
-		ss << magnitude_reduce(local_spp) << magnitude_prefix(local_spp) << "S/p ";
-
-		ss.precision( magnitude_dp(local_sps) );
-		ss	<< magnitude_reduce(local_sps) << magnitude_prefix(local_sps) << "S/s ";
-
-		ss.precision(0);
-		ss << eff << "% Eff";
-
 		if (serverCount > 0)
 		{
-			ss << " - " << serverCount << "N: ";
-
 			if (netsamples > 0 && secelapsed > 0)
 			{
+				FORMAT_TEMPLATE = FORMAT_NETWORK;
+
 				if (netsamples == previousNetworkSamples)
 				{
 					// Predict based on last reading
@@ -123,7 +145,6 @@ private:
 					network_spp = netsamples / px;
 					network_sps = previousNetworkSamplesSec;
 
-					ss << "~";
 					network_predicted = true;
 				}
 				else
@@ -139,33 +160,62 @@ private:
 					network_predicted = false;
 				}
 
-				ss.precision( magnitude_dp(network_spp) );
-				ss<< magnitude_reduce(network_spp) << magnitude_prefix(network_spp) << "S/p ";
-				ss.precision( magnitude_dp(network_sps) );
-				ss << magnitude_reduce(network_sps) << magnitude_prefix(network_sps) << "S/s";
-
 				if (add_total)
 				{
+					FORMAT_TEMPLATE = FORMAT_TOTAL;
+
 					total_spp = (localsamples + netsamples) / px;
 					total_sps = (localsamples + netsamples) / secelapsed;
-
-					ss << " - Tot: ";
-
-					if (network_predicted) ss << "~";
-
-					ss.precision( magnitude_dp(total_spp) );
-					ss << magnitude_reduce(total_spp) << magnitude_prefix(total_spp) << "S/p ";
-					ss.precision( magnitude_dp(total_sps) );
-					ss << magnitude_reduce(total_sps) << magnitude_prefix(total_sps) << "S/s";
 				}
 			}
 			else
 			{
-				ss << "Waiting for first update...";
+				FORMAT_TEMPLATE = FORMAT_NETWORK_WAITING;
 			}
 		}
 
-		formattedStatsString = ss.str();
+		boost::format stats_formatter;
+		switch (FORMAT_TEMPLATE)
+		{
+			default:
+			case FORMAT_LOCAL:
+				stats_formatter = boost::format(template_string_local);
+				break;
+
+			case FORMAT_NETWORK_WAITING:
+				stats_formatter = boost::format(template_string_network_waiting);
+				break;
+
+			case FORMAT_NETWORK:
+				stats_formatter = boost::format(template_string_network);
+				break;
+
+			case FORMAT_TOTAL:
+				stats_formatter = boost::format(template_string_total);
+				break;
+		}
+
+		stats_formatter.exceptions( boost::io::all_error_bits ^(boost::io::too_many_args_bit | boost::io::too_few_args_bit) ); // Ignore extra or missing args
+
+		formattedStatsString = str(stats_formatter
+			/*  1 */ % boost::posix_time::time_duration(0, 0, secelapsed, 0)
+			/*  2 */ % threadCount
+			/*  3 */ % magnitude_reduce(local_spp)
+			/*  4 */ % magnitude_prefix(local_spp)
+			/*  5 */ % magnitude_reduce(local_sps)
+			/*  6 */ % magnitude_prefix(local_sps)
+			/*  7 */ % eff
+			/*  8 */ % serverCount
+			/*  9 */ % ((network_predicted)?"~":"")
+			/* 10 */ % magnitude_reduce(network_spp)
+			/* 11 */ % magnitude_prefix(network_spp)
+			/* 12 */ % magnitude_reduce(network_sps)
+			/* 13 */ % magnitude_prefix(network_sps)
+			/* 14 */ % magnitude_reduce(total_spp)
+			/* 15 */ % magnitude_prefix(total_spp)
+			/* 16 */ % magnitude_reduce(total_sps)
+			/* 17 */ % magnitude_prefix(total_sps)
+		);
 	}
 
 	/**
@@ -222,35 +272,40 @@ private:
 
 public:
 	// Inputs
-	u_int px;							// Number of pixels in film
-	u_int serverCount;					// Number of connected net slaves
-	u_int threadCount;					// Number of local threads
+	string template_string_local;			// String template to format the data into, local only, needs 7 placeholders
+	string template_string_network_waiting;	// String template to format the data into, network waiting, needs 8 placeholders
+	string template_string_network;			// String template to format the data into, network rendering, needs 13 placeholders
+	string template_string_total;			// String template to format the data into, complete stats, needs 17 placeholders
 
-	double secelapsed;					// Seconds since rendering started
+	u_int px;								// Number of pixels in film
+	u_int serverCount;						// Number of connected net slaves
+	u_int threadCount;						// Number of local threads
 
-	double localsamples;				// Number of film samples generated locally
-	double netsamples;					// Number of film samples generated by net slaves
+	double secelapsed;						// Seconds since rendering started
 
-	float local_spp;					// Local Samples / Px
-	float local_sps;					// Local Samples / Sec
+	double localsamples;					// Number of film samples generated locally
+	double netsamples;						// Number of film samples generated by net slaves
 
-	float network_spp;					// Network Samples / Px		(might be predicted; check network_predicted value)
-	float network_sps;					// Network Samples / Sec	(might be predicted; check network_predicted value)
+	float local_spp;						// Local Samples / Px
+	float local_sps;						// Local Samples / Sec
 
-	float total_spp;					// Total Samples / Px		(might be predicted; check network_predicted value)
-	float total_sps;					// Total Samples / Sec		(might be predicted; check network_predicted value)
+	float network_spp;						// Network Samples / Px		(might be predicted; check network_predicted value)
+	float network_sps;						// Network Samples / Sec	(might be predicted; check network_predicted value)
 
-	float eff;							// Rendering efficiency
+	float total_spp;						// Total Samples / Px		(might be predicted; check network_predicted value)
+	float total_sps;						// Total Samples / Sec		(might be predicted; check network_predicted value)
 
-	bool add_total;						// Add total (local+net) stats to output?
+	float eff;								// Rendering efficiency
+
+	bool add_total;							// Add total (local+net) stats to output?
 
 	// Storage
-	bool network_predicted;				// Network stats were predicted at last update ?
+	bool network_predicted;					// Network stats were predicted at last update ?
 
 private:
-	float previousNetworkSamplesSec;	// Last known network_sps
-	double previousNetworkSamples;		// Last known netsamples
-	double lastUpdateSecElapsed;		// secelapsed value when previous* members were updated
+	float previousNetworkSamplesSec;		// Last known network_sps
+	double previousNetworkSamples;			// Last known netsamples
+	double lastUpdateSecElapsed;			// secelapsed value when previous* members were updated
 };
 
 
