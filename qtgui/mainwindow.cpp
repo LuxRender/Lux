@@ -242,8 +242,7 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	connect(ui->tabs_main, SIGNAL(currentChanged(int)), this, SLOT(tabChanged(int)));
 
 	// Render threads
-	connect(ui->button_addThread, SIGNAL(clicked()), this, SLOT(addThread()));
-	connect(ui->button_removeThread, SIGNAL(clicked()), this, SLOT(removeThread()));
+	connect(ui->spinBox_Threads, SIGNAL(valueChanged(int)), this, SLOT(ThreadChanged(int)));
 	
 	// Clipboard
 	connect(ui->button_copyToClipboard, SIGNAL(clicked()), this, SLOT(copyToClipboard()));
@@ -448,16 +447,9 @@ void MainWindow::openForums ()
 	QDesktopServices::openUrl(QUrl("http://www.luxrender.net/forum/"));
 }
 
-void MainWindow::addThread ()
+void MainWindow::ThreadChanged(int value)
 {
-	if (m_numThreads < 16)
-		SetRenderThreads (m_numThreads + 1);
-}
-
-void MainWindow::removeThread ()
-{
-	if (m_numThreads > 1)
-		SetRenderThreads (m_numThreads - 1);
+	SetRenderThreads (value);
 }
 
 void MainWindow::copyToClipboard ()
@@ -843,7 +835,8 @@ void MainWindow::SetRenderThreads(int num)
 		m_numThreads = num;
 	}
 
-    ui->label_threadCount->setText(QString("Threads: %1").arg(m_numThreads));
+	ui->label_threadCount->setText(QString("Threads:"));
+	updateWidgetValue(ui->spinBox_Threads, m_numThreads);
 }
 
 void MainWindow::updateStatistics()

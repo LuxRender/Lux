@@ -114,35 +114,32 @@
           <item>
            <widget class="QLabel" name="label_threadCount">
             <property name="text">
-             <string>Threads: 4</string>
+             <string>Threads:</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QToolButton" name="button_addThread">
-            <property name="toolTip">
-             <string>Add a rendering thread</string>
+           <widget class="QSpinBox" name="spinBox_Threads">
+            <property name="layoutDirection">
+             <enum>Qt::LeftToRight</enum>
             </property>
-            <property name="text">
-             <string>+</string>
+            <property name="frame">
+             <bool>false</bool>
             </property>
-            <property name="icon">
-             <iconset resource="icons.qrc">
-              <normaloff>:/icons/plusicon.png</normaloff>:/icons/plusicon.png</iconset>
+            <property name="alignment">
+             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
             </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QToolButton" name="button_removeThread">
-            <property name="toolTip">
-             <string>Remove rendering thread</string>
+            <property name="buttonSymbols">
+             <enum>QAbstractSpinBox::UpDownArrows</enum>
             </property>
-            <property name="text">
-             <string>-</string>
+            <property name="prefix">
+             <string/>
             </property>
-            <property name="icon">
-             <iconset resource="icons.qrc">
-              <normaloff>:/icons/minusicon.png</normaloff>:/icons/minusicon.png</iconset>
+            <property name="maximum">
+             <number>32</number>
+            </property>
+            <property name="value">
+             <number>4</number>
             </property>
            </widget>
           </item>
@@ -391,8 +388,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>100</width>
-                  <height>30</height>
+                  <width>472</width>
+                  <height>547</height>
                  </rect>
                 </property>
                 <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -423,6 +420,9 @@
            </widget>
           </widget>
           <widget class="QFrame" name="frame_render">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
            <property name="sizePolicy">
             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
              <horstretch>0</horstretch>

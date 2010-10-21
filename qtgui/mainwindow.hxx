@@ -280,8 +280,7 @@ private slots:
 	void netTimeout ();
 	void blinkTrigger (bool active = true);
 
-	void addThread ();
-	void removeThread ();
+	void ThreadChanged(int value);
 
 	// Tonemapping slots
 	void toneMapParamsChanged();
