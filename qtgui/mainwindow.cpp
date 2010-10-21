@@ -1271,7 +1271,7 @@ void MainWindow::statsTimeout()
 {
 	if(luxStatistics("sceneIsReady") || luxStatistics("filmIsReady")) {
 		updateStatistics();
-		if ((m_guiRenderState == STOPPING || m_guiRenderState == FINISHED) && m_samplesSec == 0.0) {
+		if ((m_guiRenderState == STOPPING || m_guiRenderState == FINISHED) && luxStatistics("samplesSec") == 0.0) {
 			// Render threads stopped, do one last render update
 			LOG(LUX_INFO,LUX_NOERROR)<< tr("GUI: Updating framebuffer...").toLatin1().data();
 			statusMessage->setText(tr("Tonemapping..."));
