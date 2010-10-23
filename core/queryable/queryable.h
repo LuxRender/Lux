@@ -102,13 +102,13 @@ public:
 
 	template<class T> friend void AddBoolAttribute(T &object,
 		const std::string &name, const std::string &description,
-		bool T::*f, AttributeAccess access = ReadOnlyAccess) {
+		bool T::*b, AttributeAccess access = ReadOnlyAccess) {
 
 		boost::shared_ptr<QueryableBoolAttribute> attribute(
 			new QueryableBoolAttribute(name, description, false));
 
 		if (access == ReadWriteAccess)
-			attribute->setFunc = boost::bind(f, boost::ref(object));
+			attribute->setFunc = boost::bind(queryable::setfield<T, bool>, boost::ref(object), b, _1);
 
 		attribute->getFunc = boost::bind(f, boost::ref(object));
 		object.AddAttribute(attribute);
@@ -135,7 +135,7 @@ public:
 			new QueryableStringAttribute(name, description, ""));
 
 		if (access == ReadWriteAccess)
-			attribute->setFunc = boost::bind(s, boost::ref(object));
+			attribute->setFunc = boost::bind(queryable::setfield<T, std::string>, boost::ref(object), s, _1);
 
 		attribute->getFunc = boost::bind(s, boost::ref(object));
 		object.AddAttribute(attribute);
@@ -162,7 +162,7 @@ public:
 			new QueryableFloatAttribute(name, description, 0.f));
 
 		if (access == ReadWriteAccess)
-			attribute->setFunc = boost::bind(f, boost::ref(object));
+			attribute->setFunc = boost::bind(queryable::setfield<T, float>, boost::ref(object), f, _1);
 
 		attribute->getFunc = boost::bind(f, boost::ref(object));
 		object.AddAttribute(attribute);
@@ -189,7 +189,7 @@ public:
 			new QueryableDoubleAttribute(name, description, 0.0));
 
 		if (access == ReadWriteAccess)
-			attribute->setFunc = boost::bind(f, boost::ref(object));
+			attribute->setFunc = boost::bind(queryable::setfield<T, double>, boost::ref(object), f, _1);
 
 		attribute->getFunc = boost::bind(f, boost::ref(object));
 		object.AddAttribute(attribute);
@@ -216,7 +216,7 @@ public:
 			new QueryableIntAttribute(name, description, 0));
 
 		if (access == ReadWriteAccess)
-			attribute->setFunc = boost::bind(i, boost::ref(object));
+			attribute->setFunc = boost::bind(queryable::setfield<T, int>, boost::ref(object), i, _1);
 
 		attribute->getFunc = boost::bind(i, boost::ref(object));
 		object.AddAttribute(attribute);
@@ -253,6 +253,14 @@ private:
 	std::string name;
 	NullAttribute nullAttribute;
 };
+
+	namespace queryable {
+		// internal function for Queryable API
+		// used to set field of an object
+		template <class T, class D> void setfield(T &obj, D T::*field, D value) { 
+			obj.*field = value; 
+		}
+	}
 
 }//namespace lux
 

@@ -679,25 +679,31 @@ extern "C" bool luxHasObject(const char * objectName)
 	return Context::GetActive()->registry[objectName] != NULL;
 }
 
-extern "C" int luxGetStringAttribute(const char * objectName, const char * attributeName, char * dest, unsigned int destlen) 
+extern "C" const char* luxGetStringAttribute(const char * objectName, const char * attributeName)
 {
 	try { 
 		Queryable *object=Context::GetActive()->registry[objectName];
-		if (object) {
-			string str = (*object)[attributeName].Value();
-			unsigned int copylen = str.length() < destlen ? str.length() + 1 : destlen;
-			if (copylen > 0) {
-				strncpy(dest, str.c_str(), copylen - 1);
-				dest[copylen - 1] = '\0';
-				return copylen;
-			}
-			return 0;
-		}
+		if (object) 
+			return (*object)[attributeName].StringValue().c_str();
 	} catch (std::runtime_error e) {
 		LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
 	}
 
 	return 0;
+}
+
+extern "C" void luxSetStringAttribute(const char * objectName, const char * attributeName, const char * value)
+{
+	Queryable *object=Context::GetActive()->registry[objectName];
+	if (object) {
+		try {
+			(*object)[attributeName] = std::string(value);
+		} catch (std::runtime_error e) {
+			LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
+		}
+	} else {
+		LOG(LUX_ERROR,LUX_BADTOKEN)<<"Unknown object '"<<objectName<<"'";
+	}
 }
 
 extern "C" float luxGetFloatAttribute(const char * objectName, const char * attributeName)
@@ -713,11 +719,25 @@ extern "C" float luxGetFloatAttribute(const char * objectName, const char * attr
 	return 0;
 }
 
+extern "C" void luxSetFloatAttribute(const char * objectName, const char * attributeName, float value)
+{
+	Queryable *object=Context::GetActive()->registry[objectName];
+	if (object) {
+		try {
+			(*object)[attributeName] = value;
+		} catch (std::runtime_error e) {
+			LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
+		}
+	} else {
+		LOG(LUX_ERROR,LUX_BADTOKEN)<<"Unknown object '"<<objectName<<"'";
+	}
+}
+
 extern "C" double luxGetDoubleAttribute(const char * objectName, const char * attributeName)
 {
-	try {
+	try { 
 		Queryable *object=Context::GetActive()->registry[objectName];
-		if (object)
+		if (object) 
 			return (*object)[attributeName].DoubleValue();
 	} catch (std::runtime_error e) {
 		LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
@@ -753,6 +773,33 @@ extern "C" void luxSetIntAttribute(const char * objectName, const char * attribu
 	}
 }
 
+extern "C" bool luxGetBoolAttribute(const char * objectName, const char * attributeName)
+{
+	try { 
+		Queryable *object=Context::GetActive()->registry[objectName];
+		if (object) 
+			return (*object)[attributeName].BoolValue();
+	} catch (std::runtime_error e) {
+		LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
+	}
+
+	return 0;
+}
+
+extern "C" void luxSetBoolAttribute(const char * objectName, const char * attributeName, bool value)
+{
+	Queryable *object=Context::GetActive()->registry[objectName];
+	if (object) {
+		try {
+			(*object)[attributeName] = value;
+		} catch (std::runtime_error e) {
+			LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
+		}
+	} else {
+		LOG(LUX_ERROR,LUX_BADTOKEN)<<"Unknown object '"<<objectName<<"'";
+	}
+}
+
 extern "C" void luxSetAttribute(const char * objectName, const char * attributeName, int n, void *values)
 {
 	Queryable *object=Context::GetActive()->registry[objectName];
@@ -760,6 +807,11 @@ extern "C" void luxSetAttribute(const char * objectName, const char * attributeN
 		QueryableAttribute &attribute=(*object)[attributeName];
 		switch(attribute.Type())
 		{
+		case AttributeType::Bool :
+			BOOST_ASSERT(n==1);
+			attribute = (*((bool*)values));
+			break;
+
 		case AttributeType::Int :
 			BOOST_ASSERT(n==1);
 			attribute = (*((int*)values));
@@ -770,9 +822,14 @@ extern "C" void luxSetAttribute(const char * objectName, const char * attributeN
 			attribute = (*((float*)values));
 			break;
 
+		case AttributeType::Double :
+			BOOST_ASSERT(n==1);
+			attribute = (*((double*)values));
+			break;
+
 		case AttributeType::String :
 			BOOST_ASSERT(n==1);
-			attribute = ((char*)values);
+			attribute = std::string((char*)values);
 			break;
 
 		case AttributeType::None :

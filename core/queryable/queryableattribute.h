@@ -121,7 +121,7 @@ public:
 	virtual double DoubleValue() const {
 		throw std::runtime_error("Parameter type '" + TypeStr() + "' is not compatible with type 'double'");
 	}
-	virtual std::string StringValue() const {
+	virtual const std::string& StringValue() const {
 		throw std::runtime_error("Parameter type '" + TypeStr() + "' is not compatible with type 'string'");
 	}
 
@@ -139,7 +139,7 @@ public:
 	virtual double DefaultDoubleValue() const {
 		throw std::runtime_error("Parameter type '" + TypeStr() + "' is not compatible with type 'double'");
 	}
-	virtual std::string DefaultStringValue() const {
+	virtual const std::string& DefaultStringValue() const {
 		throw std::runtime_error("Parameter type '" + TypeStr() + "' is not compatible with type 'string'");
 	}
 
@@ -200,7 +200,8 @@ protected:
 	GenericQueryableAttribute<D>(const std::string &_name, const std::string &_desc, D _defaultValue) 
 		: QueryableAttribute(_name, _desc), 
 		defaultValue(_defaultValue), 
-		hasMinValue(false), hasMaxValue(false) {
+		hasMinValue(false), minValue(_defaultValue), // initialize min/max in case they must be
+		hasMaxValue(false), maxValue(_defaultValue) {
 		// attributes are read-only by default
 		setFunc = boost::bind(&GenericQueryableAttribute<D>::ReadOnlyError, boost::ref(*this), _1);
 	}
@@ -401,13 +402,17 @@ public:
 		setFunc(v);
 	}
 
-	virtual std::string StringValue() const {
-		return getFunc();
+	virtual const std::string& StringValue() const {
+		value = getFunc();
+		return value;
 	}
 
-	virtual std::string DefaultStringValue() const {
+	virtual const std::string& DefaultStringValue() const {
 		return defaultValue;
 	}
+private:
+	// used to cache value, so a reference can be returned
+	mutable std::string value;
 };
 
 }//namespace lux

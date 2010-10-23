@@ -217,12 +217,15 @@ const char* luxGetAttributes(); /* Returns an XML string containing all queryabl
 bool luxHasObject(const char * objectName); /* Returns true if the given object exists in the registry */
 
 /* Copies the the value of a string attribute into dest, returns number of characters copied. */
-int luxGetStringAttribute(const char * objectName, const char * attributeName, char * dest, unsigned int destlen); 
-
+const char* luxGetStringAttribute(const char * objectName, const char * attributeName); 
+void luxSetStringAttribute(const char * objectName, const char * attributeName, const char * value);
 float luxGetFloatAttribute(const char * objectName, const char * attributeName); /* Returns the value of a float attribute */
+void luxSetFloatAttribute(const char * objectName, const char * attributeName, float value); /* Sets an float attribute value */
 double luxGetDoubleAttribute(const char * objectName, const char * attributeName); /* Returns the value of a double attribute */
 int luxGetIntAttribute(const char * objectName, const char * attributeName); /* Returns the value of an int attribute */
 void luxSetIntAttribute(const char * objectName, const char * attributeName, int value); /* Sets an int attribute value */
+bool luxGetBoolAttribute(const char * objectName, const char * attributeName); /* Returns the value of a bool attribute */
+void luxSetBoolAttribute(const char * objectName, const char * attributeName, bool value); /* Sets a bool attribute value */
 void luxSetAttribute(const char * objectName, const char * attributeName, int n, void *values); /* Sets an attribute value */
 
 /* Networking */
