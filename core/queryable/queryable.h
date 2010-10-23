@@ -34,6 +34,14 @@
 namespace lux
 {
 
+namespace queryable {
+	// internal function for Queryable API
+	// used to set field of an object
+	template <class T, class D> void setfield(T &obj, D T::*field, D value) {
+		obj.*field = value;
+	}
+}
+
 /*! \class Queryable
  * \brief Parent class of all Queryable objects in the core module
  * \author jromang
@@ -108,9 +116,9 @@ public:
 			new QueryableBoolAttribute(name, description, false));
 
 		if (access == ReadWriteAccess)
-			attribute->setFunc = boost::bind(queryable::setfield<T, bool>, boost::ref(object), b, _1);
+			attribute->setFunc = boost::bind(lux::queryable::setfield<T, bool>, boost::ref(object), b, _1);
 
-		attribute->getFunc = boost::bind(f, boost::ref(object));
+		attribute->getFunc = boost::bind(b, boost::ref(object));
 		object.AddAttribute(attribute);
 	}
 	template<class T> friend void AddBoolAttribute(T &object,
@@ -135,7 +143,7 @@ public:
 			new QueryableStringAttribute(name, description, ""));
 
 		if (access == ReadWriteAccess)
-			attribute->setFunc = boost::bind(queryable::setfield<T, std::string>, boost::ref(object), s, _1);
+			attribute->setFunc = boost::bind(lux::queryable::setfield<T, std::string>, boost::ref(object), s, _1);
 
 		attribute->getFunc = boost::bind(s, boost::ref(object));
 		object.AddAttribute(attribute);
@@ -162,7 +170,7 @@ public:
 			new QueryableFloatAttribute(name, description, 0.f));
 
 		if (access == ReadWriteAccess)
-			attribute->setFunc = boost::bind(queryable::setfield<T, float>, boost::ref(object), f, _1);
+			attribute->setFunc = boost::bind(lux::queryable::setfield<T, float>, boost::ref(object), f, _1);
 
 		attribute->getFunc = boost::bind(f, boost::ref(object));
 		object.AddAttribute(attribute);
@@ -189,7 +197,7 @@ public:
 			new QueryableDoubleAttribute(name, description, 0.0));
 
 		if (access == ReadWriteAccess)
-			attribute->setFunc = boost::bind(queryable::setfield<T, double>, boost::ref(object), f, _1);
+			attribute->setFunc = boost::bind(lux::queryable::setfield<T, double>, boost::ref(object), f, _1);
 
 		attribute->getFunc = boost::bind(f, boost::ref(object));
 		object.AddAttribute(attribute);
@@ -216,7 +224,7 @@ public:
 			new QueryableIntAttribute(name, description, 0));
 
 		if (access == ReadWriteAccess)
-			attribute->setFunc = boost::bind(queryable::setfield<T, int>, boost::ref(object), i, _1);
+			attribute->setFunc = boost::bind(lux::queryable::setfield<T, int>, boost::ref(object), i, _1);
 
 		attribute->getFunc = boost::bind(i, boost::ref(object));
 		object.AddAttribute(attribute);
@@ -254,13 +262,6 @@ private:
 	NullAttribute nullAttribute;
 };
 
-	namespace queryable {
-		// internal function for Queryable API
-		// used to set field of an object
-		template <class T, class D> void setfield(T &obj, D T::*field, D value) { 
-			obj.*field = value; 
-		}
-	}
 
 }//namespace lux
 
