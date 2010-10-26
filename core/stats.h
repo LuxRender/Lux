@@ -138,6 +138,10 @@ private:
 			local_sps = 0.f;
 		}
 
+		// This is so that completion_samples can be calculated if not networking or add_total==false
+		total_spp = local_spp;
+		total_sps = local_sps;
+
 		if (serverCount > 0)
 		{
 			if (netsamples > 0 && secelapsed > 0)
@@ -173,12 +177,6 @@ private:
 
 					total_spp = (localsamples + netsamples) / px;
 					total_sps = (localsamples + netsamples) / secelapsed;
-				}
-				else
-				{
-					// This is so that completion_samples can be calculated
-					total_spp = local_spp;
-					total_sps = local_sps;
 				}
 			}
 			else
