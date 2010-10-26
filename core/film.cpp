@@ -225,7 +225,7 @@ void ApplyImagingPipeline(vector<XYZColor> &xyzpixels,
 
 			// Apply bloom filter to image pixels
 			//			vector<Color> bloomImage(nPix);
-			ProgressReporter prog(yResolution, "Bloom filter"); //NOBOOK
+//			ProgressReporter prog(yResolution, "Bloom filter"); //NOBOOK //intermediate crashfix until imagepipelinerefactor is done - Jens
 			for (u_int y = 0; y < yResolution; ++y) {
 				for (u_int x = 0; x < xResolution; ++x) {
 					// Compute bloom for pixel _(x,y)_
@@ -252,9 +252,9 @@ void ApplyImagingPipeline(vector<XYZColor> &xyzpixels,
 					}
 					bloomImage[offset] /= sumWt;
 				}
-				prog.Update(); //NOBOOK
+//				prog.Update(); //NOBOOK //intermediate crashfix until imagepipelinerefactor is done - Jens
 			}
-			prog.Done(); //NOBOOK
+//			prog.Done(); //NOBOOK //intermediate crashfix until imagepipelinerefactor is done - Jens
 		}
 
 		// Mix bloom effect into each pixel
