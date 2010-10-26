@@ -189,7 +189,7 @@ private:
 
 		if (haltspp > 0)
 		{
-			completion_samples = 100.f * (local_spp / haltspp);
+			completion_samples = 100.f * (total_spp / haltspp);
 		}
 		else
 		{
