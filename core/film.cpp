@@ -566,6 +566,8 @@ Film::Film(u_int xres, u_int yres, Filter *filt, const float crop[4],
 	AddDoubleAttribute(*this, "numberOfLocalSamples", "Number of samples contributed to film on the local machine", &Film::numberOfLocalSamples);
 	AddDoubleAttribute(*this, "numberOfSamplesFromNetwork", "Number of samples contributed from network slaves", &Film::numberOfSamplesFromNetwork);
 	AddBoolAttribute(*this, "enoughSamples", "Indicates if the halt condition been reached", &Film::enoughSamplePerPixel);
+	AddIntAttribute(*this, "haltSamplePerPixel", "Halt Samples per Pixel", &Film::haltSamplePerPixel);
+	AddIntAttribute(*this, "haltTime", "Halt time in seconds", &Film::haltTime);
 
 	// Compute film image extent
 	memcpy(cropWindow, crop, 4 * sizeof(float));

@@ -1045,10 +1045,12 @@ const char* Context::PrintableStatistics(const bool add_total) {
 		luxGetIntAttribute("film", "xResolution") * luxGetIntAttribute("film", "yResolution"),	// px
 		luxStatistics("secElapsed"),															// secelapsed
 		luxGetDoubleAttribute("film", "numberOfLocalSamples"),									// localsamples
+		luxGetDoubleAttribute("film", "numberOfSamplesFromNetwork"),							// netsamples
 		luxStatistics("efficiency"),															// eff
 		luxStatistics("threadCount"),															// threadCount
 		GetServerCount(),																		// serverCount
-		luxGetDoubleAttribute("film", "numberOfSamplesFromNetwork"),							// netsamples
+		luxGetIntAttribute("film", "haltSamplePerPixel"),										// haltspp
+		luxGetIntAttribute("film", "haltTime"),													// halttime
 		add_total
 	);
 

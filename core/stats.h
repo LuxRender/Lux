@@ -45,9 +45,11 @@ class StatsData {
 public:
 	StatsData() :
 		template_string_local("%1% - %2%T: %3$0.2f %4%S/p %5$0.2f %6%S/s %7$0.2f%% Eff"),
-		template_string_network_waiting("%1% - %2%T: %3$0.2f %4%S/p %5$0.2f %6%S/s %7$0.2f%% Eff - %8%N: Waiting for first update..."),
-		template_string_network("%1% - %2%T: %3$0.2f %4%S/p %5$0.2f %6%S/s %7$0.2f%% Eff - %8%N: %9%%10$0.2f %11%S/p %12$0.2f %13%S/s"),
-		template_string_total("%1% - %2%T: %3$0.2f %4%S/p %5$0.2f %6%S/s %7$0.2f%% Eff - %8%N: %9%%10$0.2f %11%S/p %12$0.2f %13%S/s - Tot: %9%%14$0.2f %15%S/p %16$0.2f %17%S/s"),
+		template_string_network_waiting(" - %8%N: Waiting for first update..."),
+		template_string_network(" - %8%N: %9%%10$0.2f %11%S/p %12$0.2f %13%S/s"),
+		template_string_total(" - Tot: %9%%14$0.2f %15%S/p %16$0.2f %17%S/s"),
+		template_string_haltspp(" - %18$0.2f%% Complete (S/Px)"),
+		template_string_halttime(" - %19$0.2f%% Complete (sec)"),
 		network_predicted(false),
 		previousNetworkSamplesSec(0),
 		previousNetworkSamples(0),
@@ -63,19 +65,23 @@ public:
 		u_int _px,
 		double _secelapsed,
 		double _localsamples,
+		double _netsamples,
 		float _eff,
 		int _threadCount,
 		u_int _serverCount,
-		double _netsamples,
+		int _haltspp,
+		int _halttime,
 		bool _add_total
 	) {
 		px = _px;
 		secelapsed = _secelapsed;
 		localsamples = _localsamples;
+		netsamples = _netsamples;
 		eff = _eff;
 		threadCount = _threadCount;
 		serverCount = _serverCount;
-		netsamples = _netsamples;
+		haltspp = _haltspp;
+		halttime = _halttime;
 		add_total = _add_total;
 
 		FormatStatsString();
@@ -118,7 +124,8 @@ private:
 	 */
 	void FormatStatsString()
 	{
-		int FORMAT_TEMPLATE = FORMAT_LOCAL;
+		std::ostringstream os;
+		os << template_string_local;
 
 		if (secelapsed > 0)
 		{
@@ -135,7 +142,7 @@ private:
 		{
 			if (netsamples > 0 && secelapsed > 0)
 			{
-				FORMAT_TEMPLATE = FORMAT_NETWORK;
+				os << template_string_network;
 
 				if (netsamples == previousNetworkSamples)
 				{
@@ -162,39 +169,53 @@ private:
 
 				if (add_total)
 				{
-					FORMAT_TEMPLATE = FORMAT_TOTAL;
+					os << template_string_total;
 
 					total_spp = (localsamples + netsamples) / px;
 					total_sps = (localsamples + netsamples) / secelapsed;
 				}
+				else
+				{
+					// This is so that completion_samples can be calculated
+					total_spp = local_spp;
+					total_sps = local_sps;
+				}
 			}
 			else
 			{
-				FORMAT_TEMPLATE = FORMAT_NETWORK_WAITING;
+				os << template_string_network_waiting;
 			}
 		}
 
-		boost::format stats_formatter;
-		switch (FORMAT_TEMPLATE)
+		if (haltspp > 0)
 		{
-			default:
-			case FORMAT_LOCAL:
-				stats_formatter = boost::format(template_string_local);
-				break;
-
-			case FORMAT_NETWORK_WAITING:
-				stats_formatter = boost::format(template_string_network_waiting);
-				break;
-
-			case FORMAT_NETWORK:
-				stats_formatter = boost::format(template_string_network);
-				break;
-
-			case FORMAT_TOTAL:
-				stats_formatter = boost::format(template_string_total);
-				break;
+			completion_samples = 100.f * (local_spp / haltspp);
+		}
+		else
+		{
+			completion_samples = 0.f;
 		}
 
+		if (halttime > 0)
+		{
+			completion_time = 100.f * (secelapsed / halttime);
+		}
+		else
+		{
+			completion_time = 0.f;
+		}
+
+		// Show either one of completion stats, depending on which is greatest
+		if (completion_samples > 0.f && completion_samples > completion_time)
+		{
+			os << template_string_haltspp;
+		}
+		else if (completion_time > 0.f && completion_time > completion_samples)
+		{
+			os << template_string_halttime;
+		}
+
+		boost::format stats_formatter = boost::format(os.str().c_str());
 		stats_formatter.exceptions( boost::io::all_error_bits ^(boost::io::too_many_args_bit | boost::io::too_few_args_bit) ); // Ignore extra or missing args
 
 		formattedStatsString = str(stats_formatter
@@ -215,6 +236,8 @@ private:
 			/* 15 */ % magnitude_prefix(total_spp)
 			/* 16 */ % magnitude_reduce(total_sps)
 			/* 17 */ % magnitude_prefix(total_sps)
+			/* 18 */ % completion_samples
+			/* 19 */ % completion_time
 		);
 	}
 
@@ -272,10 +295,12 @@ private:
 
 public:
 	// Inputs
-	string template_string_local;			// String template to format the data into, local only, needs 7 placeholders
-	string template_string_network_waiting;	// String template to format the data into, network waiting, needs 8 placeholders
-	string template_string_network;			// String template to format the data into, network rendering, needs 13 placeholders
-	string template_string_total;			// String template to format the data into, complete stats, needs 17 placeholders
+	string template_string_local;			// String template to format local only, needs placeholders 1 to 7
+	string template_string_network_waiting;	// String template to format network waiting, needs placeholder 8
+	string template_string_network;			// String template to format network rendering, needs placeholders 9 to 13
+	string template_string_total;			// String template to format complete stats, needs placeholders 9 and 14 to 17
+	string template_string_haltspp;			// String template to format percent samples completion, needs placeholder 18
+	string template_string_halttime;		// String template to format percent time completion, needs placeholder 19
 
 	u_int px;								// Number of pixels in film
 	u_int serverCount;						// Number of connected net slaves
@@ -286,6 +311,14 @@ public:
 	double localsamples;					// Number of film samples generated locally
 	double netsamples;						// Number of film samples generated by net slaves
 
+	int haltspp;							// Halt samples per pixel
+	int halttime;							// Halt time in seconds
+
+	float eff;								// Rendering efficiency
+
+	bool add_total;							// Add total (local+net) stats to output?
+
+	// Computed
 	float local_spp;						// Local Samples / Px
 	float local_sps;						// Local Samples / Sec
 
@@ -295,11 +328,9 @@ public:
 	float total_spp;						// Total Samples / Px		(might be predicted; check network_predicted value)
 	float total_sps;						// Total Samples / Sec		(might be predicted; check network_predicted value)
 
-	float eff;								// Rendering efficiency
+	float completion_samples;				// Percent completion wirh regards to haltspp
+	float completion_time;					// Percent completion with regards to halttime
 
-	bool add_total;							// Add total (local+net) stats to output?
-
-	// Storage
 	bool network_predicted;					// Network stats were predicted at last update ?
 
 private:
