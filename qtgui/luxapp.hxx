@@ -39,8 +39,7 @@ public:
 	
 	void init(void);
 	void InfoDialogBox(const std::string &msg, const std::string &caption);
-protected:
-	bool event(QEvent *);	
+	
 private:
 	int m_argc;
 	char **m_argv;
@@ -50,6 +49,8 @@ private:
 #if defined(__APPLE__)
 	QString m_inputFile;
 	void loadFile(const QString &fileName);
+protected:
+	bool event(QEvent *);
 #endif
 
 };
