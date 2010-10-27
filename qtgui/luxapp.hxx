@@ -39,15 +39,18 @@ public:
 	
 	void init(void);
 	void InfoDialogBox(const std::string &msg, const std::string &caption);
-	
+protected:
+	bool event(QEvent *);	
 private:
 	int m_argc;
 	char **m_argv;
 	int m_threads;
 	bool m_useServer, m_copyLog2Console;
-	QString m_inputFile;
-
 	bool ProcessCommandLine (void);
+#if defined(__APPLE__)
+	QString m_inputFile;
+	void loadFile(const QString &fileName);
+#endif
 
 };
 

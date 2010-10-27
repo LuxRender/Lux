@@ -77,6 +77,27 @@ void LuxGuiApp::init(void) {
 	}	
 }
 
+#if defined(__APPLE__) // Doubleclick or dragging .lxs in OSX Finder to LuxRender
+void LuxGuiApp::loadFile(const QString &fileName)
+{
+	if (m_inputFile.isEmpty()) {
+		m_inputFile = (fileName);
+		mainwin->renderScenefile(m_inputFile);
+	}
+}
+
+bool LuxGuiApp::event(QEvent *event)
+{
+	switch (event->type()) {
+        case QEvent::FileOpen:
+            loadFile(static_cast<QFileOpenEvent *>(event)->file());        
+            return true;
+        default:
+            return QApplication::event(event);
+    }
+}
+#endif
+
 void LuxGuiApp::InfoDialogBox(const string &msg, const string &caption = "LuxRender") {
 	QMessageBox msgBox;
 	msgBox.setIcon(QMessageBox::Information);
