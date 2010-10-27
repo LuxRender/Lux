@@ -46,8 +46,8 @@ private:
 	int m_threads;
 	bool m_useServer, m_copyLog2Console;
 	bool ProcessCommandLine (void);
-#if defined(__APPLE__)
 	QString m_inputFile;
+#if defined(__APPLE__)
 	void loadFile(const QString &fileName);
 protected:
 	bool event(QEvent *);
