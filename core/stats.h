@@ -188,6 +188,8 @@ private:
 		if (haltspp > 0)
 		{
 			completion_samples = 100.f * (total_spp / haltspp);
+			if (completion_samples > 100.f)
+				completion_samples = 100.f; // keep at 100%
 		}
 		else
 		{
@@ -197,6 +199,9 @@ private:
 		if (halttime > 0)
 		{
 			completion_time = 100.f * (secelapsed / halttime);
+			if (completion_time > 100.f)
+				completion_time = 100.f; // keep at 100%
+
 		}
 		else
 		{
@@ -204,11 +209,20 @@ private:
 		}
 
 		// Show either one of completion stats, depending on which is greatest
+		static bool timetype; // determine type once at start and keep it
 		if (completion_samples > 0.f && completion_samples > completion_time)
+		{
+			timetype = false;
+		}
+		else if (completion_time > 0.f && completion_time > completion_samples)
+		{
+			timetype = true;
+		}
+		if (timetype == false)
 		{
 			os << template_string_haltspp;
 		}
-		else if (completion_time > 0.f && completion_time > completion_samples)
+		else if (timetype == true)
 		{
 			os << template_string_halttime;
 		}
