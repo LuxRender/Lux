@@ -208,20 +208,20 @@ private:
 		}
 
 		// Show either one of completion stats, depending on which is greatest
-		static bool timetype; // determine type once at start and keep it
+		static bool timebased; // determine type once at start and keep it
 		if (completion_samples > completion_time)
 		{
-			timetype = false;
+			timebased = false;
 		}
 		else if (completion_time > completion_samples)
 		{
-			timetype = true;
+			timebased = true;
 		}
-		if (completion_samples > 0.f && timetype == false)
+		if (completion_samples > 0.f && timebased == false)
 		{
 			os << template_string_haltspp;
 		}
-		else if (completion_time > 0.f && timetype == true)
+		else if (completion_time > 0.f && timebased == true)
 		{
 			os << template_string_halttime;
 		}
