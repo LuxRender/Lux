@@ -209,19 +209,19 @@ private:
 
 		// Show either one of completion stats, depending on which is greatest
 		static bool timetype; // determine type once at start and keep it
-		if (completion_samples > 0.f && completion_samples > completion_time)
+		if (completion_samples > completion_time)
 		{
 			timetype = false;
 		}
-		else if (completion_time > 0.f && completion_time > completion_samples)
+		else if (completion_time > completion_samples)
 		{
 			timetype = true;
 		}
-		if (timetype == false)
+		if (completion_samples > 0.f && timetype == false)
 		{
 			os << template_string_haltspp;
 		}
-		else if (timetype == true)
+		else if (completion_time > 0.f && timetype == true)
 		{
 			os << template_string_halttime;
 		}
