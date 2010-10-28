@@ -201,7 +201,6 @@ private:
 			completion_time = 100.f * (secelapsed / halttime);
 			if (completion_time > 100.f)
 				completion_time = 100.f; // keep at 100%
-
 		}
 		else
 		{
