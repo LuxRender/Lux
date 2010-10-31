@@ -83,10 +83,24 @@ void LuxGuiApp::init(void) {
 #if defined(__APPLE__) // Doubleclick or dragging .lxs in OSX Finder to LuxRender
 void LuxGuiApp::loadFile(const QString &fileName)
 {
-	if (m_inputFile.isEmpty()) {
-		m_inputFile = (fileName);
-		mainwin->renderScenefile(m_inputFile);
+	if (fileName.endsWith("lxs")){
+	
+		if (m_inputFile.isEmpty()){
+			m_inputFile = (fileName);
+			mainwin->renderScenefile(m_inputFile);
+		} else {
+			if (!mainwin->canStopRendering())
+			return;
+			mainwin->endRenderingSession();
+			mainwin->renderScenefile(fileName);
+		}
+	} else {
+		QMessageBox msgBox;
+		msgBox.setIcon(QMessageBox::Information);
+		msgBox.setText("Doubleclick and drag only handles Lux scenefiles. Please choose an .lxs");
+		msgBox.exec();
 	}
+
 }
 
 bool LuxGuiApp::event(QEvent *event)

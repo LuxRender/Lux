@@ -39,7 +39,7 @@ public:
 	
 	void init(void);
 	void InfoDialogBox(const std::string &msg, const std::string &caption);
-	
+
 private:
 	int m_argc;
 	char **m_argv;

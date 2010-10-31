@@ -915,11 +915,11 @@ void MainWindow::setCurrentFile(const QString& filename)
 		m_CurrentFileBaseName = info.completeBaseName();
 
 		m_lastOpendir = info.absolutePath();
-		if (!filename.endsWith("flm")) {
+		if (filename.endsWith("lxs")) {
 			m_recentFiles.removeAll(m_CurrentFile);
 			m_recentFiles.prepend(m_CurrentFile);
 		
-			updateRecentFileActions(); // no flm to recentlist, causes parse-error
+			updateRecentFileActions(); // only parseble files .lxs to recentlist
 		}
 
 	}
