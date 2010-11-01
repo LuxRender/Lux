@@ -70,12 +70,13 @@ void LuxGuiApp::init(void) {
 	if (ProcessCommandLine()) {
 		mainwin = new MainWindow(0,m_copyLog2Console);
 		mainwin->show();
+#if defined(__APPLE__)
+		mainwin->raise();
+		mainwin->activateWindow();
+#endif
 		mainwin->SetRenderThreads(m_threads);
 		if (!m_inputFile.isEmpty())
 			mainwin->renderScenefile(m_inputFile);
-#if defined(__APPLE__)
-			mainwin->raise();
-#endif
 	} else {
 	}	
 }
