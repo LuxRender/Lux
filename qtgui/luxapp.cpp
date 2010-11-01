@@ -86,7 +86,7 @@ void LuxGuiApp::loadFile(const QString &fileName)
 {
 	if (fileName.endsWith("lxs")){
 	
-		if (m_inputFile.isEmpty()){
+		if (!ProcessCommandLine()) {
 			m_inputFile = (fileName);
 			mainwin->renderScenefile(m_inputFile);
 		} else {
