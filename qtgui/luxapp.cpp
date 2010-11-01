@@ -85,10 +85,10 @@ void LuxGuiApp::init(void) {
 void LuxGuiApp::loadFile(const QString &fileName)
 {
 	if (fileName.endsWith("lxs")){
-			if (!mainwin->canStopRendering())
-			return;
-			mainwin->endRenderingSession();
-			mainwin->renderScenefile(fileName);
+		if (!mainwin->canStopRendering())
+		return;
+		mainwin->endRenderingSession();
+		mainwin->renderScenefile(fileName);
 	} else {
 		QMessageBox msgBox;
 		msgBox.setIcon(QMessageBox::Information);
@@ -101,9 +101,10 @@ bool LuxGuiApp::event(QEvent *event)
 {
 	switch (event->type()) {
         case QEvent::FileOpen:
-            loadFile(static_cast<QFileOpenEvent *>(event)->file());
-			if (m_inputFile.isEmpty())
+			if (m_inputFile.isEmpty()){
+				loadFile(static_cast<QFileOpenEvent *>(event)->file());
 				return true;
+			}
         default:
             break;
     }
