@@ -24,10 +24,10 @@
 #define LUX_CONTEXT_H
 
 #include "lux.h"
+#include "stats.h"
 #include "geometry/transform.h"
 #include "paramset.h"
 #include "queryableregistry.h"
-#include "stats.h"
 
 #include <boost/thread/mutex.hpp>
 #include <map>

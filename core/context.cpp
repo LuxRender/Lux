@@ -33,7 +33,6 @@
 #include "shape.h"
 #include "volume.h"
 #include "material.h"
-#include "stats.h"
 #include "renderfarm.h"
 #include "film/fleximage.h"
 #include "epsilon.h"
@@ -126,7 +125,7 @@ void Context::Init() {
 	renderFarm = new RenderFarm();
 	filmOverrideParams = NULL;
 
-	statsData = new StatsData();
+	statsData = new StatsData(this);
 }
 
 void Context::Free() {
@@ -1039,21 +1038,7 @@ void Context::SceneReady() {
 }
 
 const char* Context::PrintableStatistics(const bool add_total) {
-	Context::SetActive(this);
-
-	statsData->updateData(
-		luxGetIntAttribute("film", "xResolution") * luxGetIntAttribute("film", "yResolution"),	// px
-		luxStatistics("secElapsed"),															// secelapsed
-		luxGetDoubleAttribute("film", "numberOfLocalSamples"),									// localsamples
-		luxGetDoubleAttribute("film", "numberOfSamplesFromNetwork"),							// netsamples
-		luxStatistics("efficiency"),															// eff
-		luxStatistics("threadCount"),															// threadCount
-		GetServerCount(),																		// serverCount
-		luxGetIntAttribute("film", "haltSamplePerPixel"),										// haltspp
-		luxGetIntAttribute("film", "haltTime"),													// halttime
-		add_total
-	);
-
+	statsData->update(add_total);
 	return statsData->formattedStatsString.c_str();
 }
 

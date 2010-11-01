@@ -212,6 +212,9 @@ namespace lux
   class StatsRatio;
   class StatsPercentage;
 
+  class Context;
+  class StatsData;
+
 // Global Function Declarations
   //string hashing function
   unsigned int DJBHash(const std::string& str);

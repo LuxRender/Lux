@@ -338,9 +338,6 @@ ENDIF(APPLE)
 # Compiler flags for specific setup
 #############################################################################
 
-# doug - When linking liblux as a python extension, need to compile with -fPIC
-#ADD_DEFINITIONS(-fPIC)
-
 # Jens - default Mac compiler options with OpenGL
 #ADD_DEFINITIONS(-O3 -ftree-vectorize -msse -msse2 -msse3 -mssse3 -fvariable-expansion-in-unroller -fpic -Wall -DHAVE_PTHREAD_H )
 # Jens - testing Mac compiler options (debug)
@@ -491,6 +488,7 @@ SET(lux_core_src
 	core/api.cpp
 	core/camera.cpp
 	core/color.cpp
+	core/stats.cpp
 	core/context.cpp
 	core/contribution.cpp
 	core/dynload.cpp
@@ -535,7 +533,7 @@ SET(lux_core_src
 	)
 SET(lux_accelerators_src
 	accelerators/bruteforce.cpp
-        accelerators/bvhaccel.cpp
+	accelerators/bvhaccel.cpp
 	accelerators/grid.cpp
 	accelerators/qbvhaccel.cpp
 	accelerators/tabreckdtree.cpp
@@ -688,7 +686,7 @@ SET(lux_textures_src
 	textures/brick.cpp
 	textures/checkerboard.cpp
 	textures/dots.cpp
-        textures/fbm.cpp
+	textures/fbm.cpp
 	textures/harlequin.cpp
 	textures/imagemap.cpp
 	textures/marble.cpp
@@ -870,6 +868,10 @@ IF(PYTHONLIBS_FOUND)
 			TARGET pylux POST_BUILD
 			COMMAND mv release/libpylux.so release/pylux.so
 		)
+		ADD_CUSTOM_COMMAND(
+			TARGET pylux POST_BUILD
+			COMMAND cp ${CMAKE_SOURCE_DIR}/python/pyluxconsole.py release/pyluxconsole.py
+		)
 	ELSE(APPLE)
 		ADD_LIBRARY(pylux SHARED python/binding.cpp)
 		TARGET_LINK_LIBRARIES(pylux -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${SYS_LIBRARIES} ${PYTHON_LIBRARIES} ${Boost_python_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARY})
@@ -877,13 +879,17 @@ IF(PYTHONLIBS_FOUND)
 			ADD_CUSTOM_COMMAND(
 				TARGET pylux POST_BUILD
 				COMMAND mv cygpylux.dll pylux.dll
-				)
+			)
 		ELSE(CYGWIN)
 			ADD_CUSTOM_COMMAND(
 				TARGET pylux POST_BUILD
 				COMMAND mv libpylux.so pylux.so
-				)
+			)
 		ENDIF(CYGWIN)
+		ADD_CUSTOM_COMMAND(
+			TARGET pylux POST_BUILD
+			COMMAND cp ${CMAKE_SOURCE_DIR}/python/pyluxconsole.py pyluxconsole.py
+		)
 	ENDIF(APPLE)
 ELSE(PYTHONLIBS_FOUND)
 	MESSAGE( STATUS "Warning : could not find Python libraries - not building python module")
