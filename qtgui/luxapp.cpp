@@ -111,8 +111,9 @@ bool LuxGuiApp::event(QEvent *event)
             loadFile(static_cast<QFileOpenEvent *>(event)->file());        
             return true;
         default:
-            return QApplication::event(event);
+            break;
     }
+	return QApplication::event(event);
 }
 #endif
 
