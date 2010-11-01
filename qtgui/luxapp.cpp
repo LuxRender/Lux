@@ -85,31 +85,25 @@ void LuxGuiApp::init(void) {
 void LuxGuiApp::loadFile(const QString &fileName)
 {
 	if (fileName.endsWith("lxs")){
-	
-		if (!ProcessCommandLine()) {
-			m_inputFile = (fileName);
-			mainwin->renderScenefile(m_inputFile);
-		} else {
 			if (!mainwin->canStopRendering())
 			return;
 			mainwin->endRenderingSession();
 			mainwin->renderScenefile(fileName);
-		}
 	} else {
 		QMessageBox msgBox;
 		msgBox.setIcon(QMessageBox::Information);
 		msgBox.setText("Doubleclick and drag only handles Lux scenefiles. Please choose an .lxs");
 		msgBox.exec();
 	}
-
 }
 
 bool LuxGuiApp::event(QEvent *event)
 {
 	switch (event->type()) {
         case QEvent::FileOpen:
-            loadFile(static_cast<QFileOpenEvent *>(event)->file());        
-            return true;
+            loadFile(static_cast<QFileOpenEvent *>(event)->file());
+			if (m_inputFile.isEmpty())
+				return true;
         default:
             break;
     }
