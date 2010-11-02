@@ -839,6 +839,41 @@ void MainWindow::SetRenderThreads(int num)
 	updateWidgetValue(ui->spinBox_Threads, m_numThreads);
 }
 
+#if defined(__APPLE__) // Doubleclick or dragging .lxs in OSX Finder to LuxRender
+
+void  MainWindow::loadFile(const QString &fileName)
+{
+	if (fileName.endsWith("lxs")){
+		if (!canStopRendering())
+			return;
+		endRenderingSession();
+		renderScenefile(fileName);
+	} else if (fileName.endsWith("flm")){
+		if (!canStopRendering())
+			return;
+		if(fileName.isNull())
+			return;
+		
+		setCurrentFile(fileName); // show flm-name in windowheader
+		
+		endRenderingSession();
+		
+		indicateActivity ();
+		statusMessage->setText("Loading FLM...");
+		// Start load thread
+		m_loadTimer->start(1000);
+		
+		delete m_flmloadThread;
+		m_flmloadThread = new boost::thread(boost::bind(&MainWindow::flmLoadThread, this, fileName));
+	} else {
+		QMessageBox msgBox;
+		msgBox.setIcon(QMessageBox::Information);
+		msgBox.setText("Doubleclick and drag only handles Lux scenefiles. Please choose an .lxs");
+		msgBox.exec();
+	}
+}
+#endif
+
 void MainWindow::updateStatistics()
 {
 //	m_samplesSec = luxStatistics("samplesSec");

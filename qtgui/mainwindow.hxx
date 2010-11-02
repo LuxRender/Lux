@@ -160,7 +160,8 @@ public:
 	void ShowTabLogIcon( int index , const QIcon & icon);
 	
 	bool m_auto_tonemap;
-	bool canStopRendering ();
+
+	void loadFile(const QString &fileName);
 	
 protected:
 	
@@ -231,6 +232,8 @@ private:
 	bool event (QEvent * event);
 
 	void logEvent(LuxLogEvent *event);
+	
+	bool canStopRendering ();
     
 	bool blink;
 	int viewportw, viewporth;

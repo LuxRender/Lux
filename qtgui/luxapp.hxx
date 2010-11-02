@@ -48,11 +48,9 @@ private:
 	bool ProcessCommandLine (void);
 	QString m_inputFile;
 #if defined(__APPLE__)
-	void loadFile(const QString &fileName);
 protected:
 	bool event(QEvent *);
 #endif
-
 };
 
 #endif // LUXAPP_H
