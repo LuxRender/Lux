@@ -33,13 +33,13 @@ namespace lux
 {
 
 StatsData::StatsData(Context *_ctx) :
+	formattedStatsString(""),
 	template_string_local("%1% - %2%T: %3$0.2f %4%S/p %5$0.2f %6%S/s %7$0.2f%% Eff"),
-	template_string_network_waiting(" - %8%N: Waiting for first update..."),
+	template_string_network_waiting(" - %8%N: Waiting for first update"),
 	template_string_network(" - %8%N: %9%%10$0.2f %11%S/p %12$0.2f %13%S/s"),
 	template_string_total(" - Tot: %9%%14$0.2f %15%S/p %16$0.2f %17%S/s"),
-	template_string_haltspp(" - %18$0.2f%% Complete (S/Px)"),
-	template_string_halttime(" - %19$0.2f%% Complete (sec)"),
-	network_predicted(false),
+	template_string_haltspp(" - %9%%18$0.2f%% Complete (S/Px)"),
+	template_string_halttime(" - %9%%19$0.2f%% Complete (sec)"),
 	previousNetworkSamplesSec(0),
 	previousNetworkSamples(0),
 	lastUpdateSecElapsed(0)
@@ -47,171 +47,167 @@ StatsData::StatsData(Context *_ctx) :
 	ctx = _ctx;
 };
 
-void StatsData::update(const bool _add_total)
+/**
+ * Format the input data into a readable string. Predict the network
+ * and total rendering progress if necessary.
+ */
+void StatsData::update(const bool add_total)
 {
+	/*
+	 * %N comments refer to placeholder values used in template strings
+	 */
+
 	try {
+		// These 5 vars are neither stored nor placed into the output string
+		int px = 0;
+		int haltspp = -1;
+		int halttime = -1;
+		double localsamples = 0;
+		double netsamples = 0;
+
 		Queryable *film_registry = ctx->registry["film"];
 		if (film_registry)
 		{
-			int xres = (*film_registry)["xResolution"].IntValue();
-			int yres = (*film_registry)["yResolution"].IntValue();
-			px = xres * yres;
-
+			px = (*film_registry)["xResolution"].IntValue() * (*film_registry)["yResolution"].IntValue();
 			localsamples = (*film_registry)["numberOfLocalSamples"].DoubleValue();
 			netsamples = (*film_registry)["numberOfSamplesFromNetwork"].DoubleValue();
 			haltspp = (*film_registry)["haltSamplePerPixel"].IntValue();
 			halttime = (*film_registry)["haltTime"].IntValue();
 		}
 
-		secelapsed = ctx->Statistics("secElapsed");
-		eff = ctx->Statistics("efficiency");
-		threadCount = ctx->Statistics("threadCount");
-
-		serverCount = ctx->GetServerCount();
-
-		add_total = _add_total;
-
-		FormatStatsString();
-
-	} catch (std::runtime_error e) {
-		LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
-	}
-};
-
-/**
- * Format the input data into a readable string. Predict the network
- * rendering progress if necessary.
- *
- */
-
-void StatsData::FormatStatsString()
-{
-	std::ostringstream os;
-	os << template_string_local;
-
-	if (secelapsed > 0)
-	{
-		local_spp = localsamples / px;
-		local_sps = localsamples / secelapsed;
-	}
-	else
-	{
-		local_spp = 0.f;
-		local_sps = 0.f;
-	}
-
-	// This is so that completion_samples can be calculated if not networking or add_total==false
-	total_spp = local_spp;
-	total_sps = local_sps;
-
-	if (serverCount > 0)
-	{
-		if (netsamples > 0 && secelapsed > 0)
+		if (px == 0)
 		{
-			os << template_string_network;
+			// Stats calculation is impossible, give up now.
+			return;
+		}
 
-			if (netsamples == previousNetworkSamples)
+		std::ostringstream os;
+		os << template_string_local;
+
+		double secelapsed = ctx->Statistics("secElapsed");	// %1
+		float local_spp = 0;								// %3, %4
+		float local_sps = 0;								// %5, %6
+		if (secelapsed > 0)
+		{
+			local_spp = localsamples / px;
+			local_sps = localsamples / secelapsed;
+		}
+
+		// This is so that completion_samples can be calculated if not networking or add_total==false
+		float total_spp = local_spp;						// %14, %15
+		float total_sps = local_sps;						// %16, %17
+
+		int serverCount = ctx->GetServerCount();			// %8
+		bool network_predicted = false;						// %9
+		float network_spp = 0;								// %10, %11
+		float network_sps = 0;								// %12, %13
+		if (serverCount > 0)
+		{
+			if (netsamples > 0 && secelapsed > 0)
 			{
-				// Predict based on last reading
-				netsamples = ((secelapsed - lastUpdateSecElapsed) * previousNetworkSamplesSec) +
-								previousNetworkSamples;
-				network_spp = netsamples / px;
-				network_sps = previousNetworkSamplesSec;
+				os << template_string_network;
 
-				network_predicted = true;
+				if (netsamples == previousNetworkSamples)
+				{
+					// Predict based on last reading
+					netsamples = ((secelapsed - lastUpdateSecElapsed) * previousNetworkSamplesSec) +
+									previousNetworkSamples;
+					network_spp = netsamples / px;
+					network_sps = previousNetworkSamplesSec;
+
+					network_predicted = true;
+				}
+				else
+				{
+					// Use real data
+					network_spp = netsamples / px;
+					network_sps = netsamples / secelapsed;
+
+					previousNetworkSamples = netsamples;
+					previousNetworkSamplesSec = network_sps;
+					lastUpdateSecElapsed = secelapsed;
+				}
+
+				if (add_total)
+				{
+					os << template_string_total;
+
+					total_spp = (localsamples + netsamples) / px;
+					total_sps = (localsamples + netsamples) / secelapsed;
+				}
 			}
 			else
 			{
-				// Use real data
-				network_spp = netsamples / px;
-				network_sps = netsamples / secelapsed;
-
-				previousNetworkSamples = netsamples;
-				previousNetworkSamplesSec = network_sps;
-				lastUpdateSecElapsed = secelapsed;
-
-				network_predicted = false;
-			}
-
-			if (add_total)
-			{
-				os << template_string_total;
-
-				total_spp = (localsamples + netsamples) / px;
-				total_sps = (localsamples + netsamples) / secelapsed;
+				os << template_string_network_waiting;
 			}
 		}
-		else
+
+		float completion_samples = 0.f;						// %18
+		if (haltspp > 0)
 		{
-			os << template_string_network_waiting;
+			completion_samples = 100.f * (total_spp / haltspp);
+			if (completion_samples > 100.f)
+				completion_samples = 100.f; // keep at 100%
 		}
-	}
 
-	if (haltspp > 0)
-	{
-		completion_samples = 100.f * (total_spp / haltspp);
-		if (completion_samples > 100.f)
-			completion_samples = 100.f; // keep at 100%
-	}
-	else
-	{
-		completion_samples = 0.f;
-	}
+		float completion_time = 0.f;						// %19
+		if (halttime > 0)
+		{
+			completion_time = 100.f * (secelapsed / halttime);
+			if (completion_time > 100.f)
+				completion_time = 100.f; // keep at 100%
+		}
 
-	if (halttime > 0)
-	{
-		completion_time = 100.f * (secelapsed / halttime);
-		if (completion_time > 100.f)
-			completion_time = 100.f; // keep at 100%
-	}
-	else
-	{
-		completion_time = 0.f;
-	}
+		// Show either one of completion stats, depending on which is greatest
+		static bool timebased; // determine type once at start and keep it
+		if (completion_samples > completion_time)
+		{
+			timebased = false;
+		}
+		else if (completion_time > completion_samples)
+		{
+			timebased = true;
+		}
+		if (completion_samples > 0.f && timebased == false)
+		{
+			os << template_string_haltspp;
+		}
+		else if (completion_time > 0.f && timebased == true)
+		{
+			os << template_string_halttime;
+		}
 
-	// Show either one of completion stats, depending on which is greatest
-	static bool timebased; // determine type once at start and keep it
-	if (completion_samples > completion_time)
-	{
-		timebased = false;
-	}
-	else if (completion_time > completion_samples)
-	{
-		timebased = true;
-	}
-	if (completion_samples > 0.f && timebased == false)
-	{
-		os << template_string_haltspp;
-	}
-	else if (completion_time > 0.f && timebased == true)
-	{
-		os << template_string_halttime;
-	}
+		boost::format stats_formatter = boost::format(os.str().c_str());
+		stats_formatter.exceptions( boost::io::all_error_bits ^(boost::io::too_many_args_bit | boost::io::too_few_args_bit) ); // Ignore extra or missing args
 
-	boost::format stats_formatter = boost::format(os.str().c_str());
-	stats_formatter.exceptions( boost::io::all_error_bits ^(boost::io::too_many_args_bit | boost::io::too_few_args_bit) ); // Ignore extra or missing args
+		int threadCount = ctx->Statistics("threadCount");	// %2
+		float eff = ctx->Statistics("efficiency");			// %7
 
-	formattedStatsString = str(stats_formatter
-		/*  1 */ % boost::posix_time::time_duration(0, 0, secelapsed, 0)
-		/*  2 */ % threadCount
-		/*  3 */ % magnitude_reduce(local_spp)
-		/*  4 */ % magnitude_prefix(local_spp)
-		/*  5 */ % magnitude_reduce(local_sps)
-		/*  6 */ % magnitude_prefix(local_sps)
-		/*  7 */ % eff
-		/*  8 */ % serverCount
-		/*  9 */ % ((network_predicted)?"~":"")
-		/* 10 */ % magnitude_reduce(network_spp)
-		/* 11 */ % magnitude_prefix(network_spp)
-		/* 12 */ % magnitude_reduce(network_sps)
-		/* 13 */ % magnitude_prefix(network_sps)
-		/* 14 */ % magnitude_reduce(total_spp)
-		/* 15 */ % magnitude_prefix(total_spp)
-		/* 16 */ % magnitude_reduce(total_sps)
-		/* 17 */ % magnitude_prefix(total_sps)
-		/* 18 */ % completion_samples
-		/* 19 */ % completion_time
-	);
+		formattedStatsString = str(stats_formatter
+			/*  %1 */ % boost::posix_time::time_duration(0, 0, secelapsed, 0)
+			/*  %2 */ % threadCount
+			/*  %3 */ % magnitude_reduce(local_spp)
+			/*  %4 */ % magnitude_prefix(local_spp)
+			/*  %5 */ % magnitude_reduce(local_sps)
+			/*  %6 */ % magnitude_prefix(local_sps)
+			/*  %7 */ % eff
+			/*  %8 */ % serverCount
+			/*  %9 */ % ((network_predicted)?"~":"")
+			/* %10 */ % magnitude_reduce(network_spp)
+			/* %11 */ % magnitude_prefix(network_spp)
+			/* %12 */ % magnitude_reduce(network_sps)
+			/* %13 */ % magnitude_prefix(network_sps)
+			/* %14 */ % magnitude_reduce(total_spp)
+			/* %15 */ % magnitude_prefix(total_spp)
+			/* %16 */ % magnitude_reduce(total_sps)
+			/* %17 */ % magnitude_prefix(total_sps)
+			/* %18 */ % completion_samples
+			/* %19 */ % completion_time
+		);
+
+	} catch (std::runtime_error e) {
+			LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
+	}
 }
 
 
