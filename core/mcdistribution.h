@@ -120,6 +120,12 @@ public:
 	float SampleContinuous(float u, float *pdf, u_int *off = NULL) const {
 		// Find surrounding CDF segments and _offset_
 		float *ptr = std::upper_bound(cdf, cdf + count + 1, u);
+		if (ptr == cdf + count + 1) {
+			*pdf = func[count - 1] * invFuncInt;
+			if (off)
+				*off = count - 1;
+			return 1.f;
+		}
 		u_int offset = max<int>(0, ptr - cdf - 1);
 
 		// Compute offset along CDF segment
@@ -150,6 +156,12 @@ public:
 	u_int SampleDiscrete(float u, float *pdf, float *du = NULL) const {
 		// Find surrounding CDF segments and _offset_
 		float *ptr = std::upper_bound(cdf, cdf + count + 1, u);
+		if (ptr == cdf + count + 1) {
+			if (du)
+				*du = 1.f;
+			*pdf = func[count - 1] * invFuncInt * invCount;
+			return count - 1;
+		}
 		u_int offset = max<int>(0, ptr - cdf - 1);
 
 		// Compute offset along CDF segment
@@ -266,16 +278,16 @@ public:
 	 */
 	float Eval(float x) const {
 		if( x <= xFunc[0] )
-			return yFunc[ 0 ];
-		else if( x >= xFunc[ count - 1 ] )
-			return yFunc[ count - 1 ];
+			return yFunc[0];
+		else if( x >= xFunc[count - 1] )
+			return yFunc[count - 1];
 
-		float *ptr = std::upper_bound(xFunc, xFunc+count, x);
+		float *ptr = std::upper_bound(xFunc, xFunc + count, x);
 		const u_int offset = static_cast<u_int>(max<int>(0, ptr - xFunc - 1));
 
-		float d = (x - xFunc[offset]) / (xFunc[offset+1] - xFunc[offset]);
+		float d = (x - xFunc[offset]) / (xFunc[offset + 1] - xFunc[offset]);
 
-		return (1.f - d) * yFunc[offset] + d * yFunc[offset+1];
+		return Lerp(d, yFunc[offset], yFunc[offset + 1]);
 	}
 
 	/**
@@ -291,15 +303,15 @@ public:
 			*d = 0.f;
 			return 0;
 		}
-		else if( x >= xFunc[ count - 1 ] ) {
+		else if( x >= xFunc[count - 1] ) {
 			*d = 0.f;
 			return count - 1;
 		}
 
-		float *ptr = std::upper_bound(xFunc, xFunc+count, x);
-		int offset = (int) (ptr-xFunc-1);
+		float *ptr = std::upper_bound(xFunc, xFunc + count, x);
+		int offset = max<int>(0, ptr - xFunc - 1);
 
-		*d = (x - xFunc[offset]) / (xFunc[offset+1] - xFunc[offset]);
+		*d = (x - xFunc[offset]) / (xFunc[offset + 1] - xFunc[offset]);
 		return offset;
 	}
 
@@ -378,12 +390,16 @@ public:
 	 */ 
 	float Sample(float u, float *pdf) const {
 		// Find surrounding cdf segments
-		float *ptr = std::upper_bound(yCdf, yCdf+count+1, u);
-		int offset = Clamp((int) (ptr-yCdf-1), 0, count - 1);
+		float *ptr = std::upper_bound(yCdf, yCdf + count + 1, u);
+		if (ptr == yCdf + count + 1) {
+			*pdf = xFunc[count] * invFuncInt;
+			return xCdf[count];
+		}
+		int offset = max<int>(0, ptr - yCdf - 1);
 		// Return offset along current cdf segment
-		float du = (u - yCdf[offset]) / (yCdf[offset+1] - yCdf[offset]);
+		float du = (u - yCdf[offset]) / (yCdf[offset + 1] - yCdf[offset]);
 		*pdf = xFunc[offset] * invFuncInt;
-		return xCdf[offset] + du * (xCdf[offset+1] - xCdf[offset]);
+		return Lerp(du, xCdf[offset], xCdf[offset + 1]);
 	}
 
 	/**
@@ -399,12 +415,12 @@ public:
 		else if( x >= xFunc[ count - 1 ] )
 			return yFunc[ count - 1 ];
 
-		float *ptr = std::upper_bound(xFunc, xFunc+count, x);
-		int offset = (int) (ptr-xFunc-1);
+		float *ptr = std::upper_bound(xFunc, xFunc + count, x);
+		int offset = max<int>(0, ptr - xFunc - 1);
 
 		float d = (x - xFunc[offset]) / (xFunc[offset+1] - xFunc[offset]);
 
-		return (1.f - d) * yFunc[offset] + d * yFunc[offset+1];
+		return Lerp(d, yFunc[offset], yFunc[offset+1]);
 	}
 
 	/**

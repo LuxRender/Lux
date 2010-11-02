@@ -227,7 +227,7 @@ namespace lux
 
 // Global Inline Functions
 template<class T> inline T Lerp(float t, T v1, T v2) {
-	return (1.f - t) * v1 + t * v2;
+	return v1 + t * (v2 - v1);
 }
 template<class T> inline T Clamp(T val, T low, T high) {
 	return val > low ? (val < high ? val : high) : low;
