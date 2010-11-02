@@ -843,12 +843,12 @@ void MainWindow::SetRenderThreads(int num)
 
 void  MainWindow::loadFile(const QString &fileName)
 {
-	if (fileName.endsWith("lxs")){
+	if (fileName.endsWith(".lxs")){
 		if (!canStopRendering())
 			return;
 		endRenderingSession();
 		renderScenefile(fileName);
-	} else if (fileName.endsWith("flm")){
+	} else if (fileName.endsWith(".flm")){
 		if (!canStopRendering())
 			return;
 		if(fileName.isNull())
@@ -950,7 +950,7 @@ void MainWindow::setCurrentFile(const QString& filename)
 		m_CurrentFileBaseName = info.completeBaseName();
 
 		m_lastOpendir = info.absolutePath();
-		if (filename.endsWith("lxs")) {
+		if (filename.endsWith(".lxs")) {
 			m_recentFiles.removeAll(m_CurrentFile);
 			m_recentFiles.prepend(m_CurrentFile);
 		
