@@ -868,7 +868,9 @@ void  MainWindow::loadFile(const QString &fileName)
 	} else {
 		QMessageBox msgBox;
 		msgBox.setIcon(QMessageBox::Information);
-		msgBox.setText("Doubleclick and drag only handles Lux scenefiles. Please choose an .lxs");
+		QFileInfo fi(fileName);
+		QString name = fi.fileName();
+		msgBox.setText(name +(" is not a renderable scenefile. Please choose an .lxs"));
 		msgBox.exec();
 	}
 }
