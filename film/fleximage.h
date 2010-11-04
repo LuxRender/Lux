@@ -37,6 +37,7 @@ class FlexImageFilm : public Film {
 public:
 	enum OutputChannels { Y, YA, RGB, RGBA };
 	enum ZBufNormalization { None, CameraStartEnd, MinMax };
+	enum TonemapKernels { TMK_Reinhard = 0, TMK_Linear, TMK_Contrast, TMK_MaxWhite, TMK_AutoLinear };
 
 	// FlexImageFilm Public Methods
 
@@ -146,7 +147,7 @@ private:
 	XYZColor * m_glareImage; // Persisting glarelayer image 
 	float m_GlareAmount, d_GlareAmount;
 	float m_GlareRadius, d_GlareRadius;
-	u_int m_GlareBlades, d_GlareBlades;
+	int m_GlareBlades, d_GlareBlades;
 	float m_GlareThreshold, d_GlareThreshold;
 	bool m_GlareUpdateLayer;
 	bool m_GlareDeleteLayer;

@@ -32,6 +32,7 @@
 #include "binding.h"
 #include "pydoc.h"
 #include "pycontext.h"
+#include "pyfleximage.h"
 #include "pyrenderserver.h"
 
 namespace lux{
@@ -68,7 +69,10 @@ BOOST_PYTHON_MODULE(pylux)
 		false	/* show c++ signatures */
 	);
 
-	scope().attr("__doc__") = ds_pylux;
+	// This 'module' is actually a fake package
+	object package = scope();
+	package.attr("__path__") = "pylux";
+	package.attr("__doc__") = ds_pylux;
 
 	//Direct python module calls
 	def("version", luxVersion, ds_pylux_version);
@@ -152,5 +156,6 @@ BOOST_PYTHON_MODULE(pylux)
 	
 	// Add definitions given in other header files
 	export_PyContext();
+	export_PyFlexImageFilm();
 	export_PyRenderServer();
 }

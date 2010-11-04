@@ -87,6 +87,7 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, const float c
 
 	// Set use and default runtime changeable parameters
 	m_TonemapKernel = d_TonemapKernel = p_TonemapKernel;
+	AddIntAttribute(*this, "TonemapKernel", "Tonemap kernel type: {0: Reinhard, 1: Linear, 2: Contrast, 3: MaxWhite, 4: AutoLinear}", &FlexImageFilm::m_TonemapKernel, Queryable::ReadWriteAccess);
 
 	m_ReinhardPreScale = d_ReinhardPreScale = p_ReinhardPreScale;
 	AddFloatAttribute(*this, "ReinhardPreScale", "Reinhard pre-scale", &FlexImageFilm::m_ReinhardPreScale, Queryable::ReadWriteAccess);
@@ -152,8 +153,7 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, const float c
 	m_GlareRadius = d_GlareRadius = 0.03f;
 	AddFloatAttribute(*this, "GlareRadius", "Glare radius", &FlexImageFilm::m_GlareRadius, Queryable::ReadWriteAccess);
 	m_GlareBlades = d_GlareBlades = 3;
-	// TODO: this won't register ?
-	//AddIntAttribute(*this, "GlareBlades", "Glare blades", &FlexImageFilm::m_GlareBlades, Queryable::ReadWriteAccess);
+	AddIntAttribute(*this, "GlareBlades", "Glare blades", &FlexImageFilm::m_GlareBlades, Queryable::ReadWriteAccess);
 	m_GlareThreshold = d_GlareThreshold = .5f;
 	AddFloatAttribute(*this, "GlareThreshold", "Glare threshold", &FlexImageFilm::m_GlareThreshold, Queryable::ReadWriteAccess);
 
@@ -814,27 +814,27 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 		// Apply the imaging/tonemapping pipeline
 		ParamSet toneParams;
 		std::string tmkernel = "reinhard";
-		if(m_TonemapKernel == 0) {
+		if(m_TonemapKernel == TMK_Reinhard) {
 			// Reinhard Tonemapper
 			toneParams.AddFloat("prescale", &m_ReinhardPreScale, 1);
 			toneParams.AddFloat("postscale", &m_ReinhardPostScale, 1);
 			toneParams.AddFloat("burn", &m_ReinhardBurn, 1);
 			tmkernel = "reinhard";
-		} else if(m_TonemapKernel == 1) {
+		} else if(m_TonemapKernel == TMK_Linear) {
 			// Linear Tonemapper
 			toneParams.AddFloat("sensitivity", &m_LinearSensitivity, 1);
 			toneParams.AddFloat("exposure", &m_LinearExposure, 1);
 			toneParams.AddFloat("fstop", &m_LinearFStop, 1);
 			toneParams.AddFloat("gamma", &m_LinearGamma, 1);
 			tmkernel = "linear";
-		} else if(m_TonemapKernel == 2) {
+		} else if(m_TonemapKernel == TMK_Contrast) {
 			// Contrast Tonemapper
 			toneParams.AddFloat("ywa", &m_ContrastYwa, 1);
 			tmkernel = "contrast";
-		} else if(m_TonemapKernel == 3) {		
+		} else if(m_TonemapKernel == TMK_MaxWhite) {		
 			// MaxWhite Tonemapper
 			tmkernel = "maxwhite";
-		} else {
+		} else { // if(m_TonemapKernel == TMK_AutoLinear) {
 			// Auto Linear Tonemapper
 			tmkernel = "autolinear";
 		}
@@ -1234,16 +1234,16 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 	GetColorspaceParam(params, "colorspace_white", white);
 
 	// Tonemapping
-	int s_TonemapKernel = 0;
+	int s_TonemapKernel = TMK_Reinhard;
 	string tmkernelStr = params.FindOneString("tonemapkernel", "reinhard");
-	if (tmkernelStr == "reinhard") s_TonemapKernel = 0;
-	else if (tmkernelStr == "linear") s_TonemapKernel = 1;
-	else if (tmkernelStr == "contrast") s_TonemapKernel = 2;
-	else if (tmkernelStr == "maxwhite") s_TonemapKernel = 3;
-	else if (tmkernelStr == "autolinear") s_TonemapKernel = 4;
+	if (tmkernelStr == "reinhard") s_TonemapKernel = TMK_Reinhard;
+	else if (tmkernelStr == "linear") s_TonemapKernel = TMK_Linear;
+	else if (tmkernelStr == "contrast") s_TonemapKernel = TMK_Contrast;
+	else if (tmkernelStr == "maxwhite") s_TonemapKernel = TMK_MaxWhite;
+	else if (tmkernelStr == "autolinear") s_TonemapKernel = TMK_AutoLinear;
 	else {
 		LOG(LUX_WARNING,LUX_BADTOKEN) << "Tonemap kernel  '" << tmkernelStr << "' unknown. Using \"reinhard\".";
-		s_TonemapKernel = 0;
+		s_TonemapKernel = TMK_Reinhard;
 	}
 
 	float s_ReinhardPreScale = params.FindOneFloat("reinhard_prescale", 1.f);
