@@ -89,37 +89,58 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, const float c
 	m_TonemapKernel = d_TonemapKernel = p_TonemapKernel;
 
 	m_ReinhardPreScale = d_ReinhardPreScale = p_ReinhardPreScale;
+	AddFloatAttribute(*this, "ReinhardPreScale", "Reinhard pre-scale", &FlexImageFilm::m_ReinhardPreScale, Queryable::ReadWriteAccess);
 	m_ReinhardPostScale = d_ReinhardPostScale = p_ReinhardPostScale;
+	AddFloatAttribute(*this, "ReinhardPostScale", "Reinhard post-scale", &FlexImageFilm::m_ReinhardPostScale, Queryable::ReadWriteAccess);
 	m_ReinhardBurn = d_ReinhardBurn = p_ReinhardBurn;
+	AddFloatAttribute(*this, "ReinhardBurn", "Reinhard burn", &FlexImageFilm::m_ReinhardBurn, Queryable::ReadWriteAccess);
 
 	m_LinearSensitivity = d_LinearSensitivity = p_LinearSensitivity;
+	AddFloatAttribute(*this, "LinearSensitivity", "Linear ISO sensitivity", &FlexImageFilm::m_LinearSensitivity, Queryable::ReadWriteAccess);
 	m_LinearExposure = d_LinearExposure = p_LinearExposure;
+	AddFloatAttribute(*this, "LinearExposure", "Linear exposure (sec)", &FlexImageFilm::m_LinearExposure, Queryable::ReadWriteAccess);
 	m_LinearFStop = d_LinearFStop = p_LinearFStop;
+	AddFloatAttribute(*this, "LinearFStop", "Linear f/Stop", &FlexImageFilm::m_LinearFStop, Queryable::ReadWriteAccess);
 	m_LinearGamma = d_LinearGamma = p_LinearGamma;
+	AddFloatAttribute(*this, "LinearGamma", "Linear gamma", &FlexImageFilm::m_LinearGamma, Queryable::ReadWriteAccess);
 
 	m_ContrastYwa = d_ContrastYwa = p_ContrastYwa;
+	AddFloatAttribute(*this, "ContrastYwa", "Contrast world-adaptation luminance", &FlexImageFilm::m_ContrastYwa, Queryable::ReadWriteAccess);
 
 	m_RGB_X_White = d_RGB_X_White = whitepoint[0];
+	AddFloatAttribute(*this, "RGB_X_White", "Colourspace: white point X", &FlexImageFilm::m_RGB_X_White, Queryable::ReadWriteAccess);
 	m_RGB_Y_White = d_RGB_Y_White = whitepoint[1];
+	AddFloatAttribute(*this, "RGB_Y_White", "Colourspace: white point Y", &FlexImageFilm::m_RGB_Y_White, Queryable::ReadWriteAccess);
 	m_RGB_X_Red = d_RGB_X_Red = cs_red[0];
+	AddFloatAttribute(*this, "RGB_X_Red", "Colourspace: red X", &FlexImageFilm::m_RGB_X_Red, Queryable::ReadWriteAccess);
 	m_RGB_Y_Red = d_RGB_Y_Red = cs_red[1];
+	AddFloatAttribute(*this, "RGB_Y_Red", "Colourspace: red Y", &FlexImageFilm::m_RGB_Y_Red, Queryable::ReadWriteAccess);
 	m_RGB_X_Green = d_RGB_X_Green = cs_green[0];
+	AddFloatAttribute(*this, "RGB_X_Green", "Colourspace: green X", &FlexImageFilm::m_RGB_X_Green, Queryable::ReadWriteAccess);
 	m_RGB_Y_Green = d_RGB_Y_Green = cs_green[1];
+	AddFloatAttribute(*this, "RGB_Y_Green", "Colourspace: green Y", &FlexImageFilm::m_RGB_Y_Green, Queryable::ReadWriteAccess);
 	m_RGB_X_Blue = d_RGB_X_Blue = cs_blue[0];
+	AddFloatAttribute(*this, "RGB_X_Blue", "Colourspace: blue X", &FlexImageFilm::m_RGB_X_Blue, Queryable::ReadWriteAccess);
 	m_RGB_Y_Blue = d_RGB_Y_Blue = cs_blue[1];
+	AddFloatAttribute(*this, "RGB_Y_Blue", "Colourspace: blue Y", &FlexImageFilm::m_RGB_Y_Blue, Queryable::ReadWriteAccess);
 	m_Gamma = d_Gamma = p_Gamma;
+	AddFloatAttribute(*this, "Gamma", "Film gamma", &FlexImageFilm::m_Gamma, Queryable::ReadWriteAccess);
 
 	m_BloomUpdateLayer = false;
 	m_BloomDeleteLayer = false;
 	m_HaveBloomImage = false;
 	m_BloomRadius = d_BloomRadius = 0.07f;
+	AddFloatAttribute(*this, "BloomRadius", "Bloom radius", &FlexImageFilm::m_BloomRadius, Queryable::ReadWriteAccess);
 	m_BloomWeight = d_BloomWeight = 0.25f;
+	AddFloatAttribute(*this, "BloomWeight", "Bloom weight", &FlexImageFilm::m_BloomWeight, Queryable::ReadWriteAccess);
 
 	m_VignettingEnabled = d_VignettingEnabled = false;
 	m_VignettingScale = d_VignettingScale = 0.4f;
+	AddFloatAttribute(*this, "VignettingScale", "Vignetting scale", &FlexImageFilm::m_VignettingScale, Queryable::ReadWriteAccess);
 
 	m_AberrationEnabled = d_AberrationEnabled = false;
 	m_AberrationAmount = d_AberrationAmount = 0.005f;
+	AddFloatAttribute(*this, "AberrationAmount", "Chromatic abberation amount", &FlexImageFilm::m_AberrationAmount, Queryable::ReadWriteAccess);
 
 	m_GlareUpdateLayer = false;
 	m_GlareDeleteLayer = false;
@@ -127,9 +148,14 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, const float c
 	m_glareImage = NULL;
 	m_bloomImage = NULL;
 	m_GlareAmount = d_GlareAmount = 0.03f;
+	AddFloatAttribute(*this, "GlareAmount", "Glare amount", &FlexImageFilm::m_GlareAmount, Queryable::ReadWriteAccess);
 	m_GlareRadius = d_GlareRadius = 0.03f;
+	AddFloatAttribute(*this, "GlareRadius", "Glare radius", &FlexImageFilm::m_GlareRadius, Queryable::ReadWriteAccess);
 	m_GlareBlades = d_GlareBlades = 3;
+	// TODO: this won't register ?
+	//AddIntAttribute(*this, "GlareBlades", "Glare blades", &FlexImageFilm::m_GlareBlades, Queryable::ReadWriteAccess);
 	m_GlareThreshold = d_GlareThreshold = .5f;
+	AddFloatAttribute(*this, "GlareThreshold", "Glare threshold", &FlexImageFilm::m_GlareThreshold, Queryable::ReadWriteAccess);
 
 	m_HistogramEnabled = d_HistogramEnabled = false;
 
