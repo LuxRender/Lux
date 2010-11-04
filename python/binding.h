@@ -20,39 +20,11 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// Python doc-strings for pylux module
-// Try to keep within 80 columns
+#ifndef LUX_BINDING_H
+#define LUX_BINDING_H
 
-// ref: http://epydoc.sourceforge.net/manual-epytext.html
+namespace lux {
 
-#ifndef LUX_PYDOC_H
-#define LUX_PYDOC_H
+} //namespace lux
 
-const char * ds_pylux =
-"LuxRender Python Bindings\n\n"
-"Provides access to the LuxRender API in python\n\n"
-"TODO: Docstrings marked (+) need verification.";
-
-const char * ds_pylux_version =
-"Returns the pylux/LuxRender version";
-
-const char * ds_pylux_ThreadSignals =
-"Valid states for rendering threads";
-
-const char * ds_pylux_RenderingThreadInfo =
-"Container class for information about rendering threads";
-
-const char * ds_pylux_Component =
-"(+) LuxRender Components available to modify at render-time";
-
-const char * ds_pylux_ComponentParameters =
-"(+) Parameters of luxComponents available to modify at render time";
-
-const char * ds_pylux_RenderingServerInfo =
-"Container class for information about rendering servers";
-
-const char * ds_pylux_errorHandler =
-"Specify an alternate error handler (logging) function for LuxRender engine\n"
-"output. By default the render engine will print to stdout";
-
-#endif	// LUX_PYDOC_H
+#endif	// LUX_BINDING_H
