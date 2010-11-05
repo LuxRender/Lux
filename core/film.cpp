@@ -26,12 +26,12 @@
 #include "dynload.h"
 #include "paramset.h"
 #include "tonemap.h"
+#include "cameraresponse.h"
 #include "filter.h"
 #include "contribution.h"
 #include "stats.h"
 #include "blackbodyspd.h"
 #include "osfunc.h"
-
 
 #include <iostream>
 #include <fstream>
@@ -194,7 +194,7 @@ void ApplyImagingPipeline(vector<XYZColor> &xyzpixels,
 	bool &haveGlareImage, XYZColor *&glareImage, bool glareUpdate,
 	float glareAmount, float glareRadius, u_int glareBlades, float glareThreshold,
 	const char *toneMapName, const ParamSet *toneMapParams,
-	float gamma, float dither)
+	const CameraResponse *response, float gamma, float dither)
 {
 	const u_int nPix = xResolution * yResolution;
 
@@ -346,16 +346,17 @@ void ApplyImagingPipeline(vector<XYZColor> &xyzpixels,
 			toneMap->Map(xyzpixels, xResolution, yResolution, 100.f);
 		delete toneMap;
 	}
+
 	// Convert to RGB
 	vector<RGBColor> &rgbpixels = reinterpret_cast<vector<RGBColor> &>(xyzpixels);
-	const float invGamma = 1.f / gamma;
-	for (u_int i = 0; i < nPix; ++i) {
+	for (u_int i = 0; i < nPix; ++i)
 		rgbpixels[i] = colorSpace.ToRGBConstrained(xyzpixels[i]);
-		// Do gamma correction
-		rgbpixels[i] = rgbpixels[i].Pow(invGamma);
-	}
 
 	// DO NOT USE xyzpixels ANYMORE AFTER THIS POINT
+	if (response) {
+		for (u_int i = 0; i < nPix; ++i)
+			response->Map(rgbpixels[i]);
+	}
 
 	// Add vignetting & chromatic aberration effect
 	// These are paired in 1 loop as they can share quite a few calculations
@@ -413,9 +414,8 @@ void ApplyImagingPipeline(vector<XYZColor> &xyzpixels,
 	}
 
 	// Calculate histogram (if it is enabled and exists)
-	if (HistogramEnabled && histogram) {
+	if (HistogramEnabled && histogram)
 		histogram->Calculate(rgbpixels, xResolution, yResolution);
-	}
 
 	// Apply Chiu Noise Reduction Filter
 	if(chiuParams.enabled) {
@@ -526,6 +526,11 @@ void ApplyImagingPipeline(vector<XYZColor> &xyzpixels,
 	if (dither > 0.f)
 		for (u_int i = 0; i < nPix; ++i)
 			rgbpixels[i] += 2.f * dither * (lux::random::floatValueP() - .5f);
+
+	// Do gamma correction
+	const float invGamma = 1.f / gamma;
+	for (u_int i = 0; i < nPix; ++i)
+		rgbpixels[i] = rgbpixels[i].Pow(invGamma);
 }
 
 // Film Function Definitions

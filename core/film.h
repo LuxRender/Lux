@@ -509,8 +509,8 @@ void ApplyImagingPipeline(vector<XYZColor> &pixels,
 	bool aberrationEnabled, float aberrationAmount,
 	bool &haveGlareImage, XYZColor *&glareImage, bool glareUpdate,
 	float glareAmount, float glareRadius, u_int glareBlades, float glareThreshold,
-	const char *tonemap, const ParamSet *toneMapParams, float gamma,
-	float dither);
+	const char *tonemap, const ParamSet *toneMapParams,
+	const CameraResponse *response, float gamma, float dither);
 
 }//namespace lux;
 

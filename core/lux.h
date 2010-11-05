@@ -147,6 +147,7 @@ namespace lux
   class ColorSystem;
   class SPD;
   class Camera;
+  class CameraResponse;
   class ProjectiveCamera;
   class Sampler;
   class PixelSampler;

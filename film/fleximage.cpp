@@ -30,6 +30,7 @@
 #include <boost/serialization/string.hpp>
 
 #include "fleximage.h"
+#include "cameraresponse.h"
 #include "error.h"
 #include "scene.h"		// for Scene
 #include "filter.h"
@@ -53,7 +54,7 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, const float c
 	bool w_resume_FLM, bool restart_resume_FLM, int haltspp, int halttime,
 	int p_TonemapKernel, float p_ReinhardPreScale, float p_ReinhardPostScale,
 	float p_ReinhardBurn, float p_LinearSensitivity, float p_LinearExposure, float p_LinearFStop, float p_LinearGamma,
-	float p_ContrastYwa, float p_Gamma,
+	float p_ContrastYwa, const string &response, float p_Gamma,
 	const float cs_red[2], const float cs_green[2], const float cs_blue[2], const float whitepoint[2],
 	int reject_warmup, bool debugmode) :
 	Film(xres, yres, filt, crop, filename1, premult, cw_EXR_ZBuf || cw_PNG_ZBuf || cw_TGA_ZBuf, w_resume_FLM, 
@@ -156,6 +157,11 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, const float c
 	AddIntAttribute(*this, "GlareBlades", "Glare blades", &FlexImageFilm::m_GlareBlades, Queryable::ReadWriteAccess);
 	m_GlareThreshold = d_GlareThreshold = .5f;
 	AddFloatAttribute(*this, "GlareThreshold", "Glare threshold", &FlexImageFilm::m_GlareThreshold, Queryable::ReadWriteAccess);
+
+	if (response != "")
+		cameraResponse = new CameraResponse(response);
+	else
+		cameraResponse = NULL;
 
 	m_HistogramEnabled = d_HistogramEnabled = false;
 
@@ -861,7 +867,7 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 			colorSpace, histogram, m_HistogramEnabled, m_HaveBloomImage, m_bloomImage, m_BloomUpdateLayer,
 			m_BloomRadius, m_BloomWeight, m_VignettingEnabled, m_VignettingScale, m_AberrationEnabled, m_AberrationAmount,
 			m_HaveGlareImage, m_glareImage, m_GlareUpdateLayer, m_GlareAmount, m_GlareRadius, m_GlareBlades, m_GlareThreshold,
-			tmkernel.c_str(), &toneParams, m_Gamma, 0.f);
+			tmkernel.c_str(), &toneParams, cameraResponse, m_Gamma, 0.f);
 
 		// DO NOT USE xyzcolor ANYMORE AFTER THIS POINT
 		vector<RGBColor> &rgbcolor = reinterpret_cast<vector<RGBColor> &>(xyzcolor);
@@ -1254,6 +1260,9 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 	float s_LinearFStop = params.FindOneFloat("linear_fstop", 2.8f);
 	float s_LinearGamma = params.FindOneFloat("linear_gamma", 1.0f);
 	float s_ContrastYwa = params.FindOneFloat("contrast_ywa", 1.f);
+
+	string response = params.FindOneString("cameraresponse", "");
+
 	float s_Gamma = params.FindOneFloat("gamma", 2.2f);
 
 	return new FlexImageFilm(xres, yres, filter, crop,
@@ -1263,7 +1272,7 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 		w_TGA, w_TGA_channels, w_TGA_gamutclamp, w_TGA_ZBuf, w_TGA_ZBuf_normalizationtype, 
 		w_resume_FLM, restart_resume_FLM, haltspp, halttime,
 		s_TonemapKernel, s_ReinhardPreScale, s_ReinhardPostScale, s_ReinhardBurn, s_LinearSensitivity,
-		s_LinearExposure, s_LinearFStop, s_LinearGamma, s_ContrastYwa, s_Gamma,
+		s_LinearExposure, s_LinearFStop, s_LinearGamma, s_ContrastYwa, response, s_Gamma,
 		red, green, blue, white, reject_warmup, debug_mode);
 }
 

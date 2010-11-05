@@ -488,6 +488,7 @@ SET(lux_core_src
 	${CMAKE_BINARY_DIR}/luxlex.cpp
 	core/api.cpp
 	core/camera.cpp
+	core/cameraresponse.cpp
 	core/color.cpp
 	core/stats.cpp
 	core/context.cpp
