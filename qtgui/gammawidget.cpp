@@ -33,6 +33,9 @@ GammaWidget::GammaWidget(QWidget *parent) : QWidget(parent), ui(new Ui::GammaWid
 	
 	connect(ui->slider_gamma, SIGNAL(valueChanged(int)), this, SLOT(gammaChanged(int)));
 	connect(ui->spinBox_gamma, SIGNAL(valueChanged(double)), this, SLOT(gammaChanged(double)));
+	connect(ui->checkBox_CRF, SIGNAL(stateChanged(int)), this, SLOT(CRFChanged(int)));
+	connect(ui->pushButton_loadCRF, SIGNAL(clicked()), this, SLOT(loadCRF()));
+	ui->CRF_lineEdit->setText("- empty -");
 }
 
 GammaWidget::~GammaWidget()
@@ -87,4 +90,26 @@ void GammaWidget::gammaChanged (double value)
 	updateParam (LUX_FILM, LUX_FILM_TORGB_GAMMA, m_TORGB_gamma);
 
 	emit valuesChanged ();
+}
+
+void GammaWidget::CRFChanged(int value) // TODO: add functions
+{
+/*	if (value == Qt::Checked)
+
+	else
+*/
+	
+//	Update();
+}
+
+void GammaWidget::loadCRF() // TODO: add functions
+{
+	
+	QString fileName = QFileDialog::getOpenFileName(this, tr("Choose a CRF file to open"), m_lastOpendir, tr("LuxRender Files (*.crf)"));
+    
+	if(!fileName.isNull()) {
+		QFileInfo fi(fileName);
+		QString name = fi.fileName();
+		ui->CRF_lineEdit->setText(name);
+	}
 }

@@ -25,6 +25,7 @@
 
 #include <QtGui/QWidget>
 #include <QEvent>
+#include <QtGui/QFileDialog>
 
 #define TORGB_GAMMA_RANGE 5.0f
 
@@ -50,6 +51,8 @@ public:
 
 	bool m_Gamma_enabled;
 	double m_TORGB_gamma;
+	
+	void Update();
 
 signals:
 	void valuesChanged();
@@ -57,6 +60,7 @@ signals:
 private:
 
 	Ui::GammaWidget *ui;
+	QString m_lastOpendir;
 
 protected:
 
@@ -66,7 +70,8 @@ private slots:
 
 	void gammaChanged (int value);
 	void gammaChanged (double value);
-
+	void CRFChanged (int value);
+	void loadCRF();
 };
 
 #endif // GAMMAWIDGET_H
