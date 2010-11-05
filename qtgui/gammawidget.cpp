@@ -111,5 +111,9 @@ void GammaWidget::loadCRF() // TODO: add functions
 		QFileInfo fi(fileName);
 		QString name = fi.fileName();
 		ui->CRF_lineEdit->setText(name);
+		QString str = fileName;
+		QByteArray fileName = str.toAscii();
+		const char* crfName = fileName.data();
+		luxSetStringAttribute("film", "CameraResponse", crfName);
 	}
 }
