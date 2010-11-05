@@ -158,11 +158,6 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, const float c
 	m_GlareThreshold = d_GlareThreshold = .5f;
 	AddFloatAttribute(*this, "GlareThreshold", "Glare threshold", &FlexImageFilm::m_GlareThreshold, Queryable::ReadWriteAccess);
 
-	if (response != "")
-		cameraResponse = new CameraResponse(response);
-	else
-		cameraResponse = NULL;
-
 	m_HistogramEnabled = d_HistogramEnabled = false;
 
 	m_GREYCStorationParams.Reset();
@@ -170,6 +165,8 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, const float c
 
 	m_chiuParams.Reset();
 	d_chiuParams.Reset();
+
+	AddStringAttribute(*this, "CameraResponse", "Path to camera response data file", &FlexImageFilm::response, Queryable::ReadWriteAccess);
 
 	// init timer
 	boost::xtime_get(&lastWriteImageTime, boost::TIME_UTC);
@@ -862,12 +859,22 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 			m_GlareDeleteLayer = false;
 		}
 
+		if (response != "")
+			cameraResponse = new CameraResponse(response);
+		else
+			cameraResponse = NULL;
+
 		// Apply chosen tonemapper
 		ApplyImagingPipeline(xyzcolor, xPixelCount, yPixelCount, m_GREYCStorationParams, m_chiuParams,
 			colorSpace, histogram, m_HistogramEnabled, m_HaveBloomImage, m_bloomImage, m_BloomUpdateLayer,
 			m_BloomRadius, m_BloomWeight, m_VignettingEnabled, m_VignettingScale, m_AberrationEnabled, m_AberrationAmount,
 			m_HaveGlareImage, m_glareImage, m_GlareUpdateLayer, m_GlareAmount, m_GlareRadius, m_GlareBlades, m_GlareThreshold,
 			tmkernel.c_str(), &toneParams, cameraResponse, m_Gamma, 0.f);
+
+		if (cameraResponse) {
+			delete(cameraResponse);
+			cameraResponse = NULL;
+		}
 
 		// DO NOT USE xyzcolor ANYMORE AFTER THIS POINT
 		vector<RGBColor> &rgbcolor = reinterpret_cast<vector<RGBColor> &>(xyzcolor);

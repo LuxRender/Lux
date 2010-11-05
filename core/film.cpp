@@ -353,7 +353,7 @@ void ApplyImagingPipeline(vector<XYZColor> &xyzpixels,
 		rgbpixels[i] = colorSpace.ToRGBConstrained(xyzpixels[i]);
 
 	// DO NOT USE xyzpixels ANYMORE AFTER THIS POINT
-	if (response) {
+	if (response && response->validFile) {
 		for (u_int i = 0; i < nPix; ++i)
 			response->Map(rgbpixels[i]);
 	}

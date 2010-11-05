@@ -131,7 +131,8 @@ private:
 	GREYCStorationParams m_GREYCStorationParams, d_GREYCStorationParams;
 	ChiuParams m_chiuParams, d_chiuParams;
 
-	CameraResponse *cameraResponse;
+	string response;					// Path to the data file
+	CameraResponse *cameraResponse;		// Actual data processor
 
 	XYZColor * m_bloomImage; // Persisting bloom layer image 
 	float m_BloomRadius, d_BloomRadius;

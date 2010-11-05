@@ -40,74 +40,77 @@ CameraResponse::CameraResponse(const string &film)
 	std::ifstream file(film.c_str());
 	if (!file) {
 		LOG(LUX_WARNING, LUX_NOFILE) << "Film file \"" << film << "\" not found! Camera Response Function will not be applied.";
-		return;
+		validFile = false;
 	}
-	int row = 0;
-	string buffer;
-	vector<string> crfstrings;
-	vector<float> *crfpoints = NULL;
-	while (getline(file, buffer)) {
-		++row;
-		switch (row) {
-		case 4:
-			crfpoints = &RedI;
-			break;
-		case 6:
-			crfpoints = &RedB;
-			break;
-		case 10:
-			crfpoints = &GreenI;
-			break;
-		case 12:
-			crfpoints = &GreenB;
-			break;
-		case 16:
-			crfpoints = &BlueI;
-			break;
-		case 18:
-			crfpoints = &BlueB;
-			break;
-		default:
-			crfpoints = NULL;
-			break;
+	else {
+		int row = 0;
+		string buffer;
+		vector<string> crfstrings;
+		vector<float> *crfpoints = NULL;
+		while (getline(file, buffer)) {
+			++row;
+			switch (row) {
+			case 4:
+				crfpoints = &RedI;
+				break;
+			case 6:
+				crfpoints = &RedB;
+				break;
+			case 10:
+				crfpoints = &GreenI;
+				break;
+			case 12:
+				crfpoints = &GreenB;
+				break;
+			case 16:
+				crfpoints = &BlueI;
+				break;
+			case 18:
+				crfpoints = &BlueB;
+				break;
+			default:
+				crfpoints = NULL;
+				break;
+			}
+			if (!crfpoints)
+				continue;
+			boost::split(crfstrings, buffer, boost::is_space(),
+				boost::token_compress_on);
+			for (vector<string>::size_type j = 0; j != crfstrings.size(); ++j)
+				crfpoints->push_back(boost::lexical_cast<float>(crfstrings[j]));
 		}
-		if (!crfpoints)
-			continue;
-		boost::split(crfstrings, buffer, boost::is_space(),
-			boost::token_compress_on);
-		for (vector<string>::size_type j = 0; j != crfstrings.size(); ++j)
-			crfpoints->push_back(boost::lexical_cast<float>(crfstrings[j]));
-	}
-	if (row < 18)
-		color = false;
-	if (RedI.empty() || RedB.size() != RedI.size()) {
-		LOG(LUX_WARNING, LUX_LIMIT) << "Inconsistent Red data for \"" << film << "\"";
-		RedI.clear();
-		RedI.push_back(0.f);
-		RedI.push_back(1.f);
-		RedB.clear();
-		RedB.push_back(0.f);
-		RedB.push_back(1.f);
-	}
-	if (color) {
-		if (GreenI.empty() || GreenB.size() != GreenI.size()) {
-			LOG(LUX_WARNING, LUX_LIMIT) << "Inconsistent Green data for \"" << film << "\"";
-			GreenI.clear();
-			GreenI.push_back(0.f);
-			GreenI.push_back(1.f);
-			GreenB.clear();
-			GreenB.push_back(0.f);
-			GreenB.push_back(1.f);
+		if (row < 18)
+			color = false;
+		if (RedI.empty() || RedB.size() != RedI.size()) {
+			LOG(LUX_WARNING, LUX_LIMIT) << "Inconsistent Red data for \"" << film << "\"";
+			RedI.clear();
+			RedI.push_back(0.f);
+			RedI.push_back(1.f);
+			RedB.clear();
+			RedB.push_back(0.f);
+			RedB.push_back(1.f);
 		}
-		if (BlueI.empty() || BlueB.size() != BlueI.size()) {
-			LOG(LUX_WARNING, LUX_LIMIT) << "Inconsistent Blue data for \"" << film << "\"";
-			BlueI.clear();
-			BlueI.push_back(0.f);
-			BlueI.push_back(1.f);
-			BlueB.clear();
-			BlueB.push_back(0.f);
-			BlueB.push_back(1.f);
+		if (color) {
+			if (GreenI.empty() || GreenB.size() != GreenI.size()) {
+				LOG(LUX_WARNING, LUX_LIMIT) << "Inconsistent Green data for \"" << film << "\"";
+				GreenI.clear();
+				GreenI.push_back(0.f);
+				GreenI.push_back(1.f);
+				GreenB.clear();
+				GreenB.push_back(0.f);
+				GreenB.push_back(1.f);
+			}
+			if (BlueI.empty() || BlueB.size() != BlueI.size()) {
+				LOG(LUX_WARNING, LUX_LIMIT) << "Inconsistent Blue data for \"" << film << "\"";
+				BlueI.clear();
+				BlueI.push_back(0.f);
+				BlueI.push_back(1.f);
+				BlueB.clear();
+				BlueB.push_back(0.f);
+				BlueB.push_back(1.f);
+			}
 		}
+		validFile = true;
 	}
 }
 

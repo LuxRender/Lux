@@ -31,6 +31,8 @@ class CameraResponse {
 public:
 	CameraResponse(const string &film);
 	void Map(RGBColor &rgb) const;
+
+	bool validFile;
 private:
 	float ApplyCrf(float point, const vector<float> &from, const vector<float> &to) const;
 
