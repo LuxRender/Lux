@@ -47,12 +47,16 @@ float SampleStep1d(const float *f, const float *cdf, float c, u_int nSteps,
 	float u, float *pdf)
 {
 	// Find surrounding cdf segments
-	const float *ptr = std::upper_bound(cdf, cdf + nSteps + 1, u);
-	if (ptr == cdf + nSteps + 1) {
+	if (u >= cdf[nSteps]) {
 		*pdf = f[nSteps - 1] / c;
 		return 1.f;
 	}
-	u_int offset = static_cast<u_int>(max<int>(ptr - cdf - 1, 0));
+	if (u <= cdf[0]) {
+		*pdf = f[0] / c;
+		return 0.f;
+	}
+	const float *ptr = std::upper_bound(cdf, cdf + nSteps + 1, u);
+	u_int offset = static_cast<u_int>(ptr - cdf - 1);
 	// Return offset along current cdf segment
 	u = (u - cdf[offset]) / (cdf[offset + 1] - cdf[offset]);
 	*pdf = f[offset] / c;
