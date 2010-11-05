@@ -23,8 +23,6 @@
 #ifndef LUX_PYFLEXIMAGE_H
 #define LUX_PYFLEXIMAGE_H
 
-#include "fleximage.h"
-
 void export_PyFlexImageFilm()
 {
 	using namespace boost::python;
@@ -50,12 +48,14 @@ void export_PyFlexImageFilm()
 		;
 	*/
 
-	enum_<FlexImageFilm::TonemapKernels>("TonemapKernels", "")
-		.value("Reinhard", FlexImageFilm::TMK_Reinhard)
-		.value("Linear", FlexImageFilm::TMK_Linear)
-		.value("Contrast", FlexImageFilm::TMK_Contrast)
-		.value("MaxWhite", FlexImageFilm::TMK_MaxWhite)
-		.value("AutoLinear", FlexImageFilm::TMK_AutoLinear)
+	// TODO: don't rely on arbitrary int values, or having to
+	// include half the core headers
+	enum_<int>("TonemapKernels", "")
+		.value("Reinhard",	0) //FlexImageFilm::TMK_Reinhard)
+		.value("Linear",	1) //FlexImageFilm::TMK_Linear)
+		.value("Contrast",	2) //FlexImageFilm::TMK_Contrast)
+		.value("MaxWhite",	3) //FlexImageFilm::TMK_MaxWhite)
+		.value("AutoLinear",4) //FlexImageFilm::TMK_AutoLinear)
 		;
 };
 
