@@ -94,12 +94,7 @@ void GammaWidget::gammaChanged (double value)
 
 	emit valuesChanged ();
 }
-/*
-bool GammaWidget::crf_active()
-{
-		return true;
-}
-*/ 
+ 
 void GammaWidget::CRFChanged(int value) // TODO: add functions
 {
 	if (value != Qt::Checked){

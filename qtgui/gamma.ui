@@ -66,6 +66,9 @@
        <property name="text">
         <string>Active</string>
        </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
       </widget>
      </item>
      <item row="7" column="1">
