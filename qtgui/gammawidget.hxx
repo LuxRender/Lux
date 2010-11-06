@@ -61,6 +61,7 @@ private:
 
 	Ui::GammaWidget *ui;
 	QString m_lastOpendir;
+	bool crf_active;
 
 protected:
 

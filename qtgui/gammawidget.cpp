@@ -35,7 +35,10 @@ GammaWidget::GammaWidget(QWidget *parent) : QWidget(parent), ui(new Ui::GammaWid
 	connect(ui->spinBox_gamma, SIGNAL(valueChanged(double)), this, SLOT(gammaChanged(double)));
 	connect(ui->checkBox_CRF, SIGNAL(stateChanged(int)), this, SLOT(CRFChanged(int)));
 	connect(ui->pushButton_loadCRF, SIGNAL(clicked()), this, SLOT(loadCRF()));
-	ui->CRF_lineEdit->setText("- empty -");
+	ui->CRF_label->setStyleSheet(QString::fromUtf8(" QFrame {\n""background-color: rgb(250, 250, 250)\n""}"));
+#if defined(__APPLE__)
+	ui->pushButton_loadCRF->setFont(QFont  ("Lucida Grande", 11));
+#endif
 }
 
 GammaWidget::~GammaWidget()
@@ -91,29 +94,39 @@ void GammaWidget::gammaChanged (double value)
 
 	emit valuesChanged ();
 }
-
+/*
+bool GammaWidget::crf_active()
+{
+		return true;
+}
+*/ 
 void GammaWidget::CRFChanged(int value) // TODO: add functions
 {
-/*	if (value == Qt::Checked)
+	if (value != Qt::Checked){
+		crf_active = true;
+	}else {
+		crf_active = false;
+	}
 
-	else
-*/
-	
+
+
 //	Update();
 }
 
 void GammaWidget::loadCRF() // TODO: add functions
 {
 	
-	QString fileName = QFileDialog::getOpenFileName(this, tr("Choose a CRF file to open"), m_lastOpendir, tr("LuxRender Files (*.crf *.txt)"));
+	QString fileName = QFileDialog::getOpenFileName(this, tr("Choose a CRF file to open"), m_lastOpendir, tr("CRF Files (*.crf *.txt)"));
     
 	if(!fileName.isNull()) {
 		QFileInfo fi(fileName);
 		QString name = fi.fileName();
-		ui->CRF_lineEdit->setText(name);
+		ui->CRF_label->setText(name);
 		QString str = fileName;
 		QByteArray fileName = str.toAscii();
 		const char* crfName = fileName.data();
+
 		luxSetStringAttribute("film", "CameraResponse", crfName);
+
 	}
 }

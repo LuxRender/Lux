@@ -96,7 +96,16 @@
       </spacer>
      </item>
      <item row="7" column="0">
-      <widget class="QLineEdit" name="CRF_lineEdit">
+      <widget class="QLabel" name="CRF_label">
+       <property name="frameShape">
+        <enum>QFrame::Panel</enum>
+       </property>
+       <property name="frameShadow">
+        <enum>QFrame::Sunken</enum>
+       </property>
+       <property name="text">
+        <string>- empty -</string>
+       </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>
        </property>
