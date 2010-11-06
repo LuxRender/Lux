@@ -105,7 +105,7 @@ void GammaWidget::CRFChanged(int value) // TODO: add functions
 void GammaWidget::loadCRF() // TODO: add functions
 {
 	
-	QString fileName = QFileDialog::getOpenFileName(this, tr("Choose a CRF file to open"), m_lastOpendir, tr("LuxRender Files (*.crf)"));
+	QString fileName = QFileDialog::getOpenFileName(this, tr("Choose a CRF file to open"), m_lastOpendir, tr("LuxRender Files (*.crf *.txt)"));
     
 	if(!fileName.isNull()) {
 		QFileInfo fi(fileName);
