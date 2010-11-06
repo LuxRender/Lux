@@ -1041,6 +1041,29 @@ const char* Context::PrintableStatistics(const bool add_total) {
 	return statsData->formattedStatsString.c_str();
 }
 
+const char* Context::CustomStatistics(const string custom_template)
+{
+	const string _ts1 = StatsData::template_string_local;
+	const string _ts2 = StatsData::template_string_network_waiting;
+	const string _ts3 = StatsData::template_string_network;
+	const string _ts4 = StatsData::template_string_total;
+	const string _ts5 = StatsData::template_string_haltspp;
+	const string _ts6 = StatsData::template_string_halttime;
+
+	StatsData::template_string_local = custom_template;
+	statsData->update(true);
+	const char* custom_stats = statsData->formattedStatsString.c_str();
+
+	StatsData::template_string_local = _ts1;
+	StatsData::template_string_network_waiting = _ts2;
+	StatsData::template_string_network = _ts3;
+	StatsData::template_string_total = _ts4;
+	StatsData::template_string_haltspp = _ts5;
+	StatsData::template_string_halttime = _ts6;
+
+	return custom_stats;
+}
+
 void Context::TransmitFilm(std::basic_ostream<char> &stream) {
 	luxCurrentScene->camera->film->TransmitFilm(stream);
 }

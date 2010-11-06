@@ -32,14 +32,21 @@ using std::ostream;
 namespace lux
 {
 
+// String template to format local only, provides placeholders 1 to 7
+string StatsData::template_string_local = "%1% - %2%T: %3$0.2f %4%S/p %5$0.2f %6%S/s %7$0.2f%% Eff";
+// String template to format network waiting, provides placeholder 8
+string StatsData::template_string_network_waiting = " - %8%N: Waiting for first update";
+// String template to format network rendering, provides placeholders 9 to 13
+string StatsData::template_string_network = " - %8%N: %9%%10$0.2f %11%S/p %12$0.2f %13%S/s";
+// String template to format complete stats, provides placeholders 9 and 14 to 17
+string StatsData::template_string_total = " - Tot: %9%%14$0.2f %15%S/p %16$0.2f %17%S/s";
+// String template to format percent samples completion, provides placeholder 18
+string StatsData::template_string_haltspp = " - %9%%18$0.2f%% Complete (S/Px)";
+// String template to format percent time completion, provides placeholder 19
+string StatsData::template_string_halttime = " - %9%%19$0.2f%% Complete (sec)";
+
 StatsData::StatsData(Context *_ctx) :
 	formattedStatsString(""),
-	template_string_local("%1% - %2%T: %3$0.2f %4%S/p %5$0.2f %6%S/s %7$0.2f%% Eff"),
-	template_string_network_waiting(" - %8%N: Waiting for first update"),
-	template_string_network(" - %8%N: %9%%10$0.2f %11%S/p %12$0.2f %13%S/s"),
-	template_string_total(" - Tot: %9%%14$0.2f %15%S/p %16$0.2f %17%S/s"),
-	template_string_haltspp(" - %9%%18$0.2f%% Complete (S/Px)"),
-	template_string_halttime(" - %9%%19$0.2f%% Complete (sec)"),
 	previousNetworkSamplesSec(0),
 	previousNetworkSamples(0),
 	lastUpdateSecElapsed(0)
@@ -209,6 +216,5 @@ void StatsData::update(const bool add_total)
 			LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
 	}
 }
-
 
 }

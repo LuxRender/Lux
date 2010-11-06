@@ -49,18 +49,18 @@ public:
 	string formattedStatsString;
 
 	// Inputs
-	string template_string_local;			// String template to format local only, provides placeholders 1 to 7
-	string template_string_network_waiting;	// String template to format network waiting, provides placeholder 8
-	string template_string_network;			// String template to format network rendering, provides placeholders 9 to 13
-	string template_string_total;			// String template to format complete stats, provides placeholders 9 and 14 to 17
-	string template_string_haltspp;			// String template to format percent samples completion, provides placeholder 18
-	string template_string_halttime;		// String template to format percent time completion, provides placeholder 19
+	static string template_string_local;
+	static string template_string_network_waiting;
+	static string template_string_network;
+	static string template_string_total;
+	static string template_string_haltspp;
+	static string template_string_halttime;
 
 private:
-	Context *ctx;							// Reference to context that created this StatsData object
-	float previousNetworkSamplesSec;		// Last known network_sps
-	double previousNetworkSamples;			// Last known netsamples
-	double lastUpdateSecElapsed;			// secelapsed value when previous* members were updated
+	Context *ctx;									// Reference to context that created this StatsData object
+	float previousNetworkSamplesSec;				// Last known network_sps
+	double previousNetworkSamples;					// Last known netsamples
+	double lastUpdateSecElapsed;					// secelapsed value when previous* members were updated
 
 	/**
 	 * Select an appropriate number of decimal places for the given number

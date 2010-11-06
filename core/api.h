@@ -254,6 +254,7 @@ unsigned int luxGetRenderingServersStatus(RenderingServerInfo *info, unsigned in
 /* Informations and statistics */
 double luxStatistics(const char *statName);
 const char* luxPrintableStatistics(const bool add_total);
+const char* luxCustomStatistics(const char *custom_template);
 
 // Dade - enable debug mode
 void luxEnableDebugMode();

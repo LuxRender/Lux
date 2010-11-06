@@ -669,6 +669,14 @@ extern "C" const char* luxPrintableStatistics(const bool add_total)
 	return "";
 }
 
+extern "C" const char* luxCustomStatistics(const char *template_string)
+{
+	if (initialized)
+		return Context::GetActive()->CustomStatistics(template_string);
+	LOG(LUX_SEVERE,LUX_NOTSTARTED)<<"luxInit() must be called before calling 'luxStatistics'. Ignoring.";
+	return "";
+}
+
 extern "C" const char* luxGetAttributes()
 {
 	return Context::GetActive()->registry.GetContent();

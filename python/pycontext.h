@@ -910,6 +910,11 @@ public:
 		return context->PrintableStatistics(add_total);
 	}
 
+	const char* customStatistics(const string custom_template)
+	{
+		return context->CustomStatistics(custom_template);
+	}
+
 	void enableDebugMode()
 	{
 		Context::SetActive(context);
@@ -1278,6 +1283,11 @@ void export_PyContext()
 			&PyContext::printableStatistics,
 			args("Context", "add_total"),
 			ds_pylux_Context_printable_statistics
+		)
+		.def("customStatistics",
+			&PyContext::customStatistics,
+			args("Context", "template_string"),
+			""
 		)
 		.def("surfaceIntegrator",
 			&PyContext::surfaceIntegrator,
