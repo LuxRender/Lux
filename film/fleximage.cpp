@@ -54,7 +54,7 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, const float c
 	bool w_resume_FLM, bool restart_resume_FLM, int haltspp, int halttime,
 	int p_TonemapKernel, float p_ReinhardPreScale, float p_ReinhardPostScale,
 	float p_ReinhardBurn, float p_LinearSensitivity, float p_LinearExposure, float p_LinearFStop, float p_LinearGamma,
-	float p_ContrastYwa, const string &response, float p_Gamma,
+	float p_ContrastYwa, const string &p_response, float p_Gamma,
 	const float cs_red[2], const float cs_green[2], const float cs_blue[2], const float whitepoint[2],
 	int reject_warmup, bool debugmode) :
 	Film(xres, yres, filt, crop, filename1, premult, cw_EXR_ZBuf || cw_PNG_ZBuf || cw_TGA_ZBuf, w_resume_FLM, 
@@ -166,6 +166,7 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, const float c
 	m_chiuParams.Reset();
 	d_chiuParams.Reset();
 
+	response = p_response;
 	AddStringAttribute(*this, "CameraResponse", "Path to camera response data file", &FlexImageFilm::response, Queryable::ReadWriteAccess);
 
 	// init timer
