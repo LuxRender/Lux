@@ -40,6 +40,7 @@ namespace lux
 {
 
 class HybridRenderer;
+class HybridSamplerRenderer;
 class HRHostDescription;
 
 //------------------------------------------------------------------------------
@@ -51,6 +52,7 @@ public:
 	const string &GetName() const { return name; }
 
 	friend class HybridRenderer;
+	friend class HybridSamplerRenderer;
 	friend class HRHostDescription;
 
 protected:
@@ -67,6 +69,7 @@ public:
 	void SetUsedUnitsCount(const unsigned int units);
 
 	friend class HybridRenderer;
+	friend class HybridSamplerRenderer;
 	friend class HRHostDescription;
 
 private:
@@ -86,6 +89,7 @@ public:
 	void SetUsedUnitsCount(const unsigned int units);
 
 	friend class HybridRenderer;
+	friend class HybridSamplerRenderer;
 	friend class HRHostDescription;
 
 private:
@@ -104,6 +108,7 @@ public:
 	vector<RendererDeviceDescription *> &GetDeviceDescs() { return devs; }
 
 	friend class HybridRenderer;
+	friend class HybridSamplerRenderer;
 	friend class HRDeviceDescription;
 	friend class HRHardwareDeviceDescription;
 	friend class HRVirtualDeviceDescription;
@@ -124,83 +129,18 @@ private:
 //------------------------------------------------------------------------------
 
 class HybridRenderer : public Renderer {
-public:
-	HybridRenderer();
-	~HybridRenderer();
+protected:
+	virtual void CreateRenderThread() = 0;
+	virtual void RemoveRenderThread() = 0;
+	virtual size_t GetRenderThreadCount() const  = 0;
 
-	RendererType GetType() const;
-
-	RendererState GetState() const;
-	vector<RendererHostDescription *> &GetHostDescs();
-	void SuspendWhenDone(bool v);
-
-	double Statistics(const string &statName);
-
-	void Render(Scene *scene);
-
-	void Pause();
-	void Resume();
-	void Terminate();
+	mutable boost::mutex classWideMutex;
+	vector<RendererHostDescription *> hosts;
 
 	friend class HRDeviceDescription;
 	friend class HRHardwareDeviceDescription;
 	friend class HRVirtualDeviceDescription;
 	friend class HRHostDescription;
-
-	static Renderer *CreateRenderer(const ParamSet &params);
-
-private:
-	//--------------------------------------------------------------------------
-	// RenderThread
-	//--------------------------------------------------------------------------
-
-	class RenderThread : public boost::noncopyable {
-	public:
-		RenderThread(u_int index, HybridRenderer *renderer, luxrays::IntersectionDevice * idev);
-		~RenderThread();
-
-		static void RenderImpl(RenderThread *r);
-
-		u_int  n;
-		boost::thread *thread; // keep pointer to delete the thread object
-		HybridRenderer *renderer;
-		luxrays::IntersectionDevice * iDevice;
-
-		// Rendering statistics
-		fast_mutex statLock;
-		double samples, blackSamples;
-	};
-
-	void CreateRenderThread();
-	void RemoveRenderThread();
-
-	double Statistics_GetNumberOfSamples();
-	double Statistics_SamplesPSec();
-	double Statistics_SamplesPTotSec();
-	double Statistics_Efficiency();
-	double Statistics_SamplesPPx();
-
-	//--------------------------------------------------------------------------
-
-	mutable boost::mutex classWideMutex;
-
-	luxrays::Context *ctx;
-
-	RendererState state;
-	// LuxRays virtual device used to feed all HardwareIntersectionDevice
-	luxrays::VirtualM2OHardwareIntersectionDevice *virtualIDevice;
-	vector<RendererHostDescription *> hosts;
-	vector<RenderThread *> renderThreads;
-	Scene *scene;
-
-	Timer s_Timer;
-	double lastSamples, lastTime;
-	double stat_Samples, stat_blackSamples;
-
-	// Put them last for better data alignment
-	// used to suspend render threads until the preprocessing phase is done
-	bool preprocessDone;
-	bool suspendThreadsWhenDone;
 };
 
 }//namespace lux
