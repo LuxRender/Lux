@@ -95,33 +95,38 @@ void GammaWidget::gammaChanged (double value)
 	emit valuesChanged ();
 }
  
+
 void GammaWidget::CRFChanged(int value) // TODO: add functions
 {
-	if (value != Qt::Checked){
-		crf_active = true;
-	}else {
-		crf_active = false;
+	if (value == Qt::Checked)
+		crf_active(true);
+	else
+		crf_active(false);
+	
+	//	Update();
+}
+
+void GammaWidget::crf_active(bool active)
+{
+	if (active) {
+		if(!crfFile.isNull()) {
+			QFileInfo fi(crfFile);
+			ui->CRF_label->setText(fi.fileName());
+			luxSetStringAttribute("film", "CameraResponse", crfFile.toAscii().data());
+		}
 	}
-
-
-
-//	Update();
+	else {
+		ui->CRF_label->setText("inactive");
+		luxSetStringAttribute("film", "CameraResponse", "");
+	}
 }
 
 void GammaWidget::loadCRF() // TODO: add functions
 {
 	
-	QString fileName = QFileDialog::getOpenFileName(this, tr("Choose a CRF file to open"), m_lastOpendir, tr("CRF Files (*.crf *.txt)"));
+	crfFile = QFileDialog::getOpenFileName(this, tr("Choose a CRF file to open"), m_lastOpendir, tr("LuxRender Files (*.crf)"));
     
-	if(!fileName.isNull()) {
-		QFileInfo fi(fileName);
-		QString name = fi.fileName();
-		ui->CRF_label->setText(name);
-		QString str = fileName;
-		QByteArray fileName = str.toUtf8();
-		const char* crfName = fileName.data();
-
-		luxSetStringAttribute("film", "CameraResponse", crfName);
-
+	if(!crfFile.isNull()) {
+		crf_active(true);
 	}
 }

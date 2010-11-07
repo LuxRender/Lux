@@ -53,6 +53,7 @@ public:
 	double m_TORGB_gamma;
 	
 	void Update();
+	QString crfFile;
 
 signals:
 	void valuesChanged();
@@ -61,7 +62,7 @@ private:
 
 	Ui::GammaWidget *ui;
 	QString m_lastOpendir;
-	bool crf_active;
+	void crf_active (bool active = true);
 
 protected:
 
@@ -73,6 +74,7 @@ private slots:
 	void gammaChanged (double value);
 	void CRFChanged (int value);
 	void loadCRF();
+
 };
 
 #endif // GAMMAWIDGET_H
