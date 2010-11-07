@@ -41,6 +41,7 @@ namespace lux
 
 class HybridRenderer;
 class HybridSamplerRenderer;
+class HybridSPPMRenderer;
 class HRHostDescription;
 
 //------------------------------------------------------------------------------
@@ -53,6 +54,7 @@ public:
 
 	friend class HybridRenderer;
 	friend class HybridSamplerRenderer;
+	friend class HybridSPPMRenderer;
 	friend class HRHostDescription;
 
 protected:
@@ -70,6 +72,7 @@ public:
 
 	friend class HybridRenderer;
 	friend class HybridSamplerRenderer;
+	friend class HybridSPPMRenderer;
 	friend class HRHostDescription;
 
 private:
@@ -90,6 +93,7 @@ public:
 
 	friend class HybridRenderer;
 	friend class HybridSamplerRenderer;
+	friend class HybridSPPMRenderer;
 	friend class HRHostDescription;
 
 private:
@@ -109,6 +113,7 @@ public:
 
 	friend class HybridRenderer;
 	friend class HybridSamplerRenderer;
+	friend class HybridSPPMRenderer;
 	friend class HRDeviceDescription;
 	friend class HRHardwareDeviceDescription;
 	friend class HRVirtualDeviceDescription;
@@ -129,6 +134,9 @@ private:
 //------------------------------------------------------------------------------
 
 class HybridRenderer : public Renderer {
+public:
+	static luxrays::DataSet *PreprocessGeometry(luxrays::Context *ctx, Scene *scene);
+
 protected:
 	virtual void CreateRenderThread() = 0;
 	virtual void RemoveRenderThread() = 0;
@@ -142,6 +150,8 @@ protected:
 	friend class HRVirtualDeviceDescription;
 	friend class HRHostDescription;
 };
+
+extern void LuxRaysDebugHandler(const char *msg);
 
 }//namespace lux
 

@@ -36,6 +36,10 @@
 
 using namespace lux;
 
+void lux::LuxRaysDebugHandler(const char *msg) {
+	LOG(LUX_DEBUG, LUX_NOERROR) << "[LuxRays] " << msg;
+}
+
 //------------------------------------------------------------------------------
 // HRDeviceDescription
 //------------------------------------------------------------------------------
@@ -94,4 +98,34 @@ HRHostDescription::~HRHostDescription() {
 
 void HRHostDescription::AddDevice(HRDeviceDescription *devDesc) {
 	devs.push_back(devDesc);
+}
+
+//------------------------------------------------------------------------------
+
+luxrays::DataSet *HybridRenderer::PreprocessGeometry(luxrays::Context *ctx, Scene *scene) {
+	// Compile the scene geometries in a LuxRays compatible format
+
+	vector<luxrays::TriangleMesh *> meshList;
+
+	LOG(LUX_INFO,LUX_NOERROR) << "Tesselating " << scene->primitives.size() << " primitives";
+
+	for (size_t i = 0; i < scene->primitives.size(); ++i)
+		scene->primitives[i]->Tesselate(&meshList, &scene->tesselatedPrimitives);
+
+	// Create the DataSet
+	luxrays::DataSet *dataSet = new luxrays::DataSet(ctx);
+
+	// Add all mesh
+	for (std::vector<luxrays::TriangleMesh *>::const_iterator obj = meshList.begin(); obj != meshList.end(); ++obj)
+		dataSet->Add(*obj);
+
+	dataSet->Preprocess();
+	scene->dataSet = dataSet;
+	ctx->SetDataSet(dataSet);
+
+	// I can free temporary data
+	for (std::vector<luxrays::TriangleMesh *>::const_iterator obj = meshList.begin(); obj != meshList.end(); ++obj)
+		delete *obj;
+
+	return dataSet;
 }

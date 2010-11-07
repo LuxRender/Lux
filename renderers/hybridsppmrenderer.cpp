@@ -27,7 +27,7 @@
 #include "camera.h"
 #include "film.h"
 #include "sampling.h"
-#include "hybridsamplerrenderer.h"
+#include "hybridsppmrenderer.h"
 #include "randomgen.h"
 #include "context.h"
 
@@ -37,10 +37,10 @@
 using namespace lux;
 
 //------------------------------------------------------------------------------
-// HybridSamplerRenderer
+// HybridSPPM
 //------------------------------------------------------------------------------
 
-HybridSamplerRenderer::HybridSamplerRenderer() {
+HybridSPPMRenderer::HybridSPPMRenderer() {
 	state = INIT;
 
 	// Create the LuxRays context
@@ -77,14 +77,14 @@ HybridSamplerRenderer::HybridSamplerRenderer() {
 	suspendThreadsWhenDone = false;
 }
 
-HybridSamplerRenderer::~HybridSamplerRenderer() {
+HybridSPPMRenderer::~HybridSPPMRenderer() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 
 	if ((state != TERMINATE) && (state != INIT))
-		throw std::runtime_error("Internal error: called HybridSamplerRenderer::~HybridSamplerRenderer() while not in TERMINATE or INIT state.");
+		throw std::runtime_error("Internal error: called HybridSPPM::~HybridSPPM() while not in TERMINATE or INIT state.");
 
 	if (renderThreads.size() > 0)
-		throw std::runtime_error("Internal error: called HybridSamplerRenderer::~HybridSamplerRenderer() while list of renderThread sis not empty.");
+		throw std::runtime_error("Internal error: called HybridSPPM::~HybridSPPM() while list of renderThread sis not empty.");
 
 	delete ctx;
 
@@ -92,30 +92,30 @@ HybridSamplerRenderer::~HybridSamplerRenderer() {
 		delete hosts[i];
 }
 
-Renderer::RendererType HybridSamplerRenderer::GetType() const {
+Renderer::RendererType HybridSPPMRenderer::GetType() const {
 	boost::mutex::scoped_lock lock(classWideMutex);
 
-	return HYBRIDSAMPLER;
+	return HYBRIDSPPM;
 }
 
-Renderer::RendererState HybridSamplerRenderer::GetState() const {
+Renderer::RendererState HybridSPPMRenderer::GetState() const {
 	boost::mutex::scoped_lock lock(classWideMutex);
 
 	return state;
 }
 
-vector<RendererHostDescription *> &HybridSamplerRenderer::GetHostDescs() {
+vector<RendererHostDescription *> &HybridSPPMRenderer::GetHostDescs() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 
 	return hosts;
 }
 
-void HybridSamplerRenderer::SuspendWhenDone(bool v) {
+void HybridSPPMRenderer::SuspendWhenDone(bool v) {
 	boost::mutex::scoped_lock lock(classWideMutex);
 	suspendThreadsWhenDone = v;
 }
 
-void HybridSamplerRenderer::Render(Scene *s) {
+void HybridSPPMRenderer::Render(Scene *s) {
 	luxrays::DataSet *dataSet;
 
 	{
@@ -125,23 +125,6 @@ void HybridSamplerRenderer::Render(Scene *s) {
 		scene = s;
 
 		if (scene->IsFilmOnly()) {
-			state = TERMINATE;
-			return;
-		}
-
-		if (scene->lights.size() == 0) {
-			LOG( LUX_SEVERE,LUX_MISSINGDATA)<< "No light sources defined in scene; nothing to render.";
-			state = TERMINATE;
-			return;
-		}
-
-		if (!scene->surfaceIntegrator->IsDataParallelSupported()) {
-			LOG( LUX_SEVERE,LUX_ERROR)<< "The SurfaceIntegrator doesn't support HybridSamplerRenderer.";
-			state = TERMINATE;
-			return;
-		}
-
-		if (!scene->surfaceIntegrator->CheckLightStrategy()) {
 			state = TERMINATE;
 			return;
 		}
@@ -166,8 +149,6 @@ void HybridSamplerRenderer::Render(Scene *s) {
 
 		// integrator preprocessing
 		scene->sampler->SetFilm(scene->camera->film);
-		scene->surfaceIntegrator->Preprocess(rng, *scene);
-		scene->volumeIntegrator->Preprocess(rng, *scene);
 		scene->camera->film->CreateBuffers();
 
 		// Dade - to support autofocus for some camera model
@@ -222,17 +203,17 @@ void HybridSamplerRenderer::Render(Scene *s) {
 	scene->dataSet = NULL;
 }
 
-void HybridSamplerRenderer::Pause() {
+void HybridSPPMRenderer::Pause() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 	state = PAUSE;
 }
 
-void HybridSamplerRenderer::Resume() {
+void HybridSPPMRenderer::Resume() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 	state = RUN;
 }
 
-void HybridSamplerRenderer::Terminate() {
+void HybridSPPMRenderer::Terminate() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 	state = TERMINATE;
 }
@@ -242,7 +223,7 @@ void HybridSamplerRenderer::Terminate() {
 //------------------------------------------------------------------------------
 
 // Statistics Access
-double HybridSamplerRenderer::Statistics(const string &statName) {
+double HybridSPPMRenderer::Statistics(const string &statName) {
 	if(statName=="secElapsed") {
 		// Dade - s_Timer is inizialized only after the preprocess phase
 		if (preprocessDone)
@@ -275,7 +256,7 @@ double HybridSamplerRenderer::Statistics(const string &statName) {
 	}
 }
 
-double HybridSamplerRenderer::Statistics_GetNumberOfSamples() {
+double HybridSPPMRenderer::Statistics_GetNumberOfSamples() {
 	if (s_Timer.Time() - lastTime > .5f) {
 		boost::mutex::scoped_lock lock(classWideMutex);
 
@@ -291,14 +272,14 @@ double HybridSamplerRenderer::Statistics_GetNumberOfSamples() {
 	return stat_Samples + scene->camera->film->numberOfSamplesFromNetwork;
 }
 
-double HybridSamplerRenderer::Statistics_SamplesPPx() {
+double HybridSPPMRenderer::Statistics_SamplesPPx() {
 	// divide by total pixels
 	int xstart, xend, ystart, yend;
 	scene->camera->film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
 	return Statistics_GetNumberOfSamples() / ((xend - xstart) * (yend - ystart));
 }
 
-double HybridSamplerRenderer::Statistics_SamplesPSec() {
+double HybridSPPMRenderer::Statistics_SamplesPSec() {
 	// Dade - s_Timer is inizialized only after the preprocess phase
 	if (!preprocessDone)
 		return 0.0;
@@ -317,7 +298,7 @@ double HybridSamplerRenderer::Statistics_SamplesPSec() {
 		return dif_samples / elapsed;
 }
 
-double HybridSamplerRenderer::Statistics_SamplesPTotSec() {
+double HybridSPPMRenderer::Statistics_SamplesPTotSec() {
 	// Dade - s_Timer is inizialized only after the preprocess phase
 	if (!preprocessDone)
 		return 0.0;
@@ -329,7 +310,7 @@ double HybridSamplerRenderer::Statistics_SamplesPTotSec() {
 	return samples / time;
 }
 
-double HybridSamplerRenderer::Statistics_Efficiency() {
+double HybridSPPMRenderer::Statistics_Efficiency() {
 	Statistics_GetNumberOfSamples();	// required before eff can be calculated.
 
 	if (stat_Samples == 0.0)
@@ -342,7 +323,7 @@ double HybridSamplerRenderer::Statistics_Efficiency() {
 // Private methods
 //------------------------------------------------------------------------------
 
-void HybridSamplerRenderer::CreateRenderThread() {
+void HybridSPPMRenderer::CreateRenderThread() {
 	if (scene->IsFilmOnly())
 		return;
 
@@ -359,7 +340,7 @@ void HybridSamplerRenderer::CreateRenderThread() {
 	}
 }
 
-void HybridSamplerRenderer::RemoveRenderThread() {
+void HybridSPPMRenderer::RemoveRenderThread() {
 	if (renderThreads.size() == 0)
 		return;
 
@@ -373,15 +354,15 @@ void HybridSamplerRenderer::RemoveRenderThread() {
 // RenderThread methods
 //------------------------------------------------------------------------------
 
-HybridSamplerRenderer::RenderThread::RenderThread(u_int index, HybridSamplerRenderer *r, luxrays::IntersectionDevice * idev) :
+HybridSPPMRenderer::RenderThread::RenderThread(u_int index, HybridSPPMRenderer *r, luxrays::IntersectionDevice * idev) :
 	n(index), thread(NULL), renderer(r), iDevice(idev), samples(0.), blackSamples(0.) {
 }
 
-HybridSamplerRenderer::RenderThread::~RenderThread() {
+HybridSPPMRenderer::RenderThread::~RenderThread() {
 }
 
-void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread) {
-	HybridSamplerRenderer *renderer = renderThread->renderer;
+void HybridSPPMRenderer::RenderThread::RenderImpl(RenderThread *renderThread) {
+	HybridSPPMRenderer *renderer = renderThread->renderer;
 	Scene &scene(*(renderer->scene));
 	if (scene.IsFilmOnly())
 		return;
@@ -396,119 +377,10 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 		++xt.sec;
 		boost::thread::sleep(xt);
 	}
-
-	// ContribBuffer has to wait until the end of the preprocessing
-	// It depends on the fact that the film buffers have been created
-	// This is done during the preprocessing phase
-	ContributionBuffer *contribBuffer = new ContributionBuffer(scene.camera->film->contribPool);
-
-	// initialize the thread's rangen
-	u_long seed = scene.seedBase + renderThread->n;
-	LOG( LUX_INFO,LUX_NOERROR) << "Thread " << renderThread->n << " uses seed: " << seed;
-
-	RandomGenerator rng(seed);
-
-	//luxrays::RayBuffer *rayBuffer = renderThread->iDevice->NewRayBuffer();
-	luxrays::RayBuffer *rayBuffer = new luxrays::RayBuffer(8192);
-
-	// Init all PathState
-	const double t0 = luxrays::WallClockTime();
-	vector<SurfaceIntegratorState *> integratorState(rayBuffer->GetSize());
-	for (size_t i = 0; i < integratorState.size(); ++i) {
-		integratorState[i] = scene.surfaceIntegrator->NewState(scene, contribBuffer, &rng);
-		integratorState[i]->Init(scene);
-	}
-
-	LOG( LUX_DEBUG,LUX_NOERROR) << "Thread " << renderThread->n << " initialization time: " <<
-			std::setiosflags(std::ios::fixed) << std::setprecision(2) <<
-			luxrays::WallClockTime() - t0 << " secs";
-
-	size_t currentGenerateIndex = 0;
-	size_t currentNextIndex = 0;
-	bool renderIsOver = false;
-	while (!renderIsOver) {
-		while (renderer->state == PAUSE) {
-			boost::xtime xt;
-			boost::xtime_get(&xt, boost::TIME_UTC);
-			xt.sec += 1;
-			boost::thread::sleep(xt);
-		}
-		if ((renderer->state == TERMINATE) || boost::this_thread::interruption_requested())
-			break;
-
-		while (rayBuffer->LeftSpace() > 0) {
-			if (!scene.surfaceIntegrator->GenerateRays(scene, integratorState[currentGenerateIndex], rayBuffer)) {
-				// The RayBuffer is full
-				break;
-			}
-
-			currentGenerateIndex = (currentGenerateIndex + 1) % integratorState.size();
-		}
-
-		// Trace the RayBuffer
-		renderThread->iDevice->PushRayBuffer(rayBuffer);
-		rayBuffer = renderThread->iDevice->PopRayBuffer();
-
-		// Advance the next step
-		u_int nrContribs = 0;
-		u_int nrSamples = 0;
-		do {
-			u_int count;
-			if (scene.surfaceIntegrator->NextState(scene, integratorState[currentNextIndex], rayBuffer, &count)) {
-				// The sample is finished
-				++nrSamples;
-
-				if (!integratorState[currentNextIndex]->Init(scene)) {
-					renderer->Pause();
-
-					// Dade - we have done, check what we have to do now
-					if (renderer->suspendThreadsWhenDone) {
-						// Dade - wait for a resume rendering or exit
-						while (renderer->state == PAUSE) {
-							boost::xtime xt;
-							boost::xtime_get(&xt, boost::TIME_UTC);
-							xt.sec += 1;
-							boost::thread::sleep(xt);
-						}
-
-						if (renderer->state == TERMINATE) {
-							renderIsOver = true;
-							break;
-						} else
-							continue;
-					} else {
-						renderIsOver = true;
-						break;
-					}
-				}
-			}
-
-			nrContribs += count;
-			currentNextIndex = (currentNextIndex + 1) % integratorState.size();
-		} while (currentNextIndex != currentGenerateIndex);
-
-		// Jeanphi - Hijack statistics until volume integrator revamp
-		{
-			// update samples statistics
-			fast_mutex::scoped_lock lockStats(renderThread->statLock);
-			renderThread->blackSamples += nrContribs;
-			renderThread->samples += nrSamples;
-		}
-
-		rayBuffer->Reset();
-	}
-
-	scene.camera->film->contribPool->End(contribBuffer);
-
-	// Free memory
-	for (size_t i = 0; i < integratorState.size(); ++i)
-		delete integratorState[i];
-	delete rayBuffer;
 }
 
-Renderer *HybridSamplerRenderer::CreateRenderer(const ParamSet &params) {
-	return new HybridSamplerRenderer();
+Renderer *HybridSPPMRenderer::CreateRenderer(const ParamSet &params) {
+	return new HybridSPPMRenderer();
 }
 
-static DynamicLoader::RegisterRenderer<HybridSamplerRenderer> r("hybrid");
-static DynamicLoader::RegisterRenderer<HybridSamplerRenderer> r2("hybridsampler");
+static DynamicLoader::RegisterRenderer<HybridSPPMRenderer> r("hybridsppm");

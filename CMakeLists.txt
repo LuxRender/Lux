@@ -613,6 +613,7 @@ else(LUXRAYS_DISABLE_OPENCL)
 SET(lux_renderers_src
 	renderers/hybridrenderer.cpp
 	renderers/hybridsamplerrenderer.cpp
+	renderers/hybridsppmrenderer.cpp
 	renderers/samplerrenderer.cpp
 	)
 endif(LUXRAYS_DISABLE_OPENCL)
