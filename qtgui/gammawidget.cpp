@@ -74,6 +74,8 @@ void GammaWidget::resetFromFilm (bool useDefaults)
 	m_TORGB_gamma =  retrieveParam( useDefaults, LUX_FILM, LUX_FILM_TORGB_GAMMA);
 
 	luxSetParameterValue(LUX_FILM, LUX_FILM_TORGB_GAMMA, m_TORGB_gamma);
+	
+	ui->checkBox_CRF->setCheckState(Qt::Unchecked); // TODO: do true reset from film
 }
 
 void GammaWidget::gammaChanged (int value)
@@ -96,14 +98,14 @@ void GammaWidget::gammaChanged (double value)
 }
  
 
-void GammaWidget::CRFChanged(int value) // TODO: add functions
+void GammaWidget::CRFChanged(int value)
 {
 	if (value == Qt::Checked)
 		crf_active(true);
 	else
 		crf_active(false);
 	
-	//	Update();
+	emit valuesChanged ();
 }
 
 void GammaWidget::crf_active(bool active)
@@ -112,7 +114,11 @@ void GammaWidget::crf_active(bool active)
 		if(!crfFile.isNull()) {
 			QFileInfo fi(crfFile);
 			ui->CRF_label->setText(fi.fileName());
+#if defined(__APPLE__)
+			luxSetStringAttribute("film", "CameraResponse", crfFile.toUtf8().data());
+#else
 			luxSetStringAttribute("film", "CameraResponse", crfFile.toAscii().data());
+#endif
 		}
 	}
 	else {
@@ -121,12 +127,13 @@ void GammaWidget::crf_active(bool active)
 	}
 }
 
-void GammaWidget::loadCRF() // TODO: add functions
+void GammaWidget::loadCRF()
 {
 	
-	crfFile = QFileDialog::getOpenFileName(this, tr("Choose a CRF file to open"), m_lastOpendir, tr("LuxRender Files (*.crf)"));
+	crfFile = QFileDialog::getOpenFileName(this, tr("Choose a CRF file to open"), m_lastOpendir, tr("Camera Response Files (*.crf *.txt)"));
     
 	if(!crfFile.isNull()) {
-		crf_active(true);
+		ui->checkBox_CRF->setCheckState(Qt::Checked);
+		CRFChanged(Qt::Checked);
 	}
 }
