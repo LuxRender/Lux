@@ -54,6 +54,13 @@ void GammaWidget::changeEvent(QEvent *event)
 		
 		updateParam(LUX_FILM, LUX_FILM_TORGB_GAMMA, (this->isEnabled() ? m_TORGB_gamma : 1.0));
 		emit valuesChanged ();
+		
+		if(!crfFile.isNull()) {
+			if ((ui->checkBox_CRF->isChecked()) && (this->isEnabled()))
+				crf_active(true);
+			else 
+				crf_active(false);
+		}
 	}
 }
 
