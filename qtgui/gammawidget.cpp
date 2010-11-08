@@ -102,6 +102,11 @@ void GammaWidget::gammaChanged (double value)
 	updateParam (LUX_FILM, LUX_FILM_TORGB_GAMMA, m_TORGB_gamma);
 
 	emit valuesChanged ();
+	
+	if (m_TORGB_gamma == 1.0f)
+		ui->gamma_label->setText("Gamma ( CRF-neutral )");
+	else
+		ui->gamma_label->setText("Gamma");
 }
  
 
@@ -122,7 +127,8 @@ void GammaWidget::crf_active(bool active)
 			QFileInfo fi(crfFile);
 			ui->CRF_label->setText(fi.fileName());
 			// CRF should be used along with gamma 1.0
-			updateWidgetValue(ui->slider_gamma, 100 );
+			ui->gamma_label->setText("Gamma ( CRF-neutral )");
+			updateWidgetValue(ui->slider_gamma, (int)((FLOAT_SLIDER_RES / TORGB_GAMMA_RANGE) * 1.0f) );
 			updateWidgetValue(ui->spinBox_gamma, 1.0f);
 			updateParam (LUX_FILM, LUX_FILM_TORGB_GAMMA, 1.0f);
 			
@@ -135,6 +141,11 @@ void GammaWidget::crf_active(bool active)
 	}
 	else {
 		ui->CRF_label->setText("inactive");
+		ui->gamma_label->setText("Gamma");
+		updateWidgetValue(ui->slider_gamma, (int)((FLOAT_SLIDER_RES / TORGB_GAMMA_RANGE) * m_TORGB_gamma) );
+		updateWidgetValue(ui->spinBox_gamma, m_TORGB_gamma);
+		updateParam (LUX_FILM, LUX_FILM_TORGB_GAMMA, m_TORGB_gamma);
+		
 		luxSetStringAttribute("film", "CameraResponse", "");
 	}
 }
