@@ -121,7 +121,12 @@ void GammaWidget::crf_active(bool active)
 		if(!crfFile.isNull()) {
 			QFileInfo fi(crfFile);
 			ui->CRF_label->setText(fi.fileName());
-#if defined(__APPLE__)
+			// CRF should be used along with gamma 1.0
+			updateWidgetValue(ui->slider_gamma, 100 );
+			updateWidgetValue(ui->spinBox_gamma, 1.0f);
+			updateParam (LUX_FILM, LUX_FILM_TORGB_GAMMA, 1.0f);
+			
+#if defined(__APPLE__) // OSX locale is UTF-8, TODO check this for other OS
 			luxSetStringAttribute("film", "CameraResponse", crfFile.toUtf8().data());
 #else
 			luxSetStringAttribute("film", "CameraResponse", crfFile.toAscii().data());
