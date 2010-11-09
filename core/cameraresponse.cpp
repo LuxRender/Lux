@@ -37,6 +37,7 @@ namespace lux {
 
 CameraResponse::CameraResponse(const string &film)
 {
+	fileName = film;
 	color = true;
 	std::ifstream file(film.c_str());
 	if (!file) {
