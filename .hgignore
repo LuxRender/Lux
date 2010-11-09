@@ -22,4 +22,5 @@ syntax: glob
 moc_*.cxx
 ui_*.h
 qrc_*.cxx
+*-hxx.cpp
 *~
