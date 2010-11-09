@@ -29,6 +29,7 @@
 #include "paramset.h"
 #include "tonemap.h"
 #include "sampling.h"
+#include <boost/thread/mutex.hpp>
 
 namespace lux {
 
@@ -131,8 +132,9 @@ private:
 	GREYCStorationParams m_GREYCStorationParams, d_GREYCStorationParams;
 	ChiuParams m_chiuParams, d_chiuParams;
 
-	string response;					// Path to the data file
-	CameraResponse *cameraResponse;		// Actual data processor
+	string response; // Path to the data file
+	boost::shared_ptr<CameraResponse> cameraResponse; // Actual data processor
+	boost::mutex cameraResponse_mutex; // camera response synchronization
 
 	XYZColor * m_bloomImage; // Persisting bloom layer image 
 	float m_BloomRadius, d_BloomRadius;

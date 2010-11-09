@@ -860,22 +860,27 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 			m_GlareDeleteLayer = false;
 		}
 
-		if (response != "")
-			cameraResponse = new CameraResponse(response);
-		else
-			cameraResponse = NULL;
+		// use local shared_ptr to keep reference to current cameraResponse
+		// so we can pass a regular pointer to ApplyImagingPipeline
+		boost::shared_ptr<CameraResponse> crf;
+		{
+			boost::mutex::scoped_lock(cameraResponse_mutex);
+
+			if (response == "")
+				cameraResponse.reset();
+
+			if ((!cameraResponse && response != "") || (cameraResponse && cameraResponse->fileName != response))
+				cameraResponse.reset(new CameraResponse(response));
+
+			crf = cameraResponse;
+		}
 
 		// Apply chosen tonemapper
 		ApplyImagingPipeline(xyzcolor, xPixelCount, yPixelCount, m_GREYCStorationParams, m_chiuParams,
 			colorSpace, histogram, m_HistogramEnabled, m_HaveBloomImage, m_bloomImage, m_BloomUpdateLayer,
 			m_BloomRadius, m_BloomWeight, m_VignettingEnabled, m_VignettingScale, m_AberrationEnabled, m_AberrationAmount,
 			m_HaveGlareImage, m_glareImage, m_GlareUpdateLayer, m_GlareAmount, m_GlareRadius, m_GlareBlades, m_GlareThreshold,
-			tmkernel.c_str(), &toneParams, cameraResponse, m_Gamma, 0.f);
-
-		if (cameraResponse) {
-			delete(cameraResponse);
-			cameraResponse = NULL;
-		}
+			tmkernel.c_str(), &toneParams, crf.get(), m_Gamma, 0.f);
 
 		// DO NOT USE xyzcolor ANYMORE AFTER THIS POINT
 		vector<RGBColor> &rgbcolor = reinterpret_cast<vector<RGBColor> &>(xyzcolor);
