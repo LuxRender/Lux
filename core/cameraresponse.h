@@ -23,6 +23,7 @@
 #ifndef CAMERARESPONSE_H
 #define CAMERARESPONSE_H
 // cameraresponse.h*
+// Original code by Daniel90
 #include "lux.h"
 
 namespace lux {

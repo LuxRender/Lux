@@ -20,7 +20,7 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// Modified material based on glossy2
+// Modified material based on glossy2 by paco
 
 #include "glossytranslucent.h"
 #include "memory.h"

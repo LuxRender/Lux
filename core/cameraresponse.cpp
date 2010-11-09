@@ -21,6 +21,7 @@
  ***************************************************************************/
 
 // cameraresponse.cpp*
+// Original code by Daniel90
 #include "cameraresponse.h"
 #include "color.h"
 #include "error.h"
