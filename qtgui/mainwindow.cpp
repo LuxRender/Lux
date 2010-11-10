@@ -748,7 +748,7 @@ bool MainWindow::saveAllLightGroups(const QString &outFilename, const bool &asHD
 	int lgCount = (int)luxGetParameterValue(LUX_FILM, LUX_FILM_LG_COUNT);
 	
 	// Start by save current light group state and turning off ALL light groups
-	bool prevLGState[lgCount];
+	vector<bool> prevLGState(lgCount);
 	for(int i=0; i<lgCount; i++)
 	{
 		prevLGState[i] = (luxGetParameterValue(LUX_FILM, LUX_FILM_LG_ENABLE, i) != 0.f);
