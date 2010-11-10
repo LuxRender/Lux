@@ -125,6 +125,7 @@ public:
 void updateWidgetValue(QSlider *slider, int value);
 void updateWidgetValue(QDoubleSpinBox *spinbox, double value);
 void updateWidgetValue(QSpinBox *spinbox, int value);
+void updateWidgetValue(QCheckBox *checkbox, bool checked);
 
 int ValueToLogSliderVal(float value, const float logLowerBound, const float logUpperBound);
 float LogSliderValToValue(int sliderval, const float logLowerBound, const float logUpperBound);

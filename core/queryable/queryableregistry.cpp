@@ -67,7 +67,12 @@ const char * QueryableRegistry::GetContent()
 			XMLOutput<<"      <type>"<< pairQAttribute.second->TypeStr() <<"</type>"<<std::endl;
 			XMLOutput<<"      <description>"<< pairQAttribute.second->description <<"</description>"<<std::endl;
 			XMLOutput<<"      <value>"<< pairQAttribute.second->Value() <<"</value>"<<std::endl;
-			XMLOutput<<"      <default>"<< pairQAttribute.second->DefaultValue() <<"</default>"<<std::endl;
+			if (pairQAttribute.second->HasDefaultValue())
+				XMLOutput<<"      <default>"<< pairQAttribute.second->DefaultValue() <<"</default>"<<std::endl;
+			if (pairQAttribute.second->HasMinValue())
+				XMLOutput<<"      <min>"<< pairQAttribute.second->MinFloatValue() <<"</min>"<<std::endl;
+			if (pairQAttribute.second->HasMaxValue())
+				XMLOutput<<"      <max>"<< pairQAttribute.second->MaxFloatValue() <<"</max>"<<std::endl;
 			XMLOutput<<"    </attribute>"<<std::endl;
 		}
 

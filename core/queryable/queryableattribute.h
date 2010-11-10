@@ -125,6 +125,10 @@ public:
 		throw std::runtime_error("Parameter type '" + TypeStr() + "' is not compatible with type 'string'");
 	}
 
+	virtual bool HasDefaultValue() const {
+		return false;
+	}
+
 	virtual std::string DefaultValue() const = 0;
 
 	virtual bool DefaultBoolValue() const {
@@ -197,11 +201,22 @@ public:
 template <class D>
 class GenericQueryableAttribute : public QueryableAttribute {
 protected:
-	GenericQueryableAttribute<D>(const std::string &_name, const std::string &_desc, D _defaultValue) 
+	GenericQueryableAttribute<D>(const std::string &_name, const std::string &_desc) 
 		: QueryableAttribute(_name, _desc), 
+		hasDefaultValue(false), hasMinValue(false), hasMaxValue(false) {
+		//hasMinValue(false), minValue(_defaultValue), // initialize min/max in case they must be
+		//hasMaxValue(false), maxValue(_defaultValue) {
+		// attributes are read-only by default
+		setFunc = boost::bind(&GenericQueryableAttribute<D>::ReadOnlyError, boost::ref(*this), _1);
+	}
+
+GenericQueryableAttribute<D>(const std::string &_name, const std::string &_desc, D _defaultValue) 
+		: QueryableAttribute(_name, _desc), 
+		hasDefaultValue(true),
 		defaultValue(_defaultValue), 
-		hasMinValue(false), minValue(_defaultValue), // initialize min/max in case they must be
-		hasMaxValue(false), maxValue(_defaultValue) {
+		hasMinValue(false), hasMaxValue(false) {
+		//hasMinValue(false), minValue(_defaultValue), // initialize min/max in case they must be
+		//hasMaxValue(false), maxValue(_defaultValue) {
 		// attributes are read-only by default
 		setFunc = boost::bind(&GenericQueryableAttribute<D>::ReadOnlyError, boost::ref(*this), _1);
 	}
@@ -209,6 +224,7 @@ protected:
 	GenericQueryableAttribute<D>(const std::string &_name, const std::string &_desc, D _defaultValue,
 								 bool _hasMin, D _minValue, bool _hasMax, D _maxValue)
 		: QueryableAttribute(_name, _desc), 
+		hasDefaultValue(true),
 		defaultValue(_defaultValue), 
 		hasMinValue(_hasMin), minValue(_minValue), 
 		hasMaxValue(_hasMax), maxValue(_maxValue) {
@@ -221,6 +237,10 @@ public:
 
 	virtual std::string Value() const {
 		return boost::lexical_cast<std::string>(getFunc());
+	}
+
+	virtual bool HasDefaultValue() const {
+		return hasDefaultValue;
 	}
 
 	virtual std::string DefaultValue() const {
@@ -242,6 +262,7 @@ public:
 	}
 
 protected:
+	bool hasDefaultValue;
 	D defaultValue;
 
 	bool hasMinValue;
@@ -252,6 +273,10 @@ protected:
 
 class QueryableBoolAttribute : public GenericQueryableAttribute<bool> {
 public:
+	QueryableBoolAttribute(const std::string &_name, const std::string &_desc) 
+		: GenericQueryableAttribute<bool>(_name, _desc) {
+	}
+
 	QueryableBoolAttribute(const std::string &_name, const std::string &_desc, bool _defaultValue) 
 		: GenericQueryableAttribute<bool>(_name, _desc, _defaultValue) {
 	}
@@ -275,6 +300,10 @@ public:
 
 class QueryableIntAttribute : public GenericQueryableAttribute<int> {
 public:
+	QueryableIntAttribute(const std::string &_name, const std::string &_desc) 
+		: GenericQueryableAttribute<int>(_name, _desc) {
+	}
+
 	QueryableIntAttribute(const std::string &_name, const std::string &_desc, int _defaultValue) 
 		: GenericQueryableAttribute<int>(_name, _desc, _defaultValue) {
 	}
@@ -299,13 +328,26 @@ public:
 		return minValue;
 	}
 
+	virtual float MinFloatValue() const {
+		return static_cast<float>(minValue);
+	}
+
 	virtual int MaxIntValue() const {
 		return maxValue;
 	}
+
+	virtual float MaxFloatValue() const {
+		return static_cast<float>(maxValue);
+	}
+
 };
 
 class QueryableFloatAttribute : public GenericQueryableAttribute<float> {
 public:
+	QueryableFloatAttribute(const std::string &_name, const std::string &_desc) 
+		: GenericQueryableAttribute<float>(_name, _desc) {
+	}
+
 	QueryableFloatAttribute(const std::string &_name, const std::string &_desc, float _defaultValue) 
 		: GenericQueryableAttribute<float>(_name, _desc, _defaultValue) {
 	}
@@ -337,6 +379,10 @@ public:
 
 class QueryableDoubleAttribute : public GenericQueryableAttribute<double> {
 public:
+	QueryableDoubleAttribute(const std::string &_name, const std::string &_desc) 
+		: GenericQueryableAttribute<double>(_name, _desc) {
+	}
+
 	QueryableDoubleAttribute(const std::string &_name, const std::string &_desc, double _defaultValue) 
 		: GenericQueryableAttribute<double>(_name, _desc, _defaultValue) {
 	}
@@ -390,6 +436,10 @@ public:
 
 class QueryableStringAttribute : public GenericQueryableAttribute<std::string> {
 public:
+	QueryableStringAttribute(const std::string &_name, const std::string &_desc) 
+		: GenericQueryableAttribute<std::string>(_name, _desc) {
+	}
+
 	QueryableStringAttribute(const std::string &_name, const std::string &_desc, std::string _defaultValue) 
 		: GenericQueryableAttribute<std::string>(_name, _desc, _defaultValue) {
 	}

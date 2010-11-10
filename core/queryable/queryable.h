@@ -71,6 +71,8 @@ public:
 
 	void AddAttribute(boost::shared_ptr<QueryableAttribute> attr)
 	{
+		// replace any existing attribute with same name
+		attributes.erase(attr->name);
 		attributes.insert ( std::pair<std::string,boost::shared_ptr<QueryableAttribute> >(attr->name,attr) );
 	}
 
@@ -112,142 +114,141 @@ public:
 		const std::string &name, const std::string &description,
 		bool T::*b, AttributeAccess access = ReadOnlyAccess) {
 
-		boost::shared_ptr<QueryableBoolAttribute> attribute(
-			new QueryableBoolAttribute(name, description, false));
+		AddFieldAttrib<QueryableBoolAttribute>(object, name, description, b, access);
+	}
 
-		if (access == ReadWriteAccess)
-			attribute->setFunc = boost::bind(lux::queryable::setfield<T, bool>, boost::ref(object), b, _1);
+	template<class T> friend void AddBoolAttribute(T &object,
+		const std::string &name, const std::string &description,
+		bool defaultValue, bool T::*b,
+		AttributeAccess access = ReadOnlyAccess) {
 
-		attribute->getFunc = boost::bind(b, boost::ref(object));
-		object.AddAttribute(attribute);
+		AddFieldAttrib<QueryableBoolAttribute>(object, name, description, defaultValue, b, access);
 	}
 	template<class T> friend void AddBoolAttribute(T &object,
 		const std::string &name, const std::string &description,
 		bool (T::*get)(), void (T::*set)(bool) = NULL) {
 
-		boost::shared_ptr<QueryableBoolAttribute> attribute(
-			new QueryableBoolAttribute(name, description, false));
-
-		if (set)
-			attribute->setFunc = boost::bind(set, boost::ref(object), _1);
-
-		attribute->getFunc = boost::bind(get, boost::ref(object));
-		object.AddAttribute(attribute);
+		AddAttrib<QueryableBoolAttribute>(object, name, description, get, set);
 	}
 
 	template<class T> friend void AddStringAttribute(T &object,
 		const std::string &name, const std::string &description,
 		std::string T::*s, AttributeAccess access = ReadOnlyAccess) {
 
-		boost::shared_ptr<QueryableStringAttribute> attribute(
-			new QueryableStringAttribute(name, description, ""));
+		AddFieldAttrib<QueryableStringAttribute>(object, name, description, s, access);
+	}
+	template<class T> friend void AddStringAttribute(T &object,
+		const std::string &name, const std::string &description,
+		std::string defaultValue, std::string T::*s,
+		AttributeAccess access = ReadOnlyAccess) {
 
-		if (access == ReadWriteAccess)
-			attribute->setFunc = boost::bind(lux::queryable::setfield<T, std::string>, boost::ref(object), s, _1);
-
-		attribute->getFunc = boost::bind(s, boost::ref(object));
-		object.AddAttribute(attribute);
+		AddFieldAttrib<QueryableStringAttribute>(object, name, description, defaultValue, s, access);
 	}
 	template<class T> friend void AddStringAttribute(T &object,
 		const std::string &name, const std::string &description,
 		std::string (T::*get)(), void (T::*set)(std::string) = NULL) {
 
-		boost::shared_ptr<QueryableStringAttribute> attribute(
-			new QueryableStringAttribute(name, description, ""));
-
-		if (set)
-			attribute->setFunc = boost::bind(set, boost::ref(object), _1);
-
-		attribute->getFunc = boost::bind(get, boost::ref(object));
-		object.AddAttribute(attribute);
+		AddAttrib<QueryableStringAttribute>(object, name, description, get, set);
 	}
 
 	template<class T> friend void AddFloatAttribute(T &object,
 		const std::string &name, const std::string &description,
 		float T::*f, AttributeAccess access = ReadOnlyAccess) {
 
-		boost::shared_ptr<QueryableFloatAttribute> attribute(
-			new QueryableFloatAttribute(name, description, 0.f));
+		AddFieldAttrib<QueryableFloatAttribute>(object, name, description, f, access);
+	}
+	template<class T> friend void AddFloatAttribute(T &object,
+		const std::string &name, const std::string &description,
+		float defaultValue, float T::*f,
+		AttributeAccess access = ReadOnlyAccess) {
 
-		if (access == ReadWriteAccess)
-			attribute->setFunc = boost::bind(lux::queryable::setfield<T, float>, boost::ref(object), f, _1);
-
-		attribute->getFunc = boost::bind(f, boost::ref(object));
-		object.AddAttribute(attribute);
+		AddFieldAttrib<QueryableFloatAttribute>(object, name, description, defaultValue, f, access);
 	}
 	template<class T> friend void AddFloatAttribute(T &object,
 		const std::string &name, const std::string &description,
 		float (T::*get)(), void (T::*set)(float) = NULL) {
 
-		boost::shared_ptr<QueryableFloatAttribute> attribute(
-			new QueryableFloatAttribute(name, description, 0.f));
-
-		if (set)
-			attribute->setFunc = boost::bind(set, boost::ref(object), _1);
-
-		attribute->getFunc = boost::bind(get, boost::ref(object));
-		object.AddAttribute(attribute);
+		AddAttrib<QueryableFloatAttribute>(object, name, description, get, set);
 	}
 
 	template<class T> friend void AddDoubleAttribute(T &object,
 		const std::string &name, const std::string &description,
 		double T::*f, AttributeAccess access = ReadOnlyAccess) {
 
-		boost::shared_ptr<QueryableDoubleAttribute> attribute(
-			new QueryableDoubleAttribute(name, description, 0.0));
+		AddFieldAttrib<QueryableDoubleAttribute>(object, name, description, f, access);
+	}
+	template<class T> friend void AddDoubleAttribute(T &object,
+		const std::string &name, const std::string &description,
+		double defaultValue, double T::*f,
+		AttributeAccess access = ReadOnlyAccess) {
 
-		if (access == ReadWriteAccess)
-			attribute->setFunc = boost::bind(lux::queryable::setfield<T, double>, boost::ref(object), f, _1);
-
-		attribute->getFunc = boost::bind(f, boost::ref(object));
-		object.AddAttribute(attribute);
+		AddFieldAttrib<QueryableDoubleAttribute>(object, name, description, defaultValue, f, access);
 	}
 	template<class T> friend void AddDoubleAttribute(T &object,
 		const std::string &name, const std::string &description,
 		double (T::*get)(), void (T::*set)(double) = NULL) {
 
-		boost::shared_ptr<QueryableDoubleAttribute> attribute(
-			new QueryableDoubleAttribute(name, description, 0.0));
-
-		if (set)
-			attribute->setFunc = boost::bind(set, boost::ref(object), _1);
-
-		attribute->getFunc = boost::bind(get, boost::ref(object));
-		object.AddAttribute(attribute);
+		AddAttrib<QueryableDoubleAttribute>(object, name, description, get, set);
 	}
 
 	template<class T> friend void AddIntAttribute(T &object,
 		const std::string &name, const std::string &description,
 		int T::*i, AttributeAccess access = ReadOnlyAccess) {
 
-		boost::shared_ptr<QueryableIntAttribute> attribute(
-			new QueryableIntAttribute(name, description, 0));
+		AddFieldAttrib<QueryableIntAttribute>(object, name, description, i, access);
+	}
+	template<class T> friend void AddIntAttribute(T &object,
+		const std::string &name, const std::string &description,
+		int defaultValue, int T::*i,
+		AttributeAccess access = ReadOnlyAccess) {
 
-		if (access == ReadWriteAccess)
-			attribute->setFunc = boost::bind(lux::queryable::setfield<T, int>, boost::ref(object), i, _1);
-
-		attribute->getFunc = boost::bind(i, boost::ref(object));
-		object.AddAttribute(attribute);
+		AddFieldAttrib<QueryableIntAttribute>(object, name, description, defaultValue, i, access);
 	}
 	template<class T> friend void AddIntAttribute(T &object,
 		const std::string &name, const std::string &description,
 		unsigned int (T::*get)(), void (T::*set)(unsigned int) = NULL) {
 
-		boost::shared_ptr<QueryableIntAttribute> attribute(
-			new QueryableIntAttribute(name, description, 0));
-
-		if (set)
-			attribute->setFunc = boost::bind(set, boost::ref(object), _1);
-
-		attribute->getFunc = boost::bind(get, boost::ref(object));
-		object.AddAttribute(attribute);
+		AddAttrib<QueryableIntAttribute>(object, name, description, get, set);
 	}
 	template<class T> friend void AddIntAttribute(T &object,
 		const std::string &name, const std::string &description,
 		int (T::*get)(), void (T::*set)(int) = NULL) {
 
-		boost::shared_ptr<QueryableIntAttribute> attribute(
-			new QueryableIntAttribute(name, description, 0));
+		AddAttrib<QueryableIntAttribute>(object, name, description, get, set);
+	}
+protected:
+	template<class QA, class T, class D> static void AddFieldAttrib(T &object,
+		const std::string &name, const std::string &description,
+		D T::*field, AttributeAccess access) {
+
+		boost::shared_ptr<QA> attribute(
+			new QA(name, description));
+
+		if (access == ReadWriteAccess)
+			attribute->setFunc = boost::bind(lux::queryable::setfield<T, D>, boost::ref(object), field, _1);
+
+		attribute->getFunc = boost::bind(field, boost::ref(object));
+		object.AddAttribute(attribute);
+	}
+	template<class QA, class T, class D> static void AddFieldAttrib(T &object,
+		const std::string &name, const std::string &description,
+		D defaultValue, D T::*field, AttributeAccess access) {
+
+		boost::shared_ptr<QA> attribute(
+			new QA(name, description, defaultValue));
+
+		if (access == ReadWriteAccess)
+			attribute->setFunc = boost::bind(lux::queryable::setfield<T, D>, boost::ref(object), field, _1);
+
+		attribute->getFunc = boost::bind(field, boost::ref(object));
+		object.AddAttribute(attribute);
+	}
+	template<class QA, class T, class D> static void AddAttrib(T &object,
+		const std::string &name, const std::string &description,
+		D (T::*get)(), void (T::*set)(D)) {
+
+		boost::shared_ptr<QA> attribute(
+			new QA(name, description));
 
 		if (set)
 			attribute->setFunc = boost::bind(set, boost::ref(object), _1);

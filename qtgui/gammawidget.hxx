@@ -51,10 +51,11 @@ public:
 
 	bool m_Gamma_enabled;
 	double m_TORGB_gamma;
+
+	bool m_CRF_enabled;
+	QString m_CRF_file;
 	
 	void Update();
-	QString crfFile;
-
 signals:
 	void valuesChanged();
 
@@ -62,7 +63,8 @@ private:
 
 	Ui::GammaWidget *ui;
 	QString m_lastOpendir;
-	void crf_active (bool active = true);
+	void activateCRF();
+	void deactivateCRF();
 
 protected:
 

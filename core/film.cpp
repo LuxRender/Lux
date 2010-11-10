@@ -562,18 +562,6 @@ Film::Film(u_int xres, u_int yres, Filter *filt, const float crop[4],
 	writeResumeFlm(w_resume_FLM), restartResumeFlm(restart_resume_FLM),
 	haltSamplePerPixel(haltspp), haltTime(halttime), histogram(NULL), enoughSamplePerPixel(false)
 {
-	//Queryable parameters
-	AddIntAttribute(*this, "xResolution", "Horizontal resolution (pixels)", &Film::GetXResolution);
-	AddIntAttribute(*this, "yResolution", "Vertical resolution (pixels)", &Film::GetYResolution);
-	AddStringAttribute(*this, "filename", "Output filename", &Film::filename, Queryable::ReadWriteAccess);
-	AddFloatAttribute(*this, "EV", "Exposure value", &Film::EV);
-	AddFloatAttribute(*this, "averageLuminance", "Average Image Luminance", &Film::averageLuminance);
-	AddDoubleAttribute(*this, "numberOfLocalSamples", "Number of samples contributed to film on the local machine", &Film::numberOfLocalSamples);
-	AddDoubleAttribute(*this, "numberOfSamplesFromNetwork", "Number of samples contributed from network slaves", &Film::numberOfSamplesFromNetwork);
-	AddBoolAttribute(*this, "enoughSamples", "Indicates if the halt condition been reached", &Film::enoughSamplePerPixel);
-	AddIntAttribute(*this, "haltSamplePerPixel", "Halt Samples per Pixel", &Film::haltSamplePerPixel);
-	AddIntAttribute(*this, "haltTime", "Halt time in seconds", &Film::haltTime);
-
 	// Compute film image extent
 	memcpy(cropWindow, crop, 4 * sizeof(float));
 	xPixelStart = Ceil2UInt(xResolution * cropWindow[0]);
@@ -592,6 +580,18 @@ Film::Film(u_int xres, u_int yres, Filter *filt, const float crop[4],
 	warmupComplete = debug_mode;
 
 	boost::xtime_get(&creationTime, boost::TIME_UTC);
+
+	//Queryable parameters
+	AddIntAttribute(*this, "xResolution", "Horizontal resolution (pixels)", &Film::GetXResolution);
+	AddIntAttribute(*this, "yResolution", "Vertical resolution (pixels)", &Film::GetYResolution);
+	AddStringAttribute(*this, "filename", "Output filename", filename, &Film::filename, Queryable::ReadWriteAccess);
+	AddFloatAttribute(*this, "EV", "Exposure value", &Film::EV);
+	AddFloatAttribute(*this, "averageLuminance", "Average Image Luminance", &Film::averageLuminance);
+	AddDoubleAttribute(*this, "numberOfLocalSamples", "Number of samples contributed to film on the local machine", &Film::numberOfLocalSamples);
+	AddDoubleAttribute(*this, "numberOfSamplesFromNetwork", "Number of samples contributed from network slaves", &Film::numberOfSamplesFromNetwork);
+	AddBoolAttribute(*this, "enoughSamples", "Indicates if the halt condition been reached", &Film::enoughSamplePerPixel);
+	AddIntAttribute(*this, "haltSamplePerPixel", "Halt Samples per Pixel", haltSamplePerPixel, &Film::haltSamplePerPixel);
+	AddIntAttribute(*this, "haltTime", "Halt time in seconds", haltTime, &Film::haltTime);
 
 	// Precompute filter weight table
 	filterTable = new float[FILTER_TABLE_SIZE * FILTER_TABLE_SIZE];
@@ -1246,6 +1246,8 @@ double Film::DoTransmitFilm(
 		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TORGB_Y_BLUE, 0));
 		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TORGB_GAMMA, 0));
 
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_CAMERA_RESPONSE_ENABLED, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_STRING, LUX_FILM_CAMERA_RESPONSE_FILE, 0));
 
 		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_UPDATEBLOOMLAYER, 0));
 		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_DELETEBLOOMLAYER, 0));

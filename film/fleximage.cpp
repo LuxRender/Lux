@@ -88,7 +88,7 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, const float c
 
 	// Set use and default runtime changeable parameters
 	m_TonemapKernel = d_TonemapKernel = p_TonemapKernel;
-	AddIntAttribute(*this, "TonemapKernel", "Tonemap kernel type: {0: Reinhard, 1: Linear, 2: Contrast, 3: MaxWhite, 4: AutoLinear}", &FlexImageFilm::m_TonemapKernel, Queryable::ReadWriteAccess);
+	AddIntAttribute(*this, "TonemapKernel", "Tonemap kernel type: {0: Reinhard, 1: Linear, 2: Contrast, 3: MaxWhite, 4: AutoLinear}", 0, &FlexImageFilm::m_TonemapKernel, Queryable::ReadWriteAccess);
 
 	m_ReinhardPreScale = d_ReinhardPreScale = p_ReinhardPreScale;
 	AddFloatAttribute(*this, "ReinhardPreScale", "Reinhard pre-scale", &FlexImageFilm::m_ReinhardPreScale, Queryable::ReadWriteAccess);
@@ -166,8 +166,9 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, const float c
 	m_chiuParams.Reset();
 	d_chiuParams.Reset();
 
-	response = p_response;
-	AddStringAttribute(*this, "CameraResponse", "Path to camera response data file", &FlexImageFilm::response, Queryable::ReadWriteAccess);
+	m_CameraResponseFile = d_CameraResponseFile = p_response;
+	AddStringAttribute(*this, "CameraResponse", "Path to camera response data file", "", &FlexImageFilm::m_CameraResponseFile, Queryable::ReadWriteAccess);
+	m_CameraResponseEnabled = d_CameraResponseEnabled = m_CameraResponseFile != "";
 
 	// init timer
 	boost::xtime_get(&lastWriteImageTime, boost::TIME_UTC);
@@ -235,6 +236,11 @@ void FlexImageFilm::SetParameterValue(luxComponentParameters param, double value
 		case LUX_FILM_TORGB_GAMMA:
 			m_Gamma = value;
 			break;
+
+		case LUX_FILM_CAMERA_RESPONSE_ENABLED:
+			m_CameraResponseEnabled = (value != 0.f);
+			break;
+
 		case LUX_FILM_UPDATEBLOOMLAYER:
 			m_BloomUpdateLayer = (value != 0.f);
 			break;
@@ -437,6 +443,9 @@ double FlexImageFilm::GetParameterValue(luxComponentParameters param, u_int inde
 			return m_Gamma;
 			break;
 
+		case LUX_FILM_CAMERA_RESPONSE_ENABLED:
+			return m_CameraResponseEnabled;
+
 		case LUX_FILM_BLOOMRADIUS:
 			return m_BloomRadius;
 			break;
@@ -620,6 +629,9 @@ double FlexImageFilm::GetDefaultParameterValue(luxComponentParameters param, u_i
 			return d_Gamma;
 			break;
 
+		case LUX_FILM_CAMERA_RESPONSE_ENABLED:
+			return d_CameraResponseEnabled;
+
 		case LUX_FILM_BLOOMRADIUS:
 			return d_BloomRadius;
 			break;
@@ -743,6 +755,8 @@ void FlexImageFilm::SetStringParameterValue(luxComponentParameters param, const 
 	switch(param) {
 		case LUX_FILM_LG_NAME:
 			return SetGroupName(index, value);
+		case LUX_FILM_CAMERA_RESPONSE_FILE:
+			m_CameraResponseFile = value;
 		default:
 			break;
 	}
@@ -751,6 +765,8 @@ string FlexImageFilm::GetStringParameterValue(luxComponentParameters param, u_in
 	switch(param) {
 		case LUX_FILM_LG_NAME:
 			return GetGroupName(index);
+		case LUX_FILM_CAMERA_RESPONSE_FILE:
+			return m_CameraResponseFile;
 		default:
 			break;
 	}
@@ -866,13 +882,15 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 		{
 			boost::mutex::scoped_lock(cameraResponse_mutex);
 
-			if (response == "")
+			if (m_CameraResponseFile == "")
 				cameraResponse.reset();
 
-			if ((!cameraResponse && response != "") || (cameraResponse))// && cameraResponse->fileName != response))
-				cameraResponse.reset(new CameraResponse(response));
+			if (m_CameraResponseEnabled) {			
+				if ((!cameraResponse && m_CameraResponseFile != "") || (cameraResponse && cameraResponse->fileName != m_CameraResponseFile))
+					cameraResponse.reset(new CameraResponse(m_CameraResponseFile));
 
-			crf = cameraResponse;
+				crf = cameraResponse;
+			}
 		}
 
 		// Apply chosen tonemapper

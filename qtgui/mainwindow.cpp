@@ -87,6 +87,13 @@ void updateWidgetValue(QSpinBox *spinbox, int value)
 	spinbox->blockSignals (false);
 }
 
+void updateWidgetValue(QCheckBox *checkbox, bool checked)
+{
+	checkbox->blockSignals (true);
+	checkbox->setChecked(checked);
+	checkbox->blockSignals (false);
+}
+
 int ValueToLogSliderVal(float value, const float logLowerBound, const float logUpperBound)
 {
 

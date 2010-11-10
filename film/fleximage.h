@@ -133,7 +133,8 @@ private:
 	GREYCStorationParams m_GREYCStorationParams, d_GREYCStorationParams;
 	ChiuParams m_chiuParams, d_chiuParams;
 
-	string response; // Path to the data file
+	bool m_CameraResponseEnabled, d_CameraResponseEnabled;
+	string m_CameraResponseFile, d_CameraResponseFile; // Path to the data file
 	boost::shared_ptr<CameraResponse> cameraResponse; // Actual data processor
 	boost::mutex cameraResponse_mutex; // camera response synchronization
 
