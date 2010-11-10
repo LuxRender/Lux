@@ -869,7 +869,7 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 			if (response == "")
 				cameraResponse.reset();
 
-			if ((!cameraResponse && response != "") || (cameraResponse && cameraResponse->fileName != response))
+			if ((!cameraResponse && response != "") || (cameraResponse))// && cameraResponse->fileName != response))
 				cameraResponse.reset(new CameraResponse(response));
 
 			crf = cameraResponse;
@@ -989,6 +989,90 @@ void FlexImageFilm::WriteImage(ImageType type)
 	// usually S is taken to be 100 and K to be 12.5
 	EV = logf(Y * 8.f) / logf(2.f);
 	averageLuminance = Y;
+}
+
+void FlexImageFilm::SaveEXR(const string &pExrFilename, const bool &pUseHalfFloats, const bool &pIncludeZBuf, const int &pCompressionType)
+{
+	// Seth - Code below based on FlexImageFilm::WriteImage()
+	const u_int nPix = xPixelCount * yPixelCount;
+	vector<XYZColor> xyzcolor(nPix);
+	vector<float> alpha(nPix), alphaWeight(nPix, 0.f);
+	
+	// in order to fix bug #360
+	// ouside loop not to trash the complete picture
+	// if there are several buffer groups
+	fill(xyzcolor.begin(), xyzcolor.end(), XYZColor(0.f));
+	fill(alpha.begin(), alpha.end(), 0.f);
+	
+	XYZColor p;
+	float a;
+	
+	// write framebuffer (combines multiple buffer groups into a single buffer applying any modifiers to intensity and color)
+	for(u_int j = 0; j < bufferGroups.size(); ++j) {
+		if (!bufferGroups[j].enable)
+			continue;
+		
+		for(u_int i = 0; i < bufferConfigs.size(); ++i) {
+			const Buffer &buffer = *(bufferGroups[j].buffers[i]);
+			if (!(bufferConfigs[i].output & BUF_FRAMEBUFFER))
+				continue;
+			
+			for (u_int offset = 0, y = 0; y < yPixelCount; ++y) {
+				for (u_int x = 0; x < xPixelCount; ++x,++offset) {
+					
+					alphaWeight[offset] += buffer.GetData(x, y, &p, &a);
+					xyzcolor[offset] += p * bufferGroups[j].scale;
+					alpha[offset] += a;
+				}
+			}
+		}
+	}
+	
+	// outside loop in order to write complete image
+	for (u_int pix = 0; pix < nPix; ++pix) {
+		if (alphaWeight[pix] > 0.f)
+			alpha[pix] /= alphaWeight[pix];
+	}
+
+	// Seth - Code below based on beginning of FlexImageFilm::WriteImage2()
+	
+	// Construct normalized Z buffer if needed
+	vector<float> zBuf;
+	if(pIncludeZBuf) {
+		zBuf.resize(nPix, 0.f);
+		for (u_int offset = 0, y = 0; y < yPixelCount; ++y) {
+			for (u_int x = 0; x < xPixelCount; ++x,++offset) {
+				zBuf[offset] = ZBuffer->GetData(x, y);
+			}
+		}
+	}
+	
+	// convert to rgb
+	colorSpace = ColorSystem(m_RGB_X_Red, m_RGB_Y_Red,
+							 m_RGB_X_Green, m_RGB_Y_Green,
+							 m_RGB_X_Blue, m_RGB_Y_Blue,
+							 m_RGB_X_White, m_RGB_Y_White, 1.f);
+	vector<RGBColor> rgbColor(nPix);
+	for ( u_int i = 0; i < nPix; i++ )
+		rgbColor[i] = colorSpace.ToRGBConstrained(xyzcolor[i]);
+			
+	
+	// Backup members that affect WriteEXRImage()
+	bool lOrigZbuf = write_EXR_ZBuf;
+	bool lOrigHalf = write_EXR_halftype;
+	int lOrigCompression = write_EXR_compressiontype;
+	
+	// Set members that affect WriteEXRImage() according to passed parameters
+	write_EXR_ZBuf = pIncludeZBuf;
+	write_EXR_halftype = pUseHalfFloats;
+	write_EXR_compressiontype = pCompressionType;
+	
+	WriteEXRImage(rgbColor, alpha, pExrFilename, zBuf);
+
+	// Restore the write_EXR members
+	write_EXR_ZBuf = lOrigZbuf;
+	write_EXR_halftype = lOrigHalf;
+	write_EXR_compressiontype = lOrigCompression;
 }
 
 // GUI LDR framebuffer access methods

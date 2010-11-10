@@ -59,6 +59,7 @@ public:
 		delete[] framebuffer;
 	}	
 
+	virtual void SaveEXR(const string &pExrFilename, const bool &pUseHalfFloats, const bool &pIncludeZBuf, const int &pCompressionType);
 	virtual void WriteImage(ImageType type);
 	virtual void CheckWriteOuputInterval();
 

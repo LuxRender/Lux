@@ -165,6 +165,8 @@ public:
 	
 protected:
 	
+	bool saveCurrentImage(const QString &outFile, const bool &asHDR);
+	bool saveAllLightGroups(const QString &outFilename, const bool &asHDR);
 	void setCurrentFile(const QString& filename);
 	void updateRecentFileActions();
 	void createActions();
@@ -265,6 +267,10 @@ private slots:
 	void pauseRender ();
 	void stopRender ();
 	void outputTonemapped ();
+	void outputHDR ();
+	void outputBufferGroupsTonemapped ();
+	void outputBufferGroupsHDR ();
+	void batchProcess ();
 	void copyLog ();
 	void clearLog ();
 	void tabChanged (int);

@@ -755,6 +755,20 @@
       <string>Open Recent</string>
      </property>
     </widget>
+    <widget class="QMenu" name="menuExport_to_Image">
+     <property name="title">
+      <string>Export to Image</string>
+     </property>
+     <addaction name="action_outputTonemapped"/>
+     <addaction name="action_outputHDR"/>
+     <addaction name="separator"/>
+     <addaction name="action_outputBufferGroupsTonemapped"/>
+     <addaction name="action_outputBufferGroupsHDR"/>
+     <addaction name="separator"/>
+     <addaction name="action_batchProcess"/>
+     <addaction name="separator"/>
+     <addaction name="action_Overlay"/>
+    </widget>
     <addaction name="action_openFile"/>
     <addaction name="menuOpen_Recent"/>
     <addaction name="separator"/>
@@ -762,17 +776,12 @@
     <addaction name="action_loadFLM"/>
     <addaction name="action_saveFLM"/>
     <addaction name="separator"/>
+    <addaction name="menuExport_to_Image"/>
+    <addaction name="separator"/>
     <addaction name="action_exitApp"/>
-   </widget>
-   <widget class="QMenu" name="menuImage">
-    <property name="title">
-     <string>Image</string>
-    </property>
-    <addaction name="action_outputTonemapped"/>
    </widget>
    <addaction name="menu_file"/>
    <addaction name="menu_render"/>
-   <addaction name="menuImage"/>
    <addaction name="menu_view"/>
    <addaction name="menu_help"/>
   </widget>
@@ -995,10 +1004,50 @@
   </action>
   <action name="action_outputTonemapped">
    <property name="text">
-    <string>Save Tonemapped Image</string>
+    <string>Tonemapped Image...</string>
    </property>
    <property name="toolTip">
     <string>Save the current framebuffer (with tonemapping) to a standard image file.</string>
+   </property>
+  </action>
+  <action name="action_outputHDR">
+   <property name="text">
+    <string>High Dynamic Range Image...</string>
+   </property>
+   <property name="toolTip">
+    <string>Save the current image in a high dynamic range, floating-point image format.</string>
+   </property>
+  </action>
+  <action name="action_outputBufferGroupsTonemapped">
+   <property name="text">
+    <string>Light Groups to Tonemapped Images...</string>
+   </property>
+   <property name="toolTip">
+    <string>Save the each individual light group as a tonemapped image.</string>
+   </property>
+  </action>
+  <action name="action_outputBufferGroupsHDR">
+   <property name="text">
+    <string>Light Groups to High Dynamic Range Images...</string>
+   </property>
+   <property name="toolTip">
+    <string>Save the each individual light group as an OpenEXR image in high dynamic range.</string>
+   </property>
+  </action>
+  <action name="action_batchProcess">
+   <property name="text">
+    <string>Batch Process...</string>
+   </property>
+   <property name="toolTip">
+    <string>Process a directory of 'flm' film files.</string>
+   </property>
+  </action>
+  <action name="action_Overlay">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Overlay Statistics</string>
    </property>
   </action>
  </widget>

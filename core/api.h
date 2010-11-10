@@ -102,6 +102,9 @@ void luxSaveFLM(const char* name);
 /* Overrides the resume settings of the Film in the next scene to resume from the given FLM file */
 void luxOverrideResumeFLM(const char *name);
 
+/* Write film to a floating point OpenEXR image */
+void luxSaveEXR(const char* name, const bool &useHalfFloat, const bool &includeZBuffer, const int &compressionType);
+
 /* User interactive thread functions */
 void luxStart();
 void luxPause();

@@ -387,6 +387,7 @@ public:
 
 	virtual void AddSample(Contribution *contrib);
 	virtual void AddSampleCount(float count);
+	virtual void SaveEXR(const string &pExrFilename, const bool &pUseHalfFloats, const bool &pIncludeZBuf, const int &pCompressionType) = 0;
 	virtual void WriteImage(ImageType type) = 0;
 	virtual void WriteFilm(const string &fname) { WriteResumeFilm(fname); }
 	virtual void CheckWriteOuputInterval() { }

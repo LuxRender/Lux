@@ -21,13 +21,16 @@
  ***************************************************************************/
 
 #include <boost/bind.hpp>
-#include <boost/filesystem/path.hpp>
-#include <boost/filesystem/operations.hpp>
+#include <boost/filesystem.hpp>
+//#include <boost/filesystem/path.hpp>
+//#include <boost/filesystem/operations.hpp>
 #include <boost/thread.hpp>
 #include <boost/cast.hpp>
 
 #include <sstream>
 #include <clocale>
+
+#include <QProgressDialog>
 
 #include <QList>
 
@@ -39,6 +42,7 @@
 #include "mainwindow.hxx"
 #include "ui_luxrender.h"
 #include "aboutdialog.hxx"
+#include "batchprocessdialog.hxx"
 
 #if defined(WIN32) && !defined(__CYGWIN__)
 #include "direct.h"
@@ -149,8 +153,12 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	connect(ui->action_saveFLM, SIGNAL(triggered()), this, SLOT(saveFLM()));
 	connect(ui->action_exitApp, SIGNAL(triggered()), this, SLOT(exitApp()));
 	
-	// Image menu slots
+	// Export to Image sub-menu slots
 	connect(ui->action_outputTonemapped, SIGNAL(triggered()), this, SLOT(outputTonemapped()));
+	connect(ui->action_outputHDR, SIGNAL(triggered()), this, SLOT(outputHDR()));
+	connect(ui->action_outputBufferGroupsTonemapped, SIGNAL(triggered()), this, SLOT(outputBufferGroupsTonemapped()));
+	connect(ui->action_outputBufferGroupsHDR, SIGNAL(triggered()), this, SLOT(outputBufferGroupsHDR()));
+	connect(ui->action_batchProcess, SIGNAL(triggered()), this, SLOT(batchProcess()));
 
 	// Render menu slots
 	connect(ui->action_resumeRender, SIGNAL(triggered()), this, SLOT(resumeRender()));
@@ -661,8 +669,258 @@ void MainWindow::outputTonemapped()
 {
 	QString fileName = QFileDialog::getSaveFileName(this, tr("Save Tonemapped Image"), m_lastOpendir, tr("PNG Image (*.png);;JPEG Image (*.jpg);;Windows Bitmap (*.bmp);;TIFF Image (*.tif)"));
 	if(fileName.isNull() || fileName.isEmpty()) return;
-	if(renderView->outputTonemapped(fileName)) statusMessage->setText(tr("Tonemapped image saved to '%1'").arg(fileName));
+	if(saveCurrentImage(fileName, false)) statusMessage->setText(tr("Tonemapped image saved"));
 	else statusMessage->setText(tr("ERROR: Tonemapped image NOT saved. May be an unsupported image type."));
+}
+
+void MainWindow::outputHDR()
+{
+	QString fileName = QFileDialog::getSaveFileName(this, tr("Save High Dynamic Range Image"), m_lastOpendir, tr("OpenEXR Image (*.exr)"));
+	if(fileName.isNull() || fileName.isEmpty()) return;	
+	if(saveCurrentImage(fileName, true)) statusMessage->setText(tr("High dynamic range image saved"));
+	else statusMessage->setText(tr("ERROR: High dynamic range image NOT saved."));
+}
+
+bool MainWindow::saveCurrentImage(const QString &outFile, const bool &asHDR)
+{
+	// If saving as HDR then we do it differently
+	if(asHDR)
+	{
+		// Done inside API for now (uses standard OpenEXR defaults: 16bit floats, no Z-buffer, PIZ compression)
+		luxSaveEXR(outFile.toAscii().data(), true, false, 1);
+		return true;
+	}
+	
+	// Saving as tonemapped image ...
+	// Get width, height and pixel buffer
+	int w = luxGetIntAttribute("film", "xResolution");
+	int h = luxGetIntAttribute("film", "yResolution");
+	unsigned char* fb = luxFramebuffer();
+	
+	// If all looks okay, proceed
+	if(w > 0 && h > 0 && fb != NULL)
+	{
+		QImage image(fb, w, h, w*3, QImage::Format_RGB888);
+		return image.save(outFile);
+	}
+	
+	// Something was wrong with buffer, width or height
+	return false;
+}
+
+void MainWindow::outputBufferGroupsTonemapped()
+{	
+	// Where should these be output
+	QString fileName = QFileDialog::getSaveFileName(this, tr("Select a destination for the images"), m_lastOpendir, tr("PNG Image (*.png);;JPEG Image (*.jpg);;Windows Bitmap (*.bmp);;TIFF Image (*.tif)"));
+	if(fileName.isNull() || fileName.isEmpty()) return;
+	
+	// Show busy cursor
+	QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
+	
+	// Output the light groups
+	if(saveAllLightGroups(fileName, false)) statusMessage->setText(tr("Light group tonemapped images saved"));
+	else statusMessage->setText(tr("ERROR: Light group tonemapped images NOT saved"));
+	
+	// Stop showing busy cursor
+	QApplication::restoreOverrideCursor();
+}
+
+void MainWindow::outputBufferGroupsHDR()
+{	
+	// Where should these be output
+	QString fileName = QFileDialog::getSaveFileName(this, tr("Select a destination for the images"), m_lastOpendir, tr("OpenEXR Image (*.exr)"));
+	if(fileName.isNull() || fileName.isEmpty()) return;
+	
+	// Show busy cursor
+	QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
+	
+	// Output the light groups
+	if(saveAllLightGroups(fileName, true)) statusMessage->setText(tr("Light group HDR images saved"));
+	else statusMessage->setText(tr("ERROR: Light group HDR images NOT saved"));
+	
+	// Stop showing busy cursor
+	QApplication::restoreOverrideCursor();
+}
+
+bool MainWindow::saveAllLightGroups(const QString &outFilename, const bool &asHDR)
+{	
+	// Get number of light groups
+	int lgCount = (int)luxGetParameterValue(LUX_FILM, LUX_FILM_LG_COUNT);
+	
+	// Start by save current light group state and turning off ALL light groups
+	bool prevLGState[lgCount];
+	for(int i=0; i<lgCount; i++)
+	{
+		prevLGState[i] = (luxGetParameterValue(LUX_FILM, LUX_FILM_LG_ENABLE, i) != 0.f);
+		luxSetParameterValue(LUX_FILM, LUX_FILM_LG_ENABLE, 0.f, i);
+	}
+	
+	// Prepare filename (will hack up when outputting each light group)
+	boost::filesystem::path filenamePath(outFilename.toStdString());
+	
+	// Get film resolution (only needed for tonemapped case but better off being outside loop)
+	int w = luxGetIntAttribute("film", "xResolution");
+	int h = luxGetIntAttribute("film", "yResolution");
+	
+	// Now, turn one light group on at a time, update the film and save to an image
+	bool result = true;
+	for(int i=0; i<lgCount; i++)
+	{
+		// Get light group name
+		char lgName[256];
+		luxGetStringParameterValue(LUX_FILM, LUX_FILM_LG_NAME, lgName, 256, i);
+		
+		// Enable light group (and tonemap if not saving as HDR)
+		luxSetParameterValue(LUX_FILM, LUX_FILM_LG_ENABLE, 1.f, i);
+		if(!asHDR) luxUpdateFramebuffer();
+		
+		// Output image
+		QString outputName = QString("%1/%2-%3").arg(filenamePath.parent_path().string().c_str())
+		.arg(filenamePath.stem().c_str()).arg(lgName);
+		if(asHDR) luxSaveEXR(QString("%1.exr").arg(outputName).toAscii().data(), true, false, 1);
+		else 
+		{
+			unsigned char* fb = luxFramebuffer();
+			if(fb != NULL)
+			{
+				QImage image(fb, w, h, w*3, QImage::Format_RGB888);
+				result = image.save(QString("%1%2").arg(outputName).arg(filenamePath.extension().c_str()));
+			}
+			else result = false;
+		}
+		
+		// Turn group back off
+		luxSetParameterValue(LUX_FILM, LUX_FILM_LG_ENABLE, 0.f, i);
+		if(!result) break;
+	}
+	
+	// Restore previous light group state
+	for(int i=0; i<lgCount; i++)
+		luxSetParameterValue(LUX_FILM, LUX_FILM_LG_ENABLE, (prevLGState[i]?1.f:0.f), i);
+	
+	if(!asHDR) luxUpdateFramebuffer();
+	
+	// Report success or failure (always success when outputting HDR)
+	return result;
+}
+
+void MainWindow::batchProcess()
+{
+    // Are we rendering?
+    if(!canStopRendering()) return;
+	
+    // Is there already film in the camera?
+    if(luxStatistics("sceneIsReady") || luxStatistics("filmIsReady"))
+    {
+        int ret = QMessageBox::warning(this, tr("Film/Scene Loaded"),
+                                       tr("There is exposed film in the camera (from a previously loaded scene or flm file). "
+                                          "You must discard this film before starting a batch process.\n\n"
+                                          "Save the existing film?"),
+                                       QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel, QMessageBox::Save);
+		
+        switch(ret)
+        {
+				// Call save function instead, then fall-through to abort
+            case QMessageBox::Save: saveFLM();
+				
+				// Return from function/abort batch processing
+            default:
+            case QMessageBox::Cancel:
+                return;
+				break;
+				
+				// Continue with batch processing
+            case QMessageBox::Discard: break;
+        }
+    }
+	
+    // Show the batch processing dialog for user to customize
+    BatchProcessDialog *batchDialog = new BatchProcessDialog(m_lastOpendir, this);
+    if(batchDialog->exec() == QDialog::Rejected) return;
+	
+    // Make sure rendering is ended
+    endRenderingSession();
+	
+    // Get options from dialog
+    bool allLightGroups = batchDialog->individualLightGroups();
+    QString inDir = batchDialog->inputDir();
+    QString outDir = batchDialog->outputDir();
+    bool asHDR = !batchDialog->applyTonemapping();
+	
+    QString outExtension = "exr";
+    if(!asHDR)
+    {
+        switch(batchDialog->format())
+        {
+            default: case 0: outExtension = "png"; break;
+            case 1: outExtension = "jpg"; break;
+            case 2: outExtension = "bmp"; break;
+            case 3: outExtension = "tif"; break;
+        }
+    }
+	
+    // Find 'flm' files in the directory
+    QVector<string> flmFiles, flmStems;
+    for(boost::filesystem::directory_iterator itr(inDir.toStdString());
+		itr != boost::filesystem::directory_iterator();
+		itr++)
+    {
+        const boost::filesystem::path curPath = itr->path();
+        if(curPath.extension() == ".flm")
+        {
+            flmFiles.push_back(curPath.string());
+            flmStems.push_back(curPath.stem());
+        }
+    }
+	
+    // Show modal progress dialog
+    QProgressDialog progress(tr("Processing ..."), tr("Cancel"), 0, flmFiles.size(), this);
+    progress.setSizeGripEnabled(false);
+    progress.setModal(true);
+	
+    // Process the 'flm' files
+    for(int i=0; i<flmFiles.size(); i++)
+    {
+        // Update progress
+        progress.setValue(i);
+        progress.setLabelText(tr("Processing %1.flm ...").arg(flmStems[i].c_str()));
+		
+        // Load FLM into Lux engine
+        luxLoadFLM(flmFiles[i].c_str());
+        if(!luxStatistics("filmIsReady")) continue;
+		
+        // Check for cancel
+        if (progress.wasCanceled()) break;
+		
+        // Make output filename
+        QString outName = QString("%1/%2.%3").arg(outDir)
+		.arg(flmStems[i].c_str())
+		.arg(outExtension);
+		
+        // Save loaded FLM
+        if(allLightGroups) saveAllLightGroups(outName, asHDR);
+        else
+        {
+            luxUpdateFramebuffer();
+            saveCurrentImage(outName, asHDR);
+        }
+		
+        // Check again for cancel
+        if (progress.wasCanceled()) break;
+    }
+	
+    // Reload last flm like the loadFLM function to make sure GUI is in sync
+    setCurrentFile(flmFiles[flmFiles.size()-1].c_str()); // show flm-name in windowheader
+    indicateActivity();
+    statusMessage->setText("Loading FLM...");
+	
+    // Start load thread
+    m_loadTimer->start(1000);
+    delete m_flmloadThread;
+    m_flmloadThread = new boost::thread(boost::bind(&MainWindow::flmLoadThread, this, flmFiles[flmFiles.size()-1].c_str()));
+	
+    // Finish progress
+    progress.setValue(flmFiles.size());
 }
 
 // Stop rendering session entirely - this is different from stopping it; it's not resumable
@@ -1020,6 +1278,10 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			ui->action_stopRender->setEnabled (false);
 			ui->button_copyToClipboard->setEnabled (false);
 			ui->action_outputTonemapped->setEnabled (false);
+			ui->action_outputHDR->setEnabled (false);
+			ui->action_outputBufferGroupsTonemapped->setEnabled (false);
+			ui->action_outputBufferGroupsHDR->setEnabled (false);
+			ui->action_batchProcess->setEnabled (true);
 			activityMessage->setText("Idle");
 			showRenderresolution();
 			statusProgress->setRange(0, 100);
@@ -1034,6 +1296,10 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			ui->action_stopRender->setEnabled(false);
 			ui->button_copyToClipboard->setEnabled (false);
 			ui->action_outputTonemapped->setEnabled (false);
+			ui->action_outputHDR->setEnabled (false);
+			ui->action_outputBufferGroupsTonemapped->setEnabled (false);
+			ui->action_outputBufferGroupsHDR->setEnabled (false);
+			ui->action_batchProcess->setEnabled (false);
 			//m_viewerToolBar->Disable();
 			activityMessage->setText("Parsing scenefile");
 			renderView->setLogoMode();
@@ -1048,6 +1314,10 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			ui->action_stopRender->setEnabled (true);
 			ui->button_copyToClipboard->setEnabled (true);
 			ui->action_outputTonemapped->setEnabled (true);
+			ui->action_outputHDR->setEnabled (true);
+			ui->action_outputBufferGroupsTonemapped->setEnabled (true);
+			ui->action_outputBufferGroupsHDR->setEnabled (true);
+			ui->action_batchProcess->setEnabled (true);
 			activityMessage->setText("Rendering...");
 			break;
 		case TONEMAPPING:
@@ -1060,6 +1330,10 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			ui->action_stopRender->setEnabled (false);
 			ui->button_copyToClipboard->setEnabled (true);
 			ui->action_outputTonemapped->setEnabled (true);
+			ui->action_outputHDR->setEnabled (true);
+			ui->action_outputBufferGroupsTonemapped->setEnabled (true);
+			ui->action_outputBufferGroupsHDR->setEnabled (true);
+			ui->action_batchProcess->setEnabled (true);
 			showRenderresolution();
 			activityMessage->setText("Render is finished");
 			break;
@@ -1073,6 +1347,10 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			ui->action_stopRender->setEnabled (false);
 			ui->button_copyToClipboard->setEnabled (true);
 			ui->action_outputTonemapped->setEnabled (true);
+			ui->action_outputHDR->setEnabled (true);
+			ui->action_outputBufferGroupsTonemapped->setEnabled (true);
+			ui->action_outputBufferGroupsHDR->setEnabled (true);
+			ui->action_batchProcess->setEnabled (false);
 			break;
 		case STOPPED:
 			// Rendering is stopped.
@@ -1084,6 +1362,10 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			ui->action_stopRender->setEnabled (false);
 			ui->button_copyToClipboard->setEnabled (true);
 			ui->action_outputTonemapped->setEnabled (true);
+			ui->action_outputHDR->setEnabled (true);
+			ui->action_outputBufferGroupsTonemapped->setEnabled (true);
+			ui->action_outputBufferGroupsHDR->setEnabled (true);
+			ui->action_batchProcess->setEnabled (true);
 			activityMessage->setText("Render is stopped");
 			break;
 		case PAUSED:
@@ -1096,6 +1378,10 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			ui->action_stopRender->setEnabled (true);
 			ui->button_copyToClipboard->setEnabled (true);
 			ui->action_outputTonemapped->setEnabled (true);
+			ui->action_outputHDR->setEnabled (true);
+			ui->action_outputBufferGroupsTonemapped->setEnabled (true);
+			ui->action_outputBufferGroupsHDR->setEnabled (true);
+			ui->action_batchProcess->setEnabled (true);
 			activityMessage->setText("Render is paused");
 			break;
 	}

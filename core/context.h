@@ -137,6 +137,9 @@ public:
 	void SaveFLM(const string &name);
 	void OverrideResumeFLM(const string &name);
 
+	// Save OpenEXR image
+	void SaveEXR(const string &name, const bool &useHalfFloat, const bool &includeZBuffer, const int &compressionType);	
+	
 	//CORE engine control
 	//user interactive thread functions
 	void Resume();

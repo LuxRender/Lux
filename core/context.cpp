@@ -873,6 +873,11 @@ void Context::SaveFLM(const string &flmFileName) {
 	luxCurrentScene->SaveFLM(flmFileName);
 }
 
+// Save current film to OpenEXR image
+void Context::SaveEXR(const string &name, const bool &useHalfFloat, const bool &includeZBuffer, const int &compressionType) {
+	luxCurrentScene->SaveEXR(name, useHalfFloat, includeZBuffer, compressionType);
+}
+
 void Context::OverrideResumeFLM(const string &flmFileName) {
 	if (!filmOverrideParams) {
 		filmOverrideParams = new ParamSet();

@@ -104,6 +104,7 @@ public:
 	void UpdateFramebuffer();
 	unsigned char* GetFramebuffer();
 	void SaveFLM(const string& filename);
+	void SaveEXR(const string& filename, const bool& useHalfFloat, const bool& includeZBuffer, const int& compressionType);
 
 	//histogram access
 	void GetHistogramImage(unsigned char *outPixels, u_int width,

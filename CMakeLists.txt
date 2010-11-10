@@ -773,6 +773,7 @@ SET( LUXQTGUI_SRCS
 	qtgui/noisereductionwidget.cpp
 	qtgui/histogramwidget.cpp
 	qtgui/panewidget.cpp
+	qtgui/batchprocessdialog.cpp
 	)
 SET( LUXQTGUI_MOC
 	qtgui/histogramview.hxx
@@ -788,6 +789,7 @@ SET( LUXQTGUI_MOC
 	qtgui/noisereductionwidget.hxx
 	qtgui/histogramwidget.hxx
 	qtgui/panewidget.hxx
+	qtgui/batchprocessdialog.hxx
 	)
 SET(LUXQTGUI_UIS
 	qtgui/luxrender.ui
@@ -800,6 +802,7 @@ SET(LUXQTGUI_UIS
 	qtgui/noisereduction.ui
 	qtgui/histogram.ui
 	qtgui/pane.ui
+	qtgui/batchprocessdialog.ui
 	)
 SET( LUXQTGUI_RCS
 	qtgui/icons.qrc
