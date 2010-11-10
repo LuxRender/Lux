@@ -1177,7 +1177,7 @@ void MainWindow::viewportChanged() {
 // actual viewportsize
 void MainWindow::showViewportsize() {
 	int viewportw = renderView->width(), viewporth = renderView->height();
-	ui->viewportinfoLabel->setText(QString("Viewportsize: %1 x %2").arg(viewportw).arg(viewporth));
+	ui->viewportinfoLabel->setText(QString("Viewport size: %1 x %2").arg(viewportw).arg(viewporth));
 }
 
 void MainWindow::renderScenefile(const QString& sceneFilename, const QString& flmFilename)
