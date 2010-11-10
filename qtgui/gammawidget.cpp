@@ -148,11 +148,11 @@ void GammaWidget::activateCRF()
 		QFileInfo fi(m_CRF_file);
 		ui->CRF_label->setText(fi.fileName());
 		// CRF should be used along with gamma 1.0
-		ui->gamma_label->setText("Gamma ( CRF-neutral )");
-		updateWidgetValue(ui->slider_gamma, (int)((FLOAT_SLIDER_RES / TORGB_GAMMA_RANGE) * 1.0f) );
-		updateWidgetValue(ui->spinBox_gamma, 1.0f);
+		//ui->gamma_label->setText("Gamma ( CRF-neutral )");
+		//updateWidgetValue(ui->slider_gamma, (int)((FLOAT_SLIDER_RES / TORGB_GAMMA_RANGE) * 1.0f) );
+		//updateWidgetValue(ui->spinBox_gamma, 1.0f);
 		updateWidgetValue(ui->checkBox_CRF, m_CRF_enabled);
-		updateParam (LUX_FILM, LUX_FILM_TORGB_GAMMA, 1.0f);
+		//updateParam (LUX_FILM, LUX_FILM_TORGB_GAMMA, 1.0f);
 		
 		updateParam(LUX_FILM, LUX_FILM_CAMERA_RESPONSE_ENABLED, m_CRF_enabled);
 

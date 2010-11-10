@@ -35,6 +35,12 @@ using namespace lux;
 
 namespace lux {
 
+void AdjustGamma(const vector<float> &from, vector<float> &to, float gamma = 2.2f) {
+	for (int i = 0; i < from.size(); i++) {
+		to[i] = powf(to[i], gamma);
+	}
+}
+
 CameraResponse::CameraResponse(const string &film)
 {
 	fileName = film;
@@ -114,6 +120,10 @@ CameraResponse::CameraResponse(const string &film)
 		}
 		validFile = true;
 	}
+
+	AdjustGamma(RedI, RedB);
+	AdjustGamma(GreenI, GreenB);
+	AdjustGamma(BlueI, BlueB);
 }
 
 void CameraResponse::Map(RGBColor &rgb) const
