@@ -721,8 +721,8 @@ void MainWindow::overlayStatistics(QImage *image)
 
 	font.setStyleHint(QFont::SansSerif, static_cast<QFont::StyleStrategy>(QFont::PreferAntialias | QFont::PreferQuality));
 
-	float pointSize = min(max(image->width() / 100.f, 8.f), 16.f);
-	font.setPointSizeF(pointSize);
+	int fontSize = (int)min(max(image->width() / (800.f / 14.f) + 0.5f, 10.f), 18.f);
+	font.setPixelSize(fontSize);
 
 	QFontMetrics fontMetrics(font);
 	int leading = fontMetrics.leading();
@@ -737,7 +737,7 @@ void MainWindow::overlayStatistics(QImage *image)
 
 	textLayout.beginLayout();
 	QTextLine line;
-	qreal height = 0;
+	qreal height = leading;
 	qreal maxwidth = image->width() - 10;
 	while ((line = textLayout.createLine()).isValid()) {
 		line.setLineWidth(maxwidth);
@@ -745,9 +745,11 @@ void MainWindow::overlayStatistics(QImage *image)
 		line.setPosition(QPointF(0, height));
 		height += line.height();
 	}
+	height += 2*leading;
 	textLayout.endLayout();
 
 	QRectF rect = textLayout.boundingRect();
+	rect.setHeight(height);
 
 	// align at bottom
 	rect.moveLeft((image->width() - maxwidth) / 2.f);
