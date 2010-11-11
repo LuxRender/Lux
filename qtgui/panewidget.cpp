@@ -42,7 +42,7 @@ PaneWidget::PaneWidget(QWidget *parent, const QString& label, const QString& ico
 
 	ui->setupUi(this);
 	
-	ui->frame->setStyleSheet(QString::fromUtf8(" QFrame {\n""background-color: qlineargradient(spread:pad, x1:1, y1:0, x2:0, y2:0, stop:0 rgb(90, 90, 90), stop:0.8 rgb(230, 230, 230))\n""}\n"""));
+	ui->frame->setStyleSheet(QString::fromUtf8(" QFrame {\n""background-color: qlineargradient(spread:pad, x1:1, y1:0, x2:0, y2:0, stop:0 rgb(120, 120, 120), stop:0.8 rgb(230, 230, 230))\n""}\n"""));
 
 	if (!icon.isEmpty())
 		ui->labelPaneIcon->setPixmap(QPixmap(icon));
