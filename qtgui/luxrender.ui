@@ -760,6 +760,8 @@
       <string>Export to Image</string>
      </property>
      <addaction name="action_outputTonemapped"/>
+     <addaction name="action_overlayStats"/>
+     <addaction name="separator"/>
      <addaction name="action_outputHDR"/>
      <addaction name="separator"/>
      <addaction name="action_outputBufferGroupsTonemapped"/>
@@ -767,7 +769,6 @@
      <addaction name="separator"/>
      <addaction name="action_batchProcess"/>
      <addaction name="separator"/>
-     <addaction name="action_Overlay"/>
     </widget>
     <addaction name="action_openFile"/>
     <addaction name="menuOpen_Recent"/>
@@ -1042,7 +1043,7 @@
     <string>Process a directory of 'flm' film files.</string>
    </property>
   </action>
-  <action name="action_Overlay">
+  <action name="action_overlayStats">
    <property name="checkable">
     <bool>true</bool>
    </property>

@@ -37,6 +37,8 @@
 #include <QDateTime>
 #include <QTextStream>
 
+#include <QTextLayout>
+
 #include "error.h"
 
 #include "mainwindow.hxx"
@@ -403,6 +405,7 @@ void MainWindow::ReadSettings()
 	ui->splitter->restoreState(settings.value("splittersizes").toByteArray());
 	m_recentFiles = settings.value("recentFiles").toStringList();
 	m_lastOpendir = settings.value("lastOpenDir","").toString();
+	ui->action_overlayStats->setChecked(settings.value("overlayStatistics").toBool());
 	settings.endGroup();
 
 	updateRecentFileActions();
@@ -417,6 +420,7 @@ void MainWindow::WriteSettings()
 	settings.setValue("splittersizes", ui->splitter->saveState());
 	settings.setValue("recentFiles", m_recentFiles);
 	settings.setValue("lastOpenDir", m_lastOpendir);
+	settings.setValue("overlayStatistics", ui->action_overlayStats->isChecked());
 	settings.endGroup();
 }
 
@@ -697,6 +701,70 @@ void MainWindow::outputHDR()
 		statusMessage->setText(tr("ERROR: High dynamic range image NOT saved."));
 }
 
+void MainWindow::overlayStatistics(QImage *image)
+{
+	QPainter p(image);
+
+	QString stats;
+
+	stats = "LuxRender " + QString::fromLatin1(luxVersion()) + " ";
+	stats += "|Saved: " + QDateTime::currentDateTime().toString(Qt::DefaultLocaleShortDate) + " ";
+	stats += "|Statistics: " + QString::fromLatin1(luxPrintableStatistics(true)) + " ";
+
+	// convert regular spaces to non-breaking spaces, so that it will prefer to wrap
+	// between segments
+	stats = stats.replace(QChar(' '), QChar::Nbsp);
+	stats = stats.replace("|", " |  ");
+
+
+	QFont font("Helvetica");
+
+	font.setStyleHint(QFont::SansSerif, static_cast<QFont::StyleStrategy>(QFont::PreferAntialias | QFont::PreferQuality));
+
+	float pointSize = min(max(image->width() / 100.f, 8.f), 16.f);
+	font.setPointSizeF(pointSize);
+
+	QFontMetrics fontMetrics(font);
+	int leading = fontMetrics.leading();
+
+	QTextLayout textLayout(stats, font, image);
+
+	QTextOption textOption;
+	//textOption.setUseDesignMetrics(true);
+	textOption.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
+	textOption.setAlignment(Qt::AlignLeft);
+	textLayout.setTextOption(textOption);
+
+	textLayout.beginLayout();
+	QTextLine line;
+	qreal height = 0;
+	qreal maxwidth = image->width() - 10;
+	while ((line = textLayout.createLine()).isValid()) {
+		line.setLineWidth(maxwidth);
+		height += leading;
+		line.setPosition(QPointF(0, height));
+		height += line.height();
+	}
+	textLayout.endLayout();
+
+	QRectF rect = textLayout.boundingRect();
+
+	// align at bottom
+	rect.moveLeft((image->width() - maxwidth) / 2.f);
+	rect.moveTop(image->height() - rect.height());
+
+	// darken background
+	p.setOpacity(0.6);
+	p.fillRect(0, rect.top(), image->width(), rect.height(), Qt::black);
+
+	// draw text
+	p.setOpacity(1.0);
+	p.setPen(QColor(240, 240, 240));
+	textLayout.draw(&p, rect.topLeft());
+
+	p.end();
+}
+
 bool MainWindow::saveCurrentImageTonemapped(const QString &outFile)
 {
 	// Saving as tonemapped image ...
@@ -706,13 +774,16 @@ bool MainWindow::saveCurrentImageTonemapped(const QString &outFile)
 	unsigned char* fb = luxFramebuffer();
 	
 	// If all looks okay, proceed
-	if(w > 0 && h > 0 && fb != NULL) {
-		QImage image(fb, w, h, w*3, QImage::Format_RGB888);
-		return image.save(outFile);
-	}
-	
-	// Something was wrong with buffer, width or height
-	return false;
+	if (!(w > 0 && h > 0 && fb != NULL))
+		// Something was wrong with buffer, width or height
+		return false;
+
+	QImage image(fb, w, h, w*3, QImage::Format_RGB888);
+
+	if (ui->action_overlayStats->isChecked())
+		overlayStatistics(&image);
+
+	return image.save(outFile);
 }
 
 bool MainWindow::saveCurrentImageHDR(const QString &outFile)
