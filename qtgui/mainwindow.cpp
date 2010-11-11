@@ -716,12 +716,14 @@ void MainWindow::overlayStatistics(QImage *image)
 	stats = stats.replace(QChar(' '), QChar::Nbsp);
 	stats = stats.replace("|", " |  ");
 
-
+#if defined(__APPLE__)
+	QFont font("Monaco");
+#else
 	QFont font("Helvetica");
-
+#endif
 	font.setStyleHint(QFont::SansSerif, static_cast<QFont::StyleStrategy>(QFont::PreferAntialias | QFont::PreferQuality));
-
-	int fontSize = (int)min(max(image->width() / (800.f / 14.f) + 0.5f, 10.f), 18.f);
+	
+	int fontSize = (int)min(max(image->width() / 100.0f, 10.f), 18.f);
 	font.setPixelSize(fontSize);
 
 	QFontMetrics fontMetrics(font);
