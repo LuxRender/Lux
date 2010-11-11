@@ -55,11 +55,7 @@ void GammaWidget::changeEvent(QEvent *event)
 		updateParam(LUX_FILM, LUX_FILM_TORGB_GAMMA, (this->isEnabled() ? m_TORGB_gamma : 1.0));
 		updateParam(LUX_FILM, LUX_FILM_CAMERA_RESPONSE_ENABLED, this->isEnabled() && m_CRF_enabled);
 		emit valuesChanged ();
-		
-		if(this->isEnabled() && m_CRF_enabled)
-			activateCRF();
-		else
-			deactivateCRF();
+
 	}
 }
 
