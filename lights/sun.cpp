@@ -216,7 +216,7 @@ bool SunLight::Le(const Scene &scene, const Sample &sample, const Ray &r,
 	}
 	if (pdfDirect)
 		*pdfDirect = INV_PI * zD / (sin2ThetaMax * DistanceSquared(r.o, ps));
-	*L = SWCSpectrum(sample.swl, *LSPD);
+	*L *= SWCSpectrum(sample.swl, *LSPD);
 	return true;
 }
 
