@@ -675,29 +675,30 @@ void MainWindow::stopRender()
 void MainWindow::outputTonemapped()
 {
 	QString fileName = QFileDialog::getSaveFileName(this, tr("Save Tonemapped Image"), m_lastOpendir, tr("PNG Image (*.png);;JPEG Image (*.jpg);;Windows Bitmap (*.bmp);;TIFF Image (*.tif)"));
-	if(fileName.isNull() || fileName.isEmpty()) return;
-	if(saveCurrentImage(fileName, false)) statusMessage->setText(tr("Tonemapped image saved"));
-	else statusMessage->setText(tr("ERROR: Tonemapped image NOT saved. May be an unsupported image type."));
+	if (fileName.isEmpty()) 
+		return;
+
+	if (saveCurrentImageTonemapped(fileName)) 
+		statusMessage->setText(tr("Tonemapped image saved"));
+	else 
+		statusMessage->setText(tr("ERROR: Tonemapped image NOT saved. May be an unsupported image type."));
 }
+
 
 void MainWindow::outputHDR()
 {
 	QString fileName = QFileDialog::getSaveFileName(this, tr("Save High Dynamic Range Image"), m_lastOpendir, tr("OpenEXR Image (*.exr)"));
-	if(fileName.isNull() || fileName.isEmpty()) return;	
-	if(saveCurrentImage(fileName, true)) statusMessage->setText(tr("High dynamic range image saved"));
-	else statusMessage->setText(tr("ERROR: High dynamic range image NOT saved."));
+	if (fileName.isEmpty()) 
+		return;	
+
+	if (saveCurrentImageHDR(fileName)) 
+		statusMessage->setText(tr("High dynamic range image saved"));
+	else 
+		statusMessage->setText(tr("ERROR: High dynamic range image NOT saved."));
 }
 
-bool MainWindow::saveCurrentImage(const QString &outFile, const bool &asHDR)
+bool MainWindow::saveCurrentImageTonemapped(const QString &outFile)
 {
-	// If saving as HDR then we do it differently
-	if(asHDR)
-	{
-		// Done inside API for now (uses standard OpenEXR defaults: 16bit floats, no Z-buffer, PIZ compression)
-		luxSaveEXR(outFile.toAscii().data(), true, false, 1);
-		return true;
-	}
-	
 	// Saving as tonemapped image ...
 	// Get width, height and pixel buffer
 	int w = luxGetIntAttribute("film", "xResolution");
@@ -705,8 +706,7 @@ bool MainWindow::saveCurrentImage(const QString &outFile, const bool &asHDR)
 	unsigned char* fb = luxFramebuffer();
 	
 	// If all looks okay, proceed
-	if(w > 0 && h > 0 && fb != NULL)
-	{
+	if(w > 0 && h > 0 && fb != NULL) {
 		QImage image(fb, w, h, w*3, QImage::Format_RGB888);
 		return image.save(outFile);
 	}
@@ -715,18 +715,28 @@ bool MainWindow::saveCurrentImage(const QString &outFile, const bool &asHDR)
 	return false;
 }
 
+bool MainWindow::saveCurrentImageHDR(const QString &outFile)
+{
+	// Done inside API for now (uses standard OpenEXR defaults: 16bit floats, no Z-buffer, PIZ compression)
+	luxSaveEXR(outFile.toAscii().data(), true, false, 1);
+	return true;
+}
+
 void MainWindow::outputBufferGroupsTonemapped()
 {	
 	// Where should these be output
 	QString fileName = QFileDialog::getSaveFileName(this, tr("Select a destination for the images"), m_lastOpendir, tr("PNG Image (*.png);;JPEG Image (*.jpg);;Windows Bitmap (*.bmp);;TIFF Image (*.tif)"));
-	if(fileName.isNull() || fileName.isEmpty()) return;
+	if (fileName.isEmpty()) 
+		return;
 	
 	// Show busy cursor
 	QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
 	
 	// Output the light groups
-	if(saveAllLightGroups(fileName, false)) statusMessage->setText(tr("Light group tonemapped images saved"));
-	else statusMessage->setText(tr("ERROR: Light group tonemapped images NOT saved"));
+	if (saveAllLightGroups(fileName, false))
+		statusMessage->setText(tr("Light group tonemapped images saved"));
+	else 
+		statusMessage->setText(tr("ERROR: Light group tonemapped images NOT saved"));
 	
 	// Stop showing busy cursor
 	QApplication::restoreOverrideCursor();
@@ -736,14 +746,17 @@ void MainWindow::outputBufferGroupsHDR()
 {	
 	// Where should these be output
 	QString fileName = QFileDialog::getSaveFileName(this, tr("Select a destination for the images"), m_lastOpendir, tr("OpenEXR Image (*.exr)"));
-	if(fileName.isNull() || fileName.isEmpty()) return;
+	if (fileName.isEmpty()) 
+		return;
 	
 	// Show busy cursor
 	QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
 	
 	// Output the light groups
-	if(saveAllLightGroups(fileName, true)) statusMessage->setText(tr("Light group HDR images saved"));
-	else statusMessage->setText(tr("ERROR: Light group HDR images NOT saved"));
+	if (saveAllLightGroups(fileName, true))
+		statusMessage->setText(tr("Light group HDR images saved"));
+	else 
+		statusMessage->setText(tr("ERROR: Light group HDR images NOT saved"));
 	
 	// Stop showing busy cursor
 	QApplication::restoreOverrideCursor();
@@ -771,41 +784,44 @@ bool MainWindow::saveAllLightGroups(const QString &outFilename, const bool &asHD
 	
 	// Now, turn one light group on at a time, update the film and save to an image
 	bool result = true;
-	for(int i=0; i<lgCount; i++)
-	{
+	for(int i=0; i<lgCount; i++) {
 		// Get light group name
 		char lgName[256];
 		luxGetStringParameterValue(LUX_FILM, LUX_FILM_LG_NAME, lgName, 256, i);
 		
 		// Enable light group (and tonemap if not saving as HDR)
 		luxSetParameterValue(LUX_FILM, LUX_FILM_LG_ENABLE, 1.f, i);
-		if(!asHDR) luxUpdateFramebuffer();
+		if (!asHDR) 
+			luxUpdateFramebuffer();
 		
 		// Output image
 		QString outputName = QString("%1/%2-%3").arg(filenamePath.parent_path().string().c_str())
-		.arg(filenamePath.stem().c_str()).arg(lgName);
-		if(asHDR) luxSaveEXR(QString("%1.exr").arg(outputName).toAscii().data(), true, false, 1);
-		else 
-		{
+			.arg(filenamePath.stem().c_str()).arg(lgName);
+
+		if (asHDR) 
+			luxSaveEXR(QString("%1.exr").arg(outputName).toAscii().data(), true, false, 1);
+		else {
 			unsigned char* fb = luxFramebuffer();
-			if(fb != NULL)
-			{
+			if(fb != NULL) {
 				QImage image(fb, w, h, w*3, QImage::Format_RGB888);
 				result = image.save(QString("%1%2").arg(outputName).arg(filenamePath.extension().c_str()));
 			}
-			else result = false;
+			else
+				result = false;
 		}
 		
 		// Turn group back off
 		luxSetParameterValue(LUX_FILM, LUX_FILM_LG_ENABLE, 0.f, i);
-		if(!result) break;
+		if (!result) 
+			break;
 	}
 	
 	// Restore previous light group state
 	for(int i=0; i<lgCount; i++)
 		luxSetParameterValue(LUX_FILM, LUX_FILM_LG_ENABLE, (prevLGState[i]?1.f:0.f), i);
 	
-	if(!asHDR) luxUpdateFramebuffer();
+	if (!asHDR) 
+		luxUpdateFramebuffer();
 	
 	// Report success or failure (always success when outputting HDR)
 	return result;
@@ -814,7 +830,8 @@ bool MainWindow::saveAllLightGroups(const QString &outFilename, const bool &asHD
 void MainWindow::batchProcess()
 {
     // Are we rendering?
-    if(!canStopRendering()) return;
+    if (!canStopRendering())
+		return;
 	
     // Is there already film in the camera?
     if(luxStatistics("sceneIsReady") || luxStatistics("filmIsReady"))
@@ -855,8 +872,7 @@ void MainWindow::batchProcess()
     bool asHDR = !batchDialog->applyTonemapping();
 	
     QString outExtension = "exr";
-    if(!asHDR)
-    {
+    if(!asHDR) {
         switch(batchDialog->format())
         {
             default: case 0: outExtension = "png"; break;
@@ -873,8 +889,7 @@ void MainWindow::batchProcess()
 		itr++)
     {
         const boost::filesystem::path curPath = itr->path();
-        if(curPath.extension() == ".flm")
-        {
+        if(curPath.extension() == ".flm") {
             flmFiles.push_back(curPath.string());
             flmStems.push_back(curPath.stem());
         }
@@ -886,18 +901,19 @@ void MainWindow::batchProcess()
     progress.setModal(true);
 	
     // Process the 'flm' files
-    for(int i=0; i<flmFiles.size(); i++)
-    {
+    for (int i=0; i<flmFiles.size(); i++) {
         // Update progress
         progress.setValue(i);
         progress.setLabelText(tr("Processing %1.flm ...").arg(flmStems[i].c_str()));
 		
         // Load FLM into Lux engine
         luxLoadFLM(flmFiles[i].c_str());
-        if(!luxStatistics("filmIsReady")) continue;
+        if (!luxStatistics("filmIsReady"))
+			continue;
 		
         // Check for cancel
-        if (progress.wasCanceled()) break;
+        if (progress.wasCanceled())
+			break;
 		
         // Make output filename
         QString outName = QString("%1/%2.%3").arg(outDir)
@@ -905,15 +921,19 @@ void MainWindow::batchProcess()
 		.arg(outExtension);
 		
         // Save loaded FLM
-        if(allLightGroups) saveAllLightGroups(outName, asHDR);
-        else
-        {
+        if (allLightGroups)
+			saveAllLightGroups(outName, asHDR);
+        else {
             luxUpdateFramebuffer();
-            saveCurrentImage(outName, asHDR);
+			if (asHDR)
+				saveCurrentImageHDR(outName);
+			else
+				saveCurrentImageTonemapped(outName);
         }
 		
         // Check again for cancel
-        if (progress.wasCanceled()) break;
+        if (progress.wasCanceled())
+			break;
     }
 	
     // Reload last flm like the loadFLM function to make sure GUI is in sync

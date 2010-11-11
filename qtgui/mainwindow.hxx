@@ -166,7 +166,8 @@ public:
 	
 protected:
 	
-	bool saveCurrentImage(const QString &outFile, const bool &asHDR);
+	bool saveCurrentImageTonemapped(const QString &outFile);
+	bool saveCurrentImageHDR(const QString &outFile);
 	bool saveAllLightGroups(const QString &outFilename, const bool &asHDR);
 	void setCurrentFile(const QString& filename);
 	void updateRecentFileActions();
