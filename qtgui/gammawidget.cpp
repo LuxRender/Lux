@@ -123,10 +123,10 @@ void GammaWidget::gammaChanged (double value)
 
 	emit valuesChanged ();
 	
-	if (m_CRF_enabled && m_TORGB_gamma == 1.0f)
-		ui->gamma_label->setText("Gamma ( CRF-neutral )");
-	else
-		ui->gamma_label->setText("Gamma");
+//	if (m_CRF_enabled && m_TORGB_gamma == 1.0f)
+//		ui->gamma_label->setText("Gamma ( CRF-neutral )");
+//	else
+//		ui->gamma_label->setText("Gamma");
 }
  
 
