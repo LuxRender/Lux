@@ -78,7 +78,7 @@ void StatsData::update(const bool add_total)
 			px = (*film_registry)["xResolution"].IntValue() * (*film_registry)["yResolution"].IntValue();
 			localsamples = (*film_registry)["numberOfLocalSamples"].DoubleValue();
 			netsamples = (*film_registry)["numberOfSamplesFromNetwork"].DoubleValue();
-			haltspp = (*film_registry)["haltSamplePerPixel"].IntValue();
+			haltspp = (*film_registry)["haltSamplesPerPixel"].IntValue();
 			halttime = (*film_registry)["haltTime"].IntValue();
 		}
 

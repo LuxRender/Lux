@@ -899,11 +899,11 @@ void Context::Pause() {
 	luxCurrentRenderer->Pause();
 }
 
-void Context::SetHaltSamplePerPixel(int haltspp, bool haveEnoughSamplePerPixel,
+void Context::SetHaltSamplesPerPixel(int haltspp, bool haveEnoughSamplesPerPixel,
 	bool suspendThreadsWhenDone) {
 	lux::Film *film = luxCurrentScene->camera->film;
-	film->haltSamplePerPixel = haltspp;
-	film->enoughSamplePerPixel = haveEnoughSamplePerPixel;
+	film->haltSamplesPerPixel = haltspp;
+	film->enoughSamplesPerPixel = haveEnoughSamplesPerPixel;
 	luxCurrentRenderer->SuspendWhenDone(suspendThreadsWhenDone);
 }
 

@@ -488,12 +488,12 @@ protected: // Put it here for better data alignment
 public:
 	// Samplers will check this flag to know if we have enough samples per
 	// pixel and it is time to stop
-	int haltSamplePerPixel;
+	int haltSamplesPerPixel;
 	// Seconds to wait before to stop. Any value <= 0 will never stop the rendering
 	int haltTime;
 
 	Histogram *histogram;
-	bool enoughSamplePerPixel; // At the end to get better data alignment
+	bool enoughSamplesPerPixel; // At the end to get better data alignment
 
 private:
 	boost::mutex histMutex;

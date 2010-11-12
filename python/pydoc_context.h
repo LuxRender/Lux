@@ -263,7 +263,7 @@ const char * ds_pylux_Context_scale =
 const char * ds_pylux_Context_setEpsilon =
 "";
 
-const char * ds_pylux_Context_setHaltSamplePerPixel =
+const char * ds_pylux_Context_setHaltSamplesPerPixel =
 "";
 
 const char * ds_pylux_Context_setNetworkServerUpdateInterval =

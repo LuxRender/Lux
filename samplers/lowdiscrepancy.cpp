@@ -114,7 +114,7 @@ bool LDSampler::GetNextSample(Sample *sample) {
 	LDData *data = (LDData *)(sample->samplerData);
 	const RandomGenerator &rng(*(sample->rng));
 
-	bool haveMoreSample = true;
+	bool haveMoreSamples = true;
 	if (data->samplePos == pixelSamples) {
 		u_int sampPixelPosToUse;
 		// Move to the next pixel
@@ -128,13 +128,13 @@ bool LDSampler::GetNextSample(Sample *sample) {
 		if(!pixelSampler->GetNextPixel(&data->xPos, &data->yPos, sampPixelPosToUse)) {
 			// Dade - we are at a valid checkpoint where we can stop the
 			// rendering. Check if we have enough samples per pixel in the film.
-			if (film->enoughSamplePerPixel) {
+			if (film->enoughSamplesPerPixel) {
 				// Dade - pixelSampler->renderingDone is shared among all rendering threads
 				pixelSampler->renderingDone = true;
-				haveMoreSample = false;
+				haveMoreSamples = false;
 			}
 		} else
-			haveMoreSample = (!pixelSampler->renderingDone);
+			haveMoreSamples = (!pixelSampler->renderingDone);
 
 		data->samplePos = 0;
 		// Generate low-discrepancy samples for pixel
@@ -191,7 +191,7 @@ bool LDSampler::GetNextSample(Sample *sample) {
 	}
 	++(data->samplePos);
 
-	return haveMoreSample;
+	return haveMoreSamples;
 }
 
 float *LDSampler::GetLazyValues(const Sample &sample, u_int num, u_int pos)

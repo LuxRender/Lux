@@ -153,7 +153,7 @@ bool MetropolisSampler::GetNextSample(Sample *sample)
 	if (data->rngBase == 0) {
 		// This is a safe point to stop without too visible patterns
 		// if the render has to stop
-		if (film->enoughSamplePerPixel)
+		if (film->enoughSamplesPerPixel)
 			return false;
 		for (u_int i = 0; i < data->totalSamples; ++i)
 			data->rngRotation[i] = sample->rng->floatValue();

@@ -147,7 +147,7 @@ public:
 	void Wait();
 	void Exit();
 
-	void SetHaltSamplePerPixel(int haltspp, bool haveEnoughSamplePerPixel,
+	void SetHaltSamplesPerPixel(int haltspp, bool haveEnoughSamplesPerPixel,
 		bool suspendThreadsWhenDone);
 
 	//controlling number of threads

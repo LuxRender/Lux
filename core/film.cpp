@@ -560,7 +560,7 @@ Film::Film(u_int xres, u_int yres, Filter *filt, const float crop[4],
 	debug_mode(debugmode), premultiplyAlpha(premult),
 	warmupComplete(false), reject_warmup_samples(reject_warmup),
 	writeResumeFlm(w_resume_FLM), restartResumeFlm(restart_resume_FLM),
-	haltSamplePerPixel(haltspp), haltTime(halttime), histogram(NULL), enoughSamplePerPixel(false)
+	haltSamplesPerPixel(haltspp), haltTime(halttime), histogram(NULL), enoughSamplesPerPixel(false)
 {
 	// Compute film image extent
 	memcpy(cropWindow, crop, 4 * sizeof(float));
@@ -589,9 +589,11 @@ Film::Film(u_int xres, u_int yres, Filter *filt, const float crop[4],
 	AddFloatAttribute(*this, "averageLuminance", "Average Image Luminance", &Film::averageLuminance);
 	AddDoubleAttribute(*this, "numberOfLocalSamples", "Number of samples contributed to film on the local machine", &Film::numberOfLocalSamples);
 	AddDoubleAttribute(*this, "numberOfSamplesFromNetwork", "Number of samples contributed from network slaves", &Film::numberOfSamplesFromNetwork);
-	AddBoolAttribute(*this, "enoughSamples", "Indicates if the halt condition been reached", &Film::enoughSamplePerPixel);
-	AddIntAttribute(*this, "haltSamplePerPixel", "Halt Samples per Pixel", haltSamplePerPixel, &Film::haltSamplePerPixel, Queryable::ReadWriteAccess);
+	AddBoolAttribute(*this, "enoughSamples", "Indicates if the halt condition been reached", &Film::enoughSamplesPerPixel);
+	AddIntAttribute(*this, "haltSamplesPerPixel", "Halt Samples per Pixel", haltSamplesPerPixel, &Film::haltSamplesPerPixel, Queryable::ReadWriteAccess);
 	AddIntAttribute(*this, "haltTime", "Halt time in seconds", haltTime, &Film::haltTime, Queryable::ReadWriteAccess);
+	AddBoolAttribute(*this, "writeResumeFlm", "Write resume file", writeResumeFlm, &Film::writeResumeFlm, Queryable::ReadWriteAccess);
+	AddBoolAttribute(*this, "restartResumeFlm", "Restart (overwrite) resume file", restartResumeFlm, &Film::restartResumeFlm, Queryable::ReadWriteAccess);
 
 	// Precompute filter weight table
 	filterTable = new float[FILTER_TABLE_SIZE * FILTER_TABLE_SIZE];
@@ -756,7 +758,7 @@ void Film::AddSampleCount(float count) {
 		boost::xtime t;
 		boost::xtime_get(&t, boost::TIME_UTC);
 		if (t.sec - creationTime.sec > haltTime)
-			enoughSamplePerPixel = true;
+			enoughSamplesPerPixel = true;
 	}
 
 	numberOfLocalSamples += count;
@@ -768,9 +770,9 @@ void Film::AddSampleCount(float count) {
 		// when one of the buffer groups has enough samples (at the moment all
 		// buffer groups have always the same samples count; in the future
 		// it could be better to stop when all buffer groups have enough samples)
-		if ((haltSamplePerPixel > 0) &&
-			(bufferGroups[i].numberOfSamples  >= haltSamplePerPixel * samplePerPass))
-			enoughSamplePerPixel = true;
+		if ((haltSamplesPerPixel > 0) &&
+			(bufferGroups[i].numberOfSamples  >= haltSamplesPerPixel * samplePerPass))
+			enoughSamplesPerPixel = true;
 	}
 }
 
@@ -1494,9 +1496,9 @@ double Film::UpdateFilm(std::basic_istream<char> &stream) {
 
 			currentGroup.numberOfSamples += bufferGroupNumSamples[i];
 			// Check if we have enough samples per pixel
-			if ((haltSamplePerPixel > 0) &&
-				(currentGroup.numberOfSamples >= haltSamplePerPixel * samplePerPass))
-				enoughSamplePerPixel = true;
+			if ((haltSamplesPerPixel > 0) &&
+				(currentGroup.numberOfSamples >= haltSamplesPerPixel * samplePerPass))
+				enoughSamplesPerPixel = true;
 			totNumberOfSamples += bufferGroupNumSamples[i];
 			maxTotNumberOfSamples = max(maxTotNumberOfSamples, bufferGroupNumSamples[i]);
 		}

@@ -116,7 +116,7 @@ bool ERPTSampler::GetNextSample(Sample *sample)
 	if (data->mutation == ~0U) {
 		// Dade - we are at a valid checkpoint where we can stop the
 		// rendering. Check if we have enough samples per pixel in the film.
-		if (film->enoughSamplePerPixel)
+		if (film->enoughSamplesPerPixel)
 			return false;
 
 		const bool ret = baseSampler->GetNextSample(sample);

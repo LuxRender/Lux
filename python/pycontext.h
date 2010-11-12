@@ -653,10 +653,10 @@ public:
 		context->Wait();
 	}
 
-	void setHaltSamplePerPixel(int haltspp, bool haveEnoughSamplePerPixel, bool suspendThreadsWhenDone)
+	void setHaltSamplesPerPixel(int haltspp, bool haveEnoughSamplesPerPixel, bool suspendThreadsWhenDone)
 	{
 		Context::SetActive(context);
-		context->SetHaltSamplePerPixel(haltspp, haveEnoughSamplePerPixel, suspendThreadsWhenDone);
+		context->SetHaltSamplesPerPixel(haltspp, haveEnoughSamplesPerPixel, suspendThreadsWhenDone);
 	}
 
 	unsigned int addThread()
@@ -1239,10 +1239,10 @@ void export_PyContext()
 			args("Context"),
 			ds_pylux_Context_setEpsilon
 		)
-		.def("setHaltSamplePerPixel",
-			&PyContext::setHaltSamplePerPixel,
+		.def("setHaltSamplesPerPixel",
+			&PyContext::setHaltSamplesPerPixel,
 			args("Context"),
-			ds_pylux_Context_setHaltSamplePerPixel
+			ds_pylux_Context_setHaltSamplesPerPixel
 		)
 		.def("setNetworkServerUpdateInterval",
 			&PyContext::setNetworkServerUpdateInterval,
