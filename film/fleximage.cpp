@@ -86,6 +86,9 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, const float c
 	write_TGA_channels = cw_TGA_channels;
 	write_TGA_ZBuf_normalizationtype = cw_TGA_ZBuf_normalizationtype;
 
+	AddIntAttribute(*this, "displayInterval", "Display interval (seconds)", displayInterval, &FlexImageFilm::displayInterval, Queryable::ReadWriteAccess);
+	AddIntAttribute(*this, "writeInterval", "Output file write interval (seconds)", writeInterval, &FlexImageFilm::writeInterval, Queryable::ReadWriteAccess);
+
 	// Set use and default runtime changeable parameters
 	m_TonemapKernel = d_TonemapKernel = p_TonemapKernel;
 	AddIntAttribute(*this, "TonemapKernel", "Tonemap kernel type: {0: Reinhard, 1: Linear, 2: Contrast, 3: MaxWhite, 4: AutoLinear}", 0, &FlexImageFilm::m_TonemapKernel, Queryable::ReadWriteAccess);

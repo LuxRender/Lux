@@ -324,6 +324,7 @@ private slots:
 	void forceToneMapUpdate();
 
 	void autoEnabledChanged (int value);
+	void overrideDisplayIntervalChanged(int value);
 
 	void addServer();
 	void removeServer();

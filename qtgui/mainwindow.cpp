@@ -199,6 +199,7 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	connect(ui->action_forums, SIGNAL(triggered()), this, SLOT(openForums()));
 	
 	connect(ui->checkBox_imagingAuto, SIGNAL(stateChanged(int)), this, SLOT(autoEnabledChanged(int)));
+	connect(ui->spinBox_overrideDisplayInterval, SIGNAL(valueChanged(int)), this, SLOT(overrideDisplayIntervalChanged(int)));
 
 	// Panes
 	panes[0] = new PaneWidget(ui->panesAreaContents, "Tone Mapping", ":/icons/tonemapicon.png");
@@ -516,6 +517,20 @@ void MainWindow::autoEnabledChanged (int value)
 		applyTonemapping();
 }
 
+void MainWindow::overrideDisplayIntervalChanged(int value)
+{
+	if (m_guiRenderState != RENDERING)
+		return;
+
+	if (value > 0)
+		luxSetIntAttribute("film", "displayInterval", value);
+	else
+		luxSetIntAttribute("film", "displayInterval", luxGetIntAttributeDefault("film", "displayInterval"));	
+
+	if (m_renderTimer->isActive())
+		m_renderTimer->setInterval(1000*luxGetIntAttribute("film", "displayInterval"));
+}
+
 void MainWindow::LuxGuiErrorHandler(int code, int severity, const char *msg)
 {
 	if (copyLog2Console)
@@ -659,7 +674,7 @@ void MainWindow::resumeRender()
 		renderView->reload();
 		histogramwidget->Update();
 
-		m_renderTimer->start(1000*luxStatistics("displayInterval"));
+		m_renderTimer->start(1000*luxGetIntAttribute("film", "displayInterval"));
 		m_statsTimer->start(1000);
 		m_netTimer->start(10000);
 		
@@ -1806,6 +1821,8 @@ void MainWindow::loadTimeout()
 				luxAddThread();
 				curThreads++;
 			}
+
+			updateWidgetValue(ui->spinBox_overrideDisplayInterval, luxGetIntAttribute("film", "displayInterval"));
 
 			// override halt conditions if needed
 			if (IsFileInQueue(m_CurrentFile)) {

@@ -282,20 +282,51 @@
                </property>
               </widget>
              </item>
-             <item row="1" column="3">
+              <item row="1" column="2">
+                <widget class="QSpinBox" name="spinBox_overrideDisplayInterval">
+                  <property name="sizePolicy">
+                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                      <horstretch>0</horstretch>
+                      <verstretch>0</verstretch>
+                    </sizepolicy>
+                  </property>
+                  <property name="minimumSize">
+                    <size>
+                      <width>75</width>
+                      <height>0</height>
+                    </size>
+                  </property>
+                  <property name="toolTip">
+                    <string>Override display interval (seconds)</string>
+                  </property>
+                  <property name="maximum">
+                    <number>3600</number>
+                  </property>
+                  <property name="minimum">
+                    <number>3</number>
+                  </property>
+                  <property name="value">
+                    <number>0</number>
+                  </property>
+                  <property name="singleStep">
+                    <number>10</number>
+                  </property>
+                </widget>
+              </item>
+              <item row="1" column="3">
               <widget class="QPushButton" name="button_imagingApply">
                <property name="enabled">
                 <bool>true</bool>
                </property>
                <property name="sizePolicy">
-                <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
                  <horstretch>0</horstretch>
                  <verstretch>0</verstretch>
                 </sizepolicy>
                </property>
                <property name="minimumSize">
                 <size>
-                 <width>200</width>
+                 <width>100</width>
                  <height>0</height>
                 </size>
                </property>
@@ -344,19 +375,6 @@
                 </layout>
                </widget>
               </widget>
-             </item>
-             <item row="1" column="2">
-              <spacer name="horizontalSpacer">
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>40</width>
-                 <height>20</height>
-                </size>
-               </property>
-              </spacer>
              </item>
             </layout>
            </widget>
