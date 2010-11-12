@@ -1040,7 +1040,7 @@ void MainWindow::endRenderingSession()
 		m_renderTimer->stop ();
 		m_statsTimer->stop ();
 		m_netTimer->stop ();
-		if (!IsFileInQueue())
+		if (!IsFileQueued())
 			// dont clear log if rendering a queue
 			clearLog();
 
