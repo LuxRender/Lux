@@ -2097,9 +2097,9 @@ void MainWindow::removeQueueFiles()
 	for (int i = ui->table_queue->rowCount()-1; i >= 0; i--) {
 		QTableWidgetItem *fname = ui->table_queue->item(i, 0);
 		
-		// cant remove current file
+		// stop rendering if current file is active
 		if (fname->text() == m_CurrentFile)
-			continue;
+			endRenderingSession();
 
 		if (!fname->isSelected())
 			continue;
