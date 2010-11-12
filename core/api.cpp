@@ -693,12 +693,40 @@ extern "C" bool luxHasObject(const char * objectName)
 	return Context::GetActive()->registry[objectName] != NULL;
 }
 
+extern "C" bool luxHasAttributeDefaultValue(const char * objectName, const char * attributeName)
+{
+	Queryable *object=Context::GetActive()->registry[objectName];
+	if (object) {
+		try {
+			return (*object)[attributeName].HasDefaultValue();
+		} catch (std::runtime_error e) {
+			LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
+		}
+	} else {
+		LOG(LUX_ERROR,LUX_BADTOKEN)<<"Unknown object '"<<objectName<<"'";
+	}
+	return false;
+}
+
 extern "C" const char* luxGetStringAttribute(const char * objectName, const char * attributeName)
 {
 	try { 
 		Queryable *object=Context::GetActive()->registry[objectName];
 		if (object) 
 			return (*object)[attributeName].StringValue().c_str();
+	} catch (std::runtime_error e) {
+		LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
+	}
+
+	return 0;
+}
+
+extern "C" const char* luxGetStringAttributeDefault(const char * objectName, const char * attributeName)
+{
+	try { 
+		Queryable *object=Context::GetActive()->registry[objectName];
+		if (object) 
+			return (*object)[attributeName].DefaultStringValue().c_str();
 	} catch (std::runtime_error e) {
 		LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
 	}
@@ -747,6 +775,19 @@ extern "C" void luxSetFloatAttribute(const char * objectName, const char * attri
 	}
 }
 
+extern "C" float luxGetFloatAttributeDefault(const char * objectName, const char * attributeName)
+{
+	try { 
+		Queryable *object=Context::GetActive()->registry[objectName];
+		if (object) 
+			return (*object)[attributeName].DefaultFloatValue();
+	} catch (std::runtime_error e) {
+		LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
+	}
+
+	return 0;
+}
+
 extern "C" double luxGetDoubleAttribute(const char * objectName, const char * attributeName)
 {
 	try { 
@@ -760,12 +801,38 @@ extern "C" double luxGetDoubleAttribute(const char * objectName, const char * at
 	return 0;
 }
 
+extern "C" double luxGetDoubleAttributeDefault(const char * objectName, const char * attributeName)
+{
+	try { 
+		Queryable *object=Context::GetActive()->registry[objectName];
+		if (object) 
+			return (*object)[attributeName].DefaultDoubleValue();
+	} catch (std::runtime_error e) {
+		LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
+	}
+
+	return 0;
+}
+
 extern "C" int luxGetIntAttribute(const char * objectName, const char * attributeName)
 {
 	try { 
 		Queryable *object=Context::GetActive()->registry[objectName];
 		if (object) 
 			return (*object)[attributeName].IntValue();
+	} catch (std::runtime_error e) {
+		LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
+	}
+
+	return 0;
+}
+
+extern "C" int luxGetIntAttributeDefault(const char * objectName, const char * attributeName)
+{
+	try { 
+		Queryable *object=Context::GetActive()->registry[objectName];
+		if (object) 
+			return (*object)[attributeName].DefaultIntValue();
 	} catch (std::runtime_error e) {
 		LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
 	}
@@ -793,6 +860,19 @@ extern "C" bool luxGetBoolAttribute(const char * objectName, const char * attrib
 		Queryable *object=Context::GetActive()->registry[objectName];
 		if (object) 
 			return (*object)[attributeName].BoolValue();
+	} catch (std::runtime_error e) {
+		LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
+	}
+
+	return 0;
+}
+
+extern "C" bool luxGetBoolAttributeDefault(const char * objectName, const char * attributeName)
+{
+	try { 
+		Queryable *object=Context::GetActive()->registry[objectName];
+		if (object) 
+			return (*object)[attributeName].DefaultBoolValue();
 	} catch (std::runtime_error e) {
 		LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
 	}

@@ -220,16 +220,21 @@ unsigned int luxGetDefaultStringParameterValue(luxComponent comp, luxComponentPa
 /* Queryable objects */
 const char* luxGetAttributes(); /* Returns an XML string containing all queryable data of the current context */
 bool luxHasObject(const char * objectName); /* Returns true if the given object exists in the registry */
+bool luxHasAttributeDefaultValue(const char * objectName, const char * attributeName); /* Returns true of attribute has a default value */
 
-/* Copies the the value of a string attribute into dest, returns number of characters copied. */
 const char* luxGetStringAttribute(const char * objectName, const char * attributeName); 
+const char* luxGetStringAttributeDefault(const char * objectName, const char * attributeName); 
 void luxSetStringAttribute(const char * objectName, const char * attributeName, const char * value);
 float luxGetFloatAttribute(const char * objectName, const char * attributeName); /* Returns the value of a float attribute */
+float luxGetFloatAttributeDefault(const char * objectName, const char * attributeName); /* Returns the default value of a float attribute */
 void luxSetFloatAttribute(const char * objectName, const char * attributeName, float value); /* Sets an float attribute value */
 double luxGetDoubleAttribute(const char * objectName, const char * attributeName); /* Returns the value of a double attribute */
+double luxGetDoubleAttributeDefault(const char * objectName, const char * attributeName); /* Returns the default value of a double attribute */
 int luxGetIntAttribute(const char * objectName, const char * attributeName); /* Returns the value of an int attribute */
+int luxGetIntAttributeDefault(const char * objectName, const char * attributeName); /* Returns the default value of an int attribute */
 void luxSetIntAttribute(const char * objectName, const char * attributeName, int value); /* Sets an int attribute value */
 bool luxGetBoolAttribute(const char * objectName, const char * attributeName); /* Returns the value of a bool attribute */
+bool luxGetBoolAttributeDefault(const char * objectName, const char * attributeName); /* Returns the default value of a bool attribute */
 void luxSetBoolAttribute(const char * objectName, const char * attributeName, bool value); /* Sets a bool attribute value */
 void luxSetAttribute(const char * objectName, const char * attributeName, int n, void *values); /* Sets an attribute value */
 
