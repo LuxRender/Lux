@@ -266,7 +266,7 @@ double HybridSamplerRenderer::Statistics(const string &statName) {
 	else if(statName == "numberOfLocalSamples")
 		return scene->camera->film->numberOfLocalSamples;
 	else if (statName == "enoughSamples")
-		return scene->camera->film->enoughSamplePerPixel;
+		return scene->camera->film->enoughSamplesPerPixel;
 	else if (statName == "threadCount")
 		return renderThreads.size();
 	else {
