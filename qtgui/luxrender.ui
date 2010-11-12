@@ -762,23 +762,6 @@
                  </widget>
                </item>
                <item>
-                 <widget class="QLabel" name="label_loopQueue">
-                   <property name="text">
-                     <string>Loop queue:</string>
-                   </property>
-                   <property name="buddy">
-                     <cstring>checkBox_loopQueue</cstring>
-                   </property>
-                 </widget>
-               </item>
-               <item>
-                 <widget class="QCheckBox" name="checkBox_loopQueue">
-                   <property name="toolTip">
-                     <string>Continuously loop queue</string>
-                   </property>
-                 </widget>
-               </item>
-               <item>
                  <widget class="QLabel" name="label_overrideHaltSpp">
                    <property name="text">
                      <string>Overide halt spp:</string>
@@ -845,6 +828,50 @@
                    </property>
                    <property name="singleStep">
                      <number>120</number>
+                   </property>
+                 </widget>
+               </item>
+               <item>
+                 <widget class="Line" name="line_5">
+                   <property name="orientation">
+                     <enum>Qt::Vertical</enum>
+                   </property>
+                 </widget>
+               </item>
+               <item>
+                 <widget class="QLabel" name="label_loopQueue">
+                   <property name="text">
+                     <string>Loop queue:</string>
+                   </property>
+                   <property name="buddy">
+                     <cstring>checkBox_loopQueue</cstring>
+                   </property>
+                 </widget>
+               </item>
+               <item>
+                 <widget class="QCheckBox" name="checkBox_loopQueue">
+                   <property name="toolTip">
+                     <string>Continuously loop queue</string>
+                   </property>
+                 </widget>
+               </item>
+               <item>
+                 <widget class="QLabel" name="label_overrideWriteFlm">
+                   <property name="text">
+                     <string>Write FLM:</string>
+                   </property>
+                   <property name="buddy">
+                     <cstring>checkBox_overrideWriteFlm</cstring>
+                   </property>
+                 </widget>
+               </item>
+               <item>
+                 <widget class="QCheckBox" name="checkBox_overrideWriteFlm">
+                   <property name="toolTip">
+                     <string>Overrides writing and use of resume FLM file.</string>
+                   </property>
+                   <property name="checkState">
+                     <enum>Qt::Checked</enum>
                    </property>
                  </widget>
                </item>

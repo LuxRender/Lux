@@ -268,6 +268,8 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	connect(ui->button_removeQueueFiles, SIGNAL(clicked()), this, SLOT(removeQueueFiles()));
 	connect(ui->spinBox_overrideHaltSpp, SIGNAL(valueChanged(int)), this, SLOT(overrideHaltSppChanged(int)));
 	connect(ui->spinBox_overrideHaltTime, SIGNAL(valueChanged(int)), this, SLOT(overrideHaltTimeChanged(int)));
+	connect(ui->checkBox_loopQueue, SIGNAL(stateChanged(int)), this, SLOT(loopQueueChanged(int)));
+	connect(ui->checkBox_overrideWriteFlm, SIGNAL(toggled(bool)), this, SLOT(overrideWriteFlmChanged(bool)));
 	ui->table_queue->setColumnHidden(2, true);
 
 
@@ -665,7 +667,7 @@ void MainWindow::resumeRender()
 			luxStart();
 		
 		if (m_guiRenderState == STOPPED)
-			luxSetHaltSamplePerPixel(-1, false, false);
+			luxSetHaltSamplesPerPixel(-1, false, false);
 		changeRenderState(RENDERING);
 		showRenderresolution();
 		showZoomfactor();
@@ -699,7 +701,7 @@ void MainWindow::stopRender()
 			m_statsTimer->start(1000);
 
 		// Make sure lux core stops
-		luxSetHaltSamplePerPixel(1, true, true);
+		luxSetHaltSamplesPerPixel(1, true, true);
 		
 		statusMessage->setText(tr("Waiting for render threads to stop."));
 		changeRenderState(STOPPING);
@@ -1809,6 +1811,13 @@ void MainWindow::loadTimeout()
 					luxSetIntAttribute("film", "haltSamplesPerPixel", ui->spinBox_overrideHaltSpp->value());
 				if (ui->spinBox_overrideHaltTime->value() > 0)
 					luxSetIntAttribute("film", "haltTime", ui->spinBox_overrideHaltTime->value());
+
+				bool writeFlm = ui->checkBox_overrideWriteFlm->isChecked();
+				luxSetBoolAttribute("film", "writeResumeFlm", writeFlm);
+				if (writeFlm)
+					luxSetBoolAttribute("film", "restartResumeFlm", false);
+				else
+					luxSetBoolAttribute("film", "restartResumeFlm", luxGetBoolAttributeDefault("film", "restartResumeFlm"));
 			}
 
 
@@ -2111,10 +2120,10 @@ void MainWindow::removeQueueFiles()
 void MainWindow::overrideHaltSppChanged(int value)
 {
 	if (value <= 0)
-		value = luxGetIntAttributeDefault("film", "haltSamplePerPixel");
+		value = luxGetIntAttributeDefault("film", "haltSamplesPerPixel");
 	
 	if (m_guiRenderState == RENDERING)
-		luxSetIntAttribute("film", "haltSamplePerPixel", value);
+		luxSetIntAttribute("film", "haltSamplesPerPixel", value);
 }
 
 void MainWindow::overrideHaltTimeChanged(int value)
@@ -2124,6 +2133,34 @@ void MainWindow::overrideHaltTimeChanged(int value)
 	
 	if (m_guiRenderState == RENDERING)
 		luxSetIntAttribute("film", "haltTime", value);
+}
+
+void MainWindow::loopQueueChanged(int state)
+{
+	bool loop = state == Qt::Checked;
+
+	if (loop && !ui->checkBox_overrideWriteFlm->isChecked()) {
+		// looping makes little sense without resume films, so just enabled it
+		ui->checkBox_overrideWriteFlm->setChecked(true);
+	}
+}
+
+void MainWindow::overrideWriteFlmChanged(bool checked)
+{
+	if (!checked) {
+		if (QMessageBox::question(this, tr("Override resume file settings"),tr("Are you sure you want to disable the resume film setting override?\n\nIf the scene files do not specify usage of resume films you will be unable to use queue looping.\n\nIt is highly recommended that you do not disable this."), QMessageBox::Yes|QMessageBox::No) == QMessageBox::No) {
+			updateWidgetValue(ui->checkBox_overrideWriteFlm, true);
+			return;
+		}
+	}
+
+	if (m_guiRenderState == RENDERING) {
+		luxSetBoolAttribute("film", "writeResumeFlm", checked);
+		if (checked)
+			luxSetBoolAttribute("film", "restartResumeFlm", false);
+		else
+			luxSetBoolAttribute("film", "restartResumeFlm", luxGetBoolAttributeDefault("film", "restartResumeFlm"));
+	}
 }
 
 bool MainWindow::IsFileInQueue(const QString &filename)

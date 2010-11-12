@@ -334,6 +334,8 @@ private slots:
 	void removeQueueFiles();
 	void overrideHaltSppChanged(int value);
 	void overrideHaltTimeChanged(int value);
+	void loopQueueChanged(int state);
+	void overrideWriteFlmChanged(bool checked);
 
 	void copyToClipboard ();
 };
