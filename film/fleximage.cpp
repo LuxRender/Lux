@@ -1000,13 +1000,13 @@ void FlexImageFilm::WriteImage(ImageType type)
 		Y += pixels[pix].c[1];
 	}
 	Y /= nPix;
+	averageLuminance = Y;
 	WriteImage2(type, pixels, alpha, "");
 	// The relation between EV and luminance in cd.m-2 is:
 	// EV = log2(L * S / K)
 	// where L is the luminance, S is the ISO speed and K is a constant
 	// usually S is taken to be 100 and K to be 12.5
 	EV = logf(Y * 8.f) / logf(2.f);
-	averageLuminance = Y;
 }
 
 void FlexImageFilm::SaveEXR(const string &pExrFilename, const bool &pUseHalfFloats, const bool &pIncludeZBuf, const int &pCompressionType)
