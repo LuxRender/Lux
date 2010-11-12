@@ -150,9 +150,11 @@ double retrieveParam(bool useDefault, luxComponent comp, luxComponentParameters 
 		return luxGetParameterValue(comp, param, index);
 }
 
+QWidget *MainWindow::instance;
 MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(parent), ui(new Ui::MainWindow), m_copyLog2Console(copylog2console)
 {
-	
+	MainWindow::instance = this;
+
 	luxErrorHandler(&MainWindow::LuxGuiErrorHandler);
 	
 	ui->setupUi(this);
@@ -260,6 +262,14 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	connect(ui->button_removeServer, SIGNAL(clicked()), this, SLOT(removeServer()));
 	connect(ui->spinBox_updateInterval, SIGNAL(valueChanged(int)), this, SLOT(updateIntervalChanged(int)));
 	connect(ui->table_servers, SIGNAL(itemSelectionChanged()), this, SLOT(networknodeSelectionChanged()));
+
+	// Queue tab
+	connect(ui->button_addQueueFiles, SIGNAL(clicked()), this, SLOT(addQueueFiles()));
+	connect(ui->button_removeQueueFiles, SIGNAL(clicked()), this, SLOT(removeQueueFiles()));
+	connect(ui->spinBox_overrideHaltSpp, SIGNAL(valueChanged(int)), this, SLOT(overrideHaltSppChanged(int)));
+	connect(ui->spinBox_overrideHaltTime, SIGNAL(valueChanged(int)), this, SLOT(overrideHaltTimeChanged(int)));
+	ui->table_queue->setColumnHidden(2, true);
+
 
 	// Buttons
 	connect(ui->button_imagingApply, SIGNAL(clicked()), this, SLOT(applyTonemapping()));
@@ -509,8 +519,7 @@ void MainWindow::LuxGuiErrorHandler(int code, int severity, const char *msg)
 	if (copyLog2Console)
 	    luxErrorPrint(code, severity, msg);
 	
-	foreach (QWidget *widget, qApp->topLevelWidgets())
-		qApp->postEvent(widget, new LuxLogEvent(code,severity,QString(msg)));
+	qApp->postEvent(MainWindow::instance, new LuxLogEvent(code,severity,QString(msg)));
 }
 
 bool MainWindow::canStopRendering()
@@ -521,6 +530,8 @@ bool MainWindow::canStopRendering()
 			return false;
 		}
 	}
+	// clear rendering queue
+	ClearRenderingQueue();
 	return true;
 }
 
@@ -601,6 +612,7 @@ void MainWindow::loadFLM(QString flmFileName)
 
 	indicateActivity ();
 	statusMessage->setText("Loading FLM...");
+
 	// Start load thread
 	m_loadTimer->start(1000);
 
@@ -1391,9 +1403,6 @@ void MainWindow::renderScenefile(const QString& filename)
 	setCurrentFile(filename);
 
 	changeRenderState(PARSING);
-
-	// NOTE - lordcrc - create progress dialog before starting engine thread
-	//                  so we don't try to destroy it before it's properly created
 	
     indicateActivity ();
 	statusMessage->setText("Loading scene...");
@@ -1402,8 +1411,10 @@ void MainWindow::renderScenefile(const QString& filename)
 
 
 	// Start main render thread
-	if (m_engineThread)
+	if (m_engineThread) {
+		m_engineThread->join();
 		delete m_engineThread;
+	}
 
 	m_engineThread = new boost::thread(boost::bind(&MainWindow::engineThread, this, filename));
 }
@@ -1574,10 +1585,18 @@ bool MainWindow::event (QEvent *event)
 	else if (eventtype == EVT_LUX_FINISHED) {
 		if (m_guiRenderState == RENDERING) {
 			// Ignoring finished events if another file is being opened (state != RENDERING)
-			// Stop timers and update output one last time.
-			stopRender();
 
-			changeRenderState(FINISHED);
+			bool renderingNext = false;
+
+			if (IsFileQueued())
+				renderingNext = RenderNextFileInQueue();
+			
+			if (!renderingNext) {
+				// Stop timers and update output one last time.
+				stopRender();
+
+				changeRenderState(FINISHED);
+			}
 		}
 		retval = TRUE;
 	}
@@ -1750,6 +1769,8 @@ void MainWindow::statsTimeout()
 			// Render threads stopped, do one last render update
 			LOG(LUX_INFO,LUX_NOERROR)<< tr("GUI: Updating framebuffer...").toLatin1().data();
 			statusMessage->setText(tr("Tonemapping..."));
+			if (m_updateThread)
+				m_updateThread->join();
 			delete m_updateThread;
 			m_updateThread = new boost::thread(boost::bind(&MainWindow::updateThread, this));
 			m_statsTimer->stop();
@@ -1782,6 +1803,15 @@ void MainWindow::loadTimeout()
 				curThreads++;
 			}
 
+			// override halt conditions if needed
+			if (IsFileInQueue(m_CurrentFile)) {
+				if (ui->spinBox_overrideHaltSpp->value() > 0)
+					luxSetIntAttribute("film", "haltSamplesPerPixel", ui->spinBox_overrideHaltSpp->value());
+				if (ui->spinBox_overrideHaltTime->value() > 0)
+					luxSetIntAttribute("film", "haltTime", ui->spinBox_overrideHaltTime->value());
+			}
+
+
 			// Start updating the display by faking a resume menu item click.
 			ui->action_resumeRender->activate(QAction::Trigger);
 
@@ -1811,7 +1841,10 @@ void MainWindow::loadTimeout()
 		resetToneMappingFromFilm (false);
 		ResetLightGroupsFromFilm( false );
 		// Update framebuffer
-		luxUpdateFramebuffer();
+		if (!m_auto_tonemap)
+			// if auto tonemap is enabled then
+			// resetToneMappingFromFilm already performed tonemap
+			luxUpdateFramebuffer();
 		renderView->resetTransform();
 		renderView->reload();
 		// Update stats
@@ -2016,3 +2049,146 @@ void MainWindow::networknodeSelectionChanged()
 	}
 }
 
+void MainWindow::addQueueFiles()
+{
+    QStringList files = QFileDialog::getOpenFileNames(this, tr("Select files to add"), m_lastOpendir, tr("LuxRender Files (*.lxs)"));
+
+	if (files.empty())
+		return;
+
+	int row = ui->table_queue->rowCount();
+
+	if (m_guiRenderState == RENDERING && !IsFileInQueue(m_CurrentFile)) {
+		// add current file to queue, since user created one
+		// first ensure it's not in the selected files already
+		if (files.indexOf(m_CurrentFile) < 0)
+			files.insert(0, m_CurrentFile);
+	}
+
+
+	for (int i = 0; i < files.count(); i++) {
+
+		// not allowing duplicates
+		if (IsFileInQueue(files[i]))
+			continue;
+
+		QTableWidgetItem *filename = new QTableWidgetItem(files[i]);
+		QTableWidgetItem *status = new QTableWidgetItem("");				
+		QTableWidgetItem *pass = new QTableWidgetItem("0");
+
+		ui->table_queue->insertRow(row);
+
+		ui->table_queue->setItem(row, 0, filename);
+		ui->table_queue->setItem(row, 1, status);
+		ui->table_queue->setItem(row, 2, pass);
+
+		row++;
+	}
+
+	ui->table_queue->resizeColumnsToContents();
+
+	if (m_guiRenderState != RENDERING) {
+		RenderNextFileInQueue();
+	}
+}
+
+void MainWindow::removeQueueFiles()
+{
+	for (int i = ui->table_queue->rowCount()-1; i >= 0; i--) {
+		QTableWidgetItem *fname = ui->table_queue->item(i, 0);
+		
+		// cant remove current file
+		if (fname->text() == m_CurrentFile)
+			continue;
+
+		if (!fname->isSelected())
+			continue;
+
+		ui->table_queue->removeRow(i);
+	}
+}
+
+void MainWindow::overrideHaltSppChanged(int value)
+{
+	if (value <= 0)
+		value = luxGetIntAttributeDefault("film", "haltSamplePerPixel");
+	
+	if (m_guiRenderState == RENDERING)
+		luxSetIntAttribute("film", "haltSamplePerPixel", value);
+}
+
+void MainWindow::overrideHaltTimeChanged(int value)
+{
+	if (value <= 0)
+		value = luxGetIntAttributeDefault("film", "haltTime");
+	
+	if (m_guiRenderState == RENDERING)
+		luxSetIntAttribute("film", "haltTime", value);
+}
+
+bool MainWindow::IsFileInQueue(const QString &filename)
+{
+	for (int i = 0; i < ui->table_queue->rowCount(); i++) {
+		QTableWidgetItem *fname = ui->table_queue->item(i, 0);
+
+		if (fname->text() == filename)
+			return true;
+	}
+
+	return false;
+}
+
+bool MainWindow::IsFileQueued()
+{
+	return ui->table_queue->rowCount() > 0;
+}
+
+bool MainWindow::RenderNextFileInQueue()
+{
+	int idx = -1;
+
+	// update current file
+	for (int i = 0; i < ui->table_queue->rowCount(); i++) {
+		QTableWidgetItem *fname = ui->table_queue->item(i, 0);
+
+		if (fname->text() == m_CurrentFile) {
+			idx = i;
+			break;
+		}
+	}
+
+	if (idx >= 0) {
+		QTableWidgetItem *status = ui->table_queue->item(idx, 1);
+		status->setText("Completed " + QDateTime::currentDateTime().toString(Qt::DefaultLocaleShortDate));
+	}
+
+	// render next
+	if (++idx >= ui->table_queue->rowCount()) {
+		if (ui->checkBox_loopQueue->isChecked()) {
+			ui->table_queue->setColumnHidden(2, false);
+			idx = 0;
+		}
+		else
+			return false;
+	}
+
+	QString filename = ui->table_queue->item(idx, 0)->text();
+	QTableWidgetItem *status = ui->table_queue->item(idx, 1);
+	QTableWidgetItem *pass = ui->table_queue->item(idx, 2);
+
+	status->setText("Rendering");
+	pass->setText(QString("%1").arg(pass->text().toInt() + 1));
+
+	ui->table_queue->resizeColumnsToContents();
+
+	endRenderingSession();
+	renderScenefile(filename);
+
+	return true;
+}
+
+void MainWindow::ClearRenderingQueue()
+{
+	ui->table_queue->clearContents();
+	ui->table_queue->setColumnHidden(2, true);
+}

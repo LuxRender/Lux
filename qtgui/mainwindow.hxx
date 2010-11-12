@@ -247,6 +247,7 @@ private:
 	QAction *m_recentFileActions[MaxRecentFiles];
 
 	static void LuxGuiErrorHandler(int code, int severity, const char *msg);
+	static QWidget *instance;
 	
 	void engineThread(QString filename);
 	void updateThread();
@@ -271,6 +272,11 @@ private:
 
 	void ReadSettings();
 	void WriteSettings();
+
+	bool IsFileInQueue(const QString &filename);
+	bool IsFileQueued();
+	bool RenderNextFileInQueue();
+	void ClearRenderingQueue();
 
 public slots:
 
@@ -323,7 +329,12 @@ private slots:
 	void removeServer();
 	void updateIntervalChanged(int value);
 	void networknodeSelectionChanged();
-	
+
+	void addQueueFiles();
+	void removeQueueFiles();
+	void overrideHaltSppChanged(int value);
+	void overrideHaltTimeChanged(int value);
+
 	void copyToClipboard ();
 };
 

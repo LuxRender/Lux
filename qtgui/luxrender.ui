@@ -703,6 +703,199 @@
         </item>
        </layout>
       </widget>
+       <widget class="QWidget" name="tab_queue">
+         <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+           </sizepolicy>
+         </property>
+         <attribute name="icon">
+           <iconset resource="icons.qrc">
+             <normaloff>:/icons/networktabicon.png</normaloff>:/icons/networktabicon.png
+           </iconset>
+         </attribute>
+         <attribute name="title">
+           <string>Queue</string>
+         </attribute>
+         <layout class="QGridLayout" name="gridLayout_13">
+           <item row="1" column="0">
+             <layout class="QHBoxLayout" name="horizontalLayout_6">
+               <item>
+                 <widget class="QToolButton" name="button_addQueueFiles">
+                   <property name="toolTip">
+                     <string>Add files to queue</string>
+                   </property>
+                   <property name="text">
+                     <string>Add files...</string>
+                   </property>
+                   <property name="icon">
+                     <iconset resource="icons.qrc">
+                       <normaloff>:/icons/plusicon.png</normaloff>:/icons/plusicon.png
+                     </iconset>
+                   </property>
+                   <property name="toolButtonStyle">
+                     <enum>Qt::ToolButtonTextBesideIcon</enum>
+                   </property>
+                 </widget>
+               </item>
+               <item>
+                 <widget class="QToolButton" name="button_removeQueueFiles">
+                   <property name="toolTip">
+                     <string>Remove selected files from queue</string>
+                   </property>
+                   <property name="text">
+                     <string>Remove files</string>
+                   </property>
+                   <property name="icon">
+                     <iconset resource="icons.qrc">
+                       <normaloff>:/icons/minusicon.png</normaloff>:/icons/minusicon.png
+                     </iconset>
+                   </property>
+                 </widget>
+               </item>
+               <item>
+                 <widget class="Line" name="line_4">
+                   <property name="orientation">
+                     <enum>Qt::Vertical</enum>
+                   </property>
+                 </widget>
+               </item>
+               <item>
+                 <widget class="QLabel" name="label_loopQueue">
+                   <property name="text">
+                     <string>Loop queue:</string>
+                   </property>
+                   <property name="buddy">
+                     <cstring>checkBox_loopQueue</cstring>
+                   </property>
+                 </widget>
+               </item>
+               <item>
+                 <widget class="QCheckBox" name="checkBox_loopQueue">
+                   <property name="toolTip">
+                     <string>Continuously loop queue</string>
+                   </property>
+                 </widget>
+               </item>
+               <item>
+                 <widget class="QLabel" name="label_overrideHaltSpp">
+                   <property name="text">
+                     <string>Overide halt spp:</string>
+                   </property>
+                   <property name="buddy">
+                     <cstring>spinBox_overrideHaltSpp</cstring>
+                   </property>
+                 </widget>
+               </item>
+               <item>
+                 <widget class="QSpinBox" name="spinBox_overrideHaltSpp">
+                   <property name="minimumSize">
+                     <size>
+                       <width>100</width>
+                       <height>0</height>
+                     </size>
+                   </property>
+                   <property name="toolTip">
+                     <string>Override halt sample-per-pixel condition, or zero to disable</string>
+                   </property>
+                   <property name="maximum">
+                     <number>10000</number>
+                   </property>
+                   <property name="minimum">
+                     <number>0</number>
+                   </property>
+                   <property name="value">
+                     <number>0</number>
+                   </property>
+                   <property name="singleStep">
+                     <number>50</number>
+                   </property>
+                 </widget>
+               </item>
+               <item>
+                 <widget class="QLabel" name="label_overrideHaltTime">
+                   <property name="text">
+                     <string>Overide halt time:</string>
+                   </property>
+                   <property name="buddy">
+                     <cstring>spinBox_overrideHaltTime</cstring>
+                   </property>
+                 </widget>
+               </item>
+               <item>
+                 <widget class="QSpinBox" name="spinBox_overrideHaltTime">
+                   <property name="minimumSize">
+                     <size>
+                       <width>100</width>
+                       <height>0</height>
+                     </size>
+                   </property>
+                   <property name="toolTip">
+                     <string>Override halt time condition (seconds), or zero to disable</string>
+                   </property>
+                   <property name="maximum">
+                     <number>86400</number>
+                   </property>
+                   <property name="minimum">
+                     <number>0</number>
+                   </property>
+                   <property name="value">
+                     <number>0</number>
+                   </property>
+                   <property name="singleStep">
+                     <number>120</number>
+                   </property>
+                 </widget>
+               </item>
+               <item>
+                 <spacer name="horizontalSpacer1">
+                   <property name="orientation">
+                     <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="sizeType">
+                     <enum>QSizePolicy::MinimumExpanding</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                     <size>
+                       <width>0</width>
+                       <height>0</height>
+                     </size>
+                   </property>
+                 </spacer>
+               </item>
+             </layout>
+           </item>
+           <item row="2" column="0">
+             <widget class="QTableWidget" name="table_queue">
+               <property name="editTriggers">
+                 <set>QAbstractItemView::NoEditTriggers</set>
+               </property>
+               <property name="selectionBehavior">
+                 <enum>QAbstractItemView::SelectRows</enum>
+               </property>
+               <property name="wordWrap">
+                 <bool>true</bool>
+               </property>
+               <column>
+                 <property name="text">
+                   <string>File</string>
+                 </property>
+               </column>
+               <column>
+                 <property name="text">
+                   <string>Status</string>
+                 </property>
+               </column>
+               <column>
+                 <property name="text">
+                   <string>Pass</string>
+                 </property>
+               </column>
+             </widget>
+           </item>
+         </layout>
+       </widget>
      </widget>
     </item>
    </layout>
