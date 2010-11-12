@@ -134,20 +134,19 @@ void StatsData::update(const bool add_total)
 					previousNetworkSamplesSec = network_sps;
 					lastUpdateSecElapsed = secelapsed;
 				}
-
-				if (add_total)
-				{
-					os << template_string_total;
-
-					total_spp = (localsamples + netsamples) / px;
-					total_sps = (localsamples + netsamples) / secelapsed;
-				}
 			}
 			else
 			{
 				os << template_string_network_waiting;
 			}
+		} else if (add_total)
+		{
+			os << template_string_total;
+
+			total_spp = (localsamples + netsamples) / px;
+			total_sps = (localsamples + netsamples) / secelapsed;
 		}
+
 
 		float completion_samples = 0.f;						// %18
 		if (haltspp > 0)
