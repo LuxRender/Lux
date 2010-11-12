@@ -1057,10 +1057,17 @@ void FlexImageFilm::SaveEXR(const string &pExrFilename, const bool &pUseHalfFloa
 	// Construct normalized Z buffer if needed
 	vector<float> zBuf;
 	if(pIncludeZBuf) {
-		zBuf.resize(nPix, 0.f);
-		for (u_int offset = 0, y = 0; y < yPixelCount; ++y) {
-			for (u_int x = 0; x < xPixelCount; ++x,++offset) {
-				zBuf[offset] = ZBuffer->GetData(x, y);
+
+		// Make sure we have a ZBuffer
+		if(!use_Zbuf || ZBuffer == NULL) {
+			LOG(LUX_WARNING, LUX_NOERROR) << "Z Buffer output requested but is not available.  Will be omitted from OpenEXR file.";
+			LOG(LUX_WARNING, LUX_NOERROR) << "Note: To enable Z Buffer, add the line '\"bool write_exr_ZBuf\" [\"true\"]' to the 'Film \"fleximage\"' section of your LXS file.";
+		} else {
+			zBuf.resize(nPix, 0.f);
+			for (u_int offset = 0, y = 0; y < yPixelCount; ++y) {
+				for (u_int x = 0; x < xPixelCount; ++x,++offset) {
+					zBuf[offset] = ZBuffer->GetData(x, y);
+				}
 			}
 		}
 	}
@@ -1081,7 +1088,7 @@ void FlexImageFilm::SaveEXR(const string &pExrFilename, const bool &pUseHalfFloa
 	int lOrigCompression = write_EXR_compressiontype;
 	
 	// Set members that affect WriteEXRImage() according to passed parameters
-	write_EXR_ZBuf = pIncludeZBuf;
+	write_EXR_ZBuf = (use_Zbuf?pIncludeZBuf:false);
 	write_EXR_halftype = pUseHalfFloats;
 	write_EXR_compressiontype = pCompressionType;
 	

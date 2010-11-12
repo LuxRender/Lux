@@ -45,6 +45,7 @@
 #include "ui_luxrender.h"
 #include "aboutdialog.hxx"
 #include "batchprocessdialog.hxx"
+#include "openexroptionsdialog.hxx"
 
 #if defined(WIN32) && !defined(__CYGWIN__)
 #include "direct.h"
@@ -62,8 +63,15 @@ int EVT_LUX_TONEMAPPED = QEvent::registerEventType();
 int EVT_LUX_FLMLOADERROR = QEvent::registerEventType();
 int EVT_LUX_SAVEDFLM = QEvent::registerEventType();
 int EVT_LUX_LOGEVENT = QEvent::registerEventType();
+int EVT_LUX_BATCHEVENT = QEvent::registerEventType();
 
 LuxLogEvent::LuxLogEvent(int code,int severity,QString message) : QEvent((QEvent::Type)EVT_LUX_LOGEVENT), _message(message), _severity(severity), _code(code)
+{
+	setAccepted(false);
+}
+
+BatchEvent::BatchEvent(const QString &currentFile, const int &numCompleted, const int &total)
+	: QEvent((QEvent::Type)EVT_LUX_BATCHEVENT), _currentFile(currentFile), _numCompleted(numCompleted), _total(total)
 {
 	setAccepted(false);
 }
@@ -329,6 +337,13 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	m_flmloadThread = NULL;
 	m_flmsaveThread = NULL;
 
+	m_batchProcessThread = NULL;
+	batchProgress = NULL;
+
+	openExrHalfFloats = true;
+	openExrDepthBuffer = false;
+	openExrCompressionType = 1;
+
 	// used in ResetToneMapping
 	m_auto_tonemap = false;
 	resetToneMapping();
@@ -372,12 +387,14 @@ MainWindow::~MainWindow()
 	delete m_flmloadThread;
 	delete m_flmsaveThread;
 	delete m_renderTimer;
+	delete m_batchProcessThread;
 	delete renderView;
 	delete tonemapwidget;
 	delete lenseffectswidget;
 	delete colorspacewidget;
 	delete noisereductionwidget;
 	delete histogramwidget;
+	delete batchProgress;
 
 	for (int i = 0; i < NumPanes; i++)
 		delete panes[i];
@@ -565,12 +582,13 @@ void MainWindow::resumeFLM()
 	renderScenefile (lxsFileName, flmFileName);
 }
 
-void MainWindow::loadFLM()
+void MainWindow::loadFLM(QString flmFileName)
 {
 	if (!canStopRendering())
 		return;
 
-	QString flmFileName = QFileDialog::getOpenFileName(this, tr("Choose an FLM file to open"), m_lastOpendir, tr("LuxRender FLM files (*.flm)"));
+	if (flmFileName.isNull() || flmFileName.isEmpty())
+			flmFileName = QFileDialog::getOpenFileName(this, tr("Choose an FLM file to open"), m_lastOpendir, tr("LuxRender FLM files (*.flm)"));
 	
 	if(flmFileName.isNull())
 		return;
@@ -695,7 +713,16 @@ void MainWindow::outputHDR()
 	if (fileName.isEmpty()) 
 		return;	
 
-	if (saveCurrentImageHDR(fileName)) 
+	// Get OpenEXR options
+	OpenEXROptionsDialog *options = new OpenEXROptionsDialog(this, openExrHalfFloats, openExrDepthBuffer, openExrCompressionType);
+	// options->disableZBufferCheckbox();		// TODO: Check if film has a ZBuffer and disable it here if not
+	if(options->exec() == QDialog::Rejected) return;
+	openExrHalfFloats = options->useHalfFloats();
+	openExrDepthBuffer = options->includeZBuffer();
+	openExrCompressionType = options->getCompressionType();
+	delete options;
+
+	if (saveCurrentImageHDR(fileName))
 		statusMessage->setText(tr("High dynamic range image saved"));
 	else 
 		statusMessage->setText(tr("ERROR: High dynamic range image NOT saved."));
@@ -792,8 +819,8 @@ bool MainWindow::saveCurrentImageTonemapped(const QString &outFile)
 
 bool MainWindow::saveCurrentImageHDR(const QString &outFile)
 {
-	// Done inside API for now (uses standard OpenEXR defaults: 16bit floats, no Z-buffer, PIZ compression)
-	luxSaveEXR(outFile.toAscii().data(), true, false, 1);
+	// Done inside API for now (set openExr* members to control OpenEXR format options)
+	luxSaveEXR(outFile.toAscii().data(), openExrHalfFloats, openExrDepthBuffer, openExrCompressionType);
 	return true;
 }
 
@@ -824,6 +851,15 @@ void MainWindow::outputBufferGroupsHDR()
 	if (fileName.isEmpty()) 
 		return;
 	
+	// Get OpenEXR options
+	OpenEXROptionsDialog *options = new OpenEXROptionsDialog(this, openExrHalfFloats, openExrDepthBuffer, openExrCompressionType);
+	// options->disableZBufferCheckbox();		// TODO: Check if film has a ZBuffer and disable it here if not
+	if(options->exec() == QDialog::Rejected) return;
+	openExrHalfFloats = options->useHalfFloats();
+	openExrDepthBuffer = options->includeZBuffer();
+	openExrCompressionType = options->getCompressionType();
+	delete options;
+
 	// Show busy cursor
 	QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
 	
@@ -874,7 +910,7 @@ bool MainWindow::saveAllLightGroups(const QString &outFilename, const bool &asHD
 			.arg(filenamePath.stem().c_str()).arg(lgName);
 
 		if (asHDR) 
-			luxSaveEXR(QString("%1.exr").arg(outputName).toAscii().data(), true, false, 1);
+			luxSaveEXR(QString("%1.exr").arg(outputName).toAscii().data(), openExrHalfFloats, openExrDepthBuffer, openExrCompressionType);
 		else {
 			unsigned char* fb = luxFramebuffer();
 			if(fb != NULL) {
@@ -919,33 +955,45 @@ void MainWindow::batchProcess()
 		
         switch(ret)
         {
-				// Call save function instead, then fall-through to abort
+            // Call save function instead, then fall-through to abort
             case QMessageBox::Save: saveFLM();
 				
-				// Return from function/abort batch processing
-            default:
-            case QMessageBox::Cancel:
-                return;
-				break;
+			// Return from function/abort batch processing
+			default:
+			case QMessageBox::Cancel:
+				return;
+			break;
 				
-				// Continue with batch processing
-            case QMessageBox::Discard: break;
+			// Continue with batch processing
+			case QMessageBox::Discard: break;
         }
     }
 	
     // Show the batch processing dialog for user to customize
     BatchProcessDialog *batchDialog = new BatchProcessDialog(m_lastOpendir, this);
     if(batchDialog->exec() == QDialog::Rejected) return;
-	
-    // Make sure rendering is ended
-    endRenderingSession();
-	
+		
     // Get options from dialog
     bool allLightGroups = batchDialog->individualLightGroups();
     QString inDir = batchDialog->inputDir();
     QString outDir = batchDialog->outputDir();
     bool asHDR = !batchDialog->applyTonemapping();
 	
+	// Get OpenEXR options
+	if(asHDR)
+	{
+		OpenEXROptionsDialog *options = new OpenEXROptionsDialog(this, openExrHalfFloats, openExrDepthBuffer, openExrCompressionType);
+		// options->disableZBufferCheckbox();		// TODO: Check if film has a ZBuffer and disable it here if not
+		if(options->exec() == QDialog::Rejected) return;
+		openExrHalfFloats = options->useHalfFloats();
+		openExrDepthBuffer = options->includeZBuffer();
+		openExrCompressionType = options->getCompressionType();
+		delete options;
+	}
+
+    // Make sure rendering is ended
+    endRenderingSession();
+
     QString outExtension = "exr";
     if(!asHDR) {
         switch(batchDialog->format())
@@ -956,73 +1004,17 @@ void MainWindow::batchProcess()
             case 3: outExtension = "tif"; break;
         }
     }
-	
-    // Find 'flm' files in the directory
-    QVector<string> flmFiles, flmStems;
-    for(boost::filesystem::directory_iterator itr(inDir.toStdString());
-		itr != boost::filesystem::directory_iterator();
-		itr++)
-    {
-        const boost::filesystem::path curPath = itr->path();
-        if(curPath.extension() == ".flm") {
-            flmFiles.push_back(curPath.string());
-            flmStems.push_back(curPath.stem());
-        }
-    }
-	
-    // Show modal progress dialog
-    QProgressDialog progress(tr("Processing ..."), tr("Cancel"), 0, flmFiles.size(), this);
-    progress.setSizeGripEnabled(false);
-    progress.setModal(true);
-	
-    // Process the 'flm' files
-    for (int i=0; i<flmFiles.size(); i++) {
-        // Update progress
-        progress.setValue(i);
-        progress.setLabelText(tr("Processing %1.flm ...").arg(flmStems[i].c_str()));
-		
-        // Load FLM into Lux engine
-        luxLoadFLM(flmFiles[i].c_str());
-        if (!luxStatistics("filmIsReady"))
-			continue;
-		
-        // Check for cancel
-        if (progress.wasCanceled())
-			break;
-		
-        // Make output filename
-        QString outName = QString("%1/%2.%3").arg(outDir)
-		.arg(flmStems[i].c_str())
-		.arg(outExtension);
-		
-        // Save loaded FLM
-        if (allLightGroups)
-			saveAllLightGroups(outName, asHDR);
-        else {
-            luxUpdateFramebuffer();
-			if (asHDR)
-				saveCurrentImageHDR(outName);
-			else
-				saveCurrentImageTonemapped(outName);
-        }
-		
-        // Check again for cancel
-        if (progress.wasCanceled())
-			break;
-    }
-	
-    // Reload last flm like the loadFLM function to make sure GUI is in sync
-    setCurrentFile(flmFiles[flmFiles.size()-1].c_str()); // show flm-name in windowheader
-    indicateActivity();
-    statusMessage->setText("Loading FLM...");
-	
-    // Start load thread
-    m_loadTimer->start(1000);
-    delete m_flmloadThread;
-    m_flmloadThread = new boost::thread(boost::bind(&MainWindow::flmLoadThread, this, flmFiles[flmFiles.size()-1].c_str()));
-	
-    // Finish progress
-    progress.setValue(flmFiles.size());
+
+	// Show modal progress dialog
+	if(batchProgress != NULL) delete batchProgress;
+	batchProgress = new QProgressDialog(tr("Processing ..."), tr("Cancel"), 0, 0, this);
+	batchProgress->setSizeGripEnabled(false);
+	batchProgress->setModal(true);
+	batchProgress->show();
+
+    // Execute in seperate thread
+    if(m_batchProcessThread != NULL) delete m_batchProcessThread;
+    m_batchProcessThread = new boost::thread(boost::bind(&MainWindow::batchProcessThread, this, inDir, outDir, outExtension, allLightGroups, asHDR));
 }
 
 // Stop rendering session entirely - this is different from stopping it; it's not resumable
@@ -1179,6 +1171,55 @@ void MainWindow::flmSaveThread(QString filename)
 	luxSaveFLM(filename.toStdString().c_str());
 
 	qApp->postEvent(this, new QEvent((QEvent::Type)EVT_LUX_SAVEDFLM));
+}
+
+void MainWindow::batchProcessThread(QString inDir, QString outDir, QString outExtension, bool allLightGroups, bool asHDR)
+{
+    // Find 'flm' files in the input directory
+    QVector<string> flmFiles, flmStems;
+    for(boost::filesystem::directory_iterator itr(inDir.toStdString());
+        itr != boost::filesystem::directory_iterator();
+        itr++)
+    {
+        const boost::filesystem::path curPath = itr->path();
+        if(curPath.extension() == ".flm")
+        {
+            flmFiles.push_back(curPath.string());
+            flmStems.push_back(curPath.stem());
+        }
+    }
+
+    // Process the 'flm' files
+    for(int i=0; i<flmFiles.size(); i++)
+    {
+        // Update progress
+        qApp->postEvent(this, new BatchEvent(QString(flmStems[i].c_str()), i, flmFiles.size()));
+
+        // Load FLM into Lux engine
+        luxLoadFLM(flmFiles[i].c_str());
+        if(!luxStatistics("filmIsReady")) continue;
+
+        // Check for cancel
+        if (batchProgress && batchProgress->wasCanceled()) return;
+
+        // Make output filename
+        QString outName = QString("%1/%2.%3").arg(outDir).arg(flmStems[i].c_str()).arg(outExtension);
+
+        // Save loaded FLM
+        if(allLightGroups) saveAllLightGroups(outName, asHDR);
+        else
+        {
+            luxUpdateFramebuffer();
+            if(asHDR) saveCurrentImageHDR(outName);
+            else saveCurrentImageTonemapped(outName);
+        }
+
+        // Check again for cancel
+        if (batchProgress && batchProgress->wasCanceled()) return;
+    }
+
+	// Signal completion
+	qApp->postEvent(this, new BatchEvent(flmFiles[flmFiles.size()-1].c_str(), flmFiles.size(), flmFiles.size()));
 }
 
 void MainWindow::SetRenderThreads(int num)
@@ -1552,8 +1593,24 @@ bool MainWindow::event (QEvent *event)
 	else if (eventtype == EVT_LUX_LOGEVENT) {
 		logEvent((LuxLogEvent *)event);
 		retval = TRUE;
+	}
+	else if (eventtype == EVT_LUX_BATCHEVENT) {
+		if(((BatchEvent*)event)->isFinished())
+		{
+			batchProgress->setMaximum(((BatchEvent*)event)->getTotal());
+			batchProgress->setValue(((BatchEvent*)event)->getNumCompleted());
+			loadFLM(((BatchEvent*)event)->getCurrentFile());
 		}
-	
+		else
+		{
+			batchProgress->setMaximum(((BatchEvent*)event)->getTotal());
+			batchProgress->setValue(((BatchEvent*)event)->getNumCompleted());
+			batchProgress->setLabelText(tr("Processing %1 ...").arg(((BatchEvent*)event)->getCurrentFile()));
+		}
+
+		retval = TRUE;
+	}
+
 	if (retval)
 		// Was our event, stop the event propagation
 		event->accept();

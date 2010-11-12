@@ -51,7 +51,7 @@
 #include <QSettings>
 #include <QTextCursor>
 #include <QtGui/QTabBar>
-
+#include <QtGui/QProgressDialog>
 
 #include "api.h"
 #include "renderview.hxx"
@@ -107,6 +107,20 @@ private:
 	QString _message;
 	int _severity;
 	int _code;
+};
+
+class BatchEvent: public QEvent {
+public:
+	BatchEvent(const QString &currentFile, const int &numCompleted, const int &total);
+
+	const QString& getCurrentFile() const { return _currentFile; }
+	const int& getNumCompleted() const { return _numCompleted; }
+	const int& getTotal() const { return _total; }
+	bool isFinished() const { return (_numCompleted == _total); }
+
+private:
+	QString _currentFile;
+	int _numCompleted, _total;
 };
 
 class luxTreeData
@@ -210,6 +224,8 @@ private:
 
 	QVector<PaneWidget*> m_LightGroupPanes;
 
+	QProgressDialog *batchProgress;
+
 	int m_numThreads;
 	bool m_copyLog2Console;
 
@@ -219,7 +235,10 @@ private:
 	
 	QTimer *m_renderTimer, *m_statsTimer, *m_loadTimer, *m_saveTimer, *m_netTimer, *m_blinkTimer;
 	
-	boost::thread *m_engineThread, *m_updateThread, *m_flmloadThread, *m_flmsaveThread;
+	boost::thread *m_engineThread, *m_updateThread, *m_flmloadThread, *m_flmsaveThread, *m_batchProcessThread;
+
+	bool openExrHalfFloats, openExrDepthBuffer;
+	int openExrCompressionType;
 
 	// Directory Handling
 	enum { MaxRecentFiles = 5 };
@@ -233,7 +252,8 @@ private:
 	void updateThread();
 	void flmLoadThread(QString filename);
 	void flmSaveThread(QString filename);
-	
+	void batchProcessThread(QString inDir, QString outDir, QString outExtension, bool allLightGroups, bool asHDR);
+
 	bool event (QEvent * event);
 
 	void logEvent(LuxLogEvent *event);
@@ -264,7 +284,7 @@ private slots:
 	void openFile ();
 	void openRecentFile();
 	void resumeFLM ();
-	void loadFLM ();
+	void loadFLM (QString flmFileName = QString());
 	void saveFLM ();
 	void resumeRender ();
 	void pauseRender ();
