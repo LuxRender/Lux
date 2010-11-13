@@ -100,6 +100,8 @@ void include_push(char *filename) {
 
 void include_pop(void)
 {
+	// close include file
+	fclose(yyin);
 	yy_delete_buffer(YY_CURRENT_BUFFER);
 	yy_switch_to_buffer(includeStack.back().bufState);
 	currentFile = includeStack.back().filename;
