@@ -66,23 +66,34 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, const float c
 
 	// Set Image Output parameters
 	clampMethod = cM;
+
 	write_EXR = cw_EXR;
+	AddBoolAttribute(*this, "write_EXR", "Write EXR image", write_EXR, &FlexImageFilm::write_EXR, Queryable::ReadWriteAccess);
 	write_EXR_halftype = cw_EXR_halftype;
+	AddBoolAttribute(*this, "write_EXR_halftype", "Write EXR half-float (16bit per channel)", write_EXR_halftype, &FlexImageFilm::write_EXR_halftype, Queryable::ReadWriteAccess);
 	write_EXR_applyimaging = cw_EXR_applyimaging;
+	AddBoolAttribute(*this, "write_EXR_applyimaging", "Write EXR with tonemapping", write_EXR_applyimaging, &FlexImageFilm::write_EXR_applyimaging, Queryable::ReadWriteAccess);
 	write_EXR_gamutclamp = cw_EXR_gamutclamp;
+	AddBoolAttribute(*this, "write_EXR_gamutclamp", "Clamp out of gamut colors in EXR", write_EXR_gamutclamp, &FlexImageFilm::write_EXR_gamutclamp, Queryable::ReadWriteAccess);
 	write_EXR_ZBuf = cw_EXR_ZBuf;
+	AddBoolAttribute(*this, "write_EXR_ZBuf", "Write EXR with Z-buffer", write_EXR_ZBuf, &FlexImageFilm::write_EXR_ZBuf, Queryable::ReadWriteAccess);
+	write_EXR_channels = cw_EXR_channels;
+	AddIntAttribute(*this, "write_EXR_channels", "Channels to add to EXR image { 0: Y, 1: YA, 2: RGB, 3: RGBA }", 0, &FlexImageFilm::write_EXR_channels, Queryable::ReadWriteAccess);
+	write_EXR_compressiontype = cw_EXR_compressiontype;
+	// AddIntAttribute(*this, "write_EXR_compressiontype", "EXR compression type { 0: RLE, 1: PIZ, 2: ZIP, 3: Pxr24 (lossy), 4: None }", 0, &FlexImageFilm::write_EXR_compressiontype, Queryable::ReadWriteAccess);
+	write_EXR_ZBuf_normalizationtype = cw_EXR_ZBuf_normalizationtype;
+	// AddIntAttribute(*this, "write_EXR_ZBuf_normalizationtype", "EXR Z-buffer normalization type { 0: None, 1: Camera Start/End, 2: Min/Max }", 0, &FlexImageFilm::write_EXR_ZBuf_normalizationtype, Queryable::ReadWriteAccess);
+
 	write_PNG = cw_PNG;
 	write_PNG_16bit = cw_PNG_16bit;
 	write_PNG_gamutclamp = cw_PNG_gamutclamp;
 	write_PNG_ZBuf = cw_PNG_ZBuf;
+	write_PNG_ZBuf_normalizationtype = cw_PNG_ZBuf_normalizationtype;
+	write_PNG_channels = cw_PNG_channels;
+
 	write_TGA = cw_TGA;
 	write_TGA_gamutclamp = cw_TGA_gamutclamp;
 	write_TGA_ZBuf = cw_TGA_ZBuf;
-	write_EXR_channels = cw_EXR_channels;
-	write_EXR_compressiontype = cw_EXR_compressiontype;
-	write_EXR_ZBuf_normalizationtype = cw_EXR_ZBuf_normalizationtype;
-	write_PNG_ZBuf_normalizationtype = cw_PNG_ZBuf_normalizationtype;
-	write_PNG_channels = cw_PNG_channels;
 	write_TGA_channels = cw_TGA_channels;
 	write_TGA_ZBuf_normalizationtype = cw_TGA_ZBuf_normalizationtype;
 

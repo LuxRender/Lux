@@ -121,7 +121,8 @@ private:
 	int displayInterval;
 	int write_EXR_compressiontype;
 	ZBufNormalization write_EXR_ZBuf_normalizationtype;
-	OutputChannels write_EXR_channels;
+	//OutputChannels write_EXR_channels;
+	int write_EXR_channels;
 	ZBufNormalization write_PNG_ZBuf_normalizationtype;
 	OutputChannels write_PNG_channels;
 	ZBufNormalization write_TGA_ZBuf_normalizationtype;
