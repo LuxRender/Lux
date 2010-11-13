@@ -2106,7 +2106,7 @@ void MainWindow::addQueueFiles()
 		// update haltspp/time
 		overrideHaltSppChanged(ui->spinBox_overrideHaltSpp->value());
 		overrideHaltTimeChanged(ui->spinBox_overrideHaltTime->value());
-		if (ui->checkBox_overrideWriteFlm->isChecked());
+		if (ui->checkBox_overrideWriteFlm->isChecked())
 			overrideWriteFlmChanged(true);
 	}
 
