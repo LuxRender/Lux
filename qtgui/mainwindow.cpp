@@ -436,6 +436,7 @@ void MainWindow::ReadSettings()
 	m_recentFiles = settings.value("recentFiles").toStringList();
 	m_lastOpendir = settings.value("lastOpenDir","").toString();
 	ui->action_overlayStats->setChecked(settings.value("overlayStatistics").toBool());
+	ui->action_HDR_tonemapped->setChecked(settings.value("tonemappedHDR").toBool());
 	settings.endGroup();
 
 	updateRecentFileActions();
@@ -451,6 +452,7 @@ void MainWindow::WriteSettings()
 	settings.setValue("recentFiles", m_recentFiles);
 	settings.setValue("lastOpenDir", m_lastOpendir);
 	settings.setValue("overlayStatistics", ui->action_overlayStats->isChecked());
+	settings.setValue("tonemappedHDR", ui->action_HDR_tonemapped->isChecked());
 	settings.endGroup();
 }
 
@@ -854,7 +856,10 @@ bool MainWindow::saveCurrentImageTonemapped(const QString &outFile)
 bool MainWindow::saveCurrentImageHDR(const QString &outFile)
 {
 	// Done inside API for now (set openExr* members to control OpenEXR format options)
-	luxSaveEXR(outFile.toAscii().data(), openExrHalfFloats, openExrDepthBuffer, openExrCompressionType, false);
+	if (ui->action_HDR_tonemapped->isChecked())
+		luxSaveEXR(outFile.toAscii().data(), openExrHalfFloats, openExrDepthBuffer, openExrCompressionType, true);
+	else
+		luxSaveEXR(outFile.toAscii().data(), openExrHalfFloats, openExrDepthBuffer, openExrCompressionType, false);
 	return true;
 }
 
@@ -943,8 +948,11 @@ bool MainWindow::saveAllLightGroups(const QString &outFilename, const bool &asHD
 		QString outputName = QString("%1/%2-%3").arg(filenamePath.parent_path().string().c_str())
 			.arg(filenamePath.stem().c_str()).arg(lgName);
 
-		if (asHDR) 
-			luxSaveEXR(QString("%1.exr").arg(outputName).toAscii().data(), openExrHalfFloats, openExrDepthBuffer, openExrCompressionType, false);
+		if (asHDR)
+			if (ui->action_HDR_tonemapped->isChecked())
+				luxSaveEXR(QString("%1.exr").arg(outputName).toAscii().data(), openExrHalfFloats, openExrDepthBuffer, openExrCompressionType, true);
+			else
+				luxSaveEXR(QString("%1.exr").arg(outputName).toAscii().data(), openExrHalfFloats, openExrDepthBuffer, openExrCompressionType, false);
 		else {
 			unsigned char* fb = luxFramebuffer();
 			if(fb != NULL) {
