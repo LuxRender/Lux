@@ -398,11 +398,10 @@ void SamplerRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 	// Trace rays: The main loop
 	while (true) {
 		if (!sampler->GetNextSample(&sample)) {
-			renderer->Terminate();
-
 			// Dade - we have done, check what we have to do now
 			if (renderer->suspendThreadsWhenDone) {
 				// Dade - wait for a resume rendering or exit
+				renderer->Pause();
 				while (renderer->state == PAUSE) {
 					boost::xtime xt;
 					boost::xtime_get(&xt, boost::TIME_UTC);
@@ -414,8 +413,10 @@ void SamplerRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 					break;
 				else
 					continue;
-			} else
+			} else {
+				renderer->Terminate();
 				break;
+			}
 		}
 
 		// save ray time value

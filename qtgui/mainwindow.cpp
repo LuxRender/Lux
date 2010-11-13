@@ -678,11 +678,15 @@ void MainWindow::resumeRender()
 		m_statsTimer->start(1000);
 		m_netTimer->start(10000);
 
+		if (m_guiRenderState == STOPPED) {
+			// reset flags, keep haltspp
+			int haltspp = luxGetIntAttribute("film", "haltSamplesPerPixel");
+			luxSetHaltSamplesPerPixel(haltspp, false, false);
+		}
+
 		if (m_guiRenderState == PAUSED || m_guiRenderState == STOPPED) // Only re-start if we were previously stopped
 			luxStart();
 		
-		if (m_guiRenderState == STOPPED)
-			luxSetHaltSamplesPerPixel(-1, false, false);
 		changeRenderState(RENDERING);
 		showRenderresolution();
 		showZoomfactor();
@@ -716,7 +720,8 @@ void MainWindow::stopRender()
 			m_statsTimer->start(1000);
 
 		// Make sure lux core stops
-		luxSetHaltSamplesPerPixel(1, true, true);
+		int haltspp = luxGetIntAttribute("film", "haltSamplesPerPixel");
+		luxSetHaltSamplesPerPixel(haltspp, true, true);
 		
 		statusMessage->setText(tr("Waiting for render threads to stop."));
 		changeRenderState(STOPPING);
@@ -2083,6 +2088,13 @@ void MainWindow::addQueueFiles()
 	if (files.empty())
 		return;
 
+	// scrub filenames, due to a bug in Qt 4.6.2 (at least)
+	// it will return paths with \ instead of / which it should
+	for (int i = 0; i < files.count(); i++) {
+		files[i] = QDir::fromNativeSeparators(files[i]);
+	}
+
+
 	int row = ui->table_queue->rowCount();
 
 	if (m_guiRenderState == RENDERING && !IsFileInQueue(m_CurrentFile)) {
@@ -2090,6 +2102,12 @@ void MainWindow::addQueueFiles()
 		// first ensure it's not in the selected files already
 		if (files.indexOf(m_CurrentFile) < 0)
 			files.insert(0, m_CurrentFile);
+
+		// update haltspp/time
+		overrideHaltSppChanged(ui->spinBox_overrideHaltSpp->value());
+		overrideHaltTimeChanged(ui->spinBox_overrideHaltTime->value());
+		if (ui->checkBox_overrideWriteFlm->isChecked());
+			overrideWriteFlmChanged(true);
 	}
 
 
@@ -2100,8 +2118,11 @@ void MainWindow::addQueueFiles()
 			continue;
 
 		QTableWidgetItem *filename = new QTableWidgetItem(files[i]);
-		QTableWidgetItem *status = new QTableWidgetItem("");				
+		QTableWidgetItem *status = new QTableWidgetItem("");
 		QTableWidgetItem *pass = new QTableWidgetItem("0");
+
+		if (files[i] == m_CurrentFile)
+			status->setText(tr("Rendering"));
 
 		ui->table_queue->insertRow(row);
 
@@ -2214,9 +2235,11 @@ bool MainWindow::RenderNextFileInQueue()
 
 	if (idx >= 0) {
 		QTableWidgetItem *status = ui->table_queue->item(idx, 1);
-		status->setText("Completed " + QDateTime::currentDateTime().toString(Qt::DefaultLocaleShortDate));
+		status->setText(tr("Completed ") + QDateTime::currentDateTime().toString(Qt::DefaultLocaleShortDate));
 		LOG(LUX_INFO,LUX_NOERROR) << "==== Queued file '" << m_CurrentFileBaseName.toStdString() << "' done ====";
 	}
+
+	ui->table_queue->resizeColumnsToContents();
 
 	// render next
 	if (++idx >= ui->table_queue->rowCount()) {
@@ -2232,7 +2255,7 @@ bool MainWindow::RenderNextFileInQueue()
 	QTableWidgetItem *status = ui->table_queue->item(idx, 1);
 	QTableWidgetItem *pass = ui->table_queue->item(idx, 2);
 
-	status->setText("Rendering");
+	status->setText(tr("Rendering"));
 	pass->setText(QString("%1").arg(pass->text().toInt() + 1));
 
 	ui->table_queue->resizeColumnsToContents();
