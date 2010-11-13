@@ -85,6 +85,12 @@ public:
 		x *= inv; y *= inv; z *= inv;
 		return *this;
 	}
+	bool operator==(const Point &p) const {
+		return x == p.x && y == p.y && z == p.z;
+	}
+	bool operator!=(const Point &p) const {
+		return x != p.x || y != p.y || z != p.z;
+	}
 	float operator[](int i) const { return (&x)[i]; }
 	float &operator[](int i) { return (&x)[i]; }
 	// Point Public Data

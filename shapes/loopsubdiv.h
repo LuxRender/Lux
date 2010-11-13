@@ -20,7 +20,7 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// loopsubdiv.cpp*
+// loopsubdiv.h*
 #include "shape.h"
 #include "texture.h"
 #include "error.h"
@@ -45,9 +45,8 @@ struct SDVertex {
 	}
 
 	// SDVertex Methods
-	u_int valence();
-	void oneRing(Point *P);
-	void oneRing(SDVertex **V);
+	u_int valence() const;
+	void oneRing(Point *P) const;
 
 	Point P;
 	float u, v;
@@ -67,29 +66,57 @@ struct SDFace {
 			children[i] = NULL;
 	}
 	// SDFace Methods
-	u_int vnum(SDVertex *vert) const {
+/*	u_int vnum(SDVertex *vert) const {
 		for (u_int i = 0; i < 3; ++i) {
 			if (v[i] == vert)
 				return i;
 		}
 		LOG(LUX_SEVERE,LUX_BUG)<<"Basic logic error in SDFace::vnum()";
 		return 0;
+	}*/
+	u_int vnum(const Point &p) const {
+		for (u_int i = 0; i < 3; ++i) {
+			if (v[i]->P == p)
+				return i;
+		}
+		LOG(LUX_SEVERE,LUX_BUG)<<"Basic logic error in SDFace::vnum()";
+		return 0;
 	}
-	SDFace *nextFace(SDVertex *vert) {
+/*	SDFace *nextFace(SDVertex *vert) const {
 		return f[vnum(vert)];
 	}
-	SDFace *prevFace(SDVertex *vert) {
+	SDFace *prevFace(SDVertex *vert) const {
 		return f[PREV(vnum(vert))];
 	}
-	SDVertex *nextVert(SDVertex *vert) {
+	SDVertex *nextVert(SDVertex *vert) const {
 		return v[NEXT(vnum(vert))];
 	}
-	SDVertex *prevVert(SDVertex *vert) {
+	SDVertex *prevVert(SDVertex *vert) const {
 		return v[PREV(vnum(vert))];
+	}*/
+	SDFace *nextFace(const Point &p) const {
+		return f[vnum(p)];
 	}
-	SDVertex *otherVert(SDVertex *v0, SDVertex *v1) {
+	SDFace *prevFace(const Point &p) const {
+		return f[PREV(vnum(p))];
+	}
+	SDVertex *nextVert(const Point &p) const {
+		return v[NEXT(vnum(p))];
+	}
+	SDVertex *prevVert(const Point &p) const {
+		return v[PREV(vnum(p))];
+	}
+/*	SDVertex *otherVert(SDVertex *v0, SDVertex *v1) const {
 		for (u_int i = 0; i < 3; ++i) {
 			if (v[i] != v0 && v[i] != v1)
+				return v[i];
+		}
+		LOG(LUX_SEVERE,LUX_BUG)<<"Basic logic error in SDVertex::otherVert()";
+		return NULL;
+	}*/
+	SDVertex *otherVert(const Point &p0, const Point &p1) const {
+		for (u_int i = 0; i < 3; ++i) {
+			if (v[i]->P != p0 && v[i]->P != p1)
 				return v[i];
 		}
 		LOG(LUX_SEVERE,LUX_BUG)<<"Basic logic error in SDVertex::otherVert()";
@@ -102,18 +129,28 @@ struct SDFace {
 
 struct SDEdge {
 	// SDEdge Constructor
-	SDEdge(SDVertex *v0 = NULL, SDVertex *v1 = NULL) {
-		v[0] = min(v0, v1);
-		v[1] = max(v0, v1);
+	SDEdge(const Point &p0, const Point &p1) {
+		if (PInf(p0, p1)) {
+			p[0] = p0;
+			p[1] = p1;
+		} else {
+			p[0] = p1;
+			p[1] = p0;
+		}
 		f[0] = f[1] = NULL;
 		f0edgeNum = 0;
 	}
 	// SDEdge Comparison Function
-	bool operator<(const SDEdge &e2) const {
-		if (v[0] == e2.v[0]) return v[1] < e2.v[1];
-		return v[0] < e2.v[0];
+	bool PInf(const Point &p1, const Point &p2) const {
+		if (p1.x == p2.x)
+			return p1.y == p2.y ? p1.z < p2.z : p1.y < p2.y;
+		return p1.x < p2.x;
 	}
-	SDVertex *v[2];
+	bool operator<(const SDEdge &e2) const {
+		if (p[0] == e2.p[0]) return PInf(p[1], e2.p[1]);
+		return PInf(p[0], e2.p[0]);
+	}
+	Point p[2];
 	SDFace *f[2];
 	u_int f0edgeNum;
 };
@@ -197,25 +234,39 @@ private:
 };
 
 // LoopSubdiv Inline Functions
-inline u_int SDVertex::valence() {
+inline u_int SDVertex::valence() const {
 	SDFace *f = startFace;
 	if (!boundary) {
 		// Compute valence of interior vertex
 		u_int nf = 0;
 		do {
-			f = f->nextFace(this);
+			SDVertex *v = f->v[f->vnum(P)];
+			if (v->startFace != startFace)
+				v->startFace = startFace;
 			++nf;
+			f = f->nextFace(v->P);
 		} while (f != startFace);
 		return nf;
 	} else {
 		// Compute valence of boundary vertex
-		u_int nf = 1;
-		while ((f = f->nextFace(this)) != NULL)
+		u_int nf = 0;
+		while (f) {
+			SDVertex *v = f->v[f->vnum(P)];
+			if (v->startFace != startFace)
+				v->startFace = startFace;
 			++nf;
+			f = f->nextFace(v->P);
+		}
+
 		f = startFace;
-		while ((f = f->prevFace(this)) != NULL)
+		while (f) {
+			SDVertex *v = f->v[f->vnum(P)];
+			if (v->startFace != startFace)
+				v->startFace = startFace;
 			++nf;
-		return nf+1;
+			f = f->prevFace(v->P);
+		}
+		return nf;
 	}
 }
 

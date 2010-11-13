@@ -83,7 +83,7 @@ LoopSubdiv::LoopSubdiv(const Transform &o2w, bool ro,
 		for (u_int edgeNum = 0; edgeNum < 3; ++edgeNum) {
 			// Update neighbor pointer for _edgeNum_
 			u_int v0 = edgeNum, v1 = NEXT(edgeNum);
-			SDEdge e(f->v[v0], f->v[v1]);
+			SDEdge e(f->v[v0]->P, f->v[v1]->P);
 			if (edges.find(e) == edges.end()) {
 				// Handle new edge
 				e.f[0] = f;
@@ -98,10 +98,10 @@ LoopSubdiv::LoopSubdiv(const Transform &o2w, bool ro,
 				// other face is opposite of the 
 				// current face, otherwise we have 
 				// inconsistent winding
-				u_int otherv0 = e.f[0]->vnum(f->v[v0]);
-				u_int otherv1 = e.f[0]->vnum(f->v[v1]);
+				u_int otherv0 = e.f[0]->vnum(f->v[v0]->P);
+				u_int otherv1 = e.f[0]->vnum(f->v[v1]->P);
 				if (PREV(otherv0) != otherv1) {
-					LOG( LUX_ERROR,LUX_CONSISTENCY)<< "Inconsistent vertex winding in mesh, aborting subdivision.";
+					LOG(LUX_ERROR,LUX_CONSISTENCY)<< "Inconsistent vertex winding in mesh, aborting subdivision.";
 					// prevent subdivision
 					nLevels = 0;
 					return;
@@ -116,7 +116,7 @@ LoopSubdiv::LoopSubdiv(const Transform &o2w, bool ro,
 		SDVertex *v = vertices[i];
 		SDFace *f = v->startFace;
 		do {
-			f = f->nextFace(v);
+			f = f->nextFace(v->P);
 		} while (f && f != v->startFace);
 		v->boundary = (f == NULL);
 		if (!v->boundary && v->valence() == 6)
@@ -173,118 +173,130 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 		vector<SDVertex *> newVertices;
 
 		// Allocate next level of children in mesh tree
+		newVertices.reserve(v.size());
 		for (u_int j = 0; j < v.size(); ++j) {
 			v[j]->child = vertexArena.construct();//new (vertexArena) SDVertex;
 			v[j]->child->regular = v[j]->regular;
 			v[j]->child->boundary = v[j]->boundary;
 			newVertices.push_back(v[j]->child);
 		}
-		for (u_int j = 0; j < f.size(); ++j)
+		newFaces.reserve(f.size());
+		for (u_int j = 0; j < f.size(); ++j) {
 			for (u_int k = 0; k < 4; ++k) {
 				f[j]->children[k] = faceArena.construct();//new (faceArena) SDFace;
 				newFaces.push_back(f[j]->children[k]);
 			}
+		}
 
 		// Update vertex positions and create new edge vertices
 		// Update vertex positions for even vertices
 		for (u_int j = 0; j < v.size(); ++j) {
-			if (!v[j]->boundary) {
+			SDVertex *vert = v[j];
+			if (!vert->boundary) {
 				// Apply one-ring rule for even vertex
-				if (v[j]->regular)
-					weightOneRing(v[j]->child, v[j], 1.f/16.f);
+				if (vert->regular)
+					weightOneRing(vert->child, vert, 1.f/16.f);
 				else
-					weightOneRing(v[j]->child, v[j], beta(v[j]->valence()));
+					weightOneRing(vert->child, vert, beta(vert->valence()));
 			} else {
 				// Apply boundary rule for even vertex
-				weightBoundary(v[j]->child, v[j], 1.f/8.f);
+				weightBoundary(vert->child, vert, 1.f/8.f);
 			}
+			// Update even vertex face pointers
+			const SDFace *sf = vert->startFace;
+			vert->child->startFace = sf->children[sf->vnum(vert->P)];
 		}
 
 		// Compute new odd edge vertices
+		// Update new mesh topology
 		map<SDEdge, SDVertex *> edgeVerts;
 		for (u_int j = 0; j < f.size(); ++j) {
 			SDFace *face = f[j];
 			for (u_int k = 0; k < 3; ++k) {
-				// Compute odd vertex on _k_th edge
-				SDEdge edge(face->v[k], face->v[NEXT(k)]);
-				SDVertex *vert = edgeVerts[edge];
-				if (!vert) {
-					// Create and initialize new odd vertex
-					vert = vertexArena.construct();//new (vertexArena) SDVertex;
-					newVertices.push_back(vert);
-					vert->regular = true;
-					vert->boundary = (face->f[k] == NULL);
-					vert->startFace = face->children[3];
-					// Apply edge rules to compute new vertex position
-					if (vert->boundary) {
-						vert->P =  0.5f * edge.v[0]->P;
-						vert->P += 0.5f * edge.v[1]->P;
-
-						vert->u = 0.5f * (edge.v[0]->u + edge.v[1]->u);
-						vert->v = 0.5f * (edge.v[0]->v + edge.v[1]->v);
-					} else {
-						vert->P =  3.f/8.f * edge.v[0]->P;
-						vert->P += 3.f/8.f * edge.v[1]->P;
-						SDVertex *ov1 = face->otherVert(edge.v[0], edge.v[1]);
-						vert->P += 1.f/8.f * ov1->P;
-						SDVertex *ov2 = face->f[k]->otherVert(edge.v[0], edge.v[1]);
-						vert->P += 1.f/8.f * ov2->P;
-
-						vert->u = 3.f/8.f * edge.v[0]->u;
-						vert->u += 3.f/8.f * edge.v[1]->u;
-						vert->u += 1.f/8.f * ov1->u;
-						vert->u += 1.f/8.f * ov2->u;
-
-						vert->v = 3.f/8.f * edge.v[0]->v;
-						vert->v += 3.f/8.f * edge.v[1]->v;
-						vert->v += 1.f/8.f * ov1->v;
-						vert->v += 1.f/8.f * ov2->v;
-					}
-					edgeVerts[edge] = vert;
-				}
-			}
-		}
-
-		// Update new mesh topology
-		// Update even vertex face pointers
-		for (u_int j = 0; j < v.size(); ++j) {
-			SDVertex *vert = v[j];
-			u_int vertNum = vert->startFace->vnum(vert);
-			vert->child->startFace =
-			    vert->startFace->children[vertNum];
-		}
-
-		// Update face neighbor pointers
-		for (u_int j = 0; j < f.size(); ++j) {
-			SDFace *face = f[j];
-			for (u_int k = 0; k < 3; ++k) {
+				// Update face neighbor pointers
 				// Update children _f_ pointers for siblings
 				face->children[3]->f[k] = face->children[NEXT(k)];
 				face->children[k]->f[NEXT(k)] = face->children[3];
 				// Update children _f_ pointers for neighbor children
-				SDFace *f2 = face->f[k];
-				face->children[k]->f[k] =
-					f2 ? f2->children[f2->vnum(face->v[k])] : NULL;
-				f2 = face->f[PREV(k)];
+				SDFace *f2 = face->f[PREV(k)];
 				face->children[k]->f[PREV(k)] =
-					f2 ? f2->children[f2->vnum(face->v[k])] : NULL;
-			}
-		}
-
-		// Update face vertex pointers
-		for (u_int j = 0; j < f.size(); ++j) {
-			SDFace *face = f[j];
-			for (u_int k = 0; k < 3; ++k) {
+					f2 ? f2->children[f2->vnum(face->v[k]->P)] : NULL;
+				f2 = face->f[k];
+				face->children[k]->f[k] =
+					f2 ? f2->children[f2->vnum(face->v[k]->P)] : NULL;
 				// Update child vertex pointer to new even vertex
 				face->children[k]->v[k] = face->v[k]->child;
+				// Compute odd vertex on _k_th edge
+				SDVertex *v0 = face->v[k], *v1 = face->v[NEXT(k)];
+				SDEdge edge(v0->P, v1->P);
+				SDVertex *vert = edgeVerts[edge];
+				if (!vert) {
+					edge.f[0] = face;
+					edge.f0edgeNum = k;
+					// Create and initialize new odd vertex
+					vert = vertexArena.construct();//new (vertexArena) SDVertex;
+					newVertices.push_back(vert);
+					vert->regular = true;
+					vert->boundary = (f2 == NULL);
+					vert->startFace = face->children[3];
+					// Apply edge rules to compute new vertex position
+					if (vert->boundary) {
+						vert->P =  0.5f * (v0->P + v1->P);
+
+						vert->u = 0.5f * (v0->u + v1->u);
+						vert->v = 0.5f * (v0->v + v1->v);
+					} else {
+						SDVertex *ov1 = face->v[PREV(k)];
+						SDVertex *ov2 = f2->otherVert(edge.p[0], edge.p[1]);
+						vert->P =  3.f/8.f * (v0->P + v1->P);
+						vert->P += 1.f/8.f * (ov1->P + ov2->P);
+
+						// If UV are different on each side of the edge interpolate as boundary
+						if (f2->v[f2->vnum(v0->P)]->u == v0->u &&
+							f2->v[f2->vnum(v0->P)]->v == v0->v &&
+							f2->v[f2->vnum(v1->P)]->u == v1->u &&
+							f2->v[f2->vnum(v1->P)]->v == v1->v) {
+							vert->u = 3.f/8.f * (v0->u + v1->u);
+							vert->u += 1.f/8.f * (ov1->u + ov2->u);
+
+							vert->v = 3.f/8.f * (v0->v + v1->v);
+							vert->v += 1.f/8.f * (ov1->v + ov2->v);
+						} else {
+							vert->u = 0.5f * (v0->u + v1->u);
+							vert->v = 0.5f * (v0->v + v1->v);
+						}
+					}
+					edgeVerts[edge] = vert;
+				} else {
+					// If UV are different on each side of the edge create a new vertex
+					if (!vert->boundary &&
+						(f2->v[f2->vnum(v0->P)]->u != v0->u ||
+						f2->v[f2->vnum(v0->P)]->v != v0->v ||
+						f2->v[f2->vnum(v1->P)]->u != v1->u ||
+						f2->v[f2->vnum(v1->P)]->v != v1->v)) {
+						const Point &P(vert->P);
+						SDFace *startFace = vert->startFace;
+						vert = vertexArena.construct();//new (vertexArena) SDVertex;
+						newVertices.push_back(vert);
+						vert->regular = true;
+						vert->boundary = false;
+						vert->startFace = startFace;
+						// Standard point interpolation
+						vert->P =  P;
+						// Boundary interpolation for UV
+						vert->u = 0.5f * (v0->u + v1->u);
+						vert->v = 0.5f * (v0->v + v1->v);
+					}
+					edgeVerts.erase(edge);
+				}
+				// Update face vertex pointers
 				// Update child vertex pointer to new odd vertex
-				SDVertex *vert =
-					edgeVerts[SDEdge(face->v[k], face->v[NEXT(k)])];
 				face->children[k]->v[NEXT(k)] = vert;
 				face->children[NEXT(k)]->v[k] = vert;
 				face->children[3]->v[k] = vert;
 			}
 		}
+		edgeVerts.clear();
 
 		// Prepare for next level of subdivision
 		f = newFaces;
@@ -473,7 +485,23 @@ void LoopSubdiv::weightOneRing(SDVertex *destVert, SDVertex *vert, float beta) c
 	// Put _vert_ one-ring in _Pring_
 	u_int valence = vert->valence();
 	SDVertex **Vring = (SDVertex **)alloca(valence * sizeof(SDVertex *));
-	vert->oneRing(Vring);
+	SDVertex **VR = Vring;
+	// Get one ring vertices for interior vertex
+	SDFace *face = vert->startFace;
+	bool uvSplit = false;
+	do {
+		SDVertex *v = face->v[face->vnum(vert->P)];
+		if (v->u != vert->u || v->v != vert->v)
+			uvSplit = true;
+		SDVertex *v2 = face->nextVert(vert->P);
+		float vu = v2->u;
+		float vv = v2->v;
+		*VR++ = v2;
+		face = face->nextFace(vert->P);
+		v2 = face->prevVert(vert->P);
+		if (vu != v2->u || vv != v2->v)
+			uvSplit = true;
+	} while (face != vert->startFace);
 
 	Point P = (1 - valence * beta) * vert->P;
 	float u = (1 - valence * beta) * vert->u;
@@ -486,51 +514,32 @@ void LoopSubdiv::weightOneRing(SDVertex *destVert, SDVertex *vert, float beta) c
 	}
 
 	destVert->P = P;
-	destVert->u = u;
-	destVert->v = v;
-}
-
-void SDVertex::oneRing(SDVertex **V) {
-	if (!boundary) {
-		// Get one ring vertices for interior vertex
-		SDFace *face = startFace;
-		do {
-			*V = face->nextVert(this);
-			V++;
-			face = face->nextFace(this);
-		} while (face != startFace);
+	if (uvSplit) {
+		destVert->u = vert->u;
+		destVert->v = vert->v;
 	} else {
-		// Get one ring vertices for boundary vertex
-		SDFace *face = startFace, *f2;
-		while ((f2 = face->nextFace(this)) != NULL)
-			face = f2;
-		*V = face->nextVert(this);
-		V++;
-		do {
-			*V = face->prevVert(this);
-			V++;
-			face = face->prevFace(this);
-		} while (face != NULL);
+		destVert->u = u;
+		destVert->v = v;
 	}
 }
 
-void SDVertex::oneRing(Point *P) {
+void SDVertex::oneRing(Point *Pring) const {
 	if (!boundary) {
 		// Get one ring vertices for interior vertex
 		SDFace *face = startFace;
 		do {
-			*P++ = face->nextVert(this)->P;
-			face = face->nextFace(this);
+			*Pring++ = face->nextVert(P)->P;
+			face = face->nextFace(P);
 		} while (face != startFace);
 	} else {
 		// Get one ring vertices for boundary vertex
 		SDFace *face = startFace, *f2;
-		while ((f2 = face->nextFace(this)) != NULL)
+		while ((f2 = face->nextFace(P)) != NULL)
 			face = f2;
-		*P++ = face->nextVert(this)->P;
+		*Pring++ = face->nextVert(P)->P;
 		do {
-			*P++ = face->prevVert(this)->P;
-			face = face->prevFace(this);
+			*Pring++ = face->prevVert(P)->P;
+			face = face->prevFace(P);
 		} while (face != NULL);
 	}
 }
@@ -540,7 +549,31 @@ void LoopSubdiv::weightBoundary(SDVertex *destVert,  SDVertex *vert,
 	// Put _vert_ one-ring in _Pring_
 	u_int valence = vert->valence();
 	SDVertex **Vring = (SDVertex **)alloca(valence * sizeof(SDVertex *));
-	vert->oneRing(Vring);
+	SDVertex **VR = Vring;
+	// Get one ring vertices for boundary vertex
+	SDFace *face = vert->startFace, *f2;
+	// Go to the last face in the list
+	while ((f2 = face->nextFace(vert->P)) != NULL)
+		face = f2;
+	// Add the last vertex (on the boundary)
+	*VR++ = face->nextVert(vert->P);
+	// Add all vertices up to the first one (on the boundary)
+	bool uvSplit = false;
+	do {
+		SDVertex *v = face->v[face->vnum(vert->P)];
+		if (v->u != vert->u || v->v != vert->v)
+			uvSplit = true;
+		SDVertex *v2 = face->prevVert(vert->P);
+		float vu = v2->u;
+		float vv = v2->v;
+		*VR++ = v2;
+		face = face->prevFace(vert->P);
+		if (face) {
+			v2 = face->nextVert(vert->P);
+			if (vu != v2->u || vv != v2->v)
+				uvSplit = true;
+		}
+	} while (face != NULL);
 
 	if(!displacementMapSharpBoundary) {
 		Point P = (1 - 2 * beta) * vert->P;
@@ -548,14 +581,17 @@ void LoopSubdiv::weightBoundary(SDVertex *destVert,  SDVertex *vert,
 		P += beta * Vring[valence - 1]->P;
 		destVert->P = P;
 
-		float u = (1 - 2 * beta) * vert->u;
-		float v = (1 - 2 * beta) * vert->v;
-		u += beta * Vring[0]->u;
-		v += beta * Vring[0]->v;
-		u += beta * Vring[valence - 1]->u;
-		v += beta * Vring[valence - 1]->v;
-		destVert->u = u;
-		destVert->v = v;
+		if (uvSplit) {
+			destVert->u = vert->u;
+			destVert->v = vert->v;
+		} else {
+			float u = (1.f - 2.f * beta) * vert->u;
+			float v = (1.f - 2.f * beta) * vert->v;
+			u += beta * (Vring[0]->u + Vring[valence - 1]->u);
+			v += beta * (Vring[0]->v + Vring[valence - 1]->v);
+			destVert->u = u;
+			destVert->v = v;
+		}
 	} else {
 		destVert->P = vert->P;
 		destVert->u = vert->u;
