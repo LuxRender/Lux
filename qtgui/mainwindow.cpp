@@ -854,7 +854,7 @@ bool MainWindow::saveCurrentImageTonemapped(const QString &outFile)
 bool MainWindow::saveCurrentImageHDR(const QString &outFile)
 {
 	// Done inside API for now (set openExr* members to control OpenEXR format options)
-	luxSaveEXR(outFile.toAscii().data(), openExrHalfFloats, openExrDepthBuffer, openExrCompressionType);
+	luxSaveEXR(outFile.toAscii().data(), openExrHalfFloats, openExrDepthBuffer, openExrCompressionType, false);
 	return true;
 }
 
@@ -944,7 +944,7 @@ bool MainWindow::saveAllLightGroups(const QString &outFilename, const bool &asHD
 			.arg(filenamePath.stem().c_str()).arg(lgName);
 
 		if (asHDR) 
-			luxSaveEXR(QString("%1.exr").arg(outputName).toAscii().data(), openExrHalfFloats, openExrDepthBuffer, openExrCompressionType);
+			luxSaveEXR(QString("%1.exr").arg(outputName).toAscii().data(), openExrHalfFloats, openExrDepthBuffer, openExrCompressionType, false);
 		else {
 			unsigned char* fb = luxFramebuffer();
 			if(fb != NULL) {

@@ -103,7 +103,7 @@ void luxSaveFLM(const char* name);
 void luxOverrideResumeFLM(const char *name);
 
 /* Write film to a floating point OpenEXR image */
-void luxSaveEXR(const char* name, const bool &useHalfFloat, const bool &includeZBuffer, const int &compressionType);
+void luxSaveEXR(const char* name, bool useHalfFloat, bool includeZBuffer, int compressionType, bool tonemapped);
 
 /* User interactive thread functions */
 void luxStart();

@@ -540,9 +540,9 @@ extern "C" void luxOverrideResumeFLM(const char *name)
 }
 
 // Write film to a floating point OpenEXR image
-extern "C" void luxSaveEXR(const char* name, const bool &useHalfFloat, const bool &includeZBuffer, const int &compressionType)
+extern "C" void luxSaveEXR(const char* name, bool useHalfFloat, bool includeZBuffer, int compressionType, bool tonemapped)
 {
-	Context::GetActive()->SaveEXR(string(name), useHalfFloat, includeZBuffer, compressionType);
+	Context::GetActive()->SaveEXR(string(name), useHalfFloat, includeZBuffer, compressionType, tonemapped);
 }
 
 //interactive control

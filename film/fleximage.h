@@ -59,7 +59,7 @@ public:
 		delete[] framebuffer;
 	}	
 
-	virtual void SaveEXR(const string &pExrFilename, const bool &pUseHalfFloats, const bool &pIncludeZBuf, const int &pCompressionType);
+	virtual void SaveEXR(const string &exrFilename, bool useHalfFloats, bool includeZBuf, int compressionType, bool tonemapped);
 	virtual void WriteImage(ImageType type);
 	virtual void CheckWriteOuputInterval();
 
@@ -86,6 +86,7 @@ public:
 private:
 	static void GetColorspaceParam(const ParamSet &params, const string name, float values[2]);
 
+	vector<RGBColor>& ApplyPipeline(const ColorSystem &colorSpace, vector<XYZColor> &color);
 	void WriteImage2(ImageType type, vector<XYZColor> &color, vector<float> &alpha, string postfix);
 	void WriteTGAImage(vector<RGBColor> &rgb, vector<float> &alpha, const string &filename);
 	void WritePNGImage(vector<RGBColor> &rgb, vector<float> &alpha, const string &filename);

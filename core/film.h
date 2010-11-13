@@ -387,7 +387,9 @@ public:
 
 	virtual void AddSample(Contribution *contrib);
 	virtual void AddSampleCount(float count);
-	virtual void SaveEXR(const string &pExrFilename, const bool &pUseHalfFloats, const bool &pIncludeZBuf, const int &pCompressionType) = 0;
+	virtual void SaveEXR(const string &exrFilename, bool useHalfFloats, bool includeZBuf, int compressionType, bool tonemapped) {
+		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SaveEXR not implemented";
+	}
 	virtual void WriteImage(ImageType type) = 0;
 	virtual void WriteFilm(const string &fname) { WriteResumeFilm(fname); }
 	virtual void CheckWriteOuputInterval() { }
@@ -503,7 +505,7 @@ private:
 void ApplyImagingPipeline(vector<XYZColor> &pixels,
 	u_int xResolution, u_int yResolution, 
 	const GREYCStorationParams &GREYCParams, const ChiuParams &chiuParams,
-	ColorSystem &colorSpace, Histogram *histogram, bool HistogramEnabled,
+	const ColorSystem &colorSpace, Histogram *histogram, bool HistogramEnabled,
 	bool &haveBloomImage, XYZColor *&bloomImage, bool bloomUpdate,
 	float bloomRadius, float bloomWeight,
 	bool VignettingEnabled, float VignetScale,

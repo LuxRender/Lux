@@ -44,8 +44,8 @@ void Scene::SaveFLM( const string& filename ) {
 	camera->film->WriteFilm(filename);
 }
 
-void Scene::SaveEXR( const string& filename, const bool &useHalfFloat, const bool &includeZBuffer, const int &compressionType ) {
-	camera->film->SaveEXR(filename, useHalfFloat, includeZBuffer, compressionType);
+void Scene::SaveEXR(const string& filename, bool useHalfFloat, bool includeZBuffer, int compressionType, bool tonemapped) {
+	camera->film->SaveEXR(filename, useHalfFloat, includeZBuffer, compressionType, tonemapped);
 }
 
 // Framebuffer Access for GUI

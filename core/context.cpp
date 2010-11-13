@@ -874,8 +874,8 @@ void Context::SaveFLM(const string &flmFileName) {
 }
 
 // Save current film to OpenEXR image
-void Context::SaveEXR(const string &name, const bool &useHalfFloat, const bool &includeZBuffer, const int &compressionType) {
-	luxCurrentScene->SaveEXR(name, useHalfFloat, includeZBuffer, compressionType);
+void Context::SaveEXR(const string &name, bool useHalfFloat, bool includeZBuffer, int compressionType, bool tonemapped) {
+	luxCurrentScene->SaveEXR(name, useHalfFloat, includeZBuffer, compressionType, tonemapped);
 }
 
 void Context::OverrideResumeFLM(const string &flmFileName) {

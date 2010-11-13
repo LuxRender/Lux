@@ -794,6 +794,84 @@ void FlexImageFilm::CheckWriteOuputInterval()
 	}
 }
 
+vector<RGBColor>& FlexImageFilm::ApplyPipeline(const ColorSystem &colorSpace, vector<XYZColor> &xyzcolor)
+{
+	// Apply the imaging/tonemapping pipeline
+	ParamSet toneParams;
+	std::string tmkernel = "reinhard";
+	if(m_TonemapKernel == TMK_Reinhard) {
+		// Reinhard Tonemapper
+		toneParams.AddFloat("prescale", &m_ReinhardPreScale, 1);
+		toneParams.AddFloat("postscale", &m_ReinhardPostScale, 1);
+		toneParams.AddFloat("burn", &m_ReinhardBurn, 1);
+		tmkernel = "reinhard";
+	} else if(m_TonemapKernel == TMK_Linear) {
+		// Linear Tonemapper
+		toneParams.AddFloat("sensitivity", &m_LinearSensitivity, 1);
+		toneParams.AddFloat("exposure", &m_LinearExposure, 1);
+		toneParams.AddFloat("fstop", &m_LinearFStop, 1);
+		toneParams.AddFloat("gamma", &m_LinearGamma, 1);
+		tmkernel = "linear";
+	} else if(m_TonemapKernel == TMK_Contrast) {
+		// Contrast Tonemapper
+		toneParams.AddFloat("ywa", &m_ContrastYwa, 1);
+		tmkernel = "contrast";
+	} else if(m_TonemapKernel == TMK_MaxWhite) {		
+		// MaxWhite Tonemapper
+		tmkernel = "maxwhite";
+	} else { // if(m_TonemapKernel == TMK_AutoLinear) {
+		// Auto Linear Tonemapper
+		tmkernel = "autolinear";
+	}
+
+	// Delete bloom/glare layers if requested
+	if (!m_BloomUpdateLayer && m_BloomDeleteLayer && m_HaveBloomImage) {
+		// TODO - make thread safe
+		m_HaveBloomImage = false;
+		delete[] m_bloomImage;
+		m_bloomImage = NULL;
+		m_BloomDeleteLayer = false;
+	}
+
+	if (!m_GlareUpdateLayer && m_GlareDeleteLayer && m_HaveGlareImage) {
+		// TODO - make thread safe
+		m_HaveGlareImage = false;
+		delete[] m_glareImage;
+		m_glareImage = NULL;
+		m_GlareDeleteLayer = false;
+	}
+
+	// use local shared_ptr to keep reference to current cameraResponse
+	// so we can pass a regular pointer to ApplyImagingPipeline
+	boost::shared_ptr<CameraResponse> crf;
+	{
+		boost::mutex::scoped_lock(cameraResponse_mutex);
+
+		if (m_CameraResponseFile == "")
+			cameraResponse.reset();
+
+		if (m_CameraResponseEnabled) {			
+			if ((!cameraResponse && m_CameraResponseFile != "") || (cameraResponse && cameraResponse->fileName != m_CameraResponseFile))
+				cameraResponse.reset(new CameraResponse(m_CameraResponseFile));
+
+			crf = cameraResponse;
+		}
+	}
+
+	// Apply chosen tonemapper
+	ApplyImagingPipeline(xyzcolor, xPixelCount, yPixelCount, m_GREYCStorationParams, m_chiuParams,
+		colorSpace, histogram, m_HistogramEnabled, m_HaveBloomImage, m_bloomImage, m_BloomUpdateLayer,
+		m_BloomRadius, m_BloomWeight, m_VignettingEnabled, m_VignettingScale, m_AberrationEnabled, m_AberrationAmount,
+		m_HaveGlareImage, m_glareImage, m_GlareUpdateLayer, m_GlareAmount, m_GlareRadius, m_GlareBlades, m_GlareThreshold,
+		tmkernel.c_str(), &toneParams, crf.get(), m_Gamma, 0.f);
+
+	// Disable further bloom layer updates if used.
+	m_BloomUpdateLayer = false;
+	m_GlareUpdateLayer = false;
+
+	return reinterpret_cast<vector<RGBColor> &>(xyzcolor);
+}
+
 void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vector<float> &alpha, string postfix)
 {
 	// Construct ColorSystem from values
@@ -834,81 +912,9 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 	// Dade - check if I have to run ApplyImagingPipeline
 	if (((type & IMAGE_FRAMEBUFFER) && framebuffer) ||
 		((type & IMAGE_FILEOUTPUT) && ((write_EXR && write_EXR_applyimaging) || write_TGA || write_PNG))) {
-		// Apply the imaging/tonemapping pipeline
-		ParamSet toneParams;
-		std::string tmkernel = "reinhard";
-		if(m_TonemapKernel == TMK_Reinhard) {
-			// Reinhard Tonemapper
-			toneParams.AddFloat("prescale", &m_ReinhardPreScale, 1);
-			toneParams.AddFloat("postscale", &m_ReinhardPostScale, 1);
-			toneParams.AddFloat("burn", &m_ReinhardBurn, 1);
-			tmkernel = "reinhard";
-		} else if(m_TonemapKernel == TMK_Linear) {
-			// Linear Tonemapper
-			toneParams.AddFloat("sensitivity", &m_LinearSensitivity, 1);
-			toneParams.AddFloat("exposure", &m_LinearExposure, 1);
-			toneParams.AddFloat("fstop", &m_LinearFStop, 1);
-			toneParams.AddFloat("gamma", &m_LinearGamma, 1);
-			tmkernel = "linear";
-		} else if(m_TonemapKernel == TMK_Contrast) {
-			// Contrast Tonemapper
-			toneParams.AddFloat("ywa", &m_ContrastYwa, 1);
-			tmkernel = "contrast";
-		} else if(m_TonemapKernel == TMK_MaxWhite) {		
-			// MaxWhite Tonemapper
-			tmkernel = "maxwhite";
-		} else { // if(m_TonemapKernel == TMK_AutoLinear) {
-			// Auto Linear Tonemapper
-			tmkernel = "autolinear";
-		}
-
-		// Delete bloom/glare layers if requested
-		if (!m_BloomUpdateLayer && m_BloomDeleteLayer && m_HaveBloomImage) {
-			// TODO - make thread safe
-			m_HaveBloomImage = false;
-			delete[] m_bloomImage;
-			m_bloomImage = NULL;
-			m_BloomDeleteLayer = false;
-		}
-
-		if (!m_GlareUpdateLayer && m_GlareDeleteLayer && m_HaveGlareImage) {
-			// TODO - make thread safe
-			m_HaveGlareImage = false;
-			delete[] m_glareImage;
-			m_glareImage = NULL;
-			m_GlareDeleteLayer = false;
-		}
-
-		// use local shared_ptr to keep reference to current cameraResponse
-		// so we can pass a regular pointer to ApplyImagingPipeline
-		boost::shared_ptr<CameraResponse> crf;
-		{
-			boost::mutex::scoped_lock(cameraResponse_mutex);
-
-			if (m_CameraResponseFile == "")
-				cameraResponse.reset();
-
-			if (m_CameraResponseEnabled) {			
-				if ((!cameraResponse && m_CameraResponseFile != "") || (cameraResponse && cameraResponse->fileName != m_CameraResponseFile))
-					cameraResponse.reset(new CameraResponse(m_CameraResponseFile));
-
-				crf = cameraResponse;
-			}
-		}
-
-		// Apply chosen tonemapper
-		ApplyImagingPipeline(xyzcolor, xPixelCount, yPixelCount, m_GREYCStorationParams, m_chiuParams,
-			colorSpace, histogram, m_HistogramEnabled, m_HaveBloomImage, m_bloomImage, m_BloomUpdateLayer,
-			m_BloomRadius, m_BloomWeight, m_VignettingEnabled, m_VignettingScale, m_AberrationEnabled, m_AberrationAmount,
-			m_HaveGlareImage, m_glareImage, m_GlareUpdateLayer, m_GlareAmount, m_GlareRadius, m_GlareBlades, m_GlareThreshold,
-			tmkernel.c_str(), &toneParams, crf.get(), m_Gamma, 0.f);
 
 		// DO NOT USE xyzcolor ANYMORE AFTER THIS POINT
-		vector<RGBColor> &rgbcolor = reinterpret_cast<vector<RGBColor> &>(xyzcolor);
-
-		// Disable further bloom layer updates if used.
-		m_BloomUpdateLayer = false;
-		m_GlareUpdateLayer = false;
+		vector<RGBColor> &rgbcolor = ApplyPipeline(colorSpace, xyzcolor);
 
 		if (type & IMAGE_FILEOUTPUT) {
 			// write out tonemapped EXR
@@ -1012,7 +1018,7 @@ void FlexImageFilm::WriteImage(ImageType type)
 	EV = logf(Y * 8.f) / logf(2.f);
 }
 
-void FlexImageFilm::SaveEXR(const string &pExrFilename, const bool &pUseHalfFloats, const bool &pIncludeZBuf, const int &pCompressionType)
+void FlexImageFilm::SaveEXR(const string &exrFilename, bool useHalfFloats, bool includeZBuf, int compressionType, bool tonemapped)
 {
 	// Seth - Code below based on FlexImageFilm::WriteImage()
 	const u_int nPix = xPixelCount * yPixelCount;
@@ -1059,7 +1065,7 @@ void FlexImageFilm::SaveEXR(const string &pExrFilename, const bool &pUseHalfFloa
 	
 	// Construct normalized Z buffer if needed
 	vector<float> zBuf;
-	if(pIncludeZBuf) {
+	if(includeZBuf) {
 
 		// Make sure we have a ZBuffer
 		if(!use_Zbuf || ZBuffer == NULL) {
@@ -1079,11 +1085,7 @@ void FlexImageFilm::SaveEXR(const string &pExrFilename, const bool &pUseHalfFloa
 	colorSpace = ColorSystem(m_RGB_X_Red, m_RGB_Y_Red,
 							 m_RGB_X_Green, m_RGB_Y_Green,
 							 m_RGB_X_Blue, m_RGB_Y_Blue,
-							 m_RGB_X_White, m_RGB_Y_White, 1.f);
-	vector<RGBColor> rgbColor(nPix);
-	for ( u_int i = 0; i < nPix; i++ )
-		rgbColor[i] = colorSpace.ToRGBConstrained(xyzcolor[i]);
-			
+							 m_RGB_X_White, m_RGB_Y_White, 1.f);			
 	
 	// Backup members that affect WriteEXRImage()
 	bool lOrigZbuf = write_EXR_ZBuf;
@@ -1091,11 +1093,19 @@ void FlexImageFilm::SaveEXR(const string &pExrFilename, const bool &pUseHalfFloa
 	int lOrigCompression = write_EXR_compressiontype;
 	
 	// Set members that affect WriteEXRImage() according to passed parameters
-	write_EXR_ZBuf = (use_Zbuf?pIncludeZBuf:false);
-	write_EXR_halftype = pUseHalfFloats;
-	write_EXR_compressiontype = pCompressionType;
+	write_EXR_ZBuf = use_Zbuf ? includeZBuf : false;
+	write_EXR_halftype = useHalfFloats;
+	write_EXR_compressiontype = compressionType;
 	
-	WriteEXRImage(rgbColor, alpha, pExrFilename, zBuf);
+	vector<RGBColor> &rgbcolor = reinterpret_cast<vector<RGBColor> &>(xyzcolor);
+	// DO NOT USE xyzcolor ANYMORE AFTER THIS POINT
+	if (tonemapped) {
+		rgbcolor = ApplyPipeline(colorSpace, xyzcolor);
+	} else {
+		for ( u_int i = 0; i < nPix; i++ )
+			rgbcolor[i] = colorSpace.ToRGBConstrained(xyzcolor[i]);
+	}
+	WriteEXRImage(rgbcolor, alpha, exrFilename, zBuf);
 
 	// Restore the write_EXR members
 	write_EXR_ZBuf = lOrigZbuf;
