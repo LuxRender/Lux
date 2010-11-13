@@ -884,10 +884,12 @@ void Context::OverrideResumeFLM(const string &flmFileName) {
 	}
 	const bool boolTrue = true;
 	const bool boolFalse = false;
-	const string filename = flmFileName.substr(0, flmFileName.length() - 4);
 	filmOverrideParams->AddBool("write_resume_flm", &boolTrue);
 	filmOverrideParams->AddBool("restart_resume_flm", &boolFalse);
-	filmOverrideParams->AddString("filename", &filename);
+	if (flmFileName != "") {
+		const string filename = flmFileName.substr(0, flmFileName.length() - 4);
+		filmOverrideParams->AddString("filename", &filename);
+	}
 }
 
 //user interactive thread functions

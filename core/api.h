@@ -99,7 +99,7 @@ void luxWorldEnd();
 /* Load/Save FLM file */
 void luxLoadFLM(const char* name);
 void luxSaveFLM(const char* name);
-/* Overrides the resume settings of the Film in the next scene to resume from the given FLM file */
+/* Overrides the resume settings of the Film in the next scene to resume from the given FLM file, or use filename from scene if empty */
 void luxOverrideResumeFLM(const char *name);
 
 /* Write film to a floating point OpenEXR image */

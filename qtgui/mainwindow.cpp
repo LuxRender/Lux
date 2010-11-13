@@ -677,7 +677,7 @@ void MainWindow::resumeRender()
 		m_renderTimer->start(1000*luxGetIntAttribute("film", "displayInterval"));
 		m_statsTimer->start(1000);
 		m_netTimer->start(10000);
-		
+
 		if (m_guiRenderState == PAUSED || m_guiRenderState == STOPPED) // Only re-start if we were previously stopped
 			luxStart();
 		
@@ -1839,7 +1839,6 @@ void MainWindow::loadTimeout()
 					luxSetBoolAttribute("film", "restartResumeFlm", luxGetBoolAttributeDefault("film", "restartResumeFlm"));
 			}
 
-
 			// Start updating the display by faking a resume menu item click.
 			ui->action_resumeRender->activate(QAction::Trigger);
 
@@ -2216,6 +2215,7 @@ bool MainWindow::RenderNextFileInQueue()
 	if (idx >= 0) {
 		QTableWidgetItem *status = ui->table_queue->item(idx, 1);
 		status->setText("Completed " + QDateTime::currentDateTime().toString(Qt::DefaultLocaleShortDate));
+		LOG(LUX_INFO,LUX_NOERROR) << "==== Queued file '" << m_CurrentFileBaseName.toStdString() << "' done ====";
 	}
 
 	// render next
@@ -2237,7 +2237,12 @@ bool MainWindow::RenderNextFileInQueue()
 
 	ui->table_queue->resizeColumnsToContents();
 
+
 	endRenderingSession();
+
+	if (ui->checkBox_overrideWriteFlm->isChecked())
+		luxOverrideResumeFLM("");
+
 	renderScenefile(filename);
 
 	return true;
