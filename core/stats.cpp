@@ -139,7 +139,8 @@ void StatsData::update(const bool add_total)
 			{
 				os << template_string_network_waiting;
 			}
-		} else if (add_total)
+		}
+		if (add_total && netsamples > 0)
 		{
 			os << template_string_total;
 
