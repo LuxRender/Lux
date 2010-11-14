@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>947</width>
-    <height>736</height>
+    <width>840</width>
+    <height>611</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -169,7 +169,7 @@
           </item>
          </layout>
         </item>
-        <item row="1" column="0" colspan="4">
+        <item row="1" column="0" colspan="6">
          <widget class="QSplitter" name="splitter">
           <property name="enabled">
            <bool>true</bool>
@@ -282,37 +282,6 @@
                </property>
               </widget>
              </item>
-             <item row="1" column="2">
-              <widget class="QSpinBox" name="spinBox_overrideDisplayInterval">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="minimumSize">
-                <size>
-                 <width>75</width>
-                 <height>0</height>
-                </size>
-               </property>
-               <property name="toolTip">
-                <string>Override display interval (seconds)</string>
-               </property>
-               <property name="minimum">
-                <number>3</number>
-               </property>
-               <property name="maximum">
-                <number>3600</number>
-               </property>
-               <property name="singleStep">
-                <number>10</number>
-               </property>
-               <property name="value">
-                <number>3</number>
-               </property>
-              </widget>
-             </item>
              <item row="1" column="3">
               <widget class="QPushButton" name="button_imagingApply">
                <property name="enabled">
@@ -326,7 +295,7 @@
                </property>
                <property name="minimumSize">
                 <size>
-                 <width>100</width>
+                 <width>200</width>
                  <height>0</height>
                 </size>
                </property>
@@ -351,8 +320,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>468</width>
-                  <height>512</height>
+                  <width>362</width>
+                  <height>392</height>
                  </rect>
                 </property>
                 <property name="sizePolicy">
@@ -375,6 +344,19 @@
                 </layout>
                </widget>
               </widget>
+             </item>
+             <item row="1" column="2">
+              <spacer name="horizontalSpacer">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
              </item>
             </layout>
            </widget>
@@ -409,8 +391,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>472</width>
-                  <height>547</height>
+                  <width>100</width>
+                  <height>30</height>
                  </rect>
                 </property>
                 <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -476,7 +458,7 @@
           </widget>
          </widget>
         </item>
-        <item row="0" column="3">
+        <item row="0" column="5">
          <layout class="QHBoxLayout" name="horizontalLayout_5" stretch="0,0,0">
           <property name="spacing">
            <number>0</number>
@@ -564,6 +546,50 @@
            </size>
           </property>
          </spacer>
+        </item>
+        <item row="0" column="4">
+         <widget class="QSpinBox" name="spinBox_overrideDisplayInterval">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>75</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>Override display interval (seconds)</string>
+          </property>
+          <property name="suffix">
+           <string> sec.</string>
+          </property>
+          <property name="prefix">
+           <string/>
+          </property>
+          <property name="minimum">
+           <number>3</number>
+          </property>
+          <property name="maximum">
+           <number>3600</number>
+          </property>
+          <property name="singleStep">
+           <number>10</number>
+          </property>
+          <property name="value">
+           <number>3</number>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="3">
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string>Display Interval:</string>
+          </property>
+         </widget>
         </item>
        </layout>
       </widget>
@@ -944,7 +970,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>947</width>
+     <width>840</width>
      <height>22</height>
     </rect>
    </property>
