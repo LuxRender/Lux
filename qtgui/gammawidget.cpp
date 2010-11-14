@@ -171,6 +171,9 @@ void GammaWidget::loadCRF()
 	m_CRF_file = QFileDialog::getOpenFileName(this, tr("Choose a CRF file to open"), m_lastOpendir, tr("Camera Response Files (*.crf *.txt)"));
     
 	if(!m_CRF_file.isEmpty()) {
+		QFileInfo info(m_CRF_file);
+		m_lastOpendir = info.absolutePath();
+
 		ui->checkBox_CRF->setChecked(true);
 		CRFChanged(Qt::Checked);
 	}
