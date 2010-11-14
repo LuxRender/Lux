@@ -233,5 +233,47 @@ RGBColor ColorSystem::Limit(const RGBColor &rgb, int method) const
 	return rgb;
 }
 
+static const float bradford[3][3] = {
+	{0.8951f, 0.2664f, -0.1614f},
+	{-0.7502f, 1.7135f, 0.0367f},
+	{0.0389f, -0.0685f, 1.0296f}};
+static const float invBradford[3][3] = {
+	{0.9869929f, -0.1470543f, 0.1599627f},
+	{0.4323053f, 0.5183603f, 0.0492912f},
+	{-0.0085287f, 0.0400428f, 0.9684867f}};
+ColorAdaptator::ColorAdaptator(const XYZColor &from, const XYZColor &to)
+{
+	float mat[3][3] = {
+		{to.c[0] / from.c[0], 0.f, 0.f},
+		{0.f, to.c[1] / from.c[1], 0.f},
+		{0.f, 0.f, to.c[2] / from.c[2]}};
+	float temp[3][3];
+	Multiply3x3(mat, bradford, temp);
+	Multiply3x3(invBradford, temp, conv);
+}
+
+XYZColor ColorAdaptator::Adapt(const XYZColor &color) const
+{
+	XYZColor result;
+	Transform3x3(conv, color.c, result.c);
+	return result;
+}
+
+ColorAdaptator ColorAdaptator::operator*(const ColorAdaptator &ca) const
+{
+	ColorAdaptator result(XYZColor(1.f), XYZColor(1.f));
+	Multiply3x3(conv, ca.conv, result.conv);
+	return result;
+}
+
+ColorAdaptator &ColorAdaptator::operator*=(float s)
+{
+	for(u_int i = 0; i < 3; ++i) {
+		for(u_int j = 0; j < 3; ++j)
+			conv[i][j] *= s;
+	}
+	return *this;
+}
+
 }
 

@@ -286,6 +286,44 @@ public:
 	float RGBToXYZ[3][3]; //!<Corresponding conversion matrix from RGB to XYZ
 };
 
+//!
+//! Color space white point conversion using Bradford matrices
+//!
+class ColorAdaptator {
+public:
+	//!
+	//! \param[in] from initial color
+	//! \param[in] to final color
+	//!
+	//! Construct the conversion matrix to convert corresponding
+	//! to the provided initial and final colors with Bradford matrices
+	//!
+	ColorAdaptator(const XYZColor &from, const XYZColor &to);
+	//!
+	//! \param[in] color a color to convert
+	//! \return the converted color in the new colorspace
+	//!
+	//! Converts a color in the new colorspace
+	//!
+	XYZColor Adapt(const XYZColor &color) const;
+	//!
+	//! \param[in] ca a color adaptator
+	//! \return the composition of the 2 color adaptators
+	//!
+	//! Compose 2 color adaptators
+	//!
+	ColorAdaptator operator*(const ColorAdaptator &ca) const;
+	//!
+	//! \param[in] s a scaling factor
+	//! \return a reference to self once scaled
+	//!
+	//! Scale the color adaptator
+	//!
+	ColorAdaptator &operator*=(float s);
+private:
+	float conv[3][3]; //!<Conversion matrix
+};
+
 // RGBColor Method Definitions
 inline ostream &operator<<(ostream &os, const RGBColor &s) {
 	for (int i = 0; i < 3; ++i) {

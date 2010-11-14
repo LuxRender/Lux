@@ -1007,7 +1007,7 @@ void FlexImageFilm::WriteImage(ImageType type)
 				for (u_int x = 0; x < xPixelCount; ++x,++offset) {
 
 					alphaWeight[offset] += buffer.GetData(x, y, &p, &a);
-					pixels[offset] += p * bufferGroups[j].scale;
+					pixels[offset] += bufferGroups[j].convert.Adapt(p);
 					alpha[offset] += a;
 				}
 			}
@@ -1059,7 +1059,7 @@ void FlexImageFilm::SaveEXR(const string &exrFilename, bool useHalfFloats, bool 
 				for (u_int x = 0; x < xPixelCount; ++x,++offset) {
 					
 					alphaWeight[offset] += buffer.GetData(x, y, &p, &a);
-					xyzcolor[offset] += p * bufferGroups[j].scale;
+					xyzcolor[offset] += bufferGroups[j].convert.Adapt(p);
 					alpha[offset] += a;
 				}
 			}

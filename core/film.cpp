@@ -734,13 +734,17 @@ float Film::GetGroupTemperature(u_int index) const
 void Film::ComputeGroupScale(u_int index)
 {
 	const XYZColor white(colorSpace.ToXYZ(RGBColor(1.f)));
-	bufferGroups[index].scale =
-		colorSpace.ToXYZ(bufferGroups[index].rgbScale) / white;
 	if (bufferGroups[index].temperature > 0.f) {
-		XYZColor factor(BlackbodySPD(bufferGroups[index].temperature));
-		bufferGroups[index].scale *= factor / (factor.Y() * white);
+		XYZColor colorTemp(BlackbodySPD(bufferGroups[index].temperature));
+		colorTemp /= colorTemp.Y();
+		bufferGroups[index].convert = ColorAdaptator(white,
+			colorSpace.ToXYZ(bufferGroups[index].rgbScale)) *
+			ColorAdaptator(white, colorTemp);
+	} else {
+		bufferGroups[index].convert = ColorAdaptator(white,
+			colorSpace.ToXYZ(bufferGroups[index].rgbScale));
 	}
-	bufferGroups[index].scale *= bufferGroups[index].globalScale;
+	bufferGroups[index].convert *= bufferGroups[index].globalScale;
 }
 
 void Film::GetSampleExtent(int *xstart, int *xend,

@@ -279,7 +279,8 @@ class BufferGroup {
 public:
 	BufferGroup(const string &n) : numberOfSamples(0.f), name(n),
 		globalScale(1.f), temperature(0.f),
-		rgbScale(1.f), scale(1.f), enable(true) { }
+		rgbScale(1.f), convert(XYZColor(1.f), XYZColor(1.f)),
+		enable(true) { }
 	~BufferGroup() {
 		for(vector<Buffer *>::iterator buffer = buffers.begin(); buffer != buffers.end(); ++buffer)
 			delete *buffer;
@@ -311,7 +312,7 @@ public:
 	string name;
 	float globalScale, temperature;
 	RGBColor rgbScale;
-	XYZColor scale;
+	ColorAdaptator convert;
 	bool enable;
 };
 
