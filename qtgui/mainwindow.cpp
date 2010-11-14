@@ -838,7 +838,8 @@ bool MainWindow::saveCurrentImageTonemapped(const QString &outFile)
 	// Get width, height and pixel buffer
 	int w = luxGetIntAttribute("film", "xResolution");
 	int h = luxGetIntAttribute("film", "yResolution");
-	unsigned char* fb = luxFramebuffer();
+	// pointer needs to be const so QImage doesn't write to it
+	const unsigned char* fb = luxFramebuffer();
 	
 	// If all looks okay, proceed
 	if (!(w > 0 && h > 0 && fb != NULL))
