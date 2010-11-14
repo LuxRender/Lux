@@ -992,16 +992,15 @@
       <string>Export to Image</string>
      </property>
      <addaction name="action_outputTonemapped"/>
+     <addaction name="action_outputBufferGroupsTonemapped"/>
      <addaction name="action_overlayStats"/>
      <addaction name="separator"/>
      <addaction name="action_outputHDR"/>
-     <addaction name="separator"/>
-     <addaction name="action_outputBufferGroupsTonemapped"/>
      <addaction name="action_outputBufferGroupsHDR"/>
+     <addaction name="action_HDR_tonemapped"/>
+     <addaction name="separator"/>
      <addaction name="separator"/>
      <addaction name="action_batchProcess"/>
-     <addaction name="separator"/>
-     <addaction name="action_HDR_tonemapped"/>
     </widget>
     <addaction name="action_openFile"/>
     <addaction name="menuOpen_Recent"/>
@@ -1238,7 +1237,7 @@
   </action>
   <action name="action_outputTonemapped">
    <property name="text">
-    <string>Tonemapped Image...</string>
+    <string>Tonemapped Low Dynamic Range Image...</string>
    </property>
    <property name="toolTip">
     <string>Save the current framebuffer (with tonemapping) to a standard image file.</string>
@@ -1254,7 +1253,7 @@
   </action>
   <action name="action_outputBufferGroupsTonemapped">
    <property name="text">
-    <string>Light Groups to Tonemapped Images...</string>
+    <string>Light Groups to Tonemapped LDR Images...</string>
    </property>
    <property name="toolTip">
     <string>Save the each individual light group as a tonemapped image.</string>
@@ -1270,7 +1269,7 @@
   </action>
   <action name="action_batchProcess">
    <property name="text">
-    <string>Batch Process...</string>
+    <string>Batch Process FLM files...</string>
    </property>
    <property name="toolTip">
     <string>Process a directory of 'flm' film files.</string>
