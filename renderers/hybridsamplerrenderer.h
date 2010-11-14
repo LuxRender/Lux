@@ -106,6 +106,7 @@ private:
 	luxrays::VirtualM2OHardwareIntersectionDevice *virtualIDevice;
 	vector<RenderThread *> renderThreads;
 	Scene *scene;
+	u_long lastUsedSeed;
 
 	Timer s_Timer;
 	double lastSamples, lastTime;

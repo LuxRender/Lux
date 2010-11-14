@@ -159,10 +159,10 @@ void HybridSamplerRenderer::Render(Scene *s) {
 		// It can be used by the Preprocess() methods.
 
 		// initialize the thread's RandomGenerator
-		u_long seed = scene->seedBase - 1;
-		LOG( LUX_INFO,LUX_NOERROR) << "Preprocess thread uses seed: " << seed;
+		lastUsedSeed = scene->seedBase - 1;
+		LOG( LUX_INFO,LUX_NOERROR) << "Preprocess thread uses seed: " << lastUsedSeed;
 
-		RandomGenerator rng(seed);
+		RandomGenerator rng(lastUsedSeed);
 
 		// integrator preprocessing
 		scene->sampler->SetFilm(scene->camera->film);
@@ -403,7 +403,12 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 	ContributionBuffer *contribBuffer = new ContributionBuffer(scene.camera->film->contribPool);
 
 	// initialize the thread's rangen
-	u_long seed = scene.seedBase + renderThread->n;
+	u_long seed;
+	{
+		boost::mutex::scoped_lock lock(renderer->classWideMutex);
+		renderer->lastUsedSeed++;
+		seed = renderer->lastUsedSeed;
+	}
 	LOG( LUX_INFO,LUX_NOERROR) << "Thread " << renderThread->n << " uses seed: " << seed;
 
 	RandomGenerator rng(seed);
