@@ -248,6 +248,9 @@
              <height>16777215</height>
             </size>
            </property>
+           <property name="toolTip">
+            <string>Toggle Adjustment 2th/4th decimal</string>
+           </property>
            <property name="text">
             <string>High Precision Editing</string>
            </property>

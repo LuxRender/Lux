@@ -63,6 +63,9 @@
      </item>
      <item row="5" column="1">
       <widget class="QCheckBox" name="checkBox_CRF">
+       <property name="toolTip">
+        <string>Toggle CRF on/off</string>
+       </property>
        <property name="text">
         <string>Active</string>
        </property>
@@ -73,6 +76,9 @@
      </item>
      <item row="7" column="1">
       <widget class="QPushButton" name="pushButton_loadCRF">
+       <property name="toolTip">
+        <string>Load CRF with Filedialog</string>
+       </property>
        <property name="text">
         <string>Load</string>
        </property>
@@ -100,6 +106,9 @@
      </item>
      <item row="7" column="0">
       <widget class="QLabel" name="CRF_label">
+       <property name="toolTip">
+        <string>Name of actual CRF</string>
+       </property>
        <property name="frameShape">
         <enum>QFrame::Panel</enum>
        </property>
