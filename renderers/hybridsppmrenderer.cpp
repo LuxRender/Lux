@@ -145,8 +145,6 @@ void HybridSPPMRenderer::Render(Scene *s) {
 		u_long seed = scene->seedBase - 1;
 		LOG( LUX_INFO,LUX_NOERROR) << "Preprocess thread uses seed: " << seed;
 
-		RandomGenerator rng(seed);
-
 		// integrator preprocessing
 		scene->sampler->SetFilm(scene->camera->film);
 		scene->camera->film->CreateBuffers();
