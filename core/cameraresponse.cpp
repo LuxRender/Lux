@@ -56,6 +56,8 @@ CameraResponse::CameraResponse(const string &film)
 		vector<string> crfstrings;
 		vector<float> *crfpoints = NULL;
 		while (getline(file, buffer)) {
+			if (buffer[buffer.length()-1] == '\r')
+				buffer = buffer.substr(0, buffer.length()-1);
 			++row;
 			switch (row) {
 			case 4:
