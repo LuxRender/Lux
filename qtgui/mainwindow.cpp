@@ -739,7 +739,7 @@ void MainWindow::outputTonemapped()
 	if (saveCurrentImageTonemapped(fileName)) 
 		statusMessage->setText(tr("Tonemapped image saved"));
 	else 
-		statusMessage->setText(tr("ERROR: Tonemapped image NOT saved. May be an unsupported image type."));
+		statusMessage->setText(tr("ERROR: Tonemapped image NOT saved."));
 }
 
 
