@@ -232,6 +232,9 @@ const char * ds_pylux_Context_pixelFilter =
 const char * ds_pylux_Context_portalShape =
 "Define geometry as an \"Exit Portal\" shape. See shape().";
 
+const char * ds_pylux_Context_portalInstance =
+"Define instance as an \"Exit Portal\" shape. See objectInstance() and portalShape().";
+
 const char * ds_pylux_Context_removeServer =
 "Remote a remote rendering slave from the current rendering process.";
 

@@ -600,6 +600,12 @@ public:
 		context->ObjectInstance(std::string(name));
 	}
 
+	void portalInstance(const char *name)
+	{
+		Context::SetActive(context);
+		context->PortalInstance(std::string(name));
+	}
+
 	void motionInstance(const char *name, float startTime, float endTime, const char *toTransform)
 	{
 		Context::SetActive(context);
@@ -1198,6 +1204,11 @@ void export_PyContext()
 			&PyContext::portalShape,
 			args("Context", "type", "ParamSet"),
 			ds_pylux_Context_portalShape
+		)
+		.def("portalInstance",
+			&PyContext::portalInstance,
+			args("Context", "name"),
+			ds_pylux_Context_portalInstance
 		)
 		.def("removeServer",
 			&PyContext::removeServer,
