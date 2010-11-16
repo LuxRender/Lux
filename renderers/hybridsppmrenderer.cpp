@@ -327,7 +327,7 @@ void HybridSPPMRenderer::CreateRenderThread() {
 
 	// Avoid to create the thread in case signal is EXIT. For instance, it
 	// can happen when the rendering is done.
-	if ((state != TERMINATE) || (state != INIT)) {
+	if ((state == RUN) || (state == RUN)) {
 		// Add an instance to the LuxRays virtual device
 		luxrays::IntersectionDevice * idev = virtualIDevice->AddVirtualDevice();
 

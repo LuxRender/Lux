@@ -330,7 +330,7 @@ void SamplerRenderer::CreateRenderThread() {
 
 	// Avoid to create the thread in case signal is EXIT. For instance, it
 	// can happen when the rendering is done.
-	if ((state != TERMINATE) || (state != INIT)) {
+	if ((state == RUN) || (state == PAUSE)) {
 		RenderThread *rt = new  RenderThread(renderThreads.size(), this);
 
 		renderThreads.push_back(rt);
