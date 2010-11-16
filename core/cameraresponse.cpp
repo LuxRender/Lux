@@ -36,7 +36,7 @@ using namespace lux;
 namespace lux {
 
 void AdjustGamma(const vector<float> &from, vector<float> &to, float gamma = 2.2f) {
-	for (int i = 0; i < from.size(); i++) {
+	for (size_t i = 0; i < from.size(); i++) {
 		to[i] = powf(to[i], gamma);
 	}
 }
