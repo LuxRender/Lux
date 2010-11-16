@@ -348,7 +348,7 @@ void HybridSamplerRenderer::CreateRenderThread() {
 
 	// Avoid to create the thread in case signal is EXIT. For instance, it
 	// can happen when the rendering is done.
-	if ((state == RUN) || (state == RUN)) {
+	if ((state == RUN) || (state == PAUSE)) {
 		// Add an instance to the LuxRays virtual device
 		luxrays::IntersectionDevice * idev = virtualIDevice->AddVirtualDevice();
 
