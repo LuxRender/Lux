@@ -432,6 +432,10 @@ extern "C" void luxObjectInstance(const char *name)
 {
 	Context::GetActive()->ObjectInstance(string(name));
 }
+extern "C" void luxPortalInstance(const char *name)
+{
+	Context::GetActive()->PortalInstance(string(name));
+}
 extern "C" void luxMotionInstance(const char *name, float startTime,
 	float endTime, const char *toTransform)
 {

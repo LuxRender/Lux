@@ -113,6 +113,7 @@ public:
 	void ObjectBegin(const string &name);
 	void ObjectEnd();
 	void ObjectInstance(const string &name);
+	void PortalInstance(const string &name);
 	void Renderer(const string &, const ParamSet &params);
 	void ReverseOrientation();
 	void Rotate(float angle, float ax, float ay, float az);

@@ -158,6 +158,7 @@ NamedMaterial		{ return NAMEDMATERIAL;		}
 ObjectBegin 		{ return OBJECTBEGIN;		}
 ObjectEnd 		{ return OBJECTEND;		}
 ObjectInstance 		{ return OBJECTINSTANCE;	}
+PortalInstance		{ return PORTALINSTANCE;	}
 MotionInstance 		{ return MOTIONINSTANCE;	}
 PixelFilter 		{ return PIXELFILTER; 		}
 Renderer		{ return RENDERER;	}

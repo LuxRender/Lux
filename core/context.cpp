@@ -698,7 +698,34 @@ void Context::ObjectInstance(const string &n) {
 		graphicsState->exterior, graphicsState->interior));
 	renderOptions->primitives.push_back(o);
 }
+void Context::PortalInstance(const string &n) {
+	VERIFY_WORLD("PortalInstance");
+	renderFarm->send("luxPortalInstance", n);
+	// Portal instance error checking
+	if (renderOptions->currentInstance) {
+		LOG(LUX_ERROR,LUX_NESTING)<< "PortalInstance can't be called inside instance definition";
+		return;
+	}
+	if (renderOptions->instances.find(n) == renderOptions->instances.end()) {
+		LOG(LUX_ERROR,LUX_BADTOKEN) << "Unable to find instance named '" << n << "'";
+		return;
+	}
 
+	if (graphicsState->currentLight == "")
+		return;
+
+	vector<boost::shared_ptr<Primitive> > &in = renderOptions->instances[n];
+	if (in.size() == 0)
+		return;
+
+	for (size_t i = 0; i < in.size(); i++) {
+		if (graphicsState->currentLightPtr0)
+			graphicsState->currentLightPtr0->AddPortalShape(in[i]);
+
+		if (graphicsState->currentLightPtr1)
+			graphicsState->currentLightPtr1->AddPortalShape(in[i]);
+	}
+}
 void Context::MotionInstance(const string &n, float startTime, float endTime, const string &toTransform) {
 	VERIFY_WORLD("MotionInstance");
 	renderFarm->send("luxMotionInstance", n, startTime, endTime, toTransform);

@@ -93,6 +93,7 @@ void luxInterior(const char *name);
 void luxObjectBegin(const char *name);
 void luxObjectEnd();
 void luxObjectInstance(const char *name);
+void luxPortalInstance(const char *name);
 void luxMotionInstance(const char *name, float startTime, float endTime, const char *toTransform);
 void luxWorldEnd();
 
