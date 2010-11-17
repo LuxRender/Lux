@@ -72,6 +72,7 @@ private:
 
 	PathStateType state;
 	bool specularBounce, specular;
+	float bouncePdf;
 };
 
 // PathIntegrator Declarations

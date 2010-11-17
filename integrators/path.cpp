@@ -29,6 +29,7 @@
 #include "paramset.h"
 #include "dynload.h"
 #include "path.h"
+#include "mc.h"
 
 #include "luxrays/core/dataset.h"
 
@@ -291,6 +292,7 @@ bool PathState::Init(const Scene &scene) {
 	}
 
 	eyeRayWeight = sample.camera->GenerateRay(scene, sample, &pathRay);
+	bouncePdf = 1.f;
 
 	state = EYE_VERTEX;
 
@@ -420,12 +422,15 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 	if (!scene.Intersect(state->sample, state->volume, state->pathRay, *rayHit, &isect, &bsdf, &state->pathThroughput)) {
 		// Stop path sampling since no intersection was found
 		// Possibly add horizon in render & reflections
-		if ((includeEnvironment || state->pathLength > 0) && state->specularBounce) {
+		if ((includeEnvironment || state->pathLength > 0)){
 			BSDF *ibsdf;
 			for (u_int i = 0; i < nLights; ++i) {
+				float pdf;
 				SWCSpectrum Le(state->pathThroughput);
 				if (scene.lights[i]->Le(scene, state->sample,
-					state->pathRay, &ibsdf, NULL, NULL, &Le)) {
+					state->pathRay, &ibsdf, NULL, &pdf, &Le)) {
+					if (!state->specularBounce)
+						Le *= PowerHeuristic(1, state->bouncePdf, 1, pdf * DistanceSquared(state->pathRay.o, ibsdf->dgShading.p) / AbsDot(state->pathRay.d, ibsdf->ng));
 					state->L[scene.lights[i]->group] += Le;
 					state->V[scene.lights[i]->group] += Le.Filter(sw) * state->VContrib;
 					++(*nrContribs);
@@ -448,11 +453,14 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 		// Possibly add emitted light at path vertex
 		Vector wo(-state->pathRay.d);
 
-		if (state->specularBounce && isect.arealight) {
+		if (isect.arealight) {
 			BSDF *ibsdf;
-			SWCSpectrum Le(isect.Le(state->sample, state->pathRay, &ibsdf, NULL, NULL));
+			float pdf;
+			SWCSpectrum Le(isect.Le(state->sample, state->pathRay, &ibsdf, NULL, &pdf));
 
 			if (!Le.Black()) {
+				if (!state->specularBounce)
+					Le *= PowerHeuristic(1, state->bouncePdf, 1, pdf * DistanceSquared(state->pathRay.o, ibsdf->dgShading.p) / AbsDot(state->pathRay.d, ibsdf->ng));
 				Le *= state->pathThroughput;
 				state->L[isect.arealight->group] += Le;
 				state->V[isect.arealight->group] += Le.Filter(sw) * state->VContrib;
@@ -477,12 +485,12 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 
 			const float lightNum = sampleData[0];
 
-			// Select a light source to sample
-			const u_int lightNumber = min(Floor2UInt(lightNum * nLights), nLights - 1);
-			const Light &light(*(scene.lights[lightNumber]));
 
 			// Check if I need direct light sampling
 			if (bsdf->NumComponents(BxDFType(BSDF_REFLECTION | BSDF_TRANSMISSION | BSDF_DIFFUSE | BSDF_GLOSSY)) > 0) {
+				// Select a light source to sample
+				const u_int lightNumber = min(Floor2UInt(lightNum * nLights), nLights - 1);
+				const Light &light(*(scene.lights[lightNumber]));
 				const float lightSample0 = sampleData[1];
 				const float lightSample1 = sampleData[2];
 				const float lightSample2 = sampleData[3];
@@ -508,6 +516,7 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 
 						if (shadowRayEpsilon < length * .5f) {
 							const float lightPdf2 = lightPdf * d2 /	AbsDot(wi, lightBsdf->nn);
+							Li *= PowerHeuristic(1, lightPdf2, 1, bsdf->Pdf(sw, wo, wi));
 
 							// Store light's contribution
 							state->Ld[0] = state->pathThroughput * Li * (AbsDot(wi, n) / lightPdf2);
@@ -561,17 +570,21 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 				}
 			}
 			++(state->pathLength);
+			state->bouncePdf = pdf;
 
 			state->specularBounce = (flags & BSDF_SPECULAR) != 0;
 			state->specular = state->specular && state->specularBounce;
+			state->pathRay = Ray(p, wi);
+			state->pathRay.time = state->sample.realTime;
+		} else {
+			state->pathRay.mint = state->pathRay.maxt + MachineEpsilon::E(state->pathRay.maxt);
+			state->pathRay.maxt = INFINITY;
 		}
 		state->pathThroughput *= f;
 		state->pathThroughput *= dp;
 		if (!state->specular)
 			state->VContrib += dp;
 
-		state->pathRay = Ray(p, wi);
-		state->pathRay.time = state->sample.realTime;
 		state->volume = bsdf->GetVolume(wi);
 		state->state = PathState::NEXT_VERTEX;
 
