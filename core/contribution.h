@@ -39,7 +39,7 @@ namespace lux
 
 // Minimum number of buffers to keep alive/reuse
 // In practice twice this amount stays allocated
-#define CONTRIB_BUF_KEEPALIVE 8
+#define CONTRIB_BUF_KEEPALIVE 1
 
 // Switch on to get feedback in the log about allocation
 #define CONTRIB_DEBUG false
