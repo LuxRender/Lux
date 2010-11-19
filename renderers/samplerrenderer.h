@@ -145,6 +145,7 @@ private:
 	//--------------------------------------------------------------------------
 
 	mutable boost::mutex classWideMutex;
+	mutable boost::mutex renderThreadsMutex;
 
 	RendererState state;
 	vector<RendererHostDescription *> hosts;

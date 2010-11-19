@@ -36,12 +36,12 @@ using namespace lux;
 //------------------------------------------------------------------------------
 
 unsigned int SRDeviceDescription::GetUsedUnitsCount() const {
-	boost::mutex::scoped_lock lock(host->renderer->classWideMutex);
+	boost::mutex::scoped_lock lock(host->renderer->renderThreadsMutex);
 	return host->renderer->renderThreads.size();
 }
 
 void SRDeviceDescription::SetUsedUnitsCount(const unsigned int units) {
-	boost::mutex::scoped_lock lock(host->renderer->classWideMutex);
+	boost::mutex::scoped_lock lock(host->renderer->renderThreadsMutex);
 
 	unsigned int target = max(units, 1u);
 	size_t current = host->renderer->renderThreads.size();
@@ -184,7 +184,7 @@ void SamplerRenderer::Render(Scene *s) {
 
 		// rendering done, now I can remove all rendering threads
 		{
-			boost::mutex::scoped_lock lock(classWideMutex);
+			boost::mutex::scoped_lock lock(renderThreadsMutex);
 
 			// wait for all threads to finish their job
 			for (u_int i = 0; i < renderThreads.size(); ++i) {
@@ -195,7 +195,7 @@ void SamplerRenderer::Render(Scene *s) {
 
 			// I change the current signal to exit in order to disable the creation
 			// of new threads after this point
-			state = TERMINATE;
+			Terminate();
 		}
 
 		// Flush the contribution pool
@@ -259,7 +259,7 @@ double SamplerRenderer::Statistics(const string &statName) {
 
 double SamplerRenderer::Statistics_GetNumberOfSamples() {
 	if (s_Timer.Time() - lastTime > .5f) {
-		boost::mutex::scoped_lock lock(classWideMutex);
+		boost::mutex::scoped_lock lock(renderThreadsMutex);
 
 		for (u_int i = 0; i < renderThreads.size(); ++i) {
 			fast_mutex::scoped_lock lockStats(renderThreads[i]->statLock);
