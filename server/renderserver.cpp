@@ -45,6 +45,8 @@
 #include <boost/iostreams/filter/zlib.hpp>
 #include <boost/iostreams/filter/bzip2.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
+#include <boost/bind.hpp>
+#include <boost/function.hpp>
 
 using namespace lux;
 using namespace boost::iostreams;
@@ -335,12 +337,12 @@ static void processCommand(void (Context::*f)(const string &, float, float, cons
 }
 
 
-string RenderServer::createNewSessionID() {
+void RenderServer::createNewSessionID() {
 	char buf[4 * 4 + 4];
 	sprintf(buf, "%04d_%04d_%04d_%04d", rand() % 9999, rand() % 9999,
 			rand() % 9999, rand() % 9999);
 
-	return string(buf);
+	currentSID = string(buf);
 }
 
 bool RenderServer::validateAccess(basic_istream<char> &stream) const {
@@ -358,66 +360,378 @@ bool RenderServer::validateAccess(basic_istream<char> &stream) const {
 	return (sid == currentSID);
 }
 
+// command handlers
+void cmd_NOOP(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+	// do nothing
+}
+void cmd_ServerDisconnect(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_SERVER_DISCONNECT:
+	if (!serverThread->renderServer->validateAccess(stream))
+		return;
+
+	// Dade - stop the rendering and cleanup
+	luxExit();
+	luxWait();
+	luxCleanup();
+
+	// Dade - remove all temporary files
+	for (size_t i = 1; i < tmpFileList.size(); i++)
+		remove(tmpFileList[i]);
+
+	serverThread->renderServer->setServerState(RenderServer::READY);
+}
+void cmd_ServerConnect(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_SERVER_CONNECT:
+	if (serverThread->renderServer->getServerState() == RenderServer::READY) {
+		serverThread->renderServer->setServerState(RenderServer::BUSY);
+		stream << "OK" << endl;
+
+		// Dade - generate the session ID
+		serverThread->renderServer->createNewSessionID();
+		LOG( LUX_INFO,LUX_NOERROR) << "New session ID: " << serverThread->renderServer->getCurrentSID();
+		stream << serverThread->renderServer->getCurrentSID() << endl;
+
+		tmpFileList.clear();
+		char buf[6];
+		snprintf(buf, 6, "%05d", serverThread->renderServer->getTcpPort());
+		tmpFileList.push_back(string(buf));
+	} else
+		stream << "BUSY" << endl;
+}
+void cmd_luxInit(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_LUXINIT:
+	LOG( LUX_SEVERE,LUX_BUG)<< "Server already initialized";
+}
+void cmd_luxTranslate(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_LUXTRANSLATE:
+	processCommand(&Context::Translate, stream);
+}
+void cmd_luxRotate(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_LUXROTATE:
+	float angle, ax, ay, az;
+	stream >> angle;
+	stream >> ax;
+	stream >> ay;
+	stream >> az;
+	luxRotate(angle, ax, ay, az);
+}
+void cmd_luxScale(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_LUXSCALE:
+	processCommand(&Context::Scale, stream);
+}
+void cmd_luxLookAt(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_LUXLOOKAT:
+	float ex, ey, ez, lx, ly, lz, ux, uy, uz;
+	stream >> ex;
+	stream >> ey;
+	stream >> ez;
+	stream >> lx;
+	stream >> ly;
+	stream >> lz;
+	stream >> ux;
+	stream >> uy;
+	stream >> uz;
+	luxLookAt(ex, ey, ez, lx, ly, lz, ux, uy, uz);
+}
+void cmd_luxConcatTransform(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_LUXCONCATTRANSFORM:
+	processCommand(&Context::ConcatTransform, stream);
+}
+void cmd_luxTransform(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_LUXTRANSFORM:
+	processCommand(&Context::Transform, stream);
+}
+void cmd_luxIdentity(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_LUXIDENTITY:
+	luxIdentity();
+}
+void cmd_luxCoordinateSystem(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_LUXCOORDINATESYSTEM:
+	processCommand(&Context::CoordinateSystem, stream);
+}
+void cmd_luxCoordSysTransform(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_LUXCOORDSYSTRANSFORM:
+	processCommand(&Context::CoordSysTransform, stream);
+}
+void cmd_luxPixelFilter(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_LUXPIXELFILTER:
+	processCommand(isLittleEndian, &Context::PixelFilter, tmpFileList, stream);
+}
+void cmd_luxFilm(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_LUXFILM:
+	// Dade - Servers use a special kind of film to buffer the
+	// samples. I overwrite some option here.
+
+	processCommandFilm(isLittleEndian, &Context::Film, stream);
+}
+void cmd_luxSampler(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_LUXSAMPLER:
+	processCommand(isLittleEndian, &Context::Sampler, tmpFileList, stream);
+}
+void cmd_luxAccelerator(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_LUXACCELERATOR:
+	processCommand(isLittleEndian, &Context::Accelerator, tmpFileList, stream);
+}
+void cmd_luxSurfaceIntegrator(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_LUXSURFACEINTEGRATOR:
+	processCommand(isLittleEndian, &Context::SurfaceIntegrator, tmpFileList, stream);
+}
+void cmd_luxVolumeIntegrator(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_LUXVOLUMEINTEGRATOR:
+	processCommand(isLittleEndian, &Context::VolumeIntegrator, tmpFileList, stream);
+}
+void cmd_luxCamera(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_LUXCAMERA:
+	processCommand(isLittleEndian, &Context::Camera, tmpFileList, stream);
+}
+void cmd_luxWorldBegin(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_LUXWORLDBEGIN:
+	luxWorldBegin();
+}
+void cmd_luxAttributeBegin(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_LUXATTRIBUTEBEGIN:
+	luxAttributeBegin();
+}
+void cmd_luxAttributeEnd(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_LUXATTRIBUTEEND:
+	luxAttributeEnd();
+}
+void cmd_luxTransformBegin(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_LUXTRANSFORMBEGIN:
+	luxTransformBegin();
+}
+void cmd_luxTransformEnd(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_LUXTRANSFORMEND:
+	luxTransformEnd();
+}
+void cmd_luxTexture(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_LUXTEXTURE:
+	string name, type, texname;
+	ParamSet params;
+	// Dade - fixed in bug 562: "Luxconsole -s (Linux 64) fails to network render when material names contain spaces"
+	getline(stream, name);
+	getline(stream, type);
+	getline(stream, texname);
+
+	processCommandParams(isLittleEndian, params, stream);
+
+	processFile("filename", params, tmpFileList, stream);
+
+	Context::GetActive()->Texture(name, type, texname, params);
+}
+void cmd_luxMaterial(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_LUXMATERIAL:
+	processCommand(isLittleEndian, &Context::Material, tmpFileList, stream);
+}
+void cmd_luxMakeNamedMaterial(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_LUXMAKENAMEDMATERIAL:
+	processCommand(isLittleEndian, &Context::MakeNamedMaterial, tmpFileList, stream);
+}
+void cmd_luxNamedMaterial(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_LUXNAMEDMATERIAL:
+	processCommand(&Context::NamedMaterial, stream);
+}
+void cmd_luxLightGroup(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_LUXLIGHTGROUP:
+	processCommand(isLittleEndian, &Context::LightGroup, tmpFileList, stream);
+}
+void cmd_luxLightSource(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_LUXLIGHTSOURCE:
+	processCommand(isLittleEndian, &Context::LightSource, tmpFileList, stream);
+}
+void cmd_luxAreaLightSource(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_LUXAREALIGHTSOURCE:
+	processCommand(isLittleEndian, &Context::AreaLightSource, tmpFileList, stream);
+}
+void cmd_luxPortalShape(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_LUXPORTALSHAPE:
+	processCommand(isLittleEndian, &Context::PortalShape, tmpFileList, stream);
+}
+void cmd_luxShape(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_LUXSHAPE:
+	processCommand(isLittleEndian, &Context::Shape, tmpFileList, stream);
+}
+void cmd_luxReverseOrientation(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_LUXREVERSEORIENTATION:
+	luxReverseOrientation();
+}
+void cmd_luxMakeNamedVolume(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_LUXMAKENAMEDVOLUME:
+	string id, name;
+	ParamSet params;
+	getline(stream, id);
+	getline(stream, name);
+
+	processCommandParams(isLittleEndian,
+		params, stream);
+
+	Context::GetActive()->MakeNamedVolume(id, name, params);
+}
+void cmd_luxVolume(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_LUXVOLUME:
+	processCommand(isLittleEndian, &Context::Volume, tmpFileList, stream);
+}
+void cmd_luxExterior(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_LUXEXTERIOR:
+	processCommand(&Context::Exterior, stream);
+}
+void cmd_luxInterior(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_LUXINTERIOR:
+	processCommand(&Context::Interior, stream);
+}
+void cmd_luxObjectBegin(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_LUXOBJECTBEGIN:
+	processCommand(&Context::ObjectBegin, stream);
+}
+void cmd_luxObjectEnd(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_LUXOBJECTEND:
+	luxObjectEnd();
+}
+void cmd_luxObjectInstance(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_LUXOBJECTINSTANCE:
+	processCommand(&Context::ObjectInstance, stream);
+}
+void cmd_luxPortalInstance(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_PORTALINSTANCE:
+	processCommand(&Context::PortalInstance, stream);
+}
+void cmd_luxMotionInstance(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_MOTIONINSTANCE:
+	processCommand(&Context::MotionInstance, stream);
+}
+void cmd_luxWorldEnd(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_LUXWORLDEND:
+	serverThread->engineThread = new boost::thread(&luxWorldEnd);
+
+	// Wait the scene parsing to finish
+	while (!luxStatistics("sceneIsReady")) {
+		boost::xtime xt;
+		boost::xtime_get(&xt, boost::TIME_UTC);
+		xt.sec += 1;
+		boost::thread::sleep(xt);
+	}
+
+	// Dade - start the info thread only if it is not already running
+	if(!serverThread->infoThread)
+		serverThread->infoThread = new boost::thread(&printInfoThread);
+
+	// Add rendering threads
+	int threadsToAdd = serverThread->renderServer->getThreadCount();
+	while (--threadsToAdd)
+		luxAddThread();
+}
+void cmd_luxGetFilm(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_LUXGETFILM:
+	// Dade - check if we are rendering something
+	if (serverThread->renderServer->getServerState() == RenderServer::BUSY) {
+		if (!serverThread->renderServer->validateAccess(stream)) {
+			LOG( LUX_ERROR,LUX_SYSTEM)<< "Unknown session ID";
+			stream.close();
+			return;
+		}
+
+		LOG( LUX_INFO,LUX_NOERROR)<< "Transmitting film samples";
+
+		if (serverThread->renderServer->getWriteFlmFile()) {
+			string file = "server_resume";
+			if (tmpFileList.size())
+			file += "_" + tmpFileList[0];
+			file += ".flm";
+
+			writeTransmitFilm(stream, file);
+		} else {
+			Context::GetActive()->TransmitFilm(stream);
+		}
+		stream.close();
+
+		LOG( LUX_INFO,LUX_NOERROR)<< "Finished film samples transmission";
+	} else {
+		LOG( LUX_ERROR,LUX_SYSTEM)<< "Received a GetFilm command after a ServerDisconnect";
+		stream.close();
+	}
+}
+void cmd_luxSetEpsilon(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_LUXSETEPSILON:
+	processCommand(&Context::SetEpsilon, stream);
+}
+void cmd_luxRenderer(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_LUXRENDERER:
+	processCommand(isLittleEndian, &Context::Renderer, tmpFileList, stream);
+}
+
 // Dade - TODO: support signals
 void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread)
 {
-    //Command identifiers (hashed strings)
-    //These identifiers are used in the switch statement to avoid string comparisons (fastest)
-	static const unsigned int CMD_LUXINIT = 2531407474U,
-		CMD_LUXTRANSLATE = 2039302476U,
-		CMD_LUXROTATE = 3982485453U,
-		CMD_LUXSCALE = 1943523046U,
-		CMD_LUXLOOKAT = 3747502632U,
-		CMD_LUXCONCATTRANSFORM = 449663410U,
-		CMD_LUXTRANSFORM = 2039102042U,
-		CMD_LUXIDENTITY = 97907816U,
-		CMD_LUXCOORDINATESYSTEM = 1707244427U,
-		CMD_LUXCOORDSYSTRANSFORM = 2024449520U,
-		CMD_LUXPIXELFILTER = 2384561510U,
-		CMD_LUXFILM = 2531294310U,
-		CMD_LUXSAMPLER = 3308802546U,
-		CMD_LUXACCELERATOR = 1613429731U,
-		CMD_LUXSURFACEINTEGRATOR = 4011931910U,
-		CMD_LUXVOLUMEINTEGRATOR = 2954204437U,
-		CMD_LUXCAMERA = 3378604391U,
-		CMD_LUXWORLDBEGIN = 1247285547U,
-		CMD_LUXATTRIBUTEBEGIN = 684297207U,
-		CMD_LUXATTRIBUTEEND = 3427929065U,
-		CMD_LUXTRANSFORMBEGIN = 567425599U,
-		CMD_LUXTRANSFORMEND = 2773125169U,
-		CMD_LUXTEXTURE = 475043887U,
-		CMD_LUXMATERIAL = 4064803661U,
-		CMD_LUXLIGHTGROUP = 770727715U,
-		CMD_LUXMAKENAMEDMATERIAL = 2355625968U,
-		CMD_LUXNAMEDMATERIAL = 922480690U,
-		CMD_LUXLIGHTSOURCE = 130489799U,
-		CMD_LUXAREALIGHTSOURCE = 515057184U,
-		CMD_LUXPORTALSHAPE = 3416559329U,
-		CMD_LUXSHAPE = 1943702863U,
-		CMD_LUXREVERSEORIENTATION = 2027239206U,
-		CMD_LUXMAKENAMEDVOLUME = 2393963353U,
-		CMD_LUXVOLUME = 4138761078U,
-		CMD_LUXEXTERIOR = 2058668912U,
-		CMD_LUXINTERIOR = 703971178U,
-		CMD_LUXOBJECTBEGIN = 1097337658U,
-		CMD_LUXOBJECTEND = 229760620U,
-		CMD_LUXOBJECTINSTANCE = 4125664042U,
-		CMD_LUXWORLDEND = 1582674973U,
-		CMD_LUXGETFILM = 859419430U,
-		CMD_SERVER_DISCONNECT = 2500584742U,
-		CMD_SERVER_CONNECT = 332355398U,
-		CMD_VOID = 5381U,
-		CMD_SPACE = 177605U,
-		CMD_MOTIONINSTANCE = 4223946185U,
-		CMD_LUXSETEPSILON = 3945573060U,
-		CMD_LUXRENDERER = 3043102805U;
-
 	const int listenPort = serverThread->renderServer->tcpPort;
 	const bool isLittleEndian = osIsLittleEndian();
 	LOG( LUX_INFO,LUX_NOERROR) << "Launching server [" << serverThread->renderServer->threadCount <<
 		" threads] mode on port '" << listenPort << "'.";
 
+
 	vector<string> tmpFileList;
+
+	typedef boost::function<void (tcp::iostream&)> cmdfunc_t;
+	#define INSERT_CMD(CmdName) cmds.insert(std::pair<string, cmdfunc_t>(#CmdName, boost::bind(cmd_##CmdName, isLittleEndian, serverThread, _1, boost::ref(tmpFileList))))
+
+	map<string, cmdfunc_t> cmds;
+
+	// Insert command handlers
+
+	//case CMD_VOID:
+	cmds.insert(std::pair<string, cmdfunc_t>("", boost::bind(cmd_NOOP, isLittleEndian, serverThread, _1, boost::ref(tmpFileList))));
+	//case CMD_SPACE:
+	cmds.insert(std::pair<string, cmdfunc_t>(" ", boost::bind(cmd_NOOP, isLittleEndian, serverThread, _1, boost::ref(tmpFileList))));
+
+	INSERT_CMD(ServerDisconnect);
+	INSERT_CMD(ServerConnect);
+	INSERT_CMD(luxInit);
+	INSERT_CMD(luxTranslate);
+	INSERT_CMD(luxRotate);
+	INSERT_CMD(luxScale);
+	INSERT_CMD(luxLookAt);
+	INSERT_CMD(luxConcatTransform);
+	INSERT_CMD(luxTransform);
+	INSERT_CMD(luxIdentity);
+	INSERT_CMD(luxCoordinateSystem);
+	INSERT_CMD(luxCoordSysTransform);
+	INSERT_CMD(luxPixelFilter);
+	INSERT_CMD(luxFilm);
+	INSERT_CMD(luxSampler);
+	INSERT_CMD(luxAccelerator);
+	INSERT_CMD(luxSurfaceIntegrator);
+	INSERT_CMD(luxVolumeIntegrator);
+	INSERT_CMD(luxCamera);
+	INSERT_CMD(luxWorldBegin);
+	INSERT_CMD(luxAttributeBegin);
+	INSERT_CMD(luxAttributeEnd);
+	INSERT_CMD(luxTransformBegin);
+	INSERT_CMD(luxTransformEnd);
+	INSERT_CMD(luxTexture);
+	INSERT_CMD(luxMaterial);
+	INSERT_CMD(luxMakeNamedMaterial);
+	INSERT_CMD(luxNamedMaterial);
+	INSERT_CMD(luxLightGroup);
+	INSERT_CMD(luxLightSource);
+	INSERT_CMD(luxAreaLightSource);
+	INSERT_CMD(luxPortalShape);
+	INSERT_CMD(luxShape);
+	INSERT_CMD(luxReverseOrientation);
+	INSERT_CMD(luxMakeNamedVolume);
+	INSERT_CMD(luxVolume);
+	INSERT_CMD(luxExterior);
+	INSERT_CMD(luxInterior);
+	INSERT_CMD(luxObjectBegin);
+	INSERT_CMD(luxObjectEnd);
+	INSERT_CMD(luxObjectInstance);
+	INSERT_CMD(luxPortalInstance);
+	INSERT_CMD(luxMotionInstance);
+	INSERT_CMD(luxWorldEnd);
+	INSERT_CMD(luxGetFilm);
+	INSERT_CMD(luxSetEpsilon);
+	INSERT_CMD(luxRenderer);
+
+	#undef INSERT_CMD
+
 	try {
 		boost::asio::io_service io_service;
 		tcp::endpoint endpoint(tcp::v4(), listenPort);
@@ -433,274 +747,16 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread)
 			string command;
 			LOG( LUX_INFO,LUX_NOERROR) << "Server receiving commands...";
 			while (getline(stream, command)) {
-				const unsigned int hash = DJBHash(command);
 
 				if ((command != "") && (command != " ")) {
-					LOG(LUX_DEBUG,LUX_NOERROR) << "... processing command: '" << command << "' (hash: " << hash << ")";
+					LOG(LUX_DEBUG,LUX_NOERROR) << "... processing command: '" << command << "'";
 				}
 
-				//processing the command
-				switch (hash) {
-				case CMD_VOID:
-				case CMD_SPACE:
-					break;
-				case CMD_SERVER_DISCONNECT:
-					if (!serverThread->renderServer->validateAccess(stream))
-						break;
-
-					// Dade - stop the rendering and cleanup
-					luxExit();
-					luxWait();
-					luxCleanup();
-
-					// Dade - remove all temporary files
-					for (size_t i = 1; i < tmpFileList.size(); i++)
-						remove(tmpFileList[i]);
-
-					serverThread->renderServer->state = RenderServer::READY;
-					break;
-				case CMD_SERVER_CONNECT:
-					if (serverThread->renderServer->state == RenderServer::READY) {
-						serverThread->renderServer->state = RenderServer::BUSY;
-						stream << "OK" << endl;
-
-						// Dade - generate the session ID
-						serverThread->renderServer->currentSID =
-							RenderServer::createNewSessionID();
-						LOG( LUX_INFO,LUX_NOERROR) << "New session ID: " << serverThread->renderServer->currentSID;
-						stream << serverThread->renderServer->currentSID << endl;
-
-						tmpFileList.clear();
-						char buf[6];
-						snprintf(buf, 6, "%05d", listenPort);
-						tmpFileList.push_back(string(buf));
-					} else
-						stream << "BUSY" << endl;
-					break;
-				case CMD_LUXINIT:
-					LOG( LUX_SEVERE,LUX_BUG)<< "Server already initialized";
-					break;
-				case CMD_LUXTRANSLATE:
-					processCommand(&Context::Translate, stream);
-					break;
-				case CMD_LUXROTATE: {
-					float angle, ax, ay, az;
-					stream >> angle;
-					stream >> ax;
-					stream >> ay;
-					stream >> az;
-					luxRotate(angle, ax, ay, az);
-					break;
-				}
-				case CMD_LUXSCALE:
-					processCommand(&Context::Scale, stream);
-					break;
-				case CMD_LUXLOOKAT: {
-					float ex, ey, ez, lx, ly, lz, ux, uy, uz;
-					stream >> ex;
-					stream >> ey;
-					stream >> ez;
-					stream >> lx;
-					stream >> ly;
-					stream >> lz;
-					stream >> ux;
-					stream >> uy;
-					stream >> uz;
-					luxLookAt(ex, ey, ez, lx, ly, lz, ux, uy, uz);
-					break;
-				}
-				case CMD_LUXCONCATTRANSFORM:
-					processCommand(&Context::ConcatTransform, stream);
-					break;
-				case CMD_LUXTRANSFORM:
-					processCommand(&Context::Transform, stream);
-					break;
-				case CMD_LUXIDENTITY:
-					luxIdentity();
-					break;
-				case CMD_LUXCOORDINATESYSTEM:
-					processCommand(&Context::CoordinateSystem, stream);
-					break;
-				case CMD_LUXCOORDSYSTRANSFORM:
-					processCommand(&Context::CoordSysTransform, stream);
-					break;
-				case CMD_LUXPIXELFILTER:
-					processCommand(isLittleEndian, &Context::PixelFilter, tmpFileList, stream);
-					break;
-				case CMD_LUXFILM: {
-					// Dade - Servers use a special kind of film to buffer the
-					// samples. I overwrite some option here.
-
-					processCommandFilm(isLittleEndian, &Context::Film, stream);
-					break;
-				}
-				case CMD_LUXSAMPLER:
-					processCommand(isLittleEndian, &Context::Sampler, tmpFileList, stream);
-					break;
-				case CMD_LUXACCELERATOR:
-					processCommand(isLittleEndian, &Context::Accelerator, tmpFileList, stream);
-					break;
-				case CMD_LUXSURFACEINTEGRATOR:
-					processCommand(isLittleEndian, &Context::SurfaceIntegrator, tmpFileList, stream);
-					break;
-				case CMD_LUXVOLUMEINTEGRATOR:
-					processCommand(isLittleEndian, &Context::VolumeIntegrator, tmpFileList, stream);
-					break;
-				case CMD_LUXCAMERA:
-					processCommand(isLittleEndian, &Context::Camera, tmpFileList, stream);
-					break;
-				case CMD_LUXWORLDBEGIN:
-					luxWorldBegin();
-					break;
-				case CMD_LUXATTRIBUTEBEGIN:
-					luxAttributeBegin();
-					break;
-				case CMD_LUXATTRIBUTEEND:
-					luxAttributeEnd();
-					break;
-				case CMD_LUXTRANSFORMBEGIN:
-					luxTransformBegin();
-					break;
-				case CMD_LUXTRANSFORMEND:
-					luxTransformEnd();
-					break;
-				case CMD_LUXTEXTURE: {
-					string name, type, texname;
-					ParamSet params;
-					// Dade - fixed in bug 562: "Luxconsole -s (Linux 64) fails to network render when material names contain spaces"
-					getline(stream, name);
-					getline(stream, type);
-					getline(stream, texname);
-
-					processCommandParams(isLittleEndian, params, stream);
-
-					processFile("filename", params, tmpFileList, stream);
-
-					Context::GetActive()->Texture(name, type, texname, params);
-					break;
-				}
-				case CMD_LUXMATERIAL:
-					processCommand(isLittleEndian, &Context::Material, tmpFileList, stream);
-					break;
-				case CMD_LUXMAKENAMEDMATERIAL:
-					processCommand(isLittleEndian, &Context::MakeNamedMaterial, tmpFileList, stream);
-					break;
-				case CMD_LUXNAMEDMATERIAL:
-					processCommand(&Context::NamedMaterial, stream);
-					break;
-				case CMD_LUXLIGHTGROUP:
-					processCommand(isLittleEndian, &Context::LightGroup, tmpFileList, stream);
-					break;
-				case CMD_LUXLIGHTSOURCE:
-					processCommand(isLittleEndian, &Context::LightSource, tmpFileList, stream);
-					break;
-				case CMD_LUXAREALIGHTSOURCE:
-					processCommand(isLittleEndian, &Context::AreaLightSource, tmpFileList, stream);
-					break;
-				case CMD_LUXPORTALSHAPE:
-					processCommand(isLittleEndian, &Context::PortalShape, tmpFileList, stream);
-					break;
-				case CMD_LUXSHAPE:
-					processCommand(isLittleEndian, &Context::Shape, tmpFileList, stream);
-					break;
-				case CMD_LUXREVERSEORIENTATION:
-					luxReverseOrientation();
-					break;
-				case CMD_LUXMAKENAMEDVOLUME: {
-					string id, name;
-					ParamSet params;
-					getline(stream, id);
-					getline(stream, name);
-
-					processCommandParams(isLittleEndian,
-						params, stream);
-
-					Context::GetActive()->MakeNamedVolume(id, name, params);
-					break;
-				}
-				case CMD_LUXVOLUME:
-					processCommand(isLittleEndian, &Context::Volume, tmpFileList, stream);
-					break;
-				case CMD_LUXEXTERIOR:
-					processCommand(&Context::Exterior,
-						stream);
-					break;
-				case CMD_LUXINTERIOR:
-					processCommand(&Context::Interior,
-						stream);
-					break;
-				case CMD_LUXOBJECTBEGIN:
-					processCommand(&Context::ObjectBegin, stream);
-					break;
-				case CMD_LUXOBJECTEND:
-					luxObjectEnd();
-					break;
-				case CMD_LUXOBJECTINSTANCE:
-					processCommand(&Context::ObjectInstance, stream);
-					break;
-				case CMD_MOTIONINSTANCE:
-					processCommand(&Context::MotionInstance, stream);
-					break;
-				case CMD_LUXWORLDEND: {
-					serverThread->engineThread = new boost::thread(&luxWorldEnd);
-
-					// Wait the scene parsing to finish
-					while (!luxStatistics("sceneIsReady")) {
-						boost::xtime xt;
-						boost::xtime_get(&xt, boost::TIME_UTC);
-						xt.sec += 1;
-						boost::thread::sleep(xt);
-					}
-
-					// Dade - start the info thread only if it is not already running
-					if(!serverThread->infoThread)
-						serverThread->infoThread = new boost::thread(&printInfoThread);
-
-					// Add rendering threads
-					int threadsToAdd = serverThread->renderServer->threadCount;
-					while (--threadsToAdd)
-						luxAddThread();
-					break;
-				}
-				case CMD_LUXGETFILM: {
-					// Dade - check if we are rendering something
-					if (serverThread->renderServer->state == RenderServer::BUSY) {
-						if (!serverThread->renderServer->validateAccess(stream)) {
-							LOG( LUX_ERROR,LUX_SYSTEM)<< "Unknown session ID";
-							stream.close();
-							break;
-						}
-
-						LOG( LUX_INFO,LUX_NOERROR)<< "Transmitting film samples";
-
-						if (serverThread->renderServer->writeFlmFile) {
-							string file = "server_resume";
-							if (tmpFileList.size())
-								file += "_" + tmpFileList[0];
-							file += ".flm";
-
-							writeTransmitFilm(stream, file);
-						} else {
-							Context::GetActive()->TransmitFilm(stream);
-						}
-						stream.close();
-
-						LOG( LUX_INFO,LUX_NOERROR)<< "Finished film samples transmission";
-					} else {
-						LOG( LUX_ERROR,LUX_SYSTEM)<< "Received a GetFilm command after a ServerDisconnect";
-						stream.close();
-					}
-					break;
-				}
-				case CMD_LUXSETEPSILON:
-					processCommand(&Context::SetEpsilon, stream);
-					break;
-				case CMD_LUXRENDERER:
-					processCommand(isLittleEndian, &Context::Renderer, tmpFileList, stream);
-					break;
-				default:
+				if (cmds.find(command) != cmds.end()) {
+					cmdfunc_t cmdhandler = cmds.find(command)->second;
+					cmdhandler(stream);
+				} else {
 					LOG( LUX_SEVERE,LUX_BUG) << "Unknown command '" << command << "'. Ignoring";
-					break;
 				}
 
 				//END OF COMMAND PROCESSING

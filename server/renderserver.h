@@ -66,7 +66,7 @@ public:
 
     static void run(NetworkRenderServerThread *serverThread);
     friend class RenderServer;
-private:
+
     RenderServer *renderServer;
     boost::thread *serverThread;
     boost::thread *engineThread;
@@ -75,7 +75,6 @@ private:
     // Dade - used to send signals to the thread
     enum ThreadSignal { SIG_NONE, SIG_EXIT };
     ThreadSignal signal;
-
 };
 
 // Dade - network rendering server
@@ -92,16 +91,35 @@ public:
     void join();
     void stop();
 
-    int getServerPort() { return tcpPort; }
-    ServerState getServerState() { return  state; }
+    int getServerPort() const { return tcpPort; }
+    ServerState getServerState() const { return  state; }
+	void setServerState(ServerState newState) {
+		state = newState;
+	}
+
+	string getCurrentSID() const {
+		return currentSID;
+	}
+
+	bool getWriteFlmFile() const {
+		return writeFlmFile;
+	}
+
+	int getTcpPort() const {
+		return tcpPort;
+	}
+
+	int getThreadCount() const {
+		return threadCount;
+	}
+
+	void createNewSessionID();
+
+	bool validateAccess(std::basic_istream<char> &stream) const;
 
     friend class NetworkRenderServerThread;
 
 private:
-	static string createNewSessionID();
-
-	bool validateAccess(std::basic_istream<char> &stream) const;
-
     int threadCount;
     int tcpPort;
 	bool writeFlmFile;
