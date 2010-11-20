@@ -197,6 +197,8 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	connect(ui->action_aboutDialog, SIGNAL(triggered()), this, SLOT(aboutDialog()));
 	connect(ui->action_documentation, SIGNAL(triggered()), this, SLOT(openDocumentation()));
 	connect(ui->action_forums, SIGNAL(triggered()), this, SLOT(openForums()));
+        connect(ui->action_gallery, SIGNAL(triggered()), this, SLOT(openGallery()));
+        connect(ui->action_bugtracker, SIGNAL(triggered()), this, SLOT(openBugTracker()));
 	
 	connect(ui->checkBox_imagingAuto, SIGNAL(stateChanged(int)), this, SLOT(autoEnabledChanged(int)));
 	connect(ui->spinBox_overrideDisplayInterval, SIGNAL(valueChanged(int)), this, SLOT(overrideDisplayIntervalChanged(int)));
@@ -205,7 +207,7 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	panes[0] = new PaneWidget(ui->panesAreaContents, "Tone Mapping", ":/icons/tonemapicon.png");
 	panes[1] = new PaneWidget(ui->panesAreaContents, "Lens Effects", ":/icons/lenseffectsicon.png", true);
 	panes[2] = new PaneWidget(ui->panesAreaContents, "Color Space", ":/icons/colorspaceicon.png");
-	panes[3] = new PaneWidget(ui->panesAreaContents, "Gamma + Camera Response", ":/icons/gammaicon.png", true);
+	panes[3] = new PaneWidget(ui->panesAreaContents, "Gamma + Film Response", ":/icons/gammaicon.png", true);
 	panes[4] = new PaneWidget(ui->panesAreaContents, "HDR Histogram", ":/icons/histogramicon.png");
 	panes[5] = new PaneWidget(ui->panesAreaContents, "Noise Reduction", ":/icons/noisereductionicon.png", true);
 	
@@ -243,7 +245,7 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	histogramwidget = new HistogramWidget(panes[4]);
 	panes[4]->setWidget(histogramwidget);
 	ui->panesLayout->addWidget(panes[4]);
-    panes[4]->expand();
+	panes[4]->expand();
 
 	// Noise reduction
 	noisereductionwidget = new NoiseReductionWidget(panes[5]);
@@ -272,7 +274,6 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	connect(ui->checkBox_loopQueue, SIGNAL(stateChanged(int)), this, SLOT(loopQueueChanged(int)));
 	connect(ui->checkBox_overrideWriteFlm, SIGNAL(toggled(bool)), this, SLOT(overrideWriteFlmChanged(bool)));
 	ui->table_queue->setColumnHidden(2, true);
-
 
 	// Buttons
 	connect(ui->button_imagingApply, SIGNAL(clicked()), this, SLOT(applyTonemapping()));
@@ -496,6 +497,16 @@ void MainWindow::openDocumentation ()
 void MainWindow::openForums ()
 {
 	QDesktopServices::openUrl(QUrl("http://www.luxrender.net/forum/"));
+}
+
+void MainWindow::openGallery ()
+{
+        QDesktopServices::openUrl(QUrl("http://www.luxrender.net/gallery"));
+}
+
+void MainWindow::openBugTracker ()
+{
+        QDesktopServices::openUrl(QUrl("http://www.luxrender.net/mantis"));
 }
 
 void MainWindow::ThreadChanged(int value)

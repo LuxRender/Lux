@@ -309,6 +309,8 @@ private slots:
 	void aboutDialog ();
 	void openDocumentation ();
 	void openForums ();
+        void openGallery ();
+        void openBugTracker ();
 	
 	void renderTimeout ();
 	void statsTimeout ();

@@ -87,7 +87,7 @@
      <item row="5" column="0">
       <widget class="QLabel" name="crf_label">
        <property name="text">
-        <string>Camera Response Function</string>
+        <string>Film Response</string>
        </property>
       </widget>
      </item>
