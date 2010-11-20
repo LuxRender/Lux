@@ -320,8 +320,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>362</width>
-                  <height>388</height>
+                  <width>381</width>
+                  <height>413</height>
                  </rect>
                 </property>
                 <property name="sizePolicy">
@@ -403,8 +403,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>362</width>
-                  <height>422</height>
+                  <width>377</width>
+                  <height>437</height>
                  </rect>
                 </property>
                 <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -983,7 +983,7 @@
      <x>0</x>
      <y>0</y>
      <width>840</width>
-     <height>22</height>
+     <height>21</height>
     </rect>
    </property>
    <property name="nativeMenuBar">
@@ -1013,6 +1013,8 @@
     </property>
     <addaction name="action_documentation"/>
     <addaction name="action_forums"/>
+    <addaction name="action_gallery"/>
+    <addaction name="action_bugtracker"/>
     <addaction name="separator"/>
     <addaction name="action_aboutDialog"/>
    </widget>
@@ -1327,6 +1329,16 @@
    </property>
    <property name="text">
     <string>Output HDR Images Tonemapped</string>
+   </property>
+  </action>
+  <action name="action_gallery">
+   <property name="text">
+    <string>Gallery</string>
+   </property>
+  </action>
+  <action name="action_bugtracker">
+   <property name="text">
+    <string>Bug tracker</string>
    </property>
   </action>
  </widget>
