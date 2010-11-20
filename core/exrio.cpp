@@ -391,6 +391,21 @@ ImageData *ReadImage(const string &name)
 	}
 }
 
+/*
+ * To convert a standard EXR to Blender MultiLayer format, change the channel names:
+ * RenderLayer.Combined.R
+ * RenderLayer.Combined.G
+ * RenderLayer.Combined.B
+ * RenderLayer.Combined.A
+ * RenderLayer.Depth.Z
+ * (and force RGBA format)
+ *
+ * and set a header
+ * header.insert("BlenderMultiChannel", StringAttribute("Blender V2.43 and newer"));
+ *
+ * it may also be necessary to flip image data both horizonally and vertically
+ */
+
 void WriteOpenEXRImage(int channeltype, bool halftype, bool savezbuf,
 	int compressiontype, const string &name, vector<RGBColor> &pixels,
 	vector<float> &alpha, u_int xRes, u_int yRes,

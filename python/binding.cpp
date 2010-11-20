@@ -158,6 +158,6 @@ BOOST_PYTHON_MODULE(pylux)
 	// Add definitions given in other header files
 	export_PyContext();
 	export_PyFlexImageFilm();
-	export_PyRenderer();
+	// export_PyRenderer();
 	export_PyRenderServer();
 }
