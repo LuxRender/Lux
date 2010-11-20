@@ -259,6 +259,9 @@ const char * ds_pylux_Context_sampler =
 const char * ds_pylux_Context_saveFLM =
 "Save the current virtual film to an FLM file.";
 
+const char * ds_pylux_Context_saveEXR =
+"Save the current image to EXR format, using the specified options";
+
 const char * ds_pylux_Context_scale =
 "Concatenate a scaling onto the current scope's transformation.\n"
 "(Ref: RiSpec 3.2 p.57)";

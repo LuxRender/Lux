@@ -33,29 +33,33 @@ void export_PyFlexImageFilm()
 	scope().attr("FlexImageFilm") = flexImageFilm;
 	scope flexImageFilmScope = flexImageFilm;
 
+	// TODO: don't rely on arbitrary int values, or having to
+	// include half the core headers
+	
 	/*
-	enum_<FlexImageFilm::OutputChannels>("OutputChannels", "")
-		.value("Y", FlexImageFilm::Y)
-		.value("YA", FlexImageFilm::YA)
-		.value("RGB", FlexImageFilm::RGB)
-		.value("RGBA", FlexImageFilm::RGBA)
+	enum_<int>("OutputChannels", "")
+		.value("Y",					0) //FlexImageFilm::Y)
+		.value("YA",				1) //FlexImageFilm::YA)
+		.value("RGB",				2) //FlexImageFilm::RGB)
+		.value("RGBA",				3) //FlexImageFilm::RGBA)
 		;
 
-	enum_<FlexImageFilm::ZBufNormalization>("ZBufNormalization", "")
-		.value("None", FlexImageFilm::None)
-		.value("CameraStartEnd", FlexImageFilm::CameraStartEnd)
-		.value("MinMax", FlexImageFilm::MinMax)
+	enum_<int>("ZBufNormalization", "")
+		.value("None",				0) //FlexImageFilm::None)
+		.value("CameraStartEnd",	1) //FlexImageFilm::CameraStartEnd)
+		.value("MinMax",			2) //FlexImageFilm::MinMax)
 		;
 	*/
 
-	// TODO: don't rely on arbitrary int values, or having to
-	// include half the core headers
+	// TODO: can't have more than one enum_<int>, causes RuntimeWarnings
+	// need to use reference to real enum
+
 	enum_<int>("TonemapKernels", "")
-		.value("Reinhard",	0) //FlexImageFilm::TMK_Reinhard)
-		.value("Linear",	1) //FlexImageFilm::TMK_Linear)
-		.value("Contrast",	2) //FlexImageFilm::TMK_Contrast)
-		.value("MaxWhite",	3) //FlexImageFilm::TMK_MaxWhite)
-		.value("AutoLinear",4) //FlexImageFilm::TMK_AutoLinear)
+		.value("Reinhard",			0) //FlexImageFilm::TMK_Reinhard)
+		.value("Linear",			1) //FlexImageFilm::TMK_Linear)
+		.value("Contrast",			2) //FlexImageFilm::TMK_Contrast)
+		.value("MaxWhite",			3) //FlexImageFilm::TMK_MaxWhite)
+		.value("AutoLinear",		4) //FlexImageFilm::TMK_AutoLinear)
 		;
 };
 

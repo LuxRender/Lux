@@ -33,6 +33,7 @@
 #include "pydoc.h"
 #include "pycontext.h"
 #include "pyfleximage.h"
+// #include "pyrenderer.h"
 #include "pyrenderserver.h"
 
 namespace lux{
@@ -157,5 +158,6 @@ BOOST_PYTHON_MODULE(pylux)
 	// Add definitions given in other header files
 	export_PyContext();
 	export_PyFlexImageFilm();
+	export_PyRenderer();
 	export_PyRenderServer();
 }

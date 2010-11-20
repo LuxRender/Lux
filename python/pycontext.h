@@ -614,7 +614,7 @@ public:
 
 	void worldEnd() //launch luxWorldEnd() into a thread
 	{
-		pyLuxWorldEndThreads.push_back(new boost::thread( boost::bind(&PyContext::pyWorldEnd,this) ));
+		pyLuxWorldEndThreads.push_back(new boost::thread( boost::bind(&PyContext::pyWorldEnd, this) ));
 	}
 
 	void loadFLM(const char* name)
@@ -627,6 +627,12 @@ public:
 	{
 		Context::SetActive(context);
 		context->SaveFLM(std::string(name));
+	}
+
+	void saveEXR(const char *filename, bool useHalfFloat, bool includeZBuffer, bool tonemapped)
+	{
+		Context::SetActive(context);
+		context->SaveEXR(filename, useHalfFloat, includeZBuffer, 2 /*ZIP_COMPRESSION*/, tonemapped);
 	}
 
 	void overrideResumeFLM(const char *name)
@@ -1239,6 +1245,11 @@ void export_PyContext()
 			&PyContext::saveFLM,
 			args("Context", "filename"),
 			ds_pylux_Context_saveFLM
+		)
+		.def("saveEXR",
+			&PyContext::saveEXR,
+			args("Context", "filename", "useHalfFloat", "includeZBuffer", "tonemapped"),
+			ds_pylux_Context_saveEXR
 		)
 		.def("scale",
 			&PyContext::scale,
