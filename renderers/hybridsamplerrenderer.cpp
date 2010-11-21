@@ -40,7 +40,7 @@ using namespace lux;
 // HybridSamplerRenderer
 //------------------------------------------------------------------------------
 
-HybridSamplerRenderer::HybridSamplerRenderer() {
+HybridSamplerRenderer::HybridSamplerRenderer() : HybridRenderer() {
 	state = INIT;
 
 	// Create the LuxRays context
@@ -75,6 +75,8 @@ HybridSamplerRenderer::HybridSamplerRenderer() {
 
 	preprocessDone = false;
 	suspendThreadsWhenDone = false;
+
+	AddStringConstant(*this, "name", "Name of current renderer", "hybridsampler");
 }
 
 HybridSamplerRenderer::~HybridSamplerRenderer() {

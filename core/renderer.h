@@ -60,7 +60,7 @@ public:
 
 /*! \brief The interface for rendering a scene.
  */
-class Renderer {
+class Renderer : public Queryable {
 public:
 	/*! Valid states of a Renderer.
 	 */
@@ -74,6 +74,7 @@ public:
 		SAMPLER, HYBRIDSAMPLER, HYBRIDSPPM
 	} RendererType;
 
+	Renderer() : Queryable("renderer") { }
     virtual ~Renderer() { }
 
 	/*! \brief Return the type of the Renderer.

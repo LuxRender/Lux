@@ -40,7 +40,7 @@ using namespace lux;
 // HybridSPPM
 //------------------------------------------------------------------------------
 
-HybridSPPMRenderer::HybridSPPMRenderer() {
+HybridSPPMRenderer::HybridSPPMRenderer() : HybridRenderer() {
 	state = INIT;
 
 	// Create the LuxRays context
@@ -88,6 +88,8 @@ HybridSPPMRenderer::HybridSPPMRenderer() {
 	useDirectLightSampling = false;
 
 	hitPoints = NULL;
+
+	AddStringConstant(*this, "name", "Name of current renderer", "hybridsppm");
 }
 
 HybridSPPMRenderer::~HybridSPPMRenderer() {
@@ -156,7 +158,7 @@ void HybridSPPMRenderer::Render(Scene *s) {
 
 		// initialize the thread's RandomGenerator
 		u_long seed = scene->seedBase - 1;
-		LOG(LUX_INFO, LUX_NOERROR) << "Preprocess thread uses seed: " << seed;
+		LOG( LUX_INFO,LUX_NOERROR) << "Preprocess thread uses seed: " << seed;
 
 		// integrator preprocessing
 		scene->sampler->SetFilm(scene->camera->film);

@@ -138,6 +138,8 @@ public:
 	static luxrays::DataSet *PreprocessGeometry(luxrays::Context *ctx, Scene *scene);
 
 protected:
+	HybridRenderer() : Renderer() { }
+
 	virtual void CreateRenderThread() = 0;
 	virtual void RemoveRenderThread() = 0;
 	virtual size_t GetRenderThreadCount() const  = 0;

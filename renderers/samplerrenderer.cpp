@@ -73,7 +73,7 @@ SRHostDescription::~SRHostDescription() {
 // SamplerRenderer
 //------------------------------------------------------------------------------
 
-SamplerRenderer::SamplerRenderer() {
+SamplerRenderer::SamplerRenderer() : Renderer() {
 	state = INIT;
 
 	SRHostDescription *host = new SRHostDescription(this, "Localhost");
@@ -81,6 +81,8 @@ SamplerRenderer::SamplerRenderer() {
 
 	preprocessDone = false;
 	suspendThreadsWhenDone = false;
+
+	AddStringConstant(*this, "name", "Name of current renderer", "sampler");
 }
 
 SamplerRenderer::~SamplerRenderer() {
