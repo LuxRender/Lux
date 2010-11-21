@@ -32,6 +32,7 @@
 #include "timer.h"
 #include "dynload.h"
 #include "hybridrenderer.h"
+#include "hybridsppm/hitpoints.h"
 
 #include "luxrays/luxrays.h"
 #include "luxrays/core/device.h"
@@ -64,6 +65,8 @@ public:
 	void Terminate();
 
 	static Renderer *CreateRenderer(const ParamSet &params);
+
+	friend class HitPoints;
 
 private:
 	//--------------------------------------------------------------------------
@@ -106,6 +109,16 @@ private:
 	luxrays::VirtualM2OHardwareIntersectionDevice *virtualIDevice;
 	vector<RenderThread *> renderThreads;
 	Scene *scene;
+
+	HitPoints *hitPoints;
+	LookUpAccelType lookupAccelType;
+	// double instead of float because photon counters declared as int 64bit
+	double photonAlpha;
+	float photonStartRadiusScale;
+	unsigned int maxEyePathDepth;
+	unsigned int maxPhotonPathDepth;
+	unsigned int stochasticInterval;
+	bool useDirectLightSampling;
 
 	Timer s_Timer;
 	double lastSamples, lastTime;

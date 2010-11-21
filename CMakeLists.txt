@@ -614,6 +614,10 @@ SET(lux_renderers_src
 	renderers/hybridrenderer.cpp
 	renderers/hybridsamplerrenderer.cpp
 	renderers/hybridsppmrenderer.cpp
+	renderers/hybridsppm/hashgrid.cpp
+	renderers/hybridsppm/hitpoints.cpp
+	renderers/hybridsppm/hybridhashgrid.cpp
+	renderers/hybridsppm/kdtree.cpp
 	renderers/samplerrenderer.cpp
 	)
 endif(LUXRAYS_DISABLE_OPENCL)

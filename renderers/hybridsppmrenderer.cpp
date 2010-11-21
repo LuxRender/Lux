@@ -75,6 +75,19 @@ HybridSPPMRenderer::HybridSPPMRenderer() {
 
 	preprocessDone = false;
 	suspendThreadsWhenDone = false;
+
+	// SPPM rendering parameters
+
+	lookupAccelType = HYBRID_HASH_GRID;
+	maxEyePathDepth = 16;
+	photonAlpha = 0.7f;
+	photonStartRadiusScale = 1.f;
+	maxPhotonPathDepth = 8;
+
+	stochasticInterval = 5000000;
+	useDirectLightSampling = false;
+
+	hitPoints = NULL;
 }
 
 HybridSPPMRenderer::~HybridSPPMRenderer() {
@@ -143,7 +156,7 @@ void HybridSPPMRenderer::Render(Scene *s) {
 
 		// initialize the thread's RandomGenerator
 		u_long seed = scene->seedBase - 1;
-		LOG( LUX_INFO,LUX_NOERROR) << "Preprocess thread uses seed: " << seed;
+		LOG(LUX_INFO, LUX_NOERROR) << "Preprocess thread uses seed: " << seed;
 
 		// integrator preprocessing
 		scene->sampler->SetFilm(scene->camera->film);
@@ -375,6 +388,27 @@ void HybridSPPMRenderer::RenderThread::RenderImpl(RenderThread *renderThread) {
 		++xt.sec;
 		boost::thread::sleep(xt);
 	}
+
+	//HitPoints *hitPoints = NULL;
+	try {
+		/*// First eye pass
+		if (renderThread->n == 0) {
+			// One thread initialize the EyePaths list
+			renderEngine->hitPoints = new HitPoints(renderEngine);
+		}
+
+		// Wait for other threads
+		renderEngine->barrier->wait();
+
+		hitPoints = renderEngine->hitPoints;*/
+	} catch (boost::thread_interrupted) {
+		LOG(LUX_INFO, LUX_NOERROR) << "Rendering thread " << renderThread->n << " halted";
+	}
+#if !defined(LUXRAYS_DISABLE_OPENCL)
+	catch (cl::Error err) {
+		LOG(LUX_INFO, LUX_ERROR) << "[SPPMDeviceRenderThread::" << renderThread->n << "] Rendering thread ERROR: " << err.what() << "(" << err.err() << ")";
+	}
+#endif
 }
 
 Renderer *HybridSPPMRenderer::CreateRenderer(const ParamSet &params) {

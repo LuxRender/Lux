@@ -160,7 +160,7 @@ void HybridSamplerRenderer::Render(Scene *s) {
 
 		// initialize the thread's RandomGenerator
 		lastUsedSeed = scene->seedBase - 1;
-		LOG( LUX_INFO,LUX_NOERROR) << "Preprocess thread uses seed: " << lastUsedSeed;
+		LOG(LUX_INFO, LUX_NOERROR) << "Preprocess thread uses seed: " << lastUsedSeed;
 
 		RandomGenerator rng(lastUsedSeed);
 
@@ -409,7 +409,7 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 		renderer->lastUsedSeed++;
 		seed = renderer->lastUsedSeed;
 	}
-	LOG( LUX_INFO,LUX_NOERROR) << "Thread " << renderThread->n << " uses seed: " << seed;
+	LOG(LUX_INFO, LUX_NOERROR) << "Thread " << renderThread->n << " uses seed: " << seed;
 
 	RandomGenerator rng(seed);
 
@@ -424,7 +424,7 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 		integratorState[i]->Init(scene);
 	}
 
-	LOG( LUX_DEBUG,LUX_NOERROR) << "Thread " << renderThread->n << " initialization time: " <<
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Thread " << renderThread->n << " initialization time: " <<
 			std::setiosflags(std::ios::fixed) << std::setprecision(2) <<
 			luxrays::WallClockTime() - t0 << " secs";
 
