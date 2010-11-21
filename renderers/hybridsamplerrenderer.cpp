@@ -36,6 +36,8 @@
 
 using namespace lux;
 
+#if !defined(LUXRAYS_DISABLE_OPENCL)
+
 //------------------------------------------------------------------------------
 // HybridSamplerRenderer
 //------------------------------------------------------------------------------
@@ -519,3 +521,5 @@ Renderer *HybridSamplerRenderer::CreateRenderer(const ParamSet &params) {
 
 static DynamicLoader::RegisterRenderer<HybridSamplerRenderer> r("hybrid");
 static DynamicLoader::RegisterRenderer<HybridSamplerRenderer> r2("hybridsampler");
+
+#endif // !defined(LUXRAYS_DISABLE_OPENCL)

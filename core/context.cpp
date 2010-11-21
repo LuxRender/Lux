@@ -791,24 +791,26 @@ void Context::WorldEnd() {
 		if (luxCurrentScene) {
 			luxCurrentRenderer = renderOptions->MakeRenderer();
 
-			// Dade - check if we have to start the network rendering updater thread
-			if (renderFarm->getServerCount() > 0)
-				renderFarm->startFilmUpdater(luxCurrentScene);
+			if (luxCurrentRenderer) {
+				// Dade - check if we have to start the network rendering updater thread
+				if (renderFarm->getServerCount() > 0)
+					renderFarm->startFilmUpdater(luxCurrentScene);
 
-			luxCurrentRenderer->Render(luxCurrentScene);
+				luxCurrentRenderer->Render(luxCurrentScene);
 
-			// Check if we have to stop the network rendering updater thread
-			if (GetServerCount() > 0) {
-				// Stop the render farm too
-				activeContext->renderFarm->stopFilmUpdater();
-				// Update the film for the last time
-				activeContext->renderFarm->updateFilm(luxCurrentScene);
-				// Disconnect from all servers
-				activeContext->renderFarm->disconnectAll();
+				// Check if we have to stop the network rendering updater thread
+				if (GetServerCount() > 0) {
+					// Stop the render farm too
+					activeContext->renderFarm->stopFilmUpdater();
+					// Update the film for the last time
+					activeContext->renderFarm->updateFilm(luxCurrentScene);
+					// Disconnect from all servers
+					activeContext->renderFarm->disconnectAll();
+				}
+
+				// Store final image
+				luxCurrentScene->camera->film->WriteImage((ImageType)(IMAGE_FILEOUTPUT|IMAGE_FRAMEBUFFER));
 			}
-
-			// Store final image
-			luxCurrentScene->camera->film->WriteImage((ImageType)(IMAGE_FILEOUTPUT|IMAGE_FRAMEBUFFER));
 		}
 	}
 

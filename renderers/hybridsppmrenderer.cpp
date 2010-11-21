@@ -36,6 +36,8 @@
 
 using namespace lux;
 
+#if !defined(LUXRAYS_DISABLE_OPENCL)
+
 //------------------------------------------------------------------------------
 // HybridSPPM
 //------------------------------------------------------------------------------
@@ -418,3 +420,5 @@ Renderer *HybridSPPMRenderer::CreateRenderer(const ParamSet &params) {
 }
 
 static DynamicLoader::RegisterRenderer<HybridSPPMRenderer> r("hybridsppm");
+
+#endif // !defined(LUXRAYS_DISABLE_OPENCL)
