@@ -24,7 +24,7 @@
 #define LUX_RENDERER_H
 
 #include <vector>
-
+#include "queryable.h"
 #include "lux.h"
 
 namespace lux
