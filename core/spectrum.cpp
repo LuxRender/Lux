@@ -48,18 +48,6 @@ Scalar SWCSpectrum::Y(const SpectrumWavelengths &sw) const {
 
 	return y;
 }
-Scalar SWCSpectrum::Filter(const SpectrumWavelengths &sw) const
-{
-	Scalar result = 0.f;
-	if (sw.single) {
-		result = c[sw.single_w];
-	} else {
-		for (u_int i = 0; i < WAVELENGTH_SAMPLES; ++i)
-			result += c[i];
-		result *= inv_WAVELENGTH_SAMPLES;
-	}
-	return result;
-}
 
 SWCSpectrum::SWCSpectrum(const SpectrumWavelengths &sw, const SPD &s) {
 	s.Sample(WAVELENGTH_SAMPLES, sw.w, c);

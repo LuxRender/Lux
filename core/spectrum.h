@@ -173,7 +173,7 @@ public:
 		return false;
 	}
 	Scalar Y(const SpectrumWavelengths &sw) const;
-	Scalar Filter(const SpectrumWavelengths &sw) const;
+	inline Scalar Filter(const SpectrumWavelengths &sw) const;
 
 //	bool operator<(const SWCSpectrum &s2) const {
 //		return y() < s2.y();
@@ -194,5 +194,19 @@ private:
 };
 
 }//namespace lux
+
+// SpectrumWavelengths needs the SWCSpectrum class fully defined
+#include "spectrumwavelengths.h"
+
+// This is one of the most used functions so make it an inline candidate
+// However it requires SpectrumWavelengths to be fully defined
+inline Scalar lux::SWCSpectrum::Filter(const SpectrumWavelengths &sw) const {
+	if (sw.single)
+		return c[sw.single_w];
+	Scalar result = 0.f;
+	for (u_int i = 0; i < WAVELENGTH_SAMPLES; ++i)
+		result += c[i];
+	return result * inv_WAVELENGTH_SAMPLES;
+}
 
 #endif // LUX_SWCSPECTRUM_H

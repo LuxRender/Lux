@@ -20,11 +20,15 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
+// Force correct declaration order of SpectrumWavelengths and SWCSpectrum
+#ifndef LUX_SWCSPECTRUM_H
+#include "spectrum.h"
+#endif
+
 #ifndef LUX_SPECTRUMWAVELENGTHS_H
 #define LUX_SPECTRUMWAVELENGTHS_H
 // Spectrumwavelengths.h*
 #include "lux.h"
-#include "spectrum.h"
 #include "regular.h"
 
 namespace lux
