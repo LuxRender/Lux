@@ -32,14 +32,14 @@ using std::ostream;
 namespace lux
 {
 
-// String template to format local only, provides placeholders 1 to 7
-string StatsData::template_string_local = "%1% - %2%T: %3$0.2f %4%S/p %5$0.2f %6%S/s %7$0.2f%% Eff";
+// String template to format local only, provides placeholders 1 to 7 and 20, 21
+string StatsData::template_string_local = "%1% - %2%T: %3$0.2f %4%S/p %20$0.2f %21%C/s (%5$0.2f %6%S/s @ %7$0.2f%% Eff)";
 // String template to format network waiting, provides placeholder 8
 string StatsData::template_string_network_waiting = " - %8%N: Waiting for first update";
-// String template to format network rendering, provides placeholders 9 to 13
-string StatsData::template_string_network = " - %8%N: %9%%10$0.2f %11%S/p %12$0.2f %13%S/s";
-// String template to format complete stats, provides placeholders 9 and 14 to 17
-string StatsData::template_string_total = " - Tot: %9%%14$0.2f %15%S/p %16$0.2f %17%S/s";
+// String template to format network rendering, provides placeholders 9 to 13 and 22, 23
+string StatsData::template_string_network = " - %8%N: %9%%10$0.2f %11%S/p %22$0.2f %23%C/s (%12$0.2f %13%S/s)";
+// String template to format complete stats, provides placeholders 9 and 14 to 17 and 24, 25
+string StatsData::template_string_total = " - Tot: %9%%14$0.2f %15%S/p %24$0.2f %25%C/s (%16$0.2f %17%S/s)";
 // String template to format percent samples completion, provides placeholder 18
 string StatsData::template_string_haltspp = " - %9%%18$0.2f%% Complete (S/Px)";
 // String template to format percent time completion, provides placeholder 19
@@ -88,24 +88,31 @@ void StatsData::update(const bool add_total)
 			return;
 		}
 
+		int threadCount = ctx->Statistics("threadCount");	// %2
+		float eff = ctx->Statistics("efficiency");			// %7
+
 		std::ostringstream os;
 		os << template_string_local;
 
 		double secelapsed = ctx->Statistics("secElapsed");	// %1
+		float local_cps = 0;								// %20
 		float local_spp = 0;								// %3, %4
 		float local_sps = 0;								// %5, %6
 		if (secelapsed > 0)
 		{
 			local_spp = localsamples / px;
 			local_sps = localsamples / secelapsed;
+			local_cps = local_sps * (eff/100.f);
 		}
 
 		// This is so that completion_samples can be calculated if not networking or add_total==false
+		float total_cps = local_cps;						// %24
 		float total_spp = local_spp;						// %14, %15
 		float total_sps = local_sps;						// %16, %17
 
 		int serverCount = ctx->GetServerCount();			// %8
 		bool network_predicted = false;						// %9
+		float network_cps = 0;								// %22
 		float network_spp = 0;								// %10, %11
 		float network_sps = 0;								// %12, %13
 		if (serverCount > 0)
@@ -121,6 +128,7 @@ void StatsData::update(const bool add_total)
 									previousNetworkSamples;
 					network_spp = netsamples / px;
 					network_sps = previousNetworkSamplesSec;
+					network_cps = network_sps * (eff/100.f);
 
 					network_predicted = true;
 				}
@@ -129,6 +137,7 @@ void StatsData::update(const bool add_total)
 					// Use real data
 					network_spp = netsamples / px;
 					network_sps = netsamples / secelapsed;
+					network_cps = network_sps * (eff/100.f);
 
 					previousNetworkSamples = netsamples;
 					previousNetworkSamplesSec = network_sps;
@@ -146,6 +155,7 @@ void StatsData::update(const bool add_total)
 
 			total_spp = (localsamples + netsamples) / px;
 			total_sps = (localsamples + netsamples) / secelapsed;
+			total_cps = total_sps * (eff/100.f);
 		}
 
 
@@ -187,9 +197,6 @@ void StatsData::update(const bool add_total)
 		boost::format stats_formatter = boost::format(os.str().c_str());
 		stats_formatter.exceptions( boost::io::all_error_bits ^(boost::io::too_many_args_bit | boost::io::too_few_args_bit) ); // Ignore extra or missing args
 
-		int threadCount = ctx->Statistics("threadCount");	// %2
-		float eff = ctx->Statistics("efficiency");			// %7
-
 		formattedStatsString = str(stats_formatter
 			/*  %1 */ % boost::posix_time::time_duration(0, 0, secelapsed, 0)
 			/*  %2 */ % threadCount
@@ -210,6 +217,12 @@ void StatsData::update(const bool add_total)
 			/* %17 */ % magnitude_prefix(total_sps)
 			/* %18 */ % completion_samples
 			/* %19 */ % completion_time
+			/* %20 */ % magnitude_reduce(local_cps)
+			/* %21 */ % magnitude_prefix(local_cps)
+			/* %22 */ % magnitude_reduce(network_cps)
+			/* %23 */ % magnitude_prefix(network_cps)
+			/* %24 */ % magnitude_reduce(total_cps)
+			/* %25 */ % magnitude_prefix(total_cps)
 		);
 
 	} catch (std::runtime_error e) {
