@@ -463,6 +463,7 @@ void LoopSubdiv::ApplyDisplacementMap(const vector<SDVertex *> verts,
 
 		SDFace *face = v->startFace;
 		u_int nf = 0;
+		float dl = 0.f;
 		vector<SDVertex *> vlist;
 		vlist.reserve(v->valence());
 		if (v->boundary) {
@@ -472,9 +473,7 @@ void LoopSubdiv::ApplyDisplacementMap(const vector<SDVertex *> verts,
 					Normal(0, 0, 0), Normal(0, 0, 0),
 					vv->u, vv->v, this);
 
-				displacement *=	-(displacementMapOffset +
-					displacementMapScale *
-					displacementMap.get()->Evaluate(swl, dg));
+				dl += displacementMap.get()->Evaluate(swl, dg);
 				++nf;
 				if (vv->child != vv) {
 					vlist.push_back(vv);
@@ -489,9 +488,7 @@ void LoopSubdiv::ApplyDisplacementMap(const vector<SDVertex *> verts,
 					Normal(0, 0, 0), Normal(0, 0, 0),
 					vv->u, vv->v, this);
 
-				displacement *=	-(displacementMapOffset +
-					displacementMapScale *
-					displacementMap.get()->Evaluate(swl, dg));
+				dl += displacementMap.get()->Evaluate(swl, dg);
 				++nf;
 				if (vv->child != vv) {
 					vlist.push_back(vv);
@@ -506,9 +503,7 @@ void LoopSubdiv::ApplyDisplacementMap(const vector<SDVertex *> verts,
 					Normal(0, 0, 0), Normal(0, 0, 0),
 					vv->u, vv->v, this);
 
-				displacement *=	-(displacementMapOffset +
-					displacementMapScale *
-					displacementMap.get()->Evaluate(swl, dg));
+				dl += displacementMap.get()->Evaluate(swl, dg);
 				++nf;
 				if (vv->child != vv) {
 					vlist.push_back(vv);
@@ -517,8 +512,9 @@ void LoopSubdiv::ApplyDisplacementMap(const vector<SDVertex *> verts,
 				face = face->nextFace(v->P);
 			} while (face != v->startFace);
 		}
+		dl = -(dl * displacementMapScale / nf + displacementMapOffset);
 		// Average the displacement
-		displacement /= nf;
+		displacement *= dl;
 
 		// Apply displacement to all vertices in the list
 		for (u_int j = 0; j < vlist.size(); ++j)
