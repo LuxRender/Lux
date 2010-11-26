@@ -352,7 +352,7 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 	if (displacementMap.get() != NULL) {
 		// Dade - apply the displacement map
 
-		ApplyDisplacementMap(v, Ns, UVlimit);
+		ApplyDisplacementMap(v, Ns);
 
 		if (displacementMapNormalSmooth) {
 			// Dade - recalculate normals after the displacement
@@ -437,47 +437,92 @@ void LoopSubdiv::GenerateNormals(const vector<SDVertex *> v, Normal *Ns) {
 				T = -T;
 			}
 		}
-		Ns[i] = Normal(Cross(T, S));
+		Ns[i] = Normal(Normalize(Cross(T, S)));
 	}
 }
 
-void LoopSubdiv::ApplyDisplacementMap(
-		const vector<SDVertex *> verts,
-		const Normal *norms,
-		const float *uvs) const {
+void LoopSubdiv::ApplyDisplacementMap(const vector<SDVertex *> verts,
+	const Normal *norms) const
+{
 	// Dade - apply the displacement map
 	LOG(LUX_INFO,LUX_NOERROR) << "Applying displacement map to " << verts.size() << " vertices";
 	SpectrumWavelengths swl;
 	swl.Sample(.5f);
 
 	for (u_int i = 0; i < verts.size(); i++) {
-		Point pp = ObjectToWorld(verts[i]->P);
-		Normal nn = Normalize(norms[i]);	
+		SDVertex *v = verts[i];
+		// Special use of the child member to detect that
+		// the vertex has already been displaced
+		if (v->child == v)
+			continue;
+		Point pp = ObjectToWorld(v->P);
+		const Normal nn = Normalize(ObjectToWorld(norms[i]));
 		Vector dpdu, dpdv;
 		CoordinateSystem(Vector(nn), &dpdu, &dpdv);
+		Vector displacement(norms[i]);
 
-		float u, v;
-		if (uvs != NULL) {
-			u = uvs[2 * i];
-			v = uvs[2 * i + 1];
+		SDFace *face = v->startFace;
+		u_int nf = 0;
+		vector<SDVertex *> vlist;
+		vlist.reserve(v->valence());
+		if (v->boundary) {
+			do {
+				SDVertex *vv = face->v[face->vnum(v->P)];
+				DifferentialGeometry dg(pp, nn, dpdu, dpdv,
+					Normal(0, 0, 0), Normal(0, 0, 0),
+					vv->u, vv->v, this);
+
+				displacement *=	-(displacementMapOffset +
+					displacementMapScale *
+					displacementMap.get()->Evaluate(swl, dg));
+				++nf;
+				if (vv->child != vv) {
+					vlist.push_back(vv);
+					vv->child = vv;
+				}
+				face = face->nextFace(v->P);
+			} while (face);
+			face = v->startFace->prevFace(v->P);
+			while (face) {
+				SDVertex *vv = face->v[face->vnum(v->P)];
+				DifferentialGeometry dg(pp, nn, dpdu, dpdv,
+					Normal(0, 0, 0), Normal(0, 0, 0),
+					vv->u, vv->v, this);
+
+				displacement *=	-(displacementMapOffset +
+					displacementMapScale *
+					displacementMap.get()->Evaluate(swl, dg));
+				++nf;
+				if (vv->child != vv) {
+					vlist.push_back(vv);
+					vv->child = vv;
+				}
+				face = face->prevFace(v->P);
+			}
 		} else {
-			u = pp.x;
-			v = pp.y;
+			do {
+				SDVertex *vv = face->v[face->vnum(v->P)];
+				DifferentialGeometry dg(pp, nn, dpdu, dpdv,
+					Normal(0, 0, 0), Normal(0, 0, 0),
+					vv->u, vv->v, this);
+
+				displacement *=	-(displacementMapOffset +
+					displacementMapScale *
+					displacementMap.get()->Evaluate(swl, dg));
+				++nf;
+				if (vv->child != vv) {
+					vlist.push_back(vv);
+					vv->child = vv;
+				}
+				face = face->nextFace(v->P);
+			} while (face != v->startFace);
 		}
-	
-		DifferentialGeometry dg = DifferentialGeometry(
-				pp,
-				nn,
-				dpdu, dpdv,
-				Normal(0, 0, 0), Normal(0, 0, 0),
-				u, v, this);
+		// Average the displacement
+		displacement /= nf;
 
-		Vector displacement(nn);
-		displacement *=	- (
-				displacementMap.get()->Evaluate(swl, dg) * displacementMapScale +
-				displacementMapOffset);
-
-		verts[i]->P += displacement;
+		// Apply displacement to all vertices in the list
+		for (u_int j = 0; j < vlist.size(); ++j)
+			vlist[j]->P += displacement;
 	}
 }
 
@@ -548,6 +593,12 @@ void LoopSubdiv::weightBoundary(SDVertex *destVert,  SDVertex *vert,
                                  float beta) const {
 	// Put _vert_ one-ring in _Pring_
 	u_int valence = vert->valence();
+	if (displacementMapSharpBoundary) {
+		destVert->P = vert->P;
+		destVert->u = vert->u;
+		destVert->v = vert->v;
+		return;
+	}
 	SDVertex **Vring = (SDVertex **)alloca(valence * sizeof(SDVertex *));
 	SDVertex **VR = Vring;
 	// Get one ring vertices for boundary vertex
@@ -575,27 +626,21 @@ void LoopSubdiv::weightBoundary(SDVertex *destVert,  SDVertex *vert,
 		}
 	} while (face != NULL);
 
-	if(!displacementMapSharpBoundary) {
-		Point P = (1 - 2 * beta) * vert->P;
-		P += beta * Vring[0]->P;
-		P += beta * Vring[valence - 1]->P;
-		destVert->P = P;
+	Point P = (1 - 2 * beta) * vert->P;
+	P += beta * Vring[0]->P;
+	P += beta * Vring[valence - 1]->P;
+	destVert->P = P;
 
-		if (uvSplit) {
-			destVert->u = vert->u;
-			destVert->v = vert->v;
-		} else {
-			float u = (1.f - 2.f * beta) * vert->u;
-			float v = (1.f - 2.f * beta) * vert->v;
-			u += beta * (Vring[0]->u + Vring[valence - 1]->u);
-			v += beta * (Vring[0]->v + Vring[valence - 1]->v);
-			destVert->u = u;
-			destVert->v = v;
-		}
-	} else {
-		destVert->P = vert->P;
+	if (uvSplit) {
 		destVert->u = vert->u;
 		destVert->v = vert->v;
+	} else {
+		float u = (1.f - 2.f * beta) * vert->u;
+		float v = (1.f - 2.f * beta) * vert->v;
+		u += beta * (Vring[0]->u + Vring[valence - 1]->u);
+		v += beta * (Vring[0]->v + Vring[valence - 1]->v);
+		destVert->u = u;
+		destVert->v = v;
 	}
 }
 

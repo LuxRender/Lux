@@ -66,14 +66,6 @@ struct SDFace {
 			children[i] = NULL;
 	}
 	// SDFace Methods
-/*	u_int vnum(SDVertex *vert) const {
-		for (u_int i = 0; i < 3; ++i) {
-			if (v[i] == vert)
-				return i;
-		}
-		LOG(LUX_SEVERE,LUX_BUG)<<"Basic logic error in SDFace::vnum()";
-		return 0;
-	}*/
 	u_int vnum(const Point &p) const {
 		for (u_int i = 0; i < 3; ++i) {
 			if (v[i]->P == p)
@@ -82,18 +74,6 @@ struct SDFace {
 		LOG(LUX_SEVERE,LUX_BUG)<<"Basic logic error in SDFace::vnum()";
 		return 0;
 	}
-/*	SDFace *nextFace(SDVertex *vert) const {
-		return f[vnum(vert)];
-	}
-	SDFace *prevFace(SDVertex *vert) const {
-		return f[PREV(vnum(vert))];
-	}
-	SDVertex *nextVert(SDVertex *vert) const {
-		return v[NEXT(vnum(vert))];
-	}
-	SDVertex *prevVert(SDVertex *vert) const {
-		return v[PREV(vnum(vert))];
-	}*/
 	SDFace *nextFace(const Point &p) const {
 		return f[vnum(p)];
 	}
@@ -106,14 +86,6 @@ struct SDFace {
 	SDVertex *prevVert(const Point &p) const {
 		return v[PREV(vnum(p))];
 	}
-/*	SDVertex *otherVert(SDVertex *v0, SDVertex *v1) const {
-		for (u_int i = 0; i < 3; ++i) {
-			if (v[i] != v0 && v[i] != v1)
-				return v[i];
-		}
-		LOG(LUX_SEVERE,LUX_BUG)<<"Basic logic error in SDVertex::otherVert()";
-		return NULL;
-	}*/
 	SDVertex *otherVert(const Point &p0, const Point &p1) const {
 		for (u_int i = 0; i < 3; ++i) {
 			if (v[i]->P != p0 && v[i]->P != p1)
@@ -212,10 +184,8 @@ private:
 	}
 	static void GenerateNormals(const vector<SDVertex *> verts, Normal *Ns);
 
-	void ApplyDisplacementMap(
-			const vector<SDVertex *> verts,
-			const Normal *norms,
-			const float *uvs) const;
+	void ApplyDisplacementMap(const vector<SDVertex *> verts,
+		const Normal *norms) const;
 
 	// LoopSubdiv Private Data
 	u_int nLevels;
