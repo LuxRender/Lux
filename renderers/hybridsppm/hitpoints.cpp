@@ -124,6 +124,22 @@ using namespace lux;
 }*/
 
 //------------------------------------------------------------------------------
+// EyePath methods
+//------------------------------------------------------------------------------
+
+EyePath::EyePath(const u_int index) {
+	state = NEXT_VERTEX;
+	pixelIndex = index;
+	depth = 0;
+	throughput = 1.f;
+}
+
+EyePath::~EyePath() {
+}
+
+//------------------------------------------------------------------------------
+// HitPoints methods
+//------------------------------------------------------------------------------
 
 HitPoints::HitPoints(HybridSPPMRenderer *engine) {
 	renderer = engine;
@@ -254,8 +270,8 @@ void HitPoints::AccumulateFlux(const unsigned long long photonTraced,
 void HitPoints::SetHitPoints(RandomGenerator *rndGen,
 		luxrays::IntersectionDevice *device, luxrays::RayBuffer *rayBuffer,
 		const u_int index, const u_int count) {
-	/*const u_int width = renderer->scene->camera->GetXPixelCount();
-	const u_int height = renderer->scene->camera->GetYPixelCount();
+	const u_int width = renderer->scene->camera->film->GetXPixelCount();
+	const u_int height = renderer->scene->camera->film->GetYPixelCount();
 
 	// Calculate the index of work this thread has to do
 	const u_int pixelCount = width * height;
@@ -266,12 +282,12 @@ void HitPoints::SetHitPoints(RandomGenerator *rndGen,
 	assert (last <= pixelCount);
 
 	std::list<EyePath *> todoEyePaths;
-	Scene *scene = renderEngine->scene;
+	//Scene *scene = renderer->scene;
 
 	// Generate eye rays
-	//std::cerr << "Building eye paths rays" << std::endl;
+	LOG(LUX_INFO, LUX_NOERROR) << "Building eye paths rays";
 	for (u_int i = first; i < last; ++i) {
-		EyePath *eyePath = new EyePath();
+		/*EyePath *eyePath = new EyePath(i);
 
 		const u_int x = i % width;
 		const u_int y = i / width;
@@ -280,18 +296,13 @@ void HitPoints::SetHitPoints(RandomGenerator *rndGen,
 		scene->camera->GenerateRay(scrX, scrY, width, height, &eyePath->ray,
 				rndGen->floatValue(), rndGen->floatValue(), rndGen->floatValue());
 
-		eyePath->state = NEXT_VERTEX;
-		eyePath->pixelIndex = i;
-		eyePath->depth = 0;
-		eyePath->throughput = Spectrum(1.f, 1.f, 1.f);
-
-		todoEyePaths.push_front(eyePath);
+		todoEyePaths.push_front(eyePath);*/
 	}
 
 	// Iterate through all eye paths
 	//std::cerr << "Building eye paths hit points" << std::endl;
 	// Note: (todoEyePaths.size() > 0) is extremly slow to execute
-	u_int todoEyePathCount = last - first;
+	/*u_int todoEyePathCount = last - first;
 	while(todoEyePathCount > 0) {
 		std::list<EyePath *>::iterator todoEyePathsIterator = todoEyePaths.begin();
 		while (todoEyePathsIterator != todoEyePaths.end()) {

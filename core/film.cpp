@@ -876,6 +876,62 @@ void Film::AddSample(Contribution *contrib) {
 	}
 }
 
+void Film::SetSample(const Contribution *contrib) {
+	XYZColor xyz = contrib->color;
+	const float alpha = contrib->alpha;
+	const float weight = contrib->variance;
+
+	// Issue warning if unexpected radiance value returned
+	if (!(xyz.Y() >= 0.f) || isinf(xyz.Y())) {
+		if(debug_mode) {
+			LOG(LUX_WARNING,LUX_LIMIT) << "Out of bound intensity in Film::AddSample: "
+			   << xyz.Y() << ", sample discarded";
+		}
+		return;
+	}
+
+	if (!(alpha >= 0.f) || isinf(alpha)) {
+		if(debug_mode) {
+			LOG(LUX_WARNING,LUX_LIMIT) << "Out of bound  alpha in Film::AddSample: "
+			   << alpha << ", sample discarded";
+		}
+		return;
+	}
+
+	if (!(weight >= 0.f) || isinf(weight)) {
+		if(debug_mode) {
+			LOG(LUX_WARNING,LUX_LIMIT) << "Out of bound  weight in Film::AddSample: "
+			   << weight << ", sample discarded";
+		}
+		return;
+	}
+
+	// Reject samples higher than max Y() after warmup period
+	if (warmupComplete) {
+		if(xyz.Y() > maxY)
+			return;
+	} else {
+	 	maxY = max(maxY, xyz.Y());
+		++warmupSamples;
+	 	if (warmupSamples >= reject_warmup_samples)
+			warmupComplete = true;
+	}
+
+	if (premultiplyAlpha)
+		xyz *= alpha;
+
+	BufferGroup &currentGroup = bufferGroups[contrib->bufferGroup];
+	Buffer *buffer = currentGroup.getBuffer(contrib->buffer);
+
+	// Compute sample's raster extent
+	const u_int dImageX = contrib->imageX - 0.5f;
+	const u_int dImageY = contrib->imageY - 0.5f;
+	buffer->Set(dImageX, dImageY, xyz, alpha);
+
+	// Update ZBuffer values with filtered zdepth contribution
+	if(use_Zbuf && contrib->zdepth != 0.f)
+		ZBuffer->Add(dImageX, dImageY, contrib->zdepth, 1.0f);
+}
 
 void Film::WriteResumeFilm(const string &filename)
 {

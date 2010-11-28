@@ -39,7 +39,9 @@ enum EyePathStateType {
 };
 
 class EyePath {
-public:
+	EyePath(const u_int index);
+	~EyePath();
+
 	EyePathStateType state;
 
 	// Screen information
@@ -48,6 +50,7 @@ public:
 	// Eye path information
 	Ray ray;
 	u_int depth;
+
 	SWCSpectrum throughput;
 };
 

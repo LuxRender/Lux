@@ -45,6 +45,8 @@ namespace lux
 // HybridSPPM
 //------------------------------------------------------------------------------
 
+#define SPPM_DEVICE_RENDER_BUFFER_COUNT 4
+
 class HybridSPPMRenderer : public HybridRenderer {
 public:
 	HybridSPPMRenderer();
@@ -75,8 +77,10 @@ private:
 
 	class RenderThread : public boost::noncopyable {
 	public:
-		RenderThread(u_int index, HybridSPPMRenderer *renderer, luxrays::IntersectionDevice * idev);
+		RenderThread(const u_int index, HybridSPPMRenderer *renderer, luxrays::IntersectionDevice *idev);
 		~RenderThread();
+
+		void UpdateFilm();
 
 		static void RenderImpl(RenderThread *r);
 
@@ -84,6 +88,9 @@ private:
 		boost::thread *thread; // keep pointer to delete the thread object
 		HybridSPPMRenderer *renderer;
 		luxrays::IntersectionDevice * iDevice;
+		luxrays::RayBuffer *rayBufferHitPoints;
+		std::vector<luxrays::RayBuffer *> rayBuffersList;
+		std::vector<std::vector<PhotonPath> *> photonPathsList;
 
 		// Rendering statistics
 		fast_mutex statLock;
@@ -91,8 +98,10 @@ private:
 	};
 
 	void CreateRenderThread();
+	void PrivateCreateRenderThread();
 	void RemoveRenderThread();
-	size_t GetRenderThreadCount() const  { return renderThreads.size(); }
+	void PrivateRemoveRenderThread();
+	size_t GetRenderThreadCount() const  { return requestedRenderThreadsCount; }
 
 	double Statistics_GetNumberOfSamples();
 	double Statistics_SamplesPSec();
@@ -108,7 +117,10 @@ private:
 	// LuxRays virtual device used to feed all HardwareIntersectionDevice
 	luxrays::VirtualM2OHardwareIntersectionDevice *virtualIDevice;
 	vector<RenderThread *> renderThreads;
+	u_long requestedRenderThreadsCount;
 	Scene *scene;
+	u_long lastUsedSeed;
+	u_int bufferId;
 
 	HitPoints *hitPoints;
 	LookUpAccelType lookupAccelType;
@@ -119,6 +131,9 @@ private:
 	unsigned int maxPhotonPathDepth;
 	unsigned int stochasticInterval;
 	bool useDirectLightSampling;
+
+	boost::barrier *barrier;
+	boost::barrier *barrierExit;
 
 	Timer s_Timer;
 	double lastSamples, lastTime;

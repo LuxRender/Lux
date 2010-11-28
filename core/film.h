@@ -114,6 +114,13 @@ public:
 		pixel.weightSum += wt;
 	}
 
+	void Set(u_int x, u_int y, XYZColor L, float alpha) {
+		Pixel &pixel = (*pixels)(x, y);
+		pixel.L = L;
+		pixel.alpha = alpha;
+		pixel.weightSum = 1.f;
+	}
+
 	void Clear() {
 		for (u_int y = 0, offset = 0; y < yPixelCount; ++y) {
 			for (u_int x = 0; x < xPixelCount; ++x, ++offset) {
@@ -387,6 +394,7 @@ public:
 	virtual ~Film();
 
 	virtual void AddSample(Contribution *contrib);
+	virtual void SetSample(const Contribution *contrib);
 	virtual void AddSampleCount(float count);
 	virtual void SaveEXR(const string &exrFilename, bool useHalfFloats, bool includeZBuf, int compressionType, bool tonemapped) {
 		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SaveEXR not implemented";

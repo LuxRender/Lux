@@ -78,6 +78,10 @@ HybridSPPMRenderer::HybridSPPMRenderer() : HybridRenderer() {
 	preprocessDone = false;
 	suspendThreadsWhenDone = false;
 
+	barrier = NULL;
+	barrierExit = NULL;
+	requestedRenderThreadsCount = 0;
+
 	// SPPM rendering parameters
 
 	lookupAccelType = HYBRID_HASH_GRID;
@@ -101,7 +105,7 @@ HybridSPPMRenderer::~HybridSPPMRenderer() {
 		throw std::runtime_error("Internal error: called HybridSPPM::~HybridSPPM() while not in TERMINATE or INIT state.");
 
 	if (renderThreads.size() > 0)
-		throw std::runtime_error("Internal error: called HybridSPPM::~HybridSPPM() while list of renderThread sis not empty.");
+		throw std::runtime_error("Internal error: called HybridSPPM::~HybridSPPM() while list of renderThread is not empty.");
 
 	delete ctx;
 
@@ -155,15 +159,16 @@ void HybridSPPMRenderer::Render(Scene *s) {
 		stat_blackSamples = 0.;
 		s_Timer.Reset();
 	
-		// Dade - I have to do initiliaziation here for the current thread.
-		// It can be used by the Preprocess() methods.
+		// Initialize the thread's RandomGenerator seed
+		lastUsedSeed = scene->seedBase;
 
-		// initialize the thread's RandomGenerator
-		u_long seed = scene->seedBase - 1;
-		LOG( LUX_INFO,LUX_NOERROR) << "Preprocess thread uses seed: " << seed;
-
-		// integrator preprocessing
+		// Preprocessing
 		scene->sampler->SetFilm(scene->camera->film);
+
+		// Prepare image buffers
+		BufferType type = BUF_TYPE_PER_PIXEL;
+		scene->sampler->GetBufferType(&type);
+		bufferId = scene->camera->film->RequestBuffer(type, BUF_FRAMEBUFFER, "eye");
 		scene->camera->film->CreateBuffers();
 
 		// Dade - to support autofocus for some camera model
@@ -184,7 +189,7 @@ void HybridSPPMRenderer::Render(Scene *s) {
 		Context::GetActive()->SceneReady();
 
 		// add a thread
-		CreateRenderThread();
+		PrivateCreateRenderThread();
 	}
 
 	if (renderThreads.size() > 0) {
@@ -264,7 +269,7 @@ double HybridSPPMRenderer::Statistics(const string &statName) {
 	else if (statName == "enoughSamples")
 		return scene->camera->film->enoughSamplesPerPixel;
 	else if (statName == "threadCount")
-		return renderThreads.size();
+		return requestedRenderThreadsCount;
 	else {
 		LOG( LUX_ERROR,LUX_BADTOKEN)<< "luxStatistics - requested an invalid data : " << statName;
 		return 0.;
@@ -275,12 +280,14 @@ double HybridSPPMRenderer::Statistics_GetNumberOfSamples() {
 	if (s_Timer.Time() - lastTime > .5f) {
 		boost::mutex::scoped_lock lock(classWideMutex);
 
-		for (u_int i = 0; i < renderThreads.size(); ++i) {
-			fast_mutex::scoped_lock lockStats(renderThreads[i]->statLock);
-			stat_Samples += renderThreads[i]->samples;
-			stat_blackSamples += renderThreads[i]->blackSamples;
-			renderThreads[i]->samples = 0.;
-			renderThreads[i]->blackSamples = 0.;
+		for (u_int i = 0; i < requestedRenderThreadsCount; ++i) {
+			if (i < renderThreads.size()) {
+				fast_mutex::scoped_lock lockStats(renderThreads[i]->statLock);
+				stat_Samples += renderThreads[i]->samples;
+				stat_blackSamples += renderThreads[i]->blackSamples;
+				renderThreads[i]->samples = 0.;
+				renderThreads[i]->blackSamples = 0.;
+			}
 		}
 	}
 
@@ -345,17 +352,40 @@ void HybridSPPMRenderer::CreateRenderThread() {
 	// Avoid to create the thread in case signal is EXIT. For instance, it
 	// can happen when the rendering is done.
 	if ((state == RUN) || (state == PAUSE)) {
+	}
+}
+
+void HybridSPPMRenderer::PrivateCreateRenderThread() {
+	if (scene->IsFilmOnly())
+		return;
+
+	// Avoid to create the thread in case signal is EXIT. For instance, it
+	// can happen when the rendering is done.
+	if ((state == RUN) || (state == PAUSE)) {
 		// Add an instance to the LuxRays virtual device
-		luxrays::IntersectionDevice * idev = virtualIDevice->AddVirtualDevice();
+		luxrays::IntersectionDevice *idev = virtualIDevice->AddVirtualDevice();
 
 		RenderThread *rt = new  RenderThread(renderThreads.size(), this, idev);
 
 		renderThreads.push_back(rt);
 		rt->thread = new boost::thread(boost::bind(RenderThread::RenderImpl, rt));
+
+		// Create synchronization barriers
+		barrier = new boost::barrier(renderThreads.size());
+		barrierExit = new boost::barrier(renderThreads.size());
+
+		requestedRenderThreadsCount++;
 	}
 }
 
 void HybridSPPMRenderer::RemoveRenderThread() {
+	if (requestedRenderThreadsCount == 0)
+		return;
+
+	requestedRenderThreadsCount--;
+}
+
+void HybridSPPMRenderer::PrivateRemoveRenderThread() {
 	if (renderThreads.size() == 0)
 		return;
 
@@ -363,17 +393,54 @@ void HybridSPPMRenderer::RemoveRenderThread() {
 	renderThreads.back()->thread->join();
 	delete renderThreads.back();
 	renderThreads.pop_back();
+
+	requestedRenderThreadsCount--;
 }
 
 //------------------------------------------------------------------------------
 // RenderThread methods
 //------------------------------------------------------------------------------
 
-HybridSPPMRenderer::RenderThread::RenderThread(u_int index, HybridSPPMRenderer *r, luxrays::IntersectionDevice * idev) :
+HybridSPPMRenderer::RenderThread::RenderThread(u_int index, HybridSPPMRenderer *r, luxrays::IntersectionDevice *idev) :
 	n(index), thread(NULL), renderer(r), iDevice(idev), samples(0.), blackSamples(0.) {
+	const u_long bufferSize = 8192;
+
+	for (unsigned int i = 0; i < SPPM_DEVICE_RENDER_BUFFER_COUNT; ++i) {
+		rayBuffersList.push_back(new luxrays::RayBuffer(bufferSize));
+		rayBuffersList[i]->PushUserData(i);
+		photonPathsList.push_back(new std::vector<PhotonPath>(rayBuffersList[i]->GetSize()));
+	}
+	rayBufferHitPoints = new luxrays::RayBuffer(bufferSize);
 }
 
 HybridSPPMRenderer::RenderThread::~RenderThread() {
+	for (unsigned int i = 0; i < SPPM_DEVICE_RENDER_BUFFER_COUNT; ++i) {
+		delete rayBuffersList[i];
+		delete photonPathsList[i];
+	}
+	delete rayBufferHitPoints;
+}
+
+void HybridSPPMRenderer::RenderThread::UpdateFilm() {
+	/*Film *film = renderer->scene->camera->film;
+	const u_int width = film->GetXPixelCount();
+	const u_int height = film->GetYPixelCount();
+
+	HitPoints *hitPoints = renderer->hitPoints;
+
+	Contribution contrib;
+	for (u_int i = 0; i < hitPoints->GetSize(); ++i) {
+		//HitPoint *hp = hitPoints->GetHitPoint(i);
+
+		const u_int x = i % width;
+		const u_int y = i / width;
+		const float r = x / (float)width;
+		const float g = y / (float)height;
+		contrib = Contribution(
+				x + 0.5f, y + 0.5f,
+				colorSpace.ToXYZ(RGBColor(r, 0.f, 0.f)), renderer->bufferId);
+		film->SetSample(&contrib);
+	}*/
 }
 
 void HybridSPPMRenderer::RenderThread::RenderImpl(RenderThread *renderThread) {
@@ -393,18 +460,112 @@ void HybridSPPMRenderer::RenderThread::RenderImpl(RenderThread *renderThread) {
 		boost::thread::sleep(xt);
 	}
 
-	//HitPoints *hitPoints = NULL;
+	// initialize the thread's rangen
+	u_long seed;
+	{
+		boost::mutex::scoped_lock lock(renderer->classWideMutex);
+		renderer->lastUsedSeed++;
+		seed = renderer->lastUsedSeed;
+	}
+	LOG(LUX_INFO, LUX_NOERROR) << "Thread " << renderThread->n << " uses seed: " << seed;
+
+	RandomGenerator rndGen(seed);
+
+	luxrays::IntersectionDevice *device = renderThread->iDevice;
+	luxrays::RayBuffer *rayBufferHitPoints = renderThread->rayBufferHitPoints;
+	HitPoints *hitPoints = NULL;
 	try {
-		/*// First eye pass
+		// First eye pass
 		if (renderThread->n == 0) {
 			// One thread initialize the EyePaths list
-			renderEngine->hitPoints = new HitPoints(renderEngine);
+			renderer->hitPoints = new HitPoints(renderer);
 		}
 
 		// Wait for other threads
-		renderEngine->barrier->wait();
+		renderer->barrier->wait();
 
-		hitPoints = renderEngine->hitPoints;*/
+		hitPoints = renderer->hitPoints;
+		// Multi-threads calculate hit points
+		hitPoints->SetHitPoints(&rndGen, device, rayBufferHitPoints, renderThread->n, renderer->renderThreads.size());
+
+		// Wait for other threads
+		renderer->barrier->wait();
+
+		double passStartTime = luxrays::WallClockTime();
+		while (!boost::this_thread::interruption_requested()) {
+			/*for (;;) {
+				// Trace the rays
+				while (todoBuffers.size() > 0) {
+					RayBuffer *rayBuffer = todoBuffers.front();
+					todoBuffers.pop_front();
+
+					device->PushRayBuffer(rayBuffer);
+				}
+
+				RayBuffer *rayBuffer = device->PopRayBuffer();
+				std::vector<PhotonPath> &photonPaths = *(renderThread->photonPathsList[rayBuffer->GetUserData()]);
+				AdvancePhotonPaths(renderEngine, hitPoints, scene, rndGen, rayBuffer, photonPaths);
+				todoBuffers.push_back(rayBuffer);
+
+				// Check if it is time to do an eye pass
+				if ((renderEngine->photonTracedPass > renderEngine->stochasticInterval) ||
+					boost::this_thread::interruption_requested()) {
+					// Ok, time to stop, finish current work
+					const unsigned int pendingBuffers = SPPM_DEVICE_RENDER_BUFFER_COUNT - todoBuffers.size();
+					for(unsigned int i = 0; i < pendingBuffers; i++) {
+						RayBuffer *rayBuffer = device->PopRayBuffer();
+						std::vector<PhotonPath> &photonPaths = *(renderThread->photonPathsList[rayBuffer->GetUserData()]);
+						AdvancePhotonPaths(renderEngine, hitPoints, scene, rndGen, rayBuffer, photonPaths);
+						todoBuffers.push_back(rayBuffer);
+					}
+					break;
+				}
+			}*/
+
+			// Wait for other threads
+			renderer->barrier->wait();
+
+			const double t1 = luxrays::WallClockTime();
+
+			/*const long long count = renderEngine->photonTracedTotal + renderEngine->photonTracedPass;
+			hitPoints->AccumulateFlux(count, renderThread->threadIndex, renderEngine->renderThreads.size());
+			hitPoints->SetHitPoints(rndGen, device, rayBufferHitPoints, renderThread->threadIndex, renderEngine->renderThreads.size());*/
+
+			// Wait for other threads
+			renderer->barrier->wait();
+
+			// The first thread has to do some special task for the eye pass
+			if (renderThread->n == 0) {
+				// First thread only tasks
+				//hitPoints->UpdatePointsInformation();
+				//hitPoints->IncPass();
+				//hitPoints->RefreshAccelMutex();
+
+				// Update the frame buffer
+				// TODO transform in static method
+				renderThread->UpdateFilm();
+
+				//renderEngine->photonTracedTotal = count;
+				//renderEngine->photonTracedPass = 0;
+			}
+
+			// Wait for other threads
+			renderer->barrier->wait();
+
+			//hitPoints->RefreshAccelParallel(renderThread->threadIndex, renderEngine->renderThreads.size());
+
+			if (renderThread->n == 0) {
+				const double photonPassTime = t1 - passStartTime;
+				LOG(LUX_INFO, LUX_NOERROR) << "Photon pass time: " << photonPassTime << "secs";
+				const double eyePassTime = luxrays::WallClockTime() - t1;
+				LOG(LUX_INFO, LUX_NOERROR) << "Eye pass time: " << eyePassTime << "secs (" << 100.0 * eyePassTime / (eyePassTime + photonPassTime) << "%)";
+
+				passStartTime = luxrays::WallClockTime();
+			}
+
+			if (boost::this_thread::interruption_requested())
+				break;
+		}
 	} catch (boost::thread_interrupted) {
 		LOG(LUX_INFO, LUX_NOERROR) << "Rendering thread " << renderThread->n << " halted";
 	}
