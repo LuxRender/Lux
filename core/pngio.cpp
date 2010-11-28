@@ -75,7 +75,6 @@ void lux_png_error(png_structp png_, png_const_charp msg)
     text.compression = PNG_TEXT_COMPRESSION_NONE;
     text.key = (png_charp)"Software";
     text.text = (png_charp)"LuxRender";
-    text.text_length = 4;
     png_set_text(png, info, &text, 1);
 
     png_color_16 black = {0, 0, 0, 0, 0};
