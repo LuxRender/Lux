@@ -73,6 +73,12 @@ namespace w32util
 inline void ChangeConsoleColor(WORD col)
 {
 	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+
+	// keep user-defined background and foreground intensity
+	CONSOLE_SCREEN_BUFFER_INFO screenBufferInfo;
+	GetConsoleScreenBufferInfo(hConsole, &screenBufferInfo);
+	col |= screenBufferInfo.wAttributes & static_cast<WORD>(FOREGROUND_INTENSITY | BACKGROUND_INTENSITY);
+
 	SetConsoleTextAttribute(hConsole, col);
 }
 }
