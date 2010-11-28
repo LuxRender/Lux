@@ -56,6 +56,7 @@ void LightGroupWidget::changeEvent(QEvent *event)
 	m_LG_enable = this->isEnabled();
 	if (event->type() == QEvent::EnabledChange) {
 		luxSetParameterValue(LUX_FILM, LUX_FILM_LG_ENABLE, this->isEnabled(), m_Index);
+		SetWidgetsEnabled(m_LG_enable);
 		emit valuesChanged ();
 	}
 }
@@ -211,9 +212,18 @@ void LightGroupWidget::UpdateWidgetValues()
 	updateWidgetValue(ui->slider_gain, ScaleToSliderVal(m_LG_scale));
 	updateWidgetValue(ui->spinBox_gain, m_LG_scale);
 
+	updateWidgetValue(ui->checkBox_enableBB, m_LG_temperature_enabled);
 	updateWidgetValue(ui->slider_colortemp, (int)(((m_LG_temperature - LG_TEMPERATURE_MIN) / (LG_TEMPERATURE_MAX - LG_TEMPERATURE_MIN)) * FLOAT_SLIDER_RES));
 	updateWidgetValue(ui->spinBox_colortemp, m_LG_temperature);
-	
+
+	updateWidgetValue(ui->checkBox_enableRGB, m_LG_rgb_enabled);
+
+	ui->toolButton_colorfield->setPalette(QPalette(QColor(
+											(int)(m_LG_scaleRed * 255.0),
+											(int)(m_LG_scaleGreen * 255.0),
+											(int)(m_LG_scaleBlue * 255.0))));
+	ui->toolButton_colorfield->setAutoFillBackground(true);
+
 	/*wxString st;
 	wxColour colour(Clamp(int(m_LG_scaleRed * 255.0), 0, 255),
 					Clamp(int(m_LG_scaleGreen * 255.0), 0, 255),
@@ -244,6 +254,10 @@ void LightGroupWidget::ResetValuesFromFilm(bool useDefaults)
 	
 	//m_LG_name->SetLabel(wxString::FromAscii(tmpStr));
 	m_LG_enable = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_LG_ENABLE, m_Index) != 0.f;
+
+	// set enabled here so pane can pick it up when this widget is added to it
+	this->setEnabled(m_LG_enable);
+
 	m_LG_scale = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_LG_SCALE, m_Index);
 	double t = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_LG_TEMPERATURE, m_Index);
 	m_LG_temperature_enabled = t != 0.0;
@@ -252,7 +266,7 @@ void LightGroupWidget::ResetValuesFromFilm(bool useDefaults)
 	double g = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_LG_SCALE_GREEN, m_Index);
 	double b = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_LG_SCALE_BLUE, m_Index);
 
-	m_LG_rgb_enabled = (r != 1.0) && (g != 1.0) && (b != 1.0);
+	m_LG_rgb_enabled = (r != 1.0) || (g != 1.0) || (b != 1.0);
 	
 	if (m_LG_rgb_enabled) {
 		m_LG_scaleRed = r;
