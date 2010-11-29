@@ -382,11 +382,55 @@ private:
 	boost::mutex m_mutex;
 };
 
+
+//------------------------------------------------------------------------------
+// Filter Look Up Table
+//------------------------------------------------------------------------------
+
+class FilterLUT {
+public:
+	FilterLUT() : lut() { }
+
+	FilterLUT(Filter *filter, const float offsetX, const float offsetY);
+
+	~FilterLUT() { }
+
+	const u_int GetWidth() const { return lutWidth; }
+	const u_int GetHeight() const { return lutHeight; }
+
+	const float *GetLUT() const {
+		return &lut.front();
+	}
+
+private:
+	u_int lutWidth, lutHeight;
+	std::vector<float> lut;
+};
+
+class FilterLUTs {
+public:
+	FilterLUTs(Filter *filter, const u_int size);
+
+	~FilterLUTs() {	}
+
+	const FilterLUT &GetLUT(const float x, const float y) const {
+		const int ix = max<int>(0, min<int>(Floor2Int(lutsSize * (x + 0.5f)), lutsSize - 1));
+		const int iy = max<int>(0, min<int>(Floor2Int(lutsSize * (y + 0.5f)), lutsSize - 1));
+
+		return luts[ix + iy * lutsSize];
+	}
+
+private:
+	unsigned int lutsSize;
+	float step;
+	std::vector<FilterLUT> luts;
+};
+
 // Film Declarations
 class Film : public Queryable {
 public:
 	// Film Interface
-	Film(u_int xres, u_int yres, Filter *filt, const float crop[4],
+	Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop[4],
 		const string &filename1, bool premult, bool useZbuffer,
 		bool w_resume_FLM, bool restart_resume_FLM, int haltspp, int halttime,
 		int reject_warmup, bool debugmode);
@@ -475,6 +519,7 @@ protected: // Put it here for better data alignment
 
 	Filter *filter;
 	float *filterTable;
+	FilterLUTs *filterLUTs;
 
 	string filename;
 

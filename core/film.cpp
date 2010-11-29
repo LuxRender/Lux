@@ -533,9 +533,54 @@ void ApplyImagingPipeline(vector<XYZColor> &xyzpixels,
 		rgbpixels[i] = rgbpixels[i].Pow(invGamma);
 }
 
-// Film Function Definitions
 
-#define FILTER_TABLE_SIZE 16
+// Filter Look Up Table Definitions
+
+FilterLUT::FilterLUT(Filter *filter, const float offsetX, const float offsetY) {
+	const int x0 = Ceil2Int(offsetX - filter->xWidth);
+	const int x1 = Floor2Int(offsetX + filter->xWidth);
+	const int y0 = Ceil2Int(offsetY - filter->yWidth);
+	const int y1 = Floor2Int(offsetY + filter->yWidth);
+	lutWidth = x1 - x0 + 1;
+	lutHeight = y1 - y0 + 1;
+	//lut = new float[lutWidth * lutHeight];
+	lut.resize(lutWidth * lutHeight);
+
+	float totalWeight = 0.f;
+	unsigned int index = 0;
+	for (int iy = y0; iy <= y1; ++iy) {
+		for (int ix = x0; ix <= x1; ++ix) {
+			const float filterVal = filter->Evaluate(fabsf(ix - offsetX), fabsf(iy - offsetY));
+			totalWeight += filterVal;
+			lut[index++] = filterVal;
+		}
+	}
+
+	// Normalize LUT
+	index = 0;
+	for (int iy = y0; iy <= y1; ++iy) {
+		for (int ix = x0; ix <= x1; ++ix)
+			lut[index++] /= totalWeight;
+	}
+}
+
+FilterLUTs::FilterLUTs(Filter *filter, const unsigned int size) {		
+	lutsSize = size + 1;
+	step = 1.f / float(size);
+
+	luts.resize(lutsSize * lutsSize);
+
+	for (unsigned int iy = 0; iy < lutsSize; ++iy) {
+		for (unsigned int ix = 0; ix < lutsSize; ++ix) {
+			const float x = ix * step - 0.5f + step / 2.f;
+			const float y = iy * step - 0.5f + step / 2.f;
+
+			luts[ix + iy * lutsSize] = FilterLUT(filter, x, y);
+		}
+	}
+}
+
+// Film Function Definitions
 
 u_int Film::GetXResolution()
 {
@@ -547,7 +592,7 @@ u_int Film::GetYResolution()
 	return yResolution;
 }
 
-Film::Film(u_int xres, u_int yres, Filter *filt, const float crop[4], 
+Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop[4], 
 		   const string &filename1, bool premult, bool useZbuffer,
 		   bool w_resume_FLM, bool restart_resume_FLM, int haltspp, int halttime,
 		   int reject_warmup, bool debugmode) :
@@ -595,21 +640,13 @@ Film::Film(u_int xres, u_int yres, Filter *filt, const float crop[4],
 	AddBoolAttribute(*this, "writeResumeFlm", "Write resume file", writeResumeFlm, &Film::writeResumeFlm, Queryable::ReadWriteAccess);
 	AddBoolAttribute(*this, "restartResumeFlm", "Restart (overwrite) resume file", restartResumeFlm, &Film::restartResumeFlm, Queryable::ReadWriteAccess);
 
-	// Precompute filter weight table
-	filterTable = new float[FILTER_TABLE_SIZE * FILTER_TABLE_SIZE];
-	float *ftp = filterTable;
-	for (u_int y = 0; y < FILTER_TABLE_SIZE; ++y) {
-		const float fy = (static_cast<float>(y) + .5f) * filter->yWidth / FILTER_TABLE_SIZE;
-		for (u_int x = 0; x < FILTER_TABLE_SIZE; ++x) {
-			const float fx = (static_cast<float>(x) + .5f) * filter->xWidth / FILTER_TABLE_SIZE;
-			*ftp++ = filter->Evaluate(fx, fy);
-		}
-	}
+	// Precompute filter tables
+	filterLUTs = new FilterLUTs(filt, max(min(filtRes, 64u), 2u));
 }
 
 Film::~Film()
 {
-	delete[] filterTable;
+	delete filterLUTs;
 	delete filter;
 	delete ZBuffer;
 	delete histogram;
@@ -830,42 +867,25 @@ void Film::AddSample(Contribution *contrib) {
 	// Compute sample's raster extent
 	float dImageX = contrib->imageX - 0.5f;
 	float dImageY = contrib->imageY - 0.5f;
+
+	// Get filter coefficients
+	const FilterLUT &filterLUT = 
+		filterLUTs->GetLUT(dImageX - Floor2Int(contrib->imageX), dImageY - Floor2Int(contrib->imageY));
+	const float *lut = filterLUT.GetLUT();
+
 	int x0 = Ceil2Int (dImageX - filter->xWidth);
-	int x1 = Floor2Int(dImageX + filter->xWidth);
+	int x1 = x0 + filterLUT.GetWidth();
 	int y0 = Ceil2Int (dImageY - filter->yWidth);
-	int y1 = Floor2Int(dImageY + filter->yWidth);
+	int y1 = y0 + filterLUT.GetHeight();
 	if (x1 < x0 || y1 < y0 || x1 < 0 || y1 < 0)
 		return;
-	// Loop over filter support and add sample to pixel arrays
-	// Precompute $x$ and $y$ filter table offsets
-//	int *ifx = (int *)alloca((x1-x0+1) * sizeof(int));				// TODO - radiance - pre alloc memory in constructor for speedup ?
-	int ifx[32];
-	for (int x = x0; x <= x1; ++x) {
-		float fx = fabsf((x - dImageX) *
-			filter->invXWidth * FILTER_TABLE_SIZE);
-		ifx[x-x0] = min(Floor2Int(fx), FILTER_TABLE_SIZE-1);
-	}
-//	int *ify = (int *)alloca((y1-y0+1) * sizeof(int));				// TODO - radiance - pre alloc memory in constructor for speedup ?
-	int ify[32];
-	for (int y = y0; y <= y1; ++y) {
-		float fy = fabsf((y - dImageY) *
-			filter->invYWidth * FILTER_TABLE_SIZE);
-		ify[y-y0] = min(Floor2Int(fy), FILTER_TABLE_SIZE-1);
-	}
-	float filterNorm = 0.f;
-	for (int y = y0; y <= y1; ++y) {
-		for (int x = x0; x <= x1; ++x) {
-			const int offset = ify[y-y0]*FILTER_TABLE_SIZE + ifx[x-x0];
-			filterNorm += filterTable[offset];
-		}
-	}
-	filterNorm = weight / filterNorm;
 
-	for (u_int y = static_cast<u_int>(max(y0, static_cast<int>(yPixelStart))); y <= static_cast<u_int>(min(y1, static_cast<int>(yPixelStart + yPixelCount - 1))); ++y) {
-		for (u_int x = static_cast<u_int>(max(x0, static_cast<int>(xPixelStart))); x <= static_cast<u_int>(min(x1, static_cast<int>(xPixelStart + xPixelCount - 1))); ++x) {
+	for (u_int y = static_cast<u_int>(max(y0, static_cast<int>(yPixelStart))); y < static_cast<u_int>(min(y1, static_cast<int>(yPixelStart + yPixelCount))); ++y) {
+		const int yoffset = (y-y0) * filterLUT.GetWidth();
+		for (u_int x = static_cast<u_int>(max(x0, static_cast<int>(xPixelStart))); x < static_cast<u_int>(min(x1, static_cast<int>(xPixelStart + xPixelCount))); ++x) {
 			// Evaluate filter value at $(x,y)$ pixel
-			const int offset = ify[y-y0]*FILTER_TABLE_SIZE + ifx[x-x0];
-			const float filterWt = filterTable[offset] * filterNorm;
+			const int xoffset = x-x0;
+			const float filterWt = lut[yoffset + xoffset];
 			// Update pixel values with filtered sample contribution
 			buffer->Add(x - xPixelStart,y - yPixelStart,
 				xyz, alpha, filterWt);

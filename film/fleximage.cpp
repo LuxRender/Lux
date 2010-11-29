@@ -45,7 +45,7 @@
 using namespace lux;
 
 // FlexImageFilm Method Definitions
-FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, const float crop[4],
+FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop[4],
 	const string &filename1, bool premult, int wI, int dI, int cM,
 	bool cw_EXR, OutputChannels cw_EXR_channels, bool cw_EXR_halftype, int cw_EXR_compressiontype, bool cw_EXR_applyimaging,
 	bool cw_EXR_gamutclamp, bool cw_EXR_ZBuf, ZBufNormalization cw_EXR_ZBuf_normalizationtype,
@@ -57,7 +57,7 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, const float c
 	float p_ContrastYwa, const string &p_response, float p_Gamma,
 	const float cs_red[2], const float cs_green[2], const float cs_blue[2], const float whitepoint[2],
 	int reject_warmup, bool debugmode) :
-	Film(xres, yres, filt, crop, filename1, premult, cw_EXR_ZBuf || cw_PNG_ZBuf || cw_TGA_ZBuf, w_resume_FLM, 
+	Film(xres, yres, filt, filtRes, crop, filename1, premult, cw_EXR_ZBuf || cw_PNG_ZBuf || cw_TGA_ZBuf, w_resume_FLM, 
 		restart_resume_FLM, haltspp, halttime, reject_warmup, debugmode), 
 	framebuffer(NULL),
 	writeInterval(wI), displayInterval(dI)
@@ -1238,6 +1238,9 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 		crop[3] = Clamp(max(cr[2], cr[3]), 0.f, 1.f);
 	}
 
+	// Filter quality
+	u_int filtRes = 1 << max(params.FindOneInt("filterquality", 4), 1);
+
 	// Output Image File Formats
 	string clampMethodString = params.FindOneString("ldr_clamp_method", "lum");
 	int clampMethod = 0;
@@ -1411,7 +1414,7 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 
 	float s_Gamma = params.FindOneFloat("gamma", 2.2f);
 
-	return new FlexImageFilm(xres, yres, filter, crop,
+	return new FlexImageFilm(xres, yres, filter, filtRes, crop,
 		filename, premultiplyAlpha, writeInterval, displayInterval,
 		clampMethod, w_EXR, w_EXR_channels, w_EXR_halftype, w_EXR_compressiontype, w_EXR_applyimaging, w_EXR_gamutclamp, w_EXR_ZBuf, w_EXR_ZBuf_normalizationtype,
 		w_PNG, w_PNG_channels, w_PNG_16bit, w_PNG_gamutclamp, w_PNG_ZBuf, w_PNG_ZBuf_normalizationtype,
