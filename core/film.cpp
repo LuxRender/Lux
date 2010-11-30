@@ -888,7 +888,7 @@ void Film::AddSample(Contribution *contrib) {
 			const float filterWt = lut[yoffset + xoffset];
 			// Update pixel values with filtered sample contribution
 			buffer->Add(x - xPixelStart,y - yPixelStart,
-				xyz, alpha, filterWt);
+				xyz, alpha, filterWt * weight);
 			// Update ZBuffer values with filtered zdepth contribution
 			if(use_Zbuf && contrib->zdepth != 0.f)
 				ZBuffer->Add(x - xPixelStart, y - yPixelStart, contrib->zdepth, 1.0f);
