@@ -138,8 +138,10 @@ int main(int ac, char *av[]) {
 		p.add("input-file", -1);
 
 		po::variables_map vm;
+		// disable guessing of option names
+		int cmdstyle = po::command_line_style::default_style & ~po::command_line_style::allow_guessing;
 		store(po::command_line_parser(ac, av).
-				options(cmdline_options).positional(p).run(), vm);
+			style(cmdstyle).options(cmdline_options).positional(p).run(), vm);
 
 		std::ifstream
 		ifs("luxconsole.cfg");
