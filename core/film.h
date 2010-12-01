@@ -28,6 +28,7 @@
 #include "color.h"
 #include "memory.h"
 #include "queryable.h"
+#include "bsh.h"
 
 #include <boost/serialization/split_member.hpp>
 #include <boost/thread/mutex.hpp>
@@ -382,6 +383,7 @@ private:
 	boost::mutex m_mutex;
 };
 
+// SamplePoint
 
 //------------------------------------------------------------------------------
 // Filter Look Up Table
@@ -426,6 +428,48 @@ private:
 	std::vector<FilterLUT> luts;
 };
 
+class OutlierDataXYRGB {
+public:
+	typedef PointN<5> Point_t;
+
+	OutlierDataXYRGB() : p() {
+	}
+
+	OutlierDataXYRGB(float x, float y, const XYZColor &color) {
+		RGBColor rgb = cs.ToRGBConstrained(color);
+		p.x[0] = x;
+		p.x[1] = y;
+		p.x[2] = rgb.c[0] * (1.f / 255.f);
+		p.x[3] = rgb.c[1] * (1.f / 255.f);
+		p.x[4] = rgb.c[2] * (1.f / 255.f);
+	}
+
+	Point_t p;
+
+	static ColorSystem cs;
+};
+
+class OutlierDataRGB {
+public:
+	typedef PointN<3> Point_t;
+
+	OutlierDataRGB() : p() {
+	}
+
+	OutlierDataRGB(float x, float y, const XYZColor &color) {
+		RGBColor rgb = cs.ToRGBConstrained(color);
+		p.x[0] = rgb.c[0] * (1.f / 255.f);
+		p.x[1] = rgb.c[1] * (1.f / 255.f);
+		p.x[2] = rgb.c[2] * (1.f / 255.f);
+	}
+
+	Point_t p;
+
+	static ColorSystem cs;
+};
+
+typedef OutlierDataXYRGB OutlierData;
+
 // Film Declarations
 class Film : public Queryable {
 public:
@@ -433,7 +477,7 @@ public:
 	Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop[4],
 		const string &filename1, bool premult, bool useZbuffer,
 		bool w_resume_FLM, bool restart_resume_FLM, int haltspp, int halttime,
-		int reject_warmup, bool debugmode);
+		int reject_warmup, bool debugmode, int outlierk);
 
 	virtual ~Film();
 
@@ -492,7 +536,7 @@ public:
 
 protected:
 	double DoTransmitFilm(std::basic_ostream<char> &stream, bool clearBuffers = true, bool transmitParams = false);
-
+	bool RejectOutlier(Contribution *contrib);
 
 public:
 	// Film Public Data
@@ -539,7 +583,13 @@ protected: // Put it here for better data alignment
 	double warmupSamples;
 	float maxY;
 
+
 	bool writeResumeFlm, restartResumeFlm;
+
+	// density-based outlier rejection
+	int outlierRejection_k;
+	typedef BSH<OutlierData::Point_t, NearSetPointProcess<OutlierData::Point_t>, 9 > OutlierAccel;
+	std::vector<std::vector<OutlierAccel> > outliers;
 
 public:
 	// Samplers will check this flag to know if we have enough samples per

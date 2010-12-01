@@ -580,6 +580,9 @@ FilterLUTs::FilterLUTs(Filter *filter, const unsigned int size) {
 	}
 }
 
+// OutlierData Definitions
+ColorSystem OutlierData::cs(0.63f, 0.34f, 0.31f, 0.595f, 0.155f, 0.07f, 0.314275f, 0.329411f);
+
 // Film Function Definitions
 
 u_int Film::GetXResolution()
@@ -595,7 +598,7 @@ u_int Film::GetYResolution()
 Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop[4], 
 		   const string &filename1, bool premult, bool useZbuffer,
 		   bool w_resume_FLM, bool restart_resume_FLM, int haltspp, int halttime,
-		   int reject_warmup, bool debugmode) :
+		   int reject_warmup, bool debugmode, int outlierk) :
 	Queryable("film"),
 	xResolution(xres), yResolution(yres),
 	EV(0.f), averageLuminance(0.f),  numberOfSamplesFromNetwork(0), numberOfLocalSamples(0),
@@ -605,7 +608,8 @@ Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop
 	debug_mode(debugmode), premultiplyAlpha(premult),
 	warmupComplete(false), reject_warmup_samples(reject_warmup),
 	writeResumeFlm(w_resume_FLM), restartResumeFlm(restart_resume_FLM),
-	haltSamplesPerPixel(haltspp), haltTime(halttime), histogram(NULL), enoughSamplesPerPixel(false)
+	haltSamplesPerPixel(haltspp), haltTime(halttime), histogram(NULL), enoughSamplesPerPixel(false),
+	outlierRejection_k(outlierk)
 {
 	// Compute film image extent
 	memcpy(cropWindow, crop, 4 * sizeof(float));
@@ -640,6 +644,11 @@ Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop
 	AddBoolAttribute(*this, "writeResumeFlm", "Write resume file", writeResumeFlm, &Film::writeResumeFlm, Queryable::ReadWriteAccess);
 	AddBoolAttribute(*this, "restartResumeFlm", "Restart (overwrite) resume file", restartResumeFlm, &Film::restartResumeFlm, Queryable::ReadWriteAccess);
 
+	if (outlierRejection_k > 0) {
+		outliers.resize(yRealHeight / (2 * filter->yWidth));
+		for (int i = 0; i < outliers.size(); i++)
+			outliers[i].resize(xRealWidth / (2 * filter->xWidth));
+	}
 	// Precompute filter tables
 	filterLUTs = new FilterLUTs(filt, max(min(filtRes, 64u), 2u));
 }
@@ -817,6 +826,54 @@ void Film::AddSampleCount(float count) {
 	}
 }
 
+bool Film::RejectOutlier(Contribution *contrib) {
+	// outlier rejection
+
+	// filter-normalized pixel coordinates
+	float fnormX = (contrib->imageX - 0.5f + filter->xWidth) * 0.5f * filter->invXWidth;
+	float fnormY = (contrib->imageY - 0.5f + filter->yWidth) * 0.5f * filter->invYWidth;
+
+	OutlierData sd(fnormX, fnormY, contrib->color);
+
+	int oY = max<int>(0, min<int>(Floor2Int(fnormY), outliers.size()-1));
+	int oX = max<int>(0, min<int>(Floor2Int(fnormX), outliers[0].size()-1));
+
+	std::vector<OutlierAccel> &outlierRow = outliers[oY];
+	OutlierAccel &outlierAccel = outlierRow[oX];	
+
+	NearSetPointProcess<OutlierData::Point_t> proc(outlierRejection_k);
+	vector<ClosePoint<OutlierData::Point_t> > closest(outlierRejection_k);
+	proc.points = &closest[0];
+
+	float maxDist = INFINITY;
+
+	outlierAccel.Lookup(sd.p, proc, maxDist);
+
+	float kmeandist = 0.f;
+	for (u_int i = 0; i < proc.foundPoints; i++)
+		kmeandist += proc.points[i].distance;
+	
+	//kmeandist /= proc.foundPoints;
+		
+	if (proc.foundPoints < 1 || kmeandist > proc.foundPoints) { // kmeandist > 1.f
+		// add outlier and return
+		// include surrounding cells so we don't have to
+		// traverse multiple cells for each lookup
+		int oLeft = max<int>(0, oX - 1);
+		int oRight = min<int>(outliers[0].size()-1, oX + 1);
+		int oTop = max<int>(0, oY - 1);
+		int oBottom = min<int>(outliers.size()-1, oY + 1);
+		for (int i = oTop; i <= oBottom; i++) {
+			for (int j = oLeft; j <= oRight; j++) {
+				outliers[i][j].AddNode(sd.p);
+			}
+		}
+		return true;
+	}
+	// not an outlier, splat
+	return false;
+}
+
 void Film::AddSample(Contribution *contrib) {
 	XYZColor xyz = contrib->color;
 	const float alpha = contrib->alpha;
@@ -847,17 +904,22 @@ void Film::AddSample(Contribution *contrib) {
 		return;
 	}
 
-	// Reject samples higher than max Y() after warmup period
-	if (warmupComplete) {
-		if(xyz.Y() > maxY)
+	if (outlierRejection_k > 0) {
+		if (RejectOutlier(contrib))
 			return;
 	} else {
-	 	maxY = max(maxY, xyz.Y());
-		++warmupSamples;
-	 	if (warmupSamples >= reject_warmup_samples)
-			warmupComplete = true;
+		// Reject samples higher than max Y() after warmup period
+		if (warmupComplete) {
+			if(xyz.Y() > maxY)
+				return;
+		} else {
+ 			maxY = max(maxY, xyz.Y());
+			++warmupSamples;
+ 			if (warmupSamples >= reject_warmup_samples)
+				warmupComplete = true;
+		}
 	}
-
+	
 	if (premultiplyAlpha)
 		xyz *= alpha;
 
