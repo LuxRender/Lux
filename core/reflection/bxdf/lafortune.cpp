@@ -33,14 +33,14 @@ Lafortune::Lafortune(const SWCSpectrum &xx, const SWCSpectrum &yy,
 	exponent(e)
 {
 }
-void Lafortune::f(const SpectrumWavelengths &sw, const Vector &wo,
+void Lafortune::F(const SpectrumWavelengths &sw, const Vector &wo,
 	const Vector &wi, SWCSpectrum *const f_) const
 {
 	SWCSpectrum v(x * (wo.x * wi.x) + y * (wo.y * wi.y) + z * (wo.z * wi.z));
-	*f_ += v.Pow(exponent);
+	*f_ += v.Pow(exponent) * fabsf(wo.z);
 }
 
-bool Lafortune::Sample_f(const SpectrumWavelengths &sw, const Vector &wo,
+bool Lafortune::SampleF(const SpectrumWavelengths &sw, const Vector &wo,
 	Vector *wi, float u1, float u2, SWCSpectrum *const f_, float *pdf,
 	float *pdfBack, bool reverse) const
 {
@@ -61,8 +61,11 @@ bool Lafortune::Sample_f(const SpectrumWavelengths &sw, const Vector &wo,
 	if (pdfBack)
 		*pdfBack = Pdf(sw, *wi, wo);
 	*f_ = SWCSpectrum(0.f);
-	// f is symmetric, no need to check for reverse
-	f(sw, wo, *wi, f_);
+	if (reverse)
+		F(sw, *wi, wo, f_);
+	else
+		F(sw, wo, *wi, f_);
+	*f_ /= *pdf;
 	return true;
 }
 

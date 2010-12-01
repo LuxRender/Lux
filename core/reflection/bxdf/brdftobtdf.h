@@ -47,9 +47,9 @@ public:
 		float *samples) const {
 		return brdf->rho(sw, nSamples, samples);
 	}
-	virtual void f(const SpectrumWavelengths &sw, const Vector &wo,
+	virtual void F(const SpectrumWavelengths &sw, const Vector &wo,
 		const Vector &wi, SWCSpectrum *const f) const;
-	virtual bool Sample_f(const SpectrumWavelengths &sw, const Vector &wo,
+	virtual bool SampleF(const SpectrumWavelengths &sw, const Vector &wo,
 		Vector *wi, float u1, float u2, SWCSpectrum *const f,
 		float *pdf, float *pdfBack = NULL, bool reverse = false) const;
 	virtual float Weight(const SpectrumWavelengths &sw,

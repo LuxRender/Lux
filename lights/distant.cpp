@@ -39,20 +39,20 @@ public:
 		BSDF_GLOSSY)), sin2ThetaMax(sin2Max), cosThetaMax(cosMax),
 		conePdf(UniformConePdf(cosMax)) { }
 	virtual ~DistantBxDF() { }
-	virtual void f(const SpectrumWavelengths &sw, const Vector &wo,
+	virtual void F(const SpectrumWavelengths &sw, const Vector &wo,
 		const Vector &wi, SWCSpectrum *const f) const {
 		if (wi.z <= 0.f || (wi.x * wi.x + wi.y * wi.y) > sin2ThetaMax)
 			return;
-		*f += SWCSpectrum(1.f / conePdf);
+		*f += SWCSpectrum(conePdf);
 	}
-	virtual bool Sample_f(const SpectrumWavelengths &sw, const Vector &wo,
+	virtual bool SampleF(const SpectrumWavelengths &sw, const Vector &wo,
 		Vector *wi, float u1, float u2, SWCSpectrum *const f,float *pdf,
 		float *pdfBack = NULL, bool reverse = false) const {
 		*wi = UniformSampleCone(u1, u2, cosThetaMax);
 		*pdf = conePdf;
 		if (pdfBack)
 			*pdfBack = 0.f;
-		*f = SWCSpectrum(1.f / conePdf);
+		*f = SWCSpectrum(1.f);
 		return true;
 	}
 	virtual float Pdf(const SpectrumWavelengths &sw, const Vector &wi,

@@ -36,7 +36,7 @@ MicrofacetReflection::MicrofacetReflection(const SWCSpectrum &reflectance,
 {
 }
 
-void MicrofacetReflection::f(const SpectrumWavelengths &sw, const Vector &wo, 
+void MicrofacetReflection::F(const SpectrumWavelengths &sw, const Vector &wo, 
 	const Vector &wi, SWCSpectrum *const f_) const
 {
 	const float cosThetaO = fabsf(CosTheta(wo));
@@ -56,10 +56,10 @@ void MicrofacetReflection::f(const SpectrumWavelengths &sw, const Vector &wo,
 	SWCSpectrum F;
 	fresnel->Evaluate(sw, cosThetaH, &F);
 	f_->AddWeighted(distribution->D(wh) * distribution->G(wo, wi, wh) /
-		(4.f * cosThetaI * cosThetaO), R * F);
+		(4.f * cosThetaI), R * F);
 }
 
-bool MicrofacetReflection::Sample_f(const SpectrumWavelengths &sw,
+bool MicrofacetReflection::SampleF(const SpectrumWavelengths &sw,
 	const Vector &wo, Vector *wi, float u1, float u2, SWCSpectrum *const f_,
 	float *pdf, float *pdfBack, bool reverse) const
 {
@@ -73,13 +73,17 @@ bool MicrofacetReflection::Sample_f(const SpectrumWavelengths &sw,
 		return false;
 
 	const float cosThetaH = Dot(wo, wh);
+	const float factor = d * fabsf(cosThetaH) / *pdf *
+		distribution->G(wo, *wi, wh);
+	SWCSpectrum F;
+	fresnel->Evaluate(sw, cosThetaH, &F);
+	if (reverse)
+		*f_ = (factor /	fabsf(wo.z)) * (R * F);
+	else
+		*f_ = (factor /	fabsf(wi->z)) * (R * F);
 	*pdf /= 4.f * fabsf(cosThetaH);
 	if (pdfBack)
 		*pdfBack = *pdf;
-	SWCSpectrum F;
-	fresnel->Evaluate(sw, cosThetaH, &F);
-	*f_ = (d * distribution->G(wo, *wi, wh) /
-		(4.f * fabsf(wo.z) * fabsf(wi->z))) * (R * F);
 	return true;
 }
 float MicrofacetReflection::Pdf(const SpectrumWavelengths &sw, const Vector &wo,
@@ -104,7 +108,7 @@ MicrofacetTransmission::MicrofacetTransmission(const SWCSpectrum &transmitance,
 {
 }
 
-void MicrofacetTransmission::f(const SpectrumWavelengths &sw, const Vector &wo, 
+void MicrofacetTransmission::F(const SpectrumWavelengths &sw, const Vector &wo, 
 	const Vector &wi, SWCSpectrum *const f_) const
 {
 	const bool entering = CosTheta(wo) > 0.f;
@@ -117,19 +121,17 @@ void MicrofacetTransmission::f(const SpectrumWavelengths &sw, const Vector &wo,
 	if (!(lengthSquared > 0.f))
 		return;
 	wh /= sqrtf(lengthSquared);
-	const float cosThetaO = fabsf(CosTheta(wo));
 	const float cosThetaI = fabsf(CosTheta(wi));
 	const float cosThetaIH = AbsDot(wi, wh);
 	const float cosThetaOH = Dot(wo, wh);
 	SWCSpectrum F;
 	fresnel->Evaluate(sw, cosThetaOH, &F);
 	f_->AddWeighted(fabsf(cosThetaOH) * cosThetaIH * distribution->D(wh) *
-		distribution->G(wo, wi, wh) /
-		(cosThetaI * cosThetaO * lengthSquared),
+		distribution->G(wo, wi, wh) / (cosThetaI * lengthSquared),
 		T * (SWCSpectrum(1.f) - F));
 }
 
-bool MicrofacetTransmission::Sample_f(const SpectrumWavelengths &sw,
+bool MicrofacetTransmission::SampleF(const SpectrumWavelengths &sw,
 	const Vector &wo, Vector *wi, float u1, float u2, SWCSpectrum *const f_,
 	float *pdf, float *pdfBack, bool reverse) const
 {
@@ -161,9 +163,14 @@ bool MicrofacetTransmission::Sample_f(const SpectrumWavelengths &sw,
 		fresnel->Evaluate(sw, cosThetaIH, &F);
 	else
 		fresnel->Evaluate(sw, cosThetaOH, &F);
-	*f_ = (fabsf(cosThetaOH * cosThetaIH / (CosTheta(wo) * CosTheta(*wi) *
-		lengthSquared)) * d * distribution->G(*wi, wo, wh)) *
-		(T * (SWCSpectrum(1.f) - F));
+	const float factor = distribution->G(wo, *wi, wh) * d *
+		fabsf(cosThetaIH) / (*pdf * eta * eta);
+	if (reverse)
+		*f_ = (factor / fabsf(CosTheta(wo))) *
+			(T * (SWCSpectrum(1.f) - F));
+	else
+		*f_ = (factor / fabsf(CosTheta(*wi))) *
+			(T * (SWCSpectrum(1.f) - F));
 	return true;
 }
 float MicrofacetTransmission::Pdf(const SpectrumWavelengths &sw,

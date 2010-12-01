@@ -27,9 +27,29 @@
 
 using namespace lux;
 
-void Lambertian::f(const SpectrumWavelengths &sw, const Vector &wo, 
+void Lambertian::F(const SpectrumWavelengths &sw, const Vector &wo, 
 	const Vector &wi, SWCSpectrum *const f_) const
 {
-	*f_ += RoverPI;
+	*f_ += RoverPI * fabsf(wo.z);
+}
+
+bool Lambertian::SampleF(const SpectrumWavelengths &sw, const Vector &wo,
+	Vector *wi, float u1, float u2, SWCSpectrum *const f_, float *pdf,
+	float *pdfBack, bool reverse) const
+{
+	// Cosine-sample the hemisphere, flipping the direction if necessary
+	*wi = CosineSampleHemisphere(u1, u2);
+	if (wo.z < 0.f) wi->z *= -1.f;
+	// wi may be in the tangent plane, which will 
+	// fail the SameHemisphere test in Pdf()
+	if (!SameHemisphere(wo, *wi)) 
+		return false;
+	*pdf = Pdf(sw, wo, *wi);
+	if (pdfBack)
+		*pdfBack = Pdf(sw, *wi, wo);
+	*f_ = R;
+	if (!reverse)
+		*f_ *= fabsf(wo.z / wi->z);
+	return true;
 }
 

@@ -59,14 +59,17 @@ public:
 	/**
 	 * Evaluates the BxDF.
 	 * Accumulates the result in the f parameter.
+	 * Compared to PBRT this is f*(ns.wo)
 	 */
-	virtual void f(const SpectrumWavelengths &sw, const Vector &wo,
+	virtual void F(const SpectrumWavelengths &sw, const Vector &wo,
 		const Vector &wi, SWCSpectrum *const f) const = 0;
 	/**
 	 * Samples the BxDF.
 	 * Returns the result of the BxDF for the sampled direction in f.
+	 * Compared to PBRT this is f*(ns.wi)/pdf if reverse==true
+	 * and f*(ns.wo)/pdf if reverse==true
 	 */
-	virtual bool Sample_f(const SpectrumWavelengths &sw, const Vector &wo,
+	virtual bool SampleF(const SpectrumWavelengths &sw, const Vector &wo,
 		Vector *wi, float u1, float u2, SWCSpectrum *const f,
 		float *pdf, float *pdfBack = NULL, bool reverse = false) const;
 	virtual SWCSpectrum rho(const SpectrumWavelengths &sw, const Vector &wo,
@@ -108,16 +111,19 @@ public:
 	/**
 	 * Samples the BSDF.
 	 * Returns the result of the BSDF for the sampled direction in f.
+	 * Compared to PBRT this is f*(ns.wi)/pdf if reverse==true
+	 * and f*(ns.wo)*(ng.wi)/(ng.wo)/pdf if reverse==false
 	 */
-	virtual bool Sample_f(const SpectrumWavelengths &sw, const Vector &wo,
+	virtual bool SampleF(const SpectrumWavelengths &sw, const Vector &wo,
 		Vector *wi, float u1, float u2, float u3, SWCSpectrum *const f,
 		float *pdf, BxDFType flags = BSDF_ALL,
 		BxDFType *sampledType = NULL, float *pdfBack = NULL,
 		bool reverse = false) const = 0;
 	virtual float Pdf(const SpectrumWavelengths &sw, const Vector &wo,
 		const Vector &wi, BxDFType flags = BSDF_ALL) const = 0;
-	virtual SWCSpectrum f(const SpectrumWavelengths &sw, const Vector &woW,
-		const Vector &wiW, BxDFType flags = BSDF_ALL) const = 0;
+	virtual SWCSpectrum F(const SpectrumWavelengths &sw, const Vector &woW,
+		const Vector &wiW, bool reverse,
+		BxDFType flags = BSDF_ALL) const = 0;
 	virtual SWCSpectrum rho(const SpectrumWavelengths &sw,
 		BxDFType flags = BSDF_ALL) const = 0;
 	virtual SWCSpectrum rho(const SpectrumWavelengths &sw, const Vector &wo,
@@ -153,15 +159,16 @@ public:
 	 * Samples the BSDF.
 	 * Returns the result of the BSDF for the sampled direction in f.
 	 */
-	virtual bool Sample_f(const SpectrumWavelengths &sw, const Vector &woW,
+	virtual bool SampleF(const SpectrumWavelengths &sw, const Vector &woW,
 		Vector *wiW, float u1, float u2, float u3,
 		SWCSpectrum *const f_, float *pdf, BxDFType flags = BSDF_ALL,
 		BxDFType *sampledType = NULL, float *pdfBack = NULL,
 		bool reverse = false) const;
 	virtual float Pdf(const SpectrumWavelengths &sw, const Vector &woW,
 		const Vector &wiW, BxDFType flags = BSDF_ALL) const;
-	virtual SWCSpectrum f(const SpectrumWavelengths &sw, const Vector &woW,
-		const Vector &wiW, BxDFType flags = BSDF_ALL) const;
+	virtual SWCSpectrum F(const SpectrumWavelengths &sw, const Vector &woW,
+		const Vector &wiW, bool reverse,
+		BxDFType flags = BSDF_ALL) const;
 	virtual SWCSpectrum rho(const SpectrumWavelengths &sw,
 		BxDFType flags = BSDF_ALL) const;
 	virtual SWCSpectrum rho(const SpectrumWavelengths &sw,
@@ -187,15 +194,16 @@ public:
 	 * Samples the BSDF.
 	 * Returns the result of the BSDF for the sampled direction in f.
 	 */
-	virtual bool Sample_f(const SpectrumWavelengths &sw, const Vector &wo,
+	virtual bool SampleF(const SpectrumWavelengths &sw, const Vector &wo,
 		Vector *wi, float u1, float u2, float u3, SWCSpectrum *const f,
 		float *pdf, BxDFType flags = BSDF_ALL,
 		BxDFType *sampledType = NULL, float *pdfBack = NULL,
 		bool reverse = false) const;
 	virtual float Pdf(const SpectrumWavelengths &sw, const Vector &wo,
 		const Vector &wi, BxDFType flags = BSDF_ALL) const;
-	virtual SWCSpectrum f(const SpectrumWavelengths &sw, const Vector &woW,
-		const Vector &wiW, BxDFType flags = BSDF_ALL) const;
+	virtual SWCSpectrum F(const SpectrumWavelengths &sw, const Vector &woW,
+		const Vector &wiW, bool reverse,
+		BxDFType flags = BSDF_ALL) const;
 	virtual SWCSpectrum rho(const SpectrumWavelengths &sw,
 		BxDFType flags = BSDF_ALL) const;
 	virtual SWCSpectrum rho(const SpectrumWavelengths &sw, const Vector &wo,
@@ -228,15 +236,16 @@ public:
 	 * Samples the BSDF.
 	 * Returns the result of the BSDF for the sampled direction in f.
 	 */
-	virtual bool Sample_f(const SpectrumWavelengths &sw, const Vector &wo,
+	virtual bool SampleF(const SpectrumWavelengths &sw, const Vector &wo,
 		Vector *wi, float u1, float u2, float u3, SWCSpectrum *const f,
 		float *pdf, BxDFType flags = BSDF_ALL,
 		BxDFType *sampledType = NULL, float *pdfBack = NULL,
 		bool reverse = false) const;
 	virtual float Pdf(const SpectrumWavelengths &sw, const Vector &wo,
 		const Vector &wi, BxDFType flags = BSDF_ALL) const;
-	virtual SWCSpectrum f(const SpectrumWavelengths &sw, const Vector &woW,
-		const Vector &wiW, BxDFType flags = BSDF_ALL) const;
+	virtual SWCSpectrum F(const SpectrumWavelengths &sw, const Vector &woW,
+		const Vector &wiW, bool reverse,
+		BxDFType flags = BSDF_ALL) const;
 	virtual SWCSpectrum rho(const SpectrumWavelengths &sw,
 		BxDFType flags = BSDF_ALL) const;
 	virtual SWCSpectrum rho(const SpectrumWavelengths &sw, const Vector &wo,

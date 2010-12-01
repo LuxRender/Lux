@@ -48,7 +48,7 @@ public:
 		return (flags & (BSDF_REFLECTION | BSDF_GLOSSY)) ==
 			(BSDF_REFLECTION | BSDF_GLOSSY) ? 1U : 0U;
 	}
-	virtual bool Sample_f(const SpectrumWavelengths &sw, const Vector &woW,
+	virtual bool SampleF(const SpectrumWavelengths &sw, const Vector &woW,
 		Vector *wiW, float u1, float u2, float u3,
 		SWCSpectrum *const f_, float *pdf, BxDFType flags = BSDF_ALL,
 		BxDFType *sampledType = NULL, float *pdfBack = NULL,
@@ -68,7 +68,7 @@ public:
 			*sampledType = BxDFType(BSDF_REFLECTION | BSDF_GLOSSY);
 		if (pdfBack)
 			*pdfBack = 0.f;
-		*f_ = SWCSpectrum(*pdf);
+		*f_ = SWCSpectrum(1.f);
 		return true;
 	}
 	virtual float Pdf(const SpectrumWavelengths &sw, const Vector &woW,
@@ -80,8 +80,8 @@ public:
 		}
 		return 0.f;
 	}
-	virtual SWCSpectrum f(const SpectrumWavelengths &sw, const Vector &woW,
-		const Vector &wiW, BxDFType flags = BSDF_ALL) const {
+	virtual SWCSpectrum F(const SpectrumWavelengths &sw, const Vector &woW,
+		const Vector &wiW, bool reverse, BxDFType flags = BSDF_ALL) const {
 		if (NumComponents(flags) == 1) {
 			const Vector wi(WorldToLocal(wiW));
 			if (wi.z > 0.f && (wi.x * wi.x + wi.y * wi.y) <= sin2ThetaMax)

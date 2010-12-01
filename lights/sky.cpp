@@ -50,27 +50,25 @@ public:
 		return (flags & (BSDF_REFLECTION | BSDF_DIFFUSE)) ==
 			(BSDF_REFLECTION | BSDF_DIFFUSE) ? 1U : 0U;
 	}
-	virtual bool Sample_f(const SpectrumWavelengths &sw, const Vector &woW,
+	virtual bool SampleF(const SpectrumWavelengths &sw, const Vector &woW,
 		Vector *wiW, float u1, float u2, float u3,
 		SWCSpectrum *const f_, float *pdf, BxDFType flags = BSDF_ALL,
 		BxDFType *sampledType = NULL, float *pdfBack = NULL,
 		bool reverse = false) const {
 		if (reverse || NumComponents(flags) == 0)
 			return false;
-		*wiW = Normalize(LocalToWorld(CosineSampleHemisphere(u1, u2)));
-		if (!(Dot(*wiW, ng) > 0.f))
-			return false;
-		if (!(Dot(*wiW, nn) > 0.f))
-			return false;
+		*wiW = CosineSampleHemisphere(u1, u2);
+		const float cosi = wiW->z;
+		*wiW = Normalize(LocalToWorld(*wiW));
 		if (sampledType)
 			*sampledType = BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE);
-		*pdf = AbsDot(*wiW, nn) * INV_PI;
+		*pdf = cosi * INV_PI;
 		if (pdfBack)
 			*pdfBack = 0.f;
 		const Vector w(Normalize(WorldToLight(-(*wiW))));
 		const float phi = SphericalPhi(w);
 		const float theta = SphericalTheta(w);
-		*f_ = SWCSpectrum(1.f);
+		*f_ = SWCSpectrum(M_PI);
 		light.GetSkySpectralRadiance(sw, theta, phi, f_);
 		return true;
 	}
@@ -81,13 +79,14 @@ public:
 			return AbsDot(wiW, nn) * INV_PI;
 		return 0.f;
 	}
-	virtual SWCSpectrum f(const SpectrumWavelengths &sw, const Vector &woW,
-		const Vector &wiW, BxDFType flags = BSDF_ALL) const {
-		if (NumComponents(flags) == 1 && Dot(wiW, ng) > 0.f) {
+	virtual SWCSpectrum F(const SpectrumWavelengths &sw, const Vector &woW,
+		const Vector &wiW, bool reverse, BxDFType flags = BSDF_ALL) const {
+		const float cosi = Dot(wiW, ng);
+		if (NumComponents(flags) == 1 && cosi > 0.f) {
 			const Vector w(Normalize(WorldToLight(-wiW)));
 			const float phi = SphericalPhi(w);
 			const float theta = SphericalTheta(w);
-			SWCSpectrum L(1.f);
+			SWCSpectrum L(cosi);
 			light.GetSkySpectralRadiance(sw, theta, phi, &L);
 			return L;
 		}
@@ -123,7 +122,7 @@ public:
 		return (flags & (BSDF_REFLECTION | BSDF_DIFFUSE)) ==
 			(BSDF_REFLECTION | BSDF_DIFFUSE) ? 1U : 0U;
 	}
-	virtual bool Sample_f(const SpectrumWavelengths &sw, const Vector &woW,
+	virtual bool SampleF(const SpectrumWavelengths &sw, const Vector &woW,
 		Vector *wiW, float u1, float u2, float u3,
 		SWCSpectrum *const f_, float *pdf, BxDFType flags = BSDF_ALL,
 		BxDFType *sampledType = NULL, float *pdfBack = NULL,
@@ -134,12 +133,13 @@ public:
 		dg.time = dgShading.time;
 		PortalShapes[shapeIndex]->Sample(ps, u1, u2, u3, &dg);
 		*wiW = Normalize(dg.p - ps);
-		if (!(Dot(*wiW, nn) > 0.f))
+		const float cosi = Dot(*wiW, ng);
+		if (!(cosi > 0.f))
 			return false;
 		const Vector w(Normalize(WorldToLight(-(*wiW))));
 		const float phi = SphericalPhi(w);
 		const float theta = SphericalTheta(w);
-		*f_ = SWCSpectrum(1.f);
+		*f_ = SWCSpectrum(cosi);
 		light.GetSkySpectralRadiance(sw, theta, phi, f_);
 		*pdf = PortalShapes[shapeIndex]->Pdf(ps, dg.p) *
 			DistanceSquared(ps, dg.p) / AbsDot(*wiW, dg.nn);
@@ -159,6 +159,7 @@ public:
 		*pdf /= PortalShapes.size();
 		if (pdfBack)
 			*pdfBack = 0.f;
+		*f_ /= *pdf;
 		return true;
 	}
 	virtual float Pdf(const SpectrumWavelengths &sw, const Vector &woW,
@@ -179,13 +180,14 @@ public:
 		}
 		return pdf / PortalShapes.size();
 	}
-	virtual SWCSpectrum f(const SpectrumWavelengths &sw, const Vector &woW,
-		const Vector &wiW, BxDFType flags = BSDF_ALL) const {
-		if (NumComponents(flags) == 1 && Dot(wiW, ng) > 0.f) {
+	virtual SWCSpectrum F(const SpectrumWavelengths &sw, const Vector &woW,
+		const Vector &wiW, bool reverse, BxDFType flags = BSDF_ALL) const {
+		const float cosi = Dot(wiW, ng);
+		if (NumComponents(flags) == 1 && cosi > 0.f) {
 			const Vector w(Normalize(WorldToLight(-wiW)));
 			const float phi = SphericalPhi(w);
 			const float theta = SphericalTheta(w);
-			SWCSpectrum L(1.f);
+			SWCSpectrum L(cosi);
 			light.GetSkySpectralRadiance(sw, theta, phi, &L);
 			return L;
 		}

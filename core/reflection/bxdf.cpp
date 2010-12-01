@@ -34,7 +34,7 @@ using namespace lux;
 static RandomGenerator rng(1);
 
 // BxDF Method Definitions
-bool BxDF::Sample_f(const SpectrumWavelengths &sw, const Vector &wo, Vector *wi,
+bool BxDF::SampleF(const SpectrumWavelengths &sw, const Vector &wo, Vector *wi,
 	float u1, float u2, SWCSpectrum *const f_, float *pdf, float *pdfBack,
 	bool reverse) const
 {
@@ -50,9 +50,10 @@ bool BxDF::Sample_f(const SpectrumWavelengths &sw, const Vector &wo, Vector *wi,
 		*pdfBack = Pdf(sw, *wi, wo);
 	*f_ = SWCSpectrum(0.f);
 	if (reverse)
-		f(sw, *wi, wo, f_);
+		F(sw, *wi, wo, f_);
 	else
-		f(sw, wo, *wi, f_);
+		F(sw, wo, *wi, f_);
+	*f_ /= *pdf;
 	return true;
 }
 float BxDF::Pdf(const SpectrumWavelengths &sw, const Vector &wo, const Vector &wi) const {
@@ -71,9 +72,10 @@ SWCSpectrum BxDF::rho(const SpectrumWavelengths &sw, const Vector &w, u_int nSam
 		// Estimate one term of $\rho_{dh}$
 		Vector wi;
 		float pdf = 0.f;
-		SWCSpectrum f_(0.f);		
-		if (Sample_f(sw, w, &wi, samples[2*i], samples[2*i+1], &f_, &pdf) && pdf > 0.f) 
-			r.AddWeighted(fabsf(wi.z) / pdf, f_);
+		SWCSpectrum f_(0.f);
+		if (SampleF(sw, w, &wi, samples[2*i], samples[2*i+1], &f_, &pdf,
+			NULL, true) && pdf > 0.f)
+			r += f_;
 	}
 	return r / nSamples;
 }
@@ -89,9 +91,10 @@ SWCSpectrum BxDF::rho(const SpectrumWavelengths &sw, u_int nSamples, float *samp
 		Vector wo, wi;
 		wo = UniformSampleHemisphere(samples[4*i], samples[4*i+1]);
 		float pdf_o = INV_TWOPI, pdf_i = 0.f;
-		SWCSpectrum f_(0.f);			
-		if (Sample_f(sw, wo, &wi, samples[4*i+2], samples[4*i+3], &f_, &pdf_i) && pdf_i > 0.f)
-			r.AddWeighted(fabsf(wi.z * wo.z) / (pdf_o * pdf_i), f_);
+		SWCSpectrum f_(0.f);
+		if (SampleF(sw, wo, &wi, samples[4*i+2], samples[4*i+3], &f_,
+			&pdf_i, NULL, true) && pdf_i > 0.f)
+			r.AddWeighted(fabsf(wo.z) / pdf_o, f_);
 	}
 	return r / (M_PI * nSamples);
 }
@@ -107,7 +110,7 @@ BSDF::BSDF(const DifferentialGeometry &dg, const Normal &ngeom,
 	tn = Cross(nn, sn);
 	compParams = NULL; 
 }
-bool SingleBSDF::Sample_f(const SpectrumWavelengths &sw, const Vector &woW, Vector *wiW,
+bool SingleBSDF::SampleF(const SpectrumWavelengths &sw, const Vector &woW, Vector *wiW,
 	float u1, float u2, float u3, SWCSpectrum *const f_, float *pdf,
 	BxDFType flags, BxDFType *sampledType, float *pdfBack,
 	bool reverse) const
@@ -116,13 +119,13 @@ bool SingleBSDF::Sample_f(const SpectrumWavelengths &sw, const Vector &woW, Vect
 	if (!bxdf->MatchesFlags(flags))
 		return false;
 	// Sample chosen _BxDF_
-	if (!bxdf->Sample_f(sw, WorldToLocal(woW), wiW, u1, u2, f_,
+	if (!bxdf->SampleF(sw, WorldToLocal(woW), wiW, u1, u2, f_,
 		pdf, pdfBack, reverse))
 		return false;
 	if (sampledType)
 		*sampledType = bxdf->type;
 	*wiW = LocalToWorld(*wiW);
-	const float sideTest = Dot(*wiW, ng) * Dot(woW, ng);
+	const float sideTest = Dot(*wiW, ng) / Dot(woW, ng);
 	if (sideTest > 0.f) {
 		// ignore BTDFs
 		if (bxdf->type & BSDF_TRANSMISSION)
@@ -133,6 +136,8 @@ bool SingleBSDF::Sample_f(const SpectrumWavelengths &sw, const Vector &woW, Vect
 			return false;
 	} else
 		return false;
+	if (!reverse)
+		*f_ *= fabsf(sideTest);
 	return true;
 }
 float SingleBSDF::Pdf(const SpectrumWavelengths &sw, const Vector &woW,
@@ -143,10 +148,10 @@ float SingleBSDF::Pdf(const SpectrumWavelengths &sw, const Vector &woW,
 	return bxdf->Pdf(sw, WorldToLocal(woW), WorldToLocal(wiW));
 }
 
-SWCSpectrum SingleBSDF::f(const SpectrumWavelengths &sw, const Vector &woW,
-	const Vector &wiW, BxDFType flags) const
+SWCSpectrum SingleBSDF::F(const SpectrumWavelengths &sw, const Vector &woW,
+	const Vector &wiW, bool reverse, BxDFType flags) const
 {
-	const float sideTest = Dot(wiW, ng) * Dot(woW, ng);
+	const float sideTest = Dot(wiW, ng) / Dot(woW, ng);
 	if (sideTest > 0.f)
 		// ignore BTDFs
 		flags = BxDFType(flags & ~BSDF_TRANSMISSION);
@@ -158,7 +163,9 @@ SWCSpectrum SingleBSDF::f(const SpectrumWavelengths &sw, const Vector &woW,
 	if (!bxdf->MatchesFlags(flags))
 		return SWCSpectrum(0.f);
 	SWCSpectrum f_(0.f);
-	bxdf->f(sw, WorldToLocal(woW), WorldToLocal(wiW), &f_);
+	bxdf->F(sw, WorldToLocal(woW), WorldToLocal(wiW), &f_);
+	if (!reverse)
+		f_ *= fabsf(sideTest);
 	return f_;
 }
 SWCSpectrum SingleBSDF::rho(const SpectrumWavelengths &sw, BxDFType flags) const
@@ -180,7 +187,7 @@ MultiBSDF::MultiBSDF(const DifferentialGeometry &dg, const Normal &ngeom,
 {
 	nBxDFs = 0;
 }
-bool MultiBSDF::Sample_f(const SpectrumWavelengths &sw, const Vector &woW, Vector *wiW,
+bool MultiBSDF::SampleF(const SpectrumWavelengths &sw, const Vector &woW, Vector *wiW,
 	float u1, float u2, float u3, SWCSpectrum *const f_, float *pdf,
 	BxDFType flags, BxDFType *sampledType, float *pdfBack,
 	bool reverse) const
@@ -219,18 +226,14 @@ bool MultiBSDF::Sample_f(const SpectrumWavelengths &sw, const Vector &woW, Vecto
 	BOOST_ASSERT(bxdf); // NOBOOK
 	// Sample chosen _BxDF_
 	Vector wi;
-	if (!bxdf->Sample_f(sw, wo, &wi, u1, u2, f_, pdf, pdfBack, reverse))
+	if (!bxdf->SampleF(sw, wo, &wi, u1, u2, f_, pdf, pdfBack, reverse))
 		return false;
 	if (sampledType)
 		*sampledType = bxdf->type;
 	*wiW = LocalToWorld(wi);
-	*pdf *= weights[which];
-	float totalWeightR = bxdfs[which]->Weight(sw, wi);
-	if (pdfBack)
-		*pdfBack *= totalWeightR;
 	// Compute overall PDF with all matching _BxDF_s
 	// Compute value of BSDF for sampled direction
-	const float sideTest = Dot(*wiW, ng) * Dot(woW, ng);
+	const float sideTest = Dot(*wiW, ng) / Dot(woW, ng);
 	BxDFType flags2;
 	if (sideTest > 0.f)
 		// ignore BTDFs
@@ -243,30 +246,50 @@ bool MultiBSDF::Sample_f(const SpectrumWavelengths &sw, const Vector &woW, Vecto
 	if (!bxdf->MatchesFlags(flags2))
 		return false;
 	if (!(bxdf->type & BSDF_SPECULAR) && matchingComps > 1) {
+		*f_ *= *pdf;
+		*pdf *= weights[which];
+		float totalWeightR = bxdfs[which]->Weight(sw, wi);
+		if (pdfBack)
+			*pdfBack *= totalWeightR;
 		for (u_int i = 0; i < nBxDFs; ++i) {
-			if (i== which)
+			if (i== which || !bxdfs[i]->MatchesFlags(flags))
 				continue;
 			if (bxdfs[i]->MatchesFlags(flags2)) {
 				if (reverse)
-					bxdfs[i]->f(sw, wi, wo, f_);
+					bxdfs[i]->F(sw, wi, wo, f_);
 				else
-					bxdfs[i]->f(sw, wo, wi, f_);
+					bxdfs[i]->F(sw, wo, wi, f_);
 			}
-			if (bxdfs[i]->MatchesFlags(flags)) {
-				*pdf += bxdfs[i]->Pdf(sw, wo, wi) *
-					weights[i];
-				if (pdfBack) {
-					const float weightR = bxdfs[i]->Weight(sw, wi);
-					*pdfBack += bxdfs[i]->Pdf(sw, wi, wo) *
-						weightR;
-					totalWeightR += weightR;
-				}
+			*pdf += bxdfs[i]->Pdf(sw, wo, wi) * weights[i];
+			if (pdfBack) {
+				const float weightR = bxdfs[i]->Weight(sw, wi);
+				*pdfBack += bxdfs[i]->Pdf(sw, wi, wo) * weightR;
+				totalWeightR += weightR;
 			}
 		}
+		*pdf /= totalWeight;
+		*f_ /= *pdf;
+		if (pdfBack)
+			*pdfBack /= totalWeightR;
+	} else {
+		const float w = weights[which] / totalWeight;
+		*pdf *= w;
+		*f_ /= w;
+		if (pdfBack && matchingComps > 1) {
+			float totalWeightR = bxdfs[which]->Weight(sw, wi);
+			*pdfBack *= totalWeightR;
+			for (u_int i = 0; i < nBxDFs; ++i) {
+				if (i== which || !bxdfs[i]->MatchesFlags(flags))
+					continue;
+				const float weightR = bxdfs[i]->Weight(sw, wi);
+				*pdfBack += bxdfs[i]->Pdf(sw, wi, wo) * weightR;
+				totalWeightR += weightR;
+			}
+			*pdfBack /= totalWeightR;
+		}
 	}
-	*pdf /= totalWeight;
-	if (pdfBack)
-		*pdfBack /= totalWeightR;
+	if (!reverse)
+		*f_ *= fabsf(sideTest);
 	return true;
 }
 float MultiBSDF::Pdf(const SpectrumWavelengths &sw, const Vector &woW, const Vector &wiW,
@@ -284,10 +307,10 @@ float MultiBSDF::Pdf(const SpectrumWavelengths &sw, const Vector &woW, const Vec
 	return totalWeight > 0.f ? pdf / totalWeight : 0.f;
 }
 
-SWCSpectrum MultiBSDF::f(const SpectrumWavelengths &sw, const Vector &woW,
-		const Vector &wiW, BxDFType flags) const
+SWCSpectrum MultiBSDF::F(const SpectrumWavelengths &sw, const Vector &woW,
+		const Vector &wiW, bool reverse, BxDFType flags) const
 {
-	const float sideTest = Dot(wiW, ng) * Dot(woW, ng);
+	const float sideTest = Dot(wiW, ng) / Dot(woW, ng);
 	if (sideTest > 0.f)
 		// ignore BTDFs
 		flags = BxDFType(flags & ~BSDF_TRANSMISSION);
@@ -300,7 +323,9 @@ SWCSpectrum MultiBSDF::f(const SpectrumWavelengths &sw, const Vector &woW,
 	SWCSpectrum f_(0.f);
 	for (u_int i = 0; i < nBxDFs; ++i)
 		if (bxdfs[i]->MatchesFlags(flags))
-			bxdfs[i]->f(sw, wo, wi, &f_);
+			bxdfs[i]->F(sw, wo, wi, &f_);
+	if (!reverse)
+		f_ *= fabsf(sideTest);
 	return f_;
 }
 SWCSpectrum MultiBSDF::rho(const SpectrumWavelengths &sw, BxDFType flags) const
@@ -330,7 +355,7 @@ MixBSDF::MixBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
 	// are no components in the mix
 	nBSDFs = 0;
 }
-bool MixBSDF::Sample_f(const SpectrumWavelengths &sw, const Vector &wo, Vector *wi,
+bool MixBSDF::SampleF(const SpectrumWavelengths &sw, const Vector &wo, Vector *wi,
 	float u1, float u2, float u3, SWCSpectrum *const f_, float *pdf,
 	BxDFType flags, BxDFType *sampledType, float *pdfBack,
 	bool reverse) const
@@ -347,24 +372,12 @@ bool MixBSDF::Sample_f(const SpectrumWavelengths &sw, const Vector &wo, Vector *
 		u3 -= weights[i];
 	}
 	BxDFType sType;
-	if (!bsdfs[which]->Sample_f(sw,
+	if (!bsdfs[which]->SampleF(sw,
 		wo, wi, u1, u2, u3 / weights[which], f_, pdf, flags,
 		&sType, pdfBack, reverse))
 		return false;
-	// To make bump map work, we must compensate for the shading normal
-	// that can be different in the sub BSDF than in the mix. The values
-	// will always end up being multiplied by the cosine between the
-	// incoming light ray and the shading normal of the mix. By convention,
-	// the incoming light ray will be *wi if reverse and wo otherwise.
-	// Thus we divide by the cosine of the light ray and the mix shading
-	// normal and multiply by the cosine of the light ray and the sub BSDF
-	// shading normal.
-	// Part of the computation is done at the end for speed reasons
-	if (reverse)
-		*f_ *= weights[which] * AbsDot(*wi, bsdfs[which]->nn);
-	else
-		*f_ *= weights[which] * AbsDot(wo, bsdfs[which]->nn);
 	*pdf *= weights[which];
+	*f_ *= *pdf;
 	if (pdfBack)
 		*pdfBack *= weights[which];
 	if (sType & BSDF_SPECULAR)
@@ -375,21 +388,20 @@ bool MixBSDF::Sample_f(const SpectrumWavelengths &sw, const Vector &wo, Vector *
 		BSDF *bsdf = bsdfs[i];
 		if (bsdf->NumComponents(flags) == 0)
 			continue;
-		// Same trick than above for the shading normal
 		if (reverse)
-			f_->AddWeighted(weights[i] * AbsDot(*wi, bsdfs[i]->nn),
-				bsdf->f(sw, *wi, wo, flags));
+			f_->AddWeighted(weights[i],
+				bsdf->F(sw, *wi, wo, true, flags));
 		else
-			f_->AddWeighted(weights[i] * AbsDot(wo, bsdfs[i]->nn),
-				bsdf->f(sw, wo, *wi, flags));
+			f_->AddWeighted(weights[i],
+				bsdf->F(sw, wo, *wi, false, flags));
 		*pdf += weights[i] * bsdf->Pdf(sw, wo, *wi, flags);
 		if (pdfBack)
 			*pdfBack += weights[i] * bsdf->Pdf(sw, *wi, wo, flags);
 	}
-	*f_ /= totalWeight * (reverse ? AbsDot(*wi, nn) : AbsDot(wo, nn));
 	*pdf /= totalWeight;
 	if (pdfBack)
 		*pdfBack /= totalWeight;
+	*f_ /= *pdf;
 	if (sampledType)
 		*sampledType = sType;
 	return true;
@@ -402,24 +414,15 @@ float MixBSDF::Pdf(const SpectrumWavelengths &sw, const Vector &wo, const Vector
 		pdf += weights[i] * bsdfs[i]->Pdf(sw, wo, wi, flags);
 	return pdf / totalWeight;
 }
-SWCSpectrum MixBSDF::f(const SpectrumWavelengths &sw, const Vector &woW,
-	const Vector &wiW, BxDFType flags) const
+SWCSpectrum MixBSDF::F(const SpectrumWavelengths &sw, const Vector &woW,
+	const Vector &wiW, bool reverse, BxDFType flags) const
 {
 	SWCSpectrum ff(0.f);
 	for (u_int i = 0; i < nBSDFs; ++i) {
-		// To make bump map work, we must compensate for the shading
-		// normal that can be different in the sub BSDF than in the mix.
-		// The values will always end up being multiplied by the cosine
-		// between the incoming light ray and the shading normal of the
-		// mix. By convention, the incoming light ray should always be
-		// in woW.
-		// Thus we divide by the cosine of woW and the mix shading
-		// normal and multiply by the cosine of woW and the sub BSDF
-		// shading normal.
-		ff.AddWeighted(weights[i] * AbsDot(woW, bsdfs[i]->nn),
-			bsdfs[i]->f(sw, woW, wiW, flags));
+		ff.AddWeighted(weights[i],
+			bsdfs[i]->F(sw, woW, wiW, reverse, flags));
 	}
-	return ff / (totalWeight * AbsDot(woW, nn));
+	return ff / totalWeight;
 }
 SWCSpectrum MixBSDF::rho(const SpectrumWavelengths &sw, BxDFType flags) const
 {

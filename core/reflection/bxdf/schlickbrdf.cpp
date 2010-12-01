@@ -35,7 +35,7 @@ SchlickBRDF::SchlickBRDF(const SWCSpectrum &d, const SWCSpectrum &s,
 	multibounce(mb)
 {
 }
-void SchlickBRDF::f(const SpectrumWavelengths &sw, const Vector &wo, 
+void SchlickBRDF::F(const SpectrumWavelengths &sw, const Vector &wo, 
 	 const Vector &wi, SWCSpectrum *const f_) const
 {
 	const float cosi = fabsf(CosTheta(wi));
@@ -53,12 +53,12 @@ void SchlickBRDF::f(const SpectrumWavelengths &sw, const Vector &wo,
 	const SWCSpectrum S(SchlickFresnel(u));
 
 	// diffuse part
-	f_->AddWeighted(INV_PI, a * Rd * (SWCSpectrum(1.f) - S));
+	f_->AddWeighted(INV_PI * coso, a * Rd * (SWCSpectrum(1.f) - S));
 
 	// specular part
 	if (wi.z <= 0.f || wo.z <= 0.f)
 		return;
-	f_->AddWeighted(SchlickD(cosi, coso, H), S);
+	f_->AddWeighted(coso * SchlickD(cosi, coso, H), S);
 }
 
 static float GetPhi(float a, float b)
@@ -66,7 +66,7 @@ static float GetPhi(float a, float b)
 	return M_PI * .5f * sqrtf(a * b / (1.f - a * (1.f - b)));
 }
 
-bool SchlickBRDF::Sample_f(const SpectrumWavelengths &sw, const Vector &wo,
+bool SchlickBRDF::SampleF(const SpectrumWavelengths &sw, const Vector &wo,
 	Vector *wi, float u1, float u2, SWCSpectrum *const f_, float *pdf, 
 	float *pdfBack, bool reverse) const
 {
@@ -118,9 +118,11 @@ bool SchlickBRDF::Sample_f(const SpectrumWavelengths &sw, const Vector &wo,
 		*pdfBack = fabsf(wo.z) * INV_TWOPI + specPdf / fabsf(wi->z);
 
 	*f_ = SWCSpectrum(0.f);
-	// No need to check for the reverse flag as the BRDF is identical in
-	// both cases
-	f(sw, *wi, wo, f_);
+	if (reverse)
+		F(sw, *wi, wo, f_);
+	else
+		F(sw, wo, *wi, f_);
+	*f_ /= *pdf;
 	return true;
 }
 float SchlickBRDF::Pdf(const SpectrumWavelengths &sw, const Vector &wo,
@@ -141,7 +143,7 @@ SchlickDoubleSidedBRDF::SchlickDoubleSidedBRDF(const SWCSpectrum &d,
 	depth_bf(dep2), roughness_bf(r2), anisotropy_bf(p2), multibounce_bf(mb2)
 {
 }
-void SchlickDoubleSidedBRDF::f(const SpectrumWavelengths &sw, const Vector &wo,
+void SchlickDoubleSidedBRDF::F(const SpectrumWavelengths &sw, const Vector &wo,
 	 const Vector &wi, SWCSpectrum *const f_) const
 {
 	const float cosi = fabsf(CosTheta(wi));
@@ -160,12 +162,12 @@ void SchlickDoubleSidedBRDF::f(const SpectrumWavelengths &sw, const Vector &wo,
 		const SWCSpectrum S(SchlickFresnel(u));
 
 		// diffuse part
-		f_->AddWeighted(INV_PI, a * Rd * (SWCSpectrum(1.f) - S));
+		f_->AddWeighted(INV_PI * coso, a * Rd * (SWCSpectrum(1.f) - S));
 
 		// specular part
 		if (wi.z <= 0.f || wo.z <= 0.f)
 			return;
-		f_->AddWeighted(SchlickD(cosi, coso, H), S);
+		f_->AddWeighted(coso * SchlickD(cosi, coso, H), S);
 	} else {
 		if (depth_bf > 0.f) {
 			// 1/cosi+1/coso=(cosi+coso)/(cosi*coso)
@@ -175,16 +177,16 @@ void SchlickDoubleSidedBRDF::f(const SpectrumWavelengths &sw, const Vector &wo,
 		const SWCSpectrum S(SchlickFresnelBack(u));
 
 		// diffuse part
-		f_->AddWeighted(INV_PI, a * Rd * (SWCSpectrum(1.f) - S));
+		f_->AddWeighted(INV_PI * coso, a * Rd * (SWCSpectrum(1.f) - S));
 
 		// specular part
 		if (wi.z >= 0.f || wo.z >= 0.f)
 			return;
-		f_->AddWeighted(SchlickDBack(cosi, coso, H), S);
+		f_->AddWeighted(coso * SchlickDBack(cosi, coso, H), S);
 	}
 }
 
-bool SchlickDoubleSidedBRDF::Sample_f(const SpectrumWavelengths &sw, const Vector &wo,
+bool SchlickDoubleSidedBRDF::SampleF(const SpectrumWavelengths &sw, const Vector &wo,
 	Vector *wi, float u1, float u2, SWCSpectrum *const f_, float *pdf,
 	float *pdfBack, bool reverse) const
 {
@@ -237,9 +239,11 @@ bool SchlickDoubleSidedBRDF::Sample_f(const SpectrumWavelengths &sw, const Vecto
 		*pdfBack = fabsf(wo.z) * INV_TWOPI + specPdf / fabsf(wi->z);
 
 	*f_ = SWCSpectrum(0.f);
-	// No need to check for the reverse flag as the BRDF is identical in
-	// both cases
-	f(sw, *wi, wo, f_);
+	if (reverse)
+		F(sw, *wi, wo, f_);
+	else
+		F(sw, wo, *wi, f_);
+	*f_ /= *pdf;
 	return true;
 }
 float SchlickDoubleSidedBRDF::Pdf(const SpectrumWavelengths &sw, const Vector &wo,

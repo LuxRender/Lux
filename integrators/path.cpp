@@ -183,18 +183,16 @@ u_int PathIntegrator::Li(const Scene &scene, const Sample &sample) const
 		float pdf;
 		BxDFType flags;
 		SWCSpectrum f;
-		if (!bsdf->Sample_f(sw, wo, &wi, data[0], data[1], data[2], &f,
+		if (!bsdf->SampleF(sw, wo, &wi, data[0], data[1], data[2], &f,
 			&pdf, BSDF_ALL, &flags, NULL, true))
 			break;
-
-		const float dp = AbsDot(wi, n) / pdf;
 
 		if (flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) ||
 			!(bsdf->Pdf(sw, wi, wo, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) > 0.f)) {
 			// Possibly terminate the path
 			if (vertexIndex > 3) {
 				if (rrStrategy == RR_EFFICIENCY) { // use efficiency optimized RR
-					const float q = min<float>(1.f, f.Filter(sw) * dp);
+					const float q = min<float>(1.f, f.Filter(sw));
 					if (q < data[3])
 						break;
 					// increase path contribution
@@ -212,9 +210,8 @@ u_int PathIntegrator::Li(const Scene &scene, const Sample &sample) const
 			specular = specular && specularBounce;
 		}
 		pathThroughput *= f;
-		pathThroughput *= dp;
 		if (!specular)
-			VContrib += dp;
+			VContrib += AbsDot(wi, n) / pdf;
 
 		ray = Ray(p, wi);
 		ray.time = sample.realTime;
@@ -507,19 +504,19 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 					const float length = sqrtf(d2);
 					const Vector wi(wi0 / length);
 
-					Li *= lightBsdf->f(sw, Vector(lightBsdf->nn), -wi);
-					Li *= bsdf->f(sw, wi, wo);
+					Li *= lightBsdf->F(sw, Vector(lightBsdf->nn), -wi, false);
+					Li *= bsdf->F(sw, wi, wo, true);
 
 					if (!Li.Black()) {
 						const float shadowRayEpsilon = max(MachineEpsilon::E(pL),
 								MachineEpsilon::E(length));
 
 						if (shadowRayEpsilon < length * .5f) {
-							const float lightPdf2 = lightPdf * d2 /	AbsDot(wi, lightBsdf->nn);
-							Li *= PowerHeuristic(1, lightPdf2, 1, bsdf->Pdf(sw, wo, wi));
+							const float lightPdf2 = lightPdf * d2;
+							Li *= PowerHeuristic(1, lightPdf2 / AbsDot(wi, lightBsdf->nn), 1, bsdf->Pdf(sw, wo, wi));
 
 							// Store light's contribution
-							state->Ld[0] = state->pathThroughput * Li * (AbsDot(wi, n) / lightPdf2);
+							state->Ld[0] = state->pathThroughput * Li / lightPdf2;
 							state->Vd[0] = state->Ld[0].Filter(sw) * state->VContrib;
 							state->LdGroup[0] = light.group;
 
@@ -540,20 +537,18 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 		float pdf;
 		BxDFType flags;
 		SWCSpectrum f;
-		if (!bsdf->Sample_f(sw, wo, &wi, data[0], data[1], data[2], &f,
+		if (!bsdf->SampleF(sw, wo, &wi, data[0], data[1], data[2], &f,
 			&pdf, BSDF_ALL, &flags, NULL, true)) {
 			state->Terminate(scene, bufferId);
 			return true;
 		}
-
-		const float dp = AbsDot(wi, n) / pdf;
 
 		if (flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) ||
 			!(bsdf->Pdf(sw, wi, wo, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) > 0.f)) {
 			// Possibly terminate the path
 			if (state->pathLength > 3) {
 				if (rrStrategy == RR_EFFICIENCY) { // use efficiency optimized RR
-					const float q = min<float>(1.f, f.Filter(sw) * dp);
+					const float q = min<float>(1.f, f.Filter(sw));
 					if (q < data[3]) {
 						state->Terminate(scene, bufferId);
 						return true;
@@ -581,9 +576,8 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 			state->pathRay.maxt = INFINITY;
 		}
 		state->pathThroughput *= f;
-		state->pathThroughput *= dp;
 		if (!state->specular)
-			state->VContrib += dp;
+			state->VContrib += AbsDot(wi, n) / pdf;
 
 		state->volume = bsdf->GetVolume(wi);
 		state->state = PathState::NEXT_VERTEX;

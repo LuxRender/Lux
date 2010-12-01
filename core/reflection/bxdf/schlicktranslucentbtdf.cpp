@@ -37,7 +37,7 @@ SchlickTranslucentBTDF::SchlickTranslucentBTDF(const SWCSpectrum &d,
 {
 }
 
-void SchlickTranslucentBTDF::f(const SpectrumWavelengths &sw, const Vector &wo, 
+void SchlickTranslucentBTDF::F(const SpectrumWavelengths &sw, const Vector &wo, 
 	 const Vector &wi, SWCSpectrum *const f_) const
 {
 	const float cosi = fabsf(CosTheta(wi));
@@ -55,10 +55,10 @@ void SchlickTranslucentBTDF::f(const SpectrumWavelengths &sw, const Vector &wo,
 		if (depth > 0.f || depth_bf > 0.f)
 			S *= Exp(Alpha * -(depth / coso) + Alpha_bf * -(depth_bf / cosi));
 	}
-	f_->AddWeighted(INV_PI, S * Rt * (SWCSpectrum(1.f) - Rd));
+	f_->AddWeighted(INV_PI * coso, S * Rt * (SWCSpectrum(1.f) - Rd));
 }
 
-bool SchlickTranslucentBTDF::Sample_f(const SpectrumWavelengths &sw, const Vector &wo,
+bool SchlickTranslucentBTDF::SampleF(const SpectrumWavelengths &sw, const Vector &wo,
 	Vector *wi, float u1, float u2, SWCSpectrum *const f_, float *pdf, 
 	float *pdfBack, bool reverse) const
 {
@@ -73,7 +73,11 @@ bool SchlickTranslucentBTDF::Sample_f(const SpectrumWavelengths &sw, const Vecto
 	if (pdfBack)
 		*pdfBack = Pdf(sw, *wi, wo);
 	*f_ = SWCSpectrum(0.f);
-	f(sw, *wi, wo, f_);
+	if (reverse)
+		F(sw, *wi, wo, f_);
+	else
+		F(sw, wo, *wi, f_);
+	*f_ /= *pdf;
 	return true;
 }
 

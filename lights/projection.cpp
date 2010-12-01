@@ -41,7 +41,7 @@ public:
 		xStart(xS), xEnd(xE), yStart(yS), yEnd(yE), Area(A),
 		Projection(proj), projectionMap(map) { }
 	virtual ~ProjectionBxDF() { }
-	virtual void f(const SpectrumWavelengths &sw, const Vector &wo,
+	virtual void F(const SpectrumWavelengths &sw, const Vector &wo,
 		const Vector &wi, SWCSpectrum *const f) const
 	{
 		const float cos = wi.z;
@@ -60,7 +60,7 @@ public:
 				projectionMap->LookupSpectrum(sw, s, t));
 		}
 	}
-	virtual bool Sample_f(const SpectrumWavelengths &sw, const Vector &wo,
+	virtual bool SampleF(const SpectrumWavelengths &sw, const Vector &wo,
 		Vector *wi, float u1, float u2, SWCSpectrum *const f_,
 		float *pdf, float *pdfBack = NULL, bool reverse = false) const
 	{
@@ -72,10 +72,10 @@ public:
 		if (pdfBack)
 			*pdfBack = 0.f;
 		if (!projectionMap)
-			*f_ = SWCSpectrum(1.f / (Area * cos2 * cos2));
+			*f_ = SWCSpectrum(1.f / cos);
 		else
 			*f_ = projectionMap->LookupSpectrum(sw, u1, u2) /
-				(Area * cos2 * cos2);
+				cos;
 		return true;
 	}
 	virtual float Pdf(const SpectrumWavelengths &sw, const Vector &wi, const Vector &wo) const

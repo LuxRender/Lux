@@ -90,7 +90,7 @@ bool Camera::GenerateRay(MemoryArena &arena, const SpectrumWavelengths &sw,
 
 	// Sample ray direction
 	//FIXME: Replace dummy .5f by a sampled value if needed
-	if (!bsdf->Sample_f(sw, Vector(bsdf->nn), &(ray->d), d1, d2, .5f,
+	if (!bsdf->SampleF(sw, Vector(bsdf->nn), &(ray->d), d1, d2, .5f,
 		&We, &pdf, BSDF_ALL, NULL, NULL, true))
 		return false;
 

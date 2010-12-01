@@ -37,9 +37,9 @@ public:
 	CookTorrance(const SWCSpectrum &ks, MicrofacetDistribution *dist,
 		Fresnel *fres);
 	virtual ~CookTorrance() { }
-	virtual void f(const SpectrumWavelengths &sw, const Vector &wo,
+	virtual void F(const SpectrumWavelengths &sw, const Vector &wo,
 		const Vector &wi, SWCSpectrum *const f) const;
-	virtual bool Sample_f(const SpectrumWavelengths &sw, const Vector &wi,
+	virtual bool SampleF(const SpectrumWavelengths &sw, const Vector &wi,
 		Vector *sampled_f, float u1, float u2, SWCSpectrum *const f,
 		float *pdf, float *pdfBack = NULL, bool reverse = false) const;
 	virtual float Pdf(const SpectrumWavelengths &sw, const Vector &wi,

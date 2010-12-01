@@ -85,7 +85,7 @@ SWCSpectrum SampleableSphericalFunction::f(const SpectrumWavelengths &sw,
 	return func->f(sw, phi, theta);
 }
 
-SWCSpectrum SampleableSphericalFunction::Sample_f(const SpectrumWavelengths &sw,
+SWCSpectrum SampleableSphericalFunction::SampleF(const SpectrumWavelengths &sw,
 	float u1, float u2, Vector *w, float *pdf) const
 {
 	// Find floating-point $(u,v)$ sample coordinates
@@ -99,7 +99,7 @@ SWCSpectrum SampleableSphericalFunction::Sample_f(const SpectrumWavelengths &sw,
 	// Compute PDF for sampled direction
 	*pdf /= 2.f * M_PI * M_PI * sintheta;
 	// Return value for direction
-	return f(sw, phi, theta);
+	return f(sw, phi, theta) / *pdf;
 }
 
 float SampleableSphericalFunction::Pdf(const Vector& w) const

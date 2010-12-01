@@ -38,12 +38,12 @@ public:
 		const SWCSpectrum &Alpha, float d,
 		MicrofacetDistribution *dist);
 	virtual ~FresnelBlend() { }
-	virtual void f(const SpectrumWavelengths &sw, const Vector &wo,
+	virtual void F(const SpectrumWavelengths &sw, const Vector &wo,
 		const Vector &wi, SWCSpectrum *const f) const;
 	SWCSpectrum SchlickFresnel(float costheta) const {
 		return Rs + powf(1.f - costheta, 5.f) * (SWCSpectrum(1.f) - Rs);
 	}
-	virtual bool Sample_f(const SpectrumWavelengths &sw, const Vector &wo,
+	virtual bool SampleF(const SpectrumWavelengths &sw, const Vector &wo,
 		Vector *wi, float u1, float u2, SWCSpectrum *const f,
 		float *pdf, float *pdfBack = NULL, bool reverse = false) const;
 	virtual float Pdf(const SpectrumWavelengths &sw, const Vector &wi,

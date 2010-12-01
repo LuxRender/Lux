@@ -35,10 +35,9 @@ CookTorrance::CookTorrance(const SWCSpectrum &ks, MicrofacetDistribution *dist,
 {
 }
 
-void CookTorrance::f(const SpectrumWavelengths &sw, const Vector &wo,
+void CookTorrance::F(const SpectrumWavelengths &sw, const Vector &wo,
 	const Vector &wi, SWCSpectrum *const f_) const
 {
-	const float cosThetaO = fabsf(CosTheta(wo));
 	const float cosThetaI = fabsf(CosTheta(wi));
 	Vector wh(Normalize(wi + wo));
 	if (wh.z < 0.f)
@@ -48,10 +47,10 @@ void CookTorrance::f(const SpectrumWavelengths &sw, const Vector &wo,
 
 	SWCSpectrum F;
 	fresnel->Evaluate(sw, cosThetaH, &F);
-	f_->AddWeighted(distribution->D(wh) * cG  / (M_PI * cosThetaI * cosThetaO), KS * F);
+	f_->AddWeighted(distribution->D(wh) * cG  / (M_PI * cosThetaI), KS * F);
 }
 
-bool CookTorrance::Sample_f(const SpectrumWavelengths &sw, const Vector &wo,
+bool CookTorrance::SampleF(const SpectrumWavelengths &sw, const Vector &wo,
 	Vector *wi, float u1, float u2, SWCSpectrum *const f_, float *pdf,
 	float *pdfBack, bool reverse) const
 {
@@ -64,14 +63,18 @@ bool CookTorrance::Sample_f(const SpectrumWavelengths &sw, const Vector &wo,
 	*wi = 2.f * cosThetaH * wh - wo;
 	if (*pdf == 0.f)
 		return false;
+	SWCSpectrum F;
+	fresnel->Evaluate(sw, cosThetaH, &F);
+	const float factor = d * fabsf(cosThetaH) / *pdf *
+		distribution->G(wo, *wi, wh) * 4.f * INV_PI;
+	if (reverse)
+		*f_ = (factor / fabsf(wo.z)) *	(KS * F);
+	else
+		*f_ = (factor / fabsf(wi->z)) * (KS * F);
 	*pdf /= 4.f * fabsf(cosThetaH);
 	if (pdfBack)
 		*pdfBack = *pdf;
 
-	SWCSpectrum F;
-	fresnel->Evaluate(sw, cosThetaH, &F);
-	*f_ = (d * distribution->G(wo, *wi, wh) / (M_PI * fabsf(wi->z * wo.z))) *
-		(KS * F);
 	return true;
 }
 

@@ -130,7 +130,7 @@ bool VolumeIntegrator::Connect(const Scene &scene, const Sample &sample,
 		if (!Intersect(scene, sample, volume, ray, &isect, &bsdf, f))
 			return true;
 
-		*f *= bsdf->f(sample.swl, d, -d, flags);
+		*f *= bsdf->F(sample.swl, d, -d, true, flags);
 		if (f->Black())
 			return false;
 		const float cost = Dot(bsdf->nn, d);
@@ -138,7 +138,6 @@ bool VolumeIntegrator::Connect(const Scene &scene, const Sample &sample,
 			volume = isect.exterior;
 		else
 			volume = isect.interior;
-		*f *= fabsf(cost);
 		if (pdf)
 			*pdf *= bsdf->Pdf(sample.swl, d, -d);
 		if (pdfR)
@@ -161,7 +160,7 @@ int VolumeIntegrator::Connect(const Scene &scene, const Sample &sample,
 
 	const Vector d(ray.d);
 	const BxDFType flags(BxDFType(BSDF_SPECULAR | BSDF_TRANSMISSION));
-	*f *= bsdf->f(sample.swl, d, -d, flags);
+	*f *= bsdf->F(sample.swl, d, -d, true, flags);
 	if (f->Black())
 		return -1;
 	const float cost = Dot(bsdf->nn, d);
@@ -169,7 +168,6 @@ int VolumeIntegrator::Connect(const Scene &scene, const Sample &sample,
 		volume = isect.exterior;
 	else
 		volume = isect.interior;
-	*f *= fabsf(cost);
 	if (pdf)
 		*pdf *= bsdf->Pdf(sample.swl, d, -d);
 	if (pdfR)
@@ -241,19 +239,19 @@ SWCSpectrum EstimateDirect(const Scene &scene, const Light &light,
 			NULL)) {
 			const float d2 = wi0.LengthSquared();
 			const Vector wi(wi0 / sqrtf(d2));
-			Li *= lightBsdf->f(sample.swl, Vector(lightBsdf->nn), -wi);
-			Li *= bsdf->f(sample.swl, wi, wo);
+			Li *= lightBsdf->F(sample.swl, Vector(lightBsdf->nn), -wi, false);
+			Li *= bsdf->F(sample.swl, wi, wo, true);
 			if (!Li.Black()) {
-				const float lightPdf2 = lightPdf * d2 /
-					AbsDot(wi, lightBsdf->nn);
+				const float lightPdf2 = lightPdf * d2;
 				if (mis) {
 					const float bsdfPdf = bsdf->Pdf(sample.swl,
 						wo, wi);
-					Li *= PowerHeuristic(1, lightPdf2,
+					Li *= PowerHeuristic(1, lightPdf2 /
+						AbsDot(wi, lightBsdf->nn),
 						1, bsdfPdf);
 				}
 				// Add light's contribution
-				Ld += Li * (AbsDot(wi, n) / lightPdf2);
+				Ld += Li / lightPdf2;
 			}
 		}
 	}
@@ -262,7 +260,7 @@ SWCSpectrum EstimateDirect(const Scene &scene, const Light &light,
 		Vector wi;
 		float bsdfPdf;
 		BxDFType sampledType;
-		if (bsdf->Sample_f(sample.swl, wo, &wi, bs1, bs2, bcs,
+		if (bsdf->SampleF(sample.swl, wo, &wi, bs1, bs2, bcs,
 			&Li, &bsdfPdf, BSDF_ALL, &sampledType, NULL, true) &&
 			(sampledType & BSDF_SPECULAR) == 0) {
 			// Add light contribution from BSDF sampling
@@ -287,7 +285,7 @@ SWCSpectrum EstimateDirect(const Scene &scene, const Light &light,
 					AbsDot(wi, lightBsdf->nn);
 				const float weight = PowerHeuristic(1, bsdfPdf,
 					1, lightPdf2);
-				Ld += Li * (AbsDot(wi, n) * weight / bsdfPdf);
+				Ld += Li * weight;
 			}
 		}
 	}

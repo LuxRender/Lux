@@ -46,32 +46,29 @@ public:
 		return (flags & (BSDF_REFLECTION | BSDF_DIFFUSE)) ==
 			(BSDF_REFLECTION | BSDF_DIFFUSE) ? 1U : 0U;
 	}
-	virtual bool Sample_f(const SpectrumWavelengths &sw, const Vector &woW,
+	virtual bool SampleF(const SpectrumWavelengths &sw, const Vector &woW,
 		Vector *wiW, float u1, float u2, float u3,
 		SWCSpectrum *const f_, float *pdf, BxDFType flags = BSDF_ALL,
 		BxDFType *sampledType = NULL, float *pdfBack = NULL,
 		bool reverse = false) const {
 		if (reverse || NumComponents(flags) == 0)
 			return false;
-		*wiW = Normalize(LocalToWorld(CosineSampleHemisphere(u1, u2)));
-		if (!(Dot(*wiW, ng) > 0.f))
-			return false;
-		if (!(Dot(*wiW, nn) > 0.f))
-			return false;
+		*wiW = CosineSampleHemisphere(u1, u2);
+		const float cosi = wiW->z;
+		*wiW = Normalize(LocalToWorld(*wiW));
 		if (sampledType)
 			*sampledType = BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE);
-		*pdf = AbsDot(*wiW, nn) * INV_PI;
+		*pdf = cosi * INV_PI;
 		if (pdfBack)
 			*pdfBack = 0.f;
 		if (light.radianceMap == NULL) {
-			*f_ = SWCSpectrum(INV_PI);
+			*f_ = SWCSpectrum(1.f);
 			return true;
 		}
 		const Vector wh = Normalize(WorldToLight(-(*wiW)));
 		float s, t, dummy;
 		light.mapping->Map(wh, &s, &t, &dummy);
-		*f_ = light.radianceMap->LookupSpectrum(sw, s, t) *
-			INV_PI;
+		*f_ = light.radianceMap->LookupSpectrum(sw, s, t);
 		return true;
 	}
 	virtual float Pdf(const SpectrumWavelengths &sw, const Vector &woW,
@@ -81,17 +78,18 @@ public:
 			return AbsDot(wiW, nn) * INV_PI;
 		return 0.f;
 	}
-	virtual SWCSpectrum f(const SpectrumWavelengths &sw, const Vector &woW,
-		const Vector &wiW, BxDFType flags = BSDF_ALL) const {
-		if (NumComponents(flags) == 1 && Dot(wiW, ng) > 0.f) {
+	virtual SWCSpectrum F(const SpectrumWavelengths &sw, const Vector &woW,
+		const Vector &wiW, bool reverse, BxDFType flags = BSDF_ALL) const {
+		const float cosi = Dot(wiW, ng);
+		if (NumComponents(flags) == 1 && cosi > 0.f) {
 			if (light.radianceMap == NULL) {
-				return SWCSpectrum(INV_PI);
+				return SWCSpectrum(reverse ? INV_PI : INV_PI * cosi);
 			}
 			const Vector wh = Normalize(WorldToLight(-wiW));
 			float s, t, dummy;
 			light.mapping->Map(wh, &s, &t, &dummy);
 			return light.radianceMap->LookupSpectrum(sw, s, t) *
-				INV_PI;
+				(reverse ? INV_PI : INV_PI * cosi);
 		}
 		return SWCSpectrum(0.f);
 	}
@@ -125,7 +123,7 @@ public:
 		return (flags & (BSDF_REFLECTION | BSDF_DIFFUSE)) ==
 			(BSDF_REFLECTION | BSDF_DIFFUSE) ? 1U : 0U;
 	}
-	virtual bool Sample_f(const SpectrumWavelengths &sw, const Vector &woW,
+	virtual bool SampleF(const SpectrumWavelengths &sw, const Vector &woW,
 		Vector *wiW, float u1, float u2, float u3,
 		SWCSpectrum *const f_, float *pdf, BxDFType flags = BSDF_ALL,
 		BxDFType *sampledType = NULL, float *pdfBack = NULL,
@@ -136,16 +134,17 @@ public:
 		dg.time = dgShading.time;
 		PortalShapes[shapeIndex]->Sample(ps, u1, u2, u3, &dg);
 		*wiW = Normalize(dg.p - ps);
-		if (!(Dot(*wiW, nn) > 0.f))
+		const float cosi = Dot(*wiW, ng);
+		if (!(cosi > 0.f))
 			return false;
 		if (light.radianceMap != NULL) {
 			const Vector wh = Normalize(WorldToLight(-(*wiW)));
 			float s, t, dummy;
 			light.mapping->Map(wh, &s, &t, &dummy);
 			*f_ = light.radianceMap->LookupSpectrum(sw, s, t) *
-				INV_PI;
+				(INV_PI * cosi);
 		} else
-			*f_ = SWCSpectrum(INV_PI);
+			*f_ = SWCSpectrum(INV_PI * cosi);
 		*pdf = PortalShapes[shapeIndex]->Pdf(ps, dg.p) *
 			DistanceSquared(ps, dg.p) / AbsDot(*wiW, dg.nn);
 		for (u_int i = 0; i < PortalShapes.size(); ++i) {
@@ -164,6 +163,7 @@ public:
 		*pdf /= PortalShapes.size();
 		if (pdfBack)
 			*pdfBack = 0.f;
+		*f_ /= *pdf;
 		return true;
 	}
 	virtual float Pdf(const SpectrumWavelengths &sw, const Vector &woW,
@@ -184,17 +184,18 @@ public:
 		}
 		return pdf / PortalShapes.size();
 	}
-	virtual SWCSpectrum f(const SpectrumWavelengths &sw, const Vector &woW,
-		const Vector &wiW, BxDFType flags = BSDF_ALL) const {
+	virtual SWCSpectrum F(const SpectrumWavelengths &sw, const Vector &woW,
+		const Vector &wiW, bool reverse, BxDFType flags = BSDF_ALL) const {
+		const float cosi = Dot(wiW, ng);
 		if (NumComponents(flags) == 1 && Dot(wiW, ng) > 0.f) {
 			if (light.radianceMap == NULL) {
-				return SWCSpectrum(INV_PI);
+				return SWCSpectrum(reverse ? INV_PI : INV_PI * cosi);
 			}
 			const Vector wh = Normalize(WorldToLight(-wiW));
 			float s, t, dummy;
 			light.mapping->Map(wh, &s, &t, &dummy);
 			return light.radianceMap->LookupSpectrum(sw, s, t) *
-			INV_PI;
+			(reverse ? INV_PI : INV_PI * cosi);
 		}
 		return SWCSpectrum(0.f);
 	}

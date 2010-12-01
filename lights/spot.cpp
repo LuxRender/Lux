@@ -48,12 +48,12 @@ class SpotBxDF : public BxDF
 public:
 	SpotBxDF(float width, float fall) : BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)), cosTotalWidth(width), cosFalloffStart(fall) {}
 	virtual ~SpotBxDF() { }
-	virtual void f(const SpectrumWavelengths &sw, const Vector &wo,
+	virtual void F(const SpectrumWavelengths &sw, const Vector &wo,
 		const Vector &wi, SWCSpectrum *const f) const {
 		*f += LocalFalloff(wi, cosTotalWidth, cosFalloffStart) /
 			fabsf(wi.z);
 	}
-	virtual bool Sample_f(const SpectrumWavelengths &sw, const Vector &wo,
+	virtual bool SampleF(const SpectrumWavelengths &sw, const Vector &wo,
 		Vector *wi, float u1, float u2, SWCSpectrum *const f,float *pdf,
 		float *pdfBack = NULL, bool reverse = false) const {
 		*wi = UniformSampleCone(u1, u2, cosTotalWidth);
@@ -61,7 +61,7 @@ public:
 		if (pdfBack)
 			*pdfBack = Pdf(sw, *wi, wo);
 		*f = LocalFalloff(*wi, cosTotalWidth, cosFalloffStart) /
-			fabsf(wi->z);
+			(fabsf(wi->z) * *pdf);
 		return true;
 	}
 	virtual float Pdf(const SpectrumWavelengths &sw, const Vector &wi,

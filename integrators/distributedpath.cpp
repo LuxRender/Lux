@@ -323,7 +323,7 @@ void DistributedPath::LiInternal(const Scene &scene, const Sample &sample,
 					u3 = sample.oneD[diffuse_reflectComponentOffset][i];
 				}
 
-				if (bsdf->Sample_f(sw, wo, &wi, u1, u2, u3, &f, 
+				if (bsdf->SampleF(sw, wo, &wi, u1, u2, u3, &f, 
 					 &pdf, BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE), &flags, NULL, true)) {
 					Ray rd(p, wi);
 					rd.time = time;
@@ -333,7 +333,7 @@ void DistributedPath::LiInternal(const Scene &scene, const Sample &sample,
 						bsdf->GetVolume(wi), rd, Ll,
 						alpha, zdepth, rayDepth + 1,
 						false, nrContribs);
-					f *= invsamples * AbsDot(wi, n) / pdf;
+					f *= invsamples;
 					if (diffusereflectReject &&
 						(rayDepth == 0 || includeEmit)) {
 						for (u_int j = 0; j < Ll.size(); ++j)
@@ -370,7 +370,7 @@ void DistributedPath::LiInternal(const Scene &scene, const Sample &sample,
 					u3 = sample.oneD[diffuse_refractComponentOffset][i];
 				}
 
-				if (bsdf->Sample_f(sw, wo, &wi, u1, u2, u3, &f, 
+				if (bsdf->SampleF(sw, wo, &wi, u1, u2, u3, &f, 
 					 &pdf, BxDFType(BSDF_TRANSMISSION | BSDF_DIFFUSE), &flags, NULL, true)) {
 					Ray rd(p, wi);
 					rd.time = time;
@@ -380,7 +380,7 @@ void DistributedPath::LiInternal(const Scene &scene, const Sample &sample,
 						bsdf->GetVolume(wi), rd, Ll,
 						alpha, zdepth, rayDepth + 1,
 						false, nrContribs);
-					f *= invsamples * AbsDot(wi, n) / pdf;
+					f *= invsamples;
 					if (diffuserefractReject &&
 						(rayDepth == 0 || includeEmit)) {
 						for (u_int j = 0; j < Ll.size(); ++j)
@@ -419,7 +419,7 @@ void DistributedPath::LiInternal(const Scene &scene, const Sample &sample,
 					u3 = sample.oneD[glossy_reflectComponentOffset][i];
 				}
 
-				if (bsdf->Sample_f(sw, wo, &wi, u1, u2, u3, &f, 
+				if (bsdf->SampleF(sw, wo, &wi, u1, u2, u3, &f, 
 					 &pdf, BxDFType(BSDF_REFLECTION | BSDF_GLOSSY), &flags, NULL, true)) {
 					Ray rd(p, wi);
 					rd.time = time;
@@ -429,7 +429,7 @@ void DistributedPath::LiInternal(const Scene &scene, const Sample &sample,
 						bsdf->GetVolume(wi), rd, Ll,
 						alpha, zdepth, rayDepth + 1,
 						false, nrContribs);
-					f *= invsamples * AbsDot(wi, n) / pdf;
+					f *= invsamples;
 					if (glossyreflectReject &&
 						(rayDepth == 0 || includeEmit)) {
 						for (u_int j = 0; j < Ll.size(); ++j)
@@ -466,7 +466,7 @@ void DistributedPath::LiInternal(const Scene &scene, const Sample &sample,
 					u3 = sample.oneD[glossy_refractComponentOffset][i];
 				}
 
-				if (bsdf->Sample_f(sw, wo, &wi, u1, u2, u3, &f, 
+				if (bsdf->SampleF(sw, wo, &wi, u1, u2, u3, &f, 
 					&pdf, BxDFType(BSDF_TRANSMISSION | BSDF_GLOSSY), &flags, NULL, true)) {
 					Ray rd(p, wi);
 					rd.time = time;
@@ -476,7 +476,7 @@ void DistributedPath::LiInternal(const Scene &scene, const Sample &sample,
 						bsdf->GetVolume(wi), rd, Ll,
 						alpha, zdepth, rayDepth + 1,
 						false, nrContribs);
-					f *= invsamples * AbsDot(wi, n) / pdf;
+					f *= invsamples;
 					if (glossyrefractReject &&
 						(rayDepth == 0 || includeEmit)) {
 						for (u_int j = 0; j < Ll.size(); ++j)
@@ -495,7 +495,7 @@ void DistributedPath::LiInternal(const Scene &scene, const Sample &sample,
 		
 		// trace specular reflection & transmission rays
 		if (rayDepth < specularreflectDepth) {
-			if (bsdf->Sample_f(sw, wo, &wi, 1.f, 1.f, 1.f, &f, 
+			if (bsdf->SampleF(sw, wo, &wi, 1.f, 1.f, 1.f, &f, 
 				 &pdf, BxDFType(BSDF_REFLECTION | BSDF_SPECULAR), NULL, NULL, true)) {
 				Ray rd(p, wi);
 				rd.time = time;
@@ -504,13 +504,12 @@ void DistributedPath::LiInternal(const Scene &scene, const Sample &sample,
 				LiInternal(scene, sample, bsdf->GetVolume(wi),
 					rd, Ll, alpha, zdepth, rayDepth + 1,
 					true, nrContribs);
-				f *= AbsDot(wi, n);
 				for (u_int j = 0; j < L.size(); ++j)
 					L[j] += f * Ll[j];
 			}
 		}
 		if (rayDepth < specularrefractDepth) {
-			if (bsdf->Sample_f(sw, wo, &wi, 1.f, 1.f, 1.f, &f, 
+			if (bsdf->SampleF(sw, wo, &wi, 1.f, 1.f, 1.f, &f, 
 				 &pdf, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR), NULL, NULL, true)) {
 				Ray rd(p, wi);
 				rd.time = time;
@@ -519,7 +518,6 @@ void DistributedPath::LiInternal(const Scene &scene, const Sample &sample,
 				LiInternal(scene, sample, bsdf->GetVolume(wi),
 					rd, Ll, alpha, zdepth, rayDepth + 1,
 					true, nrContribs);
-				f *= AbsDot(wi, n);
 				for (u_int j = 0; j < L.size(); ++j)
 					L[j] += f * Ll[j];
 			}

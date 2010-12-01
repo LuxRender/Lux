@@ -38,9 +38,9 @@ public:
 		BxDF(BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)),
 		fresnel(fr), dispersive(disp), architectural(archi) { }
 	virtual ~SimpleSpecularTransmission() { }
-	virtual void f(const SpectrumWavelengths &sw, const Vector &wo,
+	virtual void F(const SpectrumWavelengths &sw, const Vector &wo,
 		const Vector &wi, SWCSpectrum *const f) const;
-	virtual bool Sample_f(const SpectrumWavelengths &sw, const Vector &wo,
+	virtual bool SampleF(const SpectrumWavelengths &sw, const Vector &wo,
 		Vector *wi, float u1, float u2, SWCSpectrum *const f,
 		float *pdf, float *pdfBack = NULL, bool reverse = false) const;
 	virtual float Weight(const SpectrumWavelengths &sw,
@@ -63,9 +63,9 @@ public:
 		bool archi = false) :
 		SimpleSpecularTransmission(fr, disp, archi), T(t) { }
 	virtual ~SpecularTransmission() { }
-	virtual void f(const SpectrumWavelengths &sw, const Vector &wo,
+	virtual void F(const SpectrumWavelengths &sw, const Vector &wo,
 		const Vector &wi, SWCSpectrum *const f) const;
-	virtual bool Sample_f(const SpectrumWavelengths &sw, const Vector &wo,
+	virtual bool SampleF(const SpectrumWavelengths &sw, const Vector &wo,
 		Vector *wi, float u1, float u2, SWCSpectrum *const f,
 		float *pdf, float *pdfBack = NULL, bool reverse = false) const;
 private:

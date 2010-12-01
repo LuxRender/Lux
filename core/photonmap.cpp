@@ -222,7 +222,7 @@ SWCSpectrum LightPhotonMap::LPhoton(const SpectrumWavelengths &sw,
 		float k = Ekernel(p, isect.dg.p, distSquared);
 		const SWCSpectrum alpha = p->GetSWCSpectrum(sw);
 
-		L += (k / nPaths) * bsdf->f(sw, p->wi, wo, flag) * alpha;
+		L += (k / nPaths) * bsdf->F(sw, p->wi, wo, false, flag) * alpha;
 	}
 
 	return L;
@@ -558,11 +558,11 @@ void PhotonMapPreprocess(const RandomGenerator &rng, const Scene &scene,
 		photonRay.o = bsdf->dgShading.p;
 		float pdf2;
 		SWCSpectrum alpha2;
-		if (!bsdf->Sample_f(sw, Vector(bsdf->nn), &photonRay.d,
+		if (!bsdf->SampleF(sw, Vector(bsdf->nn), &photonRay.d,
 			u[3], u[4], u[5], &alpha2, &pdf2))
 			continue;
 		alpha *= alpha2;
-		alpha /= pdf2 * pdf * lightPdf;
+		alpha /= pdf * lightPdf;
 
 		if (!alpha.Black()) {
 			// Follow photon path through scene and record intersections
@@ -659,12 +659,9 @@ void PhotonMapPreprocess(const RandomGenerator &rng, const Scene &scene,
 
 				// Compute new photon weight and possibly terminate with RR
 				SWCSpectrum fr;
-				if (!photonBSDF->Sample_f(sw, wo, &wi, u1, u2, u3, &fr, &pdfo, BSDF_ALL, &flags))
+				if (!photonBSDF->SampleF(sw, wo, &wi, u1, u2, u3, &fr, &pdfo, BSDF_ALL, &flags))
 					break;
-				SWCSpectrum anew = fr *
-					(AbsDot(wi, photonBSDF->ng) *
-					AbsDot(wo, photonBSDF->nn) /
-					(AbsDot(wo, photonBSDF->ng) * pdfo));
+				SWCSpectrum anew = fr;
 				float continueProb = min(1.f, anew.Filter(sw));
 				if (rng.floatValue() > continueProb || nIntersections > maxDepth)
 					break;
@@ -804,7 +801,6 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const Scene &scene,
 	// Do one-bounce final gather for photon map
 	if (bsdf->NumComponents(bxdfType) > 0 && !indirectMap->IsEmpty()) {
 		const Point &p = bsdf->dgShading.p;
-		const Normal &n = bsdf->dgShading.nn;
 
 		// Find indirect photons around point for importance sampling
 		u_int nIndirSamplePhotons = indirectMap->nLookup;
@@ -850,13 +846,12 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const Scene &scene,
 			float u3 = sampleFGData[2];
 			float pdf;
 			SWCSpectrum fr;
-			if (!bsdf->Sample_f(sw, wo, &wi, u1, u2, u3, &fr, &pdf, bxdfType, NULL, NULL, true)) 
+			if (!bsdf->SampleF(sw, wo, &wi, u1, u2, u3, &fr, &pdf, bxdfType, NULL, NULL, true)) 
 				continue;
 
 			// Dade - russian roulette
 			if (rrStrategy == RR_EFFICIENCY) { // use efficiency optimized RR
-				const float dp = AbsDot(wi, n) / pdf;
-				const float q = min(1.f, fr.Filter(sw) * dp);
+				const float q = min(1.f, fr.Filter(sw));
 				if (q < sampleFGData[3])
 					continue;
 
@@ -899,7 +894,7 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const Scene &scene,
 					// Limit weight when intersection point is close
 					if (bounceRay.maxt < sqrtf(md2))
 						wt *= (1.f + bounceRay.maxt / sqrtf(md2)) / 2.f;
-					Li += fr * Lindir * (AbsDot(wi, n) * wt / pdf);
+					Li += fr * Lindir * wt;
 				}
 			}
 		}
@@ -923,7 +918,7 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const Scene &scene,
 			Vector wi = UniformSampleCone(u2, u3, cosGatherAngle, vx, vy,
 				photonDirs[photonNum]);
 			// Trace photon-sampled final gather ray and accumulate radiance
-			SWCSpectrum fr = bsdf->f(sw, wi, wo, bxdfType);
+			SWCSpectrum fr(bsdf->F(sw, wi, wo, true, bxdfType));
 			if (fr.Black())
 				continue;
 
@@ -974,7 +969,7 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const Scene &scene,
 					// Limit weight when intersection point is close
 					if (bounceRay.maxt < sqrtf(md2))
 						wt *= (1.f + bounceRay.maxt / sqrtf(md2)) / 2.f;
-					Li += fr * Lindir * (AbsDot(wi, n) * wt / photonPdf);
+					Li += fr * Lindir * (wt / photonPdf);
 				}
 			}
 		}
@@ -996,7 +991,6 @@ SWCSpectrum PhotonMapFinalGather(const Scene &scene, const Sample &sample,
 	// Do one-bounce final gather for photon map
 	if (bsdf->NumComponents(bxdfType) > 0 && !radianceMap->IsEmpty()) {
 		const Point &p = bsdf->dgShading.p;
-		const Normal &n = bsdf->dgShading.nn;
 		const SpectrumWavelengths &sw(sample.swl);
 
 		// Use BSDF to do final gathering
@@ -1012,13 +1006,12 @@ SWCSpectrum PhotonMapFinalGather(const Scene &scene, const Sample &sample,
 			float u3 = sampleFGData[2];
 			float pdf;
 			SWCSpectrum fr;
-			if (!bsdf->Sample_f(sw, wo, &wi, u1, u2, u3, &fr, &pdf, bxdfType, NULL, NULL, true)) 
+			if (!bsdf->SampleF(sw, wo, &wi, u1, u2, u3, &fr, &pdf, bxdfType, NULL, NULL, true)) 
 				continue;
 
 			// Dade - russian roulette
 			if (rrStrategy == RR_EFFICIENCY) { // use efficiency optimized RR
-				const float dp = AbsDot(wi, n) / pdf;
-				const float q = min(1.f, fr.Filter(sw) * dp);
+				const float q = min(1.f, fr.Filter(sw));
 				if (q < sampleFGData[3])
 					continue;
 
@@ -1048,7 +1041,7 @@ SWCSpectrum PhotonMapFinalGather(const Scene &scene, const Sample &sample,
 				if (proc.photon) {
 					SWCSpectrum Lindir = proc.photon->GetSWCSpectrum(sw);
 
-					Li += fr * Lindir * (AbsDot(wi, n) / pdf);
+					Li += fr * Lindir;
 				}
 			}
 		}

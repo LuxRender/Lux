@@ -271,15 +271,14 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(const Scene &scene,
 			SWCSpectrum f;
 			BxDFType sampledType;
 			// Trace rays for specular reflection and refraction
-			if (bsdf->Sample_f(sw, wo, &wi, u1, u2, u3, &f, &pdf,
+			if (bsdf->SampleF(sw, wo, &wi, u1, u2, u3, &f, &pdf,
 				BxDFType(BSDF_REFLECTION | BSDF_TRANSMISSION | BSDF_SPECULAR | BSDF_GLOSSY), &sampledType, NULL, true)) {
 				// Compute ray differential _rd_ for specular reflection
 				Ray rd(p, wi);
 				L += LiDirectLightingMode(scene, sample,
 					bsdf->GetVolume(wi), rd, alpha,
 					reflectionDepth + 1,
-					(sampledType & BSDF_SPECULAR) != 0) *
-					f * (AbsDot(wi, ns) / pdf);
+					(sampledType & BSDF_SPECULAR) != 0) * f;
 			}
 		}
 	} else {
@@ -422,7 +421,7 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const Scene &scene,
 					float u3 = indirectComponent[0];
 					float pdf;
 					SWCSpectrum fr;
-					if (bsdf->Sample_f(sw, wo, &wi, u1, u2,
+					if (bsdf->SampleF(sw, wo, &wi, u1, u2,
 						u3, &fr, &pdf, diffuseType,
 						NULL, NULL, true)) {
 						Ray bounceRay(p, wi);
@@ -442,7 +441,7 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const Scene &scene,
 									-bounceRay.d, BSDF_ALL);
 								if (!Lindir.Black()) {
 									scene.Transmittance(bounceRay, sample, &Lindir);
-									currL += fr * Lindir * (AbsDot(wi, n) / pdf);
+									currL += fr * Lindir;
 								}
 							} else {
 								// Dade - the intersection is too near, fall back to
@@ -480,16 +479,14 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const Scene &scene,
 		float pdf;
 		BxDFType sampledType;
 		SWCSpectrum f;
-		if (!bsdf->Sample_f(sw, wo, &wi, pathSample[0], pathSample[1], pathComponent[0],
+		if (!bsdf->SampleF(sw, wo, &wi, pathSample[0], pathSample[1], pathComponent[0],
 			&f, &pdf, componentsToSample, &sampledType, NULL, true))
 			break;
-
-		const float dp = AbsDot(wi, n) / pdf;
 
 		// Possibly terminate the path
 		if (pathLength > 3) {
 			if (rrStrategy == RR_EFFICIENCY) { // use efficiency optimized RR
-				const float q = min<float>(1.f, f.Filter(sw) * dp);
+				const float q = min<float>(1.f, f.Filter(sw));
 				if (q < rrSample[0])
 					break;
 				// increase path contribution
@@ -505,7 +502,6 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const Scene &scene,
 		specularBounce = (sampledType & BSDF_SPECULAR) != 0;
 		specular = specular && specularBounce;
 		pathThroughput *= f;
-		pathThroughput *= dp;
 
 		ray = Ray(p, wi);
 		volume = bsdf->GetVolume(wi);

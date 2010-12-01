@@ -211,12 +211,12 @@ static bool evalPath(const Scene &scene, const Sample &sample,
 	// Check Connectability
 	eyeV.flags = BxDFType(~BSDF_SPECULAR);
 	const Vector ewi(Normalize(lightV.p - eyeV.p));
-	const SWCSpectrum ef(eyeV.bsdf->f(sw, ewi, eyeV.wo, eyeV.flags));
+	const SWCSpectrum ef(eyeV.bsdf->F(sw, ewi, eyeV.wo, true, eyeV.flags));
 	if (ef.Black())
 		return false;
 	lightV.flags = BxDFType(~BSDF_SPECULAR);
 	const Vector lwo(-ewi);
-	const SWCSpectrum lf(lightV.bsdf->f(sw, lightV.wi, lwo, lightV.flags));
+	const SWCSpectrum lf(lightV.bsdf->F(sw, lightV.wi, lwo, false, lightV.flags));
 	if (lf.Black())
 		return false;
 	const float epdfR = eyeV.bsdf->Pdf(sw, eyeV.wo, ewi, eyeV.flags);
@@ -234,18 +234,16 @@ static bool evalPath(const Scene &scene, const Sample &sample,
 	const float d2 = DistanceSquared(eyeV.p, lightV.p);
 	if (d2 < max(MachineEpsilon::E(eyeV.p), MachineEpsilon::E(lightV.p)))
 		return false;
-	const float ecosins = AbsDot(ewi, eyeV.bsdf->nn);
 	SWCSpectrum eflux(ef); // No pdf as it is a direct connection
 	eflux *= eyeV.flux;
 	// Prepare light vertex for connection
 	const float lcoso = AbsDot(lwo, lightV.bsdf->ng);
-	const float lcosins = AbsDot(lightV.wi, lightV.bsdf->nn);
-	SWCSpectrum lflux(lf * (lcosins / lightV.cosi)); // No pdf as it is a direct connection
+	SWCSpectrum lflux(lf); // No pdf as it is a direct connection
 	lflux *= lightV.flux;
 	// Connect eye and light vertices
 	*L *= eflux;
 	*L *= lflux;
-	*L *= ecosins * lcoso / d2;
+	*L /= d2;
 	if (L->Black())
 		return false;
 	// Evaluate factors for eye path weighting
@@ -254,22 +252,20 @@ static bool evalPath(const Scene &scene, const Sample &sample,
 		eyeV.rr = 1.f;
 	else
 		eyeV.rr = min(1.f, max(lightThreshold, ef.Filter(sw) *
-			eyeV.coso * ecosins / (ecosi * epdf)));
-	eyeV.rrR = min(1.f, max(eyeThreshold, ef.Filter(sw) *
-		ecosins / epdfR));
+			eyeV.coso / (ecosi * epdf)));
+	eyeV.rrR = min(1.f, max(eyeThreshold, ef.Filter(sw) / epdfR));
 	eyeV.dAWeight = lpdf * ltPdf * ecosi / d2;
 	if (nEye > 1)
 		eye[nEye - 2].dAWeight = epdf * eyeV.tPdf *
 			eye[nEye - 2].cosi / eye[nEye - 2].d2;
 	// Evaluate factors for light path weighting
 	const float lpdfR = lightV.bsdf->Pdf(sw, lwo, lightV.wi, lightV.flags);
-	lightV.rr = min(1.f, max(lightThreshold, lf.Filter(sw) *
-		lcoso * lcosins / (lightV.cosi * lpdf)));
+	lightV.rr = min(1.f, max(lightThreshold, lf.Filter(sw) / lpdf));
 	if (nLight == 1)
 		lightV.rrR = 1.f;
 	else
 		lightV.rrR = min(1.f, max(eyeThreshold, lf.Filter(sw) *
-			lcosins / lpdfR));
+			lightV.cosi / (lcoso * lpdfR)));
 	lightV.dARWeight = epdfR * etPdfR * lcoso / d2;
 	const float lWeight = nLight > 1 ? light[nLight - 2].dARWeight : 0.f;
 	if (nLight > 1)
@@ -485,16 +481,14 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 		// Sample light subpath initial direction and
 		// finish vertex initialization if needed
 		data = scene.sampler->GetLazyValues(sample, sampleLightOffset, 0);
-		if (maxLightDepth > 1 && light0.bsdf->Sample_f(sw, light0.wi,
+		if (maxLightDepth > 1 && light0.bsdf->SampleF(sw, light0.wi,
 			&light0.wo, data[1], data[2], data[3],
 			&light0.flux, &light0.pdf, BSDF_ALL, &light0.flags,
 			&light0.pdfR)) {
 			light0.coso = AbsDot(light0.wo, light0.bsdf->ng);
-			const float cosins0 = AbsDot(light0.wi, light0.bsdf->nn);
 			light0.rrR = min(1.f, max(eyeThreshold,
-				light0.flux.Filter(sw) * cosins0 / light0.pdfR));
-			light0.flux *= (light0.coso * cosins0) /
-				(light0.pdf * light0.cosi);
+				light0.flux.Filter(sw) * light0.cosi /
+				light0.coso));
 			light0.rr = min(1.f, max(lightThreshold,
 				light0.flux.Filter(sw)));
 			Ray ray(light0.p, light0.wo);
@@ -548,7 +542,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 				data = scene.sampler->GetLazyValues(sample,
 					sampleLightOffset, sampleIndex);
 				SWCSpectrum f;
-				if (!v.bsdf->Sample_f(sw, v.wi, &v.wo,
+				if (!v.bsdf->SampleF(sw, v.wi, &v.wo,
 					data[1], data[2], data[3], &f, &v.pdf,
 					BSDF_ALL, &v.flags, &v.pdfR))
 					break;
@@ -564,11 +558,8 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 						lightPath[nLight - 2].coso /
 						lightPath[nLight - 2].d2;
 					v.coso = AbsDot(v.wo, v.bsdf->ng);
-					const float cosins = AbsDot(v.wi, v.bsdf->nn);
 					v.rrR = min(1.f, max(eyeThreshold,
-						f.Filter(sw) * cosins / v.pdfR));
-					f *= (v.coso * cosins) /
-						(v.pdf * v.cosi);
+						f.Filter(sw) * v.cosi / v.coso));
 					v.rr = min(1.f, max(lightThreshold,
 						f.Filter(sw)));
 					v.flux *= f;
@@ -580,9 +571,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 					lightPath[nLight].flux = v.flux;
 				} else {
 					--nLight;
-					const float cosins = AbsDot(v.wi, v.bsdf->nn);
-					// No need to do '/ v.cosi * v.coso' since cosi==coso
-					v.flux *= f * (cosins / v.pdf);
+					v.flux *= f;
 					lightPath[nLight - 1].tPdf *= v.pdf;
 					v.tPdfR *= v.pdfR;
 					if (sampleIndex + 1 >= maxLightDepth) {
@@ -604,16 +593,14 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 	const float lensV = sample.camera->IsLensBased() ? sample.imageY :
 		sample.lensV;
 	//Jeanphi - Replace dummy .5f by a sampled value if needed
-	if (maxEyeDepth <= 1 || !eye0.bsdf->Sample_f(sw,
+	if (maxEyeDepth <= 1 || !eye0.bsdf->SampleF(sw,
 		eye0.wo, &eye0.wi, lensU, lensV, .5f,
 		&eye0.flux, &eye0.pdfR, BSDF_ALL, &eye0.flags,
 		&eye0.pdf, true))
 			return nrContribs;
 	eye0.cosi = AbsDot(eye0.wi, eye0.bsdf->ng);
-	const float cosins0 = AbsDot(eye0.wi, eye0.bsdf->nn);
 	eye0.rr = min(1.f, max(lightThreshold,
-		eye0.flux.Filter(sw) * (cosins0 * eye0.coso / (eye0.cosi * eye0.pdf))));
-	eye0.flux *= (cosins0 / eye0.pdfR);
+		eye0.flux.Filter(sw) * eye0.coso / eye0.cosi));
 	eye0.rrR = min(1.f, max(eyeThreshold, eye0.flux.Filter(sw)));
 	Ray ray(eyePath[0].p, eyePath[0].wi);
 	ray.time = sample.realTime;
@@ -817,7 +804,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 		data = scene.sampler->GetLazyValues(sample, sampleEyeOffset,
 			sampleIndex);
 		SWCSpectrum f;
-		if (!v.bsdf->Sample_f(sw, v.wo, &v.wi, data[1], data[2],
+		if (!v.bsdf->SampleF(sw, v.wo, &v.wi, data[1], data[2],
 			data[3], &f, &v.pdfR, BSDF_ALL, &v.flags, &v.pdf, true))
 			break;
 
@@ -831,10 +818,8 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 				eyePath[nEye - 2].cosi /
 				eyePath[nEye - 2].d2;
 			v.cosi = AbsDot(v.wi, v.bsdf->ng);
-			const float cosins = AbsDot(v.wi, v.bsdf->nn);
 			v.rr = min(1.f, max(lightThreshold,
-				f.Filter(sw) * (cosins * v.coso / (v.cosi * v.pdf))));
-			f *= cosins / v.pdfR;
+				f.Filter(sw) * v.coso / v.cosi));
 			v.rrR = min(1.f, max(eyeThreshold, f.Filter(sw)));
 			v.flux *= f;
 			if (nEye > rrStart) {
@@ -845,8 +830,6 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 			eyePath[nEye].flux = v.flux;
 		} else {
 			--nEye;
-			const float cosins = AbsDot(v.wi, v.bsdf->nn);
-			v.flux *= f * (cosins / v.pdfR);
 			eyePath[nEye - 1].tPdfR *= v.pdfR;
 			v.tPdf *= v.pdf;
 			if (sampleIndex + 1 >= maxEyeDepth) {

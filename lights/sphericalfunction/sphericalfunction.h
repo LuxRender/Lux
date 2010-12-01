@@ -134,7 +134,7 @@ public:
 	 *
 	 * @return The function value of the sampled direction.
 	 */
-	SWCSpectrum Sample_f(const SpectrumWavelengths &sw, float u1, float u2,
+	SWCSpectrum SampleF(const SpectrumWavelengths &sw, float u1, float u2,
 		Vector *w, float *pdf) const;
 
 	/**

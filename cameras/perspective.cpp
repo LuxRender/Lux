@@ -48,7 +48,7 @@ public:
 		return (flags & (BSDF_REFLECTION | BSDF_DIFFUSE)) ==
 			(BSDF_REFLECTION | BSDF_DIFFUSE) ? 1U : 0U;
 	}
-	virtual bool Sample_f(const SpectrumWavelengths &sw, const Vector &woW,
+	virtual bool SampleF(const SpectrumWavelengths &sw, const Vector &woW,
 		Vector *wiW, float u1, float u2, float u3,
 		SWCSpectrum *const f_, float *pdf, BxDFType flags = BSDF_ALL,
 		BxDFType *sampledType = NULL, float *pdfBack = NULL,
@@ -68,7 +68,7 @@ public:
 		*pdf = 1.f / (camera.Apixel * cosi2 * cosi);
 		if (pdfBack)
 			*pdfBack = 0.f;
-		*f_ = SWCSpectrum(*pdf / cosi);
+		*f_ = SWCSpectrum(1.f);
 		if (sampledType)
 			*sampledType = BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE);
 		return true;
@@ -89,8 +89,8 @@ public:
 		}
 		return 0.f;
 	}
-	virtual SWCSpectrum f(const SpectrumWavelengths &sw, const Vector &woW,
-		const Vector &wiW, BxDFType flags = BSDF_ALL) const {
+	virtual SWCSpectrum F(const SpectrumWavelengths &sw, const Vector &woW,
+		const Vector &wiW, bool reverse, BxDFType flags = BSDF_ALL) const {
 		const Vector wo(camera.WorldToCamera(woW));
 		const float coso = wo.z;
 		if (NumComponents(flags) == 1 && coso > 0.f) {
@@ -100,7 +100,7 @@ public:
 			if (pO.x >= camera.xStart && pO.x < camera.xEnd &&
 				pO.y >= camera.yStart && pO.y < camera.yEnd) {
 				const float coso2 = coso * coso;
-				return SWCSpectrum(1.f / (camera.Apixel * coso2 * coso2));
+				return SWCSpectrum(1.f / (camera.Apixel * coso * coso2));
 			}
 		}
 		return SWCSpectrum(0.f);

@@ -37,7 +37,7 @@ public:
 	SchlickBRDF(const SWCSpectrum &Rd, const SWCSpectrum &Rs,
 		const SWCSpectrum &Alpha, float d, float r, float p, bool mb);
 	virtual ~SchlickBRDF() { }
-	virtual void f(const SpectrumWavelengths &sw, const Vector &wo,
+	virtual void F(const SpectrumWavelengths &sw, const Vector &wo,
 		const Vector &wi, SWCSpectrum *const f) const;
 	SWCSpectrum SchlickFresnel(float costheta) const {
 		return Rs + powf(1.f - costheta, 5.f) * (SWCSpectrum(1.f) - Rs);
@@ -68,7 +68,7 @@ public:
 		else
 			return G * SchlickZ(fabsf(H.z)) * SchlickA(H) / den;
 	}
-	virtual bool Sample_f(const SpectrumWavelengths &sw, const Vector &wo,
+	virtual bool SampleF(const SpectrumWavelengths &sw, const Vector &wo,
 		Vector *wi, float u1, float u2, SWCSpectrum *const f,
 		float *pdf, float *pdfBack = NULL, bool reverse = false) const;
 	virtual float Pdf(const SpectrumWavelengths &sw, const Vector &wi,
@@ -91,7 +91,7 @@ public:
 		float d, float d2, float r, float r2, float p, float p2,
 		bool mb, bool mb2);
 	virtual ~SchlickDoubleSidedBRDF() { }
-	virtual void f(const SpectrumWavelengths &sw, const Vector &wo,
+	virtual void F(const SpectrumWavelengths &sw, const Vector &wo,
 		const Vector &wi, SWCSpectrum *const f) const;
 	SWCSpectrum SchlickFresnelBack(float costheta) const {
 		return Rs_bf + powf(1.f - costheta, 5.f) * (SWCSpectrum(1.f) - Rs_bf);
@@ -122,7 +122,7 @@ public:
 		else
 			return G * SchlickZBack(fabsf(H.z)) * SchlickABack(H) / den;
 	}
-	virtual bool Sample_f(const SpectrumWavelengths &sw, const Vector &wo,
+	virtual bool SampleF(const SpectrumWavelengths &sw, const Vector &wo,
 		Vector *wi, float u1, float u2, SWCSpectrum *const f,
 		float *pdf, float *pdfBack = NULL, bool reverse = false) const;
 	virtual float Pdf(const SpectrumWavelengths &sw, const Vector &wi,

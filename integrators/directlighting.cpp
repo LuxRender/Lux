@@ -99,7 +99,7 @@ u_int DirectLightingIntegrator::LiInternal(const Scene &scene,
 			// Trace rays for specular reflection and refraction
 			float pdf;
 			SWCSpectrum f;
-			if (bsdf->Sample_f(sw, wo, &wi, .5f, .5f, .5f, &f, &pdf,
+			if (bsdf->SampleF(sw, wo, &wi, .5f, .5f, .5f, &f, &pdf,
 				BxDFType(BSDF_REFLECTION | BSDF_SPECULAR), NULL,
 				NULL, true)) {
 				// Compute ray differential _rd_ for specular reflection
@@ -111,15 +111,13 @@ u_int DirectLightingIntegrator::LiInternal(const Scene &scene,
 					bsdf->GetVolume(wi), rd, Lr, alpha,
 					distance, rayDepth + 1);
 				if (nc > 0) {
-					SWCSpectrum filter(f *
-						(AbsDot(wi, n) / pdf));
 					for (u_int i = 0; i < L.size(); ++i)
-						L[i] += Lr[i] * filter;
+						L[i] += Lr[i] * f;
 					nContribs += nc;
 				}
 			}
 
-			if (bsdf->Sample_f(sw, wo, &wi, .5f, .5f, .5f, &f, &pdf,
+			if (bsdf->SampleF(sw, wo, &wi, .5f, .5f, .5f, &f, &pdf,
 				BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR),
 				NULL, NULL, true)) {
 				// Compute ray differential _rd_ for specular transmission
@@ -131,10 +129,8 @@ u_int DirectLightingIntegrator::LiInternal(const Scene &scene,
 					bsdf->GetVolume(wi), rd, Lr, alpha,
 					distance, rayDepth + 1);
 				if (nc > 0) {
-					SWCSpectrum filter(f *
-						(AbsDot(wi, n) / pdf));
 					for (u_int i = 0; i < L.size(); ++i)
-						L[i] += Lr[i] * filter;
+						L[i] += Lr[i] * f;
 					nContribs += nc;
 				}
 			}

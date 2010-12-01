@@ -38,9 +38,9 @@ public:
 	EnvironmentBxDF() :
 		BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)) {}
 	virtual ~EnvironmentBxDF() { }
-	virtual void f(const SpectrumWavelengths &sw, const Vector &wo,
-		const Vector &wi, SWCSpectrum *const F) const {
-		*F += SWCSpectrum(SameHemisphere(wo, wi) ? fabsf(wi.z) * INV_PI : 0.f);
+	virtual void F(const SpectrumWavelengths &sw, const Vector &wo,
+		const Vector &wi, SWCSpectrum *const F_) const {
+		*F_ += SWCSpectrum(SameHemisphere(wo, wi) ? fabsf(wo.z) * INV_PI : 0.f);
 	}
 };
 

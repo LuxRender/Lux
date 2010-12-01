@@ -41,7 +41,7 @@ public:
 	virtual inline u_int NumComponents(BxDFType flags) const {
 		return (flags & BSDF_DIFFUSE) == BSDF_DIFFUSE ? 1U : 0U;
 	}
-	virtual bool Sample_f(const SpectrumWavelengths &sw, const Vector &woW,
+	virtual bool SampleF(const SpectrumWavelengths &sw, const Vector &woW,
 		Vector *wiW, float u1, float u2, float u3,
 		SWCSpectrum *const f_, float *pdf, BxDFType flags = BSDF_ALL,
 		BxDFType *sampledType = NULL, float *pdfBack = NULL,
@@ -49,13 +49,12 @@ public:
 		if (reverse || NumComponents(flags) == 0)
 			return false;
 		*wiW = UniformSampleSphere(u1, u2);
-		const float cosi = AbsDot(*wiW, nn);
 		if (sampledType)
 			*sampledType = BSDF_DIFFUSE;
 		*pdf = .25f * INV_PI;
 		if (pdfBack)
 			*pdfBack = 0.f;
-		*f_ = SWCSpectrum(.25f * INV_PI / cosi);
+		*f_ = SWCSpectrum(1.f);
 		return true;
 	}
 	virtual float Pdf(const SpectrumWavelengths &sw, const Vector &woW,
@@ -64,10 +63,10 @@ public:
 			return .25f * INV_PI;
 		return 0.f;
 	}
-	virtual SWCSpectrum f(const SpectrumWavelengths &sw, const Vector &woW,
-		const Vector &wiW, BxDFType flags = BSDF_ALL) const {
+	virtual SWCSpectrum F(const SpectrumWavelengths &sw, const Vector &woW,
+		const Vector &wiW, bool reverse, BxDFType flags = BSDF_ALL) const {
 		if (NumComponents(flags) == 1)
-			return SWCSpectrum(.25f * INV_PI / AbsDot(wiW, nn));
+			return SWCSpectrum(.25f * INV_PI);
 		return SWCSpectrum(0.f);
 	}
 	virtual SWCSpectrum rho(const SpectrumWavelengths &sw,
@@ -93,16 +92,16 @@ public:
 	virtual inline u_int NumComponents(BxDFType flags) const {
 		return (flags & BSDF_DIFFUSE) == BSDF_DIFFUSE ? 1U : 0U;
 	}
-	virtual bool Sample_f(const SpectrumWavelengths &sw, const Vector &woW,
+	virtual bool SampleF(const SpectrumWavelengths &sw, const Vector &woW,
 		Vector *wiW, float u1, float u2, float u3,
 		SWCSpectrum *const f_, float *pdf, BxDFType flags = BSDF_ALL,
 		BxDFType *sampledType = NULL, float *pdfBack = NULL,
 		bool reverse = false) const {
 		if (reverse || NumComponents(flags) == 0)
 			return false;
-		*f_ = sf->Sample_f(sw, u1, u2, wiW, pdf);
-		*f_ /= sf->Average_f() * fabsf(wiW->z);
+		*f_ = sf->SampleF(sw, u1, u2, wiW, pdf);
 		*wiW = Normalize(LocalToWorld(*wiW));
+		*f_ /= sf->Average_f();
 		if (sampledType)
 			*sampledType = BSDF_DIFFUSE;
 		if (pdfBack)
@@ -115,11 +114,10 @@ public:
 			return sf->Pdf(WorldToLocal(wiW));
 		return 0.f;
 	}
-	virtual SWCSpectrum f(const SpectrumWavelengths &sw, const Vector &woW,
-		const Vector &wiW, BxDFType flags = BSDF_ALL) const {
+	virtual SWCSpectrum F(const SpectrumWavelengths &sw, const Vector &woW,
+		const Vector &wiW, bool reverse, BxDFType flags = BSDF_ALL) const {
 		if (NumComponents(flags) == 1)
-			return sf->f(sw, WorldToLocal(wiW)) /
-				(sf->Average_f() * AbsDot(wiW, nn));
+			return sf->f(sw, WorldToLocal(wiW)) / sf->Average_f();
 		return SWCSpectrum(0.f);
 	}
 	virtual SWCSpectrum rho(const SpectrumWavelengths &sw,

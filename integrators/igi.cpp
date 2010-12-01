@@ -136,13 +136,13 @@ void IGIIntegrator::Preprocess(const RandomGenerator &rng, const Scene &scene)
 			ray.o = bsdf->dgShading.p;
 			SWCSpectrum f;
 			float pdf2;
-			if (!bsdf->Sample_f(sw, Vector(bsdf->nn), &ray.d,
+			if (!bsdf->SampleF(sw, Vector(bsdf->nn), &ray.d,
 				lightSamp1[2 * sampOffset],
 				lightSamp1[2 * sampOffset + 1],
 				lightSamp1b[sampOffset], &f, &pdf2))
 				continue;
 			alpha *= f;
-			alpha /= pdf2 * pdf * lightPdf;
+			alpha /= pdf * lightPdf;
 			Intersection isect;
 			const Volume *volume = NULL; //FIXME: get it from the light
 			u_int nIntersections = 0;
@@ -162,17 +162,16 @@ void IGIIntegrator::Preprocess(const RandomGenerator &rng, const Scene &scene)
 				float pdf;
 				BxDFType flags;
 				SWCSpectrum fr;
-			       	if (!bsdf->Sample_f(sw, wo, &wi,
+			       	if (!bsdf->SampleF(sw, wo, &wi,
 					rng.floatValue(),
 					rng.floatValue(),
 					rng.floatValue(),
 					&fr, &pdf, BSDF_ALL, &flags))
 					break;
-				SWCSpectrum anew = fr * AbsDot(wi, bsdf->dgShading.nn) / pdf;
-				float r = min(1.f, anew.Filter(sw));
+				float r = min(1.f, fr.Filter(sw));
 				if (rng.floatValue() > r)
 					break;
-				alpha *= anew / r;
+				alpha *= fr / r;
 				ray = Ray(isect.dg.p, wi);
 				volume = bsdf->GetVolume(wi);
 			}
@@ -236,11 +235,11 @@ u_int IGIIntegrator::Li(const Scene &scene, const Sample &sample) const
 			// Ignore light if it's too close
 			float d2 = DistanceSquared(p, vl.p);
 			Vector wi = Normalize(vl.p - p);
-			float G = AbsDot(wi, n) * AbsDot(wi, vl.n) / d2;
+			float G = AbsDot(wi, vl.n) / d2;
 			G = min(G, gLimit);
 			// Compute virtual light's tentative contribution _Llight_
-			SWCSpectrum f = bsdf->f(sw, wi, wo,
-				BxDFType(~BSDF_SPECULAR));
+			SWCSpectrum f(bsdf->F(sw, wi, wo, true,
+				BxDFType(~BSDF_SPECULAR)));
 			if (!(G > 0.f) || f.Black())
 				continue;
 			SWCSpectrum Llight = f * vl.GetSWCSpectrum(sw) *
@@ -257,12 +256,12 @@ u_int IGIIntegrator::Li(const Scene &scene, const Sample &sample) const
 		float pdf;
 		// Trace rays for specular reflection and refraction
 		float *data = scene.sampler->GetLazyValues(sample, sampleOffset, depth);
-		if (!bsdf->Sample_f(sw, wo, &wi, .5f, .5f, *data, &f, &pdf,
+		if (!bsdf->SampleF(sw, wo, &wi, .5f, .5f, *data, &f, &pdf,
 			BxDFType(BSDF_SPECULAR | BSDF_REFLECTION | BSDF_TRANSMISSION)))
 			break;
 		ray = Ray(p, wi);
 		ray.time = sample.realTime;
-		pathThroughput *= f * (AbsDot(wi, n) / pdf);
+		pathThroughput *= f;
 		volume = bsdf->GetVolume(wi);
 	}
 	const XYZColor color(sw, L);

@@ -28,7 +28,7 @@
 
 using namespace lux;
 
-bool SimpleSpecularReflection::Sample_f(const SpectrumWavelengths &sw,
+bool SimpleSpecularReflection::SampleF(const SpectrumWavelengths &sw,
 	const Vector &wo, Vector *wi, float u1, float u2, SWCSpectrum *const f_,
 	float *pdf, float *pdfBack, bool reverse) const
 {
@@ -38,7 +38,6 @@ bool SimpleSpecularReflection::Sample_f(const SpectrumWavelengths &sw,
 	if (pdfBack)
 		*pdfBack = 1.f;
 	fresnel->Evaluate(sw, CosTheta(wo), f_);
-	*f_ /= fabsf(CosTheta(wo));
 	return true;
 }
 float SimpleSpecularReflection::Weight(const SpectrumWavelengths &sw,
@@ -49,7 +48,7 @@ float SimpleSpecularReflection::Weight(const SpectrumWavelengths &sw,
 	return F.Filter(sw);
 }
 
-bool SimpleArchitecturalReflection::Sample_f(const SpectrumWavelengths &sw,
+bool SimpleArchitecturalReflection::SampleF(const SpectrumWavelengths &sw,
 	const Vector &wo, Vector *wi, float u1, float u2,
 	SWCSpectrum *const f_, float *pdf, float *pdfBack, bool reverse) const
 {
@@ -59,7 +58,7 @@ bool SimpleArchitecturalReflection::Sample_f(const SpectrumWavelengths &sw,
 			*pdfBack = 0.f;
 		return false;
 	}
-	return SimpleSpecularReflection::Sample_f(sw, wo, wi, u1, u2, f_,
+	return SimpleSpecularReflection::SampleF(sw, wo, wi, u1, u2, f_,
 		pdf, pdfBack, reverse);
 }
 float SimpleArchitecturalReflection::Weight(const SpectrumWavelengths &sw,
@@ -83,12 +82,12 @@ inline void PhaseDifference(const SpectrumWavelengths &sw, const Vector &wo,
 	}
 }
 
-bool SpecularReflection::Sample_f(const SpectrumWavelengths &sw,
+bool SpecularReflection::SampleF(const SpectrumWavelengths &sw,
 	const Vector &wo, Vector *wi, float u1, float u2, SWCSpectrum *const f_,
 	float *pdf, float *pdfBack, bool reverse) const
 {
 	// Compute perfect specular reflection direction
-	if (!SimpleSpecularReflection::Sample_f(sw, wo, wi, u1, u2, f_,
+	if (!SimpleSpecularReflection::SampleF(sw, wo, wi, u1, u2, f_,
 		pdf, pdfBack, reverse))
 		return false;
 	if (film > 0.f)
@@ -97,7 +96,7 @@ bool SpecularReflection::Sample_f(const SpectrumWavelengths &sw,
 	return true;
 }
 
-bool ArchitecturalReflection::Sample_f(const SpectrumWavelengths &sw,
+bool ArchitecturalReflection::SampleF(const SpectrumWavelengths &sw,
 	const Vector &wo, Vector *wi, float u1, float u2, SWCSpectrum *const f_,
 	float *pdf, float *pdfBack, bool reverse) const
 {
@@ -107,7 +106,7 @@ bool ArchitecturalReflection::Sample_f(const SpectrumWavelengths &sw,
 			*pdfBack = 0.f;
 		return false;
 	}
-	return SpecularReflection::Sample_f(sw, wo, wi, u1, u2, f_, pdf,
+	return SpecularReflection::SampleF(sw, wo, wi, u1, u2, f_, pdf,
 		pdfBack, reverse);
 }
 float ArchitecturalReflection::Weight(const SpectrumWavelengths &sw,
