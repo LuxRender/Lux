@@ -204,8 +204,9 @@ void HybridHashGrid::HashCell::AddFlux(const Point &hitPoint, const Vector &wi,
 					continue;
 
 				luxrays::AtomicInc(&hp->accumPhotonCount);
-				SWCSpectrum flux = photonFlux * hp->bsdf->f(sw, hp->wo, wi) *
-						dot * hp->throughput;
+				SWCSpectrum flux = photonFlux *
+					hp->bsdf->F(sw, wi, hp->wo, true) *
+					hp->throughput; // FIXME - not sure if the reverse flag should be true or false
 				SpectrumAtomicAdd(hp->accumReflectedFlux, flux);
 			}
 			break;
@@ -337,7 +338,9 @@ void HybridHashGrid::HHGKdTree::AddFlux(const Point &p, const Vector &wi,
 			continue;
 
 		luxrays::AtomicInc(&hp->accumPhotonCount);
-		SWCSpectrum flux = photonFlux * hp->bsdf->f(sw, hp->wo, wi) * hp->throughput;
+		SWCSpectrum flux = photonFlux *
+			hp->bsdf->F(sw, wi, hp->wo, true) *
+			hp->throughput; // FIXME - not sure if the reverse flag should be true or false
 		SpectrumAtomicAdd(hp->accumReflectedFlux, flux);
 	}
 }
