@@ -608,8 +608,8 @@ Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop
 	debug_mode(debugmode), premultiplyAlpha(premult),
 	warmupComplete(false), reject_warmup_samples(reject_warmup),
 	writeResumeFlm(w_resume_FLM), restartResumeFlm(restart_resume_FLM),
-	haltSamplesPerPixel(haltspp), haltTime(halttime), histogram(NULL), enoughSamplesPerPixel(false),
-	outlierRejection_k(outlierk)
+	outlierRejection_k(outlierk), haltSamplesPerPixel(haltspp),
+	haltTime(halttime), histogram(NULL), enoughSamplesPerPixel(false)
 {
 	// Compute film image extent
 	memcpy(cropWindow, crop, 4 * sizeof(float));
@@ -646,7 +646,7 @@ Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop
 
 	if (outlierRejection_k > 0) {
 		outliers.resize(yRealHeight / (2 * filter->yWidth));
-		for (int i = 0; i < outliers.size(); i++)
+		for (size_t i = 0; i < outliers.size(); i++)
 			outliers[i].resize(xRealWidth / (2 * filter->xWidth));
 	}
 	// Precompute filter tables

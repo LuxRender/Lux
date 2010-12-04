@@ -34,7 +34,7 @@ public:
 	typedef BSHNode<PointType, MaxChilds> NodeType;
 
 	BSHNode(PointType c = PointType())
-			: center(c), childCount(0), parent(NULL), radius(0.f), radius2(0.f) {
+			: parent(NULL), childCount(0), radius(0.f), radius2(0.f), center(c) {
 		memset(child, 0, sizeof(child));
 	}
 	

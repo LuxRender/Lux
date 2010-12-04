@@ -127,9 +127,9 @@ private:
 	// double instead of float because photon counters declared as int 64bit
 	double photonAlpha;
 	float photonStartRadiusScale;
-	unsigned int maxEyePathDepth;
-	unsigned int maxPhotonPathDepth;
-	unsigned int stochasticInterval;
+	u_int maxEyePathDepth;
+	u_int maxPhotonPathDepth;
+	u_int stochasticInterval;
 	bool useDirectLightSampling;
 
 	boost::barrier *barrier;
