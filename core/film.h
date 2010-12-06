@@ -439,9 +439,12 @@ public:
 		RGBColor rgb = cs.ToRGBConstrained(color);
 		p.x[0] = x;
 		p.x[1] = y;
-		p.x[2] = rgb.c[0] * (1.f / 255.f);
-		p.x[3] = rgb.c[1] * (1.f / 255.f);
-		p.x[4] = rgb.c[2] * (1.f / 255.f);
+		//p.x[2] = rgb.c[0] * (1.f / 255.f);
+		//p.x[3] = rgb.c[1] * (1.f / 255.f);
+		//p.x[4] = rgb.c[2] * (1.f / 255.f);
+		p.x[2] = logf(1.f + rgb.c[0]);
+		p.x[3] = logf(1.f + rgb.c[1]);
+		p.x[4] = logf(1.f + rgb.c[2]);
 	}
 
 	Point_t p;
@@ -468,7 +471,26 @@ public:
 	static ColorSystem cs;
 };
 
-typedef OutlierDataXYRGB OutlierData;
+class OutlierDataXYLY {
+public:
+	typedef PointN<3> Point_t;
+
+	OutlierDataXYLY() : p() {
+	}
+
+	OutlierDataXYLY(float x, float y, const XYZColor &color) {
+		p.x[0] = x;
+		p.x[1] = y;
+		p.x[2] = logf(1.f + color.Y());
+	}
+
+	Point_t p;
+
+	static ColorSystem cs;
+};
+
+//typedef OutlierDataXYRGB OutlierData;
+typedef OutlierDataXYLY OutlierData;
 
 // Film Declarations
 class Film : public Queryable {
