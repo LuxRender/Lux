@@ -81,8 +81,8 @@ MESSAGE(STATUS "LuxRays library directory: " ${LUXRAYS_LIBRARY})
 if(LUXRAYS_DISABLE_OPENCL)
     set(OCL_LIBRARY "")
 else(LUXRAYS_DISABLE_OPENCL)
-    FIND_PATH(OPENCL_INCLUDE_DIRS NAMES CL/cl.hpp OpenCL/cl.hpp PATHS /home/david/src/ati-stream-sdk-v2.2-lnx64/include /usr/local/cuda/include)
-    FIND_LIBRARY(OPENCL_LIBRARY OpenCL /home/david/src/ati-stream-sdk-v2.2-lnx64/lib/x86_64)
+    FIND_PATH(OPENCL_INCLUDE_DIRS NAMES CL/cl.hpp OpenCL/cl.hpp PATHS /home/david/src/ati-stream-sdk-v2.2-lnx64/include /home/doug/Development/ati-stream-sdk-v2.2-lnx64/include /usr/local/cuda/include)
+    FIND_LIBRARY(OPENCL_LIBRARY OpenCL /home/david/src/ati-stream-sdk-v2.2-lnx64/lib/x86_64 /home/doug/Development/ati-stream-sdk-v2.2-lnx64/x86_64)
 
     MESSAGE(STATUS "OpenCL include directory: " ${OPENCL_INCLUDE_DIRS})
     MESSAGE(STATUS "OpenCL library directory: " ${OPENCL_LIBRARY})
@@ -496,6 +496,7 @@ SET(lux_core_src
 	core/dynload.cpp
 	core/epsilon.cpp
 	core/exrio.cpp
+	core/filedata.cpp
 	core/film.cpp
 	core/geometry/bbox.cpp
 	core/geometry/matrix4x4.cpp
@@ -870,7 +871,11 @@ ENDIF(APPLE)
 #############################################################################
 #############################################################################
 FIND_PACKAGE(PythonLibs)
-IF(PYTHONLIBS_FOUND)
+
+SET(PYTHON_LIBRARIES "-lpthread -ldl -lutil -lm -lpython3.1")
+SET(PYTHON_INCLUDE_PATH "/usr/include/python3.1")
+
+#IF(PYTHONLIBS_FOUND)
 	MESSAGE(STATUS "Python library directory: " ${PYTHON_LIBRARIES} )
 	MESSAGE(STATUS "Python include directory: " ${PYTHON_INCLUDE_PATH} )
 
@@ -906,9 +911,9 @@ IF(PYTHONLIBS_FOUND)
 			COMMAND cp ${CMAKE_SOURCE_DIR}/python/pyluxconsole.py pyluxconsole.py
 		)
 	ENDIF(APPLE)
-ELSE(PYTHONLIBS_FOUND)
-	MESSAGE( STATUS "Warning : could not find Python libraries - not building python module")
-ENDIF(PYTHONLIBS_FOUND)
+#ELSE(PYTHONLIBS_FOUND)
+#	MESSAGE( STATUS "Warning : could not find Python libraries - not building python module")
+#ENDIF(PYTHONLIBS_FOUND)
 
 #############################################################################
 #Here we build the QT4 GUI executable
