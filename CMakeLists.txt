@@ -691,6 +691,7 @@ SET(lux_textures_src
 	${lux_uniform_textures_src}
 	${lux_blender_textures_src}
 	${lux_fresnel_textures_src}
+	textures/band.cpp
 	textures/bilerp.cpp
 	textures/brick.cpp
 	textures/checkerboard.cpp
