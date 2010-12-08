@@ -49,8 +49,8 @@ BSDF *RoughGlass::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 	// NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
 	SWCSpectrum R = Kr->Evaluate(sw, dgs).Clamp(0.f, 1.f);
 	SWCSpectrum T = Kt->Evaluate(sw, dgs).Clamp(0.f, 1.f);
-	float u = uroughness->Evaluate(sw, dgs);
-	float v = vroughness->Evaluate(sw, dgs);
+	float u = Clamp(uroughness->Evaluate(sw, dgs), 6e-3f, 1.f);
+	float v = Clamp(vroughness->Evaluate(sw, dgs), 6e-3f, 1.f);
 	const float u2 = u * u;
 	const float v2 = v * v;
 
