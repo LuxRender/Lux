@@ -26,6 +26,7 @@
 #include "texture.h"
 #include "color.h"
 #include "paramset.h"
+#include "error.h"
 
 #include <sstream>
 using std::stringstream;
@@ -110,11 +111,14 @@ template <class T> Texture<float> * BandTexture<T>::CreateFloatTexture(const Tra
 	const ParamSet &tp) {
 	u_int n;
 	const float *o = tp.FindFloat("offsets", &n);
+	for (u_int i = 0; i < n - 1; ++i)
+		if (o[i] > o[i + 1])
+			LOG(LUX_ERROR, LUX_LIMIT) << "Offsets in 'band' texture are not in ascending order";
 	vector<boost::shared_ptr<Texture<float> > > tex;
 	tex.reserve(n);
 	for (u_int i = 0; i < n; ++i) {
 		stringstream ss("tex");
-		ss << i;
+		ss << (i + 1);
 		tex.push_back(tp.GetFloatTexture(ss.str(), 0.f));
 	}
 	boost::shared_ptr<Texture<float> > a(tp.GetFloatTexture("amount", 0.f));
@@ -125,11 +129,14 @@ template <class T> Texture<SWCSpectrum> * BandTexture<T>::CreateSWCSpectrumTextu
 	const ParamSet &tp) {
 	u_int n;
 	const float *o = tp.FindFloat("offsets", &n);
+	for (u_int i = 0; i < n - 1; ++i)
+		if (o[i] > o[i + 1])
+			LOG(LUX_ERROR, LUX_LIMIT) << "Offsets in 'band' texture are not in ascending order";
 	vector<boost::shared_ptr<Texture<SWCSpectrum> > > tex;
 	tex.reserve(n);
 	for (u_int i = 0; i < n; ++i) {
 		stringstream ss("tex");
-		ss << i;
+		ss << (i + 1);
 		tex.push_back(tp.GetSWCSpectrumTexture(ss.str(), 0.f));
 	}
 	boost::shared_ptr<Texture<float> > a(tp.GetFloatTexture("amount", 0.f));
