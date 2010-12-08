@@ -106,7 +106,7 @@ void LightPhoton::load(bool isLittleEndian, std::basic_istream<char> &stream)
 
 	// Vector wi
 	for (u_int i = 0; i < 3; ++i)
-		w[i] = osReadLittleEndianFloat(isLittleEndian, stream);
+		wi[i] = osReadLittleEndianFloat(isLittleEndian, stream);
 }
 
 void RadiancePhoton::save(bool isLittleEndian, std::basic_ostream<char> &stream) const
