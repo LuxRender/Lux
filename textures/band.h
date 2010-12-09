@@ -117,8 +117,8 @@ template <class T> Texture<float> * BandTexture<T>::CreateFloatTexture(const Tra
 	vector<boost::shared_ptr<Texture<float> > > tex;
 	tex.reserve(n);
 	for (u_int i = 0; i < n; ++i) {
-		stringstream ss("tex");
-		ss << (i + 1);
+		stringstream ss;
+		ss << "tex" << (i + 1);
 		tex.push_back(tp.GetFloatTexture(ss.str(), 0.f));
 	}
 	boost::shared_ptr<Texture<float> > a(tp.GetFloatTexture("amount", 0.f));
@@ -135,8 +135,8 @@ template <class T> Texture<SWCSpectrum> * BandTexture<T>::CreateSWCSpectrumTextu
 	vector<boost::shared_ptr<Texture<SWCSpectrum> > > tex;
 	tex.reserve(n);
 	for (u_int i = 0; i < n; ++i) {
-		stringstream ss("tex");
-		ss << (i + 1);
+		stringstream ss;
+		ss << "tex" << (i + 1);
 		tex.push_back(tp.GetSWCSpectrumTexture(ss.str(), 0.f));
 	}
 	boost::shared_ptr<Texture<float> > a(tp.GetFloatTexture("amount", 0.f));
