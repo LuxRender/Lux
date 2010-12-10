@@ -42,7 +42,7 @@ public:
 		float worldRadius;
 		scene.WorldBound().BoundingSphere(&worldCenter, &worldRadius);
 		return SPDbase.Y() *
-			radianceMap->LookupFloat(CHANNEL_WMEAN, .5f, .5f, .5f) *
+			(radianceMap ? radianceMap->LookupFloat(CHANNEL_WMEAN, .5f, .5f, .5f) : 1.f) *
 			M_PI * worldRadius * worldRadius;
 	}
 	virtual bool IsDeltaLight() const { return false; }
