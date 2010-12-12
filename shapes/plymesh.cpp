@@ -107,6 +107,11 @@ static int FaceCB(p_ply_argument argument)
 	return 1;
 }
 
+static void ErrorCB(const char *message)
+{
+	LOG(LUX_ERROR, LUX_SYSTEM) << "PLY loader error: " << message;
+}
+
 Shape* PlyMesh::CreateShape(const Transform &o2w,
 		bool reverseOrientation, const ParamSet &params) {
 	string filename = params.FindOneString("filename", "none");
@@ -114,7 +119,7 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 
 	LOG( LUX_INFO,LUX_NOERROR) << "Loading PLY mesh file: '" << filename << "'...";
 
-	p_ply plyfile = ply_open(filename.c_str(), NULL);
+	p_ply plyfile = ply_open(filename.c_str(), ErrorCB);
 	if (!plyfile) {
 		LOG( LUX_ERROR,LUX_SYSTEM) << "Unable to read PLY mesh file '" << filename << "'";
 		return NULL;
