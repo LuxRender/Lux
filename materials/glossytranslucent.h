@@ -49,12 +49,10 @@ public:
 		bool mb,
 		bool mb2,
 		boost::shared_ptr<Texture<float> > &bump,
-		const CompositingParams &cp) : Kd(kd), Kt(kt),
+		const ParamSet &mp) : Material(mp), Kd(kd), Kt(kt),
 		Ks(ks), Ks_bf(ks2), Ka(ka), Ka_bf(ka2), depth(d), depth_bf(d2),
 		index(i), index_bf(i2), nu(u), nu_bf(u2), nv(v), nv_bf(v2),
-		bumpMap(bump), multibounce(mb), multibounce_bf(mb2) {
-		compParams = new CompositingParams(cp);
-	}
+		bumpMap(bump), multibounce(mb), multibounce_bf(mb2) { }
 	virtual ~GlossyTranslucent() { }
 	virtual void GetShadingGeometry(const SpectrumWavelengths &sw,
 		const Normal &nGeom, DifferentialGeometry *dgBump) const {
@@ -62,9 +60,8 @@ public:
 			Bump(sw, bumpMap, nGeom, dgBump);
 	}
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
-		const DifferentialGeometry &dgGeom,
-		const DifferentialGeometry &dgShading,
-		const Volume *exterior, const Volume *interior) const;
+		const Intersection &isect,
+		const DifferentialGeometry &dgShading) const;
 	
 	static Material * CreateMaterial(const Transform &xform,
 		const ParamSet &mp);

@@ -29,26 +29,14 @@
 using namespace lux;
 
 // Material Method Definitions
-Material::Material() : bumpmapSampleDistance(.001f) {
-	compParams = NULL;
-}
-
-Material::~Material() {
-	if(compParams) delete compParams; 
-}
-
-void Material::InitGeneralParams(const ParamSet &mp) {
+Material::Material(const ParamSet &mp) {
 	bumpmapSampleDistance = mp.FindOneFloat("bumpmapsampledistance", .001f);
-}
-
-void Material::FindCompositingParams(const ParamSet &mp, CompositingParams *cp)
-{
-	cp->tVm = mp.FindOneBool("compo_visible_material", true);
-	cp->tVl = mp.FindOneBool("compo_visible_emission", true);
-	cp->tiVm = mp.FindOneBool("compo_visible_indirect_material", true);
-	cp->tiVl = mp.FindOneBool("compo_visible_indirect_emission", true);
-	cp->oA = mp.FindOneBool("compo_override_alpha", false);
-	cp->A = mp.FindOneFloat("compo_override_alpha_value", 0.f);
+	compParams.tVm = mp.FindOneBool("compo_visible_material", true);
+	compParams.tVl = mp.FindOneBool("compo_visible_emission", true);
+	compParams.tiVm = mp.FindOneBool("compo_visible_indirect_material", true);
+	compParams.tiVl = mp.FindOneBool("compo_visible_indirect_emission", true);
+	compParams.oA = mp.FindOneBool("compo_override_alpha", false);
+	compParams.A = mp.FindOneFloat("compo_override_alpha_value", 0.f);
 }
 
 void Material::Bump(const SpectrumWavelengths &sw,

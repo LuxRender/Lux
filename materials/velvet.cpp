@@ -24,6 +24,7 @@
 #include "asperity.h"
 #include "memory.h"
 #include "bxdf.h"
+#include "primitive.h"
 #include "velvet.h"
 #include "texture.h"
 #include "color.h"
@@ -34,9 +35,7 @@ using namespace lux;
 
 // Velvet Method Definitions
 BSDF *Velvet::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
-	const DifferentialGeometry &dgGeom,
-	const DifferentialGeometry &dgs,
-	const Volume *exterior, const Volume *interior) const
+	const Intersection &isect, const DifferentialGeometry &dgs) const
 {
 	// Allocate _BSDF_
 	SWCSpectrum r = Kd->Evaluate(sw, dgs).Clamp(0.f, 1.f);
@@ -50,10 +49,10 @@ BSDF *Velvet::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 	BxDF *bxdf = ARENA_ALLOC(arena, Asperity)(r, p1, p2, p3, thickness);
 
 	SingleBSDF *bsdf = ARENA_ALLOC(arena, SingleBSDF)(dgs,
-		dgGeom.nn, bxdf, exterior, interior);
+		isect.dg.nn, bxdf, isect.exterior, isect.interior);
 
 	// Add ptr to CompositingParams structure
-	bsdf->SetCompositingParams(compParams);
+	bsdf->SetCompositingParams(&compParams);
 
 	return bsdf;
 }
@@ -66,10 +65,7 @@ Material* Velvet::CreateMaterial(const Transform &xform,
 	boost::shared_ptr<Texture<float> > P3(mp.GetFloatTexture("p3", 2.f));
 	boost::shared_ptr<Texture<float> > Thickness(mp.GetFloatTexture("thickness", 0.1f));
 	boost::shared_ptr<Texture<float> > bumpMap(mp.GetFloatTexture("bumpmap"));
-	// Get Compositing Params
-	CompositingParams cP;
-	FindCompositingParams(mp, &cP);
-	return new Velvet(Kd, P1, P2, P3, Thickness, bumpMap, cP);
+	return new Velvet(Kd, P1, P2, P3, Thickness, bumpMap, mp);
 }
 
 static DynamicLoader::RegisterMaterial<Velvet> r("velvet");

@@ -24,6 +24,7 @@
 #include "null.h"
 #include "memory.h"
 #include "bxdf.h"
+#include "primitive.h"
 #include "nulltransmission.h"
 #include "paramset.h"
 #include "dynload.h"
@@ -32,28 +33,21 @@ using namespace lux;
 
 // Glass Method Definitions
 BSDF *Null::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
-	const DifferentialGeometry &dgGeom,
-	const DifferentialGeometry &dgShading,
-	const Volume *exterior, const Volume *interior) const
+	const Intersection &isect, const DifferentialGeometry &dgShading) const
 {
 	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
 	SingleBSDF *bsdf = ARENA_ALLOC(arena, SingleBSDF)(dgShading,
-		dgGeom.nn, ARENA_ALLOC(arena, NullTransmission)(),
-		exterior, interior);
+		isect.dg.nn, ARENA_ALLOC(arena, NullTransmission)(),
+		isect.exterior, isect.interior);
 
 	// Add ptr to CompositingParams structure
-	bsdf->SetCompositingParams(compParams);
+	bsdf->SetCompositingParams(&compParams);
 
 	return bsdf;
 }
 Material* Null::CreateMaterial(const Transform &xform,
 		const ParamSet &mp) {
-
-	// Get Compositing Params
-	CompositingParams cP;
-	FindCompositingParams(mp, &cP);
-
-	return new Null(cP);
+	return new Null(mp);
 }
 
 static DynamicLoader::RegisterMaterial<Null> r("null");

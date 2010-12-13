@@ -24,6 +24,7 @@
 #include "glass.h"
 #include "memory.h"
 #include "bxdf.h"
+#include "primitive.h"
 #include "specularreflection.h"
 #include "speculartransmission.h"
 #include "fresnelcauchy.h"
@@ -36,9 +37,7 @@ using namespace lux;
 
 // Glass Method Definitions
 BSDF *Glass::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
-	const DifferentialGeometry &dgGeom,
-	const DifferentialGeometry &dgs,
-	const Volume *exterior, const Volume *interior) const
+	const Intersection &isect, const DifferentialGeometry &dgs) const
 {
 	// Allocate _BSDF_
 	// NOTE - lordcrc - Bugfix, pbrt tracker id 0000078: index of refraction swapped and not recorded
@@ -48,7 +47,8 @@ BSDF *Glass::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 	float flm = film->Evaluate(sw, dgs);
 	float flmindex = filmindex->Evaluate(sw, dgs);
 
-	MultiBSDF *bsdf = ARENA_ALLOC(arena, MultiBSDF)(dgs, dgGeom.nn, exterior, interior);
+	MultiBSDF *bsdf = ARENA_ALLOC(arena, MultiBSDF)(dgs, isect.dg.nn,
+		isect.exterior, isect.interior);
     // NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
 	SWCSpectrum R = Kr->Evaluate(sw, dgs).Clamp(0.f, 1.f);
 	SWCSpectrum T = Kt->Evaluate(sw, dgs).Clamp(0.f, 1.f);
@@ -65,7 +65,7 @@ BSDF *Glass::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 		bsdf->Add(ARENA_ALLOC(arena, SpecularTransmission)(T, fresnel, cb != 0.f, architectural));
 
 	// Add ptr to CompositingParams structure
-	bsdf->SetCompositingParams(compParams);
+	bsdf->SetCompositingParams(&compParams);
 
 	return bsdf;
 }
@@ -80,11 +80,7 @@ Material* Glass::CreateMaterial(const Transform &xform,
 	bool archi = mp.FindOneBool("architectural", false);
 	boost::shared_ptr<Texture<float> > bumpMap(mp.GetFloatTexture("bumpmap"));
 
-	// Get Compositing Params
-	CompositingParams cP;
-	FindCompositingParams(mp, &cP);
-
-	return new Glass(Kr, Kt, index, cbf, film, filmindex, archi, bumpMap, cP);
+	return new Glass(Kr, Kt, index, cbf, film, filmindex, archi, bumpMap, mp);
 }
 
 static DynamicLoader::RegisterMaterial<Glass> r("glass");

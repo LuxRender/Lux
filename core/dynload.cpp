@@ -59,10 +59,7 @@ boost::shared_ptr<Material> MakeMaterial(const string &name,
 	if (DynamicLoader::registeredMaterials().find(name) !=
 		DynamicLoader::registeredMaterials().end()) {
 		boost::shared_ptr<Material> ret(DynamicLoader::registeredMaterials()[name](mtl2world, mp));
-		if (ret) {
-			ret->InitGeneralParams(mp);
-			mp.ReportUnused();
-		}
+		mp.ReportUnused();
 		return ret;
 	}
 

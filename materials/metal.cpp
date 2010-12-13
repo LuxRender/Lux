@@ -24,6 +24,7 @@
 #include "metal.h"
 #include "memory.h"
 #include "bxdf.h"
+#include "primitive.h"
 #include "fresnelconductor.h"
 #include "microfacet.h"
 #include "schlickdistribution.h"
@@ -44,15 +45,13 @@ Metal::Metal(boost::shared_ptr<SPD > &n, boost::shared_ptr<SPD > &k,
 	boost::shared_ptr<Texture<float> > &u,
 	boost::shared_ptr<Texture<float> > &v,
 	boost::shared_ptr<Texture<float> > &bump,
-	const CompositingParams &cp) : N(n), K(k), nu(u), nv(v), bumpMap(bump)
+	const ParamSet &mp) : Material(mp), N(n), K(k), nu(u), nv(v),
+	bumpMap(bump)
 {
-	compParams = new CompositingParams(cp);
 }
 
 BSDF *Metal::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
-	const DifferentialGeometry &dgGeom,
-	const DifferentialGeometry &dgs,
-	const Volume *exterior, const Volume *interior) const
+	const Intersection &isect, const DifferentialGeometry &dgs) const
 {
 	// Allocate _BSDF_
 	SWCSpectrum n(sw, *N);
@@ -70,10 +69,10 @@ BSDF *Metal::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 	MicrofacetReflection *bxdf = ARENA_ALLOC(arena, MicrofacetReflection)(1.f,
 		fresnel, md);
 	SingleBSDF *bsdf = ARENA_ALLOC(arena, SingleBSDF)(dgs,
-		dgGeom.nn, bxdf, exterior, interior);
+		isect.dg.nn, bxdf, isect.exterior, isect.interior);
 
 	// Add ptr to CompositingParams structure
-	bsdf->SetCompositingParams(compParams);
+	bsdf->SetCompositingParams(&compParams);
 
 	return bsdf;
 }
@@ -389,12 +388,7 @@ Material *Metal::CreateMaterial(const Transform &xform, const ParamSet &tp) {
 	boost::shared_ptr<Texture<float> > vroughness(tp.GetFloatTexture("vroughness", .1f));
 	boost::shared_ptr<Texture<float> > bumpMap(tp.GetFloatTexture("bumpmap"));
 
-
-	// Get Compositing Params
-	CompositingParams cP;
-	FindCompositingParams(tp, &cP);
-
-	return new Metal(n, k, uroughness, vroughness, bumpMap, cP);
+	return new Metal(n, k, uroughness, vroughness, bumpMap, tp);
 }
 
 static DynamicLoader::RegisterMaterial<Metal> r("metal");

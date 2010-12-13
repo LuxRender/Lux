@@ -24,6 +24,7 @@
 #include "mattetranslucent.h"
 #include "memory.h"
 #include "bxdf.h"
+#include "primitive.h"
 #include "brdftobtdf.h"
 #include "lambertian.h"
 #include "orennayar.h"
@@ -37,13 +38,11 @@ using namespace lux;
 // Matte Method Definitions
 BSDF *MatteTranslucent::GetBSDF(MemoryArena &arena,
 	const SpectrumWavelengths &sw,
-	const DifferentialGeometry &dgGeom,
-	const DifferentialGeometry &dgs,
-	const Volume *exterior, const Volume *interior) const
+	const Intersection &isect, const DifferentialGeometry &dgs) const
 {
 	// Allocate _BSDF_
-	MultiBSDF *bsdf = ARENA_ALLOC(arena, MultiBSDF)(dgs, dgGeom.nn,
-		exterior, interior);
+	MultiBSDF *bsdf = ARENA_ALLOC(arena, MultiBSDF)(dgs, isect.dg.nn,
+		isect.exterior, isect.interior);
 	// NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
 	SWCSpectrum R = Kr->Evaluate(sw, dgs).Clamp(0.f, 1.f);
 	SWCSpectrum T = Kt->Evaluate(sw, dgs).Clamp(0.f, 1.f);
@@ -67,7 +66,7 @@ BSDF *MatteTranslucent::GetBSDF(MemoryArena &arena,
 	}
 
 	// Add ptr to CompositingParams structure
-	bsdf->SetCompositingParams(compParams);
+	bsdf->SetCompositingParams(&compParams);
 
 	return bsdf;
 }
@@ -79,11 +78,7 @@ Material* MatteTranslucent::CreateMaterial(const Transform &xform,
 	boost::shared_ptr<Texture<float> > bumpMap(mp.GetFloatTexture("bumpmap"));
 	bool conserving = mp.FindOneBool("energyconserving", false);
 
-	// Get Compositing Params
-	CompositingParams cP;
-	FindCompositingParams(mp, &cP);
-
-	return new MatteTranslucent(Kr, Kt, sigma, bumpMap, conserving, cP);
+	return new MatteTranslucent(Kr, Kt, sigma, bumpMap, conserving, mp);
 }
 
 static DynamicLoader::RegisterMaterial<MatteTranslucent> r("mattetranslucent");

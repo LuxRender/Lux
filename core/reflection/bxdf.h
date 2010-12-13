@@ -91,7 +91,7 @@ public:
 		const Volume *exterior, const Volume *interior);
 	virtual u_int NumComponents() const = 0;
 	virtual u_int NumComponents(BxDFType flags) const = 0;
-	virtual inline void SetCompositingParams(CompositingParams *cp) {
+	virtual inline void SetCompositingParams(const CompositingParams *cp) {
 		compParams = cp;
 	}
 	bool HasShadingGeometry() const {
@@ -135,7 +135,7 @@ public:
 	const Volume *exterior, *interior;
 
 	// Compositing Parameters pointer
-	CompositingParams *compParams;
+	const CompositingParams *compParams;
 	
 protected:
 	// BSDF Private Methods
@@ -227,7 +227,7 @@ public:
 	inline void Add(float weight, BSDF *bsdf);
 	virtual inline u_int NumComponents() const;
 	virtual inline u_int NumComponents(BxDFType flags) const;
-	virtual inline void SetCompositingParams(CompositingParams *cp) {
+	virtual inline void SetCompositingParams(const CompositingParams *cp) {
 		compParams = cp;
 		for (u_int i = 0; i < nBSDFs; ++i)
 			bsdfs[i]->SetCompositingParams(cp);

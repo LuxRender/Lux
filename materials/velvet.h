@@ -37,10 +37,8 @@ public:
 		boost::shared_ptr<Texture<float> > &p3,
 		boost::shared_ptr<Texture<float> > &thickness,
 		boost::shared_ptr<Texture<float> > &bump,
-		const CompositingParams &cp) : Kd(kd), P1(p1), P2(p2), P3(p3), Thickness(thickness),
-		bumpMap(bump) {
-		compParams = new CompositingParams(cp);
-	}
+		const ParamSet &mp) : Material(mp), Kd(kd), P1(p1), P2(p2),
+		P3(p3), Thickness(thickness), bumpMap(bump) { }
 	virtual ~Velvet() { }
 	virtual void GetShadingGeometry(const SpectrumWavelengths &sw,
 		const Normal &nGeom, DifferentialGeometry *dgBump) const {
@@ -48,9 +46,8 @@ public:
 			Bump(sw, bumpMap, nGeom, dgBump);
 	}
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
-		const DifferentialGeometry &dgGeom,
-		const DifferentialGeometry &dgShading,
-		const Volume *exterior, const Volume *interior) const;
+		const Intersection &isect,
+		const DifferentialGeometry &dgShading) const;
 	              
 	static Material * CreateMaterial(const Transform &xform,
 		const ParamSet &mp);

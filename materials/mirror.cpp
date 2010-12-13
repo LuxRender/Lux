@@ -24,6 +24,7 @@
 #include "mirror.h"
 #include "memory.h"
 #include "bxdf.h"
+#include "primitive.h"
 #include "specularreflection.h"
 #include "fresnelnoop.h"
 #include "texture.h"
@@ -35,9 +36,7 @@ using namespace lux;
 
 // Mirror Method Definitions
 BSDF *Mirror::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
-	const DifferentialGeometry &dgGeom,
-	const DifferentialGeometry &dgs,
-	const Volume *exterior, const Volume *interior) const
+	const Intersection &isect, const DifferentialGeometry &dgs) const
 {
 	// Allocate _BSDF_
 	float flm = film->Evaluate(sw, dgs);
@@ -48,10 +47,10 @@ BSDF *Mirror::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 	BxDF *bxdf = ARENA_ALLOC(arena, SpecularReflection)(R,
 		ARENA_ALLOC(arena, FresnelNoOp)(), flm, flmindex);
 	SingleBSDF *bsdf = ARENA_ALLOC(arena, SingleBSDF)(dgs,
-		dgGeom.nn, bxdf, exterior, interior);
+		isect.dg.nn, bxdf, isect.exterior, isect.interior);
 
 	// Add ptr to CompositingParams structure
-	bsdf->SetCompositingParams(compParams);
+	bsdf->SetCompositingParams(&compParams);
 
 	return bsdf;
 }
@@ -62,11 +61,7 @@ Material* Mirror::CreateMaterial(const Transform &xform,
 	boost::shared_ptr<Texture<float> > filmindex(mp.GetFloatTexture("filmindex", 1.5f));				// Thin film index of refraction
 	boost::shared_ptr<Texture<float> > bumpMap(mp.GetFloatTexture("bumpmap"));
 
-	// Get Compositing Params
-	CompositingParams cP;
-	FindCompositingParams(mp, &cP);
-
-	return new Mirror(Kr, film, filmindex, bumpMap, cP);
+	return new Mirror(Kr, film, filmindex, bumpMap, mp);
 }
 
 static DynamicLoader::RegisterMaterial<Mirror> r("mirror");

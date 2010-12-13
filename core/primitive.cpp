@@ -74,7 +74,7 @@ BSDF *Intersection::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 	primitive->GetShadingGeometry(WorldToObject.GetInverse(), dg,
 		&dgShading);
 	material->GetShadingGeometry(sw, dg.nn, &dgShading);
-	return material->GetBSDF(arena, sw, dg, dgShading, exterior, interior);
+	return material->GetBSDF(arena, sw, *this, dgShading);
 }
 
 SWCSpectrum Intersection::Le(const Sample &sample, const Ray &ray,

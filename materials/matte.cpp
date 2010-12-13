@@ -24,6 +24,7 @@
 #include "matte.h"
 #include "memory.h"
 #include "bxdf.h"
+#include "primitive.h"
 #include "lambertian.h"
 #include "orennayar.h"
 #include "texture.h"
@@ -35,9 +36,7 @@ using namespace lux;
 
 // Matte Method Definitions
 BSDF *Matte::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
-	const DifferentialGeometry &dgGeom,
-	const DifferentialGeometry &dgs,
-	const Volume *exterior, const Volume *interior) const
+	const Intersection &isect, const DifferentialGeometry &dgs) const
 {
 	// Allocate _BSDF_
 	// Evaluate textures for _Matte_ material and allocate BRDF
@@ -50,10 +49,10 @@ BSDF *Matte::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 	else
 		bxdf = ARENA_ALLOC(arena, OrenNayar)(r, sig);
 	SingleBSDF *bsdf = ARENA_ALLOC(arena, SingleBSDF)(dgs,
-		dgGeom.nn, bxdf, exterior, interior);
+		isect.dg.nn, bxdf, isect.exterior, isect.interior);
 
 	// Add ptr to CompositingParams structure
-	bsdf->SetCompositingParams(compParams);
+	bsdf->SetCompositingParams(&compParams);
 
 	return bsdf;
 }
@@ -62,10 +61,7 @@ Material* Matte::CreateMaterial(const Transform &xform,
 	boost::shared_ptr<Texture<SWCSpectrum> > Kd(mp.GetSWCSpectrumTexture("Kd", RGBColor(.9f)));
 	boost::shared_ptr<Texture<float> > sigma(mp.GetFloatTexture("sigma", 0.f));
 	boost::shared_ptr<Texture<float> > bumpMap(mp.GetFloatTexture("bumpmap"));
-	// Get Compositing Params
-	CompositingParams cP;
-	FindCompositingParams(mp, &cP);
-	return new Matte(Kd, sigma, bumpMap, cP);
+	return new Matte(Kd, sigma, bumpMap, mp);
 }
 
 static DynamicLoader::RegisterMaterial<Matte> r("matte");

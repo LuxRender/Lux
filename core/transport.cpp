@@ -41,12 +41,7 @@ bool VolumeIntegrator::Intersect(const Scene &scene, const Sample &sample,
 {
 	const bool hit = scene.Intersect(ray, isect);
 	if (hit) {
-		DifferentialGeometry dgShading;
-		isect->primitive->GetShadingGeometry(isect->WorldToObject.GetInverse(),
-			isect->dg, &dgShading);
-		isect->material->GetShadingGeometry(sample.swl, isect->dg.nn,
-			&dgShading);
-		if (Dot(ray.d, dgShading.nn) > 0.f) {
+		if (Dot(ray.d, isect->dg.nn) > 0.f) {
 			if (!volume)
 				volume = isect->interior;
 			else if (!isect->interior)
@@ -58,9 +53,7 @@ bool VolumeIntegrator::Intersect(const Scene &scene, const Sample &sample,
 				isect->exterior = volume;
 		}
 		if (bsdf)
-			*bsdf = isect->material->GetBSDF(sample.arena,
-				sample.swl, isect->dg, dgShading,
-				isect->exterior, isect->interior);
+			*bsdf = isect->GetBSDF(sample.arena, sample.swl, ray);
 	}
 	if (volume && L)
 		*L *= Exp(-volume->Tau(sample.swl, ray));
@@ -75,12 +68,7 @@ bool VolumeIntegrator::Intersect(const Scene &scene, const Sample &sample,
 {
 	const bool hit = scene.Intersect(rayHit, isect);
 	if (hit) {
-		DifferentialGeometry dgShading;
-		isect->primitive->GetShadingGeometry(isect->WorldToObject.GetInverse(),
-			isect->dg, &dgShading);
-		isect->material->GetShadingGeometry(sample.swl, isect->dg.nn,
-			&dgShading);
-		if (Dot(ray.d, dgShading.nn) > 0.f) {
+		if (Dot(ray.d, isect->dg.nn) > 0.f) {
 			if (!volume)
 				volume = isect->interior;
 			else if (!isect->interior)
@@ -92,9 +80,7 @@ bool VolumeIntegrator::Intersect(const Scene &scene, const Sample &sample,
 				isect->exterior = volume;
 		}
 		if (bsdf)
-			*bsdf = isect->material->GetBSDF(sample.arena,
-				sample.swl, isect->dg, dgShading,
-				isect->exterior, isect->interior);
+			*bsdf = isect->GetBSDF(sample.arena, sample.swl, ray);
 	}
 	if (volume && L)
 		*L *= Exp(-volume->Tau(sample.swl, ray));
@@ -133,7 +119,7 @@ bool VolumeIntegrator::Connect(const Scene &scene, const Sample &sample,
 		*f *= bsdf->F(sample.swl, d, -d, true, flags);
 		if (f->Black())
 			return false;
-		const float cost = Dot(bsdf->nn, d);
+		const float cost = Dot(bsdf->ng, d);
 		if (cost > 0.f)
 			volume = isect.exterior;
 		else
@@ -163,7 +149,7 @@ int VolumeIntegrator::Connect(const Scene &scene, const Sample &sample,
 	*f *= bsdf->F(sample.swl, d, -d, true, flags);
 	if (f->Black())
 		return -1;
-	const float cost = Dot(bsdf->nn, d);
+	const float cost = Dot(bsdf->ng, d);
 	if (cost > 0.f)
 		volume = isect.exterior;
 	else
