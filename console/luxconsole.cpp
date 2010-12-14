@@ -94,6 +94,8 @@ int main(int ac, char *av[]) {
 		generic.add_options()
 				("version,v", "Print version string")
 				("help,h", "Produce help message")
+				("resume,r", po::value< std::string >()->implicit_value(""), "Resume from FLM")
+				("overrideresume,R", po::value< std::string >(), "Resume from specified FLM")
 				("server,s", "Launch in server mode")
 				("bindump,b", "Dump binary RGB framebuffer to stdout when finished")
 				("debug,d", "Enable debug mode")
@@ -230,6 +232,22 @@ int main(int ac, char *av[]) {
 				luxSetEpsilon(-1.f, maxe);
 			} else
 				luxSetEpsilon(-1.f, -1.f);
+		}
+
+		if (vm.count("resume")) {
+			luxOverrideResumeFLM("");
+		}
+
+		if (vm.count("overrideresume")) {
+			std::string resumefile = vm["overrideresume"].as<std::string>();
+
+			boost::filesystem::path resumePath(resumefile);
+			if (!boost::filesystem::exists(resumePath)) {
+				LOG(LUX_WARNING,LUX_NOFILE) << "Could not find resume file '" << resumefile << "', using filename in scene";
+				resumefile = "";
+			}
+
+			luxOverrideResumeFLM(resumefile.c_str());
 		}
 
 		if (vm.count("input-file")) {
