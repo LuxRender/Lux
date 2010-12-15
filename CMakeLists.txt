@@ -566,6 +566,7 @@ SET(lux_integrators_src
 	integrators/igi.cpp
 	integrators/path.cpp
 	integrators/single.cpp
+	integrators/sppm.cpp
 	)
 SET(lux_lights_src
 	lights/area.cpp

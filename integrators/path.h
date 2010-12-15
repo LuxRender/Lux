@@ -110,7 +110,8 @@ public:
 		ContributionBuffer *contribBuffer, RandomGenerator *rng);
 	virtual bool GenerateRays(const Scene &,
 		SurfaceIntegratorState *state, luxrays::RayBuffer *rayBuffer);
-	virtual bool NextState(const Scene &, SurfaceIntegratorState *state, luxrays::RayBuffer *rayBuffer, u_int *nrContribs);
+	virtual bool NextState(const Scene &, SurfaceIntegratorState *state,
+		luxrays::RayBuffer *rayBuffer, u_int *nrContribs);
 
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 

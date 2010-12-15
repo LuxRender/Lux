@@ -41,6 +41,8 @@
 namespace lux
 {
 
+class SPPMIntegrator;
+
 //------------------------------------------------------------------------------
 // HybridSPPM
 //------------------------------------------------------------------------------
@@ -119,18 +121,11 @@ private:
 	vector<RenderThread *> renderThreads;
 	u_long requestedRenderThreadsCount;
 	Scene *scene;
+	SPPMIntegrator *sppmi;
 	u_long lastUsedSeed;
 	u_int bufferId;
 
 	HitPoints *hitPoints;
-	LookUpAccelType lookupAccelType;
-	// double instead of float because photon counters declared as int 64bit
-	double photonAlpha;
-	float photonStartRadiusScale;
-	u_int maxEyePathDepth;
-	u_int maxPhotonPathDepth;
-	u_int stochasticInterval;
-	bool useDirectLightSampling;
 
 	boost::barrier *barrier;
 	boost::barrier *barrierExit;
