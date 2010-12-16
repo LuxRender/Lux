@@ -240,6 +240,9 @@ int main(int ac, char *av[]) {
 			const std::vector<std::string> &v = vm["input-file"].as < vector<string> > ();
 
 			if ((v.size() == 1)  || (v.size() == 2)) {
+
+				luxInit();
+
 				LOG( LUX_INFO,LUX_NOERROR)<< "-------------------------------";
 
 				// Dade - read the reference film
