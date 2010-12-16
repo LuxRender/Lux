@@ -84,6 +84,30 @@ static int NormalCB(p_ply_argument argument)
 	return 1;
 }
 
+// rply st/uv callback
+static int TexCoordCB(p_ply_argument argument)
+{
+	long userIndex = 0;
+	void *userData = NULL;
+	ply_get_argument_user_data(argument, &userData, &userIndex);
+
+	float* uv = *static_cast<float **>(userData);
+
+	long vertIndex;
+	ply_get_argument_element(argument, NULL, &vertIndex);
+
+	if (userIndex == 0)
+		uv[2*vertIndex] =
+			static_cast<float>(ply_get_argument_value(argument));
+	else if (userIndex == 1)
+		uv[2*vertIndex+1] =
+			static_cast<float>(ply_get_argument_value(argument));
+/*	else
+		return 0;*/
+
+	return 1;
+}
+
 // rply face callback
 static int FaceCB(p_ply_argument argument)
 {
@@ -154,6 +178,19 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 	ply_set_read_cb(plyfile, "vertex", "ny", NormalCB, &n, 1);
 	ply_set_read_cb(plyfile, "vertex", "nz", NormalCB, &n, 2);
 
+	// try both st and uv for texture coordinates
+	// st before uv
+	float *uv;
+	long plyNbUVs = ply_set_read_cb(plyfile, "vertex", "s",
+		TexCoordCB, &uv, 0);
+	ply_set_read_cb(plyfile, "vertex", "t", TexCoordCB, &uv, 1);
+
+	if (plyNbUVs <= 0) {
+		plyNbUVs = ply_set_read_cb(plyfile, "vertex", "u",
+			TexCoordCB, &uv, 0);
+		ply_set_read_cb(plyfile, "vertex", "v", TexCoordCB, &uv, 1);
+	}
+
 	p = new Point[plyNbVerts];
 	vertexIndex = new int[3 * plyNbTris];
 	if (plyNbNormals <= 0)
@@ -161,11 +198,17 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 	else
 		n = new Normal[plyNbNormals];
 
+	if (plyNbUVs <= 0)
+		uv = NULL;
+	else
+		uv = new float[2*plyNbUVs];
+
 	if (!ply_read(plyfile)) {
 		LOG( LUX_ERROR,LUX_SYSTEM) << "Unable to parse PLY file '" << filename << "'";
 		delete[] p;
 		delete[] vertexIndex;
 		delete[] n;
+		delete[] uv;
 		return NULL;
 	}
 
@@ -211,13 +254,22 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 		delete[] nf;
 	}
 
+	if (plyNbVerts != plyNbUVs) {
+		if (uv) {
+			LOG( LUX_ERROR,LUX_CONSISTENCY)<< "Incorrect number of uv coordinates";
+			delete[] uv;
+			uv = NULL;
+		}
+	}
+
 	boost::shared_ptr<Texture<float> > dummytex;
 	Mesh *mesh = new Mesh(o2w, reverseOrientation, Mesh::ACCEL_AUTO,
-		plyNbVerts, p, n, NULL, Mesh::TRI_AUTO, plyNbTris, vertexIndex,
+		plyNbVerts, p, n, uv, Mesh::TRI_AUTO, plyNbTris, vertexIndex,
 		Mesh::QUAD_QUADRILATERAL, 0, NULL, Mesh::SUBDIV_LOOP, 0,
 		dummytex, 1.f, 0.f, false, false);
 	delete[] p;
 	delete[] n;
+	delete[] uv;
 	delete[] vertexIndex;
 	return mesh;
 }
