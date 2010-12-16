@@ -25,6 +25,8 @@
 #include "texture.h"
 #include "geometry/raydifferential.h"
 #include "fresnel.h"
+#include "sampling.h"
+#include "spectrum.h"
 
 namespace lux
 {
@@ -65,6 +67,14 @@ public:
 		DifferentialGeometry dg; //FIXME give it as argument
 		dg.p = p;
 		return fresnel->Evaluate(sw, dg);
+	}
+	bool Scatter(const Sample &sample, const Ray &ray, float u,
+		Intersection *isect, float *pdf, SWCSpectrum *L) const {
+		if (L)
+			*L *= Exp(-Tau(sample.swl, ray));
+		if (pdf)
+			*pdf = 1.f;
+		return false;
 	}
 	// ClearVolume Public Methods
 	static Volume *CreateVolume(const Transform &volume2world, const ParamSet &params);

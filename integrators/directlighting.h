@@ -51,7 +51,7 @@ private:
 
 	u_int maxDepth; // NOBOOK
 	// Declare sample parameters for light source sampling
-	u_int sampleOffset, bufferId;
+	u_int sampleOffset, scatterOffset, bufferId;
 };
 
 }//namespace lux

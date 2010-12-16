@@ -78,8 +78,9 @@ public:
 	virtual void Transmittance(const Scene &scene, const Ray &ray,
 		const Sample &sample, float *alpha, SWCSpectrum *const L) const = 0;
 	virtual bool Intersect(const Scene &scene, const Sample &sample,
-		const Volume *volume, const Ray &ray,
-		Intersection *isect, BSDF **bsdf, SWCSpectrum *L) const;
+		const Volume *volume, const Ray &ray, float u,
+		Intersection *isect, BSDF **bsdf, float *pdf,
+		SWCSpectrum *L) const;
 	// Used to complete intersection data with LuxRays
 	virtual bool Intersect(const Scene &scene, const Sample &sample,
 		const Volume *volume, const Ray &ray, const luxrays::RayHit &rayHit,

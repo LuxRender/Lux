@@ -43,6 +43,7 @@ void PathIntegrator::RequestSamples(Sample *sample, const Scene &scene)
 	vector<u_int> structure;
 	structure.push_back(2);	// bsdf direction sample for path
 	structure.push_back(1);	// bsdf component sample for path
+	structure.push_back(1); // scattering
 	if (rrStrategy != RR_NONE)
 		structure.push_back(1);	// continue sample
 
@@ -91,11 +92,15 @@ u_int PathIntegrator::Li(const Scene &scene, const Sample &sample) const
 	const Volume *volume = NULL;
 
 	for (u_int pathLength = 0; ; ++pathLength) {
+		const float *data = scene.sampler->GetLazyValues(sample,
+			sampleOffset, pathLength);
 		// Find next vertex of path
 		Intersection isect;
 		BSDF *bsdf;
-		if (!scene.Intersect(sample, volume, ray, &isect, &bsdf,
-			&pathThroughput)) {
+		float spdf;
+		if (!scene.Intersect(sample, volume, ray, data[3], &isect,
+			&bsdf, &spdf, &pathThroughput)) {
+			pathThroughput /= spdf;
 			// Dade - now I know ray.maxt and I can call volumeIntegrator
 			SWCSpectrum Lv;
 			u_int g = scene.volumeIntegrator->Li(scene, ray, sample,
@@ -127,6 +132,7 @@ u_int PathIntegrator::Li(const Scene &scene, const Sample &sample) const
 				alpha = 0.f;
 			break;
 		}
+		pathThroughput /= spdf;
 		if (vertexIndex == 0) {
 			distance = ray.maxt * ray.d.Length();
 		}
@@ -157,8 +163,6 @@ u_int PathIntegrator::Li(const Scene &scene, const Sample &sample) const
 		if (pathLength == maxDepth)
 			break;
 		// Evaluate BSDF at hit point
-		const float *data = scene.sampler->GetLazyValues(sample,
-			sampleOffset, pathLength);
 
 		// Estimate direct lighting
 		const Point &p = bsdf->dgShading.p;
@@ -193,12 +197,12 @@ u_int PathIntegrator::Li(const Scene &scene, const Sample &sample) const
 			if (vertexIndex > 3) {
 				if (rrStrategy == RR_EFFICIENCY) { // use efficiency optimized RR
 					const float q = min<float>(1.f, f.Filter(sw));
-					if (q < data[3])
+					if (q < data[4])
 						break;
 					// increase path contribution
 					pathThroughput /= q;
 				} else if (rrStrategy == RR_PROBABILITY) { // use normal/probability RR
-					if (continueProbability < data[3])
+					if (continueProbability < data[4])
 						break;
 					// increase path contribution
 					pathThroughput /= continueProbability;

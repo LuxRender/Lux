@@ -36,10 +36,10 @@ namespace lux
 
 // Integrator Method Definitions
 bool VolumeIntegrator::Intersect(const Scene &scene, const Sample &sample,
-	const Volume *volume, const Ray &ray, Intersection *isect, BSDF **bsdf,
-	SWCSpectrum *L) const
+	const Volume *volume, const Ray &ray, float u, Intersection *isect,
+	BSDF **bsdf, float *pdf, SWCSpectrum *L) const
 {
-	const bool hit = scene.Intersect(ray, isect);
+	bool hit = scene.Intersect(ray, isect);
 	if (hit) {
 		if (Dot(ray.d, isect->dg.nn) > 0.f) {
 			if (!volume)
@@ -52,11 +52,15 @@ bool VolumeIntegrator::Intersect(const Scene &scene, const Sample &sample,
 			else if (!isect->exterior)
 				isect->exterior = volume;
 		}
+	}
+	if (volume)
+		hit |= volume->Scatter(sample, ray, u, isect, pdf, L);
+	else if (pdf)
+		*pdf = 1.f;
+	if (hit) {
 		if (bsdf)
 			*bsdf = isect->GetBSDF(sample.arena, sample.swl, ray);
 	}
-	if (volume && L)
-		*L *= Exp(-volume->Tau(sample.swl, ray));
 	if (L)
 		Transmittance(scene, ray, sample, NULL, L);
 	return hit;
@@ -113,7 +117,9 @@ bool VolumeIntegrator::Connect(const Scene &scene, const Sample &sample,
 	// but it's safer to keep it
 	for (u_int i = 0; i < 10000; ++i) {
 		BSDF *bsdf;
-		if (!Intersect(scene, sample, volume, ray, &isect, &bsdf, f))
+		float spdf;
+		if (!Intersect(scene, sample, volume, ray, 1.f, &isect, &bsdf,
+			&spdf, f))
 			return true;
 
 		*f *= bsdf->F(sample.swl, d, -d, true, flags);
@@ -125,9 +131,9 @@ bool VolumeIntegrator::Connect(const Scene &scene, const Sample &sample,
 		else
 			volume = isect.interior;
 		if (pdf)
-			*pdf *= bsdf->Pdf(sample.swl, d, -d);
+			*pdf *= bsdf->Pdf(sample.swl, d, -d) * spdf;
 		if (pdfR)
-			*pdfR *= bsdf->Pdf(sample.swl, -d, d);
+			*pdfR *= bsdf->Pdf(sample.swl, -d, d) * spdf;
 
 		ray.mint = ray.maxt + MachineEpsilon::E(ray.maxt);
 		ray.maxt = maxt;
@@ -256,8 +262,8 @@ SWCSpectrum EstimateDirect(const Scene &scene, const Light &light,
 			BSDF *ibsdf;
 			const Volume *volume = bsdf->GetVolume(wi);
 			bool lit = false;
-			if (!scene.Intersect(sample, volume, ray, &lightIsect,
-				&ibsdf, &Li))
+			if (!scene.Intersect(sample, volume, ray, 1.f,
+				&lightIsect, &ibsdf, NULL, &Li))
 				lit = light.Le(scene, sample, ray, &lightBsdf,
 					NULL, &lightPdf, &Li);
 			else if (lightIsect.arealight == &light) {

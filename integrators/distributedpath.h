@@ -72,7 +72,7 @@ private:
 		specularrefractDepth, maxDepth;
 
 	// Declare sample parameters for light source sampling
-	u_int sampleOffset, bufferId;
+	u_int sampleOffset, scatterOffset, bufferId;
 	u_int lightSampleOffset, lightNumOffset, bsdfSampleOffset,
 	      bsdfComponentOffset;
 	u_int indirectlightSampleOffset, indirectlightNumOffset,

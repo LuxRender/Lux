@@ -65,10 +65,10 @@ public:
 		}
 	}
 	bool Intersect(const Sample &sample, const Volume *volume,
-		const Ray &ray, Intersection *isect, BSDF **bsdf,
-		SWCSpectrum *f) const {
+		const Ray &ray, float u, Intersection *isect, BSDF **bsdf,
+		float *pdf, SWCSpectrum *f) const {
 		return volumeIntegrator->Intersect(*this, sample, volume, ray,
-			isect, bsdf, f);
+			u, isect, bsdf, pdf, f);
 	}
 	// Used to complete intersection data with LuxRays
 	bool Intersect(const Sample &sample, const Volume *volume,

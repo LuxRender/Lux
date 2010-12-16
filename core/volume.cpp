@@ -22,6 +22,8 @@
 
 // volume.cpp*
 #include "volume.h"
+#include "sampling.h"
+#include "spectrum.h"
 
 namespace lux
 {
@@ -54,6 +56,34 @@ float PhaseSchlick(const Vector &w,
 	const float k = g * (1.55f - .55f * g * g);
 	const float compkcostheta = 1.f - k * Dot(w, wp);
 	return (1.f - k * k) / (4.f * M_PI * compkcostheta * compkcostheta);
+}
+bool RGBVolume::Scatter(const Sample &sample, const Ray &ray, float u,
+		Intersection *isect, float *pdf, SWCSpectrum *L) const
+{
+	// Determine scattering distance
+	const float k = sigS.Y();
+	const float d = ray.mint - logf(1 - u) / k;
+	bool scatter = d < ray.maxt;
+	if (scatter) {
+		// The ray is scattered
+		ray.maxt = d;
+		isect->dg.p = ray(d);
+		isect->dg.nn = Normal(-ray.d);
+		CoordinateSystem(Vector(isect->dg.nn), &(isect->dg.dpdu), &(isect->dg.dpdv));
+		//isect->primitive = dummy;
+		//isect->material = thismaterial;
+		isect->interior = this;
+		isect->exterior = this;
+		//isect->arealight = thislight;
+		if (pdf)
+			*pdf = expf(-d * k);
+	} else {
+		if (*pdf)
+			*pdf = 1.f - expf(-(ray.maxt - ray.mint) * k);
+	}
+	if (L)
+		*L *= Exp(-Tau(sample.swl, ray));
+	return scatter;
 }
 AggregateRegion::AggregateRegion(const vector<Region *> &r)
 {
@@ -132,6 +162,15 @@ bool AggregateRegion::IntersectP(const Ray &ray, float *t0, float *t1) const
 AggregateRegion::~AggregateRegion() {
 	for (u_int i = 0; i < regions.size(); ++i)
 		delete regions[i];
+}
+bool AggregateRegion::Scatter(const Sample &sample, const Ray &ray, float u,
+		Intersection *isect, float *pdf, SWCSpectrum *L) const
+{
+	bool scatter = false;
+	for (u_int i = 0; i < regions.size(); ++i)
+		scatter = scatter || regions[i]->Scatter(sample, ray, u, isect,
+			pdf, L);
+	return scatter;
 }
 
 }//namespace lux

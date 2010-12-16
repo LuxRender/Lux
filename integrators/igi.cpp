@@ -81,7 +81,8 @@ void IGIIntegrator::RequestSamples(Sample *sample, const Scene &scene)
 
 	vector<u_int> structure;
 	structure.push_back(1);	// bsdf component
-	sampleOffset = sample->AddxD(structure, maxSpecularDepth);
+	structure.push_back(1); // scattering
+	sampleOffset = sample->AddxD(structure, maxSpecularDepth + 1);
 }
 void IGIIntegrator::Preprocess(const RandomGenerator &rng, const Scene &scene)
 {
@@ -146,8 +147,8 @@ void IGIIntegrator::Preprocess(const RandomGenerator &rng, const Scene &scene)
 			Intersection isect;
 			const Volume *volume = NULL; //FIXME: get it from the light
 			u_int nIntersections = 0;
-			while (scene.Intersect(sample, volume, ray,
-				&isect, &bsdf, &alpha) && !alpha.Black()) {
+			while (scene.Intersect(sample, volume, ray, 1.f,
+				&isect, &bsdf, NULL, &alpha) && !alpha.Black()) {
 				++nIntersections;
 				Vector wo = -ray.d;
 				// Create virtual light at ray intersection point
@@ -192,10 +193,13 @@ u_int IGIIntegrator::Li(const Scene &scene, const Sample &sample) const
 	float alpha = 1.f;
 	const Volume *volume = NULL;
 	for (u_int depth = 0; ; ++depth) {
+		const float *data = scene.sampler->GetLazyValues(sample, sampleOffset, depth);
 		Intersection isect;
 		BSDF *bsdf;
-		if (!scene.Intersect(sample, volume, ray, &isect, &bsdf,
-			&pathThroughput)) {
+		float spdf;
+		if (!scene.Intersect(sample, volume, ray, data[1], &isect,
+			&bsdf, &spdf, &pathThroughput)) {
+			pathThroughput /= spdf;
 			// Handle ray with no intersection
 			if (depth == 0)
 				alpha = 0.f;
@@ -208,6 +212,7 @@ u_int IGIIntegrator::Li(const Scene &scene, const Sample &sample) const
 			}
 			break;
 		}
+		pathThroughput /= spdf;
 		Vector wo = -ray.d;
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;
@@ -255,7 +260,6 @@ u_int IGIIntegrator::Li(const Scene &scene, const Sample &sample) const
 		SWCSpectrum f;
 		float pdf;
 		// Trace rays for specular reflection and refraction
-		float *data = scene.sampler->GetLazyValues(sample, sampleOffset, depth);
 		if (!bsdf->SampleF(sw, wo, &wi, .5f, .5f, *data, &f, &pdf,
 			BxDFType(BSDF_SPECULAR | BSDF_REFLECTION | BSDF_TRANSMISSION)))
 			break;

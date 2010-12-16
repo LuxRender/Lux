@@ -40,6 +40,9 @@ DirectLightingIntegrator::DirectLightingIntegrator(u_int md) {
 void DirectLightingIntegrator::RequestSamples(Sample *sample, const Scene &scene) {
 	// Allocate and request samples for light sampling
 	hints.RequestSamples(sample, scene, maxDepth + 1);
+	vector<u_int> structure;
+	structure.push_back(1);	//scattering
+	scatterOffset = sample->AddxD(structure, maxDepth + 1);
 }
 
 void DirectLightingIntegrator::Preprocess(const RandomGenerator &rng,
@@ -66,7 +69,11 @@ u_int DirectLightingIntegrator::LiInternal(const Scene &scene,
 	const SpectrumWavelengths &sw(sample.swl);
 	SWCSpectrum Lt(1.f);
 
-	if (scene.Intersect(sample, volume, ray, &isect, &bsdf, &Lt)) {
+	const float *data = scene.sampler->GetLazyValues(sample,scatterOffset,
+		rayDepth);
+	float spdf;
+	if (scene.Intersect(sample, volume, ray, data[0], &isect, &bsdf, &spdf,
+		&Lt)) {
 		if (rayDepth == 0)
 			distance = ray.maxt * ray.d.Length();
 
@@ -151,6 +158,7 @@ u_int DirectLightingIntegrator::LiInternal(const Scene &scene,
 			distance = INFINITY;
 		}
 	}
+	Lt /= spdf;
 
 	if (nContribs > 0) {
 		for (u_int i = 0; i < L.size(); ++i)

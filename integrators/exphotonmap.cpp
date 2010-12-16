@@ -91,6 +91,7 @@ void ExPhotonIntegrator::RequestSamples(Sample *sample, const Scene &scene)
 
 		structure.push_back(2);	// reflection bsdf direction sample
 		structure.push_back(1);	// reflection bsdf component sample
+		structure.push_back(1); // scattering
 
 		sampleOffset = sample->AddxD(structure, maxDepth + 1);
 
@@ -119,6 +120,7 @@ void ExPhotonIntegrator::RequestSamples(Sample *sample, const Scene &scene)
 		structure.push_back(1);	// bsdf component sample for path
 		structure.push_back(2);	// bsdf direction sample for indirect light
 		structure.push_back(1);	// bsdf component sample for indirect light
+		structure.push_back(1); // scattering
 
 		if (rrStrategy != RR_NONE)
 			structure.push_back(1);	// continue sample
@@ -200,7 +202,10 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(const Scene &scene,
 
 	Intersection isect;
 	BSDF *bsdf;
-	if (scene.Intersect(sample, volume, ray, &isect, &bsdf, &Lt)) {
+	const float *sampleData = scene.sampler->GetLazyValues(sample, sampleOffset, reflectionDepth);
+	float spdf;
+	if (scene.Intersect(sample, volume, ray, sampleData[3], &isect, &bsdf,
+		&spdf, &Lt)) {
 		Vector wo = -ray.d;
 
 		const Point &p = bsdf->dgShading.p;
@@ -260,8 +265,6 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(const Scene &scene,
 
         if (debugEnableSpecular && (reflectionDepth < maxDepth)) {
 			// Collect samples
-			const float *sampleData = scene.sampler->GetLazyValues(sample, sampleOffset, reflectionDepth);
-
 			float u1 = sampleData[0];
 			float u2 = sampleData[1];
 			float u3 = sampleData[2];
@@ -296,6 +299,7 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(const Scene &scene,
 		if (reflectionDepth == 0)
 			*alpha = 0.f;
 	}
+	Lt /= spdf;
 
 	SWCSpectrum Lv;
 	scene.volumeIntegrator->Li(scene, ray, sample, &Lv, alpha);
@@ -318,11 +322,15 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const Scene &scene,
 	const Volume *volume = NULL;
 
 	for (u_int pathLength = 0; ; ++pathLength) {
+		const float *sampleData = scene.sampler->GetLazyValues(sample,
+			sampleOffset, pathLength);
 		// Find next vertex of path
 		Intersection isect;
 		BSDF *bsdf;
-		if (!scene.Intersect(sample, volume, ray, &isect, &bsdf,
-			&pathThroughput)) {
+		float spdf;
+		if (!scene.Intersect(sample, volume, ray, sampleData[6], &isect,
+			&bsdf, &spdf, &pathThroughput)) {
+			pathThroughput /= spdf;
 			// Stop path sampling since no intersection was found
 			SWCSpectrum Lv;
 			scene.volumeIntegrator->Li(scene, ray, sample, &Lv,
@@ -372,16 +380,14 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const Scene &scene,
 		}
 
 		// Dade - collect samples
-		float *sampleData = scene.sampler->GetLazyValues(sample,
-			sampleOffset, pathLength);
 		const float *pathSample = &sampleData[0];
 		const float *pathComponent = &sampleData[2];
 		const float *indirectSample = &sampleData[3];
 		const float *indirectComponent = &sampleData[5];
 
-		float *rrSample;
+		const float *rrSample;
 		if (rrStrategy != RR_NONE)
-			rrSample = &sampleData[6];
+			rrSample = &sampleData[7];
 		else
 			rrSample = NULL;
 
@@ -429,7 +435,8 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const Scene &scene,
 						Intersection gatherIsect;
 						if (scene.Intersect(sample,
 							bsdf->GetVolume(wi),
-							bounceRay, &gatherIsect,
+							bounceRay, 1.f,
+							&gatherIsect, NULL,
 							NULL, &fr)) {
 							// Dade - check the distance threshold option, if the intersection
 							// distance is smaller than the threshold, revert to standard path

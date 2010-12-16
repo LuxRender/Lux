@@ -572,7 +572,8 @@ void PhotonMapPreprocess(const RandomGenerator &rng, const Scene &scene,
 			BSDF *photonBSDF;
 			u_int nIntersections = 0;
 			while (scene.Intersect(sample, volume,
-				photonRay, &photonIsect, &photonBSDF, &alpha)) {
+				photonRay, 1.f, &photonIsect, &photonBSDF,
+				NULL, &alpha)) {
 				++nIntersections;
 
 				// Handle photon/surface intersection
@@ -869,7 +870,7 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const Scene &scene,
 			Ray bounceRay(p, wi);
 			Intersection gatherIsect;
 			if (scene.Intersect(sample, bsdf->GetVolume(wi),
-				bounceRay, &gatherIsect, NULL, &fr)) {
+				bounceRay, 1.f, &gatherIsect, NULL, NULL, &fr)) {
 				// Compute exitant radiance using precomputed irradiance
 				Normal nGather = gatherIsect.dg.nn;
 				if (Dot(nGather, bounceRay.d) > 0)
@@ -951,7 +952,7 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const Scene &scene,
 			Ray bounceRay(p, wi);
 			Intersection gatherIsect;
 			if (scene.Intersect(sample, bsdf->GetVolume(wi),
-				bounceRay, &gatherIsect, NULL, &fr)) {
+				bounceRay, 1.f, &gatherIsect, NULL, NULL, &fr)) {
 				// Compute exitant radiance using precomputed irradiance
 				Normal nGather = gatherIsect.dg.nn;
 				if (Dot(nGather, bounceRay.d) > 0)
@@ -1029,7 +1030,7 @@ SWCSpectrum PhotonMapFinalGather(const Scene &scene, const Sample &sample,
 			Ray bounceRay(p, wi);
 			Intersection gatherIsect;
 			if (scene.Intersect(sample, bsdf->GetVolume(wi),
-				bounceRay, &gatherIsect, NULL, &fr)) {
+				bounceRay, 1.f, &gatherIsect, NULL, NULL, &fr)) {
 				// Compute exitant radiance using precomputed irradiance
 				Normal nGather = gatherIsect.dg.nn;
 				if (Dot(nGather, bounceRay.d) > 0)

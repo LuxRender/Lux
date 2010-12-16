@@ -75,12 +75,14 @@ void BidirIntegrator::RequestSamples(Sample *sample, const Scene &scene)
 	structure.push_back(1);	//continue eye
 	structure.push_back(2);	//bsdf sampling for eye path
 	structure.push_back(1);	//bsdf component for eye path
+	structure.push_back(1); //scattering
 	sampleEyeOffset = sample->AddxD(structure, maxEyeDepth);
 	structure.clear();
 	// Light subpath samples
 	structure.push_back(1); //continue light
 	structure.push_back(2); //bsdf sampling for light path
 	structure.push_back(1); //bsdf component for light path
+	structure.push_back(1); //scattering
 	sampleLightOffset = sample->AddxD(structure, maxLightDepth);
 }
 void BidirIntegrator::Preprocess(const RandomGenerator &rng, const Scene &scene)
@@ -498,11 +500,18 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 
 			// Trace light subpath and connect to eye vertex
 			for (u_int sampleIndex = 1; sampleIndex < maxLightDepth; ++sampleIndex) {
+				data = scene.sampler->GetLazyValues(sample,
+					sampleLightOffset, sampleIndex);
 				BidirVertex &v = lightPath[nLight];
+				float spdf;
 				if (!scene.Intersect(sample,
 					lightPath[nLight - 1].bsdf->GetVolume(ray.d),
-					ray, &isect, &v.bsdf, &v.flux))
+					ray, data[4], &isect, &v.bsdf, &spdf,
+					&v.flux))
 					break;
+				v.tPdfR *= spdf;
+				v.flux /= spdf;
+				lightPath[nLight - 1].tPdf *= spdf;
 				++nLight;
 
 				// Initialize new intersection vertex
@@ -539,8 +548,6 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 				// Break out if path is too long
 				if (sampleIndex >= maxLightDepth)
 					break;
-				data = scene.sampler->GetLazyValues(sample,
-					sampleLightOffset, sampleIndex);
 				SWCSpectrum f;
 				if (!v.bsdf->SampleF(sw, v.wi, &v.wo,
 					data[1], data[2], data[3], &f, &v.pdf,
@@ -613,10 +620,14 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 	SWCSpectrum &L(vecL[lightGroup]);
 	float &variance(vecV[lightGroup]);
 	for (u_int sampleIndex = 1; sampleIndex < maxEyeDepth; ++sampleIndex) {
+		data = scene.sampler->GetLazyValues(sample, sampleEyeOffset,
+			sampleIndex);
 		BidirVertex &v = eyePath[nEye];
+		float spdf;
 		if (!scene.Intersect(sample,
-			eyePath[nEye - 1].bsdf->GetVolume(ray.d), ray, &isect,
-			&v.bsdf, &v.flux)) {
+			eyePath[nEye - 1].bsdf->GetVolume(ray.d), ray, data[4],
+			&isect, &v.bsdf, &spdf, &v.flux)) {
+			v.flux /= spdf;
 			vector<BidirVertex> path(0);
 			for (u_int lightNumber = 0; lightNumber < scene.lights.size(); ++lightNumber) {
 				const Light *light = scene.lights[lightNumber];
@@ -640,7 +651,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 					DistanceSquared(eyePath[nEye - 1].p, v.p);
 				// Evaluate factors for path weighting
 				v.dARWeight = eyePath[nEye - 1].pdfR *
-					eyePath[nEye - 1].tPdfR *
+					eyePath[nEye - 1].tPdfR * spdf *
 					v.coso / eyePath[nEye - 1].d2;
 				v.pdf = v.bsdf->Pdf(sw, Vector(v.bsdf->nn),
 					v.wo);
@@ -650,7 +661,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 				v.dAWeight /= scene.lights.size();
 				ePdfDirect *= directWeight;
 				eyePath[nEye - 1].dAWeight = v.pdf * v.tPdf *
-					eyePath[nEye - 1].cosi /
+					spdf * eyePath[nEye - 1].cosi /
 					eyePath[nEye - 1].d2;
 				vector<BidirVertex> path(0);
 				const float w = weightPath(eyePath,
@@ -673,6 +684,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 			// End eye path tracing
 			break;
 		}
+		v.flux /= spdf;
 		++nEye;
 
 		// Initialize new intersection vertex
@@ -801,8 +813,6 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 				break;
 		}
 
-		data = scene.sampler->GetLazyValues(sample, sampleEyeOffset,
-			sampleIndex);
 		SWCSpectrum f;
 		if (!v.bsdf->SampleF(sw, v.wo, &v.wi, data[1], data[2],
 			data[3], &f, &v.pdfR, BSDF_ALL, &v.flags, &v.pdf, true))

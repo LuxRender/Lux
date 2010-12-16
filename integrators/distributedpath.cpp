@@ -85,6 +85,9 @@ void DistributedPath::RequestSamples(Sample *sample, const Scene &scene) {
 	maxDepth = max(maxDepth, specularreflectDepth);
 	maxDepth = max(maxDepth, specularrefractDepth);
 
+	// Scattering
+	scatterOffset = sample->Add1D(maxDepth);
+
 	// Direct lighting
 	// eye vertex
 	lightSampleOffset = sample->Add2D(directSamples);
@@ -191,8 +194,11 @@ void DistributedPath::LiInternal(const Scene &scene, const Sample &sample,
 	const float time = ray.time; // save time for motion blur
 	const SpectrumWavelengths &sw(sample.swl);
 	SWCSpectrum Lt(1.f);
+	float spdf;
 
-	if (scene.Intersect(sample, volume, ray, &isect, &bsdf, &Lt)) {
+	if (scene.Intersect(sample, volume, ray,
+		sample.oneD[scatterOffset][rayDepth], &isect, &bsdf, &spdf,
+		&Lt)) {
 		// Evaluate BSDF at hit point
 		Vector wo = -ray.d;
 		const Point &p = bsdf->dgShading.p;
@@ -537,6 +543,7 @@ void DistributedPath::LiInternal(const Scene &scene, const Sample &sample,
 		if (rayDepth == 0)
 			*alpha = 0.f;
 	}
+	Lt /= spdf;
 
 	for (u_int i = 0; i < L.size(); ++i)
 		L[i] *= Lt;
