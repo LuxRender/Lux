@@ -747,6 +747,44 @@ public:
 		return pyFrameBuffer;
 	}
 
+	/**
+	 * Format framebuffers into a bottom-up format required
+	 * by Blender 2.5's RenderLayer type
+	 */
+	boost::python::tuple blenderCombinedDepthRects()
+	{
+		updateFramebuffer();
+		boost::python::list combined;
+		boost::python::list depth;
+
+		Context::SetActive(context);
+		int xres = luxGetIntAttribute("film", "xResolution");
+		int yres = luxGetIntAttribute("film", "yResolution");
+
+		float *color = context->FloatFramebuffer();
+		float *alpha = context->AlphaBuffer();
+		float *z = context->ZBuffer();
+		for(int y=yres-1; y>-1;y--)
+		{
+			for(int x=0; x<xres; x++)
+			{
+				int i = (y*xres + x);
+				int j = i*3;
+				boost::python::list rect_item;
+				rect_item.append( color[j] );
+				rect_item.append( color[j+1] );
+				rect_item.append( color[j+2] );
+				rect_item.append( alpha[i] );
+				combined.append( rect_item );
+				boost::python::list depth_item;
+				depth_item.append( z[i] );
+				depth.append( depth_item );
+			}
+		}
+		
+		return boost::python::make_tuple( combined, depth );
+	}
+
 	boost::python::list getHistogramImage(unsigned int width, unsigned int height, int options)
 	{
 		boost::python::list pyHistogramImage;
@@ -1040,6 +1078,11 @@ void export_PyContext()
 			&PyContext::attributeEnd,
 			args("Context"),
 			ds_pylux_Context_attributeEnd
+		)
+		.def("blenderCombinedDepthRects",
+			&PyContext::blenderCombinedDepthRects,
+			args("Context"),
+			"Blender framebuffer fetcher method; returns combined Color+Alpha and Depth buffers in bottom-up format"
 		)
 		.def("camera",
 			&PyContext::camera,
