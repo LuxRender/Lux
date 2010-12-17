@@ -547,6 +547,7 @@ public:
 	virtual unsigned char* getFrameBuffer() = 0;
 	virtual float* getFloatFrameBuffer() = 0;
 	virtual float* getAlphaBuffer() = 0;
+	virtual float* getZBuffer() = 0;
 	virtual void updateFrameBuffer() = 0;
 	virtual int getldrDisplayInterval() = 0;
 	void getHistogramImage(unsigned char *outPixels, u_int width, u_int height, int options);

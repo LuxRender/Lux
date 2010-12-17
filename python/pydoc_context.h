@@ -112,6 +112,10 @@ const char * ds_pylux_Context_alphabuffer =
 "Returns the current alpha buffer in float format as a list.\n"
 "It is advisable to call updateFramebuffer() before calling this function.";
 
+const char * ds_pylux_Context_zbuffer =
+"Returns the current Z buffer in float format as a list.\n"
+"It is advisable to call updateFramebuffer() before calling this function.";
+
 const char * ds_pylux_Context_getDefaultParameterValue =
 "";
 

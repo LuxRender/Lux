@@ -59,6 +59,7 @@ public:
 		delete[] framebuffer;
 		delete[] float_framebuffer;
 		delete[] alpha_buffer;
+		delete[] z_buffer;
 	}	
 
 	virtual void SaveEXR(const string &exrFilename, bool useHalfFloats, bool includeZBuf, int compressionType, bool tonemapped);
@@ -70,6 +71,7 @@ public:
 	virtual unsigned char* getFrameBuffer();
 	virtual float* getFloatFrameBuffer();
 	virtual float* getAlphaBuffer();
+	virtual float* getZBuffer();
 	virtual void createFrameBuffer();
 	virtual int getldrDisplayInterval() { return displayInterval; }
 
@@ -100,6 +102,7 @@ private:
 	unsigned char *framebuffer;
 	float *float_framebuffer;
 	float *alpha_buffer;
+	float *z_buffer;
 
 	float m_RGB_X_White, d_RGB_X_White;
 	float m_RGB_Y_White, d_RGB_Y_White;

@@ -1138,11 +1138,13 @@ void FlexImageFilm::createFrameBuffer()
 	framebuffer = new unsigned char[3*nPix];			// TODO delete data
 	float_framebuffer = new float[3*nPix];
 	alpha_buffer = new float[nPix];
+	z_buffer = new float[nPix];
 
 	// zero it out
 	memset(framebuffer,0,sizeof(*framebuffer)*3*nPix);
 	memset(float_framebuffer,0,sizeof(*float_framebuffer)*3*nPix);
 	memset(alpha_buffer,0,sizeof(*alpha_buffer)*nPix);
+	memset(z_buffer,0,sizeof(*z_buffer)*nPix);
 }
 
 void FlexImageFilm::updateFrameBuffer()
@@ -1175,6 +1177,23 @@ float* FlexImageFilm::getAlphaBuffer()
 		createFrameBuffer();
 
 	return alpha_buffer;
+}
+
+float* FlexImageFilm::getZBuffer()
+{
+	if (!z_buffer)
+		createFrameBuffer();
+
+	if (ZBuffer)
+	{
+		for (u_int offset = 0, y = 0; y < yPixelCount; ++y) {
+			for (u_int x = 0; x < xPixelCount; ++x,++offset) {
+				z_buffer[offset] = ZBuffer->GetData(x, y);
+			}
+		}
+	}
+
+	return z_buffer;
 }
 
 void FlexImageFilm::WriteTGAImage(vector<RGBColor> &rgb, vector<float> &alpha, const string &filename)

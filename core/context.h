@@ -161,6 +161,7 @@ public:
 	unsigned char* Framebuffer();
 	float* FloatFramebuffer();
 	float* AlphaBuffer();
+	float* ZBuffer();
 
 	//histogram access
 	void GetHistogramImage(unsigned char *outPixels, u_int width, u_int height, int options);
