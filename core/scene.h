@@ -103,6 +103,7 @@ public:
 	//framebuffer access
 	void UpdateFramebuffer();
 	unsigned char* GetFramebuffer();
+	float* GetFloatFramebuffer();
 	void SaveFLM(const string& filename);
 	void SaveEXR(const string& filename, bool useHalfFloat, bool includeZBuffer, int compressionType, bool tonemapped);
 

@@ -990,6 +990,10 @@ unsigned char* Context::Framebuffer() {
 	return luxCurrentScene->GetFramebuffer();
 }
 
+float* Context::FloatFramebuffer() {
+	return luxCurrentScene->GetFloatFramebuffer();
+}
+
 //histogram access
 void Context::GetHistogramImage(unsigned char *outPixels, u_int width,
 	u_int height, int options)

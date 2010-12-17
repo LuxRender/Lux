@@ -104,6 +104,10 @@ const char * ds_pylux_Context_framebuffer =
 "Returns the current post-processed LDR framebuffer in RGB888 format as a list.\n"
 "It is advisable to call updateFramebuffer() before calling this function.";
 
+const char * ds_pylux_Context_floatframebuffer =
+"Returns the current post-processed LDR framebuffer in float format as a list.\n"
+"It is advisable to call updateFramebuffer() before calling this function.";
+
 const char * ds_pylux_Context_getDefaultParameterValue =
 "";
 

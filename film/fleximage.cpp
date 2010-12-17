@@ -949,6 +949,10 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 			// Copy to framebuffer pixels
 			if ((type & IMAGE_FRAMEBUFFER) && framebuffer) {
 				for (u_int i = 0; i < nPix; i++) {
+					float_framebuffer[3 * i] = rgbcolor[i].c[0];
+					float_framebuffer[3 * i + 1] = rgbcolor[i].c[1];
+					float_framebuffer[3 * i + 2] = rgbcolor[i].c[2];
+
 					framebuffer[3 * i] = static_cast<unsigned char>(Clamp(256 * rgbcolor[i].c[0], 0.f, 255.f));
 					framebuffer[3 * i + 1] = static_cast<unsigned char>(Clamp(256 * rgbcolor[i].c[1], 0.f, 255.f));
 					framebuffer[3 * i + 2] = static_cast<unsigned char>(Clamp(256 * rgbcolor[i].c[2], 0.f, 255.f));
@@ -1129,9 +1133,11 @@ void FlexImageFilm::createFrameBuffer()
 {
 	// allocate pixels
 	unsigned int nPix = xPixelCount * yPixelCount;
+	float_framebuffer = new float[3*nPix];
 	framebuffer = new unsigned char[3*nPix];			// TODO delete data
 
 	// zero it out
+	memset(float_framebuffer,0,sizeof(*float_framebuffer)*3*nPix);
 	memset(framebuffer,0,sizeof(*framebuffer)*3*nPix);
 }
 void FlexImageFilm::updateFrameBuffer()
@@ -1148,6 +1154,14 @@ unsigned char* FlexImageFilm::getFrameBuffer()
 		createFrameBuffer();
 
 	return framebuffer;
+}
+
+float* FlexImageFilm::getFloatFrameBuffer()
+{
+	if (!float_framebuffer)
+		createFrameBuffer();
+
+	return float_framebuffer;
 }
 
 

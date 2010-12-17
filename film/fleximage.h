@@ -56,6 +56,7 @@ public:
 		int reject_warmup, bool debugmode, int outlierk);
 
 	virtual ~FlexImageFilm() {
+		delete[] float_framebuffer;
 		delete[] framebuffer;
 	}	
 
@@ -66,6 +67,7 @@ public:
 	// GUI display methods
 	virtual void updateFrameBuffer();
 	virtual unsigned char* getFrameBuffer();
+	virtual float* getFloatFrameBuffer();
 	virtual void createFrameBuffer();
 	virtual int getldrDisplayInterval() { return displayInterval; }
 
@@ -93,6 +95,7 @@ private:
 	void WriteEXRImage(vector<RGBColor> &rgb, vector<float> &alpha, const string &filename, vector<float> &zbuf);
 
 	// FlexImageFilm Private Data
+	float *float_framebuffer;
 	unsigned char *framebuffer;
 
 	float m_RGB_X_White, d_RGB_X_White;
