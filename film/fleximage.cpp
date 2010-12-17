@@ -59,7 +59,7 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, u_int filtRes
 	int reject_warmup, bool debugmode, int outlierk) :
 	Film(xres, yres, filt, filtRes, crop, filename1, premult, cw_EXR_ZBuf || cw_PNG_ZBuf || cw_TGA_ZBuf, w_resume_FLM, 
 		restart_resume_FLM, haltspp, halttime, reject_warmup, debugmode, outlierk), 
-	framebuffer(NULL), float_framebuffer(NULL), alpha_buffer(NULL),
+	framebuffer(NULL), float_framebuffer(NULL), alpha_buffer(NULL), z_buffer(NULL),
 	writeInterval(wI), displayInterval(dI)
 {
 	colorSpace = ColorSystem(cs_red[0], cs_red[1], cs_green[0], cs_green[1], cs_blue[0], cs_blue[1], whitepoint[0], whitepoint[1], 1.f);
@@ -965,6 +965,9 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 
 void FlexImageFilm::WriteImage(ImageType type)
 {
+	if (!framebuffer || !float_framebuffer || !alpha_buffer || !z_buffer)
+		createFrameBuffer();
+
 	const u_int nPix = xPixelCount * yPixelCount;
 	vector<XYZColor> pixels(nPix);
 	vector<float> alpha(nPix), alphaWeight(nPix, 0.f);
