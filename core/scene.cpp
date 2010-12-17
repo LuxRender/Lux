@@ -66,6 +66,10 @@ float* Scene::GetFloatFramebuffer() {
     return camera->film->getFloatFrameBuffer();
 }
 
+float* Scene::GetAlphaBuffer() {
+    return camera->film->getAlphaBuffer();
+}
+
 // histogram access for GUI
 void Scene::GetHistogramImage(unsigned char *outPixels, u_int width, u_int height, int options){
 	camera->film->getHistogramImage(outPixels, width, height, options);

@@ -56,8 +56,9 @@ public:
 		int reject_warmup, bool debugmode, int outlierk);
 
 	virtual ~FlexImageFilm() {
-		delete[] float_framebuffer;
 		delete[] framebuffer;
+		delete[] float_framebuffer;
+		delete[] alpha_buffer;
 	}	
 
 	virtual void SaveEXR(const string &exrFilename, bool useHalfFloats, bool includeZBuf, int compressionType, bool tonemapped);
@@ -68,6 +69,7 @@ public:
 	virtual void updateFrameBuffer();
 	virtual unsigned char* getFrameBuffer();
 	virtual float* getFloatFrameBuffer();
+	virtual float* getAlphaBuffer();
 	virtual void createFrameBuffer();
 	virtual int getldrDisplayInterval() { return displayInterval; }
 
@@ -95,8 +97,9 @@ private:
 	void WriteEXRImage(vector<RGBColor> &rgb, vector<float> &alpha, const string &filename, vector<float> &zbuf);
 
 	// FlexImageFilm Private Data
-	float *float_framebuffer;
 	unsigned char *framebuffer;
+	float *float_framebuffer;
+	float *alpha_buffer;
 
 	float m_RGB_X_White, d_RGB_X_White;
 	float m_RGB_Y_White, d_RGB_Y_White;

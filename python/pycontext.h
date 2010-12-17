@@ -721,6 +721,19 @@ public:
 		return pyFrameBuffer;
 	}
 
+	boost::python::list alphaBuffer()
+	{
+		boost::python::list pyFrameBuffer;
+		Context::SetActive(context);
+		int nvalues=(luxGetIntAttribute("film", "xResolution")) * (luxGetIntAttribute("film", "yResolution"));
+
+		float* framebuffer = context->AlphaBuffer();
+		//copy the values
+		for(int i=0;i<nvalues;i++)
+			pyFrameBuffer.append(framebuffer[i]);
+		return pyFrameBuffer;
+	}
+
 	boost::python::list getHistogramImage(unsigned int width, unsigned int height, int options)
 	{
 		boost::python::list pyHistogramImage;
@@ -1074,6 +1087,11 @@ void export_PyContext()
 			&PyContext::floatFramebuffer,
 			args("Context"),
 			ds_pylux_Context_floatframebuffer
+		)
+		.def("alphaBuffer",
+			&PyContext::alphaBuffer,
+			args("Context"),
+			ds_pylux_Context_alphabuffer
 		)
 		.def("getDefaultParameterValue",
 			&PyContext::getDefaultParameterValue,

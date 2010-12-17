@@ -160,6 +160,7 @@ public:
 	void UpdateFramebuffer();
 	unsigned char* Framebuffer();
 	float* FloatFramebuffer();
+	float* AlphaBuffer();
 
 	//histogram access
 	void GetHistogramImage(unsigned char *outPixels, u_int width, u_int height, int options);

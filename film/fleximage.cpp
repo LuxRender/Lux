@@ -59,7 +59,7 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, u_int filtRes
 	int reject_warmup, bool debugmode, int outlierk) :
 	Film(xres, yres, filt, filtRes, crop, filename1, premult, cw_EXR_ZBuf || cw_PNG_ZBuf || cw_TGA_ZBuf, w_resume_FLM, 
 		restart_resume_FLM, haltspp, halttime, reject_warmup, debugmode, outlierk), 
-	framebuffer(NULL),
+	framebuffer(NULL), float_framebuffer(NULL), alpha_buffer(NULL),
 	writeInterval(wI), displayInterval(dI)
 {
 	colorSpace = ColorSystem(cs_red[0], cs_red[1], cs_green[0], cs_green[1], cs_blue[0], cs_blue[1], whitepoint[0], whitepoint[1], 1.f);
@@ -1022,6 +1022,7 @@ void FlexImageFilm::WriteImage(ImageType type)
 		if (alphaWeight[pix] > 0.f)
 			alpha[pix] /= alphaWeight[pix];
 		Y += pixels[pix].c[1];
+		alpha_buffer[pix] = alpha[pix];
 	}
 	Y /= nPix;
 	averageLuminance = Y;
@@ -1133,12 +1134,14 @@ void FlexImageFilm::createFrameBuffer()
 {
 	// allocate pixels
 	unsigned int nPix = xPixelCount * yPixelCount;
-	float_framebuffer = new float[3*nPix];
 	framebuffer = new unsigned char[3*nPix];			// TODO delete data
+	float_framebuffer = new float[3*nPix];
+	alpha_buffer = new float[nPix];
 
 	// zero it out
-	memset(float_framebuffer,0,sizeof(*float_framebuffer)*3*nPix);
 	memset(framebuffer,0,sizeof(*framebuffer)*3*nPix);
+	memset(float_framebuffer,0,sizeof(*float_framebuffer)*3*nPix);
+	memset(alpha_buffer,0,sizeof(*alpha_buffer)*nPix);
 }
 void FlexImageFilm::updateFrameBuffer()
 {
@@ -1164,6 +1167,13 @@ float* FlexImageFilm::getFloatFrameBuffer()
 	return float_framebuffer;
 }
 
+float* FlexImageFilm::getAlphaBuffer()
+{
+	if (!alpha_buffer)
+		createFrameBuffer();
+
+	return alpha_buffer;
+}
 
 void FlexImageFilm::WriteTGAImage(vector<RGBColor> &rgb, vector<float> &alpha, const string &filename)
 {
