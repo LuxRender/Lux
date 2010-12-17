@@ -797,6 +797,7 @@ void FlexImageFilm::CheckWriteOuputInterval()
 
 	// Possibly write out in-progress image
 	if (timeToWriteImage) {
+		if (!framebuffer) createFrameBuffer();
 		WriteImage(IMAGE_FILEOUTPUT);
 		// WriteImage can take a very long time to be executed (i.e. by saving
 		// the film. It is better to refresh lastWriteImageTime after the
@@ -1143,6 +1144,7 @@ void FlexImageFilm::createFrameBuffer()
 	memset(float_framebuffer,0,sizeof(*float_framebuffer)*3*nPix);
 	memset(alpha_buffer,0,sizeof(*alpha_buffer)*nPix);
 }
+
 void FlexImageFilm::updateFrameBuffer()
 {
 	if(!framebuffer) {
