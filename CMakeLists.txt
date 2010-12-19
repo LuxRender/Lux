@@ -468,6 +468,7 @@ SET(lux_core_reflection_src
 	core/reflection/bxdf/nulltransmission.cpp
 	core/reflection/bxdf/orennayar.cpp
 	core/reflection/bxdf/schlickbrdf.cpp
+	core/reflection/bxdf/schlickscatter.cpp
 	core/reflection/bxdf/schlicktranslucentbtdf.cpp
 	core/reflection/bxdf/specularreflection.cpp
 	core/reflection/bxdf/speculartransmission.cpp
@@ -596,6 +597,7 @@ SET(lux_materials_src
 	materials/mixmaterial.cpp
 	materials/null.cpp
 	materials/roughglass.cpp
+	materials/scattermaterial.cpp
 	materials/shinymetal.cpp
 	materials/velvet.cpp
 	)
