@@ -70,16 +70,17 @@ bool RGBVolume::Scatter(const Sample &sample, const Ray &ray, float u,
 		isect->dg.p = ray(d);
 		isect->dg.nn = Normal(-ray.d);
 		CoordinateSystem(Vector(isect->dg.nn), &(isect->dg.dpdu), &(isect->dg.dpdv));
-		//isect->primitive = dummy;
-		//isect->material = thismaterial;
+		isect->WorldToObject = Transform();
+		isect->primitive = &primitive;
+		isect->material = &material;
 		isect->interior = this;
 		isect->exterior = this;
-		//isect->arealight = thislight;
+		isect->arealight = NULL; // Update if volumetric emission
 		if (pdf)
-			*pdf = expf(-d * k);
+			*pdf = k * expf(-d * k);
 	} else {
 		if (*pdf)
-			*pdf = 1.f - expf(-(ray.maxt - ray.mint) * k);
+			*pdf = expf(-(ray.maxt - ray.mint) * k);
 	}
 	if (L)
 		*L *= Exp(-Tau(sample.swl, ray));

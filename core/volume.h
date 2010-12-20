@@ -30,6 +30,7 @@
 #include "spectrum.h"
 #include "fresnelgeneral.h"
 #include "color.h"
+#include "materials/scattermaterial.h"
 
 namespace lux
 {
@@ -69,7 +70,8 @@ public:
 class RGBVolume : public Volume {
 public:
 	RGBVolume(const RGBColor &sA, const RGBColor &sS, const RGBColor &l,
-		float gg) : sigA(sA), sigS(sS), le(l), g(gg) { }
+		float gg) : sigA(sA), sigS(sS), le(l), g(gg), material(sS, gg),
+		primitive(&material, this, this) { }
 	virtual ~RGBVolume() { }
 	virtual SWCSpectrum SigmaA(const SpectrumWavelengths &sw,
 		const Point &p, const Vector &) const {
@@ -103,6 +105,8 @@ public:
 private:
 	RGBColor sigA, sigS, le;
 	float g;
+	UniformRGBScatterMaterial material;
+	ScattererPrimitive primitive;
 };
 
 class  Region : public Volume {

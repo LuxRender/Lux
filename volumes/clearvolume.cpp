@@ -28,7 +28,7 @@
 
 using namespace lux;
 
-// HomogeneousVolume Method Definitions
+// ClearVolume Method Definitions
 Volume * ClearVolume::CreateVolume(const Transform &volume2world,
 		const ParamSet &params) {
 	// Initialize common volume region parameters

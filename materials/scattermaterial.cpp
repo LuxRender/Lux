@@ -33,15 +33,14 @@
 
 using namespace lux;
 
-// Matte Method Definitions
+// ScatterMaterial Method Definitions
 BSDF *ScatterMaterial::GetBSDF(MemoryArena &arena,
 	const SpectrumWavelengths &sw,
 	const Intersection &isect, const DifferentialGeometry &dgs) const
 {
 	// Allocate _BSDF_
-	// Evaluate textures for _Matte_ material and allocate BRDF
-	// NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
-	SWCSpectrum r = Kd->Evaluate(sw, dgs).Clamp(0.f, 1.f);
+	// Evaluate textures for _ScatterMaterial_ material and allocate BRDF
+	SWCSpectrum r = Kd->Evaluate(sw, dgs);
 	float g = Clamp(G->Evaluate(sw, dgs), -1.f, 1.f);
 	SchlickScatter *bsdf = ARENA_ALLOC(arena, SchlickScatter)(dgs,
 		isect.dg.nn, isect.exterior, isect.interior, r, g);
@@ -57,6 +56,22 @@ Material* ScatterMaterial::CreateMaterial(const Transform &xform,
 	boost::shared_ptr<Texture<SWCSpectrum> > Kd(mp.GetSWCSpectrumTexture("Kd", RGBColor(.9f)));
 	boost::shared_ptr<Texture<float> > g(mp.GetFloatTexture("g", 0.f));
 	return new ScatterMaterial(Kd, g, mp);
+}
+
+// UniformRGBScatterMaterial Method Definitions
+BSDF *UniformRGBScatterMaterial::GetBSDF(MemoryArena &arena,
+	const SpectrumWavelengths &sw,
+	const Intersection &isect, const DifferentialGeometry &dgs) const
+{
+	// Allocate _BSDF_
+	SWCSpectrum r(sw, Kd);
+	SchlickScatter *bsdf = ARENA_ALLOC(arena, SchlickScatter)(dgs,
+		isect.dg.nn, isect.exterior, isect.interior, r, G);
+
+	// Add ptr to CompositingParams structure
+	bsdf->SetCompositingParams(&compParams);
+
+	return bsdf;
 }
 
 static DynamicLoader::RegisterMaterial<ScatterMaterial> r("scatter");

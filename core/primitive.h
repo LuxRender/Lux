@@ -447,6 +447,49 @@ private:
 	boost::shared_ptr<Volume> exterior, interior;
 };
 
+// ScattererPrimitive Declarations
+class ScattererPrimitive : public Primitive {
+public:
+	// Construction/Destruction
+	ScattererPrimitive(Material *mat, Volume *ex, Volume *in) :
+		material(mat), exterior(ex), interior(in) { }
+	virtual ~ScattererPrimitive() { }
+
+	// General util
+	/**
+	 * Returns the world bounds of this primitive.
+	 */
+	virtual BBox WorldBound() const { return BBox(); }
+	virtual Volume *GetExterior() const { return exterior; }
+	virtual Volume *GetInterior() const { return interior; }
+
+	// Intersection
+	/**
+	 * Returns whether this primitive can be intersected.
+	 */
+	virtual bool CanIntersect() const { return false; }
+
+	// Material
+	/**
+	 * Calculates the shading geometry from the given intersection geometry.
+	 * @param obj2world The object to world transformation to use.
+	 * @param dg        The intersection geometry.
+	 * @param dgShading The destination for the shading geometry.
+	 */
+	virtual void GetShadingGeometry(const Transform &obj2world,
+		const DifferentialGeometry &dg,
+		DifferentialGeometry *dgShading) const { *dgShading = dg; }
+
+	// Sampling
+	/**
+	 * Returns whether this primitive can be sampled.
+	 */
+	virtual bool CanSample() const { return false; }
+private:
+	Material *material;
+	Volume *exterior, *interior;
+};
+
 
 }//namespace lux
 

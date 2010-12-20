@@ -30,6 +30,7 @@ namespace lux
 class HomogeneousVolume {
 public:
 	// HomogeneousVolume Public Methods
+	static Volume *CreateVolume(const Transform &volume2world, const ParamSet &params);
 	static Region *CreateVolumeRegion(const Transform &volume2world, const ParamSet &params);
 };
 

@@ -23,6 +23,8 @@
 // scattermaterial.h*
 #include "lux.h"
 #include "material.h"
+#include "color.h"
+#include "paramset.h"
 
 namespace lux
 {
@@ -45,6 +47,22 @@ private:
 	// ScatterMaterial Private Data
 	boost::shared_ptr<Texture<SWCSpectrum> > Kd;
 	boost::shared_ptr<Texture<float> > G;
+};
+
+// UniformRGBScatterMaterial Class Declarations
+class UniformRGBScatterMaterial : public Material {
+public:
+	// UniformRGBScatterMaterial Public Methods
+	UniformRGBScatterMaterial(const RGBColor &kd, float &g)
+		: Material(ParamSet()), Kd(kd), G(g) { }
+	virtual ~UniformRGBScatterMaterial() { }
+	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
+		const Intersection &isect,
+		const DifferentialGeometry &dgShading) const;
+private:
+	// ScatterMaterial Private Data
+	RGBColor Kd;
+	float G;
 };
 
 }//namespace lux
