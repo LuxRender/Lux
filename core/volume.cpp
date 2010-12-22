@@ -57,18 +57,20 @@ float PhaseSchlick(const Vector &w,
 	const float compkcostheta = 1.f - k * Dot(w, wp);
 	return (1.f - k * k) / (4.f * M_PI * compkcostheta * compkcostheta);
 }
-bool RGBVolume::Scatter(const Sample &sample, const Ray &ray, float u,
-		Intersection *isect, float *pdf, SWCSpectrum *L) const
+bool RGBVolume::Scatter(const Sample &sample, bool scatteredStart,
+	const Ray &ray, float u, Intersection *isect, float *pdf,
+	float *pdfBack, SWCSpectrum *L) const
 {
 	// Determine scattering distance
 	const float k = sigS.Y();
-	const float d = ray.mint - logf(1 - u) / k;
-	bool scatter = d < ray.maxt;
+	const float d = logf(1 - u) / k; //the real distance is ray.mint-d
+	bool scatter = d > ray.mint - ray.maxt;
 	if (scatter) {
 		// The ray is scattered
-		ray.maxt = d;
-		isect->dg.p = ray(d);
+		ray.maxt = ray.mint - d;
+		isect->dg.p = ray(ray.maxt);
 		isect->dg.nn = Normal(-ray.d);
+		isect->dg.scattered = true;
 		CoordinateSystem(Vector(isect->dg.nn), &(isect->dg.dpdu), &(isect->dg.dpdv));
 		isect->WorldToObject = Transform();
 		isect->primitive = &primitive;
@@ -77,10 +79,27 @@ bool RGBVolume::Scatter(const Sample &sample, const Ray &ray, float u,
 		isect->exterior = this;
 		isect->arealight = NULL; // Update if volumetric emission
 		if (pdf)
-			*pdf = k * expf(-d * k);
+			*pdf = k * expf(d * k); //d is negative
+		if (pdfBack) {
+			*pdfBack = expf(d * k);
+			if (scatteredStart)
+				*pdfBack *= k;
+		}
 	} else {
-		if (pdf)
-			*pdf = expf(-(ray.maxt - ray.mint) * k);
+		if (pdf) {
+			*pdf = expf((ray.mint - ray.maxt) * k);
+			// if u==1 we are just checking connectivity
+			// so we give the probability of scattering
+			// at the end point so that we can estimate
+			// the alternate path probability
+			if (isect->dg.scattered && u == 1.f)
+				*pdf *= k;
+		}
+		if (pdfBack) {
+			*pdfBack = expf((ray.mint - ray.maxt) * k);
+			if (scatteredStart)
+				*pdfBack *= k;
+		}
 	}
 	if (L)
 		*L *= Exp(-Tau(sample.swl, ray));
@@ -164,13 +183,14 @@ AggregateRegion::~AggregateRegion() {
 	for (u_int i = 0; i < regions.size(); ++i)
 		delete regions[i];
 }
-bool AggregateRegion::Scatter(const Sample &sample, const Ray &ray, float u,
-		Intersection *isect, float *pdf, SWCSpectrum *L) const
+bool AggregateRegion::Scatter(const Sample &sample, bool scatteredStart,
+	const Ray &ray, float u, Intersection *isect, float *pdf,
+	float *pdfBack, SWCSpectrum *L) const
 {
 	bool scatter = false;
 	for (u_int i = 0; i < regions.size(); ++i)
-		scatter = scatter || regions[i]->Scatter(sample, ray, u, isect,
-			pdf, L);
+		scatter = scatter || regions[i]->Scatter(sample, scatteredStart,
+			ray, u, isect, pdf, pdfBack, L);
 	return scatter;
 }
 

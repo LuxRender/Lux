@@ -228,8 +228,9 @@ static bool evalPath(const Scene &scene, const Sample &sample,
 	const Volume *volume = eyeV.bsdf->GetVolume(ewi);
 	if (!volume)
 		volume = lightV.bsdf->GetVolume(lwo);
-	if (!scene.Connect(sample, volume, eyeV.p, lightV.p, nEye == 1, L,
-		&ltPdf, &etPdfR))
+	if (!scene.Connect(sample, volume, eyeV.bsdf->dgShading.scattered,
+		lightV.bsdf->dgShading.scattered, eyeV.p, lightV.p, nEye == 1,
+		L, &ltPdf, &etPdfR))
 		return false;
 	// Prepare eye vertex for connection
 	const float ecosi = AbsDot(ewi, eyeV.bsdf->ng);
@@ -503,13 +504,14 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 				data = scene.sampler->GetLazyValues(sample,
 					sampleLightOffset, sampleIndex);
 				BidirVertex &v = lightPath[nLight];
-				float spdf;
+				float spdf, spdfR;
 				if (!scene.Intersect(sample,
 					lightPath[nLight - 1].bsdf->GetVolume(ray.d),
+					lightPath[nLight - 1].bsdf->dgShading.scattered,
 					ray, data[4], &isect, &v.bsdf, &spdf,
-					&v.flux))
+					&spdfR, &v.flux))
 					break;
-				v.tPdfR *= spdf;
+				v.tPdfR *= spdfR;
 				v.flux /= spdf;
 				lightPath[nLight - 1].tPdf *= spdf;
 				++nLight;
@@ -623,11 +625,12 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 		data = scene.sampler->GetLazyValues(sample, sampleEyeOffset,
 			sampleIndex);
 		BidirVertex &v = eyePath[nEye];
-		float spdf;
+		float spdf, spdfR;
 		if (!scene.Intersect(sample,
-			eyePath[nEye - 1].bsdf->GetVolume(ray.d), ray, data[4],
-			&isect, &v.bsdf, &spdf, &v.flux)) {
-			v.flux /= spdf;
+			eyePath[nEye - 1].bsdf->GetVolume(ray.d),
+			eyePath[nEye - 1].bsdf->dgShading.scattered, ray, data[4],
+			&isect, &v.bsdf, &spdfR, &spdf, &v.flux)) {
+			v.flux /= spdfR;
 			vector<BidirVertex> path(0);
 			for (u_int lightNumber = 0; lightNumber < scene.lights.size(); ++lightNumber) {
 				const Light *light = scene.lights[lightNumber];
@@ -651,7 +654,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 					DistanceSquared(eyePath[nEye - 1].p, v.p);
 				// Evaluate factors for path weighting
 				v.dARWeight = eyePath[nEye - 1].pdfR *
-					eyePath[nEye - 1].tPdfR * spdf *
+					eyePath[nEye - 1].tPdfR * spdfR *
 					v.coso / eyePath[nEye - 1].d2;
 				v.pdf = v.bsdf->Pdf(sw, Vector(v.bsdf->nn),
 					v.wo);
@@ -684,7 +687,9 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 			// End eye path tracing
 			break;
 		}
-		v.flux /= spdf;
+		v.flux /= spdfR;
+		eyePath[nEye - 1].tPdfR *= spdfR;
+		v.tPdf *= spdf;
 		++nEye;
 
 		// Initialize new intersection vertex

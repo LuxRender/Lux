@@ -78,16 +78,17 @@ public:
 	virtual void Transmittance(const Scene &scene, const Ray &ray,
 		const Sample &sample, float *alpha, SWCSpectrum *const L) const = 0;
 	virtual bool Intersect(const Scene &scene, const Sample &sample,
-		const Volume *volume, const Ray &ray, float u,
-		Intersection *isect, BSDF **bsdf, float *pdf,
-		SWCSpectrum *L) const;
+		const Volume *volume, bool scatteredStart, const Ray &ray,
+		float u, Intersection *isect, BSDF **bsdf, float *pdf,
+		float *pdfBack, SWCSpectrum *L) const;
 	// Used to complete intersection data with LuxRays
 	virtual bool Intersect(const Scene &scene, const Sample &sample,
 		const Volume *volume, const Ray &ray, const luxrays::RayHit &rayHit,
 		Intersection *isect, BSDF **bsdf, SWCSpectrum *L) const;
 	virtual bool Connect(const Scene &scene, const Sample &sample,
-		const Volume *volume, const Point &p0, const Point &p1,
-		bool clip, SWCSpectrum *f, float *pdf, float *pdfR) const;
+		const Volume *volume, bool scatteredStart, bool scatteredEnd,
+		const Point &p0, const Point &p1, bool clip, SWCSpectrum *f,
+		float *pdf, float *pdfR) const;
 	// Used with LuxRays, returns 1 if can connect, -1 if not and 0 if I have
 	// to continue to trace the ray
 	virtual int Connect(const Scene &scene, const Sample &sample,
@@ -104,7 +105,7 @@ SWCSpectrum UniformSampleAllLights(const Scene &scene, const Sample &sample,
 	const float *lightSample, const float *lightNum,
 	const float *bsdfSample, const float *bsdfComponent);
 u_int UniformSampleOneLight(const Scene &scene, const Sample &sample,
-	const Point &p,	const Normal &n, const Vector &wo, BSDF *bsdf,
+	const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
 	const float *lightSample, const float *lightNum,
 	const float *bsdfSample, const float *bsdfComponent, SWCSpectrum *L);
 

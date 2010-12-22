@@ -571,9 +571,9 @@ void PhotonMapPreprocess(const RandomGenerator &rng, const Scene &scene,
 			const Volume *volume = NULL; //FIXME: try to get volume from light
 			BSDF *photonBSDF;
 			u_int nIntersections = 0;
-			while (scene.Intersect(sample, volume,
+			while (scene.Intersect(sample, volume, false,
 				photonRay, 1.f, &photonIsect, &photonBSDF,
-				NULL, &alpha)) {
+				NULL, NULL, &alpha)) {
 				++nIntersections;
 
 				// Handle photon/surface intersection
@@ -869,8 +869,9 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const Scene &scene,
 			// Trace BSDF final gather ray and accumulate radiance
 			Ray bounceRay(p, wi);
 			Intersection gatherIsect;
-			if (scene.Intersect(sample, bsdf->GetVolume(wi),
-				bounceRay, 1.f, &gatherIsect, NULL, NULL, &fr)) {
+			if (scene.Intersect(sample, bsdf->GetVolume(wi), false,
+				bounceRay, 1.f, &gatherIsect, NULL, NULL, NULL,
+				&fr)) {
 				// Compute exitant radiance using precomputed irradiance
 				Normal nGather = gatherIsect.dg.nn;
 				if (Dot(nGather, bounceRay.d) > 0)
@@ -951,8 +952,9 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const Scene &scene,
 
 			Ray bounceRay(p, wi);
 			Intersection gatherIsect;
-			if (scene.Intersect(sample, bsdf->GetVolume(wi),
-				bounceRay, 1.f, &gatherIsect, NULL, NULL, &fr)) {
+			if (scene.Intersect(sample, bsdf->GetVolume(wi), false,
+				bounceRay, 1.f, &gatherIsect, NULL, NULL, NULL,
+				&fr)) {
 				// Compute exitant radiance using precomputed irradiance
 				Normal nGather = gatherIsect.dg.nn;
 				if (Dot(nGather, bounceRay.d) > 0)
@@ -1029,8 +1031,9 @@ SWCSpectrum PhotonMapFinalGather(const Scene &scene, const Sample &sample,
 			// Trace BSDF final gather ray and accumulate radiance
 			Ray bounceRay(p, wi);
 			Intersection gatherIsect;
-			if (scene.Intersect(sample, bsdf->GetVolume(wi),
-				bounceRay, 1.f, &gatherIsect, NULL, NULL, &fr)) {
+			if (scene.Intersect(sample, bsdf->GetVolume(wi), false,
+				bounceRay, 1.f, &gatherIsect, NULL, NULL, NULL,
+				&fr)) {
 				// Compute exitant radiance using precomputed irradiance
 				Normal nGather = gatherIsect.dg.nn;
 				if (Dot(nGather, bounceRay.d) > 0)

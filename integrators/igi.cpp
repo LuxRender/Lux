@@ -147,8 +147,9 @@ void IGIIntegrator::Preprocess(const RandomGenerator &rng, const Scene &scene)
 			Intersection isect;
 			const Volume *volume = NULL; //FIXME: get it from the light
 			u_int nIntersections = 0;
-			while (scene.Intersect(sample, volume, ray, 1.f,
-				&isect, &bsdf, NULL, &alpha) && !alpha.Black()) {
+			while (scene.Intersect(sample, volume, false, ray, 1.f,
+				&isect, &bsdf, NULL, NULL, &alpha) &&
+				!alpha.Black()) {
 				++nIntersections;
 				Vector wo = -ray.d;
 				// Create virtual light at ray intersection point
@@ -192,13 +193,14 @@ u_int IGIIntegrator::Li(const Scene &scene, const Sample &sample) const
 	SWCSpectrum L(0.f), pathThroughput(1.f);
 	float alpha = 1.f;
 	const Volume *volume = NULL;
+	bool scattered = false;
 	for (u_int depth = 0; ; ++depth) {
 		const float *data = scene.sampler->GetLazyValues(sample, sampleOffset, depth);
 		Intersection isect;
 		BSDF *bsdf;
 		float spdf;
-		if (!scene.Intersect(sample, volume, ray, data[1], &isect,
-			&bsdf, &spdf, &pathThroughput)) {
+		if (!scene.Intersect(sample, volume, scattered, ray, data[1],
+			&isect, &bsdf, &spdf, NULL, &pathThroughput)) {
 			pathThroughput /= spdf;
 			// Handle ray with no intersection
 			if (depth == 0)
@@ -212,6 +214,7 @@ u_int IGIIntegrator::Li(const Scene &scene, const Sample &sample) const
 			}
 			break;
 		}
+		scattered = bsdf->dgShading.scattered;
 		pathThroughput /= spdf;
 		Vector wo = -ray.d;
 		const Point &p = bsdf->dgShading.p;
@@ -249,8 +252,9 @@ u_int IGIIntegrator::Li(const Scene &scene, const Sample &sample) const
 				continue;
 			SWCSpectrum Llight = f * vl.GetSWCSpectrum(sw) *
 				(G / nLightPaths);
-			if (scene.Connect(sample, bsdf->GetVolume(wi), p, vl.p,
-				false, &Llight, NULL, NULL)) {
+			if (scene.Connect(sample, bsdf->GetVolume(wi),
+				scattered, false, p, vl.p, false, &Llight, NULL,
+				NULL)) {
 				L += pathThroughput * Llight;
 			}
 		}

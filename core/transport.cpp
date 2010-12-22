@@ -36,8 +36,9 @@ namespace lux
 
 // Integrator Method Definitions
 bool VolumeIntegrator::Intersect(const Scene &scene, const Sample &sample,
-	const Volume *volume, const Ray &ray, float u, Intersection *isect,
-	BSDF **bsdf, float *pdf, SWCSpectrum *L) const
+	const Volume *volume, bool scatteredStart, const Ray &ray, float u,
+	Intersection *isect, BSDF **bsdf, float *pdf, float *pdfBack,
+	SWCSpectrum *L) const
 {
 	bool hit = scene.Intersect(ray, isect);
 	if (hit) {
@@ -54,9 +55,14 @@ bool VolumeIntegrator::Intersect(const Scene &scene, const Sample &sample,
 		}
 	}
 	if (volume)
-		hit |= volume->Scatter(sample, ray, u, isect, pdf, L);
-	else if (pdf)
-		*pdf = 1.f;
+		hit |= volume->Scatter(sample, scatteredStart, ray, u, isect,
+			pdf, pdfBack, L);
+	else {
+		if (pdf)
+			*pdf = 1.f;
+		if (pdfBack)
+			*pdfBack = 1.f;
+	}
 	if (hit) {
 		if (bsdf)
 			*bsdf = isect->GetBSDF(sample.arena, sample.swl, ray);
@@ -67,8 +73,8 @@ bool VolumeIntegrator::Intersect(const Scene &scene, const Sample &sample,
 }
 
 bool VolumeIntegrator::Intersect(const Scene &scene, const Sample &sample,
-	const Volume *volume, const Ray &ray, const luxrays::RayHit &rayHit, Intersection *isect, BSDF **bsdf,
-	SWCSpectrum *L) const
+	const Volume *volume, const Ray &ray, const luxrays::RayHit &rayHit,
+	Intersection *isect, BSDF **bsdf, SWCSpectrum *L) const
 {
 	const bool hit = scene.Intersect(rayHit, isect);
 	if (hit) {
@@ -94,7 +100,8 @@ bool VolumeIntegrator::Intersect(const Scene &scene, const Sample &sample,
 }
 
 bool VolumeIntegrator::Connect(const Scene &scene, const Sample &sample,
-	const Volume *volume, const Point &p0, const Point &p1, bool clip,
+	const Volume *volume, bool scatteredStart, bool scatteredEnd,
+	const Point &p0, const Point &p1, bool clip,
 	SWCSpectrum *f, float *pdf, float *pdfR) const
 {
 	const Vector w = p1 - p0;
@@ -117,10 +124,16 @@ bool VolumeIntegrator::Connect(const Scene &scene, const Sample &sample,
 	// but it's safer to keep it
 	for (u_int i = 0; i < 10000; ++i) {
 		BSDF *bsdf;
-		float spdf;
-		if (!Intersect(scene, sample, volume, ray, 1.f, &isect, &bsdf,
-			&spdf, f))
+		float spdf, spdfBack;
+		isect.dg.scattered = scatteredEnd;
+		if (!Intersect(scene, sample, volume, scatteredStart, ray, 1.f,
+			&isect, &bsdf, &spdf, &spdfBack, f)) {
+		if (pdf)
+			*pdf *= spdf;
+		if (pdfR)
+			*pdfR *= spdfBack;
 			return true;
+		}
 
 		*f *= bsdf->F(sample.swl, d, -d, true, flags);
 		if (f->Black())
@@ -133,7 +146,7 @@ bool VolumeIntegrator::Connect(const Scene &scene, const Sample &sample,
 		if (pdf)
 			*pdf *= bsdf->Pdf(sample.swl, d, -d) * spdf;
 		if (pdfR)
-			*pdfR *= bsdf->Pdf(sample.swl, -d, d) * spdf;
+			*pdfR *= bsdf->Pdf(sample.swl, -d, d) * spdfBack;
 
 		ray.mint = ray.maxt + MachineEpsilon::E(ray.maxt);
 		ray.maxt = maxt;
@@ -227,8 +240,8 @@ SWCSpectrum EstimateDirect(const Scene &scene, const Light &light,
 		const Volume *volume = bsdf->GetVolume(wi0);
 		if (!volume)
 			volume = lightBsdf->GetVolume(-wi0);
-		if (scene.Connect(sample, volume, p, pL, false, &Li, NULL,
-			NULL)) {
+		if (scene.Connect(sample, volume, bsdf->dgShading.scattered,
+			false, p, pL, false, &Li, NULL, NULL)) {
 			const float d2 = wi0.LengthSquared();
 			const Vector wi(wi0 / sqrtf(d2));
 			Li *= lightBsdf->F(sample.swl, Vector(lightBsdf->nn), -wi, false);
@@ -262,8 +275,9 @@ SWCSpectrum EstimateDirect(const Scene &scene, const Light &light,
 			BSDF *ibsdf;
 			const Volume *volume = bsdf->GetVolume(wi);
 			bool lit = false;
-			if (!scene.Intersect(sample, volume, ray, 1.f,
-				&lightIsect, &ibsdf, NULL, &Li))
+			if (!scene.Intersect(sample, volume,
+				bsdf->dgShading.scattered, ray, 1.f,
+				&lightIsect, &ibsdf, NULL, NULL, &Li))
 				lit = light.Le(scene, sample, ray, &lightBsdf,
 					NULL, &lightPdf, &Li);
 			else if (lightIsect.arealight == &light) {

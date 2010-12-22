@@ -63,8 +63,9 @@ public:
 		float step = 1.f, float offset = 0.5f) const = 0;
 	virtual FresnelGeneral Fresnel(const SpectrumWavelengths &sw,
 		const Point &, const Vector &) const = 0;
-	virtual bool Scatter(const Sample &sample, const Ray &ray, float u,
-		Intersection *isect, float *pdf, SWCSpectrum *L) const = 0;
+	virtual bool Scatter(const Sample &sample, bool scatteredStart,
+		const Ray &ray, float u, Intersection *isect, float *pdf,
+		float *pdfBack, SWCSpectrum *L) const = 0;
 };
 
 class RGBVolume : public Volume {
@@ -100,8 +101,9 @@ public:
 		return FresnelGeneral(DIELECTRIC_FRESNEL,
 			SWCSpectrum(1.f), SWCSpectrum(0.f));
 	}
-	virtual bool Scatter(const Sample &sample, const Ray &ray, float u,
-		Intersection *isect, float *pdf, SWCSpectrum *L) const;
+	virtual bool Scatter(const Sample &sample, bool scatteredStart,
+		const Ray &ray, float u, Intersection *isect, float *pdf,
+		float *pdfBack, SWCSpectrum *L) const;
 private:
 	RGBColor sigA, sigS, le;
 	float g;
@@ -170,8 +172,9 @@ public:
 		const Point &p, const Vector &w) const {
 		return volume.Fresnel(sw, p, w);
 	}
-	virtual bool Scatter(const Sample &sample, const Ray &ray, float u,
-		Intersection *isect, float *pdf, SWCSpectrum *L) const {
+	virtual bool Scatter(const Sample &sample, bool scatteredStart,
+		const Ray &ray, float u, Intersection *isect, float *pdf,
+		float *pdfBack, SWCSpectrum *L) const {
 		Ray r(WorldToVolume(ray));
 		float t0;
 		float t1;
@@ -181,7 +184,8 @@ public:
 		r.maxt = min(t1, r.maxt);
 		if (r.maxt <= r.mint)
 			return false;
-		if (!volume.Scatter(sample, r, u, isect, pdf, L))
+		if (!volume.Scatter(sample, scatteredStart, r, u, isect, pdf,
+			pdfBack, L))
 			return false;
 		ray.maxt = r.maxt;
 		Transform VolumeToWorld(WorldToVolume.GetInverse());
@@ -239,30 +243,32 @@ public:
 		const Point &p, const Vector &w) const {
 		return volume.Fresnel(sw, p, w);
 	}
-	virtual bool Scatter(const Sample &sample, const Ray &ray, float u,
-		Intersection *isect, float *pdf, SWCSpectrum *L) const {
+	virtual bool Scatter(const Sample &sample, bool scatteredStart,
+		const Ray &ray, float u, Intersection *isect, float *pdf,
+		float *pdfBack, SWCSpectrum *L) const {
 		if (pdf)
 			*pdf = 1.f;
+		if (pdfBack)
+			*pdfBack = 1.f;
 		const float mint = ray.mint;
 		while (true) {
-			float lpdf;
-			bool scatter = volume.Scatter(sample, ray, u, isect, &lpdf, L);
+			float lpdf, lpdfBack;
+			bool scatter = volume.Scatter(sample, scatteredStart,
+				ray, u, isect, &lpdf, &lpdfBack, L);
 			if (!scatter) {
 				ray.mint = mint;
-				if (pdf)
-					*pdf = 1.f - *pdf * (1.f - lpdf);
+				//TODO compute correct probabilities
 				return false;
 			}
-			if (pdf)
-				*pdf *= lpdf;
+			//TODO update probabilities
 			const float d = Density(ray(ray.maxt));
 			if (d >= u) //FIXME: need to decouple random values
 				break;
-			*pdf *= 1.f - d;
+			//*pdf *= 1.f - d;
 			ray.mint = ray.maxt;
 		}
 		ray.mint = mint;
-		return true;
+		return false; //FIXME scattering disabled for now
 	}
 protected:
 	// DensityVolume Protected Data
@@ -292,8 +298,9 @@ public:
 		return FresnelGeneral(DIELECTRIC_FRESNEL,
 			SWCSpectrum(1.f), SWCSpectrum(0.f));
 	}
-	virtual bool Scatter(const Sample &sample, const Ray &ray, float u,
-		Intersection *isect, float *pdf, SWCSpectrum *L) const;
+	virtual bool Scatter(const Sample &sample, bool scatteredStart,
+		const Ray &ray, float u, Intersection *isect, float *pdf,
+		float *pdfBack, SWCSpectrum *L) const;
 private:
 	// AggregateRegion Private Data
 	vector<Region *> regions;

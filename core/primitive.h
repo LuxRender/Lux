@@ -478,7 +478,10 @@ public:
 	 */
 	virtual void GetShadingGeometry(const Transform &obj2world,
 		const DifferentialGeometry &dg,
-		DifferentialGeometry *dgShading) const { *dgShading = dg; }
+		DifferentialGeometry *dgShading) const {
+		*dgShading = dg;
+		dgShading->scattered = true;
+	}
 
 	// Sampling
 	/**

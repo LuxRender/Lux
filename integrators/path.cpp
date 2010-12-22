@@ -85,7 +85,7 @@ u_int PathIntegrator::Li(const Scene &scene, const Sample &sample) const
 	vector<SWCSpectrum> L(lightGroupCount, 0.f);
 	vector<float> V(lightGroupCount, 0.f);
 	float VContrib = .1f;
-	bool specularBounce = true, specular = true;
+	bool specularBounce = true, specular = true, scattered = false;
 	float alpha = 1.f;
 	float distance = INFINITY;
 	u_int vertexIndex = 0;
@@ -98,8 +98,8 @@ u_int PathIntegrator::Li(const Scene &scene, const Sample &sample) const
 		Intersection isect;
 		BSDF *bsdf;
 		float spdf;
-		if (!scene.Intersect(sample, volume, ray, data[3], &isect,
-			&bsdf, &spdf, &pathThroughput)) {
+		if (!scene.Intersect(sample, volume, scattered, ray, data[3], &isect,
+			&bsdf, &spdf, NULL, &pathThroughput)) {
 			pathThroughput /= spdf;
 			// Dade - now I know ray.maxt and I can call volumeIntegrator
 			SWCSpectrum Lv;
@@ -132,6 +132,7 @@ u_int PathIntegrator::Li(const Scene &scene, const Sample &sample) const
 				alpha = 0.f;
 			break;
 		}
+		scattered = bsdf->dgShading.scattered;
 		pathThroughput /= spdf;
 		if (vertexIndex == 0) {
 			distance = ray.maxt * ray.d.Length();

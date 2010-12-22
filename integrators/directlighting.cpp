@@ -57,8 +57,8 @@ void DirectLightingIntegrator::Preprocess(const RandomGenerator &rng,
 }
 
 u_int DirectLightingIntegrator::LiInternal(const Scene &scene,
-	const Sample &sample, const Volume *volume, const Ray &ray,
-	vector<SWCSpectrum> &L, float *alpha, float &distance,
+	const Sample &sample, const Volume *volume, bool scattered,
+	const Ray &ray, vector<SWCSpectrum> &L, float *alpha, float &distance,
 	u_int rayDepth) const
 {
 	u_int nContribs = 0;
@@ -72,8 +72,8 @@ u_int DirectLightingIntegrator::LiInternal(const Scene &scene,
 	const float *data = scene.sampler->GetLazyValues(sample,scatterOffset,
 		rayDepth);
 	float spdf;
-	if (scene.Intersect(sample, volume, ray, data[0], &isect, &bsdf, &spdf,
-		&Lt)) {
+	if (scene.Intersect(sample, volume, scattered, ray, data[0], &isect,
+		&bsdf, &spdf, NULL, &Lt)) {
 		if (rayDepth == 0)
 			distance = ray.maxt * ray.d.Length();
 
@@ -115,8 +115,9 @@ u_int DirectLightingIntegrator::LiInternal(const Scene &scene,
 				vector<SWCSpectrum> Lr(scene.lightGroups.size(),
 					SWCSpectrum(0.f));
 				u_int nc = LiInternal(scene, sample,
-					bsdf->GetVolume(wi), rd, Lr, alpha,
-					distance, rayDepth + 1);
+					bsdf->GetVolume(wi),
+					bsdf->dgShading.scattered,
+					rd, Lr, alpha, distance, rayDepth + 1);
 				if (nc > 0) {
 					for (u_int i = 0; i < L.size(); ++i)
 						L[i] += Lr[i] * f;
@@ -133,8 +134,9 @@ u_int DirectLightingIntegrator::LiInternal(const Scene &scene,
 				vector<SWCSpectrum> Lr(scene.lightGroups.size(),
 					SWCSpectrum(0.f));
 				u_int nc = LiInternal(scene, sample,
-					bsdf->GetVolume(wi), rd, Lr, alpha,
-					distance, rayDepth + 1);
+					bsdf->GetVolume(wi),
+					bsdf->dgShading.scattered, rd, Lr,
+					alpha, distance, rayDepth + 1);
 				if (nc > 0) {
 					for (u_int i = 0; i < L.size(); ++i)
 						L[i] += Lr[i] * f;
@@ -183,7 +185,7 @@ u_int DirectLightingIntegrator::Li(const Scene &scene,
 	vector<SWCSpectrum> L(scene.lightGroups.size(), SWCSpectrum(0.f));
 	float alpha = 1.f;
 	float distance;
-	u_int nContribs = LiInternal(scene, sample, NULL, ray, L, &alpha,
+	u_int nContribs = LiInternal(scene, sample, NULL, false, ray, L, &alpha,
 		distance, 0);
 
 	for (u_int i = 0; i < scene.lightGroups.size(); ++i)

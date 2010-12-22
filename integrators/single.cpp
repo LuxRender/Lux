@@ -107,9 +107,9 @@ u_int SingleScattering::Li(const Scene &scene, const Ray &ray,
 			SWCSpectrum L;
 			if (light->Sample_L(scene, sample, r.o, u1, u2, u3,
 				&ibsdf, NULL, &pdf, &L)) {
-				if (Connect(scene, sample, NULL, r.o,
-					ibsdf->dgShading.p, false, &L, NULL,
-					NULL))
+				if (Connect(scene, sample, NULL, true, false,
+					r.o, ibsdf->dgShading.p, false, &L,
+					NULL, NULL))
 					*Lv += Tr * ss * L *
 						(vr->P(sw, r.o, w, -wo) *
 						 nLights / pdf);

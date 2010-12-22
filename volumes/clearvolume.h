@@ -68,12 +68,15 @@ public:
 		dg.p = p;
 		return fresnel->Evaluate(sw, dg);
 	}
-	bool Scatter(const Sample &sample, const Ray &ray, float u,
-		Intersection *isect, float *pdf, SWCSpectrum *L) const {
+	bool Scatter(const Sample &sample, bool scatteredStart, const Ray &ray,
+		float u, Intersection *isect, float *pdf, float *pdfBack,
+		SWCSpectrum *L) const {
 		if (L)
 			*L *= Exp(-Tau(sample.swl, ray));
 		if (pdf)
 			*pdf = 1.f;
+		if (pdfBack)
+			*pdfBack = 1.f;
 		return false;
 	}
 	// ClearVolume Public Methods

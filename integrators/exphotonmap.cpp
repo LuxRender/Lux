@@ -170,8 +170,8 @@ u_int ExPhotonIntegrator::Li(const Scene &scene, const Sample &sample) const
 	float alpha = 1.f;
 	switch (renderingMode) {
 		case RM_DIRECTLIGHTING:
-			L = LiDirectLightingMode(scene, sample, NULL, ray,
-				&alpha, 0, true);
+			L = LiDirectLightingMode(scene, sample, NULL, false,
+				ray, &alpha, 0, true);
 			break;
 		case RM_PATH:
 			L = LiPathMode(scene, sample, ray, &alpha);
@@ -187,8 +187,8 @@ u_int ExPhotonIntegrator::Li(const Scene &scene, const Sample &sample) const
 }
 
 SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(const Scene &scene,
-	const Sample &sample, const Volume *volume, const Ray &ray,
-	float *alpha, const u_int reflectionDepth,
+	const Sample &sample, const Volume *volume, bool scattered,
+	const Ray &ray, float *alpha, const u_int reflectionDepth,
 	const bool specularBounce) const 
 {
 	// Compute reflected radiance with photon map
@@ -204,8 +204,8 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(const Scene &scene,
 	BSDF *bsdf;
 	const float *sampleData = scene.sampler->GetLazyValues(sample, sampleOffset, reflectionDepth);
 	float spdf;
-	if (scene.Intersect(sample, volume, ray, sampleData[3], &isect, &bsdf,
-		&spdf, &Lt)) {
+	if (scene.Intersect(sample, volume, scattered, ray, sampleData[3],
+		&isect, &bsdf, &spdf, NULL, &Lt)) {
 		Vector wo = -ray.d;
 
 		const Point &p = bsdf->dgShading.p;
@@ -279,7 +279,8 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(const Scene &scene,
 				// Compute ray differential _rd_ for specular reflection
 				Ray rd(p, wi);
 				L += LiDirectLightingMode(scene, sample,
-					bsdf->GetVolume(wi), rd, alpha,
+					bsdf->GetVolume(wi),
+					bsdf->dgShading.scattered, rd, alpha,
 					reflectionDepth + 1,
 					(sampledType & BSDF_SPECULAR) != 0) * f;
 			}
@@ -318,7 +319,7 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const Scene &scene,
 	Ray ray(r);
 	const SpectrumWavelengths &sw(sample.swl);
 	SWCSpectrum pathThroughput(1.f);
-	bool specularBounce = true, specular = true;
+	bool specularBounce = true, specular = true, scattered = false;
 	const Volume *volume = NULL;
 
 	for (u_int pathLength = 0; ; ++pathLength) {
@@ -328,8 +329,9 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const Scene &scene,
 		Intersection isect;
 		BSDF *bsdf;
 		float spdf;
-		if (!scene.Intersect(sample, volume, ray, sampleData[6], &isect,
-			&bsdf, &spdf, &pathThroughput)) {
+		if (!scene.Intersect(sample, volume, scattered, ray,
+			sampleData[6], &isect, &bsdf, &spdf, NULL,
+			&pathThroughput)) {
 			pathThroughput /= spdf;
 			// Stop path sampling since no intersection was found
 			SWCSpectrum Lv;
@@ -356,6 +358,7 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const Scene &scene,
 				*alpha = 0.f;
 			break;
 		}
+		scattered = bsdf->dgShading.scattered;
 		if (pathLength == 0)
 			r.maxt = ray.maxt;
 
@@ -435,9 +438,9 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const Scene &scene,
 						Intersection gatherIsect;
 						if (scene.Intersect(sample,
 							bsdf->GetVolume(wi),
-							bounceRay, 1.f,
-							&gatherIsect, NULL,
-							NULL, &fr)) {
+							scattered, bounceRay,
+							1.f, &gatherIsect, NULL,
+							NULL, NULL, &fr)) {
 							// Dade - check the distance threshold option, if the intersection
 							// distance is smaller than the threshold, revert to standard path
 							// tracing in order to avoid corner artifacts
