@@ -79,7 +79,7 @@ bool RGBVolume::Scatter(const Sample &sample, const Ray &ray, float u,
 		if (pdf)
 			*pdf = k * expf(-d * k);
 	} else {
-		if (*pdf)
+		if (pdf)
 			*pdf = expf(-(ray.maxt - ray.mint) * k);
 	}
 	if (L)
