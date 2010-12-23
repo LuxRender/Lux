@@ -91,13 +91,13 @@ private:
 	 * Reduce the magnitude on the input number by dividing into kilo- or Mega- units
 	 */
 	inline float magnitude_reduce(const float number) {
-		if (number < 1024.f)
+		if (number < 1000.f)
 			return number;
 
-		if ( number < 1048576.f)
-			return number / 1024.f;
+		if ( number < 1000000.f)
+			return number / 1000.f;
 
-		return number / 1048576.f;
+		return number / 1000000.f;
 	}
 
 	/**

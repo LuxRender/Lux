@@ -33,17 +33,17 @@ namespace lux
 {
 
 // String template to format local only, provides placeholders 1 to 7 and 20, 21
-string StatsData::template_string_local = "%1% - %2%T: %3$0.2f %4%S/p %20$0.2f %21%C/s (%5$0.2f %6%S/s @ %7$0.2f%% Eff)";
+string StatsData::template_string_local = "%1% - %2%T: %3$0.2f %4%S/p  %5$0.0f %6%S/s  %7$0.0f%% Eff  %20$0.0f %21%C/s";
 // String template to format network waiting, provides placeholder 8
-string StatsData::template_string_network_waiting = " - %8%N: Waiting for first update";
+string StatsData::template_string_network_waiting = " - %8%N: Waiting...";
 // String template to format network rendering, provides placeholders 9 to 13 and 22, 23
-string StatsData::template_string_network = " - %8%N: %9%%10$0.2f %11%S/p %22$0.2f %23%C/s (%12$0.2f %13%S/s)";
+string StatsData::template_string_network = " - %8%N: %9%%10$0.2f %11%S/p  %12$0.0f %13%S/s"; // 22, 23 removed to save space
 // String template to format complete stats, provides placeholders 9 and 14 to 17 and 24, 25
-string StatsData::template_string_total = " - Tot: %9%%14$0.2f %15%S/p %24$0.2f %25%C/s (%16$0.2f %17%S/s)";
+string StatsData::template_string_total = " - Tot: %9%%14$0.2f %15%S/p  %16$0.0f %17%S/s"; // 24, 25 removed to save space
 // String template to format percent samples completion, provides placeholder 18
-string StatsData::template_string_haltspp = " - %9%%18$0.2f%% Complete (S/Px)";
+string StatsData::template_string_haltspp = " - %9%%18$0.0f%% Complete (S/Px)";
 // String template to format percent time completion, provides placeholder 19
-string StatsData::template_string_halttime = " - %9%%19$0.2f%% Complete (sec)";
+string StatsData::template_string_halttime = " - %9%%19$0.0f%% Complete (sec)";
 
 StatsData::StatsData(Context *_ctx) :
 	formattedStatsString(""),
