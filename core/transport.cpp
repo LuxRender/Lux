@@ -129,9 +129,9 @@ bool VolumeIntegrator::Connect(const Scene &scene, const Sample &sample,
 		if (!Intersect(scene, sample, volume, scatteredStart, ray, 1.f,
 			&isect, &bsdf, &spdf, &spdfBack, f)) {
 		if (pdf)
-			*pdf *= spdf;
+			*pdf *= spdfBack;
 		if (pdfR)
-			*pdfR *= spdfBack;
+			*pdfR *= spdf;
 			return true;
 		}
 
@@ -144,9 +144,9 @@ bool VolumeIntegrator::Connect(const Scene &scene, const Sample &sample,
 		else
 			volume = isect.interior;
 		if (pdf)
-			*pdf *= bsdf->Pdf(sample.swl, d, -d) * spdf;
+			*pdf *= bsdf->Pdf(sample.swl, d, -d) * spdfBack;
 		if (pdfR)
-			*pdfR *= bsdf->Pdf(sample.swl, -d, d) * spdfBack;
+			*pdfR *= bsdf->Pdf(sample.swl, -d, d) * spdf;
 
 		ray.mint = ray.maxt + MachineEpsilon::E(ray.maxt);
 		ray.maxt = maxt;
