@@ -104,10 +104,10 @@ private:
 	 * Return the magnitude prefix char for kilo- or Mega-
 	 */
 	inline const char* magnitude_prefix(float number) {
-		if (number < 1024.f)
+		if (number < 1000.f)
 			return "";
 
-		if ( number < 1048576.f)
+		if ( number < 1000000.f)
 			return "k";
 
 		return "M";
