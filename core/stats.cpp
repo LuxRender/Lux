@@ -33,7 +33,7 @@ namespace lux
 {
 
 // String template to format local only, provides placeholders 1 to 7 and 20, 21
-string StatsData::template_string_local = "%1% - %2%T: %3$0.2f %4%S/p  %5$0.0f %6%S/s  %7$0.0f%% Eff  %20$0.0f %21%C/s";
+string StatsData::template_string_local = "%1% - %2%T: %3$0.2f %4%S/p  %5$0.0f %6%S/s  %7$0.0f%% Eff  %20$0.2f %21%C/s";
 // String template to format network waiting, provides placeholder 8
 string StatsData::template_string_network_waiting = " - %8%N: Waiting...";
 // String template to format network rendering, provides placeholders 9 to 13 and 22, 23
