@@ -28,8 +28,9 @@ using namespace lux;
 
 SchlickScatter::SchlickScatter(const DifferentialGeometry &dgs,
 	const Normal &ngeom, const Volume *exterior, const Volume *interior,
-	const SWCSpectrum &r, float k) : BSDF(dgs, ngeom, exterior, interior),
-	R(r), g(k)
+	const SWCSpectrum &r, const SWCSpectrum &g) :
+	BSDF(dgs, ngeom, exterior, interior), R(r),
+	k(g * (SWCSpectrum(1.55f) - 0.55f * g * g))
 {
 }
 SWCSpectrum SchlickScatter::F(const SpectrumWavelengths &sw, const Vector &wo,
@@ -37,9 +38,9 @@ SWCSpectrum SchlickScatter::F(const SpectrumWavelengths &sw, const Vector &wo,
 {
 	if (!(flags & BSDF_DIFFUSE))
 		return SWCSpectrum(0.f);
-	const float cost = Dot(wo, wi);
-	return ((1.f - g * g) /
-		(4.f * M_PI * (1.f - g * cost) * (1.f - g * cost))) * R;
+	const SWCSpectrum compcost = SWCSpectrum(1.f) - k * Dot(wo, wi);
+	return R * (SWCSpectrum(1.f) - k * k) /
+		(compcost * compcost * (4.f * M_PI));
 }
 
 bool SchlickScatter::SampleF(const SpectrumWavelengths &sw, const Vector &wo,
@@ -49,13 +50,14 @@ bool SchlickScatter::SampleF(const SpectrumWavelengths &sw, const Vector &wo,
 {
 	if (!(flags & BSDF_DIFFUSE))
 		return false;
+	const float g = k.Filter(sw);
 	const float cost = (2.f * u1 + g - 1.f) / (2.f * g * u1 - g + 1.f);
 	Vector x, y;
 	CoordinateSystem(wo, &x, &y);
 	*wi = SphericalDirection(sqrtf(max(0.f, 1.f - cost * cost)), cost, u2,
 		x, y, wo);
-	*pdf = (1.f - g * g) /
-		(4.f * M_PI * (1.f - g * cost) * (1.f - g * cost));
+	const float compcost = 1.f - g * cost;
+	*pdf = (1.f - g * g) / (compcost * compcost * (4.f * M_PI));
 	if (!(*pdf > 0.f))
 		return false;
 	if (pdfBack)
@@ -71,7 +73,8 @@ float SchlickScatter::Pdf(const SpectrumWavelengths &sw, const Vector &wo,
 {
 	if (!(flags & BSDF_DIFFUSE))
 		return 0.f;
-	const float cost = Dot(wo, wi);
-	 return (1.f - g *g) / (4.f * M_PI * (1.f - g * cost) * (1.f - g * cost));
+	const float g = k.Filter(sw);
+	const float compcost = 1.f - g * Dot(wo, wi);
+	 return (1.f - g * g) / (compcost * compcost * (4.f * M_PI));
 }
 

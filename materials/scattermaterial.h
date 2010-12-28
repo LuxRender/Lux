@@ -34,7 +34,7 @@ class ScatterMaterial : public Material {
 public:
 	// ScatterMaterial Public Methods
 	ScatterMaterial(boost::shared_ptr<Texture<SWCSpectrum> > &kd,
-		boost::shared_ptr<Texture<float> > &g,
+		boost::shared_ptr<Texture<SWCSpectrum> > &g,
 		const ParamSet &mp) : Material(mp), Kd(kd), G(g) { }
 	virtual ~ScatterMaterial() { }
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
@@ -45,8 +45,7 @@ public:
 		const ParamSet &mp);
 private:
 	// ScatterMaterial Private Data
-	boost::shared_ptr<Texture<SWCSpectrum> > Kd;
-	boost::shared_ptr<Texture<float> > G;
+	boost::shared_ptr<Texture<SWCSpectrum> > Kd, G;
 };
 
 // UniformRGBScatterMaterial Class Declarations

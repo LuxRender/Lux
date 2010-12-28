@@ -128,21 +128,17 @@ bool VolumeIntegrator::Connect(const Scene &scene, const Sample &sample,
 		isect.dg.scattered = scatteredEnd;
 		if (!Intersect(scene, sample, volume, scatteredStart, ray, 1.f,
 			&isect, &bsdf, &spdf, &spdfBack, f)) {
-		if (pdf)
-			*pdf *= spdfBack;
-		if (pdfR)
-			*pdfR *= spdf;
+			if (pdf)
+				*pdf *= spdfBack;
+			if (pdfR)
+				*pdfR *= spdf;
 			return true;
 		}
 
 		*f *= bsdf->F(sample.swl, d, -d, true, flags);
 		if (f->Black())
 			return false;
-		const float cost = Dot(bsdf->ng, d);
-		if (cost > 0.f)
-			volume = isect.exterior;
-		else
-			volume = isect.interior;
+		volume = bsdf->GetVolume(d);
 		if (pdf)
 			*pdf *= bsdf->Pdf(sample.swl, d, -d) * spdfBack;
 		if (pdfR)

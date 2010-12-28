@@ -130,8 +130,8 @@ public:
 
 	virtual BBox ObjectBound() const;
 	virtual BBox WorldBound() const;
-	virtual Volume *GetExterior() const { return mesh->GetExterior(); }
-	virtual Volume *GetInterior() const { return mesh->GetInterior(); }
+	virtual const Volume *GetExterior() const { return mesh->GetExterior(); }
+	virtual const Volume *GetInterior() const { return mesh->GetInterior(); }
 
 	virtual bool CanIntersect() const { return true; }
 	virtual bool Intersect(const Ray &ray, Intersection *isect) const;

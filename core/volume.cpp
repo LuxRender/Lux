@@ -62,7 +62,7 @@ bool RGBVolume::Scatter(const Sample &sample, bool scatteredStart,
 	float *pdfBack, SWCSpectrum *L) const
 {
 	// Determine scattering distance
-	const float k = sigS.Y();
+	const float k = sigS.Filter();
 	const float d = logf(1 - u) / k; //the real distance is ray.mint-d
 	bool scatter = d > ray.mint - ray.maxt;
 	if (scatter) {

@@ -36,7 +36,7 @@ public:
 	// SchlickScatter Public Methods
 	SchlickScatter(const DifferentialGeometry &dgs, const Normal &ngeom,
 		const Volume *exterior, const Volume *interior,
-		const SWCSpectrum &R, float g);
+		const SWCSpectrum &R, const SWCSpectrum &g);
 	virtual ~SchlickScatter() { }
 	virtual u_int NumComponents() const { return 1; }
 	virtual u_int NumComponents(BxDFType flags) const {
@@ -63,8 +63,7 @@ public:
 
 protected:
 	// SchlickScatter Private Data
-	SWCSpectrum R;
-	float g;
+	SWCSpectrum R, k;
 };
 
 }//namespace lux

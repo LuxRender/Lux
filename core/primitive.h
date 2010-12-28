@@ -45,8 +45,8 @@ public:
 	 * Returns the world bounds of this primitive.
 	 */
 	virtual BBox WorldBound() const = 0;
-	virtual Volume *GetExterior() const { return NULL; }
-	virtual Volume *GetInterior() const { return NULL; }
+	virtual const Volume *GetExterior() const { return NULL; }
+	virtual const Volume *GetInterior() const { return NULL; }
 	/**
 	 * Refines this primitive to a number of primitives that are intersectable and
 	 * satisfy all the given hints if possible.
@@ -220,8 +220,8 @@ public:
 	virtual ~AreaLightPrimitive() { }
 
 	virtual BBox WorldBound() const { return prim->WorldBound(); };
-	virtual Volume *GetExterior() const { return prim->GetExterior(); }
-	virtual Volume *GetInterior() const { return prim->GetInterior(); }
+	virtual const Volume *GetExterior() const { return prim->GetExterior(); }
+	virtual const Volume *GetInterior() const { return prim->GetInterior(); }
 	virtual void Refine(vector<boost::shared_ptr<Primitive> > &refined,
 		const PrimitiveRefinementHints& refineHints,
 		const boost::shared_ptr<Primitive> &thisPtr);
@@ -297,10 +297,10 @@ public:
 	virtual BBox WorldBound() const  {
 		return InstanceToWorld(instance->WorldBound());
 	}
-	virtual Volume *GetExterior() const {
+	virtual const Volume *GetExterior() const {
 		return exterior ? exterior.get() : instance->GetExterior();
 	}
-	virtual Volume *GetInterior() const {
+	virtual const Volume *GetInterior() const {
 		return interior ? interior.get() : instance->GetInterior();
 	}
 
@@ -390,10 +390,10 @@ public:
 	virtual ~MotionPrimitive() { }
 
 	virtual BBox WorldBound() const;
-	virtual Volume *GetExterior() const {
+	virtual const Volume *GetExterior() const {
 		return exterior ? exterior.get() : instance->GetExterior();
 	}
-	virtual Volume *GetInterior() const {
+	virtual const Volume *GetInterior() const {
 		return interior ? interior.get() : instance->GetInterior();
 	}
 
@@ -451,7 +451,7 @@ private:
 class ScattererPrimitive : public Primitive {
 public:
 	// Construction/Destruction
-	ScattererPrimitive(Material *mat, Volume *ex, Volume *in) :
+	ScattererPrimitive(Material *mat, const Volume *ex, const Volume *in) :
 		material(mat), exterior(ex), interior(in) { }
 	virtual ~ScattererPrimitive() { }
 
@@ -460,8 +460,8 @@ public:
 	 * Returns the world bounds of this primitive.
 	 */
 	virtual BBox WorldBound() const { return BBox(); }
-	virtual Volume *GetExterior() const { return exterior; }
-	virtual Volume *GetInterior() const { return interior; }
+	virtual const Volume *GetExterior() const { return exterior; }
+	virtual const Volume *GetInterior() const { return interior; }
 
 	// Intersection
 	/**
@@ -490,7 +490,7 @@ public:
 	virtual bool CanSample() const { return false; }
 private:
 	Material *material;
-	Volume *exterior, *interior;
+	const Volume *exterior, *interior;
 };
 
 

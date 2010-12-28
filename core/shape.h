@@ -60,8 +60,8 @@ public:
 		interior = v;
 	}
 	Material *GetMaterial() const { return material.get(); }
-	virtual Volume *GetExterior() const { return exterior.get(); }
-	virtual Volume *GetInterior() const { return interior.get(); }
+	virtual const Volume *GetExterior() const { return exterior.get(); }
+	virtual const Volume *GetInterior() const { return interior.get(); }
 
 	virtual BBox WorldBound() const { return ObjectToWorld(ObjectBound()); }
 	virtual void Refine(vector<boost::shared_ptr<Primitive> > &refined,
