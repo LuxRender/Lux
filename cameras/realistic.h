@@ -46,12 +46,12 @@ public:
 		float filmdiag, Film *film);
 	virtual ~RealisticCamera(void);
 	virtual float GenerateRay(const Sample &sample, Ray *) const;
-	virtual bool Sample_W(MemoryArena &arena, const SpectrumWavelengths &sw,
+	virtual bool SampleW(MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Scene &scene, float u1, float u2, float u3,
 		BSDF **bsdf, float *pdf, SWCSpectrum *We) const {
 		return false;
 	}
-	virtual bool Sample_W(MemoryArena &arena, const SpectrumWavelengths &sw,
+	virtual bool SampleW(MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Scene &scene, const Point &p, const Normal &n,
 		float u1, float u2, float u3, BSDF **bsdf, float *pdf,
 		float *pdfDirect, SWCSpectrum *We) const { return false; }

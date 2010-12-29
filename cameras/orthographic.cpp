@@ -96,7 +96,7 @@ void OrthoCamera::AutoFocus(const Scene &scene)
 	}
 }
 
-bool OrthoCamera::Sample_W(MemoryArena &arena, const SpectrumWavelengths &sw,
+bool OrthoCamera::SampleW(MemoryArena &arena, const SpectrumWavelengths &sw,
 	const Scene &scene, float u1, float u2, float u3, BSDF **bsdf,
 	float *pdf, SWCSpectrum *We) const
 {
@@ -110,11 +110,11 @@ bool OrthoCamera::Sample_W(MemoryArena &arena, const SpectrumWavelengths &sw,
 		ARENA_ALLOC(arena, SpecularReflection)(SWCSpectrum(1.f),
 		ARENA_ALLOC(arena, FresnelNoOp)(), 0.f, 0.f), NULL, NULL);
 	*pdf = posPdf;
-	*We = SWCSpectrum(posPdf);
+	*We = SWCSpectrum(1.f);
 	return true;
 }
 
-bool OrthoCamera::Sample_W(MemoryArena &arena, const SpectrumWavelengths &sw,
+bool OrthoCamera::SampleW(MemoryArena &arena, const SpectrumWavelengths &sw,
 	const Scene &scene, const Point &p, const Normal &n,
 	float u1, float u2, float u3,
 	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *We) const

@@ -98,7 +98,7 @@ float SpotLight::Pdf(const Point &p, const Point &po, const Normal &ns) const
 	return 1.f;
 }
 
-bool SpotLight::Sample_L(const Scene &scene, const Sample &sample,
+bool SpotLight::SampleL(const Scene &scene, const Sample &sample,
 	float u1, float u2, float u3, BSDF **bsdf, float *pdf,
 	SWCSpectrum *Le) const
 {
@@ -113,7 +113,7 @@ bool SpotLight::Sample_L(const Scene &scene, const Sample &sample,
 	*Le = Lbase->Evaluate(sample.swl, dg) * gain;
 	return true;
 }
-bool SpotLight::Sample_L(const Scene &scene, const Sample &sample,
+bool SpotLight::SampleL(const Scene &scene, const Sample &sample,
 	const Point &p, float u1, float u2, float u3, BSDF **bsdf, float *pdf,
 	float *pdfDirect, SWCSpectrum *Le) const
 {

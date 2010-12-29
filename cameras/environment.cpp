@@ -65,7 +65,7 @@ void EnvironmentCamera::SampleMotion(float time)
 	pos = CameraToWorld(Point(0,0,0));
 }
 
-bool EnvironmentCamera::Sample_W(MemoryArena &arena,
+bool EnvironmentCamera::SampleW(MemoryArena &arena,
 	const SpectrumWavelengths &sw, const Scene &scene,
 	float u1, float u2, float u3, BSDF **bsdf, float *pdf,
 	SWCSpectrum *We) const
@@ -81,10 +81,10 @@ bool EnvironmentCamera::Sample_W(MemoryArena &arena,
 	*bsdf = ARENA_ALLOC(arena, SingleBSDF)(dg, ns,
 		ARENA_ALLOC(arena, EnvironmentBxDF)(), NULL, NULL);
 	*pdf = 1.f / (2.f * M_PI * M_PI * sinf(theta));
-	*We = SWCSpectrum(*pdf);
+	*We = SWCSpectrum(1.f);
 	return true;
 }
-bool EnvironmentCamera::Sample_W(MemoryArena &arena,
+bool EnvironmentCamera::SampleW(MemoryArena &arena,
 	const SpectrumWavelengths &sw, const Scene &scene,
 	const Point &p, const Normal &n, float u1, float u2, float u3,
 	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *We) const
@@ -98,7 +98,7 @@ bool EnvironmentCamera::Sample_W(MemoryArena &arena,
 		ARENA_ALLOC(arena, EnvironmentBxDF)(), NULL, NULL);
 	*pdf = 1.f / (2.f * M_PI * M_PI * sqrtf(max(0.f, 1.f - ns.y * ns.y)));
 	*pdfDirect = 1.f;
-	*We = SWCSpectrum(*pdf);
+	*We = SWCSpectrum(1.f);
 	return true;
 }
 

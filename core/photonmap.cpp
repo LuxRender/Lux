@@ -551,7 +551,7 @@ void PhotonMapPreprocess(const RandomGenerator &rng, const Scene &scene,
 		BSDF *bsdf;
 		float pdf;
 		SWCSpectrum alpha;
-		if (!light->Sample_L(scene, sample, u[0], u[1], u[2],
+		if (!light->SampleL(scene, sample, u[0], u[1], u[2],
 			&bsdf, &pdf, &alpha))
 			continue;
 		Ray photonRay;
@@ -562,7 +562,7 @@ void PhotonMapPreprocess(const RandomGenerator &rng, const Scene &scene,
 			u[3], u[4], u[5], &alpha2, &pdf2))
 			continue;
 		alpha *= alpha2;
-		alpha /= pdf * lightPdf;
+		alpha /= lightPdf;
 
 		if (!alpha.Black()) {
 			// Follow photon path through scene and record intersections

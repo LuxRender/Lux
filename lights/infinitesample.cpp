@@ -207,7 +207,7 @@ float InfiniteAreaLightIS::Pdf(const Point &p, const Point &po,
 		DistanceSquared(p, po);
 }
 
-bool InfiniteAreaLightIS::Sample_L(const Scene &scene, const Sample &sample,
+bool InfiniteAreaLightIS::SampleL(const Scene &scene, const Sample &sample,
 	float u1, float u2, float u3, BSDF **bsdf, float *pdf,
 	SWCSpectrum *Le) const
 {
@@ -225,11 +225,11 @@ bool InfiniteAreaLightIS::Sample_L(const Scene &scene, const Sample &sample,
 	*bsdf = ARENA_ALLOC(sample.arena, InfiniteISBSDF)(dg, ns,
 		NULL, NULL, *this, WorldToLight);
 	*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
-	*Le = SWCSpectrum(sample.swl, SPDbase) * M_PI;
+	*Le = SWCSpectrum(sample.swl, SPDbase) * (M_PI / *pdf);
 	return true;
 }
 
-bool InfiniteAreaLightIS::Sample_L(const Scene &scene, const Sample &sample,
+bool InfiniteAreaLightIS::SampleL(const Scene &scene, const Sample &sample,
 	const Point &p, float u1, float u2, float u3, BSDF **bsdf, float *pdf,
 	float *pdfDirect, SWCSpectrum *Le) const
 {
@@ -264,7 +264,7 @@ bool InfiniteAreaLightIS::Sample_L(const Scene &scene, const Sample &sample,
 	if (pdf)
 		*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	*pdfDirect *= AbsDot(wi, ns) / (distance * distance);
-	*Le = SWCSpectrum(sample.swl, SPDbase) * M_PI;
+	*Le = SWCSpectrum(sample.swl, SPDbase) * (M_PI / *pdfDirect);
 	return true;
 }
 

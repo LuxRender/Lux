@@ -39,33 +39,37 @@ public:
 		fresnel(fr), absorption(a) { }
 	virtual ~ClearVolume() { }
 	virtual SWCSpectrum SigmaA(const SpectrumWavelengths &sw,
-		const Point &p, const Vector &) const {
-		DifferentialGeometry dg; //FIXME give it as argument
-		dg.p = p;
+		const DifferentialGeometry &dg) const {
 		return fresnel->Evaluate(sw, dg).SigmaA(sw) +
 			absorption->Evaluate(sw, dg);
 	}
-	virtual SWCSpectrum SigmaS(const SpectrumWavelengths &sw, const Point &,
-		const Vector &) const { return SWCSpectrum(0.f); }
-	virtual SWCSpectrum Lve(const SpectrumWavelengths &sw, const Point &,
-		const Vector &) const { return SWCSpectrum(0.f); }
-	virtual float P(const SpectrumWavelengths &, const Point &,
+	virtual SWCSpectrum SigmaS(const SpectrumWavelengths &sw,
+		const DifferentialGeometry &dg) const {
+		return SWCSpectrum(0.f);
+	}
+	virtual SWCSpectrum Lve(const SpectrumWavelengths &sw,
+		const DifferentialGeometry &dg) const {
+		return SWCSpectrum(0.f);
+	}
+	virtual float P(const SpectrumWavelengths &,
+		const DifferentialGeometry &dg,
 		const Vector &, const Vector &) const { return 0.f; }
 	virtual SWCSpectrum SigmaT(const SpectrumWavelengths &sw,
-		const Point &p, const Vector &w) const {
-		return SigmaA(sw, p, w);
+		const DifferentialGeometry &dg) const {
+		return SigmaA(sw, dg);
 	}
 	virtual SWCSpectrum Tau(const SpectrumWavelengths &sw, const Ray &ray,
 		float step = 1.f, float offset = .5f) const {
-		const SWCSpectrum sigma(SigmaT(sw, ray.o, ray.d));
+		DifferentialGeometry dg;
+		dg.p = ray.o;
+		dg.nn = Normal(-ray.d);
+		const SWCSpectrum sigma(SigmaT(sw, dg));
 		if (sigma.Black())
 			return SWCSpectrum(0.f);
 		return sigma * ray.d.Length() * (ray.maxt - ray.mint);
 	}
 	virtual FresnelGeneral Fresnel(const SpectrumWavelengths &sw,
-		const Point &p, const Vector &) const {
-		DifferentialGeometry dg; //FIXME give it as argument
-		dg.p = p;
+		const DifferentialGeometry &dg) const {
 		return fresnel->Evaluate(sw, dg);
 	}
 	bool Scatter(const Sample &sample, bool scatteredStart, const Ray &ray,

@@ -77,7 +77,10 @@ u_int SingleScattering::Li(const Scene &scene, const Ray &ray,
 	float *samp = static_cast<float *>(alloca(3 * N * sizeof(float)));
 	LatinHypercube(*(sample.rng), samp, N, 3);
 	u_int sampOffset = 0;
+	DifferentialGeometry dg;
+	dg.nn = Normal(-ray.d);
 	for (u_int i = 0; i < N; ++i, t0 += step) {
+		dg.p = ray(t0);
 		// Advance to sample at _t0_ and update _T_
 		r.o = ray(t0);
 
@@ -92,11 +95,11 @@ u_int SingleScattering::Li(const Scene &scene, const Ray &ray,
 		}
 
 		// Compute single-scattering source term at _p_
-		*Lv += Tr * vr->Lve(sw, r.o, w);
+		*Lv += Tr * vr->Lve(sw, dg);
 
 		if (scene.lights.size() == 0)
 			continue;
-		const SWCSpectrum ss(vr->SigmaS(sw, r.o, w));
+		const SWCSpectrum ss(vr->SigmaS(sw, dg));
 		if (!ss.Black()) {
 			// Add contribution of _light_ due to scattering at _p_
 			float pdf;
@@ -105,14 +108,14 @@ u_int SingleScattering::Li(const Scene &scene, const Ray &ray,
 				u3 = samp[sampOffset + 2];
 			BSDF *ibsdf;
 			SWCSpectrum L;
-			if (light->Sample_L(scene, sample, r.o, u1, u2, u3,
+			if (light->SampleL(scene, sample, r.o, u1, u2, u3,
 				&ibsdf, NULL, &pdf, &L)) {
 				if (Connect(scene, sample, NULL, true, false,
 					r.o, ibsdf->dgShading.p, false, &L,
 					NULL, NULL))
 					*Lv += Tr * ss * L *
-						(vr->P(sw, r.o, w, -wo) *
-						 nLights / pdf);
+						(vr->P(sw, dg, w, -wo) *
+						 nLights);
 			}
 		}
 		sampOffset += 3;

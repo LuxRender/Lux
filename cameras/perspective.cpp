@@ -206,7 +206,7 @@ void PerspectiveCamera::AutoFocus(const Scene &scene)
 	}
 }
 
-bool PerspectiveCamera::Sample_W(MemoryArena &arena,
+bool PerspectiveCamera::SampleW(MemoryArena &arena,
 	const SpectrumWavelengths &sw, const Scene &scene,
 	float u1, float u2, float u3, BSDF **bsdf, float *pdf,
 	SWCSpectrum *We) const
@@ -224,10 +224,10 @@ bool PerspectiveCamera::Sample_W(MemoryArena &arena,
 	*bsdf = ARENA_ALLOC(arena, PerspectiveBSDF)(dg, normal,
 		NULL, NULL, *this, LensRadius > 0.f, psC);
 	*pdf = posPdf;
-	*We = SWCSpectrum(posPdf);
+	*We = SWCSpectrum(1.f);
 	return true;
 }
-bool PerspectiveCamera::Sample_W(MemoryArena &arena,
+bool PerspectiveCamera::SampleW(MemoryArena &arena,
 	const SpectrumWavelengths &sw, const Scene &scene,
 	const Point &p, const Normal &n, float u1, float u2, float u3,
 	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *We) const
@@ -244,7 +244,7 @@ bool PerspectiveCamera::Sample_W(MemoryArena &arena,
 		NULL, NULL, *this, LensRadius > 0.f, psC);
 	*pdf = posPdf;
 	*pdfDirect = posPdf;
-	*We = SWCSpectrum(posPdf);
+	*We = SWCSpectrum(1.f);
 	return true;
 }
 

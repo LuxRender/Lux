@@ -147,7 +147,7 @@ float ProjectionLight::Pdf(const Point &p, const Point &po,
 {
 	return 1.f;
 }
-bool ProjectionLight::Sample_L(const Scene &scene, const Sample &sample,
+bool ProjectionLight::SampleL(const Scene &scene, const Sample &sample,
 	float u1, float u2, float u3, BSDF **bsdf, float *pdf,
 	SWCSpectrum *Le) const
 {
@@ -163,7 +163,7 @@ bool ProjectionLight::Sample_L(const Scene &scene, const Sample &sample,
 	*Le = Lbase->Evaluate(sample.swl, dg) * gain;
 	return true;
 }
-bool ProjectionLight::Sample_L(const Scene &scene, const Sample &sample,
+bool ProjectionLight::SampleL(const Scene &scene, const Sample &sample,
 	const Point &p, float u1, float u2, float u3, BSDF **bsdf, float *pdf,
 	float *pdfDirect, SWCSpectrum *Le) const
 {

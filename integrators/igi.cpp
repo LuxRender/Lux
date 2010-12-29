@@ -128,7 +128,7 @@ void IGIIntegrator::Preprocess(const RandomGenerator &rng, const Scene &scene)
 			BSDF *bsdf;
 			float pdf;
 			SWCSpectrum alpha;
-			if (!light->Sample_L(scene, sample,
+			if (!light->SampleL(scene, sample,
 				lightSamp0[2 * sampOffset ],
 				lightSamp0[2 * sampOffset + 1],
 				lightSamp0b[sampOffset], &bsdf, &pdf, &alpha))
@@ -143,7 +143,7 @@ void IGIIntegrator::Preprocess(const RandomGenerator &rng, const Scene &scene)
 				lightSamp1b[sampOffset], &f, &pdf2))
 				continue;
 			alpha *= f;
-			alpha /= pdf * lightPdf;
+			alpha /= lightPdf;
 			Intersection isect;
 			const Volume *volume = NULL; //FIXME: get it from the light
 			u_int nIntersections = 0;

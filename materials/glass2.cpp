@@ -42,11 +42,10 @@ BSDF *Glass2::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 	// Allocate _BSDF_
 	Fresnel *fresnel;
 	if (isect.exterior) {
-		const FresnelGeneral fre(isect.exterior->Fresnel(sw, dgs.p,
-			Vector(dgs.nn)));
+		const FresnelGeneral fre(isect.exterior->Fresnel(sw, dgs));
 		if (isect.interior) {
 			const FresnelGeneral fri(isect.interior->Fresnel(sw,
-				dgs.p, Vector(dgs.nn)));
+				dgs));
 			SWCSpectrum fer, fir, f;
 			fre.ComplexEvaluate(sw, &fer, &f);
 			fri.ComplexEvaluate(sw, &fir, &f);
@@ -62,7 +61,7 @@ BSDF *Glass2::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 		}
 	} else if (isect.interior)
 		fresnel = ARENA_ALLOC(arena, FresnelGeneral)
-			(isect.interior->Fresnel(sw, dgs.p, Vector(dgs.nn)));
+			(isect.interior->Fresnel(sw, dgs));
 	else
 		fresnel = ARENA_ALLOC(arena, FresnelDielectric)(1.f,
 			SWCSpectrum(1.f), SWCSpectrum(0.f));

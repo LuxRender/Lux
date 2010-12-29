@@ -501,7 +501,7 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 				float lightPdf;
 				SWCSpectrum Li;
 				BSDF *lightBsdf;
-				if (light.Sample_L(scene, state->sample, p, lightSample0, lightSample1, lightSample2,
+				if (light.SampleL(scene, state->sample, p, lightSample0, lightSample1, lightSample2,
 					&lightBsdf, NULL, &lightPdf, &Li)) {
 					const Point &pL(lightBsdf->dgShading.p);
 					const Vector wi0(pL - p);
@@ -517,11 +517,10 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 								MachineEpsilon::E(length));
 
 						if (shadowRayEpsilon < length * .5f) {
-							const float lightPdf2 = lightPdf * d2;
-							Li *= PowerHeuristic(1, lightPdf2 / AbsDot(wi, lightBsdf->nn), 1, bsdf->Pdf(sw, wo, wi));
+							Li *= PowerHeuristic(1, lightPdf * d2 / AbsDot(wi, lightBsdf->nn), 1, bsdf->Pdf(sw, wo, wi));
 
 							// Store light's contribution
-							state->Ld[0] = state->pathThroughput * Li / lightPdf2;
+							state->Ld[0] = state->pathThroughput * Li / d2;
 							state->Vd[0] = state->Ld[0].Filter(sw) * state->VContrib;
 							state->LdGroup[0] = light.group;
 

@@ -46,10 +46,10 @@ public:
 		SWCSpectrum *L) const;
 	virtual float Pdf(const Point &p, const Point &po,
 		const Normal &ns) const;
-	virtual bool Sample_L(const Scene &scene, const Sample &sample,
+	virtual bool SampleL(const Scene &scene, const Sample &sample,
 		float u1, float u2, float u3, BSDF **bsdf, float *pdf,
 		SWCSpectrum *Le) const;
-	virtual bool Sample_L(const Scene &scene, const Sample &sample,
+	virtual bool SampleL(const Scene &scene, const Sample &sample,
 		const Point &p, float u1, float u2, float u3, BSDF **bsdf,
 		float *pdf, float *pdfDirect, SWCSpectrum *Le) const;
 	

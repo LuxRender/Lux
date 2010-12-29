@@ -229,7 +229,7 @@ SWCSpectrum EstimateDirect(const Scene &scene, const Light &light,
 	float lightPdf;
 	SWCSpectrum Li;
 	BSDF *lightBsdf;
-	if (light.Sample_L(scene, sample, p, ls1, ls2, ls3,
+	if (light.SampleL(scene, sample, p, ls1, ls2, ls3,
 		&lightBsdf, NULL, &lightPdf, &Li)) {
 		const Point &pL(lightBsdf->dgShading.p);
 		const Vector wi0(pL - p);
@@ -243,16 +243,15 @@ SWCSpectrum EstimateDirect(const Scene &scene, const Light &light,
 			Li *= lightBsdf->F(sample.swl, Vector(lightBsdf->nn), -wi, false);
 			Li *= bsdf->F(sample.swl, wi, wo, true);
 			if (!Li.Black()) {
-				const float lightPdf2 = lightPdf * d2;
 				if (mis) {
 					const float bsdfPdf = bsdf->Pdf(sample.swl,
 						wo, wi);
-					Li *= PowerHeuristic(1, lightPdf2 /
+					Li *= PowerHeuristic(1, lightPdf * d2 /
 						AbsDot(wi, lightBsdf->nn),
 						1, bsdfPdf);
 				}
 				// Add light's contribution
-				Ld += Li / lightPdf2;
+				Ld += Li / d2;
 			}
 		}
 	}

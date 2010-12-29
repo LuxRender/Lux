@@ -63,8 +63,11 @@ u_int EmissionIntegrator::Li(const Scene &scene, const Ray &ray,
 	SWCSpectrum Tr(1.f);
 	const Vector w = -ray.d;
 	t0 += sample.oneD[scatterSampleOffset][0] * step;
+	DifferentialGeometry dg;
+	dg.nn = Normal(-ray.d);
 	Ray r(ray(t0), ray.d * (step / ray.d.Length()), 0.f, 1.f);
 	for (u_int i = 0; i < N; ++i, t0 += step) {
+		dg.p = ray(t0);
 		// Advance to sample at _t0_ and update _T_
 		r.o = ray(t0);
 		// Ray is already offset above, no need to do it again
@@ -78,7 +81,7 @@ u_int EmissionIntegrator::Li(const Scene &scene, const Ray &ray,
 			Tr /= continueProb;
 		}
 		// Compute emission-only source term at _p_
-		*Lv += Tr * vr->Lve(sample.swl, r.o, w);
+		*Lv += Tr * vr->Lve(sample.swl, dg);
 	}
 	*Lv *= step;
 	return group;

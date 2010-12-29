@@ -39,37 +39,37 @@ public:
 		primitive(&material, this, this), material(s, g_, ParamSet()) { }
 	virtual ~HomogeneousVolume() { }
 	virtual SWCSpectrum SigmaA(const SpectrumWavelengths &sw,
-		const Point &p, const Vector &) const {
-		DifferentialGeometry dg; //FIXME give it as argument
-		dg.p = p;
+		const DifferentialGeometry &dg) const {
 		return fresnel->Evaluate(sw, dg).SigmaA(sw) +
 			sigmaA->Evaluate(sw, dg);
 	}
 	virtual SWCSpectrum SigmaS(const SpectrumWavelengths &sw,
-		const Point &p, const Vector &) const {
-		DifferentialGeometry dg; //FIXME give it as argument
-		dg.p = p;
+		const DifferentialGeometry &dg) const {
 		return sigmaS->Evaluate(sw, dg);
 	}
-	virtual SWCSpectrum Lve(const SpectrumWavelengths &sw, const Point &,
-		const Vector &) const { return SWCSpectrum(0.f); }
-	virtual float P(const SpectrumWavelengths &, const Point &,
+	virtual SWCSpectrum Lve(const SpectrumWavelengths &sw,
+		const DifferentialGeometry &dg) const {
+		return SWCSpectrum(0.f);
+	}
+	virtual float P(const SpectrumWavelengths &,
+		const DifferentialGeometry &dg,
 		const Vector &, const Vector &) const { return 0.f; }
 	virtual SWCSpectrum SigmaT(const SpectrumWavelengths &sw,
-		const Point &p, const Vector &w) const {
-		return SigmaA(sw, p, w) + SigmaS(sw, p, w);
+		const DifferentialGeometry &dg) const {
+		return SigmaA(sw, dg) + SigmaS(sw, dg);
 	}
 	virtual SWCSpectrum Tau(const SpectrumWavelengths &sw, const Ray &ray,
 		float step = 1.f, float offset = .5f) const {
-		const SWCSpectrum sigma(SigmaT(sw, ray.o, ray.d));
+		DifferentialGeometry dg;
+		dg.p = ray.o;
+		dg.nn = Normal(-ray.d);
+		const SWCSpectrum sigma(SigmaT(sw, dg));
 		if (sigma.Black())
 			return SWCSpectrum(0.f);
 		return sigma * ray.d.Length() * (ray.maxt - ray.mint);
 	}
 	virtual FresnelGeneral Fresnel(const SpectrumWavelengths &sw,
-		const Point &p, const Vector &) const {
-		DifferentialGeometry dg; //FIXME give it as argument
-		dg.p = p;
+		const DifferentialGeometry &dg) const {
 		return fresnel->Evaluate(sw, dg);
 	}
 	bool Scatter(const Sample &sample, bool scatteredStart, const Ray &ray,
@@ -78,7 +78,7 @@ public:
 		// Determine scattering distance
 		const float k = sigmaS->Filter();
 		const float d = logf(1 - u) / k; //the real distance is ray.mint-d
-		bool scatter = d > ray.mint - ray.maxt;
+		const bool scatter = d > ray.mint - ray.maxt;
 		if (scatter) {
 			// The ray is scattered
 			ray.maxt = ray.mint - d;
@@ -92,28 +92,16 @@ public:
 			isect->interior = this;
 			isect->exterior = this;
 			isect->arealight = NULL; // Update if volumetric emission
-			if (pdf)
-				*pdf = k * expf(d * k); //d is negative
-			if (pdfBack) {
-				*pdfBack = expf(d * k);
+		}
+		if (pdf) {
+			*pdf = expf((ray.mint - ray.maxt) * k);
+			if (isect->dg.scattered)
+				*pdf *= k;
+		}
+		if (pdfBack) {
+			*pdfBack = expf((ray.mint - ray.maxt) * k);
 				if (scatteredStart)
 					*pdfBack *= k;
-			}
-		} else {
-			if (pdf) {
-				*pdf = expf((ray.mint - ray.maxt) * k);
-				// if u==1 we are just checking connectivity
-				// so we give the probability of scattering
-				// at the end point so that we can estimate
-				// the alternate path probability
-				if (isect->dg.scattered && u == 1.f)
-					*pdf *= k;
-			}
-			if (pdfBack) {
-				*pdfBack = expf((ray.mint - ray.maxt) * k);
-				if (scatteredStart)
-					*pdfBack *= k;
-			}
 		}
 		if (L)
 			*L *= Exp(-Tau(sample.swl, ray));

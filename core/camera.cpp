@@ -84,7 +84,7 @@ bool Camera::GenerateRay(MemoryArena &arena, const SpectrumWavelengths &sw,
 	float pdf;
 	// Sample ray origin
 	//FIXME: Replace dummy .5f by a sampled value if needed
-	if (!Sample_W(arena, sw, scene, o1, o2, .5f, &bsdf, &pdf, &We))
+	if (!SampleW(arena, sw, scene, o1, o2, .5f, &bsdf, &pdf, &We))
 		return false;
 	ray->o = bsdf->dgShading.p;
 

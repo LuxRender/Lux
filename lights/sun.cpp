@@ -229,7 +229,7 @@ float SunLight::Pdf(const Point &p, const Point &po, const Normal &ns) const
 		return INV_PI * cosTheta / (sin2ThetaMax * DistanceSquared(p, po));
 }
 
-bool SunLight::Sample_L(const Scene &scene, const Sample &sample,
+bool SunLight::SampleL(const Scene &scene, const Sample &sample,
 	float u1, float u2, float u3, BSDF **bsdf, float *pdf,
 	SWCSpectrum *Le) const
 {
@@ -287,11 +287,11 @@ bool SunLight::Sample_L(const Scene &scene, const Sample &sample,
 	*bsdf = ARENA_ALLOC(sample.arena, SunBSDF)(dg, ns, NULL, NULL,
 		sin2ThetaMax);
 
-	*Le = SWCSpectrum(sample.swl, *LSPD) * (M_PI * sin2ThetaMax);
+	*Le = SWCSpectrum(sample.swl, *LSPD) * (M_PI * sin2ThetaMax / *pdf);
 	return true;
 }
 
-bool SunLight::Sample_L(const Scene &scene, const Sample &sample,
+bool SunLight::SampleL(const Scene &scene, const Sample &sample,
 	const Point &p, float u1, float u2, float u3, BSDF **bsdf, float *pdf,
 	float *pdfDirect, SWCSpectrum *Le) const
 {
@@ -343,7 +343,7 @@ bool SunLight::Sample_L(const Scene &scene, const Sample &sample,
 	if (cosThetaMax < 1.f)
 		*pdfDirect *= AbsDot(wi, ns) / DistanceSquared(p, ps);
 
-	*Le = SWCSpectrum(sample.swl, *LSPD) * (M_PI * sin2ThetaMax);
+	*Le = SWCSpectrum(sample.swl, *LSPD) * (M_PI * sin2ThetaMax / *pdfDirect);
 	return true;
 }
 

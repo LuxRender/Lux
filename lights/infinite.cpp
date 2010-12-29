@@ -354,7 +354,7 @@ float InfiniteAreaLight::Pdf(const Point &p, const Point &po,
 	}
 }
 
-bool InfiniteAreaLight::Sample_L(const Scene &scene, const Sample &sample,
+bool InfiniteAreaLight::SampleL(const Scene &scene, const Sample &sample,
 	float u1, float u2, float u3, BSDF **bsdf, float *pdf,
 	SWCSpectrum *Le) const
 {
@@ -417,10 +417,10 @@ bool InfiniteAreaLight::Sample_L(const Scene &scene, const Sample &sample,
 		}
 		*pdf *= INV_TWOPI / nrPortalShapes;
 	}
-	*Le = SWCSpectrum(sample.swl, SPDbase) * M_PI;
+	*Le = SWCSpectrum(sample.swl, SPDbase) * (M_PI / *pdf);
 	return true;
 }
-bool InfiniteAreaLight::Sample_L(const Scene &scene, const Sample &sample,
+bool InfiniteAreaLight::SampleL(const Scene &scene, const Sample &sample,
 	const Point &p, float u1, float u2, float u3,
 	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *Le) const
 {
@@ -508,7 +508,7 @@ bool InfiniteAreaLight::Sample_L(const Scene &scene, const Sample &sample,
 		*pdfDirect /= nrPortalShapes;
 	}
 	*pdfDirect *= AbsDot(wi, ns) / (distance * distance);
-	*Le = SWCSpectrum(sample.swl, SPDbase) * M_PI;
+	*Le = SWCSpectrum(sample.swl, SPDbase) * (M_PI / *pdfDirect);
 	return true;
 }
 

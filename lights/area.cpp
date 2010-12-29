@@ -198,7 +198,7 @@ float AreaLight::Pdf(const Point &p, const Point &po, const Normal &ns) const
 	return prim->Pdf(p, po);
 }
 
-bool AreaLight::Sample_L(const Scene &scene, const Sample &sample,
+bool AreaLight::SampleL(const Scene &scene, const Sample &sample,
 	float u1, float u2, float u3, BSDF **bsdf, float *pdf,
 	SWCSpectrum *Le) const
 {
@@ -213,13 +213,13 @@ bool AreaLight::Sample_L(const Scene &scene, const Sample &sample,
 			prim->GetExterior(), prim->GetInterior());
 	*pdf = prim->Pdf(dg.p);
 	if (*pdf > 0.f) {
-		*Le = this->Le->Evaluate(sample.swl, dg) * (gain * M_PI);
+		*Le = this->Le->Evaluate(sample.swl, dg) * (gain * M_PI / *pdf);
 		return true;
 	}
 	*Le = 0.f;
 	return false;
 }
-bool AreaLight::Sample_L(const Scene &scene, const Sample &sample,
+bool AreaLight::SampleL(const Scene &scene, const Sample &sample,
 	const Point &p, float u1, float u2, float u3,
 	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *Le) const
 {
@@ -231,15 +231,14 @@ bool AreaLight::Sample_L(const Scene &scene, const Sample &sample,
 	if (pdfd > 0.f) {
 		if (pdf)
 			*pdf = prim->Pdf(dg.p);
-		if (pdfDirect)
-			*pdfDirect = pdfd;
+		*pdfDirect = pdfd;
 		if(func)
 			*bsdf = ARENA_ALLOC(sample.arena, GonioAreaBSDF)(dg, dg.nn,
 				prim->GetExterior(), prim->GetInterior(), func);
 		else
 			*bsdf = ARENA_ALLOC(sample.arena, UniformAreaBSDF)(dg, dg.nn,
 				prim->GetExterior(), prim->GetInterior());
-		*Le = this->Le->Evaluate(sample.swl, dg) * (gain * M_PI);
+		*Le = this->Le->Evaluate(sample.swl, dg) * (gain * M_PI / pdfd);
 		return true;
 	}
 	*Le = 0.f;

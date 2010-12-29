@@ -112,50 +112,50 @@ AggregateRegion::AggregateRegion(const vector<Region *> &r)
 		bound = Union(bound, regions[i]->WorldBound());
 }
 SWCSpectrum AggregateRegion::SigmaA(const SpectrumWavelengths &sw,
-	const Point &p, const Vector &w) const
+	const DifferentialGeometry &dg) const
 {
 	SWCSpectrum s(0.f);
 	for (u_int i = 0; i < regions.size(); ++i)
-		s += regions[i]->SigmaA(sw, p, w);
+		s += regions[i]->SigmaA(sw, dg);
 	return s;
 }
 SWCSpectrum AggregateRegion::SigmaS(const SpectrumWavelengths &sw,
-	const Point &p, const Vector &w) const
+	const DifferentialGeometry &dg) const
 {
 	SWCSpectrum s(0.f);
 	for (u_int i = 0; i < regions.size(); ++i)
-		s += regions[i]->SigmaS(sw, p, w);
+		s += regions[i]->SigmaS(sw, dg);
 	return s;
 }
-SWCSpectrum AggregateRegion::Lve(const SpectrumWavelengths &sw, const Point &p,
-	const Vector &w) const
+SWCSpectrum AggregateRegion::Lve(const SpectrumWavelengths &sw,
+	const DifferentialGeometry &dg) const
 {
 	SWCSpectrum L(0.f);
 	for (u_int i = 0; i < regions.size(); ++i)
-		L += regions[i]->Lve(sw, p, w);
+		L += regions[i]->Lve(sw, dg);
 	return L;
 }
-float AggregateRegion::P(const SpectrumWavelengths &sw, const Point &p,
-	const Vector &w, const Vector &wp) const
+float AggregateRegion::P(const SpectrumWavelengths &sw,
+	const DifferentialGeometry &dg, const Vector &w, const Vector &wp) const
 {
 	float ph = 0.f, sumWt = 0.f;
 	for (u_int i = 0; i < regions.size(); ++i) {
-		const float sigt = regions[i]->SigmaT(sw, p, w).Y(sw);
+		const float sigt = regions[i]->SigmaT(sw, dg).Filter(sw);
 		if (sigt > 0.f) {
-			const float wt = regions[i]->SigmaA(sw, p, w).Y(sw) /
+			const float wt = regions[i]->SigmaA(sw, dg).Filter(sw) /
 				sigt;
 			sumWt += wt;
-			ph += wt * regions[i]->P(sw, p, w, wp);
+			ph += wt * regions[i]->P(sw, dg, w, wp);
 		}
 	}
 	return ph / sumWt;
 }
 SWCSpectrum AggregateRegion::SigmaT(const SpectrumWavelengths &sw,
-	const Point &p, const Vector &w) const
+	const DifferentialGeometry &dg) const
 {
 	SWCSpectrum s(0.f);
 	for (u_int i = 0; i < regions.size(); ++i)
-		s += regions[i]->SigmaT(sw, p, w);
+		s += regions[i]->SigmaT(sw, dg);
 	return s;
 }
 SWCSpectrum AggregateRegion::Tau(const SpectrumWavelengths &sw, const Ray &ray,
