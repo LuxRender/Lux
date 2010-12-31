@@ -36,7 +36,7 @@ public:
 		boost::shared_ptr<Texture<SWCSpectrum> > &s,
 		boost::shared_ptr<Texture<SWCSpectrum> > &g_) :
 		fresnel(fr), sigmaA(a), sigmaS(s), g(g_),
-		primitive(&material, this, this), material(s, g_, ParamSet()) { }
+		primitive(&material, this, this), material(this, g_) { }
 	virtual ~HomogeneousVolume() { }
 	virtual SWCSpectrum SigmaA(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
@@ -92,6 +92,8 @@ public:
 			isect->interior = this;
 			isect->exterior = this;
 			isect->arealight = NULL; // Update if volumetric emission
+			if (L)
+				*L *= SigmaT(sample.swl, isect->dg);
 		}
 		if (pdf) {
 			*pdf = expf((ray.mint - ray.maxt) * k);
@@ -115,7 +117,7 @@ private:
 	boost::shared_ptr<Texture<FresnelGeneral> > fresnel;
 	boost::shared_ptr<Texture<SWCSpectrum> > sigmaA, sigmaS, g;
 	ScattererPrimitive primitive;
-	ScatterMaterial material;
+	VolumeScatterMaterial material;
 };
 
 }//namespace lux

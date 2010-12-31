@@ -20,6 +20,8 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
+#ifndef LUX_MATERIALS_SCATTERMATERIAL_H
+#define LUX_MATERIALS_SCATTERMATERIAL_H
 // scattermaterial.h*
 #include "lux.h"
 #include "material.h"
@@ -52,17 +54,35 @@ private:
 class UniformRGBScatterMaterial : public Material {
 public:
 	// UniformRGBScatterMaterial Public Methods
-	UniformRGBScatterMaterial(const RGBColor &kd, float &g)
-		: Material(ParamSet()), Kd(kd), G(g) { }
+	UniformRGBScatterMaterial(const RGBColor &ks, const RGBColor &ka,
+		float &g_) : Material(ParamSet()), kS(ks), kA(ka), g(g_) { }
 	virtual ~UniformRGBScatterMaterial() { }
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,
 		const DifferentialGeometry &dgShading) const;
 private:
-	// ScatterMaterial Private Data
-	RGBColor Kd;
-	float G;
+	// UniformRGBScatterMaterial Private Data
+	RGBColor kS, kA;
+	float g;
+};
+
+// VolumeScatterMaterial Class Declarations
+class VolumeScatterMaterial : public Material {
+public:
+	// VolumeScatterMaterial Public Methods
+	VolumeScatterMaterial(const Volume *v,
+		boost::shared_ptr<Texture<SWCSpectrum> > &g)
+		: Material(ParamSet()), volume(v), G(g) { }
+	virtual ~VolumeScatterMaterial() { }
+	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
+		const Intersection &isect,
+		const DifferentialGeometry &dgShading) const;
+private:
+	// VolumeScatterMaterial Private Data
+	const Volume *volume;
+	boost::shared_ptr<Texture<SWCSpectrum> > G;
 };
 
 }//namespace lux
 
+#endif //LUX_MATERIALS_SCATTERMATERIAL_H

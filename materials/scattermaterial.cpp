@@ -28,6 +28,7 @@
 #include "schlickscatter.h"
 #include "texture.h"
 #include "color.h"
+#include "volume.h"
 #include "paramset.h"
 #include "dynload.h"
 
@@ -64,9 +65,31 @@ BSDF *UniformRGBScatterMaterial::GetBSDF(MemoryArena &arena,
 	const Intersection &isect, const DifferentialGeometry &dgs) const
 {
 	// Allocate _BSDF_
-	SWCSpectrum r(sw, Kd);
+	SWCSpectrum r(sw, kS);
+	if (!r.Black())
+		r /= r + SWCSpectrum(sw, kA);
 	SchlickScatter *bsdf = ARENA_ALLOC(arena, SchlickScatter)(dgs,
-		isect.dg.nn, isect.exterior, isect.interior, r, SWCSpectrum(G));
+		isect.dg.nn, isect.exterior, isect.interior, r, SWCSpectrum(g));
+
+	// Add ptr to CompositingParams structure
+	bsdf->SetCompositingParams(&compParams);
+
+	return bsdf;
+}
+
+// VolumeScatterMaterial Method Definitions
+BSDF *VolumeScatterMaterial::GetBSDF(MemoryArena &arena,
+	const SpectrumWavelengths &sw,
+	const Intersection &isect, const DifferentialGeometry &dgs) const
+{
+	// Allocate _BSDF_
+	// Evaluate textures for _ScatterMaterial_ material and allocate BRDF
+	SWCSpectrum r = volume->SigmaS(sw, dgs);
+	if (!r.Black())
+		r /= r + volume->SigmaA(sw, dgs);
+	SWCSpectrum g = G->Evaluate(sw, dgs).Clamp(-1.f, 1.f);
+	SchlickScatter *bsdf = ARENA_ALLOC(arena, SchlickScatter)(dgs,
+		isect.dg.nn, isect.exterior, isect.interior, r, g);
 
 	// Add ptr to CompositingParams structure
 	bsdf->SetCompositingParams(&compParams);

@@ -72,8 +72,8 @@ public:
 class RGBVolume : public Volume {
 public:
 	RGBVolume(const RGBColor &sA, const RGBColor &sS, const RGBColor &l,
-		float gg) : sigA(sA), sigS(sS), le(l), g(gg), material(sS, gg),
-		primitive(&material, this, this) { }
+		float gg) : sigA(sA), sigS(sS), le(l), g(gg),
+		material(sS, sA, gg), primitive(&material, this, this) { }
 	virtual ~RGBVolume() { }
 	virtual SWCSpectrum SigmaA(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {

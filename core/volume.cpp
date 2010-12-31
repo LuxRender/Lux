@@ -78,28 +78,18 @@ bool RGBVolume::Scatter(const Sample &sample, bool scatteredStart,
 		isect->interior = this;
 		isect->exterior = this;
 		isect->arealight = NULL; // Update if volumetric emission
-		if (pdf)
-			*pdf = k * expf(d * k); //d is negative
-		if (pdfBack) {
-			*pdfBack = expf(d * k);
+		if (L)
+			*L *= SigmaT(sample.swl, isect->dg);
+	}
+	if (pdf) {
+		*pdf = expf((ray.mint - ray.maxt) * k);
+		if (isect->dg.scattered)
+			*pdf *= k;
+	}
+	if (pdfBack) {
+		*pdfBack = expf((ray.mint - ray.maxt) * k);
 			if (scatteredStart)
 				*pdfBack *= k;
-		}
-	} else {
-		if (pdf) {
-			*pdf = expf((ray.mint - ray.maxt) * k);
-			// if u==1 we are just checking connectivity
-			// so we give the probability of scattering
-			// at the end point so that we can estimate
-			// the alternate path probability
-			if (isect->dg.scattered && u == 1.f)
-				*pdf *= k;
-		}
-		if (pdfBack) {
-			*pdfBack = expf((ray.mint - ray.maxt) * k);
-			if (scatteredStart)
-				*pdfBack *= k;
-		}
 	}
 	if (L)
 		*L *= Exp(-Tau(sample.swl, ray));
