@@ -221,8 +221,9 @@ bool PerspectiveCamera::SampleW(MemoryArena &arena,
 	DifferentialGeometry dg(ps, normal, CameraToWorld(Vector(1, 0, 0)),
 		CameraToWorld(Vector(0, 1, 0)), Normal(0, 0, 0),
 		Normal(0, 0, 0), 0, 0, NULL);
+	const Volume *v = GetVolume();
 	*bsdf = ARENA_ALLOC(arena, PerspectiveBSDF)(dg, normal,
-		NULL, NULL, *this, LensRadius > 0.f, psC);
+		v, v, *this, LensRadius > 0.f, psC);
 	*pdf = posPdf;
 	*We = SWCSpectrum(1.f);
 	return true;
@@ -240,8 +241,9 @@ bool PerspectiveCamera::SampleW(MemoryArena &arena,
 	}
 	Point ps = CameraToWorld(psC);
 	DifferentialGeometry dg(ps, normal, CameraToWorld(Vector(1, 0, 0)), CameraToWorld(Vector(0, 1, 0)), Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
+	const Volume *v = GetVolume();
 	*bsdf = ARENA_ALLOC(arena, PerspectiveBSDF)(dg, normal,
-		NULL, NULL, *this, LensRadius > 0.f, psC);
+		v, v, *this, LensRadius > 0.f, psC);
 	*pdf = posPdf;
 	*pdfDirect = posPdf;
 	*We = SWCSpectrum(1.f);

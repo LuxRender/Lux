@@ -106,9 +106,10 @@ bool OrthoCamera::SampleW(MemoryArena &arena, const SpectrumWavelengths &sw,
 	DifferentialGeometry dg(ps, normal, CameraToWorld(Vector(1, 0, 0)),
 		CameraToWorld(Vector(0, 1, 0)), Normal(0, 0, 0),
 		Normal(0, 0, 0), 0, 0, NULL);
+	const Volume *v = GetVolume();
 	*bsdf = ARENA_ALLOC(arena, SingleBSDF)(dg, normal,
 		ARENA_ALLOC(arena, SpecularReflection)(SWCSpectrum(1.f),
-		ARENA_ALLOC(arena, FresnelNoOp)(), 0.f, 0.f), NULL, NULL);
+		ARENA_ALLOC(arena, FresnelNoOp)(), 0.f, 0.f), v, v);
 	*pdf = posPdf;
 	*We = SWCSpectrum(1.f);
 	return true;

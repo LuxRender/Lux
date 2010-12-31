@@ -167,12 +167,13 @@ bool PointLight::SampleL(const Scene &scene, const Sample &sample,
 		Normalize(LightToWorld(Vector(0, 1, 0))),
 		Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
 	dg.time = sample.realTime;
+	const Volume *v = GetVolume();
 	if(func)
 		*bsdf = ARENA_ALLOC(sample.arena, GonioBSDF)(dg, ns,
-			NULL, NULL, func);
+			v, v, func);
 	else
 		*bsdf = ARENA_ALLOC(sample.arena, UniformBSDF)(dg, ns,
-			NULL, NULL);
+			v, v);
 	*Le = Lbase->Evaluate(sample.swl, dg) * (gain * 4.f * M_PI);
 	return true;
 }
@@ -189,12 +190,13 @@ bool PointLight::SampleL(const Scene &scene, const Sample &sample,
 	*pdfDirect = 1.f;
 	if (pdf)
 		*pdf = 1.f;
+	const Volume *v = GetVolume();
 	if (func)
 		*bsdf = ARENA_ALLOC(sample.arena, GonioBSDF)(dg, ns,
-			NULL, NULL, func);
+			v, v, func);
 	else
 		*bsdf = ARENA_ALLOC(sample.arena, UniformBSDF)(dg, ns,
-			NULL, NULL);
+			v, v);
 	*Le = Lbase->Evaluate(sample.swl, dg) * (gain * 4.f * M_PI);
 	return true;
 }

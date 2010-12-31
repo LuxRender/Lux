@@ -180,8 +180,9 @@ bool InfiniteAreaLightIS::Le(const Scene &scene, const Sample &sample,
 	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Normal(0, 0, 0),
 		Normal(0, 0, 0), 0, 0, NULL);
 	dg.time = sample.realTime;
+	const Volume *v = GetVolume();
 	*bsdf = ARENA_ALLOC(sample.arena, InfiniteISBSDF)(dg, ns,
-		NULL, NULL, *this, WorldToLight);
+		v, v, *this, WorldToLight);
 	*L *= SWCSpectrum(sample.swl, SPDbase);
 	const Vector wh = Normalize(WorldToLight(r.d));
 	float s, t, pdfMap;
@@ -222,8 +223,9 @@ bool InfiniteAreaLightIS::SampleL(const Scene &scene, const Sample &sample,
 	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Normal(0, 0, 0),
 		Normal (0, 0, 0), 0, 0, NULL);
 	dg.time = sample.realTime;
+	const Volume *v = GetVolume();
 	*bsdf = ARENA_ALLOC(sample.arena, InfiniteISBSDF)(dg, ns,
-		NULL, NULL, *this, WorldToLight);
+		v, v, *this, WorldToLight);
 	*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	*Le = SWCSpectrum(sample.swl, SPDbase) * (M_PI / *pdf);
 	return true;
@@ -259,8 +261,9 @@ bool InfiniteAreaLightIS::SampleL(const Scene &scene, const Sample &sample,
 	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Normal(0, 0, 0),
 		Normal (0, 0, 0), 0, 0, NULL);
 	dg.time = sample.realTime;
+	const Volume *v = GetVolume();
 	*bsdf = ARENA_ALLOC(sample.arena, InfiniteISBSDF)(dg, ns,
-		NULL, NULL, *this, WorldToLight);
+		v, v, *this, WorldToLight);
 	if (pdf)
 		*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	*pdfDirect *= AbsDot(wi, ns) / (distance * distance);

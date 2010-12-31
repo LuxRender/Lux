@@ -109,7 +109,8 @@ bool DistantLight::Le(const Scene &scene, const Sample &sample, const Ray &r,
 	DifferentialGeometry dg(ps, ns, -x, y, Normal(0, 0, 0), Normal(0, 0, 0),
 		0, 0, NULL);
 	dg.time = sample.realTime;
-	*bsdf = ARENA_ALLOC(sample.arena, SingleBSDF)(dg, ns, bxdf, NULL, NULL);
+	const Volume *v = GetVolume();
+	*bsdf = ARENA_ALLOC(sample.arena, SingleBSDF)(dg, ns, bxdf, v, v);
 	if (pdf) {
 		if (!havePortalShape)
 			*pdf = 1.f / (M_PI * worldRadius * worldRadius);
@@ -204,7 +205,8 @@ bool DistantLight::SampleL(const Scene &scene, const Sample &sample,
 	DifferentialGeometry dg(ps, ns, -x, y, Normal(0, 0, 0), Normal(0, 0, 0),
 		0, 0, NULL);
 	dg.time = sample.time;
-	*bsdf = ARENA_ALLOC(sample.arena, SingleBSDF)(dg, ns, bxdf, NULL, NULL);
+	const Volume *v = GetVolume();
+	*bsdf = ARENA_ALLOC(sample.arena, SingleBSDF)(dg, ns, bxdf, v, v);
 
 	*Le = Lbase->Evaluate(sample.swl, dg) *
 		(gain * UniformConePdf(cosThetaMax) / *pdf);
@@ -230,7 +232,8 @@ bool DistantLight::SampleL(const Scene &scene, const Sample &sample,
 	DifferentialGeometry dg(ps, ns, -x, y, Normal(0, 0, 0), Normal(0, 0, 0),
 		0, 0, NULL);
 	dg.time = sample.realTime;
-	*bsdf = ARENA_ALLOC(sample.arena, SingleBSDF)(dg, ns, bxdf, NULL, NULL);
+	const Volume *v = GetVolume();
+	*bsdf = ARENA_ALLOC(sample.arena, SingleBSDF)(dg, ns, bxdf, v, v);
 	if (pdf) {
 		if (!havePortalShape)
 			*pdf = 1.f / (M_PI * worldRadius * worldRadius);

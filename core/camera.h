@@ -36,6 +36,13 @@ public:
 	Camera(const Transform &w2cstart, const Transform &w2cend, float hither,
 		float yon, float sopen, float sclose, int sdist, Film *film);
 	virtual ~Camera();
+	const Volume *GetVolume() const { return volume.get(); }
+	void SetVolume(boost::shared_ptr<Volume> &v) {
+		// Create a temporary to increase shared count
+		// The assignment is just a swap
+		boost::shared_ptr<Volume> vol(v);
+		volume = vol;
+	}
 	float GenerateRay(const Scene &scene, const Sample &sample,
 		Ray *ray) const;
 	virtual bool SampleW(MemoryArena &arena, const SpectrumWavelengths &sw,
@@ -71,6 +78,7 @@ protected:
 	float ClipHither, ClipYon;
 	float ShutterOpen, ShutterClose;
 	int ShutterDistribution;
+	boost::shared_ptr<Volume> volume;
 };
 class  ProjectiveCamera : public Camera {
 public:

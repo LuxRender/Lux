@@ -156,9 +156,10 @@ bool ProjectionLight::SampleL(const Scene &scene, const Sample &sample,
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 	DifferentialGeometry dg(lightPos, ns, dpdu, dpdv, Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
 	dg.time = sample.realTime;
+	const Volume *v = GetVolume();
 	*bsdf = ARENA_ALLOC(sample.arena, SingleBSDF)(dg, ns,
 		ARENA_ALLOC(sample.arena, ProjectionBxDF)(area, projectionMap,
-		lightProjection, screenX0, screenX1, screenY0, screenY1), NULL, NULL);
+		lightProjection, screenX0, screenX1, screenY0, screenY1), v, v);
 	*pdf = 1.f;
 	*Le = Lbase->Evaluate(sample.swl, dg) * gain;
 	return true;
@@ -176,9 +177,10 @@ bool ProjectionLight::SampleL(const Scene &scene, const Sample &sample,
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 	DifferentialGeometry dg(lightPos, ns, dpdu, dpdv, Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
 	dg.time = sample.realTime;
+	const Volume *v = GetVolume();
 	*bsdf = ARENA_ALLOC(sample.arena, SingleBSDF)(dg, ns,
 		ARENA_ALLOC(sample.arena, ProjectionBxDF)(area, projectionMap,
-		lightProjection, screenX0, screenX1, screenY0, screenY1), NULL, NULL);
+		lightProjection, screenX0, screenX1, screenY0, screenY1), v, v);
 	*Le = Lbase->Evaluate(sample.swl, dg) * gain;
 	return true;
 }

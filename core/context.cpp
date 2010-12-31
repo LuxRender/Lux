@@ -496,6 +496,7 @@ void Context::LightSource(const string &n, const ParamSet &params) {
 			graphicsState->currentLight = n;
 			graphicsState->currentLightPtr0 = lt_sun;
 			lt_sun->group = lg;
+			lt_sun->SetVolume(graphicsState->exterior);
 		}
 		Light *lt_sky = MakeLight("sky", curTransform, params);
 		if (lt_sky == NULL) {
@@ -506,6 +507,7 @@ void Context::LightSource(const string &n, const ParamSet &params) {
 			graphicsState->currentLight = n;
 			graphicsState->currentLightPtr1 = lt_sky;
 			lt_sky->group = lg;
+			lt_sky->SetVolume(graphicsState->exterior);
 		}
 	} else {
 		// other lightsource type
@@ -518,6 +520,7 @@ void Context::LightSource(const string &n, const ParamSet &params) {
 			graphicsState->currentLightPtr0 = lt;
 			graphicsState->currentLightPtr1 = NULL;
 			lt->group = lg;
+			lt->SetVolume(graphicsState->exterior);
 		}
 	}
 }
@@ -562,8 +565,10 @@ void Context::Shape(const string &n, const ParamSet &params) {
 		u_int lg = GetLightGroup();
 		area = MakeAreaLight(graphicsState->areaLight, curTransform,
 			graphicsState->areaLightParams, sh);
-		if (area)
+		if (area) {
 			area->group = lg;
+			area->SetVolume(graphicsState->exterior); //unused
+		}
 	}
 
 	// Lotus - Set the material
@@ -788,6 +793,7 @@ void Context::WorldEnd() {
 	if (!terminated) {
 		// Create scene and render
 		luxCurrentScene = renderOptions->MakeScene();
+		luxCurrentScene->camera->SetVolume(graphicsState->exterior);
 		if (luxCurrentScene) {
 			luxCurrentRenderer = renderOptions->MakeRenderer();
 

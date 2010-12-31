@@ -271,9 +271,10 @@ bool InfiniteAreaLight::Le(const Scene &scene, const Sample &sample,
 	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Normal(0, 0, 0),
 		Normal(0, 0, 0), 0, 0, NULL);
 	dg.time = sample.realTime;
+	const Volume *v = GetVolume();
 	if (!havePortalShape) {
 		*bsdf = ARENA_ALLOC(sample.arena, InfiniteBSDF)(dg, ns,
-			NULL, NULL, *this, WorldToLight);
+			v, v, *this, WorldToLight);
 		if (pdf)
 			*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 		if (pdfDirect)
@@ -281,7 +282,7 @@ bool InfiniteAreaLight::Le(const Scene &scene, const Sample &sample,
 				(4.f * M_PI * DistanceSquared(r.o, ps));
 	} else {
 		*bsdf = ARENA_ALLOC(sample.arena, InfinitePortalBSDF)(dg, ns,
-			NULL, NULL, *this, WorldToLight, ps, PortalShapes,
+			v, v, *this, WorldToLight, ps, PortalShapes,
 			~0U);
 		if (pdf)
 			*pdf = 0.f;
@@ -361,6 +362,7 @@ bool InfiniteAreaLight::SampleL(const Scene &scene, const Sample &sample,
 	Point worldCenter;
 	float worldRadius;
 	scene.WorldBound().BoundingSphere(&worldCenter, &worldRadius);
+	const Volume *v = GetVolume();
 	if (!havePortalShape) {
 		const Point ps = worldCenter +
 			worldRadius * UniformSampleSphere(u1, u2);
@@ -371,7 +373,7 @@ bool InfiniteAreaLight::SampleL(const Scene &scene, const Sample &sample,
 			Normal (0, 0, 0), 0, 0, NULL);
 		dg.time = sample.realTime;
 		*bsdf = ARENA_ALLOC(sample.arena, InfiniteBSDF)(dg, ns,
-			NULL, NULL, *this, WorldToLight);
+			v, v, *this, WorldToLight);
 		*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	} else {
 		// Sample a random Portal
@@ -401,7 +403,7 @@ bool InfiniteAreaLight::SampleL(const Scene &scene, const Sample &sample,
 			Normal(0, 0, 0), 0, 0, NULL);
 		dg.time = sample.realTime;
 		*bsdf = ARENA_ALLOC(sample.arena, InfinitePortalBSDF)(dg, ns,
-			NULL, NULL, *this, WorldToLight, ps, PortalShapes,
+			v, v, *this, WorldToLight, ps, PortalShapes,
 			shapeIndex);
 		*pdf = AbsDot(ns, wi) / (distance * distance);
 		for (u_int i = 0; i < nrPortalShapes; ++i) {
@@ -467,14 +469,15 @@ bool InfiniteAreaLight::SampleL(const Scene &scene, const Sample &sample,
 	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Normal(0, 0, 0),
 		Normal (0, 0, 0), 0, 0, NULL);
 	dg.time = sample.realTime;
+	const Volume *v = GetVolume();
 	if (!havePortalShape) {
 		*bsdf = ARENA_ALLOC(sample.arena, InfiniteBSDF)(dg, ns,
-			NULL, NULL, *this, WorldToLight);
+			v, v, *this, WorldToLight);
 		if (pdf)
 			*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	} else {
 		*bsdf = ARENA_ALLOC(sample.arena, InfinitePortalBSDF)(dg, ns,
-			NULL, NULL, *this, WorldToLight, ps, PortalShapes,
+			v, v, *this, WorldToLight, ps, PortalShapes,
 			shapeIndex);
 		if (pdf) {
 			*pdf = 0.f;
