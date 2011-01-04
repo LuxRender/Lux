@@ -624,7 +624,7 @@ void Context::Exterior(const string &n) {
 	VERIFY_WORLD("Exterior");
 	renderFarm->send("luxExterior", n);
 	if (n == "")
-		graphicsState->interior = boost::shared_ptr<lux::Volume>();
+		graphicsState->exterior = boost::shared_ptr<lux::Volume>();
 	else if (graphicsState->namedVolumes.find(n) !=
 		graphicsState->namedVolumes.end()) {
 		// Create a temporary to increase share count
