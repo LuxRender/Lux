@@ -103,7 +103,8 @@ int main(int ac, char *av[]) {
 				("minepsilon,e", po::value< float >(), "Set minimum epsilon")
 				("maxepsilon,E", po::value< float >(), "Set maximum epsilon")
 				("verbose,V", "Increase output verbosity (show DEBUG messages)")
-				("quiet,q", "Reduce output verbosity (hide INFO messages)") // (give once for WARNING only, twice for ERROR only)")
+				("quiet,q", "Reduce output verbosity (hide INFO messages)")
+				("very-quiet,x", "Reduce output verbosity even more (hide WARNING messages)")
 				;
 
 		// Declare a group of options that will be
@@ -184,12 +185,9 @@ int main(int ac, char *av[]) {
 			luxErrorFilter(LUX_WARNING);
 		}
 
-		/*
-		// cannot get po to parse multiple occurrences
-		if (vm.count("quiet")==2) {
+		if (vm.count("very-quiet")) {
 			luxErrorFilter(LUX_ERROR);
 		}
-		*/
 
 		if (vm.count("fixedseed")) {
 			if (!vm.count("server"))
