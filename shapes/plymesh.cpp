@@ -42,6 +42,8 @@ static int VertexCB(p_ply_argument argument)
 	long vertIndex;
 	ply_get_argument_element(argument, NULL, &vertIndex);
 
+	float f = static_cast<float>(ply_get_argument_value(argument));
+
 	if (userIndex == 0)
 		p[vertIndex].x =
 			static_cast<float>(ply_get_argument_value(argument));
@@ -108,25 +110,46 @@ static int TexCoordCB(p_ply_argument argument)
 	return 1;
 }
 
+class FaceData {
+public:
+	FaceData() : triVerts(), quadVerts() { }
+
+	std::vector<int> triVerts;
+	std::vector<int> quadVerts;
+};
+
 // rply face callback
 static int FaceCB(p_ply_argument argument)
 {
 	void *userData = NULL;
 	ply_get_argument_user_data(argument, &userData, NULL);
 
-	int *verts = *static_cast<int **>(userData);
+	FaceData *fd = static_cast<FaceData *>(userData);
 
-	long triIndex;
-	ply_get_argument_element(argument, NULL, &triIndex);
+	long faceIndex;
+	ply_get_argument_element(argument, NULL, &faceIndex);
 
 	long length, valueIndex;
-	ply_get_argument_property(argument, NULL, &length, &valueIndex);
+	ply_get_argument_property(argument, NULL, &length, &valueIndex);	
 
-	if (valueIndex >= 0 && valueIndex < 3) {
-		verts[triIndex * 3 + valueIndex] =
-			static_cast<int>(ply_get_argument_value(argument));
-	}/* else
-		return 0;*/
+	const int nTris = fd->triVerts.size();
+
+	switch (length) {
+		case 3:
+			if (valueIndex < 0)
+				// preallocate items
+				fd->triVerts.resize(nTris + 3);
+			else if (valueIndex < 3)
+				fd->triVerts[nTris-3+valueIndex] = static_cast<int>(ply_get_argument_value(argument));
+			break;
+		case 4:
+			if (valueIndex < 0)
+				// preallocate items
+				fd->quadVerts.resize(fd->quadVerts.size() + 4);
+			else if (valueIndex < 4)
+				fd->quadVerts[fd->quadVerts.size()-4+valueIndex] = static_cast<int>(ply_get_argument_value(argument));
+			break;
+	}
 
 	return 1;
 }
@@ -164,11 +187,11 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 		return NULL;
 	}
 
-	int *vertexIndex;
-	long plyNbTris = ply_set_read_cb(plyfile, "face", "vertex_indices",
-		FaceCB, &vertexIndex, 0);
-	if (plyNbTris <= 0) {
-		LOG( LUX_ERROR,LUX_BADFILE) << "No triangles found in '" << filename << "'";
+	FaceData faceData;
+	long plyNbFaces = ply_set_read_cb(plyfile, "face", "vertex_indices",
+		FaceCB, &faceData, 0);
+	if (plyNbFaces <= 0) {
+		LOG( LUX_ERROR,LUX_BADFILE) << "No faces found in '" << filename << "'";
 		return NULL;
 	}
 
@@ -192,7 +215,6 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 	}
 
 	p = new Point[plyNbVerts];
-	vertexIndex = new int[3 * plyNbTris];
 	if (plyNbNormals <= 0)
 		n = NULL;
 	else
@@ -206,7 +228,6 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 	if (!ply_read(plyfile)) {
 		LOG( LUX_ERROR,LUX_SYSTEM) << "Unable to parse PLY file '" << filename << "'";
 		delete[] p;
-		delete[] vertexIndex;
 		delete[] n;
 		delete[] uv;
 		return NULL;
@@ -214,9 +235,12 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 
 	ply_close(plyfile);
 
+	int plyNbTris = faceData.triVerts.size()/3;
+	int plyNbQuads = faceData.quadVerts.size()/4;
+
 	if (smooth || plyNbVerts != plyNbNormals) {
 		if (n) {
-			LOG( LUX_WARNING,LUX_NOERROR) << "Overriding plymesh normals";
+			LOG((smooth ? LUX_DEBUG : LUX_WARNING), LUX_NOERROR) << "Overriding plymesh normals";
 			delete[] n;
 		}
 		// generate face normals
@@ -227,24 +251,58 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 			nf[i] = 0.f;
 		}
 
-		for (int tri = 0; tri < plyNbTris; ++tri) {
-			/* Compute edge vectors */
-			const Vector e10(p[vertexIndex[3 * tri + 1]] -
-				p[vertexIndex[3 * tri]]);
-			const Vector e12(p[vertexIndex[3 * tri + 1]] -
-				p[vertexIndex[3 * tri + 2]]);
+		for (int face = 0; face < plyNbTris; ++face) {
+			int i = 3 * face;
+			// Compute edge vectors
+			const Vector e10(p[faceData.triVerts[i + 1]] -
+				p[faceData.triVerts[i]]);
+			const Vector e12(p[faceData.triVerts[i + 1]] -
+				p[faceData.triVerts[i + 2]]);
 
 			Normal fn(Normalize(Cross(e12, e10)));
 
-			// add to face normal of triangle's vertex normals
-			n[vertexIndex[3 * tri]] += fn;
-			n[vertexIndex[3 * tri + 1]] += fn;
-			n[vertexIndex[3 * tri + 2]] += fn;
+			n[faceData.triVerts[i + 0]] += fn;
+			n[faceData.triVerts[i + 1]] += fn;
+			n[faceData.triVerts[i + 2]] += fn;
+			nf[faceData.triVerts[i + 0]]++;
+			nf[faceData.triVerts[i + 1]]++;
+			nf[faceData.triVerts[i + 2]]++;
+		}
 
-			// increment contributions
-			nf[vertexIndex[3 * tri]]++;
-			nf[vertexIndex[3 * tri + 1]]++;
-			nf[vertexIndex[3 * tri + 2]]++;
+		// compute normals of both triangles in each quad separately
+		// this should be more consistent if quads and tris share vertex
+		// and/or if the quad is non-planar
+		for (int face = 0; face < plyNbQuads; ++face) {
+			int i = 4 * face;
+			// Compute edge vectors
+			const Vector e10(p[faceData.quadVerts[i + 1]] -
+				p[faceData.quadVerts[i]]);
+			const Vector e12(p[faceData.quadVerts[i + 1]] -
+				p[faceData.quadVerts[i + 2]]);
+
+			Normal fn1(Normalize(Cross(e12, e10)));
+			
+			n[faceData.quadVerts[i + 0]] += fn1;
+			n[faceData.quadVerts[i + 1]] += fn1;
+			n[faceData.quadVerts[i + 2]] += fn1;
+			nf[faceData.quadVerts[i + 0]]++;
+			nf[faceData.quadVerts[i + 1]]++;
+			nf[faceData.quadVerts[i + 2]]++;
+
+			// Compute edge vectors for second tri
+			const Vector e30(p[faceData.quadVerts[i + 3]] -
+				p[faceData.quadVerts[i]]);
+			const Vector e32(p[faceData.quadVerts[i + 3]] -
+				p[faceData.quadVerts[i + 2]]);
+
+			Normal fn2(Normalize(Cross(e30, e32)));
+
+			n[faceData.quadVerts[i + 0]] += fn2;
+			n[faceData.quadVerts[i + 2]] += fn2;
+			n[faceData.quadVerts[i + 3]] += fn2;
+			nf[faceData.quadVerts[i + 0]]++;
+			nf[faceData.quadVerts[i + 2]]++;
+			nf[faceData.quadVerts[i + 3]]++;
 		}
 
 		// divide by contributions
@@ -262,15 +320,17 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 		}
 	}
 
+	const int *triVerts = plyNbTris > 0 ? &faceData.triVerts[0] : NULL;
+	const int *quadVerts = plyNbQuads > 0 ? &faceData.quadVerts[0] : NULL;
+
 	boost::shared_ptr<Texture<float> > dummytex;
 	Mesh *mesh = new Mesh(o2w, reverseOrientation, Mesh::ACCEL_AUTO,
-		plyNbVerts, p, n, uv, Mesh::TRI_AUTO, plyNbTris, vertexIndex,
-		Mesh::QUAD_QUADRILATERAL, 0, NULL, Mesh::SUBDIV_LOOP, 0,
+		plyNbVerts, p, n, uv, Mesh::TRI_AUTO, plyNbTris, triVerts,
+		Mesh::QUAD_QUADRILATERAL, plyNbQuads, quadVerts, Mesh::SUBDIV_LOOP, 0,
 		dummytex, 1.f, 0.f, false, false);
 	delete[] p;
 	delete[] n;
 	delete[] uv;
-	delete[] vertexIndex;
 	return mesh;
 }
 
