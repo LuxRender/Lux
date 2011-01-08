@@ -42,31 +42,37 @@ bool MeshQuadrilateral::IsDegenerate(const Point &p0, const Point &p1, const Poi
 }
 
 // checks if a non-degenerate quad is planar
-// most likely susceptible to numerical issues for large quads
 bool MeshQuadrilateral::IsPlanar(const Point &p0, const Point &p1, const Point &p2, const Point &p3) {
 
-	// basis vectors for projection
-	Vector e0 = p1 - p0;
-	Vector e1 = p2 - p0;
+	// calculate normal using Newells method
+	Vector N(Normalize(Cross(p2 - p0, p3 - p1)));
 
-	Point p = p3;
+	// calculate center
+	Vector P(0.25 * (p0 + p1 + p2 + p3));
 
-	if (1.f - fabsf(Dot(e0, e1)) < 1e-6) {
-		// if collinear, use p3
-		e1 = p3 - p0;
-		p = p2;
-	}
+	float D = Dot(N, P);
 
-	Vector n = Cross(e1, e0);
-
-	Vector x = p - p0;
-
-	// find distance from point to plane defined by e0 and e1
-	float D = fabsf(Dot(x, n));
+	const float eps = 1e-3;
+	float dist;
 
 	// if planar, the distance from point to plane should be zero
-	// |x.n|/|n| < eps ==> |x.n| < |n| * eps
-	return D < n.Length() * 1e-6f;
+	dist = fabsf(Dot(N, Vector(p0)) - D);
+	if (dist > eps)
+		return false;
+
+	dist = fabsf(Dot(N, Vector(p1)) - D);
+	if (dist > eps)
+		return false;
+
+	dist = fabsf(Dot(N, Vector(p2)) - D);
+	if (dist > eps)
+		return false;
+
+	dist = fabsf(Dot(N, Vector(p3)) - D);
+	if (dist > eps)
+		return false;
+
+	return true;
 }
 
 // checks if a non-degenerate, planar quad is strictly convex
@@ -186,12 +192,9 @@ MeshQuadrilateral::MeshQuadrilateral(const Mesh *m, u_int n)
 	const Point &p2 = mesh->WorldToObject(mesh->p[idx[2]]);
 	const Point &p3 = mesh->WorldToObject(mesh->p[idx[3]]);
 
+	// assume planar check is performed
 	if (IsDegenerate(p0, p1, p2, p3)) {
 		LOG( LUX_ERROR,LUX_CONSISTENCY)<< "Degenerate quadrilateral detected";
-		idx = NULL;
-	}
-	else if (!IsPlanar(p0, p1, p2, p3)) {
-		LOG( LUX_ERROR,LUX_CONSISTENCY)<< "Non-planar quadrilateral detected";
 		idx = NULL;
 	}
 	else if (!IsConvex(p0, p1, p2, p3)) {

@@ -263,7 +263,7 @@ public:
 	}
 
 	bool isDegenerate() const {
-		return false; //TODO check degenerate
+		return idx == NULL; //TODO proper check degenerate
 	}
 
 	static bool IsPlanar(const Point &p0, const Point &p1, const Point &p2, const Point &p3);
