@@ -33,12 +33,15 @@ bool MeshQuadrilateral::IsDegenerate(const Point &p0, const Point &p1, const Poi
 	Vector e2 = p3 - p2;
 	Vector e3 = p0 - p3;
 
-	float el0 = e0.Length();
-	float el1 = e1.Length();
-	float el2 = e2.Length();
-	float el3 = e3.Length();
+	const float el0 = e0.Length();
+	const float el1 = e1.Length();
+	const float el2 = e2.Length();
+	const float el3 = e3.Length();
 
-	return el0 < 1e-30 || el1 < 1e-30 || el2 < 1e-30 || el3 < 1e-30;
+	const float lmin = min(min(el0, el1), min(el2, el3));
+	const float lmax = max(max(el0, el1), max(el2, el3));
+
+	return lmax == 0.0 || (lmin / lmax) < 1e-30;
 }
 
 // checks if a non-degenerate quad is planar
@@ -192,13 +195,9 @@ MeshQuadrilateral::MeshQuadrilateral(const Mesh *m, u_int n)
 	const Point &p2 = mesh->WorldToObject(mesh->p[idx[2]]);
 	const Point &p3 = mesh->WorldToObject(mesh->p[idx[3]]);
 
-	// assume planar check is performed
+	// assume convex and planar check is performed before
 	if (IsDegenerate(p0, p1, p2, p3)) {
-		LOG( LUX_ERROR,LUX_CONSISTENCY)<< "Degenerate quadrilateral detected";
-		idx = NULL;
-	}
-	else if (!IsConvex(p0, p1, p2, p3)) {
-		LOG( LUX_ERROR,LUX_CONSISTENCY)<< "Non-convex quadrilateral detected";
+		LOG(LUX_DEBUG, LUX_CONSISTENCY)<< "Degenerate quadrilateral detected";
 		idx = NULL;
 	}
 

@@ -102,8 +102,9 @@ Mesh::Mesh(const Transform &o2w, bool ro, MeshAccelType acceltype,
 			const Point &p2 = p[quads[idx + 2]];
 			const Point &p3 = p[quads[idx + 3]];
 
-			// Split the quad if subdivision is necessary (only possible on tri's) or if its not planar
-			if (!mustSubdivide && MeshQuadrilateral::IsPlanar(p0, p1, p2, p3)) {
+			// Split the quad if subdivision is necessary (only possible on tri's) or if its not planar or convex
+			bool quadOk = MeshQuadrilateral::IsPlanar(p0, p1, p2, p3) && MeshQuadrilateral::IsConvex(p0, p1, p2, p3);
+			if (!mustSubdivide && quadOk) {
 				quadsOk.push_back(quads[idx]);
 				quadsOk.push_back(quads[idx + 1]);
 				quadsOk.push_back(quads[idx + 2]);
@@ -133,7 +134,7 @@ Mesh::Mesh(const Transform &o2w, bool ro, MeshAccelType acceltype,
 		if( nSubdivLevels > 0 )
 			ss << " to allow subdivision";
 		else
-			ss << " because they are non-planar";
+			ss << " because they are non-planar or non-convex";
 		LOG(LUX_INFO,LUX_NOERROR)<< ss.str().c_str();
 	}
 
