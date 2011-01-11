@@ -103,9 +103,9 @@ Mesh::Mesh(const Transform &o2w, bool ro, MeshAccelType acceltype,
 			const Point &p3 = p[quads[idx + 3]];
 
 			// Split the quad if subdivision is necessary (only possible on tri's) or if its not planar or convex
-			bool quadOk = MeshQuadrilateral::IsPlanar(p0, p1, p2, p3) && MeshQuadrilateral::IsConvex(p0, p1, p2, p3);
-			// TODO - quads have UV mapping issue, split them if they have UVs
-			quadOk &= uvs == NULL;
+			//bool quadOk = MeshQuadrilateral::IsPlanar(p0, p1, p2, p3) && MeshQuadrilateral::IsConvex(p0, p1, p2, p3);
+			// TODO - quads have issues with normals and uvs, split them
+			bool quadOk = false;
 			if (!mustSubdivide && quadOk) {
 				quadsOk.push_back(quads[idx]);
 				quadsOk.push_back(quads[idx + 1]);
@@ -133,10 +133,11 @@ Mesh::Mesh(const Transform &o2w, bool ro, MeshAccelType acceltype,
 	if (!quadsToSplit.empty()) {
 		std::stringstream ss;
 		ss << "Mesh: splitting " << (quadsToSplit.size() / 4) << " quads";
-		if( nSubdivLevels > 0 )
-			ss << " to allow subdivision";
-		else
-			ss << " because they are non-planar or non-convex";
+		// TODO - quads have issues with normals and uvs, don't specify		
+		//if( nSubdivLevels > 0 )
+		//	ss << " to allow subdivision";
+		//else
+		//	ss << " because they are non-planar or non-convex";		
 		LOG(LUX_INFO,LUX_NOERROR)<< ss.str().c_str();
 	}
 
