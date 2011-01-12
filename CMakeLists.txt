@@ -640,6 +640,7 @@ SET(lux_shapes_src
 	shapes/loopsubdiv.cpp
 	shapes/mesh.cpp
 	shapes/meshbarytriangle.cpp
+	shapes/meshmicrodisplacementtriangle.cpp
 	shapes/meshquadrilateral.cpp
 	shapes/meshwaldtriangle.cpp
 	shapes/nurbs.cpp

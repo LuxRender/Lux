@@ -257,6 +257,17 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 
 				break;
 			}
+			case SUBDIV_MICRODISPLACEMENT:
+				triType = TRI_MICRODISPLACEMENT;
+
+				for (u_int i = 0; i < nverts; ++i)
+					p[i] = ObjectToWorld(p[i]);
+				if (n) {
+					for (u_int i = 0; i < nverts; ++i)
+						n[i] = Normalize(ObjectToWorld(n[i]));
+				}
+
+				break;
 			default: {
 				LOG( LUX_ERROR,LUX_CONSISTENCY) << "Unknow subdivision type in a mesh: " << concreteSubdivType;
 				break;
@@ -305,6 +316,20 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 					currTri = new MeshBaryTriangle(this, i);
 				else
 					currTri = new MeshElemSharedPtr<MeshBaryTriangle>(this, i, thisPtr);
+				if (!currTri->isDegenerate()) {
+					boost::shared_ptr<Primitive> o(currTri);
+					refinedPrims.push_back(o);
+				} else
+					delete currTri;
+			}
+			break;
+		case TRI_MICRODISPLACEMENT:
+			for (u_int i = 0; i < ntris; ++i) {
+				MeshMicroDisplacementTriangle *currTri;
+				if (refinedPrims.size() > 0)
+					currTri = new MeshMicroDisplacementTriangle(this, i);
+				else
+					currTri = new MeshElemSharedPtr<MeshMicroDisplacementTriangle>(this, i, thisPtr);
 				if (!currTri->isDegenerate()) {
 					boost::shared_ptr<Primitive> o(currTri);
 					refinedPrims.push_back(o);
@@ -385,6 +410,9 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 			break;
 		case TRI_WALD:
 			ss << "wald";
+			break;
+		case TRI_MICRODISPLACEMENT:
+			ss << "microdisp";
 			break;
 		default:
 			ss << "?";
@@ -698,6 +726,8 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 	Mesh::MeshSubdivType subdivType;
 	if (subdivSchemeStr == "loop")
 		subdivType = Mesh::SUBDIV_LOOP;
+	else if (subdivSchemeStr == "microdisplacement")
+		subdivType = Mesh::SUBDIV_MICRODISPLACEMENT;
 	else {
 		LOG(LUX_WARNING,LUX_BADTOKEN) << "Subdivision type  '" << subdivSchemeStr << "' unknown. Using \"loop\".";
 		subdivType = Mesh::SUBDIV_LOOP;
