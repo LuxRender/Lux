@@ -259,6 +259,8 @@ public:
 	// BaryTriangle Data
 	const Mesh *mesh;
 	const int *v;
+	Vector dpdu, dpdv, normalizedNormal;
+	float uvs[3][2];
 };
 
 //------------------------------------------------------------------------------
