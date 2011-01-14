@@ -662,9 +662,11 @@ bool MeshMicroDisplacementTriangle::Intersect(const Ray &ray, Intersection* isec
 			if (!(t > ray.mint && t < ray.maxt))
 				goto next_cell;
 
-			// recover barycentric coordinates in macrotriangle
-			//const float u = (1.f - va - wa) * b0 + (1.f - vb - wb) * b1 + (1.f - vc - wc) * b2;
+			// interpolate microtriangle even if it is very small
+			// otherwise selfshadowing will occur
+			const Point pp(a * b0 + b * b1 + c * b2);
 
+			// recover barycentric coordinates in macrotriangle
 			const float v = va * b0 + vb * b1 + vc * b2;
 			const float w = wa * b0 + wb * b1 + wc * b2;
 			b0 = 1.f - v - w;
@@ -672,9 +674,6 @@ bool MeshMicroDisplacementTriangle::Intersect(const Ray &ray, Intersection* isec
 			b2 = w;
 
 			Normal nn(Normalize(Cross(e1, e2)));
-			Vector displacement(n1 * b0 + n2 * b1 + n3 * b2);
-			if (Dot(nn, displacement) < 0.f)
-				nn = -nn;
 			Vector ts(Normalize(Cross(nn, dpdu)));
 			Vector ss(Cross(ts, nn));
 			// Lotus - the length of dpdu/dpdv can be important for bumpmapping
@@ -683,32 +682,12 @@ bool MeshMicroDisplacementTriangle::Intersect(const Ray &ray, Intersection* isec
 				ts *= -dpdv.Length();
 			else
 				ts *= dpdv.Length();
-			//nn = Normal(Normalize(n1 * b0 + n2 * b1 + n3 * b2));
-			// interpolate macrotriangle coordinates as microtriangles can be
-			// very small
-			const Point pbase(p1 * b0 + p2 * b1 + p3 * b2);
-
-			//pp = a + e1 * b1 + e2 * b2;
-			//b0 = 1.f - v - w;
-			//b1 = v;
-			//b2 = w;
 
 			// Interpolate $(u,v)$ triangle parametric coordinates
 			const float tu = b0 * uvs[0][0] + b1 * uvs[1][0] + b2 * uvs[2][0];
 			const float tv = b0 * uvs[0][1] + b1 * uvs[1][1] + b2 * uvs[2][1];
 
-			const DifferentialGeometry dg(pbase, Normal(displacement),
-				dpdu, dpdv, Normal(0, 0, 0), Normal(0, 0, 0),
-				tu, tv, this);
-
-			SpectrumWavelengths sw;
-
-			displacement *=	(
-				Clamp(mesh->displacementMap->Evaluate(sw, dg), -1.f, 1.f) * mesh->displacementMapScale +
-				mesh->displacementMapOffset);
-
-			isect->dg = DifferentialGeometry(pbase + displacement,
-				nn, ss, ts,
+			isect->dg = DifferentialGeometry(pp, nn, ss, ts,
 				Normal(0, 0, 0), Normal(0, 0, 0), tu, tv, this);
 
 			isect->Set(mesh->WorldToObject, this, mesh->GetMaterial(),
@@ -861,30 +840,30 @@ void MeshMicroDisplacementTriangle::Sample(float u1, float u2, float u3, Differe
 void MeshMicroDisplacementTriangle::GetShadingGeometry(const Transform &obj2world,
 	const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const
 {
-	// flat for now
-	*dgShading = dg;
-	return;
-
-/*
-	if (!mesh->n) {
+	if (!mesh->displacementMapNormalSmooth) {
 		*dgShading = dg;
 		return;
 	}
 
+	const Point p(dg.iData.baryTriangle.coords[0] * mesh->p[v[0]] +
+		dg.iData.baryTriangle.coords[1] * mesh->p[v[1]] +
+		dg.iData.baryTriangle.coords[2] * mesh->p[v[2]]);
 	// Use _n_ to compute shading tangents for triangle, _ss_ and _ts_
-	const Normal ns = Normalize(dg.triangleBaryCoords[0] * mesh->n[v[0]] +
-		dg.triangleBaryCoords[1] * mesh->n[v[1]] + dg.triangleBaryCoords[2] * mesh->n[v[2]]);
+	const Normal ns(Normalize(dg.iData.baryTriangle.coords[0] * GetN(0) +
+		dg.iData.baryTriangle.coords[1] * GetN(1) +
+		dg.iData.baryTriangle.coords[2] * GetN(2)));
 
-	Vector ts(Normalize(Cross(ns, dg.dpdu)));
+	Vector ts(Normalize(Cross(ns, dpdu)));
 	Vector ss(Cross(ts, ns));
 	// Lotus - the length of dpdu/dpdv can be important for bumpmapping
 	ss *= dg.dpdu.Length();
-	ts *= dg.dpdv.Length();
+	if (Dot(dpdv, ts) < 0.f)
+		ts *= -dg.dpdv.Length();
+	else
+		ts *= dg.dpdv.Length();
 
 	Normal dndu, dndv;
 	// Compute \dndu and \dndv for triangle shading geometry
-	float uvs[3][2];
-	GetUVs(uvs);
 
 	// Compute deltas for triangle partial derivatives of normal
 	const float du1 = uvs[0][0] - uvs[2][0];
@@ -903,11 +882,18 @@ void MeshMicroDisplacementTriangle::GetShadingGeometry(const Transform &obj2worl
 		dndv = (-du2 * dn1 + du1 * dn2) * invdet;
 	}
 
-	*dgShading = DifferentialGeometry(dg.p, ns, ss, ts,
+	*dgShading = DifferentialGeometry(p, ns, ss, ts,
 		dndu, dndv, dg.u, dg.v, this);
-
-	dgShading->dudx = dg.dudx;  dgShading->dvdx = dg.dvdx;
-	dgShading->dudy = dg.dudy;  dgShading->dvdy = dg.dvdy;
-	dgShading->dpdx = dg.dpdx;  dgShading->dpdy = dg.dpdy;
-*/
+	float dddu, dddv;
+	SpectrumWavelengths sw;
+	mesh->displacementMap->GetDuv(sw, *dgShading, 0.001f, &dddu, &dddv);
+	dgShading->p = dg.p;
+	dgShading->dpdu = ss + dddu * Vector(ns);
+	dgShading->dpdv = ts + dddv * Vector(ns);
+	dgShading->nn = Normal(Normalize(Cross(dgShading->dpdu, dgShading->dpdv)));
+	// The above transform keeps the normal in the original normal
+	// hemisphere. If they are opposed, it means UVN was indirect and
+	// the normal needs to be reversed
+	if (Dot(ns, dgShading->nn) < 0.f)
+		dgShading->nn = -dgShading->nn;
 }
