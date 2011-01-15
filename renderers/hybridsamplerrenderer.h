@@ -62,6 +62,8 @@ public:
 	void Pause();
 	void Resume();
 	void Terminate();
+	
+	string GetStats();
 
 	static Renderer *CreateRenderer(const ParamSet &params);
 

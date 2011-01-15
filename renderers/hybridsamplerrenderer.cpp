@@ -71,14 +71,17 @@ HybridSamplerRenderer::HybridSamplerRenderer() : HybridRenderer() {
 		throw std::runtime_error("Unable to find an OpenCL GPU device.");
 	hwDeviceDescs.resize(1);
 
-	ctx->AddVirtualM2OIntersectionDevices(0, hwDeviceDescs);
+	luxrays::IntersectionDevice *intersectionDevice = ctx->AddVirtualM2OIntersectionDevices(0, hwDeviceDescs)[0];
 
 	virtualIDevice = ctx->GetVirtualM2OIntersectionDevices()[0];
+
+	LOG(LUX_INFO, LUX_NOERROR) << "OpenCL Device used: [" << intersectionDevice->GetName() << "]";
 
 	preprocessDone = false;
 	suspendThreadsWhenDone = false;
 
 	AddStringConstant(*this, "name", "Name of current renderer", "hybridsampler");
+	AddStringAttribute(*this, "stats", "Current renderer statistics", &HybridSamplerRenderer::GetStats);
 }
 
 HybridSamplerRenderer::~HybridSamplerRenderer() {
@@ -340,6 +343,13 @@ double HybridSamplerRenderer::Statistics_Efficiency() {
 		return 0.0;
 
 	return (100.f * stat_blackSamples) / stat_Samples;
+}
+
+string HybridSamplerRenderer::GetStats() {
+	luxrays::IntersectionDevice *idevice = virtualIDevice->GetVirtualDevice(0);
+	std::stringstream ss("");
+	ss << "GPU Load: " << std::setiosflags(std::ios_base::fixed) << std::setprecision(0) << (100.f * idevice->GetLoad()) << "%";
+	return ss.str();
 }
 
 //------------------------------------------------------------------------------
