@@ -43,9 +43,11 @@ void RGBReflSPD::init(const RGBColor &s)
 	for (u_int i = 0; i < n; ++i)
 		samples[i] = 0.f;
 
-	float r = s.c[0];
-	float g = s.c[1];
-	float b = s.c[2];
+	const float r = s.c[0];
+	const float g = s.c[1];
+	const float b = s.c[2];
+
+	bool clamp = (r >= 0.f) && (g >= 0.f) && (b >= 0.f);
 
 	if (r <= g && r <= b) {
 		AddWeighted(r, refrgb2spect_white);
@@ -80,6 +82,7 @@ void RGBReflSPD::init(const RGBColor &s)
 	}
 
 	Scale(refrgb2spect_scale);
-	Clamp();
+	if (clamp)
+		Clamp();
 }
 
