@@ -658,48 +658,45 @@ bool MeshMicroDisplacementTriangle::Intersect(const Ray &ray, Intersection* isec
 		float b0, b1, b2;
 
 		if (intersectTri(ray, a, e1, e2, &b0, &b1, &b2, &t)) {
+			if ((t >= ray.mint) && (t <= ray.maxt)) {
+				// interpolate position in microtriangle
+				const Point pp(a * b0 + b * b1 + c * b2);
 
-			if (!(t > ray.mint && t < ray.maxt))
-				goto next_cell;
+				// recover barycentric coordinates in macrotriangle
+				const float v = va * b0 + vb * b1 + vc * b2;
+				const float w = wa * b0 + wb * b1 + wc * b2;
+				b0 = 1.f - v - w;
+				b1 = v;
+				b2 = w;
 
-			// interpolate microtriangle even if it is very small
-			// otherwise selfshadowing will occur
-			const Point pp(a * b0 + b * b1 + c * b2);
+				Normal nn(Normalize(Cross(e1, e2)));
+				Vector ts(Normalize(Cross(nn, dpdu)));
+				Vector ss(Cross(ts, nn));
+				// Lotus - the length of dpdu/dpdv can be important for bumpmapping
+				ss *= dpdu.Length();
+				if (Dot(dpdv, ts) < 0.f)
+					ts *= -dpdv.Length();
+				else
+					ts *= dpdv.Length();
 
-			// recover barycentric coordinates in macrotriangle
-			const float v = va * b0 + vb * b1 + vc * b2;
-			const float w = wa * b0 + wb * b1 + wc * b2;
-			b0 = 1.f - v - w;
-			b1 = v;
-			b2 = w;
+				// Interpolate $(u,v)$ triangle parametric coordinates
+				const float tu = b0 * uvs[0][0] + b1 * uvs[1][0] + b2 * uvs[2][0];
+				const float tv = b0 * uvs[0][1] + b1 * uvs[1][1] + b2 * uvs[2][1];
 
-			Normal nn(Normalize(Cross(e1, e2)));
-			Vector ts(Normalize(Cross(nn, dpdu)));
-			Vector ss(Cross(ts, nn));
-			// Lotus - the length of dpdu/dpdv can be important for bumpmapping
-			ss *= dpdu.Length();
-			if (Dot(dpdv, ts) < 0.f)
-				ts *= -dpdv.Length();
-			else
-				ts *= dpdv.Length();
+				isect->dg = DifferentialGeometry(pp, nn, ss, ts,
+					Normal(0, 0, 0), Normal(0, 0, 0), tu, tv, this);
 
-			// Interpolate $(u,v)$ triangle parametric coordinates
-			const float tu = b0 * uvs[0][0] + b1 * uvs[1][0] + b2 * uvs[2][0];
-			const float tv = b0 * uvs[0][1] + b1 * uvs[1][1] + b2 * uvs[2][1];
+				isect->Set(mesh->WorldToObject, this, mesh->GetMaterial(),
+					mesh->GetExterior(), mesh->GetInterior());
+				isect->dg.iData.baryTriangle.coords[0] = b0;
+				isect->dg.iData.baryTriangle.coords[1] = b1;
+				isect->dg.iData.baryTriangle.coords[2] = b2;
+				ray.maxt = t;
 
-			isect->dg = DifferentialGeometry(pp, nn, ss, ts,
-				Normal(0, 0, 0), Normal(0, 0, 0), tu, tv, this);
-
-			isect->Set(mesh->WorldToObject, this, mesh->GetMaterial(),
-				mesh->GetExterior(), mesh->GetInterior());
-			isect->dg.iData.baryTriangle.coords[0] = b0;
-			isect->dg.iData.baryTriangle.coords[1] = b1;
-			isect->dg.iData.baryTriangle.coords[2] = b2;
-			ray.maxt = t;
-
-			return true;
+				return true;
+			}
 		}
-next_cell:
+
 		// check if we reached end cell
 		if (i == ei && j == ej && k == ek) {
 			return false;
