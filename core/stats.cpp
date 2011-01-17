@@ -44,6 +44,8 @@ string StatsData::template_string_total = " - Tot: %9%%14$0.2f %15%S/p  %16$0.0f
 string StatsData::template_string_haltspp = " - %9%%18$0.0f%% Complete (S/Px)";
 // String template to format percent time completion, provides placeholder 19
 string StatsData::template_string_halttime = " - %9%%19$0.0f%% Complete (sec)";
+// String template to renderer stats, provides placeholder 26
+string StatsData::template_string_renderer = " - %26%";
 
 StatsData::StatsData(Context *_ctx) :
 	formattedStatsString(""),
@@ -194,6 +196,15 @@ void StatsData::update(const bool add_total)
 			os << template_string_halttime;
 		}
 
+		string rendererStats = "";
+		Queryable *renderer_registry = ctx->registry["renderer"];
+		if (renderer_registry) {
+			if (renderer_registry->HasAttribute("stats")) {
+				os << template_string_renderer;
+				rendererStats = (*renderer_registry)["stats"].StringValue();
+			}
+		}
+
 		boost::format stats_formatter = boost::format(os.str().c_str());
 		stats_formatter.exceptions( boost::io::all_error_bits ^(boost::io::too_many_args_bit | boost::io::too_few_args_bit) ); // Ignore extra or missing args
 
@@ -223,6 +234,7 @@ void StatsData::update(const bool add_total)
 			/* %23 */ % magnitude_prefix(network_cps)
 			/* %24 */ % magnitude_reduce(total_cps)
 			/* %25 */ % magnitude_prefix(total_cps)
+			/* %26 */ % rendererStats
 		);
 
 	} catch (std::runtime_error e) {

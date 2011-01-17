@@ -55,6 +55,7 @@ public:
 	static string template_string_total;
 	static string template_string_haltspp;
 	static string template_string_halttime;
+	static string template_string_renderer;
 
 private:
 	Context *ctx;									// Reference to context that created this StatsData object
