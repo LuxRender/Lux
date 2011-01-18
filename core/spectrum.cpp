@@ -57,60 +57,31 @@ SWCSpectrum::SWCSpectrum(const SpectrumWavelengths &sw, const RGBColor &s) {
 	const float r = s.c[0];
 	const float g = s.c[1];
 	const float b = s.c[2];
-	SWCSpectrum min, med, max;
 
-	SpectrumWavelengths::spd_w.Sample(WAVELENGTH_SAMPLES,
-		sw.binsRGB, sw.offsetsRGB, min.c);
+	*this = sw.sampled_w;
 	if (r <= g && r <= b) {
-		min *= r;
+		*this *= r;
 
-		SpectrumWavelengths::spd_c.Sample(WAVELENGTH_SAMPLES,
-			sw.binsRGB, sw.offsetsRGB, med.c);
 		if (g <= b) {
-			med *= g - r;
-			SpectrumWavelengths::spd_b.Sample(WAVELENGTH_SAMPLES,
-				sw.binsRGB, sw.offsetsRGB, max.c);
-			max *= b - g;
+			*this += sw.sampled_c * (g - r) + sw.sampled_b * (b - g);
 		} else {
-			med *= b - r;
-			SpectrumWavelengths::spd_g.Sample(WAVELENGTH_SAMPLES,
-				sw.binsRGB, sw.offsetsRGB, max.c);
-			max *= g - b;
+			*this += sw.sampled_c * (b - r) + sw.sampled_g * (g - b);
 		}
 	} else if (g <= r && g <= b) {
-		min *= g;
+		*this *= g;
 
-		SpectrumWavelengths::spd_m.Sample(WAVELENGTH_SAMPLES,
-			sw.binsRGB, sw.offsetsRGB, med.c);
 		if (r <= b) {
-			med *= r - g;
-			SpectrumWavelengths::spd_b.Sample(WAVELENGTH_SAMPLES,
-				sw.binsRGB, sw.offsetsRGB, max.c);
-			max *= b - r;
+			*this += sw.sampled_m * (r - g) + sw.sampled_b * (b - r);
 		} else {
-			med *= b - g;
-			SpectrumWavelengths::spd_r.Sample(WAVELENGTH_SAMPLES,
-				sw.binsRGB, sw.offsetsRGB, max.c);
-			max *= r - b;
+			*this += sw.sampled_m * (b - g) + sw.sampled_r * (r - b);
 		}
 	} else {	// blue <= red && blue <= green
-		min *= b;
+		*this *= b;
 
-		SpectrumWavelengths::spd_y.Sample(WAVELENGTH_SAMPLES,
-			sw.binsRGB, sw.offsetsRGB, med.c);
 		if (r <= g) {
-			med *= r - b;
-			SpectrumWavelengths::spd_g.Sample(WAVELENGTH_SAMPLES,
-				sw.binsRGB, sw.offsetsRGB, max.c);
-			max *= g - r;
+			*this += sw.sampled_y * (r - b) + sw.sampled_g * (g - r);
 		} else {
-			med *= g - b;
-			SpectrumWavelengths::spd_r.Sample(WAVELENGTH_SAMPLES,
-				sw.binsRGB, sw.offsetsRGB, max.c);
-			max *= r - g;
+			*this += sw.sampled_y * (g - b) + sw.sampled_r * (r - g);
 		}
 	}
-
-	for (u_int j = 0; j < WAVELENGTH_SAMPLES; ++j)
-		c[j] = min.c[j] + med.c[j] + max.c[j];
 }

@@ -56,6 +56,14 @@ public:
 		}
 		spd_w.Offsets(WAVELENGTH_SAMPLES, w, binsRGB, offsetsRGB);
 		spd_ciex.Offsets(WAVELENGTH_SAMPLES, w, binsXYZ, offsetsXYZ);
+
+		spd_w.Sample(WAVELENGTH_SAMPLES, binsRGB, offsetsRGB, sampled_w.c);
+		spd_c.Sample(WAVELENGTH_SAMPLES, binsRGB, offsetsRGB, sampled_c.c);
+		spd_m.Sample(WAVELENGTH_SAMPLES, binsRGB, offsetsRGB, sampled_m.c);
+		spd_y.Sample(WAVELENGTH_SAMPLES, binsRGB, offsetsRGB, sampled_y.c);
+		spd_r.Sample(WAVELENGTH_SAMPLES, binsRGB, offsetsRGB, sampled_r.c);
+		spd_g.Sample(WAVELENGTH_SAMPLES, binsRGB, offsetsRGB, sampled_g.c);
+		spd_b.Sample(WAVELENGTH_SAMPLES, binsRGB, offsetsRGB, sampled_b.c);
 	}
 
 	inline float SampleSingle() const {
@@ -67,6 +75,9 @@ public:
 
 	u_int  single_w; // Chosen single wavelength bin
 	mutable bool single; // Split to single
+
+	SWCSpectrum sampled_w, sampled_c, sampled_m, sampled_y;
+	SWCSpectrum sampled_r, sampled_g, sampled_b;
 
 	int binsRGB[WAVELENGTH_SAMPLES], binsXYZ[WAVELENGTH_SAMPLES];
 	float offsetsRGB[WAVELENGTH_SAMPLES], offsetsXYZ[WAVELENGTH_SAMPLES];
