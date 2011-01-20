@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2011 by authors (see AUTHORS.txt )                 *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -32,6 +32,56 @@
 #include <algorithm>
 
 using namespace lux;
+
+// Bilinear patch class
+// created by Shaun David Ramsey and Kristin Potter copyright (c) 2003
+// email ramsey()cs.utah.edu with any quesitons
+// modified by Asjørn Heid 2011
+/*
+This copyright notice is available at:
+http://www.opensource.org/licenses/mit-license.php
+
+Copyright (c) 2003 Shaun David Ramsey, Kristin Potter, Charles Hansen
+
+Permission is hereby granted, free of charge, to any person obtaining a 
+copy of this software and associated documentation files (the "Software"), 
+to deal in the Software without restriction, including without limitation 
+the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+and/or sel copies of the Software, and to permit persons to whom the 
+Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in 
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL 
+THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+DEALINGS IN THE SOFTWARE.
+*/
+class BilinearPatch
+{
+public:
+	// Constructors
+	BilinearPatch(const Point &p00, const Point &p01, const Point &p10, const Point &p11) : P00(p00), P01(p01), P10(p10), P11(p11) {}
+	~BilinearPatch() { }
+	// Find the tangent (du)
+	Vector TanU(const float v) const;
+	// Find the tangent (dv)
+	Vector TanV(const float u) const;
+	// Find dudv
+	Normal N(const float u, const float v) const;
+	// Evaluate the surface of the patch at u,v
+	Point P(const float u, const float v) const;
+	// Find the local closest point to spacept
+	bool RayPatchIntersection(const Ray &ray, float *u, float *v, float *t) const;
+
+	// The four points defining the patch
+	Point P00, P01, P10, P11;
+};
+// end Bilinear patch class
 
 MeshMicroDisplacementTriangle::MeshMicroDisplacementTriangle(const Mesh *m, u_int n) :
 	mesh(m), v(&(mesh->triVertexIndex[3 * n]))
@@ -148,141 +198,6 @@ static bool intersectTri(const Ray &ray, const Point &p1,
 	return true;
 }
 
-
-static u_int MajorAxis(const Vector &v) 
-{
-	const float absVx = fabsf(v.x);
-	const float absVy = fabsf(v.y);
-	const float absVz = fabsf(v.z);
-
-	if (absVx > absVy)
-		return (absVx > absVz) ? 0 : 2;
-	return (absVy > absVz) ? 1 : 2;
-}
-
-static void ComputeV11BarycentricCoords(const Vector &e01,
-	const Vector &e02, const Vector &e03, float *a11, float *b11) 
-{	
-	const Vector N(Cross(e01, e03));
-
-	switch (MajorAxis(N)) {
-		case 0: {
-			const float iNx = 1.f / N.x;
-			*a11 = (e02.y * e03.z - e02.z * e03.y) * iNx;
-			*b11 = (e01.y * e02.z - e01.z * e02.y) * iNx;
-			break;
-		}
-		case 1: {
-			const float iNy = 1.f / N.y;
-			*a11 = (e02.z * e03.x - e02.x * e03.z) * iNy;
-			*b11 = (e01.z * e02.x - e01.x * e02.z) * iNy;
-			break;
-		}
-		case 2: {
-			const float iNz = 1.f / N.z;
-			*a11 = (e02.x * e03.y - e02.y * e03.x) * iNz;
-			*b11 = (e01.x * e02.y - e01.y * e02.x) * iNz;
-			break;
-		}
-		default:
-			BOOST_ASSERT(false);
-			// since we don't allow for degenerate quads the normal
-			// should always be well defined and we should never get here
-			break;
-	}
-}
-
-static bool intersectQuad(const Ray &ray, const Point &p00, const Point &p10,
-	const Point &p01, const Point &p11, float *u, float *v, float *t)
-{
-	// Reject rays using the barycentric coordinates of
-	// the intersection point with respect to T.
-	const Vector e01(p10 - p00);
-	const Vector e03(p01 - p00);
-	const Vector P(Cross(ray.d, e03));
-	const float det = Dot(e01, P);
-	if (fabsf(det) < 1e-7f)
-		return false;
-
-	const float invdet = 1.f / det;
-
-	const Vector T(ray.o - p00);
-	const float alpha = Dot(T, P) * invdet;
-	if (alpha < 0.f)// || alpha > 1)
-		return false;
-
-	const Vector Q(Cross(T, e01));
-	const float beta = Dot(ray.d, Q) * invdet;
-	if (beta < 0.f)// || beta > 1)
-		return false;
-
-	// Reject rays using the barycentric coordinates of
-	// the intersection point with respect to T'.
-	if ((alpha + beta) > 1.f) {
-		const Vector e23(p01 - p11);
-		const Vector e21(p10 - p11);
-		const Vector P2(Cross(ray.d, e21));
-		const float det2 = Dot(e23, P2);
-		if (fabsf(det2) < 1e-7f)
-			return false;
-		// since we only reject if alpha or beta < 0
-		// we just need the sign info from det2
-		const Vector T2(ray.o - p11);
-		const float alpha2 = Dot(T2, P2);
-		if (det2 < 0.f) {
-			if (alpha2 > 0.f)
-				return false;
-		} else if (alpha2 < 0.f)
-			return false;
-		const Vector Q2 = Cross(T2, e23);
-		float beta2 = Dot(ray.d, Q2);
-		if (det2 < 0.f) {
-			if (beta2 > 0.f)
-				return false;
-		} else if (beta2 < 0.f)
-			return false;
-	}
-
-	// Compute the ray parameter of the intersection
-	// point.
-	*t = Dot(e03, Q) * invdet;
-	if (!(*t > ray.mint && *t < ray.maxt))
-		return false;
-
-	// Compute the barycentric coordinates of V11.
-	const Vector e02(p11 - p00);
-
-	float a11, b11;
-
-	ComputeV11BarycentricCoords(e01, e02, e03, &a11, &b11);
-
-	// save a lot of redundant computations
-	a11 -= 1.f;
-	b11 -= 1.f;
-
-	// Compute the bilinear coordinates of the
-	// intersection point.
-	if (fabsf(a11) < 1e-7f) {
-		*u = alpha;
-		*v = fabsf(b11) < 1e-7f ? beta : beta / (alpha * b11 + 1.f);
-	} else if (fabsf(b11) < 1e-7f) {
-		*v = beta;
-		*u = alpha / (beta * a11 + 1.f);
-	} else {
-		const float A = -b11;
-		const float B = alpha * b11 - beta * a11 - 1.f;
-		const float C = alpha;
-
-		Quadratic(A, B, C, u, v);
-		if ((*u < 0.f) || (*u > 1.f))
-			*u = *v;
-
-		*v = beta / (*u * b11 + 1.f);
-	}
-
-	return true;
-}
-
 Point MeshMicroDisplacementTriangle::GetDisplacedP(const Point &pbase, const Vector &n, const float u, const float v, const float w) const
 {
 		const float tu = u * uvs[0][0] + v * uvs[1][0] + w * uvs[2][0];
@@ -291,7 +206,7 @@ Point MeshMicroDisplacementTriangle::GetDisplacedP(const Point &pbase, const Vec
 		const DifferentialGeometry dg(pbase, Normal(n), dpdu, dpdv,
 			Normal(0, 0, 0), Normal(0, 0, 0), tu, tv, this);
 
-		SpectrumWavelengths sw;
+		const SpectrumWavelengths sw;
 
 		Vector displacement(n);
 		displacement *=	(
@@ -313,6 +228,18 @@ static bool intersectPlane(const Ray &ray, const Point &p1, const Point &p2, con
 		return false;
 
 	*t = Dot(n, p1 - ray.o) / num;
+
+	return true;
+}
+
+static bool intersectPlane(const Ray &ray, const Point &p, const Vector &n, float *t)
+{
+	const float num = Dot(n, ray.d);
+
+	if (fabsf(num) < MachineEpsilon::E(fabsf(num)))
+		return false;
+
+	*t = Dot(n, p - ray.o) / num;
 
 	return true;
 }
@@ -411,10 +338,14 @@ bool MeshMicroDisplacementTriangle::Intersect(const Ray &ray, Intersection* isec
 		const Point p01(p1 + M * n1);
 		const Point p11(p2 + M * n2);
 
-		float t, u ,v;
+		float t, u, v;
 
-		// TODO - cheaper ray-quad test (possibly ray-plane?)
-		if (intersectQuad(ray, p00, p10, p01, p11, &u, &v, &t)) {
+		const BilinearPatch bip(p00, p01, p10, p11);
+		
+		// currently ignores potential second hit
+		// ideally marching should be restarted with second hit if
+		// first hit misses
+		if (bip.RayPatchIntersection(ray, &u, &v, &t)) {
 			// always hits a lower triangle, so i+j+k == N-1
 			if (t < tmin) {
 				tmin = t;
@@ -441,9 +372,11 @@ bool MeshMicroDisplacementTriangle::Intersect(const Ray &ray, Intersection* isec
 		const Point p01(p2 + M * n2);
 		const Point p11(p3 + M * n3);
 
-		float t, u ,v;
+		float t, u, v;
 
-		if (intersectQuad(ray, p00, p10, p01, p11, &u, &v, &t)) {
+		const BilinearPatch bip(p00, p01, p10, p11);
+
+		if (bip.RayPatchIntersection(ray, &u, &v, &t)) {
 			// always hits a lower triangle, so i+j+k == N-1
 			if (t < tmin) {
 				tmin = t;
@@ -469,9 +402,11 @@ bool MeshMicroDisplacementTriangle::Intersect(const Ray &ray, Intersection* isec
 		const Point p01(p3 + M * n3);
 		const Point p11(p1 + M * n1);
 
-		float t, u ,v;
+		float t, u, v;
 
-		if (intersectQuad(ray, p00, p10, p01, p11, &u, &v, &t)) {
+		const BilinearPatch bip(p00, p01, p10, p11);
+
+		if (bip.RayPatchIntersection(ray, &u, &v, &t)) {
 			// always hits a lower triangle, so i+j+k == N-1
 			if (t < tmin) {
 				tmin = t;
@@ -492,7 +427,7 @@ bool MeshMicroDisplacementTriangle::Intersect(const Ray &ray, Intersection* isec
 
 	// no hit
 	if (i < 0 || j < 0 || k < 0)
-		return false;
+		return false;	
 
 
 	// initialize microtriangle vertices a,b,c
@@ -506,27 +441,27 @@ bool MeshMicroDisplacementTriangle::Intersect(const Ray &ray, Intersection* isec
 		va = j * delta;
 		wa = k * delta;
 
-		ub = i * delta;
-		vb = (j+1) * delta;
-		wb = k * delta;
+			ub = i * delta;
+			vb = (j+1) * delta;
+			wb = k * delta;
 
-		uc = i * delta;
-		vc = j * delta;
-		wc = (k+1) * delta;
-	} else {
-		// upper triangle
-		ua = (i+1) * delta;
-		va = j * delta;
-		wa = (k+1) * delta;
+			uc = i * delta;
+			vc = j * delta;
+			wc = (k+1) * delta;
+		} else {
+			// upper triangle
+			ua = (i+1) * delta;
+			va = j * delta;
+			wa = (k+1) * delta;
 
-		ub = (i+1) * delta;
-		vb = (j+1) * delta;
-		wb = k * delta;
+			ub = (i+1) * delta;
+			vb = (j+1) * delta;
+			wb = k * delta;
 
-		uc = i * delta;
-		vc = (j+1) * delta;
-		wc = (k+1) * delta;
-	}
+			uc = i * delta;
+			vc = (j+1) * delta;
+			wc = (k+1) * delta;
+		}
 
 	// interpolated normal, only normal of c is actively used
 	Vector na = Normalize(n1 * ua + n2 * va + n3 * wa);
@@ -543,49 +478,45 @@ bool MeshMicroDisplacementTriangle::Intersect(const Ray &ray, Intersection* isec
 		a = GetDisplacedP(pa, na, ua, va, wa);
 		b = GetDisplacedP(pb, nb, ub, vb, wb);
 		c = GetDisplacedP(pc, nc, uc, vc, wc);
-	}
 
-	if (enterSide < 0) {
-		// ray enters through one of the caps, and exits through one side
-		// check entry cell to figure out correct entry side
+		if (enterSide < 0) {
+			// ray enters through one of the caps, and possibly exits through one side
+			// check entry cell to figure out correct entry side
 
-		float tt;
-		float ttmin = 1e30;
+			float tt;
+			float ttmin = 1e30;
 
-		const Point p11(a + m * na);
-		const Point p12(b + m * nb);
-		const Point p13(a + M * na);
 
-		if (intersectPlane(ray, p11, p12, p13, &tt)) {
-			if (tt < ttmin) {
-				ttmin = tt;
-				enterSide = 1;
+			// TODO - improve
+			const Vector pn12(Cross(pb - pa, normalizedNormal));
+
+			if (intersectPlane(ray, pa, pn12, &tt)) {
+				if (tt < ttmin) {
+					ttmin = tt;
+					enterSide = 1;
+				}
 			}
-		}
 
-		const Point p21(b + m * nb);
-		const Point p22(c + m * nc);
-		const Point p23(b + M * nb);
+			const Vector pn23(Cross(pc - pb, normalizedNormal));
 
-		if (intersectPlane(ray, p21, p22, p23, &tt)) {
-			if (tt < ttmin) {
-				ttmin = tt;
-				enterSide = 2;
+			if (intersectPlane(ray, pb, pn23, &tt)) {
+				if (tt < ttmin) {
+					ttmin = tt;
+					enterSide = 2;
+				}
 			}
-		}
 
-		const Point p31(c + m * nc);
-		const Point p32(a + m * na);
-		const Point p33(c + M * nc);
+			const Vector pn31(Cross(pa - pc, normalizedNormal));
 
-		if (intersectPlane(ray, p31, p32, p33, &tt)) {
-			if (tt < ttmin) {
-				ttmin = tt;
-				enterSide = 3;
+			if (intersectPlane(ray, pc, pn31, &tt)) {
+				if (tt < ttmin) {
+					ttmin = tt;
+					enterSide = 3;
+				}
 			}
-		}
 
-		// if enterSide < 0 then we dont hit any walls
+			// if enterSide < 0 then we dont hit any walls
+		}
 	}
 
 	// Determine "change" variable based on which sides
@@ -658,8 +589,9 @@ bool MeshMicroDisplacementTriangle::Intersect(const Ray &ray, Intersection* isec
 		float b0, b1, b2;
 
 		if (intersectTri(ray, a, e1, e2, &b0, &b1, &b2, &t)) {
-			if ((t >= ray.mint) && (t <= ray.maxt)) {
-				// interpolate position in microtriangle
+			if (t >= ray.mint && t <= ray.maxt) {
+				// interpolate microtriangle even if it is very small
+				// otherwise selfshadowing will occur
 				const Point pp(a * b0 + b * b1 + c * b2);
 
 				// recover barycentric coordinates in macrotriangle
@@ -698,9 +630,8 @@ bool MeshMicroDisplacementTriangle::Intersect(const Ray &ray, Intersection* isec
 		}
 
 		// check if we reached end cell
-		if (i == ei && j == ej && k == ek) {
+		if (i == ei && j == ej && k == ek)
 			return false;
-		}
 
 		const bool rightOfC = Dot(Cross(nc, (ray.o - c)), ray.d) > 0.f;
 		
@@ -716,7 +647,7 @@ bool MeshMicroDisplacementTriangle::Intersect(const Ray &ray, Intersection* isec
 
 		// 5 = -1 mod 6
 		change = (LastChange)((change + (rightOfC ? 1 : 5)) % 6);
-	
+
 		switch (change) {
 			case iminus:
 				if (--i < 0)
@@ -759,6 +690,7 @@ bool MeshMicroDisplacementTriangle::Intersect(const Ray &ray, Intersection* isec
 				// something has gone horribly wrong
 				return false;
 		}
+
 		const float uc = (1.f - vc - wc);
 
 		// point in macrotriangle
@@ -837,7 +769,7 @@ void MeshMicroDisplacementTriangle::Sample(float u1, float u2, float u3, Differe
 void MeshMicroDisplacementTriangle::GetShadingGeometry(const Transform &obj2world,
 	const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const
 {
-	if (!mesh->displacementMapNormalSmooth) {
+	if (!mesh->displacementMapNormalSmooth || !mesh->n) {
 		*dgShading = dg;
 		return;
 	}
@@ -846,9 +778,8 @@ void MeshMicroDisplacementTriangle::GetShadingGeometry(const Transform &obj2worl
 		dg.iData.baryTriangle.coords[1] * mesh->p[v[1]] +
 		dg.iData.baryTriangle.coords[2] * mesh->p[v[2]]);
 	// Use _n_ to compute shading tangents for triangle, _ss_ and _ts_
-	const Normal ns(Normalize(dg.iData.baryTriangle.coords[0] * GetN(0) +
-		dg.iData.baryTriangle.coords[1] * GetN(1) +
-		dg.iData.baryTriangle.coords[2] * GetN(2)));
+	const Normal ns = Normalize(dg.iData.baryTriangle.coords[0] * mesh->n[v[0]] +
+		dg.iData.baryTriangle.coords[1] * mesh->n[v[1]] + dg.iData.baryTriangle.coords[2] * mesh->n[v[2]]);
 
 	Vector ts(Normalize(Cross(ns, dpdu)));
 	Vector ss(Cross(ts, ns));
@@ -893,4 +824,207 @@ void MeshMicroDisplacementTriangle::GetShadingGeometry(const Transform &obj2worl
 	// the normal needs to be reversed
 	if (Dot(ns, dgShading->nn) < 0.f)
 		dgShading->nn = -dgShading->nn;
+}
+
+
+// Bilinear patch implementation, see copyright information above
+// x,y,z position of a point at params u and v
+Point BilinearPatch::P(const float u, const float v) const
+{
+	return 
+		((1.f - u) * (1.f - v)) * P00 +
+		((1.f - u) *        v)  * P01 + 
+		(       u  * (1.f - v)) * P10 +
+		(       u  *        v)  * P11;
+}
+
+// Find tangent (du)
+Vector BilinearPatch::TanU(const float v) const
+{
+  return (1.f - v) * (P10 - P00) + v * (P11 - P01);
+}
+
+// Find tanget (dv)
+Vector BilinearPatch::TanV(const float u) const
+{
+  return (1.f - u) * (P01 - P00) + u * (P11 - P10);
+}
+
+
+// Find the normal of the patch
+Normal BilinearPatch::N(const float u, const float v) const
+{
+  return Normalize(Normal(Cross(TanU(v), TanV(u))));
+}
+  
+//choose between the best denominator to avoid singularities
+//and to get the most accurate root possible
+static float getu(const float v, const float M1, const float M2, 
+				  const float J1, const float J2, 
+				  const float K1, const float K2, 
+				  const float R1, const float R2)
+{
+
+	const float denom = v * (M1-M2) + J1 - J2;
+	const float d2 = v * M1 + J1;
+	if(fabsf(denom) > fabsf(d2)) // which denominator is bigger
+		return (v * (K2 - K1) + R2 - R1) / denom;
+	return -(v * K1 + R1) / d2;
+}
+
+// compute t with the best accuracy by using the component
+// of the direction that is largest
+static float computet(const Ray &ray, const Point &srfpos)
+{
+	const float dx = fabsf(ray.d.x);
+	const float dy = fabsf(ray.d.y);
+	const float dz = fabsf(ray.d.z);
+	// if x is bigger than y and z
+	if(dx >= dy && dx >= dz)
+		return (srfpos.x - ray.o.x) / ray.d.x;
+	// if y is bigger than x and z
+	else if(dy >= dz)
+		return (srfpos.y - ray.o.y) / ray.d.y;
+	// otherwise x isn't bigger than both and y isn't bigger than both
+	else
+		return (srfpos.z - ray.o.z) / ray.d.z;    
+}
+
+// returns roots in u[2] between min and max
+static u_int QuadraticRoot(float a, float b, float c, 
+		   float min, float max, float *u)
+{
+	float t0, t1;
+	if (!Quadratic(a, b, c, &t0, &t1))
+		return 0;
+
+	u_int sol = 0;
+	if (t0 > min && t0 < max)
+		u[sol++] = t0;
+	if (t1 > min && t1 < max)
+		u[sol++] = t1;
+	return sol;
+}
+
+//             RayPatchIntersection
+// intersect rays of the form p = o + t d where t is the parameter
+// to solve for. 
+// return true to this function
+// for invalid intersections - simply return false uv values can be 
+// anything
+#define ray_epsilon 1e-9
+bool BilinearPatch::RayPatchIntersection(const Ray &ray, float *u, float *v, float *t) const
+{
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// Equation of the patch:
+	// P(u, v) = (1-u)(1-v)P00 + (1-u)vP01 + u(1-v)P10 + uvP11
+	// Equation of the ray:
+	// R(t) = r + tq
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// Variables for substitition
+	// a = P11 - P10 - P01 + P00
+	// b = P10 - P00
+	// c = P01 - P00
+	// d = P00  (d is shown below in the #ifdef raypatch area)
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~  
+
+	// Find a w.r.t. x, y, z
+	const float ax = P11.x - P10.x - P01.x + P00.x;
+	const float ay = P11.y - P10.y - P01.y + P00.y;
+	const float az = P11.z - P10.z - P01.z + P00.z;
+
+	// Find A1 and A2
+	const float A1 = ax * ray.d.z - az * ray.d.x;
+	const float A2 = ay * ray.d.z - az * ray.d.y;
+
+	// Find b w.r.t. x, y, z
+	const float bx = P10.x - P00.x;
+	const float by = P10.y - P00.y;
+	const float bz = P10.z - P00.z;
+
+	// Find B1 and B2
+	const float B1 = bx * ray.d.z - bz * ray.d.x;
+	const float B2 = by * ray.d.z - bz * ray.d.y;
+
+	// Find c w.r.t. x, y, z
+	const float cx = P01.x - P00.x;
+	const float cy = P01.y - P00.y;
+	const float cz = P01.z - P00.z;
+
+	// Find C1 and C2
+	const float C1 = cx * ray.d.z - cz * ray.d.x;
+	const float C2 = cy * ray.d.z - cz * ray.d.y;
+
+	// Find d w.r.t. x, y, z - subtracting r just after  
+	const float dx = P00.x - ray.o.x;
+	const float dy = P00.y - ray.o.y;
+	const float dz = P00.z - ray.o.z;
+  
+	// Find D1 and D2
+	const float D1 = dx * ray.d.z - dz * ray.d.x;
+	const float D2 = dy * ray.d.z - dz * ray.d.y;
+
+
+	const float A = A2*C1 - A1*C2;
+	const float B = A2*D1 - A1*D2 + B2*C1 -B1*C2;
+	const float C = B2*D1 - B1*D2;
+
+	float vsol[2]; // the two roots from quadraticroot
+	u_int num_sol = QuadraticRoot(A, B, C, -ray_epsilon, 1.f + ray_epsilon, vsol);
+
+	switch(num_sol)
+	{
+		case 0: {
+			return false; // no solutions found
+		}
+		case 1: {
+			*v =  vsol[0];
+			*u = getu(vsol[0], A2, A1, B2, B1, C2, C1, D2, D1);
+			const Point pos1 = P(*u, *v);
+			*t = computet(ray, pos1);
+			if (*u < 1.f + ray_epsilon && *u > -ray_epsilon && *t > 0.f)//vars okay?
+				return true;
+			else
+				return false; // no other soln - so ret false
+		}
+		case 2: { // two solutions found
+			*v = vsol[0];
+			*u = getu(vsol[0], A2, A1, B2, B1, C2, C1, D2, D1);
+			const Point pos1 = P(*u, *v);
+			*t = computet(ray, pos1);
+			if(*u < 1.f + ray_epsilon && *u > -ray_epsilon && *t > 0.f) {
+				const float tu = getu(vsol[1], A2, A1, B2, B1, C2, C1, D2, D1);
+
+				if (tu < 1.f + ray_epsilon && tu > ray_epsilon) {
+					const Point pos2 = P(tu, vsol[1]);
+					const float t2 = computet(ray, pos2);
+					if (t2 < 0.f || *t < t2) // t2 is bad or t1 is better
+						return true;
+					// other wise both t2 > 0 and t2 < t1
+					*v = vsol[1];
+					*u = tu;
+					*t = t2;
+					return true;
+				}
+				return true; // u2 is bad but u1 vars are still okay
+			}
+			else // doesn't fit in the root - try other one
+			{
+				*v = vsol[1];
+				*u = getu(vsol[1], A2, A1, B2, B1, C2, C1, D2, D1);
+				const Point pos1 = P(*u, *v);
+				*t = computet(ray, pos1);
+				if (*u < 1.f + ray_epsilon && *u > -ray_epsilon && *t > 0.f)
+					return true;
+				else
+					return false;
+			}
+			break;
+		}
+	}
+ 
+  BOOST_ASSERT(false);
+  return false; 
 }
