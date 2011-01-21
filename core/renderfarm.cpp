@@ -493,6 +493,12 @@ void RenderFarm::send(const string &command, const string &name,
 		file = params.FindOneString(string("iesname"), file);
 		if (file.size())
 			sendFile(file);
+
+		file = "";
+		file = params.FindOneString(string("filename"), file);
+		if (file.size())
+			sendFile(file);
+
 	} catch (exception& e) {
 		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
 	}

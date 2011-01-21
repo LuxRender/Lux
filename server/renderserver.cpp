@@ -286,6 +286,7 @@ static void processCommand(bool isLittleEndian,
 
 	processFile("mapname", params, tmpFileList, stream);
 	processFile("iesname", params, tmpFileList, stream);
+	processFile("filename", params, tmpFileList, stream);
 
 	(Context::GetActive()->*f)(type, params);
 }
