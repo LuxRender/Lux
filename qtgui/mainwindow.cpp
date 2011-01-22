@@ -1403,19 +1403,19 @@ void MainWindow::setCurrentFile(const QString& filename)
 		showName = info.fileName();
 		if (filename == "-")
 			showName = "LuxRender - Piped Scene";
-		else
+		else {
 			showName = "LuxRender - " + showName;
         
-		m_CurrentFileBaseName = info.completeBaseName();
+			m_CurrentFileBaseName = info.completeBaseName();
 
-		m_lastOpendir = info.absolutePath();
-		if (filename.endsWith(".lxs")) {
-			m_recentFiles.removeAll(m_CurrentFile);
-			m_recentFiles.prepend(m_CurrentFile);
-		
-			updateRecentFileActions(); // only parseble files .lxs to recentlist
+			m_lastOpendir = info.absolutePath();
+			if (filename.endsWith(".lxs")) {
+				m_recentFiles.removeAll(m_CurrentFile);
+				m_recentFiles.prepend(m_CurrentFile);
+			
+				updateRecentFileActions(); // only parseble files .lxs to recentlist
+			}
 		}
-
 	}
 
 	setWindowTitle(tr("%1[*]").arg(showName));
