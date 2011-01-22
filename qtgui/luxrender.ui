@@ -1051,6 +1051,7 @@
     <addaction name="separator"/>
     <addaction name="menuExport_to_Image"/>
     <addaction name="separator"/>
+    <addaction name="action_exitAppSave"/>
     <addaction name="action_exitApp"/>
    </widget>
    <addaction name="menu_file"/>
@@ -1085,7 +1086,18 @@
     <string>Save FLM...</string>
    </property>
   </action>
-  <action name="action_exitApp">
+   <action name="action_exitAppSave">
+    <property name="text">
+     <string>Save and Exit</string>
+    </property>
+    <property name="shortcutContext">
+     <enum>Qt::ApplicationShortcut</enum>
+    </property>
+    <property name="shortcut">
+     <string>Shift+Alt+Q</string>
+    </property>
+   </action>
+   <action name="action_exitApp">
    <property name="text">
     <string>Exit</string>
    </property>

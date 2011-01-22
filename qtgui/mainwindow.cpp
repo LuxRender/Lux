@@ -170,6 +170,7 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	connect(ui->action_resumeFLM, SIGNAL(triggered()), this, SLOT(resumeFLM()));
 	connect(ui->action_loadFLM, SIGNAL(triggered()), this, SLOT(loadFLM()));
 	connect(ui->action_saveFLM, SIGNAL(triggered()), this, SLOT(saveFLM()));
+	connect(ui->action_exitAppSave, SIGNAL(triggered()), this, SLOT(exitAppSave()));
 	connect(ui->action_exitApp, SIGNAL(triggered()), this, SLOT(exitApp()));
 	
 	// Export to Image sub-menu slots
@@ -333,7 +334,6 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
     
 	m_blinkTimer = new QTimer();
 	connect(m_blinkTimer, SIGNAL(timeout()), SLOT(blinkTrigger()));
-
 
 	// Init render area
 	renderView = new RenderView(ui->frame_render);
@@ -566,9 +566,16 @@ bool MainWindow::canStopRendering()
 }
 
 // File menu slots
+void MainWindow::exitAppSave()
+{
+	endRenderingSession(false);
+	qApp->exit();
+}
+
 void MainWindow::exitApp()
 {
-	endRenderingSession();
+	// abort rendering
+	endRenderingSession(true);
 }
 
 void MainWindow::openFile()
@@ -618,7 +625,7 @@ void MainWindow::resumeFLM()
 	if(flmFileName.isNull())
 		return;
 
-	endRenderingSession ();
+	endRenderingSession();
 
 	renderScenefile (lxsFileName, flmFileName);
 }
@@ -1072,11 +1079,15 @@ void MainWindow::batchProcess()
 }
 
 // Stop rendering session entirely - this is different from stopping it; it's not resumable
-void MainWindow::endRenderingSession()
+void MainWindow::endRenderingSession(bool abort)
 {
 	statusMessage->setText("");
 	// Clean up if this is not the first rendering
 	if (m_guiRenderState != WAITING) {
+		// at least give user some hints of what's going on
+		activityMessage->setText("Shutting down...");
+		qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
+
 		m_renderTimer->stop ();
 		m_statsTimer->stop ();
 		m_netTimer->stop ();
@@ -1096,13 +1107,17 @@ void MainWindow::endRenderingSession()
 			m_updateThread->join();
 		delete m_updateThread;
 		m_updateThread = NULL;
-		luxExit ();
+		// TODO - make this async as it can block for tens of seconds
+		if (abort)
+			luxAbort();
+		else
+			luxExit();
 		if (m_engineThread)
 			m_engineThread->join();
 		delete m_engineThread;
 		m_engineThread = NULL;
 		LOG( LUX_INFO,LUX_NOERROR)<< "Freeing resources.";
-		luxCleanup ();
+		luxCleanup();
 		changeRenderState (WAITING);
 		renderView->setLogoMode ();
 	}

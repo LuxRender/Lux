@@ -164,7 +164,7 @@ public:
 	void renderScenefile(const QString& sceneFilename, const QString& flmFilename);
 	void renderScenefile(const QString& filename);
 	void changeRenderState (LuxGuiRenderState state);
-	void endRenderingSession ();
+	void endRenderingSession(bool abort = true);
 	
 	void updateTonemapWidgetValues ();
 
@@ -286,6 +286,7 @@ public slots:
 
 private slots:
 
+	void exitAppSave ();
 	void exitApp ();
 	void openFile ();
 	void openRecentFile();

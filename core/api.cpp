@@ -569,6 +569,11 @@ extern "C" void luxExit()
 	Context::GetActive()->Exit();
 }
 
+extern "C" void luxAbort()
+{
+	Context::GetActive()->Abort();
+}
+
 extern "C" void luxWait()
 {
 	Context::GetActive()->Wait();

@@ -110,6 +110,7 @@ boost::shared_ptr<lux::Material > Context::GetMaterial(const string &n) const
 
 void Context::Init() {
 	// Dade - reinitialize
+	aborted = false;
 	terminated = false;
 	currentApiState = STATE_OPTIONS_BLOCK;
 	luxCurrentRenderer = NULL;
@@ -810,13 +811,15 @@ void Context::WorldEnd() {
 					// Stop the render farm too
 					activeContext->renderFarm->stopFilmUpdater();
 					// Update the film for the last time
-					activeContext->renderFarm->updateFilm(luxCurrentScene);
+					if (!aborted)
+						activeContext->renderFarm->updateFilm(luxCurrentScene);
 					// Disconnect from all servers
 					activeContext->renderFarm->disconnectAll();
 				}
 
 				// Store final image
-				luxCurrentScene->camera->film->WriteImage((ImageType)(IMAGE_FILEOUTPUT|IMAGE_FRAMEBUFFER));
+				if (!aborted)
+					luxCurrentScene->camera->film->WriteImage((ImageType)(IMAGE_FILEOUTPUT|IMAGE_FRAMEBUFFER));
 			}
 		}
 	}
@@ -954,7 +957,8 @@ void Context::Exit() {
 		// Dade - stop the render farm too
 		activeContext->renderFarm->stopFilmUpdater();
 		// Dade - update the film for the last time
-		activeContext->renderFarm->updateFilm(luxCurrentScene);
+		if (!aborted)
+			activeContext->renderFarm->updateFilm(luxCurrentScene);
 		// Dade - disconnect from all servers
 		activeContext->renderFarm->disconnectAll();
 	}
@@ -967,6 +971,11 @@ void Context::Exit() {
 
 	if (luxCurrentRenderer)
 		luxCurrentRenderer->Terminate();
+}
+
+void Context::Abort() {
+	aborted = true;
+	Exit();
 }
 
 //controlling number of threads

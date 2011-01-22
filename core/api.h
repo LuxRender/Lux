@@ -110,6 +110,7 @@ void luxSaveEXR(const char* name, bool useHalfFloat, bool includeZBuffer, int co
 void luxStart();
 void luxPause();
 void luxExit();
+void luxAbort();
 void luxWait();
 
 void luxSetHaltSamplesPerPixel(int haltspp, bool haveEnoughSamplesPerPixel, bool suspendThreadsWhenDone);

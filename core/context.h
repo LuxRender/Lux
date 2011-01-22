@@ -147,6 +147,7 @@ public:
 	void Pause();
 	void Wait();
 	void Exit();
+	void Abort();
 
 	void SetHaltSamplesPerPixel(int haltspp, bool haveEnoughSamplesPerPixel,
 		bool suspendThreadsWhenDone);
@@ -308,6 +309,7 @@ private:
 	mutable boost::mutex renderingMutex;
 	bool luxCurrentSceneReady;
 	bool terminated;
+	bool aborted; // abort rendering
 
 	StatsData *statsData;
 };
