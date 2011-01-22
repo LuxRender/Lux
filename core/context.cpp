@@ -293,6 +293,7 @@ void Context::PixelFilter(const string &n, const ParamSet &params) {
 }
 void Context::Film(const string &type, const ParamSet &params) {
 	VERIFY_OPTIONS("Film");
+	// NOTE - luxFilm command doesn't cause "filename" file to be sent
 	renderFarm->send("luxFilm", type, params);
 	renderOptions->filmParams = params;
 	renderOptions->filmName = type;

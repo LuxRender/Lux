@@ -494,10 +494,12 @@ void RenderFarm::send(const string &command, const string &name,
 		if (file.size())
 			sendFile(file);
 
-		file = "";
-		file = params.FindOneString(string("filename"), file);
-		if (file.size())
-			sendFile(file);
+		if (command != "luxFilm") {
+			file = "";
+			file = params.FindOneString(string("filename"), file);
+			if (file.size())
+				sendFile(file);
+		}
 
 	} catch (exception& e) {
 		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
