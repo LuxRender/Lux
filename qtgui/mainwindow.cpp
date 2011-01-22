@@ -743,11 +743,11 @@ void MainWindow::stopRender()
 
 void MainWindow::outputTonemapped()
 {
-	QString fileName = QFileDialog::getSaveFileName(this, tr("Save Tonemapped Image"), m_lastOpendir, tr("PNG Image (*.png);;JPEG Image (*.jpg);;Windows Bitmap (*.bmp);;TIFF Image (*.tif)"));
+	QString fileName = QFileDialog::getSaveFileName(this, tr("Save Tonemapped Image"), m_lastOpendir + "/" + m_CurrentFileBaseName, tr("PNG Image (*.png);;JPEG Image (*.jpg);;Windows Bitmap (*.bmp);;TIFF Image (*.tif)"));
 	if (fileName.isEmpty()) 
 		return;
 
-	if (saveCurrentImageTonemapped(fileName)) 
+	if (saveCurrentImageTonemapped(fileName))
 		statusMessage->setText(tr("Tonemapped image saved"));
 	else 
 		statusMessage->setText(tr("ERROR: Tonemapped image NOT saved."));
@@ -756,7 +756,7 @@ void MainWindow::outputTonemapped()
 
 void MainWindow::outputHDR()
 {
-	QString fileName = QFileDialog::getSaveFileName(this, tr("Save High Dynamic Range Image"), m_lastOpendir, tr("OpenEXR Image (*.exr)"));
+	QString fileName = QFileDialog::getSaveFileName(this, tr("Save High Dynamic Range Image"), m_lastOpendir + "/" + m_CurrentFileBaseName, tr("OpenEXR Image (*.exr)"));
 	if (fileName.isEmpty()) 
 		return;	
 
