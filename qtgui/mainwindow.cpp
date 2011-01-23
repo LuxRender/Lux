@@ -710,7 +710,7 @@ void MainWindow::resumeRender()
 		changeRenderState(RENDERING);
 		showRenderresolution();
 		showZoomfactor();
-		showViewportsize();
+//		showViewportsize();
 	}
 }
 
@@ -1372,7 +1372,8 @@ void MainWindow::showRenderresolution()
 	if (luxHasObject("film")) {
 		int w = luxGetIntAttribute("film", "xResolution");
 		int h = luxGetIntAttribute("film", "yResolution");
-		ui->resinfoLabel->setText(QString("Resolution: %1 x %2").arg(w).arg(h));
+		ui->resolutioniconLabel->setPixmap(QPixmap(":/icons/resolutionicon.png"));
+		ui->resinfoLabel->setText(QString(" %1 x %2 ").arg(w).arg(h));
 		ui->resinfoLabel->setVisible(true);
 	} else {
 		ui->resinfoLabel->setVisible(false);
@@ -1381,17 +1382,11 @@ void MainWindow::showRenderresolution()
 // show the zoom-factor in viewport
 void MainWindow::showZoomfactor()
 {
-	ui->zoominfoLabel->setText((QString("Zoom Factor: %1").arg(renderView->getZoomFactor()))+ "%");
+	ui->zoominfoLabel->setText((QString(" %1").arg(renderView->getZoomFactor()))+ "% ");
 }
 // show the actual viewportsize
 void MainWindow::viewportChanged() {
 	showZoomfactor();
-	showViewportsize();
-}
-// actual viewportsize
-void MainWindow::showViewportsize() {
-	int viewportw = renderView->width(), viewporth = renderView->height();
-	ui->viewportinfoLabel->setText(QString("Viewport size: %1 x %2").arg(viewportw).arg(viewporth));
 }
 
 void MainWindow::renderScenefile(const QString& sceneFilename, const QString& flmFilename)

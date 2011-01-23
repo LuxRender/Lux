@@ -160,7 +160,6 @@ public:
 	void updateStatistics();
 	void showRenderresolution();
 	void showZoomfactor();
-	void showViewportsize();
 	void renderScenefile(const QString& sceneFilename, const QString& flmFilename);
 	void renderScenefile(const QString& filename);
 	void changeRenderState (LuxGuiRenderState state);
