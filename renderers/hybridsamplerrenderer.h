@@ -46,7 +46,7 @@ namespace lux
 
 class HybridSamplerRenderer : public HybridRenderer {
 public:
-	HybridSamplerRenderer();
+	HybridSamplerRenderer(const ParamSet &params);
 	~HybridSamplerRenderer();
 
 	RendererType GetType() const;

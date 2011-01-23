@@ -42,11 +42,13 @@ using namespace lux;
 // HybridSamplerRenderer
 //------------------------------------------------------------------------------
 
-HybridSamplerRenderer::HybridSamplerRenderer() : HybridRenderer() {
+HybridSamplerRenderer::HybridSamplerRenderer(const ParamSet &params) : HybridRenderer() {
 	state = INIT;
 
+	int oclPlatformIndex = params.FindOneInt("opencl.platform.index", 0);
+
 	// Create the LuxRays context
-	ctx = new luxrays::Context(LuxRaysDebugHandler);
+	ctx = new luxrays::Context(LuxRaysDebugHandler, oclPlatformIndex);
 
 	// Create the device descriptions
 	HRHostDescription *host = new HRHostDescription(this, "Localhost");
@@ -526,7 +528,7 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 }
 
 Renderer *HybridSamplerRenderer::CreateRenderer(const ParamSet &params) {
-	return new HybridSamplerRenderer();
+	return new HybridSamplerRenderer(params);
 }
 
 static DynamicLoader::RegisterRenderer<HybridSamplerRenderer> r("hybrid");
