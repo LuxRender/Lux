@@ -206,10 +206,10 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 
 	// Panes
 	panes[0] = new PaneWidget(ui->panesAreaContents, "Tone Mapping", ":/icons/tonemapicon.png");
-	panes[1] = new PaneWidget(ui->panesAreaContents, "Lens Effects", ":/icons/lenseffectsicon.png", true);
-	panes[2] = new PaneWidget(ui->panesAreaContents, "Color Space", ":/icons/colorspaceicon.png");
-	panes[3] = new PaneWidget(ui->panesAreaContents, "Gamma + Film Response", ":/icons/gammaicon.png", true);
-	panes[4] = new PaneWidget(ui->panesAreaContents, "HDR Histogram", ":/icons/histogramicon.png");
+	panes[1] = new PaneWidget(ui->panesAreaContents, "Color Space", ":/icons/colorspaceicon.png");
+	panes[2] = new PaneWidget(ui->panesAreaContents, "Gamma + Film Response", ":/icons/gammaicon.png", true);
+	panes[3] = new PaneWidget(ui->panesAreaContents, "HDR Histogram", ":/icons/histogramicon.png");
+	panes[4] = new PaneWidget(ui->panesAreaContents, "Lens Effects", ":/icons/lenseffectsicon.png", true);
 	panes[5] = new PaneWidget(ui->panesAreaContents, "Noise Reduction", ":/icons/noisereductionicon.png", true);
 	
 #if defined(__APPLE__)
@@ -223,31 +223,31 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	panes[0]->expand();
 	connect(tonemapwidget, SIGNAL(valuesChanged()), this, SLOT(toneMapParamsChanged()));
 
-	// Lens effects page
-	lenseffectswidget = new LensEffectsWidget(panes[1]);
-	panes[1]->setWidget(lenseffectswidget);
-	ui->panesLayout->addWidget(panes[1]);
-	connect(lenseffectswidget, SIGNAL(forceUpdate()), this, SLOT(forceToneMapUpdate()));
-	connect(lenseffectswidget, SIGNAL(valuesChanged()), this, SLOT(toneMapParamsChanged()));
-
 	// Colorspace
-	colorspacewidget = new ColorSpaceWidget(panes[2]);
-	panes[2]->setWidget(colorspacewidget);
-	ui->panesLayout->addWidget(panes[2]);
+	colorspacewidget = new ColorSpaceWidget(panes[1]);
+	panes[1]->setWidget(colorspacewidget);
+	ui->panesLayout->addWidget(panes[1]);
 	connect(colorspacewidget, SIGNAL(valuesChanged()), this, SLOT(toneMapParamsChanged()));
 
 	// Gamma
-	gammawidget = new GammaWidget(panes[3]);
-	panes[3]->setWidget(gammawidget);
-	ui->panesLayout->addWidget(panes[3]);
+	gammawidget = new GammaWidget(panes[2]);
+	panes[2]->setWidget(gammawidget);
+	ui->panesLayout->addWidget(panes[2]);
 	connect(gammawidget, SIGNAL(valuesChanged()), this, SLOT(toneMapParamsChanged()));
 
 	// Histogram
-	histogramwidget = new HistogramWidget(panes[4]);
-	panes[4]->setWidget(histogramwidget);
+	histogramwidget = new HistogramWidget(panes[3]);
+	panes[3]->setWidget(histogramwidget);
+	ui->panesLayout->addWidget(panes[3]);
+	panes[3]->expand();
+	
+	// Lens effects page
+	lenseffectswidget = new LensEffectsWidget(panes[4]);
+	panes[4]->setWidget(lenseffectswidget);
 	ui->panesLayout->addWidget(panes[4]);
-	panes[4]->expand();
-
+	connect(lenseffectswidget, SIGNAL(forceUpdate()), this, SLOT(forceToneMapUpdate()));
+	connect(lenseffectswidget, SIGNAL(valuesChanged()), this, SLOT(toneMapParamsChanged()));
+	
 	// Noise reduction
 	noisereductionwidget = new NoiseReductionWidget(panes[5]);
 	panes[5]->setWidget(noisereductionwidget);
