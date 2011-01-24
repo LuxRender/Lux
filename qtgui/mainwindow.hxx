@@ -192,8 +192,7 @@ private:
 	Ui::MainWindow *thorizontalLayout_5;
 	
 	QLabel *resinfoLabel;
-	QLabel *zoominfoLabel;
-	QLabel *viewportinfoLabel; 
+	QLabel *zoominfoLabel; 
 	
 	Ui::MainWindow *ui;
 

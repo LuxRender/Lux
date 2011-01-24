@@ -710,7 +710,6 @@ void MainWindow::resumeRender()
 		changeRenderState(RENDERING);
 		showRenderresolution();
 		showZoomfactor();
-//		showViewportsize();
 	}
 }
 
