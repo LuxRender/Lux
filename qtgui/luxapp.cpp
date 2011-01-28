@@ -43,6 +43,24 @@ using std::stringstream;
 #include "mainwindow.hxx"
 #include "luxapp.hxx"
 
+#if defined(WIN32) || !defined(__CYGWIN__)
+// for stderr redirection
+#include <windows.h>
+#include <stdio.h>
+#include <io.h>
+#include <fcntl.h> 
+
+void AttachStderr()
+{
+	int hCrt = _open_osfhandle((intptr_t)GetStdHandle(STD_ERROR_HANDLE), _O_TEXT);
+
+	FILE *hf = _fdopen(hCrt, "w");
+	*stderr = *hf;
+
+	setvbuf(stderr, NULL, _IONBF, 0);
+} 
+#endif
+
 namespace po = boost::program_options;
 
 LuxGuiApp::LuxGuiApp(int argc, char **argv) : QApplication(argc, argv)
@@ -68,6 +86,18 @@ void LuxGuiApp::init(void) {
 	luxInit();
 
 	if (ProcessCommandLine()) {
+
+#if defined(WIN32) || !defined(__CYGWIN__)
+		// attach to parent process' console if it exists, otherwise ignore
+		if (m_copyLog2Console) {
+			// AttachConsole is XP+ only, lets hope nobody on win2k tries this...
+			if (AttachConsole(ATTACH_PARENT_PROCESS)) {
+				AttachStderr();
+				std::cerr << "\nRedirecting log to console...\n";
+			}
+		}
+#endif
+
 		mainwin = new MainWindow(0,m_copyLog2Console);
 		mainwin->show();
 #if defined(__APPLE__)
