@@ -55,4 +55,11 @@ const char * ds_pylux_errorHandler =
 "Specify an alternate error handler (logging) function for LuxRender engine\n"
 "output. By default the render engine will print to stdout";
 
+const char * ds_pylux_ErrorSeverity =
+"(+) Error severity levels";
+
+const char * ds_pylux_errorFilter =
+"Specify an error severity level filter. Errors with severity less than the\n"
+"specified level will be suppressed";
+
 #endif	// LUX_PYDOC_H

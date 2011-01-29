@@ -55,7 +55,26 @@ void pyLuxErrorHandler(boost::python::object handler)
 	luxErrorHandler(luxErrorPython);
 }
 
+void pyLuxErrorFilter(int severity)
+{
+	//System wide init (usefull if you set the filter before any context is created)
+	boost::call_once(&luxInit, luxInitFlag);
+
+	luxErrorFilter(severity);
+}
+
 }//namespace lux
+
+class LuxErrorSeverity {
+public:
+	enum Levels {
+		Debug = -1,
+		Info,
+		Warning,
+		Error,
+		Severe
+	};
+};
 
 /*
  *  Finally, we create the python module using boost/python !
@@ -155,6 +174,21 @@ BOOST_PYTHON_MODULE(pylux)
 		ds_pylux_errorHandler
 	);
 	
+	// Error filtering
+	enum_<LuxErrorSeverity::Levels>("ErrorSeverity", ds_pylux_ErrorSeverity)
+		.value("LUX_DEBUG", LuxErrorSeverity::Debug)
+		.value("LUX_INFO", LuxErrorSeverity::Info)
+		.value("LUX_WARNING", LuxErrorSeverity::Warning)
+		.value("LUX_ERROR", LuxErrorSeverity::Error)
+		.value("LUX_SEVERE", LuxErrorSeverity::Severe)
+		;
+
+	def("errorFilter",
+		pyLuxErrorFilter,
+		ds_pylux_errorFilter
+	);
+
+
 	// Add definitions given in other header files
 	export_PyContext();
 	export_PyFlexImageFilm();
