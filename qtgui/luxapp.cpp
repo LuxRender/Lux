@@ -43,7 +43,7 @@ using std::stringstream;
 #include "mainwindow.hxx"
 #include "luxapp.hxx"
 
-#if defined(WIN32) || !defined(__CYGWIN__)
+#if defined(WIN32) && !defined(__CYGWIN__)
 // for stderr redirection
 #include <windows.h>
 #include <stdio.h>
@@ -87,7 +87,7 @@ void LuxGuiApp::init(void) {
 
 	if (ProcessCommandLine()) {
 
-#if defined(WIN32) || !defined(__CYGWIN__)
+#if defined(WIN32) && !defined(__CYGWIN__)
 		// attach to parent process' console if it exists, otherwise ignore
 		if (m_copyLog2Console) {
 			// AttachConsole is XP+ only, lets hope nobody on win2k tries this...
