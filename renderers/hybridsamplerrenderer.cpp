@@ -32,6 +32,7 @@
 #include "context.h"
 
 #include "luxrays/core/context.h"
+#include "luxrays/core/device.h"
 #include "luxrays/core/virtualdevice.h"
 
 using namespace lux;
@@ -42,7 +43,7 @@ using namespace lux;
 // HybridSamplerRenderer
 //------------------------------------------------------------------------------
 
-HybridSamplerRenderer::HybridSamplerRenderer(int oclPlatformIndex, bool useGPUs) : HybridRenderer() {
+HybridSamplerRenderer::HybridSamplerRenderer(int oclPlatformIndex, bool useGPUs, u_int forceGPUWorkGroupSize) : HybridRenderer() {
 	state = INIT;
 
 	// Create the LuxRays context
@@ -69,6 +70,10 @@ HybridSamplerRenderer::HybridSamplerRenderer(int oclPlatformIndex, bool useGPUs)
 
 	if (useGPUs && (hwDeviceDescs.size() > 1)) {
 		hwDeviceDescs.resize(1);
+
+		luxrays::OpenCLDeviceDescription *desc = (luxrays::OpenCLDeviceDescription *)hwDeviceDescs[0];
+		if (forceGPUWorkGroupSize > 0)
+			desc->SetForceWorkGroupSize(forceGPUWorkGroupSize);
 
 		luxrays::IntersectionDevice *intersectionDevice = ctx->AddVirtualM2OIntersectionDevices(0, hwDeviceDescs)[0];
 
@@ -551,11 +556,21 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 
 Renderer *HybridSamplerRenderer::CreateRenderer(const ParamSet &params) {
 
-	int platformIndex = params.FindOneInt("opencl.platform.index", -1);
+	ParamSet configParams(params);
 
-	bool useGPUs = params.FindOneBool("opencl.gpu.use", true);
+	string configFile = params.FindOneString("configfile", "");
+	if (configFile != "") {
+		HybridRenderer::LoadCfgParams(configFile, &configParams);
+	}
 
-	return new HybridSamplerRenderer(platformIndex, useGPUs);
+	int platformIndex = configParams.FindOneInt("opencl.platform.index", -1);
+
+	bool useGPUs = configParams.FindOneBool("opencl.gpu.use", true);
+
+	u_int forceGPUWorkGroupSize = max(0, configParams.FindOneInt("opencl.gpu.workgroup.size", 0));
+
+	params.MarkUsed(configParams);
+	return new HybridSamplerRenderer(platformIndex, useGPUs, forceGPUWorkGroupSize);
 }
 
 static DynamicLoader::RegisterRenderer<HybridSamplerRenderer> r("hybrid");

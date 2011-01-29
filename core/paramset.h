@@ -149,6 +149,7 @@ public:
 	boost::shared_ptr<Texture<FresnelGeneral> >
 		GetFresnelTexture(const string &name, float def) const;
 	boost::shared_ptr<Material> GetMaterial(const string &name) const;
+	void MarkUsed(const ParamSet &p2) const;
 	void ReportUnused() const;
 	~ParamSet() {
 		Clear();

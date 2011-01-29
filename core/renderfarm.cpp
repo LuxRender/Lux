@@ -494,6 +494,11 @@ void RenderFarm::send(const string &command, const string &name,
 		if (file.size())
 			sendFile(file);
 
+		file = "";
+		file = params.FindOneString(string("configfile"), file);
+		if (file.size())
+			sendFile(file);
+
 		if (command != "luxFilm") {
 			file = "";
 			file = params.FindOneString(string("filename"), file);
