@@ -42,10 +42,8 @@ using namespace lux;
 // HybridSamplerRenderer
 //------------------------------------------------------------------------------
 
-HybridSamplerRenderer::HybridSamplerRenderer(const ParamSet &params) : HybridRenderer() {
+HybridSamplerRenderer::HybridSamplerRenderer(int oclPlatformIndex, bool useGPUs) : HybridRenderer() {
 	state = INIT;
-
-	int oclPlatformIndex = params.FindOneInt("opencl.platform.index", 0);
 
 	// Create the LuxRays context
 	ctx = new luxrays::Context(LuxRaysDebugHandler, oclPlatformIndex);
@@ -69,15 +67,27 @@ HybridSamplerRenderer::HybridSamplerRenderer(const ParamSet &params) : HybridRen
 	luxrays::DeviceDescription::Filter(luxrays::DEVICE_TYPE_OPENCL, hwDeviceDescs);
 	luxrays::OpenCLDeviceDescription::Filter(luxrays::OCL_DEVICE_TYPE_GPU, hwDeviceDescs);
 
-	if (hwDeviceDescs.size() < 1)
-		throw std::runtime_error("Unable to find an OpenCL GPU device.");
-	hwDeviceDescs.resize(1);
+	if (useGPUs && (hwDeviceDescs.size() > 1)) {
+		hwDeviceDescs.resize(1);
 
-	luxrays::IntersectionDevice *intersectionDevice = ctx->AddVirtualM2OIntersectionDevices(0, hwDeviceDescs)[0];
+		luxrays::IntersectionDevice *intersectionDevice = ctx->AddVirtualM2OIntersectionDevices(0, hwDeviceDescs)[0];
 
-	virtualIDevice = ctx->GetVirtualM2OIntersectionDevices()[0];
+		virtualIDevice = ctx->GetVirtualM2OIntersectionDevices()[0];
 
-	LOG(LUX_INFO, LUX_NOERROR) << "OpenCL Device used: [" << intersectionDevice->GetName() << "]";
+		LOG(LUX_INFO, LUX_NOERROR) << "OpenCL Device used: [" << intersectionDevice->GetName() << "]";
+	} else {
+		if (useGPUs)
+			LOG(LUX_WARNING, LUX_SYSTEM) << "Unable to find an OpenCL GPU device, falling back to CPU";
+
+		virtualIDevice = NULL;
+
+		// allocate native threads
+		std::vector<luxrays::DeviceDescription *> nativeDeviceDescs = deviceDescs;
+		luxrays::DeviceDescription::Filter(luxrays::DEVICE_TYPE_NATIVE_THREAD, nativeDeviceDescs);
+
+		nativeDevices = ctx->AddIntersectionDevices(nativeDeviceDescs);
+	}
+
 
 	preprocessDone = false;
 	suspendThreadsWhenDone = false;
@@ -348,10 +358,14 @@ double HybridSamplerRenderer::Statistics_Efficiency() {
 }
 
 string HybridSamplerRenderer::GetStats() {
-	luxrays::IntersectionDevice *idevice = virtualIDevice->GetVirtualDevice(0);
-	std::stringstream ss("");
-	ss << "GPU Load: " << std::setiosflags(std::ios_base::fixed) << std::setprecision(0) << (100.f * idevice->GetLoad()) << "%";
-	return ss.str();
+
+	if (virtualIDevice) {
+		luxrays::IntersectionDevice *idevice = virtualIDevice->GetVirtualDevice(0);
+		std::stringstream ss("");
+		ss << "GPU Load: " << std::setiosflags(std::ios_base::fixed) << std::setprecision(0) << (100.f * idevice->GetLoad()) << "%";
+		return ss.str();
+	} else
+		return "Using CPU";
 }
 
 //------------------------------------------------------------------------------
@@ -365,8 +379,16 @@ void HybridSamplerRenderer::CreateRenderThread() {
 	// Avoid to create the thread in case signal is EXIT. For instance, it
 	// can happen when the rendering is done.
 	if ((state == RUN) || (state == PAUSE)) {
-		// Add an instance to the LuxRays virtual device
-		luxrays::IntersectionDevice * idev = virtualIDevice->AddVirtualDevice();
+		
+		luxrays::IntersectionDevice *idev;
+
+		if (virtualIDevice) {
+			// Add an instance to the LuxRays virtual device
+			idev = virtualIDevice->AddVirtualDevice();
+		} else {
+			// Add a nativethread device
+			idev = nativeDevices[renderThreads.size() % nativeDevices.size()];
+		}
 
 		RenderThread *rt = new  RenderThread(renderThreads.size(), this, idev);
 
@@ -528,7 +550,12 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 }
 
 Renderer *HybridSamplerRenderer::CreateRenderer(const ParamSet &params) {
-	return new HybridSamplerRenderer(params);
+
+	int platformIndex = params.FindOneInt("opencl.platform.index", -1);
+
+	bool useGPUs = params.FindOneBool("opencl.gpu.use", true);
+
+	return new HybridSamplerRenderer(platformIndex, useGPUs);
 }
 
 static DynamicLoader::RegisterRenderer<HybridSamplerRenderer> r("hybrid");
