@@ -68,7 +68,7 @@ HybridSamplerRenderer::HybridSamplerRenderer(int oclPlatformIndex, bool useGPUs,
 	luxrays::DeviceDescription::Filter(luxrays::DEVICE_TYPE_OPENCL, hwDeviceDescs);
 	luxrays::OpenCLDeviceDescription::Filter(luxrays::OCL_DEVICE_TYPE_GPU, hwDeviceDescs);
 
-	if (useGPUs && (hwDeviceDescs.size() > 1)) {
+	if (useGPUs && (hwDeviceDescs.size() >= 1)) {
 		hwDeviceDescs.resize(1);
 
 		luxrays::OpenCLDeviceDescription *desc = (luxrays::OpenCLDeviceDescription *)hwDeviceDescs[0];
@@ -457,7 +457,8 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 	RandomGenerator rng(seed);
 
 	//luxrays::RayBuffer *rayBuffer = renderThread->iDevice->NewRayBuffer();
-	luxrays::RayBuffer *rayBuffer = new luxrays::RayBuffer(8192);
+	//luxrays::RayBuffer *rayBuffer = new luxrays::RayBuffer(8192);
+	luxrays::RayBuffer *rayBuffer = new luxrays::RayBuffer(4);
 
 	// Init all PathState
 	const double t0 = luxrays::WallClockTime();
