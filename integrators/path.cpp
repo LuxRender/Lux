@@ -524,7 +524,8 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 							state->Vd[0] = state->Ld[0].Filter(sw) * state->VContrib;
 							state->LdGroup[0] = light.group;
 
-							state->shadowRay[0] = Ray(p, wi, shadowRayEpsilon, length, state->sample.time);
+							const float maxt = length - shadowRayEpsilon;
+							state->shadowRay[0] = Ray(p, wi, shadowRayEpsilon, maxt, state->sample.time);
 							state->tracedShadowRayCount = 1;
 						}
 					}
