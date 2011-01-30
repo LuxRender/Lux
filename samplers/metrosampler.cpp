@@ -31,6 +31,7 @@
 using namespace lux;
 
 #define SAMPLE_FLOATS 6
+// rngGet/rngGet2 assumes rgnN is 2^n-1
 static const u_int rngN = 8191;
 static const u_int rngA = 884;
 
@@ -110,9 +111,15 @@ static float mutateScaled(const float x, const float randomValue, const float mi
 	}
 }
 
-static float rngDummy;
-#define rngGet(__pos) (modff(rngSamples[(data->rngBase + (__pos)) % rngN] + data->rngRotation[(__pos)], &rngDummy))
-#define rngGet2(__pos,__off) (modff(rngSamples[(data->rngBase + (__pos) + (__off)) % rngN] + data->rngRotation[(__pos)], &rngDummy))
+static float fracf(const float &v) {
+	const long i = static_cast<long>(v);
+	return v - i;
+}
+
+#define rngGet(__pos) (fracf(rngSamples[(data->rngBase + (__pos)) % rngN] + data->rngRotation[(__pos)]))
+#define rngGet2(__pos,__off) (fracf(rngSamples[(data->rngBase + (__pos) + (__off)) % (rngN+1) + (data->rngBase + (__pos) + (__off)) / (rngN+1)] + data->rngRotation[(__pos)]))
+
+
 // Metropolis method definitions
 MetropolisSampler::MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
 		u_int maxRej, float largeProb, float rng, bool useV) :
@@ -121,7 +128,7 @@ MetropolisSampler::MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
  range(rng), useVariance(useV)
 {
 	// Allocate and compute all values of the rng
-	rngSamples = AllocAligned<float>(rngN);
+	rngSamples = AllocAligned<float>(rngN+1);
 	rngSamples[0] = 0.f;
 	rngSamples[1] = 1.f / rngN;
 	u_int rngI = 1;
@@ -131,6 +138,8 @@ MetropolisSampler::MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
 	}
 	RandomGenerator rndg(1);
 	Shuffle(rndg, rngSamples, rngN, 1);
+	// used to enable mod 2^n instead of 2^n-1 in rngGet()
+	rngSamples[rngN] = rngSamples[0];
 }
 
 MetropolisSampler::~MetropolisSampler() {
@@ -204,23 +213,29 @@ float *MetropolisSampler::GetLazyValues(const Sample &sample, u_int num, u_int p
 	// Get the reference number of mutations
 	const int stampLimit = sample.stamp;
 	// If we are at the target, don't do anything
-	if (sample.timexD[num][pos] != stampLimit) {
+	int curTimexD = sample.timexD[num][pos];
+	if (curTimexD != stampLimit) {
+		const u_int spos = data->normalSamples + pos * size;
 		// If the node has not yet been initialized, do it now
 		// otherwise get the last known value from the sample image
-		if (sample.timexD[num][pos] == -1) {
+		if (curTimexD == -1) {
 			for (u_int i = 0; i < size; ++i)
-				sd[i] = rngGet(data->normalSamples + pos * size + i);
-			sample.timexD[num][pos] = 0;
+				sd[i] = rngGet(spos + i);
+			curTimexD = 0;
 		} else {
 			float *image = data->sampleImage + data->offset[num] + pos * size;
 			for (u_int i = 0; i < size; ++i)
 				sd[i] = image[i];
 		}
 		// Mutate as needed
-		for (; sample.timexD[num][pos] < stampLimit; ++(sample.timexD[num][pos])) {
-			for (u_int i = 0; i < size; ++i)
-				sd[i] = mutate(sd[i], rngGet2(data->normalSamples + pos * size + i, data->rngOffset * static_cast<u_int>(stampLimit - sample.timexD[num][pos] + 1)));
+		for (; curTimexD < stampLimit; ++curTimexD) {
+			const u_int roffs = data->rngOffset * static_cast<u_int>(stampLimit - curTimexD + 1);
+			for (u_int i = 0; i < size; ++i) {
+				sd[i] = mutate(sd[i], rngGet2(spos + i, roffs));
+			}
 		}
+		// store back
+		sample.timexD[num][pos] = curTimexD;
 	}
 	return sd;
 }
