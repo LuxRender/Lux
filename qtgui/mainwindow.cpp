@@ -1703,59 +1703,58 @@ void MainWindow::logEvent(LuxLogEvent *event)
 	bool warning = false;
 	bool error = false;
 
-	bool hasSelection = ui->textEdit_log->textCursor().hasSelection();
-	int startPos, endPos;
-	
-	// Remember current selection, if any
-	if (hasSelection) {
-		startPos = ui->textEdit_log->textCursor().selectionStart();
-		endPos = ui->textEdit_log->textCursor().selectionEnd();
-	}
+	// changing cursor does not change the visible cursor
+	QTextCursor cursor = ui->textEdit_log->textCursor();
+	bool atEnd = cursor.atEnd();
 
 	// Append log message to end of document
-	ui->textEdit_log->moveCursor(QTextCursor::End);
+	cursor.movePosition(QTextCursor::End);
+
+	QTextCharFormat fmt(cursor.charFormat());
+
+	QColor textColor = Qt::black;
 
 	switch(event->getSeverity()) {
 		case LUX_DEBUG:
 			ss << tr("Debug: ");
-			ui->textEdit_log->setTextColor(debugColour);
+			textColor = debugColour;
 			break;
 		case LUX_INFO:
 		default:
 			ss << tr("Info: ");
-			ui->textEdit_log->setTextColor(infoColour);
+			textColor = infoColour;
 			break;
 		case LUX_WARNING:
 			ss << tr("Warning: ");
-			ui->textEdit_log->setTextColor(warningColour);
+			textColor = warningColour;
 			warning = true;            
 			break;
 		case LUX_ERROR:
 			ss << tr("Error: ");
-			ui->textEdit_log->setTextColor(errorColour);
+			textColor = errorColour;
 			error = true;
 			break;
 		case LUX_SEVERE:
 			ss << tr("Severe error: ");
-			ui->textEdit_log->setTextColor(severeColour);
+			textColor = severeColour;
 			break;
 	}
 
 	ss << event->getCode() << "] ";
 	ss.flush();
 	
-	ui->textEdit_log->textCursor().insertText(ss.readAll());
-	ui->textEdit_log->setTextColor(Qt::black);
+	fmt.setForeground(QBrush(textColor));
+	cursor.setCharFormat(fmt);
+	cursor.insertText(ss.readAll());
+
+	fmt.setForeground(QBrush(Qt::black));
+	cursor.setCharFormat(fmt);
 	ss << event->getMessage() << endl;
-	ui->textEdit_log->textCursor().insertText(ss.readAll());
+	cursor.insertText(ss.readAll());
 
-	// Restore previous selection, if any
-	if (hasSelection) {
-		ui->textEdit_log->textCursor().setPosition(endPos);
-		ui->textEdit_log->textCursor().setPosition(startPos);
-	}
-
-	ui->textEdit_log->ensureCursorVisible();
+	// scroll new message into view if cursor was at end
+	if (atEnd)
+		ui->textEdit_log->ensureCursorVisible();
 	
 	int currentIndex = ui->tabs_main->currentIndex();
 	if (currentIndex != 1 && event->getSeverity() > LUX_INFO) {
