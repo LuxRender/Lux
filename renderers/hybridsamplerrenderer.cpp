@@ -507,10 +507,9 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 				++nrSamples;
 
 				if (!integratorState[currentNextIndex]->Init(scene)) {
-					renderer->Pause();
-
 					// Dade - we have done, check what we have to do now
 					if (renderer->suspendThreadsWhenDone) {
+						renderer->Pause();
 						// Dade - wait for a resume rendering or exit
 						while (renderer->state == PAUSE) {
 							boost::xtime xt;
@@ -525,6 +524,7 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 						} else
 							continue;
 					} else {
+						renderer->Terminate();
 						renderIsOver = true;
 						break;
 					}
