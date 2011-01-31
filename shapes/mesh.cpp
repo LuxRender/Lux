@@ -258,13 +258,18 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 				break;
 			}
 			case SUBDIV_MICRODISPLACEMENT:
-				triType = TRI_MICRODISPLACEMENT;
-
 				for (u_int i = 0; i < nverts; ++i)
 					p[i] = ObjectToWorld(p[i]);
 				if (n) {
 					for (u_int i = 0; i < nverts; ++i)
 						n[i] = Normalize(ObjectToWorld(n[i]));
+				}
+
+				if (displacementMap) {
+					triType = TRI_MICRODISPLACEMENT;
+				} else {
+					LOG(LUX_WARNING, LUX_CONSISTENCY) << "No displacement map for microdisplacement, disabling";
+					triType = TRI_AUTO;
 				}
 
 				break;
@@ -519,7 +524,7 @@ void Mesh::GetIntersection(const luxrays::RayHit &rayHit, const u_int index, Int
 		dpdv = (-du2 * dp1 + du1 * dp2) * invdet;
 	}
 
-	const float b0 = 1.f - (rayHit.b1 + rayHit.b2);
+	const float b0 = 1.f - rayHit.b1 - rayHit.b2;
 	const float b1 = rayHit.b1;
 	const float b2 = rayHit.b2;
 
@@ -528,7 +533,7 @@ void Mesh::GetIntersection(const luxrays::RayHit &rayHit, const u_int index, Int
 	const float tv = b0 * uv[0][1] + b1 * uv[1][1] + b2 * uv[2][1];
 
 	const Normal nn = Normal(Normalize(Cross(e1, e2)));
-	const Point pp(p1 + b1 * e1 + b2 * e2);
+	const Point pp(b0 * p1 + b1 * p2 + b2 * p3);
 
 	isect->dg = DifferentialGeometry(pp, nn, dpdu, dpdv,
 		Normal(0, 0, 0), Normal(0, 0, 0), tu, tv, this);
