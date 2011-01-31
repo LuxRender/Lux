@@ -1508,7 +1508,7 @@ bool Film::TransmitFilm(
 	if (directWrite) {
 		if (useCompression) {
 			filtering_stream<output> fs;
-			fs.push(gzip_compressor(9));
+			fs.push(gzip_compressor(4));
 			fs.push(stream);
 			totNumberOfSamples = DoTransmitFilm(fs, clearBuffers, transmitParams);
 
