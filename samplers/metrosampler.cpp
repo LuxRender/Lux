@@ -31,7 +31,6 @@
 using namespace lux;
 
 #define SAMPLE_FLOATS 6
-// rngGet/rngGet2 assumes rgnN is 2^n-1
 static const u_int rngN = 8191;
 static const u_int rngA = 884;
 
@@ -117,7 +116,7 @@ static float fracf(const float &v) {
 }
 
 #define rngGet(__pos) (fracf(rngSamples[(data->rngBase + (__pos)) % rngN] + data->rngRotation[(__pos)]))
-#define rngGet2(__pos,__off) (fracf(rngSamples[(data->rngBase + (__pos) + (__off)) % (rngN+1) + (data->rngBase + (__pos) + (__off)) / (rngN+1)] + data->rngRotation[(__pos)]))
+#define rngGet2(__pos,__off) (fracf(rngSamples[(data->rngBase + (__pos) + (__off)) % rngN] + data->rngRotation[(__pos)]))
 
 
 // Metropolis method definitions
@@ -128,7 +127,7 @@ MetropolisSampler::MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
  range(rng), useVariance(useV)
 {
 	// Allocate and compute all values of the rng
-	rngSamples = AllocAligned<float>(rngN+1);
+	rngSamples = AllocAligned<float>(rngN);
 	rngSamples[0] = 0.f;
 	rngSamples[1] = 1.f / rngN;
 	u_int rngI = 1;
@@ -138,8 +137,6 @@ MetropolisSampler::MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
 	}
 	RandomGenerator rndg(1);
 	Shuffle(rndg, rngSamples, rngN, 1);
-	// used to enable mod 2^n instead of 2^n-1 in rngGet()
-	rngSamples[rngN] = rngSamples[0];
 }
 
 MetropolisSampler::~MetropolisSampler() {
