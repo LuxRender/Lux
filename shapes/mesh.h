@@ -117,6 +117,9 @@ protected:
 	float displacementMapScale;
 	float displacementMapOffset;
 	bool displacementMapNormalSmooth, displacementMapSharpBoundary;
+
+	// for error reporting
+	mutable u_int inconsistentShadingTris;
 };
 
 //------------------------------------------------------------------------------

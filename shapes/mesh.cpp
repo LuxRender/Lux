@@ -299,6 +299,9 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 		else
 			concreteTriType = TRI_BARY;
 	}
+
+	inconsistentShadingTris = 0;
+
 	switch (concreteTriType) {
 		case TRI_WALD:
 			for (u_int i = 0; i < ntris; ++i) {
@@ -347,6 +350,13 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 			break;
 		}
 	}
+
+	if (inconsistentShadingTris > 0) {
+		LOG(LUX_WARNING, LUX_CONSISTENCY) <<
+			"Inconsistent shading normals in " << 
+			inconsistentShadingTris << " triangle" << (inconsistentShadingTris > 1 ? "s" : "");
+	}
+
 	u_int numConcreteTris = refinedPrims.size();
 
 	// Dade - refine quads
@@ -727,7 +737,6 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 		}
 	}
 
-	// don't actually use this for now...
 	Mesh::MeshSubdivType subdivType;
 	if (subdivSchemeStr == "loop")
 		subdivType = Mesh::SUBDIV_LOOP;

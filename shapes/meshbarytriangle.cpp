@@ -46,14 +46,12 @@ MeshBaryTriangle::MeshBaryTriangle(const Mesh *m, u_int n) :
 				Dot(normalizedNormal, m->n[v[2]]) < 0.f)
 				swap(v_[1], v_[2]);
 			else {
-				LOG(LUX_WARNING, LUX_CONSISTENCY) <<
-					"Inconsistent shading normals";
+				m->inconsistentShadingTris++;
 			}
 		} else if (cos0 > 0.f) {
 			if (!(Dot(normalizedNormal, m->n[v[1]]) > 0.f &&
 				Dot(normalizedNormal, m->n[v[2]]) > 0.f)) {
-				LOG(LUX_WARNING, LUX_CONSISTENCY) <<
-					"Inconsistent shading normals";
+				m->inconsistentShadingTris++;
 			}
 		}
 	}
