@@ -22,6 +22,7 @@
 
 #include "plymesh.h"
 #include "paramset.h"
+#include "context.h"
 #include "dynload.h"
 
 #include "mesh.h"
@@ -323,11 +324,44 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 	const int *triVerts = plyNbTris > 0 ? &faceData.triVerts[0] : NULL;
 	const int *quadVerts = plyNbQuads > 0 ? &faceData.quadVerts[0] : NULL;
 
+	// subdiv and displacement params
+	string displacementMapName = params.FindOneString("displacementmap", "");
+	float displacementMapScale = params.FindOneFloat("dmscale", 0.1f);
+	float displacementMapOffset = params.FindOneFloat("dmoffset", 0.0f);
+	bool displacementMapNormalSmooth = params.FindOneBool("dmnormalsmooth", true);
+	bool displacementMapSharpBoundary = params.FindOneBool("dmsharpboundary", false);
+
+	boost::shared_ptr<Texture<float> > displacementMap;
+	if (displacementMapName != "") {
+		// Lotus - read subdivision data
+		map<string, boost::shared_ptr<Texture<float> > > *floatTextures = Context::GetActiveFloatTextures();
+
+		boost::shared_ptr<Texture<float> > dm((*floatTextures)[displacementMapName]);
+		displacementMap = dm;
+
+		if (displacementMap.get() == NULL) {
+			LOG( LUX_WARNING,LUX_SYNTAX) << "Unknow float texture '" << displacementMapName << "' in a Mesh shape.";
+		}
+	}
+
+	string subdivscheme = params.FindOneString("subdivscheme", "loop");
+	int nsubdivlevels = params.FindOneInt("nsubdivlevels", 0);
+
+	Mesh::MeshSubdivType subdivType;
+	if (subdivscheme == "loop")
+		subdivType = Mesh::SUBDIV_LOOP;
+	else if (subdivscheme == "microdisplacement")
+		subdivType = Mesh::SUBDIV_MICRODISPLACEMENT;
+	else {
+		LOG(LUX_WARNING,LUX_BADTOKEN) << "Subdivision type  '" << subdivscheme << "' unknown. Using \"loop\".";
+		subdivType = Mesh::SUBDIV_LOOP;
+	}
+
 	boost::shared_ptr<Texture<float> > dummytex;
 	Mesh *mesh = new Mesh(o2w, reverseOrientation, Mesh::ACCEL_AUTO,
 		plyNbVerts, p, n, uv, Mesh::TRI_AUTO, plyNbTris, triVerts,
-		Mesh::QUAD_QUADRILATERAL, plyNbQuads, quadVerts, Mesh::SUBDIV_LOOP, 0,
-		dummytex, 1.f, 0.f, false, false);
+		Mesh::QUAD_QUADRILATERAL, plyNbQuads, quadVerts, subdivType, nsubdivlevels,
+		displacementMap, displacementMapScale, displacementMapOffset, displacementMapNormalSmooth, displacementMapSharpBoundary);
 	delete[] p;
 	delete[] n;
 	delete[] uv;
