@@ -819,7 +819,7 @@ void Context::WorldEnd() {
 
 				// Store final image
 				if (!aborted)
-					luxCurrentScene->camera->film->WriteImage((ImageType)(IMAGE_FILEOUTPUT|IMAGE_FRAMEBUFFER));
+					luxCurrentScene->camera->film->WriteImage((ImageType)(IMAGE_FILE_ALL|IMAGE_FRAMEBUFFER));
 			}
 		}
 	}

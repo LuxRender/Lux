@@ -43,7 +43,7 @@ public:
 	// FlexImageFilm Public Methods
 
 	FlexImageFilm(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop[4],
-		const string &filename1, bool premult, int wI, int dI, int cM,
+		const string &filename1, bool premult, int wI, int fwI, int dI, int cM,
 		bool cw_EXR, OutputChannels cw_EXR_channels, bool cw_EXR_halftype, int cw_EXR_compressiontype, bool cw_EXR_applyimaging,
 		bool cw_EXR_gamutclamp, bool cw_EXR_ZBuf, ZBufNormalization cw_EXR_ZBuf_normalizationtype,
 		bool cw_PNG, OutputChannels cw_PNG_channels, bool cw_PNG_16bit, bool cw_PNG_gamutclamp, bool cw_PNG_ZBuf, ZBufNormalization cw_PNG_ZBuf_normalizationtype,
@@ -127,6 +127,8 @@ private:
 
 	int writeInterval;
 	boost::xtime lastWriteImageTime;
+	int flmWriteInterval;
+	boost::xtime lastWriteFLMTime;
 	int displayInterval;
 	int write_EXR_compressiontype;
 	ZBufNormalization write_EXR_ZBuf_normalizationtype;

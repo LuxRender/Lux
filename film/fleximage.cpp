@@ -46,7 +46,7 @@ using namespace lux;
 
 // FlexImageFilm Method Definitions
 FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop[4],
-	const string &filename1, bool premult, int wI, int dI, int cM,
+	const string &filename1, bool premult, int wI, int fwI, int dI, int cM,
 	bool cw_EXR, OutputChannels cw_EXR_channels, bool cw_EXR_halftype, int cw_EXR_compressiontype, bool cw_EXR_applyimaging,
 	bool cw_EXR_gamutclamp, bool cw_EXR_ZBuf, ZBufNormalization cw_EXR_ZBuf_normalizationtype,
 	bool cw_PNG, OutputChannels cw_PNG_channels, bool cw_PNG_16bit, bool cw_PNG_gamutclamp, bool cw_PNG_ZBuf, ZBufNormalization cw_PNG_ZBuf_normalizationtype,
@@ -60,7 +60,7 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, u_int filtRes
 	Film(xres, yres, filt, filtRes, crop, filename1, premult, cw_EXR_ZBuf || cw_PNG_ZBuf || cw_TGA_ZBuf, w_resume_FLM, 
 		restart_resume_FLM, haltspp, halttime, reject_warmup, debugmode, outlierk), 
 	framebuffer(NULL), float_framebuffer(NULL), alpha_buffer(NULL), z_buffer(NULL),
-	writeInterval(wI), displayInterval(dI)
+	writeInterval(wI), flmWriteInterval(fwI), displayInterval(dI)
 {
 	colorSpace = ColorSystem(cs_red[0], cs_red[1], cs_green[0], cs_green[1], cs_blue[0], cs_blue[1], whitepoint[0], whitepoint[1], 1.f);
 
@@ -99,6 +99,7 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, u_int filtRes
 
 	AddIntAttribute(*this, "displayInterval", "Display interval (seconds)", displayInterval, &FlexImageFilm::displayInterval, Queryable::ReadWriteAccess);
 	AddIntAttribute(*this, "writeInterval", "Output file write interval (seconds)", writeInterval, &FlexImageFilm::writeInterval, Queryable::ReadWriteAccess);
+	AddIntAttribute(*this, "flmWriteInterval", "Output FLM file write interval (seconds)", flmWriteInterval, &FlexImageFilm::flmWriteInterval, Queryable::ReadWriteAccess);
 
 	// Set use and default runtime changeable parameters
 	m_TonemapKernel = d_TonemapKernel = p_TonemapKernel;
@@ -186,6 +187,7 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, u_int filtRes
 
 	// init timer
 	boost::xtime_get(&lastWriteImageTime, boost::TIME_UTC);
+	lastWriteFLMTime = lastWriteImageTime;
 }
 
 // Parameter Access functions
@@ -794,16 +796,32 @@ void FlexImageFilm::CheckWriteOuputInterval()
 	boost::xtime currentTime;
 	boost::xtime_get(&currentTime, boost::TIME_UTC);
 	bool timeToWriteImage = (currentTime.sec - lastWriteImageTime.sec > writeInterval);
+	bool timeToWriteFLM = (currentTime.sec - lastWriteFLMTime.sec > flmWriteInterval);
 
 	// Possibly write out in-progress image
-	if (timeToWriteImage) {
-		if (!framebuffer) createFrameBuffer();
-		WriteImage(IMAGE_FILEOUTPUT);
-		// WriteImage can take a very long time to be executed (i.e. by saving
-		// the film. It is better to refresh lastWriteImageTime after the
-		// execution of WriteImage instead than before.
-		boost::xtime_get(&lastWriteImageTime, boost::TIME_UTC);
-	}
+	if (!(timeToWriteImage || timeToWriteFLM))
+		return;
+
+	if (!framebuffer) 
+		createFrameBuffer();
+
+	ImageType output = IMAGE_NONE;
+	if (timeToWriteImage)
+		output = static_cast<ImageType>(output | IMAGE_FILEOUTPUT);
+	if (timeToWriteFLM)
+		output = static_cast<ImageType>(output | IMAGE_FLMOUTPUT);
+
+	WriteImage(output);
+
+	// WriteImage can take a very long time to be executed (i.e. by saving
+	// the film. It is better to refresh timestamps after the
+	// execution of WriteImage instead than before.
+	boost::xtime_get(&currentTime, boost::TIME_UTC);
+
+	if (timeToWriteImage)
+		lastWriteImageTime = currentTime;
+	if (timeToWriteFLM)
+		lastWriteFLMTime = currentTime;
 }
 
 vector<RGBColor>& FlexImageFilm::ApplyPipeline(const ColorSystem &colorSpace, vector<XYZColor> &xyzcolor)
@@ -915,7 +933,9 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 
 			WriteEXRImage(rgbColor, alpha, filename + postfix + ".exr", zBuf);
 		}
+	}
 
+	if (type & IMAGE_FLMOUTPUT) {
 		// Dade - save the current status of the film if required
 		if (writeResumeFlm)
 			WriteResumeFilm(filename + ".flm");
@@ -1411,6 +1431,7 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 
 	// intervals
 	int writeInterval = params.FindOneInt("writeinterval", 60);
+	int flmWriteInterval = params.FindOneInt("flmwriteinterval", writeInterval);
 	int displayInterval = params.FindOneInt("displayinterval", 12);
 
 	// Rejection mechanism
@@ -1465,7 +1486,7 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 	float s_Gamma = params.FindOneFloat("gamma", 2.2f);
 
 	return new FlexImageFilm(xres, yres, filter, filtRes, crop,
-		filename, premultiplyAlpha, writeInterval, displayInterval,
+		filename, premultiplyAlpha, writeInterval, flmWriteInterval, displayInterval,
 		clampMethod, w_EXR, w_EXR_channels, w_EXR_halftype, w_EXR_compressiontype, w_EXR_applyimaging, w_EXR_gamutclamp, w_EXR_ZBuf, w_EXR_ZBuf_normalizationtype,
 		w_PNG, w_PNG_channels, w_PNG_16bit, w_PNG_gamutclamp, w_PNG_ZBuf, w_PNG_ZBuf_normalizationtype,
 		w_TGA, w_TGA_channels, w_TGA_gamutclamp, w_TGA_ZBuf, w_TGA_ZBuf_normalizationtype, 

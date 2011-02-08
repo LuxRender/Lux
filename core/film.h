@@ -38,9 +38,11 @@ namespace lux {
 
 enum ImageType {
     IMAGE_NONE = 0, // Don't write anything
-    IMAGE_FILEOUTPUT = 1 << 1, // Write image to file
+    IMAGE_FILEOUTPUT = 1 << 0, // Write image to file
+    IMAGE_FLMOUTPUT = 1 << 1, // Write flm file
     IMAGE_FRAMEBUFFER = 1 << 2, // Display image
-    IMAGE_ALL = IMAGE_FILEOUTPUT | IMAGE_FRAMEBUFFER
+	IMAGE_FILE_ALL = IMAGE_FILEOUTPUT | IMAGE_FLMOUTPUT, // All filebased output
+    IMAGE_ALL = IMAGE_FLMOUTPUT | IMAGE_FILEOUTPUT | IMAGE_FRAMEBUFFER
 };
 
 // Buffer types
