@@ -1470,19 +1470,30 @@ double Film::DoTransmitFilm(
 					osWriteLittleEndianFloat(isLittleEndian, os, pixel.alpha);
 					osWriteLittleEndianFloat(isLittleEndian, os, pixel.weightSum);
 				}
-			}
-
-			if (clearBuffers) {
-				// Dade - reset the rendering buffer
-				buffer->Clear();
+				if (!os.good())
+					// error during transmission, abort
+					return 0;
 			}
 		}
 
 		totNumberOfSamples += bufferGroup.numberOfSamples;
 		LOG(LUX_DEBUG,LUX_NOERROR) << "Transmitted " << bufferGroup.numberOfSamples << " samples for buffer group " << i <<
 			" (buffer config size: " << bufferConfigs.size() << ")";
+	}
 
-		if (clearBuffers) {
+	// transmitted everything, now we can clear buffers if needed
+	if (clearBuffers) {
+		for (u_int i = 0; i < bufferGroups.size(); ++i) {
+
+			BufferGroup& bufferGroup = bufferGroups[i];
+
+			for (u_int j = 0; j < bufferConfigs.size(); ++j) {
+				Buffer* buffer = bufferGroup.getBuffer(j);
+
+				// Dade - reset the rendering buffer
+				buffer->Clear();
+			}
+
 			// Dade - reset the rendering buffer
 			bufferGroup.numberOfSamples = 0;
 		}
@@ -1503,9 +1514,33 @@ bool Film::TransmitFilm(
 
 	double totNumberOfSamples = 0;
 
-	bool transmitError = true;
+	bool transmitError = false;
 
-	if (directWrite) {
+	if (!directWrite) {
+		std::stringstream ss(std::stringstream::in | std::stringstream::out | std::stringstream::binary);
+		totNumberOfSamples = DoTransmitFilm(ss, clearBuffers, transmitParams);
+
+		transmitError = !ss.good();
+		
+		if (!transmitError) {
+			if (useCompression) {
+				filtering_streambuf<input> in;
+				in.push(gzip_compressor(4));
+				in.push(ss);
+				boost::iostreams::copy(in, stream);
+			} else {
+				boost::iostreams::copy(ss, stream);
+			}
+			// ignore how the copy to stream goes for now, as
+			// direct writing won't help with that
+		} else {
+			LOG(LUX_SEVERE,LUX_SYSTEM) << "Error while preparing film data for transmission, retrying without buffering.";
+		}
+	}
+
+	// if the memory buffered method fails it's most likely due
+	// to low memory conditions, so fall back to direct writing
+	if (directWrite || transmitError) {
 		if (useCompression) {
 			filtering_stream<output> fs;
 			fs.push(gzip_compressor(4));
@@ -1519,35 +1554,13 @@ bool Film::TransmitFilm(
 			totNumberOfSamples = DoTransmitFilm(stream, clearBuffers, transmitParams);
 			transmitError = !stream.good();
 		}
-	} else {
-		std::stringstream ss(std::stringstream::in | std::stringstream::out | std::stringstream::binary);
-		totNumberOfSamples = DoTransmitFilm(ss, clearBuffers, transmitParams);
-
-		transmitError = !ss.good();
-		
-		if (!transmitError) {
-			if (useCompression) {
-				filtering_streambuf<input> in;
-				in.push(gzip_compressor(9));
-				in.push(ss);
-				boost::iostreams::copy(in, stream);
-			} else {
-				boost::iostreams::copy(ss, stream);
-			}
-		}
 	}
-
-	if (transmitError) {
-		LOG(LUX_SEVERE,LUX_SYSTEM) << "Error while preparing film data for transmission";
-		return false;
-	}
-
-	LOG(LUX_DEBUG,LUX_NOERROR) << "Transmitted a film with " << totNumberOfSamples << " samples";
 	
-	if (!stream.good()) {
+	if (transmitError || !stream.good()) {
 		LOG(LUX_SEVERE,LUX_SYSTEM) << "Error while transmitting film";
 		return false;
-	}
+	} else
+		LOG(LUX_DEBUG,LUX_NOERROR) << "Transmitted a film with " << totNumberOfSamples << " samples";
 
 	std::streamsize size = stream.tellp() - stream_startpos;
 
