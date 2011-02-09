@@ -755,6 +755,13 @@
             </property>
            </widget>
           </item>
+          <item row="4" column="2" colspan="2">
+           <widget class="QPushButton" name="button_linearEstimate">
+            <property name="text">
+             <string>Estimate settings</string>
+            </property>
+           </widget>
+          </item>
          </layout>
         </item>
        </layout>

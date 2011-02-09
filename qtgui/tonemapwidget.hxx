@@ -107,6 +107,7 @@ private slots:
 	void fstopChanged (double value);
 	void gammaLinearChanged (int value);
 	void gammaLinearChanged (double value);
+	void estimateLinear ();
 
 	void ywaChanged (int value);
 	void ywaChanged (double value);

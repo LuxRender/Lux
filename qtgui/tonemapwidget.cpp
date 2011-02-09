@@ -25,6 +25,7 @@
 #include "mainwindow.hxx"
 
 #include <iostream>
+#include <algorithm>
 
 static double sensitivity_presets[NUM_SENSITITIVITY_PRESETS] = {20.0f, 25.0f, 32.0f, 40.0f, 50.0f, 64.0f, 80.0f, 100.0f, 125.0f, 160.0f, 200.0f, 250.0f, 320.0f, 400.0f, 500.0f, 640.0f, 800.0f, 1000.0f, 1250.0f, 1600.0f, 2000.0f, 2500.0f, 3200.0f, 4000.0f, 5000.0f, 6400.0f};
 
@@ -70,7 +71,9 @@ ToneMapWidget::ToneMapWidget(QWidget *parent) : QWidget(parent), ui(new Ui::Tone
 	connect(ui->spinBox_fstop, SIGNAL(valueChanged(double)), this, SLOT(fstopChanged(double)));
 	connect(ui->slider_gamma_linear, SIGNAL(valueChanged(int)), this, SLOT(gammaLinearChanged(int)));
 	connect(ui->spinBox_gamma_linear, SIGNAL(valueChanged(double)), this, SLOT(gammaLinearChanged(double)));
-	
+	connect(ui->button_linearEstimate, SIGNAL(clicked()), this, SLOT(estimateLinear()));	
+
+
 	// Max contrast
 	connect(ui->slider_ywa, SIGNAL(valueChanged(int)), this, SLOT(ywaChanged(int)));
 	connect(ui->spinBox_ywa, SIGNAL(valueChanged(double)), this, SLOT(ywaChanged(double)));
@@ -452,6 +455,78 @@ void ToneMapWidget::gammaLinearChanged (double value)
 	updateParam (LUX_FILM, LUX_FILM_TM_LINEAR_GAMMA, m_TM_linear_gamma);
 
 	emit valuesChanged();
+}
+
+void ToneMapWidget::estimateLinear ()
+{
+	// estimate linear tonemapping parameters
+	const float gamma = luxGetParameterValue(LUX_FILM, LUX_FILM_TORGB_GAMMA);
+	const float Y =  luxGetFloatAttribute("film", "averageLuminance");
+
+	const double gfactor = powf(118.f / 255.f, gamma);
+
+	// this is the target factor that autolinear would calculate
+	// we try to get as close as possible to this
+	const double targetFactor = (1.25 / Y * gfactor);
+
+	const int numFStopSettings = 10;
+	static double fStopSettings[10] = { 2.8, 4.0, 5.6, 8.0, 11.0, 16.0, 22.0, 32.0, 45.0, 64.0 };
+	int fStopIdx = 2;
+
+	const int numExposureSettings = 11;
+	static double exposureSettings[11] = { 1.0/1000.0, 1.0/500.0, 1.0/250.0, 1.0/125.0, 1.0/60.0, 1.0/30.0, 1.0/15.0, 1.0/8.0, 1.0/4.0, 1.0/2.0, 1.0 };
+	int exposureIdx = 3;
+
+	const int numSensitivitySettings = 5;
+	static double sensitivitySettings[5] = { 50.0, 100.0, 200.0, 400.0, 800.0  };
+	int sensitivityIdx = 2;
+
+	while (true) {
+		//double exposure = exposureSettings[exposureIdx];
+		double sensitivity = sensitivitySettings[sensitivityIdx];
+		double fstop = fStopSettings[fStopIdx];
+
+		// factor = exposure / (fstop * fstop) * sensitivity / 10.f * powf(118.f / 255.f, gamma);
+		double targetExposure = targetFactor * (fstop * fstop) * 10.0 / (sensitivity * gfactor);
+		
+		if (targetExposure < exposureSettings[0]) {
+			// want shorter exposure, ie too bright
+			if (sensitivityIdx <= 0) {
+				sensitivityIdx = 0;
+				exposureIdx = numExposureSettings-1;
+				
+				fStopIdx++;
+				if (fStopIdx >= numFStopSettings) {
+					fStopIdx = numFStopSettings-1;
+					break;
+				}
+			} else
+				sensitivityIdx--;
+		} else if (targetExposure > exposureSettings[numExposureSettings-1]) {
+			// want longer exposure, ie too dark
+			if (sensitivityIdx >= numSensitivitySettings-1) {
+				sensitivityIdx = numSensitivitySettings-1;
+				exposureIdx = 0;
+				
+				fStopIdx--;
+				if (fStopIdx < 0) {
+					fStopIdx = 0;
+					break;
+				}
+			} else
+				sensitivityIdx++;
+		} else {
+			exposureIdx = static_cast<int>(std::upper_bound(exposureSettings, exposureSettings+(numExposureSettings-1), targetExposure) - exposureSettings);
+			if (targetExposure < exposureSettings[exposureIdx])
+				exposureIdx--;
+			break;
+		}
+	}
+
+	gammaLinearChanged(gamma);
+	sensitivityChanged(sensitivitySettings[sensitivityIdx]);
+	exposureChanged(exposureSettings[exposureIdx]);
+	fstopChanged(fStopSettings[fStopIdx]);
 }
 
 void ToneMapWidget::ywaChanged (int value)
