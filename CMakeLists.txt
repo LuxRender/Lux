@@ -61,8 +61,8 @@ ENDIF(NOT APPLE)
 #############################################################################
 #############################################################################
 #IF(APPLE)
-	FIND_PATH(LUXRAYS_INCLUDE_DIRS NAMES luxrays/luxrays.h PATHS ../luxrays/include)
-	FIND_LIBRARY(LUXRAYS_LIBRARY luxrays ../luxrays/lib/release)
+	FIND_PATH(LUXRAYS_INCLUDE_DIRS NAMES luxrays/luxrays.h PATHS ../macos/include/LuxRays)
+	FIND_LIBRARY(LUXRAYS_LIBRARY libluxrays.a ../macos/lib/LuxRays)
 #ELSE(APPLE)
 	FIND_PATH(LUXRAYS_INCLUDE_DIRS NAMES luxrays/luxrays.h PATHS ../luxrays/include)
 	FIND_LIBRARY(LUXRAYS_LIBRARY luxrays ../luxrays/lib)
