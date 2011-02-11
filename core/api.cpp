@@ -515,6 +515,13 @@ int luxParse(const char *filename)
 			Context::GetActive()->Free();
 			Context::GetActive()->Init();
 			Context::GetActive()->currentApiState = STATE_PARSE_FAIL;
+		} else if (Context::GetActive()->currentApiState == STATE_WORLD_BLOCK) {
+			// file doesn't contain valid world block
+			LOG(LUX_SEVERE, LUX_BADFILE) << "Missing WorldEnd in scenefile '" << filename << "'";
+			Context::GetActive()->Free();
+			Context::GetActive()->Init();
+			Context::GetActive()->currentApiState = STATE_PARSE_FAIL;
+			parse_success = false;
 		}
 		if (yyin != stdin)
 			fclose(yyin);
