@@ -217,6 +217,7 @@ CameraResponse::CameraResponse(const string &film)
 	YI.insert(YI.end(), GreenI.begin(), GreenI.end());
 	YI.insert(YI.end(), BlueI.begin(), BlueI.end());
 
+	std::sort(YI.begin(), YI.end());
 	const size_t n = std::unique(YI.begin(), YI.end()) - YI.begin();
 
 	YI.resize(n);
