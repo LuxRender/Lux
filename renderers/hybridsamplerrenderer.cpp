@@ -37,7 +37,7 @@
 
 using namespace lux;
 
-#if !defined(LUXRAYS_DISABLE_OPENCL)
+//#if !defined(LUXRAYS_DISABLE_OPENCL)
 
 //------------------------------------------------------------------------------
 // HybridSamplerRenderer
@@ -63,6 +63,9 @@ HybridSamplerRenderer::HybridSamplerRenderer(int oclPlatformIndex, bool useGPUs,
 	for (size_t i = 0; i < deviceDescs.size(); ++i)
 		host->AddDevice(new HRHardwareDeviceDescription(host, deviceDescs[i]));
 
+	bool useNative = false;
+
+#if !defined(LUXRAYS_DISABLE_OPENCL)
 	// Create the virtual device to feed all hardware device
 	std::vector<luxrays::DeviceDescription *> hwDeviceDescs = deviceDescs;
 	luxrays::DeviceDescription::Filter(luxrays::DEVICE_TYPE_OPENCL, hwDeviceDescs);
@@ -80,7 +83,19 @@ HybridSamplerRenderer::HybridSamplerRenderer(int oclPlatformIndex, bool useGPUs,
 		virtualIDevice = ctx->GetVirtualM2OIntersectionDevices()[0];
 
 		LOG(LUX_INFO, LUX_NOERROR) << "OpenCL Device used: [" << intersectionDevice->GetName() << "]";
-	} else {
+	} else
+		// don't want GPU or no hardware available, use native
+		useNative = true;
+#else
+	// only native mode without OpenCL
+	if (useGPUs)
+		LOG(LUX_INFO, LUX_NOERROR) << "GPU assisted rendering requires an OpenCL enabled version of LuxRender, using CPU instead";
+
+	useGPUs = false;
+	useNative = true;
+#endif
+
+	if (useNative) {
 		if (useGPUs)
 			LOG(LUX_WARNING, LUX_SYSTEM) << "Unable to find an OpenCL GPU device, falling back to CPU";
 
@@ -576,4 +591,4 @@ Renderer *HybridSamplerRenderer::CreateRenderer(const ParamSet &params) {
 static DynamicLoader::RegisterRenderer<HybridSamplerRenderer> r("hybrid");
 static DynamicLoader::RegisterRenderer<HybridSamplerRenderer> r2("hybridsampler");
 
-#endif // !defined(LUXRAYS_DISABLE_OPENCL)
+//#endif // !defined(LUXRAYS_DISABLE_OPENCL)
