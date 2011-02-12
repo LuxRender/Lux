@@ -103,7 +103,7 @@ inline float expf(float a) { return exp(a); }
 //#define INFINITY std::numeric_limits<float>::max()
 #endif
 #define LUX_VERSION 0.8
-#define LUX_VERSION_STRING "0.8(dev)"
+#define LUX_VERSION_STRING "0.8RC1"
 #if defined(WIN32) && !defined(__CYGWIN__)
 #  define LUX_PATH_SEP ";"
 #else
