@@ -874,16 +874,20 @@ ENDIF(APPLE)
 ###########################   PYTHON LIBRARIES    ###########################
 #############################################################################
 #############################################################################
-FIND_PACKAGE(PythonLibs)
+IF(APPLE)
+	# use Blender python libs for static compiling !
+	SET(PYTHON_LIBRARIES ${CMAKE_SOURCE_DIR}/../macos/lib/BF_pythonlibs/py31_uni_intel/libbf_python_ext.a ${CMAKE_SOURCE_DIR}/../macos/lib/BF_pythonlibs/py31_uni_intel/libbf_python.a)
+	SET(PYTHON_INCLUDE_PATH ${CMAKE_SOURCE_DIR}/../macos/include/Python3.1)
+	SET(PYTHONLIBS_FOUND on)
+ELSE(APPLE)
+	FIND_PACKAGE(PythonLibs)
+ENDIF(NOT_APPLE)
 IF(PYTHONLIBS_FOUND)
 	MESSAGE(STATUS "Python library directory: " ${PYTHON_LIBRARIES} )
 	MESSAGE(STATUS "Python include directory: " ${PYTHON_INCLUDE_PATH} )
 
 	INCLUDE_DIRECTORIES(SYSTEM ${PYTHON_INCLUDE_PATH})
 	IF(APPLE)
-		# use Blender python libs for static compiling !
-		SET(PYTHON_LIBRARIES ${CMAKE_SOURCE_DIR}/../macos/lib/BF_pythonlibs/py31_uni_intel/libbf_python_ext.a ${CMAKE_SOURCE_DIR}/../macos/lib/BF_pythonlibs/py31_uni_intel/libbf_python.a)
-		SET(PYTHON_INCLUDE_PATH ${CMAKE_SOURCE_DIR}/../macos/include/Python3.1)
 		ADD_LIBRARY(pylux MODULE python/binding.cpp)
 		TARGET_LINK_LIBRARIES(pylux -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z bz2  ${SYS_LIBRARIES} ${PYTHON_LIBRARIES} ${Boost_python_LIBRARIES})
 ### if XCode used for compiling ###
@@ -947,14 +951,14 @@ IF(QT4_FOUND)
 	IF(APPLE)
 		INCLUDE_DIRECTORIES (SYSTEM /Developer/Headers/FlatCarbon /usr/local/include)
 		FIND_LIBRARY(CARBON_LIBRARY Carbon)
-		FIND_LIBRARY(PYTHON_LIBRARY Python )
+#		FIND_LIBRARY(PYTHON_LIBRARY Python )
 		FIND_LIBRARY(QT_LIBRARY QtCore QtGui)
 		FIND_LIBRARY(AGL_LIBRARY AGL )
 		FIND_LIBRARY(APP_SERVICES_LIBRARY ApplicationServices )
 
 		MESSAGE(STATUS ${CARBON_LIBRARY})
 		MARK_AS_ADVANCED (CARBON_LIBRARY)
-		MARK_AS_ADVANCED (PYTHON_LIBRARY)
+#		MARK_AS_ADVANCED (PYTHON_LIBRARY)
 		MARK_AS_ADVANCED (QT_LIBRARY)
 		MARK_AS_ADVANCED (AGL_LIBRARY)
 		MARK_AS_ADVANCED (APP_SERVICES_LIBRARY)
