@@ -483,11 +483,7 @@ extern "C" void luxInit()
 	initialized = true;
 }
 
-// Parsing Global Interface
-int luxParse(const char *filename)
-{
-	bool parse_success = false;
-
+bool parseFile(const char *filename) {
 	//TODO jromang - add thread lock here (we can only parse in one context)
 	extern FILE *yyin;
 	extern int yyparse(void);
@@ -495,6 +491,8 @@ int luxParse(const char *filename)
 	extern void include_clear();
 	extern string currentFile;
 	extern u_int lineNum;
+
+	bool parse_success = false;
 
 	if (strcmp(filename, "-") == 0)
 		yyin = stdin;
@@ -510,19 +508,7 @@ int luxParse(const char *filename)
 		include_clear();
 		yyrestart(yyin);
 		parse_success = (yyparse() == 0);
-		if (!parse_success) {
-			// syntax error
-			Context::GetActive()->Free();
-			Context::GetActive()->Init();
-			Context::GetActive()->currentApiState = STATE_PARSE_FAIL;
-		} else if (Context::GetActive()->currentApiState == STATE_WORLD_BLOCK) {
-			// file doesn't contain valid world block
-			LOG(LUX_SEVERE, LUX_BADFILE) << "Missing WorldEnd in scenefile '" << filename << "'";
-			Context::GetActive()->Free();
-			Context::GetActive()->Init();
-			Context::GetActive()->currentApiState = STATE_PARSE_FAIL;
-			parse_success = false;
-		}
+		
 		if (yyin != stdin)
 			fclose(yyin);
 	} else {
@@ -532,6 +518,34 @@ int luxParse(const char *filename)
 	currentFile = "";
 	lineNum = 0;
 	return (yyin != NULL) && parse_success;
+}
+
+// Parsing Global Interface
+int luxParse(const char *filename)
+{
+	bool parse_success = parseFile(filename);
+
+	if (!parse_success) {
+		// syntax error
+		Context::GetActive()->Free();
+		Context::GetActive()->Init();
+		Context::GetActive()->currentApiState = STATE_PARSE_FAIL;
+	} else if (Context::GetActive()->currentApiState == STATE_WORLD_BLOCK) {
+		// file doesn't contain valid world block
+		LOG(LUX_SEVERE, LUX_BADFILE) << "Missing WorldEnd in scenefile '" << filename << "'";
+		Context::GetActive()->Free();
+		Context::GetActive()->Init();
+		Context::GetActive()->currentApiState = STATE_PARSE_FAIL;
+		parse_success = false;
+	}
+
+	return parse_success;
+}
+
+int luxParsePartial(const char *filename)
+{
+	// caller does error handling
+	return parseFile(filename);
 }
 
 // Load/save FLM file
@@ -707,6 +721,21 @@ extern "C" const char* luxGetAttributes()
 extern "C" bool luxHasObject(const char * objectName)
 {
 	return Context::GetActive()->registry[objectName] != NULL;
+}
+
+extern "C" bool luxHasAttribute(const char * objectName, const char * attributeName)
+{
+	Queryable *object=Context::GetActive()->registry[objectName];
+	if (object) {
+		try {
+			return (*object).HasAttribute(attributeName);
+		} catch (std::runtime_error e) {
+			LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
+		}
+	} else {
+		LOG(LUX_ERROR,LUX_BADTOKEN)<<"Unknown object '"<<objectName<<"'";
+	}
+	return false;
 }
 
 extern "C" bool luxHasAttributeDefaultValue(const char * objectName, const char * attributeName)

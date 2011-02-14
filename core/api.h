@@ -34,6 +34,8 @@ typedef const char *LuxPointer;
 const char *luxVersion();
 void luxInit();
 int luxParse(const char *filename);
+/* allows for parsing of partial files, caller does error handling */
+int luxParsePartial(const char *filename);
 void luxCleanup();
 
 /* Basic control flow, scoping, stacks */
@@ -222,7 +224,8 @@ unsigned int luxGetDefaultStringParameterValue(luxComponent comp, luxComponentPa
 /* Queryable objects */
 const char* luxGetAttributes(); /* Returns an XML string containing all queryable data of the current context */
 bool luxHasObject(const char * objectName); /* Returns true if the given object exists in the registry */
-bool luxHasAttributeDefaultValue(const char * objectName, const char * attributeName); /* Returns true of attribute has a default value */
+bool luxHasAttribute(const char * objectName, const char * attributeName); /* Returns true if object has the given attribute */
+bool luxHasAttributeDefaultValue(const char * objectName, const char * attributeName); /* Returns true if attribute has a default value */
 
 const char* luxGetStringAttribute(const char * objectName, const char * attributeName); 
 const char* luxGetStringAttributeDefault(const char * objectName, const char * attributeName); 
