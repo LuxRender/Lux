@@ -984,7 +984,12 @@ ENDIF(QT4_FOUND)
 #############################################################################
 
 #Install target
-INSTALL(TARGETS luxrender luxconsole luxmerger RUNTIME DESTINATION bin)
+IF(APPLE)
+	INSTALL(TARGETS luxconsole luxmerger RUNTIME DESTINATION bin)
+	INSTALL(TARGETS luxrender BUNDLE DESTINATION bin)
+ELSE(APPLE)
+	INSTALL(TARGETS luxrender luxconsole luxmerger RUNTIME DESTINATION bin)
+ENDIF(APPLE)
 
 #Install API/Library
 INSTALL(FILES ${CMAKE_SOURCE_DIR}/core/api.h DESTINATION include/luxrender/)
