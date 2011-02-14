@@ -285,6 +285,20 @@ public:
 		}
 	}
 
+	bool parsePartial(const char *filename, bool async)
+	{
+		Context::SetActive(context);
+		if (async)
+		{
+			pyLuxWorldEndThreads.push_back(new boost::thread( boost::bind(luxParsePartial, filename) ));
+			return true;	// Real parse status can be checked later with parseSuccess()
+		}
+		else
+		{
+			return luxParsePartial(filename);
+		}
+	}
+
 	bool parseSuccessful()
 	{
 		return context->currentApiState != STATE_PARSE_FAIL;
@@ -1284,6 +1298,11 @@ void export_PyContext()
 			args("Context", "filename", "asynchronous"),
 			ds_pylux_Context_parse
 			)
+		.def("parsePartial",
+			&PyContext::parsePartial,
+			args("Context", "filename", "asynchronous"),
+			ds_pylux_Context_parsePartial
+		)
 		.def("parseSuccessful",
 			&PyContext::parseSuccessful,
 			args("Context")

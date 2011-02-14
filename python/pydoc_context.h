@@ -222,8 +222,16 @@ const char * ds_pylux_Context_overrideResumeFLM =
 "";
 
 const char * ds_pylux_Context_parse =
-"Parse the given filename. If done asynchronously, control will pass\n"
-"immediately back to the python interpreter, otherwise this function blocks.";
+"Parse the given filename. This method expects a complete scene file as an\n"
+"argument, including a WorldEnd statement. If done asynchronously, control\n"
+"will pass immediately back to the python interpreter, otherwise this\n"
+"function blocks.";
+
+const char * ds_pylux_Context_parsePartial =
+"Parse the given filename. This method doesn't expect the parsed file to be\n"
+"complete, so that additional API calls can be made in this Context.\n"
+"If done asynchronously, control will pass immediately back to the python\n"
+"interpreter, otherwise this function blocks.";
 
 const char * ds_pylux_Context_pause =
 "(+) Pause all local rendering threads.";
