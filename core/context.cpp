@@ -1107,14 +1107,23 @@ const char* Context::PrintableStatistics(const bool add_total) {
 
 const char* Context::CustomStatistics(const string custom_template)
 {
+	// BEWARE capitalisation in this function StatsData vs. statsData
+
 	const string _ts1 = StatsData::template_string_local;
 	const string _ts2 = StatsData::template_string_network_waiting;
 	const string _ts3 = StatsData::template_string_network;
 	const string _ts4 = StatsData::template_string_total;
 	const string _ts5 = StatsData::template_string_haltspp;
 	const string _ts6 = StatsData::template_string_halttime;
+	const string _ts7 = StatsData::template_string_renderer;
 
 	StatsData::template_string_local = custom_template;
+	StatsData::template_string_network_waiting = "";
+	StatsData::template_string_network = "";
+	StatsData::template_string_total = "";
+	StatsData::template_string_haltspp = "";
+	StatsData::template_string_halttime = "";
+	StatsData::template_string_renderer = "";
 	statsData->update(true);
 	const char* custom_stats = statsData->formattedStatsString.c_str();
 
@@ -1124,6 +1133,7 @@ const char* Context::CustomStatistics(const string custom_template)
 	StatsData::template_string_total = _ts4;
 	StatsData::template_string_haltspp = _ts5;
 	StatsData::template_string_halttime = _ts6;
+	StatsData::template_string_renderer = _ts7;
 
 	return custom_stats;
 }
