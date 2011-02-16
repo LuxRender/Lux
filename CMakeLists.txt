@@ -13,9 +13,10 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${LUX_CMAKE_DIR}")
 # Dade - uncomment to obtain verbose building output
 #SET(CMAKE_VERBOSE_MAKEFILE true)
 
-#Setting Universal Binary Properties, only for Mac OS X
+#Setting Universal Binary Properties and Pylux configuration, only for Mac OS X
 # generate with xcode/crosscompile, setting: ( darwin - 10.6 - gcc - g++ - MacOSX10.6.sdk - Find from root, then native system )
 IF(APPLE)
+	SET(PYLUX_FOR_BLENDER on)
 	SET(CMAKE_OSX_DEPLOYMENT_TARGET 10.6)
 	IF(CMAKE_VERSION VERSION_LESS 2.8.1)
 		SET(CMAKE_OSX_ARCHITECTURES i386;x86_64)
@@ -881,7 +882,6 @@ ENDIF(APPLE)
 #############################################################################
 #############################################################################
 IF(APPLE)
-	SET(PYLUX_FOR_BLENDER on)
 	IF(PYLUX_FOR_BLENDER)
 		# use Blender python libs for static compiling !
 		SET(PYTHON_LIBRARIES ${CMAKE_SOURCE_DIR}/../macos/lib/BF_pythonlibs/py31_uni_intel/libbf_python_ext.a ${CMAKE_SOURCE_DIR}/../macos/lib/BF_pythonlibs/py31_uni_intel/libbf_python.a)
@@ -1050,9 +1050,9 @@ IF(APPLE)
 	MESSAGE(STATUS "OSX SDK SETTING : " ${CMAKE_OSX_SYSROOT})
 	MESSAGE(STATUS "BUILD_CONFIGURATION_TYPE : " ${CMAKE_CONFIGURATION_TYPES})
 	IF(PYLUX_FOR_BLENDER)
-		MESSAGE(STATUS "PYLUX BUILD FOR BLENDER 2.5 USE")
+		MESSAGE(STATUS "PYLUX CONFIGURED FOR BLENDER 2.5 USE")
 	ELSE(PYLUX_FOR_BLENDER)
-		MESSAGE(STATUS "PYLUX BUILD FOR GENERAL PURPOSE USE")
+		MESSAGE(STATUS "PYLUX CONFIGURED FOR GENERAL PURPOSE USE")
 	ENDIF(PYLUX_FOR_BLENDER)
 	MESSAGE(STATUS "")
 	MESSAGE(STATUS "#####################################################################")
