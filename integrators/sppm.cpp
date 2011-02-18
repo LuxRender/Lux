@@ -41,6 +41,12 @@ SPPMIntegrator::~SPPMIntegrator() {
 }
 
 void SPPMIntegrator::RequestSamples(Sample *sample, const Scene &scene) {
+	vector<u_int> structure;
+	structure.push_back(2);	// bsdf direction sample for path
+	structure.push_back(1);	// bsdf component sample for path
+	structure.push_back(1); // scattering
+
+	sampleOffset = sample->AddxD(structure, maxEyePathDepth + 1);
 }
 
 void SPPMIntegrator::Preprocess(const RandomGenerator &rng, const Scene &scene) {
@@ -62,7 +68,6 @@ SurfaceIntegrator* SPPMIntegrator::CreateSurfaceIntegrator(const ParamSet &param
 	SPPMIntegrator *sppmi =  new SPPMIntegrator();
 
 	// SPPM rendering parameters
-
 	sppmi->lookupAccelType = HYBRID_HASH_GRID;
 	sppmi->maxEyePathDepth = 16;
 	sppmi->photonAlpha = 0.7f;
@@ -70,7 +75,8 @@ SurfaceIntegrator* SPPMIntegrator::CreateSurfaceIntegrator(const ParamSet &param
 	sppmi->maxPhotonPathDepth = 8;
 
 	sppmi->stochasticInterval = 5000000;
-	sppmi->useDirectLightSampling = false;
+
+	sppmi->includeEnvironment = true;
 
 	return sppmi;
 }

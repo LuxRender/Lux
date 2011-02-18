@@ -618,17 +618,21 @@ SET(lux_pixelsamplers_src
 if(LUXRAYS_DISABLE_OPENCL)
 SET(lux_renderers_src
 	renderers/samplerrenderer.cpp
+    renderers/sppmrenderer.cpp
+	renderers/sppm/hashgrid.cpp
+	renderers/sppm/hitpoints.cpp
+	renderers/sppm/hybridhashgrid.cpp
+	renderers/sppm/kdtree.cpp
 	)
 else(LUXRAYS_DISABLE_OPENCL)
 SET(lux_renderers_src
 	renderers/hybridrenderer.cpp
 	renderers/hybridsamplerrenderer.cpp
-	renderers/hybridsppmrenderer.cpp
-	renderers/hybridsppm/hashgrid.cpp
-	renderers/hybridsppm/hitpoints.cpp
-	renderers/hybridsppm/hybridhashgrid.cpp
-	renderers/hybridsppm/kdtree.cpp
-	renderers/samplerrenderer.cpp
+    renderers/sppmrenderer.cpp
+	renderers/sppm/hashgrid.cpp
+	renderers/sppm/hitpoints.cpp
+	renderers/sppm/hybridhashgrid.cpp
+	renderers/sppm/kdtree.cpp
 	)
 endif(LUXRAYS_DISABLE_OPENCL)
 SET(lux_samplers_src

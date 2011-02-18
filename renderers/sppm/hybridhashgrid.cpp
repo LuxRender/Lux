@@ -138,6 +138,9 @@ void HybridHashGrid::RefreshMutex() {
 }
 
 void HybridHashGrid::RefreshParallel(const unsigned int index, const unsigned int count) {
+	if (gridSize == 0)
+		return;
+
 	// Calculate the index of work this thread has to do
 	const unsigned int workSize = gridSize / count;
 	const unsigned int first = workSize * index;
@@ -204,10 +207,9 @@ void HybridHashGrid::HashCell::AddFlux(const Point &hitPoint, const Vector &wi,
 					continue;
 
 				luxrays::AtomicInc(&hp->accumPhotonCount);
-				SWCSpectrum flux = photonFlux *
-					hp->bsdf->F(sw, wi, hp->wo, true) *
-					hp->throughput; // FIXME - not sure if the reverse flag should be true or false
-				SpectrumAtomicAdd(hp->accumReflectedFlux, flux);
+				XYZColor flux = XYZColor(sw, photonFlux * hp->bsdf->F(sw, wi, hp->wo, true)) *
+					hp->eyeThroughput; // FIXME - not sure if the reverse flag should be true or false
+				XYZColorAtomicAdd(hp->accumReflectedFlux, flux);
 			}
 			break;
 		}
@@ -338,9 +340,8 @@ void HybridHashGrid::HHGKdTree::AddFlux(const Point &p, const Vector &wi,
 			continue;
 
 		luxrays::AtomicInc(&hp->accumPhotonCount);
-		SWCSpectrum flux = photonFlux *
-			hp->bsdf->F(sw, wi, hp->wo, true) *
-			hp->throughput; // FIXME - not sure if the reverse flag should be true or false
-		SpectrumAtomicAdd(hp->accumReflectedFlux, flux);
+		XYZColor flux = XYZColor(sw, photonFlux * hp->bsdf->F(sw, wi, hp->wo, true)) *
+			hp->eyeThroughput; // FIXME - not sure if the reverse flag should be true or false
+		XYZColorAtomicAdd(hp->accumReflectedFlux, flux);
 	}
 }

@@ -25,108 +25,101 @@
 #include "camera.h"
 #include "film.h"
 #include "sampling.h"
-#include "samplerrenderer.h"
 #include "randomgen.h"
 #include "context.h"
+#include "sppmrenderer.h"
+#include "integrators/sppm.h"
 
 using namespace lux;
 
 //------------------------------------------------------------------------------
-// SRDeviceDescription
+// SPPMRDeviceDescription
 //------------------------------------------------------------------------------
 
-unsigned int SRDeviceDescription::GetUsedUnitsCount() const {
+unsigned int SPPMRDeviceDescription::GetUsedUnitsCount() const {
 	boost::mutex::scoped_lock lock(host->renderer->renderThreadsMutex);
 	return host->renderer->renderThreads.size();
 }
 
-void SRDeviceDescription::SetUsedUnitsCount(const unsigned int units) {
-	boost::mutex::scoped_lock lock(host->renderer->renderThreadsMutex);
-
-	unsigned int target = max(units, 1u);
-	size_t current = host->renderer->renderThreads.size();
-
-	if (current > target) {
-		for (unsigned int i = 0; i < current - target; ++i)
-			host->renderer->RemoveRenderThread();
-	} else if (current < target) {
-		for (unsigned int i = 0; i < target - current; ++i)
-			host->renderer->CreateRenderThread();
-	}
+void SPPMRDeviceDescription::SetUsedUnitsCount(const unsigned int units) {
 }
 
 //------------------------------------------------------------------------------
-// SRHostDescription
+// SPPMRHostDescription
 //------------------------------------------------------------------------------
 
-SRHostDescription::SRHostDescription(SamplerRenderer *r, const string &n) : renderer(r), name(n) {
-	SRDeviceDescription *desc = new SRDeviceDescription(this, "CPUs");
+SPPMRHostDescription::SPPMRHostDescription(SPPMRenderer *r, const string &n) : renderer(r), name(n) {
+	SPPMRDeviceDescription *desc = new SPPMRDeviceDescription(this, "CPUs");
 	devs.push_back(desc);
 }
 
-SRHostDescription::~SRHostDescription() {
+SPPMRHostDescription::~SPPMRHostDescription() {
 	for (size_t i = 0; i < devs.size(); ++i)
 		delete devs[i];
 }
 
 //------------------------------------------------------------------------------
-// SamplerRenderer
+// SPPMRenderer
 //------------------------------------------------------------------------------
 
-SamplerRenderer::SamplerRenderer() : Renderer() {
+SPPMRenderer::SPPMRenderer() : Renderer() {
 	state = INIT;
 
-	SRHostDescription *host = new SRHostDescription(this, "Localhost");
+	SPPMRHostDescription *host = new SPPMRHostDescription(this, "Localhost");
 	hosts.push_back(host);
 
 	preprocessDone = false;
 	suspendThreadsWhenDone = false;
 
-	AddStringConstant(*this, "name", "Name of current renderer", "sampler");
+	AddStringConstant(*this, "name", "Name of current renderer", "sppm");
 }
 
-SamplerRenderer::~SamplerRenderer() {
+SPPMRenderer::~SPPMRenderer() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 
 	if ((state != TERMINATE) && (state != INIT))
-		throw std::runtime_error("Internal error: called SamplerRenderer::~SamplerRenderer() while not in TERMINATE or INIT state.");
+		throw std::runtime_error("Internal error: called SPPMRenderer::~SPPMRenderer() while not in TERMINATE or INIT state.");
 
 	if (renderThreads.size() > 0)
-		throw std::runtime_error("Internal error: called SamplerRenderer::~SamplerRenderer() while list of renderThread sis not empty.");
+		throw std::runtime_error("Internal error: called SPPMRenderer::~SPPMRenderer() while list of renderThread sis not empty.");
 
 	for (size_t i = 0; i < hosts.size(); ++i)
 		delete hosts[i];
 }
 
-Renderer::RendererType SamplerRenderer::GetType() const {
+Renderer::RendererType SPPMRenderer::GetType() const {
 	boost::mutex::scoped_lock lock(classWideMutex);
 
-	return SAMPLER;
+	return SPPM;
 }
 
-Renderer::RendererState SamplerRenderer::GetState() const {
+Renderer::RendererState SPPMRenderer::GetState() const {
 	boost::mutex::scoped_lock lock(classWideMutex);
 
 	return state;
 }
 
-vector<RendererHostDescription *> &SamplerRenderer::GetHostDescs() {
+vector<RendererHostDescription *> &SPPMRenderer::GetHostDescs() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 
 	return hosts;
 }
 
-void SamplerRenderer::SuspendWhenDone(bool v) {
+void SPPMRenderer::SuspendWhenDone(bool v) {
 	boost::mutex::scoped_lock lock(classWideMutex);
 	suspendThreadsWhenDone = v;
 }
 
-void SamplerRenderer::Render(Scene *s) {
+void SPPMRenderer::Render(Scene *s) {
 	{
 		// Section under mutex
 		boost::mutex::scoped_lock lock(classWideMutex);
 
 		scene = s;
+
+		// TODO: At the moment I have no way to check if the SPPM integrator
+		// has been really used
+		sppmi = (SPPMIntegrator *)scene->surfaceIntegrator;
 
 		if (scene->IsFilmOnly()) {
 			state = TERMINATE;
@@ -134,7 +127,7 @@ void SamplerRenderer::Render(Scene *s) {
 		}
 
 		if (scene->lights.size() == 0) {
-			LOG( LUX_SEVERE,LUX_MISSINGDATA)<< "No light sources defined in scene; nothing to render.";
+			LOG(LUX_SEVERE,LUX_MISSINGDATA)<< "No light sources defined in scene; nothing to render.";
 			state = TERMINATE;
 			return;
 		}
@@ -153,7 +146,7 @@ void SamplerRenderer::Render(Scene *s) {
 
 		// initialize the thread's rangen
 		u_long seed = scene->seedBase - 1;
-		LOG( LUX_INFO,LUX_NOERROR) << "Preprocess thread uses seed: " << seed;
+		LOG(LUX_INFO, LUX_NOERROR) << "Preprocess thread uses seed: " << seed;
 
 		RandomGenerator rng(seed);
 
@@ -167,7 +160,16 @@ void SamplerRenderer::Render(Scene *s) {
 		scene->camera->AutoFocus(*scene);
 
 		sampPos = 0;
-		
+
+		size_t threadCount = boost::thread::hardware_concurrency();
+		LOG(LUX_INFO, LUX_NOERROR) << "Hardware concurrency: " << threadCount;
+
+		// Create synchronization barriers
+		barrier = new boost::barrier(threadCount);
+
+		photonTracedTotal = 0;
+		photonTracedPass = 0;
+
 		// start the timer
 		s_Timer.Start();
 
@@ -175,8 +177,13 @@ void SamplerRenderer::Render(Scene *s) {
 		preprocessDone = true;
 		Context::GetActive()->SceneReady();
 
-		// add a thread
-		CreateRenderThread();
+		// Start all threads
+		for (size_t i = 0; i < threadCount; ++i) {
+			RenderThread *rt = new  RenderThread(i, this);
+
+			renderThreads.push_back(rt);
+			rt->thread = new boost::thread(boost::bind(RenderThread::RenderImpl, rt));
+		}
 	}
 
 	if (renderThreads.size() > 0) {
@@ -206,17 +213,17 @@ void SamplerRenderer::Render(Scene *s) {
 	}
 }
 
-void SamplerRenderer::Pause() {
+void SPPMRenderer::Pause() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 	state = PAUSE;
 }
 
-void SamplerRenderer::Resume() {
+void SPPMRenderer::Resume() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 	state = RUN;
 }
 
-void SamplerRenderer::Terminate() {
+void SPPMRenderer::Terminate() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 	state = TERMINATE;
 }
@@ -226,7 +233,7 @@ void SamplerRenderer::Terminate() {
 //------------------------------------------------------------------------------
 
 // Statistics Access
-double SamplerRenderer::Statistics(const string &statName) {
+double SPPMRenderer::Statistics(const string &statName) {
 	if(statName=="secElapsed") {
 		// Dade - s_Timer is inizialized only after the preprocess phase
 		if (preprocessDone)
@@ -254,12 +261,12 @@ double SamplerRenderer::Statistics(const string &statName) {
 	else if (statName == "threadCount")
 		return renderThreads.size();
 	else {
-		LOG( LUX_ERROR,LUX_BADTOKEN)<< "luxStatistics - requested an invalid data : "<< statName;
+		LOG(LUX_ERROR,LUX_BADTOKEN)<< "luxStatistics - requested an invalid data : "<< statName;
 		return 0.;
 	}
 }
 
-double SamplerRenderer::Statistics_GetNumberOfSamples() {
+double SPPMRenderer::Statistics_GetNumberOfSamples() {
 	if (s_Timer.Time() - lastTime > .5f) {
 		boost::mutex::scoped_lock lock(renderThreadsMutex);
 
@@ -275,14 +282,14 @@ double SamplerRenderer::Statistics_GetNumberOfSamples() {
 	return stat_Samples + scene->camera->film->numberOfSamplesFromNetwork;
 }
 
-double SamplerRenderer::Statistics_SamplesPPx() {
+double SPPMRenderer::Statistics_SamplesPPx() {
 	// divide by total pixels
 	int xstart, xend, ystart, yend;
 	scene->camera->film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
 	return Statistics_GetNumberOfSamples() / ((xend - xstart) * (yend - ystart));
 }
 
-double SamplerRenderer::Statistics_SamplesPSec() {
+double SPPMRenderer::Statistics_SamplesPSec() {
 	// Dade - s_Timer is inizialized only after the preprocess phase
 	if (!preprocessDone)
 		return 0.0;
@@ -301,7 +308,7 @@ double SamplerRenderer::Statistics_SamplesPSec() {
 		return dif_samples / elapsed;
 }
 
-double SamplerRenderer::Statistics_SamplesPTotSec() {
+double SPPMRenderer::Statistics_SamplesPTotSec() {
 	// Dade - s_Timer is inizialized only after the preprocess phase
 	if (!preprocessDone)
 		return 0.0;
@@ -313,7 +320,7 @@ double SamplerRenderer::Statistics_SamplesPTotSec() {
 	return samples / time;
 }
 
-double SamplerRenderer::Statistics_Efficiency() {
+double SPPMRenderer::Statistics_Efficiency() {
 	Statistics_GetNumberOfSamples(); // required before eff can be calculated.
 
 	if (stat_Samples == 0.0)
@@ -326,53 +333,42 @@ double SamplerRenderer::Statistics_Efficiency() {
 // Private methods
 //------------------------------------------------------------------------------
 
-void SamplerRenderer::CreateRenderThread() {
-	if (scene->IsFilmOnly())
-		return;
+void SPPMRenderer::UpdateFilm() {
+	const u_int width = scene->camera->film->GetXPixelCount();
+	const u_int bufferId = sppmi->bufferId;
 
-	// Avoid to create the thread in case signal is EXIT. For instance, it
-	// can happen when the rendering is done.
-	if ((state == RUN) || (state == PAUSE)) {
-		RenderThread *rt = new  RenderThread(renderThreads.size(), this);
+	for (unsigned int i = 0; i < hitPoints->GetSize(); ++i) {
+		HitPoint *hp = hitPoints->GetHitPoint(i);
+		const float scrX = i % width;
+		const float scrY = i / width;
 
-		renderThreads.push_back(rt);
-		rt->thread = new boost::thread(boost::bind(RenderThread::RenderImpl, rt));
+		Contribution contrib(scrX, scrY, hp->radiance, hp->eyeAlpha,
+				hp->eyeDistance, 0.f, bufferId);
+		scene->camera->film->SetSample(&contrib);
 	}
-}
-
-void SamplerRenderer::RemoveRenderThread() {
-	if (renderThreads.size() == 0)
-		return;
-
-	renderThreads.back()->thread->interrupt();
-	renderThreads.back()->thread->join();
-	delete renderThreads.back();
-	renderThreads.pop_back();
 }
 
 //------------------------------------------------------------------------------
 // RenderThread methods
 //------------------------------------------------------------------------------
 
-SamplerRenderer::RenderThread::RenderThread(u_int index, SamplerRenderer *r) :
+SPPMRenderer::RenderThread::RenderThread(u_int index, SPPMRenderer *r) :
 	n(index), renderer(r), thread(NULL), samples(0.), blackSamples(0.) {
 }
 
-SamplerRenderer::RenderThread::~RenderThread() {
+SPPMRenderer::RenderThread::~RenderThread() {
 }
 
-void SamplerRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
-	SamplerRenderer *renderer = myThread->renderer;
+void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
+	SPPMRenderer *renderer = myThread->renderer;
+	boost::barrier *barrier = renderer->barrier;
+
 	Scene &scene(*(renderer->scene));
 	if (scene.IsFilmOnly())
 		return;
 
 	// To avoid interrupt exception
 	boost::this_thread::disable_interruption di;
-
-	Sampler *sampler = scene.sampler;
-	Sample sample(scene.surfaceIntegrator, scene.volumeIntegrator, scene);
-	sampler->InitSample(&sample);
 
 	// Dade - wait the end of the preprocessing phase
 	while (!renderer->preprocessDone) {
@@ -382,53 +378,38 @@ void SamplerRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 		boost::thread::sleep(xt);
 	}
 
-	// ContribBuffer has to wait until the end of the preprocessing
-	// It depends on the fact that the film buffers have been created
-	// This is done during the preprocessing phase
-	sample.contribBuffer = new ContributionBuffer(scene.camera->film->contribPool);
-
-	// initialize the thread's rangen
+	// Initialize the thread's rangen
 	u_long seed = scene.seedBase + myThread->n;
-	LOG( LUX_INFO,LUX_NOERROR) << "Thread " << myThread->n << " uses seed: " << seed;
-
+	LOG(LUX_INFO, LUX_NOERROR) << "Thread " << myThread->n << " uses seed: " << seed;
 	RandomGenerator rng(seed);
-	sample.camera = scene.camera->Clone();
-	sample.realTime = 0.f;
 
-	sample.rng = &rng;
+	HitPoints *hitPoints = NULL;
+
+	//--------------------------------------------------------------------------
+	// First eye pass
+	//--------------------------------------------------------------------------
+
+	if (myThread->n == 0) {
+		// One thread initialize the hit points
+		renderer->hitPoints = new HitPoints(renderer);
+		hitPoints = renderer->hitPoints;
+
+		hitPoints->SetHitPoints(&rng);
+		hitPoints->Init();
+	}
+
+	// Wait for other threads
+	barrier->wait();
+
+	// Last step of the initialization
+	hitPoints = renderer->hitPoints;
+	hitPoints->RefreshAccelParallel(myThread->n, renderer->renderThreads.size());
+
+	// Wait for other threads
+	barrier->wait();
 
 	// Trace rays: The main loop
 	while (true) {
-		if (!sampler->GetNextSample(&sample)) {
-			// Dade - we have done, check what we have to do now
-			if (renderer->suspendThreadsWhenDone) {
-				// Dade - wait for a resume rendering or exit
-				renderer->Pause();
-				while (renderer->state == PAUSE) {
-					boost::xtime xt;
-					boost::xtime_get(&xt, boost::TIME_UTC);
-					xt.sec += 1;
-					boost::thread::sleep(xt);
-				}
-
-				if (renderer->state == TERMINATE)
-					break;
-				else
-					continue;
-			} else {
-				renderer->Terminate();
-				break;
-			}
-		}
-
-		// save ray time value
-		sample.realTime = sample.camera->GetTime(sample.time);
-		// sample camera transformation
-		sample.camera->SampleMotion(sample.realTime);
-
-		// Sample new SWC thread wavelengths
-		sample.swl.Sample(sample.wavelengths);
-
 		while (renderer->state == PAUSE && !boost::this_thread::interruption_requested()) {
 			boost::xtime xt;
 			boost::xtime_get(&xt, boost::TIME_UTC);
@@ -438,35 +419,49 @@ void SamplerRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 		if ((renderer->state == TERMINATE) || boost::this_thread::interruption_requested())
 			break;
 
-		// Evaluate radiance along camera ray
-		// Jeanphi - Hijack statistics until volume integrator revamp
-		{
-			const u_int nContribs = scene.surfaceIntegrator->Li(scene, sample);
-			// update samples statistics
-			fast_mutex::scoped_lock lockStats(myThread->statLock);
-			myThread->blackSamples += nContribs;
-			++(myThread->samples);
+		//----------------------------------------------------------------------
+		// Trace photons
+		//----------------------------------------------------------------------
+
+		// TODO
+
+		//----------------------------------------------------------------------
+		// End of the pass
+		//----------------------------------------------------------------------
+
+		// Wait for other threads
+		barrier->wait();
+
+		// The first thread has to do some special task for the eye pass
+		if (myThread->n == 0) {
+			// First thread only tasks
+			const long long count = renderer->photonTracedTotal + renderer->photonTracedPass;
+			hitPoints->AccumulateFlux(count);
+
+			hitPoints->SetHitPoints(&rng);
+			hitPoints->UpdatePointsInformation();
+			hitPoints->IncPass();
+			hitPoints->RefreshAccelMutex();
+
+			// Update the frame buffer
+			renderer->UpdateFilm();
+
+			renderer->photonTracedTotal = count;
+			renderer->photonTracedPass = 0;
 		}
 
-		sampler->AddSample(sample);
+		// Wait for other threads
+		barrier->wait();
 
-		// Free BSDF memory from computing image sample value
-		sample.arena.FreeAll();
+		hitPoints->RefreshAccelParallel(myThread->n, renderer->renderThreads.size());
 
-#ifdef WIN32
-		// Work around Windows bad scheduling -- Jeanphi
-		myThread->thread->yield();
-#endif
+		// Wait for other threads
+		barrier->wait();
 	}
-
-	scene.camera->film->contribPool->End(sample.contribBuffer);
-	sample.contribBuffer = NULL;
-
-	//delete myThread->sample->camera; //FIXME deleting the camera clone would delete the film!
 }
 
-Renderer *SamplerRenderer::CreateRenderer(const ParamSet &params) {
-	return new SamplerRenderer();
+Renderer *SPPMRenderer::CreateRenderer(const ParamSet &params) {
+	return new SPPMRenderer();
 }
 
-static DynamicLoader::RegisterRenderer<SamplerRenderer> r("sampler");
+static DynamicLoader::RegisterRenderer<SPPMRenderer> r("sppm");

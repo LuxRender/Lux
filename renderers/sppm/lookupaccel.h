@@ -57,6 +57,11 @@ inline void SpectrumAtomicAdd(SWCSpectrum &s, SWCSpectrum &a) {
 		luxrays::AtomicAdd(&s.c[i], a.c[i]);
 }
 
+inline void XYZColorAtomicAdd(XYZColor &s, XYZColor &a) {
+	for (int i = 0; i < COLOR_SAMPLES; ++i)
+		luxrays::AtomicAdd(&s.c[i], a.c[i]);
+}
+
 //------------------------------------------------------------------------------
 // HashGrid accelerator
 //------------------------------------------------------------------------------
