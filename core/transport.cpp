@@ -73,10 +73,11 @@ bool VolumeIntegrator::Intersect(const Scene &scene, const Sample &sample,
 }
 
 bool VolumeIntegrator::Intersect(const Scene &scene, const Sample &sample,
-	const Volume *volume, const Ray &ray, const luxrays::RayHit &rayHit,
-	Intersection *isect, BSDF **bsdf, SWCSpectrum *L) const
+	const Volume *volume, bool scatteredStart, const Ray &ray,
+	const luxrays::RayHit &rayHit, float u, Intersection *isect,
+	BSDF **bsdf, float *pdf, float *pdfBack, SWCSpectrum *L) const
 {
-	const bool hit = scene.Intersect(rayHit, isect);
+	bool hit = scene.Intersect(rayHit, isect);
 	if (hit) {
 		if (Dot(ray.d, isect->dg.nn) > 0.f) {
 			if (!volume)
@@ -89,11 +90,20 @@ bool VolumeIntegrator::Intersect(const Scene &scene, const Sample &sample,
 			else if (!isect->exterior)
 				isect->exterior = volume;
 		}
+	}
+	if (volume)
+		hit |= volume->Scatter(sample, scatteredStart, ray, u, isect,
+			pdf, pdfBack, L);
+	else {
+		if (pdf)
+			*pdf = 1.f;
+		if (pdfBack)
+			*pdfBack = 1.f;
+	}
+	if (hit) {
 		if (bsdf)
 			*bsdf = isect->GetBSDF(sample.arena, sample.swl, ray);
 	}
-	if (volume && L)
-		*L *= Exp(-volume->Tau(sample.swl, ray));
 	if (L)
 		Transmittance(scene, ray, sample, NULL, L);
 	return hit;
@@ -151,28 +161,33 @@ bool VolumeIntegrator::Connect(const Scene &scene, const Sample &sample,
 }
 
 int VolumeIntegrator::Connect(const Scene &scene, const Sample &sample,
-	const Volume *volume, const Ray &ray, const luxrays::RayHit &rayHit,
+	const Volume *volume, bool scatteredStart, bool scatteredEnd,
+	const Ray &ray, const luxrays::RayHit &rayHit,
 	SWCSpectrum *f, float *pdf, float *pdfR) const
 {
 	BSDF *bsdf;
 	Intersection isect;
-	if (!Intersect(scene, sample, volume, ray, rayHit, &isect, &bsdf, f))
+	float spdf, spdfBack;
+	isect.dg.scattered = scatteredEnd;
+	if (!Intersect(scene, sample, volume, scatteredStart, ray, rayHit, 1.f,
+		&isect, &bsdf, &spdf, &spdfBack, f)) {
+		if (pdf)
+			*pdf *= spdfBack;
+		if (pdfR)
+			*pdfR *= spdf;
 		return 1;
+	}
 
 	const Vector d(ray.d);
 	const BxDFType flags(BxDFType(BSDF_SPECULAR | BSDF_TRANSMISSION));
 	*f *= bsdf->F(sample.swl, d, -d, true, flags);
 	if (f->Black())
 		return -1;
-	const float cost = Dot(bsdf->ng, d);
-	if (cost > 0.f)
-		volume = isect.exterior;
-	else
-		volume = isect.interior;
+	volume = bsdf->GetVolume(d);
 	if (pdf)
-		*pdf *= bsdf->Pdf(sample.swl, d, -d);
+		*pdf *= bsdf->Pdf(sample.swl, d, -d) * spdfBack;
 	if (pdfR)
-		*pdfR *= bsdf->Pdf(sample.swl, -d, d);
+		*pdfR *= bsdf->Pdf(sample.swl, -d, d) * spdf;
 
 	ray.mint = rayHit.t + MachineEpsilon::E(rayHit.t);
 	return 0;

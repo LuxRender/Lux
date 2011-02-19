@@ -83,8 +83,9 @@ public:
 		float *pdfBack, SWCSpectrum *L) const;
 	// Used to complete intersection data with LuxRays
 	virtual bool Intersect(const Scene &scene, const Sample &sample,
-		const Volume *volume, const Ray &ray, const luxrays::RayHit &rayHit,
-		Intersection *isect, BSDF **bsdf, SWCSpectrum *L) const;
+		const Volume *volume, bool scatteredStart, const Ray &ray,
+		const luxrays::RayHit &rayHit, float u, Intersection *isect,
+		BSDF **bsdf, float *pdf, float *pdfBack, SWCSpectrum *L) const;
 	virtual bool Connect(const Scene &scene, const Sample &sample,
 		const Volume *volume, bool scatteredStart, bool scatteredEnd,
 		const Point &p0, const Point &p1, bool clip, SWCSpectrum *f,
@@ -92,8 +93,9 @@ public:
 	// Used with LuxRays, returns 1 if can connect, -1 if not and 0 if I have
 	// to continue to trace the ray
 	virtual int Connect(const Scene &scene, const Sample &sample,
-		const Volume *volume, const Ray &ray, const luxrays::RayHit &rayHit,
-		SWCSpectrum *f, float *pdf, float *pdfR) const;
+		const Volume *volume, bool scatteredStart, bool scatteredEnd,
+		const Ray &ray, const luxrays::RayHit &rayHit, SWCSpectrum *f,
+		float *pdf, float *pdfR) const;
 };
 
 SWCSpectrum EstimateDirect(const Scene &scene, const Light &light,

@@ -71,7 +71,7 @@ private:
 	u_int *currentShadowRayIndex;
 
 	PathStateType state;
-	bool specularBounce, specular;
+	bool specularBounce, specular, scattered;
 	float bouncePdf;
 };
 
