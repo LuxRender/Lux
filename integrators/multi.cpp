@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2011 by authors (see AUTHORS.txt )                 *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -20,8 +20,8 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// single.cpp*
-#include "single.h"
+// multi.cpp*
+#include "multi.h"
 #include "randomgen.h"
 #include "light.h"
 #include "bxdf.h"
@@ -31,14 +31,14 @@
 
 using namespace lux;
 
-// SingleScattering Method Definitions
-void SingleScattering::RequestSamples(Sample *sample, const Scene &scene)
+// MultiScattering Method Definitions
+void MultiScattering::RequestSamples(Sample *sample, const Scene &scene)
 {
 	tauSampleOffset = sample->Add1D(1);
 	scatterSampleOffset = sample->Add1D(1);
 }
 
-void SingleScattering::Transmittance(const Scene &scene, const Ray &ray,
+void MultiScattering::Transmittance(const Scene &scene, const Ray &ray,
 	const Sample &sample, float *alpha, SWCSpectrum *const L) const
 {
 	if (!scene.volumeRegion) 
@@ -50,7 +50,7 @@ void SingleScattering::Transmittance(const Scene &scene, const Ray &ray,
 	*L *= Exp(-tau);
 }
 
-u_int SingleScattering::Li(const Scene &scene, const Ray &ray,
+u_int MultiScattering::Li(const Scene &scene, const Ray &ray,
 	const Sample &sample, SWCSpectrum *Lv, float *alpha) const
 {
 	*Lv = 0.f;
@@ -59,6 +59,7 @@ u_int SingleScattering::Li(const Scene &scene, const Ray &ray,
 	if (!vr || !vr->IntersectP(ray, &t0, &t1))
 		return 0;
 	// Do single scattering volume integration in _vr_
+	// Multiple scattering in this context is almost impossible to do
 	// Prepare for volume integration stepping
 	const u_int N = Ceil2UInt((t1 - t0) / stepSize);
 	const float step = (t1 - t0) / N;
@@ -124,7 +125,7 @@ u_int SingleScattering::Li(const Scene &scene, const Ray &ray,
 	return light->group;
 }
 
-bool SingleScattering::Intersect(const Scene &scene, const Sample &sample,
+bool MultiScattering::Intersect(const Scene &scene, const Sample &sample,
 	const Volume *volume, bool scatteredStart, const Ray &ray, float u,
 	Intersection *isect, BSDF **bsdf, float *pdf, float *pdfBack,
 	SWCSpectrum *L) const
@@ -143,14 +144,10 @@ bool SingleScattering::Intersect(const Scene &scene, const Sample &sample,
 				isect->exterior = volume;
 		}
 	}
-	// Do scattering only if start point is not a scattering event
-	// or if connecting 2 vertices that are not both scattering events
-	if (volume && (!scatteredStart || (u == 1.f && !isect->dg.scattered)))
+	if (volume)
 		hit |= volume->Scatter(sample, scatteredStart, ray, u, isect,
 			pdf, pdfBack, L);
 	else {
-		if (volume && L)
-			*L *= Exp(-volume->Tau(sample.swl, ray));
 		if (pdf)
 			*pdf = 1.f;
 		if (pdfBack)
@@ -165,7 +162,7 @@ bool SingleScattering::Intersect(const Scene &scene, const Sample &sample,
 	return hit;
 }
 
-bool SingleScattering::Intersect(const Scene &scene, const Sample &sample,
+bool MultiScattering::Intersect(const Scene &scene, const Sample &sample,
 	const Volume *volume, bool scatteredStart, const Ray &ray,
 	const luxrays::RayHit &rayHit, float u, Intersection *isect,
 	BSDF **bsdf, float *pdf, float *pdfBack, SWCSpectrum *L) const
@@ -184,14 +181,10 @@ bool SingleScattering::Intersect(const Scene &scene, const Sample &sample,
 				isect->exterior = volume;
 		}
 	}
-	// Do scattering only if start point is not a scattering event
-	// or if connecting 2 vertices that are not both scattering events
-	if (volume && (!scatteredStart || (u == 1.f && !isect->dg.scattered)))
+	if (volume)
 		hit |= volume->Scatter(sample, scatteredStart, ray, u, isect,
 			pdf, pdfBack, L);
 	else {
-		if (volume && L)
-			*L *= Exp(-volume->Tau(sample.swl, ray));
 		if (pdf)
 			*pdf = 1.f;
 		if (pdfBack)
@@ -206,9 +199,9 @@ bool SingleScattering::Intersect(const Scene &scene, const Sample &sample,
 	return hit;
 }
 
-VolumeIntegrator* SingleScattering::CreateVolumeIntegrator(const ParamSet &params) {
+VolumeIntegrator* MultiScattering::CreateVolumeIntegrator(const ParamSet &params) {
 	float stepSize  = params.FindOneFloat("stepsize", 1.f);
-	return new SingleScattering(stepSize);
+	return new MultiScattering(stepSize);
 }
 
-static DynamicLoader::RegisterVolumeIntegrator<SingleScattering> r("single");
+static DynamicLoader::RegisterVolumeIntegrator<MultiScattering> r("multi");

@@ -572,6 +572,7 @@ SET(lux_integrators_src
 	integrators/emission.cpp
 	integrators/exphotonmap.cpp
 	integrators/igi.cpp
+	integrators/multi.cpp
 	integrators/path.cpp
 	integrators/single.cpp
 	integrators/sppm.cpp

@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2011 by authors (see AUTHORS.txt )                 *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -20,7 +20,7 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// emission.cpp*
+// multi.h*
 #include "volume.h"
 #include "transport.h"
 #include "scene.h"
@@ -28,15 +28,16 @@
 namespace lux
 {
 
-// EmissionIntegrator Declarations
-class EmissionIntegrator : public VolumeIntegrator {
+// MultiScattering Declarations
+class MultiScattering : public VolumeIntegrator {
 public:
-	// EmissionIntegrator Public Methods
-	EmissionIntegrator(float ss, u_int g) : group(g) { stepSize = ss; }
-	virtual ~EmissionIntegrator() { }
-	virtual void RequestSamples(Sample *sample, const Scene &scene);
+	// MultiScattering Public Methods
+	MultiScattering(float ss) : stepSize(ss) { }
+	virtual ~MultiScattering() { }
+
 	virtual void Transmittance(const Scene &, const Ray &ray,
 		const Sample &sample, float *alpha, SWCSpectrum *const L) const;
+	virtual void RequestSamples(Sample *sample, const Scene &scene);
 	virtual u_int Li(const Scene &, const Ray &ray,
 		const Sample &sample, SWCSpectrum *L, float *alpha) const;
 	virtual bool Intersect(const Scene &scene, const Sample &sample,
@@ -48,13 +49,14 @@ public:
 		const Volume *volume, bool scatteredStart, const Ray &ray,
 		const luxrays::RayHit &rayHit, float u, Intersection *isect,
 		BSDF **bsdf, float *pdf, float *pdfBack, SWCSpectrum *L) const;
+
 	static VolumeIntegrator *CreateVolumeIntegrator(const ParamSet &params);
+
 private:
-	// EmissionIntegrator Private Data
+	// MultiScattering Private Data
 	float stepSize;
-	const u_int group;
+
 	u_int tauSampleOffset, scatterSampleOffset;
 };
 
 }//namespace lux
-

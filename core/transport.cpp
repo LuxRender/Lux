@@ -35,13 +35,16 @@ namespace lux
 {
 
 // Integrator Method Definitions
+// This is a very basic implementation without any volumetric support
+// Look at the emission, single or multi integrators for proper support
 bool VolumeIntegrator::Intersect(const Scene &scene, const Sample &sample,
 	const Volume *volume, bool scatteredStart, const Ray &ray, float u,
 	Intersection *isect, BSDF **bsdf, float *pdf, float *pdfBack,
 	SWCSpectrum *L) const
 {
-	bool hit = scene.Intersect(ray, isect);
+	const bool hit = scene.Intersect(ray, isect);
 	if (hit) {
+		// Proper volume setting is still required for eg glass2
 		if (Dot(ray.d, isect->dg.nn) > 0.f) {
 			if (!volume)
 				volume = isect->interior;
@@ -53,32 +56,26 @@ bool VolumeIntegrator::Intersect(const Scene &scene, const Sample &sample,
 			else if (!isect->exterior)
 				isect->exterior = volume;
 		}
-	}
-	if (volume)
-		hit |= volume->Scatter(sample, scatteredStart, ray, u, isect,
-			pdf, pdfBack, L);
-	else {
-		if (pdf)
-			*pdf = 1.f;
-		if (pdfBack)
-			*pdfBack = 1.f;
-	}
-	if (hit) {
 		if (bsdf)
 			*bsdf = isect->GetBSDF(sample.arena, sample.swl, ray);
 	}
-	if (L)
-		Transmittance(scene, ray, sample, NULL, L);
+	if (pdf)
+		*pdf = 1.f;
+	if (pdfBack)
+		*pdfBack = 1.f;
 	return hit;
 }
 
+// This is a very basic implementation without any volumetric support
+// Look at the emission, single or multi integrators for proper support
 bool VolumeIntegrator::Intersect(const Scene &scene, const Sample &sample,
 	const Volume *volume, bool scatteredStart, const Ray &ray,
 	const luxrays::RayHit &rayHit, float u, Intersection *isect,
 	BSDF **bsdf, float *pdf, float *pdfBack, SWCSpectrum *L) const
 {
-	bool hit = scene.Intersect(rayHit, isect);
+	const bool hit = scene.Intersect(rayHit, isect);
 	if (hit) {
+		// Proper volume setting is still required for eg glass2
 		if (Dot(ray.d, isect->dg.nn) > 0.f) {
 			if (!volume)
 				volume = isect->interior;
@@ -90,22 +87,13 @@ bool VolumeIntegrator::Intersect(const Scene &scene, const Sample &sample,
 			else if (!isect->exterior)
 				isect->exterior = volume;
 		}
-	}
-	if (volume)
-		hit |= volume->Scatter(sample, scatteredStart, ray, u, isect,
-			pdf, pdfBack, L);
-	else {
-		if (pdf)
-			*pdf = 1.f;
-		if (pdfBack)
-			*pdfBack = 1.f;
-	}
-	if (hit) {
 		if (bsdf)
 			*bsdf = isect->GetBSDF(sample.arena, sample.swl, ray);
 	}
-	if (L)
-		Transmittance(scene, ray, sample, NULL, L);
+	if (pdf)
+		*pdf = 1.f;
+	if (pdfBack)
+		*pdfBack = 1.f;
 	return hit;
 }
 
