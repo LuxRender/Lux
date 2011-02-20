@@ -68,7 +68,7 @@ SurfaceIntegrator* SPPMIntegrator::CreateSurfaceIntegrator(const ParamSet &param
 	SPPMIntegrator *sppmi =  new SPPMIntegrator();
 
 	// SPPM rendering parameters
-	sppmi->lookupAccelType = HASH_GRID; //HYBRID_HASH_GRID;
+	sppmi->lookupAccelType = HYBRID_HASH_GRID;
 	sppmi->maxEyePathDepth = 16;
 	sppmi->photonAlpha = 0.7f;
 	sppmi->photonStartRadiusScale = 1.f;

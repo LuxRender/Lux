@@ -42,6 +42,7 @@ enum HitPointType {
 class HitPoint {
 public:
 	HitPointType type;
+	Sample *sample;
 
 	// Used for CONSTANT_COLOR and SURFACE type
 	XYZColor eyeThroughput;

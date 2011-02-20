@@ -58,6 +58,7 @@ HitPoints::HitPoints(SPPMRenderer *engine) {
 	// Initialize hit points field
 	for (u_int i = 0; i < (*hitPoints).size(); ++i) {
 		HitPoint *hp = &(*hitPoints)[i];
+		hp->sample = NULL;
 
 		hp->photonCount = 0;
 		hp->reflectedFlux = XYZColor();
@@ -75,6 +76,12 @@ HitPoints::HitPoints(SPPMRenderer *engine) {
 
 HitPoints::~HitPoints() {
 	delete lookUpAccel;
+
+	for (u_int i = 0; i < (*hitPoints).size(); ++i) {
+		HitPoint *hp = &(*hitPoints)[i];
+
+		delete hp->sample;
+	}
 	delete hitPoints;
 }
 
@@ -166,16 +173,18 @@ void HitPoints::SetHitPoints(RandomGenerator *rng) {
 
 	LOG(LUX_INFO, LUX_NOERROR) << "Building hit points";
 
-	// Initialize the sample
-	Sample sample(scene->surfaceIntegrator, scene->volumeIntegrator, *scene);
-	sampler->InitSample(&sample);
-	sample.contribBuffer = NULL;
-	sample.camera = scene->camera->Clone();
-	sample.realTime = 0.f;
-	sample.rng = rng;
-
 	for (u_int i = 0; i < (*hitPoints).size(); ++i) {
 		HitPoint *hp = &(*hitPoints)[i];
+
+		delete hp->sample;
+		hp->sample = new Sample(scene->surfaceIntegrator, scene->volumeIntegrator, *scene);
+		Sample &sample(*hp->sample);
+
+		sampler->InitSample(&sample);
+		sample.contribBuffer = NULL;
+		sample.camera = scene->camera->Clone();
+		sample.realTime = 0.f;
+		sample.rng = rng;
 
 		sampler->GetNextSample(&sample);
 
@@ -189,9 +198,6 @@ void HitPoints::SetHitPoints(RandomGenerator *rng) {
 
 		// Trace the eye path
 		TraceEyePath(hp, sample);
-
-		// Free BSDF memory from computing image sample value
-		sample.arena.FreeAll();
 	}
 }
 
@@ -306,7 +312,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample) {
 			hp->eyeThroughput = XYZColor(sw, pathThroughput * rayWeight);
 			hp->position = p;
 			hp->wo = wo;
-			hp->normal = n;
+			hp->normal = (Dot(n, wo) > 0.f) ? (n) : (-n);
 			return;
 		}
 

@@ -166,7 +166,7 @@ void SPPMRenderer::Render(Scene *s) {
 
 		sampPos = 0;
 
-		size_t threadCount = 1;//boost::thread::hardware_concurrency();
+		size_t threadCount = boost::thread::hardware_concurrency();
 		LOG(LUX_INFO, LUX_NOERROR) << "Hardware concurrency: " << threadCount;
 
 		// Create synchronization barriers
@@ -461,7 +461,8 @@ void SPPMRenderer::RenderThread::TracePhotons() {
 				Vector wo = -photonRay.d;
 
 				// Deposit Flux
-				renderer->hitPoints->AddFlux(photonRay.o, wo, sw, alpha);
+				// Should be -photonRay.d, not photonRay.d
+				renderer->hitPoints->AddFlux(photonRay.o, photonRay.d, sw, alpha);
 
 				// Sample new photon ray direction
 				Vector wi;

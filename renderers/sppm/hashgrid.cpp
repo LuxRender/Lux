@@ -138,7 +138,7 @@ void HashGrid::AddFlux(const Point &hitPoint, const Vector &wi,
 				continue;
 
 			luxrays::AtomicInc(&hp->accumPhotonCount);
-			XYZColor flux = XYZColor(sw, photonFlux /* hp->bsdf->F(sw, wi, hp->wo, true)*/) *
+			XYZColor flux = XYZColor(sw, photonFlux * hp->bsdf->F(sw, hp->wo, wi, true)) *
 				hp->eyeThroughput; // FIXME - not sure if the reverse flag should be true or false
 			XYZColorAtomicAdd(hp->accumReflectedFlux, flux);
 		}
