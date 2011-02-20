@@ -42,7 +42,7 @@ using namespace lux;
 // HitPoints methods
 //------------------------------------------------------------------------------
 
-HitPoints::HitPoints(SPPMRenderer *engine) {
+HitPoints::HitPoints(SPPMRenderer *engine)  {
 	renderer = engine;
 	pass = 0;
 
@@ -56,9 +56,18 @@ HitPoints::HitPoints(SPPMRenderer *engine) {
 	LOG(LUX_INFO, LUX_NOERROR) << "Hit points count: " << hitPoints->size();
 
 	// Initialize hit points field
+	Scene *scene = renderer->scene;
+	Sampler *sampler = scene->sampler;
 	for (u_int i = 0; i < (*hitPoints).size(); ++i) {
 		HitPoint *hp = &(*hitPoints)[i];
-		hp->sample = NULL;
+
+		hp->sample = new Sample(scene->surfaceIntegrator, scene->volumeIntegrator, *scene);
+
+		Sample &sample(*hp->sample);
+		sampler->InitSample(&sample);
+		sample.contribBuffer = NULL;
+		sample.camera = scene->camera->Clone();
+		sample.realTime = 0.f;
 
 		hp->photonCount = 0;
 		hp->reflectedFlux = XYZColor();
@@ -176,16 +185,9 @@ void HitPoints::SetHitPoints(RandomGenerator *rng) {
 	for (u_int i = 0; i < (*hitPoints).size(); ++i) {
 		HitPoint *hp = &(*hitPoints)[i];
 
-		delete hp->sample;
-		hp->sample = new Sample(scene->surfaceIntegrator, scene->volumeIntegrator, *scene);
 		Sample &sample(*hp->sample);
-
-		sampler->InitSample(&sample);
-		sample.contribBuffer = NULL;
-		sample.camera = scene->camera->Clone();
-		sample.realTime = 0.f;
+		sample.arena.FreeAll();
 		sample.rng = rng;
-
 		sampler->GetNextSample(&sample);
 
 		// Save ray time value

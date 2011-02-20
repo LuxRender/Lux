@@ -71,7 +71,7 @@ SurfaceIntegrator* SPPMIntegrator::CreateSurfaceIntegrator(const ParamSet &param
 	sppmi->lookupAccelType = HYBRID_HASH_GRID;
 	sppmi->maxEyePathDepth = 16;
 	sppmi->photonAlpha = 0.7f;
-	sppmi->photonStartRadiusScale = 1.f;
+	sppmi->photonStartRadiusScale = 2.f;
 	sppmi->maxPhotonPathDepth = 8;
 
 	sppmi->stochasticInterval = 5000000;
