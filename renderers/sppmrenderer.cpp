@@ -334,17 +334,25 @@ double SPPMRenderer::Statistics_Efficiency() {
 //------------------------------------------------------------------------------
 
 void SPPMRenderer::UpdateFilm() {
-	const u_int width = scene->camera->film->GetXPixelCount();
+	// Assume a linear pixel sampler
 	const u_int bufferId = sppmi->bufferId;
+	int xstart, xend, ystart, yend;
+    scene->camera->film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
 
-	for (unsigned int i = 0; i < hitPoints->GetSize(); ++i) {
+	int x = xstart;
+	int y = ystart;
+	for (u_int i = 0; i < hitPoints->GetSize(); ++i) {
 		HitPoint *hp = hitPoints->GetHitPoint(i);
-		const float scrX = i % width;
-		const float scrY = i / width;
 
-		Contribution contrib(scrX, scrY, hp->radiance, hp->eyeAlpha,
+		Contribution contrib(x - xstart, y - ystart, hp->eyeThroughput, hp->eyeAlpha,
 				hp->eyeDistance, 0.f, bufferId);
 		scene->camera->film->SetSample(&contrib);
+
+		++x;
+		if (x == xend) {
+			x = xstart;
+			++y;
+		}
 	}
 }
 
@@ -391,10 +399,10 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 
 	if (myThread->n == 0) {
 		// One thread initialize the hit points
-		renderer->hitPoints = new HitPoints(renderer);
+		renderer->hitPoints = new HitPoints(renderer, &rng);
 		hitPoints = renderer->hitPoints;
 
-		hitPoints->SetHitPoints(&rng);
+		hitPoints->SetHitPoints();
 		hitPoints->Init();
 	}
 
@@ -438,7 +446,7 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 			const long long count = renderer->photonTracedTotal + renderer->photonTracedPass;
 			hitPoints->AccumulateFlux(count);
 
-			hitPoints->SetHitPoints(&rng);
+			hitPoints->SetHitPoints();
 			hitPoints->UpdatePointsInformation();
 			hitPoints->IncPass();
 			hitPoints->RefreshAccelMutex();

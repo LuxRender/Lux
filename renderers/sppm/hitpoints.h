@@ -76,7 +76,7 @@ class SPPMRenderer;
 
 class HitPoints {
 public:
-	HitPoints(SPPMRenderer *engine);
+	HitPoints(SPPMRenderer *engine, RandomGenerator *rng);
 	~HitPoints();
 
 	void Init();
@@ -105,7 +105,7 @@ public:
 	}
 
 	void AccumulateFlux(const unsigned long long photonTraced);
-	void SetHitPoints(RandomGenerator *rng);
+	void SetHitPoints();
 
 	void RefreshAccelMutex() {
 		lookUpAccel->RefreshMutex();
@@ -119,6 +119,8 @@ private:
 	void TraceEyePath(HitPoint *hp, const Sample &sample);
 
 	SPPMRenderer *renderer;
+	u_int filmWidth, filmHeight;
+	Sample *sample;
 
 	// Hit points information
 	BBox bbox;

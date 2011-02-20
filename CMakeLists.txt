@@ -628,6 +628,7 @@ else(LUXRAYS_DISABLE_OPENCL)
 SET(lux_renderers_src
 	renderers/hybridrenderer.cpp
 	renderers/hybridsamplerrenderer.cpp
+	renderers/samplerrenderer.cpp
     renderers/sppmrenderer.cpp
 	renderers/sppm/hashgrid.cpp
 	renderers/sppm/hitpoints.cpp

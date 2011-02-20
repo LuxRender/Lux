@@ -19,6 +19,15 @@
  *   LuxRays website: http://www.luxrender.net                             *
  ***************************************************************************/
 
+/*
+ * A scene, to be rendered with SPPM, must have:
+ *
+ * Renderer "sppm"
+ * Sampler "random or lowdiscrepancy" "string pixelsampler" ["linear"] "integer pixelsamples" [1]
+ * SurfaceIntegrator "sppm"
+ *
+ */
+
 #include "../sppmrenderer.h"
 #include "integrators/sppm.h"
 #include "camera.h"
@@ -131,13 +140,17 @@ using namespace lux;
 // HitPoints methods
 //------------------------------------------------------------------------------
 
-HitPoints::HitPoints(SPPMRenderer *engine) {
+HitPoints::HitPoints(SPPMRenderer *engine, RandomGenerator *rng) {
 	renderer = engine;
 	pass = 0;
 
-	const u_int width = renderer->scene->camera->film->GetXPixelCount();
-	const u_int height = renderer->scene->camera->film->GetYPixelCount();
-	hitPoints = new std::vector<HitPoint>(width * height);
+	// Get the count of hit points required
+	int xstart, xend, ystart, yend;
+    renderer->scene->camera->film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
+	filmWidth = xend - xstart;
+	filmHeight = yend - ystart;
+
+	hitPoints = new std::vector<HitPoint>(filmWidth * filmHeight);
 	LOG(LUX_INFO, LUX_NOERROR) << "Hit points count: " << hitPoints->size();
 
 	// Initialize hit points field
@@ -156,6 +169,22 @@ HitPoints::HitPoints(SPPMRenderer *engine) {
 		hp->accumRadiance = XYZColor();
 		hp->radiance = XYZColor();
 	}
+
+	// Initialize the sample
+	Scene *scene = renderer->scene;
+	Sampler *sampler = scene->sampler;
+	sample = new Sample(scene->surfaceIntegrator, scene->volumeIntegrator, *scene);
+	sampler->InitSample(sample);
+	sample->contribBuffer = NULL;
+	sample->camera = scene->camera->Clone();
+	sample->realTime = 0.f;
+	sample->rng = rng;
+}
+
+HitPoints::~HitPoints() {
+	delete sample;
+	delete lookUpAccel;
+	delete hitPoints;
 }
 
 void HitPoints::Init() {
@@ -170,9 +199,7 @@ void HitPoints::Init() {
 
 	// Calculate initial radius
 	Vector ssize = hpBBox.pMax - hpBBox.pMin;
-	const u_int width = renderer->scene->camera->film->GetXPixelCount();
-	const u_int height = renderer->scene->camera->film->GetYPixelCount();
-	const float photonRadius = renderer->sppmi->photonStartRadiusScale * ((ssize.x + ssize.y + ssize.z) / 3.f) / ((width + height) / 2.f) * 2.f;
+	const float photonRadius = renderer->sppmi->photonStartRadiusScale * ((ssize.x + ssize.y + ssize.z) / 3.f) / ((filmWidth + filmHeight) / 2.f) * 2.f;
 	const float photonRadius2 = photonRadius * photonRadius;
 
 	// Expand the bounding box by used radius
@@ -202,11 +229,6 @@ void HitPoints::Init() {
 		default:
 			assert (false);
 	}
-}
-
-HitPoints::~HitPoints() {
-	delete lookUpAccel;
-	delete hitPoints;
 }
 
 void HitPoints::AccumulateFlux(const unsigned long long photonTraced) {
@@ -247,7 +269,7 @@ void HitPoints::AccumulateFlux(const unsigned long long photonTraced) {
 	}
 }
 
-void HitPoints::SetHitPoints(RandomGenerator *rng) {
+void HitPoints::SetHitPoints() {
 	Scene *scene = renderer->scene;
 	Sampler *sampler = scene->sampler;
 
@@ -256,26 +278,21 @@ void HitPoints::SetHitPoints(RandomGenerator *rng) {
 	for (u_int i = 0; i < (*hitPoints).size(); ++i) {
 		HitPoint *hp = &(*hitPoints)[i];
 
-		// Initialize the sample
-		Sample sample(scene->surfaceIntegrator, scene->volumeIntegrator, *scene);
-		sampler->InitSample(&sample);
-		sample.contribBuffer = NULL;
-		sample.camera = scene->camera->Clone();
-		sample.realTime = 0.f;
-		sample.rng = rng;
-
-		sampler->GetNextSample(&sample);
+		sampler->GetNextSample(sample);
 
 		// Save ray time value
-		sample.realTime = sample.camera->GetTime(sample.time);
+		sample->realTime = sample->camera->GetTime(sample->time);
 		// Sample camera transformation
-		sample.camera->SampleMotion(sample.realTime);
+		sample->camera->SampleMotion(sample->realTime);
 
 		// Sample new SWC thread wavelengths
-		sample.swl.Sample(sample.wavelengths);
+		sample->swl.Sample(sample->wavelengths);
 
 		// Trace the eye path
-		TraceEyePath(hp, sample);
+		TraceEyePath(hp, *sample);
+
+		// Free BSDF memory from computing image sample value
+		sample->arena.FreeAll();
 	}
 }
 
@@ -295,7 +312,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample) {
 	const float rayWeight = sample.camera->GenerateRay(scene, sample, &ray);
 
 	const float nLights = scene.lights.size();
-	SWCSpectrum pathThroughput(rayWeight);
+	SWCSpectrum pathThroughput(1.f);
 	SWCSpectrum L(0.f);
 	bool scattered = false;
 	hp->eyeAlpha = 1.f;
@@ -335,7 +352,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample) {
 				hp->eyeAlpha = 0.f;
 
 			hp->type = CONSTANT_COLOR;
-			hp->eyeThroughput = XYZColor(sw, L);
+			hp->eyeThroughput = XYZColor(sw, L * rayWeight);
 			return;
 		}
 		scattered = bsdf->dgShading.scattered;
@@ -363,7 +380,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample) {
 
 		if (pathLength == maxDepth) {
 			hp->type = CONSTANT_COLOR;
-			hp->eyeThroughput = XYZColor(sw, L);
+			hp->eyeThroughput = XYZColor(sw, L * rayWeight);
 			return;
 		}
 
@@ -378,15 +395,16 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample) {
 		if (!bsdf->SampleF(sw, wo, &wi, data[0], data[1], data[2], &f,
 			&pdf, BSDF_ALL, &flags, NULL, true)) {
 			hp->type = CONSTANT_COLOR;
-			hp->eyeThroughput = XYZColor(sw, L);
+			hp->eyeThroughput = XYZColor(sw, L  * rayWeight);
 			return;
 		}
 
-		if (flags == BxDFType(BSDF_ALL & BSDF_DIFFUSE)) {
+		if ((flags == BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)) ||
+				(flags == BxDFType(BSDF_TRANSMISSION | BSDF_DIFFUSE))) {
 			// It is a valid hit point
 			hp->type = SURFACE;
 			hp->bsdf = bsdf;
-			hp->eyeThroughput = XYZColor(sw, pathThroughput * rayWeight);
+			hp->eyeThroughput = XYZColor(sw, pathThroughput * f * rayWeight);
 			hp->position = p;
 			hp->wo = wo;
 			hp->normal = n;
@@ -396,7 +414,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample) {
 		pathThroughput *= f;
 		if (pathThroughput.Black()) {
 			hp->type = CONSTANT_COLOR;
-			hp->eyeThroughput = XYZColor(sw, L);
+			hp->eyeThroughput = XYZColor(sw, L * rayWeight);
 			return;
 		}
 

@@ -1005,14 +1005,14 @@ void Film::SetSample(const Contribution *contrib) {
 	BufferGroup &currentGroup = bufferGroups[contrib->bufferGroup];
 	Buffer *buffer = currentGroup.getBuffer(contrib->buffer);
 
-	// Compute sample's raster extent
-	const u_int dImageX = contrib->imageX - 0.5f;
-	const u_int dImageY = contrib->imageY - 0.5f;
-	buffer->Set(dImageX, dImageY, xyz, alpha);
+	const u_int x = (u_int)contrib->imageX;
+	const u_int y = (u_int)contrib->imageY;
+
+	buffer->Set(x, y, xyz, alpha);
 
 	// Update ZBuffer values with filtered zdepth contribution
 	if(use_Zbuf && contrib->zdepth != 0.f)
-		ZBuffer->Add(dImageX, dImageY, contrib->zdepth, 1.0f);
+		ZBuffer->Add(x, y, contrib->zdepth, 1.0f);
 }
 
 void Film::WriteResumeFilm(const string &filename)
