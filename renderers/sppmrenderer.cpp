@@ -27,6 +27,11 @@
 #include "sampling.h"
 #include "randomgen.h"
 #include "context.h"
+#include "light.h"
+#include "mc.h"
+#include "mcdistribution.h"
+#include "spectrumwavelengths.h"
+#include "reflection/bxdf.h"
 #include "sppmrenderer.h"
 #include "integrators/sppm.h"
 
@@ -161,11 +166,12 @@ void SPPMRenderer::Render(Scene *s) {
 
 		sampPos = 0;
 
-		size_t threadCount = boost::thread::hardware_concurrency();
+		size_t threadCount = 1;//boost::thread::hardware_concurrency();
 		LOG(LUX_INFO, LUX_NOERROR) << "Hardware concurrency: " << threadCount;
 
 		// Create synchronization barriers
 		barrier = new boost::barrier(threadCount);
+		barrierExit = new boost::barrier(threadCount);
 
 		photonTracedTotal = 0;
 		photonTracedPass = 0;
@@ -211,6 +217,9 @@ void SPPMRenderer::Render(Scene *s) {
 		scene->camera->film->contribPool->Flush();
 		scene->camera->film->contribPool->Delete();
 	}
+
+	delete barrier;
+	delete barrierExit;
 }
 
 void SPPMRenderer::Pause() {
@@ -344,7 +353,7 @@ void SPPMRenderer::UpdateFilm() {
 	for (u_int i = 0; i < hitPoints->GetSize(); ++i) {
 		HitPoint *hp = hitPoints->GetHitPoint(i);
 
-		Contribution contrib(x - xstart, y - ystart, hp->eyeThroughput, hp->eyeAlpha,
+		Contribution contrib(x - xstart, y - ystart, hp->radiance, hp->eyeAlpha,
 				hp->eyeDistance, 0.f, bufferId);
 		scene->camera->film->SetSample(&contrib);
 
@@ -362,14 +371,132 @@ void SPPMRenderer::UpdateFilm() {
 
 SPPMRenderer::RenderThread::RenderThread(u_int index, SPPMRenderer *r) :
 	n(index), renderer(r), thread(NULL), samples(0.), blackSamples(0.) {
+	threadRng = NULL;
+
+	Scene &scene(*(renderer->scene));
+	threadSample = new Sample(scene.surfaceIntegrator, scene.volumeIntegrator, scene);
+	// Initialized later
+	threadSample->rng = NULL;
+	threadSample->camera = scene.camera->Clone();
+	threadSample->realTime = threadSample->camera->GetTime(.5f); //FIXME sample it
+	threadSample->camera->SampleMotion(threadSample->realTime);
+
+	// Compute light power CDF for photon shooting
+	u_int nLights = scene.lights.size();
+	float *lightPower = new float[nLights];
+	for (u_int i = 0; i < nLights; ++i)
+		lightPower[i] = scene.lights[i]->Power(scene);
+	lightCDF = new Distribution1D(lightPower, nLights);
+	delete[] lightPower;
 }
 
 SPPMRenderer::RenderThread::~RenderThread() {
+	delete lightCDF;
+	delete threadSample;
+	delete threadRng;
+}
+
+void SPPMRenderer::RenderThread::TracePhotons() {
+	Scene &scene(*(renderer->scene));
+	SpectrumWavelengths &sw(threadSample->swl);
+	Sample &sample(*threadSample);
+
+	for (;;) {
+		// Check if it is time to do an eye pass
+		if (renderer->photonTracedPass > renderer->sppmi->stochasticInterval) {
+			// Ok, time to stop
+			return;
+		}
+
+		luxrays::AtomicInc(&(renderer->photonTracedPass));
+
+		// Sample the wavelengths
+		sw.Sample(threadRng->floatValue());
+
+		// Trace a photon path and store contribution
+		// Choose 6D sample values for photon
+		float u[6];
+		u[0] = threadRng->floatValue();
+		u[1] = threadRng->floatValue();
+		u[2] = threadRng->floatValue();
+		u[3] = threadRng->floatValue();
+		u[4] = threadRng->floatValue();
+		u[5] = threadRng->floatValue();
+
+		// Choose light to shoot photon from
+		float lightPdf;
+		float uln = threadRng->floatValue();
+		u_int lightNum = lightCDF->SampleDiscrete(uln, &lightPdf);
+		const Light *light = scene.lights[lightNum];
+
+		// Generate _photonRay_ from light source and initialize _alpha_
+		BSDF *bsdf;
+		float pdf;
+		SWCSpectrum alpha;
+		if (!light->SampleL(scene, sample, u[0], u[1], u[2],
+				&bsdf, &pdf, &alpha))
+			continue;
+		Ray photonRay;
+		photonRay.o = bsdf->dgShading.p;
+		float pdf2;
+		SWCSpectrum alpha2;
+		if (!bsdf->SampleF(sw, Vector(bsdf->nn), &photonRay.d,
+				u[3], u[4], u[5], &alpha2, &pdf2))
+			continue;
+		alpha *= alpha2;
+		alpha /= lightPdf;
+
+		if (!alpha.Black()) {
+			// Follow photon path through scene and record intersections
+			Intersection photonIsect;
+			const Volume *volume = NULL; //FIXME: try to get volume from light
+			BSDF *photonBSDF;
+			u_int nIntersections = 0;
+			while (scene.Intersect(sample, volume, false,
+				photonRay, 1.f, &photonIsect, &photonBSDF,
+				NULL, NULL, &alpha)) {
+				++nIntersections;
+
+				// Handle photon/surface intersection
+				Vector wo = -photonRay.d;
+
+				// Deposit Flux
+				renderer->hitPoints->AddFlux(photonRay.o, wo, sw, alpha);
+
+				// Sample new photon ray direction
+				Vector wi;
+				float pdfo;
+				BxDFType flags;
+				// Get random numbers for sampling outgoing photon direction
+				const float u1 = threadRng->floatValue();
+				const float u2 = threadRng->floatValue();
+				const float u3 = threadRng->floatValue();
+
+				// Compute new photon weight and possibly terminate with RR
+				SWCSpectrum fr;
+				if (!photonBSDF->SampleF(sw, wo, &wi, u1, u2, u3, &fr, &pdfo, BSDF_ALL, &flags))
+					break;
+
+				// Russian Roulette
+				SWCSpectrum anew = fr;
+				float continueProb = min(1.f, anew.Filter(sw));
+				if (threadRng->floatValue() > continueProb || nIntersections > renderer->sppmi->maxPhotonPathDepth)
+					break;
+
+				alpha *= anew / continueProb;
+				photonRay = Ray(photonIsect.dg.p, wi);
+				volume = photonBSDF->GetVolume(photonRay.d);
+			}
+		}
+
+		sample.arena.FreeAll();
+	}
 }
 
 void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 	SPPMRenderer *renderer = myThread->renderer;
 	boost::barrier *barrier = renderer->barrier;
+	boost::barrier *barrierExit = renderer->barrierExit;
 
 	Scene &scene(*(renderer->scene));
 	if (scene.IsFilmOnly())
@@ -389,7 +516,8 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 	// Initialize the thread's rangen
 	u_long seed = scene.seedBase + myThread->n;
 	LOG(LUX_INFO, LUX_NOERROR) << "Thread " << myThread->n << " uses seed: " << seed;
-	RandomGenerator rng(seed);
+	myThread->threadRng = new RandomGenerator(seed);
+	myThread->threadSample->rng = myThread->threadRng;
 
 	HitPoints *hitPoints = NULL;
 
@@ -399,10 +527,10 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 
 	if (myThread->n == 0) {
 		// One thread initialize the hit points
-		renderer->hitPoints = new HitPoints(renderer, &rng);
+		renderer->hitPoints = new HitPoints(renderer);
 		hitPoints = renderer->hitPoints;
 
-		hitPoints->SetHitPoints();
+		hitPoints->SetHitPoints(myThread->threadRng);
 		hitPoints->Init();
 	}
 
@@ -431,7 +559,7 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 		// Trace photons
 		//----------------------------------------------------------------------
 
-		// TODO
+		myThread->TracePhotons();
 
 		//----------------------------------------------------------------------
 		// End of the pass
@@ -446,7 +574,7 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 			const long long count = renderer->photonTracedTotal + renderer->photonTracedPass;
 			hitPoints->AccumulateFlux(count);
 
-			hitPoints->SetHitPoints();
+			hitPoints->SetHitPoints(myThread->threadRng);
 			hitPoints->UpdatePointsInformation();
 			hitPoints->IncPass();
 			hitPoints->RefreshAccelMutex();
@@ -466,6 +594,12 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 		// Wait for other threads
 		barrier->wait();
 	}
+
+	// Wait for other threads
+	barrierExit->wait();
+
+	if (myThread->n == 0)
+		delete hitPoints;
 }
 
 Renderer *SPPMRenderer::CreateRenderer(const ParamSet &params) {

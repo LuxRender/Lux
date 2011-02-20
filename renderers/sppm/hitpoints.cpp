@@ -28,7 +28,7 @@
  *
  */
 
-#include "../sppmrenderer.h"
+#include "renderers/sppmrenderer.h"
 #include "integrators/sppm.h"
 #include "camera.h"
 #include "film.h"
@@ -38,109 +38,11 @@
 
 using namespace lux;
 
-/*bool GetHitPointInformation(const Scene *scene, RandomGenerator *rndGen,
-		Ray *ray, const RayHit *rayHit, Point &hitPoint,
-		Spectrum &surfaceColor, Normal &N, Normal &shadeN) {
-	hitPoint = (*ray)(rayHit->t);
-	const u_int currentTriangleIndex = rayHit->index;
-	const u_int currentMeshIndex = scene->dataSet->GetMeshID(currentTriangleIndex);
-
-	// Get the triangle
-	const ExtMesh *mesh = scene->objects[scene->dataSet->GetMeshID(currentTriangleIndex)];
-	const u_int triIndex = scene->dataSet->GetMeshTriangleID(currentTriangleIndex);
-
-	if (mesh->HasColors())
-		surfaceColor = mesh->InterpolateTriColor(triIndex, rayHit->b1, rayHit->b2);
-	else
-		surfaceColor = Spectrum(1.f, 1.f, 1.f);
-
-	// Interpolate face normal
-	N = mesh->InterpolateTriNormal(triIndex, rayHit->b1, rayHit->b2);
-
-	// Check if I have to apply texture mapping or normal mapping
-	TexMapInstance *tm = scene->objectTexMaps[currentMeshIndex];
-	BumpMapInstance *bm = scene->objectBumpMaps[currentMeshIndex];
-	NormalMapInstance *nm = scene->objectNormalMaps[currentMeshIndex];
-	if (tm || bm || nm) {
-		// Interpolate UV coordinates if required
-		const UV triUV = mesh->InterpolateTriUV(triIndex, rayHit->b1, rayHit->b2);
-
-		// Check if there is an assigned texture map
-		if (tm) {
-			const TextureMap *map = tm->GetTexMap();
-
-			// Apply texture mapping
-			surfaceColor *= map->GetColor(triUV);
-
-			// Check if the texture map has an alpha channel
-			if (map->HasAlpha()) {
-				const float alpha = map->GetAlpha(triUV);
-
-				if ((alpha == 0.0f) || ((alpha < 1.f) && (rndGen->floatValue() > alpha))) {
-					*ray = Ray(hitPoint, ray->d);
-					return true;
-				}
-			}
-		}
-
-		// Check if there is an assigned bump/normal map
-		if (bm || nm) {
-			if (nm) {
-				// Apply normal mapping
-				const Spectrum color = nm->GetTexMap()->GetColor(triUV);
-
-				const float x = 2.f * (color.r - 0.5f);
-				const float y = 2.f * (color.g - 0.5f);
-				const float z = 2.f * (color.b - 0.5f);
-
-				Vector v1, v2;
-				CoordinateSystem(Vector(N), &v1, &v2);
-				N = Normalize(Normal(
-						v1.x * x + v2.x * y + N.x * z,
-						v1.y * x + v2.y * y + N.y * z,
-						v1.z * x + v2.z * y + N.z * z));
-			}
-
-			if (bm) {
-				// Apply bump mapping
-				const TextureMap *map = bm->GetTexMap();
-				const UV &dudv = map->GetDuDv();
-
-				const float b0 = map->GetColor(triUV).Filter();
-
-				const UV uvdu(triUV.u + dudv.u, triUV.v);
-				const float bu = map->GetColor(uvdu).Filter();
-
-				const UV uvdv(triUV.u, triUV.v + dudv.v);
-				const float bv = map->GetColor(uvdv).Filter();
-
-				const float scale = bm->GetScale();
-				const Vector bump(scale * (bu - b0), scale * (bv - b0), 1.f);
-
-				Vector v1, v2;
-				CoordinateSystem(Vector(N), &v1, &v2);
-				N = Normalize(Normal(
-						v1.x * bump.x + v2.x * bump.y + N.x * bump.z,
-						v1.y * bump.x + v2.y * bump.y + N.y * bump.z,
-						v1.z * bump.x + v2.z * bump.y + N.z * bump.z));
-			}
-		}
-	}
-
-	// Flip the normal if required
-	if (Dot(ray->d, N) > 0.f)
-		shadeN = -N;
-	else
-		shadeN = N;
-
-	return false;
-}*/
-
 //------------------------------------------------------------------------------
 // HitPoints methods
 //------------------------------------------------------------------------------
 
-HitPoints::HitPoints(SPPMRenderer *engine, RandomGenerator *rng) {
+HitPoints::HitPoints(SPPMRenderer *engine) {
 	renderer = engine;
 	pass = 0;
 
@@ -169,20 +71,9 @@ HitPoints::HitPoints(SPPMRenderer *engine, RandomGenerator *rng) {
 		hp->accumRadiance = XYZColor();
 		hp->radiance = XYZColor();
 	}
-
-	// Initialize the sample
-	Scene *scene = renderer->scene;
-	Sampler *sampler = scene->sampler;
-	sample = new Sample(scene->surfaceIntegrator, scene->volumeIntegrator, *scene);
-	sampler->InitSample(sample);
-	sample->contribBuffer = NULL;
-	sample->camera = scene->camera->Clone();
-	sample->realTime = 0.f;
-	sample->rng = rng;
 }
 
 HitPoints::~HitPoints() {
-	delete sample;
 	delete lookUpAccel;
 	delete hitPoints;
 }
@@ -269,30 +160,38 @@ void HitPoints::AccumulateFlux(const unsigned long long photonTraced) {
 	}
 }
 
-void HitPoints::SetHitPoints() {
+void HitPoints::SetHitPoints(RandomGenerator *rng) {
 	Scene *scene = renderer->scene;
 	Sampler *sampler = scene->sampler;
 
 	LOG(LUX_INFO, LUX_NOERROR) << "Building hit points";
 
+	// Initialize the sample
+	Sample sample(scene->surfaceIntegrator, scene->volumeIntegrator, *scene);
+	sampler->InitSample(&sample);
+	sample.contribBuffer = NULL;
+	sample.camera = scene->camera->Clone();
+	sample.realTime = 0.f;
+	sample.rng = rng;
+
 	for (u_int i = 0; i < (*hitPoints).size(); ++i) {
 		HitPoint *hp = &(*hitPoints)[i];
 
-		sampler->GetNextSample(sample);
+		sampler->GetNextSample(&sample);
 
 		// Save ray time value
-		sample->realTime = sample->camera->GetTime(sample->time);
+		sample.realTime = sample.camera->GetTime(sample.time);
 		// Sample camera transformation
-		sample->camera->SampleMotion(sample->realTime);
+		sample.camera->SampleMotion(sample.realTime);
 
 		// Sample new SWC thread wavelengths
-		sample->swl.Sample(sample->wavelengths);
+		sample.swl.Sample(sample.wavelengths);
 
 		// Trace the eye path
-		TraceEyePath(hp, *sample);
+		TraceEyePath(hp, sample);
 
 		// Free BSDF memory from computing image sample value
-		sample->arena.FreeAll();
+		sample.arena.FreeAll();
 	}
 }
 
@@ -404,7 +303,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample) {
 			// It is a valid hit point
 			hp->type = SURFACE;
 			hp->bsdf = bsdf;
-			hp->eyeThroughput = XYZColor(sw, pathThroughput * f * rayWeight);
+			hp->eyeThroughput = XYZColor(sw, pathThroughput * rayWeight);
 			hp->position = p;
 			hp->wo = wo;
 			hp->normal = n;

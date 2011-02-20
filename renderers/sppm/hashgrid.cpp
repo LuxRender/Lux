@@ -124,6 +124,7 @@ void HashGrid::AddFlux(const Point &hitPoint, const Vector &wi,
 
 	std::list<HitPoint *> *hps = grid[Hash(ix, iy, iz)];
 	if (hps) {
+
 		std::list<HitPoint *>::iterator iter = hps->begin();
 		while (iter != hps->end()) {
 			HitPoint *hp = *iter++;
@@ -137,7 +138,7 @@ void HashGrid::AddFlux(const Point &hitPoint, const Vector &wi,
 				continue;
 
 			luxrays::AtomicInc(&hp->accumPhotonCount);
-			XYZColor flux = XYZColor(sw, photonFlux * hp->bsdf->F(sw, wi, hp->wo, true)) *
+			XYZColor flux = XYZColor(sw, photonFlux /* hp->bsdf->F(sw, wi, hp->wo, true)*/) *
 				hp->eyeThroughput; // FIXME - not sure if the reverse flag should be true or false
 			XYZColorAtomicAdd(hp->accumReflectedFlux, flux);
 		}

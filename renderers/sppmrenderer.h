@@ -128,6 +128,8 @@ private:
 		RenderThread(u_int index, SPPMRenderer *renderer);
 		~RenderThread();
 
+		void TracePhotons();
+
 		static void RenderImpl(RenderThread *r);
 
 		u_int  n;
@@ -135,6 +137,10 @@ private:
 		boost::thread *thread; // keep pointer to delete the thread object
 		double samples, blackSamples;
 		fast_mutex statLock;
+
+		RandomGenerator *threadRng;
+		Sample *threadSample;
+		Distribution1D *lightCDF;
 	};
 
 	double Statistics_GetNumberOfSamples();
@@ -149,7 +155,7 @@ private:
 
 	mutable boost::mutex classWideMutex;
 	mutable boost::mutex renderThreadsMutex;
-	boost::barrier *barrier;
+	boost::barrier *barrier, *barrierExit;
 
 	RendererState state;
 	vector<RendererHostDescription *> hosts;

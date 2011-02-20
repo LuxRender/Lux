@@ -68,15 +68,11 @@ public:
 	XYZColor radiance;
 };
 
-/*extern bool GetHitPointInformation(const Scene *scene, RandomGenerator *rndGen,
-		Ray *ray, const RayHit *rayHit, Point &hitPoint,
-		SWCSpectrum &surfaceColor, Normal &N, Normal &shadeN);*/
-
 class SPPMRenderer;
 
 class HitPoints {
 public:
-	HitPoints(SPPMRenderer *engine, RandomGenerator *rng);
+	HitPoints(SPPMRenderer *engine);
 	~HitPoints();
 
 	void Init();
@@ -105,7 +101,7 @@ public:
 	}
 
 	void AccumulateFlux(const unsigned long long photonTraced);
-	void SetHitPoints();
+	void SetHitPoints(RandomGenerator *rng);
 
 	void RefreshAccelMutex() {
 		lookUpAccel->RefreshMutex();
@@ -120,7 +116,6 @@ private:
 
 	SPPMRenderer *renderer;
 	u_int filmWidth, filmHeight;
-	Sample *sample;
 
 	// Hit points information
 	BBox bbox;
