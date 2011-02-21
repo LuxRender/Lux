@@ -292,7 +292,6 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample) {
 		}
 
 		const Point &p = bsdf->dgShading.p;
-		const Normal &n = bsdf->dgShading.nn;
 
 		// Sample BSDF to get new path direction
 		Vector wi;
@@ -314,7 +313,6 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample) {
 			hp->eyeThroughput = XYZColor(sw, pathThroughput * rayWeight);
 			hp->position = p;
 			hp->wo = wo;
-			hp->normal = (Dot(n, wo) > 0.f) ? (n) : (-n);
 			return;
 		}
 

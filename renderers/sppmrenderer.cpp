@@ -481,7 +481,8 @@ void SPPMRenderer::RenderThread::TracePhotons() {
 				// Russian Roulette
 				SWCSpectrum anew = fr;
 				float continueProb = min(1.f, anew.Filter(sw));
-				if (threadRng->floatValue() > continueProb || nIntersections > renderer->sppmi->maxPhotonPathDepth)
+				if ((threadRng->floatValue() > continueProb) ||
+						(nIntersections > renderer->sppmi->maxPhotonPathDepth))
 					break;
 
 				alpha *= anew / continueProb;

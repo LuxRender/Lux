@@ -146,13 +146,12 @@ void KdTree::AddFlux(const Point &p, const Vector &wi,
 		if (dist2 > hp->accumPhotonRadius2)
 			continue;
 
-		const float dot = Dot(hp->normal, wi);
-		if (dot <= 0.0001f)
+		SWCSpectrum f = hp->bsdf->F(sw, hp->wo, wi, false);
+		if (f.Black())
 			continue;
 
+		XYZColor flux = XYZColor(sw, photonFlux * f) * hp->eyeThroughput;
 		luxrays::AtomicInc(&hp->accumPhotonCount);
-		XYZColor flux = XYZColor(sw, photonFlux * hp->bsdf->F(sw, wi, hp->wo, true)) *
-			hp->eyeThroughput; // FIXME - not sure if the reverse flag should be true or false
 		XYZColorAtomicAdd(hp->accumReflectedFlux, flux);
 	}
 }

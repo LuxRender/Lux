@@ -69,7 +69,7 @@ void HashGrid::RefreshMutex() {
 	unsigned long long entryCount = 0;
 	for (unsigned int i = 0; i < hitPointsCount; ++i) {
 		if (luxrays::WallClockTime() - lastPrintTime > 2.0) {
-			std::cerr << "  " << i / 1000 << "k/" << hitPointsCount / 1000 << "k" <<std::endl;
+			LOG(LUX_INFO, LUX_NOERROR) << "  " << i / 1000 << "k/" << hitPointsCount / 1000 << "k" <<std::endl;
 			lastPrintTime = luxrays::WallClockTime();
 		}
 
@@ -124,7 +124,6 @@ void HashGrid::AddFlux(const Point &hitPoint, const Vector &wi,
 
 	std::list<HitPoint *> *hps = grid[Hash(ix, iy, iz)];
 	if (hps) {
-
 		std::list<HitPoint *>::iterator iter = hps->begin();
 		while (iter != hps->end()) {
 			HitPoint *hp = *iter++;
@@ -133,13 +132,12 @@ void HashGrid::AddFlux(const Point &hitPoint, const Vector &wi,
 			if ((dist2 >  hp->accumPhotonRadius2))
 				continue;
 
-			const float dot = Dot(hp->normal, wi);
-			if (dot <= 0.0001f)
+			SWCSpectrum f = hp->bsdf->F(sw, hp->wo, wi, false);
+			if (f.Black())
 				continue;
 
+			XYZColor flux = XYZColor(sw, photonFlux * f) * hp->eyeThroughput;
 			luxrays::AtomicInc(&hp->accumPhotonCount);
-			XYZColor flux = XYZColor(sw, photonFlux * hp->bsdf->F(sw, hp->wo, wi, true)) *
-				hp->eyeThroughput; // FIXME - not sure if the reverse flag should be true or false
 			XYZColorAtomicAdd(hp->accumReflectedFlux, flux);
 		}
 	}

@@ -52,7 +52,6 @@ public:
 	// Used for SURFACE type
 	Point position;
 	Vector wo;
-	Normal normal;
 	BSDF *bsdf;
 
 	unsigned long long photonCount;
