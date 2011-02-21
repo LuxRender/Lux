@@ -73,6 +73,12 @@ public:
 		x *= inv; y *= inv; z *= inv;
 		return *this;
 	}
+	bool operator==(const Normal &n) const {
+		return x == n.x && y == n.y && z == n.z;
+	}
+	bool operator!=(const Normal &n) const {
+		return x != n.x || y != n.y || z != n.z;
+	}
 	float LengthSquared() const { return x*x + y*y + z*z; }
 	float Length() const        { return sqrtf(LengthSquared()); }
 	

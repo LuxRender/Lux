@@ -35,7 +35,8 @@ Mesh::Mesh(const Transform &o2w, bool ro, MeshAccelType acceltype,
 	MeshQuadType quadtype, u_int nquadsCount, const int *quads,
 	MeshSubdivType subdivtype, u_int nsubdivlevels,
 	boost::shared_ptr<Texture<float> > &dmMap, float dmScale, float dmOffset,
-	bool dmNormalSmooth, bool dmSharpBoundary) : Shape(o2w, ro)
+	bool dmNormalSmooth, bool dmSharpBoundary, bool normalsplit)
+	: Shape(o2w, ro)
 {
 	accelType = acceltype;
 
@@ -46,6 +47,7 @@ Mesh::Mesh(const Transform &o2w, bool ro, MeshAccelType acceltype,
 	displacementMapOffset = dmOffset;
 	displacementMapNormalSmooth = dmNormalSmooth;
 	displacementMapSharpBoundary = dmSharpBoundary;
+	normalSplit = normalsplit;
 	mustSubdivide = nSubdivLevels > 0;
 
 	// TODO: use AllocAligned
@@ -220,9 +222,12 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 				// Apply subdivision
 				LoopSubdiv loopsubdiv(ObjectToWorld, reverseOrientation,
 					ntris, nverts, triVertexIndex, p, uvs,
-					nSubdivLevels, displacementMap,
-					displacementMapScale, displacementMapOffset,
-					displacementMapNormalSmooth, displacementMapSharpBoundary);
+					n, nSubdivLevels, displacementMap,
+					displacementMapScale,
+					displacementMapOffset,
+					displacementMapNormalSmooth,
+					displacementMapSharpBoundary,
+					normalSplit);
 				boost::shared_ptr<LoopSubdiv::SubdivResult> res(loopsubdiv.Refine());
 				// Check if subdivision was successfull
 				if (!res)
@@ -723,6 +728,7 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 	float displacementMapOffset = params.FindOneFloat("dmoffset", 0.0f);
 	bool displacementMapNormalSmooth = params.FindOneBool("dmnormalsmooth", true);
 	bool displacementMapSharpBoundary = params.FindOneBool("dmsharpboundary", false);
+	bool normalSplit = params.FindOneBool("dmnormalsplit", false);
 
 	boost::shared_ptr<Texture<float> > displacementMap;
 	if (displacementMapName != "") {
@@ -752,8 +758,10 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 		npi, P, N, UV,
 		triType, triIndicesCount, triIndices,
 		quadType, quadIndicesCount, quadIndices,
-		subdivType, nSubdivLevels, displacementMap, displacementMapScale, displacementMapOffset,
-		displacementMapNormalSmooth, displacementMapSharpBoundary);
+		subdivType, nSubdivLevels, displacementMap,
+		displacementMapScale, displacementMapOffset,
+		displacementMapNormalSmooth, displacementMapSharpBoundary,
+		normalSplit);
 }
 
 Shape *Mesh::CreateShape(const Transform &o2w, bool reverseOrientation, const ParamSet &params) {
