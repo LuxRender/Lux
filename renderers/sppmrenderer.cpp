@@ -403,7 +403,7 @@ void SPPMRenderer::RenderThread::TracePhotons() {
 
 	for (;;) {
 		// Check if it is time to do an eye pass
-		if (renderer->photonTracedPass > renderer->sppmi->stochasticInterval) {
+		if (renderer->photonTracedPass > renderer->sppmi->photonPerPass) {
 			// Ok, time to stop
 			return;
 		}

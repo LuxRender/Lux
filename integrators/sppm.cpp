@@ -64,19 +64,27 @@ u_int SPPMIntegrator::Li(const Scene &scene, const Sample &sample) const {
 	return 0;
 }
 
-SurfaceIntegrator* SPPMIntegrator::CreateSurfaceIntegrator(const ParamSet &params) {
+SurfaceIntegrator *SPPMIntegrator::CreateSurfaceIntegrator(const ParamSet &params) {
 	SPPMIntegrator *sppmi =  new SPPMIntegrator();
 
 	// SPPM rendering parameters
-	sppmi->lookupAccelType = HYBRID_HASH_GRID;
-	sppmi->maxEyePathDepth = 16;
-	sppmi->photonAlpha = 0.7f;
-	sppmi->photonStartRadiusScale = 2.f;
-	sppmi->maxPhotonPathDepth = 8;
 
-	sppmi->stochasticInterval = 5000000;
+	string acc = params.FindOneString("lookupaccel", "hybridhashgrid");
+	if (acc == "hashgrid") sppmi->lookupAccelType = HASH_GRID;
+	else if (acc == "kdtree") sppmi->lookupAccelType = KD_TREE;
+	else {
+		LOG(LUX_WARNING,LUX_BADTOKEN) << "Lookup accelerator  '" << acc <<"' unknown. Using \"hybridhashgrid\".";
+		sppmi->lookupAccelType = HYBRID_HASH_GRID;
+	}
+	
+	sppmi->maxEyePathDepth = params.FindOneInt("maxeyedepth", 16);
+	sppmi->photonAlpha = params.FindOneFloat("alpha", .7f);
+	sppmi->photonStartRadiusScale = params.FindOneFloat("startradius", 2.f);
+	sppmi->maxPhotonPathDepth = params.FindOneInt("maxphotondepth", 8);
 
-	sppmi->includeEnvironment = true;
+	sppmi->photonPerPass = params.FindOneInt("photonperpass", 1000000);
+
+	sppmi->includeEnvironment = params.FindOneBool("includeenvironment", true);
 
 	return sppmi;
 }

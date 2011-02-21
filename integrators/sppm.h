@@ -50,7 +50,7 @@ public:
 	float photonStartRadiusScale;
 	u_int maxEyePathDepth;
 	u_int maxPhotonPathDepth;
-	u_int stochasticInterval;
+	u_int photonPerPass;
 
 	u_int sampleOffset, bufferId;
 	bool includeEnvironment;
