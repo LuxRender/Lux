@@ -316,6 +316,10 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample) {
 			return;
 		}
 
+		if (flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) ||
+			!(bsdf->Pdf(sw, wi, wo, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) > 0.f))
+			++vertexIndex;
+
 		pathThroughput *= f;
 		if (pathThroughput.Black()) {
 			hp->type = CONSTANT_COLOR;
