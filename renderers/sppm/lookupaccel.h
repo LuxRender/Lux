@@ -50,6 +50,11 @@ public:
 
 	virtual void AddFlux(const Point &hitPoint, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux) = 0;
+
+protected:
+	void AddFluxToHitPoint(HitPoint *hp,
+		const Point &hitPoint, const Vector &wi,
+		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux);
 };
 
 inline void SpectrumAtomicAdd(SWCSpectrum &s, SWCSpectrum &a) {
@@ -226,7 +231,7 @@ private:
 		HHGKdTree(std::list<HitPoint *> *hps, const unsigned int count);
 		~HHGKdTree();
 
-		void AddFlux(const Point &hitPoint, const Vector &wi,
+		void AddFlux(HybridHashGrid *hhg, const Point &hitPoint, const Vector &wi,
 			const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux);
 
 	private:
@@ -314,7 +319,7 @@ private:
 			type = KD_TREE;
 		}
 
-		void AddFlux(const Point &hitPoint, const Vector &wi,
+		void AddFlux(HybridHashGrid *hhg, const Point &hitPoint, const Vector &wi,
 			const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux);
 
 		unsigned int GetSize() const { return size; }

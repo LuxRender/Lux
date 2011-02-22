@@ -625,6 +625,7 @@ SET(lux_renderers_src
 	renderers/hybridsamplerrenderer.cpp
 	renderers/samplerrenderer.cpp
     renderers/sppmrenderer.cpp
+	renderers/sppm/lookupaccel.cpp
 	renderers/sppm/hashgrid.cpp
 	renderers/sppm/hitpoints.cpp
 	renderers/sppm/hybridhashgrid.cpp

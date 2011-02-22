@@ -128,17 +128,7 @@ void HashGrid::AddFlux(const Point &hitPoint, const Vector &wi,
 		while (iter != hps->end()) {
 			HitPoint *hp = *iter++;
 
-			const float dist2 = DistanceSquared(hp->position, hitPoint);
-			if ((dist2 >  hp->accumPhotonRadius2))
-				continue;
-
-			SWCSpectrum f = hp->bsdf->F(sw, hp->wo, wi, false);
-			if (f.Black())
-				continue;
-
-			XYZColor flux = XYZColor(sw, photonFlux * f) * hp->eyeThroughput + hp->eyeL;
-			luxrays::AtomicInc(&hp->accumPhotonCount);
-			XYZColorAtomicAdd(hp->accumReflectedFlux, flux);
+			AddFluxToHitPoint(hp, hitPoint, wi, sw, photonFlux);
 		}
 	}
 }

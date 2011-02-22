@@ -142,16 +142,6 @@ void KdTree::AddFlux(const Point &p, const Vector &wi,
 
 		// Process the leaf
 		HitPoint *hp = nodeData[nodeNum];
-		const float dist2 = DistanceSquared(hp->position, p);
-		if (dist2 > hp->accumPhotonRadius2)
-			continue;
-
-		SWCSpectrum f = hp->bsdf->F(sw, hp->wo, wi, false);
-		if (f.Black())
-			continue;
-
-		XYZColor flux = XYZColor(sw, photonFlux * f) * hp->eyeThroughput + hp->eyeL;
-		luxrays::AtomicInc(&hp->accumPhotonCount);
-		XYZColorAtomicAdd(hp->accumReflectedFlux, flux);
+		AddFluxToHitPoint(hp, p, wi, sw, photonFlux);
 	}
 }

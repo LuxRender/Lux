@@ -187,33 +187,22 @@ void HybridHashGrid::AddFlux(const Point &hitPoint, const Vector &wi,
 
 	HashCell *hc = grid[Hash(ix, iy, iz)];
 	if (hc)
-		hc->AddFlux(hitPoint, wi, sw, photonFlux);
+		hc->AddFlux(this, hitPoint, wi, sw, photonFlux);
 }
 
-void HybridHashGrid::HashCell::AddFlux(const Point &hitPoint, const Vector &wi,
-		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux) {
+void HybridHashGrid::HashCell::AddFlux(HybridHashGrid *hhg, const Point &hitPoint,
+		const Vector &wi, const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux) {
 	switch (type) {
 		case LIST: {
 			std::list<HitPoint *>::iterator iter = list->begin();
 			while (iter != list->end()) {
 				HitPoint *hp = *iter++;
-
-				const float dist2 = DistanceSquared(hp->position, hitPoint);
-				if ((dist2 >  hp->accumPhotonRadius2))
-					continue;
-
-				SWCSpectrum f = hp->bsdf->F(sw, hp->wo, wi, false);
-				if (f.Black())
-					continue;
-
-				XYZColor flux = XYZColor(sw, photonFlux * f) * hp->eyeThroughput + hp->eyeL;
-				luxrays::AtomicInc(&hp->accumPhotonCount);
-				XYZColorAtomicAdd(hp->accumReflectedFlux, flux);
+				hhg->AddFluxToHitPoint(hp, hitPoint, wi, sw, photonFlux);
 			}
 			break;
 		}
 		case KD_TREE: {
-			kdtree->AddFlux(hitPoint, wi, sw, photonFlux);
+			kdtree->AddFlux(hhg, hitPoint, wi, sw, photonFlux);
 			break;
 		}
 		default:
@@ -300,8 +289,8 @@ void HybridHashGrid::HHGKdTree::RecursiveBuild(const unsigned int nodeNum, const
 	}
 }
 
-void HybridHashGrid::HHGKdTree::AddFlux(const Point &p, const Vector &wi,
-		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux) {
+void HybridHashGrid::HHGKdTree::AddFlux(HybridHashGrid *hhg, const Point &p,
+		const Vector &wi, const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux) {
 	unsigned int nodeNumStack[64];
 	// Start from the first node
 	nodeNumStack[0] = 0;
@@ -330,16 +319,6 @@ void HybridHashGrid::HHGKdTree::AddFlux(const Point &p, const Vector &wi,
 
 		// Process the leaf
 		HitPoint *hp = nodeData[nodeNum];
-		const float dist2 = DistanceSquared(hp->position, p);
-		if (dist2 > hp->accumPhotonRadius2)
-			continue;
-
-		SWCSpectrum f = hp->bsdf->F(sw, hp->wo, wi, false);
-		if (f.Black())
-			continue;
-
-		XYZColor flux = XYZColor(sw, photonFlux * f) * hp->eyeThroughput + hp->eyeL;
-		luxrays::AtomicInc(&hp->accumPhotonCount);
-		XYZColorAtomicAdd(hp->accumReflectedFlux, flux);
+		hhg->AddFluxToHitPoint(hp, p, wi, sw, photonFlux);
 	}
 }

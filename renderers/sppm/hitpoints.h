@@ -44,6 +44,7 @@ public:
 	HitPointType type;
 	Sample *sample;
 
+	// Eye path data
 	XYZColor eyeThroughput; // Used only for SURFACE type
 	XYZColor eyeL;
 	float eyeAlpha;
