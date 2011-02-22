@@ -461,8 +461,7 @@ void SPPMRenderer::RenderThread::TracePhotons() {
 				Vector wo = -photonRay.d;
 
 				// Deposit Flux
-				// Should be -photonRay.d, not photonRay.d
-				renderer->hitPoints->AddFlux(photonRay.o, photonRay.d, sw, alpha);
+				renderer->hitPoints->AddFlux(photonIsect.dg.p, wo, sw, alpha);
 
 				// Sample new photon ray direction
 				Vector wi;
