@@ -145,7 +145,7 @@ void HitPoints::AccumulateFlux(const unsigned long long photonTraced) {
 
 		switch (hp->type) {
 			case CONSTANT_COLOR:
-				hp->accumRadiance += hp->eyeThroughput;
+				hp->accumRadiance += hp->eyeL;
 				hp->constantHitsCount += 1;
 				break;
 			case SURFACE:
@@ -245,7 +245,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample) {
 
 			// Stop path sampling since no intersection was found
 			// Possibly add horizon in render & reflections
-			if (includeEnvironment || vertexIndex > 0) {
+			if (includeEnvironment || (vertexIndex > 0)) {
 				BSDF *ibsdf;
 				for (u_int i = 0; i < nLights; ++i) {
 					SWCSpectrum Le(pathThroughput);
@@ -259,7 +259,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample) {
 				hp->eyeAlpha = 0.f;
 
 			hp->type = CONSTANT_COLOR;
-			hp->eyeThroughput = XYZColor(sw, L * rayWeight);
+			hp->eyeL = XYZColor(sw, L * rayWeight);
 			return;
 		}
 		scattered = bsdf->dgShading.scattered;
@@ -287,7 +287,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample) {
 
 		if (pathLength == maxDepth) {
 			hp->type = CONSTANT_COLOR;
-			hp->eyeThroughput = XYZColor(sw, L * rayWeight);
+			hp->eyeL = XYZColor(sw, L * rayWeight);
 			return;
 		}
 
@@ -301,7 +301,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample) {
 		if (!bsdf->SampleF(sw, wo, &wi, data[0], data[1], data[2], &f,
 			&pdf, BSDF_ALL, &flags, NULL, true)) {
 			hp->type = CONSTANT_COLOR;
-			hp->eyeThroughput = XYZColor(sw, L  * rayWeight);
+			hp->eyeL = XYZColor(sw, L  * rayWeight);
 			return;
 		}
 
@@ -311,6 +311,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample) {
 			hp->type = SURFACE;
 			hp->bsdf = bsdf;
 			hp->eyeThroughput = XYZColor(sw, pathThroughput * rayWeight);
+			hp->eyeL = XYZColor(sw, L * rayWeight);;
 			hp->position = p;
 			hp->wo = wo;
 			return;
@@ -323,7 +324,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample) {
 		pathThroughput *= f;
 		if (pathThroughput.Black()) {
 			hp->type = CONSTANT_COLOR;
-			hp->eyeThroughput = XYZColor(sw, L * rayWeight);
+			hp->eyeL = XYZColor(sw, L * rayWeight);
 			return;
 		}
 

@@ -150,7 +150,7 @@ void KdTree::AddFlux(const Point &p, const Vector &wi,
 		if (f.Black())
 			continue;
 
-		XYZColor flux = XYZColor(sw, photonFlux * f) * hp->eyeThroughput;
+		XYZColor flux = XYZColor(sw, photonFlux * f) * hp->eyeThroughput + hp->eyeL;
 		luxrays::AtomicInc(&hp->accumPhotonCount);
 		XYZColorAtomicAdd(hp->accumReflectedFlux, flux);
 	}

@@ -44,8 +44,8 @@ public:
 	HitPointType type;
 	Sample *sample;
 
-	// Used for CONSTANT_COLOR and SURFACE type
-	XYZColor eyeThroughput;
+	XYZColor eyeThroughput; // Used only for SURFACE type
+	XYZColor eyeL;
 	float eyeAlpha;
 	float eyeDistance;
 
