@@ -713,6 +713,7 @@ SET(lux_textures_src
 	textures/imagemap.cpp
 	textures/marble.cpp
 	textures/mix.cpp
+	textures/multimix.cpp
 	textures/scale.cpp
 	textures/uv.cpp
 	textures/uvmask.cpp
@@ -882,6 +883,7 @@ ENDIF(APPLE)
 ###########################   PYTHON LIBRARIES    ###########################
 #############################################################################
 #############################################################################
+# SET(CMAKE_USE_PYTHON_VERSION 3.1)
 IF(APPLE)
 	IF(PYLUX_FOR_BLENDER)
 		# use Blender python libs for static compiling !
