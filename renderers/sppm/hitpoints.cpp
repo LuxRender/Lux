@@ -145,7 +145,7 @@ void HitPoints::AccumulateFlux(const unsigned long long photonTraced) {
 
 		switch (hp->type) {
 			case CONSTANT_COLOR:
-				hp->accumRadiance += hp->eyeL;
+				hp->accumRadiance += XYZColor(hp->sample->swl, hp->eyeLe);
 				hp->constantHitsCount += 1;
 				break;
 			case SURFACE:
@@ -196,7 +196,7 @@ void HitPoints::SetHitPoints(RandomGenerator *rng) {
 		sample.camera->SampleMotion(sample.realTime);
 
 		// Sample new SWC thread wavelengths
-		sample.swl.Sample(sample.wavelengths);
+		sample.swl.Sample(renderer->currentWaveLengthSample);
 
 		// Trace the eye path
 		TraceEyePath(hp, sample);
@@ -259,7 +259,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample) {
 				hp->eyeAlpha = 0.f;
 
 			hp->type = CONSTANT_COLOR;
-			hp->eyeL = XYZColor(sw, L * rayWeight);
+			hp->eyeLe = L * rayWeight;
 			return;
 		}
 		scattered = bsdf->dgShading.scattered;
@@ -287,7 +287,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample) {
 
 		if (pathLength == maxDepth) {
 			hp->type = CONSTANT_COLOR;
-			hp->eyeL = XYZColor(sw, L * rayWeight);
+			hp->eyeLe = L * rayWeight;
 			return;
 		}
 
@@ -301,7 +301,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample) {
 		if (!bsdf->SampleF(sw, wo, &wi, data[0], data[1], data[2], &f,
 			&pdf, BSDF_ALL, &flags, NULL, true)) {
 			hp->type = CONSTANT_COLOR;
-			hp->eyeL = XYZColor(sw, L  * rayWeight);
+			hp->eyeLe = L  * rayWeight;
 			return;
 		}
 
@@ -310,8 +310,8 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample) {
 			// It is a valid hit point
 			hp->type = SURFACE;
 			hp->bsdf = bsdf;
-			hp->eyeThroughput = XYZColor(sw, pathThroughput * rayWeight);
-			hp->eyeL = XYZColor(sw, L * rayWeight);;
+			hp->eyeThroughput = pathThroughput * rayWeight;
+			hp->eyeLe = L * rayWeight;
 			hp->position = p;
 			hp->wo = wo;
 			return;
@@ -324,7 +324,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample) {
 		pathThroughput *= f;
 		if (pathThroughput.Black()) {
 			hp->type = CONSTANT_COLOR;
-			hp->eyeL = XYZColor(sw, L * rayWeight);
+			hp->eyeLe = L * rayWeight;
 			return;
 		}
 

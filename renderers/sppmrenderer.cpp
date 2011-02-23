@@ -411,7 +411,7 @@ void SPPMRenderer::RenderThread::TracePhotons() {
 		luxrays::AtomicInc(&(renderer->photonTracedPass));
 
 		// Sample the wavelengths
-		sw.Sample(threadRng->floatValue());
+		sw.Sample(renderer->currentWaveLengthSample);
 
 		// Trace a photon path and store contribution
 		// Choose 6D sample values for photon
@@ -528,6 +528,7 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 
 	if (myThread->n == 0) {
 		// One thread initialize the hit points
+		renderer->currentWaveLengthSample = myThread->threadRng->floatValue();
 		renderer->hitPoints = new HitPoints(renderer);
 		hitPoints = renderer->hitPoints;
 
@@ -575,6 +576,7 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 			const long long count = renderer->photonTracedTotal + renderer->photonTracedPass;
 			hitPoints->AccumulateFlux(count);
 
+			renderer->currentWaveLengthSample = myThread->threadRng->floatValue();
 			hitPoints->SetHitPoints(myThread->threadRng);
 			hitPoints->UpdatePointsInformation();
 			hitPoints->IncPass();

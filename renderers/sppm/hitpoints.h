@@ -45,8 +45,8 @@ public:
 	Sample *sample;
 
 	// Eye path data
-	XYZColor eyeThroughput; // Used only for SURFACE type
-	XYZColor eyeL;
+	SWCSpectrum eyeThroughput; // Used only for SURFACE type
+	SWCSpectrum eyeLe;
 	float eyeAlpha;
 	float eyeDistance;
 

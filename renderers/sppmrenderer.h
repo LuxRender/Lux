@@ -163,6 +163,9 @@ private:
 	Scene *scene;
 	SPPMIntegrator *sppmi;
 	HitPoints *hitPoints;
+
+	// Only a single set of wavelengths is sampled for each pass
+	float currentWaveLengthSample;
 	unsigned long long photonTracedTotal;
 	unsigned int photonTracedPass;
 
