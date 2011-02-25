@@ -115,7 +115,7 @@ void HashGrid::RefreshMutex() {
 }
 
 void HashGrid::AddFlux(const Point &hitPoint, const Vector &wi,
-		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux) {
+		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group) {
 	// Look for eye path hit points near the current hit point
 	Vector hh = (hitPoint - hitPoints->GetBBox().pMin) * invCellSize;
 	const int ix = abs(int(hh.x));
@@ -128,7 +128,7 @@ void HashGrid::AddFlux(const Point &hitPoint, const Vector &wi,
 		while (iter != hps->end()) {
 			HitPoint *hp = *iter++;
 
-			AddFluxToHitPoint(hp, hitPoint, wi, sw, photonFlux);
+			AddFluxToHitPoint(hp, hitPoint, wi, sw, photonFlux, light_group);
 		}
 	}
 }

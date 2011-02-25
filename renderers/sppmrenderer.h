@@ -166,8 +166,13 @@ private:
 
 	// Only a single set of wavelengths is sampled for each pass
 	float currentWaveLengthSample;
-	unsigned long long photonTracedTotal;
-	unsigned int photonTracedPass;
+
+	// store number of photon traced by lightgroup
+	vector<unsigned long long> photonTracedTotal;
+	vector<unsigned int> photonTracedPass;
+
+	// store number of photon traced this pass, regardless of lightgroup
+	unsigned int photonTracedPassNoLightGroup;
 
 	fast_mutex sampPosMutex;
 	u_int sampPos;

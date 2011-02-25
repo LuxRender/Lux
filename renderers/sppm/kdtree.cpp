@@ -113,7 +113,7 @@ void KdTree::RefreshMutex() {
 }
 
 void KdTree::AddFlux(const Point &p, const Vector &wi,
-		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux) {
+		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group) {
 	unsigned int nodeNumStack[64];
 	// Start from the first node
 	nodeNumStack[0] = 0;
@@ -142,6 +142,6 @@ void KdTree::AddFlux(const Point &p, const Vector &wi,
 
 		// Process the leaf
 		HitPoint *hp = nodeData[nodeNum];
-		AddFluxToHitPoint(hp, p, wi, sw, photonFlux);
+		AddFluxToHitPoint(hp, p, wi, sw, photonFlux, light_group);
 	}
 }

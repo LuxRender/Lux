@@ -172,7 +172,7 @@ void HybridHashGrid::RefreshParallel(const unsigned int index, const unsigned in
 }
 
 void HybridHashGrid::AddFlux(const Point &hitPoint, const Vector &wi,
-		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux) {
+		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group) {
 	// Look for eye path hit points near the current hit point
 	Vector hh = (hitPoint - hitPoints->GetBBox().pMin) * invCellSize;
 	const int ix = int(hh.x);
@@ -187,22 +187,22 @@ void HybridHashGrid::AddFlux(const Point &hitPoint, const Vector &wi,
 
 	HashCell *hc = grid[Hash(ix, iy, iz)];
 	if (hc)
-		hc->AddFlux(this, hitPoint, wi, sw, photonFlux);
+		hc->AddFlux(this, hitPoint, wi, sw, photonFlux, light_group);
 }
 
 void HybridHashGrid::HashCell::AddFlux(HybridHashGrid *hhg, const Point &hitPoint,
-		const Vector &wi, const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux) {
+		const Vector &wi, const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group) {
 	switch (type) {
 		case LIST: {
 			std::list<HitPoint *>::iterator iter = list->begin();
 			while (iter != list->end()) {
 				HitPoint *hp = *iter++;
-				hhg->AddFluxToHitPoint(hp, hitPoint, wi, sw, photonFlux);
+				hhg->AddFluxToHitPoint(hp, hitPoint, wi, sw, photonFlux, light_group);
 			}
 			break;
 		}
 		case KD_TREE: {
-			kdtree->AddFlux(hhg, hitPoint, wi, sw, photonFlux);
+			kdtree->AddFlux(hhg, hitPoint, wi, sw, photonFlux, light_group);
 			break;
 		}
 		default:
@@ -290,7 +290,7 @@ void HybridHashGrid::HHGKdTree::RecursiveBuild(const unsigned int nodeNum, const
 }
 
 void HybridHashGrid::HHGKdTree::AddFlux(HybridHashGrid *hhg, const Point &p,
-		const Vector &wi, const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux) {
+		const Vector &wi, const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, u_int light_group) {
 	unsigned int nodeNumStack[64];
 	// Start from the first node
 	nodeNumStack[0] = 0;
@@ -319,6 +319,6 @@ void HybridHashGrid::HHGKdTree::AddFlux(HybridHashGrid *hhg, const Point &p,
 
 		// Process the leaf
 		HitPoint *hp = nodeData[nodeNum];
-		hhg->AddFluxToHitPoint(hp, p, wi, sw, photonFlux);
+		hhg->AddFluxToHitPoint(hp, p, wi, sw, photonFlux, light_group);
 	}
 }

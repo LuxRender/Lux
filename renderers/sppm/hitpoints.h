@@ -39,26 +39,11 @@ enum HitPointType {
 	SURFACE, CONSTANT_COLOR
 };
 
-class HitPoint {
-public:
-	HitPointType type;
-	Sample *sample;
-
-	// Eye path data
-	SWCSpectrum eyeThroughput; // Used only for SURFACE type
-	SWCSpectrum eyeLe;
-	float eyeAlpha;
-	float eyeDistance;
-
-	// Used for SURFACE type
-	Point position;
-	Vector wo;
-	BSDF *bsdf;
-
+struct HitPointLightGroup
+{
 	unsigned long long photonCount;
 	XYZColor reflectedFlux;
 
-	float accumPhotonRadius2;
 	u_int accumPhotonCount;
 	XYZColor accumReflectedFlux;
 	XYZColor accumRadiance;
@@ -67,6 +52,29 @@ public:
 	u_int surfaceHitsCount;
 
 	XYZColor radiance;
+	
+	SWCSpectrum eyeLe;
+};
+
+
+class HitPoint {
+public:
+	HitPointType type;
+	Sample *sample;
+
+	// Eye path data
+	SWCSpectrum eyeThroughput; // Used only for SURFACE type
+	float eyeAlpha;
+	float eyeDistance;
+
+	// Used for SURFACE type
+	Point position;
+	Vector wo;
+	BSDF *bsdf;
+
+	vector<HitPointLightGroup> lightGroupData;
+	
+	float accumPhotonRadius2;
 };
 
 class SPPMRenderer;
@@ -97,11 +105,11 @@ public:
 	void IncPass() { ++pass; }
 
 	void AddFlux(const Point &hitPoint, const Vector &wi,
-		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux) {
-		lookUpAccel->AddFlux(hitPoint, wi, sw, photonFlux);
+		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const uint light_group) {
+		lookUpAccel->AddFlux(hitPoint, wi, sw, photonFlux, light_group);
 	}
 
-	void AccumulateFlux(const unsigned long long photonTraced);
+	void AccumulateFlux(const vector<unsigned long long> photonTracedByLightGroup);
 	void SetHitPoints(RandomGenerator *rng);
 
 	void RefreshAccelMutex() {

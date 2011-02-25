@@ -27,7 +27,7 @@ using namespace lux;
 
 void HitPointsLookUpAccel::AddFluxToHitPoint(HitPoint *hp,
 	const Point &hitPoint, const Vector &wi,
-	const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux) {
+	const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, u_int light_group) {
 		const float dist2 = DistanceSquared(hp->position, hitPoint);
 		if ((dist2 >  hp->accumPhotonRadius2))
 			return;
@@ -36,7 +36,7 @@ void HitPointsLookUpAccel::AddFluxToHitPoint(HitPoint *hp,
 		if (f.Black())
 			return;
 
-		XYZColor flux = XYZColor(hp->sample->swl, photonFlux * f * hp->eyeThroughput + hp->eyeLe);
-		luxrays::AtomicInc(&hp->accumPhotonCount);
-		XYZColorAtomicAdd(hp->accumReflectedFlux, flux);
+		XYZColor flux = XYZColor(hp->sample->swl, photonFlux * f * hp->eyeThroughput + hp->lightGroupData[light_group].eyeLe);
+		luxrays::AtomicInc(&hp->lightGroupData[light_group].accumPhotonCount);
+		XYZColorAtomicAdd(hp->lightGroupData[light_group].accumReflectedFlux, flux);
 }

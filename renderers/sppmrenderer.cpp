@@ -173,8 +173,10 @@ void SPPMRenderer::Render(Scene *s) {
 		barrier = new boost::barrier(threadCount);
 		barrierExit = new boost::barrier(threadCount);
 
-		photonTracedTotal = 0;
-		photonTracedPass = 0;
+		// initialise
+		photonTracedTotal.resize(scene->lightGroups.size(), 0);
+		photonTracedPass.resize(scene->lightGroups.size(), 0);
+		photonTracedPassNoLightGroup = 0;
 
 		// start the timer
 		s_Timer.Start();
@@ -350,12 +352,17 @@ void SPPMRenderer::UpdateFilm() {
 
 	int x = xstart;
 	int y = ystart;
+
+	uint lightGroupsNumber = scene->lightGroups.size();
 	for (u_int i = 0; i < hitPoints->GetSize(); ++i) {
 		HitPoint *hp = hitPoints->GetHitPoint(i);
-
-		Contribution contrib(x - xstart, y - ystart, hp->radiance, hp->eyeAlpha,
-				hp->eyeDistance, 0.f, bufferId);
-		scene->camera->film->SetSample(&contrib);
+		
+		for(u_int j = 0; j < lightGroupsNumber; j++)
+		{
+			Contribution contrib(x - xstart, y - ystart, hp->lightGroupData[j].radiance, hp->eyeAlpha,
+					hp->eyeDistance, 0.f, bufferId, j);
+			scene->camera->film->SetSample(&contrib);
+		}
 
 		++x;
 		if (x == xend) {
@@ -403,13 +410,11 @@ void SPPMRenderer::RenderThread::TracePhotons() {
 
 	for (;;) {
 		// Check if it is time to do an eye pass
-		if (renderer->photonTracedPass > renderer->sppmi->photonPerPass) {
+		if (renderer->photonTracedPassNoLightGroup > renderer->sppmi->photonPerPass) {
 			// Ok, time to stop
 			return;
 		}
-
-		luxrays::AtomicInc(&(renderer->photonTracedPass));
-
+		
 		// Sample the wavelengths
 		sw.Sample(renderer->currentWaveLengthSample);
 
@@ -428,6 +433,9 @@ void SPPMRenderer::RenderThread::TracePhotons() {
 		float uln = threadRng->floatValue();
 		u_int lightNum = lightCDF->SampleDiscrete(uln, &lightPdf);
 		const Light *light = scene.lights[lightNum];
+		
+		luxrays::AtomicInc(&(renderer->photonTracedPass[light->group]));
+		luxrays::AtomicInc(&(renderer->photonTracedPassNoLightGroup));
 
 		// Generate _photonRay_ from light source and initialize _alpha_
 		BSDF *bsdf;
@@ -461,7 +469,7 @@ void SPPMRenderer::RenderThread::TracePhotons() {
 				Vector wo = -photonRay.d;
 
 				// Deposit Flux
-				renderer->hitPoints->AddFlux(photonIsect.dg.p, wo, sw, alpha);
+				renderer->hitPoints->AddFlux(photonIsect.dg.p, wo, sw, alpha, light->group);
 
 				// Sample new photon ray direction
 				Vector wi;
@@ -573,8 +581,14 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 		// The first thread has to do some special task for the eye pass
 		if (myThread->n == 0) {
 			// First thread only tasks
-			const long long count = renderer->photonTracedTotal + renderer->photonTracedPass;
-			hitPoints->AccumulateFlux(count);
+			for(u_int i = 0; i < renderer->photonTracedTotal.size(); ++i)
+			{
+				renderer->photonTracedTotal[i] += renderer->photonTracedPass[i];
+				renderer->photonTracedPass[i] = 0;
+			}
+			renderer->photonTracedPassNoLightGroup = 0;
+
+			hitPoints->AccumulateFlux(renderer->photonTracedTotal);
 
 			renderer->currentWaveLengthSample = myThread->threadRng->floatValue();
 			hitPoints->SetHitPoints(myThread->threadRng);
@@ -584,9 +598,6 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 
 			// Update the frame buffer
 			renderer->UpdateFilm();
-
-			renderer->photonTracedTotal = count;
-			renderer->photonTracedPass = 0;
 		}
 
 		// Wait for other threads

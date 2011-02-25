@@ -49,12 +49,12 @@ public:
 	virtual void RefreshParallel(const unsigned int index, const unsigned int count) { }
 
 	virtual void AddFlux(const Point &hitPoint, const Vector &wi,
-		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux) = 0;
+		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, u_int light_group) = 0;
 
 protected:
 	void AddFluxToHitPoint(HitPoint *hp,
 		const Point &hitPoint, const Vector &wi,
-		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux);
+		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group);
 };
 
 inline void SpectrumAtomicAdd(SWCSpectrum &s, SWCSpectrum &a) {
@@ -80,7 +80,7 @@ public:
 	void RefreshMutex();
 
 	void AddFlux(const Point &hitPoint, const Vector &wi,
-		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux);
+		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group);
 
 private:
 	unsigned int Hash(const int ix, const int iy, const int iz) {
@@ -106,7 +106,7 @@ public:
 	void RefreshMutex();
 
 	void AddFlux(const Point &hitPoint,  const Vector &wi,
-		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux);
+		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group);
 
 private:
 	struct KdNode {
@@ -167,7 +167,7 @@ public:
 	void RefreshParallel(const unsigned int index, const unsigned int count);
 
 	void AddFlux(const Point &hitPoint, const Vector &wi,
-		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux);
+		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group);
 
 private:
 	unsigned int Hash(const int ix, const int iy, const int iz) {
@@ -232,7 +232,7 @@ private:
 		~HHGKdTree();
 
 		void AddFlux(HybridHashGrid *hhg, const Point &hitPoint, const Vector &wi,
-			const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux);
+			const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group);
 
 	private:
 		struct KdNode {
@@ -320,7 +320,7 @@ private:
 		}
 
 		void AddFlux(HybridHashGrid *hhg, const Point &hitPoint, const Vector &wi,
-			const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux);
+			const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group);
 
 		unsigned int GetSize() const { return size; }
 
