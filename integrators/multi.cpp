@@ -61,13 +61,14 @@ u_int MultiScattering::Li(const Scene &scene, const Ray &ray,
 	// Do single scattering volume integration in _vr_
 	// Multiple scattering in this context is almost impossible to do
 	// Prepare for volume integration stepping
-	const u_int N = Ceil2UInt((t1 - t0) / stepSize);
-	const float step = (t1 - t0) / N;
+	const float length = ray.d.Length();
+	const u_int N = Ceil2UInt((t1 - t0) * length / stepSize);
+	const float step = (t1 - t0) / (length * N);
 	const SpectrumWavelengths &sw(sample.swl);
 	SWCSpectrum Tr(1.f);
-	Vector w = -ray.d;
+	const Vector w(-ray.d / length);
 	t0 += sample.oneD[tauSampleOffset][0] * step;
-	Ray r(ray(t0), ray.d * (step / ray.d.Length()), 0.f, 1.f);
+	Ray r(ray(t0), ray.d, 0.f, step, ray.time);
 	const u_int nLights = scene.lights.size();
 	const u_int lightNum = min(nLights - 1,
 		Floor2UInt(sample.oneD[scatterSampleOffset][0] * nLights));
@@ -79,47 +80,50 @@ u_int MultiScattering::Li(const Scene &scene, const Ray &ray,
 	LatinHypercube(*(sample.rng), samp, N, 3);
 	u_int sampOffset = 0;
 	DifferentialGeometry dg;
+	dg.p = r.o;
 	dg.nn = Normal(-ray.d);
-	for (u_int i = 0; i < N; ++i, t0 += step) {
-		dg.p = ray(t0);
-		// Advance to sample at _t0_ and update _T_
-		r.o = ray(t0);
-
+	for (u_int i = 0; i < N; ++i) {
 		// Ray is already offset above, no need to do it again
 		const SWCSpectrum stepTau(vr->Tau(sw, r, .5f * stepSize, 0.f));
 		Tr *= Exp(-stepTau);
 		// Possibly terminate raymarching if transmittance is small
 		if (Tr.Filter(sw) < 1e-3f) {
 			const float continueProb = .5f;
-			if (sample.rng->floatValue() > continueProb) break; // TODO - REFACT - remove and add random value from sample
+			if (sample.rng->floatValue() > continueProb)
+				break; // TODO - REFACT - remove and add random value from sample
 			Tr /= continueProb;
 		}
 
 		// Compute single-scattering source term at _p_
 		*Lv += Tr * vr->Lve(sw, dg);
 
-		if (scene.lights.size() == 0)
-			continue;
-		const SWCSpectrum ss(vr->SigmaS(sw, dg));
-		if (!ss.Black()) {
-			// Add contribution of _light_ due to scattering at _p_
-			float pdf;
-			Vector wo;
-			float u1 = samp[sampOffset], u2 = samp[sampOffset + 1],
-				u3 = samp[sampOffset + 2];
-			BSDF *ibsdf;
-			SWCSpectrum L;
-			if (light->SampleL(scene, sample, r.o, u1, u2, u3,
-				&ibsdf, NULL, &pdf, &L)) {
-				if (Connect(scene, sample, NULL, true, false,
-					r.o, ibsdf->dgShading.p, false, &L,
-					NULL, NULL))
-					*Lv += Tr * ss * L *
-						(vr->P(sw, dg, w, -wo) *
-						 nLights);
+		if (scene.lights.size() > 0) {
+			const SWCSpectrum ss(vr->SigmaS(sw, dg));
+			if (!ss.Black()) {
+				// Add contribution of _light_ due to scattering at _p_
+				float pdf;
+				float u1 = samp[sampOffset], u2 = samp[sampOffset + 1],
+					u3 = samp[sampOffset + 2];
+				BSDF *ibsdf;
+				SWCSpectrum L;
+				if (light->SampleL(scene, sample, r.o, u1, u2, u3,
+					&ibsdf, NULL, &pdf, &L)) {
+					if (Connect(scene, sample, vr, true, false,
+						r.o, ibsdf->dgShading.p, false, &L,
+						NULL, NULL))
+						*Lv += Tr * ss * L *
+							(vr->P(sw, dg, w,
+							Normalize(r.o - ibsdf->dgShading.p)) *
+							nLights);
+				}
 			}
 		}
 		sampOffset += 3;
+
+		// Advance to sample at _t0_ and update _T_
+		t0 += step;
+		r.o = ray(t0);
+		dg.p = r.o;
 	}
 	*Lv *= step;
 	return light->group;
