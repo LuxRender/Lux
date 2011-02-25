@@ -31,6 +31,8 @@
 #include <map>
 using std::map;
 
+#include "data/rgbD65_32.h"
+
 // TODO - radiance - add methods for Power and Illuminant propagation
 
 namespace lux
@@ -151,7 +153,7 @@ public:
 	// ImageSpectrumTexture Public Methods
 	ImageSpectrumTexture(TextureMapping2D *m, ImageTextureFilterType type,
 		const string &filename, int discardmm, float maxAniso,
-		ImageWrap wrapMode, float gain, float gamma) :
+		ImageWrap wrapMode, float gain, float gamma) : scalefactor(1.f),
 		ImageTexture(m, type, filename, discardmm, maxAniso, wrapMode,
 			gain, gamma) { }
 
@@ -161,7 +163,7 @@ public:
 		const DifferentialGeometry &dg) const {
 		float s, t;
 		mapping->Map(dg, &s, &t);
-		return mipmap->LookupSpectrum(sw, s, t);
+		return scalefactor * mipmap->LookupSpectrum(sw, s, t);
 	}
 	virtual float Y() const {
 		return mipmap->LookupFloat(CHANNEL_WMEAN, .5f, .5f, .5f);
@@ -179,8 +181,13 @@ public:
 		*du = ds * dsdu + dt * dtdu;
 		*dv = ds * dsdv + dt * dtdv;
 	}
-
+	virtual void SetIlluminant() {
+		scalefactor = illumrgb2spect_scale;
+	}
 	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const ParamSet &tp);
+
+private:
+	float scalefactor;
 };
 
 // ImageTexture Method Definitions
