@@ -87,10 +87,10 @@ void LuxGuiApp::init(void) {
 
 	if (ProcessCommandLine()) {
 
-// AttachConsole is XP only, restrict to SSE2+
-#if defined(WIN32) && !defined(__CYGWIN__) && (_M_IX86_FP >= 2)
+#if defined(WIN32) && !defined(__CYGWIN__)
 		// attach to parent process' console if it exists, otherwise ignore
 		if (m_copyLog2Console) {
+			// AttachConsole is XP+ only, lets hope nobody on win2k tries this...
 			if (AttachConsole(ATTACH_PARENT_PROCESS)) {
 				AttachStderr();
 				std::cerr << "\nRedirecting log to console...\n";

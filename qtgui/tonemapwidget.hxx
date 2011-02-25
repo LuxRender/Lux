@@ -76,7 +76,6 @@ private:
 	double m_TM_linear_sensitivity;
 	double m_TM_linear_fstop;
 	double m_TM_linear_gamma;
-	bool m_TM_linear_linked;
 
 	double m_TM_contrast_ywa;
 
@@ -109,7 +108,6 @@ private slots:
 	void gammaLinearChanged (int value);
 	void gammaLinearChanged (double value);
 	void estimateLinear ();
-	void linkedChanged (int value);
 
 	void ywaChanged (int value);
 	void ywaChanged (double value);

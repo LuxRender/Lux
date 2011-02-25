@@ -39,7 +39,7 @@ Camera::Camera(const Transform &w2cstart,
 			   const Transform &w2cend,
                float hither, float yon,
 			   float sopen, float sclose, int sdist, Film *f) 
-			   : Queryable("camera"), CameraMotion(sopen, sclose, w2cstart, w2cend) {
+			   : CameraMotion(sopen, sclose, w2cstart, w2cend) {
 	WorldToCamera = w2cstart;
 	CameraToWorld = WorldToCamera.GetInverse();
 	ClipHither = hither;
@@ -48,9 +48,6 @@ Camera::Camera(const Transform &w2cstart,
 	ShutterClose = sclose;
 	ShutterDistribution = sdist;
 	film = f;
-
-	AddFloatAttribute(*this, "ShutterOpen", "Time when shutter opens", 0.f, &Camera::ShutterOpen);
-	AddFloatAttribute(*this, "ShutterClose", "Time when shutter closes", 1.f, &Camera::ShutterClose);
 }
 
 float Camera::GenerateRay(const Scene &scene, const Sample &sample,
@@ -154,9 +151,6 @@ ProjectiveCamera::ProjectiveCamera(const Transform &w2cs,
 	RasterToCamera = CameraToRaster.GetInverse();
 	WorldToRaster = ScreenToRaster * WorldToScreen;
 	RasterToWorld = WorldToRaster.GetInverse();
-
-	AddFloatAttribute(*this, "LensRadius", "Lens radius", 0.f, &ProjectiveCamera::LensRadius);
-	AddFloatAttribute(*this, "FocalDistance", "Focal distance", &ProjectiveCamera::FocalDistance);
 }
 void ProjectiveCamera::SampleMotion(float time) {
 

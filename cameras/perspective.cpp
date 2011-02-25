@@ -155,8 +155,6 @@ PerspectiveCamera::PerspectiveCamera(const Transform &world2camStart,
 	const float yPixelHeight = templength * (Screen[3] - Screen[2]) / 2.f *
 		(yEnd - yStart) / f->yResolution;
 	Apixel = xPixelWidth * yPixelHeight;
-
-	AddFloatAttribute(*this, "fov", "Field of View in radians", M_PI / 2.f, &PerspectiveCamera::fov);
 }
 
 void PerspectiveCamera::SampleMotion(float time)
@@ -254,9 +252,8 @@ bool PerspectiveCamera::SampleW(MemoryArena &arena,
 
 BBox PerspectiveCamera::Bounds() const
 {
-	float lensr = max(LensRadius, 0.f);
-	BBox bound(Point(-lensr, -lensr, 0.f),
-		Point(lensr, lensr, 0.f));
+	BBox bound(Point(-LensRadius, -LensRadius, 0.f),
+		Point(LensRadius, LensRadius, 0.f));
 	bound = CameraToWorld(bound);
 	bound.Expand(MachineEpsilon::E(bound));
 	return bound;

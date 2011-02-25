@@ -795,9 +795,8 @@ void Context::WorldEnd() {
 	if (!terminated) {
 		// Create scene and render
 		luxCurrentScene = renderOptions->MakeScene();
+		luxCurrentScene->camera->SetVolume(graphicsState->exterior);
 		if (luxCurrentScene) {
-			luxCurrentScene->camera->SetVolume(graphicsState->exterior);
-
 			luxCurrentRenderer = renderOptions->MakeRenderer();
 
 			if (luxCurrentRenderer) {

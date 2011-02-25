@@ -72,10 +72,7 @@ ToneMapWidget::ToneMapWidget(QWidget *parent) : QWidget(parent), ui(new Ui::Tone
 	connect(ui->slider_gamma_linear, SIGNAL(valueChanged(int)), this, SLOT(gammaLinearChanged(int)));
 	connect(ui->spinBox_gamma_linear, SIGNAL(valueChanged(double)), this, SLOT(gammaLinearChanged(double)));
 	connect(ui->button_linearEstimate, SIGNAL(clicked()), this, SLOT(estimateLinear()));	
-	connect(ui->checkBox_linearLinked, SIGNAL(stateChanged(int)), this, SLOT(linkedChanged(int)));
 
-	// hide until completed
-	ui->checkBox_linearLinked->hide();
 
 	// Max contrast
 	connect(ui->slider_ywa, SIGNAL(valueChanged(int)), this, SLOT(ywaChanged(int)));
@@ -463,7 +460,7 @@ void ToneMapWidget::gammaLinearChanged (double value)
 void ToneMapWidget::estimateLinear ()
 {
 	// estimate linear tonemapping parameters
-	const float gamma = retrieveParam(false, LUX_FILM, LUX_FILM_TORGB_GAMMA);
+	const float gamma = luxGetParameterValue(LUX_FILM, LUX_FILM_TORGB_GAMMA);
 	const float Y =  luxGetFloatAttribute("film", "averageLuminance");
 
 	const double gfactor = powf(118.f / 255.f, gamma);
@@ -530,45 +527,6 @@ void ToneMapWidget::estimateLinear ()
 	sensitivityChanged(sensitivitySettings[sensitivityIdx]);
 	exposureChanged(exposureSettings[exposureIdx]);
 	fstopChanged(fStopSettings[fStopIdx]);
-}
-
-void ToneMapWidget::linkedChanged (int value)
-{
-	bool linked = value == Qt::Checked;
-	bool linkedFStop = false;
-
-	if (linked) {
-		gammaLinearChanged(retrieveParam(false, LUX_FILM, LUX_FILM_TORGB_GAMMA));
-
-		float sopen = luxGetFloatAttribute("camera", "ShutterOpen");
-		float sclose = luxGetFloatAttribute("camera", "ShutterClose");
-
-		exposureChanged(sclose - sopen);
-
-		linkedFStop = luxHasAttribute("camera", "LensRadius") && luxHasAttribute("camera", "fov");
-		float lensr = fabsf(luxGetFloatAttribute("camera", "LensRadius"));
-
-		linkedFStop &= lensr > 0;
-
-		if (linkedFStop) {
-			float fov = luxGetFloatAttribute("camera", "fov");
-			float focalLength = 16.0f / tanf(fov / 2.f); // from blender, in mm
-			float fstop = focalLength / (1000.f * 2.f * lensr);
-
-			fstopChanged(fstop);
-		}
-	}
-
-	ui->slider_exposure->setEnabled(!linked);
-	ui->spinBox_exposure->setEnabled(!linked);
-	ui->comboBox_ExposurePreset->setEnabled(!linked);
-
-	ui->slider_fstop->setEnabled(!linkedFStop);
-	ui->spinBox_fstop->setEnabled(!linkedFStop);
-	ui->comboBox_FStopPreset->setEnabled(!linkedFStop);
-
-	ui->slider_gamma_linear->setEnabled(!linked);
-	ui->spinBox_gamma_linear->setEnabled(!linked);
 }
 
 void ToneMapWidget::ywaChanged (int value)

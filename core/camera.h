@@ -26,12 +26,11 @@
 #include "lux.h"
 #include "geometry/transform.h"
 #include "motionsystem.h"
-#include "queryable.h"
 
 namespace lux
 {
 // Camera Declarations
-class  Camera : public Queryable {
+class  Camera {
 public:
 	// Camera Interface
 	Camera(const Transform &w2cstart, const Transform &w2cend, float hither,

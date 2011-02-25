@@ -755,19 +755,6 @@
             </property>
            </widget>
           </item>
-          <item row="4" column="0" colspan="2">
-           <widget class="QCheckBox" name="checkBox_linearLinked">
-            <property name="toolTip">
-             <string>Use camera F-stop and exposure settings and image gamma</string>
-            </property>
-            <property name="text">
-             <string>Use camera settings</string>
-            </property>
-            <property name="checked">
-             <bool>false</bool>
-            </property>
-           </widget>
-          </item>
           <item row="4" column="2" colspan="2">
            <widget class="QPushButton" name="button_linearEstimate">
             <property name="text">
