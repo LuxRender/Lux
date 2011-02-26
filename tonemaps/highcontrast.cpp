@@ -95,4 +95,4 @@ ToneMap * HighContrastOp::CreateToneMap(const ParamSet &ps) {
 	return new HighContrastOp;
 }
 
-static DynamicLoader::RegisterToneMap<HighContrastOp> r("highcontrast");
+// static DynamicLoader::RegisterToneMap<HighContrastOp> r("highcontrast");
