@@ -722,7 +722,6 @@ SET(lux_textures_src
 	)
 SET(lux_tonemaps_src
 	tonemaps/contrast.cpp
-	tonemaps/highcontrast.cpp
 	tonemaps/lineartonemap.cpp
 	tonemaps/maxwhite.cpp
 	tonemaps/nonlinear.cpp
