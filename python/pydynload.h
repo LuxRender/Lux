@@ -37,8 +37,8 @@ USE pydynload_generator.py TO GENERATE THIS FILE !!
 boost::python::list py_getRegisteredVolumeRegions()
 {
 	boost::python::list names;
-	map<string, DynamicLoader::CreateVolumeRegion> &pluginMap = DynamicLoader::registeredVolumeRegions();
-	map<string, DynamicLoader::CreateVolumeRegion>::iterator mapit;
+	const map<string, DynamicLoader::CreateVolumeRegion> &pluginMap = DynamicLoader::registeredVolumeRegions();
+	map<string, DynamicLoader::CreateVolumeRegion>::const_iterator mapit;
 	for (mapit=pluginMap.begin(); mapit != pluginMap.end(); mapit++)
 	{
 		names.append( (*mapit).first );
@@ -51,8 +51,8 @@ boost::python::list py_getRegisteredVolumeRegions()
 boost::python::list py_getRegisteredFloatTextures()
 {
 	boost::python::list names;
-	map<string, DynamicLoader::CreateFloatTexture> &pluginMap = DynamicLoader::registeredFloatTextures();
-	map<string, DynamicLoader::CreateFloatTexture>::iterator mapit;
+	const map<string, DynamicLoader::CreateFloatTexture> &pluginMap = DynamicLoader::registeredFloatTextures();
+	map<string, DynamicLoader::CreateFloatTexture>::const_iterator mapit;
 	for (mapit=pluginMap.begin(); mapit != pluginMap.end(); mapit++)
 	{
 		names.append( (*mapit).first );
@@ -65,8 +65,8 @@ boost::python::list py_getRegisteredFloatTextures()
 boost::python::list py_getRegisteredFilters()
 {
 	boost::python::list names;
-	map<string, DynamicLoader::CreateFilter> &pluginMap = DynamicLoader::registeredFilters();
-	map<string, DynamicLoader::CreateFilter>::iterator mapit;
+	const map<string, DynamicLoader::CreateFilter> &pluginMap = DynamicLoader::registeredFilters();
+	map<string, DynamicLoader::CreateFilter>::const_iterator mapit;
 	for (mapit=pluginMap.begin(); mapit != pluginMap.end(); mapit++)
 	{
 		names.append( (*mapit).first );
@@ -79,8 +79,8 @@ boost::python::list py_getRegisteredFilters()
 boost::python::list py_getRegisteredSurfaceIntegrators()
 {
 	boost::python::list names;
-	map<string, DynamicLoader::CreateSurfaceIntegrator> &pluginMap = DynamicLoader::registeredSurfaceIntegrators();
-	map<string, DynamicLoader::CreateSurfaceIntegrator>::iterator mapit;
+	const map<string, DynamicLoader::CreateSurfaceIntegrator> &pluginMap = DynamicLoader::registeredSurfaceIntegrators();
+	map<string, DynamicLoader::CreateSurfaceIntegrator>::const_iterator mapit;
 	for (mapit=pluginMap.begin(); mapit != pluginMap.end(); mapit++)
 	{
 		names.append( (*mapit).first );
@@ -93,8 +93,8 @@ boost::python::list py_getRegisteredSurfaceIntegrators()
 boost::python::list py_getRegisteredRenderer()
 {
 	boost::python::list names;
-	map<string, DynamicLoader::CreateRenderer> &pluginMap = DynamicLoader::registeredRenderer();
-	map<string, DynamicLoader::CreateRenderer>::iterator mapit;
+	const map<string, DynamicLoader::CreateRenderer> &pluginMap = DynamicLoader::registeredRenderer();
+	map<string, DynamicLoader::CreateRenderer>::const_iterator mapit;
 	for (mapit=pluginMap.begin(); mapit != pluginMap.end(); mapit++)
 	{
 		names.append( (*mapit).first );
@@ -107,8 +107,8 @@ boost::python::list py_getRegisteredRenderer()
 boost::python::list py_getRegisteredFresnelTextures()
 {
 	boost::python::list names;
-	map<string, DynamicLoader::CreateFresnelTexture> &pluginMap = DynamicLoader::registeredFresnelTextures();
-	map<string, DynamicLoader::CreateFresnelTexture>::iterator mapit;
+	const map<string, DynamicLoader::CreateFresnelTexture> &pluginMap = DynamicLoader::registeredFresnelTextures();
+	map<string, DynamicLoader::CreateFresnelTexture>::const_iterator mapit;
 	for (mapit=pluginMap.begin(); mapit != pluginMap.end(); mapit++)
 	{
 		names.append( (*mapit).first );
@@ -121,8 +121,8 @@ boost::python::list py_getRegisteredFresnelTextures()
 boost::python::list py_getRegisteredCameras()
 {
 	boost::python::list names;
-	map<string, DynamicLoader::CreateCamera> &pluginMap = DynamicLoader::registeredCameras();
-	map<string, DynamicLoader::CreateCamera>::iterator mapit;
+	const map<string, DynamicLoader::CreateCamera> &pluginMap = DynamicLoader::registeredCameras();
+	map<string, DynamicLoader::CreateCamera>::const_iterator mapit;
 	for (mapit=pluginMap.begin(); mapit != pluginMap.end(); mapit++)
 	{
 		names.append( (*mapit).first );
@@ -135,8 +135,8 @@ boost::python::list py_getRegisteredCameras()
 boost::python::list py_getRegisteredPixelSamplers()
 {
 	boost::python::list names;
-	map<string, DynamicLoader::CreatePixelSampler> &pluginMap = DynamicLoader::registeredPixelSamplers();
-	map<string, DynamicLoader::CreatePixelSampler>::iterator mapit;
+	const map<string, DynamicLoader::CreatePixelSampler> &pluginMap = DynamicLoader::registeredPixelSamplers();
+	map<string, DynamicLoader::CreatePixelSampler>::const_iterator mapit;
 	for (mapit=pluginMap.begin(); mapit != pluginMap.end(); mapit++)
 	{
 		names.append( (*mapit).first );
@@ -149,8 +149,8 @@ boost::python::list py_getRegisteredPixelSamplers()
 boost::python::list py_getRegisteredToneMaps()
 {
 	boost::python::list names;
-	map<string, DynamicLoader::CreateToneMap> &pluginMap = DynamicLoader::registeredToneMaps();
-	map<string, DynamicLoader::CreateToneMap>::iterator mapit;
+	const map<string, DynamicLoader::CreateToneMap> &pluginMap = DynamicLoader::registeredToneMaps();
+	map<string, DynamicLoader::CreateToneMap>::const_iterator mapit;
 	for (mapit=pluginMap.begin(); mapit != pluginMap.end(); mapit++)
 	{
 		names.append( (*mapit).first );
@@ -163,8 +163,8 @@ boost::python::list py_getRegisteredToneMaps()
 boost::python::list py_getRegisteredShapes()
 {
 	boost::python::list names;
-	map<string, DynamicLoader::CreateShape> &pluginMap = DynamicLoader::registeredShapes();
-	map<string, DynamicLoader::CreateShape>::iterator mapit;
+	const map<string, DynamicLoader::CreateShape> &pluginMap = DynamicLoader::registeredShapes();
+	map<string, DynamicLoader::CreateShape>::const_iterator mapit;
 	for (mapit=pluginMap.begin(); mapit != pluginMap.end(); mapit++)
 	{
 		names.append( (*mapit).first );
@@ -177,8 +177,8 @@ boost::python::list py_getRegisteredShapes()
 boost::python::list py_getRegisteredLights()
 {
 	boost::python::list names;
-	map<string, DynamicLoader::CreateLight> &pluginMap = DynamicLoader::registeredLights();
-	map<string, DynamicLoader::CreateLight>::iterator mapit;
+	const map<string, DynamicLoader::CreateLight> &pluginMap = DynamicLoader::registeredLights();
+	map<string, DynamicLoader::CreateLight>::const_iterator mapit;
 	for (mapit=pluginMap.begin(); mapit != pluginMap.end(); mapit++)
 	{
 		names.append( (*mapit).first );
@@ -191,8 +191,8 @@ boost::python::list py_getRegisteredLights()
 boost::python::list py_getRegisteredMaterials()
 {
 	boost::python::list names;
-	map<string, DynamicLoader::CreateMaterial> &pluginMap = DynamicLoader::registeredMaterials();
-	map<string, DynamicLoader::CreateMaterial>::iterator mapit;
+	const map<string, DynamicLoader::CreateMaterial> &pluginMap = DynamicLoader::registeredMaterials();
+	map<string, DynamicLoader::CreateMaterial>::const_iterator mapit;
 	for (mapit=pluginMap.begin(); mapit != pluginMap.end(); mapit++)
 	{
 		names.append( (*mapit).first );
@@ -205,8 +205,8 @@ boost::python::list py_getRegisteredMaterials()
 boost::python::list py_getRegisteredFilms()
 {
 	boost::python::list names;
-	map<string, DynamicLoader::CreateFilm> &pluginMap = DynamicLoader::registeredFilms();
-	map<string, DynamicLoader::CreateFilm>::iterator mapit;
+	const map<string, DynamicLoader::CreateFilm> &pluginMap = DynamicLoader::registeredFilms();
+	map<string, DynamicLoader::CreateFilm>::const_iterator mapit;
 	for (mapit=pluginMap.begin(); mapit != pluginMap.end(); mapit++)
 	{
 		names.append( (*mapit).first );
@@ -219,8 +219,8 @@ boost::python::list py_getRegisteredFilms()
 boost::python::list py_getRegisteredVolumeIntegrators()
 {
 	boost::python::list names;
-	map<string, DynamicLoader::CreateVolumeIntegrator> &pluginMap = DynamicLoader::registeredVolumeIntegrators();
-	map<string, DynamicLoader::CreateVolumeIntegrator>::iterator mapit;
+	const map<string, DynamicLoader::CreateVolumeIntegrator> &pluginMap = DynamicLoader::registeredVolumeIntegrators();
+	map<string, DynamicLoader::CreateVolumeIntegrator>::const_iterator mapit;
 	for (mapit=pluginMap.begin(); mapit != pluginMap.end(); mapit++)
 	{
 		names.append( (*mapit).first );
@@ -233,8 +233,8 @@ boost::python::list py_getRegisteredVolumeIntegrators()
 boost::python::list py_getRegisteredVolumes()
 {
 	boost::python::list names;
-	map<string, DynamicLoader::CreateVolume> &pluginMap = DynamicLoader::registeredVolumes();
-	map<string, DynamicLoader::CreateVolume>::iterator mapit;
+	const map<string, DynamicLoader::CreateVolume> &pluginMap = DynamicLoader::registeredVolumes();
+	map<string, DynamicLoader::CreateVolume>::const_iterator mapit;
 	for (mapit=pluginMap.begin(); mapit != pluginMap.end(); mapit++)
 	{
 		names.append( (*mapit).first );
@@ -247,8 +247,8 @@ boost::python::list py_getRegisteredVolumes()
 boost::python::list py_getRegisteredSamplers()
 {
 	boost::python::list names;
-	map<string, DynamicLoader::CreateSampler> &pluginMap = DynamicLoader::registeredSamplers();
-	map<string, DynamicLoader::CreateSampler>::iterator mapit;
+	const map<string, DynamicLoader::CreateSampler> &pluginMap = DynamicLoader::registeredSamplers();
+	map<string, DynamicLoader::CreateSampler>::const_iterator mapit;
 	for (mapit=pluginMap.begin(); mapit != pluginMap.end(); mapit++)
 	{
 		names.append( (*mapit).first );
@@ -261,8 +261,8 @@ boost::python::list py_getRegisteredSamplers()
 boost::python::list py_getRegisteredAccelerators()
 {
 	boost::python::list names;
-	map<string, DynamicLoader::CreateAccelerator> &pluginMap = DynamicLoader::registeredAccelerators();
-	map<string, DynamicLoader::CreateAccelerator>::iterator mapit;
+	const map<string, DynamicLoader::CreateAccelerator> &pluginMap = DynamicLoader::registeredAccelerators();
+	map<string, DynamicLoader::CreateAccelerator>::const_iterator mapit;
 	for (mapit=pluginMap.begin(); mapit != pluginMap.end(); mapit++)
 	{
 		names.append( (*mapit).first );
@@ -275,8 +275,8 @@ boost::python::list py_getRegisteredAccelerators()
 boost::python::list py_getRegisteredAreaLights()
 {
 	boost::python::list names;
-	map<string, DynamicLoader::CreateAreaLight> &pluginMap = DynamicLoader::registeredAreaLights();
-	map<string, DynamicLoader::CreateAreaLight>::iterator mapit;
+	const map<string, DynamicLoader::CreateAreaLight> &pluginMap = DynamicLoader::registeredAreaLights();
+	map<string, DynamicLoader::CreateAreaLight>::const_iterator mapit;
 	for (mapit=pluginMap.begin(); mapit != pluginMap.end(); mapit++)
 	{
 		names.append( (*mapit).first );
@@ -289,8 +289,8 @@ boost::python::list py_getRegisteredAreaLights()
 boost::python::list py_getRegisteredSWCSpectrumTextures()
 {
 	boost::python::list names;
-	map<string, DynamicLoader::CreateSWCSpectrumTexture> &pluginMap = DynamicLoader::registeredSWCSpectrumTextures();
-	map<string, DynamicLoader::CreateSWCSpectrumTexture>::iterator mapit;
+	const map<string, DynamicLoader::CreateSWCSpectrumTexture> &pluginMap = DynamicLoader::registeredSWCSpectrumTextures();
+	map<string, DynamicLoader::CreateSWCSpectrumTexture>::const_iterator mapit;
 	for (mapit=pluginMap.begin(); mapit != pluginMap.end(); mapit++)
 	{
 		names.append( (*mapit).first );

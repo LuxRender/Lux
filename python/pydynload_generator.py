@@ -26,8 +26,8 @@ func_template = Template("""
 boost::python::list py_getRegistered$f1()
 {
 	boost::python::list names;
-	map<string, DynamicLoader::Create$f2> &pluginMap = DynamicLoader::registered$f1();
-	map<string, DynamicLoader::Create$f2>::iterator mapit;
+	const map<string, DynamicLoader::Create$f2> &pluginMap = DynamicLoader::registered$f1();
+	map<string, DynamicLoader::Create$f2>::const_iterator mapit;
 	for (mapit=pluginMap.begin(); mapit != pluginMap.end(); mapit++)
 	{
 		names.append( (*mapit).first );
