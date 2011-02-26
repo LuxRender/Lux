@@ -31,6 +31,7 @@
 // pylux headers
 #include "binding.h"
 #include "pydoc.h"
+#include "pydynload.h"
 #include "pycontext.h"
 #include "pyfleximage.h"
 // #include "pyrenderer.h"
@@ -191,6 +192,7 @@ BOOST_PYTHON_MODULE(pylux)
 
 	// Add definitions given in other header files
 	export_PyContext();
+	export_PyDynload();
 	export_PyFlexImageFilm();
 	// export_PyRenderer();
 	export_PyRenderServer();
