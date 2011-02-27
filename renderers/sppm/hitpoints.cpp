@@ -156,9 +156,8 @@ void HitPoints::AccumulateFlux(const vector<unsigned long long> photonTracedByLi
 
 		switch (hp->type) {
 			case CONSTANT_COLOR:
-				for(u_int j = 0; j < lightGroupsNumber; ++j)
-				{
-					hp->lightGroupData[j].accumRadiance += XYZColor(hp->sample->swl, hp->lightGroupData[j].eyeLe);
+				for (u_int j = 0; j < lightGroupsNumber; ++j) {
+					hp->lightGroupData[j].accumRadiance += hp->lightGroupData[j].eyeRadiance;
 					hp->lightGroupData[j].constantHitsCount += 1;
 				}
 				break;
@@ -167,35 +166,35 @@ void HitPoints::AccumulateFlux(const vector<unsigned long long> photonTracedByLi
 					// compute g and do radius reduction
 					unsigned long long photonCount = 0;
 					unsigned long long accumPhotonCount = 0;
-					for(u_int j = 0; j < lightGroupsNumber; ++j)
-					{
-						photonCount +=  hp->lightGroupData[j].photonCount;
-						accumPhotonCount +=  hp->lightGroupData[j].accumPhotonCount;
-						
+					for (u_int j = 0; j < lightGroupsNumber; ++j) {
+						photonCount += hp->lightGroupData[j].photonCount;
+						accumPhotonCount += hp->lightGroupData[j].accumPhotonCount;
+
 						hp->lightGroupData[j].photonCount += hp->lightGroupData[j].accumPhotonCount;
 						hp->lightGroupData[j].accumPhotonCount = 0;
 					}
-					if(accumPhotonCount > 0)
-					{
+					if (accumPhotonCount > 0) {
 						const unsigned long long pcount = photonCount + accumPhotonCount;
 						const double alpha = renderer->sppmi->photonAlpha;
 						const float g = alpha * pcount / (photonCount * alpha + accumPhotonCount);
-					
+
 						// radius reduction
 						hp->accumPhotonRadius2 *= g;
-						
+
 						// update light group flux
-						for(u_int j = 0; j < lightGroupsNumber; ++j)
-						{
+						for (u_int j = 0; j < lightGroupsNumber; ++j) {
 							hp->lightGroupData[j].reflectedFlux = (hp->lightGroupData[j].reflectedFlux + hp->lightGroupData[j].accumReflectedFlux) * g;
 							hp->lightGroupData[j].accumReflectedFlux = XYZColor();
+
+							if (!hp->lightGroupData[j].eyeRadiance.Black()) {
+								hp->lightGroupData[j].accumRadiance += hp->lightGroupData[j].eyeRadiance;
+								hp->lightGroupData[j].constantHitsCount += 1;
+							}
 						}
 					}
 
-					for(u_int j = 0; j < lightGroupsNumber; ++j)
-					{
+					for (u_int j = 0; j < lightGroupsNumber; ++j)
 						hp->lightGroupData[j].surfaceHitsCount += 1;
-					}
 				}
 				break;
 			default:
@@ -203,8 +202,7 @@ void HitPoints::AccumulateFlux(const vector<unsigned long long> photonTracedByLi
 		}
 
 		// update radiance
-		for(u_int j = 0; j < lightGroupsNumber; ++j)
-		{
+		for(u_int j = 0; j < lightGroupsNumber; ++j) {
 			const u_int hitCount = hp->lightGroupData[j].constantHitsCount + hp->lightGroupData[j].surfaceHitsCount;
 			if (hitCount > 0) {
 				const double k = 1.0 / (M_PI * hp->accumPhotonRadius2 * photonTracedByLightGroup[j]);
@@ -282,8 +280,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample) {
 			// Dade - now I know ray.maxt and I can call volumeIntegrator
 			SWCSpectrum Lv;
 			u_int g = scene.volumeIntegrator->Li(scene, ray, sample, &Lv, &hp->eyeAlpha);
-			if (!Lv.Black())
-			{
+			if (!Lv.Black()) {
 				// TODO: copied from path integrator. Why not += ?
 				L[g] = Lv;
 			}
@@ -305,9 +302,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample) {
 
 			hp->type = CONSTANT_COLOR;
 			for(unsigned int j = 0; j < lightGroupCount; ++j)
-			{
-				hp->lightGroupData[j].eyeLe = L[j] * rayWeight;
-			}
+				hp->lightGroupData[j].eyeRadiance = XYZColor(sw, L[j] * rayWeight);
 			return;
 		}
 		scattered = bsdf->dgShading.scattered;
@@ -336,9 +331,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample) {
 		if (pathLength == maxDepth) {
 			hp->type = CONSTANT_COLOR;
 			for(unsigned int j = 0; j < lightGroupCount; ++j)
-			{
-				hp->lightGroupData[j].eyeLe = L[j] * rayWeight;
-			}
+				hp->lightGroupData[j].eyeRadiance = XYZColor(sw, L[j] * rayWeight);
 			return;
 		}
 
@@ -353,9 +346,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample) {
 			&pdf, BSDF_ALL, &flags, NULL, true)) {
 			hp->type = CONSTANT_COLOR;
 			for(unsigned int j = 0; j < lightGroupCount; ++j)
-			{
-				hp->lightGroupData[j].eyeLe = L[j] * rayWeight;
-			}
+				hp->lightGroupData[j].eyeRadiance = XYZColor(sw, L[j] * rayWeight);
 			return;
 		}
 
@@ -366,9 +357,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample) {
 			hp->bsdf = bsdf;
 			hp->eyeThroughput = pathThroughput * rayWeight;
 			for(unsigned int j = 0; j < lightGroupCount; ++j)
-			{
-				hp->lightGroupData[j].eyeLe = L[j] * rayWeight;
-			}
+				hp->lightGroupData[j].eyeRadiance = XYZColor(sw, L[j] * rayWeight);
 			hp->position = p;
 			hp->wo = wo;
 			return;
@@ -382,9 +371,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample) {
 		if (pathThroughput.Black()) {
 			hp->type = CONSTANT_COLOR;
 			for(unsigned int j = 0; j < lightGroupCount; ++j)
-			{
-				hp->lightGroupData[j].eyeLe = L[j] * rayWeight;
-			}
+				hp->lightGroupData[j].eyeRadiance = XYZColor(sw, L[j] * rayWeight);
 			return;
 		}
 

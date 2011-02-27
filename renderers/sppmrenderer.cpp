@@ -356,9 +356,8 @@ void SPPMRenderer::UpdateFilm() {
 	uint lightGroupsNumber = scene->lightGroups.size();
 	for (u_int i = 0; i < hitPoints->GetSize(); ++i) {
 		HitPoint *hp = hitPoints->GetHitPoint(i);
-		
-		for(u_int j = 0; j < lightGroupsNumber; j++)
-		{
+
+		for(u_int j = 0; j < lightGroupsNumber; j++) {
 			Contribution contrib(x - xstart, y - ystart, hp->lightGroupData[j].radiance, hp->eyeAlpha,
 					hp->eyeDistance, 0.f, bufferId, j);
 			scene->camera->film->SetSample(&contrib);

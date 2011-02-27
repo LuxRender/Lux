@@ -39,8 +39,7 @@ enum HitPointType {
 	SURFACE, CONSTANT_COLOR
 };
 
-struct HitPointLightGroup
-{
+struct HitPointLightGroup {
 	unsigned long long photonCount;
 	XYZColor reflectedFlux;
 
@@ -52,8 +51,8 @@ struct HitPointLightGroup
 	u_int surfaceHitsCount;
 
 	XYZColor radiance;
-	
-	SWCSpectrum eyeLe;
+
+	XYZColor eyeRadiance;
 };
 
 
