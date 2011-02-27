@@ -49,7 +49,7 @@ public:
 	virtual void RefreshParallel(const unsigned int index, const unsigned int count) { }
 
 	virtual void AddFlux(const Point &hitPoint, const Vector &wi,
-		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, u_int light_group) = 0;
+		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group) = 0;
 
 protected:
 	void AddFluxToHitPoint(HitPoint *hp,

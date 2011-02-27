@@ -353,7 +353,7 @@ void SPPMRenderer::UpdateFilm() {
 	int x = xstart;
 	int y = ystart;
 
-	uint lightGroupsNumber = scene->lightGroups.size();
+	u_int lightGroupsNumber = scene->lightGroups.size();
 	for (u_int i = 0; i < hitPoints->GetSize(); ++i) {
 		HitPoint *hp = hitPoints->GetHitPoint(i);
 

@@ -104,7 +104,7 @@ public:
 	void IncPass() { ++pass; }
 
 	void AddFlux(const Point &hitPoint, const Vector &wi,
-		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const uint light_group) {
+		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group) {
 		lookUpAccel->AddFlux(hitPoint, wi, sw, photonFlux, light_group);
 	}
 
