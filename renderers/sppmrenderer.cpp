@@ -407,13 +407,16 @@ void SPPMRenderer::RenderThread::TracePhotons() {
 	SpectrumWavelengths &sw(threadSample->swl);
 	Sample &sample(*threadSample);
 
+	// Sample the wavelengths
+	sw.Sample(renderer->currentWaveLengthSample);
+
 	for (;;) {
 		// Check if it is time to do an eye pass
 		if (renderer->photonTracedPassNoLightGroup > renderer->sppmi->photonPerPass) {
 			// Ok, time to stop
 			return;
 		}
-		
+
 		// Sample the wavelengths
 		sw.Sample(renderer->currentWaveLengthSample);
 
