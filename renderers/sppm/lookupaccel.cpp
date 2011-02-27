@@ -22,6 +22,7 @@
 #include "hitpoints.h"
 #include "lookupaccel.h"
 #include "bxdf.h"
+#include "reflection/bxdf.h"
 
 using namespace lux;
 
@@ -32,7 +33,7 @@ void HitPointsLookUpAccel::AddFluxToHitPoint(HitPoint *hp,
 		if ((dist2 >  hp->accumPhotonRadius2))
 			return;
 
-		SWCSpectrum f = hp->bsdf->F(sw, hp->wo, wi, false);
+		SWCSpectrum f = hp->bsdf->F(sw, hp->wo, wi, false, BxDFType(BSDF_ALL | BSDF_DIFFUSE));
 		if (f.Black())
 			return;
 
