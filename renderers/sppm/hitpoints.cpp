@@ -146,7 +146,7 @@ void HitPoints::Init() {
 	}
 }
 
-void HitPoints::AccumulateFlux(const vector<unsigned long long> photonTracedByLightGroup) {
+void HitPoints::AccumulateFlux(const vector<unsigned long long> &photonTracedByLightGroup) {
 	LOG(LUX_INFO, LUX_NOERROR) << "Accumulate photons flux";
 
 	const u_int lightGroupsNumber = renderer->scene->lightGroups.size();

@@ -108,7 +108,7 @@ public:
 		lookUpAccel->AddFlux(hitPoint, wi, sw, photonFlux, light_group);
 	}
 
-	void AccumulateFlux(const vector<unsigned long long> photonTracedByLightGroup);
+	void AccumulateFlux(const vector<unsigned long long> &photonTracedByLightGroup);
 	void SetHitPoints(RandomGenerator *rng);
 
 	void RefreshAccelMutex() {
