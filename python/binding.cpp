@@ -93,6 +93,7 @@ BOOST_PYTHON_MODULE(pylux)
 	// This 'module' is actually a fake package
 	object package = scope();
 	package.attr("__path__") = "pylux";
+	package.attr("__package__") = "pylux";
 	package.attr("__doc__") = ds_pylux;
 
 	//Direct python module calls
@@ -186,6 +187,7 @@ BOOST_PYTHON_MODULE(pylux)
 
 	def("errorFilter",
 		pyLuxErrorFilter,
+		args("ErrorSeverity"),
 		ds_pylux_errorFilter
 	);
 

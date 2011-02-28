@@ -308,6 +308,9 @@ void export_PyDynload()
 	object dynload(handle<>(borrowed(PyImport_AddModule("pylux.Dynload"))));
 	scope().attr("Dynload") = dynload;
 	scope dynloadScope = dynload;
+	
+	dynloadScope.attr("__doc__") = ds_pylux_Dynload;
+	dynloadScope.attr("__package__") = "pylux.Dynload";
 
 	def("registeredVolumeRegions",
 		py_getRegisteredVolumeRegions,
