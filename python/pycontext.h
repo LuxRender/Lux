@@ -1441,7 +1441,7 @@ void export_PyContext()
 		.def("customStatistics",
 			&PyContext::customStatistics,
 			args("Context", "template_string"),
-			""
+			ds_pylux_Context_custom_statistics
 		)
 		.def("surfaceIntegrator",
 			&PyContext::surfaceIntegrator,

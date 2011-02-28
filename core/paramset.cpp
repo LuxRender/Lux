@@ -233,6 +233,11 @@ ParamSet::ParamSet(u_int n, const char * pluginName, const char * const tokens[]
 				else if (s == "vknots")
 					np = FindOneInt("nv", 1) +
 						FindOneInt("vorder", 1);
+				else if (s == "offsets")
+					np = FindOneInt("noffsets", 1);
+				else if (s == "weights")
+					np = FindOneInt("nweights", 1);
+
 				AddFloat(s, (float*)(params[i]), np);
 				break;
 			}

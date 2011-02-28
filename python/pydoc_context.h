@@ -340,6 +340,10 @@ const char * ds_pylux_Context_printable_statistics =
 "Return a formatted statistics string. If add_total=True, then the Local and Net"
 " stats will be summed and also shown.";
 
+const char * ds_pylux_Context_custom_statistics =
+"Return a formatted statistics string. The string argument should contain the\n"
+"appropriate template placeholders for the stats to be formatted into.";
+
 const char * ds_pylux_Context_surfaceIntegrator =
 "Initialise the surface integrator to use for rendering. Valid types are:\n"
 "- bidirectional\n"

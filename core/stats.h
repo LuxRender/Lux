@@ -54,6 +54,7 @@ public:
 	static string template_string_network;
 	static string template_string_total;
 	static string template_string_haltspp;
+	static string template_string_time_remaining;
 	static string template_string_halttime;
 	static string template_string_renderer;
 

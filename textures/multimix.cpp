@@ -20,41 +20,11 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// emission.cpp*
-#include "volume.h"
-#include "transport.h"
-#include "scene.h"
+// multimix.cpp*
+#include "multimix.h"
+#include "dynload.h"
 
-namespace lux
-{
+using namespace lux;
 
-// EmissionIntegrator Declarations
-class EmissionIntegrator : public VolumeIntegrator {
-public:
-	// EmissionIntegrator Public Methods
-	EmissionIntegrator(float ss, u_int g) : group(g) { stepSize = ss; }
-	virtual ~EmissionIntegrator() { }
-	virtual void RequestSamples(Sample *sample, const Scene &scene);
-	virtual void Transmittance(const Scene &, const Ray &ray,
-		const Sample &sample, float *alpha, SWCSpectrum *const L) const;
-	virtual u_int Li(const Scene &, const Ray &ray,
-		const Sample &sample, SWCSpectrum *L, float *alpha) const;
-	virtual bool Intersect(const Scene &scene, const Sample &sample,
-		const Volume *volume, bool scatteredStart, const Ray &ray,
-		float u, Intersection *isect, BSDF **bsdf, float *pdf,
-		float *pdfBack, SWCSpectrum *L) const;
-	// Used to complete intersection data with LuxRays
-	virtual bool Intersect(const Scene &scene, const Sample &sample,
-		const Volume *volume, bool scatteredStart, const Ray &ray,
-		const luxrays::RayHit &rayHit, float u, Intersection *isect,
-		BSDF **bsdf, float *pdf, float *pdfBack, SWCSpectrum *L) const;
-	static VolumeIntegrator *CreateVolumeIntegrator(const ParamSet &params);
-private:
-	// EmissionIntegrator Private Data
-	float stepSize;
-	const u_int group;
-	u_int tauSampleOffset, scatterSampleOffset;
-};
-
-}//namespace lux
-
+static DynamicLoader::RegisterFloatTexture<MultiMixTexture<float> > r1("multimix");
+static DynamicLoader::RegisterSWCSpectrumTexture<MultiMixTexture<SWCSpectrum> > r2("multimix");

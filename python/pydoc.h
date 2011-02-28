@@ -42,6 +42,9 @@ const char * ds_pylux_ThreadSignals =
 const char * ds_pylux_RenderingThreadInfo =
 "Container class for information about rendering threads";
 
+const char * ds_pylux_Dynload =
+"Module for LuxRender compiled-in plugins introspection";
+
 const char * ds_pylux_Component =
 "(+) LuxRender Components available to modify at render-time";
 
@@ -56,10 +59,13 @@ const char * ds_pylux_errorHandler =
 "output. By default the render engine will print to stdout";
 
 const char * ds_pylux_ErrorSeverity =
-"(+) Error severity levels";
+"Error severity levels";
 
 const char * ds_pylux_errorFilter =
 "Specify an error severity level filter. Errors with severity less than the\n"
 "specified level will be suppressed";
+
+const char * ds_pylux_FlexImageFilm =
+"Information about the FlexImage film.";
 
 #endif	// LUX_PYDOC_H

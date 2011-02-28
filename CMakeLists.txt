@@ -572,6 +572,7 @@ SET(lux_integrators_src
 	integrators/emission.cpp
 	integrators/exphotonmap.cpp
 	integrators/igi.cpp
+	integrators/multi.cpp
 	integrators/path.cpp
 	integrators/single.cpp
 	integrators/sppm.cpp
@@ -713,6 +714,7 @@ SET(lux_textures_src
 	textures/imagemap.cpp
 	textures/marble.cpp
 	textures/mix.cpp
+	textures/multimix.cpp
 	textures/scale.cpp
 	textures/uv.cpp
 	textures/uvmask.cpp
@@ -721,7 +723,6 @@ SET(lux_textures_src
 	)
 SET(lux_tonemaps_src
 	tonemaps/contrast.cpp
-	tonemaps/highcontrast.cpp
 	tonemaps/lineartonemap.cpp
 	tonemaps/maxwhite.cpp
 	tonemaps/nonlinear.cpp
@@ -882,6 +883,7 @@ ENDIF(APPLE)
 ###########################   PYTHON LIBRARIES    ###########################
 #############################################################################
 #############################################################################
+# SET(CMAKE_USE_PYTHON_VERSION 3.1)
 IF(APPLE)
 	IF(PYLUX_FOR_BLENDER)
 		# use Blender python libs for static compiling !

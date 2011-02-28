@@ -32,6 +32,9 @@ void export_PyFlexImageFilm()
 	object flexImageFilm(handle<>(borrowed(PyImport_AddModule("pylux.FlexImageFilm"))));
 	scope().attr("FlexImageFilm") = flexImageFilm;
 	scope flexImageFilmScope = flexImageFilm;
+	
+	flexImageFilmScope.attr("__doc__") = ds_pylux_FlexImageFilm;
+	flexImageFilmScope.attr("__package__") = "pylux.FlexImageFilm";
 
 	// TODO: don't rely on arbitrary int values, or having to
 	// include half the core headers
@@ -54,7 +57,7 @@ void export_PyFlexImageFilm()
 	// TODO: can't have more than one enum_<int>, causes RuntimeWarnings
 	// need to use reference to real enum
 
-	enum_<int>("TonemapKernels", "")
+	enum_<int>("TonemapKernels", "Available tonemap kernel types")
 		.value("Reinhard",			0) //FlexImageFilm::TMK_Reinhard)
 		.value("Linear",			1) //FlexImageFilm::TMK_Linear)
 		.value("Contrast",			2) //FlexImageFilm::TMK_Contrast)

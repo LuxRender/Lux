@@ -566,7 +566,7 @@ void PhotonMapPreprocess(const RandomGenerator &rng, const Scene &scene,
 
 		if (!alpha.Black()) {
 			// Follow photon path through scene and record intersections
-			bool specularPath = false;
+			bool specularPath = false, directPhoton = true;
 			Intersection photonIsect;
 			const Volume *volume = NULL; //FIXME: try to get volume from light
 			BSDF *photonBSDF;
@@ -583,7 +583,7 @@ void PhotonMapPreprocess(const RandomGenerator &rng, const Scene &scene,
 					// Deposit photon at surface
 					LightPhoton photon(sw, photonIsect.dg.p, alpha, wo);
 
-					if (nIntersections == 1) {
+					if (directPhoton) {
 						if (computeRadianceMap && (!directDone)) {
 							// Deposit direct photon
 							directPhotons.push_back(photon);
@@ -664,11 +664,16 @@ void PhotonMapPreprocess(const RandomGenerator &rng, const Scene &scene,
 					break;
 				SWCSpectrum anew = fr;
 				float continueProb = min(1.f, anew.Filter(sw));
-				if (rng.floatValue() > continueProb || nIntersections > maxDepth)
+				if (nIntersections > maxDepth || rng.floatValue() > continueProb)
 					break;
 				alpha *= anew / continueProb;
-				specularPath = (nIntersections == 1 || specularPath) &&
-					((flags & BSDF_SPECULAR) != 0 || pdfo > 100.f);
+				const bool passThrough = flags == (BSDF_TRANSMISSION | BSDF_SPECULAR) &&
+					photonBSDF->Pdf(sw, wo, wi, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) > 0.f;
+				if (!passThrough) {
+					specularPath = (directPhoton || specularPath) &&
+						((flags & BSDF_SPECULAR) != 0 || pdfo > 100.f);
+					directPhoton = false;
+				}
 				photonRay = Ray(photonIsect.dg.p, wi);
 				volume = photonBSDF->GetVolume(photonRay.d);
 			}

@@ -42,6 +42,8 @@ string StatsData::template_string_network = " - %8%N: %9%%10$0.2f %11%S/p  %12$0
 string StatsData::template_string_total = " - Tot: %9%%14$0.2f %15%S/p  %16$0.0f %17%S/s"; // 24, 25 removed to save space
 // String template to format percent samples completion, provides placeholder 18
 string StatsData::template_string_haltspp = " - %9%%18$0.0f%% Complete (S/Px)";
+// String template to format time to completion, provides placeholder 27
+string StatsData::template_string_time_remaining = " - %27% Remaining";
 // String template to format percent time completion, provides placeholder 19
 string StatsData::template_string_halttime = " - %9%%19$0.0f%% Complete (sec)";
 // String template to renderer stats, provides placeholder 26
@@ -177,6 +179,17 @@ void StatsData::update(const bool add_total)
 				completion_time = 100.f; // keep at 100%
 		}
 
+		// calculate the time remaining in seconds
+		int seconds_remaining = 0;						// %27
+		if (haltspp > 0)
+		{
+			if (((localsamples + netsamples) / px) > 1000) {
+				seconds_remaining = (haltspp - ((localsamples + netsamples) / px)) / (((localsamples + netsamples) / px) / secelapsed);
+			} else {
+				seconds_remaining = (haltspp - total_spp) / (total_spp / secelapsed);
+			}
+		}
+
 		// Show either one of completion stats, depending on which is greatest
 		static bool timebased; // determine type once at start and keep it
 		if (completion_samples > completion_time)
@@ -190,6 +203,7 @@ void StatsData::update(const bool add_total)
 		if (completion_samples > 0.f && timebased == false)
 		{
 			os << template_string_haltspp;
+			os << template_string_time_remaining;
 		}
 		else if (completion_time > 0.f && timebased == true)
 		{
@@ -235,6 +249,7 @@ void StatsData::update(const bool add_total)
 			/* %24 */ % magnitude_reduce(total_cps)
 			/* %25 */ % magnitude_prefix(total_cps)
 			/* %26 */ % rendererStats
+			/* %27 */ % boost::posix_time::time_duration(0, 0, seconds_remaining, 0)
 		);
 
 	} catch (std::runtime_error e) {

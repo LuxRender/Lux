@@ -330,6 +330,7 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 	float displacementMapOffset = params.FindOneFloat("dmoffset", 0.0f);
 	bool displacementMapNormalSmooth = params.FindOneBool("dmnormalsmooth", true);
 	bool displacementMapSharpBoundary = params.FindOneBool("dmsharpboundary", false);
+	bool normalSplit = params.FindOneBool("dmnormalsplit", false);
 
 	boost::shared_ptr<Texture<float> > displacementMap;
 	if (displacementMapName != "") {
@@ -360,8 +361,10 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 	boost::shared_ptr<Texture<float> > dummytex;
 	Mesh *mesh = new Mesh(o2w, reverseOrientation, Mesh::ACCEL_AUTO,
 		plyNbVerts, p, n, uv, Mesh::TRI_AUTO, plyNbTris, triVerts,
-		Mesh::QUAD_QUADRILATERAL, plyNbQuads, quadVerts, subdivType, nsubdivlevels,
-		displacementMap, displacementMapScale, displacementMapOffset, displacementMapNormalSmooth, displacementMapSharpBoundary);
+		Mesh::QUAD_QUADRILATERAL, plyNbQuads, quadVerts, subdivType,
+		nsubdivlevels, displacementMap, displacementMapScale,
+		displacementMapOffset, displacementMapNormalSmooth,
+		displacementMapSharpBoundary, normalSplit);
 	delete[] p;
 	delete[] n;
 	delete[] uv;

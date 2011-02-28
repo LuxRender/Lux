@@ -73,10 +73,12 @@ public:
 	}
 	// Used to complete intersection data with LuxRays
 	bool Intersect(const Sample &sample, const Volume *volume,
-		const Ray &ray, const luxrays::RayHit &rayHit, Intersection *isect, BSDF **bsdf,
-		SWCSpectrum *f) const {
-		return volumeIntegrator->Intersect(*this, sample, volume, ray, rayHit,
-			isect, bsdf, f);
+		bool scatteredStart, const Ray &ray,
+		const luxrays::RayHit &rayHit, float u, Intersection *isect,
+		BSDF **bsdf, float *pdf, float *pdfBack, SWCSpectrum *f) const {
+		return volumeIntegrator->Intersect(*this, sample, volume,
+			scatteredStart, ray, rayHit, u, isect, bsdf, pdf,
+			pdfBack, f);
 	}
 	bool Connect(const Sample &sample, const Volume *volume,
 		bool scatteredStart, bool scatteredEnd, const Point &p0,
@@ -88,10 +90,12 @@ public:
 	}
 	// Used with LuxRays
 	int Connect(const Sample &sample, const Volume *volume,
-		const Ray &ray, const luxrays::RayHit &rayHit,
-		SWCSpectrum *f, float *pdf, float *pdfR) const {
+		bool scatteredStart, bool scatteredEnd, const Ray &ray,
+		const luxrays::RayHit &rayHit, SWCSpectrum *f, float *pdf,
+		float *pdfR) const {
 		return volumeIntegrator->Connect(*this, sample, volume,
-			ray, rayHit, f, pdf, pdfR);
+			scatteredStart, scatteredEnd, ray, rayHit, f, pdf,
+			pdfR);
 	}
 	bool IntersectP(const Ray &ray) const {
 		return aggregate->IntersectP(ray);

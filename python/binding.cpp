@@ -31,6 +31,7 @@
 // pylux headers
 #include "binding.h"
 #include "pydoc.h"
+#include "pydynload.h"
 #include "pycontext.h"
 #include "pyfleximage.h"
 // #include "pyrenderer.h"
@@ -92,6 +93,7 @@ BOOST_PYTHON_MODULE(pylux)
 	// This 'module' is actually a fake package
 	object package = scope();
 	package.attr("__path__") = "pylux";
+	package.attr("__package__") = "pylux";
 	package.attr("__doc__") = ds_pylux;
 
 	//Direct python module calls
@@ -185,12 +187,14 @@ BOOST_PYTHON_MODULE(pylux)
 
 	def("errorFilter",
 		pyLuxErrorFilter,
+		args("ErrorSeverity"),
 		ds_pylux_errorFilter
 	);
 
 
 	// Add definitions given in other header files
 	export_PyContext();
+	export_PyDynload();
 	export_PyFlexImageFilm();
 	// export_PyRenderer();
 	export_PyRenderServer();

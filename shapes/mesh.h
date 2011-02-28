@@ -43,7 +43,7 @@ public:
 		boost::shared_ptr<Texture<float> > &displacementMap,
 		float displacementMapScale, float displacementMapOffset,
 		bool displacementMapNormalSmooth,
-		bool displacementMapSharpBoundary);
+		bool displacementMapSharpBoundary, bool normalsplit);
 	virtual ~Mesh();
 
 	virtual BBox ObjectBound() const;
@@ -117,6 +117,7 @@ protected:
 	float displacementMapScale;
 	float displacementMapOffset;
 	bool displacementMapNormalSmooth, displacementMapSharpBoundary;
+	bool normalSplit;
 
 	// for error reporting
 	mutable u_int inconsistentShadingTris;

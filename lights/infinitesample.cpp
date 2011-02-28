@@ -54,7 +54,7 @@ public:
 			return false;
 		*wiW = CosineSampleHemisphere(u1, u2);
 		const float cosi = wiW->z;
-		*wiW = Normalize(LocalToWorld(*wiW));
+		*wiW = Normalize(WorldToLight.GetInverse()(*wiW));
 		if (sampledType)
 			*sampledType = BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE);
 		*pdf = cosi * INV_PI;

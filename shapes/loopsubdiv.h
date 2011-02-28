@@ -39,16 +39,16 @@ namespace lux
 struct SDFace;
 struct SDVertex {
 	// SDVertex Constructor
-	SDVertex(Point pt = Point(0,0,0), float uu = 0.0f, float vv = 0.0f)
-		: P(pt), u(uu), v(vv), startFace(NULL), child(NULL),
-		regular(false), boundary(false) {
-	}
+	SDVertex(Point pt = Point(0,0,0), float uu = 0.0f, float vv = 0.0f,
+		Normal nn = Normal(0, 0, 0)) : P(pt), n(nn), u(uu), v(vv),
+		startFace(NULL), child(NULL), regular(false), boundary(false) {}
 
 	// SDVertex Methods
 	u_int valence() const;
 	void oneRing(Point *P) const;
 
 	Point P;
+	Normal n;
 	float u, v;
 	SDFace *startFace;
 	SDVertex *child;
@@ -101,13 +101,13 @@ struct SDFace {
 
 struct SDEdge {
 	// SDEdge Constructor
-	SDEdge(const Point &p0, const Point &p1) {
-		if (PInf(p0, p1)) {
-			p[0] = p0;
-			p[1] = p1;
+	SDEdge(const SDVertex *v0, const SDVertex *v1) {
+		if (PInf(v0->P, v1->P)) {
+			v[0] = v0;
+			v[1] = v1;
 		} else {
-			p[0] = p1;
-			p[1] = p0;
+			v[0] = v1;
+			v[1] = v0;
 		}
 		f[0] = f[1] = NULL;
 		f0edgeNum = 0;
@@ -118,11 +118,23 @@ struct SDEdge {
 			return p1.y == p2.y ? p1.z < p2.z : p1.y < p2.y;
 		return p1.x < p2.x;
 	}
-	bool operator<(const SDEdge &e2) const {
-		if (p[0] == e2.p[0]) return PInf(p[1], e2.p[1]);
-		return PInf(p[0], e2.p[0]);
+	bool NInf(const Normal &n1, const Normal &n2) const {
+		if (n1.x == n2.x)
+			return n1.y == n2.y ? n1.z < n2.z : n1.y < n2.y;
+		return n1.x < n2.x;
 	}
-	Point p[2];
+	bool operator<(const SDEdge &e2) const {
+		if (v[0]->P == e2.v[0]->P) {
+			if (v[1]->P == e2.v[1]->P) {
+				if (v[0]->n == e2.v[0]->n)
+					return NInf(v[1]->n, e2.v[1]->n);
+				return NInf(v[0]->n, e2.v[0]->n);
+			}
+			return PInf(v[1]->P, e2.v[1]->P);
+		}
+		return PInf(v[0]->P, e2.v[0]->P);
+	}
+	const SDVertex *v[2];
 	SDFace *f[2];
 	u_int f0edgeNum;
 };
@@ -131,12 +143,11 @@ struct SDEdge {
 class LoopSubdiv : public Shape {
 public:
 	// LoopSubdiv Public Methods
-	LoopSubdiv(const Transform &o2w, bool ro,
-			u_int nt, u_int nv, const int *vi,
-			const Point *P, const float *uv, u_int nlevels,
-			const boost::shared_ptr<Texture<float> > &dismap,
-			float dmscale, float dmoffset,
-			bool dmnormalsmooth, bool dmsharpboundary);
+	LoopSubdiv(const Transform &o2w, bool ro, u_int nt, u_int nv,
+		const int *vi, const Point *P, const float *uv, const Normal *n,
+		u_int nlevels, const boost::shared_ptr<Texture<float> > &dismap,
+		float dmscale, float dmoffset, bool dmnormalsmooth,
+		bool dmsharpboundary, bool normalsplit);
 	virtual ~LoopSubdiv();
 	virtual bool CanIntersect() const;
 	virtual void Refine(vector<boost::shared_ptr<Shape> > &refined) const;
@@ -182,10 +193,9 @@ private:
 	float gamma(u_int valence) const {
 		return 1.f / (valence + 3.f / (8.f * beta(valence)));
 	}
-	static void GenerateNormals(const vector<SDVertex *> verts, Normal *Ns);
+	static void GenerateNormals(const vector<SDVertex *> verts);
 
-	void ApplyDisplacementMap(const vector<SDVertex *> verts,
-		const Normal *norms) const;
+	void ApplyDisplacementMap(const vector<SDVertex *> verts) const;
 
 	// LoopSubdiv Private Data
 	u_int nLevels;
