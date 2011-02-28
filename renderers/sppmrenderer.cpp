@@ -122,9 +122,11 @@ void SPPMRenderer::Render(Scene *s) {
 
 		scene = s;
 
-		// TODO: At the moment I have no way to check if the SPPM integrator
-		// has been really used
-		sppmi = (SPPMIntegrator *)scene->surfaceIntegrator;
+		sppmi = dynamic_cast<SPPMIntegrator*>(scene->surfaceIntegrator);
+		if (!sppmi) {
+			LOG(LUX_SEVERE,LUX_CONSISTENCY)<< "SPPM renderer requires the SPPM integrator.";
+			return;
+		}
 
 		if (scene->IsFilmOnly()) {
 			state = TERMINATE;
