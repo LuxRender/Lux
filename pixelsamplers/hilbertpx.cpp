@@ -99,7 +99,7 @@ HilbertPixelSampler::HilbertPixelSampler(int xStart, int xEnd,
 
 			if (!found)
 				printf("Sanity check error: %d, %d\n", x, y);
-		}
+			}
 	}*/
 }
 

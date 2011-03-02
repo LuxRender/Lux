@@ -138,12 +138,19 @@ void HitPoints::Init() {
 	}
 }
 
-void HitPoints::AccumulateFlux(const vector<unsigned long long> &photonTracedByLightGroup) {
-	LOG(LUX_INFO, LUX_NOERROR) << "Accumulate photons flux";
+void HitPoints::AccumulateFlux(const vector<unsigned long long> &photonTracedByLightGroup,
+		const u_int index, const u_int count) {
+	const unsigned int workSize = hitPoints->size() / count;
+	const unsigned int first = workSize * index;
+	const unsigned int last = (index == count - 1) ? hitPoints->size() : (first + workSize);
+	assert (first >= 0);
+	assert (last <= hitPoints->size());
+
+	LOG(LUX_INFO, LUX_NOERROR) << "Accumulate photons flux: " << first << " to " << last - 1;
 
 	const u_int lightGroupsNumber = renderer->scene->lightGroups.size();
 
-	for (u_int i = 0; i < hitPoints->size(); ++i) {
+	for (u_int i = first; i < last; ++i) {
 		HitPoint *hp = &(*hitPoints)[i];
 
 		switch (hp->type) {
@@ -205,11 +212,18 @@ void HitPoints::AccumulateFlux(const vector<unsigned long long> &photonTracedByL
 	}
 }
 
-void HitPoints::SetHitPoints(RandomGenerator *rng) {
-	LOG(LUX_INFO, LUX_NOERROR) << "Building hit points";
+void HitPoints::SetHitPoints(RandomGenerator *rng,
+		const u_int index, const u_int count) {
+	const unsigned int workSize = hitPoints->size() / count;
+	const unsigned int first = workSize * index;
+	const unsigned int last = (index == count - 1) ? hitPoints->size() : (first + workSize);
+	assert (first >= 0);
+	assert (last <= hitPoints->size());
+
+	LOG(LUX_INFO, LUX_NOERROR) << "Building hit points: " << first << " to " << last - 1;
 
 	int xPos, yPos;
-	for (u_int i = 0; i < (*hitPoints).size(); ++i) {
+	for (u_int i = first; i < last; ++i) {
 		HitPoint *hp = &(*hitPoints)[i];
 
 		Sample &sample(*hp->sample);

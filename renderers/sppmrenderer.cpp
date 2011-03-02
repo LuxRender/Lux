@@ -512,17 +512,25 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 		// One thread initialize the hit points
 		renderer->currentWaveLengthSample = myThread->threadRng->floatValue();
 		renderer->hitPoints = new HitPoints(renderer);
-		hitPoints = renderer->hitPoints;
-
-		hitPoints->SetHitPoints(myThread->threadRng);
-		hitPoints->Init();
 	}
 
 	// Wait for other threads
 	barrier->wait();
 
-	// Last step of the initialization
 	hitPoints = renderer->hitPoints;
+	hitPoints->SetHitPoints(myThread->threadRng, myThread->n, renderer->renderThreads.size());
+
+	// Wait for other threads
+	barrier->wait();
+
+	if (myThread->n == 0)
+		hitPoints->Init();
+
+	// Wait for other threads
+	barrier->wait();
+
+	// Last step of the initialization
+
 	hitPoints->RefreshAccelParallel(myThread->n, renderer->renderThreads.size());
 
 	// Wait for other threads
@@ -530,6 +538,10 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 
 	// Trace rays: The main loop
 	while (true) {
+		double passStartTime = 0.0;
+		if (myThread->n == 0)
+			passStartTime = luxrays::WallClockTime();
+
 		while (renderer->state == PAUSE && !boost::this_thread::interruption_requested()) {
 			boost::xtime xt;
 			boost::xtime_get(&xt, boost::TIME_UTC);
@@ -555,17 +567,33 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 		// The first thread has to do some special task for the eye pass
 		if (myThread->n == 0) {
 			// First thread only tasks
-			for(u_int i = 0; i < renderer->photonTracedTotal.size(); ++i)
-			{
+			for(u_int i = 0; i < renderer->photonTracedTotal.size(); ++i) {
 				renderer->photonTracedTotal[i] += renderer->photonTracedPass[i];
 				renderer->photonTracedPass[i] = 0;
 			}
 			renderer->photonTracedPassNoLightGroup = 0;
+		}
 
-			hitPoints->AccumulateFlux(renderer->photonTracedTotal);
+		// Wait for other threads
+		barrier->wait();
+		double eyePassStartTime = 0.0;
+		if (myThread->n == 0)
+			eyePassStartTime = luxrays::WallClockTime();
 
+		hitPoints->AccumulateFlux(renderer->photonTracedTotal, myThread->n, renderer->renderThreads.size());
+
+		if (myThread->n == 0)
 			renderer->currentWaveLengthSample = myThread->threadRng->floatValue();
-			hitPoints->SetHitPoints(myThread->threadRng);
+
+		// Wait for other threads
+		barrier->wait();
+
+		hitPoints->SetHitPoints(myThread->threadRng, myThread->n, renderer->renderThreads.size());
+
+		// Wait for other threads
+		barrier->wait();
+
+		if (myThread->n == 0) {
 			hitPoints->UpdatePointsInformation();
 			hitPoints->IncPass();
 			hitPoints->RefreshAccelMutex();
@@ -581,6 +609,15 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 
 		// Wait for other threads
 		barrier->wait();
+
+		if (myThread->n == 0) {
+			const double photonPassTime = eyePassStartTime - passStartTime;
+			LOG(LUX_INFO, LUX_NOERROR) << "Photon pass time: " << photonPassTime << "secs" << std::endl;
+			const double eyePassTime = luxrays::WallClockTime() - eyePassStartTime;
+			LOG(LUX_INFO, LUX_NOERROR) << "Eye pass time: " << eyePassTime << "secs (" << 100.0 * eyePassTime / (eyePassTime + photonPassTime) << "%)" << std::endl;
+
+			passStartTime = luxrays::WallClockTime();
+		}
 	}
 
 	// Wait for other threads
