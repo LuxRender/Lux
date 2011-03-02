@@ -38,6 +38,8 @@ void HitPointsLookUpAccel::AddFluxToHitPoint(HitPoint *hp,
 			return;
 
 		XYZColor flux = XYZColor(sw, photonFlux * f * hp->eyeThroughput);
+		// TODO: it should be more something like:
+		//XYZColor flux = XYZColor(sw, photonFlux * f) * XYZColor(hp->sample->swl, hp->eyeThroughput);
 		osAtomicInc(&hp->lightGroupData[light_group].accumPhotonCount);
 		XYZColorAtomicAdd(hp->lightGroupData[light_group].accumReflectedFlux, flux);
 }

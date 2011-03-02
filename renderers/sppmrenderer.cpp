@@ -381,11 +381,10 @@ SPPMRenderer::RenderThread::~RenderThread() {
 
 void SPPMRenderer::RenderThread::TracePhotons() {
 	Scene &scene(*(renderer->scene));
-	SpectrumWavelengths &sw(threadSample->swl);
 	Sample &sample(*threadSample);
 
 	// Sample the wavelengths
-	sw.Sample(renderer->currentWaveLengthSample);
+	sample.swl.Sample(renderer->currentWaveLengthSample);
 
 	for (;;) {
 		// Check if it is time to do an eye pass
@@ -393,6 +392,10 @@ void SPPMRenderer::RenderThread::TracePhotons() {
 			// Ok, time to stop
 			return;
 		}
+
+		// I have to make a copy of SpectrumWavelengths because it can be modified
+		// even if passed as a const argument !
+		SpectrumWavelengths sw(threadSample->swl);
 
 		// Trace a photon path and store contribution
 		// Choose 6D sample values for photon
