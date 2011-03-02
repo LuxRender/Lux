@@ -19,15 +19,6 @@
  *   LuxRays website: http://www.luxrender.net                             *
  ***************************************************************************/
 
-/*
- * A scene, to be rendered with SPPM, must have:
- *
- * Renderer "sppm"
- * Sampler "random or lowdiscrepancy" "string pixelsampler" ["linear"] "integer pixelsamples" [1]
- * SurfaceIntegrator "sppm"
- *
- */
-
 #include "renderers/sppmrenderer.h"
 #include "integrators/sppm.h"
 #include "camera.h"
@@ -52,22 +43,22 @@ HitPoints::HitPoints(SPPMRenderer *engine)  {
 	filmWidth = xend - xstart;
 	filmHeight = yend - ystart;
 
+	pixelSampler = new LinearPixelSampler(xstart, xend, ystart, yend);
+
 	hitPoints = new std::vector<HitPoint>(filmWidth * filmHeight);
 	LOG(LUX_INFO, LUX_NOERROR) << "Hit points count: " << hitPoints->size();
 
 	// Initialize hit points field
 	Scene *scene = renderer->scene;
-	Sampler *sampler = scene->sampler;
 
 	const u_int lightGroupsNumber = scene->lightGroups.size();
 
 	for (u_int i = 0; i < (*hitPoints).size(); ++i) {
 		HitPoint *hp = &(*hitPoints)[i];
 
-		hp->sample = new Sample(scene->surfaceIntegrator, scene->volumeIntegrator, *scene);
+		hp->sample = new Sample(NULL, NULL, *scene);
 
 		Sample &sample(*hp->sample);
-		sampler->InitSample(&sample);
 		sample.contribBuffer = NULL;
 		sample.camera = scene->camera->Clone();
 		sample.realTime = 0.f;
@@ -100,6 +91,7 @@ HitPoints::~HitPoints() {
 		delete hp->sample;
 	}
 	delete hitPoints;
+	delete pixelSampler;
 }
 
 void HitPoints::Init() {
@@ -214,18 +206,23 @@ void HitPoints::AccumulateFlux(const vector<unsigned long long> &photonTracedByL
 }
 
 void HitPoints::SetHitPoints(RandomGenerator *rng) {
-	Scene *scene = renderer->scene;
-	Sampler *sampler = scene->sampler;
-
 	LOG(LUX_INFO, LUX_NOERROR) << "Building hit points";
 
+	int xPos, yPos;
 	for (u_int i = 0; i < (*hitPoints).size(); ++i) {
 		HitPoint *hp = &(*hitPoints)[i];
 
 		Sample &sample(*hp->sample);
 		sample.arena.FreeAll();
 		sample.rng = rng;
-		sampler->GetNextSample(&sample);
+
+		pixelSampler->GetNextPixel(&xPos, &yPos, i);
+		sample.imageX = xPos + sample.rng->floatValue();
+		sample.imageY = yPos + sample.rng->floatValue();
+		sample.lensU = sample.rng->floatValue();
+		sample.lensV = sample.rng->floatValue();
+		sample.time = sample.rng->floatValue();
+		sample.wavelengths = renderer->currentWaveLengthSample;
 
 		// Save ray time value
 		sample.realTime = sample.camera->GetTime(sample.time);
@@ -233,7 +230,7 @@ void HitPoints::SetHitPoints(RandomGenerator *rng) {
 		sample.camera->SampleMotion(sample.realTime);
 
 		// Sample new SWC thread wavelengths
-		sample.swl.Sample(renderer->currentWaveLengthSample);
+		sample.swl.Sample(sample.wavelengths);
 
 		// Trace the eye path
 		TraceEyePath(hp, sample);
@@ -241,8 +238,8 @@ void HitPoints::SetHitPoints(RandomGenerator *rng) {
 }
 
 void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample) {
-	Scene &scene = *renderer->scene;
-	const u_int sampleOffset = renderer->sppmi->sampleOffset;
+	Scene &scene(*renderer->scene);
+	const RandomGenerator &rng(*sample.rng);
 	const bool includeEnvironment = renderer->sppmi->includeEnvironment;
 	const u_int maxDepth = renderer->sppmi->maxEyePathDepth;
 
@@ -263,27 +260,23 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample) {
 	hp->eyeAlpha = 1.f;
 	hp->eyeDistance = INFINITY;
 	u_int vertexIndex = 0;
-	const Volume *volume = NULL;
 
 	// TODO: L[light group]
 
+	float data[4];
 	for (u_int pathLength = 0; ; ++pathLength) {
-		const float *data = scene.sampler->GetLazyValues(sample,
-			sampleOffset, pathLength);
+		data[0] = rng.floatValue();
+		data[1] = rng.floatValue();
+		data[2] = rng.floatValue();
+		data[3] = rng.floatValue();
+
 		// Find next vertex of path
 		Intersection isect;
 		BSDF *bsdf;
 		float spdf;
-		if (!scene.Intersect(sample, volume, scattered, ray, data[3], &isect,
+		if (!scene.Intersect(sample, NULL, scattered, ray, data[3], &isect,
 			&bsdf, &spdf, NULL, &pathThroughput)) {
 			pathThroughput /= spdf;
-			// Dade - now I know ray.maxt and I can call volumeIntegrator
-			SWCSpectrum Lv;
-			u_int g = scene.volumeIntegrator->Li(scene, ray, sample, &Lv, &hp->eyeAlpha);
-			if (!Lv.Black()) {
-				// TODO: copied from path integrator. Why not += ?
-				L[g] = Lv;
-			}
 
 			// Stop path sampling since no intersection was found
 			// Possibly add horizon in render & reflections
@@ -309,13 +302,6 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample) {
 		pathThroughput /= spdf;
 		if (vertexIndex == 0)
 			hp->eyeDistance = ray.maxt * ray.d.Length();
-
-		SWCSpectrum Lv;
-		const u_int g = scene.volumeIntegrator->Li(scene, ray, sample, &Lv, &hp->eyeAlpha);
-		if (!Lv.Black()) {
-			Lv *= pathThroughput;
-			L[g] += Lv;
-		}
 
 		// Possibly add emitted light at path vertex
 		Vector wo(-ray.d);
@@ -377,7 +363,6 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample) {
 
 		ray = Ray(p, wi);
 		ray.time = sample.realTime;
-		volume = bsdf->GetVolume(wi);
 	}
 }
 

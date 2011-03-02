@@ -20,6 +20,14 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
+/*
+ * A scene, to be rendered with SPPM, must have:
+ *
+ * Renderer "sppm"
+ * SurfaceIntegrator "sppm"
+ *
+ */
+
 #include "api.h"
 #include "scene.h"
 #include "camera.h"
@@ -158,9 +166,7 @@ void SPPMRenderer::Render(Scene *s) {
 		RandomGenerator rng(seed);
 
 		// integrator preprocessing
-		scene->sampler->SetFilm(scene->camera->film);
 		scene->surfaceIntegrator->Preprocess(rng, *scene);
-		scene->volumeIntegrator->Preprocess(rng, *scene);
 		scene->camera->film->CreateBuffers();
 
 		// Dade - to support autofocus for some camera model
@@ -382,7 +388,7 @@ SPPMRenderer::RenderThread::RenderThread(u_int index, SPPMRenderer *r) :
 	threadRng = NULL;
 
 	Scene &scene(*(renderer->scene));
-	threadSample = new Sample(scene.surfaceIntegrator, scene.volumeIntegrator, scene);
+	threadSample = new Sample(NULL, NULL, scene);
 	// Initialized later
 	threadSample->rng = NULL;
 	threadSample->camera = scene.camera->Clone();
@@ -418,9 +424,6 @@ void SPPMRenderer::RenderThread::TracePhotons() {
 			// Ok, time to stop
 			return;
 		}
-
-		// Sample the wavelengths
-		sw.Sample(renderer->currentWaveLengthSample);
 
 		// Trace a photon path and store contribution
 		// Choose 6D sample values for photon
@@ -461,10 +464,9 @@ void SPPMRenderer::RenderThread::TracePhotons() {
 		if (!alpha.Black()) {
 			// Follow photon path through scene and record intersections
 			Intersection photonIsect;
-			const Volume *volume = NULL; //FIXME: try to get volume from light
 			BSDF *photonBSDF;
 			u_int nIntersections = 0;
-			while (scene.Intersect(sample, volume, false,
+			while (scene.Intersect(sample, NULL, false,
 				photonRay, 1.f, &photonIsect, &photonBSDF,
 				NULL, NULL, &alpha)) {
 				++nIntersections;
@@ -498,7 +500,6 @@ void SPPMRenderer::RenderThread::TracePhotons() {
 
 				alpha *= anew / continueProb;
 				photonRay = Ray(photonIsect.dg.p, wi);
-				volume = photonBSDF->GetVolume(photonRay.d);
 			}
 		}
 

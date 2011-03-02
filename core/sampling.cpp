@@ -60,12 +60,15 @@ Sample::Sample(SurfaceIntegrator *surf, VolumeIntegrator *vol,
 {
 	stamp = 0;
 	samplerData = NULL;
-	surf->RequestSamples(this, scene);
-	vol->RequestSamples(this, scene);
+	if (surf)
+		surf->RequestSamples(this, scene);
+	if (vol)
+		vol->RequestSamples(this, scene);
 	// Allocate storage for sample pointers
 	u_int nPtrs = n1D.size() + n2D.size() + nxD.size();
 	if (!nPtrs) {
 		oneD = twoD = xD = NULL;
+		timexD = NULL;
 		return;
 	}
 	oneD = AllocAligned<float *>(nPtrs);

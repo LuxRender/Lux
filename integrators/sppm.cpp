@@ -40,15 +40,6 @@ SPPMIntegrator::SPPMIntegrator() {
 SPPMIntegrator::~SPPMIntegrator() {
 }
 
-void SPPMIntegrator::RequestSamples(Sample *sample, const Scene &scene) {
-	vector<u_int> structure;
-	structure.push_back(2);	// bsdf direction sample for path
-	structure.push_back(1);	// bsdf component sample for path
-	structure.push_back(1); // scattering
-
-	sampleOffset = sample->AddxD(structure, maxEyePathDepth + 1);
-}
-
 void SPPMIntegrator::Preprocess(const RandomGenerator &rng, const Scene &scene) {
 	// Prepare image buffers
 	BufferType type = BUF_TYPE_PER_PIXEL;
@@ -81,7 +72,7 @@ SurfaceIntegrator *SPPMIntegrator::CreateSurfaceIntegrator(const ParamSet &param
 	sppmi->maxEyePathDepth = params.FindOneInt("maxeyedepth", 16);
 	sppmi->photonAlpha = params.FindOneFloat("alpha", .7f);
 	sppmi->photonStartRadiusScale = params.FindOneFloat("startradius", 2.f);
-	sppmi->maxPhotonPathDepth = params.FindOneInt("maxphotondepth", 8);
+	sppmi->maxPhotonPathDepth = params.FindOneInt("maxphotondepth", 16);
 
 	sppmi->photonPerPass = params.FindOneInt("photonperpass", 1000000);
 
