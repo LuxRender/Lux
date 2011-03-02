@@ -120,11 +120,12 @@ public:
 		lookUpAccel->RefreshParallel(index, count);
 	}
 
+	void UpdateFilm();
+
 private:
 	void TraceEyePath(HitPoint *hp, const Sample &sample);
 
 	SPPMRenderer *renderer;
-	u_int filmWidth, filmHeight;
 	PixelSampler *pixelSampler;
 
 	// Hit points information

@@ -149,8 +149,6 @@ private:
 	double Statistics_Efficiency();
 	double Statistics_SamplesPPx();
 
-	void UpdateFilm();
-
 	//--------------------------------------------------------------------------
 
 	mutable boost::mutex classWideMutex;

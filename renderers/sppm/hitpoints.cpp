@@ -26,6 +26,8 @@
 #include "sampling.h"
 #include "light.h"
 #include "reflection/bxdf.h"
+#include "pixelsamplers/hilbertpx.h"
+#include "pixelsamplers/tilepx.h"
 
 using namespace lux;
 
@@ -40,12 +42,9 @@ HitPoints::HitPoints(SPPMRenderer *engine)  {
 	// Get the count of hit points required
 	int xstart, xend, ystart, yend;
     renderer->scene->camera->film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
-	filmWidth = xend - xstart;
-	filmHeight = yend - ystart;
+	pixelSampler = new TilePixelSampler(xstart, xend, ystart, yend);
 
-	pixelSampler = new LinearPixelSampler(xstart, xend, ystart, yend);
-
-	hitPoints = new std::vector<HitPoint>(filmWidth * filmHeight);
+	hitPoints = new std::vector<HitPoint>(pixelSampler->GetTotalPixels());
 	LOG(LUX_INFO, LUX_NOERROR) << "Hit points count: " << hitPoints->size();
 
 	// Initialize hit points field
@@ -106,7 +105,8 @@ void HitPoints::Init() {
 
 	// Calculate initial radius
 	Vector ssize = hpBBox.pMax - hpBBox.pMin;
-	const float photonRadius = renderer->sppmi->photonStartRadiusScale * ((ssize.x + ssize.y + ssize.z) / 3.f) / ((filmWidth + filmHeight) / 2.f) * 2.f;
+	const float photonRadius = renderer->sppmi->photonStartRadiusScale *
+		((ssize.x + ssize.y + ssize.z) / 3.f) / sqrtf(pixelSampler->GetTotalPixels()) * 2.f;
 	const float photonRadius2 = photonRadius * photonRadius;
 
 	// Expand the bounding box by used radius
@@ -379,4 +379,24 @@ void HitPoints::UpdatePointsInformation() {
 		}
 	}
 	LOG(LUX_INFO, LUX_NOERROR) << "Hit points bounding box: " << bbox;
+}
+
+void HitPoints::UpdateFilm() {
+	// Assume a linear pixel sampler
+	Scene &scene(*renderer->scene);
+	const u_int bufferId = renderer->sppmi->bufferId;
+	int xPos, yPos;
+	u_int lightGroupsNumber = scene.lightGroups.size();
+
+	Film &film(*scene.camera->film);
+	for (u_int i = 0; i < GetSize(); ++i) {
+		HitPoint *hp = GetHitPoint(i);
+		pixelSampler->GetNextPixel(&xPos, &yPos, i);
+
+		for(u_int j = 0; j < lightGroupsNumber; j++) {
+			Contribution contrib(xPos, yPos, hp->lightGroupData[j].radiance, hp->eyeAlpha,
+					hp->eyeDistance, 0.f, bufferId, j);
+			film.SetSample(&contrib);
+		}
+	}
 }

@@ -349,37 +349,6 @@ double SPPMRenderer::Statistics_Efficiency() {
 }
 
 //------------------------------------------------------------------------------
-// Private methods
-//------------------------------------------------------------------------------
-
-void SPPMRenderer::UpdateFilm() {
-	// Assume a linear pixel sampler
-	const u_int bufferId = sppmi->bufferId;
-	int xstart, xend, ystart, yend;
-    scene->camera->film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
-
-	int x = xstart;
-	int y = ystart;
-
-	u_int lightGroupsNumber = scene->lightGroups.size();
-	for (u_int i = 0; i < hitPoints->GetSize(); ++i) {
-		HitPoint *hp = hitPoints->GetHitPoint(i);
-
-		for(u_int j = 0; j < lightGroupsNumber; j++) {
-			Contribution contrib(x - xstart, y - ystart, hp->lightGroupData[j].radiance, hp->eyeAlpha,
-					hp->eyeDistance, 0.f, bufferId, j);
-			scene->camera->film->SetSample(&contrib);
-		}
-
-		++x;
-		if (x == xend) {
-			x = xstart;
-			++y;
-		}
-	}
-}
-
-//------------------------------------------------------------------------------
 // RenderThread methods
 //------------------------------------------------------------------------------
 
@@ -602,7 +571,7 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 			hitPoints->RefreshAccelMutex();
 
 			// Update the frame buffer
-			renderer->UpdateFilm();
+			hitPoints->UpdateFilm();
 		}
 
 		// Wait for other threads
