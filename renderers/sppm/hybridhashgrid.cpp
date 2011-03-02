@@ -80,12 +80,12 @@ void HybridHashGrid::RefreshMutex() {
 			const Vector bMin = ((hp->position - rad) - hpBBox.pMin) * invCellSize;
 			const Vector bMax = ((hp->position + rad) - hpBBox.pMin) * invCellSize;
 
-			const int ixMin = luxrays::Clamp<int>(int(bMin.x), 0, maxHashIndexX);
-			const int ixMax = luxrays::Clamp<int>(int(bMax.x), 0, maxHashIndexX);
-			const int iyMin = luxrays::Clamp<int>(int(bMin.y), 0, maxHashIndexY);
-			const int iyMax = luxrays::Clamp<int>(int(bMax.y), 0, maxHashIndexY);
-			const int izMin = luxrays::Clamp<int>(int(bMin.z), 0, maxHashIndexZ);
-			const int izMax = luxrays::Clamp<int>(int(bMax.z), 0, maxHashIndexZ);
+			const int ixMin = Clamp<int>(int(bMin.x), 0, maxHashIndexX);
+			const int ixMax = Clamp<int>(int(bMax.x), 0, maxHashIndexX);
+			const int iyMin = Clamp<int>(int(bMin.y), 0, maxHashIndexY);
+			const int iyMax = Clamp<int>(int(bMax.y), 0, maxHashIndexY);
+			const int izMin = Clamp<int>(int(bMin.z), 0, maxHashIndexZ);
+			const int izMax = Clamp<int>(int(bMax.z), 0, maxHashIndexZ);
 
 			for (int iz = izMin; iz <= izMax; iz++) {
 				for (int iy = iyMin; iy <= iyMax; iy++) {
@@ -220,7 +220,7 @@ HybridHashGrid::HHGKdTree::HHGKdTree(std::list<HitPoint *> *hps, const unsigned 
 	std::list<HitPoint *>::iterator iter = hps->begin();
 	for (unsigned int i = 0; i < nNodes; ++i)  {
 		buildNodes.push_back(*iter++);
-		maxDistSquared = luxrays::Max(maxDistSquared, buildNodes[i]->accumPhotonRadius2);
+		maxDistSquared = max<float>(maxDistSquared, buildNodes[i]->accumPhotonRadius2);
 	}
 	//std::cerr << "kD-Tree search radius: " << sqrtf(maxDistSquared) << std::endl;
 

@@ -410,8 +410,8 @@ void SPPMRenderer::RenderThread::TracePhotons() {
 		u_int lightNum = lightCDF->SampleDiscrete(uln, &lightPdf);
 		const Light *light = scene.lights[lightNum];
 		
-		luxrays::AtomicInc(&(renderer->photonTracedPass[light->group]));
-		luxrays::AtomicInc(&(renderer->photonTracedPassNoLightGroup));
+		osAtomicInc(&(renderer->photonTracedPass[light->group]));
+		osAtomicInc(&(renderer->photonTracedPassNoLightGroup));
 
 		// Generate _photonRay_ from light source and initialize _alpha_
 		BSDF *bsdf;
@@ -540,7 +540,7 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 	while (true) {
 		double passStartTime = 0.0;
 		if (myThread->n == 0)
-			passStartTime = luxrays::WallClockTime();
+			passStartTime = osWallClockTime();
 
 		while (renderer->state == PAUSE && !boost::this_thread::interruption_requested()) {
 			boost::xtime xt;
@@ -578,7 +578,7 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 		barrier->wait();
 		double eyePassStartTime = 0.0;
 		if (myThread->n == 0)
-			eyePassStartTime = luxrays::WallClockTime();
+			eyePassStartTime = osWallClockTime();
 
 		hitPoints->AccumulateFlux(renderer->photonTracedTotal, myThread->n, renderer->renderThreads.size());
 
@@ -613,10 +613,10 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 		if (myThread->n == 0) {
 			const double photonPassTime = eyePassStartTime - passStartTime;
 			LOG(LUX_INFO, LUX_NOERROR) << "Photon pass time: " << photonPassTime << "secs" << std::endl;
-			const double eyePassTime = luxrays::WallClockTime() - eyePassStartTime;
+			const double eyePassTime = osWallClockTime() - eyePassStartTime;
 			LOG(LUX_INFO, LUX_NOERROR) << "Eye pass time: " << eyePassTime << "secs (" << 100.0 * eyePassTime / (eyePassTime + photonPassTime) << "%)" << std::endl;
 
-			passStartTime = luxrays::WallClockTime();
+			passStartTime = osWallClockTime();
 		}
 	}
 

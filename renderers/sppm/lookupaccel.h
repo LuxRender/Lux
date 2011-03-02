@@ -22,9 +22,7 @@
 #ifndef LUX_LOOKUPACCEL_H
 #define	LUX_LOOKUPACCEL_H
 
-#include "luxrays/luxrays.h"
-#include "luxrays/core/utils.h"
-#include "luxrays/utils/core/atomic.h"
+#include "osfunc.h"
 
 namespace lux
 {
@@ -59,12 +57,12 @@ protected:
 
 inline void SpectrumAtomicAdd(SWCSpectrum &s, SWCSpectrum &a) {
 	for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
-		luxrays::AtomicAdd(&s.c[i], a.c[i]);
+		osAtomicAdd(&s.c[i], a.c[i]);
 }
 
 inline void XYZColorAtomicAdd(XYZColor &s, XYZColor &a) {
 	for (int i = 0; i < COLOR_SAMPLES; ++i)
-		luxrays::AtomicAdd(&s.c[i], a.c[i]);
+		osAtomicAdd(&s.c[i], a.c[i]);
 }
 
 //------------------------------------------------------------------------------

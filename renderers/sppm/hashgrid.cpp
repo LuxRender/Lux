@@ -62,17 +62,10 @@ void HashGrid::RefreshMutex() {
 		}
 	}
 
-	LOG(LUX_INFO, LUX_NOERROR) << "Building hit points hash grid:";
-	LOG(LUX_INFO, LUX_NOERROR) << "  0k/" << hitPointsCount / 1000 << "k";
+	LOG(LUX_INFO, LUX_NOERROR) << "Building hit points hash grid.";
 	//unsigned int maxPathCount = 0;
-	double lastPrintTime = luxrays::WallClockTime();
 	unsigned long long entryCount = 0;
 	for (unsigned int i = 0; i < hitPointsCount; ++i) {
-		if (luxrays::WallClockTime() - lastPrintTime > 2.0) {
-			LOG(LUX_INFO, LUX_NOERROR) << "  " << i / 1000 << "k/" << hitPointsCount / 1000 << "k" <<std::endl;
-			lastPrintTime = luxrays::WallClockTime();
-		}
-
 		HitPoint *hp = hitPoints->GetHitPoint(i);
 
 		if (hp->type == SURFACE) {

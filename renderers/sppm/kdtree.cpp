@@ -104,7 +104,7 @@ void KdTree::RefreshMutex() {
 	maxDistSquared = 0.f;
 	for (unsigned int i = 0; i < nNodes; ++i)  {
 		buildNodes.push_back(hitPoints->GetHitPoint(i));
-		maxDistSquared = luxrays::Max(maxDistSquared, buildNodes[i]->accumPhotonRadius2);
+		maxDistSquared = max<float>(maxDistSquared, buildNodes[i]->accumPhotonRadius2);
 	}
 	LOG(LUX_INFO, LUX_NOERROR) << "kD-Tree search radius: " << sqrtf(maxDistSquared);
 
