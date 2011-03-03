@@ -61,6 +61,8 @@ class HitPoint {
 public:
 	HitPointType type;
 	Sample *sample;
+	PermutedHalton *halton;
+	float haltonOffset;
 
 	// Eye path data
 	SWCSpectrum eyeThroughput; // Used only for SURFACE type
@@ -81,7 +83,7 @@ class SPPMRenderer;
 
 class HitPoints {
 public:
-	HitPoints(SPPMRenderer *engine);
+	HitPoints(SPPMRenderer *engine, RandomGenerator *rng);
 	~HitPoints();
 
 	void Init();
@@ -111,7 +113,7 @@ public:
 
 	void AccumulateFlux(const vector<unsigned long long> &photonTracedByLightGroup,
 		const u_int index, const u_int count);
-	void SetHitPoints(RandomGenerator *rng,
+	void SetHitPoints(RandomGenerator *rng, const u_int pass,
 		const u_int index, const u_int count);
 
 	void RefreshAccelMutex() {
@@ -125,7 +127,7 @@ public:
 	void UpdateFilm();
 
 private:
-	void TraceEyePath(HitPoint *hp, const Sample &sample);
+	void TraceEyePath(HitPoint *hp, const Sample &sample, const float *u);
 
 	SPPMRenderer *renderer;
 	PixelSampler *pixelSampler;

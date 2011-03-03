@@ -163,7 +163,7 @@ private:
 	HitPoints *hitPoints;
 
 	// Only a single set of wavelengths is sampled for each pass
-	float currentWaveLengthSample;
+	float currentWavelengthSample;
 
 	// store number of photon traced by lightgroup
 	vector<unsigned long long> photonTracedTotal;

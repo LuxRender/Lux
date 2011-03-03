@@ -384,10 +384,11 @@ void SPPMRenderer::RenderThread::TracePhotons() {
 	Sample &sample(*threadSample);
 
 	// Sample the wavelengths
-	sample.swl.Sample(renderer->currentWaveLengthSample);
+	sample.swl.Sample(renderer->currentWavelengthSample);
 
 	// Build the sample sequence
 	PermutedHalton halton(7, *threadRng);
+	const float haltonOffset = threadRng->floatValue();
 
 	for (u_int photonCount = 0;; ++photonCount) {
 		// Check if it is time to do an eye pass
@@ -403,6 +404,11 @@ void SPPMRenderer::RenderThread::TracePhotons() {
 		// Trace a photon path and store contribution
 		float u[7];
 		halton.Sample(photonCount, u);
+		// Add an offset to the samples to avoid to start with 0.f values
+		for (int j = 0; j < 7; ++j) {
+			float v = u[j] + haltonOffset;
+			u[j] = (v >= 1.f) ? (v - 1.f) : v;
+		}
 
 		// Choose light to shoot photon from
 		float lightPdf;
@@ -502,6 +508,8 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 	myThread->threadSample->rng = myThread->threadRng;
 
 	HitPoints *hitPoints = NULL;
+	const u_int wavelengthSampleScramble = myThread->threadRng->uintValue();
+	u_int passCount = 0;
 
 	//--------------------------------------------------------------------------
 	// First eye pass
@@ -509,15 +517,17 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 
 	if (myThread->n == 0) {
 		// One thread initialize the hit points
-		renderer->currentWaveLengthSample = myThread->threadRng->floatValue();
-		renderer->hitPoints = new HitPoints(renderer);
+		renderer->currentWavelengthSample = Halton(passCount, wavelengthSampleScramble);
+		renderer->hitPoints = new HitPoints(renderer, myThread->threadRng);
 	}
 
 	// Wait for other threads
 	barrier->wait();
 
 	hitPoints = renderer->hitPoints;
-	hitPoints->SetHitPoints(myThread->threadRng, myThread->n, renderer->renderThreads.size());
+	hitPoints->SetHitPoints(myThread->threadRng, passCount,
+			myThread->n, renderer->renderThreads.size());
+	++passCount;
 
 	// Wait for other threads
 	barrier->wait();
@@ -582,12 +592,14 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 		hitPoints->AccumulateFlux(renderer->photonTracedTotal, myThread->n, renderer->renderThreads.size());
 
 		if (myThread->n == 0)
-			renderer->currentWaveLengthSample = myThread->threadRng->floatValue();
+			renderer->currentWavelengthSample = Halton(passCount, wavelengthSampleScramble);
 
 		// Wait for other threads
 		barrier->wait();
 
-		hitPoints->SetHitPoints(myThread->threadRng, myThread->n, renderer->renderThreads.size());
+		hitPoints->SetHitPoints(myThread->threadRng, passCount,
+				myThread->n, renderer->renderThreads.size());
+		++passCount;
 
 		// Wait for other threads
 		barrier->wait();
@@ -611,9 +623,9 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 
 		if (myThread->n == 0) {
 			const double photonPassTime = eyePassStartTime - passStartTime;
-			LOG(LUX_INFO, LUX_NOERROR) << "Photon pass time: " << photonPassTime << "secs" << std::endl;
+			LOG(LUX_INFO, LUX_NOERROR) << "Photon pass time: " << photonPassTime << "secs";
 			const double eyePassTime = osWallClockTime() - eyePassStartTime;
-			LOG(LUX_INFO, LUX_NOERROR) << "Eye pass time: " << eyePassTime << "secs (" << 100.0 * eyePassTime / (eyePassTime + photonPassTime) << "%)" << std::endl;
+			LOG(LUX_INFO, LUX_NOERROR) << "Eye pass time: " << eyePassTime << "secs (" << 100.0 * eyePassTime / (eyePassTime + photonPassTime) << "%)";
 
 			passStartTime = osWallClockTime();
 		}

@@ -35,7 +35,7 @@ using namespace lux;
 // HitPoints methods
 //------------------------------------------------------------------------------
 
-HitPoints::HitPoints(SPPMRenderer *engine)  {
+HitPoints::HitPoints(SPPMRenderer *engine, RandomGenerator *rng)  {
 	renderer = engine;
 	pass = 0;
 
@@ -61,11 +61,13 @@ HitPoints::HitPoints(SPPMRenderer *engine)  {
 		sample.contribBuffer = NULL;
 		sample.camera = scene->camera->Clone();
 		sample.realTime = 0.f;
-			
+
+		hp->halton = new PermutedHalton(9, *rng);
+		hp->haltonOffset = rng->floatValue();
+
 		hp->lightGroupData.resize(lightGroupsNumber);
 		
-		for(u_int j = 0; j < lightGroupsNumber; j++)
-		{
+		for(u_int j = 0; j < lightGroupsNumber; j++) {
 			hp->lightGroupData[j].photonCount = 0;
 			hp->lightGroupData[j].reflectedFlux = XYZColor();
 
@@ -88,6 +90,7 @@ HitPoints::~HitPoints() {
 		HitPoint *hp = &(*hitPoints)[i];
 
 		delete hp->sample;
+		delete hp->halton;
 	}
 	delete hitPoints;
 	delete pixelSampler;
@@ -212,7 +215,7 @@ void HitPoints::AccumulateFlux(const vector<unsigned long long> &photonTracedByL
 	}
 }
 
-void HitPoints::SetHitPoints(RandomGenerator *rng,
+void HitPoints::SetHitPoints(RandomGenerator *rng, const u_int pass,
 		const u_int index, const u_int count) {
 	const unsigned int workSize = hitPoints->size() / count;
 	const unsigned int first = workSize * index;
@@ -226,17 +229,26 @@ void HitPoints::SetHitPoints(RandomGenerator *rng,
 	for (u_int i = first; i < last; ++i) {
 		HitPoint *hp = &(*hitPoints)[i];
 
+		// Generate the sample values
+		float u[9];
+		hp->halton->Sample(pass, u);
+		// Add an offset to the samples to avoid to start with 0.f values
+		for (int j = 0; j < 9; ++j) {
+			float v = u[j] + hp->haltonOffset;
+			u[j] = (v >= 1.f) ? (v - 1.f) : v;
+		}
+
 		Sample &sample(*hp->sample);
 		sample.arena.FreeAll();
 		sample.rng = rng;
 
 		pixelSampler->GetNextPixel(&xPos, &yPos, i);
-		sample.imageX = xPos + sample.rng->floatValue();
-		sample.imageY = yPos + sample.rng->floatValue();
-		sample.lensU = sample.rng->floatValue();
-		sample.lensV = sample.rng->floatValue();
-		sample.time = sample.rng->floatValue();
-		sample.wavelengths = renderer->currentWaveLengthSample;
+		sample.imageX = xPos + u[0];
+		sample.imageY = yPos + u[1];
+		sample.lensU = u[2];
+		sample.lensV = u[3];
+		sample.time = u[4];
+		sample.wavelengths = renderer->currentWavelengthSample;
 
 		// Save ray time value
 		sample.realTime = sample.camera->GetTime(sample.time);
@@ -247,11 +259,11 @@ void HitPoints::SetHitPoints(RandomGenerator *rng,
 		sample.swl.Sample(sample.wavelengths);
 
 		// Trace the eye path
-		TraceEyePath(hp, sample);
+		TraceEyePath(hp, sample, &u[5]);
 	}
 }
 
-void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample) {
+void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, const float *u) {
 	Scene &scene(*renderer->scene);
 	const RandomGenerator &rng(*sample.rng);
 	const bool includeEnvironment = renderer->sppmi->includeEnvironment;
@@ -279,10 +291,17 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample) {
 
 	float data[4];
 	for (u_int pathLength = 0; ; ++pathLength) {
-		data[0] = rng.floatValue();
-		data[1] = rng.floatValue();
-		data[2] = rng.floatValue();
-		data[3] = rng.floatValue();
+		if (pathLength == 0) {
+			data[0] = u[0];
+			data[1] = u[1];
+			data[2] = u[2];
+			data[3] = u[3];
+		} else {
+			data[0] = rng.floatValue();
+			data[1] = rng.floatValue();
+			data[2] = rng.floatValue();
+			data[3] = rng.floatValue();
+		}
 
 		// Find next vertex of path
 		Intersection isect;
