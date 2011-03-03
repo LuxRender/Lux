@@ -413,4 +413,5 @@ void HitPoints::UpdateFilm() {
 			film.SetSample(&contrib);
 		}
 	}
+	scene.camera->film->CheckWriteOuputInterval();
 }
