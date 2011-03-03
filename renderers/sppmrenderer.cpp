@@ -386,7 +386,10 @@ void SPPMRenderer::RenderThread::TracePhotons() {
 	// Sample the wavelengths
 	sample.swl.Sample(renderer->currentWaveLengthSample);
 
-	for (;;) {
+	// Build the sample sequence
+	PermutedHalton halton(7, *threadRng);
+
+	for (u_int photonCount = 0;; ++photonCount) {
 		// Check if it is time to do an eye pass
 		if (renderer->photonTracedPassNoLightGroup > renderer->sppmi->photonPerPass) {
 			// Ok, time to stop
@@ -398,19 +401,12 @@ void SPPMRenderer::RenderThread::TracePhotons() {
 		SpectrumWavelengths sw(threadSample->swl);
 
 		// Trace a photon path and store contribution
-		// Choose 6D sample values for photon
-		float u[6];
-		u[0] = threadRng->floatValue();
-		u[1] = threadRng->floatValue();
-		u[2] = threadRng->floatValue();
-		u[3] = threadRng->floatValue();
-		u[4] = threadRng->floatValue();
-		u[5] = threadRng->floatValue();
+		float u[7];
+		halton.Sample(photonCount, u);
 
 		// Choose light to shoot photon from
 		float lightPdf;
-		float uln = threadRng->floatValue();
-		u_int lightNum = lightCDF->SampleDiscrete(uln, &lightPdf);
+		u_int lightNum = lightCDF->SampleDiscrete(u[6], &lightPdf);
 		const Light *light = scene.lights[lightNum];
 		
 		osAtomicInc(&(renderer->photonTracedPass[light->group]));
