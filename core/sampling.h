@@ -308,7 +308,7 @@ class PermutedHalton {
 		void Sample(u_int n, float *out) const {
 			u_int *p = permute;
 			for (u_int i = 0; i < dims; ++i) {
-				out[i] = min(float(PermutedRadicalInverse(n, b[i], p)), OneMinusEpsilon);
+				out[i] = min<float>(float(PermutedRadicalInverse(n, b[i], p)), OneMinusEpsilon);
 				p += b[i];
 			}
 		}
