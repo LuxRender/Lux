@@ -962,6 +962,13 @@ void Film::SetSample(const Contribution *contrib) {
 	XYZColor xyz = contrib->color;
 	const float alpha = contrib->alpha;
 	const float weight = contrib->variance;
+	const int x = static_cast<int>(contrib->imageX);
+	const int y = static_cast<int>(contrib->imageY);
+
+	if (x < static_cast<int>(xPixelStart) || x >= static_cast<int>(xPixelStart + xPixelCount) ||
+		y < static_cast<int>(yPixelStart) || y >= static_cast<int>(yPixelStart + yPixelCount)) {
+		return;
+	}
 
 	// Issue warning if unexpected radiance value returned
 	if (!(xyz.Y() >= 0.f) || isinf(xyz.Y())) {
@@ -1004,9 +1011,6 @@ void Film::SetSample(const Contribution *contrib) {
 
 	BufferGroup &currentGroup = bufferGroups[contrib->bufferGroup];
 	Buffer *buffer = currentGroup.getBuffer(contrib->buffer);
-
-	const u_int x = (u_int)contrib->imageX;
-	const u_int y = (u_int)contrib->imageY;
 
 	buffer->Set(x, y, xyz, alpha);
 
