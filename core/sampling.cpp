@@ -287,17 +287,17 @@ static const int primes[] = {
 PermutedHalton::PermutedHalton(u_int d, const RandomGenerator &rng) {
 	dims = d;
 	// Determine bases $b_i$ and their sum
-	b = new uint32_t[dims];
-	uint32_t sumBases = 0;
-	for (uint32_t i = 0; i < dims; ++i) {
+	b = new u_int[dims];
+	u_int sumBases = 0;
+	for (u_int i = 0; i < dims; ++i) {
 		b[i] = primes[i];
 		sumBases += b[i];
 	}
 
 	// Compute permutation tables for each base
 	permute = new u_int[sumBases];
-	uint32_t *p = permute;
-	for (uint32_t i = 0; i < dims; ++i) {
+	u_int *p = permute;
+	for (u_int i = 0; i < dims; ++i) {
 		GeneratePermutation(p, b[i], rng);
 		p += b[i];
 	}

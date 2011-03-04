@@ -275,19 +275,18 @@ static const float OneMinusEpsilon=0x1.fffffep-1;
 
 // Directly from PBRT2
 inline void GeneratePermutation(u_int *buf, u_int b, const RandomGenerator &rng) {
-	for (uint32_t i = 0; i < b; ++i)
+	for (u_int i = 0; i < b; ++i)
 		buf[i] = i;
 	Shuffle(rng, buf, b, 1);
 }
 
 // Directly from PBRT2
-inline double PermutedRadicalInverse(uint32_t n, uint32_t base,
-		const uint32_t *p) {
+inline double PermutedRadicalInverse(u_int n, u_int base, const u_int *p) {
 	double val = 0;
 	double invBase = 1. / base, invBi = invBase;
 
 	while (n > 0) {
-		uint32_t d_i = p[n % base];
+		u_int d_i = p[n % base];
 		val += d_i * invBi;
 		n *= invBase;
 		invBi *= invBase;
@@ -306,19 +305,18 @@ class PermutedHalton {
 			delete[] permute;
 		}
 
-		void Sample(uint32_t n, float *out) const {
-			uint32_t *p = permute;
-			for (uint32_t i = 0; i < dims; ++i) {
-				out[i] = min(float(PermutedRadicalInverse(n, b[i], p)),
-						OneMinusEpsilon);
+		void Sample(u_int n, float *out) const {
+			u_int *p = permute;
+			for (u_int i = 0; i < dims; ++i) {
+				out[i] = min(float(PermutedRadicalInverse(n, b[i], p)), OneMinusEpsilon);
 				p += b[i];
 			}
 		}
 
 	private:
 		// PermutedHalton Private Data
-		uint32_t dims;
-		uint32_t *b, *permute;
+		u_int dims;
+		u_int *b, *permute;
 
 		PermutedHalton(const PermutedHalton &);
 		PermutedHalton & operator=(const PermutedHalton &);
