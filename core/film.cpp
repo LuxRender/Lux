@@ -967,13 +967,17 @@ void Film::SetSample(const Contribution *contrib) {
 
 	if (x < static_cast<int>(xPixelStart) || x >= static_cast<int>(xPixelStart + xPixelCount) ||
 		y < static_cast<int>(yPixelStart) || y >= static_cast<int>(yPixelStart + yPixelCount)) {
+		if(debug_mode) {
+			LOG(LUX_WARNING, LUX_LIMIT) << "Out of bound pixel coordinates in Film::SetSample: ("
+					<< x << ", " << y << "), sample discarded";
+		}
 		return;
 	}
 
 	// Issue warning if unexpected radiance value returned
 	if (!(xyz.Y() >= 0.f) || isinf(xyz.Y())) {
 		if(debug_mode) {
-			LOG(LUX_WARNING,LUX_LIMIT) << "Out of bound intensity in Film::AddSample: "
+			LOG(LUX_WARNING, LUX_LIMIT) << "Out of bound intensity in Film::SetSample: "
 			   << xyz.Y() << ", sample discarded";
 		}
 		return;
@@ -981,7 +985,7 @@ void Film::SetSample(const Contribution *contrib) {
 
 	if (!(alpha >= 0.f) || isinf(alpha)) {
 		if(debug_mode) {
-			LOG(LUX_WARNING,LUX_LIMIT) << "Out of bound  alpha in Film::AddSample: "
+			LOG(LUX_WARNING, LUX_LIMIT) << "Out of bound  alpha in Film::SetSample: "
 			   << alpha << ", sample discarded";
 		}
 		return;
@@ -989,21 +993,10 @@ void Film::SetSample(const Contribution *contrib) {
 
 	if (!(weight >= 0.f) || isinf(weight)) {
 		if(debug_mode) {
-			LOG(LUX_WARNING,LUX_LIMIT) << "Out of bound  weight in Film::AddSample: "
+			LOG(LUX_WARNING, LUX_LIMIT) << "Out of bound  weight in Film::SetSample: "
 			   << weight << ", sample discarded";
 		}
 		return;
-	}
-
-	// Reject samples higher than max Y() after warmup period
-	if (warmupComplete) {
-		if(xyz.Y() > maxY)
-			return;
-	} else {
-	 	maxY = max(maxY, xyz.Y());
-		++warmupSamples;
-	 	if (warmupSamples >= reject_warmup_samples)
-			warmupComplete = true;
 	}
 
 	if (premultiplyAlpha)
