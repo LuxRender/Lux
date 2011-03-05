@@ -167,6 +167,7 @@ void SPPMRenderer::Render(Scene *s) {
 
 		// integrator preprocessing
 		scene->surfaceIntegrator->Preprocess(rng, *scene);
+		scene->volumeIntegrator->Preprocess(rng, *scene);
 		scene->camera->film->CreateBuffers();
 
 		// Dade - to support autofocus for some camera model
@@ -357,7 +358,7 @@ SPPMRenderer::RenderThread::RenderThread(u_int index, SPPMRenderer *r) :
 	threadRng = NULL;
 
 	Scene &scene(*(renderer->scene));
-	threadSample = new Sample(NULL, NULL, scene);
+	threadSample = new Sample(NULL, scene.volumeIntegrator, scene);
 	// Initialized later
 	threadSample->rng = NULL;
 	threadSample->camera = scene.camera->Clone();
@@ -410,6 +411,11 @@ void SPPMRenderer::RenderThread::TracePhotons() {
 			u[j] = (v >= 1.f) ? (v - 1.f) : v;
 		}
 
+		// This may be required by the volume integrator
+		for (u_int j = 0; j < sample.n1D.size(); ++j)
+			for (u_int k = 0; k < sample.n1D[j]; ++k)
+				sample.oneD[j][k] = threadRng->floatValue();
+
 		// Choose light to shoot photon from
 		float lightPdf;
 		u_int lightNum = lightCDF->SampleDiscrete(u[6], &lightPdf);
@@ -438,9 +444,10 @@ void SPPMRenderer::RenderThread::TracePhotons() {
 		if (!alpha.Black()) {
 			// Follow photon path through scene and record intersections
 			Intersection photonIsect;
+			const Volume *volume = NULL; //FIXME: try to get volume from light
 			BSDF *photonBSDF;
 			u_int nIntersections = 0;
-			while (scene.Intersect(sample, NULL, false,
+			while (scene.Intersect(sample, volume, false,
 				photonRay, 1.f, &photonIsect, &photonBSDF,
 				NULL, NULL, &alpha)) {
 				++nIntersections;
@@ -474,6 +481,7 @@ void SPPMRenderer::RenderThread::TracePhotons() {
 
 				alpha *= anew / continueProb;
 				photonRay = Ray(photonIsect.dg.p, wi);
+				volume = photonBSDF->GetVolume(photonRay.d);
 			}
 		}
 

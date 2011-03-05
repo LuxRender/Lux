@@ -36,25 +36,26 @@ using namespace lux;
 
 HitPoints::HitPoints(SPPMRenderer *engine, RandomGenerator *rng)  {
 	renderer = engine;
+	Scene *scene = renderer->scene;
 	pass = 0;
 
 	// Get the count of hit points required
 	int xstart, xend, ystart, yend;
-    renderer->scene->camera->film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
+    scene->camera->film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
 	pixelSampler = new VegasPixelSampler(xstart, xend, ystart, yend);
 
 	hitPoints = new std::vector<HitPoint>(pixelSampler->GetTotalPixels());
 	LOG(LUX_INFO, LUX_NOERROR) << "Hit points count: " << hitPoints->size();
 
 	// Initialize hit points field
-	Scene *scene = renderer->scene;
+
 
 	const u_int lightGroupsNumber = scene->lightGroups.size();
 
 	for (u_int i = 0; i < (*hitPoints).size(); ++i) {
 		HitPoint *hp = &(*hitPoints)[i];
 
-		hp->sample = new Sample(NULL, NULL, *scene);
+		hp->sample = new Sample(NULL, scene->volumeIntegrator, *scene);
 
 		Sample &sample(*hp->sample);
 		sample.contribBuffer = NULL;
@@ -249,6 +250,11 @@ void HitPoints::SetHitPoints(RandomGenerator *rng, const u_int pass,
 		sample.time = u[4];
 		sample.wavelengths = renderer->currentWavelengthSample;
 
+		// This may be required by the volume integrator
+		for (u_int j = 0; j < sample.n1D.size(); ++j)
+			for (u_int k = 0; k < sample.n1D[j]; ++k)
+				sample.oneD[j][k] = rng->floatValue();
+
 		// Save ray time value
 		sample.realTime = sample.camera->GetTime(sample.time);
 		// Sample camera transformation
@@ -285,6 +291,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, const float *u)
 	hp->eyeAlpha = 1.f;
 	hp->eyeDistance = INFINITY;
 	u_int vertexIndex = 0;
+	const Volume *volume = NULL;
 
 	// TODO: L[light group]
 
@@ -306,9 +313,16 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, const float *u)
 		Intersection isect;
 		BSDF *bsdf;
 		float spdf;
-		if (!scene.Intersect(sample, NULL, scattered, ray, data[3], &isect,
+		if (!scene.Intersect(sample, volume, scattered, ray, data[3], &isect,
 			&bsdf, &spdf, NULL, &pathThroughput)) {
 			pathThroughput /= spdf;
+			// Dade - now I know ray.maxt and I can call volumeIntegrator
+			SWCSpectrum Lv;
+			u_int g = scene.volumeIntegrator->Li(scene, ray, sample, &Lv, &hp->eyeAlpha);
+			if (!Lv.Black()) {
+				// TODO: copied from path integrator. Why not += ?
+				L[g] = Lv;
+			}
 
 			// Stop path sampling since no intersection was found
 			// Possibly add horizon in render & reflections
@@ -334,6 +348,13 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, const float *u)
 		pathThroughput /= spdf;
 		if (vertexIndex == 0)
 			hp->eyeDistance = ray.maxt * ray.d.Length();
+
+		SWCSpectrum Lv;
+		const u_int g = scene.volumeIntegrator->Li(scene, ray, sample, &Lv, &hp->eyeAlpha);
+		if (!Lv.Black()) {
+			Lv *= pathThroughput;
+			L[g] += Lv;
+		}
 
 		// Possibly add emitted light at path vertex
 		Vector wo(-ray.d);
@@ -395,6 +416,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, const float *u)
 
 		ray = Ray(p, wi);
 		ray.time = sample.realTime;
+		volume = bsdf->GetVolume(wi);
 	}
 }
 
