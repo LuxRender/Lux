@@ -134,6 +134,7 @@ private:
 
 	// Hit points information
 	BBox bbox;
+	float initialPhotonRaidus;
 	float maxPhotonRaidus2;
 	std::vector<HitPoint> *hitPoints;
 	HitPointsLookUpAccel *lookUpAccel;

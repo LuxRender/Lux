@@ -108,12 +108,12 @@ void HitPoints::Init() {
 
 	// Calculate initial radius
 	Vector ssize = hpBBox.pMax - hpBBox.pMin;
-	const float photonRadius = renderer->sppmi->photonStartRadiusScale *
+	initialPhotonRaidus = renderer->sppmi->photonStartRadiusScale *
 		((ssize.x + ssize.y + ssize.z) / 3.f) / sqrtf(pixelSampler->GetTotalPixels()) * 2.f;
-	const float photonRadius2 = photonRadius * photonRadius;
+	const float photonRadius2 = initialPhotonRaidus * initialPhotonRaidus;
 
 	// Expand the bounding box by used radius
-	hpBBox.Expand(photonRadius);
+	hpBBox.Expand(initialPhotonRaidus);
 	// Update hit points information
 	bbox = hpBBox;
 	maxPhotonRaidus2 = photonRadius2;
@@ -441,17 +441,39 @@ void HitPoints::UpdateFilm() {
 	const u_int bufferId = renderer->sppmi->bufferId;
 	int xPos, yPos;
 	u_int lightGroupsNumber = scene.lightGroups.size();
-
 	Film &film(*scene.camera->film);
-	for (u_int i = 0; i < GetSize(); ++i) {
-		HitPoint *hp = GetHitPoint(i);
-		pixelSampler->GetNextPixel(&xPos, &yPos, i);
 
-		for(u_int j = 0; j < lightGroupsNumber; j++) {
-			Contribution contrib(xPos, yPos, hp->lightGroupData[j].radiance, hp->eyeAlpha,
-					hp->eyeDistance, 0.f, bufferId, j);
-			film.SetSample(&contrib);
+	if (renderer->sppmi->dbg_enableradiusdraw) {
+		// Draw the radius of hit points
+		XYZColor c;
+		for (u_int i = 0; i < GetSize(); ++i) {
+			HitPoint *hp = GetHitPoint(i);
+			pixelSampler->GetNextPixel(&xPos, &yPos, i);
+
+			for(u_int j = 0; j < lightGroupsNumber; j++) {
+				if (hp->lightGroupData[j].surfaceHitsCount > 0)
+					c.c[1] = sqrtf(hp->accumPhotonRadius2) / initialPhotonRaidus;
+				else
+					c.c[1] = 0;
+
+				Contribution contrib(xPos, yPos, c, hp->eyeAlpha,
+						hp->eyeDistance, 0.f, bufferId, j);
+				film.SetSample(&contrib);
+			}
+		}
+	} else {
+		// Just normal rendering
+		for (u_int i = 0; i < GetSize(); ++i) {
+			HitPoint *hp = GetHitPoint(i);
+			pixelSampler->GetNextPixel(&xPos, &yPos, i);
+
+			for(u_int j = 0; j < lightGroupsNumber; j++) {
+				Contribution contrib(xPos, yPos, hp->lightGroupData[j].radiance, hp->eyeAlpha,
+						hp->eyeDistance, 0.f, bufferId, j);
+				film.SetSample(&contrib);
+			}
 		}
 	}
+
 	scene.camera->film->CheckWriteOuputInterval();
 }

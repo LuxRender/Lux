@@ -53,6 +53,9 @@ public:
 
 	u_int sampleOffset, bufferId;
 	bool includeEnvironment;
+
+	// Few debugging options
+	bool dbg_enableradiusdraw;
 };
 
 }//namespace lux
