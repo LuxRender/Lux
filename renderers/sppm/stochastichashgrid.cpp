@@ -25,46 +25,35 @@
 
 using namespace lux;
 
-HashGrid::HashGrid(HitPoints *hps) {
+StochasticHashGrid::StochasticHashGrid(HitPoints *hps) {
 	hitPoints = hps;
 	grid = NULL;
 
 	RefreshMutex();
 }
 
-HashGrid::~HashGrid() {
-	for (unsigned int i = 0; i < gridSize; ++i)
-		delete grid[i];
-	delete[] grid;
+StochasticHashGrid::~StochasticHashGrid() {
+	delete grid;
 }
 
-void HashGrid::RefreshMutex() {
+void StochasticHashGrid::RefreshMutex() {
 	const unsigned int hitPointsCount = hitPoints->GetSize();
 	const BBox &hpBBox = hitPoints->GetBBox();
 
 	// Calculate the size of the grid cell
 	const float maxPhotonRadius2 = hitPoints->GetMaxPhotonRaidus2();
 	const float cellSize = sqrtf(maxPhotonRadius2) * 2.f;
-	LOG(LUX_INFO, LUX_NOERROR) << "Hash grid cell size: " << cellSize;
+	LOG(LUX_INFO, LUX_NOERROR) << "Stochastic Hash grid cell size: " << cellSize;
 	invCellSize = 1.f / cellSize;
 
-	// TODO: add a tunable parameter for hashgrid size
-	gridSize = hitPointsCount;
 	if (!grid) {
-		grid = new std::list<HitPoint *>*[gridSize];
-
-		for (unsigned int i = 0; i < gridSize; ++i)
-			grid[i] = NULL;
-	} else {
-		for (unsigned int i = 0; i < gridSize; ++i) {
-			delete grid[i];
-			grid[i] = NULL;
-		}
+		// TODO: add a tunable parameter for hashgrid size
+		gridSize = hitPointsCount;
+		grid = new GridCell[gridSize];
 	}
+	memset(grid, 0, sizeof(GridCell) * gridSize);
 
-	LOG(LUX_INFO, LUX_NOERROR) << "Building hit points hash grid";
-	//unsigned int maxPathCount = 0;
-	unsigned long long entryCount = 0;
+	LOG(LUX_INFO, LUX_NOERROR) << "Building hit points stochastic hash grid";
 	for (unsigned int i = 0; i < hitPointsCount; ++i) {
 		HitPoint *hp = hitPoints->GetHitPoint(i);
 
@@ -79,41 +68,30 @@ void HashGrid::RefreshMutex() {
 					for (int ix = abs(int(bMin.x)); ix <= abs(int(bMax.x)); ++ix) {
 						int hv = Hash(ix, iy, iz);
 
-						if (grid[hv] == NULL)
-							grid[hv] = new std::list<HitPoint *>();
-
-						grid[hv]->push_front(hp);
-						++entryCount;
-
-						/*// grid[hv]->size() is very slow to execute
-						if (grid[hv]->size() > maxPathCount)
-							maxPathCount = grid[hv]->size();*/
+						grid[hv].hitPoint = hp;
+						grid[hv].count += 1;
 					}
 				}
 			}
 		}
 	}
-	//std::cerr << "Max. hit points in a single hash grid entry: " << maxPathCount << std::endl;
-	LOG(LUX_INFO, LUX_NOERROR) << "Total hash grid entry: " << entryCount;
-	LOG(LUX_INFO, LUX_NOERROR) << "Avg. hit points in a single hash grid entry: " << entryCount / gridSize;
 
-	/*// HashGrid debug code
+	/*// StochasticHashGrid debug code
 	u_int badCells = 0;
 	u_int emptyCells = 0;
 	for (u_int i = 0; i < gridSize; ++i) {
-		if (grid[i]) {
-			if (grid[i]->size() > 5) {
-				//std::cerr << "HashGrid[" << i << "].size() = " << grid[i]->size() << std::endl;
-				++badCells;
-			}
-		} else
+		if (grid[i].count == 0)
 			++emptyCells;
+		else if (grid[i].count > 5) {
+			//std::cerr << "StochasticHashGrid[" << i << "].count = " << grid[i].count << std::endl;
+			++badCells;
+		}
 	}
-	std::cerr << "HashGrid.badCells = " << (100.f * badCells / gridSize) << "%" << std::endl;
-	std::cerr << "HashGrid.emptyCells = " << (100.f * emptyCells / gridSize) << "%" << std::endl;*/
+	std::cerr << "StochasticHashGrid.badCells = " << (100.f * badCells / gridSize) << "%" << std::endl;
+	std::cerr << "StochasticHashGrid.emptyCells = " << (100.f * emptyCells / gridSize) << "%" << std::endl;*/
 }
 
-void HashGrid::AddFlux(const Point &hitPoint, const Vector &wi,
+void StochasticHashGrid::AddFlux(const Point &hitPoint, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group) {
 	// Look for eye path hit points near the current hit point
 	Vector hh = (hitPoint - hitPoints->GetBBox().pMin) * invCellSize;
@@ -121,13 +99,7 @@ void HashGrid::AddFlux(const Point &hitPoint, const Vector &wi,
 	const int iy = abs(int(hh.y));
 	const int iz = abs(int(hh.z));
 
-	std::list<HitPoint *> *hps = grid[Hash(ix, iy, iz)];
-	if (hps) {
-		std::list<HitPoint *>::iterator iter = hps->begin();
-		while (iter != hps->end()) {
-			HitPoint *hp = *iter++;
-
-			AddFluxToHitPoint(hp, hitPoint, wi, sw, photonFlux, light_group);
-		}
-	}
+	GridCell &cell(grid[Hash(ix, iy, iz)]);
+	if (cell.count > 0)
+		AddFluxToHitPoint(cell.hitPoint, hitPoint, wi, sw, photonFlux * cell.count, light_group);
 }

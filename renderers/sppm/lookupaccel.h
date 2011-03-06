@@ -35,7 +35,7 @@ class HitPoint;
 class HitPoints;
 
 enum LookUpAccelType {
-	HASH_GRID, KD_TREE, HYBRID_HASH_GRID
+	HASH_GRID, KD_TREE, HYBRID_HASH_GRID, STOCHASTIC_HASH_GRID
 };
 
 class HitPointsLookUpAccel {
@@ -84,11 +84,93 @@ private:
 	unsigned int Hash(const int ix, const int iy, const int iz) {
 		return (unsigned int)((ix * 73856093) ^ (iy * 19349663) ^ (iz * 83492791)) % gridSize;
 	}
+	/*unsigned int Hash(const int ix, const int iy, const int iz) {
+		// TODO: translate to SSE code
+		const float ksh = 4194304.f / invCellSize;
+		const float nx = ix * ksh;
+		const float ny = iy * ksh;
+		const float nz = iz * ksh;
+		const float nw = (ix + iy - iz) * ksh;
+
+		const float qx = 1225.f;
+		const float qy = 1585.f;
+		const float qz = 2457.f;
+		const float qw = 2098.f;
+
+		const float rx = 1112.f;
+		const float ry = 367.f;
+		const float rz = 92.f;
+		const float rw = 265.f;
+
+		const float ax = 3423.f;
+		const float ay = 2646.f;
+		const float az = 1707.f;
+		const float aw = 1999.f;
+
+		const float mx = 4194287.f;
+		const float my = 4194277.f;
+		const float mz = 4194191.f;
+		const float mw = 4194167.f;
+
+		const float betax = nx / qx;
+		const float betay = ny / qy;
+		const float betaz = nz / qz;
+		const float betaw = nw / qw;
+
+		const float px = ax * (nx - betax * qx) - betax * rx;
+		const float py = ay * (ny - betax * qy) - betay * ry;
+		const float pz = az * (nz - betax * qz) - betaz * rz;
+		const float pw = aw * (nw - betax * qw) - betaw * rw;
+
+		const float beta2x = (SignOf(-px) + 1.f) * .5f * mx;
+		const float beta2y = (SignOf(-py) + 1.f) * .5f * my;
+		const float beta2z = (SignOf(-pz) + 1.f) * .5f * mz;
+		const float beta2w = (SignOf(-pw) + 1.f) * .5f * mw;
+
+		const float n2x = px + beta2x;
+		const float n2y = py + beta2y;
+		const float n2z = pz + beta2z;
+		const float n2w = pw + beta2w;
+
+		const float dot = n2x / mx - n2y / my + n2z / mz - n2w / mw;
+		return Floor2UInt(fabsf(dot - floorf(dot)) * gridSize);
+	}*/
 
 	HitPoints *hitPoints;
 	unsigned int gridSize;
 	float invCellSize;
 	std::list<HitPoint *> **grid;
+};
+
+//------------------------------------------------------------------------------
+// StochasticHashGrid accelerator
+//------------------------------------------------------------------------------
+
+class StochasticHashGrid : public HitPointsLookUpAccel {
+public:
+	StochasticHashGrid(HitPoints *hps);
+
+	~StochasticHashGrid();
+
+	void RefreshMutex();
+
+	void AddFlux(const Point &hitPoint, const Vector &wi,
+		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group);
+
+private:
+	struct GridCell {
+		HitPoint *hitPoint;
+		u_int count;
+	};
+
+	unsigned int Hash(const int ix, const int iy, const int iz) {
+		return (unsigned int)((ix * 73856093) ^ (iy * 19349663) ^ (iz * 83492791)) % gridSize;
+	}
+
+	HitPoints *hitPoints;
+	unsigned int gridSize;
+	float invCellSize;
+	GridCell *grid;
 };
 
 //------------------------------------------------------------------------------
@@ -171,58 +253,6 @@ private:
 	unsigned int Hash(const int ix, const int iy, const int iz) {
 		return (unsigned int)((ix * 73856093) ^ (iy * 19349663) ^ (iz * 83492791)) % gridSize;
 	}
-
-	/*unsigned int Hash(const int ix, const int iy, const int iz) {
-		// TODO: translate to SSE code
-		const float ksh = 4194304.f / invCellSize;
-		const float nx = ix * ksh;
-		const float ny = iy * ksh;
-		const float nz = iz * ksh;
-		const float nw = (ix + iy - iz) * ksh;
-
-		const float qx = 1225.f;
-		const float qy = 1585.f;
-		const float qz = 2457.f;
-		const float qw = 2098.f;
-
-		const float rx = 1112.f;
-		const float ry = 367.f;
-		const float rz = 92.f;
-		const float rw = 265.f;
-
-		const float ax = 3423.f;
-		const float ay = 2646.f;
-		const float az = 1707.f;
-		const float aw = 1999.f;
-
-		const float mx = 4194287.f;
-		const float my = 4194277.f;
-		const float mz = 4194191.f;
-		const float mw = 4194167.f;
-
-		const float betax = nx / qx;
-		const float betay = ny / qy;
-		const float betaz = nz / qz;
-		const float betaw = nw / qw;
-
-		const float px = ax * (nx - betax * qx) - betax * rx;
-		const float py = ay * (ny - betax * qy) - betay * ry;
-		const float pz = az * (nz - betax * qz) - betaz * rz;
-		const float pw = aw * (nw - betax * qw) - betaw * rw;
-
-		const float beta2x = (Sgn(-px) + 1.f) * .5f * mx;
-		const float beta2y = (Sgn(-py) + 1.f) * .5f * my;
-		const float beta2z = (Sgn(-pz) + 1.f) * .5f * mz;
-		const float beta2w = (Sgn(-pw) + 1.f) * .5f * mw;
-
-		const float n2x = px + beta2x;
-		const float n2y = py + beta2y;
-		const float n2z = pz + beta2z;
-		const float n2w = pw + beta2w;
-
-		const float dot = n2x / mx - n2y / my + n2z / mz - n2w / mw;
-		return Floor2UInt(fabsf(dot - floorf(dot)) * gridSize);
-	}*/
 
 	class HHGKdTree {
 	public:

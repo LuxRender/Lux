@@ -137,6 +137,9 @@ void HitPoints::Init() {
 		case HYBRID_HASH_GRID:
 			lookUpAccel = new HybridHashGrid(this);
 			break;
+		case STOCHASTIC_HASH_GRID:
+			lookUpAccel = new StochasticHashGrid(this);
+			break;
 		default:
 			assert (false);
 	}

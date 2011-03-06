@@ -619,6 +619,13 @@ SET(lux_pixelsamplers_src
 if(LUXRAYS_DISABLE_OPENCL)
 SET(lux_renderers_src
 	renderers/samplerrenderer.cpp
+    renderers/sppmrenderer.cpp
+	renderers/sppm/lookupaccel.cpp
+	renderers/sppm/hashgrid.cpp
+	renderers/sppm/hitpoints.cpp
+	renderers/sppm/hybridhashgrid.cpp
+	renderers/sppm/stochastichashgrid.cpp
+	renderers/sppm/kdtree.cpp
 	)
 else(LUXRAYS_DISABLE_OPENCL)
 SET(lux_renderers_src
@@ -630,6 +637,7 @@ SET(lux_renderers_src
 	renderers/sppm/hashgrid.cpp
 	renderers/sppm/hitpoints.cpp
 	renderers/sppm/hybridhashgrid.cpp
+	renderers/sppm/stochastichashgrid.cpp
 	renderers/sppm/kdtree.cpp
 	)
 endif(LUXRAYS_DISABLE_OPENCL)
