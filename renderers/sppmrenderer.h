@@ -48,11 +48,11 @@ class SPPMRDeviceDescription : protected RendererDeviceDescription {
 public:
 	const string &GetName() const { return name; }
 
-	unsigned int GetAvailableUnitsCount() const {
+	u_int GetAvailableUnitsCount() const {
 		return max(boost::thread::hardware_concurrency(), 1u);
 	}
-	unsigned int GetUsedUnitsCount() const;
-	void SetUsedUnitsCount(const unsigned int units);
+	u_int GetUsedUnitsCount() const;
+	void SetUsedUnitsCount(const u_int units);
 
 	friend class SPPMRenderer;
 	friend class SPPMRHostDescription;
@@ -165,19 +165,19 @@ private:
 	// Only a single set of wavelengths is sampled for each pass
 	float currentWavelengthSample;
 
+	u_int passCount;
+
 	// store number of photon traced by lightgroup
 	vector<unsigned long long> photonTracedTotal;
-	vector<unsigned int> photonTracedPass;
+	vector<u_int> photonTracedPass;
 
 	// store number of photon traced this pass, regardless of lightgroup
-	unsigned int photonTracedPassNoLightGroup;
+	u_int photonTracedPassNoLightGroup;
 
 	fast_mutex sampPosMutex;
 	u_int sampPos;
 
 	Timer s_Timer;
-	double lastSamples, lastTime;
-	double stat_Samples, stat_blackSamples;
 
 	// Put them last for better data alignment
 	// used to suspend render threads until the preprocessing phase is done

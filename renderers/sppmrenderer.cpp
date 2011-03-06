@@ -150,10 +150,6 @@ void SPPMRenderer::Render(Scene *s) {
 		state = RUN;
 
 		// Initialize the stats
-		lastSamples = 0.;
-		lastTime = 0.;
-		stat_Samples = 0.;
-		stat_blackSamples = 0.;
 		s_Timer.Reset();
 	
 		// Dade - I have to do initiliaziation here for the current thread.
@@ -183,6 +179,7 @@ void SPPMRenderer::Render(Scene *s) {
 		barrierExit = new boost::barrier(threadCount);
 
 		// initialise
+		passCount = 0;
 		photonTracedTotal.resize(scene->lightGroups.size(), 0);
 		photonTracedPass.resize(scene->lightGroups.size(), 0);
 		photonTracedPassNoLightGroup = 0;
@@ -261,13 +258,13 @@ double SPPMRenderer::Statistics(const string &statName) {
 		else
 			return 0.0;
 	} else if(statName=="samplesSec")
-		return Statistics_SamplesPSec();
+		return 0.0;
 	else if(statName=="samplesTotSec")
-		return Statistics_SamplesPTotSec();
+		return 0.0;
 	else if(statName=="samplesPx")
-		return Statistics_SamplesPPx();
+		return 0.0;
 	else if(statName=="efficiency")
-		return Statistics_Efficiency();
+		return 0.0;
 	else if(statName=="displayInterval")
 		return scene->DisplayInterval();
 	else if(statName == "filmEV")
@@ -280,73 +277,17 @@ double SPPMRenderer::Statistics(const string &statName) {
 		return scene->camera->film->enoughSamplesPerPixel;
 	else if (statName == "threadCount")
 		return renderThreads.size();
-	else {
+	else if (statName == "pass") {
+		return double(passCount);
+	} else if (statName == "photonCount") {
+		unsigned long long total = 0;
+		for (size_t i = 0; i < photonTracedTotal.size(); ++i)
+			total += photonTracedTotal[i] + photonTracedPass[i];
+		return double(total);
+	} else {
 		LOG(LUX_ERROR,LUX_BADTOKEN)<< "luxStatistics - requested an invalid data : "<< statName;
 		return 0.;
 	}
-}
-
-double SPPMRenderer::Statistics_GetNumberOfSamples() {
-	if (s_Timer.Time() - lastTime > .5f) {
-		boost::mutex::scoped_lock lock(renderThreadsMutex);
-
-		for (u_int i = 0; i < renderThreads.size(); ++i) {
-			fast_mutex::scoped_lock lockStats(renderThreads[i]->statLock);
-			stat_Samples += renderThreads[i]->samples;
-			stat_blackSamples += renderThreads[i]->blackSamples;
-			renderThreads[i]->samples = 0.;
-			renderThreads[i]->blackSamples = 0.;
-		}
-	}
-
-	return stat_Samples + scene->camera->film->numberOfSamplesFromNetwork;
-}
-
-double SPPMRenderer::Statistics_SamplesPPx() {
-	// divide by total pixels
-	int xstart, xend, ystart, yend;
-	scene->camera->film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
-	return Statistics_GetNumberOfSamples() / ((xend - xstart) * (yend - ystart));
-}
-
-double SPPMRenderer::Statistics_SamplesPSec() {
-	// Dade - s_Timer is inizialized only after the preprocess phase
-	if (!preprocessDone)
-		return 0.0;
-
-	double samples = Statistics_GetNumberOfSamples();
-	double time = s_Timer.Time();
-	double dif_samples = samples - lastSamples;
-	double elapsed = time - lastTime;
-	lastSamples = samples;
-	lastTime = time;
-
-	// return current samples / sec total
-	if (elapsed == 0.0)
-		return 0.0;
-	else
-		return dif_samples / elapsed;
-}
-
-double SPPMRenderer::Statistics_SamplesPTotSec() {
-	// Dade - s_Timer is inizialized only after the preprocess phase
-	if (!preprocessDone)
-		return 0.0;
-
-	double samples = Statistics_GetNumberOfSamples();
-	double time = s_Timer.Time();
-
-	// return current samples / total elapsed secs
-	return samples / time;
-}
-
-double SPPMRenderer::Statistics_Efficiency() {
-	Statistics_GetNumberOfSamples(); // required before eff can be calculated.
-
-	if (stat_Samples == 0.0)
-		return 0.0;
-
-	return (100.f * stat_blackSamples) / stat_Samples;
 }
 
 //------------------------------------------------------------------------------
@@ -619,6 +560,7 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 
 			// Update the frame buffer
 			hitPoints->UpdateFilm();
+			renderer->passCount += 1;
 		}
 
 		// Wait for other threads

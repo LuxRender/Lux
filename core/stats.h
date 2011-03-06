@@ -44,6 +44,7 @@ public:
 	~StatsData() {};
 
 	void update(const bool add_total);
+	void updateSPPM(const bool add_total);
 
 	// Outputs
 	string formattedStatsString;

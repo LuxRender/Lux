@@ -257,4 +257,32 @@ void StatsData::update(const bool add_total)
 	}
 }
 
+void StatsData::updateSPPM(const bool add_total) {
+	// SPPM Renderer statistics
+
+	try {
+		std::ostringstream os;
+		os << "%1% - %2%T: %3$d %4%pass  %5$0.2f %6%P/s";
+		boost::format stats_formatter = boost::format(os.str().c_str());
+		stats_formatter.exceptions(boost::io::all_error_bits ^
+			(boost::io::too_many_args_bit | boost::io::too_few_args_bit)); // Ignore extra or missing args
+
+		double secelapsed = ctx->Statistics("secElapsed");	// %1
+		int threadCount = ctx->Statistics("threadCount");	// %2
+		u_int pass = ctx->Statistics("pass");	// %3
+		double local_pps = ctx->Statistics("photonCount") / secelapsed; // %5
+
+		formattedStatsString = str(stats_formatter
+				/*  %1 */ % boost::posix_time::time_duration(0, 0, secelapsed, 0)
+				/*  %2 */ % threadCount
+				/*  %3 */ % magnitude_reduce(pass)
+				/*  %4 */ % magnitude_prefix(pass)
+				/*  %5 */ % magnitude_reduce(local_pps)
+				/*  %6 */ % magnitude_prefix(local_pps)
+			);
+	} catch (std::runtime_error e) {
+		LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
+	}
+}
+
 }
