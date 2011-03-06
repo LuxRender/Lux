@@ -87,7 +87,7 @@ void StochasticHashGrid::RefreshMutex() {
 			++badCells;
 		}
 	}
-	std::cerr << "StochasticHashGrid.badCells = " << (100.f * badCells / gridSize) << "%" << std::endl;
+	std::cerr << "StochasticHashGrid.badCells = " << (100.f * badCells / (gridSize - emptyCells)) << "%" << std::endl;
 	std::cerr << "StochasticHashGrid.emptyCells = " << (100.f * emptyCells / gridSize) << "%" << std::endl;*/
 }
 

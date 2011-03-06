@@ -140,6 +140,9 @@ void HitPoints::Init() {
 		case STOCHASTIC_HASH_GRID:
 			lookUpAccel = new StochasticHashGrid(this);
 			break;
+		case GRID:
+			lookUpAccel = new GridLookUpAccel(this);
+			break;
 		default:
 			assert (false);
 	}

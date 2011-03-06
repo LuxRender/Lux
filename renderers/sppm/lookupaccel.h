@@ -35,7 +35,7 @@ class HitPoint;
 class HitPoints;
 
 enum LookUpAccelType {
-	HASH_GRID, KD_TREE, HYBRID_HASH_GRID, STOCHASTIC_HASH_GRID
+	HASH_GRID, KD_TREE, HYBRID_HASH_GRID, STOCHASTIC_HASH_GRID, GRID
 };
 
 class HitPointsLookUpAccel {
@@ -138,6 +138,33 @@ private:
 
 	HitPoints *hitPoints;
 	unsigned int gridSize;
+	float invCellSize;
+	std::list<HitPoint *> **grid;
+};
+
+//------------------------------------------------------------------------------
+// Grid accelerator
+//------------------------------------------------------------------------------
+
+class GridLookUpAccel : public HitPointsLookUpAccel {
+public:
+	GridLookUpAccel(HitPoints *hps);
+
+	~GridLookUpAccel();
+
+	void RefreshMutex();
+
+	void AddFlux(const Point &hitPoint, const Vector &wi,
+		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group);
+
+private:
+	unsigned int ReduceDims(const int ix, const int iy, const int iz) {
+		return ix + iy * gridSizeX + iz * gridSizeX * gridSizeY;
+	}
+
+	HitPoints *hitPoints;
+	u_int gridSize, gridSizeX, gridSizeY, gridSizeZ;
+	int maxGridIndexX, maxGridIndexY, maxGridIndexZ;
 	float invCellSize;
 	std::list<HitPoint *> **grid;
 };

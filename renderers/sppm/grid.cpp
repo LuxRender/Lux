@@ -25,35 +25,41 @@
 
 using namespace lux;
 
-HashGrid::HashGrid(HitPoints *hps) {
+GridLookUpAccel::GridLookUpAccel(HitPoints *hps) {
 	hitPoints = hps;
 	grid = NULL;
 
 	RefreshMutex();
 }
 
-HashGrid::~HashGrid() {
+GridLookUpAccel::~GridLookUpAccel() {
 	for (unsigned int i = 0; i < gridSize; ++i)
 		delete grid[i];
 	delete[] grid;
 }
 
-void HashGrid::RefreshMutex() {
+void GridLookUpAccel::RefreshMutex() {
 	const unsigned int hitPointsCount = hitPoints->GetSize();
 	const BBox &hpBBox = hitPoints->GetBBox();
 
 	// Calculate the size of the grid cell
 	const float maxPhotonRadius2 = hitPoints->GetMaxPhotonRaidus2();
 	const float cellSize = sqrtf(maxPhotonRadius2) * 2.f;
-	LOG(LUX_INFO, LUX_NOERROR) << "Hash grid cell size: " << cellSize;
+	LOG(LUX_INFO, LUX_NOERROR) << "Grid cell size: " << cellSize;
 	invCellSize = 1.f / cellSize;
-	LOG(LUX_INFO, LUX_NOERROR) << "Hash grid size: (" <<
-			(hpBBox.pMax.x - hpBBox.pMin.x) * invCellSize << ", " <<
-			(hpBBox.pMax.y - hpBBox.pMin.y) * invCellSize << ", " <<
-			(hpBBox.pMax.z - hpBBox.pMin.z) * invCellSize << ")";
 
-	// TODO: add a tunable parameter for hashgrid size
-	gridSize = hitPointsCount;
+	maxGridIndexX = int((hpBBox.pMax.x - hpBBox.pMin.x) * invCellSize);
+	maxGridIndexY = int((hpBBox.pMax.y - hpBBox.pMin.y) * invCellSize);
+	maxGridIndexZ = int((hpBBox.pMax.z - hpBBox.pMin.z) * invCellSize);
+	gridSizeX = maxGridIndexX + 1;
+	gridSizeY = maxGridIndexY + 1;
+	gridSizeZ = maxGridIndexZ + 1;
+	gridSize = gridSizeX * gridSizeY * gridSizeZ;
+
+	LOG(LUX_INFO, LUX_NOERROR) << "Grid size: (" <<
+			gridSizeX << ", " << gridSizeY << ", " << gridSizeZ << ")";
+
+	// TODO: add a tunable parameter for Grid size
 	if (!grid) {
 		grid = new std::list<HitPoint *>*[gridSize];
 
@@ -66,7 +72,7 @@ void HashGrid::RefreshMutex() {
 		}
 	}
 
-	LOG(LUX_INFO, LUX_NOERROR) << "Building hit points hash grid";
+	LOG(LUX_INFO, LUX_NOERROR) << "Building hit points grid";
 	//unsigned int maxPathCount = 0;
 	unsigned long long entryCount = 0;
 	for (unsigned int i = 0; i < hitPointsCount; ++i) {
@@ -78,10 +84,18 @@ void HashGrid::RefreshMutex() {
 			const Vector bMin = ((hp->position - rad) - hpBBox.pMin) * invCellSize;
 			const Vector bMax = ((hp->position + rad) - hpBBox.pMin) * invCellSize;
 
-			for (int iz = abs(int(bMin.z)); iz <= abs(int(bMax.z)); ++iz) {
-				for (int iy = abs(int(bMin.y)); iy <= abs(int(bMax.y)); ++iy) {
-					for (int ix = abs(int(bMin.x)); ix <= abs(int(bMax.x)); ++ix) {
-						int hv = Hash(ix, iy, iz);
+			const int ixMin = Clamp<int>(int(bMin.x), 0, maxGridIndexX);
+			const int ixMax = Clamp<int>(int(bMax.x), 0, maxGridIndexX);
+			const int iyMin = Clamp<int>(int(bMin.y), 0, maxGridIndexY);
+			const int iyMax = Clamp<int>(int(bMax.y), 0, maxGridIndexY);
+			const int izMin = Clamp<int>(int(bMin.z), 0, maxGridIndexZ);
+			const int izMax = Clamp<int>(int(bMax.z), 0, maxGridIndexZ);
+
+			for (int iz = izMin; iz <= izMax; iz++) {
+				for (int iy = iyMin; iy <= iyMax; iy++) {
+					for (int ix = ixMin; ix <= ixMax; ix++) {
+
+						int hv = ReduceDims(ix, iy, iz);
 
 						if (grid[hv] == NULL)
 							grid[hv] = new std::list<HitPoint *>();
@@ -98,34 +112,40 @@ void HashGrid::RefreshMutex() {
 		}
 	}
 	//std::cerr << "Max. hit points in a single hash grid entry: " << maxPathCount << std::endl;
-	LOG(LUX_INFO, LUX_NOERROR) << "Total hash grid entry: " << entryCount;
-	LOG(LUX_INFO, LUX_NOERROR) << "Avg. hit points in a single hash grid entry: " << entryCount / gridSize;
+	LOG(LUX_INFO, LUX_NOERROR) << "Total grid entry: " << entryCount;
+	LOG(LUX_INFO, LUX_NOERROR) << "Avg. hit points in a single grid entry: " << entryCount / gridSize;
 
-	/*// HashGrid debug code
+	/*// Grid debug code
 	u_int badCells = 0;
 	u_int emptyCells = 0;
 	for (u_int i = 0; i < gridSize; ++i) {
 		if (grid[i]) {
 			if (grid[i]->size() > 5) {
-				//std::cerr << "HashGrid[" << i << "].size() = " << grid[i]->size() << std::endl;
+				//std::cerr << "Grid[" << i << "].size() = " << grid[i]->size() << std::endl;
 				++badCells;
 			}
 		} else
 			++emptyCells;
 	}
-	std::cerr << "HashGrid.badCells = " << (100.f * badCells / (gridSize - emptyCells)) << "%" << std::endl;
-	std::cerr << "HashGrid.emptyCells = " << (100.f * emptyCells / gridSize) << "%" << std::endl;*/
+	std::cerr << "Grid.badCells = " << (100.f * badCells / (gridSize - emptyCells)) << "%" << std::endl;
+	std::cerr << "Grid.emptyCells = " << (100.f * emptyCells / gridSize) << "%" << std::endl;*/
 }
 
-void HashGrid::AddFlux(const Point &hitPoint, const Vector &wi,
+void GridLookUpAccel::AddFlux(const Point &hitPoint, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group) {
 	// Look for eye path hit points near the current hit point
 	Vector hh = (hitPoint - hitPoints->GetBBox().pMin) * invCellSize;
-	const int ix = abs(int(hh.x));
-	const int iy = abs(int(hh.y));
-	const int iz = abs(int(hh.z));
+	const int ix = int(hh.x);
+	if ((ix < 0) || (ix > maxGridIndexX))
+			return;
+	const int iy = int(hh.y);
+	if ((iy < 0) || (iy > maxGridIndexY))
+			return;
+	const int iz = int(hh.z);
+	if ((iz < 0) || (iz > maxGridIndexZ))
+			return;
 
-	std::list<HitPoint *> *hps = grid[Hash(ix, iy, iz)];
+	std::list<HitPoint *> *hps = grid[ReduceDims(ix, iy, iz)];
 	if (hps) {
 		std::list<HitPoint *>::iterator iter = hps->begin();
 		while (iter != hps->end()) {
