@@ -35,7 +35,8 @@ class HitPoint;
 class HitPoints;
 
 enum LookUpAccelType {
-	HASH_GRID, KD_TREE, HYBRID_HASH_GRID, STOCHASTIC_HASH_GRID, GRID
+	HASH_GRID, KD_TREE, HYBRID_HASH_GRID, STOCHASTIC_HASH_GRID, GRID,
+	CUCKOO_HASH_GRID
 };
 
 class HitPointsLookUpAccel {
@@ -85,55 +86,7 @@ private:
 		return (unsigned int)((ix * 73856093) ^ (iy * 19349663) ^ (iz * 83492791)) % gridSize;
 	}
 	/*unsigned int Hash(const int ix, const int iy, const int iz) {
-		// TODO: translate to SSE code
-		const float ksh = 4194304.f / invCellSize;
-		const float nx = ix * ksh;
-		const float ny = iy * ksh;
-		const float nz = iz * ksh;
-		const float nw = (ix + iy - iz) * ksh;
-
-		const float qx = 1225.f;
-		const float qy = 1585.f;
-		const float qz = 2457.f;
-		const float qw = 2098.f;
-
-		const float rx = 1112.f;
-		const float ry = 367.f;
-		const float rz = 92.f;
-		const float rw = 265.f;
-
-		const float ax = 3423.f;
-		const float ay = 2646.f;
-		const float az = 1707.f;
-		const float aw = 1999.f;
-
-		const float mx = 4194287.f;
-		const float my = 4194277.f;
-		const float mz = 4194191.f;
-		const float mw = 4194167.f;
-
-		const float betax = nx / qx;
-		const float betay = ny / qy;
-		const float betaz = nz / qz;
-		const float betaw = nw / qw;
-
-		const float px = ax * (nx - betax * qx) - betax * rx;
-		const float py = ay * (ny - betax * qy) - betay * ry;
-		const float pz = az * (nz - betax * qz) - betaz * rz;
-		const float pw = aw * (nw - betax * qw) - betaw * rw;
-
-		const float beta2x = (SignOf(-px) + 1.f) * .5f * mx;
-		const float beta2y = (SignOf(-py) + 1.f) * .5f * my;
-		const float beta2z = (SignOf(-pz) + 1.f) * .5f * mz;
-		const float beta2w = (SignOf(-pw) + 1.f) * .5f * mw;
-
-		const float n2x = px + beta2x;
-		const float n2y = py + beta2y;
-		const float n2z = pz + beta2z;
-		const float n2w = pw + beta2w;
-
-		const float dot = n2x / mx - n2y / my + n2z / mz - n2w / mw;
-		return Floor2UInt(fabsf(dot - floorf(dot)) * gridSize);
+		return (unsigned int)((ix * 997 + iy) * 443 + iz) % gridSize;
 	}*/
 
 	HitPoints *hitPoints;
@@ -198,6 +151,51 @@ private:
 	unsigned int gridSize;
 	float invCellSize;
 	GridCell *grid;
+};
+
+//------------------------------------------------------------------------------
+// CuckooHashGrid accelerator
+//------------------------------------------------------------------------------
+
+class CuckooHashGrid : public HitPointsLookUpAccel {
+public:
+	CuckooHashGrid(HitPoints *hps);
+
+	~CuckooHashGrid();
+
+	void RefreshMutex();
+
+	void AddFlux(const Point &hitPoint, const Vector &wi,
+		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group);
+
+private:
+	struct GridCell {
+		int ix, iy, iz;
+		HitPoint *hitPoint;
+	};
+
+	void Insert(const int ix, const int iy, const int iz, HitPoint *hitPoint);
+
+	unsigned int Hash1(const int ix, const int iy, const int iz) {
+		return (unsigned int)((ix * 73856093) ^ (iy * 19349663) ^ (iz * 83492791)) % gridSize;
+	}
+	unsigned int Hash2(const int ix, const int iy, const int iz) {
+		return (unsigned int)((ix * 49979693) ^ (iy * 86028157) ^ (iz * 15485867)) % gridSize;
+	}
+	unsigned int Hash3(const int ix, const int iy, const int iz) {
+		return (unsigned int)((ix * 15485863) ^ (iy * 49979687) ^ (iz * 32452867)) % gridSize;
+	}
+	/*unsigned int Hash4(const int ix, const int iy, const int iz) {
+		return (unsigned int)((ix * 67867979) ^ (iy * 32452843) ^ (iz * 67867967)) % gridSize;
+	}*/
+
+	HitPoints *hitPoints;
+	unsigned int gridSize;
+	float invCellSize;
+
+	GridCell *grid1;
+	GridCell *grid2;
+	GridCell *grid3;
 };
 
 //------------------------------------------------------------------------------
@@ -360,6 +358,16 @@ private:
 
 		void AddList(HitPoint *hp) {
 			assert (type == LIST);
+
+			/* Too slow:
+			// Check if the hit point has been already inserted
+			std::list<HitPoint *>::iterator iter = list->begin();
+			while (iter != list->end()) {
+				HitPoint *lhp = *iter++;
+
+				if (lhp == hp)
+					return;
+			}*/
 
 			list->push_front(hp);
 			++size;

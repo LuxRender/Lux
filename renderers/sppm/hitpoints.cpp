@@ -143,6 +143,9 @@ void HitPoints::Init() {
 		case GRID:
 			lookUpAccel = new GridLookUpAccel(this);
 			break;
+		case CUCKOO_HASH_GRID:
+			lookUpAccel = new CuckooHashGrid(this);
+			break;
 		default:
 			assert (false);
 	}

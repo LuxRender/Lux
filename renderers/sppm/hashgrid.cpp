@@ -66,6 +66,39 @@ void HashGrid::RefreshMutex() {
 		}
 	}
 
+	/*// HashGrid debug code
+	int maxHashIndexX = int((hpBBox.pMax.x - hpBBox.pMin.x) * invCellSize);
+	int maxHashIndexY = int((hpBBox.pMax.y - hpBBox.pMin.y) * invCellSize);
+	int maxHashIndexZ = int((hpBBox.pMax.z - hpBBox.pMin.z) * invCellSize);
+	u_int hMin = gridSize;
+	u_int hMax = 0;
+	u_int *hits = new u_int[gridSize];
+	memset(hits, 0, sizeof(u_int) * gridSize);
+	for (int iz = 0; iz <= maxHashIndexZ; ++iz) {
+		for (int iy = 0; iy <= maxHashIndexY; ++iy) {
+			for (int ix = 0; ix <= maxHashIndexX; ++ix) {
+				u_int h = Hash(ix, iy, iz);
+				hMin = min(h, hMin);
+				hMax = max(h, hMax);
+
+				hits[h] += 1;
+			}
+		}
+	}
+	std::cerr << "HashGrid.Hash.hMin = " << hMin << std::endl;
+	std::cerr << "HashGrid.Hash.hMax = " << hMax << std::endl;
+	for (int iz = 0; iz <= maxHashIndexZ; ++iz) {
+		for (int iy = 0; iy <= maxHashIndexY; ++iy) {
+			for (int ix = 0; ix <= maxHashIndexX; ++ix) {
+				u_int h = Hash(ix, iy, iz);
+				u_int count = hits[h];
+
+				if (count > 1)
+					std::cerr << "HashGrid.Hash.(" << ix << ", " << iy << ", " << iz << " => " << h << ") = " << count << std::endl;
+			}
+		}
+	}*/
+
 	LOG(LUX_INFO, LUX_NOERROR) << "Building hit points hash grid";
 	//unsigned int maxPathCount = 0;
 	unsigned long long entryCount = 0;
@@ -89,14 +122,38 @@ void HashGrid::RefreshMutex() {
 						grid[hv]->push_front(hp);
 						++entryCount;
 
-						/*// grid[hv]->size() is very slow to execute
-						if (grid[hv]->size() > maxPathCount)
-							maxPathCount = grid[hv]->size();*/
+						/* Too slow:
+						if (grid[hv] == NULL) {
+							grid[hv] = new std::list<HitPoint *>();
+
+							grid[hv]->push_front(hp);
+							++entryCount;
+						} else {
+							// Check if the hit point has been already inserted
+							std::list<HitPoint *>::iterator iter = grid[hv]->begin();
+							bool found = false;
+							while (iter != grid[hv]->end()) {
+								HitPoint *lhp = *iter++;
+
+								if (lhp == hp)
+									found = true;
+							}
+							if (found)
+								continue;
+
+							grid[hv]->push_front(hp);
+							++entryCount;
+
+							// grid[hv]->size() is very slow to execute
+							//if (grid[hv]->size() > maxPathCount)
+							//	maxPathCount = grid[hv]->size();
+						}*/
 					}
 				}
 			}
 		}
 	}
+
 	//std::cerr << "Max. hit points in a single hash grid entry: " << maxPathCount << std::endl;
 	LOG(LUX_INFO, LUX_NOERROR) << "Total hash grid entry: " << entryCount;
 	LOG(LUX_INFO, LUX_NOERROR) << "Avg. hit points in a single hash grid entry: " << entryCount / gridSize;
