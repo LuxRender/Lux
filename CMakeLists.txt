@@ -544,7 +544,6 @@ SET(lux_core_src
 SET(lux_accelerators_src
 	accelerators/bruteforce.cpp
 	accelerators/bvhaccel.cpp
-	accelerators/grid.cpp
 	accelerators/qbvhaccel.cpp
 	accelerators/tabreckdtree.cpp
 	accelerators/unsafekdtree.cpp
