@@ -644,6 +644,9 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 			&isect, &v.bsdf, &spdfR, &spdf, &v.flux)) {
 			v.flux /= spdfR;
 			vector<BidirVertex> path(0);
+			// Reinitalize ray origin to the previous
+			// non passthrough intersection
+			ray.o = eyePath[nEye - 1].p;
 			for (u_int lightNumber = 0; lightNumber < scene.lights.size(); ++lightNumber) {
 				const Light *light = scene.lights[lightNumber];
 				if (!light->IsEnvironmental())
@@ -721,6 +724,9 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 		if (isect.arealight) {
 			BSDF *eBsdf;
 			float ePdfDirect;
+			// Reinitalize ray origin to the previous
+			// non passthrough intersection
+			ray.o = eyePath[nEye - 2].p;
 			SWCSpectrum Ll(isect.Le(sample, ray, &eBsdf,
 				&v.dAWeight, &ePdfDirect));
 			if (eBsdf && !Ll.Black()) {
