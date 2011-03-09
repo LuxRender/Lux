@@ -629,6 +629,7 @@ SET(lux_renderers_src
 	renderers/sppm/grid.cpp
 	renderers/sppm/cuckoohashgrid.cpp
 	renderers/sppm/hybridmultihashgrid.cpp
+	renderers/sppm/stochasticmultihashgrid.cpp
 	)
 else(LUXRAYS_DISABLE_OPENCL)
 SET(lux_renderers_src
@@ -645,6 +646,7 @@ SET(lux_renderers_src
 	renderers/sppm/grid.cpp
 	renderers/sppm/cuckoohashgrid.cpp
 	renderers/sppm/hybridmultihashgrid.cpp
+	renderers/sppm/stochasticmultihashgrid.cpp
 	)
 endif(LUXRAYS_DISABLE_OPENCL)
 SET(lux_samplers_src

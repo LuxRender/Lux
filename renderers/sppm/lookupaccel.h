@@ -36,7 +36,7 @@ class HitPoints;
 
 enum LookUpAccelType {
 	HASH_GRID, KD_TREE, HYBRID_HASH_GRID, STOCHASTIC_HASH_GRID, GRID,
-	CUCKOO_HASH_GRID, HYBRID_MULTIHASH_GRID
+	CUCKOO_HASH_GRID, HYBRID_MULTIHASH_GRID, STOCHASTIC_MULTIHASH_GRID
 };
 
 class HitPointsLookUpAccel {
@@ -554,6 +554,43 @@ private:
 	float invCellSize;
 	int maxHashIndexX, maxHashIndexY, maxHashIndexZ;
 	HashCell **grid;
+};
+
+//------------------------------------------------------------------------------
+// StochasticMultiHashGrid accelerator
+//------------------------------------------------------------------------------
+
+class StochasticMultiHashGrid : public HitPointsLookUpAccel {
+public:
+	StochasticMultiHashGrid(HitPoints *hps);
+
+	~StochasticMultiHashGrid();
+
+	void RefreshMutex();
+
+	void AddFlux(const Point &hitPoint, const Vector &wi,
+		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group);
+
+private:
+	struct GridCell {
+		HitPoint *hitPoint;
+		u_int count;
+	};
+
+	unsigned int Hash1(const int ix, const int iy, const int iz) {
+		return (unsigned int)((ix * 73856093) ^ (iy * 19349663) ^ (iz * 83492791)) % gridSize;
+	}
+	unsigned int Hash2(const int ix, const int iy, const int iz) {
+		return (unsigned int)((ix * 49979693) ^ (iy * 86028157) ^ (iz * 15485867)) % gridSize;
+	}
+	unsigned int Hash3(const int ix, const int iy, const int iz) {
+		return (unsigned int)((ix * 15485863) ^ (iy * 49979687) ^ (iz * 32452867)) % gridSize;
+	}
+
+	HitPoints *hitPoints;
+	unsigned int gridSize;
+	float invCellSize;
+	GridCell *grid;
 };
 
 }//namespace lux
