@@ -33,7 +33,8 @@ void HitPointsLookUpAccel::AddFluxToHitPoint(HitPoint *hp,
 		if ((dist2 >  hp->accumPhotonRadius2))
 			return;
 
-		SWCSpectrum f = hp->bsdf->F(sw, hp->wo, wi, false, BxDFType(BSDF_ALL | BSDF_DIFFUSE));
+		SWCSpectrum f = hp->bsdf->F(sw, hp->wo, wi, false,
+				BxDFType(BSDF_REFLECTION | BSDF_TRANSMISSION | BSDF_DIFFUSE));
 		if (f.Black())
 			return;
 
