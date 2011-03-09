@@ -67,6 +67,7 @@ SurfaceIntegrator *SPPMIntegrator::CreateSurfaceIntegrator(const ParamSet &param
 	else if (acc == "stochastichashgrid") sppmi->lookupAccelType = STOCHASTIC_HASH_GRID;
 	else if (acc == "grid") sppmi->lookupAccelType = GRID;
 	else if (acc == "cuckoohashgrid") sppmi->lookupAccelType = CUCKOO_HASH_GRID;
+	else if (acc == "hybridmultihashgrid") sppmi->lookupAccelType = HYBRID_MULTIHASH_GRID;
 	else {
 		LOG(LUX_WARNING,LUX_BADTOKEN) << "Lookup accelerator  '" << acc <<"' unknown. Using \"hybridhashgrid\".";
 		sppmi->lookupAccelType = HYBRID_HASH_GRID;

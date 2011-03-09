@@ -628,6 +628,7 @@ SET(lux_renderers_src
 	renderers/sppm/kdtree.cpp
 	renderers/sppm/grid.cpp
 	renderers/sppm/cuckoohashgrid.cpp
+	renderers/sppm/hybridmultihashgrid.cpp
 	)
 else(LUXRAYS_DISABLE_OPENCL)
 SET(lux_renderers_src
@@ -643,6 +644,7 @@ SET(lux_renderers_src
 	renderers/sppm/kdtree.cpp
 	renderers/sppm/grid.cpp
 	renderers/sppm/cuckoohashgrid.cpp
+	renderers/sppm/hybridmultihashgrid.cpp
 	)
 endif(LUXRAYS_DISABLE_OPENCL)
 SET(lux_samplers_src

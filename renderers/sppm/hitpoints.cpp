@@ -146,6 +146,9 @@ void HitPoints::Init() {
 		case CUCKOO_HASH_GRID:
 			lookUpAccel = new CuckooHashGrid(this);
 			break;
+		case HYBRID_MULTIHASH_GRID:
+			lookUpAccel = new HybridMultiHashGrid(this);
+			break;
 		default:
 			assert (false);
 	}

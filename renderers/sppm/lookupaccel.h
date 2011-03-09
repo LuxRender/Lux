@@ -36,7 +36,7 @@ class HitPoints;
 
 enum LookUpAccelType {
 	HASH_GRID, KD_TREE, HYBRID_HASH_GRID, STOCHASTIC_HASH_GRID, GRID,
-	CUCKOO_HASH_GRID
+	CUCKOO_HASH_GRID, HYBRID_MULTIHASH_GRID
 };
 
 class HitPointsLookUpAccel {
@@ -383,6 +383,158 @@ private:
 		}
 
 		void AddFlux(HybridHashGrid *hhg, const Point &hitPoint, const Vector &wi,
+			const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group);
+
+		unsigned int GetSize() const { return size; }
+
+	private:
+		HashCellType type;
+		unsigned int size;
+		union {
+			std::list<HitPoint *> *list;
+			HHGKdTree *kdtree;
+		};
+	};
+
+	unsigned int kdtreeThreshold;
+	HitPoints *hitPoints;
+	unsigned int gridSize;
+	float invCellSize;
+	int maxHashIndexX, maxHashIndexY, maxHashIndexZ;
+	HashCell **grid;
+};
+
+//------------------------------------------------------------------------------
+// HybridMultiHashGrid accelerator
+//------------------------------------------------------------------------------
+
+class HybridMultiHashGrid : public HitPointsLookUpAccel {
+public:
+	HybridMultiHashGrid(HitPoints *hps);
+
+	~HybridMultiHashGrid();
+
+	void RefreshMutex();
+	void RefreshParallel(const unsigned int index, const unsigned int count);
+
+	void AddFlux(const Point &hitPoint, const Vector &wi,
+		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group);
+
+private:
+	unsigned int Hash1(const int ix, const int iy, const int iz) {
+		return (unsigned int)((ix * 73856093) ^ (iy * 19349663) ^ (iz * 83492791)) % gridSize;
+	}
+	unsigned int Hash2(const int ix, const int iy, const int iz) {
+		return (unsigned int)((ix * 49979693) ^ (iy * 86028157) ^ (iz * 15485867)) % gridSize;
+	}
+	/*unsigned int Hash3(const int ix, const int iy, const int iz) {
+		return (unsigned int)((ix * 15485863) ^ (iy * 49979687) ^ (iz * 32452867)) % gridSize;
+	}*/
+
+	class HHGKdTree {
+	public:
+		HHGKdTree(std::list<HitPoint *> *hps, const unsigned int count);
+		~HHGKdTree();
+
+		void AddFlux(HybridMultiHashGrid *hhg, const Point &hitPoint, const Vector &wi,
+			const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group);
+
+	private:
+		struct KdNode {
+			void init(const float p, const unsigned int a) {
+				splitPos = p;
+				splitAxis = a;
+				// Dade - in order to avoid a gcc warning
+				rightChild = 0;
+				rightChild = ~rightChild;
+				hasLeftChild = 0;
+			}
+
+			void initLeaf() {
+				splitAxis = 3;
+				// Dade - in order to avoid a gcc warning
+				rightChild = 0;
+				rightChild = ~rightChild;
+				hasLeftChild = 0;
+			}
+
+			// KdNode Data
+			float splitPos;
+			unsigned int splitAxis : 2;
+			unsigned int hasLeftChild : 1;
+			unsigned int rightChild : 29;
+		};
+
+		struct CompareNode {
+			CompareNode(int a) {
+				axis = a;
+			}
+
+			int axis;
+
+			bool operator()(const HitPoint *d1, const HitPoint * d2) const;
+		};
+
+		void RecursiveBuild(const unsigned int nodeNum, const unsigned int start,
+				const unsigned int end, std::vector<HitPoint *> &buildNodes);
+
+		KdNode *nodes;
+		HitPoint **nodeData;
+		unsigned int nNodes, nextFreeNode;
+		float maxDistSquared;
+	};
+
+	enum HashCellType {
+		LIST, KD_TREE
+	};
+
+	class HashCell {
+	public:
+		HashCell(const HashCellType t) {
+			type = LIST;
+			size = 0;
+			list = new std::list<HitPoint *>();
+		}
+		~HashCell() {
+			switch (type) {
+				case LIST:
+					delete list;
+					break;
+				case KD_TREE:
+					delete kdtree;
+					break;
+				default:
+					assert (false);
+			}
+		}
+
+		void AddList(HitPoint *hp) {
+			assert (type == LIST);
+
+			/* Too slow:
+			// Check if the hit point has been already inserted
+			std::list<HitPoint *>::iterator iter = list->begin();
+			while (iter != list->end()) {
+				HitPoint *lhp = *iter++;
+
+				if (lhp == hp)
+					return;
+			}*/
+
+			list->push_front(hp);
+			++size;
+		}
+
+		void TransformToKdTree() {
+			assert (type == LIST);
+
+			std::list<HitPoint *> *hplist = list;
+			kdtree = new HHGKdTree(hplist, size);
+			delete hplist;
+			type = KD_TREE;
+		}
+
+		void AddFlux(HybridMultiHashGrid *hhg, const Point &hitPoint, const Vector &wi,
 			const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group);
 
 		unsigned int GetSize() const { return size; }
