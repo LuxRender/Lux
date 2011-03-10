@@ -63,7 +63,7 @@ u_int MultiScattering::Li(const Scene &scene, const Ray &ray,
 	// Prepare for volume integration stepping
 	const float length = ray.d.Length();
 	const u_int N = Ceil2UInt((t1 - t0) * length / stepSize);
-	const float step = (t1 - t0) / (length * N);
+	const float step = (t1 - t0) / N;
 	const SpectrumWavelengths &sw(sample.swl);
 	SWCSpectrum Tr(1.f);
 	const Vector w(-ray.d / length);
@@ -81,7 +81,7 @@ u_int MultiScattering::Li(const Scene &scene, const Ray &ray,
 	u_int sampOffset = 0;
 	DifferentialGeometry dg;
 	dg.p = r.o;
-	dg.nn = Normal(-ray.d);
+	dg.nn = Normal(w);
 	for (u_int i = 0; i < N; ++i) {
 		// Ray is already offset above, no need to do it again
 		const SWCSpectrum stepTau(vr->Tau(sw, r, .5f * stepSize, 0.f));
@@ -97,7 +97,7 @@ u_int MultiScattering::Li(const Scene &scene, const Ray &ray,
 		// Compute single-scattering source term at _p_
 		*Lv += Tr * vr->Lve(sw, dg);
 
-		if (scene.lights.size() > 0) {
+		if (nLights > 0) {
 			const SWCSpectrum ss(vr->SigmaS(sw, dg));
 			if (!ss.Black()) {
 				// Add contribution of _light_ due to scattering at _p_
@@ -125,7 +125,7 @@ u_int MultiScattering::Li(const Scene &scene, const Ray &ray,
 		r.o = ray(t0);
 		dg.p = r.o;
 	}
-	*Lv *= step;
+	*Lv *= stepSize;
 	return light->group;
 }
 

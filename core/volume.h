@@ -147,7 +147,7 @@ public:
 	virtual SWCSpectrum SigmaS(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
 		return region.Inside(WorldToVolume(dg.p)) ?
-			volume.SigmaA(sw, dg) : SWCSpectrum(0.f);
+			volume.SigmaS(sw, dg) : SWCSpectrum(0.f);
 	}
 	virtual SWCSpectrum SigmaT(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
@@ -221,7 +221,7 @@ public:
 	}
 	virtual SWCSpectrum SigmaS(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
-		return Density(dg.p) * volume.SigmaA(sw, dg);
+		return Density(dg.p) * volume.SigmaS(sw, dg);
 	}
 	virtual SWCSpectrum SigmaT(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
