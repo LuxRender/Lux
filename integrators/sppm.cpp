@@ -83,8 +83,8 @@ SurfaceIntegrator *SPPMIntegrator::CreateSurfaceIntegrator(const ParamSet &param
 
 	sppmi->includeEnvironment = params.FindOneBool("includeenvironment", true);
 
-	sppmi->dbg_enableradiusdraw = params.FindOneBool("dbg_enableradiusdraw", false);
-	sppmi->dbg_enablemsedraw = params.FindOneBool("dbg_enablemsedraw", false);
+	/*sppmi->dbg_enableradiusdraw = params.FindOneBool("dbg_enableradiusdraw", false);
+	sppmi->dbg_enablemsedraw = params.FindOneBool("dbg_enablemsedraw", false);*/
 
 	return sppmi;
 }

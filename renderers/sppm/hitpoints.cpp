@@ -72,7 +72,8 @@ HitPoints::HitPoints(SPPMRenderer *engine, RandomGenerator *rng)  {
 			hp->lightGroupData[j].surfaceHitsCount = 0;
 			hp->lightGroupData[j].accumRadiance = XYZColor();
 			hp->lightGroupData[j].radiance = XYZColor();
-			hp->lightGroupData[j].radianceSSE = 0.f;
+			// Debug code
+			//hp->lightGroupData[j].radianceSSE = 0.f;
 		}
 	}
 }
@@ -220,11 +221,12 @@ void HitPoints::AccumulateFlux(const vector<unsigned long long> &photonTracedByL
 				const XYZColor newRadiance = (hp->lightGroupData[j].accumRadiance +
 					hp->lightGroupData[j].surfaceHitsCount * hp->lightGroupData[j].reflectedFlux * k) / hitCount;
 
-				// Update Sum Square Error statistic
+				// Debug code
+				/*// Update Sum Square Error statistic
 				if (hitCount > 1) {
 					const float v = newRadiance.Y() - hp->lightGroupData[j].radiance.Y();
 					hp->lightGroupData[j].radianceSSE += v * v;
-				}
+				}*/
 
 				hp->lightGroupData[j].radiance = newRadiance;
 			}
@@ -471,7 +473,7 @@ void HitPoints::UpdateFilm() {
 	u_int lightGroupsNumber = scene.lightGroups.size();
 	Film &film(*scene.camera->film);
 
-	if (renderer->sppmi->dbg_enableradiusdraw) {
+	/*if (renderer->sppmi->dbg_enableradiusdraw) {
 		// Draw the radius of hit points
 		XYZColor c;
 		for (u_int i = 0; i < GetSize(); ++i) {
@@ -506,7 +508,7 @@ void HitPoints::UpdateFilm() {
 				film.SetSample(&contrib);
 			}
 		}
-	} else {
+	} else {*/
 		// Just normal rendering
 		for (u_int i = 0; i < GetSize(); ++i) {
 			HitPoint *hp = GetHitPoint(i);
@@ -518,7 +520,7 @@ void HitPoints::UpdateFilm() {
 				film.SetSample(&contrib);
 			}
 		}
-	}
+	//}
 
 	scene.camera->film->CheckWriteOuputInterval();
 }

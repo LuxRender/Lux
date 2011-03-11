@@ -52,8 +52,9 @@ struct HitPointLightGroup {
 	u_int surfaceHitsCount;
 
 	XYZColor radiance;
+	// Debug code
 	// Radiance Sum Square Error, used to compute Mean Square Error
-	float radianceSSE;
+	//float radianceSSE;
 
 	XYZColor eyeRadiance;
 };

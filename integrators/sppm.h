@@ -55,7 +55,7 @@ public:
 	bool includeEnvironment;
 
 	// Few debugging options
-	bool dbg_enableradiusdraw, dbg_enablemsedraw;
+	//bool dbg_enableradiusdraw, dbg_enablemsedraw;
 };
 
 }//namespace lux
