@@ -33,8 +33,17 @@ void HitPointsLookUpAccel::AddFluxToHitPoint(HitPoint *hp,
 		if ((dist2 >  hp->accumPhotonRadius2))
 			return;
 
+		/* Was:
 		SWCSpectrum f = hp->bsdf->F(sw, hp->wo, wi, false,
-				BxDFType(BSDF_REFLECTION | BSDF_TRANSMISSION | BSDF_DIFFUSE));
+				BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE));
+		 * Replace with the following code to avoid the storage of Sample class.
+		 */
+
+		const float sideTest = Dot(wi, hp->bsdfNG) / Dot(hp->wo, hp->bsdfNG);
+		if (sideTest <= 0.f)
+			return;
+
+		SWCSpectrum f(hp->bsdfRoverPI * AbsDot(hp->wo, hp->bsdfNS) * fabsf(sideTest));
 		if (f.Black())
 			return;
 

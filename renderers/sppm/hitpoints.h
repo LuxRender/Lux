@@ -62,7 +62,6 @@ struct HitPointLightGroup {
 class HitPoint {
 public:
 	HitPointType type;
-	Sample *sample;
 	PermutedHalton *halton;
 	float haltonOffset;
 
@@ -74,7 +73,8 @@ public:
 	// Used for SURFACE type
 	Point position;
 	Vector wo;
-	BSDF *bsdf;
+	Normal bsdfNG, bsdfNS;
+	SWCSpectrum bsdfRoverPI;
 
 	vector<HitPointLightGroup> lightGroupData;
 	

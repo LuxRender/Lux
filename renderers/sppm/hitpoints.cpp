@@ -55,13 +55,6 @@ HitPoints::HitPoints(SPPMRenderer *engine, RandomGenerator *rng)  {
 	for (u_int i = 0; i < (*hitPoints).size(); ++i) {
 		HitPoint *hp = &(*hitPoints)[i];
 
-		hp->sample = new Sample(NULL, scene->volumeIntegrator, *scene);
-
-		Sample &sample(*hp->sample);
-		sample.contribBuffer = NULL;
-		sample.camera = scene->camera->Clone();
-		sample.realTime = 0.f;
-
 		hp->halton = new PermutedHalton(9, *rng);
 		hp->haltonOffset = rng->floatValue();
 
@@ -90,7 +83,6 @@ HitPoints::~HitPoints() {
 	for (u_int i = 0; i < (*hitPoints).size(); ++i) {
 		HitPoint *hp = &(*hitPoints)[i];
 
-		delete hp->sample;
 		delete hp->halton;
 	}
 	delete hitPoints;
@@ -250,6 +242,14 @@ void HitPoints::SetHitPoints(RandomGenerator *rng, const u_int pass,
 
 	LOG(LUX_INFO, LUX_NOERROR) << "Building hit points: " << first << " to " << last - 1;
 
+	Scene &scene(*renderer->scene);
+
+	Sample sample(NULL, scene.volumeIntegrator, scene);
+	sample.contribBuffer = NULL;
+	sample.camera = scene.camera->Clone();
+	sample.realTime = 0.f;
+	sample.rng = rng;
+
 	int xPos, yPos;
 	for (u_int i = first; i < last; ++i) {
 		HitPoint *hp = &(*hitPoints)[i];
@@ -263,9 +263,7 @@ void HitPoints::SetHitPoints(RandomGenerator *rng, const u_int pass,
 			u[j] = (v >= 1.f) ? (v - 1.f) : v;
 		}
 
-		Sample &sample(*hp->sample);
 		sample.arena.FreeAll();
-		sample.rng = rng;
 
 		pixelSampler->GetNextPixel(&xPos, &yPos, i);
 		sample.imageX = xPos + u[0];
@@ -416,11 +414,14 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, const float *u)
 			return;
 		}
 
-		if ((flags == BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)) ||
-				(flags == BxDFType(BSDF_TRANSMISSION | BSDF_DIFFUSE))) {
+		if (flags == BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)) {
 			// It is a valid hit point
 			hp->type = SURFACE;
-			hp->bsdf = bsdf;
+			hp->bsdfNG = bsdf->ng;
+			hp->bsdfNS = bsdf->dgShading.nn;
+			const Vector vn(hp->bsdfNS);
+			hp->bsdfRoverPI = bsdf->F(sw, vn, vn,
+					false, BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE));
 			hp->eyeThroughput = pathThroughput * rayWeight;
 			for(unsigned int j = 0; j < lightGroupCount; ++j)
 				hp->lightGroupData[j].eyeRadiance = XYZColor(sw, L[j] * rayWeight);
