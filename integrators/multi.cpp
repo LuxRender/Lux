@@ -125,7 +125,7 @@ u_int MultiScattering::Li(const Scene &scene, const Ray &ray,
 		r.o = ray(t0);
 		dg.p = r.o;
 	}
-	*Lv *= stepSize;
+	*Lv *= step * length;
 	return light->group;
 }
 
