@@ -147,7 +147,7 @@ public:
 	virtual SWCSpectrum SigmaS(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
 		return region.Inside(WorldToVolume(dg.p)) ?
-			volume.SigmaA(sw, dg) : SWCSpectrum(0.f);
+			volume.SigmaS(sw, dg) : SWCSpectrum(0.f);
 	}
 	virtual SWCSpectrum SigmaT(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
@@ -166,12 +166,9 @@ public:
 	}
 	virtual SWCSpectrum Tau(const SpectrumWavelengths &sw, const Ray &r,
 		float stepSize, float offset) const {
-		float t0, t1;
 		Ray rn(r);
-		if (!IntersectP(rn, &t0, &t1))
+		if (!IntersectP(rn, &rn.mint, &rn.maxt))
 			return SWCSpectrum(0.f);
-		rn.mint = t0;
-		rn.maxt = t1;
 		return volume.Tau(sw, rn, stepSize, offset);
 	}
 	virtual FresnelGeneral Fresnel(const SpectrumWavelengths &sw,
@@ -182,12 +179,8 @@ public:
 		const Ray &ray, float u, Intersection *isect, float *pdf,
 		float *pdfBack, SWCSpectrum *L) const {
 		Ray r(WorldToVolume(ray));
-		float t0;
-		float t1;
-		if (!region.IntersectP(r, &t0, &t1))
+		if (!region.IntersectP(r, &r.mint, &r.maxt))
 			return false;
-		r.mint = max(t0, r.mint);
-		r.maxt = min(t1, r.maxt);
 		if (r.maxt <= r.mint)
 			return false;
 		if (!volume.Scatter(sample, scatteredStart, r, u, isect, pdf,
@@ -221,7 +214,7 @@ public:
 	}
 	virtual SWCSpectrum SigmaS(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
-		return Density(dg.p) * volume.SigmaA(sw, dg);
+		return Density(dg.p) * volume.SigmaS(sw, dg);
 	}
 	virtual SWCSpectrum SigmaT(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
@@ -238,17 +231,21 @@ public:
 	}
 	virtual SWCSpectrum Tau(const SpectrumWavelengths &sw, const Ray &r,
 		float stepSize, float offset) const {
-		if (!(r.d.Length() > 0.f))
+		const float length = r.d.Length();
+		if (!(length > 0.f))
 			return SWCSpectrum(0.f);
-		const float step = stepSize / r.d.Length();
+		const u_int N = Ceil2UInt((r.maxt - r.mint) * length / stepSize);
+		const float step = (r.maxt - r.mint) / N;
 		DifferentialGeometry dg;
 		dg.nn = Normal(-r.d);
 		SWCSpectrum tau(0.f);
-		for (float t0 = r.mint + offset * step; t0 < r.maxt; t0 += step) {
+		float t0 = r.mint + offset * step;
+		for (u_int i = 0; i < N; ++i) {
 			dg.p = r(t0);
 			tau += SigmaT(sw, dg);
+			t0 += step;
 		}
-		return tau * stepSize;
+		return tau * (step * length);
 	}
 	virtual FresnelGeneral Fresnel(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {

@@ -902,8 +902,8 @@ ENDIF(APPLE)
 IF(APPLE)
 	IF(PYLUX_FOR_BLENDER)
 		# use Blender python libs for static compiling !
-		SET(PYTHON_LIBRARIES ${CMAKE_SOURCE_DIR}/../macos/lib/BF_pythonlibs/py31_uni_intel/libbf_python_ext.a ${CMAKE_SOURCE_DIR}/../macos/lib/BF_pythonlibs/py31_uni_intel/libbf_python.a)
-		SET(PYTHON_INCLUDE_PATH ${CMAKE_SOURCE_DIR}/../macos/include/Python3.1)
+		SET(PYTHON_LIBRARIES ${CMAKE_SOURCE_DIR}/../macos/lib/BF_pythonlibs/py32_uni_intel/libbf_python_ext.a ${CMAKE_SOURCE_DIR}/../macos/lib/BF_pythonlibs/py32_uni_intel/libbf_python.a)
+		SET(PYTHON_INCLUDE_PATH ${CMAKE_SOURCE_DIR}/../macos/include/Python3.2)
 		SET(PYTHONLIBS_FOUND ON)
 	ELSE(PYLUX_FOR_BLENDER)
 		# compile pylux for genral purpose against Python framework

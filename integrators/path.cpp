@@ -92,6 +92,7 @@ u_int PathIntegrator::Li(const Scene &scene, const Sample &sample) const
 	const Volume *volume = NULL;
 
 	for (u_int pathLength = 0; ; ++pathLength) {
+		const SWCSpectrum prevThroughput(pathThroughput);
 		const float *data = scene.sampler->GetLazyValues(sample,
 			sampleOffset, pathLength);
 		// Find next vertex of path
@@ -106,7 +107,8 @@ u_int PathIntegrator::Li(const Scene &scene, const Sample &sample) const
 			u_int g = scene.volumeIntegrator->Li(scene, ray, sample,
 				&Lv, &alpha);
 			if (!Lv.Black()) {
-				L[g] = Lv;
+				Lv *= prevThroughput;
+				L[g] += Lv;
 				V[g] += Lv.Filter(sw) * VContrib;
 				++nrContribs;
 			}
@@ -142,7 +144,7 @@ u_int PathIntegrator::Li(const Scene &scene, const Sample &sample) const
 		const u_int g = scene.volumeIntegrator->Li(scene, ray, sample,
 			&Lv, &alpha);
 		if (!Lv.Black()) {
-			Lv *= pathThroughput;
+			Lv *= prevThroughput;
 			L[g] += Lv;
 			V[g] += Lv.Filter(sw) * VContrib;
 			++nrContribs;
