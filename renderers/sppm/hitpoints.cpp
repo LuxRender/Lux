@@ -322,6 +322,8 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, const float *u)
 
 	float data[4];
 	for (u_int pathLength = 0; ; ++pathLength) {
+		const SWCSpectrum prevThroughput(pathThroughput);
+
 		if (pathLength == 0) {
 			data[0] = u[0];
 			data[1] = u[1];
@@ -345,8 +347,8 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, const float *u)
 			SWCSpectrum Lv;
 			u_int g = scene.volumeIntegrator->Li(scene, ray, sample, &Lv, &hp->eyeAlpha);
 			if (!Lv.Black()) {
-				// TODO: copied from path integrator. Why not += ?
-				L[g] = Lv;
+				Lv *= prevThroughput;
+				L[g] += Lv;
 			}
 
 			// Stop path sampling since no intersection was found
@@ -377,7 +379,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, const float *u)
 		SWCSpectrum Lv;
 		const u_int g = scene.volumeIntegrator->Li(scene, ray, sample, &Lv, &hp->eyeAlpha);
 		if (!Lv.Black()) {
-			Lv *= pathThroughput;
+			Lv *= prevThroughput;
 			L[g] += Lv;
 		}
 
