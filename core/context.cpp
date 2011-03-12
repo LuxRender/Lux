@@ -965,6 +965,9 @@ void Context::Exit() {
 	}
 	
 	terminated = true;
+	if (luxCurrentScene)
+		// set this before Renderer::Terminate() as that call is blocking
+		luxCurrentScene->terminated = true;
 
 	// Reset Dynamic Epsilon values
 	MachineEpsilon::SetMin(DEFAULT_EPSILON_MIN);

@@ -477,7 +477,7 @@ void PhotonMapPreprocess(const RandomGenerator &rng, const Scene &scene,
 	boost::xtime_get(&photonShootingStartTime, boost::TIME_UTC);
 	boost::xtime_get(&lastUpdateTime, boost::TIME_UTC);
 	u_int nshot = 0;
-	while (!radianceDone || !directDone || !causticDone || !indirectDone) {
+	while ((!radianceDone || !directDone || !causticDone || !indirectDone) && !scene.terminated) {
 		// Dade - print some progress information
 		boost::xtime currentTime;
 		boost::xtime_get(&currentTime, boost::TIME_UTC);
@@ -681,6 +681,9 @@ void PhotonMapPreprocess(const RandomGenerator &rng, const Scene &scene,
 
 		sample.arena.FreeAll();
 	}
+
+	if (scene.terminated)
+		return;
 
 	boost::xtime photonShootingEndTime;
 	boost::xtime_get(&photonShootingEndTime, boost::TIME_UTC);
