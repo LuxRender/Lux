@@ -46,12 +46,12 @@ void HybridHashGrid::RefreshMutex(const u_int passIndex) {
 	// Calculate the size of the grid cell
 	const float maxPhotonRadius2 = hitPoints->GetMaxPhotonRaidus2(passIndex);
 	const float cellSize = sqrtf(maxPhotonRadius2) * 2.f;
-	LOG(LUX_INFO, LUX_NOERROR) << "Hybrid hash grid cell size: " << cellSize;
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Hybrid hash grid cell size: " << cellSize;
 	invCellSize = 1.f / cellSize;
 	maxHashIndexX = int((hpBBox.pMax.x - hpBBox.pMin.x) * invCellSize);
 	maxHashIndexY = int((hpBBox.pMax.y - hpBBox.pMin.y) * invCellSize);
 	maxHashIndexZ = int((hpBBox.pMax.z - hpBBox.pMin.z) * invCellSize);
-	LOG(LUX_INFO, LUX_NOERROR) << "Hybrid hash grid cell count: (" << maxHashIndexX << ", " <<
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Hybrid hash grid cell count: (" << maxHashIndexX << ", " <<
 			maxHashIndexY << ", " << maxHashIndexZ << ")";
 
 	// TODO: add a tunable parameter for HybridHashGrid size
@@ -68,7 +68,7 @@ void HybridHashGrid::RefreshMutex(const u_int passIndex) {
 		}
 	}
 
-	LOG(LUX_INFO, LUX_NOERROR) << "Building hit points hybrid hash grid";
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Building hit points hybrid hash grid";
 	unsigned int maxPathCount = 0;
 	unsigned long long entryCount = 0;
 	for (unsigned int i = 0; i < hitPointsCount; ++i) {
@@ -106,9 +106,9 @@ void HybridHashGrid::RefreshMutex(const u_int passIndex) {
 			}
 		}
 	}
-	LOG(LUX_INFO, LUX_NOERROR) << "Max. hit points in a single hybrid hash grid entry: " << maxPathCount;
-	LOG(LUX_INFO, LUX_NOERROR) << "Total hash grid entry: " << entryCount;
-	LOG(LUX_INFO, LUX_NOERROR) << "Avg. hit points in a single hybrid hash grid entry: " << entryCount / gridSize;
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Max. hit points in a single hybrid hash grid entry: " << maxPathCount;
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Total hash grid entry: " << entryCount;
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Avg. hit points in a single hybrid hash grid entry: " << entryCount / gridSize;
 
 	// Debug code
 	/*unsigned int nullCount = 0;
@@ -153,7 +153,7 @@ void HybridHashGrid::RefreshParallel(const u_int passIndex, const unsigned int i
 		} else
 			++HHGlistEntries;
 	}
-	LOG(LUX_INFO, LUX_NOERROR) << "Hybrid hash cells storing a HHGKdTree: " << HHGKdTreeEntries << "/" << HHGlistEntries;
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Hybrid hash cells storing a HHGKdTree: " << HHGKdTreeEntries << "/" << HHGlistEntries;
 
 	// HybridHashGrid debug code
 	/*for (unsigned int i = 0; i < HybridHashGridSize; ++i) {

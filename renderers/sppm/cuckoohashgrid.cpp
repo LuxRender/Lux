@@ -47,9 +47,9 @@ void CuckooHashGrid::RefreshMutex(const u_int passIndex) {
 	// Calculate the size of the grid cell
 	const float maxPhotonRadius2 = hitPoints->GetMaxPhotonRaidus2(passIndex);
 	const float cellSize = sqrtf(maxPhotonRadius2) * 2.f;
-	LOG(LUX_INFO, LUX_NOERROR) << "Cuckoo Hash grid cell size: " << cellSize;
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Cuckoo Hash grid cell size: " << cellSize;
 	invCellSize = 1.f / cellSize;
-	LOG(LUX_INFO, LUX_NOERROR) << "Hash grid size: (" <<
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Hash grid size: (" <<
 			(hpBBox.pMax.x - hpBBox.pMin.x) * invCellSize << ", " <<
 			(hpBBox.pMax.y - hpBBox.pMin.y) * invCellSize << ", " <<
 			(hpBBox.pMax.z - hpBBox.pMin.z) * invCellSize << ")";
@@ -65,7 +65,7 @@ void CuckooHashGrid::RefreshMutex(const u_int passIndex) {
 	memset(grid2, 0, sizeof(GridCell) * gridSize);
 	memset(grid3, 0, sizeof(GridCell) * gridSize);
 
-	LOG(LUX_INFO, LUX_NOERROR) << "Building hit points cuckoo hash grid";
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Building hit points cuckoo hash grid";
 	unsigned long long entryCount = 0;
 	for (unsigned int i = 0; i < hitPointsCount; ++i) {
 		HitPoint *hp = hitPoints->GetHitPoint(i);
@@ -89,8 +89,8 @@ void CuckooHashGrid::RefreshMutex(const u_int passIndex) {
 		}
 	}
 
-	LOG(LUX_INFO, LUX_NOERROR) << "Total cukoo hash grid entry: " << entryCount;
-	LOG(LUX_INFO, LUX_NOERROR) << "Avg. hit points in a single cukoo hash grid entry: " << entryCount / gridSize;
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Total cukoo hash grid entry: " << entryCount;
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Avg. hit points in a single cukoo hash grid entry: " << entryCount / gridSize;
 
 	/*// CuckooHashGrid debug code
 	u_int emptyCells = 0;
@@ -169,7 +169,7 @@ void CuckooHashGrid::Insert(const int x, const int y, const int z, HitPoint *hp)
 	}
 
 	// Mmmm, I should reash all the table but I just give up and discard the hit point
-	//LOG(LUX_INFO, LUX_NOERROR) << "Discarded hit point in CuckooHashGrid::Insert()";
+	//LOG(LUX_DEBUG, LUX_NOERROR) << "Discarded hit point in CuckooHashGrid::Insert()";
 }
 
 void CuckooHashGrid::AddFlux(const Point &hitPoint, const u_int passIndex, const Vector &wi,

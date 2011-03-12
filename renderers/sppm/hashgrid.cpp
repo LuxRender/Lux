@@ -45,9 +45,9 @@ void HashGrid::RefreshMutex(const u_int passIndex) {
 	// Calculate the size of the grid cell
 	const float maxPhotonRadius2 = hitPoints->GetMaxPhotonRaidus2(passIndex);
 	const float cellSize = sqrtf(maxPhotonRadius2) * 2.f;
-	LOG(LUX_INFO, LUX_NOERROR) << "Hash grid cell size: " << cellSize;
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Hash grid cell size: " << cellSize;
 	invCellSize = 1.f / cellSize;
-	LOG(LUX_INFO, LUX_NOERROR) << "Hash grid size: (" <<
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Hash grid size: (" <<
 			(hpBBox.pMax.x - hpBBox.pMin.x) * invCellSize << ", " <<
 			(hpBBox.pMax.y - hpBBox.pMin.y) * invCellSize << ", " <<
 			(hpBBox.pMax.z - hpBBox.pMin.z) * invCellSize << ")";
@@ -99,7 +99,7 @@ void HashGrid::RefreshMutex(const u_int passIndex) {
 		}
 	}*/
 
-	LOG(LUX_INFO, LUX_NOERROR) << "Building hit points hash grid";
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Building hit points hash grid";
 	//unsigned int maxPathCount = 0;
 	unsigned long long entryCount = 0;
 	for (unsigned int i = 0; i < hitPointsCount; ++i) {
@@ -156,8 +156,8 @@ void HashGrid::RefreshMutex(const u_int passIndex) {
 	}
 
 	//std::cerr << "Max. hit points in a single hash grid entry: " << maxPathCount << std::endl;
-	LOG(LUX_INFO, LUX_NOERROR) << "Total hash grid entry: " << entryCount;
-	LOG(LUX_INFO, LUX_NOERROR) << "Avg. hit points in a single hash grid entry: " << entryCount / gridSize;
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Total hash grid entry: " << entryCount;
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Avg. hit points in a single hash grid entry: " << entryCount / gridSize;
 
 	/*// HashGrid debug code
 	u_int badCells = 0;

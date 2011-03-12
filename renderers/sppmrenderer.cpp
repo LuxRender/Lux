@@ -409,6 +409,10 @@ void SPPMRenderer::EyePassRenderThread::RenderImpl(EyePassRenderThread *myThread
 		if ((renderer->state == TERMINATE) || boost::this_thread::interruption_requested())
 			break;
 
+		double passStartTime = 0.0;
+		if (myThread->n == 0)
+			passStartTime = osWallClockTime();
+
 		//----------------------------------------------------------------------
 		// Eye pass: find hit points
 		//----------------------------------------------------------------------
@@ -439,6 +443,11 @@ void SPPMRenderer::EyePassRenderThread::RenderImpl(EyePassRenderThread *myThread
 		eyePassThreadBarrier->wait();
 
 		hitPoints->RefreshAccelParallel(myThread->n, renderer->eyePassRenderThreads.size());
+
+		if (myThread->n == 0) {
+			const double photonPassTime = osWallClockTime() - passStartTime;
+			LOG(LUX_INFO, LUX_NOERROR) << "Eye pass time: " << photonPassTime << "secs";
+		}
 
 		//----------------------------------------------------------------------
 		// End of the pass
@@ -533,6 +542,10 @@ void SPPMRenderer::PhotonPassRenderThread::RenderImpl(PhotonPassRenderThread *my
 		if ((renderer->state == TERMINATE) || boost::this_thread::interruption_requested())
 			break;
 
+		double passStartTime = 0.0;
+		if (myThread->n == 0)
+			passStartTime = osWallClockTime();
+
 		//----------------------------------------------------------------------
 		// Photon pass: trace photons
 		//----------------------------------------------------------------------
@@ -565,6 +578,9 @@ void SPPMRenderer::PhotonPassRenderThread::RenderImpl(PhotonPassRenderThread *my
 			hitPoints->UpdateFilm();
 
 			hitPoints->IncPhotonPass();
+
+			const double photonPassTime = osWallClockTime() - passStartTime;
+			LOG(LUX_INFO, LUX_NOERROR) << "Photon pass time: " << photonPassTime << "secs";
 		}
 
 		//----------------------------------------------------------------------

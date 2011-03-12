@@ -93,7 +93,7 @@ void KdTree::RefreshMutex(const u_int passIndex) {
 	delete[] nodes;
 	delete[] nodeData;
 
-	LOG(LUX_INFO, LUX_NOERROR) << "Building kD-Tree with " << nNodes << " nodes";
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Building kD-Tree with " << nNodes << " nodes";
 
 	nodes = new KdNode[nNodes];
 	nodeData = new HitPoint*[nNodes];
@@ -107,7 +107,7 @@ void KdTree::RefreshMutex(const u_int passIndex) {
 		buildNodes.push_back(hitPoints->GetHitPoint(i));
 		maxDistSquared = max<float>(maxDistSquared, buildNodes[i]->accumPhotonRadius2);
 	}
-	LOG(LUX_INFO, LUX_NOERROR) << "kD-Tree search radius: " << sqrtf(maxDistSquared);
+	LOG(LUX_DEBUG, LUX_NOERROR) << "kD-Tree search radius: " << sqrtf(maxDistSquared);
 
 	RecursiveBuild(passIndex, 0, 0, nNodes, buildNodes);
 	assert (nNodes == nextFreeNode);

@@ -43,7 +43,7 @@ void StochasticMultiHashGrid::RefreshMutex(const u_int passIndex) {
 	// Calculate the size of the grid cell
 	const float maxPhotonRadius2 = hitPoints->GetMaxPhotonRaidus2(passIndex);
 	const float cellSize = sqrtf(maxPhotonRadius2) * 2.f;
-	LOG(LUX_INFO, LUX_NOERROR) << "Stochastic multi-hash grid cell size: " << cellSize;
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Stochastic multi-hash grid cell size: " << cellSize;
 	invCellSize = 1.f / cellSize;
 
 	if (!grid) {
@@ -53,7 +53,7 @@ void StochasticMultiHashGrid::RefreshMutex(const u_int passIndex) {
 	}
 	memset(grid, 0, sizeof(GridCell) * gridSize);
 
-	LOG(LUX_INFO, LUX_NOERROR) << "Building hit points stochastic multi-hash grid";
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Building hit points stochastic multi-hash grid";
 	for (unsigned int i = 0; i < hitPointsCount; ++i) {
 		HitPoint *hp = hitPoints->GetHitPoint(i);
 		HitPointEyePass *hpep = &hp->eyePass[passIndex];

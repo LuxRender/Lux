@@ -50,7 +50,7 @@ HitPoints::HitPoints(SPPMRenderer *engine, RandomGenerator *rng)  {
 	pixelSampler = new VegasPixelSampler(xstart, xend, ystart, yend);
 
 	hitPoints = new std::vector<HitPoint>(pixelSampler->GetTotalPixels());
-	LOG(LUX_INFO, LUX_NOERROR) << "Hit points count: " << hitPoints->size();
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Hit points count: " << hitPoints->size();
 
 	// Initialize hit points field
 	const u_int lightGroupsNumber = scene->lightGroups.size();
@@ -173,7 +173,7 @@ void HitPoints::AccumulateFlux(const vector<unsigned long long> &photonTracedByL
 	assert (first >= 0);
 	assert (last <= hitPoints->size());
 
-	LOG(LUX_INFO, LUX_NOERROR) << "Accumulate photons flux: " << first << " to " << last - 1;
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Accumulate photons flux: " << first << " to " << last - 1;
 
 	const u_int lightGroupsNumber = renderer->scene->lightGroups.size();
 
@@ -258,7 +258,7 @@ void HitPoints::SetHitPoints(RandomGenerator *rng, const u_int index, const u_in
 	assert (first >= 0);
 	assert (last <= hitPoints->size());
 
-	LOG(LUX_INFO, LUX_NOERROR) << "Building hit points: " << first << " to " << last - 1;
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Building hit points: " << first << " to " << last - 1;
 
 	Scene &scene(*renderer->scene);
 
@@ -483,7 +483,7 @@ void HitPoints::UpdatePointsInformation() {
 		}
 	}
 
-	LOG(LUX_INFO, LUX_NOERROR) << "Hit points bounding box: " << bbox;
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Hit points bounding box: " << bbox;
 
 	hitPointBBox[passIndex] = bbox;
 	maxHitPointRadius2[passIndex] = maxr2;

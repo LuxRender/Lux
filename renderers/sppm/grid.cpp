@@ -45,7 +45,7 @@ void GridLookUpAccel::RefreshMutex(const u_int passIndex) {
 	// Calculate the size of the grid cell
 	const float maxPhotonRadius2 = hitPoints->GetMaxPhotonRaidus2(passIndex);
 	const float cellSize = sqrtf(maxPhotonRadius2) * 2.f;
-	LOG(LUX_INFO, LUX_NOERROR) << "Grid cell size: " << cellSize;
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Grid cell size: " << cellSize;
 	invCellSize = 1.f / cellSize;
 
 	maxGridIndexX = int((hpBBox.pMax.x - hpBBox.pMin.x) * invCellSize);
@@ -56,7 +56,7 @@ void GridLookUpAccel::RefreshMutex(const u_int passIndex) {
 	gridSizeZ = maxGridIndexZ + 1;
 	gridSize = gridSizeX * gridSizeY * gridSizeZ;
 
-	LOG(LUX_INFO, LUX_NOERROR) << "Grid size: (" <<
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Grid size: (" <<
 			gridSizeX << ", " << gridSizeY << ", " << gridSizeZ << ")";
 
 	// TODO: add a tunable parameter for Grid size
@@ -72,7 +72,7 @@ void GridLookUpAccel::RefreshMutex(const u_int passIndex) {
 		}
 	}
 
-	LOG(LUX_INFO, LUX_NOERROR) << "Building hit points grid";
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Building hit points grid";
 	//unsigned int maxPathCount = 0;
 	unsigned long long entryCount = 0;
 	for (unsigned int i = 0; i < hitPointsCount; ++i) {
@@ -113,8 +113,8 @@ void GridLookUpAccel::RefreshMutex(const u_int passIndex) {
 		}
 	}
 	//std::cerr << "Max. hit points in a single hash grid entry: " << maxPathCount << std::endl;
-	LOG(LUX_INFO, LUX_NOERROR) << "Total grid entry: " << entryCount;
-	LOG(LUX_INFO, LUX_NOERROR) << "Avg. hit points in a single grid entry: " << entryCount / gridSize;
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Total grid entry: " << entryCount;
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Avg. hit points in a single grid entry: " << entryCount / gridSize;
 
 	/*// Grid debug code
 	u_int badCells = 0;
