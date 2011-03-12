@@ -484,6 +484,7 @@ void HitPoints::UpdatePointsInformation() {
 	}
 
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Hit points bounding box: " << bbox;
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Hit points max. radius: " << sqrtf(maxr2);
 
 	hitPointBBox[passIndex] = bbox;
 	maxHitPointRadius2[passIndex] = maxr2;
