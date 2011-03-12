@@ -42,6 +42,7 @@
 #include <boost/iostreams/filtering_streambuf.hpp>
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/zlib.hpp>
+#include <boost/filesystem.hpp>
 
 using namespace boost::iostreams;
 using namespace lux;
@@ -926,9 +927,18 @@ void Context::OverrideResumeFLM(const string &flmFileName) {
 	const bool boolFalse = false;
 	filmOverrideParams->AddBool("write_resume_flm", &boolTrue);
 	filmOverrideParams->AddBool("restart_resume_flm", &boolFalse);
-	if (flmFileName != "") {
-		const string filename = flmFileName.substr(0, flmFileName.length() - 4);
-		filmOverrideParams->AddString("filename", &filename);
+	OverrideFilename(flmFileName);
+}
+
+void Context::OverrideFilename(const string &filename) {
+	if (!filmOverrideParams) {
+		filmOverrideParams = new ParamSet();
+	}
+	if (filename != "") {
+		boost::filesystem::path filePath(filename);
+
+		const string basename = filePath.replace_extension("").string();
+		filmOverrideParams->AddString("filename", &basename);
 	}
 }
 

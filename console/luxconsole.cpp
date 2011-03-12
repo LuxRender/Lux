@@ -96,6 +96,7 @@ int main(int ac, char *av[]) {
 				("help,h", "Produce help message")
 				("resume,r", po::value< std::string >()->implicit_value(""), "Resume from FLM")
 				("overrideresume,R", po::value< std::string >(), "Resume from specified FLM")
+				("output,o", po::value< std::string >(), "Output filename")
 				("server,s", "Launch in server mode")
 				("bindump,b", "Dump binary RGB framebuffer to stdout when finished")
 				("debug,d", "Enable debug mode")
@@ -246,6 +247,16 @@ int main(int ac, char *av[]) {
 			}
 
 			luxOverrideResumeFLM(resumefile.c_str());
+		}
+
+		if (vm.count("output")) {
+			std::string outputfile = vm["output"].as<std::string>();
+
+			boost::filesystem::path outputPath(outputfile);
+			if (!boost::filesystem::exists(outputPath.parent_path())) {
+				LOG(LUX_WARNING,LUX_NOFILE) << "Could not find output path '" << outputPath.parent_path() << "', using filename in scene";
+			} else
+				luxOverrideFilename(outputfile.c_str());
 		}
 
 		if (vm.count("input-file")) {

@@ -564,6 +564,11 @@ extern "C" void luxOverrideResumeFLM(const char *name)
 	Context::GetActive()->OverrideResumeFLM(string(name));
 }
 
+extern "C" void luxOverrideFilename(const char *name)
+{
+	Context::GetActive()->OverrideFilename(string(name));
+}
+
 // Write film to a floating point OpenEXR image
 extern "C" void luxSaveEXR(const char* name, bool useHalfFloat, bool includeZBuffer, int compressionType, bool tonemapped)
 {
