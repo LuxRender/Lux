@@ -84,6 +84,8 @@ SPPMRenderer::SPPMRenderer() : Renderer() {
 	preprocessDone = false;
 	suspendThreadsWhenDone = false;
 
+	hitPoints = NULL;
+
 	AddStringConstant(*this, "name", "Name of current renderer", "sppm");
 }
 

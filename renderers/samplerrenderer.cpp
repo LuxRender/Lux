@@ -28,6 +28,7 @@
 #include "samplerrenderer.h"
 #include "randomgen.h"
 #include "context.h"
+#include "sppm/hitpoints.h"
 
 using namespace lux;
 
