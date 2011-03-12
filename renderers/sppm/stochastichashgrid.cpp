@@ -29,19 +29,19 @@ StochasticHashGrid::StochasticHashGrid(HitPoints *hps) {
 	hitPoints = hps;
 	grid = NULL;
 
-	RefreshMutex();
+	RefreshMutex(0);
 }
 
 StochasticHashGrid::~StochasticHashGrid() {
 	delete grid;
 }
 
-void StochasticHashGrid::RefreshMutex() {
+void StochasticHashGrid::RefreshMutex(const u_int passIndex) {
 	const unsigned int hitPointsCount = hitPoints->GetSize();
-	const BBox &hpBBox = hitPoints->GetBBox();
+	const BBox &hpBBox = hitPoints->GetBBox(passIndex);
 
 	// Calculate the size of the grid cell
-	const float maxPhotonRadius2 = hitPoints->GetMaxPhotonRaidus2();
+	const float maxPhotonRadius2 = hitPoints->GetMaxPhotonRaidus2(passIndex);
 	const float cellSize = sqrtf(maxPhotonRadius2) * 2.f;
 	LOG(LUX_INFO, LUX_NOERROR) << "Stochastic Hash grid cell size: " << cellSize;
 	invCellSize = 1.f / cellSize;
@@ -56,12 +56,13 @@ void StochasticHashGrid::RefreshMutex() {
 	LOG(LUX_INFO, LUX_NOERROR) << "Building hit points stochastic hash grid";
 	for (unsigned int i = 0; i < hitPointsCount; ++i) {
 		HitPoint *hp = hitPoints->GetHitPoint(i);
+		HitPointEyePass *hpep = &hp->eyePass[passIndex];
 
-		if (hp->type == SURFACE) {
+		if (hpep->type == SURFACE) {
 			const float photonRadius = sqrtf(hp->accumPhotonRadius2);
 			const Vector rad(photonRadius, photonRadius, photonRadius);
-			const Vector bMin = ((hp->position - rad) - hpBBox.pMin) * invCellSize;
-			const Vector bMax = ((hp->position + rad) - hpBBox.pMin) * invCellSize;
+			const Vector bMin = ((hpep->position - rad) - hpBBox.pMin) * invCellSize;
+			const Vector bMax = ((hpep->position + rad) - hpBBox.pMin) * invCellSize;
 
 			for (int iz = abs(int(bMin.z)); iz <= abs(int(bMax.z)); ++iz) {
 				for (int iy = abs(int(bMin.y)); iy <= abs(int(bMax.y)); ++iy) {
@@ -91,15 +92,15 @@ void StochasticHashGrid::RefreshMutex() {
 	std::cerr << "StochasticHashGrid.emptyCells = " << (100.f * emptyCells / gridSize) << "%" << std::endl;*/
 }
 
-void StochasticHashGrid::AddFlux(const Point &hitPoint, const Vector &wi,
+void StochasticHashGrid::AddFlux(const Point &hitPoint, const u_int passIndex, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group) {
 	// Look for eye path hit points near the current hit point
-	Vector hh = (hitPoint - hitPoints->GetBBox().pMin) * invCellSize;
+	Vector hh = (hitPoint - hitPoints->GetBBox(passIndex).pMin) * invCellSize;
 	const int ix = abs(int(hh.x));
 	const int iy = abs(int(hh.y));
 	const int iz = abs(int(hh.z));
 
 	GridCell &cell(grid[Hash(ix, iy, iz)]);
 	if (cell.count > 0)
-		AddFluxToHitPoint(cell.hitPoint, hitPoint, wi, sw, photonFlux * cell.count, light_group);
+		AddFluxToHitPoint(cell.hitPoint, passIndex, hitPoint, wi, sw, photonFlux * cell.count, light_group);
 }

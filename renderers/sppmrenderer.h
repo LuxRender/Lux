@@ -120,23 +120,36 @@ public:
 
 private:
 	//--------------------------------------------------------------------------
-	// RenderThread
+	// Render threads
 	//--------------------------------------------------------------------------
 
-	class RenderThread : public boost::noncopyable {
+	class EyePassRenderThread : public boost::noncopyable {
 	public:
-		RenderThread(u_int index, SPPMRenderer *renderer);
-		~RenderThread();
+		EyePassRenderThread(u_int index, SPPMRenderer *renderer);
+		~EyePassRenderThread();
 
-		void TracePhotons();
-
-		static void RenderImpl(RenderThread *r);
+		static void RenderImpl(EyePassRenderThread *r);
 
 		u_int  n;
 		SPPMRenderer *renderer;
 		boost::thread *thread; // keep pointer to delete the thread object
-		double samples, blackSamples;
-		fast_mutex statLock;
+
+		RandomGenerator *threadRng;
+		Sample *threadSample;
+	};
+
+	class PhotonPassRenderThread : public boost::noncopyable {
+	public:
+		PhotonPassRenderThread(u_int index, SPPMRenderer *renderer);
+		~PhotonPassRenderThread();
+
+		void TracePhotons();
+
+		static void RenderImpl(PhotonPassRenderThread *r);
+
+		u_int  n;
+		SPPMRenderer *renderer;
+		boost::thread *thread; // keep pointer to delete the thread object
 
 		RandomGenerator *threadRng;
 		Sample *threadSample;
@@ -153,25 +166,25 @@ private:
 
 	mutable boost::mutex classWideMutex;
 	mutable boost::mutex renderThreadsMutex;
-	boost::barrier *barrier, *barrierExit;
+	boost::barrier *allThreadBarrier;
+	boost::barrier *eyePassThreadBarrier;
+	boost::barrier *photonPassThreadBarrier;
+	boost::barrier *exitBarrier;
 
 	RendererState state;
 	vector<RendererHostDescription *> hosts;
-	vector<RenderThread *> renderThreads;
+	vector<EyePassRenderThread *> eyePassRenderThreads;
+	vector<PhotonPassRenderThread *> photonPassRenderThreads;
+
 	Scene *scene;
 	SPPMIntegrator *sppmi;
 	HitPoints *hitPoints;
 
-	// Only a single set of wavelengths is sampled for each pass
-	float currentWavelengthSample;
-
-	u_int passCount;
-
-	// store number of photon traced by lightgroup
+	// Store number of photon traced by lightgroup
 	vector<unsigned long long> photonTracedTotal;
 	vector<u_int> photonTracedPass;
 
-	// store number of photon traced this pass, regardless of lightgroup
+	// Store number of photon traced this pass, regardless of lightgroup
 	u_int photonTracedPassNoLightGroup;
 
 	fast_mutex sampPosMutex;

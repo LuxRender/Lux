@@ -37,7 +37,12 @@ using namespace lux;
 HitPoints::HitPoints(SPPMRenderer *engine, RandomGenerator *rng)  {
 	renderer = engine;
 	Scene *scene = renderer->scene;
-	pass = 0;
+	currentEyePass = 0;
+	currentPhotonPass = 0;
+
+	wavelengthSampleScramble = rng->uintValue();
+	eyePassWavelengthSample = Halton(0, wavelengthSampleScramble);
+	photonPassWavelengthSample = Halton(0, wavelengthSampleScramble);
 
 	// Get the count of hit points required
 	int xstart, xend, ystart, yend;
@@ -48,8 +53,6 @@ HitPoints::HitPoints(SPPMRenderer *engine, RandomGenerator *rng)  {
 	LOG(LUX_INFO, LUX_NOERROR) << "Hit points count: " << hitPoints->size();
 
 	// Initialize hit points field
-
-
 	const u_int lightGroupsNumber = scene->lightGroups.size();
 
 	for (u_int i = 0; i < (*hitPoints).size(); ++i) {
@@ -59,6 +62,8 @@ HitPoints::HitPoints(SPPMRenderer *engine, RandomGenerator *rng)  {
 		hp->haltonOffset = rng->floatValue();
 
 		hp->lightGroupData.resize(lightGroupsNumber);
+		hp->eyePass[0].eyeRadiance.reserve(lightGroupsNumber);
+		hp->eyePass[1].eyeRadiance.reserve(lightGroupsNumber);
 		
 		for(u_int j = 0; j < lightGroupsNumber; j++) {
 			hp->lightGroupData[j].photonCount = 0;
@@ -79,7 +84,8 @@ HitPoints::HitPoints(SPPMRenderer *engine, RandomGenerator *rng)  {
 }
 
 HitPoints::~HitPoints() {
-	delete lookUpAccel;
+	delete lookUpAccel[0];
+	delete lookUpAccel[1];
 
 	for (u_int i = 0; i < (*hitPoints).size(); ++i) {
 		HitPoint *hp = &(*hitPoints)[i];
@@ -95,9 +101,10 @@ void HitPoints::Init() {
 	BBox hpBBox = BBox();
 	for (u_int i = 0; i < (*hitPoints).size(); ++i) {
 		HitPoint *hp = &(*hitPoints)[i];
+		HitPointEyePass *hpep = &hp->eyePass[0];
 
-		if (hp->type == SURFACE)
-			hpBBox = Union(hpBBox, hp->position);
+		if (hpep->type == SURFACE)
+			hpBBox = Union(hpBBox, hpep->position);
 	}
 
 	// Calculate initial radius
@@ -109,8 +116,8 @@ void HitPoints::Init() {
 	// Expand the bounding box by used radius
 	hpBBox.Expand(initialPhotonRaidus);
 	// Update hit points information
-	bbox = hpBBox;
-	maxPhotonRaidus2 = photonRadius2;
+	hitPointBBox[0] = hpBBox;
+	maxHitPointRadius2[0] = photonRadius2;
 
 	// Initialize hit points field
 	for (u_int i = 0; i < (*hitPoints).size(); ++i) {
@@ -122,28 +129,36 @@ void HitPoints::Init() {
 	// Allocate hit points lookup accelerator
 	switch (renderer->sppmi->lookupAccelType) {
 		case HASH_GRID:
-			lookUpAccel = new HashGrid(this);
+			lookUpAccel[0] = new HashGrid(this);
+			lookUpAccel[1] = new HashGrid(this);
 			break;
 		case KD_TREE:
-			lookUpAccel = new KdTree(this);
+			lookUpAccel[0] = new KdTree(this);
+			lookUpAccel[1] = new KdTree(this);
 			break;
 		case HYBRID_HASH_GRID:
-			lookUpAccel = new HybridHashGrid(this);
+			lookUpAccel[0] = new HybridHashGrid(this);
+			lookUpAccel[1] = new HybridHashGrid(this);
 			break;
 		case STOCHASTIC_HASH_GRID:
-			lookUpAccel = new StochasticHashGrid(this);
+			lookUpAccel[0] = new StochasticHashGrid(this);
+			lookUpAccel[1] = new StochasticHashGrid(this);
 			break;
 		case GRID:
-			lookUpAccel = new GridLookUpAccel(this);
+			lookUpAccel[0] = new GridLookUpAccel(this);
+			lookUpAccel[1] = new GridLookUpAccel(this);
 			break;
 		case CUCKOO_HASH_GRID:
-			lookUpAccel = new CuckooHashGrid(this);
+			lookUpAccel[0] = new CuckooHashGrid(this);
+			lookUpAccel[1] = new CuckooHashGrid(this);
 			break;
 		case HYBRID_MULTIHASH_GRID:
-			lookUpAccel = new HybridMultiHashGrid(this);
+			lookUpAccel[0] = new HybridMultiHashGrid(this);
+			lookUpAccel[1] = new HybridMultiHashGrid(this);
 			break;
 		case STOCHASTIC_MULTIHASH_GRID:
-			lookUpAccel = new StochasticMultiHashGrid(this);
+			lookUpAccel[0] = new StochasticMultiHashGrid(this);
+			lookUpAccel[1] = new StochasticMultiHashGrid(this);
 			break;
 		default:
 			assert (false);
@@ -162,19 +177,21 @@ void HitPoints::AccumulateFlux(const vector<unsigned long long> &photonTracedByL
 
 	const u_int lightGroupsNumber = renderer->scene->lightGroups.size();
 
+	const u_int passIndex = currentPhotonPass % 2;
 	for (u_int i = first; i < last; ++i) {
 		HitPoint *hp = &(*hitPoints)[i];
+		HitPointEyePass *hpep = &hp->eyePass[passIndex];
 
-		switch (hp->type) {
+		switch (hpep->type) {
 			case CONSTANT_COLOR:
 				for (u_int j = 0; j < lightGroupsNumber; ++j) {
-					hp->lightGroupData[j].accumRadiance += hp->lightGroupData[j].eyeRadiance;
+					hp->lightGroupData[j].accumRadiance += hpep->eyeRadiance[j];
 					hp->lightGroupData[j].constantHitsCount += 1;
 				}
 				break;
 			case SURFACE:
 				{
-					// compute g and do radius reduction
+					// Compute g and do radius reduction
 					unsigned long long photonCount = 0;
 					unsigned long long accumPhotonCount = 0;
 					for (u_int j = 0; j < lightGroupsNumber; ++j) {
@@ -189,7 +206,7 @@ void HitPoints::AccumulateFlux(const vector<unsigned long long> &photonTracedByL
 						const double alpha = renderer->sppmi->photonAlpha;
 						const float g = alpha * pcount / (photonCount * alpha + accumPhotonCount);
 
-						// radius reduction
+						// Radius reduction
 						hp->accumPhotonRadius2 *= g;
 
 						// update light group flux
@@ -197,8 +214,8 @@ void HitPoints::AccumulateFlux(const vector<unsigned long long> &photonTracedByL
 							hp->lightGroupData[j].reflectedFlux = (hp->lightGroupData[j].reflectedFlux + hp->lightGroupData[j].accumReflectedFlux) * g;
 							hp->lightGroupData[j].accumReflectedFlux = XYZColor();
 
-							if (!hp->lightGroupData[j].eyeRadiance.Black()) {
-								hp->lightGroupData[j].accumRadiance += hp->lightGroupData[j].eyeRadiance;
+							if (!hpep->eyeRadiance[j].Black()) {
+								hp->lightGroupData[j].accumRadiance += hpep->eyeRadiance[j];
 								hp->lightGroupData[j].constantHitsCount += 1;
 							}
 						}
@@ -212,7 +229,7 @@ void HitPoints::AccumulateFlux(const vector<unsigned long long> &photonTracedByL
 				assert (false);
 		}
 
-		// update radiance
+		// Update radiance
 		for(u_int j = 0; j < lightGroupsNumber; ++j) {
 			const u_int hitCount = hp->lightGroupData[j].constantHitsCount + hp->lightGroupData[j].surfaceHitsCount;
 			if (hitCount > 0) {
@@ -234,8 +251,7 @@ void HitPoints::AccumulateFlux(const vector<unsigned long long> &photonTracedByL
 	}
 }
 
-void HitPoints::SetHitPoints(RandomGenerator *rng, const u_int pass,
-		const u_int index, const u_int count) {
+void HitPoints::SetHitPoints(RandomGenerator *rng, const u_int index, const u_int count) {
 	const unsigned int workSize = hitPoints->size() / count;
 	const unsigned int first = workSize * index;
 	const unsigned int last = (index == count - 1) ? hitPoints->size() : (first + workSize);
@@ -258,7 +274,7 @@ void HitPoints::SetHitPoints(RandomGenerator *rng, const u_int pass,
 
 		// Generate the sample values
 		float u[9];
-		hp->halton->Sample(pass, u);
+		hp->halton->Sample(currentEyePass, u);
 		// Add an offset to the samples to avoid to start with 0.f values
 		for (int j = 0; j < 9; ++j) {
 			float v = u[j] + hp->haltonOffset;
@@ -273,7 +289,7 @@ void HitPoints::SetHitPoints(RandomGenerator *rng, const u_int pass,
 		sample.lensU = u[2];
 		sample.lensV = u[3];
 		sample.time = u[4];
-		sample.wavelengths = renderer->currentWavelengthSample;
+		sample.wavelengths = eyePassWavelengthSample;
 
 		// This may be required by the volume integrator
 		for (u_int j = 0; j < sample.n1D.size(); ++j)
@@ -294,6 +310,8 @@ void HitPoints::SetHitPoints(RandomGenerator *rng, const u_int pass,
 }
 
 void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, const float *u) {
+	HitPointEyePass *hpep = &hp->eyePass[currentEyePass % 2];
+
 	Scene &scene(*renderer->scene);
 	const RandomGenerator &rng(*sample.rng);
 	const bool includeEnvironment = renderer->sppmi->includeEnvironment;
@@ -313,8 +331,8 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, const float *u)
 	const u_int lightGroupCount = scene.lightGroups.size();
 	vector<SWCSpectrum> L(lightGroupCount, 0.f);
 	bool scattered = false;
-	hp->eyeAlpha = 1.f;
-	hp->eyeDistance = INFINITY;
+	hpep->eyeAlpha = 1.f;
+	hpep->eyeDistance = INFINITY;
 	u_int vertexIndex = 0;
 	const Volume *volume = NULL;
 
@@ -345,7 +363,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, const float *u)
 			pathThroughput /= spdf;
 			// Dade - now I know ray.maxt and I can call volumeIntegrator
 			SWCSpectrum Lv;
-			u_int g = scene.volumeIntegrator->Li(scene, ray, sample, &Lv, &hp->eyeAlpha);
+			u_int g = scene.volumeIntegrator->Li(scene, ray, sample, &Lv, &hpep->eyeAlpha);
 			if (!Lv.Black()) {
 				Lv *= prevThroughput;
 				L[g] += Lv;
@@ -364,20 +382,20 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, const float *u)
 
 			// Set alpha channel
 			if (vertexIndex == 0)
-				hp->eyeAlpha = 0.f;
+				hpep->eyeAlpha = 0.f;
 
-			hp->type = CONSTANT_COLOR;
+			hpep->type = CONSTANT_COLOR;
 			for(unsigned int j = 0; j < lightGroupCount; ++j)
-				hp->lightGroupData[j].eyeRadiance = XYZColor(sw, L[j] * rayWeight);
+				hpep->eyeRadiance[j] = XYZColor(sw, L[j] * rayWeight);
 			return;
 		}
 		scattered = bsdf->dgShading.scattered;
 		pathThroughput /= spdf;
 		if (vertexIndex == 0)
-			hp->eyeDistance = ray.maxt * ray.d.Length();
+			hpep->eyeDistance = ray.maxt * ray.d.Length();
 
 		SWCSpectrum Lv;
-		const u_int g = scene.volumeIntegrator->Li(scene, ray, sample, &Lv, &hp->eyeAlpha);
+		const u_int g = scene.volumeIntegrator->Li(scene, ray, sample, &Lv, &hpep->eyeAlpha);
 		if (!Lv.Black()) {
 			Lv *= prevThroughput;
 			L[g] += Lv;
@@ -395,9 +413,9 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, const float *u)
 		}
 
 		if (pathLength == maxDepth) {
-			hp->type = CONSTANT_COLOR;
+			hpep->type = CONSTANT_COLOR;
 			for(unsigned int j = 0; j < lightGroupCount; ++j)
-				hp->lightGroupData[j].eyeRadiance = XYZColor(sw, L[j] * rayWeight);
+				hpep->eyeRadiance[j] = XYZColor(sw, L[j] * rayWeight);
 			return;
 		}
 
@@ -410,25 +428,25 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, const float *u)
 		SWCSpectrum f;
 		if (!bsdf->SampleF(sw, wo, &wi, data[0], data[1], data[2], &f,
 			&pdf, BSDF_ALL, &flags, NULL, true)) {
-			hp->type = CONSTANT_COLOR;
+			hpep->type = CONSTANT_COLOR;
 			for(unsigned int j = 0; j < lightGroupCount; ++j)
-				hp->lightGroupData[j].eyeRadiance = XYZColor(sw, L[j] * rayWeight);
+				hpep->eyeRadiance[j] = XYZColor(sw, L[j] * rayWeight);
 			return;
 		}
 
 		if (flags == BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)) {
 			// It is a valid hit point
-			hp->type = SURFACE;
-			hp->bsdfNG = bsdf->ng;
-			hp->bsdfNS = bsdf->dgShading.nn;
-			const Vector vn(hp->bsdfNS);
-			hp->bsdfRoverPI = bsdf->F(sw, vn, vn,
+			hpep->type = SURFACE;
+			hpep->bsdfNG = bsdf->ng;
+			hpep->bsdfNS = bsdf->dgShading.nn;
+			const Vector vn(hpep->bsdfNS);
+			hpep->bsdfRoverPI = bsdf->F(sw, vn, vn,
 					false, BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE));
-			hp->eyeThroughput = pathThroughput * rayWeight;
+			hpep->eyeThroughput = pathThroughput * rayWeight;
 			for(unsigned int j = 0; j < lightGroupCount; ++j)
-				hp->lightGroupData[j].eyeRadiance = XYZColor(sw, L[j] * rayWeight);
-			hp->position = p;
-			hp->wo = wo;
+				hpep->eyeRadiance[j] = XYZColor(sw, L[j] * rayWeight);
+			hpep->position = p;
+			hpep->wo = wo;
 			return;
 		}
 
@@ -438,9 +456,9 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, const float *u)
 
 		pathThroughput *= f;
 		if (pathThroughput.Black()) {
-			hp->type = CONSTANT_COLOR;
+			hpep->type = CONSTANT_COLOR;
 			for(unsigned int j = 0; j < lightGroupCount; ++j)
-				hp->lightGroupData[j].eyeRadiance = XYZColor(sw, L[j] * rayWeight);
+				hpep->eyeRadiance[j] = XYZColor(sw, L[j] * rayWeight);
 			return;
 		}
 
@@ -452,21 +470,28 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, const float *u)
 
 void HitPoints::UpdatePointsInformation() {
 	// Calculate hit points bounding box
-	bbox = BBox();
-	maxPhotonRaidus2 = 0.f;
+	BBox bbox;
+	float maxr2 = 0.f;
+	const u_int passIndex = currentEyePass % 2;
 	for (u_int i = 0; i < (*hitPoints).size(); ++i) {
 		HitPoint *hp = &(*hitPoints)[i];
+		HitPointEyePass *hpep = &hp->eyePass[passIndex];
 
-		if (hp->type == SURFACE) {
-			bbox = Union(bbox, hp->position);
-			maxPhotonRaidus2 = max<float>(maxPhotonRaidus2, hp->accumPhotonRadius2);
+		if (hpep->type == SURFACE) {
+			bbox = Union(bbox, hpep->position);
+			maxr2 = max<float>(maxr2, hp->accumPhotonRadius2);
 		}
 	}
+
 	LOG(LUX_INFO, LUX_NOERROR) << "Hit points bounding box: " << bbox;
+
+	hitPointBBox[passIndex] = bbox;
+	maxHitPointRadius2[passIndex] = maxr2;
 }
 
 void HitPoints::UpdateFilm() {
-	// Assume a linear pixel sampler
+	const u_int passIndex = currentPhotonPass % 2;
+
 	Scene &scene(*renderer->scene);
 	const u_int bufferId = renderer->sppmi->bufferId;
 	int xPos, yPos;
@@ -511,12 +536,13 @@ void HitPoints::UpdateFilm() {
 	} else {*/
 		// Just normal rendering
 		for (u_int i = 0; i < GetSize(); ++i) {
-			HitPoint *hp = GetHitPoint(i);
+			HitPoint *hp = &(*hitPoints)[i];
+			HitPointEyePass *hpep = &hp->eyePass[passIndex];
 			pixelSampler->GetNextPixel(&xPos, &yPos, i);
 
 			for(u_int j = 0; j < lightGroupsNumber; j++) {
-				Contribution contrib(xPos, yPos, hp->lightGroupData[j].radiance, hp->eyeAlpha,
-						hp->eyeDistance, 0.f, bufferId, j);
+				Contribution contrib(xPos, yPos, hp->lightGroupData[j].radiance, hpep->eyeAlpha,
+						hpep->eyeDistance, 0.f, bufferId, j);
 				film.SetSample(&contrib);
 			}
 		}

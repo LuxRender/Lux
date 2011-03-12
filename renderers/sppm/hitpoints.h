@@ -40,7 +40,8 @@ enum HitPointType {
 	SURFACE, CONSTANT_COLOR
 };
 
-struct HitPointLightGroup {
+class HitPointLightGroup {
+public:
 	unsigned long long photonCount;
 	XYZColor reflectedFlux;
 
@@ -55,16 +56,11 @@ struct HitPointLightGroup {
 	// Debug code
 	// Radiance Sum Square Error, used to compute Mean Square Error
 	//float radianceSSE;
-
-	XYZColor eyeRadiance;
 };
 
-
-class HitPoint {
+class HitPointEyePass {
 public:
 	HitPointType type;
-	PermutedHalton *halton;
-	float haltonOffset;
 
 	// Eye path data
 	SWCSpectrum eyeThroughput; // Used only for SURFACE type
@@ -76,6 +72,18 @@ public:
 	Vector wo;
 	Normal bsdfNG, bsdfNS;
 	SWCSpectrum bsdfRoverPI;
+
+	vector<XYZColor> eyeRadiance;
+};
+
+
+class HitPoint {
+public:
+	PermutedHalton *halton;
+	float haltonOffset;
+
+	// Used to render eye pass n+1 while doing photon pass n
+	HitPointEyePass eyePass[2];
 
 	vector<HitPointLightGroup> lightGroupData;
 	
@@ -99,32 +107,45 @@ public:
 		return hitPoints->size();
 	}
 
-	const BBox GetBBox() const {
-		return bbox;
+	const BBox &GetBBox(const u_int passIndex) const {
+		return hitPointBBox[passIndex];
 	}
 
-	float GetMaxPhotonRaidus2() const { return maxPhotonRaidus2; }
+	float GetMaxPhotonRaidus2(const u_int passIndex) const { return maxHitPointRadius2[passIndex]; }
 
 	void UpdatePointsInformation();
-	u_int GetPassCount() const { return pass; }
-	void IncPass() { ++pass; }
+	const u_int GetEyePassCount() const { return currentEyePass; }
+	const u_int GetPhotonPassCount() const { return currentPhotonPass; }
+	void IncEyePass() {
+		++currentEyePass;
+		eyePassWavelengthSample = Halton(currentEyePass, wavelengthSampleScramble);
+	}
+	void IncPhotonPass() {
+		++currentPhotonPass;
+		photonPassWavelengthSample = Halton(currentPhotonPass, wavelengthSampleScramble);
+	}
+
+	const float GetPassWavelengthSample() { return eyePassWavelengthSample; }
+	const float GetPhotonPassWavelengthSample() { return photonPassWavelengthSample; }
 
 	void AddFlux(const Point &hitPoint, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group) {
-		lookUpAccel->AddFlux(hitPoint, wi, sw, photonFlux, light_group);
+		const u_int passIndex = currentPhotonPass % 2;
+		lookUpAccel[passIndex]->AddFlux(hitPoint, passIndex, wi, sw, photonFlux, light_group);
 	}
 
 	void AccumulateFlux(const vector<unsigned long long> &photonTracedByLightGroup,
 		const u_int index, const u_int count);
-	void SetHitPoints(RandomGenerator *rng, const u_int pass,
-		const u_int index, const u_int count);
+	void SetHitPoints(RandomGenerator *rng,	const u_int index, const u_int count);
 
 	void RefreshAccelMutex() {
-		lookUpAccel->RefreshMutex();
+		const u_int passIndex = currentEyePass % 2;
+		lookUpAccel[passIndex]->RefreshMutex(passIndex);
 	}
 
 	void RefreshAccelParallel(const u_int index, const u_int count) {
-		lookUpAccel->RefreshParallel(index, count);
+		const u_int passIndex = currentEyePass % 2;
+		lookUpAccel[passIndex]->RefreshParallel(passIndex, index, count);
 	}
 
 	void UpdateFilm();
@@ -136,13 +157,20 @@ private:
 	PixelSampler *pixelSampler;
 
 	// Hit points information
-	BBox bbox;
 	float initialPhotonRaidus;
-	float maxPhotonRaidus2;
+	// Used to render eye pass n+1 while doing photon pass n
+	BBox hitPointBBox[2];
+	float maxHitPointRadius2[2];
 	std::vector<HitPoint> *hitPoints;
-	HitPointsLookUpAccel *lookUpAccel;
+	HitPointsLookUpAccel *lookUpAccel[2];
 
-	u_int pass;
+	u_int currentEyePass;
+	u_int currentPhotonPass;
+
+	// Only a single set of wavelengths is sampled for each pass
+	float eyePassWavelengthSample, photonPassWavelengthSample;
+	u_int wavelengthSampleScramble;
+
 };
 
 }//namespace lux

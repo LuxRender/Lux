@@ -29,7 +29,7 @@ GridLookUpAccel::GridLookUpAccel(HitPoints *hps) {
 	hitPoints = hps;
 	grid = NULL;
 
-	RefreshMutex();
+	RefreshMutex(0);
 }
 
 GridLookUpAccel::~GridLookUpAccel() {
@@ -38,12 +38,12 @@ GridLookUpAccel::~GridLookUpAccel() {
 	delete[] grid;
 }
 
-void GridLookUpAccel::RefreshMutex() {
+void GridLookUpAccel::RefreshMutex(const u_int passIndex) {
 	const unsigned int hitPointsCount = hitPoints->GetSize();
-	const BBox &hpBBox = hitPoints->GetBBox();
+	const BBox &hpBBox = hitPoints->GetBBox(passIndex);
 
 	// Calculate the size of the grid cell
-	const float maxPhotonRadius2 = hitPoints->GetMaxPhotonRaidus2();
+	const float maxPhotonRadius2 = hitPoints->GetMaxPhotonRaidus2(passIndex);
 	const float cellSize = sqrtf(maxPhotonRadius2) * 2.f;
 	LOG(LUX_INFO, LUX_NOERROR) << "Grid cell size: " << cellSize;
 	invCellSize = 1.f / cellSize;
@@ -77,12 +77,13 @@ void GridLookUpAccel::RefreshMutex() {
 	unsigned long long entryCount = 0;
 	for (unsigned int i = 0; i < hitPointsCount; ++i) {
 		HitPoint *hp = hitPoints->GetHitPoint(i);
+		HitPointEyePass *hpep = &hp->eyePass[passIndex];
 
-		if (hp->type == SURFACE) {
+		if (hpep->type == SURFACE) {
 			const float photonRadius = sqrtf(hp->accumPhotonRadius2);
 			const Vector rad(photonRadius, photonRadius, photonRadius);
-			const Vector bMin = ((hp->position - rad) - hpBBox.pMin) * invCellSize;
-			const Vector bMax = ((hp->position + rad) - hpBBox.pMin) * invCellSize;
+			const Vector bMin = ((hpep->position - rad) - hpBBox.pMin) * invCellSize;
+			const Vector bMax = ((hpep->position + rad) - hpBBox.pMin) * invCellSize;
 
 			const int ixMin = Clamp<int>(int(bMin.x), 0, maxGridIndexX);
 			const int ixMax = Clamp<int>(int(bMax.x), 0, maxGridIndexX);
@@ -131,10 +132,10 @@ void GridLookUpAccel::RefreshMutex() {
 	std::cerr << "Grid.emptyCells = " << (100.f * emptyCells / gridSize) << "%" << std::endl;*/
 }
 
-void GridLookUpAccel::AddFlux(const Point &hitPoint, const Vector &wi,
+void GridLookUpAccel::AddFlux(const Point &hitPoint, const u_int passIndex, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group) {
 	// Look for eye path hit points near the current hit point
-	Vector hh = (hitPoint - hitPoints->GetBBox().pMin) * invCellSize;
+	Vector hh = (hitPoint - hitPoints->GetBBox(passIndex).pMin) * invCellSize;
 	const int ix = int(hh.x);
 	if ((ix < 0) || (ix > maxGridIndexX))
 			return;
@@ -151,7 +152,7 @@ void GridLookUpAccel::AddFlux(const Point &hitPoint, const Vector &wi,
 		while (iter != hps->end()) {
 			HitPoint *hp = *iter++;
 
-			AddFluxToHitPoint(hp, hitPoint, wi, sw, photonFlux, light_group);
+			AddFluxToHitPoint(hp, passIndex, hitPoint, wi, sw, photonFlux, light_group);
 		}
 	}
 }

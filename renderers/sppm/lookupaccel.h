@@ -39,19 +39,23 @@ enum LookUpAccelType {
 	CUCKOO_HASH_GRID, HYBRID_MULTIHASH_GRID, STOCHASTIC_MULTIHASH_GRID
 };
 
+class HashCell;
+
 class HitPointsLookUpAccel {
 public:
 	HitPointsLookUpAccel() { }
 	virtual ~HitPointsLookUpAccel() { }
 
-	virtual void RefreshMutex() = 0;
-	virtual void RefreshParallel(const unsigned int index, const unsigned int count) { }
+	virtual void RefreshMutex(const u_int passIndex) = 0;
+	virtual void RefreshParallel(const u_int passIndex, const u_int index, const u_int count) { }
 
-	virtual void AddFlux(const Point &hitPoint, const Vector &wi,
+	virtual void AddFlux(const Point &hitPoint, const u_int passIndex, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group) = 0;
 
+	friend class HashCell;
+
 protected:
-	void AddFluxToHitPoint(HitPoint *hp,
+	void AddFluxToHitPoint(HitPoint *hp, const u_int passIndex,
 		const Point &hitPoint, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group);
 };
@@ -76,21 +80,21 @@ public:
 
 	~HashGrid();
 
-	void RefreshMutex();
+	void RefreshMutex(const u_int passIndex);
 
-	void AddFlux(const Point &hitPoint, const Vector &wi,
+	void AddFlux(const Point &hitPoint, const u_int passIndex, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group);
 
 private:
-	unsigned int Hash(const int ix, const int iy, const int iz) {
-		return (unsigned int)((ix * 73856093) ^ (iy * 19349663) ^ (iz * 83492791)) % gridSize;
+	u_int Hash(const int ix, const int iy, const int iz) {
+		return (u_int)((ix * 73856093) ^ (iy * 19349663) ^ (iz * 83492791)) % gridSize;
 	}
-	/*unsigned int Hash(const int ix, const int iy, const int iz) {
-		return (unsigned int)((ix * 997 + iy) * 443 + iz) % gridSize;
+	/*u_int Hash(const int ix, const int iy, const int iz) {
+		return (u_int)((ix * 997 + iy) * 443 + iz) % gridSize;
 	}*/
 
 	HitPoints *hitPoints;
-	unsigned int gridSize;
+	u_int gridSize;
 	float invCellSize;
 	std::list<HitPoint *> **grid;
 };
@@ -105,13 +109,13 @@ public:
 
 	~GridLookUpAccel();
 
-	void RefreshMutex();
+	void RefreshMutex(const u_int passIndex);
 
-	void AddFlux(const Point &hitPoint, const Vector &wi,
+	void AddFlux(const Point &hitPoint, const u_int passIndex, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group);
 
 private:
-	unsigned int ReduceDims(const int ix, const int iy, const int iz) {
+	u_int ReduceDims(const int ix, const int iy, const int iz) {
 		return ix + iy * gridSizeX + iz * gridSizeX * gridSizeY;
 	}
 
@@ -132,9 +136,9 @@ public:
 
 	~StochasticHashGrid();
 
-	void RefreshMutex();
+	void RefreshMutex(const u_int passIndex);
 
-	void AddFlux(const Point &hitPoint, const Vector &wi,
+	void AddFlux(const Point &hitPoint, const u_int passIndex, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group);
 
 private:
@@ -143,12 +147,12 @@ private:
 		u_int count;
 	};
 
-	unsigned int Hash(const int ix, const int iy, const int iz) {
-		return (unsigned int)((ix * 73856093) ^ (iy * 19349663) ^ (iz * 83492791)) % gridSize;
+	u_int Hash(const int ix, const int iy, const int iz) {
+		return (u_int)((ix * 73856093) ^ (iy * 19349663) ^ (iz * 83492791)) % gridSize;
 	}
 
 	HitPoints *hitPoints;
-	unsigned int gridSize;
+	u_int gridSize;
 	float invCellSize;
 	GridCell *grid;
 };
@@ -163,9 +167,9 @@ public:
 
 	~CuckooHashGrid();
 
-	void RefreshMutex();
+	void RefreshMutex(const u_int passIndex);
 
-	void AddFlux(const Point &hitPoint, const Vector &wi,
+	void AddFlux(const Point &hitPoint, const u_int passIndex, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group);
 
 private:
@@ -176,21 +180,21 @@ private:
 
 	void Insert(const int ix, const int iy, const int iz, HitPoint *hitPoint);
 
-	unsigned int Hash1(const int ix, const int iy, const int iz) {
-		return (unsigned int)((ix * 73856093) ^ (iy * 19349663) ^ (iz * 83492791)) % gridSize;
+	u_int Hash1(const int ix, const int iy, const int iz) {
+		return (u_int)((ix * 73856093) ^ (iy * 19349663) ^ (iz * 83492791)) % gridSize;
 	}
-	unsigned int Hash2(const int ix, const int iy, const int iz) {
-		return (unsigned int)((ix * 49979693) ^ (iy * 86028157) ^ (iz * 15485867)) % gridSize;
+	u_int Hash2(const int ix, const int iy, const int iz) {
+		return (u_int)((ix * 49979693) ^ (iy * 86028157) ^ (iz * 15485867)) % gridSize;
 	}
-	unsigned int Hash3(const int ix, const int iy, const int iz) {
-		return (unsigned int)((ix * 15485863) ^ (iy * 49979687) ^ (iz * 32452867)) % gridSize;
+	u_int Hash3(const int ix, const int iy, const int iz) {
+		return (u_int)((ix * 15485863) ^ (iy * 49979687) ^ (iz * 32452867)) % gridSize;
 	}
-	/*unsigned int Hash4(const int ix, const int iy, const int iz) {
-		return (unsigned int)((ix * 67867979) ^ (iy * 32452843) ^ (iz * 67867967)) % gridSize;
+	/*u_int Hash4(const int ix, const int iy, const int iz) {
+		return (u_int)((ix * 67867979) ^ (iy * 32452843) ^ (iz * 67867967)) % gridSize;
 	}*/
 
 	HitPoints *hitPoints;
-	unsigned int gridSize;
+	u_int gridSize;
 	float invCellSize;
 
 	GridCell *grid1;
@@ -208,14 +212,14 @@ public:
 
 	~KdTree();
 
-	void RefreshMutex();
+	void RefreshMutex(const u_int passIndex);
 
-	void AddFlux(const Point &hitPoint,  const Vector &wi,
+	void AddFlux(const Point &hitPoint, const u_int passIndex, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group);
 
 private:
 	struct KdNode {
-		void init(const float p, const unsigned int a) {
+		void init(const float p, const u_int a) {
 			splitPos = p;
 			splitAxis = a;
 			// Dade - in order to avoid a gcc warning
@@ -234,62 +238,98 @@ private:
 
 		// KdNode Data
 		float splitPos;
-		unsigned int splitAxis : 2;
-		unsigned int hasLeftChild : 1;
-		unsigned int rightChild : 29;
+		u_int splitAxis : 2;
+		u_int hasLeftChild : 1;
+		u_int rightChild : 29;
 	};
 
 	struct CompareNode {
-		CompareNode(int a) { axis = a; }
+		CompareNode(int a, u_int i) { axis = a; passIndex = i; }
 
 		int axis;
+		u_int passIndex;
 
 		bool operator()(const HitPoint *d1, const HitPoint *d2) const;
 	};
 
-	void RecursiveBuild(const unsigned int nodeNum, const unsigned int start,
-		const unsigned int end, std::vector<HitPoint *> &buildNodes);
+	void RecursiveBuild(const u_int passIndex,
+		const u_int nodeNum, const u_int start,
+		const u_int end, std::vector<HitPoint *> &buildNodes);
 
 	HitPoints *hitPoints;
 
 	KdNode *nodes;
 	HitPoint **nodeData;
-	unsigned int nNodes, nextFreeNode;
+	u_int nNodes, nextFreeNode;
 	float maxDistSquared;
 };
 
 //------------------------------------------------------------------------------
-// HybridHashGrid accelerator
+// HashCell definition
 //------------------------------------------------------------------------------
 
-class HybridHashGrid : public HitPointsLookUpAccel {
+enum HashCellType {
+	HH_LIST, HH_KD_TREE
+};
+
+class HashCell {
 public:
-	HybridHashGrid(HitPoints *hps);
-
-	~HybridHashGrid();
-
-	void RefreshMutex();
-	void RefreshParallel(const unsigned int index, const unsigned int count);
-
-	void AddFlux(const Point &hitPoint, const Vector &wi,
-		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group);
-
-private:
-	unsigned int Hash(const int ix, const int iy, const int iz) {
-		return (unsigned int)((ix * 73856093) ^ (iy * 19349663) ^ (iz * 83492791)) % gridSize;
+	HashCell(const HashCellType t) {
+		type = HH_LIST;
+		size = 0;
+		list = new std::list<HitPoint *>();
+	}
+	~HashCell() {
+		switch (type) {
+			case HH_LIST:
+				delete list;
+				break;
+			case HH_KD_TREE:
+				delete kdtree;
+				break;
+			default:
+				assert (false);
+		}
 	}
 
-	class HHGKdTree {
-	public:
-		HHGKdTree(std::list<HitPoint *> *hps, const unsigned int count);
-		~HHGKdTree();
+	void AddList(HitPoint *hp) {
+		assert (type == HH_LIST);
 
-		void AddFlux(HybridHashGrid *hhg, const Point &hitPoint, const Vector &wi,
+		/* Too slow:
+		// Check if the hit point has been already inserted
+		std::list<HitPoint *>::iterator iter = list->begin();
+		while (iter != list->end()) {
+			HitPoint *lhp = *iter++;
+
+			if (lhp == hp)
+				return;
+		}*/
+
+		list->push_front(hp);
+		++size;
+	}
+
+	void TransformToKdTree(const u_int passIndex);
+
+	void AddFlux(HitPointsLookUpAccel *accel, const u_int passIndex,
+		const Point &hitPoint, const Vector &wi,
+		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group);
+
+	u_int GetSize() const { return size; }
+
+private:
+	class HCKdTree {
+	public:
+		HCKdTree(const u_int passIndex, std::list<HitPoint *> *hps, const u_int count);
+		~HCKdTree();
+
+		void AddFlux(HitPointsLookUpAccel *accel,  const u_int passIndex,
+			const Point &hitPoint, const Vector &wi,
 			const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group);
 
 	private:
 		struct KdNode {
-			void init(const float p, const unsigned int a) {
+			void init(const float p, const u_int a) {
 				splitPos = p;
 				splitAxis = a;
 				// Dade - in order to avoid a gcc warning
@@ -308,97 +348,62 @@ private:
 
 			// KdNode Data
 			float splitPos;
-			unsigned int splitAxis : 2;
-			unsigned int hasLeftChild : 1;
-			unsigned int rightChild : 29;
+			u_int splitAxis : 2;
+			u_int hasLeftChild : 1;
+			u_int rightChild : 29;
 		};
 
 		struct CompareNode {
-			CompareNode(int a) {
-				axis = a;
-			}
+			CompareNode(int a, u_int i) { axis = a; passIndex = i; }
 
 			int axis;
+			u_int passIndex;
 
-			bool operator()(const HitPoint *d1, const HitPoint * d2) const;
+			bool operator()(const HitPoint *d1, const HitPoint *d2) const;
 		};
 
-		void RecursiveBuild(const unsigned int nodeNum, const unsigned int start,
-				const unsigned int end, std::vector<HitPoint *> &buildNodes);
+		void RecursiveBuild(const u_int passIndex,
+				const u_int nodeNum, const u_int start,
+				const u_int end, std::vector<HitPoint *> &buildNodes);
 
 		KdNode *nodes;
 		HitPoint **nodeData;
-		unsigned int nNodes, nextFreeNode;
+		u_int nNodes, nextFreeNode;
 		float maxDistSquared;
 	};
 
-	enum HashCellType {
-		LIST, KD_TREE
+	HashCellType type;
+	u_int size;
+	union {
+		std::list<HitPoint *> *list;
+		HCKdTree *kdtree;
 	};
+};
 
-	class HashCell {
-	public:
-		HashCell(const HashCellType t) {
-			type = LIST;
-			size = 0;
-			list = new std::list<HitPoint *>();
-		}
-		~HashCell() {
-			switch (type) {
-				case LIST:
-					delete list;
-					break;
-				case KD_TREE:
-					delete kdtree;
-					break;
-				default:
-					assert (false);
-			}
-		}
+//------------------------------------------------------------------------------
+// HybridHashGrid accelerator
+//------------------------------------------------------------------------------
 
-		void AddList(HitPoint *hp) {
-			assert (type == LIST);
+class HybridHashGrid : public HitPointsLookUpAccel {
+public:
+	HybridHashGrid(HitPoints *hps);
 
-			/* Too slow:
-			// Check if the hit point has been already inserted
-			std::list<HitPoint *>::iterator iter = list->begin();
-			while (iter != list->end()) {
-				HitPoint *lhp = *iter++;
+	~HybridHashGrid();
 
-				if (lhp == hp)
-					return;
-			}*/
+	void RefreshMutex(const u_int passIndex);
+	void RefreshParallel(const u_int passIndex, const u_int index, const u_int count);
 
-			list->push_front(hp);
-			++size;
-		}
+	void AddFlux(const Point &hitPoint, const u_int passIndex, const Vector &wi,
+		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group);
 
-		void TransformToKdTree() {
-			assert (type == LIST);
+private:
+	u_int Hash(const int ix, const int iy, const int iz) {
+		return (u_int)((ix * 73856093) ^ (iy * 19349663) ^ (iz * 83492791)) % gridSize;
+	}
 
-			std::list<HitPoint *> *hplist = list;
-			kdtree = new HHGKdTree(hplist, size);
-			delete hplist;
-			type = KD_TREE;
-		}
-
-		void AddFlux(HybridHashGrid *hhg, const Point &hitPoint, const Vector &wi,
-			const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group);
-
-		unsigned int GetSize() const { return size; }
-
-	private:
-		HashCellType type;
-		unsigned int size;
-		union {
-			std::list<HitPoint *> *list;
-			HHGKdTree *kdtree;
-		};
-	};
-
-	unsigned int kdtreeThreshold;
+	u_int kdtreeThreshold;
 	HitPoints *hitPoints;
-	unsigned int gridSize;
+	u_int gridSize;
 	float invCellSize;
 	int maxHashIndexX, maxHashIndexY, maxHashIndexZ;
 	HashCell **grid;
@@ -414,143 +419,26 @@ public:
 
 	~HybridMultiHashGrid();
 
-	void RefreshMutex();
-	void RefreshParallel(const unsigned int index, const unsigned int count);
+	void RefreshMutex(const u_int passIndex);
+	void RefreshParallel(const u_int passIndex, const u_int index, const u_int count);
 
-	void AddFlux(const Point &hitPoint, const Vector &wi,
+	void AddFlux(const Point &hitPoint, const u_int passIndex, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group);
 
 private:
-	unsigned int Hash1(const int ix, const int iy, const int iz) {
-		return (unsigned int)((ix * 73856093) ^ (iy * 19349663) ^ (iz * 83492791)) % gridSize;
+	u_int Hash1(const int ix, const int iy, const int iz) {
+		return (u_int)((ix * 73856093) ^ (iy * 19349663) ^ (iz * 83492791)) % gridSize;
 	}
-	unsigned int Hash2(const int ix, const int iy, const int iz) {
-		return (unsigned int)((ix * 49979693) ^ (iy * 86028157) ^ (iz * 15485867)) % gridSize;
+	u_int Hash2(const int ix, const int iy, const int iz) {
+		return (u_int)((ix * 49979693) ^ (iy * 86028157) ^ (iz * 15485867)) % gridSize;
 	}
-	/*unsigned int Hash3(const int ix, const int iy, const int iz) {
-		return (unsigned int)((ix * 15485863) ^ (iy * 49979687) ^ (iz * 32452867)) % gridSize;
+	/*u_int Hash3(const int ix, const int iy, const int iz) {
+		return (u_int)((ix * 15485863) ^ (iy * 49979687) ^ (iz * 32452867)) % gridSize;
 	}*/
 
-	class HHGKdTree {
-	public:
-		HHGKdTree(std::list<HitPoint *> *hps, const unsigned int count);
-		~HHGKdTree();
-
-		void AddFlux(HybridMultiHashGrid *hhg, const Point &hitPoint, const Vector &wi,
-			const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group);
-
-	private:
-		struct KdNode {
-			void init(const float p, const unsigned int a) {
-				splitPos = p;
-				splitAxis = a;
-				// Dade - in order to avoid a gcc warning
-				rightChild = 0;
-				rightChild = ~rightChild;
-				hasLeftChild = 0;
-			}
-
-			void initLeaf() {
-				splitAxis = 3;
-				// Dade - in order to avoid a gcc warning
-				rightChild = 0;
-				rightChild = ~rightChild;
-				hasLeftChild = 0;
-			}
-
-			// KdNode Data
-			float splitPos;
-			unsigned int splitAxis : 2;
-			unsigned int hasLeftChild : 1;
-			unsigned int rightChild : 29;
-		};
-
-		struct CompareNode {
-			CompareNode(int a) {
-				axis = a;
-			}
-
-			int axis;
-
-			bool operator()(const HitPoint *d1, const HitPoint * d2) const;
-		};
-
-		void RecursiveBuild(const unsigned int nodeNum, const unsigned int start,
-				const unsigned int end, std::vector<HitPoint *> &buildNodes);
-
-		KdNode *nodes;
-		HitPoint **nodeData;
-		unsigned int nNodes, nextFreeNode;
-		float maxDistSquared;
-	};
-
-	enum HashCellType {
-		LIST, KD_TREE
-	};
-
-	class HashCell {
-	public:
-		HashCell(const HashCellType t) {
-			type = LIST;
-			size = 0;
-			list = new std::list<HitPoint *>();
-		}
-		~HashCell() {
-			switch (type) {
-				case LIST:
-					delete list;
-					break;
-				case KD_TREE:
-					delete kdtree;
-					break;
-				default:
-					assert (false);
-			}
-		}
-
-		void AddList(HitPoint *hp) {
-			assert (type == LIST);
-
-			/* Too slow:
-			// Check if the hit point has been already inserted
-			std::list<HitPoint *>::iterator iter = list->begin();
-			while (iter != list->end()) {
-				HitPoint *lhp = *iter++;
-
-				if (lhp == hp)
-					return;
-			}*/
-
-			list->push_front(hp);
-			++size;
-		}
-
-		void TransformToKdTree() {
-			assert (type == LIST);
-
-			std::list<HitPoint *> *hplist = list;
-			kdtree = new HHGKdTree(hplist, size);
-			delete hplist;
-			type = KD_TREE;
-		}
-
-		void AddFlux(HybridMultiHashGrid *hhg, const Point &hitPoint, const Vector &wi,
-			const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group);
-
-		unsigned int GetSize() const { return size; }
-
-	private:
-		HashCellType type;
-		unsigned int size;
-		union {
-			std::list<HitPoint *> *list;
-			HHGKdTree *kdtree;
-		};
-	};
-
-	unsigned int kdtreeThreshold;
+	u_int kdtreeThreshold;
 	HitPoints *hitPoints;
-	unsigned int gridSize;
+	u_int gridSize;
 	float invCellSize;
 	int maxHashIndexX, maxHashIndexY, maxHashIndexZ;
 	HashCell **grid;
@@ -566,9 +454,9 @@ public:
 
 	~StochasticMultiHashGrid();
 
-	void RefreshMutex();
+	void RefreshMutex(const u_int passIndex);
 
-	void AddFlux(const Point &hitPoint, const Vector &wi,
+	void AddFlux(const Point &hitPoint, const u_int passIndex, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group);
 
 private:
@@ -577,18 +465,18 @@ private:
 		u_int count;
 	};
 
-	unsigned int Hash1(const int ix, const int iy, const int iz) {
-		return (unsigned int)((ix * 73856093) ^ (iy * 19349663) ^ (iz * 83492791)) % gridSize;
+	u_int Hash1(const int ix, const int iy, const int iz) {
+		return (u_int)((ix * 73856093) ^ (iy * 19349663) ^ (iz * 83492791)) % gridSize;
 	}
-	unsigned int Hash2(const int ix, const int iy, const int iz) {
-		return (unsigned int)((ix * 49979693) ^ (iy * 86028157) ^ (iz * 15485867)) % gridSize;
+	u_int Hash2(const int ix, const int iy, const int iz) {
+		return (u_int)((ix * 49979693) ^ (iy * 86028157) ^ (iz * 15485867)) % gridSize;
 	}
-	unsigned int Hash3(const int ix, const int iy, const int iz) {
-		return (unsigned int)((ix * 15485863) ^ (iy * 49979687) ^ (iz * 32452867)) % gridSize;
+	u_int Hash3(const int ix, const int iy, const int iz) {
+		return (u_int)((ix * 15485863) ^ (iy * 49979687) ^ (iz * 32452867)) % gridSize;
 	}
 
 	HitPoints *hitPoints;
-	unsigned int gridSize;
+	u_int gridSize;
 	float invCellSize;
 	GridCell *grid;
 };
