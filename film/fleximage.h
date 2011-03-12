@@ -125,6 +125,7 @@ private:
 	float m_LinearGamma, d_LinearGamma;
 	float m_ContrastYwa, d_ContrastYwa;
 
+	boost::mutex write_mutex; // WriteImage synchronization
 	int writeInterval;
 	boost::xtime lastWriteImageTime;
 	int flmWriteInterval;
@@ -149,7 +150,6 @@ private:
 	bool m_CameraResponseEnabled, d_CameraResponseEnabled;
 	string m_CameraResponseFile, d_CameraResponseFile; // Path to the data file
 	boost::shared_ptr<CameraResponse> cameraResponse; // Actual data processor
-	boost::mutex cameraResponse_mutex; // camera response synchronization
 
 	XYZColor * m_bloomImage; // Persisting bloom layer image 
 	float m_BloomRadius, d_BloomRadius;
