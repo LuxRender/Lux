@@ -119,6 +119,9 @@ void HitPoints::Init() {
 	hitPointBBox[0] = hpBBox;
 	maxHitPointRadius2[0] = photonRadius2;
 
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Hit points bounding box: " << hitPointBBox[0];
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Hit points max. radius: " << sqrtf(maxHitPointRadius2[0]);
+
 	// Initialize hit points field
 	for (u_int i = 0; i < (*hitPoints).size(); ++i) {
 		HitPoint *hp = &(*hitPoints)[i];

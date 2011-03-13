@@ -670,8 +670,9 @@ void SPPMRenderer::PhotonPassRenderThread::TracePhotons() {
 				// Handle photon/surface intersection
 				Vector wo = -photonRay.d;
 
-				// Deposit Flux
-				renderer->hitPoints->AddFlux(photonIsect.dg.p, wo, sw, alpha, light->group);
+				// Deposit Flux (only if we have hit a diffuse surface)
+				if (photonBSDF->NumComponents(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)) > 0)
+					renderer->hitPoints->AddFlux(photonIsect.dg.p, wo, sw, alpha, light->group);
 
 				// Sample new photon ray direction
 				Vector wi;
@@ -689,7 +690,7 @@ void SPPMRenderer::PhotonPassRenderThread::TracePhotons() {
 
 				// Russian Roulette
 				SWCSpectrum anew = fr;
-				float continueProb = min(1.f, anew.Filter(sw));
+				const float continueProb = min(1.f, anew.Filter(sw));
 				if ((threadRng->floatValue() > continueProb) ||
 						(nIntersections > renderer->sppmi->maxPhotonPathDepth))
 					break;
