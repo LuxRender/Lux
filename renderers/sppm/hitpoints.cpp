@@ -62,8 +62,8 @@ HitPoints::HitPoints(SPPMRenderer *engine, RandomGenerator *rng)  {
 		hp->haltonOffset = rng->floatValue();
 
 		hp->lightGroupData.resize(lightGroupsNumber);
-		hp->eyePass[0].eyeRadiance.resize(lightGroupsNumber);
-		hp->eyePass[1].eyeRadiance.resize(lightGroupsNumber);
+		hp->eyePass[0].emittedRadiance.resize(lightGroupsNumber);
+		hp->eyePass[1].emittedRadiance.resize(lightGroupsNumber);
 		
 		for(u_int j = 0; j < lightGroupsNumber; j++) {
 			hp->lightGroupData[j].photonCount = 0;
@@ -185,7 +185,7 @@ void HitPoints::AccumulateFlux(const vector<unsigned long long> &photonTracedByL
 		switch (hpep->type) {
 			case CONSTANT_COLOR:
 				for (u_int j = 0; j < lightGroupsNumber; ++j) {
-					hp->lightGroupData[j].accumRadiance += hpep->eyeRadiance[j];
+					hp->lightGroupData[j].accumRadiance += hpep->emittedRadiance[j];
 					hp->lightGroupData[j].constantHitsCount += 1;
 				}
 				break;
@@ -214,8 +214,8 @@ void HitPoints::AccumulateFlux(const vector<unsigned long long> &photonTracedByL
 							hp->lightGroupData[j].reflectedFlux = (hp->lightGroupData[j].reflectedFlux + hp->lightGroupData[j].accumReflectedFlux) * g;
 							hp->lightGroupData[j].accumReflectedFlux = XYZColor();
 
-							if (!hpep->eyeRadiance[j].Black()) {
-								hp->lightGroupData[j].accumRadiance += hpep->eyeRadiance[j];
+							if (!hpep->emittedRadiance[j].Black()) {
+								hp->lightGroupData[j].accumRadiance += hpep->emittedRadiance[j];
 								hp->lightGroupData[j].constantHitsCount += 1;
 							}
 						}
@@ -331,8 +331,8 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, const float *u)
 	const u_int lightGroupCount = scene.lightGroups.size();
 	vector<SWCSpectrum> L(lightGroupCount, 0.f);
 	bool scattered = false;
-	hpep->eyeAlpha = 1.f;
-	hpep->eyeDistance = INFINITY;
+	hpep->alpha = 1.f;
+	hpep->distance = INFINITY;
 	u_int vertexIndex = 0;
 	const Volume *volume = NULL;
 
@@ -363,7 +363,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, const float *u)
 			pathThroughput /= spdf;
 			// Dade - now I know ray.maxt and I can call volumeIntegrator
 			SWCSpectrum Lv;
-			u_int g = scene.volumeIntegrator->Li(scene, ray, sample, &Lv, &hpep->eyeAlpha);
+			u_int g = scene.volumeIntegrator->Li(scene, ray, sample, &Lv, &hpep->alpha);
 			if (!Lv.Black()) {
 				Lv *= prevThroughput;
 				L[g] += Lv;
@@ -382,20 +382,20 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, const float *u)
 
 			// Set alpha channel
 			if (vertexIndex == 0)
-				hpep->eyeAlpha = 0.f;
+				hpep->alpha = 0.f;
 
 			hpep->type = CONSTANT_COLOR;
 			for(unsigned int j = 0; j < lightGroupCount; ++j)
-				hpep->eyeRadiance[j] = XYZColor(sw, L[j] * rayWeight);
+				hpep->emittedRadiance[j] = XYZColor(sw, L[j] * rayWeight);
 			return;
 		}
 		scattered = bsdf->dgShading.scattered;
 		pathThroughput /= spdf;
 		if (vertexIndex == 0)
-			hpep->eyeDistance = ray.maxt * ray.d.Length();
+			hpep->distance = ray.maxt * ray.d.Length();
 
 		SWCSpectrum Lv;
-		const u_int g = scene.volumeIntegrator->Li(scene, ray, sample, &Lv, &hpep->eyeAlpha);
+		const u_int g = scene.volumeIntegrator->Li(scene, ray, sample, &Lv, &hpep->alpha);
 		if (!Lv.Black()) {
 			Lv *= prevThroughput;
 			L[g] += Lv;
@@ -415,7 +415,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, const float *u)
 		if (pathLength == maxDepth) {
 			hpep->type = CONSTANT_COLOR;
 			for(unsigned int j = 0; j < lightGroupCount; ++j)
-				hpep->eyeRadiance[j] = XYZColor(sw, L[j] * rayWeight);
+				hpep->emittedRadiance[j] = XYZColor(sw, L[j] * rayWeight);
 			return;
 		}
 
@@ -430,7 +430,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, const float *u)
 			&pdf, BSDF_ALL, &flags, NULL, true)) {
 			hpep->type = CONSTANT_COLOR;
 			for(unsigned int j = 0; j < lightGroupCount; ++j)
-				hpep->eyeRadiance[j] = XYZColor(sw, L[j] * rayWeight);
+				hpep->emittedRadiance[j] = XYZColor(sw, L[j] * rayWeight);
 			return;
 		}
 
@@ -442,9 +442,9 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, const float *u)
 			const Vector vn(hpep->bsdfNS);
 			hpep->bsdfRoverPI = bsdf->F(sw, vn, vn,
 					false, BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE));
-			hpep->eyeThroughput = pathThroughput * rayWeight;
+			hpep->pathThroughput = pathThroughput * rayWeight;
 			for(unsigned int j = 0; j < lightGroupCount; ++j)
-				hpep->eyeRadiance[j] = XYZColor(sw, L[j] * rayWeight);
+				hpep->emittedRadiance[j] = XYZColor(sw, L[j] * rayWeight);
 			hpep->position = p;
 			hpep->wo = wo;
 			return;
@@ -458,7 +458,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, const float *u)
 		if (pathThroughput.Black()) {
 			hpep->type = CONSTANT_COLOR;
 			for(unsigned int j = 0; j < lightGroupCount; ++j)
-				hpep->eyeRadiance[j] = XYZColor(sw, L[j] * rayWeight);
+				hpep->emittedRadiance[j] = XYZColor(sw, L[j] * rayWeight);
 			return;
 		}
 
@@ -542,8 +542,8 @@ void HitPoints::UpdateFilm() {
 			pixelSampler->GetNextPixel(&xPos, &yPos, i);
 
 			for(u_int j = 0; j < lightGroupsNumber; j++) {
-				Contribution contrib(xPos, yPos, hp->lightGroupData[j].radiance, hpep->eyeAlpha,
-						hpep->eyeDistance, 0.f, bufferId, j);
+				Contribution contrib(xPos, yPos, hp->lightGroupData[j].radiance, hpep->alpha,
+						hpep->distance, 0.f, bufferId, j);
 				film.SetSample(&contrib);
 			}
 		}

@@ -63,9 +63,9 @@ public:
 	HitPointType type;
 
 	// Eye path data
-	SWCSpectrum eyeThroughput; // Used only for SURFACE type
-	float eyeAlpha;
-	float eyeDistance;
+	SWCSpectrum pathThroughput; // Used only for SURFACE type
+	float alpha;
+	float distance;
 
 	// Used for SURFACE type
 	Point position;
@@ -73,7 +73,7 @@ public:
 	Normal bsdfNG, bsdfNS;
 	SWCSpectrum bsdfRoverPI;
 
-	vector<XYZColor> eyeRadiance;
+	vector<XYZColor> emittedRadiance;
 };
 
 

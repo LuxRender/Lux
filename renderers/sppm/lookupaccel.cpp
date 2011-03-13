@@ -49,7 +49,7 @@ void HitPointsLookUpAccel::AddFluxToHitPoint(HitPoint *hp, const u_int passIndex
 	if (f.Black())
 		return;
 
-	XYZColor flux = XYZColor(sw, photonFlux * f * hpep.eyeThroughput);
+	XYZColor flux = XYZColor(sw, photonFlux * f * hpep.pathThroughput);
 	// TODO: it should be more something like:
 	//XYZColor flux = XYZColor(sw, photonFlux * f) * XYZColor(hp->sample->swl, hp->eyeThroughput);
 	osAtomicInc(&hp->lightGroupData[light_group].accumPhotonCount);
