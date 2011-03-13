@@ -194,7 +194,7 @@ void ApplyImagingPipeline(vector<XYZColor> &xyzpixels,
 	bool &haveGlareImage, XYZColor *&glareImage, bool glareUpdate,
 	float glareAmount, float glareRadius, u_int glareBlades, float glareThreshold,
 	const char *toneMapName, const ParamSet *toneMapParams,
-	const CameraResponse *response, float gamma, float dither)
+	const CameraResponse *response, float dither)
 {
 	const u_int nPix = xResolution * yResolution;
 
@@ -526,11 +526,6 @@ void ApplyImagingPipeline(vector<XYZColor> &xyzpixels,
 	if (dither > 0.f)
 		for (u_int i = 0; i < nPix; ++i)
 			rgbpixels[i] += 2.f * dither * (lux::random::floatValueP() - .5f);
-
-	// Do gamma correction
-	const float invGamma = 1.f / gamma;
-	for (u_int i = 0; i < nPix; ++i)
-		rgbpixels[i] = rgbpixels[i].Pow(invGamma);
 }
 
 
