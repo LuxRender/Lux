@@ -749,9 +749,20 @@ void MainWindow::stopRender()
 
 void MainWindow::outputTonemapped()
 {
-	QString fileName = QFileDialog::getSaveFileName(this, tr("Save Tonemapped Image"), m_lastOpendir + "/" + m_CurrentFileBaseName, tr("PNG Image (*.png);;JPEG Image (*.jpg);;Windows Bitmap (*.bmp);;TIFF Image (*.tif)"));
+	QString fileName = QFileDialog::getSaveFileName(this, tr("Save Tonemapped Image"), m_lastOpendir + "/" + m_CurrentFileBaseName + ".png", tr("PNG Image (*.png);;JPEG Image (*.jpg);;Windows Bitmap (*.bmp);;TIFF Image (*.tif)"));
 	if (fileName.isEmpty()) 
 		return;
+
+	// Check if it is known image file name extension otherwise
+	// saveCurrentImageTonemapped() fails without explaination.
+	if (!fileName.endsWith(".png") &&
+			!fileName.endsWith(".jpg") &&
+			!fileName.endsWith(".bmp") &&
+			!fileName.endsWith(".tif")
+			) {
+		statusMessage->setText(tr("ERROR: Unknown image extension."));
+		return;
+	}
 
 	if (saveCurrentImageTonemapped(fileName))
 		statusMessage->setText(tr("Tonemapped image saved"));
@@ -857,7 +868,7 @@ bool MainWindow::saveCurrentImageTonemapped(const QString &outFile)
 	int h = luxGetIntAttribute("film", "yResolution");
 	// pointer needs to be const so QImage doesn't write to it
 	const unsigned char* fb = luxFramebuffer();
-	
+
 	// If all looks okay, proceed
 	if (!(w > 0 && h > 0 && fb != NULL))
 		// Something was wrong with buffer, width or height
