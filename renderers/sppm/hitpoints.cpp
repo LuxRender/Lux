@@ -62,8 +62,8 @@ HitPoints::HitPoints(SPPMRenderer *engine, RandomGenerator *rng)  {
 		hp->haltonOffset = rng->floatValue();
 
 		hp->lightGroupData.resize(lightGroupsNumber);
-		hp->eyePass[0].eyeRadiance.reserve(lightGroupsNumber);
-		hp->eyePass[1].eyeRadiance.reserve(lightGroupsNumber);
+		hp->eyePass[0].eyeRadiance.resize(lightGroupsNumber);
+		hp->eyePass[1].eyeRadiance.resize(lightGroupsNumber);
 		
 		for(u_int j = 0; j < lightGroupsNumber; j++) {
 			hp->lightGroupData[j].photonCount = 0;

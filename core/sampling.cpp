@@ -71,8 +71,9 @@ Sample::Sample(SurfaceIntegrator *surf, VolumeIntegrator *vol,
 		timexD = NULL;
 		return;
 	}
-	oneD = AllocAligned<float *>(nPtrs);
-	timexD = AllocAligned<int *>(nxD.size());
+	// since we assign the first element, ensure at least one element is allocated
+	oneD = AllocAligned<float *>(max<u_int>(nPtrs, 1));
+	timexD = AllocAligned<int *>(max<u_int>(nxD.size(), 1));
 	twoD = oneD + n1D.size();
 	xD = twoD + n2D.size();
 	// Compute total number of sample values needed
