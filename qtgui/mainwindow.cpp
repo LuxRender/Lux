@@ -2181,6 +2181,7 @@ void MainWindow::addQueueFiles()
 
 void MainWindow::removeQueueFiles()
 {
+	int idx = -1;
 	for (int i = ui->table_queue->rowCount()-1; i >= 0; i--) {
 		QTableWidgetItem *fname = ui->table_queue->item(i, 0);
 		
@@ -2188,10 +2189,18 @@ void MainWindow::removeQueueFiles()
 			continue;
 
 		// stop rendering if current file is active
-		if (fname->text() == m_CurrentFile)
-			endRenderingSession();
+		if (fname->text() == m_CurrentFile) {
+			idx = i;
+		}
 
 		ui->table_queue->removeRow(i);
+	}
+
+	if (idx >= 0) {
+		endRenderingSession();
+		changeRenderState(STOPPED);
+
+		RenderNextFileInQueue(idx);
 	}
 }
 
@@ -2280,8 +2289,14 @@ bool MainWindow::RenderNextFileInQueue()
 
 	ui->table_queue->resizeColumnsToContents();
 
+	idx++;
+	return RenderNextFileInQueue(idx);
+}
+
+bool MainWindow::RenderNextFileInQueue(int idx)
+{
 	// render next
-	if (++idx >= ui->table_queue->rowCount()) {
+	if (idx >= ui->table_queue->rowCount()) {
 		if (ui->checkBox_loopQueue->isChecked()) {
 			ui->table_queue->setColumnHidden(2, false);
 			idx = 0;

@@ -274,6 +274,7 @@ private:
 	bool IsFileInQueue(const QString &filename);
 	bool IsFileQueued();
 	bool RenderNextFileInQueue();
+	bool RenderNextFileInQueue(int idx);
 	void ClearRenderingQueue();
 
 public slots:
