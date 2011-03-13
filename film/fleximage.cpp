@@ -874,18 +874,14 @@ vector<RGBColor>& FlexImageFilm::ApplyPipeline(const ColorSystem &colorSpace, ve
 	// use local shared_ptr to keep reference to current cameraResponse
 	// so we can pass a regular pointer to ApplyImagingPipeline
 	boost::shared_ptr<CameraResponse> crf;
-	{
-		boost::mutex::scoped_lock(cameraResponse_mutex);
+	if (m_CameraResponseFile == "")
+		cameraResponse.reset();
 
-		if (m_CameraResponseFile == "")
-			cameraResponse.reset();
+	if (m_CameraResponseEnabled) {			
+		if ((!cameraResponse && m_CameraResponseFile != "") || (cameraResponse && cameraResponse->fileName != m_CameraResponseFile))
+			cameraResponse.reset(new CameraResponse(m_CameraResponseFile));
 
-		if (m_CameraResponseEnabled) {			
-			if ((!cameraResponse && m_CameraResponseFile != "") || (cameraResponse && cameraResponse->fileName != m_CameraResponseFile))
-				cameraResponse.reset(new CameraResponse(m_CameraResponseFile));
-
-			crf = cameraResponse;
-		}
+		crf = cameraResponse;
 	}
 
 	// Apply chosen tonemapper
@@ -904,6 +900,9 @@ vector<RGBColor>& FlexImageFilm::ApplyPipeline(const ColorSystem &colorSpace, ve
 
 void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vector<float> &alpha, string postfix)
 {
+	// NOTE - this method is not reentrant! 
+	// write_mutex must be aquired before calling WriteImage2
+
 	// Construct ColorSystem from values
 	colorSpace = ColorSystem(m_RGB_X_Red, m_RGB_Y_Red,
 		m_RGB_X_Green, m_RGB_Y_Green,
@@ -933,12 +932,6 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 
 			WriteEXRImage(rgbColor, alpha, filename + postfix + ".exr", zBuf);
 		}
-	}
-
-	if (type & IMAGE_FLMOUTPUT) {
-		// Dade - save the current status of the film if required
-		if (writeResumeFlm)
-			WriteResumeFilm(filename + ".flm");
 	}
 
 	// Dade - check if I have to run ApplyImagingPipeline
@@ -985,6 +978,16 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 
 void FlexImageFilm::WriteImage(ImageType type)
 {
+	boost::mutex::scoped_lock(write_mutex);
+	
+	// save the current status of the film if required
+	// do it here instead of in WriteImage2 to reduce
+	// memory usage
+	if (type & IMAGE_FLMOUTPUT) {
+		if (writeResumeFlm)
+			WriteResumeFilm(filename + ".flm");
+	}
+
 	if (!framebuffer || !float_framebuffer || !alpha_buffer || !z_buffer)
 		createFrameBuffer();
 
@@ -1060,6 +1063,8 @@ void FlexImageFilm::WriteImage(ImageType type)
 
 void FlexImageFilm::SaveEXR(const string &exrFilename, bool useHalfFloats, bool includeZBuf, int compressionType, bool tonemapped)
 {
+	boost::mutex::scoped_lock(write_mutex);
+
 	// Seth - Code below based on FlexImageFilm::WriteImage()
 	const u_int nPix = xPixelCount * yPixelCount;
 	vector<XYZColor> xyzcolor(nPix);

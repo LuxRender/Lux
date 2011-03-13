@@ -137,6 +137,7 @@ public:
 	void LoadFLM(const string &name);
 	void SaveFLM(const string &name);
 	void OverrideResumeFLM(const string &name);
+	void OverrideFilename(const string &filename);
 
 	// Save OpenEXR image
 	void SaveEXR(const string &name, bool useHalfFloat, bool includeZBuffer, int compressionType, bool tonemapped);	

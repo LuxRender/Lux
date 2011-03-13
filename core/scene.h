@@ -151,6 +151,7 @@ public:
 	Sampler *sampler;
 	BBox bound;
 	u_long seedBase;
+	bool terminated; // rendering is terminated
 
 	// The following data are used when tracing rays with LuxRays
 	// The list of original primitives. It is required by LuxRays to build the DataSet.
