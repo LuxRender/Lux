@@ -64,6 +64,7 @@ int EVT_LUX_FLMLOADERROR = QEvent::registerEventType();
 int EVT_LUX_SAVEDFLM = QEvent::registerEventType();
 int EVT_LUX_LOGEVENT = QEvent::registerEventType();
 int EVT_LUX_BATCHEVENT = QEvent::registerEventType();
+int EVT_LUX_NETWORKUPDATETREEEVENT = QEvent::registerEventType();
 
 LuxLogEvent::LuxLogEvent(int code,int severity,QString message) : QEvent((QEvent::Type)EVT_LUX_LOGEVENT), _message(message), _severity(severity), _code(code)
 {
@@ -72,6 +73,11 @@ LuxLogEvent::LuxLogEvent(int code,int severity,QString message) : QEvent((QEvent
 
 BatchEvent::BatchEvent(const QString &currentFile, const int &numCompleted, const int &total)
 	: QEvent((QEvent::Type)EVT_LUX_BATCHEVENT), _currentFile(currentFile), _numCompleted(numCompleted), _total(total)
+{
+	setAccepted(false);
+}
+
+NetworkUpdateTreeEvent::NetworkUpdateTreeEvent() : QEvent((QEvent::Type)EVT_LUX_NETWORKUPDATETREEEVENT)
 {
 	setAccepted(false);
 }
@@ -353,6 +359,8 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 
 	m_batchProcessThread = NULL;
 	batchProgress = NULL;
+
+	m_networkAddRemoveSlavesThread = NULL;
 
 	openExrHalfFloats = true;
 	openExrDepthBuffer = false;
@@ -749,20 +757,9 @@ void MainWindow::stopRender()
 
 void MainWindow::outputTonemapped()
 {
-	QString fileName = QFileDialog::getSaveFileName(this, tr("Save Tonemapped Image"), m_lastOpendir + "/" + m_CurrentFileBaseName + ".png", tr("PNG Image (*.png);;JPEG Image (*.jpg);;Windows Bitmap (*.bmp);;TIFF Image (*.tif)"));
+	QString fileName = QFileDialog::getSaveFileName(this, tr("Save Tonemapped Image"), m_lastOpendir + "/" + m_CurrentFileBaseName, tr("PNG Image (*.png);;JPEG Image (*.jpg);;Windows Bitmap (*.bmp);;TIFF Image (*.tif)"));
 	if (fileName.isEmpty()) 
 		return;
-
-	// Check if it is known image file name extension otherwise
-	// saveCurrentImageTonemapped() fails without explaination.
-	if (!fileName.endsWith(".png") &&
-			!fileName.endsWith(".jpg") &&
-			!fileName.endsWith(".bmp") &&
-			!fileName.endsWith(".tif")
-			) {
-		statusMessage->setText(tr("ERROR: Unknown image extension."));
-		return;
-	}
 
 	if (saveCurrentImageTonemapped(fileName))
 		statusMessage->setText(tr("Tonemapped image saved"));
@@ -868,7 +865,7 @@ bool MainWindow::saveCurrentImageTonemapped(const QString &outFile)
 	int h = luxGetIntAttribute("film", "yResolution");
 	// pointer needs to be const so QImage doesn't write to it
 	const unsigned char* fb = luxFramebuffer();
-
+	
 	// If all looks okay, proceed
 	if (!(w > 0 && h > 0 && fb != NULL))
 		// Something was wrong with buffer, width or height
@@ -1117,6 +1114,7 @@ void MainWindow::endRenderingSession(bool abort)
 			m_updateThread->join();
 		delete m_updateThread;
 		m_updateThread = NULL;
+
 		// TODO - make this async as it can block for tens of seconds
 		if (abort)
 			luxAbort();
@@ -1302,6 +1300,23 @@ void MainWindow::batchProcessThread(QString inDir, QString outDir, QString outEx
 	// Signal completion
 	qApp->postEvent(this, new BatchEvent(flmFiles[flmFiles.size()-1].c_str(), flmFiles.size(), flmFiles.size()));
 }
+
+void MainWindow::networkAddRemoveSlavesThread(QVector<QString> slaves, ChangeSlavesAction action) {
+	for (int i = 0; i < slaves.size(); ++i) {
+		switch (action) {
+			case AddSlaves:
+				luxAddServer(slaves[i].toStdString().c_str());
+				break;
+			case RemoveSlaves:
+				luxRemoveServer(slaves[i].toStdString().c_str());
+				break;
+			default:
+				break;
+		}
+	}
+	qApp->postEvent(this, new NetworkUpdateTreeEvent());
+}
+
 
 void MainWindow::SetRenderThreads(int num)
 {
@@ -1692,6 +1707,14 @@ bool MainWindow::event (QEvent *event)
 		}
 
 		retval = TRUE;
+	} else if (eventtype == EVT_LUX_NETWORKUPDATETREEEVENT) {
+		ui->button_addServer->setEnabled(true);
+		ui->button_removeServer->setEnabled(true);
+
+		saveNetworkSlaves();
+		UpdateNetworkTree();
+
+		retval = TRUE;
 	}
 
 	if (retval)
@@ -1858,6 +1881,8 @@ void MainWindow::loadTimeout()
 		gammawidget->resetFromFilm(true);
 
 		if (luxStatistics("sceneIsReady")) {
+			addRemoveSlaves(savedNetworkSlaves, AddSlaves);
+
 			// Scene file loaded
 			// Add other render threads if necessary
 			int curThreads = 1;
@@ -2082,13 +2107,44 @@ void MainWindow::UpdateNetworkTree()
 	delete[] pInfoList;
 }
 
+void MainWindow::saveNetworkSlaves() {
+	int nServers = luxGetServerCount();
+
+	RenderingServerInfo *pInfoList = new RenderingServerInfo[nServers];
+	nServers = luxGetRenderingServersStatus( pInfoList, nServers );
+
+	savedNetworkSlaves.clear();
+
+	for (int i = 0; i < nServers; ++i) {
+		savedNetworkSlaves.push_back(QString("%1:%2").arg(pInfoList[i].name).arg(pInfoList[i].port));
+	}
+
+	delete[] pInfoList;
+}
+
+void MainWindow::addRemoveSlaves(QVector<QString> slaves, ChangeSlavesAction action) {
+
+	if (m_networkAddRemoveSlavesThread != NULL) {
+		m_networkAddRemoveSlavesThread->join();
+		delete m_networkAddRemoveSlavesThread;
+	}
+
+	ui->button_addServer->setEnabled(false);
+	ui->button_removeServer->setEnabled(false);
+
+	m_networkAddRemoveSlavesThread = new boost::thread(boost::bind(&MainWindow::networkAddRemoveSlavesThread, this, slaves, action));
+}
+
+
 void MainWindow::addServer()
 {
 	QString server = ui->lineEdit_server->text();
 
 	if (!server.isEmpty()) {
-		luxAddServer(server.toStdString().c_str());
-		UpdateNetworkTree();
+		QVector<QString> slaves;
+		slaves.push_back(server);
+
+		addRemoveSlaves(slaves, AddSlaves);
 	}
 }
 
@@ -2097,8 +2153,10 @@ void MainWindow::removeServer()
 	QString server = ui->lineEdit_server->text();
 
 	if (!server.isEmpty()) {
-		luxRemoveServer(server.toStdString().c_str());
-		UpdateNetworkTree();
+		QVector<QString> slaves;
+		slaves.push_back(server);
+
+		addRemoveSlaves(slaves, RemoveSlaves);
 	}
 }
 
@@ -2182,11 +2240,16 @@ void MainWindow::addQueueFiles()
 void MainWindow::removeQueueFiles()
 {
 	int idx = -1;
+	int idxOffset = 0;
 	for (int i = ui->table_queue->rowCount()-1; i >= 0; i--) {
 		QTableWidgetItem *fname = ui->table_queue->item(i, 0);
 		
 		if (!fname->isSelected())
 			continue;
+
+		// increase offset for rows removed above active file
+		if (idx >= 0)
+			idxOffset++;
 
 		// stop rendering if current file is active
 		if (fname->text() == m_CurrentFile) {
@@ -2200,7 +2263,7 @@ void MainWindow::removeQueueFiles()
 		endRenderingSession();
 		changeRenderState(STOPPED);
 
-		RenderNextFileInQueue(idx);
+		RenderNextFileInQueue(idx - idxOffset);
 	}
 }
 
