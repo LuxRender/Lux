@@ -761,10 +761,13 @@ void MainWindow::outputTonemapped()
 	if (fileName.isEmpty()) 
 		return;
 
-	if (saveCurrentImageTonemapped(fileName))
+	if (saveCurrentImageTonemapped(fileName)) {
 		statusMessage->setText(tr("Tonemapped image saved"));
-	else 
+		LOG(LUX_INFO, LUX_NOERROR) << "Tonemapped image saved to '" << fileName.toStdString() << "'";
+	} else {
 		statusMessage->setText(tr("ERROR: Tonemapped image NOT saved."));
+		LOG(LUX_WARNING, LUX_SYSTEM) << "Error while saving tonemapped image to '" << fileName.toStdString() << "'";
+	}
 }
 
 
@@ -783,10 +786,13 @@ void MainWindow::outputHDR()
 	openExrCompressionType = options->getCompressionType();
 	delete options;
 
-	if (saveCurrentImageHDR(fileName))
-		statusMessage->setText(tr("High dynamic range image saved"));
-	else 
-		statusMessage->setText(tr("ERROR: High dynamic range image NOT saved."));
+	if (saveCurrentImageHDR(fileName)) {
+		statusMessage->setText(tr("HDR image saved"));
+		LOG(LUX_INFO, LUX_NOERROR) << "HDR image saved to '" << fileName.toStdString() << "'";
+	} else {
+		statusMessage->setText(tr("ERROR: HDR image NOT saved."));
+		LOG(LUX_WARNING, LUX_SYSTEM) << "Error while saving HDR image to '" << fileName.toStdString() << "'";
+	}
 }
 
 void MainWindow::overlayStatistics(QImage *image)
@@ -900,10 +906,13 @@ void MainWindow::outputBufferGroupsTonemapped()
 	QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
 	
 	// Output the light groups
-	if (saveAllLightGroups(fileName, false))
+	if (saveAllLightGroups(fileName, false)) {
 		statusMessage->setText(tr("Light group tonemapped images saved"));
-	else 
+		LOG(LUX_INFO, LUX_NOERROR) << "Light group tonemapped images saved to '" << fileName.toStdString() << "'";
+	} else {
 		statusMessage->setText(tr("ERROR: Light group tonemapped images NOT saved"));
+		LOG(LUX_WARNING, LUX_SYSTEM) << "Error while saving light group tonemapped images to '" << fileName.toStdString() << "'";
+	}
 	
 	// Stop showing busy cursor
 	QApplication::restoreOverrideCursor();
@@ -929,10 +938,13 @@ void MainWindow::outputBufferGroupsHDR()
 	QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
 	
 	// Output the light groups
-	if (saveAllLightGroups(fileName, true))
+	if (saveAllLightGroups(fileName, true)) {
 		statusMessage->setText(tr("Light group HDR images saved"));
-	else 
+		LOG(LUX_INFO, LUX_NOERROR) << "Light group HDR images saved to '" << fileName.toStdString() << "'";
+	} else {
 		statusMessage->setText(tr("ERROR: Light group HDR images NOT saved"));
+		LOG(LUX_WARNING, LUX_SYSTEM) << "Error while saving light group HDR images to '" << fileName.toStdString() << "'";
+	}
 	
 	// Stop showing busy cursor
 	QApplication::restoreOverrideCursor();
@@ -1292,6 +1304,7 @@ void MainWindow::batchProcessThread(QString inDir, QString outDir, QString outEx
             if(asHDR) saveCurrentImageHDR(outName);
             else saveCurrentImageTonemapped(outName);
         }
+		LOG(LUX_INFO, LUX_NOERROR) << "Saved '" << flmFiles[i] << "' as '" << outName.toStdString();
 
         // Check again for cancel
         if (batchProgress && batchProgress->wasCanceled()) return;
