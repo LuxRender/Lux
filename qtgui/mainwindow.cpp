@@ -748,7 +748,7 @@ void MainWindow::stopRender()
 
 		// Make sure lux core stops
 		int haltspp = luxGetIntAttribute("film", "haltSamplesPerPixel");
-		luxSetHaltSamplesPerPixel(haltspp, true, true);
+		luxSetHaltSamplesPerPixel(haltspp, true, false);
 		
 		statusMessage->setText(tr("Waiting for render threads to stop."));
 		changeRenderState(STOPPING);
@@ -2331,7 +2331,7 @@ bool MainWindow::IsFileInQueue(const QString &filename)
 	for (int i = 0; i < ui->table_queue->rowCount(); i++) {
 		QTableWidgetItem *fname = ui->table_queue->item(i, 0);
 
-		if (fname->text() == filename)
+		if (fname && (fname->text() == filename))
 			return true;
 	}
 
