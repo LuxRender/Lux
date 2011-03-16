@@ -819,6 +819,9 @@ void Context::WorldEnd() {
 					// Disconnect from all servers
 					activeContext->renderFarm->disconnectAll();
 				}
+				// Signal that rendering is done, so any slaves connected
+				// after this won't start rendering
+				activeContext->renderFarm->renderingDone();
 
 				// Store final image
 				if (!aborted)

@@ -78,6 +78,9 @@ public:
 	void disconnect(const string &serverName);
 	void disconnect(const RenderingServerInfo &serverInfo);
 
+	// signal that rendering is done
+	void renderingDone() { netBufferComplete = false; };
+
 	void send(const std::string &command);
 	void send(const std::string &command,
 		const std::string &name, const ParamSet &params);
