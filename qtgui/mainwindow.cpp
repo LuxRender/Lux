@@ -1182,6 +1182,7 @@ void MainWindow::fullScreen()
 	}
 	else {
 		renderView->setParent( NULL );
+		renderView->move(pos()); // move renderview to same monitor as mainwindow
 		renderView->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
 		renderView->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
 		renderView->showFullScreen();
