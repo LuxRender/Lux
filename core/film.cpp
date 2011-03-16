@@ -628,6 +628,7 @@ Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop
 	//Queryable parameters
 	AddIntAttribute(*this, "xResolution", "Horizontal resolution (pixels)", &Film::GetXResolution);
 	AddIntAttribute(*this, "yResolution", "Vertical resolution (pixels)", &Film::GetYResolution);
+	AddBoolAttribute(*this, "premultiplyAlpha", "Premultiplied alpha enabled", &Film::premultiplyAlpha);
 	AddStringAttribute(*this, "filename", "Output filename", filename, &Film::filename, Queryable::ReadWriteAccess);
 	AddFloatAttribute(*this, "EV", "Exposure value", &Film::EV);
 	AddFloatAttribute(*this, "averageLuminance", "Average Image Luminance", &Film::averageLuminance);

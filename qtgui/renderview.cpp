@@ -22,6 +22,7 @@
 
 #include "renderview.hxx"
 #include "api.h"
+#include "error.h"
 
 #include <iostream>
 #include <algorithm>
@@ -52,9 +53,17 @@ void RenderView::copyToClipboard()
 		int w = luxGetIntAttribute("film", "xResolution");
 		int h = luxGetIntAttribute("film", "yResolution");
 		unsigned char* fb = luxFramebuffer();
-		QImage image = QImage(fb, w, h, QImage::Format_RGB888);
+
+		if (!fb)
+			return;
+
+		QImage image(fb, w, h, QImage::Format_RGB888);
 		QClipboard *clipboard = QApplication::clipboard();
 		// QT assumes 32bpp images for clipboard (DIBs)
+		if (!clipboard) {
+			LOG(LUX_ERROR, LUX_SYSTEM) << tr("Copy to clipboard failed, unable to open clipboard").toLatin1().data();
+			return;
+		}
 		clipboard->setImage(image.convertToFormat(QImage::Format_RGB32));
 	}
 }

@@ -633,6 +633,16 @@ extern "C" unsigned char* luxFramebuffer()
 	return Context::GetActive()->Framebuffer();
 }
 
+extern "C" float* luxFloatFramebuffer()
+{
+	return Context::GetActive()->FloatFramebuffer();
+}
+
+extern "C" float* luxAlphaBuffer()
+{
+	return Context::GetActive()->AlphaBuffer();
+}
+
 //histogram access
 extern "C" void luxGetHistogramImage(unsigned char *outPixels,
 	unsigned int width, unsigned int height, int options)
