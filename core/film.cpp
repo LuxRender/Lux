@@ -1505,7 +1505,7 @@ bool Film::TransmitFilm(
 		bool useCompression, 
 		bool directWrite)
 {
-	std::streampos stream_startpos = stream.tellp();
+	std::streamsize size;
 
 	double totNumberOfSamples = 0;
 
@@ -1522,9 +1522,9 @@ bool Film::TransmitFilm(
 				filtering_streambuf<input> in;
 				in.push(gzip_compressor(4));
 				in.push(ss);
-				boost::iostreams::copy(in, stream);
+				size = boost::iostreams::copy(in, stream);
 			} else {
-				boost::iostreams::copy(ss, stream);
+				size = boost::iostreams::copy(ss, stream);
 			}
 			// ignore how the copy to stream goes for now, as
 			// direct writing won't help with that
@@ -1536,6 +1536,7 @@ bool Film::TransmitFilm(
 	// if the memory buffered method fails it's most likely due
 	// to low memory conditions, so fall back to direct writing
 	if (directWrite || transmitError) {
+		std::streampos stream_startpos = stream.tellp();
 		if (useCompression) {
 			filtering_stream<output> fs;
 			fs.push(gzip_compressor(4));
@@ -1549,6 +1550,7 @@ bool Film::TransmitFilm(
 			totNumberOfSamples = DoTransmitFilm(stream, clearBuffers, transmitParams);
 			transmitError = !stream.good();
 		}
+		size = stream.tellp() - stream_startpos;
 	}
 	
 	if (transmitError || !stream.good()) {
@@ -1556,8 +1558,6 @@ bool Film::TransmitFilm(
 		return false;
 	} else
 		LOG(LUX_DEBUG,LUX_NOERROR) << "Transmitted a film with " << totNumberOfSamples << " samples";
-
-	std::streamsize size = stream.tellp() - stream_startpos;
 
 	LOG(LUX_INFO,LUX_NOERROR) << "Film transmission done (" << (size / 1024) << " Kbytes sent)";
 	return true;
