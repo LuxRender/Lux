@@ -123,6 +123,14 @@ void RenderFarm::decodeServerName(const string &serverName, string &name, string
 }
 
 bool RenderFarm::connect(ExtRenderingServerInfo &serverInfo) {
+
+	// check to see if we're already connected, if so ignore
+	for (vector<ExtRenderingServerInfo>::iterator it = serverInfoList.begin(); it < serverInfoList.end(); it++ ) {
+		if (serverInfo.name.compare(it->name) == 0 && serverInfo.port.compare(it->port) == 0) {
+			return false;
+		}
+	}
+
 	stringstream ss;
 	string serverName = serverInfo.name + ":" + serverInfo.port;
 
@@ -179,7 +187,8 @@ bool RenderFarm::connect(const string &serverName) {
 			decodeServerName(serverName, name, port);
 
 			ExtRenderingServerInfo serverInfo(name, port, "");
-			connect(serverInfo);
+			if (!connect(serverInfo))
+				return false;
 
 			serverInfoList.push_back(serverInfo);
 		} catch (exception& e) {

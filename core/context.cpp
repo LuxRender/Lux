@@ -158,7 +158,8 @@ void Context::Free() {
 // API Function Definitions
 
 void Context::AddServer(const string &n) {
-	renderFarm->connect(n);
+	if (!renderFarm->connect(n))
+		return;
 
 	// NOTE - Ratow - if this is the first server added during rendering, make sure update thread is started
 	if (GetServerCount() == 1 && luxCurrentScene)
