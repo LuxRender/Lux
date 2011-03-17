@@ -112,6 +112,9 @@ public:
 	//!<Gets the films from the network, and merge them to the film given in parameter
 	void updateFilm(Scene *scene);
 
+	//!<Gets the log from the network
+	void updateLog();
+
 public:
 	// Dade - film update infromation
 	int serverUpdateInterval;

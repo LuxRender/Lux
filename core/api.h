@@ -252,6 +252,7 @@ void luxAddServer(const char * name);
 void luxRemoveServer(const char * name);
 unsigned int luxGetServerCount();
 void luxUpdateFilmFromNetwork();
+void luxUpdateLogFromNetwork();
 void luxSetNetworkServerUpdateInterval(int updateInterval);
 int luxGetNetworkServerUpdateInterval();
 

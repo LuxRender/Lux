@@ -56,6 +56,7 @@ namespace po = boost::program_options;
 std::string sceneFileName;
 int threads;
 bool parseError;
+RenderServer *renderServer;
 
 void engineThread() {
 	// NOTE - lordcrc - initialize rand()
@@ -79,6 +80,15 @@ void infoThread() {
 			break;
 		}
 	}
+}
+
+LuxErrorHandler prevErrorHandler;
+
+void serverErrorHandler(int code, int severity, const char *msg) {
+	if (renderServer)
+		renderServer->errorHandler(code, severity, msg);
+
+	prevErrorHandler(code, severity, msg);
 }
 
 int main(int ac, char *av[]) {
@@ -338,7 +348,11 @@ int main(int ac, char *av[]) {
 			}
 		} else if (vm.count("server")) {
 			bool writeFlmFile = vm.count("serverwriteflm") != 0;
-			RenderServer *renderServer = new RenderServer(threads, serverPort, writeFlmFile);
+			renderServer = new RenderServer(threads, serverPort, writeFlmFile);
+
+			prevErrorHandler = luxError;
+			luxErrorHandler(serverErrorHandler);
+
 			renderServer->start();
 			renderServer->join();
 			delete renderServer;

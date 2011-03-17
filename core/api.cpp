@@ -1011,6 +1011,11 @@ extern "C" void luxUpdateFilmFromNetwork()
 	Context::GetActive()->UpdateFilmFromNetwork();
 }
 
+extern "C" void luxUpdateLogFromNetwork()
+{
+	Context::GetActive()->UpdateLogFromNetwork();
+}
+
 extern "C" void luxSetNetworkServerUpdateInterval(int updateInterval)
 {
 	Context::GetActive()->SetNetworkServerUpdateInterval(updateInterval);

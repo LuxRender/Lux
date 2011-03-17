@@ -1260,6 +1260,7 @@ void MainWindow::engineThread(QString filename)
 void MainWindow::updateThread()
 {
 	luxUpdateFramebuffer ();
+	luxUpdateLogFromNetwork();
 	qApp->postEvent(this, new QEvent((QEvent::Type)EVT_LUX_TONEMAPPED));
 }
 
@@ -1516,7 +1517,6 @@ void MainWindow::renderScenefile(const QString& filename)
     
 	m_loadTimer->start(1000);
 
-
 	// Start main render thread
 	if (m_engineThread) {
 		m_engineThread->join();
@@ -1615,8 +1615,8 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			break;
 		case STOPPED:
 			// Rendering is stopped.
-			ui->button_resume->setEnabled (true);
-			ui->action_resumeRender->setEnabled (true);
+			ui->button_resume->setEnabled (false);
+			ui->action_resumeRender->setEnabled (false);
 			ui->button_pause->setEnabled (false);
 			ui->action_pauseRender->setEnabled (false);
 			ui->button_stop->setEnabled (false);

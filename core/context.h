@@ -186,6 +186,7 @@ public:
 
 	// Dade - network rendering
 	void UpdateFilmFromNetwork();
+	void UpdateLogFromNetwork();
 	void SetNetworkServerUpdateInterval(int updateInterval);
 	int GetNetworkServerUpdateInterval();
 	void TransmitFilm(std::basic_ostream<char> &stream);

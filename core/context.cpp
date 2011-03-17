@@ -1167,6 +1167,9 @@ void Context::TransmitFilm(std::basic_ostream<char> &stream, bool useCompression
 void Context::UpdateFilmFromNetwork() {
 	renderFarm->updateFilm(luxCurrentScene);
 }
+void Context::UpdateLogFromNetwork() {
+	renderFarm->updateLog();
+}
 void Context::SetNetworkServerUpdateInterval(int updateInterval)
 {
 	activeContext->renderFarm->serverUpdateInterval = updateInterval;
