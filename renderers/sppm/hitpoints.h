@@ -153,7 +153,7 @@ public:
 	void UpdateFilm();
 
 private:
-	void TraceEyePath(HitPoint *hp, const Sample &sample, const float *u);
+	bool TraceEyePath(HitPoint *hp, const Sample &sample, const float *u);
 
 	SPPMRenderer *renderer;
 	PixelSampler *pixelSampler;

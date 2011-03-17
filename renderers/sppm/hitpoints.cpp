@@ -333,11 +333,39 @@ void HitPoints::SetHitPoints(RandomGenerator *rng, const u_int index, const u_in
 		sample.swl.Sample(sample.wavelengths);
 
 		// Trace the eye path
-		TraceEyePath(hp, sample, &u[5]);
+		if (!TraceEyePath(hp, sample, &u[5])) {
+			// SampleF() of a lambertian surface with interpolated normals can
+			// return false. This may sound wired (and it is) but it happens
+			// because SampleF() work in a local space relative to the shading
+			// normal while the side tests are done with geometrical normal.
+			//
+			// As a workaround, if this happen, I try to generate another valid
+			// eye path.
+
+			for (int j = 0; j < 9; ++j) {
+				// Generate a set of random samples
+				for (int k = 0; k < 9; ++k)
+					u[k] = rng->floatValue();
+
+				sample.imageX = xPos + u[0];
+				sample.imageY = yPos + u[1];
+				sample.lensU = u[2];
+				sample.lensV = u[3];
+				sample.time = u[4];
+
+				// Save ray time value
+				sample.realTime = sample.camera->GetTime(sample.time);
+				// Sample camera transformation
+				sample.camera->SampleMotion(sample.realTime);
+
+				if (TraceEyePath(hp, sample, &u[5]))
+					break;
+			}
+		}
 	}
 }
 
-void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, const float *u) {
+bool HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, const float *u) {
 	HitPointEyePass *hpep = &hp->eyePass[currentEyePass % 2];
 
 	Scene &scene(*renderer->scene);
@@ -415,7 +443,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, const float *u)
 			hpep->type = CONSTANT_COLOR;
 			for(unsigned int j = 0; j < lightGroupCount; ++j)
 				hpep->emittedRadiance[j] = XYZColor(sw, L[j] * rayWeight);
-			return;
+			return true;
 		}
 		scattered = bsdf->dgShading.scattered;
 		pathThroughput /= spdf;
@@ -444,7 +472,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, const float *u)
 			hpep->type = CONSTANT_COLOR;
 			for(unsigned int j = 0; j < lightGroupCount; ++j)
 				hpep->emittedRadiance[j] = XYZColor(sw, L[j] * rayWeight);
-			return;
+			return true;
 		}
 
 		const Point &p = bsdf->dgShading.p;
@@ -459,7 +487,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, const float *u)
 			hpep->type = CONSTANT_COLOR;
 			for(unsigned int j = 0; j < lightGroupCount; ++j)
 				hpep->emittedRadiance[j] = XYZColor(sw, L[j] * rayWeight);
-			return;
+			return false;
 		}
 
 		if (flags == BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)) {
@@ -475,7 +503,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, const float *u)
 				hpep->emittedRadiance[j] = XYZColor(sw, L[j] * rayWeight);
 			hpep->position = p;
 			hpep->wo = wo;
-			return;
+			return true;
 		}
 
 		if (flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) ||
@@ -487,7 +515,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, const float *u)
 			hpep->type = CONSTANT_COLOR;
 			for(unsigned int j = 0; j < lightGroupCount; ++j)
 				hpep->emittedRadiance[j] = XYZColor(sw, L[j] * rayWeight);
-			return;
+			return true;
 		}
 
 		ray = Ray(p, wi);
