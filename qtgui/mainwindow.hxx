@@ -172,7 +172,7 @@ public:
 protected:
 	
 	void overlayStatistics(QImage *image);
-	bool saveCurrentImageTonemapped(const QString &outFile);
+	bool saveCurrentImageTonemapped(const QString &outFile, bool outputAlpha = false);
 	bool saveCurrentImageHDR(const QString &outFile);
 	bool saveAllLightGroups(const QString &outFilename, const bool &asHDR);
 	void setCurrentFile(const QString& filename);

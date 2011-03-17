@@ -446,6 +446,8 @@ void MainWindow::ReadSettings()
 	m_lastOpendir = settings.value("lastOpenDir","").toString();
 	ui->action_overlayStats->setChecked(settings.value("overlayStatistics").toBool());
 	ui->action_HDR_tonemapped->setChecked(settings.value("tonemappedHDR").toBool());
+	ui->action_useAlpha->setChecked(settings.value("outputUseAlpha").toBool());
+	ui->action_useAlphaHDR->setChecked(settings.value("outputUseAlphaHDR").toBool());
 	settings.endGroup();
 
 	updateRecentFileActions();
@@ -462,6 +464,8 @@ void MainWindow::WriteSettings()
 	settings.setValue("lastOpenDir", m_lastOpendir);
 	settings.setValue("overlayStatistics", ui->action_overlayStats->isChecked());
 	settings.setValue("tonemappedHDR", ui->action_HDR_tonemapped->isChecked());
+	settings.setValue("outputUseAlpha", ui->action_useAlpha->isChecked());
+	settings.setValue("outputUseAlphaHDR", ui->action_useAlphaHDR->isChecked());
 	settings.endGroup();
 }
 
@@ -761,7 +765,7 @@ void MainWindow::outputTonemapped()
 	if (fileName.isEmpty()) 
 		return;
 
-	if (saveCurrentImageTonemapped(fileName)) {
+	if (saveCurrentImageTonemapped(fileName, ui->action_useAlpha->isChecked())) {
 		statusMessage->setText(tr("Tonemapped image saved"));
 		LOG(LUX_INFO, LUX_NOERROR) << "Tonemapped image saved to '" << fileName.toStdString() << "'";
 	} else {
@@ -863,7 +867,7 @@ void MainWindow::overlayStatistics(QImage *image)
 	p.end();
 }
 
-bool MainWindow::saveCurrentImageTonemapped(const QString &outFile)
+bool MainWindow::saveCurrentImageTonemapped(const QString &outFile, bool outputAlpha)
 {
 	// Saving as tonemapped image ...
 	// Get width, height and pixel buffer
@@ -871,26 +875,32 @@ bool MainWindow::saveCurrentImageTonemapped(const QString &outFile)
 	int h = luxGetIntAttribute("film", "yResolution");
 	// pointer needs to be const so QImage doesn't write to it
 	const unsigned char* fb = luxFramebuffer();
-	float *alpha = luxAlphaBuffer();
 	
 	// If all looks okay, proceed
 	if (!(w > 0 && h > 0 && fb))
 		// Something was wrong with buffer, width or height
 		return false;
 
-	bool preMult = luxGetBoolAttribute("film", "premultiplyAlpha");
+	QImage image;
+	
+	if (outputAlpha) {
+		float *alpha = luxAlphaBuffer();
+		bool preMult = luxGetBoolAttribute("film", "premultiplyAlpha");
 
-	QImage image(w, h, (preMult ? QImage::Format_ARGB32_Premultiplied : QImage::Format_ARGB32));
-	for (int y = 0; y < h; y++) {
-		uchar *scanline = image.scanLine(y);
-		for (int x = 0; x < w; x++) {
-			scanline[4*x + 0] = fb[2];
-			scanline[4*x + 1] = fb[1];
-			scanline[4*x + 2] = fb[0];
-			scanline[4*x + 3] = static_cast<uchar>(min(max(255.f * alpha[0], 0.f), 255.f));
-			fb += 3;
-			alpha++;
+		image = QImage(w, h, (preMult ? QImage::Format_ARGB32_Premultiplied : QImage::Format_ARGB32));
+		for (int y = 0; y < h; y++) {
+			uchar *scanline = image.scanLine(y);
+			for (int x = 0; x < w; x++) {
+				scanline[4*x + 0] = fb[2];
+				scanline[4*x + 1] = fb[1];
+				scanline[4*x + 2] = fb[0];
+				scanline[4*x + 3] = static_cast<uchar>(min(max(255.f * alpha[0], 0.f), 255.f));
+				fb += 3;
+				alpha++;
+			}
 		}
+	} else {
+		image = QImage(fb, w, h, QImage::Format_RGB888);
 	}
 
 	if (ui->action_overlayStats->isChecked())
