@@ -38,14 +38,14 @@ void HitPointsLookUpAccel::AddFluxToHitPoint(HitPoint *hp, const u_int passIndex
 	/* Was:
 	SWCSpectrum f = hp->bsdf->F(sw, hp->wo, wi, false,
 			BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE));
-	 * Replace with the following code to avoid the storage of Sample class.
+	 * Replaced with the following code to avoid the storage of Sample class.
 	 */
 
-	const float sideTest = Dot(wi, hpep.bsdfNG) / Dot(hpep.wo, hpep.bsdfNG);
+	const float sideTest = Dot(hpep.wo, hpep.bsdfNG) / Dot(wi, hpep.bsdfNG);
 	if (sideTest <= 0.f)
 		return;
 
-	SWCSpectrum f(hpep.bsdfRoverPI * AbsDot(hpep.wo, hpep.bsdfNS) * fabsf(sideTest));
+	SWCSpectrum f(hpep.bsdfRoverPI * AbsDot(wi, hpep.bsdfNS));
 	if (f.Black())
 		return;
 

@@ -469,7 +469,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, const float *u)
 			hpep->bsdfNS = bsdf->dgShading.nn;
 			const Vector vn(hpep->bsdfNS);
 			hpep->bsdfRoverPI = bsdf->F(sw, vn, vn,
-					false, BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE));
+					true, BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE));
 			hpep->pathThroughput = pathThroughput * rayWeight;
 			for(unsigned int j = 0; j < lightGroupCount; ++j)
 				hpep->emittedRadiance[j] = XYZColor(sw, L[j] * rayWeight);
