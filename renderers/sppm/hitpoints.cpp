@@ -96,6 +96,31 @@ HitPoints::~HitPoints() {
 	delete pixelSampler;
 }
 
+const double HitPoints::GetPhotonHitEfficency() {
+	const u_int passIndex = currentPhotonPass % 2;
+	const u_int lightGroupsNumber = renderer->scene->lightGroups.size();
+
+	u_int surfaceHitPointsCount = 0;
+	u_int hitPointsUpdatedCount = 0;
+	for (u_int i = 0; i < GetSize(); ++i) {
+		HitPoint *hp = &(*hitPoints)[i];
+		HitPointEyePass *hpep = &hp->eyePass[passIndex];
+
+		u_int photonHitsCount = 0;
+		for(u_int j = 0; j < lightGroupsNumber; j++)
+			photonHitsCount += hp->lightGroupData[j].accumPhotonCount;
+
+		if (hpep->type == SURFACE) {
+			++surfaceHitPointsCount;
+
+			if (photonHitsCount > 0)
+				++hitPointsUpdatedCount;
+		}
+	}
+
+	return 100.0 * hitPointsUpdatedCount / surfaceHitPointsCount;
+}
+
 void HitPoints::Init() {
 	// Not using UpdateBBox() because hp->accumPhotonRadius2 is not yet set
 	BBox hpBBox = BBox();
@@ -499,7 +524,7 @@ void HitPoints::UpdateFilm() {
 	Scene &scene(*renderer->scene);
 	const u_int bufferId = renderer->sppmi->bufferId;
 	int xPos, yPos;
-	u_int lightGroupsNumber = scene.lightGroups.size();
+	const u_int lightGroupsNumber = scene.lightGroups.size();
 	Film &film(*scene.camera->film);
 
 	/*if (renderer->sppmi->dbg_enableradiusdraw) {

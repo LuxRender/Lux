@@ -99,6 +99,8 @@ public:
 
 	void Init();
 
+	const double GetPhotonHitEfficency();
+
 	HitPoint *GetHitPoint(const u_int index) {
 		return &(*hitPoints)[index];
 	}
@@ -170,7 +172,6 @@ private:
 	// Only a single set of wavelengths is sampled for each pass
 	float eyePassWavelengthSample, photonPassWavelengthSample;
 	u_int wavelengthSampleScramble;
-
 };
 
 }//namespace lux

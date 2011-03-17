@@ -189,6 +189,7 @@ void SPPMRenderer::Render(Scene *s) {
 		photonTracedTotal.resize(scene->lightGroups.size(), 0);
 		photonTracedPass.resize(scene->lightGroups.size(), 0);
 		photonTracedPassNoLightGroup = 0;
+		photonHitEfficiency = 0;
 
 		// start the timer
 		s_Timer.Start();
@@ -306,6 +307,8 @@ double SPPMRenderer::Statistics(const string &statName) {
 		for (size_t i = 0; i < photonTracedTotal.size(); ++i)
 			total += photonTracedTotal[i] + photonTracedPass[i];
 		return double(total);
+	} else if (statName == "hitPointsUpdateEfficiency") {
+		return photonHitEfficiency;
 	} else {
 		LOG(LUX_ERROR,LUX_BADTOKEN)<< "luxStatistics - requested an invalid data : "<< statName;
 		return 0.;
@@ -557,6 +560,8 @@ void SPPMRenderer::PhotonPassRenderThread::RenderImpl(PhotonPassRenderThread *my
 
 		// The first thread has to do some special task for the eye pass
 		if (myThread->n == 0) {
+			renderer->photonHitEfficiency = renderer->hitPoints->GetPhotonHitEfficency();
+
 			// First thread only tasks
 			for(u_int i = 0; i < renderer->photonTracedTotal.size(); ++i) {
 				renderer->photonTracedTotal[i] += renderer->photonTracedPass[i];

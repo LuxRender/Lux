@@ -180,6 +180,8 @@ private:
 	SPPMIntegrator *sppmi;
 	HitPoints *hitPoints;
 
+	double photonHitEfficiency;
+
 	// Store number of photon traced by lightgroup
 	vector<unsigned long long> photonTracedTotal;
 	vector<u_int> photonTracedPass;

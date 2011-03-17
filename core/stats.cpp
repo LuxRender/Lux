@@ -253,7 +253,7 @@ void StatsData::update(const bool add_total)
 		);
 
 	} catch (std::runtime_error e) {
-			LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
+			LOG(LUX_ERROR, LUX_CONSISTENCY)<< e.what();
 	}
 }
 
@@ -262,7 +262,7 @@ void StatsData::updateSPPM(const bool add_total) {
 
 	try {
 		std::ostringstream os;
-		os << "%1% - %2%T: %3$d %4%pass  %5$0.2f %6%P  %7$0.2f %8%P/s";
+		os << "%1% - %2%T: %3$d %4%pass  %5$0.2f %6%P  %7$0.2f %8%P/s %9$0.0f%% PEff";
 		boost::format stats_formatter = boost::format(os.str().c_str());
 		stats_formatter.exceptions(boost::io::all_error_bits ^
 			(boost::io::too_many_args_bit | boost::io::too_few_args_bit)); // Ignore extra or missing args
@@ -272,6 +272,7 @@ void StatsData::updateSPPM(const bool add_total) {
 		u_int pass = ctx->Statistics("pass");	// %3
 		double local_p = ctx->Statistics("photonCount"); // %5
 		double local_pps = ctx->Statistics("photonCount") / secelapsed; // %7
+		double local_peff = ctx->Statistics("hitPointsUpdateEfficiency"); // %9
 
 		formattedStatsString = str(stats_formatter
 				/*  %1 */ % boost::posix_time::time_duration(0, 0, secelapsed, 0)
@@ -282,9 +283,10 @@ void StatsData::updateSPPM(const bool add_total) {
 				/*  %6 */ % magnitude_prefix(local_p)
 				/*  %7 */ % magnitude_reduce(local_pps)
 				/*  %8 */ % magnitude_prefix(local_pps)
+				/*  %9 */ % local_peff
 			);
 	} catch (std::runtime_error e) {
-		LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
+		LOG(LUX_ERROR, LUX_CONSISTENCY)<< e.what();
 	}
 }
 
