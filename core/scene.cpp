@@ -136,8 +136,8 @@ Scene::Scene(Camera *cam, SurfaceIntegrator *si, VolumeIntegrator *vi,
 	const vector<Light *> &lts, const vector<string> &lg, Region *vr) :
 	aggregate(accel), lights(lts),
 	lightGroups(lg), camera(cam), volumeRegion(vr), surfaceIntegrator(si),
-	volumeIntegrator(vi), sampler(s),
-	primitives(prims), filmOnly(false), terminated(false)
+	volumeIntegrator(vi), sampler(s), terminated(false),
+	primitives(prims), filmOnly(false)
 {
 	// Scene Constructor Implementation
 	bound = Union(aggregate->WorldBound(), camera->Bounds());

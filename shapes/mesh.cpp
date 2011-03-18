@@ -99,13 +99,13 @@ Mesh::Mesh(const Transform &o2w, bool ro, MeshAccelType acceltype,
 		// Dade - check quads and split them if required
 		for (u_int i = 0; i < nquads; i++) {
 			const u_int idx = 4 * i;
-			const Point &p0 = p[quads[idx]];
+/*			const Point &p0 = p[quads[idx]];
 			const Point &p1 = p[quads[idx + 1]];
 			const Point &p2 = p[quads[idx + 2]];
 			const Point &p3 = p[quads[idx + 3]];
 
 			// Split the quad if subdivision is necessary (only possible on tri's) or if its not planar or convex
-			//bool quadOk = MeshQuadrilateral::IsPlanar(p0, p1, p2, p3) && MeshQuadrilateral::IsConvex(p0, p1, p2, p3);
+			//bool quadOk = MeshQuadrilateral::IsPlanar(p0, p1, p2, p3) && MeshQuadrilateral::IsConvex(p0, p1, p2, p3);*/
 			// TODO - quads have issues with normals and uvs, split them
 			bool quadOk = false;
 			if (!mustSubdivide && quadOk) {

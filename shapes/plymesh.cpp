@@ -43,8 +43,6 @@ static int VertexCB(p_ply_argument argument)
 	long vertIndex;
 	ply_get_argument_element(argument, NULL, &vertIndex);
 
-	float f = static_cast<float>(ply_get_argument_value(argument));
-
 	if (userIndex == 0)
 		p[vertIndex].x =
 			static_cast<float>(ply_get_argument_value(argument));
