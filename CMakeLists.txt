@@ -99,7 +99,7 @@ endif(LUXRAYS_DISABLE_OPENCL)
 
 #############################################################################
 #############################################################################
-###########################      Find OpenCL       ##########################
+###########################      Find OpenGL       ##########################
 #############################################################################
 #############################################################################
 
@@ -115,10 +115,10 @@ message(STATUS "OpenGL library: " "${OPENGL_LIBRARY}")
 #############################################################################
 #############################################################################
 
-FIND_PROGRAM(BISON_EXECUTABLE bison)
-IF (NOT BISON_EXECUTABLE)
+FIND_PACKAGE(BISON REQUIRED)
+IF (NOT BISON_FOUND)
 	MESSAGE(FATAL_ERROR "bison not found - aborting")
-ENDIF (NOT BISON_EXECUTABLE)
+ENDIF (NOT BISON_FOUND)
 
 
 #############################################################################
@@ -127,10 +127,10 @@ ENDIF (NOT BISON_EXECUTABLE)
 #############################################################################
 #############################################################################
 
-FIND_PROGRAM(FLEX_EXECUTABLE flex)
-IF (NOT FLEX_EXECUTABLE)
+FIND_PACKAGE(FLEX REQUIRED)
+IF (NOT FLEX_FOUND)
 	MESSAGE(FATAL_ERROR "flex not found - aborting")
-ENDIF (NOT FLEX_EXECUTABLE)
+ENDIF (NOT FLEX_FOUND)
 
 
 
@@ -144,14 +144,14 @@ IF(APPLE)
 	SET(BOOST_ROOT ../macos)
 ENDIF(APPLE)
 
-FIND_PACKAGE(Boost 1.43 REQUIRED COMPONENTS python)
+FIND_PACKAGE(Boost 1.43 COMPONENTS python REQUIRED)
 
 SET(Boost_python_FOUND ${Boost_FOUND})
 SET(Boost_python_LIBRARIES ${Boost_LIBRARIES})
 SET(Boost_FOUND)
 SET(Boost_LIBRARIES)
 
-FIND_PACKAGE(Boost 1.43 REQUIRED COMPONENTS thread program_options filesystem serialization iostreams regex system)
+FIND_PACKAGE(Boost 1.43 COMPONENTS thread program_options filesystem serialization iostreams regex system REQUIRED)
 
 IF(Boost_FOUND)
 	MESSAGE(STATUS "Boost library directory: " ${Boost_LIBRARY_DIRS})
@@ -213,12 +213,10 @@ IF(APPLE)
 		NO_DEFAULT_PATH
 	)
 ELSE(APPLE)
-	INCLUDE(FindPNG)
-	IF(PNG_FOUND)
-	ELSE(PNG_FOUND)
-   	 MESSAGE( STATUS "Warning : could not find PNG - building without png support")
-	ENDIF(PNG_FOUND)
-	#FIND_PACKAGE(PNG REQUIRED)
+	FIND_PACKAGE(PNG)
+	IF(NOT PNG_FOUND)
+		MESSAGE(STATUS "Warning : could not find PNG - building without png support")
+	ENDIF(NOT PNG_FOUND)
 ENDIF(APPLE)
 
 
@@ -389,38 +387,18 @@ ENDIF(APPLE)
 #########################      CUSTOM COMMAND     ###########################
 #############################################################################
 #############################################################################
-# Create custom command for flex/lex (note the outputs)
-ADD_CUSTOM_COMMAND(
-SOURCE ${CMAKE_SOURCE_DIR}/core/luxlex.l
-COMMAND ${FLEX_EXECUTABLE} 
-ARGS -o${CMAKE_BINARY_DIR}/luxlex.cpp
-      ${CMAKE_SOURCE_DIR}/core/luxlex.l
-TARGET LuxLexer
-OUTPUTS ${CMAKE_BINARY_DIR}/luxlex.cpp)
-SET_SOURCE_FILES_PROPERTIES(${CMAKE_BINARY_DIR}/luxlex.cpp GENERATED)
 
-# Create custom command for bison/yacc (note the DEPENDS)
-IF(APPLE AND !APPLE_64)
-	ADD_CUSTOM_COMMAND(
-	TARGET LuxParser
-	#DEPENDS ${CMAKE_BINARY_DIR}/core/luxlex.cpp
-	SOURCE ${CMAKE_SOURCE_DIR}/core/luxparse.y
-	COMMAND ${BISON_EXECUTABLE} -y ${CMAKE_SOURCE_DIR}/core/luxparse.y -o ${CMAKE_BINARY_DIR}/luxparse.cpp -d
-	COMMAND mv ${CMAKE_SOURCE_DIR}/luxparse.cpp.h ${CMAKE_BINARY_DIR}/luxparse.hpp
-	OUTPUTS ${CMAKE_BINARY_DIR}/luxparse.cpp ${CMAKE_BINARY_DIR}/luxparse.hpp)
-ELSE(APPLE AND !APPLE_64)
-	ADD_CUSTOM_COMMAND(
-	SOURCE ${CMAKE_SOURCE_DIR}/core/luxparse.y
-	COMMAND ${BISON_EXECUTABLE} 
-	ARGS -y ${CMAKE_SOURCE_DIR}/core/luxparse.y
-	     -o ${CMAKE_BINARY_DIR}/luxparse.cpp
-	     -d
-	TARGET LuxParser
-	#DEPENDS ${CMAKE_BINARY_DIR}/core/luxlex.cpp
-	OUTPUTS ${CMAKE_BINARY_DIR}/luxparse.cpp ${CMAKE_BINARY_DIR}/luxparse.hpp)
+# Create custom command for bison/yacc
+BISON_TARGET(LuxParser ${CMAKE_SOURCE_DIR}/core/luxparse.y ${CMAKE_BINARY_DIR}/luxparse.cpp)
+if(APPLE AND !APPLE_64)
+	EXECUTE_PROCESS(COMMAND mv ${CMAKE_SOURCE_DIR}/luxparse.cpp.h ${CMAKE_BINARY_DIR}/luxparse.hpp)
 ENDIF(APPLE AND !APPLE_64)
 SET_SOURCE_FILES_PROPERTIES(${CMAKE_BINARY_DIR}/core/luxparse.cpp GENERATED)
 
+# Create custom command for flex/lex
+FLEX_TARGET(LuxLexer ${CMAKE_SOURCE_DIR}/core/luxlex.l ${CMAKE_BINARY_DIR}/luxlex.cpp)
+SET_SOURCE_FILES_PROPERTIES(${CMAKE_BINARY_DIR}/luxlex.cpp GENERATED)
+ADD_FLEX_BISON_DEPENDENCY(LuxLexer LuxParser)
 
 #############################################################################
 #############################################################################
@@ -757,8 +735,6 @@ SET(lux_lib_src
 INCLUDE_DIRECTORIES(SYSTEM
 	${Boost_INCLUDE_DIRS}
 	${CMAKE_SOURCE_DIR}/core/external
-	${JPEG_INCLUDE_DIR}
-	${TIFF_INCLUDE_DIR}
 	${PNG_INCLUDE_DIR}
 	${OPENEXR_INCLUDE_DIRS}
 	${LUXRAYS_INCLUDE_DIRS}
@@ -951,11 +927,10 @@ ENDIF(PYTHONLIBS_FOUND)
 #############################################################################
 #############################################################################
 
-FIND_PACKAGE(Qt4)
+FIND_PACKAGE(Qt4 4.6.0 COMPONENTS QtCore QtGui REQUIRED)
 IF(QT4_FOUND)
 	MESSAGE(STATUS "Qt library directory: " ${QT_LIBRARY_DIR} )
 	MESSAGE( STATUS "Qt include directory: " ${QT_INCLUDE_DIR} )
-	SET(QT_USE_QTOPENGL FALSE)
 	INCLUDE(${QT_USE_FILE})
 
 	QT4_ADD_RESOURCES( LUXQTGUI_RC_SRCS ${LUXQTGUI_RCS}) 
@@ -1006,9 +981,14 @@ ENDIF(QT4_FOUND)
 #Install target
 IF(APPLE)
 	INSTALL(TARGETS luxconsole luxmerger RUNTIME DESTINATION bin)
-	INSTALL(TARGETS luxrender BUNDLE DESTINATION bin)
+	IF(QT4_FOUND)
+		INSTALL(TARGETS luxrender BUNDLE DESTINATION bin)
+	ENDIF(QT4_FOUND)
 ELSE(APPLE)
-	INSTALL(TARGETS luxrender luxconsole luxmerger RUNTIME DESTINATION bin)
+	INSTALL(TARGETS luxconsole luxmerger RUNTIME DESTINATION bin)
+	IF(QT4_FOUND)
+		INSTALL(TARGETS luxrender RUNTIME DESTINATION bin)
+	ENDIF(QT4_FOUND)
 ENDIF(APPLE)
 
 #Install API/Library
