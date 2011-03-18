@@ -158,7 +158,8 @@ void Context::Free() {
 // API Function Definitions
 
 void Context::AddServer(const string &n) {
-	renderFarm->connect(n);
+	if (!renderFarm->connect(n))
+		return;
 
 	// NOTE - Ratow - if this is the first server added during rendering, make sure update thread is started
 	if (GetServerCount() == 1 && luxCurrentScene)
@@ -818,6 +819,9 @@ void Context::WorldEnd() {
 					// Disconnect from all servers
 					activeContext->renderFarm->disconnectAll();
 				}
+				// Signal that rendering is done, so any slaves connected
+				// after this won't start rendering
+				activeContext->renderFarm->renderingDone();
 
 				// Store final image
 				if (!aborted)
@@ -1171,6 +1175,9 @@ void Context::TransmitFilm(std::basic_ostream<char> &stream, bool useCompression
 
 void Context::UpdateFilmFromNetwork() {
 	renderFarm->updateFilm(luxCurrentScene);
+}
+void Context::UpdateLogFromNetwork() {
+	renderFarm->updateLog();
 }
 void Context::SetNetworkServerUpdateInterval(int updateInterval)
 {

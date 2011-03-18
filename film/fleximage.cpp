@@ -827,6 +827,7 @@ void FlexImageFilm::CheckWriteOuputInterval()
 vector<RGBColor>& FlexImageFilm::ApplyPipeline(const ColorSystem &colorSpace, vector<XYZColor> &xyzcolor)
 {
 	// Apply the imaging/tonemapping pipeline
+	// not reentrant!
 	ParamSet toneParams;
 	std::string tmkernel = "reinhard";
 	if(m_TonemapKernel == TMK_Reinhard) {
@@ -856,7 +857,6 @@ vector<RGBColor>& FlexImageFilm::ApplyPipeline(const ColorSystem &colorSpace, ve
 
 	// Delete bloom/glare layers if requested
 	if (!m_BloomUpdateLayer && m_BloomDeleteLayer && m_HaveBloomImage) {
-		// TODO - make thread safe
 		m_HaveBloomImage = false;
 		delete[] m_bloomImage;
 		m_bloomImage = NULL;
@@ -864,7 +864,6 @@ vector<RGBColor>& FlexImageFilm::ApplyPipeline(const ColorSystem &colorSpace, ve
 	}
 
 	if (!m_GlareUpdateLayer && m_GlareDeleteLayer && m_HaveGlareImage) {
-		// TODO - make thread safe
 		m_HaveGlareImage = false;
 		delete[] m_glareImage;
 		m_glareImage = NULL;
@@ -889,7 +888,7 @@ vector<RGBColor>& FlexImageFilm::ApplyPipeline(const ColorSystem &colorSpace, ve
 		colorSpace, histogram, m_HistogramEnabled, m_HaveBloomImage, m_bloomImage, m_BloomUpdateLayer,
 		m_BloomRadius, m_BloomWeight, m_VignettingEnabled, m_VignettingScale, m_AberrationEnabled, m_AberrationAmount,
 		m_HaveGlareImage, m_glareImage, m_GlareUpdateLayer, m_GlareAmount, m_GlareRadius, m_GlareBlades, m_GlareThreshold,
-		tmkernel.c_str(), &toneParams, crf.get(), m_Gamma, 0.f);
+		tmkernel.c_str(), &toneParams, crf.get(), 0.f);
 
 	// Disable further bloom layer updates if used.
 	m_BloomUpdateLayer = false;
@@ -950,9 +949,11 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 		// Output to low dynamic range formats
 		if ((type & IMAGE_FILEOUTPUT) || (type & IMAGE_FRAMEBUFFER)) {
 			// Clamp too high values
+			// and apply gamma correction
+			const float invGamma = 1.f / m_Gamma;
 			const u_int nPix = xPixelCount * yPixelCount;
 			for (u_int i = 0; i < nPix; ++i)
-				rgbcolor[i] = colorSpace.Limit(rgbcolor[i], clampMethod);
+				rgbcolor[i] = colorSpace.Limit(rgbcolor[i], clampMethod).Pow(invGamma);
 
 			// write out tonemapped TGA
 			if ((type & IMAGE_FILEOUTPUT) && write_TGA)

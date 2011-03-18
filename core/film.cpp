@@ -194,7 +194,7 @@ void ApplyImagingPipeline(vector<XYZColor> &xyzpixels,
 	bool &haveGlareImage, XYZColor *&glareImage, bool glareUpdate,
 	float glareAmount, float glareRadius, u_int glareBlades, float glareThreshold,
 	const char *toneMapName, const ParamSet *toneMapParams,
-	const CameraResponse *response, float gamma, float dither)
+	const CameraResponse *response, float dither)
 {
 	const u_int nPix = xResolution * yResolution;
 
@@ -526,11 +526,6 @@ void ApplyImagingPipeline(vector<XYZColor> &xyzpixels,
 	if (dither > 0.f)
 		for (u_int i = 0; i < nPix; ++i)
 			rgbpixels[i] += 2.f * dither * (lux::random::floatValueP() - .5f);
-
-	// Do gamma correction
-	const float invGamma = 1.f / gamma;
-	for (u_int i = 0; i < nPix; ++i)
-		rgbpixels[i] = rgbpixels[i].Pow(invGamma);
 }
 
 
@@ -633,6 +628,7 @@ Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop
 	//Queryable parameters
 	AddIntAttribute(*this, "xResolution", "Horizontal resolution (pixels)", &Film::GetXResolution);
 	AddIntAttribute(*this, "yResolution", "Vertical resolution (pixels)", &Film::GetYResolution);
+	AddBoolAttribute(*this, "premultiplyAlpha", "Premultiplied alpha enabled", &Film::premultiplyAlpha);
 	AddStringAttribute(*this, "filename", "Output filename", filename, &Film::filename, Queryable::ReadWriteAccess);
 	AddFloatAttribute(*this, "EV", "Exposure value", &Film::EV);
 	AddFloatAttribute(*this, "averageLuminance", "Average Image Luminance", &Film::averageLuminance);
@@ -1507,7 +1503,7 @@ bool Film::TransmitFilm(
 		bool useCompression, 
 		bool directWrite)
 {
-	std::streampos stream_startpos = stream.tellp();
+	std::streamsize size;
 
 	double totNumberOfSamples = 0;
 
@@ -1524,9 +1520,9 @@ bool Film::TransmitFilm(
 				filtering_streambuf<input> in;
 				in.push(gzip_compressor(4));
 				in.push(ss);
-				boost::iostreams::copy(in, stream);
+				size = boost::iostreams::copy(in, stream);
 			} else {
-				boost::iostreams::copy(ss, stream);
+				size = boost::iostreams::copy(ss, stream);
 			}
 			// ignore how the copy to stream goes for now, as
 			// direct writing won't help with that
@@ -1538,6 +1534,7 @@ bool Film::TransmitFilm(
 	// if the memory buffered method fails it's most likely due
 	// to low memory conditions, so fall back to direct writing
 	if (directWrite || transmitError) {
+		std::streampos stream_startpos = stream.tellp();
 		if (useCompression) {
 			filtering_stream<output> fs;
 			fs.push(gzip_compressor(4));
@@ -1551,6 +1548,7 @@ bool Film::TransmitFilm(
 			totNumberOfSamples = DoTransmitFilm(stream, clearBuffers, transmitParams);
 			transmitError = !stream.good();
 		}
+		size = stream.tellp() - stream_startpos;
 	}
 	
 	if (transmitError || !stream.good()) {
@@ -1558,8 +1556,6 @@ bool Film::TransmitFilm(
 		return false;
 	} else
 		LOG(LUX_DEBUG,LUX_NOERROR) << "Transmitted a film with " << totNumberOfSamples << " samples";
-
-	std::streamsize size = stream.tellp() - stream_startpos;
 
 	LOG(LUX_INFO,LUX_NOERROR) << "Film transmission done (" << (size / 1024) << " Kbytes sent)";
 	return true;

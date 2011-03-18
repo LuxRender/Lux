@@ -45,6 +45,7 @@
 #include <boost/iostreams/filter/zlib.hpp>
 #include <boost/iostreams/filter/bzip2.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
+#include <boost/algorithm/string.hpp>
 
 using namespace boost::iostreams;
 using namespace boost::posix_time;
@@ -123,6 +124,14 @@ void RenderFarm::decodeServerName(const string &serverName, string &name, string
 }
 
 bool RenderFarm::connect(ExtRenderingServerInfo &serverInfo) {
+
+	// check to see if we're already connected, if so ignore
+	for (vector<ExtRenderingServerInfo>::iterator it = serverInfoList.begin(); it < serverInfoList.end(); it++ ) {
+		if (serverInfo.name.compare(it->name) == 0 && serverInfo.port.compare(it->port) == 0) {
+			return false;
+		}
+	}
+
 	stringstream ss;
 	string serverName = serverInfo.name + ":" + serverInfo.port;
 
@@ -179,7 +188,8 @@ bool RenderFarm::connect(const string &serverName) {
 			decodeServerName(serverName, name, port);
 
 			ExtRenderingServerInfo serverInfo(name, port, "");
-			connect(serverInfo);
+			if (!connect(serverInfo))
+				return false;
 
 			serverInfoList.push_back(serverInfo);
 		} catch (exception& e) {
@@ -363,6 +373,87 @@ void RenderFarm::updateFilm(Scene *scene) {
 			LOG( LUX_INFO,LUX_NOERROR) << "Samples received from '" <<
 					serverInfoList[i].name << ":" << serverInfoList[i].port << "' (" <<
 					(compressedSize / 1024) << " Kbytes)";
+
+			serverInfoList[i].timeLastContact = second_clock::local_time();
+		} catch (string s) {
+			LOG(LUX_ERROR,LUX_SYSTEM)<< s.c_str();
+			// Add the index to the list of failed slves
+			failedServerIndexList.push_back(i);
+		} catch (std::exception& e) {
+			LOG( LUX_ERROR,LUX_SYSTEM) << "Error while communicating with server: " <<
+					serverInfoList[i].name << ":" << serverInfoList[i].port;
+			LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
+
+			// Add the index to the list of failed slves
+			failedServerIndexList.push_back(i);
+		}
+	}
+
+	// Check if there was some failed server
+	if (failedServerIndexList.size() > 0) {
+		// Try to reconect failed servers
+		for (size_t i = 0; i < failedServerIndexList.size(); ++i) {
+			ExtRenderingServerInfo *serverInfo = &serverInfoList[failedServerIndexList[i]];
+			try {
+				LOG(LUX_INFO,LUX_NOERROR)
+					<< "Trying to reconnect server: "
+					<< serverInfo->name << ":" << serverInfo->port;
+
+				this->connect(*serverInfo);
+			} catch (std::exception& e) {
+				LOG(LUX_ERROR,LUX_SYSTEM)
+					<< "Error while reconnecting with server: "
+					<< serverInfo->name << ":" << serverInfo->port;
+				LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
+			}
+		}
+
+		// Send the scene to all servers
+		this->flushImpl();
+	}
+}
+
+void RenderFarm::updateLog() {
+	// Using the mutex in order to not allow server disconnection while
+	// I'm downloading a film
+	boost::mutex::scoped_lock lock(serverListMutex);
+
+	vector<int> failedServerIndexList;
+	for (size_t i = 0; i < serverInfoList.size(); i++) {
+		try {
+			LOG( LUX_INFO,LUX_NOERROR) << "Getting samples from: " <<
+					serverInfoList[i].name << ":" << serverInfoList[i].port;
+
+			// Connect to the server
+			tcp::iostream stream(serverInfoList[i].name, serverInfoList[i].port);
+
+			// Send the command to get the log
+			stream << "luxGetLog" << std::endl;
+			stream << serverInfoList[i].sid << std::endl;
+
+			// Receive the log
+			std::stringstream log;
+			log << stream.rdbuf();
+
+			stream.close();
+
+			//serverInfoList[i].log = log.str();
+
+			while (log.good()) {
+				int code, severity;
+				string message;
+
+				log >> code;
+				log >> severity;
+				log >> std::ws;
+				getline(log, message);
+
+				if (message == "")
+					continue;
+
+				LOG(code, severity) << "[" << serverInfoList[i].name << ":" << serverInfoList[i].port << "] " 
+					<< message;
+			}
 
 			serverInfoList[i].timeLastContact = second_clock::local_time();
 		} catch (string s) {

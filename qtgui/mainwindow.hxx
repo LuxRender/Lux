@@ -123,17 +123,9 @@ private:
 	int _numCompleted, _total;
 };
 
-class luxTreeData
-{
+class NetworkUpdateTreeEvent: public QEvent {
 public:
-
-	QString m_SlaveName;
-	QString m_SlaveFile;
-	QString m_SlavePort;
-	QString m_SlaveID;
-
-	unsigned int m_secsSinceLastContact;
-	double m_numberOfSamplesReceived;
+	NetworkUpdateTreeEvent();
 };
 
 void updateWidgetValue(QSlider *slider, int value);
@@ -180,7 +172,7 @@ public:
 protected:
 	
 	void overlayStatistics(QImage *image);
-	bool saveCurrentImageTonemapped(const QString &outFile);
+	bool saveCurrentImageTonemapped(const QString &outFile, bool outputAlpha = false);
 	bool saveCurrentImageHDR(const QString &outFile);
 	bool saveAllLightGroups(const QString &outFilename, const bool &asHDR);
 	void setCurrentFile(const QString& filename);
@@ -233,7 +225,7 @@ private:
 	
 	QTimer *m_renderTimer, *m_statsTimer, *m_loadTimer, *m_saveTimer, *m_netTimer, *m_blinkTimer;
 	
-	boost::thread *m_engineThread, *m_updateThread, *m_flmloadThread, *m_flmsaveThread, *m_batchProcessThread;
+	boost::thread *m_engineThread, *m_updateThread, *m_flmloadThread, *m_flmsaveThread, *m_batchProcessThread, *m_networkAddRemoveSlavesThread;
 
 	bool openExrHalfFloats, openExrDepthBuffer;
 	int openExrCompressionType;
@@ -252,6 +244,14 @@ private:
 	void flmLoadThread(QString filename);
 	void flmSaveThread(QString filename);
 	void batchProcessThread(QString inDir, QString outDir, QString outExtension, bool allLightGroups, bool asHDR);
+
+	enum ChangeSlavesAction { AddSlaves, RemoveSlaves };
+	void networkAddRemoveSlavesThread(QVector<QString> slaves, ChangeSlavesAction action);
+
+	void addRemoveSlaves(QVector<QString> slaves, ChangeSlavesAction action);
+
+	QVector<QString> savedNetworkSlaves;
+	void saveNetworkSlaves();
 
 	bool event (QEvent * event);
 
@@ -274,6 +274,7 @@ private:
 	bool IsFileInQueue(const QString &filename);
 	bool IsFileQueued();
 	bool RenderNextFileInQueue();
+	bool RenderNextFileInQueue(int idx);
 	void ClearRenderingQueue();
 
 public slots:

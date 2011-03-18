@@ -1082,11 +1082,13 @@
      </property>
      <addaction name="action_outputTonemapped"/>
      <addaction name="action_outputBufferGroupsTonemapped"/>
+     <addaction name="action_useAlpha"/>
      <addaction name="action_overlayStats"/>
      <addaction name="separator"/>
      <addaction name="action_outputHDR"/>
      <addaction name="action_outputBufferGroupsHDR"/>
      <addaction name="action_HDR_tonemapped"/>
+     <addaction name="action_useAlphaHDR"/>
      <addaction name="separator"/>
      <addaction name="separator"/>
      <addaction name="action_batchProcess"/>
@@ -1374,6 +1376,25 @@
    </property>
    <property name="toolTip">
     <string>Process a directory of 'flm' film files.</string>
+   </property>
+  </action>
+  <action name="action_useAlpha">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Output Alpha Channel</string>
+   </property>
+  </action>
+  <action name="action_useAlphaHDR">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="visible">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Output HDR Alpha Channel</string>
    </property>
   </action>
   <action name="action_overlayStats">

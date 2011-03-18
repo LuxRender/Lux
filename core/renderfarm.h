@@ -78,6 +78,9 @@ public:
 	void disconnect(const string &serverName);
 	void disconnect(const RenderingServerInfo &serverInfo);
 
+	// signal that rendering is done
+	void renderingDone() { netBufferComplete = false; };
+
 	void send(const std::string &command);
 	void send(const std::string &command,
 		const std::string &name, const ParamSet &params);
@@ -108,6 +111,9 @@ public:
 	void stopFilmUpdater();
 	//!<Gets the films from the network, and merge them to the film given in parameter
 	void updateFilm(Scene *scene);
+
+	//!<Gets the log from the network
+	void updateLog();
 
 public:
 	// Dade - film update infromation

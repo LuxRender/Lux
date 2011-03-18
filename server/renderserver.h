@@ -117,6 +117,21 @@ public:
 
 	bool validateAccess(std::basic_istream<char> &stream) const;
 
+	class ErrorMessage {
+	public:
+		ErrorMessage(int _code, int _severity, const char *_msg) 
+			: code(_code), severity(_severity), message(_msg) { 
+		}
+
+		int code;
+		int severity;
+		string message;
+	};
+
+	void errorHandler(int code, int severity, const char *msg);
+
+	vector<ErrorMessage> errorMessages;
+
     friend class NetworkRenderServerThread;
 
 private:

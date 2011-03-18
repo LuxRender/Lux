@@ -106,6 +106,10 @@ void RenderServer::stop()
 	state = STOPPED;
 }
 
+void RenderServer::errorHandler(int code, int severity, const char *msg) {
+	errorMessages.push_back(ErrorMessage(code, severity, msg));
+}
+
 //------------------------------------------------------------------------------
 // NetworkRenderServerThread
 //------------------------------------------------------------------------------
@@ -356,7 +360,7 @@ bool RenderServer::validateAccess(basic_istream<char> &stream) const {
 	if (!getline(stream, sid))
 		return false;
 
-	LOG( LUX_INFO,LUX_NOERROR) << "Validating SID: " << sid << " = " << currentSID;
+	LOG( LUX_DEBUG,LUX_NOERROR) << "Validating SID: " << sid << " = " << currentSID;
 
 	return (sid == currentSID);
 }
@@ -651,6 +655,34 @@ void cmd_luxGetFilm(bool isLittleEndian, NetworkRenderServerThread *serverThread
 		stream.close();
 	}
 }
+void cmd_luxGetLog(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_LUXGETLOG:
+	// Dade - check if we are rendering something
+	if (serverThread->renderServer->getServerState() == RenderServer::BUSY) {
+		if (!serverThread->renderServer->validateAccess(stream)) {
+			LOG( LUX_ERROR,LUX_SYSTEM)<< "Unknown session ID";
+			stream.close();
+			return;
+		}
+
+		LOG( LUX_DEBUG,LUX_NOERROR)<< "Transmitting log";
+
+		for (vector<RenderServer::ErrorMessage>::iterator it = serverThread->renderServer->errorMessages.begin(); it != serverThread->renderServer->errorMessages.end(); ++it) {
+			stringstream ss("");
+			ss << it->code << " " << it->severity << " " << it->message << "\n";
+			stream << ss.str();
+		}
+
+		stream.close();
+
+		serverThread->renderServer->errorMessages.clear();
+
+		LOG( LUX_DEBUG,LUX_NOERROR)<< "Finished log transmission";
+	} else {
+		LOG( LUX_ERROR,LUX_SYSTEM)<< "Received a GetLog command after a ServerDisconnect";
+		stream.close();
+	}
+}
 void cmd_luxSetEpsilon(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
 //case CMD_LUXSETEPSILON:
 	processCommand(&Context::SetEpsilon, stream);
@@ -728,6 +760,7 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread)
 	INSERT_CMD(luxMotionInstance);
 	INSERT_CMD(luxWorldEnd);
 	INSERT_CMD(luxGetFilm);
+	INSERT_CMD(luxGetLog);
 	INSERT_CMD(luxSetEpsilon);
 	INSERT_CMD(luxRenderer);
 
@@ -746,7 +779,7 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread)
 
 			//reading the command
 			string command;
-			LOG( LUX_INFO,LUX_NOERROR) << "Server receiving commands...";
+			LOG( LUX_DEBUG,LUX_NOERROR) << "Server receiving commands...";
 			while (getline(stream, command)) {
 
 				if ((command != "") && (command != " ")) {

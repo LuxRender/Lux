@@ -129,6 +129,8 @@ void luxSetEpsilon(const float minValue, const float maxValue);
 /* Framebuffer access */
 void luxUpdateFramebuffer();
 unsigned char* luxFramebuffer();
+float* luxFloatFramebuffer();
+float* luxAlphaBuffer();
 
 /* Histogram access */
 void luxGetHistogramImage(unsigned char *outPixels, unsigned int width, unsigned int height, int options);
@@ -250,6 +252,7 @@ void luxAddServer(const char * name);
 void luxRemoveServer(const char * name);
 unsigned int luxGetServerCount();
 void luxUpdateFilmFromNetwork();
+void luxUpdateLogFromNetwork();
 void luxSetNetworkServerUpdateInterval(int updateInterval);
 int luxGetNetworkServerUpdateInterval();
 

@@ -56,6 +56,7 @@ namespace po = boost::program_options;
 std::string sceneFileName;
 int threads;
 bool parseError;
+RenderServer *renderServer;
 
 void engineThread() {
 	// NOTE - lordcrc - initialize rand()
@@ -81,7 +82,19 @@ void infoThread() {
 	}
 }
 
+LuxErrorHandler prevErrorHandler;
+
+void serverErrorHandler(int code, int severity, const char *msg) {
+	if (renderServer)
+		renderServer->errorHandler(code, severity, msg);
+
+	prevErrorHandler(code, severity, msg);
+}
+
 int main(int ac, char *av[]) {
+
+	boost::filesystem::path initial_path = boost::filesystem::initial_path();
+
 	// Dade - initialize rand() number generator
 	srand(time(NULL));
 
@@ -263,8 +276,7 @@ int main(int ac, char *av[]) {
 			const std::vector<std::string> &v = vm["input-file"].as < vector<string> > ();
 			for (unsigned int i = 0; i < v.size(); i++) {
 				//change the working directory
-				boost::filesystem::path fullPath(boost::filesystem::initial_path());
-				fullPath = boost::filesystem::system_complete(boost::filesystem::path(v[i], boost::filesystem::native));
+				boost::filesystem::path fullPath = boost::filesystem::complete(boost::filesystem::path(v[i], boost::filesystem::native), initial_path);
 
 				if (!boost::filesystem::exists(fullPath) && v[i] != "-") {
 					LOG(LUX_SEVERE,LUX_NOFILE) << "Unable to open scenefile '" << fullPath.string() << "'";
@@ -336,7 +348,11 @@ int main(int ac, char *av[]) {
 			}
 		} else if (vm.count("server")) {
 			bool writeFlmFile = vm.count("serverwriteflm") != 0;
-			RenderServer *renderServer = new RenderServer(threads, serverPort, writeFlmFile);
+			renderServer = new RenderServer(threads, serverPort, writeFlmFile);
+
+			prevErrorHandler = luxError;
+			luxErrorHandler(serverErrorHandler);
+
 			renderServer->start();
 			renderServer->join();
 			delete renderServer;

@@ -22,6 +22,7 @@ IF(APPLE)
 		SET(CMAKE_OSX_ARCHITECTURES i386;x86_64)
 	ELSE(CMAKE_VERSION VERSION_LESS 2.8.1)
 		SET(CMAKE_XCODE_ATTRIBUTE_ARCHS i386\ x86_64)
+#		SET(CMAKE_XCODE_ATTRIBUTE_GCC_VERSION 4.2) # for compatibility eventually
 	ENDIF(CMAKE_VERSION VERSION_LESS 2.8.1)
 	SET(CMAKE_OSX_SYSROOT /Developer/SDKs/MacOSX10.6.sdk)
 	set(CMAKE_CONFIGURATION_TYPES Release)
@@ -427,18 +428,18 @@ SET_SOURCE_FILES_PROPERTIES(${CMAKE_BINARY_DIR}/core/luxparse.cpp GENERATED)
 #############################################################################
 #############################################################################
 IF(APPLE)
-	ADD_CUSTOM_TARGET(dist DEPENDS luxrender)
-	ADD_CUSTOM_COMMAND(
-	TARGET dist POST_BUILD
-	COMMAND rm -rf luxrender.app 
-	COMMAND mkdir luxrender.app 
-	COMMAND mkdir luxrender.app/Contents 
-	COMMAND mkdir luxrender.app/Contents/MacOS 
-	COMMAND mkdir luxrender.app/Contents/Resources
-	COMMAND cp ../macos/Info.plist luxrender.app/Contents
-	COMMAND cp luxrender.icns luxrender.app/Contents/Resources
-	COMMAND echo APPLnone > luxrender.app/Contents/PkgInfo
-	COMMAND cp luxrender luxrender.app/Contents/MacOS/luxrender)
+#	ADD_CUSTOM_TARGET(dist DEPENDS luxrender)
+#	ADD_CUSTOM_COMMAND(
+#	TARGET dist POST_BUILD
+#	COMMAND rm -rf luxrender.app 
+#	COMMAND mkdir luxrender.app 
+#	COMMAND mkdir luxrender.app/Contents 
+#	COMMAND mkdir luxrender.app/Contents/MacOS 
+#	COMMAND mkdir luxrender.app/Contents/Resources
+#	COMMAND cp ../macos/Info.plist luxrender.app/Contents
+#	COMMAND cp luxrender.icns luxrender.app/Contents/Resources
+#	COMMAND echo APPLnone > luxrender.app/Contents/PkgInfo
+#	COMMAND cp luxrender luxrender.app/Contents/MacOS/luxrender)
 
 	SET(GUI_TYPE MACOSX_BUNDLE)
 	# SET(MACOSX_BUNDLE_LONG_VERSION_STRING "${OPENSCENEGRAPH_MAJOR_VERSION}.${OPENSCENEGRAPH_MINOR_VERSION}.${OPENSCENEGRAPH_PATCH_VERSION}")
@@ -853,9 +854,9 @@ SET( LUXQTGUI_RCS
 #############################################################################
 
 LINK_DIRECTORIES(${LINK_DIRECTORIES} ${Boost_LIBRARY_DIRS} )
-
 #Here we build the core library
 ADD_LIBRARY(lux STATIC ${lux_lib_src} )
+#SET_TARGET_PROPERTIES(lux PROPERTIES XCODE_ATTRIBUTE_GCC_VERSION com.apple.compilers.llvm.clang.1_0) # for testing new CLANG2.0, will be ignored for other OS
 #TARGET_LINK_LIBRARIES(lux ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} )
 
 
@@ -983,6 +984,7 @@ IF(QT4_FOUND)
 	#ADD_EXECUTABLE(luxrender ${GUI_TYPE} ${LUXQTGUI_SRCS} ${LUXQTGUI_MOC_SRCS} ${LUXQTGUI_RC_SRCS} ${LUXQTGUI_UI_HDRS} ${QM_FILES})
 	ADD_EXECUTABLE(luxrender ${GUI_TYPE} ${LUXQTGUI_SRCS} ${LUXQTGUI_MOC_SRCS} ${LUXQTGUI_RC_SRCS} ${LUXQTGUI_UI_HDRS})
 	IF(APPLE)
+		SET_TARGET_PROPERTIES(luxrender PROPERTIES XCODE_ATTRIBUTE_GCC_VERSION 4.2) # QT will not play with new compiler default llvm-gcc-4.2 !
 		INCLUDE_DIRECTORIES (SYSTEM /Developer/Headers/FlatCarbon /usr/local/include)
 		FIND_LIBRARY(CARBON_LIBRARY Carbon)
 		FIND_LIBRARY(QT_LIBRARY QtCore QtGui)
