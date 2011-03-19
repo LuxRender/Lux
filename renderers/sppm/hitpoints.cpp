@@ -237,7 +237,7 @@ void HitPoints::AccumulateFlux(const vector<unsigned long long> &photonTracedByL
 						// Radius reduction
 						hp->accumPhotonRadius2 *= g;
 
-						// update light group flux
+						// Update light group flux
 						for (u_int j = 0; j < lightGroupsNumber; ++j) {
 							hp->lightGroupData[j].reflectedFlux = (hp->lightGroupData[j].reflectedFlux + hp->lightGroupData[j].accumReflectedFlux) * g;
 							hp->lightGroupData[j].accumReflectedFlux = XYZColor();

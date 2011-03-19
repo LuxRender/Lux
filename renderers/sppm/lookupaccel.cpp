@@ -36,7 +36,7 @@ void HitPointsLookUpAccel::AddFluxToHitPoint(HitPoint *hp, const u_int passIndex
 		return;
 
 	/* Was:
-	SWCSpectrum f = hp->bsdf->F(sw, hp->wo, wi, false,
+	SWCSpectrum f = hp->bsdf->F(sw, wi, hp->wo, true,
 			BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE));
 	 * Replaced with the following code to avoid the storage of Sample class.
 	 */
@@ -55,7 +55,6 @@ void HitPointsLookUpAccel::AddFluxToHitPoint(HitPoint *hp, const u_int passIndex
 	osAtomicInc(&hp->lightGroupData[light_group].accumPhotonCount);
 	XYZColorAtomicAdd(hp->lightGroupData[light_group].accumReflectedFlux, flux);
 }
-
 
 void HashCell::AddFlux(HitPointsLookUpAccel *accel, const u_int passIndex, const Point &hitPoint,
 		const Vector &wi, const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group) {
