@@ -178,6 +178,8 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	connect(ui->action_saveFLM, SIGNAL(triggered()), this, SLOT(saveFLM()));
 	connect(ui->action_exitAppSave, SIGNAL(triggered()), this, SLOT(exitAppSave()));
 	connect(ui->action_exitApp, SIGNAL(triggered()), this, SLOT(exitApp()));
+
+	connect(ui->menuOpen_Recent, SIGNAL(hovered(QAction *)), this, SLOT(menuHovered(QAction *)));
 	
 	// Export to Image sub-menu slots
 	connect(ui->action_outputTonemapped, SIGNAL(triggered()), this, SLOT(outputTonemapped()));
@@ -204,8 +206,8 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	connect(ui->action_aboutDialog, SIGNAL(triggered()), this, SLOT(aboutDialog()));
 	connect(ui->action_documentation, SIGNAL(triggered()), this, SLOT(openDocumentation()));
 	connect(ui->action_forums, SIGNAL(triggered()), this, SLOT(openForums()));
-        connect(ui->action_gallery, SIGNAL(triggered()), this, SLOT(openGallery()));
-        connect(ui->action_bugtracker, SIGNAL(triggered()), this, SLOT(openBugTracker()));
+	connect(ui->action_gallery, SIGNAL(triggered()), this, SLOT(openGallery()));
+	connect(ui->action_bugtracker, SIGNAL(triggered()), this, SLOT(openBugTracker()));
 	
 	connect(ui->checkBox_imagingAuto, SIGNAL(stateChanged(int)), this, SLOT(autoEnabledChanged(int)));
 	connect(ui->spinBox_overrideDisplayInterval, SIGNAL(valueChanged(int)), this, SLOT(overrideDisplayIntervalChanged(int)));
@@ -1506,13 +1508,19 @@ void MainWindow::updateRecentFileActions()
 
 	for (int j = 0; j < MaxRecentFiles; ++j) {
 		if (j < m_recentFiles.count()) {
-			QString text = tr("&%1 %2").arg(j + 1).arg( QFileInfo(m_recentFiles[j]).fileName());
+			QString text = tr("&%1 %2").arg(j + 1).arg(QFileInfo(m_recentFiles[j]).fileName());
 			m_recentFileActions[j]->setText(text);
 			m_recentFileActions[j]->setData(m_recentFiles[j]);
-			m_recentFileActions[j]->setVisible(true);
+			m_recentFileActions[j]->setToolTip(m_recentFiles[j]);
+			m_recentFileActions[j]->setVisible(true);			
 		} else
 			m_recentFileActions[j]->setVisible(false);
 	}
+}
+
+void MainWindow::menuHovered(QAction *action) {
+  QString tip = action->toolTip();
+  QToolTip::showText(QCursor::pos(), tip);
 }
 
 void MainWindow::renderScenefile(const QString& filename)

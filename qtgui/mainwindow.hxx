@@ -50,6 +50,8 @@
 #include <QVector>
 #include <QSettings>
 #include <QTextCursor>
+#include <QToolTip>
+#include <QCursor>
 #include <QtGui/QTabBar>
 #include <QtGui/QProgressDialog>
 
@@ -285,6 +287,7 @@ public slots:
 
 private slots:
 
+	void menuHovered(QAction *action);
 	void exitAppSave ();
 	void exitApp ();
 	void openFile ();
@@ -309,8 +312,8 @@ private slots:
 	void aboutDialog ();
 	void openDocumentation ();
 	void openForums ();
-        void openGallery ();
-        void openBugTracker ();
+	void openGallery ();
+	void openBugTracker ();
 	
 	void renderTimeout ();
 	void statsTimeout ();
