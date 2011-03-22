@@ -89,6 +89,9 @@ public:
 				return true;
 		return false;
 	}
+	virtual Transform GetWorldToLocal(float time) const {
+		return Transform();
+	}
 	virtual void GetPrimitives(vector<boost::shared_ptr<Primitive> > &prims) const
 	{
 		prims.reserve(prims.size() + 4);
