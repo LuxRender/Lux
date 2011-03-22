@@ -1519,8 +1519,8 @@ void MainWindow::updateRecentFileActions()
 }
 
 void MainWindow::menuHovered(QAction *action) {
-  QString tip = action->toolTip();
-  QToolTip::showText(QCursor::pos(), tip);
+	QString tip = action->toolTip();
+	QToolTip::showText(QCursor::pos(), tip);
 }
 
 void MainWindow::renderScenefile(const QString& filename)
