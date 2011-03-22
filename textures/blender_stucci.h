@@ -34,7 +34,7 @@ public:
 	BlenderStucciTexture3D(const Transform &tex2world,
 		const ParamSet &tp) :
 		BlenderTexture3D(tex2world, tp, TEX_STUCCI) {
-		tex.stype = GetStucciType(tp.FindOneString("type", "Plastic"));
+		tex.stype = GetStucciType(tp.FindOneString("type", "plastic"));
 		tex.noisetype = GetNoiseType(tp.FindOneString("noisetype",
 			"soft_noise"));
 		tex.noisebasis = GetNoiseBasis(tp.FindOneString("noisebasis",
