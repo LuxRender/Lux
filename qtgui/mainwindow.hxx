@@ -49,8 +49,6 @@
 #include <QClipboard>
 #include <QVector>
 #include <QSettings>
-#include <QTextCursor>
-#include <QToolTip>
 #include <QCursor>
 #include <QtGui/QTabBar>
 #include <QtGui/QProgressDialog>
@@ -287,7 +285,6 @@ public slots:
 
 private slots:
 
-	void menuHovered(QAction *action);
 	void exitAppSave ();
 	void exitApp ();
 	void openFile ();

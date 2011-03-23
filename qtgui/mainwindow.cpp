@@ -194,8 +194,6 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	connect(ui->action_saveFLM, SIGNAL(triggered()), this, SLOT(saveFLM()));
 	connect(ui->action_exitAppSave, SIGNAL(triggered()), this, SLOT(exitAppSave()));
 	connect(ui->action_exitApp, SIGNAL(triggered()), this, SLOT(exitApp()));
-
-	connect(ui->menuOpen_Recent, SIGNAL(hovered(QAction *)), this, SLOT(menuHovered(QAction *)));
 	
 	// Export to Image sub-menu slots
 	connect(ui->action_outputTonemapped, SIGNAL(triggered()), this, SLOT(outputTonemapped()));
@@ -1530,16 +1528,10 @@ void MainWindow::updateRecentFileActions()
 
 			m_recentFileActions[j]->setText(text);
 			m_recentFileActions[j]->setData(m_recentFiles[j]);
-			m_recentFileActions[j]->setToolTip(m_recentFiles[j]);
 			m_recentFileActions[j]->setVisible(true);			
 		} else
 			m_recentFileActions[j]->setVisible(false);
 	}
-}
-
-void MainWindow::menuHovered(QAction *action) {
-	QString tip = action->toolTip();
-	QToolTip::showText(QCursor::pos(), tip);
 }
 
 void MainWindow::renderScenefile(const QString& filename)
