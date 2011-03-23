@@ -38,6 +38,7 @@
 #include <QTextStream>
 
 #include <QTextLayout>
+#include <QFontMetrics>
 
 #include "error.h"
 
@@ -154,6 +155,21 @@ double retrieveParam(bool useDefault, luxComponent comp, luxComponentParameters 
 		return luxGetDefaultParameterValue(comp, param, index);	
 	else
 		return luxGetParameterValue(comp, param, index);
+}
+
+// TODO - move to utility .cpp
+QString pathElidedText(const QFontMetrics &fm, const QString &text, int width, int flags = 0) {
+
+	const QString filename = "/" + QFileInfo(text).fileName();
+	const QString path = QFileInfo(text).absolutePath();
+
+	int fwidth = fm.width(filename);
+
+	if (fwidth > width)
+		// we're SOL, just do the default
+		return fm.elidedText(text, Qt::ElideMiddle, width, flags);
+
+	return fm.elidedText(path, Qt::ElideMiddle, width - fwidth, flags) + filename;
 }
 
 QWidget *MainWindow::instance;
@@ -1508,7 +1524,10 @@ void MainWindow::updateRecentFileActions()
 
 	for (int j = 0; j < MaxRecentFiles; ++j) {
 		if (j < m_recentFiles.count()) {
-			QString text = tr("&%1 %2").arg(j + 1).arg(QFileInfo(m_recentFiles[j]).fileName());
+			QFontMetrics fm(m_recentFileActions[j]->font());
+
+			QString text = tr("&%1 %2").arg(j + 1).arg(QDir::toNativeSeparators(pathElidedText(fm, m_recentFiles[j], 250, 0)));
+
 			m_recentFileActions[j]->setText(text);
 			m_recentFileActions[j]->setData(m_recentFiles[j]);
 			m_recentFileActions[j]->setToolTip(m_recentFiles[j]);
