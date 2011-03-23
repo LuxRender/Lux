@@ -84,11 +84,6 @@ GammaWidget::GammaWidget(QWidget *parent) : QWidget(parent), ui(new Ui::GammaWid
 	ui->combo_CRF_List->addItem("Portra_400NCCD");
 	ui->combo_CRF_List->addItem("Portra_400VCCD");
 	ui->combo_CRF_List->addItem("Portra_800CD");
-	
-
-#if defined(__APPLE__)
-	ui->pushButton_loadCRF->setFont(QFont  ("Lucida Grande", 11));
-#endif
 }
 
 GammaWidget::~GammaWidget()
