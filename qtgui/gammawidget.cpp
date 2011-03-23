@@ -34,8 +34,58 @@ GammaWidget::GammaWidget(QWidget *parent) : QWidget(parent), ui(new Ui::GammaWid
 	connect(ui->slider_gamma, SIGNAL(valueChanged(int)), this, SLOT(gammaChanged(int)));
 	connect(ui->spinBox_gamma, SIGNAL(valueChanged(double)), this, SLOT(gammaChanged(double)));
 	connect(ui->checkBox_CRF, SIGNAL(stateChanged(int)), this, SLOT(CRFChanged(int)));
-	connect(ui->pushButton_loadCRF, SIGNAL(clicked()), this, SLOT(loadCRF()));
-	ui->CRF_label->setStyleSheet(QString::fromUtf8(" QFrame {\n""background-color: rgb(250, 250, 250)\n""}"));
+	connect(ui->combo_CRF_List, SIGNAL(activated(QString)), this, SLOT(SetCRFPreset(QString)));
+
+	ui->combo_CRF_List->addItem("External...");
+	ui->combo_CRF_List->addItem("Advantix_100CD");
+	ui->combo_CRF_List->addItem("Advantix_200CD");
+	ui->combo_CRF_List->addItem("Advantix_400CD");
+	ui->combo_CRF_List->addItem("Agfachrome_ctpecisa_200CD");
+	ui->combo_CRF_List->addItem("Agfachrome_ctprecisa_100CD");
+	ui->combo_CRF_List->addItem("Agfachrome_rsx2_050CD");
+	ui->combo_CRF_List->addItem("Agfachrome_rsx2_100CD");
+	ui->combo_CRF_List->addItem("Agfachrome_rsx2_200CD");
+	ui->combo_CRF_List->addItem("Agfacolor_futura_100CD");
+	ui->combo_CRF_List->addItem("Agfacolor_futura_200CD");
+	ui->combo_CRF_List->addItem("Agfacolor_futura_400CD");
+	ui->combo_CRF_List->addItem("Agfacolor_futuraII_100CD");
+	ui->combo_CRF_List->addItem("Agfacolor_futuraII_200CD");
+	ui->combo_CRF_List->addItem("Agfacolor_futuraII_400CD");
+	ui->combo_CRF_List->addItem("Agfacolor_hdc_100_plusCD");
+	ui->combo_CRF_List->addItem("Agfacolor_hdc_200_plusCD");
+	ui->combo_CRF_List->addItem("Agfacolor_hdc_400_plusCD");
+	ui->combo_CRF_List->addItem("Agfacolor_optimaII_100CD");
+	ui->combo_CRF_List->addItem("Agfacolor_optimaII_200CD");
+	ui->combo_CRF_List->addItem("Agfacolor_ultra_050_CD");
+	ui->combo_CRF_List->addItem("Agfacolor_vista_100CD");
+	ui->combo_CRF_List->addItem("Agfacolor_vista_200CD");
+	ui->combo_CRF_List->addItem("Agfacolor_vista_400CD");
+	ui->combo_CRF_List->addItem("Agfacolor_vista_800CD");
+	ui->combo_CRF_List->addItem("Ektachrome_100_plusCD");
+	ui->combo_CRF_List->addItem("Ektachrome_100CD");
+	ui->combo_CRF_List->addItem("Ektachrome_320TCD");
+	ui->combo_CRF_List->addItem("Ektachrome_400XCD");
+	ui->combo_CRF_List->addItem("Ektachrome_64CD");
+	ui->combo_CRF_List->addItem("Ektachrome_64TCD");
+	ui->combo_CRF_List->addItem("Ektachrome_E100SCD");
+	ui->combo_CRF_List->addItem("F125CD");
+	ui->combo_CRF_List->addItem("F250CD");
+	ui->combo_CRF_List->addItem("F400CD");
+	ui->combo_CRF_List->addItem("FCICD");
+	ui->combo_CRF_List->addItem("Gold_100CD");
+	ui->combo_CRF_List->addItem("Gold_200CD");
+	ui->combo_CRF_List->addItem("Kodachrome_200CD");
+	ui->combo_CRF_List->addItem("Kodachrome_25");
+	ui->combo_CRF_List->addItem("Kodachrome_64CD");
+	ui->combo_CRF_List->addItem("Max_Zoom_800CD");
+	ui->combo_CRF_List->addItem("Portra_100TCD");
+	ui->combo_CRF_List->addItem("Portra_160NCCD");
+	ui->combo_CRF_List->addItem("Portra_160VCCD");
+	ui->combo_CRF_List->addItem("Portra_400NCCD");
+	ui->combo_CRF_List->addItem("Portra_400VCCD");
+	ui->combo_CRF_List->addItem("Portra_800CD");
+	
+
 #if defined(__APPLE__)
 	ui->pushButton_loadCRF->setFont(QFont  ("Lucida Grande", 11));
 #endif
@@ -137,7 +187,6 @@ void GammaWidget::activateCRF()
 		m_CRF_enabled = true;
 
 		QFileInfo fi(m_CRF_file);
-		ui->CRF_label->setText(fi.fileName());
 
 		updateWidgetValue(ui->checkBox_CRF, m_CRF_enabled);
 		
@@ -155,7 +204,6 @@ void GammaWidget::deactivateCRF()
 {
 	m_CRF_enabled = false;
 
-	ui->CRF_label->setText("inactive");
 	ui->gamma_label->setText("Gamma");
 	updateWidgetValue(ui->slider_gamma, (int)((FLOAT_SLIDER_RES / TORGB_GAMMA_RANGE) * m_TORGB_gamma) );
 	updateWidgetValue(ui->spinBox_gamma, m_TORGB_gamma);
@@ -178,3 +226,28 @@ void GammaWidget::loadCRF()
 		CRFChanged(Qt::Checked);
 	}
 }
+
+void GammaWidget::SetCRFPreset( QString sOption )
+{
+	if ( ui->combo_CRF_List->currentIndex() == 0 )
+	{
+		loadCRF();
+
+		if( !m_CRF_file.isEmpty() )
+		{
+			ui->combo_CRF_List->addItem(m_CRF_file);
+			ui->combo_CRF_List->setCurrentIndex( ui->combo_CRF_List->count() - 1 );
+		}
+	}
+	else
+	{
+		m_CRF_file = sOption;		
+	}
+	
+	if( !m_CRF_file.isEmpty() )
+	{
+		activateCRF();
+	}
+}
+
+

@@ -21,9 +21,9 @@
     <number>0</number>
    </property>
    <item>
-    <layout class="QGridLayout" name="gridLayout_2" rowstretch="0,0,0,0,0,0,0,0,0" rowminimumheight="0,0,0,0,10,0,0,0,0">
+    <layout class="QGridLayout" name="gridLayout_2" rowstretch="0,0,0,0,0,0,0,0,0">
      <property name="verticalSpacing">
-      <number>-1</number>
+      <number>6</number>
      </property>
      <item row="0" column="0">
       <widget class="QLabel" name="gamma_label">
@@ -74,16 +74,6 @@
        </property>
       </widget>
      </item>
-     <item row="7" column="1">
-      <widget class="QPushButton" name="pushButton_loadCRF">
-       <property name="toolTip">
-        <string>Load CRF with Filedialog</string>
-       </property>
-       <property name="text">
-        <string>Load</string>
-       </property>
-      </widget>
-     </item>
      <item row="5" column="0">
       <widget class="QLabel" name="crf_label">
        <property name="text">
@@ -104,24 +94,8 @@
        </property>
       </spacer>
      </item>
-     <item row="7" column="0">
-      <widget class="QLabel" name="CRF_label">
-       <property name="toolTip">
-        <string>Name of actual CRF</string>
-       </property>
-       <property name="frameShape">
-        <enum>QFrame::Panel</enum>
-       </property>
-       <property name="frameShadow">
-        <enum>QFrame::Sunken</enum>
-       </property>
-       <property name="text">
-        <string>- empty -</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
+     <item row="6" column="0" colspan="2">
+      <widget class="QComboBox" name="combo_CRF_List"/>
      </item>
     </layout>
    </item>
