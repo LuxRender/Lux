@@ -876,8 +876,8 @@ vector<RGBColor>& FlexImageFilm::ApplyPipeline(const ColorSystem &colorSpace, ve
 	if (m_CameraResponseFile == "")
 		cameraResponse.reset();
 
-	if (m_CameraResponseEnabled) {			
-		if ((!cameraResponse && m_CameraResponseFile != "") || (cameraResponse && cameraResponse->fileName != m_CameraResponseFile))
+	if (m_CameraResponseEnabled) {
+		if ((!cameraResponse && m_CameraResponseFile != "") || (cameraResponse && cameraResponse->filmName != m_CameraResponseFile))
 			cameraResponse.reset(new CameraResponse(m_CameraResponseFile));
 
 		crf = cameraResponse;
