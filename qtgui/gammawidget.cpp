@@ -248,6 +248,8 @@ void GammaWidget::SetCRFPreset( QString sOption )
 	{
 		activateCRF();
 	}
+
+	emit valuesChanged ();
 }
 
 
