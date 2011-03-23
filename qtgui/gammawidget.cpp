@@ -75,7 +75,7 @@ GammaWidget::GammaWidget(QWidget *parent) : QWidget(parent), ui(new Ui::GammaWid
 	ui->combo_CRF_List->addItem("Gold_100CD");
 	ui->combo_CRF_List->addItem("Gold_200CD");
 	ui->combo_CRF_List->addItem("Kodachrome_200CD");
-	ui->combo_CRF_List->addItem("Kodachrome_25");
+	ui->combo_CRF_List->addItem("Kodachrome_25CD");
 	ui->combo_CRF_List->addItem("Kodachrome_64CD");
 	ui->combo_CRF_List->addItem("Max_Zoom_800CD");
 	ui->combo_CRF_List->addItem("Portra_100TCD");
