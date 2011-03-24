@@ -36,7 +36,7 @@ GammaWidget::GammaWidget(QWidget *parent) : QWidget(parent), ui(new Ui::GammaWid
 	connect(ui->checkBox_CRF, SIGNAL(stateChanged(int)), this, SLOT(CRFChanged(int)));
 	connect(ui->combo_CRF_List, SIGNAL(activated(QString)), this, SLOT(SetCRFPreset(QString)));
 
-	ui->combo_CRF_List->addItem("External...");
+	ui->combo_CRF_List->addItem(tr("External..."));
 	ui->combo_CRF_List->addItem("Advantix_100CD");
 	ui->combo_CRF_List->addItem("Advantix_200CD");
 	ui->combo_CRF_List->addItem("Advantix_400CD");
@@ -230,13 +230,24 @@ void GammaWidget::SetCRFPreset( QString sOption )
 
 		if( !m_CRF_file.isEmpty() )
 		{
-			ui->combo_CRF_List->addItem(m_CRF_file);
-			ui->combo_CRF_List->setCurrentIndex( ui->combo_CRF_List->count() - 1 );
+			QString sTemp = m_CRF_file; sTemp.remove( 0, sTemp.lastIndexOf("/") + 1 );
+
+			ui->combo_CRF_List->insertItem( 1, sTemp, QVariant( m_CRF_file ) );
+			ui->combo_CRF_List->setCurrentIndex( 1 );
 		}
 	}
 	else
 	{
-		m_CRF_file = sOption;		
+		QVariant vTemp = ui->combo_CRF_List->itemData( ui->combo_CRF_List->currentIndex() );
+
+		if ( vTemp != QVariant::Invalid )
+		{
+			m_CRF_file = vTemp.toString();
+		}
+		else
+		{
+			m_CRF_file = sOption;
+		}		
 	}
 	
 	if( !m_CRF_file.isEmpty() )
