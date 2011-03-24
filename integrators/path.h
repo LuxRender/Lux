@@ -69,6 +69,7 @@ private:
 	u_int tracedShadowRayCount;
 	Ray *shadowRay;
 	u_int *currentShadowRayIndex;
+	const Volume **shadowVolume;
 
 	PathStateType state;
 	bool specularBounce, specular, scattered;

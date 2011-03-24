@@ -256,6 +256,7 @@ PathState::PathState(const Scene &scene, ContributionBuffer *contribBuffer, Rand
 	LdGroup = new u_int[1];
 	shadowRay = new Ray[1];
 	currentShadowRayIndex = new u_int[1];
+	shadowVolume = new const Volume *[1];
 }
 
 PathState::~PathState() {
@@ -264,6 +265,7 @@ PathState::~PathState() {
 	delete[] LdGroup;
 	delete[] shadowRay;
 	delete[] currentShadowRayIndex;
+	delete[] shadowVolume;
 }
 
 bool PathState::Init(const Scene &scene) {
@@ -389,7 +391,7 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 		u_int leftShadowRaysToTrace = 0;
 
 		for (u_int i = 0; i < state->tracedShadowRayCount; ++i) {
-			int result = scene.Connect(state->sample, state->volume,
+			int result = scene.Connect(state->sample, state->shadowVolume + i,
 				state->scattered, false, state->shadowRay[i],
 				*(rayBuffer->GetRayHit(state->currentShadowRayIndex[i])),
 				&state->Ld[i], NULL, NULL);
@@ -533,12 +535,13 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 					Li *= PowerHeuristic(1, lightPdf * d2 / AbsDot(wi, lightBsdf->nn), 1, bsdf->Pdf(sw, wo, wi));
 
 					// Store light's contribution
-					state->Ld[0] = state->pathThroughput * Li / d2;
-					state->Vd[0] = state->Ld[0].Filter(sw) * state->VContrib;
-					state->LdGroup[0] = light.group;
+					state->Ld[state->tracedShadowRayCount] = state->pathThroughput * Li / d2;
+					state->Vd[state->tracedShadowRayCount] = state->Ld[state->tracedShadowRayCount].Filter(sw) * state->VContrib;
+					state->LdGroup[state->tracedShadowRayCount] = light.group;
 
 					const float maxt = length - shadowRayEpsilon;
-					state->shadowRay[0] = Ray(p, wi, shadowRayEpsilon, maxt, state->sample.realTime);
+					state->shadowRay[state->tracedShadowRayCount] = Ray(p, wi, shadowRayEpsilon, maxt, state->sample.realTime);
+					state->shadowVolume[state->tracedShadowRayCount] = bsdf->GetVolume(wi);
 					++(state->tracedShadowRayCount);
 				}
 			}

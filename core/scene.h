@@ -89,7 +89,7 @@ public:
 			pdfR);
 	}
 	// Used with LuxRays
-	int Connect(const Sample &sample, const Volume *volume,
+	int Connect(const Sample &sample, const Volume **volume,
 		bool scatteredStart, bool scatteredEnd, const Ray &ray,
 		const luxrays::RayHit &rayHit, SWCSpectrum *f, float *pdf,
 		float *pdfR) const {
