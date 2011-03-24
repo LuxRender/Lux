@@ -403,6 +403,7 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 			} else if (result == 0) {
 				// I have to continue to trace the ray
 				state->shadowRay[leftShadowRaysToTrace] = state->shadowRay[i];
+				state->shadowVolume[leftShadowRaysToTrace] = state->shadowVolume[i];
 				++leftShadowRaysToTrace;
 			}
 		}
@@ -440,7 +441,8 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 		&state->pathThroughput)) {
 		// Stop path sampling since no intersection was found
 		// Possibly add horizon in render & reflections
-		if ((includeEnvironment || state->pathLength > 0)){
+		if ((includeEnvironment || state->pathLength > 0)) {
+			state->pathThroughput /= spdf;
 			BSDF *ibsdf;
 			for (u_int i = 0; i < nLights; ++i) {
 				float pdf;
@@ -497,9 +499,9 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 	const Point &p = bsdf->dgShading.p;
 	const Normal &n = bsdf->dgShading.nn;
 
-	// Direct light sampling, only if there's a non specular coponent
+	// Direct light sampling, only if there's a non specular component
 	state->tracedShadowRayCount = 0;
-	if (nLights > 0 && bsdf->NumComponents(BxDFType(BSDF_REFLECTION | BSDF_TRANSMISSION | BSDF_DIFFUSE | BSDF_GLOSSY)) > 0) {
+	if (nLights > 0 && bsdf->NumComponents(BxDFType(BSDF_ALL & ~BSDF_SPECULAR)) > 0) {
 		const float *sampleData = scene.sampler->GetLazyValues(state->sample,
 			hints.lightSampleOffset, state->pathLength);
 
@@ -532,7 +534,7 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 					MachineEpsilon::E(length));
 
 				if (shadowRayEpsilon < length * .5f) {
-					Li *= PowerHeuristic(1, lightPdf * d2 / AbsDot(wi, lightBsdf->nn), 1, bsdf->Pdf(sw, wo, wi));
+					Li *= PowerHeuristic(1, lightPdf * d2 / AbsDot(wi, lightBsdf->ng), 1, bsdf->Pdf(sw, wo, wi));
 
 					// Store light's contribution
 					state->Ld[state->tracedShadowRayCount] = state->pathThroughput * Li / d2;
@@ -585,10 +587,8 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 		state->specular = state->specular && state->specularBounce;
 		state->pathRay = Ray(p, wi);
 		state->pathRay.time = state->sample.realTime;
-	} else {
-		state->pathRay.mint = rayHit->t + MachineEpsilon::E(state->pathRay.maxt);
-		state->pathRay.maxt = INFINITY;
-	}
+	} else
+		state->pathRay.mint = rayHit->t + MachineEpsilon::E(rayHit->t);
 	++(state->pathLength);
 	state->pathThroughput *= f;
 	if (!state->specular)
