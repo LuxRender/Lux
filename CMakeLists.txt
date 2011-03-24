@@ -18,14 +18,14 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${LUX_CMAKE_DIR}")
 # generate with xcode/crosscompile, setting: ( darwin - 10.6 - gcc - g++ - MacOSX10.6.sdk - Find from root, then native system )
 IF(APPLE)
 	SET(PYLUX_FOR_BLENDER on)
-	SET(OSX_CORE_BUILD_WITH_CLANG off)
+	SET(OSX_CORE_BUILD_WITH_CLANG on)
 	SET(CMAKE_OSX_DEPLOYMENT_TARGET 10.6)
 	IF(CMAKE_VERSION VERSION_LESS 2.8.1)
 		SET(CMAKE_OSX_ARCHITECTURES i386;x86_64)
 	ELSE(CMAKE_VERSION VERSION_LESS 2.8.1)
 		SET(CMAKE_XCODE_ATTRIBUTE_ARCHS i386\ x86_64)
 	ENDIF(CMAKE_VERSION VERSION_LESS 2.8.1)
-	SET(CMAKE_XCODE_ATTRIBUTE_DEPLOYMENT_POSTPROCESSING YES) # stripe symbols
+	SET(CMAKE_XCODE_ATTRIBUTE_DEPLOYMENT_POSTPROCESSING YES) # strip symbols
 	SET(CMAKE_OSX_SYSROOT /Developer/SDKs/MacOSX10.6.sdk)
 	set(CMAKE_CONFIGURATION_TYPES Release)
 ENDIF(APPLE)
@@ -864,7 +864,7 @@ ENDIF(APPLE)
 ###########################   PYTHON LIBRARIES    ###########################
 #############################################################################
 #############################################################################
-# SET(CMAKE_USE_PYTHON_VERSION 3.1)
+# SET(CMAKE_USE_PYTHON_VERSION 3.2)
 IF(APPLE)
 	IF(PYLUX_FOR_BLENDER)
 		# use Blender python libs for static compiling !
@@ -890,7 +890,7 @@ IF(PYTHONLIBS_FOUND)
 	IF(APPLE)
 		ADD_LIBRARY(pylux MODULE python/binding.cpp)
 		IF( NOT CMAKE_VERSION VERSION_LESS 2.8.3) # only cmake >= 2.8.3 supports per target attributes
-		 SET_TARGET_PROPERTIES(pylux PROPERTIES XCODE_ATTRIBUTE_DEPLOYMENT_POSTPROCESSING NO) # exclude pylux from striping
+		 SET_TARGET_PROPERTIES(pylux PROPERTIES XCODE_ATTRIBUTE_DEPLOYMENT_POSTPROCESSING NO) # exclude pylux from strip symbols
 		ENDIF( NOT CMAKE_VERSION VERSION_LESS 2.8.3)
 		TARGET_LINK_LIBRARIES(pylux -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z bz2  ${SYS_LIBRARIES} ${PYTHON_LIBRARIES} ${Boost_python_LIBRARIES})
 ### if XCode used for compiling ###
@@ -952,7 +952,7 @@ IF(QT4_FOUND)
 	ADD_EXECUTABLE(luxrender ${GUI_TYPE} ${LUXQTGUI_SRCS} ${LUXQTGUI_MOC_SRCS} ${LUXQTGUI_RC_SRCS} ${LUXQTGUI_UI_HDRS})
 	IF(APPLE)
 		IF( NOT CMAKE_VERSION VERSION_LESS 2.8.3) # only cmake >= 2.8.1 supports per target attributes
-			SET_TARGET_PROPERTIES(luxrender PROPERTIES XCODE_ATTRIBUTE_GCC_VERSION 4.2) # QT will not play with new compiler default llvm-gcc-4.2 !
+			SET_TARGET_PROPERTIES(luxrender PROPERTIES XCODE_ATTRIBUTE_GCC_VERSION 4.2) # QT will not play with xcode4 compiler default llvm-gcc-4.2 !
 		ENDIF( NOT CMAKE_VERSION VERSION_LESS 2.8.3)
 		INCLUDE_DIRECTORIES (SYSTEM /Developer/Headers/FlatCarbon /usr/local/include)
 		FIND_LIBRARY(CARBON_LIBRARY Carbon)
