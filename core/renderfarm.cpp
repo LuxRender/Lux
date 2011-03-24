@@ -112,7 +112,8 @@ void RenderFarm::stopFilmUpdater() {
 void RenderFarm::decodeServerName(const string &serverName, string &name, string &port) {
 	// Dade - check if the server name includes the port
 	size_t idx = serverName.find_last_of(':');
-	if (idx != string::npos) {
+	size_t idx_v6 = serverName.rfind("::");
+	if (idx != string::npos && idx != idx_v6+1) {
 		// Dade - the server name includes the port number
 
 		name = serverName.substr(0, idx);
