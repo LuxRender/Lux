@@ -42,7 +42,7 @@ class RenderServer;
 class NetworkRenderServerThread : public boost::noncopyable {
 public:
     NetworkRenderServerThread(RenderServer *server) :
-        renderServer(server), serverThread(NULL), engineThread(NULL),
+        renderServer(server), serverThread4(NULL), serverThread6(NULL), engineThread(NULL),
         infoThread(NULL), signal(SIG_NONE) { }
 
     ~NetworkRenderServerThread() {
@@ -52,8 +52,11 @@ public:
         if (infoThread)
             delete infoThread;
 
-        if (serverThread)
-            delete serverThread;
+        if (serverThread4)
+            delete serverThread4;
+        
+		if (serverThread6)
+            delete serverThread6;
     }
 
     void interrupt() {
@@ -61,14 +64,16 @@ public:
     }
 
     void join() {
-        serverThread->join();
+        serverThread4->join();
+        serverThread6->join();
     }
 
-    static void run(NetworkRenderServerThread *serverThread);
+    static void run(int ipversion, NetworkRenderServerThread *serverThread);
     friend class RenderServer;
 
     RenderServer *renderServer;
-    boost::thread *serverThread;
+    boost::thread *serverThread4;
+    boost::thread *serverThread6;
     boost::thread *engineThread;
     boost::thread *infoThread;
 

@@ -47,6 +47,7 @@
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
+#include <boost/thread/thread.hpp>
 
 using namespace lux;
 using namespace boost::iostreams;
@@ -75,10 +76,17 @@ void RenderServer::start() {
 		return;
 	}
 
-	// Dade - start the tcp server thread
+	LOG( LUX_INFO,LUX_NOERROR) << "Launching server mode [" << threadCount << " threads]";
+
+	// Dade - start the tcp server threads
 	serverThread = new NetworkRenderServerThread(this);
-	serverThread->serverThread = new boost::thread(boost::bind(
-		NetworkRenderServerThread::run, serverThread));
+
+	serverThread->serverThread6 = new boost::thread(boost::bind(
+		NetworkRenderServerThread::run, 6, serverThread));
+	// TODO - workaround for linux dualstack handling
+	boost::this_thread::sleep(boost::posix_time::milliseconds(250));
+	serverThread->serverThread4 = new boost::thread(boost::bind(
+		NetworkRenderServerThread::run, 4, serverThread));
 
 	state = READY;
 }
@@ -693,13 +701,10 @@ void cmd_luxRenderer(bool isLittleEndian, NetworkRenderServerThread *serverThrea
 }
 
 // Dade - TODO: support signals
-void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread)
+void NetworkRenderServerThread::run(int ipversion, NetworkRenderServerThread *serverThread)
 {
 	const int listenPort = serverThread->renderServer->tcpPort;
 	const bool isLittleEndian = osIsLittleEndian();
-	LOG( LUX_INFO,LUX_NOERROR) << "Launching server [" << serverThread->renderServer->threadCount <<
-		" threads] mode on port '" << listenPort << "'.";
-
 
 	vector<string> tmpFileList;
 
@@ -768,8 +773,18 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread)
 
 	try {
 		boost::asio::io_service io_service;
-		tcp::endpoint endpoint(tcp::v4(), listenPort);
+		tcp::endpoint endpoint(ipversion == 4 ? tcp::v4() : tcp::v6(), listenPort);
 		tcp::acceptor acceptor(io_service, endpoint);
+
+		LOG(LUX_INFO,LUX_NOERROR) << "Server listening on " << endpoint;
+
+		//if (ipversion != 4) {
+		//	boost::asio::ip::v6_only option;
+		//	acceptor.get_option(option);
+		//	bool v6_only = option.value();
+		//	if (!v6_only)
+		//		acceptor.set_option(boost::asio::ip::v6_only(true));
+		//}
 
 		while (serverThread->signal == SIG_NONE) {
 			tcp::iostream stream;
@@ -796,6 +811,11 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread)
 				//END OF COMMAND PROCESSING
 			}
 		}
+	} catch (boost::system::system_error& e) {
+		if (e.code() != boost::asio::error::address_family_not_supported)
+			LOG(LUX_ERROR,LUX_BUG) << "Internal error: " << e.what();
+		else
+			LOG(LUX_INFO,LUX_NOERROR) << "IPv" << ipversion << " not available";
 	} catch (exception& e) {
 		LOG(LUX_ERROR,LUX_BUG) << "Internal error: " << e.what();
 	}
