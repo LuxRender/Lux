@@ -183,6 +183,26 @@ void GammaWidget::activateCRF()
 
 		QFileInfo fi(m_CRF_file);
 
+		// Check to see if a CRF file was specificed in the scene.
+		if ( fi.fileName() != ui->combo_CRF_List->itemText( ui->combo_CRF_List->currentIndex() ) )
+		{
+			if ( fi.suffix().toLower() == "crf" )
+			{
+				ui->combo_CRF_List->insertItem( 1, fi.fileName(), QVariant( m_CRF_file ) );
+				ui->combo_CRF_List->setCurrentIndex( 1 );
+			}
+			else // look for existing preset.
+			{
+				int lIndex = ui->combo_CRF_List->findText( m_CRF_file );
+
+				if ( lIndex != -1 ) ui->combo_CRF_List->setCurrentIndex( lIndex );
+				else // Invalid preset, set to External...
+				{
+					ui->combo_CRF_List->setCurrentIndex( 0 );
+				}				
+			}
+		}
+
 		updateWidgetValue(ui->checkBox_CRF, m_CRF_enabled);
 		
 		updateParam(LUX_FILM, LUX_FILM_CAMERA_RESPONSE_ENABLED, m_CRF_enabled);
@@ -216,9 +236,6 @@ void GammaWidget::loadCRF()
 	if(!m_CRF_file.isEmpty()) {
 		QFileInfo info(m_CRF_file);
 		m_lastOpendir = info.absolutePath();
-
-		ui->checkBox_CRF->setChecked(true);
-		CRFChanged(Qt::Checked);
 	}
 }
 
@@ -230,9 +247,9 @@ void GammaWidget::SetCRFPreset( QString sOption )
 
 		if( !m_CRF_file.isEmpty() )
 		{
-			QString sTemp = m_CRF_file; sTemp.remove( 0, sTemp.lastIndexOf("/") + 1 );
+			QFileInfo fTemp = m_CRF_file;
 
-			ui->combo_CRF_List->insertItem( 1, sTemp, QVariant( m_CRF_file ) );
+			ui->combo_CRF_List->insertItem( 1, fTemp.fileName(), QVariant( m_CRF_file ) );
 			ui->combo_CRF_List->setCurrentIndex( 1 );
 		}
 	}
