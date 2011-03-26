@@ -338,7 +338,7 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 		boost::shared_ptr<Texture<float> > dm((*floatTextures)[displacementMapName]);
 		displacementMap = dm;
 
-		if (displacementMap.get() == NULL) {
+		if (!displacementMap) {
 			LOG( LUX_WARNING,LUX_SYNTAX) << "Unknow float texture '" << displacementMapName << "' in a Mesh shape.";
 		}
 	}
