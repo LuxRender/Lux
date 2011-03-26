@@ -263,10 +263,6 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 				break;
 			}
 			case SUBDIV_MICRODISPLACEMENT:
-				if (displacementMapMin < -1.f || displacementMapMax > 1.f)
-					LOG(LUX_WARNING, LUX_LIMIT) << "Displacement map for microdisplacement reported min/max values of (" 
-						<< displacementMapMin << "," << displacementMapMax << "), actual displacement values will be clamped to [-1,1]";
-
 				for (u_int i = 0; i < nverts; ++i)
 					p[i] = ObjectToWorld(p[i]);
 				if (n) {
@@ -277,6 +273,11 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 				if (displacementMap) {
 					// get min/max displacement for MD
 					displacementMap->GetMinMaxFloat(&displacementMapMin, &displacementMapMax);
+
+					if (displacementMapMin < -1.f || displacementMapMax > 1.f)
+						LOG(LUX_WARNING, LUX_LIMIT) << "Displacement map for microdisplacement reported min/max values of (" 
+							<< displacementMapMin << "," << displacementMapMax << "), actual displacement values will be clamped to [-1,1]";
+
 					triType = TRI_MICRODISPLACEMENT;
 				} else {
 					LOG(LUX_WARNING, LUX_CONSISTENCY) << "No displacement map for microdisplacement, disabling";
