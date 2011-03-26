@@ -116,6 +116,7 @@ protected:
 	boost::shared_ptr<Texture<float> > displacementMap;
 	float displacementMapScale;
 	float displacementMapOffset;
+	float displacementMapMin, displacementMapMax;
 	bool displacementMapNormalSmooth, displacementMapSharpBoundary;
 	bool normalSplit;
 
