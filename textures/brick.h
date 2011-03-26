@@ -187,6 +187,15 @@ public:
 		dgTemp.nn = Normalize(origN + vv * dgTemp.dndv);
 		*dv = (Texture<T>::EvalFloat(sw, dgTemp) - base) / vv;
 	}
+	virtual void GetMinMaxFloat(float *minValue, float *maxValue) const {
+		float min1, min2, min3;
+		float max1, max2, max3;
+		tex1->GetMinMaxFloat(&min1, &max1);
+		tex2->GetMinMaxFloat(&min2, &max2);
+		tex3->GetMinMaxFloat(&min3, &max3);
+		*minValue = min(min1 * min3, min2);
+		*maxValue = max(max1 * max3, max2);
+	}
 	virtual void SetIlluminant() {
 		// Update sub-textures
 		// Don't update tex3 as it's a filtering texture

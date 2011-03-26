@@ -76,6 +76,14 @@ public:
 		dgTemp.nn = Normalize(origN + vv * dgTemp.dndv);
 		*dv = (Evaluate(sw, dgTemp) - base) / vv;
 	}
+	virtual void GetMinMaxFloat(float *minValue, float *maxValue) const {
+		// FBm is computed as a geometric series Sum(Ar^k) with A ~ [-1, 1]
+		const float geomsum = (1.f - powf(omega, octaves)) / (1.f - omega);
+		// this seems to be a fair conservative bound on the min/max values
+		// TODO - find better bounds
+		*maxValue = max(1.f, geomsum/2.f);
+		*minValue = -*maxValue;
+	}
 
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const ParamSet &tp);
 	

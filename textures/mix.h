@@ -63,6 +63,15 @@ public:
 		*du = Lerp(a, du1, du2) + d * dua;
 		*dv = Lerp(a, dv1, dv2) + d * dva;
 	}
+	virtual void GetMinMaxFloat(float *minValue, float *maxValue) const {
+		float mina, min1, min2;
+		float maxa, max1, max2;
+		amount->GetMinMaxFloat(&mina, &maxa);
+		tex1->GetMinMaxFloat(&min1, &max1);
+		tex2->GetMinMaxFloat(&min2, &max2);
+		*minValue = min(Lerp(mina, min1, min2), Lerp(maxa, min1, min2));
+		*maxValue = max(Lerp(mina, max1, max2), Lerp(maxa, max1, max2));
+	}
 	virtual void SetIlluminant() {
 		// Update sub-textures
 		tex1->SetIlluminant();

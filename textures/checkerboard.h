@@ -192,6 +192,14 @@ public:
 			}
 		}
 	}
+	virtual void GetMinMaxFloat(float *minValue, float *maxValue) const {
+		float min1, min2;
+		float max1, max2;
+		tex1->GetMinMaxFloat(&min1, &max1);
+		tex2->GetMinMaxFloat(&min2, &max2);
+		*minValue = min(min1, min2);
+		*maxValue = max(max1, max2);
+	}
 	virtual void SetIlluminant() {
 		// Update sub-textures
 		tex1->SetIlluminant();
@@ -338,6 +346,14 @@ public:
 				*dv -= d * dpdv.z;
 			}
 		}
+	}
+	virtual void GetMinMaxFloat(float *minValue, float *maxValue) const {
+		float min1, min2;
+		float max1, max2;
+		tex1->GetMinMaxFloat(&min1, &max1);
+		tex2->GetMinMaxFloat(&min2, &max2);
+		*minValue = min(min1, min2);
+		*maxValue = max(max1, max2);
 	}
 	virtual void SetIlluminant() {
 		// Update sub-textures

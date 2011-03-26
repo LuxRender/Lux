@@ -181,6 +181,10 @@ public:
 	virtual void GetDuv(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg, float delta,
 		float *du, float *dv) const = 0;
+	virtual void GetMinMaxFloat(float *minValue, float *maxValue) const {
+		*minValue = -INFINITY;
+		*maxValue = INFINITY;
+	};
 	virtual ~Texture() { }
 };
 
