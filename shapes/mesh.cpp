@@ -216,9 +216,6 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 
 	// Possibly subdivide the triangles
 	if (mustSubdivide) {
-		// get min/max displacement for MD
-		displacementMap->GetMinMaxFloat(&displacementMapMin, &displacementMapMax);
-
 		MeshSubdivType concreteSubdivType = subdivType;
 		switch (concreteSubdivType) {
 			case SUBDIV_LOOP: {
@@ -278,6 +275,8 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 				}
 
 				if (displacementMap) {
+					// get min/max displacement for MD
+					displacementMap->GetMinMaxFloat(&displacementMapMin, &displacementMapMax);
 					triType = TRI_MICRODISPLACEMENT;
 				} else {
 					LOG(LUX_WARNING, LUX_CONSISTENCY) << "No displacement map for microdisplacement, disabling";
