@@ -323,6 +323,9 @@ bool CameraResponse::loadPreset() {
 	Agfacolor_vista_200CD
 	Agfacolor_vista_400CD
 	Agfacolor_vista_800CD
+	Agfapan_apx_025CD
+	Agfapan_apx_100CD
+	Agfapan_apx_400CD
 	Ektachrome_100_plusCD
 	Ektachrome_100CD
 	Ektachrome_320TCD
@@ -613,6 +616,21 @@ bool CameraResponse::loadPreset() {
 		BlueI.assign(Agfacolor_vista_800CDBlue_I, Agfacolor_vista_800CDBlue_I + nBlue);
 		BlueB.assign(Agfacolor_vista_800CDBlue_B, Agfacolor_vista_800CDBlue_B + nBlue);
 		color = true;
+	} else if (filmName == "Agfapan_apx_025CD") {
+		const size_t nRed = sizeof(Agfapan_apx_025CDRed_I) / sizeof(Agfapan_apx_025CDRed_I[0]);
+		RedI.assign(Agfapan_apx_025CDRed_I, Agfapan_apx_025CDRed_I + nRed);
+		RedB.assign(Agfapan_apx_025CDRed_B, Agfapan_apx_025CDRed_B + nRed);
+		color = false;
+	} else if (filmName == "Agfapan_apx_100CD") {
+		const size_t nRed = sizeof(Agfapan_apx_100CDRed_I) / sizeof(Agfapan_apx_100CDRed_I[0]);
+		RedI.assign(Agfapan_apx_100CDRed_I, Agfapan_apx_100CDRed_I + nRed);
+		RedB.assign(Agfapan_apx_100CDRed_B, Agfapan_apx_100CDRed_B + nRed);
+		color = false;
+	} else if (filmName == "Agfapan_apx_400CD") {
+		const size_t nRed = sizeof(Agfapan_apx_400CDRed_I) / sizeof(Agfapan_apx_400CDRed_I[0]);
+		RedI.assign(Agfapan_apx_400CDRed_I, Agfapan_apx_400CDRed_I + nRed);
+		RedB.assign(Agfapan_apx_400CDRed_B, Agfapan_apx_400CDRed_B + nRed);
+		color = false;
 	} else if (filmName == "Ektachrome_100_plusCD") {
 		const size_t nRed = sizeof(Ektachrome_100_plusCDRed_I) / sizeof(Ektachrome_100_plusCDRed_I[0]);
 		RedI.assign(Ektachrome_100_plusCDRed_I, Ektachrome_100_plusCDRed_I + nRed);
