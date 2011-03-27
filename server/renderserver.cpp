@@ -772,22 +772,26 @@ void NetworkRenderServerThread::run(int ipversion, NetworkRenderServerThread *se
 	#undef INSERT_CMD
 
 	try {
+		bool reuse_addr = true;
+
 		boost::asio::io_service io_service;
 		tcp::endpoint endpoint(ipversion == 4 ? tcp::v4() : tcp::v6(), listenPort);
-		tcp::acceptor acceptor(io_service, endpoint);
+		tcp::acceptor acceptor(io_service);
+
+		acceptor.open(endpoint.protocol());
+		if (reuse_addr)
+			acceptor.set_option(boost::asio::socket_base::reuse_address(true));
+		if (endpoint.protocol() != tcp::v4())
+			acceptor.set_option(boost::asio::ip::v6_only(true));
+		acceptor.bind(endpoint);
+		acceptor.listen();
 
 		LOG(LUX_INFO,LUX_NOERROR) << "Server listening on " << endpoint;
 
-		//if (ipversion != 4) {
-		//	boost::asio::ip::v6_only option;
-		//	acceptor.get_option(option);
-		//	bool v6_only = option.value();
-		//	if (!v6_only)
-		//		acceptor.set_option(boost::asio::ip::v6_only(true));
-		//}
-
 		while (serverThread->signal == SIG_NONE) {
+			vector<char> buffer(2048);
 			tcp::iostream stream;
+			stream.rdbuf()->pubsetbuf(&buffer[0], buffer.size());
 			acceptor.accept(*stream.rdbuf());
 			stream.setf(ios::scientific, ios::floatfield);
 			stream.precision(16);
