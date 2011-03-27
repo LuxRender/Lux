@@ -66,6 +66,8 @@ private:
 	void activateCRF();
 	void deactivateCRF();
 
+	void addPreset( QString listName, QString realName );
+
 protected:
 
 	void changeEvent(QEvent * event);
