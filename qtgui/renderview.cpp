@@ -57,7 +57,7 @@ void RenderView::copyToClipboard()
 		if (!fb)
 			return;
 
-		QImage image(fb, w, h, QImage::Format_RGB888);
+		QImage image(fb, w, h, w * 3, QImage::Format_RGB888);
 		QClipboard *clipboard = QApplication::clipboard();
 		// QT assumes 32bpp images for clipboard (DIBs)
 		if (!clipboard) {

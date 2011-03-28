@@ -916,7 +916,7 @@ bool MainWindow::saveCurrentImageTonemapped(const QString &outFile, bool outputA
 			}
 		}
 	} else {
-		image = QImage(fb, w, h, QImage::Format_RGB888);
+		image = QImage(fb, w, h, w*3, QImage::Format_RGB888);
 	}
 
 	if (ui->action_overlayStats->isChecked())
