@@ -182,9 +182,10 @@ public:
 		const DifferentialGeometry &dg, float delta,
 		float *du, float *dv) const = 0;
 	virtual void GetMinMaxFloat(float *minValue, float *maxValue) const {
-		*minValue = -INFINITY;
-		*maxValue = INFINITY;
-	};
+		LOG(LUX_WARNING, LUX_SYSTEM) << "Invalid call to Texture<T>::GetMinMaxFloat";
+		*minValue = -1.f;
+		*maxValue = 1.f;
+	}
 	virtual ~Texture() { }
 };
 

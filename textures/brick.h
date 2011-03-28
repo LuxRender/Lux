@@ -193,8 +193,12 @@ public:
 		tex1->GetMinMaxFloat(&min1, &max1);
 		tex2->GetMinMaxFloat(&min2, &max2);
 		tex3->GetMinMaxFloat(&min3, &max3);
-		*minValue = min(min1 * min3, min2);
-		*maxValue = max(max1 * max3, max2);
+		const float minmin13 = min1 * min3;
+		const float minmax13 = min1 * max3;
+		const float maxmin13 = max1 * min3;
+		const float maxmax13 = max1 * max3;
+		*minValue = min(min(min(minmin13, minmax13), min(maxmin13, maxmax13)), min2);
+		*maxValue = max(max(max(minmin13, minmax13), max(maxmin13, maxmax13)), max2);
 	}
 	virtual void SetIlluminant() {
 		// Update sub-textures

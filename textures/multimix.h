@@ -91,12 +91,15 @@ public:
 		*dv = dva;
 	}
 	virtual void GetMinMaxFloat(float *minValue, float *maxValue) const {
-		tex.front()->GetMinMaxFloat(minValue, maxValue);
-		for (u_int i = 1; i < tex.size() - 1; ++i) {
+		*minValue = 0.f;
+		*maxValue = 0.f;
+		for (u_int i = 0; i < tex.size() - 1; ++i) {
 			float minv, maxv;
 			tex[i]->GetMinMaxFloat(&minv, &maxv);
-			*minValue = min(*minValue, minv);
-			*maxValue = max(*maxValue, maxv);
+			const float wminv = weights[i] * minv;
+			const float wmaxv = weights[i] * maxv;
+			*minValue += min(wminv, wmaxv);
+			*maxValue += max(wminv, wmaxv);
 		}
 	}
 	virtual void SetIlluminant()
