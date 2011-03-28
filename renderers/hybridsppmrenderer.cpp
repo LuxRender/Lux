@@ -219,11 +219,13 @@ void HybridSPPMRenderer::Render(Scene *s) {
 void HybridSPPMRenderer::Pause() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 	state = PAUSE;
+	s_Timer.Stop();
 }
 
 void HybridSPPMRenderer::Resume() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 	state = RUN;
+	s_Timer.Start();
 }
 
 void HybridSPPMRenderer::Terminate() {

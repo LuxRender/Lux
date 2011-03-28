@@ -67,7 +67,7 @@ Timer::Timer()
 	one_over_frequency = 1. / static_cast<double>(performance_frequency.QuadPart);
 #endif
 	time0 = elapsed = 0;
-	running = 0;
+	running = false;
 }
 
 
@@ -105,22 +105,23 @@ Timer::~Timer()
 
 void Timer::Start()
 {
-	BOOST_ASSERT( !running );
-	running = 1;
-	time0 = GetTime();
+	if (!running ) {
+		running = true;
+		time0 = GetTime();
+	}
 }
 
 void Timer::Stop()
 {
-	BOOST_ASSERT( running );
-	running = 0;
-
-	elapsed += GetTime() - time0;
+	if (running) {
+		running = false;
+		elapsed += GetTime() - time0;
+	}
 }
 
 void Timer::Reset()
 {
-    running = 0;
+    running = false;
     elapsed = 0;
 }
 
