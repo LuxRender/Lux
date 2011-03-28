@@ -298,6 +298,7 @@ private slots:
 	void viewportChanged ();
 	void fullScreen ();
 	void normalScreen ();
+	void overlayStatsChanged (bool);
 	void aboutDialog ();
 	void openDocumentation ();
 	void openForums ();

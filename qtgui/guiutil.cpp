@@ -137,21 +137,20 @@ void overlayStatistics(QImage *image)
 	p.end();
 }
 
-bool saveCurrentImageTonemapped(const QString &outFile, bool overlayStats, bool outputAlpha)
+QImage getFramebufferImage(bool overlayStats, bool outputAlpha)
 {
-	// Saving as tonemapped image ...
 	// Get width, height and pixel buffer
 	int w = luxGetIntAttribute("film", "xResolution");
 	int h = luxGetIntAttribute("film", "yResolution");
 	// pointer needs to be const so QImage doesn't write to it
 	const unsigned char* fb = luxFramebuffer();
-	
+
+	QImage image;
+
 	// If all looks okay, proceed
 	if (!(w > 0 && h > 0 && fb))
 		// Something was wrong with buffer, width or height
-		return false;
-
-	QImage image;
+		return image;
 	
 	if (outputAlpha) {
 		float *alpha = luxAlphaBuffer();
@@ -170,11 +169,23 @@ bool saveCurrentImageTonemapped(const QString &outFile, bool overlayStats, bool 
 			}
 		}
 	} else {
-		image = QImage(fb, w, h, w*3, QImage::Format_RGB888);
+		// clone so stats won't be applied on framebuffer data
+		image = QImage(fb, w, h, w * 3, QImage::Format_RGB888).convertToFormat(QImage::Format_RGB32);
 	}
 
 	if (overlayStats)
 		overlayStatistics(&image);
+
+	return image;
+}
+
+bool saveCurrentImageTonemapped(const QString &outFile, bool overlayStats, bool outputAlpha)
+{
+	// Saving as tonemapped image ...
+	QImage image = getFramebufferImage(overlayStats, outputAlpha);
+
+	if (image.isNull())
+		return false;
 
 	return image.save(outFile);
 }

@@ -178,7 +178,8 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	connect(ui->action_copyLog, SIGNAL(triggered()), this, SLOT(copyLog()));
 	connect(ui->action_clearLog, SIGNAL(triggered()), this, SLOT(clearLog()));
 	connect(ui->action_fullScreen, SIGNAL(triggered()), this, SLOT(fullScreen()));
-    connect(ui->action_normalScreen, SIGNAL(triggered()), this, SLOT(normalScreen()));
+	connect(ui->action_normalScreen, SIGNAL(triggered()), this, SLOT(normalScreen()));
+	connect(ui->action_overlayStatsView, SIGNAL(triggered(bool)), this, SLOT(overlayStatsChanged(bool)));
 	
 	// Help menu slots
 	connect(ui->action_aboutDialog, SIGNAL(triggered()), this, SLOT(aboutDialog()));
@@ -886,11 +887,9 @@ bool MainWindow::saveAllLightGroups(const QString &outFilename, const bool &asHD
 			else
 				luxSaveEXR(QString("%1.exr").arg(outputName).toAscii().data(), openExrHalfFloats, openExrDepthBuffer, openExrCompressionType, false);
 		else {
-			unsigned char* fb = luxFramebuffer();
-			if(fb != NULL) {
-				QImage image(fb, w, h, w*3, QImage::Format_RGB888);
+			QImage image = getFramebufferImage();
+			if(!image.isNull())
 				result = image.save(QString("%1%2").arg(outputName).arg(filenamePath.extension().c_str()));
-			}
 			else
 				result = false;
 		}
@@ -1083,6 +1082,11 @@ void MainWindow::normalScreen()
 	}
 }
 
+void MainWindow::overlayStatsChanged(bool checked)
+{
+	renderView->setOverlayStatistics(checked);
+	renderView->reload();
+}
 
 // Help menu slots
 void MainWindow::aboutDialog()
