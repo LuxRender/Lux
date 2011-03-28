@@ -777,6 +777,7 @@ SET( LUXQTGUI_SRCS
 	qtgui/panewidget.cpp
 	qtgui/batchprocessdialog.cpp
 	qtgui/openexroptionsdialog.cpp
+	qtgui/guiutil.cpp
 	)
 SET( LUXQTGUI_MOC
 	qtgui/histogramview.hxx
