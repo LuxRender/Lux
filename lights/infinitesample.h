@@ -34,16 +34,14 @@ class InfiniteAreaLightIS : public Light {
 public:
 	// InfiniteAreaLightIS Public Methods
 	InfiniteAreaLightIS(const Transform &light2world, const RGBColor &l,
-		u_int ns, const string &texmap, EnvironmentMapping *m,
+		u_int ns, const string &texmap, u_int imr, EnvironmentMapping *m,
 		float gain, float gamma);
 	virtual ~InfiniteAreaLightIS();
 	virtual float Power(const Scene &scene) const {
 		Point worldCenter;
 		float worldRadius;
 		scene.WorldBound().BoundingSphere(&worldCenter, &worldRadius);
-		return SPDbase.Y() *
-			(radianceMap ? radianceMap->LookupFloat(CHANNEL_WMEAN, .5f, .5f, .5f) : 1.f) *
-			M_PI * worldRadius * worldRadius;
+		return SPDbase.Y() * mean_y * M_PI * worldRadius * worldRadius;
 	}
 	virtual bool IsDeltaLight() const { return false; }
 	virtual bool IsEnvironmental() const { return true; }
@@ -68,6 +66,7 @@ private:
 	// InfiniteAreaLightIS Private Data
 	RGBIllumSPD SPDbase;
 	Distribution2D *uvDistrib;
+	float mean_y;
 };
 
 }
