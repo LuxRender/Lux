@@ -124,7 +124,7 @@ private:
 		ExtRenderingServerInfo(string n, string p, string id) :
 			timeLastContact(boost::posix_time::second_clock::local_time()),
 			numberOfSamplesReceived(0.),
-			name(n), port(p), sid(id), flushed(false), active(false) { }
+			name(n), port(p), sid(id), active(false), flushed(false) { }
 
 		boost::posix_time::ptime timeLastContact;
 		// to return the max. number of samples among

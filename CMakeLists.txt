@@ -942,7 +942,7 @@ ENDIF(PYTHONLIBS_FOUND)
 #############################################################################
 #############################################################################
 
-FIND_PACKAGE(Qt4 4.6.0 COMPONENTS QtCore QtGui REQUIRED)
+FIND_PACKAGE(Qt4 4.6.0 COMPONENTS QtCore QtGui)
 IF(QT4_FOUND)
 	MESSAGE(STATUS "Qt library directory: " ${QT_LIBRARY_DIR} )
 	MESSAGE( STATUS "Qt include directory: " ${QT_INCLUDE_DIR} )
