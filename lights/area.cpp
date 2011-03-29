@@ -134,7 +134,8 @@ public:
 		const Vector &wiW, bool reverse, BxDFType flags = BSDF_ALL) const {
 		if (NumComponents(flags) == 1)
 			return sf->f(sw, WorldToLocal(wiW)) *
-				fabsf(reverse ? Dot(woW, nn) : Dot(wiW, ng) * Dot(woW, nn) /
+				fabsf(reverse ? Dot(woW, nn)  / sf->Average_f() :
+				Dot(wiW, ng) * Dot(woW, nn) /
 				(Dot(wiW, nn) * sf->Average_f()));
 		return SWCSpectrum(0.f);
 	}
