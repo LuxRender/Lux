@@ -42,63 +42,63 @@ class RenderServer;
 
 class NetworkRenderServerThread : public boost::noncopyable {
 public:
-    NetworkRenderServerThread(RenderServer *server) :
-        renderServer(server), serverThread4(NULL), serverThread6(NULL), engineThread(NULL),
-        infoThread(NULL), signal(SIG_NONE) { }
+	NetworkRenderServerThread(RenderServer *server) :
+		renderServer(server), serverThread4(NULL), serverThread6(NULL), engineThread(NULL),
+		infoThread(NULL), signal(SIG_NONE) { }
 
-    ~NetworkRenderServerThread() {
-        if (engineThread)
-            delete engineThread;
+	~NetworkRenderServerThread() {
+		if (engineThread)
+			delete engineThread;
 
-        if (infoThread)
-            delete infoThread;
+		if (infoThread)
+			delete infoThread;
 
-        if (serverThread4)
-            delete serverThread4;
-        
+		if (serverThread4)
+			delete serverThread4;
+		
 		if (serverThread6)
-            delete serverThread6;
-    }
+			delete serverThread6;
+	}
 
-    void interrupt() {
-        signal = SIG_EXIT;
-    }
+	void interrupt() {
+		signal = SIG_EXIT;
+	}
 
-    void join() {
-        serverThread4->join();
-        serverThread6->join();
-    }
+	void join() {
+		serverThread4->join();
+		serverThread6->join();
+	}
 
-    static void run(int ipversion, NetworkRenderServerThread *serverThread);
-    friend class RenderServer;
+	static void run(int ipversion, NetworkRenderServerThread *serverThread);
+	friend class RenderServer;
 
-    RenderServer *renderServer;
-    boost::thread *serverThread4;
-    boost::thread *serverThread6;
-    boost::thread *engineThread;
-    boost::thread *infoThread;
+	RenderServer *renderServer;
+	boost::thread *serverThread4;
+	boost::thread *serverThread6;
+	boost::thread *engineThread;
+	boost::thread *infoThread;
 
-    // Dade - used to send signals to the thread
-    enum ThreadSignal { SIG_NONE, SIG_EXIT };
-    ThreadSignal signal;
+	// Dade - used to send signals to the thread
+	enum ThreadSignal { SIG_NONE, SIG_EXIT };
+	ThreadSignal signal;
 };
 
 // Dade - network rendering server
 class RenderServer {
 public:
-    static const int DEFAULT_TCP_PORT = 18018;
+	static const int DEFAULT_TCP_PORT = 18018;
 
-    enum ServerState { UNSTARTED, READY, BUSY, STOPPED };
+	enum ServerState { UNSTARTED, READY, BUSY, STOPPED };
 
-    RenderServer(int threadCount, int tcpPort = DEFAULT_TCP_PORT, bool writeFlmFile = false);
-    ~RenderServer();
+	RenderServer(int threadCount, int tcpPort = DEFAULT_TCP_PORT, bool writeFlmFile = false);
+	~RenderServer();
 
-    void start();
-    void join();
-    void stop();
+	void start();
+	void join();
+	void stop();
 
-    int getServerPort() const { return tcpPort; }
-    ServerState getServerState() const { return  state; }
+	int getServerPort() const { return tcpPort; }
+	ServerState getServerState() const { return  state; }
 	void setServerState(ServerState newState) {
 		state = newState;
 	}
@@ -138,15 +138,15 @@ public:
 
 	vector<ErrorMessage> errorMessages;
 
-    friend class NetworkRenderServerThread;
+	friend class NetworkRenderServerThread;
 
 private:
-    int threadCount;
-    int tcpPort;
+	int threadCount;
+	int tcpPort;
 	bool writeFlmFile;
-    ServerState state;
+	ServerState state;
 	boost::uuids::uuid currentSID;
-    NetworkRenderServerThread *serverThread;
+	NetworkRenderServerThread *serverThread;
 };
 
 }//namespace lux
