@@ -76,7 +76,7 @@ Texture<SWCSpectrum> *TabulatedDataTexture::CreateSWCSpectrumTexture(const Trans
 	vector<float> wl;
 	vector<float> data;
 
-	const string filename = tp.FindOneString("filename", "");
+	const string filename = AdjustFilename(tp.FindOneString("filename", ""));
 	std::ifstream fs;
 	fs.open(filename.c_str());
 	string line;

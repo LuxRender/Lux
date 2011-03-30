@@ -160,7 +160,7 @@ static void ErrorCB(const char *message)
 
 Shape* PlyMesh::CreateShape(const Transform &o2w,
 		bool reverseOrientation, const ParamSet &params) {
-	string filename = params.FindOneString("filename", "none");
+	const string filename = AdjustFilename(params.FindOneString("filename", "none"));
 	bool smooth = params.FindOneBool("smooth", false);
 
 	LOG( LUX_INFO,LUX_NOERROR) << "Loading PLY mesh file: '" << filename << "'...";

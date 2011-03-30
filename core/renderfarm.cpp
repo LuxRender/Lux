@@ -508,8 +508,10 @@ void RenderFarm::send(const string &command) {
 		netBufferComplete = true;
 }
 
-void RenderFarm::sendFile(const string file) {
-	std::ifstream in(file.c_str(), std::ios::in | std::ios::binary);
+void RenderFarm::sendFile(const string &file) {
+	// silent replacement, since relevant plugin will report replacement
+	const string filename = AdjustFilename(file, true);
+	std::ifstream in(filename.c_str(), std::ios::in | std::ios::binary);
 
 	// Get length of file:
 	in.seekg (0, std::ifstream::end);
@@ -518,7 +520,8 @@ void RenderFarm::sendFile(const string file) {
 	in.seekg (0, std::ifstream::beg);
 
 	if (in.fail()) {
-		LOG( LUX_ERROR,LUX_SYSTEM) << "There was an error while checking the size of file '" << file << "'";
+		// AdjustFilename should guarantee that file exists, if not return just normalized filename
+		LOG( LUX_ERROR,LUX_SYSTEM) << "There was an error while checking the size of file '" << filename << "'";
 
 		// Send an empty file ot the server
 		netBuffer << "0\n";
@@ -529,7 +532,7 @@ void RenderFarm::sendFile(const string file) {
 		in.read(buf, len);
 
 		if (in.fail()) {
-			LOG( LUX_ERROR,LUX_SYSTEM) << "There was an error while reading file '" << file << "'";
+			LOG( LUX_ERROR,LUX_SYSTEM) << "There was an error while reading file '" << filename << "'";
 
 			// Send an empty file to the server
 			netBuffer << "0\n";

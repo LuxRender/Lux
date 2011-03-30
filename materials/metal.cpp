@@ -357,7 +357,7 @@ int IORFromFile(const string filename, vector<float> &wl, vector<float> &n, vect
 Material *Metal::CreateMaterial(const Transform &xform, const ParamSet &tp) {
 	//FIXME: "name" is deprecated in favor of "filename"
 	// keep it until v0.8 until the exporters have fully transitioned
-	string metalname = tp.FindOneString("filename", tp.FindOneString("name", ""));
+	string metalname = AdjustFilename(tp.FindOneString("filename", tp.FindOneString("name", "")));
 
 	if (metalname == "")
 		metalname = DEFAULT_METAL;

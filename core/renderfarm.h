@@ -145,7 +145,7 @@ private:
 	void flushImpl();
 	void disconnect(const ExtRenderingServerInfo &serverInfo);
 	void sendParams(const ParamSet &params);
-	void sendFile(std::string file);
+	void sendFile(const std::string &file);
 	void reconnectFailed();
 
 	// Any operation on servers must be synchronized via this mutex

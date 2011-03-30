@@ -228,8 +228,12 @@ namespace lux
 
   bool SolveLinearSystem2x2(const float A[2][2], const float B[2], float x[2]);
 
-	ImageData *ReadImage(const string &name);
+  // accepts platform-specific filenames and performs fallback
+  ImageData *ReadImage(const string &name);
 
+  // converts paths to portable format and 
+  // provides fallback mechanism for missing files
+  string AdjustFilename(const string filename, bool silent = false);
 }
 
 // Global Inline Functions

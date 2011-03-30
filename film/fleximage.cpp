@@ -41,6 +41,7 @@
 #include "dynload.h"
 
 #include <boost/thread/xtime.hpp>
+#include <boost/filesystem/path.hpp>
 
 using namespace lux;
 
@@ -1434,6 +1435,7 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 
 	// output filenames
 	string filename = params.FindOneString("filename", "luxout");
+	filename = boost::filesystem::path(filename).string();
 
 	// intervals
 	int writeInterval = params.FindOneInt("writeinterval", 60);
@@ -1487,7 +1489,7 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 	float s_LinearGamma = params.FindOneFloat("linear_gamma", 1.0f);
 	float s_ContrastYwa = params.FindOneFloat("contrast_ywa", 1.f);
 
-	string response = params.FindOneString("cameraresponse", "");
+	string response = AdjustFilename(params.FindOneString("cameraresponse", ""));
 
 	float s_Gamma = params.FindOneFloat("gamma", 2.2f);
 

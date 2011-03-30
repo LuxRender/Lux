@@ -570,7 +570,7 @@ SurfaceIntegrator* ExPhotonIntegrator::CreateSurfaceIntegrator(const ParamSet &p
 	float distanceThreshold = params.FindOneFloat("distancethreshold", maxDist * 1.25f);
 
 	string *mapsFileName = NULL;
-	string sfn = params.FindOneString("photonmapsfile", "");
+	string sfn = AdjustFilename(params.FindOneString("photonmapsfile", ""));
 	if (sfn != "")
 		mapsFileName = new string(sfn);
 
