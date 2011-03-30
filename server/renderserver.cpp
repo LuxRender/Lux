@@ -83,8 +83,6 @@ void RenderServer::start() {
 
 	serverThread->serverThread6 = new boost::thread(boost::bind(
 		NetworkRenderServerThread::run, 6, serverThread));
-	// TODO - workaround for linux dualstack handling
-	boost::this_thread::sleep(boost::posix_time::milliseconds(250));
 	serverThread->serverThread4 = new boost::thread(boost::bind(
 		NetworkRenderServerThread::run, 4, serverThread));
 
