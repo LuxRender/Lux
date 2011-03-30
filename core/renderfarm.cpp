@@ -128,7 +128,7 @@ bool RenderFarm::connect(ExtRenderingServerInfo &serverInfo) {
 
 	// check to see if we're already connected (active), if so ignore
 	for (vector<ExtRenderingServerInfo>::iterator it = serverInfoList.begin(); it < serverInfoList.end(); it++ ) {
-		if (serverInfo.name.compare(it->name) == 0 && serverInfo.port.compare(it->port) == 0 && serverInfo.active) {
+		if (serverInfo.name.compare(it->name) == 0 && serverInfo.port.compare(it->port) == 0 && it->active) {
 			return false;
 		}
 	}
