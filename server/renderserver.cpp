@@ -48,6 +48,8 @@
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
 #include <boost/thread/thread.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
 
 using namespace lux;
 using namespace boost::iostreams;
@@ -349,11 +351,7 @@ static void processCommand(void (Context::*f)(const string &, float, float, cons
 
 
 void RenderServer::createNewSessionID() {
-	char buf[4 * 4 + 4];
-	sprintf(buf, "%04d_%04d_%04d_%04d", rand() % 9999, rand() % 9999,
-			rand() % 9999, rand() % 9999);
-
-	currentSID = string(buf);
+	currentSID = boost::uuids::random_generator()();
 }
 
 bool RenderServer::validateAccess(basic_istream<char> &stream) const {
@@ -362,9 +360,11 @@ bool RenderServer::validateAccess(basic_istream<char> &stream) const {
 		return false;
 	}
 
-	string sid;
-	if (!getline(stream, sid))
+	string sidstr;
+	if (!getline(stream, sidstr))
 		return false;
+
+	boost::uuids::uuid sid = boost::uuids::string_generator()(sidstr);
 
 	LOG( LUX_DEBUG,LUX_NOERROR) << "Validating SID: " << sid << " = " << currentSID;
 

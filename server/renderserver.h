@@ -33,6 +33,7 @@
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
+#include <boost/uuid/uuid.hpp>
 
 namespace lux
 {
@@ -102,7 +103,7 @@ public:
 		state = newState;
 	}
 
-	string getCurrentSID() const {
+	boost::uuids::uuid getCurrentSID() const {
 		return currentSID;
 	}
 
@@ -144,7 +145,7 @@ private:
     int tcpPort;
 	bool writeFlmFile;
     ServerState state;
-	string currentSID;
+	boost::uuids::uuid currentSID;
     NetworkRenderServerThread *serverThread;
 };
 
