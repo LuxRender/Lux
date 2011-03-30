@@ -51,32 +51,107 @@ public:
 	bool parsePartial(const char* filename, bool async);
 	bool parseSuccessful();
 	
-	// housekeeping
+	// rendering control
+	void pause();
+	void start();
+	void setHaltSamplesPerPixel(int haltspp, bool haveEnoughSamplesPerPixel, bool suspendThreadsWhenDone);
+	unsigned int addThread();
+	void removeThread();
 	void wait();
 	void exit();
 	void cleanup();
 
 	// scene description methods
-	void identity();
-	void translate(float dx, float dy, float dz);
-	void rotate(float angle, float ax, float ay, float az);
-	void scale(float sx, float sy, float sz);
-	void lookAt(float ex, float ey, float ez, float lx, float ly, float lz, float ux, float uy, float uz);
+	void accelerator(const char *aName, const lux_paramset* params);
+	void areaLightSource(const char *aName, const lux_paramset* params);
+	void attributeBegin();
+	void attributeEnd();
+	void camera(const char *cName, const lux_paramset* params);
 	void concatTransform(float tx[16]);
+	void coordinateSystem(const char *cnName);
+	void coordSysTransform(const char *cnName);
+	void exterior(const char *eName);
+	void film(const char *fName, const lux_paramset* params);
+	void identity();
+	void interior(const char *iName);
+	void lightGroup(const char *lName, const lux_paramset* params);
+	void lightSource(const char *lName, const lux_paramset* params);
+	void lookAt(float ex, float ey, float ez, float lx, float ly, float lz, float ux, float uy, float uz);
+	void makeNamedMaterial(const char *mName, const lux_paramset* params);
+	void makeNamedVolume(const char *vName, const char *vType, const lux_paramset* params);
+	void material(const char *mName, const lux_paramset* params);
+	void motionInstance(const char *mName, float startTime, float endTime, const char *toTransform);
+	void namedMaterial(const char *mName);
+	void objectBegin(const char *oName);
+	void objectEnd();
+	void objectInstance(const char *oName);
+	void pixelFilter(const char *pName, const lux_paramset* params);
+	void portalInstance(const char *pName);
+	void portalShape(const char *pName, const lux_paramset* params);
+	void renderer(const char *rName, const lux_paramset* params);
+	void reverseOrientation();
+	void rotate(float angle, float ax, float ay, float az);
+	void sampler(const char *sName, const lux_paramset* params);
+	void scale(float sx, float sy, float sz);
+	void shape(const char *sName, const lux_paramset* params);
+	void surfaceIntegrator(const char *sName, const lux_paramset* params);
+	void texture(const char *tName, const char *tVariant, const char *tType, const lux_paramset* params);
 	void transform(float tx[16]);
-	void coordinateSystem(const char *name);
-	void coordSysTransform(const char *name);
-	void renderer(const char *name, const lux_paramset* params);
-	void film(const char *name, const lux_paramset* params);
-	void lightSource(const char *name, const lux_paramset* params);
+	void transformBegin();
+	void transformEnd();
+	void translate(float dx, float dy, float dz);
+	void volume(const char *vName, const lux_paramset* params);	
+	void volumeIntegrator(const char *vName, const lux_paramset* params);
 	void worldBegin();
 	void worldEnd();
 
-	// rendering control
+	// I/O and imaging
+	void loadFLM(const char* fName);
+	void saveFLM(const char* fName);
+	void saveEXR(const char *filename, bool useHalfFloat, bool includeZBuffer, bool tonemapped);
+	void overrideResumeFLM(const char *fName);
+	void updateFramebuffer();
+	const unsigned char* framebuffer();
+	const float* floatFramebuffer();
+	const float* alphaBuffer();
+	const float* zBuffer();
+	const unsigned char* getHistogramImage(unsigned int width, unsigned int height, int options);
+
+	// Old-style parameter update interface
+	// To implement these requires exporting further luxComponent* symbols; In most cases the 
+	// new Queryable system should be preferred anyhow.
+	// void setParameterValue(luxComponent comp, luxComponentParameters param, double value, unsigned int index);
+	// double getParameterValue(luxComponent comp, luxComponentParameters param, unsigned int index);
+	// double getDefaultParameterValue(luxComponent comp, luxComponentParameters param, unsigned int index);
+	// void setStringParameterValue(luxComponent comp, luxComponentParameters param, const char* value, unsigned int index);
+	// unsigned int getStringParameterValue(luxComponent comp, luxComponentParameters param, char* dst, unsigned int dstlen, unsigned int index);
+	// unsigned int getDefaultStringParameterValue(luxComponent comp, luxComponentParameters param, char* dst, unsigned int dstlen, unsigned int index);
+
+	// Queryable interface
+	const char* getAttributes();
+	// TODO; this requires a get*Attribute()/set*Attribute() method for each data type.
+	// void* getAttribute(const char *objectName, const char *attributeName);
+	// void setAttribute(const char *objectName, const char *attributeName, void* value);
+
+	// Networking interface
+	void addServer(const char *sName);
+	void removeServer(const char *sName);
+	unsigned int getServerCount();
+	void updateFilmFromNetwork();
+	void setNetworkServerUpdateInterval(int updateInterval);
+	int getNetworkServerUpdateInterval();
+	// How to return data from this one? Export another data type?
+	// boost::python::tuple getRenderingServersStatus();
+
+	// Stats
 	double statistics(const char* statName);
 	const char* printableStatistics(const bool addTotal);
-	unsigned int addThread();
-	void removeThread();
+	const char* customStatistics(const char* custom_template);
+
+	// Debugging interface
+	void enableDebugMode();
+	void disableRandomMode();
+	void setEpsilon(const float minValue, const float maxValue);
 
 private:
 	const char* name;
