@@ -23,53 +23,23 @@
 #ifndef LUX_TIMER_H
 #define LUX_TIMER_H
 // timer.h*
-#if defined ( WIN32 ) || defined(__CYGWIN__)
-#include <windows.h>
-#else
-#include <sys/time.h>
-#endif
-#if (_MSC_VER >= 1400)
-#include <stdio.h>
-#define snprintf _snprintf
-#endif
+#include "boost/date_time/posix_time/posix_time_types.hpp"
 // Timer Declarations
 class  Timer {
 public:
 	// Public Timer Methods
-	Timer();
-	~Timer();
+	Timer() : running(false), elapsed(0.0) { };
+	~Timer() { };
 	
 	void Start();
 	void Stop();
 	void Reset();
-	
-	double Time();
+	double Time() const;
 private:
-	double GetTime();
 	// Private Timer Data
-	double time0, elapsed;
-#if defined( IRIX ) || defined( IRIX64 )
-	// Private IRIX Timer Data
-	int fd;
-	unsigned long long counter64;
-	unsigned int counter32;
-	unsigned int cycleval;
-	
-	typedef unsigned long long iotimer64_t;
-	typedef unsigned int iotimer32_t;
-	volatile iotimer64_t *iotimer_addr64;
-	volatile iotimer32_t *iotimer_addr32;
-	
-	void *unmapLocation;
-	int unmapSize;
-#elif defined( WIN32 ) || defined(__CYGWIN__)
-	// Private Windows Timer Data
-	double one_over_frequency;
-	LARGE_INTEGER performance_counter, performance_frequency;
-#else
-	// Private UNIX Timer Data
-	struct timeval timeofday;
-#endif
+	double elapsed;
 	bool running;
+	boost::posix_time::ptime time0;
 };
+
 #endif // LUX_TIMER_H
