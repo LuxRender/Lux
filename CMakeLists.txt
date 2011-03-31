@@ -842,6 +842,7 @@ ENDIF()
 
 ADD_LIBRARY(luxShared SHARED
 	cpp_api/lux_api.cpp
+	cpp_api/lux_wrapper_factories.cpp
 )
 TARGET_LINK_LIBRARIES(luxShared -Wl,--whole-archive luxStatic -Wl,--no-whole-archive ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${SYS_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARY})
 

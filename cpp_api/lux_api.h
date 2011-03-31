@@ -33,14 +33,13 @@
 #include "paramset.h"
 
 // CPP API Includes
-#include "export_defs.h"
 #include "lux_instance.h"
 #include "lux_paramset.h"
 
-CPP_EXPORT class CPP_API lux_wrapped_context : public lux_instance {
+class lux_wrapped_context : public lux_instance {
 public:
 	lux_wrapped_context(const char* _name);
-	virtual ~lux_wrapped_context();
+	~lux_wrapped_context();
 
 	// context metadata
 	const char* version();
@@ -170,10 +169,10 @@ private:
 	}
 };
 
-CPP_EXPORT class CPP_API lux_wrapped_paramset : public lux_paramset {
+class lux_wrapped_paramset : public lux_paramset {
 public:
 	lux_wrapped_paramset();
-	virtual ~lux_wrapped_paramset();
+	~lux_wrapped_paramset();
 
 	lux::ParamSet* GetParamSet() { return ps; };
 

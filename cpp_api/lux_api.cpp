@@ -39,21 +39,6 @@
 #include "lux_api.h"
 
 // -----------------------------------------------------------------------
-// FACTORY FUNCTIONS
-// -----------------------------------------------------------------------
-
-// Returns an instance of lux_wrapped_context, cast as a pure lux_instance interface
-CPP_API lux_instance* CreateLuxInstance(const char* _name)
-{
-	return dynamic_cast<lux_instance*>(new lux_wrapped_context(_name));
-}
-// Returns an instance of lux_wrapped_paramset, cast as a pure lux_paramset interface
-CPP_API lux_paramset* CreateLuxParamSet()
-{
-	return dynamic_cast<lux_paramset*>(new lux_wrapped_paramset());
-}
-
-// -----------------------------------------------------------------------
 // CONTEXT WRAPPING
 // -----------------------------------------------------------------------
 
@@ -514,39 +499,39 @@ lux_wrapped_paramset::~lux_wrapped_paramset()
 {
 	delete(ps);
 }
-void lux_wrapped_paramset::AddFloat(const char* n, const float * v, u_int nItems)
+void lux_wrapped_paramset::AddFloat(const char* n, const float * v, unsigned int nItems)
 {
 	ps->AddFloat(n, v, nItems);
 }
-void lux_wrapped_paramset::AddInt(const char* n, const int * v, u_int nItems)
+void lux_wrapped_paramset::AddInt(const char* n, const int * v, unsigned int nItems)
 {
 	ps->AddInt(n, v, nItems);
 }
-void lux_wrapped_paramset::AddBool(const char* n, const bool * v, u_int nItems)
+void lux_wrapped_paramset::AddBool(const char* n, const bool * v, unsigned int nItems)
 {
 	ps->AddBool(n, v, nItems);
 }
-void lux_wrapped_paramset::AddPoint(const char* n, const float * v, u_int nItems)
+void lux_wrapped_paramset::AddPoint(const char* n, const float * v, unsigned int nItems)
 {
 	lux::Point* p = new lux::Point(v[0],v[1],v[2]);
 	ps->AddPoint(n, p, nItems);
 }
-void lux_wrapped_paramset::AddVector(const char* n, const float * v, u_int nItems)
+void lux_wrapped_paramset::AddVector(const char* n, const float * v, unsigned int nItems)
 {
 	lux::Vector* vec = new lux::Vector(v[0],v[1],v[2]);
 	ps->AddVector(n, vec, nItems);
 }
-void lux_wrapped_paramset::AddNormal(const char* n, const float * v, u_int nItems)
+void lux_wrapped_paramset::AddNormal(const char* n, const float * v, unsigned int nItems)
 {
 	lux::Normal* nor = new lux::Normal(v[0],v[1],v[2]);
 	ps->AddNormal(n, nor, nItems);
 }
-void lux_wrapped_paramset::AddRGBColor(const char* n, const float * v, u_int nItems)
+void lux_wrapped_paramset::AddRGBColor(const char* n, const float * v, unsigned int nItems)
 {
 	lux::RGBColor* col = new lux::RGBColor(v[0],v[1],v[2]);
 	ps->AddRGBColor(n, col, nItems);
 }
-void lux_wrapped_paramset::AddString(const char* n, const char* v, u_int nItems)
+void lux_wrapped_paramset::AddString(const char* n, const char* v, unsigned int nItems)
 {
 	std::string *str = new std::string(v);
 	ps->AddString(n, str, nItems);

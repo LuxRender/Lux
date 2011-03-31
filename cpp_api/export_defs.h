@@ -44,6 +44,5 @@
  #endif
  #define CPP_EXPORT extern "C"
 #endif
-// TODO, add *nix compatible definitions
 
 #endif	// EXPORT_DEFS_H

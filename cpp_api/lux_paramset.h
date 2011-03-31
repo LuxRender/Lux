@@ -34,14 +34,14 @@ public:
 	lux_paramset() {};
 	virtual ~lux_paramset() {};
 
-	virtual void AddFloat(const char*, const float *, u_int nItems = 1) = 0;
-	virtual void AddInt(const char*, const int *, u_int nItems = 1) = 0;
-	virtual void AddBool(const char*, const bool *, u_int nItems = 1) = 0;
-	virtual void AddPoint(const char*, const float *, u_int nItems = 1) = 0;
-	virtual void AddVector(const char*, const float *, u_int nItems = 1) = 0;
-	virtual void AddNormal(const char*, const float *, u_int nItems = 1) = 0;
-	virtual void AddRGBColor(const char*, const float *, u_int nItems = 1) = 0;
-	virtual void AddString(const char*, const char*, u_int nItems = 1) = 0;
+	virtual void AddFloat(const char*, const float *, unsigned int nItems = 1) = 0;
+	virtual void AddInt(const char*, const int *, unsigned int nItems = 1) = 0;
+	virtual void AddBool(const char*, const bool *, unsigned int nItems = 1) = 0;
+	virtual void AddPoint(const char*, const float *, unsigned int nItems = 1) = 0;
+	virtual void AddVector(const char*, const float *, unsigned int nItems = 1) = 0;
+	virtual void AddNormal(const char*, const float *, unsigned int nItems = 1) = 0;
+	virtual void AddRGBColor(const char*, const float *, unsigned int nItems = 1) = 0;
+	virtual void AddString(const char*, const char*, unsigned int nItems = 1) = 0;
 	virtual void AddTexture(const char*, const char*) = 0;
 
 };
