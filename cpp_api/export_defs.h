@@ -26,15 +26,23 @@
 // The following ifdef block is the standard way of creating macros which make exporting 
 // from a DLL simpler. All files within this DLL are compiled with the CPP_API_EXPORTS
 // symbol defined on the command line. this symbol should not be defined on any project
-// that uses this DLL. This way any other project whose source files include this file see 
-// CPP_API_API functions as being imported from a DLL, whereas this DLL sees symbols
+// that uses this DLL. This way any other project whose source files include this file see
+// CPP_API functions as being imported from a DLL, whereas this DLL sees symbols
 // defined with this macro as being exported.
 #ifdef CPP_API_EXPORTS
-#define CPP_API __declspec(dllexport)
-#define CPP_EXPORT extern "C"
+ #ifdef WIN32
+  #define CPP_API __declspec(dllexport)
+ #else
+  #define CPP_API
+ #endif
+ #define CPP_EXPORT extern "C"
 #else
-#define CPP_API __declspec(dllimport)
-#define CPP_EXPORT extern "C"
+ #ifdef WIN32
+  #define CPP_API __declspec(dllimport)
+ #else
+  #define CPP_API
+ #endif
+ #define CPP_EXPORT extern "C"
 #endif
 // TODO, add *nix compatible definitions
 

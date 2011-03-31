@@ -185,16 +185,16 @@ IF(APPLE)
 	)
 ELSE(APPLE)
 	FIND_PATH(OPENEXR_INCLUDE_DIRS
-  	  ImfXdr.h
-  	  PATHS
-  	  /usr/local/include/OpenEXR
-   	 /usr/include/OpenEXR
-  	  /sw/include/OpenEXR
-  	 /opt/local/include/OpenEXR
-   	 /opt/csw/include/OpenEXR
-  	 /opt/include/OpenEXR
-	) 
-   SET(OPENEXR_LIBRARIES Half IlmImf Iex Imath)
+		ImfXdr.h
+		PATHS
+		/usr/local/include/OpenEXR
+		/usr/include/OpenEXR
+		/sw/include/OpenEXR
+		/opt/local/include/OpenEXR
+		/opt/csw/include/OpenEXR
+		/opt/include/OpenEXR
+	)
+	SET(OPENEXR_LIBRARIES Half IlmImf Iex Imath)
 ENDIF(APPLE)
 
 #############################################################################
@@ -231,32 +231,32 @@ ENDIF(APPLE)
 
 #############################################################################
 #############################################################################
-###########################   FREEIMAGE LIBRARIES    ###########################
+###########################   FREEIMAGE LIBRARIES    ########################
 #############################################################################
 #############################################################################
 
 IF(APPLE)
-    FIND_PATH(FREEIMAGE_INCLUDE_DIRS
-    	freeimage.h
-    	PATHS
-	../macos//include	
+	FIND_PATH(FREEIMAGE_INCLUDE_DIRS
+		freeimage.h
+		PATHS
+	../macos//include
 	NO_DEFAULT_PATH
-    )
-    FIND_LIBRARY(FREEIMAGE_LIBRARIES
-    	libfreeimage.a
-    	PATHS
-	../macos//lib	
+	)
+	FIND_LIBRARY(FREEIMAGE_LIBRARIES
+		libfreeimage.a
+		PATHS
+	../macos//lib
 	NO_DEFAULT_PATH
-    )
+	)
 ELSE(APPLE)
-    FIND_PACKAGE(FreeImage REQUIRED)
+	FIND_PACKAGE(FreeImage REQUIRED)
 
-    IF(FREEIMAGE_FOUND)
-        MESSAGE(STATUS "FreeImage library directory: " ${FREEIMAGE_LIBRARIES})
-        MESSAGE(STATUS "FreeImage include directory: " ${FREEIMAGE_INCLUDE_PATH})
-    ELSE(FREEIMAGE_FOUND)
-        MESSAGE(FATAL_ERROR "Could not find FreeImage")
-    ENDIF(FREEIMAGE_FOUND)
+	IF(FREEIMAGE_FOUND)
+		MESSAGE(STATUS "FreeImage library directory: " ${FREEIMAGE_LIBRARIES})
+		MESSAGE(STATUS "FreeImage include directory: " ${FREEIMAGE_INCLUDE_PATH})
+	ELSE(FREEIMAGE_FOUND)
+		MESSAGE(FATAL_ERROR "Could not find FreeImage")
+	ENDIF(FREEIMAGE_FOUND)
 ENDIF(APPLE)
 
 #############################################################################
@@ -265,11 +265,11 @@ ENDIF(APPLE)
 #############################################################################
 #############################################################################
 IF(APPLE)
-    FIND_PATH(THREADS_INCLUDE_DIRS
-    pthread.h
-    PATHS
-    /usr/include/pthread
-    )
+	FIND_PATH(THREADS_INCLUDE_DIRS
+		pthread.h
+		PATHS
+		/usr/include/pthread
+	)
 	SET(THREADS_LIBRARIES pthread)
 ELSE(APPLE)
 	FIND_PACKAGE(Threads REQUIRED)
@@ -294,12 +294,12 @@ FIND_PACKAGE(Doxygen)
 
 IF (DOXYGEN_FOUND)
 	MESSAGE( STATUS "Found Doxygen and generating documentation" )
-			
+	
 	SET(DOXYGEN_TEMPLATE ${CMAKE_CURRENT_SOURCE_DIR}/doxygen/doxygen.template)
 	SET(DOXYGEN_INPUT ${CMAKE_CURRENT_BINARY_DIR}/doxygen.conf)
 	SET(DOXYGEN_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/doc)
 	SET(DOXYGEN_OUTPUT ${DOXYGEN_OUTPUT_DIR}/html/index.html)
-		
+	
 	MESSAGE( STATUS "Doxygen output:" ${DOXYGEN_OUTPUT} )
 	
 	IF(DOXYGEN_DOT_FOUND)
@@ -319,7 +319,7 @@ IF (DOXYGEN_FOUND)
 	DEPENDS ${DOXYGEN_TEMPLATE}
 	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 	)
-		
+	
 	ADD_CUSTOM_TARGET(apidoc ALL DEPENDS ${DOXYGEN_OUTPUT})
 ENDIF (DOXYGEN_FOUND)
 
@@ -444,7 +444,7 @@ ENDIF(APPLE)
 
 #############################################################################
 #############################################################################
-#####################      SOURCE FILE FOR lux_lib     ######################
+#####################  SOURCE FILES FOR static liblux.a  ####################
 #############################################################################
 #############################################################################
 
@@ -822,45 +822,31 @@ SET( LUXQTGUI_RCS
 #############################################################################
 #############################################################################
 
+#############################################################################
+# Here we build the static core library liblux.a
+#############################################################################
+
 LINK_DIRECTORIES(${LINK_DIRECTORIES} ${Boost_LIBRARY_DIRS} )
-#Here we build the core library
-ADD_LIBRARY(lux STATIC ${lux_lib_src} )
+
+ADD_LIBRARY(luxStatic STATIC ${lux_lib_src} )
 IF( NOT CMAKE_VERSION VERSION_LESS 2.8.3 AND OSX_OPTION_CLANG) # only cmake >= 2.8.1 supports per target attributes
-	SET_TARGET_PROPERTIES(lux PROPERTIES XCODE_ATTRIBUTE_GCC_VERSION com.apple.compilers.llvm.clang.1_0) # for testing new CLANG2.0, will be ignored for other OS
-	SET_TARGET_PROPERTIES(lux PROPERTIES XCODE_ATTRIBUTE_LLVM_LTO YES )
+	SET_TARGET_PROPERTIES(luxStatic PROPERTIES XCODE_ATTRIBUTE_GCC_VERSION com.apple.compilers.llvm.clang.1_0) # for testing new CLANG2.0, will be ignored for other OS
+	SET_TARGET_PROPERTIES(luxStatic PROPERTIES XCODE_ATTRIBUTE_LLVM_LTO YES )
 ENDIF()
-#TARGET_LINK_LIBRARIES(lux ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} )
+#TARGET_LINK_LIBRARIES(luxStatic ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} )
 
 
 #############################################################################
-#Here we build the console executable
+# Here we build the shared core library liblux.so
 #############################################################################
-ADD_EXECUTABLE(luxconsole console/luxconsole.cpp)
-IF(APPLE)
-	TARGET_LINK_LIBRARIES(luxconsole -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} z ${Boost_LIBRARIES} )
-ELSE(APPLE)
-	TARGET_LINK_LIBRARIES(luxconsole -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES}  ${SYS_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARY})
-ENDIF(APPLE)
 
-#############################################################################
-#Here we build the LuxMerger executable
-#############################################################################
-ADD_EXECUTABLE(luxmerger tools/luxmerger.cpp)
-IF(APPLE)
-	TARGET_LINK_LIBRARIES(luxmerger -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} z ${Boost_LIBRARIES} )
-ELSE(APPLE)
-	TARGET_LINK_LIBRARIES(luxmerger -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES}  ${SYS_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARY})
-ENDIF(APPLE)
+ADD_LIBRARY(luxShared SHARED
+	cpp_api/lux_api.cpp
+)
+TARGET_LINK_LIBRARIES(luxShared -Wl,--whole-archive luxStatic -Wl,--no-whole-archive ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${SYS_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARY})
 
-#############################################################################
-#Here we build the LuxComp executable
-#############################################################################
-ADD_EXECUTABLE(luxcomp tools/luxcomp.cpp)
-IF(APPLE)
-	TARGET_LINK_LIBRARIES(luxcomp -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} z ${Boost_LIBRARIES} )
-ELSE(APPLE)
-	TARGET_LINK_LIBRARIES(luxcomp -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES}  ${SYS_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARY})
-ENDIF(APPLE)
+# Make CMake output both libs with the same name
+SET_TARGET_PROPERTIES(luxStatic luxShared PROPERTIES OUTPUT_NAME lux)
 
 #############################################################################
 #Here we build the python module
@@ -899,7 +885,7 @@ IF(PYTHONLIBS_FOUND)
 		IF( NOT CMAKE_VERSION VERSION_LESS 2.8.3) # only cmake >= 2.8.3 supports per target attributes
 		 SET_TARGET_PROPERTIES(pylux PROPERTIES XCODE_ATTRIBUTE_DEPLOYMENT_POSTPROCESSING NO) # exclude pylux from strip symbols
 		ENDIF( NOT CMAKE_VERSION VERSION_LESS 2.8.3)
-		TARGET_LINK_LIBRARIES(pylux -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z bz2  ${SYS_LIBRARIES} ${PYTHON_LIBRARIES} ${Boost_python_LIBRARIES})
+		TARGET_LINK_LIBRARIES(pylux -Wl,-undefined -Wl,dynamic_lookup -all_load luxStatic -noall_load ${CMAKE_THREAD_LIBS_INIT} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z bz2  ${SYS_LIBRARIES} ${PYTHON_LIBRARIES} ${Boost_python_LIBRARIES})
 ### if XCode used for compiling ###
 		ADD_CUSTOM_COMMAND(
 			TARGET pylux POST_BUILD
@@ -911,7 +897,7 @@ IF(PYTHONLIBS_FOUND)
 		)
 	ELSE(APPLE)
 		ADD_LIBRARY(pylux SHARED python/binding.cpp)
-		TARGET_LINK_LIBRARIES(pylux -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${SYS_LIBRARIES} ${PYTHON_LIBRARIES} ${Boost_python_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARY})
+		TARGET_LINK_LIBRARIES(pylux -Wl,--whole-archive luxStatic -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${SYS_LIBRARIES} ${PYTHON_LIBRARIES} ${Boost_python_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARY})
 		IF(CYGWIN)
 			ADD_CUSTOM_COMMAND(
 				TARGET pylux POST_BUILD
@@ -931,6 +917,36 @@ IF(PYTHONLIBS_FOUND)
 ELSE(PYTHONLIBS_FOUND)
 	MESSAGE( STATUS "Warning : could not find Python libraries - not building python module")
 ENDIF(PYTHONLIBS_FOUND)
+
+#############################################################################
+#Here we build the console executable
+#############################################################################
+ADD_EXECUTABLE(luxconsole console/luxconsole.cpp)
+IF(APPLE)
+	TARGET_LINK_LIBRARIES(luxconsole -Wl,-undefined -Wl,dynamic_lookup -all_load luxStatic -noall_load ${CMAKE_THREAD_LIBS_INIT} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} z ${Boost_LIBRARIES} )
+ELSE(APPLE)
+	TARGET_LINK_LIBRARIES(luxconsole -Wl,--whole-archive luxStatic -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES}  ${SYS_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARY})
+ENDIF(APPLE)
+
+#############################################################################
+#Here we build the LuxMerger executable
+#############################################################################
+ADD_EXECUTABLE(luxmerger tools/luxmerger.cpp)
+IF(APPLE)
+	TARGET_LINK_LIBRARIES(luxmerger -Wl,-undefined -Wl,dynamic_lookup -all_load luxStatic -noall_load ${CMAKE_THREAD_LIBS_INIT} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} z ${Boost_LIBRARIES} )
+ELSE(APPLE)
+	TARGET_LINK_LIBRARIES(luxmerger -Wl,--whole-archive luxStatic -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES}  ${SYS_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARY})
+ENDIF(APPLE)
+
+#############################################################################
+#Here we build the LuxComp executable
+#############################################################################
+ADD_EXECUTABLE(luxcomp tools/luxcomp.cpp)
+IF(APPLE)
+	TARGET_LINK_LIBRARIES(luxcomp -Wl,-undefined -Wl,dynamic_lookup -all_load luxStatic -noall_load ${CMAKE_THREAD_LIBS_INIT} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} z ${Boost_LIBRARIES} )
+ELSE(APPLE)
+	TARGET_LINK_LIBRARIES(luxcomp -Wl,--whole-archive luxStatic -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES}  ${SYS_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARY})
+ENDIF(APPLE)
 
 #############################################################################
 #Here we build the QT4 GUI executable
@@ -973,7 +989,7 @@ IF(QT4_FOUND)
 		MARK_AS_ADVANCED (AGL_LIBRARY)
 		MARK_AS_ADVANCED (APP_SERVICES_LIBRARY)
 		SET(EXTRA_LIBS ${CARBON_LIBRARY} ${QT_LIBRARY} ${AGL_LIBRARY} ${APP_SERVICES_LIBRARY})
-		TARGET_LINK_LIBRARIES(luxrender -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${QT_LIBRARIES} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${BZ2_LIBRARIES} )
+		TARGET_LINK_LIBRARIES(luxrender -Wl,-undefined -Wl,dynamic_lookup -all_load luxStatic -noall_load ${QT_LIBRARIES} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${BZ2_LIBRARIES} )
 ### if XCode used for compiling ###
 		ADD_CUSTOM_COMMAND(
 			TARGET luxrender POST_BUILD
@@ -987,7 +1003,7 @@ IF(QT4_FOUND)
 #			COMMAND macdeployqt release/LuxRender.app ### uncomment for bundling Qt frameworks ###
 			)
 	ELSE(APPLE)
-	TARGET_LINK_LIBRARIES(luxrender -Wl,--whole-archive lux -Wl,--no-whole-archive ${QT_LIBRARIES} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} ${ZLIB_LIBRARIES} ${BZ2_LIBRARIES}  ${SYS_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARY})
+	TARGET_LINK_LIBRARIES(luxrender -Wl,--whole-archive luxStatic -Wl,--no-whole-archive ${QT_LIBRARIES} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} ${ZLIB_LIBRARIES} ${BZ2_LIBRARIES}  ${SYS_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARY})
 	ENDIF(APPLE)
 ELSE(QT4_FOUND)
 	MESSAGE( STATUS "Warning : could not find Qt - not building Qt GUI")
@@ -1010,7 +1026,7 @@ ENDIF(APPLE)
 
 #Install API/Library
 INSTALL(FILES ${CMAKE_SOURCE_DIR}/core/api.h DESTINATION include/luxrender/)
-INSTALL(TARGETS lux DESTINATION lib${LIB_SUFFIX})
+INSTALL(TARGETS luxStatic DESTINATION lib${LIB_SUFFIX})
 #	ELSE(FIND_LIBRARY_USE_LIB64_PATHS) ARCHIVE DESTINATION lib
 #	ENDIF(FIND_LIBRARY_USE_LIB64_PATHS)
 

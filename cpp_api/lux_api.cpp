@@ -70,7 +70,7 @@ lux_wrapped_context::lux_wrapped_context(const char* _name) : name(_name)
 }
 lux_wrapped_context::~lux_wrapped_context()
 {
-	for each(boost::thread* t in render_threads)
+	BOOST_FOREACH(boost::thread* t, render_threads)
 	{
 		delete(t);
 	}
