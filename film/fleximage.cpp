@@ -45,7 +45,7 @@ using namespace lux;
 
 // FlexImageFilm Method Definitions
 FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, const float crop[4],
-	const string &filename1, bool premult, int wI, int dI, int cM,
+	const string &filename1, const string &filename_back, bool premult, int wI, int dI, int cM,
 	bool cw_EXR, OutputChannels cw_EXR_channels, bool cw_EXR_halftype, int cw_EXR_compressiontype, bool cw_EXR_applyimaging,
 	bool cw_EXR_gamutclamp, bool cw_EXR_ZBuf, ZBufNormalization cw_EXR_ZBuf_normalizationtype,
 	bool cw_PNG, OutputChannels cw_PNG_channels, bool cw_PNG_16bit, bool cw_PNG_gamutclamp, bool cw_PNG_ZBuf, ZBufNormalization cw_PNG_ZBuf_normalizationtype,
@@ -141,6 +141,28 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, const float c
 
 	// init timer
 	boost::xtime_get(&lastWriteImageTime, boost::TIME_UTC);
+
+	BackgroundEnabled = false;
+	if (filename_back != "")  {
+		auto_ptr<ImageData> imgdata(ReadImage(filename_back));
+		if (imgdata.get() != NULL){
+			int nu = imgdata->getWidth();
+			int nv = imgdata->getHeight();
+			back=new XYZColor[nu*nv];
+			TextureColor<float, 3u > *ret=static_cast<TextureColor<float, 3u >*>(imgdata->getData());
+			float R_=0.f,G_=0.f,B_=0.f;
+
+			for ( int i = 0 ; i < nu*nv ; i++ ) 
+				back[i] = colorSpace.ToXYZ(RGBColor(ret[i].c)); 
+
+			premultiplyAlpha = true;
+			BackgroundEnabled = true;
+		}
+		else
+			back = NULL;
+	}
+	else
+		back = NULL;
 }
 
 // Parameter Access functions
@@ -311,7 +333,12 @@ void FlexImageFilm::SetParameterValue(luxComponentParameters param, double value
 		case LUX_FILM_NOISE_GREYC_THREADS:
 			m_GREYCStorationParams.threads = Round2UInt(value);
 			break;
-
+		case LUX_FILM_BACKGROUNDENABLE:
+			BackgroundEnabled = (value != 0.f);
+			break;
+		case LUX_FILM_PREMULTIPLYALPHA:
+			premultiplyAlpha = (value != 0.f);
+			break;
 		case LUX_FILM_LG_SCALE:
 			SetGroupScale(index, value);
 			break;
@@ -521,6 +548,12 @@ double FlexImageFilm::GetParameterValue(luxComponentParameters param, u_int inde
 			break;
 		case LUX_FILM_LG_TEMPERATURE:
 			return GetGroupTemperature(index);
+			break;
+		case LUX_FILM_BACKGROUNDENABLE:
+			return BackgroundEnabled ;
+			break;
+		case LUX_FILM_PREMULTIPLYALPHA:
+			return premultiplyAlpha;
 			break;
 
 		default:
@@ -933,6 +966,14 @@ void FlexImageFilm::WriteImage(ImageType type)
 			alpha[pix] /= alphaWeight[pix];
 		Y += pixels[pix].c[1];
 	}
+
+
+	if(back!=NULL && BackgroundEnabled)
+		for(u_int j = 0; j < nPix; ++j)
+				 pixels[j] = back[j]*(1.f-alpha[j])+pixels[j];
+
+
+
 	Y /= nPix;
 	WriteImage2(type, pixels, alpha, "");
 	// The relation between EV and luminance in cd.m-2 is:
@@ -1191,6 +1232,8 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 
 	// output filenames
 	string filename = params.FindOneString("filename", "luxout");
+	// background filenames
+	string filename_back = params.FindOneString("background", "");
 
 	// intervals
 	int writeInterval = params.FindOneInt("writeinterval", 60);
@@ -1244,7 +1287,7 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 	float s_Gamma = params.FindOneFloat("gamma", 2.2f);
 
 	return new FlexImageFilm(xres, yres, filter, crop,
-		filename, premultiplyAlpha, writeInterval, displayInterval,
+		filename, filename_back, premultiplyAlpha, writeInterval, displayInterval,
 		clampMethod, w_EXR, w_EXR_channels, w_EXR_halftype, w_EXR_compressiontype, w_EXR_applyimaging, w_EXR_gamutclamp, w_EXR_ZBuf, w_EXR_ZBuf_normalizationtype,
 		w_PNG, w_PNG_channels, w_PNG_16bit, w_PNG_gamutclamp, w_PNG_ZBuf, w_PNG_ZBuf_normalizationtype,
 		w_TGA, w_TGA_channels, w_TGA_gamutclamp, w_TGA_ZBuf, w_TGA_ZBuf_normalizationtype, 

@@ -85,6 +85,16 @@ u_int EmissionIntegrator::Li(const TsPack *tspack, const Scene *scene,
 	*Lv *= step;
 	return group;
 }
+
+u_int EmissionIntegrator::Li(const TsPack *tspack, const Scene *scene,
+	const RayDifferential &ray, const Sample *sample,
+	SWCSpectrum *Lv, float *alpha, bool from_IsSup, bool path_type) const
+{
+	if(!from_IsSup)
+		return Li(tspack, scene, ray, sample, Lv, alpha);
+	else {	*Lv = 0.f; return 0;}
+}
+
 VolumeIntegrator* EmissionIntegrator::CreateVolumeIntegrator(const ParamSet &params) {
 	float stepSize  = params.FindOneFloat("stepsize", 1.f);
 	return new EmissionIntegrator(stepSize, Context::GetActiveLightGroup());

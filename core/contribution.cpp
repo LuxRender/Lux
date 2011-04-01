@@ -37,6 +37,7 @@ void ContributionBuffer::Buffer::Splat(Film *film)
 
 void ContributionBuffer::Splat(Film *film)
 {
+
 	for (u_int i = 0; i < buffers.size(); ++i) {
 		for (u_int j = 0; j < buffers[i].size(); ++j)
 			buffers[i][j]->Splat(film);
@@ -54,6 +55,7 @@ ContributionPool::ContributionPool() {
 		CSplat.push_back(new ContributionBuffer());
 		++total;
 	}
+
 }
 
 void ContributionPool::End(ContributionBuffer *c)
@@ -124,13 +126,16 @@ ContributionBuffer* ContributionPool::Next(ContributionBuffer *c)
 
 void ContributionPool::Flush()
 {
+
+
 	for(u_int i = 0; i < CFull.size(); ++i)
 		CSplat.push_back(CFull[i]);
 
 	CFull.clear();
-
 	for(u_int i = 0; i < CSplat.size(); ++i)
 		CSplat[i]->Splat(film);
+
+
 }
 
 void ContributionPool::Delete()

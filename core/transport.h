@@ -51,12 +51,15 @@ public:
 	virtual u_int Li(const TsPack *tspack, const Scene *scene,
 		const RayDifferential &ray, const Sample *sample,
 		SWCSpectrum *L, float *alpha) const = 0;
+	virtual u_int Li(const TsPack *tspack, const Scene *scene,
+		const RayDifferential &ray, const Sample *sample,
+		SWCSpectrum *L, float *alpha, bool surf_type, bool path_type) const = 0;
 	// modulates the supplied SWCSpectrum with the transmittance along the ray
 	virtual void Transmittance(const TsPack *tspack, const Scene *scene,
 		const Ray &ray, const Sample *sample, float *alpha, SWCSpectrum *const L) const = 0;
 	virtual bool Intersect(const TsPack *tspack, const Scene *scene,
 		const Volume *volume, const RayDifferential &ray,
-		Intersection *isect, BSDF **bsdf, SWCSpectrum *L) const;
+		Intersection *isect, BSDF **bsdf, SWCSpectrum *L, bool null_shp_isect=false) const;
 	virtual bool Connect(const TsPack *tspack, const Scene *scene,
 		const Volume *volume, const Point &p0, const Point &p1,
 		bool clip, SWCSpectrum *f, float *pdf, float *pdfR) const;
@@ -74,6 +77,22 @@ SWCSpectrum UniformSampleAllLights(const TsPack *tspack, const Scene *scene,
 u_int UniformSampleOneLight(const TsPack *tspack, const Scene *scene,
 	const Point &p,	const Normal &n, const Vector &wo, BSDF *bsdf,
 	const Sample *sample, const float *lightSample,
+	const float *lightNum, const float *bsdfSample,
+	const float *bsdfComponent, SWCSpectrum *L);
+
+//Augmented reality methods
+SWCSpectrum EstimateDirect(const TsPack *tspack, const Scene *scene,
+	const Light *light, const Point &p, const Normal &n, const Vector &wo,
+	BSDF *bsdf, const Sample *sample, float ls1, float ls2, float ls3,
+	float bs1, float bs2, float bcs, int rayDepth, bool from_IsSup, bool to_IsSup, bool path_type);
+SWCSpectrum UniformSampleAllLights(const TsPack *tspack, const Scene *scene,
+	const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
+	const Sample *sample, int rayDepth, bool from_IsSup, bool to_IsSup, bool path_type, const float *lightSample = NULL,
+	const float *lightNum = NULL, const float *bsdfSample = NULL,
+	const float *bsdfComponent = NULL);
+u_int UniformSampleOneLight(const TsPack *tspack, const Scene *scene,
+	const Point &p,	const Normal &n, const Vector &wo, BSDF *bsdf,
+	const Sample *sample, int rayDepth, bool from_IsSup, bool to_IsSup, bool path_type, const float *lightSample,
 	const float *lightNum, const float *bsdfSample,
 	const float *bsdfComponent, SWCSpectrum *L);
 

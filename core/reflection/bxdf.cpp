@@ -99,8 +99,8 @@ float BxDF::Weight(const TsPack *tspack, const Vector &wo) const
 	return 1.f;
 }
 BSDF::BSDF(const DifferentialGeometry &dg, const Normal &ngeom,
-	const Volume *ex, const Volume *in)
-	: nn(dg.nn), ng(ngeom), dgShading(dg), exterior(ex), interior(in)
+	const Volume *ex, const Volume *in, const SWCSpectrum Bco)
+	: nn(dg.nn), ng(ngeom), dgShading(dg), exterior(ex), interior(in), Bcolor(Bco)
 {
 	sn = Normalize(dgShading.dpdu);
 	tn = Cross(nn, sn);
@@ -244,8 +244,8 @@ SWCSpectrum SingleBSDF::rho(const TsPack *tspack, const Vector &woW,
 	return bxdf->rho(tspack, WorldToLocal(woW));
 }
 MultiBSDF::MultiBSDF(const DifferentialGeometry &dg, const Normal &ngeom,
-	const Volume *exterior, const Volume *interior) :
-	BSDF(dg, ngeom, exterior, interior)
+	const Volume *exterior, const Volume *interior, const SWCSpectrum Bcolor) :
+	BSDF(dg, ngeom, exterior, interior, Bcolor)
 {
 	nBxDFs = 0;
 }
@@ -392,8 +392,8 @@ SWCSpectrum MultiBSDF::rho(const TsPack *tspack, const Vector &woW,
 }
 
 MixBSDF::MixBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
-	const Volume *exterior, const Volume *interior) :
-	BSDF(dgs, ngeom, exterior, interior), totalWeight(1.f)
+	const Volume *exterior, const Volume *interior, const SWCSpectrum Bcolor) :
+	BSDF(dgs, ngeom, exterior, interior, Bcolor), totalWeight(1.f)
 {
 	// totalWeight is initialized to 1 to avoid divisions by 0 when there
 	// are no components in the mix

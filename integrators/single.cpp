@@ -125,6 +125,16 @@ u_int SingleScattering::Li(const TsPack *tspack, const Scene *scene,
 	return light->group;
 }
 
+u_int SingleScattering::Li(const TsPack *tspack, const Scene *scene, 
+	const RayDifferential &ray, const Sample *sample, 
+	SWCSpectrum *Lv, float *alpha, bool from_IsSup, bool path_type) const
+{
+	if ( !from_IsSup ) 
+		return Li(tspack, scene, ray, sample, Lv, alpha);
+	else {	*Lv = 0.f; return false; }
+
+}
+
 VolumeIntegrator* SingleScattering::CreateVolumeIntegrator(const ParamSet &params) {
 	float stepSize  = params.FindOneFloat("stepsize", 1.f);
 	return new SingleScattering(stepSize);

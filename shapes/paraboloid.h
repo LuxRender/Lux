@@ -35,8 +35,8 @@ public:
 	virtual ~Paraboloid() { }
 	virtual BBox ObjectBound() const;
 	virtual bool Intersect(const Ray &ray, float *tHit,
-	                  DifferentialGeometry *dg) const;
-	virtual bool IntersectP(const Ray &ray) const;
+	                  DifferentialGeometry *dg, bool null_shp_isect = false) const;
+	virtual bool IntersectP(const Ray &ray, bool null_shp_isect = false) const;
 	virtual float Area() const;
 	
 	static Shape* CreateShape(const Transform &o2w, bool reverseOrientation, const ParamSet &params);

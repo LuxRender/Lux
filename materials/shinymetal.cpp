@@ -42,8 +42,10 @@ BSDF *ShinyMetal::GetBSDF(const TsPack *tspack,
 	const Volume *exterior, const Volume *interior) const
 {
 	// Allocate _BSDF_
+	SWCSpectrum bcolor = (Sc->Evaluate(tspack, dgs).Clamp(0.f, 10000.f))*dgs.Scale;
+
 	MultiBSDF *bsdf = ARENA_ALLOC(tspack->arena, MultiBSDF)(dgs, dgGeom.nn,
-		exterior, interior);
+		exterior, interior, bcolor);
 	SWCSpectrum spec = Ks->Evaluate(tspack, dgs).Clamp();
 	SWCSpectrum R = Kr->Evaluate(tspack, dgs).Clamp();
 
@@ -74,6 +76,7 @@ BSDF *ShinyMetal::GetBSDF(const TsPack *tspack,
 }
 Material* ShinyMetal::CreateMaterial(const Transform &xform,
 		const ParamSet &mp) {
+	boost::shared_ptr<Texture<SWCSpectrum> > Sc(mp.GetSWCSpectrumTexture("Sc", RGBColor(.9f)));
 	boost::shared_ptr<Texture<SWCSpectrum> > Kr(mp.GetSWCSpectrumTexture("Kr", RGBColor(1.f)));
 	boost::shared_ptr<Texture<SWCSpectrum> > Ks(mp.GetSWCSpectrumTexture("Ks", RGBColor(1.f)));
 	boost::shared_ptr<Texture<float> > uroughness(mp.GetFloatTexture("uroughness", .1f));
@@ -86,7 +89,7 @@ Material* ShinyMetal::CreateMaterial(const Transform &xform,
 	CompositingParams cP;
 	FindCompositingParams(mp, &cP);
 
-	return new ShinyMetal(Ks, uroughness, vroughness, film, filmindex, Kr, bumpMap, cP);
+	return new ShinyMetal(Ks, uroughness, vroughness, film, filmindex, Kr, bumpMap, cP, Sc);
 }
 
 static DynamicLoader::RegisterMaterial<ShinyMetal> r("shinymetal");

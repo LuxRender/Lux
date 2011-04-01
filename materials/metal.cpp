@@ -31,6 +31,7 @@
 #include "paramset.h"
 #include "dynload.h"
 #include "error.h"
+#include "color.h"
 
 #include "irregular.h"
 
@@ -44,9 +45,10 @@ Metal::Metal(boost::shared_ptr<SPD > &n, boost::shared_ptr<SPD > &k,
 	boost::shared_ptr<Texture<float> > &u,
 	boost::shared_ptr<Texture<float> > &v,
 	boost::shared_ptr<Texture<float> > &bump,
-	const CompositingParams &cp) : N(n), K(k), nu(u), nv(v), bumpMap(bump)
+	const CompositingParams &cp, boost::shared_ptr<Texture<SWCSpectrum> > &sc) : N(n), K(k), nu(u), nv(v), bumpMap(bump)
 {
 	compParams = new CompositingParams(cp);
+	Sc = sc;
 }
 
 BSDF *Metal::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
@@ -56,7 +58,7 @@ BSDF *Metal::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 	// Allocate _BSDF_
 	SWCSpectrum n(tspack, *N);
 	SWCSpectrum k(tspack, *K);
-
+	SWCSpectrum bcolor = (Sc->Evaluate(tspack, dgs).Clamp(0.f, 10000.f))*dgs.Scale;
 	float u = nu->Evaluate(tspack, dgs);
 	float v = nv->Evaluate(tspack, dgs);
 	const float u2 = u * u;
@@ -69,7 +71,7 @@ BSDF *Metal::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 	MicrofacetReflection *bxdf = ARENA_ALLOC(tspack->arena, MicrofacetReflection)(1.f,
 		fresnel, md);
 	SingleBSDF *bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dgs,
-		dgGeom.nn, bxdf, exterior, interior);
+		dgGeom.nn, bxdf, exterior, interior, bcolor);
 
 	// Add ptr to CompositingParams structure
 	bsdf->SetCompositingParams(compParams);
@@ -359,7 +361,7 @@ Material *Metal::CreateMaterial(const Transform &xform, const ParamSet &tp) {
 	//FIXME: "name" is deprecated in favor of "filename"
 	// keep it until v0.8 until the exporters have fully transitioned
 	string metalname = tp.FindOneString("filename", tp.FindOneString("name", ""));
-
+	boost::shared_ptr<Texture<SWCSpectrum> > Sc(tp.GetSWCSpectrumTexture("Sc", RGBColor(.9f)));
 	if (metalname == "")
 		metalname = DEFAULT_METAL;
 
@@ -395,7 +397,7 @@ Material *Metal::CreateMaterial(const Transform &xform, const ParamSet &tp) {
 	CompositingParams cP;
 	FindCompositingParams(tp, &cP);
 
-	return new Metal(n, k, uroughness, vroughness, bumpMap, cP);
+	return new Metal(n, k, uroughness, vroughness, bumpMap, cP, Sc);
 }
 
 static DynamicLoader::RegisterMaterial<Metal> r("metal");

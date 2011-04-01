@@ -36,22 +36,26 @@
 using namespace lux;
 
 // Glossy Method Definitions
+SWCSpectrum Glossy::GetKd(const TsPack *tspack,	const DifferentialGeometry &dgs) const {
+		return Kd->Evaluate(tspack, dgs).Clamp(0.f, 10000.f); }	
+
 BSDF *Glossy::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 	const DifferentialGeometry &dgs,
 	const Volume *exterior, const Volume *interior) const
 {
 	// Allocate _BSDF_
 	// NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
-	SWCSpectrum d = Kd->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
+	SWCSpectrum bcolor = (Sc->Evaluate(tspack, dgs).Clamp(0.f, 10000.f))*dgs.Scale;
+	SWCSpectrum d = Kd->Evaluate(tspack, dgs).Clamp(0.f, 100.f);
 	SWCSpectrum s = Ks->Evaluate(tspack, dgs);
 	float i = index->Evaluate(tspack, dgs);
 	if (i > 0.f) {
 		const float ti = (i-1)/(i+1);
 		s *= ti*ti;
 	}
-	s = s.Clamp(0.f, 1.f);
+	s = s.Clamp(0.f, 10.f);
 
-	SWCSpectrum a = Ka->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
+	SWCSpectrum a = Ka->Evaluate(tspack, dgs).Clamp(0.f, 10.f);
 
 	float u = nu->Evaluate(tspack, dgs);
 	float v = nv->Evaluate(tspack, dgs);
@@ -64,7 +68,7 @@ BSDF *Glossy::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 	SchlickDistribution *md = ARENA_ALLOC(tspack->arena, SchlickDistribution)(u * v, anisotropy);
 	SingleBSDF *bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dgs,
 		dgGeom.nn, ARENA_ALLOC(tspack->arena, FresnelBlend)(d, s, a, ld,
-		md), exterior, interior);
+		md), exterior, interior, bcolor);
 
 	// Add ptr to CompositingParams structure
 	bsdf->SetCompositingParams(compParams);
@@ -73,6 +77,7 @@ BSDF *Glossy::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 }
 Material* Glossy::CreateMaterial(const Transform &xform,
 		const ParamSet &mp) {
+	boost::shared_ptr<Texture<SWCSpectrum> > Sc(mp.GetSWCSpectrumTexture("Sc", RGBColor(.9f)));
 	boost::shared_ptr<Texture<SWCSpectrum> > Kd(mp.GetSWCSpectrumTexture("Kd", RGBColor(1.f)));
 	boost::shared_ptr<Texture<SWCSpectrum> > Ks(mp.GetSWCSpectrumTexture("Ks", RGBColor(1.f)));
 	boost::shared_ptr<Texture<SWCSpectrum> > Ka(mp.GetSWCSpectrumTexture("Ka", RGBColor(.0f)));
@@ -86,7 +91,7 @@ Material* Glossy::CreateMaterial(const Transform &xform,
 	CompositingParams cP;
 	FindCompositingParams(mp, &cP);
 
-	return new Glossy(Kd, Ks, Ka, i, d, uroughness, vroughness, bumpMap, cP);
+	return new Glossy(Kd, Ks, Ka, i, d, uroughness, vroughness, bumpMap, cP, Sc);
 }
 
 static DynamicLoader::RegisterMaterial<Glossy> r("glossy_lossy");

@@ -25,6 +25,7 @@
 // texture.h*
 #include "lux.h"
 #include "geometry/transform.h"
+#include "spectrum.h"
 
 namespace lux
 {
@@ -60,6 +61,30 @@ public:
 private:
 	float su, sv, du, dv;
 };
+
+
+class  ProjectorMapping2D : public TextureMapping2D {
+public:
+	// ProjectorMapping2D Public Methods
+	ProjectorMapping2D(float su = 1, float sv = 1,
+		float du = 0, float dv = 0,  Vector dir = 0, Vector up = 0, float fov= 0, float yox=0);
+	virtual ~ProjectorMapping2D() { }
+	virtual void Map(const DifferentialGeometry &dg, float *s, float *t) const;
+	virtual void MapDxy(const DifferentialGeometry &dg,
+		float *s, float *t, float *dsdx, float *dtdx,
+		float *dsdy, float *dtdy) const;
+	virtual void MapDuv(const DifferentialGeometry &dg,
+		float *s, float *t, float *dsdu, float *dtdu,
+		float *dsdv, float *dtdv) const;
+private:
+	float su, sv, du, dv;
+	Vector right, up, dir;
+	float alfa;
+	float beta;
+	float r,g,b;
+};
+
+
 class  SphericalMapping2D : public TextureMapping2D {
 public:
 	// SphericalMapping2D Public Methods

@@ -41,7 +41,8 @@ BSDF *Glossy2::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 {
 	// Allocate _BSDF_
 	// NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
-	SWCSpectrum d(Kd->Evaluate(tspack, dgs).Clamp(0.f, 1.f));
+	SWCSpectrum bcolor = (Sc->Evaluate(tspack, dgs).Clamp(0.f, 10000.f))*dgs.Scale;
+	SWCSpectrum d(Kd->Evaluate(tspack, dgs).Clamp(0.f, 10000.f));
 	SWCSpectrum s(Ks->Evaluate(tspack, dgs));
 	float i = index->Evaluate(tspack, dgs);
 	if (i > 0.f) {
@@ -62,7 +63,7 @@ BSDF *Glossy2::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 	const float anisotropy = u2 < v2 ? 1.f - u2 / v2 : v2 / u2 - 1.f;
 	SingleBSDF *bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dgs,
 		dgGeom.nn, ARENA_ALLOC(tspack->arena, SchlickBRDF)(d, s, a, ld,
-		u * v, anisotropy), exterior, interior);
+		u * v, anisotropy), exterior, interior, bcolor);
 
 	// Add ptr to CompositingParams structure
 	bsdf->SetCompositingParams(compParams);
@@ -71,6 +72,7 @@ BSDF *Glossy2::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 }
 Material* Glossy2::CreateMaterial(const Transform &xform,
 		const ParamSet &mp) {
+	boost::shared_ptr<Texture<SWCSpectrum> > Sc(mp.GetSWCSpectrumTexture("Sc", RGBColor(.9f)));
 	boost::shared_ptr<Texture<SWCSpectrum> > Kd(mp.GetSWCSpectrumTexture("Kd", RGBColor(1.f)));
 	boost::shared_ptr<Texture<SWCSpectrum> > Ks(mp.GetSWCSpectrumTexture("Ks", RGBColor(1.f)));
 	boost::shared_ptr<Texture<SWCSpectrum> > Ka(mp.GetSWCSpectrumTexture("Ka", RGBColor(.0f)));
@@ -84,7 +86,7 @@ Material* Glossy2::CreateMaterial(const Transform &xform,
 	CompositingParams cP;
 	FindCompositingParams(mp, &cP);
 
-	return new Glossy2(Kd, Ks, Ka, i, d, uroughness, vroughness, bumpMap, cP);
+	return new Glossy2(Kd, Ks, Ka, i, d, uroughness, vroughness, bumpMap, cP, Sc);
 }
 
 static DynamicLoader::RegisterMaterial<Glossy2> r("glossy");

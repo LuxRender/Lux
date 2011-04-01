@@ -28,6 +28,7 @@
 #include "scene.h"
 #include "mipmap.h"
 #include "rgbillum.h"
+#include "spectrumwavelengths.h"
 
 namespace lux
 {
@@ -36,7 +37,7 @@ class InfiniteAreaLightIS : public Light {
 public:
 	// InfiniteAreaLightIS Public Methods
 	InfiniteAreaLightIS(const Transform &light2world, const RGBColor &l,
-		u_int ns, const string &texmap, EnvironmentMapping *m,
+		u_int ns, int LNs, const string &texmap, EnvironmentMapping *m,
 		float gain, float gamma);
 	virtual ~InfiniteAreaLightIS();
 	virtual float Power(const Scene *scene) const {
@@ -47,9 +48,11 @@ public:
 			radianceMap->LookupFloat(CHANNEL_WMEAN, .5f, .5f, .5f) *
 			M_PI * worldRadius * worldRadius;
 	}
+	virtual float DirProb(Vector N) const;
 	virtual bool IsDeltaLight() const { return false; }
 	virtual bool IsEnvironmental() const { return true; }
 	virtual SWCSpectrum Le(const TsPack *tspack, const RayDifferential &r) const;
+	virtual SWCSpectrum Le_Sup(const TsPack *tspack, const RayDifferential &r) const;
 	virtual SWCSpectrum Le(const TsPack *tspack, const Scene *scene,
 		const Ray &r, const Normal &n, BSDF **bsdf, float *pdf,
 		float *pdfDirect) const;
@@ -73,10 +76,13 @@ public:
 
 	MIPMap *radianceMap;
 	EnvironmentMapping *mapping;
+	u_int W, H, LNsamples;
+	float *lightdata;
 private:
 	// InfiniteAreaLightIS Private Data
 	RGBIllumSPD SPDbase;
 	Distribution2D *uvDistrib;
+	u_int support_sample;
 };
 
 }

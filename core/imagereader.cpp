@@ -63,3 +63,86 @@ using namespace cimg_library;
 using namespace Imf;
 using namespace Imath;
 using namespace lux;
+
+void ImageData::data_scale()
+{
+	float sc[4];
+	sc[0] = 0.0000114011578f;
+	sc[1] = 0.0000144624098f;
+	sc[2] = 0.0000149589504f;
+	sc[3] = 1.f;
+	if (noChannels_ == 1) {
+		if (pixel_type_ == UNSIGNED_CHAR_TYPE) {
+			TextureColor<unsigned char, 1> *ret = static_cast<TextureColor<unsigned char, 1> *>(data_);
+			for ( int i = 0 ; i < width_*height_ ; i++ ) {
+				for ( int j = 0 ; j < noChannels_ ; j++ )
+					ret[i].c[j] = ret[i].c[j]*sc[j];
+			}
+			data_ = ret;
+		} else if (pixel_type_ == FLOAT_TYPE) {
+			TextureColor<float, 1> *ret = static_cast<TextureColor<float, 1> *>(data_);
+			for ( int i = 0 ; i < width_*height_ ; i++ ) {
+				for ( int j = 0 ; j < noChannels_ ; j++ )
+					ret[i].c[j] = ret[i].c[j]*sc[j];
+			}
+			data_ = ret;
+		} else if (pixel_type_ == UNSIGNED_SHORT_TYPE) {
+			TextureColor<unsigned short, 1> *ret = static_cast<TextureColor<unsigned short, 1> *>(data_);
+			for ( int i = 0 ; i < width_*height_ ; i++ ) {
+				for ( int j = 0 ; j < noChannels_ ; j++ )
+					ret[i].c[j] = ret[i].c[j]*sc[j];
+			}
+			data_ = ret;
+		}
+	} else if (noChannels_ == 3) {
+		if (pixel_type_ == UNSIGNED_CHAR_TYPE) {
+			TextureColor<unsigned char, 3> *ret = static_cast<TextureColor<unsigned char, 3> *>(data_);
+			for ( int i = 0 ; i < width_*height_ ; i++ ) {
+				for ( int j = 0 ; j < noChannels_ ; j++ )
+					ret[i].c[j] = ret[i].c[j]*sc[j];
+			}
+			data_ = ret;
+		} else if (pixel_type_ == FLOAT_TYPE) {
+			TextureColor<float, 3u > *ret=static_cast<TextureColor<float, 3u >*>(data_);
+			for ( int i = 0 ; i < width_*height_ ; i++ ) {
+				for ( int j = 0 ; j < noChannels_ ; j++ )
+					ret[i].c[j] = ret[i].c[j]*sc[j];
+			}
+			data_ = ret;
+		} else if (pixel_type_ == UNSIGNED_SHORT_TYPE) {
+			TextureColor<unsigned short, 3> *ret=static_cast<TextureColor<unsigned short, 3>*>(data_);
+			for ( int i = 0 ; i < width_*height_ ; i++ ) {
+				for ( int j = 0 ; j < noChannels_ ; j++ )
+					ret[i].c[j] = ret[i].c[j]*sc[j];
+			}
+			data_ = ret;
+		}
+	} else if (noChannels_ == 4) {
+		if (pixel_type_ == UNSIGNED_CHAR_TYPE) {
+			TextureColor<unsigned char, 4> *ret = static_cast<TextureColor<unsigned char, 4> *>(data_);
+			for ( int i = 0 ; i < width_*height_ ; i++ ) {
+				for ( int j = 0 ; j < noChannels_ ; j++ )
+					ret[i].c[j] = ret[i].c[j]*sc[j];
+			}
+			data_ = ret;
+		} else if (pixel_type_ == FLOAT_TYPE) {
+			TextureColor<float, 4> *ret = static_cast<TextureColor<float, 4> *>(data_);
+			for ( int i = 0 ; i < width_*height_ ; i++ ) {
+				for ( int j = 0 ; j < noChannels_ ; j++ )
+					ret[i].c[j] = ret[i].c[j]*sc[j];
+			}
+			data_ = ret;
+		} else if (pixel_type_ == UNSIGNED_SHORT_TYPE) {
+			TextureColor<unsigned short, 4> *ret = static_cast<TextureColor<unsigned short, 4> *>(data_);
+			for ( int i = 0 ; i < width_*height_ ; i++ ) {
+				for ( int j = 0 ; j < noChannels_ ; j++ )
+					ret[i].c[j] = ret[i].c[j]*sc[j];
+			}
+			data_ = ret;
+		}
+	} else {
+		LOG(LUX_ERROR, LUX_SYSTEM) << "Unsupported channel count in ImageData::Scale_Data()";
+
+	}
+
+}

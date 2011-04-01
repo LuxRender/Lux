@@ -23,6 +23,7 @@
 // glossy.cpp*
 #include "lux.h"
 #include "material.h"
+#include "spectrum.h"
 
 namespace lux
 {
@@ -39,9 +40,10 @@ public:
 		boost::shared_ptr<Texture<float> > &u,
 		boost::shared_ptr<Texture<float> > &v,
 		boost::shared_ptr<Texture<float> > &bump,
-		const CompositingParams &cp) : Kd(kd), Ks(ks), Ka(ka), depth(d),
+		const CompositingParams &cp, boost::shared_ptr<Texture<SWCSpectrum> > &sc) : Kd(kd), Ks(ks), Ka(ka), depth(d),
 		index(i), nu(u), nv(v), bumpMap(bump) {
 		compParams = new CompositingParams(cp);
+		Sc = sc; 
 	}
 	virtual ~Glossy() { }
 	virtual void GetShadingGeometry(const TsPack *tspack,
@@ -53,6 +55,8 @@ public:
 		const DifferentialGeometry &dgGeom,
 		const DifferentialGeometry &dgShading,
 		const Volume *exterior, const Volume *interior) const;
+
+	virtual SWCSpectrum GetKd(const TsPack *tspack,	const DifferentialGeometry &dgs) const; 
 	
 	static Material * CreateMaterial(const Transform &xform,
 		const ParamSet &mp);

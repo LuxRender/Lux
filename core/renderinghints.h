@@ -66,6 +66,13 @@ public:
 		const Vector &wo, BSDF *bsdf, const Sample *sample,
 		const float *sampleData, const SWCSpectrum &scale,
 		vector<SWCSpectrum> &L) const = 0;
+
+	// SampleLights Method for Augmented Reality
+	virtual u_int SampleLights(const TsPack *tspack, const Scene *scene,
+		const u_int shadowRayCount, const Point &p, const Normal &n,
+		const Vector &wo, BSDF *bsdf, const Sample *sample,
+		const float *sampleData, const SWCSpectrum &scale,
+		vector<SWCSpectrum> &L, int rayDepth, bool from_IsSup, bool to_IsSup, bool path_type) const = 0;
 };
 
 class LSSAllUniform : public LightsSamplingStrategy {
@@ -81,6 +88,13 @@ public:
 		const Vector &wo, BSDF *bsdf, const Sample *sample,
 		const float *sampleData, const SWCSpectrum &scale,
 		vector<SWCSpectrum> &L) const;
+
+	// SampleLights Method for Augmented Reality
+	virtual u_int SampleLights(const TsPack *tspack, const Scene *scene,
+		const u_int shadowRayCount, const Point &p, const Normal &n,
+		const Vector &wo, BSDF *bsdf, const Sample *sample,
+		const float *sampleData, const SWCSpectrum &scale,
+		vector<SWCSpectrum> &L, int rayDepth, bool from_IsSup, bool to_IsSup, bool path_type) const;
 };
 
 class LSSOneUniform : public LightsSamplingStrategy {
@@ -94,6 +108,13 @@ public:
 		const Vector &wo, BSDF *bsdf, const Sample *sample,
 		const float *sampleData, const SWCSpectrum &scale,
 		vector<SWCSpectrum> &L) const;
+
+	// SampleLights Method for Augmented Reality
+	virtual u_int SampleLights(const TsPack *tspack, const Scene *scene,
+		const u_int shadowRayCount, const Point &p, const Normal &n,
+		const Vector &wo, BSDF *bsdf, const Sample *sample,
+		const float *sampleData, const SWCSpectrum &scale,
+		vector<SWCSpectrum> &L, int rayDepth, bool from_IsSup, bool to_IsSup, bool path_type) const;
 };
 
 class LSSAuto : public LightsSamplingStrategy {
@@ -118,6 +139,15 @@ public:
 			p, n, wo, bsdf, sample, sampleData, scale, L);
 	}
 
+	// SampleLights Method for Augmented Reality
+	virtual u_int SampleLights(const TsPack *tspack, const Scene *scene,
+		const u_int shadowRayCount, const Point &p, const Normal &n,
+		const Vector &wo, BSDF *bsdf, const Sample *sample,
+		const float *sampleData, const SWCSpectrum &scale,
+		vector<SWCSpectrum> &L, int rayDepth, bool from_IsSup, bool to_IsSup, bool path_type) const {
+		return strategy->SampleLights(tspack, scene, shadowRayCount,
+			p, n, wo, bsdf, sample, sampleData, scale, L, rayDepth, from_IsSup, to_IsSup, path_type);
+	}
 private:
 	LightsSamplingStrategy *strategy;
 };
@@ -135,6 +165,12 @@ public:
 		const Vector &wo, BSDF *bsdf, const Sample *sample,
 		const float *sampleData, const SWCSpectrum &scale,
 		vector<SWCSpectrum> &L) const;
+	// SampleLights Method for Augmented Reality
+	virtual u_int SampleLights(const TsPack *tspack, const Scene *scene,
+		const u_int shadowRayCount, const Point &p, const Normal &n,
+		const Vector &wo, BSDF *bsdf, const Sample *sample,
+		const float *sampleData, const SWCSpectrum &scale,
+		vector<SWCSpectrum> &L, int rayDepth, bool from_IsSup, bool to_IsSup, bool path_type) const;
 
 private:
 	Distribution1D *lightDistribution;
@@ -154,6 +190,12 @@ public:
 		const Vector &wo, BSDF *bsdf, const Sample *sample,
 		const float *sampleData, const SWCSpectrum &scale,
 		vector<SWCSpectrum> &L) const;
+	// SampleLights Method for Augmented Reality
+	virtual u_int SampleLights(const TsPack *tspack, const Scene *scene,
+		const u_int shadowRayCount, const Point &p, const Normal &n,
+		const Vector &wo, BSDF *bsdf, const Sample *sample,
+		const float *sampleData, const SWCSpectrum &scale,
+		vector<SWCSpectrum> &L, int rayDepth, bool from_IsSup, bool to_IsSup, bool path_type) const;
 
 protected:
 	Distribution1D *lightDistribution;
@@ -169,6 +211,12 @@ public:
 		const Vector &wo, BSDF *bsdf, const Sample *sample,
 		const float *sampleData, const SWCSpectrum &scale,
 		vector<SWCSpectrum> &L) const;
+	// SampleLights Method for Augmented Reality
+	virtual u_int SampleLights(const TsPack *tspack, const Scene *scene,
+		const u_int shadowRayCount, const Point &p, const Normal &n,
+		const Vector &wo, BSDF *bsdf, const Sample *sample,
+		const float *sampleData, const SWCSpectrum &scale,
+		vector<SWCSpectrum> &L, int rayDepth, bool from_IsSup, bool to_IsSup, bool path_type) const;
 };
 
 class LSSOneLogPowerImportance : public LSSOnePowerImportance {
@@ -224,7 +272,11 @@ public:
 		const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
 		const Sample *sample, u_int depth, const SWCSpectrum &scale,
 		vector<SWCSpectrum> &L, vector<float> *V = NULL) const;
-
+	// SampleLights Method for Augmented Reality
+	u_int SampleLights(const TsPack *tspack, const Scene *scene,
+		const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
+		const Sample *sample, u_int depth, const SWCSpectrum &scale,
+		vector<SWCSpectrum> &L, int rayDepth, bool from_IsSup, bool to_IsSup, bool path_type, vector<float> *V = NULL) const;
 private:
 	// Light Strategies
 	u_int shadowRayCount, nLights;

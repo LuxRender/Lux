@@ -57,7 +57,7 @@ return BBox(Point(-radius, -radius, zmin),
     Point(radius,  radius, zmax));
 }
 bool LensComponent::Intersect(const Ray &r, float *tHit,
-DifferentialGeometry *dg) const {
+DifferentialGeometry *dg, bool null_shp_isect) const {
     float phi;
     Point phit;
     // Transform _Ray_ to object space
@@ -135,7 +135,7 @@ DifferentialGeometry *dg) const {
     *tHit = thit;
     return true;
 }
-bool LensComponent::IntersectP(const Ray &r) const {
+bool LensComponent::IntersectP(const Ray &r, bool null_shp_isect) const {
     //float phi;
     Point phit;
     // Transform _Ray_ to object space

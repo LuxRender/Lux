@@ -136,7 +136,7 @@ GridAccel::~GridAccel() {
 		if (voxels[i]) voxels[i]->~Voxel();
 	FreeAligned(voxels);
 }
-bool GridAccel::Intersect(const Ray &ray, Intersection *isect) const {
+bool GridAccel::Intersect(const Ray &ray, Intersection *isect, bool null_shp_isect) const {
 	if (!gridForRefined) { // NOBOOK
 		//rayTests.Add(0, 1); // NOBOOK
 		//rayHits.Add(0, 1); // NOBOOK
@@ -145,7 +145,7 @@ bool GridAccel::Intersect(const Ray &ray, Intersection *isect) const {
 	float rayT;
 	if (bounds.Inside(ray(ray.mint)))
 		rayT = ray.mint;
-	else if (!bounds.IntersectP(ray, &rayT))
+	else if (!bounds.IntersectP(ray, &rayT, false)) //cuidado com o false
 		return false;
 	Point gridIntersect = ray(rayT);
 	// Get ray mailbox id
@@ -181,7 +181,7 @@ bool GridAccel::Intersect(const Ray &ray, Intersection *isect) const {
 		Voxel *voxel =
 			voxels[Offset(Pos[0],	Pos[1], Pos[2])];
 		if (voxel != NULL)
-			hitSomething |= voxel->Intersect(ray, isect, rayId);
+			hitSomething |= voxel->Intersect(ray, isect, rayId, null_shp_isect);
 		// Advance to next voxel
 		// Find _stepAxis_ for stepping to next voxel
 		int bits = ((NextCrossingT[0] < NextCrossingT[1]) << 2) +
@@ -199,7 +199,7 @@ bool GridAccel::Intersect(const Ray &ray, Intersection *isect) const {
 	return hitSomething;
 }
 int GridAccel::curMailboxId = 0;
-bool Voxel::Intersect(const Ray &ray, Intersection *isect, int rayId) {
+bool Voxel::Intersect(const Ray &ray, Intersection *isect, int rayId, bool null_shp_isect) {
 	// Refine primitives in voxel if needed
 	if (!allCanIntersect) {
 		GMailboxPrim **mpp;
@@ -236,14 +236,14 @@ bool Voxel::Intersect(const Ray &ray, Intersection *isect, int rayId) {
 		// Check for ray--primitive intersection
 		mp->lastMailboxId = rayId;
 		//rayTests.Add(1, 0); // NOBOOK
-		if (mp->primitive->Intersect(ray, isect)) {
+		if (mp->primitive->Intersect(ray, isect, null_shp_isect)) {
 			//rayHits.Add(1, 0); // NOBOOK
 			hitSomething = true;
 		}
 	}
 	return hitSomething;
 }
-bool GridAccel::IntersectP(const Ray &ray) const {
+bool GridAccel::IntersectP(const Ray &ray, bool null_shp_isect) const {
 	// radiance - disabled for threading // if (!gridForRefined) { // NOBOOK
 	// radiance - disabled for threading // 	//rayTests.Add(0, 1); // NOBOOK
 	// radiance - disabled for threading // 	//rayHits.Add(0, 1); // NOBOOK
@@ -253,7 +253,7 @@ bool GridAccel::IntersectP(const Ray &ray) const {
 	float rayT;
 	if (bounds.Inside(ray(ray.mint)))
 		rayT = ray.mint;
-	else if (!bounds.IntersectP(ray, &rayT))
+	else if (!bounds.IntersectP(ray, &rayT,NULL, null_shp_isect))
 		return false;
 	Point gridIntersect = ray(rayT);
 	// Set up 3D DDA for ray
@@ -285,7 +285,7 @@ bool GridAccel::IntersectP(const Ray &ray) const {
 	for (;;) {
 		int offset = Offset(Pos[0], Pos[1], Pos[2]);
 		Voxel *voxel = voxels[offset];
-		if (voxel && voxel->IntersectP(ray, rayId))
+		if (voxel && voxel->IntersectP(ray, rayId, null_shp_isect))
 			return true;
 		// Advance to next voxel
 		// Find _stepAxis_ for stepping to next voxel
@@ -303,7 +303,7 @@ bool GridAccel::IntersectP(const Ray &ray) const {
 	}
 	return false;
 }
-bool Voxel::IntersectP(const Ray &ray, int rayId) {
+bool Voxel::IntersectP(const Ray &ray, int rayId, bool null_shp_isect) {
 	// Refine primitives in voxel if needed
 	if (!allCanIntersect) {
 		GMailboxPrim **mpp;
@@ -338,7 +338,7 @@ bool Voxel::IntersectP(const Ray &ray, int rayId) {
 		// Check for ray--primitive intersection for shadow ray
 		mp->lastMailboxId = rayId;
 		// radiance - disabled for threading // //rayTests.Add(1, 0);
-		if (mp->primitive->IntersectP(ray)) {
+		if (mp->primitive->IntersectP(ray, null_shp_isect)) {
 			// radiance - disabled for threading // //rayHits.Add(1, 0);
 			return true;
 		}

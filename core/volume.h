@@ -103,8 +103,8 @@ public:
 	Region(const BBox &b) : bound(b) { }
 	virtual ~Region() { }
 	virtual BBox WorldBound() const { return bound; };
-	virtual bool IntersectP(const Ray &ray, float *t0, float *t1) const {
-		return bound.IntersectP(ray, t0, t1);
+	virtual bool IntersectP(const Ray &ray, float *t0, float *t1, bool null_shp_isect = false) const {
+		return bound.IntersectP(ray, t0, t1, null_shp_isect);
 	}
 protected:
 	BBox bound;
@@ -116,8 +116,8 @@ public:
 		Region(v2w(b)), WorldToVolume(v2w.GetInverse()), region(b),
 		volume(v) { }
 	virtual ~VolumeRegion() { }
-	virtual bool IntersectP(const Ray &ray, float *t0, float *t1) const {
-		return region.IntersectP(WorldToVolume(ray), t0, t1);
+	virtual bool IntersectP(const Ray &ray, float *t0, float *t1, bool null_shp_isect = false) const {
+		return region.IntersectP(WorldToVolume(ray), t0, t1, null_shp_isect);
 	}
 	virtual SWCSpectrum SigmaA(const TsPack *tspack, const Point &p,
 		const Vector &w) const {
@@ -147,7 +147,7 @@ public:
 		float stepSize, float offset) const {
 		float t0, t1;
 		Ray rn(r);
-		if (!IntersectP(rn, &t0, &t1))
+		if (!IntersectP(rn, &t0, &t1)) //FIXME null_shp_isect not inserted!
 			return SWCSpectrum(0.f);
 		rn.mint = t0;
 		rn.maxt = t1;
@@ -213,7 +213,7 @@ public:
 	// AggregateRegion Public Methods
 	AggregateRegion(const vector<Region *> &r);
 	virtual ~AggregateRegion();
-	virtual bool IntersectP(const Ray &ray, float *t0, float *t1) const;
+	virtual bool IntersectP(const Ray &ray, float *t0, float *t1, bool null_shp_isect = false ) const;
 	virtual SWCSpectrum SigmaA(const TsPack *tspack, const Point &,
 		const Vector &) const;
 	virtual SWCSpectrum SigmaS(const TsPack *tspack, const Point &,

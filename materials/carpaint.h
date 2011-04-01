@@ -45,7 +45,8 @@ public:
 		boost::shared_ptr<Texture<float> > &m2,
 		boost::shared_ptr<Texture<float> > &m3,
 		boost::shared_ptr<Texture<float> > &bump,
-		const CompositingParams &cp);
+		const CompositingParams &cp, 
+		boost::shared_ptr<Texture<SWCSpectrum> > &sc);
 	virtual ~CarPaint() { }
 
 	virtual void GetShadingGeometry(const TsPack *tspack,

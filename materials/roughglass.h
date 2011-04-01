@@ -38,9 +38,9 @@ public:
 		boost::shared_ptr<Texture<float> > &i,
 		boost::shared_ptr<Texture<float> > &cbf,
 		boost::shared_ptr<Texture<float> > &bump,
-		const CompositingParams &cp) : Kr(r), Kt(t), index(i),
+		const CompositingParams &cp, boost::shared_ptr<Texture<SWCSpectrum> > &sc) : Kr(r), Kt(t), index(i),
 		cauchyb(cbf), uroughness(urough), vroughness(vrough),
-		bumpMap(bump) { compParams = new CompositingParams(cp); }
+		bumpMap(bump) { compParams = new CompositingParams(cp);	 Sc = sc; }
 	virtual ~RoughGlass() { }
 	virtual void GetShadingGeometry(const TsPack *tspack,
 		const Normal &nGeom, DifferentialGeometry *dgBump) const {

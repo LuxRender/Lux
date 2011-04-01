@@ -68,6 +68,7 @@ public:
 			const Normal &DNDU, const Normal &DNDV,
 			float uu, float vv,
 			const void *pr);
+
 	void AdjustNormal(bool ro, bool swapsHandedness) {
 		// Adjust normal based on orientation and handedness
 		if (ro ^ swapsHandedness) {
@@ -87,7 +88,7 @@ public:
 	const void* handle;
 	mutable float dudx, dvdx, dudy, dvdy;
 	float time;
-
+	mutable float Scale;
 	// Dade - shape specific data, useful to "transport" informatin between
 	// shape intersection method and GetShadingGeometry()
 	union {

@@ -253,14 +253,14 @@ public:
 	   @param isect pointer to the intersection object to fill.
 	   @return true if there is an intersection.
 	*/
-	virtual bool Intersect(const Ray &ray, Intersection *isect) const;
+	virtual bool Intersect(const Ray &ray, Intersection *isect, bool null_shapes_isect=false) const;
 
 	/**
 	   Predicate version, only tests if there is intersection.
 	   @param ray in world space
 	   @return true if there is intersection.
 	*/
-	virtual bool IntersectP(const Ray &ray) const;
+	virtual bool IntersectP(const Ray &ray, bool null_shapes_isect=false) const;
 
 	/**
 	   Fills an array with the primitives

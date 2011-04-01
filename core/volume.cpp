@@ -115,13 +115,13 @@ SWCSpectrum AggregateRegion::Tau(const TsPack *tspack, const Ray &ray,
 		t += regions[i]->Tau(tspack, ray, step, offset);
 	return t;
 }
-bool AggregateRegion::IntersectP(const Ray &ray, float *t0, float *t1) const
+bool AggregateRegion::IntersectP(const Ray &ray, float *t0, float *t1, bool null_shp_isect) const
 {
 	*t0 = INFINITY;
 	*t1 = -INFINITY;
 	for (u_int i = 0; i < regions.size(); ++i) {
 		float tr0, tr1;
-		if (regions[i]->IntersectP(ray, &tr0, &tr1)) {
+		if (regions[i]->IntersectP(ray, &tr0, &tr1, null_shp_isect )) {
 			*t0 = min(*t0, tr0);
 			*t1 = max(*t1, tr1);
 		}

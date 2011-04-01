@@ -36,8 +36,8 @@ public:
 	virtual ~Torus() { }
 	virtual BBox ObjectBound() const;
 	virtual bool Intersect(const Ray &ray, float *tHit,
-	               DifferentialGeometry *dg) const;
-	virtual bool IntersectP(const Ray &ray) const;
+	               DifferentialGeometry *dg, bool null_shp_isect = false) const;
+	virtual bool IntersectP(const Ray &ray, bool null_shp_isect = false) const;
 	virtual float Area() const;
 	virtual Point Sample(float u1, float u2, float u3, Normal *ns) const {
 

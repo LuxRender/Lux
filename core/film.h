@@ -28,6 +28,7 @@
 #include "color.h"
 #include "memory.h"
 #include "queryable.h"
+#include "imagereader.h"
 
 #include <boost/serialization/split_member.hpp>
 #include <boost/thread/mutex.hpp>
@@ -473,6 +474,7 @@ protected: // Put it here for better data alignment
 
 	bool writeResumeFlm, restartResumeFlm;
 
+	XYZColor *back;
 public:
 	// Samplers will check this flag to know if we have enough samples per
 	// pixel and it is time to stop

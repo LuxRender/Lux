@@ -38,10 +38,11 @@ public:
 		boost::shared_ptr<Texture<float> > &flm,
 		boost::shared_ptr<Texture<float> > &flmindex,
 		bool archi, boost::shared_ptr<Texture<float> > &bump,
-		const CompositingParams &cp) : Kr(r), Kt(t), index(i),
+		const CompositingParams &cp, boost::shared_ptr<Texture<SWCSpectrum> > &sc) : Kr(r), Kt(t), index(i),
 		cauchyb(cbf), film(flm), filmindex(flmindex), bumpMap(bump),
 		architectural(archi) {
 		compParams = new CompositingParams(cp);
+		Sc = sc;
 	}
 	virtual ~Glass() { }
 	virtual void GetShadingGeometry(const TsPack *tspack,

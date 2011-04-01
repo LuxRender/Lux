@@ -75,17 +75,17 @@ public:
 			Union(primitives[2]->WorldBound(),
 			primitives[3]->WorldBound()));
 	}
-	virtual bool Intersect(const Ray &ray, Intersection *isect) const
+	virtual bool Intersect(const Ray &ray, Intersection *isect, bool null_shp_isect) const
 	{
 		bool hit = false;
 		for (u_int i = 0; i < 4; ++i)
-			hit |= primitives[i]->Intersect(ray, isect);
+			hit |= primitives[i]->Intersect(ray, isect, null_shp_isect);
 		return hit;
 	}
-	virtual bool IntersectP(const Ray &ray) const
+	virtual bool IntersectP(const Ray &ray, bool null_shp_isect) const
 	{
 		for (u_int i = 0; i < 4; ++i)
-			if (primitives[i]->IntersectP(ray))
+			if (primitives[i]->IntersectP(ray, null_shp_isect))
 				return true;
 		return false;
 	}
@@ -95,9 +95,9 @@ public:
 		for (u_int i = 0; i < 4; ++i)
 			prims.push_back(primitives[i]);
 	}
-	virtual bool Intersect(const QuadRay &ray4, const Ray &ray, Intersection *isect) const
+	virtual bool Intersect(const QuadRay &ray4, const Ray &ray, Intersection *isect, bool null_shp_isect) const
 	{
-		const bool hit = Intersect(ray, isect);
+		const bool hit = Intersect(ray, isect, null_shp_isect);
 		if (!hit)
 			return false;
 		ray4.maxt = _mm_set1_ps(ray.maxt);
@@ -136,7 +136,7 @@ public:
 		}
 	}
 	virtual ~QuadTriangle() { }
-	virtual bool Intersect(const QuadRay &ray4, const Ray &ray, Intersection *isect) const
+	virtual bool Intersect(const QuadRay &ray4, const Ray &ray, Intersection *isect, bool null_shp_isect) const
 	{
 		const __m128 zero = _mm_set1_ps(0.f);
 		const __m128 s1x = _mm_sub_ps(_mm_mul_ps(ray4.dy, edge2z),
@@ -609,7 +609,7 @@ int32_t QBVHNode::BBoxIntersect(const QuadRay &ray4, const __m128 invDir[3],
 }
 
 /***************************************************/
-bool QBVHAccel::Intersect(const Ray &ray, Intersection *isect) const
+bool QBVHAccel::Intersect(const Ray &ray, Intersection *isect, bool null_shp_isect) const
 {
 	//------------------------------
 	// Prepare the ray for intersection
@@ -663,7 +663,7 @@ bool QBVHAccel::Intersect(const Ray &ray, Intersection *isect) const
 			const u_int offset = QBVHNode::FirstQuadIndex(leafData);
 
 			for (u_int primNumber = offset; primNumber < (offset + nbQuadPrimitives); ++primNumber)
-				hit |= prims[primNumber]->Intersect(ray4, ray, isect);
+				hit |= prims[primNumber]->Intersect(ray4, ray, isect, null_shp_isect);
 		}//end of the else
 	}
 
@@ -671,7 +671,7 @@ bool QBVHAccel::Intersect(const Ray &ray, Intersection *isect) const
 }
 
 /***************************************************/
-bool QBVHAccel::IntersectP(const Ray &ray) const
+bool QBVHAccel::IntersectP(const Ray &ray, bool null_shp_isect) const
 {
 	//------------------------------
 	// Prepare the ray for intersection
@@ -724,7 +724,7 @@ bool QBVHAccel::IntersectP(const Ray &ray) const
 			const u_int offset = QBVHNode::FirstQuadIndex(leafData);
 
 			for (u_int primNumber = offset; primNumber < (offset + nbQuadPrimitives); ++primNumber) {
-				if (prims[primNumber]->IntersectP(ray))
+				if (prims[primNumber]->IntersectP(ray, null_shp_isect))
 					return true;
 			}
 		} // end of the else

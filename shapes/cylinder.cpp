@@ -42,7 +42,7 @@ BBox Cylinder::ObjectBound() const {
 	return BBox(p1, p2);
 }
 bool Cylinder::Intersect(const Ray &r, float *tHit,
-		DifferentialGeometry *dg) const {
+		DifferentialGeometry *dg, bool null_shp_isect) const {
 	float phi;
 	Point phit;
 	// Transform _Ray_ to object space
@@ -115,7 +115,7 @@ bool Cylinder::Intersect(const Ray &r, float *tHit,
 	*tHit = thit;
 	return true;
 }
-bool Cylinder::IntersectP(const Ray &r) const {
+bool Cylinder::IntersectP(const Ray &r, bool null_shp_isect) const {
 	float phi;
 	Point phit;
 	// Transform _Ray_ to object space

@@ -97,6 +97,49 @@ u_int LSSAllUniform::SampleLights(const TsPack *tspack, const Scene *scene,
 	return nContribs;
 }
 
+// SampleLights Method for Augmented Reality
+u_int LSSAllUniform::SampleLights(const TsPack *tspack, const Scene *scene,
+	const u_int shadowRayCount, const Point &p, const Normal &n,
+	const Vector &wo, BSDF *bsdf, const Sample *sample,
+	const float *sampleData, const SWCSpectrum &scale,
+	vector<SWCSpectrum> &L, int rayDepth, bool from_IsSup, bool to_IsSup, bool path_type) const
+{
+	// Sample all lights in the scene
+	const u_int nLights = scene->lights.size();
+	const SWCSpectrum newScale = scale / shadowRayCount;
+	const u_int sampleCount = RequestSamplesCount(scene);
+	u_int nContribs = 0;
+
+	// Using one sample for all lights
+	SWCSpectrum Ll;
+
+	for (u_int j = 0; j < nLights; ++j) {
+		const Light *light = scene->lights[j];
+
+		for (u_int i = 0; i < shadowRayCount; ++i) {	
+			const u_int offset = i * sampleCount;
+			const float *lightSample = sampleData + offset;
+			const float *lightNum = sampleData + offset + 2;
+			const float *bsdfSample = sampleData + offset + 3;
+			const float *bsdfComponent =  sampleData + offset + 5;
+			
+			Ll = EstimateDirect(tspack, scene, light,
+				p, n, wo, bsdf, sample, lightSample[0],
+				lightSample[1], *lightNum,
+				bsdfSample[0], bsdfSample[1], *bsdfComponent, rayDepth, from_IsSup, to_IsSup, path_type);
+
+				if (!Ll.Black()) {
+					L[light->group] += Ll * newScale;
+					++nContribs;
+				}
+
+
+		}
+	}
+
+	return nContribs;
+}
+
 //******************************************************************************
 // Light Sampling Strategies: LightStrategyOneUniform
 //******************************************************************************
@@ -134,6 +177,41 @@ u_int LSSOneUniform::SampleLights(const TsPack *tspack, const Scene *scene,
 		SWCSpectrum Ll(EstimateDirect(tspack, scene, light,
 			p, n, wo, bsdf, sample, lightSample[0], lightSample[1],
 			ls3, bsdfSample[0], bsdfSample[1], *bsdfComponent));
+
+		if (!Ll.Black()) {
+			L[light->group] += Ll * newScale;
+			++nContribs;
+		}
+	}
+
+	return nContribs;
+}
+
+// SampleLights Method for Augmented Reality
+u_int LSSOneUniform::SampleLights(const TsPack *tspack, const Scene *scene,
+	const u_int shadowRayCount, const Point &p, const Normal &n,
+	const Vector &wo, BSDF *bsdf, const Sample *sample,
+	const float *sampleData, const SWCSpectrum &scale,
+	vector<SWCSpectrum> &L, int rayDepth, bool from_IsSup, bool to_IsSup, bool path_type) const
+{
+	// Randomly choose a single light to sample
+	const u_int nLights = scene->lights.size();
+	const SWCSpectrum newScale = static_cast<float>(nLights) * scale / shadowRayCount;
+	const u_int sampleCount = RequestSamplesCount(scene);
+	u_int nContribs = 0;
+	for (u_int i = 0; i < shadowRayCount; ++i) {
+		const u_int offset = i * sampleCount;
+		const float *lightSample = sampleData + offset;
+		const float *lightNum = sampleData + offset + 2;
+		const float *bsdfSample = sampleData + offset + 3;
+		const float *bsdfComponent =  sampleData + offset + 5;
+		float ls3 = *lightNum * nLights;
+		const u_int lightNumber = min(Floor2UInt(ls3), nLights - 1);
+		ls3 -= lightNumber;
+		const Light *light = scene->lights[lightNumber];
+		SWCSpectrum Ll(EstimateDirect(tspack, scene, light,
+			p, n, wo, bsdf, sample, lightSample[0], lightSample[1],
+			ls3, bsdfSample[0], bsdfSample[1], *bsdfComponent, rayDepth, from_IsSup, to_IsSup, path_type));
 
 		if (!Ll.Black()) {
 			L[light->group] += Ll * newScale;
@@ -221,6 +299,40 @@ u_int LSSOneImportance::SampleLights(const TsPack *tspack, const Scene *scene,
 	return nContribs;
 }
 
+// SampleLights Method for Augmented Reality
+u_int LSSOneImportance::SampleLights(const TsPack *tspack, const Scene *scene,
+	const u_int shadowRayCount, const Point &p, const Normal &n,
+	const Vector &wo, BSDF *bsdf, const Sample *sample,
+	const float *sampleData, const SWCSpectrum &scale,
+	vector<SWCSpectrum> &L, int rayDepth, bool from_IsSup, bool to_IsSup, bool path_type) const {
+	// Choose a single light to sample according the importance
+	const u_int nLights = scene->lights.size();
+	const SWCSpectrum newScale = scale / shadowRayCount;
+	const u_int sampleCount = this->RequestSamplesCount(scene);
+	u_int nContribs = 0;
+	for (u_int i = 0; i < shadowRayCount; ++i) {
+		const u_int offset = i * sampleCount;
+		const float *lightSample = &sampleData[offset];
+		const float *lightNum = &sampleData[offset + 2];
+		const float *bsdfSample = &sampleData[offset + 3];
+		const float *bsdfComponent =  &sampleData[offset + 5];
+		float lightPdf, ls3;
+		const u_int lightNumber = lightDistribution->SampleDiscrete(*lightNum, &lightPdf, &ls3);
+		const Light *light = scene->lights[lightNumber];
+
+		SWCSpectrum Ll = EstimateDirect(tspack, scene, light,
+			p, n, wo, bsdf, sample, lightSample[0], lightSample[1],
+			ls3, bsdfSample[0], bsdfSample[1], *bsdfComponent, rayDepth, from_IsSup, to_IsSup, path_type);
+
+		if (!Ll.Black()) {
+			Ll *=  newScale / lightPdf;
+			L[light->group] += Ll;
+			++nContribs;
+		}
+	}
+
+	return nContribs;
+}
 //******************************************************************************
 // Light Sampling Strategies: LightStrategyOnePowerImportance
 //******************************************************************************
@@ -287,6 +399,40 @@ u_int LSSOnePowerImportance::SampleLights(
 	return nContribs;
 }
 
+// SampleLights Method for Augmented Reality
+u_int LSSOnePowerImportance::SampleLights(
+	const TsPack *tspack, const Scene *scene, const u_int shadowRayCount,
+	const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
+	const Sample *sample, const float *sampleData, const SWCSpectrum &scale,
+	vector<SWCSpectrum> &L, int rayDepth, bool from_IsSup, bool to_IsSup, bool path_type) const {
+	// Choose a single light to sample according the importance
+	const u_int nLights = scene->lights.size();
+	const SWCSpectrum newScale = scale / shadowRayCount;
+	const u_int sampleCount = this->RequestSamplesCount(scene);
+	u_int nContribs = 0;
+	for (u_int i = 0; i < shadowRayCount; ++i) {
+		const u_int offset = i * sampleCount;
+		const float *lightSample = &sampleData[offset];
+		const float *lightNum = &sampleData[offset + 2];
+		const float *bsdfSample = &sampleData[offset + 3];
+		const float *bsdfComponent =  &sampleData[offset + 5];
+		float lightPdf, ls3;
+		const u_int lightNumber = lightDistribution->SampleDiscrete(*lightNum, &lightPdf, &ls3);
+		const Light *light = scene->lights[lightNumber];
+
+		SWCSpectrum Ll = EstimateDirect(tspack, scene, light,
+			p, n, wo, bsdf, sample, lightSample[0], lightSample[1],
+			ls3, bsdfSample[0], bsdfSample[1], *bsdfComponent, rayDepth, from_IsSup, to_IsSup, path_type);
+
+		if (!Ll.Black()) {
+			Ll *=  newScale / lightPdf;
+			L[light->group] += Ll;
+			++nContribs;
+		}
+	}
+
+	return nContribs;
+}
 //******************************************************************************
 // Light Sampling Strategies: LightStrategyAllPowerImportance
 //******************************************************************************
@@ -350,6 +496,63 @@ u_int LSSAllPowerImportance::SampleLights(const TsPack *tspack,
 	return nContribs;
 }
 
+// SampleLights Method for Augmented Reality
+u_int LSSAllPowerImportance::SampleLights(const TsPack *tspack,
+	const Scene *scene, const u_int shadowRayCount,
+	const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
+	const Sample *sample, const float *sampleData, const SWCSpectrum &scale,
+	vector<SWCSpectrum> &L, int rayDepth, bool from_IsSup, bool to_IsSup, bool path_type) const {
+	// Choose a single light to sample according the importance
+	u_int nLights = scene->lights.size();
+	const u_int sampleCount = this->RequestSamplesCount(scene);
+	u_int nContribs = 0;
+	u_int shadowBase = 0;
+	const SWCSpectrum newScale = scale / shadowRayCount;
+	if (shadowRayCount >= nLights) {
+		// We have enough shadow ray, trace at least one ray for each light source
+		for (u_int i = 0; i < nLights; ++i) {
+			const u_int offset = i * sampleCount;
+			const float *lightSample = &sampleData[offset];
+			const float *lightNum = &sampleData[offset + 2];
+			const float *bsdfSample = &sampleData[offset + 3];
+			const float *bsdfComponent =  &sampleData[offset + 5];
+			const Light *light = scene->lights[i];
+			SWCSpectrum Ll = EstimateDirect(tspack, scene, light,
+				p, n, wo, bsdf, sample, lightSample[0],
+				lightSample[1], *lightNum, bsdfSample[0],
+				bsdfSample[1], *bsdfComponent, rayDepth, from_IsSup, to_IsSup, path_type);
+
+			if (!Ll.Black()) {
+				L[light->group] += Ll * newScale * nLights;
+				++nContribs;
+			}
+		}
+		shadowBase = nLights;
+	}
+	// Use lightCDF for any left shadow ray
+	for (u_int i = shadowBase; i < shadowRayCount; ++i) {
+		const u_int offset = i * sampleCount;
+		const float *lightSample = &sampleData[offset];
+		const float *lightNum = &sampleData[offset + 2];
+		const float *bsdfSample = &sampleData[offset + 3];
+		const float *bsdfComponent =  &sampleData[offset + 5];
+		float lightPdf, ls3;
+		const u_int lightNumber = lightDistribution->SampleDiscrete(*lightNum, &lightPdf, &ls3);
+		const Light *light = scene->lights[lightNumber];
+
+		SWCSpectrum Ll = EstimateDirect(tspack, scene, light,
+			p, n, wo, bsdf, sample, lightSample[0], lightSample[1],
+			ls3, bsdfSample[0], bsdfSample[1], *bsdfComponent, rayDepth, from_IsSup, to_IsSup, path_type);
+
+		if (!Ll.Black()) {
+			Ll *=  newScale / lightPdf;
+			L[light->group] += Ll;
+			++nContribs;
+		}
+	}
+
+	return nContribs;
+}
 //******************************************************************************
 // Light Sampling Strategies: LightStrategyOneLogPowerImportance
 //******************************************************************************
@@ -461,6 +664,28 @@ u_int SurfaceIntegratorRenderingHints::SampleLights(const TsPack *tspack,
 		shadowRayCount, p, n, wo, bsdf, sample,
 		sample->sampler->GetLazyValues(const_cast<Sample *>(sample),
 		lightSampleOffset, depth), scale, L);
+
+	if (V) {
+		for (u_int i = 0; i < scene->lightGroups.size(); ++i)
+			(*V)[i] += L[i].Filter(tspack);
+	}
+
+	return nContribs;
+}
+
+// SampleLights Method for Augmented Reality
+u_int SurfaceIntegratorRenderingHints::SampleLights(const TsPack *tspack,
+	const Scene *scene, const Point &p, const Normal &n, const Vector &wo,
+	BSDF *bsdf, const Sample *sample, u_int depth, const SWCSpectrum &scale,
+	vector<SWCSpectrum> &L, int rayDepth, bool from_IsSup, bool to_IsSup, bool path_type, vector<float> *V) const
+{
+	if (nLights == 0)
+		return 0;
+
+	const u_int nContribs = lsStrategy->SampleLights(tspack, scene,
+		shadowRayCount, p, n, wo, bsdf, sample,
+		sample->sampler->GetLazyValues(const_cast<Sample *>(sample),
+		lightSampleOffset, depth), scale, L, rayDepth, from_IsSup, to_IsSup, path_type);
 
 	if (V) {
 		for (u_int i = 0; i < scene->lightGroups.size(); ++i)

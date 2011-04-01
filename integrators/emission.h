@@ -38,6 +38,7 @@ public:
 	virtual void Transmittance(const TsPack *tspack, const Scene *, const Ray &ray,
 		const Sample *sample, float *alpha, SWCSpectrum *const L) const;
 	virtual u_int Li(const TsPack *tspack, const Scene *, const RayDifferential &ray, const Sample *sample, SWCSpectrum *L, float *alpha) const;
+	virtual u_int Li(const TsPack *tspack, const Scene *, const RayDifferential &ray, const Sample *sample, SWCSpectrum *L, float *alpha, bool from_IsSup, bool path_type) const;
 	static VolumeIntegrator *CreateVolumeIntegrator(const ParamSet &params);
 private:
 	// EmissionIntegrator Private Data

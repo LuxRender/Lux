@@ -58,7 +58,7 @@ BBox Hyperboloid::ObjectBound() const {
 	return BBox( p1, p2 );
 }
 bool Hyperboloid::Intersect(const Ray &r, float *tHit,
-		DifferentialGeometry *dg) const {
+		DifferentialGeometry *dg, bool null_shp_isect) const {
 	float phi, v;
 	Point phit;
 	// Transform _Ray_ to object space
@@ -149,7 +149,7 @@ bool Hyperboloid::Intersect(const Ray &r, float *tHit,
 	*tHit = thit;
 	return true;
 }
-bool Hyperboloid::IntersectP(const Ray &r) const {
+bool Hyperboloid::IntersectP(const Ray &r, bool null_shp_isect) const {
 	float phi, v;
 	Point phit;
 	// Transform _Ray_ to object space

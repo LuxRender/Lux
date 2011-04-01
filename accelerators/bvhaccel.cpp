@@ -265,7 +265,7 @@ BBox BVHAccel::WorldBound() const {
 	return bvhTree[0].bbox;
 }
 
-bool BVHAccel::Intersect(const Ray &ray, Intersection *isect) const {
+bool BVHAccel::Intersect(const Ray &ray, Intersection *isect, bool null_shp_isect) const {
 	u_int currentNode = 0; // Root Node
 	u_int stopNode = bvhTree[0].skipIndex; // Non-existent
 	bool hit = false;
@@ -273,7 +273,7 @@ bool BVHAccel::Intersect(const Ray &ray, Intersection *isect) const {
 	while(currentNode < stopNode) {
 		if(bvhTree[currentNode].bbox.IntersectP(ray)) {
 			if(bvhTree[currentNode].primitive != NULL)
-				if(bvhTree[currentNode].primitive->Intersect(ray, isect))
+				if(bvhTree[currentNode].primitive->Intersect(ray, isect, null_shp_isect))
 					hit = true; // Continue testing for closer intersections
 			currentNode++;
 		} else {
@@ -284,14 +284,14 @@ bool BVHAccel::Intersect(const Ray &ray, Intersection *isect) const {
 	return hit;
 }
 
-bool BVHAccel::IntersectP(const Ray &ray) const {
+bool BVHAccel::IntersectP(const Ray &ray, bool null_shapes_isect) const {
 	u_int currentNode = 0; // Root Node
 	u_int stopNode = bvhTree[0].skipIndex; // Non-existent
 
 	while(currentNode < stopNode) {
-		if(bvhTree[currentNode].bbox.IntersectP(ray)) {
+		if(bvhTree[currentNode].bbox.IntersectP(ray, NULL,NULL, null_shapes_isect)) {
 			if(bvhTree[currentNode].primitive != NULL)
-				if(bvhTree[currentNode].primitive->IntersectP(ray))
+				if(bvhTree[currentNode].primitive->IntersectP(ray, null_shapes_isect))
 					return true;
 			currentNode++;
 		} else {

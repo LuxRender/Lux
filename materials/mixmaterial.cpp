@@ -22,6 +22,7 @@
 
 // mixmaterial.cpp*
 #include "mixmaterial.h"
+#include "color.h"
 #include "memory.h"
 #include "bxdf.h"
 #include "texture.h"
@@ -35,8 +36,9 @@ BSDF *MixMaterial::GetBSDF(const TsPack *tspack,
 	const DifferentialGeometry &dgGeom,
 	const DifferentialGeometry &dgShading,
 	const Volume *exterior, const Volume *interior) const {
+	SWCSpectrum bcolor = (Sc->Evaluate(tspack, dgShading).Clamp(0.f, 10000.f))*dgShading.Scale;
 	MixBSDF *bsdf = ARENA_ALLOC(tspack->arena, MixBSDF)(dgShading,
-		dgGeom.nn, exterior, interior);
+		dgGeom.nn, exterior, interior, bcolor);
 	float amt = amount->Evaluate(tspack, dgShading);
 	DifferentialGeometry dgS = dgShading;
 	mat1->GetShadingGeometry(tspack, dgGeom.nn, &dgS);
@@ -63,13 +65,13 @@ Material* MixMaterial::CreateMaterial(const Transform &xform,
 			"Second material of the mix is incorrect");
 		return NULL;
 	}
-
+	boost::shared_ptr<Texture<SWCSpectrum> > Sc(mp.GetSWCSpectrumTexture("Sc", RGBColor(.9f)));
 	boost::shared_ptr<Texture<float> > amount(mp.GetFloatTexture("amount", 0.5f));
 
 	// Get Compositing Params
 	CompositingParams cP;
 	FindCompositingParams(mp, &cP);
-	return new MixMaterial(amount, mat1, mat2, cP);
+	return new MixMaterial(amount, mat1, mat2, cP, Sc);
 }
 
 static DynamicLoader::RegisterMaterial<MixMaterial> r("mix");

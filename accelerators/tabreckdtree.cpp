@@ -218,7 +218,7 @@ void TaBRecKdTreeAccel::buildTree(int nodeNum,
 // "Heuristic Ray Shooting Algorithms" available at http://www.cgg.cvut.cz/members/havran/phdthesis.html
 // TaBRecKdTreeAccel::Intersect uses limts in mint/maxt while TaBRecKdTreeAccel::IntersectP
 // uses inverse mailboxes, it looks like the fastest combo.
-bool TaBRecKdTreeAccel::Intersect(const Ray &ray, Intersection *isect) const {
+bool TaBRecKdTreeAccel::Intersect(const Ray &ray, Intersection *isect, bool null_shp_isect) const {
     // Compute initial parametric range of ray inside kd-tree extent
     float t, tmin, tmax;
     if (!bounds.IntersectP(ray, &tmin, &tmax))
@@ -320,11 +320,11 @@ bool TaBRecKdTreeAccel::Intersect(const Ray &ray, Intersection *isect) const {
         //luxError(LUX_NOERROR,LUX_INFO,ss.str().c_str());
 
         if (nPrimitives == 1) {
-            hit |= currNode->onePrimitive->Intersect(ray, isect);
+            hit |= currNode->onePrimitive->Intersect(ray, isect, null_shp_isect);
         } else {
             Primitive **prs = currNode->primitives;
             for (u_int i = 0; i < nPrimitives; ++i)
-                hit |= prs[i]->Intersect(ray, isect);
+                hit |= prs[i]->Intersect(ray, isect, null_shp_isect);
         }
 
         if (hit) {
@@ -346,10 +346,10 @@ bool TaBRecKdTreeAccel::Intersect(const Ray &ray, Intersection *isect) const {
     return false;
 }
 
-bool TaBRecKdTreeAccel::IntersectP(const Ray &ray) const {
+bool TaBRecKdTreeAccel::IntersectP(const Ray &ray, bool null_shapes_isect) const {
     // Compute initial parametric range of ray inside kd-tree extent
     float t, tmin, tmax;
-    if (!bounds.IntersectP(ray, &tmin, &tmax))
+    if (!bounds.IntersectP(ray, &tmin, &tmax, null_shapes_isect))
         return false;
 
     // Dade - Prepare the local Mailboxes. I'm going to use an inverse mailboxes
@@ -447,7 +447,7 @@ bool TaBRecKdTreeAccel::IntersectP(const Ray &ray) const {
             // Dade - check with the mailboxes if we need to do
             // the intersection test
             if (!mailboxes.alreadyChecked(pp)) {
-                if (pp->IntersectP(ray))
+                if (pp->IntersectP(ray, null_shapes_isect))
                     return true;
 
                 mailboxes.addChecked(pp);
@@ -460,7 +460,7 @@ bool TaBRecKdTreeAccel::IntersectP(const Ray &ray) const {
                 // Dade - check with the mailboxes if we need to do
                 // the intersection test
                 if (!mailboxes.alreadyChecked(pp)) {
-                    if (pp->IntersectP(ray))
+                    if (pp->IntersectP(ray, null_shapes_isect))
                         return true;
 
                     mailboxes.addChecked(pp);

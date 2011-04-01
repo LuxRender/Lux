@@ -32,9 +32,10 @@ class Glass2 : public Material {
 public:
 	// Glass Public Methods
 	Glass2(bool archi, bool disp, boost::shared_ptr<Texture<float> > &bump,
-		const CompositingParams &cp) : bumpMap(bump),
+		const CompositingParams &cp, boost::shared_ptr<Texture<SWCSpectrum> > &sc) : bumpMap(bump),
 		architectural(archi), dispersion(disp) {
 		compParams = new CompositingParams(cp);
+		Sc = sc;
 	}
 	virtual ~Glass2() { }
 	virtual void GetShadingGeometry(const TsPack *tspack,

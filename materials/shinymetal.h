@@ -38,9 +38,10 @@ public:
 		boost::shared_ptr<Texture<float> > &flmindex, 
 		boost::shared_ptr<Texture<SWCSpectrum> > &kr,
 		boost::shared_ptr<Texture<float> > &bump,
-		const CompositingParams &cp) : Ks(ks), Kr(kr), nu(u), nv(v),
+		const CompositingParams &cp, boost::shared_ptr<Texture<SWCSpectrum> > &sc) : Ks(ks), Kr(kr), nu(u), nv(v),
 		film(flm), filmindex(flmindex), bumpMap(bump) {
 		compParams = new CompositingParams(cp);
+		Sc = sc;
 	}
 	virtual ~ShinyMetal() { }
 	virtual void GetShadingGeometry(const TsPack *tspack,

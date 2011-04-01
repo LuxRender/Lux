@@ -170,7 +170,9 @@ MainWindow::MainWindow(QWidget *parent, bool opengl, bool copylog2console) : QMa
 	panes[2] = new PaneWidget(ui->panesAreaContents, "Color Space", ":/icons/colorspaceicon.png");
 	panes[3] = new PaneWidget(ui->panesAreaContents, "Gamma", ":/icons/gammaicon.png", true);
 	panes[4] = new PaneWidget(ui->panesAreaContents, "HDR Histogram", ":/icons/histogramicon.png");
-	panes[5] = new PaneWidget(ui->panesAreaContents, "Noise Reduction", ":/icons/noisereductionicon.png", true);
+	panes[5] = new PaneWidget(ui->panesAreaContents, "Background Image", ":/icons/luxrender.png", true);
+	panes[6] = new PaneWidget(ui->panesAreaContents, "Noise Reduction", ":/icons/noisereductionicon.png", true);
+
 	
 #if defined(__APPLE__)
 	ui->outputTabs->setFont(QFont  ("Lucida Grande", 11));
@@ -206,12 +208,18 @@ MainWindow::MainWindow(QWidget *parent, bool opengl, bool copylog2console) : QMa
 	histogramwidget = new HistogramWidget(panes[4]);
 	panes[4]->setWidget(histogramwidget);
 	ui->panesLayout->addWidget(panes[4]);
-    panes[4]->expand();
+	panes[4]->expand();
+
+	// Background Image
+	backgroundwidget = new BackgroundWidget(panes[5]);
+	panes[5]->setWidget(backgroundwidget);
+	ui->panesLayout->addWidget(panes[5]);
+	connect(backgroundwidget, SIGNAL(valuesChanged()), this, SLOT(toneMapParamsChanged()));
 
 	// Noise reduction
-	noisereductionwidget = new NoiseReductionWidget(panes[5]);
-	panes[5]->setWidget(noisereductionwidget);
-	ui->panesLayout->addWidget(panes[5]);
+	noisereductionwidget = new NoiseReductionWidget(panes[6]);
+	panes[6]->setWidget(noisereductionwidget);
+	ui->panesLayout->addWidget(panes[6]);
 	connect(noisereductionwidget, SIGNAL(valuesChanged()), this, SLOT(toneMapParamsChanged()));
 	
 	ui->panesLayout->setAlignment(Qt::AlignTop);
@@ -219,6 +227,8 @@ MainWindow::MainWindow(QWidget *parent, bool opengl, bool copylog2console) : QMa
 	
 	ui->lightGroupsLayout->setAlignment(Qt::AlignTop);
 	spacer = new QSpacerItem( 20, 20, QSizePolicy::Expanding, QSizePolicy::Expanding);
+
+	
 
 	// Network tab
 	connect(ui->button_addServer, SIGNAL(clicked()), this, SLOT(addServer()));
@@ -352,6 +362,7 @@ MainWindow::~MainWindow()
 	delete lenseffectswidget;
 	delete colorspacewidget;
 	delete noisereductionwidget;
+	delete backgroundwidget;
 	delete histogramwidget;
 
 	for (int i = 0; i < NumPanes; i++)
@@ -1337,7 +1348,7 @@ void MainWindow::resetToneMapping()
 	colorspacewidget->resetValues();
 	gammawidget->resetValues();
 	noisereductionwidget->resetValues();
-
+	backgroundwidget->resetValues();
 	updateTonemapWidgetValues ();
     
 	ui->outputTabs->setEnabled (false);
@@ -1350,7 +1361,7 @@ void MainWindow::updateTonemapWidgetValues()
 	colorspacewidget->updateWidgetValues();
 	gammawidget->updateWidgetValues();
 	noisereductionwidget->updateWidgetValues();
-
+	backgroundwidget->updateWidgetValues();
 	// Histogram
 	histogramwidget->SetEnabled(true);
 }
@@ -1362,6 +1373,7 @@ void MainWindow::resetToneMappingFromFilm (bool useDefaults)
 	colorspacewidget->resetFromFilm(useDefaults);
 	gammawidget->resetFromFilm(useDefaults);
 	noisereductionwidget->resetFromFilm(useDefaults);
+	backgroundwidget->resetFromFilm(useDefaults);
 
 	updateTonemapWidgetValues ();
 

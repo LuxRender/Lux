@@ -268,7 +268,7 @@ BBox MeshQuadrilateral::WorldBound() const {
 	return Union(BBox(p0, p1), BBox(p2, p3));
 }
 
-bool MeshQuadrilateral::Intersect(const Ray &ray, Intersection *isect) const {
+bool MeshQuadrilateral::Intersect(const Ray &ray, Intersection *isect, bool null_shp_isect) const {
 	// Compute intersection for quadrilateral
 	// based on "An Efficient Ray-Quadrilateral Intersection Test"
 	// by Ares Lagae and Philip Dutr�
@@ -278,6 +278,9 @@ bool MeshQuadrilateral::Intersect(const Ray &ray, Intersection *isect) const {
 	if (!idx)
 		return false;
 
+//look if shape is a null type
+if (null_shp_isect && mesh->suport) return false;
+///
 	// Get quadrilateral vertices in _p00_, _p10_, _p11_ and _p01_
 	const Point &p00 = mesh->p[idx[0]];
 	const Point &p10 = mesh->p[idx[1]];
@@ -419,7 +422,7 @@ bool MeshQuadrilateral::Intersect(const Ray &ray, Intersection *isect) const {
 	return true;
 }
 
-bool MeshQuadrilateral::IntersectP(const Ray &ray) const {
+bool MeshQuadrilateral::IntersectP(const Ray &ray, bool null_shp_isect) const {
 	return Intersect(ray, NULL);
 }
 

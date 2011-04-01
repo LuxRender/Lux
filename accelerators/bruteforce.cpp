@@ -51,25 +51,25 @@ BBox BruteForceAccel::WorldBound() const {
 	return bounds;
 }
 
-bool BruteForceAccel::Intersect(const Ray &ray, Intersection *isect) const {
+bool BruteForceAccel::Intersect(const Ray &ray, Intersection *isect, bool null_shp_isect) const {
 	bool hitSomething = false;
 
 	if (!bounds.IntersectP(ray))
 		return false;
 
 	for (u_int i = 0; i < prims.size(); ++i) {
-		hitSomething |= prims[i]->Intersect(ray, isect);
+		hitSomething |= prims[i]->Intersect(ray, isect, null_shp_isect);
 	}
 
 	return hitSomething;
 }
 
-bool BruteForceAccel::IntersectP(const Ray &ray) const {
-	if (!bounds.IntersectP(ray))
+bool BruteForceAccel::IntersectP(const Ray &ray, bool null_shp_isect) const {
+	if (!bounds.IntersectP(ray, NULL, NULL, null_shp_isect))
 		return false;
 
 	for (u_int i = 0; i < prims.size(); ++i) {
-		if(prims[i]->IntersectP(ray))
+		if(prims[i]->IntersectP(ray, null_shp_isect))
 			return true;
 	}
 

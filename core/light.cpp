@@ -30,13 +30,13 @@
 using namespace lux;
 
 // Light Method Definitions
-bool VisibilityTester::Unoccluded(const Scene *scene) const
+bool VisibilityTester::Unoccluded(const Scene *scene, bool null_shapes_isect) const
 {
-	return !scene->IntersectP(r);
+	return !scene->IntersectP(r, null_shapes_isect);
 }
 
 bool VisibilityTester::TestOcclusion(const TsPack *tspack, const Scene *scene,
-	SWCSpectrum *f, float *pdf, float *pdfR) const
+	SWCSpectrum *f, bool null_shapes_isect, float *pdf, float *pdfR) const
 {
 	RayDifferential ray(r);
 	ray.time = tspack->time;
@@ -52,7 +52,7 @@ bool VisibilityTester::TestOcclusion(const TsPack *tspack, const Scene *scene,
 	const Volume *vol = volume;
 	BSDF *bsdf;
 	for (u_int i = 0; i < 10000; ++i) {
-		if (!scene->Intersect(tspack, vol, ray, &isect, &bsdf, f))
+		if (!scene->Intersect(tspack, vol, ray, &isect, &bsdf, f, null_shapes_isect))
 			return true;
 
 		*f *= bsdf->f(tspack, d, -d, flags);

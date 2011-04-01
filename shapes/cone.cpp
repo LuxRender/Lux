@@ -63,7 +63,7 @@ BBox Cone::ObjectBound() const {
 }
 
 bool Cone::Intersect(const Ray &r, float *tHit,
-		DifferentialGeometry *dg) const {
+		DifferentialGeometry *dg, bool null_shp_isect) const {
 	float phi;
 	Point phit;
 	// Transform _Ray_ to object space
@@ -158,7 +158,7 @@ bool Cone::Intersect(const Ray &r, float *tHit,
 	return true;
 }
 
-bool Cone::IntersectP(const Ray &r) const {
+bool Cone::IntersectP(const Ray &r, bool null_shp_isect) const {
 	float phi;
 	Point phit;
 	// Transform _Ray_ to object space

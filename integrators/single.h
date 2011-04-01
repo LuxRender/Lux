@@ -39,6 +39,7 @@ public:
 		const Sample *sample, float *alpha, SWCSpectrum *const L) const;
 	virtual void RequestSamples(Sample *sample, const Scene *scene);
 	virtual u_int Li(const TsPack *tspack, const Scene *, const RayDifferential &ray, const Sample *sample, SWCSpectrum *L, float *alpha) const;
+	virtual u_int Li(const TsPack *tspack, const Scene *, const RayDifferential &ray, const Sample *sample, SWCSpectrum *L, float *alpha, bool from_IsSup, bool path_type) const;
 
 	static VolumeIntegrator *CreateVolumeIntegrator(const ParamSet &params);
 

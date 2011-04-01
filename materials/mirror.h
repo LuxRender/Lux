@@ -35,9 +35,10 @@ public:
 		boost::shared_ptr<Texture<float> > &flm,
 		boost::shared_ptr<Texture<float> > &flmindex, 
 		boost::shared_ptr<Texture<float> > &bump,
-		const CompositingParams &cp) : Kr(r), film(flm),
+		const CompositingParams &cp, boost::shared_ptr<Texture<SWCSpectrum> > &sc) : Kr(r), film(flm),
 		filmindex(flmindex), bumpMap(bump) {
 		compParams = new CompositingParams(cp);
+		Sc = sc;
 	}
 	virtual ~Mirror() { }
 	virtual void GetShadingGeometry(const TsPack *tspack,

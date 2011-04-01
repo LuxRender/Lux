@@ -24,7 +24,7 @@
 #define LUX_MATERIAL_H
 // material.h*
 #include "lux.h"
-
+#include "spectrum.h"
 namespace lux
 {
 
@@ -64,6 +64,8 @@ public:
 
 	float bumpmapSampleDistance;
 	CompositingParams *compParams;
+	boost::shared_ptr<Texture<SWCSpectrum> > Sc;
+
 };
 
 }//namespace lux

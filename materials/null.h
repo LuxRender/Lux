@@ -31,8 +31,9 @@ namespace lux
 class Null : public Material {
 public:
 	// Null Public Methods
-	Null(const CompositingParams &cp) {
+	Null(const CompositingParams &cp, boost::shared_ptr<Texture<SWCSpectrum> > &sc) {
 		compParams = new CompositingParams(cp);
+		Sc = sc;
 	}
 	virtual ~Null() { }
 	virtual BSDF *GetBSDF(const TsPack *tspack,

@@ -99,6 +99,63 @@ void UVMapping2D::MapDuv(const DifferentialGeometry &dg, float *s, float *t,
 	*dtdv = sv;
 }
 
+//Projection texture methods
+ProjectorMapping2D::ProjectorMapping2D(float _su, float _sv,
+	float _du, float _dv,   Vector sdir, Vector sup , float fov, float yox) {
+	su = _su; sv = _sv;
+	du = _du; dv = _dv;
+	right =Normalize(Cross(sdir,sup));
+	up = Normalize(-sup);
+	dir =Normalize(sdir);
+
+	alfa = tan(fov/360.f*M_PI);
+	beta = tan(fov/360.f*M_PI)*yox;
+	r=1.f; g=1.f; b=1.f;
+
+}
+
+void ProjectorMapping2D::Map(const DifferentialGeometry &dg,
+		float *s, float *t) const {
+
+	Vector ray( sin(dg.v)*cos(dg.u), sin(dg.v)*sin(dg.u), cos(dg.v));
+
+	ray= Normalize(ray);
+
+	float a,b,c;
+	b=(Dot(dir, ray));
+
+	a=(Dot(right,ray));
+	c=(Dot(up,ray));
+	a=a/b;
+	c=c/b;
+
+	*s = su * (a+alfa)/(2.f*alfa) + du;
+	*t = sv * (c+beta)/(2.f*beta) + dv;
+
+}
+
+void ProjectorMapping2D::MapDxy(const DifferentialGeometry &dg, float *s, float *t,
+	float *dsdx, float *dtdx, float *dsdy, float *dtdy) const
+{
+	Map(dg, s, t);
+	// Compute texture differentials for 2D identity mapping
+	*dsdx = 0.0f; //su * dg.dudx;
+	*dtdx = 0.0f; //sv * dg.dvdx;
+	*dsdy = 0.0f; //su * dg.dudy;
+	*dtdy = 0.0f; //sv * dg.dvdy;
+}
+void ProjectorMapping2D::MapDuv(const DifferentialGeometry &dg, float *s, float *t,
+	float *dsdu, float *dtdu, float *dsdv, float *dtdv) const
+{
+	Map(dg, s, t);
+	// Compute texture differentials for 2D identity mapping
+	*dsdu = su;
+	*dsdv = 0.f;
+	*dtdu = 0.f;
+	*dtdv = sv;
+}
+
+
 void SphericalMapping2D::Map(const DifferentialGeometry &dg,
 	float *s, float *t) const
 {

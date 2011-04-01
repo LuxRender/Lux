@@ -147,8 +147,8 @@ public:
     virtual BBox WorldBound() const { return bounds; }
     virtual bool CanIntersect() const { return true; }
     virtual ~TaBRecKdTreeAccel();
-    virtual bool Intersect(const Ray &ray, Intersection *isect) const;
-    virtual bool IntersectP(const Ray &ray) const;
+    virtual bool Intersect(const Ray &ray, Intersection *isect, bool null_shp_isect=false) const;
+    virtual bool IntersectP(const Ray &ray, bool null_shp_isect=false) const;
 
     virtual void GetPrimitives(vector<boost::shared_ptr<Primitive> > &prims);
 

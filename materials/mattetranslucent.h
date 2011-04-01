@@ -35,9 +35,10 @@ public:
 		boost::shared_ptr<Texture<SWCSpectrum> > &kt,
 		boost::shared_ptr<Texture<float> > &sig,
 		boost::shared_ptr<Texture<float> > &bump,
-		const CompositingParams &cp) : Kr(kr), Kt(kt), sigma(sig),
+		const CompositingParams &cp, boost::shared_ptr<Texture<SWCSpectrum> > &sc) : Kr(kr), Kt(kt), sigma(sig),
 		bumpMap(bump) {
 		compParams = new CompositingParams(cp);
+		Sc = sc;
 	}
 	virtual ~MatteTranslucent() { }
 	virtual void GetShadingGeometry(const TsPack *tspack,

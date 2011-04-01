@@ -35,6 +35,8 @@
 #include "light.h"
 #include "spectrumwavelengths.h"
 #include "transport.h"
+#include "primitive.h"
+#include "material.h"
 
 #include "randomgen.h"
 
@@ -83,6 +85,7 @@ void Scene::UpdateFramebuffer() {
 
 	// I have to call ContributionPool method here in order
 	// to acquire splattingMutex lock
+
 	if (contribPool)
 		contribPool->CheckFilmWriteOuputInterval();
 }
@@ -257,6 +260,7 @@ RenderThread::RenderThread(u_int _n, ThreadSignals _signal,
 	samples(0.), blackSamples(0.)
 {
 	sample = new Sample(surfaceIntegrator, volumeIntegrator, scene);
+
 }
 
 RenderThread::~RenderThread()
@@ -278,11 +282,9 @@ void RenderThread::Render(RenderThread *myThread) {
 		boost::thread::sleep(xt);
 	}
 
+
 	// initialize the thread's rangen
 	u_long seed = myThread->scene->seedBase + myThread->n;
-	std::stringstream ss;
-	ss << "Thread " << myThread->n << " uses seed: " << seed;
-	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
 	// initialize the threads tspack
 	myThread->tspack = new TsPack();	// TODO - radiance - remove
@@ -296,13 +298,18 @@ void RenderThread::Render(RenderThread *myThread) {
 
 	myThread->sampler->SetTsPack(myThread->tspack);
 
+
+
 	// allocate sample pos
 	u_int *useSampPos = new u_int();
 	*useSampPos = 0;
 	u_int maxSampPos = myThread->sampler->GetTotalSamplePos();
 
+
 	// Trace rays: The main loop
-	while (true) {
+	while (true) { 
+
+
 		if (!myThread->sampler->GetNextSample(myThread->sample, useSampPos)) {
 
 			// Dade - we have done, check what we have to do now
@@ -330,6 +337,8 @@ void RenderThread::Render(RenderThread *myThread) {
 		// sample camera transformation
 		myThread->tspack->camera->SampleMotion(myThread->tspack->time);
 
+
+
 		// Sample new SWC thread wavelengths
 		myThread->tspack->swl->Sample(myThread->sample->wavelengths);
 
@@ -345,8 +354,11 @@ void RenderThread::Render(RenderThread *myThread) {
 		// Evaluate radiance along camera ray
 		// Jeanphi - Hijack statistics until volume integrator revamp
 		{
+
 			const u_int nContribs = myThread->surfaceIntegrator->Li(myThread->tspack,
 				myThread->scene, myThread->sample);
+
+
 			// update samples statistics
 			fast_mutex::scoped_lock lockStats(myThread->statLock);
 			myThread->blackSamples += nContribs;
@@ -371,9 +383,12 @@ void RenderThread::Render(RenderThread *myThread) {
 		//Work around Windows bad scheduling -- Jeanphi
 		myThread->thread->yield();
 #endif
+
+
 	}
 
 	myThread->sampler->Cleanup();
+
 
 	delete useSampPos;
 
@@ -387,6 +402,7 @@ void RenderThread::Render(RenderThread *myThread) {
 
 u_int Scene::CreateRenderThread()
 {
+
 	if (IsFilmOnly())
 		return 0;
 
@@ -403,6 +419,8 @@ u_int Scene::CreateRenderThread()
 		rt->thread = new boost::thread(boost::bind(RenderThread::Render, rt));
 	}
 
+
+
 	return renderThreads.size();
 }
 
@@ -416,6 +434,7 @@ void Scene::RemoveRenderThread()
 	renderThreads.back()->thread->join();
 	delete renderThreads.back();
 	renderThreads.pop_back();
+
 }
 
 void Scene::Render() {
@@ -432,11 +451,10 @@ void Scene::Render() {
 
 	// initialize the thread's rangen
 	u_long seed = seedBase - 1;
-	std::stringstream ss;
-	ss << "Preprocess thread uses seed: " << seed;
-	luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+
 
 	// initialize the contribution pool
+
 	contribPool = new ContributionPool();
 	contribPool->SetFilm(camera->film);
 
@@ -448,6 +466,7 @@ void Scene::Render() {
 	tspack->arena = new MemoryArena();
 
 	sampler->SetTsPack(tspack);
+
 
 	// integrator preprocessing
 	camera->film->SetScene(this);
@@ -461,6 +480,10 @@ void Scene::Render() {
 	camera->AutoFocus(this);
 
 	sampPos = 0;
+
+	///////////////////////////////////////////////////////////////
+	load_suport();	
+	///////////////////////////////////////////////////////////////
 
 	//start the timer
 	s_Timer.Start();
@@ -477,6 +500,8 @@ void Scene::Render() {
 
 		// The first thread can not be removed
 		// it will terminate when the rendering is finished
+
+
 		renderThreads[0]->thread->join();
 
 		// rendering done, now I can remove all rendering threads
@@ -487,6 +512,7 @@ void Scene::Render() {
 			for (u_int i = 0; i < renderThreads.size(); ++i) {
 				renderThreads[i]->thread->join();
 				delete renderThreads[i];
+
 			}
 			renderThreads.clear();
 
@@ -499,6 +525,7 @@ void Scene::Render() {
 		contribPool->Flush();
 		contribPool->Delete();
 	}
+
 
 	delete tspack->swl;
 	delete tspack->rng;
@@ -537,6 +564,7 @@ Scene::Scene(Camera *cam, SurfaceIntegrator *si, VolumeIntegrator *vi,
 	seedBase = rand();
 
 	camera->film->RequestBufferGroups(lightGroups);
+
 }
 
 Scene::Scene(Camera *cam) :
@@ -553,6 +581,7 @@ Scene::Scene(Camera *cam) :
 
 	// Dade - Initialize the base seed with the standard C lib random number generator
 	seedBase = rand();
+
 }
 
 SWCSpectrum Scene::Li(const RayDifferential &ray,
@@ -570,3 +599,36 @@ void Scene::Transmittance(const TsPack *tsp, const Ray &ray,
 	const Sample *sample, SWCSpectrum *const L) const {
     volumeIntegrator->Transmittance(tsp, this, ray, sample, NULL, L);
 }
+
+void Scene::load_suport(void) const{
+
+	vector<boost::shared_ptr<Primitive> > objects;
+	Aggregate *aggr = dynamic_cast<Aggregate*>(aggregate.get());
+	aggr->GetPrimitives(objects);
+
+	Primitive *shp;
+
+	Vector Z;
+	Point cam = camera->CameraToWorld( Point(0.f, 0.f, 0.f) );
+
+	for (u_int i=0; i < objects.size(); i++) { 
+
+		shp = objects[i].get(); 
+		if( shp != NULL ) 
+			if( shp->IsSupport() ) {
+				Vector N;
+				Point P;
+				shp->GetNormal(&N);
+				shp->GetBaryPoint(&P);
+				Z = cam-P;
+				if( Dot(N,Z) < 0.f )  N = N * (-1);
+				for( u_int k=0 ; k < lights.size() ; k++ ) 
+					if (lights[k]->IsEnvironmental()){
+						float Pow = lights[k]->DirProb(N);
+						shp->SetScale(Pow); 
+					}
+			}
+	}
+}
+
+

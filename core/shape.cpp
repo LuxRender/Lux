@@ -28,6 +28,8 @@
 
 using namespace lux;
 
+
+
 // Shape Method Definitions
 Shape::Shape(const Transform &o2w, bool ro)
 	: ObjectToWorld(o2w), WorldToObject(o2w.GetInverse()),
@@ -74,15 +76,15 @@ PrimitiveSet::PrimitiveSet(const vector<boost::shared_ptr<Primitive> > &p) :
 	}
 }
 
-bool PrimitiveSet::Intersect(const Ray &ray, Intersection *in) const
+bool PrimitiveSet::Intersect(const Ray &ray, Intersection *in, bool null_shp_isect ) const
 {
 	if (accelerator)
-		return accelerator->Intersect(ray, in);
-	if (worldbound.IntersectP(ray)) {
+		return accelerator->Intersect(ray, in,  null_shp_isect );
+	if (worldbound.IntersectP(ray, NULL, NULL, null_shp_isect )) {
 		// NOTE - ratow - Testing each shape for intersections again because the _PrimitiveSet_ can be non-planar.
 		bool anyHit = false;
 		for (u_int i = 0; i < primitives.size(); ++i) {
-			if (primitives[i]->Intersect(ray, in))
+			if (primitives[i]->Intersect(ray, in, null_shp_isect ))
 				anyHit = true;
 		}
 		return anyHit;
@@ -90,13 +92,13 @@ bool PrimitiveSet::Intersect(const Ray &ray, Intersection *in) const
 	return false;
 }
 
-bool PrimitiveSet::IntersectP(const Ray &ray) const
+bool PrimitiveSet::IntersectP(const Ray &ray, bool null_shp_isect ) const
 {
 	if (accelerator)
-		return accelerator->IntersectP(ray);
-	if (worldbound.IntersectP(ray)) {
+		return accelerator->IntersectP(ray, null_shp_isect );
+	if (worldbound.IntersectP(ray, NULL, NULL, null_shp_isect )) {
 		for (u_int i = 0; i < primitives.size(); ++i) {
-			if (primitives[i]->IntersectP(ray))
+			if (primitives[i]->IntersectP(ray, null_shp_isect ))
 				return true;
 		}
 	}

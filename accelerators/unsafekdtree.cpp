@@ -205,7 +205,7 @@ void UnsafeKdTreeAccel::buildTree(int nodeNum,
             prims0, prims1 + nPrims, badRefines);
 }
 
-bool UnsafeKdTreeAccel::Intersect(const Ray &ray, Intersection *isect) const {
+bool UnsafeKdTreeAccel::Intersect(const Ray &ray, Intersection *isect, bool null_shp_isect) const {
     // Compute initial parametric range of ray inside kd-tree extent
     float tmin, tmax;
     if (!bounds.IntersectP(ray, &tmin, &tmax))
@@ -269,7 +269,7 @@ bool UnsafeKdTreeAccel::Intersect(const Ray &ray, Intersection *isect) const {
                 // Check one primitive inside leaf node
                 if (mp->lastMailboxId != rayId) {
                     mp->lastMailboxId = rayId;
-                    if (mp->primitive->Intersect(ray, isect))
+                    if (mp->primitive->Intersect(ray, isect, null_shp_isect))
                         hit = true;
                 }
             }
@@ -280,7 +280,7 @@ bool UnsafeKdTreeAccel::Intersect(const Ray &ray, Intersection *isect) const {
                     // Check one primitive inside leaf node
                     if (mp->lastMailboxId != rayId) {
                         mp->lastMailboxId = rayId;
-                        if (mp->primitive->Intersect(ray, isect))
+                        if (mp->primitive->Intersect(ray, isect, null_shp_isect))
                             hit = true;
                     }
                 }
@@ -299,10 +299,10 @@ bool UnsafeKdTreeAccel::Intersect(const Ray &ray, Intersection *isect) const {
     return hit;
 }
 
-bool UnsafeKdTreeAccel::IntersectP(const Ray &ray) const {
+bool UnsafeKdTreeAccel::IntersectP(const Ray &ray, bool null_shp_isect) const {
     // Compute initial parametric range of ray inside kd-tree extent
     float tmin, tmax;
-    if (!bounds.IntersectP(ray, &tmin, &tmax))
+    if (!bounds.IntersectP(ray, &tmin, &tmax, null_shp_isect))
         return false;
     // Prepare to traverse kd-tree for ray
     int rayId = curMailboxId++;
@@ -323,7 +323,7 @@ bool UnsafeKdTreeAccel::IntersectP(const Ray &ray) const {
                 MailboxPrim *mp = node->onePrimitive;
                 if (mp->lastMailboxId != rayId) {
                     mp->lastMailboxId = rayId;
-                    if (mp->primitive->IntersectP(ray))
+                    if (mp->primitive->IntersectP(ray, null_shp_isect))
                         return true;
                 }
             }
@@ -333,7 +333,7 @@ bool UnsafeKdTreeAccel::IntersectP(const Ray &ray) const {
                     MailboxPrim *mp = prims[i];
                     if (mp->lastMailboxId != rayId) {
                         mp->lastMailboxId = rayId;
-                        if (mp->primitive->IntersectP(ray))
+                        if (mp->primitive->IntersectP(ray, null_shp_isect))
                             return true;
                     }
                 }

@@ -62,6 +62,7 @@
 #include "colorspacewidget.hxx"
 #include "gammawidget.hxx"
 #include "noisereductionwidget.hxx"
+#include "backgroundwidget.hxx"
 #include "histogramwidget.hxx"
 
 #define FLOAT_SLIDER_RES 512.f
@@ -190,7 +191,7 @@ private:
 	QString m_CurrentFile;
 	QString m_CurrentFileBaseName;
 
-	enum { NumPanes = 6 };
+	enum { NumPanes = 7 };
 
 	PaneWidget *panes[NumPanes];
 
@@ -199,6 +200,7 @@ private:
 	ColorSpaceWidget *colorspacewidget;
 	GammaWidget *gammawidget;
 	NoiseReductionWidget *noisereductionwidget;
+	BackgroundWidget *backgroundwidget;
 	HistogramWidget *histogramwidget;
 
 	QVector<PaneWidget*> m_LightGroupPanes;

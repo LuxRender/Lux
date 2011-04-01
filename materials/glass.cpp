@@ -46,8 +46,8 @@ BSDF *Glass::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 
 	float flm = film->Evaluate(tspack, dgs);
 	float flmindex = filmindex->Evaluate(tspack, dgs);
-
-	MultiBSDF *bsdf = ARENA_ALLOC(tspack->arena, MultiBSDF)(dgs, dgGeom.nn, exterior, interior);
+	SWCSpectrum bcolor = (Sc->Evaluate(tspack, dgs).Clamp(0.f, 10000.f))*dgs.Scale;
+	MultiBSDF *bsdf = ARENA_ALLOC(tspack->arena, MultiBSDF)(dgs, dgGeom.nn, exterior, interior, bcolor);
     // NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
 	SWCSpectrum R = Kr->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
 	SWCSpectrum T = Kt->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
@@ -70,6 +70,7 @@ BSDF *Glass::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 }
 Material* Glass::CreateMaterial(const Transform &xform,
 		const ParamSet &mp) {
+	boost::shared_ptr<Texture<SWCSpectrum> > Sc(mp.GetSWCSpectrumTexture("Sc", RGBColor(.9f)));
 	boost::shared_ptr<Texture<SWCSpectrum> > Kr(mp.GetSWCSpectrumTexture("Kr", RGBColor(1.f)));
 	boost::shared_ptr<Texture<SWCSpectrum> > Kt(mp.GetSWCSpectrumTexture("Kt", RGBColor(1.f)));
 	boost::shared_ptr<Texture<float> > index(mp.GetFloatTexture("index", 1.5f));
@@ -83,7 +84,7 @@ Material* Glass::CreateMaterial(const Transform &xform,
 	CompositingParams cP;
 	FindCompositingParams(mp, &cP);
 
-	return new Glass(Kr, Kt, index, cbf, film, filmindex, archi, bumpMap, cP);
+	return new Glass(Kr, Kt, index, cbf, film, filmindex, archi, bumpMap, cP, Sc);
 }
 
 static DynamicLoader::RegisterMaterial<Glass> r("glass");

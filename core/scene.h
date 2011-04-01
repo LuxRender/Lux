@@ -72,14 +72,14 @@ public:
 		Region *vr);
 	Scene(Camera *c);
 	~Scene();
-	bool Intersect(const Ray &ray, Intersection *isect) const {
-		return aggregate->Intersect(ray, isect);
+	bool Intersect(const Ray &ray, Intersection *isect, bool null_shp_isect = false) const {
+		return aggregate->Intersect(ray, isect, null_shp_isect);
 	}
 	bool Intersect(const TsPack *tspack, const Volume *volume,
 		const RayDifferential &ray, Intersection *isect, BSDF **bsdf,
-		SWCSpectrum *f) const {
+		SWCSpectrum *f, bool null_shp_isect = false) const {
 		return volumeIntegrator->Intersect(tspack, this, volume, ray,
-			isect, bsdf, f);
+			isect, bsdf, f, null_shp_isect);
 	}
 	bool Connect(const TsPack *tspack, const Volume *volume,
 		const Point &p0, const Point &p1, bool clip, SWCSpectrum *f,
@@ -87,8 +87,8 @@ public:
 		return volumeIntegrator->Connect(tspack, this, volume, p0, p1,
 			clip, f, pdf, pdfR);
 	}
-	bool IntersectP(const Ray &ray) const {
-		return aggregate->IntersectP(ray);
+	bool IntersectP(const Ray &ray, bool null_shp_isect = false) const {
+		return aggregate->IntersectP(ray, null_shp_isect);
 	}
 	const BBox &WorldBound() const { return bound; }
 	SWCSpectrum Li(const RayDifferential &ray, const Sample *sample,
@@ -97,6 +97,7 @@ public:
 	void Transmittance(const TsPack *tspack, const Ray &ray,
 		const Sample *sample, SWCSpectrum *const L) const;
 
+	void load_suport(void) const;
 	//Control methods
 	void Start();
 	void Pause();

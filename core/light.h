@@ -49,6 +49,7 @@ public:
 	virtual float Power(const Scene *scene) const = 0;
 	virtual bool IsDeltaLight() const = 0;
 	virtual bool IsEnvironmental() const = 0;
+	virtual float DirProb(Vector N) const {return 1.f;}
 	virtual SWCSpectrum Le(const TsPack *tspack,
 		const RayDifferential &r) const;
 	virtual SWCSpectrum Le(const TsPack *tspack, const Scene *scene,
@@ -121,9 +122,9 @@ struct VisibilityTester {
 		volume = NULL;
 	}
 
-	bool Unoccluded(const Scene * scene) const;
+	bool Unoccluded(const Scene * scene, bool null_shapes_isect = false) const;
 	bool TestOcclusion(const TsPack *tspack, const Scene *scene,
-		SWCSpectrum *f, float *pdf = NULL, float *pdfR = NULL) const;
+		SWCSpectrum *f, bool null_shapes_isect = false, float *pdf = NULL, float *pdfR = NULL) const;
 	// modulates the supplied SWCSpectrum with the transmittance along the ray
 	void Transmittance(const TsPack *tspack, const Scene * scene,
 		const Sample *sample, SWCSpectrum *const L) const;

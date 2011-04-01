@@ -34,6 +34,9 @@
 using namespace lux;
 
 // Matte Method Definitions
+SWCSpectrum Matte::GetKd(const TsPack *tspack,	const DifferentialGeometry &dgs) const {
+		return Kd->Evaluate(tspack, dgs).Clamp(0.f, 10000.f);}	
+
 BSDF *Matte::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 	const DifferentialGeometry &dgs,
 	const Volume *exterior, const Volume *interior) const
@@ -42,14 +45,15 @@ BSDF *Matte::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 	// Evaluate textures for _Matte_ material and allocate BRDF
 	// NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
 	SWCSpectrum r = Kd->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
+	SWCSpectrum bcolor = (Sc->Evaluate(tspack, dgs).Clamp(0.f, 10000.f))*dgs.Scale;
 	float sig = Clamp(sigma->Evaluate(tspack, dgs), 0.f, 90.f);
 	BxDF *bxdf;
-	if (sig == 0.f)
+	if (sig == 0.f)	
 		bxdf = ARENA_ALLOC(tspack->arena, Lambertian)(r);
 	else
 		bxdf = ARENA_ALLOC(tspack->arena, OrenNayar)(r, sig);
 	SingleBSDF *bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dgs,
-		dgGeom.nn, bxdf, exterior, interior);
+		dgGeom.nn, bxdf, exterior, interior, bcolor);
 
 	// Add ptr to CompositingParams structure
 	bsdf->SetCompositingParams(compParams);
@@ -59,12 +63,13 @@ BSDF *Matte::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
 Material* Matte::CreateMaterial(const Transform &xform,
 		const ParamSet &mp) {
 	boost::shared_ptr<Texture<SWCSpectrum> > Kd(mp.GetSWCSpectrumTexture("Kd", RGBColor(.9f)));
+	boost::shared_ptr<Texture<SWCSpectrum> > Sc(mp.GetSWCSpectrumTexture("Sc", RGBColor(.9f)));
 	boost::shared_ptr<Texture<float> > sigma(mp.GetFloatTexture("sigma", 0.f));
 	boost::shared_ptr<Texture<float> > bumpMap(mp.GetFloatTexture("bumpmap"));
 	// Get Compositing Params
 	CompositingParams cP;
 	FindCompositingParams(mp, &cP);
-	return new Matte(Kd, sigma, bumpMap, cP);
+	return new Matte(Kd, sigma, bumpMap, cP, Sc);
 }
 
 static DynamicLoader::RegisterMaterial<Matte> r("matte");

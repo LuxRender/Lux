@@ -45,6 +45,7 @@ public:
 	virtual BBox WorldBound() const = 0;
 	virtual Volume *GetExterior() const { return NULL; }
 	virtual Volume *GetInterior() const { return NULL; }
+	virtual Material *GetMaterial() const { return NULL; }
 	/**
 	 * Refines this primitive to a number of primitives that are intersectable and
 	 * satisfy all the given hints if possible.
@@ -59,6 +60,11 @@ public:
 		const PrimitiveRefinementHints &refineHints,
 		const boost::shared_ptr<Primitive> &thisPtr);
 
+	virtual bool IsSupport() const { return false; }
+	virtual bool GetNormal(Vector *N) const;
+	virtual bool GetBaryPoint(Point *P) const;
+	virtual float GetScale() const;
+	virtual bool SetScale(float scale) const {return false;};
 	// Intersection
 	/**
 	 * Returns whether this primitive can be intersected.
@@ -72,13 +78,13 @@ public:
 	 * @param in The destination of the intersection information.
 	 * @return Whether an intersection was found.
 	 */
-	virtual bool Intersect(const Ray &r, Intersection *in) const;
+	virtual bool Intersect(const Ray &r, Intersection *in, bool null_shp_isect = false) const;
 	/**
 	 * Tests for intersection of this primitive with the given ray.
 	 * @param r  The ray to intersect with this primitive.
 	 * @return Whether an intersection was found.
 	 */
-	virtual bool IntersectP(const Ray &r) const;
+	virtual bool IntersectP(const Ray &r, bool null_shp_isect = false ) const;
 
 	// Material
 	/**
@@ -150,6 +156,7 @@ public:
 	virtual float Pdf(const Point &p, const Point &po) const {
 		return 1.f / Area();
 	}
+
 };
 
 class PrimitiveRefinementHints {
@@ -213,9 +220,10 @@ public:
 		const PrimitiveRefinementHints& refineHints,
 		const boost::shared_ptr<Primitive> &thisPtr);
 
+	virtual bool IsSupport() const { return prim->IsSupport(); }
 	virtual bool CanIntersect() const { return prim->CanIntersect(); }
-	virtual bool Intersect(const Ray &r, Intersection *in) const;
-	virtual bool IntersectP(const Ray &r) const { return prim->IntersectP(r); }
+	virtual bool Intersect(const Ray &r, Intersection *in, bool null_shp_isect = false) const;
+	virtual bool IntersectP(const Ray &r, bool null_shp_isect = false ) const { return prim->IntersectP(r, null_shp_isect); }
 
 	virtual void GetShadingGeometry(const Transform &obj2world,
 		const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const {
@@ -278,9 +286,10 @@ public:
 		return interior ? interior.get() : instance->GetInterior();
 	}
 
+	virtual bool IsSupport() const { return instance->IsSupport(); }
 	virtual bool CanIntersect() const { return instance->CanIntersect(); }
-	virtual bool Intersect(const Ray &r, Intersection *in) const;
-	virtual bool IntersectP(const Ray &r) const;
+	virtual bool Intersect(const Ray &r, Intersection *in, bool null_shp_isect = false) const;
+	virtual bool IntersectP(const Ray &r, bool null_shp_isect = false) const;
 	virtual void GetShadingGeometry(const Transform &obj2world,
 		const DifferentialGeometry &dg,
 		DifferentialGeometry *dgShading) const;
@@ -329,6 +338,7 @@ class Aggregate : public Primitive {
 public:
 	// Aggregate Public Methods
 	virtual ~Aggregate() { }
+	virtual bool IsSupport() const { return false; }
 	virtual bool CanIntersect() const { return true; }
 	virtual bool CanSample() const { return false; }
 
@@ -374,9 +384,10 @@ public:
 		return interior ? interior.get() : instance->GetInterior();
 	}
 
+	virtual bool IsSupport() const { return instance->IsSupport(); }
 	virtual bool CanIntersect() const { return instance->CanIntersect(); }
-	virtual bool Intersect(const Ray &r, Intersection *in) const;
-	virtual bool IntersectP(const Ray &r) const;
+	virtual bool Intersect(const Ray &r, Intersection *in, bool null_shp_isect = false) const;
+	virtual bool IntersectP(const Ray &r, bool null_shp_isect = false) const;
 	virtual void GetShadingGeometry(const Transform &obj2world,
 		const DifferentialGeometry &dg,
 		DifferentialGeometry *dgShading) const;

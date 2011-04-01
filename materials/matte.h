@@ -23,6 +23,7 @@
 // matte.cpp*
 #include "lux.h"
 #include "material.h"
+#include "spectrum.h"
 
 namespace lux
 {
@@ -34,9 +35,10 @@ public:
 	Matte(boost::shared_ptr<Texture<SWCSpectrum> > &kd,
 		boost::shared_ptr<Texture<float> > &sig,
 		boost::shared_ptr<Texture<float> > &bump,
-		const CompositingParams &cp) : Kd(kd), sigma(sig),
+		const CompositingParams &cp, boost::shared_ptr<Texture<SWCSpectrum> > &sc) : Kd(kd), sigma(sig),
 		bumpMap(bump) {
 		compParams = new CompositingParams(cp);
+		Sc = sc; 
 	}
 	virtual ~Matte() { }
 	virtual void GetShadingGeometry(const TsPack *tspack,
@@ -44,11 +46,15 @@ public:
 		if (bumpMap)
 			Bump(tspack, bumpMap, nGeom, dgBump);
 	}
+
+
 	virtual BSDF *GetBSDF(const TsPack *tspack,
 		const DifferentialGeometry &dgGeom,
 		const DifferentialGeometry &dgShading,
 		const Volume *exterior, const Volume *interior) const;
-	              
+
+	virtual SWCSpectrum GetKd(const TsPack *tspack,	const DifferentialGeometry &dgs) const;
+              
 	static Material * CreateMaterial(const Transform &xform,
 		const ParamSet &mp);
 private:

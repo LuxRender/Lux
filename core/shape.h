@@ -34,6 +34,7 @@ namespace lux
 // Shape Declarations
 class Shape : public Primitive {
 public:
+
 	Shape(const Transform &o2w, bool ro);
 	Shape(const Transform &o2w, bool ro,
 		boost::shared_ptr<Material> &material,
@@ -60,6 +61,8 @@ public:
 		interior = v;
 	}
 	Material *GetMaterial() const { return material.get(); }
+
+
 	virtual Volume *GetExterior() const { return exterior.get(); }
 	virtual Volume *GetInterior() const { return interior.get(); }
 
@@ -82,10 +85,15 @@ public:
 		}
 	}
 
+	virtual bool IsSupport() const { return false; }
+	virtual bool GetNormal(Vector *N) const { return false; }
+	virtual bool GetBaryPoint(Point *P) const { return false; }
 	virtual bool CanIntersect() const { return true; }
-	virtual bool Intersect(const Ray &r, Intersection *isect) const {
+	virtual float GetScale() const { return 1.f; }
+	virtual bool SetScale(float scale) const { return false; }
+	virtual bool Intersect(const Ray &r, Intersection *isect, bool null_shp_isect = false ) const {
 		float thit;
-		if (!Intersect(r, &thit, &isect->dg))
+		if (!Intersect(r, &thit, &isect->dg, null_shp_isect))
 			return false;
 		isect->dg.AdjustNormal(reverseOrientation,
 			transformSwapsHandedness);
@@ -134,7 +142,7 @@ public:
 			"Unimplemented Shape::Refine() method called");
 	}
 	virtual bool Intersect(const Ray &ray, float *t_hitp,
-		DifferentialGeometry *dg) const {
+		DifferentialGeometry *dg, bool null_shp_isect = false ) const {
 		luxError(LUX_BUG, LUX_SEVERE,
 			"Unimplemented Shape::Intersect() method called");
 		return false;
@@ -153,6 +161,7 @@ protected:
 	boost::shared_ptr<Volume> exterior, interior;
 public: // Last to get better data alignment
 	const bool reverseOrientation, transformSwapsHandedness;
+
 };
 
 class PrimitiveSet : public Primitive {
@@ -163,13 +172,18 @@ public:
 	virtual ~PrimitiveSet() { }
 
 	virtual BBox WorldBound() const { return worldbound; }
+	virtual bool IsSupport() const {
+		for (u_int i = 0; i < primitives.size(); ++i)
+			if (!primitives[i]->IsSupport()) return false;
+		return true;
+	}
 	virtual bool CanIntersect() const {
 		for (u_int i = 0; i < primitives.size(); ++i)
 			if (!primitives[i]->CanIntersect()) return false;
 		return true;
 	}
-	virtual bool Intersect(const Ray &r, Intersection *in) const;
-	virtual bool IntersectP(const Ray &r) const;
+	virtual bool Intersect(const Ray &r, Intersection *in, bool null_shp_isect = false ) const;
+	virtual bool IntersectP(const Ray &r, bool null_shp_isect = false) const;
 
 	virtual bool CanSample() const {
 		for (u_int i = 0; i < primitives.size(); ++i)

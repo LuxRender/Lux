@@ -29,6 +29,7 @@
 #include "paramset.h"
 #include "reflection/bxdf.h"
 #include "dynload.h"
+#include "mediancut.h"
 
 using namespace lux;
 
@@ -39,7 +40,7 @@ public:
 	InfiniteISBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
 		const Volume *exterior, const Volume *interior,
 		const InfiniteAreaLightIS &l, const Transform &WL) :
-		BSDF(dgs, ngeom, exterior, interior), light(l),
+		BSDF(dgs, ngeom, exterior, interior, SWCSpectrum(0.f)), light(l),
 		WorldToLight(WL) { }
 	virtual inline u_int NumComponents() const { return 1; }
 	virtual inline u_int NumComponents(BxDFType flags) const {
@@ -113,10 +114,12 @@ InfiniteAreaLightIS::~InfiniteAreaLightIS() {
 	delete mapping;
 }
 InfiniteAreaLightIS::InfiniteAreaLightIS(const Transform &light2world,
-	const RGBColor &l, u_int ns, const string &texmap,
+	const RGBColor &l, u_int ns, int LNs, const string &texmap,
 	EnvironmentMapping *m, float gain, float gamma)
 	: Light(light2world, ns), SPDbase(l)
 {
+	srand ( time(NULL) );
+
 	// Base illuminant SPD
 	SPDbase.Scale(gain);
 
@@ -127,10 +130,14 @@ InfiniteAreaLightIS::InfiniteAreaLightIS(const Transform &light2world,
 	if (texmap != "") {
 		auto_ptr<ImageData> imgdata(ReadImage(texmap));
 		if (imgdata.get() != NULL) {
-			nu = imgdata->getWidth();
-			nv = imgdata->getHeight();
+			W = nu = imgdata->getWidth();
+			H = nv = imgdata->getHeight();
 			radianceMap = imgdata->createMIPMap(BILINEAR, 8.f,
 				TEXTURE_REPEAT, 1.f, gamma);
+		std::stringstream al02;
+		al02 << "Mapa de iluminacao criado "  ;
+		luxError(LUX_NOERROR, LUX_INFO, al02.str().c_str());
+
 		} else
 			radianceMap = NULL;
 	}
@@ -142,6 +149,7 @@ InfiniteAreaLightIS::InfiniteAreaLightIS(const Transform &light2world,
 	// Initialize sampling PDFs for infinite area light
 	float filter = 1.f / max(nu, nv);
 	float *img = new float[nu * nv];
+	float *predata = new float[nu*nv];
 	for (u_int y = 0; y < nv; ++y) {
 		float yp = (y + .5f) / nv;
 		for (u_int x = 0; x < nu; ++x) {
@@ -154,13 +162,63 @@ InfiniteAreaLightIS::InfiniteAreaLightIS(const Transform &light2world,
 			else if (radianceMap)
 				img[x + y * nu] = radianceMap->LookupFloat(CHANNEL_WMEAN,
 					xp, yp, filter) / pdf;
+
 			else
 				img[x + y * nu] = 1.f / pdf;
+
+
+			predata[x + y * nu] = img[x + y * nu] * 2.f*PI*PI;
+
 		}
 	}
 	uvDistrib = new Distribution2D(img, nu, nv);
 	delete[] img;
+
+LNsamples= LNs;
+MedCutSample( &C_MedCut, &C_MCLight, predata, LNsamples, W, H );
+lightdata=new float[4*(int)(pow(2, (float)LNsamples))];
+for( int i=0; i<(int)(pow(2,LNsamples)); i++){
+	lightdata[4*i]  = C_MCLight[i].x;
+	lightdata[4*i+1]= C_MCLight[i].y;
+	lightdata[4*i+2]= C_MCLight[i].z;
+	lightdata[4*i+3]= C_MCLight[i].lum;
 }
+
+C_MCLight.clear();
+C_MedCut.clear();
+
+}
+
+float InfiniteAreaLightIS::DirProb(Vector N) const
+{
+
+	Vector w = N;
+	// Compute infinite light radiance for direction
+	if (lightdata != NULL) {
+		Vector wh = Normalize(WorldToLight(w));
+		float T_rad = 0.f, P_rad = 0.f; 
+
+		for( int i=0; i<(int)(pow(2,LNsamples)); i++){
+
+			Vector dummy;
+			dummy.x = lightdata[4*i];
+			dummy.y = lightdata[4*i+1];
+			dummy.z = lightdata[4*i+2];
+			float cosN = Dot( wh, dummy );
+	
+			if ( cosN > 0.f )
+				{ P_rad += lightdata[4*i+3] * cosN ; T_rad += lightdata[4*i+3]; }
+			else
+				T_rad += lightdata[4*i+3];
+
+		}
+		return T_rad/P_rad;
+	}
+
+	return 0.5f;
+}
+
+
 SWCSpectrum InfiniteAreaLightIS::Le(const TsPack *tspack,
 	const RayDifferential &r) const
 {
@@ -175,6 +233,21 @@ SWCSpectrum InfiniteAreaLightIS::Le(const TsPack *tspack,
 	}
 	return SWCSpectrum(tspack, SPDbase);
 }
+
+SWCSpectrum InfiniteAreaLightIS::Le_Sup(const TsPack *tspack,
+	const RayDifferential &r) const
+{
+	// Compute infinite light radiance for direction
+	if (radianceMap != NULL) {
+		Vector wh = Normalize(WorldToLight(r.d));
+		float s, t, dummy;
+		mapping->Map(wh, &s, &t, &dummy);
+		return SWCSpectrum(tspack, SPDbase) *
+			radianceMap->LookupSpectrum(tspack, s, t);
+	} else
+		return SWCSpectrum(tspack, SPDbase);
+}
+
 
 SWCSpectrum InfiniteAreaLightIS::Le(const TsPack *tspack, const Scene *scene,
 	const Ray &r, const Normal &n, BSDF **bsdf, float *pdf,
@@ -213,28 +286,37 @@ SWCSpectrum InfiniteAreaLightIS::Le(const TsPack *tspack, const Scene *scene,
 	}
 }
 
+
 SWCSpectrum InfiniteAreaLightIS::Sample_L(const TsPack *tspack, const Point &p, float u1,
 		float u2, float u3, Vector *wi, float *pdf,
 		VisibilityTester *visibility) const {
+
 	// Find floating-point $(u,v)$ sample coordinates
 	float uv[2];
+
 	uvDistrib->SampleContinuous(u1, u2, uv, pdf);
 	// Convert sample point to direction on the unit sphere
 	const float theta = uv[1] * M_PI;
 	const float phi = uv[0] * 2.f * M_PI;
 	const float costheta = cosf(theta), sintheta = sinf(theta);
 	*wi = LightToWorld(SphericalDirection(sintheta, costheta, phi));
+
+      
 	// Compute PDF for sampled direction
 	// FIXME - use mapping
 	*pdf /= (2.f * M_PI * M_PI * sintheta);
+
 	// Return radiance value for direction
 	visibility->SetRay(p, *wi, tspack->time);
+
 	if (radianceMap)
 		return SWCSpectrum(tspack, SPDbase) *
 			radianceMap->LookupSpectrum(tspack, uv[0], uv[1]);
 	else
 		return SWCSpectrum(tspack, SPDbase);
+
 }
+
 float InfiniteAreaLightIS::Pdf(const TsPack *tspack, const Point &,
 		const Vector &w) const {
 	Vector wi = WorldToLight(w);
@@ -310,6 +392,12 @@ bool InfiniteAreaLightIS::Sample_L(const TsPack *tspack, const Scene *scene,
 	BSDF **bsdf, float *pdf, float *pdfDirect,
 	VisibilityTester *visibility, SWCSpectrum *Le) const
 {
+		//aldo
+		//std::stringstream al02;
+		//al02 << "ENTROU NO Sample_L"  ;
+		//luxError(LUX_NOERROR, LUX_INFO, al02.str().c_str());
+		//aldo
+
 	Point worldCenter;
 	float worldRadius;
 	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
@@ -350,6 +438,7 @@ Light* InfiniteAreaLightIS::CreateLight(const Transform &light2world,
 	RGBColor L = paramSet.FindOneRGBColor("L", RGBColor(1.f));
 	string texmap = paramSet.FindOneString("mapname", "");
 	int nSamples = paramSet.FindOneInt("nsamples", 1);
+	int LNsamples= paramSet.FindOneInt("LNsamples", 9);
 
 	EnvironmentMapping *map = NULL;
 	string type = paramSet.FindOneString("mapping", "");
@@ -364,7 +453,7 @@ Light* InfiniteAreaLightIS::CreateLight(const Transform &light2world,
 	float gain = paramSet.FindOneFloat("gain", 1.0f);
 	float gamma = paramSet.FindOneFloat("gamma", 1.0f);
 
-	InfiniteAreaLightIS *l = new InfiniteAreaLightIS(light2world, L, nSamples, texmap, map, gain, gamma);
+	InfiniteAreaLightIS *l = new InfiniteAreaLightIS(light2world, L, nSamples, LNsamples, texmap, map, gain, gamma);
 	l->hints.InitParam(paramSet);
 	return l;
 }

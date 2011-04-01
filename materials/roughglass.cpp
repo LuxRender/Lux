@@ -44,8 +44,9 @@ BSDF *RoughGlass::GetBSDF(const TsPack *tspack,
 	// NOTE - lordcrc - Bugfix, pbrt tracker id 0000078: index of refraction swapped and not recorded
 	float ior = index->Evaluate(tspack, dgs);
 	float cb = cauchyb->Evaluate(tspack, dgs);
+	SWCSpectrum bcolor = (Sc->Evaluate(tspack, dgs).Clamp(0.f, 10000.f))*dgs.Scale;
 	MultiBSDF *bsdf = ARENA_ALLOC(tspack->arena, MultiBSDF)(dgs, dgGeom.nn,
-		exterior, interior);
+		exterior, interior, bcolor);
 	// NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
 	SWCSpectrum R = Kr->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
 	SWCSpectrum T = Kt->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
@@ -74,6 +75,7 @@ BSDF *RoughGlass::GetBSDF(const TsPack *tspack,
 }
 Material* RoughGlass::CreateMaterial(const Transform &xform,
 		const ParamSet &mp) {
+	boost::shared_ptr<Texture<SWCSpectrum> > Sc(mp.GetSWCSpectrumTexture("Sc", RGBColor(.9f)));
 	boost::shared_ptr<Texture<SWCSpectrum> > Kr(mp.GetSWCSpectrumTexture("Kr", RGBColor(1.f)));
 	boost::shared_ptr<Texture<SWCSpectrum> > Kt(mp.GetSWCSpectrumTexture("Kt", RGBColor(1.f)));
 	boost::shared_ptr<Texture<float> > uroughness(mp.GetFloatTexture("uroughness", .001f));
@@ -86,7 +88,7 @@ Material* RoughGlass::CreateMaterial(const Transform &xform,
 	CompositingParams cP;
 	FindCompositingParams(mp, &cP);
 
-	return new RoughGlass(Kr, Kt, uroughness, vroughness, index, cbf, bumpMap, cP);
+	return new RoughGlass(Kr, Kt, uroughness, vroughness, index, cbf, bumpMap, cP, Sc);
 }
 
 static DynamicLoader::RegisterMaterial<RoughGlass> r("roughglass");

@@ -352,7 +352,7 @@ BBox Torus::ObjectBound() const {
 }
 
 bool Torus::Intersect(const Ray &r, float *tHit,
-		DifferentialGeometry *dg) const {
+		DifferentialGeometry *dg, bool null_shp_isect) const {
 	float phi, theta;
 	float thit;
 	Point phit;
@@ -435,7 +435,7 @@ bool Torus::Intersect(const Ray &r, float *tHit,
 	return true;
 }
 
-bool Torus::IntersectP(const Ray &r) const {
+bool Torus::IntersectP(const Ray &r, bool null_shp_isect) const {
 	float phi, theta;
 	float thit;
 	Point phit;

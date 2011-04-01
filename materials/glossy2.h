@@ -39,9 +39,11 @@ public:
 		boost::shared_ptr<Texture<float> > &u,
 		boost::shared_ptr<Texture<float> > &v,
 		boost::shared_ptr<Texture<float> > &bump,
-		const CompositingParams &cp) : Kd(kd), Ks(ks), Ka(ka), depth(d),
+		const CompositingParams &cp,
+		boost::shared_ptr<Texture<SWCSpectrum> > &sc) : Kd(kd), Ks(ks), Ka(ka), depth(d),
 		index(i), nu(u), nv(v), bumpMap(bump) {
 		compParams = new CompositingParams(cp);
+		Sc = sc;
 	}
 	virtual ~Glossy2() { }
 	virtual void GetShadingGeometry(const TsPack *tspack,

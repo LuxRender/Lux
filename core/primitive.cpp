@@ -37,14 +37,33 @@ void Primitive::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 		"Unimplemented Primitive::Refine method called!");
 }
 
-bool Primitive::Intersect(const Ray &r, Intersection *in) const
+bool Primitive::GetNormal(Vector *N) const
+{
+	luxError(LUX_BUG, LUX_SEVERE,
+		"Unimplemented Primitive::GetNormal method called!");
+	return false;
+}
+
+bool Primitive::GetBaryPoint(Point *P) const
+{
+	luxError(LUX_BUG, LUX_SEVERE,
+		"Unimplemented Primitive::GetBaryPoint method called!");
+	return false;
+}
+
+float Primitive::GetScale() const
+{
+	return 1.f;
+}
+
+bool Primitive::Intersect(const Ray &r, Intersection *in, bool null_shp_isect) const
 {
 	luxError(LUX_BUG, LUX_SEVERE,
 		"Unimplemented Primitive::Intersect method called!");
 	return false;
 }
 
-bool Primitive::IntersectP(const Ray &r) const
+bool Primitive::IntersectP(const Ray &r, bool null_shp_isect) const
 {
 	luxError(LUX_BUG, LUX_SEVERE,
 		"Unimplemented Primitive::IntersectP method called!");
@@ -77,7 +96,7 @@ float Primitive::Pdf(const Point &p, const Vector &wi) const
 	// Intersect sample ray with area light geometry
 	Intersection isect;
 	Ray ray(p, wi);
-	if (!Intersect(ray, &isect))
+	if (!Intersect(ray, &isect, true)) //cuidado com o true
 		return 0.f;
 	// Convert light sample weight to solid angle measure
 	const float cost = AbsDot(isect.dg.nn, -wi);
@@ -92,9 +111,10 @@ BSDF *Intersection::GetBSDF(const TsPack *tspack,
 {
 	dg.ComputeDifferentials(ray);
 	DifferentialGeometry dgShading;
-	primitive->GetShadingGeometry(WorldToObject.GetInverse(), dg,
-		&dgShading);
+
+	primitive->GetShadingGeometry(WorldToObject.GetInverse(), dg, &dgShading);
 	material->GetShadingGeometry(tspack, dg.nn, &dgShading);
+
 	return material->GetBSDF(tspack, dg, dgShading, exterior, interior);
 }
 
@@ -128,19 +148,19 @@ void AreaLightPrimitive::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 	}
 }
 
-bool AreaLightPrimitive::Intersect(const Ray &r, Intersection *in) const
+bool AreaLightPrimitive::Intersect(const Ray &r, Intersection *in, bool null_shp_isect) const
 {
-	if (!prim->Intersect(r, in))
+	if (!prim->Intersect(r, in, null_shp_isect))
 		return false;
 	in->arealight = areaLight; // set the intersected arealight
 	return true;
 }
 
 // InstancePrimitive Method Definitions
-bool InstancePrimitive::Intersect(const Ray &r, Intersection *isect) const
+bool InstancePrimitive::Intersect(const Ray &r, Intersection *isect, bool null_shp_isect) const
 {
 	Ray ray = WorldToInstance(r);
-	if (!instance->Intersect(ray, isect))
+	if (!instance->Intersect(ray, isect, null_shp_isect))
 		return false;
 	r.maxt = ray.maxt;
 	isect->WorldToObject = isect->WorldToObject * WorldToInstance;
@@ -163,9 +183,9 @@ bool InstancePrimitive::Intersect(const Ray &r, Intersection *isect) const
 	return true;
 }
 
-bool InstancePrimitive::IntersectP(const Ray &r) const
+bool InstancePrimitive::IntersectP(const Ray &r, bool null_shp_isect) const
 {
-	return instance->IntersectP(WorldToInstance(r));
+	return instance->IntersectP(WorldToInstance(r), null_shp_isect);
 }
 
 void InstancePrimitive::GetShadingGeometry(const Transform &obj2world,
@@ -193,13 +213,13 @@ void InstancePrimitive::GetShadingGeometry(const Transform &obj2world,
 }
 
 // MotionPrimitive Method Definitions
-bool MotionPrimitive::Intersect(const Ray &r, Intersection *isect) const
+bool MotionPrimitive::Intersect(const Ray &r, Intersection *isect, bool null_shp_isect) const
 {
 	Transform InstanceToWorld = motionSystem.Sample(r.time);
 	Transform WorldToInstance = InstanceToWorld.GetInverse();
 
 	Ray ray = WorldToInstance(r);
-	if (!instance->Intersect(ray, isect))
+	if (!instance->Intersect(ray, isect, null_shp_isect))
 		return false;
 	r.maxt = ray.maxt;
 	isect->WorldToObject = isect->WorldToObject * WorldToInstance;
@@ -222,12 +242,12 @@ bool MotionPrimitive::Intersect(const Ray &r, Intersection *isect) const
 	return true;
 }
 
-bool MotionPrimitive::IntersectP(const Ray &r) const
+bool MotionPrimitive::IntersectP(const Ray &r, bool null_shp_isect) const
 {
 	Transform InstanceToWorld = motionSystem.Sample(r.time);
 	Transform WorldToInstance = InstanceToWorld.GetInverse();
 
-	return instance->IntersectP(WorldToInstance(r));
+	return instance->IntersectP(WorldToInstance(r), null_shp_isect);
 }
 void MotionPrimitive::GetShadingGeometry(const Transform &obj2world,
 	const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const

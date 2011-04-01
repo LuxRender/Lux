@@ -84,7 +84,7 @@ class  BSDF {
 public:
 	// BSDF Public Methods
 	BSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
-		const Volume *exterior, const Volume *interior);
+		const Volume *exterior, const Volume *interior, const SWCSpectrum Bcolor = SWCSpectrum(0.f) );
 	virtual u_int NumComponents() const = 0;
 	virtual u_int NumComponents(BxDFType flags) const = 0;
 	virtual inline void SetCompositingParams(CompositingParams *cp) {
@@ -130,7 +130,7 @@ public:
 	const Normal nn, ng;
 	const DifferentialGeometry dgShading;
 	const Volume *exterior, *interior;
-
+	const SWCSpectrum Bcolor;
 	// Compositing Parameters pointer
 	CompositingParams *compParams;
 	
@@ -146,8 +146,8 @@ class  SingleBSDF : public BSDF  {
 public:
 	// StackedBSDF Public Methods
 	SingleBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
-		const BxDF *b, const Volume *exterior, const Volume *interior) :
-		BSDF(dgs, ngeom, exterior, interior), bxdf(b) { }
+		const BxDF *b, const Volume *exterior, const Volume *interior, const SWCSpectrum Bcolor = SWCSpectrum(0.f) ) :
+		BSDF(dgs, ngeom, exterior, interior, Bcolor), bxdf(b) { }
 	virtual inline u_int NumComponents() const { return 1; }
 	virtual inline u_int NumComponents(BxDFType flags) const {
 		return bxdf->MatchesFlags(flags) ? 1U : 0U;
@@ -181,7 +181,7 @@ class  MultiBSDF : public BSDF  {
 public:
 	// MultiBSDF Public Methods
 	MultiBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
-		const Volume *exterior, const Volume *interior);
+		const Volume *exterior, const Volume *interior, const SWCSpectrum Bcolor = SWCSpectrum(0.f) );
 	inline void Add(BxDF *bxdf);
 	virtual inline u_int NumComponents() const { return nBxDFs; }
 	virtual inline u_int NumComponents(BxDFType flags) const;
@@ -216,7 +216,7 @@ class MixBSDF : public BSDF {
 public:
 	// MixBSDF Public Methods
 	MixBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
-		const Volume *exterior, const Volume *interior);
+		const Volume *exterior, const Volume *interior, const SWCSpectrum Bcolor = SWCSpectrum(0.f) );
 	inline void Add(float weight, BSDF *bsdf);
 	virtual inline u_int NumComponents() const;
 	virtual inline u_int NumComponents(BxDFType flags) const;

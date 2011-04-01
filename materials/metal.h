@@ -37,7 +37,7 @@ public:
 		boost::shared_ptr<Texture<float> > &u,
 		boost::shared_ptr<Texture<float> > &v,
 		boost::shared_ptr<Texture<float> > &bump,
-		const CompositingParams &cp);
+		const CompositingParams &cp, boost::shared_ptr<Texture<SWCSpectrum> > &sc);
 	virtual ~Metal() { }
 
 	virtual void GetShadingGeometry(const TsPack *tspack,

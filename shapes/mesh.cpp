@@ -27,7 +27,7 @@
 
 using namespace lux;
 
-Mesh::Mesh(const Transform &o2w, bool ro, MeshAccelType acceltype,
+Mesh::Mesh(const Transform &o2w, bool ro, bool sup, bool proj, Point cam_, MeshAccelType acceltype,
 	u_int nv, const Point *P, const Normal *N, const float *UV,
 	MeshTriangleType tritype, u_int trisCount, const int *tris,
 	MeshQuadType quadtype, u_int nquadsCount, const int *quads,
@@ -35,6 +35,15 @@ Mesh::Mesh(const Transform &o2w, bool ro, MeshAccelType acceltype,
 	boost::shared_ptr<Texture<float> > &dmMap, float dmScale, float dmOffset,
 	bool dmNormalSmooth, bool dmSharpBoundary) : Shape(o2w, ro)
 {
+
+	suport = sup;
+	proj_text = proj;
+	if (sup)
+	 proj_text = true;
+
+	cam = cam_;
+
+
 	accelType = acceltype;
 
 	subdivType = subdivtype;
@@ -212,7 +221,7 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 		switch (concreteSubdivType) {
 			case SUBDIV_LOOP: {
 				// Apply subdivision
-				LoopSubdiv loopsubdiv(ObjectToWorld, reverseOrientation,
+				LoopSubdiv loopsubdiv(ObjectToWorld, reverseOrientation, suport, proj_text, cam,
 					ntris, nverts, triVertexIndex, p, uvs,
 					nSubdivLevels, displacementMap,
 					displacementMapScale, displacementMapOffset,
@@ -352,10 +361,8 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 			concreteAccelType = ACCEL_NONE;
 		else if (refinedPrims.size() <= 500000)
 			concreteAccelType = ACCEL_KDTREE;
-		else if (refinedPrims.size() <= 8000000)
-			concreteAccelType = ACCEL_QBVH;
 		else
-			concreteAccelType = ACCEL_GRID;
+			concreteAccelType = ACCEL_QBVH;
 	}
 
 	// Report selections used
@@ -577,7 +584,11 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 		subdivType = Mesh::SUBDIV_LOOP;
 	}
 
-	return new Mesh(o2w, reverseOrientation,
+	bool  sup = params.FindOneBool( "suport", false );
+	bool  proj_text = params.FindOneBool( "projection", false );
+	Point  cam = params.FindOnePoint( "cam", (0,0,0) );
+
+	return new Mesh(o2w, reverseOrientation, sup, proj_text, cam,
 		accelType,
 		npi, P, N, UV,
 		triType, triIndicesCount, triIndices,
@@ -597,7 +608,9 @@ Shape *Mesh::CreateShape(const Transform &o2w, bool reverseOrientation, const Pa
 
 	string subdivscheme = params.FindOneString("subdivscheme", "loop");
 	int nsubdivlevels = params.FindOneInt("nsubdivlevels", 0);
-
+	bool  sup = params.FindOneBool( "suport", false );
+	bool  proj_text = params.FindOneBool( "projection", false );
+	Point  cam = params.FindOnePoint( "cam", (0,0,0) );
 	return ::CreateShape( o2w, reverseOrientation, params, accelTypeStr, triTypeStr,
 		triIndices, triIndicesCount, uvCoordinates, uvCoordinatesCount,
 		subdivscheme, max(0, nsubdivlevels));
@@ -615,6 +628,9 @@ Shape* Mesh::BaryMesh::CreateShape(const Transform &o2w, bool reverseOrientation
 	if (uvCoordinates == NULL) {
 		uvCoordinates = params.FindFloat("st", &uvCoordinatesCount);
 	}
+	bool  sup = params.FindOneBool( "suport", false );
+	bool  proj_text = params.FindOneBool( "projection", false );
+	Point  cam = params.FindOnePoint( "cam", (0,0,0) );
 	return ::CreateShape( o2w, reverseOrientation, params, accelTypeStr, triTypeStr,
 		indices, indicesCount, uvCoordinates, uvCoordinatesCount,
 		"loop", 0U);
@@ -632,6 +648,9 @@ Shape* Mesh::WaldMesh::CreateShape(const Transform &o2w, bool reverseOrientation
 	if (uvCoordinates == NULL) {
 		uvCoordinates = params.FindFloat("st", &uvCoordinatesCount);
 	}
+	bool  sup = params.FindOneBool( "suport", false );
+	bool  proj_text = params.FindOneBool( "projection", false );
+	Point  cam = params.FindOnePoint( "cam", (0,0,0) );
 	return ::CreateShape( o2w, reverseOrientation, params, accelTypeStr, triTypeStr,
 		indices, indicesCount, uvCoordinates, uvCoordinatesCount,
 		"loop", 0U);
@@ -654,7 +673,9 @@ Shape* Mesh::LoopMesh::CreateShape(const Transform &o2w, bool reverseOrientation
 
 	string subdivscheme = params.FindOneString("scheme", "loop");
 	int nsubdivlevels = params.FindOneInt("nlevels", 3);
-
+	bool  sup = params.FindOneBool( "suport", false );
+	bool  proj_text = params.FindOneBool( "projection", false );
+	Point  cam = params.FindOnePoint( "cam", (0,0,0) );
 	return ::CreateShape( o2w, reverseOrientation, params, accelTypeStr, triTypeStr,
 		indices, indicesCount, uvCoordinates, uvCoordinatesCount,
 		subdivscheme, max(0, nsubdivlevels));

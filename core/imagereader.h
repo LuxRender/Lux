@@ -79,6 +79,8 @@ public:
 		}
 	}
 
+	void data_scale();
+
 	u_int getWidth() {
 		return width_;
 	}
@@ -246,3 +248,5 @@ public:
 
 }
 #endif // LUX_IMAGEREADER_H
+
+

@@ -31,7 +31,7 @@
 using namespace lux;
 
 // LoopSubdiv Method Definitions
-LoopSubdiv::LoopSubdiv(const Transform &o2w, bool ro,
+LoopSubdiv::LoopSubdiv(const Transform &o2w, bool ro, bool sup, bool proj, Point cam_,
         u_int nfaces, u_int nvertices,
 		const int *vertexIndices,
 		const Point *P,
@@ -43,6 +43,14 @@ LoopSubdiv::LoopSubdiv(const Transform &o2w, bool ro,
 	: Shape(o2w, ro), displacementMap(dismap), displacementMapScale(dmscale),
 	displacementMapOffset(dmoffset), displacementMapNormalSmooth(dmnormalsmooth),
 	displacementMapSharpBoundary(dmsharpboundary) {
+
+	suport = sup;
+	proj_text = proj;
+	if (sup)
+	 proj_text = true;
+
+	cam = cam_;
+
 	nLevels = nl;
 	hasUV = (uv != NULL);
 
@@ -584,7 +592,9 @@ Shape *LoopSubdiv::CreateShape(
 	float displacementMapOffset = params.FindOneFloat("dmoffset", 0.0f);
 	bool displacementMapNormalSmooth = params.FindOneBool("dmnormalsmooth", true);
 	bool displacementMapSharpBoundary = params.FindOneBool("dmsharpboundary", false);
-
+	bool  sup = params.FindOneBool( "suport", false );
+	bool  proj_text = params.FindOneBool( "projection", false );
+	Point  cam = params.FindOnePoint( "cam", (0,0,0) );
 	boost::shared_ptr<Texture<float> > displacementMap;
 	if (displacementMapName != "") {
 		boost::shared_ptr<Texture<float> > dm((*floatTextures)[displacementMapName]);
@@ -600,7 +610,7 @@ Shape *LoopSubdiv::CreateShape(
 	// don't actually use this for now...
 	string scheme = params.FindOneString("scheme", "loop");
 
-	return new LoopSubdiv(o2w, reverseOrientation, nIndices/3, nps,
+	return new LoopSubdiv(o2w, reverseOrientation, sup,proj_text, cam,nIndices/3, nps,
 		vi, P, uvs, nlevels, displacementMap,
 		displacementMapScale, displacementMapOffset,
 		displacementMapNormalSmooth, displacementMapSharpBoundary);

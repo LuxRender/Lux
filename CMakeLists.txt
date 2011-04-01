@@ -207,38 +207,38 @@ ENDIF(CYGWIN)
 #############################################################################
 #############################################################################
 
-FIND_PACKAGE(Doxygen)
+#FIND_PACKAGE(Doxygen)
 
-IF (DOXYGEN_FOUND)
-	MESSAGE( STATUS "Found Doxygen and generating documentation" )
+#IF (DOXYGEN_FOUND)
+#	MESSAGE( STATUS "Found Doxygen and generating documentation" )
 			
-	SET(DOXYGEN_TEMPLATE ${CMAKE_CURRENT_SOURCE_DIR}/doxygen/doxygen.template)
-	SET(DOXYGEN_INPUT ${CMAKE_CURRENT_BINARY_DIR}/doxygen.conf)
-	SET(DOXYGEN_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/doc)
-	SET(DOXYGEN_OUTPUT ${DOXYGEN_OUTPUT_DIR}/html/index.html)
+#	SET(DOXYGEN_TEMPLATE ${CMAKE_CURRENT_SOURCE_DIR}/doxygen/doxygen.template)
+#	SET(DOXYGEN_INPUT ${CMAKE_CURRENT_BINARY_DIR}/doxygen.conf)
+#	SET(DOXYGEN_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/doc)
+#	SET(DOXYGEN_OUTPUT ${DOXYGEN_OUTPUT_DIR}/html/index.html)
 		
-	MESSAGE( STATUS "Doxygen output:" ${DOXYGEN_OUTPUT} )
+#	MESSAGE( STATUS "Doxygen output:" ${DOXYGEN_OUTPUT} )
 	
-	IF(DOXYGEN_DOT_FOUND)
-		MESSAGE( STATUS "Found dot" )
-		SET(DOXYGEN_DOT_CONF "HAVE_DOT = YES")
-	ENDIF(DOXYGEN_DOT_FOUND)
+#	IF(DOXYGEN_DOT_FOUND)
+#		MESSAGE( STATUS "Found dot" )
+#		SET(DOXYGEN_DOT_CONF "HAVE_DOT = YES")
+#	ENDIF(DOXYGEN_DOT_FOUND)
 	
-	ADD_CUSTOM_COMMAND( 
-	OUTPUT ${DOXYGEN_OUTPUT}
+#	ADD_CUSTOM_COMMAND( 
+#	OUTPUT ${DOXYGEN_OUTPUT}
 	#creating custom doxygen.conf
-	COMMAND cp ${DOXYGEN_TEMPLATE} ${DOXYGEN_INPUT}
-	COMMAND echo "INPUT = " ${CMAKE_CURRENT_SOURCE_DIR} >> ${DOXYGEN_INPUT}
-	COMMAND echo "OUTPUT_DIRECTORY = " ${DOXYGEN_OUTPUT_DIR} >> ${DOXYGEN_INPUT}
-	COMMAND echo ${DOXYGEN_DOT_CONF} >> ${DOXYGEN_INPUT}
+#	COMMAND cp ${DOXYGEN_TEMPLATE} ${DOXYGEN_INPUT}
+#	COMMAND echo "INPUT = " ${CMAKE_CURRENT_SOURCE_DIR} >> ${DOXYGEN_INPUT}
+#	COMMAND echo "OUTPUT_DIRECTORY = " ${DOXYGEN_OUTPUT_DIR} >> ${DOXYGEN_INPUT}
+#	COMMAND echo ${DOXYGEN_DOT_CONF} >> ${DOXYGEN_INPUT}
 	#launch doxygen
-	COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_INPUT}
-	DEPENDS ${DOXYGEN_TEMPLATE}
-	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-	)
+#	COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_INPUT}
+#	DEPENDS ${DOXYGEN_TEMPLATE}
+#	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+#	)
 		
-	ADD_CUSTOM_TARGET(apidoc ALL DEPENDS ${DOXYGEN_OUTPUT})
-ENDIF (DOXYGEN_FOUND)
+#	ADD_CUSTOM_TARGET(apidoc ALL DEPENDS ${DOXYGEN_OUTPUT})
+#ENDIF (DOXYGEN_FOUND)
 
 
 #############################################################################
@@ -500,14 +500,18 @@ SET(lux_filters_src
 SET(lux_integrators_src
 	integrators/bidirectional.cpp
 	integrators/directlighting.cpp
+	integrators/ardirectlighting.cpp
 	integrators/distributedpath.cpp
 	integrators/emission.cpp
 	integrators/exphotonmap.cpp
 	integrators/igi.cpp
 	integrators/path.cpp
+	integrators/arpath.cpp
 	integrators/single.cpp
 	)
 SET(lux_lights_src
+	lights/SummedAreaTable.cpp
+	lights/mediancut.cpp
 	lights/area.cpp
 	lights/distant.cpp
 	lights/infinite.cpp
@@ -696,6 +700,7 @@ SET( LUXQTGUI_SRCS
 	qtgui/noisereductionwidget.cpp
 	qtgui/histogramwidget.cpp
 	qtgui/panewidget.cpp
+	qtgui/backgroundwidget.cpp
 	)
 SET( LUXQTGUI_MOC
 	qtgui/histogramview.hxx
@@ -711,6 +716,7 @@ SET( LUXQTGUI_MOC
 	qtgui/noisereductionwidget.hxx
 	qtgui/histogramwidget.hxx
 	qtgui/panewidget.hxx
+	qtgui/backgroundwidget.hxx
 	)
 SET(LUXQTGUI_UIS
 	qtgui/luxrender.ui
@@ -723,6 +729,7 @@ SET(LUXQTGUI_UIS
 	qtgui/noisereduction.ui
 	qtgui/histogram.ui
 	qtgui/pane.ui
+	qtgui/background.ui
 	)
 SET( LUXQTGUI_RCS
 	qtgui/icons.qrc
