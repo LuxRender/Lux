@@ -173,7 +173,6 @@ void SamplerRenderer::Render(Scene *s) {
 
 		// Dade - preprocessing done
 		preprocessDone = true;
-		// Context::GetActive()->SceneReady();
 		scene->SetReady();
 
 		// add a thread
