@@ -56,6 +56,7 @@ public:
 	void setHaltSamplesPerPixel(int haltspp, bool haveEnoughSamplesPerPixel, bool suspendThreadsWhenDone);
 	unsigned int addThread();
 	void removeThread();
+	void abort();
 	void wait();
 	void exit();
 	void cleanup();
@@ -190,8 +191,11 @@ private:
 	lux::ParamSet* ps;
 };
 
-// exported factory functions
+// exported factory and cleanup functions
 CPP_EXPORT CPP_API lux_instance* CreateLuxInstance(const char* _name);
+CPP_EXPORT CPP_API void DestroyLuxInstance(lux_instance* inst);
+
 CPP_EXPORT CPP_API lux_paramset* CreateLuxParamSet();
+CPP_EXPORT CPP_API void DestroyLuxParamSet(lux_paramset* ps);
 
 #endif	// LUX_CPP_API_H

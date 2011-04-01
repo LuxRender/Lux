@@ -41,3 +41,21 @@ CPP_API lux_paramset* CreateLuxParamSet()
 {
 	return dynamic_cast<lux_paramset*>(new lux_wrapped_paramset());
 };
+
+// -----------------------------------------------------------------------
+// CLEANUP FUNCTIONS
+// -----------------------------------------------------------------------
+
+// Destroy a lux_wrapped_context instance pointed to as lux_instance*
+CPP_API void DestroyLuxInstance(lux_instance* inst)
+{
+	lux_wrapped_context* w_inst = dynamic_cast<lux_wrapped_context*>(inst);
+	delete( w_inst );
+};
+
+// Destroy a lux_wrapped_paramset instance pointed to as lux_paramset*
+CPP_API void DestroyLuxParamSet(lux_paramset* ps)
+{
+	lux_wrapped_paramset* w_ps = dynamic_cast<lux_wrapped_paramset*>(ps);
+	delete( w_ps );
+};

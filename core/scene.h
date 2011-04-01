@@ -138,6 +138,9 @@ public:
 	u_int FilmXres();
 	u_int FilmYres();
 
+	bool ready;
+	void SetReady() { ready = true; }
+	bool IsReady() { return ready; }
 	bool IsFilmOnly() const { return filmOnly; }
 
 	// Scene Data

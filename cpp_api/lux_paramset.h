@@ -48,5 +48,6 @@ public:
 
 // Pointer to lux_paramset factory function
 typedef lux_paramset* (*CreateLuxParamSetPtr)();
+typedef void (*DestroyLuxParamSetPtr)(lux_paramset* ps);
 
 #endif	// LUX_CPP_PARAMSET_H

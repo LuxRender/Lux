@@ -116,7 +116,6 @@ void Context::Init() {
 	currentApiState = STATE_OPTIONS_BLOCK;
 	luxCurrentRenderer = NULL;
 	luxCurrentScene = NULL;
-	luxCurrentSceneReady = false;
 	curTransform = lux::Transform();
 	namedCoordinateSystems.clear();
 	renderOptions = new RenderOptions;
@@ -131,7 +130,6 @@ void Context::Init() {
 
 void Context::Free() {
 	// Dade - free memory
-	luxCurrentSceneReady = false;
 
 	delete luxCurrentRenderer;
 	luxCurrentRenderer = NULL;
@@ -912,7 +910,7 @@ void Context::LoadFLM(const string &flmFileName) {
 		return;
 	}
 	luxCurrentScene = new Scene(cam);
-	SceneReady();
+	luxCurrentScene->SetReady();
 }
 void Context::SaveFLM(const string &flmFileName) {
 	luxCurrentScene->SaveFLM(flmFileName);
@@ -1102,7 +1100,7 @@ u_int Context::GetLightGroup() {
 
 double Context::Statistics(const string &statName) {
 	if (statName == "sceneIsReady")
-		return (luxCurrentScene != NULL && luxCurrentSceneReady &&
+		return (luxCurrentScene != NULL && luxCurrentScene->IsReady() &&
 			!luxCurrentScene->IsFilmOnly());
 	else if (statName == "filmIsReady")
 		return (luxCurrentScene != NULL &&
@@ -1114,9 +1112,6 @@ double Context::Statistics(const string &statName) {
 	else
 		return 0;
 }
-void Context::SceneReady() {
-	luxCurrentSceneReady = true;
-}
 
 const char* Context::PrintableStatistics(const bool add_total) {
 	statsData->update(add_total);
@@ -1126,6 +1121,8 @@ const char* Context::PrintableStatistics(const bool add_total) {
 const char* Context::CustomStatistics(const string custom_template)
 {
 	// BEWARE capitalisation in this function StatsData vs. statsData
+
+	// TODO: need a mutex here, modifying StatsData is not thread safe
 
 	const string _ts1 = StatsData::template_string_local;
 	const string _ts2 = StatsData::template_string_network_waiting;

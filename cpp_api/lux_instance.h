@@ -49,6 +49,7 @@ public:
 	virtual void setHaltSamplesPerPixel(int haltspp, bool haveEnoughSamplesPerPixel, bool suspendThreadsWhenDone) = 0;
 	virtual unsigned int addThread() = 0;
 	virtual void removeThread() = 0;
+	virtual void abort() = 0;
 	virtual void wait() = 0;
 	virtual void exit() = 0;
 	virtual void cleanup() = 0;
@@ -149,5 +150,6 @@ public:
 
 // Pointer to lux_instance factory function
 typedef lux_instance* (*CreateLuxInstancePtr)(const char* name);
+typedef void (*DestroyLuxInstancePtr)(lux_instance* inst);
 
 #endif	// LUX_INSTANCE_H
