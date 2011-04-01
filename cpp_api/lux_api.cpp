@@ -89,19 +89,35 @@ bool lux_wrapped_context::parse(const char* filename, bool async)
 {
 	boost::mutex::scoped_lock lock(ctxMutex);
 	checkContext();
-	return true;
+	if (async)
+	{
+		render_threads.push_back(new boost::thread( boost::bind(luxParse, filename) ));
+		return true;	// Real parse status can be checked later with parseSuccess()
+	}
+	else
+	{
+		return luxParse(filename);
+	}
 }
 bool lux_wrapped_context::parsePartial(const char* filename, bool async)
 {
 	boost::mutex::scoped_lock lock(ctxMutex);
 	checkContext();
-	return true;
+	if (async)
+	{
+		render_threads.push_back(new boost::thread( boost::bind(luxParsePartial, filename) ));
+		return true;	// Real parse status can be checked later with parseSuccess()
+	}
+	else
+	{
+		return luxParsePartial(filename);
+	}
 }
 bool lux_wrapped_context::parseSuccessful()
 {
 	boost::mutex::scoped_lock lock(ctxMutex);
 	checkContext();
-	return true;
+	return ctx->currentApiState != STATE_PARSE_FAIL;
 }
 
 // rendering control
