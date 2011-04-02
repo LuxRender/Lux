@@ -89,7 +89,7 @@ public:
 			pdfR);
 	}
 	// Used with LuxRays
-	int Connect(const Sample &sample, const Volume *volume,
+	int Connect(const Sample &sample, const Volume **volume,
 		bool scatteredStart, bool scatteredEnd, const Ray &ray,
 		const luxrays::RayHit &rayHit, SWCSpectrum *f, float *pdf,
 		float *pdfR) const {
@@ -138,6 +138,9 @@ public:
 	u_int FilmXres();
 	u_int FilmYres();
 
+	bool ready;
+	void SetReady() { ready = true; }
+	bool IsReady() { return ready; }
 	bool IsFilmOnly() const { return filmOnly; }
 
 	// Scene Data

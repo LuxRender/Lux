@@ -23,6 +23,7 @@
 #include "ui_tonemap.h"
 #include "tonemapwidget.hxx"
 #include "mainwindow.hxx"
+#include "guiutil.h"
 
 #include <iostream>
 #include <algorithm>
@@ -73,7 +74,6 @@ ToneMapWidget::ToneMapWidget(QWidget *parent) : QWidget(parent), ui(new Ui::Tone
 	connect(ui->spinBox_gamma_linear, SIGNAL(valueChanged(double)), this, SLOT(gammaLinearChanged(double)));
 	connect(ui->button_linearEstimate, SIGNAL(clicked()), this, SLOT(estimateLinear()));	
 
-
 	// Max contrast
 	connect(ui->slider_ywa, SIGNAL(valueChanged(int)), this, SLOT(ywaChanged(int)));
 	connect(ui->spinBox_ywa, SIGNAL(valueChanged(double)), this, SLOT(ywaChanged(double)));
@@ -107,7 +107,7 @@ void ToneMapWidget::updateWidgetValues()
 	updateWidgetValue(ui->spinBox_burn, m_TM_reinhard_burn);
 
 	// Linear widgets
-	updateWidgetValue(ui->slider_exposure, ValueToLogSliderVal(m_TM_linear_exposure, TM_LINEAR_EXPOSURE_LOG_MIN, TM_LINEAR_EXPOSURE_LOG_MAX) );
+	updateWidgetValue(ui->slider_exposure, ValueToLogSliderVal(m_TM_linear_exposure, TM_LINEAR_EXPOSURE_LOG_MIN, TM_LINEAR_EXPOSURE_LOG_MAX, FLOAT_SLIDER_RES) );
 	updateWidgetValue(ui->spinBox_exposure, m_TM_linear_exposure);
 
 	updateWidgetValue(ui->slider_sensitivity, (int)((FLOAT_SLIDER_RES / TM_LINEAR_SENSITIVITY_RANGE) * m_TM_linear_sensitivity) );
@@ -120,7 +120,7 @@ void ToneMapWidget::updateWidgetValues()
 	updateWidgetValue(ui->spinBox_gamma_linear, m_TM_linear_gamma);
 
 	// Contrast widgets
-	updateWidgetValue(ui->slider_ywa, ValueToLogSliderVal(m_TM_contrast_ywa, TM_CONTRAST_YWA_LOG_MIN, TM_CONTRAST_YWA_LOG_MAX) );
+	updateWidgetValue(ui->slider_ywa, ValueToLogSliderVal(m_TM_contrast_ywa, TM_CONTRAST_YWA_LOG_MIN, TM_CONTRAST_YWA_LOG_MAX, FLOAT_SLIDER_RES) );
 	updateWidgetValue(ui->spinBox_ywa, m_TM_contrast_ywa);
 }
 
@@ -394,14 +394,14 @@ void ToneMapWidget::sensitivityChanged (double value)
 
 void ToneMapWidget::exposureChanged (int value)
 {
-	exposureChanged ( LogSliderValToValue(value, TM_LINEAR_EXPOSURE_LOG_MIN, TM_LINEAR_EXPOSURE_LOG_MAX) );
+	exposureChanged ( LogSliderValToValue(value, TM_LINEAR_EXPOSURE_LOG_MIN, TM_LINEAR_EXPOSURE_LOG_MAX, FLOAT_SLIDER_RES) );
 }
 
 void ToneMapWidget::exposureChanged (double value)
 {
 	m_TM_linear_exposure = value;
 
-	int sliderval = ValueToLogSliderVal (m_TM_linear_exposure, TM_LINEAR_EXPOSURE_LOG_MIN, TM_LINEAR_EXPOSURE_LOG_MAX);
+	int sliderval = ValueToLogSliderVal (m_TM_linear_exposure, TM_LINEAR_EXPOSURE_LOG_MIN, TM_LINEAR_EXPOSURE_LOG_MAX, FLOAT_SLIDER_RES);
 
 	updateWidgetValue(ui->slider_exposure, sliderval);
 	updateWidgetValue(ui->spinBox_exposure, m_TM_linear_exposure);
@@ -460,7 +460,7 @@ void ToneMapWidget::gammaLinearChanged (double value)
 void ToneMapWidget::estimateLinear ()
 {
 	// estimate linear tonemapping parameters
-	const float gamma = luxGetParameterValue(LUX_FILM, LUX_FILM_TORGB_GAMMA);
+	const float gamma = retrieveParam(false, LUX_FILM, LUX_FILM_TORGB_GAMMA);
 	const float Y =  luxGetFloatAttribute("film", "averageLuminance");
 
 	const double gfactor = powf(118.f / 255.f, gamma);
@@ -531,14 +531,14 @@ void ToneMapWidget::estimateLinear ()
 
 void ToneMapWidget::ywaChanged (int value)
 {
-	ywaChanged (LogSliderValToValue(value, TM_CONTRAST_YWA_LOG_MIN, TM_CONTRAST_YWA_LOG_MAX) );
+	ywaChanged (LogSliderValToValue(value, TM_CONTRAST_YWA_LOG_MIN, TM_CONTRAST_YWA_LOG_MAX, FLOAT_SLIDER_RES) );
 }
 
 void ToneMapWidget::ywaChanged (double value)
 {
 	m_TM_contrast_ywa = value;
 
-	int sliderval = ValueToLogSliderVal (m_TM_contrast_ywa, TM_CONTRAST_YWA_LOG_MIN, TM_CONTRAST_YWA_LOG_MAX);
+	int sliderval = ValueToLogSliderVal (m_TM_contrast_ywa, TM_CONTRAST_YWA_LOG_MIN, TM_CONTRAST_YWA_LOG_MAX, FLOAT_SLIDER_RES);
 
 	updateWidgetValue(ui->slider_ywa, sliderval);
 	updateWidgetValue(ui->spinBox_ywa, m_TM_contrast_ywa);

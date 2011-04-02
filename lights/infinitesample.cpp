@@ -113,7 +113,7 @@ InfiniteAreaLightIS::~InfiniteAreaLightIS() {
 	delete mapping;
 }
 InfiniteAreaLightIS::InfiniteAreaLightIS(const Transform &light2world,
-	const RGBColor &l, u_int ns, const string &texmap,
+	const RGBColor &l, u_int ns, const string &texmap, u_int immaxres,
 	EnvironmentMapping *m, float gain, float gamma)
 	: Light(light2world, ns), SPDbase(l)
 {
@@ -139,26 +139,44 @@ InfiniteAreaLightIS::InfiniteAreaLightIS(const Transform &light2world,
 		nv = 128;
 	}
 	// Initialize sampling PDFs for infinite area light
-	float filter = 1.f / max(nu, nv);
-	float *img = new float[nu * nv];
-	for (u_int y = 0; y < nv; ++y) {
-		float yp = (y + .5f) / nv;
-		for (u_int x = 0; x < nu; ++x) {
-			float xp = (x + .5f) / nu;
+	// resample using supersampling if dimensions are large
+	u_int dnu = nu;
+	u_int dnv = nv;
+	if (nu > immaxres || nv > immaxres) {
+		dnu = Ceil2UInt(static_cast<float>(nu * immaxres) / max(nu, nv));
+		dnv = Ceil2UInt(static_cast<float>(nv * immaxres) / max(nu, nv));
+	}
+	const float uscale = static_cast<float>(nu) / dnu;
+	const float vscale = static_cast<float>(nv) / dnv;
+	const u_int samples = Ceil2UInt(max(uscale, vscale));
+	const float us = uscale / samples;
+	const float vs = vscale / samples;
+
+	const float filter = 1.f / max(nu, nv);
+	vector<float> img(dnu * dnv);
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Computing importance sampling map";
+	mean_y = 0.f;
+	for (u_int y = 0; y < dnv*samples; ++y) {
+		const float yp = (y * vs + .5f) / nv;
+		u_int iy = y / samples;
+		for (u_int x = 0; x < dnu*samples; ++x) {
+			const float xp = (x * us + .5f) / nu;
 			Vector dummy;
 			float pdf;
 			mapping->Map(xp, yp, &dummy, &pdf);
+			u_int ix = x / samples;
 			if (!(pdf > 0.f))
-				img[x + y * nu] = 0.f;
-			else if (radianceMap)
-				img[x + y * nu] = radianceMap->LookupFloat(CHANNEL_WMEAN,
-					xp, yp, filter) / pdf;
-			else
-				img[x + y * nu] = 1.f / pdf;
+			//	img[ix + iy * dnu] += 0.f;
+				continue;
+			const float y = (radianceMap) ? 
+				radianceMap->LookupFloat(CHANNEL_WMEAN, xp, yp, filter) : 1.f;
+			img[ix + iy * dnu] += y / (samples*samples*pdf);
+			mean_y += y;
 		}
 	}
-	uvDistrib = new Distribution2D(img, nu, nv);
-	delete[] img;
+	mean_y /= dnu*samples * dnv*samples;
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Finished computing importance sampling map";
+	uvDistrib = new Distribution2D(&img[0], dnu, dnv);
 }
 
 bool InfiniteAreaLightIS::Le(const Scene &scene, const Sample &sample,
@@ -277,6 +295,7 @@ Light* InfiniteAreaLightIS::CreateLight(const Transform &light2world,
 	RGBColor L = paramSet.FindOneRGBColor("L", RGBColor(1.f));
 	string texmap = paramSet.FindOneString("mapname", "");
 	int nSamples = paramSet.FindOneInt("nsamples", 1);
+	int imapmaxres = paramSet.FindOneInt("imapmaxresolution", 500);
 
 	EnvironmentMapping *map = NULL;
 	string type = paramSet.FindOneString("mapping", "");
@@ -291,7 +310,7 @@ Light* InfiniteAreaLightIS::CreateLight(const Transform &light2world,
 	float gain = paramSet.FindOneFloat("gain", 1.0f);
 	float gamma = paramSet.FindOneFloat("gamma", 1.0f);
 
-	InfiniteAreaLightIS *l = new InfiniteAreaLightIS(light2world, L, nSamples, texmap, map, gain, gamma);
+	InfiniteAreaLightIS *l = new InfiniteAreaLightIS(light2world, L, nSamples, texmap, imapmaxres, map, gain, gamma);
 	l->hints.InitParam(paramSet);
 	return l;
 }

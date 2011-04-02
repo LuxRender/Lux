@@ -66,6 +66,8 @@ private:
 	void activateCRF();
 	void deactivateCRF();
 
+	void addPreset( QString listName, QString realName );
+
 protected:
 
 	void changeEvent(QEvent * event);
@@ -75,6 +77,7 @@ private slots:
 	void gammaChanged (int value);
 	void gammaChanged (double value);
 	void CRFChanged (int value);
+	void SetCRFPreset(QString sOption);
 	void loadCRF();
 
 };

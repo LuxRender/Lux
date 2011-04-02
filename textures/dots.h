@@ -118,6 +118,14 @@ public:
 			}
 		}
 	}
+	virtual void GetMinMaxFloat(float *minValue, float *maxValue) const {
+		float min1, min2;
+		float max1, max2;
+		insideDot->GetMinMaxFloat(&min1, &max1);
+		outsideDot->GetMinMaxFloat(&min2, &max2);
+		*minValue = min(min1, min2);
+		*maxValue = max(max1, max2);
+	}
 	virtual void SetIlluminant() {
 		// Update sub-textures
 		outsideDot->SetIlluminant();

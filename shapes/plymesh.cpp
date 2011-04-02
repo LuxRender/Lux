@@ -43,8 +43,6 @@ static int VertexCB(p_ply_argument argument)
 	long vertIndex;
 	ply_get_argument_element(argument, NULL, &vertIndex);
 
-	float f = static_cast<float>(ply_get_argument_value(argument));
-
 	if (userIndex == 0)
 		p[vertIndex].x =
 			static_cast<float>(ply_get_argument_value(argument));
@@ -162,7 +160,7 @@ static void ErrorCB(const char *message)
 
 Shape* PlyMesh::CreateShape(const Transform &o2w,
 		bool reverseOrientation, const ParamSet &params) {
-	string filename = params.FindOneString("filename", "none");
+	const string filename = AdjustFilename(params.FindOneString("filename", "none"));
 	bool smooth = params.FindOneBool("smooth", false);
 
 	LOG( LUX_INFO,LUX_NOERROR) << "Loading PLY mesh file: '" << filename << "'...";
@@ -340,7 +338,7 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 		boost::shared_ptr<Texture<float> > dm((*floatTextures)[displacementMapName]);
 		displacementMap = dm;
 
-		if (displacementMap.get() == NULL) {
+		if (!displacementMap) {
 			LOG( LUX_WARNING,LUX_SYNTAX) << "Unknow float texture '" << displacementMapName << "' in a Mesh shape.";
 		}
 	}

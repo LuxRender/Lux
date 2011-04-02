@@ -22,44 +22,51 @@
 #include "lux.h"
 #include "imagereader.h"
 #include "error.h"
-#define cimg_display_type  0
 
-#ifdef LUX_USE_CONFIG_H
-#include "config.h"
+#include <boost/filesystem/path.hpp>
+#include <boost/filesystem/convenience.hpp>
 
-#ifdef PNG_FOUND
-#define cimg_use_png 1
-#endif
+namespace lux {
 
-#ifdef JPEG_FOUND
-#define cimg_use_jpeg 1
-#endif
+static bool FileExists(const boost::filesystem::path &path) {
+	try {
+		// boost::filesystem::exists() can throw an exception under Windows
+		// if the drive in imagePath doesn't exist
+		return boost::filesystem::exists(path);
+	} catch (const boost::filesystem::filesystem_error &) {
+		return false;
+	}	
+}
 
-#ifdef TIFF_FOUND
-#define cimg_use_tiff 1
-#endif
+static bool FileExists(const string filename) {
+	return FileExists(boost::filesystem::path(filename));
+}
 
+// converts filename to platform independent form
+// and searches for file in current dir if it doesn't 
+// exist in specified location
+// can't be in util.cpp due to error.h conflict
+string AdjustFilename(const string filename, bool silent) {
 
-#else //LUX_USE_CONFIG_H
-#define cimg_use_png 1
-#define cimg_use_tiff 1
-#define cimg_use_jpeg 1
-#endif //LUX_USE_CONFIG_H
+	boost::filesystem::path filePath(filename);
+	string result = filePath.string();
 
+	// boost::filesystem::exists() can throw an exception under Windows
+	// if the drive in imagePath doesn't exist
+	if (FileExists(filePath))
+		return result;
 
-#define cimg_debug 0     // Disable modal window in CImg exceptions.
-#include "cimg.h"
-using namespace cimg_library;
+	// file not found, try fallback
+	if (FileExists(filePath.filename()))
+		result = filePath.filename();
+	else
+		// we failed, just return the normalized name
+		return result;
 
-#if defined(WIN32) && !defined(__CYGWIN__)
-#define hypotf hypot // For the OpenEXR headers
-#endif
+	if (!silent)
+		LOG(LUX_INFO, LUX_NOERROR) << "Couldn't find file '" << filename << "', using '" << result << "' instead";
 
-#include <ImfInputFile.h>
-#include <ImfOutputFile.h>
-#include <ImfChannelList.h>
-#include <ImfFrameBuffer.h>
-#include <half.h>
-using namespace Imf;
-using namespace Imath;
-using namespace lux;
+	return result;
+}
+
+} //namespace lux

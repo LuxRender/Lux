@@ -123,6 +123,9 @@ public:
     virtual ~UnsafeKdTreeAccel();
     virtual bool Intersect(const Ray &ray, Intersection *isect) const;
     virtual bool IntersectP(const Ray &ray) const;
+	virtual Transform GetWorldToLocal(float time) const {
+		return Transform();
+	}
 
     virtual void GetPrimitives(vector<boost::shared_ptr<Primitive> > &prims) const;
 

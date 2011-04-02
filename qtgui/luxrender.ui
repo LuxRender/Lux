@@ -1055,6 +1055,7 @@
     <addaction name="separator"/>
     <addaction name="action_fullScreen"/>
     <addaction name="action_normalScreen"/>
+    <addaction name="action_overlayStatsView"/>
    </widget>
    <widget class="QMenu" name="menu_help">
     <property name="title">
@@ -1264,6 +1265,20 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Alt+W</string>
+   </property>
+  </action>
+  <action name="action_overlayStatsView">
+   <property name="text">
+    <string>Overlay statistics</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Alt+O</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+   <property name="checkable">
+    <bool>true</bool>
    </property>
   </action>
   <action name="action_fullScreen">

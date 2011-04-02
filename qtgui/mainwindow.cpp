@@ -38,6 +38,7 @@
 #include <QTextStream>
 
 #include <QTextLayout>
+#include <QFontMetrics>
 
 #include "error.h"
 
@@ -46,6 +47,7 @@
 #include "aboutdialog.hxx"
 #include "batchprocessdialog.hxx"
 #include "openexroptionsdialog.hxx"
+#include "guiutil.h"
 
 #if defined(WIN32) && !defined(__CYGWIN__)
 #include "direct.h"
@@ -108,28 +110,6 @@ void updateWidgetValue(QCheckBox *checkbox, bool checked)
 	checkbox->blockSignals (true);
 	checkbox->setChecked(checked);
 	checkbox->blockSignals (false);
-}
-
-int ValueToLogSliderVal(float value, const float logLowerBound, const float logUpperBound)
-{
-
-	if (value <= 0)
-		return 0;
-
-	float logvalue = Clamp<float>(log10f(value), logLowerBound, logUpperBound);
-
-	const int val = static_cast<int>((logvalue - logLowerBound) / 
-		(logUpperBound - logLowerBound) * FLOAT_SLIDER_RES);
-	return val;
-}
-
-float LogSliderValToValue(int sliderval, const float logLowerBound, const float logUpperBound)
-{
-
-	float logvalue = (float)sliderval * (logUpperBound - logLowerBound) / 
-		FLOAT_SLIDER_RES + logLowerBound;
-
-	return powf(10.f, logvalue);
 }
 
 void updateParam(luxComponent comp, luxComponentParameters param, double value, int index)
@@ -198,14 +178,15 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	connect(ui->action_copyLog, SIGNAL(triggered()), this, SLOT(copyLog()));
 	connect(ui->action_clearLog, SIGNAL(triggered()), this, SLOT(clearLog()));
 	connect(ui->action_fullScreen, SIGNAL(triggered()), this, SLOT(fullScreen()));
-    connect(ui->action_normalScreen, SIGNAL(triggered()), this, SLOT(normalScreen()));
+	connect(ui->action_normalScreen, SIGNAL(triggered()), this, SLOT(normalScreen()));
+	connect(ui->action_overlayStatsView, SIGNAL(triggered(bool)), this, SLOT(overlayStatsChanged(bool)));
 	
 	// Help menu slots
 	connect(ui->action_aboutDialog, SIGNAL(triggered()), this, SLOT(aboutDialog()));
 	connect(ui->action_documentation, SIGNAL(triggered()), this, SLOT(openDocumentation()));
 	connect(ui->action_forums, SIGNAL(triggered()), this, SLOT(openForums()));
-        connect(ui->action_gallery, SIGNAL(triggered()), this, SLOT(openGallery()));
-        connect(ui->action_bugtracker, SIGNAL(triggered()), this, SLOT(openBugTracker()));
+	connect(ui->action_gallery, SIGNAL(triggered()), this, SLOT(openGallery()));
+	connect(ui->action_bugtracker, SIGNAL(triggered()), this, SLOT(openBugTracker()));
 	
 	connect(ui->checkBox_imagingAuto, SIGNAL(stateChanged(int)), this, SLOT(autoEnabledChanged(int)));
 	connect(ui->spinBox_overrideDisplayInterval, SIGNAL(valueChanged(int)), this, SLOT(overrideDisplayIntervalChanged(int)));
@@ -765,7 +746,7 @@ void MainWindow::outputTonemapped()
 	if (fileName.isEmpty()) 
 		return;
 
-	if (saveCurrentImageTonemapped(fileName, ui->action_useAlpha->isChecked())) {
+	if (saveCurrentImageTonemapped(fileName, ui->action_overlayStats->isChecked(), ui->action_useAlpha->isChecked())) {
 		statusMessage->setText(tr("Tonemapped image saved"));
 		LOG(LUX_INFO, LUX_NOERROR) << "Tonemapped image saved to '" << fileName.toStdString() << "'";
 	} else {
@@ -797,116 +778,6 @@ void MainWindow::outputHDR()
 		statusMessage->setText(tr("ERROR: HDR image NOT saved."));
 		LOG(LUX_WARNING, LUX_SYSTEM) << "Error while saving HDR image to '" << fileName.toStdString() << "'";
 	}
-}
-
-void MainWindow::overlayStatistics(QImage *image)
-{
-	QPainter p(image);
-
-	QString stats;
-
-	stats = "LuxRender " + QString::fromLatin1(luxVersion()) + " ";
-	stats += "|Saved: " + QDateTime::currentDateTime().toString(Qt::DefaultLocaleShortDate) + " ";
-	stats += "|Statistics: " + QString::fromLatin1(luxPrintableStatistics(true)) + " ";
-
-	// convert regular spaces to non-breaking spaces, so that it will prefer to wrap
-	// between segments
-	stats = stats.replace(QChar(' '), QChar::Nbsp);
-	stats = stats.replace("|", " |  ");
-
-#if defined(__APPLE__)
-	QFont font("Monaco");
-#else
-	QFont font("Helvetica");
-#endif
-	font.setStyleHint(QFont::SansSerif, static_cast<QFont::StyleStrategy>(QFont::PreferAntialias | QFont::PreferQuality));
-	
-	int fontSize = (int)min(max(image->width() / 100.0f, 10.f), 18.f);
-	font.setPixelSize(fontSize);
-
-	QFontMetrics fontMetrics(font);
-	int leading = fontMetrics.leading();
-
-	QTextLayout textLayout(stats, font, image);
-
-	QTextOption textOption;
-	//textOption.setUseDesignMetrics(true);
-	textOption.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
-	textOption.setAlignment(Qt::AlignLeft);
-	textLayout.setTextOption(textOption);
-
-	textLayout.beginLayout();
-	QTextLine line;
-	qreal height = leading;
-	qreal maxwidth = image->width() - 10;
-	while ((line = textLayout.createLine()).isValid()) {
-		line.setLineWidth(maxwidth);
-		height += leading;
-		line.setPosition(QPointF(0, height));
-		height += line.height();
-	}
-	height += 2*leading;
-	textLayout.endLayout();
-
-	QRectF rect = textLayout.boundingRect();
-	rect.setHeight(height);
-
-	// align at bottom
-	rect.moveLeft((image->width() - maxwidth) / 2.f);
-	rect.moveTop(image->height() - rect.height());
-
-	// darken background
-	p.setOpacity(0.6);
-	p.fillRect(0, rect.top(), image->width(), rect.height(), Qt::black);
-
-	// draw text
-	p.setOpacity(1.0);
-	p.setPen(QColor(240, 240, 240));
-	textLayout.draw(&p, rect.topLeft());
-
-	p.end();
-}
-
-bool MainWindow::saveCurrentImageTonemapped(const QString &outFile, bool outputAlpha)
-{
-	// Saving as tonemapped image ...
-	// Get width, height and pixel buffer
-	int w = luxGetIntAttribute("film", "xResolution");
-	int h = luxGetIntAttribute("film", "yResolution");
-	// pointer needs to be const so QImage doesn't write to it
-	const unsigned char* fb = luxFramebuffer();
-	
-	// If all looks okay, proceed
-	if (!(w > 0 && h > 0 && fb))
-		// Something was wrong with buffer, width or height
-		return false;
-
-	QImage image;
-	
-	if (outputAlpha) {
-		float *alpha = luxAlphaBuffer();
-		bool preMult = luxGetBoolAttribute("film", "premultiplyAlpha");
-
-		image = QImage(w, h, (preMult ? QImage::Format_ARGB32_Premultiplied : QImage::Format_ARGB32));
-		for (int y = 0; y < h; y++) {
-			uchar *scanline = image.scanLine(y);
-			for (int x = 0; x < w; x++) {
-				scanline[4*x + 0] = fb[2];
-				scanline[4*x + 1] = fb[1];
-				scanline[4*x + 2] = fb[0];
-				scanline[4*x + 3] = static_cast<uchar>(min(max(255.f * alpha[0], 0.f), 255.f));
-				fb += 3;
-				alpha++;
-			}
-		}
-	} else {
-		image = QImage(fb, w, h, QImage::Format_RGB888);
-	}
-
-	if (ui->action_overlayStats->isChecked())
-		overlayStatistics(&image);
-
-	return image.save(outFile);
 }
 
 bool MainWindow::saveCurrentImageHDR(const QString &outFile)
@@ -1016,11 +887,9 @@ bool MainWindow::saveAllLightGroups(const QString &outFilename, const bool &asHD
 			else
 				luxSaveEXR(QString("%1.exr").arg(outputName).toAscii().data(), openExrHalfFloats, openExrDepthBuffer, openExrCompressionType, false);
 		else {
-			unsigned char* fb = luxFramebuffer();
-			if(fb != NULL) {
-				QImage image(fb, w, h, w*3, QImage::Format_RGB888);
+			QImage image = getFramebufferImage();
+			if(!image.isNull())
 				result = image.save(QString("%1%2").arg(outputName).arg(filenamePath.extension().c_str()));
-			}
 			else
 				result = false;
 		}
@@ -1213,6 +1082,11 @@ void MainWindow::normalScreen()
 	}
 }
 
+void MainWindow::overlayStatsChanged(bool checked)
+{
+	renderView->setOverlayStatistics(checked);
+	renderView->reload();
+}
 
 // Help menu slots
 void MainWindow::aboutDialog()
@@ -1506,10 +1380,13 @@ void MainWindow::updateRecentFileActions()
 
 	for (int j = 0; j < MaxRecentFiles; ++j) {
 		if (j < m_recentFiles.count()) {
-			QString text = tr("&%1 %2").arg(j + 1).arg( QFileInfo(m_recentFiles[j]).fileName());
+			QFontMetrics fm(m_recentFileActions[j]->font());
+
+			QString text = tr("&%1 %2").arg(j + 1).arg(QDir::toNativeSeparators(pathElidedText(fm, m_recentFiles[j], 250, 0)));
+
 			m_recentFileActions[j]->setText(text);
 			m_recentFileActions[j]->setData(m_recentFiles[j]);
-			m_recentFileActions[j]->setVisible(true);
+			m_recentFileActions[j]->setVisible(true);			
 		} else
 			m_recentFileActions[j]->setVisible(false);
 	}

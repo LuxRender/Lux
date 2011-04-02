@@ -47,6 +47,9 @@
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
+#include <boost/thread/thread.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
 
 using namespace lux;
 using namespace boost::iostreams;
@@ -75,10 +78,15 @@ void RenderServer::start() {
 		return;
 	}
 
-	// Dade - start the tcp server thread
+	LOG( LUX_INFO,LUX_NOERROR) << "Launching server mode [" << threadCount << " threads]";
+
+	// Dade - start the tcp server threads
 	serverThread = new NetworkRenderServerThread(this);
-	serverThread->serverThread = new boost::thread(boost::bind(
-		NetworkRenderServerThread::run, serverThread));
+
+	serverThread->serverThread6 = new boost::thread(boost::bind(
+		NetworkRenderServerThread::run, 6, serverThread));
+	serverThread->serverThread4 = new boost::thread(boost::bind(
+		NetworkRenderServerThread::run, 4, serverThread));
 
 	state = READY;
 }
@@ -343,11 +351,7 @@ static void processCommand(void (Context::*f)(const string &, float, float, cons
 
 
 void RenderServer::createNewSessionID() {
-	char buf[4 * 4 + 4];
-	sprintf(buf, "%04d_%04d_%04d_%04d", rand() % 9999, rand() % 9999,
-			rand() % 9999, rand() % 9999);
-
-	currentSID = string(buf);
+	currentSID = boost::uuids::random_generator()();
 }
 
 bool RenderServer::validateAccess(basic_istream<char> &stream) const {
@@ -356,9 +360,11 @@ bool RenderServer::validateAccess(basic_istream<char> &stream) const {
 		return false;
 	}
 
-	string sid;
-	if (!getline(stream, sid))
+	string sidstr;
+	if (!getline(stream, sidstr))
 		return false;
+
+	boost::uuids::uuid sid = boost::uuids::string_generator()(sidstr);
 
 	LOG( LUX_DEBUG,LUX_NOERROR) << "Validating SID: " << sid << " = " << currentSID;
 
@@ -693,13 +699,10 @@ void cmd_luxRenderer(bool isLittleEndian, NetworkRenderServerThread *serverThrea
 }
 
 // Dade - TODO: support signals
-void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread)
+void NetworkRenderServerThread::run(int ipversion, NetworkRenderServerThread *serverThread)
 {
 	const int listenPort = serverThread->renderServer->tcpPort;
 	const bool isLittleEndian = osIsLittleEndian();
-	LOG( LUX_INFO,LUX_NOERROR) << "Launching server [" << serverThread->renderServer->threadCount <<
-		" threads] mode on port '" << listenPort << "'.";
-
 
 	vector<string> tmpFileList;
 
@@ -767,12 +770,26 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread)
 	#undef INSERT_CMD
 
 	try {
+		bool reuse_addr = true;
+
 		boost::asio::io_service io_service;
-		tcp::endpoint endpoint(tcp::v4(), listenPort);
-		tcp::acceptor acceptor(io_service, endpoint);
+		tcp::endpoint endpoint(ipversion == 4 ? tcp::v4() : tcp::v6(), listenPort);
+		tcp::acceptor acceptor(io_service);
+
+		acceptor.open(endpoint.protocol());
+		if (reuse_addr)
+			acceptor.set_option(boost::asio::socket_base::reuse_address(true));
+		if (endpoint.protocol() != tcp::v4())
+			acceptor.set_option(boost::asio::ip::v6_only(true));
+		acceptor.bind(endpoint);
+		acceptor.listen();
+
+		LOG(LUX_INFO,LUX_NOERROR) << "Server listening on " << endpoint;
 
 		while (serverThread->signal == SIG_NONE) {
+			vector<char> buffer(2048);
 			tcp::iostream stream;
+			stream.rdbuf()->pubsetbuf(&buffer[0], buffer.size());
 			acceptor.accept(*stream.rdbuf());
 			stream.setf(ios::scientific, ios::floatfield);
 			stream.precision(16);
@@ -796,6 +813,11 @@ void NetworkRenderServerThread::run(NetworkRenderServerThread *serverThread)
 				//END OF COMMAND PROCESSING
 			}
 		}
+	} catch (boost::system::system_error& e) {
+		if (e.code() != boost::asio::error::address_family_not_supported)
+			LOG(LUX_ERROR,LUX_BUG) << "Internal error: " << e.what();
+		else
+			LOG(LUX_INFO,LUX_NOERROR) << "IPv" << ipversion << " not available";
 	} catch (exception& e) {
 		LOG(LUX_ERROR,LUX_BUG) << "Internal error: " << e.what();
 	}

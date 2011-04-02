@@ -163,6 +163,14 @@ public:
 	virtual void GetIntersection(const luxrays::RayHit &rayHit, const u_int index, Intersection *in) const {
 		throw std::runtime_error("Internal error: called Primitives::GetIntersection().");
 	}
+
+	/**
+	 * This methods allows to retrieve the primitive transform from
+	 * world to local coordinates. It is used by textures.
+	 * @param time The time to sample the transform (for motion)
+	 * @return The primitive world to local transform
+	 */
+	virtual Transform GetWorldToLocal(float time) const = 0;
 };
 
 class PrimitiveRefinementHints {
@@ -264,6 +272,9 @@ public:
 		in->arealight = areaLight; // set the intersected arealight
 	}
 
+	virtual Transform GetWorldToLocal(float time) const {
+		return prim->GetWorldToLocal(time);
+	}
 private:
 	// AreaLightPrimitive Private Data
 	boost::shared_ptr<Primitive> prim;
@@ -339,6 +350,10 @@ public:
 	//FIXME: The various pdf computations should be adapted for scaling
 	virtual float Pdf(const Point &p, const Point &po) const {
 		return instance->Pdf(WorldToInstance(p), WorldToInstance(po));
+	}
+
+	virtual Transform GetWorldToLocal(float time) const {
+		return WorldToInstance;
 	}
 private:
 	// InstancePrimitive Private Data
@@ -439,6 +454,9 @@ public:
 	virtual float Pdf(const Point &p, const Point &po) const {
 		return instance->Pdf(p, po);
 	}
+	virtual Transform GetWorldToLocal(float time) const {
+		return motionSystem.Sample(time).GetInverse();
+	}
 private:
 	// MotionPrimitive Private Data
 	boost::shared_ptr<Primitive> instance;
@@ -488,6 +506,11 @@ public:
 	 * Returns whether this primitive can be sampled.
 	 */
 	virtual bool CanSample() const { return false; }
+
+	virtual Transform GetWorldToLocal(float time) const {
+		return Transform();
+	}
+
 private:
 	Material *material;
 	const Volume *exterior, *interior;

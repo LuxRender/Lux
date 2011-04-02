@@ -65,6 +65,7 @@ public:
 		float *ds, float *dt) const = 0;
 	virtual void GetDifferentials(const SpectrumWavelengths &sw,
 		float s, float t, float *ds, float *dt) const = 0;
+	virtual void GetMinMaxFloat(Channel channel, float *minValue, float *maxValue) const = 0;
 
 	virtual u_int GetMemoryUsed() const = 0;
 	virtual void DiscardMipmaps(u_int n) { }
@@ -240,6 +241,8 @@ public:
 			}
 		}
 	}
+
+	virtual void GetMinMaxFloat(Channel channel, float *minValue, float *maxValue) const;
 
 	virtual u_int GetMemoryUsed() const {
 		switch (filterType) {
@@ -978,6 +981,21 @@ SWCSpectrum MIPMapFastImpl<T>::Texel(const SpectrumWavelengths &sw,
 
 	return l(s, t).GetSpectrum(sw);
 }
+template <class T>
+void MIPMapFastImpl<T>::GetMinMaxFloat(Channel channel, float *minValue, float *maxValue) const {
+	const BlockedArray<T> &map = (nLevels == 0) ? *singleMap : *pyramid[0];
+	float minv = INFINITY;
+	float maxv = -INFINITY;
+	for (u_int t = 0; t < map.vSize(); ++t) {
+		for (u_int s = 0; s < map.uSize(); ++s) {
+			const float v = map(s, t).GetFloat(channel);
+			minv = min(minv, v);
+			maxv = max(maxv, v);
+		}
+	}
+	*minValue = minv;
+	*maxValue = maxv;
+}
 
 template <class T> class MIPMapImpl : public MIPMapFastImpl<T> {
 public:
@@ -1034,6 +1052,11 @@ public:
 			*ds *= factor;
 			*dt *= factor;
 		}
+	}
+	virtual void GetMinMaxFloat(Channel channel, float *minValue, float *maxValue) const {
+		MIPMapFastImpl<T>::GetMinMaxFloat(channel, minValue, maxValue);
+		*minValue = powf(gain * (*minValue), gamma);
+		*maxValue = powf(gain * (*maxValue), gamma);
 	}
 private:
 	float gain, gamma;

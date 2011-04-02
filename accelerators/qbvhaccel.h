@@ -262,6 +262,10 @@ public:
 	*/
 	virtual bool IntersectP(const Ray &ray) const;
 
+	virtual Transform GetWorldToLocal(float time) const {
+		return Transform();
+	}
+
 	/**
 	   Fills an array with the primitives
 	   @param prims vector to be filled

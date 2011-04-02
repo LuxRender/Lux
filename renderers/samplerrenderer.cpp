@@ -174,7 +174,7 @@ void SamplerRenderer::Render(Scene *s) {
 
 		// Dade - preprocessing done
 		preprocessDone = true;
-		Context::GetActive()->SceneReady();
+		scene->SetReady();
 
 		// add a thread
 		CreateRenderThread();
@@ -210,11 +210,13 @@ void SamplerRenderer::Render(Scene *s) {
 void SamplerRenderer::Pause() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 	state = PAUSE;
+	s_Timer.Stop();
 }
 
 void SamplerRenderer::Resume() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 	state = RUN;
+	s_Timer.Start();
 }
 
 void SamplerRenderer::Terminate() {

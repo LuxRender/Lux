@@ -59,7 +59,7 @@ static float nmtolambda(float nm)
 Texture<FresnelGeneral> *SopraTexture::CreateFresnelTexture(const Transform &tex2world,
 	const ParamSet &tp)
 {
-	const string filename = tp.FindOneString("filename", "");
+	const string filename = AdjustFilename(tp.FindOneString("filename", ""));
 	std::ifstream fs;
 	fs.open(filename.c_str());
 	string line;
@@ -152,7 +152,7 @@ Texture<FresnelGeneral> *SopraTexture::CreateFresnelTexture(const Transform &tex
 Texture<FresnelGeneral> *LuxpopTexture::CreateFresnelTexture(const Transform &tex2world,
 	const ParamSet &tp)
 {
-	const string filename = tp.FindOneString("filename", "");
+	const string filename = AdjustFilename(tp.FindOneString("filename", ""));
 	std::ifstream fs;
 	fs.open(filename.c_str());
 	vector<float> wl;

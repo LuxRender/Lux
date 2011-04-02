@@ -139,6 +139,10 @@ public:
 		*dv = ds * dsdv + dt * dtdv;
 	}
 
+	virtual void GetMinMaxFloat(float *minValue, float *maxValue) const {
+		mipmap->GetMinMaxFloat(channel, minValue, maxValue);
+	}
+
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const ParamSet &tp);
 
 private:

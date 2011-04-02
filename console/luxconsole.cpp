@@ -165,7 +165,7 @@ int main(int ac, char *av[]) {
 		store(parse_config_file(ifs, config_file_options), vm);
 		notify(vm);
 
-		if (vm.count("help")) {
+		if (vm.count("help") || vm.empty()) {
 			LOG(LUX_ERROR,LUX_SYSTEM)<< "Usage: luxconsole [options] file...\n" << visible;
 			return 0;
 		}

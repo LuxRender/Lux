@@ -24,6 +24,7 @@
 #include "lightgroupwidget.hxx"
 
 #include "mainwindow.hxx"
+#include "guiutil.h"
 
 #include "api.h"
 

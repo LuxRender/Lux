@@ -354,7 +354,7 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 
 	LOG( LUX_INFO,LUX_NOERROR) << "Subdivision complete, got " << ntris << " triangles";
 
-	if (displacementMap.get() != NULL) {
+	if (displacementMap) {
 		// Dade - apply the displacement map
 		GenerateNormals(v);
 		ApplyDisplacementMap(v);
@@ -477,7 +477,7 @@ void LoopSubdiv::ApplyDisplacementMap(const vector<SDVertex *> verts) const
 					Normal(0, 0, 0), Normal(0, 0, 0),
 					vv->u, vv->v, this);
 
-				dl += displacementMap.get()->Evaluate(swl, dg);
+				dl += displacementMap->Evaluate(swl, dg);
 				++nf;
 				if (vv->child != vv) {
 					vlist.push_back(vv);
@@ -492,7 +492,7 @@ void LoopSubdiv::ApplyDisplacementMap(const vector<SDVertex *> verts) const
 					Normal(0, 0, 0), Normal(0, 0, 0),
 					vv->u, vv->v, this);
 
-				dl += displacementMap.get()->Evaluate(swl, dg);
+				dl += displacementMap->Evaluate(swl, dg);
 				++nf;
 				if (vv->child != vv) {
 					vlist.push_back(vv);
@@ -507,7 +507,7 @@ void LoopSubdiv::ApplyDisplacementMap(const vector<SDVertex *> verts) const
 					Normal(0, 0, 0), Normal(0, 0, 0),
 					vv->u, vv->v, this);
 
-				dl += displacementMap.get()->Evaluate(swl, dg);
+				dl += displacementMap->Evaluate(swl, dg);
 				++nf;
 				if (vv->child != vv) {
 					vlist.push_back(vv);
@@ -685,7 +685,7 @@ Shape *LoopSubdiv::CreateShape(
 		boost::shared_ptr<Texture<float> > dm((*floatTextures)[displacementMapName]);
 		displacementMap = dm;
 
-		if (displacementMap.get() == NULL) {
+		if (!displacementMap) {
             LOG( LUX_WARNING,LUX_SYNTAX) << "Unknown float texture '" << displacementMapName << "' in a LoopSubdiv shape.";
 		}
 	}

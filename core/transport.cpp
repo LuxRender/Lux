@@ -149,7 +149,7 @@ bool VolumeIntegrator::Connect(const Scene &scene, const Sample &sample,
 }
 
 int VolumeIntegrator::Connect(const Scene &scene, const Sample &sample,
-	const Volume *volume, bool scatteredStart, bool scatteredEnd,
+	const Volume **volume, bool scatteredStart, bool scatteredEnd,
 	const Ray &ray, const luxrays::RayHit &rayHit,
 	SWCSpectrum *f, float *pdf, float *pdfR) const
 {
@@ -157,7 +157,7 @@ int VolumeIntegrator::Connect(const Scene &scene, const Sample &sample,
 	Intersection isect;
 	float spdf, spdfBack;
 	isect.dg.scattered = scatteredEnd;
-	if (!Intersect(scene, sample, volume, scatteredStart, ray, rayHit, 1.f,
+	if (!Intersect(scene, sample, *volume, scatteredStart, ray, rayHit, 1.f,
 		&isect, &bsdf, &spdf, &spdfBack, f)) {
 		if (pdf)
 			*pdf *= spdfBack;
@@ -171,7 +171,7 @@ int VolumeIntegrator::Connect(const Scene &scene, const Sample &sample,
 	*f *= bsdf->F(sample.swl, d, -d, true, flags);
 	if (f->Black())
 		return -1;
-	volume = bsdf->GetVolume(d);
+	*volume = bsdf->GetVolume(d);
 	if (pdf)
 		*pdf *= bsdf->Pdf(sample.swl, d, -d) * spdfBack;
 	if (pdfR)

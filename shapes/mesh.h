@@ -116,6 +116,7 @@ protected:
 	boost::shared_ptr<Texture<float> > displacementMap;
 	float displacementMapScale;
 	float displacementMapOffset;
+	float displacementMapMin, displacementMapMax;
 	bool displacementMapNormalSmooth, displacementMapSharpBoundary;
 	bool normalSplit;
 
@@ -150,6 +151,9 @@ public:
 	virtual float Area() const;
 	virtual void Sample(float u1, float u2, float u3,
 		DifferentialGeometry *dg) const;
+	virtual Transform GetWorldToLocal(float time) const {
+		return mesh->GetWorldToLocal(time);
+	}
 
 	virtual bool isDegenerate() const {
 		return false; //TODO check degenerate
@@ -234,6 +238,9 @@ public:
 	virtual float Area() const;
 	virtual void Sample(float u1, float u2, float u3,
 		DifferentialGeometry *dg) const;
+	virtual Transform GetWorldToLocal(float time) const {
+		return mesh->GetWorldToLocal(time);
+	}
 
 	virtual bool isDegenerate() const {
 		return false; //TODO check degenerate
@@ -321,6 +328,9 @@ public:
 		GetUVs(uv);
 		dg->u = b0*uv[0][0] + b1*uv[1][0] + b2*uv[2][0] + b3*uv[3][0];
 		dg->v = b0*uv[0][1] + b1*uv[1][1] + b2*uv[2][1] + b3*uv[3][1];
+	}
+	virtual Transform GetWorldToLocal(float time) const {
+		return mesh->GetWorldToLocal(time);
 	}
 
 	bool isDegenerate() const {

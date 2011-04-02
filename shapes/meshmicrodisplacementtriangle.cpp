@@ -159,9 +159,10 @@ BBox MeshMicroDisplacementTriangle::WorldBound() const
 	const Vector n1(GetN(0));
 	const Vector n2(GetN(1));
 	const Vector n3(GetN(2));
-	
-	const float M = mesh->displacementMapOffset + mesh->displacementMapScale;
-	const float m = mesh->displacementMapOffset - mesh->displacementMapScale;
+
+	// since texture output is clamped, restrict min/max
+	const float M = mesh->displacementMapOffset + min(mesh->displacementMapMax, 1.f) * mesh->displacementMapScale;
+	const float m = mesh->displacementMapOffset + max(mesh->displacementMapMin, -1.f) * mesh->displacementMapScale;
 
 	const BBox bb1(p1 + M * n1, p1 + m * n1);
 	const BBox bb2(p2 + M * n2, p2 + m * n2);
@@ -216,22 +217,6 @@ Point MeshMicroDisplacementTriangle::GetDisplacedP(const Point &pbase, const Vec
 		return pbase + displacement;
 }
 
-static bool intersectPlane(const Ray &ray, const Point &p1, const Point &p2, const Point &p3, float *t)
-{
-	const Vector e1(p2 - p1);
-	const Vector e2(p3 - p1);
-	const Vector n(Cross(e1, e2));
-
-	const float num = Dot(n, ray.d);
-
-	if (fabsf(num) < MachineEpsilon::E(fabsf(num)))
-		return false;
-
-	*t = Dot(n, p1 - ray.o) / num;
-
-	return true;
-}
-
 static bool intersectPlane(const Ray &ray, const Point &p, const Vector &n, float *t)
 {
 	const float num = Dot(n, ray.d);
@@ -271,8 +256,9 @@ bool MeshMicroDisplacementTriangle::Intersect(const Ray &ray, Intersection* isec
 	float tmax = -1e30f;
 
 	// upper and lower displacment
-	const float M = mesh->displacementMapOffset + mesh->displacementMapScale;
-	const float m = mesh->displacementMapOffset - mesh->displacementMapScale;
+	// since texture output is clamped, restrict min/max
+	const float M = mesh->displacementMapOffset + min(mesh->displacementMapMax, 1.f) * mesh->displacementMapScale;
+	const float m = mesh->displacementMapOffset + max(mesh->displacementMapMin, -1.f) * mesh->displacementMapScale;
 
 	// determine initial i,j,k for travesal
 	// check all faces of volume

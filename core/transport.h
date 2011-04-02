@@ -93,7 +93,7 @@ public:
 	// Used with LuxRays, returns 1 if can connect, -1 if not and 0 if I have
 	// to continue to trace the ray
 	virtual int Connect(const Scene &scene, const Sample &sample,
-		const Volume *volume, bool scatteredStart, bool scatteredEnd,
+		const Volume **volume, bool scatteredStart, bool scatteredEnd,
 		const Ray &ray, const luxrays::RayHit &rayHit, SWCSpectrum *f,
 		float *pdf, float *pdfR) const;
 };

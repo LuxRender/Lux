@@ -49,7 +49,7 @@
 #include <QClipboard>
 #include <QVector>
 #include <QSettings>
-#include <QTextCursor>
+#include <QCursor>
 #include <QtGui/QTabBar>
 #include <QtGui/QProgressDialog>
 
@@ -74,9 +74,6 @@
 #define LG_TEMPERATURE_MIN 1000.f
 #define LG_TEMPERATURE_MAX 10000.f
 
-template<class T> inline T Clamp(T val, T low, T high) {
-	return val > low ? (val < high ? val : high) : low;
-}
 
 enum LuxGuiRenderState
 {
@@ -133,9 +130,6 @@ void updateWidgetValue(QDoubleSpinBox *spinbox, double value);
 void updateWidgetValue(QSpinBox *spinbox, int value);
 void updateWidgetValue(QCheckBox *checkbox, bool checked);
 
-int ValueToLogSliderVal(float value, const float logLowerBound, const float logUpperBound);
-float LogSliderValToValue(int sliderval, const float logLowerBound, const float logUpperBound);
-
 void updateParam(luxComponent comp, luxComponentParameters param, double value, int index = 0);
 void updateParam(luxComponent comp, luxComponentParameters param, const char* value, int index = 0);
 double retrieveParam (bool useDefault, luxComponent comp, luxComponentParameters param, int index = 0);
@@ -171,8 +165,6 @@ public:
 	
 protected:
 	
-	void overlayStatistics(QImage *image);
-	bool saveCurrentImageTonemapped(const QString &outFile, bool outputAlpha = false);
 	bool saveCurrentImageHDR(const QString &outFile);
 	bool saveAllLightGroups(const QString &outFilename, const bool &asHDR);
 	void setCurrentFile(const QString& filename);
@@ -306,11 +298,12 @@ private slots:
 	void viewportChanged ();
 	void fullScreen ();
 	void normalScreen ();
+	void overlayStatsChanged (bool);
 	void aboutDialog ();
 	void openDocumentation ();
 	void openForums ();
-        void openGallery ();
-        void openBugTracker ();
+	void openGallery ();
+	void openBugTracker ();
 	
 	void renderTimeout ();
 	void statsTimeout ();

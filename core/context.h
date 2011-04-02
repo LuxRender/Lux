@@ -309,7 +309,6 @@ private:
 	
 	// Dade - mutex used to wait the end of the rendering
 	mutable boost::mutex renderingMutex;
-	bool luxCurrentSceneReady;
 	bool terminated;
 	bool aborted; // abort rendering
 

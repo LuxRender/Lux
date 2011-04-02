@@ -135,9 +135,9 @@ short BlenderTexture3D::GetMusgraveType(const string &name)
 
 static const mapstsh::value_type stucciTypeInit[4] = {
 	mapstsh::value_type("", TEX_PLASTIC),
-	mapstsh::value_type("Plastic", TEX_PLASTIC),
-	mapstsh::value_type("Wall In", TEX_WALLIN),
-	mapstsh::value_type("Wall Out", TEX_WALLOUT)
+	mapstsh::value_type("plastic", TEX_PLASTIC),
+	mapstsh::value_type("wall_in", TEX_WALLIN),
+	mapstsh::value_type("wall_out", TEX_WALLOUT)
 };
 static const mapstsh stucciType(stucciTypeInit, stucciTypeInit + 4);
 short BlenderTexture3D::GetStucciType(const string &name)

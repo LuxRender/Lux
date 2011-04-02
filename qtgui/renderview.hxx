@@ -44,6 +44,7 @@ public:
 	~RenderView ();
 
 	void setZoomEnabled (bool enabled = true) { zoomEnabled = enabled; };
+	void setOverlayStatistics (bool value = true) { overlayStats = value; };
 	void reload ();
 	void setLogoMode ();
 	int getZoomFactor ();
@@ -57,6 +58,8 @@ private:
 	bool zoomEnabled;
 	float zoomfactor;
 	QPoint currentpos;
+
+	bool overlayStats;
 
 	QGraphicsScene *renderscene;
 	QGraphicsPixmapItem *luxlogo;

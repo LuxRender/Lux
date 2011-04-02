@@ -90,6 +90,18 @@ public:
 		*du = dua;
 		*dv = dva;
 	}
+	virtual void GetMinMaxFloat(float *minValue, float *maxValue) const {
+		*minValue = 0.f;
+		*maxValue = 0.f;
+		for (u_int i = 0; i < tex.size() - 1; ++i) {
+			float minv, maxv;
+			tex[i]->GetMinMaxFloat(&minv, &maxv);
+			const float wminv = weights[i] * minv;
+			const float wmaxv = weights[i] * maxv;
+			*minValue += min(wminv, wmaxv);
+			*maxValue += max(wminv, wmaxv);
+		}
+	}
 	virtual void SetIlluminant()
 	{
 		// Update sub-textures

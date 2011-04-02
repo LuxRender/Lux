@@ -89,6 +89,9 @@ public:
 				return true;
 		return false;
 	}
+	virtual Transform GetWorldToLocal(float time) const {
+		return Transform();
+	}
 	virtual void GetPrimitives(vector<boost::shared_ptr<Primitive> > &prims) const
 	{
 		prims.reserve(prims.size() + 4);
@@ -342,7 +345,13 @@ void QBVHAccel::BuildTree(u_int start, u_int end, u_int *primsIndexes,
 {
 	// Create a leaf ?
 	//********
-	if (end - start <= maxPrimsPerLeaf) {
+	if (depth > 64 || end - start <= maxPrimsPerLeaf) {
+		if (depth > 64) {
+			LOG(LUX_WARNING,LUX_LIMIT) << "Maximum recursion depth reached while constructing QBVH, forcing a leaf node";
+			if (end - start > 64) {
+				LOG(LUX_ERROR,LUX_LIMIT) << "QBVH unable to handle geometry, too many primitives in leaf";
+			}
+		}
 		CreateTempLeaf(parentIndex, childIndex, start, end, nodeBbox);
 		return;
 	}
