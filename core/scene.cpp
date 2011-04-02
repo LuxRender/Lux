@@ -37,6 +37,12 @@
 
 #include <boost/thread/xtime.hpp>
 #include <boost/bind.hpp>
+#include <boost/thread/mutex.hpp>
+
+#include <ctime>
+#include <boost/random/mersenne_twister.hpp>
+boost::mt19937 scene_rng(std::time(0));
+boost::mutex scene_rand_mutex;
 
 using namespace lux;
 
@@ -145,7 +151,9 @@ Scene::Scene(Camera *cam, SurfaceIntegrator *si, VolumeIntegrator *vi,
 		bound = Union(bound, volumeRegion->WorldBound());
 
 	// Dade - Initialize the base seed with the standard C lib random number generator
-	seedBase = rand();
+	scene_rand_mutex.lock();
+	seedBase = scene_rng();
+	scene_rand_mutex.unlock();
 
 	camera->film->RequestBufferGroups(lightGroups);
 }
@@ -159,7 +167,9 @@ Scene::Scene(Camera *cam) :
 		lightGroups.push_back( cam->film->GetGroupName(i) );
 
 	// Dade - Initialize the base seed with the standard C lib random number generator
-	seedBase = rand();
+	scene_rand_mutex.lock();
+	seedBase = scene_rng();
+	scene_rand_mutex.unlock();
 }
 
 SWCSpectrum Scene::Li(const Ray &ray, const Sample &sample, float *alpha) const

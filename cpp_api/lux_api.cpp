@@ -45,7 +45,14 @@
 #define UPCAST_PARAMSET *((lux_wrapped_paramset*)params)->GetParamSet()
 
 // Initialise the Lux Core only once, when the first lux_wrapped_context is constructed
-boost::once_flag luxInitFlag = BOOST_ONCE_INIT;
+boost::once_flag luxDllInitFlag = BOOST_ONCE_INIT;
+
+void luxDllInit()
+{
+	// Init RNG
+	// srand(time(NULL));
+	luxInit();
+}
 
 // The wrapper needs to hold this mutex for every context method call
 // since the LuxRender core is fond is using a single Active Context
@@ -55,8 +62,7 @@ boost::mutex ctxMutex;
 // This class is going to wrap lux::Context
 lux_wrapped_context::lux_wrapped_context(const char* _name) : name(_name)
 {
-	luxErrorFilter(LUX_DEBUG);
-	boost::call_once(&luxInit, luxInitFlag);
+	boost::call_once(&luxDllInit, luxDllInitFlag);
 	ctx = new lux::Context(_name);
 }
 lux_wrapped_context::~lux_wrapped_context()
