@@ -49,8 +49,7 @@ boost::once_flag luxDllInitFlag = BOOST_ONCE_INIT;
 
 void luxDllInit()
 {
-	// Init RNG
-	// srand(time(NULL));
+	luxErrorFilter(LUX_DEBUG);
 	luxInit();
 }
 
@@ -276,7 +275,7 @@ void lux_wrapped_context::lookAt(float ex, float ey, float ez, float lx, float l
 {
 	boost::mutex::scoped_lock lock(ctxMutex);
 	checkContext();
-	ctx->LookAt(ex,ey,ez, lx,ly,lx, ux,uy,uz);
+	ctx->LookAt(ex,ey,ez, lx,ly,lz, ux,uy,uz);
 }
 void lux_wrapped_context::makeNamedMaterial(const char *mName, const lux_paramset* params)
 {
@@ -627,18 +626,36 @@ void lux_wrapped_paramset::AddBool(const char* n, const bool * v, unsigned int n
 }
 void lux_wrapped_paramset::AddPoint(const char* n, const float * v, unsigned int nItems)
 {
-	lux::Point* p = new lux::Point(v[0],v[1],v[2]);
-	ps->AddPoint(n, p, nItems);
+	lux::Point* pts = new lux::Point[nItems/3];
+	for(unsigned int i=0; i<nItems; i+=3)
+	{
+		pts[i/3].x = v[i];
+		pts[i/3].y = v[i+1];
+		pts[i/3].z = v[i+2];
+	}
+	ps->AddPoint(n, pts, nItems/3);
 }
 void lux_wrapped_paramset::AddVector(const char* n, const float * v, unsigned int nItems)
 {
-	lux::Vector* vec = new lux::Vector(v[0],v[1],v[2]);
-	ps->AddVector(n, vec, nItems);
+	lux::Vector* vec = new lux::Vector[nItems/3];
+	for(unsigned int i=0; i<nItems; i+=3)
+	{
+		vec[i/3].x = v[i];
+		vec[i/3].y = v[i+1];
+		vec[i/3].z = v[i+2];
+	}
+	ps->AddVector(n, vec, nItems/3);
 }
 void lux_wrapped_paramset::AddNormal(const char* n, const float * v, unsigned int nItems)
 {
-	lux::Normal* nor = new lux::Normal(v[0],v[1],v[2]);
-	ps->AddNormal(n, nor, nItems);
+	lux::Normal* nor = new lux::Normal[nItems/3];
+	for(unsigned int i=0; i<nItems; i+=3)
+	{
+		nor[i/3].x = v[i];
+		nor[i/3].y = v[i+1];
+		nor[i/3].z = v[i+2];
+	}
+	ps->AddNormal(n, nor, nItems/3);
 }
 void lux_wrapped_paramset::AddRGBColor(const char* n, const float * v, unsigned int nItems)
 {
@@ -647,7 +664,7 @@ void lux_wrapped_paramset::AddRGBColor(const char* n, const float * v, unsigned 
 }
 void lux_wrapped_paramset::AddString(const char* n, const char* v, unsigned int nItems)
 {
-	std::string *str = new std::string(v);
+	std::string* str = new std::string(v);
 	ps->AddString(n, str, nItems);
 }
 void lux_wrapped_paramset::AddTexture(const char* n, const char* v)
