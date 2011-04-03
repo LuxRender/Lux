@@ -32,16 +32,7 @@ using namespace std;
 
 AdvancedInfoWidget::AdvancedInfoWidget(QWidget *parent) : QWidget(parent), ui(new Ui::AdvancedInfoWidget)
 {
-	ui->setupUi(this);
-	
-	
-#if defined(__APPLE__)
-	ui->frame_toneMapReinhard->setFont(QFont  ("Lucida Grande", 11));
-	ui->frame_toneMapLinear->setFont(QFont  ("Lucida Grande", 11));
-	ui->frame_toneMapContrast->setFont(QFont  ("Lucida Grande", 11));
-#endif
-	
-	ui->textAdvancedInfo->setText("Yadda yadda");
+	ui->setupUi(this);		
 }
 
 AdvancedInfoWidget::~AdvancedInfoWidget()
