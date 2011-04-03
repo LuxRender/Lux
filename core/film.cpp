@@ -1087,7 +1087,8 @@ static const int FLM_MAGIC_NUMBER = 0xCEBCD816;
 static const int FLM_VERSION = 0; // should be incremented on each change to the format to allow detecting unsupported FLM data!
 enum FlmParameterType {
 	FLM_PARAMETER_TYPE_FLOAT = 0,
-	FLM_PARAMETER_TYPE_STRING = 1
+	FLM_PARAMETER_TYPE_STRING = 1,
+	FLM_PARAMETER_TYPE_DOUBLE = 2,
 };
 
 class FlmParameter {
@@ -1102,12 +1103,16 @@ public:
 				size = 4;
 				floatValue = static_cast<float>(aFilm->GetParameterValue(aParam, aIndex));
 				break;
+			case FLM_PARAMETER_TYPE_DOUBLE:
+				size = 8;
+				floatValue = static_cast<double>(aFilm->GetParameterValue(aParam, aIndex));
+				break;
 			case FLM_PARAMETER_TYPE_STRING:
 				stringValue = aFilm->GetStringParameterValue(aParam, aIndex);
 				size = stringValue.size();
 				break;
 			default: {
-				LOG(LUX_ERROR,LUX_SYSTEM) << "Invalid parameter type (expected value in [0,1], got=" << type << ")";
+				LOG(LUX_ERROR,LUX_SYSTEM) << "Invalid parameter type (expected value in [0,2], got=" << type << ")";
 				break;
 			}
 		}
@@ -1116,6 +1121,9 @@ public:
 	void Set(Film *aFilm) {
 		switch (type) {
 			case FLM_PARAMETER_TYPE_FLOAT:
+				aFilm->SetParameterValue(id, floatValue, index);
+				break;
+			case FLM_PARAMETER_TYPE_DOUBLE:
 				aFilm->SetParameterValue(id, floatValue, index);
 				break;
 			case FLM_PARAMETER_TYPE_STRING:
@@ -1158,6 +1166,13 @@ public:
 				}
 				floatValue = osReadLittleEndianFloat(isLittleEndian, is);
 				break;
+			case FLM_PARAMETER_TYPE_DOUBLE:
+				if (size != 8) {
+					LOG(LUX_ERROR,LUX_SYSTEM) << "Invalid parameter size (expected value for double is 8, received=" << size << ")";
+					return false;
+				}
+				floatValue = osReadLittleEndianDouble(isLittleEndian, is);
+				break;
 			case FLM_PARAMETER_TYPE_STRING: {
 				char* chars = new char[size+1];
 				is.read(chars, size);
@@ -1182,6 +1197,9 @@ public:
 			case FLM_PARAMETER_TYPE_FLOAT:
 				osWriteLittleEndianFloat(isLittleEndian, os, floatValue);
 				break;
+			case FLM_PARAMETER_TYPE_DOUBLE:
+				osWriteLittleEndianDouble(isLittleEndian, os, floatValue);
+				break;
 			case FLM_PARAMETER_TYPE_STRING:
 				os.write(stringValue.c_str(), size);
 				break;
@@ -1197,7 +1215,7 @@ private:
 	luxComponentParameters id;
 	u_int index;
 		
-	float floatValue;
+	double floatValue;
 	string stringValue;
 };
 
