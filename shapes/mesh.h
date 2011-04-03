@@ -76,18 +76,6 @@ public:
 			bool reverseOrientation, const ParamSet &params);
 	};
 
-	class WaldMesh {
-	public:
-		static Shape* CreateShape(const Transform &o2w,
-			bool reverseOrientation, const ParamSet &params);
-	};
-
-	class LoopMesh {
-	public:
-		static Shape* CreateShape(const Transform &o2w,
-			bool reverseOrientation, const ParamSet &params);
-	};
-
 protected:
 	// Lotus - refinement data
 	MeshAccelType accelType;

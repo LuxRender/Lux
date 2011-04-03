@@ -634,10 +634,13 @@ void Mesh::GetShadingGeometry(const Transform &obj2world,
 }
 
 static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const ParamSet &params,
-						   const string& accelTypeStr, const string& triTypeStr,
+						   const string& accelTypeStr, const string& triTypeStr, const string& quadTypeStr,
 						   const int* triIndices, u_int triIndicesCount,
+						   const int* quadIndices, u_int quadIndicesCount,
 						   const float* UV, u_int UVCount,
-						   const string& subdivSchemeStr, u_int nSubdivLevels) {
+						   const string& subdivSchemeStr, u_int nSubdivLevels,
+						   const Point* P, u_int npi,
+						   const Normal* N, u_int nni) {
 	// Lotus - read general data
 	Mesh::MeshAccelType accelType;
 	if (accelTypeStr == "kdtree")
@@ -657,10 +660,6 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 		accelType = Mesh::ACCEL_AUTO;
 	}
 
-	// Dade - read vertex data
-	u_int npi;
-	const Point *P = params.FindPoint("P", &npi);
-
 	// NOTE - lordcrc - Bugfix, pbrt tracker id 0000085: check for correct number of uvs
 	if (UV && (UVCount != npi * 2)) {
 		LOG( LUX_ERROR,LUX_CONSISTENCY)<< "Number of \"UV\"s for mesh must match \"P\"s";
@@ -669,8 +668,6 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 	if (!P)
 		return NULL;
 
-	u_int nni;
-	const Normal *N = params.FindNormal("N", &nni);
 	if (N && (nni != npi)) {
 		LOG( LUX_ERROR,LUX_CONSISTENCY)<< "Number of \"N\"s for mesh must match \"P\"s";
 		N = NULL;
@@ -702,17 +699,14 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 	} else
 		triIndicesCount = 0;
 
-	// Dade - read quad data
+	// Copy quad data
 	Mesh::MeshQuadType quadType;
-	string quadTypeStr = params.FindOneString("quadtype", "quadrilateral");
 	if (quadTypeStr == "quadrilateral") quadType = Mesh::QUAD_QUADRILATERAL;
 	else {
 		LOG(LUX_WARNING,LUX_BADTOKEN) << "Quad type  '" << quadTypeStr << "' unknown. Using \"quadrilateral\".";
 		quadType = Mesh::QUAD_QUADRILATERAL;
 	}
 
-	u_int quadIndicesCount;
-	const int *quadIndices = params.FindInt("quadindices", &quadIndicesCount);
 	if (quadIndices) {
 		for (u_int i = 0; i < quadIndicesCount; ++i) {
 			if (static_cast<u_int>(quadIndices[i]) >= npi) {
@@ -771,78 +765,62 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 		normalSplit);
 }
 
-Shape *Mesh::CreateShape(const Transform &o2w, bool reverseOrientation, const ParamSet &params) {
-	string accelTypeStr = params.FindOneString("acceltype", "auto");
+static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const ParamSet &params,
+						   string accelTypeStr, string triTypeStr) {
+	// Vertex and attributes
+	u_int npi;
+	const Point *P = params.FindPoint("P", &npi);
+	
+	u_int nni;
+	const Normal *N = params.FindNormal("N", &nni);
+	
+	u_int UVCount;
+	const float *UV = params.FindFloat("uv", &UVCount);
+	if (UV == NULL) {
+		UV = params.FindFloat("st", &UVCount);
+	}
 
-	string triTypeStr = params.FindOneString("tritype", "auto");
+	// Triangles
 	u_int triIndicesCount;
 	const int *triIndices = params.FindInt("triindices", &triIndicesCount);
-	u_int uvCoordinatesCount;
-	const float *uvCoordinates = params.FindFloat("uv", &uvCoordinatesCount);
+	if(triIndices == NULL)
+	{
+		triIndices = params.FindInt("indices", &triIndicesCount);
+	}
+ 
+	triTypeStr = params.FindOneString("tritype", triTypeStr);
 
-	string subdivscheme = params.FindOneString("subdivscheme", "loop");
-	int nsubdivlevels = params.FindOneInt("nsubdivlevels", 0);
+	// Quads
+	string quadTypeStr = params.FindOneString("quadtype", "quadrilateral");
+	u_int quadIndicesCount;
+	const int *quadIndices = params.FindInt("quadindices", &quadIndicesCount);
 
-	return ::CreateShape( o2w, reverseOrientation, params, accelTypeStr, triTypeStr,
-		triIndices, triIndicesCount, uvCoordinates, uvCoordinatesCount,
-		subdivscheme, max(0, nsubdivlevels));
+	// Mesh parameters
+	accelTypeStr = params.FindOneString("acceltype", accelTypeStr);
+ 	string subdivscheme = params.FindOneString("subdivscheme", "loop");
+	int nSubdivLevels = max(0, params.FindOneInt("nsubdivlevels", params.FindOneInt("nlevels", 0)));
+
+	return CreateShape(o2w, reverseOrientation, params,
+		accelTypeStr, triTypeStr, quadTypeStr,
+		triIndices, triIndicesCount,
+		quadIndices, quadIndicesCount,
+		UV, UVCount,
+		subdivscheme, nSubdivLevels,
+		P, npi,
+		N, nni);
+}
+
+Shape *Mesh::CreateShape(const Transform &o2w, bool reverseOrientation, const ParamSet &params) {
+	return ::CreateShape( o2w, reverseOrientation, params, "auto", "auto");
 }
 
 static DynamicLoader::RegisterShape<Mesh> r("mesh");
 
 Shape* Mesh::BaryMesh::CreateShape(const Transform &o2w, bool reverseOrientation, const ParamSet &params) {
-	string accelTypeStr = "auto";
-	string triTypeStr = "bary";
-	u_int indicesCount;
-	const int* indices = params.FindInt( "indices", &indicesCount );
-	u_int uvCoordinatesCount;
-	const float *uvCoordinates = params.FindFloat("uv", &uvCoordinatesCount);
-	if (uvCoordinates == NULL) {
-		uvCoordinates = params.FindFloat("st", &uvCoordinatesCount);
-	}
-	return ::CreateShape( o2w, reverseOrientation, params, accelTypeStr, triTypeStr,
-		indices, indicesCount, uvCoordinates, uvCoordinatesCount,
-		"loop", 0U);
+	return ::CreateShape( o2w, reverseOrientation, params, "auto", "bary");
 }
 
 static DynamicLoader::RegisterShape<Mesh::BaryMesh> rbary("barytrianglemesh");
-
-Shape* Mesh::WaldMesh::CreateShape(const Transform &o2w, bool reverseOrientation, const ParamSet &params) {
-	string accelTypeStr = "auto";
-	string triTypeStr = "auto";
-	u_int indicesCount;
-	const int* indices = params.FindInt( "indices", &indicesCount );
-	u_int uvCoordinatesCount;
-	const float *uvCoordinates = params.FindFloat("uv", &uvCoordinatesCount);
-	if (uvCoordinates == NULL) {
-		uvCoordinates = params.FindFloat("st", &uvCoordinatesCount);
-	}
-	return ::CreateShape( o2w, reverseOrientation, params, accelTypeStr, triTypeStr,
-		indices, indicesCount, uvCoordinates, uvCoordinatesCount,
-		"loop", 0U);
-}
-
-static DynamicLoader::RegisterShape<Mesh::WaldMesh> rwald1("waldtrianglemesh");
-static DynamicLoader::RegisterShape<Mesh::WaldMesh> rwald2("trianglemesh");
-
-Shape* Mesh::LoopMesh::CreateShape(const Transform &o2w, bool reverseOrientation, const ParamSet &params) {
-	string accelTypeStr = "auto";
-	string triTypeStr = "auto";
-
-	u_int indicesCount;
-	const int* indices = params.FindInt( "indices", &indicesCount );
-	u_int uvCoordinatesCount;
-	const float *uvCoordinates = params.FindFloat("uv", &uvCoordinatesCount);
-	if (uvCoordinates == NULL) {
-		uvCoordinates = params.FindFloat("st", &uvCoordinatesCount);
-	}
-
-	string subdivscheme = params.FindOneString("scheme", "loop");
-	int nsubdivlevels = params.FindOneInt("nlevels", 3);
-
-	return ::CreateShape( o2w, reverseOrientation, params, accelTypeStr, triTypeStr,
-		indices, indicesCount, uvCoordinates, uvCoordinatesCount,
-		subdivscheme, max(0, nsubdivlevels));
-}
-
-static DynamicLoader::RegisterShape<Mesh::LoopMesh> rloop("loopsubdiv");
+static DynamicLoader::RegisterShape<Mesh> rwald1("waldtrianglemesh");
+static DynamicLoader::RegisterShape<Mesh> rwald2("trianglemesh");
+static DynamicLoader::RegisterShape<Mesh> rloop("loopsubdiv");
