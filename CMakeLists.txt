@@ -894,7 +894,7 @@ IF(PYTHONLIBS_FOUND)
 		IF( NOT CMAKE_VERSION VERSION_LESS 2.8.3) # only cmake >= 2.8.3 supports per target attributes
 		 SET_TARGET_PROPERTIES(pylux PROPERTIES XCODE_ATTRIBUTE_DEPLOYMENT_POSTPROCESSING NO) # exclude pylux from strip symbols
 		ENDIF( NOT CMAKE_VERSION VERSION_LESS 2.8.3)
-		TARGET_LINK_LIBRARIES(pylux -Wl,-undefined -Wl,dynamic_lookup -all_load luxStatic -noall_load ${CMAKE_THREAD_LIBS_INIT} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z bz2  ${SYS_LIBRARIES} ${PYTHON_LIBRARIES} ${Boost_python_LIBRARIES})
+		TARGET_LINK_LIBRARIES(pylux -Wl,-undefined -Wl,dynamic_lookup -all_load luxStatic -noall_load ${CMAKE_THREAD_LIBS_INIT} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} ${SYS_LIBRARIES} ${PYTHON_LIBRARIES} ${Boost_python_LIBRARIES})
 ### if XCode used for compiling ###
 		ADD_CUSTOM_COMMAND(
 			TARGET pylux POST_BUILD
@@ -932,7 +932,7 @@ ENDIF(PYTHONLIBS_FOUND)
 #############################################################################
 ADD_EXECUTABLE(luxconsole console/luxconsole.cpp)
 IF(APPLE)
-	TARGET_LINK_LIBRARIES(luxconsole -Wl,-undefined -Wl,dynamic_lookup -all_load luxStatic -noall_load ${CMAKE_THREAD_LIBS_INIT} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} z ${Boost_LIBRARIES} )
+	TARGET_LINK_LIBRARIES(luxconsole -Wl,-undefined -Wl,dynamic_lookup -all_load luxStatic -noall_load ${CMAKE_THREAD_LIBS_INIT} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${SYS_LIBRARIES} ${Boost_LIBRARIES} )
 ELSE(APPLE)
 	TARGET_LINK_LIBRARIES(luxconsole -Wl,--whole-archive luxStatic -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES}  ${SYS_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARY})
 ENDIF(APPLE)
@@ -942,7 +942,7 @@ ENDIF(APPLE)
 #############################################################################
 ADD_EXECUTABLE(luxmerger tools/luxmerger.cpp)
 IF(APPLE)
-	TARGET_LINK_LIBRARIES(luxmerger -Wl,-undefined -Wl,dynamic_lookup -all_load luxStatic -noall_load ${CMAKE_THREAD_LIBS_INIT} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} z ${Boost_LIBRARIES} )
+	TARGET_LINK_LIBRARIES(luxmerger -Wl,-undefined -Wl,dynamic_lookup -all_load luxStatic -noall_load ${CMAKE_THREAD_LIBS_INIT} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${SYS_LIBRARIES} ${Boost_LIBRARIES} )
 ELSE(APPLE)
 	TARGET_LINK_LIBRARIES(luxmerger -Wl,--whole-archive luxStatic -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES}  ${SYS_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARY})
 ENDIF(APPLE)
@@ -952,7 +952,7 @@ ENDIF(APPLE)
 #############################################################################
 ADD_EXECUTABLE(luxcomp tools/luxcomp.cpp)
 IF(APPLE)
-	TARGET_LINK_LIBRARIES(luxcomp -Wl,-undefined -Wl,dynamic_lookup -all_load luxStatic -noall_load ${CMAKE_THREAD_LIBS_INIT} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} z ${Boost_LIBRARIES} )
+	TARGET_LINK_LIBRARIES(luxcomp -Wl,-undefined -Wl,dynamic_lookup -all_load luxStatic -noall_load ${CMAKE_THREAD_LIBS_INIT} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${SYS_LIBRARIES} ${Boost_LIBRARIES} )
 ELSE(APPLE)
 	TARGET_LINK_LIBRARIES(luxcomp -Wl,--whole-archive luxStatic -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES}  ${SYS_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARY})
 ENDIF(APPLE)
@@ -998,7 +998,7 @@ IF(QT4_FOUND)
 		MARK_AS_ADVANCED (AGL_LIBRARY)
 		MARK_AS_ADVANCED (APP_SERVICES_LIBRARY)
 		SET(EXTRA_LIBS ${CARBON_LIBRARY} ${QT_LIBRARY} ${AGL_LIBRARY} ${APP_SERVICES_LIBRARY})
-		TARGET_LINK_LIBRARIES(luxrender -Wl,-undefined -Wl,dynamic_lookup -all_load luxStatic -noall_load ${QT_LIBRARIES} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${BZ2_LIBRARIES} )
+		TARGET_LINK_LIBRARIES(luxrender -Wl,-undefined -Wl,dynamic_lookup -all_load luxStatic -noall_load ${QT_LIBRARIES} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} ${SYS_LIBRARIES} )
 ### if XCode used for compiling ###
 		ADD_CUSTOM_COMMAND(
 			TARGET luxrender POST_BUILD
