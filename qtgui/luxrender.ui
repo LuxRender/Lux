@@ -1235,9 +1235,6 @@
    <property name="shortcutContext">
     <enum>Qt::ApplicationShortcut</enum>
    </property>
-   <property name="menuRole">
-    <enum>QAction::QuitRole</enum>
-   </property>
   </action>
   <action name="action_exitApp">
    <property name="text">
