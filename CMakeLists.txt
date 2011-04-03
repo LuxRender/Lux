@@ -644,6 +644,7 @@ SET(lux_shapes_src
 	shapes/plymesh.cpp
 	shapes/plymesh/rply.c
 	shapes/sphere.cpp
+	shapes/stlmesh.cpp
 	shapes/torus.cpp
 	)
 SET(lux_spds_src
