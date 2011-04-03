@@ -769,6 +769,7 @@ SET( LUXQTGUI_SRCS
 	qtgui/renderview.cpp
 	qtgui/luxapp.cpp
 	qtgui/aboutdialog.cpp
+	qtgui/advancedinfowidget.cpp
 	qtgui/lightgroupwidget.cpp
 	qtgui/tonemapwidget.cpp
 	qtgui/lenseffectswidget.cpp
@@ -785,6 +786,7 @@ SET( LUXQTGUI_MOC
 	qtgui/histogramview.hxx
 	qtgui/mainwindow.hxx
 	qtgui/aboutdialog.hxx
+	qtgui/advancedinfowidget.hxx
 	qtgui/luxapp.hxx
 	qtgui/renderview.hxx
 	qtgui/lightgroupwidget.hxx
@@ -801,6 +803,7 @@ SET( LUXQTGUI_MOC
 SET(LUXQTGUI_UIS
 	qtgui/luxrender.ui
 	qtgui/aboutdialog.ui
+	qtgui/advancedinfo.ui
 	qtgui/lightgroup.ui
 	qtgui/tonemap.ui
 	qtgui/lenseffects.ui

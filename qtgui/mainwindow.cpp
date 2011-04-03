@@ -198,7 +198,9 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	panes[3] = new PaneWidget(ui->panesAreaContents, "HDR Histogram", ":/icons/histogramicon.png");
 	panes[4] = new PaneWidget(ui->panesAreaContents, "Lens Effects", ":/icons/lenseffectsicon.png", true);
 	panes[5] = new PaneWidget(ui->panesAreaContents, "Noise Reduction", ":/icons/noisereductionicon.png", true);
-	
+
+	advpanes[0] = new PaneWidget(ui->advancedAreaContents, "Scene information", ":/icons/logtabicon.png");
+
 #if defined(__APPLE__)
 	ui->outputTabs->setFont(QFont  ("Lucida Grande", 11));
 #endif
@@ -243,7 +245,17 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	
 	ui->panesLayout->setAlignment(Qt::AlignTop);
 	ui->panesLayout->addItem(new QSpacerItem( 20, 20, QSizePolicy::Minimum, QSizePolicy::Expanding));
+
+	// Advanced info
+	advancedinfowidget = new AdvancedInfoWidget(advpanes[0]);
+	advpanes[0]->setWidget(advancedinfowidget);
+	ui->advancedLayout->addWidget(advpanes[0]);
+	advpanes[0]->expand();
+	//connect(noisereductionwidget, SIGNAL(valuesChanged()), this, SLOT(toneMapParamsChanged()));
 	
+	ui->advancedLayout->setAlignment(Qt::AlignTop);
+	ui->advancedLayout->addItem(new QSpacerItem( 20, 20, QSizePolicy::Minimum, QSizePolicy::Expanding));
+
 	ui->lightGroupsLayout->setAlignment(Qt::AlignTop);
 	spacer = new QSpacerItem( 20, 20, QSizePolicy::Expanding, QSizePolicy::Expanding);
 
@@ -1900,6 +1912,7 @@ void MainWindow::updateTonemapWidgetValues()
 	colorspacewidget->updateWidgetValues();
 	gammawidget->updateWidgetValues();
 	noisereductionwidget->updateWidgetValues();
+	advancedinfowidget->updateWidgetValues();
 
 	// Histogram
 	histogramwidget->SetEnabled(true);

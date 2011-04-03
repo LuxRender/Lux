@@ -63,6 +63,7 @@
 #include "gammawidget.hxx"
 #include "noisereductionwidget.hxx"
 #include "histogramwidget.hxx"
+#include "advancedinfowidget.hxx"
 
 #define FLOAT_SLIDER_RES 512.f
 
@@ -197,12 +198,17 @@ private:
 
 	PaneWidget *panes[NumPanes];
 
+	enum { NumAdvPanes = 1 };
+
+	PaneWidget *advpanes[NumAdvPanes];
+
 	ToneMapWidget *tonemapwidget;
 	LensEffectsWidget *lenseffectswidget;
 	ColorSpaceWidget *colorspacewidget;
 	GammaWidget *gammawidget;
 	NoiseReductionWidget *noisereductionwidget;
 	HistogramWidget *histogramwidget;
+	AdvancedInfoWidget *advancedinfowidget;
 
 	QVector<PaneWidget*> m_LightGroupPanes;
 
