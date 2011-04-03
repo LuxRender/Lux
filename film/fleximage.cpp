@@ -86,6 +86,7 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, u_int filtRes
 	// AddIntAttribute(*this, "write_EXR_ZBuf_normalizationtype", "EXR Z-buffer normalization type { 0: None, 1: Camera Start/End, 2: Min/Max }", 0, &FlexImageFilm::write_EXR_ZBuf_normalizationtype, Queryable::ReadWriteAccess);
 
 	write_PNG = cw_PNG;
+	AddBoolAttribute(*this, "write_PNG", "Write PNG image", write_PNG, &FlexImageFilm::write_PNG, Queryable::ReadWriteAccess);
 	write_PNG_16bit = cw_PNG_16bit;
 	write_PNG_gamutclamp = cw_PNG_gamutclamp;
 	write_PNG_ZBuf = cw_PNG_ZBuf;
