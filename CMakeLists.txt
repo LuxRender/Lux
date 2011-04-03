@@ -1043,17 +1043,16 @@ ENDIF(QT4_FOUND)
 #############################################################################
 
 #Install target
-IF(APPLE)
-	INSTALL(TARGETS luxconsole luxmerger RUNTIME DESTINATION bin)
-	IF(QT4_FOUND)
-		INSTALL(TARGETS luxrender BUNDLE DESTINATION bin)
-	ENDIF(QT4_FOUND)
+IF(APPLE) # deactivate temporary, in the works
+#	INSTALL(TARGETS luxconsole luxmerger RUNTIME DESTINATION bin)
+#	IF(QT4_FOUND)
+#		INSTALL(TARGETS luxrender BUNDLE DESTINATION bin)
+#	ENDIF(QT4_FOUND)
 ELSE(APPLE)
 	INSTALL(TARGETS luxconsole luxmerger RUNTIME DESTINATION bin)
 	IF(QT4_FOUND)
 		INSTALL(TARGETS luxrender RUNTIME DESTINATION bin)
 	ENDIF(QT4_FOUND)
-ENDIF(APPLE)
 
 #Install API/Library
 INSTALL(FILES ${CMAKE_SOURCE_DIR}/core/api.h DESTINATION include/luxrender/)
@@ -1075,7 +1074,7 @@ ADD_CUSTOM_TARGET(package mkdir lux-${VERSION}
 	DEPENDS ${lux_lib_src}
 	COMMENT Building source package
 )
-
+ENDIF(APPLE)
 # Dade - GCC Profiling (remember to uncomment the line in the middle of file too)
 #SET_TARGET_PROPERTIES(luxconsole luxmerger luxrender PROPERTIES LINK_FLAGS "-pg")
 
