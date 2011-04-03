@@ -32,7 +32,10 @@ namespace lux
 class EmissionIntegrator : public VolumeIntegrator {
 public:
 	// EmissionIntegrator Public Methods
-	EmissionIntegrator(float ss, u_int g) : group(g) { stepSize = ss; }
+	EmissionIntegrator(float ss, u_int g) 
+		: VolumeIntegrator(), group(g), stepSize(ss) { 
+		AddStringConstant(*this, "name", "Name of current volume integrator", "single");
+	}
 	virtual ~EmissionIntegrator() { }
 	virtual void RequestSamples(Sample *sample, const Scene &scene);
 	virtual void Transmittance(const Scene &, const Ray &ray,

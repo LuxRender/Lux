@@ -33,8 +33,9 @@
 using namespace lux;
 
 // DirectLightingIntegrator Method Definitions
-DirectLightingIntegrator::DirectLightingIntegrator(u_int md) {
+DirectLightingIntegrator::DirectLightingIntegrator(u_int md) : SurfaceIntegrator() {
 	maxDepth = md;
+	AddStringConstant(*this, "name", "Name of current surface integrator", "directlighting");	
 }
 
 void DirectLightingIntegrator::RequestSamples(Sample *sample, const Scene &scene) {

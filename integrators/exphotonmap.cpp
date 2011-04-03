@@ -42,7 +42,7 @@ ExPhotonIntegrator::ExPhotonIntegrator(RenderingMode rm,
 	u_int mdepth, u_int mpdepth, float mdist, bool fg, u_int gs, float ga,
 	PhotonMapRRStrategy rrstrategy, float rrcontprob, float distThreshold,
 	string *mapsfn, bool dbgEnableDirect, bool dbgUseRadianceMap,
-	bool dbgEnableCaustic, bool dbgEnableIndirect, bool dbgEnableSpecular)
+	bool dbgEnableCaustic, bool dbgEnableIndirect, bool dbgEnableSpecular) : SurfaceIntegrator()
 {
 	renderingMode = rm;
 
@@ -73,6 +73,8 @@ ExPhotonIntegrator::ExPhotonIntegrator(RenderingMode rm,
 	debugEnableCaustic = dbgEnableCaustic;
 	debugEnableIndirect = dbgEnableIndirect;
 	debugEnableSpecular = dbgEnableSpecular;
+
+	AddStringConstant(*this, "name", "Name of current surface integrator", "exphotonmap");
 }
 
 ExPhotonIntegrator::~ExPhotonIntegrator()

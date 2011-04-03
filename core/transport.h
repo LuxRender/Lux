@@ -23,6 +23,7 @@
 #ifndef LUX_TRANSPORT_H
 #define LUX_TRANSPORT_H
 // transport.h*
+#include "queryable.h"
 #include "lux.h"
 #include "spectrum.h"
 
@@ -47,8 +48,9 @@ public:
 	virtual bool Init(const Scene &scene) = 0;
 };
 
-class SurfaceIntegrator : public Integrator {
+class SurfaceIntegrator : public Integrator, public Queryable {
 public:
+	SurfaceIntegrator() : Queryable("surfaceintegrator") { }
 	virtual ~SurfaceIntegrator() { }
 	virtual u_int Li(const Scene &scene, const Sample &sample) const = 0;
 
@@ -69,8 +71,9 @@ public:
 	}
 };
 
-class VolumeIntegrator : public Integrator {
+class VolumeIntegrator : public Integrator, public Queryable {
 public:
+	VolumeIntegrator() : Queryable("volumeintegrator") { }
 	virtual ~VolumeIntegrator() { }
 	virtual u_int Li(const Scene &scene, const Ray &ray,
 		const Sample &sample, SWCSpectrum *L, float *alpha) const = 0;

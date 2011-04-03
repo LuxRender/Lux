@@ -54,13 +54,14 @@ SWCSpectrum VirtualLight::GetSWCSpectrum(const SpectrumWavelengths &sw) const
 }
 
 // IGIIntegrator Implementation
-IGIIntegrator::IGIIntegrator(u_int nl, u_int ns, u_int d, float gl)
+IGIIntegrator::IGIIntegrator(u_int nl, u_int ns, u_int d, float gl) : SurfaceIntegrator()
 {
 	nLightPaths = RoundUpPow2(nl);
 	nLightSets = RoundUpPow2(ns);
 	gLimit = gl;
 	maxSpecularDepth = d;
 	virtualLights.resize(nLightSets);
+	AddStringConstant(*this, "name", "Name of current surface integrator", "igi");
 }
 void IGIIntegrator::RequestSamples(Sample *sample, const Scene &scene)
 {

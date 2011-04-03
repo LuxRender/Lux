@@ -37,7 +37,7 @@ using namespace lux;
 DistributedPath::DistributedPath(LightStrategy st, bool da, u_int ds, bool dd, bool dg, bool ida, u_int ids, bool idd, bool idg,
 	u_int drd, u_int drs, u_int dtd, u_int dts, u_int grd, u_int grs, u_int gtd, u_int gts, u_int srd, u_int std,
 	bool drer, float drert, bool drfr, float drfrt,
-	bool grer, float grert, bool grfr, float grfrt) {
+	bool grer, float grert, bool grfr, float grfrt) : SurfaceIntegrator() {
 	lightStrategy = st;
 
 	directAll = da;
@@ -67,6 +67,8 @@ DistributedPath::DistributedPath(LightStrategy st, bool da, u_int ds, bool dd, b
 	glossyreflectReject_thr = grert;
 	glossyrefractReject = grfr;
 	glossyrefractReject_thr = grfrt;
+
+	AddStringConstant(*this, "name", "Name of current surface integrator", "distributedpath");
 }
 
 void DistributedPath::RequestSamples(Sample *sample, const Scene &scene) {
