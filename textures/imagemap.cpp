@@ -117,6 +117,8 @@ Texture<float> *ImageFloatTexture::CreateFloatTexture(const Transform &tex2world
 	return tex;
 }
 
+RGBIllumSPD ImageSpectrumTexture::whiteRGBIllum;
+
 Texture<SWCSpectrum> *ImageSpectrumTexture::CreateSWCSpectrumTexture(const Transform &tex2world,
 	const ParamSet &tp)
 {
