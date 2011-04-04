@@ -7,7 +7,7 @@
 namespace lux
 {
 
-// PlyMesh Declarations
+// StlMesh Declarations
 class StlMesh {
 public:
 	// StlMesh Public Methods
