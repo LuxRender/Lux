@@ -28,6 +28,7 @@
 #include "imagereader.h"
 #include "paramset.h"
 #include "error.h"
+#include "rgbillum.h"
 #include <map>
 using std::map;
 
@@ -157,7 +158,7 @@ public:
 		const string &filename, int discardmm, float maxAniso,
 		ImageWrap wrapMode, float gain, float gamma) :
 		ImageTexture(m, type, filename, discardmm, maxAniso, wrapMode,
-			gain, gamma) { }
+			gain, gamma), isIlluminant(false) { }
 
 	virtual ~ImageSpectrumTexture() { }
 
@@ -165,13 +166,18 @@ public:
 		const DifferentialGeometry &dg) const {
 		float s, t;
 		mapping->Map(dg, &s, &t);
-		return mipmap->LookupSpectrum(sw, s, t);
+		if (isIlluminant)
+			return SWCSpectrum(sw, whiteRGBIllum) * mipmap->LookupSpectrum(sw, s, t);
+		else
+			return mipmap->LookupSpectrum(sw, s, t);
 	}
 	virtual float Y() const {
-		return mipmap->LookupFloat(CHANNEL_WMEAN, .5f, .5f, .5f);
+		return (isIlluminant ? whiteRGBIllum.Y() : 1.f) * 
+			mipmap->LookupFloat(CHANNEL_WMEAN, .5f, .5f, .5f);
 	}
 	virtual float Filter() const {
-		return mipmap->LookupFloat(CHANNEL_MEAN, .5f, .5f, .5f);
+		return (isIlluminant ? whiteRGBIllum.Filter() : 1.f) *
+			mipmap->LookupFloat(CHANNEL_MEAN, .5f, .5f, .5f);
 	}
 	virtual void GetDuv(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg, float delta,
@@ -184,7 +190,14 @@ public:
 		*dv = ds * dsdv + dt * dtdv;
 	}
 
+	virtual void SetIlluminant() {
+		isIlluminant = true;
+	}
+
+	static RGBIllumSPD whiteRGBIllum;
 	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const ParamSet &tp);
+private:
+	bool isIlluminant;
 };
 
 // ImageTexture Method Definitions
