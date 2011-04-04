@@ -28,7 +28,7 @@
 class  Timer {
 public:
 	// Public Timer Methods
-	Timer() : running(false), elapsed(0.0) { };
+	Timer() : elapsed(0.0), running(false) { };
 	~Timer() { };
 	
 	void Start();

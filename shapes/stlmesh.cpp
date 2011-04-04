@@ -1,12 +1,17 @@
 #include "stlmesh.h"
 
-#include <limits.h>
-#include <float.h>
 #include "paramset.h"
 #include "context.h"
 #include "dynload.h"
 #include "mesh.h"
 
+#include <climits>
+#include <cfloat>
+#include <cstdio>
+using std::fopen;
+using std::fclose;
+using std::fread;
+using std::ftell;
 #include <boost/cstdint.hpp>
 using boost::uint8_t;
 using boost::uint16_t;

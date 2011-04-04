@@ -234,7 +234,7 @@ InfiniteAreaLight::InfiniteAreaLight(const Transform &light2world,
 	mapping = m;
 	radianceMap = NULL;
 	if (texmap != "") {
-		auto_ptr<ImageData> imgdata(ReadImage(texmap));
+		std::auto_ptr<ImageData> imgdata(ReadImage(texmap));
 		if (imgdata.get() != NULL)
 			radianceMap = imgdata->createMIPMap(BILINEAR, 8.f,
 				TEXTURE_REPEAT, 1.f, gamma);

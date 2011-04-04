@@ -200,7 +200,7 @@ inline boost::shared_ptr<MIPMap> ImageTexture::GetTexture(ImageTextureFilterType
 		return textures[texInfo];
 	}
 	int width, height;
-	auto_ptr<ImageData> imgdata(ReadImage(filename));
+	std::auto_ptr<ImageData> imgdata(ReadImage(filename));
 	boost::shared_ptr<MIPMap> ret;
 	if (imgdata.get() != NULL) {
 		width=imgdata->getWidth();

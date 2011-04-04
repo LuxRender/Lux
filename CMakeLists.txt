@@ -604,11 +604,6 @@ SET(lux_pixelsamplers_src
 	pixelsamplers/tilepx.cpp
 	pixelsamplers/vegas.cpp
 	)
-if(LUXRAYS_DISABLE_OPENCL)
-SET(lux_renderers_src
-	renderers/samplerrenderer.cpp
-	)
-else(LUXRAYS_DISABLE_OPENCL)
 SET(lux_renderers_src
 	renderers/hybridrenderer.cpp
 	renderers/hybridsamplerrenderer.cpp
@@ -619,7 +614,6 @@ SET(lux_renderers_src
 	renderers/hybridsppm/kdtree.cpp
 	renderers/samplerrenderer.cpp
 	)
-endif(LUXRAYS_DISABLE_OPENCL)
 SET(lux_samplers_src
 	samplers/erpt.cpp
 	samplers/lowdiscrepancy.cpp

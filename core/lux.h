@@ -146,6 +146,7 @@ namespace lux
   class Aggregate;
   class Intersection;
   class ImageData;
+  class MIPMap;
   class SWCSpectrum;
   class SpectrumWavelengths;
   class RGBColor;

@@ -125,7 +125,7 @@ InfiniteAreaLightIS::InfiniteAreaLightIS(const Transform &light2world,
 	uvDistrib = NULL;
 	u_int nu = 0, nv = 0;
 	if (texmap != "") {
-		auto_ptr<ImageData> imgdata(ReadImage(texmap));
+		std::auto_ptr<ImageData> imgdata(ReadImage(texmap));
 		if (imgdata.get() != NULL) {
 			nu = imgdata->getWidth();
 			nv = imgdata->getHeight();
