@@ -153,6 +153,7 @@ int VolumeIntegrator::Connect(const Scene &scene, const Sample &sample,
 	const Ray &ray, const luxrays::RayHit &rayHit,
 	SWCSpectrum *f, float *pdf, float *pdfR) const
 {
+	const float maxt = ray.maxt;
 	BSDF *bsdf;
 	Intersection isect;
 	float spdf, spdfBack;
@@ -178,6 +179,7 @@ int VolumeIntegrator::Connect(const Scene &scene, const Sample &sample,
 		*pdfR *= bsdf->Pdf(sample.swl, -d, d) * spdf;
 
 	ray.mint = rayHit.t + MachineEpsilon::E(rayHit.t);
+	ray.maxt = maxt;
 	return 0;
 }
 
