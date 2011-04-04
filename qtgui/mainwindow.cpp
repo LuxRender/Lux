@@ -173,6 +173,7 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	connect(ui->button_pause, SIGNAL(clicked()), this, SLOT(pauseRender()));
 	connect(ui->action_stopRender, SIGNAL(triggered()), this, SLOT(stopRender()));
 	connect(ui->button_stop, SIGNAL(clicked()), this, SLOT(stopRender()));
+	connect(ui->action_endRender, SIGNAL(triggered()), this, SLOT(endRender()));
 	
 	// View menu slots
 	connect(ui->action_copyLog, SIGNAL(triggered()), this, SLOT(copyLog()));
@@ -743,12 +744,29 @@ void MainWindow::stopRender()
 		if (!m_statsTimer->isActive())
 			m_statsTimer->start(1000);
 
-		// Make sure lux core stops
+		// Make sure lux core halts
+		int haltspp = luxGetIntAttribute("film", "haltSamplesPerPixel");
+		luxSetHaltSamplesPerPixel(haltspp, true, true);
+		
+		statusMessage->setText(tr("Waiting for render threads to stop."));
+		changeRenderState(STOPPING);
+	}
+}
+
+void MainWindow::endRender()
+{
+	if ((m_guiRenderState == RENDERING || m_guiRenderState == PAUSED) && m_guiRenderState != TONEMAPPING) {
+		m_renderTimer->stop();
+		// Leave stats timer running so we know when threads stopped
+		if (!m_statsTimer->isActive())
+			m_statsTimer->start(1000);
+
+		// Make sure lux core shuts down
 		int haltspp = luxGetIntAttribute("film", "haltSamplesPerPixel");
 		luxSetHaltSamplesPerPixel(haltspp, true, false);
 		
 		statusMessage->setText(tr("Waiting for render threads to stop."));
-		changeRenderState(STOPPING);
+		changeRenderState(ENDING);
 	}
 }
 
@@ -1436,6 +1454,7 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			ui->action_pauseRender->setEnabled (false);
 			ui->button_stop->setEnabled (false);
 			ui->action_stopRender->setEnabled (false);
+			ui->action_endRender->setEnabled (false);
 			ui->button_copyToClipboard->setEnabled (false);
 			ui->action_outputTonemapped->setEnabled (false);
 			ui->action_outputHDR->setEnabled (false);
@@ -1454,6 +1473,7 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			ui->action_pauseRender->setEnabled(false);
 			ui->button_stop->setEnabled (false);
 			ui->action_stopRender->setEnabled(false);
+			ui->action_endRender->setEnabled (false);
 			ui->button_copyToClipboard->setEnabled (false);
 			ui->action_outputTonemapped->setEnabled (false);
 			ui->action_outputHDR->setEnabled (false);
@@ -1472,6 +1492,7 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			ui->action_pauseRender->setEnabled (true);
 			ui->button_stop->setEnabled (true);
 			ui->action_stopRender->setEnabled (true);
+			ui->action_endRender->setEnabled (true);
 			ui->button_copyToClipboard->setEnabled (true);
 			ui->action_outputTonemapped->setEnabled (true);
 			ui->action_outputHDR->setEnabled (true);
@@ -1488,6 +1509,7 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			ui->action_pauseRender->setEnabled (false);
 			ui->button_stop->setEnabled (false);
 			ui->action_stopRender->setEnabled (false);
+			ui->action_endRender->setEnabled (false);
 			ui->button_copyToClipboard->setEnabled (true);
 			ui->action_outputTonemapped->setEnabled (true);
 			ui->action_outputHDR->setEnabled (true);
@@ -1505,6 +1527,7 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			ui->action_pauseRender->setEnabled (false);
 			ui->button_stop->setEnabled (false);
 			ui->action_stopRender->setEnabled (false);
+			ui->action_endRender->setEnabled (false);
 			ui->button_copyToClipboard->setEnabled (true);
 			ui->action_outputTonemapped->setEnabled (true);
 			ui->action_outputHDR->setEnabled (true);
@@ -1514,12 +1537,13 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			break;
 		case STOPPED:
 			// Rendering is stopped.
-			ui->button_resume->setEnabled (false);
-			ui->action_resumeRender->setEnabled (false);
+			ui->button_resume->setEnabled (true);
+			ui->action_resumeRender->setEnabled (true);
 			ui->button_pause->setEnabled (false);
 			ui->action_pauseRender->setEnabled (false);
 			ui->button_stop->setEnabled (false);
 			ui->action_stopRender->setEnabled (false);
+			ui->action_endRender->setEnabled (false);
 			ui->button_copyToClipboard->setEnabled (true);
 			ui->action_outputTonemapped->setEnabled (true);
 			ui->action_outputHDR->setEnabled (true);
@@ -1528,14 +1552,48 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			ui->action_batchProcess->setEnabled (true);
 			activityMessage->setText("Render is stopped");
 			break;
+		case ENDING:
+			// Rendering is ending.
+			ui->button_resume->setEnabled (false);
+			ui->action_resumeRender->setEnabled (false);
+			ui->button_pause->setEnabled (false);
+			ui->action_pauseRender->setEnabled (false);
+			ui->button_stop->setEnabled (false);
+			ui->action_stopRender->setEnabled (false);
+			ui->action_endRender->setEnabled (false);
+			ui->button_copyToClipboard->setEnabled (true);
+			ui->action_outputTonemapped->setEnabled (true);
+			ui->action_outputHDR->setEnabled (true);
+			ui->action_outputBufferGroupsTonemapped->setEnabled (true);
+			ui->action_outputBufferGroupsHDR->setEnabled (true);
+			ui->action_batchProcess->setEnabled (false);
+			break;
+		case ENDED:
+			// Rendering has ended.
+			ui->button_resume->setEnabled (false);
+			ui->action_resumeRender->setEnabled (false);
+			ui->button_pause->setEnabled (false);
+			ui->action_pauseRender->setEnabled (false);
+			ui->button_stop->setEnabled (false);
+			ui->action_stopRender->setEnabled (false);
+			ui->action_endRender->setEnabled (false);
+			ui->button_copyToClipboard->setEnabled (true);
+			ui->action_outputTonemapped->setEnabled (true);
+			ui->action_outputHDR->setEnabled (true);
+			ui->action_outputBufferGroupsTonemapped->setEnabled (true);
+			ui->action_outputBufferGroupsHDR->setEnabled (true);
+			ui->action_batchProcess->setEnabled (true);
+			activityMessage->setText("Render is over");
+			break;
 		case PAUSED:
 			// Rendering is paused.
 			ui->button_resume->setEnabled (true);
 			ui->action_resumeRender->setEnabled (true);
 			ui->button_pause->setEnabled (false);
 			ui->action_pauseRender->setEnabled (false);
-			ui->button_stop->setEnabled (true);
-			ui->action_stopRender->setEnabled (true);
+			ui->button_stop->setEnabled (false);
+			ui->action_stopRender->setEnabled (false);
+			ui->action_endRender->setEnabled (false);
 			ui->button_copyToClipboard->setEnabled (true);
 			ui->action_outputTonemapped->setEnabled (true);
 			ui->action_outputHDR->setEnabled (true);
@@ -1778,7 +1836,8 @@ void MainWindow::statsTimeout()
 {
 	if(luxStatistics("sceneIsReady") || luxStatistics("filmIsReady")) {
 		updateStatistics();
-		if ((m_guiRenderState == STOPPING || m_guiRenderState == FINISHED) && luxStatistics("samplesSec") == 0.0) {
+		if ((m_guiRenderState == STOPPING || m_guiRenderState == ENDING || m_guiRenderState == FINISHED) 
+			&& luxStatistics("samplesSec") == 0.0) {
 			// Render threads stopped, do one last render update
 			LOG(LUX_INFO,LUX_NOERROR)<< tr("GUI: Updating framebuffer...").toLatin1().data();
 			statusMessage->setText(tr("Tonemapping..."));
@@ -1787,12 +1846,15 @@ void MainWindow::statsTimeout()
 			delete m_updateThread;
 			m_updateThread = new boost::thread(boost::bind(&MainWindow::updateThread, this));
 			m_statsTimer->stop();
-			luxPause();
+			//luxPause();
 			if (m_guiRenderState == FINISHED)
 				LOG(LUX_INFO,LUX_NOERROR)<< tr("Rendering finished.").toLatin1().data();
-			else {
+			else if (m_guiRenderState == STOPPING) {
 				LOG(LUX_INFO,LUX_NOERROR)<< tr("Rendering stopped by user.").toLatin1().data();
 				changeRenderState(STOPPED);
+			} else { //if (m_guiRenderState == ENDING) {
+				LOG(LUX_INFO,LUX_NOERROR)<< tr("Rendering ended by user.").toLatin1().data();
+				changeRenderState(ENDED);
 			}
 		}
 		

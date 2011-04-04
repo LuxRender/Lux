@@ -1132,6 +1132,7 @@
     <addaction name="action_resumeRender"/>
     <addaction name="action_pauseRender"/>
     <addaction name="action_stopRender"/>
+    <addaction name="action_endRender"/>
    </widget>
    <widget class="QMenu" name="menu_view">
     <property name="title">
@@ -1284,6 +1285,16 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Alt+S</string>
+   </property>
+  </action>
+  <action name="action_endRender">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/icons/stopicon.png</normaloff>:/icons/powerofficon.png
+    </iconset>
+   </property>
+   <property name="text">
+    <string>End rendering</string>
    </property>
   </action>
   <action name="action_viewToolbar">

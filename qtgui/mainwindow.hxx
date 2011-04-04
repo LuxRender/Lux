@@ -83,6 +83,8 @@ enum LuxGuiRenderState
 	RENDERING,
 	STOPPING,
 	STOPPED,
+	ENDING,
+	ENDED,
 	PAUSED,
 	FINISHED,
 	TONEMAPPING // tonemapping an FLM file (not really a 'render' state)
@@ -293,6 +295,7 @@ private slots:
 	void resumeRender ();
 	void pauseRender ();
 	void stopRender ();
+	void endRender ();
 	void outputTonemapped ();
 	void outputHDR ();
 	void outputBufferGroupsTonemapped ();
