@@ -113,22 +113,44 @@ private:
 class  TextureMapping3D {
 public:
 	// TextureMapping3D Interface
+	TextureMapping3D(const Transform &x) : WorldToTexture(x) { }
 	virtual ~TextureMapping3D() { }
 	virtual Point Map(const DifferentialGeometry &dg) const = 0;
 	virtual Point MapDuv(const DifferentialGeometry &dg,
 		Vector *dpdu, Vector *dpdv) const = 0;
-};
-class  IdentityMapping3D : public TextureMapping3D {
-public:
-	IdentityMapping3D(const Transform &x)
-		: WorldToTexture(x) { }
-	virtual ~IdentityMapping3D() { }
-	virtual Point Map(const DifferentialGeometry &dg) const;
-	virtual Point MapDuv(const DifferentialGeometry &dg,
-		Vector *dpdu, Vector *dpdv) const;
 	void Apply3DTextureMappingOptions(const ParamSet &tp);
 //private:
 	Transform WorldToTexture;
+};
+// 3D base: global, object (from original), uv (from dupli),
+// original coords (from dupli), sticky, window, normal, reflection, stress,
+// tangent
+// 3D->2D (except for UV and window): flat, cube, tube, sphere
+// matrix
+// process: 3Dbase->matrix->3D2D
+class GlobalMapping3D : public TextureMapping3D {
+public:
+	GlobalMapping3D(const Transform &x) : TextureMapping3D(x) { }
+	virtual ~GlobalMapping3D() { }
+	virtual Point Map(const DifferentialGeometry &dg) const;
+	virtual Point MapDuv(const DifferentialGeometry &dg,
+		Vector *dpdu, Vector *dpdv) const;
+};
+class LocalMapping3D : public TextureMapping3D {
+public:
+	LocalMapping3D(const Transform &x) : TextureMapping3D(x) { }
+	virtual ~LocalMapping3D() { }
+	virtual Point Map(const DifferentialGeometry &dg) const;
+	virtual Point MapDuv(const DifferentialGeometry &dg,
+		Vector *dpdu, Vector *dpdv) const;
+};
+class  UVMapping3D : public TextureMapping3D {
+public:
+	UVMapping3D(const Transform &x) : TextureMapping3D(x) { }
+	virtual ~UVMapping3D() { }
+	virtual Point Map(const DifferentialGeometry &dg) const;
+	virtual Point MapDuv(const DifferentialGeometry &dg,
+		Vector *dpdu, Vector *dpdv) const;
 };
 class  EnvironmentMapping {
 public:

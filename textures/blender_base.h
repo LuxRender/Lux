@@ -34,9 +34,19 @@ public:
 	virtual ~BlenderTexture3D() { }
 
 	BlenderTexture3D(const Transform &tex2world, const ParamSet &tp,
-		short type) : mapping(tex2world) {
+		short type) {
+		// Read mapping coordinates
+		string coords = tp.FindOneString("coordinates", "global");
+		if (coords == "global")
+			mapping = new GlobalMapping3D(tex2world);
+		else if (coords == "local")
+			mapping = new LocalMapping3D(tex2world);
+		else if (coords == "uv")
+			mapping = new UVMapping3D(tex2world);
+		else
+			mapping = new GlobalMapping3D(tex2world);
 		// Apply texture specified transformation option for 3D mapping
-		mapping.Apply3DTextureMappingOptions(tp);
+		mapping->Apply3DTextureMappingOptions(tp);
 		tex1 = tp.GetFloatTexture("tex1", 0.f);
 		tex2 = tp.GetFloatTexture("tex2", 1.f);
 		tex.type = type;
@@ -49,7 +59,7 @@ public:
 
 	virtual float Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
-		const Point P = mapping.Map(dg);
+		const Point P = mapping->Map(dg);
 		const float t1 = tex1->Evaluate(sw, dg);
 		const float t2 = tex2->Evaluate(sw, dg);
 
@@ -98,7 +108,7 @@ protected:
 	static short GetNoiseBasis(const string &name);
 	static short GetNoiseShape(const string &name);
 	// BlenderBlendTexture3D Private Data
-	IdentityMapping3D mapping;
+	TextureMapping3D *mapping;
 	boost::shared_ptr<Texture<float> > tex1, tex2;
 	blender::Tex tex;
 };

@@ -35,7 +35,8 @@ void BlenderTexture3D::GetDuv(const SpectrumWavelengths &sw,
 	const DifferentialGeometry &dg, float delta, float *du, float *dv) const
 {
 	// Calculate values at intersection point (copy of Evaluate)
-	const Point P(mapping.Map(dg));
+	Vector dpdu, dpdv;
+	const Point P(mapping->MapDuv(dg, &dpdu, &dpdv));
 
 	const float a = GetF(P);
 
@@ -45,26 +46,14 @@ void BlenderTexture3D::GetDuv(const SpectrumWavelengths &sw,
 	tex2->GetDuv(sw, dg, delta, &du2, &dv2);
 
 	// Compute offset positions and evaluate displacement texture
-	DifferentialGeometry dgTemp = dg;
-	const Point origP(dgTemp.p);
-	const Normal origN(dgTemp.nn);
-	const float origU = dgTemp.u;
-
-	// Shift _dgTemp_ _du_ in the $u$ direction and calculate value
-	const float uu = delta / dgTemp.dpdu.Length();
-	dgTemp.p += uu * dgTemp.dpdu;
-	dgTemp.u += uu;
-	dgTemp.nn = Normalize(origN + uu * dgTemp.dndu);
-	const Point Pu(mapping.Map(dgTemp));
+	// Shift _P_ _du_ in the $u$ direction and calculate value
+	const float uu = delta / dg.dpdu.Length();
+	const Point Pu(P + dg.dpdu * uu);
 	const float dau = (GetF(Pu) - a) / uu;
 
 	// Shift _dgTemp_ _dv_ in the $v$ direction and calculate value
-	const float vv = delta / dgTemp.dpdv.Length();
-	dgTemp.p = origP + vv * dgTemp.dpdv;
-	dgTemp.u = origU;
-	dgTemp.v += vv;
-	dgTemp.nn = Normalize(origN + vv * dgTemp.dndv);
-	const Point Pv(mapping.Map(dgTemp));
+	const float vv = delta / dg.dpdv.Length();
+	const Point Pv(P + dg.dpdv * vv);
 	const float dav = (GetF(Pv) - a) / vv;
 
 	*du = Lerp(a, du1, du2) + dau * e;
