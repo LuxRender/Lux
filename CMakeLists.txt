@@ -12,7 +12,7 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${LUX_CMAKE_DIR}")
 #SET(LUXRAYS_DISABLE_OPENCL 1)
 
 # Dade - uncomment to obtain verbose building output
-#SET(CMAKE_VERBOSE_MAKEFILE true)
+option(LUXRAYS_DISABLE_OPENCL OFF)
 
 #Setting Universal Binary Properties and Pylux configuration, only for Mac OS X
 # generate with xcode/crosscompile, setting: ( darwin - 10.6 - gcc - g++ - MacOSX10.6.sdk - Find from root, then native system )
