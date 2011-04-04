@@ -122,12 +122,6 @@ public:
 //private:
 	Transform WorldToTexture;
 };
-// 3D base: global, object (from original), uv (from dupli),
-// original coords (from dupli), sticky, window, normal, reflection, stress,
-// tangent
-// 3D->2D (except for UV and window): flat, cube, tube, sphere
-// matrix
-// process: 3Dbase->matrix->3D2D
 class GlobalMapping3D : public TextureMapping3D {
 public:
 	GlobalMapping3D(const Transform &x) : TextureMapping3D(x) { }
@@ -148,6 +142,22 @@ class  UVMapping3D : public TextureMapping3D {
 public:
 	UVMapping3D(const Transform &x) : TextureMapping3D(x) { }
 	virtual ~UVMapping3D() { }
+	virtual Point Map(const DifferentialGeometry &dg) const;
+	virtual Point MapDuv(const DifferentialGeometry &dg,
+		Vector *dpdu, Vector *dpdv) const;
+};
+class GlobalNormalMapping3D : public TextureMapping3D {
+public:
+	GlobalNormalMapping3D(const Transform &x) : TextureMapping3D(x) { }
+	virtual ~GlobalNormalMapping3D() { }
+	virtual Point Map(const DifferentialGeometry &dg) const;
+	virtual Point MapDuv(const DifferentialGeometry &dg,
+		Vector *dpdu, Vector *dpdv) const;
+};
+class LocalNormalMapping3D : public TextureMapping3D {
+public:
+	LocalNormalMapping3D(const Transform &x) : TextureMapping3D(x) { }
+	virtual ~LocalNormalMapping3D() { }
 	virtual Point Map(const DifferentialGeometry &dg) const;
 	virtual Point MapDuv(const DifferentialGeometry &dg,
 		Vector *dpdu, Vector *dpdv) const;

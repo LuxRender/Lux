@@ -43,6 +43,10 @@ public:
 			mapping = new LocalMapping3D(tex2world);
 		else if (coords == "uv")
 			mapping = new UVMapping3D(tex2world);
+		else if (coords == "globalnormal")
+			mapping = new GlobalNormalMapping3D(tex2world);
+		else if (coords == "localnormal")
+			mapping = new LocalNormalMapping3D(tex2world);
 		else
 			mapping = new GlobalMapping3D(tex2world);
 		// Apply texture specified transformation option for 3D mapping

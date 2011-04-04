@@ -441,7 +441,7 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 		&state->pathThroughput)) {
 		// Stop path sampling since no intersection was found
 		// Possibly add horizon in render & reflections
-		if ((includeEnvironment || state->pathLength > 0)) {
+/*		if ((includeEnvironment || state->pathLength > 0)) {
 			state->pathThroughput /= spdf;
 			BSDF *ibsdf;
 			for (u_int i = 0; i < nLights; ++i) {
@@ -460,7 +460,7 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 
 		// Set alpha channel
 		if (state->pathLength == 0)
-			state->alpha = 0.f;
+			state->alpha = 0.f;*/
 
 		// The path is finished
 		state->Terminate(scene, bufferId);
@@ -475,7 +475,7 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 	// Possibly add emitted light at path vertex
 	Vector wo(-state->pathRay.d);
 
-	if (isect.arealight) {
+/*	if (isect.arealight) {
 		BSDF *ibsdf;
 		float pdf;
 		SWCSpectrum Le(isect.Le(state->sample, state->pathRay, &ibsdf, NULL, &pdf));
@@ -488,7 +488,7 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 			state->V[isect.arealight->group] += Le.Filter(sw) * state->VContrib;
 			++(*nrContribs);
 		}
-	}
+	}*/
 
 	// Check if we have reached the max. path depth
 	if (state->pathLength == maxDepth) {
@@ -534,7 +534,7 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 					MachineEpsilon::E(length));
 
 				if (shadowRayEpsilon < length * .5f) {
-					Li *= PowerHeuristic(1, lightPdf * d2 / AbsDot(wi, lightBsdf->ng), 1, bsdf->Pdf(sw, wo, wi));
+//					Li *= PowerHeuristic(1, lightPdf * d2 / AbsDot(wi, lightBsdf->ng), 1, bsdf->Pdf(sw, wo, wi));
 
 					// Store light's contribution
 					state->Ld[state->tracedShadowRayCount] = state->pathThroughput * Li / d2;
@@ -567,14 +567,14 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 		if (state->pathLength > 3) {
 			if (rrStrategy == RR_EFFICIENCY) { // use efficiency optimized RR
 				const float q = min<float>(1.f, f.Filter(sw));
-				if (q < data[3]) {
+				if (q < data[4]) {
 					state->Terminate(scene, bufferId);
 					return true;
 				}
 				// increase path contribution
 				f /= q;
 			} else if (rrStrategy == RR_PROBABILITY) { // use normal/probability RR
-				if (continueProbability < data[3]) {
+				if (continueProbability < data[4]) {
 					state->Terminate(scene, bufferId);
 					return true;
 				}
@@ -587,8 +587,10 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 		state->specular = state->specular && state->specularBounce;
 		state->pathRay = Ray(p, wi);
 		state->pathRay.time = state->sample.realTime;
-	} else
+	} else {
+		state->bouncePdf *= pdf;
 		state->pathRay.mint = rayHit->t + MachineEpsilon::E(rayHit->t);
+	}
 	++(state->pathLength);
 	state->pathThroughput *= f;
 	if (!state->specular)

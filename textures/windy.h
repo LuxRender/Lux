@@ -101,6 +101,10 @@ inline Texture<float> * WindyTexture::CreateFloatTexture(const Transform &tex2wo
 		imap = new LocalMapping3D(tex2world);
 	else if (coords == "uv")
 		imap = new UVMapping3D(tex2world);
+	else if (coords == "globalnormal")
+		imap = new GlobalNormalMapping3D(tex2world);
+	else if (coords == "localnormal")
+		imap = new LocalNormalMapping3D(tex2world);
 	else
 		imap = new GlobalMapping3D(tex2world);
 	// Apply texture specified transformation option for 3D mapping
