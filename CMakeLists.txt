@@ -23,6 +23,7 @@ IF(APPLE)
 	option(OSX_OPTION_UNIVERSAL "Forcre compile universal" OFF)
 	option(OSX_OPTION_DYNAMIC_BUILD "Link lux apps to shared corelib" OFF)
 	###################################
+#	SET(OSX_INSTALL_PATH /Applications/LuxRender_dyntest ) # in work
 	SET(CMAKE_OSX_DEPLOYMENT_TARGET 10.6)
 	IF(CMAKE_VERSION VERSION_LESS 2.8.1)
 		SET(CMAKE_OSX_ARCHITECTURES i386;x86_64) # valid arches
@@ -35,6 +36,7 @@ IF(APPLE)
 	endif(OSX_OPTION_UNIVERSAL)
 	SET(CMAKE_OSX_SYSROOT /Developer/SDKs/MacOSX10.6.sdk)
 	set(CMAKE_CONFIGURATION_TYPES Release)
+	SET(OSX_SHARED_CORELIB ${CMAKE_SOURCE_DIR}/../macos/lib/corelib/liblux.dylib)
 ENDIF(APPLE)
 
 
@@ -411,23 +413,10 @@ ADD_FLEX_BISON_DEPENDENCY(LuxLexer LuxParser)
 
 #############################################################################
 #############################################################################
-##################  APPLE CUSTOM GUI_TYPE MACOSX_BUNDLE  ####################
+##########  APPLE CUSTOM GUI_TYPE MACOSX_BUNDLE AND BUILD TARGETS ###########
 #############################################################################
 #############################################################################
 IF(APPLE)
-#	ADD_CUSTOM_TARGET(dist DEPENDS luxrender)
-#	ADD_CUSTOM_COMMAND(
-#	TARGET dist POST_BUILD
-#	COMMAND rm -rf luxrender.app 
-#	COMMAND mkdir luxrender.app 
-#	COMMAND mkdir luxrender.app/Contents 
-#	COMMAND mkdir luxrender.app/Contents/MacOS 
-#	COMMAND mkdir luxrender.app/Contents/Resources
-#	COMMAND cp ../macos/Info.plist luxrender.app/Contents
-#	COMMAND cp luxrender.icns luxrender.app/Contents/Resources
-#	COMMAND echo APPLnone > luxrender.app/Contents/PkgInfo
-#	COMMAND cp luxrender luxrender.app/Contents/MacOS/luxrender)
-
 	SET(GUI_TYPE MACOSX_BUNDLE)
 	# SET(MACOSX_BUNDLE_LONG_VERSION_STRING "${OPENSCENEGRAPH_MAJOR_VERSION}.${OPENSCENEGRAPH_MINOR_VERSION}.${OPENSCENEGRAPH_PATCH_VERSION}")
 	# Short Version is the "marketing version". It is the version
@@ -436,12 +425,49 @@ IF(APPLE)
 	# Bundle version is the version the OS looks at.
 	SET(MACOSX_BUNDLE_BUNDLE_VERSION "${VERSION}")
 	SET(MACOSX_BUNDLE_GUI_IDENTIFIER "org.luxrender.luxrender" )
-	SET(MACOSX_BUNDLE_BUNDLE_NAME "luxrender" )
+	SET(MACOSX_BUNDLE_BUNDLE_NAME "Luxrender" )
 	SET(MACOSX_BUNDLE_ICON_FILE "luxrender.icns")
 	# SET(MACOSX_BUNDLE_COPYRIGHT "")
 	# SET(MACOSX_BUNDLE_INFO_STRING "Info string, localized?")
-ENDIF(APPLE)
+	IF(OSX_OPTION_DYNAMIC_BUILD)	
+		ADD_CUSTOM_TARGET(DYNAMIC_BUILD DEPENDS luxShared luxrender luxconsole luxmerger luxcomp pylux )
+		ADD_CUSTOM_COMMAND(
+			TARGET DYNAMIC_BUILD POST_BUILD
+			COMMAND rm -rf release/luxrender.app/Contents/Resources
+			COMMAND mkdir release/luxrender.app/Contents/Resources
+			COMMAND cp ../macos/icons/luxrender.icns release/luxrender.app/Contents/Resources
+			COMMAND cp ../macos/icons/luxscene.icns release/luxrender.app/Contents/Resources
+			COMMAND cp ../macos/icons/luxfilm.icns release/luxrender.app/Contents/Resources
+			COMMAND cp ../macos/plists/08/Info.plist release/luxrender.app/Contents
+			COMMAND install_name_tool -change ${CMAKE_BINARY_DIR}/Release/liblux.dylib @loader_path/liblux.dylib release/luxrender.app/Contents/MacOS/luxrender
+			COMMAND mv release/luxrender.app release/LuxRender.app
+#			COMMAND macdeployqt release/LuxRender.app ### uncomment for bundling Qt frameworks ###
+			COMMAND install_name_tool -change ${CMAKE_BINARY_DIR}/Release/liblux.dylib @loader_path/liblux.dylib Release/luxconsole
+			COMMAND mv release/luxconsole ${CMAKE_BINARY_DIR}/Release/LuxRender.app/Contents/MacOS/luxconsole
+			COMMAND install_name_tool -change ${CMAKE_BINARY_DIR}/Release/liblux.dylib @loader_path/liblux.dylib Release/luxcomp
+			COMMAND mv release/luxcomp ${CMAKE_BINARY_DIR}/Release/LuxRender.app/Contents/MacOS/luxcomp
+			COMMAND install_name_tool -change ${CMAKE_BINARY_DIR}/Release/liblux.dylib @loader_path/liblux.dylib Release/luxmerger
+			COMMAND mv release/luxmerger ${CMAKE_BINARY_DIR}/Release/LuxRender.app/Contents/MacOS/luxmerger
+			COMMAND install_name_tool -id @loader_path/liblux.dylib release/liblux.dylib
+			COMMAND mv release/liblux.dylib ${CMAKE_BINARY_DIR}/Release/LuxRender.app/Contents/MacOS/liblux.dylib
+			)
 
+	ELSE(OSX_OPTION_DYNAMIC_BUILD)
+		ADD_CUSTOM_TARGET(STATIC_BUILD DEPENDS luxrender luxconsole luxmerger luxcomp pylux)
+		ADD_CUSTOM_COMMAND(
+			TARGET STATIC_BUILD POST_BUILD
+			COMMAND rm -rf release/luxrender.app/Contents/Resources
+			COMMAND mkdir release/luxrender.app/Contents/Resources
+			COMMAND cp ../macos/icons/luxrender.icns release/luxrender.app/Contents/Resources
+			COMMAND cp ../macos/icons/luxscene.icns release/luxrender.app/Contents/Resources
+			COMMAND cp ../macos/icons/luxfilm.icns release/luxrender.app/Contents/Resources
+			COMMAND cp ../macos/plists/08/Info.plist release/luxrender.app/Contents
+			COMMAND mv release/luxrender.app release/LuxRender.app
+#			COMMAND macdeployqt release/LuxRender.app ### uncomment for bundling Qt frameworks ###
+			)
+
+	ENDIF(OSX_OPTION_DYNAMIC_BUILD)
+ENDIF(APPLE)
 
 #############################################################################
 #############################################################################
@@ -834,7 +860,6 @@ IF( NOT CMAKE_VERSION VERSION_LESS 2.8.3 AND OSX_OPTION_CLANG) # only cmake >= 2
 ENDIF()
 #TARGET_LINK_LIBRARIES(luxStatic ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} )
 
-
 #############################################################################
 # Here we build the shared core library liblux.so
 #############################################################################
@@ -893,12 +918,7 @@ IF(PYTHONLIBS_FOUND)
 		IF( NOT CMAKE_VERSION VERSION_LESS 2.8.3) # only cmake >= 2.8.3 supports per target attributes
 		 SET_TARGET_PROPERTIES(pylux PROPERTIES XCODE_ATTRIBUTE_DEPLOYMENT_POSTPROCESSING NO) # exclude pylux from strip symbols
 		ENDIF( NOT CMAKE_VERSION VERSION_LESS 2.8.3)
-		IF(OSX_OPTION_DYNAMIC_BUILD)
-			TARGET_LINK_LIBRARIES(pylux -Wl,-undefined -Wl,dynamic_lookup -llux ${CMAKE_THREAD_LIBS_INIT} ${PYTHON_LIBRARIES} ${Boost_python_LIBRARIES})
-		ELSE(OSX_OPTION_DYNAMIC_BUILD)
-			TARGET_LINK_LIBRARIES(pylux -Wl,-undefined -Wl,dynamic_lookup -all_load luxStatic -noall_load ${CMAKE_THREAD_LIBS_INIT} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} ${SYS_LIBRARIES} ${PYTHON_LIBRARIES} ${Boost_python_LIBRARIES})
-		ENDIF(OSX_OPTION_DYNAMIC_BUILD)
-### if XCode used for compiling ###
+		TARGET_LINK_LIBRARIES(pylux -Wl,-undefined -Wl,dynamic_lookup -all_load luxStatic -noall_load ${CMAKE_THREAD_LIBS_INIT} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} ${SYS_LIBRARIES} ${PYTHON_LIBRARIES} ${Boost_python_LIBRARIES})
 		ADD_CUSTOM_COMMAND(
 			TARGET pylux POST_BUILD
 			COMMAND mv release/libpylux.so release/pylux.so
@@ -936,7 +956,7 @@ ENDIF(PYTHONLIBS_FOUND)
 ADD_EXECUTABLE(luxconsole console/luxconsole.cpp)
 IF(APPLE)
 	IF(OSX_OPTION_DYNAMIC_BUILD)
-		TARGET_LINK_LIBRARIES(luxconsole -llux ${CMAKE_THREAD_LIBS_INIT} )
+		TARGET_LINK_LIBRARIES(luxconsole ${OSX_SHARED_CORELIB} ${CMAKE_THREAD_LIBS_INIT} )
 	ELSE(OSX_OPTION_DYNAMIC_BUILD)
 		TARGET_LINK_LIBRARIES(luxconsole -Wl,-undefined -Wl,dynamic_lookup -all_load luxStatic -noall_load ${CMAKE_THREAD_LIBS_INIT} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${SYS_LIBRARIES} ${Boost_LIBRARIES} )
 	ENDIF(OSX_OPTION_DYNAMIC_BUILD)
@@ -950,7 +970,7 @@ ENDIF(APPLE)
 ADD_EXECUTABLE(luxmerger tools/luxmerger.cpp)
 IF(APPLE)
 	IF(OSX_OPTION_DYNAMIC_BUILD)
-		TARGET_LINK_LIBRARIES(luxmerger -llux ${CMAKE_THREAD_LIBS_INIT} )
+		TARGET_LINK_LIBRARIES(luxmerger ${OSX_SHARED_CORELIB} ${CMAKE_THREAD_LIBS_INIT} )
 	ELSE(OSX_OPTION_DYNAMIC_BUILD)
 		TARGET_LINK_LIBRARIES(luxmerger -Wl,-undefined -Wl,dynamic_lookup -all_load luxStatic -noall_load ${CMAKE_THREAD_LIBS_INIT} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${SYS_LIBRARIES} ${Boost_LIBRARIES} )
 	ENDIF(OSX_OPTION_DYNAMIC_BUILD)
@@ -964,7 +984,7 @@ ENDIF(APPLE)
 ADD_EXECUTABLE(luxcomp tools/luxcomp.cpp)
 IF(APPLE)
 	IF(OSX_OPTION_DYNAMIC_BUILD)
-		TARGET_LINK_LIBRARIES(luxcomp -llux ${CMAKE_THREAD_LIBS_INIT} )
+		TARGET_LINK_LIBRARIES(luxcomp ${OSX_SHARED_CORELIB} ${CMAKE_THREAD_LIBS_INIT} )
 	ELSE(OSX_OPTION_DYNAMIC_BUILD)
 		TARGET_LINK_LIBRARIES(luxcomp -Wl,-undefined -Wl,dynamic_lookup -all_load luxStatic -noall_load ${CMAKE_THREAD_LIBS_INIT} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${SYS_LIBRARIES} ${Boost_LIBRARIES} )
 	ENDIF(OSX_OPTION_DYNAMIC_BUILD)
@@ -1014,22 +1034,10 @@ IF(QT4_FOUND)
 		MARK_AS_ADVANCED (APP_SERVICES_LIBRARY)
 		SET(EXTRA_LIBS ${CARBON_LIBRARY} ${QT_LIBRARY} ${AGL_LIBRARY} ${APP_SERVICES_LIBRARY})
 		IF(OSX_OPTION_DYNAMIC_BUILD)
-			TARGET_LINK_LIBRARIES(luxrender -llux ${QT_LIBRARIES} ${EXTRA_LIBS} )
+			TARGET_LINK_LIBRARIES(luxrender ${OSX_SHARED_CORELIB} ${QT_LIBRARIES} ${EXTRA_LIBS} )
 		ELSE(OSX_OPTION_DYNAMIC_BUILD)
 			TARGET_LINK_LIBRARIES(luxrender -Wl,-undefined -Wl,dynamic_lookup -all_load luxStatic -noall_load ${QT_LIBRARIES} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} ${SYS_LIBRARIES} )
 		ENDIF(OSX_OPTION_DYNAMIC_BUILD)
-### if XCode used for compiling ###
-		ADD_CUSTOM_COMMAND(
-			TARGET luxrender POST_BUILD
-			COMMAND rm -rf release/luxrender.app/Contents/Resources
-			COMMAND mkdir release/luxrender.app/Contents/Resources
-			COMMAND cp ../macos/icons/luxrender.icns release/luxrender.app/Contents/Resources
-			COMMAND cp ../macos/icons/luxscene.icns release/luxrender.app/Contents/Resources
-			COMMAND cp ../macos/icons/luxfilm.icns release/luxrender.app/Contents/Resources
-			COMMAND cp ../macos/plists/08/Info.plist release/luxrender.app/Contents
-			COMMAND mv release/luxrender.app release/LuxRender.app
-#			COMMAND macdeployqt release/LuxRender.app ### uncomment for bundling Qt frameworks ###
-			)
 	ELSE(APPLE)
 	TARGET_LINK_LIBRARIES(luxrender -Wl,--whole-archive luxStatic -Wl,--no-whole-archive ${QT_LIBRARIES} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} ${ZLIB_LIBRARIES} ${BZ2_LIBRARIES}  ${SYS_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARY})
 	ENDIF(APPLE)
@@ -1040,11 +1048,10 @@ ENDIF(QT4_FOUND)
 #############################################################################
 
 #Install target
-IF(APPLE) # deactivate temporary, in the works
-#	INSTALL(TARGETS luxconsole luxmerger RUNTIME DESTINATION bin)
-#	IF(QT4_FOUND)
-#		INSTALL(TARGETS luxrender BUNDLE DESTINATION bin)
-#	ENDIF(QT4_FOUND)
+IF(APPLE)
+
+#	TODO: custom install
+
 ELSE(APPLE)
 	INSTALL(TARGETS luxconsole luxmerger RUNTIME DESTINATION bin)
 	IF(QT4_FOUND)
@@ -1101,6 +1108,7 @@ IF(APPLE)
 	ENDIF(OSX_OPTION_PYLUX)
 	MESSAGE(STATUS "ALWAYS_BUILD_UNIVERSAL : " ${OSX_OPTION_UNIVERSAL})
 	MESSAGE(STATUS "USE SHARED CORELIB : " ${OSX_OPTION_DYNAMIC_BUILD})
+#	MESSAGE(STATUS "INSTALL_LOCATION : " ${OSX_INSTALL_PATH})
 	MESSAGE(STATUS "")
 	MESSAGE(STATUS "#####################################################################")
 ENDIF(APPLE)
