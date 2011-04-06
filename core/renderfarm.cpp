@@ -85,6 +85,14 @@ void FilmUpdaterThread::updateFilm(FilmUpdaterThread *filmUpdaterThread) {
 	}
 }
 
+RenderFarm::RenderFarm() : serverUpdateInterval(3 * 60), filmUpdateThread(NULL),
+		netBufferComplete(false), isLittleEndian(osIsLittleEndian()),
+		netBuffer(std::stringstream::in | std::stringstream::out  | std::stringstream::binary) {
+		// set precision for accurate transmission of floats
+		netBuffer << std::scientific << std::setprecision(9);
+}
+
+
 // Dade - used to periodically update the film
 void RenderFarm::startFilmUpdater(Scene *scene) {
 	if (filmUpdateThread == NULL) {
