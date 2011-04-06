@@ -463,6 +463,9 @@ IF(APPLE)
 			COMMAND cp ../macos/icons/luxfilm.icns release/luxrender.app/Contents/Resources
 			COMMAND cp ../macos/plists/08/Info.plist release/luxrender.app/Contents
 			COMMAND mv release/luxrender.app release/LuxRender.app
+			COMMAND mv release/luxconsole ${CMAKE_BINARY_DIR}/Release/LuxRender.app/Contents/MacOS/luxconsole
+			COMMAND mv release/luxmerger ${CMAKE_BINARY_DIR}/Release/LuxRender.app/Contents/MacOS/luxmerger
+			COMMAND mv release/luxcomp ${CMAKE_BINARY_DIR}/Release/LuxRender.app/Contents/MacOS/luxcomp
 #			COMMAND macdeployqt release/LuxRender.app ### uncomment for bundling Qt frameworks ###
 			)
 
