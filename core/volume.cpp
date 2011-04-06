@@ -22,6 +22,8 @@
 
 // volume.cpp*
 #include "volume.h"
+#include "sampling.h"
+#include "spectrum.h"
 
 namespace lux
 {
@@ -55,6 +57,44 @@ float PhaseSchlick(const Vector &w,
 	const float compkcostheta = 1.f - k * Dot(w, wp);
 	return (1.f - k * k) / (4.f * M_PI * compkcostheta * compkcostheta);
 }
+bool RGBVolume::Scatter(const Sample &sample, bool scatteredStart,
+	const Ray &ray, float u, Intersection *isect, float *pdf,
+	float *pdfBack, SWCSpectrum *L) const
+{
+	// Determine scattering distance
+	const float k = sigS.Filter();
+	const float d = logf(1 - u) / k; //the real distance is ray.mint-d
+	bool scatter = d > ray.mint - ray.maxt;
+	if (scatter) {
+		// The ray is scattered
+		ray.maxt = ray.mint - d;
+		isect->dg.p = ray(ray.maxt);
+		isect->dg.nn = Normal(-ray.d);
+		isect->dg.scattered = true;
+		CoordinateSystem(Vector(isect->dg.nn), &(isect->dg.dpdu), &(isect->dg.dpdv));
+		isect->WorldToObject = Transform();
+		isect->primitive = &primitive;
+		isect->material = &material;
+		isect->interior = this;
+		isect->exterior = this;
+		isect->arealight = NULL; // Update if volumetric emission
+		if (L)
+			*L *= SigmaT(sample.swl, isect->dg);
+	}
+	if (pdf) {
+		*pdf = expf((ray.mint - ray.maxt) * k);
+		if (isect->dg.scattered)
+			*pdf *= k;
+	}
+	if (pdfBack) {
+		*pdfBack = expf((ray.mint - ray.maxt) * k);
+			if (scatteredStart)
+				*pdfBack *= k;
+	}
+	if (L)
+		*L *= Exp(-Tau(sample.swl, ray));
+	return scatter;
+}
 AggregateRegion::AggregateRegion(const vector<Region *> &r)
 {
 	regions = r;
@@ -62,50 +102,50 @@ AggregateRegion::AggregateRegion(const vector<Region *> &r)
 		bound = Union(bound, regions[i]->WorldBound());
 }
 SWCSpectrum AggregateRegion::SigmaA(const SpectrumWavelengths &sw,
-	const Point &p, const Vector &w) const
+	const DifferentialGeometry &dg) const
 {
 	SWCSpectrum s(0.f);
 	for (u_int i = 0; i < regions.size(); ++i)
-		s += regions[i]->SigmaA(sw, p, w);
+		s += regions[i]->SigmaA(sw, dg);
 	return s;
 }
 SWCSpectrum AggregateRegion::SigmaS(const SpectrumWavelengths &sw,
-	const Point &p, const Vector &w) const
+	const DifferentialGeometry &dg) const
 {
 	SWCSpectrum s(0.f);
 	for (u_int i = 0; i < regions.size(); ++i)
-		s += regions[i]->SigmaS(sw, p, w);
+		s += regions[i]->SigmaS(sw, dg);
 	return s;
 }
-SWCSpectrum AggregateRegion::Lve(const SpectrumWavelengths &sw, const Point &p,
-	const Vector &w) const
+SWCSpectrum AggregateRegion::Lve(const SpectrumWavelengths &sw,
+	const DifferentialGeometry &dg) const
 {
 	SWCSpectrum L(0.f);
 	for (u_int i = 0; i < regions.size(); ++i)
-		L += regions[i]->Lve(sw, p, w);
+		L += regions[i]->Lve(sw, dg);
 	return L;
 }
-float AggregateRegion::P(const SpectrumWavelengths &sw, const Point &p,
-	const Vector &w, const Vector &wp) const
+float AggregateRegion::P(const SpectrumWavelengths &sw,
+	const DifferentialGeometry &dg, const Vector &w, const Vector &wp) const
 {
 	float ph = 0.f, sumWt = 0.f;
 	for (u_int i = 0; i < regions.size(); ++i) {
-		const float sigt = regions[i]->SigmaT(sw, p, w).Y(sw);
+		const float sigt = regions[i]->SigmaT(sw, dg).Filter(sw);
 		if (sigt > 0.f) {
-			const float wt = regions[i]->SigmaA(sw, p, w).Y(sw) /
+			const float wt = regions[i]->SigmaA(sw, dg).Filter(sw) /
 				sigt;
 			sumWt += wt;
-			ph += wt * regions[i]->P(sw, p, w, wp);
+			ph += wt * regions[i]->P(sw, dg, w, wp);
 		}
 	}
 	return ph / sumWt;
 }
 SWCSpectrum AggregateRegion::SigmaT(const SpectrumWavelengths &sw,
-	const Point &p, const Vector &w) const
+	const DifferentialGeometry &dg) const
 {
 	SWCSpectrum s(0.f);
 	for (u_int i = 0; i < regions.size(); ++i)
-		s += regions[i]->SigmaT(sw, p, w);
+		s += regions[i]->SigmaT(sw, dg);
 	return s;
 }
 SWCSpectrum AggregateRegion::Tau(const SpectrumWavelengths &sw, const Ray &ray,
@@ -132,6 +172,16 @@ bool AggregateRegion::IntersectP(const Ray &ray, float *t0, float *t1) const
 AggregateRegion::~AggregateRegion() {
 	for (u_int i = 0; i < regions.size(); ++i)
 		delete regions[i];
+}
+bool AggregateRegion::Scatter(const Sample &sample, bool scatteredStart,
+	const Ray &ray, float u, Intersection *isect, float *pdf,
+	float *pdfBack, SWCSpectrum *L) const
+{
+	bool scatter = false;
+	for (u_int i = 0; i < regions.size(); ++i)
+		scatter = scatter || regions[i]->Scatter(sample, scatteredStart,
+			ray, u, isect, pdf, pdfBack, L);
+	return scatter;
 }
 
 }//namespace lux

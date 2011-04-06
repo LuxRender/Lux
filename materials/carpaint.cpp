@@ -27,6 +27,7 @@
 #include "carpaint.h"
 #include "memory.h"
 #include "bxdf.h"
+#include "primitive.h"
 #include "schlickdistribution.h"
 #include "fresnelslick.h"
 #include "microfacet.h"
@@ -51,22 +52,19 @@ CarPaint::CarPaint(boost::shared_ptr<Texture<SWCSpectrum> > &kd,
 	boost::shared_ptr<Texture<float> > &m2,
 	boost::shared_ptr<Texture<float> > &m3,
 	boost::shared_ptr<Texture<float> > &bump,
-	const CompositingParams &cp) :
+	const ParamSet &mp) : Material(mp),
 	Kd(kd), Ka(ka), Ks1(ks1), Ks2(ks2), Ks3(ks3), depth(d), R1(r1), R2(r2),
 	R3(r3), M1(m1), M2(m2), M3(m3), bumpMap(bump)
 {
-	compParams = new CompositingParams(cp);
 }
 
 // CarPaint Method Definitions
 BSDF *CarPaint::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
-	const DifferentialGeometry &dgGeom,
-	const DifferentialGeometry &dgs,
-	const Volume *exterior, const Volume *interior) const {
-
+	const Intersection &isect, const DifferentialGeometry &dgs) const
+{
 	// Allocate _BSDF_
-	MultiBSDF *bsdf = ARENA_ALLOC(arena, MultiBSDF)(dgs, dgGeom.nn,
-		exterior, interior);
+	MultiBSDF *bsdf = ARENA_ALLOC(arena, MultiBSDF)(dgs, isect.dg.nn,
+		isect.exterior, isect.interior);
 
 	// The Carpaint BRDF is really a Multi-lobe Microfacet model with a Lambertian base
 	// NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
@@ -107,7 +105,7 @@ BSDF *CarPaint::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 	}
 
 	// Add ptr to CompositingParams structure
-	bsdf->SetCompositingParams(compParams);
+	bsdf->SetCompositingParams(&compParams);
 
 	return bsdf;
 }
@@ -227,11 +225,7 @@ Material* CarPaint::CreateMaterial(const Transform &xform, const ParamSet &mp)
 
 	boost::shared_ptr<Texture<float> > bumpMap(mp.GetFloatTexture("bumpmap"));
 
-	// Get Compositing Params
-	CompositingParams cP;
-	FindCompositingParams(mp, &cP);
-
-	return new CarPaint(Kd, Ka, d, Ks1, Ks2, Ks3, R1, R2, R3, M1, M2, M3, bumpMap, cP);
+	return new CarPaint(Kd, Ka, d, Ks1, Ks2, Ks3, R1, R2, R3, M1, M2, M3, bumpMap, mp);
 }
 
 static DynamicLoader::RegisterMaterial<CarPaint> r("carpaint");

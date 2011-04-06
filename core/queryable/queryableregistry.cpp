@@ -46,7 +46,7 @@ const char * QueryableRegistry::GetContent()
 {
 	std::stringstream XMLOutput;
 	//ATTRIBUTE_NONE, ATTRIBUTE_INT,ATTRIBUTE_FLOAT,ATTRIBUTE_DOUBLE,ATTRIBUTE_STRING
-	static const char* typeString[]= {"none","int","float","double","string"};
+	//static const char* typeString[]= {"none","int","float","double","string"};
 
 
 	XMLOutput<<"<?xml version='1.0' encoding='utf-8'?>"<<std::endl;

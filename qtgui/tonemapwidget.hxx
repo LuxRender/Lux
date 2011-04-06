@@ -68,6 +68,7 @@ private:
 	Ui::ToneMapWidget *ui;
 
 	int m_TM_kernel;
+	int m_clamp_method;
 	double m_TM_reinhard_prescale;
 	double m_TM_reinhard_postscale;
 	double m_TM_reinhard_burn;
@@ -89,6 +90,7 @@ signals:
 private slots:
 
 	void setTonemapKernel (int choice);
+	void setClampMethod (int choice);
 	void setSensitivityPreset (int choice);
 	void setExposurePreset (int choice);
 	void setFStopPreset (int choice);
@@ -107,6 +109,7 @@ private slots:
 	void fstopChanged (double value);
 	void gammaLinearChanged (int value);
 	void gammaLinearChanged (double value);
+	void estimateLinear ();
 
 	void ywaChanged (int value);
 	void ywaChanged (double value);

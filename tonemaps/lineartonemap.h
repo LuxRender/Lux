@@ -43,6 +43,9 @@ public:
 		float gamma = luxGetParameterValue(LUX_FILM, LUX_FILM_TORGB_GAMMA);
 		float Y =  luxGetFloatAttribute("film", "averageLuminance");
 		
+		if (Y <= 0)
+			return;
+
 		/*
 		(fstop * fstop) / exposure = Y*sensitivity/K
 

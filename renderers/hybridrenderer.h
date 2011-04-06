@@ -137,6 +137,7 @@ class HybridRenderer : public Renderer {
 public:
 	static luxrays::DataSet *PreprocessGeometry(luxrays::Context *ctx, Scene *scene);
 
+	static void LoadCfgParams(const string &configFile, ParamSet *params);
 protected:
 	HybridRenderer() : Renderer() { }
 

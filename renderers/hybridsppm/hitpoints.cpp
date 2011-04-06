@@ -20,8 +20,10 @@
  ***************************************************************************/
 
 #include "../hybridsppmrenderer.h"
+#include "integrators/sppm.h"
 #include "camera.h"
 #include "film.h"
+#include "sampling.h"
 
 using namespace lux;
 
@@ -127,11 +129,33 @@ using namespace lux;
 // EyePath methods
 //------------------------------------------------------------------------------
 
-EyePath::EyePath(const u_int index) {
+EyePath::EyePath(const Scene &scene, RandomGenerator *rng, const u_int index)  :
+	sample(scene.surfaceIntegrator, scene.volumeIntegrator, scene) {
 	state = NEXT_VERTEX;
+
 	pixelIndex = index;
 	depth = 0;
 	throughput = 1.f;
+
+	// Initialize the sample
+	scene.sampler->InitSample(&sample);
+	sample.contribBuffer = NULL;
+	sample.camera = scene.camera->Clone();
+	sample.realTime = 0.f;
+	sample.rng = rng;
+
+	scene.sampler->GetNextSample(&sample);
+
+	// save ray time value
+	sample.realTime = sample.camera->GetTime(sample.time);
+	// sample camera transformation
+	sample.camera->SampleMotion(sample.realTime);
+
+	// Sample new SWC thread wavelengths
+	sample.swl.Sample(sample.wavelengths);
+
+	// Generate the eye ray
+	sample.camera->GenerateRay(scene, sample, &ray);
 }
 
 EyePath::~EyePath() {
@@ -182,7 +206,7 @@ void HitPoints::Init() {
 	Vector ssize = hpBBox.pMax - hpBBox.pMin;
 	const u_int width = renderer->scene->camera->film->GetXPixelCount();
 	const u_int height = renderer->scene->camera->film->GetYPixelCount();
-	const float photonRadius = renderer->photonStartRadiusScale * ((ssize.x + ssize.y + ssize.z) / 3.f) / ((width + height) / 2.f) * 2.f;
+	const float photonRadius = renderer->sppmi->photonStartRadiusScale * ((ssize.x + ssize.y + ssize.z) / 3.f) / ((width + height) / 2.f) * 2.f;
 	const float photonRadius2 = photonRadius * photonRadius;
 
 	// Expand the bounding box by used radius
@@ -199,7 +223,7 @@ void HitPoints::Init() {
 	}
 
 	// Allocate hit points lookup accelerator
-	switch (renderer->lookupAccelType) {
+	switch (renderer->sppmi->lookupAccelType) {
 		case HASH_GRID:
 			lookUpAccel = new HashGrid(this);
 			break;
@@ -240,7 +264,7 @@ void HitPoints::AccumulateFlux(const unsigned long long photonTraced,
 			case SURFACE:
 				if ((hp->accumPhotonCount > 0)) {
 					const unsigned long long pcount = hp->photonCount + hp->accumPhotonCount;
-					const double alpha = renderer->photonAlpha;
+					const double alpha = renderer->sppmi->photonAlpha;
 					const float g = alpha * pcount / (hp->photonCount * alpha + hp->accumPhotonCount);
 					hp->photonCount = pcount;
 					hp->reflectedFlux = (hp->reflectedFlux + hp->accumReflectedFlux) * g;
@@ -259,7 +283,7 @@ void HitPoints::AccumulateFlux(const unsigned long long photonTraced,
 		const u_int hitCount = hp->constantHitsCount + hp->surfaceHitsCount;
 		if (hitCount > 0) {
 			const double k = 1.0 / (M_PI * hp->accumPhotonRadius2 * photonTraced);
-			if (renderer->useDirectLightSampling)
+			if (renderer->sppmi->useDirectLightSampling)
 				hp->radiance = (hp->accumRadiance + hp->accumDirectLightRadiance + hp->surfaceHitsCount * hp->reflectedFlux * k) / hitCount;
 			else
 				hp->radiance = (hp->accumRadiance + hp->surfaceHitsCount * hp->reflectedFlux * k) / hitCount;
@@ -282,21 +306,26 @@ void HitPoints::SetHitPoints(RandomGenerator *rndGen,
 	assert (last <= pixelCount);
 
 	std::list<EyePath *> todoEyePaths;
-	//Scene *scene = renderer->scene;
+	Scene *scene = renderer->scene;
 
 	// Generate eye rays
-	LOG(LUX_INFO, LUX_NOERROR) << "Building eye paths rays";
-	for (u_int i = first; i < last; ++i) {
-		/*EyePath *eyePath = new EyePath(i);
+	{
+		// Must be done under mutex because of the shared Sampler
+		boost::mutex::scoped_lock lock(renderer->classWideMutex);
 
-		const u_int x = i % width;
-		const u_int y = i / width;
-		const float scrX = x + rndGen->floatValue() - 0.5f;
-		const float scrY = y + rndGen->floatValue() - 0.5f;
-		scene->camera->GenerateRay(scrX, scrY, width, height, &eyePath->ray,
-				rndGen->floatValue(), rndGen->floatValue(), rndGen->floatValue());
+		LOG(LUX_INFO, LUX_NOERROR) << "Building eye paths rays";
+		for (u_int i = first; i < last; ++i) {
+			EyePath *eyePath = new EyePath(*scene, rndGen, i);
+			todoEyePaths.push_front(eyePath);
+		}
+	 }
 
-		todoEyePaths.push_front(eyePath);*/
+	std::list<EyePath *>::iterator todoEyePathsIterator = todoEyePaths.begin();
+	while (todoEyePathsIterator != todoEyePaths.end()) {
+		EyePath *eyePath = *todoEyePathsIterator;
+		delete eyePath;
+
+		++todoEyePathsIterator;
 	}
 
 	// Iterate through all eye paths

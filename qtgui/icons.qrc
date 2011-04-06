@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="/">
+    <file>icons/resolutionicon.png</file>
     <file>icons/collapsedicon.png</file>
     <file>icons/powerofficon.png</file>
     <file>icons/expandedicon.png</file>
@@ -24,5 +25,6 @@
     <file>icons/resumeicon.png</file>
     <file>icons/stopicon.png</file>
     <file>icons/tonemapicon.png</file>
+    <file>icons/zoomicon.png</file>
   </qresource>
 </RCC>

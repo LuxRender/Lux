@@ -38,9 +38,11 @@ namespace lux {
 
 enum ImageType {
     IMAGE_NONE = 0, // Don't write anything
-    IMAGE_FILEOUTPUT = 1 << 1, // Write image to file
+    IMAGE_FILEOUTPUT = 1 << 0, // Write image to file
+    IMAGE_FLMOUTPUT = 1 << 1, // Write flm file
     IMAGE_FRAMEBUFFER = 1 << 2, // Display image
-    IMAGE_ALL = IMAGE_FILEOUTPUT | IMAGE_FRAMEBUFFER
+	IMAGE_FILE_ALL = IMAGE_FILEOUTPUT | IMAGE_FLMOUTPUT, // All filebased output
+    IMAGE_ALL = IMAGE_FLMOUTPUT | IMAGE_FILEOUTPUT | IMAGE_FRAMEBUFFER
 };
 
 // Buffer types
@@ -545,6 +547,9 @@ public:
 	u_int GetYPixelCount() const { return yPixelCount; }
 
 	virtual unsigned char* getFrameBuffer() = 0;
+	virtual float* getFloatFrameBuffer() = 0;
+	virtual float* getAlphaBuffer() = 0;
+	virtual float* getZBuffer() = 0;
 	virtual void updateFrameBuffer() = 0;
 	virtual int getldrDisplayInterval() = 0;
 	void getHistogramImage(unsigned char *outPixels, u_int width, u_int height, int options);
@@ -639,7 +644,7 @@ void ApplyImagingPipeline(vector<XYZColor> &pixels,
 	bool &haveGlareImage, XYZColor *&glareImage, bool glareUpdate,
 	float glareAmount, float glareRadius, u_int glareBlades, float glareThreshold,
 	const char *tonemap, const ParamSet *toneMapParams,
-	const CameraResponse *response, float gamma, float dither);
+	const CameraResponse *response, float dither);
 
 }//namespace lux;
 

@@ -46,7 +46,7 @@ namespace lux
 
 class HybridSamplerRenderer : public HybridRenderer {
 public:
-	HybridSamplerRenderer();
+	HybridSamplerRenderer(int oclPlatformIndex, bool useGPUs, u_int forceGPUWorkGroupSize);
 	~HybridSamplerRenderer();
 
 	RendererType GetType() const;
@@ -62,6 +62,8 @@ public:
 	void Pause();
 	void Resume();
 	void Terminate();
+	
+	string GetStats();
 
 	static Renderer *CreateRenderer(const ParamSet &params);
 
@@ -104,6 +106,7 @@ private:
 	RendererState state;
 	// LuxRays virtual device used to feed all HardwareIntersectionDevice
 	luxrays::VirtualM2OHardwareIntersectionDevice *virtualIDevice;
+	vector<luxrays::IntersectionDevice *> nativeDevices;
 	vector<RenderThread *> renderThreads;
 	Scene *scene;
 	u_long lastUsedSeed;

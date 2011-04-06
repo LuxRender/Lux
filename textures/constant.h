@@ -45,6 +45,10 @@ public:
 	virtual void GetDuv(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg, float delta,
 		float *du, float *dv) const { *du = *dv = 0.f; }
+	virtual void GetMinMaxFloat(float *minValue, float *maxValue) const {
+		*minValue = value;
+		*maxValue = value;
+	}
 private:
 	float value;
 };

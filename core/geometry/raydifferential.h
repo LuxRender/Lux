@@ -44,7 +44,7 @@ public:
 		} mesh;
 	} IntersectionData;
 
-	DifferentialGeometry() { u = v = 0.; handle = NULL; }
+	DifferentialGeometry() { u = v = 0.; handle = NULL; scattered = false; }
 	// DifferentialGeometry Public Methods
 	DifferentialGeometry(
 			const Point &P,
@@ -74,6 +74,7 @@ public:
 	float u, v;
 	const void* handle;
 	float time;
+	bool scattered;
 
 	// Dade - shape specific data, useful to "transport" informatin between
 	// shape intersection method and GetShadingGeometry()

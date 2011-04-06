@@ -46,6 +46,13 @@ public:
 		nrPortalShapes = 0;
 		PortalArea = 0;
 	}
+	const Volume *GetVolume() const { return volume.get(); }
+	void SetVolume(boost::shared_ptr<Volume> &v) {
+		// Create a temporary to increase shared count
+		// The assignment is just a swap
+		boost::shared_ptr<Volume> vol(v);
+		volume = vol;
+	}
 	virtual float Power(const Scene &scene) const = 0;
 	virtual bool IsDeltaLight() const = 0;
 	virtual bool IsEnvironmental() const = 0;
@@ -53,10 +60,10 @@ public:
 		BSDF **bsdf, float *pdf, float *pdfDirect,
 		SWCSpectrum *L) const { return false; }
 	virtual float Pdf(const Point &p, const Point &po, const Normal &ns) const = 0;
-	virtual bool Sample_L(const Scene &scene, const Sample &sample,
+	virtual bool SampleL(const Scene &scene, const Sample &sample,
 		float u1, float u2, float u3, BSDF **bsdf, float *pdf,
 		SWCSpectrum *L) const = 0;
-	virtual bool Sample_L(const Scene &scene, const Sample &sample,
+	virtual bool SampleL(const Scene &scene, const Sample &sample,
 		const Point &p, float u1, float u2, float u3,
 		BSDF **bsdf, float *pdf, float *pdfDirect,
 		SWCSpectrum *L) const = 0;
@@ -76,6 +83,8 @@ protected:
 	LightRenderingHints hints;
 public: // Put last for better data alignment
 	bool havePortalShape;
+protected:
+	boost::shared_ptr<Volume> volume;
 };
 
 class AreaLight : public Light {
@@ -93,10 +102,10 @@ public:
 	virtual bool IsDeltaLight() const { return false; }
 	virtual bool IsEnvironmental() const { return false; }
 	virtual float Pdf(const Point &p, const Point &po, const Normal &ns) const;
-	virtual bool Sample_L(const Scene &scene, const Sample &sample,
+	virtual bool SampleL(const Scene &scene, const Sample &sample,
 		float u1, float u2, float u3, BSDF **bsdf, float *pdf,
 		SWCSpectrum *Le) const;
-	virtual bool Sample_L(const Scene &scene, const Sample &sample,
+	virtual bool SampleL(const Scene &scene, const Sample &sample,
 		const Point &p, float u1, float u2, float u3,
 		BSDF **bsdf, float *pdf, float *pdfDirect,
 		SWCSpectrum *Le) const;

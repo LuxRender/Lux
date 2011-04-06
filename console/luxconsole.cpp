@@ -56,6 +56,7 @@ namespace po = boost::program_options;
 std::string sceneFileName;
 int threads;
 bool parseError;
+RenderServer *renderServer;
 
 void engineThread() {
 	// NOTE - lordcrc - initialize rand()
@@ -81,7 +82,19 @@ void infoThread() {
 	}
 }
 
+LuxErrorHandler prevErrorHandler;
+
+void serverErrorHandler(int code, int severity, const char *msg) {
+	if (renderServer)
+		renderServer->errorHandler(code, severity, msg);
+
+	prevErrorHandler(code, severity, msg);
+}
+
 int main(int ac, char *av[]) {
+
+	boost::filesystem::path initial_path = boost::filesystem::initial_path();
+
 	// Dade - initialize rand() number generator
 	srand(time(NULL));
 
@@ -94,6 +107,9 @@ int main(int ac, char *av[]) {
 		generic.add_options()
 				("version,v", "Print version string")
 				("help,h", "Produce help message")
+				("resume,r", po::value< std::string >()->implicit_value(""), "Resume from FLM")
+				("overrideresume,R", po::value< std::string >(), "Resume from specified FLM")
+				("output,o", po::value< std::string >(), "Output filename")
 				("server,s", "Launch in server mode")
 				("bindump,b", "Dump binary RGB framebuffer to stdout when finished")
 				("debug,d", "Enable debug mode")
@@ -101,7 +117,8 @@ int main(int ac, char *av[]) {
 				("minepsilon,e", po::value< float >(), "Set minimum epsilon")
 				("maxepsilon,E", po::value< float >(), "Set maximum epsilon")
 				("verbose,V", "Increase output verbosity (show DEBUG messages)")
-				("quiet,q", "Reduce output verbosity (hide INFO messages)") // (give once for WARNING only, twice for ERROR only)")
+				("quiet,q", "Reduce output verbosity (hide INFO messages)")
+				("very-quiet,x", "Reduce output verbosity even more (hide WARNING messages)")
 				;
 
 		// Declare a group of options that will be
@@ -148,7 +165,7 @@ int main(int ac, char *av[]) {
 		store(parse_config_file(ifs, config_file_options), vm);
 		notify(vm);
 
-		if (vm.count("help")) {
+		if (vm.count("help") || vm.empty()) {
 			LOG(LUX_ERROR,LUX_SYSTEM)<< "Usage: luxconsole [options] file...\n" << visible;
 			return 0;
 		}
@@ -182,12 +199,9 @@ int main(int ac, char *av[]) {
 			luxErrorFilter(LUX_WARNING);
 		}
 
-		/*
-		// cannot get po to parse multiple occurrences
-		if (vm.count("quiet")==2) {
+		if (vm.count("very-quiet")) {
 			luxErrorFilter(LUX_ERROR);
 		}
-		*/
 
 		if (vm.count("fixedseed")) {
 			if (!vm.count("server"))
@@ -232,12 +246,37 @@ int main(int ac, char *av[]) {
 				luxSetEpsilon(-1.f, -1.f);
 		}
 
+		if (vm.count("resume")) {
+			luxOverrideResumeFLM("");
+		}
+
+		if (vm.count("overrideresume")) {
+			std::string resumefile = vm["overrideresume"].as<std::string>();
+
+			boost::filesystem::path resumePath(resumefile);
+			if (!boost::filesystem::exists(resumePath)) {
+				LOG(LUX_WARNING,LUX_NOFILE) << "Could not find resume file '" << resumefile << "', using filename in scene";
+				resumefile = "";
+			}
+
+			luxOverrideResumeFLM(resumefile.c_str());
+		}
+
+		if (vm.count("output")) {
+			std::string outputfile = vm["output"].as<std::string>();
+
+			boost::filesystem::path outputPath(outputfile);
+			if (!boost::filesystem::exists(outputPath.parent_path())) {
+				LOG(LUX_WARNING,LUX_NOFILE) << "Could not find output path '" << outputPath.parent_path() << "', using filename in scene";
+			} else
+				luxOverrideFilename(outputfile.c_str());
+		}
+
 		if (vm.count("input-file")) {
 			const std::vector<std::string> &v = vm["input-file"].as < vector<string> > ();
 			for (unsigned int i = 0; i < v.size(); i++) {
 				//change the working directory
-				boost::filesystem::path fullPath(boost::filesystem::initial_path());
-				fullPath = boost::filesystem::system_complete(boost::filesystem::path(v[i], boost::filesystem::native));
+				boost::filesystem::path fullPath = boost::filesystem::complete(boost::filesystem::path(v[i], boost::filesystem::native), initial_path);
 
 				if (!boost::filesystem::exists(fullPath) && v[i] != "-") {
 					LOG(LUX_SEVERE,LUX_NOFILE) << "Unable to open scenefile '" << fullPath.string() << "'";
@@ -309,7 +348,11 @@ int main(int ac, char *av[]) {
 			}
 		} else if (vm.count("server")) {
 			bool writeFlmFile = vm.count("serverwriteflm") != 0;
-			RenderServer *renderServer = new RenderServer(threads, serverPort, writeFlmFile);
+			renderServer = new RenderServer(threads, serverPort, writeFlmFile);
+
+			prevErrorHandler = luxError;
+			luxErrorHandler(serverErrorHandler);
+
 			renderServer->start();
 			renderServer->join();
 			delete renderServer;

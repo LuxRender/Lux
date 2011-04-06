@@ -78,6 +78,9 @@ public:
 	void disconnect(const string &serverName);
 	void disconnect(const RenderingServerInfo &serverInfo);
 
+	// signal that rendering is done
+	void renderingDone() { netBufferComplete = false; };
+
 	void send(const std::string &command);
 	void send(const std::string &command,
 		const std::string &name, const ParamSet &params);
@@ -109,6 +112,9 @@ public:
 	//!<Gets the films from the network, and merge them to the film given in parameter
 	void updateFilm(Scene *scene);
 
+	//!<Gets the log from the network
+	void updateLog();
+
 public:
 	// Dade - film update infromation
 	int serverUpdateInterval;
@@ -118,7 +124,7 @@ private:
 		ExtRenderingServerInfo(string n, string p, string id) :
 			timeLastContact(boost::posix_time::second_clock::local_time()),
 			numberOfSamplesReceived(0.),
-			name(n), port(p), sid(id), flushed(false) { }
+			name(n), port(p), sid(id), active(false), flushed(false) { }
 
 		boost::posix_time::ptime timeLastContact;
 		// to return the max. number of samples among
@@ -129,6 +135,8 @@ private:
 		string port;
 		string sid;
 
+		bool active;
+
 		bool flushed;
 	};
 
@@ -137,7 +145,8 @@ private:
 	void flushImpl();
 	void disconnect(const ExtRenderingServerInfo &serverInfo);
 	void sendParams(const ParamSet &params);
-	void sendFile(std::string file);
+	void sendFile(const std::string &file);
+	void reconnectFailed();
 
 	// Any operation on servers must be synchronized via this mutex
 	boost::mutex serverListMutex;

@@ -141,13 +141,15 @@ float *RandomSampler::GetLazyValues(const Sample &sample, u_int num, u_int pos)
 
 Sampler* RandomSampler::CreateSampler(const ParamSet &params, const Film *film)
 {
-	int nsamp = params.FindOneInt("pixelsamples", -1);
 	// for backwards compatibility
-	if (nsamp < 0) {
-		LOG( LUX_WARNING,LUX_NOERROR)<< "Parameters 'xsamples' and 'ysamples' are deprecated, use 'pixelsamples' instead";
-		int xsamp = params.FindOneInt("xsamples", 2);
-		int ysamp = params.FindOneInt("ysamples", 2);
-		nsamp = xsamp*ysamp;
+	int nsamp = params.FindOneInt("pixelsamples", 4);
+
+	int xsamp = params.FindOneInt("xsamples", -1);
+	int ysamp = params.FindOneInt("ysamples", -1);
+
+	if (xsamp >= 0 || ysamp >= 0) {
+		LOG(LUX_WARNING, LUX_NOERROR) << "Parameters 'xsamples' and 'ysamples' are deprecated, use 'pixelsamples' instead";		
+		nsamp = (xsamp < 0 ? 2 : xsamp) * (ysamp < 0 ? 2 : ysamp);
 	}
 
 	string pixelsampler = params.FindOneString("pixelsampler", "vegas");
@@ -155,7 +157,7 @@ Sampler* RandomSampler::CreateSampler(const ParamSet &params, const Film *film)
     film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
     return new RandomSampler(xstart, xend,
                              ystart, yend,
-                             max(nsamp, 0), pixelsampler);
+                             max(nsamp, 1), pixelsampler);
 }
 
 static DynamicLoader::RegisterSampler<RandomSampler> r("random");

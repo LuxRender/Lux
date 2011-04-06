@@ -31,14 +31,11 @@ namespace lux
 class Null : public Material {
 public:
 	// Null Public Methods
-	Null(const CompositingParams &cp) {
-		compParams = new CompositingParams(cp);
-	}
+	Null(const ParamSet &mp) : Material(mp) { }
 	virtual ~Null() { }
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
-		const DifferentialGeometry &dgGeom,
-		const DifferentialGeometry &dgShading,
-		const Volume *exterior, const Volume *interior) const;
+		const Intersection &isect,
+		const DifferentialGeometry &dgShading) const;
 
 	static Material * CreateMaterial(const Transform &xform,
 		const ParamSet &mp);

@@ -24,6 +24,7 @@
 #include "mixmaterial.h"
 #include "memory.h"
 #include "bxdf.h"
+#include "primitive.h"
 #include "texture.h"
 #include "paramset.h"
 #include "dynload.h"
@@ -32,21 +33,17 @@ using namespace lux;
 
 // MixMaterial Method Definitions
 BSDF *MixMaterial::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
-	const DifferentialGeometry &dgGeom,
-	const DifferentialGeometry &dgShading,
-	const Volume *exterior, const Volume *interior) const {
-	MixBSDF *bsdf = ARENA_ALLOC(arena, MixBSDF)(dgShading, dgGeom.nn,
-		exterior, interior);
+	const Intersection &isect, const DifferentialGeometry &dgShading) const {
+	MixBSDF *bsdf = ARENA_ALLOC(arena, MixBSDF)(dgShading, isect.dg.nn,
+		isect.exterior, isect.interior);
 	float amt = amount->Evaluate(sw, dgShading);
 	DifferentialGeometry dgS = dgShading;
-	mat1->GetShadingGeometry(sw, dgGeom.nn, &dgS);
-	bsdf->Add(1.f - amt, mat1->GetBSDF(arena, sw, dgGeom, dgS,
-		exterior, interior));
+	mat1->GetShadingGeometry(sw, isect.dg.nn, &dgS);
+	bsdf->Add(1.f - amt, mat1->GetBSDF(arena, sw, isect, dgS));
 	dgS = dgShading;
-	mat2->GetShadingGeometry(sw, dgGeom.nn, &dgS);
-	bsdf->Add(amt, mat2->GetBSDF(arena, sw, dgGeom, dgS,
-		exterior, interior));
-	bsdf->SetCompositingParams(compParams);
+	mat2->GetShadingGeometry(sw, isect.dg.nn, &dgS);
+	bsdf->Add(amt, mat2->GetBSDF(arena, sw, isect, dgS));
+	bsdf->SetCompositingParams(&compParams);
 	return bsdf;
 }
 Material* MixMaterial::CreateMaterial(const Transform &xform,
@@ -64,10 +61,7 @@ Material* MixMaterial::CreateMaterial(const Transform &xform,
 
 	boost::shared_ptr<Texture<float> > amount(mp.GetFloatTexture("amount", 0.5f));
 
-	// Get Compositing Params
-	CompositingParams cP;
-	FindCompositingParams(mp, &cP);
-	return new MixMaterial(amount, mat1, mat2, cP);
+	return new MixMaterial(amount, mat1, mat2, mp);
 }
 
 static DynamicLoader::RegisterMaterial<MixMaterial> r("mix");

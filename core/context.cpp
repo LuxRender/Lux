@@ -42,6 +42,7 @@
 #include <boost/iostreams/filtering_streambuf.hpp>
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/zlib.hpp>
+#include <boost/filesystem.hpp>
 
 using namespace boost::iostreams;
 using namespace lux;
@@ -110,11 +111,11 @@ boost::shared_ptr<lux::Material > Context::GetMaterial(const string &n) const
 
 void Context::Init() {
 	// Dade - reinitialize
+	aborted = false;
 	terminated = false;
 	currentApiState = STATE_OPTIONS_BLOCK;
 	luxCurrentRenderer = NULL;
 	luxCurrentScene = NULL;
-	luxCurrentSceneReady = false;
 	curTransform = lux::Transform();
 	namedCoordinateSystems.clear();
 	renderOptions = new RenderOptions;
@@ -129,7 +130,6 @@ void Context::Init() {
 
 void Context::Free() {
 	// Dade - free memory
-	luxCurrentSceneReady = false;
 
 	delete luxCurrentRenderer;
 	luxCurrentRenderer = NULL;
@@ -156,7 +156,8 @@ void Context::Free() {
 // API Function Definitions
 
 void Context::AddServer(const string &n) {
-	renderFarm->connect(n);
+	if (!renderFarm->connect(n))
+		return;
 
 	// NOTE - Ratow - if this is the first server added during rendering, make sure update thread is started
 	if (GetServerCount() == 1 && luxCurrentScene)
@@ -293,6 +294,7 @@ void Context::PixelFilter(const string &n, const ParamSet &params) {
 }
 void Context::Film(const string &type, const ParamSet &params) {
 	VERIFY_OPTIONS("Film");
+	// NOTE - luxFilm command doesn't cause "filename" file to be sent
 	renderFarm->send("luxFilm", type, params);
 	renderOptions->filmParams = params;
 	renderOptions->filmName = type;
@@ -496,6 +498,7 @@ void Context::LightSource(const string &n, const ParamSet &params) {
 			graphicsState->currentLight = n;
 			graphicsState->currentLightPtr0 = lt_sun;
 			lt_sun->group = lg;
+			lt_sun->SetVolume(graphicsState->exterior);
 		}
 		Light *lt_sky = MakeLight("sky", curTransform, params);
 		if (lt_sky == NULL) {
@@ -506,6 +509,7 @@ void Context::LightSource(const string &n, const ParamSet &params) {
 			graphicsState->currentLight = n;
 			graphicsState->currentLightPtr1 = lt_sky;
 			lt_sky->group = lg;
+			lt_sky->SetVolume(graphicsState->exterior);
 		}
 	} else {
 		// other lightsource type
@@ -518,6 +522,7 @@ void Context::LightSource(const string &n, const ParamSet &params) {
 			graphicsState->currentLightPtr0 = lt;
 			graphicsState->currentLightPtr1 = NULL;
 			lt->group = lg;
+			lt->SetVolume(graphicsState->exterior);
 		}
 	}
 }
@@ -562,8 +567,10 @@ void Context::Shape(const string &n, const ParamSet &params) {
 		u_int lg = GetLightGroup();
 		area = MakeAreaLight(graphicsState->areaLight, curTransform,
 			graphicsState->areaLightParams, sh);
-		if (area)
+		if (area) {
 			area->group = lg;
+			area->SetVolume(graphicsState->exterior); //unused
+		}
 	}
 
 	// Lotus - Set the material
@@ -619,7 +626,7 @@ void Context::Exterior(const string &n) {
 	VERIFY_WORLD("Exterior");
 	renderFarm->send("luxExterior", n);
 	if (n == "")
-		graphicsState->interior = boost::shared_ptr<lux::Volume>();
+		graphicsState->exterior = boost::shared_ptr<lux::Volume>();
 	else if (graphicsState->namedVolumes.find(n) !=
 		graphicsState->namedVolumes.end()) {
 		// Create a temporary to increase share count
@@ -789,6 +796,8 @@ void Context::WorldEnd() {
 		// Create scene and render
 		luxCurrentScene = renderOptions->MakeScene();
 		if (luxCurrentScene) {
+			luxCurrentScene->camera->SetVolume(graphicsState->exterior);
+
 			luxCurrentRenderer = renderOptions->MakeRenderer();
 
 			if (luxCurrentRenderer) {
@@ -803,13 +812,18 @@ void Context::WorldEnd() {
 					// Stop the render farm too
 					activeContext->renderFarm->stopFilmUpdater();
 					// Update the film for the last time
-					activeContext->renderFarm->updateFilm(luxCurrentScene);
+					if (!aborted)
+						activeContext->renderFarm->updateFilm(luxCurrentScene);
 					// Disconnect from all servers
 					activeContext->renderFarm->disconnectAll();
 				}
+				// Signal that rendering is done, so any slaves connected
+				// after this won't start rendering
+				activeContext->renderFarm->renderingDone();
 
 				// Store final image
-				luxCurrentScene->camera->film->WriteImage((ImageType)(IMAGE_FILEOUTPUT|IMAGE_FRAMEBUFFER));
+				if (!aborted)
+					luxCurrentScene->camera->film->WriteImage((ImageType)(IMAGE_FILE_ALL|IMAGE_FRAMEBUFFER));
 			}
 		}
 	}
@@ -896,7 +910,7 @@ void Context::LoadFLM(const string &flmFileName) {
 		return;
 	}
 	luxCurrentScene = new Scene(cam);
-	SceneReady();
+	luxCurrentScene->SetReady();
 }
 void Context::SaveFLM(const string &flmFileName) {
 	luxCurrentScene->SaveFLM(flmFileName);
@@ -915,9 +929,18 @@ void Context::OverrideResumeFLM(const string &flmFileName) {
 	const bool boolFalse = false;
 	filmOverrideParams->AddBool("write_resume_flm", &boolTrue);
 	filmOverrideParams->AddBool("restart_resume_flm", &boolFalse);
-	if (flmFileName != "") {
-		const string filename = flmFileName.substr(0, flmFileName.length() - 4);
-		filmOverrideParams->AddString("filename", &filename);
+	OverrideFilename(flmFileName);
+}
+
+void Context::OverrideFilename(const string &filename) {
+	if (!filmOverrideParams) {
+		filmOverrideParams = new ParamSet();
+	}
+	if (filename != "") {
+		boost::filesystem::path filePath(filename);
+
+		const string basename = filePath.replace_extension("").string();
+		filmOverrideParams->AddString("filename", &basename);
 	}
 }
 
@@ -947,12 +970,16 @@ void Context::Exit() {
 		// Dade - stop the render farm too
 		activeContext->renderFarm->stopFilmUpdater();
 		// Dade - update the film for the last time
-		activeContext->renderFarm->updateFilm(luxCurrentScene);
+		if (!aborted)
+			activeContext->renderFarm->updateFilm(luxCurrentScene);
 		// Dade - disconnect from all servers
 		activeContext->renderFarm->disconnectAll();
 	}
 	
 	terminated = true;
+	if (luxCurrentScene)
+		// set this before Renderer::Terminate() as that call is blocking
+		luxCurrentScene->terminated = true;
 
 	// Reset Dynamic Epsilon values
 	MachineEpsilon::SetMin(DEFAULT_EPSILON_MIN);
@@ -960,6 +987,11 @@ void Context::Exit() {
 
 	if (luxCurrentRenderer)
 		luxCurrentRenderer->Terminate();
+}
+
+void Context::Abort() {
+	aborted = true;
+	Exit();
 }
 
 //controlling number of threads
@@ -988,6 +1020,18 @@ void Context::UpdateFramebuffer() {
 
 unsigned char* Context::Framebuffer() {
 	return luxCurrentScene->GetFramebuffer();
+}
+
+float* Context::FloatFramebuffer() {
+	return luxCurrentScene->GetFloatFramebuffer();
+}
+
+float* Context::AlphaBuffer() {
+	return luxCurrentScene->GetAlphaBuffer();
+}
+
+float* Context::ZBuffer() {
+	return luxCurrentScene->GetZBuffer();
 }
 
 //histogram access
@@ -1056,7 +1100,7 @@ u_int Context::GetLightGroup() {
 
 double Context::Statistics(const string &statName) {
 	if (statName == "sceneIsReady")
-		return (luxCurrentScene != NULL && luxCurrentSceneReady &&
+		return (luxCurrentScene != NULL && luxCurrentScene->IsReady() &&
 			!luxCurrentScene->IsFilmOnly());
 	else if (statName == "filmIsReady")
 		return (luxCurrentScene != NULL &&
@@ -1068,9 +1112,6 @@ double Context::Statistics(const string &statName) {
 	else
 		return 0;
 }
-void Context::SceneReady() {
-	luxCurrentSceneReady = true;
-}
 
 const char* Context::PrintableStatistics(const bool add_total) {
 	statsData->update(add_total);
@@ -1079,14 +1120,25 @@ const char* Context::PrintableStatistics(const bool add_total) {
 
 const char* Context::CustomStatistics(const string custom_template)
 {
+	// BEWARE capitalisation in this function StatsData vs. statsData
+
+	// TODO: need a mutex here, modifying StatsData is not thread safe
+
 	const string _ts1 = StatsData::template_string_local;
 	const string _ts2 = StatsData::template_string_network_waiting;
 	const string _ts3 = StatsData::template_string_network;
 	const string _ts4 = StatsData::template_string_total;
 	const string _ts5 = StatsData::template_string_haltspp;
 	const string _ts6 = StatsData::template_string_halttime;
+	const string _ts7 = StatsData::template_string_renderer;
 
 	StatsData::template_string_local = custom_template;
+	StatsData::template_string_network_waiting = "";
+	StatsData::template_string_network = "";
+	StatsData::template_string_total = "";
+	StatsData::template_string_haltspp = "";
+	StatsData::template_string_halttime = "";
+	StatsData::template_string_renderer = "";
 	statsData->update(true);
 	const char* custom_stats = statsData->formattedStatsString.c_str();
 
@@ -1096,6 +1148,7 @@ const char* Context::CustomStatistics(const string custom_template)
 	StatsData::template_string_total = _ts4;
 	StatsData::template_string_haltspp = _ts5;
 	StatsData::template_string_halttime = _ts6;
+	StatsData::template_string_renderer = _ts7;
 
 	return custom_stats;
 }
@@ -1110,6 +1163,9 @@ void Context::TransmitFilm(std::basic_ostream<char> &stream, bool useCompression
 
 void Context::UpdateFilmFromNetwork() {
 	renderFarm->updateFilm(luxCurrentScene);
+}
+void Context::UpdateLogFromNetwork() {
+	renderFarm->updateLog();
 }
 void Context::SetNetworkServerUpdateInterval(int updateInterval)
 {

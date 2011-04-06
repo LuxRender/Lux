@@ -34,11 +34,62 @@ GammaWidget::GammaWidget(QWidget *parent) : QWidget(parent), ui(new Ui::GammaWid
 	connect(ui->slider_gamma, SIGNAL(valueChanged(int)), this, SLOT(gammaChanged(int)));
 	connect(ui->spinBox_gamma, SIGNAL(valueChanged(double)), this, SLOT(gammaChanged(double)));
 	connect(ui->checkBox_CRF, SIGNAL(stateChanged(int)), this, SLOT(CRFChanged(int)));
-	connect(ui->pushButton_loadCRF, SIGNAL(clicked()), this, SLOT(loadCRF()));
-	ui->CRF_label->setStyleSheet(QString::fromUtf8(" QFrame {\n""background-color: rgb(250, 250, 250)\n""}"));
-#if defined(__APPLE__)
-	ui->pushButton_loadCRF->setFont(QFont  ("Lucida Grande", 11));
-#endif
+	connect(ui->combo_CRF_List, SIGNAL(activated(QString)), this, SLOT(SetCRFPreset(QString)));
+
+
+	ui->combo_CRF_List->addItem(tr("External..."));
+
+	addPreset("Advantix 100CD", "Advantix_100CD");
+	addPreset("Advantix 200CD", "Advantix_200CD");
+	addPreset("Advantix 400CD", "Advantix_400CD");
+	addPreset("Agfachrome ctpecisa 200CD", "Agfachrome_ctpecisa_200CD");
+	addPreset("Agfachrome ctprecisa 100CD", "Agfachrome_ctprecisa_100CD");
+	addPreset("Agfachrome rsx2 050CD", "Agfachrome_rsx2_050CD");
+	addPreset("Agfachrome rsx2 100CD", "Agfachrome_rsx2_100CD");
+	addPreset("Agfachrome rsx2 200CD", "Agfachrome_rsx2_200CD");
+	addPreset("Agfacolor futura 100CD", "Agfacolor_futura_100CD");
+	addPreset("Agfacolor futura 200CD", "Agfacolor_futura_200CD");
+	addPreset("Agfacolor futura 400CD", "Agfacolor_futura_400CD");
+	addPreset("Agfacolor futuraII 100CD", "Agfacolor_futuraII_100CD");
+	addPreset("Agfacolor futuraII 200CD", "Agfacolor_futuraII_200CD");
+	addPreset("Agfacolor futuraII 400CD", "Agfacolor_futuraII_400CD");
+	addPreset("Agfacolor hdc 100 plusCD", "Agfacolor_hdc_100_plusCD");
+	addPreset("Agfacolor hdc 200 plusCD", "Agfacolor_hdc_200_plusCD");
+	addPreset("Agfacolor hdc 400 plusCD", "Agfacolor_hdc_400_plusCD");
+	addPreset("Agfacolor optimaII 100CD", "Agfacolor_optimaII_100CD");
+	addPreset("Agfacolor optimaII 200CD", "Agfacolor_optimaII_200CD");
+	addPreset("Agfacolor ultra 050 CD", "Agfacolor_ultra_050_CD");
+	addPreset("Agfacolor vista 100CD", "Agfacolor_vista_100CD");
+	addPreset("Agfacolor vista 200CD", "Agfacolor_vista_200CD");
+	addPreset("Agfacolor vista 400CD", "Agfacolor_vista_400CD");
+	addPreset("Agfacolor vista 800CD", "Agfacolor_vista_800CD");
+	addPreset("B&W - Agfapan apx 025CD", "Agfapan_apx_025CD");
+	addPreset("B&W - Agfapan apx 100CD", "Agfapan_apx_100CD");
+	addPreset("B&W - Agfapan apx 400CD", "Agfapan_apx_400CD");
+	addPreset("Ektachrome 100 plusCD", "Ektachrome_100_plusCD");
+	addPreset("Ektachrome 100CD", "Ektachrome_100CD");
+	addPreset("Ektachrome 320TCD", "Ektachrome_320TCD");
+	addPreset("Ektachrome 400XCD", "Ektachrome_400XCD");
+	addPreset("Ektachrome 64CD", "Ektachrome_64CD");
+	addPreset("Ektachrome 64TCD", "Ektachrome_64TCD");
+	addPreset("Ektachrome E100SCD", "Ektachrome_E100SCD");
+	addPreset("F125CD", "F125CD");
+	addPreset("F250CD", "F250CD");
+	addPreset("F400CD", "F400CD");
+	addPreset("FCICD", "FCICD");
+	addPreset("Gold 100CD", "Gold_100CD");
+	addPreset("Gold 200CD", "Gold_200CD");
+	addPreset("Kodachrome 200CD", "Kodachrome_200CD");
+	addPreset("Kodachrome 25CD", "Kodachrome_25CD");
+	addPreset("Kodachrome 64CD", "Kodachrome_64CD");
+	addPreset("Max Zoom 800CD", "Max_Zoom_800CD");
+	addPreset("Portra 100TCD", "Portra_100TCD");
+	addPreset("Portra 160NCCD", "Portra_160NCCD");
+	addPreset("Portra 160VCCD", "Portra_160VCCD");
+	addPreset("Portra 400NCCD", "Portra_400NCCD");
+	addPreset("Portra 400VCCD", "Portra_400VCCD");
+	addPreset("Portra 800CD", "Portra_800CD");
+
 }
 
 GammaWidget::~GammaWidget()
@@ -137,17 +188,39 @@ void GammaWidget::activateCRF()
 		m_CRF_enabled = true;
 
 		QFileInfo fi(m_CRF_file);
-		ui->CRF_label->setText(fi.fileName());
+
+		// Validate current selection...
+		if ( m_CRF_file != ui->combo_CRF_List->itemData( ui->combo_CRF_List->currentIndex() ).toString() )
+		{
+			if ( fi.suffix().toLower() == "crf" || fi.suffix().toLower() == "txt" || fi.exists() )
+			{
+				ui->combo_CRF_List->insertItem( 1, fi.fileName(), QVariant( m_CRF_file ) );
+				ui->combo_CRF_List->setCurrentIndex( 1 );
+			}
+			else // look for existing preset.
+			{
+				int lIndex = ui->combo_CRF_List->findData( QVariant( m_CRF_file ) );
+
+				if ( lIndex != -1 ) ui->combo_CRF_List->setCurrentIndex( lIndex );
+				else // Invalid preset...
+				{
+					m_CRF_enabled = false;
+				}				
+			}
+		}
 
 		updateWidgetValue(ui->checkBox_CRF, m_CRF_enabled);
 		
 		updateParam(LUX_FILM, LUX_FILM_CAMERA_RESPONSE_ENABLED, m_CRF_enabled);
 
+		if ( m_CRF_enabled )
+		{
 #if defined(__APPLE__) // OSX locale is UTF-8, TODO check this for other OS
-		luxSetStringAttribute("film", "CameraResponse", m_CRF_file.toUtf8().data());
+			luxSetStringAttribute("film", "CameraResponse", m_CRF_file.toUtf8().data());
 #else
-		luxSetStringAttribute("film", "CameraResponse", m_CRF_file.toAscii().data());
+			luxSetStringAttribute("film", "CameraResponse", m_CRF_file.toAscii().data());
 #endif
+		}
 	}
 }
 
@@ -155,7 +228,6 @@ void GammaWidget::deactivateCRF()
 {
 	m_CRF_enabled = false;
 
-	ui->CRF_label->setText("inactive");
 	ui->gamma_label->setText("Gamma");
 	updateWidgetValue(ui->slider_gamma, (int)((FLOAT_SLIDER_RES / TORGB_GAMMA_RANGE) * m_TORGB_gamma) );
 	updateWidgetValue(ui->spinBox_gamma, m_TORGB_gamma);
@@ -173,8 +245,50 @@ void GammaWidget::loadCRF()
 	if(!m_CRF_file.isEmpty()) {
 		QFileInfo info(m_CRF_file);
 		m_lastOpendir = info.absolutePath();
-
-		ui->checkBox_CRF->setChecked(true);
-		CRFChanged(Qt::Checked);
 	}
 }
+
+void GammaWidget::SetCRFPreset( QString sOption )
+{
+	if ( ui->combo_CRF_List->currentIndex() == 0 ) // Load from file.
+	{
+		loadCRF();
+
+		if( !m_CRF_file.isEmpty() )
+		{
+			QFileInfo fTemp = m_CRF_file;
+
+			ui->combo_CRF_List->insertItem( 1, fTemp.fileName(), QVariant( m_CRF_file ) );
+			ui->combo_CRF_List->setCurrentIndex( 1 );
+		}
+	}
+	else // Select existing preset.
+	{
+		QVariant vTemp = ui->combo_CRF_List->itemData( ui->combo_CRF_List->currentIndex() );
+
+		if ( vTemp != QVariant::Invalid )
+		{
+			m_CRF_file = vTemp.toString();
+		}
+		else
+		{
+			m_CRF_file = sOption;
+		}		
+	}
+	
+	if( !m_CRF_file.isEmpty() )
+	{
+		activateCRF();
+	}
+
+	emit valuesChanged ();
+}
+
+void GammaWidget::addPreset( QString listName, QString realName )
+{
+	ui->combo_CRF_List->addItem( listName, QVariant( realName ) );
+}
+
+
+
+

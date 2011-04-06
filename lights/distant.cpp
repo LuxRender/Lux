@@ -109,7 +109,8 @@ bool DistantLight::Le(const Scene &scene, const Sample &sample, const Ray &r,
 	DifferentialGeometry dg(ps, ns, -x, y, Normal(0, 0, 0), Normal(0, 0, 0),
 		0, 0, NULL);
 	dg.time = sample.realTime;
-	*bsdf = ARENA_ALLOC(sample.arena, SingleBSDF)(dg, ns, bxdf, NULL, NULL);
+	const Volume *v = GetVolume();
+	*bsdf = ARENA_ALLOC(sample.arena, SingleBSDF)(dg, ns, bxdf, v, v);
 	if (pdf) {
 		if (!havePortalShape)
 			*pdf = 1.f / (M_PI * worldRadius * worldRadius);
@@ -148,7 +149,7 @@ float DistantLight::Pdf(const Point &p, const Point &po, const Normal &ns) const
 		return UniformConePdf(cosThetaMax) * cosRay / d2;
 }
 
-bool DistantLight::Sample_L(const Scene &scene, const Sample &sample,
+bool DistantLight::SampleL(const Scene &scene, const Sample &sample,
 	float u1, float u2, float u3, BSDF **bsdf, float *pdf,
 	SWCSpectrum *Le) const
 {
@@ -204,14 +205,15 @@ bool DistantLight::Sample_L(const Scene &scene, const Sample &sample,
 	DifferentialGeometry dg(ps, ns, -x, y, Normal(0, 0, 0), Normal(0, 0, 0),
 		0, 0, NULL);
 	dg.time = sample.time;
-	*bsdf = ARENA_ALLOC(sample.arena, SingleBSDF)(dg, ns, bxdf, NULL, NULL);
+	const Volume *v = GetVolume();
+	*bsdf = ARENA_ALLOC(sample.arena, SingleBSDF)(dg, ns, bxdf, v, v);
 
 	*Le = Lbase->Evaluate(sample.swl, dg) *
-		(gain * UniformConePdf(cosThetaMax));
+		(gain * UniformConePdf(cosThetaMax) / *pdf);
 	return true;
 }
 
-bool DistantLight::Sample_L(const Scene &scene, const Sample &sample,
+bool DistantLight::SampleL(const Scene &scene, const Sample &sample,
 	const Point &p, float u1, float u2, float u3,
 	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *Le) const
 {
@@ -230,7 +232,8 @@ bool DistantLight::Sample_L(const Scene &scene, const Sample &sample,
 	DifferentialGeometry dg(ps, ns, -x, y, Normal(0, 0, 0), Normal(0, 0, 0),
 		0, 0, NULL);
 	dg.time = sample.realTime;
-	*bsdf = ARENA_ALLOC(sample.arena, SingleBSDF)(dg, ns, bxdf, NULL, NULL);
+	const Volume *v = GetVolume();
+	*bsdf = ARENA_ALLOC(sample.arena, SingleBSDF)(dg, ns, bxdf, v, v);
 	if (pdf) {
 		if (!havePortalShape)
 			*pdf = 1.f / (M_PI * worldRadius * worldRadius);
@@ -250,12 +253,11 @@ bool DistantLight::Sample_L(const Scene &scene, const Sample &sample,
 			*pdf /= nrPortalShapes;
 		}
 	}
-	if (pdfDirect)
-		*pdfDirect = UniformConePdf(cosThetaMax) * cosRay /
-			(distance * distance);
+	*pdfDirect = UniformConePdf(cosThetaMax) * cosRay /
+		(distance * distance);
 
 	*Le = Lbase->Evaluate(sample.swl, dg) *
-		(gain * UniformConePdf(cosThetaMax));
+		(gain * UniformConePdf(cosThetaMax) / *pdfDirect);
 	return true;
 }
 

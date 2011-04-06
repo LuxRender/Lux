@@ -36,6 +36,7 @@ DifferentialGeometry::DifferentialGeometry(const Point &P,
 	u = uu;
 	v = vv;
 	handle = pr;
+	scattered = false;
 }
 // Dade - added this costructor as a little optimization if the
 // normalized normal is already available
@@ -49,4 +50,5 @@ DifferentialGeometry::DifferentialGeometry(const Point &P,
 	u = uu;
 	v = vv;
 	handle = pr;
+	scattered = false;
 }

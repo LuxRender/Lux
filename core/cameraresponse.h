@@ -33,10 +33,12 @@ public:
 	CameraResponse(const string &film);
 	void Map(RGBColor &rgb) const;
 
-	string fileName;
+	string filmName;
 	bool validFile;
 private:
 	float ApplyCrf(float point, const vector<float> &from, const vector<float> &to) const;
+	bool loadPreset();
+	bool loadFile();
 
 	bool color;
 	vector<float> RedI; // image irradiance (on the image plane)

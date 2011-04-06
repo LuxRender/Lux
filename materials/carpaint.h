@@ -46,7 +46,7 @@ public:
 		boost::shared_ptr<Texture<float> > &m2,
 		boost::shared_ptr<Texture<float> > &m3,
 		boost::shared_ptr<Texture<float> > &bump,
-		const CompositingParams &cp);
+		const ParamSet &mp);
 	virtual ~CarPaint() { }
 
 	virtual void GetShadingGeometry(const SpectrumWavelengths &sw,
@@ -55,9 +55,8 @@ public:
 			Bump(sw, bumpMap, nGeom, dgBump);
 	}
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
-		const DifferentialGeometry &dgGeom,
-		const DifferentialGeometry &dgShading,
-		const Volume *exterior, const Volume *interior) const;
+		const Intersection &isect,
+		const DifferentialGeometry &dgShading) const;
 
 	static Material * CreateMaterial(const Transform &xform,
 		const ParamSet &mp);

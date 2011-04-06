@@ -54,13 +54,14 @@ SWCSpectrum VirtualLight::GetSWCSpectrum(const SpectrumWavelengths &sw) const
 }
 
 // IGIIntegrator Implementation
-IGIIntegrator::IGIIntegrator(u_int nl, u_int ns, u_int d, float gl)
+IGIIntegrator::IGIIntegrator(u_int nl, u_int ns, u_int d, float gl) : SurfaceIntegrator()
 {
 	nLightPaths = RoundUpPow2(nl);
 	nLightSets = RoundUpPow2(ns);
 	gLimit = gl;
 	maxSpecularDepth = d;
 	virtualLights.resize(nLightSets);
+	AddStringConstant(*this, "name", "Name of current surface integrator", "igi");
 }
 void IGIIntegrator::RequestSamples(Sample *sample, const Scene &scene)
 {
@@ -81,7 +82,8 @@ void IGIIntegrator::RequestSamples(Sample *sample, const Scene &scene)
 
 	vector<u_int> structure;
 	structure.push_back(1);	// bsdf component
-	sampleOffset = sample->AddxD(structure, maxSpecularDepth);
+	structure.push_back(1); // scattering
+	sampleOffset = sample->AddxD(structure, maxSpecularDepth + 1);
 }
 void IGIIntegrator::Preprocess(const RandomGenerator &rng, const Scene &scene)
 {
@@ -127,7 +129,7 @@ void IGIIntegrator::Preprocess(const RandomGenerator &rng, const Scene &scene)
 			BSDF *bsdf;
 			float pdf;
 			SWCSpectrum alpha;
-			if (!light->Sample_L(scene, sample,
+			if (!light->SampleL(scene, sample,
 				lightSamp0[2 * sampOffset ],
 				lightSamp0[2 * sampOffset + 1],
 				lightSamp0b[sampOffset], &bsdf, &pdf, &alpha))
@@ -142,12 +144,13 @@ void IGIIntegrator::Preprocess(const RandomGenerator &rng, const Scene &scene)
 				lightSamp1b[sampOffset], &f, &pdf2))
 				continue;
 			alpha *= f;
-			alpha /= pdf * lightPdf;
+			alpha /= lightPdf;
 			Intersection isect;
 			const Volume *volume = NULL; //FIXME: get it from the light
 			u_int nIntersections = 0;
-			while (scene.Intersect(sample, volume, ray,
-				&isect, &bsdf, &alpha) && !alpha.Black()) {
+			while (scene.Intersect(sample, volume, false, ray, 1.f,
+				&isect, &bsdf, NULL, NULL, &alpha) &&
+				!alpha.Black()) {
 				++nIntersections;
 				Vector wo = -ray.d;
 				// Create virtual light at ray intersection point
@@ -191,11 +194,15 @@ u_int IGIIntegrator::Li(const Scene &scene, const Sample &sample) const
 	SWCSpectrum L(0.f), pathThroughput(1.f);
 	float alpha = 1.f;
 	const Volume *volume = NULL;
+	bool scattered = false;
 	for (u_int depth = 0; ; ++depth) {
+		const float *data = scene.sampler->GetLazyValues(sample, sampleOffset, depth);
 		Intersection isect;
 		BSDF *bsdf;
-		if (!scene.Intersect(sample, volume, ray, &isect, &bsdf,
-			&pathThroughput)) {
+		float spdf;
+		if (!scene.Intersect(sample, volume, scattered, ray, data[1],
+			&isect, &bsdf, &spdf, NULL, &pathThroughput)) {
+			pathThroughput /= spdf;
 			// Handle ray with no intersection
 			if (depth == 0)
 				alpha = 0.f;
@@ -208,6 +215,8 @@ u_int IGIIntegrator::Li(const Scene &scene, const Sample &sample) const
 			}
 			break;
 		}
+		scattered = bsdf->dgShading.scattered;
+		pathThroughput /= spdf;
 		Vector wo = -ray.d;
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;
@@ -244,8 +253,9 @@ u_int IGIIntegrator::Li(const Scene &scene, const Sample &sample) const
 				continue;
 			SWCSpectrum Llight = f * vl.GetSWCSpectrum(sw) *
 				(G / nLightPaths);
-			if (scene.Connect(sample, bsdf->GetVolume(wi), p, vl.p,
-				false, &Llight, NULL, NULL)) {
+			if (scene.Connect(sample, bsdf->GetVolume(wi),
+				scattered, false, p, vl.p, false, &Llight, NULL,
+				NULL)) {
 				L += pathThroughput * Llight;
 			}
 		}
@@ -255,7 +265,6 @@ u_int IGIIntegrator::Li(const Scene &scene, const Sample &sample) const
 		SWCSpectrum f;
 		float pdf;
 		// Trace rays for specular reflection and refraction
-		float *data = scene.sampler->GetLazyValues(sample, sampleOffset, depth);
 		if (!bsdf->SampleF(sw, wo, &wi, .5f, .5f, *data, &f, &pdf,
 			BxDFType(BSDF_SPECULAR | BSDF_REFLECTION | BSDF_TRANSMISSION)))
 			break;

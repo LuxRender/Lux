@@ -24,6 +24,7 @@
 #include "glass2.h"
 #include "memory.h"
 #include "bxdf.h"
+#include "primitive.h"
 #include "specularreflection.h"
 #include "speculartransmission.h"
 #include "fresneldielectric.h"
@@ -36,18 +37,15 @@ using namespace lux;
 
 // Glass Method Definitions
 BSDF *Glass2::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
-	const DifferentialGeometry &dgGeom,
-	const DifferentialGeometry &dgs,
-	const Volume *exterior, const Volume *interior) const
+	const Intersection &isect, const DifferentialGeometry &dgs) const
 {
 	// Allocate _BSDF_
 	Fresnel *fresnel;
-	if (exterior) {
-		const FresnelGeneral fre(exterior->Fresnel(sw, dgs.p,
-			Vector(dgs.nn)));
-		if (interior) {
-			const FresnelGeneral fri(interior->Fresnel(sw, dgs.p,
-				Vector(dgs.nn)));
+	if (isect.exterior) {
+		const FresnelGeneral fre(isect.exterior->Fresnel(sw, dgs));
+		if (isect.interior) {
+			const FresnelGeneral fri(isect.interior->Fresnel(sw,
+				dgs));
 			SWCSpectrum fer, fir, f;
 			fre.ComplexEvaluate(sw, &fer, &f);
 			fri.ComplexEvaluate(sw, &fir, &f);
@@ -61,15 +59,15 @@ BSDF *Glass2::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 			fresnel = ARENA_ALLOC(arena, FresnelDielectric)
 				(ior, SWCSpectrum(1.f) / fer, SWCSpectrum(0.f));
 		}
-	} else if (interior)
+	} else if (isect.interior)
 		fresnel = ARENA_ALLOC(arena, FresnelGeneral)
-			(interior->Fresnel(sw, dgs.p, Vector(dgs.nn)));
+			(isect.interior->Fresnel(sw, dgs));
 	else
 		fresnel = ARENA_ALLOC(arena, FresnelDielectric)(1.f,
 			SWCSpectrum(1.f), SWCSpectrum(0.f));
 
-	MultiBSDF *bsdf = ARENA_ALLOC(arena, MultiBSDF)(dgs, dgGeom.nn,
-		exterior, interior);
+	MultiBSDF *bsdf = ARENA_ALLOC(arena, MultiBSDF)(dgs, isect.dg.nn,
+		isect.exterior, isect.interior);
 	if (architectural)
 		bsdf->Add(ARENA_ALLOC(arena,
 			SimpleArchitecturalReflection)(fresnel));
@@ -80,7 +78,7 @@ BSDF *Glass2::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 		SimpleSpecularTransmission)(fresnel, dispersion, architectural));
 
 	// Add ptr to CompositingParams structure
-	bsdf->SetCompositingParams(compParams);
+	bsdf->SetCompositingParams(&compParams);
 
 	return bsdf;
 }
@@ -92,11 +90,7 @@ Material* Glass2::CreateMaterial(const Transform &xform,
 	bool disp = mp.FindOneBool("dispersion", false);
 	boost::shared_ptr<Texture<float> > bumpMap(mp.GetFloatTexture("bumpmap"));
 
-	// Get Compositing Params
-	CompositingParams cP;
-	FindCompositingParams(mp, &cP);
-
-	return new Glass2(archi, disp, bumpMap, cP);
+	return new Glass2(archi, disp, bumpMap, mp);
 }
 
 static DynamicLoader::RegisterMaterial<Glass2> r("glass2");

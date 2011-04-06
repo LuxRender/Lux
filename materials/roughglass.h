@@ -38,9 +38,9 @@ public:
 		boost::shared_ptr<Texture<float> > &i,
 		boost::shared_ptr<Texture<float> > &cbf,
 		boost::shared_ptr<Texture<float> > &bump,
-		const CompositingParams &cp) : Kr(r), Kt(t), index(i),
+		const ParamSet &mp) : Material(mp), Kr(r), Kt(t), index(i),
 		cauchyb(cbf), uroughness(urough), vroughness(vrough),
-		bumpMap(bump) { compParams = new CompositingParams(cp); }
+		bumpMap(bump) { }
 	virtual ~RoughGlass() { }
 	virtual void GetShadingGeometry(const SpectrumWavelengths &sw,
 		const Normal &nGeom, DifferentialGeometry *dgBump) const {
@@ -48,9 +48,8 @@ public:
 			Bump(sw, bumpMap, nGeom, dgBump);
 	}
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
-		const DifferentialGeometry &dgGeom,
-		const DifferentialGeometry &dgShading,
-		const Volume *exterior, const Volume *interior) const;
+		const Intersection &isect,
+		const DifferentialGeometry &dgShading) const;
 
 	static Material * CreateMaterial(const Transform &xform,
 		const ParamSet &mp);

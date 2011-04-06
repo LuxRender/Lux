@@ -22,6 +22,8 @@
 
 #include "renderview.hxx"
 #include "api.h"
+#include "error.h"
+#include "guiutil.h"
 
 #include <iostream>
 #include <algorithm>
@@ -38,6 +40,7 @@ RenderView::RenderView(QWidget *parent) : QGraphicsView(parent) {
 	centerOn(luxlogo);
 	setScene(renderscene);
 	zoomfactor = 100.0f;
+	overlayStats = false;
 }
 
 RenderView::~RenderView () {
@@ -49,12 +52,18 @@ RenderView::~RenderView () {
 void RenderView::copyToClipboard()
 {
 	if ((luxStatistics("sceneIsReady") || luxStatistics("filmIsReady")) && luxfb->isVisible()) {
-		int w = luxGetIntAttribute("film", "xResolution");
-		int h = luxGetIntAttribute("film", "yResolution");
-		unsigned char* fb = luxFramebuffer();
-		QImage image = QImage(fb, w, h, QImage::Format_RGB888);
+		QImage image = getFramebufferImage(overlayStats);
+		if (image.isNull()) {
+			LOG(LUX_ERROR, LUX_SYSTEM) << tr("Error getting framebuffer").toLatin1().data();
+			return;
+		}
+
 		QClipboard *clipboard = QApplication::clipboard();
 		// QT assumes 32bpp images for clipboard (DIBs)
+		if (!clipboard) {
+			LOG(LUX_ERROR, LUX_SYSTEM) << tr("Copy to clipboard failed, unable to open clipboard").toLatin1().data();
+			return;
+		}
 		clipboard->setImage(image.convertToFormat(QImage::Format_RGB32));
 	}
 }
@@ -63,15 +72,16 @@ void RenderView::reload () {
 	if (luxStatistics("sceneIsReady") || luxStatistics("filmIsReady")) {
 		int w = luxGetIntAttribute("film", "xResolution");
 		int h = luxGetIntAttribute("film", "yResolution");
-		unsigned char* fb = luxFramebuffer();
-
-		if (!fb)
-			return;
 			
+		QImage image = getFramebufferImage(overlayStats);
+
+		if (image.isNull())
+			return;
+
 		if (luxlogo->isVisible ())
 			luxlogo->hide ();
-
-		luxfb->setPixmap(QPixmap::fromImage(QImage(fb, w, h, w * 3, QImage::Format_RGB888)));
+		
+		luxfb->setPixmap(QPixmap::fromImage(image));
 
 		if (!luxfb->isVisible()) {
 			resetTransform ();

@@ -76,6 +76,14 @@ public:
 		dgTemp.nn = Normalize(origN + vv * dgTemp.dndv);
 		*dv = (Evaluate(sw, dgTemp) - base) / vv;
 	}
+	virtual void GetMinMaxFloat(float *minValue, float *maxValue) const {
+		// FBm is computed as a geometric series Sum(Ar^k) with A ~ [-1, 1]
+		const float geomsum = (1.f - powf(omega, octaves)) / (1.f - omega);
+		// this seems to be a fair conservative bound on the min/max values
+		// TODO - find better bounds
+		*maxValue = max(1.f, geomsum/2.f);
+		*minValue = -*maxValue;
+	}
 
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const ParamSet &tp);
 	
@@ -89,8 +97,22 @@ private:
 // FBmTexture Method Definitions
 Texture<float> * FBmTexture::CreateFloatTexture(const Transform &tex2world,
 	const ParamSet &tp) {
+	TextureMapping3D *imap;
+	// Read mapping coordinates
+	string coords = tp.FindOneString("coordinates", "global");
+	if (coords == "global")
+		imap = new GlobalMapping3D(tex2world);
+	else if (coords == "local")
+		imap = new LocalMapping3D(tex2world);
+	else if (coords == "uv")
+		imap = new UVMapping3D(tex2world);
+	else if (coords == "globalnormal")
+		imap = new GlobalNormalMapping3D(tex2world);
+	else if (coords == "localnormal")
+		imap = new LocalNormalMapping3D(tex2world);
+	else
+		imap = new GlobalMapping3D(tex2world);
 	// Apply texture specified transformation option for 3D mapping
-	IdentityMapping3D *imap = new IdentityMapping3D(tex2world);
 	imap->Apply3DTextureMappingOptions(tp);
 
 	return new FBmTexture(tp.FindOneInt("octaves", 8),

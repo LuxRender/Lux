@@ -24,6 +24,7 @@
 
 #include "lux.h"
 #include "scene.h"
+#include "sampling.h"
 
 #include "luxrays/luxrays.h"
 #include "luxrays/core/device.h"
@@ -39,10 +40,13 @@ enum EyePathStateType {
 };
 
 class EyePath {
-	EyePath(const u_int index);
+public:
+	EyePath(const Scene &scene, RandomGenerator *rng, const u_int index);
 	~EyePath();
 
 	EyePathStateType state;
+
+	Sample sample;
 
 	// Screen information
 	u_int pixelIndex;

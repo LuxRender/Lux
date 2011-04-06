@@ -194,7 +194,7 @@ void ApplyImagingPipeline(vector<XYZColor> &xyzpixels,
 	bool &haveGlareImage, XYZColor *&glareImage, bool glareUpdate,
 	float glareAmount, float glareRadius, u_int glareBlades, float glareThreshold,
 	const char *toneMapName, const ParamSet *toneMapParams,
-	const CameraResponse *response, float gamma, float dither)
+	const CameraResponse *response, float dither)
 {
 	const u_int nPix = xResolution * yResolution;
 
@@ -526,11 +526,6 @@ void ApplyImagingPipeline(vector<XYZColor> &xyzpixels,
 	if (dither > 0.f)
 		for (u_int i = 0; i < nPix; ++i)
 			rgbpixels[i] += 2.f * dither * (lux::random::floatValueP() - .5f);
-
-	// Do gamma correction
-	const float invGamma = 1.f / gamma;
-	for (u_int i = 0; i < nPix; ++i)
-		rgbpixels[i] = rgbpixels[i].Pow(invGamma);
 }
 
 
@@ -633,6 +628,7 @@ Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop
 	//Queryable parameters
 	AddIntAttribute(*this, "xResolution", "Horizontal resolution (pixels)", &Film::GetXResolution);
 	AddIntAttribute(*this, "yResolution", "Vertical resolution (pixels)", &Film::GetYResolution);
+	AddBoolAttribute(*this, "premultiplyAlpha", "Premultiplied alpha enabled", &Film::premultiplyAlpha);
 	AddStringAttribute(*this, "filename", "Output filename", filename, &Film::filename, Queryable::ReadWriteAccess);
 	AddFloatAttribute(*this, "EV", "Exposure value", &Film::EV);
 	AddFloatAttribute(*this, "averageLuminance", "Average Image Luminance", &Film::averageLuminance);
@@ -1091,7 +1087,8 @@ static const int FLM_MAGIC_NUMBER = 0xCEBCD816;
 static const int FLM_VERSION = 0; // should be incremented on each change to the format to allow detecting unsupported FLM data!
 enum FlmParameterType {
 	FLM_PARAMETER_TYPE_FLOAT = 0,
-	FLM_PARAMETER_TYPE_STRING = 1
+	FLM_PARAMETER_TYPE_STRING = 1,
+	FLM_PARAMETER_TYPE_DOUBLE = 2,
 };
 
 class FlmParameter {
@@ -1106,12 +1103,16 @@ public:
 				size = 4;
 				floatValue = static_cast<float>(aFilm->GetParameterValue(aParam, aIndex));
 				break;
+			case FLM_PARAMETER_TYPE_DOUBLE:
+				size = 8;
+				floatValue = static_cast<double>(aFilm->GetParameterValue(aParam, aIndex));
+				break;
 			case FLM_PARAMETER_TYPE_STRING:
 				stringValue = aFilm->GetStringParameterValue(aParam, aIndex);
 				size = stringValue.size();
 				break;
 			default: {
-				LOG(LUX_ERROR,LUX_SYSTEM) << "Invalid parameter type (expected value in [0,1], got=" << type << ")";
+				LOG(LUX_ERROR,LUX_SYSTEM) << "Invalid parameter type (expected value in [0,2], got=" << type << ")";
 				break;
 			}
 		}
@@ -1120,6 +1121,9 @@ public:
 	void Set(Film *aFilm) {
 		switch (type) {
 			case FLM_PARAMETER_TYPE_FLOAT:
+				aFilm->SetParameterValue(id, floatValue, index);
+				break;
+			case FLM_PARAMETER_TYPE_DOUBLE:
 				aFilm->SetParameterValue(id, floatValue, index);
 				break;
 			case FLM_PARAMETER_TYPE_STRING:
@@ -1162,6 +1166,13 @@ public:
 				}
 				floatValue = osReadLittleEndianFloat(isLittleEndian, is);
 				break;
+			case FLM_PARAMETER_TYPE_DOUBLE:
+				if (size != 8) {
+					LOG(LUX_ERROR,LUX_SYSTEM) << "Invalid parameter size (expected value for double is 8, received=" << size << ")";
+					return false;
+				}
+				floatValue = osReadLittleEndianDouble(isLittleEndian, is);
+				break;
 			case FLM_PARAMETER_TYPE_STRING: {
 				char* chars = new char[size+1];
 				is.read(chars, size);
@@ -1186,6 +1197,9 @@ public:
 			case FLM_PARAMETER_TYPE_FLOAT:
 				osWriteLittleEndianFloat(isLittleEndian, os, floatValue);
 				break;
+			case FLM_PARAMETER_TYPE_DOUBLE:
+				osWriteLittleEndianDouble(isLittleEndian, os, floatValue);
+				break;
 			case FLM_PARAMETER_TYPE_STRING:
 				os.write(stringValue.c_str(), size);
 				break;
@@ -1201,7 +1215,7 @@ private:
 	luxComponentParameters id;
 	u_int index;
 		
-	float floatValue;
+	double floatValue;
 	string stringValue;
 };
 
@@ -1380,6 +1394,8 @@ double Film::DoTransmitFilm(
 
 		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TM_CONTRAST_YWA, 0));
 
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_LDR_CLAMP_METHOD, 0));		
+
 		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TORGB_X_WHITE, 0));
 		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TORGB_Y_WHITE, 0));
 		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TORGB_X_RED, 0));
@@ -1470,19 +1486,30 @@ double Film::DoTransmitFilm(
 					osWriteLittleEndianFloat(isLittleEndian, os, pixel.alpha);
 					osWriteLittleEndianFloat(isLittleEndian, os, pixel.weightSum);
 				}
-			}
-
-			if (clearBuffers) {
-				// Dade - reset the rendering buffer
-				buffer->Clear();
+				if (!os.good())
+					// error during transmission, abort
+					return 0;
 			}
 		}
 
 		totNumberOfSamples += bufferGroup.numberOfSamples;
 		LOG(LUX_DEBUG,LUX_NOERROR) << "Transmitted " << bufferGroup.numberOfSamples << " samples for buffer group " << i <<
 			" (buffer config size: " << bufferConfigs.size() << ")";
+	}
 
-		if (clearBuffers) {
+	// transmitted everything, now we can clear buffers if needed
+	if (clearBuffers) {
+		for (u_int i = 0; i < bufferGroups.size(); ++i) {
+
+			BufferGroup& bufferGroup = bufferGroups[i];
+
+			for (u_int j = 0; j < bufferConfigs.size(); ++j) {
+				Buffer* buffer = bufferGroup.getBuffer(j);
+
+				// Dade - reset the rendering buffer
+				buffer->Clear();
+			}
+
 			// Dade - reset the rendering buffer
 			bufferGroup.numberOfSamples = 0;
 		}
@@ -1499,16 +1526,41 @@ bool Film::TransmitFilm(
 		bool useCompression, 
 		bool directWrite)
 {
-	std::streampos stream_startpos = stream.tellp();
+	std::streamsize size;
 
 	double totNumberOfSamples = 0;
 
-	bool transmitError = true;
+	bool transmitError = false;
 
-	if (directWrite) {
+	if (!directWrite) {
+		std::stringstream ss(std::stringstream::in | std::stringstream::out | std::stringstream::binary);
+		totNumberOfSamples = DoTransmitFilm(ss, clearBuffers, transmitParams);
+
+		transmitError = !ss.good();
+		
+		if (!transmitError) {
+			if (useCompression) {
+				filtering_streambuf<input> in;
+				in.push(gzip_compressor(4));
+				in.push(ss);
+				size = boost::iostreams::copy(in, stream);
+			} else {
+				size = boost::iostreams::copy(ss, stream);
+			}
+			// ignore how the copy to stream goes for now, as
+			// direct writing won't help with that
+		} else {
+			LOG(LUX_SEVERE,LUX_SYSTEM) << "Error while preparing film data for transmission, retrying without buffering.";
+		}
+	}
+
+	// if the memory buffered method fails it's most likely due
+	// to low memory conditions, so fall back to direct writing
+	if (directWrite || transmitError) {
+		std::streampos stream_startpos = stream.tellp();
 		if (useCompression) {
 			filtering_stream<output> fs;
-			fs.push(gzip_compressor(9));
+			fs.push(gzip_compressor(4));
 			fs.push(stream);
 			totNumberOfSamples = DoTransmitFilm(fs, clearBuffers, transmitParams);
 
@@ -1519,37 +1571,14 @@ bool Film::TransmitFilm(
 			totNumberOfSamples = DoTransmitFilm(stream, clearBuffers, transmitParams);
 			transmitError = !stream.good();
 		}
-	} else {
-		std::stringstream ss(std::stringstream::in | std::stringstream::out | std::stringstream::binary);
-		totNumberOfSamples = DoTransmitFilm(ss, clearBuffers, transmitParams);
-
-		transmitError = !ss.good();
-		
-		if (!transmitError) {
-			if (useCompression) {
-				filtering_streambuf<input> in;
-				in.push(gzip_compressor(9));
-				in.push(ss);
-				boost::iostreams::copy(in, stream);
-			} else {
-				boost::iostreams::copy(ss, stream);
-			}
-		}
+		size = stream.tellp() - stream_startpos;
 	}
-
-	if (transmitError) {
-		LOG(LUX_SEVERE,LUX_SYSTEM) << "Error while preparing film data for transmission";
-		return false;
-	}
-
-	LOG(LUX_DEBUG,LUX_NOERROR) << "Transmitted a film with " << totNumberOfSamples << " samples";
 	
-	if (!stream.good()) {
+	if (transmitError || !stream.good()) {
 		LOG(LUX_SEVERE,LUX_SYSTEM) << "Error while transmitting film";
 		return false;
-	}
-
-	std::streamsize size = stream.tellp() - stream_startpos;
+	} else
+		LOG(LUX_DEBUG,LUX_NOERROR) << "Transmitted a film with " << totNumberOfSamples << " samples";
 
 	LOG(LUX_INFO,LUX_NOERROR) << "Film transmission done (" << (size / 1024) << " Kbytes sent)";
 	return true;

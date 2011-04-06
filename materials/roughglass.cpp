@@ -24,6 +24,7 @@
 #include "roughglass.h"
 #include "memory.h"
 #include "bxdf.h"
+#include "primitive.h"
 #include "fresnelcauchy.h"
 #include "microfacet.h"
 #include "schlickdistribution.h"
@@ -36,21 +37,19 @@ using namespace lux;
 
 // RoughGlass Method Definitions
 BSDF *RoughGlass::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
-	const DifferentialGeometry &dgGeom,
-	const DifferentialGeometry &dgs,
-	const Volume *exterior, const Volume *interior) const
+	const Intersection &isect, const DifferentialGeometry &dgs) const
 {
 	// Allocate _BSDF_
 	// NOTE - lordcrc - Bugfix, pbrt tracker id 0000078: index of refraction swapped and not recorded
 	float ior = index->Evaluate(sw, dgs);
 	float cb = cauchyb->Evaluate(sw, dgs);
-	MultiBSDF *bsdf = ARENA_ALLOC(arena, MultiBSDF)(dgs, dgGeom.nn,
-		exterior, interior);
+	MultiBSDF *bsdf = ARENA_ALLOC(arena, MultiBSDF)(dgs, isect.dg.nn,
+		isect.exterior, isect.interior);
 	// NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
 	SWCSpectrum R = Kr->Evaluate(sw, dgs).Clamp(0.f, 1.f);
 	SWCSpectrum T = Kt->Evaluate(sw, dgs).Clamp(0.f, 1.f);
-	float u = uroughness->Evaluate(sw, dgs);
-	float v = vroughness->Evaluate(sw, dgs);
+	float u = Clamp(uroughness->Evaluate(sw, dgs), 6e-3f, 1.f);
+	float v = Clamp(vroughness->Evaluate(sw, dgs), 6e-3f, 1.f);
 	const float u2 = u * u;
 	const float v2 = v * v;
 
@@ -68,7 +67,7 @@ BSDF *RoughGlass::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 	}
 
 	// Add ptr to CompositingParams structure
-	bsdf->SetCompositingParams(compParams);
+	bsdf->SetCompositingParams(&compParams);
 
 	return bsdf;
 }
@@ -82,11 +81,7 @@ Material* RoughGlass::CreateMaterial(const Transform &xform,
 	boost::shared_ptr<Texture<float> > cbf(mp.GetFloatTexture("cauchyb", 0.f));				// Cauchy B coefficient
 	boost::shared_ptr<Texture<float> > bumpMap(mp.GetFloatTexture("bumpmap"));
 
-	// Get Compositing Params
-	CompositingParams cP;
-	FindCompositingParams(mp, &cP);
-
-	return new RoughGlass(Kr, Kt, uroughness, vroughness, index, cbf, bumpMap, cP);
+	return new RoughGlass(Kr, Kt, uroughness, vroughness, index, cbf, bumpMap, mp);
 }
 
 static DynamicLoader::RegisterMaterial<RoughGlass> r("roughglass");

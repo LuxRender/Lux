@@ -106,7 +106,7 @@ void LightPhoton::load(bool isLittleEndian, std::basic_istream<char> &stream)
 
 	// Vector wi
 	for (u_int i = 0; i < 3; ++i)
-		w[i] = osReadLittleEndianFloat(isLittleEndian, stream);
+		wi[i] = osReadLittleEndianFloat(isLittleEndian, stream);
 }
 
 void RadiancePhoton::save(bool isLittleEndian, std::basic_ostream<char> &stream) const
@@ -477,7 +477,7 @@ void PhotonMapPreprocess(const RandomGenerator &rng, const Scene &scene,
 	boost::xtime_get(&photonShootingStartTime, boost::TIME_UTC);
 	boost::xtime_get(&lastUpdateTime, boost::TIME_UTC);
 	u_int nshot = 0;
-	while (!radianceDone || !directDone || !causticDone || !indirectDone) {
+	while ((!radianceDone || !directDone || !causticDone || !indirectDone) && !scene.terminated) {
 		// Dade - print some progress information
 		boost::xtime currentTime;
 		boost::xtime_get(&currentTime, boost::TIME_UTC);
@@ -551,7 +551,7 @@ void PhotonMapPreprocess(const RandomGenerator &rng, const Scene &scene,
 		BSDF *bsdf;
 		float pdf;
 		SWCSpectrum alpha;
-		if (!light->Sample_L(scene, sample, u[0], u[1], u[2],
+		if (!light->SampleL(scene, sample, u[0], u[1], u[2],
 			&bsdf, &pdf, &alpha))
 			continue;
 		Ray photonRay;
@@ -562,17 +562,18 @@ void PhotonMapPreprocess(const RandomGenerator &rng, const Scene &scene,
 			u[3], u[4], u[5], &alpha2, &pdf2))
 			continue;
 		alpha *= alpha2;
-		alpha /= pdf * lightPdf;
+		alpha /= lightPdf;
 
 		if (!alpha.Black()) {
 			// Follow photon path through scene and record intersections
-			bool specularPath = false;
+			bool specularPath = false, directPhoton = true;
 			Intersection photonIsect;
 			const Volume *volume = NULL; //FIXME: try to get volume from light
 			BSDF *photonBSDF;
 			u_int nIntersections = 0;
-			while (scene.Intersect(sample, volume,
-				photonRay, &photonIsect, &photonBSDF, &alpha)) {
+			while (scene.Intersect(sample, volume, false,
+				photonRay, 1.f, &photonIsect, &photonBSDF,
+				NULL, NULL, &alpha)) {
 				++nIntersections;
 
 				// Handle photon/surface intersection
@@ -582,7 +583,7 @@ void PhotonMapPreprocess(const RandomGenerator &rng, const Scene &scene,
 					// Deposit photon at surface
 					LightPhoton photon(sw, photonIsect.dg.p, alpha, wo);
 
-					if (nIntersections == 1) {
+					if (directPhoton) {
 						if (computeRadianceMap && (!directDone)) {
 							// Deposit direct photon
 							directPhotons.push_back(photon);
@@ -663,11 +664,16 @@ void PhotonMapPreprocess(const RandomGenerator &rng, const Scene &scene,
 					break;
 				SWCSpectrum anew = fr;
 				float continueProb = min(1.f, anew.Filter(sw));
-				if (rng.floatValue() > continueProb || nIntersections > maxDepth)
+				if (nIntersections > maxDepth || rng.floatValue() > continueProb)
 					break;
 				alpha *= anew / continueProb;
-				specularPath = (nIntersections == 1 || specularPath) &&
-					((flags & BSDF_SPECULAR) != 0 || pdfo > 100.f);
+				const bool passThrough = flags == (BSDF_TRANSMISSION | BSDF_SPECULAR) &&
+					photonBSDF->Pdf(sw, wo, wi, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) > 0.f;
+				if (!passThrough) {
+					specularPath = (directPhoton || specularPath) &&
+						((flags & BSDF_SPECULAR) != 0 || pdfo > 100.f);
+					directPhoton = false;
+				}
 				photonRay = Ray(photonIsect.dg.p, wi);
 				volume = photonBSDF->GetVolume(photonRay.d);
 			}
@@ -675,6 +681,9 @@ void PhotonMapPreprocess(const RandomGenerator &rng, const Scene &scene,
 
 		sample.arena.FreeAll();
 	}
+
+	if (scene.terminated)
+		return;
 
 	boost::xtime photonShootingEndTime;
 	boost::xtime_get(&photonShootingEndTime, boost::TIME_UTC);
@@ -868,8 +877,9 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const Scene &scene,
 			// Trace BSDF final gather ray and accumulate radiance
 			Ray bounceRay(p, wi);
 			Intersection gatherIsect;
-			if (scene.Intersect(sample, bsdf->GetVolume(wi),
-				bounceRay, &gatherIsect, NULL, &fr)) {
+			if (scene.Intersect(sample, bsdf->GetVolume(wi), false,
+				bounceRay, 1.f, &gatherIsect, NULL, NULL, NULL,
+				&fr)) {
 				// Compute exitant radiance using precomputed irradiance
 				Normal nGather = gatherIsect.dg.nn;
 				if (Dot(nGather, bounceRay.d) > 0)
@@ -950,8 +960,9 @@ SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(const Scene &scene,
 
 			Ray bounceRay(p, wi);
 			Intersection gatherIsect;
-			if (scene.Intersect(sample, bsdf->GetVolume(wi),
-				bounceRay, &gatherIsect, NULL, &fr)) {
+			if (scene.Intersect(sample, bsdf->GetVolume(wi), false,
+				bounceRay, 1.f, &gatherIsect, NULL, NULL, NULL,
+				&fr)) {
 				// Compute exitant radiance using precomputed irradiance
 				Normal nGather = gatherIsect.dg.nn;
 				if (Dot(nGather, bounceRay.d) > 0)
@@ -1028,8 +1039,9 @@ SWCSpectrum PhotonMapFinalGather(const Scene &scene, const Sample &sample,
 			// Trace BSDF final gather ray and accumulate radiance
 			Ray bounceRay(p, wi);
 			Intersection gatherIsect;
-			if (scene.Intersect(sample, bsdf->GetVolume(wi),
-				bounceRay, &gatherIsect, NULL, &fr)) {
+			if (scene.Intersect(sample, bsdf->GetVolume(wi), false,
+				bounceRay, 1.f, &gatherIsect, NULL, NULL, NULL,
+				&fr)) {
 				// Compute exitant radiance using precomputed irradiance
 				Normal nGather = gatherIsect.dg.nn;
 				if (Dot(nGather, bounceRay.d) > 0)

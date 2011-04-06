@@ -21,9 +21,8 @@
  ***************************************************************************/
 
 // imagemap.cpp*
-
-#include "dynload.h"
 #include "imagemap.h"
+#include "dynload.h"
 #include "filedata.h"
 
 using namespace lux;
@@ -119,6 +118,8 @@ Texture<float> *ImageFloatTexture::CreateFloatTexture(const Transform &tex2world
 
 	return tex;
 }
+
+RGBIllumSPD ImageSpectrumTexture::whiteRGBIllum;
 
 Texture<SWCSpectrum> *ImageSpectrumTexture::CreateSWCSpectrumTexture(const Transform &tex2world,
 	const ParamSet &tp)

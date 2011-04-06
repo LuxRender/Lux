@@ -30,10 +30,10 @@ namespace lux
 
 class Mesh : public Shape {
 public:
-	enum MeshTriangleType { TRI_WALD, TRI_BARY, TRI_AUTO };
+	enum MeshTriangleType { TRI_WALD, TRI_BARY, TRI_MICRODISPLACEMENT, TRI_AUTO };
 	enum MeshQuadType { QUAD_QUADRILATERAL };
 	enum MeshAccelType { ACCEL_KDTREE, ACCEL_QBVH, ACCEL_NONE, ACCEL_GRID, ACCEL_BRUTEFORCE, ACCEL_AUTO };
-	enum MeshSubdivType { SUBDIV_LOOP };
+	enum MeshSubdivType { SUBDIV_LOOP, SUBDIV_MICRODISPLACEMENT };
 
 	Mesh(const Transform &o2w, bool ro, MeshAccelType acceltype,
 		u_int nv, const Point *P, const Normal *N, const float *UV,
@@ -43,7 +43,7 @@ public:
 		boost::shared_ptr<Texture<float> > &displacementMap,
 		float displacementMapScale, float displacementMapOffset,
 		bool displacementMapNormalSmooth,
-		bool displacementMapSharpBoundary);
+		bool displacementMapSharpBoundary, bool normalsplit);
 	virtual ~Mesh();
 
 	virtual BBox ObjectBound() const;
@@ -64,24 +64,13 @@ public:
 
 	friend class MeshWaldTriangle;
 	friend class MeshBaryTriangle;
+	friend class MeshMicroDisplacementTriangle;
 	friend class MeshQuadrilateral;
 
 	static Shape* CreateShape(const Transform &o2w, bool reverseOrientation,
 		const ParamSet &params);
 
 	class BaryMesh {
-	public:
-		static Shape* CreateShape(const Transform &o2w,
-			bool reverseOrientation, const ParamSet &params);
-	};
-
-	class WaldMesh {
-	public:
-		static Shape* CreateShape(const Transform &o2w,
-			bool reverseOrientation, const ParamSet &params);
-	};
-
-	class LoopMesh {
 	public:
 		static Shape* CreateShape(const Transform &o2w,
 			bool reverseOrientation, const ParamSet &params);
@@ -115,7 +104,12 @@ protected:
 	boost::shared_ptr<Texture<float> > displacementMap;
 	float displacementMapScale;
 	float displacementMapOffset;
+	float displacementMapMin, displacementMapMax;
 	bool displacementMapNormalSmooth, displacementMapSharpBoundary;
+	bool normalSplit;
+
+	// for error reporting
+	mutable u_int inconsistentShadingTris;
 };
 
 //------------------------------------------------------------------------------
@@ -130,8 +124,8 @@ public:
 
 	virtual BBox ObjectBound() const;
 	virtual BBox WorldBound() const;
-	virtual Volume *GetExterior() const { return mesh->GetExterior(); }
-	virtual Volume *GetInterior() const { return mesh->GetInterior(); }
+	virtual const Volume *GetExterior() const { return mesh->GetExterior(); }
+	virtual const Volume *GetInterior() const { return mesh->GetInterior(); }
 
 	virtual bool CanIntersect() const { return true; }
 	virtual bool Intersect(const Ray &ray, Intersection *isect) const;
@@ -145,6 +139,9 @@ public:
 	virtual float Area() const;
 	virtual void Sample(float u1, float u2, float u3,
 		DifferentialGeometry *dg) const;
+	virtual Transform GetWorldToLocal(float time) const {
+		return mesh->GetWorldToLocal(time);
+	}
 
 	virtual bool isDegenerate() const {
 		return false; //TODO check degenerate
@@ -206,6 +203,65 @@ private:
 	Normal normalizedNormal;
 };
 
+class MeshMicroDisplacementTriangle : public Primitive {
+public:
+	// MeshMicroDisplacementTriangle Public Methods
+	MeshMicroDisplacementTriangle(const Mesh *m, u_int n);
+	virtual ~MeshMicroDisplacementTriangle() { }
+
+	virtual BBox ObjectBound() const;
+	virtual BBox WorldBound() const;
+	virtual const Volume *GetExterior() const { return mesh->GetExterior(); }
+	virtual const Volume *GetInterior() const { return mesh->GetInterior(); }
+
+	virtual bool CanIntersect() const { return true; }
+	virtual bool Intersect(const Ray &ray, Intersection *isect) const;
+	virtual bool IntersectP(const Ray &ray) const;
+
+	virtual void GetShadingGeometry(const Transform &obj2world,
+		const DifferentialGeometry &dg,
+		DifferentialGeometry *dgShading) const;
+
+	virtual bool CanSample() const { return true; }
+	virtual float Area() const;
+	virtual void Sample(float u1, float u2, float u3,
+		DifferentialGeometry *dg) const;
+	virtual Transform GetWorldToLocal(float time) const {
+		return mesh->GetWorldToLocal(time);
+	}
+
+	virtual bool isDegenerate() const {
+		return false; //TODO check degenerate
+	}
+
+	void GetUVs(float uv[3][2]) const {
+		if (mesh->uvs) {
+			uv[0][0] = mesh->uvs[2*v[0]];
+			uv[0][1] = mesh->uvs[2*v[0]+1];
+			uv[1][0] = mesh->uvs[2*v[1]];
+			uv[1][1] = mesh->uvs[2*v[1]+1];
+			uv[2][0] = mesh->uvs[2*v[2]];
+			uv[2][1] = mesh->uvs[2*v[2]+1];
+		} else {
+			uv[0][0] = .5f;//mesh->p[v[0]].x;
+			uv[0][1] = .5f;//mesh->p[v[0]].y;
+			uv[1][0] = .5f;//mesh->p[v[1]].x;
+			uv[1][1] = .5f;//mesh->p[v[1]].y;
+			uv[2][0] = .5f;//mesh->p[v[2]].x;
+			uv[2][1] = .5f;//mesh->p[v[2]].y;
+		}
+	}
+	const Point &GetP(u_int i) const { return mesh->p[v[i]]; }
+	Point GetDisplacedP(const Point &pbase, const Vector &n, const float u, const float v, const float w) const;
+	Vector GetN(u_int i) const;
+
+	// BaryTriangle Data
+	const Mesh *mesh;
+	const int *v;
+	Vector dpdu, dpdv, normalizedNormal;
+	float uvs[3][2];
+};
+
 //------------------------------------------------------------------------------
 // Quad shapes
 //------------------------------------------------------------------------------
@@ -261,9 +317,12 @@ public:
 		dg->u = b0*uv[0][0] + b1*uv[1][0] + b2*uv[2][0] + b3*uv[3][0];
 		dg->v = b0*uv[0][1] + b1*uv[1][1] + b2*uv[2][1] + b3*uv[3][1];
 	}
+	virtual Transform GetWorldToLocal(float time) const {
+		return mesh->GetWorldToLocal(time);
+	}
 
 	bool isDegenerate() const {
-		return false; //TODO check degenerate
+		return idx == NULL; //TODO proper check degenerate
 	}
 
 	static bool IsPlanar(const Point &p0, const Point &p1, const Point &p2, const Point &p3);

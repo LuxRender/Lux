@@ -82,17 +82,6 @@ HybridSPPMRenderer::HybridSPPMRenderer() : HybridRenderer() {
 	barrierExit = NULL;
 	requestedRenderThreadsCount = 0;
 
-	// SPPM rendering parameters
-
-	lookupAccelType = HYBRID_HASH_GRID;
-	maxEyePathDepth = 16;
-	photonAlpha = 0.7f;
-	photonStartRadiusScale = 1.f;
-	maxPhotonPathDepth = 8;
-
-	stochasticInterval = 5000000;
-	useDirectLightSampling = false;
-
 	hitPoints = NULL;
 
 	AddStringConstant(*this, "name", "Name of current renderer", "hybridsppm");
@@ -145,6 +134,10 @@ void HybridSPPMRenderer::Render(Scene *s) {
 
 		scene = s;
 
+		// TODO: At the moment I have no way to check if the SPPM integrator
+		// has been really used
+		sppmi = (SPPMIntegrator *)scene->surfaceIntegrator;
+
 		if (scene->IsFilmOnly()) {
 			state = TERMINATE;
 			return;
@@ -160,15 +153,15 @@ void HybridSPPMRenderer::Render(Scene *s) {
 		s_Timer.Reset();
 	
 		// Initialize the thread's RandomGenerator seed
-		lastUsedSeed = scene->seedBase;
+		lastUsedSeed = scene->seedBase - 1;
+		LOG(LUX_INFO, LUX_NOERROR) << "Preprocess thread uses seed: " << lastUsedSeed;
 
-		// Preprocessing
+		RandomGenerator rng(lastUsedSeed);
+
+		// integrator preprocessing
 		scene->sampler->SetFilm(scene->camera->film);
-
-		// Prepare image buffers
-		BufferType type = BUF_TYPE_PER_PIXEL;
-		scene->sampler->GetBufferType(&type);
-		bufferId = scene->camera->film->RequestBuffer(type, BUF_FRAMEBUFFER, "eye");
+		scene->surfaceIntegrator->Preprocess(rng, *scene);
+		scene->volumeIntegrator->Preprocess(rng, *scene);
 		scene->camera->film->CreateBuffers();
 
 		// Dade - to support autofocus for some camera model
@@ -186,7 +179,7 @@ void HybridSPPMRenderer::Render(Scene *s) {
 
 		// Dade - preprocessing done
 		preprocessDone = true;
-		Context::GetActive()->SceneReady();
+		scene->SetReady();
 
 		// add a thread
 		PrivateCreateRenderThread();
@@ -226,11 +219,13 @@ void HybridSPPMRenderer::Render(Scene *s) {
 void HybridSPPMRenderer::Pause() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 	state = PAUSE;
+	s_Timer.Stop();
 }
 
 void HybridSPPMRenderer::Resume() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 	state = RUN;
+	s_Timer.Start();
 }
 
 void HybridSPPMRenderer::Terminate() {

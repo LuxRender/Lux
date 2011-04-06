@@ -37,7 +37,7 @@ using namespace lux;
 DistributedPath::DistributedPath(LightStrategy st, bool da, u_int ds, bool dd, bool dg, bool ida, u_int ids, bool idd, bool idg,
 	u_int drd, u_int drs, u_int dtd, u_int dts, u_int grd, u_int grs, u_int gtd, u_int gts, u_int srd, u_int std,
 	bool drer, float drert, bool drfr, float drfrt,
-	bool grer, float grert, bool grfr, float grfrt) {
+	bool grer, float grert, bool grfr, float grfrt) : SurfaceIntegrator() {
 	lightStrategy = st;
 
 	directAll = da;
@@ -67,6 +67,8 @@ DistributedPath::DistributedPath(LightStrategy st, bool da, u_int ds, bool dd, b
 	glossyreflectReject_thr = grert;
 	glossyrefractReject = grfr;
 	glossyrefractReject_thr = grfrt;
+
+	AddStringConstant(*this, "name", "Name of current surface integrator", "distributedpath");
 }
 
 void DistributedPath::RequestSamples(Sample *sample, const Scene &scene) {
@@ -84,6 +86,9 @@ void DistributedPath::RequestSamples(Sample *sample, const Scene &scene) {
 	maxDepth = max(maxDepth, glossyrefractDepth);
 	maxDepth = max(maxDepth, specularreflectDepth);
 	maxDepth = max(maxDepth, specularrefractDepth);
+
+	// Scattering
+	scatterOffset = sample->Add1D(maxDepth);
 
 	// Direct lighting
 	// eye vertex
@@ -182,7 +187,7 @@ void DistributedPath::Reject(const SpectrumWavelengths &sw,
 }
 
 void DistributedPath::LiInternal(const Scene &scene, const Sample &sample,
-		const Volume *volume, const Ray &ray,
+		const Volume *volume, bool scattered, const Ray &ray,
 		vector<SWCSpectrum> &L, float *alpha, float *zdepth,
 		u_int rayDepth, bool includeEmit, u_int &nrContribs) const
 {
@@ -191,8 +196,11 @@ void DistributedPath::LiInternal(const Scene &scene, const Sample &sample,
 	const float time = ray.time; // save time for motion blur
 	const SpectrumWavelengths &sw(sample.swl);
 	SWCSpectrum Lt(1.f);
+	float spdf;
 
-	if (scene.Intersect(sample, volume, ray, &isect, &bsdf, &Lt)) {
+	if (scene.Intersect(sample, volume, scattered, ray,
+		sample.oneD[scatterOffset][rayDepth], &isect, &bsdf, &spdf,
+		NULL, &Lt)) {
 		// Evaluate BSDF at hit point
 		Vector wo = -ray.d;
 		const Point &p = bsdf->dgShading.p;
@@ -330,8 +338,9 @@ void DistributedPath::LiInternal(const Scene &scene, const Sample &sample,
 					vector<SWCSpectrum> Ll(L.size(),
 						SWCSpectrum(0.f));
 					LiInternal(scene, sample,
-						bsdf->GetVolume(wi), rd, Ll,
-						alpha, zdepth, rayDepth + 1,
+						bsdf->GetVolume(wi),
+						bsdf->dgShading.scattered,rd,
+						Ll, alpha, zdepth, rayDepth + 1,
 						false, nrContribs);
 					f *= invsamples;
 					if (diffusereflectReject &&
@@ -377,8 +386,9 @@ void DistributedPath::LiInternal(const Scene &scene, const Sample &sample,
 					vector<SWCSpectrum> Ll(L.size(),
 						SWCSpectrum(0.f));
 					LiInternal(scene, sample,
-						bsdf->GetVolume(wi), rd, Ll,
-						alpha, zdepth, rayDepth + 1,
+						bsdf->GetVolume(wi),
+						bsdf->dgShading.scattered, rd,
+						Ll, alpha, zdepth, rayDepth + 1,
 						false, nrContribs);
 					f *= invsamples;
 					if (diffuserefractReject &&
@@ -426,8 +436,9 @@ void DistributedPath::LiInternal(const Scene &scene, const Sample &sample,
 					vector<SWCSpectrum> Ll(L.size(),
 						SWCSpectrum(0.f));
 					LiInternal(scene, sample,
-						bsdf->GetVolume(wi), rd, Ll,
-						alpha, zdepth, rayDepth + 1,
+						bsdf->GetVolume(wi),
+						bsdf->dgShading.scattered, rd,
+						Ll, alpha, zdepth, rayDepth + 1,
 						false, nrContribs);
 					f *= invsamples;
 					if (glossyreflectReject &&
@@ -473,8 +484,9 @@ void DistributedPath::LiInternal(const Scene &scene, const Sample &sample,
 					vector<SWCSpectrum> Ll(L.size(),
 						SWCSpectrum(0.f));
 					LiInternal(scene, sample,
-						bsdf->GetVolume(wi), rd, Ll,
-						alpha, zdepth, rayDepth + 1,
+						bsdf->GetVolume(wi),
+						bsdf->dgShading.scattered, rd,
+						Ll, alpha, zdepth, rayDepth + 1,
 						false, nrContribs);
 					f *= invsamples;
 					if (glossyrefractReject &&
@@ -502,8 +514,9 @@ void DistributedPath::LiInternal(const Scene &scene, const Sample &sample,
 				vector<SWCSpectrum> Ll(L.size(),
 					SWCSpectrum(0.f));
 				LiInternal(scene, sample, bsdf->GetVolume(wi),
-					rd, Ll, alpha, zdepth, rayDepth + 1,
-					true, nrContribs);
+					bsdf->dgShading.scattered, rd, Ll,
+					alpha, zdepth, rayDepth + 1, true,
+					nrContribs);
 				for (u_int j = 0; j < L.size(); ++j)
 					L[j] += f * Ll[j];
 			}
@@ -516,8 +529,9 @@ void DistributedPath::LiInternal(const Scene &scene, const Sample &sample,
 				vector<SWCSpectrum> Ll(L.size(),
 					SWCSpectrum(0.f));
 				LiInternal(scene, sample, bsdf->GetVolume(wi),
-					rd, Ll, alpha, zdepth, rayDepth + 1,
-					true, nrContribs);
+					bsdf->dgShading.scattered, rd, Ll,
+					alpha, zdepth, rayDepth + 1, true,
+					nrContribs);
 				for (u_int j = 0; j < L.size(); ++j)
 					L[j] += f * Ll[j];
 			}
@@ -537,6 +551,7 @@ void DistributedPath::LiInternal(const Scene &scene, const Sample &sample,
 		if (rayDepth == 0)
 			*alpha = 0.f;
 	}
+	Lt /= spdf;
 
 	for (u_int i = 0; i < L.size(); ++i)
 		L[i] *= Lt;
@@ -554,7 +569,7 @@ u_int DistributedPath::Li(const Scene &scene, const Sample &sample) const
 
 	vector<SWCSpectrum> L(scene.lightGroups.size(), SWCSpectrum(0.f));
 	float alpha = 1.f;
-	LiInternal(scene, sample, NULL, ray, L, &alpha, &zdepth, 0, true,
+	LiInternal(scene, sample, NULL, false, ray, L, &alpha, &zdepth, 0, true,
 		nrContribs);
 
 	for (u_int i = 0; i < L.size(); ++i)

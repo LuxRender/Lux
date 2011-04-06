@@ -30,16 +30,28 @@ using namespace lux;
 Texture<SWCSpectrum> * MarbleTexture::CreateSWCSpectrumTexture(const Transform &tex2world,
 	const ParamSet &tp)
 {
-	// Initialize 3D texture mapping _map_ from _tp_
-	TextureMapping3D *map = new IdentityMapping3D(tex2world);
+	TextureMapping3D *imap;
+	// Read mapping coordinates
+	string coords = tp.FindOneString("coordinates", "global");
+	if (coords == "global")
+		imap = new GlobalMapping3D(tex2world);
+	else if (coords == "local")
+		imap = new LocalMapping3D(tex2world);
+	else if (coords == "uv")
+		imap = new UVMapping3D(tex2world);
+	else if (coords == "globalnormal")
+		imap = new GlobalNormalMapping3D(tex2world);
+	else if (coords == "localnormal")
+		imap = new LocalNormalMapping3D(tex2world);
+	else
+		imap = new GlobalMapping3D(tex2world);
 	// Apply texture specified transformation option for 3D mapping
-	IdentityMapping3D *imap = (IdentityMapping3D*) map;
 	imap->Apply3DTextureMappingOptions(tp);
 	return new MarbleTexture(tp.FindOneInt("octaves", 8),
 		tp.FindOneFloat("roughness", .5f),
 		tp.FindOneFloat("scale", 1.f),
 		tp.FindOneFloat("variation", .2f),
-		map);
+		imap);
 }
 
 static DynamicLoader::RegisterSWCSpectrumTexture<MarbleTexture> r2("marble");

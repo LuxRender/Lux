@@ -156,21 +156,20 @@ bool MicrofacetTransmission::SampleF(const SpectrumWavelengths &sw,
 	const float lengthSquared = length * length;
 	if (pdfBack)
 		*pdfBack = *pdf * fabsf(cosThetaOH) * eta * eta / lengthSquared;
-	*pdf *= fabsf(cosThetaIH) / lengthSquared;
+	const float factor = distribution->G(wo, *wi, wh) * d *
+		fabsf(cosThetaOH) / *pdf;
 
 	SWCSpectrum F;
-	if (reverse)
+	if (reverse) {
 		fresnel->Evaluate(sw, cosThetaIH, &F);
-	else
-		fresnel->Evaluate(sw, cosThetaOH, &F);
-	const float factor = distribution->G(wo, *wi, wh) * d *
-		fabsf(cosThetaIH) / (*pdf * eta * eta);
-	if (reverse)
 		*f_ = (factor / fabsf(CosTheta(wo))) *
 			(T * (SWCSpectrum(1.f) - F));
-	else
+	} else {
+		fresnel->Evaluate(sw, cosThetaOH, &F);
 		*f_ = (factor / fabsf(CosTheta(*wi))) *
 			(T * (SWCSpectrum(1.f) - F));
+	}
+	*pdf *= fabsf(cosThetaIH) / lengthSquared;
 	return true;
 }
 float MicrofacetTransmission::Pdf(const SpectrumWavelengths &sw,

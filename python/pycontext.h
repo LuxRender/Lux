@@ -234,7 +234,7 @@ public:
 
 		//Here we create a new context
 		name = _name;
-		context=new Context(_name);
+		context = new Context(_name);
 		// LOG(LUX_INFO,LUX_NOERROR)<<"Created new context : '"<<name<<"'";
 	}
 
@@ -273,7 +273,7 @@ public:
 
 	bool parse(const char *filename, bool async)
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		if (async)
 		{
 			pyLuxWorldEndThreads.push_back(new boost::thread( boost::bind(luxParse, filename) ));
@@ -285,44 +285,64 @@ public:
 		}
 	}
 
+	bool parsePartial(const char *filename, bool async)
+	{
+		checkActiveContext();
+		if (async)
+		{
+			pyLuxWorldEndThreads.push_back(new boost::thread( boost::bind(luxParsePartial, filename) ));
+			return true;	// Real parse status can be checked later with parseSuccess()
+		}
+		else
+		{
+			return luxParsePartial(filename);
+		}
+	}
+
 	bool parseSuccessful()
 	{
+		checkActiveContext();
 		return context->currentApiState != STATE_PARSE_FAIL;
 	}
 
 	void cleanup()
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		context->Cleanup();
+
+		// Ensure the context memory is freed. Any pylux calls
+		// after this will create a new Context with the same name.
+		delete context;
+		context = NULL;
 	}
 
 	void identity()
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		context->Identity();
 	}
 
 	void translate(float dx, float dy, float dz)
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		context->Translate(dx,dy,dz);
 	}
 
 	void rotate(float angle, float ax, float ay, float az)
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		context->Rotate(angle,ax,ay,az);
 	}
 
 	void scale(float sx, float sy, float sz)
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		context->Scale(sx,sy,sz);
 	}
 
 	void lookAt(float ex, float ey, float ez, float lx, float ly, float lz, float ux, float uy, float uz)
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		context->LookAt(ex, ey, ez, lx, ly, lz, ux, uy, uz);
 	}
 
@@ -344,7 +364,7 @@ public:
 		}
 		//std::cout<<std::endl;
 
-		Context::SetActive(context);
+		checkActiveContext();
 		context->ConcatTransform(pFloat);
 		memoryPool.purge_memory();
 	}
@@ -367,27 +387,27 @@ public:
 		}
 		//std::cout<<std::endl;
 
-		Context::SetActive(context);
+		checkActiveContext();
 		context->Transform(pFloat);
-				memoryPool.purge_memory();
+		memoryPool.purge_memory();
 	}
 
 	void coordinateSystem(const char *name)
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		context->CoordinateSystem(std::string(name));
 	}
 
 	void coordSysTransform(const char *name)
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		context->CoordSysTransform(std::string(name));
 	}
 	
 	void renderer(const char *name, boost::python::list params)
 	{
 		EXTRACT_PARAMETERS(params);
-		Context::SetActive(context);
+		checkActiveContext();
 		context->Renderer(name,PASS_PARAMSET);
 		memoryPool.purge_memory();
 	}
@@ -395,7 +415,7 @@ public:
 	void pixelFilter(const char *name, boost::python::list params)
 	{
 		EXTRACT_PARAMETERS(params);
-		Context::SetActive(context);
+		checkActiveContext();
 		context->PixelFilter(name,PASS_PARAMSET);
 		memoryPool.purge_memory();
 	}
@@ -403,7 +423,7 @@ public:
 	void film(const char *name, boost::python::list params)
 	{
 		EXTRACT_PARAMETERS(params);
-		Context::SetActive(context);
+		checkActiveContext();
 		context->Film(name, PASS_PARAMSET);
 		memoryPool.purge_memory();
 	}
@@ -411,7 +431,7 @@ public:
 	void sampler(const char *name, boost::python::list params)
 	{
 		EXTRACT_PARAMETERS(params);
-		Context::SetActive(context);
+		checkActiveContext();
 		context->Sampler(name, PASS_PARAMSET);
 		memoryPool.purge_memory();
 	}
@@ -419,7 +439,7 @@ public:
 	void accelerator(const char *name, boost::python::list params)
 	{
 		EXTRACT_PARAMETERS(params);
-		Context::SetActive(context);
+		checkActiveContext();
 		context->Accelerator(name, PASS_PARAMSET);
 		memoryPool.purge_memory();
 	}
@@ -427,7 +447,7 @@ public:
 	void surfaceIntegrator(const char *name, boost::python::list params)
 	{
 		EXTRACT_PARAMETERS(params);
-		Context::SetActive(context);
+		checkActiveContext();
 		context->SurfaceIntegrator(name, PASS_PARAMSET);
 		memoryPool.purge_memory();
 	}
@@ -435,7 +455,7 @@ public:
 	void volumeIntegrator(const char *name, boost::python::list params)
 	{
 		EXTRACT_PARAMETERS(params);
-		Context::SetActive(context);
+		checkActiveContext();
 		context->VolumeIntegrator(name,PASS_PARAMSET);
 		memoryPool.purge_memory();
 	}
@@ -443,45 +463,45 @@ public:
 	void camera(const char *name, boost::python::list params)
 	{
 		EXTRACT_PARAMETERS(params);
-		Context::SetActive(context);
+		checkActiveContext();
 		context->Camera(name, PASS_PARAMSET);
 		memoryPool.purge_memory();
 	}
 
 	void worldBegin()
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		context->WorldBegin();
 	}
 
 	void attributeBegin()
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		context->AttributeBegin();
 	}
 
 	void attributeEnd()
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		context->AttributeEnd();
 	}
 
 	void transformBegin()
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		context->TransformBegin();
 	}
 
 	void transformEnd()
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		context->TransformEnd();
 	}
 
 	void texture(const char *name, const char *type, const char *texname, boost::python::list params)
 	{
 		EXTRACT_PARAMETERS(params);
-		Context::SetActive(context);
+		checkActiveContext();
 		context->Texture(name, type, texname, PASS_PARAMSET);
 		memoryPool.purge_memory();
 	}
@@ -489,7 +509,7 @@ public:
 	void material(const char *name, boost::python::list params)
 	{
 		EXTRACT_PARAMETERS(params);
-		Context::SetActive(context);
+		checkActiveContext();
 		context->Material(name, PASS_PARAMSET);
 		memoryPool.purge_memory();
 	}
@@ -497,21 +517,21 @@ public:
 	void makeNamedMaterial(const char *name, boost::python::list params)
 	{
 		EXTRACT_PARAMETERS(params);
-		Context::SetActive(context);
+		checkActiveContext();
 		context->MakeNamedMaterial(name, PASS_PARAMSET);
 		memoryPool.purge_memory();
 	}
 
 	void namedMaterial(const char *name)
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		context->NamedMaterial(name);
 	}
 
 	void lightGroup(const char *name, boost::python::list params)
 	{
 		EXTRACT_PARAMETERS(params);
-		Context::SetActive(context);
+		checkActiveContext();
 		context->LightGroup(name, PASS_PARAMSET);
 		memoryPool.purge_memory();
 	}
@@ -519,7 +539,7 @@ public:
 	void lightSource(const char *name, boost::python::list params)
 	{
 		EXTRACT_PARAMETERS(params);
-		Context::SetActive(context);
+		checkActiveContext();
 		context->LightSource(name, PASS_PARAMSET);
 		memoryPool.purge_memory();
 	}
@@ -527,7 +547,7 @@ public:
 	void areaLightSource(const char *name, boost::python::list params)
 	{
 		EXTRACT_PARAMETERS(params);
-		Context::SetActive(context);
+		checkActiveContext();
 		context->AreaLightSource(name, PASS_PARAMSET);
 		memoryPool.purge_memory();
 	}
@@ -535,7 +555,7 @@ public:
 	void portalShape(const char *name, boost::python::list params)
 	{
 		EXTRACT_PARAMETERS(params);
-		Context::SetActive(context);
+		checkActiveContext();
 		context->PortalShape(name, PASS_PARAMSET);
 		memoryPool.purge_memory();
 	}
@@ -543,21 +563,21 @@ public:
 	void shape(const char *name, boost::python::list params)
 	{
 		EXTRACT_PARAMETERS(params);
-		Context::SetActive(context);
+		checkActiveContext();
 		context->Shape(name, PASS_PARAMSET);
 		memoryPool.purge_memory();
 	}
 
 	void reverseOrientation()
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		context->ReverseOrientation();
 	}
 
 	void makeNamedVolume(const char *id, const char *name, boost::python::list params)
 	{
 		EXTRACT_PARAMETERS(params);
-		Context::SetActive(context);
+		checkActiveContext();
 		context->MakeNamedVolume(id, name, PASS_PARAMSET);
 		memoryPool.purge_memory();
 	}
@@ -565,147 +585,225 @@ public:
 	void volume(const char *name, boost::python::list params)
 	{
 		EXTRACT_PARAMETERS(params);
-		Context::SetActive(context);
+		checkActiveContext();
 		context->Volume(name, PASS_PARAMSET);
 		memoryPool.purge_memory();
 	}
 
 	void exterior(const char *name)
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		context->Exterior(name);
 	}
 
 	void interior(const char *name)
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		context->Interior(name);
 	}
 
 	void objectBegin(const char *name)
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		context->ObjectBegin(std::string(name));
 	}
 
 	void objectEnd()
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		context->ObjectEnd();
 	}
 
 	void objectInstance(const char *name)
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		context->ObjectInstance(std::string(name));
 	}
 
 	void portalInstance(const char *name)
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		context->PortalInstance(std::string(name));
 	}
 
 	void motionInstance(const char *name, float startTime, float endTime, const char *toTransform)
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		context->MotionInstance(std::string(name), startTime, endTime, std::string(toTransform));
 	}
 
 	void worldEnd() //launch luxWorldEnd() into a thread
 	{
+		checkActiveContext();
 		pyLuxWorldEndThreads.push_back(new boost::thread( boost::bind(&PyContext::pyWorldEnd, this) ));
 	}
 
 	void loadFLM(const char* name)
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		context->LoadFLM(std::string(name));
 	}
 
 	void saveFLM(const char* name)
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		context->SaveFLM(std::string(name));
 	}
 
 	void saveEXR(const char *filename, bool useHalfFloat, bool includeZBuffer, bool tonemapped)
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		context->SaveEXR(filename, useHalfFloat, includeZBuffer, 2 /*ZIP_COMPRESSION*/, tonemapped);
 	}
 
 	void overrideResumeFLM(const char *name)
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		context->OverrideResumeFLM(string(name));
 	}
 
 	void start()
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		context->Resume();
 	}
 
 	void pause() 
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		context->Pause();
 	}
 
 	void exit()
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		context->Exit();
 	}
 
 	void wait()
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		context->Wait();
 	}
 
 	void setHaltSamplesPerPixel(int haltspp, bool haveEnoughSamplesPerPixel, bool suspendThreadsWhenDone)
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		context->SetHaltSamplesPerPixel(haltspp, haveEnoughSamplesPerPixel, suspendThreadsWhenDone);
 	}
 
 	unsigned int addThread()
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		return context->AddThread();
 	}
 
 	void removeThread()
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		context->RemoveThread();
 	}
 
 	void setEpsilon(const float minValue, const float maxValue)
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		context->SetEpsilon(minValue < 0.f ? DEFAULT_EPSILON_MIN : minValue, maxValue < 0.f ? DEFAULT_EPSILON_MAX : maxValue);
 	}
 
 	void updateFramebuffer()
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		context->UpdateFramebuffer();
 	}
 
 	boost::python::list framebuffer()
 	{
 		boost::python::list pyFrameBuffer;
+		checkActiveContext();
 		int nvalues=(luxGetIntAttribute("film", "xResolution")) * (luxGetIntAttribute("film", "yResolution")) * 3; //get the number of values to copy
 
-		Context::SetActive(context);
-		unsigned char* framebuffer=luxFramebuffer(); //get the framebuffer
+		unsigned char* framebuffer = context->Framebuffer();
 		//copy the values
 		for(int i=0;i<nvalues;i++)
 			pyFrameBuffer.append(framebuffer[i]);
 		return pyFrameBuffer;
+	}
+
+	boost::python::list floatFramebuffer()
+	{
+		boost::python::list pyFrameBuffer;
+		checkActiveContext();
+		int nvalues=(luxGetIntAttribute("film", "xResolution")) * (luxGetIntAttribute("film", "yResolution")) * 3; //get the number of values to copy
+
+		float* framebuffer = context->FloatFramebuffer();
+		//copy the values
+		for(int i=0;i<nvalues;i++)
+			pyFrameBuffer.append(framebuffer[i]);
+		return pyFrameBuffer;
+	}
+
+	boost::python::list alphaBuffer()
+	{
+		boost::python::list pyFrameBuffer;
+		checkActiveContext();
+		int nvalues=(luxGetIntAttribute("film", "xResolution")) * (luxGetIntAttribute("film", "yResolution"));
+
+		float* framebuffer = context->AlphaBuffer();
+		//copy the values
+		for(int i=0;i<nvalues;i++)
+			pyFrameBuffer.append(framebuffer[i]);
+		return pyFrameBuffer;
+	}
+
+	boost::python::list zBuffer()
+	{
+		boost::python::list pyFrameBuffer;
+		checkActiveContext();
+		int nvalues=(luxGetIntAttribute("film", "xResolution")) * (luxGetIntAttribute("film", "yResolution"));
+
+		float* framebuffer = context->ZBuffer();
+		//copy the values
+		for(int i=0;i<nvalues;i++)
+			pyFrameBuffer.append(framebuffer[i]);
+		return pyFrameBuffer;
+	}
+
+	/**
+	 * Format framebuffers into a bottom-up format required
+	 * by Blender 2.5's RenderLayer type
+	 */
+	boost::python::tuple blenderCombinedDepthRects()
+	{
+		updateFramebuffer();
+		boost::python::list combined;
+		boost::python::list depth;
+
+		checkActiveContext();
+		int xres = luxGetIntAttribute("film", "xResolution");
+		int yres = luxGetIntAttribute("film", "yResolution");
+
+		float *color = context->FloatFramebuffer();
+		float *alpha = context->AlphaBuffer();
+		float *z = context->ZBuffer();
+		for(int y=yres-1; y>-1;y--)
+		{
+			for(int x=0; x<xres; x++)
+			{
+				int i = (y*xres + x);
+				int j = i*3;
+				boost::python::list rect_item;
+				rect_item.append( color[j] );
+				rect_item.append( color[j+1] );
+				rect_item.append( color[j+2] );
+				rect_item.append( alpha[i] );
+				combined.append( rect_item );
+				boost::python::list depth_item;
+				depth_item.append( z[i] );
+				depth.append( depth_item );
+			}
+		}
+		
+		return boost::python::make_tuple( combined, depth );
 	}
 
 	boost::python::list getHistogramImage(unsigned int width, unsigned int height, int options)
@@ -714,7 +812,7 @@ public:
 		int nvalues=width*height;
 		unsigned char* outPixels = new unsigned char[nvalues];
 
-		Context::SetActive(context);
+		checkActiveContext();
 		context->GetHistogramImage(outPixels, width, height, options);
 
 		for(int i=0;i<nvalues;i++)
@@ -725,31 +823,31 @@ public:
 
 	void setParameterValue(luxComponent comp, luxComponentParameters param, double value, unsigned int index)
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		return context->SetParameterValue(comp, param, value, index);
 	}
 
 	double getParameterValue(luxComponent comp, luxComponentParameters param, unsigned int index)
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		return context->GetParameterValue(comp, param, index);
 	}
 
 	double getDefaultParameterValue(luxComponent comp, luxComponentParameters param, unsigned int index)
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		return context->GetDefaultParameterValue(comp, param, index);
 	}
 
 	void setStringParameterValue(luxComponent comp, luxComponentParameters param, const char* value, unsigned int index)
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		return context->SetStringParameterValue(comp, param, value, index);
 	}
 
 	unsigned int getStringParameterValue(luxComponent comp, luxComponentParameters param, char* dst, unsigned int dstlen, unsigned int index)
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		const string str = context->GetStringParameterValue(comp, param, index);
 		unsigned int nToCopy = str.length() < dstlen ?
 			str.length() + 1 : dstlen;
@@ -762,7 +860,7 @@ public:
 
 	unsigned int getDefaultStringParameterValue(luxComponent comp, luxComponentParameters param, char* dst, unsigned int dstlen, unsigned int index)
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		const string str = context->GetDefaultStringParameterValue(comp, param, index);
 		unsigned int nToCopy = str.length() < dstlen ?
 			str.length() + 1 : dstlen;
@@ -775,7 +873,7 @@ public:
 
 	const char* getAttributes()
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		return context->registry.GetContent();
 	}
 
@@ -787,7 +885,7 @@ public:
 	//This function handles all types
 	boost::python::object getAttribute(const char *objectName, const char *attributeName)
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		Queryable *object=context->registry[objectName];
 		if(object!=0)
 		{
@@ -816,7 +914,7 @@ public:
 	void setAttribute(const char * objectName, const char * attributeName, boost::python::object value)
 	{
 		//void luxSetAttribute(const char * objectName, const char * attributeName, int n, void *values); /* Sets an option value */
-		Context::SetActive(context);
+		checkActiveContext();
 		Queryable *object=context->registry[objectName];
 		if(object!=0)
 		{
@@ -856,48 +954,46 @@ public:
 
 	void addServer(const char * name)
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		context->AddServer(std::string(name));
 	}
 
 	void removeServer(const char * name)
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		context->RemoveServer(std::string(name));
 	}
 
 	unsigned int getServerCount()
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		return context->GetServerCount();
 	}
 
 	void updateFilmFromNetwork()
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		context->UpdateFilmFromNetwork();
 	}
 
 	void setNetworkServerUpdateInterval(int updateInterval)
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		context->SetNetworkServerUpdateInterval(updateInterval);
 	}
 
 	int getNetworkServerUpdateInterval()
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		return context->GetNetworkServerUpdateInterval();
 	}
 
 	boost::python::tuple getRenderingServersStatus()
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		int nServers = context->GetServerCount();
 
 		RenderingServerInfo *pInfoList = new RenderingServerInfo[nServers];
-		
-		Context::SetActive(context);
 		nServers = context->GetRenderingServersStatus( pInfoList, nServers );
 		
 		boost::python::list server_list;
@@ -913,29 +1009,31 @@ public:
 
 	double statistics(const char *statName)
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		return context->Statistics(statName);
 	}
 
 	const char* printableStatistics(const bool add_total)
 	{
+		checkActiveContext();
 		return context->PrintableStatistics(add_total);
 	}
 
 	const char* customStatistics(const string custom_template)
 	{
+		checkActiveContext();
 		return context->CustomStatistics(custom_template);
 	}
 
 	void enableDebugMode()
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		context->EnableDebugMode();
 	}
 
 	void disableRandomMode()
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		context->DisableRandomMode();
 	}
 
@@ -947,8 +1045,17 @@ private:
 	std::vector<boost::thread *> pyLuxWorldEndThreads; //hold pointers to the worldend threads
 	void pyWorldEnd()
 	{
-		Context::SetActive(context);
+		checkActiveContext();
 		context->WorldEnd();
+	}
+
+	void checkActiveContext()
+	{
+		if (context == NULL)
+		{
+			context = new Context(name);
+		}
+		Context::SetActive(context);
 	}
 };
 
@@ -1001,6 +1108,11 @@ void export_PyContext()
 			&PyContext::attributeEnd,
 			args("Context"),
 			ds_pylux_Context_attributeEnd
+		)
+		.def("blenderCombinedDepthRects",
+			&PyContext::blenderCombinedDepthRects,
+			args("Context"),
+			"Blender framebuffer fetcher method; returns combined Color+Alpha and Depth buffers in bottom-up format"
 		)
 		.def("camera",
 			&PyContext::camera,
@@ -1056,6 +1168,21 @@ void export_PyContext()
 			&PyContext::framebuffer,
 			args("Context"),
 			ds_pylux_Context_framebuffer
+		)
+		.def("floatFramebuffer",
+			&PyContext::floatFramebuffer,
+			args("Context"),
+			ds_pylux_Context_floatframebuffer
+		)
+		.def("alphaBuffer",
+			&PyContext::alphaBuffer,
+			args("Context"),
+			ds_pylux_Context_alphabuffer
+		)
+		.def("zBuffer",
+			&PyContext::zBuffer,
+			args("Context"),
+			ds_pylux_Context_zbuffer
 		)
 		.def("getDefaultParameterValue",
 			&PyContext::getDefaultParameterValue,
@@ -1187,6 +1314,11 @@ void export_PyContext()
 			args("Context", "filename", "asynchronous"),
 			ds_pylux_Context_parse
 			)
+		.def("parsePartial",
+			&PyContext::parsePartial,
+			args("Context", "filename", "asynchronous"),
+			ds_pylux_Context_parsePartial
+		)
 		.def("parseSuccessful",
 			&PyContext::parseSuccessful,
 			args("Context")
@@ -1309,7 +1441,7 @@ void export_PyContext()
 		.def("customStatistics",
 			&PyContext::customStatistics,
 			args("Context", "template_string"),
-			""
+			ds_pylux_Context_custom_statistics
 		)
 		.def("surfaceIntegrator",
 			&PyContext::surfaceIntegrator,

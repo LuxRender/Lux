@@ -104,6 +104,18 @@ const char * ds_pylux_Context_framebuffer =
 "Returns the current post-processed LDR framebuffer in RGB888 format as a list.\n"
 "It is advisable to call updateFramebuffer() before calling this function.";
 
+const char * ds_pylux_Context_floatframebuffer =
+"Returns the current post-processed LDR framebuffer in float format as a list.\n"
+"It is advisable to call updateFramebuffer() before calling this function.";
+
+const char * ds_pylux_Context_alphabuffer =
+"Returns the current alpha buffer in float format as a list.\n"
+"It is advisable to call updateFramebuffer() before calling this function.";
+
+const char * ds_pylux_Context_zbuffer =
+"Returns the current Z buffer in float format as a list.\n"
+"It is advisable to call updateFramebuffer() before calling this function.";
+
 const char * ds_pylux_Context_getDefaultParameterValue =
 "";
 
@@ -210,8 +222,16 @@ const char * ds_pylux_Context_overrideResumeFLM =
 "";
 
 const char * ds_pylux_Context_parse =
-"Parse the given filename. If done asynchronously, control will pass\n"
-"immediately back to the python interpreter, otherwise this function blocks.";
+"Parse the given filename. This method expects a complete scene file as an\n"
+"argument, including a WorldEnd statement. If done asynchronously, control\n"
+"will pass immediately back to the python interpreter, otherwise this\n"
+"function blocks.";
+
+const char * ds_pylux_Context_parsePartial =
+"Parse the given filename. This method doesn't expect the parsed file to be\n"
+"complete, so that additional API calls can be made in this Context.\n"
+"If done asynchronously, control will pass immediately back to the python\n"
+"interpreter, otherwise this function blocks.";
 
 const char * ds_pylux_Context_pause =
 "(+) Pause all local rendering threads.";
@@ -319,6 +339,10 @@ const char * ds_pylux_Context_statistics =
 const char * ds_pylux_Context_printable_statistics =
 "Return a formatted statistics string. If add_total=True, then the Local and Net"
 " stats will be summed and also shown.";
+
+const char * ds_pylux_Context_custom_statistics =
+"Return a formatted statistics string. The string argument should contain the\n"
+"appropriate template placeholders for the stats to be formatted into.";
 
 const char * ds_pylux_Context_surfaceIntegrator =
 "Initialise the surface integrator to use for rendering. Valid types are:\n"

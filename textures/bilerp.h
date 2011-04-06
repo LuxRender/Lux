@@ -65,7 +65,11 @@ public:
 		*du = dsdu * (v10 - v00 + t * d) + dtdu * (v01 - v00 + s * d);
 		*dv = dsdv * (v10 - v00 + t * d) + dtdv * (v01 - v00 + s * d);
 	}
-	
+	virtual void GetMinMaxFloat(float *minValue, float *maxValue) const {
+		*minValue = min(min(v00, v01), min(v10, v11));
+		*maxValue = max(max(v00, v01), max(v10, v11));
+	}	
+
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const ParamSet &tp);
 	
 private:

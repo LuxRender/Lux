@@ -37,12 +37,13 @@ public:
 //	enum RRStrategy { RR_EFFICIENCY, RR_PROBABILITY, RR_NONE };
 
 	BidirIntegrator(u_int ed, u_int ld, float et, float lt, LightStrategy ls,
-		bool d) :
+		bool d) : SurfaceIntegrator(),
 		maxEyeDepth(ed), maxLightDepth(ld),
 		eyeThreshold(et), lightThreshold(lt),
 		lightStrategy(ls), debug(d) {
 		eyeBufferId = 0;
 		lightBufferId = 0;
+		AddStringConstant(*this, "name", "Name of current surface integrator", "bidirectional");
 	}
 	virtual ~BidirIntegrator() { }
 	// BidirIntegrator Public Methods

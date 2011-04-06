@@ -32,21 +32,22 @@
 #include "context.h"
 
 #include "luxrays/core/context.h"
+#include "luxrays/core/device.h"
 #include "luxrays/core/virtualdevice.h"
 
 using namespace lux;
 
-#if !defined(LUXRAYS_DISABLE_OPENCL)
+//#if !defined(LUXRAYS_DISABLE_OPENCL)
 
 //------------------------------------------------------------------------------
 // HybridSamplerRenderer
 //------------------------------------------------------------------------------
 
-HybridSamplerRenderer::HybridSamplerRenderer() : HybridRenderer() {
+HybridSamplerRenderer::HybridSamplerRenderer(int oclPlatformIndex, bool useGPUs, u_int forceGPUWorkGroupSize) : HybridRenderer() {
 	state = INIT;
 
 	// Create the LuxRays context
-	ctx = new luxrays::Context(LuxRaysDebugHandler);
+	ctx = new luxrays::Context(LuxRaysDebugHandler, oclPlatformIndex);
 
 	// Create the device descriptions
 	HRHostDescription *host = new HRHostDescription(this, "Localhost");
@@ -62,23 +63,57 @@ HybridSamplerRenderer::HybridSamplerRenderer() : HybridRenderer() {
 	for (size_t i = 0; i < deviceDescs.size(); ++i)
 		host->AddDevice(new HRHardwareDeviceDescription(host, deviceDescs[i]));
 
+	bool useNative = false;
+
+#if !defined(LUXRAYS_DISABLE_OPENCL)
 	// Create the virtual device to feed all hardware device
 	std::vector<luxrays::DeviceDescription *> hwDeviceDescs = deviceDescs;
 	luxrays::DeviceDescription::Filter(luxrays::DEVICE_TYPE_OPENCL, hwDeviceDescs);
 	luxrays::OpenCLDeviceDescription::Filter(luxrays::OCL_DEVICE_TYPE_GPU, hwDeviceDescs);
 
-	if (hwDeviceDescs.size() < 1)
-		throw std::runtime_error("Unable to find an OpenCL GPU device.");
-	hwDeviceDescs.resize(1);
+	if (useGPUs && (hwDeviceDescs.size() >= 1)) {
+		hwDeviceDescs.resize(1);
 
-	ctx->AddVirtualM2OIntersectionDevices(0, hwDeviceDescs);
+		luxrays::OpenCLDeviceDescription *desc = (luxrays::OpenCLDeviceDescription *)hwDeviceDescs[0];
+		if (forceGPUWorkGroupSize > 0)
+			desc->SetForceWorkGroupSize(forceGPUWorkGroupSize);
 
-	virtualIDevice = ctx->GetVirtualM2OIntersectionDevices()[0];
+		luxrays::IntersectionDevice *intersectionDevice = ctx->AddVirtualM2OIntersectionDevices(0, hwDeviceDescs)[0];
+
+		virtualIDevice = ctx->GetVirtualM2OIntersectionDevices()[0];
+
+		LOG(LUX_INFO, LUX_NOERROR) << "OpenCL Device used: [" << intersectionDevice->GetName() << "]";
+	} else
+		// don't want GPU or no hardware available, use native
+		useNative = true;
+#else
+	// only native mode without OpenCL
+	if (useGPUs)
+		LOG(LUX_INFO, LUX_NOERROR) << "GPU assisted rendering requires an OpenCL enabled version of LuxRender, using CPU instead";
+
+	useGPUs = false;
+	useNative = true;
+#endif
+
+	if (useNative) {
+		if (useGPUs)
+			LOG(LUX_WARNING, LUX_SYSTEM) << "Unable to find an OpenCL GPU device, falling back to CPU";
+
+		virtualIDevice = NULL;
+
+		// allocate native threads
+		std::vector<luxrays::DeviceDescription *> nativeDeviceDescs = deviceDescs;
+		luxrays::DeviceDescription::Filter(luxrays::DEVICE_TYPE_NATIVE_THREAD, nativeDeviceDescs);
+
+		nativeDevices = ctx->AddIntersectionDevices(nativeDeviceDescs);
+	}
+
 
 	preprocessDone = false;
 	suspendThreadsWhenDone = false;
 
 	AddStringConstant(*this, "name", "Name of current renderer", "hybridsampler");
+	AddStringAttribute(*this, "stats", "Current renderer statistics", &HybridSamplerRenderer::GetStats);
 }
 
 HybridSamplerRenderer::~HybridSamplerRenderer() {
@@ -189,7 +224,7 @@ void HybridSamplerRenderer::Render(Scene *s) {
 
 		// Dade - preprocessing done
 		preprocessDone = true;
-		Context::GetActive()->SceneReady();
+		scene->SetReady();
 
 		// add a thread
 		CreateRenderThread();
@@ -229,11 +264,13 @@ void HybridSamplerRenderer::Render(Scene *s) {
 void HybridSamplerRenderer::Pause() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 	state = PAUSE;
+	s_Timer.Stop();
 }
 
 void HybridSamplerRenderer::Resume() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 	state = RUN;
+	s_Timer.Start();
 }
 
 void HybridSamplerRenderer::Terminate() {
@@ -342,6 +379,17 @@ double HybridSamplerRenderer::Statistics_Efficiency() {
 	return (100.f * stat_blackSamples) / stat_Samples;
 }
 
+string HybridSamplerRenderer::GetStats() {
+
+	if (virtualIDevice) {
+		luxrays::IntersectionDevice *idevice = virtualIDevice->GetVirtualDevice(0);
+		std::stringstream ss("");
+		ss << "GPU Load: " << std::setiosflags(std::ios_base::fixed) << std::setprecision(0) << (100.f * idevice->GetLoad()) << "%";
+		return ss.str();
+	} else
+		return "Using CPU";
+}
+
 //------------------------------------------------------------------------------
 // Private methods
 //------------------------------------------------------------------------------
@@ -353,8 +401,16 @@ void HybridSamplerRenderer::CreateRenderThread() {
 	// Avoid to create the thread in case signal is EXIT. For instance, it
 	// can happen when the rendering is done.
 	if ((state == RUN) || (state == PAUSE)) {
-		// Add an instance to the LuxRays virtual device
-		luxrays::IntersectionDevice * idev = virtualIDevice->AddVirtualDevice();
+		
+		luxrays::IntersectionDevice *idev;
+
+		if (virtualIDevice) {
+			// Add an instance to the LuxRays virtual device
+			idev = virtualIDevice->AddVirtualDevice();
+		} else {
+			// Add a nativethread device
+			idev = nativeDevices[renderThreads.size() % nativeDevices.size()];
+		}
 
 		RenderThread *rt = new  RenderThread(renderThreads.size(), this, idev);
 
@@ -432,8 +488,9 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 			std::setiosflags(std::ios::fixed) << std::setprecision(2) <<
 			luxrays::WallClockTime() - t0 << " secs";
 
-	size_t currentGenerateIndex = 0;
-	size_t currentNextIndex = 0;
+	size_t currentStartIndex = 0;
+	size_t currentGenerateIndex;
+	size_t currentNextIndex;
 	bool renderIsOver = false;
 	while (!renderIsOver) {
 		while (renderer->state == PAUSE) {
@@ -445,13 +502,17 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 		if ((renderer->state == TERMINATE) || boost::this_thread::interruption_requested())
 			break;
 
+		currentGenerateIndex = currentStartIndex;
 		while (rayBuffer->LeftSpace() > 0) {
 			if (!scene.surfaceIntegrator->GenerateRays(scene, integratorState[currentGenerateIndex], rayBuffer)) {
 				// The RayBuffer is full
 				break;
 			}
 
-			currentGenerateIndex = (currentGenerateIndex + 1) % integratorState.size();
+			if (++currentGenerateIndex >= integratorState.size())
+				currentGenerateIndex -= integratorState.size();
+			if (currentGenerateIndex == currentStartIndex)
+				break;
 		}
 
 		// Trace the RayBuffer
@@ -461,6 +522,7 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 		// Advance the next step
 		u_int nrContribs = 0;
 		u_int nrSamples = 0;
+		currentNextIndex = currentStartIndex;
 		do {
 			u_int count;
 			if (scene.surfaceIntegrator->NextState(scene, integratorState[currentNextIndex], rayBuffer, &count)) {
@@ -468,10 +530,9 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 				++nrSamples;
 
 				if (!integratorState[currentNextIndex]->Init(scene)) {
-					renderer->Pause();
-
 					// Dade - we have done, check what we have to do now
 					if (renderer->suspendThreadsWhenDone) {
+						renderer->Pause();
 						// Dade - wait for a resume rendering or exit
 						while (renderer->state == PAUSE) {
 							boost::xtime xt;
@@ -486,6 +547,7 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 						} else
 							continue;
 					} else {
+						renderer->Terminate();
 						renderIsOver = true;
 						break;
 					}
@@ -493,7 +555,8 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 			}
 
 			nrContribs += count;
-			currentNextIndex = (currentNextIndex + 1) % integratorState.size();
+			if (++currentNextIndex >= integratorState.size())
+				currentNextIndex -= integratorState.size();
 		} while (currentNextIndex != currentGenerateIndex);
 
 		// Jeanphi - Hijack statistics until volume integrator revamp
@@ -505,6 +568,7 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 		}
 
 		rayBuffer->Reset();
+		currentStartIndex = currentGenerateIndex;
 	}
 
 	scene.camera->film->contribPool->End(contribBuffer);
@@ -516,10 +580,25 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 }
 
 Renderer *HybridSamplerRenderer::CreateRenderer(const ParamSet &params) {
-	return new HybridSamplerRenderer();
+
+	ParamSet configParams(params);
+
+	string configFile = params.FindOneString("configfile", "");
+	if (configFile != "") {
+		HybridRenderer::LoadCfgParams(configFile, &configParams);
+	}
+
+	int platformIndex = configParams.FindOneInt("opencl.platform.index", -1);
+
+	bool useGPUs = configParams.FindOneBool("opencl.gpu.use", true);
+
+	u_int forceGPUWorkGroupSize = max(0, configParams.FindOneInt("opencl.gpu.workgroup.size", 0));
+
+	params.MarkUsed(configParams);
+	return new HybridSamplerRenderer(platformIndex, useGPUs, forceGPUWorkGroupSize);
 }
 
 static DynamicLoader::RegisterRenderer<HybridSamplerRenderer> r("hybrid");
 static DynamicLoader::RegisterRenderer<HybridSamplerRenderer> r2("hybridsampler");
 
-#endif // !defined(LUXRAYS_DISABLE_OPENCL)
+//#endif // !defined(LUXRAYS_DISABLE_OPENCL)

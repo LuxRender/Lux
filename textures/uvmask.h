@@ -86,6 +86,14 @@ public:
 			*dv *= d;
 		}
 	}
+	virtual void GetMinMaxFloat(float *minValue, float *maxValue) const {
+		float min1, min2;
+		float max1, max2;
+		innerTex->GetMinMaxFloat(&min1, &max1);
+		outerTex->GetMinMaxFloat(&min2, &max2);
+		*minValue = min(min1, min2);
+		*maxValue = max(max1, max2);
+	}
 
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world,
 	                                           const ParamSet  &tp);

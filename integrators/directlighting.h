@@ -43,7 +43,7 @@ public:
 
 private:
 	u_int LiInternal(const Scene &scene, const Sample &sample,
-		const Volume *volume, const Ray &ray,
+		const Volume *volume, bool scattered, const Ray &ray,
 		vector<SWCSpectrum> &L, float *alpha, float &distance,
 		u_int rayDepth) const;
 
@@ -51,7 +51,7 @@ private:
 
 	u_int maxDepth; // NOBOOK
 	// Declare sample parameters for light source sampling
-	u_int sampleOffset, bufferId;
+	u_int sampleOffset, scatterOffset, bufferId;
 };
 
 }//namespace lux

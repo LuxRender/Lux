@@ -35,18 +35,17 @@ namespace lux
 {
 
 // Integrator Method Definitions
+// This is a very basic implementation without any volumetric support
+// Look at the emission, single or multi integrators for proper support
 bool VolumeIntegrator::Intersect(const Scene &scene, const Sample &sample,
-	const Volume *volume, const Ray &ray, Intersection *isect, BSDF **bsdf,
+	const Volume *volume, bool scatteredStart, const Ray &ray, float u,
+	Intersection *isect, BSDF **bsdf, float *pdf, float *pdfBack,
 	SWCSpectrum *L) const
 {
 	const bool hit = scene.Intersect(ray, isect);
 	if (hit) {
-		DifferentialGeometry dgShading;
-		isect->primitive->GetShadingGeometry(isect->WorldToObject.GetInverse(),
-			isect->dg, &dgShading);
-		isect->material->GetShadingGeometry(sample.swl, isect->dg.nn,
-			&dgShading);
-		if (Dot(ray.d, dgShading.nn) > 0.f) {
+		// Proper volume setting is still required for eg glass2
+		if (Dot(ray.d, isect->dg.nn) > 0.f) {
 			if (!volume)
 				volume = isect->interior;
 			else if (!isect->interior)
@@ -58,29 +57,26 @@ bool VolumeIntegrator::Intersect(const Scene &scene, const Sample &sample,
 				isect->exterior = volume;
 		}
 		if (bsdf)
-			*bsdf = isect->material->GetBSDF(sample.arena,
-				sample.swl, isect->dg, dgShading,
-				isect->exterior, isect->interior);
+			*bsdf = isect->GetBSDF(sample.arena, sample.swl, ray);
 	}
-	if (volume && L)
-		*L *= Exp(-volume->Tau(sample.swl, ray));
-	if (L)
-		Transmittance(scene, ray, sample, NULL, L);
+	if (pdf)
+		*pdf = 1.f;
+	if (pdfBack)
+		*pdfBack = 1.f;
 	return hit;
 }
 
+// This is a very basic implementation without any volumetric support
+// Look at the emission, single or multi integrators for proper support
 bool VolumeIntegrator::Intersect(const Scene &scene, const Sample &sample,
-	const Volume *volume, const Ray &ray, const luxrays::RayHit &rayHit, Intersection *isect, BSDF **bsdf,
-	SWCSpectrum *L) const
+	const Volume *volume, bool scatteredStart, const Ray &ray,
+	const luxrays::RayHit &rayHit, float u, Intersection *isect,
+	BSDF **bsdf, float *pdf, float *pdfBack, SWCSpectrum *L) const
 {
 	const bool hit = scene.Intersect(rayHit, isect);
 	if (hit) {
-		DifferentialGeometry dgShading;
-		isect->primitive->GetShadingGeometry(isect->WorldToObject.GetInverse(),
-			isect->dg, &dgShading);
-		isect->material->GetShadingGeometry(sample.swl, isect->dg.nn,
-			&dgShading);
-		if (Dot(ray.d, dgShading.nn) > 0.f) {
+		// Proper volume setting is still required for eg glass2
+		if (Dot(ray.d, isect->dg.nn) > 0.f) {
 			if (!volume)
 				volume = isect->interior;
 			else if (!isect->interior)
@@ -92,19 +88,18 @@ bool VolumeIntegrator::Intersect(const Scene &scene, const Sample &sample,
 				isect->exterior = volume;
 		}
 		if (bsdf)
-			*bsdf = isect->material->GetBSDF(sample.arena,
-				sample.swl, isect->dg, dgShading,
-				isect->exterior, isect->interior);
+			*bsdf = isect->GetBSDF(sample.arena, sample.swl, ray);
 	}
-	if (volume && L)
-		*L *= Exp(-volume->Tau(sample.swl, ray));
-	if (L)
-		Transmittance(scene, ray, sample, NULL, L);
+	if (pdf)
+		*pdf = 1.f;
+	if (pdfBack)
+		*pdfBack = 1.f;
 	return hit;
 }
 
 bool VolumeIntegrator::Connect(const Scene &scene, const Sample &sample,
-	const Volume *volume, const Point &p0, const Point &p1, bool clip,
+	const Volume *volume, bool scatteredStart, bool scatteredEnd,
+	const Point &p0, const Point &p1, bool clip,
 	SWCSpectrum *f, float *pdf, float *pdfR) const
 {
 	const Vector w = p1 - p0;
@@ -127,21 +122,25 @@ bool VolumeIntegrator::Connect(const Scene &scene, const Sample &sample,
 	// but it's safer to keep it
 	for (u_int i = 0; i < 10000; ++i) {
 		BSDF *bsdf;
-		if (!Intersect(scene, sample, volume, ray, &isect, &bsdf, f))
+		float spdf, spdfBack;
+		isect.dg.scattered = scatteredEnd;
+		if (!Intersect(scene, sample, volume, scatteredStart, ray, 1.f,
+			&isect, &bsdf, &spdf, &spdfBack, f)) {
+			if (pdf)
+				*pdf *= spdfBack;
+			if (pdfR)
+				*pdfR *= spdf;
 			return true;
+		}
 
 		*f *= bsdf->F(sample.swl, d, -d, true, flags);
 		if (f->Black())
 			return false;
-		const float cost = Dot(bsdf->nn, d);
-		if (cost > 0.f)
-			volume = isect.exterior;
-		else
-			volume = isect.interior;
+		volume = bsdf->GetVolume(d);
 		if (pdf)
-			*pdf *= bsdf->Pdf(sample.swl, d, -d);
+			*pdf *= bsdf->Pdf(sample.swl, d, -d) * spdfBack;
 		if (pdfR)
-			*pdfR *= bsdf->Pdf(sample.swl, -d, d);
+			*pdfR *= bsdf->Pdf(sample.swl, -d, d) * spdf;
 
 		ray.mint = ray.maxt + MachineEpsilon::E(ray.maxt);
 		ray.maxt = maxt;
@@ -150,30 +149,37 @@ bool VolumeIntegrator::Connect(const Scene &scene, const Sample &sample,
 }
 
 int VolumeIntegrator::Connect(const Scene &scene, const Sample &sample,
-	const Volume *volume, const Ray &ray, const luxrays::RayHit &rayHit,
+	const Volume **volume, bool scatteredStart, bool scatteredEnd,
+	const Ray &ray, const luxrays::RayHit &rayHit,
 	SWCSpectrum *f, float *pdf, float *pdfR) const
 {
+	const float maxt = ray.maxt;
 	BSDF *bsdf;
 	Intersection isect;
-	if (!Intersect(scene, sample, volume, ray, rayHit, &isect, &bsdf, f))
+	float spdf, spdfBack;
+	isect.dg.scattered = scatteredEnd;
+	if (!Intersect(scene, sample, *volume, scatteredStart, ray, rayHit, 1.f,
+		&isect, &bsdf, &spdf, &spdfBack, f)) {
+		if (pdf)
+			*pdf *= spdfBack;
+		if (pdfR)
+			*pdfR *= spdf;
 		return 1;
+	}
 
 	const Vector d(ray.d);
 	const BxDFType flags(BxDFType(BSDF_SPECULAR | BSDF_TRANSMISSION));
 	*f *= bsdf->F(sample.swl, d, -d, true, flags);
 	if (f->Black())
 		return -1;
-	const float cost = Dot(bsdf->nn, d);
-	if (cost > 0.f)
-		volume = isect.exterior;
-	else
-		volume = isect.interior;
+	*volume = bsdf->GetVolume(d);
 	if (pdf)
-		*pdf *= bsdf->Pdf(sample.swl, d, -d);
+		*pdf *= bsdf->Pdf(sample.swl, d, -d) * spdfBack;
 	if (pdfR)
-		*pdfR *= bsdf->Pdf(sample.swl, -d, d);
+		*pdfR *= bsdf->Pdf(sample.swl, -d, d) * spdf;
 
 	ray.mint = rayHit.t + MachineEpsilon::E(rayHit.t);
+	ray.maxt = maxt;
 	return 0;
 }
 
@@ -228,30 +234,29 @@ SWCSpectrum EstimateDirect(const Scene &scene, const Light &light,
 	float lightPdf;
 	SWCSpectrum Li;
 	BSDF *lightBsdf;
-	if (light.Sample_L(scene, sample, p, ls1, ls2, ls3,
+	if (light.SampleL(scene, sample, p, ls1, ls2, ls3,
 		&lightBsdf, NULL, &lightPdf, &Li)) {
 		const Point &pL(lightBsdf->dgShading.p);
 		const Vector wi0(pL - p);
 		const Volume *volume = bsdf->GetVolume(wi0);
 		if (!volume)
 			volume = lightBsdf->GetVolume(-wi0);
-		if (scene.Connect(sample, volume, p, pL, false, &Li, NULL,
-			NULL)) {
+		if (scene.Connect(sample, volume, bsdf->dgShading.scattered,
+			false, p, pL, false, &Li, NULL, NULL)) {
 			const float d2 = wi0.LengthSquared();
 			const Vector wi(wi0 / sqrtf(d2));
 			Li *= lightBsdf->F(sample.swl, Vector(lightBsdf->nn), -wi, false);
 			Li *= bsdf->F(sample.swl, wi, wo, true);
 			if (!Li.Black()) {
-				const float lightPdf2 = lightPdf * d2;
 				if (mis) {
 					const float bsdfPdf = bsdf->Pdf(sample.swl,
 						wo, wi);
-					Li *= PowerHeuristic(1, lightPdf2 /
+					Li *= PowerHeuristic(1, lightPdf * d2 /
 						AbsDot(wi, lightBsdf->nn),
 						1, bsdfPdf);
 				}
 				// Add light's contribution
-				Ld += Li / lightPdf2;
+				Ld += Li / d2;
 			}
 		}
 	}
@@ -270,8 +275,9 @@ SWCSpectrum EstimateDirect(const Scene &scene, const Light &light,
 			BSDF *ibsdf;
 			const Volume *volume = bsdf->GetVolume(wi);
 			bool lit = false;
-			if (!scene.Intersect(sample, volume, ray, &lightIsect,
-				&ibsdf, &Li))
+			if (!scene.Intersect(sample, volume,
+				bsdf->dgShading.scattered, ray, 1.f,
+				&lightIsect, &ibsdf, NULL, NULL, &Li))
 				lit = light.Le(scene, sample, ray, &lightBsdf,
 					NULL, &lightPdf, &Li);
 			else if (lightIsect.arealight == &light) {

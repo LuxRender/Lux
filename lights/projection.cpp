@@ -107,7 +107,7 @@ ProjectionLight::ProjectionLight(const Transform &light2world,
 	gain = g;
 	// Create _ProjectionLight_ MIP-map
 	int width = 0, height = 0;
-	auto_ptr<ImageData> imgdata(ReadImage(texname));
+	std::auto_ptr<ImageData> imgdata(ReadImage(texname));
 	if (imgdata.get() != NULL) {
 		width = imgdata->getWidth();
 		height = imgdata->getHeight();
@@ -147,7 +147,7 @@ float ProjectionLight::Pdf(const Point &p, const Point &po,
 {
 	return 1.f;
 }
-bool ProjectionLight::Sample_L(const Scene &scene, const Sample &sample,
+bool ProjectionLight::SampleL(const Scene &scene, const Sample &sample,
 	float u1, float u2, float u3, BSDF **bsdf, float *pdf,
 	SWCSpectrum *Le) const
 {
@@ -156,14 +156,15 @@ bool ProjectionLight::Sample_L(const Scene &scene, const Sample &sample,
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 	DifferentialGeometry dg(lightPos, ns, dpdu, dpdv, Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
 	dg.time = sample.realTime;
+	const Volume *v = GetVolume();
 	*bsdf = ARENA_ALLOC(sample.arena, SingleBSDF)(dg, ns,
 		ARENA_ALLOC(sample.arena, ProjectionBxDF)(area, projectionMap,
-		lightProjection, screenX0, screenX1, screenY0, screenY1), NULL, NULL);
+		lightProjection, screenX0, screenX1, screenY0, screenY1), v, v);
 	*pdf = 1.f;
 	*Le = Lbase->Evaluate(sample.swl, dg) * gain;
 	return true;
 }
-bool ProjectionLight::Sample_L(const Scene &scene, const Sample &sample,
+bool ProjectionLight::SampleL(const Scene &scene, const Sample &sample,
 	const Point &p, float u1, float u2, float u3, BSDF **bsdf, float *pdf,
 	float *pdfDirect, SWCSpectrum *Le) const
 {
@@ -176,9 +177,10 @@ bool ProjectionLight::Sample_L(const Scene &scene, const Sample &sample,
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 	DifferentialGeometry dg(lightPos, ns, dpdu, dpdv, Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
 	dg.time = sample.realTime;
+	const Volume *v = GetVolume();
 	*bsdf = ARENA_ALLOC(sample.arena, SingleBSDF)(dg, ns,
 		ARENA_ALLOC(sample.arena, ProjectionBxDF)(area, projectionMap,
-		lightProjection, screenX0, screenX1, screenY0, screenY1), NULL, NULL);
+		lightProjection, screenX0, screenX1, screenY0, screenY1), v, v);
 	*Le = Lbase->Evaluate(sample.swl, dg) * gain;
 	return true;
 }

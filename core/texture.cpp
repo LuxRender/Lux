@@ -168,18 +168,7 @@ void PlanarMapping2D::MapDuv(const DifferentialGeometry &dg, float *s, float *t,
 	*dtdv = Dot(dg.dpdv, vt);
 }
 
-Point IdentityMapping3D::Map(const DifferentialGeometry &dg) const
-{
-	return WorldToTexture(dg.p);
-}
-Point IdentityMapping3D::MapDuv(const DifferentialGeometry &dg,
-	Vector *dpdu, Vector *dpdv) const
-{
-	*dpdu = WorldToTexture(dg.dpdu);
-	*dpdv = WorldToTexture(dg.dpdv);
-	return Map(dg);
-}
-void IdentityMapping3D::Apply3DTextureMappingOptions(const ParamSet &tp)
+void TextureMapping3D::Apply3DTextureMappingOptions(const ParamSet &tp)
 {
 	// Apply inverted scale
 	Vector scale = tp.FindOneVector("scale", Vector(1.f, 1.f, 1.f));
@@ -193,6 +182,72 @@ void IdentityMapping3D::Apply3DTextureMappingOptions(const ParamSet &tp)
 	// Apply negated Translation
 	Vector translate = tp.FindOneVector("translate", Vector(0.f, 0.f, 0.f));
 	WorldToTexture = WorldToTexture * Translate(-translate);
+}
+Point GlobalMapping3D::Map(const DifferentialGeometry &dg) const
+{
+	return WorldToTexture(dg.p);
+}
+Point GlobalMapping3D::MapDuv(const DifferentialGeometry &dg,
+	Vector *dpdu, Vector *dpdv) const
+{
+	*dpdu = WorldToTexture(dg.dpdu);
+	*dpdv = WorldToTexture(dg.dpdv);
+	return Map(dg);
+}
+Point LocalMapping3D::Map(const DifferentialGeometry &dg) const
+{
+	const Transform W2T(WorldToTexture *
+		static_cast<const Primitive *>(dg.handle)->GetWorldToLocal(dg.time));
+	return W2T(dg.p);
+}
+Point LocalMapping3D::MapDuv(const DifferentialGeometry &dg,
+	Vector *dpdu, Vector *dpdv) const
+{
+	const Transform W2T(WorldToTexture *
+		static_cast<const Primitive *>(dg.handle)->GetWorldToLocal(dg.time));
+	*dpdu = W2T(dg.dpdu);
+	*dpdv = W2T(dg.dpdv);
+	return W2T(dg.p);
+}
+Point UVMapping3D::Map(const DifferentialGeometry &dg) const
+{
+	return WorldToTexture(Point(dg.u, dg.v, 0.f));
+}
+Point UVMapping3D::MapDuv(const DifferentialGeometry &dg,
+	Vector *dpdu, Vector *dpdv) const
+{
+	*dpdu = WorldToTexture(Vector(1.f, 0.f, 0.f));
+	*dpdv = WorldToTexture(Vector(0.f, 1.f, 0.f));
+	return Map(dg);
+}
+Point GlobalNormalMapping3D::Map(const DifferentialGeometry &dg) const
+{
+	const Normal n(WorldToTexture(dg.nn));
+	return Point(n.x, n.y, n.z);
+}
+Point GlobalNormalMapping3D::MapDuv(const DifferentialGeometry &dg,
+	Vector *dpdu, Vector *dpdv) const
+{
+	*dpdu = Vector(WorldToTexture(dg.dndu));
+	*dpdv = Vector(WorldToTexture(dg.dndv));
+	return Map(dg);
+}
+Point LocalNormalMapping3D::Map(const DifferentialGeometry &dg) const
+{
+	const Transform W2T(WorldToTexture *
+		static_cast<const Primitive *>(dg.handle)->GetWorldToLocal(dg.time));
+	const Normal n(W2T(dg.nn));
+	return Point(n.x, n.y, n.z);
+}
+Point LocalNormalMapping3D::MapDuv(const DifferentialGeometry &dg,
+	Vector *dpdu, Vector *dpdv) const
+{
+	const Transform W2T(WorldToTexture *
+		static_cast<const Primitive *>(dg.handle)->GetWorldToLocal(dg.time));
+	*dpdu = Vector(W2T(dg.dndu));
+	*dpdv = Vector(W2T(dg.dndv));
+	const Normal n(W2T(dg.nn));
+	return Point(n.x, n.y, n.z);
 }
 
 void LatLongMapping::Map(const Vector &wh, float *s, float *t, float *pdf) const

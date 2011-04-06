@@ -49,7 +49,7 @@ using std::sort;
 // Platform-specific definitions
 #if defined(WIN32) && !defined(__CYGWIN__)
 #  include <float.h>
-#  define isnan _isnan
+#  define isnan(a) _isnan(a)
 #  define isinf(f) (!_finite((f)))
 #  pragma warning (disable: 4244) // conversion from double to float (VS2005) - Radiance
 #  pragma warning (disable: 4305) // truncation from double to float (VS2005) - Radiance
@@ -103,7 +103,7 @@ inline float expf(float a) { return exp(a); }
 //#define INFINITY std::numeric_limits<float>::max()
 #endif
 #define LUX_VERSION 0.8
-#define LUX_VERSION_STRING "0.8(dev)"
+#define LUX_VERSION_STRING "0.8RC2"
 #if defined(WIN32) && !defined(__CYGWIN__)
 #  define LUX_PATH_SEP ";"
 #else
@@ -146,6 +146,7 @@ namespace lux
   class Aggregate;
   class Intersection;
   class ImageData;
+  class MIPMap;
   class SWCSpectrum;
   class SpectrumWavelengths;
   class RGBColor;
@@ -228,8 +229,12 @@ namespace lux
 
   bool SolveLinearSystem2x2(const float A[2][2], const float B[2], float x[2]);
 
-	ImageData *ReadImage(const string &name);
+  // accepts platform-specific filenames and performs fallback
+  ImageData *ReadImage(const string &name);
 
+  // converts paths to portable format and 
+  // provides fallback mechanism for missing files
+  string AdjustFilename(const string filename, bool silent = false);
 }
 
 // Global Inline Functions

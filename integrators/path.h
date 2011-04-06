@@ -69,9 +69,10 @@ private:
 	u_int tracedShadowRayCount;
 	Ray *shadowRay;
 	u_int *currentShadowRayIndex;
+	const Volume **shadowVolume;
 
 	PathStateType state;
-	bool specularBounce, specular;
+	bool specularBounce, specular, scattered;
 	float bouncePdf;
 };
 
@@ -82,9 +83,11 @@ public:
 	enum RRStrategy { RR_EFFICIENCY, RR_PROBABILITY, RR_NONE };
 
 	// PathIntegrator Public Methods
-	PathIntegrator(RRStrategy rst, u_int md, float cp, bool ie)  :
+	PathIntegrator(RRStrategy rst, u_int md, float cp, bool ie) : SurfaceIntegrator(),
 		hints(), rrStrategy(rst), maxDepth(md), continueProbability(cp),
-		sampleOffset(0), bufferId(0), includeEnvironment(ie) { }
+		sampleOffset(0), bufferId(0), includeEnvironment(ie) { 
+		AddStringConstant(*this, "name", "Name of current surface integrator", "path");
+	}
 
 	virtual u_int Li(const Scene &scene, const Sample &sample) const;
 	virtual void RequestSamples(Sample *sample, const Scene &scene);
@@ -110,7 +113,8 @@ public:
 		ContributionBuffer *contribBuffer, RandomGenerator *rng);
 	virtual bool GenerateRays(const Scene &,
 		SurfaceIntegratorState *state, luxrays::RayBuffer *rayBuffer);
-	virtual bool NextState(const Scene &, SurfaceIntegratorState *state, luxrays::RayBuffer *rayBuffer, u_int *nrContribs);
+	virtual bool NextState(const Scene &, SurfaceIntegratorState *state,
+		luxrays::RayBuffer *rayBuffer, u_int *nrContribs);
 
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 

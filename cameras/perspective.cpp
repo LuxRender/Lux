@@ -155,6 +155,8 @@ PerspectiveCamera::PerspectiveCamera(const Transform &world2camStart,
 	const float yPixelHeight = templength * (Screen[3] - Screen[2]) / 2.f *
 		(yEnd - yStart) / f->yResolution;
 	Apixel = xPixelWidth * yPixelHeight;
+
+	AddFloatAttribute(*this, "fov", "Field of View in radians", M_PI / 2.f, &PerspectiveCamera::fov);
 }
 
 void PerspectiveCamera::SampleMotion(float time)
@@ -206,7 +208,7 @@ void PerspectiveCamera::AutoFocus(const Scene &scene)
 	}
 }
 
-bool PerspectiveCamera::Sample_W(MemoryArena &arena,
+bool PerspectiveCamera::SampleW(MemoryArena &arena,
 	const SpectrumWavelengths &sw, const Scene &scene,
 	float u1, float u2, float u3, BSDF **bsdf, float *pdf,
 	SWCSpectrum *We) const
@@ -221,13 +223,14 @@ bool PerspectiveCamera::Sample_W(MemoryArena &arena,
 	DifferentialGeometry dg(ps, normal, CameraToWorld(Vector(1, 0, 0)),
 		CameraToWorld(Vector(0, 1, 0)), Normal(0, 0, 0),
 		Normal(0, 0, 0), 0, 0, NULL);
+	const Volume *v = GetVolume();
 	*bsdf = ARENA_ALLOC(arena, PerspectiveBSDF)(dg, normal,
-		NULL, NULL, *this, LensRadius > 0.f, psC);
+		v, v, *this, LensRadius > 0.f, psC);
 	*pdf = posPdf;
-	*We = SWCSpectrum(posPdf);
+	*We = SWCSpectrum(1.f);
 	return true;
 }
-bool PerspectiveCamera::Sample_W(MemoryArena &arena,
+bool PerspectiveCamera::SampleW(MemoryArena &arena,
 	const SpectrumWavelengths &sw, const Scene &scene,
 	const Point &p, const Normal &n, float u1, float u2, float u3,
 	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *We) const
@@ -240,18 +243,20 @@ bool PerspectiveCamera::Sample_W(MemoryArena &arena,
 	}
 	Point ps = CameraToWorld(psC);
 	DifferentialGeometry dg(ps, normal, CameraToWorld(Vector(1, 0, 0)), CameraToWorld(Vector(0, 1, 0)), Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
+	const Volume *v = GetVolume();
 	*bsdf = ARENA_ALLOC(arena, PerspectiveBSDF)(dg, normal,
-		NULL, NULL, *this, LensRadius > 0.f, psC);
+		v, v, *this, LensRadius > 0.f, psC);
 	*pdf = posPdf;
 	*pdfDirect = posPdf;
-	*We = SWCSpectrum(posPdf);
+	*We = SWCSpectrum(1.f);
 	return true;
 }
 
 BBox PerspectiveCamera::Bounds() const
 {
-	BBox bound(Point(-LensRadius, -LensRadius, 0.f),
-		Point(LensRadius, LensRadius, 0.f));
+	float lensr = max(LensRadius, 0.f);
+	BBox bound(Point(-lensr, -lensr, 0.f),
+		Point(lensr, lensr, 0.f));
 	bound = CameraToWorld(bound);
 	bound.Expand(MachineEpsilon::E(bound));
 	return bound;

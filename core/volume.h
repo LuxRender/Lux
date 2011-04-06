@@ -26,9 +26,11 @@
 #include "lux.h"
 #include "geometry/transform.h"
 #include "geometry/bbox.h"
+#include "primitive.h"
 #include "spectrum.h"
 #include "fresnelgeneral.h"
 #include "color.h"
+#include "materials/scattermaterial.h"
 
 namespace lux
 {
@@ -45,59 +47,73 @@ class Volume {
 public:
 	// Volume Interface
 	virtual ~Volume() { }
-	virtual SWCSpectrum SigmaA(const SpectrumWavelengths &sw, const Point &,
-		const Vector &) const = 0;
-	virtual SWCSpectrum SigmaS(const SpectrumWavelengths &sw, const Point &,
-		const Vector &) const = 0;
-	virtual SWCSpectrum Lve(const SpectrumWavelengths &sw, const Point &,
-		const Vector &) const = 0;
-	virtual float P(const SpectrumWavelengths &sw, const Point &,
+	virtual SWCSpectrum SigmaA(const SpectrumWavelengths &sw,
+		const DifferentialGeometry &dg) const = 0;
+	virtual SWCSpectrum SigmaS(const SpectrumWavelengths &sw,
+		const DifferentialGeometry &dg) const = 0;
+	virtual SWCSpectrum Lve(const SpectrumWavelengths &sw,
+		const DifferentialGeometry &dg) const = 0;
+	virtual float P(const SpectrumWavelengths &sw,
+		const DifferentialGeometry &dg,
 		const Vector &, const Vector &) const = 0;
 	virtual SWCSpectrum SigmaT(const SpectrumWavelengths &sw,
-		const Point &p, const Vector &w) const {
-		return SigmaA(sw, p, w) + SigmaS(sw, p, w);
+		const DifferentialGeometry &dg) const {
+		return SigmaA(sw, dg) + SigmaS(sw, dg);
 	}
 	virtual SWCSpectrum Tau(const SpectrumWavelengths &sw, const Ray &ray,
 		float step = 1.f, float offset = 0.5f) const = 0;
 	virtual FresnelGeneral Fresnel(const SpectrumWavelengths &sw,
-		const Point &, const Vector &) const = 0;
+		const DifferentialGeometry &dg) const = 0;
+	virtual bool Scatter(const Sample &sample, bool scatteredStart,
+		const Ray &ray, float u, Intersection *isect, float *pdf,
+		float *pdfBack, SWCSpectrum *L) const = 0;
 };
 
 class RGBVolume : public Volume {
 public:
 	RGBVolume(const RGBColor &sA, const RGBColor &sS, const RGBColor &l,
-		float gg) : sigA(sA), sigS(sS), le(l), g(gg) { }
+		float gg) : sigA(sA), sigS(sS), le(l), g(gg),
+		material(sS, sA, gg), primitive(&material, this, this) { }
 	virtual ~RGBVolume() { }
 	virtual SWCSpectrum SigmaA(const SpectrumWavelengths &sw,
-		const Point &p, const Vector &) const {
+		const DifferentialGeometry &dg) const {
 		return SWCSpectrum(sw, sigA);
 	}
 	virtual SWCSpectrum SigmaS(const SpectrumWavelengths &sw,
-		const Point &p, const Vector &) const {
+		const DifferentialGeometry &dg) const {
 		return SWCSpectrum(sw, sigS);
 	}
-	virtual SWCSpectrum Lve(const SpectrumWavelengths &sw, const Point &p,
-		const Vector &) const {
+	virtual SWCSpectrum Lve(const SpectrumWavelengths &sw,
+		const DifferentialGeometry &dg) const {
 		//FIXME - use a D65 white point instead of the E white point
 		return SWCSpectrum(sw, le);
 	}
-	virtual float P(const SpectrumWavelengths &sw, const Point &p,
+	virtual float P(const SpectrumWavelengths &sw,
+		const DifferentialGeometry &dg,
 		const Vector &w, const Vector &wp) const {
 		return PhaseHG(w, wp, g);
 	}
 	virtual SWCSpectrum Tau(const SpectrumWavelengths &sw, const Ray &ray,
 		float step = 1.f, float offset = 0.5f) const {
-		return SigmaT(sw, ray.o, -ray.d) *
+		DifferentialGeometry dg;
+		dg.p = ray.o;
+		dg.nn = Normal(-ray.d);
+		return SigmaT(sw, dg) *
 			(ray.d.Length() * (ray.maxt - ray.mint));
 	}
 	virtual FresnelGeneral Fresnel(const SpectrumWavelengths &sw,
-		const Point &, const Vector &) const {
+		const DifferentialGeometry &dg) const {
 		return FresnelGeneral(DIELECTRIC_FRESNEL,
 			SWCSpectrum(1.f), SWCSpectrum(0.f));
 	}
+	virtual bool Scatter(const Sample &sample, bool scatteredStart,
+		const Ray &ray, float u, Intersection *isect, float *pdf,
+		float *pdfBack, SWCSpectrum *L) const;
 private:
 	RGBColor sigA, sigS, le;
 	float g;
+	UniformRGBScatterMaterial material;
+	ScattererPrimitive primitive;
 };
 
 class  Region : public Volume {
@@ -124,42 +140,61 @@ public:
 		return region.IntersectP(WorldToVolume(ray), t0, t1);
 	}
 	virtual SWCSpectrum SigmaA(const SpectrumWavelengths &sw,
-		const Point &p, const Vector &w) const {
-		return region.Inside(WorldToVolume(p)) ?
-			volume.SigmaA(sw, p, w) : SWCSpectrum(0.f);
+		const DifferentialGeometry &dg) const {
+		return region.Inside(WorldToVolume(dg.p)) ?
+			volume.SigmaA(sw, dg) : SWCSpectrum(0.f);
 	}
 	virtual SWCSpectrum SigmaS(const SpectrumWavelengths &sw,
-		const Point &p, const Vector &w) const {
-		return region.Inside(WorldToVolume(p)) ?
-			volume.SigmaA(sw, p, w) : SWCSpectrum(0.f);
+		const DifferentialGeometry &dg) const {
+		return region.Inside(WorldToVolume(dg.p)) ?
+			volume.SigmaS(sw, dg) : SWCSpectrum(0.f);
 	}
 	virtual SWCSpectrum SigmaT(const SpectrumWavelengths &sw,
-		const Point &p, const Vector &w) const {
-		return region.Inside(WorldToVolume(p)) ?
-			volume.SigmaT(sw, p, w) : SWCSpectrum(0.f);
+		const DifferentialGeometry &dg) const {
+		return region.Inside(WorldToVolume(dg.p)) ?
+			volume.SigmaT(sw, dg) : SWCSpectrum(0.f);
 	}
-	virtual SWCSpectrum Lve(const SpectrumWavelengths &sw, const Point &p,
-		const Vector &w) const {
-		return region.Inside(WorldToVolume(p)) ?
-			volume.Lve(sw, p, w) : SWCSpectrum(0.f);
+	virtual SWCSpectrum Lve(const SpectrumWavelengths &sw,
+		const DifferentialGeometry &dg) const {
+		return region.Inside(WorldToVolume(dg.p)) ?
+			volume.Lve(sw, dg) : SWCSpectrum(0.f);
 	}
-	virtual float P(const SpectrumWavelengths &sw, const Point &p,
+	virtual float P(const SpectrumWavelengths &sw,
+		const DifferentialGeometry &dg,
 		const Vector &w, const Vector &wp) const {
-		return volume.P(sw, p, w, wp);
+		return volume.P(sw, dg, w, wp);
 	}
 	virtual SWCSpectrum Tau(const SpectrumWavelengths &sw, const Ray &r,
 		float stepSize, float offset) const {
-		float t0, t1;
 		Ray rn(r);
-		if (!IntersectP(rn, &t0, &t1))
+		if (!IntersectP(rn, &rn.mint, &rn.maxt))
 			return SWCSpectrum(0.f);
-		rn.mint = t0;
-		rn.maxt = t1;
 		return volume.Tau(sw, rn, stepSize, offset);
 	}
 	virtual FresnelGeneral Fresnel(const SpectrumWavelengths &sw,
-		const Point &p, const Vector &w) const {
-		return volume.Fresnel(sw, p, w);
+		const DifferentialGeometry &dg) const {
+		return volume.Fresnel(sw, dg);
+	}
+	virtual bool Scatter(const Sample &sample, bool scatteredStart,
+		const Ray &ray, float u, Intersection *isect, float *pdf,
+		float *pdfBack, SWCSpectrum *L) const {
+		Ray r(WorldToVolume(ray));
+		if (!region.IntersectP(r, &r.mint, &r.maxt))
+			return false;
+		if (r.maxt <= r.mint)
+			return false;
+		if (!volume.Scatter(sample, scatteredStart, r, u, isect, pdf,
+			pdfBack, L))
+			return false;
+		ray.maxt = r.maxt;
+		Transform VolumeToWorld(WorldToVolume.GetInverse());
+		isect->dg.p = VolumeToWorld(isect->dg.p);
+		isect->dg.nn = VolumeToWorld(isect->dg.nn);
+		isect->dg.dpdu = VolumeToWorld(isect->dg.dpdu);
+		isect->dg.dpdv = VolumeToWorld(isect->dg.dpdv);
+		isect->dg.dndu = VolumeToWorld(isect->dg.dndu);
+		isect->dg.dndv = VolumeToWorld(isect->dg.dndv);
+		return true;
 	}
 protected:
 	Transform WorldToVolume;
@@ -174,38 +209,74 @@ public:
 	virtual ~DensityVolume() { }
 	virtual float Density(const Point &Pobj) const = 0;
 	virtual SWCSpectrum SigmaA(const SpectrumWavelengths &sw,
-		const Point &p, const Vector &w) const {
-		return Density(p) * volume.SigmaA(sw, p, w);
+		const DifferentialGeometry &dg) const {
+		return Density(dg.p) * volume.SigmaA(sw, dg);
 	}
 	virtual SWCSpectrum SigmaS(const SpectrumWavelengths &sw,
-		const Point &p, const Vector &w) const {
-		return Density(p) * volume.SigmaA(sw, p, w);
+		const DifferentialGeometry &dg) const {
+		return Density(dg.p) * volume.SigmaS(sw, dg);
 	}
 	virtual SWCSpectrum SigmaT(const SpectrumWavelengths &sw,
-		const Point &p, const Vector &w) const {
-		return Density(p) * volume.SigmaT(sw, p, w);
+		const DifferentialGeometry &dg) const {
+		return Density(dg.p) * volume.SigmaT(sw, dg);
 	}
-	virtual SWCSpectrum Lve(const SpectrumWavelengths &sw, const Point &p,
-		const Vector &w) const {
-		return Density(p) * volume.Lve(sw, p, w);
+	virtual SWCSpectrum Lve(const SpectrumWavelengths &sw,
+		const DifferentialGeometry &dg) const {
+		return Density(dg.p) * volume.Lve(sw, dg);
 	}
-	virtual float P(const SpectrumWavelengths &sw, const Point &p,
+	virtual float P(const SpectrumWavelengths &sw,
+		const DifferentialGeometry &dg,
 		const Vector &w, const Vector &wp) const {
-		return volume.P(sw, p, w, wp);
+		return volume.P(sw, dg, w, wp);
 	}
 	virtual SWCSpectrum Tau(const SpectrumWavelengths &sw, const Ray &r,
 		float stepSize, float offset) const {
-		if (!(r.d.Length() > 0.f))
+		const float length = r.d.Length();
+		if (!(length > 0.f))
 			return SWCSpectrum(0.f);
-		const float step = stepSize / r.d.Length();
+		const u_int N = Ceil2UInt((r.maxt - r.mint) * length / stepSize);
+		const float step = (r.maxt - r.mint) / N;
+		DifferentialGeometry dg;
+		dg.nn = Normal(-r.d);
 		SWCSpectrum tau(0.f);
-		for (float t0 = r.mint + offset * step; t0 < r.maxt; t0 += step)
-			tau += SigmaT(sw, r(t0), -r.d);
-		return tau * stepSize;
+		float t0 = r.mint + offset * step;
+		for (u_int i = 0; i < N; ++i) {
+			dg.p = r(t0);
+			tau += SigmaT(sw, dg);
+			t0 += step;
+		}
+		return tau * (step * length);
 	}
 	virtual FresnelGeneral Fresnel(const SpectrumWavelengths &sw,
-		const Point &p, const Vector &w) const {
-		return volume.Fresnel(sw, p, w);
+		const DifferentialGeometry &dg) const {
+		return volume.Fresnel(sw, dg);
+	}
+	virtual bool Scatter(const Sample &sample, bool scatteredStart,
+		const Ray &ray, float u, Intersection *isect, float *pdf,
+		float *pdfBack, SWCSpectrum *L) const {
+		if (pdf)
+			*pdf = 1.f;
+		if (pdfBack)
+			*pdfBack = 1.f;
+		const float mint = ray.mint;
+		while (true) {
+			float lpdf, lpdfBack;
+			bool scatter = volume.Scatter(sample, scatteredStart,
+				ray, u, isect, &lpdf, &lpdfBack, L);
+			if (!scatter) {
+				ray.mint = mint;
+				//TODO compute correct probabilities
+				return false;
+			}
+			//TODO update probabilities
+			const float d = Density(ray(ray.maxt));
+			if (d >= u) //FIXME: need to decouple random values
+				break;
+			//*pdf *= 1.f - d;
+			ray.mint = ray.maxt;
+		}
+		ray.mint = mint;
+		return false; //FIXME scattering disabled for now
 	}
 protected:
 	// DensityVolume Protected Data
@@ -218,23 +289,27 @@ public:
 	AggregateRegion(const vector<Region *> &r);
 	virtual ~AggregateRegion();
 	virtual bool IntersectP(const Ray &ray, float *t0, float *t1) const;
-	virtual SWCSpectrum SigmaA(const SpectrumWavelengths &sw, const Point &,
-		const Vector &) const;
-	virtual SWCSpectrum SigmaS(const SpectrumWavelengths &sw, const Point &,
-		const Vector &) const;
-	virtual SWCSpectrum Lve(const SpectrumWavelengths &sw, const Point &,
-		const Vector &) const;
-	virtual float P(const SpectrumWavelengths &sw, const Point &,
+	virtual SWCSpectrum SigmaA(const SpectrumWavelengths &sw,
+		const DifferentialGeometry &dg) const;
+	virtual SWCSpectrum SigmaS(const SpectrumWavelengths &sw,
+		const DifferentialGeometry &dg) const;
+	virtual SWCSpectrum Lve(const SpectrumWavelengths &sw,
+		const DifferentialGeometry &dg) const;
+	virtual float P(const SpectrumWavelengths &sw,
+		const DifferentialGeometry &dg,
 		const Vector &, const Vector &) const;
-	virtual SWCSpectrum SigmaT(const SpectrumWavelengths &sw, const Point &,
-		const Vector &) const;
+	virtual SWCSpectrum SigmaT(const SpectrumWavelengths &sw,
+		const DifferentialGeometry &dg) const;
 	virtual SWCSpectrum Tau(const SpectrumWavelengths &sw, const Ray &ray,
 		float stepSize, float u) const;
 	virtual FresnelGeneral Fresnel(const SpectrumWavelengths &sw,
-		const Point &, const Vector &) const {
+		const DifferentialGeometry &dg) const {
 		return FresnelGeneral(DIELECTRIC_FRESNEL,
 			SWCSpectrum(1.f), SWCSpectrum(0.f));
 	}
+	virtual bool Scatter(const Sample &sample, bool scatteredStart,
+		const Ray &ray, float u, Intersection *isect, float *pdf,
+		float *pdfBack, SWCSpectrum *L) const;
 private:
 	// AggregateRegion Private Data
 	vector<Region *> regions;

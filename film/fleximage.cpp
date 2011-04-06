@@ -42,12 +42,13 @@
 #include "filedata.h"
 
 #include <boost/thread/xtime.hpp>
+#include <boost/filesystem/path.hpp>
 
 using namespace lux;
 
 // FlexImageFilm Method Definitions
 FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop[4],
-	const string &filename1, bool premult, int wI, int dI, int cM,
+	const string &filename1, bool premult, int wI, int fwI, int dI, int cM,
 	bool cw_EXR, OutputChannels cw_EXR_channels, bool cw_EXR_halftype, int cw_EXR_compressiontype, bool cw_EXR_applyimaging,
 	bool cw_EXR_gamutclamp, bool cw_EXR_ZBuf, ZBufNormalization cw_EXR_ZBuf_normalizationtype,
 	bool cw_PNG, OutputChannels cw_PNG_channels, bool cw_PNG_16bit, bool cw_PNG_gamutclamp, bool cw_PNG_ZBuf, ZBufNormalization cw_PNG_ZBuf_normalizationtype,
@@ -60,8 +61,8 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, u_int filtRes
 	int reject_warmup, bool debugmode, int outlierk) :
 	Film(xres, yres, filt, filtRes, crop, filename1, premult, cw_EXR_ZBuf || cw_PNG_ZBuf || cw_TGA_ZBuf, w_resume_FLM, 
 		restart_resume_FLM, haltspp, halttime, reject_warmup, debugmode, outlierk), 
-	framebuffer(NULL),
-	writeInterval(wI), displayInterval(dI)
+	framebuffer(NULL), float_framebuffer(NULL), alpha_buffer(NULL), z_buffer(NULL),
+	writeInterval(wI), flmWriteInterval(fwI), displayInterval(dI)
 {
 	colorSpace = ColorSystem(cs_red[0], cs_red[1], cs_green[0], cs_green[1], cs_blue[0], cs_blue[1], whitepoint[0], whitepoint[1], 1.f);
 
@@ -86,6 +87,7 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, u_int filtRes
 	// AddIntAttribute(*this, "write_EXR_ZBuf_normalizationtype", "EXR Z-buffer normalization type { 0: None, 1: Camera Start/End, 2: Min/Max }", 0, &FlexImageFilm::write_EXR_ZBuf_normalizationtype, Queryable::ReadWriteAccess);
 
 	write_PNG = cw_PNG;
+	AddBoolAttribute(*this, "write_PNG", "Write PNG image", write_PNG, &FlexImageFilm::write_PNG, Queryable::ReadWriteAccess);
 	write_PNG_16bit = cw_PNG_16bit;
 	write_PNG_gamutclamp = cw_PNG_gamutclamp;
 	write_PNG_ZBuf = cw_PNG_ZBuf;
@@ -100,6 +102,7 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, u_int filtRes
 
 	AddIntAttribute(*this, "displayInterval", "Display interval (seconds)", displayInterval, &FlexImageFilm::displayInterval, Queryable::ReadWriteAccess);
 	AddIntAttribute(*this, "writeInterval", "Output file write interval (seconds)", writeInterval, &FlexImageFilm::writeInterval, Queryable::ReadWriteAccess);
+	AddIntAttribute(*this, "flmWriteInterval", "Output FLM file write interval (seconds)", flmWriteInterval, &FlexImageFilm::flmWriteInterval, Queryable::ReadWriteAccess);
 
 	// Set use and default runtime changeable parameters
 	m_TonemapKernel = d_TonemapKernel = p_TonemapKernel;
@@ -187,6 +190,7 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, u_int filtRes
 
 	// init timer
 	boost::xtime_get(&lastWriteImageTime, boost::TIME_UTC);
+	lastWriteFLMTime = lastWriteImageTime;
 }
 
 // Parameter Access functions
@@ -392,6 +396,11 @@ void FlexImageFilm::SetParameterValue(luxComponentParameters param, double value
 			break;
 		}
 
+		case LUX_FILM_LDR_CLAMP_METHOD: {
+			clampMethod = value;
+			break;
+		}
+
 		 default:
 			break;
 	 }
@@ -577,6 +586,10 @@ double FlexImageFilm::GetParameterValue(luxComponentParameters param, u_int inde
 			return GetGroupTemperature(index);
 			break;
 
+		case LUX_FILM_LDR_CLAMP_METHOD:
+			return clampMethod;
+			break;
+
 		default:
 			break;
 	 }
@@ -760,6 +773,10 @@ double FlexImageFilm::GetDefaultParameterValue(luxComponentParameters param, u_i
 			return 0.f;
 			break;
 
+		case LUX_FILM_LDR_CLAMP_METHOD:
+			return 0;
+			break;
+
 		default:
 			break;
 	 }
@@ -795,20 +812,38 @@ void FlexImageFilm::CheckWriteOuputInterval()
 	boost::xtime currentTime;
 	boost::xtime_get(&currentTime, boost::TIME_UTC);
 	bool timeToWriteImage = (currentTime.sec - lastWriteImageTime.sec > writeInterval);
+	bool timeToWriteFLM = (currentTime.sec - lastWriteFLMTime.sec > flmWriteInterval);
 
 	// Possibly write out in-progress image
-	if (timeToWriteImage) {
-		WriteImage(IMAGE_FILEOUTPUT);
-		// WriteImage can take a very long time to be executed (i.e. by saving
-		// the film. It is better to refresh lastWriteImageTime after the
-		// execution of WriteImage instead than before.
-		boost::xtime_get(&lastWriteImageTime, boost::TIME_UTC);
-	}
+	if (!(timeToWriteImage || timeToWriteFLM))
+		return;
+
+	if (!framebuffer) 
+		createFrameBuffer();
+
+	ImageType output = IMAGE_NONE;
+	if (timeToWriteImage)
+		output = static_cast<ImageType>(output | IMAGE_FILEOUTPUT);
+	if (timeToWriteFLM)
+		output = static_cast<ImageType>(output | IMAGE_FLMOUTPUT);
+
+	WriteImage(output);
+
+	// WriteImage can take a very long time to be executed (i.e. by saving
+	// the film. It is better to refresh timestamps after the
+	// execution of WriteImage instead than before.
+	boost::xtime_get(&currentTime, boost::TIME_UTC);
+
+	if (timeToWriteImage)
+		lastWriteImageTime = currentTime;
+	if (timeToWriteFLM)
+		lastWriteFLMTime = currentTime;
 }
 
 vector<RGBColor>& FlexImageFilm::ApplyPipeline(const ColorSystem &colorSpace, vector<XYZColor> &xyzcolor)
 {
 	// Apply the imaging/tonemapping pipeline
+	// not reentrant!
 	ParamSet toneParams;
 	std::string tmkernel = "reinhard";
 	if(m_TonemapKernel == TMK_Reinhard) {
@@ -838,7 +873,6 @@ vector<RGBColor>& FlexImageFilm::ApplyPipeline(const ColorSystem &colorSpace, ve
 
 	// Delete bloom/glare layers if requested
 	if (!m_BloomUpdateLayer && m_BloomDeleteLayer && m_HaveBloomImage) {
-		// TODO - make thread safe
 		m_HaveBloomImage = false;
 		delete[] m_bloomImage;
 		m_bloomImage = NULL;
@@ -846,7 +880,6 @@ vector<RGBColor>& FlexImageFilm::ApplyPipeline(const ColorSystem &colorSpace, ve
 	}
 
 	if (!m_GlareUpdateLayer && m_GlareDeleteLayer && m_HaveGlareImage) {
-		// TODO - make thread safe
 		m_HaveGlareImage = false;
 		delete[] m_glareImage;
 		m_glareImage = NULL;
@@ -856,18 +889,14 @@ vector<RGBColor>& FlexImageFilm::ApplyPipeline(const ColorSystem &colorSpace, ve
 	// use local shared_ptr to keep reference to current cameraResponse
 	// so we can pass a regular pointer to ApplyImagingPipeline
 	boost::shared_ptr<CameraResponse> crf;
-	{
-		boost::mutex::scoped_lock(cameraResponse_mutex);
+	if (m_CameraResponseFile == "")
+		cameraResponse.reset();
 
-		if (m_CameraResponseFile == "")
-			cameraResponse.reset();
+	if (m_CameraResponseEnabled) {
+		if ((!cameraResponse && m_CameraResponseFile != "") || (cameraResponse && cameraResponse->filmName != m_CameraResponseFile))
+			cameraResponse.reset(new CameraResponse(m_CameraResponseFile));
 
-		if (m_CameraResponseEnabled) {			
-			if ((!cameraResponse && m_CameraResponseFile != "") || (cameraResponse && cameraResponse->fileName != m_CameraResponseFile))
-				cameraResponse.reset(new CameraResponse(m_CameraResponseFile));
-
-			crf = cameraResponse;
-		}
+		crf = cameraResponse;
 	}
 
 	// Apply chosen tonemapper
@@ -875,7 +904,7 @@ vector<RGBColor>& FlexImageFilm::ApplyPipeline(const ColorSystem &colorSpace, ve
 		colorSpace, histogram, m_HistogramEnabled, m_HaveBloomImage, m_bloomImage, m_BloomUpdateLayer,
 		m_BloomRadius, m_BloomWeight, m_VignettingEnabled, m_VignettingScale, m_AberrationEnabled, m_AberrationAmount,
 		m_HaveGlareImage, m_glareImage, m_GlareUpdateLayer, m_GlareAmount, m_GlareRadius, m_GlareBlades, m_GlareThreshold,
-		tmkernel.c_str(), &toneParams, crf.get(), m_Gamma, 0.f);
+		tmkernel.c_str(), &toneParams, crf.get(), 0.f);
 
 	// Disable further bloom layer updates if used.
 	m_BloomUpdateLayer = false;
@@ -886,6 +915,9 @@ vector<RGBColor>& FlexImageFilm::ApplyPipeline(const ColorSystem &colorSpace, ve
 
 void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vector<float> &alpha, string postfix)
 {
+	// NOTE - this method is not reentrant! 
+	// write_mutex must be aquired before calling WriteImage2
+
 	// Construct ColorSystem from values
 	colorSpace = ColorSystem(m_RGB_X_Red, m_RGB_Y_Red,
 		m_RGB_X_Green, m_RGB_Y_Green,
@@ -915,10 +947,6 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 
 			WriteEXRImage(rgbColor, alpha, filename + postfix + ".exr", zBuf);
 		}
-
-		// Dade - save the current status of the film if required
-		if (writeResumeFlm)
-			WriteResumeFilm(filename + ".flm");
 	}
 
 	// Dade - check if I have to run ApplyImagingPipeline
@@ -937,9 +965,11 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 		// Output to low dynamic range formats
 		if ((type & IMAGE_FILEOUTPUT) || (type & IMAGE_FRAMEBUFFER)) {
 			// Clamp too high values
+			// and apply gamma correction
+			const float invGamma = 1.f / m_Gamma;
 			const u_int nPix = xPixelCount * yPixelCount;
 			for (u_int i = 0; i < nPix; ++i)
-				rgbcolor[i] = colorSpace.Limit(rgbcolor[i], clampMethod);
+				rgbcolor[i] = colorSpace.Limit(rgbcolor[i], clampMethod).Pow(invGamma);
 
 			// write out tonemapped TGA
 			if ((type & IMAGE_FILEOUTPUT) && write_TGA)
@@ -950,6 +980,10 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 			// Copy to framebuffer pixels
 			if ((type & IMAGE_FRAMEBUFFER) && framebuffer) {
 				for (u_int i = 0; i < nPix; i++) {
+					float_framebuffer[3 * i] = rgbcolor[i].c[0];
+					float_framebuffer[3 * i + 1] = rgbcolor[i].c[1];
+					float_framebuffer[3 * i + 2] = rgbcolor[i].c[2];
+
 					framebuffer[3 * i] = static_cast<unsigned char>(Clamp(256 * rgbcolor[i].c[0], 0.f, 255.f));
 					framebuffer[3 * i + 1] = static_cast<unsigned char>(Clamp(256 * rgbcolor[i].c[1], 0.f, 255.f));
 					framebuffer[3 * i + 2] = static_cast<unsigned char>(Clamp(256 * rgbcolor[i].c[2], 0.f, 255.f));
@@ -961,6 +995,19 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 
 void FlexImageFilm::WriteImage(ImageType type)
 {
+	boost::mutex::scoped_lock(write_mutex);
+	
+	// save the current status of the film if required
+	// do it here instead of in WriteImage2 to reduce
+	// memory usage
+	if (type & IMAGE_FLMOUTPUT) {
+		if (writeResumeFlm)
+			WriteResumeFilm(filename + ".flm");
+	}
+
+	if (!framebuffer || !float_framebuffer || !alpha_buffer || !z_buffer)
+		createFrameBuffer();
+
 	const u_int nPix = xPixelCount * yPixelCount;
 	vector<XYZColor> pixels(nPix);
 	vector<float> alpha(nPix), alphaWeight(nPix, 0.f);
@@ -1019,6 +1066,7 @@ void FlexImageFilm::WriteImage(ImageType type)
 		if (alphaWeight[pix] > 0.f)
 			alpha[pix] /= alphaWeight[pix];
 		Y += pixels[pix].c[1];
+		alpha_buffer[pix] = alpha[pix];
 	}
 	Y /= nPix;
 	averageLuminance = Y;
@@ -1032,6 +1080,8 @@ void FlexImageFilm::WriteImage(ImageType type)
 
 void FlexImageFilm::SaveEXR(const string &exrFilename, bool useHalfFloats, bool includeZBuf, int compressionType, bool tonemapped)
 {
+	boost::mutex::scoped_lock(write_mutex);
+
 	// Seth - Code below based on FlexImageFilm::WriteImage()
 	const u_int nPix = xPixelCount * yPixelCount;
 	vector<XYZColor> xyzcolor(nPix);
@@ -1131,10 +1181,17 @@ void FlexImageFilm::createFrameBuffer()
 	// allocate pixels
 	unsigned int nPix = xPixelCount * yPixelCount;
 	framebuffer = new unsigned char[3*nPix];			// TODO delete data
+	float_framebuffer = new float[3*nPix];
+	alpha_buffer = new float[nPix];
+	z_buffer = new float[nPix];
 
 	// zero it out
 	memset(framebuffer,0,sizeof(*framebuffer)*3*nPix);
+	memset(float_framebuffer,0,sizeof(*float_framebuffer)*3*nPix);
+	memset(alpha_buffer,0,sizeof(*alpha_buffer)*nPix);
+	memset(z_buffer,0,sizeof(*z_buffer)*nPix);
 }
+
 void FlexImageFilm::updateFrameBuffer()
 {
 	if(!framebuffer) {
@@ -1151,6 +1208,38 @@ unsigned char* FlexImageFilm::getFrameBuffer()
 	return framebuffer;
 }
 
+float* FlexImageFilm::getFloatFrameBuffer()
+{
+	if (!float_framebuffer)
+		createFrameBuffer();
+
+	return float_framebuffer;
+}
+
+float* FlexImageFilm::getAlphaBuffer()
+{
+	if (!alpha_buffer)
+		createFrameBuffer();
+
+	return alpha_buffer;
+}
+
+float* FlexImageFilm::getZBuffer()
+{
+	if (!z_buffer)
+		createFrameBuffer();
+
+	if (ZBuffer)
+	{
+		for (u_int offset = 0, y = 0; y < yPixelCount; ++y) {
+			for (u_int x = 0; x < xPixelCount; ++x,++offset) {
+				z_buffer[offset] = ZBuffer->GetData(x, y);
+			}
+		}
+	}
+
+	return z_buffer;
+}
 
 void FlexImageFilm::WriteTGAImage(vector<RGBColor> &rgb, vector<float> &alpha, const string &filename)
 {
@@ -1361,9 +1450,11 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 
 	// output filenames
 	string filename = params.FindOneString("filename", "luxout");
+	filename = boost::filesystem::path(filename).string();
 
 	// intervals
 	int writeInterval = params.FindOneInt("writeinterval", 60);
+	int flmWriteInterval = params.FindOneInt("flmwriteinterval", writeInterval);
 	int displayInterval = params.FindOneInt("displayinterval", 12);
 
 	// Rejection mechanism
@@ -1414,12 +1505,12 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 	float s_ContrastYwa = params.FindOneFloat("contrast_ywa", 1.f);
 
 	FileData::decode(params, "cameraresponse");
-	string response = params.FindOneString("cameraresponse", "");
+	string response = AdjustFilename(params.FindOneString("cameraresponse", ""));
 
 	float s_Gamma = params.FindOneFloat("gamma", 2.2f);
 
 	return new FlexImageFilm(xres, yres, filter, filtRes, crop,
-		filename, premultiplyAlpha, writeInterval, displayInterval,
+		filename, premultiplyAlpha, writeInterval, flmWriteInterval, displayInterval,
 		clampMethod, w_EXR, w_EXR_channels, w_EXR_halftype, w_EXR_compressiontype, w_EXR_applyimaging, w_EXR_gamutclamp, w_EXR_ZBuf, w_EXR_ZBuf_normalizationtype,
 		w_PNG, w_PNG_channels, w_PNG_16bit, w_PNG_gamutclamp, w_PNG_ZBuf, w_PNG_ZBuf_normalizationtype,
 		w_TGA, w_TGA_channels, w_TGA_gamutclamp, w_TGA_ZBuf, w_TGA_ZBuf_normalizationtype, 

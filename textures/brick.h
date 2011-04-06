@@ -187,6 +187,19 @@ public:
 		dgTemp.nn = Normalize(origN + vv * dgTemp.dndv);
 		*dv = (Texture<T>::EvalFloat(sw, dgTemp) - base) / vv;
 	}
+	virtual void GetMinMaxFloat(float *minValue, float *maxValue) const {
+		float min1, min2, min3;
+		float max1, max2, max3;
+		tex1->GetMinMaxFloat(&min1, &max1);
+		tex2->GetMinMaxFloat(&min2, &max2);
+		tex3->GetMinMaxFloat(&min3, &max3);
+		const float minmin13 = min1 * min3;
+		const float minmax13 = min1 * max3;
+		const float maxmin13 = max1 * min3;
+		const float maxmax13 = max1 * max3;
+		*minValue = min(min(min(minmin13, minmax13), min(maxmin13, maxmax13)), min2);
+		*maxValue = max(max(max(minmin13, minmax13), max(maxmin13, maxmax13)), max2);
+	}
 	virtual void SetIlluminant() {
 		// Update sub-textures
 		// Don't update tex3 as it's a filtering texture
@@ -297,8 +310,22 @@ private:
 
 template <class T> Texture<float> *BrickTexture3D<T>::CreateFloatTexture(
 	const Transform &tex2world, const ParamSet &tp) {
+	TextureMapping3D *imap;
+	// Read mapping coordinates
+	string coords = tp.FindOneString("coordinates", "global");
+	if (coords == "global")
+		imap = new GlobalMapping3D(tex2world);
+	else if (coords == "local")
+		imap = new LocalMapping3D(tex2world);
+	else if (coords == "uv")
+		imap = new UVMapping3D(tex2world);
+	else if (coords == "globalnormal")
+		imap = new GlobalNormalMapping3D(tex2world);
+	else if (coords == "localnormal")
+		imap = new LocalNormalMapping3D(tex2world);
+	else
+		imap = new GlobalMapping3D(tex2world);
 	// Apply texture specified transformation option for 3D mapping
-	IdentityMapping3D *imap = new IdentityMapping3D(tex2world);
 	imap->Apply3DTextureMappingOptions(tp);
 
 	boost::shared_ptr<Texture<float> > tex1(tp.GetFloatTexture("bricktex", 1.f));
@@ -319,8 +346,22 @@ template <class T> Texture<float> *BrickTexture3D<T>::CreateFloatTexture(
 
 template <class T> Texture<SWCSpectrum> *BrickTexture3D<T>::CreateSWCSpectrumTexture(
 	const Transform &tex2world, const ParamSet &tp) {
+	TextureMapping3D *imap;
+	// Read mapping coordinates
+	string coords = tp.FindOneString("coordinates", "global");
+	if (coords == "global")
+		imap = new GlobalMapping3D(tex2world);
+	else if (coords == "local")
+		imap = new LocalMapping3D(tex2world);
+	else if (coords == "uv")
+		imap = new UVMapping3D(tex2world);
+	else if (coords == "globalnormal")
+		imap = new GlobalNormalMapping3D(tex2world);
+	else if (coords == "localnormal")
+		imap = new LocalNormalMapping3D(tex2world);
+	else
+		imap = new GlobalMapping3D(tex2world);
 	// Apply texture specified transformation option for 3D mapping
-	IdentityMapping3D *imap = new IdentityMapping3D(tex2world);
 	imap->Apply3DTextureMappingOptions(tp);
 
 	boost::shared_ptr<Texture<SWCSpectrum> > tex1(tp.GetSWCSpectrumTexture("bricktex", RGBColor(1.f)));

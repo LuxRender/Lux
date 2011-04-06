@@ -28,13 +28,26 @@
 using namespace lux;
 
 // HomogeneousVolume Method Definitions
-Region * HomogeneousVolume::CreateVolumeRegion(const Transform &volume2world,
-		const ParamSet &params) {
+Volume * HomogeneousVolume::CreateVolume(const Transform &volume2world,
+	const ParamSet &params)
+{
 	// Initialize common volume region parameters
-	RGBColor sigma_a = params.FindOneRGBColor("sigma_a", 0.);
-	RGBColor sigma_s = params.FindOneRGBColor("sigma_s", 0.);
-	float g = params.FindOneFloat("g", 0.);
-	RGBColor Le = params.FindOneRGBColor("Le", 0.);
+	boost::shared_ptr<Texture<FresnelGeneral> > fr(params.GetFresnelTexture("fresnel", 1.5f));
+	boost::shared_ptr<Texture<SWCSpectrum> > sigma_a(params.GetSWCSpectrumTexture("sigma_a", RGBColor(0.f)));
+	boost::shared_ptr<Texture<SWCSpectrum> > sigma_s(params.GetSWCSpectrumTexture("sigma_s", RGBColor(0.f)));
+	boost::shared_ptr<Texture<SWCSpectrum> > g(params.GetSWCSpectrumTexture("g", RGBColor(0.f)));
+//	RGBColor Le = params.FindOneRGBColor("Le", RGBColor(0.f));
+
+	return new HomogeneousVolume(fr, sigma_a, sigma_s, g);
+}
+Region * HomogeneousVolume::CreateVolumeRegion(const Transform &volume2world,
+	const ParamSet &params)
+{
+	// Initialize common volume region parameters
+	RGBColor sigma_a = params.FindOneRGBColor("sigma_a", RGBColor(0.f));
+	RGBColor sigma_s = params.FindOneRGBColor("sigma_s", RGBColor(0.f));
+	float g = params.FindOneFloat("g", 0.f);
+	RGBColor Le = params.FindOneRGBColor("Le", RGBColor(0.f));
 	Point p0 = params.FindOnePoint("p0", Point(0,0,0));
 	Point p1 = params.FindOnePoint("p1", Point(1,1,1));
 
@@ -42,4 +55,5 @@ Region * HomogeneousVolume::CreateVolumeRegion(const Transform &volume2world,
 		RGBVolume(sigma_a, sigma_s, Le, g));
 }
 
-static DynamicLoader::RegisterVolumeRegion<HomogeneousVolume> r("homogeneous");
+static DynamicLoader::RegisterVolume<HomogeneousVolume> r1("homogeneous");
+static DynamicLoader::RegisterVolumeRegion<HomogeneousVolume> r2("homogeneous");

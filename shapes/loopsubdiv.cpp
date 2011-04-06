@@ -32,20 +32,20 @@
 using namespace lux;
 
 // LoopSubdiv Method Definitions
-LoopSubdiv::LoopSubdiv(const Transform &o2w, bool ro,
-        u_int nfaces, u_int nvertices,
-		const int *vertexIndices,
-		const Point *P,
-		const float *uv,
-		u_int nl,
-		const boost::shared_ptr<Texture<float> > &dismap,
-		float dmscale, float dmoffset,
-		bool dmnormalsmooth, bool dmsharpboundary)
-	: Shape(o2w, ro), displacementMap(dismap), displacementMapScale(dmscale),
-	displacementMapOffset(dmoffset), displacementMapNormalSmooth(dmnormalsmooth),
-	displacementMapSharpBoundary(dmsharpboundary) {
+LoopSubdiv::LoopSubdiv(const Transform &o2w, bool ro, u_int nfaces,
+	u_int nvertices, const int *vertexIndices, const Point *P,
+	const float *uv, const Normal *n, u_int nl,
+	const boost::shared_ptr<Texture<float> > &dismap, float dmscale,
+	float dmoffset, bool dmnormalsmooth, bool dmsharpboundary,
+	bool normalsplit)
+	: Shape(o2w, ro), displacementMap(dismap),
+	displacementMapScale(dmscale), displacementMapOffset(dmoffset),
+	displacementMapNormalSmooth(dmnormalsmooth),
+	displacementMapSharpBoundary(dmsharpboundary)
+{
 	nLevels = nl;
 	hasUV = (uv != NULL);
+	bool normalSplit = normalsplit && n != NULL;
 
 	// Allocate _LoopSubdiv_ vertices and faces
 	SDVertex *verts = new SDVertex[nvertices];
@@ -54,6 +54,8 @@ LoopSubdiv::LoopSubdiv(const Transform &o2w, bool ro,
 			verts[i] = SDVertex(P[i], uv[2 * i], uv[2 * i + 1]);
 		else
 			verts[i] = SDVertex(P[i]);
+		if (normalSplit)
+			verts[i].n = n[i];
 
 		vertices.push_back(&verts[i]);
 	}
@@ -83,7 +85,8 @@ LoopSubdiv::LoopSubdiv(const Transform &o2w, bool ro,
 		for (u_int edgeNum = 0; edgeNum < 3; ++edgeNum) {
 			// Update neighbor pointer for _edgeNum_
 			u_int v0 = edgeNum, v1 = NEXT(edgeNum);
-			SDEdge e(f->v[v0]->P, f->v[v1]->P);
+			Normal n0, n1;
+			SDEdge e(f->v[v0], f->v[v1]);
 			if (edges.find(e) == edges.end()) {
 				// Handle new edge
 				e.f[0] = f;
@@ -228,7 +231,7 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 				face->children[k]->v[k] = face->v[k]->child;
 				// Compute odd vertex on _k_th edge
 				SDVertex *v0 = face->v[k], *v1 = face->v[NEXT(k)];
-				SDEdge edge(v0->P, v1->P);
+				SDEdge edge(v0, v1);
 				SDVertex *vert = edgeVerts[edge];
 				if (!vert) {
 					edge.f[0] = face;
@@ -245,9 +248,10 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 
 						vert->u = 0.5f * (v0->u + v1->u);
 						vert->v = 0.5f * (v0->v + v1->v);
+						vert->n = 0.5f * (v0->n + v1->n);
 					} else {
 						SDVertex *ov1 = face->v[PREV(k)];
-						SDVertex *ov2 = f2->otherVert(edge.p[0], edge.p[1]);
+						SDVertex *ov2 = f2->otherVert(edge.v[0]->P, edge.v[1]->P);
 						vert->P =  3.f/8.f * (v0->P + v1->P);
 						vert->P += 1.f/8.f * (ov1->P + ov2->P);
 
@@ -265,6 +269,8 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 							vert->u = 0.5f * (v0->u + v1->u);
 							vert->v = 0.5f * (v0->v + v1->v);
 						}
+						vert->n =  3.f/8.f * (v0->n + v1->n);
+						vert->n += 1.f/8.f * (ov1->n + ov2->n);
 					}
 					edgeVerts[edge] = vert;
 				} else {
@@ -275,6 +281,7 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 						f2->v[f2->vnum(v1->P)]->u != v1->u ||
 						f2->v[f2->vnum(v1->P)]->v != v1->v)) {
 						const Point &P(vert->P);
+						const Normal &N(vert->n);
 						SDFace *startFace = vert->startFace;
 						vert = vertexArena.construct();//new (vertexArena) SDVertex;
 						newVertices.push_back(vert);
@@ -282,10 +289,11 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 						vert->boundary = false;
 						vert->startFace = startFace;
 						// Standard point interpolation
-						vert->P =  P;
+						vert->P = P;
 						// Boundary interpolation for UV
 						vert->u = 0.5f * (v0->u + v1->u);
 						vert->v = 0.5f * (v0->v + v1->v);
+						vert->n = N;
 					}
 					edgeVerts.erase(edge);
 				}
@@ -315,6 +323,7 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 		v[i]->P = Vlimit[i].P;
 		v[i]->u = Vlimit[i].u;
 		v[i]->v = Vlimit[i].v;
+		v[i]->n = Vlimit[i].n;
 	}
 	delete[] Vlimit;
 
@@ -333,10 +342,6 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 		}
 	}
 
-	// Dade - calculate normals
-	Normal* Ns = new Normal[ nverts ];
-	GenerateNormals(v, Ns);
-
 	// Dade - calculate vertex UVs if required
 	float *UVlimit = NULL;
 	if (hasUV) {
@@ -349,15 +354,10 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 
 	LOG( LUX_INFO,LUX_NOERROR) << "Subdivision complete, got " << ntris << " triangles";
 
-	if (displacementMap.get() != NULL) {
+	if (displacementMap) {
 		// Dade - apply the displacement map
-
-		ApplyDisplacementMap(v, Ns);
-
-		if (displacementMapNormalSmooth) {
-			// Dade - recalculate normals after the displacement
-			GenerateNormals(v, Ns);
-		}
+		GenerateNormals(v);
+		ApplyDisplacementMap(v);
 	}
 
 	// Dade - create trianglemesh vertices
@@ -365,9 +365,14 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 	for (u_int i = 0; i < nverts; ++i)
 		Plimit[i] = v[i]->P;
 
-	if (!displacementMapNormalSmooth) {
-		delete[] Ns;
-		Ns = NULL;
+	Normal *Ns = NULL;
+	if (displacementMapNormalSmooth) {
+		// Dade - calculate normals
+		GenerateNormals(v);
+
+		Ns = new Normal[nverts];
+		for (u_int i = 0; i < nverts; ++i)
+			Ns[i] = v[i]->n;
 	}
 
 	return boost::shared_ptr<SubdivResult>(new SubdivResult(ntris, nverts, verts, Plimit, Ns, UVlimit));
@@ -396,7 +401,7 @@ void LoopSubdiv::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 	refined.push_back(this->refinedShape);
 }
 
-void LoopSubdiv::GenerateNormals(const vector<SDVertex *> v, Normal *Ns) {
+void LoopSubdiv::GenerateNormals(const vector<SDVertex *> v) {
 	// Compute vertex tangents on limit surface
 	u_int ringSize = 16;
 	Point *Pring = new Point[ringSize];
@@ -437,12 +442,11 @@ void LoopSubdiv::GenerateNormals(const vector<SDVertex *> v, Normal *Ns) {
 				T = -T;
 			}
 		}
-		Ns[i] = Normal(Normalize(Cross(T, S)));
+		vert->n = Normal(Normalize(Cross(T, S)));
 	}
 }
 
-void LoopSubdiv::ApplyDisplacementMap(const vector<SDVertex *> verts,
-	const Normal *norms) const
+void LoopSubdiv::ApplyDisplacementMap(const vector<SDVertex *> verts) const
 {
 	// Dade - apply the displacement map
 	LOG(LUX_INFO,LUX_NOERROR) << "Applying displacement map to " << verts.size() << " vertices";
@@ -456,10 +460,10 @@ void LoopSubdiv::ApplyDisplacementMap(const vector<SDVertex *> verts,
 		if (v->child == v)
 			continue;
 		Point pp = ObjectToWorld(v->P);
-		const Normal nn = Normalize(ObjectToWorld(norms[i]));
+		const Normal nn(Normalize(ObjectToWorld(v->n)));
 		Vector dpdu, dpdv;
 		CoordinateSystem(Vector(nn), &dpdu, &dpdv);
-		Vector displacement(norms[i]);
+		Vector displacement(v->n);
 
 		SDFace *face = v->startFace;
 		u_int nf = 0;
@@ -473,7 +477,7 @@ void LoopSubdiv::ApplyDisplacementMap(const vector<SDVertex *> verts,
 					Normal(0, 0, 0), Normal(0, 0, 0),
 					vv->u, vv->v, this);
 
-				dl += displacementMap.get()->Evaluate(swl, dg);
+				dl += displacementMap->Evaluate(swl, dg);
 				++nf;
 				if (vv->child != vv) {
 					vlist.push_back(vv);
@@ -488,7 +492,7 @@ void LoopSubdiv::ApplyDisplacementMap(const vector<SDVertex *> verts,
 					Normal(0, 0, 0), Normal(0, 0, 0),
 					vv->u, vv->v, this);
 
-				dl += displacementMap.get()->Evaluate(swl, dg);
+				dl += displacementMap->Evaluate(swl, dg);
 				++nf;
 				if (vv->child != vv) {
 					vlist.push_back(vv);
@@ -503,7 +507,7 @@ void LoopSubdiv::ApplyDisplacementMap(const vector<SDVertex *> verts,
 					Normal(0, 0, 0), Normal(0, 0, 0),
 					vv->u, vv->v, this);
 
-				dl += displacementMap.get()->Evaluate(swl, dg);
+				dl += displacementMap->Evaluate(swl, dg);
 				++nf;
 				if (vv->child != vv) {
 					vlist.push_back(vv);
@@ -522,7 +526,9 @@ void LoopSubdiv::ApplyDisplacementMap(const vector<SDVertex *> verts,
 	}
 }
 
-void LoopSubdiv::weightOneRing(SDVertex *destVert, SDVertex *vert, float beta) const {
+void LoopSubdiv::weightOneRing(SDVertex *destVert, SDVertex *vert,
+	float beta) const
+{
 	// Put _vert_ one-ring in _Pring_
 	u_int valence = vert->valence();
 	SDVertex **Vring = (SDVertex **)alloca(valence * sizeof(SDVertex *));
@@ -544,14 +550,16 @@ void LoopSubdiv::weightOneRing(SDVertex *destVert, SDVertex *vert, float beta) c
 			uvSplit = true;
 	} while (face != vert->startFace);
 
-	Point P = (1 - valence * beta) * vert->P;
+	Point P((1 - valence * beta) * vert->P);
 	float u = (1 - valence * beta) * vert->u;
 	float v = (1 - valence * beta) * vert->v;
+	Normal N((1 - valence * beta) * vert->n);
 
 	for (u_int i = 0; i < valence; ++i) {
 		P += beta * Vring[i]->P;
 		u += beta * Vring[i]->u;
 		v += beta * Vring[i]->v;
+		N += beta * Vring[i]->n;
 	}
 
 	destVert->P = P;
@@ -562,9 +570,11 @@ void LoopSubdiv::weightOneRing(SDVertex *destVert, SDVertex *vert, float beta) c
 		destVert->u = u;
 		destVert->v = v;
 	}
+	destVert->n = N;
 }
 
-void SDVertex::oneRing(Point *Pring) const {
+void SDVertex::oneRing(Point *Pring) const
+{
 	if (!boundary) {
 		// Get one ring vertices for interior vertex
 		SDFace *face = startFace;
@@ -586,13 +596,15 @@ void SDVertex::oneRing(Point *Pring) const {
 }
 
 void LoopSubdiv::weightBoundary(SDVertex *destVert,  SDVertex *vert,
-                                 float beta) const {
+	float beta) const
+{
 	// Put _vert_ one-ring in _Pring_
 	u_int valence = vert->valence();
 	if (displacementMapSharpBoundary) {
 		destVert->P = vert->P;
 		destVert->u = vert->u;
 		destVert->v = vert->v;
+		destVert->n = vert->n;
 		return;
 	}
 	SDVertex **Vring = (SDVertex **)alloca(valence * sizeof(SDVertex *));
@@ -622,7 +634,7 @@ void LoopSubdiv::weightBoundary(SDVertex *destVert,  SDVertex *vert,
 		}
 	} while (face != NULL);
 
-	Point P = (1 - 2 * beta) * vert->P;
+	Point P((1 - 2 * beta) * vert->P);
 	P += beta * Vring[0]->P;
 	P += beta * Vring[valence - 1]->P;
 	destVert->P = P;
@@ -638,6 +650,11 @@ void LoopSubdiv::weightBoundary(SDVertex *destVert,  SDVertex *vert,
 		destVert->u = u;
 		destVert->v = v;
 	}
+
+	Normal N((1 - 2 * beta) * vert->n);
+	N += beta * Vring[0]->n;
+	N += beta * Vring[valence - 1]->n;
+	destVert->n = N;
 }
 
 Shape *LoopSubdiv::CreateShape(
@@ -647,12 +664,13 @@ Shape *LoopSubdiv::CreateShape(
 {
 	map<string, boost::shared_ptr<Texture<float> > > *floatTextures = Context::GetActiveFloatTextures();
 	int nlevels = params.FindOneInt("nlevels", 3);
-	u_int nps, nIndices, nuvi;
+	u_int nps, nIndices, nuvi, nn;
 	const int *vi = params.FindInt("indices", &nIndices);
 	const Point *P = params.FindPoint("P", &nps);
 	if (!vi || !P) return NULL;
 
 	const float *uvs = params.FindFloat("uv", &nuvi);
+	const Normal *n = params.FindNormal("N", &nn);
 
 	// Dade - the optional displacement map
 	string displacementMapName = params.FindOneString("displacementmap", "");
@@ -660,13 +678,14 @@ Shape *LoopSubdiv::CreateShape(
 	float displacementMapOffset = params.FindOneFloat("dmoffset", 0.0f);
 	bool displacementMapNormalSmooth = params.FindOneBool("dmnormalsmooth", true);
 	bool displacementMapSharpBoundary = params.FindOneBool("dmsharpboundary", false);
+	bool normalSplit = params.FindOneBool("dmnormalsplit", false);
 
 	boost::shared_ptr<Texture<float> > displacementMap;
 	if (displacementMapName != "") {
 		boost::shared_ptr<Texture<float> > dm((*floatTextures)[displacementMapName]);
 		displacementMap = dm;
 
-		if (displacementMap.get() == NULL) {
+		if (!displacementMap) {
             LOG( LUX_WARNING,LUX_SYNTAX) << "Unknown float texture '" << displacementMapName << "' in a LoopSubdiv shape.";
 		}
 	}
@@ -675,9 +694,10 @@ Shape *LoopSubdiv::CreateShape(
 	string scheme = params.FindOneString("scheme", "loop");
 
 	return new LoopSubdiv(o2w, reverseOrientation, nIndices/3, nps,
-		vi, P, uvs, nlevels, displacementMap,
+		vi, P, uvs, n, nlevels, displacementMap,
 		displacementMapScale, displacementMapOffset,
-		displacementMapNormalSmooth, displacementMapSharpBoundary);
+		displacementMapNormalSmooth, displacementMapSharpBoundary,
+		normalSplit);
 }
 
 // Lotus - Handled by mesh shape

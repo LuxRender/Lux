@@ -24,6 +24,7 @@
 #include "shinymetal.h"
 #include "memory.h"
 #include "bxdf.h"
+#include "primitive.h"
 #include "fresnelgeneral.h"
 #include "schlickdistribution.h"
 #include "microfacet.h"
@@ -37,13 +38,11 @@ using namespace lux;
 
 // ShinyMetal Method Definitions
 BSDF *ShinyMetal::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
-	const DifferentialGeometry &dgGeom,
-	const DifferentialGeometry &dgs,
-	const Volume *exterior, const Volume *interior) const
+	const Intersection &isect, const DifferentialGeometry &dgs) const
 {
 	// Allocate _BSDF_
-	MultiBSDF *bsdf = ARENA_ALLOC(arena, MultiBSDF)(dgs, dgGeom.nn,
-		exterior, interior);
+	MultiBSDF *bsdf = ARENA_ALLOC(arena, MultiBSDF)(dgs, isect.dg.nn,
+		isect.exterior, isect.interior);
 	SWCSpectrum spec = Ks->Evaluate(sw, dgs).Clamp();
 	SWCSpectrum R = Kr->Evaluate(sw, dgs).Clamp();
 
@@ -67,7 +66,7 @@ BSDF *ShinyMetal::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 		flm, flmindex));
 
 	// Add ptr to CompositingParams structure
-	bsdf->SetCompositingParams(compParams);
+	bsdf->SetCompositingParams(&compParams);
 
 	return bsdf;
 }
@@ -81,11 +80,7 @@ Material* ShinyMetal::CreateMaterial(const Transform &xform,
 	boost::shared_ptr<Texture<float> > filmindex(mp.GetFloatTexture("filmindex", 1.5f));				// Thin film index of refraction
 	boost::shared_ptr<Texture<float> > bumpMap(mp.GetFloatTexture("bumpmap"));
 
-	// Get Compositing Params
-	CompositingParams cP;
-	FindCompositingParams(mp, &cP);
-
-	return new ShinyMetal(Ks, uroughness, vroughness, film, filmindex, Kr, bumpMap, cP);
+	return new ShinyMetal(Ks, uroughness, vroughness, film, filmindex, Kr, bumpMap, mp);
 }
 
 static DynamicLoader::RegisterMaterial<ShinyMetal> r("shinymetal");

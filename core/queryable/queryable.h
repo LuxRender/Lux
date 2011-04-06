@@ -100,15 +100,21 @@ public:
     iterator end() { return attributes.end(); }
     const_iterator end() const { return attributes.end(); }
 
+	bool HasAttribute(const std::string attributeName)
+	{
+		iterator it = attributes.find(attributeName);
+		return it != attributes.end();
+	}
+
     //If s matches the name of an attribute in this object, the function returns a reference to its QueryableAttribute.
     //Otherwise, it throws an error.
-	QueryableAttribute& operator[] (const std::string &s)
+	QueryableAttribute& operator[] (const std::string &attributeName)
 	{
-		iterator it=attributes.find(s);
+		iterator it = attributes.find(attributeName);
 		if (it != attributes.end())
 			return(*it->second);
 
-		LOG(LUX_SEVERE,LUX_BADTOKEN) << "Attribute '" << s << "' does not exist in Queryable object";
+		LOG(LUX_SEVERE,LUX_BADTOKEN) << "Attribute '" << attributeName << "' does not exist in Queryable object";
 		return nullAttribute;		
 	}
 

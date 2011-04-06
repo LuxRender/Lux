@@ -18,6 +18,18 @@
 
 #include "rply.h"
 
+#if defined(WIN32) && !defined(__CYGWIN__)
+// MSVC doesn't support C99, uses LLP64
+typedef signed char int8_t;
+typedef unsigned char uint8_t;
+typedef short int16_t;
+typedef unsigned short uint16_t;
+typedef int int32_t;
+typedef unsigned int uint32_t;
+#else
+#include <stdint.h>
+#endif
+
 /* ----------------------------------------------------------------------
  * Constants 
  * ---------------------------------------------------------------------- */
@@ -304,7 +316,7 @@ p_ply ply_open(const char *name, p_ply_error_cb error_cb) {
         fclose(fp);
         return NULL;
     }
-    if (strcmp(magic, "ply\n")) {
+    if (strcmp(magic, "ply\n") && strcmp(magic, "ply\r")) {
         fclose(fp);
         error_cb("Not a PLY file. Expected magic number 'ply\\n'");
         return NULL;
@@ -1181,20 +1193,20 @@ static e_ply_storage_mode ply_arch_endian(void) {
 }
 
 static int ply_type_check(void) {
-    assert(sizeof(char) == 1);
-    assert(sizeof(unsigned char) == 1);
-    assert(sizeof(short) == 2);
-    assert(sizeof(unsigned short) == 2);
-    assert(sizeof(long) == 4);
-    assert(sizeof(unsigned long) == 4);
+    assert(sizeof(int8_t) == 1);
+    assert(sizeof(uint8_t) == 1);
+    assert(sizeof(int16_t) == 2);
+    assert(sizeof(uint16_t) == 2);
+    assert(sizeof(int32_t) == 4);
+    assert(sizeof(uint32_t) == 4);
     assert(sizeof(float) == 4);
     assert(sizeof(double) == 8);
-    if (sizeof(char) != 1) return 0;
-    if (sizeof(unsigned char) != 1) return 0;
-    if (sizeof(short) != 2) return 0;
-    if (sizeof(unsigned short) != 2) return 0;
-    if (sizeof(long) != 4) return 0;
-    if (sizeof(unsigned long) != 4) return 0;
+    if (sizeof(int8_t) != 1) return 0;
+    if (sizeof(uint8_t) != 1) return 0;
+    if (sizeof(int16_t) != 2) return 0;
+    if (sizeof(uint16_t) != 2) return 0;
+    if (sizeof(int32_t) != 4) return 0;
+    if (sizeof(uint32_t) != 4) return 0;
     if (sizeof(float) != 4) return 0;
     if (sizeof(double) != 8) return 0;
     return 1;
@@ -1244,37 +1256,37 @@ static int oascii_float64(p_ply ply, double value) {
 }
 
 static int obinary_int8(p_ply ply, double value) {
-    char int8 = (char) value;
+    int8_t int8 = (int8_t) value;
     if (value > CHAR_MAX || value < CHAR_MIN) return 0;
     return ply->odriver->ochunk(ply, &int8, sizeof(int8));
 }
 
 static int obinary_uint8(p_ply ply, double value) {
-    unsigned char uint8 = (unsigned char) value;
+    uint8_t uint8 = (uint8_t) value;
     if (value > UCHAR_MAX || value < 0) return 0;
     return ply->odriver->ochunk(ply, &uint8, sizeof(uint8)); 
 }
 
 static int obinary_int16(p_ply ply, double value) {
-    short int16 = (short) value;
+    int16_t int16 = (int16_t) value;
     if (value > SHRT_MAX || value < SHRT_MIN) return 0;
     return ply->odriver->ochunk(ply, &int16, sizeof(int16));
 }
 
 static int obinary_uint16(p_ply ply, double value) {
-    unsigned short uint16 = (unsigned short) value;
+    uint16_t uint16 = (uint16_t) value;
     if (value > USHRT_MAX || value < 0) return 0;
     return ply->odriver->ochunk(ply, &uint16, sizeof(uint16)); 
 }
 
 static int obinary_int32(p_ply ply, double value) {
-    long int32 = (long) value;
+    int32_t int32 = (int32_t) value;
     if (value > LONG_MAX || value < LONG_MIN) return 0;
     return ply->odriver->ochunk(ply, &int32, sizeof(int32));
 }
 
 static int obinary_uint32(p_ply ply, double value) {
-    unsigned long uint32 = (unsigned long) value;
+    uint32_t uint32 = (uint32_t) value;
     if (value > ULONG_MAX || value < 0) return 0;
     return ply->odriver->ochunk(ply, &uint32, sizeof(uint32));
 }
@@ -1357,42 +1369,42 @@ static int iascii_float64(p_ply ply, double *value) {
 }
 
 static int ibinary_int8(p_ply ply, double *value) {
-    char int8;
-    if (!ply->idriver->ichunk(ply, &int8, 1)) return 0;
+    int8_t int8;
+    if (!ply->idriver->ichunk(ply, &int8, sizeof(int8))) return 0;
     *value = int8;
     return 1;
 }
 
 static int ibinary_uint8(p_ply ply, double *value) {
-    unsigned char uint8;
-    if (!ply->idriver->ichunk(ply, &uint8, 1)) return 0;
+    uint8_t uint8;
+    if (!ply->idriver->ichunk(ply, &uint8, sizeof(uint8))) return 0;
     *value = uint8;
     return 1;
 }
 
 static int ibinary_int16(p_ply ply, double *value) {
-    short int16;
+    int16_t int16;
     if (!ply->idriver->ichunk(ply, &int16, sizeof(int16))) return 0;
     *value = int16;
     return 1;
 }
 
 static int ibinary_uint16(p_ply ply, double *value) {
-    unsigned short uint16;
+    uint16_t uint16;
     if (!ply->idriver->ichunk(ply, &uint16, sizeof(uint16))) return 0;
     *value = uint16;
     return 1;
 }
 
 static int ibinary_int32(p_ply ply, double *value) {
-    long int32;
+    int32_t int32;
     if (!ply->idriver->ichunk(ply, &int32, sizeof(int32))) return 0;
     *value = int32;
     return 1;
 }
 
 static int ibinary_uint32(p_ply ply, double *value) {
-    unsigned long uint32;
+    uint32_t uint32;
     if (!ply->idriver->ichunk(ply, &uint32, sizeof(uint32))) return 0;
     *value = uint32;
     return 1;

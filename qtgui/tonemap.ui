@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>486</width>
+    <width>498</width>
     <height>497</height>
    </rect>
   </property>
@@ -755,6 +755,13 @@
             </property>
            </widget>
           </item>
+          <item row="4" column="2" colspan="2">
+           <widget class="QPushButton" name="button_linearEstimate">
+            <property name="text">
+             <string>Estimate settings</string>
+            </property>
+           </widget>
+          </item>
          </layout>
         </item>
        </layout>
@@ -816,6 +823,38 @@
          </layout>
         </item>
        </layout>
+      </widget>
+     </item>
+     <item row="4" column="0">
+      <widget class="QLabel" name="label_clampMethod">
+       <property name="text">
+        <string>Clamp method:</string>
+       </property>
+       <property name="buddy">
+        <cstring>comboBox_clampMethod</cstring>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="1">
+      <widget class="QComboBox" name="comboBox_clampMethod">
+       <property name="toolTip">
+        <string>Select color clamping method</string>
+       </property>
+       <item>
+        <property name="text">
+         <string>Preserve luminosity</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Preserve hue</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Clip channels individually</string>
+        </property>
+       </item>
       </widget>
      </item>
     </layout>

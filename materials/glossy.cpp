@@ -26,6 +26,7 @@
 #include "glossy.h"
 #include "memory.h"
 #include "bxdf.h"
+#include "primitive.h"
 #include "fresnelblend.h"
 #include "schlickdistribution.h"
 #include "texture.h"
@@ -37,9 +38,7 @@ using namespace lux;
 
 // Glossy Method Definitions
 BSDF *Glossy::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
-	const DifferentialGeometry &dgGeom,
-	const DifferentialGeometry &dgs,
-	const Volume *exterior, const Volume *interior) const
+	const Intersection &isect, const DifferentialGeometry &dgs) const
 {
 	// Allocate _BSDF_
 	// NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
@@ -64,11 +63,11 @@ BSDF *Glossy::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 
 	SchlickDistribution *md = ARENA_ALLOC(arena, SchlickDistribution)(u * v, anisotropy);
 	SingleBSDF *bsdf = ARENA_ALLOC(arena, SingleBSDF)(dgs,
-		dgGeom.nn, ARENA_ALLOC(arena, FresnelBlend)(d, s, a, ld, md),
-		exterior, interior);
+		isect.dg.nn, ARENA_ALLOC(arena, FresnelBlend)(d, s, a, ld, md),
+		isect.exterior, isect.interior);
 
 	// Add ptr to CompositingParams structure
-	bsdf->SetCompositingParams(compParams);
+	bsdf->SetCompositingParams(&compParams);
 
 	return bsdf;
 }
@@ -83,11 +82,7 @@ Material* Glossy::CreateMaterial(const Transform &xform,
 	boost::shared_ptr<Texture<float> > vroughness(mp.GetFloatTexture("vroughness", .1f));
 	boost::shared_ptr<Texture<float> > bumpMap(mp.GetFloatTexture("bumpmap"));
 
-	// Get Compositing Params
-	CompositingParams cP;
-	FindCompositingParams(mp, &cP);
-
-	return new Glossy(Kd, Ks, Ka, i, d, uroughness, vroughness, bumpMap, cP);
+	return new Glossy(Kd, Ks, Ka, i, d, uroughness, vroughness, bumpMap, mp);
 }
 
 static DynamicLoader::RegisterMaterial<Glossy> r("glossy_lossy");

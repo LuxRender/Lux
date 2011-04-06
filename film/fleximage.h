@@ -43,7 +43,7 @@ public:
 	// FlexImageFilm Public Methods
 
 	FlexImageFilm(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop[4],
-		const string &filename1, bool premult, int wI, int dI, int cM,
+		const string &filename1, bool premult, int wI, int fwI, int dI, int cM,
 		bool cw_EXR, OutputChannels cw_EXR_channels, bool cw_EXR_halftype, int cw_EXR_compressiontype, bool cw_EXR_applyimaging,
 		bool cw_EXR_gamutclamp, bool cw_EXR_ZBuf, ZBufNormalization cw_EXR_ZBuf_normalizationtype,
 		bool cw_PNG, OutputChannels cw_PNG_channels, bool cw_PNG_16bit, bool cw_PNG_gamutclamp, bool cw_PNG_ZBuf, ZBufNormalization cw_PNG_ZBuf_normalizationtype,
@@ -57,6 +57,9 @@ public:
 
 	virtual ~FlexImageFilm() {
 		delete[] framebuffer;
+		delete[] float_framebuffer;
+		delete[] alpha_buffer;
+		delete[] z_buffer;
 	}	
 
 	virtual void SaveEXR(const string &exrFilename, bool useHalfFloats, bool includeZBuf, int compressionType, bool tonemapped);
@@ -66,6 +69,9 @@ public:
 	// GUI display methods
 	virtual void updateFrameBuffer();
 	virtual unsigned char* getFrameBuffer();
+	virtual float* getFloatFrameBuffer();
+	virtual float* getAlphaBuffer();
+	virtual float* getZBuffer();
 	virtual void createFrameBuffer();
 	virtual int getldrDisplayInterval() { return displayInterval; }
 
@@ -94,6 +100,9 @@ private:
 
 	// FlexImageFilm Private Data
 	unsigned char *framebuffer;
+	float *float_framebuffer;
+	float *alpha_buffer;
+	float *z_buffer;
 
 	float m_RGB_X_White, d_RGB_X_White;
 	float m_RGB_Y_White, d_RGB_Y_White;
@@ -116,8 +125,11 @@ private:
 	float m_LinearGamma, d_LinearGamma;
 	float m_ContrastYwa, d_ContrastYwa;
 
+	boost::mutex write_mutex; // WriteImage synchronization
 	int writeInterval;
 	boost::xtime lastWriteImageTime;
+	int flmWriteInterval;
+	boost::xtime lastWriteFLMTime;
 	int displayInterval;
 	int write_EXR_compressiontype;
 	ZBufNormalization write_EXR_ZBuf_normalizationtype;
@@ -138,7 +150,6 @@ private:
 	bool m_CameraResponseEnabled, d_CameraResponseEnabled;
 	string m_CameraResponseFile, d_CameraResponseFile; // Path to the data file
 	boost::shared_ptr<CameraResponse> cameraResponse; // Actual data processor
-	boost::mutex cameraResponse_mutex; // camera response synchronization
 
 	XYZColor * m_bloomImage; // Persisting bloom layer image 
 	float m_BloomRadius, d_BloomRadius;

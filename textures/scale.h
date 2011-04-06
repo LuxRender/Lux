@@ -61,6 +61,18 @@ public:
 		*du = t1 * du2 + t2 * du1;
 		*dv = t1 * dv2 + t2 * dv1;
 	}
+	virtual void GetMinMaxFloat(float *minValue, float *maxValue) const {
+		float min1, min2;
+		float max1, max2;
+		tex1->GetMinMaxFloat(&min1, &max1);
+		tex2->GetMinMaxFloat(&min2, &max2);
+		const float minmin = min1 * min2;
+		const float minmax = min1 * max2;
+		const float maxmin = max1 * min2;
+		const float maxmax = max1 * max2;
+		*minValue = min(min(minmin, minmax), min(maxmin, maxmax));
+		*maxValue = max(max(minmin, minmax), max(maxmin, maxmax));
+	}
 	virtual void SetIlluminant() {
 		// Update sub-textures
 		tex1->SetIlluminant();

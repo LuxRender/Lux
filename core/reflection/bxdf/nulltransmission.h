@@ -53,6 +53,29 @@ private:
 	// NullTransmission Private Data
 };
 
+class  FilteredTransmission : public BxDF {
+public:
+	// FilteredTransmission Public Methods
+	FilteredTransmission(const SWCSpectrum &r)
+		: BxDF(BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)), R(r) {}
+	virtual ~FilteredTransmission() { }
+	virtual void F(const SpectrumWavelengths &sw, const Vector &wo,
+		const Vector &wi, SWCSpectrum *const f_) const {
+		if (Dot(wo, wi) <= -1.f + MachineEpsilon::E(1.f))
+			*f_ += R;
+	}
+	virtual bool SampleF(const SpectrumWavelengths &sw, const Vector &wo,
+		Vector *wi, float u1, float u2, SWCSpectrum *const f,
+		float *pdf, float *pdfBack = NULL, bool reverse = false) const;
+	virtual float Pdf(const SpectrumWavelengths &sw, const Vector &wo,
+		const Vector &wi) const {
+		return Dot(wo, wi) <= -1.f + MachineEpsilon::E(1.f) ? 1.f : 0.f;
+	}
+private:
+	// FilteredTransmission Private Data
+	SWCSpectrum R;
+};
+
 }//namespace lux
 
 #endif // LUX_NULLTRANSMISSION_H

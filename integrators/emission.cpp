@@ -63,8 +63,11 @@ u_int EmissionIntegrator::Li(const Scene &scene, const Ray &ray,
 	SWCSpectrum Tr(1.f);
 	const Vector w = -ray.d;
 	t0 += sample.oneD[scatterSampleOffset][0] * step;
+	DifferentialGeometry dg;
+	dg.nn = Normal(-ray.d);
 	Ray r(ray(t0), ray.d * (step / ray.d.Length()), 0.f, 1.f);
 	for (u_int i = 0; i < N; ++i, t0 += step) {
+		dg.p = ray(t0);
 		// Advance to sample at _t0_ and update _T_
 		r.o = ray(t0);
 		// Ray is already offset above, no need to do it again
@@ -78,11 +81,78 @@ u_int EmissionIntegrator::Li(const Scene &scene, const Ray &ray,
 			Tr /= continueProb;
 		}
 		// Compute emission-only source term at _p_
-		*Lv += Tr * vr->Lve(sample.swl, r.o, w);
+		*Lv += Tr * vr->Lve(sample.swl, dg);
 	}
 	*Lv *= step;
 	return group;
 }
+
+bool EmissionIntegrator::Intersect(const Scene &scene, const Sample &sample,
+	const Volume *volume, bool scatteredStart, const Ray &ray, float u,
+	Intersection *isect, BSDF **bsdf, float *pdf, float *pdfBack,
+	SWCSpectrum *L) const
+{
+	const bool hit = scene.Intersect(ray, isect);
+	if (hit) {
+		if (Dot(ray.d, isect->dg.nn) > 0.f) {
+			if (!volume)
+				volume = isect->interior;
+			else if (!isect->interior)
+				isect->interior = volume;
+		} else {
+			if (!volume)
+				volume = isect->exterior;
+			else if (!isect->exterior)
+				isect->exterior = volume;
+		}
+		if (bsdf)
+			*bsdf = isect->GetBSDF(sample.arena, sample.swl, ray);
+	}
+	if (pdf)
+		*pdf = 1.f;
+	if (pdfBack)
+		*pdfBack = 1.f;
+	if (L) {
+		if (volume)
+			*L *= Exp(-volume->Tau(sample.swl, ray));
+		Transmittance(scene, ray, sample, NULL, L);
+	}
+	return hit;
+}
+
+bool EmissionIntegrator::Intersect(const Scene &scene, const Sample &sample,
+	const Volume *volume, bool scatteredStart, const Ray &ray,
+	const luxrays::RayHit &rayHit, float u, Intersection *isect,
+	BSDF **bsdf, float *pdf, float *pdfBack, SWCSpectrum *L) const
+{
+	const bool hit = scene.Intersect(rayHit, isect);
+	if (hit) {
+		if (Dot(ray.d, isect->dg.nn) > 0.f) {
+			if (!volume)
+				volume = isect->interior;
+			else if (!isect->interior)
+				isect->interior = volume;
+		} else {
+			if (!volume)
+				volume = isect->exterior;
+			else if (!isect->exterior)
+				isect->exterior = volume;
+		}
+		if (bsdf)
+			*bsdf = isect->GetBSDF(sample.arena, sample.swl, ray);
+	}
+	if (pdf)
+		*pdf = 1.f;
+	if (pdfBack)
+		*pdfBack = 1.f;
+	if (L) {
+		if (volume)
+			*L *= Exp(-volume->Tau(sample.swl, ray));
+		Transmittance(scene, ray, sample, NULL, L);
+	}
+	return hit;
+}
+
 VolumeIntegrator* EmissionIntegrator::CreateVolumeIntegrator(const ParamSet &params) {
 	float stepSize  = params.FindOneFloat("stepsize", 1.f);
 	return new EmissionIntegrator(stepSize, Context::GetActiveLightGroup());

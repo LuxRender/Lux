@@ -60,8 +60,8 @@ public:
 		interior = v;
 	}
 	Material *GetMaterial() const { return material.get(); }
-	virtual Volume *GetExterior() const { return exterior.get(); }
-	virtual Volume *GetInterior() const { return interior.get(); }
+	virtual const Volume *GetExterior() const { return exterior.get(); }
+	virtual const Volume *GetInterior() const { return interior.get(); }
 
 	virtual BBox WorldBound() const { return ObjectToWorld(ObjectBound()); }
 	virtual void Refine(vector<boost::shared_ptr<Primitive> > &refined,
@@ -139,6 +139,9 @@ public:
 	}
 	virtual Point Sample(const Point &p, float u1, float u2, float u3,
 		Normal *Ns) const { return Sample(u1, u2, u3, Ns); }
+	virtual Transform GetWorldToLocal(float time) const {
+		return WorldToObject;
+	}
 	// Shape data
 	const Transform ObjectToWorld, WorldToObject;
 protected:
@@ -183,6 +186,9 @@ public:
 		primitives[sn]->Sample(u1, u2, u3, dg);
 	}
 	virtual float Area() const { return area; }
+	virtual Transform GetWorldToLocal(float time) const {
+		return Transform();
+	}
 private:
 	void initAreas();
 

@@ -34,16 +34,14 @@ class InfiniteAreaLightIS : public Light {
 public:
 	// InfiniteAreaLightIS Public Methods
 	InfiniteAreaLightIS(const Transform &light2world, const RGBColor &l,
-		u_int ns, const string &texmap, EnvironmentMapping *m,
+		u_int ns, const string &texmap, u_int imr, EnvironmentMapping *m,
 		float gain, float gamma);
 	virtual ~InfiniteAreaLightIS();
 	virtual float Power(const Scene &scene) const {
 		Point worldCenter;
 		float worldRadius;
 		scene.WorldBound().BoundingSphere(&worldCenter, &worldRadius);
-		return SPDbase.Y() *
-			radianceMap->LookupFloat(CHANNEL_WMEAN, .5f, .5f, .5f) *
-			M_PI * worldRadius * worldRadius;
+		return SPDbase.Y() * mean_y * M_PI * worldRadius * worldRadius;
 	}
 	virtual bool IsDeltaLight() const { return false; }
 	virtual bool IsEnvironmental() const { return true; }
@@ -52,10 +50,10 @@ public:
 		SWCSpectrum *L) const;
 	virtual float Pdf(const Point &p, const Point &po,
 		const Normal &ns) const;
-	virtual bool Sample_L(const Scene &scene, const Sample &sample,
+	virtual bool SampleL(const Scene &scene, const Sample &sample,
 		float u1, float u2, float u3, BSDF **bsdf, float *pdf,
 		SWCSpectrum *Le) const;
-	virtual bool Sample_L(const Scene &scene, const Sample &sample,
+	virtual bool SampleL(const Scene &scene, const Sample &sample,
 		const Point &p, float u1, float u2, float u3, BSDF **bsdf,
 		float *pdf, float *pdfDirect, SWCSpectrum *Le) const;
 
@@ -68,6 +66,7 @@ private:
 	// InfiniteAreaLightIS Private Data
 	RGBIllumSPD SPDbase;
 	Distribution2D *uvDistrib;
+	float mean_y;
 };
 
 }

@@ -137,6 +137,7 @@ public:
 	void LoadFLM(const string &name);
 	void SaveFLM(const string &name);
 	void OverrideResumeFLM(const string &name);
+	void OverrideFilename(const string &filename);
 
 	// Save OpenEXR image
 	void SaveEXR(const string &name, bool useHalfFloat, bool includeZBuffer, int compressionType, bool tonemapped);	
@@ -147,6 +148,7 @@ public:
 	void Pause();
 	void Wait();
 	void Exit();
+	void Abort();
 
 	void SetHaltSamplesPerPixel(int haltspp, bool haveEnoughSamplesPerPixel,
 		bool suspendThreadsWhenDone);
@@ -159,6 +161,9 @@ public:
 	//framebuffer access
 	void UpdateFramebuffer();
 	unsigned char* Framebuffer();
+	float* FloatFramebuffer();
+	float* AlphaBuffer();
+	float* ZBuffer();
 
 	//histogram access
 	void GetHistogramImage(unsigned char *outPixels, u_int width, u_int height, int options);
@@ -181,6 +186,7 @@ public:
 
 	// Dade - network rendering
 	void UpdateFilmFromNetwork();
+	void UpdateLogFromNetwork();
 	void SetNetworkServerUpdateInterval(int updateInterval);
 	int GetNetworkServerUpdateInterval();
 	void TransmitFilm(std::basic_ostream<char> &stream);
@@ -193,7 +199,6 @@ public:
 
 	//statistics
 	double Statistics(const string &statName);
-	void SceneReady();
 
 	const char* PrintableStatistics(const bool add_total);
 	const char* CustomStatistics(const string custom_template);
@@ -303,8 +308,8 @@ private:
 	
 	// Dade - mutex used to wait the end of the rendering
 	mutable boost::mutex renderingMutex;
-	bool luxCurrentSceneReady;
 	bool terminated;
+	bool aborted; // abort rendering
 
 	StatsData *statsData;
 };

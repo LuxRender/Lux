@@ -117,13 +117,13 @@ float SampleableSphericalFunction::Average_f() const
 SphericalFunction *CreateSphericalFunction(const ParamSet &paramSet)
 {
 	bool flipZ = paramSet.FindOneBool("flipz", false);
-	string texname = paramSet.FindOneString("mapname", "");
-	string iesname = paramSet.FindOneString("iesname", "");
+	const string texname = paramSet.FindOneString("mapname", "");
+	const string iesname = AdjustFilename(paramSet.FindOneString("iesname", ""));
 
 	// Create _mipmap_ for _PointLight_
 	SphericalFunction *mipmapFunc = NULL;
 	if (texname.length() > 0) {
-		auto_ptr<ImageData> imgdata(ReadImage(texname));
+		std::auto_ptr<ImageData> imgdata(ReadImage(texname));
 		if (imgdata.get() != NULL) {
 			boost::shared_ptr<const MIPMap> mm(imgdata->createMIPMap());
 			mipmapFunc = new MipMapSphericalFunction(mm, flipZ);

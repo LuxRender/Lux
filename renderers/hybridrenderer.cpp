@@ -34,6 +34,10 @@
 #include "luxrays/core/context.h"
 #include "luxrays/core/virtualdevice.h"
 
+#include <boost/lexical_cast.hpp>
+#include <boost/regex.hpp>
+#include <fstream>
+
 using namespace lux;
 
 void lux::LuxRaysDebugHandler(const char *msg) {
@@ -128,4 +132,68 @@ luxrays::DataSet *HybridRenderer::PreprocessGeometry(luxrays::Context *ctx, Scen
 		delete *obj;
 
 	return dataSet;
+}
+
+void HybridRenderer::LoadCfgParams(const string &configFile, ParamSet *params) {
+	// adds parameters from cfg file to paramset
+
+	boost::smatch m;
+
+	boost::regex cfg_comment_expr("^\\s*#");
+	boost::regex cfg_param_expr("\\s*([\\w\\.]+)\\s*=\\s*([^\\s]+)\\s*[\\r\\n]?");
+	boost::regex int_expr("\\d+");
+	boost::regex float_expr("-?\\d*\\.?\\d+(?:[eE]-?\\d+)?");
+	boost::regex bool_expr("(true|false)");
+
+	LOG(LUX_INFO, LUX_NOERROR) << "Loading config file '" << configFile << "'";
+
+	std::ifstream fs;
+	fs.open(configFile.c_str());
+	string line;
+
+	if (!fs.is_open()) {
+		LOG(LUX_WARNING, LUX_BADFILE) << "Error opening config file '" << configFile << "'";
+		return;
+	}
+
+	int n = 0;
+
+	while (getline(fs, line).good()) {
+		if (boost::regex_search(line, m, cfg_comment_expr))
+			continue;
+
+		// use match instead of search to ensure valid syntax
+		if (!boost::regex_match(line, m, cfg_param_expr)) {
+			LOG(LUX_WARNING, LUX_BADTOKEN) << "Invalid syntax in config file: '" << line << "'";
+			continue;
+		}
+
+		string name = m[1];
+		string value = m[2];
+
+		// duck typing
+		if (boost::regex_match(value, m, int_expr)) {
+			int i = boost::lexical_cast<int>(m[0]);
+			params->AddInt(name, &i);
+			// if 0 or 1 it may be a bool, add to be sure
+			// user will know what to look for
+			if (i == 0 || i == 1) {
+				bool b = i == 1;
+				params->AddBool(name, &b);
+			}
+		} else if (boost::regex_match(value, m, float_expr)) {
+			float f = boost::lexical_cast<float>(m[0]);
+			params->AddFloat(name, &f);
+		} else if (boost::regex_match(value, m, bool_expr)) {			
+			bool b = m[0] == "true" ? true : false;
+			params->AddBool(name, &b);
+		} else {
+			params->AddString(name, &value);
+		}
+		n++;
+	}
+
+	fs.close();
+
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Read " << n << " parameters from config file";
 }

@@ -34,6 +34,8 @@ typedef const char *LuxPointer;
 const char *luxVersion();
 void luxInit();
 int luxParse(const char *filename);
+/* allows for parsing of partial files, caller does error handling */
+int luxParsePartial(const char *filename);
 void luxCleanup();
 
 /* Basic control flow, scoping, stacks */
@@ -102,6 +104,8 @@ void luxLoadFLM(const char* name);
 void luxSaveFLM(const char* name);
 /* Overrides the resume settings of the Film in the next scene to resume from the given FLM file, or use filename from scene if empty */
 void luxOverrideResumeFLM(const char *name);
+/* Overrides the Film output filename */
+void luxOverrideFilename(const char *name);
 
 /* Write film to a floating point OpenEXR image */
 void luxSaveEXR(const char* name, bool useHalfFloat, bool includeZBuffer, int compressionType, bool tonemapped);
@@ -110,6 +114,7 @@ void luxSaveEXR(const char* name, bool useHalfFloat, bool includeZBuffer, int co
 void luxStart();
 void luxPause();
 void luxExit();
+void luxAbort();
 void luxWait();
 
 void luxSetHaltSamplesPerPixel(int haltspp, bool haveEnoughSamplesPerPixel, bool suspendThreadsWhenDone);
@@ -124,6 +129,8 @@ void luxSetEpsilon(const float minValue, const float maxValue);
 /* Framebuffer access */
 void luxUpdateFramebuffer();
 unsigned char* luxFramebuffer();
+float* luxFloatFramebuffer();
+float* luxAlphaBuffer();
 
 /* Histogram access */
 void luxGetHistogramImage(unsigned char *outPixels, unsigned int width, unsigned int height, int options);
@@ -206,7 +213,8 @@ enum luxComponentParameters {	LUX_FILM_TM_TONEMAPKERNEL,
 				LUX_FILM_LG_SCALE_Z,
 				LUX_FILM_GLARE_THRESHOLD,
 				LUX_FILM_CAMERA_RESPONSE_ENABLED,
-				LUX_FILM_CAMERA_RESPONSE_FILE
+				LUX_FILM_CAMERA_RESPONSE_FILE,
+				LUX_FILM_LDR_CLAMP_METHOD
 };
 
 /* Parameter Access functions */
@@ -221,7 +229,8 @@ unsigned int luxGetDefaultStringParameterValue(luxComponent comp, luxComponentPa
 /* Queryable objects */
 const char* luxGetAttributes(); /* Returns an XML string containing all queryable data of the current context */
 bool luxHasObject(const char * objectName); /* Returns true if the given object exists in the registry */
-bool luxHasAttributeDefaultValue(const char * objectName, const char * attributeName); /* Returns true of attribute has a default value */
+bool luxHasAttribute(const char * objectName, const char * attributeName); /* Returns true if object has the given attribute */
+bool luxHasAttributeDefaultValue(const char * objectName, const char * attributeName); /* Returns true if attribute has a default value */
 
 const char* luxGetStringAttribute(const char * objectName, const char * attributeName); 
 const char* luxGetStringAttributeDefault(const char * objectName, const char * attributeName); 
@@ -244,6 +253,7 @@ void luxAddServer(const char * name);
 void luxRemoveServer(const char * name);
 unsigned int luxGetServerCount();
 void luxUpdateFilmFromNetwork();
+void luxUpdateLogFromNetwork();
 void luxSetNetworkServerUpdateInterval(int updateInterval);
 int luxGetNetworkServerUpdateInterval();
 

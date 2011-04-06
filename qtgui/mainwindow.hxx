@@ -49,7 +49,7 @@
 #include <QClipboard>
 #include <QVector>
 #include <QSettings>
-#include <QTextCursor>
+#include <QCursor>
 #include <QtGui/QTabBar>
 #include <QtGui/QProgressDialog>
 
@@ -63,6 +63,7 @@
 #include "gammawidget.hxx"
 #include "noisereductionwidget.hxx"
 #include "histogramwidget.hxx"
+#include "advancedinfowidget.hxx"
 
 #define FLOAT_SLIDER_RES 512.f
 
@@ -74,9 +75,6 @@
 #define LG_TEMPERATURE_MIN 1000.f
 #define LG_TEMPERATURE_MAX 10000.f
 
-template<class T> inline T Clamp(T val, T low, T high) {
-	return val > low ? (val < high ? val : high) : low;
-}
 
 enum LuxGuiRenderState
 {
@@ -85,6 +83,8 @@ enum LuxGuiRenderState
 	RENDERING,
 	STOPPING,
 	STOPPED,
+	ENDING,
+	ENDED,
 	PAUSED,
 	FINISHED,
 	TONEMAPPING // tonemapping an FLM file (not really a 'render' state)
@@ -123,26 +123,15 @@ private:
 	int _numCompleted, _total;
 };
 
-class luxTreeData
-{
+class NetworkUpdateTreeEvent: public QEvent {
 public:
-
-	QString m_SlaveName;
-	QString m_SlaveFile;
-	QString m_SlavePort;
-	QString m_SlaveID;
-
-	unsigned int m_secsSinceLastContact;
-	double m_numberOfSamplesReceived;
+	NetworkUpdateTreeEvent();
 };
 
 void updateWidgetValue(QSlider *slider, int value);
 void updateWidgetValue(QDoubleSpinBox *spinbox, double value);
 void updateWidgetValue(QSpinBox *spinbox, int value);
 void updateWidgetValue(QCheckBox *checkbox, bool checked);
-
-int ValueToLogSliderVal(float value, const float logLowerBound, const float logUpperBound);
-float LogSliderValToValue(int sliderval, const float logLowerBound, const float logUpperBound);
 
 void updateParam(luxComponent comp, luxComponentParameters param, double value, int index = 0);
 void updateParam(luxComponent comp, luxComponentParameters param, const char* value, int index = 0);
@@ -160,11 +149,10 @@ public:
 	void updateStatistics();
 	void showRenderresolution();
 	void showZoomfactor();
-	void showViewportsize();
 	void renderScenefile(const QString& sceneFilename, const QString& flmFilename);
 	void renderScenefile(const QString& filename);
 	void changeRenderState (LuxGuiRenderState state);
-	void endRenderingSession ();
+	void endRenderingSession(bool abort = true);
 	
 	void updateTonemapWidgetValues ();
 
@@ -180,8 +168,6 @@ public:
 	
 protected:
 	
-	void overlayStatistics(QImage *image);
-	bool saveCurrentImageTonemapped(const QString &outFile);
 	bool saveCurrentImageHDR(const QString &outFile);
 	bool saveAllLightGroups(const QString &outFilename, const bool &asHDR);
 	void setCurrentFile(const QString& filename);
@@ -193,8 +179,7 @@ private:
 	Ui::MainWindow *thorizontalLayout_5;
 	
 	QLabel *resinfoLabel;
-	QLabel *zoominfoLabel;
-	QLabel *viewportinfoLabel; 
+	QLabel *zoominfoLabel; 
 	
 	Ui::MainWindow *ui;
 
@@ -215,12 +200,17 @@ private:
 
 	PaneWidget *panes[NumPanes];
 
+	enum { NumAdvPanes = 1 };
+
+	PaneWidget *advpanes[NumAdvPanes];
+
 	ToneMapWidget *tonemapwidget;
 	LensEffectsWidget *lenseffectswidget;
 	ColorSpaceWidget *colorspacewidget;
 	GammaWidget *gammawidget;
 	NoiseReductionWidget *noisereductionwidget;
 	HistogramWidget *histogramwidget;
+	AdvancedInfoWidget *advancedinfowidget;
 
 	QVector<PaneWidget*> m_LightGroupPanes;
 
@@ -235,7 +225,7 @@ private:
 	
 	QTimer *m_renderTimer, *m_statsTimer, *m_loadTimer, *m_saveTimer, *m_netTimer, *m_blinkTimer;
 	
-	boost::thread *m_engineThread, *m_updateThread, *m_flmloadThread, *m_flmsaveThread, *m_batchProcessThread;
+	boost::thread *m_engineThread, *m_updateThread, *m_flmloadThread, *m_flmsaveThread, *m_batchProcessThread, *m_networkAddRemoveSlavesThread;
 
 	bool openExrHalfFloats, openExrDepthBuffer;
 	int openExrCompressionType;
@@ -254,6 +244,14 @@ private:
 	void flmLoadThread(QString filename);
 	void flmSaveThread(QString filename);
 	void batchProcessThread(QString inDir, QString outDir, QString outExtension, bool allLightGroups, bool asHDR);
+
+	enum ChangeSlavesAction { AddSlaves, RemoveSlaves };
+	void networkAddRemoveSlavesThread(QVector<QString> slaves, ChangeSlavesAction action);
+
+	void addRemoveSlaves(QVector<QString> slaves, ChangeSlavesAction action);
+
+	QVector<QString> savedNetworkSlaves;
+	void saveNetworkSlaves();
 
 	bool event (QEvent * event);
 
@@ -276,6 +274,7 @@ private:
 	bool IsFileInQueue(const QString &filename);
 	bool IsFileQueued();
 	bool RenderNextFileInQueue();
+	bool RenderNextFileInQueue(int idx);
 	void ClearRenderingQueue();
 
 public slots:
@@ -286,6 +285,7 @@ public slots:
 
 private slots:
 
+	void exitAppSave ();
 	void exitApp ();
 	void openFile ();
 	void openRecentFile();
@@ -295,6 +295,7 @@ private slots:
 	void resumeRender ();
 	void pauseRender ();
 	void stopRender ();
+	void endRender ();
 	void outputTonemapped ();
 	void outputHDR ();
 	void outputBufferGroupsTonemapped ();
@@ -306,11 +307,12 @@ private slots:
 	void viewportChanged ();
 	void fullScreen ();
 	void normalScreen ();
+	void overlayStatsChanged (bool);
 	void aboutDialog ();
 	void openDocumentation ();
 	void openForums ();
-        void openGallery ();
-        void openBugTracker ();
+	void openGallery ();
+	void openBugTracker ();
 	
 	void renderTimeout ();
 	void statsTimeout ();

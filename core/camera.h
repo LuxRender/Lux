@@ -26,22 +26,30 @@
 #include "lux.h"
 #include "geometry/transform.h"
 #include "motionsystem.h"
+#include "queryable.h"
 
 namespace lux
 {
 // Camera Declarations
-class  Camera {
+class  Camera : public Queryable {
 public:
 	// Camera Interface
 	Camera(const Transform &w2cstart, const Transform &w2cend, float hither,
 		float yon, float sopen, float sclose, int sdist, Film *film);
 	virtual ~Camera();
+	const Volume *GetVolume() const { return volume.get(); }
+	void SetVolume(boost::shared_ptr<Volume> &v) {
+		// Create a temporary to increase shared count
+		// The assignment is just a swap
+		boost::shared_ptr<Volume> vol(v);
+		volume = vol;
+	}
 	float GenerateRay(const Scene &scene, const Sample &sample,
 		Ray *ray) const;
-	virtual bool Sample_W(MemoryArena &arena, const SpectrumWavelengths &sw,
+	virtual bool SampleW(MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Scene &scene, float u1, float u2, float u3, BSDF **bsdf,
 		float *pdf, SWCSpectrum *We) const = 0;
-	virtual bool Sample_W(MemoryArena &arena, const SpectrumWavelengths &sw,
+	virtual bool SampleW(MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Scene &scene, const Point &p, const Normal &n,
 		float u1, float u2, float u3, BSDF **bsdf, float *pdf,
 		float *pdfDirect, SWCSpectrum *We) const = 0;
@@ -71,6 +79,7 @@ protected:
 	float ClipHither, ClipYon;
 	float ShutterOpen, ShutterClose;
 	int ShutterDistribution;
+	boost::shared_ptr<Volume> volume;
 };
 class  ProjectiveCamera : public Camera {
 public:

@@ -34,10 +34,8 @@ public:
 	Matte(boost::shared_ptr<Texture<SWCSpectrum> > &kd,
 		boost::shared_ptr<Texture<float> > &sig,
 		boost::shared_ptr<Texture<float> > &bump,
-		const CompositingParams &cp) : Kd(kd), sigma(sig),
-		bumpMap(bump) {
-		compParams = new CompositingParams(cp);
-	}
+		const ParamSet &mp) : Material(mp), Kd(kd), sigma(sig),
+		bumpMap(bump) { }
 	virtual ~Matte() { }
 	virtual void GetShadingGeometry(const SpectrumWavelengths &sw,
 		const Normal &nGeom, DifferentialGeometry *dgBump) const {
@@ -45,9 +43,8 @@ public:
 			Bump(sw, bumpMap, nGeom, dgBump);
 	}
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
-		const DifferentialGeometry &dgGeom,
-		const DifferentialGeometry &dgShading,
-		const Volume *exterior, const Volume *interior) const;
+		const Intersection &isect,
+		const DifferentialGeometry &dgShading) const;
 	              
 	static Material * CreateMaterial(const Transform &xform,
 		const ParamSet &mp);

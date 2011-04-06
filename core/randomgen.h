@@ -68,13 +68,15 @@ public:
 
 	inline unsigned long uintValue() const {
 		// Repopulate buffer if necessary
-		if (bufid == RAN_BUFFER_AMOUNT) {
+		const unsigned int offset = bufid; // for thread safety
+		if (offset >= RAN_BUFFER_AMOUNT) {
 			for(int i = 0; i < RAN_BUFFER_AMOUNT; ++i)
 				buf[i] = nobuf_generateUInt();
-			bufid = 0;
+			bufid = 1;
+			return buf[0];
 		}
-
-		return buf[bufid++];
+		bufid = offset + 1;
+		return buf[offset];
 	}
 
 	inline float floatValue() const {
@@ -130,17 +132,13 @@ private:
 
 namespace random {
 
-static RandomGenerator* PGen;
+static RandomGenerator PGen(1);
 // request RN's during engine initialization (pre threads)
 inline unsigned long uintValueP() { 
-	if (!PGen)
-		PGen = new RandomGenerator(1);
-	return PGen->uintValue();
+	return PGen.uintValue();
 }
 inline float floatValueP() { 
-	if (!PGen)
-		PGen = new RandomGenerator(1);
-	return PGen->floatValue();
+	return PGen.floatValue();
 }
 
 } // random

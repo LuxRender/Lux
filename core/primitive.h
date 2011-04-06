@@ -45,8 +45,8 @@ public:
 	 * Returns the world bounds of this primitive.
 	 */
 	virtual BBox WorldBound() const = 0;
-	virtual Volume *GetExterior() const { return NULL; }
-	virtual Volume *GetInterior() const { return NULL; }
+	virtual const Volume *GetExterior() const { return NULL; }
+	virtual const Volume *GetInterior() const { return NULL; }
 	/**
 	 * Refines this primitive to a number of primitives that are intersectable and
 	 * satisfy all the given hints if possible.
@@ -163,6 +163,14 @@ public:
 	virtual void GetIntersection(const luxrays::RayHit &rayHit, const u_int index, Intersection *in) const {
 		throw std::runtime_error("Internal error: called Primitives::GetIntersection().");
 	}
+
+	/**
+	 * This methods allows to retrieve the primitive transform from
+	 * world to local coordinates. It is used by textures.
+	 * @param time The time to sample the transform (for motion)
+	 * @return The primitive world to local transform
+	 */
+	virtual Transform GetWorldToLocal(float time) const = 0;
 };
 
 class PrimitiveRefinementHints {
@@ -220,8 +228,8 @@ public:
 	virtual ~AreaLightPrimitive() { }
 
 	virtual BBox WorldBound() const { return prim->WorldBound(); };
-	virtual Volume *GetExterior() const { return prim->GetExterior(); }
-	virtual Volume *GetInterior() const { return prim->GetInterior(); }
+	virtual const Volume *GetExterior() const { return prim->GetExterior(); }
+	virtual const Volume *GetInterior() const { return prim->GetInterior(); }
 	virtual void Refine(vector<boost::shared_ptr<Primitive> > &refined,
 		const PrimitiveRefinementHints& refineHints,
 		const boost::shared_ptr<Primitive> &thisPtr);
@@ -264,6 +272,9 @@ public:
 		in->arealight = areaLight; // set the intersected arealight
 	}
 
+	virtual Transform GetWorldToLocal(float time) const {
+		return prim->GetWorldToLocal(time);
+	}
 private:
 	// AreaLightPrimitive Private Data
 	boost::shared_ptr<Primitive> prim;
@@ -297,10 +308,10 @@ public:
 	virtual BBox WorldBound() const  {
 		return InstanceToWorld(instance->WorldBound());
 	}
-	virtual Volume *GetExterior() const {
+	virtual const Volume *GetExterior() const {
 		return exterior ? exterior.get() : instance->GetExterior();
 	}
-	virtual Volume *GetInterior() const {
+	virtual const Volume *GetInterior() const {
 		return interior ? interior.get() : instance->GetInterior();
 	}
 
@@ -339,6 +350,10 @@ public:
 	//FIXME: The various pdf computations should be adapted for scaling
 	virtual float Pdf(const Point &p, const Point &po) const {
 		return instance->Pdf(WorldToInstance(p), WorldToInstance(po));
+	}
+
+	virtual Transform GetWorldToLocal(float time) const {
+		return WorldToInstance;
 	}
 private:
 	// InstancePrimitive Private Data
@@ -390,10 +405,10 @@ public:
 	virtual ~MotionPrimitive() { }
 
 	virtual BBox WorldBound() const;
-	virtual Volume *GetExterior() const {
+	virtual const Volume *GetExterior() const {
 		return exterior ? exterior.get() : instance->GetExterior();
 	}
-	virtual Volume *GetInterior() const {
+	virtual const Volume *GetInterior() const {
 		return interior ? interior.get() : instance->GetInterior();
 	}
 
@@ -439,12 +454,66 @@ public:
 	virtual float Pdf(const Point &p, const Point &po) const {
 		return instance->Pdf(p, po);
 	}
+	virtual Transform GetWorldToLocal(float time) const {
+		return motionSystem.Sample(time).GetInverse();
+	}
 private:
 	// MotionPrimitive Private Data
 	boost::shared_ptr<Primitive> instance;
 	MotionSystem motionSystem;
 	boost::shared_ptr<Material> material;
 	boost::shared_ptr<Volume> exterior, interior;
+};
+
+// ScattererPrimitive Declarations
+class ScattererPrimitive : public Primitive {
+public:
+	// Construction/Destruction
+	ScattererPrimitive(Material *mat, const Volume *ex, const Volume *in) :
+		material(mat), exterior(ex), interior(in) { }
+	virtual ~ScattererPrimitive() { }
+
+	// General util
+	/**
+	 * Returns the world bounds of this primitive.
+	 */
+	virtual BBox WorldBound() const { return BBox(); }
+	virtual const Volume *GetExterior() const { return exterior; }
+	virtual const Volume *GetInterior() const { return interior; }
+
+	// Intersection
+	/**
+	 * Returns whether this primitive can be intersected.
+	 */
+	virtual bool CanIntersect() const { return false; }
+
+	// Material
+	/**
+	 * Calculates the shading geometry from the given intersection geometry.
+	 * @param obj2world The object to world transformation to use.
+	 * @param dg        The intersection geometry.
+	 * @param dgShading The destination for the shading geometry.
+	 */
+	virtual void GetShadingGeometry(const Transform &obj2world,
+		const DifferentialGeometry &dg,
+		DifferentialGeometry *dgShading) const {
+		*dgShading = dg;
+		dgShading->scattered = true;
+	}
+
+	// Sampling
+	/**
+	 * Returns whether this primitive can be sampled.
+	 */
+	virtual bool CanSample() const { return false; }
+
+	virtual Transform GetWorldToLocal(float time) const {
+		return Transform();
+	}
+
+private:
+	Material *material;
+	const Volume *exterior, *interior;
 };
 
 

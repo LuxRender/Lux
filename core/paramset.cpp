@@ -121,6 +121,15 @@ template <class T> inline void CheckUnused(const vector<ParamSetItem<T> *> &vec)
 			LOG( LUX_WARNING,LUX_NOERROR) << "Parameter '" << vec[i]->name << "' not used";
 		}
 }
+template <class T> inline void MarkAsUsed(const vector<ParamSetItem<T> *> &vec, const vector<ParamSetItem<T> *> &vecOther)
+{
+	for (u_int i = 0; i < vecOther.size(); ++i) {
+		if (vecOther[i]->lookedUp) {
+			u_int n;
+			LookupPtr(vec, vecOther[i]->name, &n);
+		}
+	}
+}
 
 // ParamSet Methods
 template <> ParamSetItem<int>::~ParamSetItem()
@@ -224,6 +233,11 @@ ParamSet::ParamSet(u_int n, const char * pluginName, const char * const tokens[]
 				else if (s == "vknots")
 					np = FindOneInt("nv", 1) +
 						FindOneInt("vorder", 1);
+				else if (s == "offsets")
+					np = FindOneInt("noffsets", 1);
+				else if (s == "weights")
+					np = FindOneInt("nweights", 1);
+
 				AddFloat(s, (float*)(params[i]), np);
 				break;
 			}
@@ -797,6 +811,8 @@ ParamSet::ParamSet(u_int n, const char * pluginName, const char * const tokens[]
 			AddString(s, new string(params[i]));
 		if (s == "basesampler")
 			AddString(s, new string(params[i]));
+		if (s == "configfile")
+			AddString(s, new string(params[i]));
 		if (s == "displacementmap")
 			AddString(s, new string(params[i]));
 		if (s == "distmetric")
@@ -1185,6 +1201,18 @@ const string &ParamSet::FindTexture(const string &name) const
 {
 	static const string empty("");
 	return LookupOne(textures, name, empty);
+}
+void ParamSet::MarkUsed(const ParamSet &p2) const {
+	// marks any used params in p2 as used in this
+	MarkAsUsed(ints, p2.ints);
+	MarkAsUsed(bools, p2.bools);
+	MarkAsUsed(floats, p2.floats);
+	MarkAsUsed(points, p2.points);
+	MarkAsUsed(vectors, p2.vectors);
+	MarkAsUsed(normals, p2.normals);
+	MarkAsUsed(spectra, p2.spectra);
+	MarkAsUsed(strings, p2.strings);
+	MarkAsUsed(textures, p2.textures);
 }
 void ParamSet::ReportUnused() const {
 	CheckUnused(ints);

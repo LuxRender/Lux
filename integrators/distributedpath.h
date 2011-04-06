@@ -54,7 +54,7 @@ public:
 
 private:
 	void LiInternal(const Scene &scene, const Sample &sample,
-		const Volume *volume, const Ray &ray,
+		const Volume *volume, bool scattered, const Ray &ray,
 		vector<SWCSpectrum> &L, float *alpha, float *zdepth,
 		u_int rayDepth, bool includeEmit, u_int &nrContribs) const;
 	void Reject(const SpectrumWavelengths &sw,
@@ -72,7 +72,7 @@ private:
 		specularrefractDepth, maxDepth;
 
 	// Declare sample parameters for light source sampling
-	u_int sampleOffset, bufferId;
+	u_int sampleOffset, scatterOffset, bufferId;
 	u_int lightSampleOffset, lightNumOffset, bsdfSampleOffset,
 	      bsdfComponentOffset;
 	u_int indirectlightSampleOffset, indirectlightNumOffset,

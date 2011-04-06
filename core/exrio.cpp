@@ -26,6 +26,7 @@
 #include "color.h"
 #include "spectrum.h"
 #include "imagereader.h"
+#include "texturecolor.h"
 #include <algorithm>
 
 #include <FreeImage.h>
@@ -359,13 +360,13 @@ ImageData *ReadImage(const string &name)
 	FreeImage_SetOutputMessage(FreeImageErrorHandler);
 
 	try {
-		boost::filesystem::path imagePath(name);
+		boost::filesystem::path imagePath(AdjustFilename(name));
 		// boost::filesystem::exists() can throw an exception under Windows
 		// if the drive in imagePath doesn't exist
 		if (!boost::filesystem::exists(imagePath)) {
 			LOG(LUX_ERROR, LUX_NOFILE) <<
 				"Unable to open image file '" <<
-				imagePath.string() << "'";
+				imagePath.file_string() << "'";
 			return NULL;
 		}
 
@@ -378,7 +379,7 @@ ImageData *ReadImage(const string &name)
 #endif
 
 		StandardImageReader stdImageReader;
-		return stdImageReader.read(name);
+		return stdImageReader.read(imagePath.string());
 
 		LOG(LUX_ERROR, LUX_BADFILE) <<
 			"Cannot recognise file format for image '" <<

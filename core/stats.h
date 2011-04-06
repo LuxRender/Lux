@@ -54,7 +54,9 @@ public:
 	static string template_string_network;
 	static string template_string_total;
 	static string template_string_haltspp;
+	static string template_string_time_remaining;
 	static string template_string_halttime;
+	static string template_string_renderer;
 
 private:
 	Context *ctx;									// Reference to context that created this StatsData object
@@ -91,23 +93,23 @@ private:
 	 * Reduce the magnitude on the input number by dividing into kilo- or Mega- units
 	 */
 	inline float magnitude_reduce(const float number) {
-		if (number < 1024.f)
+		if (number < 1000.f)
 			return number;
 
-		if ( number < 1048576.f)
-			return number / 1024.f;
+		if ( number < 1000000.f)
+			return number / 1000.f;
 
-		return number / 1048576.f;
+		return number / 1000000.f;
 	}
 
 	/**
 	 * Return the magnitude prefix char for kilo- or Mega-
 	 */
 	inline const char* magnitude_prefix(float number) {
-		if (number < 1024.f)
+		if (number < 1000.f)
 			return "";
 
-		if ( number < 1048576.f)
+		if ( number < 1000000.f)
 			return "k";
 
 		return "M";

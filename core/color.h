@@ -202,7 +202,7 @@ public:
 	float Y() const {
 		return 0.212671f * c[0] + 0.715160f * c[1] + 0.072169f * c[2];
 	}
-	float Filter() const { return (c[0] + c[1] + c[2]) / 3.f; }
+	float Filter() const { return (c[0] + c[1] + c[2]) * (1.f / 3.f); }
 };
 
 // XYZColor Declarations

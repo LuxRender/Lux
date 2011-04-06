@@ -25,6 +25,7 @@
 #include "glossytranslucent.h"
 #include "memory.h"
 #include "bxdf.h"
+#include "primitive.h"
 #include "schlicktranslucentbtdf.h"
 #include "schlickbrdf.h"
 #include "texture.h"
@@ -36,9 +37,7 @@ using namespace lux;
 
 // Glossy Method Definitions
 BSDF *GlossyTranslucent::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
-	const DifferentialGeometry &dgGeom,
-	const DifferentialGeometry &dgs,
-	const Volume *exterior, const Volume *interior) const
+	const Intersection &isect, const DifferentialGeometry &dgs) const
 {
 	// Allocate _BSDF_
 	// NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
@@ -85,8 +84,8 @@ BSDF *GlossyTranslucent::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &
 	const float broughness = bu * bv;
 	const float banisotropy = bu2 < bv2 ? 1.f - bu2 / bv2 : bv2 / bu2 - 1.f;
 	
-	MultiBSDF *bsdf = ARENA_ALLOC(arena, MultiBSDF)(dgs, dgGeom.nn,
-		exterior, interior);
+	MultiBSDF *bsdf = ARENA_ALLOC(arena, MultiBSDF)(dgs, isect.dg.nn,
+		isect.exterior, isect.interior);
 	
 	// add the BRDF
 	bsdf->Add(ARENA_ALLOC(arena, SchlickDoubleSidedBRDF)(d, s, bs, a, ba,
@@ -98,7 +97,7 @@ BSDF *GlossyTranslucent::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &
 		ld, bld));
 
 	// Add ptr to CompositingParams structure
-	bsdf->SetCompositingParams(compParams);
+	bsdf->SetCompositingParams(&compParams);
 
 	return bsdf;
 }
@@ -119,13 +118,10 @@ Material* GlossyTranslucent::CreateMaterial(const Transform &xform,
 	boost::shared_ptr<Texture<float> > vroughness(mp.GetFloatTexture("vroughness", 0.1f));
 	bool mb = mp.FindOneBool("multibounce", false);
 
-	// Get Compositing Params
-	CompositingParams cP;
-	FindCompositingParams(mp, &cP);
 	if (ones) { // copy parameters from frontface to backface
 		return new GlossyTranslucent(Kd, Kt, Ks, Ks, Ka, Ka, i, i, d, d,
 			uroughness, uroughness, vroughness, vroughness, mb, mb,
-			bumpMap, cP);
+			bumpMap, mp);
 	}
 
 	// otherwise use backface parameters
@@ -139,7 +135,7 @@ Material* GlossyTranslucent::CreateMaterial(const Transform &xform,
 
 	return new GlossyTranslucent(Kd, Kt, Ks, Ks2, Ka, Ka2, i, i2, d, d2,
 		uroughness, uroughness2, vroughness, vroughness2, mb, mb2,
-		bumpMap, cP);
+		bumpMap, mp);
 }
 
 static DynamicLoader::RegisterMaterial<GlossyTranslucent> r("glossytranslucent");

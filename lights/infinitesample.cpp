@@ -54,7 +54,7 @@ public:
 			return false;
 		*wiW = CosineSampleHemisphere(u1, u2);
 		const float cosi = wiW->z;
-		*wiW = Normalize(LocalToWorld(*wiW));
+		*wiW = Normalize(WorldToLight.GetInverse()(*wiW));
 		if (sampledType)
 			*sampledType = BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE);
 		*pdf = cosi * INV_PI;
@@ -113,7 +113,7 @@ InfiniteAreaLightIS::~InfiniteAreaLightIS() {
 	delete mapping;
 }
 InfiniteAreaLightIS::InfiniteAreaLightIS(const Transform &light2world,
-	const RGBColor &l, u_int ns, const string &texmap,
+	const RGBColor &l, u_int ns, const string &texmap, u_int immaxres,
 	EnvironmentMapping *m, float gain, float gamma)
 	: Light(light2world, ns), SPDbase(l)
 {
@@ -125,7 +125,7 @@ InfiniteAreaLightIS::InfiniteAreaLightIS(const Transform &light2world,
 	uvDistrib = NULL;
 	u_int nu = 0, nv = 0;
 	if (texmap != "") {
-		auto_ptr<ImageData> imgdata(ReadImage(texmap));
+		std::auto_ptr<ImageData> imgdata(ReadImage(texmap));
 		if (imgdata.get() != NULL) {
 			nu = imgdata->getWidth();
 			nv = imgdata->getHeight();
@@ -139,26 +139,44 @@ InfiniteAreaLightIS::InfiniteAreaLightIS(const Transform &light2world,
 		nv = 128;
 	}
 	// Initialize sampling PDFs for infinite area light
-	float filter = 1.f / max(nu, nv);
-	float *img = new float[nu * nv];
-	for (u_int y = 0; y < nv; ++y) {
-		float yp = (y + .5f) / nv;
-		for (u_int x = 0; x < nu; ++x) {
-			float xp = (x + .5f) / nu;
+	// resample using supersampling if dimensions are large
+	u_int dnu = nu;
+	u_int dnv = nv;
+	if (nu > immaxres || nv > immaxres) {
+		dnu = Ceil2UInt(static_cast<float>(nu * immaxres) / max(nu, nv));
+		dnv = Ceil2UInt(static_cast<float>(nv * immaxres) / max(nu, nv));
+	}
+	const float uscale = static_cast<float>(nu) / dnu;
+	const float vscale = static_cast<float>(nv) / dnv;
+	const u_int samples = Ceil2UInt(max(uscale, vscale));
+	const float us = uscale / samples;
+	const float vs = vscale / samples;
+
+	const float filter = 1.f / max(nu, nv);
+	vector<float> img(dnu * dnv);
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Computing importance sampling map";
+	mean_y = 0.f;
+	for (u_int y = 0; y < dnv*samples; ++y) {
+		const float yp = (y * vs + .5f) / nv;
+		u_int iy = y / samples;
+		for (u_int x = 0; x < dnu*samples; ++x) {
+			const float xp = (x * us + .5f) / nu;
 			Vector dummy;
 			float pdf;
 			mapping->Map(xp, yp, &dummy, &pdf);
+			u_int ix = x / samples;
 			if (!(pdf > 0.f))
-				img[x + y * nu] = 0.f;
-			else if (radianceMap)
-				img[x + y * nu] = radianceMap->LookupFloat(CHANNEL_WMEAN,
-					xp, yp, filter) / pdf;
-			else
-				img[x + y * nu] = 1.f / pdf;
+			//	img[ix + iy * dnu] += 0.f;
+				continue;
+			const float y = (radianceMap) ? 
+				radianceMap->LookupFloat(CHANNEL_WMEAN, xp, yp, filter) : 1.f;
+			img[ix + iy * dnu] += y / (samples*samples*pdf);
+			mean_y += y;
 		}
 	}
-	uvDistrib = new Distribution2D(img, nu, nv);
-	delete[] img;
+	mean_y /= dnu*samples * dnv*samples;
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Finished computing importance sampling map";
+	uvDistrib = new Distribution2D(&img[0], dnu, dnv);
 }
 
 bool InfiniteAreaLightIS::Le(const Scene &scene, const Sample &sample,
@@ -180,8 +198,9 @@ bool InfiniteAreaLightIS::Le(const Scene &scene, const Sample &sample,
 	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Normal(0, 0, 0),
 		Normal(0, 0, 0), 0, 0, NULL);
 	dg.time = sample.realTime;
+	const Volume *v = GetVolume();
 	*bsdf = ARENA_ALLOC(sample.arena, InfiniteISBSDF)(dg, ns,
-		NULL, NULL, *this, WorldToLight);
+		v, v, *this, WorldToLight);
 	*L *= SWCSpectrum(sample.swl, SPDbase);
 	const Vector wh = Normalize(WorldToLight(r.d));
 	float s, t, pdfMap;
@@ -207,7 +226,7 @@ float InfiniteAreaLightIS::Pdf(const Point &p, const Point &po,
 		DistanceSquared(p, po);
 }
 
-bool InfiniteAreaLightIS::Sample_L(const Scene &scene, const Sample &sample,
+bool InfiniteAreaLightIS::SampleL(const Scene &scene, const Sample &sample,
 	float u1, float u2, float u3, BSDF **bsdf, float *pdf,
 	SWCSpectrum *Le) const
 {
@@ -222,14 +241,15 @@ bool InfiniteAreaLightIS::Sample_L(const Scene &scene, const Sample &sample,
 	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Normal(0, 0, 0),
 		Normal (0, 0, 0), 0, 0, NULL);
 	dg.time = sample.realTime;
+	const Volume *v = GetVolume();
 	*bsdf = ARENA_ALLOC(sample.arena, InfiniteISBSDF)(dg, ns,
-		NULL, NULL, *this, WorldToLight);
+		v, v, *this, WorldToLight);
 	*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
-	*Le = SWCSpectrum(sample.swl, SPDbase) * M_PI;
+	*Le = SWCSpectrum(sample.swl, SPDbase) * (M_PI / *pdf);
 	return true;
 }
 
-bool InfiniteAreaLightIS::Sample_L(const Scene &scene, const Sample &sample,
+bool InfiniteAreaLightIS::SampleL(const Scene &scene, const Sample &sample,
 	const Point &p, float u1, float u2, float u3, BSDF **bsdf, float *pdf,
 	float *pdfDirect, SWCSpectrum *Le) const
 {
@@ -259,12 +279,13 @@ bool InfiniteAreaLightIS::Sample_L(const Scene &scene, const Sample &sample,
 	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Normal(0, 0, 0),
 		Normal (0, 0, 0), 0, 0, NULL);
 	dg.time = sample.realTime;
+	const Volume *v = GetVolume();
 	*bsdf = ARENA_ALLOC(sample.arena, InfiniteISBSDF)(dg, ns,
-		NULL, NULL, *this, WorldToLight);
+		v, v, *this, WorldToLight);
 	if (pdf)
 		*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	*pdfDirect *= AbsDot(wi, ns) / (distance * distance);
-	*Le = SWCSpectrum(sample.swl, SPDbase) * M_PI;
+	*Le = SWCSpectrum(sample.swl, SPDbase) * (M_PI / *pdfDirect);
 	return true;
 }
 
@@ -274,6 +295,7 @@ Light* InfiniteAreaLightIS::CreateLight(const Transform &light2world,
 	RGBColor L = paramSet.FindOneRGBColor("L", RGBColor(1.f));
 	string texmap = paramSet.FindOneString("mapname", "");
 	int nSamples = paramSet.FindOneInt("nsamples", 1);
+	int imapmaxres = paramSet.FindOneInt("imapmaxresolution", 500);
 
 	EnvironmentMapping *map = NULL;
 	string type = paramSet.FindOneString("mapping", "");
@@ -288,7 +310,7 @@ Light* InfiniteAreaLightIS::CreateLight(const Transform &light2world,
 	float gain = paramSet.FindOneFloat("gain", 1.0f);
 	float gamma = paramSet.FindOneFloat("gamma", 1.0f);
 
-	InfiniteAreaLightIS *l = new InfiniteAreaLightIS(light2world, L, nSamples, texmap, map, gain, gamma);
+	InfiniteAreaLightIS *l = new InfiniteAreaLightIS(light2world, L, nSamples, texmap, imapmaxres, map, gain, gamma);
 	l->hints.InitParam(paramSet);
 	return l;
 }

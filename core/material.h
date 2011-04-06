@@ -45,25 +45,20 @@ struct CompositingParams {
 class Material  {
 public:
 	// Material Interface
-	Material();
-	virtual ~Material();
-
-	void InitGeneralParams(const ParamSet &mp);
+	Material(const ParamSet &mp);
+	virtual ~Material() { }
 
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
-		const DifferentialGeometry &dgGeom,
-		const DifferentialGeometry &dgShading,
-		const Volume *exterior, const Volume *interior) const = 0;
+		const Intersection &isect,
+		const DifferentialGeometry &dgShading) const = 0;
 	void Bump(const SpectrumWavelengths &sw,
 		const boost::shared_ptr<Texture<float> > &d,
 		const Normal &nGeom, DifferentialGeometry *dgBump) const;
 	virtual void GetShadingGeometry(const SpectrumWavelengths &sw,
 		const Normal &nGeom, DifferentialGeometry *dgBump) const { }
 
-	static void FindCompositingParams(const ParamSet &mp, CompositingParams *cp);
-
 	float bumpmapSampleDistance;
-	CompositingParams *compParams;
+	CompositingParams compParams;
 };
 
 }//namespace lux
