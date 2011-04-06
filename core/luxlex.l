@@ -208,8 +208,7 @@ WorldEnd 		{ return WORLDEND;		}
 <STR>\\. { add_string_char(yytext[1]);}
 <STR>\" {BEGIN INITIAL; return STRING;}
 <STR>. {add_string_char(yytext[0]);}
-<STR>\n {add_string_char('\n');}
-	/*LOG(LUX_SEVERE,LUX_SYNTAX)<<"Unterminated string!";}*/
+<STR>\n { LOG(LUX_SEVERE,LUX_SYNTAX)<<"Unterminated string!";}
 
 . { LOG(LUX_SEVERE,LUX_SYNTAX)<<"Illegal character: "<<yytext[0]; }
 %%
