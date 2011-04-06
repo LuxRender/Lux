@@ -26,7 +26,6 @@
 #include <boost/iostreams/device/file.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/zlib.hpp>
-#include <boost/algorithm/string/erase.hpp>
 #include <string>
 
 #include "error.h"
@@ -116,18 +115,24 @@ std::string base64_decode(std::string const& encoded_string) {
 
 bool FileData::decode(const ParamSet &tp, const std::string param_name)
 {
-	std::string b64_compressed_filedata = tp.FindOneString(param_name + "_data", "");
+	u_int nlines = 0;
+	std::stringstream b64_compressed_filedata_buf;
+	std::string b64_compressed_filedata;
+	const std::string* b64_compressed_lines = tp.FindString(param_name + "_data", &nlines);
 	const std::string bencoded_filename = tp.FindOneString(param_name, "");
-	if (b64_compressed_filedata != "" && bencoded_filename != "")
+	
+	// concantenate lines into b64_compressed_filedata_buf
+	for(u_int i=0; i<nlines; i++)
+	{
+		b64_compressed_filedata_buf << b64_compressed_lines[i];
+	}
+	b64_compressed_filedata = b64_compressed_filedata_buf.str().c_str();
+	b64_compressed_filedata_buf.str("");
+	
+	if (b64_compressed_filedata.size() > 0 && bencoded_filename != "")
 	{
 		LOG(LUX_DEBUG,LUX_NOERROR)<<"Decoding embedded filedata:";
 		LOG(LUX_DEBUG,LUX_NOERROR)<<"\tinput b64 compressed data length: "<< b64_compressed_filedata.size();
-
-		// remove line breaks in input
-		boost::erase_all(b64_compressed_filedata, "\r");
-		boost::erase_all(b64_compressed_filedata, "\n");
-
-		LOG(LUX_DEBUG,LUX_NOERROR)<<"\tstripped b64 compressed data length: "<< b64_compressed_filedata.size();
 
 		// base64 decode
 		const std::string compressed_filedata = base64_decode(b64_compressed_filedata);
