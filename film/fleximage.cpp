@@ -395,6 +395,11 @@ void FlexImageFilm::SetParameterValue(luxComponentParameters param, double value
 			break;
 		}
 
+		case LUX_FILM_LDR_CLAMP_METHOD: {
+			clampMethod = value;
+			break;
+		}
+
 		 default:
 			break;
 	 }
@@ -580,6 +585,10 @@ double FlexImageFilm::GetParameterValue(luxComponentParameters param, u_int inde
 			return GetGroupTemperature(index);
 			break;
 
+		case LUX_FILM_LDR_CLAMP_METHOD:
+			return clampMethod;
+			break;
+
 		default:
 			break;
 	 }
@@ -761,6 +770,10 @@ double FlexImageFilm::GetDefaultParameterValue(luxComponentParameters param, u_i
 			break;
 		case LUX_FILM_LG_TEMPERATURE:
 			return 0.f;
+			break;
+
+		case LUX_FILM_LDR_CLAMP_METHOD:
+			return 0;
 			break;
 
 		default:

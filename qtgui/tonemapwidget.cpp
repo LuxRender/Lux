@@ -51,8 +51,10 @@ ToneMapWidget::ToneMapWidget(QWidget *parent) : QWidget(parent), ui(new Ui::Tone
 	ui->frame_toneMapLinear->hide ();
 	ui->frame_toneMapContrast->hide ();
 
-	// Reinhard
 	connect(ui->comboBox_kernel, SIGNAL(currentIndexChanged(int)), this, SLOT(setTonemapKernel(int)));
+	connect(ui->comboBox_clampMethod, SIGNAL(currentIndexChanged(int)), this, SLOT(setClampMethod(int)));
+
+	// Reinhard
 	connect(ui->slider_prescale, SIGNAL(valueChanged(int)), this, SLOT(prescaleChanged(int)));
 	connect(ui->spinBox_prescale, SIGNAL(valueChanged(double)), this, SLOT(prescaleChanged(double)));
 	connect(ui->slider_postscale, SIGNAL(valueChanged(int)), this, SLOT(postscaleChanged(int)));
@@ -186,6 +188,7 @@ void ToneMapWidget::setFStopPreset(int choice)
 void ToneMapWidget::resetValues()
 {
 	m_TM_kernel = 0;
+	m_clamp_method = 0;
 
 	m_TM_reinhard_prescale = 1.0;
 	m_TM_reinhard_postscale = 1.0;
@@ -244,6 +247,7 @@ int ToneMapWidget::fstopToPreset(double value)
 void ToneMapWidget::resetFromFilm (bool useDefaults)
 {
 	m_TM_kernel = (int)retrieveParam( useDefaults, LUX_FILM, LUX_FILM_TM_TONEMAPKERNEL);
+	m_clamp_method = (int)retrieveParam( useDefaults, LUX_FILM, LUX_FILM_LDR_CLAMP_METHOD);
 
 	m_TM_reinhard_prescale = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_TM_REINHARD_PRESCALE);
 	m_TM_reinhard_postscale = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_TM_REINHARD_POSTSCALE);
@@ -259,6 +263,8 @@ void ToneMapWidget::resetFromFilm (bool useDefaults)
 	ui->comboBox_FStopPreset->setCurrentIndex(fstopToPreset(m_TM_linear_fstop));
 
 	m_TM_contrast_ywa = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_TM_CONTRAST_YWA);
+
+	luxSetParameterValue(LUX_FILM, LUX_FILM_LDR_CLAMP_METHOD, (double)m_clamp_method);
 
 	luxSetParameterValue(LUX_FILM, LUX_FILM_TM_REINHARD_PRESCALE, m_TM_reinhard_prescale);
 	luxSetParameterValue(LUX_FILM, LUX_FILM_TM_REINHARD_POSTSCALE, m_TM_reinhard_postscale);
@@ -310,6 +316,16 @@ void ToneMapWidget::setTonemapKernel(int choice)
 		default:
 			break;
 	}
+
+	emit valuesChanged();
+}
+
+void ToneMapWidget::setClampMethod(int choice)
+{
+	ui->comboBox_clampMethod->setCurrentIndex(choice);
+	// index -> method
+	m_clamp_method = choice;
+	updateParam(LUX_FILM, LUX_FILM_LDR_CLAMP_METHOD, (double)m_clamp_method);
 
 	emit valuesChanged();
 }
