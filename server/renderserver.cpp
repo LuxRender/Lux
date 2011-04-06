@@ -45,6 +45,7 @@
 #include <boost/iostreams/filter/zlib.hpp>
 #include <boost/iostreams/filter/bzip2.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
+#include <boost/iostreams/restrict.hpp>
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
 #include <boost/thread/thread.hpp>
@@ -177,17 +178,10 @@ static void processCommandParams(bool isLittleEndian,
 		// Read the size of the compressed chunk
 		uint32_t size = osReadLittleEndianUInt(isLittleEndian, stream);
 
-		// Read the compressed chunk
-		char *zbuf = new char[size];
-		stream.read(zbuf, size);
-		stringstream zos(stringstream::in | stringstream::out  | stringstream::binary);
-		zos.write(zbuf, size);
-		delete zbuf;
-
 		// Uncompress the chunk
 		filtering_stream<input> in;
 		in.push(gzip_decompressor());
-		in.push(zos);
+		in.push(boost::iostreams::restrict(stream, 0, size));
 		boost::iostreams::copy(in, uzos);
 	}
 
@@ -268,20 +262,17 @@ static void processFile(const string &fileParam, ParamSet &params, vector<string
 
 		// Dade - fix for bug 514: avoid to create the file if it is empty
 		if (len > 0) {
-			// Allocate a buffer to read all the file
-			char *buf = new char[len];
-			stream.read(buf, len);
-
 			ofstream out(file.c_str(), ios::out | ios::binary);
-			out.write(buf, len);
+
+			std::streamsize written = boost::iostreams::copy(
+				boost::iostreams::restrict(stream, 0, len), out);
+
 			out.flush();
 			tmpFileList.push_back(file);
 
-			if (out.fail()) {
+			if (out.fail() || written != len) {
 				LOG( LUX_ERROR,LUX_SYSTEM) << "There was an error while writing file '" << file << "'";
 			}
-
-			delete buf;
 		}
 	}
 }
