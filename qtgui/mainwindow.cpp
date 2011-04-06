@@ -436,7 +436,12 @@ void MainWindow::ReadSettings()
 	settings.beginGroup("MainWindow");
 	restoreGeometry(settings.value("geometry").toByteArray());
 	ui->splitter->restoreState(settings.value("splittersizes").toByteArray());
-	m_recentFiles = settings.value("recentFiles").toStringList();
+	{
+		QStringList recentFilesList = settings.value("recentFiles").toStringList();
+		QStringListIterator i(recentFilesList);
+		while (i.hasNext())
+			m_recentFiles.append(QFileInfo(i.next()));		
+	}
 	m_lastOpendir = settings.value("lastOpenDir","").toString();
 	ui->action_overlayStats->setChecked(settings.value("overlayStatistics").toBool());
 	ui->action_HDR_tonemapped->setChecked(settings.value("tonemappedHDR").toBool());
@@ -454,7 +459,13 @@ void MainWindow::WriteSettings()
 	settings.beginGroup("MainWindow");
 	settings.setValue("geometry", saveGeometry());
 	settings.setValue("splittersizes", ui->splitter->saveState());
-	settings.setValue("recentFiles", m_recentFiles);
+	{
+		QListIterator<QFileInfo> i(m_recentFiles);
+		QStringList recentFilesList;
+		while (i.hasNext())
+			recentFilesList.append(i.next().absoluteFilePath());
+		settings.setValue("recentFiles", recentFilesList);
+	}
 	settings.setValue("lastOpenDir", m_lastOpendir);
 	settings.setValue("overlayStatistics", ui->action_overlayStats->isChecked());
 	settings.setValue("tonemappedHDR", ui->action_HDR_tonemapped->isChecked());
@@ -1388,8 +1399,8 @@ void MainWindow::setCurrentFile(const QString& filename)
 
 			m_lastOpendir = info.absolutePath();
 			if (filename.endsWith(".lxs")) {
-				m_recentFiles.removeAll(m_CurrentFile);
-				m_recentFiles.prepend(m_CurrentFile);
+				m_recentFiles.removeAll(info);
+				m_recentFiles.prepend(info);
 			
 				updateRecentFileActions(); // only parseble files .lxs to recentlist
 			}
@@ -1401,9 +1412,10 @@ void MainWindow::setCurrentFile(const QString& filename)
 
 void MainWindow::updateRecentFileActions()
 {
-	QMutableStringListIterator i(m_recentFiles);
+	QMutableListIterator<QFileInfo> i(m_recentFiles);
 	while (i.hasNext()) {
-		if (!QFile::exists(i.next())) {
+		i.peekNext().refresh();
+		if (!i.next().exists()) {
 			i.remove();
 		}
 	}
@@ -1411,11 +1423,12 @@ void MainWindow::updateRecentFileActions()
 	for (int j = 0; j < MaxRecentFiles; ++j) {
 		if (j < m_recentFiles.count()) {
 			QFontMetrics fm(m_recentFileActions[j]->font());
+			QString filename = m_recentFiles[j].absoluteFilePath();
 
-			QString text = tr("&%1 %2").arg(j + 1).arg(QDir::toNativeSeparators(pathElidedText(fm, m_recentFiles[j], 250, 0)));
+			QString text = tr("&%1 %2").arg(j + 1).arg(QDir::toNativeSeparators(pathElidedText(fm, filename, 250, 0)));
 
 			m_recentFileActions[j]->setText(text);
-			m_recentFileActions[j]->setData(m_recentFiles[j]);
+			m_recentFileActions[j]->setData(filename);
 			m_recentFileActions[j]->setVisible(true);			
 		} else
 			m_recentFileActions[j]->setVisible(false);

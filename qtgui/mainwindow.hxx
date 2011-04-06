@@ -233,7 +233,7 @@ private:
 	// Directory Handling
 	enum { MaxRecentFiles = 5 };
 	QString m_lastOpendir;
-	QStringList m_recentFiles;
+	QList<QFileInfo> m_recentFiles;
 	QAction *m_recentFileActions[MaxRecentFiles];
 
 	static void LuxGuiErrorHandler(int code, int severity, const char *msg);
