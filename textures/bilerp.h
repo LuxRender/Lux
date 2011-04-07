@@ -25,6 +25,7 @@
 #include "spectrum.h"
 #include "texture.h"
 #include "color.h"
+#include "spds/rgbillum.h"
 #include "paramset.h"
 #include "error.h"
 
@@ -89,6 +90,7 @@ public:
 		v01 = t01;
 		v10 = t10;
 		v11 = t11;
+		isIlluminant = false;
 	}
 	virtual ~BilerpSpectrumTexture() { delete mapping; }
 	virtual SWCSpectrum Evaluate(const SpectrumWavelengths &sw,
@@ -120,6 +122,7 @@ public:
 		*du = dsdu * (d1 + t * d) + dtdu * (d2 + s * d);
 		*dv = dsdv * (d1 + t * d) + dtdv * (d2 + s * d);
 	}
+	virtual void SetIlluminant() { isIlluminant = true; }
 	
 	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const ParamSet &tp);
 	
@@ -127,6 +130,8 @@ private:
 	// BilerpTexture Private Data
 	TextureMapping2D *mapping;
 	RGBColor v00, v01, v10, v11;
+	static RGBIllumSPD whiteRGBIllum;
+	bool isIlluminant;
 };
 
 }//namespace lux
