@@ -521,6 +521,7 @@ SET(lux_core_src
 	core/dynload.cpp
 	core/epsilon.cpp
 	core/exrio.cpp
+	core/filedata.cpp
 	core/film.cpp
 	core/geometry/bbox.cpp
 	core/geometry/matrix4x4.cpp

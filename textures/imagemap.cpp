@@ -23,6 +23,7 @@
 // imagemap.cpp*
 #include "imagemap.h"
 #include "dynload.h"
+#include "filedata.h"
 
 using namespace lux;
 
@@ -88,6 +89,7 @@ Texture<float> *ImageFloatTexture::CreateFloatTexture(const Transform &tex2world
 	float gain = tp.FindOneFloat("gain", 1.0f);
 	float gamma = tp.FindOneFloat("gamma", 1.0f);
 
+	FileData::decode(tp, "filename");
 	string filename = tp.FindOneString("filename", "");
 	int discardmm = tp.FindOneInt("discardmipmaps", 0);
 
@@ -181,6 +183,7 @@ Texture<SWCSpectrum> *ImageSpectrumTexture::CreateSWCSpectrumTexture(const Trans
 	float gain = tp.FindOneFloat("gain", 1.0f);
 	float gamma = tp.FindOneFloat("gamma", 1.0f);
 
+	FileData::decode(tp, "filename");
 	string filename = tp.FindOneString("filename", "");
 	int discardmm = tp.FindOneInt("discardmipmaps", 0);
 
