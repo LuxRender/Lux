@@ -74,6 +74,7 @@ private:
 	PathStateType state;
 	bool specularBounce, specular, scattered;
 	float bouncePdf;
+	Point lastBounce;
 };
 
 // PathIntegrator Declarations

@@ -555,7 +555,7 @@ void Mesh::GetIntersection(const luxrays::RayHit &rayHit, const u_int index, Int
 	const float tv = b0 * uv[0][1] + b1 * uv[1][1] + b2 * uv[2][1];
 
 	const Normal nn = Normal(Normalize(Cross(e1, e2)));
-	const Point pp(b0 * p1 + b1 * p2 + b2 * p3);
+	const Point pp(p1 + b1 * e1 + b2 * e2);
 
 	isect->dg = DifferentialGeometry(pp, nn, dpdu, dpdv,
 		Normal(0, 0, 0), Normal(0, 0, 0), tu, tv, this);

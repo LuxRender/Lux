@@ -33,7 +33,7 @@ class EmissionIntegrator : public VolumeIntegrator {
 public:
 	// EmissionIntegrator Public Methods
 	EmissionIntegrator(float ss, u_int g) 
-		: VolumeIntegrator(), group(g), stepSize(ss) { 
+		: VolumeIntegrator(), stepSize(ss), group(g) {
 		AddStringConstant(*this, "name", "Name of current volume integrator", "single");
 	}
 	virtual ~EmissionIntegrator() { }

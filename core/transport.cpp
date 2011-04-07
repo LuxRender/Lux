@@ -75,6 +75,7 @@ bool VolumeIntegrator::Intersect(const Scene &scene, const Sample &sample,
 {
 	const bool hit = scene.Intersect(rayHit, isect);
 	if (hit) {
+		ray.maxt = rayHit.t;
 		// Proper volume setting is still required for eg glass2
 		if (Dot(ray.d, isect->dg.nn) > 0.f) {
 			if (!volume)

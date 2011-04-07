@@ -176,6 +176,7 @@ bool SingleScattering::Intersect(const Scene &scene, const Sample &sample,
 {
 	bool hit = scene.Intersect(rayHit, isect);
 	if (hit) {
+		ray.maxt = rayHit.t;
 		if (Dot(ray.d, isect->dg.nn) > 0.f) {
 			if (!volume)
 				volume = isect->interior;
