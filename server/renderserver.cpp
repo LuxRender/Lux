@@ -63,7 +63,7 @@ using boost::asio::ip::tcp;
 //------------------------------------------------------------------------------
 
 RenderServer::RenderServer(int tCount, int port, bool wFlmFile) : threadCount(tCount),
-	tcpPort(port), writeFlmFile(wFlmFile), state(UNSTARTED), serverThread(NULL)
+	tcpPort(port), writeFlmFile(wFlmFile), state(UNSTARTED), serverThread(NULL), errorMessages()
 {
 }
 
@@ -116,6 +116,7 @@ void RenderServer::stop()
 }
 
 void RenderServer::errorHandler(int code, int severity, const char *msg) {
+	boost::mutex::scoped_lock(errorMessageLock);
 	errorMessages.push_back(ErrorMessage(code, severity, msg));
 }
 
