@@ -84,7 +84,7 @@ public:
 // end Bilinear patch class
 
 MeshMicroDisplacementTriangle::MeshMicroDisplacementTriangle(const Mesh *m, u_int n) :
-	mesh(m), v(&(mesh->triVertexIndex[3 * n]))
+	mesh(m), v(&(mesh->triVertexIndex[3 * n])), is_Degenerate(false)
 {
 	int *v_ = const_cast<int *>(v);
 	if (m->reverseOrientation ^ m->transformSwapsHandedness)
@@ -97,6 +97,14 @@ MeshMicroDisplacementTriangle::MeshMicroDisplacementTriangle(const Mesh *m, u_in
 	const Vector e2(v2 - v0);
 
 	normalizedNormal = Normalize(Cross(e1, e2));
+
+	if (isnan(normalizedNormal.x) || 
+		isnan(normalizedNormal.y) ||
+		isnan(normalizedNormal.z))
+	{
+		is_Degenerate = true;
+		return;
+	}
 
 	// Reorder vertices if geometric normal doesn't match shading normal
 	if (m->n) {

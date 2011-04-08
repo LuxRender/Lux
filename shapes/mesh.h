@@ -144,7 +144,7 @@ public:
 	}
 
 	virtual bool isDegenerate() const {
-		return false; //TODO check degenerate
+		return is_Degenerate;
 	}
 
 	void GetUVs(float uv[3][2]) const {
@@ -169,6 +169,7 @@ public:
 	// BaryTriangle Data
 	const Mesh *mesh;
 	const int *v;
+	bool is_Degenerate;
 };
 
 class MeshWaldTriangle : public MeshBaryTriangle {
@@ -182,7 +183,9 @@ public:
 
 	virtual void Sample(float u1, float u2, float u3,
 		DifferentialGeometry *dg) const;
+	
 	virtual bool isDegenerate() const;
+
 private:
 	// WaldTriangle Data
 
@@ -231,7 +234,7 @@ public:
 	}
 
 	virtual bool isDegenerate() const {
-		return false; //TODO check degenerate
+		return is_Degenerate;
 	}
 
 	void GetUVs(float uv[3][2]) const {
@@ -260,6 +263,7 @@ public:
 	const int *v;
 	Vector dpdu, dpdv, normalizedNormal;
 	float uvs[3][2];
+	bool is_Degenerate;
 };
 
 //------------------------------------------------------------------------------
