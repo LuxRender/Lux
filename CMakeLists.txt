@@ -894,7 +894,9 @@ SET_TARGET_PROPERTIES(luxStatic luxShared PROPERTIES OUTPUT_NAME lux)
 ###########################   PYTHON LIBRARIES    ###########################
 #############################################################################
 #############################################################################
+
 # SET(CMAKE_USE_PYTHON_VERSION 3.2)
+
 IF(APPLE)
 	IF(OSX_OPTION_PYLUX)
 		# use Blender python libs for static compiling !
@@ -910,9 +912,20 @@ IF(APPLE)
 		SET(PYTHON_LIBRARIES ${PYTHON_LIBRARY})
 	ENDIF(OSX_OPTION_PYLUX)
 ELSE(APPLE)
-	FIND_PACKAGE(PythonLibs)
+	IF(PYTHON_CUSTOM)
+		IF (NOT PYTHON_LIBRARIES)
+			MESSAGE(FATAL_ERROR " PYTHON_CUSTOM set but PYTHON_LIBRARIES NOT set.")
+		ENDIF (NOT PYTHON_LIBRARIES)
+		IF (NOT PYTHON_INCLUDE_PATH)
+			MESSAGE(FATAL_ERROR " PYTHON_CUSTOM set but PYTHON_INCLUDE_PATH NOT set.")
+		ENDIF (NOT PYTHON_INCLUDE_PATH)
+	ELSE(PYTHON_CUSTOM)
+		FIND_PACKAGE(PythonLibs)
+	ENDIF(PYTHON_CUSTOM)
 ENDIF(APPLE)
-IF(PYTHONLIBS_FOUND)
+
+IF(PYTHONLIBS_FOUND OR PYTHON_CUSTOM)
+
 	MESSAGE(STATUS "Python library directory: " ${PYTHON_LIBRARIES} )
 	MESSAGE(STATUS "Python include directory: " ${PYTHON_INCLUDE_PATH} )
 
@@ -950,9 +963,9 @@ IF(PYTHONLIBS_FOUND)
 			COMMAND cp ${CMAKE_SOURCE_DIR}/python/pyluxconsole.py pyluxconsole.py
 		)
 	ENDIF(APPLE)
-ELSE(PYTHONLIBS_FOUND)
+ELSE(PYTHONLIBS_FOUND OR PYTHON_CUSTOM)
 	MESSAGE( STATUS "Warning : could not find Python libraries - not building python module")
-ENDIF(PYTHONLIBS_FOUND)
+ENDIF(PYTHONLIBS_FOUND OR PYTHON_CUSTOM)
 
 #############################################################################
 #Here we build the console executable
