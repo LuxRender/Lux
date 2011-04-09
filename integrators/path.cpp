@@ -456,7 +456,7 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 				if (scene.lights[i]->Le(scene, state->sample,
 					state->pathRay, &ibsdf, NULL, &pdf, &Le)) {
 					if (!state->specularBounce)
-						Le *= PowerHeuristic(1, state->bouncePdf, 1, pdf * DistanceSquared(state->pathRay.o, ibsdf->dgShading.p) / AbsDot(state->pathRay.d, ibsdf->ng));
+						Le *= PowerHeuristic(1, state->bouncePdf, 1, pdf * DistanceSquared(state->pathRay.o, ibsdf->dgShading.p) / (AbsDot(state->pathRay.d, ibsdf->ng) * nLights));
 					state->L[scene.lights[i]->group] += Le;
 					state->V[scene.lights[i]->group] += Le.Filter(sw) * state->VContrib;
 					++(*nrContribs);
@@ -490,7 +490,7 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 
 		if (!Le.Black()) {
 			if (!state->specularBounce)
-				Le *= PowerHeuristic(1, state->bouncePdf, 1, pdf * DistanceSquared(state->pathRay.o, ibsdf->dgShading.p) / AbsDot(state->pathRay.d, ibsdf->ng));
+				Le *= PowerHeuristic(1, state->bouncePdf, 1, pdf * DistanceSquared(state->pathRay.o, ibsdf->dgShading.p) / (AbsDot(state->pathRay.d, ibsdf->ng) * nLights));
 			Le *= state->pathThroughput;
 			state->L[isect.arealight->group] += Le;
 			state->V[isect.arealight->group] += Le.Filter(sw) * state->VContrib;
@@ -528,6 +528,9 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 		BSDF *lightBsdf;
 		if (light.SampleL(scene, state->sample, p, lightSample0, lightSample1, lightSample2,
 			&lightBsdf, NULL, &lightPdf, &Li)) {
+			//FIXME specific to one uniform strategy
+			lightPdf /= nLights;
+			Li *= nLights;
 			const Point &pL(lightBsdf->dgShading.p);
 			const Vector wi0(pL - p);
 			const float d2 = wi0.LengthSquared();
