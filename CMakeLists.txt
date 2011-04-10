@@ -860,7 +860,7 @@ LINK_DIRECTORIES(${LINK_DIRECTORIES} ${Boost_LIBRARY_DIRS} )
 ADD_LIBRARY(luxStatic STATIC ${lux_lib_src} )
 IF( NOT CMAKE_VERSION VERSION_LESS 2.8.3 AND OSX_OPTION_CLANG) # only cmake >= 2.8.1 supports per target attributes
 	SET_TARGET_PROPERTIES(luxStatic PROPERTIES XCODE_ATTRIBUTE_GCC_VERSION com.apple.compilers.llvm.clang.1_0) # for testing new CLANG2.0, will be ignored for other OS
-	SET_TARGET_PROPERTIES(luxStatic PROPERTIES XCODE_ATTRIBUTE_LLVM_LTO NO )
+	SET_TARGET_PROPERTIES(luxStatic PROPERTIES XCODE_ATTRIBUTE_LLVM_LTO NO ) # disabled due breaks bw compatibility
 ENDIF()
 #TARGET_LINK_LIBRARIES(luxStatic ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} )
 
@@ -875,7 +875,7 @@ ADD_LIBRARY(luxShared SHARED
 IF(APPLE)
 	IF( NOT CMAKE_VERSION VERSION_LESS 2.8.3 AND OSX_OPTION_CLANG) # only cmake >= 2.8.1 supports per target attributes
 		SET_TARGET_PROPERTIES(luxShared PROPERTIES XCODE_ATTRIBUTE_GCC_VERSION com.apple.compilers.llvm.clang.1_0) # for testing new CLANG2.0, will be ignored for other OS
-		SET_TARGET_PROPERTIES(luxShared PROPERTIES XCODE_ATTRIBUTE_LLVM_LTO NO )
+		SET_TARGET_PROPERTIES(luxShared PROPERTIES XCODE_ATTRIBUTE_LLVM_LTO NO ) # disabled due breaks bw compatibility
 	ENDIF()
 	TARGET_LINK_LIBRARIES(luxShared -all_load luxStatic -noall_load ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${SYS_LIBRARIES} )
 ELSE(APPLE)

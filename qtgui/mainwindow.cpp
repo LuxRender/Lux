@@ -1679,7 +1679,9 @@ bool MainWindow::event (QEvent *event)
 	}
 	else if (eventtype == EVT_LUX_SAVEDFLM) {
 		m_saveTimer->stop();
-
+		statusMessage->setText("");
+		// reset progressindicator
+		indicateActivity(false);		
 		if (m_flmsaveThread)
 			m_flmsaveThread->join();
 		delete m_flmsaveThread;
