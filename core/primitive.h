@@ -333,6 +333,7 @@ public:
 		dg->dpdv = InstanceToWorld(dg->dpdv);
 		dg->dndu = InstanceToWorld(dg->dndu);
 		dg->dndv = InstanceToWorld(dg->dndv);
+		dg->handle = this;
 	}
 	virtual float Pdf(const Point &p) const {
 		return instance->Pdf(WorldToInstance(p));
@@ -346,6 +347,7 @@ public:
 		dg->dpdv = InstanceToWorld(dg->dpdv);
 		dg->dndu = InstanceToWorld(dg->dndu);
 		dg->dndv = InstanceToWorld(dg->dndv);
+		dg->handle = this;
 	}
 	//FIXME: The various pdf computations should be adapted for scaling
 	virtual float Pdf(const Point &p, const Point &po) const {
@@ -431,6 +433,7 @@ public:
 		dg->dpdv = InstanceToWorld(dg->dpdv);
 		dg->dndu = InstanceToWorld(dg->dndu);
 		dg->dndv = InstanceToWorld(dg->dndv);
+		dg->handle = this;
 	}
 	virtual float Pdf(const Point &p) const {
 		return instance->Pdf(p);
@@ -446,6 +449,7 @@ public:
 		dg->dpdv = InstanceToWorld(dg->dpdv);
 		dg->dndu = InstanceToWorld(dg->dndu);
 		dg->dndv = InstanceToWorld(dg->dndv);
+		dg->handle = this;
 	}
 	//FIXME: The various pdf computations should be adapted for scaling
 	//FIXME: The various pdf parameters should be converted to instance

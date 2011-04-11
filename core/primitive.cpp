@@ -125,7 +125,7 @@ bool InstancePrimitive::Intersect(const Ray &r, Intersection *isect) const
 	isect->dg.dpdv = InstanceToWorld(isect->dg.dpdv);
 	isect->dg.dndu = InstanceToWorld(isect->dg.dndu);
 	isect->dg.dndv = InstanceToWorld(isect->dg.dndv);
-	isect->dg.handle = isect->primitive;
+	isect->dg.handle = this;
 	isect->primitive = this;
 	isect->dg.time = r.time;
 	if (material)
@@ -155,14 +155,14 @@ void InstancePrimitive::GetShadingGeometry(const Transform &obj2world,
 	memcpy(&dgl.iData, &dg.iData,
 		sizeof(DifferentialGeometry::IntersectionData));
 
-	reinterpret_cast<const Primitive *>(dg.handle)->GetShadingGeometry(o2w,
-		dgl, dgShading);
+	instance->GetShadingGeometry(o2w, dgl, dgShading);
 	dgShading->p = InstanceToWorld(dgShading->p);
 	dgShading->nn = Normalize(InstanceToWorld(dgShading->nn));
 	dgShading->dpdu = InstanceToWorld(dgShading->dpdu);
 	dgShading->dpdv = InstanceToWorld(dgShading->dpdv);
 	dgShading->dndu = InstanceToWorld(dgShading->dndu);
 	dgShading->dndv = InstanceToWorld(dgShading->dndv);
+	dgShading->handle = this;
 }
 
 // MotionPrimitive Method Definitions
@@ -183,7 +183,7 @@ bool MotionPrimitive::Intersect(const Ray &r, Intersection *isect) const
 	isect->dg.dpdv = InstanceToWorld(isect->dg.dpdv);
 	isect->dg.dndu = InstanceToWorld(isect->dg.dndu);
 	isect->dg.dndv = InstanceToWorld(isect->dg.dndv);
-	isect->dg.handle = isect->primitive;
+	isect->dg.handle = this;
 	isect->primitive = this;
 	isect->dg.time = r.time;
 	if (material)
@@ -217,14 +217,14 @@ void MotionPrimitive::GetShadingGeometry(const Transform &obj2world,
 	memcpy(&dgl.iData, &dg.iData,
 		sizeof(DifferentialGeometry::IntersectionData));
 
-	reinterpret_cast<const Primitive *>(dg.handle)->GetShadingGeometry(o2w,
-		dgl, dgShading);
+	instance->GetShadingGeometry(o2w, dgl, dgShading);
 	dgShading->p = InstanceToWorld(dgShading->p);
 	dgShading->nn = Normalize(InstanceToWorld(dgShading->nn));
 	dgShading->dpdu = InstanceToWorld(dgShading->dpdu);
 	dgShading->dpdv = InstanceToWorld(dgShading->dpdv);
 	dgShading->dndu = InstanceToWorld(dgShading->dndu);
 	dgShading->dndv = InstanceToWorld(dgShading->dndv);
+	dgShading->handle = this;
 }
 
 BBox MotionPrimitive::WorldBound() const
