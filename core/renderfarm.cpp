@@ -86,8 +86,9 @@ void FilmUpdaterThread::updateFilm(FilmUpdaterThread *filmUpdaterThread) {
 }
 
 RenderFarm::RenderFarm() : serverUpdateInterval(3 * 60), filmUpdateThread(NULL),
-		netBufferComplete(false), isLittleEndian(osIsLittleEndian()),
-		netBuffer(std::stringstream::in | std::stringstream::out  | std::stringstream::binary) {
+		netBuffer(std::stringstream::in | std::stringstream::out  | std::stringstream::binary),
+		netBufferComplete(false), isLittleEndian(osIsLittleEndian())
+{
 		// set precision for accurate transmission of floats
 		netBuffer << std::scientific << std::setprecision(16);
 }

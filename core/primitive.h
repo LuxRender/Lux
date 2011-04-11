@@ -353,7 +353,7 @@ public:
 	}
 
 	virtual Transform GetWorldToLocal(float time) const {
-		return WorldToInstance;
+		return instance->GetWorldToLocal(time) * WorldToInstance;
 	}
 private:
 	// InstancePrimitive Private Data
@@ -455,7 +455,8 @@ public:
 		return instance->Pdf(p, po);
 	}
 	virtual Transform GetWorldToLocal(float time) const {
-		return motionSystem.Sample(time).GetInverse();
+		return instance->GetWorldToLocal(time) *
+			motionSystem.Sample(time).GetInverse();
 	}
 private:
 	// MotionPrimitive Private Data
