@@ -45,7 +45,7 @@ public:
 	FlexImageFilm(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop[4],
 		const string &filename1, bool premult, int wI, int fwI, int dI, int cM,
 		bool cw_EXR, OutputChannels cw_EXR_channels, bool cw_EXR_halftype, int cw_EXR_compressiontype, bool cw_EXR_applyimaging,
-		bool cw_EXR_gamutclamp, bool cw_EXR_ZBuf, ZBufNormalization cw_EXR_ZBuf_normalizationtype,
+		bool cw_EXR_gamutclamp, bool cw_EXR_ZBuf, ZBufNormalization cw_EXR_ZBuf_normalizationtype, bool cw_EXR_straight_colors,
 		bool cw_PNG, OutputChannels cw_PNG_channels, bool cw_PNG_16bit, bool cw_PNG_gamutclamp, bool cw_PNG_ZBuf, ZBufNormalization cw_PNG_ZBuf_normalizationtype,
 		bool cw_TGA, OutputChannels cw_TGA_channels, bool cw_TGA_gamutclamp, bool cw_TGA_ZBuf, ZBufNormalization cw_TGA_ZBuf_normalizationtype, 
 		bool w_resume_FLM, bool restart_resume_FLM, int haltspp, int halttime,
@@ -135,6 +135,7 @@ private:
 	ZBufNormalization write_EXR_ZBuf_normalizationtype;
 	//OutputChannels write_EXR_channels;
 	int write_EXR_channels;
+	bool write_EXR_straight_colors;
 	ZBufNormalization write_PNG_ZBuf_normalizationtype;
 	OutputChannels write_PNG_channels;
 	ZBufNormalization write_TGA_ZBuf_normalizationtype;
