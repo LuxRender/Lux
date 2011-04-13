@@ -70,7 +70,7 @@ public:
 		serverThread6->join();
 	}
 
-	static void run(int ipversion, NetworkRenderServerThread *serverThread);
+	static void run(int ipversion, NetworkRenderServerThread *serverThread, boost::mutex &initMutex);
 	friend class RenderServer;
 
 	RenderServer *renderServer;

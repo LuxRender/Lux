@@ -84,10 +84,13 @@ void RenderServer::start() {
 	// Dade - start the tcp server threads
 	serverThread = new NetworkRenderServerThread(this);
 
+	// used to prevent simultaneous initialization
+	boost::mutex initMutex;
+
 	serverThread->serverThread6 = new boost::thread(boost::bind(
-		NetworkRenderServerThread::run, 6, serverThread));
+		NetworkRenderServerThread::run, 6, serverThread, boost::ref(initMutex)));
 	serverThread->serverThread4 = new boost::thread(boost::bind(
-		NetworkRenderServerThread::run, 4, serverThread));
+		NetworkRenderServerThread::run, 4, serverThread, boost::ref(initMutex)));
 
 	state = READY;
 }
@@ -691,8 +694,10 @@ void cmd_luxRenderer(bool isLittleEndian, NetworkRenderServerThread *serverThrea
 }
 
 // Dade - TODO: support signals
-void NetworkRenderServerThread::run(int ipversion, NetworkRenderServerThread *serverThread)
+void NetworkRenderServerThread::run(int ipversion, NetworkRenderServerThread *serverThread, boost::mutex &initMutex)
 {
+	boost::mutex::scoped_lock initLock(initMutex);
+
 	const int listenPort = serverThread->renderServer->tcpPort;
 	const bool isLittleEndian = osIsLittleEndian();
 
@@ -762,7 +767,7 @@ void NetworkRenderServerThread::run(int ipversion, NetworkRenderServerThread *se
 	#undef INSERT_CMD
 
 	try {
-		bool reuse_addr = true;
+		const bool reuse_addr = true;
 
 		boost::asio::io_service io_service;
 		tcp::endpoint endpoint(ipversion == 4 ? tcp::v4() : tcp::v6(), listenPort);
@@ -776,10 +781,13 @@ void NetworkRenderServerThread::run(int ipversion, NetworkRenderServerThread *se
 		acceptor.bind(endpoint);
 		acceptor.listen();
 
+		// release init lock
+		initLock.unlock();
+
 		LOG(LUX_INFO,LUX_NOERROR) << "Server listening on " << endpoint;
 
+		vector<char> buffer(2048);
 		while (serverThread->signal == SIG_NONE) {
-			vector<char> buffer(2048);
 			tcp::iostream stream;
 			stream.rdbuf()->pubsetbuf(&buffer[0], buffer.size());
 			acceptor.accept(*stream.rdbuf());
