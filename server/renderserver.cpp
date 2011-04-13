@@ -84,13 +84,10 @@ void RenderServer::start() {
 	// Dade - start the tcp server threads
 	serverThread = new NetworkRenderServerThread(this);
 
-	// used to prevent simultaneous initialization
-	boost::mutex initMutex;
-
 	serverThread->serverThread6 = new boost::thread(boost::bind(
-		NetworkRenderServerThread::run, 6, serverThread, boost::ref(initMutex)));
+		NetworkRenderServerThread::run, 6, serverThread));
 	serverThread->serverThread4 = new boost::thread(boost::bind(
-		NetworkRenderServerThread::run, 4, serverThread, boost::ref(initMutex)));
+		NetworkRenderServerThread::run, 4, serverThread));
 
 	state = READY;
 }
@@ -694,9 +691,9 @@ void cmd_luxRenderer(bool isLittleEndian, NetworkRenderServerThread *serverThrea
 }
 
 // Dade - TODO: support signals
-void NetworkRenderServerThread::run(int ipversion, NetworkRenderServerThread *serverThread, boost::mutex &initMutex)
+void NetworkRenderServerThread::run(int ipversion, NetworkRenderServerThread *serverThread)
 {
-	boost::mutex::scoped_lock initLock(initMutex);
+	boost::mutex::scoped_lock initLock(serverThread->initMutex);
 
 	const int listenPort = serverThread->renderServer->tcpPort;
 	const bool isLittleEndian = osIsLittleEndian();
@@ -780,11 +777,11 @@ void NetworkRenderServerThread::run(int ipversion, NetworkRenderServerThread *se
 			acceptor.set_option(boost::asio::ip::v6_only(true));
 		acceptor.bind(endpoint);
 		acceptor.listen();
-
+		
+		LOG(LUX_INFO,LUX_NOERROR) << "Server listening on " << endpoint;
+		
 		// release init lock
 		initLock.unlock();
-
-		LOG(LUX_INFO,LUX_NOERROR) << "Server listening on " << endpoint;
 
 		vector<char> buffer(2048);
 		while (serverThread->signal == SIG_NONE) {

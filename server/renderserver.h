@@ -70,7 +70,7 @@ public:
 		serverThread6->join();
 	}
 
-	static void run(int ipversion, NetworkRenderServerThread *serverThread, boost::mutex &initMutex);
+	static void run(int ipversion, NetworkRenderServerThread *serverThread);
 	friend class RenderServer;
 
 	RenderServer *renderServer;
@@ -78,6 +78,9 @@ public:
 	boost::thread *serverThread6;
 	boost::thread *engineThread;
 	boost::thread *infoThread;
+	// used to prevent simultaneous initialization
+	boost::mutex initMutex;
+
 
 	// Dade - used to send signals to the thread
 	enum ThreadSignal { SIG_NONE, SIG_EXIT };
