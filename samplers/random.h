@@ -42,13 +42,13 @@ public:
 		u_int ps, string pixelsampler);
 	virtual ~RandomSampler();
 
-	virtual void InitSample(Sample *sample) const {
-		sample->samplerData = new RandomData(xPixelStart, yPixelStart,
+	virtual void *InitSampleData(const Sample &sample) const {
+		return new RandomData(xPixelStart, yPixelStart,
 			pixelSamples);
 	}
 	virtual u_int GetTotalSamplePos();
-	virtual bool GetNextSample(Sample *sample);
-	virtual float *GetLazyValues(const Sample &sample, u_int num, u_int pos);
+	virtual bool GetNextSample(Sample *sample, void *samplerData);
+	virtual float *GetLazyValues(const Sample &sample, void *samplerData, u_int num, u_int pos);
 	virtual u_int RoundSize(u_int sz) const { return sz; }
 	virtual void GetBufferType(BufferType *type) {*type = BUF_TYPE_PER_PIXEL;}
 

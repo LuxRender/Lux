@@ -79,9 +79,9 @@ u_int RandomSampler::GetTotalSamplePos()
 	return totalPixels;
 }
 
-bool RandomSampler::GetNextSample(Sample *sample)
+bool RandomSampler::GetNextSample(Sample *sample, void *samplerData)
 {
-	RandomData *data = (RandomData *)(sample->samplerData);
+	RandomData *data = (RandomData *)(samplerData);
 
 	// Compute new set of samples if needed for next pixel
 	bool haveMoreSamples = true;
@@ -131,7 +131,7 @@ bool RandomSampler::GetNextSample(Sample *sample)
 	return haveMoreSamples;
 }
 
-float *RandomSampler::GetLazyValues(const Sample &sample, u_int num, u_int pos)
+float *RandomSampler::GetLazyValues(const Sample &sample, void* samplerData, u_int num, u_int pos)
 {
 	float *data = sample.xD[num] + pos * sample.dxD[num];
 	for (u_int i = 0; i < sample.dxD[num]; ++i)

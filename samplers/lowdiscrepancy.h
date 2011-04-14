@@ -49,8 +49,8 @@ public:
 			  u_int nsamp, string pixelsampler);
 	virtual ~LDSampler();
 
-	virtual void InitSample(Sample *sample) const {
-		sample->samplerData = new LDData(*sample, xPixelStart,
+	virtual void *InitSampleData(const Sample &sample) const {
+		return new LDData(sample, xPixelStart,
 			yPixelStart, pixelSamples);
 	}
 	virtual u_int RoundSize(u_int size) const {
@@ -58,8 +58,8 @@ public:
 	}
 	virtual void GetBufferType(BufferType *type) {*type = BUF_TYPE_PER_PIXEL;}
 	virtual u_int GetTotalSamplePos();
-	virtual bool GetNextSample(Sample *sample);
-	virtual float *GetLazyValues(const Sample &sample, u_int num, u_int pos);
+	virtual bool GetNextSample(Sample *sample, void *samplerData);
+	virtual float *GetLazyValues(const Sample &sample, void *samplerData, u_int num, u_int pos);
 
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
 private:

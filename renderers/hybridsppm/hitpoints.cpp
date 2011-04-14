@@ -138,7 +138,7 @@ EyePath::EyePath(const Scene &scene, RandomGenerator *rng, const u_int index)  :
 	throughput = 1.f;
 
 	// Initialize the sample
-	scene.sampler->InitSample(&sample);
+	sample.samplerData = scene.sampler->InitSampleData(sample);
 	sample.contribBuffer = NULL;
 	sample.camera = scene.camera->Clone();
 	sample.realTime = 0.f;
