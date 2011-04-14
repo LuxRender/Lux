@@ -320,8 +320,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>373</width>
-                  <height>407</height>
+                  <width>376</width>
+                  <height>388</height>
                  </rect>
                 </property>
                 <property name="sizePolicy">
@@ -403,8 +403,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>369</width>
-                  <height>432</height>
+                  <width>100</width>
+                  <height>30</height>
                  </rect>
                 </property>
                 <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -465,58 +465,50 @@
              </property>
              <item>
               <widget class="QScrollArea" name="advancedArea">
-             <property name="geometry">
-              <rect>
-               <x>0</x>
-               <y>0</y>
-               <width>369</width>
-               <height>432</height>
-              </rect>
-             </property>
-             <property name="frameShape">
-              <enum>QFrame::NoFrame</enum>
-             </property>
-             <property name="widgetResizable">
-              <bool>true</bool>
-             </property>
-             <widget class="QWidget" name="advancedAreaContents">
-              <property name="geometry">
-               <rect>
-                <x>0</x>
-                <y>0</y>
-                <width>369</width>
-                <height>432</height>
-               </rect>
-              </property>
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <layout class="QVBoxLayout" name="verticalLayout_4">
-               <property name="leftMargin">
-                <number>4</number>
+               <property name="frameShape">
+                <enum>QFrame::NoFrame</enum>
                </property>
-               <property name="topMargin">
-                <number>4</number>
+               <property name="widgetResizable">
+                <bool>true</bool>
                </property>
-               <property name="rightMargin">
-                <number>4</number>
-               </property>
-               <property name="bottomMargin">
-                <number>0</number>
-               </property>
-               <item>
-                <layout class="QVBoxLayout" name="advancedLayout">
+               <widget class="QWidget" name="advancedAreaContents">
+                <property name="geometry">
+                 <rect>
+                  <x>0</x>
+                  <y>0</y>
+                  <width>100</width>
+                  <height>30</height>
+                 </rect>
+                </property>
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_4">
+                 <property name="leftMargin">
+                  <number>4</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>4</number>
+                 </property>
                  <property name="rightMargin">
+                  <number>4</number>
+                 </property>
+                 <property name="bottomMargin">
                   <number>0</number>
                  </property>
+                 <item>
+                  <layout class="QVBoxLayout" name="advancedLayout">
+                   <property name="rightMargin">
+                    <number>0</number>
+                   </property>
+                  </layout>
+                 </item>
                 </layout>
-               </item>
-              </layout>
-             </widget>
-            </widget>
+               </widget>
+              </widget>
              </item>
             </layout>
            </widget>
@@ -1119,7 +1111,7 @@
      <x>0</x>
      <y>0</y>
      <width>840</width>
-     <height>21</height>
+     <height>23</height>
     </rect>
    </property>
    <property name="nativeMenuBar">
@@ -1188,6 +1180,9 @@
     <addaction name="action_resumeFLM"/>
     <addaction name="action_loadFLM"/>
     <addaction name="action_saveFLM"/>
+    <addaction name="separator"/>
+    <addaction name="action_Save_Panel_Settings"/>
+    <addaction name="action_Load_Panel_Settings"/>
     <addaction name="separator"/>
     <addaction name="menuExport_to_Image"/>
     <addaction name="separator"/>
@@ -1290,8 +1285,7 @@
   <action name="action_endRender">
    <property name="icon">
     <iconset resource="icons.qrc">
-     <normaloff>:/icons/stopicon.png</normaloff>:/icons/powerofficon.png
-    </iconset>
+     <normaloff>:/icons/stopicon.png</normaloff>:/icons/stopicon.png</iconset>
    </property>
    <property name="text">
     <string>End rendering</string>
@@ -1534,6 +1528,28 @@
   <action name="action_bugtracker">
    <property name="text">
     <string>Bug tracker</string>
+   </property>
+  </action>
+  <action name="action_Save_Panel_Settings">
+   <property name="text">
+    <string>Save Panel Settings...</string>
+   </property>
+   <property name="toolTip">
+    <string>Save Settings for the tonemapping, lightgroups and gamma panels to a .ini file</string>
+   </property>
+   <property name="statusTip">
+    <string>Save Settings for the tonemapping, lightgroups and gamma panels to a .ini file</string>
+   </property>
+  </action>
+  <action name="action_Load_Panel_Settings">
+   <property name="text">
+    <string>Load Panel Settings...</string>
+   </property>
+   <property name="toolTip">
+    <string>Load Settings for the tonemapping, lightgroups and gamma panels from a .ini file</string>
+   </property>
+   <property name="statusTip">
+    <string>Load Settings for the tonemapping, lightgroups and gamma panels from a .ini file</string>
    </property>
   </action>
  </widget>

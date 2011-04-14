@@ -165,7 +165,7 @@ public:
 	bool m_auto_tonemap;
 
 	void loadFile(const QString &fileName);
-	
+
 protected:
 	
 	bool saveCurrentImageHDR(const QString &outFile);
@@ -343,6 +343,10 @@ private slots:
 	void overrideWriteFlmChanged(bool checked);
 
 	void copyToClipboard ();
+
+	void SavePanelSettings();
+	void LoadPanelSettings();
+
 };
 
 #endif // MAINWINDOW_H

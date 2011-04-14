@@ -47,6 +47,10 @@ public:
 	void ResetValues();
 	void ResetValuesFromFilm(bool useDefaults);
 	void SetWidgetsEnabled(bool enabled);
+	void SetFromValues();
+
+	void SaveSettings( QString fName );
+	void LoadSettings( QString fName );
 
 signals:
 	void valuesChanged();

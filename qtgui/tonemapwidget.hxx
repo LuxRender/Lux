@@ -62,6 +62,10 @@ public:
 	void updateWidgetValues();
 	void resetValues();
 	void resetFromFilm (bool useDefaults);
+	void SetFromValues ();
+
+	void SaveSettings( QString fName );
+	void LoadSettings( QString fName );
 
 private:
 

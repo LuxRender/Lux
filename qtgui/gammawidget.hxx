@@ -49,6 +49,9 @@ public:
 	void resetValues();
 	void resetFromFilm (bool useDefaults);
 
+	void SaveSettings( QString fName );
+	void LoadSettings( QString fName );
+
 	bool m_Gamma_enabled;
 	double m_TORGB_gamma;
 

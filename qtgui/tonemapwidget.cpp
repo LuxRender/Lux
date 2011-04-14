@@ -258,11 +258,16 @@ void ToneMapWidget::resetFromFilm (bool useDefaults)
 	m_TM_linear_fstop = (double)retrieveParam( useDefaults, LUX_FILM, LUX_FILM_TM_LINEAR_FSTOP);
 	m_TM_linear_gamma = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_TM_LINEAR_GAMMA);
 
+	m_TM_contrast_ywa = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_TM_CONTRAST_YWA);
+
+	SetFromValues();
+}
+
+void ToneMapWidget::SetFromValues ()
+{
 	ui->comboBox_SensitivityPreset->setCurrentIndex(sensitivityToPreset(m_TM_linear_sensitivity));
 	ui->comboBox_ExposurePreset->setCurrentIndex(exposureToPreset(m_TM_linear_exposure));
 	ui->comboBox_FStopPreset->setCurrentIndex(fstopToPreset(m_TM_linear_fstop));
-
-	m_TM_contrast_ywa = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_TM_CONTRAST_YWA);
 
 	luxSetParameterValue(LUX_FILM, LUX_FILM_LDR_CLAMP_METHOD, (double)m_clamp_method);
 
@@ -277,6 +282,7 @@ void ToneMapWidget::resetFromFilm (bool useDefaults)
 
 	luxSetParameterValue(LUX_FILM, LUX_FILM_TM_CONTRAST_YWA, m_TM_contrast_ywa);
 }
+
 
 void ToneMapWidget::setTonemapKernel(int choice)
 {
@@ -563,3 +569,61 @@ void ToneMapWidget::ywaChanged (double value)
 
 	emit valuesChanged();
 }
+
+///////////////////////////////////////////
+// Save and Load settings from a ini file.
+
+void ToneMapWidget::SaveSettings( QString fName )
+{
+	QSettings settings( fName, QSettings::IniFormat );
+
+	settings.beginGroup("tonemapping");
+	if ( settings.status() ) return;
+
+	settings.setValue( "TM_kernel", m_TM_kernel );
+	settings.setValue( "clamp_method", m_clamp_method );
+
+	settings.setValue( "TM_reinhard_prescale", m_TM_reinhard_prescale );
+	settings.setValue( "TM_reinhard_postscale", m_TM_reinhard_postscale );
+	settings.setValue( "TM_reinhard_burn", m_TM_reinhard_burn );
+
+	settings.setValue( "TM_linear_exposure", m_TM_linear_exposure );
+	settings.setValue( "TM_linear_sensitivity", m_TM_linear_sensitivity );
+	settings.setValue( "TM_linear_fstop", m_TM_linear_fstop );
+	settings.setValue( "TM_linear_gamma", m_TM_linear_gamma );
+
+	settings.setValue( "TM_contrast_ywa", m_TM_contrast_ywa );
+
+	settings.endGroup();
+}
+
+void ToneMapWidget::LoadSettings( QString fName )
+{
+	QSettings settings( fName, QSettings::IniFormat );
+
+	settings.beginGroup("tonemapping");
+	if ( settings.status() ) return;
+
+	m_TM_kernel = settings.value("TM_kernel", 0 ).toInt();
+	m_clamp_method = settings.value("clamp_method", 0 ).toInt();
+
+	m_TM_reinhard_prescale = settings.value("TM_reinhard_prescale", 1.0 ).toDouble();
+	m_TM_reinhard_postscale = settings.value("TM_reinhard_postscale", 1.0 ).toDouble();
+	m_TM_reinhard_burn = settings.value("TM_reinhard_burn", 6.0 ).toDouble();
+
+	m_TM_linear_exposure = settings.value("TM_linear_exposure", 1.0 ).toDouble();
+	m_TM_linear_sensitivity = settings.value("TM_linear_sensitivity", 50.0 ).toDouble();
+	m_TM_linear_fstop = settings.value("TM_linear_fstop", 2.8 ).toDouble();
+	m_TM_linear_gamma = settings.value("TM_linear_gamma", 1.0 ).toDouble();
+
+	m_TM_contrast_ywa = settings.value("TM_contrast_ywa", 0.1 ).toDouble();
+
+	settings.endGroup();
+
+	SetFromValues();
+	updateWidgetValues();
+
+	emit valuesChanged();
+}
+
+

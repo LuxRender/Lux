@@ -158,6 +158,8 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	connect(ui->action_saveFLM, SIGNAL(triggered()), this, SLOT(saveFLM()));
 	connect(ui->action_exitAppSave, SIGNAL(triggered()), this, SLOT(exitAppSave()));
 	connect(ui->action_exitApp, SIGNAL(triggered()), this, SLOT(exitApp()));
+	connect(ui->action_Save_Panel_Settings, SIGNAL(triggered()), this, SLOT(SavePanelSettings()));
+	connect(ui->action_Load_Panel_Settings, SIGNAL(triggered()), this, SLOT(LoadPanelSettings()));
 	
 	// Export to Image sub-menu slots
 	connect(ui->action_outputTonemapped, SIGNAL(triggered()), this, SLOT(outputTonemapped()));
@@ -2398,3 +2400,43 @@ void MainWindow::ClearRenderingQueue()
 	ui->table_queue->clearContents();
 	ui->table_queue->setColumnHidden(2, true);
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// Save and Load panel settings: Light groups, tonemapping, CRF.
+
+void MainWindow::SavePanelSettings()
+{
+	QString Settings_file = QFileDialog::getSaveFileName(this, tr("Choose a Luxrender panel settings file to save"), m_lastOpendir, tr("Luxrender panel settings (*.ini *.txt)"));
+    
+	if(Settings_file.isEmpty()) return;
+
+	QFileInfo info(Settings_file);
+	m_lastOpendir = info.absolutePath();
+
+	tonemapwidget->SaveSettings( Settings_file );
+	gammawidget->SaveSettings( Settings_file );
+
+	for (QVector<PaneWidget*>::iterator it = m_LightGroupPanes.begin(); it != m_LightGroupPanes.end(); it++) 
+	{
+		((LightGroupWidget *)(*it)->getWidget())->SaveSettings( Settings_file );
+	}
+}
+
+void MainWindow::LoadPanelSettings()
+{
+	QString Settings_file = QFileDialog::getOpenFileName(this, tr("Choose a Luxrender panel settings file to open"), m_lastOpendir, tr("Luxrender panel settings (*.ini *.txt)"));
+    
+	if(Settings_file.isEmpty()) return;
+
+	QFileInfo info(Settings_file);
+	m_lastOpendir = info.absolutePath();
+
+	tonemapwidget->LoadSettings( Settings_file );
+	gammawidget->LoadSettings( Settings_file );
+
+	for (QVector<PaneWidget*>::iterator it = m_LightGroupPanes.begin(); it != m_LightGroupPanes.end(); it++) 
+	{
+		((LightGroupWidget *)(*it)->getWidget())->LoadSettings( Settings_file );
+	}
+}
+
