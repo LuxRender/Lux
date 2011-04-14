@@ -24,7 +24,7 @@
 
 # Massive thanks to http://www.dabeaz.com/ply/
 
-import ply.lex as lex, ply.yacc as yacc, sys, json
+import ply.lex as lex, ply.yacc as yacc, sys, json, hashlib
 
 #------------------------------------------------------------------------------ 
 # TOKENIZER
@@ -46,7 +46,7 @@ t_ignore_WS			= r'\s+'
 t_ignore_COMMENT	= r'\#(.*)'
 t_STRING			= r'"([^"]+)"'
 t_NUM				= r'[+-]?\d+\.?(\d+)?'
-v_TYPES				= r'bool|float|color|vector|normal|point|string|texture'
+v_TYPES				= r'bool|float|color|vector|normal|point|string|texture|integer'
 t_PARAM_ID			= r'["|\']('+v_TYPES+')[ ](\w+)["|\']'
 #t_PARAM_VALUE		= r'\[(.*)\]'
 t_LBRACK			= r'\['
@@ -75,11 +75,14 @@ def t_error(t):
 
 LAST_OBJECT_NAME = ''
 
+def shorten_name(n):
+	return hashlib.md5(n.encode()).hexdigest()[:21] if len(n) > 21 else n
+
 class Texture(object):
 	def __init__(self, name, variant, type):
-		self.name = name
+		self.name = shorten_name(name)
 		global LAST_OBJECT_NAME
-		LAST_OBJECT_NAME = name
+		LAST_OBJECT_NAME = self.name
 		self.variant = variant
 		self.type = type
 		self.paramset = []
@@ -95,9 +98,9 @@ class Texture(object):
 
 class Volume(object):
 	def __init__(self, name, type):
-		self.name = name
+		self.name = shorten_name(name)
 		global LAST_OBJECT_NAME
-		LAST_OBJECT_NAME = name
+		LAST_OBJECT_NAME = self.name
 		self.type = type
 		self.paramset = []
 	def asValue(self):
@@ -112,9 +115,9 @@ class Volume(object):
 
 class Material(object):
 	def __init__(self, name):
-		self.name = name
+		self.name = shorten_name(name)
 		global LAST_OBJECT_NAME
-		LAST_OBJECT_NAME = name
+		LAST_OBJECT_NAME = self.name
 		self.paramset = []
 	def asValue(self):
 		return {
@@ -131,6 +134,10 @@ class ParamSetItem(object):
 		self.type = pt
 		self.name = name
 		self.value = value
+		
+		if pt.lower() == 'texture':
+			self.value = shorten_name(value)
+		
 	def asValue(self):
 		return {
 			'name': self.name,
