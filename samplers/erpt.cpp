@@ -119,7 +119,9 @@ bool ERPTSampler::GetNextSample(Sample *sample)
 		if (film->enoughSamplesPerPixel)
 			return false;
 
+		sample->samplerData = data->baseSamplerData;
 		const bool ret = baseSampler->GetNextSample(sample);
+		sample->samplerData = data;
 		for (u_int i = 0; i < data->totalTimes; ++i)
 			sample->timexD[0][i] = -1;
 		sample->stamp = 0;
@@ -161,7 +163,9 @@ float *ERPTSampler::GetLazyValues(const Sample &sample, u_int num, u_int pos)
 	const int stampLimit = sample.stamp;
 	if (sample.timexD[num][pos] != stampLimit) {
 		if (sample.timexD[num][pos] == -1) {
+			const_cast<Sample&>(sample).samplerData = data->baseSamplerData;
 			baseSampler->GetLazyValues(sample, num, pos);
+			const_cast<Sample&>(sample).samplerData = data;
 			sample.timexD[num][pos] = 0;
 		} else {
 			const u_int start = data->offset[num] + pos * size;

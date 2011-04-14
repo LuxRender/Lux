@@ -47,12 +47,16 @@ public:
 		float baseLY, quantum, weight, LY, alpha;
 		vector<Contribution> oldContributions, baseContributions;
 		double totalLY, sampleCount;
+		void *baseSamplerData;
 	};
 	ERPTSampler(u_int totMutations, float rng, Sampler *sampler);
 	virtual ~ERPTSampler();
 
 	virtual void InitSample(Sample *sample) const {
-		sample->samplerData = new ERPTData(*sample);
+		ERPTData* data = new ERPTData(*sample);
+		baseSampler->InitSample(sample);
+		data->baseSamplerData = sample->samplerData;
+		sample->samplerData = data;
 	}
 	virtual void SetFilm(Film* f) { film = f; baseSampler->SetFilm(f); }
 	virtual void GetBufferType(BufferType *type) {*type = BUF_TYPE_PER_SCREEN;}
