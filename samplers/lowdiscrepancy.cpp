@@ -110,8 +110,8 @@ u_int LDSampler::GetTotalSamplePos() {
 	return totalPixels;
 }
 
-bool LDSampler::GetNextSample(Sample *sample, void *samplerData) {
-	LDData *data = (LDData *)(samplerData);
+bool LDSampler::GetNextSample(Sample *sample) {
+	LDData *data = (LDData *)(sample->samplerData);
 	const RandomGenerator &rng(*(sample->rng));
 
 	bool haveMoreSamples = true;
@@ -194,9 +194,9 @@ bool LDSampler::GetNextSample(Sample *sample, void *samplerData) {
 	return haveMoreSamples;
 }
 
-float *LDSampler::GetLazyValues(const Sample &sample, void* samplerData, u_int num, u_int pos)
+float *LDSampler::GetLazyValues(const Sample &sample, u_int num, u_int pos)
 {
-	LDData *data = (LDData *)(samplerData);
+	LDData *data = (LDData *)(sample.samplerData);
 	float *sd = sample.xD[num] + pos * sample.dxD[num];
 	float *xDSamp = data->xDSamples[num];
 	u_int offset = 0;

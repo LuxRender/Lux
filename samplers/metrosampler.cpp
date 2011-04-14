@@ -144,9 +144,9 @@ MetropolisSampler::~MetropolisSampler() {
 }
 
 // interface for new ray/samples from scene
-bool MetropolisSampler::GetNextSample(Sample *sample, void *samplerData)
+bool MetropolisSampler::GetNextSample(Sample *sample)
 {
-	MetropolisData *data = (MetropolisData *)(samplerData);
+	MetropolisData *data = (MetropolisData *)(sample->samplerData);
 
 	// Advance to the next vector in the QMC sequence and stay inside the
 	// array bounds
@@ -201,9 +201,9 @@ bool MetropolisSampler::GetNextSample(Sample *sample, void *samplerData)
 	return true;
 }
 
-float *MetropolisSampler::GetLazyValues(const Sample &sample, void* samplerData, u_int num, u_int pos)
+float *MetropolisSampler::GetLazyValues(const Sample &sample, u_int num, u_int pos)
 {
-	MetropolisData *data = (MetropolisData *)(samplerData);
+	MetropolisData *data = (MetropolisData *)(sample.samplerData);
 	// Get size and position of current lazy values node
 	const u_int size = sample.dxD[num];
 	float *sd = sample.xD[num] + pos * size;

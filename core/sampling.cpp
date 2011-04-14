@@ -41,7 +41,7 @@ Sampler::Sampler(int xstart, int xend, int ystart, int yend,
 	samplesPerPixel = spp;
 }
 
-float *Sampler::GetLazyValues(const Sample &sample, void* samplerData, u_int num, u_int pos)
+float *Sampler::GetLazyValues(const Sample &sample, u_int num, u_int pos)
 {
 	return sample.xD[num] + pos * sample.dxD[num];
 }

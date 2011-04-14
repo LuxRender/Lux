@@ -47,23 +47,19 @@ public:
 		float baseLY, quantum, weight, LY, alpha;
 		vector<Contribution> oldContributions, baseContributions;
 		double totalLY, sampleCount;
-		void *baseSamplerData;
 	};
 	ERPTSampler(u_int totMutations, float rng, Sampler *sampler);
 	virtual ~ERPTSampler();
 
-	virtual void *InitSampleData(const Sample &sample) const {
-		ERPTData *data = new ERPTData(sample);
-		// initialize base sampler data		
-		data->baseSamplerData = baseSampler->InitSampleData(sample);
-		return data;
+	virtual void InitSample(Sample *sample) const {
+		sample->samplerData = new ERPTData(*sample);
 	}
 	virtual void SetFilm(Film* f) { film = f; baseSampler->SetFilm(f); }
 	virtual void GetBufferType(BufferType *type) {*type = BUF_TYPE_PER_SCREEN;}
 	virtual u_int GetTotalSamplePos() { return baseSampler->GetTotalSamplePos(); }
 	virtual u_int RoundSize(u_int size) const { return baseSampler->RoundSize(size); }
-	virtual bool GetNextSample(Sample *sample, void *samplerData);
-	virtual float *GetLazyValues(const Sample &sample, void *samplerData, u_int num, u_int pos);
+	virtual bool GetNextSample(Sample *sample);
+	virtual float *GetLazyValues(const Sample &sample, u_int num, u_int pos);
 	//void AddSample(float imageX, float imageY, const Sample &sample, const Ray &ray, const XYZColor &L, float alpha, int id=0);
 	virtual void AddSample(const Sample &sample);
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);

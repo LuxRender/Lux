@@ -54,13 +54,13 @@ public:
 		u_int maxRej, float largeProb, float rng, bool useV);
 	virtual ~MetropolisSampler();
 
-	virtual void *InitSampleData(const Sample &sample) const {
-		return new MetropolisData(sample);
+	virtual void InitSample(Sample *sample) const {
+		sample->samplerData = new MetropolisData(*sample);
 	}
 	virtual u_int GetTotalSamplePos() { return 0; }
 	virtual u_int RoundSize(u_int size) const { return size; }
-	virtual bool GetNextSample(Sample *sample, void *samplerData);
-	virtual float *GetLazyValues(const Sample &sample, void *samplerData, u_int num, u_int pos);
+	virtual bool GetNextSample(Sample *sample);
+	virtual float *GetLazyValues(const Sample &sample, u_int num, u_int pos);
 	virtual void AddSample(const Sample &sample);
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
 

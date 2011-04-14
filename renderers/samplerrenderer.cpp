@@ -374,7 +374,7 @@ void SamplerRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 
 	Sampler *sampler = scene.sampler;
 	Sample sample(scene.surfaceIntegrator, scene.volumeIntegrator, scene);
-	sample.samplerData = scene.sampler->InitSampleData(sample);
+	sampler->InitSample(&sample);
 
 	// Dade - wait the end of the preprocessing phase
 	while (!renderer->preprocessDone) {

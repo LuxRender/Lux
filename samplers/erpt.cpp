@@ -108,10 +108,10 @@ ERPTSampler::~ERPTSampler() {
 }
 
 // interface for new ray/samples from scene
-bool ERPTSampler::GetNextSample(Sample *sample, void *samplerData)
+bool ERPTSampler::GetNextSample(Sample *sample)
 {
 	const RandomGenerator *rng = sample->rng;
-	ERPTData *data = (ERPTData *)(samplerData);
+	ERPTData *data = (ERPTData *)(sample->samplerData);
 
 	if (data->mutation == ~0U) {
 		// Dade - we are at a valid checkpoint where we can stop the
@@ -119,7 +119,7 @@ bool ERPTSampler::GetNextSample(Sample *sample, void *samplerData)
 		if (film->enoughSamplesPerPixel)
 			return false;
 
-		const bool ret = baseSampler->GetNextSample(sample, data->baseSamplerData);
+		const bool ret = baseSampler->GetNextSample(sample);
 		for (u_int i = 0; i < data->totalTimes; ++i)
 			sample->timexD[0][i] = -1;
 		sample->stamp = 0;
@@ -153,15 +153,15 @@ bool ERPTSampler::GetNextSample(Sample *sample, void *samplerData)
 	return true;
 }
 
-float *ERPTSampler::GetLazyValues(const Sample &sample, void* samplerData, u_int num, u_int pos)
+float *ERPTSampler::GetLazyValues(const Sample &sample, u_int num, u_int pos)
 {
-	ERPTData *data = (ERPTData *)(samplerData);
+	ERPTData *data = (ERPTData *)(sample.samplerData);
 	const u_int size = sample.dxD[num];
 	float *sd = sample.xD[num] + pos * size;
 	const int stampLimit = sample.stamp;
 	if (sample.timexD[num][pos] != stampLimit) {
-		if (sample.timexD[num][pos] == -1) {			
-			baseSampler->GetLazyValues(sample, data->baseSamplerData, num, pos);
+		if (sample.timexD[num][pos] == -1) {
+			baseSampler->GetLazyValues(sample, num, pos);
 			sample.timexD[num][pos] = 0;
 		} else {
 			const u_int start = data->offset[num] + pos * size;
@@ -182,17 +182,9 @@ void ERPTSampler::AddSample(const Sample &sample)
 {
 	ERPTData *data = (ERPTData *)(sample.samplerData);
 	vector<Contribution> &newContributions(sample.contributions);
-	float newLY = 0.f;
-	for(u_int i = 0; i < newContributions.size(); ++i) {
-		const float ly = newContributions[i].color.Y();
-		if (ly > 0.f && !isinf(ly))
-			newLY += ly;
-		else
-			newContributions[i].color = XYZColor(0.f);
-	}
-
-	sample.contribBuffer->AddSampleCount(1.f);
-
+	float newLY = 0.0f;
+	for(u_int i = 0; i < newContributions.size(); ++i)
+		newLY += newContributions[i].color.Y();
 	if (data->mutation == 0U || data->mutation == ~0U) {
 		if (data->weight > 0.f) {
 			// Add accumulated contribution of previous reference sample
@@ -208,6 +200,7 @@ void ERPTSampler::AddSample(const Sample &sample)
 				newContributions.clear();
 				return;
 			}
+			sample.contribBuffer->AddSampleCount(1.f);
 			++(data->sampleCount);
 			data->totalLY += newLY;
 			const float meanIntensity = data->totalLY > 0. ? static_cast<float>(data->totalLY / data->sampleCount) : 1.f;

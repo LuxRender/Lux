@@ -241,7 +241,7 @@ u_int PathIntegrator::Li(const Scene &scene, const Sample &sample) const
 
 PathState::PathState(const Scene &scene, ContributionBuffer *contribBuffer, RandomGenerator *rng) :
 	sample(scene.surfaceIntegrator, scene.volumeIntegrator, scene), state(TO_INIT) {
-	sample.samplerData = scene.sampler->InitSampleData(sample);
+	scene.sampler->InitSample(&sample);
 	sample.contribBuffer = contribBuffer;
 	sample.camera = scene.camera->Clone();
 	sample.realTime = 0.f;

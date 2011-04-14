@@ -103,15 +103,9 @@ public:
 	// Sampler Interface
 	virtual ~Sampler() {}
 	Sampler(int xstart, int xend, int ystart, int yend, u_int spp);
-	virtual void *InitSampleData(const Sample &sample) const = 0;
-	bool GetNextSample(Sample *sample) {
-		return GetNextSample(sample, sample->samplerData);
-	}
-	virtual bool GetNextSample(Sample *sample, void *samplerData) = 0;
-	float *GetLazyValues(const Sample &sample, u_int num, u_int pos) {
-		return GetLazyValues(sample, sample.samplerData, num, pos);
-	}
-	virtual float *GetLazyValues(const Sample &sample, void *samplerData, u_int num, u_int pos);
+	virtual void InitSample(Sample *sample) const = 0;
+	virtual bool GetNextSample(Sample *sample) = 0;
+	virtual float *GetLazyValues(const Sample &sample, u_int num, u_int pos);
 	virtual u_int GetTotalSamplePos() = 0;
 	u_int TotalSamples() const {
 		return samplesPerPixel * static_cast<u_int>((xPixelEnd - xPixelStart) * (yPixelEnd - yPixelStart));
