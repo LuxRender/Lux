@@ -208,6 +208,7 @@ private:
 	float displacementMapOffset;
 
 	bool hasUV, displacementMapNormalSmooth, displacementMapSharpBoundary;
+	bool normalSplit;
 
 	// Lotus - a pointer to the refined mesh to avoid double refinement or deletion
 	mutable boost::shared_ptr<Shape> refinedShape;
