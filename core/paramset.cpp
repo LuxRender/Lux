@@ -370,6 +370,8 @@ ParamSet::ParamSet(u_int n, const char * pluginName, const char * const tokens[]
 			AddFloat(s, (float*)(params[i]));
 		if (s == "filmdistance")
 			AddFloat(s, (float*)(params[i]));
+		if (s == "filterquality")
+			AddFloat(s, (float*)(params[i]));
 		if (s == "focaldistance")
 			AddFloat(s, (float*)(params[i]));
 		if (s == "fov")
@@ -610,6 +612,8 @@ ParamSet::ParamSet(u_int n, const char * pluginName, const char * const tokens[]
 			AddInt(s, (int*)(params[i]));
 		if (s == "finalgathersamples")
 			AddInt(s, (int*)(params[i]));
+		if (s == "flmwriteinterval")
+			AddInt(s, (int*)(params[i]));
 		if (s == "glossyreflectdepth")
 			AddInt(s, (int*)(params[i]));
 		if (s == "glossyreflectsamples")
@@ -666,6 +670,8 @@ ParamSet::ParamSet(u_int n, const char * pluginName, const char * const tokens[]
 		if (s == "nz")
 			AddInt(s, (int*)(params[i]));
 		if (s == "octaves")
+			AddInt(s, (int*)(params[i]));
+		if (s == "outlierrejection_k")
 			AddInt(s, (int*)(params[i]));
 		if (s == "pixelsamples")
 			AddInt(s, (int*)(params[i]));
@@ -787,6 +793,8 @@ ParamSet::ParamSet(u_int n, const char * pluginName, const char * const tokens[]
 			AddBool(s, (bool*)(params[i]));
 		if (s == "write_exr_halftype")
 			AddBool(s, (bool*)(params[i]));
+		if (s == "write_exr_straightcolors")
+			AddBool(s, (bool*)(params[i]));
 		if (s == "write_png")
 			AddBool(s, (bool*)(params[i]));
 		if (s == "write_png_16bit")
@@ -810,6 +818,8 @@ ParamSet::ParamSet(u_int n, const char * pluginName, const char * const tokens[]
 		if (s == "acceltype")
 			AddString(s, new string(params[i]));
 		if (s == "basesampler")
+			AddString(s, new string(params[i]));
+		if (s == "cameraresponse")
 			AddString(s, new string(params[i]));
 		if (s == "configfile")
 			AddString(s, new string(params[i]));
@@ -886,6 +896,8 @@ ParamSet::ParamSet(u_int n, const char * pluginName, const char * const tokens[]
 		if (s == "write_tga_channels")
 			AddString(s, new string(params[i]));
 		if (s == "write_tga_zbuf_normalization")
+			AddString(s, new string(params[i]));
+		if (s == "coordinates")
 			AddString(s, new string(params[i]));
 
 		//point parameters
@@ -1013,8 +1025,8 @@ ParamSet::ParamSet(u_int n, const char * pluginName, const char * const tokens[]
 		if (s == "v11")
 			AddRGBColor(s, new RGBColor((float*)params[i]));
 		if (s == "value")
-			AddRGBColor(s, new RGBColor((float*)params[i]));
-		
+			AddRGBColor(s, new RGBColor((float*)params[i]));	
+
 		//unknown parameter
 		/*
 		else
