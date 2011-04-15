@@ -75,6 +75,7 @@ bool VolumeIntegrator::Intersect(const Scene &scene, const Sample &sample,
 {
 	const bool hit = scene.Intersect(rayHit, isect);
 	if (hit) {
+		ray.maxt = rayHit.t;
 		// Proper volume setting is still required for eg glass2
 		if (Dot(ray.d, isect->dg.nn) > 0.f) {
 			if (!volume)
@@ -153,6 +154,7 @@ int VolumeIntegrator::Connect(const Scene &scene, const Sample &sample,
 	const Ray &ray, const luxrays::RayHit &rayHit,
 	SWCSpectrum *f, float *pdf, float *pdfR) const
 {
+	const float maxt = ray.maxt;
 	BSDF *bsdf;
 	Intersection isect;
 	float spdf, spdfBack;
@@ -178,6 +180,7 @@ int VolumeIntegrator::Connect(const Scene &scene, const Sample &sample,
 		*pdfR *= bsdf->Pdf(sample.swl, -d, d) * spdf;
 
 	ray.mint = rayHit.t + MachineEpsilon::E(rayHit.t);
+	ray.maxt = maxt;
 	return 0;
 }
 

@@ -69,7 +69,7 @@ void export_PyRenderServer()
 		.value("STOPPED", RenderServer::STOPPED)
 		;
 	
-	class_<RenderServer>(
+	class_<RenderServer, boost::noncopyable>(
 		"RenderServer",
 		ds_pylux_RenderServer,
 		init<int, optional<int,bool> >(args("RenderServer", "threadCount", "tcpPort", "writeFlmFile"))

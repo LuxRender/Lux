@@ -74,6 +74,7 @@ private:
 	PathStateType state;
 	bool specularBounce, specular, scattered;
 	float bouncePdf;
+	Point lastBounce;
 };
 
 // PathIntegrator Declarations
@@ -83,9 +84,11 @@ public:
 	enum RRStrategy { RR_EFFICIENCY, RR_PROBABILITY, RR_NONE };
 
 	// PathIntegrator Public Methods
-	PathIntegrator(RRStrategy rst, u_int md, float cp, bool ie)  :
+	PathIntegrator(RRStrategy rst, u_int md, float cp, bool ie) : SurfaceIntegrator(),
 		hints(), rrStrategy(rst), maxDepth(md), continueProbability(cp),
-		sampleOffset(0), bufferId(0), includeEnvironment(ie) { }
+		sampleOffset(0), bufferId(0), includeEnvironment(ie) { 
+		AddStringConstant(*this, "name", "Name of current surface integrator", "path");
+	}
 
 	virtual u_int Li(const Scene &scene, const Sample &sample) const;
 	virtual void RequestSamples(Sample *sample, const Scene &scene);

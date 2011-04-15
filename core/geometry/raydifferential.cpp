@@ -36,6 +36,7 @@ DifferentialGeometry::DifferentialGeometry(const Point &P,
 	u = uu;
 	v = vv;
 	handle = pr;
+	ihandle = NULL;
 	scattered = false;
 }
 // Dade - added this costructor as a little optimization if the
@@ -50,5 +51,6 @@ DifferentialGeometry::DifferentialGeometry(const Point &P,
 	u = uu;
 	v = vv;
 	handle = pr;
+	ihandle = NULL;
 	scattered = false;
 }

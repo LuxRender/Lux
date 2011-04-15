@@ -127,6 +127,7 @@ bool EmissionIntegrator::Intersect(const Scene &scene, const Sample &sample,
 {
 	const bool hit = scene.Intersect(rayHit, isect);
 	if (hit) {
+		ray.maxt = rayHit.t;
 		if (Dot(ray.d, isect->dg.nn) > 0.f) {
 			if (!volume)
 				volume = isect->interior;

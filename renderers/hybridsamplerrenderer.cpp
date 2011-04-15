@@ -488,8 +488,9 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 			std::setiosflags(std::ios::fixed) << std::setprecision(2) <<
 			luxrays::WallClockTime() - t0 << " secs";
 
-	size_t currentGenerateIndex = 0;
-	size_t currentNextIndex = 0;
+	size_t currentStartIndex = 0;
+	size_t currentGenerateIndex;
+	size_t currentNextIndex;
 	bool renderIsOver = false;
 	while (!renderIsOver) {
 		while (renderer->state == PAUSE) {
@@ -501,13 +502,17 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 		if ((renderer->state == TERMINATE) || boost::this_thread::interruption_requested())
 			break;
 
+		currentGenerateIndex = currentStartIndex;
 		while (rayBuffer->LeftSpace() > 0) {
 			if (!scene.surfaceIntegrator->GenerateRays(scene, integratorState[currentGenerateIndex], rayBuffer)) {
 				// The RayBuffer is full
 				break;
 			}
 
-			currentGenerateIndex = (currentGenerateIndex + 1) % integratorState.size();
+			if (++currentGenerateIndex >= integratorState.size())
+				currentGenerateIndex -= integratorState.size();
+			if (currentGenerateIndex == currentStartIndex)
+				break;
 		}
 
 		// Trace the RayBuffer
@@ -517,6 +522,7 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 		// Advance the next step
 		u_int nrContribs = 0;
 		u_int nrSamples = 0;
+		currentNextIndex = currentStartIndex;
 		do {
 			u_int count;
 			if (scene.surfaceIntegrator->NextState(scene, integratorState[currentNextIndex], rayBuffer, &count)) {
@@ -549,7 +555,8 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 			}
 
 			nrContribs += count;
-			currentNextIndex = (currentNextIndex + 1) % integratorState.size();
+			if (++currentNextIndex >= integratorState.size())
+				currentNextIndex -= integratorState.size();
 		} while (currentNextIndex != currentGenerateIndex);
 
 		// Jeanphi - Hijack statistics until volume integrator revamp
@@ -561,6 +568,7 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 		}
 
 		rayBuffer->Reset();
+		currentStartIndex = currentGenerateIndex;
 	}
 
 	scene.camera->film->contribPool->End(contribBuffer);

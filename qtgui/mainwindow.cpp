@@ -158,6 +158,8 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	connect(ui->action_saveFLM, SIGNAL(triggered()), this, SLOT(saveFLM()));
 	connect(ui->action_exitAppSave, SIGNAL(triggered()), this, SLOT(exitAppSave()));
 	connect(ui->action_exitApp, SIGNAL(triggered()), this, SLOT(exitApp()));
+	connect(ui->action_Save_Panel_Settings, SIGNAL(triggered()), this, SLOT(SavePanelSettings()));
+	connect(ui->action_Load_Panel_Settings, SIGNAL(triggered()), this, SLOT(LoadPanelSettings()));
 	
 	// Export to Image sub-menu slots
 	connect(ui->action_outputTonemapped, SIGNAL(triggered()), this, SLOT(outputTonemapped()));
@@ -173,6 +175,7 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	connect(ui->button_pause, SIGNAL(clicked()), this, SLOT(pauseRender()));
 	connect(ui->action_stopRender, SIGNAL(triggered()), this, SLOT(stopRender()));
 	connect(ui->button_stop, SIGNAL(clicked()), this, SLOT(stopRender()));
+	connect(ui->action_endRender, SIGNAL(triggered()), this, SLOT(endRender()));
 	
 	// View menu slots
 	connect(ui->action_copyLog, SIGNAL(triggered()), this, SLOT(copyLog()));
@@ -198,7 +201,9 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	panes[3] = new PaneWidget(ui->panesAreaContents, "HDR Histogram", ":/icons/histogramicon.png");
 	panes[4] = new PaneWidget(ui->panesAreaContents, "Lens Effects", ":/icons/lenseffectsicon.png", true);
 	panes[5] = new PaneWidget(ui->panesAreaContents, "Noise Reduction", ":/icons/noisereductionicon.png", true);
-	
+
+	advpanes[0] = new PaneWidget(ui->advancedAreaContents, "Scene information", ":/icons/logtabicon.png");
+
 #if defined(__APPLE__)
 	ui->outputTabs->setFont(QFont  ("Lucida Grande", 11));
 #endif
@@ -243,7 +248,17 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	
 	ui->panesLayout->setAlignment(Qt::AlignTop);
 	ui->panesLayout->addItem(new QSpacerItem( 20, 20, QSizePolicy::Minimum, QSizePolicy::Expanding));
+
+	// Advanced info
+	advancedinfowidget = new AdvancedInfoWidget(advpanes[0]);
+	advpanes[0]->setWidget(advancedinfowidget);
+	ui->advancedLayout->addWidget(advpanes[0]);
+	advpanes[0]->expand();
+	//connect(noisereductionwidget, SIGNAL(valuesChanged()), this, SLOT(toneMapParamsChanged()));
 	
+	ui->advancedLayout->setAlignment(Qt::AlignTop);
+	ui->advancedLayout->addItem(new QSpacerItem( 20, 20, QSizePolicy::Minimum, QSizePolicy::Expanding));
+
 	ui->lightGroupsLayout->setAlignment(Qt::AlignTop);
 	spacer = new QSpacerItem( 20, 20, QSizePolicy::Expanding, QSizePolicy::Expanding);
 
@@ -423,7 +438,12 @@ void MainWindow::ReadSettings()
 	settings.beginGroup("MainWindow");
 	restoreGeometry(settings.value("geometry").toByteArray());
 	ui->splitter->restoreState(settings.value("splittersizes").toByteArray());
-	m_recentFiles = settings.value("recentFiles").toStringList();
+	{
+		QStringList recentFilesList = settings.value("recentFiles").toStringList();
+		QStringListIterator i(recentFilesList);
+		while (i.hasNext())
+			m_recentFiles.append(QFileInfo(i.next()));		
+	}
 	m_lastOpendir = settings.value("lastOpenDir","").toString();
 	ui->action_overlayStats->setChecked(settings.value("overlayStatistics").toBool());
 	ui->action_HDR_tonemapped->setChecked(settings.value("tonemappedHDR").toBool());
@@ -441,7 +461,13 @@ void MainWindow::WriteSettings()
 	settings.beginGroup("MainWindow");
 	settings.setValue("geometry", saveGeometry());
 	settings.setValue("splittersizes", ui->splitter->saveState());
-	settings.setValue("recentFiles", m_recentFiles);
+	{
+		QListIterator<QFileInfo> i(m_recentFiles);
+		QStringList recentFilesList;
+		while (i.hasNext())
+			recentFilesList.append(i.next().absoluteFilePath());
+		settings.setValue("recentFiles", recentFilesList);
+	}
 	settings.setValue("lastOpenDir", m_lastOpendir);
 	settings.setValue("overlayStatistics", ui->action_overlayStats->isChecked());
 	settings.setValue("tonemappedHDR", ui->action_HDR_tonemapped->isChecked());
@@ -731,12 +757,29 @@ void MainWindow::stopRender()
 		if (!m_statsTimer->isActive())
 			m_statsTimer->start(1000);
 
-		// Make sure lux core stops
+		// Make sure lux core halts
+		int haltspp = luxGetIntAttribute("film", "haltSamplesPerPixel");
+		luxSetHaltSamplesPerPixel(haltspp, true, true);
+		
+		statusMessage->setText(tr("Waiting for render threads to stop."));
+		changeRenderState(STOPPING);
+	}
+}
+
+void MainWindow::endRender()
+{
+	if ((m_guiRenderState == RENDERING || m_guiRenderState == PAUSED) && m_guiRenderState != TONEMAPPING) {
+		m_renderTimer->stop();
+		// Leave stats timer running so we know when threads stopped
+		if (!m_statsTimer->isActive())
+			m_statsTimer->start(1000);
+
+		// Make sure lux core shuts down
 		int haltspp = luxGetIntAttribute("film", "haltSamplesPerPixel");
 		luxSetHaltSamplesPerPixel(haltspp, true, false);
 		
 		statusMessage->setText(tr("Waiting for render threads to stop."));
-		changeRenderState(STOPPING);
+		changeRenderState(ENDING);
 	}
 }
 
@@ -1358,8 +1401,8 @@ void MainWindow::setCurrentFile(const QString& filename)
 
 			m_lastOpendir = info.absolutePath();
 			if (filename.endsWith(".lxs")) {
-				m_recentFiles.removeAll(m_CurrentFile);
-				m_recentFiles.prepend(m_CurrentFile);
+				m_recentFiles.removeAll(info);
+				m_recentFiles.prepend(info);
 			
 				updateRecentFileActions(); // only parseble files .lxs to recentlist
 			}
@@ -1371,9 +1414,10 @@ void MainWindow::setCurrentFile(const QString& filename)
 
 void MainWindow::updateRecentFileActions()
 {
-	QMutableStringListIterator i(m_recentFiles);
+	QMutableListIterator<QFileInfo> i(m_recentFiles);
 	while (i.hasNext()) {
-		if (!QFile::exists(i.next())) {
+		i.peekNext().refresh();
+		if (!i.next().exists()) {
 			i.remove();
 		}
 	}
@@ -1381,11 +1425,12 @@ void MainWindow::updateRecentFileActions()
 	for (int j = 0; j < MaxRecentFiles; ++j) {
 		if (j < m_recentFiles.count()) {
 			QFontMetrics fm(m_recentFileActions[j]->font());
+			QString filename = m_recentFiles[j].absoluteFilePath();
 
-			QString text = tr("&%1 %2").arg(j + 1).arg(QDir::toNativeSeparators(pathElidedText(fm, m_recentFiles[j], 250, 0)));
+			QString text = tr("&%1 %2").arg(j + 1).arg(QDir::toNativeSeparators(pathElidedText(fm, filename, 250, 0)));
 
 			m_recentFileActions[j]->setText(text);
-			m_recentFileActions[j]->setData(m_recentFiles[j]);
+			m_recentFileActions[j]->setData(filename);
 			m_recentFileActions[j]->setVisible(true);			
 		} else
 			m_recentFileActions[j]->setVisible(false);
@@ -1424,6 +1469,7 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			ui->action_pauseRender->setEnabled (false);
 			ui->button_stop->setEnabled (false);
 			ui->action_stopRender->setEnabled (false);
+			ui->action_endRender->setEnabled (false);
 			ui->button_copyToClipboard->setEnabled (false);
 			ui->action_outputTonemapped->setEnabled (false);
 			ui->action_outputHDR->setEnabled (false);
@@ -1442,6 +1488,7 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			ui->action_pauseRender->setEnabled(false);
 			ui->button_stop->setEnabled (false);
 			ui->action_stopRender->setEnabled(false);
+			ui->action_endRender->setEnabled (false);
 			ui->button_copyToClipboard->setEnabled (false);
 			ui->action_outputTonemapped->setEnabled (false);
 			ui->action_outputHDR->setEnabled (false);
@@ -1460,6 +1507,7 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			ui->action_pauseRender->setEnabled (true);
 			ui->button_stop->setEnabled (true);
 			ui->action_stopRender->setEnabled (true);
+			ui->action_endRender->setEnabled (true);
 			ui->button_copyToClipboard->setEnabled (true);
 			ui->action_outputTonemapped->setEnabled (true);
 			ui->action_outputHDR->setEnabled (true);
@@ -1476,6 +1524,7 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			ui->action_pauseRender->setEnabled (false);
 			ui->button_stop->setEnabled (false);
 			ui->action_stopRender->setEnabled (false);
+			ui->action_endRender->setEnabled (false);
 			ui->button_copyToClipboard->setEnabled (true);
 			ui->action_outputTonemapped->setEnabled (true);
 			ui->action_outputHDR->setEnabled (true);
@@ -1493,6 +1542,7 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			ui->action_pauseRender->setEnabled (false);
 			ui->button_stop->setEnabled (false);
 			ui->action_stopRender->setEnabled (false);
+			ui->action_endRender->setEnabled (false);
 			ui->button_copyToClipboard->setEnabled (true);
 			ui->action_outputTonemapped->setEnabled (true);
 			ui->action_outputHDR->setEnabled (true);
@@ -1502,12 +1552,13 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			break;
 		case STOPPED:
 			// Rendering is stopped.
-			ui->button_resume->setEnabled (false);
-			ui->action_resumeRender->setEnabled (false);
+			ui->button_resume->setEnabled (true);
+			ui->action_resumeRender->setEnabled (true);
 			ui->button_pause->setEnabled (false);
 			ui->action_pauseRender->setEnabled (false);
 			ui->button_stop->setEnabled (false);
 			ui->action_stopRender->setEnabled (false);
+			ui->action_endRender->setEnabled (false);
 			ui->button_copyToClipboard->setEnabled (true);
 			ui->action_outputTonemapped->setEnabled (true);
 			ui->action_outputHDR->setEnabled (true);
@@ -1516,14 +1567,48 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			ui->action_batchProcess->setEnabled (true);
 			activityMessage->setText("Render is stopped");
 			break;
+		case ENDING:
+			// Rendering is ending.
+			ui->button_resume->setEnabled (false);
+			ui->action_resumeRender->setEnabled (false);
+			ui->button_pause->setEnabled (false);
+			ui->action_pauseRender->setEnabled (false);
+			ui->button_stop->setEnabled (false);
+			ui->action_stopRender->setEnabled (false);
+			ui->action_endRender->setEnabled (false);
+			ui->button_copyToClipboard->setEnabled (true);
+			ui->action_outputTonemapped->setEnabled (true);
+			ui->action_outputHDR->setEnabled (true);
+			ui->action_outputBufferGroupsTonemapped->setEnabled (true);
+			ui->action_outputBufferGroupsHDR->setEnabled (true);
+			ui->action_batchProcess->setEnabled (false);
+			break;
+		case ENDED:
+			// Rendering has ended.
+			ui->button_resume->setEnabled (false);
+			ui->action_resumeRender->setEnabled (false);
+			ui->button_pause->setEnabled (false);
+			ui->action_pauseRender->setEnabled (false);
+			ui->button_stop->setEnabled (false);
+			ui->action_stopRender->setEnabled (false);
+			ui->action_endRender->setEnabled (false);
+			ui->button_copyToClipboard->setEnabled (true);
+			ui->action_outputTonemapped->setEnabled (true);
+			ui->action_outputHDR->setEnabled (true);
+			ui->action_outputBufferGroupsTonemapped->setEnabled (true);
+			ui->action_outputBufferGroupsHDR->setEnabled (true);
+			ui->action_batchProcess->setEnabled (true);
+			activityMessage->setText("Render is over");
+			break;
 		case PAUSED:
 			// Rendering is paused.
 			ui->button_resume->setEnabled (true);
 			ui->action_resumeRender->setEnabled (true);
 			ui->button_pause->setEnabled (false);
 			ui->action_pauseRender->setEnabled (false);
-			ui->button_stop->setEnabled (true);
-			ui->action_stopRender->setEnabled (true);
+			ui->button_stop->setEnabled (false);
+			ui->action_stopRender->setEnabled (false);
+			ui->action_endRender->setEnabled (false);
 			ui->button_copyToClipboard->setEnabled (true);
 			ui->action_outputTonemapped->setEnabled (true);
 			ui->action_outputHDR->setEnabled (true);
@@ -1596,7 +1681,9 @@ bool MainWindow::event (QEvent *event)
 	}
 	else if (eventtype == EVT_LUX_SAVEDFLM) {
 		m_saveTimer->stop();
-
+		statusMessage->setText("");
+		// reset progressindicator
+		indicateActivity(false);		
 		if (m_flmsaveThread)
 			m_flmsaveThread->join();
 		delete m_flmsaveThread;
@@ -1766,7 +1853,8 @@ void MainWindow::statsTimeout()
 {
 	if(luxStatistics("sceneIsReady") || luxStatistics("filmIsReady")) {
 		updateStatistics();
-		if ((m_guiRenderState == STOPPING || m_guiRenderState == FINISHED) && luxStatistics("samplesSec") == 0.0) {
+		if ((m_guiRenderState == STOPPING || m_guiRenderState == ENDING || m_guiRenderState == FINISHED) 
+			&& luxStatistics("samplesSec") == 0.0) {
 			// Render threads stopped, do one last render update
 			LOG(LUX_INFO,LUX_NOERROR)<< tr("GUI: Updating framebuffer...").toLatin1().data();
 			statusMessage->setText(tr("Tonemapping..."));
@@ -1775,12 +1863,15 @@ void MainWindow::statsTimeout()
 			delete m_updateThread;
 			m_updateThread = new boost::thread(boost::bind(&MainWindow::updateThread, this));
 			m_statsTimer->stop();
-			luxPause();
+			//luxPause();
 			if (m_guiRenderState == FINISHED)
 				LOG(LUX_INFO,LUX_NOERROR)<< tr("Rendering finished.").toLatin1().data();
-			else {
+			else if (m_guiRenderState == STOPPING) {
 				LOG(LUX_INFO,LUX_NOERROR)<< tr("Rendering stopped by user.").toLatin1().data();
 				changeRenderState(STOPPED);
+			} else { //if (m_guiRenderState == ENDING) {
+				LOG(LUX_INFO,LUX_NOERROR)<< tr("Rendering ended by user.").toLatin1().data();
+				changeRenderState(ENDED);
 			}
 		}
 		
@@ -1900,6 +1991,7 @@ void MainWindow::updateTonemapWidgetValues()
 	colorspacewidget->updateWidgetValues();
 	gammawidget->updateWidgetValues();
 	noisereductionwidget->updateWidgetValues();
+	advancedinfowidget->updateWidgetValues();
 
 	// Histogram
 	histogramwidget->SetEnabled(true);
@@ -2308,3 +2400,43 @@ void MainWindow::ClearRenderingQueue()
 	ui->table_queue->clearContents();
 	ui->table_queue->setColumnHidden(2, true);
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// Save and Load panel settings: Light groups, tonemapping, CRF.
+
+void MainWindow::SavePanelSettings()
+{
+	QString Settings_file = QFileDialog::getSaveFileName(this, tr("Choose a Luxrender panel settings file to save"), m_lastOpendir, tr("Luxrender panel settings (*.ini *.txt)"));
+    
+	if(Settings_file.isEmpty()) return;
+
+	QFileInfo info(Settings_file);
+	m_lastOpendir = info.absolutePath();
+
+	tonemapwidget->SaveSettings( Settings_file );
+	gammawidget->SaveSettings( Settings_file );
+
+	for (QVector<PaneWidget*>::iterator it = m_LightGroupPanes.begin(); it != m_LightGroupPanes.end(); it++) 
+	{
+		((LightGroupWidget *)(*it)->getWidget())->SaveSettings( Settings_file );
+	}
+}
+
+void MainWindow::LoadPanelSettings()
+{
+	QString Settings_file = QFileDialog::getOpenFileName(this, tr("Choose a Luxrender panel settings file to open"), m_lastOpendir, tr("Luxrender panel settings (*.ini *.txt)"));
+    
+	if(Settings_file.isEmpty()) return;
+
+	QFileInfo info(Settings_file);
+	m_lastOpendir = info.absolutePath();
+
+	tonemapwidget->LoadSettings( Settings_file );
+	gammawidget->LoadSettings( Settings_file );
+
+	for (QVector<PaneWidget*>::iterator it = m_LightGroupPanes.begin(); it != m_LightGroupPanes.end(); it++) 
+	{
+		((LightGroupWidget *)(*it)->getWidget())->LoadSettings( Settings_file );
+	}
+}
+

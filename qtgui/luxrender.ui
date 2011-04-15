@@ -320,7 +320,7 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>362</width>
+                  <width>376</width>
                   <height>388</height>
                  </rect>
                 </property>
@@ -376,7 +376,7 @@
             </attribute>
             <layout class="QVBoxLayout" name="verticalLayout_15" stretch="0">
              <property name="spacing">
-              <number>-1</number>
+              <number>6</number>
              </property>
              <property name="leftMargin">
               <number>6</number>
@@ -403,8 +403,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>362</width>
-                  <height>422</height>
+                  <width>100</width>
+                  <height>30</height>
                  </rect>
                 </property>
                 <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -422,6 +422,85 @@
                  </property>
                  <item>
                   <layout class="QVBoxLayout" name="lightGroupsLayout">
+                   <property name="rightMargin">
+                    <number>0</number>
+                   </property>
+                  </layout>
+                 </item>
+                </layout>
+               </widget>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+           <widget class="QWidget" name="tab_advanced">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <attribute name="icon">
+             <iconset resource="icons.qrc">
+              <normaloff>:/icons/rendertabicon.png</normaloff>:/icons/rendertabicon.png</iconset>
+            </attribute>
+            <attribute name="title">
+             <string>Advanced</string>
+            </attribute>
+            <layout class="QVBoxLayout" name="verticalLayout_18" stretch="0">
+             <property name="spacing">
+              <number>6</number>
+             </property>
+             <property name="leftMargin">
+              <number>6</number>
+             </property>
+             <property name="topMargin">
+              <number>4</number>
+             </property>
+             <property name="rightMargin">
+              <number>6</number>
+             </property>
+             <property name="bottomMargin">
+              <number>4</number>
+             </property>
+             <item>
+              <widget class="QScrollArea" name="advancedArea">
+               <property name="frameShape">
+                <enum>QFrame::NoFrame</enum>
+               </property>
+               <property name="widgetResizable">
+                <bool>true</bool>
+               </property>
+               <widget class="QWidget" name="advancedAreaContents">
+                <property name="geometry">
+                 <rect>
+                  <x>0</x>
+                  <y>0</y>
+                  <width>100</width>
+                  <height>30</height>
+                 </rect>
+                </property>
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_4">
+                 <property name="leftMargin">
+                  <number>4</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>4</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>4</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>0</number>
+                 </property>
+                 <item>
+                  <layout class="QVBoxLayout" name="advancedLayout">
                    <property name="rightMargin">
                     <number>0</number>
                    </property>
@@ -1032,7 +1111,7 @@
      <x>0</x>
      <y>0</y>
      <width>840</width>
-     <height>22</height>
+     <height>23</height>
     </rect>
    </property>
    <property name="nativeMenuBar">
@@ -1045,6 +1124,7 @@
     <addaction name="action_resumeRender"/>
     <addaction name="action_pauseRender"/>
     <addaction name="action_stopRender"/>
+    <addaction name="action_endRender"/>
    </widget>
    <widget class="QMenu" name="menu_view">
     <property name="title">
@@ -1100,6 +1180,9 @@
     <addaction name="action_resumeFLM"/>
     <addaction name="action_loadFLM"/>
     <addaction name="action_saveFLM"/>
+    <addaction name="separator"/>
+    <addaction name="action_Save_Panel_Settings"/>
+    <addaction name="action_Load_Panel_Settings"/>
     <addaction name="separator"/>
     <addaction name="menuExport_to_Image"/>
     <addaction name="separator"/>
@@ -1199,6 +1282,15 @@
     <string>Ctrl+Alt+S</string>
    </property>
   </action>
+  <action name="action_endRender">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/icons/stopicon.png</normaloff>:/icons/stopicon.png</iconset>
+   </property>
+   <property name="text">
+    <string>End rendering</string>
+   </property>
+  </action>
   <action name="action_viewToolbar">
    <property name="checkable">
     <bool>true</bool>
@@ -1268,6 +1360,9 @@
    </property>
   </action>
   <action name="action_overlayStatsView">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="text">
     <string>Overlay statistics</string>
    </property>
@@ -1276,9 +1371,6 @@
    </property>
    <property name="shortcutContext">
     <enum>Qt::ApplicationShortcut</enum>
-   </property>
-   <property name="checkable">
-    <bool>true</bool>
    </property>
   </action>
   <action name="action_fullScreen">
@@ -1405,11 +1497,11 @@
    <property name="checkable">
     <bool>true</bool>
    </property>
-   <property name="visible">
-    <bool>false</bool>
-   </property>
    <property name="text">
     <string>Output HDR Alpha Channel</string>
+   </property>
+   <property name="visible">
+    <bool>false</bool>
    </property>
   </action>
   <action name="action_overlayStats">
@@ -1436,6 +1528,28 @@
   <action name="action_bugtracker">
    <property name="text">
     <string>Bug tracker</string>
+   </property>
+  </action>
+  <action name="action_Save_Panel_Settings">
+   <property name="text">
+    <string>Save Panel Settings...</string>
+   </property>
+   <property name="toolTip">
+    <string>Save Settings for the tonemapping, lightgroups and gamma panels to a .ini file</string>
+   </property>
+   <property name="statusTip">
+    <string>Save Settings for the tonemapping, lightgroups and gamma panels to a .ini file</string>
+   </property>
+  </action>
+  <action name="action_Load_Panel_Settings">
+   <property name="text">
+    <string>Load Panel Settings...</string>
+   </property>
+   <property name="toolTip">
+    <string>Load Settings for the tonemapping, lightgroups and gamma panels from a .ini file</string>
+   </property>
+   <property name="statusTip">
+    <string>Load Settings for the tonemapping, lightgroups and gamma panels from a .ini file</string>
    </property>
   </action>
  </widget>

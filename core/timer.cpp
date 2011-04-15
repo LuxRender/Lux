@@ -22,20 +22,17 @@
 
 // timer.cpp*
 #include "timer.h"
-#include "error.h"
 // Timer Method Definitions
 void Timer::Start() {
-	if (!running ) {
+	if (!running) {
 		time0 = boost::posix_time::microsec_clock::universal_time();
 		running = true;
 	}
 }
 
 void Timer::Stop() {
-	if (running) {
-		elapsed = Time();
-		running = false;
-	}
+	elapsed = Time();
+	running = false;
 }
 
 void Timer::Reset() {

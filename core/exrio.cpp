@@ -26,6 +26,7 @@
 #include "color.h"
 #include "spectrum.h"
 #include "imagereader.h"
+#include "texturecolor.h"
 #include <algorithm>
 
 #include <FreeImage.h>

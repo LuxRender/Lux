@@ -45,6 +45,7 @@
 #include <boost/iostreams/filter/zlib.hpp>
 #include <boost/iostreams/filter/bzip2.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
+#include <boost/iostreams/restrict.hpp>
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
 #include <boost/thread/thread.hpp>
@@ -62,7 +63,7 @@ using boost::asio::ip::tcp;
 //------------------------------------------------------------------------------
 
 RenderServer::RenderServer(int tCount, int port, bool wFlmFile) : threadCount(tCount),
-	tcpPort(port), writeFlmFile(wFlmFile), state(UNSTARTED), serverThread(NULL)
+	tcpPort(port), writeFlmFile(wFlmFile), state(UNSTARTED), serverThread(NULL), errorMessages()
 {
 }
 
@@ -115,6 +116,7 @@ void RenderServer::stop()
 }
 
 void RenderServer::errorHandler(int code, int severity, const char *msg) {
+	boost::mutex::scoped_lock(errorMessageLock);
 	errorMessages.push_back(ErrorMessage(code, severity, msg));
 }
 
@@ -177,17 +179,10 @@ static void processCommandParams(bool isLittleEndian,
 		// Read the size of the compressed chunk
 		uint32_t size = osReadLittleEndianUInt(isLittleEndian, stream);
 
-		// Read the compressed chunk
-		char *zbuf = new char[size];
-		stream.read(zbuf, size);
-		stringstream zos(stringstream::in | stringstream::out  | stringstream::binary);
-		zos.write(zbuf, size);
-		delete zbuf;
-
 		// Uncompress the chunk
 		filtering_stream<input> in;
 		in.push(gzip_decompressor());
-		in.push(zos);
+		in.push(boost::iostreams::restrict(stream, 0, size));
 		boost::iostreams::copy(in, uzos);
 	}
 
@@ -268,20 +263,17 @@ static void processFile(const string &fileParam, ParamSet &params, vector<string
 
 		// Dade - fix for bug 514: avoid to create the file if it is empty
 		if (len > 0) {
-			// Allocate a buffer to read all the file
-			char *buf = new char[len];
-			stream.read(buf, len);
-
 			ofstream out(file.c_str(), ios::out | ios::binary);
-			out.write(buf, len);
+
+			std::streamsize written = boost::iostreams::copy(
+				boost::iostreams::restrict(stream, 0, len), out);
+
 			out.flush();
 			tmpFileList.push_back(file);
 
-			if (out.fail()) {
+			if (out.fail() || written != len) {
 				LOG( LUX_ERROR,LUX_SYSTEM) << "There was an error while writing file '" << file << "'";
 			}
-
-			delete buf;
 		}
 	}
 }
@@ -701,6 +693,8 @@ void cmd_luxRenderer(bool isLittleEndian, NetworkRenderServerThread *serverThrea
 // Dade - TODO: support signals
 void NetworkRenderServerThread::run(int ipversion, NetworkRenderServerThread *serverThread)
 {
+	boost::mutex::scoped_lock initLock(serverThread->initMutex);
+
 	const int listenPort = serverThread->renderServer->tcpPort;
 	const bool isLittleEndian = osIsLittleEndian();
 
@@ -770,7 +764,7 @@ void NetworkRenderServerThread::run(int ipversion, NetworkRenderServerThread *se
 	#undef INSERT_CMD
 
 	try {
-		bool reuse_addr = true;
+		const bool reuse_addr = true;
 
 		boost::asio::io_service io_service;
 		tcp::endpoint endpoint(ipversion == 4 ? tcp::v4() : tcp::v6(), listenPort);
@@ -783,11 +777,14 @@ void NetworkRenderServerThread::run(int ipversion, NetworkRenderServerThread *se
 			acceptor.set_option(boost::asio::ip::v6_only(true));
 		acceptor.bind(endpoint);
 		acceptor.listen();
-
+		
 		LOG(LUX_INFO,LUX_NOERROR) << "Server listening on " << endpoint;
+		
+		// release init lock
+		initLock.unlock();
 
+		vector<char> buffer(2048);
 		while (serverThread->signal == SIG_NONE) {
-			vector<char> buffer(2048);
 			tcp::iostream stream;
 			stream.rdbuf()->pubsetbuf(&buffer[0], buffer.size());
 			acceptor.accept(*stream.rdbuf());

@@ -45,7 +45,7 @@ LoopSubdiv::LoopSubdiv(const Transform &o2w, bool ro, u_int nfaces,
 {
 	nLevels = nl;
 	hasUV = (uv != NULL);
-	bool normalSplit = normalsplit && n != NULL;
+	normalSplit = normalsplit && n != NULL;
 
 	// Allocate _LoopSubdiv_ vertices and faces
 	SDVertex *verts = new SDVertex[nvertices];
@@ -368,7 +368,11 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 	Normal *Ns = NULL;
 	if (displacementMapNormalSmooth) {
 		// Dade - calculate normals
-		GenerateNormals(v);
+		// FIXME - GenerateNormals should be called in all cases
+		// but the displacement messes the data in some rare cases
+		// when using the normal split option
+		if (!displacementMap || !normalSplit)
+			GenerateNormals(v);
 
 		Ns = new Normal[nverts];
 		for (u_int i = 0; i < nverts; ++i)

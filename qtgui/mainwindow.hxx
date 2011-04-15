@@ -63,6 +63,7 @@
 #include "gammawidget.hxx"
 #include "noisereductionwidget.hxx"
 #include "histogramwidget.hxx"
+#include "advancedinfowidget.hxx"
 
 #define FLOAT_SLIDER_RES 512.f
 
@@ -82,6 +83,8 @@ enum LuxGuiRenderState
 	RENDERING,
 	STOPPING,
 	STOPPED,
+	ENDING,
+	ENDED,
 	PAUSED,
 	FINISHED,
 	TONEMAPPING // tonemapping an FLM file (not really a 'render' state)
@@ -162,7 +165,7 @@ public:
 	bool m_auto_tonemap;
 
 	void loadFile(const QString &fileName);
-	
+
 protected:
 	
 	bool saveCurrentImageHDR(const QString &outFile);
@@ -197,12 +200,17 @@ private:
 
 	PaneWidget *panes[NumPanes];
 
+	enum { NumAdvPanes = 1 };
+
+	PaneWidget *advpanes[NumAdvPanes];
+
 	ToneMapWidget *tonemapwidget;
 	LensEffectsWidget *lenseffectswidget;
 	ColorSpaceWidget *colorspacewidget;
 	GammaWidget *gammawidget;
 	NoiseReductionWidget *noisereductionwidget;
 	HistogramWidget *histogramwidget;
+	AdvancedInfoWidget *advancedinfowidget;
 
 	QVector<PaneWidget*> m_LightGroupPanes;
 
@@ -225,7 +233,7 @@ private:
 	// Directory Handling
 	enum { MaxRecentFiles = 5 };
 	QString m_lastOpendir;
-	QStringList m_recentFiles;
+	QList<QFileInfo> m_recentFiles;
 	QAction *m_recentFileActions[MaxRecentFiles];
 
 	static void LuxGuiErrorHandler(int code, int severity, const char *msg);
@@ -287,6 +295,7 @@ private slots:
 	void resumeRender ();
 	void pauseRender ();
 	void stopRender ();
+	void endRender ();
 	void outputTonemapped ();
 	void outputHDR ();
 	void outputBufferGroupsTonemapped ();
@@ -334,6 +343,10 @@ private slots:
 	void overrideWriteFlmChanged(bool checked);
 
 	void copyToClipboard ();
+
+	void SavePanelSettings();
+	void LoadPanelSettings();
+
 };
 
 #endif // MAINWINDOW_H

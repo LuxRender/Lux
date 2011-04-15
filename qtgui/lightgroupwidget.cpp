@@ -275,6 +275,11 @@ void LightGroupWidget::ResetValuesFromFilm(bool useDefaults)
 		m_LG_scaleBlue = b;
 	}
 
+	SetFromValues();
+}
+
+void LightGroupWidget::SetFromValues()
+{
 	luxSetParameterValue(LUX_FILM, LUX_FILM_LG_ENABLE, m_LG_enable, m_Index);
 	luxSetParameterValue(LUX_FILM, LUX_FILM_LG_SCALE, m_LG_scale, m_Index);
 	luxSetParameterValue(LUX_FILM, LUX_FILM_LG_SCALE_RED, (m_LG_rgb_enabled ? m_LG_scaleRed : 1.0), m_Index);
@@ -295,3 +300,58 @@ void LightGroupWidget::SetWidgetsEnabled(bool enabled)
 	ui->slider_colortemp->setEnabled(enabled && m_LG_temperature_enabled);
 	ui->spinBox_colortemp->setEnabled(enabled && m_LG_temperature_enabled);
 }
+
+////////////////////////////////////////////////////////////////////
+// Save and Load params using .ini files
+
+void LightGroupWidget::SaveSettings( QString fName )
+{
+	QSettings settings( fName, QSettings::IniFormat );
+
+	settings.beginGroup( QString("lightgroup_") + title );
+	if ( settings.status() ) return;
+
+	settings.setValue( "LG_title", title );
+	settings.setValue( "LG_enable", m_LG_enable );
+	settings.setValue( "LG_scale", m_LG_scale );
+	settings.setValue( "LG_temperature_enabled", m_LG_temperature_enabled );
+	settings.setValue( "LG_temperature", m_LG_temperature );
+	settings.setValue( "LG_rgb_enabled", m_LG_rgb_enabled );
+	settings.setValue( "LG_scaleRed", m_LG_scaleRed );
+	settings.setValue( "LG_scaleGreen", m_LG_scaleGreen );
+	settings.setValue( "LG_scaleBlue", m_LG_scaleBlue );
+	settings.setValue( "LG_scaleX", m_LG_scaleX );
+	settings.setValue( "LG_scaleY", m_LG_scaleY );
+
+	settings.endGroup();
+}
+
+void LightGroupWidget::LoadSettings( QString fName )
+{
+	QSettings settings( fName, QSettings::IniFormat );
+
+	settings.beginGroup( QString("lightgroup_") + title );
+	if ( settings.status() ) return;
+
+	title = settings.value("LG_title", "lightgroup" ).toString();
+	m_LG_enable = settings.value("LG_enable", true ).toBool();
+	m_LG_scale = settings.value("LG_scale", 1.0 ).toDouble();
+	m_LG_temperature_enabled = settings.value("LG_temperature_enabled", false ).toBool();
+	m_LG_temperature = settings.value("LG_temperature", 6500.0 ).toDouble();
+	m_LG_rgb_enabled = settings.value("LG_rgb_enabled", false ).toBool();
+	m_LG_scaleRed = settings.value("LG_scaleRed", 1.0 ).toDouble();
+	m_LG_scaleGreen = settings.value("LG_scaleGreen", 1.0 ).toDouble();
+	m_LG_scaleBlue = settings.value("LG_scaleBlue", 1.0 ).toDouble();
+	m_LG_scaleX = settings.value("LG_scaleX", 1.0 ).toDouble();
+	m_LG_scaleY = settings.value("LG_scaleY", 1.0 ).toDouble();
+
+	settings.endGroup();
+
+	SetFromValues();
+	UpdateWidgetValues();
+
+	emit valuesChanged();
+}
+
+
+

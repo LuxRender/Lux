@@ -298,8 +298,12 @@ bool PathState::Init(const Scene &scene) {
 		V[i] = 0.f;
 	}
 
+	// Mandatory initialization of mint and maxt
+	pathRay.mint = MachineEpsilon::E(1.f);
+	pathRay.maxt = INFINITY;
 	eyeRayWeight = sample.camera->GenerateRay(scene, sample, &pathRay);
 	bouncePdf = 1.f;
+	lastBounce = pathRay.o;
 
 	state = EYE_VERTEX;
 
@@ -443,6 +447,8 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 		// Possibly add horizon in render & reflections
 		if ((includeEnvironment || state->pathLength > 0)) {
 			state->pathThroughput /= spdf;
+			// Reset ray origin
+			state->pathRay.o = state->lastBounce;
 			BSDF *ibsdf;
 			for (u_int i = 0; i < nLights; ++i) {
 				float pdf;
@@ -450,7 +456,7 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 				if (scene.lights[i]->Le(scene, state->sample,
 					state->pathRay, &ibsdf, NULL, &pdf, &Le)) {
 					if (!state->specularBounce)
-						Le *= PowerHeuristic(1, state->bouncePdf, 1, pdf * DistanceSquared(state->pathRay.o, ibsdf->dgShading.p) / AbsDot(state->pathRay.d, ibsdf->ng));
+						Le *= PowerHeuristic(1, state->bouncePdf, 1, pdf * DistanceSquared(state->pathRay.o, ibsdf->dgShading.p) / (AbsDot(state->pathRay.d, ibsdf->ng) * nLights));
 					state->L[scene.lights[i]->group] += Le;
 					state->V[scene.lights[i]->group] += Le.Filter(sw) * state->VContrib;
 					++(*nrContribs);
@@ -470,19 +476,21 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 	state->scattered = bsdf->dgShading.scattered;
 	state->pathThroughput /= spdf;
 	if (state->pathLength == 0)
-		state->distance = rayHit->t * state->pathRay.d.Length();
+		state->distance = state->pathRay.maxt * state->pathRay.d.Length();
 
 	// Possibly add emitted light at path vertex
 	Vector wo(-state->pathRay.d);
 
 	if (isect.arealight) {
+		// Reset ray origin
+		state->pathRay.o = state->lastBounce;
 		BSDF *ibsdf;
 		float pdf;
 		SWCSpectrum Le(isect.Le(state->sample, state->pathRay, &ibsdf, NULL, &pdf));
 
 		if (!Le.Black()) {
 			if (!state->specularBounce)
-				Le *= PowerHeuristic(1, state->bouncePdf, 1, pdf * DistanceSquared(state->pathRay.o, ibsdf->dgShading.p) / AbsDot(state->pathRay.d, ibsdf->ng));
+				Le *= PowerHeuristic(1, state->bouncePdf, 1, pdf * DistanceSquared(state->pathRay.o, ibsdf->dgShading.p) / (AbsDot(state->pathRay.d, ibsdf->ng) * nLights));
 			Le *= state->pathThroughput;
 			state->L[isect.arealight->group] += Le;
 			state->V[isect.arealight->group] += Le.Filter(sw) * state->VContrib;
@@ -520,6 +528,9 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 		BSDF *lightBsdf;
 		if (light.SampleL(scene, state->sample, p, lightSample0, lightSample1, lightSample2,
 			&lightBsdf, NULL, &lightPdf, &Li)) {
+			//FIXME specific to one uniform strategy
+			lightPdf /= nLights;
+			Li *= nLights;
 			const Point &pL(lightBsdf->dgShading.p);
 			const Vector wi0(pL - p);
 			const float d2 = wi0.LengthSquared();
@@ -534,7 +545,8 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 					MachineEpsilon::E(length));
 
 				if (shadowRayEpsilon < length * .5f) {
-					Li *= PowerHeuristic(1, lightPdf * d2 / AbsDot(wi, lightBsdf->ng), 1, bsdf->Pdf(sw, wo, wi));
+					if (!light.IsDeltaLight())
+						Li *= PowerHeuristic(1, lightPdf * d2 / AbsDot(wi, lightBsdf->ng), 1, bsdf->Pdf(sw, wo, wi));
 
 					// Store light's contribution
 					state->Ld[state->tracedShadowRayCount] = state->pathThroughput * Li / d2;
@@ -567,14 +579,14 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 		if (state->pathLength > 3) {
 			if (rrStrategy == RR_EFFICIENCY) { // use efficiency optimized RR
 				const float q = min<float>(1.f, f.Filter(sw));
-				if (q < data[3]) {
+				if (q < data[4]) {
 					state->Terminate(scene, bufferId);
 					return true;
 				}
 				// increase path contribution
 				f /= q;
 			} else if (rrStrategy == RR_PROBABILITY) { // use normal/probability RR
-				if (continueProbability < data[3]) {
+				if (continueProbability < data[4]) {
 					state->Terminate(scene, bufferId);
 					return true;
 				}
@@ -582,13 +594,13 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 				f /= continueProbability;
 			}
 		}
+		state->lastBounce = p;
 		state->bouncePdf = pdf;
 		state->specularBounce = (flags & BSDF_SPECULAR) != 0;
 		state->specular = state->specular && state->specularBounce;
-		state->pathRay = Ray(p, wi);
-		state->pathRay.time = state->sample.realTime;
-	} else
-		state->pathRay.mint = rayHit->t + MachineEpsilon::E(rayHit->t);
+	}
+	state->pathRay = Ray(p, wi);
+	state->pathRay.time = state->sample.realTime;
 	++(state->pathLength);
 	state->pathThroughput *= f;
 	if (!state->specular)

@@ -32,7 +32,9 @@ namespace lux
 class MultiScattering : public VolumeIntegrator {
 public:
 	// MultiScattering Public Methods
-	MultiScattering(float ss) : stepSize(ss) { }
+	MultiScattering(float ss) : VolumeIntegrator(), stepSize(ss) {
+		AddStringConstant(*this, "name", "Name of current volume integrator", "multi");
+	}
 	virtual ~MultiScattering() { }
 
 	virtual void Transmittance(const Scene &, const Ray &ray,

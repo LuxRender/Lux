@@ -1133,7 +1133,7 @@ extern "C" void luxErrorPrint(int code, int severity, const char *message)
 #else // ... but it does have it's own console API
 	w32util::ChangeConsoleColor( FOREGROUND_WHITE );
 #endif
-	cerr<<"] "<<message<<endl;
+	cerr<<"] "<<message<<endl<<std::flush;
 }
 
 extern "C" void luxSetEpsilon(const float minValue, const float maxValue)

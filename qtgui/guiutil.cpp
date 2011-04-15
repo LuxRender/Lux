@@ -156,16 +156,29 @@ QImage getFramebufferImage(bool overlayStats, bool outputAlpha)
 		float *alpha = luxAlphaBuffer();
 		bool preMult = luxGetBoolAttribute("film", "premultiplyAlpha");
 
-		image = QImage(w, h, (preMult ? QImage::Format_ARGB32_Premultiplied : QImage::Format_ARGB32));
-		for (int y = 0; y < h; y++) {
-			uchar *scanline = image.scanLine(y);
-			for (int x = 0; x < w; x++) {
-				scanline[4*x + 0] = fb[2];
-				scanline[4*x + 1] = fb[1];
-				scanline[4*x + 2] = fb[0];
-				scanline[4*x + 3] = static_cast<uchar>(min(max(255.f * alpha[0], 0.f), 255.f));
-				fb += 3;
-				alpha++;
+		image = QImage(w, h, QImage::Format_ARGB32);
+
+		if (preMult) {
+			for (int y = 0; y < h; y++) {
+				QRgb *scanline = reinterpret_cast<QRgb*>(image.scanLine(y));
+				for (int x = 0; x < w; x++) {
+					const int fba = static_cast<int>(min(max(255.f * alpha[0], 0.f), 255.f));
+					const int ia = (255 << 8) / max(fba, 1);
+				
+					// undo premultiplication
+					// workaround as Qt requires max(r,g,b) <= a
+					scanline[x] = qRgba(min((fb[0] * ia) >> 8, 255), min((fb[1] * ia) >> 8, 255), min((fb[2] * ia) >> 8, 255), fba);
+					fb += 3;
+					alpha++;
+				}
+			}
+		} else {
+			for (int y = 0; y < h; y++) {
+				QRgb *scanline = reinterpret_cast<QRgb*>(image.scanLine(y));
+				for (int x = 0; x < w; x++) {						
+					scanline[x] = qRgb(fb[0], fb[1], fb[2]);
+					fb += 3;
+				}
 			}
 		}
 	} else {

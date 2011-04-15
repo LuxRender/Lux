@@ -26,6 +26,8 @@
 
 using namespace lux;
 
+RGBIllumSPD BilerpSpectrumTexture::whiteRGBIllum;
+
 // BilerpTexture Method Definitions
 Texture<float>* BilerpFloatTexture::CreateFloatTexture(const Transform &tex2world, const ParamSet &tp)
 {

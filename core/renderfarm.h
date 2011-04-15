@@ -68,8 +68,7 @@ private:
 
 class RenderFarm {
 public:
-	RenderFarm() : serverUpdateInterval(3 * 60), filmUpdateThread(NULL),
-		netBufferComplete(false), isLittleEndian(osIsLittleEndian()) { }
+	RenderFarm();
 	~RenderFarm() { delete filmUpdateThread; }
 
 	bool connect(const string &serverName); //!< Connects to a new rendering server

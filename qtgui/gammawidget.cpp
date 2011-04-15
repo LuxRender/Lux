@@ -289,6 +289,47 @@ void GammaWidget::addPreset( QString listName, QString realName )
 	ui->combo_CRF_List->addItem( listName, QVariant( realName ) );
 }
 
+///////////////////////////////////////////
+// Save and Load settings from a ini file.
+
+void GammaWidget::SaveSettings( QString fName )
+{
+	QSettings settings( fName, QSettings::IniFormat );
+
+	settings.beginGroup("gamma");
+	if ( settings.status() ) return;
+
+	settings.setValue( "TORGB_gamma", m_TORGB_gamma );
+	settings.setValue( "CRF_enabled", m_CRF_enabled );
+	settings.setValue( "CRF_file", m_CRF_file );
+
+	settings.endGroup();
+}
+
+void GammaWidget::LoadSettings( QString fName )
+{
+	QSettings settings( fName, QSettings::IniFormat );
+
+	settings.beginGroup("gamma");
+	if ( settings.status() ) return;
+
+	m_TORGB_gamma = settings.value("TORGB_gamma", 2.2 ).toDouble();
+	m_CRF_enabled = settings.value("CRF_enabled", false ).toBool();
+	m_CRF_file = settings.value("CRF_file", "" ).toString();
+
+	settings.endGroup();
+
+	updateWidgetValues();
+	updateParam(LUX_FILM, LUX_FILM_TORGB_GAMMA, (this->isEnabled() ? m_TORGB_gamma : 1.0));
+
+	if ( m_CRF_enabled )
+	{
+		activateCRF();
+	}
+
+	emit valuesChanged();
+}
+
 
 
 

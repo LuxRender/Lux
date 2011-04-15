@@ -32,7 +32,9 @@ namespace lux
 class SingleScattering : public VolumeIntegrator {
 public:
 	// SingleScattering Public Methods
-	SingleScattering(float ss) : stepSize(ss) { }
+	SingleScattering(float ss) : VolumeIntegrator(), stepSize(ss) {
+		AddStringConstant(*this, "name", "Name of current volume integrator", "single");
+	}
 	virtual ~SingleScattering() { }
 
 	virtual void Transmittance(const Scene &, const Ray &ray,

@@ -44,7 +44,7 @@ public:
 		} mesh;
 	} IntersectionData;
 
-	DifferentialGeometry() { u = v = 0.; handle = NULL; scattered = false; }
+	DifferentialGeometry() { u = v = 0.; handle = ihandle = NULL; scattered = false; }
 	// DifferentialGeometry Public Methods
 	DifferentialGeometry(
 			const Point &P,
@@ -73,6 +73,7 @@ public:
 	Normal dndu, dndv;
 	float u, v;
 	const void* handle;
+	const void* ihandle; // handle to intersected primitive, used with instances
 	float time;
 	bool scattered;
 

@@ -34,6 +34,7 @@
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/uuid/uuid.hpp>
+#include <boost/thread/mutex.hpp>
 
 namespace lux
 {
@@ -77,6 +78,9 @@ public:
 	boost::thread *serverThread6;
 	boost::thread *engineThread;
 	boost::thread *infoThread;
+	// used to prevent simultaneous initialization
+	boost::mutex initMutex;
+
 
 	// Dade - used to send signals to the thread
 	enum ThreadSignal { SIG_NONE, SIG_EXIT };
@@ -136,6 +140,7 @@ public:
 
 	void errorHandler(int code, int severity, const char *msg);
 
+	boost::mutex errorMessageLock;
 	vector<ErrorMessage> errorMessages;
 
 	friend class NetworkRenderServerThread;
