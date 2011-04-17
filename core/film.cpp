@@ -1014,9 +1014,9 @@ void Film::SetSample(const Contribution *contrib) {
 void Film::WriteResumeFilm(const string &filename)
 {
 	// Dade - save the status of the film to the file
-	LOG(LUX_INFO, LUX_NOERROR) << "Writing film status to file";
+	LOG(LUX_INFO, LUX_NOERROR) << "Writing resume film file";
 
-	string tempfilename = filename + ".temp";
+	const string tempfilename = filename + ".temp";
 
     std::ofstream filestr(tempfilename.c_str(), std::ios_base::out | std::ios_base::binary);
 	if(!filestr) {
@@ -1030,14 +1030,16 @@ void Film::WriteResumeFilm(const string &filename)
     filestr.close();
 
 	if (writeSuccessful) {
-		// if remove fails, rename might depending on platform fail, catch error there
-		remove(filename.c_str());
-		if (rename(tempfilename.c_str(), filename.c_str())) {
+		try {
+			// use boost::filesystem which should have POSIX behavior
+			if (boost::filesystem::exists(filename))
+				boost::filesystem::remove(filename);
+			boost::filesystem::rename(tempfilename, filename);
+			LOG(LUX_INFO, LUX_NOERROR) << "Resume film written to '" << filename << "'";
+		} catch (std::runtime_error e) {
 			LOG(LUX_ERROR, LUX_SYSTEM) << 
-				"Failed to rename new resume film, leaving new resume film as '" << tempfilename << "'";
-			return;
+				"Failed to rename new resume film, leaving new resume film as '" << tempfilename << "' (" << e.what() << ")";
 		}
-		LOG(LUX_INFO, LUX_NOERROR) << "Film status written to '" << filename << "'";
 	}
 }
 
