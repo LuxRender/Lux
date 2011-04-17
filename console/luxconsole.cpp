@@ -75,7 +75,7 @@ void infoThread() {
 			xt.sec += 5;
 			boost::thread::sleep(xt);
 
-			LOG(LUX_INFO,LUX_NOERROR) << luxPrintableStatistics(false);
+			LOG(LUX_INFO,LUX_NOERROR) << luxPrintableStatistics(true);
 		} catch(boost::thread_interrupted ex) {
 			break;
 		}
