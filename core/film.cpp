@@ -1032,6 +1032,7 @@ void Film::WriteResumeFilm(const string &filename)
 	if (writeSuccessful) {
 		try {
 			// use boost::filesystem which should have POSIX behavior
+			// TODO - Remove following check when we switch to Filesystem v3
 			if (boost::filesystem::exists(filename))
 				boost::filesystem::remove(filename);
 			boost::filesystem::rename(tempfilename, filename);
