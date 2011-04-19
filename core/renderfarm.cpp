@@ -27,6 +27,7 @@
 #include "scene.h"
 #include "api.h"
 #include "error.h"
+#include "version.h"
 #include "paramset.h"
 #include "renderfarm.h"
 #include "camera.h"
@@ -151,8 +152,7 @@ bool RenderFarm::connect(ExtRenderingServerInfo &serverInfo) {
 		tcp::iostream stream(serverInfo.name, serverInfo.port);
 		stream << "ServerConnect" << std::endl;
 
-		// Dede - check if the server accepted the connection
-
+		// Check if the server accepted the connection
 		string result;
 		if (!getline(stream, result)) {
 			LOG( LUX_ERROR,LUX_SYSTEM) << "Unable to connect server: " << serverName;
@@ -160,22 +160,35 @@ bool RenderFarm::connect(ExtRenderingServerInfo &serverInfo) {
 		}
 
 		LOG( LUX_INFO,LUX_NOERROR) << "Server connect result: " << result;
-
-		string sid;
+		
 		if ("OK" != result) {
 			LOG( LUX_ERROR,LUX_SYSTEM) << "Unable to connect server: " << serverName;
 
 			return false;
-		} else {
-			// Dade - read the session ID
-			if (!getline(stream, result)) {
-				LOG( LUX_ERROR,LUX_SYSTEM) << "Unable read session ID from server: " << serverName;
-				return false;
-			}
-
-			sid = result;
-			LOG( LUX_INFO,LUX_NOERROR) << "Server session ID: " << sid;
 		}
+		// Read the server version
+		if (!getline(stream, result)) {
+			LOG( LUX_ERROR,LUX_SYSTEM) << "Unable read version from server: " << serverName;
+			return false;
+		}
+		// search for protocol field in version string
+		// if not found we're dealing with a pre 0.8 server
+		if (result.find("protocol") == string::npos) {
+			LOG( LUX_ERROR,LUX_SYSTEM) << "Server returned invalid version string, this is most likely due to an old server executable, got '" << result << "', expected '" << LUX_SERVER_VERSION_STRING << "'";
+			return false;
+		}
+		if (result != LUX_SERVER_VERSION_STRING) {
+			LOG( LUX_ERROR,LUX_SYSTEM) << "Version mismatch, server reports version '" << result << "', required version is '" << LUX_SERVER_VERSION_STRING << "'";
+			return false;
+		}
+		// Read the session ID
+		if (!getline(stream, result)) {
+			LOG( LUX_ERROR,LUX_SYSTEM) << "Unable read session ID from server: " << serverName;
+			return false;
+		}
+
+		string sid = result;
+		LOG( LUX_INFO,LUX_NOERROR) << "Server session ID: " << sid;
 
 		serverInfo.sid = sid;
 		serverInfo.active = true;

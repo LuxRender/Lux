@@ -30,6 +30,7 @@
 #include "error.h"
 #include "color.h"
 #include "osfunc.h"
+#include "version.h"
 
 #include <boost/version.hpp>
 #if (BOOST_VERSION < 103401)
@@ -80,6 +81,7 @@ void RenderServer::start() {
 	}
 
 	LOG( LUX_INFO,LUX_NOERROR) << "Launching server mode [" << threadCount << " threads]";
+	LOG( LUX_DEBUG,LUX_NOERROR) << "Server version " << LUX_SERVER_VERSION_STRING;
 
 	// Dade - start the tcp server threads
 	serverThread = new NetworkRenderServerThread(this);
@@ -388,6 +390,9 @@ void cmd_ServerConnect(bool isLittleEndian, NetworkRenderServerThread *serverThr
 	if (serverThread->renderServer->getServerState() == RenderServer::READY) {
 		serverThread->renderServer->setServerState(RenderServer::BUSY);
 		stream << "OK" << endl;
+
+		// Send version string
+		stream << LUX_SERVER_VERSION_STRING << endl;
 
 		// Dade - generate the session ID
 		serverThread->renderServer->createNewSessionID();
