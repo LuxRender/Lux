@@ -39,4 +39,4 @@
 // renderfarm relies on the 'protocol' part of in server version string
 #define LUX_SERVER_VERSION_STRING    LUX_VERSION_STRING " (protocol: " VERSION_STR(LUX_SERVER_PROTOCOL_VERSION) ")"
 
-#endif // LUX_VOLUME_H
+#endif // LUX_VERSION_H
