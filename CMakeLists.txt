@@ -100,8 +100,8 @@ MESSAGE(STATUS "LuxRays library directory: " ${LUXRAYS_LIBRARY})
 if(LUXRAYS_DISABLE_OPENCL)
     set(OCL_LIBRARY "")
 else(LUXRAYS_DISABLE_OPENCL)
-    FIND_PATH(OPENCL_INCLUDE_DIRS NAMES CL/cl.hpp OpenCL/cl.hpp PATHS /usr/src/ati-stream-sdk-v2.3-lnx64/include /usr/local/cuda/include)
-    FIND_LIBRARY(OPENCL_LIBRARY OpenCL /usr/src/ati-stream-sdk-v2.3-lnx64/lib/x86_64)
+    FIND_PATH(OPENCL_INCLUDE_DIRS NAMES CL/cl.hpp OpenCL/cl.hpp PATHS /usr/src/opencl-sdk/include /usr/local/cuda/include)
+    FIND_LIBRARY(OPENCL_LIBRARY OpenCL /usr/src/opencl-sdk/lib/x86_64)
 
     MESSAGE(STATUS "OpenCL include directory: " ${OPENCL_INCLUDE_DIRS})
     MESSAGE(STATUS "OpenCL library directory: " ${OPENCL_LIBRARY})
@@ -633,20 +633,8 @@ SET(lux_pixelsamplers_src
 	pixelsamplers/tilepx.cpp
 	pixelsamplers/vegas.cpp
 	)
-    renderers/sppmrenderer.cpp
-	renderers/sppm/lookupaccel.cpp
-	renderers/sppm/hashgrid.cpp
-	renderers/sppm/hitpoints.cpp
-	renderers/sppm/hybridhashgrid.cpp
-	renderers/sppm/stochastichashgrid.cpp
-	renderers/sppm/kdtree.cpp
-	renderers/sppm/grid.cpp
-	renderers/sppm/cuckoohashgrid.cpp
-	renderers/sppm/hybridmultihashgrid.cpp
-	renderers/sppm/stochasticmultihashgrid.cpp
+if(LUXRAYS_DISABLE_OPENCL)
 SET(lux_renderers_src
-	renderers/hybridrenderer.cpp
-	renderers/hybridsamplerrenderer.cpp
 	renderers/samplerrenderer.cpp
     renderers/sppmrenderer.cpp
 	renderers/sppm/lookupaccel.cpp
@@ -660,12 +648,24 @@ SET(lux_renderers_src
 	renderers/sppm/hybridmultihashgrid.cpp
 	renderers/sppm/stochasticmultihashgrid.cpp
 	)
-SET(lux_samplers_src
-	samplers/erpt.cpp
-	samplers/lowdiscrepancy.cpp
-	samplers/metrosampler.cpp
-	samplers/random.cpp
+else(LUXRAYS_DISABLE_OPENCL)
+SET(lux_renderers_src
+	renderers/samplerrenderer.cpp
+    renderers/sppmrenderer.cpp
+	renderers/sppm/lookupaccel.cpp
+	renderers/sppm/hashgrid.cpp
+	renderers/sppm/hitpoints.cpp
+	renderers/sppm/hybridhashgrid.cpp
+	renderers/sppm/stochastichashgrid.cpp
+	renderers/sppm/kdtree.cpp
+	renderers/sppm/grid.cpp
+	renderers/sppm/cuckoohashgrid.cpp
+	renderers/sppm/hybridmultihashgrid.cpp
+	renderers/sppm/stochasticmultihashgrid.cpp
+	renderers/hybridrenderer.cpp
+	renderers/hybridsamplerrenderer.cpp
 	)
+endif(LUXRAYS_DISABLE_OPENCL)
 SET(lux_shapes_src
 	shapes/cone.cpp
 	shapes/cylinder.cpp
