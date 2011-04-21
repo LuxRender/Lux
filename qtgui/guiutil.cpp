@@ -176,8 +176,10 @@ QImage getFramebufferImage(bool overlayStats, bool outputAlpha)
 			for (int y = 0; y < h; y++) {
 				QRgb *scanline = reinterpret_cast<QRgb*>(image.scanLine(y));
 				for (int x = 0; x < w; x++) {						
-					scanline[x] = qRgb(fb[0], fb[1], fb[2]);
+					const int fba = static_cast<int>(min(max(255.f * alpha[0], 0.f), 255.f));
+					scanline[x] = qRgba(fb[0], fb[1], fb[2], fba);
 					fb += 3;
+					alpha++;
 				}
 			}
 		}
