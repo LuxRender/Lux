@@ -2063,6 +2063,7 @@ void MainWindow::ResetLightGroupsFromFilm( bool useDefaults )
 		pane->setIcon(":/icons/lightgroupsicon.png");
 		pane->setWidget(currWidget);
 		connect(currWidget, SIGNAL(valuesChanged()), this, SLOT(toneMapParamsChanged()));
+		connect(currWidget, SIGNAL(signalLightGroupSolo(int)), this, SLOT(setLightGroupSolo(int)));
 		ui->lightGroupsLayout->addWidget(pane);
 		if (i == 0)
 			pane->expand();
@@ -2072,6 +2073,26 @@ void MainWindow::ResetLightGroupsFromFilm( bool useDefaults )
 
 	// Update
 	UpdateLightGroupWidgetValues();
+}
+
+void MainWindow::setLightGroupSolo( int index )
+{
+	int n = 0;
+
+	for (QVector<PaneWidget*>::iterator it = m_LightGroupPanes.begin(); it != m_LightGroupPanes.end(); it++, n++ ) 
+	{
+		if ( (*it)->powerON )
+		{
+			if ( index == -1 )
+			{
+				((LightGroupWidget *)(*it)->getWidget())->setEnabled( true );
+			}
+			else if ( n != index )
+			{
+				((LightGroupWidget *)(*it)->getWidget())->setEnabled( false );
+			}
+		}
+	}
 }
 
 void MainWindow::UpdateNetworkTree()

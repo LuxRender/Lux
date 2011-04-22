@@ -64,6 +64,8 @@ PaneWidget::PaneWidget(QWidget *parent, const QString& label, const QString& ico
 	ui->gridLayout->addWidget(expandlabel, 0, 3, 1, 1);
  
 	connect(expandlabel, SIGNAL(clicked()), this, SLOT(expandClicked()));
+
+	powerON = false;
 	
 	if (onoffbutton)
 		showOnOffButton();
@@ -97,6 +99,7 @@ void PaneWidget::showOnOffButton(bool showbutton)
 		ui->gridLayout->addWidget(onofflabel, 0, 3, 1, 1);
 		ui->gridLayout->addWidget(expandlabel, 0, 4, 1, 1);
 		connect(onofflabel, SIGNAL(clicked()), this, SLOT(onoffClicked()));
+		powerON = true;
 	}
 
 	if (showbutton)
@@ -111,11 +114,13 @@ void PaneWidget::onoffClicked()
 		mainwidget->setEnabled(false);
 		onofflabel->setPixmap(QPixmap(":/icons/powerofficon.png"));
 		emit turnedOff();
+		powerON = false;
 	}
 	else {
 		mainwidget->setEnabled(true);
 		onofflabel->setPixmap(QPixmap(":/icons/poweronicon.png"));
 		emit turnedOn();
+		powerON = true;
 	}
 }
 

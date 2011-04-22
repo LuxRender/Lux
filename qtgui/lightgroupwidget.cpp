@@ -39,6 +39,7 @@ LightGroupWidget::LightGroupWidget(QWidget *parent) : QWidget(parent), ui(new Ui
 	connect(ui->slider_colortemp, SIGNAL(valueChanged(int)), this, SLOT(colortempChanged(int)));
 	connect(ui->spinBox_colortemp, SIGNAL(valueChanged(double)), this, SLOT(colortempChanged(double)));
 	connect(ui->toolButton_colorpicker, SIGNAL(clicked()), this, SLOT(colorPicker()));
+	connect(ui->checkBox_Solo, SIGNAL(clicked()), this, SLOT(soloEnabled()));
 	
 #if defined(__APPLE__)
 	setFont(QFont  ("Lucida Grande", 11));
@@ -60,6 +61,20 @@ void LightGroupWidget::changeEvent(QEvent *event)
 		SetWidgetsEnabled(m_LG_enable);
 		emit valuesChanged ();
 	}
+}
+
+void LightGroupWidget::soloEnabled()
+{
+	if ( ui->checkBox_Solo->isChecked() )
+	{
+		emit signalLightGroupSolo( m_Index );
+	}
+	else
+	{
+		emit signalLightGroupSolo( -1 );
+	}
+
+	emit valuesChanged();
 }
 
 void LightGroupWidget::rgbEnabledChanged(int value)

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>464</width>
-    <height>130</height>
+    <height>134</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -31,7 +31,7 @@
      <property name="verticalSpacing">
       <number>6</number>
      </property>
-     <item row="0" column="0">
+     <item row="1" column="0">
       <widget class="QLabel" name="label_gain">
        <property name="text">
         <string>Gain</string>
@@ -41,7 +41,7 @@
        </property>
       </widget>
      </item>
-     <item row="0" column="1">
+     <item row="1" column="1">
       <widget class="QSlider" name="slider_gain">
        <property name="minimumSize">
         <size>
@@ -60,7 +60,7 @@
        </property>
       </widget>
      </item>
-     <item row="0" column="2">
+     <item row="1" column="2">
       <widget class="QDoubleSpinBox" name="spinBox_gain">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -97,7 +97,7 @@
        </property>
       </widget>
      </item>
-     <item row="1" column="0">
+     <item row="2" column="0">
       <widget class="QCheckBox" name="checkBox_enableRGB">
        <property name="toolTip">
         <string>Enable RGB Colour adjustment</string>
@@ -107,7 +107,7 @@
        </property>
       </widget>
      </item>
-     <item row="1" column="1" colspan="2">
+     <item row="2" column="1">
       <widget class="QCheckBox" name="checkBox_enableBB">
        <property name="toolTip">
         <string>Enable BlackBody Temperature Adjustment</string>
@@ -117,7 +117,7 @@
        </property>
       </widget>
      </item>
-     <item row="3" column="1">
+     <item row="4" column="1">
       <widget class="QLabel" name="label_colortemp">
        <property name="enabled">
         <bool>true</bool>
@@ -145,7 +145,7 @@
        </property>
       </widget>
      </item>
-     <item row="4" column="1">
+     <item row="5" column="1">
       <widget class="QSlider" name="slider_colortemp">
        <property name="enabled">
         <bool>true</bool>
@@ -167,7 +167,7 @@
        </property>
       </widget>
      </item>
-     <item row="4" column="2">
+     <item row="5" column="2">
       <widget class="QDoubleSpinBox" name="spinBox_colortemp">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -207,7 +207,7 @@
        </property>
       </widget>
      </item>
-     <item row="3" column="0">
+     <item row="4" column="0">
       <widget class="QLabel" name="toolButton_colorfield">
        <property name="frameShape">
         <enum>QFrame::Box</enum>
@@ -220,7 +220,7 @@
        </property>
       </widget>
      </item>
-     <item row="4" column="0">
+     <item row="5" column="0">
       <widget class="QToolButton" name="toolButton_colorpicker">
        <property name="toolTip">
         <string>Adjust RGB Colour</string>
@@ -239,6 +239,16 @@
          <width>32</width>
          <height>32</height>
         </size>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="2">
+      <widget class="QCheckBox" name="checkBox_Solo">
+       <property name="toolTip">
+        <string>Turn off all light groups except this one.</string>
+       </property>
+       <property name="text">
+        <string>Solo</string>
        </property>
       </widget>
      </item>

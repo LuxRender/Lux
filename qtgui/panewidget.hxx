@@ -71,6 +71,8 @@ public:
 	void expand();
 	void collapse();
 
+	bool powerON;
+
 private:
 
 	Ui::PaneWidget *ui;

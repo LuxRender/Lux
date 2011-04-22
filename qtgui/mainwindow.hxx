@@ -347,6 +347,8 @@ private slots:
 	void SavePanelSettings();
 	void LoadPanelSettings();
 
+	void setLightGroupSolo( int index );
+
 };
 
 #endif // MAINWINDOW_H
