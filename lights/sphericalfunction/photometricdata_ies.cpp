@@ -186,15 +186,15 @@ bool PhotometricDataIES::BuildKeywordList()
 
 //////////////////////////////////////////////////////////////////////////
 
-void PhotometricDataIES::BuildDataLine( unsigned int nDoubles, std::vector <double> & vLine )
+void PhotometricDataIES::BuildDataLine( std::stringstream & ssLine, unsigned int nDoubles, std::vector <double> & vLine )
 {
 	double dTemp = 0.0;
 
 	unsigned int count = 0;
 
-	while( count < nDoubles && m_fsIES.good() )
+	while( count < nDoubles && ssLine.good() )
 	{
-		m_fsIES >> dTemp;
+		ssLine >> dTemp;
 
 		vLine.push_back( dTemp ); 
 				
@@ -226,59 +226,71 @@ bool PhotometricDataIES::BuildLightData()
 	if ( templine.find( "TILT=NONE" ) == std::string::npos ) return false;
 
 	//////////////////////////////////////////////////////////////////	
+	// clean the data fields, some IES files use comma's in data 
+	// fields which breaks ifstreams >> op. 
+
+	int spos = (int)m_fsIES.tellg(); 
+
+	m_fsIES.seekg( 0, std::ios_base::end );
+
+	int epos = (int)m_fsIES.tellg() - spos; 
+
+	m_fsIES.seekg( spos );
+	
+	std::string strIES( epos, 0 );
+
+	int nChar;
+	int n1 = 0;
+
+	for ( int n = 0; n < epos; n++ )
+	{
+		if ( m_fsIES.eof() ) break;
+
+		nChar = m_fsIES.get();
+
+		if ( nChar != ',' ) 
+		{
+			strIES[n1] = (char)nChar; 
+			n1++;
+		}
+	}
+
+	m_fsIES.close(); // done with the file.
+
+	strIES.resize( n1 );
+
+	std::stringstream ssIES( strIES, std::stringstream::in );
+
+	ssIES.seekg( 0, std::ios_base::beg );
+
+	//////////////////////////////////////////////////////////////////	
 	// Read first two lines containing light vars.
 
-	/* Old parsing code doesn't work if parameters are split among several lines
-	ReadLine( templine );
-
+	ssIES >> m_NumberOfLamps;
+	ssIES >> m_LumensPerLamp;
+	ssIES >> m_CandelaMultiplier;
+	ssIES >> m_NumberOfVerticalAngles;
+	ssIES >> m_NumberOfHorizontalAngles;
 	unsigned int photometricTypeInt;
-	sscanf( &templine[0], "%u %lf %lf %u %u %u %u %lf %lf %lf", 
-			&m_NumberOfLamps,
-			&m_LumensPerLamp,
-			&m_CandelaMultiplier,
-			&m_NumberOfVerticalAngles,
-			&m_NumberOfHorizontalAngles,
-			&photometricTypeInt,
-			&m_UnitsType,
-			&m_LuminaireWidth,
-			&m_LuminaireLength,
-			&m_LuminaireHeight );
+	ssIES >> photometricTypeInt;
 	m_PhotometricType = PhotometricType(photometricTypeInt);
+	ssIES >> m_UnitsType;
+	ssIES >> m_LuminaireWidth;
+	ssIES >> m_LuminaireLength;
+	ssIES >> m_LuminaireHeight;
 
-	ReadLine( templine );
-
-	sscanf( &templine[0], "%lf %lf %lf", 
-			&BallastFactor,
-			&BallastLampPhotometricFactor,
-			&InputWatts );*/
-
-	m_fsIES >> m_NumberOfLamps;
-	m_fsIES >> m_LumensPerLamp;
-	m_fsIES >> m_CandelaMultiplier;
-	m_fsIES >> m_NumberOfVerticalAngles;
-	m_fsIES >> m_NumberOfHorizontalAngles;
-	unsigned int photometricTypeInt;
-	m_fsIES >> photometricTypeInt;
-	m_PhotometricType = PhotometricType(photometricTypeInt);
-	m_fsIES >> m_UnitsType;
-	m_fsIES >> m_LuminaireWidth;
-	m_fsIES >> m_LuminaireLength;
-	m_fsIES >> m_LuminaireHeight;
-
-	m_fsIES >> BallastFactor;
-	m_fsIES >> BallastLampPhotometricFactor;
-	m_fsIES >> InputWatts;
+	ssIES >> BallastFactor;
+	ssIES >> BallastLampPhotometricFactor;
+	ssIES >> InputWatts;
 
 	//////////////////////////////////////////////////////////////////	
 	// Read angle data
 
-	// Vertical Angles
-
 	m_VerticalAngles.clear(); 
-	BuildDataLine( m_NumberOfVerticalAngles, m_VerticalAngles );
+	BuildDataLine( ssIES, m_NumberOfVerticalAngles, m_VerticalAngles );
 
 	m_HorizontalAngles.clear(); 
-	BuildDataLine( m_NumberOfHorizontalAngles, m_HorizontalAngles );
+	BuildDataLine( ssIES, m_NumberOfHorizontalAngles, m_HorizontalAngles );
 	
 	m_CandelaValues.clear();
 
@@ -288,133 +300,11 @@ bool PhotometricDataIES::BuildLightData()
 	{
 		vTemp.clear();
 
-		BuildDataLine( m_NumberOfVerticalAngles, vTemp );
+		BuildDataLine( ssIES, m_NumberOfVerticalAngles, vTemp );
 
 	    m_CandelaValues.push_back( vTemp );
 	}
 
 	return true;
 }
-
-//////////////////////////////////////////////////////////////////////////
-// Test...
-
-/*int main(int ac, char *av[])
-{
-	if ( ac < 2 )
-	{
-		std::cout << "Useage: IEStest <file name> all|<IES key word> Vertical|Horizontal|Candela" << std::endl;
-
-		return 1;
-	}
-
-	std::cout << "--------------------------------------------------------------------" << std::endl;
-	std::cout << "Loading File: " << av[1] << "..." << std::endl;
-
-	PhotometricDataIES cIES( av[1] );
-
-	if ( !cIES.IsValid() )
-	{
-		std::cout << "Error loading: " << av[1] << " - Aborting" << std::endl;
-
-		return 1;
-	}
-
-	std::cout << std::endl;
-	std::cout << "IES Version: " << cIES.m_Version << std::endl;
-	std::cout << "--------------------------------------------------------------------" << std::endl;
-
-	std::cout << "Lamp Keywords..." << std::endl;
-
-	if ( ac > 2 )
-	{
-		std::string as = av[2];
-	
-		if ( as == "all" )
-		{
-			for( std::map <std::string,std::string>::iterator it = cIES.m_Keywords.begin(); it != cIES.m_Keywords.end(); it++ )
-			{
-				std::cout << std::endl;
-				std::cout << it->first << ": " << it->second << std::endl;
-			}
-		}
-		else
-		{
-			std::cout << std::endl;
-			std::cout << as << ": " << cIES.m_Keywords[as] << std::endl;
-		}
-	}
-
-	std::cout << "--------------------------------------------------------------------" << std::endl;
-	std::cout << "Lamp Data..." << std::endl;
-	std::cout << std::endl;
-	std::cout << "Number of Lamps: " << cIES.m_NumberOfLamps << std::endl;
-	std::cout << "Lumens Per Lamp: " << cIES.m_LumensPerLamp << std::endl;
-	std::cout << "Candela Multiplier: " << cIES.m_CandelaMultiplier << std::endl;
-	std::cout << "Number Of Vertical Angles: " << cIES.m_NumberOfVerticalAngles << std::endl;
-	std::cout << "Number Of Horizontal Angles: " << cIES.m_NumberOfHorizontalAngles << std::endl;
-	std::cout << "Photometric Type: " << cIES.m_PhotometricType << std::endl;
-	std::cout << "Units Type: " << cIES.m_UnitsType << std::endl;
-	std::cout << "Luminaire Width: " << cIES.m_LuminaireWidth << std::endl;
-	std::cout << "Luminaire Length: " << cIES.m_LuminaireLength << std::endl;
-	std::cout << "Luminaire Height: " << cIES.m_LuminaireHeight << std::endl;
-	std::cout << std::endl;
-	std::cout << "Ballast Factor: " << cIES.BallastFactor << std::endl;
-	std::cout << "Ballast-Lamp Photometric Factor: " << cIES.BallastLampPhotometricFactor << std::endl;
-	std::cout << "Input Watts: " << cIES.InputWatts << std::endl;
-	std::cout << std::endl;
-	std::cout << "--------------------------------------------------------------------" << std::endl;
-
-	if ( ac > 3 ) 
-	{
-		std::string as = av[3];
-
-		unsigned int n1, n2;
-	
-		if ( as == "Vertical" )
-		{
-			std::cout << std::endl;
-			std::cout << "Vertical Angles: " << cIES.m_NumberOfVerticalAngles << std::endl;
-	
-			for( n1 = 0; n1 < cIES.m_NumberOfVerticalAngles; n1++ )
-			{
-				std::cout << cIES.m_VerticalAngles[n1] << " ";
-			}
-
-			std::cout << std::endl;
-		}
-		else if ( as == "Horizontal" )
-		{
-			std::cout << std::endl;
-			std::cout << "Horizontal Angles: " << cIES.m_NumberOfHorizontalAngles << std::endl;
-
-			for( n1 = 0; n1 < cIES.m_NumberOfHorizontalAngles; n1++ )
-			{
-				std::cout << cIES.m_HorizontalAngles[n1] << " ";
-			}
-
-			std::cout << std::endl;
-		}
-		else if ( as == "Candela" )
-		{
-			std::cout << std::endl;
-			std::cout << "Candela Values: " << std::endl;
-
-			for( n1 = 0; n1 < cIES.m_NumberOfHorizontalAngles; n1++ )
-			{
-				std::cout << "Angle " << n1 << " : " << cIES.m_HorizontalAngles[n1] << std::endl;
-
-				for( n2 = 0; n2 < cIES.m_NumberOfVerticalAngles; n2++ )
-				{
-					std::cout << cIES.m_CandelaValues[n1][n2] << " ";
-				}
-
-				std::cout << std::endl;
-			}
-		}
-	}
-
-	return 0;
-}*/
-
 } //namespace lux
