@@ -230,6 +230,8 @@ private:
 	bool openExrHalfFloats, openExrDepthBuffer;
 	int openExrCompressionType;
 
+	bool m_bTonemapPending;
+
 	// Directory Handling
 	enum { MaxRecentFiles = 5 };
 	QString m_lastOpendir;

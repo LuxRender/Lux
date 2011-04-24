@@ -367,6 +367,9 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	resetToneMapping();
 	m_auto_tonemap = true;
 
+	// hack for "tonemapping lag"
+	m_bTonemapPending = false;
+
 	copyLog2Console = m_copyLog2Console;
 	luxErrorHandler(&LuxGuiErrorHandler);
 
@@ -1153,6 +1156,10 @@ void MainWindow::applyTonemapping(bool withlayercomputation)
 		}
 		m_updateThread = new boost::thread(boost::bind(&MainWindow::updateThread, this));
 	}
+	else if (m_updateThread != NULL ) // Tonemapping in progress, request second event, hack for "tonemapping lag."
+	{
+		m_bTonemapPending = true;
+	}
 }
 
 void MainWindow::engineThread(QString filename)
@@ -1639,6 +1646,13 @@ bool MainWindow::event (QEvent *event)
 		indicateActivity(false);
 		renderView->reload();
 		histogramwidget->Update();
+
+		if ( m_bTonemapPending ) // hack for "tonemapping lag."
+		{
+			m_bTonemapPending = false;
+			applyTonemapping();
+		}
+
 		retval = TRUE;
 	}
 	else if (eventtype == EVT_LUX_PARSEERROR) {
@@ -2065,8 +2079,7 @@ void MainWindow::ResetLightGroupsFromFilm( bool useDefaults )
 		connect(currWidget, SIGNAL(valuesChanged()), this, SLOT(toneMapParamsChanged()));
 		connect(currWidget, SIGNAL(signalLightGroupSolo(int)), this, SLOT(setLightGroupSolo(int)));
 		ui->lightGroupsLayout->addWidget(pane);
-		if (i == 0)
-			pane->expand();
+		pane->expand();
 		m_LightGroupPanes.push_back(pane);
 	}
 	ui->lightGroupsLayout->addItem(spacer);
