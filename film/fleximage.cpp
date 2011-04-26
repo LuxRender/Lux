@@ -43,6 +43,7 @@
 
 #include <boost/thread/xtime.hpp>
 #include <boost/filesystem/path.hpp>
+#include <boost/filesystem/operations.hpp>
 
 using namespace lux;
 
@@ -1270,8 +1271,9 @@ float* FlexImageFilm::getZBuffer()
 
 void FlexImageFilm::WriteTGAImage(vector<RGBColor> &rgb, vector<float> &alpha, const string &filename)
 {
+	string fullpath = boost::filesystem::complete(boost::filesystem::path(filename, boost::filesystem::native), boost::filesystem::current_path()).file_string();
 	// Write Truevision Targa TGA image
-	LOG( LUX_INFO,LUX_NOERROR)<< "Writing Tonemapped TGA image to file "<< filename;
+	LOG( LUX_INFO,LUX_NOERROR)<< "Writing Tonemapped TGA image to file '"<< fullpath << "'";
 	WriteTargaImage(write_TGA_channels, write_TGA_ZBuf, filename, rgb, alpha,
 		xPixelCount, yPixelCount,
 		xResolution, yResolution,
@@ -1280,9 +1282,10 @@ void FlexImageFilm::WriteTGAImage(vector<RGBColor> &rgb, vector<float> &alpha, c
 
 void FlexImageFilm::WritePNGImage(vector<RGBColor> &rgb, vector<float> &alpha, const string &filename)
 {
+	string fullpath = boost::filesystem::complete(boost::filesystem::path(filename, boost::filesystem::native), boost::filesystem::current_path()).file_string();
 	// Write Portable Network Graphics PNG image
 	// Assumes colors are "straight", ie not premultiplied
-	LOG( LUX_INFO,LUX_NOERROR)<< "Writing Tonemapped PNG image to file "<< filename;
+	LOG( LUX_INFO,LUX_NOERROR)<< "Writing Tonemapped PNG image to file '"<< fullpath << "'";
 
 	WritePngImage(write_PNG_channels, write_PNG_16bit, write_PNG_ZBuf, filename, rgb, alpha,
 		xPixelCount, yPixelCount,
@@ -1292,8 +1295,9 @@ void FlexImageFilm::WritePNGImage(vector<RGBColor> &rgb, vector<float> &alpha, c
 
 void FlexImageFilm::WriteEXRImage(vector<RGBColor> &rgb, vector<float> &alpha, const string &filename, vector<float> &zbuf)
 {
-	// Assumes colors are premultiplied
-	
+	string fullpath = boost::filesystem::complete(boost::filesystem::path(filename, boost::filesystem::native), boost::filesystem::current_path()).file_string();
+	// Assumes colors are premultiplied	
+
 	if(write_EXR_ZBuf) {
 		if(write_EXR_ZBuf_normalizationtype == CameraStartEnd) {
 			// Camera normalization
@@ -1313,7 +1317,7 @@ void FlexImageFilm::WriteEXRImage(vector<RGBColor> &rgb, vector<float> &alpha, c
 			for (u_int i=0; i<nPix; i++)
 				zBuf[i] = (zbuf[i]-min) / (max-min);
 
-			LOG( LUX_INFO,LUX_NOERROR)<< "Writing OpenEXR image to file "<< filename;
+			LOG( LUX_INFO,LUX_NOERROR)<< "Writing OpenEXR image to file '"<< fullpath << "'";
 			WriteOpenEXRImage(write_EXR_channels, write_EXR_halftype, write_EXR_ZBuf, write_EXR_compressiontype, filename, rgb, alpha,
 				xPixelCount, yPixelCount,
 				xResolution, yResolution,
@@ -1323,7 +1327,7 @@ void FlexImageFilm::WriteEXRImage(vector<RGBColor> &rgb, vector<float> &alpha, c
 	}
 
 	// Write OpenEXR RGBA image
-	LOG( LUX_INFO,LUX_NOERROR)<< "Writing OpenEXR image to file "<< filename;
+	LOG( LUX_INFO,LUX_NOERROR)<< "Writing OpenEXR image to file '"<< fullpath << "'";
 	WriteOpenEXRImage(write_EXR_channels, write_EXR_halftype, write_EXR_ZBuf, write_EXR_compressiontype, filename, rgb, alpha,
 		xPixelCount, yPixelCount,
 		xResolution, yResolution,

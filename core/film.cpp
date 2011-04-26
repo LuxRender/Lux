@@ -1013,10 +1013,11 @@ void Film::SetSample(const Contribution *contrib) {
 
 void Film::WriteResumeFilm(const string &filename)
 {
+	string fullfilename = boost::filesystem::complete(boost::filesystem::path(filename, boost::filesystem::native), boost::filesystem::current_path()).file_string();
 	// Dade - save the status of the film to the file
 	LOG(LUX_INFO, LUX_NOERROR) << "Writing resume film file";
 
-	const string tempfilename = filename + ".temp";
+	const string tempfilename = fullfilename + ".temp";
 
     std::ofstream filestr(tempfilename.c_str(), std::ios_base::out | std::ios_base::binary);
 	if(!filestr) {
@@ -1031,12 +1032,13 @@ void Film::WriteResumeFilm(const string &filename)
 
 	if (writeSuccessful) {
 		try {
-			// use boost::filesystem which should have POSIX behavior
-			// TODO - Remove following check when we switch to Filesystem v3
-			if (boost::filesystem::exists(filename))
-				boost::filesystem::remove(filename);
-			boost::filesystem::rename(tempfilename, filename);
-			LOG(LUX_INFO, LUX_NOERROR) << "Resume film written to '" << filename << "'";
+#if !defined(BOOST_FILESYSTEM_VERSION) || (BOOST_FILESYSTEM_VERSION < 3)
+			// boost filesystem v2 does not have POSIX compliant rename()
+			if (boost::filesystem::exists(fullfilename))
+				boost::filesystem::remove(fullfilename);
+#endif
+			boost::filesystem::rename(tempfilename, fullfilename);
+			LOG(LUX_INFO, LUX_NOERROR) << "Resume film written to '" << fullfilename << "'";
 		} catch (std::runtime_error e) {
 			LOG(LUX_ERROR, LUX_SYSTEM) << 
 				"Failed to rename new resume film, leaving new resume film as '" << tempfilename << "' (" << e.what() << ")";
