@@ -811,7 +811,9 @@ ParamSet::ParamSet(u_int n, const char * pluginName, const char * const tokens[]
 			AddBool(s, (bool*)(params[i]));
 		if (s == "write_tga_gamutclamp")
 			AddBool(s, (bool*)(params[i]));
-		
+		if (s == "recenter_mesh")
+			AddBool(s, (bool*)(params[i]));		
+
 		//string parameters
 		if (s == "aamode")
 			AddString(s, new string(params[i]));
