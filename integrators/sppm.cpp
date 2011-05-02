@@ -35,6 +35,7 @@ using namespace lux;
 
 SPPMIntegrator::SPPMIntegrator() {
 	bufferId = 0;
+	AddStringConstant(*this, "name", "Name of current surface integrator", "sppm");
 }
 
 SPPMIntegrator::~SPPMIntegrator() {
