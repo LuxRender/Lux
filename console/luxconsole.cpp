@@ -29,16 +29,16 @@
 #include <exception>
 #include <iostream>
 
+#include "api.h"
+#include "error.h"
+#include "server/renderserver.h"
+
 #include <boost/program_options.hpp>
 #include <boost/thread.hpp>
 #include <boost/thread/xtime.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/operations.hpp>
-
-#include "api.h"
-#include "error.h"
-#include "server/renderserver.h"
 
 #if defined(WIN32) && !defined(__CYGWIN__) /* We need the following two to set stdout to binary */
 #include <io.h>
