@@ -633,6 +633,12 @@ SET(lux_pixelsamplers_src
 	pixelsamplers/tilepx.cpp
 	pixelsamplers/vegas.cpp
 	)
+SET(lux_samplers_src
+	samplers/erpt.cpp
+	samplers/lowdiscrepancy.cpp
+	samplers/metrosampler.cpp
+	samplers/random.cpp
+	)
 if(LUXRAYS_DISABLE_OPENCL)
 SET(lux_renderers_src
 	renderers/samplerrenderer.cpp
