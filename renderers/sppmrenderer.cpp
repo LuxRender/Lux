@@ -676,7 +676,7 @@ void SPPMRenderer::PhotonPassRenderThread::TracePhotons() {
 				Vector wi = -photonRay.d;
 
 				// Deposit Flux (only if we have hit a diffuse surface)
-				if (photonBSDF->NumComponents(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)) > 0)
+				if (photonBSDF->NumComponents(BxDFType(BSDF_REFLECTION | BSDF_TRANSMISSION | BSDF_GLOSSY | BSDF_DIFFUSE)) > 0)
 					renderer->hitPoints->AddFlux(photonIsect.dg.p, *photonBSDF, wi, sw, alpha, light->group);
 
 				// Sample new photon ray direction
