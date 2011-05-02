@@ -27,25 +27,19 @@
 using namespace lux;
 
 void HitPointsLookUpAccel::AddFluxToHitPoint(HitPoint *hp, const u_int passIndex,
-		const Point &hitPoint, const Vector &wi,
+		const BSDF &bsdf, const Point &hitPoint, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, u_int light_group) {
 	HitPointEyePass &hpep(hp->eyePass[passIndex]);
 
+	// Check distance
 	const float dist2 = DistanceSquared(hpep.position, hitPoint);
 	if ((dist2 >  hp->accumPhotonRadius2))
 		return;
 
-	/* Was:
-	SWCSpectrum f = hp->bsdf->F(sw, wi, hp->wo, true,
-			BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE));
-	 * Replaced with the following code to avoid the storage of Sample class.
-	 */
-
-	const float sideTest = Dot(hpep.wo, hpep.bsdfNG) / Dot(wi, hpep.bsdfNG);
-	if (sideTest <= 0.f)
-		return;
-
-	SWCSpectrum f(hpep.bsdfRoverPI * AbsDot(wi, hpep.bsdfNS));
+	BxDFType flag = BxDFType(BSDF_DIFFUSE |
+			(Dot(bsdf.ng, hpep.bsdfNG) > 0.f ?
+			BSDF_REFLECTION : BSDF_TRANSMISSION));
+	const SWCSpectrum f = bsdf.F(sw, hpep.wo, wi, false, flag);
 	if (f.Black())
 		return;
 
@@ -56,19 +50,19 @@ void HitPointsLookUpAccel::AddFluxToHitPoint(HitPoint *hp, const u_int passIndex
 	XYZColorAtomicAdd(hp->lightGroupData[light_group].accumReflectedFlux, flux);
 }
 
-void HashCell::AddFlux(HitPointsLookUpAccel *accel, const u_int passIndex, const Point &hitPoint,
+void HashCell::AddFlux(HitPointsLookUpAccel *accel, const u_int passIndex, const Point &hitPoint, const BSDF &bsdf,
 		const Vector &wi, const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group) {
 	switch (type) {
 		case HH_LIST: {
 			std::list<HitPoint *>::iterator iter = list->begin();
 			while (iter != list->end()) {
 				HitPoint *hp = *iter++;
-				accel->AddFluxToHitPoint(hp, passIndex, hitPoint, wi, sw, photonFlux, light_group);
+				accel->AddFluxToHitPoint(hp, passIndex, bsdf, hitPoint, wi, sw, photonFlux, light_group);
 			}
 			break;
 		}
 		case HH_KD_TREE: {
-			kdtree->AddFlux(accel, passIndex, hitPoint, wi, sw, photonFlux, light_group);
+			kdtree->AddFlux(accel, passIndex, bsdf, hitPoint, wi, sw, photonFlux, light_group);
 			break;
 		}
 		default:
@@ -166,7 +160,7 @@ void HashCell::HCKdTree::RecursiveBuild(const u_int passIndex,
 	}
 }
 
-void HashCell::HCKdTree::AddFlux(HitPointsLookUpAccel *accel, const u_int passIndex, const Point &p,
+void HashCell::HCKdTree::AddFlux(HitPointsLookUpAccel *accel, const u_int passIndex, const BSDF &bsdf, const Point &p,
 		const Vector &wi, const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, u_int light_group) {
 	unsigned int nodeNumStack[64];
 	// Start from the first node
@@ -196,6 +190,6 @@ void HashCell::HCKdTree::AddFlux(HitPointsLookUpAccel *accel, const u_int passIn
 
 		// Process the leaf
 		HitPoint *hp = nodeData[nodeNum];
-		accel->AddFluxToHitPoint(hp, passIndex, p, wi, sw, photonFlux, light_group);
+		accel->AddFluxToHitPoint(hp, passIndex, bsdf, p, wi, sw, photonFlux, light_group);
 	}
 }

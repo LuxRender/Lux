@@ -172,7 +172,7 @@ void CuckooHashGrid::Insert(const int x, const int y, const int z, HitPoint *hp)
 	//LOG(LUX_DEBUG, LUX_NOERROR) << "Discarded hit point in CuckooHashGrid::Insert()";
 }
 
-void CuckooHashGrid::AddFlux(const Point &hitPoint, const u_int passIndex, const Vector &wi,
+void CuckooHashGrid::AddFlux(const Point &hitPoint, const u_int passIndex, const BSDF &bsdf, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group) {
 	// Look for eye path hit points near the current hit point
 	Vector hh = (hitPoint - hitPoints->GetBBox(passIndex).pMin) * invCellSize;
@@ -182,13 +182,13 @@ void CuckooHashGrid::AddFlux(const Point &hitPoint, const u_int passIndex, const
 
 	HitPoint *hp = grid1[Hash1(ix, iy, iz)].hitPoint;
 	if (hp)
-		AddFluxToHitPoint(hp, passIndex, hitPoint, wi, sw, photonFlux, light_group);
+		AddFluxToHitPoint(hp, passIndex, bsdf, hitPoint, wi, sw, photonFlux, light_group);
 
 	hp = grid2[Hash2(ix, iy, iz)].hitPoint;
 	if (hp)
-		AddFluxToHitPoint(hp, passIndex, hitPoint, wi, sw, photonFlux, light_group);
+		AddFluxToHitPoint(hp, passIndex, bsdf, hitPoint, wi, sw, photonFlux, light_group);
 
 	hp = grid3[Hash3(ix, iy, iz)].hitPoint;
 	if (hp)
-		AddFluxToHitPoint(hp, passIndex, hitPoint, wi, sw, photonFlux, light_group);
+		AddFluxToHitPoint(hp, passIndex, bsdf, hitPoint, wi, sw, photonFlux, light_group);
 }

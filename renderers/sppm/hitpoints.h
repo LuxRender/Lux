@@ -70,8 +70,7 @@ public:
 	// Used for SURFACE type
 	Point position;
 	Vector wo;
-	Normal bsdfNG, bsdfNS;
-	SWCSpectrum bsdfRoverPI;
+	Normal bsdfNG;
 
 	vector<XYZColor> emittedRadiance;
 };
@@ -130,10 +129,10 @@ public:
 	const float GetPassWavelengthSample() { return eyePassWavelengthSample; }
 	const float GetPhotonPassWavelengthSample() { return photonPassWavelengthSample; }
 
-	void AddFlux(const Point &hitPoint, const Vector &wi,
+	void AddFlux(const Point &hitPoint, const BSDF &bsdf, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group) {
 		const u_int passIndex = currentPhotonPass % 2;
-		lookUpAccel[passIndex]->AddFlux(hitPoint, passIndex, wi, sw, photonFlux, light_group);
+		lookUpAccel[passIndex]->AddFlux(hitPoint, passIndex, bsdf, wi, sw, photonFlux, light_group);
 	}
 
 	void AccumulateFlux(const vector<unsigned long long> &photonTracedByLightGroup,

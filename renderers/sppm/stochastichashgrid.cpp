@@ -92,7 +92,7 @@ void StochasticHashGrid::RefreshMutex(const u_int passIndex) {
 	std::cerr << "StochasticHashGrid.emptyCells = " << (100.f * emptyCells / gridSize) << "%" << std::endl;*/
 }
 
-void StochasticHashGrid::AddFlux(const Point &hitPoint, const u_int passIndex, const Vector &wi,
+void StochasticHashGrid::AddFlux(const Point &hitPoint, const u_int passIndex,  const BSDF &bsdf, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group) {
 	// Look for eye path hit points near the current hit point
 	Vector hh = (hitPoint - hitPoints->GetBBox(passIndex).pMin) * invCellSize;
@@ -102,5 +102,5 @@ void StochasticHashGrid::AddFlux(const Point &hitPoint, const u_int passIndex, c
 
 	GridCell &cell(grid[Hash(ix, iy, iz)]);
 	if (cell.count > 0)
-		AddFluxToHitPoint(cell.hitPoint, passIndex, hitPoint, wi, sw, photonFlux * cell.count, light_group);
+		AddFluxToHitPoint(cell.hitPoint, passIndex, bsdf, hitPoint, wi, sw, photonFlux * cell.count, light_group);
 }

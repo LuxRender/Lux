@@ -99,7 +99,7 @@ void StochasticMultiHashGrid::RefreshMutex(const u_int passIndex) {
 	std::cerr << "StochasticMultiHashGrid.emptyCells = " << (100.f * emptyCells / gridSize) << "%" << std::endl;*/
 }
 
-void StochasticMultiHashGrid::AddFlux(const Point &hitPoint, const u_int passIndex, const Vector &wi,
+void StochasticMultiHashGrid::AddFlux(const Point &hitPoint, const u_int passIndex, const BSDF &bsdf, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group) {
 	// Look for eye path hit points near the current hit point
 	Vector hh = (hitPoint - hitPoints->GetBBox(passIndex).pMin) * invCellSize;
@@ -109,19 +109,19 @@ void StochasticMultiHashGrid::AddFlux(const Point &hitPoint, const u_int passInd
 
 	GridCell &cell1(grid[Hash1(ix, iy, iz)]);
 	if (cell1.count > 0)
-		AddFluxToHitPoint(cell1.hitPoint, passIndex, hitPoint, wi, sw, photonFlux * cell1.count, light_group);
+		AddFluxToHitPoint(cell1.hitPoint, passIndex, bsdf, hitPoint, wi, sw, photonFlux * cell1.count, light_group);
 	else
 		return;
 
 	GridCell &cell2(grid[Hash2(ix, iy, iz)]);
 	if (cell2.count > 0)
-		AddFluxToHitPoint(cell2.hitPoint, passIndex, hitPoint, wi, sw, photonFlux * cell2.count, light_group);
+		AddFluxToHitPoint(cell2.hitPoint, passIndex, bsdf, hitPoint, wi, sw, photonFlux * cell2.count, light_group);
 	else
 		return;
 
 	GridCell &cell3(grid[Hash3(ix, iy, iz)]);
 	if (cell3.count > 0)
-		AddFluxToHitPoint(cell3.hitPoint, passIndex, hitPoint, wi, sw, photonFlux * cell3.count, light_group);
+		AddFluxToHitPoint(cell3.hitPoint, passIndex, bsdf, hitPoint, wi, sw, photonFlux * cell3.count, light_group);
 	else
 		return;
 }

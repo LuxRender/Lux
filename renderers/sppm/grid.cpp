@@ -132,7 +132,7 @@ void GridLookUpAccel::RefreshMutex(const u_int passIndex) {
 	std::cerr << "Grid.emptyCells = " << (100.f * emptyCells / gridSize) << "%" << std::endl;*/
 }
 
-void GridLookUpAccel::AddFlux(const Point &hitPoint, const u_int passIndex, const Vector &wi,
+void GridLookUpAccel::AddFlux(const Point &hitPoint, const u_int passIndex, const BSDF &bsdf, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group) {
 	// Look for eye path hit points near the current hit point
 	Vector hh = (hitPoint - hitPoints->GetBBox(passIndex).pMin) * invCellSize;
@@ -152,7 +152,7 @@ void GridLookUpAccel::AddFlux(const Point &hitPoint, const u_int passIndex, cons
 		while (iter != hps->end()) {
 			HitPoint *hp = *iter++;
 
-			AddFluxToHitPoint(hp, passIndex, hitPoint, wi, sw, photonFlux, light_group);
+			AddFluxToHitPoint(hp, passIndex, bsdf, hitPoint, wi, sw, photonFlux, light_group);
 		}
 	}
 }

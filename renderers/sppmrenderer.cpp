@@ -673,14 +673,14 @@ void SPPMRenderer::PhotonPassRenderThread::TracePhotons() {
 				++nIntersections;
 
 				// Handle photon/surface intersection
-				Vector wo = -photonRay.d;
+				Vector wi = -photonRay.d;
 
 				// Deposit Flux (only if we have hit a diffuse surface)
 				if (photonBSDF->NumComponents(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)) > 0)
-					renderer->hitPoints->AddFlux(photonIsect.dg.p, wo, sw, alpha, light->group);
+					renderer->hitPoints->AddFlux(photonIsect.dg.p, *photonBSDF, wi, sw, alpha, light->group);
 
 				// Sample new photon ray direction
-				Vector wi;
+				Vector wo;
 				float pdfo;
 				BxDFType flags;
 				// Get random numbers for sampling outgoing photon direction
@@ -690,7 +690,7 @@ void SPPMRenderer::PhotonPassRenderThread::TracePhotons() {
 
 				// Compute new photon weight and possibly terminate with RR
 				SWCSpectrum fr;
-				if (!photonBSDF->SampleF(sw, wo, &wi, u1, u2, u3, &fr, &pdfo, BSDF_ALL, &flags))
+				if (!photonBSDF->SampleF(sw, wi, &wo, u1, u2, u3, &fr, &pdfo, BSDF_ALL, &flags))
 					break;
 
 				// Russian Roulette
@@ -701,7 +701,7 @@ void SPPMRenderer::PhotonPassRenderThread::TracePhotons() {
 					break;
 
 				alpha *= anew / continueProb;
-				photonRay = Ray(photonIsect.dg.p, wi);
+				photonRay = Ray(photonIsect.dg.p, wo);
 				volume = photonBSDF->GetVolume(photonRay.d);
 			}
 		}

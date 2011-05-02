@@ -156,19 +156,19 @@ void HitPoints::Init() {
 
 	// Allocate hit points lookup accelerator
 	switch (renderer->sppmi->lookupAccelType) {
-		case HASH_GRID:
+		/*case HASH_GRID:
 			lookUpAccel[0] = new HashGrid(this);
 			lookUpAccel[1] = new HashGrid(this);
 			break;
 		case KD_TREE:
 			lookUpAccel[0] = new KdTree(this);
 			lookUpAccel[1] = new KdTree(this);
-			break;
+			break;*/
 		case HYBRID_HASH_GRID:
 			lookUpAccel[0] = new HybridHashGrid(this);
 			lookUpAccel[1] = new HybridHashGrid(this);
 			break;
-		case STOCHASTIC_HASH_GRID:
+		/*case STOCHASTIC_HASH_GRID:
 			lookUpAccel[0] = new StochasticHashGrid(this);
 			lookUpAccel[1] = new StochasticHashGrid(this);
 			break;
@@ -187,7 +187,7 @@ void HitPoints::Init() {
 		case STOCHASTIC_MULTIHASH_GRID:
 			lookUpAccel[0] = new StochasticMultiHashGrid(this);
 			lookUpAccel[1] = new StochasticMultiHashGrid(this);
-			break;
+			break;*/
 		default:
 			assert (false);
 	}
@@ -494,10 +494,6 @@ bool HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, const float *u)
 			// It is a valid hit point
 			hpep->type = SURFACE;
 			hpep->bsdfNG = bsdf->ng;
-			hpep->bsdfNS = bsdf->dgShading.nn;
-			const Vector vn(hpep->bsdfNS);
-			hpep->bsdfRoverPI = bsdf->F(sw, vn, vn,
-					true, BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE));
 			hpep->pathThroughput = pathThroughput * rayWeight;
 			for(unsigned int j = 0; j < lightGroupCount; ++j)
 				hpep->emittedRadiance[j] = XYZColor(sw, L[j] * rayWeight);
