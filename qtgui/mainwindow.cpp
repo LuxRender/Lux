@@ -20,6 +20,7 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
+#define BOOST_FILESYSTEM_VERSION 2
 #include <boost/bind.hpp>
 #include <boost/filesystem.hpp>
 //#include <boost/filesystem/path.hpp>
