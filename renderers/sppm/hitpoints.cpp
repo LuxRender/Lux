@@ -27,6 +27,9 @@
 #include "light.h"
 #include "reflection/bxdf.h"
 #include "pixelsamplers/vegas.h"
+#include "pixelsamplers/hilbertpx.h"
+#include "pixelsamplers/tilepx.h"
+#include "context.h"
 
 using namespace lux;
 
@@ -46,8 +49,21 @@ HitPoints::HitPoints(SPPMRenderer *engine, RandomGenerator *rng)  {
 
 	// Get the count of hit points required
 	int xstart, xend, ystart, yend;
-    scene->camera->film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
-	pixelSampler = new VegasPixelSampler(xstart, xend, ystart, yend);
+	scene->camera->film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
+
+	// Set the pixelsampler
+	if(renderer->sppmi->PixelSampler == "vegas"){
+		pixelSampler = new VegasPixelSampler(xstart, xend, ystart, yend);
+	}
+	if(renderer->sppmi->PixelSampler == "hilbert"){
+		pixelSampler = new HilbertPixelSampler(xstart, xend, ystart, yend);
+	}
+	if(renderer->sppmi->PixelSampler == "tile"){
+		pixelSampler = new TilePixelSampler(xstart, xend, ystart, yend);
+	}
+	if(renderer->sppmi->PixelSampler == "linear"){
+		pixelSampler = new LinearPixelSampler(xstart, xend, ystart, yend);
+	}
 
 	hitPoints = new std::vector<HitPoint>(pixelSampler->GetTotalPixels());
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Hit points count: " << hitPoints->size();
@@ -602,4 +618,20 @@ void HitPoints::UpdateFilm() {
 	//}
 
 	scene.camera->film->CheckWriteOuputInterval();
+
+	int passCount = luxStatistics("pass");
+	int hltSpp = scene.camera->film->haltSamplesPerPixel;
+	if(hltSpp > 0){
+		if(passCount == hltSpp){
+			renderer->Terminate();
+		}
+	}
+	
+	int secsElapsed = luxStatistics("secElapsed");
+	int hltTime = scene.camera->film->haltTime;
+	if(hltTime > 0){
+		if(secsElapsed > hltTime){
+			renderer->Terminate();
+		}
+	}
 }

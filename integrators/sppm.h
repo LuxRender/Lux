@@ -42,6 +42,7 @@ public:
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 
 	// Variables used by the hybrid sppm renderer
+	string PixelSampler;
 	LookUpAccelType lookupAccelType;
 
 	// double instead of float because photon counters declared as int 64bit
