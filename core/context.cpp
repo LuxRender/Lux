@@ -489,7 +489,21 @@ void Context::LightSource(const string &n, const ParamSet &params) {
 
 	if (n == "sunsky") {
 		//SunSky light - create both sun & sky lightsources
-		Light *lt_sun = MakeLight("sun", curTransform, params);
+
+		// Stop the sun complaining about unused sky parameters
+		ParamSet sunparams(params);
+		sunparams.EraseFloat("horizonbrightness");
+		sunparams.EraseFloat("horizonsize");
+		sunparams.EraseFloat("sunhalobrightness");
+		sunparams.EraseFloat("sunhalosize");
+		sunparams.EraseFloat("backscattering");
+		sunparams.EraseFloat("aconst");
+		sunparams.EraseFloat("bconst");
+		sunparams.EraseFloat("cconst");
+		sunparams.EraseFloat("dconst");
+		sunparams.EraseFloat("econst");
+
+		Light *lt_sun = MakeLight("sun", curTransform, sunparams);
 		if (lt_sun == NULL) {
 			LOG(LUX_ERROR,LUX_SYNTAX)<< "luxLightSource: light type sun unknown.";
 			graphicsState->currentLightPtr0 = NULL;
@@ -500,7 +514,12 @@ void Context::LightSource(const string &n, const ParamSet &params) {
 			lt_sun->group = lg;
 			lt_sun->SetVolume(graphicsState->exterior);
 		}
-		Light *lt_sky = MakeLight("sky", curTransform, params);
+
+		// Stop the sky complaining about unused sun params
+		ParamSet skyparams(params);
+		skyparams.EraseFloat("relsize");
+
+		Light *lt_sky = MakeLight("sky", curTransform, skyparams);
 		if (lt_sky == NULL) {
 			LOG(LUX_ERROR,LUX_SYNTAX)<< "luxLightSource: light type sky unknown.";
 			graphicsState->currentLightPtr1 = NULL;
@@ -511,6 +530,7 @@ void Context::LightSource(const string &n, const ParamSet &params) {
 			lt_sky->group = lg;
 			lt_sky->SetVolume(graphicsState->exterior);
 		}
+
 	} else {
 		// other lightsource type
 		Light *lt = MakeLight(n, curTransform, params);
