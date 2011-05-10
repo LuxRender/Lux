@@ -63,8 +63,8 @@ using boost::asio::ip::tcp;
 // RenderServer
 //------------------------------------------------------------------------------
 
-RenderServer::RenderServer(int tCount, int port, bool wFlmFile) : threadCount(tCount),
-	tcpPort(port), writeFlmFile(wFlmFile), state(UNSTARTED), serverThread(NULL), errorMessages()
+RenderServer::RenderServer(int tCount, int port, bool wFlmFile) : errorMessages(), threadCount(tCount),
+	tcpPort(port), writeFlmFile(wFlmFile), state(UNSTARTED), serverThread(NULL)
 {
 }
 
