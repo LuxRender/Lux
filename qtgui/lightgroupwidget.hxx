@@ -54,7 +54,6 @@ public:
 
 signals:
 	void valuesChanged();
-	void signalLightGroupSolo(int index);
 
 protected:
 
@@ -91,8 +90,6 @@ private slots:
 	void colorPicker();
 
    void colorSelected(const QColor & color);
-
-	void soloEnabled();
 };
 
 #endif // LIGHTGROUPWIDGET_H

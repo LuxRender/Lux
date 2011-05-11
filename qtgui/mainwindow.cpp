@@ -2070,7 +2070,9 @@ void MainWindow::ResetLightGroupsFromFilm( bool useDefaults )
 	int numLightGroups = (int)luxGetParameterValue(LUX_FILM, LUX_FILM_LG_COUNT);
 	for (int i = 0; i < numLightGroups; i++) {
 		PaneWidget *pane = new PaneWidget(ui->lightGroupsAreaContents);
+		pane->SetIndex(i);
 		pane->showOnOffButton();
+		pane->showSoloButton();
 		LightGroupWidget *currWidget = new LightGroupWidget(pane);
 		currWidget->SetIndex(i);
 		currWidget->ResetValuesFromFilm( useDefaults );
@@ -2078,7 +2080,8 @@ void MainWindow::ResetLightGroupsFromFilm( bool useDefaults )
 		pane->setIcon(":/icons/lightgroupsicon.png");
 		pane->setWidget(currWidget);
 		connect(currWidget, SIGNAL(valuesChanged()), this, SLOT(toneMapParamsChanged()));
-		connect(currWidget, SIGNAL(signalLightGroupSolo(int)), this, SLOT(setLightGroupSolo(int)));
+		connect(pane, SIGNAL(valuesChanged()), this, SLOT(toneMapParamsChanged()));
+		connect(pane, SIGNAL(signalLightGroupSolo(int)), this, SLOT(setLightGroupSolo(int)));
 		ui->lightGroupsLayout->addWidget(pane);
 		pane->expand();
 		m_LightGroupPanes.push_back(pane);
@@ -2100,10 +2103,17 @@ void MainWindow::setLightGroupSolo( int index )
 			if ( index == -1 )
 			{
 				((LightGroupWidget *)(*it)->getWidget())->setEnabled( true );
+				(*it)->SetSolo( SOLO_OFF );
 			}
 			else if ( n != index )
 			{
 				((LightGroupWidget *)(*it)->getWidget())->setEnabled( false );
+				(*it)->SetSolo( SOLO_ON );
+			}
+			else
+			{
+				((LightGroupWidget *)(*it)->getWidget())->setEnabled( true );
+				(*it)->SetSolo( SOLO_ENABLED );
 			}
 		}
 	}

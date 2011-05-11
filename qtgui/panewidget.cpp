@@ -35,10 +35,13 @@ void ClickableLabel::mouseReleaseEvent(QMouseEvent* event)
 	emit clicked();
 }
 
-PaneWidget::PaneWidget(QWidget *parent, const QString& label, const QString& icon, bool onoffbutton) : QWidget(parent), ui(new Ui::PaneWidget)
+PaneWidget::PaneWidget(QWidget *parent, const QString& label, const QString& icon, bool onoffbutton, bool solobutton) : QWidget(parent), ui(new Ui::PaneWidget)
 {
 	expanded = false;
 	onofflabel = NULL;
+	sololabel = NULL;
+
+	m_Index = -1;
 
 	ui->setupUi(this);
 	
@@ -66,9 +69,13 @@ PaneWidget::PaneWidget(QWidget *parent, const QString& label, const QString& ico
 	connect(expandlabel, SIGNAL(clicked()), this, SLOT(expandClicked()));
 
 	powerON = false;
+	m_SoloState = SOLO_OFF;
 	
 	if (onoffbutton)
 		showOnOffButton();
+
+	if (solobutton)
+		showSoloButton();
 }
 
 PaneWidget::~PaneWidget()
@@ -77,6 +84,9 @@ PaneWidget::~PaneWidget()
 
 	if (onofflabel != NULL)
 		delete onofflabel;
+
+	if (sololabel != NULL)
+		delete sololabel;
 }
 
 void PaneWidget::setTitle(const QString& title)
@@ -95,9 +105,11 @@ void PaneWidget::showOnOffButton(bool showbutton)
 		onofflabel = new ClickableLabel("*", this);
 		onofflabel->setPixmap(QPixmap(":/icons/poweronicon.png"));
 		onofflabel->setStyleSheet(QString::fromUtf8(" QFrame {\n""background-color: rgba(232, 232, 232, 0)\n""}"));
+
 		ui->gridLayout->removeWidget(expandlabel);
 		ui->gridLayout->addWidget(onofflabel, 0, 3, 1, 1);
 		ui->gridLayout->addWidget(expandlabel, 0, 4, 1, 1);
+
 		connect(onofflabel, SIGNAL(clicked()), this, SLOT(onoffClicked()));
 		powerON = true;
 	}
@@ -131,6 +143,56 @@ void PaneWidget::expandClicked()
 	else
 		expand();
 
+}
+
+void PaneWidget::showSoloButton(bool showbutton)
+{
+	if (sololabel == NULL) {
+		sololabel = new ClickableLabel("S", this);
+		sololabel->setPixmap(QPixmap(":/icons/plusicon.png"));
+		sololabel->setStyleSheet(QString::fromUtf8(" QFrame {\n""background-color: rgba(232, 232, 232, 0)\n""}"));
+		sololabel->setToolTip( "Click to make this lightgroup solo, click again to remove solo mode." );
+
+		ui->gridLayout->removeWidget(expandlabel);
+		ui->gridLayout->addWidget(sololabel, 0, 3, 1, 1);
+		ui->gridLayout->addWidget(onofflabel, 0, 4, 1, 1);
+		ui->gridLayout->addWidget(expandlabel, 0, 5, 1, 1);
+
+		connect(sololabel, SIGNAL(clicked()), this, SLOT(soloClicked()));
+	}
+
+	if (showbutton)
+		sololabel->show();
+	else
+		sololabel->hide();
+}
+
+void PaneWidget::soloClicked()
+{
+	if ( m_SoloState == SOLO_ENABLED )
+	{
+		emit signalLightGroupSolo( -1 );
+	}
+	else 
+	{
+		emit signalLightGroupSolo( m_Index );
+	}
+
+	emit valuesChanged();
+}
+
+void PaneWidget::SetSolo( SoloState esolo )
+{
+	m_SoloState = esolo;
+	
+	if ( m_SoloState == SOLO_ENABLED || m_SoloState == SOLO_OFF )
+	{
+		sololabel->setPixmap(QPixmap(":/icons/plusicon.png"));
+	}
+	else
+	{
+		sololabel->setPixmap(QPixmap(":/icons/minusicon.png"));
+	}
 }
 
 void PaneWidget::expand()
