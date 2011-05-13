@@ -20,13 +20,13 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
+// Lux headers
+#include "api.h"
+
 // boost headers
 #include <boost/python.hpp>
 #include <boost/python/object.hpp>
 #include <boost/thread/once.hpp>
-
-// Lux headers
-#include "api.h"
 
 // pylux headers
 #include "binding.h"

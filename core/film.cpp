@@ -597,7 +597,8 @@ Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop
 	Queryable("film"),
 	xResolution(xres), yResolution(yres),
 	EV(0.f), averageLuminance(0.f),  numberOfSamplesFromNetwork(0), numberOfLocalSamples(0),
-	filter(filt), filename(filename1),
+	contribPool(NULL), filter(filt), filterTable(NULL), filterLUTs(NULL),
+	filename(filename1),
 	colorSpace(0.63f, 0.34f, 0.31f, 0.595f, 0.155f, 0.07f, 0.314275f, 0.329411f), // default is SMPTE
 	ZBuffer(NULL), use_Zbuf(useZbuffer),
 	debug_mode(debugmode), premultiplyAlpha(premult),
@@ -1010,10 +1011,11 @@ void Film::SetSample(const Contribution *contrib) {
 
 void Film::WriteResumeFilm(const string &filename)
 {
+	string fullfilename = boost::filesystem::complete(boost::filesystem::path(filename, boost::filesystem::native), boost::filesystem::current_path()).file_string();
 	// Dade - save the status of the film to the file
-	LOG(LUX_INFO, LUX_NOERROR) << "Writing film status to file";
+	LOG(LUX_INFO, LUX_NOERROR) << "Writing resume film file";
 
-	string tempfilename = filename + ".temp";
+	const string tempfilename = fullfilename + ".temp";
 
     std::ofstream filestr(tempfilename.c_str(), std::ios_base::out | std::ios_base::binary);
 	if(!filestr) {
@@ -1027,14 +1029,18 @@ void Film::WriteResumeFilm(const string &filename)
     filestr.close();
 
 	if (writeSuccessful) {
-		// if remove fails, rename might depending on platform fail, catch error there
-		remove(filename.c_str());
-		if (rename(tempfilename.c_str(), filename.c_str())) {
+		try {
+#if !defined(BOOST_FILESYSTEM_VERSION) || (BOOST_FILESYSTEM_VERSION < 3)
+			// boost filesystem v2 does not have POSIX compliant rename()
+			if (boost::filesystem::exists(fullfilename))
+				boost::filesystem::remove(fullfilename);
+#endif
+			boost::filesystem::rename(tempfilename, fullfilename);
+			LOG(LUX_INFO, LUX_NOERROR) << "Resume film written to '" << fullfilename << "'";
+		} catch (std::runtime_error e) {
 			LOG(LUX_ERROR, LUX_SYSTEM) << 
-				"Failed to rename new resume film, leaving new resume film as '" << tempfilename << "'";
-			return;
+				"Failed to rename new resume film, leaving new resume film as '" << tempfilename << "' (" << e.what() << ")";
 		}
-		LOG(LUX_INFO, LUX_NOERROR) << "Film status written to '" << filename << "'";
 	}
 }
 

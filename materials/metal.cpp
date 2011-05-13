@@ -31,6 +31,7 @@
 #include "texture.h"
 #include "paramset.h"
 #include "dynload.h"
+#include "filedata.h"
 #include "error.h"
 
 #include "irregular.h"
@@ -355,6 +356,10 @@ int IORFromFile(const string filename, vector<float> &wl, vector<float> &n, vect
 }
 
 Material *Metal::CreateMaterial(const Transform &xform, const ParamSet &tp) {
+	
+	// Attempt decode of embedded data; not supporting "name" parameter
+	FileData::decode(tp, "filename");
+	
 	//FIXME: "name" is deprecated in favor of "filename"
 	// keep it until v0.8 until the exporters have fully transitioned
 	string metalname = AdjustFilename(tp.FindOneString("filename", tp.FindOneString("name", "")));

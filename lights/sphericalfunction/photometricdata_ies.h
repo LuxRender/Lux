@@ -49,7 +49,7 @@ public:
 	void inline ReadLine( std::string & sLine )
 	{
 		memset( &sLine[0], 0, sLine.size() );
-		m_fsIES.getline( &sLine[0], 256, 0x0A );
+		m_fsIES.getline( &sLine[0], sLine.size(), 0x0A );
 	}
 
 	//////////////////////////////////////////////
@@ -91,7 +91,7 @@ private:
 	bool PrivateLoad( const char* );
 
 	bool 			BuildKeywordList();
-	void 			BuildDataLine( unsigned int, std::vector<double>& );
+	void 			BuildDataLine( std::stringstream &, unsigned int, std::vector<double>& );
 	bool 			BuildLightData();
 	
 	bool 			m_bValid;

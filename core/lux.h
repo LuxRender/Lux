@@ -42,6 +42,7 @@ using std::max;
 using std::swap;
 using std::sort;
 
+#define BOOST_FILESYSTEM_VERSION 2
 
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
@@ -102,8 +103,6 @@ inline float expf(float a) { return exp(a); }
 #  define INFINITY HUGE_VAL
 //#define INFINITY std::numeric_limits<float>::max()
 #endif
-#define LUX_VERSION 0.8
-#define LUX_VERSION_STRING "0.8RC2"
 #if defined(WIN32) && !defined(__CYGWIN__)
 #  define LUX_PATH_SEP ";"
 #else

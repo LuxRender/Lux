@@ -60,7 +60,7 @@ void Scene::UpdateFramebuffer() {
 
 	// I have to call ContributionPool method here in order
 	// to acquire splattingMutex lock
-	if (camera->film->contribPool)
+	if (camera->film->contribPool && !filmOnly)
 		camera->film->contribPool->CheckFilmWriteOuputInterval();
 }
 

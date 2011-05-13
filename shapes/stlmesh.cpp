@@ -47,6 +47,8 @@ Shape* StlMesh::CreateShape(const Transform &o2w,
 
 	int nsubdivlevels = params.FindOneInt("nsubdivlevels", 0);
 
+	bool recenterMesh = params.FindOneBool("recenter_mesh", false);
+
 	Mesh::MeshSubdivType subdivType;
 
 	if (subdivscheme == "loop")
@@ -218,26 +220,18 @@ Shape* StlMesh::CreateShape(const Transform &o2w,
 		fclose(pFile);
 	}
 
-	// Bringing bounding box center to 0;0;0
+	if (recenterMesh)
 	{
-		Vector MinV(+FLT_MAX, +FLT_MAX, +FLT_MAX);
-		Vector MaxV(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+		// Bringing bounding box center to (0,0,0)
+		BBox bbox;
 
 		for(size_t i = 0 ; i < Vertices.size() ; i++)
-		{
-			if(Vertices[i].x < MinV.x) MinV.x = Vertices[i].x;
-			if(Vertices[i].y < MinV.y) MinV.y = Vertices[i].y;
-			if(Vertices[i].z < MinV.z) MinV.z = Vertices[i].z;
+			bbox = Union(bbox, BBox(Vertices[i]));
 
-			if(Vertices[i].x > MaxV.x) MaxV.x = Vertices[i].x;
-			if(Vertices[i].y > MaxV.y) MaxV.y = Vertices[i].y;
-			if(Vertices[i].z > MaxV.z) MaxV.z = Vertices[i].z;
-		}
-
-		Vector CenterV((MinV + MaxV) * 0.5f);
+		Vector centerV((bbox.pMin + bbox.pMax) * 0.5f);
 
 		for(size_t i = 0 ; i < Vertices.size() ; i++)
-			Vertices[i] -= CenterV;
+			Vertices[i] -= centerV;
 	}
 
 	// Filling face indices

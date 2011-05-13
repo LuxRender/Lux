@@ -20,6 +20,7 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
+#define BOOST_FILESYSTEM_VERSION 2
 #include <boost/bind.hpp>
 #include <boost/filesystem.hpp>
 //#include <boost/filesystem/path.hpp>
@@ -366,6 +367,9 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	m_auto_tonemap = false;
 	resetToneMapping();
 	m_auto_tonemap = true;
+
+	// hack for "tonemapping lag"
+	m_bTonemapPending = false;
 
 	copyLog2Console = m_copyLog2Console;
 	luxErrorHandler(&LuxGuiErrorHandler);
@@ -1153,6 +1157,10 @@ void MainWindow::applyTonemapping(bool withlayercomputation)
 		}
 		m_updateThread = new boost::thread(boost::bind(&MainWindow::updateThread, this));
 	}
+	else if (m_updateThread != NULL ) // Tonemapping in progress, request second event, hack for "tonemapping lag."
+	{
+		m_bTonemapPending = true;
+	}
 }
 
 void MainWindow::engineThread(QString filename)
@@ -1639,6 +1647,13 @@ bool MainWindow::event (QEvent *event)
 		indicateActivity(false);
 		renderView->reload();
 		histogramwidget->Update();
+
+		if ( m_bTonemapPending ) // hack for "tonemapping lag."
+		{
+			m_bTonemapPending = false;
+			applyTonemapping();
+		}
+
 		retval = TRUE;
 	}
 	else if (eventtype == EVT_LUX_PARSEERROR) {
@@ -2055,7 +2070,9 @@ void MainWindow::ResetLightGroupsFromFilm( bool useDefaults )
 	int numLightGroups = (int)luxGetParameterValue(LUX_FILM, LUX_FILM_LG_COUNT);
 	for (int i = 0; i < numLightGroups; i++) {
 		PaneWidget *pane = new PaneWidget(ui->lightGroupsAreaContents);
+		pane->SetIndex(i);
 		pane->showOnOffButton();
+		pane->showSoloButton();
 		LightGroupWidget *currWidget = new LightGroupWidget(pane);
 		currWidget->SetIndex(i);
 		currWidget->ResetValuesFromFilm( useDefaults );
@@ -2063,15 +2080,43 @@ void MainWindow::ResetLightGroupsFromFilm( bool useDefaults )
 		pane->setIcon(":/icons/lightgroupsicon.png");
 		pane->setWidget(currWidget);
 		connect(currWidget, SIGNAL(valuesChanged()), this, SLOT(toneMapParamsChanged()));
+		connect(pane, SIGNAL(valuesChanged()), this, SLOT(toneMapParamsChanged()));
+		connect(pane, SIGNAL(signalLightGroupSolo(int)), this, SLOT(setLightGroupSolo(int)));
 		ui->lightGroupsLayout->addWidget(pane);
-		if (i == 0)
-			pane->expand();
+		pane->expand();
 		m_LightGroupPanes.push_back(pane);
 	}
 	ui->lightGroupsLayout->addItem(spacer);
 
 	// Update
 	UpdateLightGroupWidgetValues();
+}
+
+void MainWindow::setLightGroupSolo( int index )
+{
+	int n = 0;
+
+	for (QVector<PaneWidget*>::iterator it = m_LightGroupPanes.begin(); it != m_LightGroupPanes.end(); it++, n++ ) 
+	{
+		if ( (*it)->powerON )
+		{
+			if ( index == -1 )
+			{
+				((LightGroupWidget *)(*it)->getWidget())->setEnabled( true );
+				(*it)->SetSolo( SOLO_OFF );
+			}
+			else if ( n != index )
+			{
+				((LightGroupWidget *)(*it)->getWidget())->setEnabled( false );
+				(*it)->SetSolo( SOLO_ON );
+			}
+			else
+			{
+				((LightGroupWidget *)(*it)->getWidget())->setEnabled( true );
+				(*it)->SetSolo( SOLO_ENABLED );
+			}
+		}
+	}
 }
 
 void MainWindow::UpdateNetworkTree()

@@ -29,6 +29,9 @@
 #include <exception>
 #include <iostream>
 
+#include "api.h"
+#include "film/fleximage.h"
+
 #include <boost/program_options.hpp>
 #include <boost/thread.hpp>
 #include <boost/thread/xtime.hpp>
@@ -36,9 +39,6 @@
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <boost/scoped_ptr.hpp>
-
-#include "api.h"
-#include "film/fleximage.h"
 
 #if defined(WIN32) && !defined(__CYGWIN__) /* We need the following two to set stdout to binary */
 #include <io.h>

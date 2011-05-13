@@ -52,13 +52,20 @@ signals:
 
 };
 
+enum SoloState
+{
+	SOLO_OFF,
+	SOLO_ON,
+	SOLO_ENABLED
+};
+
 class PaneWidget : public QWidget
 {
 	Q_OBJECT
 
 public:
 
-	PaneWidget(QWidget *parent, const QString& label = "", const QString& icon = "", bool onoffbutton=false);
+	PaneWidget(QWidget *parent, const QString& label = "", const QString& icon = "", bool onoffbutton=false, bool solobutton=false);
 	~PaneWidget();
 
 	void setTitle(const QString& title);
@@ -68,8 +75,19 @@ public:
 	QWidget *getWidget();
 
 	void showOnOffButton(bool showbutton = true);
+	void showSoloButton(bool showbutton = true);
 	void expand();
 	void collapse();
+
+	bool powerON;
+	
+	SoloState m_SoloState;
+	void SetSolo( SoloState );
+
+	int m_Index;
+
+	inline int  GetIndex() { return m_Index; }
+	inline void SetIndex( int Index ) { m_Index = Index; }
 
 private:
 
@@ -79,18 +97,24 @@ private:
 	QPixmap expandedicon, collapsedicon;
 	ClickableLabel *expandlabel;
 	ClickableLabel *onofflabel;
+	ClickableLabel *sololabel;
 
 	bool expanded;
 
 signals:
 
+	void valuesChanged();
+
 	void turnedOn();
 	void turnedOff();
+
+	void signalLightGroupSolo(int index);
 
 private slots:
 
 	void expandClicked();
 	void onoffClicked();
+	void soloClicked();
   
 };
 

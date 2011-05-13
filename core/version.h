@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2011 by authors (see AUTHORS.txt )                 *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -20,77 +20,23 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#ifndef LIGHTGROUPWIDGET_H
-#define LIGHTGROUPWIDGET_H
+#ifndef LUX_VERSION_H
+#define LUX_VERSION_H
+// version.h*
 
-#include <QtGui/QWidget>
-#include <QtGui/QColorDialog>
+#define XVERSION_STR(v) #v
+#define VERSION_STR(v) XVERSION_STR(v)
 
-namespace Ui
-{
-	class LightGroupWidget;
-}
 
-class LightGroupWidget : public QWidget
-{
-	Q_OBJECT
+#define LUX_VERSION 0.8
+#define LUX_VERSION_POSTFIX "RC3"
 
-public:
+#define LUX_SERVER_PROTOCOL_VERSION 1001
 
-	LightGroupWidget(QWidget *parent = 0);
-	~LightGroupWidget();
 
-	QString GetTitle();
-	int GetIndex();
-	void SetIndex(int index);
-	void UpdateWidgetValues();
-	void ResetValues();
-	void ResetValuesFromFilm(bool useDefaults);
-	void SetWidgetsEnabled(bool enabled);
-	void SetFromValues();
+#define LUX_VERSION_STRING    VERSION_STR(LUX_VERSION) LUX_VERSION_POSTFIX
 
-	void SaveSettings( QString fName );
-	void LoadSettings( QString fName );
+// renderfarm relies on the 'protocol' part of in server version string
+#define LUX_SERVER_VERSION_STRING    LUX_VERSION_STRING " (protocol: " VERSION_STR(LUX_SERVER_PROTOCOL_VERSION) ")"
 
-signals:
-	void valuesChanged();
-
-protected:
-
-	void changeEvent(QEvent * event);
-
-private:
-
-	Ui::LightGroupWidget *ui;
-	
-	QString title;
-
-	int m_Index;
-
-	bool m_LG_enable;
-	double m_LG_scale;
-	bool m_LG_temperature_enabled;
-	double m_LG_temperature;
-	bool m_LG_rgb_enabled;
-	double m_LG_scaleRed, m_LG_scaleGreen, m_LG_scaleBlue;
-	double m_LG_scaleX, m_LG_scaleY;
-
-	float SliderValToScale(int sliderval);
-	int ScaleToSliderVal(float scale);
-
-private slots:
-
-	void rgbEnabledChanged(int);
-	void bbEnabledChanged(int);
-
-	void gainChanged(int value);
-	void gainChanged(double value);
-	void colortempChanged(int value);
-	void colortempChanged(double value);
-	void colorPicker();
-
-   void colorSelected(const QColor & color);
-};
-
-#endif // LIGHTGROUPWIDGET_H
-
+#endif // LUX_VERSION_H

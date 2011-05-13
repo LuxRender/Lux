@@ -23,6 +23,7 @@
 // tabulatedfresnel.cpp*
 #include "tabulatedfresnel.h"
 #include "dynload.h"
+#include "filedata.h"
 
 #include <boost/lexical_cast.hpp>
 #include <boost/regex.hpp>
@@ -59,6 +60,10 @@ static float nmtolambda(float nm)
 Texture<FresnelGeneral> *SopraTexture::CreateFresnelTexture(const Transform &tex2world,
 	const ParamSet &tp)
 {
+
+	// Attempt decode of embedded data
+	FileData::decode(tp, "filename");
+
 	const string filename = AdjustFilename(tp.FindOneString("filename", ""));
 	std::ifstream fs;
 	fs.open(filename.c_str());
@@ -152,6 +157,9 @@ Texture<FresnelGeneral> *SopraTexture::CreateFresnelTexture(const Transform &tex
 Texture<FresnelGeneral> *LuxpopTexture::CreateFresnelTexture(const Transform &tex2world,
 	const ParamSet &tp)
 {
+	// Attempt decode of embedded data
+	FileData::decode(tp, "filename");
+
 	const string filename = AdjustFilename(tp.FindOneString("filename", ""));
 	std::ifstream fs;
 	fs.open(filename.c_str());
