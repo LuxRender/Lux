@@ -186,9 +186,8 @@ void SPPMRenderer::Render(Scene *s) {
 		exitBarrier = new boost::barrier(threadCount);
 
 		// initialise
-		photonTracedTotal.resize(scene->lightGroups.size(), 0);
-		photonTracedPass.resize(scene->lightGroups.size(), 0);
-		photonTracedPassNoLightGroup = 0;
+		photonTracedTotal = 0;
+		photonTracedPass = 0;
 		photonHitEfficiency = 0;
 
 		// start the timer
@@ -303,10 +302,7 @@ double SPPMRenderer::Statistics(const string &statName) {
 	else if (statName == "pass") {
 		return (hitPoints) ? double(hitPoints->GetPhotonPassCount()) : 0.0;
 	} else if (statName == "photonCount") {
-		unsigned long long total = 0;
-		for (size_t i = 0; i < photonTracedTotal.size(); ++i)
-			total += photonTracedTotal[i] + photonTracedPass[i];
-		return double(total);
+		return double(photonTracedTotal);
 	} else if (statName == "hitPointsUpdateEfficiency") {
 		return photonHitEfficiency;
 	} else {
@@ -563,11 +559,8 @@ void SPPMRenderer::PhotonPassRenderThread::RenderImpl(PhotonPassRenderThread *my
 			renderer->photonHitEfficiency = renderer->hitPoints->GetPhotonHitEfficency();
 
 			// First thread only tasks
-			for(u_int i = 0; i < renderer->photonTracedTotal.size(); ++i) {
-				renderer->photonTracedTotal[i] += renderer->photonTracedPass[i];
-				renderer->photonTracedPass[i] = 0;
-			}
-			renderer->photonTracedPassNoLightGroup = 0;
+			renderer->photonTracedTotal += renderer->photonTracedPass;
+			renderer->photonTracedPass = 0;
 		}
 
 		// Wait for other threads
@@ -613,7 +606,7 @@ void SPPMRenderer::PhotonPassRenderThread::TracePhotons() {
 
 	for (u_int photonCount = 0;; ++photonCount) {
 		// Check if it is time to do an eye pass
-		if (renderer->photonTracedPassNoLightGroup > renderer->sppmi->photonPerPass) {
+		if (renderer->photonTracedPass > renderer->sppmi->photonPerPass) {
 			// Ok, time to stop
 			return;
 		}
@@ -641,8 +634,7 @@ void SPPMRenderer::PhotonPassRenderThread::TracePhotons() {
 		u_int lightNum = lightCDF->SampleDiscrete(u[6], &lightPdf);
 		const Light *light = scene.lights[lightNum];
 
-		osAtomicInc(&(renderer->photonTracedPass[light->group]));
-		osAtomicInc(&(renderer->photonTracedPassNoLightGroup));
+		osAtomicInc(&renderer->photonTracedPass);
 
 		// Generate _photonRay_ from light source and initialize _alpha_
 		BSDF *bsdf;

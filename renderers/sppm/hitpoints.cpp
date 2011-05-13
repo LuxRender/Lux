@@ -209,7 +209,7 @@ void HitPoints::Init() {
 	}
 }
 
-void HitPoints::AccumulateFlux(const vector<unsigned long long> &photonTracedByLightGroup,
+void HitPoints::AccumulateFlux(unsigned long long total_photons,
 		const u_int index, const u_int count) {
 	const unsigned int workSize = hitPoints->size() / count;
 	const unsigned int first = workSize * index;
@@ -277,7 +277,7 @@ void HitPoints::AccumulateFlux(const vector<unsigned long long> &photonTracedByL
 		for(u_int j = 0; j < lightGroupsNumber; ++j) {
 			const u_int hitCount = hp->lightGroupData[j].constantHitsCount + hp->lightGroupData[j].surfaceHitsCount;
 			if (hitCount > 0) {
-				const double k = 1.0 / (M_PI * hp->accumPhotonRadius2 * photonTracedByLightGroup[j]);
+				const double k = 1.0 / (M_PI * hp->accumPhotonRadius2 * total_photons);
 
 				const XYZColor newRadiance = (hp->lightGroupData[j].accumRadiance +
 					hp->lightGroupData[j].surfaceHitsCount * hp->lightGroupData[j].reflectedFlux * k) / hitCount;

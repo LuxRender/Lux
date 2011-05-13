@@ -183,11 +183,8 @@ private:
 	double photonHitEfficiency;
 
 	// Store number of photon traced by lightgroup
-	vector<unsigned long long> photonTracedTotal;
-	vector<u_int> photonTracedPass;
-
-	// Store number of photon traced this pass, regardless of lightgroup
-	u_int photonTracedPassNoLightGroup;
+	unsigned long long photonTracedTotal;
+	u_int photonTracedPass;
 
 	fast_mutex sampPosMutex;
 	u_int sampPos;
