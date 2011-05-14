@@ -37,7 +37,7 @@ void HitPointsLookUpAccel::AddFluxToHitPoint(HitPoint *hp, const u_int passIndex
 		return;
 
 	BxDFType flag = BxDFType(BSDF_DIFFUSE | BSDF_GLOSSY |
-			((Dot(bsdf.ng, wi) > 0.f ? BSDF_REFLECTION : BSDF_TRANSMISSION)));
+			((Dot(hpep.wo, wi) > 0.f ? BSDF_REFLECTION : BSDF_TRANSMISSION)));
 	const SWCSpectrum f = bsdf.F(sw, hpep.wo, wi, false, flag);
 	if (f.Black())
 		return;
