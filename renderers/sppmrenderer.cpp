@@ -302,7 +302,7 @@ double SPPMRenderer::Statistics(const string &statName) {
 	else if (statName == "pass") {
 		return (hitPoints) ? double(hitPoints->GetPhotonPassCount()) : 0.0;
 	} else if (statName == "photonCount") {
-		return double(photonTracedTotal);
+		return double(photonTracedTotal + photonTracedPass);
 	} else if (statName == "hitPointsUpdateEfficiency") {
 		return photonHitEfficiency;
 	} else {
