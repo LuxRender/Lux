@@ -245,7 +245,7 @@ bool MultiBSDF::SampleF(const SpectrumWavelengths &sw, const Vector &woW, Vector
 		return false;
 	if (!bxdf->MatchesFlags(flags2))
 		return false;
-	if (!(bxdf->type & BSDF_SPECULAR) && matchingComps > 1) {
+	if (!(bxdf->type & BSDF_SPECULAR) && matchingComps > 1 && !isinf(*pdf)) {
 		*f_ *= *pdf;
 		*pdf *= weights[which];
 		float totalWeightR = bxdfs[which]->Weight(sw, wi);
