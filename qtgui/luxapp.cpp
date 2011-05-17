@@ -63,9 +63,8 @@ void AttachStderr()
 
 namespace po = boost::program_options;
 
-LuxGuiApp::LuxGuiApp(int argc, char **argv) : QApplication(argc, argv)
+LuxGuiApp::LuxGuiApp(int &argc, char **argv) : QApplication(argc, argv), m_argc(argc)
 {
-	m_argc = argc;
 	m_argv = argv;
 	mainwin = NULL;
 }
