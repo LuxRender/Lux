@@ -509,7 +509,8 @@ bool HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, const float *u)
 		if ((flags & BSDF_DIFFUSE) || ((flags & BSDF_GLOSSY) && (pdf < 100.f))) {
 			// It is a valid hit point
 			hpep->type = SURFACE;
-			hpep->bsdfNG = bsdf->ng;
+			// The stored bsdfNG is stored facing the eyePath
+			hpep->bsdfNG = (Dot(wo, bsdf->ng) > 0 ? bsdf->ng : -bsdf->ng);
 			hpep->pathThroughput = pathThroughput * rayWeight;
 			for(unsigned int j = 0; j < lightGroupCount; ++j)
 				hpep->emittedRadiance[j] = XYZColor(sw, L[j] * rayWeight);
