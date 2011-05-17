@@ -528,6 +528,7 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 			if (scene.surfaceIntegrator->NextState(scene, integratorState[currentNextIndex], rayBuffer, &count)) {
 				// The sample is finished
 				++nrSamples;
+				nrContribs += count;
 
 				if (!integratorState[currentNextIndex]->Init(scene)) {
 					// Dade - we have done, check what we have to do now
