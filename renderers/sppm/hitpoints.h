@@ -49,9 +49,6 @@ public:
 	XYZColor accumReflectedFlux;
 	XYZColor accumRadiance;
 
-	u_int constantHitsCount;
-	u_int surfaceHitsCount;
-
 	XYZColor radiance;
 	// Debug code
 	// Radiance Sum Square Error, used to compute Mean Square Error
