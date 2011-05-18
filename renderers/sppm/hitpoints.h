@@ -46,10 +46,8 @@ public:
 	XYZColor reflectedFlux;
 
 	u_int accumPhotonCount;
-	XYZColor accumReflectedFlux;
 	XYZColor accumRadiance;
 
-	XYZColor radiance;
 	// Debug code
 	// Radiance Sum Square Error, used to compute Mean Square Error
 	//float radianceSSE;
@@ -68,8 +66,6 @@ public:
 	Point position;
 	Vector wo;
 	Normal bsdfNG;
-
-	vector<XYZColor> emittedRadiance;
 };
 
 
@@ -132,8 +128,7 @@ public:
 		lookUpAccel[passIndex]->AddFlux(hitPoint, passIndex, bsdf, wi, sw, photonFlux, light_group);
 	}
 
-	void AccumulateFlux(unsigned long long const total_photons,
-		const u_int index, const u_int count);
+	void AccumulateFlux(const u_int index, const u_int count);
 	void SetHitPoints(RandomGenerator *rng,	const u_int index, const u_int count);
 
 	void RefreshAccelMutex() {
@@ -146,7 +141,7 @@ public:
 		lookUpAccel[passIndex]->RefreshParallel(passIndex, index, count);
 	}
 
-	void UpdateFilm();
+	void UpdateFilm(unsigned long long const total_photons);
 
 private:
 	bool TraceEyePath(HitPoint *hp, const Sample &sample, const float *u);

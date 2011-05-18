@@ -48,7 +48,7 @@ void HitPointsLookUpAccel::AddFluxToHitPoint(HitPoint *hp, const u_int passIndex
 	// TODO: it should be more something like:
 	//XYZColor flux = XYZColor(sw, photonFlux * f) * XYZColor(hp->sample->swl, hp->eyeThroughput);
 	osAtomicInc(&hp->lightGroupData[light_group].accumPhotonCount);
-	XYZColorAtomicAdd(hp->lightGroupData[light_group].accumReflectedFlux, flux);
+	XYZColorAtomicAdd(hp->lightGroupData[light_group].reflectedFlux, flux);
 }
 
 void HashCell::AddFlux(HitPointsLookUpAccel *accel, const u_int passIndex, const Point &hitPoint, const BSDF &bsdf,
