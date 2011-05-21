@@ -643,6 +643,7 @@ if(LUXRAYS_DISABLE_OPENCL)
 SET(lux_renderers_src
 	renderers/samplerrenderer.cpp
     renderers/sppmrenderer.cpp
+	renderers/sppm/photonsampler.cpp
 	renderers/sppm/lookupaccel.cpp
 	renderers/sppm/hashgrid.cpp
 	renderers/sppm/hitpoints.cpp
@@ -658,6 +659,7 @@ else(LUXRAYS_DISABLE_OPENCL)
 SET(lux_renderers_src
 	renderers/samplerrenderer.cpp
     renderers/sppmrenderer.cpp
+	renderers/sppm/photonsampler.cpp
 	renderers/sppm/lookupaccel.cpp
 	renderers/sppm/hashgrid.cpp
 	renderers/sppm/hitpoints.cpp

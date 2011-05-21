@@ -23,6 +23,7 @@
 #include "lux.h"
 #include "transport.h"
 #include "renderers/sppm/hitpoints.h"
+#include "renderers/sppm/photonsampler.h"
 
 namespace lux
 {
@@ -43,6 +44,7 @@ public:
 
 	// Variables used by the hybrid sppm renderer
 	string PixelSampler;
+	PhotonSamplerType photonSamplerType;
 	LookUpAccelType lookupAccelType;
 
 	// double instead of float because photon counters declared as int 64bit

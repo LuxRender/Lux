@@ -472,12 +472,6 @@ SPPMRenderer::PhotonPassRenderThread::PhotonPassRenderThread(u_int index, SPPMRe
 	threadRng = NULL;
 
 	Scene &scene(*(renderer->scene));
-	threadSample = new Sample(NULL, scene.volumeIntegrator, scene);
-	// Initialized later
-	threadSample->rng = NULL;
-	threadSample->camera = scene.camera->Clone();
-	threadSample->realTime = threadSample->camera->GetTime(.5f); //FIXME sample it
-	threadSample->camera->SampleMotion(threadSample->realTime);
 
 	// Compute light power CDF for photon shooting
 	u_int nLights = scene.lights.size();
@@ -490,7 +484,6 @@ SPPMRenderer::PhotonPassRenderThread::PhotonPassRenderThread(u_int index, SPPMRe
 
 SPPMRenderer::PhotonPassRenderThread::~PhotonPassRenderThread() {
 	delete lightCDF;
-	delete threadSample;
 	delete threadRng;
 }
 
@@ -522,7 +515,16 @@ void SPPMRenderer::PhotonPassRenderThread::RenderImpl(PhotonPassRenderThread *my
 	u_long seed = scene.seedBase + myThread->n + renderer->eyePassRenderThreads.size();
 	LOG(LUX_INFO, LUX_NOERROR) << "Photon pass thread " << myThread->n << " uses seed: " << seed;
 	myThread->threadRng = new RandomGenerator(seed);
-	myThread->threadSample->rng = myThread->threadRng;
+
+	// Initialize the photon sampler
+	PhotonSampler *sampler;
+	switch (renderer->sppmi->photonSamplerType) {
+		case HALTON:
+			sampler = new HaltonPhotonSampler(scene, myThread->threadRng);
+			break;
+		default:
+			throw std::runtime_error("Internal error: unknown photon sampler");
+	}
 
 	HitPoints *hitPoints = NULL;
 
@@ -549,7 +551,13 @@ void SPPMRenderer::PhotonPassRenderThread::RenderImpl(PhotonPassRenderThread *my
 		// Photon pass: trace photons
 		//----------------------------------------------------------------------
 
-		myThread->TracePhotons();
+		switch (renderer->sppmi->photonSamplerType) {
+			case HALTON:
+				myThread->TracePhotons((HaltonPhotonSampler *)sampler);
+				break;
+			default:
+				throw std::runtime_error("Internal error: unknown photon sampler");
+		}
 
 		// Wait for other threads
 		photonPassThreadBarrier->wait();
@@ -589,20 +597,16 @@ void SPPMRenderer::PhotonPassRenderThread::RenderImpl(PhotonPassRenderThread *my
 		allThreadBarrier->wait();
 	}
 
+	delete sampler;
+
 	// Wait for other threads
 	barrierExit->wait();
 }
 
-void SPPMRenderer::PhotonPassRenderThread::TracePhotons() {
+void SPPMRenderer::PhotonPassRenderThread::TracePhotons(HaltonPhotonSampler *sampler) {
 	Scene &scene(*(renderer->scene));
-	Sample &sample(*threadSample);
-
-	// Sample the wavelengths
-	sample.swl.Sample(renderer->hitPoints->GetPhotonPassWavelengthSample());
-
-	// Build the sample sequence
-	PermutedHalton halton(7, *threadRng);
-	const float haltonOffset = threadRng->floatValue();
+	
+	Sample *sample = sampler->StartNewPhotonPass(renderer->hitPoints->GetPhotonPassWavelengthSample());
 
 	for (u_int photonCount = 0;; ++photonCount) {
 		// Check if it is time to do an eye pass
@@ -611,23 +615,15 @@ void SPPMRenderer::PhotonPassRenderThread::TracePhotons() {
 			return;
 		}
 
+		sampler->StartNewPhotonPath();
+
 		// I have to make a copy of SpectrumWavelengths because it can be modified
 		// even if passed as a const argument !
-		SpectrumWavelengths sw(threadSample->swl);
+		SpectrumWavelengths sw(sample->swl);
 
 		// Trace a photon path and store contribution
 		float u[7];
-		halton.Sample(photonCount, u);
-		// Add an offset to the samples to avoid to start with 0.f values
-		for (int j = 0; j < 7; ++j) {
-			float v = u[j] + haltonOffset;
-			u[j] = (v >= 1.f) ? (v - 1.f) : v;
-		}
-
-		// This may be required by the volume integrator
-		for (u_int j = 0; j < sample.n1D.size(); ++j)
-			for (u_int k = 0; k < sample.n1D[j]; ++k)
-				sample.oneD[j][k] = threadRng->floatValue();
+		sampler->GetLightData(photonCount, u);
 
 		// Choose light to shoot photon from
 		float lightPdf;
@@ -640,7 +636,7 @@ void SPPMRenderer::PhotonPassRenderThread::TracePhotons() {
 		BSDF *bsdf;
 		float pdf;
 		SWCSpectrum alpha;
-		if (!light->SampleL(scene, sample, u[0], u[1], u[2],
+		if (!light->SampleL(scene, *sample, u[0], u[1], u[2],
 				&bsdf, &pdf, &alpha))
 			continue;
 		Ray photonRay;
@@ -659,7 +655,7 @@ void SPPMRenderer::PhotonPassRenderThread::TracePhotons() {
 			const Volume *volume = NULL; //FIXME: try to get volume from light
 			BSDF *photonBSDF;
 			u_int nIntersections = 0;
-			while (scene.Intersect(sample, volume, false,
+			while (scene.Intersect(*sample, volume, false,
 				photonRay, 1.f, &photonIsect, &photonBSDF,
 				NULL, NULL, &alpha)) {
 				++nIntersections;
@@ -667,7 +663,7 @@ void SPPMRenderer::PhotonPassRenderThread::TracePhotons() {
 				// Handle photon/surface intersection
 				Vector wi = -photonRay.d;
 
-				// Deposit Flux (only if we have hit a diffuse surface)
+				// Deposit Flux (only if we have hit a diffuse or glossy surface)
 				if (photonBSDF->NumComponents(BxDFType(BSDF_REFLECTION | BSDF_TRANSMISSION | BSDF_GLOSSY | BSDF_DIFFUSE)) > 0)
 					renderer->hitPoints->AddFlux(photonIsect.dg.p, *photonBSDF, wi, sw, alpha, light->group);
 
@@ -676,9 +672,8 @@ void SPPMRenderer::PhotonPassRenderThread::TracePhotons() {
 				float pdfo;
 				BxDFType flags;
 				// Get random numbers for sampling outgoing photon direction
-				const float u1 = threadRng->floatValue();
-				const float u2 = threadRng->floatValue();
-				const float u3 = threadRng->floatValue();
+				float u1, u2, u3;
+				sampler->GetPathVertexData(&u1, &u2, &u3);
 
 				// Compute new photon weight and possibly terminate with RR
 				SWCSpectrum fr;
@@ -688,7 +683,7 @@ void SPPMRenderer::PhotonPassRenderThread::TracePhotons() {
 				// Russian Roulette
 				SWCSpectrum anew = fr;
 				const float continueProb = min(1.f, anew.Filter(sw));
-				if ((threadRng->floatValue() > continueProb) ||
+				if ((sampler->GetPathVertexRRData() > continueProb) ||
 						(nIntersections > renderer->sppmi->maxPhotonPathDepth))
 					break;
 
@@ -698,7 +693,7 @@ void SPPMRenderer::PhotonPassRenderThread::TracePhotons() {
 			}
 		}
 
-		sample.arena.FreeAll();
+		sample->arena.FreeAll();
 	}
 }
 

@@ -32,6 +32,7 @@
 #include "timer.h"
 #include "dynload.h"
 #include "sppm/hitpoints.h"
+#include "sppm/photonsampler.h"
 
 namespace lux
 {
@@ -143,7 +144,7 @@ private:
 		PhotonPassRenderThread(u_int index, SPPMRenderer *renderer);
 		~PhotonPassRenderThread();
 
-		void TracePhotons();
+		void TracePhotons(HaltonPhotonSampler *sampler);
 
 		static void RenderImpl(PhotonPassRenderThread *r);
 
@@ -152,7 +153,6 @@ private:
 		boost::thread *thread; // keep pointer to delete the thread object
 
 		RandomGenerator *threadRng;
-		Sample *threadSample;
 		Distribution1D *lightCDF;
 	};
 

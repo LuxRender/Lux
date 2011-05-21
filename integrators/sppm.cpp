@@ -61,6 +61,13 @@ SurfaceIntegrator *SPPMIntegrator::CreateSurfaceIntegrator(const ParamSet &param
 
 	// SPPM rendering parameters
 
+	string psamp = params.FindOneString("photonsampler", "halton");
+	if (psamp == "halton") sppmi->photonSamplerType = HALTON;
+	else {
+		LOG(LUX_WARNING,LUX_BADTOKEN) << "Photon Sampler  '" << psamp <<"' unknown. Using \"halton\".";
+		sppmi->photonSamplerType = HALTON;
+	}
+
 	string acc = params.FindOneString("lookupaccel", "hybridhashgrid");
 	if (acc == "hashgrid") sppmi->lookupAccelType = HASH_GRID;
 	else if (acc == "kdtree") sppmi->lookupAccelType = KD_TREE;
