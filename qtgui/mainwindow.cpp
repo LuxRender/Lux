@@ -1166,7 +1166,7 @@ void MainWindow::applyTonemapping(bool withlayercomputation)
 void MainWindow::engineThread(QString filename)
 {
 	boost::filesystem::path fullPath(boost::filesystem::initial_path());
-	fullPath = boost::filesystem::system_complete(boost::filesystem::path(filename.toStdString().c_str(), boost::filesystem::native));
+	fullPath = boost::filesystem::system_complete(boost::filesystem::path(qPrintable(filename), boost::filesystem::native));
 
 	chdir(fullPath.branch_path().string().c_str());
 
