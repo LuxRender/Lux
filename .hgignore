@@ -14,6 +14,12 @@
 ^doc/html
 ^doxygen/doxygen.conf
 ^doxygen.conf
+(luxStatic|luxmerger|luxcomp|luxrender|luxconsole)\.dir
+^(Debug|Release|x64)/
+^ipch
+^qtgui/.*\.depends
+^qtgui/.*\.cxx_parameters
+^qtgui/.*\.cxx\.rule
 syntax: glob
 *.directory
 *.cdtproject
@@ -24,3 +30,8 @@ ui_*.h
 qrc_*.cxx
 *-hxx.cpp
 *~
+*.sdf
+*.opensdf
+*.vcxproj*
+*.sln
+*.suo
