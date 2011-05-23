@@ -75,7 +75,6 @@ public:
 	vector<XYZColor> emittedRadiance;
 };
 
-
 class HitPoint {
 public:
 	PermutedHalton *halton;

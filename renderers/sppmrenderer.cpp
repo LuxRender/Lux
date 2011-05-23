@@ -904,7 +904,7 @@ void SPPMRenderer::PhotonPassRenderThread::TracePhotons(AMCMCPhotonSampler *samp
 	float mutationSize = 1.f;
 	u_int accepted = 1;
 	u_int mutated = 0;
-	u_int uniformCount = 1;
+	//u_int uniformCount = 1;
 
 	for (u_int photonCount = 0;; ++photonCount) {
 		// Check if it is time to do an eye pass
@@ -917,7 +917,7 @@ void SPPMRenderer::PhotonPassRenderThread::TracePhotons(AMCMCPhotonSampler *samp
 
 		if (IsVisible(scene, sample, sampler->GetCandidateData())) {
 			sampler->AcceptCandidate();
-			++uniformCount;
+			//++uniformCount;
 		} else {
 			sampler->Mutate(mutationSize);
 			++mutated;
@@ -928,6 +928,8 @@ void SPPMRenderer::PhotonPassRenderThread::TracePhotons(AMCMCPhotonSampler *samp
 
 			const float R = accepted / (float)mutated;
 			mutationSize += (R - 0.234) / mutated;
+
+			//std::cerr << "accepted = " << accepted << "  mutated = " << mutated << std::endl;
 		}
 
 		Splat(scene, sample, sampler->GetCurrentData());

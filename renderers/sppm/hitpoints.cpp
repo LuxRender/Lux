@@ -54,16 +54,14 @@ HitPoints::HitPoints(SPPMRenderer *engine, RandomGenerator *rng)  {
 	// Set the pixelsampler
 	if(renderer->sppmi->PixelSampler == "vegas"){
 		pixelSampler = new VegasPixelSampler(xstart, xend, ystart, yend);
-	}
-	if(renderer->sppmi->PixelSampler == "hilbert"){
+	} else if(renderer->sppmi->PixelSampler == "hilbert"){
 		pixelSampler = new HilbertPixelSampler(xstart, xend, ystart, yend);
-	}
-	if(renderer->sppmi->PixelSampler == "tile"){
+	} else if(renderer->sppmi->PixelSampler == "tile"){
 		pixelSampler = new TilePixelSampler(xstart, xend, ystart, yend);
-	}
-	if(renderer->sppmi->PixelSampler == "linear"){
+	} else 	if(renderer->sppmi->PixelSampler == "linear"){
 		pixelSampler = new LinearPixelSampler(xstart, xend, ystart, yend);
-	}
+	} else
+		assert (false);
 
 	hitPoints = new std::vector<HitPoint>(pixelSampler->GetTotalPixels());
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Hit points count: " << hitPoints->size();
@@ -80,7 +78,7 @@ HitPoints::HitPoints(SPPMRenderer *engine, RandomGenerator *rng)  {
 		hp->lightGroupData.resize(lightGroupsNumber);
 		hp->eyePass[0].emittedRadiance.resize(lightGroupsNumber);
 		hp->eyePass[1].emittedRadiance.resize(lightGroupsNumber);
-		
+
 		for(u_int j = 0; j < lightGroupsNumber; j++) {
 			hp->lightGroupData[j].photonCount = 0;
 			hp->lightGroupData[j].reflectedFlux = XYZColor();
@@ -172,38 +170,18 @@ void HitPoints::Init() {
 
 	// Allocate hit points lookup accelerator
 	switch (renderer->sppmi->lookupAccelType) {
-		/*case HASH_GRID:
+		case HASH_GRID:
 			lookUpAccel[0] = new HashGrid(this);
 			lookUpAccel[1] = new HashGrid(this);
 			break;
 		case KD_TREE:
 			lookUpAccel[0] = new KdTree(this);
 			lookUpAccel[1] = new KdTree(this);
-			break;*/
+			break;
 		case HYBRID_HASH_GRID:
 			lookUpAccel[0] = new HybridHashGrid(this);
 			lookUpAccel[1] = new HybridHashGrid(this);
 			break;
-		/*case STOCHASTIC_HASH_GRID:
-			lookUpAccel[0] = new StochasticHashGrid(this);
-			lookUpAccel[1] = new StochasticHashGrid(this);
-			break;
-		case GRID:
-			lookUpAccel[0] = new GridLookUpAccel(this);
-			lookUpAccel[1] = new GridLookUpAccel(this);
-			break;
-		case CUCKOO_HASH_GRID:
-			lookUpAccel[0] = new CuckooHashGrid(this);
-			lookUpAccel[1] = new CuckooHashGrid(this);
-			break;
-		case HYBRID_MULTIHASH_GRID:
-			lookUpAccel[0] = new HybridMultiHashGrid(this);
-			lookUpAccel[1] = new HybridMultiHashGrid(this);
-			break;
-		case STOCHASTIC_MULTIHASH_GRID:
-			lookUpAccel[0] = new StochasticMultiHashGrid(this);
-			lookUpAccel[1] = new StochasticMultiHashGrid(this);
-			break;*/
 		default:
 			assert (false);
 	}

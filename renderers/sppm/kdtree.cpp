@@ -146,3 +146,40 @@ void KdTree::AddFlux(const Point &p, const u_int passIndex, const BSDF &bsdf, co
 		AddFluxToHitPoint(hp, passIndex, bsdf, p, wi, sw, photonFlux, light_group);
 	}
 }
+
+bool KdTree::HitSomething(const Point &p, const u_int passIndex, const BSDF &bsdf, const Vector &wi,
+		const SpectrumWavelengths &sw) {
+	unsigned int nodeNumStack[64];
+	// Start from the first node
+	nodeNumStack[0] = 0;
+	int stackIndex = 0;
+
+	while (stackIndex >= 0) {
+		const unsigned int nodeNum = nodeNumStack[stackIndex--];
+		KdNode *node = &nodes[nodeNum];
+
+		const int axis = node->splitAxis;
+		if (axis != 3) {
+			const float dist = p[axis] - node->splitPos;
+			const float dist2 = dist * dist;
+			if (p[axis] <= node->splitPos) {
+				if ((dist2 < maxDistSquared) && (node->rightChild < nNodes))
+					nodeNumStack[++stackIndex] = node->rightChild;
+				if (node->hasLeftChild)
+					nodeNumStack[++stackIndex] = nodeNum + 1;
+			} else {
+				if (node->rightChild < nNodes)
+					nodeNumStack[++stackIndex] = node->rightChild;
+				if ((dist2 < maxDistSquared) && (node->hasLeftChild))
+					nodeNumStack[++stackIndex] = nodeNum + 1;
+			}
+		}
+
+		// Process the leaf
+		HitPoint *hp = nodeData[nodeNum];
+		if (DoesAddFluxToHitPoint(hp, passIndex, bsdf, p, wi, sw))
+			return false;
+	}
+
+	return true;
+}

@@ -193,3 +193,25 @@ void HashGrid::AddFlux(const Point &hitPoint, const u_int passIndex, const BSDF 
 		}
 	}
 }
+
+bool HashGrid::HitSomething(const Point &hitPoint, const u_int passIndex, const BSDF &bsdf, const Vector &wi,
+		const SpectrumWavelengths &sw) {
+	// Look for eye path hit points near the current hit point
+	Vector hh = (hitPoint - hitPoints->GetBBox(passIndex).pMin) * invCellSize;
+	const int ix = abs(int(hh.x));
+	const int iy = abs(int(hh.y));
+	const int iz = abs(int(hh.z));
+
+	std::list<HitPoint *> *hps = grid[Hash(ix, iy, iz)];
+	if (hps) {
+		std::list<HitPoint *>::iterator iter = hps->begin();
+		while (iter != hps->end()) {
+			HitPoint *hp = *iter++;
+
+			if (DoesAddFluxToHitPoint(hp, passIndex, bsdf, hitPoint, wi, sw))
+				return true;
+		}
+	}
+
+	return false;
+}
