@@ -76,8 +76,6 @@ HitPoints::HitPoints(SPPMRenderer *engine, RandomGenerator *rng)  {
 		hp->haltonOffset = rng->floatValue();
 
 		hp->lightGroupData.resize(lightGroupsNumber);
-		hp->eyePass[0].emittedRadiance.resize(lightGroupsNumber);
-		hp->eyePass[1].emittedRadiance.resize(lightGroupsNumber);
 
 		for(u_int j = 0; j < lightGroupsNumber; j++) {
 			hp->lightGroupData[j].photonCount = 0;
@@ -85,12 +83,8 @@ HitPoints::HitPoints(SPPMRenderer *engine, RandomGenerator *rng)  {
 
 			// hp->accumPhotonRadius2 is initialized in the Init() method
 			hp->lightGroupData[j].accumPhotonCount = 0;
-			hp->lightGroupData[j].accumReflectedFlux = XYZColor();
 
-			hp->lightGroupData[j].constantHitsCount = 0;
-			hp->lightGroupData[j].surfaceHitsCount = 0;
 			hp->lightGroupData[j].accumRadiance = XYZColor();
-			hp->lightGroupData[j].radiance = XYZColor();
 			// Debug code
 			//hp->lightGroupData[j].radianceSSE = 0.f;
 		}
@@ -187,8 +181,7 @@ void HitPoints::Init() {
 	}
 }
 
-void HitPoints::AccumulateFlux(const unsigned long long totalPhotons,
-		const float fluxScale, const u_int index, const u_int count) {
+void HitPoints::AccumulateFlux(const u_int index, const u_int count) {
 	const unsigned int workSize = hitPoints->size() / count;
 	const unsigned int first = workSize * index;
 	const unsigned int last = (index == count - 1) ? hitPoints->size() : (first + workSize);
@@ -204,72 +197,32 @@ void HitPoints::AccumulateFlux(const unsigned long long totalPhotons,
 		HitPoint *hp = &(*hitPoints)[i];
 		HitPointEyePass *hpep = &hp->eyePass[passIndex];
 
-		switch (hpep->type) {
-			case CONSTANT_COLOR:
-				for (u_int j = 0; j < lightGroupsNumber; ++j) {
-					hp->lightGroupData[j].accumRadiance += hpep->emittedRadiance[j];
-					hp->lightGroupData[j].constantHitsCount += 1;
-				}
-				break;
-			case SURFACE:
-				{
-					// Compute g and do radius reduction
-					unsigned long long photonCount = 0;
-					unsigned long long accumPhotonCount = 0;
-					for (u_int j = 0; j < lightGroupsNumber; ++j) {
-						photonCount += hp->lightGroupData[j].photonCount;
-						accumPhotonCount += hp->lightGroupData[j].accumPhotonCount;
+		if(hpep->type == SURFACE) {
+			// Compute g and do radius reduction
+			unsigned long long photonCount = 0;
+			unsigned long long accumPhotonCount = 0;
+			for (u_int j = 0; j < lightGroupsNumber; ++j) {
+				photonCount += hp->lightGroupData[j].photonCount;
+				accumPhotonCount += hp->lightGroupData[j].accumPhotonCount;
 
-						hp->lightGroupData[j].photonCount += hp->lightGroupData[j].accumPhotonCount;
-						hp->lightGroupData[j].accumPhotonCount = 0;
-					}
-					if (accumPhotonCount > 0) {
-						const unsigned long long pcount = photonCount + accumPhotonCount;
-						const double alpha = renderer->sppmi->photonAlpha;
-						const float g = alpha * pcount / (photonCount * alpha + accumPhotonCount);
-
-						// Radius reduction
-						hp->accumPhotonRadius2 *= g;
-
-						// Update light group flux
-						for (u_int j = 0; j < lightGroupsNumber; ++j) {
-							hp->lightGroupData[j].reflectedFlux = (hp->lightGroupData[j].reflectedFlux + hp->lightGroupData[j].accumReflectedFlux) * g;
-							hp->lightGroupData[j].accumReflectedFlux = XYZColor();
-
-							if (!hpep->emittedRadiance[j].Black()) {
-								hp->lightGroupData[j].accumRadiance += hpep->emittedRadiance[j];
-								hp->lightGroupData[j].constantHitsCount += 1;
-							}
-						}
-					}
-
-					for (u_int j = 0; j < lightGroupsNumber; ++j)
-						hp->lightGroupData[j].surfaceHitsCount += 1;
-				}
-				break;
-			default:
-				assert (false);
-		}
-
-		// Update radiance
-		for(u_int j = 0; j < lightGroupsNumber; ++j) {
-			const u_int hitCount = hp->lightGroupData[j].constantHitsCount + hp->lightGroupData[j].surfaceHitsCount;
-			if (hitCount > 0) {
-				const double k = fluxScale / (M_PI * hp->accumPhotonRadius2 * totalPhotons);
-
-				const XYZColor newRadiance = (hp->lightGroupData[j].accumRadiance +
-					hp->lightGroupData[j].surfaceHitsCount * hp->lightGroupData[j].reflectedFlux * k) / hitCount;
-
-				// Debug code
-				/*// Update Sum Square Error statistic
-				if (hitCount > 1) {
-					const float v = newRadiance.Y() - hp->lightGroupData[j].radiance.Y();
-					hp->lightGroupData[j].radianceSSE += v * v;
-				}*/
-
-				hp->lightGroupData[j].radiance = newRadiance;
+				hp->lightGroupData[j].photonCount += hp->lightGroupData[j].accumPhotonCount;
+				hp->lightGroupData[j].accumPhotonCount = 0;
 			}
-		}
+
+			if (accumPhotonCount > 0) {
+				const unsigned long long pcount = photonCount + accumPhotonCount;
+				const double alpha = renderer->sppmi->photonAlpha;
+				const float g = alpha * pcount / (photonCount * alpha + accumPhotonCount);
+
+				// Radius reduction
+				hp->accumPhotonRadius2 *= g;
+
+				// Update light group flux
+				for (u_int j = 0; j < lightGroupsNumber; ++j)
+					hp->lightGroupData[j].reflectedFlux *= g;
+			}
+		} else
+			assert(hpep->type == CONSTANT_COLOR);
 	}
 }
 
@@ -436,7 +389,7 @@ bool HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, const float *u)
 
 			hpep->type = CONSTANT_COLOR;
 			for(unsigned int j = 0; j < lightGroupCount; ++j)
-				hpep->emittedRadiance[j] = XYZColor(sw, L[j] * rayWeight);
+				hp->lightGroupData[j].accumRadiance += XYZColor(sw, L[j] * rayWeight);
 			return true;
 		}
 		scattered = bsdf->dgShading.scattered;
@@ -465,7 +418,7 @@ bool HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, const float *u)
 		if (pathLength == maxDepth) {
 			hpep->type = CONSTANT_COLOR;
 			for(unsigned int j = 0; j < lightGroupCount; ++j)
-				hpep->emittedRadiance[j] = XYZColor(sw, L[j] * rayWeight);
+				hp->lightGroupData[j].accumRadiance += XYZColor(sw, L[j] * rayWeight);
 			return true;
 		}
 
@@ -480,7 +433,7 @@ bool HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, const float *u)
 			&pdf, BSDF_ALL, &flags, NULL, true)) {
 			hpep->type = CONSTANT_COLOR;
 			for(unsigned int j = 0; j < lightGroupCount; ++j)
-				hpep->emittedRadiance[j] = XYZColor(sw, L[j] * rayWeight);
+				hp->lightGroupData[j].accumRadiance += XYZColor(sw, L[j] * rayWeight);
 			return false;
 		}
 
@@ -491,7 +444,7 @@ bool HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, const float *u)
 			hpep->bsdfNG = (Dot(wo, bsdf->ng) > 0 ? bsdf->ng : -bsdf->ng);
 			hpep->pathThroughput = pathThroughput * rayWeight;
 			for(unsigned int j = 0; j < lightGroupCount; ++j)
-				hpep->emittedRadiance[j] = XYZColor(sw, L[j] * rayWeight);
+				hp->lightGroupData[j].accumRadiance += XYZColor(sw, L[j] * rayWeight);
 			hpep->position = p;
 			hpep->wo = wo;
 			return true;
@@ -505,7 +458,7 @@ bool HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, const float *u)
 		if (pathThroughput.Black()) {
 			hpep->type = CONSTANT_COLOR;
 			for(unsigned int j = 0; j < lightGroupCount; ++j)
-				hpep->emittedRadiance[j] = XYZColor(sw, L[j] * rayWeight);
+				hp->lightGroupData[j].accumRadiance += XYZColor(sw, L[j] * rayWeight);
 			return true;
 		}
 
@@ -537,7 +490,7 @@ void HitPoints::UpdatePointsInformation() {
 	maxHitPointRadius2[passIndex] = maxr2;
 }
 
-void HitPoints::UpdateFilm() {
+void HitPoints::UpdateFilm(const float fluxScale, const unsigned long long totalPhotons) {
 	const u_int passIndex = currentPhotonPass % 2;
 
 	Scene &scene(*renderer->scene);
@@ -588,10 +541,24 @@ void HitPoints::UpdateFilm() {
 			HitPointEyePass *hpep = &hp->eyePass[passIndex];
 			pixelSampler->GetNextPixel(&xPos, &yPos, i);
 
-			for(u_int j = 0; j < lightGroupsNumber; j++) {
-				Contribution contrib(xPos, yPos, hp->lightGroupData[j].radiance, hpep->alpha,
+
+			// Update radiance
+			for(u_int j = 0; j < lightGroupsNumber; ++j) {
+				const double k = fluxScale / (M_PI * hp->accumPhotonRadius2 * totalPhotons);
+
+				const XYZColor newRadiance = hp->lightGroupData[j].accumRadiance / currentPhotonPass +
+						hp->lightGroupData[j].reflectedFlux * k;
+
+				Contribution contrib(xPos, yPos, newRadiance, hpep->alpha,
 						hpep->distance, 0.f, bufferId, j);
 				film.SetSample(&contrib);
+					// Debug code
+					/*// Update Sum Square Error statistic
+					if (hitCount > 1) {
+						const float v = newRadiance.Y() - hp->lightGroupData[j].radiance.Y();
+						hp->lightGroupData[j].radianceSSE += v * v;
+					}*/
+
 			}
 		}
 	//}
