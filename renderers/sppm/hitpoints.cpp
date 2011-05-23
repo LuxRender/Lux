@@ -187,8 +187,8 @@ void HitPoints::Init() {
 	}
 }
 
-void HitPoints::AccumulateFlux(unsigned long long total_photons,
-		const u_int index, const u_int count) {
+void HitPoints::AccumulateFlux(const unsigned long long totalPhotons,
+		const float fluxScale, const u_int index, const u_int count) {
 	const unsigned int workSize = hitPoints->size() / count;
 	const unsigned int first = workSize * index;
 	const unsigned int last = (index == count - 1) ? hitPoints->size() : (first + workSize);
@@ -255,7 +255,7 @@ void HitPoints::AccumulateFlux(unsigned long long total_photons,
 		for(u_int j = 0; j < lightGroupsNumber; ++j) {
 			const u_int hitCount = hp->lightGroupData[j].constantHitsCount + hp->lightGroupData[j].surfaceHitsCount;
 			if (hitCount > 0) {
-				const double k = 1.0 / (M_PI * hp->accumPhotonRadius2 * total_photons);
+				const double k = fluxScale / (M_PI * hp->accumPhotonRadius2 * totalPhotons);
 
 				const XYZColor newRadiance = (hp->lightGroupData[j].accumRadiance +
 					hp->lightGroupData[j].surfaceHitsCount * hp->lightGroupData[j].reflectedFlux * k) / hitCount;

@@ -140,8 +140,8 @@ public:
 		return lookUpAccel[passIndex]->HitSomething(hitPoint, passIndex, bsdf, wi, sw);
 	}
 
-	void AccumulateFlux(unsigned long long const total_photons,
-		const u_int index, const u_int count);
+	void AccumulateFlux(const unsigned long long totalPhotons,
+		const float fluxScale, const u_int index, const u_int count);
 	void SetHitPoints(RandomGenerator *rng,	const u_int index, const u_int count);
 
 	void RefreshAccelMutex() {

@@ -156,6 +156,9 @@ private:
 		SPPMRenderer *renderer;
 		boost::thread *thread; // keep pointer to delete the thread object
 
+		// Used by AMC Photon Sampler
+		u_int amcUniformCount;
+
 		RandomGenerator *threadRng;
 		Distribution1D *lightCDF;
 	};
@@ -189,6 +192,8 @@ private:
 	// Store number of photon traced by lightgroup
 	unsigned long long photonTracedTotal;
 	u_int photonTracedPass;
+	// Used by AMC Photon Sampler
+	float accumulatedFluxScale;
 
 	fast_mutex sampPosMutex;
 	u_int sampPos;

@@ -522,7 +522,7 @@ void SPPMRenderer::PhotonPassRenderThread::RenderImpl(PhotonPassRenderThread *my
 		case HALTON:
 			sampler = new HaltonPhotonSampler(scene, myThread->threadRng);
 			break;
-		case AMCMC:
+		case AMC:
 			sampler = new AMCMCPhotonSampler(renderer->sppmi->maxPhotonPathDepth, scene, myThread->threadRng);
 			break;
 		default:
@@ -558,7 +558,7 @@ void SPPMRenderer::PhotonPassRenderThread::RenderImpl(PhotonPassRenderThread *my
 			case HALTON:
 				myThread->TracePhotons((HaltonPhotonSampler *)sampler);
 				break;
-			case AMCMC:
+			case AMC:
 				myThread->TracePhotons((AMCMCPhotonSampler *)sampler);
 				break;
 			default:
@@ -572,6 +572,15 @@ void SPPMRenderer::PhotonPassRenderThread::RenderImpl(PhotonPassRenderThread *my
 		if (myThread->n == 0) {
 			renderer->photonHitEfficiency = renderer->hitPoints->GetPhotonHitEfficency();
 
+			if (renderer->sppmi->photonSamplerType == AMC) {
+				u_int uniformCount = 0;
+				for (u_int i = 0; i < renderer->photonPassRenderThreads.size(); ++i)
+					uniformCount += renderer->photonPassRenderThreads[i]->amcUniformCount;
+
+				renderer->accumulatedFluxScale = uniformCount / (float)renderer->photonTracedPass;
+			} else
+				renderer->accumulatedFluxScale = 1.f;
+
 			// First thread only tasks
 			renderer->photonTracedTotal += renderer->photonTracedPass;
 			renderer->photonTracedPass = 0;
@@ -580,7 +589,8 @@ void SPPMRenderer::PhotonPassRenderThread::RenderImpl(PhotonPassRenderThread *my
 		// Wait for other threads
 		photonPassThreadBarrier->wait();
 
-		hitPoints->AccumulateFlux(renderer->photonTracedTotal, myThread->n, renderer->eyePassRenderThreads.size());
+		hitPoints->AccumulateFlux(renderer->photonTracedTotal, renderer->accumulatedFluxScale,
+				myThread->n, renderer->eyePassRenderThreads.size());
 
 		// Wait for other threads
 		photonPassThreadBarrier->wait();
@@ -904,11 +914,14 @@ void SPPMRenderer::PhotonPassRenderThread::TracePhotons(AMCMCPhotonSampler *samp
 	float mutationSize = 1.f;
 	u_int accepted = 1;
 	u_int mutated = 0;
-	//u_int uniformCount = 1;
+	u_int uniformCount = 1;
 
 	for (u_int photonCount = 0;; ++photonCount) {
 		// Check if it is time to do an eye pass
 		if (renderer->photonTracedPass > renderer->sppmi->photonPerPass) {
+			// Save the uniformCount to scale hit points flux later
+			amcUniformCount = uniformCount;
+
 			// Ok, time to stop
 			return;
 		}
@@ -917,7 +930,7 @@ void SPPMRenderer::PhotonPassRenderThread::TracePhotons(AMCMCPhotonSampler *samp
 
 		if (IsVisible(scene, sample, sampler->GetCandidateData())) {
 			sampler->AcceptCandidate();
-			//++uniformCount;
+			++uniformCount;
 		} else {
 			sampler->Mutate(mutationSize);
 			++mutated;

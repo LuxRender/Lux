@@ -34,7 +34,7 @@ namespace lux
 //------------------------------------------------------------------------------
 
 enum PhotonSamplerType {
-	HALTON, AMCMC
+	HALTON, AMC
 };
 
 class PhotonSampler {
@@ -110,7 +110,7 @@ public:
 			const RandomGenerator *rng);
 	~AMCMCPhotonSampler();
 
-	PhotonSamplerType GetType() const { return AMCMC; }
+	PhotonSamplerType GetType() const { return AMC; }
 
 	void StartNewPhotonPass(const float wavelength) {
 		sample->swl.Sample(wavelength);
