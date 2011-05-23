@@ -135,6 +135,12 @@ public:
 		lookUpAccel[passIndex]->AddFlux(hitPoint, passIndex, bsdf, wi, sw, photonFlux, light_group);
 	}
 
+	bool HitSomething(const Point &hitPoint, const BSDF &bsdf, const Vector &wi,
+		const SpectrumWavelengths &sw) {
+		const u_int passIndex = currentPhotonPass % 2;
+		return lookUpAccel[passIndex]->HitSomething(hitPoint, passIndex, bsdf, wi, sw);
+	}
+
 	void AccumulateFlux(unsigned long long const total_photons,
 		const u_int index, const u_int count);
 	void SetHitPoints(RandomGenerator *rng,	const u_int index, const u_int count);

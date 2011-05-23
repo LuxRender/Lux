@@ -51,6 +51,8 @@ public:
 
 	virtual void AddFlux(const Point &hitPoint, const u_int passIndex, const BSDF &bsdf, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group) = 0;
+	virtual bool HitSomething(const Point &hitPoint, const u_int passIndex, const BSDF &bsdf, const Vector &wi,
+		const SpectrumWavelengths &sw) = 0;
 
 	friend class HashCell;
 
@@ -58,6 +60,9 @@ protected:
 	void AddFluxToHitPoint(HitPoint *hp, const u_int passIndex,
 		const BSDF &bsdf, const Point &hitPoint, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group);
+	bool DoesAddFluxToHitPoint(HitPoint *hp, const u_int passIndex,
+		const BSDF &bsdf, const Point &hitPoint, const Vector &wi,
+		const SpectrumWavelengths &sw);
 };
 
 inline void SpectrumAtomicAdd(SWCSpectrum &s, SWCSpectrum &a) {
@@ -73,7 +78,7 @@ inline void XYZColorAtomicAdd(XYZColor &s, XYZColor &a) {
 //------------------------------------------------------------------------------
 // HashGrid accelerator
 //------------------------------------------------------------------------------
-
+#if 0
 class HashGrid : public HitPointsLookUpAccel {
 public:
 	HashGrid(HitPoints *hps);
@@ -263,7 +268,7 @@ private:
 	u_int nNodes, nextFreeNode;
 	float maxDistSquared;
 };
-
+#endif
 //------------------------------------------------------------------------------
 // HashCell definition
 //------------------------------------------------------------------------------
@@ -314,6 +319,9 @@ public:
 	void AddFlux(HitPointsLookUpAccel *accel, const u_int passIndex,
 		const Point &hitPoint, const BSDF &bsdf, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group);
+	bool HitSomething(HitPointsLookUpAccel *accel, const u_int passIndex,
+		const Point &hitPoint, const BSDF &bsdf, const Vector &wi,
+		const SpectrumWavelengths &sw);
 
 	u_int GetSize() const { return size; }
 
@@ -326,6 +334,9 @@ private:
 		void AddFlux(HitPointsLookUpAccel *accel,  const u_int passIndex,
 			const BSDF &bsdf, const Point &hitPoint, const Vector &wi,
 			const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group);
+		bool HitSomething(HitPointsLookUpAccel *accel,  const u_int passIndex,
+			const BSDF &bsdf, const Point &hitPoint, const Vector &wi,
+			const SpectrumWavelengths &sw);
 
 	private:
 		struct KdNode {
@@ -395,6 +406,8 @@ public:
 
 	void AddFlux(const Point &hitPoint, const u_int passIndex, const BSDF &bsdf, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group);
+	bool HitSomething(const Point &hitPoint, const u_int passIndex, const BSDF &bsdf, const Vector &wi,
+		const SpectrumWavelengths &sw);
 
 private:
 	u_int Hash(const int ix, const int iy, const int iz) {
@@ -412,7 +425,7 @@ private:
 //------------------------------------------------------------------------------
 // HybridMultiHashGrid accelerator
 //------------------------------------------------------------------------------
-
+#if 0
 class HybridMultiHashGrid : public HitPointsLookUpAccel {
 public:
 	HybridMultiHashGrid(HitPoints *hps);
@@ -480,7 +493,7 @@ private:
 	float invCellSize;
 	GridCell *grid;
 };
-
+#endif
 }//namespace lux
 
 #endif	/* LUX_LOOKUPACCEL_H */

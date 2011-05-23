@@ -183,3 +183,24 @@ void HybridHashGrid::AddFlux(const Point &hitPoint, const u_int passIndex, const
 	if (hc)
 		hc->AddFlux(this, passIndex, hitPoint, bsdf, wi, sw, photonFlux, light_group);
 }
+
+bool HybridHashGrid::HitSomething(const Point &hitPoint, const u_int passIndex, const BSDF &bsdf, const Vector &wi,
+		const SpectrumWavelengths &sw) {
+	// Look for eye path hit points near the current hit point
+	Vector hh = (hitPoint - hitPoints->GetBBox(passIndex).pMin) * invCellSize;
+	const int ix = int(hh.x);
+	if ((ix < 0) || (ix > maxHashIndexX))
+			return false;
+	const int iy = int(hh.y);
+	if ((iy < 0) || (iy > maxHashIndexY))
+			return false;
+	const int iz = int(hh.z);
+	if ((iz < 0) || (iz > maxHashIndexZ))
+			return false;
+
+	HashCell *hc = grid[Hash(ix, iy, iz)];
+	if (hc)
+		return hc->HitSomething(this, passIndex, hitPoint, bsdf, wi, sw);
+	else
+		return false;
+}

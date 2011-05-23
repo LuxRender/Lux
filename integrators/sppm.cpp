@@ -61,11 +61,12 @@ SurfaceIntegrator *SPPMIntegrator::CreateSurfaceIntegrator(const ParamSet &param
 
 	// SPPM rendering parameters
 
-	string psamp = params.FindOneString("photonsampler", "halton");
+	string psamp = params.FindOneString("photonsampler", "amcmc");
 	if (psamp == "halton") sppmi->photonSamplerType = HALTON;
+	else if (psamp == "amcmc") sppmi->photonSamplerType = AMCMC;
 	else {
-		LOG(LUX_WARNING,LUX_BADTOKEN) << "Photon Sampler  '" << psamp <<"' unknown. Using \"halton\".";
-		sppmi->photonSamplerType = HALTON;
+		LOG(LUX_WARNING,LUX_BADTOKEN) << "Photon Sampler  '" << psamp <<"' unknown. Using \"amcmc\".";
+		sppmi->photonSamplerType = AMCMC;
 	}
 
 	string acc = params.FindOneString("lookupaccel", "hybridhashgrid");

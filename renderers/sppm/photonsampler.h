@@ -34,23 +34,18 @@ namespace lux
 //------------------------------------------------------------------------------
 
 enum PhotonSamplerType {
-	HALTON
+	HALTON, AMCMC
 };
 
 class PhotonSampler {
 public:
-	PhotonSampler(const Scene &scene, const RandomGenerator *rng);
-	virtual ~PhotonSampler();
+	PhotonSampler(const RandomGenerator *rng);
+	virtual ~PhotonSampler() { }
 
 	virtual PhotonSamplerType GetType() const = 0;
 
-	virtual Sample *StartNewPhotonPass(const float wavelength) {
-		sample->swl.Sample(wavelength);
-		return sample;
-	}
-
 protected:
-	Sample *sample;
+	const RandomGenerator *rng;
 };
 
 //------------------------------------------------------------------------------
@@ -66,8 +61,9 @@ public:
 
 	Sample *StartNewPhotonPass(const float wavelength) {
 		haltonOffset = rng->floatValue();
+		sample->swl.Sample(wavelength);
 
-		return PhotonSampler::StartNewPhotonPass(wavelength);
+		return sample;
 	}
 
 	void StartNewPhotonPath() {
@@ -99,9 +95,55 @@ public:
 	}
 
 private:
-	const RandomGenerator *rng;
+	Sample *sample;
 
 	float haltonOffset;
+};
+
+//------------------------------------------------------------------------------
+// Adaptive Markov Chain Sampler
+//------------------------------------------------------------------------------
+
+class AMCMCPhotonSampler : public PhotonSampler {
+public:
+	AMCMCPhotonSampler(const u_int maxPhotonDepth, const Scene &scene,
+			const RandomGenerator *rng);
+	~AMCMCPhotonSampler();
+
+	PhotonSamplerType GetType() const { return AMCMC; }
+
+	void StartNewPhotonPass(const float wavelength) {
+		sample->swl.Sample(wavelength);
+
+		// TODO: handle samples stored in Sample class too
+		for (u_int j = 0; j < sample->n1D.size(); ++j)
+			for (u_int k = 0; k < sample->n1D[j]; ++k)
+				sample->oneD[j][k] = rng->floatValue();
+	}
+
+	void AcceptCandidate() { swap(currentIndex, candidateIndex); }
+
+	void Uniform() {
+		vector<float> &candidate = data[candidateIndex];
+
+		for (size_t i = 0; i < candidate.size(); ++i)
+			candidate[i] = rng->floatValue();
+	}
+
+	void Mutate(const float mutationSize);
+
+	Sample *GetSample() { return sample; }
+
+	float *GetCurrentData() { return (float *)&data[currentIndex][0]; }
+	float *GetCandidateData() { return (float *)&data[candidateIndex][0]; }
+
+private:
+	float MutateSingle(const float u, const float mutationSize);
+
+	Sample *sample;
+
+	size_t currentIndex, candidateIndex;
+	vector<float> data[2];
 };
 
 }//namespace lux
