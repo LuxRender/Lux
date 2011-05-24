@@ -546,7 +546,8 @@ void HitPoints::UpdateFilm(const float fluxScale, const unsigned long long total
 			for(u_int j = 0; j < lightGroupsNumber; ++j) {
 				const double k = fluxScale / (M_PI * hp->accumPhotonRadius2 * totalPhotons);
 
-				const XYZColor newRadiance = hp->lightGroupData[j].accumRadiance / currentPhotonPass +
+				// WARNING: currentPhotonPass starts at 0 and is incremented AFTER UpdateFilm, hence the + 1
+				const XYZColor newRadiance = hp->lightGroupData[j].accumRadiance / (currentPhotonPass + 1) +
 						hp->lightGroupData[j].reflectedFlux * k;
 
 				Contribution contrib(xPos, yPos, newRadiance, hpep->alpha,

@@ -597,7 +597,9 @@ void SPPMRenderer::PhotonPassRenderThread::RenderImpl(PhotonPassRenderThread *my
 		if (myThread->n == 0) {
 			// Update the frame buffer
 			hitPoints->UpdateFilm(renderer->accumulatedFluxScale, renderer->photonTracedTotal);
-
+			// WARNING: Above UpdateFilm method use the current photon pass
+			// index + 1. If you move the following line (IncPhotonPass),
+			// please update UpdateFilm
 			hitPoints->IncPhotonPass();
 
 			const double photonPassTime = osWallClockTime() - passStartTime;
