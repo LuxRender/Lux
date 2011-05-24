@@ -113,13 +113,14 @@ void KdTree::RefreshMutex(const u_int passIndex) {
 	assert (nNodes == nextFreeNode);
 }
 
-void KdTree::AddFlux(const Point &p, const u_int passIndex, const BSDF &bsdf, const Vector &wi,
+bool KdTree::AddFlux(const Point &p, const u_int passIndex, const BSDF &bsdf, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group) {
 	unsigned int nodeNumStack[64];
 	// Start from the first node
 	nodeNumStack[0] = 0;
 	int stackIndex = 0;
 
+	bool isVisible = false;
 	while (stackIndex >= 0) {
 		const unsigned int nodeNum = nodeNumStack[stackIndex--];
 		KdNode *node = &nodes[nodeNum];
@@ -143,8 +144,10 @@ void KdTree::AddFlux(const Point &p, const u_int passIndex, const BSDF &bsdf, co
 
 		// Process the leaf
 		HitPoint *hp = nodeData[nodeNum];
-		AddFluxToHitPoint(hp, passIndex, bsdf, p, wi, sw, photonFlux, light_group);
+		isVisible |= AddFluxToHitPoint(hp, passIndex, bsdf, p, wi, sw, photonFlux, light_group);
 	}
+
+	return isVisible;
 }
 
 bool KdTree::HitSomething(const Point &p, const u_int passIndex, const BSDF &bsdf, const Vector &wi,

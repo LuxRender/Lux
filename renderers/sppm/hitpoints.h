@@ -121,10 +121,10 @@ public:
 	const float GetPassWavelengthSample() { return eyePassWavelengthSample; }
 	const float GetPhotonPassWavelengthSample() { return photonPassWavelengthSample; }
 
-	void AddFlux(const Point &hitPoint, const BSDF &bsdf, const Vector &wi,
+	bool AddFlux(const Point &hitPoint, const BSDF &bsdf, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group) {
 		const u_int passIndex = currentPhotonPass % 2;
-		lookUpAccel[passIndex]->AddFlux(hitPoint, passIndex, bsdf, wi, sw, photonFlux, light_group);
+		return lookUpAccel[passIndex]->AddFlux(hitPoint, passIndex, bsdf, wi, sw, photonFlux, light_group);
 	}
 
 	bool HitSomething(const Point &hitPoint, const BSDF &bsdf, const Vector &wi,

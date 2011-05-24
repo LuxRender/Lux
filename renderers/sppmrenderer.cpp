@@ -812,7 +812,7 @@ bool SPPMRenderer::PhotonPassRenderThread::IsVisible(Scene &scene, const Sample 
 	return false;
 }
 
-void SPPMRenderer::PhotonPassRenderThread::Splat(Scene &scene, const Sample *sample, const float *u) {
+bool SPPMRenderer::PhotonPassRenderThread::Splat(Scene &scene, const Sample *sample, const float *u) {
 	// I have to make a copy of SpectrumWavelengths because it can be modified
 	// even if passed as a const argument !
 	SpectrumWavelengths sw(sample->swl);
@@ -822,8 +822,6 @@ void SPPMRenderer::PhotonPassRenderThread::Splat(Scene &scene, const Sample *sam
 	u_int lightNum = lightCDF->SampleDiscrete(u[6], &lightPdf);
 	const Light *light = scene.lights[lightNum];
 
-	osAtomicInc(&renderer->photonTracedPass);
-
 	// Generate _photonRay_ from light source and initialize _alpha_
 	BSDF *bsdf;
 	float pdf;
@@ -831,7 +829,7 @@ void SPPMRenderer::PhotonPassRenderThread::Splat(Scene &scene, const Sample *sam
 	if (!light->SampleL(scene, *sample, u[0], u[1], u[2],
 			&bsdf, &pdf, &alpha)) {
 		sample->arena.FreeAll();
-		return;
+		return false;
 	}
 	Ray photonRay;
 	photonRay.o = bsdf->dgShading.p;
@@ -840,11 +838,12 @@ void SPPMRenderer::PhotonPassRenderThread::Splat(Scene &scene, const Sample *sam
 	if (!bsdf->SampleF(sw, Vector(bsdf->nn), &photonRay.d,
 			u[3], u[4], u[5], &alpha2, &pdf2)) {
 		sample->arena.FreeAll();
-		return;
+		return false;
 	}
 	alpha *= alpha2;
 	alpha /= lightPdf;
 
+	bool isVisible = false;
 	if (!alpha.Black()) {
 		// Follow photon path through scene and record intersections
 		Intersection photonIsect;
@@ -862,7 +861,7 @@ void SPPMRenderer::PhotonPassRenderThread::Splat(Scene &scene, const Sample *sam
 
 			// Deposit Flux (only if we have hit a diffuse or glossy surface)
 			if (photonBSDF->NumComponents(BxDFType(BSDF_REFLECTION | BSDF_TRANSMISSION | BSDF_GLOSSY | BSDF_DIFFUSE)) > 0)
-				renderer->hitPoints->AddFlux(photonIsect.dg.p, *photonBSDF, wi, sw, alpha, light->group);
+				isVisible |= renderer->hitPoints->AddFlux(photonIsect.dg.p, *photonBSDF, wi, sw, alpha, light->group);
 
 			// Sample new photon ray direction
 			Vector wo;
@@ -877,7 +876,7 @@ void SPPMRenderer::PhotonPassRenderThread::Splat(Scene &scene, const Sample *sam
 			SWCSpectrum fr;
 			if (!photonBSDF->SampleF(sw, wi, &wo, u1, u2, u3, &fr, &pdfo, BSDF_ALL, &flags)) {
 				sample->arena.FreeAll();
-				return;
+				return isVisible;
 			}
 
 			// Russian Roulette
@@ -887,7 +886,7 @@ void SPPMRenderer::PhotonPassRenderThread::Splat(Scene &scene, const Sample *sam
 			if ((u4 > continueProb) ||
 					(nIntersections > renderer->sppmi->maxPhotonPathDepth)) {
 				sample->arena.FreeAll();
-				return;
+				return isVisible;
 			}
 
 			alpha *= anew / continueProb;
@@ -897,7 +896,7 @@ void SPPMRenderer::PhotonPassRenderThread::Splat(Scene &scene, const Sample *sam
 	}
 
 	sample->arena.FreeAll();
-	return;
+	return isVisible;
 }
 
 void SPPMRenderer::PhotonPassRenderThread::TracePhotons(AMCMCPhotonSampler *sampler) {
@@ -917,7 +916,7 @@ void SPPMRenderer::PhotonPassRenderThread::TracePhotons(AMCMCPhotonSampler *samp
 	u_int mutated = 0;
 	u_int uniformCount = 1;
 
-	for (u_int photonCount = 0;; ++photonCount) {
+	for (;;) {
 		// Check if it is time to do an eye pass
 		if (renderer->photonTracedPass > renderer->sppmi->photonPerPass) {
 			// Save the uniformCount to scale hit points flux later
@@ -927,26 +926,25 @@ void SPPMRenderer::PhotonPassRenderThread::TracePhotons(AMCMCPhotonSampler *samp
 			return;
 		}
 
+		osAtomicInc(&renderer->photonTracedPass);
+
 		sampler->Uniform();
 
-		if (IsVisible(scene, sample, sampler->GetCandidateData())) {
+		if (Splat(scene, sample, sampler->GetCandidateData())) {
 			sampler->AcceptCandidate();
 			++uniformCount;
 		} else {
 			sampler->Mutate(mutationSize);
 			++mutated;
-			if (IsVisible(scene, sample, sampler->GetCandidateData())) {
+			if (Splat(scene, sample, sampler->GetCandidateData())) {
 				sampler->AcceptCandidate();
 				++accepted;
-			}
+			} else
+				Splat(scene, sample, sampler->GetCurrentData());
 
 			const float R = accepted / (float)mutated;
 			mutationSize += (R - 0.234) / mutated;
-
-			//std::cerr << "accepted = " << accepted << "  mutated = " << mutated << std::endl;
 		}
-
-		Splat(scene, sample, sampler->GetCurrentData());
 	}
 }
 
