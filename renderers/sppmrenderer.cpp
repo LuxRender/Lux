@@ -676,6 +676,7 @@ void SPPMRenderer::PhotonPassRenderThread::TracePhotons(HaltonPhotonSampler *sam
 			const Volume *volume = NULL; //FIXME: try to get volume from light
 			BSDF *photonBSDF;
 			u_int nIntersections = 0;
+			u_int diffuseVertices = 0;
 			while (scene.Intersect(*sample, volume, false,
 				photonRay, 1.f, &photonIsect, &photonBSDF,
 				NULL, NULL, &alpha)) {
@@ -687,6 +688,9 @@ void SPPMRenderer::PhotonPassRenderThread::TracePhotons(HaltonPhotonSampler *sam
 				// Deposit Flux (only if we have hit a diffuse or glossy surface)
 				if (photonBSDF->NumComponents(BxDFType(BSDF_REFLECTION | BSDF_TRANSMISSION | BSDF_GLOSSY | BSDF_DIFFUSE)) > 0)
 					renderer->hitPoints->AddFlux(photonIsect.dg.p, *photonBSDF, wi, sw, alpha, light->group);
+
+				if (nIntersections > renderer->sppmi->maxPhotonPathDepth)
+					break;
 
 				// Sample new photon ray direction
 				Vector wo;
@@ -701,14 +705,17 @@ void SPPMRenderer::PhotonPassRenderThread::TracePhotons(HaltonPhotonSampler *sam
 				if (!photonBSDF->SampleF(sw, wi, &wo, u1, u2, u3, &fr, &pdfo, BSDF_ALL, &flags))
 					break;
 
-				// Russian Roulette
-				SWCSpectrum anew = fr;
-				const float continueProb = min(1.f, anew.Filter(sw));
-				if ((sampler->GetPathVertexRRData() > continueProb) ||
-						(nIntersections > renderer->sppmi->maxPhotonPathDepth))
-					break;
+				diffuseVertices += (flags & BSDF_DIFFUSE) ? 1 : 0;
+				if (diffuseVertices > 0) {
+					// Russian Roulette
+					const float continueProb = min(1.f, fr.Filter(sw));
+					if (sampler->GetPathVertexRRData() > continueProb)
+						break;
 
-				alpha *= anew / continueProb;
+					alpha /= continueProb;
+				}
+
+				alpha *= fr;
 				photonRay = Ray(photonIsect.dg.p, wo);
 				volume = photonBSDF->GetVolume(photonRay.d);
 			}
@@ -761,6 +768,7 @@ void SPPMRenderer::PhotonPassRenderThread::Splat(SplatList *splatList, Scene &sc
 		const Volume *volume = NULL; //FIXME: try to get volume from light
 		BSDF *photonBSDF;
 		u_int nIntersections = 0;
+		u_int diffuseVertices = 0;
 		size_t currentIndex = 7;
 		while (scene.Intersect(*sample, volume, false,
 			photonRay, 1.f, &photonIsect, &photonBSDF,
@@ -773,6 +781,11 @@ void SPPMRenderer::PhotonPassRenderThread::Splat(SplatList *splatList, Scene &sc
 			// Deposit Flux (only if we have hit a diffuse or glossy surface)
 			if (photonBSDF->NumComponents(BxDFType(BSDF_REFLECTION | BSDF_TRANSMISSION | BSDF_GLOSSY | BSDF_DIFFUSE)) > 0)
 				renderer->hitPoints->AddFlux(splatList, photonIsect.dg.p, *photonBSDF, wi, sw, alpha, light->group);
+
+			if (nIntersections > renderer->sppmi->maxPhotonPathDepth) {
+				sample->arena.FreeAll();
+				return;
+			}
 
 			// Sample new photon ray direction
 			Vector wo;
@@ -790,17 +803,20 @@ void SPPMRenderer::PhotonPassRenderThread::Splat(SplatList *splatList, Scene &sc
 				return;
 			}
 
-			// Russian Roulette
-			SWCSpectrum anew = fr;
-			const float continueProb = min(1.f, anew.Filter(sw));
-			const float u4 = u[currentIndex++];
-			if ((u4 > continueProb) ||
-					(nIntersections > renderer->sppmi->maxPhotonPathDepth)) {
-				sample->arena.FreeAll();
-				return;
+			diffuseVertices += (flags & BSDF_DIFFUSE) ? 1 : 0;
+			if (diffuseVertices > 0) {
+				// Russian Roulette
+				const float continueProb = min(1.f, fr.Filter(sw));
+				const float u4 = u[currentIndex++];
+				if (u4 > continueProb) {
+					sample->arena.FreeAll();
+					return;
+				}
+
+				alpha /= continueProb;
 			}
 
-			alpha *= anew / continueProb;
+			alpha *= fr;
 			photonRay = Ray(photonIsect.dg.p, wo);
 			volume = photonBSDF->GetVolume(photonRay.d);
 		}
