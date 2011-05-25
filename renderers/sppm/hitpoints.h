@@ -46,6 +46,7 @@ public:
 	XYZColor reflectedFlux;
 
 	u_int accumPhotonCount;
+	XYZColor accumReflectedFlux;
 	XYZColor accumRadiance;
 
 	// Debug code
@@ -136,7 +137,7 @@ public:
 		const u_int passIndex = currentPhotonPass % 2;
 		return lookUpAccel[passIndex]->Splat(splatList);
 	}
-	void AccumulateFlux(const u_int index, const u_int count);
+	void AccumulateFlux(const float fluxScale, const u_int index, const u_int count);
 	void SetHitPoints(RandomGenerator *rng,	const u_int index, const u_int count);
 
 	void RefreshAccelMutex() {
@@ -149,7 +150,7 @@ public:
 		lookUpAccel[passIndex]->RefreshParallel(passIndex, index, count);
 	}
 
-	void UpdateFilm(const float fluxScale, const unsigned long long totalPhotons);
+	void UpdateFilm(const unsigned long long totalPhotons);
 
 private:
 	bool TraceEyePath(HitPoint *hp, const Sample &sample, const float *u);

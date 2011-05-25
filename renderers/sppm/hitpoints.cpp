@@ -83,7 +83,7 @@ HitPoints::HitPoints(SPPMRenderer *engine, RandomGenerator *rng)  {
 
 			// hp->accumPhotonRadius2 is initialized in the Init() method
 			hp->lightGroupData[j].accumPhotonCount = 0;
-
+			hp->lightGroupData[j].accumReflectedFlux = XYZColor();
 			hp->lightGroupData[j].accumRadiance = XYZColor();
 			// Debug code
 			//hp->lightGroupData[j].radianceSSE = 0.f;
@@ -181,7 +181,7 @@ void HitPoints::Init() {
 	}
 }
 
-void HitPoints::AccumulateFlux(const u_int index, const u_int count) {
+void HitPoints::AccumulateFlux(const float fluxScale, const u_int index, const u_int count) {
 	const unsigned int workSize = hitPoints->size() / count;
 	const unsigned int first = workSize * index;
 	const unsigned int last = (index == count - 1) ? hitPoints->size() : (first + workSize);
@@ -218,8 +218,12 @@ void HitPoints::AccumulateFlux(const u_int index, const u_int count) {
 				hp->accumPhotonRadius2 *= g;
 
 				// Update light group flux
-				for (u_int j = 0; j < lightGroupsNumber; ++j)
-					hp->lightGroupData[j].reflectedFlux *= g;
+				for (u_int j = 0; j < lightGroupsNumber; ++j) {
+					hp->lightGroupData[j].reflectedFlux = (hp->lightGroupData[j].reflectedFlux +
+							fluxScale * hp->lightGroupData[j].accumReflectedFlux) * g;
+
+					hp->lightGroupData[j].accumReflectedFlux = 0.f;
+				}
 			}
 		} else
 			assert(hpep->type == CONSTANT_COLOR);
@@ -490,7 +494,7 @@ void HitPoints::UpdatePointsInformation() {
 	maxHitPointRadius2[passIndex] = maxr2;
 }
 
-void HitPoints::UpdateFilm(const float fluxScale, const unsigned long long totalPhotons) {
+void HitPoints::UpdateFilm(const unsigned long long totalPhotons) {
 	const u_int passIndex = currentPhotonPass % 2;
 
 	Scene &scene(*renderer->scene);
@@ -544,7 +548,7 @@ void HitPoints::UpdateFilm(const float fluxScale, const unsigned long long total
 
 			// Update radiance
 			for(u_int j = 0; j < lightGroupsNumber; ++j) {
-				const double k = fluxScale / (M_PI * hp->accumPhotonRadius2 * totalPhotons);
+				const double k = 1.f / (M_PI * hp->accumPhotonRadius2 * totalPhotons);
 
 				// WARNING: currentPhotonPass starts at 0 and is incremented AFTER UpdateFilm, hence the + 1
 				const XYZColor newRadiance = hp->lightGroupData[j].accumRadiance / (currentPhotonPass + 1) +

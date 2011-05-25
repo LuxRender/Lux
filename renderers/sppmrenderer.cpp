@@ -589,14 +589,14 @@ void SPPMRenderer::PhotonPassRenderThread::RenderImpl(PhotonPassRenderThread *my
 		// Wait for other threads
 		photonPassThreadBarrier->wait();
 
-		hitPoints->AccumulateFlux(myThread->n, renderer->eyePassRenderThreads.size());
+		hitPoints->AccumulateFlux(renderer->accumulatedFluxScale, myThread->n, renderer->eyePassRenderThreads.size());
 
 		// Wait for other threads
 		photonPassThreadBarrier->wait();
 
 		if (myThread->n == 0) {
 			// Update the frame buffer
-			hitPoints->UpdateFilm(renderer->accumulatedFluxScale, renderer->photonTracedTotal);
+			hitPoints->UpdateFilm(renderer->photonTracedTotal);
 			// WARNING: Above UpdateFilm method use the current photon pass
 			// index + 1. If you move the following line (IncPhotonPass),
 			// please update UpdateFilm
