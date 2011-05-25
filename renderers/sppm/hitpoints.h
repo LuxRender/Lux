@@ -121,18 +121,11 @@ public:
 	const float GetPassWavelengthSample() { return eyePassWavelengthSample; }
 	const float GetPhotonPassWavelengthSample() { return photonPassWavelengthSample; }
 
-	bool AddFlux(const Point &hitPoint, const BSDF &bsdf, const Vector &wi,
+	void AddFlux(const Point &hitPoint, const BSDF &bsdf, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup) {
 		const u_int passIndex = currentPhotonPass % 2;
-		return lookUpAccel[passIndex]->AddFlux(hitPoint, passIndex, bsdf, wi, sw, photonFlux, lightGroup);
+		lookUpAccel[passIndex]->AddFlux(hitPoint, passIndex, bsdf, wi, sw, photonFlux, lightGroup);
 	}
-
-	bool HitSomething(const Point &hitPoint, const BSDF &bsdf, const Vector &wi,
-		const SpectrumWavelengths &sw) {
-		const u_int passIndex = currentPhotonPass % 2;
-		return lookUpAccel[passIndex]->HitSomething(hitPoint, passIndex, bsdf, wi, sw);
-	}
-
 	void AddFlux(SplatList *splatList, const Point &hitPoint, const BSDF &bsdf, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup) {
 		const u_int passIndex = currentPhotonPass % 2;
