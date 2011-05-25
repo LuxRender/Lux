@@ -27,10 +27,14 @@ using namespace lux;
 
 KdTree::KdTree(HitPoints *hps) {
 	hitPoints = hps;
-	nNodes = hitPoints->GetSize();
+	maxNNodes = hitPoints->GetSize();
+
 	nextFreeNode = 1;
 	nodes = NULL;
 	nodeData = NULL;
+	
+	nodes = new KdNode[maxNNodes];
+	nodeData = new HitPoint*[maxNNodes];
 
 	RefreshMutex(0);
 }
@@ -90,23 +94,24 @@ void KdTree::RecursiveBuild(const u_int passIndex,
 }
 
 void KdTree::RefreshMutex(const u_int passIndex) {
-	delete[] nodes;
-	delete[] nodeData;
 
-	LOG(LUX_DEBUG, LUX_NOERROR) << "Building kD-Tree with " << nNodes << " nodes";
-
-	nodes = new KdNode[nNodes];
-	nodeData = new HitPoint*[nNodes];
 	nextFreeNode = 1;
 
 	// Begin the KdTree building process
 	std::vector<HitPoint *> buildNodes;
-	buildNodes.reserve(nNodes);
+	buildNodes.reserve(maxNNodes);
 	maxDistSquared = 0.f;
-	for (unsigned int i = 0; i < nNodes; ++i)  {
-		buildNodes.push_back(hitPoints->GetHitPoint(i));
-		maxDistSquared = max<float>(maxDistSquared, buildNodes[i]->accumPhotonRadius2);
+	for (unsigned int i = 0; i < maxNNodes; ++i)  {
+		HitPoint * const hp = hitPoints->GetHitPoint(i);
+		if(hp->eyePass[passIndex].type == SURFACE)
+		{
+			buildNodes.push_back(hp);
+			maxDistSquared = max<float>(maxDistSquared, hp->accumPhotonRadius2);
+		}
 	}
+	nNodes = buildNodes.size();
+
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Building kD-Tree with " << nNodes << " nodes";
 	LOG(LUX_DEBUG, LUX_NOERROR) << "kD-Tree search radius: " << sqrtf(maxDistSquared);
 
 	RecursiveBuild(passIndex, 0, 0, nNodes, buildNodes);
