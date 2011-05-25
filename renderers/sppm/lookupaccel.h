@@ -203,7 +203,7 @@ private:
 
 	KdNode *nodes;
 	HitPoint **nodeData;
-	u_int nNodes, nextFreeNode;
+	u_int nNodes, nextFreeNode, maxNNodes;
 	float maxDistSquared;
 };
 
