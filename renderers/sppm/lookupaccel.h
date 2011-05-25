@@ -22,6 +22,8 @@
 #ifndef LUX_LOOKUPACCEL_H
 #define	LUX_LOOKUPACCEL_H
 
+#include <vector>
+
 #include "osfunc.h"
 
 namespace lux
@@ -33,12 +35,12 @@ namespace lux
 
 class HitPoint;
 class HitPoints;
+class HashCell;
+class SplatList;
 
 enum LookUpAccelType {
 	HASH_GRID, KD_TREE, HYBRID_HASH_GRID
 };
-
-class HashCell;
 
 class HitPointsLookUpAccel {
 public:
@@ -49,19 +51,60 @@ public:
 	virtual void RefreshParallel(const u_int passIndex, const u_int index, const u_int count) { }
 
 	virtual bool AddFlux(const Point &hitPoint, const u_int passIndex, const BSDF &bsdf, const Vector &wi,
-		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group) = 0;
+		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup) = 0;
 	virtual bool HitSomething(const Point &hitPoint, const u_int passIndex, const BSDF &bsdf, const Vector &wi,
 		const SpectrumWavelengths &sw) = 0;
+	virtual void AddFlux(SplatList *splatList, const Point &hitPoint, const u_int passIndex, const BSDF &bsdf, const Vector &wi,
+		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup) = 0;
+
+	void Splat(SplatList *splatList);
 
 	friend class HashCell;
 
 protected:
 	bool AddFluxToHitPoint(HitPoint *hp, const u_int passIndex,
 		const BSDF &bsdf, const Point &hitPoint, const Vector &wi,
-		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group);
+		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup);
 	bool DoesAddFluxToHitPoint(HitPoint *hp, const u_int passIndex,
 		const BSDF &bsdf, const Point &hitPoint, const Vector &wi,
 		const SpectrumWavelengths &sw);
+	void AddFluxToSplatList(SplatList *splatList, HitPoint *hp, const u_int passIndex,
+		const BSDF &bsdf, const Point &hitPoint, const Vector &wi,
+		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup);
+};
+
+struct SplatNode {
+	SplatNode(const u_int lg, XYZColor f, HitPoint *hp) {
+		lightGroup = lg;
+		flux = f;
+		hitPoints = hp;
+	}
+
+	u_int lightGroup;
+	XYZColor flux;
+	HitPoint *hitPoints;
+};
+
+class SplatList {
+public:
+	SplatList() {
+		Reset();
+	}
+	~SplatList() { }
+
+	void Reset() {
+		splatCount = 1;
+		nodes.erase(nodes.begin(), nodes.end());
+	}
+
+	bool IsEmpty() const { return (nodes.size() == 0); }
+	void IncSplatCount() { ++splatCount; }
+
+	friend class HitPointsLookUpAccel;
+
+private:
+	u_int splatCount;
+	std::vector<SplatNode> nodes;
 };
 
 inline void SpectrumAtomicAdd(SWCSpectrum &s, SWCSpectrum &a) {
@@ -87,9 +130,11 @@ public:
 	void RefreshMutex(const u_int passIndex);
 
 	bool AddFlux(const Point &hitPoint, const u_int passIndex, const BSDF &bsdf, const Vector &wi,
-		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group);
+		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup);
 	bool HitSomething(const Point &hitPoint, const u_int passIndex, const BSDF &bsdf, const Vector &wi,
 		const SpectrumWavelengths &sw);
+	void AddFlux(SplatList *splatList, const Point &hitPoint, const u_int passIndex, const BSDF &bsdf, const Vector &wi,
+		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup);
 
 private:
 	u_int Hash(const int ix, const int iy, const int iz) {
@@ -118,9 +163,11 @@ public:
 	void RefreshMutex(const u_int passIndex);
 
 	bool AddFlux(const Point &hitPoint, const u_int passIndex, const BSDF &bsdf, const Vector &wi,
-		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group);
+		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup);
 	bool HitSomething(const Point &hitPoint, const u_int passIndex, const BSDF &bsdf, const Vector &wi,
 		const SpectrumWavelengths &sw);
+	void AddFlux(SplatList *splatList, const Point &hitPoint, const u_int passIndex, const BSDF &bsdf, const Vector &wi,
+		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup);
 
 private:
 	struct KdNode {
@@ -218,10 +265,13 @@ public:
 
 	bool AddFlux(HitPointsLookUpAccel *accel, const u_int passIndex,
 		const Point &hitPoint, const BSDF &bsdf, const Vector &wi,
-		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group);
+		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup);
 	bool HitSomething(HitPointsLookUpAccel *accel, const u_int passIndex,
 		const Point &hitPoint, const BSDF &bsdf, const Vector &wi,
 		const SpectrumWavelengths &sw);
+	void AddFlux(SplatList *splatList, HitPointsLookUpAccel *accel, const u_int passIndex,
+		const Point &hitPoint, const BSDF &bsdf, const Vector &wi,
+		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup);
 
 	u_int GetSize() const { return size; }
 
@@ -233,10 +283,13 @@ private:
 
 		bool AddFlux(HitPointsLookUpAccel *accel,  const u_int passIndex,
 			const BSDF &bsdf, const Point &hitPoint, const Vector &wi,
-			const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group);
+			const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup);
 		bool HitSomething(HitPointsLookUpAccel *accel,  const u_int passIndex,
 			const BSDF &bsdf, const Point &hitPoint, const Vector &wi,
 			const SpectrumWavelengths &sw);
+		void AddFlux(SplatList *splatList, HitPointsLookUpAccel *accel,  const u_int passIndex,
+			const BSDF &bsdf, const Point &hitPoint, const Vector &wi,
+			const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup);
 
 	private:
 		struct KdNode {
@@ -305,9 +358,11 @@ public:
 	void RefreshParallel(const u_int passIndex, const u_int index, const u_int count);
 
 	bool AddFlux(const Point &hitPoint, const u_int passIndex, const BSDF &bsdf, const Vector &wi,
-		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int light_group);
+		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup);
 	bool HitSomething(const Point &hitPoint, const u_int passIndex, const BSDF &bsdf, const Vector &wi,
 		const SpectrumWavelengths &sw);
+	void AddFlux(SplatList *splatList, const Point &hitPoint, const u_int passIndex, const BSDF &bsdf, const Vector &wi,
+		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup);
 
 private:
 	u_int Hash(const int ix, const int iy, const int iz) {

@@ -899,16 +899,107 @@ bool SPPMRenderer::PhotonPassRenderThread::Splat(Scene &scene, const Sample *sam
 	return isVisible;
 }
 
+void SPPMRenderer::PhotonPassRenderThread::Splat(SplatList *splatList, Scene &scene, const Sample *sample, const float *u) {
+	splatList->Reset();
+
+	// I have to make a copy of SpectrumWavelengths because it can be modified
+	// even if passed as a const argument !
+	SpectrumWavelengths sw(sample->swl);
+
+	// Choose light to shoot photon from
+	float lightPdf;
+	u_int lightNum = lightCDF->SampleDiscrete(u[6], &lightPdf);
+	const Light *light = scene.lights[lightNum];
+
+	// Generate _photonRay_ from light source and initialize _alpha_
+	BSDF *bsdf;
+	float pdf;
+	SWCSpectrum alpha;
+	if (!light->SampleL(scene, *sample, u[0], u[1], u[2],
+			&bsdf, &pdf, &alpha)) {
+		sample->arena.FreeAll();
+		return;
+	}
+	Ray photonRay;
+	photonRay.o = bsdf->dgShading.p;
+	float pdf2;
+	SWCSpectrum alpha2;
+	if (!bsdf->SampleF(sw, Vector(bsdf->nn), &photonRay.d,
+			u[3], u[4], u[5], &alpha2, &pdf2)) {
+		sample->arena.FreeAll();
+		return;
+	}
+	alpha *= alpha2;
+	alpha /= lightPdf;
+
+	if (!alpha.Black()) {
+		// Follow photon path through scene and record intersections
+		Intersection photonIsect;
+		const Volume *volume = NULL; //FIXME: try to get volume from light
+		BSDF *photonBSDF;
+		u_int nIntersections = 0;
+		size_t currentIndex = 7;
+		while (scene.Intersect(*sample, volume, false,
+			photonRay, 1.f, &photonIsect, &photonBSDF,
+			NULL, NULL, &alpha)) {
+			++nIntersections;
+
+			// Handle photon/surface intersection
+			Vector wi = -photonRay.d;
+
+			// Deposit Flux (only if we have hit a diffuse or glossy surface)
+			if (photonBSDF->NumComponents(BxDFType(BSDF_REFLECTION | BSDF_TRANSMISSION | BSDF_GLOSSY | BSDF_DIFFUSE)) > 0)
+				renderer->hitPoints->AddFlux(splatList, photonIsect.dg.p, *photonBSDF, wi, sw, alpha, light->group);
+
+			// Sample new photon ray direction
+			Vector wo;
+			float pdfo;
+			BxDFType flags;
+			// Get random numbers for sampling outgoing photon direction
+			const float u1 = u[currentIndex++];
+			const float u2 = u[currentIndex++];
+			const float u3 = u[currentIndex++];
+
+			// Compute new photon weight and possibly terminate with RR
+			SWCSpectrum fr;
+			if (!photonBSDF->SampleF(sw, wi, &wo, u1, u2, u3, &fr, &pdfo, BSDF_ALL, &flags)) {
+				sample->arena.FreeAll();
+				return;
+			}
+
+			// Russian Roulette
+			SWCSpectrum anew = fr;
+			const float continueProb = min(1.f, anew.Filter(sw));
+			const float u4 = u[currentIndex++];
+			if ((u4 > continueProb) ||
+					(nIntersections > renderer->sppmi->maxPhotonPathDepth)) {
+				sample->arena.FreeAll();
+				return;
+			}
+
+			alpha *= anew / continueProb;
+			photonRay = Ray(photonIsect.dg.p, wo);
+			volume = photonBSDF->GetVolume(photonRay.d);
+		}
+	}
+
+	sample->arena.FreeAll();
+}
+
 void SPPMRenderer::PhotonPassRenderThread::TracePhotons(AMCMCPhotonSampler *sampler) {
 	Scene &scene(*(renderer->scene));
 
 	sampler->StartNewPhotonPass(renderer->hitPoints->GetPhotonPassWavelengthSample());
 	Sample *sample = sampler->GetSample();
 
+	SplatList *currentSplatList = new SplatList();
+	SplatList *candidateSplatList = new SplatList();
+
 	// Look for a visible photon path
 	do {
 		sampler->Uniform();
-	} while (!IsVisible(scene, sample, sampler->GetCandidateData()));
+		Splat(currentSplatList, scene, sample, sampler->GetCandidateData());
+	} while (currentSplatList->IsEmpty());
 	sampler->AcceptCandidate();
 
 	float mutationSize = 1.f;
@@ -923,29 +1014,48 @@ void SPPMRenderer::PhotonPassRenderThread::TracePhotons(AMCMCPhotonSampler *samp
 			amcUniformCount = uniformCount;
 
 			// Ok, time to stop
-			return;
+			break;
 		}
 
 		osAtomicInc(&renderer->photonTracedPass);
 
 		sampler->Uniform();
 
-		if (Splat(scene, sample, sampler->GetCandidateData())) {
+		Splat(candidateSplatList, scene, sample, sampler->GetCandidateData());
+		if (!candidateSplatList->IsEmpty()) {
+			// Time to splat the current photon path
+			renderer->hitPoints->SplatFlux(currentSplatList);
+
+			// Accept the new photon path
 			sampler->AcceptCandidate();
+			swap(currentSplatList, candidateSplatList);
 			++uniformCount;
 		} else {
+			// Mutate the current photon path
 			sampler->Mutate(mutationSize);
 			++mutated;
-			if (Splat(scene, sample, sampler->GetCandidateData())) {
+
+			Splat(candidateSplatList, scene, sample, sampler->GetCandidateData());
+			if (!candidateSplatList->IsEmpty()) {
+				// Time to splat the current photon path
+				renderer->hitPoints->SplatFlux(currentSplatList);
+
+				// Accept the new photon path
 				sampler->AcceptCandidate();
+				swap(currentSplatList, candidateSplatList);
 				++accepted;
-			} else
-				Splat(scene, sample, sampler->GetCurrentData());
+			} else {
+				// Increase the weight of the current photon path
+				currentSplatList->IncSplatCount();
+			}
 
 			const float R = accepted / (float)mutated;
 			mutationSize += (R - 0.234) / mutated;
 		}
 	}
+
+	delete currentSplatList;
+	delete candidateSplatList;
 }
 
 //------------------------------------------------------------------------------

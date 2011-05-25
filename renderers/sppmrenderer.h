@@ -148,6 +148,7 @@ private:
 
 		bool IsVisible(Scene &scene, const Sample *sample, const float *u);
 		bool Splat(Scene &scene, const Sample *sample, const float *u);
+		void Splat(SplatList *splatList, Scene &scene, const Sample *sample, const float *u);
 		void TracePhotons(AMCMCPhotonSampler *sampler);
 
 		static void RenderImpl(PhotonPassRenderThread *r);
