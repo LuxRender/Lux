@@ -84,7 +84,6 @@ inline void osAtomicAdd(float *val, const float delta) {
 	union bits {
 		float f;
 		boost::uint32_t i;
-
 	};
 
 	bits oldVal, newVal;
@@ -101,14 +100,15 @@ inline void osAtomicAdd(float *val, const float delta) {
 
 inline void osAtomicAdd(unsigned int *val, const unsigned int delta) {
 #if defined(WIN32)
-   boost::uint32_t newVal;
-   do
-   {
-      #if (defined(__i386__) || defined(__amd64__))
-         __asm__ __volatile__("pause\n");
-      #endif
-      newVal = *val + delta;
-   } while (boost::interprocess::detail::atomic_cas32(((boost::uint32_t*)val), newVal, *val) != *val);
+	boost::uint32_t oldVal, newVal;
+	do
+	{
+#if (defined(__i386__) || defined(__amd64__))
+		 __asm__ __volatile__("pause\n");
+#endif
+		oldVal = *val;
+		newVal = oldVal + delta;
+	} while (boost::interprocess::detail::atomic_cas32(((boost::uint32_t*)val), newVal, oldVal) != oldVal);
 #else
 	boost::interprocess::detail::atomic_add32(((boost::uint32_t *)val), (boost::uint32_t)delta);
 #endif
