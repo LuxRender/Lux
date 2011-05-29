@@ -28,10 +28,10 @@ MESSAGE(STATUS "CMAKE VERSION DETECTED " ${CMAKE_VERSION})
 #
 ###########################################################################
 # Fresh start
-cmake_minimum_required(VERSION 2.8)
-cmake_policy(VERSION 2.8)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
+CMAKE_POLICY(VERSION 2.8)
 
-project(lux)
+PROJECT(lux)
 SET(VERSION 0.9)
 
 # Dont overconfigure
@@ -43,7 +43,7 @@ SET(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "limit configs" FORCE
 #
 ###########################################################################
 
-set(CMAKE_MODULE_PATH
+SET(CMAKE_MODULE_PATH
 	"${lux_SOURCE_DIR}"
 	"${lux_SOURCE_DIR}/cmake"
 	"${lux_SOURCE_DIR}/cmake/Utils"
@@ -74,38 +74,38 @@ INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/core
 # When using single configuration generators like make
 # cmake does need to know which of the possible configurations
 # to generate
-if(NOT CMAKE_BUILD_TYPE)
-	set(CMAKE_BUILD_TYPE Release)
-endif(NOT CMAKE_BUILD_TYPE)
+IF(NOT CMAKE_BUILD_TYPE)
+	SET(CMAKE_BUILD_TYPE Release)
+ENDIF(NOT CMAKE_BUILD_TYPE)
 
-message(STATUS "Building mode: " ${CMAKE_BUILD_TYPE})
+MESSAGE(STATUS "Building mode: " ${CMAKE_BUILD_TYPE})
 
 # Find dependencies
-include(Dependencies)
+INCLUDE(Dependencies)
 
-if (NOT OPENGL_FOUND)
+IF (NOT OPENGL_FOUND)
 	MESSAGE(STATUS "--> Could not locate required OpenGL files")
-endif(NOT OPENGL_FOUND)
+ENDIF(NOT OPENGL_FOUND)
 
-if (NOT Boost_FOUND)
+IF (NOT Boost_FOUND)
 	MESSAGE(STATUS "--> Could not locate required Boost files - Please check '${BOOST_SEARCH_PATH}'")
-endif(NOT Boost_FOUND)
+ENDIF(NOT Boost_FOUND)
 
-if (NOT FreeImage_FOUND)
+IF (NOT FreeImage_FOUND)
 	MESSAGE(STATUS "--> Could not locate required FreeImage files - Please check '${FREEIMAGE_SEARCH_PATH}'")
-endif(NOT FreeImage_FOUND)
+ENDIF(NOT FreeImage_FOUND)
 
-if (NOT OPENCL_FOUND)
+IF (NOT OPENCL_FOUND)
 	MESSAGE(STATUS "--> Could not locate required OpenCL files - Please check '${OPENCL_SEARCH_PATH}'")
-endif(NOT OPENCL_FOUND)
+ENDIF(NOT OPENCL_FOUND)
 
-if (NOT PYTHONLIBS_FOUND)
+IF (NOT PYTHONLIBS_FOUND)
 	MESSAGE(STATUS "--> Could not locate required Python files")
-endif(NOT PYTHONLIBS_FOUND)
+ENDIF(NOT PYTHONLIBS_FOUND)
 
-#if (NOT OpenEXR_FOUND)
-#  MESSAGE(STATUS "--> Could not locate required OpenEXR files - Please check '${OpenEXR_SEARCH_PATH}'")
-#endif(NOT OpenEXR_FOUND)
+IF (NOT OpenEXR_FOUND)
+	MESSAGE(STATUS "--> Could not locate required OpenEXR files - Please check '${OpenEXR_SEARCH_PATH}'")
+ENDIF(NOT OpenEXR_FOUND)
 
 #Generate the config.h file
 CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/config.h.cmake ${CMAKE_BINARY_DIR}/config.h)
