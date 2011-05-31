@@ -40,7 +40,7 @@ public:
 		u_int samplePos;
 		float *imageSamples, *lensSamples, *timeSamples,
 			*wavelengthsSamples, *singleWavelengthSamples;
-		float **oneDSamples, **twoDSamples, **xDSamples;
+		float **xD, **oneDSamples, **twoDSamples, **xDSamples;
 		u_int n1D, n2D, nxD;
 	};
 	// LDSampler Public Methods
@@ -53,12 +53,18 @@ public:
 		sample->samplerData = new LDData(*sample, xPixelStart,
 			yPixelStart, pixelSamples);
 	}
+	virtual void FreeSample(Sample *sample) const {
+		delete static_cast<LDData *>(sample->samplerData);
+	}
 	virtual u_int RoundSize(u_int size) const {
 		return RoundUpPow2(size);
 	}
 	virtual void GetBufferType(BufferType *type) {*type = BUF_TYPE_PER_PIXEL;}
 	virtual u_int GetTotalSamplePos();
 	virtual bool GetNextSample(Sample *sample);
+	virtual float GetOneD(const Sample &sample, u_int num, u_int pos);
+	virtual void GetTwoD(const Sample &sample, u_int num, u_int pos,
+		float u[2]);
 	virtual float *GetLazyValues(const Sample &sample, u_int num, u_int pos);
 
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);

@@ -38,7 +38,7 @@ LDSampler::LDData::LDData(const Sample &sample, int xPixelStart, int yPixelStart
 {
 	xPos = xPixelStart - 1;
 	yPos = yPixelStart;
-	samplePos = pixelSamples;
+	samplePos = pixelSamples - 1;
 
 	// Allocate space for pixel's low-discrepancy sample tables
 	imageSamples = new float[6 * pixelSamples];
@@ -54,10 +54,13 @@ LDSampler::LDData::LDData(const Sample &sample, int xPixelStart, int yPixelStart
 	for (u_int i = 0; i < sample.n2D.size(); ++i)
 		twoDSamples[i] = new float[2 * sample.n2D[i] * pixelSamples];
 	xDSamples = new float *[sample.nxD.size()];
+	xD = new float *[sample.nxD.size()];
 	nxD = sample.nxD.size();
-	for (u_int i = 0; i < sample.nxD.size(); ++i)
+	for (u_int i = 0; i < sample.nxD.size(); ++i) {
 		xDSamples[i] = new float[sample.dxD[i] * sample.nxD[i] *
 			pixelSamples];
+		xD[i] = new float[sample.dxD[i]];
+	}
 }
 LDSampler::LDData::~LDData()
 {
@@ -115,6 +118,7 @@ bool LDSampler::GetNextSample(Sample *sample) {
 	const RandomGenerator &rng(*(sample->rng));
 
 	bool haveMoreSamples = true;
+	++(data->samplePos);
 	if (data->samplePos == pixelSamples) {
 		u_int sampPixelPosToUse;
 		// Move to the next pixel
@@ -179,33 +183,36 @@ bool LDSampler::GetNextSample(Sample *sample) {
 	sample->lensV = data->lensSamples[2 * data->samplePos + 1];
 	sample->time = data->timeSamples[data->samplePos];
 	sample->wavelengths = data->wavelengthsSamples[data->samplePos];
-	for (u_int i = 0; i < sample->n1D.size(); ++i) {
-		u_int startSamp = sample->n1D[i] * data->samplePos;
-		for (u_int j = 0; j < sample->n1D[i]; ++j)
-			sample->oneD[i][j] = data->oneDSamples[i][startSamp+j];
-	}
-	for (u_int i = 0; i < sample->n2D.size(); ++i) {
-		u_int startSamp = 2 * sample->n2D[i] * data->samplePos;
-		for (u_int j = 0; j < 2 * sample->n2D[i]; ++j)
-			sample->twoD[i][j] = data->twoDSamples[i][startSamp+j];
-	}
-	++(data->samplePos);
 
 	return haveMoreSamples;
+}
+
+float LDSampler::GetOneD(const Sample &sample, u_int num, u_int pos)
+{
+	LDData *data = (LDData *)(sample.samplerData);
+	return data->oneDSamples[num][sample.n1D[num] * data->samplePos + pos];
+}
+
+void LDSampler::GetTwoD(const Sample &sample, u_int num, u_int pos, float u[2])
+{
+	LDData *data = (LDData *)(sample.samplerData);
+	const u_int startSamp = 2 * (sample.n2D[num] * data->samplePos + pos);
+	u[0] = data->twoDSamples[num][startSamp];
+	u[1] = data->twoDSamples[num][startSamp + 1];
 }
 
 float *LDSampler::GetLazyValues(const Sample &sample, u_int num, u_int pos)
 {
 	LDData *data = (LDData *)(sample.samplerData);
-	float *sd = sample.xD[num] + pos * sample.dxD[num];
+	float *sd = data->xD[num];
 	float *xDSamp = data->xDSamples[num];
 	u_int offset = 0;
 	for (u_int i = 0; i < sample.sxD[num].size(); ++i) {
 		if (sample.sxD[num][i] == 1) {
-			sd[offset] = xDSamp[sample.nxD[num] * (data->samplePos - 1) + pos];
+			sd[offset] = xDSamp[sample.nxD[num] * data->samplePos + pos];
 		} else if (sample.sxD[num][i] == 2) {
-			sd[offset] = xDSamp[2 * (sample.nxD[num] * (data->samplePos - 1) + pos)];
-			sd[offset + 1] = xDSamp[2 * (sample.nxD[num] * (data->samplePos - 1) + pos) + 1];
+			sd[offset] = xDSamp[2 * (sample.nxD[num] * data->samplePos + pos)];
+			sd[offset + 1] = xDSamp[2 * (sample.nxD[num] * data->samplePos + pos) + 1];
 		}
 		xDSamp += sample.sxD[num][i] * sample.nxD[num] * pixelSamples;
 		offset += sample.sxD[num][i];

@@ -107,7 +107,7 @@ void IGIIntegrator::Preprocess(const RandomGenerator &rng, const Scene &scene)
 	LDShuffleScrambled2D(rng, nLightPaths, nLightSets, lightSamp1);
 	LDShuffleScrambled1D(rng, nLightPaths, nLightSets, lightSamp1b);
 	// Precompute information for light sampling densities
-	Sample sample(scene.surfaceIntegrator, scene.volumeIntegrator, scene);
+	Sample sample;
 	sample.rng = &rng;
 	SpectrumWavelengths &sw(sample.swl);
 	u_int nLights = scene.lights.size();
@@ -228,16 +228,22 @@ u_int IGIIntegrator::Li(const Scene &scene, const Sample &sample) const
 		}
 		for (u_int i = 0; i < scene.lights.size(); ++i) {
 			SWCSpectrum Ld(0.f);
-			const float ln = (i + sample.oneD[lightSampleNumber[i]][0]) / scene.lights.size();
+			float lightPos[2], bsdfPos[2];
+			const float ln = (i + scene.sampler->GetOneD(sample,
+				lightSampleNumber[i], 0)) / scene.lights.size();
+			scene.sampler->GetTwoD(sample, lightSampleOffset[i], 0,
+				lightPos);
+			scene.sampler->GetTwoD(sample, bsdfSampleOffset[i], 0,
+				bsdfPos);
+			const float bsdfComp = scene.sampler->GetOneD(sample,
+				bsdfComponentOffset[i], 0);
 			UniformSampleOneLight(scene, sample, p, n, wo, bsdf,
-				sample.twoD[lightSampleOffset[i]], &ln,
-				sample.twoD[bsdfSampleOffset[i]],
-				sample.oneD[bsdfComponentOffset[i]], &Ld);
+				lightPos, &ln, bsdfPos, &bsdfComp, &Ld);
 			L += pathThroughput * Ld / scene.lights.size();
 		}
 		// Compute indirect illumination with virtual lights
-		size_t lSet = min<size_t>(Floor2UInt(sample.oneD[vlSetOffset][0] * nLightSets),
-			max<size_t>(1U, virtualLights.size()) - 1U);
+		size_t lSet = min<size_t>(Floor2UInt(scene.sampler->GetOneD(sample,
+			vlSetOffset, 0) * nLightSets), nLightSets - 1U);
 		for (u_int i = 0; i < virtualLights[lSet].size(); ++i) {
 			const VirtualLight &vl = virtualLights[lSet][i];
 			// Add contribution from _VirtualLight_ _vl_

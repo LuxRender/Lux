@@ -32,18 +32,13 @@
 using namespace lux;
 
 // Sampler Method Definitions
-Sampler::Sampler(int xstart, int xend, int ystart, int yend,
-		u_int spp) {
+Sampler::Sampler(int xstart, int xend, int ystart, int yend, u_int spp)
+{
 	xPixelStart = min(xstart, xend);
 	xPixelEnd = max(xstart, xend);
 	yPixelStart = min(ystart, yend);
 	yPixelEnd = max(ystart, yend);
 	samplesPerPixel = spp;
-}
-
-float *Sampler::GetLazyValues(const Sample &sample, u_int num, u_int pos)
-{
-	return sample.xD[num] + pos * sample.dxD[num];
 }
 
 void Sampler::AddSample(const Sample &sample)
@@ -55,71 +50,12 @@ void Sampler::AddSample(const Sample &sample)
 }
 
 // Sample Method Definitions
-Sample::Sample(SurfaceIntegrator *surf, VolumeIntegrator *vol,
-	const Scene &scene) : arena(2048)
+Sample::Sample() : arena(2048), samplerData(NULL)
 {
-	stamp = 0;
-	samplerData = NULL;
-	if (surf)
-		surf->RequestSamples(this, scene);
-	if (vol)
-		vol->RequestSamples(this, scene);
-	// Allocate storage for sample pointers
-	u_int nPtrs = n1D.size() + n2D.size() + nxD.size();
-	if (!nPtrs) {
-		oneD = twoD = xD = NULL;
-		timexD = NULL;
-		return;
-	}
-	// since we assign the first element, ensure at least one element is allocated
-	oneD = AllocAligned<float *>(max<u_int>(nPtrs, 1));
-	timexD = AllocAligned<int *>(max<u_int>(nxD.size(), 1));
-	twoD = oneD + n1D.size();
-	xD = twoD + n2D.size();
-	// Compute total number of sample values needed
-	u_int totSamples = 0;
-	u_int totTime = 0;
-	for (u_int i = 0; i < n1D.size(); ++i)
-		totSamples += n1D[i];
-	for (u_int i = 0; i < n2D.size(); ++i)
-		totSamples += 2 * n2D[i];
-	for (u_int i = 0; i < nxD.size(); ++i) {
-		totSamples += dxD[i] * nxD[i];
-		totTime += nxD[i];
-	}
-	// Allocate storage for sample values
-	float *mem = AllocAligned<float>(totSamples);
-	int *tmem = AllocAligned<int>(totTime);
-	// make sure to assign onexD[0] even if n1D.size() == 0
-	oneD[0] = mem;
-	for (u_int i = 0; i < n1D.size(); ++i) {
-		oneD[i] = mem;
-		mem += n1D[i];
-	}
-	for (u_int i = 0; i < n2D.size(); ++i) {
-		twoD[i] = mem;
-		mem += 2 * n2D[i];
-	}
-	// make sure to assign timexD[0] even if nxD.size() == 0
-	timexD[0] = tmem;
-	for (u_int i = 0; i < nxD.size(); ++i) {
-		xD[i] = mem;
-		mem += dxD[i] * nxD[i];
-		timexD[i] = tmem;
-		tmem += nxD[i];
-	}
 }
 
 Sample::~Sample()
 {
-	if (oneD != NULL) {
-		FreeAligned(oneD[0]);
-		FreeAligned(oneD);
-	}
-	if (timexD != NULL) {
-		FreeAligned(timexD[0]);
-		FreeAligned(timexD);
-	}
 }
 
 namespace lux {

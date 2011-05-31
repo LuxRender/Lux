@@ -33,21 +33,29 @@ class RandomSampler : public Sampler
 public:
 	class RandomData {
 	public:
-		RandomData(int xPixelStart, int yPixelStart, u_int pixelSamples);
+		RandomData(const Sample &sample, int xPixelStart,
+			int yPixelStart, u_int pixelSamples);
 		~RandomData();
 		int xPos, yPos;
-		u_int samplePos;
+		u_int samplePos, nxD;
+		float **xD;
 	};
 	RandomSampler(int xstart, int xend, int ystart, int yend,
 		u_int ps, string pixelsampler);
 	virtual ~RandomSampler();
 
 	virtual void InitSample(Sample *sample) const {
-		sample->samplerData = new RandomData(xPixelStart, yPixelStart,
-			pixelSamples);
+		sample->samplerData = new RandomData(*sample, xPixelStart,
+			yPixelStart, pixelSamples);
+	}
+	virtual void FreeSample(Sample *sample) const {
+		delete static_cast<RandomData *>(sample->samplerData);
 	}
 	virtual u_int GetTotalSamplePos();
 	virtual bool GetNextSample(Sample *sample);
+	virtual float GetOneD(const Sample &sample, u_int num, u_int pos);
+	virtual void GetTwoD(const Sample &sample, u_int num, u_int pos,
+		float u[2]);
 	virtual float *GetLazyValues(const Sample &sample, u_int num, u_int pos);
 	virtual u_int RoundSize(u_int sz) const { return sz; }
 	virtual void GetBufferType(BufferType *type) {*type = BUF_TYPE_PER_PIXEL;}

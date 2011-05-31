@@ -63,9 +63,9 @@ static float mutateScaled(const float x, const float randomValue, const float mi
 }
 
 ERPTSampler::ERPTData::ERPTData(const Sample &sample) :
-	currentImage(NULL), currentTimeImage(NULL), numChains(0), chain(0),
-	mutation(~0U), stamp(0), baseLY(0.f), quantum(0.f), weight(0.f),
-	LY(0.f), alpha(0.f), totalLY(0.), sampleCount(0.)
+	numChains(0), chain(0), mutation(~0U), stamp(0), currentStamp(0),
+	baseLY(0.f), quantum(0.f), weight(0.f), LY(0.f), alpha(0.f),
+	totalLY(0.), sampleCount(0.)
 {
 	u_int i;
 	normalSamples = SAMPLE_FLOATS;
@@ -74,25 +74,32 @@ ERPTSampler::ERPTData::ERPTData(const Sample &sample) :
 	for (i = 0; i < sample.n2D.size(); ++i)
 		normalSamples += 2 * sample.n2D[i];
 	totalSamples = normalSamples;
+	timeOffset = new u_int[sample.nxD.size()];
 	offset = new u_int[sample.nxD.size()];
 	totalTimes = 0;
 	for (i = 0; i < sample.nxD.size(); ++i) {
+		timeOffset[i] = totalTimes;
 		offset[i] = totalSamples;
 		totalTimes += sample.nxD[i];
 		totalSamples += sample.dxD[i] * sample.nxD[i];
 	}
 	sampleImage = AllocAligned<float>(totalSamples);
+	currentImage = AllocAligned<float>(totalSamples);
 	baseImage = AllocAligned<float>(totalSamples);
 	timeImage = AllocAligned<int>(totalTimes);
+	currentTimeImage = AllocAligned<int>(totalTimes);
 	baseTimeImage = AllocAligned<int>(totalTimes);
 }
 ERPTSampler::ERPTData::~ERPTData()
 {
 	FreeAligned(baseTimeImage);
+	FreeAligned(currentTimeImage);
 	FreeAligned(timeImage);
 	FreeAligned(baseImage);
+	FreeAligned(currentImage);
 	FreeAligned(sampleImage);
 	delete[] offset;
+	delete[] timeOffset;
 }
 
 // Metropolis method definitions
@@ -121,64 +128,122 @@ bool ERPTSampler::GetNextSample(Sample *sample)
 
 		sample->samplerData = data->baseSamplerData;
 		const bool ret = baseSampler->GetNextSample(sample);
+		float *image = data->baseImage;
+		*image++ = sample->imageX;
+		*image++ = sample->imageY;
+		*image++ = sample->lensU;
+		*image++ = sample->lensV;
+		*image++ = sample->time;
+		*image++ = sample->wavelengths;
+		for (u_int i = 0; i < sample->n1D.size(); ++i) {
+			for (u_int j = 0; j < sample->n1D[i]; ++j)
+				*image++ = baseSampler->GetOneD(*sample, i, j);
+		}
+		for (u_int i = 0; i < sample->n2D.size(); ++i) {
+			for (u_int j = 0; j < sample->n2D[i]; ++j) {
+				float u[2];
+				baseSampler->GetTwoD(*sample, i, j, u);
+				*image++ = u[0];
+				*image++ = u[1];
+			}
+		}
 		sample->samplerData = data;
 		for (u_int i = 0; i < data->totalTimes; ++i)
-			sample->timexD[0][i] = -1;
-		sample->stamp = 0;
-		data->currentImage = data->baseImage;
-		data->currentTimeImage = data->baseTimeImage;
+			data->baseTimeImage[i] = -1;
+		data->currentStamp = 0;
 		data->stamp = 0;
 		return ret;
 	} else {
 		if (data->mutation == 0) {
 			// *** new chain ***
-			for (u_int i = 0; i < data->totalTimes; ++i)
-				sample->timexD[0][i] = data->baseTimeImage[i];
-			sample->stamp = 0;
-			data->currentImage = data->baseImage;
-			data->currentTimeImage = data->baseTimeImage;
+			for (u_int i = 0; i < data->totalSamples; ++i)
+				data->currentImage[i] = data->baseImage[i];
+			for (u_int i = 0; i < data->totalTimes; ++i) {
+				data->timeImage[i] = -1;
+				data->currentTimeImage[i] = data->baseTimeImage[i];
+			}
+			data->currentStamp = 0;
 			data->stamp = 0;
 		}
 		// *** small mutation ***
 		// mutate current sample
-		sample->imageX = mutateScaled(data->currentImage[0], rng->floatValue(), xPixelStart, xPixelEnd, range);
-		sample->imageY = mutateScaled(data->currentImage[1], rng->floatValue(), yPixelStart, yPixelEnd, range);
-		sample->lensU = mutate(data->currentImage[2], rng->floatValue());
-		sample->lensV = mutate(data->currentImage[3], rng->floatValue());
-		sample->time = mutate(data->currentImage[4], rng->floatValue());
-		sample->wavelengths = mutate(data->currentImage[5], rng->floatValue());
-		for (u_int i = SAMPLE_FLOATS; i < data->normalSamples; ++i)
-				sample->oneD[0][i - SAMPLE_FLOATS] = mutate(data->currentImage[i], rng->floatValue());
-		++(sample->stamp);
+		data->sampleImage[0] = mutateScaled(data->currentImage[0], rng->floatValue(), xPixelStart, xPixelEnd, range);
+		data->sampleImage[1] = mutateScaled(data->currentImage[1], rng->floatValue(), yPixelStart, yPixelEnd, range);
+		for (u_int i = 2; i < data->normalSamples; ++i)
+			data->sampleImage[i] = mutate(data->currentImage[i], rng->floatValue());
+		data->stamp = data->currentStamp + 1;
+		sample->imageX = data->sampleImage[0];
+		sample->imageY = data->sampleImage[1];
+		sample->lensU = data->sampleImage[2];
+		sample->lensV = data->sampleImage[3];
+		sample->time = data->sampleImage[4];
+		sample->wavelengths = data->sampleImage[5];
 	}
 
 	return true;
+}
+
+float ERPTSampler::GetOneD(const Sample &sample, u_int num, u_int pos)
+{
+	ERPTData *data = (ERPTData *)(sample.samplerData);
+	u_int offset = SAMPLE_FLOATS;
+	for (u_int i = 0; i < num; ++i)
+		offset += sample.n1D[i];
+	if (data->mutation == ~0U)
+		return data->baseImage[offset + pos];
+	else
+		return data->sampleImage[offset + pos];
+}
+
+void ERPTSampler::GetTwoD(const Sample &sample, u_int num, u_int pos, float u[2])
+{
+	ERPTData *data = (ERPTData *)(sample.samplerData);
+	u_int offset = SAMPLE_FLOATS;
+	for (u_int i = 0; i < sample.n1D.size(); ++i)
+		offset += sample.n1D[i];
+	for (u_int i = 0; i < num; ++i)
+		offset += sample.n2D[i] * 2;
+	if (data->mutation == ~0U) {
+		u[0] = data->baseImage[offset + pos * 2];
+		u[1] = data->baseImage[offset + pos * 2 + 1];
+	} else {
+		u[0] = data->sampleImage[offset + pos * 2];
+		u[1] = data->sampleImage[offset + pos * 2 + 1];
+	}
 }
 
 float *ERPTSampler::GetLazyValues(const Sample &sample, u_int num, u_int pos)
 {
 	ERPTData *data = (ERPTData *)(sample.samplerData);
 	const u_int size = sample.dxD[num];
-	float *sd = sample.xD[num] + pos * size;
-	const int stampLimit = sample.stamp;
-	if (sample.timexD[num][pos] != stampLimit) {
-		if (sample.timexD[num][pos] == -1) {
-			const_cast<Sample&>(sample).samplerData = data->baseSamplerData;
-			baseSampler->GetLazyValues(sample, num, pos);
-			const_cast<Sample&>(sample).samplerData = data;
-			sample.timexD[num][pos] = 0;
-		} else {
-			const u_int start = data->offset[num] + pos * size;
-			float *image = data->currentImage + start;
-			for (u_int i = 0; i < size; ++i)
-				sd[i] = image[i];
+	const u_int first = data->offset[num] + pos * size;
+	int &baseTime(data->baseTimeImage[data->timeOffset[num] + pos]);
+	if (baseTime == -1) {
+		const_cast<Sample&>(sample).samplerData = data->baseSamplerData;
+		float *base = baseSampler->GetLazyValues(sample, num, pos);
+		const_cast<Sample&>(sample).samplerData = data;
+		for (u_int i = 0; i < size; ++i)
+			data->baseImage[first + i] = base[i];
+		baseTime = 0;
+	}
+	if (data->mutation == ~0U)
+		return data->baseImage + first;
+	int &time(data->timeImage[data->timeOffset[num] + pos]);
+	const int stampLimit = data->stamp;
+	if (time != stampLimit) {
+		int &currentTime(data->currentTimeImage[data->timeOffset[num] + pos]);
+		if (currentTime == -1) {
+			for (u_int i = first; i < first + size; ++i)
+				data->currentImage[i] = data->baseImage[i];
+			currentTime = 0;
 		}
-		for (int &time = sample.timexD[num][pos]; time < stampLimit; ++time) {
-			for (u_int i = 0; i < size; ++i)
-				sd[i] = mutate(sd[i], sample.rng->floatValue());
+		for (u_int i = first; i < first + size; ++i) {
+			data->sampleImage[i] = data->currentImage[i];
+			for (time = currentTime; time < stampLimit; ++time)
+				data->sampleImage[i] = mutate(data->sampleImage[i], sample.rng->floatValue());
 		}
 	}
-	return sd;
+	return data->sampleImage + first;
 }
 
 // interface for adding/accepting a new image sample.
@@ -214,19 +279,9 @@ void ERPTSampler::AddSample(const Sample &sample)
 			// The following line avoids to block on a pixel
 			// if the initial sample is extremely bright
 			data->numChains = min(data->numChains, totalMutations);
-			data->quantum /= (data->numChains * totalMutations);
+			data->quantum /= data->numChains;
 			data->baseLY = newLY;
 			data->baseContributions = newContributions;
-			data->baseImage[0] = sample.imageX;
-			data->baseImage[1] = sample.imageY;
-			data->baseImage[2] = sample.lensU;
-			data->baseImage[3] = sample.lensV;
-			data->baseImage[4] = sample.time;
-			data->baseImage[5] = sample.wavelengths;
-			for (u_int i = SAMPLE_FLOATS; i < data->totalSamples; ++i)
-				data->baseImage[i] = sample.oneD[0][i - SAMPLE_FLOATS];
-			for (u_int i = 0 ; i < data->totalTimes; ++i)
-				data->baseTimeImage[i] = sample.timexD[0][i];
 			data->mutation = 0;
 			newContributions.clear();
 			return;
@@ -256,19 +311,9 @@ void ERPTSampler::AddSample(const Sample &sample)
 		data->oldContributions = newContributions;
 
 		// Save new contributions for reference
-		data->sampleImage[0] = sample.imageX;
-		data->sampleImage[1] = sample.imageY;
-		data->sampleImage[2] = sample.lensU;
-		data->sampleImage[3] = sample.lensV;
-		data->sampleImage[4] = sample.time;
-		data->sampleImage[5] = sample.wavelengths;
-		for (u_int i = SAMPLE_FLOATS; i < data->totalSamples; ++i)
-			data->sampleImage[i] = sample.oneD[0][i - SAMPLE_FLOATS];
-		for (u_int i = 0 ; i < data->totalTimes; ++i)
-			data->timeImage[i] = sample.timexD[0][i];
-		data->stamp = sample.stamp;
-		data->currentImage = data->sampleImage;
-		data->currentTimeImage = data->timeImage;
+		swap(data->sampleImage, data->currentImage);
+		swap(data->timeImage, data->currentTimeImage);
+		data->currentStamp = data->stamp;
 	} else {
 		// Add contribution of new sample before rejecting it
 		newWeight *= data->quantum / newLY;
@@ -277,10 +322,7 @@ void ERPTSampler::AddSample(const Sample &sample)
 				sample.contribBuffer->Add(newContributions[i], newWeight);
 		}
 
-		// Restart from previous reference
-		for (u_int i = 0; i < data->totalTimes; ++i)
-			sample.timexD[0][i] = data->currentTimeImage[i];
-		sample.stamp = data->stamp;
+		data->stamp = data->currentStamp;
 	}
 	if (++(data->mutation) >= totalMutations) {
 		data->mutation = 0;

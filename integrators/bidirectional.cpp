@@ -442,19 +442,21 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 	}
 
 	// Choose light
-	const u_int lightNum = min(Floor2UInt(sample.oneD[lightNumOffset][0] *
-		numberOfLights), numberOfLights - 1U);
+	const u_int lightNum = min(Floor2UInt(scene.sampler->GetOneD(sample,
+		lightNumOffset, 0) * numberOfLights), numberOfLights - 1U);
 	const Light *light = scene.lights[lightNum];
 	const u_int lightGroup = light->group;
-	const float *data = sample.twoD[lightPosOffset];
-	const float component = sample.oneD[lightComponentOffset][0];
+	float lightPos[2];
+	scene.sampler->GetTwoD(sample, lightPosOffset, 0, lightPos);
+	const float component = scene.sampler->GetOneD(sample,
+		lightComponentOffset, 0);
 	SWCSpectrum Le;
 
 	// Sample light subpath origin
 	u_int nLight = 0;
 	float lightDirectPdf = 0.f;
 	if (maxLightDepth > 0 && light->SampleL(scene, sample,
-		data[0], data[1], component, &lightPath[0].bsdf,
+		lightPos[0], lightPos[1], component, &lightPath[0].bsdf,
 		&lightPath[0].dAWeight, &Le)) {
 		BidirVertex &light0(lightPath[0]);
 		// Initialize light vertex
@@ -488,7 +490,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 
 		// Sample light subpath initial direction and
 		// finish vertex initialization if needed
-		data = scene.sampler->GetLazyValues(sample, sampleLightOffset, 0);
+		const float *data = scene.sampler->GetLazyValues(sample, sampleLightOffset, 0);
 		if (maxLightDepth > 1 && light0.bsdf->SampleF(sw, light0.wi,
 			&light0.wo, data[1], data[2], data[3],
 			&light0.flux, &light0.pdf, BSDF_ALL, &light0.flags,
@@ -636,8 +638,8 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 	const Volume *volume = eye0.bsdf->GetVolume(ray.d);
 	bool scattered = eye0.bsdf->dgShading.scattered;
 	for (u_int sampleIndex = 1; sampleIndex < maxEyeDepth; ++sampleIndex) {
-		data = scene.sampler->GetLazyValues(sample, sampleEyeOffset,
-			sampleIndex);
+		const float *data = scene.sampler->GetLazyValues(sample,
+			sampleEyeOffset, sampleIndex);
 		BidirVertex &v = eyePath[nEye];
 		float spdf, spdfR;
 		if (!scene.Intersect(sample, volume, scattered, ray, data[4],

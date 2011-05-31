@@ -34,20 +34,26 @@
 
 using namespace lux;
 
-RandomSampler::RandomData::RandomData(int xPixelStart, int yPixelStart,
-	u_int pixelSamples)
+RandomSampler::RandomData::RandomData(const Sample &sample, int xPixelStart,
+	int yPixelStart, u_int pixelSamples)
 {
 	xPos = xPixelStart;
 	yPos = yPixelStart;
 	samplePos = pixelSamples;
+	xD = new float *[sample.nxD.size()];
+	nxD = sample.nxD.size();
+	for (u_int i = 0; i < sample.nxD.size(); ++i)
+		xD[i] = new float[sample.dxD[i]];
 }
 RandomSampler::RandomData::~RandomData()
 {
+	for (u_int i = 0; i < nxD; ++i)
+		delete[] xD[i];
+	delete[] xD;
 }
 
-RandomSampler::RandomSampler(int xstart, int xend,
-                             int ystart, int yend, u_int ps, string pixelsampler)
-        : Sampler(xstart, xend, ystart, yend, ps)
+RandomSampler::RandomSampler(int xstart, int xend, int ystart, int yend,
+	u_int ps, string pixelsampler) : Sampler(xstart, xend, ystart, yend, ps)
 {
 	pixelSamples = ps;
 
@@ -116,27 +122,30 @@ bool RandomSampler::GetNextSample(Sample *sample)
 	sample->lensV = sample->rng->floatValue();
 	sample->time = sample->rng->floatValue();
 	sample->wavelengths = sample->rng->floatValue();
-	// Generate stratified samples for integrators
-	for (u_int i = 0; i < sample->n1D.size(); ++i) {
-		for (u_int j = 0; j < sample->n1D[i]; ++j)
-			sample->oneD[i][j] = sample->rng->floatValue();
-	}
-	for (u_int i = 0; i < sample->n2D.size(); ++i) {
-		for (u_int j = 0; j < 2*sample->n2D[i]; ++j)
-			sample->twoD[i][j] = sample->rng->floatValue();
-	}
 
 	++(data->samplePos);
 
 	return haveMoreSamples;
 }
 
+float RandomSampler::GetOneD(const Sample &sample, u_int num, u_int pos)
+{
+	return sample.rng->floatValue();
+}
+
+void RandomSampler::GetTwoD(const Sample &sample, u_int num, u_int pos, float u[2])
+{
+	u[0] = sample.rng->floatValue();
+	u[1] = sample.rng->floatValue();
+}
+
 float *RandomSampler::GetLazyValues(const Sample &sample, u_int num, u_int pos)
 {
-	float *data = sample.xD[num] + pos * sample.dxD[num];
+	RandomData *data = (RandomData *)(sample.samplerData);
+	float *sd = data->xD[num];
 	for (u_int i = 0; i < sample.dxD[num]; ++i)
-		data[i] = sample.rng->floatValue();
-	return data;
+		sd[i] = sample.rng->floatValue();
+	return sd;
 }
 
 Sampler* RandomSampler::CreateSampler(const ParamSet &params, const Film *film)

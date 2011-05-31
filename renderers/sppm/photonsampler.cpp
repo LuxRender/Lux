@@ -36,7 +36,7 @@ PhotonSampler::PhotonSampler(const RandomGenerator *randomGen) {
 
 HaltonPhotonSampler::HaltonPhotonSampler(const Scene &scene,
 		const RandomGenerator *randomGen) : PhotonSampler(randomGen) {
-	sample = new Sample(NULL, scene.volumeIntegrator, scene);
+	sample = new Sample(/*FIXME NULL, scene.volumeIntegrator, scene*/);
 	// Initialized later
 	sample->rng = rng;
 	sample->camera = scene.camera->Clone();
@@ -54,7 +54,7 @@ HaltonPhotonSampler::~HaltonPhotonSampler() {
 
 AMCMCPhotonSampler::AMCMCPhotonSampler(const u_int maxPhotonDepth, const Scene &scene,
 		const RandomGenerator *randomGen) : PhotonSampler(randomGen) {
-	sample = new Sample(NULL, scene.volumeIntegrator, scene);
+	sample = new Sample(/*FIXME NULL, scene.volumeIntegrator, scene*/);
 	// Initialized later
 	sample->rng = rng;
 	sample->camera = scene.camera->Clone();

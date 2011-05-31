@@ -183,7 +183,8 @@ u_int ExPhotonIntegrator::Li(const Scene &scene, const Sample &sample) const
 	}
 
 	sample.AddContribution(sample.imageX, sample.imageY,
-		XYZColor(sample.swl, L) * rayWeight, alpha, bufferId);
+		XYZColor(sample.swl, L) * rayWeight, alpha, 0.f, 0.f,
+		bufferId, 0);
 
 	return L.Black() ? 0 : 1;
 }

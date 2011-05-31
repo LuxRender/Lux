@@ -241,7 +241,7 @@ void HitPoints::SetHitPoints(RandomGenerator *rng, const u_int index, const u_in
 
 	Scene &scene(*renderer->scene);
 
-	Sample sample(NULL, scene.volumeIntegrator, scene);
+	Sample sample/*FIXME(NULL, scene.volumeIntegrator, scene)*/;
 	sample.contribBuffer = NULL;
 	sample.camera = scene.camera->Clone();
 	sample.realTime = 0.f;
@@ -273,7 +273,7 @@ void HitPoints::SetHitPoints(RandomGenerator *rng, const u_int index, const u_in
 		// This may be required by the volume integrator
 		for (u_int j = 0; j < sample.n1D.size(); ++j)
 			for (u_int k = 0; k < sample.n1D[j]; ++k)
-				sample.oneD[j][k] = rng->floatValue();
+/*FIXME				sample.oneD[j][k] = rng->floatValue()*/;
 
 		// Save ray time value
 		sample.realTime = sample.camera->GetTime(sample.time);

@@ -41,9 +41,9 @@ public:
 		u_int normalSamples, totalSamples, totalTimes;
 		float *baseImage, *sampleImage, *currentImage;
 		int *baseTimeImage, *timeImage, *currentTimeImage;
-		u_int *offset;
+		u_int *offset, *timeOffset;
 		u_int numChains, chain, mutation;
-		int stamp;
+		int stamp, currentStamp;
 		float baseLY, quantum, weight, LY, alpha;
 		vector<Contribution> oldContributions, baseContributions;
 		double totalLY, sampleCount;
@@ -58,11 +58,18 @@ public:
 		data->baseSamplerData = sample->samplerData;
 		sample->samplerData = data;
 	}
+	virtual void FreeSample(Sample *sample) const {
+		delete static_cast<ERPTData *>(sample->samplerData);
+		sample->samplerData = NULL;
+	}
 	virtual void SetFilm(Film* f) { film = f; baseSampler->SetFilm(f); }
 	virtual void GetBufferType(BufferType *type) {*type = BUF_TYPE_PER_SCREEN;}
 	virtual u_int GetTotalSamplePos() { return baseSampler->GetTotalSamplePos(); }
 	virtual u_int RoundSize(u_int size) const { return baseSampler->RoundSize(size); }
 	virtual bool GetNextSample(Sample *sample);
+	virtual float GetOneD(const Sample &sample, u_int num, u_int pos);
+	virtual void GetTwoD(const Sample &sample, u_int num, u_int pos,
+		float u[2]);
 	virtual float *GetLazyValues(const Sample &sample, u_int num, u_int pos);
 	//void AddSample(float imageX, float imageY, const Sample &sample, const Ray &ray, const XYZColor &L, float alpha, int id=0);
 	virtual void AddSample(const Sample &sample);

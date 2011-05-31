@@ -70,7 +70,7 @@ public:
 		// This may be required by the volume integrator
 		for (u_int j = 0; j < sample->n1D.size(); ++j)
 			for (u_int k = 0; k < sample->n1D[j]; ++k)
-				sample->oneD[j][k] = rng->floatValue();
+/*FIXME				sample->oneD[j][k] = rng->floatValue()*/;
 	}
 
 	void GetLightData(const u_int pathCount, float *u) {
@@ -118,7 +118,7 @@ public:
 		// TODO: handle samples stored in Sample class too
 		for (u_int j = 0; j < sample->n1D.size(); ++j)
 			for (u_int k = 0; k < sample->n1D[j]; ++k)
-				sample->oneD[j][k] = rng->floatValue();
+/*FIXME				sample->oneD[j][k] = rng->floatValue()*/;
 	}
 
 	void AcceptCandidate() { swap(currentIndex, candidateIndex); }

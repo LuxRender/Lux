@@ -22,6 +22,7 @@
 
 // distributedpath.cpp*
 #include "lux.h"
+#include "bxdf.h"
 #include "light.h"
 #include "transport.h"
 #include "scene.h"
@@ -59,41 +60,48 @@ private:
 		u_int rayDepth, bool includeEmit, u_int &nrContribs) const;
 	void Reject(const SpectrumWavelengths &sw,
 		vector< vector<SWCSpectrum> > &LL, vector<SWCSpectrum> &L,
-		float rejectrange) const;
+		float rejectRange) const;
+	void ComputeEvent(const Scene &scene, const Sample &sample,
+		BSDF *bsdf, const Vector &wo, u_int nSamples,
+		u_int indirectSampleOffset, u_int indirectComponentOffset,
+		u_int sampleOffset, u_int componentOffset, BxDFType type,
+		bool reject, float threshold, vector<SWCSpectrum> &L,
+		float *alpha, float *zdepth, u_int rayDepth,
+		u_int &nrContribs) const;
 
 	// DistributedPath Private Data
 	LightStrategy lightStrategy;
 	bool directAll, directDiffuse, directGlossy, 
 		indirectAll, indirectDiffuse, indirectGlossy;
 	u_int directSamples, indirectSamples;
-	u_int diffusereflectDepth, diffusereflectSamples, diffuserefractDepth,
-		diffuserefractSamples, glossyreflectDepth, glossyreflectSamples,
-		glossyrefractDepth, glossyrefractSamples, specularreflectDepth,
-		specularrefractDepth, maxDepth;
+	u_int diffuseReflectDepth, diffuseReflectSamples, diffuseRefractDepth,
+		diffuseRefractSamples, glossyReflectDepth, glossyReflectSamples,
+		glossyRefractDepth, glossyRefractSamples, specularReflectDepth,
+		specularRefractDepth, maxDepth;
 
 	// Declare sample parameters for light source sampling
 	u_int sampleOffset, scatterOffset, bufferId;
 	u_int lightSampleOffset, lightNumOffset, bsdfSampleOffset,
 	      bsdfComponentOffset;
-	u_int indirectlightSampleOffset, indirectlightNumOffset,
-	      indirectbsdfSampleOffset, indirectbsdfComponentOffset;
-	u_int diffuse_reflectSampleOffset, diffuse_reflectComponentOffset,
-	      indirectdiffuse_reflectSampleOffset,
-	      indirectdiffuse_reflectComponentOffset;
-	u_int diffuse_refractSampleOffset, diffuse_refractComponentOffset,
-	      indirectdiffuse_refractSampleOffset,
-	      indirectdiffuse_refractComponentOffset;
-	u_int glossy_reflectSampleOffset, glossy_reflectComponentOffset,
-	      indirectglossy_reflectSampleOffset,
-	      indirectglossy_reflectComponentOffset;
-	u_int glossy_refractSampleOffset, glossy_refractComponentOffset,
-	      indirectglossy_refractSampleOffset,
-	      indirectglossy_refractComponentOffset;
+	u_int indirectLightSampleOffset, indirectLightNumOffset,
+	      indirectBsdfSampleOffset, indirectBsdfComponentOffset;
+	u_int diffuseReflectSampleOffset, diffuseReflectComponentOffset,
+	      indirectDiffuseReflectSampleOffset,
+	      indirectDiffuseReflectComponentOffset;
+	u_int diffuseRefractSampleOffset, diffuseRefractComponentOffset,
+	      indirectDiffuseRefractSampleOffset,
+	      indirectDiffuseRefractComponentOffset;
+	u_int glossyReflectSampleOffset, glossyReflectComponentOffset,
+	      indirectGlossyReflectSampleOffset,
+	      indirectGlossyReflectComponentOffset;
+	u_int glossyRefractSampleOffset, glossyRefractComponentOffset,
+	      indirectGlossyRefractSampleOffset,
+	      indirectGlossyRefractComponentOffset;
 
-	bool diffusereflectReject, diffuserefractReject, glossyreflectReject,
-	     glossyrefractReject;
-	float diffusereflectReject_thr, diffuserefractReject_thr,
-	      glossyreflectReject_thr, glossyrefractReject_thr;
+	bool diffuseReflectReject, diffuseRefractReject, glossyReflectReject,
+	     glossyRefractReject;
+	float diffuseReflectRejectThreshold, diffuseRefractRejectThreshold,
+	      glossyReflectRejectThreshold, glossyRefractRejectThreshold;
 };
 
 }//namespace lux

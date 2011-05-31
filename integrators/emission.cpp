@@ -43,7 +43,7 @@ void EmissionIntegrator::Transmittance(const Scene &scene, const Ray &ray,
 	if (!scene.volumeRegion)
 		return;
 	const float step = stepSize;
-	const float offset = sample.oneD[tauSampleOffset][0];
+	const float offset = scene.sampler->GetOneD(sample, tauSampleOffset, 0);
 	const SWCSpectrum tau(scene.volumeRegion->Tau(sample.swl, ray, step,
 		offset));
 	*L *= Exp(-tau);
@@ -62,7 +62,7 @@ u_int EmissionIntegrator::Li(const Scene &scene, const Ray &ray,
 	const float step = (t1 - t0) / N;
 	SWCSpectrum Tr(1.f);
 	const Vector w = -ray.d;
-	t0 += sample.oneD[scatterSampleOffset][0] * step;
+	t0 += scene.sampler->GetOneD(sample, scatterSampleOffset, 0) * step;
 	DifferentialGeometry dg;
 	dg.nn = Normal(-ray.d);
 	Ray r(ray(t0), ray.d * (step / ray.d.Length()), 0.f, 1.f);

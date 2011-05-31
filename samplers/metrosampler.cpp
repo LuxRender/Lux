@@ -35,8 +35,8 @@ static const u_int rngN = 8191;
 static const u_int rngA = 884;
 
 MetropolisSampler::MetropolisData::MetropolisData(const Sample &sample) :
-	consecRejects(0), large(true), stamp(0), weight(0.f), LY(0.f),
-	alpha(0.f), totalLY(0.f), sampleCount(0.f)
+	consecRejects(0), large(true), stamp(0), currentStamp(0), weight(0.f),
+	LY(0.f), alpha(0.f), totalLY(0.f), sampleCount(0.f)
 {
 	u_int i;
 	// Compute number of non lazy samples
@@ -50,7 +50,9 @@ MetropolisSampler::MetropolisData::MetropolisData(const Sample &sample) :
 	totalSamples = normalSamples;
 	offset = new u_int[sample.nxD.size()];
 	totalTimes = 0;
+	timeOffset = new u_int[sample.nxD.size()];
 	for (i = 0; i < sample.nxD.size(); ++i) {
+		timeOffset[i] = totalTimes;
 		offset[i] = totalSamples;
 		totalTimes += sample.nxD[i];
 		totalSamples += sample.dxD[i] * sample.nxD[i];
@@ -58,7 +60,9 @@ MetropolisSampler::MetropolisData::MetropolisData(const Sample &sample) :
 
 	// Allocate sample image to hold the current reference
 	sampleImage = AllocAligned<float>(totalSamples);
+	currentImage = AllocAligned<float>(totalSamples);
 	timeImage = AllocAligned<int>(totalTimes);
+	currentTimeImage = AllocAligned<int>(totalTimes);
 
 	// Compute best offset between sample vectors in the rng
 	// TODO use the smallest gcf of totalSamples and rngN that is greater
@@ -75,8 +79,11 @@ MetropolisSampler::MetropolisData::MetropolisData(const Sample &sample) :
 MetropolisSampler::MetropolisData::~MetropolisData()
 {
 	FreeAligned(rngRotation);
+	FreeAligned(currentTimeImage);
 	FreeAligned(timeImage);
+	FreeAligned(currentImage);
 	FreeAligned(sampleImage);
+	delete[] timeOffset;
 	delete[] offset;
 }
 
@@ -121,10 +128,9 @@ static float fracf(const float &v) {
 
 // Metropolis method definitions
 MetropolisSampler::MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
-		u_int maxRej, float largeProb, float rng, bool useV) :
- Sampler(xStart, xEnd, yStart, yEnd, 1),
- maxRejects(maxRej), pLarge(largeProb),
- range(rng), useVariance(useV)
+	u_int maxRej, float largeProb, float rng, bool useV) :
+	Sampler(xStart, xEnd, yStart, yEnd, 1), maxRejects(maxRej),
+	pLarge(largeProb), range(rng), useVariance(useV)
 {
 	// Allocate and compute all values of the rng
 	rngSamples = AllocAligned<float>(rngN);
@@ -151,7 +157,7 @@ bool MetropolisSampler::GetNextSample(Sample *sample)
 	// Advance to the next vector in the QMC sequence and stay inside the
 	// array bounds
 	data->rngBase += data->rngOffset;
-	if (data->rngBase > rngN - 1)
+	if (data->rngBase >= rngN)
 		data->rngBase -= rngN;
 	// If all possible combinations have been used,
 	// change the Cranley-Paterson rotation vector
@@ -167,38 +173,72 @@ bool MetropolisSampler::GetNextSample(Sample *sample)
 	if (data->large) {
 		// *** large mutation ***
 		// Initialize all non lazy samples
-		sample->imageX = rngGet(0) * (xPixelEnd - xPixelStart) + xPixelStart;
-		sample->imageY = rngGet(1) * (yPixelEnd - yPixelStart) + yPixelStart;
-		sample->lensU = rngGet(2);
-		sample->lensV = rngGet(3);
-		sample->time = rngGet(4);
-		sample->wavelengths = rngGet(5);
-		for (u_int i = SAMPLE_FLOATS; i < data->normalSamples; ++i)
-			sample->oneD[0][i - SAMPLE_FLOATS] = rngGet(i);
+		data->currentImage[0] = rngGet(0) * (xPixelEnd - xPixelStart) + xPixelStart;
+		data->currentImage[1] = rngGet(1) * (yPixelEnd - yPixelStart) + yPixelStart;
+		for (u_int i = 2; i < data->normalSamples; ++i)
+			data->currentImage[i] = rngGet(i);
+		sample->imageX = data->currentImage[0];
+		sample->imageY = data->currentImage[1];
+		sample->lensU = data->currentImage[2];
+		sample->lensV = data->currentImage[3];
+		sample->time = data->currentImage[4];
+		sample->wavelengths = data->currentImage[5];
 		// Reset number of mutations for lazy samples
 		for (u_int i = 0; i < data->totalTimes; ++i)
-			sample->timexD[0][i] = -1;
+			data->currentTimeImage[i] = -1;
 		// Reset number of mutations for whole sample
-		sample->stamp = 0;
+		data->currentStamp = 0;
 	} else {
 		// *** small mutation ***
 		// Mutation of non lazy samples
-		sample->imageX = mutateScaled(data->sampleImage[0],
-			rngGet(0), xPixelStart, xPixelEnd, range);
-		sample->imageY = mutateScaled(data->sampleImage[1],
-			rngGet(1), yPixelStart, yPixelEnd, range);
-		sample->lensU = mutateScaled(data->sampleImage[2], rngGet(2), 0.f, 1.f, .5f);
-		sample->lensV = mutateScaled(data->sampleImage[3], rngGet(3), 0.f, 1.f, .5f);
-		sample->time = mutateScaled(data->sampleImage[4], rngGet(4), 0.f, 1.f, .5f);
-		sample->wavelengths = mutateScaled(data->sampleImage[5],
-			rngGet(5), 0.f, 1.f, .5f);
+		sample->imageX = data->currentImage[0] =
+			mutateScaled(data->sampleImage[0], rngGet(0),
+			xPixelStart, xPixelEnd, range);
+		sample->imageY = data->currentImage[1] =
+			mutateScaled(data->sampleImage[1], rngGet(1),
+			yPixelStart, yPixelEnd, range);
+		sample->lensU = data->currentImage[2] =
+			mutateScaled(data->sampleImage[2], rngGet(2),
+			0.f, 1.f, .5f);
+		sample->lensV = data->currentImage[3] =
+			mutateScaled(data->sampleImage[3], rngGet(3),
+			0.f, 1.f, .5f);
+		sample->time = data->currentImage[4] =
+			mutateScaled(data->sampleImage[4], rngGet(4),
+			0.f, 1.f, .5f);
+		sample->wavelengths = data->currentImage[5] =
+			mutateScaled(data->sampleImage[5], rngGet(5),
+			0.f, 1.f, .5f);
 		for (u_int i = SAMPLE_FLOATS; i < data->normalSamples; ++i)
-			sample->oneD[0][i - SAMPLE_FLOATS] =
+			data->currentImage[i] =
 				mutate(data->sampleImage[i], rngGet(i));
+		for (u_int i = 0; i < data->totalTimes; ++i)
+			data->currentTimeImage[i] = data->timeImage[i];
 		// Increase reference mutation count
-		++(sample->stamp);
+		data->currentStamp = data->stamp + 1;
 	}
 	return true;
+}
+
+float MetropolisSampler::GetOneD(const Sample &sample, u_int num, u_int pos)
+{
+	MetropolisData *data = (MetropolisData *)(sample.samplerData);
+	u_int offset = SAMPLE_FLOATS;
+	for (u_int i = 0; i < num; ++i)
+		offset += sample.n1D[i];
+	return data->currentImage[offset + pos];
+}
+
+void MetropolisSampler::GetTwoD(const Sample &sample, u_int num, u_int pos, float u[2])
+{
+	MetropolisData *data = (MetropolisData *)(sample.samplerData);
+	u_int offset = SAMPLE_FLOATS;
+	for (u_int i = 0; i < sample.n1D.size(); ++i)
+		offset += sample.n1D[i];
+	for (u_int i = 0; i < num; ++i)
+		offset += sample.n2D[i] * 2;
+	u[0] = data->currentImage[offset + pos];
+	u[1] = data->currentImage[offset + pos + 1];
 }
 
 float *MetropolisSampler::GetLazyValues(const Sample &sample, u_int num, u_int pos)
@@ -206,35 +246,39 @@ float *MetropolisSampler::GetLazyValues(const Sample &sample, u_int num, u_int p
 	MetropolisData *data = (MetropolisData *)(sample.samplerData);
 	// Get size and position of current lazy values node
 	const u_int size = sample.dxD[num];
-	float *sd = sample.xD[num] + pos * size;
-	// Get the reference number of mutations
-	const int stampLimit = sample.stamp;
+	const u_int offset = data->offset[num] + pos * size;
+	const u_int timeOffset = data->timeOffset[num] + pos;
 	// If we are at the target, don't do anything
-	int curTimexD = sample.timexD[num][pos];
-	if (curTimexD != stampLimit) {
-		const u_int spos = data->normalSamples + pos * size;
-		// If the node has not yet been initialized, do it now
-		// otherwise get the last known value from the sample image
-		if (curTimexD == -1) {
-			for (u_int i = 0; i < size; ++i)
-				sd[i] = rngGet(spos + i);
-			curTimexD = 0;
-		} else {
-			float *image = data->sampleImage + data->offset[num] + pos * size;
-			for (u_int i = 0; i < size; ++i)
-				sd[i] = image[i];
+	int &currentTime(data->currentTimeImage[timeOffset]);
+	if (data->large) {
+		for (u_int i = offset; i < offset + size; ++i)
+			data->currentImage[i] = rngGet(i);
+		currentTime = 0;
+	} else {
+		// Get the reference number of mutations
+		const int stampLimit = data->currentStamp;
+		if (currentTime != stampLimit) {
+			int &time(data->timeImage[timeOffset]);
+			// If the node has not yet been initialized, do it now
+			// otherwise get the last known value from the sample image
+			if (time == -1) {
+				const u_int roffs = data->rngOffset * static_cast<u_int>(stampLimit);
+				for (u_int i = offset; i < offset + size; ++i)
+					data->sampleImage[i] = rngGet2(i, roffs);
+				time = 0;
+			}
+			for (u_int i = offset; i < offset + size; ++i)
+				data->currentImage[i] = data->sampleImage[i];
+			currentTime = time;
 		}
 		// Mutate as needed
-		for (; curTimexD < stampLimit; ++curTimexD) {
-			const u_int roffs = data->rngOffset * static_cast<u_int>(stampLimit - curTimexD + 1);
-			for (u_int i = 0; i < size; ++i) {
-				sd[i] = mutate(sd[i], rngGet2(spos + i, roffs));
-			}
+		for (; currentTime < stampLimit; ++currentTime) {
+			const u_int roffs = data->rngOffset * static_cast<u_int>(stampLimit - currentTime + 1);
+			for (u_int i = offset; i < offset + size; ++i)
+				data->currentImage[i] = mutate(data->currentImage[i], rngGet2(i, roffs));
 		}
-		// store back
-		sample.timexD[num][pos] = curTimexD;
 	}
-	return sd;
+	return data->currentImage + offset;
 }
 
 void MetropolisSampler::AddSample(const Sample &sample)
@@ -281,17 +325,9 @@ void MetropolisSampler::AddSample(const Sample &sample)
 		data->weight = newWeight;
 		data->LY = newLY;
 		data->oldContributions = newContributions;
-		data->sampleImage[0] = sample.imageX;
-		data->sampleImage[1] = sample.imageY;
-		data->sampleImage[2] = sample.lensU;
-		data->sampleImage[3] = sample.lensV;
-		data->sampleImage[4] = sample.time;
-		data->sampleImage[5] = sample.wavelengths;
-		for (u_int i = SAMPLE_FLOATS; i < data->totalSamples; ++i)
-			data->sampleImage[i] = sample.oneD[0][i - SAMPLE_FLOATS];
-		for (u_int i = 0 ; i < data->totalTimes; ++i)
-			data->timeImage[i] = sample.timexD[0][i];
-		data->stamp = sample.stamp;
+		swap(data->currentImage, data->sampleImage);
+		swap(data->currentTimeImage, data->timeImage);
+		data->stamp = data->currentStamp;
 
 		data->consecRejects = 0;
 	} else {
@@ -302,9 +338,7 @@ void MetropolisSampler::AddSample(const Sample &sample)
 				sample.contribBuffer->Add(newContributions[i], norm);
 		}
 		// Restart from previous reference
-		for (u_int i = 0; i < data->totalTimes; ++i)
-			sample.timexD[0][i] = data->timeImage[i];
-		sample.stamp = data->stamp;
+		data->currentStamp = data->stamp;
 
 		++(data->consecRejects);
 	}

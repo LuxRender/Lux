@@ -44,6 +44,7 @@ private:
 	void Terminate(const Scene &scene, const u_int bufferId);
 
 	Sample sample;
+	Sampler *sampler;
 
 	// Path status information
 	u_int pathLength;

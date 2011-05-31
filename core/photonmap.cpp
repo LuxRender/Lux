@@ -451,7 +451,7 @@ void PhotonMapPreprocess(const RandomGenerator &rng, const Scene &scene,
 	bool radianceDone = (nRadiancePhotons == 0);
 
 	// Dade - initialize SpectrumWavelengths
-	Sample sample(scene.surfaceIntegrator, scene.volumeIntegrator, scene);
+	Sample sample;
 	sample.rng = &rng;
 	SpectrumWavelengths &sw(sample.swl);
 	sample.camera = scene.camera->Clone();

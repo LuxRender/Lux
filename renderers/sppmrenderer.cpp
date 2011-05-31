@@ -320,7 +320,7 @@ SPPMRenderer::EyePassRenderThread::EyePassRenderThread(u_int index, SPPMRenderer
 	threadRng = NULL;
 
 	Scene &scene(*(renderer->scene));
-	threadSample = new Sample(NULL, scene.volumeIntegrator, scene);
+	threadSample = new Sample(/*FIXME NULL, scene.volumeIntegrator, scene*/);
 	// Initialized later
 	threadSample->rng = NULL;
 	threadSample->camera = scene.camera->Clone();

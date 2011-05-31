@@ -39,13 +39,13 @@ public:
 		MetropolisData(const Sample &sample);
 		~MetropolisData();
 		u_int normalSamples, totalSamples, totalTimes, consecRejects;
-		float *sampleImage;
-		int *timeImage;
-		u_int *offset;
+		float *sampleImage, *currentImage;
+		int *timeImage, *currentTimeImage;
+		u_int *offset, *timeOffset;
 		float *rngRotation;
 		u_int rngBase, rngOffset;
 		bool large;
-		int stamp;
+		int stamp, currentStamp;
 		float weight, LY, alpha;
 		vector <Contribution> oldContributions;
 		double totalLY, sampleCount;
@@ -57,9 +57,15 @@ public:
 	virtual void InitSample(Sample *sample) const {
 		sample->samplerData = new MetropolisData(*sample);
 	}
+	virtual void FreeSample(Sample *sample) const {
+		delete static_cast<MetropolisData *>(sample->samplerData);
+	}
 	virtual u_int GetTotalSamplePos() { return 0; }
 	virtual u_int RoundSize(u_int size) const { return size; }
 	virtual bool GetNextSample(Sample *sample);
+	virtual float GetOneD(const Sample &sample, u_int num, u_int pos);
+	virtual void GetTwoD(const Sample &sample, u_int num, u_int pos,
+		float u[2]);
 	virtual float *GetLazyValues(const Sample &sample, u_int num, u_int pos);
 	virtual void AddSample(const Sample &sample);
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);

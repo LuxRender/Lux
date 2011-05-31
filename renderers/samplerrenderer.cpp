@@ -373,7 +373,9 @@ void SamplerRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 	boost::this_thread::disable_interruption di;
 
 	Sampler *sampler = scene.sampler;
-	Sample sample(scene.surfaceIntegrator, scene.volumeIntegrator, scene);
+	Sample sample;
+	scene.surfaceIntegrator->RequestSamples(&sample, scene);
+	scene.volumeIntegrator->RequestSamples(&sample, scene);
 	sampler->InitSample(&sample);
 
 	// Dade - wait the end of the preprocessing phase
@@ -465,6 +467,7 @@ void SamplerRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 	sample.contribBuffer = NULL;
 
 	//delete myThread->sample->camera; //FIXME deleting the camera clone would delete the film!
+	sampler->FreeSample(&sample);
 }
 
 Renderer *SamplerRenderer::CreateRenderer(const ParamSet &params) {
