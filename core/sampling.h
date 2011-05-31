@@ -141,7 +141,9 @@ public:
 
 void StratifiedSample1D(const RandomGenerator &rng, float *samples, u_int nsamples, bool jitter = true);
 void StratifiedSample2D(const RandomGenerator &rng, float *samples, u_int nx, u_int ny, bool jitter = true);
+// The following 2 Shuffle() should be replaced by a template
 void Shuffle(const RandomGenerator &rng, float *samp, u_int count, u_int dims);
+void Shuffle(const RandomGenerator &rng, u_int *samp, u_int count, u_int dims);
 void LatinHypercube(const RandomGenerator &rng, float *samples, u_int nSamples, u_int nDim);
 
 // Sampling Inline Functions
@@ -260,6 +262,65 @@ inline void HaltonShuffleScrambled2D(const RandomGenerator &rng, u_int nSamples,
 		Shuffle(rng, samples + 2 * i * nSamples, nSamples, 2);
 	Shuffle(rng, samples, nPixel, 2 * nSamples);
 }
+
+// Directly from PBRT2
+// smallest floating point value less than one; all canonical random samples
+// should be <= this.
+#ifdef WIN32
+// sadly, MSVC2008 (at least) doesn't support hexidecimal fp constants...
+static const float OneMinusEpsilon=0.9999999403953552f;
+#else
+static const float OneMinusEpsilon=0x1.fffffep-1;
+#endif
+
+// Directly from PBRT2
+inline void GeneratePermutation(u_int *buf, u_int b, const RandomGenerator &rng) {
+	for (u_int i = 0; i < b; ++i)
+		buf[i] = i;
+	Shuffle(rng, buf, b, 1);
+}
+
+// Directly from PBRT2
+inline double PermutedRadicalInverse(u_int n, u_int base, const u_int *p) {
+	double val = 0;
+	double invBase = 1. / base, invBi = invBase;
+
+	while (n > 0) {
+		u_int d_i = p[n % base];
+		val += d_i * invBi;
+		n *= invBase;
+		invBi *= invBase;
+	}
+	return val;
+}
+
+// Directly from PBRT2
+class PermutedHalton {
+	public:
+		// PermutedHalton Public Methods
+		PermutedHalton(u_int d, const RandomGenerator &rng);
+
+		~PermutedHalton() {
+			delete[] b;
+			delete[] permute;
+		}
+
+		void Sample(u_int n, float *out) const {
+			u_int *p = permute;
+			for (u_int i = 0; i < dims; ++i) {
+				out[i] = min<float>(float(PermutedRadicalInverse(n, b[i], p)), OneMinusEpsilon);
+				p += b[i];
+			}
+		}
+
+	private:
+		// PermutedHalton Private Data
+		u_int dims;
+		u_int *b, *permute;
+
+		PermutedHalton(const PermutedHalton &);
+		PermutedHalton & operator=(const PermutedHalton &);
+};
 
 }//namespace lux
 

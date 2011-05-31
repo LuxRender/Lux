@@ -199,6 +199,7 @@ public:
 
 	//statistics
 	double Statistics(const string &statName);
+	void SceneReady();
 
 	const char* PrintableStatistics(const bool add_total);
 	const char* CustomStatistics(const string custom_template);

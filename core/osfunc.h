@@ -29,6 +29,17 @@ using boost::uint32_t;
 #include <istream>
 #include <ostream>
 
+#include <boost/interprocess/detail/atomic.hpp>
+
+#if defined(__linux__) || defined(__APPLE__) || defined(__CYGWIN__)
+#include <stddef.h>
+#include <sys/time.h>
+#elif defined (WIN32)
+#include <windows.h>
+#else
+#error "Unsupported Platform !!!"
+#endif
+
 namespace lux
 {
 
@@ -51,6 +62,61 @@ extern void osWriteLittleEndianUInt(bool isLittleEndian,
 		std::basic_ostream<char> &os, uint32_t value);
 extern uint32_t osReadLittleEndianUInt(bool isLittleEndian,
 		std::basic_istream<char> &is);
+
+inline double osWallClockTime() {
+#if defined(__linux__) || defined(__APPLE__) || defined(__CYGWIN__)
+	struct timeval t;
+	gettimeofday(&t, NULL);
+
+	return t.tv_sec + t.tv_usec / 1000000.0;
+#elif defined (WIN32)
+	return GetTickCount() / 1000.0;
+#else
+#error "Unsupported Platform !!!"
+#endif
+}
+
+//------------------------------------------------------------------------------
+// Atomic ops
+//------------------------------------------------------------------------------
+
+inline void osAtomicAdd(float *val, const float delta) {
+	union bits {
+		float f;
+		boost::uint32_t i;
+	};
+
+	bits oldVal, newVal;
+
+	do {
+#if (defined(__i386__) || defined(__amd64__))
+		__asm__ __volatile__("pause\n");
+#endif
+
+		oldVal.f = *val;
+		newVal.f = oldVal.f + delta;
+	} while (boost::interprocess::detail::atomic_cas32(((boost::uint32_t *)val), newVal.i, oldVal.i) != oldVal.i);
+}
+
+inline void osAtomicAdd(unsigned int *val, const unsigned int delta) {
+#if defined(WIN32)
+	boost::uint32_t oldVal, newVal;
+	do
+	{
+#if (defined(__i386__) || defined(__amd64__))
+		 __asm__ __volatile__("pause\n");
+#endif
+		oldVal = *val;
+		newVal = oldVal + delta;
+	} while (boost::interprocess::detail::atomic_cas32(((boost::uint32_t*)val), newVal, oldVal) != oldVal);
+#else
+	boost::interprocess::detail::atomic_add32(((boost::uint32_t *)val), (boost::uint32_t)delta);
+#endif
+}
+
+inline void osAtomicInc(unsigned int *val) {
+	boost::interprocess::detail::atomic_inc32(((boost::uint32_t *)val));
+}
 
 }//namespace lux
 

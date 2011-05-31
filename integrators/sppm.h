@@ -22,7 +22,8 @@
 
 #include "lux.h"
 #include "transport.h"
-#include "renderers/hybridsppm/hitpoints.h"
+#include "renderers/sppm/hitpoints.h"
+#include "renderers/sppm/photonsampler.h"
 
 namespace lux
 {
@@ -37,13 +38,13 @@ public:
 	virtual ~SPPMIntegrator();
 
 	virtual u_int Li(const Scene &scene, const Sample &sample) const;
-	virtual void RequestSamples(Sample *sample, const Scene &scene);
 	virtual void Preprocess(const RandomGenerator &rng, const Scene &scene);
 
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 
 	// Variables used by the hybrid sppm renderer
-
+	string PixelSampler;
+	PhotonSamplerType photonSamplerType;
 	LookUpAccelType lookupAccelType;
 
 	// double instead of float because photon counters declared as int 64bit
@@ -51,10 +52,13 @@ public:
 	float photonStartRadiusScale;
 	u_int maxEyePathDepth;
 	u_int maxPhotonPathDepth;
-	u_int stochasticInterval;
-	bool useDirectLightSampling;
+	u_int photonPerPass;
 
-	u_int bufferId;
+	u_int sampleOffset, bufferId;
+	bool includeEnvironment;
+
+	// Few debugging options
+	//bool dbg_enableradiusdraw, dbg_enablemsedraw;
 };
 
 }//namespace lux

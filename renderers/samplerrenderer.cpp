@@ -167,7 +167,7 @@ void SamplerRenderer::Render(Scene *s) {
 		scene->camera->AutoFocus(*scene);
 
 		sampPos = 0;
-
+		
 		// start the timer
 		s_Timer.Start();
 
@@ -369,7 +369,7 @@ void SamplerRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 	if (scene.IsFilmOnly())
 		return;
 
-	// To avoid interrupt excpetion
+	// To avoid interrupt exception
 	boost::this_thread::disable_interruption di;
 
 	Sampler *sampler = scene.sampler;

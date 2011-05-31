@@ -221,6 +221,12 @@ public:
 		fpixel.weightSum += wt;
 	}
 
+	void Set(u_int x, u_int y, float value, float wt) {
+		FloatPixel &fpixel = (*floatpixels)(x, y);
+		fpixel.V = value;
+		fpixel.weightSum = 1.f;
+	}
+
 /*	void GetData(Color *color, float *alpha) const {
 		for (int y = 0, offset = 0; y < yPixelCount; ++y) {
 			for (int x = 0; x < xPixelCount; ++x, ++offset) {

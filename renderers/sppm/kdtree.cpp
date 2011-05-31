@@ -27,12 +27,16 @@ using namespace lux;
 
 KdTree::KdTree(HitPoints *hps) {
 	hitPoints = hps;
-	nNodes = hitPoints->GetSize();
+	maxNNodes = hitPoints->GetSize();
+
 	nextFreeNode = 1;
 	nodes = NULL;
 	nodeData = NULL;
+	
+	nodes = new KdNode[maxNNodes];
+	nodeData = new HitPoint*[maxNNodes];
 
-	RefreshMutex();
+	RefreshMutex(0);
 }
 
 KdTree::~KdTree() {
@@ -41,11 +45,12 @@ KdTree::~KdTree() {
 }
 
 bool KdTree::CompareNode::operator ()(const HitPoint *d1, const HitPoint *d2) const {
-	return (d1->position[axis] == d2->position[axis]) ? (d1 < d2) :
-			(d1->position[axis] < d2->position[axis]);
+	return (d1->eyePass[passIndex].position[axis] == d2->eyePass[passIndex].position[axis]) ? (d1 < d2) :
+			(d1->eyePass[passIndex].position[axis] < d2->eyePass[passIndex].position[axis]);
 }
 
-void KdTree::RecursiveBuild(const unsigned int nodeNum, const unsigned int start,
+void KdTree::RecursiveBuild(const u_int passIndex,
+		const unsigned int nodeNum, const unsigned int start,
 		const unsigned int end, std::vector<HitPoint *> &buildNodes) {
 	assert (nodeNum >= 0);
 	assert (start >= 0);
@@ -65,55 +70,56 @@ void KdTree::RecursiveBuild(const unsigned int nodeNum, const unsigned int start
 	// Compute bounds of data from start to end
 	BBox bound;
 	for (unsigned int i = start; i < end; ++i)
-		bound = Union(bound, buildNodes[i]->position);
+		bound = Union(bound, buildNodes[i]->eyePass[passIndex].position);
 	unsigned int splitAxis = bound.MaximumExtent();
 	unsigned int splitPos = (start + end) / 2;
 
 	std::nth_element(buildNodes.begin() + start, buildNodes.begin() + splitPos,
-		buildNodes.begin() + end, CompareNode(splitAxis));
+		buildNodes.begin() + end, CompareNode(splitAxis, passIndex));
 
 	// Allocate kd-tree node and continue recursively
-	nodes[nodeNum].init(buildNodes[splitPos]->position[splitAxis], splitAxis);
+	nodes[nodeNum].init(buildNodes[splitPos]->eyePass[passIndex].position[splitAxis], splitAxis);
 	nodeData[nodeNum] = buildNodes[splitPos];
 
 	if (start < splitPos) {
 		nodes[nodeNum].hasLeftChild = 1;
 		const unsigned int childNum = nextFreeNode++;
-		RecursiveBuild(childNum, start, splitPos, buildNodes);
+		RecursiveBuild(passIndex, childNum, start, splitPos, buildNodes);
 	}
 
 	if (splitPos + 1 < end) {
 		nodes[nodeNum].rightChild = nextFreeNode++;
-		RecursiveBuild(nodes[nodeNum].rightChild, splitPos + 1, end, buildNodes);
+		RecursiveBuild(passIndex, nodes[nodeNum].rightChild, splitPos + 1, end, buildNodes);
 	}
 }
 
-void KdTree::RefreshMutex() {
-	delete[] nodes;
-	delete[] nodeData;
+void KdTree::RefreshMutex(const u_int passIndex) {
 
-	LOG(LUX_INFO, LUX_NOERROR) << "Building kD-Tree with " << nNodes << " nodes";
-
-	nodes = new KdNode[nNodes];
-	nodeData = new HitPoint*[nNodes];
 	nextFreeNode = 1;
 
 	// Begin the KdTree building process
 	std::vector<HitPoint *> buildNodes;
-	buildNodes.reserve(nNodes);
+	buildNodes.reserve(maxNNodes);
 	maxDistSquared = 0.f;
-	for (unsigned int i = 0; i < nNodes; ++i)  {
-		buildNodes.push_back(hitPoints->GetHitPoint(i));
-		maxDistSquared = luxrays::Max(maxDistSquared, buildNodes[i]->accumPhotonRadius2);
+	for (unsigned int i = 0; i < maxNNodes; ++i)  {
+		HitPoint * const hp = hitPoints->GetHitPoint(i);
+		if(hp->eyePass[passIndex].type == SURFACE)
+		{
+			buildNodes.push_back(hp);
+			maxDistSquared = max<float>(maxDistSquared, hp->accumPhotonRadius2);
+		}
 	}
-	LOG(LUX_INFO, LUX_NOERROR) << "kD-Tree search radius: " << sqrtf(maxDistSquared);
+	nNodes = buildNodes.size();
 
-	RecursiveBuild(0, 0, nNodes, buildNodes);
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Building kD-Tree with " << nNodes << " nodes";
+	LOG(LUX_DEBUG, LUX_NOERROR) << "kD-Tree search radius: " << sqrtf(maxDistSquared);
+
+	RecursiveBuild(passIndex, 0, 0, nNodes, buildNodes);
 	assert (nNodes == nextFreeNode);
 }
 
-void KdTree::AddFlux(const Point &p, const Vector &wi,
-		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux) {
+void KdTree::AddFlux(const Point &p, const u_int passIndex, const BSDF &bsdf, const Vector &wi,
+		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup) {
 	unsigned int nodeNumStack[64];
 	// Start from the first node
 	nodeNumStack[0] = 0;
@@ -142,18 +148,40 @@ void KdTree::AddFlux(const Point &p, const Vector &wi,
 
 		// Process the leaf
 		HitPoint *hp = nodeData[nodeNum];
-		const float dist2 = DistanceSquared(hp->position, p);
-		if (dist2 > hp->accumPhotonRadius2)
-			continue;
+		AddFluxToHitPoint(hp, passIndex, bsdf, p, wi, sw, photonFlux, lightGroup);
+	}
+}
 
-		const float dot = Dot(hp->normal, wi);
-		if (dot <= 0.0001f)
-			continue;
+void KdTree::AddFlux(SplatList *splatList, const Point &p, const u_int passIndex, const BSDF &bsdf, const Vector &wi,
+		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup) {
+	unsigned int nodeNumStack[64];
+	// Start from the first node
+	nodeNumStack[0] = 0;
+	int stackIndex = 0;
 
-		luxrays::AtomicInc(&hp->accumPhotonCount);
-		SWCSpectrum flux = photonFlux *
-			hp->bsdf->F(sw, wi, hp->wo, true) *
-			hp->throughput; // FIXME - not sure if the reverse flag should be true or false
-		SpectrumAtomicAdd(hp->accumReflectedFlux, flux);
+	while (stackIndex >= 0) {
+		const unsigned int nodeNum = nodeNumStack[stackIndex--];
+		KdNode *node = &nodes[nodeNum];
+
+		const int axis = node->splitAxis;
+		if (axis != 3) {
+			const float dist = p[axis] - node->splitPos;
+			const float dist2 = dist * dist;
+			if (p[axis] <= node->splitPos) {
+				if ((dist2 < maxDistSquared) && (node->rightChild < nNodes))
+					nodeNumStack[++stackIndex] = node->rightChild;
+				if (node->hasLeftChild)
+					nodeNumStack[++stackIndex] = nodeNum + 1;
+			} else {
+				if (node->rightChild < nNodes)
+					nodeNumStack[++stackIndex] = node->rightChild;
+				if ((dist2 < maxDistSquared) && (node->hasLeftChild))
+					nodeNumStack[++stackIndex] = nodeNum + 1;
+			}
+		}
+
+		// Process the leaf
+		HitPoint *hp = nodeData[nodeNum];
+		AddFluxToSplatList(splatList, hp, passIndex, bsdf, p, wi, sw, photonFlux, lightGroup);
 	}
 }
