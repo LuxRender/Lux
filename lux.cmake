@@ -228,18 +228,19 @@ SOURCE_GROUP("Source Files\\PixelSamplers" FILES ${lux_SRCS_PIXELSAMPLERS})
 SET(lux_SRCS_RENDERERS
 	renderers/hybridrenderer.cpp
 	renderers/hybridsamplerrenderer.cpp
-	renderers/hybridsppmrenderer.cpp
 	renderers/samplerrenderer.cpp
+	renderers/sppmrenderer.cpp
 )
 SOURCE_GROUP("Source Files\\Renderers" FILES ${lux_SRCS_RENDERERS})
 
-SET(lux_SRCS_RENDERERS_HYBRIDSPPM
-	renderers/hybridsppm/hashgrid.cpp
-	renderers/hybridsppm/hitpoints.cpp
-	renderers/hybridsppm/hybridhashgrid.cpp
-	renderers/hybridsppm/kdtree.cpp
+SET(lux_SRCS_RENDERERS_SPPM
+	renderers/sppm/hashgrid.cpp
+	renderers/sppm/hitpoints.cpp
+	renderers/sppm/hybridhashgrid.cpp
+	renderers/sppm/lookupaccel.cpp
+	renderers/sppm/photonsampler.cpp
 )
-SOURCE_GROUP("Source Files\\Renderers\\HybridSPPM" FILES ${lux_SRCS_RENDERERS_HYBRIDSPPM})
+SOURCE_GROUP("Source Files\\Renderers\\SPPM" FILES ${lux_SRCS_RENDERERS_SPPM})
 
 SET(lux_SRCS_SAMPLERS
 	samplers/erpt.cpp
