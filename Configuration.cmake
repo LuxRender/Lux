@@ -43,19 +43,23 @@ IF (NOT LUX_NO_DEFAULT_CONFIG)
 
 		MESSAGE(STATUS "Using default WIN32 Configuration settings")
 
-		SET(BUILD_LUXMARK TRUE) # This will require QT
+		SET(BUILD_PYLUX TRUE)			# This will require Python
+		SET(BUILD_LUXRENDER TRUE)	# This will require QT
 
-		SET(ENV{QTDIR} "c:/qt/")
+		SET ( ENV{QTDIR} "c:/qt/" )
+		SET ( ENV{OpenEXR_HOME}					"${lux_SOURCE_DIR}/../OpenEXR"	)
+		SET ( ENV{LuxRays_HOME}					"${lux_SOURCE_DIR}/../luxrays"	)
 
-		SET(FREEIMAGE_SEARCH_PATH     "${lux_SOURCE_DIR}/../FreeImage")
-		SET(FreeImage_INC_SEARCH_PATH "${FREEIMAGE_SEARCH_PATH}/source")
-		SET(FreeImage_LIB_SEARCH_PATH "${FREEIMAGE_SEARCH_PATH}/release"
-																		"${FREEIMAGE_SEARCH_PATH}/debug"
-																		"${FREEIMAGE_SEARCH_PATH}/dist")
 
-		SET(BOOST_SEARCH_PATH         "${lux_SOURCE_DIR}/../boost")
-		SET(OPENCL_SEARCH_PATH        "${lux_SOURCE_DIR}/../opencl")
-		SET(GLUT_SEARCH_PATH          "${lux_SOURCE_DIR}/../freeglut")
+		SET ( FREEIMAGE_SEARCH_PATH			"${lux_SOURCE_DIR}/../FreeImage"	)
+		SET ( FreeImage_INC_SEARCH_PATH	"${FREEIMAGE_SEARCH_PATH}/source"	)
+		SET ( FreeImage_LIB_SEARCH_PATH	"${FREEIMAGE_SEARCH_PATH}/release"
+																			"${FREEIMAGE_SEARCH_PATH}/debug"
+																			"${FREEIMAGE_SEARCH_PATH}/dist"	)
+
+		SET ( BOOST_SEARCH_PATH					"${lux_SOURCE_DIR}/../boost"		)
+		SET ( OPENCL_SEARCH_PATH				"${lux_SOURCE_DIR}/../opencl"		)
+		SET ( GLUT_SEARCH_PATH					"${lux_SOURCE_DIR}/../freeglut"	)
 
 	ELSE(WIN32)
 

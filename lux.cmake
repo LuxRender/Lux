@@ -395,22 +395,8 @@ ADD_LIBRARY(luxStatic SHARED ${lux_lib_src})
 
 SET_TARGET_PROPERTIES(luxStatic PROPERTIES COMPILE_FLAGS -DLUX_INTERNAL)
 
-#TARGET_LINK_LIBRARIES(luxStatic "../png/lib/libpng15" "../luxrays/lib/Release/luxrays" "../openexr/lib_vs2010/IlmImf" "../openexr/lib_vs2010/IlmThread" "../openexr/lib_vs2010/IMath" "../openexr/lib_vs2010/Iex" "../openexr/lib_vs2010/Half")
-#TARGET_LINK_LIBRARIES(luxStatic "shell32.lib" "../png/lib/libpng15" "../FreeImage/Dist/FreeImage" "../luxrays/lib/Release/luxrays" "../openexr/lib_vs2010/IlmImf" "../openexr/lib_vs2010/IlmThread" "../openexr/lib_vs2010/IMath" "../openexr/lib_vs2010/Iex" "../openexr/lib_vs2010/Half" ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${Boost_LIBRARIES} ${ZLIB_LIBRARIES} ${BZ2_LIBRARIES} ${SYS_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARY})
-#TARGET_LINK_LIBRARIES(luxStatic "shell32.lib" "../png/lib/libpng15" "../FreeImage/Dist/FreeImage" "../luxrays/lib/Release/luxrays" "../openexr/lib_vs2010/IlmImf" "../openexr/lib_vs2010/IlmThread" "../openexr/lib_vs2010/IMath" "../openexr/lib_vs2010/Iex" "../openexr/lib_vs2010/Half" ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${Boost_LIBRARIES} ${ZLIB_LIBRARIES} ${BZ2_LIBRARIES} ${SYS_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARY})
-TARGET_LINK_LIBRARIES(luxStatic ${SYS_LIBRARIES} ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${Boost_LIBRARIES} ${OpenEXR_LIBRARIES} ${FreeImage_LIBRARIES} ${PNG_LIBRARY})
-
-#TARGET_LINK_LIBRARIES("../luxrays/lib/Release/luxrays.lib")
-#TARGET_LINK_LIBRARIES(luxstatic "../openexr/lib_vs2010/IlmThread")
-#TARGET_LINK_LIBRARIES(luxstatic "../openexr/lib_vs2010/IMath")
-#TARGET_LINK_LIBRARIES(luxstatic "../openexr/lib_vs2010/Iex")
-#TARGET_LINK_LIBRARIES(luxstatic "../openexr/lib_vs2010/Half")
-#TARGET_LINK_LIBRARIES("../png/lib/libpng15")
+TARGET_LINK_LIBRARIES(luxStatic ${SYS_LIBRARIES} ${LuxRays_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${Boost_LIBRARIES} ${OpenEXR_LIBRARIES} ${FreeImage_LIBRARIES} ${PNG_LIBRARY})
 
 INCLUDE_DIRECTORIES(${OpenEXR_INCLUDE_DIR})
 INCLUDE_DIRECTORIES(${PNG_INCLUDE_DIR})
 INCLUDE_DIRECTORIES(${LUXRAYS_INCLUDE_DIR})
-
-#INCLUDE_DIRECTORIES("../openexr/include" "../openexr/include/iex" "../openexr/include/ilmimf" "../openexr/include/ilmthread" "../openexr/include/imath")
-#INCLUDE_DIRECTORIES("../luxrays/include")
-#INCLUDE_DIRECTORIES("../png/include")
