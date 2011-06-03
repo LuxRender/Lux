@@ -113,14 +113,18 @@ public:
 	void IncEyePass() {
 		++currentEyePass;
 		eyePassWavelengthSample = Halton(currentEyePass, wavelengthSampleScramble);
+		eyePassTimeSample = Halton(currentEyePass, timeSampleScramble);
 	}
 	void IncPhotonPass() {
 		++currentPhotonPass;
 		photonPassWavelengthSample = Halton(currentPhotonPass, wavelengthSampleScramble);
+		photonPassTimeSample = Halton(currentPhotonPass, timeSampleScramble);
 	}
 
 	const float GetPassWavelengthSample() { return eyePassWavelengthSample; }
+	const float GetPassTimeSample() { return eyePassTimeSample; }
 	const float GetPhotonPassWavelengthSample() { return photonPassWavelengthSample; }
+	const float GetPhotonPassTimeSample() { return photonPassTimeSample; }
 
 	void AddFlux(const Point &hitPoint, const BSDF &bsdf, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup) {
@@ -159,7 +163,7 @@ private:
 	PixelSampler *pixelSampler;
 
 	// Hit points information
-	float initialPhotonRaidus;
+	float initialPhotonRadius;
 	// Used to render eye pass n+1 while doing photon pass n
 	BBox hitPointBBox[2];
 	float maxHitPointRadius2[2];
@@ -171,7 +175,8 @@ private:
 
 	// Only a single set of wavelengths is sampled for each pass
 	float eyePassWavelengthSample, photonPassWavelengthSample;
-	u_int wavelengthSampleScramble;
+	float eyePassTimeSample, photonPassTimeSample;
+	u_int wavelengthSampleScramble, timeSampleScramble;
 };
 
 }//namespace lux

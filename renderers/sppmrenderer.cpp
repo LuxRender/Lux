@@ -558,8 +558,10 @@ void SPPMRenderer::PhotonPassRenderThread::RenderImpl(PhotonPassRenderThread *my
 	// Trace rays: The main loop
 	while (true) {
 		// Initialize new wavelengths and time
-		sample.swl.Sample(hitPoints->GetPhotonPassWavelengthSample());
-		sample.realTime = scene.camera->GetTime(.5f); // FIXME sample it
+		sample.wavelengths = hitPoints->GetPhotonPassWavelengthSample();
+		sample.time = hitPoints->GetPhotonPassTimeSample();
+		sample.swl.Sample(sample.wavelengths);
+		sample.realTime = scene.camera->GetTime(sample.time);
 //		sample.camera->SampleMotion(sample.realTime); // Unneeded for photons
 		while (renderer->state == PAUSE && !boost::this_thread::interruption_requested()) {
 			boost::xtime xt;

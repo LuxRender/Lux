@@ -44,8 +44,11 @@ HitPoints::HitPoints(SPPMRenderer *engine, RandomGenerator *rng)  {
 	currentPhotonPass = 0;
 
 	wavelengthSampleScramble = rng->uintValue();
+	timeSampleScramble = rng->uintValue();
 	eyePassWavelengthSample = Halton(0, wavelengthSampleScramble);
 	photonPassWavelengthSample = Halton(0, wavelengthSampleScramble);
+	eyePassTimeSample = Halton(0, timeSampleScramble);
+	photonPassTimeSample = Halton(0, timeSampleScramble);
 
 	// Get the count of hit points required
 	int xstart, xend, ystart, yend;
@@ -72,7 +75,7 @@ HitPoints::HitPoints(SPPMRenderer *engine, RandomGenerator *rng)  {
 	for (u_int i = 0; i < (*hitPoints).size(); ++i) {
 		HitPoint *hp = &(*hitPoints)[i];
 
-		hp->halton = new PermutedHalton(9, *rng);
+		hp->halton = new PermutedHalton(8, *rng);
 		hp->haltonOffset = rng->floatValue();
 
 		hp->lightGroupData.resize(lightGroupsNumber);
@@ -142,12 +145,12 @@ void HitPoints::Init() {
 
 	// Calculate initial radius
 	Vector ssize = hpBBox.pMax - hpBBox.pMin;
-	initialPhotonRaidus = renderer->sppmi->photonStartRadiusScale *
+	initialPhotonRadius = renderer->sppmi->photonStartRadiusScale *
 		((ssize.x + ssize.y + ssize.z) / 3.f) / sqrtf(pixelSampler->GetTotalPixels()) * 2.f;
-	const float photonRadius2 = initialPhotonRaidus * initialPhotonRaidus;
+	const float photonRadius2 = initialPhotonRadius * initialPhotonRadius;
 
 	// Expand the bounding box by used radius
-	hpBBox.Expand(initialPhotonRaidus);
+	hpBBox.Expand(initialPhotonRadius);
 	// Update hit points information
 	hitPointBBox[0] = hpBBox;
 	maxHitPointRadius2[0] = photonRadius2;
@@ -246,45 +249,43 @@ void HitPoints::SetHitPoints(RandomGenerator *rng, const u_int index, const u_in
 	sample.camera = scene.camera->Clone();
 	sample.realTime = 0.f;
 	sample.rng = rng;
+	sample.time = eyePassTimeSample;
+	sample.wavelengths = eyePassWavelengthSample;
+
+	// Save ray time value
+	sample.realTime = sample.camera->GetTime(sample.time);
+	// Sample camera transformation
+	sample.camera->SampleMotion(sample.realTime);
+
+	// Sample new SWC thread wavelengths
+	sample.swl.Sample(sample.wavelengths);
 
 	int xPos, yPos;
 	for (u_int i = first; i < last; ++i) {
 		HitPoint *hp = &(*hitPoints)[i];
 
 		// Generate the sample values
-		float u[9];
+		float u[8];
 		hp->halton->Sample(currentEyePass, u);
 		// Add an offset to the samples to avoid to start with 0.f values
-		for (int j = 0; j < 9; ++j) {
+		for (int j = 0; j < 8; ++j) {
 			float v = u[j] + hp->haltonOffset;
 			u[j] = (v >= 1.f) ? (v - 1.f) : v;
 		}
-
-		sample.arena.FreeAll();
 
 		pixelSampler->GetNextPixel(&xPos, &yPos, i);
 		sample.imageX = xPos + u[0];
 		sample.imageY = yPos + u[1];
 		sample.lensU = u[2];
 		sample.lensV = u[3];
-		sample.time = u[4];
-		sample.wavelengths = eyePassWavelengthSample;
 
 		// This may be required by the volume integrator
 		for (u_int j = 0; j < sample.n1D.size(); ++j)
 			for (u_int k = 0; k < sample.n1D[j]; ++k)
 /*FIXME				sample.oneD[j][k] = rng->floatValue()*/;
 
-		// Save ray time value
-		sample.realTime = sample.camera->GetTime(sample.time);
-		// Sample camera transformation
-		sample.camera->SampleMotion(sample.realTime);
-
-		// Sample new SWC thread wavelengths
-		sample.swl.Sample(sample.wavelengths);
-
 		// Trace the eye path
-		if (!TraceEyePath(hp, sample, &u[5])) {
+		if (!TraceEyePath(hp, sample, &u[4])) {
 			// SampleF() of a lambertian surface with interpolated normals can
 			// return false. This may sound wired (and it is) but it happens
 			// because SampleF() work in a local space relative to the shading
@@ -295,24 +296,21 @@ void HitPoints::SetHitPoints(RandomGenerator *rng, const u_int index, const u_in
 
 			for (int j = 0; j < 9; ++j) {
 				// Generate a set of random samples
-				for (int k = 0; k < 9; ++k)
+				for (int k = 0; k < 8; ++k)
 					u[k] = rng->floatValue();
 
 				sample.imageX = xPos + u[0];
 				sample.imageY = yPos + u[1];
 				sample.lensU = u[2];
 				sample.lensV = u[3];
-				sample.time = u[4];
 
-				// Save ray time value
-				sample.realTime = sample.camera->GetTime(sample.time);
-				// Sample camera transformation
-				sample.camera->SampleMotion(sample.realTime);
-
-				if (TraceEyePath(hp, sample, &u[5]))
+				if (TraceEyePath(hp, sample, &u[4])) {
+					sample.arena.FreeAll();
 					break;
+				}
 			}
 		}
+		sample.arena.FreeAll();
 	}
 }
 
