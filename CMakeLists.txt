@@ -461,7 +461,7 @@ IF(APPLE)
 			COMMAND cp ../macos/icons/luxrender.icns release/luxrender.app/Contents/Resources
 			COMMAND cp ../macos/icons/luxscene.icns release/luxrender.app/Contents/Resources
 			COMMAND cp ../macos/icons/luxfilm.icns release/luxrender.app/Contents/Resources
-			COMMAND cp ../macos/plists/08/Info.plist release/luxrender.app/Contents
+			COMMAND cp ../macos/plists/09/Info.plist release/luxrender.app/Contents
 			COMMAND mv release/luxrender.app release/LuxRender.app
 			COMMAND mv release/luxconsole ${CMAKE_BINARY_DIR}/Release/LuxRender.app/Contents/MacOS/luxconsole
 			COMMAND mv release/luxmerger ${CMAKE_BINARY_DIR}/Release/LuxRender.app/Contents/MacOS/luxmerger
