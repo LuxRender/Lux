@@ -144,7 +144,7 @@ private:
 		PhotonPassRenderThread(u_int index, SPPMRenderer *renderer);
 		~PhotonPassRenderThread();
 
-		void TracePhotons(HaltonPhotonSampler *sampler);
+		void TracePhotons(PhotonSampler &sampler, Sample *sample);
 
 		bool IsVisible(Scene &scene, const Sample *sample, const float *u);
 		bool Splat(Scene &scene, const Sample *sample, const float *u);

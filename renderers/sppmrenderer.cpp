@@ -520,14 +520,34 @@ void SPPMRenderer::PhotonPassRenderThread::RenderImpl(PhotonPassRenderThread *my
 	PhotonSampler *sampler;
 	switch (renderer->sppmi->photonSamplerType) {
 		case HALTON:
-			sampler = new HaltonPhotonSampler(scene, myThread->threadRng);
+			sampler = new HaltonPhotonSampler();
 			break;
 		case AMC:
-			sampler = new AMCMCPhotonSampler(renderer->sppmi->maxPhotonPathDepth, scene, myThread->threadRng);
-			break;
+/*FIXME			sampler = new AMCMCPhotonSampler(renderer->sppmi->maxPhotonPathDepth, scene, myThread->threadRng);
+			break;*/
 		default:
 			throw std::runtime_error("Internal error: unknown photon sampler");
 	}
+
+	// Initialize the photon sample
+	Sample sample;
+	// The RNG might be used when initializing the sampler data below
+	sample.rng = myThread->threadRng;
+//	sample.camera = scene.camera->Clone(); // Unneeded for photons
+	// sample.realTime and sample.swl are intialized later
+	// Describe sampling data
+	sample.Add1D(1); // light sampling
+	sample.Add2D(1); // light position sampling
+	sample.Add1D(1); // light position portal sampling
+	sample.Add2D(1); // light direction sampling
+	sample.Add1D(1); // light direction portal sampling
+	vector<u_int> structure;
+	structure.push_back(2); // BSDF direction sampling
+	structure.push_back(1); // BSDF component sampling
+	structure.push_back(1); // RR sampling
+	sample.AddxD(structure, renderer->sppmi->maxPhotonPathDepth);
+	renderer->scene->volumeIntegrator->RequestSamples(&sample, *(renderer->scene));
+	sampler->InitSample(&sample);
 
 	HitPoints *hitPoints = NULL;
 
@@ -537,6 +557,10 @@ void SPPMRenderer::PhotonPassRenderThread::RenderImpl(PhotonPassRenderThread *my
 
 	// Trace rays: The main loop
 	while (true) {
+		// Initialize new wavelengths and time
+		sample.swl.Sample(hitPoints->GetPhotonPassWavelengthSample());
+		sample.realTime = scene.camera->GetTime(.5f); // FIXME sample it
+//		sample.camera->SampleMotion(sample.realTime); // Unneeded for photons
 		while (renderer->state == PAUSE && !boost::this_thread::interruption_requested()) {
 			boost::xtime xt;
 			boost::xtime_get(&xt, boost::TIME_UTC);
@@ -550,20 +574,10 @@ void SPPMRenderer::PhotonPassRenderThread::RenderImpl(PhotonPassRenderThread *my
 		if (myThread->n == 0)
 			passStartTime = osWallClockTime();
 
-		//----------------------------------------------------------------------
+		//--------------------------------------------------------------
 		// Photon pass: trace photons
-		//----------------------------------------------------------------------
-
-		switch (renderer->sppmi->photonSamplerType) {
-			case HALTON:
-				myThread->TracePhotons((HaltonPhotonSampler *)sampler);
-				break;
-			case AMC:
-				myThread->TracePhotons((AMCMCPhotonSampler *)sampler);
-				break;
-			default:
-				throw std::runtime_error("Internal error: unknown photon sampler");
-		}
+		//--------------------------------------------------------------
+		myThread->TracePhotons(*sampler, &sample);
 
 		// Wait for other threads
 		photonPassThreadBarrier->wait();
@@ -613,7 +627,7 @@ void SPPMRenderer::PhotonPassRenderThread::RenderImpl(PhotonPassRenderThread *my
 		// Wait for other threads
 		allThreadBarrier->wait();
 	}
-
+	sampler->FreeSample(&sample);
 	delete sampler;
 
 	// Wait for other threads
@@ -621,14 +635,14 @@ void SPPMRenderer::PhotonPassRenderThread::RenderImpl(PhotonPassRenderThread *my
 }
 
 //------------------------------------------------------------------------------
-// Tracing photons for Halton Photon Sampler
+// Tracing photons for Photon Sampler
 //------------------------------------------------------------------------------
 
-void SPPMRenderer::PhotonPassRenderThread::TracePhotons(HaltonPhotonSampler *sampler) {
+void SPPMRenderer::PhotonPassRenderThread::TracePhotons(PhotonSampler &sampler,
+	Sample *sample)
+{
 	Scene &scene(*(renderer->scene));
 	
-	Sample *sample = sampler->StartNewPhotonPass(renderer->hitPoints->GetPhotonPassWavelengthSample());
-
 	for (u_int photonCount = 0;; ++photonCount) {
 		// Check if it is time to do an eye pass
 		if (renderer->photonTracedPass > renderer->sppmi->photonPerPass) {
@@ -636,19 +650,17 @@ void SPPMRenderer::PhotonPassRenderThread::TracePhotons(HaltonPhotonSampler *sam
 			return;
 		}
 
-		sampler->StartNewPhotonPath();
+		sampler.GetNextSample(sample);
 
 		// I have to make a copy of SpectrumWavelengths because it can be modified
 		// even if passed as a const argument !
 		SpectrumWavelengths sw(sample->swl);
 
 		// Trace a photon path and store contribution
-		float u[7];
-		sampler->GetLightData(photonCount, u);
-
+		float u[2];
 		// Choose light to shoot photon from
 		float lightPdf;
-		u_int lightNum = lightCDF->SampleDiscrete(u[6], &lightPdf);
+		u_int lightNum = lightCDF->SampleDiscrete(sampler.GetOneD(*sample, 0, 0), &lightPdf);
 		const Light *light = scene.lights[lightNum];
 
 		osAtomicInc(&renderer->photonTracedPass);
@@ -657,15 +669,18 @@ void SPPMRenderer::PhotonPassRenderThread::TracePhotons(HaltonPhotonSampler *sam
 		BSDF *bsdf;
 		float pdf;
 		SWCSpectrum alpha;
-		if (!light->SampleL(scene, *sample, u[0], u[1], u[2],
-				&bsdf, &pdf, &alpha))
+		sampler.GetTwoD(*sample, 0, 0, u);
+		if (!light->SampleL(scene, *sample, u[0], u[1],
+			sampler.GetOneD(*sample, 1, 0), &bsdf, &pdf, &alpha))
 			continue;
 		Ray photonRay;
 		photonRay.o = bsdf->dgShading.p;
 		float pdf2;
 		SWCSpectrum alpha2;
+		sampler.GetTwoD(*sample, 1, 0, u);
 		if (!bsdf->SampleF(sw, Vector(bsdf->nn), &photonRay.d,
-				u[3], u[4], u[5], &alpha2, &pdf2))
+			u[0], u[1], sampler.GetOneD(*sample, 2, 0), &alpha2,
+			&pdf2))
 			continue;
 		alpha *= alpha2;
 		alpha /= lightPdf;
@@ -697,19 +712,20 @@ void SPPMRenderer::PhotonPassRenderThread::TracePhotons(HaltonPhotonSampler *sam
 				float pdfo;
 				BxDFType flags;
 				// Get random numbers for sampling outgoing photon direction
-				float u1, u2, u3;
-				sampler->GetPathVertexData(&u1, &u2, &u3);
+				float *data = sampler.GetLazyValues(*sample, 0, nIntersections);
 
 				// Compute new photon weight and possibly terminate with RR
 				SWCSpectrum fr;
-				if (!photonBSDF->SampleF(sw, wi, &wo, u1, u2, u3, &fr, &pdfo, BSDF_ALL, &flags))
+				if (!photonBSDF->SampleF(sw, wi, &wo, data[0],
+					data[1], data[2], &fr, &pdfo, BSDF_ALL,
+					&flags))
 					break;
 
 				diffuseVertices += (flags & BSDF_DIFFUSE) ? 1 : 0;
 				if (diffuseVertices > 0) {
 					// Russian Roulette
 					const float continueProb = min(1.f, fr.Filter(sw));
-					if (sampler->GetPathVertexRRData() > continueProb)
+					if (data[3] > continueProb)
 						break;
 
 					alpha /= continueProb;
@@ -828,8 +844,7 @@ void SPPMRenderer::PhotonPassRenderThread::Splat(SplatList *splatList, Scene &sc
 void SPPMRenderer::PhotonPassRenderThread::TracePhotons(AMCMCPhotonSampler *sampler) {
 	Scene &scene(*(renderer->scene));
 
-	sampler->StartNewPhotonPass(renderer->hitPoints->GetPhotonPassWavelengthSample());
-	Sample *sample = sampler->GetSample();
+/*FIXME	Sample *sample = sampler->StartNewPhotonPass(renderer->hitPoints->GetPhotonPassWavelengthSample());*/
 
 	SplatList *currentSplatList = new SplatList();
 	SplatList *candidateSplatList = new SplatList();
@@ -837,7 +852,7 @@ void SPPMRenderer::PhotonPassRenderThread::TracePhotons(AMCMCPhotonSampler *samp
 	// Look for a visible photon path
 	do {
 		sampler->Uniform();
-		Splat(currentSplatList, scene, sample, sampler->GetCandidateData());
+/*FIXME		Splat(currentSplatList, scene, sample, sampler->GetCandidateData());*/
 	} while (currentSplatList->IsEmpty());
 	sampler->AcceptCandidate();
 
@@ -860,7 +875,7 @@ void SPPMRenderer::PhotonPassRenderThread::TracePhotons(AMCMCPhotonSampler *samp
 
 		sampler->Uniform();
 
-		Splat(candidateSplatList, scene, sample, sampler->GetCandidateData());
+/*FIXME		Splat(candidateSplatList, scene, sample, sampler->GetCandidateData());*/
 		if (!candidateSplatList->IsEmpty()) {
 			// Time to splat the current photon path
 			renderer->hitPoints->SplatFlux(currentSplatList);
@@ -874,7 +889,7 @@ void SPPMRenderer::PhotonPassRenderThread::TracePhotons(AMCMCPhotonSampler *samp
 			sampler->Mutate(mutationSize);
 			++mutated;
 
-			Splat(candidateSplatList, scene, sample, sampler->GetCandidateData());
+/*FIXME			Splat(candidateSplatList, scene, sample, sampler->GetCandidateData());*/
 			if (!candidateSplatList->IsEmpty()) {
 				// Time to splat the current photon path
 				renderer->hitPoints->SplatFlux(currentSplatList);

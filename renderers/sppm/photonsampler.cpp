@@ -26,37 +26,19 @@
 
 using namespace lux;
 
-PhotonSampler::PhotonSampler(const RandomGenerator *randomGen) {
-	rng = randomGen;
-}
-
 //------------------------------------------------------------------------------
 // Halton Photon Sampler
 //------------------------------------------------------------------------------
-
-HaltonPhotonSampler::HaltonPhotonSampler(const Scene &scene,
-		const RandomGenerator *randomGen) : PhotonSampler(randomGen) {
-	sample = new Sample(/*FIXME NULL, scene.volumeIntegrator, scene*/);
-	// Initialized later
-	sample->rng = rng;
-	sample->camera = scene.camera->Clone();
-	sample->realTime = sample->camera->GetTime(.5f); //FIXME sample it
-	sample->camera->SampleMotion(sample->realTime);
-}
-
-HaltonPhotonSampler::~HaltonPhotonSampler() {
-	delete sample;
-}
 
 //------------------------------------------------------------------------------
 // Adaptive Markov Chain Sampler
 //------------------------------------------------------------------------------
 
 AMCMCPhotonSampler::AMCMCPhotonSampler(const u_int maxPhotonDepth, const Scene &scene,
-		const RandomGenerator *randomGen) : PhotonSampler(randomGen) {
+		const RandomGenerator *randomGen) : PhotonSampler(/*FIXME randomGen*/) {
 	sample = new Sample(/*FIXME NULL, scene.volumeIntegrator, scene*/);
 	// Initialized later
-	sample->rng = rng;
+/*FIXME	sample->rng = rng;*/
 	sample->camera = scene.camera->Clone();
 	sample->realTime = sample->camera->GetTime(.5f); //FIXME sample it
 	sample->camera->SampleMotion(sample->realTime);
@@ -77,7 +59,7 @@ AMCMCPhotonSampler::~AMCMCPhotonSampler() {
 float AMCMCPhotonSampler::MutateSingle(const float u, const float mutationSize) {
 	// Delta U = SGN(2 E0 - 1) E1 ^ (1 / mutationSize + 1)
 
-	const float du = powf(rng->floatValue(), 1.f / mutationSize + 1.f);
+/*FIXME	const float du = powf(rng->floatValue(), 1.f / mutationSize + 1.f);
 
 	if (rng->floatValue() < 0.5f) {
 		float u1 = u + du;
@@ -85,7 +67,7 @@ float AMCMCPhotonSampler::MutateSingle(const float u, const float mutationSize) 
 	} else {
 		float u1 = u - du;
 		return (u1 < 0.f) ? u1 + 1.f : u1;
-	}
+	}*/return u;
 }
 
 void AMCMCPhotonSampler::Mutate(const float mutationSize) {
