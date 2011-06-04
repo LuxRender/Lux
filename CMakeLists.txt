@@ -475,7 +475,7 @@ SET(lux_core_src
 	)
 SET(lux_accelerators_src
 	accelerators/bruteforce.cpp
-        accelerators/bvhaccel.cpp
+    accelerators/bvhaccel.cpp
 	accelerators/grid.cpp
 	accelerators/qbvhaccel.cpp
 	accelerators/tabreckdtree.cpp
@@ -510,7 +510,7 @@ SET(lux_integrators_src
 	integrators/single.cpp
 	)
 SET(lux_lights_src
-	lights/SummedAreaTable.cpp
+	lights/summedareatable.cpp
 	lights/mediancut.cpp
 	lights/area.cpp
 	lights/distant.cpp
