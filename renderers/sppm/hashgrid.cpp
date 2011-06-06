@@ -43,7 +43,7 @@ void HashGrid::RefreshMutex(const u_int passIndex) {
 	const BBox &hpBBox = hitPoints->GetBBox(passIndex);
 
 	// Calculate the size of the grid cell
-	const float maxPhotonRadius2 = hitPoints->GetMaxPhotonRaidus2(passIndex);
+	const float maxPhotonRadius2 = hitPoints->GetMaxPhotonRadius2(passIndex);
 	const float cellSize = sqrtf(maxPhotonRadius2) * 2.f;
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Hash grid cell size: " << cellSize;
 	invCellSize = 1.f / cellSize;

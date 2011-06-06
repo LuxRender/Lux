@@ -499,7 +499,7 @@ void HitPoints::UpdateFilm(const unsigned long long totalPhotons) {
 
 			for(u_int j = 0; j < lightGroupsNumber; j++) {
 				if (hp->lightGroupData[j].surfaceHitsCount > 0)
-					c.c[1] = sqrtf(hp->accumPhotonRadius2) / initialPhotonRaidus;
+					c.c[1] = sqrtf(hp->accumPhotonRadius2) / initialPhotonRadius;
 				else
 					c.c[1] = 0;
 
