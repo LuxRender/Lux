@@ -79,15 +79,20 @@ private:
 // SpotLight Method Definitions
 SpotLight::SpotLight(const Transform &light2world,
 	const boost::shared_ptr< Texture<SWCSpectrum> > &L, 
-	float g, float width, float fall)
-	: Light(light2world), Lbase(L) {
+	float g, float power, float efficacy, float width, float fall)
+	: Light(light2world), Lbase(L), gain(g)
+{
 	lightPos = LightToWorld(Point(0,0,0));
-
-	Lbase->SetIlluminant();
-	gain = g;
 
 	cosTotalWidth = cosf(Radians(width));
 	cosFalloffStart = cosf(Radians(fall));
+
+	Lbase->SetIlluminant(); // Illuminant must be set before calling Le->Y()
+	const float gainFactor = power * efficacy /
+		(2.f * M_PI * Lbase->Y() *
+		(1.f - .5f * (cosFalloffStart + cosTotalWidth)));
+	if (gainFactor > 0.f && !isinf(gainFactor))
+		gain *= gainFactor;
 }
 SpotLight::~SpotLight()
 {
@@ -137,6 +142,8 @@ Light* SpotLight::CreateLight(const Transform &l2w, const ParamSet &paramSet)
 {
 	boost::shared_ptr<Texture<SWCSpectrum> > L(paramSet.GetSWCSpectrumTexture("L", RGBColor(1.f)));
 	float g = paramSet.FindOneFloat("gain", 1.f);
+	float p = paramSet.FindOneFloat("power", 0.f);		// Power/Lm in Watts
+	float e = paramSet.FindOneFloat("efficacy", 0.f);	// Efficacy Lm per Watt
 	float coneangle = paramSet.FindOneFloat("coneangle", 30.);
 	float conedelta = paramSet.FindOneFloat("conedeltaangle", 5.);
 	// Compute spotlight world to light transformation
@@ -154,7 +161,7 @@ Light* SpotLight::CreateLight(const Transform &l2w, const ParamSet &paramSet)
 		Translate(Vector(from.x, from.y, from.z)) *
 		dirToZ.GetInverse();
 
-	SpotLight *l = new SpotLight(light2world, L, g, coneangle,
+	SpotLight *l = new SpotLight(light2world, L, g, p, e, coneangle,
 		coneangle-conedelta);
 	l->hints.InitParam(paramSet);
 	return l;
