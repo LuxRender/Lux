@@ -682,7 +682,7 @@ void SPPMRenderer::PhotonPassRenderThread::TracePhotons(PhotonSampler &sampler,
 		if (!alpha.Black()) {
 			// Follow photon path through scene and record intersections
 			Intersection photonIsect;
-			const Volume *volume = NULL; //FIXME: try to get volume from light
+			const Volume *volume = bsdf->GetVolume(photonRay.d);
 			BSDF *photonBSDF;
 			u_int nIntersections = 0;
 			u_int diffuseVertices = 0;
@@ -775,7 +775,7 @@ void SPPMRenderer::PhotonPassRenderThread::Splat(SplatList *splatList, Scene &sc
 	if (!alpha.Black()) {
 		// Follow photon path through scene and record intersections
 		Intersection photonIsect;
-		const Volume *volume = NULL; //FIXME: try to get volume from light
+		const Volume *volume = bsdf->GetVolume(photonRay.d);
 		BSDF *photonBSDF;
 		u_int nIntersections = 0;
 		u_int diffuseVertices = 0;
