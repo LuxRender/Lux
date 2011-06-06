@@ -23,6 +23,7 @@
 // linear.cpp*
 #include "linear.h"
 #include "error.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -64,3 +65,5 @@ bool LinearPixelSampler::GetNextPixel(int *xPos, int *yPos, const u_int use_pos)
 
 	return hasMorePixel;
 }
+
+static DynamicLoader::RegisterPixelSampler<LinearPixelSampler> r("linear");

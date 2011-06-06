@@ -40,6 +40,10 @@ public:
 	virtual u_int GetTotalPixels();
 	virtual bool GetNextPixel(int *xPos, int *yPos, const u_int usePos);
 
+	static PixelSampler *CreatePixelSampler(int xstart, int xend, int ystart, int yend) {
+		return new VegasPixelSampler(xstart, xend, ystart, yend);
+	}
+
 private:
 	// VegasPixelSampler Private Data
 	u_int TotalPx;

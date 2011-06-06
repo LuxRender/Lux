@@ -26,10 +26,8 @@
 #include "sampling.h"
 #include "light.h"
 #include "reflection/bxdf.h"
-#include "pixelsamplers/vegas.h"
-#include "pixelsamplers/hilbertpx.h"
-#include "pixelsamplers/tilepx.h"
 #include "context.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -55,16 +53,7 @@ HitPoints::HitPoints(SPPMRenderer *engine, RandomGenerator *rng)  {
 	scene->camera->film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
 
 	// Set the pixelsampler
-	if(renderer->sppmi->PixelSampler == "vegas"){
-		pixelSampler = new VegasPixelSampler(xstart, xend, ystart, yend);
-	} else if(renderer->sppmi->PixelSampler == "hilbert"){
-		pixelSampler = new HilbertPixelSampler(xstart, xend, ystart, yend);
-	} else if(renderer->sppmi->PixelSampler == "tile"){
-		pixelSampler = new TilePixelSampler(xstart, xend, ystart, yend);
-	} else 	if(renderer->sppmi->PixelSampler == "linear"){
-		pixelSampler = new LinearPixelSampler(xstart, xend, ystart, yend);
-	} else
-		assert (false);
+	pixelSampler = MakePixelSampler(renderer->sppmi->PixelSampler, xstart, xend, ystart, yend);
 
 	hitPoints = new std::vector<HitPoint>(pixelSampler->GetTotalPixels());
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Hit points count: " << hitPoints->size();

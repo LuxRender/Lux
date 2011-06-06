@@ -22,6 +22,7 @@
  
 #include "tilepx.h"
 #include "error.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -73,3 +74,6 @@ bool TilePixelSampler::GetNextPixel(int *xPos, int *yPos, const u_int use_pos) {
 
 	return hasMorePixel;
 }
+
+static DynamicLoader::RegisterPixelSampler<TilePixelSampler> r1("tile");
+static DynamicLoader::RegisterPixelSampler<TilePixelSampler> r2("grid");

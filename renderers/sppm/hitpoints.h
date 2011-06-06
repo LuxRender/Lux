@@ -25,7 +25,6 @@
 #include "lux.h"
 #include "scene.h"
 #include "sampling.h"
-#include "pixelsamplers/linear.h"
 
 #include "lookupaccel.h"
 
