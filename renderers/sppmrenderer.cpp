@@ -320,16 +320,9 @@ SPPMRenderer::EyePassRenderThread::EyePassRenderThread(u_int index, SPPMRenderer
 	threadRng = NULL;
 
 	Scene &scene(*(renderer->scene));
-	threadSample = new Sample(/*FIXME NULL, scene.volumeIntegrator, scene*/);
-	// Initialized later
-	threadSample->rng = NULL;
-	threadSample->camera = scene.camera->Clone();
-	threadSample->realTime = threadSample->camera->GetTime(.5f); //FIXME sample it
-	threadSample->camera->SampleMotion(threadSample->realTime);
 }
 
 SPPMRenderer::EyePassRenderThread::~EyePassRenderThread() {
-	delete threadSample;
 	delete threadRng;
 }
 
@@ -361,7 +354,6 @@ void SPPMRenderer::EyePassRenderThread::RenderImpl(EyePassRenderThread *myThread
 	u_long seed = scene.seedBase + myThread->n;
 	LOG(LUX_INFO, LUX_NOERROR) << "Eye pass thread " << myThread->n << " uses seed: " << seed;
 	myThread->threadRng = new RandomGenerator(seed);
-	myThread->threadSample->rng = myThread->threadRng;
 
 	HitPoints *hitPoints = NULL;
 
@@ -690,7 +682,7 @@ void SPPMRenderer::PhotonPassRenderThread::TracePhotons(PhotonSampler &sampler,
 		if (!alpha.Black()) {
 			// Follow photon path through scene and record intersections
 			Intersection photonIsect;
-			const Volume *volume = NULL; //FIXME: try to get volume from light
+			const Volume *volume = bsdf->GetVolume(photonRay.d);
 			BSDF *photonBSDF;
 			u_int nIntersections = 0;
 			u_int diffuseVertices = 0;
@@ -783,7 +775,7 @@ void SPPMRenderer::PhotonPassRenderThread::Splat(SplatList *splatList, Scene &sc
 	if (!alpha.Black()) {
 		// Follow photon path through scene and record intersections
 		Intersection photonIsect;
-		const Volume *volume = NULL; //FIXME: try to get volume from light
+		const Volume *volume = bsdf->GetVolume(photonRay.d);
 		BSDF *photonBSDF;
 		u_int nIntersections = 0;
 		u_int diffuseVertices = 0;

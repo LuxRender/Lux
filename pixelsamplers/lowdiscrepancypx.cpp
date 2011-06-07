@@ -23,6 +23,7 @@
 // lowdiscrepancypx.cpp*
 #include "lowdiscrepancypx.h"
 #include "error.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -61,3 +62,5 @@ bool LowdiscrepancyPixelSampler::GetNextPixel(int *xPos, int *yPos, const u_int 
 
 	return hasMorePixel;
 }
+
+static DynamicLoader::RegisterPixelSampler<LowdiscrepancyPixelSampler> r("lowdiscrepancy");

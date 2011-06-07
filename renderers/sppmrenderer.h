@@ -136,7 +136,6 @@ private:
 		boost::thread *thread; // keep pointer to delete the thread object
 
 		RandomGenerator *threadRng;
-		Sample *threadSample;
 	};
 
 	class PhotonPassRenderThread : public boost::noncopyable {

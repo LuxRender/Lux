@@ -135,14 +135,17 @@ protected:
 };
 
 // PointLight Method Definitions
-PointLight::PointLight(
-		const Transform &light2world,
-		const boost::shared_ptr< Texture<SWCSpectrum> > &L,
-		float g,
-		SampleableSphericalFunction *ssf)
-	: Light(light2world), Lbase(L), gain(g), func(ssf) {
+PointLight::PointLight(const Transform &light2world,
+	const boost::shared_ptr< Texture<SWCSpectrum> > &L,
+	float g, float power, float efficacy,
+	SampleableSphericalFunction *ssf) :
+	Light(light2world), Lbase(L), gain(g), func(ssf)
+{
 	lightPos = LightToWorld(Point(0,0,0));
-	Lbase->SetIlluminant();
+	Lbase->SetIlluminant(); // Illuminant must be set before calling Le->Y()
+	const float gainFactor = power * efficacy / (4.f * M_PI * Lbase->Y());
+	if (gainFactor > 0.f && !isinf(gainFactor))
+		gain *= gainFactor;
 }
 PointLight::~PointLight() {
 	delete func;
@@ -204,6 +207,8 @@ Light* PointLight::CreateLight(const Transform &light2world,
 		const ParamSet &paramSet) {
 	boost::shared_ptr<Texture<SWCSpectrum> > L(paramSet.GetSWCSpectrumTexture("L", RGBColor(1.f)));
 	float g = paramSet.FindOneFloat("gain", 1.f);
+	float p = paramSet.FindOneFloat("power", 0.f);		// Power/Lm in Watts
+	float e = paramSet.FindOneFloat("efficacy", 0.f);	// Efficacy Lm per Watt
 
 	boost::shared_ptr<const SphericalFunction> sf(CreateSphericalFunction(paramSet));
 	SampleableSphericalFunction *ssf = NULL;
@@ -213,7 +218,7 @@ Light* PointLight::CreateLight(const Transform &light2world,
 	Point P = paramSet.FindOnePoint("from", Point(0,0,0));
 	Transform l2w = Translate(Vector(P.x, P.y, P.z)) * light2world;
 
-	PointLight *l = new PointLight(l2w, L, g, ssf);
+	PointLight *l = new PointLight(l2w, L, g, p, e, ssf);
 	l->hints.InitParam(paramSet);
 	return l;
 }

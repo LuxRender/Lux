@@ -294,12 +294,11 @@ Film *MakeFilm(const string &name,
 }
 
 PixelSampler *MakePixelSampler(const string &name,
-	const ParamSet &paramSet)
+	int xstart, int xend, int ystart, int yend)
 {
 	if (DynamicLoader::registeredPixelSamplers().find(name) !=
 		DynamicLoader::registeredPixelSamplers().end()) {
-		PixelSampler *ret = DynamicLoader::registeredPixelSamplers()[name](paramSet);
-		paramSet.ReportUnused();
+		PixelSampler *ret = DynamicLoader::registeredPixelSamplers()[name](xstart, xend, ystart, yend);
 		return ret;
 	}
 

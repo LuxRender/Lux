@@ -22,12 +22,6 @@
 
 // random.cpp*
 #include "random.h"
-#include "pixelsamplers/vegas.h"
-//#include "pixelsamplers/randompx.h"
-#include "pixelsamplers/hilbertpx.h"
-#include "pixelsamplers/lowdiscrepancypx.h"
-#include "pixelsamplers/linear.h"
-#include "pixelsamplers/tilepx.h"
 #include "scene.h"
 #include "dynload.h"
 #include "error.h"
@@ -58,18 +52,7 @@ RandomSampler::RandomSampler(int xstart, int xend, int ystart, int yend,
 	pixelSamples = ps;
 
 	// Initialize PixelSampler
-	if(pixelsampler == "vegas")
-		pixelSampler = new VegasPixelSampler(xstart, xend, ystart, yend);
-	else if(pixelsampler == "lowdiscrepancy")
-		pixelSampler = new LowdiscrepancyPixelSampler(xstart, xend, ystart, yend);
-//	else if(pixelsampler == "random")
-//		pixelSampler = new RandomPixelSampler(xstart, xend, ystart, yend);
-	else if((pixelsampler == "tile") || (pixelsampler == "grid"))
-		pixelSampler = new TilePixelSampler(xstart, xend, ystart, yend);
-	else if(pixelsampler == "hilbert")
-		pixelSampler = new HilbertPixelSampler(xstart, xend, ystart, yend);
-	else
-		pixelSampler = new LinearPixelSampler(xstart, xend, ystart, yend);
+	pixelSampler = MakePixelSampler(pixelsampler, xstart, xend, ystart, yend);
 
 	totalPixels = pixelSampler->GetTotalPixels();
 	sampPixelPos = 0;

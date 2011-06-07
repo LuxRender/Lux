@@ -22,6 +22,7 @@
  
 #include "hilbertpx.h"
 #include "error.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -88,3 +89,5 @@ bool HilbertPixelSampler::GetNextPixel(int *xPos, int *yPos, const u_int usePos)
 
 	return usePos != TotalPx - 1;
 }
+
+static DynamicLoader::RegisterPixelSampler<HilbertPixelSampler> r("hilbert");

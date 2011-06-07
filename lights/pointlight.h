@@ -33,7 +33,7 @@ public:
 	// PointLight Public Methods
 	PointLight(const Transform &light2world, 
 		const boost::shared_ptr< Texture<SWCSpectrum> > &L, float gain,
-		SampleableSphericalFunction *ssf);
+		float power, float efficacy, SampleableSphericalFunction *ssf);
 	virtual ~PointLight();
 	virtual bool IsDeltaLight() const { return true; }
 	virtual bool IsEnvironmental() const { return false; }

@@ -25,7 +25,6 @@
 #include "lux.h"
 #include "scene.h"
 #include "sampling.h"
-#include "pixelsamplers/linear.h"
 
 #include "lookupaccel.h"
 
@@ -105,7 +104,7 @@ public:
 		return hitPointBBox[passIndex];
 	}
 
-	float GetMaxPhotonRaidus2(const u_int passIndex) const { return maxHitPointRadius2[passIndex]; }
+	float GetMaxPhotonRadius2(const u_int passIndex) const { return maxHitPointRadius2[passIndex]; }
 
 	void UpdatePointsInformation();
 	const u_int GetEyePassCount() const { return currentEyePass; }
