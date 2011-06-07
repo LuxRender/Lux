@@ -49,6 +49,7 @@ IF (NOT LUX_NO_DEFAULT_CONFIG)
 		SET ( ENV{QTDIR} "c:/qt/" )
 		SET ( ENV{OpenEXR_HOME}					"${lux_SOURCE_DIR}/../OpenEXR"	)
 		SET ( ENV{LuxRays_HOME}					"${lux_SOURCE_DIR}/../luxrays"	)
+		SET ( ENV{PNG_HOME}							"${lux_SOURCE_DIR}/../png"			)
 
 
 		SET ( FREEIMAGE_SEARCH_PATH			"${lux_SOURCE_DIR}/../FreeImage"	)
@@ -71,6 +72,21 @@ ELSE(NOT LUX_NO_DEFAULT_CONFIG)
 	MESSAGE(STATUS "LUX_NO_DEFAULT_CONFIG defined - not using default configuration values.")
 
 ENDIF(NOT LUX_NO_DEFAULT_CONFIG)
+
+#
+# Define output path for resulting libs and binaries
+#
+
+# Libraries output directory
+SET ( LIBRARY_OUTPUT_PATH
+			"${PROJECT_BINARY_DIR}/lib"
+			CACHE PATH "Single Directory for all Libraries" )
+
+# Binaries output directory
+SET	(	CMAKE_RUNTIME_OUTPUT_DIRECTORY
+			"${PROJECT_BINARY_DIR}/bin"
+			CACHE PATH "Single Directory for all binaries" )
+
 
 #
 # Overwrite defaults with Custom Settings

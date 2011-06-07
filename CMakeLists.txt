@@ -37,6 +37,9 @@ SET(VERSION 0.9)
 # Dont overconfigure
 SET(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "limit configs" FORCE)
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "../../lib")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "../../lib")
+
 ###########################################################################
 #
 # Include necessary submodules

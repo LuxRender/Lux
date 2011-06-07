@@ -84,7 +84,7 @@ IF ( OpenEXR_FOUND )
 ENDIF ( OpenEXR_FOUND )
 
 ##
-# luxrays
+# LuxRays
 ##
 FIND_PACKAGE ( LuxRays )
 
@@ -95,9 +95,18 @@ ENDIF ( LuxRays_FOUND )
 ##
 # PNG
 ##
-SET(PNG_INCLUDE_DIR "../png/include")
-SET(PNG_LIBRARY "../png/lib/libpng15")
+#SET(PNG_INCLUDE_DIR "../png/include")
+#SET(PNG_LIBRARY "../png/lib/libpng15")
 
+FIND_PACKAGE ( PNG )
+
+IF ( PNG_FOUND )
+	INCLUDE_DIRECTORIES ( SYSTEM ${PNG_INCLUDE_DIR} )
+ENDIF ( PNG_FOUND )
+
+##
+# General system libraries
+##
 IF (WIN32)
 	SET(SYS_LIBRARIES ${SYS_LIBRARIES} "shell32.lib")
 ENDIF (WIN32)
