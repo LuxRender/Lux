@@ -227,9 +227,19 @@ unsigned int luxGetStringParameterValue(luxComponent comp, luxComponentParameter
 unsigned int luxGetDefaultStringParameterValue(luxComponent comp, luxComponentParameters param, char* dst, unsigned int dstlen, unsigned int index = 0);
 
 /* Queryable objects */
+enum luxAttributeType { // This should stay in sync with AttributeType::DataType
+	LUX_ATTRIBUTETYPE_NONE,
+	LUX_ATTRIBUTETYPE_BOOL,
+	LUX_ATTRIBUTETYPE_INT,
+	LUX_ATTRIBUTETYPE_FLOAT,
+	LUX_ATTRIBUTETYPE_DOUBLE,
+	LUX_ATTRIBUTETYPE_STRING
+};
+#define LUX_
 const char* luxGetAttributes(); /* Returns an XML string containing all queryable data of the current context */
 bool luxHasObject(const char * objectName); /* Returns true if the given object exists in the registry */
 bool luxHasAttribute(const char * objectName, const char * attributeName); /* Returns true if object has the given attribute */
+luxAttributeType luxGetAttributeType(const char *objectName, const char *attributeName); /* Returns the type of the attribute */
 bool luxHasAttributeDefaultValue(const char * objectName, const char * attributeName); /* Returns true if attribute has a default value */
 
 const char* luxGetStringAttribute(const char * objectName, const char * attributeName); 
@@ -240,6 +250,7 @@ float luxGetFloatAttributeDefault(const char * objectName, const char * attribut
 void luxSetFloatAttribute(const char * objectName, const char * attributeName, float value); /* Sets an float attribute value */
 double luxGetDoubleAttribute(const char * objectName, const char * attributeName); /* Returns the value of a double attribute */
 double luxGetDoubleAttributeDefault(const char * objectName, const char * attributeName); /* Returns the default value of a double attribute */
+void luxSetDoubleAttribute(const char * objectName, const char * attributeName, double value); /* Sets an double attribute value */
 int luxGetIntAttribute(const char * objectName, const char * attributeName); /* Returns the value of an int attribute */
 int luxGetIntAttributeDefault(const char * objectName, const char * attributeName); /* Returns the default value of an int attribute */
 void luxSetIntAttribute(const char * objectName, const char * attributeName, int value); /* Sets an int attribute value */

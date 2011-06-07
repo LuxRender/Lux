@@ -32,6 +32,7 @@
 
 #include "context.h"
 #include "queryable.h"
+#include "api.h"
 
 #include "pydoc_context.h"
 
@@ -874,7 +875,7 @@ public:
 	const char* getAttributes()
 	{
 		checkActiveContext();
-		return context->registry.GetContent();
+		return luxGetAttributes();
 	}
 
 	//Queryable objects
@@ -886,27 +887,25 @@ public:
 	boost::python::object getAttribute(const char *objectName, const char *attributeName)
 	{
 		checkActiveContext();
-		Queryable *object=context->registry[objectName];
-		if(object!=0)
-		{
-			QueryableAttribute &attr=(*object)[attributeName];
-			switch (attr.Type()) {
-				case AttributeType::Bool:
-					return boost::python::object(attr.BoolValue());
-				case AttributeType::Int:
-					return boost::python::object(attr.IntValue());
-				case AttributeType::Float:
-					return boost::python::object(attr.FloatValue());
-				case AttributeType::Double:
-					return boost::python::object(attr.DoubleValue());
-				case AttributeType::String:
-					return boost::python::object(attr.Value());
+		if (!luxHasObject(objectName) ||
+			!luxHasAttribute(objectName, attributeName))
+			return boost::python::object(0);
+		switch (luxGetAttributeType(objectName, attributeName)) {
+			case LUX_ATTRIBUTETYPE_BOOL:
+				return boost::python::object(luxGetBoolAttribute(objectName, attributeName));
+			case LUX_ATTRIBUTETYPE_INT:
+				return boost::python::object(luxGetIntAttribute(objectName, attributeName));
+			case LUX_ATTRIBUTETYPE_FLOAT:
+				return boost::python::object(luxGetFloatAttribute(objectName, attributeName));
+			case LUX_ATTRIBUTETYPE_DOUBLE:
+				return boost::python::object(luxGetDoubleAttribute(objectName, attributeName));
+			case LUX_ATTRIBUTETYPE_STRING:
+				return boost::python::object(luxGetStringAttribute(objectName, attributeName));
 
-				case AttributeType::None:
-					break;
-				default:
-					LOG(LUX_ERROR,LUX_BUG)<<"Unknown attribute type in pyLuxGetOption";
-			}
+			case LUX_ATTRIBUTETYPE_NONE:
+				break;
+			default:
+				LOG(LUX_ERROR,LUX_BUG)<<"Unknown attribute type in pyLuxGetOption";
 		}
 		return boost::python::object(0);
 	}
@@ -915,40 +914,39 @@ public:
 	{
 		//void luxSetAttribute(const char * objectName, const char * attributeName, int n, void *values); /* Sets an option value */
 		checkActiveContext();
-		Queryable *object=context->registry[objectName];
-		if(object!=0)
-		{
-			QueryableAttribute &attribute=(*object)[attributeName];
-			switch(attribute.Type())
-			{
-				case AttributeType::Bool :
-					attribute = boost::python::extract<bool>(value);
-					break;
-
-				case AttributeType::Int :
-					attribute = boost::python::extract<int>(value);
-					break;
-
-				case AttributeType::Float :
-					attribute = boost::python::extract<float>(value);
-					break;
-
-				case AttributeType::Double :
-					attribute = boost::python::extract<double>(value);
-					break;
-
-				case AttributeType::String :
-					attribute = boost::python::extract<std::string>(value);
-					break;
-
-				case AttributeType::None :
-				default:
-					LOG(LUX_ERROR,LUX_BUG)<<"Unknown attribute type for '"<<attributeName<<"' in object '"<<objectName<<"'";
-			}
-		}
-		else
-		{
+		if (!luxHasObject(objectName)) {
 			LOG(LUX_ERROR,LUX_BADTOKEN)<<"Unknown object '"<<objectName<<"'";
+			return;
+		}
+		if (!luxHasAttribute(objectName, attributeName)) {
+			LOG(LUX_ERROR,LUX_BADTOKEN)<<"Unknown attribute '"<<attributeName<<"' in object '"<<objectName<<"'";
+			return;
+		}
+		switch(luxGetAttributeType(objectName, attributeName))
+		{
+			case LUX_ATTRIBUTETYPE_BOOL:
+				luxSetBoolAttribute(objectName, attributeName, boost::python::extract<bool>(value));
+				break;
+
+			case LUX_ATTRIBUTETYPE_INT:
+				luxSetIntAttribute(objectName, attributeName, boost::python::extract<int>(value));
+				break;
+
+			case LUX_ATTRIBUTETYPE_FLOAT:
+				luxSetFloatAttribute(objectName, attributeName, boost::python::extract<float>(value));
+				break;
+
+			case LUX_ATTRIBUTETYPE_DOUBLE:
+				luxSetDoubleAttribute(objectName, attributeName, boost::python::extract<double>(value));
+				break;
+
+			case LUX_ATTRIBUTETYPE_STRING:
+				luxSetStringAttribute(objectName, attributeName, std::string(boost::python::extract<std::string>(value)).c_str());
+				break;
+
+			case LUX_ATTRIBUTETYPE_NONE:
+			default:
+				LOG(LUX_ERROR,LUX_BUG)<<"Unknown attribute type for '"<<attributeName<<"' in object '"<<objectName<<"'";
 		}
 	}
 

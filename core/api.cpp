@@ -862,6 +862,20 @@ extern "C" double luxGetDoubleAttribute(const char * objectName, const char * at
 	return 0;
 }
 
+extern "C" void luxSetDoubleAttribute(const char * objectName, const char * attributeName, double value)
+{
+	Queryable *object=Context::GetActive()->registry[objectName];
+	if (object) {
+		try {
+			(*object)[attributeName] = value;
+		} catch (std::runtime_error e) {
+			LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
+		}
+	} else {
+		LOG(LUX_ERROR,LUX_BADTOKEN)<<"Unknown object '"<<objectName<<"'";
+	}
+}
+
 extern "C" double luxGetDoubleAttributeDefault(const char * objectName, const char * attributeName)
 {
 	try { 
