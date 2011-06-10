@@ -30,6 +30,7 @@
 #include "hybridsamplerrenderer.h"
 #include "randomgen.h"
 #include "context.h"
+#include "integrators/path.h"
 
 #include "luxrays/core/context.h"
 #include "luxrays/core/device.h"
@@ -476,6 +477,21 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 	//luxrays::RayBuffer *rayBuffer = renderThread->iDevice->NewRayBuffer();
 	luxrays::RayBuffer *rayBuffer = new luxrays::RayBuffer(8192);
 
+	// LuxRender v0.8
+	//  PathState size = 616 bytes
+	//  Sample size = 368 bytes (contributes for more than 50% to the PathState total size)
+	//  SWCSpectrum = 16 bytes
+	//  Ray = 36 bytes
+	//  LuxBall5 red matte
+	//    124k S/sec
+	//    55% load on 1xHD5870
+	// First revision
+	//  PathState size = 616 bytes => 552 bytes
+	//LOG(LUX_DEBUG, LUX_NOERROR) << "PathState size: " << sizeof(PathState) << " bytes";
+	//LOG(LUX_DEBUG, LUX_NOERROR) << "Sample size: " << sizeof(Sample) << " bytes";
+	//LOG(LUX_DEBUG, LUX_NOERROR) << "SWCSpectrum size: " << sizeof(SWCSpectrum) << " bytes";
+	//LOG(LUX_DEBUG, LUX_NOERROR) << "Ray size: " << sizeof(Ray) << " bytes";
+
 	// Init all PathState
 	const double t0 = luxrays::WallClockTime();
 	vector<SurfaceIntegratorState *> integratorState(rayBuffer->GetSize());
@@ -514,6 +530,7 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 			if (currentGenerateIndex == currentStartIndex)
 				break;
 		}
+		//LOG(LUX_DEBUG, LUX_NOERROR) << "Used IntegratorStates: " << (currentGenerateIndex > currentStartIndex ? (currentGenerateIndex - currentStartIndex) : (currentGenerateIndex + integratorState.size() - currentStartIndex));
 
 		// Trace the RayBuffer
 		renderThread->iDevice->PushRayBuffer(rayBuffer);
@@ -575,8 +592,10 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 	scene.camera->film->contribPool->End(contribBuffer);
 
 	// Free memory
-	for (size_t i = 0; i < integratorState.size(); ++i)
+	for (size_t i = 0; i < integratorState.size(); ++i) {
+		integratorState[i]->Free(scene);
 		delete integratorState[i];
+	}
 	delete rayBuffer;
 }
 

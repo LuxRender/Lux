@@ -46,6 +46,9 @@ public:
 	virtual ~SurfaceIntegratorState() { }
 
 	virtual bool Init(const Scene &scene) = 0;
+
+	// Must be called before to delete the class
+	virtual void Free(const Scene &scene) = 0;
 };
 
 class SurfaceIntegrator : public Integrator, public Queryable {

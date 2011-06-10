@@ -34,30 +34,67 @@ class PathState : public SurfaceIntegratorState {
 	};
 
 	PathState(const Scene &scene, ContributionBuffer *contribBuffer, RandomGenerator *rng);
-	~PathState();
+	~PathState() { }
 
 	bool Init(const Scene &scene);
+	void Free(const Scene &scene);
 
 	friend class PathIntegrator;
 
 private:
-	void Terminate(const Scene &scene, const u_int bufferId);
+	void Terminate(const Scene &scene, const u_int bufferId,
+			const float alpha = 1.f);
+
+	PathStateType GetState() const {
+		return (PathStateType)pathState;
+	}
+
+	void SetState(const PathStateType s) {
+		pathState = s;
+	}
+
+#define PATHSTATE_FLAGS_SPECULARBOUNCE 0x1
+#define PATHSTATE_FLAGS_SPECULAR 0x2
+#define PATHSTATE_FLAGS_SCATTERED 0x4
+
+	bool GetSpecularBounce() const {
+		return flags & PATHSTATE_FLAGS_SPECULARBOUNCE;
+	}
+
+	void SetSpecularBounce(const bool v) {
+		flags = v ? (flags | PATHSTATE_FLAGS_SPECULARBOUNCE) : (flags & PATHSTATE_FLAGS_SPECULARBOUNCE);
+	}
+
+	bool GetSpecular() const {
+		return flags & PATHSTATE_FLAGS_SPECULAR;
+	}
+
+	void SetSpecular(const bool v) {
+		flags = v ? (flags | PATHSTATE_FLAGS_SPECULAR) : (flags & PATHSTATE_FLAGS_SPECULAR);
+	}
+
+	bool GetScattered() const {
+		return flags & PATHSTATE_FLAGS_SCATTERED;
+	}
+
+	void SetScattered(const bool v) {
+		flags = v ? (flags | PATHSTATE_FLAGS_SCATTERED) : (flags & PATHSTATE_FLAGS_SCATTERED);
+	}
+
+	// NOTE: the size of this class is extremely important for the total
+	// amount of memory required for hybrid rendering.
 
 	Sample sample;
-	Sampler *sampler;
 
 	// Path status information
-	u_int pathLength;
-	float alpha;
 	float distance;
 	float VContrib;
 	SWCSpectrum pathThroughput;
 	const Volume *volume;
-	vector<SWCSpectrum> L;
-	vector<float> V;
+	SWCSpectrum *L;
+	float *V;
 
 	// Next path vertex ray
-	float eyeRayWeight;
 	Ray pathRay;
 	luxrays::RayHit pathRayHit; // Used when in  CONTINUE_SHADOWRAY state
 	u_int currentPathRayIndex;
@@ -66,16 +103,25 @@ private:
 	SWCSpectrum *Ld;
 	float *Vd;
 	u_int *LdGroup;
+
 	// Direct light sampling rays
-	u_int tracedShadowRayCount;
 	Ray *shadowRay;
 	u_int *currentShadowRayIndex;
 	const Volume **shadowVolume;
 
-	PathStateType state;
-	bool specularBounce, specular, scattered;
 	float bouncePdf;
 	Point lastBounce;
+
+	u_short pathLength;
+	// Use Get/SetState to access this
+	u_short pathState;
+	u_short tracedShadowRayCount;
+	// Used to save memory and store:
+	//  specularBounce (1bit)
+	//  specular (1bit)
+	//  scattered (1bit)
+	// Use Get/SetState to access this
+	u_short flags;
 };
 
 // PathIntegrator Declarations
