@@ -741,17 +741,50 @@ extern "C" bool luxHasObject(const char * objectName)
 
 extern "C" bool luxHasAttribute(const char * objectName, const char * attributeName)
 {
-	Queryable *object=Context::GetActive()->registry[objectName];
+	Queryable *object = Context::GetActive()->registry[objectName];
 	if (object) {
 		try {
-			return (*object).HasAttribute(attributeName);
+			return object->HasAttribute(attributeName);
 		} catch (std::runtime_error e) {
 			LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
 		}
 	} else {
-		LOG(LUX_ERROR,LUX_BADTOKEN)<<"Unknown object '"<<objectName<<"'";
+		LOG(LUX_ERROR,LUX_BADTOKEN) << "Unknown object '" <<
+			objectName << "'";
 	}
 	return false;
+}
+
+extern "C" luxAttributeType luxGetAttributeType(const char *objectName, const char *attributeName)
+{
+	Queryable *object = Context::GetActive()->registry[objectName];
+	if (!object) {
+		LOG(LUX_ERROR, LUX_BADTOKEN) << "Unknown object '" <<
+			objectName << "'";
+		return LUX_ATTRIBUTETYPE_NONE;
+	}
+	if (!object->HasAttribute(attributeName)) {
+		LOG(LUX_ERROR, LUX_BADTOKEN) << "Unknown attribute '" <<
+			attributeName << "' in object '" << objectName << "'";
+		return LUX_ATTRIBUTETYPE_NONE;
+	}
+	switch ((*object)[attributeName].Type()) {
+	case AttributeType::None:
+		return LUX_ATTRIBUTETYPE_NONE;
+	case AttributeType::Bool:
+		return LUX_ATTRIBUTETYPE_BOOL;
+	case AttributeType::Int:
+		return LUX_ATTRIBUTETYPE_INT;
+	case AttributeType::Float:
+		return LUX_ATTRIBUTETYPE_FLOAT;
+	case AttributeType::Double:
+		return LUX_ATTRIBUTETYPE_DOUBLE;
+	case AttributeType::String:
+		return LUX_ATTRIBUTETYPE_STRING;
+	}
+	LOG(LUX_ERROR, LUX_BADTOKEN) << "Unknown type for attribute '" <<
+		attributeName << "' in object '" << objectName << "'";
+	return LUX_ATTRIBUTETYPE_NONE;
 }
 
 extern "C" bool luxHasAttributeDefaultValue(const char * objectName, const char * attributeName)
