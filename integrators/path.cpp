@@ -254,12 +254,15 @@ PathState::PathState(const Scene &scene, ContributionBuffer *contribBuffer, Rand
 	L = new SWCSpectrum[lightGroupCount];
 	V = new float[lightGroupCount];
 
-	Ld = new SWCSpectrum[1];
-	Vd = new float[1];
-	LdGroup = new u_int[1];
-	shadowRay = new Ray[1];
-	currentShadowRayIndex = new u_int[1];
-	shadowVolume = new const Volume *[1];
+	PathIntegrator *pi = (PathIntegrator *)scene.surfaceIntegrator;
+	const u_int shadowRaysCount = pi->hints.GetShadowRaysCount();
+
+	Ld = new SWCSpectrum[shadowRaysCount];
+	Vd = new float[shadowRaysCount];
+	LdGroup = new u_int[shadowRaysCount];
+	shadowRay = new Ray[shadowRaysCount];
+	currentShadowRayIndex = new u_int[shadowRaysCount];
+	shadowVolume = new const Volume *[shadowRaysCount];
 }
 
 bool PathState::Init(const Scene &scene) {
@@ -386,6 +389,75 @@ bool PathIntegrator::GenerateRays(const Scene &,
 	}
 
 	return true;
+}
+
+void PathIntegrator::BuildShadowRays(const Scene &scene, PathState *pathState, BSDF *bsdf) {
+	pathState->tracedShadowRayCount = 0;
+
+	const u_int nLights = scene.lights.size();
+	if (nLights > 0 && bsdf->NumComponents(BxDFType(BSDF_ALL & ~BSDF_SPECULAR)) > 0) {
+		const float *sampleData = scene.sampler->GetLazyValues(pathState->sample,
+			hints.lightSampleOffset, pathState->pathLength);
+
+		const u_int shadowRaysCount = hints.GetShadowRaysCount();
+		const float lightSelectionPdf = nLights / (float)shadowRaysCount;
+		for (u_int i = 0; i < shadowRaysCount; ++i) {
+			const float lightNum = sampleData[0];
+
+			// Select a light source to sample
+			const u_int lightNumber = min(Floor2UInt(lightNum * nLights), nLights - 1);
+			const Light &light(*(scene.lights[lightNumber]));
+			const float lightSample0 = sampleData[1];
+			const float lightSample1 = sampleData[2];
+			const float lightSample2 = sampleData[3];
+			sampleData += 4;
+
+			const Point &p = bsdf->dgShading.p;
+
+			// Trace a shadow ray by sampling the light source
+			float lightPdf;
+			SWCSpectrum Li;
+			BSDF *lightBsdf;
+			if (light.SampleL(scene, pathState->sample, p, lightSample0, lightSample1, lightSample2,
+				&lightBsdf, NULL, &lightPdf, &Li)) {
+				//FIXME specific to one uniform strategy
+				lightPdf /= lightSelectionPdf;
+				Li *= lightSelectionPdf;
+
+				const Point &pL(lightBsdf->dgShading.p);
+				const Vector wi0(pL - p);
+				const float d2 = wi0.LengthSquared();
+				const float length = sqrtf(d2);
+				const Vector wi(wi0 / length);
+
+				const SpectrumWavelengths &sw(pathState->sample.swl);
+				Vector wo(-pathState->pathRay.d);
+
+				Li *= lightBsdf->F(sw, Vector(lightBsdf->nn), -wi, false);
+				Li *= bsdf->F(sw, wi, wo, true);
+
+				if (!Li.Black()) {
+					const float shadowRayEpsilon = max(MachineEpsilon::E(pL),
+						MachineEpsilon::E(length));
+
+					if (shadowRayEpsilon < length * .5f) {
+						if (!light.IsDeltaLight())
+							Li *= PowerHeuristic(shadowRaysCount, lightPdf * d2 / AbsDot(wi, lightBsdf->ng), 1, bsdf->Pdf(sw, wo, wi));
+
+						// Store light's contribution
+						pathState->Ld[pathState->tracedShadowRayCount] = pathState->pathThroughput * Li / d2;
+						pathState->Vd[pathState->tracedShadowRayCount] = pathState->Ld[pathState->tracedShadowRayCount].Filter(sw) * pathState->VContrib;
+						pathState->LdGroup[pathState->tracedShadowRayCount] = light.group;
+
+						const float maxt = length - shadowRayEpsilon;
+						pathState->shadowRay[pathState->tracedShadowRayCount] = Ray(p, wi, shadowRayEpsilon, maxt, pathState->sample.realTime);
+						pathState->shadowVolume[pathState->tracedShadowRayCount] = bsdf->GetVolume(wi);
+						++(pathState->tracedShadowRayCount);
+					}
+				}
+			}
+		}
+	}
 }
 
 bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, luxrays::RayBuffer *rayBuffer, u_int *nrContribs) {
@@ -515,59 +587,7 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 	const Normal &n = bsdf->dgShading.nn;
 
 	// Direct light sampling, only if there's a non specular component
-	pathState->tracedShadowRayCount = 0;
-	if (nLights > 0 && bsdf->NumComponents(BxDFType(BSDF_ALL & ~BSDF_SPECULAR)) > 0) {
-		const float *sampleData = scene.sampler->GetLazyValues(pathState->sample,
-			hints.lightSampleOffset, pathState->pathLength);
-
-		const float lightNum = sampleData[0];
-
-		// Select a light source to sample
-		const u_int lightNumber = min(Floor2UInt(lightNum * nLights), nLights - 1);
-		const Light &light(*(scene.lights[lightNumber]));
-		const float lightSample0 = sampleData[1];
-		const float lightSample1 = sampleData[2];
-		const float lightSample2 = sampleData[3];
-
-		// Trace a shadow ray by sampling the light source
-		float lightPdf;
-		SWCSpectrum Li;
-		BSDF *lightBsdf;
-		if (light.SampleL(scene, pathState->sample, p, lightSample0, lightSample1, lightSample2,
-			&lightBsdf, NULL, &lightPdf, &Li)) {
-			//FIXME specific to one uniform strategy
-			lightPdf /= nLights;
-			Li *= nLights;
-			const Point &pL(lightBsdf->dgShading.p);
-			const Vector wi0(pL - p);
-			const float d2 = wi0.LengthSquared();
-			const float length = sqrtf(d2);
-			const Vector wi(wi0 / length);
-
-			Li *= lightBsdf->F(sw, Vector(lightBsdf->nn), -wi, false);
-			Li *= bsdf->F(sw, wi, wo, true);
-
-			if (!Li.Black()) {
-				const float shadowRayEpsilon = max(MachineEpsilon::E(pL),
-					MachineEpsilon::E(length));
-
-				if (shadowRayEpsilon < length * .5f) {
-					if (!light.IsDeltaLight())
-						Li *= PowerHeuristic(1, lightPdf * d2 / AbsDot(wi, lightBsdf->ng), 1, bsdf->Pdf(sw, wo, wi));
-
-					// Store light's contribution
-					pathState->Ld[pathState->tracedShadowRayCount] = pathState->pathThroughput * Li / d2;
-					pathState->Vd[pathState->tracedShadowRayCount] = pathState->Ld[pathState->tracedShadowRayCount].Filter(sw) * pathState->VContrib;
-					pathState->LdGroup[pathState->tracedShadowRayCount] = light.group;
-
-					const float maxt = length - shadowRayEpsilon;
-					pathState->shadowRay[pathState->tracedShadowRayCount] = Ray(p, wi, shadowRayEpsilon, maxt, pathState->sample.realTime);
-					pathState->shadowVolume[pathState->tracedShadowRayCount] = bsdf->GetVolume(wi);
-					++(pathState->tracedShadowRayCount);
-				}
-			}
-		}
-	}
+	BuildShadowRays(scene, pathState, bsdf);
 
 	// Sample BSDF to get new path direction
 	Vector wi;

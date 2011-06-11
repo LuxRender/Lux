@@ -150,23 +150,23 @@ public:
 			return false;
 		}
 
-		if (hints.GetShadowRaysCount() != 1) {
-			LOG(LUX_ERROR, LUX_SEVERE)<< "The shadow rays count of LightsSamplingStrategy must be 1.";
-			return false;
-		}
-
 		return true;
 	}
-	virtual SurfaceIntegratorState *NewState(const Scene &,
+	virtual SurfaceIntegratorState *NewState(const Scene &scene,
 		ContributionBuffer *contribBuffer, RandomGenerator *rng);
-	virtual bool GenerateRays(const Scene &,
+	virtual bool GenerateRays(const Scene &scene,
 		SurfaceIntegratorState *state, luxrays::RayBuffer *rayBuffer);
-	virtual bool NextState(const Scene &, SurfaceIntegratorState *state,
+	virtual bool NextState(const Scene &scene, SurfaceIntegratorState *state,
 		luxrays::RayBuffer *rayBuffer, u_int *nrContribs);
 
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 
+	friend class PathState;
+
 private:
+	// Used by DataParallel methods
+	void BuildShadowRays(const Scene &scene, PathState *pathState, BSDF *bsdf);
+
 	SurfaceIntegratorRenderingHints hints;
 
 	// PathIntegrator Private Data

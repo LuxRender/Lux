@@ -477,7 +477,7 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 
 	// Inititialize the first set SurfaceIntegratorState
 	const double t0 = luxrays::WallClockTime();
-	vector<SurfaceIntegratorState *> integratorState(512);
+	vector<SurfaceIntegratorState *> integratorState(256);
 	for (size_t i = 0; i < integratorState.size(); ++i) {
 		integratorState[i] = scene.surfaceIntegrator->NewState(scene, contribBuffer, &rng);
 		integratorState[i]->Init(scene);
@@ -531,7 +531,7 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 			size_t newStateCount = 0;
 
 			// To limit the number of new SurfaceIntegratorState generated at first run
-			const size_t maxNewPaths = rayBuffer->GetSize() >> 3;
+			const size_t maxNewPaths = max<size_t>(256, rayBuffer->GetSize() >> 4);
 
 			for (;;) {
 				// Add more SurfaceIntegratorState
@@ -555,7 +555,8 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 			}
 
 			integratorState.resize(integratorState.size());
-			LOG(LUX_DEBUG, LUX_NOERROR) << "New allocated IntegratorStates: " << newStateCount << "/" << integratorState.size();
+			LOG(LUX_DEBUG, LUX_NOERROR) << "New allocated IntegratorStates: " << newStateCount << "/" <<
+					integratorState.size() << "[" << rayBuffer->GetSize() << "]";
 		}
 
 		//----------------------------------------------------------------------
