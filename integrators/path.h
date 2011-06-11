@@ -53,16 +53,16 @@ private:
 		pathState = s;
 	}
 
-#define PATHSTATE_FLAGS_SPECULARBOUNCE 0x1
-#define PATHSTATE_FLAGS_SPECULAR 0x2
-#define PATHSTATE_FLAGS_SCATTERED 0x4
+#define PATHSTATE_FLAGS_SPECULARBOUNCE (1<<0)
+#define PATHSTATE_FLAGS_SPECULAR (1<<1)
+#define PATHSTATE_FLAGS_SCATTERED (1<<2)
 
 	bool GetSpecularBounce() const {
 		return flags & PATHSTATE_FLAGS_SPECULARBOUNCE;
 	}
 
 	void SetSpecularBounce(const bool v) {
-		flags = v ? (flags | PATHSTATE_FLAGS_SPECULARBOUNCE) : (flags & PATHSTATE_FLAGS_SPECULARBOUNCE);
+		flags = v ? (flags | PATHSTATE_FLAGS_SPECULARBOUNCE) : (flags & ~PATHSTATE_FLAGS_SPECULARBOUNCE);
 	}
 
 	bool GetSpecular() const {
@@ -70,7 +70,7 @@ private:
 	}
 
 	void SetSpecular(const bool v) {
-		flags = v ? (flags | PATHSTATE_FLAGS_SPECULAR) : (flags & PATHSTATE_FLAGS_SPECULAR);
+		flags = v ? (flags | PATHSTATE_FLAGS_SPECULAR) : (flags & ~PATHSTATE_FLAGS_SPECULAR);
 	}
 
 	bool GetScattered() const {
@@ -78,7 +78,7 @@ private:
 	}
 
 	void SetScattered(const bool v) {
-		flags = v ? (flags | PATHSTATE_FLAGS_SCATTERED) : (flags & PATHSTATE_FLAGS_SCATTERED);
+		flags = v ? (flags | PATHSTATE_FLAGS_SCATTERED) : (flags & ~PATHSTATE_FLAGS_SCATTERED);
 	}
 
 	// NOTE: the size of this class is extremely important for the total

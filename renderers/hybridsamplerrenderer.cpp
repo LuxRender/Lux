@@ -555,7 +555,7 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 			}
 
 			integratorState.resize(integratorState.size());
-			LOG(LUX_DEBUG, LUX_NOERROR) << "New allocated IntegratorStates: " << newStateCount << "/" <<
+			LOG(LUX_DEBUG, LUX_NOERROR) << "New allocated IntegratorStates: " << newStateCount << " => " <<
 					integratorState.size() << "[" << rayBuffer->GetSize() << "]";
 		}
 

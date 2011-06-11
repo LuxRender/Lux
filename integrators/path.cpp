@@ -442,7 +442,7 @@ void PathIntegrator::BuildShadowRays(const Scene &scene, PathState *pathState, B
 
 					if (shadowRayEpsilon < length * .5f) {
 						if (!light.IsDeltaLight())
-							Li *= PowerHeuristic(shadowRaysCount, lightPdf * d2 / AbsDot(wi, lightBsdf->ng), 1, bsdf->Pdf(sw, wo, wi));
+							Li *= PowerHeuristic(1, lightPdf * d2 / AbsDot(wi, lightBsdf->ng), 1, bsdf->Pdf(sw, wo, wi));
 
 						// Store light's contribution
 						pathState->Ld[pathState->tracedShadowRayCount] = pathState->pathThroughput * Li / d2;
