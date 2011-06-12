@@ -28,6 +28,7 @@
 #include "geometry/transform.h"
 #include "paramset.h"
 #include "queryableregistry.h"
+#include "renderer.h"
 
 #include <boost/thread/mutex.hpp>
 #include <map>
@@ -152,6 +153,8 @@ public:
 
 	void SetHaltSamplesPerPixel(int haltspp, bool haveEnoughSamplesPerPixel,
 		bool suspendThreadsWhenDone);
+	// Must be called after Init() otherwise the Renderer is NULL
+	Renderer::RendererType GetRendererType() const;
 
 	//controlling number of threads
 	u_int AddThread();

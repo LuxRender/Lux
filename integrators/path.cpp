@@ -30,6 +30,7 @@
 #include "dynload.h"
 #include "path.h"
 #include "mc.h"
+#include "context.h"
 
 #include "luxrays/core/dataset.h"
 
@@ -49,8 +50,21 @@ void PathIntegrator::RequestSamples(Sample *sample, const Scene &scene)
 
 	sampleOffset = sample->AddxD(structure, maxDepth + 1);
 
-	// Allocate and request samples for light sampling, RR, etc.
-	hints.RequestSamples(sample, scene, maxDepth + 1);
+	// This is a bit tricky way to discover the kind of Renderer but otherwise
+	// I would have to change the APIs
+	if (Context::GetActive()->GetRendererType() == Renderer::HYBRIDSAMPLER) {
+		structure.clear();
+		const u_int shadowRaysCount = hints.GetShadowRaysCount();
+		for (u_int i = 0; i <  shadowRaysCount; ++i) {
+			structure.push_back(1);	// light number sample
+			structure.push_back(2);	// light position sample
+			structure.push_back(1);	// light portal sample
+		}
+		hybridRendererLightSampleOffset = sample->AddxD(structure, maxDepth + 1);
+	} else {
+		// Allocate and request samples for light sampling, RR, etc.
+		hints.RequestSamples(sample, scene, maxDepth + 1);
+	}
 }
 
 void PathIntegrator::Preprocess(const RandomGenerator &rng, const Scene &scene)
@@ -397,20 +411,20 @@ void PathIntegrator::BuildShadowRays(const Scene &scene, PathState *pathState, B
 	const u_int nLights = scene.lights.size();
 	if (nLights > 0 && bsdf->NumComponents(BxDFType(BSDF_ALL & ~BSDF_SPECULAR)) > 0) {
 		const float *sampleData = scene.sampler->GetLazyValues(pathState->sample,
-			hints.lightSampleOffset, pathState->pathLength);
+			hybridRendererLightSampleOffset, pathState->pathLength);
 
 		const u_int shadowRaysCount = hints.GetShadowRaysCount();
+		const u_int sampleCount = 4;
 		const float lightSelectionPdf = nLights / (float)shadowRaysCount;
 		for (u_int i = 0; i < shadowRaysCount; ++i) {
-			const float lightNum = sampleData[0];
+			const u_int offset = i * sampleCount;
+			const float lightNum = sampleData[offset];
+			const float *lightSample = &sampleData[offset + 1];
+			const float lightPortal = sampleData[offset + 3];
 
 			// Select a light source to sample
 			const u_int lightNumber = min(Floor2UInt(lightNum * nLights), nLights - 1);
 			const Light &light(*(scene.lights[lightNumber]));
-			const float lightSample0 = sampleData[1];
-			const float lightSample1 = sampleData[2];
-			const float lightSample2 = sampleData[3];
-			sampleData += 4;
 
 			const Point &p = bsdf->dgShading.p;
 
@@ -418,7 +432,7 @@ void PathIntegrator::BuildShadowRays(const Scene &scene, PathState *pathState, B
 			float lightPdf;
 			SWCSpectrum Li;
 			BSDF *lightBsdf;
-			if (light.SampleL(scene, pathState->sample, p, lightSample0, lightSample1, lightSample2,
+			if (light.SampleL(scene, pathState->sample, p, lightSample[0], lightSample[1], lightPortal,
 				&lightBsdf, NULL, &lightPdf, &Li)) {
 				//FIXME specific to one uniform strategy
 				lightPdf /= lightSelectionPdf;

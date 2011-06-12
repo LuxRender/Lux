@@ -175,6 +175,8 @@ private:
 	float continueProbability;
 	// Declare sample parameters for light source sampling
 	u_int sampleOffset, bufferId;
+	// Used only for HybridSampler
+	u_int hybridRendererLightSampleOffset;
 	bool includeEnvironment;
 };
 

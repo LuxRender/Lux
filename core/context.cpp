@@ -981,6 +981,11 @@ void Context::SetHaltSamplesPerPixel(int haltspp, bool haveEnoughSamplesPerPixel
 	luxCurrentRenderer->SuspendWhenDone(suspendThreadsWhenDone);
 }
 
+Renderer::RendererType Context::GetRendererType() const {
+	assert (luxCurrentRenderer != NULL);
+	return luxCurrentRenderer->GetType();
+}
+
 void Context::Wait() {
     boost::mutex::scoped_lock lock(renderingMutex);
 }
