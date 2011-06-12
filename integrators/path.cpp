@@ -55,14 +55,23 @@ void PathIntegrator::RequestSamples(Sample *sample, const Scene &scene)
 	if (Context::GetActive()->GetRendererType() == Renderer::HYBRIDSAMPLER) {
 		structure.clear();
 		const u_int shadowRaysCount = hints.GetShadowRaysCount();
+		hybridRendererLightStrategy = hints.GetLightStrategy();
 
-		if (hints.GetLightStrategy() == LightsSamplingStrategy::SAMPLE_ONE_UNIFORM) {
+		// Handle the AUTO light sampling strategy
+		if (hybridRendererLightStrategy == LightsSamplingStrategy::SAMPLE_AUTOMATIC) {
+			if (scene.lights.size() > 5)
+				hybridRendererLightStrategy = LightsSamplingStrategy::SAMPLE_ONE_UNIFORM;
+			else
+				hybridRendererLightStrategy = LightsSamplingStrategy::SAMPLE_ALL_UNIFORM;
+		}
+
+		if (hybridRendererLightStrategy == LightsSamplingStrategy::SAMPLE_ONE_UNIFORM) {
 			for (u_int i = 0; i <  shadowRaysCount; ++i) {
 				structure.push_back(2);	// light position sample
 				structure.push_back(1);	// light portal sample
 				structure.push_back(1);	// light number sample
 			}
-		} else if (hints.GetLightStrategy() == LightsSamplingStrategy::SAMPLE_ALL_UNIFORM) {
+		} else if (hybridRendererLightStrategy == LightsSamplingStrategy::SAMPLE_ALL_UNIFORM) {
 			const u_int nLights = scene.lights.size();
 
 			for (u_int j = 0; j <  nLights; ++j) {
@@ -283,7 +292,7 @@ PathState::PathState(const Scene &scene, ContributionBuffer *contribBuffer, Rand
 	V = new float[lightGroupCount];
 
 	PathIntegrator *pi = (PathIntegrator *)scene.surfaceIntegrator;
-	const u_int shadowRaysCount = (pi->hints.GetLightStrategy() == LightsSamplingStrategy::SAMPLE_ONE_UNIFORM) ?
+	const u_int shadowRaysCount = (pi->hybridRendererLightStrategy == LightsSamplingStrategy::SAMPLE_ONE_UNIFORM) ?
 		(pi->hints.GetShadowRaysCount()) :
 		(pi->hints.GetShadowRaysCount() * scene.lights.size());
 
@@ -429,12 +438,11 @@ void PathIntegrator::BuildShadowRays(const Scene &scene, PathState *pathState, B
 		const float *sampleData = scene.sampler->GetLazyValues(pathState->sample,
 			hybridRendererLightSampleOffset, pathState->pathLength);
 
-		const LightsSamplingStrategy::LightStrategyType strategy = hints.GetLightStrategy();
 		const u_int shadowRaysCount = hints.GetShadowRaysCount();
 
 		u_int sampleCount, loopCount;
 		float lightSelectionPdf;
-		if (strategy == LightsSamplingStrategy::SAMPLE_ONE_UNIFORM) {
+		if (hybridRendererLightStrategy == LightsSamplingStrategy::SAMPLE_ONE_UNIFORM) {
 			sampleCount = 4;
 			loopCount = 1;
 			lightSelectionPdf = nLights / (float)shadowRaysCount;
@@ -450,7 +458,7 @@ void PathIntegrator::BuildShadowRays(const Scene &scene, PathState *pathState, B
 				const u_int offset = j * totalSampleCount + i * sampleCount;
 
 				const Light *light;
-				if (strategy == LightsSamplingStrategy::SAMPLE_ONE_UNIFORM) {
+				if (hybridRendererLightStrategy == LightsSamplingStrategy::SAMPLE_ONE_UNIFORM) {
 					const float lightNum = sampleData[offset + 3];
 					// Select a light source to sample
 					const u_int lightNumber = min(Floor2UInt(lightNum * nLights), nLights - 1);
