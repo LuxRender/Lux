@@ -145,8 +145,9 @@ public:
 	virtual bool IsDataParallelSupported() const { return true; }
 	//FIXME: just to check SurfaceIntegratorRenderingHints light strategy, to remove
 	virtual bool CheckLightStrategy() const {
-		if (hints.GetLightStrategy() != LightsSamplingStrategy::SAMPLE_ONE_UNIFORM) {
-			LOG(LUX_ERROR, LUX_SEVERE)<< "The LightsSamplingStrategy must be ONE_UNIFORM.";
+		if ((hints.GetLightStrategy() != LightsSamplingStrategy::SAMPLE_ONE_UNIFORM) &&
+			(hints.GetLightStrategy() != LightsSamplingStrategy::SAMPLE_ALL_UNIFORM)) {
+			LOG(LUX_ERROR, LUX_SEVERE)<< "The LightsSamplingStrategy must be ONE_UNIFORM or ALL_UNIFORM.";
 			return false;
 		}
 

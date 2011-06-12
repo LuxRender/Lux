@@ -55,11 +55,25 @@ void PathIntegrator::RequestSamples(Sample *sample, const Scene &scene)
 	if (Context::GetActive()->GetRendererType() == Renderer::HYBRIDSAMPLER) {
 		structure.clear();
 		const u_int shadowRaysCount = hints.GetShadowRaysCount();
-		for (u_int i = 0; i <  shadowRaysCount; ++i) {
-			structure.push_back(1);	// light number sample
-			structure.push_back(2);	// light position sample
-			structure.push_back(1);	// light portal sample
-		}
+
+		if (hints.GetLightStrategy() == LightsSamplingStrategy::SAMPLE_ONE_UNIFORM) {
+			for (u_int i = 0; i <  shadowRaysCount; ++i) {
+				structure.push_back(2);	// light position sample
+				structure.push_back(1);	// light portal sample
+				structure.push_back(1);	// light number sample
+			}
+		} else if (hints.GetLightStrategy() == LightsSamplingStrategy::SAMPLE_ALL_UNIFORM) {
+			const u_int nLights = scene.lights.size();
+
+			for (u_int j = 0; j <  nLights; ++j) {
+				for (u_int i = 0; i <  shadowRaysCount; ++i) {
+					structure.push_back(2);	// light position sample
+					structure.push_back(1);	// light portal sample
+				}
+			}
+		} else
+			assert (false);
+
 		hybridRendererLightSampleOffset = sample->AddxD(structure, maxDepth + 1);
 	} else {
 		// Allocate and request samples for light sampling, RR, etc.
@@ -269,7 +283,9 @@ PathState::PathState(const Scene &scene, ContributionBuffer *contribBuffer, Rand
 	V = new float[lightGroupCount];
 
 	PathIntegrator *pi = (PathIntegrator *)scene.surfaceIntegrator;
-	const u_int shadowRaysCount = pi->hints.GetShadowRaysCount();
+	const u_int shadowRaysCount = (pi->hints.GetLightStrategy() == LightsSamplingStrategy::SAMPLE_ONE_UNIFORM) ?
+		(pi->hints.GetShadowRaysCount()) :
+		(pi->hints.GetShadowRaysCount() * scene.lights.size());
 
 	Ld = new SWCSpectrum[shadowRaysCount];
 	Vd = new float[shadowRaysCount];
@@ -413,60 +429,80 @@ void PathIntegrator::BuildShadowRays(const Scene &scene, PathState *pathState, B
 		const float *sampleData = scene.sampler->GetLazyValues(pathState->sample,
 			hybridRendererLightSampleOffset, pathState->pathLength);
 
+		const LightsSamplingStrategy::LightStrategyType strategy = hints.GetLightStrategy();
 		const u_int shadowRaysCount = hints.GetShadowRaysCount();
-		const u_int sampleCount = 4;
-		const float lightSelectionPdf = nLights / (float)shadowRaysCount;
-		for (u_int i = 0; i < shadowRaysCount; ++i) {
-			const u_int offset = i * sampleCount;
-			const float lightNum = sampleData[offset];
-			const float *lightSample = &sampleData[offset + 1];
-			const float lightPortal = sampleData[offset + 3];
 
-			// Select a light source to sample
-			const u_int lightNumber = min(Floor2UInt(lightNum * nLights), nLights - 1);
-			const Light &light(*(scene.lights[lightNumber]));
+		u_int sampleCount, loopCount;
+		float lightSelectionPdf;
+		if (strategy == LightsSamplingStrategy::SAMPLE_ONE_UNIFORM) {
+			sampleCount = 4;
+			loopCount = 1;
+			lightSelectionPdf = nLights / (float)shadowRaysCount;
+		} else {
+			sampleCount = 3;
+			loopCount = nLights;
+			lightSelectionPdf = 1.f / (float)shadowRaysCount;
+		}
 
-			const Point &p = bsdf->dgShading.p;
+		const u_int totalSampleCount = sampleCount * shadowRaysCount;
+		for (u_int j = 0; j < loopCount; ++j) {
+			for (u_int i = 0; i < shadowRaysCount; ++i) {
+				const u_int offset = j * totalSampleCount + i * sampleCount;
 
-			// Trace a shadow ray by sampling the light source
-			float lightPdf;
-			SWCSpectrum Li;
-			BSDF *lightBsdf;
-			if (light.SampleL(scene, pathState->sample, p, lightSample[0], lightSample[1], lightPortal,
-				&lightBsdf, NULL, &lightPdf, &Li)) {
-				//FIXME specific to one uniform strategy
-				lightPdf /= lightSelectionPdf;
-				Li *= lightSelectionPdf;
+				const Light *light;
+				if (strategy == LightsSamplingStrategy::SAMPLE_ONE_UNIFORM) {
+					const float lightNum = sampleData[offset + 3];
+					// Select a light source to sample
+					const u_int lightNumber = min(Floor2UInt(lightNum * nLights), nLights - 1);
+					light = scene.lights[lightNumber];
+				} else
+					light = scene.lights[j];
 
-				const Point &pL(lightBsdf->dgShading.p);
-				const Vector wi0(pL - p);
-				const float d2 = wi0.LengthSquared();
-				const float length = sqrtf(d2);
-				const Vector wi(wi0 / length);
+				const float *lightSample = &sampleData[offset];
+				const float lightPortal = sampleData[offset + 2];
 
-				const SpectrumWavelengths &sw(pathState->sample.swl);
-				Vector wo(-pathState->pathRay.d);
+				const Point &p = bsdf->dgShading.p;
 
-				Li *= lightBsdf->F(sw, Vector(lightBsdf->nn), -wi, false);
-				Li *= bsdf->F(sw, wi, wo, true);
+				// Trace a shadow ray by sampling the light source
+				float lightPdf;
+				SWCSpectrum Li;
+				BSDF *lightBsdf;
+				if (light->SampleL(scene, pathState->sample, p, lightSample[0], lightSample[1], lightPortal,
+					&lightBsdf, NULL, &lightPdf, &Li)) {
+					//FIXME specific to one uniform strategy
+					lightPdf /= lightSelectionPdf;
+					Li *= lightSelectionPdf;
 
-				if (!Li.Black()) {
-					const float shadowRayEpsilon = max(MachineEpsilon::E(pL),
-						MachineEpsilon::E(length));
+					const Point &pL(lightBsdf->dgShading.p);
+					const Vector wi0(pL - p);
+					const float d2 = wi0.LengthSquared();
+					const float length = sqrtf(d2);
+					const Vector wi(wi0 / length);
 
-					if (shadowRayEpsilon < length * .5f) {
-						if (!light.IsDeltaLight())
-							Li *= PowerHeuristic(1, lightPdf * d2 / AbsDot(wi, lightBsdf->ng), 1, bsdf->Pdf(sw, wo, wi));
+					const SpectrumWavelengths &sw(pathState->sample.swl);
+					Vector wo(-pathState->pathRay.d);
 
-						// Store light's contribution
-						pathState->Ld[pathState->tracedShadowRayCount] = pathState->pathThroughput * Li / d2;
-						pathState->Vd[pathState->tracedShadowRayCount] = pathState->Ld[pathState->tracedShadowRayCount].Filter(sw) * pathState->VContrib;
-						pathState->LdGroup[pathState->tracedShadowRayCount] = light.group;
+					Li *= lightBsdf->F(sw, Vector(lightBsdf->nn), -wi, false);
+					Li *= bsdf->F(sw, wi, wo, true);
 
-						const float maxt = length - shadowRayEpsilon;
-						pathState->shadowRay[pathState->tracedShadowRayCount] = Ray(p, wi, shadowRayEpsilon, maxt, pathState->sample.realTime);
-						pathState->shadowVolume[pathState->tracedShadowRayCount] = bsdf->GetVolume(wi);
-						++(pathState->tracedShadowRayCount);
+					if (!Li.Black()) {
+						const float shadowRayEpsilon = max(MachineEpsilon::E(pL),
+							MachineEpsilon::E(length));
+
+						if (shadowRayEpsilon < length * .5f) {
+							if (!light->IsDeltaLight())
+								Li *= PowerHeuristic(1, lightPdf * d2 / AbsDot(wi, lightBsdf->ng), 1, bsdf->Pdf(sw, wo, wi));
+
+							// Store light's contribution
+							pathState->Ld[pathState->tracedShadowRayCount] = pathState->pathThroughput * Li / d2;
+							pathState->Vd[pathState->tracedShadowRayCount] = pathState->Ld[pathState->tracedShadowRayCount].Filter(sw) * pathState->VContrib;
+							pathState->LdGroup[pathState->tracedShadowRayCount] = light->group;
+
+							const float maxt = length - shadowRayEpsilon;
+							pathState->shadowRay[pathState->tracedShadowRayCount] = Ray(p, wi, shadowRayEpsilon, maxt, pathState->sample.realTime);
+							pathState->shadowVolume[pathState->tracedShadowRayCount] = bsdf->GetVolume(wi);
+							++(pathState->tracedShadowRayCount);
+						}
 					}
 				}
 			}
