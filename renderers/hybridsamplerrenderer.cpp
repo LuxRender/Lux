@@ -42,8 +42,15 @@ using namespace lux;
 // HybridSamplerRenderer
 //------------------------------------------------------------------------------
 
-HybridSamplerRenderer::HybridSamplerRenderer(int oclPlatformIndex, bool useGPUs, u_int forceGPUWorkGroupSize) : HybridRenderer() {
+HybridSamplerRenderer::HybridSamplerRenderer(const int oclPlatformIndex, const bool useGPUs,
+		const u_int forceGPUWorkGroupSize, const u_int rayBufSize) : HybridRenderer() {
 	state = INIT;
+
+	if (!IsPowerOf2(rayBufSize)) {
+		LOG(LUX_WARNING, LUX_CONSISTENCY) << "HybridSampler ray buffer size being rounded up to power of 2";
+		rayBufferSize = RoundUpPow2(rayBufSize);
+	} else
+		rayBufferSize = rayBufSize;
 
 	// Create the LuxRays context
 	ctx = new luxrays::Context(LuxRaysDebugHandler, oclPlatformIndex);
@@ -472,8 +479,7 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 
 	RandomGenerator rng(seed);
 
-	//luxrays::RayBuffer *rayBuffer = renderThread->iDevice->NewRayBuffer();
-	luxrays::RayBuffer *rayBuffer = new luxrays::RayBuffer(8192);
+	luxrays::RayBuffer *rayBuffer = renderThread->iDevice->NewRayBuffer(renderer->rayBufferSize);
 
 	// Inititialize the first set SurfaceIntegratorState
 	const double t0 = luxrays::WallClockTime();
@@ -639,6 +645,8 @@ Renderer *HybridSamplerRenderer::CreateRenderer(const ParamSet &params) {
 		HybridRenderer::LoadCfgParams(configFile, &configParams);
 	}
 
+	size_t rayBufferSize = params.FindOneInt("raybuffersize", 8192);
+
 	int platformIndex = configParams.FindOneInt("opencl.platform.index", -1);
 
 	bool useGPUs = configParams.FindOneBool("opencl.gpu.use", true);
@@ -646,7 +654,7 @@ Renderer *HybridSamplerRenderer::CreateRenderer(const ParamSet &params) {
 	u_int forceGPUWorkGroupSize = max(0, configParams.FindOneInt("opencl.gpu.workgroup.size", 0));
 
 	params.MarkUsed(configParams);
-	return new HybridSamplerRenderer(platformIndex, useGPUs, forceGPUWorkGroupSize);
+	return new HybridSamplerRenderer(platformIndex, useGPUs, forceGPUWorkGroupSize, rayBufferSize);
 }
 
 static DynamicLoader::RegisterRenderer<HybridSamplerRenderer> r("hybrid");
