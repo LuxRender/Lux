@@ -72,23 +72,38 @@ HybridSamplerRenderer::HybridSamplerRenderer(const int oclPlatformIndex, const b
 	bool useNative = false;
 
 #if !defined(LUXRAYS_DISABLE_OPENCL)
-	// Create the virtual device to feed all hardware device
+	// Create the virtual device to feed all hardware devices
 	std::vector<luxrays::DeviceDescription *> hwDeviceDescs = deviceDescs;
 	luxrays::DeviceDescription::Filter(luxrays::DEVICE_TYPE_OPENCL, hwDeviceDescs);
 	luxrays::OpenCLDeviceDescription::Filter(luxrays::OCL_DEVICE_TYPE_GPU, hwDeviceDescs);
 
 	if (useGPUs && (hwDeviceDescs.size() >= 1)) {
-		hwDeviceDescs.resize(1);
+		if (hwDeviceDescs.size() == 1) {
+			// Only one GPU available
+			luxrays::OpenCLDeviceDescription *desc = (luxrays::OpenCLDeviceDescription *)hwDeviceDescs[0];
+			if (forceGPUWorkGroupSize > 0)
+				desc->SetForceWorkGroupSize(forceGPUWorkGroupSize);
 
-		luxrays::OpenCLDeviceDescription *desc = (luxrays::OpenCLDeviceDescription *)hwDeviceDescs[0];
-		if (forceGPUWorkGroupSize > 0)
-			desc->SetForceWorkGroupSize(forceGPUWorkGroupSize);
+			hardwareDevices = ctx->AddVirtualM2OIntersectionDevices(0, hwDeviceDescs);
+			virtualIM2ODevice = ctx->GetVirtualM2OIntersectionDevices()[0];
+			virtualIM2MDevice = NULL;
+		} else {
+			// Multiple GPUs available
+			if (forceGPUWorkGroupSize > 0) {
+				for (size_t i = 0; i< hwDeviceDescs.size(); ++i) {
+					luxrays::OpenCLDeviceDescription *desc = (luxrays::OpenCLDeviceDescription *)hwDeviceDescs[i];
+					desc->SetForceWorkGroupSize(forceGPUWorkGroupSize);
+				}
+			}
 
-		luxrays::IntersectionDevice *intersectionDevice = ctx->AddVirtualM2OIntersectionDevices(0, hwDeviceDescs)[0];
+			hardwareDevices = ctx->AddVirtualM2MIntersectionDevices(0, hwDeviceDescs);
+			virtualIM2ODevice = NULL;
+			virtualIM2MDevice = ctx->GetVirtualM2MIntersectionDevices()[0];
+		}
 
-		virtualIDevice = ctx->GetVirtualM2OIntersectionDevices()[0];
-
-		LOG(LUX_INFO, LUX_NOERROR) << "OpenCL Device used: [" << intersectionDevice->GetName() << "]";
+		LOG(LUX_INFO, LUX_NOERROR) << "OpenCL Devices used:";
+		for (size_t i = 0; i< hardwareDevices.size(); ++i)
+			LOG(LUX_INFO, LUX_NOERROR) << " [" << hardwareDevices[0]->GetName() << "]";
 	} else
 		// don't want GPU or no hardware available, use native
 		useNative = true;
@@ -105,7 +120,8 @@ HybridSamplerRenderer::HybridSamplerRenderer(const int oclPlatformIndex, const b
 		if (useGPUs)
 			LOG(LUX_WARNING, LUX_SYSTEM) << "Unable to find an OpenCL GPU device, falling back to CPU";
 
-		virtualIDevice = NULL;
+		virtualIM2ODevice = NULL;
+		virtualIM2MDevice = NULL;
 
 		// allocate native threads
 		std::vector<luxrays::DeviceDescription *> nativeDeviceDescs = deviceDescs;
@@ -386,11 +402,13 @@ double HybridSamplerRenderer::Statistics_Efficiency() {
 }
 
 string HybridSamplerRenderer::GetStats() {
-
-	if (virtualIDevice) {
-		luxrays::IntersectionDevice *idevice = virtualIDevice->GetVirtualDevice(0);
+	if (virtualIM2ODevice || virtualIM2MDevice) {
 		std::stringstream ss("");
-		ss << "GPU Load: " << std::setiosflags(std::ios_base::fixed) << std::setprecision(0) << (100.f * idevice->GetLoad()) << "%";
+		ss << "GPU Load:";
+
+		for (size_t i = 0; i < hardwareDevices.size(); ++i)
+			ss << " " << std::setiosflags(std::ios_base::fixed) << std::setprecision(0) << (100.f * hardwareDevices[i]->GetLoad()) << "%";
+
 		return ss.str();
 	} else
 		return "Using CPU";
@@ -407,12 +425,14 @@ void HybridSamplerRenderer::CreateRenderThread() {
 	// Avoid to create the thread in case signal is EXIT. For instance, it
 	// can happen when the rendering is done.
 	if ((state == RUN) || (state == PAUSE)) {
-		
 		luxrays::IntersectionDevice *idev;
 
-		if (virtualIDevice) {
+		if (virtualIM2ODevice) {
 			// Add an instance to the LuxRays virtual device
-			idev = virtualIDevice->AddVirtualDevice();
+			idev = virtualIM2ODevice->AddVirtualDevice();
+		} else if (virtualIM2MDevice) {
+			// Add an instance to the LuxRays virtual device
+			idev = virtualIM2MDevice->AddVirtualDevice();
 		} else {
 			// Add a nativethread device
 			idev = nativeDevices[renderThreads.size() % nativeDevices.size()];
@@ -429,10 +449,21 @@ void HybridSamplerRenderer::RemoveRenderThread() {
 	if (renderThreads.size() == 0)
 		return;
 
-	renderThreads.back()->thread->interrupt();
-	renderThreads.back()->thread->join();
-	delete renderThreads.back();
+	RenderThread *renderThread = renderThreads.back();
+	renderThread->thread->interrupt();
+	renderThread->thread->join();
+
+	if (virtualIM2ODevice) {
+		// Add an instance to the LuxRays virtual device
+		virtualIM2ODevice->RemoveVirtualDevice(renderThread->iDevice);
+	} else if (virtualIM2MDevice) {
+		// Add an instance to the LuxRays virtual device
+		virtualIM2MDevice->RemoveVirtualDevice(renderThread->iDevice);
+	}
+
+	delete renderThread;
 	renderThreads.pop_back();
+
 }
 
 //------------------------------------------------------------------------------

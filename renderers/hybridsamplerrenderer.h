@@ -106,8 +106,11 @@ private:
 
 	RendererState state;
 	// LuxRays virtual device used to feed all HardwareIntersectionDevice
-	luxrays::VirtualM2OHardwareIntersectionDevice *virtualIDevice;
+	luxrays::VirtualM2OHardwareIntersectionDevice *virtualIM2ODevice;
+	luxrays::VirtualM2MHardwareIntersectionDevice *virtualIM2MDevice;
 	vector<luxrays::IntersectionDevice *> nativeDevices;
+	vector<luxrays::IntersectionDevice *> hardwareDevices;
+
 	u_int rayBufferSize;
 	vector<RenderThread *> renderThreads;
 	Scene *scene;
