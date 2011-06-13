@@ -47,7 +47,8 @@ namespace lux
 class HybridSamplerRenderer : public HybridRenderer {
 public:
 	HybridSamplerRenderer(const int oclPlatformIndex, const bool useGPUs,
-			const u_int forceGPUWorkGroupSize, const u_int rayBufferSize);
+			const u_int forceGPUWorkGroupSize, const string &deviceSelection,
+			const u_int rayBufferSize);
 	~HybridSamplerRenderer();
 
 	RendererType GetType() const;

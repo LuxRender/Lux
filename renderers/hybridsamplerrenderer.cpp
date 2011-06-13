@@ -43,7 +43,8 @@ using namespace lux;
 //------------------------------------------------------------------------------
 
 HybridSamplerRenderer::HybridSamplerRenderer(const int oclPlatformIndex, const bool useGPUs,
-		const u_int forceGPUWorkGroupSize, const u_int rayBufSize) : HybridRenderer() {
+		const u_int forceGPUWorkGroupSize, const string &deviceSelection,
+		const u_int rayBufSize) : HybridRenderer() {
 	state = INIT;
 
 	if (!IsPowerOf2(rayBufSize)) {
@@ -89,14 +90,33 @@ HybridSamplerRenderer::HybridSamplerRenderer(const int oclPlatformIndex, const b
 			virtualIM2MDevice = NULL;
 		} else {
 			// Multiple GPUs available
+
+			// Select the devices to use
+			std::vector<luxrays::DeviceDescription *> selectedDescs;
+			bool haveSelectionString = (deviceSelection.length() > 0);
+			if (haveSelectionString) {
+				if (deviceSelection.length() != hwDeviceDescs.size()) {
+					LOG(LUX_WARNING, LUX_MISSINGDATA) << "OpenCL device selection string has the wrong length, must be " <<
+							hwDeviceDescs.size() << " instead of " << deviceSelection.length() << ", ignored";
+
+					selectedDescs = hwDeviceDescs;
+				} else {
+					for (size_t i = 0; i < hwDeviceDescs.size(); ++i) {
+						if (deviceSelection.at(i) == '1')
+							selectedDescs.push_back(hwDeviceDescs[i]);
+					}
+				}
+			} else
+				selectedDescs = hwDeviceDescs;
+
 			if (forceGPUWorkGroupSize > 0) {
-				for (size_t i = 0; i< hwDeviceDescs.size(); ++i) {
-					luxrays::OpenCLDeviceDescription *desc = (luxrays::OpenCLDeviceDescription *)hwDeviceDescs[i];
+				for (size_t i = 0; i< selectedDescs.size(); ++i) {
+					luxrays::OpenCLDeviceDescription *desc = (luxrays::OpenCLDeviceDescription *)selectedDescs[i];
 					desc->SetForceWorkGroupSize(forceGPUWorkGroupSize);
 				}
 			}
 
-			hardwareDevices = ctx->AddVirtualM2MIntersectionDevices(0, hwDeviceDescs);
+			hardwareDevices = ctx->AddVirtualM2MIntersectionDevices(0, selectedDescs);
 			virtualIM2ODevice = NULL;
 			virtualIM2MDevice = ctx->GetVirtualM2MIntersectionDevices()[0];
 		}
@@ -678,6 +698,7 @@ Renderer *HybridSamplerRenderer::CreateRenderer(const ParamSet &params) {
 
 	size_t rayBufferSize = params.FindOneInt("raybuffersize", 8192);
 
+	string deviceSelection = configParams.FindOneString("opencl.devices.select", "");
 	int platformIndex = configParams.FindOneInt("opencl.platform.index", -1);
 
 	bool useGPUs = configParams.FindOneBool("opencl.gpu.use", true);
@@ -685,7 +706,8 @@ Renderer *HybridSamplerRenderer::CreateRenderer(const ParamSet &params) {
 	u_int forceGPUWorkGroupSize = max(0, configParams.FindOneInt("opencl.gpu.workgroup.size", 0));
 
 	params.MarkUsed(configParams);
-	return new HybridSamplerRenderer(platformIndex, useGPUs, forceGPUWorkGroupSize, rayBufferSize);
+	return new HybridSamplerRenderer(platformIndex, useGPUs,
+			forceGPUWorkGroupSize, deviceSelection, rayBufferSize);
 }
 
 static DynamicLoader::RegisterRenderer<HybridSamplerRenderer> r("hybrid");
