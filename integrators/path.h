@@ -58,7 +58,7 @@ private:
 #define PATHSTATE_FLAGS_SCATTERED (1<<2)
 
 	bool GetSpecularBounce() const {
-		return flags & PATHSTATE_FLAGS_SPECULARBOUNCE;
+		return (flags & PATHSTATE_FLAGS_SPECULARBOUNCE) != 0;
 	}
 
 	void SetSpecularBounce(const bool v) {
@@ -66,7 +66,7 @@ private:
 	}
 
 	bool GetSpecular() const {
-		return flags & PATHSTATE_FLAGS_SPECULAR;
+		return (flags & PATHSTATE_FLAGS_SPECULAR) != 0;
 	}
 
 	void SetSpecular(const bool v) {
@@ -74,7 +74,7 @@ private:
 	}
 
 	bool GetScattered() const {
-		return flags & PATHSTATE_FLAGS_SCATTERED;
+		return (flags & PATHSTATE_FLAGS_SCATTERED) != 0;
 	}
 
 	void SetScattered(const bool v) {
