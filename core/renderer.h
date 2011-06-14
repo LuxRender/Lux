@@ -71,7 +71,7 @@ public:
 	/*! The type of known renderers.
 	 */
 	typedef enum {
-		SAMPLER, HYBRIDSAMPLER, SPPM
+		SAMPLER_TYPE, HYBRIDSAMPLER_TYPE, SPPM_TYPE
 	} RendererType;
 
 	Renderer() : Queryable("renderer") { }

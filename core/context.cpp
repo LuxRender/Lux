@@ -1146,7 +1146,7 @@ void Context::SceneReady() {
 const char* Context::PrintableStatistics(const bool add_total) {
 	// change the behavior according the kind of Renderer
 
-	if (luxCurrentRenderer->GetType() == Renderer::SPPM) {
+	if (luxCurrentRenderer->GetType() == Renderer::SPPM_TYPE) {
 		// SPPM Renderer statistics
 		statsData->updateSPPM(add_total);
 	} else {

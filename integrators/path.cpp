@@ -52,7 +52,7 @@ void PathIntegrator::RequestSamples(Sample *sample, const Scene &scene)
 
 	// This is a bit tricky way to discover the kind of Renderer but otherwise
 	// I would have to change the APIs
-	if (Context::GetActive()->GetRendererType() == Renderer::HYBRIDSAMPLER) {
+	if (Context::GetActive()->GetRendererType() == Renderer::HYBRIDSAMPLER_TYPE) {
 		structure.clear();
 		const u_int shadowRaysCount = hints.GetShadowRaysCount();
 		hybridRendererLightStrategy = hints.GetLightStrategy();

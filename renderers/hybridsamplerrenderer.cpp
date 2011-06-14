@@ -176,7 +176,7 @@ HybridSamplerRenderer::~HybridSamplerRenderer() {
 Renderer::RendererType HybridSamplerRenderer::GetType() const {
 	boost::mutex::scoped_lock lock(classWideMutex);
 
-	return HYBRIDSAMPLER;
+	return HYBRIDSAMPLER_TYPE;
 }
 
 Renderer::RendererState HybridSamplerRenderer::GetState() const {

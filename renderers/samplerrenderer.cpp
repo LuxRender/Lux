@@ -101,7 +101,7 @@ SamplerRenderer::~SamplerRenderer() {
 Renderer::RendererType SamplerRenderer::GetType() const {
 	boost::mutex::scoped_lock lock(classWideMutex);
 
-	return SAMPLER;
+	return SAMPLER_TYPE;
 }
 
 Renderer::RendererState SamplerRenderer::GetState() const {

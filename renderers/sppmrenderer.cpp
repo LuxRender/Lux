@@ -108,7 +108,7 @@ SPPMRenderer::~SPPMRenderer() {
 Renderer::RendererType SPPMRenderer::GetType() const {
 	boost::mutex::scoped_lock lock(classWideMutex);
 
-	return SPPM;
+	return SPPM_TYPE;
 }
 
 Renderer::RendererState SPPMRenderer::GetState() const {
