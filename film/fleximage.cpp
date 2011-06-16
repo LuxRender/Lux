@@ -54,14 +54,14 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, u_int filtRes
 	bool cw_EXR_gamutclamp, bool cw_EXR_ZBuf, ZBufNormalization cw_EXR_ZBuf_normalizationtype, bool cw_EXR_straight_colors,
 	bool cw_PNG, OutputChannels cw_PNG_channels, bool cw_PNG_16bit, bool cw_PNG_gamutclamp, bool cw_PNG_ZBuf, ZBufNormalization cw_PNG_ZBuf_normalizationtype,
 	bool cw_TGA, OutputChannels cw_TGA_channels, bool cw_TGA_gamutclamp, bool cw_TGA_ZBuf, ZBufNormalization cw_TGA_ZBuf_normalizationtype, 
-	bool w_resume_FLM, bool restart_resume_FLM, int haltspp, int halttime,
+	bool w_resume_FLM, bool restart_resume_FLM, bool write_FLM_direct, int haltspp, int halttime,
 	int p_TonemapKernel, float p_ReinhardPreScale, float p_ReinhardPostScale,
 	float p_ReinhardBurn, float p_LinearSensitivity, float p_LinearExposure, float p_LinearFStop, float p_LinearGamma,
 	float p_ContrastYwa, const string &p_response, float p_Gamma,
 	const float cs_red[2], const float cs_green[2], const float cs_blue[2], const float whitepoint[2],
 	int reject_warmup, bool debugmode, int outlierk) :
 	Film(xres, yres, filt, filtRes, crop, filename1, premult, cw_EXR_ZBuf || cw_PNG_ZBuf || cw_TGA_ZBuf, w_resume_FLM, 
-		restart_resume_FLM, haltspp, halttime, reject_warmup, debugmode, outlierk), 
+		restart_resume_FLM, write_FLM_direct, haltspp, halttime, reject_warmup, debugmode, outlierk), 
 	framebuffer(NULL), float_framebuffer(NULL), alpha_buffer(NULL), z_buffer(NULL),
 	writeInterval(wI), flmWriteInterval(fwI), displayInterval(dI)
 {
@@ -1495,6 +1495,7 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 	// Output FILM / FLM 
     bool w_resume_FLM = params.FindOneBool("write_resume_flm", false);
 	bool restart_resume_FLM = params.FindOneBool("restart_resume_flm", false);
+	bool w_FLM_direct = params.FindOneBool("write_flm_direct", false);
 
 	// output filenames
 	string filename = params.FindOneString("filename", "luxout");
@@ -1562,7 +1563,7 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 		w_EXR, w_EXR_channels, w_EXR_halftype, w_EXR_compressiontype, w_EXR_applyimaging, w_EXR_gamutclamp, w_EXR_ZBuf, w_EXR_ZBuf_normalizationtype, w_EXR_straightcolors,
 		w_PNG, w_PNG_channels, w_PNG_16bit, w_PNG_gamutclamp, w_PNG_ZBuf, w_PNG_ZBuf_normalizationtype,
 		w_TGA, w_TGA_channels, w_TGA_gamutclamp, w_TGA_ZBuf, w_TGA_ZBuf_normalizationtype, 
-		w_resume_FLM, restart_resume_FLM, haltspp, halttime,
+		w_resume_FLM, restart_resume_FLM, w_FLM_direct, haltspp, halttime,
 		s_TonemapKernel, s_ReinhardPreScale, s_ReinhardPostScale, s_ReinhardBurn, s_LinearSensitivity,
 		s_LinearExposure, s_LinearFStop, s_LinearGamma, s_ContrastYwa, response, s_Gamma,
 		red, green, blue, white, reject_warmup, debug_mode, outlierrejection_k);
@@ -1585,6 +1586,7 @@ Film *FlexImageFilm::CreateFilmFromFLM(const string& flmFileName) {
 	//filmParams.AddInt("yresolution", 1);
 	filmParams.AddBool("write_resume_flm", &boolTrue);
 	filmParams.AddBool("restart_resume_flm", &boolFalse);
+	filmParams.AddBool("write_flm_direct", &boolFalse);
 	filmParams.AddBool("write_exr", &boolFalse);
 	filmParams.AddBool("write_exr_ZBuf", &boolFalse);
 	filmParams.AddBool("write_png", &boolFalse);

@@ -592,7 +592,7 @@ u_int Film::GetYResolution()
 
 Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop[4], 
 		   const string &filename1, bool premult, bool useZbuffer,
-		   bool w_resume_FLM, bool restart_resume_FLM, int haltspp, int halttime,
+		   bool w_resume_FLM, bool restart_resume_FLM, bool write_FLM_direct, int haltspp, int halttime,
 		   int reject_warmup, bool debugmode, int outlierk) :
 	Queryable("film"),
 	xResolution(xres), yResolution(yres),
@@ -603,7 +603,7 @@ Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop
 	ZBuffer(NULL), use_Zbuf(useZbuffer),
 	debug_mode(debugmode), premultiplyAlpha(premult),
 	warmupComplete(false), reject_warmup_samples(reject_warmup),
-	writeResumeFlm(w_resume_FLM), restartResumeFlm(restart_resume_FLM),
+	writeResumeFlm(w_resume_FLM), restartResumeFlm(restart_resume_FLM), writeFlmDirect(write_FLM_direct),
 	outlierRejection_k(outlierk), haltSamplesPerPixel(haltspp),
 	haltTime(halttime), histogram(NULL), enoughSamplesPerPixel(false)
 {
@@ -640,6 +640,7 @@ Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop
 	AddIntAttribute(*this, "haltTime", "Halt time in seconds", haltTime, &Film::haltTime, Queryable::ReadWriteAccess);
 	AddBoolAttribute(*this, "writeResumeFlm", "Write resume file", writeResumeFlm, &Film::writeResumeFlm, Queryable::ReadWriteAccess);
 	AddBoolAttribute(*this, "restartResumeFlm", "Restart (overwrite) resume file", restartResumeFlm, &Film::restartResumeFlm, Queryable::ReadWriteAccess);
+	AddBoolAttribute(*this, "writeFlmDirect", "Write resume file directly to disk", writeFlmDirect, &Film::writeFlmDirect, Queryable::ReadWriteAccess);	
 
 	if (outlierRejection_k > 0) {
 		outliers.resize(yRealHeight / (2 * filter->yWidth));
@@ -1037,7 +1038,7 @@ void Film::WriteResumeFilm(const string &filename)
 		return;
 	}
 
-	bool writeSuccessful = TransmitFilm(filestr,false,true);
+	bool writeSuccessful = TransmitFilm(filestr,false,true, true, writeFlmDirect);
 
     filestr.close();
 

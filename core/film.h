@@ -506,7 +506,8 @@ public:
 	// Film Interface
 	Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop[4],
 		const string &filename1, bool premult, bool useZbuffer,
-		bool w_resume_FLM, bool restart_resume_FLM, int haltspp, int halttime,
+		bool w_resume_FLM, bool restart_resume_FLM, bool write_FLM_direct,
+		int haltspp, int halttime,
 		int reject_warmup, bool debugmode, int outlierk);
 
 	virtual ~Film();
@@ -618,6 +619,7 @@ protected: // Put it here for better data alignment
 
 
 	bool writeResumeFlm, restartResumeFlm;
+	bool writeFlmDirect;
 
 	// density-based outlier rejection
 	int outlierRejection_k;
