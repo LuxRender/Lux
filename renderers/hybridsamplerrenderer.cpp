@@ -229,15 +229,22 @@ HybridSamplerRenderer::HybridSamplerRenderer(const int oclPlatformIndex, const b
 				selectedDescs = hwDeviceDescs;
 
 			if (forceGPUWorkGroupSize > 0) {
-				for (size_t i = 0; i< selectedDescs.size(); ++i) {
+				for (size_t i = 0; i < selectedDescs.size(); ++i) {
 					luxrays::OpenCLDeviceDescription *desc = (luxrays::OpenCLDeviceDescription *)selectedDescs[i];
 					desc->SetForceWorkGroupSize(forceGPUWorkGroupSize);
 				}
 			}
 
-			hardwareDevices = ctx->AddVirtualM2MIntersectionDevices(0, selectedDescs);
-			virtualIM2ODevice = NULL;
-			virtualIM2MDevice = ctx->GetVirtualM2MIntersectionDevices()[0];
+			if (selectedDescs.size() == 1) {
+				// Multiple GPUs are available but only one is selected
+				hardwareDevices = ctx->AddVirtualM2OIntersectionDevices(0, selectedDescs);
+				virtualIM2ODevice = ctx->GetVirtualM2OIntersectionDevices()[0];
+				virtualIM2MDevice = NULL;
+			} else {
+				hardwareDevices = ctx->AddVirtualM2MIntersectionDevices(0, selectedDescs);
+				virtualIM2ODevice = NULL;
+				virtualIM2MDevice = ctx->GetVirtualM2MIntersectionDevices()[0];
+			}
 		}
 
 		LOG(LUX_INFO, LUX_NOERROR) << "OpenCL Devices used:";
