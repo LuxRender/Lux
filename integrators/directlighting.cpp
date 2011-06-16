@@ -70,7 +70,7 @@ u_int DirectLightingIntegrator::LiInternal(const Scene &scene,
 	const SpectrumWavelengths &sw(sample.swl);
 	SWCSpectrum Lt(1.f);
 
-	const float *data = scene.sampler->GetLazyValues(sample,scatterOffset,
+	const float *data = sample.sampler->GetLazyValues(sample,scatterOffset,
 		rayDepth);
 	float spdf;
 	if (scene.Intersect(sample, volume, scattered, ray, data[0], &isect,

@@ -537,7 +537,7 @@ void SPPMRenderer::PhotonPassRenderThread::RenderImpl(PhotonPassRenderThread *my
 	structure.push_back(2); // BSDF direction sampling
 	structure.push_back(1); // BSDF component sampling
 	structure.push_back(1); // RR sampling
-	sample.AddxD(structure, renderer->sppmi->maxPhotonPathDepth);
+	sample.AddxD(structure, renderer->sppmi->maxPhotonPathDepth + 1);
 	renderer->scene->volumeIntegrator->RequestSamples(&sample, *(renderer->scene));
 	sampler->InitSample(&sample);
 

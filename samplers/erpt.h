@@ -56,6 +56,7 @@ public:
 		ERPTData* data = new ERPTData(*sample);
 		baseSampler->InitSample(sample);
 		data->baseSamplerData = sample->samplerData;
+		sample->sampler = const_cast<ERPTSampler *>(this);
 		sample->samplerData = data;
 	}
 	virtual void FreeSample(Sample *sample) const {

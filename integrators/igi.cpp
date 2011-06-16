@@ -196,7 +196,7 @@ u_int IGIIntegrator::Li(const Scene &scene, const Sample &sample) const
 	const Volume *volume = NULL;
 	bool scattered = false;
 	for (u_int depth = 0; ; ++depth) {
-		const float *data = scene.sampler->GetLazyValues(sample, sampleOffset, depth);
+		const float *data = sample.sampler->GetLazyValues(sample, sampleOffset, depth);
 		Intersection isect;
 		BSDF *bsdf;
 		float spdf;
@@ -229,20 +229,20 @@ u_int IGIIntegrator::Li(const Scene &scene, const Sample &sample) const
 		for (u_int i = 0; i < scene.lights.size(); ++i) {
 			SWCSpectrum Ld(0.f);
 			float lightPos[2], bsdfPos[2];
-			const float ln = (i + scene.sampler->GetOneD(sample,
+			const float ln = (i + sample.sampler->GetOneD(sample,
 				lightSampleNumber[i], 0)) / scene.lights.size();
-			scene.sampler->GetTwoD(sample, lightSampleOffset[i], 0,
+			sample.sampler->GetTwoD(sample, lightSampleOffset[i], 0,
 				lightPos);
-			scene.sampler->GetTwoD(sample, bsdfSampleOffset[i], 0,
+			sample.sampler->GetTwoD(sample, bsdfSampleOffset[i], 0,
 				bsdfPos);
-			const float bsdfComp = scene.sampler->GetOneD(sample,
+			const float bsdfComp = sample.sampler->GetOneD(sample,
 				bsdfComponentOffset[i], 0);
 			UniformSampleOneLight(scene, sample, p, n, wo, bsdf,
 				lightPos, &ln, bsdfPos, &bsdfComp, &Ld);
 			L += pathThroughput * Ld / scene.lights.size();
 		}
 		// Compute indirect illumination with virtual lights
-		size_t lSet = min<size_t>(Floor2UInt(scene.sampler->GetOneD(sample,
+		size_t lSet = min<size_t>(Floor2UInt(sample.sampler->GetOneD(sample,
 			vlSetOffset, 0) * nLightSets), nLightSets - 1U);
 		for (u_int i = 0; i < virtualLights[lSet].size(); ++i) {
 			const VirtualLight &vl = virtualLights[lSet][i];

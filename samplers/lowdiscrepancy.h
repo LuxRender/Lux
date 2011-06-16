@@ -50,6 +50,7 @@ public:
 	virtual ~LDSampler();
 
 	virtual void InitSample(Sample *sample) const {
+		sample->sampler = const_cast<LDSampler *>(this);
 		sample->samplerData = new LDData(*sample, xPixelStart,
 			yPixelStart, pixelSamples);
 	}

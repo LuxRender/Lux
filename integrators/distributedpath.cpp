@@ -193,14 +193,14 @@ void DistributedPath::ComputeEvent(const Scene &scene, const Sample &sample,
 		float direction[2], component;
 		if (rayDepth > 0) {
 			const u_int index = i * rayDepth;
-			scene.sampler->GetTwoD(sample, indirectSampleOffset,
+			sample.sampler->GetTwoD(sample, indirectSampleOffset,
 				index, direction);
-			component = scene.sampler->GetOneD(sample,
+			component = sample.sampler->GetOneD(sample,
 				indirectComponentOffset, index);
 		} else {
-			scene.sampler->GetTwoD(sample, sampleOffset, i,
+			sample.sampler->GetTwoD(sample, sampleOffset, i,
 				direction);
-			component = scene.sampler->GetOneD(sample,
+			component = sample.sampler->GetOneD(sample,
 				componentOffset, i);
 		}
 
@@ -246,7 +246,7 @@ void DistributedPath::LiInternal(const Scene &scene, const Sample &sample,
 	float spdf;
 
 	if (scene.Intersect(sample, volume, scattered, ray,
-		scene.sampler->GetOneD(sample, scatterOffset, rayDepth),
+		sample.sampler->GetOneD(sample, scatterOffset, rayDepth),
 		&isect, &bsdf, &spdf, NULL, &Lt)) {
 		// Evaluate BSDF at hit point
 		Vector wo = -ray.d;
@@ -310,23 +310,23 @@ void DistributedPath::LiInternal(const Scene &scene, const Sample &sample,
 				// get samples
 				if (rayDepth > 0) {
 					const u_int index = i * rayDepth;
-					scene.sampler->GetTwoD(sample,
+					sample.sampler->GetTwoD(sample,
 						indirectLightSampleOffset,
 						index, lightSample);
-					lightNum = scene.sampler->GetOneD(sample, indirectLightNumOffset, index);
-					scene.sampler->GetTwoD(sample,
+					lightNum = sample.sampler->GetOneD(sample, indirectLightNumOffset, index);
+					sample.sampler->GetTwoD(sample,
 						indirectBsdfSampleOffset,
 						index, bsdfSample);
-					bsdfComponent = scene.sampler->GetOneD(sample, indirectBsdfComponentOffset, index);
+					bsdfComponent = sample.sampler->GetOneD(sample, indirectBsdfComponentOffset, index);
 				} else {
-					scene.sampler->GetTwoD(sample,
+					sample.sampler->GetTwoD(sample,
 						lightSampleOffset, i,
 						lightSample);
-					lightNum = scene.sampler->GetOneD(sample, lightNumOffset, i);
-					scene.sampler->GetTwoD(sample,
+					lightNum = sample.sampler->GetOneD(sample, lightNumOffset, i);
+					sample.sampler->GetTwoD(sample,
 						bsdfSampleOffset, i,
 						bsdfSample);
-					bsdfComponent = scene.sampler->GetOneD(sample, bsdfComponentOffset, i);
+					bsdfComponent = sample.sampler->GetOneD(sample, bsdfComponentOffset, i);
 				}
 
 				// Apply direct lighting strategy

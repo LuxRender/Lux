@@ -110,6 +110,7 @@ public:
 	virtual ~HaltonPhotonSampler() { }
 
 	virtual void InitSample(Sample *sample) const {
+		sample->sampler = const_cast<HaltonPhotonSampler *>(this);
 		u_int size = 0;
 		for (u_int i = 0; i < sample->n1D.size(); ++i)
 			size += sample->n1D[i];

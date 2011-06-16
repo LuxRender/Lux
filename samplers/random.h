@@ -45,6 +45,7 @@ public:
 	virtual ~RandomSampler();
 
 	virtual void InitSample(Sample *sample) const {
+		sample->sampler = const_cast<RandomSampler *>(this);
 		sample->samplerData = new RandomData(*sample, xPixelStart,
 			yPixelStart, pixelSamples);
 	}

@@ -44,7 +44,7 @@ void MultiScattering::Transmittance(const Scene &scene, const Ray &ray,
 	if (!scene.volumeRegion) 
 		return;
 	const float step = stepSize; // TODO - handle varying step size
-	const float offset = scene.sampler->GetOneD(sample, tauSampleOffset, 0);
+	const float offset = sample.sampler->GetOneD(sample, tauSampleOffset, 0);
 	const SWCSpectrum tau(scene.volumeRegion->Tau(sample.swl, ray, step,
 		offset));
 	*L *= Exp(-tau);
@@ -67,11 +67,11 @@ u_int MultiScattering::Li(const Scene &scene, const Ray &ray,
 	const SpectrumWavelengths &sw(sample.swl);
 	SWCSpectrum Tr(1.f);
 	const Vector w(-ray.d / length);
-	t0 += scene.sampler->GetOneD(sample, tauSampleOffset, 0) * step;
+	t0 += sample.sampler->GetOneD(sample, tauSampleOffset, 0) * step;
 	Ray r(ray(t0), ray.d, 0.f, step, ray.time);
 	const u_int nLights = scene.lights.size();
 	const u_int lightNum = min(nLights - 1,
-		Floor2UInt(scene.sampler->GetOneD(sample, scatterSampleOffset, 0) * nLights));
+		Floor2UInt(sample.sampler->GetOneD(sample, scatterSampleOffset, 0) * nLights));
 	Light *light = scene.lights[lightNum];
 
 	// Compute sample patterns for single scattering samples

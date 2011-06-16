@@ -55,6 +55,7 @@ public:
 	virtual ~MetropolisSampler();
 
 	virtual void InitSample(Sample *sample) const {
+		sample->sampler = const_cast<MetropolisSampler *>(this);
 		sample->samplerData = new MetropolisData(*sample);
 	}
 	virtual void FreeSample(Sample *sample) const {

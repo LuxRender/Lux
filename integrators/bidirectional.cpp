@@ -377,7 +377,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 	eye0.dARWeight = 0.f;
 
 	// Do eye vertex direct lighting
-	const float *directData0 = scene.sampler->GetLazyValues(sample,
+	const float *directData0 = sample.sampler->GetLazyValues(sample,
 		sampleDirectOffset, 0);
 	switch (lightStrategy) {
 		case SAMPLE_ONE_UNIFORM: {
@@ -442,13 +442,13 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 	}
 
 	// Choose light
-	const u_int lightNum = min(Floor2UInt(scene.sampler->GetOneD(sample,
+	const u_int lightNum = min(Floor2UInt(sample.sampler->GetOneD(sample,
 		lightNumOffset, 0) * numberOfLights), numberOfLights - 1U);
 	const Light *light = scene.lights[lightNum];
 	const u_int lightGroup = light->group;
 	float lightPos[2];
-	scene.sampler->GetTwoD(sample, lightPosOffset, 0, lightPos);
-	const float component = scene.sampler->GetOneD(sample,
+	sample.sampler->GetTwoD(sample, lightPosOffset, 0, lightPos);
+	const float component = sample.sampler->GetOneD(sample,
 		lightComponentOffset, 0);
 	SWCSpectrum Le;
 
@@ -490,7 +490,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 
 		// Sample light subpath initial direction and
 		// finish vertex initialization if needed
-		const float *data = scene.sampler->GetLazyValues(sample, sampleLightOffset, 0);
+		const float *data = sample.sampler->GetLazyValues(sample, sampleLightOffset, 0);
 		if (maxLightDepth > 1 && light0.bsdf->SampleF(sw, light0.wi,
 			&light0.wo, data[1], data[2], data[3],
 			&light0.flux, &light0.pdf, BSDF_ALL, &light0.flags,
@@ -510,7 +510,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 			const Volume *volume = light0.bsdf->GetVolume(ray.d);
 			bool scattered = light0.bsdf->dgShading.scattered;
 			for (u_int sampleIndex = 1; sampleIndex < maxLightDepth; ++sampleIndex) {
-				data = scene.sampler->GetLazyValues(sample,
+				data = sample.sampler->GetLazyValues(sample,
 					sampleLightOffset, sampleIndex);
 				BidirVertex &v = lightPath[nLight];
 				float spdf, spdfR;
@@ -638,7 +638,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 	const Volume *volume = eye0.bsdf->GetVolume(ray.d);
 	bool scattered = eye0.bsdf->dgShading.scattered;
 	for (u_int sampleIndex = 1; sampleIndex < maxEyeDepth; ++sampleIndex) {
-		const float *data = scene.sampler->GetLazyValues(sample,
+		const float *data = sample.sampler->GetLazyValues(sample,
 			sampleEyeOffset, sampleIndex);
 		BidirVertex &v = eyePath[nEye];
 		float spdf, spdfR;
@@ -796,7 +796,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 			break;
 
 		// Do direct lighting
-		const float *directData = scene.sampler->GetLazyValues(sample,
+		const float *directData = sample.sampler->GetLazyValues(sample,
 			sampleDirectOffset, sampleIndex);
 		switch (lightStrategy) {
 			case SAMPLE_ONE_UNIFORM: {

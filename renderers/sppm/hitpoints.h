@@ -70,9 +70,6 @@ public:
 
 class HitPoint {
 public:
-	PermutedHalton *halton;
-	float haltonOffset;
-
 	// Used to render eye pass n+1 while doing photon pass n
 	HitPointEyePass eyePass[2];
 
@@ -82,6 +79,121 @@ public:
 };
 
 class SPPMRenderer;
+
+//------------------------------------------------------------------------------
+// Halton Eye Sampler
+//------------------------------------------------------------------------------
+
+class HaltonEyeSampler : public Sampler {
+public:
+	class HaltonEyeSamplerData {
+	public:
+		HaltonEyeSamplerData(const Sample &sample, u_int sz) :
+			size(sz), index(0), pathCount(0) {
+			values = new float *[max<u_int>(1U, sample.n1D.size() +
+				sample.n2D.size() + sample.nxD.size())];
+			u_int n = 0;
+			for (u_int i = 0; i < sample.n1D.size(); ++i)
+				n += sample.n1D[i];
+			for (u_int i = 0; i < sample.n2D.size(); ++i)
+				n += 2 * sample.n2D[i];
+			for (u_int i = 0; i < sample.nxD.size(); ++i)
+				n += sample.dxD[i];
+			// Reserve space for screen and lens samples
+			float *buffer = new float[n + 4] + 4;
+			values[0] = buffer;	// in case n == 0
+			for (u_int i = 0; i < sample.n1D.size(); ++i) {
+				values[i] = buffer;
+				buffer += sample.n1D[i];
+			}
+			for (u_int i = 0; i < sample.n2D.size(); ++i) {
+				values[i] = buffer;
+				buffer += 2 * sample.n1D[i];
+			}
+			for (u_int i = 0; i < sample.nxD.size(); ++i) {
+				values[i] = buffer;
+				buffer += sample.dxD[i];
+			}
+		}
+		~HaltonEyeSamplerData() {
+			// Don't forget screen and lens samples space
+			delete[] (values[0] - 4);
+			delete[] values;
+		}
+		u_int size;
+		u_int index;
+		u_int pathCount;
+		float **values;
+	};
+	HaltonEyeSampler(int x0, int x1, int y0, int y1, const string &ps);
+	virtual ~HaltonEyeSampler() { }
+	virtual u_int GetTotalSamplePos() { return nPixels; }
+	virtual u_int RoundSize(u_int sz) const { return sz; }
+
+	virtual void InitSample(Sample *sample) const {
+		sample->sampler = const_cast<HaltonEyeSampler *>(this);
+		u_int size = 0;
+		for (u_int i = 0; i < sample->n1D.size(); ++i)
+			size += sample->n1D[i];
+		for (u_int i = 0; i < sample->n2D.size(); ++i)
+			size += 2 * sample->n2D[i];
+		sample->samplerData = new HaltonEyeSamplerData(*sample, size);
+		if (halton.size() == 0) {
+			for (u_int i = 0; i < nPixels; ++i) {
+				const_cast<vector<PermutedHalton *> &>(halton).push_back(new PermutedHalton(size + 4, *(sample->rng)));
+				const_cast<vector<float> &>(haltonOffset).push_back(sample->rng->floatValue());
+			}
+		}
+	}
+	virtual void FreeSample(Sample *sample) const {
+		HaltonEyeSamplerData *data = static_cast<HaltonEyeSamplerData *>(sample->samplerData);
+		delete halton[data->index];
+		(*const_cast<vector<PermutedHalton *> *>(&halton))[data->index] = NULL;
+		delete data;
+	}
+	virtual bool GetNextSample(Sample *sample) {
+		HaltonEyeSamplerData *data = static_cast<HaltonEyeSamplerData *>(sample->samplerData);
+		halton[data->index]->Sample(data->pathCount,
+			data->values[0] - 4);
+		int x, y;
+		pixelSampler->GetNextPixel(&x, &y, data->index);
+
+		// Add an offset to the samples to avoid to start with 0.f values
+		for (int i = -4; i < static_cast<int>(data->size); ++i) {
+			const float v = data->values[0][i] + haltonOffset[data->index];
+			data->values[0][i] = (v >= 1.f) ? (v - 1.f) : v;
+		}
+		sample->imageX = x + data->values[0][-4];
+		sample->imageY = y + data->values[0][-3];
+		sample->lensU = data->values[0][-2];
+		sample->lensV = data->values[0][-1];
+		return true;
+	}
+	virtual float GetOneD(const Sample &sample, u_int num, u_int pos) {
+		HaltonEyeSamplerData *data = static_cast<HaltonEyeSamplerData *>(sample.samplerData);
+		return data->values[num][pos];
+	}
+	virtual void GetTwoD(const Sample &sample, u_int num, u_int pos,
+		float u[2]) {
+		HaltonEyeSamplerData *data = static_cast<HaltonEyeSamplerData *>(sample.samplerData);
+		u[0] = data->values[sample.n1D.size() + num][2 * pos];
+		u[1] = data->values[sample.n1D.size() + num][2 * pos + 1];
+	}
+	virtual float *GetLazyValues(const Sample &sample, u_int num, u_int pos) {
+		HaltonEyeSamplerData *data = static_cast<HaltonEyeSamplerData *>(sample.samplerData);
+		float *result = data->values[sample.n1D.size() + sample.n2D.size() + num];
+		for (u_int i = 0; i < sample.dxD[num]; ++i)
+			result[i] = sample.rng->floatValue();
+		return result;
+	}
+//	virtual void AddSample(const Sample &sample);
+	PixelSampler *pixelSampler;
+private:
+	u_int nPixels;
+	mutable u_int curIndex;
+	vector<PermutedHalton *> halton;
+	vector<float> haltonOffset;
+};
 
 class HitPoints {
 public:
@@ -156,10 +268,10 @@ public:
 	void UpdateFilm(const unsigned long long totalPhotons);
 
 private:
-	bool TraceEyePath(HitPoint *hp, const Sample &sample, const float *u);
+	void TraceEyePath(HitPoint *hp, const Sample &sample);
 
 	SPPMRenderer *renderer;
-	PixelSampler *pixelSampler;
+	Sampler *eyeSampler;
 
 	// Hit points information
 	float initialPhotonRadius;

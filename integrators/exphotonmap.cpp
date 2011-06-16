@@ -205,7 +205,7 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(const Scene &scene,
 
 	Intersection isect;
 	BSDF *bsdf;
-	const float *sampleData = scene.sampler->GetLazyValues(sample, sampleOffset, reflectionDepth);
+	const float *sampleData = sample.sampler->GetLazyValues(sample, sampleOffset, reflectionDepth);
 	float spdf;
 	if (scene.Intersect(sample, volume, scattered, ray, sampleData[3],
 		&isect, &bsdf, &spdf, NULL, &Lt)) {
@@ -326,7 +326,7 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const Scene &scene,
 	const Volume *volume = NULL;
 
 	for (u_int pathLength = 0; ; ++pathLength) {
-		const float *sampleData = scene.sampler->GetLazyValues(sample,
+		const float *sampleData = sample.sampler->GetLazyValues(sample,
 			sampleOffset, pathLength);
 		// Find next vertex of path
 		Intersection isect;

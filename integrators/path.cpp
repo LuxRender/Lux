@@ -130,7 +130,7 @@ u_int PathIntegrator::Li(const Scene &scene, const Sample &sample) const
 
 	for (u_int pathLength = 0; ; ++pathLength) {
 		const SWCSpectrum prevThroughput(pathThroughput);
-		const float *data = scene.sampler->GetLazyValues(sample,
+		const float *data = sample.sampler->GetLazyValues(sample,
 			sampleOffset, pathLength);
 		// Find next vertex of path
 		Intersection isect;
@@ -308,7 +308,7 @@ bool PathState::Init(const Scene &scene) {
 	// Free BSDF memory from computing image sample value
 	sample.arena.FreeAll();
 
-	const bool result = scene.sampler->GetNextSample(&sample);
+	const bool result = sample.sampler->GetNextSample(&sample);
 
 	// save ray time value
 	sample.realTime = sample.camera->GetTime(sample.time);
@@ -369,7 +369,7 @@ void PathState::Terminate(const Scene &scene, const u_int bufferId,
 			XYZColor(sample.swl, L[i]), alpha, distance,
 			V[i], bufferId, i);
 	}
-	scene.sampler->AddSample(sample);
+	sample.sampler->AddSample(sample);
 	SetState(PathState::TERMINATE);
 }
 
@@ -435,7 +435,7 @@ void PathIntegrator::BuildShadowRays(const Scene &scene, PathState *pathState, B
 
 	const u_int nLights = scene.lights.size();
 	if (nLights > 0 && bsdf->NumComponents(BxDFType(BSDF_ALL & ~BSDF_SPECULAR)) > 0) {
-		const float *sampleData = scene.sampler->GetLazyValues(pathState->sample,
+		const float *sampleData = pathState->sample.sampler->GetLazyValues(pathState->sample,
 			hybridRendererLightSampleOffset, pathState->pathLength);
 
 		const u_int shadowRaysCount = hints.GetShadowRaysCount();
@@ -573,7 +573,7 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 	const u_int nLights = scene.lights.size();
 	const SpectrumWavelengths &sw(pathState->sample.swl);
 
-	const float *data = scene.sampler->GetLazyValues(pathState->sample,
+	const float *data = pathState->sample.sampler->GetLazyValues(pathState->sample,
 			sampleOffset, pathState->pathLength);
 	BSDF *bsdf;
 	Intersection isect;

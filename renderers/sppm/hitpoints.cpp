@@ -32,6 +32,19 @@
 using namespace lux;
 
 //------------------------------------------------------------------------------
+// HaltonEyeSampler methods
+//------------------------------------------------------------------------------
+
+HaltonEyeSampler::HaltonEyeSampler(int x0, int x1, int y0, int y1,
+	const string &ps) : Sampler(x0, x1, y0, y1, 1)
+{
+	pixelSampler = MakePixelSampler(ps, x0, x1, y0, y1);
+	nPixels = pixelSampler->GetTotalPixels();
+	halton.reserve(nPixels);
+	haltonOffset.reserve(nPixels);
+}
+
+//------------------------------------------------------------------------------
 // HitPoints methods
 //------------------------------------------------------------------------------
 
@@ -52,10 +65,11 @@ HitPoints::HitPoints(SPPMRenderer *engine, RandomGenerator *rng)  {
 	int xstart, xend, ystart, yend;
 	scene->camera->film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
 
-	// Set the pixelsampler
-	pixelSampler = MakePixelSampler(renderer->sppmi->PixelSampler, xstart, xend, ystart, yend);
+	// Set the sampler
+	eyeSampler = new HaltonEyeSampler(xstart, xend, ystart, yend,
+		renderer->sppmi->PixelSampler);
 
-	hitPoints = new std::vector<HitPoint>(pixelSampler->GetTotalPixels());
+	hitPoints = new std::vector<HitPoint>(eyeSampler->GetTotalSamplePos());
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Hit points count: " << hitPoints->size();
 
 	// Initialize hit points field
@@ -63,9 +77,6 @@ HitPoints::HitPoints(SPPMRenderer *engine, RandomGenerator *rng)  {
 
 	for (u_int i = 0; i < (*hitPoints).size(); ++i) {
 		HitPoint *hp = &(*hitPoints)[i];
-
-		hp->halton = new PermutedHalton(8, *rng);
-		hp->haltonOffset = rng->floatValue();
 
 		hp->lightGroupData.resize(lightGroupsNumber);
 
@@ -86,14 +97,8 @@ HitPoints::HitPoints(SPPMRenderer *engine, RandomGenerator *rng)  {
 HitPoints::~HitPoints() {
 	delete lookUpAccel[0];
 	delete lookUpAccel[1];
-
-	for (u_int i = 0; i < (*hitPoints).size(); ++i) {
-		HitPoint *hp = &(*hitPoints)[i];
-
-		delete hp->halton;
-	}
 	delete hitPoints;
-	delete pixelSampler;
+	delete eyeSampler;
 }
 
 const double HitPoints::GetPhotonHitEfficency() {
@@ -135,7 +140,7 @@ void HitPoints::Init() {
 	// Calculate initial radius
 	Vector ssize = hpBBox.pMax - hpBBox.pMin;
 	initialPhotonRadius = renderer->sppmi->photonStartRadiusScale *
-		((ssize.x + ssize.y + ssize.z) / 3.f) / sqrtf(pixelSampler->GetTotalPixels()) * 2.f;
+		((ssize.x + ssize.y + ssize.z) / 3.f) / sqrtf(eyeSampler->GetTotalSamplePos()) * 2.f;
 	const float photonRadius2 = initialPhotonRadius * initialPhotonRadius;
 
 	// Expand the bounding box by used radius
@@ -233,81 +238,45 @@ void HitPoints::SetHitPoints(RandomGenerator *rng, const u_int index, const u_in
 
 	Scene &scene(*renderer->scene);
 
-	Sample sample/*FIXME(NULL, scene.volumeIntegrator, scene)*/;
+	Sample sample;
 	sample.contribBuffer = NULL;
 	sample.camera = scene.camera->Clone();
 	sample.realTime = 0.f;
 	sample.rng = rng;
-	sample.time = eyePassTimeSample;
-	sample.wavelengths = eyePassWavelengthSample;
+	vector<u_int> structure;
+	structure.push_back(1);	// volume scattering
+	structure.push_back(2);	// bsdf sampling direction
+	structure.push_back(1);	// bsdf sampling component
+	sample.AddxD(structure, renderer->sppmi->maxEyePathDepth + 1);
+	scene.volumeIntegrator->RequestSamples(&sample, scene);
+	eyeSampler->InitSample(&sample);
 
-	// Save ray time value
-	sample.realTime = sample.camera->GetTime(sample.time);
-	// Sample camera transformation
-	sample.camera->SampleMotion(sample.realTime);
-
-	// Sample new SWC thread wavelengths
-	sample.swl.Sample(sample.wavelengths);
-
-	int xPos, yPos;
 	for (u_int i = first; i < last; ++i) {
+		static_cast<HaltonEyeSampler::HaltonEyeSamplerData *>(sample.samplerData)->index = i; //FIXME sampler data shouldn't be accessed directly
+		static_cast<HaltonEyeSampler::HaltonEyeSamplerData *>(sample.samplerData)->pathCount = currentEyePass; //FIXME sampler data shouldn't be accessed directly
+		sample.wavelengths = eyePassWavelengthSample;
+		sample.time = eyePassTimeSample;
+		sample.swl.Sample(sample.wavelengths);
+		sample.realTime = sample.camera->GetTime(sample.time);
+		sample.camera->SampleMotion(sample.realTime);
+		// Generate the sample values
+		eyeSampler->GetNextSample(&sample);
 		HitPoint *hp = &(*hitPoints)[i];
 
-		// Generate the sample values
-		float u[8];
-		hp->halton->Sample(currentEyePass, u);
-		// Add an offset to the samples to avoid to start with 0.f values
-		for (int j = 0; j < 8; ++j) {
-			float v = u[j] + hp->haltonOffset;
-			u[j] = (v >= 1.f) ? (v - 1.f) : v;
-		}
-
-		pixelSampler->GetNextPixel(&xPos, &yPos, i);
-		sample.imageX = xPos + u[0];
-		sample.imageY = yPos + u[1];
-		sample.lensU = u[2];
-		sample.lensV = u[3];
-
-		// This may be required by the volume integrator
-		for (u_int j = 0; j < sample.n1D.size(); ++j)
-			for (u_int k = 0; k < sample.n1D[j]; ++k)
-/*FIXME				sample.oneD[j][k] = rng->floatValue()*/;
-
 		// Trace the eye path
-		if (!TraceEyePath(hp, sample, &u[4])) {
-			// SampleF() of a lambertian surface with interpolated normals can
-			// return false. This may sound wired (and it is) but it happens
-			// because SampleF() work in a local space relative to the shading
-			// normal while the side tests are done with geometrical normal.
-			//
-			// As a workaround, if this happen, I try to generate another valid
-			// eye path.
+		TraceEyePath(hp, sample);
 
-			for (int j = 0; j < 9; ++j) {
-				// Generate a set of random samples
-				for (int k = 0; k < 8; ++k)
-					u[k] = rng->floatValue();
-
-				sample.imageX = xPos + u[0];
-				sample.imageY = yPos + u[1];
-				sample.lensU = u[2];
-				sample.lensV = u[3];
-
-				if (TraceEyePath(hp, sample, &u[4])) {
-					sample.arena.FreeAll();
-					break;
-				}
-			}
-		}
 		sample.arena.FreeAll();
 	}
+	eyeSampler->FreeSample(&sample);
+	//delete sample.camera; //FIXME deleting the camera clone would delete the film!
 }
 
-bool HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, const float *u) {
+void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample)
+{
 	HitPointEyePass *hpep = &hp->eyePass[currentEyePass % 2];
 
 	Scene &scene(*renderer->scene);
-	const RandomGenerator &rng(*sample.rng);
 	const bool includeEnvironment = renderer->sppmi->includeEnvironment;
 	const u_int maxDepth = renderer->sppmi->maxEyePathDepth;
 
@@ -330,34 +299,22 @@ bool HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, const float *u)
 	u_int vertexIndex = 0;
 	const Volume *volume = NULL;
 
-	// TODO: L[light group]
-
-	float data[4];
 	for (u_int pathLength = 0; ; ++pathLength) {
 		const SWCSpectrum prevThroughput(pathThroughput);
 
-		if (pathLength == 0) {
-			data[0] = u[0];
-			data[1] = u[1];
-			data[2] = u[2];
-			data[3] = u[3];
-		} else {
-			data[0] = rng.floatValue();
-			data[1] = rng.floatValue();
-			data[2] = rng.floatValue();
-			data[3] = rng.floatValue();
-		}
+		float *data = eyeSampler->GetLazyValues(sample, 0, pathLength);
 
 		// Find next vertex of path
 		Intersection isect;
 		BSDF *bsdf;
 		float spdf;
-		if (!scene.Intersect(sample, volume, scattered, ray, data[3], &isect,
-			&bsdf, &spdf, NULL, &pathThroughput)) {
+		if (!scene.Intersect(sample, volume, scattered, ray, data[0],
+			&isect, &bsdf, &spdf, NULL, &pathThroughput)) {
 			pathThroughput /= spdf;
 			// Dade - now I know ray.maxt and I can call volumeIntegrator
 			SWCSpectrum Lv;
-			u_int g = scene.volumeIntegrator->Li(scene, ray, sample, &Lv, &hpep->alpha);
+			u_int g = scene.volumeIntegrator->Li(scene, ray, sample,
+				&Lv, &hpep->alpha);
 			if (!Lv.Black()) {
 				Lv *= prevThroughput;
 				L[g] += Lv;
@@ -369,7 +326,8 @@ bool HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, const float *u)
 				BSDF *ibsdf;
 				for (u_int i = 0; i < nLights; ++i) {
 					SWCSpectrum Le(pathThroughput);
-					if (scene.lights[i]->Le(scene, sample, ray, &ibsdf, NULL, NULL, &Le))
+					if (scene.lights[i]->Le(scene, sample,
+						ray, &ibsdf, NULL, NULL, &Le))
 						L[scene.lights[i]->group] += Le;
 				}
 			}
@@ -379,9 +337,7 @@ bool HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, const float *u)
 				hpep->alpha = 0.f;
 
 			hpep->type = CONSTANT_COLOR;
-			for(unsigned int j = 0; j < lightGroupCount; ++j)
-				hp->lightGroupData[j].accumRadiance += XYZColor(sw, L[j] * rayWeight);
-			return true;
+			break;
 		}
 		scattered = bsdf->dgShading.scattered;
 		pathThroughput /= spdf;
@@ -389,7 +345,8 @@ bool HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, const float *u)
 			hpep->distance = ray.maxt * ray.d.Length();
 
 		SWCSpectrum Lv;
-		const u_int g = scene.volumeIntegrator->Li(scene, ray, sample, &Lv, &hpep->alpha);
+		const u_int g = scene.volumeIntegrator->Li(scene, ray, sample,
+			&Lv, &hpep->alpha);
 		if (!Lv.Black()) {
 			Lv *= prevThroughput;
 			L[g] += Lv;
@@ -406,13 +363,6 @@ bool HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, const float *u)
 			}
 		}
 
-		if (pathLength == maxDepth) {
-			hpep->type = CONSTANT_COLOR;
-			for(unsigned int j = 0; j < lightGroupCount; ++j)
-				hp->lightGroupData[j].accumRadiance += XYZColor(sw, L[j] * rayWeight);
-			return true;
-		}
-
 		const Point &p = bsdf->dgShading.p;
 
 		// Sample BSDF to get new path direction
@@ -420,12 +370,17 @@ bool HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, const float *u)
 		float pdf;
 		BxDFType flags;
 		SWCSpectrum f;
-		if (!bsdf->SampleF(sw, wo, &wi, data[0], data[1], data[2], &f,
-			&pdf, BSDF_ALL, &flags, NULL, true)) {
-			hpep->type = CONSTANT_COLOR;
-			for(unsigned int j = 0; j < lightGroupCount; ++j)
-				hp->lightGroupData[j].accumRadiance += XYZColor(sw, L[j] * rayWeight);
-			return false;
+		if (pathLength == maxDepth || !bsdf->SampleF(sw, wo, &wi,
+			data[1], data[2], data[3], &f, &pdf, BSDF_ALL, &flags,
+			NULL, true)) {
+			// Make it an approximate hitpoint
+			hpep->type = SURFACE;
+			// The stored bsdfNG is stored facing the eyePath
+			hpep->bsdfNG = (Dot(wo, bsdf->ng) > 0 ? bsdf->ng : -bsdf->ng);
+			hpep->pathThroughput = pathThroughput * rayWeight;
+			hpep->position = p;
+			hpep->wo = wo;
+			break;
 		}
 
 		if ((flags & BSDF_DIFFUSE) || ((flags & BSDF_GLOSSY) && (pdf < 100.f))) {
@@ -434,11 +389,9 @@ bool HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, const float *u)
 			// The stored bsdfNG is stored facing the eyePath
 			hpep->bsdfNG = (Dot(wo, bsdf->ng) > 0 ? bsdf->ng : -bsdf->ng);
 			hpep->pathThroughput = pathThroughput * rayWeight;
-			for(unsigned int j = 0; j < lightGroupCount; ++j)
-				hp->lightGroupData[j].accumRadiance += XYZColor(sw, L[j] * rayWeight);
 			hpep->position = p;
 			hpep->wo = wo;
-			return true;
+			break;
 		}
 
 		if (flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) ||
@@ -448,15 +401,15 @@ bool HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, const float *u)
 		pathThroughput *= f;
 		if (pathThroughput.Black()) {
 			hpep->type = CONSTANT_COLOR;
-			for(unsigned int j = 0; j < lightGroupCount; ++j)
-				hp->lightGroupData[j].accumRadiance += XYZColor(sw, L[j] * rayWeight);
-			return true;
+			break;
 		}
 
 		ray = Ray(p, wi);
 		ray.time = sample.realTime;
 		volume = bsdf->GetVolume(wi);
 	}
+	for(unsigned int j = 0; j < lightGroupCount; ++j)
+		hp->lightGroupData[j].accumRadiance += XYZColor(sw, L[j] * rayWeight);
 }
 
 void HitPoints::UpdatePointsInformation() {
@@ -530,7 +483,7 @@ void HitPoints::UpdateFilm(const unsigned long long totalPhotons) {
 		for (u_int i = 0; i < GetSize(); ++i) {
 			HitPoint *hp = &(*hitPoints)[i];
 			HitPointEyePass *hpep = &hp->eyePass[passIndex];
-			pixelSampler->GetNextPixel(&xPos, &yPos, i);
+			static_cast<HaltonEyeSampler *>(eyeSampler)->pixelSampler->GetNextPixel(&xPos, &yPos, i); //FIXME shouldn't access directly sampler data
 
 
 			// Update radiance
