@@ -39,6 +39,123 @@
 using namespace lux;
 
 //------------------------------------------------------------------------------
+// SurfaceIntegratorStateBuffer
+//------------------------------------------------------------------------------
+
+SurfaceIntegratorStateBuffer::SurfaceIntegratorStateBuffer(
+		const Scene &scn, ContributionBuffer *contribBuf,
+		RandomGenerator *rngGen, luxrays::RayBuffer *rayBuf) :
+		scene(scn), integratorState(128) {
+	contribBuffer = contribBuf;
+	rng = rngGen;
+	rayBuffer = rayBuf;
+
+	// Inititialize the first set SurfaceIntegratorState
+	for (size_t i = 0; i < integratorState.size(); ++i) {
+		integratorState[i] = scene.surfaceIntegrator->NewState(scene, contribBuffer, rng);
+		integratorState[i]->Init(scene);
+	}
+
+	firstStateIndex = 0;
+}
+
+SurfaceIntegratorStateBuffer::~SurfaceIntegratorStateBuffer() {
+	// Free memory
+	for (size_t i = 0; i < integratorState.size(); ++i) {
+		integratorState[i]->Free(scene);
+		delete integratorState[i];
+	}
+}
+
+void SurfaceIntegratorStateBuffer::GenerateRays() {
+	//--------------------------------------------------------------------------
+	// File the RayBuffer with the generated rays
+	//--------------------------------------------------------------------------
+
+	bool usedAllStates = false;
+	lastStateIndex = firstStateIndex;
+	while (rayBuffer->LeftSpace() > 0) {
+		if (!scene.surfaceIntegrator->GenerateRays(scene, integratorState[lastStateIndex], rayBuffer)) {
+			// The RayBuffer is full
+			break;
+		}
+
+		lastStateIndex = (lastStateIndex + 1) % integratorState.size();
+		if (lastStateIndex == firstStateIndex) {
+			usedAllStates = true;
+			break;
+		}
+	}
+	/*LOG(LUX_DEBUG, LUX_NOERROR) << "Used IntegratorStates: " <<
+			(lastStateIndex > firstStateIndex ? (lastStateIndex - firstStateIndex) : (lastStateIndex + integratorState.size() - firstStateIndex)) <<
+			"/" << integratorState.size();*/
+
+	//--------------------------------------------------------------------------
+	// Check if I need to add more SurfaceIntegratorState
+	//--------------------------------------------------------------------------
+
+	if (usedAllStates) {
+		// Need to add more paths
+		size_t newStateCount = 0;
+
+		// To limit the number of new SurfaceIntegratorState generated at first run
+		const size_t maxNewPaths = max<size_t>(64, rayBuffer->GetSize() >> 4);
+
+		for (;;) {
+			// Add more SurfaceIntegratorState
+			SurfaceIntegratorState *s = scene.surfaceIntegrator->NewState(scene, contribBuffer, rng);
+			s->Init(scene);
+			integratorState.push_back(s);
+			if (!scene.surfaceIntegrator->GenerateRays(scene, s, rayBuffer)) {
+				// The RayBuffer is full
+				firstStateIndex = 0;
+				// -2 because the addition of the last SurfaceIntegratorState failed
+				lastStateIndex = integratorState.size() - 2;
+				break;
+			}
+
+			newStateCount++;
+			if (newStateCount >= maxNewPaths) {
+				firstStateIndex = 0;
+				lastStateIndex = integratorState.size() - 1;
+				break;
+			}
+		}
+
+		integratorState.resize(integratorState.size());
+		LOG(LUX_DEBUG, LUX_NOERROR) << "New allocated IntegratorStates: " << newStateCount << " => " <<
+				integratorState.size() << " [RayBuffer size = " << rayBuffer->GetSize() << "]";
+	}
+}
+
+bool SurfaceIntegratorStateBuffer::NextState(u_int &nrContribs, u_int &nrSamples) {
+	//----------------------------------------------------------------------
+	// Advance the next step
+	//----------------------------------------------------------------------
+
+	for (size_t i = firstStateIndex; i != lastStateIndex; i = (i + 1) % integratorState.size()) {
+		u_int count;
+		if (scene.surfaceIntegrator->NextState(scene, integratorState[i], rayBuffer, &count)) {
+			// The sample is finished
+			++(nrSamples);
+			nrContribs += count;
+
+			if (!integratorState[i]->Init(scene)) {
+				// We have done
+				firstStateIndex = (i + 1) % integratorState.size();
+				return true;
+			}
+		}
+
+		nrContribs += count;
+	}
+
+	firstStateIndex = (lastStateIndex + 1) % integratorState.size();
+
+	return false;
+}
+
+//------------------------------------------------------------------------------
 // HybridSamplerRenderer
 //------------------------------------------------------------------------------
 
@@ -534,18 +651,12 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 
 	// Inititialize the first set SurfaceIntegratorState
 	const double t0 = luxrays::WallClockTime();
-	vector<SurfaceIntegratorState *> integratorState(256);
-	for (size_t i = 0; i < integratorState.size(); ++i) {
-		integratorState[i] = scene.surfaceIntegrator->NewState(scene, contribBuffer, &rng);
-		integratorState[i]->Init(scene);
-	}
+	SurfaceIntegratorStateBuffer stateBuffer(scene, contribBuffer, &rng, rayBuffer);
 
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Thread " << renderThread->n << " initialization time: " <<
 			std::setiosflags(std::ios::fixed) << std::setprecision(2) <<
 			luxrays::WallClockTime() - t0 << " secs";
 
-	size_t firstStateIndex = 0;
-	size_t lastStateIndex;
 	bool renderIsOver = false;
 	while (!renderIsOver) {
 		while (renderer->state == PAUSE) {
@@ -561,60 +672,7 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 		// File the RayBuffer with the generated rays
 		//----------------------------------------------------------------------
 
-		bool usedAllStates = false;
-		lastStateIndex = firstStateIndex;
-		while (rayBuffer->LeftSpace() > 0) {
-			if (!scene.surfaceIntegrator->GenerateRays(scene, integratorState[lastStateIndex], rayBuffer)) {
-				// The RayBuffer is full
-				break;
-			}
-
-			lastStateIndex = (lastStateIndex + 1) % integratorState.size();
-			if (lastStateIndex == firstStateIndex) {
-				usedAllStates = true;
-				break;
-			}
-		}
-		/*LOG(LUX_DEBUG, LUX_NOERROR) << "Used IntegratorStates: " <<
-				(lastStateIndex > firstStateIndex ? (lastStateIndex - firstStateIndex) : (lastStateIndex + integratorState.size() - firstStateIndex)) <<
-				"/" << integratorState.size();*/
-
-		//----------------------------------------------------------------------
-		// Check if I need to add more SurfaceIntegratorState
-		//----------------------------------------------------------------------
-
-		if (usedAllStates) {
-			// Need to add more paths
-			size_t newStateCount = 0;
-
-			// To limit the number of new SurfaceIntegratorState generated at first run
-			const size_t maxNewPaths = max<size_t>(256, rayBuffer->GetSize() >> 4);
-
-			for (;;) {
-				// Add more SurfaceIntegratorState
-				SurfaceIntegratorState *s = scene.surfaceIntegrator->NewState(scene, contribBuffer, &rng);
-				s->Init(scene);
-				integratorState.push_back(s);
-				if (!scene.surfaceIntegrator->GenerateRays(scene, s, rayBuffer)) {
-					// The RayBuffer is full
-					firstStateIndex = 0;
-					// -2 because the addition of the last SurfaceIntegratorState failed
-					lastStateIndex = integratorState.size() - 2;
-					break;
-				}
-
-				newStateCount++;
-				if (newStateCount >= maxNewPaths) {
-					firstStateIndex = 0;
-					lastStateIndex = integratorState.size() - 1;
-					break;
-				}
-			}
-
-			integratorState.resize(integratorState.size());
-			LOG(LUX_DEBUG, LUX_NOERROR) << "New allocated IntegratorStates: " << newStateCount << " => " <<
-					integratorState.size() << "[" << rayBuffer->GetSize() << "]";
-		}
+		stateBuffer.GenerateRays();
 
 		//----------------------------------------------------------------------
 		// Trace the RayBuffer
@@ -629,39 +687,30 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 
 		u_int nrContribs = 0;
 		u_int nrSamples = 0;
-		for (size_t i = firstStateIndex; i != lastStateIndex; i = (i + 1) % integratorState.size()) {
-			u_int count;
-			if (scene.surfaceIntegrator->NextState(scene, integratorState[i], rayBuffer, &count)) {
-				// The sample is finished
-				++nrSamples;
-				nrContribs += count;
-
-				if (!integratorState[i]->Init(scene)) {
-					// Dade - we have done, check what we have to do now
-					if (renderer->suspendThreadsWhenDone) {
-						renderer->Pause();
-						// Dade - wait for a resume rendering or exit
-						while (renderer->state == PAUSE) {
-							boost::xtime xt;
-							boost::xtime_get(&xt, boost::TIME_UTC);
-							xt.sec += 1;
-							boost::thread::sleep(xt);
-						}
-
-						if (renderer->state == TERMINATE) {
-							renderIsOver = true;
-							break;
-						} else
-							continue;
-					} else {
-						renderer->Terminate();
-						renderIsOver = true;
-						break;
-					}
+		// stateBuffer.NextState() returns true when the rendering is
+		// finished, false otherwise
+		while (stateBuffer.NextState(nrContribs, nrSamples)) {
+			// Dade - we have done, check what we have to do now
+			if (renderer->suspendThreadsWhenDone) {
+				renderer->Pause();
+				// Dade - wait for a resume rendering or exit
+				while (renderer->state == PAUSE) {
+					boost::xtime xt;
+					boost::xtime_get(&xt, boost::TIME_UTC);
+					xt.sec += 1;
+					boost::thread::sleep(xt);
 				}
-			}
 
-			nrContribs += count;
+				if (renderer->state == TERMINATE) {
+					renderIsOver = true;
+					break;
+				} else
+					continue;
+			} else {
+				renderer->Terminate();
+				renderIsOver = true;
+				break;
+			}
 		}
 
 		// Jeanphi - Hijack statistics until volume integrator revamp
@@ -673,17 +722,10 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 		}
 
 		rayBuffer->Reset();
-
-		firstStateIndex = (lastStateIndex + 1) % integratorState.size();
 	}
 
 	scene.camera->film->contribPool->End(contribBuffer);
 
-	// Free memory
-	for (size_t i = 0; i < integratorState.size(); ++i) {
-		integratorState[i]->Free(scene);
-		delete integratorState[i];
-	}
 	delete rayBuffer;
 }
 

@@ -61,15 +61,15 @@ public:
 	virtual bool IsDataParallelSupported() const { return false; }
 	//FIXME: just to check SurfaceIntegratorRenderingHints light strategy, to remove
 	virtual bool CheckLightStrategy() const { return false; }
-	virtual SurfaceIntegratorState *NewState(const Scene &,
+	virtual SurfaceIntegratorState *NewState(const Scene &scene,
 		ContributionBuffer *contribBuffer, RandomGenerator *rng) {
 		throw std::runtime_error("Internal error: called SurfaceIntegrator::NewSurfaceIntegratorState()");
 	}
-	virtual bool GenerateRays(const Scene &,
+	virtual bool GenerateRays(const Scene &scene,
 		SurfaceIntegratorState *state, luxrays::RayBuffer *rayBuffer) {
 		throw std::runtime_error("Internal error: called SurfaceIntegrator::GenerateRays()");
 	}
-	virtual bool NextState(const Scene &, SurfaceIntegratorState *state, luxrays::RayBuffer *rayBuffer, u_int *nrContribs) {
+	virtual bool NextState(const Scene &scene, SurfaceIntegratorState *state, luxrays::RayBuffer *rayBuffer, u_int *nrContribs) {
 		throw std::runtime_error("Internal error: called SurfaceIntegrator::NextState()");
 	}
 };

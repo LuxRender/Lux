@@ -41,6 +41,30 @@ namespace lux
 {
 
 //------------------------------------------------------------------------------
+// SurfaceIntegratorStateBuffer
+//------------------------------------------------------------------------------
+
+class SurfaceIntegratorStateBuffer {
+public:
+	SurfaceIntegratorStateBuffer(const Scene &scn, ContributionBuffer *contribBuf,
+			RandomGenerator *rngGen, luxrays::RayBuffer *rayBuf);
+	~SurfaceIntegratorStateBuffer();
+
+	void GenerateRays();
+	bool NextState(u_int &nrContribs, u_int &nrSamples);
+
+private:
+	const Scene &scene;
+	ContributionBuffer *contribBuffer;
+	RandomGenerator *rng;
+	luxrays::RayBuffer *rayBuffer;
+
+	vector<SurfaceIntegratorState *> integratorState;
+	size_t firstStateIndex;
+	size_t lastStateIndex;
+};
+
+//------------------------------------------------------------------------------
 // HybridSamplerRenderer
 //------------------------------------------------------------------------------
 
