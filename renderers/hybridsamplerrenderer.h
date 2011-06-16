@@ -53,6 +53,8 @@ public:
 	void GenerateRays();
 	bool NextState(u_int &nrContribs, u_int &nrSamples);
 
+	luxrays::RayBuffer *GetRayBuffer() { return rayBuffer; }
+
 private:
 	const Scene &scene;
 	ContributionBuffer *contribBuffer;
@@ -72,7 +74,7 @@ class HybridSamplerRenderer : public HybridRenderer {
 public:
 	HybridSamplerRenderer(const int oclPlatformIndex, const bool useGPUs,
 			const u_int forceGPUWorkGroupSize, const string &deviceSelection,
-			const u_int rayBufferSize);
+			const u_int rayBufferSize, const u_int stateBufferCount);
 	~HybridSamplerRenderer();
 
 	RendererType GetType() const;
@@ -137,6 +139,7 @@ private:
 	vector<luxrays::IntersectionDevice *> hardwareDevices;
 
 	u_int rayBufferSize;
+	u_int stateBufferCount;
 	vector<RenderThread *> renderThreads;
 	Scene *scene;
 	u_long lastUsedSeed;

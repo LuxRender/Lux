@@ -161,7 +161,7 @@ bool SurfaceIntegratorStateBuffer::NextState(u_int &nrContribs, u_int &nrSamples
 
 HybridSamplerRenderer::HybridSamplerRenderer(const int oclPlatformIndex, const bool useGPUs,
 		const u_int forceGPUWorkGroupSize, const string &deviceSelection,
-		const u_int rayBufSize) : HybridRenderer() {
+		const u_int rayBufSize, const u_int stateBufCount) : HybridRenderer() {
 	state = INIT;
 
 	if (!IsPowerOf2(rayBufSize)) {
@@ -169,6 +169,8 @@ HybridSamplerRenderer::HybridSamplerRenderer(const int oclPlatformIndex, const b
 		rayBufferSize = RoundUpPow2(rayBufSize);
 	} else
 		rayBufferSize = rayBufSize;
+
+	stateBufferCount = stateBufCount;
 
 	// Create the LuxRays context
 	ctx = new luxrays::Context(LuxRaysDebugHandler, oclPlatformIndex);
@@ -647,49 +649,50 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 
 	RandomGenerator rng(seed);
 
-	luxrays::RayBuffer *rayBuffer = renderThread->iDevice->NewRayBuffer(renderer->rayBufferSize);
-
 	// Inititialize the first set SurfaceIntegratorState
 	const double t0 = luxrays::WallClockTime();
-	SurfaceIntegratorStateBuffer stateBuffer(scene, contribBuffer, &rng, rayBuffer);
+
+	vector<SurfaceIntegratorStateBuffer *> stateBuffers(renderer->stateBufferCount);
+	for (size_t i = 0; i < stateBuffers.size(); ++i) {
+		luxrays::RayBuffer *rayBuffer = renderThread->iDevice->NewRayBuffer(renderer->rayBufferSize);
+		rayBuffer->PushUserData(i);
+
+		stateBuffers[i] = new SurfaceIntegratorStateBuffer(scene, contribBuffer, &rng, rayBuffer);
+		stateBuffers[i]->GenerateRays();
+		renderThread->iDevice->PushRayBuffer(rayBuffer);
+	}
 
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Thread " << renderThread->n << " initialization time: " <<
 			std::setiosflags(std::ios::fixed) << std::setprecision(2) <<
 			luxrays::WallClockTime() - t0 << " secs";
 
-	bool renderIsOver = false;
-	while (!renderIsOver) {
+	for(;;) {
 		while (renderer->state == PAUSE) {
 			boost::xtime xt;
 			boost::xtime_get(&xt, boost::TIME_UTC);
 			xt.sec += 1;
 			boost::thread::sleep(xt);
 		}
-		if ((renderer->state == TERMINATE) || boost::this_thread::interruption_requested())
+		if ((renderer->state == TERMINATE) || boost::this_thread::interruption_requested()) {
+			// Pop left rayBuffers
+			for (size_t i = 0; i < stateBuffers.size(); ++i)
+				renderThread->iDevice->PopRayBuffer();
 			break;
+		}
 
-		//----------------------------------------------------------------------
-		// File the RayBuffer with the generated rays
-		//----------------------------------------------------------------------
-
-		stateBuffer.GenerateRays();
-
-		//----------------------------------------------------------------------
-		// Trace the RayBuffer
-		//----------------------------------------------------------------------
-
-		renderThread->iDevice->PushRayBuffer(rayBuffer);
-		rayBuffer = renderThread->iDevice->PopRayBuffer();
+		luxrays::RayBuffer *rayBuffer = renderThread->iDevice->PopRayBuffer();
+		SurfaceIntegratorStateBuffer *stateBuffer = stateBuffers[rayBuffer->GetUserData()];
 
 		//----------------------------------------------------------------------
 		// Advance the next step
 		//----------------------------------------------------------------------
 
+		bool renderIsOver = false;
 		u_int nrContribs = 0;
 		u_int nrSamples = 0;
 		// stateBuffer.NextState() returns true when the rendering is
 		// finished, false otherwise
-		while (stateBuffer.NextState(nrContribs, nrSamples)) {
+		while (stateBuffer->NextState(nrContribs, nrSamples)) {
 			// Dade - we have done, check what we have to do now
 			if (renderer->suspendThreadsWhenDone) {
 				renderer->Pause();
@@ -721,35 +724,58 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 			renderThread->samples += nrSamples;
 		}
 
+		if (renderIsOver) {
+			// Pop left rayBuffers (one has already been pop)
+			for (size_t i = 0; i < stateBuffers.size()- 1; ++i)
+				renderThread->iDevice->PopRayBuffer();
+			break;
+		}
+
+		//----------------------------------------------------------------------
+		// File the RayBuffer with the generated rays
+		//----------------------------------------------------------------------
+
 		rayBuffer->Reset();
+		stateBuffer->GenerateRays();
+
+		//----------------------------------------------------------------------
+		// Trace the RayBuffer
+		//----------------------------------------------------------------------
+
+		renderThread->iDevice->PushRayBuffer(rayBuffer);
 	}
 
 	scene.camera->film->contribPool->End(contribBuffer);
 
-	delete rayBuffer;
+	// Free memory
+	for (size_t i = 0; i < stateBuffers.size(); ++i) {
+		delete stateBuffers[i]->GetRayBuffer();
+		delete stateBuffers[i];
+	}
 }
 
 Renderer *HybridSamplerRenderer::CreateRenderer(const ParamSet &params) {
 
 	ParamSet configParams(params);
 
-	string configFile = params.FindOneString("configfile", "");
-	if (configFile != "") {
+	const  string configFile = params.FindOneString("configfile", "");
+	if (configFile != "")
 		HybridRenderer::LoadCfgParams(configFile, &configParams);
-	}
 
-	size_t rayBufferSize = params.FindOneInt("raybuffersize", 8192);
+	const u_int rayBufferSize = params.FindOneInt("raybuffersize", 8192);
+	const u_int stateBufferCount = max(1, params.FindOneInt("statebuffercount", 1));
 
 	string deviceSelection = configParams.FindOneString("opencl.devices.select", "");
 	int platformIndex = configParams.FindOneInt("opencl.platform.index", -1);
 
 	bool useGPUs = configParams.FindOneBool("opencl.gpu.use", true);
 
-	u_int forceGPUWorkGroupSize = max(0, configParams.FindOneInt("opencl.gpu.workgroup.size", 0));
+	const u_int forceGPUWorkGroupSize = max(0, configParams.FindOneInt("opencl.gpu.workgroup.size", 0));
 
 	params.MarkUsed(configParams);
 	return new HybridSamplerRenderer(platformIndex, useGPUs,
-			forceGPUWorkGroupSize, deviceSelection, rayBufferSize);
+			forceGPUWorkGroupSize, deviceSelection, rayBufferSize,
+			stateBufferCount);
 }
 
 static DynamicLoader::RegisterRenderer<HybridSamplerRenderer> r("hybrid");
