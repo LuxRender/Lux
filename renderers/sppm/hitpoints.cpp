@@ -40,8 +40,8 @@ HaltonEyeSampler::HaltonEyeSampler(int x0, int x1, int y0, int y1,
 {
 	pixelSampler = MakePixelSampler(ps, x0, x1, y0, y1);
 	nPixels = pixelSampler->GetTotalPixels();
-	halton.reserve(nPixels);
-	haltonOffset.reserve(nPixels);
+	halton.resize(nPixels);
+	haltonOffset.resize(nPixels);
 }
 
 //------------------------------------------------------------------------------
@@ -254,6 +254,7 @@ void HitPoints::SetHitPoints(RandomGenerator *rng, const u_int index, const u_in
 	for (u_int i = first; i < last; ++i) {
 		static_cast<HaltonEyeSampler::HaltonEyeSamplerData *>(sample.samplerData)->index = i; //FIXME sampler data shouldn't be accessed directly
 		static_cast<HaltonEyeSampler::HaltonEyeSamplerData *>(sample.samplerData)->pathCount = currentEyePass; //FIXME sampler data shouldn't be accessed directly
+		static_cast<HaltonEyeSampler *>(eyeSampler)->InitHalton(&sample); //FIXME sampler data shouldn't be accessed directly
 		sample.wavelengths = eyePassWavelengthSample;
 		sample.time = eyePassTimeSample;
 		sample.swl.Sample(sample.wavelengths);
@@ -267,6 +268,7 @@ void HitPoints::SetHitPoints(RandomGenerator *rng, const u_int index, const u_in
 		TraceEyePath(hp, sample);
 
 		sample.arena.FreeAll();
+		static_cast<HaltonEyeSampler *>(eyeSampler)->FreeHalton(&sample); //FIXME sampler data shouldn't be accessed directly
 	}
 	eyeSampler->FreeSample(&sample);
 	//delete sample.camera; //FIXME deleting the camera clone would delete the film!

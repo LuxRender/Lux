@@ -62,7 +62,7 @@ public:
 	class HaltonPhotonSamplerData {
 	public:
 		HaltonPhotonSamplerData(const Sample &sample, u_int sz) :
-			halton(size, *(sample.rng)), size(sz),
+			halton(sz, *(sample.rng)), size(sz),
 			haltonOffset(sample.rng->floatValue()), pathCount(0) {
 			if (sample.n1D.size() + sample.n2D.size() +
 				sample.nxD.size() == 0) {
@@ -83,16 +83,19 @@ public:
 				return;
 			}
 			float *buffer = new float[n];
+			u_int offset = 0;
 			for (u_int i = 0; i < sample.n1D.size(); ++i) {
-				values[i] = buffer;
+				values[offset + i] = buffer;
 				buffer += sample.n1D[i];
 			}
+			offset += sample.n1D.size();
 			for (u_int i = 0; i < sample.n2D.size(); ++i) {
-				values[i] = buffer;
-				buffer += 2 * sample.n1D[i];
+				values[offset + i] = buffer;
+				buffer += 2 * sample.n2D[i];
 			}
+			offset += sample.n2D.size();
 			for (u_int i = 0; i < sample.nxD.size(); ++i) {
-				values[i] = buffer;
+				values[offset + i] = buffer;
 				buffer += sample.dxD[i];
 			}
 		}

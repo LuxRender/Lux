@@ -102,16 +102,19 @@ public:
 			// Reserve space for screen and lens samples
 			float *buffer = new float[n + 4] + 4;
 			values[0] = buffer;	// in case n == 0
+			u_int offset = 0;
 			for (u_int i = 0; i < sample.n1D.size(); ++i) {
-				values[i] = buffer;
+				values[offset + i] = buffer;
 				buffer += sample.n1D[i];
 			}
+			offset += sample.n1D.size();
 			for (u_int i = 0; i < sample.n2D.size(); ++i) {
-				values[i] = buffer;
-				buffer += 2 * sample.n1D[i];
+				values[offset + i] = buffer;
+				buffer += 2 * sample.n2D[i];
 			}
+			offset += sample.n2D.size();
 			for (u_int i = 0; i < sample.nxD.size(); ++i) {
-				values[i] = buffer;
+				values[offset + i] = buffer;
 				buffer += sample.dxD[i];
 			}
 		}
@@ -138,22 +141,33 @@ public:
 		for (u_int i = 0; i < sample->n2D.size(); ++i)
 			size += 2 * sample->n2D[i];
 		sample->samplerData = new HaltonEyeSamplerData(*sample, size);
-		if (halton.size() == 0) {
-			for (u_int i = 0; i < nPixels; ++i) {
-				const_cast<vector<PermutedHalton *> &>(halton).push_back(new PermutedHalton(size + 4, *(sample->rng)));
-				const_cast<vector<float> &>(haltonOffset).push_back(sample->rng->floatValue());
-			}
-		}
 	}
 	virtual void FreeSample(Sample *sample) const {
 		HaltonEyeSamplerData *data = static_cast<HaltonEyeSamplerData *>(sample->samplerData);
-		delete halton[data->index];
-		(*const_cast<vector<PermutedHalton *> *>(&halton))[data->index] = NULL;
 		delete data;
+	}
+	void InitHalton(Sample *sample)
+	{
+		HaltonEyeSamplerData *data = static_cast<HaltonEyeSamplerData *>(sample->samplerData);
+		u_int size = 0;
+		for (u_int i = 0; i < sample->n1D.size(); ++i)
+			size += sample->n1D[i];
+		for (u_int i = 0; i < sample->n2D.size(); ++i)
+			size += 2 * sample->n2D[i];
+
+		halton[data->index] = new PermutedHalton(size + 4, *(sample->rng));
+		haltonOffset[data->index] = sample->rng->floatValue();
+	}
+	void FreeHalton(Sample *sample)
+	{
+		HaltonEyeSamplerData *data = static_cast<HaltonEyeSamplerData *>(sample->samplerData);
+		delete halton[data->index];
+		halton[data->index] = NULL;
 	}
 	virtual bool GetNextSample(Sample *sample) {
 		HaltonEyeSamplerData *data = static_cast<HaltonEyeSamplerData *>(sample->samplerData);
-		halton[data->index]->Sample(data->pathCount,
+		PermutedHalton *h = halton[data->index];
+		h->Sample(data->pathCount,
 			data->values[0] - 4);
 		int x, y;
 		pixelSampler->GetNextPixel(&x, &y, data->index);
