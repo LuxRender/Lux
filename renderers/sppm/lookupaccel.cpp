@@ -24,6 +24,26 @@
 #include "bxdf.h"
 #include "reflection/bxdf.h"
 
+
+/*
+   The flux stored inside accumReflectedFlux can be normalised by a radial
+   symetrical kernel as stated by:
+
+      "A Progressive Error Estimation Framework for Photon Density Estimation"
+      T. Hachisuka, W. Jarosz, and H. W. Jensen
+      ACM Transactions on Graphics (SIGGRAPH Asia 2010), 2010
+
+      http://graphics.ucsd.edu/~toshiya/ee.pdf
+
+      its improve smoothness of the result and makes the assumption done in PPM less strict
+*/
+inline float Ekernel(const float d2, float md2) {
+	// Epanechnikov kernel normalised on a disk
+	float s = 1.f - d2 / md2;
+
+	return s / (M_PI * md2) * 2.f;
+}
+
 using namespace lux;
 
 void HitPointsLookUpAccel::AddFluxToHitPoint(HitPoint *hp, const u_int passIndex,
@@ -36,15 +56,12 @@ void HitPointsLookUpAccel::AddFluxToHitPoint(HitPoint *hp, const u_int passIndex
 	if ((dist2 >  hp->accumPhotonRadius2))
 		return;
 
-	// Side test to choose which bsdf component we must sample
-	// Note: hpep.bsdfNG is oriented facing the hitpoint eye path.
-	BxDFType flag = BxDFType(BSDF_DIFFUSE | BSDF_GLOSSY |
-			((Dot(hpep.bsdfNG, wi) > 0.f ? BSDF_REFLECTION : BSDF_TRANSMISSION)));
+	BxDFType const flag = BxDFType(BSDF_DIFFUSE | BSDF_GLOSSY | BSDF_REFLECTION | BSDF_TRANSMISSION);
 	const SWCSpectrum f = bsdf.F(sw, hpep.wo, wi, false, flag);
 	if (f.Black())
 		return;
 
-	XYZColor flux = XYZColor(sw, photonFlux * f * hpep.pathThroughput);
+	XYZColor flux = XYZColor(sw, photonFlux * f * hpep.pathThroughput) * Ekernel(dist2, hp->accumPhotonRadius2);
 	// TODO: it should be more something like:
 	//XYZColor flux = XYZColor(sw, photonFlux * f) * XYZColor(hp->sample->swl, hp->eyeThroughput);
 	osAtomicInc(&hp->lightGroupData[lightGroup].accumPhotonCount);
@@ -61,15 +78,12 @@ void HitPointsLookUpAccel::AddFluxToSplatList(SplatList *splatList, HitPoint *hp
 	if ((dist2 >  hp->accumPhotonRadius2))
 		return;
 
-	// Side test to choose which bsdf component we must sample
-	// Note: hpep.bsdfNG is oriented facing the hitpoint eye path.
-	BxDFType flag = BxDFType(BSDF_DIFFUSE | BSDF_GLOSSY |
-			((Dot(hpep.bsdfNG, wi) > 0.f ? BSDF_REFLECTION : BSDF_TRANSMISSION)));
+	BxDFType const flag = BxDFType(BSDF_DIFFUSE | BSDF_GLOSSY | BSDF_REFLECTION | BSDF_TRANSMISSION);
 	const SWCSpectrum f = bsdf.F(sw, hpep.wo, wi, false, flag);
 	if (f.Black())
 		return;
 
-	XYZColor flux = XYZColor(sw, photonFlux * f * hpep.pathThroughput);
+	XYZColor flux = XYZColor(sw, photonFlux * f * hpep.pathThroughput) * Ekernel(dist2, hp->accumPhotonRadius2);
 
 	splatList->nodes.push_back(SplatNode(lightGroup, flux, hp));
 }

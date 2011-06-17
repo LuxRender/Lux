@@ -318,8 +318,6 @@ double SPPMRenderer::Statistics(const string &statName) {
 SPPMRenderer::EyePassRenderThread::EyePassRenderThread(u_int index, SPPMRenderer *r) :
 	n(index), renderer(r), thread(NULL) {
 	threadRng = NULL;
-
-	Scene &scene(*(renderer->scene));
 }
 
 SPPMRenderer::EyePassRenderThread::~EyePassRenderThread() {
@@ -836,7 +834,6 @@ void SPPMRenderer::PhotonPassRenderThread::Splat(SplatList *splatList, Scene &sc
 }
 
 void SPPMRenderer::PhotonPassRenderThread::TracePhotons(AMCMCPhotonSampler *sampler) {
-	Scene &scene(*(renderer->scene));
 
 /*FIXME	Sample *sample = sampler->StartNewPhotonPass(renderer->hitPoints->GetPhotonPassWavelengthSample());*/
 

@@ -65,7 +65,6 @@ public:
 	// Used for SURFACE type
 	Point position;
 	Vector wo;
-	Normal bsdfNG;
 };
 
 class HitPoint {
