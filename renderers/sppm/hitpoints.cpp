@@ -377,8 +377,6 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample)
 			NULL, true)) {
 			// Make it an approximate hitpoint
 			hpep->type = SURFACE;
-			// The stored bsdfNG is stored facing the eyePath
-			hpep->bsdfNG = (Dot(wo, bsdf->ng) > 0 ? bsdf->ng : -bsdf->ng);
 			hpep->pathThroughput = pathThroughput * rayWeight;
 			hpep->position = p;
 			hpep->wo = wo;
@@ -388,8 +386,6 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample)
 		if ((flags & BSDF_DIFFUSE) || ((flags & BSDF_GLOSSY) && (pdf < 100.f))) {
 			// It is a valid hit point
 			hpep->type = SURFACE;
-			// The stored bsdfNG is stored facing the eyePath
-			hpep->bsdfNG = (Dot(wo, bsdf->ng) > 0 ? bsdf->ng : -bsdf->ng);
 			hpep->pathThroughput = pathThroughput * rayWeight;
 			hpep->position = p;
 			hpep->wo = wo;
