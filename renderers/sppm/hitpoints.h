@@ -140,34 +140,23 @@ public:
 			size += sample->n1D[i];
 		for (u_int i = 0; i < sample->n2D.size(); ++i)
 			size += 2 * sample->n2D[i];
+		boost::mutex::scoped_lock lock(initMutex);
+		if (halton.size() == 0) {
+			for (u_int i = 0; i < nPixels; ++i) {
+				const_cast<vector<PermutedHalton *> &>(halton).push_back(new PermutedHalton(size + 4, *(sample->rng)));
+				const_cast<vector<float> &>(haltonOffset).push_back(sample->rng->floatValue());
+			}
+		}
+		lock.unlock();
 		sample->samplerData = new HaltonEyeSamplerData(*sample, size);
 	}
 	virtual void FreeSample(Sample *sample) const {
 		HaltonEyeSamplerData *data = static_cast<HaltonEyeSamplerData *>(sample->samplerData);
 		delete data;
 	}
-	void InitHalton(Sample *sample)
-	{
-		HaltonEyeSamplerData *data = static_cast<HaltonEyeSamplerData *>(sample->samplerData);
-		u_int size = 0;
-		for (u_int i = 0; i < sample->n1D.size(); ++i)
-			size += sample->n1D[i];
-		for (u_int i = 0; i < sample->n2D.size(); ++i)
-			size += 2 * sample->n2D[i];
-
-		halton[data->index] = new PermutedHalton(size + 4, *(sample->rng));
-		haltonOffset[data->index] = sample->rng->floatValue();
-	}
-	void FreeHalton(Sample *sample)
-	{
-		HaltonEyeSamplerData *data = static_cast<HaltonEyeSamplerData *>(sample->samplerData);
-		delete halton[data->index];
-		halton[data->index] = NULL;
-	}
 	virtual bool GetNextSample(Sample *sample) {
 		HaltonEyeSamplerData *data = static_cast<HaltonEyeSamplerData *>(sample->samplerData);
-		PermutedHalton *h = halton[data->index];
-		h->Sample(data->pathCount,
+		halton[data->index]->Sample(data->pathCount,
 			data->values[0] - 4);
 		int x, y;
 		pixelSampler->GetNextPixel(&x, &y, data->index);
@@ -207,6 +196,7 @@ private:
 	mutable u_int curIndex;
 	vector<PermutedHalton *> halton;
 	vector<float> haltonOffset;
+	mutable boost::mutex initMutex;
 };
 
 class HitPoints {
