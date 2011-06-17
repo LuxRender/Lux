@@ -21,7 +21,7 @@ IF(APPLE)
 	option(OSX_OPTION_PYLUX "Build a blender compatible pylux" ON)
 	option(OSX_OPTION_CLANG "Build with CLANG compiler and LTO ( XCODE4 )" ON)
 	option(OSX_OPTION_UNIVERSAL "Forcre compile universal" OFF)
-	option(OSX_OPTION_DYNAMIC_BUILD "Link lux apps to shared corelib" OFF)
+	option(OSX_OPTION_DYNAMIC_BUILD "Link lux apps to shared corelib" ON)
 	###################################
 #	SET(OSX_INSTALL_PATH /Applications/LuxRender_dyntest ) # in work
 	SET(CMAKE_OSX_DEPLOYMENT_TARGET 10.6)
@@ -438,7 +438,7 @@ IF(APPLE)
 			COMMAND cp ../macos/icons/luxrender.icns release/luxrender.app/Contents/Resources
 			COMMAND cp ../macos/icons/luxscene.icns release/luxrender.app/Contents/Resources
 			COMMAND cp ../macos/icons/luxfilm.icns release/luxrender.app/Contents/Resources
-			COMMAND cp ../macos/plists/08/Info.plist release/luxrender.app/Contents
+			COMMAND cp ../macos/plists/09/Info.plist release/luxrender.app/Contents
 			COMMAND install_name_tool -change ${CMAKE_BINARY_DIR}/Release/liblux.dylib @loader_path/liblux.dylib release/luxrender.app/Contents/MacOS/luxrender
 			COMMAND mv release/luxrender.app release/LuxRender.app
 #			COMMAND macdeployqt release/LuxRender.app ### uncomment for bundling Qt frameworks ###
