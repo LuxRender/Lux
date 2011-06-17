@@ -488,9 +488,9 @@ void HitPoints::UpdateFilm(const unsigned long long totalPhotons) {
 			static_cast<HaltonEyeSampler *>(eyeSampler)->pixelSampler->GetNextPixel(&xPos, &yPos, i); //FIXME shouldn't access directly sampler data
 
 
+			const double k = 1.f / totalPhotons;
 			// Update radiance
 			for(u_int j = 0; j < lightGroupsNumber; ++j) {
-				const double k = 1.f / (M_PI * hp->accumPhotonRadius2 * totalPhotons);
 
 				// WARNING: currentPhotonPass starts at 0 and is incremented AFTER UpdateFilm, hence the + 1
 				const XYZColor newRadiance = hp->lightGroupData[j].accumRadiance / (currentPhotonPass + 1) +
