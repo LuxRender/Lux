@@ -1,4 +1,3 @@
-	${CMAKE_SOURCE_DIR}/core/reflection/fresnel
 ###########################################################################
 #   Copyright (C) 1998-2011 by authors (see AUTHORS.txt )                 #
 #                                                                         #
@@ -67,6 +66,7 @@ INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/core
 	${CMAKE_SOURCE_DIR}/core/queryable
 	${CMAKE_SOURCE_DIR}/core/reflection
 	${CMAKE_SOURCE_DIR}/core/reflection/bxdf
+	${CMAKE_SOURCE_DIR}/core/reflection/fresnel
 	${CMAKE_SOURCE_DIR}/core/reflection/microfacetdistribution
 	${CMAKE_SOURCE_DIR}/spds
 	${CMAKE_SOURCE_DIR}/lights/sphericalfunction

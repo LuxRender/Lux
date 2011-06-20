@@ -19,47 +19,14 @@
 #   Lux website: http://www.luxrender.net                                 #
 ###########################################################################
 
-# Try to find Luxrays
-# Once done, this will define
-#
-#  LuxRays_FOUND - system has LuxRays
-#  LuxRays_INCLUDE_DIR - the LuxRays include directories
-#  LuxRays_LIBRARIES - link these to use LuxRays
+SET( luxmerger_SRCS
+	tools/luxmerger.cpp
+	)
+SOURCE_GROUP("Source Files\\" FILES ${luxmerger_SRCS})
 
-INCLUDE ( FindPkgMacros )
-FINDPKG_BEGIN ( LuxRays )
+ADD_EXECUTABLE(luxmerger ${luxmerger_SRCS})
 
-GETENV_PATH ( LuxRays_HOME )
-SET ( LuxRays_PREFIX_PATH ${LuxRays_HOME} ${ENV_LuxRays_HOME} )
-CREATE_SEARCH_PATHS ( LuxRays )
+TARGET_LINK_LIBRARIES(luxmerger luxStatic)
+INCLUDE_DIRECTORIES(${lux_INCLUDE_DIR})
 
-CLEAR_IF_CHANGED ( LuxRays_PREFIX_PATH
-	LuxRays_LIBRARY_REL
-	LuxRays_LIBRARY_DBG
-	LuxRays_INCLUDE_DIR
-)
-
-MESSAGE ( STATUS "LuxRays_INC_SEARCH_PATH" ${LuxRays_INC_SEARCH_PATH} )
-
-FIND_PATH ( LuxRays_INCLUDE_DIR NAMES luxrays/luxrays.h HINTS ${LuxRays_INC_SEARCH_PATH} )
-MESSAGE ( STATUS "LuxRays_INCLUDE_DIR " ${LuxRays_INCLUDE_DIR} )
-
-set( LuxRays_LIBRARY_NAMES luxrays )
-
-get_debug_names( LuxRays_LIBRARY_NAMES )
-
-FIND_LIBRARY ( LuxRays_LIBRARY_REL NAMES ${LuxRays_LIBRARY_NAMES} HINTS ${LuxRays_LIB_SEARCH_PATH} PATH_SUFFIXES "" release relwithdebinfo minsizerel dist )
-FIND_LIBRARY ( LuxRays_LIBRARY_DBG NAMES ${LuxRays_LIBRARY_NAMES_DBG} HINTS ${LuxRays_LIB_SEARCH_PATH} PATH_SUFFIXES "" debug dist )
-MAKE_LIBRARY_SET ( LuxRays_LIBRARY )
-
-MESSAGE ( STATUS "LuxRays_LIBRARIES NAMES " ${LuxRays_LIBRARIES} )
-
-IF ( LuxRays_INCLUDE_DIR AND LuxRays_LIBRARIES )
-	SET ( LuxRays_FOUND TRUE )
-ELSE ( LuxRays_INCLUDE_DIR AND LuxRays_LIBRARIES )
-	SET( LuxRays_FOUND FALSE )
-ENDIF ( LuxRays_INCLUDE_DIR AND LuxRays_LIBRARIES )
-
-MARK_AS_ADVANCED ( LuxRays_INCLUDE_DIR LuxRays_LIBRARIES )
-
-FINDPKG_FINISH ( LuxRays )
+TARGET_LINK_LIBRARIES(luxmerger ${Boost_LIBRARIES})
