@@ -19,6 +19,22 @@
 #   Lux website: http://www.luxrender.net                                 #
 ###########################################################################
 
+# Find python module separately
+#FIND_PACKAGE( Boost ${Boost_MINIMUM_VERSION} COMPONENTS python )
+#IF ( NOT Boost_FOUND )
+#	# Try again with the other type of libs
+#	IF ( Boost_USE_STATIC_LIBS )
+#		SET ( Boost_USE_STATIC_LIBS )
+#	ELSE ( Boost_USE_STATIC_LIBS )
+#		SET ( Boost_USE_STATIC_LIBS OFF )
+#	ENDIF ( Boost_USE_STATIC_LIBS )
+#	FIND_PACKAGE ( Boost ${Boost_MINIMUM_VERSION} COMPONENTS python )
+#ENDIF ( NOT Boost_FOUND )
+#SET(Boost_python_FOUND ${Boost_FOUND})
+#SET(Boost_python_LIBRARIES ${Boost_LIBRARIES})
+#SET(Boost_python_FOUND)
+#SET(Boost_python_LIBRARIES)
+
 SET( pylux_SRCS
 	python/binding.cpp
 	)
@@ -36,4 +52,4 @@ INCLUDE_DIRECTORIES(${lux_INCLUDE_DIR} ${PYTHON_INCLUDE_DIRS})
 
 SET_TARGET_PROPERTIES(pylux PROPERTIES COMPILE_FLAGS -DBOOST_PYTHON_STATIC_LIB)
 
-TARGET_LINK_LIBRARIES(pylux luxStatic ${Boost_LIBRARIES} ${PYTHON_LIBRARIES})
+TARGET_LINK_LIBRARIES(pylux luxStatic ${Boost_LIBRARIES} ${Boost_python_LIBRARIES} ${PYTHON_LIBRARIES})

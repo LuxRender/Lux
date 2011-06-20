@@ -47,6 +47,7 @@ ELSE (WIN32)
 		/usr/local/include
 		/sw/include
 		/opt/local/include
+		/usr/src/opencl-sdk/include
 		${OPENCL_ROOT}
 		${OPENCL_ROOT}/include
 		DOC "The directory where CL/cl.h resides")
@@ -59,6 +60,8 @@ ELSE (WIN32)
 		/usr/local/lib
 		/sw/lib
 		/opt/local/lib
+		/usr/src/opencl-sdk/lib/x86_64
+		/usr/src/opencl-sdk/lib/x86
 		${OPENCL_ROOT}
 		${OPENCL_LIBRARYDIR}
 		DOC "The OpenCL library")

@@ -64,6 +64,6 @@ void export_PyFlexImageFilm()
 		.value("MaxWhite",			3) //FlexImageFilm::TMK_MaxWhite)
 		.value("AutoLinear",		4) //FlexImageFilm::TMK_AutoLinear)
 		;
-};
+}
 
 #endif	// LUX_PYFLEXIMAGE_H

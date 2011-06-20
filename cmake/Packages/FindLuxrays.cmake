@@ -30,7 +30,7 @@ INCLUDE ( FindPkgMacros )
 FINDPKG_BEGIN ( LuxRays )
 
 GETENV_PATH ( LuxRays_HOME )
-SET ( LuxRays_PREFIX_PATH ${LuxRays_HOME} ${ENV_LuxRays_HOME} )
+SET ( LuxRays_PREFIX_PATH ../luxrays ${LuxRays_HOME} ${ENV_LuxRays_HOME} )
 CREATE_SEARCH_PATHS ( LuxRays )
 
 CLEAR_IF_CHANGED ( LuxRays_PREFIX_PATH

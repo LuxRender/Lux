@@ -56,7 +56,7 @@ StatsData::StatsData(Context *_ctx) :
 	lastUpdateSecElapsed(0)
 {
 	ctx = _ctx;
-};
+}
 
 /**
  * Format the input data into a readable string. Predict the network

@@ -1105,7 +1105,7 @@ static const int FLM_VERSION = 0; // should be incremented on each change to the
 enum FlmParameterType {
 	FLM_PARAMETER_TYPE_FLOAT = 0,
 	FLM_PARAMETER_TYPE_STRING = 1,
-	FLM_PARAMETER_TYPE_DOUBLE = 2,
+	FLM_PARAMETER_TYPE_DOUBLE = 2
 };
 
 class FlmParameter {

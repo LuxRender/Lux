@@ -40,7 +40,7 @@ boost::python::str RenderingServerInfo_repr(RenderingServerInfo const &rsi)
 	std::stringstream o(std::ios_base::out);
 	o << "<RenderingServerInfo " << rsi.serverIndex << ":" << rsi.name << ":" << rsi.port << ">";
 	return boost::python::str(o.str().c_str());
-};
+}
 
 } //namespace lux
 

@@ -19,12 +19,27 @@
 #   Lux website: http://www.luxrender.net                                 #
 ###########################################################################
 
-SET(lux_SRCS
-	luxparse.cpp
-	luxlex.cpp
-)
-SOURCE_GROUP("Source Files" FILES ${lux_SRCS})
+FIND_PACKAGE(BISON REQUIRED)
+IF (NOT BISON_FOUND)
+	MESSAGE(FATAL_ERROR "bison not found - aborting")
+ENDIF (NOT BISON_FOUND)
 
+FIND_PACKAGE(FLEX REQUIRED)
+IF (NOT FLEX_FOUND)
+	MESSAGE(FATAL_ERROR "flex not found - aborting")
+ENDIF (NOT FLEX_FOUND)
+
+# Create custom command for bison/yacc
+BISON_TARGET(LuxParser ${CMAKE_SOURCE_DIR}/core/luxparse.y ${CMAKE_BINARY_DIR}/luxparse.cpp)
+IF(APPLE AND !APPLE_64)
+	EXECUTE_PROCESS(COMMAND mv ${CMAKE_SOURCE_DIR}/luxparse.cpp.h ${CMAKE_BINARY_DIR}/luxparse.hpp)
+ENDIF(APPLE AND !APPLE_64)
+SET_SOURCE_FILES_PROPERTIES(${CMAKE_BINARY_DIR}/core/luxparse.cpp GENERATED)
+
+# Create custom command for flex/lex
+FLEX_TARGET(LuxLexer ${CMAKE_SOURCE_DIR}/core/luxlex.l ${CMAKE_BINARY_DIR}/luxlex.cpp)
+SET_SOURCE_FILES_PROPERTIES(${CMAKE_BINARY_DIR}/luxlex.cpp GENERATED)
+ADD_FLEX_BISON_DEPENDENCY(LuxLexer LuxParser)
 
 SET(lux_SRCS_CORE
 	${CMAKE_BINARY_DIR}/luxparse.cpp
@@ -133,7 +148,6 @@ SOURCE_GROUP("Source Files\\Core\\Reflection\\Microfacetdistribution" FILES ${lu
 SET(lux_SRCS_ACCELERATORS
 	accelerators/bruteforce.cpp
 	accelerators/bvhaccel.cpp
-	accelerators/grid.cpp
 	accelerators/qbvhaccel.cpp
 	accelerators/tabreckdtree.cpp
 	accelerators/unsafekdtree.cpp
@@ -391,7 +405,7 @@ SET(lux_lib_src
 	${lux_SRCS_SERVER}
 )
 
-ADD_LIBRARY(luxStatic SHARED ${lux_lib_src})
+ADD_LIBRARY(luxStatic ${lux_lib_src})
 
 SET_TARGET_PROPERTIES(luxStatic PROPERTIES COMPILE_FLAGS -DLUX_INTERNAL)
 
