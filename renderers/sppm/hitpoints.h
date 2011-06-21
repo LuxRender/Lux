@@ -41,10 +41,7 @@ enum HitPointType {
 
 class HitPointLightGroup {
 public:
-	unsigned long long photonCount;
 	XYZColor reflectedFlux;
-
-	u_int accumPhotonCount;
 	XYZColor accumReflectedFlux;
 	XYZColor accumRadiance;
 
@@ -75,6 +72,9 @@ public:
 	vector<HitPointLightGroup> lightGroupData;
 	
 	float accumPhotonRadius2;
+
+	unsigned long long photonCount;
+	u_int accumPhotonCount;
 };
 
 class SPPMRenderer;

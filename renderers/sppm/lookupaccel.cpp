@@ -64,7 +64,7 @@ void HitPointsLookUpAccel::AddFluxToHitPoint(HitPoint *hp, const u_int passIndex
 	XYZColor flux = XYZColor(sw, photonFlux * f * hpep.pathThroughput) * Ekernel(dist2, hp->accumPhotonRadius2);
 	// TODO: it should be more something like:
 	//XYZColor flux = XYZColor(sw, photonFlux * f) * XYZColor(hp->sample->swl, hp->eyeThroughput);
-	osAtomicInc(&hp->lightGroupData[lightGroup].accumPhotonCount);
+	osAtomicInc(&hp->accumPhotonCount);
 	XYZColorAtomicAdd(hp->lightGroupData[lightGroup].accumReflectedFlux, flux);
 }
 
@@ -97,7 +97,7 @@ void HitPointsLookUpAccel::Splat(SplatList *splatList) {
 		HitPoint *hp = sn->hitPoints;
 		u_int lightGroup = sn->lightGroup;
 
-		osAtomicAdd(&hp->lightGroupData[lightGroup].accumPhotonCount, splatCount);
+		osAtomicAdd(&hp->accumPhotonCount, splatCount);
 
 		XYZColor flux = splatCount * sn->flux;
 		XYZColorAtomicAdd(hp->lightGroupData[lightGroup].accumReflectedFlux, flux);
