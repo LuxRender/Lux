@@ -22,10 +22,59 @@
 
 // bidirectional.cpp*
 #include "lux.h"
+#include "sampling.h"
 #include "transport.h"
+#include "reflection/bxdf.h"
 
 namespace lux
 {
+
+class BidirPathState : public SurfaceIntegratorState {
+public:
+	enum PathState {
+		TO_INIT, TRACE_SHADOWRAYS, TERMINATE
+	};
+
+	BidirPathState(const Scene &scene, ContributionBuffer *contribBuffer, RandomGenerator *rng);
+	~BidirPathState() {
+		delete[] eyePath;
+		delete[] lightPath;
+	}
+
+	bool Init(const Scene &scene);
+	void Free(const Scene &scene);
+
+	friend class PathIntegrator;
+
+private:
+	struct BidirStateVertex {
+		BidirStateVertex() : pdf(0.f), pdfR(0.f), tPdf(1.f), tPdfR(1.f),
+			dAWeight(0.f), dARWeight(0.f), rr(1.f), rrR(1.f),
+			flux(0.f), bsdf(NULL), flags(BxDFType(0)) {}
+
+		float cosi, coso, pdf, pdfR, tPdf, tPdfR, dAWeight, dARWeight, rr, rrR, d2, padding;
+		SWCSpectrum flux;
+		BSDF *bsdf;
+		BxDFType flags;
+		Vector wi, wo;
+		Point p;
+	};
+
+	void Terminate(const Scene &scene, const u_int bufferId,
+			const float alpha = 1.f);
+
+	// NOTE: the size of this class is extremely important for the total
+	// amount of memory required for hybrid rendering.
+
+	Sample sample;
+
+	BidirStateVertex *eyePath;
+	u_int eyePathLength;
+	BidirStateVertex *lightPath;
+	u_int lightPathLength;
+
+	PathState state;
+};
 
 // Bidirectional Local Declarations
 class BidirIntegrator : public SurfaceIntegrator {
@@ -50,11 +99,37 @@ public:
 	virtual u_int Li(const Scene &scene, const Sample &sample) const;
 	virtual void RequestSamples(Sample *sample, const Scene &scene);
 	virtual void Preprocess(const RandomGenerator &rng, const Scene &scene);
+
+	//--------------------------------------------------------------------------
+	// DataParallel interface
+	//--------------------------------------------------------------------------
+
+	virtual bool IsDataParallelSupported() const { return true; }
+
+	virtual bool CheckLightStrategy() const {
+		if (lightStrategy != SAMPLE_ONE_UNIFORM) {
+			LOG(LUX_ERROR, LUX_SEVERE)<< "The (light) strategy must be ONE_UNIFORM.";
+			return false;
+		}
+
+		return true;
+	}
+	virtual SurfaceIntegratorState *NewState(const Scene &scene,
+		ContributionBuffer *contribBuffer, RandomGenerator *rng);
+	virtual bool GenerateRays(const Scene &scene,
+		SurfaceIntegratorState *state, luxrays::RayBuffer *rayBuffer);
+	virtual bool NextState(const Scene &scene, SurfaceIntegratorState *state,
+		luxrays::RayBuffer *rayBuffer, u_int *nrContribs);
+
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
+
+	friend class BidirPathState;
+
 	u_int maxEyeDepth, maxLightDepth;
 	float eyeThreshold, lightThreshold;
 	u_int sampleEyeOffset, sampleLightOffset;
 	u_int eyeBufferId, lightBufferId;
+
 private:
 	// BidirIntegrator Data
 	LightStrategy lightStrategy;
@@ -64,4 +139,3 @@ private:
 };
 
 }//namespace lux
-

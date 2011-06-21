@@ -29,6 +29,7 @@ namespace lux
 {
 
 class PathState : public SurfaceIntegratorState {
+public:
 	enum PathStateType {
 		TO_INIT, EYE_VERTEX, NEXT_VERTEX, CONTINUE_SHADOWRAY, TERMINATE
 	};

@@ -896,6 +896,407 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 	return nrContribs;
 }
 
+//------------------------------------------------------------------------------
+// DataParallel integrator BidirPathState code
+//
+// The general idea here is to trace the light and eye path on the CPU than
+// generate in a single shot all shadow rays for direct lighting and
+// eyepath/lightpath connection. The generated (long) list of rays will
+// be trace on the GPUs.
+//------------------------------------------------------------------------------
+
+BidirPathState::BidirPathState(const Scene &scene, ContributionBuffer *contribBuffer, RandomGenerator *rng) {
+	BidirIntegrator *bidir = (BidirIntegrator *)scene.surfaceIntegrator;
+
+	scene.surfaceIntegrator->RequestSamples(&sample, scene);
+	scene.volumeIntegrator->RequestSamples(&sample, scene);
+	scene.sampler->InitSample(&sample);
+	sample.contribBuffer = contribBuffer;
+	sample.camera = scene.camera->Clone();
+	sample.realTime = 0.f;
+	sample.rng = rng;
+
+	eyePath = new BidirStateVertex[bidir->maxEyeDepth];
+	eyePathLength = 0;
+
+	lightPath = new BidirStateVertex[bidir->maxLightDepth];
+	lightPathLength = 0;
+
+	state = TO_INIT;
+}
+
+bool BidirPathState::Init(const Scene &scene) {
+	//--------------------------------------------------------------------------
+	// Initialize the Sample
+	//--------------------------------------------------------------------------
+
+	// Free BSDF memory from computing image sample value
+	sample.arena.FreeAll();
+
+	const bool result = sample.sampler->GetNextSample(&sample);
+
+	// save ray time value
+	sample.realTime = sample.camera->GetTime(sample.time);
+	// sample camera transformation
+	sample.camera->SampleMotion(sample.realTime);
+
+	// Sample new SWC thread wavelengths
+	sample.swl.Sample(sample.wavelengths);
+	const SpectrumWavelengths &sw(sample.swl);
+
+	//--------------------------------------------------------------------------
+	// Build light and eye paths (on the CPU)
+	//--------------------------------------------------------------------------
+
+	const u_int numberOfLights = scene.lights.size();
+
+	BidirIntegrator *bidir = (BidirIntegrator *)scene.surfaceIntegrator;
+	const u_int maxEyeDepth = bidir->maxEyeDepth;
+	const u_int maxLightDepth = bidir->maxLightDepth;
+	const float eyeThreshold = bidir->eyeThreshold;
+	const float lightThreshold = bidir->lightThreshold;
+
+	//--------------------------------------------------------------------------
+	// Build light path (on the CPU)
+	//--------------------------------------------------------------------------
+
+	lightPathLength = 0;
+
+	if (maxLightDepth > 0) {
+		// Choose light
+		const u_int lightNum = min(Floor2UInt(sample.sampler->GetOneD(sample,
+			bidir->lightNumOffset, 0) * numberOfLights), numberOfLights - 1U);
+		const Light *light = scene.lights[lightNum];
+		float lightPos[2];
+		sample.sampler->GetTwoD(sample, bidir->lightPosOffset, 0, lightPos);
+		const float component = sample.sampler->GetOneD(sample,
+			bidir->lightComponentOffset, 0);
+		SWCSpectrum Le;
+
+		// Sample light subpath origin
+		u_int nLight = 0;
+		if (light->SampleL(scene, sample,
+			lightPos[0], lightPos[1], component, &lightPath[0].bsdf,
+			&lightPath[0].dAWeight, &Le)) {
+			++lightPathLength;
+			BidirStateVertex &light0(lightPath[0]);
+
+			// Initialize light vertex
+			light0.p = light0.bsdf->dgShading.p;
+			light0.wi = Vector(light0.bsdf->nn);
+			light0.cosi = AbsDot(light0.wi, light0.bsdf->ng);
+
+			// Give the light point probability for the weighting
+			// if the light is not delta
+			light0.dAWeight /= numberOfLights;
+
+			// Divide by Pdf because this value isn't used when the eye
+			// ray hits a light source, only for light paths
+			Le *= numberOfLights;
+
+			// Trick to tell subsequent functions that the light is delta
+			if (light->IsDeltaLight())
+				light0.dAWeight = -light0.dAWeight;
+			nLight = 1;
+
+			if (maxLightDepth > 1) {
+				//--------------------------------------------------------------
+				// Sample light subpath initial direction and
+				// finish vertex initialization if needed
+				//--------------------------------------------------------------
+
+				const float *data = sample.sampler->GetLazyValues(sample, bidir->sampleLightOffset, 0);
+
+				if (light0.bsdf->SampleF(sw, light0.wi,
+					&light0.wo, data[1], data[2], data[3],
+					&light0.flux, &light0.pdf, BSDF_ALL, &light0.flags,
+					&light0.pdfR)) {
+					light0.coso = AbsDot(light0.wo, light0.bsdf->ng);
+					light0.rrR = min(1.f, max(eyeThreshold,
+						light0.flux.Filter(sw) * light0.cosi /
+						light0.coso));
+					light0.rr = min(1.f, max(lightThreshold,
+						light0.flux.Filter(sw)));
+					Ray ray(light0.p, light0.wo);
+					ray.time = sample.realTime;
+					Intersection isect;
+					lightPath[nLight].flux = light0.flux;
+
+					// Trace light subpath and connect to eye vertex
+					const Volume *volume = light0.bsdf->GetVolume(ray.d);
+					bool scattered = light0.bsdf->dgShading.scattered;
+					for (u_int sampleIndex = 1; sampleIndex < maxLightDepth; ++sampleIndex) {
+						data = sample.sampler->GetLazyValues(sample,
+							bidir->sampleLightOffset, sampleIndex);
+						++lightPathLength;
+						BidirStateVertex &v = lightPath[nLight];
+						float spdf, spdfR;
+						if (!scene.Intersect(sample, volume, scattered,
+							ray, data[4], &isect, &v.bsdf, &spdf,
+							&spdfR, &v.flux))
+							break;
+
+						scattered = v.bsdf->dgShading.scattered;
+						v.tPdfR *= spdfR;
+						v.flux /= spdf;
+						lightPath[nLight - 1].tPdf *= spdf;
+						++nLight;
+
+						// Initialize new intersection vertex
+						v.wi = -ray.d;
+						v.p = isect.dg.p;
+						v.cosi = AbsDot(v.wi, v.bsdf->ng);
+						lightPath[nLight - 2].d2 =
+							DistanceSquared(lightPath[nLight - 2].p, v.p);
+						v.dAWeight = lightPath[nLight - 2].pdf *
+							lightPath[nLight - 2].tPdf /
+							lightPath[nLight - 2].d2;
+						if (!scattered)
+							v.dAWeight *= v.cosi;
+
+						// Break out if path is too long
+						if (sampleIndex >= maxLightDepth)
+							break;
+
+						SWCSpectrum f;
+						if (!v.bsdf->SampleF(sw, v.wi, &v.wo,
+							data[1], data[2], data[3], &f, &v.pdf,
+							BSDF_ALL, &v.flags, &v.pdfR))
+							break;
+
+						// Check if the scattering is a passthrough event
+						if (v.flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) ||
+							!(v.bsdf->Pdf(sw, v.wi, v.wo, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) > 0.f)) {
+							// Possibly terminate path sampling
+							if (nLight == maxLightDepth)
+								break;
+							lightPath[nLight - 2].dARWeight =
+								v.pdfR * v.tPdfR /
+								lightPath[nLight - 2].d2;
+							if (!lightPath[nLight - 2].bsdf->dgShading.scattered)
+								lightPath[nLight - 2].dARWeight *= lightPath[nLight - 2].coso;
+							v.coso = AbsDot(v.wo, v.bsdf->ng);
+							v.rrR = min(1.f, max(eyeThreshold,
+								f.Filter(sw) * v.cosi / v.coso));
+							v.rr = min(1.f, max(lightThreshold,
+								f.Filter(sw)));
+							v.flux *= f;
+							if (nLight > rrStart) {
+								if (v.rr < data[0])
+									break;
+								v.flux /= v.rr;
+							}
+							lightPath[nLight].flux = v.flux;
+						} else {
+							--nLight;
+							v.flux *= f;
+							lightPath[nLight - 1].tPdf *= v.pdf;
+							v.tPdfR *= v.pdfR;
+							if (sampleIndex + 1 >= maxLightDepth) {
+								lightPath[nLight - 1].rr = 0.f;
+								break;
+							}
+						}
+
+						// Initialize _ray_ for next segment of path
+						ray = Ray(v.p, v.wo);
+						ray.time = sample.realTime;
+						volume = v.bsdf->GetVolume(ray.d);
+					}
+				}
+			}
+		}
+	}
+
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Light path length: " << lightPathLength;
+
+	//--------------------------------------------------------------------------
+	// Build eye path (on the CPU)
+	//--------------------------------------------------------------------------
+
+	eyePathLength = 0;
+
+	// Sample eye subpath origin
+	const float posX = sample.camera->IsLensBased() ? sample.lensU : sample.imageX;
+	const float posY = sample.camera->IsLensBased() ? sample.lensV : sample.imageY;
+	//FIXME: Replace dummy .5f by a sampled value if needed
+	//FIXME: the return is not necessary if direct connection to the camera
+	// is implemented
+	if (!sample.camera->SampleW(sample.arena, sw, scene,
+		posX, posY, .5f, &eyePath[0].bsdf, &eyePath[0].dARWeight,
+		&eyePath[0].flux))
+		return result;
+
+	BidirStateVertex &eye0(eyePath[0]);
+
+	// Initialize eye vertex
+	eye0.p = eye0.bsdf->dgShading.p;
+	eye0.wo = Vector(eye0.bsdf->nn);
+	eye0.coso = AbsDot(eye0.wo, eye0.bsdf->ng);
+
+	// Light path cannot intersect camera (FIXME)
+	eye0.dARWeight = 0.f;
+
+	// Sample eye subpath initial direction and finish vertex initialization
+	const float lensU = sample.camera->IsLensBased() ? sample.imageX : sample.lensU;
+	const float lensV = sample.camera->IsLensBased() ? sample.imageY : sample.lensV;
+
+	//Jeanphi - Replace dummy .5f by a sampled value if needed
+	SWCSpectrum f0;
+	if ((maxEyeDepth <= 1) || !eye0.bsdf->SampleF(sw,
+		eye0.wo, &eye0.wi, lensU, lensV, .5f,
+		&f0, &eye0.pdfR, BSDF_ALL, &eye0.flags,
+		&eye0.pdf, true))
+			return result;
+
+	eye0.flux *= f0;
+	eye0.cosi = AbsDot(eye0.wi, eye0.bsdf->ng);
+	eye0.rr = min(1.f, max(lightThreshold,
+		f0.Filter(sw) * eye0.coso / eye0.cosi));
+	eye0.rrR = min(1.f, max(eyeThreshold, f0.Filter(sw)));
+	Ray ray(eyePath[0].p, eyePath[0].wi);
+	ray.time = sample.realTime;
+	sample.camera->ClampRay(ray);
+	Intersection isect;
+	u_int nEye = 1;
+	eyePath[nEye].flux = eye0.flux;
+	++eyePathLength;
+
+	// Trace eye subpath
+	const Volume *volume = eye0.bsdf->GetVolume(ray.d);
+	bool scattered = eye0.bsdf->dgShading.scattered;
+	for (u_int sampleIndex = 1; sampleIndex < maxEyeDepth; ++sampleIndex) {
+		const float *data = sample.sampler->GetLazyValues(sample,
+			bidir->sampleEyeOffset, sampleIndex);
+		++eyePathLength;
+		BidirStateVertex &v = eyePath[nEye];
+
+		float spdf, spdfR;
+		if (!scene.Intersect(sample, volume, scattered, ray, data[4],
+			&isect, &v.bsdf, &spdfR, &spdf, &v.flux)) {
+			if (nEye == 1) {
+				// Tweak intersection distance for Z buffer
+				eyePath[0].d2 = INFINITY;
+			}
+
+			// End eye path tracing
+			break;
+		}
+
+		// Initialize new intersection vertex
+		scattered = v.bsdf->dgShading.scattered;
+		v.flux /= spdfR;
+		eyePath[nEye - 1].tPdfR *= spdfR;
+		v.tPdf *= spdf;
+		v.wo = -ray.d;
+		v.p = isect.dg.p;
+		v.coso = AbsDot(v.wo, v.bsdf->ng);
+		eyePath[nEye - 1].d2 =
+			DistanceSquared(eyePath[nEye - 1].p, v.p);
+		v.dARWeight = eyePath[nEye - 1].pdfR *
+			eyePath[nEye - 1].tPdfR / eyePath[nEye - 1].d2;
+		if (!scattered)
+			v.dARWeight *= v.coso;
+		++nEye;
+
+		// Break out if path is too long
+		if (sampleIndex >= maxEyeDepth)
+			break;
+
+		SWCSpectrum f;
+		if (!v.bsdf->SampleF(sw, v.wo, &v.wi, data[1], data[2],
+			data[3], &f, &v.pdfR, BSDF_ALL, &v.flags, &v.pdf, true))
+			break;
+
+		// Check if the scattering is a passthrough event
+		if (v.flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) ||
+			!(v.bsdf->Pdf(sw, v.wo, v.wi, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) > 0.f)) {
+			// Possibly terminate path sampling
+			if (nEye == maxEyeDepth)
+				break;
+			eyePath[nEye - 2].dAWeight = v.pdf * v.tPdf /
+				eyePath[nEye - 2].d2;
+			if (!eyePath[nEye - 2].bsdf->dgShading.scattered)
+				eyePath[nEye - 2].dAWeight *= eyePath[nEye - 2].cosi;
+			v.cosi = AbsDot(v.wi, v.bsdf->ng);
+			v.rr = min(1.f, max(lightThreshold,
+				f.Filter(sw) * v.coso / v.cosi));
+			v.rrR = min(1.f, max(eyeThreshold, f.Filter(sw)));
+			v.flux *= f;
+			if (nEye > rrStart) {
+				if (v.rrR < data[0])
+					break;
+				v.flux /= v.rrR;
+			}
+			eyePath[nEye].flux = v.flux;
+		} else {
+			--nEye;
+			v.flux *= f;
+			eyePath[nEye - 1].tPdfR *= v.pdfR;
+			v.tPdf *= v.pdf;
+			if (sampleIndex + 1 >= maxEyeDepth) {
+				eyePath[nEye - 1].rrR = 0.f;
+				break;
+			}
+		}
+
+		// Initialize _ray_ for next segment of path
+		ray = Ray(v.p, v.wi);
+		ray.time = sample.realTime;
+		volume = v.bsdf->GetVolume(ray.d);
+	}
+
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Eye path length: " << eyePathLength;
+
+	state = TRACE_SHADOWRAYS;
+
+	return result;
+}
+
+void BidirPathState::Free(const Scene &scene) {
+	scene.sampler->FreeSample(&sample);
+}
+
+void BidirPathState::Terminate(const Scene &scene, const u_int bufferId,
+		const float alpha) {
+	/*const u_int lightGroupCount = scene.lightGroups.size();
+	for (u_int i = 0; i < lightGroupCount; ++i) {
+		if (!L[i].Black())
+			V[i] /= L[i].Filter(sample.swl);
+
+		sample.AddContribution(sample.imageX, sample.imageY,
+			XYZColor(sample.swl, L[i]), alpha, distance,
+			V[i], bufferId, i);
+	}
+	sample.sampler->AddSample(sample);*/
+	state = TERMINATE;
+}
+
+//------------------------------------------------------------------------------
+// DataParallel integrator PathIntegrator code
+//------------------------------------------------------------------------------
+
+SurfaceIntegratorState *BidirIntegrator::NewState(const Scene &scene,
+		ContributionBuffer *contribBuffer, RandomGenerator *rng) {
+	return new BidirPathState(scene, contribBuffer, rng);
+}
+
+bool BidirIntegrator::GenerateRays(const Scene &,
+		SurfaceIntegratorState *s, luxrays::RayBuffer *rayBuffer) {
+	LOG(LUX_ERROR, LUX_SEVERE)<< "Wait, wait, not yet finished";
+	throw new std::runtime_error("Wait, wait, not yet finished");
+
+	//return true;
+}
+
+bool BidirIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, luxrays::RayBuffer *rayBuffer, u_int *nrContribs) {
+	return false;
+}
+
+//------------------------------------------------------------------------------
+// Integrator parsing code
+//------------------------------------------------------------------------------
+
 SurfaceIntegrator* BidirIntegrator::CreateSurfaceIntegrator(const ParamSet &params)
 {
 	int eyeDepth = params.FindOneInt("eyedepth", 8);
