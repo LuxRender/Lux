@@ -19,6 +19,10 @@
 #   Lux website: http://www.luxrender.net                                 #
 ###########################################################################
 
+IF (APPLE)
+	INCLUDE(luxapple.cmake)
+ELSE (APPLE)
+
 MESSAGE(STATUS "CMAKE VERSION DETECTED " ${CMAKE_VERSION})
 
 ###########################################################################
@@ -139,3 +143,5 @@ INCLUDE(pylux)
 #
 ###########################################################################
 #INCLUDE(AssembleBinDirs)
+
+ENDIF (APPLE)
