@@ -49,7 +49,7 @@ SET ( Boost_DEBUG                 OFF)
 SET ( Boost_ADDITIONAL_VERSIONS "1.46.2" "1.46.1" "1.46" "1.46.0" "1.45" "1.45.0" "1.44" "1.44.0" "1.43" "1.43.0" )
 
 # Find general purpose modules
-SET ( LUX_BOOST_COMPONENTS thread program_options filesystem serialization iostreams regex system )
+SET ( LUX_BOOST_COMPONENTS thread program_options filesystem serialization iostreams regex system zlib )
 FIND_PACKAGE( Boost ${Boost_MINIMUM_VERSION} COMPONENTS ${LUX_BOOST_COMPONENTS} )
 IF ( NOT Boost_FOUND )
 	# Try again with the other type of libs
@@ -133,7 +133,7 @@ ENDIF ( NOT LUXRAYS_DISABLE_OPENCL )
 ##
 # Qt
 ##
-FIND_PACKAGE ( Qt4 4.6 COMPONENTS QtCore QtGui )
+FIND_PACKAGE ( Qt4 4.6 COMPONENTS QtCore QtGui QtMain )
 
 ##
 # Python

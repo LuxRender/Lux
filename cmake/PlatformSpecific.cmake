@@ -27,6 +27,10 @@ IF(WIN32)
 #  set(CMAKE_SUPPRESS_REGENERATION true)
 ENDIF(WIN32)
 
+IF(WIN32)
+   SET(GUI_TYPE WIN32)
+ENDIF(WIN32)
+
 
 ###########################################################################
 #
@@ -44,6 +48,41 @@ IF(MSVC)
 	ELSE()
 		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W3")
 	ENDIF()
+
+	IF(MSVC90)
+		MESSAGE(STATUS "Version 9")
+		# Whole Program Opt. gui display fixed in cmake 2.8.5
+		# See http://public.kitware.com/Bug/view.php?id=6794
+		# /GL will be used to build the code but the selection is not displayed in the menu
+
+		# /Qfast_transcendentals causes inlining of those functions but no loss of precission
+
+		SET(MSVC_RELEASE_COMPILER_FLAGS "/WX- /MP /O2 /Ob1 /Oi /Oy- /GT /GL /Gm- /EHsc /MD /GS /fp:precise /Zc:wchar_t /Zc:forScope /GR /Gy /Gd /TP /GF- /Ot /favor:blend /Qfast_transcendentals")
+		SET(MSVC_RELEASE_WITH_DEBUG_COMPILER_FLAGS "/Zi")
+
+		SET(CMAKE_C_FLAGS_RELEASE   "${CMAKE_C_FLAGS_RELEASE}   ${MSVC_RELEASE_COMPILER_FLAGS} ${MSVC_RELEASE_WITH_DEBUG_COMPILER_FLAGS}")
+		SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${MSVC_RELEASE_COMPILER_FLAGS} ${MSVC_RELEASE_WITH_DEBUG_COMPILER_FLAGS}")
+
+		SET(MSVC_RELEASE_LINKER_FLAGS "/LTCG /OPT:REF /OPT:ICF")
+		SET(MSVC_RELEASE_WITH_DEBUG_LINKER_FLAGS "/DEBUG")
+		#set(CMAKE_MODULE_LINKER_FLAGS_RELEASE "${CMAKE_MODULE_LINKER_FLAGS_RELEASE} ${MSVC_RELEASE_LINKER_FLAGS} ${MSVC_RELEASE_WITH_DEBUG_LINKER_FLAGS}")
+
+		# LTCG not correctly set by cmake in the current release - in meantime the linker will inform you about switching this flag automatically because of /GL
+		#set(MSVC_RELEASE_LINKER_FLAGS "/LTCG")
+		SET(MSVC_RELEASE_LINKER_FLAGS "/LTCG /OPT:REF /OPT:ICF")
+		SET(MSVC_RELEASE_WITH_DEBUG_LINKER_FLAGS "/DEBUG")
+		SET(STATIC_LIBRARY_FLAGS_RELEASE "${STATIC_LIBRARY_FLAGS_RELEASE} ${MSVC_RELEASE_LINKER_FLAGS} ${MSVC_DEBUG_LINKER_FLAGS}")
+		SET(SHARED_LIBRARY_FLAGS_RELEASE "${SHARED_LIBRARY_FLAGS_RELEASE} ${MSVC_RELEASE_LINKER_FLAGS} ${MSVC_DEBUG_LINKER_FLAGS}")
+
+		# Definitions.
+		ADD_DEFINITIONS(-D__SSE2__ -D__SSE__ -D__MMX__)
+		ADD_DEFINITIONS(-D_UNICODE -DUNICODE)
+		ADD_DEFINITIONS(-DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_CRT_SECURE_NO_DEPRECATE)
+
+		# Prevent cmake from adding about any std. lib there is
+		SET (CMAKE_C_STANDARD_LIBRARIES "")
+		SET (CMAKE_CXX_STANDARD_LIBRARIES "")
+	ENDIF(MSVC90)
 
 	IF(MSVC10)
 		MESSAGE(STATUS "Version 10")
