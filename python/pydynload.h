@@ -45,7 +45,7 @@ boost::python::list py_getRegisteredVolumeRegions()
 	}
 
 	return names;
-};
+}
 
 
 boost::python::list py_getRegisteredFloatTextures()
@@ -59,7 +59,7 @@ boost::python::list py_getRegisteredFloatTextures()
 	}
 
 	return names;
-};
+}
 
 
 boost::python::list py_getRegisteredFilters()
@@ -73,7 +73,7 @@ boost::python::list py_getRegisteredFilters()
 	}
 
 	return names;
-};
+}
 
 
 boost::python::list py_getRegisteredSurfaceIntegrators()
@@ -87,7 +87,7 @@ boost::python::list py_getRegisteredSurfaceIntegrators()
 	}
 
 	return names;
-};
+}
 
 
 boost::python::list py_getRegisteredRenderer()
@@ -101,7 +101,7 @@ boost::python::list py_getRegisteredRenderer()
 	}
 
 	return names;
-};
+}
 
 
 boost::python::list py_getRegisteredFresnelTextures()
@@ -115,7 +115,7 @@ boost::python::list py_getRegisteredFresnelTextures()
 	}
 
 	return names;
-};
+}
 
 
 boost::python::list py_getRegisteredCameras()
@@ -129,7 +129,7 @@ boost::python::list py_getRegisteredCameras()
 	}
 
 	return names;
-};
+}
 
 
 boost::python::list py_getRegisteredPixelSamplers()
@@ -143,7 +143,7 @@ boost::python::list py_getRegisteredPixelSamplers()
 	}
 
 	return names;
-};
+}
 
 
 boost::python::list py_getRegisteredToneMaps()
@@ -157,7 +157,7 @@ boost::python::list py_getRegisteredToneMaps()
 	}
 
 	return names;
-};
+}
 
 
 boost::python::list py_getRegisteredShapes()
@@ -171,7 +171,7 @@ boost::python::list py_getRegisteredShapes()
 	}
 
 	return names;
-};
+}
 
 
 boost::python::list py_getRegisteredLights()
@@ -185,7 +185,7 @@ boost::python::list py_getRegisteredLights()
 	}
 
 	return names;
-};
+}
 
 
 boost::python::list py_getRegisteredMaterials()
@@ -199,7 +199,7 @@ boost::python::list py_getRegisteredMaterials()
 	}
 
 	return names;
-};
+}
 
 
 boost::python::list py_getRegisteredFilms()
@@ -213,7 +213,7 @@ boost::python::list py_getRegisteredFilms()
 	}
 
 	return names;
-};
+}
 
 
 boost::python::list py_getRegisteredVolumeIntegrators()
@@ -227,7 +227,7 @@ boost::python::list py_getRegisteredVolumeIntegrators()
 	}
 
 	return names;
-};
+}
 
 
 boost::python::list py_getRegisteredVolumes()
@@ -241,7 +241,7 @@ boost::python::list py_getRegisteredVolumes()
 	}
 
 	return names;
-};
+}
 
 
 boost::python::list py_getRegisteredSamplers()
@@ -255,7 +255,7 @@ boost::python::list py_getRegisteredSamplers()
 	}
 
 	return names;
-};
+}
 
 
 boost::python::list py_getRegisteredAccelerators()
@@ -269,7 +269,7 @@ boost::python::list py_getRegisteredAccelerators()
 	}
 
 	return names;
-};
+}
 
 
 boost::python::list py_getRegisteredAreaLights()
@@ -283,7 +283,7 @@ boost::python::list py_getRegisteredAreaLights()
 	}
 
 	return names;
-};
+}
 
 
 boost::python::list py_getRegisteredSWCSpectrumTextures()
@@ -297,7 +297,7 @@ boost::python::list py_getRegisteredSWCSpectrumTextures()
 	}
 
 	return names;
-};
+}
 
 void export_PyDynload()
 {
@@ -425,7 +425,7 @@ void export_PyDynload()
 		"Return a list of registered SWCSpectrumTexture names"
 	);
 
-};
+}
 
 }
 
