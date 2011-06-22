@@ -45,7 +45,6 @@ IF(APPLE)
 	option(OSX_OPTION_UNIVERSAL "Force compile universal" OFF)
 	option(OSX_OPTION_DYNAMIC_BUILD "Link lux apps to shared corelib" ON)
 	###################################
-#	SET(OSX_INSTALL_PATH /Applications/LuxRender_dyntest ) # in work
 	SET(CMAKE_OSX_DEPLOYMENT_TARGET 10.6)
 	IF(CMAKE_VERSION VERSION_LESS 2.8.1)
 		SET(CMAKE_OSX_ARCHITECTURES i386;x86_64) # valid arches
@@ -126,7 +125,7 @@ ADD_DEFINITIONS(-DLUX_USE_CONFIG_H)
 #############################################################################
 #############################################################################
 IF(APPLE)
-	# Jens - default Mac compiler options with OpenGL
+	# Jens - default Mac compiler options
 	ADD_DEFINITIONS(-O3 -ftree-vectorize -msse -msse2 -msse3 -mssse3 -fvariable-expansion-in-unroller -fpic -Wall -DHAVE_PTHREAD_H )
 ELSE(APPLE)
 	# Dade - default compiler options
@@ -140,10 +139,8 @@ ENDIF(APPLE)
 # Compiler flags for specific setup
 #############################################################################
 
-# Jens - default Mac compiler options with OpenGL
-#ADD_DEFINITIONS(-O3 -ftree-vectorize -msse -msse2 -msse3 -mssse3 -fvariable-expansion-in-unroller -fpic -Wall -DHAVE_PTHREAD_H )
 # Jens - testing Mac compiler options (debug)
-#ADD_DEFINITIONS(-DHAVE_PTHREAD_H)
+#ADD_DEFINITIONS(-O0 -fpic -Wall -DHAVE_PTHREAD_H)
 
 # Dade - GCC Profiling (remember to uncomment the line at the end of file too)
 #ADD_DEFINITIONS(-pg -g -O2 -msse2 -mfpmath=sse -ftree-vectorize -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
@@ -361,7 +358,6 @@ IF(APPLE)
 	ENDIF(OSX_OPTION_PYLUX)
 	MESSAGE(STATUS "ALWAYS_BUILD_UNIVERSAL : " ${OSX_OPTION_UNIVERSAL})
 	MESSAGE(STATUS "USE SHARED CORELIB : " ${OSX_OPTION_DYNAMIC_BUILD})
-#	MESSAGE(STATUS "INSTALL_LOCATION : " ${OSX_INSTALL_PATH})
 	MESSAGE(STATUS "")
 	MESSAGE(STATUS "#####################################################################")
 ENDIF(APPLE)
