@@ -25,8 +25,8 @@
 #############################################################################
 #############################################################################
 IF(APPLE)
-	FIND_PATH(LUXRAYS_INCLUDE_DIRS NAMES luxrays/luxrays.h PATHS ../macos/include/LuxRays)
-	FIND_LIBRARY(LUXRAYS_LIBRARY libluxrays.a ../macos/lib/LuxRays)
+	FIND_PATH(LUXRAYS_INCLUDE_DIRS NAMES luxrays/luxrays.h PATHS ${OSX_DEPENDENCY_ROOT}/include/LuxRays)
+	FIND_LIBRARY(LUXRAYS_LIBRARY libluxrays.a ${OSX_DEPENDENCY_ROOT}/lib/LuxRays)
 ELSE(APPLE)
 	FIND_PATH(LUXRAYS_INCLUDE_DIRS NAMES luxrays/luxrays.h PATHS ../luxrays/include)
 	FIND_LIBRARY(LUXRAYS_LIBRARY luxrays ../luxrays/lib)
@@ -97,7 +97,7 @@ ENDIF (NOT FLEX_FOUND)
 #############################################################################
 
 IF(APPLE)
-	SET(BOOST_ROOT ../macos)
+	SET(BOOST_ROOT ${OSX_DEPENDENCY_ROOT})
 ENDIF(APPLE)
 
 FIND_PACKAGE(Boost 1.42 COMPONENTS python REQUIRED)
@@ -128,7 +128,7 @@ IF(APPLE)
 	FIND_PATH(OPENEXR_INCLUDE_DIRS
 		OpenEXRConfig.h
 		PATHS
-		../macos/include/OpenEXR
+		${OSX_DEPENDENCY_ROOT}/include/OpenEXR
 		NO_DEFAULT_PATH
 	)
 ELSE(APPLE)
@@ -165,7 +165,7 @@ IF(APPLE)
 	FIND_PATH(PNG_INCLUDE_DIR
 		pngconf.h
 		PATHS
-		../macos//include
+		${OSX_DEPENDENCY_ROOT}/include
 		NO_DEFAULT_PATH
 	)
 ELSE(APPLE)
@@ -187,13 +187,13 @@ IF(APPLE)
 	FIND_PATH(FREEIMAGE_INCLUDE_DIRS
 		freeimage.h
 		PATHS
-	../macos//include
+	${OSX_DEPENDENCY_ROOT}/include
 	NO_DEFAULT_PATH
 	)
 	FIND_LIBRARY(FREEIMAGE_LIBRARIES
 		libfreeimage.a
 		PATHS
-	../macos//lib
+	${OSX_DEPENDENCY_ROOT}/lib
 	NO_DEFAULT_PATH
 	)
 ELSE(APPLE)
