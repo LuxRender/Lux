@@ -429,20 +429,50 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, MemoryArena &hp
 void HitPoints::UpdatePointsInformation() {
 	// Calculate hit points bounding box
 	BBox bbox;
-	float maxr2 = 0.f;
+	float maxr2, minr2, meanr2;
+	u_int minp, maxp, meanp;
+	u_int surfaceHits, constantHits, zeroHits;
 	const u_int passIndex = currentEyePass % 2;
-	for (u_int i = 0; i < (*hitPoints).size(); ++i) {
-		HitPoint *hp = &(*hitPoints)[i];
-		HitPointEyePass *hpep = &hp->eyePass[passIndex];
+
+	surfaceHits = constantHits = zeroHits = 0;
+
+	assert((*hitPoints).size() > 0);
+	HitPoint *hp = &(*hitPoints)[0];
+	HitPointEyePass *hpep = &hp->eyePass[passIndex];
+
+	maxr2 = minr2 = meanr2 = hp->accumPhotonRadius2;
+	minp = maxp = meanp = hp->photonCount;
+
+	for (u_int i = 1; i < (*hitPoints).size(); ++i) {
+		hp = &(*hitPoints)[i];
+		hpep = &hp->eyePass[passIndex];
 
 		if (hpep->type == SURFACE) {
+			if(hp->photonCount == 0)
+				++zeroHits;
+
 			bbox = Union(bbox, hpep->position);
+
 			maxr2 = max<float>(maxr2, hp->accumPhotonRadius2);
+			minr2 = min<float>(minr2, hp->accumPhotonRadius2);
+			meanr2 += hp->accumPhotonRadius2;
+
+			maxp = max<float>(maxp, hp->photonCount);
+			minp = min<float>(minp, hp->photonCount);
+			meanp += hp->photonCount;
+
+			++surfaceHits;
 		}
+		else
+			++constantHits;
 	}
 
-	LOG(LUX_DEBUG, LUX_NOERROR) << "Hit points bounding box: " << bbox;
-	LOG(LUX_DEBUG, LUX_NOERROR) << "Hit points max. radius: " << sqrtf(maxr2);
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Hit points stats:";
+	LOG(LUX_DEBUG, LUX_NOERROR) << "\tbounding box: " << bbox;
+	LOG(LUX_DEBUG, LUX_NOERROR) << "\tmin/max radius: " << sqrtf(minr2) << "/" << sqrtf(maxr2);
+	LOG(LUX_DEBUG, LUX_NOERROR) << "\tmin/max photonCount: " << minp << "/" << maxp;
+	LOG(LUX_DEBUG, LUX_NOERROR) << "\tmean radius/photonCount: " << sqrtf(meanr2 / surfaceHits) << "/" << meanp / surfaceHits;
+	LOG(LUX_DEBUG, LUX_NOERROR) << "\tconstant/zero hits: " << constantHits << "/" << zeroHits;
 
 	hitPointBBox[passIndex] = bbox;
 	maxHitPointRadius2[passIndex] = maxr2;
@@ -499,7 +529,6 @@ void HitPoints::UpdateFilm(const unsigned long long totalPhotons) {
 			HitPointEyePass *hpep = &hp->eyePass[passIndex];
 			static_cast<HaltonEyeSampler *>(eyeSampler)->pixelSampler->GetNextPixel(&xPos, &yPos, i); //FIXME shouldn't access directly sampler data
 
-
 			const double k = 1.f / totalPhotons;
 			// Update radiance
 			for(u_int j = 0; j < lightGroupsNumber; ++j) {
@@ -517,7 +546,6 @@ void HitPoints::UpdateFilm(const unsigned long long totalPhotons) {
 						const float v = newRadiance.Y() - hp->lightGroupData[j].radiance.Y();
 						hp->lightGroupData[j].radianceSSE += v * v;
 					}*/
-
 			}
 		}
 	//}
