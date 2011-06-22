@@ -53,6 +53,7 @@ public:
 	u_int maxEyePathDepth;
 	u_int maxPhotonPathDepth;
 	u_int photonPerPass;
+	u_int photonStartK;
 
 	u_int sampleOffset, bufferId;
 	bool includeEnvironment;

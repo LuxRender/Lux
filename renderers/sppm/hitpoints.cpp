@@ -191,6 +191,26 @@ void HitPoints::AccumulateFlux(const float fluxScale, const u_int index, const u
 
 		if(hpep->type == SURFACE) {
 			if (hp->accumPhotonCount > 0) {
+				u_int k = renderer->sppmi->photonStartK;
+				if(k > 0 && hp->photonCount == 0)
+				{
+					// This heuristic is triggered by hitpoint on the first pass
+					// which gather photons.
+
+					// If the pass gather more than k photons, and with the
+					// assumption that photons are uniformly spread on the
+					// hitpoint, we reduce the search radius.
+
+					if(hp->accumPhotonCount > k)
+					{
+						// We now suppose that we only gather k photons, and
+						// reduce the radius accordingly.
+						// Note: the flux is already normalised, so it does
+						// not depends of the radius, no need to change it.
+						hp->accumPhotonRadius2 *= ((float) k) / ((float) hp->accumPhotonCount);
+						hp->accumPhotonCount = k;
+					}
+				}
 				const unsigned long long pcount = hp->photonCount + hp->accumPhotonCount;
 
 				// Compute g and do radius reduction
