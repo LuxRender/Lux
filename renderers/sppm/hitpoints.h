@@ -62,6 +62,8 @@ public:
 	// Used for SURFACE type
 	Point position;
 	Vector wo;
+
+	BSDF *bsdf;
 };
 
 class HitPoint {
@@ -240,15 +242,15 @@ public:
 	const float GetPhotonPassWavelengthSample() { return photonPassWavelengthSample; }
 	const float GetPhotonPassTimeSample() { return photonPassTimeSample; }
 
-	void AddFlux(const Point &hitPoint, const BSDF &bsdf, const Vector &wi,
+	void AddFlux(const Point &hitPoint, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup) {
 		const u_int passIndex = currentPhotonPass % 2;
-		lookUpAccel[passIndex]->AddFlux(hitPoint, passIndex, bsdf, wi, sw, photonFlux, lightGroup);
+		lookUpAccel[passIndex]->AddFlux(hitPoint, passIndex, wi, sw, photonFlux, lightGroup);
 	}
-	void AddFlux(SplatList *splatList, const Point &hitPoint, const BSDF &bsdf, const Vector &wi,
+	void AddFlux(SplatList *splatList, const Point &hitPoint, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup) {
 		const u_int passIndex = currentPhotonPass % 2;
-		return lookUpAccel[passIndex]->AddFlux(splatList, hitPoint, passIndex, bsdf, wi, sw, photonFlux, lightGroup);
+		return lookUpAccel[passIndex]->AddFlux(splatList, hitPoint, passIndex, wi, sw, photonFlux, lightGroup);
 	}
 
 	void SplatFlux(SplatList *splatList) {
@@ -256,7 +258,7 @@ public:
 		return lookUpAccel[passIndex]->Splat(splatList);
 	}
 	void AccumulateFlux(const float fluxScale, const u_int index, const u_int count);
-	void SetHitPoints(RandomGenerator *rng,	const u_int index, const u_int count);
+	void SetHitPoints(RandomGenerator *rng,	const u_int index, const u_int count, MemoryArena& arena);
 
 	void RefreshAccelMutex() {
 		const u_int passIndex = currentEyePass % 2;
@@ -271,7 +273,7 @@ public:
 	void UpdateFilm(const unsigned long long totalPhotons);
 
 private:
-	void TraceEyePath(HitPoint *hp, const Sample &sample);
+	void TraceEyePath(HitPoint *hp, const Sample &sample, MemoryArena &arena);
 
 	SPPMRenderer *renderer;
 	Sampler *eyeSampler;

@@ -369,7 +369,7 @@ void SPPMRenderer::EyePassRenderThread::RenderImpl(EyePassRenderThread *myThread
 
 	hitPoints = renderer->hitPoints;
 	hitPoints->SetHitPoints(myThread->threadRng,
-			myThread->n, renderer->eyePassRenderThreads.size());
+			myThread->n, renderer->eyePassRenderThreads.size(), myThread->eyePassMemoryArena[renderer->hitPoints->GetEyePassCount() % 2]);
 
 	// Wait for other threads
 	eyePassThreadBarrier->wait();
@@ -413,7 +413,7 @@ void SPPMRenderer::EyePassRenderThread::RenderImpl(EyePassRenderThread *myThread
 		eyePassThreadBarrier->wait();
 
 		hitPoints->SetHitPoints(myThread->threadRng,
-				myThread->n, renderer->eyePassRenderThreads.size());
+				myThread->n, renderer->eyePassRenderThreads.size(), myThread->eyePassMemoryArena[renderer->hitPoints->GetEyePassCount() % 2]);
 
 		// Wait for other threads
 		eyePassThreadBarrier->wait();
@@ -693,8 +693,9 @@ void SPPMRenderer::PhotonPassRenderThread::TracePhotons(PhotonSampler &sampler,
 				Vector wi = -photonRay.d;
 
 				// Deposit Flux (only if we have hit a diffuse or glossy surface)
+				// Note: the hitpoint BSDF allready handle this test, but it optimise a bit and avoid same bias
 				if (photonBSDF->NumComponents(BxDFType(BSDF_REFLECTION | BSDF_TRANSMISSION | BSDF_GLOSSY | BSDF_DIFFUSE)) > 0)
-					renderer->hitPoints->AddFlux(photonIsect.dg.p, *photonBSDF, wi, sw, alpha, light->group);
+					renderer->hitPoints->AddFlux(photonIsect.dg.p, wi, sw, alpha, light->group);
 
 				if (nIntersections > renderer->sppmi->maxPhotonPathDepth)
 					break;
@@ -787,8 +788,9 @@ void SPPMRenderer::PhotonPassRenderThread::Splat(SplatList *splatList, Scene &sc
 			Vector wi = -photonRay.d;
 
 			// Deposit Flux (only if we have hit a diffuse or glossy surface)
+			// Note: the hitpoint BSDF allready handle this test, but it optimise a bit and avoid same bias
 			if (photonBSDF->NumComponents(BxDFType(BSDF_REFLECTION | BSDF_TRANSMISSION | BSDF_GLOSSY | BSDF_DIFFUSE)) > 0)
-				renderer->hitPoints->AddFlux(splatList, photonIsect.dg.p, *photonBSDF, wi, sw, alpha, light->group);
+				renderer->hitPoints->AddFlux(splatList, photonIsect.dg.p, wi, sw, alpha, light->group);
 
 			if (nIntersections > renderer->sppmi->maxPhotonPathDepth) {
 				sample->arena.FreeAll();

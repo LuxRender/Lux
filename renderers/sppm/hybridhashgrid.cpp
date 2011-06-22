@@ -165,7 +165,7 @@ void HybridHashGrid::RefreshParallel(const u_int passIndex, const unsigned int i
 	}*/
 }
 
-void HybridHashGrid::AddFlux(const Point &hitPoint, const u_int passIndex, const BSDF &bsdf, const Vector &wi,
+void HybridHashGrid::AddFlux(const Point &hitPoint, const u_int passIndex, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup) {
 	// Look for eye path hit points near the current hit point
 	Vector hh = (hitPoint - hitPoints->GetBBox(passIndex).pMin) * invCellSize;
@@ -181,10 +181,10 @@ void HybridHashGrid::AddFlux(const Point &hitPoint, const u_int passIndex, const
 
 	HashCell *hc = grid[Hash(ix, iy, iz)];
 	if (hc)
-		return hc->AddFlux(this, passIndex, hitPoint, bsdf, wi, sw, photonFlux, lightGroup);
+		return hc->AddFlux(this, passIndex, hitPoint, wi, sw, photonFlux, lightGroup);
 }
 
-void HybridHashGrid::AddFlux(SplatList *splatList, const Point &hitPoint, const u_int passIndex, const BSDF &bsdf, const Vector &wi,
+void HybridHashGrid::AddFlux(SplatList *splatList, const Point &hitPoint, const u_int passIndex, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup) {
 	// Look for eye path hit points near the current hit point
 	Vector hh = (hitPoint - hitPoints->GetBBox(passIndex).pMin) * invCellSize;
@@ -200,5 +200,5 @@ void HybridHashGrid::AddFlux(SplatList *splatList, const Point &hitPoint, const 
 
 	HashCell *hc = grid[Hash(ix, iy, iz)];
 	if (hc)
-		hc->AddFlux(splatList, this, passIndex, hitPoint, bsdf, wi, sw, photonFlux, lightGroup);
+		hc->AddFlux(splatList, this, passIndex, hitPoint, wi, sw, photonFlux, lightGroup);
 }

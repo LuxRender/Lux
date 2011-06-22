@@ -216,10 +216,13 @@ void HitPoints::AccumulateFlux(const float fluxScale, const u_int index, const u
 	}
 }
 
-void HitPoints::SetHitPoints(RandomGenerator *rng, const u_int index, const u_int count) {
+void HitPoints::SetHitPoints(RandomGenerator *rng, const u_int index, const u_int count, MemoryArena &arena) {
 	const unsigned int workSize = hitPoints->size() / count;
 	const unsigned int first = workSize * index;
 	const unsigned int last = (index == count - 1) ? hitPoints->size() : (first + workSize);
+
+	arena.FreeAll();
+
 	assert (first >= 0);
 	assert (last <= hitPoints->size());
 
@@ -253,7 +256,7 @@ void HitPoints::SetHitPoints(RandomGenerator *rng, const u_int index, const u_in
 		HitPoint *hp = &(*hitPoints)[i];
 
 		// Trace the eye path
-		TraceEyePath(hp, sample);
+		TraceEyePath(hp, sample, arena);
 
 		sample.arena.FreeAll();
 	}
@@ -261,7 +264,7 @@ void HitPoints::SetHitPoints(RandomGenerator *rng, const u_int index, const u_in
 	//delete sample.camera; //FIXME deleting the camera clone would delete the film!
 }
 
-void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample)
+void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, MemoryArena &hp_arena)
 {
 	HitPointEyePass *hpep = &hp->eyePass[currentEyePass % 2];
 
@@ -367,6 +370,9 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample)
 			hpep->pathThroughput = pathThroughput * rayWeight;
 			hpep->position = p;
 			hpep->wo = wo;
+
+			// TODO: find a way to copy the generated bsdf to a new one
+			hpep->bsdf = isect.GetBSDF(hp_arena, sw, ray);
 			break;
 		}
 
@@ -376,6 +382,9 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample)
 			hpep->pathThroughput = pathThroughput * rayWeight;
 			hpep->position = p;
 			hpep->wo = wo;
+
+			// TODO: find a way to copy the generated bsdf to a new one
+			hpep->bsdf = isect.GetBSDF(hp_arena, sw, ray);
 			break;
 		}
 

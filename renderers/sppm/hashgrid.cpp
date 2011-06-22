@@ -175,7 +175,7 @@ void HashGrid::RefreshMutex(const u_int passIndex) {
 	std::cerr << "HashGrid.emptyCells = " << (100.f * emptyCells / gridSize) << "%" << std::endl;*/
 }
 
-void HashGrid::AddFlux(const Point &hitPoint, const u_int passIndex, const BSDF &bsdf, const Vector &wi,
+void HashGrid::AddFlux(const Point &hitPoint, const u_int passIndex, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup) {
 	// Look for eye path hit points near the current hit point
 	Vector hh = (hitPoint - hitPoints->GetBBox(passIndex).pMin) * invCellSize;
@@ -190,12 +190,12 @@ void HashGrid::AddFlux(const Point &hitPoint, const u_int passIndex, const BSDF 
 		while (iter != hps->end()) {
 			HitPoint *hp = *iter++;
 
-			AddFluxToHitPoint(hp, passIndex, bsdf, hitPoint, wi, sw, photonFlux, lightGroup);
+			AddFluxToHitPoint(hp, passIndex, hitPoint, wi, sw, photonFlux, lightGroup);
 		}
 	}
 }
 
-void HashGrid::AddFlux(SplatList *splatList, const Point &hitPoint, const u_int passIndex, const BSDF &bsdf, const Vector &wi,
+void HashGrid::AddFlux(SplatList *splatList, const Point &hitPoint, const u_int passIndex, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup) {
 	// Look for eye path hit points near the current hit point
 	Vector hh = (hitPoint - hitPoints->GetBBox(passIndex).pMin) * invCellSize;
@@ -209,7 +209,7 @@ void HashGrid::AddFlux(SplatList *splatList, const Point &hitPoint, const u_int 
 		while (iter != hps->end()) {
 			HitPoint *hp = *iter++;
 
-			AddFluxToSplatList(splatList, hp, passIndex, bsdf, hitPoint, wi, sw, photonFlux, lightGroup);
+			AddFluxToSplatList(splatList, hp, passIndex, hitPoint, wi, sw, photonFlux, lightGroup);
 		}
 	}
 }
