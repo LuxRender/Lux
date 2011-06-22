@@ -202,8 +202,8 @@ void HitPoints::AccumulateFlux(const float fluxScale, const u_int index, const u
 
 				// Update light group flux
 				for (u_int j = 0; j < lightGroupsNumber; ++j) {
-					hp->lightGroupData[j].reflectedFlux = (hp->lightGroupData[j].reflectedFlux +
-							fluxScale * hp->lightGroupData[j].accumReflectedFlux) * g;
+					// NOTE: the stored flux is already normalized, so no need to multiply by g
+					hp->lightGroupData[j].reflectedFlux += fluxScale * hp->lightGroupData[j].accumReflectedFlux;
 
 					hp->lightGroupData[j].accumReflectedFlux = 0.f;
 				}
