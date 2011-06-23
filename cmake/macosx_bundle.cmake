@@ -44,10 +44,10 @@
 			TARGET DYNAMIC_BUILD POST_BUILD
 			COMMAND rm -rf Release/luxrender.app/Contents/Resources
 			COMMAND mkdir Release/luxrender.app/Contents/Resources
-			COMMAND cp ${OSX_DEPENDENCY_ROOT}/icons/luxrender.icns Release/luxrender.app/Contents/Resources
-			COMMAND cp ${OSX_DEPENDENCY_ROOT}/icons/luxscene.icns Release/luxrender.app/Contents/Resources
-			COMMAND cp ${OSX_DEPENDENCY_ROOT}/icons/luxfilm.icns Release/luxrender.app/Contents/Resources
-			COMMAND cp ${OSX_DEPENDENCY_ROOT}/plists/09/Info.plist Release/luxrender.app/Contents
+			COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/icons/luxrender.icns Release/luxrender.app/Contents/Resources
+			COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/icons/luxscene.icns Release/luxrender.app/Contents/Resources
+			COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/icons/luxfilm.icns Release/luxrender.app/Contents/Resources
+			COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/plists/09/Info.plist Release/luxrender.app/Contents
 			COMMAND mv Release/luxrender.app Release/LuxRender.app
 #			COMMAND macdeployqt Release/LuxRender.app ### uncomment for bundling Qt frameworks ###
 			COMMAND mv Release/luxconsole ${CMAKE_BINARY_DIR}/Release/LuxRender.app/Contents/MacOS/luxconsole
@@ -63,10 +63,10 @@
 			TARGET STATIC_BUILD POST_BUILD
 			COMMAND rm -rf Release/luxrender.app/Contents/Resources
 			COMMAND mkdir Release/luxrender.app/Contents/Resources
-			COMMAND cp ${OSX_DEPENDENCY_ROOT}/icons/luxrender.icns Release/luxrender.app/Contents/Resources
-			COMMAND cp ${OSX_DEPENDENCY_ROOT}/icons/luxscene.icns Release/luxrender.app/Contents/Resources
-			COMMAND cp ${OSX_DEPENDENCY_ROOT}/icons/luxfilm.icns Release/luxrender.app/Contents/Resources
-			COMMAND cp ${OSX_DEPENDENCY_ROOT}/plists/09/Info.plist Release/luxrender.app/Contents
+			COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/icons/luxrender.icns Release/luxrender.app/Contents/Resources
+			COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/icons/luxscene.icns Release/luxrender.app/Contents/Resources
+			COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/icons/luxfilm.icns Release/luxrender.app/Contents/Resources
+			COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/plists/09/Info.plist Release/luxrender.app/Contents
 			COMMAND mv Release/luxrender.app Release/LuxRender.app
 			COMMAND mv Release/luxconsole ${CMAKE_BINARY_DIR}/Release/LuxRender.app/Contents/MacOS/luxconsole
 			COMMAND mv Release/luxmerger ${CMAKE_BINARY_DIR}/Release/LuxRender.app/Contents/MacOS/luxmerger

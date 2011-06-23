@@ -64,6 +64,7 @@ IF(APPLE)
 	SET(CMAKE_OSX_SYSROOT /Developer/SDKs/MacOSX10.6.sdk)
 	set(CMAKE_CONFIGURATION_TYPES Release)
 	set(OSX_DEPENDENCY_ROOT ${CMAKE_SOURCE_DIR}/../macos) # can be macos or usr/local for example
+	set(OSX_BUNDLE_COMPONENTS_ROOT ${CMAKE_SOURCE_DIR}/../macos) # bundle resources
 	SET(OSX_SHARED_CORELIB ${OSX_DEPENDENCY_ROOT}/lib/corelib/liblux.dylib) # this is just a safety net
 	INCLUDE(macosx_bundle)
 ENDIF(APPLE)
