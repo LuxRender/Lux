@@ -380,7 +380,7 @@ SET(lux_textures_src
 	)
 SOURCE_GROUP("Source Files\\Textures" FILES ${lux_textures_src})
 
-SET(lux_textures_all_srcs
+SET(lux_textures_all_src
 	${lux_uniform_textures_src}
 	${lux_blender_textures_src}
 	${lux_fresnel_textures_src}
