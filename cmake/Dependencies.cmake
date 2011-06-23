@@ -32,8 +32,13 @@ ELSE(APPLE)
 	FIND_LIBRARY(LUXRAYS_LIBRARY luxrays ../luxrays/lib)
 ENDIF(APPLE)
 
-MESSAGE(STATUS "LuxRays include directory: " ${LUXRAYS_INCLUDE_DIRS})
-MESSAGE(STATUS "LuxRays library directory: " ${LUXRAYS_LIBRARY})
+IF (LUXRAYS_INCLUDE_DIRS AND LUXRAYS_LIBRARY)
+	MESSAGE(STATUS "LuxRays include directory: " ${LUXRAYS_INCLUDE_DIRS})
+	MESSAGE(STATUS "LuxRays library directory: " ${LUXRAYS_LIBRARY})
+	INCLUDE_DIRECTORIES(SYSTEM ${LUXRAYS_INCLUDE_DIRS})
+ELSE (LUXRAYS_INCLUDE_DIRS AND LUXRAYS_LIBRARY)
+	MESSAGE(FATAL_ERROR "LuxRays not found.")
+ENDIF (LUXRAYS_INCLUDE_DIRS AND LUXRAYS_LIBRARY)
 
 
 #############################################################################
@@ -43,13 +48,18 @@ MESSAGE(STATUS "LuxRays library directory: " ${LUXRAYS_LIBRARY})
 #############################################################################
 
 if(LUXRAYS_DISABLE_OPENCL)
-    set(OCL_LIBRARY "")
+	SET(OCL_LIBRARY "")
 else(LUXRAYS_DISABLE_OPENCL)
-    FIND_PATH(OPENCL_INCLUDE_DIRS NAMES CL/cl.hpp OpenCL/cl.hpp PATHS /usr/src/opencl-sdk/include /usr/local/cuda/include)
-    FIND_LIBRARY(OPENCL_LIBRARY OpenCL /usr/src/opencl-sdk/lib/x86_64)
+	FIND_PATH(OPENCL_INCLUDE_DIRS NAMES CL/cl.hpp OpenCL/cl.hpp PATHS /usr/src/opencl-sdk/include /usr/local/cuda/include)
+	FIND_LIBRARY(OPENCL_LIBRARY OpenCL /usr/src/opencl-sdk/lib/x86_64)
 
-    MESSAGE(STATUS "OpenCL include directory: " ${OPENCL_INCLUDE_DIRS})
-    MESSAGE(STATUS "OpenCL library directory: " ${OPENCL_LIBRARY})
+	IF (OPENCL_INCLUDE_DIRS AND OPENCL_LIBRARY)
+		MESSAGE(STATUS "OpenCL include directory: " ${OPENCL_INCLUDE_DIRS})
+		MESSAGE(STATUS "OpenCL library directory: " ${OPENCL_LIBRARY})
+		INCLUDE_DIRECTORIES(SYSTEM ${OPENCL_INCLUDE_DIRS})
+	ELSE (OPENCL_INCLUDE_DIRS AND OPENCL_LIBRARY)
+		MESSAGE(FATAL_ERROR "OpenCL not found, try to compile with LUXRAYS_DISABLE_OPENCL=ON")
+	ENDIF (OPENCL_INCLUDE_DIRS AND OPENCL_LIBRARY)
 endif(LUXRAYS_DISABLE_OPENCL)
 
 
@@ -60,9 +70,13 @@ endif(LUXRAYS_DISABLE_OPENCL)
 #############################################################################
 
 FIND_PACKAGE(OpenGL)
-
-message(STATUS "OpenGL include directory: " "${OPENGL_INCLUDE_DIRS}")
-message(STATUS "OpenGL library: " "${OPENGL_LIBRARY}")
+IF (OPENGL_FOUND)
+	message(STATUS "OpenGL include directory: " "${OPENGL_INCLUDE_DIRS}")
+	message(STATUS "OpenGL library: " "${OPENGL_LIBRARY}")
+	INCLUDE_DIRECTORIES(SYSTEM ${OPENGL_INCLUDE_DIRS})
+ELSE (OPENGL_FOUND)
+	MESSAGE(FATAL_ERROR "OpenGL not found.")
+ENDIF (OPENGL_FOUND)
 
 
 #############################################################################
@@ -99,19 +113,32 @@ ENDIF (NOT FLEX_FOUND)
 IF(APPLE)
 	SET(BOOST_ROOT ${OSX_DEPENDENCY_ROOT})
 ENDIF(APPLE)
+SET(Boost_MINIMUM_VERSION "1.43")
+SET(Boost_ADDITIONAL_VERSIONS "1.46.2" "1.46.1" "1.46.0" "1.46" "1.45.0" "1.45" "1.44.0" "1.44" "1.43.0" "1.43")
+SET(Boost_COMPONENTS thread program_options filesystem serialization iostreams regex system)
+IF(WIN32)
+	SET(Boost_COMPONENTS ${Boost_COMPONENTS} zlib)
+	SET(Boost_USE_STATIC_LIBS ON)
+	SET(Boost_USE_MULTITHREADED ON)
+	SET(Boost_USE_STATIC_RUNTIME OFF)
+ENDIF(WIN32)
 
-FIND_PACKAGE(Boost 1.42 COMPONENTS python REQUIRED)
+FIND_PACKAGE(Boost ${Boost_MINIMUM_VERSION} COMPONENTS python REQUIRED)
 
 SET(Boost_python_FOUND ${Boost_FOUND})
 SET(Boost_python_LIBRARIES ${Boost_LIBRARIES})
 SET(Boost_FOUND)
 SET(Boost_LIBRARIES)
 
-FIND_PACKAGE(Boost 1.42 COMPONENTS thread program_options filesystem serialization iostreams regex system REQUIRED)
+FIND_PACKAGE(Boost ${Boost_MINIMUM_VERSION} COMPONENTS ${Boost_COMPONENTS} REQUIRED)
 
 IF(Boost_FOUND)
 	MESSAGE(STATUS "Boost library directory: " ${Boost_LIBRARY_DIRS})
 	MESSAGE(STATUS "Boost include directory: " ${Boost_INCLUDE_DIRS})
+
+	# Don't use latest boost versions interfaces
+	ADD_DEFINITIONS(-DBOOST_FILESYSTEM_VERSION=2)
+	INCLUDE_DIRECTORIES(SYSTEM ${Boost_INCLUDE_DIRS})
 ELSE(Boost_FOUND)
 	MESSAGE(FATAL_ERROR "Could not find Boost")
 ENDIF(Boost_FOUND)

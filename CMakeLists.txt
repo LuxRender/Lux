@@ -36,6 +36,16 @@ option(LUX_DOCUMENTATION "Generate project documentation" ON)
 # Dade - uncomment to obtain verbose building output
 #SET(CMAKE_VERBOSE_MAKEFILE true)
 
+# Don't overconfigure
+SET(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "limit configs" FORCE)
+# When using single configuration generators like make
+# CMake does need to know which of the possible configurations
+# to generate
+IF (NOT CMAKE_BUILD_TYPE)
+	SET(CMAKE_BUILD_TYPE Release)
+ENDIF(NOT CMAKE_BUILD_TYPE)
+MESSAGE(STATUS "Building mode: " ${CMAKE_BUILD_TYPE})
+
 #############################################################################
 #############################################################################
 ###                OSX general settings and options                       ###

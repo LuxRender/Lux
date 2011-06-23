@@ -432,12 +432,9 @@ SET(lux_lib_src
 #############################################################################
 
 INCLUDE_DIRECTORIES(SYSTEM
-	${Boost_INCLUDE_DIRS}
 	${CMAKE_SOURCE_DIR}/core/external
 	${PNG_INCLUDE_DIR}
 	${OPENEXR_INCLUDE_DIRS}
-	${LUXRAYS_INCLUDE_DIRS}
-	${OPENCL_INCLUDE_DIRS}
 	)
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/core
 	${CMAKE_SOURCE_DIR}/core/queryable
