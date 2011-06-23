@@ -207,9 +207,6 @@ ELSE(APPLE)
 	SET(LUX_LIBRARY -Wl,--whole-archive luxStatic -Wl,--no-whole-archive)
 ENDIF(APPLE)
 SET(LUX_LIBRARY_DEPENDS ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${SYS_LIBRARIES})
-IF (LINUX)
-	SET(LUX_LIBRARY_DEPENDS ${LUX_LIBRARY_DEPENDS} ${OPENEXR_LIBRARIES} ${PNG_LIBRARY})
-ENDIF(LINUX)
 
 #############################################################################
 #############################################################################

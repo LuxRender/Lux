@@ -142,7 +142,7 @@ ELSE(APPLE)
 		/opt/csw/include/OpenEXR
 		/opt/include/OpenEXR
 	)
-	SET(OPENEXR_LIBRARIES Half IlmImf Iex Imath)
+	MESSAGE(STATUS "OpenEXR include directory: " ${OPENEXR_INCLUDE_DIRS})
 ENDIF(APPLE)
 
 #############################################################################
