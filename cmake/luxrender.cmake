@@ -20,63 +20,6 @@
 ###########################################################################
 
 
-#############################################################################
-#############################################################################
-##########  APPLE CUSTOM GUI_TYPE MACOSX_BUNDLE AND BUILD TARGETS ###########
-#############################################################################
-#############################################################################
-
-IF(APPLE)
-	SET(GUI_TYPE MACOSX_BUNDLE)
-	# SET(MACOSX_BUNDLE_LONG_VERSION_STRING "${OPENSCENEGRAPH_MAJOR_VERSION}.${OPENSCENEGRAPH_MINOR_VERSION}.${OPENSCENEGRAPH_PATCH_VERSION}")
-	# Short Version is the "marketing version". It is the version
-	# the user sees in an information panel.
-	SET(MACOSX_BUNDLE_SHORT_VERSION_STRING "${VERSION}")
-	# Bundle version is the version the OS looks at.
-	SET(MACOSX_BUNDLE_BUNDLE_VERSION "${VERSION}")
-	SET(MACOSX_BUNDLE_GUI_IDENTIFIER "org.luxrender.luxrender" )
-	SET(MACOSX_BUNDLE_BUNDLE_NAME "Luxrender" )
-	SET(MACOSX_BUNDLE_ICON_FILE "luxrender.icns")
-	# SET(MACOSX_BUNDLE_COPYRIGHT "")
-	# SET(MACOSX_BUNDLE_INFO_STRING "Info string, localized?")
-	IF(OSX_OPTION_DYNAMIC_BUILD)
-		ADD_CUSTOM_TARGET(DYNAMIC_BUILD DEPENDS luxShared luxrender luxconsole luxmerger luxcomp pylux )
-		ADD_CUSTOM_COMMAND(
-			TARGET DYNAMIC_BUILD POST_BUILD
-			COMMAND rm -rf Release/luxrender.app/Contents/Resources
-			COMMAND mkdir Release/luxrender.app/Contents/Resources
-			COMMAND cp ${OSX_DEPENDENCY_ROOT}/icons/luxrender.icns Release/luxrender.app/Contents/Resources
-			COMMAND cp ${OSX_DEPENDENCY_ROOT}/icons/luxscene.icns Release/luxrender.app/Contents/Resources
-			COMMAND cp ${OSX_DEPENDENCY_ROOT}/icons/luxfilm.icns Release/luxrender.app/Contents/Resources
-			COMMAND cp ${OSX_DEPENDENCY_ROOT}/plists/09/Info.plist Release/luxrender.app/Contents
-			COMMAND mv Release/luxrender.app Release/LuxRender.app
-#			COMMAND macdeployqt Release/LuxRender.app ### uncomment for bundling Qt frameworks ###
-			COMMAND mv Release/luxconsole ${CMAKE_BINARY_DIR}/Release/LuxRender.app/Contents/MacOS/luxconsole
-			COMMAND mv Release/luxcomp ${CMAKE_BINARY_DIR}/Release/LuxRender.app/Contents/MacOS/luxcomp
-			COMMAND mv Release/luxmerger ${CMAKE_BINARY_DIR}/Release/LuxRender.app/Contents/MacOS/luxmerger
-			COMMAND install_name_tool -id @loader_path/liblux.dylib Release/liblux.dylib
-			COMMAND mv Release/liblux.dylib ${CMAKE_BINARY_DIR}/Release/LuxRender.app/Contents/MacOS/liblux.dylib
-			)
-
-	ELSE(OSX_OPTION_DYNAMIC_BUILD)
-		ADD_CUSTOM_TARGET(STATIC_BUILD DEPENDS luxrender luxconsole luxmerger luxcomp pylux)
-		ADD_CUSTOM_COMMAND(
-			TARGET STATIC_BUILD POST_BUILD
-			COMMAND rm -rf Release/luxrender.app/Contents/Resources
-			COMMAND mkdir Release/luxrender.app/Contents/Resources
-			COMMAND cp ${OSX_DEPENDENCY_ROOT}/icons/luxrender.icns Release/luxrender.app/Contents/Resources
-			COMMAND cp ${OSX_DEPENDENCY_ROOT}/icons/luxscene.icns Release/luxrender.app/Contents/Resources
-			COMMAND cp ${OSX_DEPENDENCY_ROOT}/icons/luxfilm.icns Release/luxrender.app/Contents/Resources
-			COMMAND cp ${OSX_DEPENDENCY_ROOT}/plists/09/Info.plist Release/luxrender.app/Contents
-			COMMAND mv Release/luxrender.app Release/LuxRender.app
-			COMMAND mv Release/luxconsole ${CMAKE_BINARY_DIR}/Release/LuxRender.app/Contents/MacOS/luxconsole
-			COMMAND mv Release/luxmerger ${CMAKE_BINARY_DIR}/Release/LuxRender.app/Contents/MacOS/luxmerger
-			COMMAND mv Release/luxcomp ${CMAKE_BINARY_DIR}/Release/LuxRender.app/Contents/MacOS/luxcomp
-#			COMMAND macdeployqt Release/LuxRender.app ### uncomment for bundling Qt frameworks ###
-			)
-	ENDIF(OSX_OPTION_DYNAMIC_BUILD)
-ENDIF(APPLE)
-
 FIND_PACKAGE(Qt4 4.6.0 COMPONENTS QtCore QtGui)
 IF(QT4_FOUND)
 	MESSAGE(STATUS "Qt library directory: " ${QT_LIBRARY_DIR} )
