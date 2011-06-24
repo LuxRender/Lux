@@ -93,6 +93,7 @@ SurfaceIntegrator *SPPMIntegrator::CreateSurfaceIntegrator(const ParamSet &param
 	sppmi->photonStartRadiusScale = params.FindOneFloat("startradius", 2.f);
 	sppmi->photonStartK = params.FindOneInt("startk", 0);
 	sppmi->maxPhotonPathDepth = params.FindOneInt("maxphotondepth", 16);
+	sppmi->GlossyThreshold = params.FindOneFloat("glossythreshold", 100.f);
 
 	sppmi->photonPerPass = params.FindOneInt("photonperpass", 1000000);
 

@@ -396,7 +396,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, MemoryArena &hp
 			break;
 		}
 
-		if ((flags & BSDF_DIFFUSE) || ((flags & BSDF_GLOSSY) && (pdf < 100.f))) {
+		if ((flags & BSDF_DIFFUSE) || ((flags & BSDF_GLOSSY) && (pdf < renderer->sppmi->GlossyThreshold))) {
 			// It is a valid hit point
 			hpep->type = SURFACE;
 			hpep->pathThroughput = pathThroughput * rayWeight;

@@ -44,6 +44,7 @@ public:
 
 	// Variables used by the hybrid sppm renderer
 	string PixelSampler;
+	float GlossyThreshold;
 	PhotonSamplerType photonSamplerType;
 	LookUpAccelType lookupAccelType;
 
