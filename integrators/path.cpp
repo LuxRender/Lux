@@ -50,43 +50,45 @@ void PathIntegrator::RequestSamples(Sample *sample, const Scene &scene)
 
 	sampleOffset = sample->AddxD(structure, maxDepth + 1);
 
-	// This is a bit tricky way to discover the kind of Renderer but otherwise
-	// I would have to change the APIs
-	if (Context::GetActive()->GetRendererType() == Renderer::HYBRIDSAMPLER_TYPE) {
-		structure.clear();
-		const u_int shadowRaysCount = hints.GetShadowRaysCount();
-		hybridRendererLightStrategy = hints.GetLightStrategy();
+	if (enableDirectLightSampling) {
+		// This is a bit tricky way to discover the kind of Renderer but otherwise
+		// I would have to change the APIs
+		if (Context::GetActive()->GetRendererType() == Renderer::HYBRIDSAMPLER_TYPE) {
+			structure.clear();
+			const u_int shadowRaysCount = hints.GetShadowRaysCount();
+			hybridRendererLightStrategy = hints.GetLightStrategy();
 
-		// Handle the AUTO light sampling strategy
-		if (hybridRendererLightStrategy == LightsSamplingStrategy::SAMPLE_AUTOMATIC) {
-			if (scene.lights.size() > 5)
-				hybridRendererLightStrategy = LightsSamplingStrategy::SAMPLE_ONE_UNIFORM;
-			else
-				hybridRendererLightStrategy = LightsSamplingStrategy::SAMPLE_ALL_UNIFORM;
-		}
-
-		if (hybridRendererLightStrategy == LightsSamplingStrategy::SAMPLE_ONE_UNIFORM) {
-			for (u_int i = 0; i <  shadowRaysCount; ++i) {
-				structure.push_back(2);	// light position sample
-				structure.push_back(1);	// light portal sample
-				structure.push_back(1);	// light number sample
+			// Handle the AUTO light sampling strategy
+			if (hybridRendererLightStrategy == LightsSamplingStrategy::SAMPLE_AUTOMATIC) {
+				if (scene.lights.size() > 5)
+					hybridRendererLightStrategy = LightsSamplingStrategy::SAMPLE_ONE_UNIFORM;
+				else
+					hybridRendererLightStrategy = LightsSamplingStrategy::SAMPLE_ALL_UNIFORM;
 			}
-		} else if (hybridRendererLightStrategy == LightsSamplingStrategy::SAMPLE_ALL_UNIFORM) {
-			const u_int nLights = scene.lights.size();
 
-			for (u_int j = 0; j <  nLights; ++j) {
+			if (hybridRendererLightStrategy == LightsSamplingStrategy::SAMPLE_ONE_UNIFORM) {
 				for (u_int i = 0; i <  shadowRaysCount; ++i) {
 					structure.push_back(2);	// light position sample
 					structure.push_back(1);	// light portal sample
+					structure.push_back(1);	// light number sample
 				}
-			}
-		} else
-			assert (false);
+			} else if (hybridRendererLightStrategy == LightsSamplingStrategy::SAMPLE_ALL_UNIFORM) {
+				const u_int nLights = scene.lights.size();
 
-		hybridRendererLightSampleOffset = sample->AddxD(structure, maxDepth + 1);
-	} else {
-		// Allocate and request samples for light sampling, RR, etc.
-		hints.RequestSamples(sample, scene, maxDepth + 1);
+				for (u_int j = 0; j <  nLights; ++j) {
+					for (u_int i = 0; i <  shadowRaysCount; ++i) {
+						structure.push_back(2);	// light position sample
+						structure.push_back(1);	// light portal sample
+					}
+				}
+			} else
+				assert (false);
+
+			hybridRendererLightSampleOffset = sample->AddxD(structure, maxDepth + 1);
+		} else {
+			// Allocate and request samples for light sampling, RR, etc.
+			hints.RequestSamples(sample, scene, maxDepth + 1);
+		}
 	}
 }
 
@@ -152,8 +154,8 @@ u_int PathIntegrator::Li(const Scene &scene, const Sample &sample) const
 
 			// Stop path sampling since no intersection was found
 			// Possibly add horizon in render & reflections
-			if ((includeEnvironment || vertexIndex > 0) &&
-				specularBounce) {
+			if (!enableDirectLightSampling || (
+					(includeEnvironment || vertexIndex > 0) && specularBounce)) {
 				BSDF *ibsdf;
 				for (u_int i = 0; i < nLights; ++i) {
 					SWCSpectrum Le(pathThroughput);
@@ -207,7 +209,7 @@ u_int PathIntegrator::Li(const Scene &scene, const Sample &sample) const
 		// Estimate direct lighting
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;
-		if (nLights > 0) {
+		if (enableDirectLightSampling && (nLights > 0)) {
 			for (u_int i = 0; i < lightGroupCount; ++i) {
 				Ld[i] = 0.f;
 				Vd[i] = 0.f;
@@ -434,7 +436,8 @@ void PathIntegrator::BuildShadowRays(const Scene &scene, PathState *pathState, B
 	pathState->tracedShadowRayCount = 0;
 
 	const u_int nLights = scene.lights.size();
-	if (nLights > 0 && bsdf->NumComponents(BxDFType(BSDF_ALL & ~BSDF_SPECULAR)) > 0) {
+	if (enableDirectLightSampling && (nLights > 0) &&
+			(bsdf->NumComponents(BxDFType(BSDF_ALL & ~BSDF_SPECULAR)) > 0)) {
 		const float *sampleData = pathState->sample.sampler->GetLazyValues(pathState->sample,
 			hybridRendererLightSampleOffset, pathState->pathLength);
 
@@ -644,7 +647,9 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 	const Point &p = bsdf->dgShading.p;
 	const Normal &n = bsdf->dgShading.nn;
 
-	// Direct light sampling, only if there's a non specular component
+
+	// Direct light sampling, only if there's a non specular component and
+	// direct light sampling is enabled
 	BuildShadowRays(scene, pathState, bsdf);
 
 	// Sample BSDF to get new path direction
@@ -717,8 +722,10 @@ SurfaceIntegrator* PathIntegrator::CreateSurfaceIntegrator(const ParamSet &param
 		rstrategy = RR_EFFICIENCY;
 	}
 	bool include_environment = params.FindOneBool("includeenvironment", true);
+	bool directLightSampling = params.FindOneBool("directlightsampling", true);
 
-	PathIntegrator *pi = new PathIntegrator(rstrategy, max(maxDepth, 0), RRcontinueProb, include_environment);
+	PathIntegrator *pi = new PathIntegrator(rstrategy, max(maxDepth, 0), RRcontinueProb,
+			include_environment, directLightSampling);
 	// Initialize the rendering hints
 	pi->hints.InitParam(params);
 
