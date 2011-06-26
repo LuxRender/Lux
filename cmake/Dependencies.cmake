@@ -224,13 +224,6 @@ ENDIF(APPLE)
 ############################ THREADING LIBRARIES ############################
 #############################################################################
 #############################################################################
-IF(APPLE)
-	FIND_PATH(THREADS_INCLUDE_DIRS
-		pthread.h
-		PATHS
-		/usr/include/pthread
-	)
-	SET(THREADS_LIBRARIES pthread)
-ELSE(APPLE)
+
 	FIND_PACKAGE(Threads REQUIRED)
-ENDIF(APPLE)
+
