@@ -19,12 +19,22 @@ IF (WIN32)
 		${FREEIMAGE_ROOT_DIR}
 		DOC "The FreeImage library")
 ELSE (WIN32)
+	FIND_PATH(FREEIMAGE_INCLUDE_PATH # OSX run, if not succesful, next FIND_PATH takes effect
+		freeimage.h
+		PATHS
+		${OSX_DEPENDENCY_ROOT}/include
+		NO_DEFAULT_PATH)
 	FIND_PATH( FREEIMAGE_INCLUDE_PATH FreeImage.h
 		/usr/include
 		/usr/local/include
 		/sw/include
 		/opt/local/include
 		DOC "The directory where FreeImage.h resides")
+	FIND_LIBRARY(FREEIMAGE_LIBRARY # OSX run, if not succesful, next FIND_PATH takes effect
+		libfreeimage.a
+		PATHS
+		${OSX_DEPENDENCY_ROOT}/lib
+		NO_DEFAULT_PATH)
 	FIND_LIBRARY( FREEIMAGE_LIBRARY
 		NAMES FreeImage freeimage
 		PATHS

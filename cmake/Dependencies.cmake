@@ -210,20 +210,6 @@ ENDIF(APPLE)
 #############################################################################
 #############################################################################
 
-IF(APPLE)
-	FIND_PATH(FREEIMAGE_INCLUDE_DIRS
-		freeimage.h
-		PATHS
-	${OSX_DEPENDENCY_ROOT}/include
-	NO_DEFAULT_PATH
-	)
-	FIND_LIBRARY(FREEIMAGE_LIBRARIES
-		libfreeimage.a
-		PATHS
-	${OSX_DEPENDENCY_ROOT}/lib
-	NO_DEFAULT_PATH
-	)
-ELSE(APPLE)
 	FIND_PACKAGE(FreeImage REQUIRED)
 
 	IF(FREEIMAGE_FOUND)
@@ -232,7 +218,6 @@ ELSE(APPLE)
 	ELSE(FREEIMAGE_FOUND)
 		MESSAGE(FATAL_ERROR "Could not find FreeImage")
 	ENDIF(FREEIMAGE_FOUND)
-ENDIF(APPLE)
 
 #############################################################################
 #############################################################################
