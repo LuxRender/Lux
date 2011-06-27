@@ -36,28 +36,22 @@ public:
 	};
 
 	BidirPathState(const Scene &scene, ContributionBuffer *contribBuffer, RandomGenerator *rng);
-	~BidirPathState() {
-		delete[] eyePath;
-		delete[] lightPath;
-	}
+	~BidirPathState() {	}
 
 	bool Init(const Scene &scene);
 	void Free(const Scene &scene);
 
-	friend class PathIntegrator;
+	friend class BidirIntegrator;
 
 private:
 	struct BidirStateVertex {
-		BidirStateVertex() : pdf(0.f), pdfR(0.f), tPdf(1.f), tPdfR(1.f),
-			dAWeight(0.f), dARWeight(0.f), rr(1.f), rrR(1.f),
-			flux(0.f), bsdf(NULL), flags(BxDFType(0)) {}
+		BidirStateVertex() : bsdf(NULL), flags(BxDFType(0)), alphaWi(0.f), alphaWo(0.f) {}
 
-		float cosi, coso, pdf, pdfR, tPdf, tPdfR, dAWeight, dARWeight, rr, rrR, d2, padding;
-		SWCSpectrum flux;
 		BSDF *bsdf;
 		BxDFType flags;
+
 		Vector wi, wo;
-		Point p;
+		SWCSpectrum alphaWi, alphaWo;
 	};
 
 	void Terminate(const Scene &scene, const u_int bufferId,
@@ -70,8 +64,17 @@ private:
 
 	BidirStateVertex *eyePath;
 	u_int eyePathLength;
+
+	const Light *light;
 	BidirStateVertex *lightPath;
 	u_int lightPathLength;
+
+	u_int *raysIndex;
+	u_int raysCount;
+
+	float distance;
+	SWCSpectrum *L;
+	float *V;
 
 	PathState state;
 };
