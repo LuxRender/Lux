@@ -249,7 +249,7 @@ HybridSamplerRenderer::HybridSamplerRenderer(const int oclPlatformIndex, const b
 
 		LOG(LUX_INFO, LUX_NOERROR) << "OpenCL Devices used:";
 		for (size_t i = 0; i< hardwareDevices.size(); ++i)
-			LOG(LUX_INFO, LUX_NOERROR) << " [" << hardwareDevices[0]->GetName() << "]";
+			LOG(LUX_INFO, LUX_NOERROR) << " [" << hardwareDevices[i]->GetName() << "]";
 	} else
 		// don't want GPU or no hardware available, use native
 		useNative = true;
