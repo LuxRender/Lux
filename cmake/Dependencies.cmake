@@ -151,26 +151,32 @@ ENDIF(Boost_FOUND)
 #############################################################################
 
 # !!!!freeimage needs headers from or matched with freeimage !!!!
-IF(APPLE)
-	FIND_PATH(OPENEXR_INCLUDE_DIRS
-		OpenEXRConfig.h
-		PATHS
-		${OSX_DEPENDENCY_ROOT}/include/OpenEXR
-		NO_DEFAULT_PATH
-	)
-ELSE(APPLE)
-	FIND_PATH(OPENEXR_INCLUDE_DIRS
-		ImfXdr.h
-		PATHS
-		/usr/local/include/OpenEXR
-		/usr/include/OpenEXR
-		/sw/include/OpenEXR
-		/opt/local/include/OpenEXR
-		/opt/csw/include/OpenEXR
-		/opt/include/OpenEXR
-	)
+# Lookup user specified path first
+FIND_PATH(OPENEXR_INCLUDE_DIRS
+	NAMES ImfXdr.h OpenEXRConfig.h
+	PATHS
+	${OSX_DEPENDENCY_ROOT}
+	PATH_SUFFIXES include/OpenEXR
+	NO_DEFAULT_PATH
+)
+FIND_PATH(OPENEXR_INCLUDE_DIRS
+	NAMES ImfXdr.h OpenEXRConfig.h
+	PATHS
+	/usr/local
+	/usr
+	/sw
+	/opt/local
+	/opt/csw
+	/opt
+	PATH_SUFFIXES include/OpenEXR
+)
+IF (OPENEXR_INCLUDE_DIRS)
 	MESSAGE(STATUS "OpenEXR include directory: " ${OPENEXR_INCLUDE_DIRS})
-ENDIF(APPLE)
+	INCLUDE_DIRECTORIES(SYSTEM ${OPENEXR_INCLUDE_DIRS})
+	SET(OPENEXR_LIBRARIES Half IlmImf Iex Imath)
+ELSE(OPENEXR_INCLUDE_DIRS)
+	MESSAGE(FATAL_ERROR "OpenEXR not found.")
+ENDIF(OPENEXR_INCLUDE_DIRS)
 
 #############################################################################
 #############################################################################
@@ -210,14 +216,18 @@ ENDIF(APPLE)
 #############################################################################
 #############################################################################
 
-	FIND_PACKAGE(FreeImage REQUIRED)
+IF(APPLE)
+	SET(FREEIMAGE_ROOT_DIR ${OSX_DEPENDENCY_ROOT})
+ENDIF(APPLE)
+FIND_PACKAGE(FreeImage REQUIRED)
 
-	IF(FREEIMAGE_FOUND)
-		MESSAGE(STATUS "FreeImage library directory: " ${FREEIMAGE_LIBRARIES})
-		MESSAGE(STATUS "FreeImage include directory: " ${FREEIMAGE_INCLUDE_PATH})
-	ELSE(FREEIMAGE_FOUND)
-		MESSAGE(FATAL_ERROR "Could not find FreeImage")
-	ENDIF(FREEIMAGE_FOUND)
+IF(FREEIMAGE_FOUND)
+	MESSAGE(STATUS "FreeImage library directory: " ${FREEIMAGE_LIBRARIES})
+	MESSAGE(STATUS "FreeImage include directory: " ${FREEIMAGE_INCLUDE_PATH})
+	INCLUDE_DIRECTORIES(SYSTEM ${FREEIMAGE_INCLUDE_PATH})
+ELSE(FREEIMAGE_FOUND)
+	MESSAGE(FATAL_ERROR "Could not find FreeImage")
+ENDIF(FREEIMAGE_FOUND)
 
 #############################################################################
 #############################################################################
@@ -225,5 +235,4 @@ ENDIF(APPLE)
 #############################################################################
 #############################################################################
 
-	FIND_PACKAGE(Threads REQUIRED)
-
+FIND_PACKAGE(Threads REQUIRED)
