@@ -103,7 +103,6 @@ IF (NOT FLEX_FOUND)
 ENDIF (NOT FLEX_FOUND)
 
 
-
 #############################################################################
 #############################################################################
 ########################### BOOST LIBRARIES SETUP ###########################
@@ -146,88 +145,85 @@ ENDIF(Boost_FOUND)
 
 #############################################################################
 #############################################################################
+###########################   FREEIMAGE LIBRARIES    ########################
+#############################################################################
+#############################################################################
+
+IF(APPLE)
+	SET(FREEIMAGE_ROOT ${OSX_DEPENDENCY_ROOT})
+ENDIF(APPLE)
+FIND_PACKAGE(FreeImage REQUIRED)
+
+IF(FREEIMAGE_FOUND)
+	MESSAGE(STATUS "FreeImage include directory: " ${FREEIMAGE_INCLUDE_DIR})
+	MESSAGE(STATUS "FreeImage library: " ${FREEIMAGE_LIBRARIES})
+	INCLUDE_DIRECTORIES(SYSTEM ${FREEIMAGE_INCLUDE_DIR})
+ELSE(FREEIMAGE_FOUND)
+	MESSAGE(FATAL_ERROR "Could not find FreeImage")
+ENDIF(FREEIMAGE_FOUND)
+
+
+#############################################################################
+#############################################################################
 ######################### OPENEXR LIBRARIES SETUP ###########################
 #############################################################################
 #############################################################################
 
 # !!!!freeimage needs headers from or matched with freeimage !!!!
-# Lookup user specified path first
-FIND_PATH(OPENEXR_INCLUDE_DIRS
-	NAMES ImfXdr.h OpenEXRConfig.h
-	PATHS
-	${OSX_DEPENDENCY_ROOT}
-	PATH_SUFFIXES include/OpenEXR
-	NO_DEFAULT_PATH
-)
-FIND_PATH(OPENEXR_INCLUDE_DIRS
-	NAMES ImfXdr.h OpenEXRConfig.h
-	PATHS
-	/usr/local
-	/usr
-	/sw
-	/opt/local
-	/opt/csw
-	/opt
-	PATH_SUFFIXES include/OpenEXR
-)
-IF (OPENEXR_INCLUDE_DIRS)
+IF(APPLE)
+	SET(OPENEXR_ROOT ${OSX_DEPENDENCY_ROOT})
+ENDIF(APPLE)
+FIND_PACKAGE(OpenEXR REQUIRED)
+# The PNG library might be accessible from the FreeImage library
+# Otherwise add it to the FreeImage library (required by pngio)
+IF (OPENEXR_FOUND)
 	MESSAGE(STATUS "OpenEXR include directory: " ${OPENEXR_INCLUDE_DIRS})
 	INCLUDE_DIRECTORIES(SYSTEM ${OPENEXR_INCLUDE_DIRS})
-	SET(OPENEXR_LIBRARIES Half IlmImf Iex Imath)
-ELSE(OPENEXR_INCLUDE_DIRS)
+	TRY_COMPILE(FREEIMAGE_PROVIDES_OPENEXR ${CMAKE_BINARY_DIR}
+		${CMAKE_SOURCE_DIR}/cmake/FindFreeImage.cxx
+		CMAKE_FLAGS
+		"-DINCLUDE_DIRECTORIES:STRING=${OPENEXR_INCLUDE_DIRS}"
+		"-DLINK_LIBRARIES:STRING=${FREEIMAGE_LIBRARY}"
+		COMPILE_DEFINITIONS -D__TEST_OPENEXR__)
+	IF (NOT FREEIMAGE_PROVIDES_OPENEXR)
+		MESSAGE(STATUS "OpenEXR library: " ${OPENEXR_LIBRARIES})
+		SET(FREEIMAGE_LIBRARIES ${FREEIMAGE_LIBRARIES} ${OPENEXR_LIBRARIES})
+	ENDIF(NOT FREEIMAGE_PROVIDES_OPENEXR)
+ELSE(OPENEXR_FOUND)
 	MESSAGE(FATAL_ERROR "OpenEXR not found.")
-ENDIF(OPENEXR_INCLUDE_DIRS)
+ENDIF(OPENEXR_FOUND)
+
 
 #############################################################################
 #############################################################################
 ########################### PNG   LIBRARIES SETUP ###########################
 #############################################################################
 #############################################################################
-# - Find the native PNG includes and library
-#
-# This module defines
-#  PNG_INCLUDE_DIR, where to find png.h, etc.
-#  PNG_LIBRARIES, the libraries to link against to use PNG.
-#  PNG_DEFINITIONS - You should ADD_DEFINITONS(${PNG_DEFINITIONS}) before compiling code that includes png library files.
-#  PNG_FOUND, If false, do not try to use PNG.
-# also defined, but not for general use are
-#  PNG_LIBRARY, where to find the PNG library.
-# None of the above will be defined unles zlib can be found.
-# PNG depends on Zlib
+
+# !!!!freeimage needs headers from or matched with freeimage !!!!
 IF(APPLE)
-	FIND_PATH(PNG_INCLUDE_DIR
-		pngconf.h
-		PATHS
-		${OSX_DEPENDENCY_ROOT}/include
-		NO_DEFAULT_PATH
-	)
-ELSE(APPLE)
-	FIND_PACKAGE(PNG)
-	IF(NOT PNG_FOUND)
-		MESSAGE(STATUS "Warning : could not find PNG - building without png support")
-	ENDIF(NOT PNG_FOUND)
+	SET(PNG_ROOT ${OSX_DEPENDENCY_ROOT})
 ENDIF(APPLE)
+FIND_PACKAGE(PNG)
+# The PNG library might be accessible from the FreeImage library
+# Otherwise add it to the FreeImage library (required by pngio)
+IF(PNG_FOUND)
+	MESSAGE(STATUS "PNG include directory: " ${PNG_INCLUDE_DIRS})
+	INCLUDE_DIRECTORIES(SYSTEM ${OpenEXR_INCLUDE_DIRS})
+	TRY_COMPILE(FREEIMAGE_PROVIDES_PNG ${CMAKE_BINARY_DIR}
+		${CMAKE_SOURCE_DIR}/cmake/FindFreeImage.cxx
+		CMAKE_FLAGS
+		"-DINCLUDE_DIRECTORIES:STRING=${PNG_INCLUDES}"
+		"-DLINK_LIBRARIES:STRING=${FREEIMAGE_LIBRARY}"
+		COMPILE_DEFINITIONS -D__TEST_PNG__)
+	IF (NOT FREEIMAGE_PROVIDES_PNG)
+		MESSAGE(STATUS "PNG library: " ${PNG_LIBRARIES})
+		SET(FREEIMAGE_LIBRARIES ${FREEIMAGE_LIBRARIES} ${PNG_LIBRARIES})
+	ENDIF(NOT FREEIMAGE_PROVIDES_PNG)
+ELSE(PNG_FOUND)
+	MESSAGE(STATUS "Warning : could not find PNG - building without png support")
+ENDIF(PNG_FOUND)
 
-
-
-#############################################################################
-#############################################################################
-###########################   FREEIMAGE LIBRARIES    ########################
-#############################################################################
-#############################################################################
-
-IF(APPLE)
-	SET(FREEIMAGE_ROOT_DIR ${OSX_DEPENDENCY_ROOT})
-ENDIF(APPLE)
-FIND_PACKAGE(FreeImage REQUIRED)
-
-IF(FREEIMAGE_FOUND)
-	MESSAGE(STATUS "FreeImage library directory: " ${FREEIMAGE_LIBRARIES})
-	MESSAGE(STATUS "FreeImage include directory: " ${FREEIMAGE_INCLUDE_PATH})
-	INCLUDE_DIRECTORIES(SYSTEM ${FREEIMAGE_INCLUDE_PATH})
-ELSE(FREEIMAGE_FOUND)
-	MESSAGE(FATAL_ERROR "Could not find FreeImage")
-ENDIF(FREEIMAGE_FOUND)
 
 #############################################################################
 #############################################################################
