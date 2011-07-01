@@ -174,21 +174,9 @@ IF(APPLE)
 	SET(OPENEXR_ROOT ${OSX_DEPENDENCY_ROOT})
 ENDIF(APPLE)
 FIND_PACKAGE(OpenEXR REQUIRED)
-# The PNG library might be accessible from the FreeImage library
-# Otherwise add it to the FreeImage library (required by pngio)
 IF (OPENEXR_FOUND)
 	MESSAGE(STATUS "OpenEXR include directory: " ${OPENEXR_INCLUDE_DIRS})
 	INCLUDE_DIRECTORIES(SYSTEM ${OPENEXR_INCLUDE_DIRS})
-	TRY_COMPILE(FREEIMAGE_PROVIDES_OPENEXR ${CMAKE_BINARY_DIR}
-		${CMAKE_SOURCE_DIR}/cmake/FindFreeImage.cxx
-		CMAKE_FLAGS
-		"-DINCLUDE_DIRECTORIES:STRING=${OPENEXR_INCLUDE_DIRS}"
-		"-DLINK_LIBRARIES:STRING=${FREEIMAGE_LIBRARY}"
-		COMPILE_DEFINITIONS -D__TEST_OPENEXR__)
-	IF (NOT FREEIMAGE_PROVIDES_OPENEXR)
-		MESSAGE(STATUS "OpenEXR library: " ${OPENEXR_LIBRARIES})
-		SET(FREEIMAGE_LIBRARIES ${FREEIMAGE_LIBRARIES} ${OPENEXR_LIBRARIES})
-	ENDIF(NOT FREEIMAGE_PROVIDES_OPENEXR)
 ELSE(OPENEXR_FOUND)
 	MESSAGE(FATAL_ERROR "OpenEXR not found.")
 ENDIF(OPENEXR_FOUND)
@@ -205,24 +193,44 @@ IF(APPLE)
 	SET(PNG_ROOT ${OSX_DEPENDENCY_ROOT})
 ENDIF(APPLE)
 FIND_PACKAGE(PNG)
-# The PNG library might be accessible from the FreeImage library
-# Otherwise add it to the FreeImage library (required by pngio)
 IF(PNG_FOUND)
 	MESSAGE(STATUS "PNG include directory: " ${PNG_INCLUDE_DIRS})
 	INCLUDE_DIRECTORIES(SYSTEM ${OpenEXR_INCLUDE_DIRS})
-	TRY_COMPILE(FREEIMAGE_PROVIDES_PNG ${CMAKE_BINARY_DIR}
-		${CMAKE_SOURCE_DIR}/cmake/FindFreeImage.cxx
-		CMAKE_FLAGS
-		"-DINCLUDE_DIRECTORIES:STRING=${PNG_INCLUDES}"
-		"-DLINK_LIBRARIES:STRING=${FREEIMAGE_LIBRARY}"
-		COMPILE_DEFINITIONS -D__TEST_PNG__)
-	IF (NOT FREEIMAGE_PROVIDES_PNG)
-		MESSAGE(STATUS "PNG library: " ${PNG_LIBRARIES})
-		SET(FREEIMAGE_LIBRARIES ${FREEIMAGE_LIBRARIES} ${PNG_LIBRARIES})
-	ENDIF(NOT FREEIMAGE_PROVIDES_PNG)
 ELSE(PNG_FOUND)
 	MESSAGE(STATUS "Warning : could not find PNG - building without png support")
 ENDIF(PNG_FOUND)
+
+
+#############################################################################
+#############################################################################
+###########################   ADDITIONAL LIBRARIES   ########################
+#############################################################################
+#############################################################################
+
+# The OpenEXR library might be accessible from the FreeImage library
+# Otherwise add it to the FreeImage library (required by exrio)
+TRY_COMPILE(FREEIMAGE_PROVIDES_OPENEXR ${CMAKE_BINARY_DIR}
+	${CMAKE_SOURCE_DIR}/cmake/FindFreeImage.cxx
+	CMAKE_FLAGS
+	"-DINCLUDE_DIRECTORIES:STRING=${OPENEXR_INCLUDE_DIRS}"
+	"-DLINK_LIBRARIES:STRING=${FREEIMAGE_LIBRARIES}"
+	COMPILE_DEFINITIONS -D__TEST_OPENEXR__)
+# The PNG library might be accessible from the FreeImage library
+# Otherwise add it to the FreeImage library (required by pngio)
+TRY_COMPILE(FREEIMAGE_PROVIDES_PNG ${CMAKE_BINARY_DIR}
+	${CMAKE_SOURCE_DIR}/cmake/FindFreeImage.cxx
+	CMAKE_FLAGS
+	"-DINCLUDE_DIRECTORIES:STRING=${PNG_INCLUDES}"
+	"-DLINK_LIBRARIES:STRING=${FREEIMAGE_LIBRARIES}"
+	COMPILE_DEFINITIONS -D__TEST_PNG__)
+IF (NOT FREEIMAGE_PROVIDES_OPENEXR)
+	MESSAGE(STATUS "OpenEXR library: " ${OPENEXR_LIBRARIES})
+	SET(FREEIMAGE_LIBRARIES ${FREEIMAGE_LIBRARIES} ${OPENEXR_LIBRARIES})
+ENDIF(NOT FREEIMAGE_PROVIDES_OPENEXR)
+IF (NOT FREEIMAGE_PROVIDES_PNG)
+	MESSAGE(STATUS "PNG library: " ${PNG_LIBRARIES})
+	SET(FREEIMAGE_LIBRARIES ${FREEIMAGE_LIBRARIES} ${PNG_LIBRARIES})
+ENDIF(NOT FREEIMAGE_PROVIDES_PNG)
 
 
 #############################################################################
