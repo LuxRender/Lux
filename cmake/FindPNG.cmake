@@ -44,7 +44,7 @@ FIND_PATH(ZLIB_INCLUDE_DIR
 	DOC "The directory where zlib.h resides")
 
 SET(ZLIB_NAMES_REL z zlib zdll)
-SET(PNG_LIB_SUFFIXES lib64 lib Lib lib/OpenEXR Libs)
+SET(PNG_LIB_SUFFIXES lib64 lib Lib lib/PNG Libs)
 SET(PNG_LIB_SUFFIXES_REL)
 SET(PNG_LIB_SUFFIXES_DBG)
 FOREACH(i ${PNG_LIB_SUFFIXES})
