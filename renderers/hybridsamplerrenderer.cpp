@@ -567,7 +567,7 @@ string HybridSamplerRenderer::GetStats() {
 void HybridSamplerRenderer::CreateRenderThread() {
 	if (scene->IsFilmOnly())
 		return;
-if (renderThreads.size() > 0) return;
+
 	// Avoid to create the thread in case signal is EXIT. For instance, it
 	// can happen when the rendering is done.
 	if ((state == RUN) || (state == PAUSE)) {

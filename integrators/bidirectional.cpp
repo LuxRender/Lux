@@ -1112,6 +1112,7 @@ bool BidirPathState::Init(const Scene &scene) {
 		const float *data = sample.sampler->GetLazyValues(sample,
 			bidir->sampleEyeOffset, sampleIndex);
 		BidirStateVertex &v = eyePath[nEye];
+		v.alphaWi = eyePath[nEye - 1].alphaWo;
 
 		if (!scene.Intersect(sample, volume, scattered, ray, data[4],
 			&isect, &v.bsdf, &pdfR, &pdf, &v.alphaWi)) {
@@ -1263,11 +1264,16 @@ bool BidirIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, l
 	u_int index = 0;
 
 	// For each eye path vertex
+	SWCSpectrum eyePathThroughput(1.f);
 	for (u_int t = 0; t < bidirState->eyePathLength; ++t) {
+		eyePathThroughput *= bidirState->eyePath[t].alphaWo;
+
 		// For each light path vertex
+		SWCSpectrum lightPathThroughput(1.f);
 		for (u_int s = 0; s < bidirState->lightPathLength; ++s) {
 			BidirPathState::BidirStateVertex &eyePath = bidirState->eyePath[t];
 			BidirPathState::BidirStateVertex &lightPath = bidirState->lightPath[s];
+			SWCSpectrum eyePathThroughput = bidirState->eyePath[t].alphaWo;
 
 			if (((eyePath.flags & BSDF_SPECULAR) == 0) &&
 				((lightPath.flags & BSDF_SPECULAR) == 0)) {
@@ -1291,12 +1297,19 @@ bool BidirIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, l
 					const luxrays::RayHit *rayHit = rayBuffer->GetRayHit(bidirState->raysIndex[index]);
 
 					if (rayHit->Miss()) {
-						
+						const u_int lightGroup = bidirState->light->group;
+						const SWCSpectrum L = eyePathThroughput * ef * lf * lightPathThroughput * lightPath.alphaWi;
+
+						bidirState->L[lightGroup] += L;
+						bidirState->V[lightGroup] += L.Filter(sw);
+						++(*nrContribs);
 					}
 
 					++index;
 				}
 			}
+
+			lightPathThroughput *= bidirState->lightPath[s].alphaWo;
 		}
 	}
 
