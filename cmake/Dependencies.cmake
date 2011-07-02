@@ -103,7 +103,6 @@ IF (NOT FLEX_FOUND)
 ENDIF (NOT FLEX_FOUND)
 
 
-
 #############################################################################
 #############################################################################
 ########################### BOOST LIBRARIES SETUP ###########################
@@ -146,106 +145,106 @@ ENDIF(Boost_FOUND)
 
 #############################################################################
 #############################################################################
+###########################   FREEIMAGE LIBRARIES    ########################
+#############################################################################
+#############################################################################
+
+IF(APPLE)
+	SET(FREEIMAGE_ROOT ${OSX_DEPENDENCY_ROOT})
+ENDIF(APPLE)
+FIND_PACKAGE(FreeImage REQUIRED)
+
+IF(FREEIMAGE_FOUND)
+	MESSAGE(STATUS "FreeImage include directory: " ${FREEIMAGE_INCLUDE_DIR})
+	MESSAGE(STATUS "FreeImage library: " ${FREEIMAGE_LIBRARIES})
+	INCLUDE_DIRECTORIES(SYSTEM ${FREEIMAGE_INCLUDE_DIR})
+ELSE(FREEIMAGE_FOUND)
+	MESSAGE(FATAL_ERROR "Could not find FreeImage")
+ENDIF(FREEIMAGE_FOUND)
+
+
+#############################################################################
+#############################################################################
 ######################### OPENEXR LIBRARIES SETUP ###########################
 #############################################################################
 #############################################################################
 
 # !!!!freeimage needs headers from or matched with freeimage !!!!
 IF(APPLE)
-	FIND_PATH(OPENEXR_INCLUDE_DIRS
-		OpenEXRConfig.h
-		PATHS
-		${OSX_DEPENDENCY_ROOT}/include/OpenEXR
-		NO_DEFAULT_PATH
-	)
-ELSE(APPLE)
-	FIND_PATH(OPENEXR_INCLUDE_DIRS
-		ImfXdr.h
-		PATHS
-		/usr/local/include/OpenEXR
-		/usr/include/OpenEXR
-		/sw/include/OpenEXR
-		/opt/local/include/OpenEXR
-		/opt/csw/include/OpenEXR
-		/opt/include/OpenEXR
-	)
-	MESSAGE(STATUS "OpenEXR include directory: " ${OPENEXR_INCLUDE_DIRS})
+	SET(OPENEXR_ROOT ${OSX_DEPENDENCY_ROOT})
 ENDIF(APPLE)
+FIND_PACKAGE(OpenEXR)
+IF (OPENEXR_INCLUDE_DIRS)
+	MESSAGE(STATUS "OpenEXR include directory: " ${OPENEXR_INCLUDE_DIRS})
+	INCLUDE_DIRECTORIES(SYSTEM ${OPENEXR_INCLUDE_DIRS})
+ELSE(OPENEXR_INCLUDE_DIRS)
+	MESSAGE(FATAL_ERROR "OpenEXR headers not found.")
+ENDIF(OPENEXR_INCLUDE_DIRS)
+
 
 #############################################################################
 #############################################################################
 ########################### PNG   LIBRARIES SETUP ###########################
 #############################################################################
 #############################################################################
-# - Find the native PNG includes and library
-#
-# This module defines
-#  PNG_INCLUDE_DIR, where to find png.h, etc.
-#  PNG_LIBRARIES, the libraries to link against to use PNG.
-#  PNG_DEFINITIONS - You should ADD_DEFINITONS(${PNG_DEFINITIONS}) before compiling code that includes png library files.
-#  PNG_FOUND, If false, do not try to use PNG.
-# also defined, but not for general use are
-#  PNG_LIBRARY, where to find the PNG library.
-# None of the above will be defined unles zlib can be found.
-# PNG depends on Zlib
+
+# !!!!freeimage needs headers from or matched with freeimage !!!!
 IF(APPLE)
-	FIND_PATH(PNG_INCLUDE_DIR
-		pngconf.h
-		PATHS
-		${OSX_DEPENDENCY_ROOT}/include
-		NO_DEFAULT_PATH
-	)
-ELSE(APPLE)
-	FIND_PACKAGE(PNG)
-	IF(NOT PNG_FOUND)
-		MESSAGE(STATUS "Warning : could not find PNG - building without png support")
-	ENDIF(NOT PNG_FOUND)
+	SET(PNG_ROOT ${OSX_DEPENDENCY_ROOT})
 ENDIF(APPLE)
-
+FIND_PACKAGE(PNG)
+IF(PNG_INCLUDE_DIRS)
+	MESSAGE(STATUS "PNG include directory: " ${PNG_INCLUDE_DIRS})
+	INCLUDE_DIRECTORIES(SYSTEM ${PNG_INCLUDE_DIRS})
+ELSE(PNG_INCLUDE_DIRS)
+	MESSAGE(STATUS "Warning : could not find PNG headers - building without png support")
+ENDIF(PNG_INCLUDE_DIRS)
 
 
 #############################################################################
 #############################################################################
-###########################   FREEIMAGE LIBRARIES    ########################
+###########################   ADDITIONAL LIBRARIES   ########################
 #############################################################################
 #############################################################################
 
-IF(APPLE)
-	FIND_PATH(FREEIMAGE_INCLUDE_DIRS
-		freeimage.h
-		PATHS
-	${OSX_DEPENDENCY_ROOT}/include
-	NO_DEFAULT_PATH
-	)
-	FIND_LIBRARY(FREEIMAGE_LIBRARIES
-		libfreeimage.a
-		PATHS
-	${OSX_DEPENDENCY_ROOT}/lib
-	NO_DEFAULT_PATH
-	)
-ELSE(APPLE)
-	FIND_PACKAGE(FreeImage REQUIRED)
+# The OpenEXR library might be accessible from the FreeImage library
+# Otherwise add it to the FreeImage library (required by exrio)
+TRY_COMPILE(FREEIMAGE_PROVIDES_OPENEXR ${CMAKE_BINARY_DIR}
+	${CMAKE_SOURCE_DIR}/cmake/FindFreeImage.cxx
+	CMAKE_FLAGS
+	"-DINCLUDE_DIRECTORIES:STRING=${OPENEXR_INCLUDE_DIRS}"
+	"-DLINK_LIBRARIES:STRING=${FREEIMAGE_LIBRARIES}"
+	COMPILE_DEFINITIONS -D__TEST_OPENEXR__)
+# The PNG library might be accessible from the FreeImage library
+# Otherwise add it to the FreeImage library (required by pngio)
+TRY_COMPILE(FREEIMAGE_PROVIDES_PNG ${CMAKE_BINARY_DIR}
+	${CMAKE_SOURCE_DIR}/cmake/FindFreeImage.cxx
+	CMAKE_FLAGS
+	"-DINCLUDE_DIRECTORIES:STRING=${PNG_INCLUDE_DIRS}"
+	"-DLINK_LIBRARIES:STRING=${FREEIMAGE_LIBRARIES}"
+	COMPILE_DEFINITIONS -D__TEST_PNG__)
+IF(NOT FREEIMAGE_PROVIDES_OPENEXR)
+	IF(OPENEXR_LIBRARIES)
+		MESSAGE(STATUS "OpenEXR library: " ${OPENEXR_LIBRARIES})
+		SET(FREEIMAGE_LIBRARIES ${FREEIMAGE_LIBRARIES} ${OPENEXR_LIBRARIES})
+	ELSE(OPENEXR_LIBRARIES)
+		MESSAGE(FATAL_ERROR "Unable to find OpenEXR library")
+	ENDIF(OPENEXR_LIBRARIES)
+ENDIF(NOT FREEIMAGE_PROVIDES_OPENEXR)
+IF (PNG_INCLUDE_DIRS AND NOT FREEIMAGE_PROVIDES_PNG)
+	IF(PNG_LIBRARIES)
+		MESSAGE(STATUS "PNG library: " ${PNG_LIBRARIES})
+		SET(FREEIMAGE_LIBRARIES ${FREEIMAGE_LIBRARIES} ${PNG_LIBRARIES})
+	ELSE(PNG_LIBRARIES)
+		MESSAGE(FATAL_ERROR "Unable to find PNG library")
+	ENDIF(PNG_LIBRARIES)
+ENDIF(PNG_INCLUDE_DIRS AND NOT FREEIMAGE_PROVIDES_PNG)
 
-	IF(FREEIMAGE_FOUND)
-		MESSAGE(STATUS "FreeImage library directory: " ${FREEIMAGE_LIBRARIES})
-		MESSAGE(STATUS "FreeImage include directory: " ${FREEIMAGE_INCLUDE_PATH})
-	ELSE(FREEIMAGE_FOUND)
-		MESSAGE(FATAL_ERROR "Could not find FreeImage")
-	ENDIF(FREEIMAGE_FOUND)
-ENDIF(APPLE)
 
 #############################################################################
 #############################################################################
 ############################ THREADING LIBRARIES ############################
 #############################################################################
 #############################################################################
-IF(APPLE)
-	FIND_PATH(THREADS_INCLUDE_DIRS
-		pthread.h
-		PATHS
-		/usr/include/pthread
-	)
-	SET(THREADS_LIBRARIES pthread)
-ELSE(APPLE)
-	FIND_PACKAGE(Threads REQUIRED)
-ENDIF(APPLE)
+
+FIND_PACKAGE(Threads REQUIRED)
