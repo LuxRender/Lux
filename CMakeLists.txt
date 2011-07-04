@@ -88,7 +88,7 @@ ENDIF(APPLE)
 #############################################################################
 #############################################################################
 
-IF(NOT APPLE)
+IF(NOT APPLE AND NOT WIN32)
 	EXECUTE_PROCESS(
 		COMMAND ${CMAKE_C_COMPILER} -dumpmachine
 		OUTPUT_VARIABLE MACHINE
@@ -113,7 +113,7 @@ IF(NOT APPLE)
 	IF (_mach_ppc)
 		SET(ARCH_PPC 1)
 	ENDIF (_mach_ppc)
-ENDIF(NOT APPLE)
+ENDIF(NOT APPLE AND NOT WIN32)
 
 #############################################################################
 #############################################################################
@@ -149,6 +149,37 @@ ADD_DEFINITIONS(-DLUX_USE_CONFIG_H)
 IF(APPLE)
 	# Jens - default Mac compiler options
 	ADD_DEFINITIONS(-O3 -ftree-vectorize -msse -msse2 -msse3 -mssse3 -fvariable-expansion-in-unroller -fpic -Wall -DHAVE_PTHREAD_H )
+ELSEIF(MSVC)
+	# Default MSVC compiler options
+	MESSAGE(STATUS "MSVC")
+
+	# Change warning to something saner
+	#Force to always compile with W3
+	IF(CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
+		STRING(REGEX REPLACE "/W[0-4]" "/W3" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+	ELSE()
+		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS /W3")
+	ENDIF()
+
+	IF(MSVC10)
+		MESSAGE(STATUS "Version 10")
+		# Whole Program Opt. gui display fixed in cmake 2.8.5
+		# See http://public.kitware.com/Bug/view.php?id=6794
+		# /GL will be used to build the code but the selection is not displayed in the menu
+
+		# /Qfast_transcendentals causes inlining of those functions but no loss of precision
+
+		SET(MSVC_RELEASE_COMPILER_FLAGS "/WX- /MP /O2 /Ob1 /Oi /Oy- /GT /GL /Gm- /EHsc /MD /GS /arch:SSE2 /fp:precise /Zc:forScope /GR /Gy /openmp /Gd /TP /GL /GF- /Ot /favor:blend /Qfast_transcendentals")
+		SET(MSVC_RELEASE_WITH_DEBUG_COMPILER_FLAGS "/Zi")
+
+		SET(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} ${MSVC_RELEASE_COMPILER_FLAGS} ${MSVC_RELEASE_WITH_DEBUG_COMPILER_FLAGS}")
+		SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${MSVC_RELEASE_COMPILER_FLAGS} ${MSVC_RELEASE_WITH_DEBUG_COMPILER_FLAGS}")
+
+		# Definitions
+		ADD_DEFINITIONS(-D__SSE2__ -D__SSE__ -D__MMX__)
+		ADD_DEFINITIONS(-D_UNICODE -DUNICODE)
+		ADD_DEFINITIONS(-DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_CRT_SECURE_NO_DEPRECATE)
+	ENDIF(MSVC10)
 ELSE(APPLE)
 	# Dade - default compiler options
 	ADD_DEFINITIONS(-O3 -msse2 -mfpmath=sse -ftree-vectorize -funroll-loops -Wall -fPIC -DHAVE_PTHREAD_H)
@@ -215,6 +246,20 @@ ENDIF(APPLE)
 LINK_DIRECTORIES(${LINK_DIRECTORIES} ${Boost_LIBRARY_DIRS} )
 IF (APPLE)
 	SET(LUX_LIBRARY -all_load luxStatic -noall_load)
+ELSEIF(MSVC)
+	IF(MSVC10)
+		# LTCG not correctly set by cmake in the current release - in the meantime the linker will inform you about switching this flag automatically because of /GL
+		#SET(MSVC_RELEASE_LINKER_FLAGS "/LTCG")
+		SET(MSVC_RELEASE_LINKER_FLAGS "/LTCG /OPT:REF /OPT:ICF")
+		SET(MSVC_RELEASE_WITH_DEBUG_LINKER_FLAGS "/DEBUG")
+		SET(STATIC_LIBRARY_FLAGS_RELEASE "${STATIC_LIBRARY_FLAGS_RELEASE} ${MSVC_RELEASE_LINKER_FLAGS} ${MSVC_DEBUG_LINKER_FLAGS}")
+		SET(SHARED_LIBRARY_FLAGS_RELEASE "${SHARED_LIBRARY_FLAGS_RELEASE} ${MSVC_RELEASE_LINKER_FLAGS} ${MSVC_DEBUG_LINKER_FLAGS}")
+
+		# Prevent cmake from adding about any std. lib there is
+		SET(CMAKE_C_STANDARD_LIBRARIES "")
+		SET(CMAKE_CXX_STANDARD_LIBRARIES "")
+	ENDIF(MSVC10)
+	SET(LUX_LIBRARY luxStatic)
 ELSE(APPLE)
 	SET(LUX_LIBRARY -Wl,--whole-archive luxStatic -Wl,--no-whole-archive)
 ENDIF(APPLE)
@@ -254,32 +299,33 @@ IF(APPLE)
 
 #	TODO: custom install
 
+ELSEIF(WIN32)
+
+	#TODO: custom install
+
 ELSE(APPLE)
 	INSTALL(TARGETS luxconsole luxmerger RUNTIME DESTINATION bin)
 	IF(QT4_FOUND)
 		INSTALL(TARGETS luxrender RUNTIME DESTINATION bin)
 	ENDIF(QT4_FOUND)
 
-#Install API/Library
-INSTALL(FILES ${CMAKE_SOURCE_DIR}/core/api.h DESTINATION include/luxrender/)
-INSTALL(TARGETS luxStatic DESTINATION lib${LIB_SUFFIX})
-#	ELSE(FIND_LIBRARY_USE_LIB64_PATHS) ARCHIVE DESTINATION lib
-#	ENDIF(FIND_LIBRARY_USE_LIB64_PATHS)
+	#Install API/Library
+	INSTALL(FILES ${CMAKE_SOURCE_DIR}/core/api.h DESTINATION include/luxrender/)
+	INSTALL(TARGETS luxStatic DESTINATION lib${LIB_SUFFIX})
 
+	#Install Desktop files
+	INSTALL(FILES ${CMAKE_SOURCE_DIR}/wxgui/luxrender.svg DESTINATION share/pixmaps/)
+	INSTALL(FILES ${CMAKE_SOURCE_DIR}/wxgui/luxrender.desktop DESTINATION share/applications/)
 
-#Install Desktop files
-INSTALL(FILES ${CMAKE_SOURCE_DIR}/wxgui/luxrender.svg DESTINATION share/pixmaps/)
-INSTALL(FILES ${CMAKE_SOURCE_DIR}/wxgui/luxrender.desktop DESTINATION share/applications/)
-
-#Source package target
-ADD_CUSTOM_TARGET(package mkdir lux-${VERSION}
-	COMMAND cp -R ${CMAKE_SOURCE_DIR}/* lux-${VERSION}
-	COMMAND tar -cf ${CMAKE_BINARY_DIR}/lux-${VERSION}.tar lux-${VERSION}
-	COMMAND bzip2 --best ${CMAKE_BINARY_DIR}/lux-${VERSION}.tar
-	WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-	DEPENDS ${lux_lib_src}
-	COMMENT Building source package
-)
+	#Source package target
+	ADD_CUSTOM_TARGET(package mkdir lux-${VERSION}
+		COMMAND cp -R ${CMAKE_SOURCE_DIR}/* lux-${VERSION}
+		COMMAND tar -cf ${CMAKE_BINARY_DIR}/lux-${VERSION}.tar lux-${VERSION}
+		COMMAND bzip2 --best ${CMAKE_BINARY_DIR}/lux-${VERSION}.tar
+		WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+		DEPENDS ${lux_lib_src}
+		COMMENT Building source package
+	)
 ENDIF(APPLE)
 # Dade - GCC Profiling (remember to uncomment the line in the middle of file too)
 #SET_TARGET_PROPERTIES(luxconsole luxmerger luxrender PROPERTIES LINK_FLAGS "-pg")
