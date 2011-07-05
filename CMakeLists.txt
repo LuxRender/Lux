@@ -19,17 +19,26 @@
 #   Lux website: http://www.luxrender.net                                 #
 ###########################################################################
 
-cmake_minimum_required(VERSION 2.4)
+MESSAGE(STATUS "CMAKE VERSION DETECTED " ${CMAKE_VERSION})
+IF(MSVC)
+	cmake_minimum_required(VERSION 2.8)
+	cmake_policy(VERSION 2.8)
+ELSE(MSVC)
+	cmake_minimum_required(VERSION 2.4)
+ENDIF(MSVC)    
+
 IF(COMMAND cmake_policy)
 	cmake_policy(SET CMP0003 NEW)
 ENDIF(COMMAND cmake_policy)
-MESSAGE(STATUS "CMAKE VERSION DETECTED " ${CMAKE_VERSION})
 
 PROJECT(lux)
 SET(VERSION 0.9)
 
 SET(LUX_CMAKE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${LUX_CMAKE_DIR}")
+SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} 
+	"${LUX_CMAKE_DIR}"
+	"${LUX_CMAKE_DIR}/SpecializedConfig"
+)
 option(LUXRAYS_DISABLE_OPENCL "Build without OpenCL support" OFF)
 option(LUX_DOCUMENTATION "Generate project documentation" ON)
 
@@ -104,7 +113,7 @@ IF(NOT APPLE AND NOT WIN32)
 	STRING(REGEX MATCH "(x86_64-*)|(X86_64-*)|(AMD64-*)|(amd64-*)" _mach_x86_64 ${MACHINE})
 	IF (_mach_x86_64)
 		SET(ARCH_X86_64 1)
-    SET(LIB_SUFFIX 64)
+	SET(LIB_SUFFIX 64)
 		#jromang - Hack to avoid boost bug on x64  Ubuntu 8.10 and Fedora 10 (http://www.luxrender.net/mantis/view.php?id=433)
 		ADD_DEFINITIONS(-DBOOST_NO_INTRINSIC_INT64_T)
 	ENDIF (_mach_x86_64)
@@ -113,7 +122,24 @@ IF(NOT APPLE AND NOT WIN32)
 	IF (_mach_ppc)
 		SET(ARCH_PPC 1)
 	ENDIF (_mach_ppc)
+ELSE(NOT APPLE AND NOT WIN32)
+	STRING(REGEX MATCH "(Win64)" _carch_x64 ${CMAKE_GENERATOR})
+	IF(_carch_x64)
+		SET(ARCH_X86_64 1)
+		MESSAGE(STATUS "Building for target x64")
+	ELSE(_carch_x64)
+		SET(ARCH_X86 1)
+		MESSAGE(STATUS "Building for target Win32")
+	ENDIF(_carch_x64)
 ENDIF(NOT APPLE AND NOT WIN32)
+
+#
+# Overwrite defaults with Custom Settings
+#
+IF(LUX_CUSTOM_CONFIG)
+	MESSAGE(STATUS "Using custom build config: ${LUX_CUSTOM_CONFIG}")
+	INCLUDE(${LUX_CUSTOM_CONFIG})
+ENDIF(LUX_CUSTOM_CONFIG)
 
 #############################################################################
 #############################################################################
@@ -153,6 +179,8 @@ ELSEIF(MSVC)
 	# Default MSVC compiler options
 	MESSAGE(STATUS "MSVC")
 
+	SET(GUI_TYPE WIN32)
+
 	# Change warning to something saner
 	#Force to always compile with W3
 	IF(CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
@@ -160,6 +188,25 @@ ELSEIF(MSVC)
 	ELSE()
 		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS /W3")
 	ENDIF()
+
+	IF(MSVC90)
+		MESSAGE(STATUS "Version 9")
+		# Whole Program Opt. gui display fixed in cmake 2.8.5
+		# See http://public.kitware.com/Bug/view.php?id=6794
+		# /GL will be used to build the code but the selection is not displayed in the menu
+
+		# /Qfast_transcendentals causes inlining of those functions but no loss of precision
+
+		SET(MSVC_RELEASE_COMPILER_FLAGS "/WX- /MP /O2 /Ob1 /Oi /Oy- /GT /GL /Gm- /EHsc /MD /GS /fp:precise /Zc:forScope /GR /Gy /Gd /TP /GL /GF- /Ot /favor:blend /Qfast_transcendentals")
+		SET(MSVC_RELEASE_WITH_DEBUG_COMPILER_FLAGS "/Zi")
+
+		IF(NOT ARCH_X86_64)
+			SET(MSVC_RELEASE_COMPILER_FLAGS ${MSVC_RELEASE_COMPILER_FLAGS} " /arch:SSE2")
+		ENDIF(NOT ARCH_X86_64)
+
+		SET(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} ${MSVC_RELEASE_COMPILER_FLAGS} ${MSVC_RELEASE_WITH_DEBUG_COMPILER_FLAGS}")
+		SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${MSVC_RELEASE_COMPILER_FLAGS} ${MSVC_RELEASE_WITH_DEBUG_COMPILER_FLAGS}")
+	ENDIF(MSVC90)
 
 	IF(MSVC10)
 		MESSAGE(STATUS "Version 10")
@@ -169,17 +216,18 @@ ELSEIF(MSVC)
 
 		# /Qfast_transcendentals causes inlining of those functions but no loss of precision
 
-		SET(MSVC_RELEASE_COMPILER_FLAGS "/WX- /MP /O2 /Ob1 /Oi /Oy- /GT /GL /Gm- /EHsc /MD /GS /arch:SSE2 /fp:precise /Zc:forScope /GR /Gy /openmp /Gd /TP /GL /GF- /Ot /favor:blend /Qfast_transcendentals")
+		SET(MSVC_RELEASE_COMPILER_FLAGS "/WX- /MP /O2 /Ob1 /Oi /Oy- /GT /GL /Gm- /EHsc /MD /GS /fp:precise /Zc:forScope /GR /Gy /openmp /Gd /TP /GL /GF- /Ot /favor:blend /Qfast_transcendentals")
 		SET(MSVC_RELEASE_WITH_DEBUG_COMPILER_FLAGS "/Zi")
 
 		SET(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} ${MSVC_RELEASE_COMPILER_FLAGS} ${MSVC_RELEASE_WITH_DEBUG_COMPILER_FLAGS}")
 		SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${MSVC_RELEASE_COMPILER_FLAGS} ${MSVC_RELEASE_WITH_DEBUG_COMPILER_FLAGS}")
-
-		# Definitions
-		ADD_DEFINITIONS(-D__SSE2__ -D__SSE__ -D__MMX__)
-		ADD_DEFINITIONS(-D_UNICODE -DUNICODE)
-		ADD_DEFINITIONS(-DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_CRT_SECURE_NO_DEPRECATE)
 	ENDIF(MSVC10)
+
+	# Definitions
+	ADD_DEFINITIONS(-D__SSE2__ -D__SSE__ -D__MMX__)
+	ADD_DEFINITIONS(-D_UNICODE -DUNICODE)
+	ADD_DEFINITIONS(-DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_CRT_SECURE_NO_DEPRECATE -D_SCL_SECURE_NO_WARNINGS)
+	
 ELSE(APPLE)
 	# Dade - default compiler options
 	ADD_DEFINITIONS(-O3 -msse2 -mfpmath=sse -ftree-vectorize -funroll-loops -Wall -fPIC -DHAVE_PTHREAD_H)
@@ -247,6 +295,19 @@ LINK_DIRECTORIES(${LINK_DIRECTORIES} ${Boost_LIBRARY_DIRS} )
 IF (APPLE)
 	SET(LUX_LIBRARY -all_load luxStatic -noall_load)
 ELSEIF(MSVC)
+	IF(MSVC90)
+		# LTCG not correctly set by cmake in the current release - in the meantime the linker will inform you about switching this flag automatically because of /GL
+		#SET(MSVC_RELEASE_LINKER_FLAGS "/LTCG")
+		SET(MSVC_RELEASE_LINKER_FLAGS "/LTCG /OPT:NOREF /OPT:ICF")
+		SET(MSVC_RELEASE_WITH_DEBUG_LINKER_FLAGS "/DEBUG")
+		SET(STATIC_LIBRARY_FLAGS_RELEASE "${STATIC_LIBRARY_FLAGS_RELEASE} ${MSVC_RELEASE_LINKER_FLAGS} ${MSVC_DEBUG_LINKER_FLAGS}")
+		SET(SHARED_LIBRARY_FLAGS_RELEASE "${SHARED_LIBRARY_FLAGS_RELEASE} ${MSVC_RELEASE_LINKER_FLAGS} ${MSVC_DEBUG_LINKER_FLAGS}")
+		SET(CMAKE_EXE_LINKER_FLAGS "${MSVC_RELEASE_LINKER_FLAGS}")
+
+		# Prevent cmake from adding about any std. lib there is
+		SET(CMAKE_C_STANDARD_LIBRARIES "")
+		SET(CMAKE_CXX_STANDARD_LIBRARIES "")
+	ENDIF(MSVC90)
 	IF(MSVC10)
 		# LTCG not correctly set by cmake in the current release - in the meantime the linker will inform you about switching this flag automatically because of /GL
 		#SET(MSVC_RELEASE_LINKER_FLAGS "/LTCG")

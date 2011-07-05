@@ -20,7 +20,8 @@
 ###########################################################################
 
 
-FIND_PACKAGE(Qt4 4.6.0 COMPONENTS QtCore QtGui)
+FIND_PACKAGE(Qt4 4.6.0 COMPONENTS QtCore QtGui QtMain)
+
 IF(QT4_FOUND)
 	MESSAGE(STATUS "Qt library directory: " ${QT_LIBRARY_DIR} )
 	MESSAGE( STATUS "Qt include directory: " ${QT_INCLUDE_DIR} )
@@ -123,6 +124,7 @@ IF(QT4_FOUND)
 			TARGET_LINK_LIBRARIES(luxrender -Wl,-undefined -Wl,dynamic_lookup ${LUX_LIBRARY} ${QT_LIBRARIES} ${LUX_LIBRARY_DEPENDS} ${EXTRA_LIBS} )
 		ENDIF(OSX_OPTION_DYNAMIC_BUILD)
 	ELSE(APPLE)
+		MESSAGE(STATUS "Qt libs: ${QT_LIBRARIES}}")
 		TARGET_LINK_LIBRARIES(luxrender ${LUX_LIBRARY} ${QT_LIBRARIES} ${LUX_LIBRARY_DEPENDS})
 	ENDIF(APPLE)
 ELSE(QT4_FOUND)

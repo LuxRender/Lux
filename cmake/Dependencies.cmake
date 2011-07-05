@@ -19,6 +19,10 @@
 #   Lux website: http://www.luxrender.net                                 #
 ###########################################################################
 
+IF(MSVC)
+	INCLUDE ( FindPkgMacros )
+ENDIF(MSVC)
+
 #############################################################################
 #############################################################################
 ##########################      Find LuxRays       ##########################
@@ -29,7 +33,7 @@ IF(APPLE)
 	FIND_LIBRARY(LUXRAYS_LIBRARY libluxrays.a ${OSX_DEPENDENCY_ROOT}/lib/LuxRays)
 ELSE(APPLE)
 	FIND_PATH(LUXRAYS_INCLUDE_DIRS NAMES luxrays/luxrays.h PATHS ../luxrays/include)
-	FIND_LIBRARY(LUXRAYS_LIBRARY luxrays ../luxrays/lib)
+	FIND_LIBRARY(LUXRAYS_LIBRARY luxrays PATHS ../luxrays/lib PATH_SUFFIXES "" release relwithdebinfo minsizerel dist )
 ENDIF(APPLE)
 
 IF (LUXRAYS_INCLUDE_DIRS AND LUXRAYS_LIBRARY)
@@ -50,8 +54,13 @@ ENDIF (LUXRAYS_INCLUDE_DIRS AND LUXRAYS_LIBRARY)
 if(LUXRAYS_DISABLE_OPENCL)
 	SET(OCL_LIBRARY "")
 else(LUXRAYS_DISABLE_OPENCL)
-	FIND_PATH(OPENCL_INCLUDE_DIRS NAMES CL/cl.hpp OpenCL/cl.hpp PATHS /usr/src/opencl-sdk/include /usr/local/cuda/include)
-	FIND_LIBRARY(OPENCL_LIBRARY OpenCL /usr/src/opencl-sdk/lib/x86_64)
+	IF(MSVC)
+		FIND_PACKAGE ( OpenCL )
+		SET ( OPENCL_INCLUDE_DIRS "${OPENCL_INCLUDE_PATH}")
+	ELSE(MSVC)
+		FIND_PATH(OPENCL_INCLUDE_DIRS NAMES CL/cl.hpp OpenCL/cl.hpp PATHS /usr/src/opencl-sdk/include /usr/local/cuda/include)
+		FIND_LIBRARY(OPENCL_LIBRARY OpenCL /usr/src/opencl-sdk/lib/x86_64)
+	ENDIF(MSVC)
 
 	IF (OPENCL_INCLUDE_DIRS AND OPENCL_LIBRARY)
 		MESSAGE(STATUS "OpenCL include directory: " ${OPENCL_INCLUDE_DIRS})
@@ -122,7 +131,17 @@ IF(WIN32)
 	SET(Boost_USE_STATIC_RUNTIME OFF)
 ENDIF(WIN32)
 
+IF(MSVC)
+	SET(_boost_libdir "${BOOST_LIBRARYDIR}")
+	SET(BOOST_LIBRARYDIR "${BOOST_python_LIBRARYDIR}")
+ENDIF(MSVC)
+
 FIND_PACKAGE(Boost ${Boost_MINIMUM_VERSION} COMPONENTS python REQUIRED)
+
+IF(MSVC)
+	SET(BOOST_LIBRARYDIR "${_boost_libdir}")
+	SET(_boost_libdir)
+ENDIF(MSVC)
 
 SET(Boost_python_FOUND ${Boost_FOUND})
 SET(Boost_python_LIBRARIES ${Boost_LIBRARIES})
@@ -215,6 +234,7 @@ TRY_COMPILE(FREEIMAGE_PROVIDES_OPENEXR ${CMAKE_BINARY_DIR}
 	"-DINCLUDE_DIRECTORIES:STRING=${OPENEXR_INCLUDE_DIRS}"
 	"-DLINK_LIBRARIES:STRING=${FREEIMAGE_LIBRARIES}"
 	COMPILE_DEFINITIONS -D__TEST_OPENEXR__)
+
 # The PNG library might be accessible from the FreeImage library
 # Otherwise add it to the FreeImage library (required by pngio)
 TRY_COMPILE(FREEIMAGE_PROVIDES_PNG ${CMAKE_BINARY_DIR}
@@ -222,7 +242,9 @@ TRY_COMPILE(FREEIMAGE_PROVIDES_PNG ${CMAKE_BINARY_DIR}
 	CMAKE_FLAGS
 	"-DINCLUDE_DIRECTORIES:STRING=${PNG_INCLUDE_DIRS}"
 	"-DLINK_LIBRARIES:STRING=${FREEIMAGE_LIBRARIES}"
-	COMPILE_DEFINITIONS -D__TEST_PNG__)
+	COMPILE_DEFINITIONS -D__TEST_PNG__
+	OUTPUT_VARIABLE FREEIMAGE_PROVIDES_PNG_OUTPUT)
+
 IF(NOT FREEIMAGE_PROVIDES_OPENEXR)
 	IF(OPENEXR_LIBRARIES)
 		MESSAGE(STATUS "OpenEXR library: " ${OPENEXR_LIBRARIES})
@@ -231,6 +253,7 @@ IF(NOT FREEIMAGE_PROVIDES_OPENEXR)
 		MESSAGE(FATAL_ERROR "Unable to find OpenEXR library")
 	ENDIF(OPENEXR_LIBRARIES)
 ENDIF(NOT FREEIMAGE_PROVIDES_OPENEXR)
+
 IF (PNG_INCLUDE_DIRS AND NOT FREEIMAGE_PROVIDES_PNG)
 	IF(PNG_LIBRARIES)
 		MESSAGE(STATUS "PNG library: " ${PNG_LIBRARIES})
@@ -248,3 +271,10 @@ ENDIF(PNG_INCLUDE_DIRS AND NOT FREEIMAGE_PROVIDES_PNG)
 #############################################################################
 
 FIND_PACKAGE(Threads REQUIRED)
+
+##
+# General system libraries
+##
+IF (WIN32)
+	SET(SYS_LIBRARIES ${SYS_LIBRARIES} "shell32.lib")
+ENDIF (WIN32)

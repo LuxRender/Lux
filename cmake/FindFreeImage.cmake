@@ -8,7 +8,7 @@
 # 
 
 # Lookup user provide path first
-SET(FREEIMAGE_INC_SUFFIXES include/freeimage include Include Headers)
+SET(FREEIMAGE_INC_SUFFIXES include/freeimage include Include Headers Dist)
 FIND_PATH(FREEIMAGE_INCLUDE_DIR
 	NAMES FreeImage.h freeimage.h
 	PATHS
@@ -21,7 +21,7 @@ FIND_PATH(FREEIMAGE_INCLUDE_DIR
 	PATH_SUFFIXES ${FREEIMAGE_INC_SUFFIXES}
 	DOC "The directory where FreeImage.h resides")
 SET(FREEIMAGE_NAMES_REL FreeImage freeimage)
-SET(FREEIMAGE_LIB_SUFFIXES lib64 lib Lib lib/freeimage Libs)
+SET(FREEIMAGE_LIB_SUFFIXES lib64 lib Lib lib/freeimage Libs Dist)
 SET(FREEIMAGE_LIB_SUFFIXES_REL)
 SET(FREEIMAGE_LIB_SUFFIXES_DBG)
 FOREACH(i ${FREEIMAGE_LIB_SUFFIXES})
