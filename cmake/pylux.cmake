@@ -53,6 +53,19 @@ IF(PYTHONLIBS_FOUND OR PYTHON_CUSTOM)
 	MESSAGE(STATUS "Python include directory: " ${PYTHON_INCLUDE_PATH} )
 
 	INCLUDE_DIRECTORIES(SYSTEM ${PYTHON_INCLUDE_PATH})
+
+	SOURCE_GROUP("Source Files\\Python" FILES python/binding.cpp)
+	SOURCE_GROUP("Header Files\\Python" FILES
+		python/binding.h
+		python/pycontext.h
+		python/pydoc.h
+		python/pydoc_context.h
+		python/pydoc_renderserver.h
+		python/pydynload.h
+		python/pyfleximage.h
+		python/pyrenderserver.h
+		)
+
 	ADD_LIBRARY(pylux MODULE python/binding.cpp)
 	IF(APPLE)
 		IF( NOT CMAKE_VERSION VERSION_LESS 2.8.3) # only cmake >= 2.8.3 supports per target attributes

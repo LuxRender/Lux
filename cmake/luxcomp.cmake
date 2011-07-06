@@ -19,6 +19,7 @@
 #   Lux website: http://www.luxrender.net                                 #
 ###########################################################################
 
+SOURCE_GROUP("Source Files\\Tools" FILES tools/luxcomp.cpp)
 ADD_EXECUTABLE(luxcomp tools/luxcomp.cpp)
 IF(APPLE)
 	IF(OSX_OPTION_DYNAMIC_BUILD)

@@ -28,70 +28,70 @@ IF(QT4_FOUND)
 	INCLUDE(${QT_USE_FILE})
 
 	SET(LUXQTGUI_SRCS
-		qtgui/main.cpp
-		qtgui/histogramview.cpp
-		qtgui/mainwindow.cpp
-		qtgui/renderview.cpp
-		qtgui/luxapp.cpp
 		qtgui/aboutdialog.cpp
 		qtgui/advancedinfowidget.cpp
-		qtgui/lightgroupwidget.cpp
-		qtgui/tonemapwidget.cpp
-		qtgui/lenseffectswidget.cpp
+		qtgui/batchprocessdialog.cpp
 		qtgui/colorspacewidget.cpp
 		qtgui/gammawidget.cpp
-		qtgui/noisereductionwidget.cpp
-		qtgui/histogramwidget.cpp
-		qtgui/panewidget.cpp
-		qtgui/batchprocessdialog.cpp
-		qtgui/openexroptionsdialog.cpp
 		qtgui/guiutil.cpp
+		qtgui/histogramview.cpp
+		qtgui/histogramwidget.cpp
+		qtgui/lenseffectswidget.cpp
+		qtgui/lightgroupwidget.cpp
+		qtgui/luxapp.cpp
+		qtgui/main.cpp
+		qtgui/mainwindow.cpp
+		qtgui/noisereductionwidget.cpp
+		qtgui/openexroptionsdialog.cpp
+		qtgui/panewidget.cpp
+		qtgui/renderview.cpp
+		qtgui/tonemapwidget.cpp
 		)
 	SOURCE_GROUP("Source Files\\Qt GUI" FILES ${LUXQTGUI_SRCS})
 
-	SET( LUXQTGUI_MOC
-		qtgui/histogramview.hxx
-		qtgui/mainwindow.hxx
+	SET(LUXQTGUI_MOC
 		qtgui/aboutdialog.hxx
 		qtgui/advancedinfowidget.hxx
-		qtgui/luxapp.hxx
-		qtgui/renderview.hxx
-		qtgui/lightgroupwidget.hxx
-		qtgui/tonemapwidget.hxx
-		qtgui/lenseffectswidget.hxx
+		qtgui/batchprocessdialog.hxx
 		qtgui/colorspacewidget.hxx
 		qtgui/gammawidget.hxx
-		qtgui/noisereductionwidget.hxx
+		qtgui/histogramview.hxx
 		qtgui/histogramwidget.hxx
-		qtgui/panewidget.hxx
-		qtgui/batchprocessdialog.hxx
+		qtgui/lenseffectswidget.hxx
+		qtgui/lightgroupwidget.hxx
+		qtgui/luxapp.hxx
+		qtgui/mainwindow.hxx
+		qtgui/noisereductionwidget.hxx
 		qtgui/openexroptionsdialog.hxx
+		qtgui/panewidget.hxx
+		qtgui/renderview.hxx
+		qtgui/tonemapwidget.hxx
 		)
-	SOURCE_GROUP("Header Files\\Qt GUI\\MOC" FILES ${LUXQTGUI_MOC})
+	SOURCE_GROUP("Header Files\\Qt GUI" FILES ${LUXQTGUI_MOC} qtgui/quiutil.h)
 
 	SET(LUXQTGUI_UIS
-		qtgui/luxrender.ui
 		qtgui/aboutdialog.ui
 		qtgui/advancedinfo.ui
-		qtgui/lightgroup.ui
-		qtgui/tonemap.ui
-		qtgui/lenseffects.ui
+		qtgui/batchprocessdialog.ui
 		qtgui/colorspace.ui
 		qtgui/gamma.ui
-		qtgui/noisereduction.ui
 		qtgui/histogram.ui
-		qtgui/pane.ui
-		qtgui/batchprocessdialog.ui
+		qtgui/lenseffects.ui
+		qtgui/lightgroup.ui
+		qtgui/luxrender.ui
+		qtgui/noisereduction.ui
 		qtgui/openexroptionsdialog.ui
+		qtgui/pane.ui
+		qtgui/tonemap.ui
 		)
-	SOURCE_GROUP("UI Files" FILES ${LUXQTGUI_UIS})
+	SOURCE_GROUP("UI Files\\Qt GUI" FILES ${LUXQTGUI_UIS})
 
-	SET( LUXQTGUI_RCS
+	SET(LUXQTGUI_RCS
 		qtgui/icons.qrc
 		qtgui/splash.qrc
 		qtgui/images.qrc
 		)
-	SOURCE_GROUP("Resource Files" FILES ${LUXQTGUI_RCS})
+	SOURCE_GROUP("Resource Files\\Qt GUI" FILES ${LUXQTGUI_RCS})
 
 	QT4_ADD_RESOURCES( LUXQTGUI_RC_SRCS ${LUXQTGUI_RCS})
 	QT4_WRAP_UI( LUXQTGUI_UI_HDRS ${LUXQTGUI_UIS} )

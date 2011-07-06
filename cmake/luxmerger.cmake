@@ -19,6 +19,7 @@
 #   Lux website: http://www.luxrender.net                                 #
 ###########################################################################
 
+SOURCE_GROUP("Source Files\\Tools" FILES tools/luxmerger.cpp)
 ADD_EXECUTABLE(luxmerger tools/luxmerger.cpp)
 IF(APPLE)
 	IF(OSX_OPTION_DYNAMIC_BUILD)

@@ -19,6 +19,7 @@
 #   Lux website: http://www.luxrender.net                                 #
 ###########################################################################
 
+SOURCE_GROUP("Source Files\\Console" FILES console/luxconsole.cpp)
 ADD_EXECUTABLE(luxconsole console/luxconsole.cpp)
 IF(APPLE)
 	IF(OSX_OPTION_DYNAMIC_BUILD)
