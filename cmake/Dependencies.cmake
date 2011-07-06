@@ -19,10 +19,6 @@
 #   Lux website: http://www.luxrender.net                                 #
 ###########################################################################
 
-IF(MSVC)
-	INCLUDE ( FindPkgMacros )
-ENDIF(MSVC)
-
 #############################################################################
 #############################################################################
 ##########################      Find LuxRays       ##########################
@@ -51,25 +47,24 @@ ENDIF (LUXRAYS_INCLUDE_DIRS AND LUXRAYS_LIBRARY)
 #############################################################################
 #############################################################################
 
-if(LUXRAYS_DISABLE_OPENCL)
-	SET(OCL_LIBRARY "")
-else(LUXRAYS_DISABLE_OPENCL)
+IF(LUXRAYS_DISABLE_OPENCL)
+	SET(OPENCL_LIBRARIES "")
+ELSE(LUXRAYS_DISABLE_OPENCL)
 	IF(MSVC)
-		FIND_PACKAGE ( OpenCL )
-		SET ( OPENCL_INCLUDE_DIRS "${OPENCL_INCLUDE_PATH}")
+		SET(OPENCL_ROOT ../opencl)
 	ELSE(MSVC)
-		FIND_PATH(OPENCL_INCLUDE_DIRS NAMES CL/cl.hpp OpenCL/cl.hpp PATHS /usr/src/opencl-sdk/include /usr/local/cuda/include)
-		FIND_LIBRARY(OPENCL_LIBRARY OpenCL /usr/src/opencl-sdk/lib/x86_64)
+		SET(OPENCL_ROOT /usr/src/opencl-sdk)
 	ENDIF(MSVC)
+	FIND_PACKAGE(OpenCL)
 
-	IF (OPENCL_INCLUDE_DIRS AND OPENCL_LIBRARY)
-		MESSAGE(STATUS "OpenCL include directory: " ${OPENCL_INCLUDE_DIRS})
-		MESSAGE(STATUS "OpenCL library directory: " ${OPENCL_LIBRARY})
-		INCLUDE_DIRECTORIES(SYSTEM ${OPENCL_INCLUDE_DIRS})
-	ELSE (OPENCL_INCLUDE_DIRS AND OPENCL_LIBRARY)
+	IF (OPENCL_FOUND)
+		MESSAGE(STATUS "OpenCL include directory: " ${OPENCL_INCLUDE_DIR})
+		MESSAGE(STATUS "OpenCL library: " ${OPENCL_LIBRARIES})
+		INCLUDE_DIRECTORIES(SYSTEM ${OPENCL_INCLUDE_DIR})
+	ELSE (OPENCL_FOUND)
 		MESSAGE(FATAL_ERROR "OpenCL not found, try to compile with LUXRAYS_DISABLE_OPENCL=ON")
-	ENDIF (OPENCL_INCLUDE_DIRS AND OPENCL_LIBRARY)
-endif(LUXRAYS_DISABLE_OPENCL)
+	ENDIF (OPENCL_FOUND)
+ENDIF(LUXRAYS_DISABLE_OPENCL)
 
 
 #############################################################################
@@ -242,9 +237,7 @@ TRY_COMPILE(FREEIMAGE_PROVIDES_PNG ${CMAKE_BINARY_DIR}
 	CMAKE_FLAGS
 	"-DINCLUDE_DIRECTORIES:STRING=${PNG_INCLUDE_DIRS}"
 	"-DLINK_LIBRARIES:STRING=${FREEIMAGE_LIBRARIES}"
-	COMPILE_DEFINITIONS -D__TEST_PNG__
-	OUTPUT_VARIABLE FREEIMAGE_PROVIDES_PNG_OUTPUT)
-
+	COMPILE_DEFINITIONS -D__TEST_PNG__)
 IF(NOT FREEIMAGE_PROVIDES_OPENEXR)
 	IF(OPENEXR_LIBRARIES)
 		MESSAGE(STATUS "OpenEXR library: " ${OPENEXR_LIBRARIES})
@@ -272,9 +265,3 @@ ENDIF(PNG_INCLUDE_DIRS AND NOT FREEIMAGE_PROVIDES_PNG)
 
 FIND_PACKAGE(Threads REQUIRED)
 
-##
-# General system libraries
-##
-IF (WIN32)
-	SET(SYS_LIBRARIES ${SYS_LIBRARIES} "shell32.lib")
-ENDIF (WIN32)

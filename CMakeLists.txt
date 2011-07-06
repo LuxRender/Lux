@@ -113,7 +113,7 @@ IF(NOT APPLE AND NOT WIN32)
 	STRING(REGEX MATCH "(x86_64-*)|(X86_64-*)|(AMD64-*)|(amd64-*)" _mach_x86_64 ${MACHINE})
 	IF (_mach_x86_64)
 		SET(ARCH_X86_64 1)
-	SET(LIB_SUFFIX 64)
+		SET(LIB_SUFFIX 64)
 		#jromang - Hack to avoid boost bug on x64  Ubuntu 8.10 and Fedora 10 (http://www.luxrender.net/mantis/view.php?id=433)
 		ADD_DEFINITIONS(-DBOOST_NO_INTRINSIC_INT64_T)
 	ENDIF (_mach_x86_64)
@@ -122,7 +122,7 @@ IF(NOT APPLE AND NOT WIN32)
 	IF (_mach_ppc)
 		SET(ARCH_PPC 1)
 	ENDIF (_mach_ppc)
-ELSE(NOT APPLE AND NOT WIN32)
+ELSEIF(MSVC)
 	STRING(REGEX MATCH "(Win64)" _carch_x64 ${CMAKE_GENERATOR})
 	IF(_carch_x64)
 		SET(ARCH_X86_64 1)
@@ -206,9 +206,7 @@ ELSEIF(MSVC)
 
 		SET(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} ${MSVC_RELEASE_COMPILER_FLAGS} ${MSVC_RELEASE_WITH_DEBUG_COMPILER_FLAGS}")
 		SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${MSVC_RELEASE_COMPILER_FLAGS} ${MSVC_RELEASE_WITH_DEBUG_COMPILER_FLAGS}")
-	ENDIF(MSVC90)
-
-	IF(MSVC10)
+	ELSEIF(MSVC10)
 		MESSAGE(STATUS "Version 10")
 		# Whole Program Opt. gui display fixed in cmake 2.8.5
 		# See http://public.kitware.com/Bug/view.php?id=6794
@@ -283,7 +281,9 @@ ENDIF(APPLE)
 #############################################################################
 IF(APPLE)
 	SET(SYS_LIBRARIES z bz2)
-ENDIF(APPLE)
+ELSEIF (WIN32)
+	SET(SYS_LIBRARIES ${SYS_LIBRARIES} "shell32.lib")
+ENDIF (APPLE)
 
 #############################################################################
 #############################################################################
@@ -307,8 +307,7 @@ ELSEIF(MSVC)
 		# Prevent cmake from adding about any std. lib there is
 		SET(CMAKE_C_STANDARD_LIBRARIES "")
 		SET(CMAKE_CXX_STANDARD_LIBRARIES "")
-	ENDIF(MSVC90)
-	IF(MSVC10)
+	ELSEIF(MSVC10)
 		# LTCG not correctly set by cmake in the current release - in the meantime the linker will inform you about switching this flag automatically because of /GL
 		#SET(MSVC_RELEASE_LINKER_FLAGS "/LTCG")
 		SET(MSVC_RELEASE_LINKER_FLAGS "/LTCG /OPT:REF /OPT:ICF")
@@ -324,7 +323,7 @@ ELSEIF(MSVC)
 ELSE(APPLE)
 	SET(LUX_LIBRARY -Wl,--whole-archive luxStatic -Wl,--no-whole-archive)
 ENDIF(APPLE)
-SET(LUX_LIBRARY_DEPENDS ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARY} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${SYS_LIBRARIES})
+SET(LUX_LIBRARY_DEPENDS ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARIES} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${SYS_LIBRARIES})
 
 #############################################################################
 #############################################################################
