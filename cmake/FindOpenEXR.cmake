@@ -46,7 +46,7 @@ FIND_PATH(OPENEXR_INCLUDE_DIRS
 
 IF (OPENEXR_INCLUDE_DIRS)
 # Lookup additional headers in case they are in subdirectories
-SET(OpenEXR_MODULES Iex Imf Half Imath IlmThread)
+SET(OpenEXR_MODULES Iex Imf half Imath IlmThread)
 FOREACH(i ${OpenEXR_MODULES})
 	FIND_PATH(OpenEXR_${i}_INCLUDE_DIR
 		NAMES ${i}.h ${i}Header.h ${i}Math.h
