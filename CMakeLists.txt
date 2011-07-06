@@ -186,7 +186,7 @@ ELSEIF(MSVC)
 	IF(CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
 		STRING(REGEX REPLACE "/W[0-4]" "/W3" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 	ELSE()
-		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS /W3")
+		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W3")
 	ENDIF()
 
 	IF(MSVC90)
@@ -197,7 +197,7 @@ ELSEIF(MSVC)
 
 		# /Qfast_transcendentals causes inlining of those functions but no loss of precision
 
-		SET(MSVC_RELEASE_COMPILER_FLAGS "/WX- /MP /O2 /Ob1 /Oi /Oy- /GT /GL /Gm- /EHsc /MD /GS /fp:precise /Zc:forScope /GR /Gy /Gd /TP /GL /GF- /Ot /favor:blend /Qfast_transcendentals")
+		SET(MSVC_RELEASE_COMPILER_FLAGS "/O2 /Ob1 /Oi /Oy- /GT /GL /EHsc /MD /GS /fp:precise /Zc:forScope /GR /Gy /Gd /TP /Ot /favor:blend /Qfast_transcendentals /MP")
 		SET(MSVC_RELEASE_WITH_DEBUG_COMPILER_FLAGS "/Zi")
 
 		IF(NOT ARCH_X86_64)
@@ -219,7 +219,7 @@ ELSEIF(MSVC)
 
 		SET(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} ${MSVC_RELEASE_COMPILER_FLAGS} ${MSVC_RELEASE_WITH_DEBUG_COMPILER_FLAGS}")
 		SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${MSVC_RELEASE_COMPILER_FLAGS} ${MSVC_RELEASE_WITH_DEBUG_COMPILER_FLAGS}")
-	ENDIF(MSVC10)
+	ENDIF(MSVC90)
 
 	# Definitions
 	ADD_DEFINITIONS(-D__SSE2__ -D__SSE__ -D__MMX__)
@@ -318,7 +318,7 @@ ELSEIF(MSVC)
 		# Prevent cmake from adding about any std. lib there is
 		SET(CMAKE_C_STANDARD_LIBRARIES "")
 		SET(CMAKE_CXX_STANDARD_LIBRARIES "")
-	ENDIF(MSVC10)
+	ENDIF(MSVC90)
 	SET(LUX_LIBRARY luxStatic)
 ELSE(APPLE)
 	SET(LUX_LIBRARY -Wl,--whole-archive luxStatic -Wl,--no-whole-archive)

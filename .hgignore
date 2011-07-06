@@ -15,6 +15,7 @@
 ^qtgui/.*\.depends
 ^qtgui/.*\.cxx_parameters
 ^qtgui/.*\.cxx\.rule
+^html/.*
 syntax: glob
 *.directory
 *.cdtproject
