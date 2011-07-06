@@ -487,7 +487,7 @@ SET_TARGET_PROPERTIES(luxStatic luxShared PROPERTIES OUTPUT_NAME lux)
 #############################################################################
 #############################################################################
 
-SOURCE_GROUP("Header Files\\Core" FILES
+SET(lux_core_hdr
 	core/api.h
 	core/bsh.h
 	core/camera.h
@@ -541,11 +541,13 @@ SOURCE_GROUP("Header Files\\Core" FILES
 	core/volume.h
 	server/renderserver.h
 	)
-SOURCE_GROUP("Header Files\\Core\\External" FILES
+SOURCE_GROUP("Header Files\\Core" FILES ${lux_core_hdr})
+SET(lux_core_external_hdr
 	core/external/cimg.h
 	core/external/greycstoration.h
 	)
-SOURCE_GROUP("Header Files\\Core\\Geometry" FILES
+SOURCE_GROUP("Header Files\\Core\\External" FILES ${lux_core_external_hdr})
+SET(lux_core_geometry_hdr
 	core/geometry/bbox.h
 	core/geometry/matrix3x3.h
 	core/geometry/matrix4x4-sse.h
@@ -561,17 +563,20 @@ SOURCE_GROUP("Header Files\\Core\\Geometry" FILES
 	core/geometry/vector.h
 	core/geometry/vector_normal.h
 	)
-SOURCE_GROUP("Header Files\\Core\\Queryable" FILES
+SOURCE_GROUP("Header Files\\Core\\Geometry" FILES ${lux_core_geometry_hdr})
+SET(lux_core_queryable_hdr
 	core/queryable/queryable.h
 	core/queryable/queryableattribute.h
 	core/queryable/queryableregistry.h
 	)
-SOURCE_GROUP("Header Files\\Core\\Reflection" FILES
+SOURCE_GROUP("Header Files\\Core\\Queryable" FILES ${lux_core_queryable_hdr})
+SET(lux_core_reflection_hdr
 	core/reflection/bxdf.h
 	core/reflection/fresnel.h
 	core/reflection/microfacetdistribution.h
 	)
-SOURCE_GROUP("Header Files\\Core\\Reflection\\BxDF" FILES
+SOURCE_GROUP("Header Files\\Core\\Reflection" FILES ${lux_core_reflection_hdr})
+SET(lux_core_reflection_bxdf_hdr
 	core/reflection/bxdf/asperity.h
 	core/reflection/bxdf/brdftobtdf.h
 	core/reflection/bxdf/cooktorrance.h
@@ -587,7 +592,8 @@ SOURCE_GROUP("Header Files\\Core\\Reflection\\BxDF" FILES
 	core/reflection/bxdf/specularreflection.h
 	core/reflection/bxdf/speculartransmission.h
 	)
-SOURCE_GROUP("Header Files\\Core\\Reflection\\Fresnel" FILES
+SOURCE_GROUP("Header Files\\Core\\Reflection\\BxDF" FILES ${lux_core_reflection_bxdf_hdr})
+SET(lux_core_reflection_fresnel_hdr
 	core/reflection/fresnel/fresnelcauchy.h
 	core/reflection/fresnel/fresnelconductor.h
 	core/reflection/fresnel/fresneldielectric.h
@@ -595,46 +601,54 @@ SOURCE_GROUP("Header Files\\Core\\Reflection\\Fresnel" FILES
 	core/reflection/fresnel/fresnelnoop.h
 	core/reflection/fresnel/fresnelslick.h
 	)
-SOURCE_GROUP("Header Files\\Core\\Reflection\\Microfacet Distribution" FILES
+SOURCE_GROUP("Header Files\\Core\\Reflection\\Fresnel" FILES ${lux_core_reflection_fresnel_hdr})
+SET(lux_core_reflection_microfacetdistribution_hdr
 	core/reflection/microfacetdistribution/anisotropic.h
 	core/reflection/microfacetdistribution/beckmann.h
 	core/reflection/microfacetdistribution/blinn.h
 	core/reflection/microfacetdistribution/schlickdistribution.h
 	core/reflection/microfacetdistribution/wardisotropic.h
 	)
-SOURCE_GROUP("Header Files\\Accelerators" FILES
+SOURCE_GROUP("Header Files\\Core\\Reflection\\Microfacet Distribution" FILES ${lux_core_reflection_microfacetdistribution_hdr})
+SET(lux_accelerators_hdr
 	accelerators/bruteforce.h
 	accelerators/bvhaccel.h
 	accelerators/qbvhaccel.h
 	accelerators/tabreckdtreeaccel.h
 	accelerators/unsafekdtreeaccel.h
 	)
-SOURCE_GROUP("Header Files\\Cameras" FILES
+SOURCE_GROUP("Header Files\\Accelerators" FILES ${lux_accelerators_hdr})
+SET(lux_cameras_hdr
 	cameras/environment.h
 	cameras/orthographic.h
 	cameras/perspective.h
 	cameras/realistic.h
 	)
-SOURCE_GROUP("Header Files\\C++ API" FILES
+SOURCE_GROUP("Header Files\\Cameras" FILES ${lux_accelerators_hdr})
+SET(lux_cpp_api_hdr
 	cpp_api/export_defs.h
 	cpp_api/lux_api.h
 	cpp_api/lux_instance.h
 	cpp_api/lux_paramset.h
 	)
-SOURCE_GROUP("Header Files\\Film" FILES
+SOURCE_GROUP("Header Files\\C++ API" FILES ${lux_cpp_api_hdr})
+SET(lux_film_hdr
 	film/fleximage.h
 	)
-SOURCE_GROUP("Header Files\\Film\\Data" FILES
+SOURCE_GROUP("Header Files\\Film" FILES ${lux_film_hdr})
+SET(lux_film_data_hdr
 	film/data/cameraresponsefunctions.h
 	)
-SOURCE_GROUP("Header Files\\Filters" FILES
+SOURCE_GROUP("Header Files\\Film\\Data" FILES ${lux_film_data_hdr})
+SET(lux_filters_hdr
 	filters/box.h
 	filters/gaussian.h
 	filters/mitchell.h
 	filters/sinc.h
 	filters/triangle.h
 	)
-SOURCE_GROUP("Header Files\\Integrators" FILES
+SOURCE_GROUP("Header Files\\Filters" FILES ${lux_filters_hdr})
+SET(lux_integrators_hdr
 	integrators/bidirectional.h
 	integrators/directlighting.h
 	integrators/distributedpath.h
@@ -646,7 +660,8 @@ SOURCE_GROUP("Header Files\\Integrators" FILES
 	integrators/single.h
 	integrators/sppm.h
 	)
-SOURCE_GROUP("Header Files\\Lights" FILES
+SOURCE_GROUP("Header Files\\Integrators" FILES ${lux_integrators_hdr})
+SET(lux_lights_hdr
 	lights/distant.h
 	lights/infinite.h
 	lights/infinitesample.h
@@ -656,17 +671,20 @@ SOURCE_GROUP("Header Files\\Lights" FILES
 	lights/spot.h
 	lights/sun.h
 	)
-SOURCE_GROUP("Header Files\\Lights\\Data" FILES
+SOURCE_GROUP("Header Files\\Lights" FILES ${lux_lights_hdr})
+SET(lux_lights_data_hdr
 	lights/data/lamp_spect.h
 	lights/data/skychroma_spect.h
 	lights/data/sun_spect.h
 	)
-SOURCE_GROUP("Header Files\\Lights\\Spherical Functions" FILES
+SOURCE_GROUP("Header Files\\Lights\\Data" FILES ${lux_lights_data_hdr})
+SET(lux_lights_sphericalfunction_hdr
 	lights/sphericalfunction/photometricdata_ies.h
 	lights/sphericalfunction/sphericalfunction.h
 	lights/sphericalfunction/sphericalfunction_ies.h
 	)
-SOURCE_GROUP("Header Files\\Materials" FILES
+SOURCE_GROUP("Header Files\\Lights\\Spherical Functions" FILES ${lux_lights_sphericalfunction_hdr})
+SET(lux_materials_hdr
 	materials/carpaint.h
 	materials/glass.h
 	materials/glass2.h
@@ -684,31 +702,36 @@ SOURCE_GROUP("Header Files\\Materials" FILES
 	materials/shinymetal.h
 	materials/velvet.h
 	)
-SOURCE_GROUP("Header Files\\Pixel Samplers" FILES
+SOURCE_GROUP("Header Files\\Materials" FILES ${lux_materials_hdr})
+SET(lux_pixelsamplers_hdr
 	pixelsamplers/hilbertpx.h
 	pixelsamplers/linear.h
 	pixelsamplers/lowdiscrepancypx.h
 	pixelsamplers/tilepx.h
 	pixelsamplers/vegas.h
 	)
-SOURCE_GROUP("Header Files\\Renderers" FILES
+SOURCE_GROUP("Header Files\\Pixel Samplers" FILES ${lux_pixelsamplers_hdr})
+SET(lux_renderers_hdr
 	renderers/hybridrenderer.h
 	renderers/hybridsamplerrenderer.h
 	renderers/samplerrenderer.h
 	renderers/sppmrenderer.h
 	)
-SOURCE_GROUP("Header Files\\Renderers\\SPPM" FILES
+SOURCE_GROUP("Header Files\\Renderers" FILES ${lux_renderers_hdr})
+SET(lux_renderers_sppm_hdr
 	renderers/sppm/hitpoints.h
 	renderers/sppm/lookupaccel.h
 	renderers/sppm/photonsampler.h
 	)
-SOURCE_GROUP("Header Files\\Samplers" FILES
+SOURCE_GROUP("Header Files\\Renderers\\SPPM" FILES ${lux_renderers_sppm_hdr})
+SET(lux_samplers_hdr
 	samplers/erpt.h
 	samplers/lowdiscrepancy.h
 	samplers/metrosampler.h
 	samplers/random.h
 	)
-SOURCE_GROUP("Header Files\\Shapes" FILES
+SOURCE_GROUP("Header Files\\Samplers" FILES ${lux_samplers_hdr})
+SET(lux_shapes_hdr
 	shapes/cone.h
 	shapes/cylinder.h
 	shapes/disk.h
@@ -725,7 +748,8 @@ SOURCE_GROUP("Header Files\\Shapes" FILES
 	shapes/stlmesh.h
 	shapes/torus.h
 	)
-SOURCE_GROUP("Header Files\\SPDs" FILES
+SOURCE_GROUP("Header Files\\Shapes" FILES ${lux_shapes_hdr})
+SET(lux_spds_hdr
 	spds/blackbodyspd.h
 	spds/equalspd.h
 	spds/frequencyspd.h
@@ -735,12 +759,14 @@ SOURCE_GROUP("Header Files\\SPDs" FILES
 	spds/rgbillum.h
 	spds/rgbrefl.h
 	)
-SOURCE_GROUP("Header Files\\SPDs\\Data" FILES
+SOURCE_GROUP("Header Files\\SPDs" FILES ${lux_spds_hdr})
+SET(lux_spds_data_hdr
 	spds/data/rgbD65_32.h
 	spds/data/rgbE_32.h
 	spds/data/xyzbasis.h
 	)
-SOURCE_GROUP("Header Files\\Textures" FILES
+SOURCE_GROUP("Header Files\\SPDs\\Data" FILES ${lux_spds_data_hdr})
+SET(lux_textures_hdr
 	textures/band.h
 	textures/bilerp.h
 	textures/brick.h
@@ -758,7 +784,8 @@ SOURCE_GROUP("Header Files\\Textures" FILES
 	textures/windy.h
 	textures/wrinkled.h
 	)
-SOURCE_GROUP("Header Files\\Textures\\Blender" FILES
+SOURCE_GROUP("Header Files\\Textures" FILES ${lux_textures_hdr})
+SET(lux_textures_blender_hdr
 	textures/blender_base.h
 	textures/blender_blend.h
 	textures/blender_clouds.h
@@ -773,7 +800,8 @@ SOURCE_GROUP("Header Files\\Textures\\Blender" FILES
 	textures/blender_voronoi.h
 	textures/blender_wood.h
 	)
-SOURCE_GROUP("Header Files\\Textures\\Uniform" FILES
+SOURCE_GROUP("Header Files\\Textures\\Blender" FILES ${lux_textures_blender_hdr})
+SET(lux_textures_uniform_hdr
 	textures/blackbody.h
 	textures/constant.h
 	textures/equalenergy.h
@@ -784,22 +812,63 @@ SOURCE_GROUP("Header Files\\Textures\\Uniform" FILES
 	textures/regulardata.h
 	textures/tabulateddata.h
 	)
-SOURCE_GROUP("Header Files\\Textures\\Fresnel" FILES
+SOURCE_GROUP("Header Files\\Textures\\Uniform" FILES ${lux_textures_uniform_hdr})
+SET(lux_textures_fresnel_hdr
 	textures/cauchytexture.h
 	textures/sellmeiertexture.h
 	textures/tabulatedfresnel.h
 	)
-SOURCE_GROUP("Header Files\\Tonemaps" FILES
+SOURCE_GROUP("Header Files\\Textures\\Fresnel" FILES ${lux_textures_fresnel_hdr})
+SET(lux_tonemaps_hdr
 	tonemaps/contrast.h
 	tonemaps/lineartonemap.h
 	tonemaps/maxwhite.h
 	tonemaps/nonlinear.h
 	tonemaps/reinhard.h
 	)
-SOURCE_GROUP("Header Files\\Volumes" FILES
+SOURCE_GROUP("Header Files\\Tonemaps" FILES ${lux_tonemaps_hdr})
+SET(lux_volumes_hdr
 	volumes/clearvolume.h
 	volumes/cloud.h
 	volumes/exponential.h
 	volumes/homogeneous.h
 	volumes/volumegrid.h
 	)
+SOURCE_GROUP("Header Files\\Volumes" FILES ${lux_volumes_hdr})
+
+SET(lux_lib_hdr
+	${lux_core_hdr}
+	${lux_core_external_hdr}
+	${lux_core_geometry_hdr}
+	${lux_core_queryable_hdr}
+	${lux_core_reflection_hdr}
+	${lux_core_reflection_bxdf_hdr}
+	${lux_core_reflection_fresnel_hdr}
+	${lux_core_reflection_microfacetdistribution_hdr}
+	${lux_accelerators_hdr}
+	${lux_cameras_hdr}
+	${lux_cpp_api_hdr}
+	${lux_film_hdr}
+	${lux_film_data_hdr}
+	${lux_filters_hdr}
+	${lux_integrators_hdr}
+	${lux_lights_hdr}
+	${lux_lights_data_hdr}
+	${lux_lights_sphericalfunction_hdr}
+	${lux_materials_hdr}
+	${lux_pixelsamplers_hdr}
+	${lux_renderers_hdr}
+	${lux_renderers_sppm_hdr}
+	${lux_sampelrs_hdr}
+	${lux_shapes_hdr}
+	${lux_spds_hdr}
+	${lux_spds_data_hdr}
+	${lux_textures_hdr}
+	${lux_textures_blender_hdr}
+	${lux_textures_uniform_hdr}
+	${lux_textures_fresnel_hdr}
+	${lux_tonemaps_hdr}
+	${lux_volumes_hdr}
+	)
+ADD_CUSTOM_TARGET(LuxHeaders SOURCES ${lux_lib_hdr})
+
