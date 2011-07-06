@@ -22,6 +22,7 @@
 
 // This file defines the windows dll entry point
 
+#ifdef WIN32
 #include <windows.h>
 
 BOOL APIENTRY DllMain( HMODULE hModule,
@@ -39,4 +40,4 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 	}
 	return TRUE;
 }
-
+#endif

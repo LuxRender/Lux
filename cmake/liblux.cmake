@@ -31,10 +31,13 @@ if(APPLE AND !APPLE_64)
 	EXECUTE_PROCESS(COMMAND mv ${CMAKE_SOURCE_DIR}/luxparse.cpp.h ${CMAKE_BINARY_DIR}/luxparse.hpp)
 ENDIF(APPLE AND !APPLE_64)
 SET_SOURCE_FILES_PROPERTIES(${CMAKE_BINARY_DIR}/core/luxparse.cpp GENERATED)
+SOURCE_GROUP("Bison Files\\Core" FILES core/luxparse.y)
 
 # Create custom command for flex/lex
 FLEX_TARGET(LuxLexer ${CMAKE_SOURCE_DIR}/core/luxlex.l ${CMAKE_BINARY_DIR}/luxlex.cpp)
 SET_SOURCE_FILES_PROPERTIES(${CMAKE_BINARY_DIR}/luxlex.cpp GENERATED)
+SOURCE_GROUP("Flex Files\\Core" FILES core/luxlex.l)
+
 ADD_FLEX_BISON_DEPENDENCY(LuxLexer LuxParser)
 
 #############################################################################
@@ -429,6 +432,13 @@ SET(lux_lib_src
 	${lux_modules_src}
 	)
 
+SET(lux_cpp_api_src
+	cpp_api/dllmain.cpp
+	cpp_api/lux_api.cpp
+	cpp_api/lux_wrapper_factories.cpp
+	)
+SOURCE_GROUP("Source Files\\C++ API" FILES ${lux_cpp_api_src})
+
 #############################################################################
 
 INCLUDE_DIRECTORIES(SYSTEM
@@ -459,10 +469,7 @@ ENDIF()
 #############################################################################
 # Here we build the shared core library liblux.so
 #############################################################################
-ADD_LIBRARY(luxShared SHARED
-	cpp_api/lux_api.cpp
-	cpp_api/lux_wrapper_factories.cpp
-)
+ADD_LIBRARY(luxShared SHARED ${lux_cpp_api_src})
 IF(APPLE)
 	IF( NOT CMAKE_VERSION VERSION_LESS 2.8.3 AND OSX_OPTION_CLANG) # only cmake >= 2.8.1 supports per target attributes
 		SET_TARGET_PROPERTIES(luxShared PROPERTIES XCODE_ATTRIBUTE_GCC_VERSION com.apple.compilers.llvm.clang.1_0) # for testing new CLANG2.0, will be ignored for other OS
@@ -474,3 +481,325 @@ TARGET_LINK_LIBRARIES(luxShared ${LUX_LIBRARY} ${LUX_LIBRARY_DEPENDS})
 # Make CMake output both libs with the same name
 SET_TARGET_PROPERTIES(luxStatic luxShared PROPERTIES OUTPUT_NAME lux)
 
+#############################################################################
+#############################################################################
+#####################  HEADER FILES FOR static liblux.a  ####################
+#############################################################################
+#############################################################################
+
+SOURCE_GROUP("Header Files\\Core" FILES
+	core/api.h
+	core/bsh.h
+	core/camera.h
+	core/cameraresponse.h
+	core/color.h
+	core/context.h
+	core/contribution.h
+	core/dynload.h
+	core/epsilon.h
+	core/error.h
+	core/exrio.h
+	core/fastmutex.h
+	core/filedata.h
+	core/film.h
+	core/filter.h
+	core/igiio.h
+	core/imagereader.h
+	core/kdtree.h
+	core/light.h
+	core/lux.h
+	core/material.h
+	core/mc.h
+	core/mcdistribution.h
+	core/memory.h
+	core/mipmap.h
+	core/motionsystem.h
+	core/octree.h
+	core/osfunc.h
+	core/paramset.h
+	core/photonmap.h
+	core/pngio.h
+	core/primitive.h
+	core/randomgen.h
+	core/renderer.h
+	core/renderfarm.h
+	core/renderinghints.h
+	core/sampling.h
+	core/scene.h
+	core/shape.h
+	core/spd.h
+	core/spectrum.h
+	core/spectrumwavelengths.h
+	core/stats.h
+	core/texture.h
+	core/texturecolor.h
+	core/tgaio.h
+	core/timer.h
+	core/tonemap.h
+	core/transport.h
+	core/version.h
+	core/volume.h
+	server/renderserver.h
+	)
+SOURCE_GROUP("Header Files\\Core\\External" FILES
+	core/external/cimg.h
+	core/external/greycstoration.h
+	)
+SOURCE_GROUP("Header Files\\Core\\Geometry" FILES
+	core/geometry/bbox.h
+	core/geometry/matrix3x3.h
+	core/geometry/matrix4x4-sse.h
+	core/geometry/matrix4x4.h
+	core/geometry/normal.h
+	core/geometry/point.h
+	core/geometry/quaternion.h
+	core/geometry/ray.h
+	core/geometry/raydifferential.h
+	core/geometry/transform-sse.inl
+	core/geometry/transform.h
+	core/geometry/transform.inl
+	core/geometry/vector.h
+	core/geometry/vector_normal.h
+	)
+SOURCE_GROUP("Header Files\\Core\\Queryable" FILES
+	core/queryable/queryable.h
+	core/queryable/queryableattribute.h
+	core/queryable/queryableregistry.h
+	)
+SOURCE_GROUP("Header Files\\Core\\Reflection" FILES
+	core/reflection/bxdf.h
+	core/reflection/fresnel.h
+	core/reflection/microfacetdistribution.h
+	)
+SOURCE_GROUP("Header Files\\Core\\Reflection\\BxDF" FILES
+	core/reflection/bxdf/asperity.h
+	core/reflection/bxdf/brdftobtdf.h
+	core/reflection/bxdf/cooktorrance.h
+	core/reflection/bxdf/fresnelblend.h
+	core/reflection/bxdf/lafortune.h
+	core/reflection/bxdf/lambertian.h
+	core/reflection/bxdf/microfacet.h
+	core/reflection/bxdf/nulltransmission.h
+	core/reflection/bxdf/orennayar.h
+	core/reflection/bxdf/schlickbrdf.h
+	core/reflection/bxdf/schlickscatter.h
+	core/reflection/bxdf/schlicktranslucentbtdf.h
+	core/reflection/bxdf/specularreflection.h
+	core/reflection/bxdf/speculartransmission.h
+	)
+SOURCE_GROUP("Header Files\\Core\\Reflection\\Fresnel" FILES
+	core/reflection/fresnel/fresnelcauchy.h
+	core/reflection/fresnel/fresnelconductor.h
+	core/reflection/fresnel/fresneldielectric.h
+	core/reflection/fresnel/fresnelgeneral.h
+	core/reflection/fresnel/fresnelnoop.h
+	core/reflection/fresnel/fresnelslick.h
+	)
+SOURCE_GROUP("Header Files\\Core\\Reflection\\Microfacet Distribution" FILES
+	core/reflection/microfacetdistribution/anisotropic.h
+	core/reflection/microfacetdistribution/beckmann.h
+	core/reflection/microfacetdistribution/blinn.h
+	core/reflection/microfacetdistribution/schlickdistribution.h
+	core/reflection/microfacetdistribution/wardisotropic.h
+	)
+SOURCE_GROUP("Header Files\\Accelerators" FILES
+	accelerators/bruteforce.h
+	accelerators/bvhaccel.h
+	accelerators/qbvhaccel.h
+	accelerators/tabreckdtreeaccel.h
+	accelerators/unsafekdtreeaccel.h
+	)
+SOURCE_GROUP("Header Files\\Cameras" FILES
+	cameras/environment.h
+	cameras/orthographic.h
+	cameras/perspective.h
+	cameras/realistic.h
+	)
+SOURCE_GROUP("Header Files\\C++ API" FILES
+	cpp_api/export_defs.h
+	cpp_api/lux_api.h
+	cpp_api/lux_instance.h
+	cpp_api/lux_paramset.h
+	)
+SOURCE_GROUP("Header Files\\Film" FILES
+	film/fleximage.cpp
+	)
+SOURCE_GROUP("Header Files\\Film\\Data" FILES
+	film/data/cameraresponsefunctions.h
+	)
+SOURCE_GROUP("Header Files\\Filters" FILES
+	filters/box.h
+	filters/gaussian.h
+	filters/mitchell.h
+	filters/sinc.h
+	filters/triangle.h
+	)
+SOURCE_GROUP("Header Files\\Integrators" FILES
+	integrators/bidirectional.h
+	integrators/directlighting.h
+	integrators/distributedpath.h
+	integrators/emission.h
+	integrators/exphotonmap.h
+	integrators/igi.h
+	integrators/multi.h
+	integrators/path.h
+	integrators/single.h
+	integrators/sppm.h
+	)
+SOURCE_GROUP("Header Files\\Lights" FILES
+	lights/distant.h
+	lights/infinite.h
+	lights/infinitesample.h
+	lights/pointlight.h
+	lights/projection.h
+	lights/sky.h
+	lights/spot.h
+	lights/sun.h
+	)
+SOURCE_GROUP("Header Files\\Lights\\Data" FILES
+	lights/data/lamp_spect.h
+	lights/data/skychroma_spect.h
+	lights/data/sun_spect.h
+	)
+SOURCE_GROUP("Header Files\\Lights\\Spherical Functions" FILES
+	lights/sphericalfunction/photometricdata_ies.h
+	lights/sphericalfunction/sphericalfunction.h
+	lights/sphericalfunction/sphericalfunction_ies.h
+	)
+SOURCE_GROUP("Header Files\\Materials" FILES
+	materials/carpaint.h
+	materials/glass.h
+	materials/glass2.h
+	materials/glossy.h
+	materials/glossy2.h
+	materials/glossytranslucent.h
+	materials/matte.h
+	materials/mattetranslucent.h
+	materials/metal.h
+	materials/mirror.h
+	materials/mixmaterial.h
+	materials/null.h
+	materials/roughglass.h
+	materials/scattermaterial.h
+	materials/shinymetal.h
+	materials/velvet.h
+	)
+SOURCE_GROUP("Header Files\\Pixel Samplers" FILES
+	pixelsamplers/hilbertpx.h
+	pixelsamplers/linear.h
+	pixelsamplers/lowdiscrepancypx.h
+	pixelsamplers/tilepx.h
+	pixelsamplers/vegas.h
+	)
+SOURCE_GROUP("Header Files\\Renderers" FILES
+	renderers/hybridrenderer.h
+	renderers/hybridsamplerrenderer.h
+	renderers/samplerrenderer.h
+	renderers/sppmrenderer.h
+	)
+SOURCE_GROUP("Header Files\\Renderers\\SPPM" FILES
+	renderers/sppm/hitpoints.h
+	renderers/sppm/lookupaccel.h
+	renderers/sppm/photonsampler.h
+	)
+SOURCE_GROUP("Header Files\\Samplers" FILES
+	samplers/erpt.h
+	samplers/lowdiscrepancy.h
+	samplers/metrosampler.h
+	samplers/random.h
+	)
+SOURCE_GROUP("Header Files\\Shapes" FILES
+	shapes/cone.h
+	shapes/cylinder.h
+	shapes/disk.h
+	shapes/heightfield.h
+	shapes/hyperboloid.h
+	shapes/lenscomponent.h
+	shapes/loopsubdiv.h
+	shapes/mesh.h
+	shapes/nurbs.h
+	shapes/paraboloid.h
+	shapes/plymesh.h
+	shapes/plymesh/rply.h
+	shapes/sphere.h
+	shapes/stlmesh.h
+	shapes/torus.h
+	)
+SOURCE_GROUP("Header Files\\SPDs" FILES
+	spds/blackbodyspd.h
+	spds/equalspd.h
+	spds/frequencyspd.h
+	spds/gaussianspd.h
+	spds/irregular.h
+	spds/regular.h
+	spds/rgbillum.h
+	spds/rgbrefl.h
+	)
+SOURCE_GROUP("Header Files\\SPDs\\Data" FILES
+	spds/data/rgbD65_32.h
+	spds/data/rgbE_32.h
+	spds/data/xyzbasis.h
+	)
+SOURCE_GROUP("Header Files\\Textures" FILES
+	textures/band.h
+	textures/bilerp.h
+	textures/brick.h
+	textures/checkerboard.h
+	textures/dots.h
+	textures/fbm.h
+	textures/harlequin.h
+	textures/imagemap.h
+	textures/marble.h
+	textures/mix.h
+	textures/multimix.h
+	textures/scale.h
+	textures/uv.h
+	textures/uvmask.h
+	textures/windy.h
+	textures/wrinkled.h
+	)
+SOURCE_GROUP("Header Files\\Textures\\Blender" FILES
+	textures/blender_base.h
+	textures/blender_blend.h
+	textures/blender_clouds.h
+	textures/blender_distortednoise.h
+	textures/blender_magic.h
+	textures/blender_marble.h
+	textures/blender_musgrave.h
+	textures/blender_noise.h
+	textures/blender_noiselib.h
+	textures/blender_stucci.h
+	textures/blender_texlib.h
+	textures/blender_voronoi.h
+	textures/blender_wood.h
+	)
+SOURCE_GROUP("Header Files\\Textures\\Uniform" FILES
+	textures/blackbody.h
+	textures/constant.h
+	textures/equalenergy.h
+	textures/frequencytexture.h
+	textures/gaussiantexture.h
+	textures/irregulardata.h
+	textures/lampspectrum.h
+	textures/regulardata.h
+	textures/tabulateddata.h
+	)
+SOURCE_GROUP("Header Files\\Textures\\Fresnel" FILES
+	textures/cauchytexture.h
+	textures/sellmeiertexture.h
+	textures/tabulatedfresnel.h
+	)
+SOURCE_GROUP("Header Files\\Tonemaps" FILES
+	tonemaps/contrast.h
+	tonemaps/lineartonemap.h
+	tonemaps/maxwhite.h
+	tonemaps/nonlinear.h
+	tonemaps/reinhard.h
+	)
+SOURCE_GROUP("Header Files\\Volumes" FILES
+	volumes/clearvolume.h
+	volumes/cloud.h
+	volumes/exponential.h
+	volumes/homogeneous.h
+	volumes/volumegrid.h
+	)
