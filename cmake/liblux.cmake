@@ -622,7 +622,7 @@ SOURCE_GROUP("Header Files\\C++ API" FILES
 	cpp_api/lux_paramset.h
 	)
 SOURCE_GROUP("Header Files\\Film" FILES
-	film/fleximage.cpp
+	film/fleximage.h
 	)
 SOURCE_GROUP("Header Files\\Film\\Data" FILES
 	film/data/cameraresponsefunctions.h
