@@ -45,13 +45,13 @@ public:
 
 private:
 	struct BidirStateVertex {
-		BidirStateVertex() : bsdf(NULL), flags(BxDFType(0)), alphaWi(0.f), alphaWo(0.f) {}
+		BidirStateVertex() : bsdf(NULL), flags(BxDFType(0)), throughputWi(0.f), throughputWo(0.f) {}
 
 		BSDF *bsdf;
 		BxDFType flags;
 
 		Vector wi, wo;
-		SWCSpectrum alphaWi, alphaWo;
+		SWCSpectrum throughputWi, throughputWo;
 	};
 
 	void Terminate(const Scene &scene, const u_int bufferId,
@@ -69,10 +69,15 @@ private:
 	BidirStateVertex *lightPath;
 	u_int lightPathLength;
 
+	// One for each eye path vertex
+	SWCSpectrum *Ld;
+	u_int *LdGroup;
+
 	u_int *raysIndex;
 	u_int raysCount;
 
 	float distance;
+	// One for each light group
 	SWCSpectrum *L;
 	float *V;
 
