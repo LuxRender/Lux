@@ -73,6 +73,9 @@ private:
 	SWCSpectrum *Ld;
 	u_int *LdGroup;
 
+	// One for each connection between eye path and light path
+	SWCSpectrum *Lc;
+
 	u_int *raysIndex;
 	u_int raysCount;
 
