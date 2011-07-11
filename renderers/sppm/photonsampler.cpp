@@ -27,53 +27,13 @@
 using namespace lux;
 
 //------------------------------------------------------------------------------
+// Photon Sampler
+//------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
 // Halton Photon Sampler
 //------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
 // Adaptive Markov Chain Sampler
 //------------------------------------------------------------------------------
-
-AMCMCPhotonSampler::AMCMCPhotonSampler(const u_int maxPhotonDepth, const Scene &scene,
-		const RandomGenerator *randomGen) : PhotonSampler(/*FIXME randomGen*/) {
-	sample = new Sample(/*FIXME NULL, scene.volumeIntegrator, scene*/);
-	// Initialized later
-/*FIXME	sample->rng = rng;*/
-	sample->camera = scene.camera->Clone();
-	sample->realTime = sample->camera->GetTime(.5f); //FIXME sample it
-	sample->camera->SampleMotion(sample->realTime);
-
-	// 7 samples for the light source plus 4 samples for each photon path vertex
-	const size_t size = 7 + 4 * maxPhotonDepth;
-	data[0].resize(size, 0.f);
-	data[1].resize(size, 0.f);
-
-	currentIndex = 0;
-	candidateIndex = 1;
-}
-
-AMCMCPhotonSampler::~AMCMCPhotonSampler() {
-	delete sample;
-}
-
-float AMCMCPhotonSampler::MutateSingle(const float u, const float mutationSize) {
-	// Delta U = SGN(2 E0 - 1) E1 ^ (1 / mutationSize + 1)
-
-/*FIXME	const float du = powf(rng->floatValue(), 1.f / mutationSize + 1.f);
-
-	if (rng->floatValue() < 0.5f) {
-		float u1 = u + du;
-		return (u1 < 1.f) ? u1 : u1 - 1.f;
-	} else {
-		float u1 = u - du;
-		return (u1 < 0.f) ? u1 + 1.f : u1;
-	}*/return u;
-}
-
-void AMCMCPhotonSampler::Mutate(const float mutationSize) {
-	vector<float> &current = data[currentIndex];
-	vector<float> &candidate = data[candidateIndex];
-
-	for (size_t i = 0; i < candidate.size(); ++i)
-		candidate[i] = MutateSingle(current[i], mutationSize);
-}

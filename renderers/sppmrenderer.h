@@ -146,22 +146,15 @@ private:
 
 		void TracePhotons(PhotonSampler &sampler, Sample *sample);
 
-		bool IsVisible(Scene &scene, const Sample *sample, const float *u);
-		bool Splat(Scene &scene, const Sample *sample, const float *u);
-		void Splat(SplatList *splatList, Scene &scene, const Sample *sample, const float *u);
-		void TracePhotons(AMCMCPhotonSampler *sampler);
-
 		static void RenderImpl(PhotonPassRenderThread *r);
 
 		u_int  n;
 		SPPMRenderer *renderer;
 		boost::thread *thread; // keep pointer to delete the thread object
 
-		// Used by AMC Photon Sampler
-		u_int amcUniformCount;
-
 		RandomGenerator *threadRng;
 		Distribution1D *lightCDF;
+		PhotonSampler* sampler;
 	};
 
 	double Statistics_GetNumberOfSamples();
@@ -193,7 +186,9 @@ private:
 	// Store number of photon traced by lightgroup
 	unsigned long long photonTracedTotal;
 	u_int photonTracedPass;
+
 	// Used by AMC Photon Sampler
+	// TODO: try to remove this stuff
 	float accumulatedFluxScale;
 
 	fast_mutex sampPosMutex;

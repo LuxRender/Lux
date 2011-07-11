@@ -36,7 +36,6 @@ namespace lux
 class HitPoint;
 class HitPoints;
 class HashCell;
-class SplatList;
 
 enum LookUpAccelType {
 	HASH_GRID, KD_TREE, HYBRID_HASH_GRID
@@ -50,64 +49,24 @@ public:
 	virtual void RefreshMutex(const u_int passIndex) = 0;
 	virtual void RefreshParallel(const u_int passIndex, const u_int index, const u_int count) { }
 
-	virtual void AddFlux(const Point &hitPoint, const u_int passIndex, const Vector &wi,
+	virtual void AddFlux(Sample &sample, const Point &hitPoint, const u_int passIndex, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup) = 0;
-	virtual void AddFlux(SplatList *splatList, const Point &hitPoint, const u_int passIndex, const Vector &wi,
-		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup) = 0;
-
-	void Splat(SplatList *splatList);
 
 	friend class HashCell;
 
 protected:
-	void AddFluxToHitPoint(HitPoint *hp, const u_int passIndex,
-		const Point &hitPoint, const Vector &wi,
-		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup);
-	void AddFluxToSplatList(SplatList *splatList, HitPoint *hp, const u_int passIndex,
+	void AddFluxToHitPoint(Sample &sample, HitPoint *hp, const u_int passIndex,
 		const Point &hitPoint, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup);
 };
 
-struct SplatNode {
-	SplatNode(const u_int lg, XYZColor f, HitPoint *hp) {
-		lightGroup = lg;
-		flux = f;
-		hitPoints = hp;
-	}
 
-	u_int lightGroup;
-	XYZColor flux;
-	HitPoint *hitPoints;
-};
-
-class SplatList {
-public:
-	SplatList() {
-		Reset();
-	}
-	~SplatList() { }
-
-	void Reset() {
-		splatCount = 1;
-		nodes.erase(nodes.begin(), nodes.end());
-	}
-
-	bool IsEmpty() const { return (nodes.size() == 0); }
-	void IncSplatCount() { ++splatCount; }
-
-	friend class HitPointsLookUpAccel;
-
-private:
-	u_int splatCount;
-	std::vector<SplatNode> nodes;
-};
-
-inline void SpectrumAtomicAdd(SWCSpectrum &s, SWCSpectrum &a) {
+inline void SpectrumAtomicAdd(SWCSpectrum &s, const SWCSpectrum &a) {
 	for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
 		osAtomicAdd(&s.c[i], a.c[i]);
 }
 
-inline void XYZColorAtomicAdd(XYZColor &s, XYZColor &a) {
+inline void XYZColorAtomicAdd(XYZColor &s, const XYZColor &a) {
 	for (int i = 0; i < COLOR_SAMPLES; ++i)
 		osAtomicAdd(&s.c[i], a.c[i]);
 }
@@ -124,9 +83,7 @@ public:
 
 	void RefreshMutex(const u_int passIndex);
 
-	void AddFlux(const Point &hitPoint, const u_int passIndex, const Vector &wi,
-		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup);
-	void AddFlux(SplatList *splatList, const Point &hitPoint, const u_int passIndex, const Vector &wi,
+	void AddFlux(Sample& sample, const Point &hitPoint, const u_int passIndex, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup);
 
 private:
@@ -155,9 +112,7 @@ public:
 
 	void RefreshMutex(const u_int passIndex);
 
-	void AddFlux(const Point &hitPoint, const u_int passIndex, const Vector &wi,
-		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup);
-	void AddFlux(SplatList *splatList, const Point &hitPoint, const u_int passIndex, const Vector &wi,
+	void AddFlux(Sample& sample, const Point &hitPoint, const u_int passIndex, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup);
 
 private:
@@ -254,10 +209,7 @@ public:
 
 	void TransformToKdTree(const u_int passIndex);
 
-	void AddFlux(HitPointsLookUpAccel *accel, const u_int passIndex,
-		const Point &hitPoint, const Vector &wi,
-		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup);
-	void AddFlux(SplatList *splatList, HitPointsLookUpAccel *accel, const u_int passIndex,
+	void AddFlux(Sample& sample, HitPointsLookUpAccel *accel, const u_int passIndex,
 		const Point &hitPoint, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup);
 
@@ -269,10 +221,7 @@ private:
 		HCKdTree(const u_int passIndex, std::list<HitPoint *> *hps, const u_int count);
 		~HCKdTree();
 
-		void AddFlux(HitPointsLookUpAccel *accel,  const u_int passIndex,
-			const Point &hitPoint, const Vector &wi,
-			const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup);
-		void AddFlux(SplatList *splatList, HitPointsLookUpAccel *accel,  const u_int passIndex,
+		void AddFlux(Sample& sample, HitPointsLookUpAccel *accel,  const u_int passIndex,
 			const Point &hitPoint, const Vector &wi,
 			const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup);
 
@@ -342,9 +291,7 @@ public:
 	void RefreshMutex(const u_int passIndex);
 	void RefreshParallel(const u_int passIndex, const u_int index, const u_int count);
 
-	void AddFlux(const Point &hitPoint, const u_int passIndex, const Vector &wi,
-		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup);
-	void AddFlux(SplatList *splatList, const Point &hitPoint, const u_int passIndex, const Vector &wi,
+	void AddFlux(Sample& sample, const Point &hitPoint, const u_int passIndex, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup);
 
 private:

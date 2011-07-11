@@ -242,20 +242,10 @@ public:
 	const float GetPhotonPassWavelengthSample() { return photonPassWavelengthSample; }
 	const float GetPhotonPassTimeSample() { return photonPassTimeSample; }
 
-	void AddFlux(const Point &hitPoint, const Vector &wi,
+	void AddFlux(Sample &sample, const Point &hitPoint, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup) {
 		const u_int passIndex = currentPhotonPass % 2;
-		lookUpAccel[passIndex]->AddFlux(hitPoint, passIndex, wi, sw, photonFlux, lightGroup);
-	}
-	void AddFlux(SplatList *splatList, const Point &hitPoint, const Vector &wi,
-		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup) {
-		const u_int passIndex = currentPhotonPass % 2;
-		return lookUpAccel[passIndex]->AddFlux(splatList, hitPoint, passIndex, wi, sw, photonFlux, lightGroup);
-	}
-
-	void SplatFlux(SplatList *splatList) {
-		const u_int passIndex = currentPhotonPass % 2;
-		return lookUpAccel[passIndex]->Splat(splatList);
+		lookUpAccel[passIndex]->AddFlux(sample, hitPoint, passIndex, wi, sw, photonFlux, lightGroup);
 	}
 	void AccumulateFlux(const float fluxScale, const u_int index, const u_int count);
 	void SetHitPoints(RandomGenerator *rng,	const u_int index, const u_int count, MemoryArena& arena);
