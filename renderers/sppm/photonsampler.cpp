@@ -33,6 +33,16 @@
 using namespace lux;
 
 // Photon tracing
+
+bool PhotonSampler::ContinueTracing(SPPMRenderer * const renderer) const
+{
+	return renderer->photonTracedPass < renderer->sppmi->photonPerPass;
+}
+
+void PhotonSampler::IncPhoton(SPPMRenderer * const renderer) const
+{
+	osAtomicInc(&renderer->photonTracedPass);
+}
 //------------------------------------------------------------------------------
 // Tracing photons for Photon Sampler
 //------------------------------------------------------------------------------
@@ -126,8 +136,8 @@ void PhotonSampler::TracePhoton(
 			volume = photonBSDF->GetVolume(photonRay.d);
 		}
 	}
+	sample->arena.FreeAll();
 }
-
 
 
 //------------------------------------------------------------------------------
@@ -139,23 +149,16 @@ void PhotonSampler::TracePhotons(
 		Sample *sample,
 		Distribution1D *lightCDF)
 {
-	StartPass();
-	
-	for (u_int photonCount = 0;; ++photonCount) {
-		// Check if it is time to do an eye pass
-		if (renderer->photonTracedPass > renderer->sppmi->photonPerPass) {
-			// Ok, time to stop
-			return;
-		}
-
+	while(ContinueTracing(renderer))
+	{
 		GetNextSample(sample);
 
+		IncPhoton(renderer);
 		TracePhoton(renderer, sample, lightCDF);
 
-		sample->arena.FreeAll();
-		Done(*sample);
 	}
 }
+
 //------------------------------------------------------------------------------
 // Halton Photon Sampler
 //------------------------------------------------------------------------------
@@ -163,3 +166,81 @@ void PhotonSampler::TracePhotons(
 //------------------------------------------------------------------------------
 // Adaptive Markov Chain Sampler
 //------------------------------------------------------------------------------
+
+void AMCMCPhotonSampler::TracePhotons(
+		SPPMRenderer *renderer,
+		Sample *sample,
+		Distribution1D *lightCDF)
+{
+	mutationSize = 1.f;
+	accepted = 1;
+	mutated = 0;
+	uniformCount = 1;
+
+	// Sample uniform
+	do
+	{
+		GetNextSample(sample, true);
+		TracePhoton(renderer, sample, lightCDF);
+	} while(!pathCandidate->isVisible());
+
+	swap(); // Current = Candidate
+
+	while(ContinueTracing(renderer)) {
+		IncPhoton(renderer);
+
+		// Sample Uniform
+		GetNextSample(sample, true);
+		TracePhoton(renderer, sample, lightCDF);
+
+		if(pathCandidate->isVisible())
+		{
+			swap();
+			++uniformCount;
+		}
+		else
+		{
+			++mutated;
+
+			// Sample mutated
+			GetNextSample(sample, false);
+			TracePhoton(renderer, sample, lightCDF);
+
+			if(pathCandidate->isVisible())
+			{
+				++accepted;
+				swap();
+			}
+
+			const float R = accepted / (float)mutated;
+			mutationSize += (R - 0.234f) / mutated;
+
+		}
+		pathCurrent->Splat();
+	}
+
+	LOG(LUX_DEBUG, LUX_NOERROR) << "AMCMC mutationSize " << mutationSize << " accepted " << accepted << " mutated " << mutated << " uniform " << uniformCount;
+}
+
+// -------------------------------------
+// AMCMCPhotonSampler sampler data
+// -------------------------------------
+
+void AMCMCPhotonSampler::AMCMCPhotonSamplerData::Mutate(const RandomGenerator * const rng, AMCMCPhotonSamplerData &source, const float mutationSize) const {
+	for (size_t i = 0; i < n; ++i)
+		values[0][i] = MutateSingle(rng, source.values[0][i], mutationSize);
+}
+
+float AMCMCPhotonSampler::AMCMCPhotonSamplerData::MutateSingle(const RandomGenerator * const rng, const float u, const float mutationSize) {
+	// Delta U = SGN(2 E0 - 1) E1 ^ (1 / mutationSize + 1)
+
+	const float du = powf(rng->floatValue(), 1.f / mutationSize + 1.f);
+
+	if (rng->floatValue() < 0.5f) {
+		float u1 = u + du;
+		return (u1 < 1.f) ? u1 : u1 - 1.f;
+	} else {
+		float u1 = u - du;
+		return (u1 < 0.f) ? u1 + 1.f : u1;
+	}
+}

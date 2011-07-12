@@ -510,10 +510,10 @@ void SPPMRenderer::PhotonPassRenderThread::RenderImpl(PhotonPassRenderThread *my
 	PhotonSampler * &sampler = myThread->sampler;
 	switch (renderer->sppmi->photonSamplerType) {
 		case HALTON:
-			sampler = new HaltonPhotonSampler(&renderer->photonTracedPass);
+			sampler = new HaltonPhotonSampler();
 			break;
 		case AMC:
-			sampler = new AMCMCPhotonSampler(&renderer->photonTracedPass);
+			sampler = new AMCMCPhotonSampler();
 			break;
 		default:
 			throw std::runtime_error("Internal error: unknown photon sampler");

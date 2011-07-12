@@ -40,9 +40,8 @@ enum PhotonSamplerType {
 
 class PhotonSampler : public Sampler {
 public:
-	PhotonSampler(u_int *photonTracedPassPtr):
-		Sampler(0, 0, 0, 0, 0),
-		photonTracedPass(photonTracedPassPtr) { }
+	PhotonSampler():
+		Sampler(0, 0, 0, 0, 0) { }
 	virtual ~PhotonSampler() { }
 	virtual u_int GetTotalSamplePos() { return 0; }
 	virtual u_int RoundSize(u_int size) const { return size; }
@@ -68,10 +67,8 @@ public:
 	{
 		AddFluxToHitPoint(lightGroup, hp, flux);
 	}
-	virtual void StartPass() {}
-	virtual void Done(Sample& sample) {}
 
-	void TracePhotons(
+	virtual void TracePhotons(
 		SPPMRenderer *renderer,
 		Sample *sample,
 		Distribution1D *lightCDF
@@ -83,13 +80,8 @@ public:
 		Distribution1D *lightCDF
 		);
 
-	void IncPhoton()
-	{
-		osAtomicInc(photonTracedPass);
-	}
-
-private:
-	u_int *photonTracedPass;
+	void IncPhoton(SPPMRenderer * const renderer) const;
+	bool ContinueTracing(SPPMRenderer * const renderer) const;
 };
 
 //------------------------------------------------------------------------------
@@ -149,7 +141,7 @@ public:
 		u_int pathCount;
 		float **values;
 	};
-	HaltonPhotonSampler(u_int *photonTracedPass) : PhotonSampler(photonTracedPass) { }
+	HaltonPhotonSampler() : PhotonSampler() { }
 	virtual ~HaltonPhotonSampler() { }
 
 	virtual void InitSample(Sample *sample) const {
@@ -165,7 +157,6 @@ public:
 		delete static_cast<HaltonPhotonSamplerData *>(sample->samplerData);
 	}
 	virtual bool GetNextSample(Sample *sample) {
-		IncPhoton();
 		HaltonPhotonSamplerData *data = static_cast<HaltonPhotonSamplerData *>(sample->samplerData);
 		data->halton.Sample(data->pathCount++, data->values[0]);
 
@@ -256,7 +247,7 @@ public:
 		float **values;
 		u_int n;
 	};
-	UniformPhotonSampler(u_int *photonTracedPass) : PhotonSampler(photonTracedPass) {}
+	UniformPhotonSampler() : PhotonSampler() {}
 	virtual ~UniformPhotonSampler() { }
 
 	virtual void InitSample(Sample *sample) const {
@@ -267,7 +258,6 @@ public:
 		delete static_cast<UniformPhotonSamplerData *>(sample->samplerData);
 	}
 	virtual bool GetNextSample(Sample *sample) {
-		IncPhoton();
 		UniformPhotonSamplerData *data = static_cast<UniformPhotonSamplerData *>(sample->samplerData);
 		data->UniformSample(*sample);
 
@@ -310,25 +300,9 @@ class AMCMCPhotonSampler : public UniformPhotonSampler
 			public:
 				AMCMCPhotonSamplerData(Sample &sample): UniformPhotonSamplerData(sample) {}
 
-				void Mutate(const RandomGenerator *rng, AMCMCPhotonSamplerData &source, const float mutationSize)
-				{
-					for (size_t i = 0; i < n; ++i)
-						values[0][i] = MutateSingle(rng, source.values[0][i], mutationSize);
-				}
+				void Mutate(const RandomGenerator * const rng, AMCMCPhotonSamplerData &source, const float mutationSize) const;
 
-				static float MutateSingle(const RandomGenerator *rng, const float u, const float mutationSize) {
-					// Delta U = SGN(2 E0 - 1) E1 ^ (1 / mutationSize + 1)
-
-					const float du = powf(rng->floatValue(), 1.f / mutationSize + 1.f);
-
-					if (rng->floatValue() < 0.5f) {
-						float u1 = u + du;
-						return (u1 < 1.f) ? u1 : u1 - 1.f;
-					} else {
-						float u1 = u - du;
-						return (u1 < 0.f) ? u1 + 1.f : u1;
-					}
-				}
+				static float MutateSingle(const RandomGenerator *rng, const float u, const float mutationSize);
 		};
 
 		struct SplatNode {
@@ -363,7 +337,7 @@ class AMCMCPhotonSampler : public UniformPhotonSampler
 			}
 		};
 
-		AMCMCPhotonSampler(u_int *photonTracedPass) : UniformPhotonSampler(photonTracedPass) {
+		AMCMCPhotonSampler() : UniformPhotonSampler() {
 		}
 		virtual ~AMCMCPhotonSampler() { }
 
@@ -381,25 +355,15 @@ class AMCMCPhotonSampler : public UniformPhotonSampler
 				delete paths[i].data;
 		}
 
-		virtual bool GetNextSample(Sample *sample) {
+		void GetNextSample(Sample *sample, bool uniform)
+		{
 			sample->samplerData = pathCandidate->data;
 			pathCandidate->clear();
 
-			if(state == SAMPLING_UNIFORM)
-				IncPhoton();
-
-			if(state == SAMPLING_CURRENT || state == SAMPLING_UNIFORM)
-			{
-				// TODO: factorize this, it is allready done in UniformSampler
-				UniformPhotonSamplerData *data = static_cast<UniformPhotonSamplerData *>(sample->samplerData);
-				data->UniformSample(*sample);
-			}
+			if(uniform)
+				pathCandidate->data->UniformSample(*sample);
 			else
-			{
-				assert(state == SAMPLING_CANDIDATE);
 				pathCandidate->data->Mutate(sample->rng, *pathCurrent->data, mutationSize);
-			}
-			return true;
 		}
 
 		void swap()
@@ -407,65 +371,16 @@ class AMCMCPhotonSampler : public UniformPhotonSampler
 			std::swap(pathCurrent, pathCandidate);
 		}
 
-		virtual void Done(Sample &sample)
-		{
-			if(state == SAMPLING_CURRENT)
-			{
-				if(pathCandidate->isVisible())
-				{
-					// we get the first correct uniform
-					swap();
-					state = SAMPLING_UNIFORM;
-				}
-				return; // continue to sample the first uniform
-			}
-			else if(state == SAMPLING_UNIFORM)
-			{
-				if(pathCandidate->isVisible())
-				{
-					swap();
-					++uniformCount;
-					pathCurrent->Splat();
-					return; // continue to sample uniform
-				}
-				else
-				{
-					// this uniform is not visible, mutate the previous one
-					state = SAMPLING_CANDIDATE;
-					return;
-				}
-			}
-			else
-			{
-				assert(state == SAMPLING_CANDIDATE);
-				++mutated;
-				if(pathCandidate->isVisible())
-				{
-					++accepted;
-					swap();
-				}
-				const float R = accepted / (float)mutated;
-				mutationSize += (R - 0.234f) / mutated;
-				pathCurrent->Splat();
-				state = SAMPLING_UNIFORM;
-			}
-		}
-
 		virtual void AddSample(const Sample &sample, const u_int lightGroup, HitPoint * const hp, const XYZColor flux)
 		{
 			pathCandidate->push_back(SplatNode(lightGroup, flux, hp));
 		}
 
-	virtual void StartPass()
-	{
-		LOG(LUX_DEBUG, LUX_NOERROR) << "AMCMC mutationSize " << mutationSize << " accepted " << accepted << " mutated " << mutated << " uniform " << uniformCount;
-		mutationSize = 1.f;
-		accepted = 1;
-		mutated = 0;
-		uniformCount = 1;
-
-		state = SAMPLING_CURRENT;
-	}
+	virtual void TracePhotons(
+		SPPMRenderer *renderer,
+		Sample *sample,
+		Distribution1D *lightCDF
+		);
 
 	private:
 		// AMC data
