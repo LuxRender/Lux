@@ -37,6 +37,7 @@
 namespace lux
 {
 
+class PhotonSampler;
 class SPPMRenderer;
 class SPPMRHostDescription;
 class SPPMIntegrator;
@@ -118,6 +119,7 @@ public:
 	static Renderer *CreateRenderer(const ParamSet &params);
 
 	friend class HitPoints;
+	friend class PhotonSampler;
 
 private:
 	//--------------------------------------------------------------------------
@@ -145,6 +147,10 @@ private:
 		~PhotonPassRenderThread();
 
 		void TracePhotons(PhotonSampler &sampler, Sample *sample);
+		void TracePhoton(
+			PhotonSampler &sampler,
+			Sample *sample,
+			Scene &scene);
 
 		static void RenderImpl(PhotonPassRenderThread *r);
 

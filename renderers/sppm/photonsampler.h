@@ -71,6 +71,17 @@ public:
 	virtual void StartPass() {}
 	virtual void Done(Sample& sample) {}
 
+	void TracePhotons(
+		SPPMRenderer *renderer,
+		Sample *sample,
+		Distribution1D *lightCDF
+		);
+	void TracePhoton(
+		SPPMRenderer *renderer, 
+		Sample *sample,
+		Distribution1D *lightCDF
+		);
+
 	void IncPhoton()
 	{
 		osAtomicInc(photonTracedPass);
