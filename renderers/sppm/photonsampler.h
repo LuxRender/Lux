@@ -76,6 +76,7 @@ public:
 		Sample *sample,
 		Distribution1D *lightCDF
 		);
+
 	void TracePhoton(
 		SPPMRenderer *renderer, 
 		Sample *sample,
