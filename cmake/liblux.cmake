@@ -31,12 +31,16 @@ if(APPLE AND !APPLE_64)
 	EXECUTE_PROCESS(COMMAND mv ${CMAKE_SOURCE_DIR}/luxparse.cpp.h ${CMAKE_BINARY_DIR}/luxparse.hpp)
 ENDIF(APPLE AND !APPLE_64)
 SET_SOURCE_FILES_PROPERTIES(${CMAKE_BINARY_DIR}/core/luxparse.cpp GENERATED)
-SOURCE_GROUP("Bison Files\\Core" FILES core/luxparse.y)
+#SOURCE_GROUP("Parser Files" FILES core/luxparse.y)
 
 # Create custom command for flex/lex
 FLEX_TARGET(LuxLexer ${CMAKE_SOURCE_DIR}/core/luxlex.l ${CMAKE_BINARY_DIR}/luxlex.cpp)
 SET_SOURCE_FILES_PROPERTIES(${CMAKE_BINARY_DIR}/luxlex.cpp GENERATED)
-SOURCE_GROUP("Flex Files\\Core" FILES core/luxlex.l)
+#SOURCE_GROUP("Parser Files" FILES core/luxlex.l)
+SET(lux_parser_src
+	core/luxparse.y
+	core/luxlex.l)
+SOURCE_GROUP("Parser Files" FILES ${lux_core_parser_src})
 
 ADD_FLEX_BISON_DEPENDENCY(LuxLexer LuxParser)
 
@@ -439,47 +443,7 @@ SET(lux_cpp_api_src
 	)
 SOURCE_GROUP("Source Files\\C++ API" FILES ${lux_cpp_api_src})
 
-#############################################################################
 
-INCLUDE_DIRECTORIES(SYSTEM
-	${CMAKE_SOURCE_DIR}/core/external
-	)
-INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/core
-	${CMAKE_SOURCE_DIR}/core/queryable
-	${CMAKE_SOURCE_DIR}/core/reflection
-	${CMAKE_SOURCE_DIR}/core/reflection/bxdf
-	${CMAKE_SOURCE_DIR}/core/reflection/fresnel
-	${CMAKE_SOURCE_DIR}/core/reflection/microfacetdistribution
-	${CMAKE_SOURCE_DIR}/spds
-	${CMAKE_SOURCE_DIR}/lights/sphericalfunction
-	${CMAKE_SOURCE_DIR}
-	${CMAKE_BINARY_DIR}
-	)
-
-#############################################################################
-# Here we build the static core library liblux.a
-#############################################################################
-ADD_LIBRARY(luxStatic STATIC ${lux_lib_src} )
-IF( NOT CMAKE_VERSION VERSION_LESS 2.8.3 AND OSX_OPTION_CLANG) # only cmake >= 2.8.3 supports per target attributes
-	SET_TARGET_PROPERTIES(luxStatic PROPERTIES XCODE_ATTRIBUTE_GCC_VERSION com.apple.compilers.llvm.clang.1_0) # for testing new CLANG2.0, will be ignored for other OS
-	SET_TARGET_PROPERTIES(luxStatic PROPERTIES XCODE_ATTRIBUTE_LLVM_LTO NO ) # disabled due breaks bw compatibility
-ENDIF()
-#TARGET_LINK_LIBRARIES(luxStatic ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} )
-
-#############################################################################
-# Here we build the shared core library liblux.so
-#############################################################################
-ADD_LIBRARY(luxShared SHARED ${lux_cpp_api_src})
-IF(APPLE)
-	IF( NOT CMAKE_VERSION VERSION_LESS 2.8.3 AND OSX_OPTION_CLANG) # only cmake >= 2.8.3 supports per target attributes
-		SET_TARGET_PROPERTIES(luxShared PROPERTIES XCODE_ATTRIBUTE_GCC_VERSION com.apple.compilers.llvm.clang.1_0) # for testing new CLANG2.0, will be ignored for other OS
-		SET_TARGET_PROPERTIES(luxShared PROPERTIES XCODE_ATTRIBUTE_LLVM_LTO NO ) # disabled due breaks bw compatibility
-	ENDIF()
-ENDIF(APPLE)
-TARGET_LINK_LIBRARIES(luxShared ${LUX_LIBRARY} ${LUX_LIBRARY_DEPENDS})
-
-# Make CMake output both libs with the same name
-SET_TARGET_PROPERTIES(luxStatic luxShared PROPERTIES OUTPUT_NAME lux)
 
 #############################################################################
 #############################################################################
@@ -624,7 +588,7 @@ SET(lux_cameras_hdr
 	cameras/perspective.h
 	cameras/realistic.h
 	)
-SOURCE_GROUP("Header Files\\Cameras" FILES ${lux_accelerators_hdr})
+SOURCE_GROUP("Header Files\\Cameras" FILES ${lux_cameras_hdr})
 SET(lux_cpp_api_hdr
 	cpp_api/export_defs.h
 	cpp_api/lux_api.h
@@ -870,5 +834,49 @@ SET(lux_lib_hdr
 	${lux_tonemaps_hdr}
 	${lux_volumes_hdr}
 	)
-ADD_CUSTOM_TARGET(LuxHeaders SOURCES ${lux_lib_hdr})
+
+
+#############################################################################
+
+INCLUDE_DIRECTORIES(SYSTEM
+	${CMAKE_SOURCE_DIR}/core/external
+	)
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/core
+	${CMAKE_SOURCE_DIR}/core/queryable
+	${CMAKE_SOURCE_DIR}/core/reflection
+	${CMAKE_SOURCE_DIR}/core/reflection/bxdf
+	${CMAKE_SOURCE_DIR}/core/reflection/fresnel
+	${CMAKE_SOURCE_DIR}/core/reflection/microfacetdistribution
+	${CMAKE_SOURCE_DIR}/spds
+	${CMAKE_SOURCE_DIR}/lights/sphericalfunction
+	${CMAKE_SOURCE_DIR}
+	${CMAKE_BINARY_DIR}
+	)
+
+#############################################################################
+# Here we build the static core library liblux.a
+#############################################################################
+ADD_LIBRARY(luxStatic STATIC ${lux_lib_src} ${lux_lib_hdr} ${lux_parser_src})
+IF( NOT CMAKE_VERSION VERSION_LESS 2.8.3 AND OSX_OPTION_CLANG) # only cmake >= 2.8.3 supports per target attributes
+	SET_TARGET_PROPERTIES(luxStatic PROPERTIES XCODE_ATTRIBUTE_GCC_VERSION com.apple.compilers.llvm.clang.1_0) # for testing new CLANG2.0, will be ignored for other OS
+	SET_TARGET_PROPERTIES(luxStatic PROPERTIES XCODE_ATTRIBUTE_LLVM_LTO NO ) # disabled due breaks bw compatibility
+ENDIF()
+#TARGET_LINK_LIBRARIES(luxStatic ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} )
+
+#############################################################################
+# Here we build the shared core library liblux.so
+#############################################################################
+ADD_LIBRARY(luxShared SHARED ${lux_cpp_api_src} ${lux_lib_hdr})
+IF(APPLE)
+	IF( NOT CMAKE_VERSION VERSION_LESS 2.8.3 AND OSX_OPTION_CLANG) # only cmake >= 2.8.3 supports per target attributes
+		SET_TARGET_PROPERTIES(luxShared PROPERTIES XCODE_ATTRIBUTE_GCC_VERSION com.apple.compilers.llvm.clang.1_0) # for testing new CLANG2.0, will be ignored for other OS
+		SET_TARGET_PROPERTIES(luxShared PROPERTIES XCODE_ATTRIBUTE_LLVM_LTO NO ) # disabled due breaks bw compatibility
+	ENDIF()
+ENDIF(APPLE)
+TARGET_LINK_LIBRARIES(luxShared ${LUX_LIBRARY} ${LUX_LIBRARY_DEPENDS})
+
+# Make CMake output both libs with the same name
+SET_TARGET_PROPERTIES(luxStatic luxShared PROPERTIES OUTPUT_NAME lux)
+
+#ADD_CUSTOM_TARGET(luxStatic SOURCES ${lux_lib_hdr})
 
