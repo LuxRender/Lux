@@ -45,7 +45,7 @@ public:
 
 private:
 	struct BidirStateVertex {
-		BidirStateVertex() : bsdf(NULL), flags(BxDFType(0)), throughputWi(0.f), throughputWo(0.f) {}
+		BidirStateVertex() : bsdf(NULL), flags(BxDFType(0)), throughputWi(1.f), throughputWo(1.f) {}
 
 		BSDF *bsdf;
 		BxDFType flags;
@@ -54,8 +54,7 @@ private:
 		SWCSpectrum throughputWi, throughputWo;
 	};
 
-	void Terminate(const Scene &scene, const u_int bufferId,
-			const float alpha = 1.f);
+	void Terminate(const Scene &scene, const u_int bufferId);
 
 	// NOTE: the size of this class is extremely important for the total
 	// amount of memory required for hybrid rendering.
@@ -66,6 +65,7 @@ private:
 	u_int eyePathLength;
 
 	const Light *light;
+	SWCSpectrum Le;
 	BidirStateVertex *lightPath;
 	u_int lightPathLength;
 
@@ -79,10 +79,11 @@ private:
 	u_int *raysIndex;
 	u_int raysCount;
 
-	float distance;
+	float distance, alpha;
 	// One for each light group
 	SWCSpectrum *L;
 	float *V;
+	u_int contribCount;
 
 	PathState state;
 };

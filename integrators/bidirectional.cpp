@@ -943,6 +943,7 @@ bool BidirPathState::Init(const Scene &scene) {
 		L[i] = 0.f;
 		V[i] = 0.f;
 	}
+	contribCount = 0;
 
 	//--------------------------------------------------------------------------
 	// Initialize the Sample
@@ -991,21 +992,19 @@ bool BidirPathState::Init(const Scene &scene) {
 			bidir->lightComponentOffset, 0);
 
 		// Sample light subpath origin
-		u_int nLight = 0;
 		BidirStateVertex &light0(lightPath[0]);
 		if (light->SampleL(
 				scene, sample,
 				lightPos[0], lightPos[1], component, &lightPath[0].bsdf,
-				&pdf, &light0.throughputWi)) {
+				&pdf, &Le)) {
 			++lightPathLength;
 
 			// Initialize light vertex
 			light0.wi = Vector(light0.bsdf->nn);
 
 			// pdf of ONE_UNIFORM light sampling strategy
-			light0.throughputWi *= numberOfLights;
+			Le *= numberOfLights;
 
-			nLight = 1;
 			if (maxLightDepth > 1) {
 				//--------------------------------------------------------------
 				// Sample light subpath initial direction and
@@ -1016,12 +1015,12 @@ bool BidirPathState::Init(const Scene &scene) {
 
 				if (light0.bsdf->SampleF(sw, light0.wi,
 					&light0.wo, data[1], data[2], data[3],
-					&light0.throughputWo, &pdf, BSDF_ALL, &light0.flags,
+					&light0.throughputWi, &pdf, BSDF_ALL, &light0.flags,
 					&pdfR)) {
 					Ray ray(light0.bsdf->dgShading.p, light0.wo);
 					ray.time = sample.realTime;
 					Intersection isect;
-					light0.throughputWo *=  light0.throughputWi / pdf;
+					light0.throughputWo =  light0.throughputWi;
 
 					// Trace light subpath and connect to eye vertex
 					const Volume *volume = light0.bsdf->GetVolume(ray.d);
@@ -1030,7 +1029,9 @@ bool BidirPathState::Init(const Scene &scene) {
 						data = sample.sampler->GetLazyValues(sample,
 							bidir->sampleLightOffset, sampleIndex);
 
-						BidirStateVertex &v = lightPath[nLight];
+						BidirStateVertex &v = lightPath[sampleIndex];
+						v.throughputWi = lightPath[sampleIndex - 1].throughputWo;
+
 						if (!scene.Intersect(sample, volume, scattered,
 							ray, data[4], &isect, &v.bsdf, &pdf,
 							&pdfR, &v.throughputWi))
@@ -1038,7 +1039,6 @@ bool BidirPathState::Init(const Scene &scene) {
 
 						scattered = v.bsdf->dgShading.scattered;
 						v.throughputWi /= pdf;
-						++nLight;
 						++lightPathLength;
 
 						// Initialize new intersection vertex
@@ -1053,7 +1053,7 @@ bool BidirPathState::Init(const Scene &scene) {
 							data[1], data[2], data[3], &f, &pdf,
 							BSDF_ALL, &v.flags, &pdfR))
 							break;
-						v.throughputWo = v.throughputWi / pdf;
+						v.throughputWo = v.throughputWi * f;
 
 						// Russian Roulette
 						if (v.flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) ||
@@ -1082,6 +1082,7 @@ bool BidirPathState::Init(const Scene &scene) {
 
 	//--------------------------------------------------------------------------
 	// Build eye path (on the CPU)
+	// and add light emitted by surfaces and received by escaped rays
 	//--------------------------------------------------------------------------
 
 	eyePathLength = 0;
@@ -1125,6 +1126,7 @@ bool BidirPathState::Init(const Scene &scene) {
 	// Trace eye subpath
 	const Volume *volume = eye0.bsdf->GetVolume(ray.d);
 	bool scattered = eye0.bsdf->dgShading.scattered;
+	bool specularBounce = true;
 	for (u_int sampleIndex = 1; sampleIndex < maxEyeDepth; ++sampleIndex) {
 		const float *data = sample.sampler->GetLazyValues(sample,
 			bidir->sampleEyeOffset, sampleIndex);
@@ -1134,20 +1136,61 @@ bool BidirPathState::Init(const Scene &scene) {
 		if (!scene.Intersect(sample, volume, scattered, ray, data[4],
 			&isect, &v.bsdf, &pdfR, &pdf, &v.throughputWi)) {
 			if (nEye == 1) {
+				alpha = 0.f;
 				// Tweak intersection distance for Z buffer
 				distance = INFINITY;
+			}
+
+			const SWCSpectrum pathThroughput = eyePath[nEye - 1].throughputWo / pdfR;
+
+			// Dade - now I know ray.maxt and I can call volumeIntegrator
+			SWCSpectrum Lv;
+			u_int g = scene.volumeIntegrator->Li(scene, ray, sample,
+				&Lv, &alpha);
+			if (!Lv.Black()) {
+				Lv *= pathThroughput;
+				L[g] += Lv;
+				V[g] += Lv.Filter(sw); // TOFIX
+				++contribCount;
+			}
+
+			// Stop path sampling since no intersection was found
+			// Possibly add horizon in render & reflections
+			if (specularBounce) {
+				BSDF *ibsdf;
+				for (u_int i = 0; i < numberOfLights; ++i) {
+					SWCSpectrum Le(pathThroughput);
+					if (scene.lights[i]->Le(scene, sample,
+						ray, &ibsdf, NULL, NULL, &Le)) {
+						L[scene.lights[i]->group] += Le;
+						V[scene.lights[i]->group] += Le.Filter(sw); // TOFIX
+						++contribCount;
+					}
+				}
 			}
 
 			// End eye path tracing
 			break;
 		}
+		v.throughputWi /= pdfR;
 
 		if (nEye == 1)
-			distance = ray.maxt;
+			distance = ray.maxt * ray.d.Length();
+
+		// Possibly add emitted light at path vertex
+		if (specularBounce && isect.arealight) {
+			BSDF *ibsdf;
+			SWCSpectrum Le(isect.Le(sample, ray, &ibsdf, NULL, NULL));
+			if (!Le.Black()) {
+				Le *= eyePath[nEye - 1].throughputWo;
+				L[isect.arealight->group] += Le;
+				V[isect.arealight->group] += Le.Filter(sw); // TOFIX
+				++contribCount;
+			}
+		}
 
 		// Initialize new intersection vertex
 		scattered = v.bsdf->dgShading.scattered;
-		v.throughputWi /= pdfR;
 		v.wo = -ray.d;
 		++nEye;
 		++eyePathLength;
@@ -1161,6 +1204,7 @@ bool BidirPathState::Init(const Scene &scene) {
 			data[3], &f, &pdfR, BSDF_ALL, &v.flags, &pdf, true))
 			break;
 
+		specularBounce = ((v.flags & BSDF_SPECULAR) != 0);
 		v.throughputWo = v.throughputWi * f;
 
 		// Russian Roulette
@@ -1198,8 +1242,7 @@ void BidirPathState::Free(const Scene &scene) {
 	scene.sampler->FreeSample(&sample);
 }
 
-void BidirPathState::Terminate(const Scene &scene, const u_int bufferId,
-		const float alpha) {
+void BidirPathState::Terminate(const Scene &scene, const u_int bufferId) {
 	const u_int lightGroupCount = scene.lightGroups.size();
 	for (u_int i = 0; i < lightGroupCount; ++i) {
 		if (!L[i].Black())
@@ -1231,7 +1274,24 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 		return true;
 	}
 
-	// Generate the rays
+	// Compute number of specular vertices for each path length
+	const u_int cameraPathLength = bidirState->eyePathLength - 1;
+	const u_int lightPathLength = bidirState->lightPathLength - 1;
+
+    int nVerts = cameraPathLength + lightPathLength + 2;
+    int *nSpecularVertices = (int *)alloca(sizeof(int) * nVerts);
+    memset(nSpecularVertices, 0, nVerts * sizeof(int));
+    for (u_int t = 0; t < cameraPathLength; ++t) {
+        for (u_int s = 0; s < lightPathLength; ++s) {
+			BidirPathState::BidirStateVertex &eyePath = bidirState->eyePath[t];
+			BidirPathState::BidirStateVertex &lightPath = bidirState->lightPath[s];
+
+            if ((eyePath.flags & BSDF_SPECULAR) || (lightPath.flags & BSDF_SPECULAR))
+                ++nSpecularVertices[s + t + 2];
+		}
+	}
+
+		// Generate the rays
 	bidirState->raysCount = 0;
 	Ray *shadowRays = (Ray *)alloca(sizeof(Ray) * (maxEyeDepth + maxEyeDepth * maxLightDepth));
 	const Sample &sample(bidirState->sample);
@@ -1285,7 +1345,8 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 
 						if (shadowRayEpsilon < length * .5f) {
 							// Store light's contribution
-							bidirState->Ld[t] = eyePath.throughputWi * Li / d2;
+							const u_int pathWeigth = t - nSpecularVertices[t];
+							bidirState->Ld[t] = eyePath.throughputWi * Li / (d2 * pathWeigth);
 							bidirState->LdGroup[t] = light->group;
 
 							const float maxt = length - shadowRayEpsilon;
@@ -1303,9 +1364,9 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 	//--------------------------------------------------------------------------
 
 	// For each eye path vertex
-	for (u_int t = 0; t < bidirState->eyePathLength; ++t) {
+	for (u_int t = 1; t < bidirState->eyePathLength; ++t) {
 		// For each light path vertex
-		for (u_int s = 0; s < bidirState->lightPathLength; ++s) {
+		for (u_int s = 1; s < bidirState->lightPathLength; ++s) {
 			BidirPathState::BidirStateVertex &eyePath = bidirState->eyePath[t];
 			BidirPathState::BidirStateVertex &lightPath = bidirState->lightPath[s];
 
@@ -1319,11 +1380,13 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 				const float length = d.Length();
 				d /= length;
 
-				const SWCSpectrum ef(eyePath.bsdf->F(sw, d, eyePath.wo, true, eyePath.flags));
+				const SWCSpectrum ef(eyePath.bsdf->F(sw, d, eyePath.wo, true, eyePath.flags) *
+					(1 + eyePath.bsdf->NumComponents(BSDF_SPECULAR)));
 				if (ef.Black())
 					continue;
 
-				const SWCSpectrum lf(lightPath.bsdf->F(sw, lightPath.wi, -d, false, lightPath.flags));
+				const SWCSpectrum lf(lightPath.bsdf->F(sw, lightPath.wi, -d, false, lightPath.flags) *
+					(1 + lightPath.bsdf->NumComponents(BSDF_SPECULAR)));
 				if (lf.Black())
 					continue;
 
@@ -1331,7 +1394,9 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 						MachineEpsilon::E(length));
 
 				if (shadowRayEpsilon < length * .5f) {
-					Lc = eyePath.throughputWi * ef * lf * lightPath.throughputWi;
+					const u_int pathWeight = t + s - nSpecularVertices[t + s];
+					const float G = AbsDot(eyePath.bsdf->dgShading.nn, d) * AbsDot(lightPath.bsdf->dgShading.nn, d) / length;
+					Lc = eyePath.throughputWi * ef * G * lf * lightPath.throughputWi * bidirState->Le / pathWeight;
 
 					const float maxt = length - shadowRayEpsilon;
 					shadowRays[bidirState->raysCount] = Ray(p, d, shadowRayEpsilon, maxt, bidirState->sample.realTime);
@@ -1380,7 +1445,7 @@ bool BidirIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, l
 
 					bidirState->L[lightGroup] += bidirState->Ld[t];
 					bidirState->V[lightGroup] += bidirState->Ld[t].Filter(sw); // TOFIX
-					++(*nrContribs);
+					++(bidirState->contribCount);
 				}
 			}
 		}
@@ -1391,9 +1456,9 @@ bool BidirIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, l
 	//--------------------------------------------------------------------------
 
 	// For each eye path vertex
-	for (u_int t = 0; t < bidirState->eyePathLength; ++t) {
+	for (u_int t = 1; t < bidirState->eyePathLength; ++t) {
 		// For each light path vertex
-		for (u_int s = 0; s < bidirState->lightPathLength; ++s) {
+		for (u_int s = 1; s < bidirState->lightPathLength; ++s) {
 			SWCSpectrum &Lc(bidirState->Lc[t + s * bidirState->eyePathLength]);
 
 			if (!Lc.Black()) {
@@ -1403,9 +1468,10 @@ bool BidirIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, l
 				// TOFIX: add support for architectural glass, etc.
 				if (rayHit->Miss()) {
 					const u_int lightGroup = bidirState->light->group;
+
 					bidirState->L[lightGroup] += Lc;
 					bidirState->V[lightGroup] += Lc.Filter(sw);
-					++(*nrContribs);
+					++(bidirState->contribCount);
 				}
 
 				++rayIndex;
@@ -1414,6 +1480,8 @@ bool BidirIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, l
 	}
 
 	bidirState->Terminate(scene, eyeBufferId);
+
+	*nrContribs += bidirState->contribCount;
 
 	return true;
 }
