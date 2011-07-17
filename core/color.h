@@ -205,6 +205,28 @@ public:
 	float Filter() const { return (c[0] + c[1] + c[2]) * (1.f / 3.f); }
 };
 
+// RGBAColor Declarations
+class  RGBAColor : public Color {
+public:
+	// RGBAColor Public Methods
+	RGBAColor(float v = 0.f) { c[0] = v; c[1] = v; c[2] = v; alpha = v; }
+	RGBAColor(float r, float g, float b) { c[0] = r; c[1] = g; c[2] = b; alpha = 0.f; }
+	RGBAColor(float r, float g, float b, float a) { c[0] = r; c[1] = g; c[2] = b; alpha = a; }
+	RGBAColor(const float cs[3]) {
+		c[0] = cs[0]; c[1] = cs[1]; c[2] = cs[2]; alpha = 0.f;
+	}
+	RGBAColor(const Color &color) { // so that operators work
+		c[0] = color.c[0]; c[1] = color.c[1]; c[2] = color.c[2]; alpha = 0.f;
+	}
+
+	float Y() const {
+		return 0.212671f * c[0] + 0.715160f * c[1] + 0.072169f * c[2];
+	}
+	float Filter() const { return (c[0] + c[1] + c[2]) * (1.f / 3.f); }
+
+	float alpha;
+};
+
 // XYZColor Declarations
 class  XYZColor : public Color {
     // Dade - serialization here is required by network rendering

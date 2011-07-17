@@ -200,6 +200,40 @@ private:
 	bool isIlluminant;
 };
 
+
+class NormalMapTexture : public Texture<float>, public ImageTexture {
+public:
+	// NormalMapTexture Public Methods
+	NormalMapTexture(TextureMapping2D *m, ImageTextureFilterType type,
+		const string &filename, int discardmm, float maxAniso,
+		ImageWrap wrapMode, float gain, float gamma) :
+		ImageTexture(m, type, filename, discardmm, maxAniso, wrapMode,
+			gain, gamma) { }
+
+	virtual ~NormalMapTexture() { }
+
+	virtual float Evaluate(const SpectrumWavelengths &sw,
+		const DifferentialGeometry &dg) const {
+		return 0.f;
+	}
+	virtual float Y() const {
+		return 0.f;
+	}
+	virtual void GetDuv(const SpectrumWavelengths &sw,
+		const DifferentialGeometry &dg, float delta,
+		float *du, float *dv) const;
+
+	virtual void GetMinMaxFloat(float *minValue, float *maxValue) const {
+		*minValue = 0.f;
+		*maxValue = 0.f;
+	}
+
+	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const ParamSet &tp);
+
+private:
+	// NormalMapTexture Private Data
+};
+
 // ImageTexture Method Definitions
 inline boost::shared_ptr<MIPMap> ImageTexture::GetTexture(ImageTextureFilterType filterType,
 	const string &filename, int discardmm, float maxAniso, ImageWrap wrap, float gain,

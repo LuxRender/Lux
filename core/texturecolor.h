@@ -63,6 +63,7 @@ public:
 
 	SWCSpectrum GetSpectrum(const SpectrumWavelengths &sw) const;
 	float GetFloat(Channel channel) const;
+	RGBAColor GetRGBAColor() const;
 
 	TextureColor<T, colorSamples> &operator+=(const TextureColor<T, colorSamples> &s2) {
 		for (u_int i = 0; i < colorSamples; ++i)
@@ -169,6 +170,10 @@ template<> inline float TextureColor<unsigned char, 1>::GetFloat(Channel channel
 	const float norm = 1.f / std::numeric_limits<unsigned char>::max();
 	return c[0] * norm;
 }
+template<> inline RGBAColor TextureColor<unsigned char, 1>::GetRGBAColor() const {
+	const float norm = 1.f / std::numeric_limits<unsigned char>::max();
+	return RGBAColor(c[0] * norm);
+}
 template<> inline SWCSpectrum TextureColor<unsigned char, 3>::GetSpectrum(const SpectrumWavelengths &sw) const {
 	const float norm = 1.f / std::numeric_limits<unsigned char>::max();
 	return SWCSpectrum(sw, RGBColor(c[0], c[1], c[2]) * norm);
@@ -190,6 +195,10 @@ template<> inline float TextureColor<unsigned char, 3>::GetFloat(Channel channel
 			return RGBColor(c[0], c[1], c[2]).Y() * norm;
 	}
 	return 1.f;
+}
+template<> inline RGBAColor TextureColor<unsigned char, 3>::GetRGBAColor() const {
+	const float norm = 1.f / std::numeric_limits<unsigned char>::max();
+	return RGBAColor(c[0], c[1], c[2]) * norm;
 }
 template<> inline SWCSpectrum TextureColor<unsigned char, 4>::GetSpectrum(const SpectrumWavelengths &sw) const {
 	const float norm = 1.f / std::numeric_limits<unsigned char>::max();
@@ -213,6 +222,10 @@ template<> inline float TextureColor<unsigned char, 4>::GetFloat(Channel channel
 	}
 	return 1.f;
 }
+template<> inline RGBAColor TextureColor<unsigned char, 4>::GetRGBAColor() const {
+	const float norm = 1.f / std::numeric_limits<unsigned char>::max();
+	return RGBAColor(c[0], c[1], c[2], c[3]) * norm;
+}
 
 // unsigned short
 template<> inline SWCSpectrum TextureColor<unsigned short, 1>::GetSpectrum(const SpectrumWavelengths &sw) const {
@@ -222,6 +235,10 @@ template<> inline SWCSpectrum TextureColor<unsigned short, 1>::GetSpectrum(const
 template<> inline float TextureColor<unsigned short, 1>::GetFloat(Channel channel) const {
 	const float norm = 1.f / std::numeric_limits<unsigned short>::max();
 	return c[0] * norm;
+}
+template<> inline RGBAColor TextureColor<unsigned short, 1>::GetRGBAColor() const {
+	const float norm = 1.f / std::numeric_limits<unsigned short>::max();
+	return RGBAColor(c[0]) * norm;
 }
 template<> inline SWCSpectrum TextureColor<unsigned short, 3>::GetSpectrum(const SpectrumWavelengths &sw) const {
 	const float norm = 1.f / std::numeric_limits<unsigned short>::max();
@@ -245,6 +262,10 @@ template<> inline float TextureColor<unsigned short, 3>::GetFloat(Channel channe
 	}
 	return 1.f;
 }
+template<> inline RGBAColor TextureColor<unsigned short, 3>::GetRGBAColor() const {
+	const float norm = 1.f / std::numeric_limits<unsigned short>::max();
+	return RGBAColor(c[0], c[1], c[2]) * norm;
+}
 template<> inline SWCSpectrum TextureColor<unsigned short, 4>::GetSpectrum(const SpectrumWavelengths &sw) const {
 	const float norm = 1.f / std::numeric_limits<unsigned short>::max();
 	return SWCSpectrum(sw, RGBColor(c[0], c[1], c[2]) * norm);
@@ -267,6 +288,10 @@ template<> inline float TextureColor<unsigned short, 4>::GetFloat(Channel channe
 	}
 	return 1.f;
 }
+template<> inline RGBAColor TextureColor<unsigned short, 4>::GetRGBAColor() const {
+	const float norm = 1.f / std::numeric_limits<unsigned short>::max();
+	return RGBAColor(c[0], c[1], c[2], c[3]) * norm;
+}
 
 // float
 template<> inline SWCSpectrum TextureColor<float, 1>::GetSpectrum(const SpectrumWavelengths &sw) const {
@@ -274,6 +299,9 @@ template<> inline SWCSpectrum TextureColor<float, 1>::GetSpectrum(const Spectrum
 }
 template<> inline float TextureColor<float, 1>::GetFloat(Channel channel) const {
 	return c[0];
+}
+template<> inline RGBAColor TextureColor<float, 1>::GetRGBAColor() const {
+	return RGBAColor(c[0]);
 }
 template<> inline SWCSpectrum TextureColor<float, 3>::GetSpectrum(const SpectrumWavelengths &sw) const {
 	return SWCSpectrum(sw, RGBColor(c[0], c[1], c[2]));
@@ -295,6 +323,9 @@ template<> inline float TextureColor<float, 3>::GetFloat(Channel channel) const 
 	}
 	return 1.f;
 }
+template<> inline RGBAColor TextureColor<float, 3>::GetRGBAColor() const {
+	return RGBAColor(c[0], c[1], c[2]);
+}
 template<> inline SWCSpectrum TextureColor<float, 4>::GetSpectrum(const SpectrumWavelengths &sw) const {
 	return SWCSpectrum(sw, RGBColor(c[0], c[1], c[2]));
 }
@@ -314,6 +345,9 @@ template<> inline float TextureColor<float, 4>::GetFloat(Channel channel) const 
 			return RGBColor(c[0], c[1], c[2]).Y();
 	}
 	return 1.f;
+}
+template<> inline RGBAColor TextureColor<float, 4>::GetRGBAColor() const {
+	return RGBAColor(c[0], c[1], c[2], c[3]);
 }
 
 }

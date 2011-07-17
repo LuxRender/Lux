@@ -23,6 +23,8 @@
 #ifndef LUX_MATRIX3X3_H
 #define LUX_MATRIX3X3_H
 
+#include "geometry/vector.h"
+
 namespace lux
 {
 
@@ -41,7 +43,7 @@ static inline float Determinant3x3(const float matrix[3][3])
 static inline bool Invert3x3(const float matrix[3][3], float result[3][3])
 {
 	const float det = Determinant3x3(matrix);
-	if (fabsf(det) < 1e-12f)
+	if (fabsf(det) < 1e-9f)
 		return false;
 	const float a = matrix[0][0], b = matrix[0][1], c = matrix[0][2],
 		d = matrix[1][0], e = matrix[1][1], f = matrix[1][2],
@@ -69,6 +71,14 @@ static inline void Transform3x3(const float matrix[3][3], const float vector[3],
 	result[2] = matrix[2][0] * vector[0] + matrix[2][1] * vector[1] + matrix[2][2] * vector[2];
 }
 
+static inline Vector Transform3x3(const float matrix[3][3], const Vector &v)
+{
+	return Vector(
+		matrix[0][0] * v.x + matrix[0][1] * v.y + matrix[0][2] * v.z,
+		matrix[1][0] * v.x + matrix[1][1] * v.y + matrix[1][2] * v.z,
+		matrix[2][0] * v.x + matrix[2][1] * v.y + matrix[2][2] * v.z);
+}
+
 static inline void Multiply3x3(const float a[3][3], const float b[3][3], float result[3][3])
 {
 	result[0][0] = a[0][0] * b[0][0] + a[0][1] * b[1][0] + a[0][2] * b[2][0];
@@ -82,6 +92,17 @@ static inline void Multiply3x3(const float a[3][3], const float b[3][3], float r
 	result[2][2] = a[2][0] * b[0][2] + a[2][1] * b[1][2] + a[2][2] * b[2][2];
 }
 
+static inline bool SolveLinearSystem3x3(const float A[3][3], const float B[3], float x[3])
+{
+	float invA[3][3];
+
+	if (!Invert3x3(A, invA))
+		return false;
+
+	Transform3x3(invA, B, x);
+
+	return true;
+}
 
 }//namespace lux
 
