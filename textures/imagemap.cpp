@@ -97,7 +97,10 @@ void NormalMapTexture::GetDuv(const SpectrumWavelengths &sw,
 
 	float dh[3];
 
-	SolveLinearSystem3x3(A, b, dh);
+	if (!SolveLinearSystem3x3(A, b, dh)) {
+		*du = *dv = 0.f;
+		return;
+	}
 		
 	// recover dhds and dhdt by dividing by 1/lambda
 	ds = dh[0] / dh[2];
