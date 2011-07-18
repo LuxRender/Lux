@@ -159,7 +159,7 @@ bool SurfaceIntegratorStateBuffer::NextState(u_int &nrContribs, u_int &nrSamples
 // HybridSamplerRenderer
 //------------------------------------------------------------------------------
 
-HybridSamplerRenderer::HybridSamplerRenderer(const int oclPlatformIndex, const bool useGPUs,
+HybridSamplerRenderer::HybridSamplerRenderer(const int oclPlatformIndex, bool useGPUs,
 		const u_int forceGPUWorkGroupSize, const string &deviceSelection,
 		const u_int rayBufSize, const u_int stateBufCount) : HybridRenderer() {
 	state = INIT;
