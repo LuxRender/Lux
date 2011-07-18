@@ -210,7 +210,7 @@ WorldEnd 		{ return WORLDEND;		}
 <STR>. {add_string_char(yytext[0]);}
 <STR>\n { LOG(LUX_SEVERE,LUX_SYNTAX)<<"Unterminated string!";}
 
-. { LOG(LUX_SEVERE,LUX_SYNTAX)<<"Illegal character: "<<yytext[0]; }
+. { LOG(LUX_SEVERE,LUX_SYNTAX)<<"Illegal character " << (currentFile != "" ? "in file '" + std::string(currentFile) + "' " : "") << "at line " << lineNum << ": "<<yytext[0]; }
 %%
 int yywrap(void)
 {
