@@ -75,7 +75,18 @@ void NormalMapTexture::GetDuv(const SpectrumWavelengths &sw,
 
 	n = Normalize(Transform3x3(mat, n));
 
-	// Solve 3x3 system to get dhds/lambda, dhdt/lambda and 1/lambda
+	// Since n is stored normalized in the normal map
+	// we need to recover the original length (lambda).
+	// We do this by solving 
+	//
+	//   lambda*n = dpds x dpdt
+	//
+	// where 
+	//   p(u,v) = base(u,v) + h(u,v) * k
+	//
+	// After inserting p into the above and rearranging we get 
+	// a system with unknowns dhds/lambda, dhdt/lambda and 1/lambda
+	// Here we solve this system to obtain dhds and dhdt.
 	const float A[3][3] = {
 		{
 			( dpdt.z * k.y - dpdt.y * k.z ),
