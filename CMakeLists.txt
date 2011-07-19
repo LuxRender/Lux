@@ -55,6 +55,10 @@ IF (NOT CMAKE_BUILD_TYPE)
 ENDIF(NOT CMAKE_BUILD_TYPE)
 MESSAGE(STATUS "Building mode: " ${CMAKE_BUILD_TYPE})
 
+IF (LUXRAYS_DISABLE_OPENCL)
+	ADD_DEFINITIONS("-DLUXRAYS_DISABLE_OPENCL")
+ENDIF()
+
 #############################################################################
 #############################################################################
 ###                OSX general settings and options                       ###
