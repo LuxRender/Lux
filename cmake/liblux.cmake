@@ -27,9 +27,9 @@
 
 # Create custom command for bison/yacc
 BISON_TARGET(LuxParser ${CMAKE_SOURCE_DIR}/core/luxparse.y ${CMAKE_BINARY_DIR}/luxparse.cpp)
-if(APPLE AND !APPLE_64)
+if(APPLE)
 	EXECUTE_PROCESS(COMMAND mv ${CMAKE_SOURCE_DIR}/luxparse.cpp.h ${CMAKE_BINARY_DIR}/luxparse.hpp)
-ENDIF(APPLE AND !APPLE_64)
+ENDIF(APPLE)
 SET_SOURCE_FILES_PROPERTIES(${CMAKE_BINARY_DIR}/core/luxparse.cpp GENERATED)
 #SOURCE_GROUP("Parser Files" FILES core/luxparse.y)
 
