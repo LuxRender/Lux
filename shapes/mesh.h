@@ -43,7 +43,8 @@ public:
 		boost::shared_ptr<Texture<float> > &displacementMap,
 		float displacementMapScale, float displacementMapOffset,
 		bool displacementMapNormalSmooth,
-		bool displacementMapSharpBoundary, bool normalsplit);
+		bool displacementMapSharpBoundary, bool normalsplit,
+		bool genTangents);
 	virtual ~Mesh();
 
 	virtual BBox ObjectBound() const;
@@ -77,6 +78,8 @@ public:
 	};
 
 protected:
+	void GenerateTangentSpace();
+
 	// Lotus - refinement data
 	MeshAccelType accelType;
 
@@ -85,6 +88,8 @@ protected:
 	Point *p; // in world space if no subdivision is needed, object space otherwise
 	Normal *n; // in object space
 	float *uvs;
+	Vector *t;
+	bool *btsign; // bitangent sign, true if positive
 
 	// Dade - triangle data
 	MeshTriangleType triType;
@@ -107,6 +112,9 @@ protected:
 	float displacementMapMin, displacementMapMax;
 	bool displacementMapNormalSmooth, displacementMapSharpBoundary;
 	bool normalSplit;
+
+	// Generate tangent space for mesh
+	bool generateTangents;
 
 	// for error reporting
 	mutable u_int inconsistentShadingTris;

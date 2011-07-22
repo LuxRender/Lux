@@ -25,6 +25,9 @@
 #include "context.h"
 #include "loopsubdiv.h"
 
+#include "./mikktspace/mikktspace.h"
+#include "./mikktspace/weldmesh.h"
+
 #include "luxrays/core/trianglemesh.h"
 
 using namespace lux;
@@ -35,7 +38,7 @@ Mesh::Mesh(const Transform &o2w, bool ro, MeshAccelType acceltype,
 	MeshQuadType quadtype, u_int nquadsCount, const int *quads,
 	MeshSubdivType subdivtype, u_int nsubdivlevels,
 	boost::shared_ptr<Texture<float> > &dmMap, float dmScale, float dmOffset,
-	bool dmNormalSmooth, bool dmSharpBoundary, bool normalsplit)
+	bool dmNormalSmooth, bool dmSharpBoundary, bool normalsplit, bool genTangents)
 	: Shape(o2w, ro)
 {
 	accelType = acceltype;
@@ -88,6 +91,15 @@ Mesh::Mesh(const Transform &o2w, bool ro, MeshAccelType acceltype,
 	} else
 		n = NULL;
 
+	if (genTangents && !uvs) {
+		LOG(LUX_ERROR,LUX_CONSISTENCY)<< "Cannot generate tangent space for mesh, mesh does not have UV coordinates.";
+		generateTangents = false;
+	} else
+		generateTangents = genTangents;
+	// will be allocated in GenerateTangentSpace if needed
+	t = NULL;
+	btsign = NULL;
+
 	// Dade - copy quad data
 	quadType = quadtype;
 	nquads = nquadsCount;
@@ -104,11 +116,11 @@ Mesh::Mesh(const Transform &o2w, bool ro, MeshAccelType acceltype,
 			const Point &p2 = p[quads[idx + 2]];
 			const Point &p3 = p[quads[idx + 3]];
 
-			// Split the quad if subdivision is necessary (only possible on tri's) or if its not planar or convex
+			// Split the quad if using subdivision, tangent space generation (only possible on tri's) or if its not planar or convex
 			//bool quadOk = MeshQuadrilateral::IsPlanar(p0, p1, p2, p3) && MeshQuadrilateral::IsConvex(p0, p1, p2, p3);*/
 			// TODO - quads have issues with normals and uvs, split them
 			bool quadOk = false;
-			if (!mustSubdivide && quadOk) {
+			if (!mustSubdivide && !generateTangents && quadOk) {
 				quadsOk.push_back(quads[idx]);
 				quadsOk.push_back(quads[idx + 1]);
 				quadsOk.push_back(quads[idx + 2]);
@@ -159,14 +171,49 @@ Mesh::Mesh(const Transform &o2w, bool ro, MeshAccelType acceltype,
 			const size_t qidx = 4 * i;
 			const size_t tidx = 3 * trisCount + 2 * 3 * i;
 
-			// Dade - triangle A
-			triVertexIndex[tidx] = quadsToSplit[qidx];
-			triVertexIndex[tidx + 1] = quadsToSplit[qidx + 1];
-			triVertexIndex[tidx + 2] = quadsToSplit[qidx + 2];
-			// Dade - triangle B
-			triVertexIndex[tidx + 3] = quadsToSplit[qidx];
-			triVertexIndex[tidx + 4] = quadsToSplit[qidx + 2];
-			triVertexIndex[tidx + 5] = quadsToSplit[qidx + 3];
+			const u_int qi0 = quadsToSplit[qidx + 0];
+			const u_int qi1 = quadsToSplit[qidx + 1];
+			const u_int qi2 = quadsToSplit[qidx + 2];
+			const u_int qi3 = quadsToSplit[qidx + 3];
+
+			bool splitfirstdiag = true;
+
+			// split along shortest diagonal to generate consistent triangles 
+			// for tangent space calculations
+			const float dlen1 = DistanceSquared(p[qi0], p[qi2]);
+			const float dlen2 = DistanceSquared(p[qi1], p[qi3]);
+
+			splitfirstdiag = dlen1 < dlen2;
+
+			if (dlen1 == dlen2 && uvs) {
+				// determine split using UV coords instead
+				const float tlen1 = DistanceSquared(Point(uvs[2*qi0+0], uvs[2*qi0+1], 0.f), 
+					Point(uvs[2*qi2+0], uvs[2*qi2+1], 0.f));
+				const float tlen2 = DistanceSquared(Point(uvs[2*qi1+0], uvs[2*qi1+1], 0.f), 
+					Point(uvs[2*qi3+0], uvs[2*qi3+1], 0.f));
+
+				splitfirstdiag = tlen1 < tlen2;
+			}
+
+			if (splitfirstdiag) {
+				// triangle A
+				triVertexIndex[tidx + 0] = quadsToSplit[qidx + 0];
+				triVertexIndex[tidx + 1] = quadsToSplit[qidx + 1];
+				triVertexIndex[tidx + 2] = quadsToSplit[qidx + 2];
+				// triangle B
+				triVertexIndex[tidx + 3] = quadsToSplit[qidx + 0];
+				triVertexIndex[tidx + 4] = quadsToSplit[qidx + 2];
+				triVertexIndex[tidx + 5] = quadsToSplit[qidx + 3];
+			} else {
+				// triangle A
+				triVertexIndex[tidx + 0] = quadsToSplit[qidx + 1];
+				triVertexIndex[tidx + 1] = quadsToSplit[qidx + 2];
+				triVertexIndex[tidx + 2] = quadsToSplit[qidx + 3];
+				// triangle B
+				triVertexIndex[tidx + 3] = quadsToSplit[qidx + 1];
+				triVertexIndex[tidx + 4] = quadsToSplit[qidx + 3];
+				triVertexIndex[tidx + 5] = quadsToSplit[qidx + 0];
+			}
 		}
 	}
 }
@@ -178,6 +225,8 @@ Mesh::~Mesh()
 	delete[] p;
 	delete[] n;
 	delete[] uvs;
+	delete[] t;
+	delete[] btsign;
 }
 
 BBox Mesh::ObjectBound() const
@@ -293,6 +342,12 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 
 		mustSubdivide = false; // only subdivide on the first refine!!!
 	}
+
+	if (generateTangents) {
+		GenerateTangentSpace();
+	}
+
+
 
 	vector<boost::shared_ptr<Primitive> > refinedPrims;
 	refinedPrims.reserve(ntris + nquads);
@@ -581,17 +636,41 @@ void Mesh::GetShadingGeometry(const Transform &obj2world,
 	const u_int v2 = triVertexIndex[dg.iData.mesh.triIndex + 2];
 
 	// Use _n_ to compute shading tangents for triangle, _ss_ and _ts_
-	const Normal ns = Normalize(dg.iData.mesh.coords[0] * n[v0] +
-		dg.iData.mesh.coords[1] * n[v1] + dg.iData.mesh.coords[2] * n[v2]);
+	const Normal nsi = dg.iData.mesh.coords[0] * n[v0] +
+		dg.iData.mesh.coords[1] * n[v1] + dg.iData.mesh.coords[2] * n[v2];
+	const Normal ns = Normalize(nsi);
 
-	Vector ts(Normalize(Cross(ns, dg.dpdu)));
-	Vector ss(Cross(ts, ns));
-	// Lotus - the length of dpdu/dpdv can be important for bumpmapping
+	Vector ss, ts;
+	Vector tangent, bitangent;
+	float sign;
+	// if we got a generated tangent space, use that
+	if (t) {
+		// length of these vectors is essential for sampled normal mapping
+		// they should be normalized at vertex level, and NOT normalized after interpolation
+		tangent = dg.iData.mesh.coords[0] * t[v0] +
+			dg.iData.mesh.coords[1] * t[v1] + dg.iData.mesh.coords[2] * t[v2];
+		// only degenerate triangles will have different vertex signs
+		bitangent = Cross(nsi, tangent);
+		// store sign, and also magnitude of interpolated normal so we can recover it
+		sign = (btsign[v0] ? 1.f : -1.f) * nsi.Length();
+
+		ss = Normalize(tangent);
+		ts = Normalize(bitangent);
+	} else {
+		ts = Normalize(Cross(ns, dg.dpdu));
+		ss = Cross(ts, ns);
+
+		ts *= Dot(dg.dpdv, ts) > 0.f ? 1.f : -1.f;
+
+		tangent = ss;
+		bitangent = ts;
+
+		sign = (Dot(ts, ns) > 0.f ? 1.f : -1.f);
+	}
+
+	// the length of dpdu/dpdv can be important for bumpmapping
 	ss *= dg.dpdu.Length();
-	if (Dot(dg.dpdv, ts) < 0.f)
-		ts *= -dg.dpdv.Length();
-	else
-		ts *= dg.dpdv.Length();
+	ts *= dg.dpdv.Length();
 
 	Normal dndu, dndv;
 	// Compute \dndu and \dndv for triangle shading geometry
@@ -630,7 +709,196 @@ void Mesh::GetShadingGeometry(const Transform &obj2world,
 	}
 
 	*dgShading = DifferentialGeometry(dg.p, ns, ss, ts,
-		dndu, dndv, dg.u, dg.v, this);
+		dndu, dndv, tangent, bitangent, sign, dg.u, dg.v, this);
+}
+
+// Class for storing mesh data pointers and holding returned tangent space data
+class MikkTSData {
+public:
+	MikkTSData(int n, int *vertexIndex, Point *pp, Normal *nn, float *uvs) 
+		: ntris(n), idx(vertexIndex), p(pp), n(nn), uv(uvs) {
+		t = new Vector[3*ntris];
+		sign = new float[3*ntris];
+	}
+
+	~MikkTSData() {
+		delete[] t;
+		delete[] sign;
+	}
+
+	int ntris;
+	int *idx;
+	Point *p;
+	Normal *n;
+	float *uv;
+
+	Vector *t;
+	float *sign;
+};
+
+// Returns the number of faces (triangles/quads) on the mesh to be processed.
+int mikkts_getNumFaces(const SMikkTSpaceContext * pContext) {
+	MikkTSData *data = static_cast<MikkTSData*>(pContext->m_pUserData);
+
+	return data->ntris;
+}
+
+// Returns the number of vertices on face number iFace
+// iFace is a number in the range {0, 1, ..., getNumFaces()-1}
+int mikkts_getNumVerticesOfFace(const SMikkTSpaceContext * pContext, const int iFace) {
+	return 3; // quads are split in constructor
+}
+
+// returns the position/normal/texcoord of the referenced face of vertex number iVert.
+// iVert is in the range {0,1,2} for triangles and {0,1,2,3} for quads.
+void mikkts_getPosition(const SMikkTSpaceContext * pContext, float fvPosOut[], const int iFace, const int iVert) {
+	MikkTSData *data = static_cast<MikkTSData*>(pContext->m_pUserData);
+
+	const Point& pos(data->p[data->idx[3*iFace + iVert]]);
+	fvPosOut[0] = pos.x;
+	fvPosOut[1] = pos.y;
+	fvPosOut[2] = pos.z;
+}
+void mikkts_getNormal(const SMikkTSpaceContext * pContext, float fvNormOut[], const int iFace, const int iVert) {
+	MikkTSData *data = static_cast<MikkTSData*>(pContext->m_pUserData);
+
+	const Normal& norm(data->n[data->idx[3*iFace + iVert]]);
+	fvNormOut[0] = norm.x;
+	fvNormOut[1] = norm.y;
+	fvNormOut[2] = norm.z;
+}
+void mikkts_getTexCoord(const SMikkTSpaceContext * pContext, float fvTexcOut[], const int iFace, const int iVert) {
+	MikkTSData *data = static_cast<MikkTSData*>(pContext->m_pUserData);
+
+	const float* const tc = &data->uv[2*data->idx[3*iFace + iVert]];
+	fvTexcOut[0] = tc[0];
+	fvTexcOut[1] = tc[1];
+}
+
+// This function is used to return the tangent and fSign to the application.
+// fvTangent is a unit length vector.
+// For normal maps it is sufficient to use the following simplified version of the bitangent which is generated at pixel/vertex level.
+// bitangent = fSign * cross(vN, tangent);
+// Note that the results are returned unindexed. It is possible to generate a new index list
+// But averaging/overwriting tangent spaces by using an already existing index list WILL produce INCRORRECT results.
+// DO NOT! use an already existing index list.
+void mikkts_setTSpaceBasic(const SMikkTSpaceContext * pContext, const float fvTangent[], const float fSign, const int iFace, const int iVert) {
+	MikkTSData *data = static_cast<MikkTSData*>(pContext->m_pUserData);
+
+	data->t[3*iFace + iVert] = Vector(fvTangent[0], fvTangent[1], fvTangent[2]);
+	data->sign[3*iFace + iVert] = fSign;
+}
+
+void Mesh::GenerateTangentSpace() {
+	LOG(LUX_INFO,LUX_NOERROR)<< "Generating tangent space for mesh.";
+
+	// set up data structures for mikktspace, use defaults
+	SMikkTSpaceInterface mif;
+	mif.m_getNumFaces = mikkts_getNumFaces;
+	mif.m_getNumVerticesOfFace = mikkts_getNumVerticesOfFace;
+	mif.m_getPosition = mikkts_getPosition;
+	mif.m_getNormal = mikkts_getNormal;
+	mif.m_getTexCoord = mikkts_getTexCoord;
+	mif.m_setTSpaceBasic = mikkts_setTSpaceBasic;
+	mif.m_setTSpace = NULL;
+
+	MikkTSData data(static_cast<int>(ntris), triVertexIndex, p, n, uvs);
+
+	SMikkTSpaceContext mctx;
+	mctx.m_pInterface = &mif;
+	mctx.m_pUserData = &data;
+
+	if (!data.t || !data.sign) {
+		LOG(LUX_ERROR,LUX_SYSTEM)<< "Failed to generate tangent space for mesh, out of memory.";
+		return;
+	}
+
+	// generate tangent space
+	if (!genTangSpaceDefault(&mctx)) {
+		LOG(LUX_ERROR,LUX_SYSTEM)<< "Failed to generate tangent space for mesh.";
+		return;
+	}
+
+	// tangents are returned unindexed, need to generate new index list
+	// as some vertices may share normals and uv, but have different tangents
+	LOG(LUX_DEBUG,LUX_NOERROR)<< "Generating new index list for mesh.";
+
+	const u_int floatsPerVert = 3 + 3 + 2 + 3 + 1;
+	float* vertDataIn = new float[3 * ntris * floatsPerVert];
+
+	if (!vertDataIn) {
+		LOG(LUX_ERROR,LUX_SYSTEM)<< "Failed to generate tangent space for mesh, out of memory.";
+
+		delete[] vertDataIn;
+		return;
+	}
+
+	// copy mesh data into "fat" array for welding
+	for (u_int i = 0; i < 3*ntris; i++) {
+		const u_int tvidx = triVertexIndex[i];
+		const u_int idx = i * floatsPerVert;
+		vertDataIn[idx + 0] = p[tvidx].x;
+		vertDataIn[idx + 1] = p[tvidx].y;
+		vertDataIn[idx + 2] = p[tvidx].z;
+		vertDataIn[idx + 3] = n[tvidx].x;
+		vertDataIn[idx + 4] = n[tvidx].y;
+		vertDataIn[idx + 5] = n[tvidx].z;
+		vertDataIn[idx + 6] = uvs[2*tvidx + 0];
+		vertDataIn[idx + 7] = uvs[2*tvidx + 1];
+		vertDataIn[idx + 8] = data.t[i].x;
+		vertDataIn[idx + 9] = data.t[i].y;
+		vertDataIn[idx + 10] = data.t[i].z;
+		vertDataIn[idx + 11] = data.sign[i];
+	}
+
+	// free here to conserve memory
+	delete[] data.t;
+	data.t = NULL;
+	delete[] data.sign;
+	data.sign = NULL;
+
+	float* vertDataOut = new float[3 * ntris * floatsPerVert];
+	int* remapTable = new int[3 * ntris];
+
+	if (!vertDataOut || !remapTable) {
+		LOG(LUX_ERROR,LUX_SYSTEM)<< "Failed to generate tangent space for mesh, out of memory.";
+
+		delete[] vertDataIn;
+		delete[] vertDataOut;
+		delete[] remapTable;
+		return;
+	}
+
+	// safe to free mesh data
+	delete[] triVertexIndex;
+	delete[] p;
+	delete[] n;
+	delete[] uvs;
+
+	// perform the weld
+	nverts = WeldMesh(remapTable, vertDataOut, vertDataIn, 3 * ntris, floatsPerVert);
+	delete[] vertDataIn;	
+
+	triVertexIndex = remapTable;
+	p = new Point[nverts];
+	n = new Normal[nverts];
+	uvs = new float[2*nverts];
+	t = new Vector[nverts];
+	btsign = new bool[nverts];
+
+	// copy vertex data back into mesh
+	for (u_int i = 0; i < nverts; i++) {
+		const u_int vidx = i * floatsPerVert;
+
+		p[i] = Point(vertDataOut[vidx + 0], vertDataOut[vidx + 1], vertDataOut[vidx + 2]);
+		n[i] = Normal(vertDataOut[vidx + 3], vertDataOut[vidx + 4], vertDataOut[vidx + 5]);
+		uvs[2*i+0] = vertDataOut[vidx + 6];
+		uvs[2*i+1] = vertDataOut[vidx + 7];
+		t[i] = Vector(vertDataOut[vidx + 8], vertDataOut[vidx + 9], vertDataOut[vidx + 10]);
+		btsign[i] = vertDataOut[vidx + 11] > 0.f;
+	}
+
+	delete[] vertDataOut;
 }
 
 static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const ParamSet &params,
@@ -754,6 +1022,8 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 		subdivType = Mesh::SUBDIV_LOOP;
 	}
 
+	bool genTangents = params.FindOneBool("generatetangents", false);
+
 	return new Mesh(o2w, reverseOrientation,
 		accelType,
 		npi, P, N, UV,
@@ -762,7 +1032,7 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 		subdivType, nSubdivLevels, displacementMap,
 		displacementMapScale, displacementMapOffset,
 		displacementMapNormalSmooth, displacementMapSharpBoundary,
-		normalSplit);
+		normalSplit, genTangents);
 }
 
 static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const ParamSet &params,

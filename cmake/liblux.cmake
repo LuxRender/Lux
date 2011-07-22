@@ -308,6 +308,8 @@ SET(lux_shapes_src
 	shapes/meshmicrodisplacementtriangle.cpp
 	shapes/meshquadrilateral.cpp
 	shapes/meshwaldtriangle.cpp
+	shapes/mikktspace/mikktspace.c
+	shapes/mikktspace/weldmesh.c
 	shapes/nurbs.cpp
 	shapes/paraboloid.cpp
 	shapes/plymesh.cpp
@@ -704,6 +706,8 @@ SET(lux_shapes_hdr
 	shapes/lenscomponent.h
 	shapes/loopsubdiv.h
 	shapes/mesh.h
+	shapes/mikktspace/mikktspace.h
+	shapes/mikktspace/weldmesh.h
 	shapes/nurbs.h
 	shapes/paraboloid.h
 	shapes/plymesh.h

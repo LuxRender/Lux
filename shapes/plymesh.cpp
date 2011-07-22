@@ -356,13 +356,15 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 		subdivType = Mesh::SUBDIV_LOOP;
 	}
 
+	bool genTangents = params.FindOneBool("generatetangents", false);
+
 	boost::shared_ptr<Texture<float> > dummytex;
 	Mesh *mesh = new Mesh(o2w, reverseOrientation, Mesh::ACCEL_AUTO,
 		plyNbVerts, p, n, uv, Mesh::TRI_AUTO, plyNbTris, triVerts,
 		Mesh::QUAD_QUADRILATERAL, plyNbQuads, quadVerts, subdivType,
 		nsubdivlevels, displacementMap, displacementMapScale,
 		displacementMapOffset, displacementMapNormalSmooth,
-		displacementMapSharpBoundary, normalSplit);
+		displacementMapSharpBoundary, normalSplit, genTangents);
 	delete[] p;
 	delete[] n;
 	delete[] uv;

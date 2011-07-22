@@ -251,7 +251,7 @@ Shape* StlMesh::CreateShape(const Transform &o2w,
 					Mesh::TRI_AUTO, uNFaces, &Faces[0],
 					Mesh::QUAD_QUADRILATERAL, 0, NULL,
 					subdivType, nsubdivlevels, displacementMap, 0.1f, 0.0f, true, false,
-					false);
+					false, false);
 }
 
 static DynamicLoader::RegisterShape<StlMesh> r("stlmesh");

@@ -254,17 +254,41 @@ void MeshBaryTriangle::GetShadingGeometry(const Transform &obj2world,
 	}
 
 	// Use _n_ to compute shading tangents for triangle, _ss_ and _ts_
-	const Normal ns = Normalize(dg.iData.baryTriangle.coords[0] * mesh->n[v[0]] +
-		dg.iData.baryTriangle.coords[1] * mesh->n[v[1]] + dg.iData.baryTriangle.coords[2] * mesh->n[v[2]]);
+	const Normal nsi = dg.iData.baryTriangle.coords[0] * mesh->n[v[0]] +
+		dg.iData.baryTriangle.coords[1] * mesh->n[v[1]] + dg.iData.baryTriangle.coords[2] * mesh->n[v[2]];
+	const Normal ns = Normalize(nsi);
 
-	Vector ts(Normalize(Cross(ns, dg.dpdu)));
-	Vector ss(Cross(ts, ns));
-	// Lotus - the length of dpdu/dpdv can be important for bumpmapping
+	Vector ss, ts;
+	Vector tangent, bitangent;
+	float btsign;
+	// if we got a generated tangent space, use that
+	if (mesh->t) {
+		// length of these vectors is essential for sampled normal mapping
+		// they should be normalized at vertex level, and NOT normalized after interpolation
+		tangent = dg.iData.baryTriangle.coords[0] * mesh->t[v[0]] +
+			dg.iData.baryTriangle.coords[1] * mesh->t[v[1]] + dg.iData.baryTriangle.coords[2] * mesh->t[v[2]];
+		// only degenerate triangles will have different vertex signs
+		bitangent = Cross(nsi, tangent);
+		// store sign, and also magnitude of interpolated normal so we can recover it
+		btsign = (mesh->btsign[v[0]] ? 1.f : -1.f) * nsi.Length();
+
+		ss = Normalize(tangent);
+		ts = Normalize(bitangent);
+	} else {
+		ts = Normalize(Cross(ns, dg.dpdu));
+		ss = Cross(ts, ns);
+
+		ts *= Dot(dg.dpdv, ts) > 0.f ? 1.f : -1.f;
+
+		tangent = ss;
+		bitangent = ts;
+
+		btsign = (Dot(ts, ns) > 0.f ? 1.f : -1.f);
+	}
+
+	// the length of dpdu/dpdv can be important for bumpmapping
 	ss *= dg.dpdu.Length();
-	if (Dot(dg.dpdv, ts) < 0.f)
-		ts *= -dg.dpdv.Length();
-	else
-		ts *= dg.dpdv.Length();
+	ts *= dg.dpdv.Length();
 
 	Normal dndu, dndv;
 	// Compute \dndu and \dndv for triangle shading geometry
@@ -289,5 +313,5 @@ void MeshBaryTriangle::GetShadingGeometry(const Transform &obj2world,
 	}
 
 	*dgShading = DifferentialGeometry(dg.p, ns, ss, ts,
-		dndu, dndv, dg.u, dg.v, this);
+		dndu, dndv, tangent, bitangent, btsign, dg.u, dg.v, this);
 }

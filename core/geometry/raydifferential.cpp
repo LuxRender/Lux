@@ -30,7 +30,8 @@ DifferentialGeometry::DifferentialGeometry(const Point &P,
 		const Vector &DPDU, const Vector &DPDV,
 		const Normal &DNDU, const Normal &DNDV,
 		float uu, float vv, const void *pr)
-	: p(P), dpdu(DPDU), dpdv(DPDV), dndu(DNDU), dndv(DNDV) {
+	: p(P), dpdu(DPDU), dpdv(DPDV), dndu(DNDU), dndv(DNDV),
+	  tangent(DPDU), bitangent(DPDV), btsign(1.f) {
 	// Initialize _DifferentialGeometry_ from parameters
 	nn = Normal(Normalize(Cross(dpdu, dpdv)));
 	u = uu;
@@ -46,7 +47,23 @@ DifferentialGeometry::DifferentialGeometry(const Point &P,
 		const Vector &DPDU, const Vector &DPDV,
 		const Normal &DNDU, const Normal &DNDV,
 		float uu, float vv, const void *pr)
-	: p(P), nn(NN), dpdu(DPDU), dpdv(DPDV), dndu(DNDU), dndv(DNDV) {
+	: p(P), nn(NN), dpdu(DPDU), dpdv(DPDV), dndu(DNDU), dndv(DNDV),
+	  tangent(DPDU), bitangent(DPDV), btsign(1.f) {
+	// Initialize _DifferentialGeometry_ from parameters
+	u = uu;
+	v = vv;
+	handle = pr;
+	ihandle = NULL;
+	scattered = false;
+}
+DifferentialGeometry::DifferentialGeometry(const Point &P,
+		const Normal &NN,
+		const Vector &DPDU, const Vector &DPDV,
+		const Normal &DNDU, const Normal &DNDV,
+		const Vector &T, const Vector &BiT, float BiTsign,
+		float uu, float vv, const void *pr)
+	: p(P), nn(NN), dpdu(DPDU), dpdv(DPDV), dndu(DNDU), dndv(DNDV),
+	  tangent(T), bitangent(BiT), btsign(BiTsign) {
 	// Initialize _DifferentialGeometry_ from parameters
 	u = uu;
 	v = vv;
