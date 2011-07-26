@@ -108,7 +108,6 @@ Material* GlossyTranslucent::CreateMaterial(const Transform &xform,
 	boost::shared_ptr<Texture<SWCSpectrum> > Kd(mp.GetSWCSpectrumTexture("Kd", RGBColor(1.f)));
 	boost::shared_ptr<Texture<SWCSpectrum> > Kt(mp.GetSWCSpectrumTexture("Kt", RGBColor(1.f)));
 	bool ones = mp.FindOneBool("onesided", true);
-	boost::shared_ptr<Texture<float> > bumpMap(mp.GetFloatTexture("bumpmap"));
 
 	boost::shared_ptr<Texture<SWCSpectrum> > Ks(mp.GetSWCSpectrumTexture("Ks", RGBColor(1.f)));
 	boost::shared_ptr<Texture<float> > i(mp.GetFloatTexture("index", 0.0f));
@@ -120,8 +119,7 @@ Material* GlossyTranslucent::CreateMaterial(const Transform &xform,
 
 	if (ones) { // copy parameters from frontface to backface
 		return new GlossyTranslucent(Kd, Kt, Ks, Ks, Ka, Ka, i, i, d, d,
-			uroughness, uroughness, vroughness, vroughness, mb, mb,
-			bumpMap, mp);
+			uroughness, uroughness, vroughness, vroughness, mb, mb, mp);
 	}
 
 	// otherwise use backface parameters
@@ -134,8 +132,7 @@ Material* GlossyTranslucent::CreateMaterial(const Transform &xform,
 	bool mb2 = mp.FindOneBool("backface_multibounce", false);
 
 	return new GlossyTranslucent(Kd, Kt, Ks, Ks2, Ka, Ka2, i, i2, d, d2,
-		uroughness, uroughness2, vroughness, vroughness2, mb, mb2,
-		bumpMap, mp);
+		uroughness, uroughness2, vroughness, vroughness2, mb, mb2, mp);
 }
 
 static DynamicLoader::RegisterMaterial<GlossyTranslucent> r("glossytranslucent");

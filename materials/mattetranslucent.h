@@ -34,16 +34,10 @@ public:
 	MatteTranslucent(boost::shared_ptr<Texture<SWCSpectrum> > &kr,
 		boost::shared_ptr<Texture<SWCSpectrum> > &kt,
 		boost::shared_ptr<Texture<float> > &sig,
-		boost::shared_ptr<Texture<float> > &bump,
 		bool conserving,
 		const ParamSet &mp) : Material(mp), Kr(kr), Kt(kt), sigma(sig),
-		bumpMap(bump), energyConserving(conserving) { }
+		energyConserving(conserving) { }
 	virtual ~MatteTranslucent() { }
-	virtual void GetShadingGeometry(const SpectrumWavelengths &sw,
-		const Normal &nGeom, DifferentialGeometry *dgBump) const {
-		if (bumpMap)
-			Bump(sw, bumpMap, nGeom, dgBump);
-	}
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,
 		const DifferentialGeometry &dgShading) const;
@@ -53,7 +47,7 @@ public:
 private:
 	// MatteTranslucent Private Data
 	boost::shared_ptr<Texture<SWCSpectrum> > Kr, Kt;
-	boost::shared_ptr<Texture<float> > sigma, bumpMap;
+	boost::shared_ptr<Texture<float> > sigma;
 	bool energyConserving;
 };
 

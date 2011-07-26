@@ -33,15 +33,8 @@ public:
 	// Matte Public Methods
 	Matte(boost::shared_ptr<Texture<SWCSpectrum> > &kd,
 		boost::shared_ptr<Texture<float> > &sig,
-		boost::shared_ptr<Texture<float> > &bump,
-		const ParamSet &mp) : Material(mp), Kd(kd), sigma(sig),
-		bumpMap(bump) { }
+		const ParamSet &mp) : Material(mp), Kd(kd), sigma(sig) { }
 	virtual ~Matte() { }
-	virtual void GetShadingGeometry(const SpectrumWavelengths &sw,
-		const Normal &nGeom, DifferentialGeometry *dgBump) const {
-		if (bumpMap)
-			Bump(sw, bumpMap, nGeom, dgBump);
-	}
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,
 		const DifferentialGeometry &dgShading) const;
@@ -51,7 +44,7 @@ public:
 private:
 	// Matte Private Data
 	boost::shared_ptr<Texture<SWCSpectrum> > Kd;
-	boost::shared_ptr<Texture<float> > sigma, bumpMap;
+	boost::shared_ptr<Texture<float> > sigma;
 };
 
 }//namespace lux

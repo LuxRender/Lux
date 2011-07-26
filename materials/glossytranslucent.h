@@ -48,17 +48,11 @@ public:
 		boost::shared_ptr<Texture<float> > &v2,
 		bool mb,
 		bool mb2,
-		boost::shared_ptr<Texture<float> > &bump,
 		const ParamSet &mp) : Material(mp), Kd(kd), Kt(kt),
 		Ks(ks), Ks_bf(ks2), Ka(ka), Ka_bf(ka2), depth(d), depth_bf(d2),
 		index(i), index_bf(i2), nu(u), nu_bf(u2), nv(v), nv_bf(v2),
-		bumpMap(bump), multibounce(mb), multibounce_bf(mb2) { }
+		multibounce(mb), multibounce_bf(mb2) { }
 	virtual ~GlossyTranslucent() { }
-	virtual void GetShadingGeometry(const SpectrumWavelengths &sw,
-		const Normal &nGeom, DifferentialGeometry *dgBump) const {
-		if (bumpMap)
-			Bump(sw, bumpMap, nGeom, dgBump);
-	}
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,
 		const DifferentialGeometry &dgShading) const;
@@ -71,7 +65,6 @@ private:
 	boost::shared_ptr<Texture<SWCSpectrum> > Kd, Kt, Ks, Ks_bf, Ka, Ka_bf;
 	boost::shared_ptr<Texture<float> > depth, depth_bf, index, index_bf;
 	boost::shared_ptr<Texture<float> > nu, nu_bf, nv, nv_bf;
-	boost::shared_ptr<Texture<float> > bumpMap;
 	bool multibounce, multibounce_bf;
 };
 

@@ -45,18 +45,21 @@ struct CompositingParams {
 class Material  {
 public:
 	// Material Interface
-	Material(const ParamSet &mp);
+	Material(const ParamSet &mp, const bool hasBumpMap = true);
 	virtual ~Material() { }
 
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,
 		const DifferentialGeometry &dgShading) const = 0;
 	void Bump(const SpectrumWavelengths &sw,
-		const boost::shared_ptr<Texture<float> > &d,
 		const Normal &nGeom, DifferentialGeometry *dgBump) const;
 	virtual void GetShadingGeometry(const SpectrumWavelengths &sw,
-		const Normal &nGeom, DifferentialGeometry *dgBump) const { }
+		const Normal &nGeom, DifferentialGeometry *dgBump) const { 
+		if (bumpMap)
+			Bump(sw, nGeom, dgBump);
+	}
 
+	boost::shared_ptr<Texture<float> > bumpMap;
 	float bumpmapSampleDistance;
 	CompositingParams compParams;
 };

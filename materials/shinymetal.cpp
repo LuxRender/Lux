@@ -78,9 +78,8 @@ Material* ShinyMetal::CreateMaterial(const Transform &xform,
 	boost::shared_ptr<Texture<float> > vroughness(mp.GetFloatTexture("vroughness", .1f));
 	boost::shared_ptr<Texture<float> > film(mp.GetFloatTexture("film", 0.f));				// Thin film thickness in nanometers
 	boost::shared_ptr<Texture<float> > filmindex(mp.GetFloatTexture("filmindex", 1.5f));				// Thin film index of refraction
-	boost::shared_ptr<Texture<float> > bumpMap(mp.GetFloatTexture("bumpmap"));
 
-	return new ShinyMetal(Ks, uroughness, vroughness, film, filmindex, Kr, bumpMap, mp);
+	return new ShinyMetal(Ks, uroughness, vroughness, film, filmindex, Kr, mp);
 }
 
 static DynamicLoader::RegisterMaterial<ShinyMetal> r("shinymetal");

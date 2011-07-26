@@ -37,16 +37,9 @@ public:
 		boost::shared_ptr<Texture<float> > &cbf,
 		boost::shared_ptr<Texture<float> > &flm,
 		boost::shared_ptr<Texture<float> > &flmindex,
-		bool archi, boost::shared_ptr<Texture<float> > &bump,
-		const ParamSet &mp) : Material(mp), Kr(r), Kt(t), index(i),
-		cauchyb(cbf), film(flm), filmindex(flmindex), bumpMap(bump),
-		architectural(archi) { }
+		bool archi, const ParamSet &mp) : Material(mp), Kr(r), Kt(t), index(i),
+		cauchyb(cbf), film(flm), filmindex(flmindex), architectural(archi) { }
 	virtual ~Glass() { }
-	virtual void GetShadingGeometry(const SpectrumWavelengths &sw,
-		const Normal &nGeom, DifferentialGeometry *dgBump) const {
-		if (bumpMap)
-			Bump(sw, bumpMap, nGeom, dgBump);
-	}
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,
 		const DifferentialGeometry &dgShading) const;
@@ -59,7 +52,6 @@ private:
 	boost::shared_ptr<Texture<float> > index;
 	boost::shared_ptr<Texture<float> > cauchyb;
 	boost::shared_ptr<Texture<float> > film, filmindex;
-	boost::shared_ptr<Texture<float> > bumpMap;
 	bool architectural;
 };
 

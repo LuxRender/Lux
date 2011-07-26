@@ -36,15 +36,9 @@ public:
 		boost::shared_ptr<Texture<float> > &p2,
 		boost::shared_ptr<Texture<float> > &p3,
 		boost::shared_ptr<Texture<float> > &thickness,
-		boost::shared_ptr<Texture<float> > &bump,
 		const ParamSet &mp) : Material(mp), Kd(kd), P1(p1), P2(p2),
-		P3(p3), Thickness(thickness), bumpMap(bump) { }
+		P3(p3), Thickness(thickness) { }
 	virtual ~Velvet() { }
-	virtual void GetShadingGeometry(const SpectrumWavelengths &sw,
-		const Normal &nGeom, DifferentialGeometry *dgBump) const {
-		if (bumpMap)
-			Bump(sw, bumpMap, nGeom, dgBump);
-	}
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,
 		const DifferentialGeometry &dgShading) const;
@@ -54,7 +48,7 @@ public:
 private:
 	// Velvet Private Data
 	boost::shared_ptr<Texture<SWCSpectrum> > Kd;
-	boost::shared_ptr<Texture<float> > P1, P2, P3, Thickness, bumpMap;
+	boost::shared_ptr<Texture<float> > P1, P2, P3, Thickness;
 };
 
 }//namespace lux

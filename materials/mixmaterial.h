@@ -34,7 +34,7 @@ public:
 	MixMaterial(boost::shared_ptr<Texture<float> > &a,
 		boost::shared_ptr<Material> &m1,
 		boost::shared_ptr<Material> &m2,
-		const ParamSet &mp) : Material(mp), amount(a),
+		const ParamSet &mp) : Material(mp, false), amount(a),
 		mat1(m1), mat2(m2) { }
 	virtual ~MixMaterial() { }
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,

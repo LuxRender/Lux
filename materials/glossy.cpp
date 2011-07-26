@@ -80,9 +80,8 @@ Material* Glossy::CreateMaterial(const Transform &xform,
 	boost::shared_ptr<Texture<float> > d(mp.GetFloatTexture("d", .0f));
 	boost::shared_ptr<Texture<float> > uroughness(mp.GetFloatTexture("uroughness", .1f));
 	boost::shared_ptr<Texture<float> > vroughness(mp.GetFloatTexture("vroughness", .1f));
-	boost::shared_ptr<Texture<float> > bumpMap(mp.GetFloatTexture("bumpmap"));
 
-	return new Glossy(Kd, Ks, Ka, i, d, uroughness, vroughness, bumpMap, mp);
+	return new Glossy(Kd, Ks, Ka, i, d, uroughness, vroughness, mp);
 }
 
 static DynamicLoader::RegisterMaterial<Glossy> r("glossy_lossy");

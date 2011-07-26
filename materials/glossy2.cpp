@@ -78,10 +78,9 @@ Material* Glossy2::CreateMaterial(const Transform &xform,
 	boost::shared_ptr<Texture<float> > d(mp.GetFloatTexture("d", .0f));
 	boost::shared_ptr<Texture<float> > uroughness(mp.GetFloatTexture("uroughness", .1f));
 	boost::shared_ptr<Texture<float> > vroughness(mp.GetFloatTexture("vroughness", .1f));
-	boost::shared_ptr<Texture<float> > bumpMap(mp.GetFloatTexture("bumpmap"));
 	bool mb = mp.FindOneBool("multibounce", false);
 
-	return new Glossy2(Kd, Ks, Ka, i, d, uroughness, vroughness, mb, bumpMap, mp);
+	return new Glossy2(Kd, Ks, Ka, i, d, uroughness, vroughness, mb, mp);
 }
 
 static DynamicLoader::RegisterMaterial<Glossy2> r("glossy");

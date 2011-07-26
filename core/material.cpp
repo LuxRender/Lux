@@ -29,8 +29,13 @@
 using namespace lux;
 
 // Material Method Definitions
-Material::Material(const ParamSet &mp) {
-	bumpmapSampleDistance = mp.FindOneFloat("bumpmapsampledistance", .001f);
+Material::Material(const ParamSet &mp, bool hasBumpMap) {
+	// so we can accurately report unused params if material doesn't support bump mapping
+	if (hasBumpMap) {
+		bumpmapSampleDistance = mp.FindOneFloat("bumpmapsampledistance", .001f);
+		boost::shared_ptr<Texture<float> > bump(mp.GetFloatTexture("bumpmap"));
+		bumpMap = bump;
+	}
 	compParams.tVm = mp.FindOneBool("compo_visible_material", true);
 	compParams.tVl = mp.FindOneBool("compo_visible_emission", true);
 	compParams.tiVm = mp.FindOneBool("compo_visible_indirect_material", true);
@@ -40,11 +45,10 @@ Material::Material(const ParamSet &mp) {
 }
 
 void Material::Bump(const SpectrumWavelengths &sw,
-	const boost::shared_ptr<Texture<float> > &d, const Normal &nGeom,
-	DifferentialGeometry *dgBump) const
+	const Normal &nGeom, DifferentialGeometry *dgBump) const
 {
 	float du, dv;
-	d->GetDuv(sw, *dgBump, bumpmapSampleDistance, &du, &dv);
+	bumpMap->GetDuv(sw, *dgBump, bumpmapSampleDistance, &du, &dv);
 	dgBump->dpdu += du * Vector(dgBump->nn);   // different to book, as displace*dgs.dndu creates artefacts
 	dgBump->dpdv += dv * Vector(dgBump->nn);   // different to book, as displace*dgs.dndv creates artefacts
 	const Normal nn(dgBump->nn);

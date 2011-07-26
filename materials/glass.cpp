@@ -78,9 +78,8 @@ Material* Glass::CreateMaterial(const Transform &xform,
 	boost::shared_ptr<Texture<float> > film(mp.GetFloatTexture("film", 0.f));				// Thin film thickness in nanometers
 	boost::shared_ptr<Texture<float> > filmindex(mp.GetFloatTexture("filmindex", 1.5f));				// Thin film index of refraction
 	bool archi = mp.FindOneBool("architectural", false);
-	boost::shared_ptr<Texture<float> > bumpMap(mp.GetFloatTexture("bumpmap"));
 
-	return new Glass(Kr, Kt, index, cbf, film, filmindex, archi, bumpMap, mp);
+	return new Glass(Kr, Kt, index, cbf, film, filmindex, archi, mp);
 }
 
 static DynamicLoader::RegisterMaterial<Glass> r("glass");

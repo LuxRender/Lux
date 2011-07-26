@@ -36,15 +36,9 @@ public:
 	Metal(boost::shared_ptr<SPD > &n, boost::shared_ptr<SPD > &k,
 		boost::shared_ptr<Texture<float> > &u,
 		boost::shared_ptr<Texture<float> > &v,
-		boost::shared_ptr<Texture<float> > &bump,
 		const ParamSet &mp);
 	virtual ~Metal() { }
 
-	virtual void GetShadingGeometry(const SpectrumWavelengths &sw,
-		const Normal &nGeom, DifferentialGeometry *dgBump) const {
-		if (bumpMap)
-			Bump(sw, bumpMap, nGeom, dgBump);
-	}
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect, 
 		const DifferentialGeometry &dgShading) const;
@@ -56,7 +50,6 @@ private:
 	// Metal Private Data
 	boost::shared_ptr<SPD > N, K;
 	boost::shared_ptr<Texture<float> > nu, nv;
-	boost::shared_ptr<Texture<float> > bumpMap;
 };
 
 static string DEFAULT_METAL = "aluminium";

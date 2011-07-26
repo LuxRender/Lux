@@ -31,15 +31,9 @@ namespace lux
 class Glass2 : public Material {
 public:
 	// Glass Public Methods
-	Glass2(bool archi, bool disp, boost::shared_ptr<Texture<float> > &bump,
-		const ParamSet &mp) : Material(mp), bumpMap(bump),
+	Glass2(bool archi, bool disp, const ParamSet &mp) : Material(mp), 
 		architectural(archi), dispersion(disp) { }
 	virtual ~Glass2() { }
-	virtual void GetShadingGeometry(const SpectrumWavelengths &sw,
-		const Normal &nGeom, DifferentialGeometry *dgBump) const {
-		if (bumpMap)
-			Bump(sw, bumpMap, nGeom, dgBump);
-	}
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,
 		const DifferentialGeometry &dgShading) const;
@@ -48,7 +42,6 @@ public:
 		const ParamSet &mp);
 private:
 	// Glass Private Data
-	boost::shared_ptr<Texture<float> > bumpMap;
 	bool architectural, dispersion;
 };
 

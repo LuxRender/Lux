@@ -51,10 +51,9 @@ CarPaint::CarPaint(boost::shared_ptr<Texture<SWCSpectrum> > &kd,
 	boost::shared_ptr<Texture<float> > &m1,
 	boost::shared_ptr<Texture<float> > &m2,
 	boost::shared_ptr<Texture<float> > &m3,
-	boost::shared_ptr<Texture<float> > &bump,
 	const ParamSet &mp) : Material(mp),
 	Kd(kd), Ka(ka), Ks1(ks1), Ks2(ks2), Ks3(ks3), depth(d), R1(r1), R2(r2),
-	R3(r3), M1(m1), M2(m2), M3(m3), bumpMap(bump)
+	R3(r3), M1(m1), M2(m2), M3(m3)
 {
 }
 
@@ -223,9 +222,7 @@ Material* CarPaint::CreateMaterial(const Transform &xform, const ParamSet &mp)
 		// Pick from presets, fall back to the first if name not found
 		DataFromName(paintname, &Kd, &Ks1, &Ks2, &Ks3, &R1, &R2, &R3, &M1, &M2, &M3);
 
-	boost::shared_ptr<Texture<float> > bumpMap(mp.GetFloatTexture("bumpmap"));
-
-	return new CarPaint(Kd, Ka, d, Ks1, Ks2, Ks3, R1, R2, R3, M1, M2, M3, bumpMap, mp);
+	return new CarPaint(Kd, Ka, d, Ks1, Ks2, Ks3, R1, R2, R3, M1, M2, M3, mp);
 }
 
 static DynamicLoader::RegisterMaterial<CarPaint> r("carpaint");

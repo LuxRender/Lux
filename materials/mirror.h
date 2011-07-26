@@ -34,15 +34,9 @@ public:
 	Mirror(boost::shared_ptr<Texture<SWCSpectrum> > &r, 
 		boost::shared_ptr<Texture<float> > &flm,
 		boost::shared_ptr<Texture<float> > &flmindex, 
-		boost::shared_ptr<Texture<float> > &bump,
 		const ParamSet &mp) : Material(mp), Kr(r), film(flm),
-		filmindex(flmindex), bumpMap(bump) { }
+		filmindex(flmindex) { }
 	virtual ~Mirror() { }
-	virtual void GetShadingGeometry(const SpectrumWavelengths &sw,
-		const Normal &nGeom, DifferentialGeometry *dgBump) const {
-		if (bumpMap)
-			Bump(sw, bumpMap, nGeom, dgBump);
-	}
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,
 		const DifferentialGeometry &dgShading) const;
@@ -53,7 +47,6 @@ private:
 	// Mirror Private Data
 	boost::shared_ptr<Texture<SWCSpectrum> > Kr;
 	boost::shared_ptr<Texture<float> > film, filmindex;
-	boost::shared_ptr<Texture<float> > bumpMap;
 };
 
 }//namespace lux

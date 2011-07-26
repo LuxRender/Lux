@@ -45,15 +45,9 @@ public:
 		boost::shared_ptr<Texture<float> > &m1,
 		boost::shared_ptr<Texture<float> > &m2,
 		boost::shared_ptr<Texture<float> > &m3,
-		boost::shared_ptr<Texture<float> > &bump,
 		const ParamSet &mp);
 	virtual ~CarPaint() { }
 
-	virtual void GetShadingGeometry(const SpectrumWavelengths &sw,
-		const Normal &nGeom, DifferentialGeometry *dgBump) const {
-		if (bumpMap)
-			Bump(sw, bumpMap, nGeom, dgBump);
-	}
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,
 		const DifferentialGeometry &dgShading) const;
@@ -64,7 +58,6 @@ private:
 	// CarPaint Private Data
 	boost::shared_ptr<Texture<SWCSpectrum> > Kd, Ka, Ks1, Ks2, Ks3;
 	boost::shared_ptr<Texture<float> > depth, R1, R2, R3, M1, M2, M3;
-	boost::shared_ptr<Texture<float> > bumpMap;
 };
 
 struct CarPaintData {

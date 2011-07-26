@@ -88,9 +88,8 @@ Material* Glass2::CreateMaterial(const Transform &xform,
 {
 	bool archi = mp.FindOneBool("architectural", false);
 	bool disp = mp.FindOneBool("dispersion", false);
-	boost::shared_ptr<Texture<float> > bumpMap(mp.GetFloatTexture("bumpmap"));
 
-	return new Glass2(archi, disp, bumpMap, mp);
+	return new Glass2(archi, disp, mp);
 }
 
 static DynamicLoader::RegisterMaterial<Glass2> r("glass2");
