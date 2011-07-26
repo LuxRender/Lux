@@ -77,8 +77,16 @@ IF(APPLE)
 	option(OSX_OPTION_LTO "Build with LINK TIME OPTIMISATION ( MAY BREAK NON-SSE4 MACS COMPATIBILITY )" ON)
 	option(OSX_OPTION_XCODE_4.1 "HAVE XCODE 4.1 ( LION )" OFF)
 	option(OSX_OPTION_UNIVERSAL "Force compile universal" OFF)
+	option(OSX_OPTION_LION "BUILD for OSX 10.7, else 10.6 would be deployment-target" OFF)
 	###################################
-	SET(CMAKE_OSX_DEPLOYMENT_TARGET 10.6)
+	if(OSX_OPTION_LION)
+		SET(CMAKE_OSX_DEPLOYMENT_TARGET 10.7)
+		SET(CMAKE_OSX_SYSROOT /Developer/SDKs/MacOSX10.7.sdk)
+	else(OSX_OPTION_LION)
+		SET(CMAKE_OSX_DEPLOYMENT_TARGET 10.6)
+		SET(CMAKE_OSX_SYSROOT /Developer/SDKs/MacOSX10.6.sdk)
+	endif(OSX_OPTION_LION)
+
 	SET(CMAKE_XCODE_ATTRIBUTE_ARCHS i386\ x86_64) # valid arches
 	SET(CMAKE_XCODE_ATTRIBUTE_DEPLOYMENT_POSTPROCESSING YES) # strip symbols in whole project, disabled in pylux target
 	if(OSX_OPTION_UNIVERSAL)
@@ -90,7 +98,6 @@ IF(APPLE)
 	if(OSX_OPTION_LTO)
 		SET(CMAKE_XCODE_ATTRIBUTE_LLVM_LTO YES)
 	endif(OSX_OPTION_LTO)
-	SET(CMAKE_OSX_SYSROOT /Developer/SDKs/MacOSX10.6.sdk)
 	set(CMAKE_CONFIGURATION_TYPES Release)
 	set(OSX_DEPENDENCY_ROOT ${CMAKE_SOURCE_DIR}/../macos) # can be macos or usr/local for example
 	set(OSX_BUNDLE_COMPONENTS_ROOT ${CMAKE_SOURCE_DIR}/../macos) # bundle resources
@@ -301,7 +308,7 @@ ENDIF (APPLE)
 
 LINK_DIRECTORIES(${LINK_DIRECTORIES} ${Boost_LIBRARY_DIRS} )
 IF (APPLE)
-	SET(OSX_CORELIB_LINKER_FLAGS -all_load -noall_load) # we don´t build static lib anymore !
+	SET(OSX_CORELIB_LINKER_FLAGS -all_load) # due symbols are hidden by default
 ELSEIF(MSVC)
 	IF(MSVC90)
 		# LTCG not correctly set by cmake in the current release - in the meantime the linker will inform you about switching this flag automatically because of /GL
