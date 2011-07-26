@@ -23,6 +23,9 @@ MESSAGE(STATUS "CMAKE VERSION DETECTED " ${CMAKE_VERSION})
 IF(MSVC)
 	cmake_minimum_required(VERSION 2.8)
 	cmake_policy(VERSION 2.8)
+ELSEIF(APPLE)
+	cmake_minimum_required(VERSION 2.8.3) # new requirement for simplification
+	cmake_policy(VERSION 2.8.3)
 ELSE(MSVC)
 	cmake_minimum_required(VERSION 2.4)
 ENDIF(MSVC)    
@@ -66,26 +69,27 @@ ENDIF()
 #############################################################################
 
 #Setting Universal Binary Properties and Pylux configuration, only for Mac OS X
-# generate with xcode/crosscompile, setting: ( darwin - 10.6 - gcc - g++ - MacOSX10.6.sdk - Find from root, then native system )
+# generate with xcode/crosscompile, setting: ( darwin - 10.x - gcc - g++ - MacOSX10.x.sdk - Find from root, then native system )
 IF(APPLE)
 	########## OSX_OPTIONS ###########
 	option(OSX_OPTION_PYLUX "Build a blender compatible pylux" ON)
 	option(OSX_OPTION_CLANG "Build with CLANG compiler ( XCODE4 )" ON)
+	option(OSX_OPTION_LTO "Build with LINK TIME OPTIMISATION ( MAY BREAK NON-SSE4 MACS COMPATIBILITY )" ON)
+	option(OSX_OPTION_XCODE_4.1 "HAVE XCODE 4.1 ( LION )" OFF)
 	option(OSX_OPTION_UNIVERSAL "Force compile universal" OFF)
-	option(OSX_OPTION_DYNAMIC_BUILD "Link lux apps to shared corelib" ON)
 	###################################
 	SET(CMAKE_OSX_DEPLOYMENT_TARGET 10.6)
-	IF(CMAKE_VERSION VERSION_LESS 2.8.1)
-		SET(CMAKE_OSX_ARCHITECTURES i386;x86_64) # valid arches
-	ELSE(CMAKE_VERSION VERSION_LESS 2.8.1)
-		SET(CMAKE_XCODE_ATTRIBUTE_ARCHS i386\ x86_64) # valid arches
-	ENDIF(CMAKE_VERSION VERSION_LESS 2.8.1)
-	IF(NOT CMAKE_VERSION VERSION_LESS 2.8.3) # only cmake >= 2.8.3 supports per target attributes, so we can disable strip in pylux target
-		SET(CMAKE_XCODE_ATTRIBUTE_DEPLOYMENT_POSTPROCESSING YES) # strip symbols in whole project, disabled in pylux target 
-	ENDIF(NOT CMAKE_VERSION VERSION_LESS 2.8.3)
+	SET(CMAKE_XCODE_ATTRIBUTE_ARCHS i386\ x86_64) # valid arches
+	SET(CMAKE_XCODE_ATTRIBUTE_DEPLOYMENT_POSTPROCESSING YES) # strip symbols in whole project, disabled in pylux target
 	if(OSX_OPTION_UNIVERSAL)
 		set(CMAKE_XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH NO)
 	endif(OSX_OPTION_UNIVERSAL)
+	if(OSX_OPTION_CLANG)
+		SET(CMAKE_XCODE_ATTRIBUTE_GCC_VERSION com.apple.compilers.llvm.clang.1_0)
+	endif(OSX_OPTION_CLANG)
+	if(OSX_OPTION_LTO)
+		SET(CMAKE_XCODE_ATTRIBUTE_LLVM_LTO YES)
+	endif(OSX_OPTION_LTO)
 	SET(CMAKE_OSX_SYSROOT /Developer/SDKs/MacOSX10.6.sdk)
 	set(CMAKE_CONFIGURATION_TYPES Release)
 	set(OSX_DEPENDENCY_ROOT ${CMAKE_SOURCE_DIR}/../macos) # can be macos or usr/local for example
@@ -297,7 +301,7 @@ ENDIF (APPLE)
 
 LINK_DIRECTORIES(${LINK_DIRECTORIES} ${Boost_LIBRARY_DIRS} )
 IF (APPLE)
-	SET(LUX_LIBRARY -all_load luxStatic -noall_load)
+	SET(OSX_CORELIB_LINKER_FLAGS -all_load -noall_load) # we don´t build static lib anymore !
 ELSEIF(MSVC)
 	IF(MSVC90)
 		# LTCG not correctly set by cmake in the current release - in the meantime the linker will inform you about switching this flag automatically because of /GL
@@ -405,22 +409,19 @@ IF(APPLE)
 	MESSAGE(STATUS "################ GENERATED XCODE PROJECT INFORMATION ################")
 	MESSAGE(STATUS "")
 	MESSAGE(STATUS "OSX_DEPLOYMENT_TARGET : " ${CMAKE_OSX_DEPLOYMENT_TARGET})
-	IF(CMAKE_VERSION VERSION_LESS 2.8.1)
-		MESSAGE(STATUS "Setting CMAKE_OSX_ARCHITECTURES ( cmake lower 2.8 method ): " ${CMAKE_OSX_ARCHITECTURES})
-	ELSE(CMAKE_VERSION VERSION_LESS 2.8.1)
-		MESSAGE(STATUS "CMAKE_XCODE_ATTRIBUTE_ARCHS ( cmake 2.8 or higher method ): " ${CMAKE_XCODE_ATTRIBUTE_ARCHS})
-	ENDIF(CMAKE_VERSION VERSION_LESS 2.8.1)
+	MESSAGE(STATUS "CMAKE_XCODE_ATTRIBUTE_ARCHS ( cmake 2.8 or higher method ): " ${CMAKE_XCODE_ATTRIBUTE_ARCHS})
 	MESSAGE(STATUS "OSX SDK SETTING : " ${CMAKE_OSX_SYSROOT})
 	MESSAGE(STATUS "OSX_DEPENDENCY_ROOT_PATH : " ${OSX_DEPENDENCY_ROOT})
 	MESSAGE(STATUS "BUILD_CONFIGURATION_TYPE : " ${CMAKE_CONFIGURATION_TYPES})
-	MESSAGE(STATUS "OSX_CORE_BUILD_WITH_CLANG : " ${OSX_OPTION_CLANG})
+	MESSAGE(STATUS "OSX_BUILD_WITH_CLANG : " ${OSX_OPTION_CLANG})
+	MESSAGE(STATUS "OSX_USE_LTO : " ${OSX_OPTION_LTO})
+	MESSAGE(STATUS "USE_XCODE_4.1_FEATURES : " ${OSX_OPTION_XCODE_4.1})
 	IF(OSX_OPTION_PYLUX)
 		MESSAGE(STATUS "PYLUX CONFIGURED FOR BLENDER 2.5 USE")
 	ELSE(OSX_OPTION_PYLUX)
 		MESSAGE(STATUS "PYLUX CONFIGURED FOR GENERAL PURPOSE USE")
 	ENDIF(OSX_OPTION_PYLUX)
 	MESSAGE(STATUS "ALWAYS_BUILD_UNIVERSAL : " ${OSX_OPTION_UNIVERSAL})
-	MESSAGE(STATUS "USE SHARED CORELIB : " ${OSX_OPTION_DYNAMIC_BUILD})
 	MESSAGE(STATUS "")
 	MESSAGE(STATUS "#####################################################################")
 ENDIF(APPLE)

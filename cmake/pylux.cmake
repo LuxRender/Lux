@@ -68,10 +68,8 @@ IF(PYTHONLIBS_FOUND OR PYTHON_CUSTOM)
 
 	ADD_LIBRARY(pylux MODULE python/binding.cpp)
 	IF(APPLE)
-		IF( NOT CMAKE_VERSION VERSION_LESS 2.8.3) # only cmake >= 2.8.3 supports per target attributes
-			SET_TARGET_PROPERTIES(pylux PROPERTIES XCODE_ATTRIBUTE_DEPLOYMENT_POSTPROCESSING NO) # exclude pylux from strip symbols
-		ENDIF( NOT CMAKE_VERSION VERSION_LESS 2.8.3)
-		TARGET_LINK_LIBRARIES(pylux -Wl,-undefined -Wl,dynamic_lookup ${LUX_LIBRARY} ${CMAKE_THREAD_LIBS_INIT} ${LUX_LIBRARY_DEPENDS} ${EXTRA_LIBS} ${PYTHON_LIBRARIES} ${Boost_python_LIBRARIES})
+		SET_TARGET_PROPERTIES(pylux PROPERTIES XCODE_ATTRIBUTE_DEPLOYMENT_POSTPROCESSING NO) # exclude pylux from strip, not possible with external symbols !
+		TARGET_LINK_LIBRARIES(pylux -Wl,-undefined -Wl,dynamic_lookup ${OSX_SHARED_CORELIB} ${CMAKE_THREAD_LIBS_INIT} ${LUX_LIBRARY_DEPENDS} ${EXTRA_LIBS} ${PYTHON_LIBRARIES} ${Boost_python_LIBRARIES})
 		ADD_CUSTOM_COMMAND(
 			TARGET pylux POST_BUILD
 			COMMAND mv release/libpylux.so release/pylux.so

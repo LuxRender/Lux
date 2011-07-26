@@ -860,27 +860,25 @@ INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/core
 #############################################################################
 # Here we build the static core library liblux.a
 #############################################################################
-ADD_LIBRARY(luxStatic STATIC ${lux_lib_src} ${lux_lib_hdr} ${lux_parser_src})
-IF( NOT CMAKE_VERSION VERSION_LESS 2.8.3 AND OSX_OPTION_CLANG) # only cmake >= 2.8.3 supports per target attributes
-	SET_TARGET_PROPERTIES(luxStatic PROPERTIES XCODE_ATTRIBUTE_GCC_VERSION com.apple.compilers.llvm.clang.1_0) # for testing new CLANG2.0, will be ignored for other OS
-	SET_TARGET_PROPERTIES(luxStatic PROPERTIES XCODE_ATTRIBUTE_LLVM_LTO NO ) # disabled due breaks bw compatibility
-ENDIF()
-#TARGET_LINK_LIBRARIES(luxStatic ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} )
+IF(NOT APPLE)
+	ADD_LIBRARY(luxStatic STATIC ${lux_lib_src} ${lux_lib_hdr} ${lux_parser_src})
+	#TARGET_LINK_LIBRARIES(luxStatic ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} )
+ENDIF(NOT APPLE)
 
 #############################################################################
 # Here we build the shared core library liblux.so
 #############################################################################
-ADD_LIBRARY(luxShared SHARED ${lux_cpp_api_src} ${lux_lib_hdr})
 IF(APPLE)
-	IF( NOT CMAKE_VERSION VERSION_LESS 2.8.3 AND OSX_OPTION_CLANG) # only cmake >= 2.8.3 supports per target attributes
-		SET_TARGET_PROPERTIES(luxShared PROPERTIES XCODE_ATTRIBUTE_GCC_VERSION com.apple.compilers.llvm.clang.1_0) # for testing new CLANG2.0, will be ignored for other OS
-		SET_TARGET_PROPERTIES(luxShared PROPERTIES XCODE_ATTRIBUTE_LLVM_LTO NO ) # disabled due breaks bw compatibility
-	ENDIF()
+	ADD_LIBRARY(luxShared SHARED ${lux_cpp_api_src} ${lux_lib_src} ${lux_lib_hdr} ${lux_parser_src})
+	TARGET_LINK_LIBRARIES(luxShared ${OSX_CORELIB_LINKER_FLAGS} ${LUX_LIBRARY_DEPENDS})
+	SET_TARGET_PROPERTIES(luxShared PROPERTIES OUTPUT_NAME lux)
+ELSE(APPLE)
+	ADD_LIBRARY(luxShared SHARED ${lux_cpp_api_src} ${lux_lib_hdr})
+	TARGET_LINK_LIBRARIES(luxShared ${LUX_LIBRARY} ${LUX_LIBRARY_DEPENDS})
+	# Make CMake output both libs with the same name
+	SET_TARGET_PROPERTIES(luxStatic luxShared PROPERTIES OUTPUT_NAME lux)
 ENDIF(APPLE)
-TARGET_LINK_LIBRARIES(luxShared ${LUX_LIBRARY} ${LUX_LIBRARY_DEPENDS})
 
-# Make CMake output both libs with the same name
-SET_TARGET_PROPERTIES(luxStatic luxShared PROPERTIES OUTPUT_NAME lux)
 
 #ADD_CUSTOM_TARGET(luxStatic SOURCES ${lux_lib_hdr})
 

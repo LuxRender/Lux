@@ -38,39 +38,20 @@
 	SET(MACOSX_BUNDLE_ICON_FILE "luxrender.icns")
 	# SET(MACOSX_BUNDLE_COPYRIGHT "")
 	# SET(MACOSX_BUNDLE_INFO_STRING "Info string, localized?")
-	IF(OSX_OPTION_DYNAMIC_BUILD)
-		ADD_CUSTOM_TARGET(DYNAMIC_BUILD DEPENDS luxShared luxrender luxconsole luxmerger luxcomp pylux )
-		ADD_CUSTOM_COMMAND(
-			TARGET DYNAMIC_BUILD POST_BUILD
-			COMMAND rm -rf Release/luxrender.app/Contents/Resources
-			COMMAND mkdir Release/luxrender.app/Contents/Resources
-			COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/icons/luxrender.icns Release/luxrender.app/Contents/Resources
-			COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/icons/luxscene.icns Release/luxrender.app/Contents/Resources
-			COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/icons/luxfilm.icns Release/luxrender.app/Contents/Resources
-			COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/plists/09/Info.plist Release/luxrender.app/Contents
-			COMMAND mv Release/luxrender.app Release/LuxRender.app
-#			COMMAND macdeployqt Release/LuxRender.app ### uncomment for bundling Qt frameworks ###
-			COMMAND mv Release/luxconsole ${CMAKE_BINARY_DIR}/Release/LuxRender.app/Contents/MacOS/luxconsole
-			COMMAND mv Release/luxcomp ${CMAKE_BINARY_DIR}/Release/LuxRender.app/Contents/MacOS/luxcomp
-			COMMAND mv Release/luxmerger ${CMAKE_BINARY_DIR}/Release/LuxRender.app/Contents/MacOS/luxmerger
-			COMMAND install_name_tool -id @loader_path/liblux.dylib Release/liblux.dylib
-			COMMAND mv Release/liblux.dylib ${CMAKE_BINARY_DIR}/Release/LuxRender.app/Contents/MacOS/liblux.dylib
-			)
-
-	ELSE(OSX_OPTION_DYNAMIC_BUILD)
-		ADD_CUSTOM_TARGET(STATIC_BUILD DEPENDS luxrender luxconsole luxmerger luxcomp pylux)
-		ADD_CUSTOM_COMMAND(
-			TARGET STATIC_BUILD POST_BUILD
-			COMMAND rm -rf Release/luxrender.app/Contents/Resources
-			COMMAND mkdir Release/luxrender.app/Contents/Resources
-			COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/icons/luxrender.icns Release/luxrender.app/Contents/Resources
-			COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/icons/luxscene.icns Release/luxrender.app/Contents/Resources
-			COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/icons/luxfilm.icns Release/luxrender.app/Contents/Resources
-			COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/plists/09/Info.plist Release/luxrender.app/Contents
-			COMMAND mv Release/luxrender.app Release/LuxRender.app
-			COMMAND mv Release/luxconsole ${CMAKE_BINARY_DIR}/Release/LuxRender.app/Contents/MacOS/luxconsole
-			COMMAND mv Release/luxmerger ${CMAKE_BINARY_DIR}/Release/LuxRender.app/Contents/MacOS/luxmerger
-			COMMAND mv Release/luxcomp ${CMAKE_BINARY_DIR}/Release/LuxRender.app/Contents/MacOS/luxcomp
-#			COMMAND macdeployqt Release/LuxRender.app ### uncomment for bundling Qt frameworks ###
-			)
-	ENDIF(OSX_OPTION_DYNAMIC_BUILD)
+	ADD_CUSTOM_TARGET(DYNAMIC_BUILD DEPENDS luxShared luxrender luxconsole luxmerger luxcomp pylux )
+	ADD_CUSTOM_COMMAND(
+		TARGET DYNAMIC_BUILD POST_BUILD
+		COMMAND rm -rf Release/luxrender.app/Contents/Resources
+		COMMAND mkdir Release/luxrender.app/Contents/Resources
+		COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/icons/luxrender.icns Release/luxrender.app/Contents/Resources
+		COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/icons/luxscene.icns Release/luxrender.app/Contents/Resources
+		COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/icons/luxfilm.icns Release/luxrender.app/Contents/Resources
+		COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/plists/09/Info.plist Release/luxrender.app/Contents
+		COMMAND mv Release/luxrender.app Release/LuxRender.app
+#		COMMAND macdeployqt Release/LuxRender.app ### uncomment for bundling Qt frameworks ###
+		COMMAND mv Release/luxconsole ${CMAKE_BINARY_DIR}/Release/LuxRender.app/Contents/MacOS/luxconsole
+		COMMAND mv Release/luxcomp ${CMAKE_BINARY_DIR}/Release/LuxRender.app/Contents/MacOS/luxcomp
+		COMMAND mv Release/luxmerger ${CMAKE_BINARY_DIR}/Release/LuxRender.app/Contents/MacOS/luxmerger
+		COMMAND install_name_tool -id @loader_path/liblux.dylib Release/liblux.dylib
+		COMMAND cp Release/liblux.dylib ${CMAKE_BINARY_DIR}/Release/LuxRender.app/Contents/MacOS/liblux.dylib
+		)
