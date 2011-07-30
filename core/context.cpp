@@ -860,10 +860,10 @@ void Context::WorldEnd() {
 Scene *Context::RenderOptions::MakeScene() const {
 	// Create scene objects from API settings
 	lux::Filter *filter = MakeFilter(filterName, filterParams);
-	lux::Film *film = MakeFilm(filmName, filmParams, filter);
-	lux::Camera *camera = MakeCamera(cameraName, worldToCamera,
+	lux::Film *film = (!filter) ? NULL : MakeFilm(filmName, filmParams, filter);
+	lux::Camera *camera = (!film) ? NULL : MakeCamera(cameraName, worldToCamera,
 		worldToCameraEnd, cameraParams, film);
-	lux::Sampler *sampler = MakeSampler(samplerName, samplerParams, film);
+	lux::Sampler *sampler = (!film) ? NULL : MakeSampler(samplerName, samplerParams, film);
 	lux::SurfaceIntegrator *surfaceIntegrator = MakeSurfaceIntegrator(
 		surfIntegratorName, surfIntegratorParams);
 	lux::VolumeIntegrator *volumeIntegrator = MakeVolumeIntegrator(
