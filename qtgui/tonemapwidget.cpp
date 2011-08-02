@@ -500,8 +500,8 @@ void ToneMapWidget::estimateLinear ()
 	static double exposureSettings[11] = { 1.0/1000.0, 1.0/500.0, 1.0/250.0, 1.0/125.0, 1.0/60.0, 1.0/30.0, 1.0/15.0, 1.0/8.0, 1.0/4.0, 1.0/2.0, 1.0 };
 	int exposureIdx = 3;
 
-	const int numSensitivitySettings = 5;
-	static double sensitivitySettings[5] = { 50.0, 100.0, 200.0, 400.0, 800.0  };
+	const int numSensitivitySettings = 8;
+	static double sensitivitySettings[8] = { 50.0, 100.0, 200.0, 400.0, 800.0, 1600.0, 3200.0, 6400.0 };
 	int sensitivityIdx = 2;
 
 	while (true) {
@@ -516,7 +516,7 @@ void ToneMapWidget::estimateLinear ()
 			// want shorter exposure, ie too bright
 			if (sensitivityIdx <= 0) {
 				sensitivityIdx = 0;
-				exposureIdx = numExposureSettings-1;
+				exposureIdx = 0;
 				
 				fStopIdx++;
 				if (fStopIdx >= numFStopSettings) {
@@ -529,7 +529,7 @@ void ToneMapWidget::estimateLinear ()
 			// want longer exposure, ie too dark
 			if (sensitivityIdx >= numSensitivitySettings-1) {
 				sensitivityIdx = numSensitivitySettings-1;
-				exposureIdx = 0;
+				exposureIdx = numExposureSettings-1;
 				
 				fStopIdx--;
 				if (fStopIdx < 0) {
