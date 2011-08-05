@@ -38,6 +38,12 @@ public:
 		memset(child, 0, sizeof(child));
 	}
 	
+	~BSHNode() {		
+		for (int i = 0; i < MaxChilds; i++) {
+			delete child[i];
+		}
+	}
+
 	bool Contains(const PointType &p) const {
 		float dist2 = DistanceSquared(center, p);
 		return dist2 < radius2;
@@ -185,6 +191,10 @@ public:
 
 	BSH() : root(NULL), count(0) {
     }
+
+	~BSH() {
+		delete root;
+	}
 
     void AddNode(PointType p) {
         NodeType *newNode = new NodeType(p);
