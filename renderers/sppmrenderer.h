@@ -126,25 +126,10 @@ private:
 	// Render threads
 	//--------------------------------------------------------------------------
 
-	class EyePassRenderThread : public boost::noncopyable {
+	class RenderThread : public boost::noncopyable {
 	public:
-		EyePassRenderThread(u_int index, SPPMRenderer *renderer);
-		~EyePassRenderThread();
-
-		static void RenderImpl(EyePassRenderThread *r);
-
-		u_int  n;
-		SPPMRenderer *renderer;
-		boost::thread *thread; // keep pointer to delete the thread object
-
-		RandomGenerator *threadRng;
-		MemoryArena eyePassMemoryArena[2];
-	};
-
-	class PhotonPassRenderThread : public boost::noncopyable {
-	public:
-		PhotonPassRenderThread(u_int index, SPPMRenderer *renderer);
-		~PhotonPassRenderThread();
+		RenderThread(u_int index, SPPMRenderer *renderer);
+		~RenderThread();
 
 		void TracePhotons(PhotonSampler &sampler, Sample *sample);
 		void TracePhoton(
@@ -152,7 +137,7 @@ private:
 			Sample *sample,
 			Scene &scene);
 
-		static void RenderImpl(PhotonPassRenderThread *r);
+		static void RenderImpl(RenderThread *r);
 
 		u_int  n;
 		SPPMRenderer *renderer;
@@ -161,6 +146,8 @@ private:
 		RandomGenerator *threadRng;
 		Distribution1D *lightCDF;
 		PhotonSampler* sampler;
+		Sample *threadSample;
+		MemoryArena eyePassMemoryArena;
 	};
 
 	double Statistics_GetNumberOfSamples();
@@ -174,14 +161,11 @@ private:
 	mutable boost::mutex classWideMutex;
 	mutable boost::mutex renderThreadsMutex;
 	boost::barrier *allThreadBarrier;
-	boost::barrier *eyePassThreadBarrier;
-	boost::barrier *photonPassThreadBarrier;
 	boost::barrier *exitBarrier;
 
 	RendererState state;
 	vector<RendererHostDescription *> hosts;
-	vector<EyePassRenderThread *> eyePassRenderThreads;
-	vector<PhotonPassRenderThread *> photonPassRenderThreads;
+	vector<RenderThread *> renderThreads;
 
 	Scene *scene;
 	SPPMIntegrator *sppmi;

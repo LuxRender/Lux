@@ -46,16 +46,16 @@ public:
 	HitPointsLookUpAccel() { }
 	virtual ~HitPointsLookUpAccel() { }
 
-	virtual void RefreshMutex(const u_int passIndex) = 0;
-	virtual void RefreshParallel(const u_int passIndex, const u_int index, const u_int count) { }
+	virtual void RefreshMutex() = 0;
+	virtual void RefreshParallel( const u_int index, const u_int count) { }
 
-	virtual void AddFlux(Sample &sample, const Point &hitPoint, const u_int passIndex, const Vector &wi,
+	virtual void AddFlux(Sample &sample, const Point &hitPoint, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup) = 0;
 
 	friend class HashCell;
 
 protected:
-	void AddFluxToHitPoint(Sample &sample, HitPoint *hp, const u_int passIndex,
+	void AddFluxToHitPoint(Sample &sample, HitPoint *hp,
 		const Point &hitPoint, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup);
 };
@@ -81,9 +81,9 @@ public:
 
 	~HashGrid();
 
-	void RefreshMutex(const u_int passIndex);
+	void RefreshMutex();
 
-	void AddFlux(Sample& sample, const Point &hitPoint, const u_int passIndex, const Vector &wi,
+	void AddFlux(Sample& sample, const Point &hitPoint, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup);
 
 private:
@@ -110,9 +110,9 @@ public:
 
 	~KdTree();
 
-	void RefreshMutex(const u_int passIndex);
+	void RefreshMutex();
 
-	void AddFlux(Sample& sample, const Point &hitPoint, const u_int passIndex, const Vector &wi,
+	void AddFlux(Sample& sample, const Point &hitPoint, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup);
 
 private:
@@ -142,15 +142,14 @@ private:
 	};
 
 	struct CompareNode {
-		CompareNode(int a, u_int i) { axis = a; passIndex = i; }
+		CompareNode(int a) { axis = a;}
 
 		int axis;
-		u_int passIndex;
 
 		bool operator()(const HitPoint *d1, const HitPoint *d2) const;
 	};
 
-	void RecursiveBuild(const u_int passIndex,
+	void RecursiveBuild(
 		const u_int nodeNum, const u_int start,
 		const u_int end, std::vector<HitPoint *> &buildNodes);
 
@@ -207,9 +206,9 @@ public:
 		++size;
 	}
 
-	void TransformToKdTree(const u_int passIndex);
+	void TransformToKdTree();
 
-	void AddFlux(Sample& sample, HitPointsLookUpAccel *accel, const u_int passIndex,
+	void AddFlux(Sample& sample, HitPointsLookUpAccel *accel,
 		const Point &hitPoint, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup);
 
@@ -218,10 +217,10 @@ public:
 private:
 	class HCKdTree {
 	public:
-		HCKdTree(const u_int passIndex, std::list<HitPoint *> *hps, const u_int count);
+		HCKdTree( std::list<HitPoint *> *hps, const u_int count);
 		~HCKdTree();
 
-		void AddFlux(Sample& sample, HitPointsLookUpAccel *accel,  const u_int passIndex,
+		void AddFlux(Sample& sample, HitPointsLookUpAccel *accel,
 			const Point &hitPoint, const Vector &wi,
 			const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup);
 
@@ -252,15 +251,14 @@ private:
 		};
 
 		struct CompareNode {
-			CompareNode(int a, u_int i) { axis = a; passIndex = i; }
+			CompareNode(int a) { axis = a;}
 
 			int axis;
-			u_int passIndex;
 
 			bool operator()(const HitPoint *d1, const HitPoint *d2) const;
 		};
 
-		void RecursiveBuild(const u_int passIndex,
+		void RecursiveBuild(
 				const u_int nodeNum, const u_int start,
 				const u_int end, std::vector<HitPoint *> &buildNodes);
 
@@ -288,10 +286,10 @@ public:
 
 	~HybridHashGrid();
 
-	void RefreshMutex(const u_int passIndex);
-	void RefreshParallel(const u_int passIndex, const u_int index, const u_int count);
+	void RefreshMutex();
+	void RefreshParallel( const u_int index, const u_int count);
 
-	void AddFlux(Sample& sample, const Point &hitPoint, const u_int passIndex, const Vector &wi,
+	void AddFlux(Sample& sample, const Point &hitPoint, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup);
 
 private:

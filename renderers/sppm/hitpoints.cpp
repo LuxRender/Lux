@@ -51,15 +51,12 @@ HaltonEyeSampler::HaltonEyeSampler(int x0, int x1, int y0, int y1,
 HitPoints::HitPoints(SPPMRenderer *engine, RandomGenerator *rng)  {
 	renderer = engine;
 	Scene *scene = renderer->scene;
-	currentEyePass = 0;
-	currentPhotonPass = 0;
+	currentPass = 0;
 
 	wavelengthSampleScramble = rng->uintValue();
 	timeSampleScramble = rng->uintValue();
-	eyePassWavelengthSample = Halton(0, wavelengthSampleScramble);
-	photonPassWavelengthSample = Halton(0, wavelengthSampleScramble);
-	eyePassTimeSample = Halton(0, timeSampleScramble);
-	photonPassTimeSample = Halton(0, timeSampleScramble);
+	wavelengthSample = Halton(0, wavelengthSampleScramble);
+	timeSample = Halton(0, timeSampleScramble);
 
 	// Get the count of hit points required
 	int xstart, xend, ystart, yend;
@@ -95,20 +92,17 @@ HitPoints::HitPoints(SPPMRenderer *engine, RandomGenerator *rng)  {
 }
 
 HitPoints::~HitPoints() {
-	delete lookUpAccel[0];
-	delete lookUpAccel[1];
+	delete lookUpAccel;
 	delete hitPoints;
 	delete eyeSampler;
 }
 
 const double HitPoints::GetPhotonHitEfficency() {
-	const u_int passIndex = currentPhotonPass % 2;
-
 	u_int surfaceHitPointsCount = 0;
 	u_int hitPointsUpdatedCount = 0;
 	for (u_int i = 0; i < GetSize(); ++i) {
 		HitPoint *hp = &(*hitPoints)[i];
-		HitPointEyePass *hpep = &hp->eyePass[passIndex];
+		HitPointEyePass *hpep = &hp->eyePass;
 
 		if (hpep->type == SURFACE) {
 			++surfaceHitPointsCount;
@@ -126,7 +120,7 @@ void HitPoints::Init() {
 	BBox hpBBox = BBox();
 	for (u_int i = 0; i < (*hitPoints).size(); ++i) {
 		HitPoint *hp = &(*hitPoints)[i];
-		HitPointEyePass *hpep = &hp->eyePass[0];
+		HitPointEyePass *hpep = &hp->eyePass;
 
 		if (hpep->type == SURFACE)
 			hpBBox = Union(hpBBox, hpep->position);
@@ -141,11 +135,11 @@ void HitPoints::Init() {
 	// Expand the bounding box by used radius
 	hpBBox.Expand(initialPhotonRadius);
 	// Update hit points information
-	hitPointBBox[0] = hpBBox;
-	maxHitPointRadius2[0] = photonRadius2;
+	hitPointBBox = hpBBox;
+	maxHitPointRadius2 = photonRadius2;
 
-	LOG(LUX_DEBUG, LUX_NOERROR) << "Hit points bounding box: " << hitPointBBox[0];
-	LOG(LUX_DEBUG, LUX_NOERROR) << "Hit points max. radius: " << sqrtf(maxHitPointRadius2[0]);
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Hit points bounding box: " << hitPointBBox;
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Hit points max. radius: " << sqrtf(maxHitPointRadius2);
 
 	// Initialize hit points field
 	for (u_int i = 0; i < (*hitPoints).size(); ++i) {
@@ -157,16 +151,13 @@ void HitPoints::Init() {
 	// Allocate hit points lookup accelerator
 	switch (renderer->sppmi->lookupAccelType) {
 		case HASH_GRID:
-			lookUpAccel[0] = new HashGrid(this);
-			lookUpAccel[1] = new HashGrid(this);
+			lookUpAccel = new HashGrid(this);
 			break;
 		case KD_TREE:
-			lookUpAccel[0] = new KdTree(this);
-			lookUpAccel[1] = new KdTree(this);
+			lookUpAccel = new KdTree(this);
 			break;
 		case HYBRID_HASH_GRID:
-			lookUpAccel[0] = new HybridHashGrid(this);
-			lookUpAccel[1] = new HybridHashGrid(this);
+			lookUpAccel = new HybridHashGrid(this);
 			break;
 		default:
 			assert (false);
@@ -184,10 +175,9 @@ void HitPoints::AccumulateFlux(const float fluxScale, const u_int index, const u
 
 	const u_int lightGroupsNumber = renderer->scene->lightGroups.size();
 
-	const u_int passIndex = currentPhotonPass % 2;
 	for (u_int i = first; i < last; ++i) {
 		HitPoint *hp = &(*hitPoints)[i];
-		HitPointEyePass *hpep = &hp->eyePass[passIndex];
+		HitPointEyePass *hpep = &hp->eyePass;
 
 		if(hpep->type == SURFACE) {
 			if (hp->accumPhotonCount > 0) {
@@ -265,9 +255,9 @@ void HitPoints::SetHitPoints(RandomGenerator *rng, const u_int index, const u_in
 
 	for (u_int i = first; i < last; ++i) {
 		static_cast<HaltonEyeSampler::HaltonEyeSamplerData *>(sample.samplerData)->index = i; //FIXME sampler data shouldn't be accessed directly
-		static_cast<HaltonEyeSampler::HaltonEyeSamplerData *>(sample.samplerData)->pathCount = currentEyePass; //FIXME sampler data shouldn't be accessed directly
-		sample.wavelengths = eyePassWavelengthSample;
-		sample.time = eyePassTimeSample;
+		static_cast<HaltonEyeSampler::HaltonEyeSamplerData *>(sample.samplerData)->pathCount = currentPass; //FIXME sampler data shouldn't be accessed directly
+		sample.wavelengths = wavelengthSample;
+		sample.time = timeSample;
 		sample.swl.Sample(sample.wavelengths);
 		sample.realTime = sample.camera->GetTime(sample.time);
 		sample.camera->SampleMotion(sample.realTime);
@@ -286,7 +276,7 @@ void HitPoints::SetHitPoints(RandomGenerator *rng, const u_int index, const u_in
 
 void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, MemoryArena &hp_arena)
 {
-	HitPointEyePass *hpep = &hp->eyePass[currentEyePass % 2];
+	HitPointEyePass *hpep = &hp->eyePass;
 
 	Scene &scene(*renderer->scene);
 	const bool includeEnvironment = renderer->sppmi->includeEnvironment;
@@ -432,20 +422,19 @@ void HitPoints::UpdatePointsInformation() {
 	float maxr2, minr2, meanr2;
 	u_int minp, maxp, meanp;
 	u_int surfaceHits, constantHits, zeroHits;
-	const u_int passIndex = currentEyePass % 2;
 
 	surfaceHits = constantHits = zeroHits = 0;
 
 	assert((*hitPoints).size() > 0);
 	HitPoint *hp = &(*hitPoints)[0];
-	HitPointEyePass *hpep = &hp->eyePass[passIndex];
+	HitPointEyePass *hpep = &hp->eyePass;
 
 	maxr2 = minr2 = meanr2 = hp->accumPhotonRadius2;
 	minp = maxp = meanp = hp->photonCount;
 
 	for (u_int i = 1; i < (*hitPoints).size(); ++i) {
 		hp = &(*hitPoints)[i];
-		hpep = &hp->eyePass[passIndex];
+		hpep = &hp->eyePass;
 
 		if (hpep->type == SURFACE) {
 			if(hp->photonCount == 0)
@@ -474,13 +463,11 @@ void HitPoints::UpdatePointsInformation() {
 	LOG(LUX_DEBUG, LUX_NOERROR) << "\tmean radius/photonCount: " << sqrtf(meanr2 / surfaceHits) << "/" << meanp / surfaceHits;
 	LOG(LUX_DEBUG, LUX_NOERROR) << "\tconstant/zero hits: " << constantHits << "/" << zeroHits;
 
-	hitPointBBox[passIndex] = bbox;
-	maxHitPointRadius2[passIndex] = maxr2;
+	hitPointBBox = bbox;
+	maxHitPointRadius2 = maxr2;
 }
 
 void HitPoints::UpdateFilm(const unsigned long long totalPhotons) {
-	const u_int passIndex = currentPhotonPass % 2;
-
 	Scene &scene(*renderer->scene);
 	const u_int bufferId = renderer->sppmi->bufferId;
 	int xPos, yPos;
@@ -526,15 +513,14 @@ void HitPoints::UpdateFilm(const unsigned long long totalPhotons) {
 		// Just normal rendering
 		for (u_int i = 0; i < GetSize(); ++i) {
 			HitPoint *hp = &(*hitPoints)[i];
-			HitPointEyePass *hpep = &hp->eyePass[passIndex];
+			HitPointEyePass *hpep = &hp->eyePass;
 			static_cast<HaltonEyeSampler *>(eyeSampler)->pixelSampler->GetNextPixel(&xPos, &yPos, i); //FIXME shouldn't access directly sampler data
 
 			const double k = 1.f / totalPhotons;
 			// Update radiance
 			for(u_int j = 0; j < lightGroupsNumber; ++j) {
 
-				// WARNING: currentPhotonPass starts at 0 and is incremented AFTER UpdateFilm, hence the + 1
-				const XYZColor newRadiance = hp->lightGroupData[j].accumRadiance / (currentPhotonPass + 1) +
+				const XYZColor newRadiance = hp->lightGroupData[j].accumRadiance / currentPass +
 						hp->lightGroupData[j].reflectedFlux * k;
 
 				Contribution contrib(xPos, yPos, newRadiance, hpep->alpha,

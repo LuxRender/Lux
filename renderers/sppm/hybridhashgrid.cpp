@@ -29,8 +29,6 @@ HybridHashGrid::HybridHashGrid(HitPoints *hps) {
 	hitPoints = hps;
 	grid = NULL;
 	kdtreeThreshold = 2;
-
-	RefreshMutex(0);
 }
 
 HybridHashGrid::~HybridHashGrid() {
@@ -39,12 +37,12 @@ HybridHashGrid::~HybridHashGrid() {
 	delete[] grid;
 }
 
-void HybridHashGrid::RefreshMutex(const u_int passIndex) {
+void HybridHashGrid::RefreshMutex() {
 	const unsigned int hitPointsCount = hitPoints->GetSize();
-	const BBox &hpBBox = hitPoints->GetBBox(passIndex);
+	const BBox &hpBBox = hitPoints->GetBBox();
 
 	// Calculate the size of the grid cell
-	const float maxPhotonRadius2 = hitPoints->GetMaxPhotonRadius2(passIndex);
+	const float maxPhotonRadius2 = hitPoints->GetMaxPhotonRadius2();
 	const float cellSize = sqrtf(maxPhotonRadius2) * 2.f;
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Hybrid hash grid cell size: " << cellSize;
 	invCellSize = 1.f / cellSize;
@@ -73,7 +71,7 @@ void HybridHashGrid::RefreshMutex(const u_int passIndex) {
 	unsigned long long entryCount = 0;
 	for (unsigned int i = 0; i < hitPointsCount; ++i) {
 		HitPoint *hp = hitPoints->GetHitPoint(i);
-		HitPointEyePass *hpep = &hp->eyePass[passIndex];
+		HitPointEyePass *hpep = &hp->eyePass;
 
 		if (hpep->type == SURFACE) {
 			const float photonRadius = sqrtf(hp->accumPhotonRadius2);
@@ -131,7 +129,7 @@ void HybridHashGrid::RefreshMutex(const u_int passIndex) {
 	}*/
 }
 
-void HybridHashGrid::RefreshParallel(const u_int passIndex, const unsigned int index, const unsigned int count) {
+void HybridHashGrid::RefreshParallel(const unsigned int index, const unsigned int count) {
 	if (gridSize == 0)
 		return;
 
@@ -148,7 +146,7 @@ void HybridHashGrid::RefreshParallel(const u_int passIndex, const unsigned int i
 		HashCell *hc = grid[i];
 
 		if (hc && hc->GetSize() > kdtreeThreshold) {
-			hc->TransformToKdTree(passIndex);
+			hc->TransformToKdTree();
 			++HHGKdTreeEntries;
 		} else
 			++HHGlistEntries;
@@ -165,10 +163,10 @@ void HybridHashGrid::RefreshParallel(const u_int passIndex, const unsigned int i
 	}*/
 }
 
-void HybridHashGrid::AddFlux(Sample& sample, const Point &hitPoint, const u_int passIndex, const Vector &wi,
+void HybridHashGrid::AddFlux(Sample& sample, const Point &hitPoint, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup) {
 	// Look for eye path hit points near the current hit point
-	Vector hh = (hitPoint - hitPoints->GetBBox(passIndex).pMin) * invCellSize;
+	Vector hh = (hitPoint - hitPoints->GetBBox().pMin) * invCellSize;
 	const int ix = int(hh.x);
 	if ((ix < 0) || (ix > maxHashIndexX))
 			return;
@@ -181,5 +179,5 @@ void HybridHashGrid::AddFlux(Sample& sample, const Point &hitPoint, const u_int 
 
 	HashCell *hc = grid[Hash(ix, iy, iz)];
 	if (hc)
-		return hc->AddFlux(sample, this, passIndex, hitPoint, wi, sw, photonFlux, lightGroup);
+		return hc->AddFlux(sample, this, hitPoint, wi, sw, photonFlux, lightGroup);
 }

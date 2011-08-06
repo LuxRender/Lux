@@ -51,7 +51,7 @@ using namespace lux;
 
 unsigned int SPPMRDeviceDescription::GetUsedUnitsCount() const {
 	boost::mutex::scoped_lock lock(host->renderer->renderThreadsMutex);
-	return host->renderer->eyePassRenderThreads.size();
+	return host->renderer->renderThreads.size();
 }
 
 void SPPMRDeviceDescription::SetUsedUnitsCount(const unsigned int units) {
@@ -95,11 +95,8 @@ SPPMRenderer::~SPPMRenderer() {
 	if ((state != TERMINATE) && (state != INIT))
 		throw std::runtime_error("Internal error: called SPPMRenderer::~SPPMRenderer() while not in TERMINATE or INIT state.");
 
-	if (eyePassRenderThreads.size() > 0)
-		throw std::runtime_error("Internal error: called SPPMRenderer::~SPPMRenderer() while list of eyePassRenderThreads is not empty.");
-
-	if (photonPassRenderThreads.size() > 0)
-		throw std::runtime_error("Internal error: called SPPMRenderer::~SPPMRenderer() while list of photonPassRenderThreads is not empty.");
+	if (renderThreads.size() > 0)
+		throw std::runtime_error("Internal error: called SPPMRenderer::~SPPMRenderer() while list of RenderThreads is not empty.");
 
 	for (size_t i = 0; i < hosts.size(); ++i)
 		delete hosts[i];
@@ -180,9 +177,7 @@ void SPPMRenderer::Render(Scene *s) {
 		LOG(LUX_INFO, LUX_NOERROR) << "Hardware concurrency: " << threadCount;
 
 		// Create synchronization barriers
-		eyePassThreadBarrier = new boost::barrier(threadCount);
-		photonPassThreadBarrier = new boost::barrier(threadCount);
-		allThreadBarrier = new boost::barrier(2 * threadCount);
+		allThreadBarrier = new boost::barrier(threadCount);
 		exitBarrier = new boost::barrier(threadCount);
 
 		// initialise
@@ -199,42 +194,28 @@ void SPPMRenderer::Render(Scene *s) {
 
 		// Start all threads
 		for (size_t i = 0; i < threadCount; ++i) {
-			// Start the eye pass thread
-			EyePassRenderThread *eprt = new  EyePassRenderThread(i, this);
+			// Start the threads
+			RenderThread *rt = new  RenderThread(i, this);
 
-			eyePassRenderThreads.push_back(eprt);
-			eprt->thread = new boost::thread(boost::bind(EyePassRenderThread::RenderImpl, eprt));
-
-			// Start the eye pass thread
-			PhotonPassRenderThread *pprt = new  PhotonPassRenderThread(i, this);
-
-			photonPassRenderThreads.push_back(pprt);
-			pprt->thread = new boost::thread(boost::bind(PhotonPassRenderThread::RenderImpl, pprt));
+			renderThreads.push_back(rt);
+			rt->thread = new boost::thread(boost::bind(RenderThread::RenderImpl, rt));
 		}
 	}
 
-	if (eyePassRenderThreads.size() > 0) {
+	if (renderThreads.size() > 0) {
 		// The first thread can not be removed
 		// it will terminate when the rendering is finished
-		eyePassRenderThreads[0]->thread->join();
+		renderThreads[0]->thread->join();
 
 		// rendering done, now I can remove all rendering threads
 		{
 			boost::mutex::scoped_lock lock(renderThreadsMutex);
 
-			photonPassRenderThreads.clear();
-			for (u_int i = 0; i < photonPassRenderThreads.size(); ++i) {
-				photonPassRenderThreads[i]->thread->join();
-				delete photonPassRenderThreads[i];
+			for (u_int i = 0; i < renderThreads.size(); ++i) {
+				renderThreads[i]->thread->join();
+				delete renderThreads[i];
 			}
-			photonPassRenderThreads.clear();
-
-			// wait for all threads to finish their job
-			for (u_int i = 0; i < eyePassRenderThreads.size(); ++i) {
-				eyePassRenderThreads[i]->thread->join();
-				delete eyePassRenderThreads[i];
-			}
-			eyePassRenderThreads.clear();
+			renderThreads.clear();
 
 			// I change the current signal to exit in order to disable the creation
 			// of new threads after this point
@@ -247,8 +228,6 @@ void SPPMRenderer::Render(Scene *s) {
 	}
 
 	delete allThreadBarrier;
-	delete eyePassThreadBarrier;
-	delete photonPassThreadBarrier;
 	delete exitBarrier;
 }
 
@@ -298,9 +277,9 @@ double SPPMRenderer::Statistics(const string &statName) {
 	else if (statName == "enoughSamples")
 		return scene->camera->film->enoughSamplesPerPixel;
 	else if (statName == "threadCount")
-		return eyePassRenderThreads.size();
+		return renderThreads.size();
 	else if (statName == "pass") {
-		return (hitPoints) ? double(hitPoints->GetPhotonPassCount()) : 0.0;
+		return (hitPoints) ? double(hitPoints->GetPassCount()) : 0.0;
 	} else if (statName == "photonCount") {
 		return double(photonTracedTotal + photonTracedPass);
 	} else if (statName == "hitPointsUpdateEfficiency") {
@@ -312,21 +291,29 @@ double SPPMRenderer::Statistics(const string &statName) {
 }
 
 //------------------------------------------------------------------------------
-// Eye pass render thread
+// Render thread
 //------------------------------------------------------------------------------
 
-SPPMRenderer::EyePassRenderThread::EyePassRenderThread(u_int index, SPPMRenderer *r) :
+SPPMRenderer::RenderThread::RenderThread(u_int index, SPPMRenderer *r) :
 	n(index), renderer(r), thread(NULL) {
 	threadRng = NULL;
+	
+	// Compute light power CDF for photon shooting
+	u_int nLights = renderer->scene->lights.size();
+	float *lightPower = new float[nLights];
+	for (u_int i = 0; i < nLights; ++i)
+		lightPower[i] = renderer->scene->lights[i]->Power(*renderer->scene);
+	lightCDF = new Distribution1D(lightPower, nLights);
+	delete[] lightPower;
 }
 
-SPPMRenderer::EyePassRenderThread::~EyePassRenderThread() {
+SPPMRenderer::RenderThread::~RenderThread() {
 	delete threadRng;
+	delete lightCDF;
 }
 
-void SPPMRenderer::EyePassRenderThread::RenderImpl(EyePassRenderThread *myThread) {
+void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 	SPPMRenderer *renderer = myThread->renderer;
-	boost::barrier *eyePassThreadBarrier = renderer->eyePassThreadBarrier;
 	boost::barrier *allThreadBarrier = renderer->allThreadBarrier;
 	boost::barrier *barrierExit = renderer->exitBarrier;
 
@@ -350,160 +337,7 @@ void SPPMRenderer::EyePassRenderThread::RenderImpl(EyePassRenderThread *myThread
 
 	// Initialize the thread's rangen
 	u_long seed = scene.seedBase + myThread->n;
-	LOG(LUX_INFO, LUX_NOERROR) << "Eye pass thread " << myThread->n << " uses seed: " << seed;
-	myThread->threadRng = new RandomGenerator(seed);
-
-	HitPoints *hitPoints = NULL;
-
-	//--------------------------------------------------------------------------
-	// First eye pass
-	//--------------------------------------------------------------------------
-
-	if (myThread->n == 0) {
-		// One thread initialize the hit points
-		renderer->hitPoints = new HitPoints(renderer, myThread->threadRng);
-	}
-
-	// Wait for other threads
-	eyePassThreadBarrier->wait();
-
-	hitPoints = renderer->hitPoints;
-	hitPoints->SetHitPoints(myThread->threadRng,
-			myThread->n, renderer->eyePassRenderThreads.size(), myThread->eyePassMemoryArena[renderer->hitPoints->GetEyePassCount() % 2]);
-
-	// Wait for other threads
-	eyePassThreadBarrier->wait();
-
-	if (myThread->n == 0)
-		hitPoints->Init();
-
-	// Wait for other threads
-	eyePassThreadBarrier->wait();
-
-	// Last step of the initialization
-
-	hitPoints->RefreshAccelParallel(myThread->n, renderer->eyePassRenderThreads.size());
-
-	// Wait for other threads
-	allThreadBarrier->wait();
-
-	// Trace rays: The main loop
-	while (true) {
-		while (renderer->state == PAUSE && !boost::this_thread::interruption_requested()) {
-			boost::xtime xt;
-			boost::xtime_get(&xt, boost::TIME_UTC);
-			xt.sec += 1;
-			boost::thread::sleep(xt);
-		}
-		if ((renderer->state == TERMINATE) || boost::this_thread::interruption_requested())
-			break;
-
-		double passStartTime = 0.0;
-		if (myThread->n == 0)
-			passStartTime = osWallClockTime();
-
-		//----------------------------------------------------------------------
-		// Eye pass: find hit points
-		//----------------------------------------------------------------------
-
-		if (myThread->n == 0)
-			hitPoints->IncEyePass();
-
-		// Wait for other threads
-		eyePassThreadBarrier->wait();
-
-		hitPoints->SetHitPoints(myThread->threadRng,
-				myThread->n, renderer->eyePassRenderThreads.size(), myThread->eyePassMemoryArena[renderer->hitPoints->GetEyePassCount() % 2]);
-
-		// Wait for other threads
-		eyePassThreadBarrier->wait();
-
-		if (myThread->n == 0) {
-			// Updating information of maxHitPointRadius2 is not thread safe
-			// because HitPoint->accumPhotonRadius2 is updated by Photon Pass Threads.
-			// However the only pratical result is that maxHitPointRadius2 is larger
-			// than its real value. This is not a big problem when updating
-			// the lookup accelerator.
-			hitPoints->UpdatePointsInformation();
-			hitPoints->RefreshAccelMutex();
-		}
-
-		// Wait for other threads
-		eyePassThreadBarrier->wait();
-
-		hitPoints->RefreshAccelParallel(myThread->n, renderer->eyePassRenderThreads.size());
-
-		if (myThread->n == 0) {
-			const double photonPassTime = osWallClockTime() - passStartTime;
-			LOG(LUX_INFO, LUX_NOERROR) << "Eye pass time: " << photonPassTime << "secs";
-		}
-
-		//----------------------------------------------------------------------
-		// End of the pass
-		//----------------------------------------------------------------------
-
-		// Wait for other threads
-		allThreadBarrier->wait();
-	}
-
-	// Wait for other threads
-	barrierExit->wait();
-
-	if (myThread->n == 0)
-		delete hitPoints;
-}
-
-//------------------------------------------------------------------------------
-// Photon pass render thread
-//------------------------------------------------------------------------------
-
-SPPMRenderer::PhotonPassRenderThread::PhotonPassRenderThread(u_int index, SPPMRenderer *r) :
-	n(index), renderer(r), thread(NULL) {
-	threadRng = NULL;
-
-	Scene &scene(*(renderer->scene));
-
-	// Compute light power CDF for photon shooting
-	u_int nLights = scene.lights.size();
-	float *lightPower = new float[nLights];
-	for (u_int i = 0; i < nLights; ++i)
-		lightPower[i] = scene.lights[i]->Power(scene);
-	lightCDF = new Distribution1D(lightPower, nLights);
-	delete[] lightPower;
-}
-
-SPPMRenderer::PhotonPassRenderThread::~PhotonPassRenderThread() {
-	delete lightCDF;
-	delete threadRng;
-}
-
-void SPPMRenderer::PhotonPassRenderThread::RenderImpl(PhotonPassRenderThread *myThread) {
-	SPPMRenderer *renderer = myThread->renderer;
-	boost::barrier *allThreadBarrier = renderer->allThreadBarrier;
-	boost::barrier *photonPassThreadBarrier = renderer->photonPassThreadBarrier;
-	boost::barrier *barrierExit = renderer->exitBarrier;
-
-	Scene &scene(*(renderer->scene));
-	if (scene.IsFilmOnly())
-		return;
-
-	// To avoid interrupt exception
-	boost::this_thread::disable_interruption di;
-
-	// Dade - wait the end of the preprocessing phase
-	while (!renderer->preprocessDone) {
-		boost::xtime xt;
-		boost::xtime_get(&xt, boost::TIME_UTC);
-		++xt.sec;
-		boost::thread::sleep(xt);
-	}
-
-	// Wait for other threads
-	allThreadBarrier->wait();
-
-	// Initialize the thread's rangen
-	u_long seed = scene.seedBase + myThread->n + renderer->eyePassRenderThreads.size();
-	LOG(LUX_INFO, LUX_NOERROR) << "Photon pass thread " << myThread->n << " uses seed: " << seed;
+	LOG(LUX_INFO, LUX_NOERROR) << "Render thread " << myThread->n << " uses seed: " << seed;
 	myThread->threadRng = new RandomGenerator(seed);
 	
 	// Initialize the photon sampler
@@ -518,7 +352,7 @@ void SPPMRenderer::PhotonPassRenderThread::RenderImpl(PhotonPassRenderThread *my
 		default:
 			throw std::runtime_error("Internal error: unknown photon sampler");
 	}
-
+	
 	// Initialize the photon sample
 	Sample sample;
 	// The RNG might be used when initializing the sampler data below
@@ -539,20 +373,49 @@ void SPPMRenderer::PhotonPassRenderThread::RenderImpl(PhotonPassRenderThread *my
 	renderer->scene->volumeIntegrator->RequestSamples(&sample, *(renderer->scene));
 	sampler->InitSample(&sample);
 
-	HitPoints *hitPoints = NULL;
+	//--------------------------------------------------------------------------
+	// First eye pass
+	//--------------------------------------------------------------------------
 
+	if (myThread->n == 0) {
+		// One thread initialize the hit points
+		renderer->hitPoints = new HitPoints(renderer, myThread->threadRng);
+	}
+	
 	// Wait for other threads
 	allThreadBarrier->wait();
-	hitPoints = renderer->hitPoints;
+	
+	HitPoints *hitPoints = renderer->hitPoints;
 
+	// Set hitpoints
+	hitPoints->SetHitPoints(myThread->threadRng,
+			myThread->n, renderer->renderThreads.size(), myThread->eyePassMemoryArena);
+
+	allThreadBarrier->wait();
+
+	if (myThread->n == 0)
+		hitPoints->Init();
+	
 	// Trace rays: The main loop
 	while (true) {
-		// Initialize new wavelengths and time
-		sample.wavelengths = hitPoints->GetPhotonPassWavelengthSample();
-		sample.time = hitPoints->GetPhotonPassTimeSample();
-		sample.swl.Sample(sample.wavelengths);
-		sample.realTime = scene.camera->GetTime(sample.time);
-//		sample.camera->SampleMotion(sample.realTime); // Unneeded for photons
+		allThreadBarrier->wait();
+
+		if (myThread->n == 0) {
+			// Updating information of maxHitPointRadius2 is not thread safe
+			// because HitPoint->accumPhotonRadius2 is updated by Photon Pass Threads.
+			// However the only pratical result is that maxHitPointRadius2 is larger
+			// than its real value. This is not a big problem when updating
+			// the lookup accelerator.
+			hitPoints->UpdatePointsInformation();
+			hitPoints->RefreshAccelMutex();
+		}
+		// Wait for photon pass
+		allThreadBarrier->wait();
+
+		hitPoints->RefreshAccelParallel(myThread->n, renderer->renderThreads.size());
+		// Wait for photon pass
+		allThreadBarrier->wait();
+	
 		while (renderer->state == PAUSE && !boost::this_thread::interruption_requested()) {
 			boost::xtime xt;
 			boost::xtime_get(&xt, boost::TIME_UTC);
@@ -565,6 +428,13 @@ void SPPMRenderer::PhotonPassRenderThread::RenderImpl(PhotonPassRenderThread *my
 		double passStartTime = 0.0;
 		if (myThread->n == 0)
 			passStartTime = osWallClockTime();
+		
+		// Initialize new wavelengths and time
+		sample.wavelengths = hitPoints->GetWavelengthSample();
+		sample.time = hitPoints->GetTimeSample();
+		sample.swl.Sample(sample.wavelengths);
+		sample.realTime = scene.camera->GetTime(sample.time);
+//		sample.camera->SampleMotion(sample.realTime); // Unneeded for photons
 
 		//--------------------------------------------------------------
 		// Photon pass: trace photons
@@ -572,7 +442,7 @@ void SPPMRenderer::PhotonPassRenderThread::RenderImpl(PhotonPassRenderThread *my
 		sampler->TracePhotons(myThread->renderer, &sample, myThread->lightCDF);
 
 		// Wait for other threads
-		photonPassThreadBarrier->wait();
+		allThreadBarrier->wait();
 
 		// The first thread has to do some special task for the eye pass
 		if (myThread->n == 0) {
@@ -581,8 +451,8 @@ void SPPMRenderer::PhotonPassRenderThread::RenderImpl(PhotonPassRenderThread *my
 			// TODO: try to abstract this in the sampler
 			if (renderer->sppmi->photonSamplerType == AMC) {
 				u_int uniformCount = 0;
-				for (u_int i = 0; i < renderer->photonPassRenderThreads.size(); ++i)
-					uniformCount += dynamic_cast<AMCMCPhotonSampler*>(renderer->photonPassRenderThreads[i]->sampler)->uniformCount;
+				for (u_int i = 0; i < renderer->renderThreads.size(); ++i)
+					uniformCount += dynamic_cast<AMCMCPhotonSampler*>(renderer->renderThreads[i]->sampler)->uniformCount;
 
 				renderer->accumulatedFluxScale = uniformCount / (float)renderer->photonTracedPass;
 			} else
@@ -594,37 +464,36 @@ void SPPMRenderer::PhotonPassRenderThread::RenderImpl(PhotonPassRenderThread *my
 		}
 
 		// Wait for other threads
-		photonPassThreadBarrier->wait();
+		allThreadBarrier->wait();
 
-		hitPoints->AccumulateFlux(renderer->accumulatedFluxScale, myThread->n, renderer->eyePassRenderThreads.size());
+		hitPoints->AccumulateFlux(renderer->accumulatedFluxScale, myThread->n, renderer->renderThreads.size());
 
 		// Wait for other threads
-		photonPassThreadBarrier->wait();
-
+		allThreadBarrier->wait();
+		
 		if (myThread->n == 0) {
+			hitPoints->IncPass();
 			// Update the frame buffer
+			// TODO: check if this can be done in //
 			hitPoints->UpdateFilm(renderer->photonTracedTotal);
-			// WARNING: Above UpdateFilm method use the current photon pass
-			// index + 1. If you move the following line (IncPhotonPass),
-			// please update UpdateFilm
-			hitPoints->IncPhotonPass();
 
 			const double photonPassTime = osWallClockTime() - passStartTime;
 			LOG(LUX_INFO, LUX_NOERROR) << "Photon pass time: " << photonPassTime << "secs";
 		}
 
-		//----------------------------------------------------------------------
-		// End of the pass
-		//----------------------------------------------------------------------
-
 		// Wait for other threads
 		allThreadBarrier->wait();
+		hitPoints->SetHitPoints(myThread->threadRng,
+				myThread->n, renderer->renderThreads.size(), myThread->eyePassMemoryArena);
 	}
 	sampler->FreeSample(&sample);
 	delete sampler;
 
 	// Wait for other threads
 	barrierExit->wait();
+
+	if (myThread->n == 0)
+		delete hitPoints;
 }
 
 Renderer *SPPMRenderer::CreateRenderer(const ParamSet &params) {

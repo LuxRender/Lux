@@ -47,10 +47,10 @@ inline float Ekernel(const float d2, float md2) {
 
 using namespace lux;
 
-void HitPointsLookUpAccel::AddFluxToHitPoint(Sample &sample, HitPoint *hp, const u_int passIndex,
+void HitPointsLookUpAccel::AddFluxToHitPoint(Sample &sample, HitPoint *hp,
 		const Point &hitPoint, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, u_int lightGroup) {
-	HitPointEyePass &hpep(hp->eyePass[passIndex]);
+	HitPointEyePass &hpep(hp->eyePass);
 
 	// Check distance
 	const float dist2 = DistanceSquared(hpep.position, hitPoint);
@@ -67,19 +67,19 @@ void HitPointsLookUpAccel::AddFluxToHitPoint(Sample &sample, HitPoint *hp, const
 	dynamic_cast<PhotonSampler *>(sample.sampler)->AddSample(sample, lightGroup, hp, flux);
 }
 
-void HashCell::AddFlux(Sample& sample, HitPointsLookUpAccel *accel, const u_int passIndex, const Point &hitPoint,
+void HashCell::AddFlux(Sample& sample, HitPointsLookUpAccel *accel, const Point &hitPoint,
 		const Vector &wi, const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup) {
 	switch (type) {
 		case HH_LIST: {
 			std::list<HitPoint *>::iterator iter = list->begin();
 			while (iter != list->end()) {
 				HitPoint *hp = *iter++;
-				accel->AddFluxToHitPoint(sample, hp, passIndex, hitPoint, wi, sw, photonFlux, lightGroup);
+				accel->AddFluxToHitPoint(sample, hp, hitPoint, wi, sw, photonFlux, lightGroup);
 			}
 			break;
 		}
 		case HH_KD_TREE: {
-			kdtree->AddFlux(sample, accel, passIndex, hitPoint, wi, sw, photonFlux, lightGroup);
+			kdtree->AddFlux(sample, accel, hitPoint, wi, sw, photonFlux, lightGroup);
 			break;
 		}
 		default:
@@ -87,16 +87,16 @@ void HashCell::AddFlux(Sample& sample, HitPointsLookUpAccel *accel, const u_int 
 	}
 }
 
-void HashCell::TransformToKdTree(const u_int passIndex) {
+void HashCell::TransformToKdTree() {
 	assert (type == HH_LIST);
 
 	std::list<HitPoint *> *hplist = list;
-	kdtree = new HCKdTree(passIndex, hplist, size);
+	kdtree = new HCKdTree(hplist, size);
 	delete hplist;
 	type = HH_KD_TREE;
 }
 
-HashCell::HCKdTree::HCKdTree(const u_int passIndex,
+HashCell::HCKdTree::HCKdTree(
 		std::list<HitPoint *> *hps, const unsigned int count) {
 	nNodes = count;
 	nextFreeNode = 1;
@@ -118,7 +118,7 @@ HashCell::HCKdTree::HCKdTree(const u_int passIndex,
 	}
 	//std::cerr << "kD-Tree search radius: " << sqrtf(maxDistSquared) << std::endl;
 
-	RecursiveBuild(passIndex, 0, 0, nNodes, buildNodes);
+	RecursiveBuild(0, 0, nNodes, buildNodes);
 	assert (nNodes == nextFreeNode);
 }
 
@@ -128,11 +128,11 @@ HashCell::HCKdTree::~HCKdTree() {
 }
 
 bool HashCell::HCKdTree::CompareNode::operator ()(const HitPoint *d1, const HitPoint *d2) const {
-	return (d1->eyePass[passIndex].position[axis] == d2->eyePass[passIndex].position[axis]) ? (d1 < d2) :
-			(d1->eyePass[passIndex].position[axis] < d2->eyePass[passIndex].position[axis]);
+	return (d1->eyePass.position[axis] == d2->eyePass.position[axis]) ? (d1 < d2) :
+			(d1->eyePass.position[axis] < d2->eyePass.position[axis]);
 }
 
-void HashCell::HCKdTree::RecursiveBuild(const u_int passIndex,
+void HashCell::HCKdTree::RecursiveBuild(
 		const unsigned int nodeNum, const unsigned int start,
 		const unsigned int end, std::vector<HitPoint *> &buildNodes) {
 	assert (nodeNum >= 0);
@@ -154,30 +154,30 @@ void HashCell::HCKdTree::RecursiveBuild(const u_int passIndex,
 	// Compute bounds of data from start to end
 	BBox bound;
 	for (unsigned int i = start; i < end; ++i)
-		bound = Union(bound, buildNodes[i]->eyePass[passIndex].position);
+		bound = Union(bound, buildNodes[i]->eyePass.position);
 	unsigned int splitAxis = bound.MaximumExtent();
 	unsigned int splitPos = (start + end) / 2;
 
 	std::nth_element(buildNodes.begin() + start, buildNodes.begin() + splitPos,
-		buildNodes.begin() + end, CompareNode(splitAxis, passIndex));
+		buildNodes.begin() + end, CompareNode(splitAxis));
 
 	// Allocate kd-tree node and continue recursively
-	nodes[nodeNum].init(buildNodes[splitPos]->eyePass[passIndex].position[splitAxis], splitAxis);
+	nodes[nodeNum].init(buildNodes[splitPos]->eyePass.position[splitAxis], splitAxis);
 	nodeData[nodeNum] = buildNodes[splitPos];
 
 	if (start < splitPos) {
 		nodes[nodeNum].hasLeftChild = 1;
 		const unsigned int childNum = nextFreeNode++;
-		RecursiveBuild(passIndex, childNum, start, splitPos, buildNodes);
+		RecursiveBuild( childNum, start, splitPos, buildNodes);
 	}
 
 	if (splitPos + 1 < end) {
 		nodes[nodeNum].rightChild = nextFreeNode++;
-		RecursiveBuild(passIndex, nodes[nodeNum].rightChild, splitPos + 1, end, buildNodes);
+		RecursiveBuild( nodes[nodeNum].rightChild, splitPos + 1, end, buildNodes);
 	}
 }
 
-void HashCell::HCKdTree::AddFlux(Sample& sample, HitPointsLookUpAccel *accel, const u_int passIndex, const Point &p,
+void HashCell::HCKdTree::AddFlux(Sample& sample, HitPointsLookUpAccel *accel, const Point &p,
 		const Vector &wi, const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, u_int lightGroup) {
 	unsigned int nodeNumStack[64];
 	// Start from the first node
@@ -207,6 +207,6 @@ void HashCell::HCKdTree::AddFlux(Sample& sample, HitPointsLookUpAccel *accel, co
 
 		// Process the leaf
 		HitPoint *hp = nodeData[nodeNum];
-		accel->AddFluxToHitPoint(sample, hp, passIndex, p, wi, sw, photonFlux, lightGroup);
+		accel->AddFluxToHitPoint(sample, hp, p, wi, sw, photonFlux, lightGroup);
 	}
 }
