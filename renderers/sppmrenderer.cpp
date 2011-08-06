@@ -387,6 +387,10 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 	
 	HitPoints *hitPoints = renderer->hitPoints;
 
+	double eyePassStartTime = 0.0;
+	if (myThread->n == 0)
+		eyePassStartTime = osWallClockTime();
+
 	// Set hitpoints
 	hitPoints->SetHitPoints(myThread->threadRng,
 			myThread->n, renderer->renderThreads.size(), myThread->eyePassMemoryArena);
@@ -415,6 +419,11 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 		hitPoints->RefreshAccelParallel(myThread->n, renderer->renderThreads.size());
 		// Wait for photon pass
 		allThreadBarrier->wait();
+
+		if (myThread->n == 0) {
+			const double eyePassTime = osWallClockTime() - eyePassStartTime;
+			LOG(LUX_INFO, LUX_NOERROR) << "Eye pass time: " << eyePassTime << "secs";
+		}
 	
 		while (renderer->state == PAUSE && !boost::this_thread::interruption_requested()) {
 			boost::xtime xt;
@@ -425,9 +434,9 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 		if ((renderer->state == TERMINATE) || boost::this_thread::interruption_requested())
 			break;
 
-		double passStartTime = 0.0;
+		double photonPassStartTime = 0.0;
 		if (myThread->n == 0)
-			passStartTime = osWallClockTime();
+			photonPassStartTime = osWallClockTime();
 		
 		// Initialize new wavelengths and time
 		sample.wavelengths = hitPoints->GetWavelengthSample();
@@ -477,12 +486,16 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 			// TODO: check if this can be done in //
 			hitPoints->UpdateFilm(renderer->photonTracedTotal);
 
-			const double photonPassTime = osWallClockTime() - passStartTime;
+			const double photonPassTime = osWallClockTime() - photonPassStartTime;
 			LOG(LUX_INFO, LUX_NOERROR) << "Photon pass time: " << photonPassTime << "secs";
 		}
 
 		// Wait for other threads
 		allThreadBarrier->wait();
+
+		if (myThread->n == 0)
+			eyePassStartTime = osWallClockTime();
+
 		hitPoints->SetHitPoints(myThread->threadRng,
 				myThread->n, renderer->renderThreads.size(), myThread->eyePassMemoryArena);
 	}
