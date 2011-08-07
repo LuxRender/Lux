@@ -78,14 +78,14 @@ SurfaceIntegrator *SPPMIntegrator::CreateSurfaceIntegrator(const ParamSet &param
 		sppmi->lookupAccelType = HYBRID_HASH_GRID;
 	}
 
-	string pxl = params.FindOneString("pixelsampler", "vegas");
-	if (pxl == "vegas") sppmi->PixelSampler = "vegas";
-	else if (pxl == "hilbert") sppmi->PixelSampler = "hilbert";
+	string pxl = params.FindOneString("pixelsampler", "hilbert");
+	if (pxl == "hilbert") sppmi->PixelSampler = "hilbert";
+	else if (pxl == "vegas") sppmi->PixelSampler = "vegas";
 	else if (pxl == "tile") sppmi->PixelSampler = "tile";
 	else if (pxl == "linear") sppmi->PixelSampler = "linear";
 	else {
-		LOG(LUX_WARNING,LUX_BADTOKEN) << "Pixelsampler '" << pxl <<"' unknown. Using \"vegas\".";
-		sppmi->PixelSampler = "vegas";
+		LOG(LUX_WARNING,LUX_BADTOKEN) << "Pixelsampler '" << pxl <<"' unknown. Using \"hilbert\".";
+		sppmi->PixelSampler = "hilbert";
 	}
 
 	sppmi->maxEyePathDepth = params.FindOneInt("maxeyedepth", 16);
