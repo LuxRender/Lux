@@ -23,6 +23,7 @@
 #ifndef LUX_DYNLOAD_H
 #define LUX_DYNLOAD_H
 
+#include "api.h"
 #include "lux.h"
 
 #include <map>
@@ -83,7 +84,7 @@ class DynamicLoader {
 
 public:
 	typedef Shape *(*CreateShape)(const Transform&, bool, const ParamSet&);
-	static map<string, CreateShape> &registeredShapes();
+	LUX_EXPORT static map<string, CreateShape> &registeredShapes();
 	template <class T> class RegisterShape : public RegisterLoader<CreateShape> {
 	public:
 		RegisterShape<T>(const string &name) :
@@ -93,7 +94,7 @@ public:
 
 	typedef Material *(*CreateMaterial)(const Transform&,
 		const ParamSet&);
-	static map<string, CreateMaterial> &registeredMaterials();
+	LUX_EXPORT static map<string, CreateMaterial> &registeredMaterials();
 	template <class T> class RegisterMaterial : public RegisterLoader<CreateMaterial> {
 	public:
 		RegisterMaterial<T>(const string &name) :
@@ -103,7 +104,7 @@ public:
 
 	typedef Texture<float> *(*CreateFloatTexture)(const Transform&,
 		const ParamSet&);
-	static map<string, CreateFloatTexture> &registeredFloatTextures();
+	LUX_EXPORT static map<string, CreateFloatTexture> &registeredFloatTextures();
 	template <class T> class RegisterFloatTexture : public RegisterLoader<CreateFloatTexture> {
 	public:
 		RegisterFloatTexture<T>(const string &name) :
@@ -113,7 +114,7 @@ public:
 
 	typedef Texture<SWCSpectrum> *(*CreateSWCSpectrumTexture)(const Transform&,
 		const ParamSet&);
-	static map<string, CreateSWCSpectrumTexture> &registeredSWCSpectrumTextures();
+	LUX_EXPORT static map<string, CreateSWCSpectrumTexture> &registeredSWCSpectrumTextures();
 	template <class T> class RegisterSWCSpectrumTexture : public RegisterLoader<CreateSWCSpectrumTexture> {
 	public:
 		RegisterSWCSpectrumTexture<T>(const string &name) :
@@ -123,7 +124,7 @@ public:
 
 	typedef Texture<FresnelGeneral> *(*CreateFresnelTexture)(const Transform&,
 		const ParamSet&);
-	static map<string, CreateFresnelTexture> &registeredFresnelTextures();
+	LUX_EXPORT static map<string, CreateFresnelTexture> &registeredFresnelTextures();
 	template <class T> class RegisterFresnelTexture : public RegisterLoader<CreateFresnelTexture> {
 	public:
 		RegisterFresnelTexture<T>(const string &name) :
@@ -132,7 +133,7 @@ public:
 	};
 
 	typedef Light *(*CreateLight)(const Transform&, const ParamSet&);
-	static map<string, CreateLight> &registeredLights();
+	LUX_EXPORT static map<string, CreateLight> &registeredLights();
 	template <class T> class RegisterLight : public RegisterLoader<CreateLight> {
 	public:
 		RegisterLight<T>(const string &name) :
@@ -142,7 +143,7 @@ public:
 
 	typedef AreaLight *(*CreateAreaLight)(const Transform&, const ParamSet&,
 		const boost::shared_ptr<Primitive>&);
-	static map<string, CreateAreaLight> &registeredAreaLights();
+	LUX_EXPORT static map<string, CreateAreaLight> &registeredAreaLights();
 	template <class T> class RegisterAreaLight : public RegisterLoader<CreateAreaLight> {
 	public:
 		RegisterAreaLight<T>(const string &name) :
@@ -152,7 +153,7 @@ public:
 
 	typedef Region *(*CreateVolumeRegion)(const Transform&,
 		const ParamSet&);
-	static map<string, CreateVolumeRegion> &registeredVolumeRegions();
+	LUX_EXPORT static map<string, CreateVolumeRegion> &registeredVolumeRegions();
 	template <class T> class RegisterVolumeRegion : public RegisterLoader<CreateVolumeRegion> {
 	public:
 		RegisterVolumeRegion<T>(const string &name) :
@@ -162,7 +163,7 @@ public:
 
 	typedef Volume *(*CreateVolume)(const Transform&,
 		const ParamSet&);
-	static map<string, CreateVolume> &registeredVolumes();
+	LUX_EXPORT static map<string, CreateVolume> &registeredVolumes();
 	template <class T> class RegisterVolume : public RegisterLoader<CreateVolume> {
 	public:
 		RegisterVolume<T>(const string &name) :
@@ -171,7 +172,7 @@ public:
 	};
 
 	typedef SurfaceIntegrator *(*CreateSurfaceIntegrator)(const ParamSet&);
-	static map<string, CreateSurfaceIntegrator> &registeredSurfaceIntegrators();
+	LUX_EXPORT static map<string, CreateSurfaceIntegrator> &registeredSurfaceIntegrators();
 	template <class T> class RegisterSurfaceIntegrator : public RegisterLoader<CreateSurfaceIntegrator> {
 	public:
 		RegisterSurfaceIntegrator<T>(const string &name) :
@@ -180,7 +181,7 @@ public:
 	};
 
 	typedef VolumeIntegrator *(*CreateVolumeIntegrator)(const ParamSet&);
-	static map<string, CreateVolumeIntegrator> &registeredVolumeIntegrators();
+	LUX_EXPORT static map<string, CreateVolumeIntegrator> &registeredVolumeIntegrators();
 	template <class T> class RegisterVolumeIntegrator : public RegisterLoader<CreateVolumeIntegrator> {
 	public:
 		RegisterVolumeIntegrator<T>(const string &name) :
@@ -190,7 +191,7 @@ public:
 
 	typedef Aggregate *(*CreateAccelerator)(const vector<boost::shared_ptr<Primitive> >&,
 		const ParamSet&);
-	static map<string, CreateAccelerator> &registeredAccelerators();
+	LUX_EXPORT static map<string, CreateAccelerator> &registeredAccelerators();
 	template <class T> class RegisterAccelerator : public RegisterLoader<CreateAccelerator> {
 	public:
 		RegisterAccelerator<T>(const string &name) :
@@ -200,7 +201,7 @@ public:
 
 	typedef Camera *(*CreateCamera)(const Transform&, const Transform&, const ParamSet&,
 		Film*);
-	static map<string, CreateCamera> &registeredCameras();
+	LUX_EXPORT static map<string, CreateCamera> &registeredCameras();
 	template <class T> class RegisterCamera : public RegisterLoader<CreateCamera> {
 	public:
 		RegisterCamera<T>(const string &name) :
@@ -209,7 +210,7 @@ public:
 	};
 
 	typedef Sampler *(*CreateSampler)(const ParamSet&, const Film*);
-	static map<string, CreateSampler> &registeredSamplers();
+	LUX_EXPORT static map<string, CreateSampler> &registeredSamplers();
 	template <class T> class RegisterSampler : public RegisterLoader<CreateSampler> {
 	public:
 		RegisterSampler<T>(const string &name) :
@@ -218,7 +219,7 @@ public:
 	};
 
 	typedef Filter *(*CreateFilter)(const ParamSet&);
-	static map<string, CreateFilter> &registeredFilters();
+	LUX_EXPORT static map<string, CreateFilter> &registeredFilters();
 	template <class T> class RegisterFilter : public RegisterLoader<CreateFilter> {
 	public:
 		RegisterFilter<T>(const string &name) :
@@ -227,7 +228,7 @@ public:
 	};
 
 	typedef ToneMap *(*CreateToneMap)(const ParamSet&);
-	static map<string, CreateToneMap> &registeredToneMaps();
+	LUX_EXPORT static map<string, CreateToneMap> &registeredToneMaps();
 	template <class T> class RegisterToneMap : public RegisterLoader<CreateToneMap> {
 	public:
 		RegisterToneMap<T>(const string &name) :
@@ -236,7 +237,7 @@ public:
 	};
 
 	typedef Film *(*CreateFilm)(const ParamSet&, Filter*);
-	static map<string, CreateFilm> &registeredFilms();
+	LUX_EXPORT static map<string, CreateFilm> &registeredFilms();
 	template <class T> class RegisterFilm : public RegisterLoader<CreateFilm> {
 	public:
 		RegisterFilm<T>(const string &name) :
@@ -245,7 +246,7 @@ public:
 	};
 
 	typedef PixelSampler *(*CreatePixelSampler)(int, int, int, int);
-	static map<string, CreatePixelSampler> &registeredPixelSamplers();
+	LUX_EXPORT static map<string, CreatePixelSampler> &registeredPixelSamplers();
 	template <class T> class RegisterPixelSampler : public RegisterLoader<CreatePixelSampler> {
 	public:
 		RegisterPixelSampler<T>(const string &name) :
@@ -254,7 +255,7 @@ public:
 	};
 
 	typedef Renderer *(*CreateRenderer)(const ParamSet&);
-	static map<string, CreateRenderer> &registeredRenderer();
+	LUX_EXPORT static map<string, CreateRenderer> &registeredRenderer();
 	template <class T> class RegisterRenderer : public RegisterLoader<CreateRenderer> {
 	public:
 		RegisterRenderer<T>(const string &name) :

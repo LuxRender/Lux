@@ -863,6 +863,7 @@ INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/core
 IF(NOT APPLE)
 	ADD_LIBRARY(luxStatic STATIC ${lux_lib_src} ${lux_lib_hdr} ${lux_parser_src})
 	#TARGET_LINK_LIBRARIES(luxStatic ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} )
+	SET_TARGET_PROPERTIES(luxStatic PROPERTIES OUTPUT_NAME lux)
 ENDIF(NOT APPLE)
 
 #############################################################################
@@ -873,10 +874,11 @@ IF(APPLE)
 	TARGET_LINK_LIBRARIES(luxShared ${OSX_CORELIB_LINKER_FLAGS} ${LUX_LIBRARY_DEPENDS})
 	SET_TARGET_PROPERTIES(luxShared PROPERTIES OUTPUT_NAME lux)
 ELSE(APPLE)
-	ADD_LIBRARY(luxShared SHARED ${lux_cpp_api_src} ${lux_lib_hdr})
+	ADD_LIBRARY(luxShared SHARED ${lux_lib_src} ${lux_lib_hdr} ${lux_parser_src})
 	TARGET_LINK_LIBRARIES(luxShared ${LUX_LIBRARY} ${LUX_LIBRARY_DEPENDS})
 	# Make CMake output both libs with the same name
-	SET_TARGET_PROPERTIES(luxStatic luxShared PROPERTIES OUTPUT_NAME lux)
+	SET_TARGET_PROPERTIES(luxShared PROPERTIES OUTPUT_NAME lux)
+	SET_TARGET_PROPERTIES(luxShared PROPERTIES DEFINE_SYMBOL LUX_INTERNAL)
 ENDIF(APPLE)
 
 

@@ -24,6 +24,7 @@
 #define LUX_PARAMSET_H
 // paramset.h*
 #include "lux.h"
+#include "api.h"
 
 #include <boost/serialization/split_member.hpp>
 
@@ -91,7 +92,7 @@ template <class T> struct ParamSetItem {
 	T *data;
 	mutable bool lookedUp;
 };
-class  ParamSet {
+class LUX_EXPORT ParamSet {
 	friend class boost::serialization::access;
 	
 public:

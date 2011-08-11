@@ -35,7 +35,7 @@
 
 namespace lux
 {
-	extern int luxLogFilter;
+	LUX_EXPORT extern int luxLogFilter;
 	//Logging class to use when displaying infos and error, syntax :
 	//  LOG(LUX_SEVERE,LUX_NOMEM)<<"one "<<23;
 
@@ -56,10 +56,11 @@ namespace lux
 	   std::ostringstream os;
 	};
 
-	extern struct nullstream : std::ostream
+	struct nullstream : std::ostream
 	{
 		nullstream(): std::ios(0), std::ostream(0) {}
-	} nullStream;
+	};
+	extern LUX_EXPORT nullstream nullStream;
 }
 
 //LOG macro. The filtering test uses the ?: operator instead of if{}else{}

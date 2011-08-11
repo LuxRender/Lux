@@ -23,6 +23,7 @@
 #ifndef LUX_CONTEXT_H
 #define LUX_CONTEXT_H
 
+#include "api.h"
 #include "lux.h"
 #include "stats.h"
 #include "geometry/transform.h"
@@ -42,7 +43,7 @@ using std::map;
 
 namespace lux {
 
-class Context {
+class LUX_EXPORT Context {
 public:
 
 	Context(std::string n = "Lux default context") : name(n) {

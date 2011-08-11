@@ -89,7 +89,7 @@ static bool initialized = false;
 
 // API Function Definitions
 
-extern "C" void luxAddServer(const char * name)
+extern "C" LUX_EXPORT void luxAddServer(const char * name)
 {
 	Context::GetActive()->AddServer(string(name));
 }

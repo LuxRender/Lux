@@ -22,6 +22,8 @@
 
 // util.cpp*
 #include "lux.h"
+#include "api.h"
+#include "error.h"
 #include "stats.h"
 #include "timer.h"
 
@@ -227,11 +229,7 @@ unsigned int DJBHash(const std::string& str)
    return hash;
 }
 
-//error.h nullstream
-struct nullstream : std::ostream
-{
-	nullstream(): std::ios(0), std::ostream(0) {}
-} nullStream;
+LUX_EXPORT nullstream nullStream;
 
 }
 

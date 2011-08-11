@@ -24,6 +24,7 @@
 #define RENDER_SERVER_H
 
 #include "lux.h"
+#include "api.h"
 
 #include <fstream>
 #include <boost/thread/xtime.hpp>
@@ -88,7 +89,7 @@ public:
 };
 
 // Dade - network rendering server
-class RenderServer {
+class LUX_EXPORT RenderServer {
 public:
 	static const int DEFAULT_TCP_PORT = 18018;
 
