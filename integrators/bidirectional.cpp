@@ -1491,7 +1491,7 @@ bool BidirIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, l
 
 	bidirState->Terminate(scene, eyeBufferId);
 
-	*nrContribs += bidirState->contribCount;
+	*nrContribs = bidirState->contribCount;
 
 	return true;
 }
