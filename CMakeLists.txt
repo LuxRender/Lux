@@ -189,7 +189,7 @@ ADD_DEFINITIONS(-DLUX_USE_CONFIG_H)
 
 IF(APPLE)
 	# Jens - default Mac compiler options
-	ADD_DEFINITIONS(-O3 -ftree-vectorize -msse -msse2 -msse3 -mssse3 -fvariable-expansion-in-unroller -fpic -Wall -DHAVE_PTHREAD_H )
+	ADD_DEFINITIONS(-O3 -ftree-vectorize -msse -msse2 -msse3 -mssse3 -fvariable-expansion-in-unroller -Wall -DHAVE_PTHREAD_H )
 ELSEIF(MSVC)
 	# Default MSVC compiler options
 	MESSAGE(STATUS "MSVC")
