@@ -1310,7 +1310,9 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 				sampleDirectOffset, t);
 
 			BidirPathState::BidirStateVertex &eyePath = bidirState->eyePath[t];
-			bidirState->Ld[t] = SWCSpectrum(0.f);
+
+			SWCSpectrum &Ld(bidirState->Ld[t]);
+			Ld = SWCSpectrum(0.f);
 
 			if (eyePath.bsdf->NumComponents(BxDFType(BSDF_ALL & ~BSDF_SPECULAR)) > 0) {
 				float portal = sampleData[2] * nLights;
@@ -1346,12 +1348,16 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 						if (shadowRayEpsilon < length * .5f) {
 							// Store light's contribution
 							const u_int pathWeigth = t - nSpecularVertices[t];
-							bidirState->Ld[t] = eyePath.throughputWi * Li / (d2 * pathWeigth);
-							bidirState->LdGroup[t] = light->group;
+							SWCSpectrum Ld = eyePath.throughputWi * Li / (d2 * pathWeigth);
 
-							const float maxt = length - shadowRayEpsilon;
-							shadowRays[bidirState->raysCount] = Ray(p, wi, shadowRayEpsilon, maxt, sample.realTime);
-							++(bidirState->raysCount);
+							if (!Ld.Black()) {
+								bidirState->Ld[t] = Ld;
+								bidirState->LdGroup[t] = light->group;
+
+								const float maxt = length - shadowRayEpsilon;
+								shadowRays[bidirState->raysCount] = Ray(p, wi, shadowRayEpsilon, maxt, sample.realTime);
+								++(bidirState->raysCount);
+							}
 						}
 					}
 				}
@@ -1398,9 +1404,11 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 					const float G = AbsDot(eyePath.bsdf->dgShading.nn, d) * AbsDot(lightPath.bsdf->dgShading.nn, d) / length;
 					Lc = eyePath.throughputWi * ef * G * lf * lightPath.throughputWi * bidirState->Le / pathWeight;
 
-					const float maxt = length - shadowRayEpsilon;
-					shadowRays[bidirState->raysCount] = Ray(p, d, shadowRayEpsilon, maxt, bidirState->sample.realTime);
-					++(bidirState->raysCount);
+					if (!Lc.Black()) {
+						const float maxt = length - shadowRayEpsilon;
+						shadowRays[bidirState->raysCount] = Ray(p, d, shadowRayEpsilon, maxt, bidirState->sample.realTime);
+						++(bidirState->raysCount);
+					}
 				}
 			}
 		}
@@ -1447,6 +1455,8 @@ bool BidirIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, l
 					bidirState->V[lightGroup] += bidirState->Ld[t].Filter(sw); // TOFIX
 					++(bidirState->contribCount);
 				}
+
+				++rayIndex;
 			}
 		}
 	}
