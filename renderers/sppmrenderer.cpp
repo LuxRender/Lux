@@ -168,6 +168,13 @@ void SPPMRenderer::Render(Scene *s) {
 		scene->volumeIntegrator->Preprocess(rng, *scene);
 		scene->camera->film->CreateBuffers();
 
+		// Told each Buffer how to scale things
+		for(u_int bg = 0; bg < scene->camera->film->GetNumBufferGroups(); ++bg)
+		{
+			PerScreenNormalizedBufferScaled * buffer= dynamic_cast<PerScreenNormalizedBufferScaled *>(scene->camera->film->GetBufferGroup(bg).getBuffer(sppmi->bufferPhotonId));
+			buffer->scaleUpdate = new ScaleUpdaterSPPM(this);
+		}
+
 		// Dade - to support autofocus for some camera model
 		scene->camera->AutoFocus(*scene);
 
@@ -358,17 +365,18 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 	PhotonSampler * &sampler = myThread->sampler;
 	switch (renderer->sppmi->photonSamplerType) {
 		case HALTON:
-			sampler = new HaltonPhotonSampler();
+			sampler = new HaltonPhotonSampler(renderer);
 			break;
 		case AMC:
-			sampler = new AMCMCPhotonSampler();
+			sampler = new AMCMCPhotonSampler(renderer);
 			break;
 		default:
 			throw std::runtime_error("Internal error: unknown photon sampler");
 	}
-	
+
 	// Initialize the photon sample
 	Sample sample;
+	sample.contribBuffer = new ContributionBuffer(scene.camera->film->contribPool);
 	// The RNG might be used when initializing the sampler data below
 	sample.rng = myThread->threadRng;
 //	sample.camera = scene.camera->Clone(); // Unneeded for photons
@@ -468,7 +476,7 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 		//--------------------------------------------------------------
 		// Photon pass: trace photons
 		//--------------------------------------------------------------
-		sampler->TracePhotons(myThread->renderer, &sample, myThread->lightCDF);
+		sampler->TracePhotons(&sample, myThread->lightCDF);
 
 		// Wait for other threads
 		allThreadBarrier->wait();
@@ -480,16 +488,6 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 			// First thread only tasks
 			renderer->photonTracedTotal += renderer->photonTracedPass;
 			renderer->photonTracedPass = 0;
-
-			// TODO: try to abstract this in the sampler
-			if (renderer->sppmi->photonSamplerType == AMC) {
-				u_int uniformCount = 0;
-				for (u_int i = 0; i < renderer->renderThreads.size(); ++i)
-					uniformCount += dynamic_cast<AMCMCPhotonSampler*>(renderer->renderThreads[i]->sampler)->uniformCount;
-
-				renderer->accumulatedFluxScale = uniformCount / (float)renderer->photonTracedTotal;
-			} else
-				renderer->accumulatedFluxScale = 1.f;
 		}
 
 		// Wait for other threads
@@ -505,10 +503,23 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 
 		if (myThread->n == 0) {
 			hitPoints->IncPass();
-			// Update the frame buffer
-			// TODO: check if this can be done in //
-			hitPoints->UpdateFilm(renderer->photonTracedTotal, renderer->accumulatedFluxScale);
 
+			// Check for termination
+			int passCount = luxStatistics("pass");
+			int hltSpp = scene.camera->film->haltSamplesPerPixel;
+			if(hltSpp > 0){
+				if(passCount == hltSpp){
+					renderer->Terminate();
+				}
+			}
+
+			int secsElapsed = luxStatistics("secElapsed");
+			int hltTime = scene.camera->film->haltTime;
+			if(hltTime > 0){
+				if(secsElapsed > hltTime){
+					renderer->Terminate();
+				}
+			}
 			const double photonPassTime = osWallClockTime() - photonPassStartTime;
 			LOG(LUX_INFO, LUX_NOERROR) << "Photon pass time: " << photonPassTime << "secs";
 		}
@@ -525,6 +536,10 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 		hitPoints->SetHitPoints(myThread->threadRng,
 				myThread->n, renderer->renderThreads.size(), myThread->eyePassMemoryArena);
 	}
+
+	scene.camera->film->contribPool->End(sample.contribBuffer);
+	sample.contribBuffer = NULL;
+
 	sampler->FreeSample(&sample);
 	delete sampler;
 
@@ -537,6 +552,18 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 
 Renderer *SPPMRenderer::CreateRenderer(const ParamSet &params) {
 	return new SPPMRenderer();
+}
+
+float SPPMRenderer::GetScaleFactor() const
+{
+	if (sppmi->photonSamplerType == AMC) {
+		u_int uniformCount = 0;
+		for (u_int i = 0; i < renderThreads.size(); ++i)
+			uniformCount += dynamic_cast<AMCMCPhotonSampler*>(renderThreads[i]->sampler)->uniformCount;
+
+		return uniformCount / ((float)photonTracedTotal + (float)photonTracedPass);
+	} else
+		return 1.f;
 }
 
 static DynamicLoader::RegisterRenderer<SPPMRenderer> r("sppm");

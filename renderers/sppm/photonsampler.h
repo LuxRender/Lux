@@ -38,10 +38,11 @@ enum PhotonSamplerType {
 	HALTON, AMC
 };
 
+
 class PhotonSampler : public Sampler {
 public:
-	PhotonSampler():
-		Sampler(0, 0, 0, 0, 0) { }
+	PhotonSampler(SPPMRenderer *sppmr):
+		Sampler(0, 0, 0, 0, 0), renderer(sppmr) { }
 	virtual ~PhotonSampler() { }
 	virtual u_int GetTotalSamplePos() { return 0; }
 	virtual u_int RoundSize(u_int size) const { return size; }
@@ -54,34 +55,29 @@ public:
 	virtual float *GetLazyValues(const Sample &sample, u_int num, u_int pos) = 0;
 
 
-	static void AddFluxToHitPoint(const u_int lightGroup, HitPoint * const hp, const XYZColor flux)
-	{
-		// TODO: it should be more something like:
-		//XYZColor flux = XYZColor(sw, photonFlux * f) * XYZColor(hp->sample->swl, hp->eyeThroughput);
-		osAtomicInc(&hp->accumPhotonCount);
-		XYZColorAtomicAdd(hp->lightGroupData[lightGroup].accumReflectedFlux, flux);
-	};
+	void AddFluxToHitPoint(const Sample *sample, const u_int lightGroup, HitPoint * const hp, const XYZColor flux);
 
 	// TODO: remove the arguments to get a coherent Sample;:AddSample(const Sample &sample) API
-	virtual void AddSample(const Sample &sample, const u_int lightGroup, HitPoint * const hp, const XYZColor flux)
+	virtual void AddSample(const Sample *sample, const u_int lightGroup, HitPoint * const hp, const XYZColor flux)
 	{
-		AddFluxToHitPoint(lightGroup, hp, flux);
+		AddFluxToHitPoint(sample, lightGroup, hp, flux);
 	}
 
 	virtual void TracePhotons(
-		SPPMRenderer *renderer,
 		Sample *sample,
 		Distribution1D *lightCDF
 		);
 
 	void TracePhoton(
-		SPPMRenderer *renderer, 
 		Sample *sample,
 		Distribution1D *lightCDF
 		);
 
-	void IncPhoton(SPPMRenderer * const renderer) const;
-	bool ContinueTracing(SPPMRenderer * const renderer) const;
+	void IncPhoton() const;
+	bool ContinueTracing() const;
+
+private:
+	SPPMRenderer *renderer;
 };
 
 //------------------------------------------------------------------------------
@@ -141,7 +137,7 @@ public:
 		u_int pathCount;
 		float **values;
 	};
-	HaltonPhotonSampler() : PhotonSampler() { }
+	HaltonPhotonSampler(SPPMRenderer *renderer) : PhotonSampler(renderer) { }
 	virtual ~HaltonPhotonSampler() { }
 
 	virtual void InitSample(Sample *sample) const {
@@ -247,7 +243,7 @@ public:
 		float **values;
 		u_int n;
 	};
-	UniformPhotonSampler() : PhotonSampler() {}
+	UniformPhotonSampler(SPPMRenderer *renderer) : PhotonSampler(renderer) {}
 	virtual ~UniformPhotonSampler() { }
 
 	virtual void InitSample(Sample *sample) const {
@@ -317,10 +313,6 @@ class AMCMCPhotonSampler : public UniformPhotonSampler
 			HitPoint *hitPoint;
 		};
 
-		enum State {
-			SAMPLING_CURRENT, SAMPLING_UNIFORM, SAMPLING_CANDIDATE
-		};
-
 		struct AMCMCPath : public std::vector <SplatNode> {
 			AMCMCPhotonSamplerData* data;
 
@@ -330,14 +322,14 @@ class AMCMCPhotonSampler : public UniformPhotonSampler
 			}
 
 			// TODO: experiment and add a splatCount like Dade previously did
-			void Splat() const
+			void Splat(const Sample *sample, PhotonSampler *sampler) const
 			{
 				for (AMCMCPath::const_iterator iter = begin(); iter != end(); ++iter)
-					PhotonSampler::AddFluxToHitPoint(iter->lightGroup, iter->hitPoint, iter->flux);
+					sampler->AddFluxToHitPoint(sample, iter->lightGroup, iter->hitPoint, iter->flux);
 			}
 		};
 
-		AMCMCPhotonSampler() : UniformPhotonSampler()
+		AMCMCPhotonSampler(SPPMRenderer *renderer) : UniformPhotonSampler(renderer)
 		{
 			mutationSize = 1.f;
 			accepted = 1;
@@ -376,13 +368,12 @@ class AMCMCPhotonSampler : public UniformPhotonSampler
 			std::swap(pathCurrent, pathCandidate);
 		}
 
-		virtual void AddSample(const Sample &sample, const u_int lightGroup, HitPoint * const hp, const XYZColor flux)
+		virtual void AddSample(const Sample *sample, const u_int lightGroup, HitPoint * const hp, const XYZColor flux)
 		{
 			pathCandidate->push_back(SplatNode(lightGroup, flux, hp));
 		}
 
 	virtual void TracePhotons(
-		SPPMRenderer *renderer,
 		Sample *sample,
 		Distribution1D *lightCDF
 		);
@@ -393,7 +384,6 @@ class AMCMCPhotonSampler : public UniformPhotonSampler
 		u_int accepted;
 		u_int mutated;
 
-		State state;
 		mutable AMCMCPath *pathCurrent, *pathCandidate;
 		mutable AMCMCPath paths[2];
 

@@ -64,7 +64,7 @@ void HitPointsLookUpAccel::AddFluxToHitPoint(Sample &sample, HitPoint *hp,
 
 	XYZColor flux = XYZColor(sw, photonFlux * f * hpep.pathThroughput) * Ekernel(dist2, hp->accumPhotonRadius2);
 
-	dynamic_cast<PhotonSampler *>(sample.sampler)->AddSample(sample, lightGroup, hp, flux);
+	dynamic_cast<PhotonSampler *>(sample.sampler)->AddSample(&sample, lightGroup, hp, flux);
 }
 
 void HashCell::AddFlux(Sample& sample, HitPointsLookUpAccel *accel, const Point &hitPoint,

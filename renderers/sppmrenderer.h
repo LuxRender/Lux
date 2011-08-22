@@ -93,7 +93,6 @@ private:
 //------------------------------------------------------------------------------
 // SPPMRenderer
 //------------------------------------------------------------------------------
-
 class SPPMRenderer : public Renderer {
 public:
 	SPPMRenderer();
@@ -133,7 +132,22 @@ public:
 		return ((state == TERMINATE) || boost::this_thread::interruption_requested());
 	}
 
+	float GetScaleFactor() const;
+
 private:
+
+	class ScaleUpdaterSPPM : public PerScreenNormalizedBufferScaled::ScaleUpdateInterface
+	{
+		public:
+			ScaleUpdaterSPPM(SPPMRenderer *renderer_): renderer(renderer_) {}
+
+			virtual float GetScaleFactor()
+			{
+				return renderer->GetScaleFactor();
+			}
+
+			SPPMRenderer *renderer;
+	};
 	//--------------------------------------------------------------------------
 	// Render threads
 	//--------------------------------------------------------------------------

@@ -39,17 +39,6 @@ enum HitPointType {
 	SURFACE, CONSTANT_COLOR
 };
 
-class HitPointLightGroup {
-public:
-	XYZColor reflectedFlux;
-	XYZColor accumReflectedFlux;
-	XYZColor accumRadiance;
-
-	// Debug code
-	// Radiance Sum Square Error, used to compute Mean Square Error
-	//float radianceSSE;
-};
-
 class HitPointEyePass {
 public:
 	HitPointType type;
@@ -71,9 +60,8 @@ public:
 	// Used to render eye pass n+1 while doing photon pass n
 	HitPointEyePass eyePass;
 
-	vector<HitPointLightGroup> lightGroupData;
-	
 	float accumPhotonRadius2;
+	float imageX, imageY;
 
 	unsigned long long photonCount;
 	u_int accumPhotonCount;
@@ -248,8 +236,6 @@ public:
 	void RefreshAccelParallel(const u_int index, const u_int count) {
 		lookUpAccel->RefreshParallel(index, count);
 	}
-
-	void UpdateFilm(const unsigned long long totalPhotons, const float fluxScale);
 
 private:
 	void TraceEyePath(HitPoint *hp, const Sample &sample, MemoryArena &arena);

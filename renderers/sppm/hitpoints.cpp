@@ -70,24 +70,11 @@ HitPoints::HitPoints(SPPMRenderer *engine, RandomGenerator *rng)  {
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Hit points count: " << hitPoints->size();
 
 	// Initialize hit points field
-	const u_int lightGroupsNumber = scene->lightGroups.size();
-
 	for (u_int i = 0; i < (*hitPoints).size(); ++i) {
 		HitPoint *hp = &(*hitPoints)[i];
 
-		hp->lightGroupData.resize(lightGroupsNumber);
 		hp->photonCount = 0;
 		hp->accumPhotonCount = 0;
-
-		for(u_int j = 0; j < lightGroupsNumber; j++) {
-			hp->lightGroupData[j].reflectedFlux = XYZColor();
-
-			// hp->accumPhotonRadius2 is initialized in the Init() method
-			hp->lightGroupData[j].accumReflectedFlux = XYZColor();
-			hp->lightGroupData[j].accumRadiance = XYZColor();
-			// Debug code
-			//hp->lightGroupData[j].radianceSSE = 0.f;
-		}
 	}
 }
 
@@ -173,8 +160,6 @@ void HitPoints::AccumulateFlux(const u_int index, const u_int count) {
 
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Accumulate photons flux: " << first << " to " << last - 1;
 
-	const u_int lightGroupsNumber = renderer->scene->lightGroups.size();
-
 	for (u_int i = first; i < last; ++i) {
 		HitPoint *hp = &(*hitPoints)[i];
 		HitPointEyePass *hpep = &hp->eyePass;
@@ -210,14 +195,6 @@ void HitPoints::AccumulateFlux(const u_int index, const u_int count) {
 				// Radius reduction
 				hp->accumPhotonRadius2 *= g;
 
-				// Update light group flux
-				for (u_int j = 0; j < lightGroupsNumber; ++j) {
-					// NOTE: the stored flux is already normalized, so no need to multiply by g
-					hp->lightGroupData[j].reflectedFlux += hp->lightGroupData[j].accumReflectedFlux;
-
-					hp->lightGroupData[j].accumReflectedFlux = 0.f;
-				}
-
 				hp->photonCount = pcount;
 				hp->accumPhotonCount = 0;
 			}
@@ -241,7 +218,7 @@ void HitPoints::SetHitPoints(RandomGenerator *rng, const u_int index, const u_in
 	Scene &scene(*renderer->scene);
 
 	Sample sample;
-	sample.contribBuffer = NULL;
+	sample.contribBuffer = new ContributionBuffer(scene.camera->film->contribPool);
 	sample.camera = scene.camera->Clone();
 	sample.realTime = 0.f;
 	sample.rng = rng;
@@ -268,8 +245,14 @@ void HitPoints::SetHitPoints(RandomGenerator *rng, const u_int index, const u_in
 		// Trace the eye path
 		TraceEyePath(hp, sample, arena);
 
+		eyeSampler->AddSample(sample);
+		hp->imageX = sample.imageX;
+		hp->imageY = sample.imageY;
+
 		sample.arena.FreeAll();
 	}
+	scene.camera->film->contribPool->End(sample.contribBuffer);
+	sample.contribBuffer = NULL;
 	eyeSampler->FreeSample(&sample);
 	//delete sample.camera; //FIXME deleting the camera clone would delete the film!
 }
@@ -292,6 +275,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, MemoryArena &hp
 	const float rayWeight = sample.camera->GenerateRay(scene, sample, &ray);
 
 	const float nLights = scene.lights.size();
+
 	SWCSpectrum pathThroughput(1.f);
 	const u_int lightGroupCount = scene.lightGroups.size();
 	vector<SWCSpectrum> L(lightGroupCount, 0.f);
@@ -413,7 +397,9 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, MemoryArena &hp
 		volume = bsdf->GetVolume(wi);
 	}
 	for(unsigned int j = 0; j < lightGroupCount; ++j)
-		hp->lightGroupData[j].accumRadiance += XYZColor(sw, L[j] * rayWeight);
+		sample.AddContribution(sample.imageX, sample.imageY,
+			XYZColor(sw, L[j] * rayWeight), hp->eyePass.alpha, hp->eyePass.distance,
+			0, renderer->sppmi->bufferEyeId, j);
 }
 
 void HitPoints::UpdatePointsInformation() {
@@ -465,94 +451,4 @@ void HitPoints::UpdatePointsInformation() {
 
 	hitPointBBox = bbox;
 	maxHitPointRadius2 = maxr2;
-}
-
-void HitPoints::UpdateFilm(const unsigned long long totalPhotons, const float fluxScale) {
-	Scene &scene(*renderer->scene);
-	const u_int bufferId = renderer->sppmi->bufferId;
-	int xPos, yPos;
-	const u_int lightGroupsNumber = scene.lightGroups.size();
-	Film &film(*scene.camera->film);
-
-	/*if (renderer->sppmi->dbg_enableradiusdraw) {
-		// Draw the radius of hit points
-		XYZColor c;
-		for (u_int i = 0; i < GetSize(); ++i) {
-			HitPoint *hp = GetHitPoint(i);
-			pixelSampler->GetNextPixel(&xPos, &yPos, i);
-
-			for(u_int j = 0; j < lightGroupsNumber; j++) {
-				if (hp->lightGroupData[j].surfaceHitsCount > 0)
-					c.c[1] = sqrtf(hp->accumPhotonRadius2) / initialPhotonRadius;
-				else
-					c.c[1] = 0;
-
-				Contribution contrib(xPos, yPos, c, hp->eyeAlpha,
-						hp->eyeDistance, 0.f, bufferId, j);
-				film.SetSample(&contrib);
-			}
-		}
-	} else if (renderer->sppmi->dbg_enablemsedraw) {
-		// Draw the radius of hit points
-		XYZColor c;
-		for (u_int i = 0; i < GetSize(); ++i) {
-			HitPoint *hp = GetHitPoint(i);
-			pixelSampler->GetNextPixel(&xPos, &yPos, i);
-
-			for(u_int j = 0; j < lightGroupsNumber; j++) {
-				// Radiance Mean Square Error
-				c.c[1] = hp->lightGroupData[j].radianceSSE /
-						(hp->lightGroupData[j].constantHitsCount + hp->lightGroupData[j].surfaceHitsCount);
-
-				Contribution contrib(xPos, yPos, c, hp->eyeAlpha,
-						hp->eyeDistance, 0.f, bufferId, j);
-				film.SetSample(&contrib);
-			}
-		}
-	} else {*/
-		// Just normal rendering
-		
-		const double k = fluxScale / totalPhotons;
-
-		for (u_int i = 0; i < GetSize(); ++i) {
-			HitPoint *hp = &(*hitPoints)[i];
-			HitPointEyePass *hpep = &hp->eyePass;
-			static_cast<HaltonEyeSampler *>(eyeSampler)->pixelSampler->GetNextPixel(&xPos, &yPos, i); //FIXME shouldn't access directly sampler data
-
-			// Update radiance
-			for(u_int j = 0; j < lightGroupsNumber; ++j) {
-
-				const XYZColor newRadiance = hp->lightGroupData[j].accumRadiance / currentPass +
-						hp->lightGroupData[j].reflectedFlux * k;
-
-				Contribution contrib(xPos, yPos, newRadiance, hpep->alpha,
-						hpep->distance, 0.f, bufferId, j);
-				film.SetSample(&contrib);
-					// Debug code
-					/*// Update Sum Square Error statistic
-					if (hitCount > 1) {
-						const float v = newRadiance.Y() - hp->lightGroupData[j].radiance.Y();
-						hp->lightGroupData[j].radianceSSE += v * v;
-					}*/
-			}
-		}
-	//}
-
-	scene.camera->film->CheckWriteOuputInterval();
-
-	int passCount = luxStatistics("pass");
-	int hltSpp = scene.camera->film->haltSamplesPerPixel;
-	if(hltSpp > 0){
-		if(passCount == hltSpp){
-			renderer->Terminate();
-		}
-	}
-	
-	int secsElapsed = luxStatistics("secElapsed");
-	int hltTime = scene.camera->film->haltTime;
-	if(hltTime > 0){
-		if(secsElapsed > hltTime){
-			renderer->Terminate();
-		}
-	}
 }

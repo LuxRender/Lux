@@ -34,7 +34,6 @@
 using namespace lux;
 
 SPPMIntegrator::SPPMIntegrator() {
-	bufferId = 0;
 	AddStringConstant(*this, "name", "Name of current surface integrator", "sppm");
 }
 
@@ -42,10 +41,8 @@ SPPMIntegrator::~SPPMIntegrator() {
 }
 
 void SPPMIntegrator::Preprocess(const RandomGenerator &rng, const Scene &scene) {
-	// Prepare image buffers
-	BufferType type = BUF_TYPE_PER_PIXEL;
-	scene.sampler->GetBufferType(&type);
-	bufferId = scene.camera->film->RequestBuffer(type, BUF_FRAMEBUFFER, "eye");
+	bufferPhotonId = scene.camera->film->RequestBuffer(BUF_TYPE_PER_SCREEN_SCALED, BUF_FRAMEBUFFER, "photons");
+	bufferEyeId = scene.camera->film->RequestBuffer(BUF_TYPE_PER_PIXEL, BUF_FRAMEBUFFER, "eye");
 	scene.camera->film->CreateBuffers();
 }
 

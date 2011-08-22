@@ -50,6 +50,7 @@ enum ImageType {
 enum BufferType {
     BUF_TYPE_PER_PIXEL = 0, // Per pixel normalized buffer
     BUF_TYPE_PER_SCREEN, // Per screen normalized buffer
+    BUF_TYPE_PER_SCREEN_SCALED, // Per screen with custom normalisation factor. Internal use of SPPM
     BUF_TYPE_RAW, // No normalization
     NUM_OF_BUFFER_TYPES
 };
@@ -290,6 +291,56 @@ private:
 	const double *numberOfSamples_;
 };
 
+// this buffer is used by SPPM
+// It is a copyPaste of PerScreenNormalizedBuffer, but without the x*y
+// normalization facter and with added a custom normalisation factor.
+class PerScreenNormalizedBufferScaled : public Buffer {
+public:
+	PerScreenNormalizedBufferScaled(u_int x, u_int y, const double *samples) :
+		Buffer(x, y), numberOfSamples_(samples) { }
+
+	virtual ~PerScreenNormalizedBufferScaled() {}
+
+	virtual void GetData(XYZColor *color, float *alpha) const {
+		const float inv = static_cast<float>(1.0f / *numberOfSamples_);
+		for (u_int y = 0, offset = 0; y < yPixelCount; ++y) {
+			for (u_int x = 0; x < xPixelCount; ++x, ++offset) {
+				const Pixel &pixel = (*pixels)(x, y);
+				color[offset] = pixel.L * inv;
+				if (pixel.weightSum > 0.f)
+					alpha[offset] = pixel.alpha / pixel.weightSum;
+				else
+					alpha[offset] = 0.f;
+			}
+		}
+	}
+	virtual float GetData(u_int x, u_int y, XYZColor *color, float *alpha) const {
+		if(x == 0 && y == 0)
+			scale = scaleUpdate->GetScaleFactor();
+
+		const Pixel &pixel = (*pixels)(x, y);
+		if (pixel.weightSum > 0.f) {
+			*color = pixel.L * static_cast<float>(scale / *numberOfSamples_);
+			*alpha = pixel.alpha;
+		} else {
+			*color = XYZColor(0.f);
+			*alpha = 0.f;
+		}
+		return pixel.weightSum;
+	}
+
+	class ScaleUpdateInterface
+	{
+		public:
+			virtual float GetScaleFactor() = 0;
+	};
+	const double *numberOfSamples_;
+
+	ScaleUpdateInterface *scaleUpdate;
+private:
+	mutable float scale;
+};
+
 
 class BufferGroup {
 public:
@@ -310,6 +361,9 @@ public:
 				break;
 			case BUF_TYPE_PER_SCREEN:
 				buffers.push_back(new PerScreenNormalizedBuffer(x, y, &numberOfSamples));
+				break;
+			case BUF_TYPE_PER_SCREEN_SCALED:
+				buffers.push_back(new PerScreenNormalizedBufferScaled(x, y, &numberOfSamples));
 				break;
 			case BUF_TYPE_RAW:
 				buffers.push_back(new RawBuffer(x, y));

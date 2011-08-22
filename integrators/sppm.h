@@ -56,7 +56,7 @@ public:
 	u_int photonPerPass;
 	u_int photonStartK;
 
-	u_int sampleOffset, bufferId;
+	u_int sampleOffset, bufferPhotonId, bufferEyeId;
 	bool includeEnvironment;
 
 	// Few debugging options

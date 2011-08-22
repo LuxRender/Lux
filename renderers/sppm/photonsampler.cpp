@@ -34,7 +34,7 @@ using namespace lux;
 
 // Photon tracing
 
-bool PhotonSampler::ContinueTracing(SPPMRenderer * const renderer) const
+bool PhotonSampler::ContinueTracing() const
 {
 	if(renderer->paused())
 		return false;
@@ -42,16 +42,26 @@ bool PhotonSampler::ContinueTracing(SPPMRenderer * const renderer) const
 	return renderer->photonTracedPass < renderer->sppmi->photonPerPass;
 }
 
-void PhotonSampler::IncPhoton(SPPMRenderer * const renderer) const
+void PhotonSampler::IncPhoton() const
 {
 	osAtomicInc(&renderer->photonTracedPass);
 }
+
+void PhotonSampler::AddFluxToHitPoint(const Sample *sample, const u_int lightGroup, HitPoint * const hp, const XYZColor flux)
+{
+	// TODO: it should be more something like:
+	//XYZColor flux = XYZColor(sw, photonFlux * f) * XYZColor(hp->sample->swl, hp->eyeThroughput);
+	osAtomicInc(&hp->accumPhotonCount);
+
+	sample->AddContribution(hp->imageX, hp->imageY,
+		flux, hp->eyePass.alpha, hp->eyePass.distance,
+		0, renderer->sppmi->bufferPhotonId, lightGroup);
+};
 //------------------------------------------------------------------------------
 // Tracing photons for Photon Sampler
 //------------------------------------------------------------------------------
 
 void PhotonSampler::TracePhoton(
-	SPPMRenderer *renderer,
 	Sample *sample,
 	Distribution1D *lightCDF)
 {
@@ -75,6 +85,7 @@ void PhotonSampler::TracePhoton(
 	if (!light->SampleL(scene, *sample, u[0], u[1],
 		GetOneD(*sample, 1, 0), &bsdf, &pdf, &alpha))
 		return;
+
 	Ray photonRay;
 	photonRay.o = bsdf->dgShading.p;
 	float pdf2;
@@ -148,17 +159,17 @@ void PhotonSampler::TracePhoton(
 //------------------------------------------------------------------------------
 
 void PhotonSampler::TracePhotons(
-		SPPMRenderer *renderer,
 		Sample *sample,
 		Distribution1D *lightCDF)
 {
-	while(ContinueTracing(renderer))
+	while(ContinueTracing())
 	{
 		GetNextSample(sample);
 
-		IncPhoton(renderer);
-		TracePhoton(renderer, sample, lightCDF);
+		IncPhoton();
+		TracePhoton(sample, lightCDF);
 
+		dynamic_cast<Sampler*>(this)->AddSample(*sample);
 	}
 }
 
@@ -171,7 +182,6 @@ void PhotonSampler::TracePhotons(
 //------------------------------------------------------------------------------
 
 void AMCMCPhotonSampler::TracePhotons(
-		SPPMRenderer *renderer,
 		Sample *sample,
 		Distribution1D *lightCDF)
 {
@@ -179,17 +189,17 @@ void AMCMCPhotonSampler::TracePhotons(
 	do
 	{
 		GetNextSample(sample, true);
-		TracePhoton(renderer, sample, lightCDF);
+		TracePhoton(sample, lightCDF);
 	} while(!pathCandidate->isVisible());
 
 	swap(); // Current = Candidate
 
-	while(ContinueTracing(renderer)) {
-		IncPhoton(renderer);
+	while(ContinueTracing()) {
+		IncPhoton();
 
 		// Sample Uniform
 		GetNextSample(sample, true);
-		TracePhoton(renderer, sample, lightCDF);
+		TracePhoton(sample, lightCDF);
 
 		if(pathCandidate->isVisible())
 		{
@@ -202,7 +212,7 @@ void AMCMCPhotonSampler::TracePhotons(
 
 			// Sample mutated
 			GetNextSample(sample, false);
-			TracePhoton(renderer, sample, lightCDF);
+			TracePhoton(sample, lightCDF);
 
 			if(pathCandidate->isVisible())
 			{
@@ -214,7 +224,8 @@ void AMCMCPhotonSampler::TracePhotons(
 			mutationSize += (R - 0.234f) / mutated;
 
 		}
-		pathCurrent->Splat();
+		pathCurrent->Splat(sample, this);
+		dynamic_cast<Sampler*>(this)->AddSample(*sample);
 	}
 
 	LOG(LUX_DEBUG, LUX_NOERROR) << "AMCMC mutationSize " << mutationSize << " accepted " << accepted << " mutated " << mutated << " uniform " << uniformCount;
