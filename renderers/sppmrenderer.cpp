@@ -234,11 +234,13 @@ void SPPMRenderer::Render(Scene *s) {
 void SPPMRenderer::Pause() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 	state = PAUSE;
+	s_Timer.Stop();
 }
 
 void SPPMRenderer::Resume() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 	state = RUN;
+	s_Timer.Start();
 }
 
 void SPPMRenderer::Terminate() {
