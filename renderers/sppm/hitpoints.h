@@ -238,7 +238,7 @@ public:
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup) {
 		lookUpAccel->AddFlux(sample, hitPoint, wi, sw, photonFlux, lightGroup);
 	}
-	void AccumulateFlux(const float fluxScale, const u_int index, const u_int count);
+	void AccumulateFlux(const u_int index, const u_int count);
 	void SetHitPoints(RandomGenerator *rng,	const u_int index, const u_int count, MemoryArena& arena);
 
 	void RefreshAccelMutex() {
@@ -249,7 +249,7 @@ public:
 		lookUpAccel->RefreshParallel(index, count);
 	}
 
-	void UpdateFilm(const unsigned long long totalPhotons);
+	void UpdateFilm(const unsigned long long totalPhotons, const float fluxScale);
 
 private:
 	void TraceEyePath(HitPoint *hp, const Sample &sample, MemoryArena &arena);

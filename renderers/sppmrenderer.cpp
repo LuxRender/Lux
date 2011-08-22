@@ -477,25 +477,25 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 		if (myThread->n == 0) {
 			renderer->photonHitEfficiency = renderer->hitPoints->GetPhotonHitEfficency();
 
+			// First thread only tasks
+			renderer->photonTracedTotal += renderer->photonTracedPass;
+			renderer->photonTracedPass = 0;
+
 			// TODO: try to abstract this in the sampler
 			if (renderer->sppmi->photonSamplerType == AMC) {
 				u_int uniformCount = 0;
 				for (u_int i = 0; i < renderer->renderThreads.size(); ++i)
 					uniformCount += dynamic_cast<AMCMCPhotonSampler*>(renderer->renderThreads[i]->sampler)->uniformCount;
 
-				renderer->accumulatedFluxScale = uniformCount / (float)renderer->photonTracedPass;
+				renderer->accumulatedFluxScale = uniformCount / (float)renderer->photonTracedTotal;
 			} else
 				renderer->accumulatedFluxScale = 1.f;
-
-			// First thread only tasks
-			renderer->photonTracedTotal += renderer->photonTracedPass;
-			renderer->photonTracedPass = 0;
 		}
 
 		// Wait for other threads
 		allThreadBarrier->wait();
 
-		hitPoints->AccumulateFlux(renderer->accumulatedFluxScale, myThread->n, renderer->renderThreads.size());
+		hitPoints->AccumulateFlux(myThread->n, renderer->renderThreads.size());
 
 		// Wait for other threads
 		allThreadBarrier->wait();
@@ -507,7 +507,7 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 			hitPoints->IncPass();
 			// Update the frame buffer
 			// TODO: check if this can be done in //
-			hitPoints->UpdateFilm(renderer->photonTracedTotal);
+			hitPoints->UpdateFilm(renderer->photonTracedTotal, renderer->accumulatedFluxScale);
 
 			const double photonPassTime = osWallClockTime() - photonPassStartTime;
 			LOG(LUX_INFO, LUX_NOERROR) << "Photon pass time: " << photonPassTime << "secs";

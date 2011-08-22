@@ -337,7 +337,12 @@ class AMCMCPhotonSampler : public UniformPhotonSampler
 			}
 		};
 
-		AMCMCPhotonSampler() : UniformPhotonSampler() {
+		AMCMCPhotonSampler() : UniformPhotonSampler()
+		{
+			mutationSize = 1.f;
+			accepted = 1;
+			mutated = 0;
+			uniformCount = 1;
 		}
 		virtual ~AMCMCPhotonSampler() { }
 

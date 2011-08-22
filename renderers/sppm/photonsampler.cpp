@@ -175,11 +175,6 @@ void AMCMCPhotonSampler::TracePhotons(
 		Sample *sample,
 		Distribution1D *lightCDF)
 {
-	mutationSize = 1.f;
-	accepted = 1;
-	mutated = 0;
-	uniformCount = 1;
-
 	// Sample uniform
 	do
 	{

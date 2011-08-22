@@ -164,7 +164,7 @@ void HitPoints::Init() {
 	}
 }
 
-void HitPoints::AccumulateFlux(const float fluxScale, const u_int index, const u_int count) {
+void HitPoints::AccumulateFlux(const u_int index, const u_int count) {
 	const unsigned int workSize = hitPoints->size() / count;
 	const unsigned int first = workSize * index;
 	const unsigned int last = (index == count - 1) ? hitPoints->size() : (first + workSize);
@@ -213,7 +213,7 @@ void HitPoints::AccumulateFlux(const float fluxScale, const u_int index, const u
 				// Update light group flux
 				for (u_int j = 0; j < lightGroupsNumber; ++j) {
 					// NOTE: the stored flux is already normalized, so no need to multiply by g
-					hp->lightGroupData[j].reflectedFlux += fluxScale * hp->lightGroupData[j].accumReflectedFlux;
+					hp->lightGroupData[j].reflectedFlux += hp->lightGroupData[j].accumReflectedFlux;
 
 					hp->lightGroupData[j].accumReflectedFlux = 0.f;
 				}
@@ -467,7 +467,7 @@ void HitPoints::UpdatePointsInformation() {
 	maxHitPointRadius2 = maxr2;
 }
 
-void HitPoints::UpdateFilm(const unsigned long long totalPhotons) {
+void HitPoints::UpdateFilm(const unsigned long long totalPhotons, const float fluxScale) {
 	Scene &scene(*renderer->scene);
 	const u_int bufferId = renderer->sppmi->bufferId;
 	int xPos, yPos;
@@ -511,12 +511,14 @@ void HitPoints::UpdateFilm(const unsigned long long totalPhotons) {
 		}
 	} else {*/
 		// Just normal rendering
+		
+		const double k = fluxScale / totalPhotons;
+
 		for (u_int i = 0; i < GetSize(); ++i) {
 			HitPoint *hp = &(*hitPoints)[i];
 			HitPointEyePass *hpep = &hp->eyePass;
 			static_cast<HaltonEyeSampler *>(eyeSampler)->pixelSampler->GetNextPixel(&xPos, &yPos, i); //FIXME shouldn't access directly sampler data
 
-			const double k = 1.f / totalPhotons;
 			// Update radiance
 			for(u_int j = 0; j < lightGroupsNumber; ++j) {
 
