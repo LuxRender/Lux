@@ -271,7 +271,7 @@ void StatsData::updateSPPM(const bool add_total) {
 		int threadCount = ctx->Statistics("threadCount");	// %2
 		u_int pass = ctx->Statistics("pass");	// %3
 		double local_p = ctx->Statistics("photonCount"); // %5
-		double local_pps = ctx->Statistics("photonCount") / secelapsed; // %7
+		double local_pps = ctx->Statistics("photonPerSecond"); // %7
 		double local_peff = ctx->Statistics("hitPointsUpdateEfficiency"); // %9
 
 		formattedStatsString = str(stats_formatter

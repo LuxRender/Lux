@@ -282,6 +282,18 @@ double SPPMRenderer::Statistics(const string &statName) {
 		return (hitPoints) ? double(hitPoints->GetPassCount()) : 0.0;
 	} else if (statName == "photonCount") {
 		return double(photonTracedTotal + photonTracedPass);
+	} else if (statName == "photonPerSecond")
+	{
+		int delta = photonTracedPass - last_pps_photons;
+		double new_time = osWallClockTime();
+		if(delta < 0)
+			return 0.0;
+
+		double res =  delta / (new_time - last_pps_time);
+		last_pps_photons = photonTracedPass;
+		last_pps_time = osWallClockTime();
+
+		return res;
 	} else if (statName == "hitPointsUpdateEfficiency") {
 		return photonHitEfficiency;
 	} else {
@@ -436,7 +448,11 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 
 		double photonPassStartTime = 0.0;
 		if (myThread->n == 0)
+		{
 			photonPassStartTime = osWallClockTime();
+			renderer->last_pps_photons = renderer->photonTracedPass;
+			renderer->last_pps_time = osWallClockTime();
+		}
 		
 		// Initialize new wavelengths and time
 		sample.wavelengths = hitPoints->GetWavelengthSample();

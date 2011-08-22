@@ -171,6 +171,7 @@ private:
 	SPPMIntegrator *sppmi;
 	HitPoints *hitPoints;
 
+	// Statistics
 	double photonHitEfficiency;
 
 	// Store number of photon traced by lightgroup
@@ -180,6 +181,8 @@ private:
 	// Used by AMC Photon Sampler
 	// TODO: try to remove this stuff
 	float accumulatedFluxScale;
+	double last_pps_time;
+	u_int last_pps_photons;
 
 	fast_mutex sampPosMutex;
 	u_int sampPos;
