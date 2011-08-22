@@ -34,12 +34,14 @@
 #include "color.h"
 #include "film.h"
 #include "osfunc.h"
+#include "streamio.h"
 
 #include <fstream>
 #include <sstream>
 #include <boost/asio.hpp>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/bind.hpp>
+#include <boost/iostreams/stream.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filtering_streambuf.hpp>
 #include <boost/iostreams/copy.hpp>
@@ -390,14 +392,18 @@ void RenderFarm::updateFilm(Scene *scene) {
 			stream << serverInfoList[i].sid << std::endl;
 
 			// Receive the film in a compressed format
-			std::stringstream compressedStream(std::stringstream::in |
-					std::stringstream::out | std::stringstream::binary);
+			//std::stringstream compressedStream(std::stringstream::in |
+			//		std::stringstream::out | std::stringstream::binary);
+			multibuffer_device mbdev;
+			boost::iostreams::stream<multibuffer_device> compressedStream(mbdev);
 
 			compressedStream << stream.rdbuf();
 
 			stream.close();
 
 			std::streampos compressedSize = compressedStream.tellp();
+
+			compressedStream.seekg(0, BOOST_IOS::beg);
 
 			// Decopress and merge the film
 			const double sampleCount = film->UpdateFilm(compressedStream);

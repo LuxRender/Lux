@@ -32,6 +32,7 @@
 #include "stats.h"
 #include "blackbodyspd.h"
 #include "osfunc.h"
+#include "streamio.h"
 
 #include <iostream>
 #include <fstream>
@@ -1550,19 +1551,24 @@ bool Film::TransmitFilm(
 	bool transmitError = false;
 
 	if (!directWrite) {
-		std::stringstream ss(std::stringstream::in | std::stringstream::out | std::stringstream::binary);
-		totNumberOfSamples = DoTransmitFilm(ss, clearBuffers, transmitParams);
+		//std::stringstream ss(std::stringstream::in | std::stringstream::out | std::stringstream::binary);
+		multibuffer_device mbdev;
+		boost::iostreams::stream<multibuffer_device> ms(mbdev);
 
-		transmitError = !ss.good();
+		totNumberOfSamples = DoTransmitFilm(ms, clearBuffers, transmitParams);
+
+		transmitError = !ms.good();
 		
+		ms.seekg(0, BOOST_IOS::beg);
+
 		if (!transmitError) {
 			if (useCompression) {
 				filtering_streambuf<input> in;
 				in.push(gzip_compressor(4));
-				in.push(ss);
+				in.push(ms);
 				size = boost::iostreams::copy(in, stream);
 			} else {
-				size = boost::iostreams::copy(ss, stream);
+				size = boost::iostreams::copy(ms, stream);
 			}
 			// ignore how the copy to stream goes for now, as
 			// direct writing won't help with that

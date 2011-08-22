@@ -497,6 +497,7 @@ SET(lux_core_hdr
 	core/spectrum.h
 	core/spectrumwavelengths.h
 	core/stats.h
+	core/streamio.h
 	core/texture.h
 	core/texturecolor.h
 	core/tgaio.h
