@@ -409,12 +409,17 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 
 	allThreadBarrier->wait();
 
+	renderer->paused(); // no return because we are not in the loop
+
 	if (myThread->n == 0)
 		hitPoints->Init();
-	
+
 	// Trace rays: The main loop
 	while (true) {
 		allThreadBarrier->wait();
+
+		if(renderer->paused())
+			break;
 
 		if (myThread->n == 0) {
 			// Updating information of maxHitPointRadius2 is not thread safe
@@ -428,6 +433,9 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 		// Wait for photon pass
 		allThreadBarrier->wait();
 
+		if(renderer->paused())
+			break;
+
 		hitPoints->RefreshAccelParallel(myThread->n, renderer->renderThreads.size());
 		// Wait for photon pass
 		allThreadBarrier->wait();
@@ -436,14 +444,8 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 			const double eyePassTime = osWallClockTime() - eyePassStartTime;
 			LOG(LUX_INFO, LUX_NOERROR) << "Eye pass time: " << eyePassTime << "secs";
 		}
-	
-		while (renderer->state == PAUSE && !boost::this_thread::interruption_requested()) {
-			boost::xtime xt;
-			boost::xtime_get(&xt, boost::TIME_UTC);
-			xt.sec += 1;
-			boost::thread::sleep(xt);
-		}
-		if ((renderer->state == TERMINATE) || boost::this_thread::interruption_requested())
+
+		if(renderer->paused())
 			break;
 
 		double photonPassStartTime = 0.0;
@@ -495,7 +497,10 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 
 		// Wait for other threads
 		allThreadBarrier->wait();
-		
+
+		if(renderer->paused())
+			break;
+
 		if (myThread->n == 0) {
 			hitPoints->IncPass();
 			// Update the frame buffer
@@ -505,6 +510,9 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 			const double photonPassTime = osWallClockTime() - photonPassStartTime;
 			LOG(LUX_INFO, LUX_NOERROR) << "Photon pass time: " << photonPassTime << "secs";
 		}
+
+		if(renderer->paused())
+			break;
 
 		// Wait for other threads
 		allThreadBarrier->wait();

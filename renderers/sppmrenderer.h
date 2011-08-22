@@ -121,6 +121,18 @@ public:
 	friend class HitPoints;
 	friend class PhotonSampler;
 
+	// loop if renderer is in pause and return true if renderer is terminate
+	bool paused()
+	{
+		while (state == PAUSE && !boost::this_thread::interruption_requested()) {
+			boost::xtime xt;
+			boost::xtime_get(&xt, boost::TIME_UTC);
+			xt.sec += 1;
+			boost::thread::sleep(xt);
+		}
+		return ((state == TERMINATE) || boost::this_thread::interruption_requested());
+	}
+
 private:
 	//--------------------------------------------------------------------------
 	// Render threads

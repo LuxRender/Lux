@@ -36,6 +36,9 @@ using namespace lux;
 
 bool PhotonSampler::ContinueTracing(SPPMRenderer * const renderer) const
 {
+	if(renderer->paused())
+		return false;
+
 	return renderer->photonTracedPass < renderer->sppmi->photonPerPass;
 }
 
