@@ -203,7 +203,7 @@ void HitPoints::AccumulateFlux(const u_int index, const u_int count) {
 	}
 }
 
-void HitPoints::SetHitPoints(RandomGenerator *rng, const u_int index, const u_int count, MemoryArena &arena) {
+void HitPoints::SetHitPoints(Sample &sample, RandomGenerator *rng, const u_int index, const u_int count, MemoryArena &arena) {
 	const unsigned int workSize = hitPoints->size() / count;
 	const unsigned int first = workSize * index;
 	const unsigned int last = (index == count - 1) ? hitPoints->size() : (first + workSize);
@@ -214,21 +214,6 @@ void HitPoints::SetHitPoints(RandomGenerator *rng, const u_int index, const u_in
 	assert (last <= hitPoints->size());
 
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Building hit points: " << first << " to " << last - 1;
-
-	Scene &scene(*renderer->scene);
-
-	Sample sample;
-	sample.contribBuffer = new ContributionBuffer(scene.camera->film->contribPool);
-	sample.camera = scene.camera->Clone();
-	sample.realTime = 0.f;
-	sample.rng = rng;
-	vector<u_int> structure;
-	structure.push_back(1);	// volume scattering
-	structure.push_back(2);	// bsdf sampling direction
-	structure.push_back(1);	// bsdf sampling component
-	sample.AddxD(structure, renderer->sppmi->maxEyePathDepth + 1);
-	scene.volumeIntegrator->RequestSamples(&sample, scene);
-	eyeSampler->InitSample(&sample);
 
 	for (u_int i = first; i < last; ++i) {
 		static_cast<HaltonEyeSampler::HaltonEyeSamplerData *>(sample.samplerData)->index = i; //FIXME sampler data shouldn't be accessed directly
@@ -251,10 +236,6 @@ void HitPoints::SetHitPoints(RandomGenerator *rng, const u_int index, const u_in
 
 		sample.arena.FreeAll();
 	}
-	scene.camera->film->contribPool->End(sample.contribBuffer);
-	sample.contribBuffer = NULL;
-	eyeSampler->FreeSample(&sample);
-	//delete sample.camera; //FIXME deleting the camera clone would delete the film!
 }
 
 void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, MemoryArena &hp_arena)

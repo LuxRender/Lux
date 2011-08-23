@@ -395,6 +395,20 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 	renderer->scene->volumeIntegrator->RequestSamples(&sample, *(renderer->scene));
 	sampler->InitSample(&sample);
 
+	// initialise the eye sample
+	Sample eyeSample;
+	eyeSample.contribBuffer = new ContributionBuffer(scene.camera->film->contribPool);
+	eyeSample.camera = scene.camera->Clone();
+	eyeSample.realTime = 0.f;
+	eyeSample.rng = myThread->threadRng;
+
+	structure.clear();
+	structure.push_back(1);	// volume scattering
+	structure.push_back(2);	// bsdf sampling direction
+	structure.push_back(1);	// bsdf sampling component
+	eyeSample.AddxD(structure, renderer->sppmi->maxEyePathDepth + 1);
+	renderer->scene->volumeIntegrator->RequestSamples(&eyeSample, *(renderer->scene));
+
 	//--------------------------------------------------------------------------
 	// First eye pass
 	//--------------------------------------------------------------------------
@@ -403,18 +417,20 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 		// One thread initialize the hit points
 		renderer->hitPoints = new HitPoints(renderer, myThread->threadRng);
 	}
-	
+
 	// Wait for other threads
 	allThreadBarrier->wait();
-	
+
 	HitPoints *hitPoints = renderer->hitPoints;
+
+	hitPoints->eyeSampler->InitSample(&eyeSample);
 
 	double eyePassStartTime = 0.0;
 	if (myThread->n == 0)
 		eyePassStartTime = osWallClockTime();
 
 	// Set hitpoints
-	hitPoints->SetHitPoints(myThread->threadRng,
+	hitPoints->SetHitPoints(eyeSample, myThread->threadRng,
 			myThread->n, renderer->renderThreads.size(), myThread->eyePassMemoryArena);
 
 	allThreadBarrier->wait();
@@ -533,14 +549,20 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 		if (myThread->n == 0)
 			eyePassStartTime = osWallClockTime();
 
-		hitPoints->SetHitPoints(myThread->threadRng,
+		hitPoints->SetHitPoints(eyeSample, myThread->threadRng,
 				myThread->n, renderer->renderThreads.size(), myThread->eyePassMemoryArena);
 	}
 
 	scene.camera->film->contribPool->End(sample.contribBuffer);
+	scene.camera->film->contribPool->End(eyeSample.contribBuffer);
 	sample.contribBuffer = NULL;
+	eyeSample.contribBuffer = NULL;
 
 	sampler->FreeSample(&sample);
+	hitPoints->eyeSampler->FreeSample(&eyeSample);
+
+	//delete sample.camera; //FIXME deleting the camera clone would delete the film!
+	//delete eyeSample.camera; //FIXME deleting the camera clone would delete the film!
 	delete sampler;
 
 	// Wait for other threads

@@ -227,7 +227,7 @@ public:
 		lookUpAccel->AddFlux(sample, hitPoint, wi, sw, photonFlux, lightGroup);
 	}
 	void AccumulateFlux(const u_int index, const u_int count);
-	void SetHitPoints(RandomGenerator *rng,	const u_int index, const u_int count, MemoryArena& arena);
+	void SetHitPoints(Sample &sample, RandomGenerator *rng, const u_int index, const u_int count, MemoryArena& arena);
 
 	void RefreshAccelMutex() {
 		lookUpAccel->RefreshMutex();
@@ -241,8 +241,10 @@ private:
 	void TraceEyePath(HitPoint *hp, const Sample &sample, MemoryArena &arena);
 
 	SPPMRenderer *renderer;
+public:
 	Sampler *eyeSampler;
 
+private:
 	// Hit points information
 	float initialPhotonRadius;
 
