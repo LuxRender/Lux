@@ -183,7 +183,7 @@ static const mapstsh::value_type noiseBasisInit[11] = {
 	mapstsh::value_type("voronoi_f2", TEX_VORONOI_F2),
 	mapstsh::value_type("voronoi_f3", TEX_VORONOI_F3),
 	mapstsh::value_type("voronoi_f4", TEX_VORONOI_F4),
-	mapstsh::value_type("voronoi_f2f1", TEX_VORONOI_F2F1),
+	mapstsh::value_type("voronoi_f2_f1", TEX_VORONOI_F2_F1),
 	mapstsh::value_type("voronoi_crackle", TEX_VORONOI_CRACKLE),
 	mapstsh::value_type("cell_noise", TEX_CELLNOISE)
 };
