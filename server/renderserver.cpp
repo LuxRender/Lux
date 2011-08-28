@@ -335,10 +335,11 @@ static void processCommand(void (Context::*f)(const string &, float, float, cons
 	string name, transform;
 	float a, b;
 
-	stream >> name;
+	getline(stream, name);
 	stream >> a;
 	stream >> b;
-	stream >> transform;
+	stream.ignore(2, '\n');
+	getline(stream, transform);
 
 	(Context::GetActive()->*f)(name, a, b, transform);
 }

@@ -698,7 +698,7 @@ void RenderFarm::send(const string &command, const string &name,
 
 void RenderFarm::send(const string &command, const string &name, float a, float b, const string &transform) {
 	try {
-		netBuffer << command << endl << name << ' ' << a << ' ' << b << ' ' << transform << endl;
+		netBuffer << command << endl << name << endl << a << " " << b << endl << transform << endl;
 	} catch (exception& e) {
 		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
 	}
