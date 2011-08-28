@@ -138,7 +138,7 @@ public:
 	QMRUListModel() : maxCount(0), QAbstractListModel() { }
 	QMRUListModel(int count, QObject *parent = 0) : maxCount(count), QAbstractListModel(parent) { }
 	QMRUListModel(const QMRUListModel<T> &other) 
-		: maxCount(other.maxCount), mrulist(other.mruList), QAbstractListModel(other.parent()) {
+		: maxCount(other.maxCount), mruList(other.mruList), QAbstractListModel(other.parent()) {
 	}
 
 	int count() const {
