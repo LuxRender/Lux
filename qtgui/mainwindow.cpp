@@ -41,6 +41,8 @@
 #include <QTextLayout>
 #include <QFontMetrics>
 
+#include <QStringListModel>
+
 #include "error.h"
 
 #include "mainwindow.hxx"
@@ -84,6 +86,7 @@ NetworkUpdateTreeEvent::NetworkUpdateTreeEvent() : QEvent((QEvent::Type)EVT_LUX_
 {
 	setAccepted(false);
 }
+
 
 void updateWidgetValue(QSlider *slider, int value)
 {
@@ -270,6 +273,10 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	connect(ui->spinBox_updateInterval, SIGNAL(valueChanged(int)), this, SLOT(updateIntervalChanged(int)));
 	connect(ui->table_servers, SIGNAL(itemSelectionChanged()), this, SLOT(networknodeSelectionChanged()));
 
+	m_recentServersModel = new QStringMRUListModel(MaxRecentServers, this);
+	ui->lineEdit_server->setCompleter(new QCompleter(m_recentServersModel, this));
+	ui->lineEdit_server->completer()->setCompletionRole(Qt::DisplayRole);
+
 	// Queue tab
 	connect(ui->button_addQueueFiles, SIGNAL(clicked()), this, SLOT(addQueueFiles()));
 	connect(ui->button_removeQueueFiles, SIGNAL(clicked()), this, SLOT(removeQueueFiles()));
@@ -453,6 +460,7 @@ void MainWindow::ReadSettings()
 	ui->action_HDR_tonemapped->setChecked(settings.value("tonemappedHDR").toBool());
 	ui->action_useAlpha->setChecked(settings.value("outputUseAlpha").toBool());
 	ui->action_useAlphaHDR->setChecked(settings.value("outputUseAlphaHDR").toBool());
+	m_recentServersModel->setList(settings.value("recentServers").toStringList());
 	settings.endGroup();
 
 	updateRecentFileActions();
@@ -477,6 +485,7 @@ void MainWindow::WriteSettings()
 	settings.setValue("tonemappedHDR", ui->action_HDR_tonemapped->isChecked());
 	settings.setValue("outputUseAlpha", ui->action_useAlpha->isChecked());
 	settings.setValue("outputUseAlphaHDR", ui->action_useAlphaHDR->isChecked());
+	settings.setValue("recentServers", QStringList(m_recentServersModel->list()));
 	settings.endGroup();
 }
 
@@ -2196,6 +2205,8 @@ void MainWindow::addServer()
 		slaves.push_back(server);
 
 		addRemoveSlaves(slaves, AddSlaves);
+
+		m_recentServersModel->add(server);
 	}
 }
 

@@ -50,6 +50,10 @@
 #include <QVector>
 #include <QSettings>
 #include <QCursor>
+#include <QAbstractListModel>
+#include <QList>
+#include <QCompleter>
+#include <QVariant>
 #include <QtGui/QTabBar>
 #include <QtGui/QProgressDialog>
 
@@ -127,6 +131,85 @@ class NetworkUpdateTreeEvent: public QEvent {
 public:
 	NetworkUpdateTreeEvent();
 };
+
+template <class T>
+class QMRUListModel : public QAbstractListModel {
+public:
+	QMRUListModel() : maxCount(0), QAbstractListModel() { }
+	QMRUListModel(int count, QObject *parent = 0) : maxCount(count), QAbstractListModel(parent) { }
+	QMRUListModel(const QMRUListModel<T> &other) 
+		: maxcount(other.maxCount), mrulist(other.mruList), QAbstractListModel(other.parent()) {
+	}
+
+	int count() const {
+		return maxCount;
+	}
+
+	void setCount(int count) {
+		maxCount = count;
+		prune(maxCount);
+	}
+
+	void add(const T& value) {
+		int i = mruList.indexOf(value);
+
+		if (i == 0)
+			return;
+
+		if (i > 0) {
+			beginRemoveRows(QModelIndex(), i, i);
+			mruList.erase(mruList.begin() + i);
+			endRemoveRows();			
+		}
+
+		beginInsertRows(QModelIndex(), 0, 0);
+		mruList.insert(0, value);
+		endInsertRows();
+
+		prune(maxCount);
+	}
+
+	QList<T> list() const {
+		return mruList;
+	}
+
+	void setList(const QList<T>& list) {
+		prune(0);
+		beginInsertRows(QModelIndex(), 0, 0);
+		mruList = list.mid(0, maxCount);
+		endInsertRows();
+	}
+
+	virtual int rowCount(const QModelIndex &parent = QModelIndex()) const {
+		return mruList.length();
+	}
+
+	virtual QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const {		
+		if (!index.isValid())
+			return QVariant();
+		if (index.row() >= mruList.length() || index.column() != 0)
+			return QVariant();
+
+		if (role == Qt::DisplayRole)
+			return QVariant(mruList[index.row()]);
+
+		return QVariant();
+	}
+
+private:
+	void prune(int count) {
+		if (mruList.length() > count) {
+			beginRemoveRows(QModelIndex(), count, mruList.length());
+			mruList.erase(mruList.begin() + count, mruList.begin() + mruList.length());
+			endRemoveRows();
+		}
+	}
+
+	int maxCount;
+	QList<T> mruList;
+};
+
+typedef QMRUListModel<QString> QStringMRUListModel;
 
 void updateWidgetValue(QSlider *slider, int value);
 void updateWidgetValue(QDoubleSpinBox *spinbox, double value);
@@ -247,6 +330,9 @@ private:
 	void flmSaveThread(QString filename);
 	void batchProcessThread(QString inDir, QString outDir, QString outExtension, bool allLightGroups, bool asHDR);
 
+	enum { MaxRecentServers = 20 };
+	QStringMRUListModel *m_recentServersModel;
+
 	enum ChangeSlavesAction { AddSlaves, RemoveSlaves };
 	void networkAddRemoveSlavesThread(QVector<QString> slaves, ChangeSlavesAction action);
 
@@ -254,6 +340,7 @@ private:
 
 	QVector<QString> savedNetworkSlaves;
 	void saveNetworkSlaves();
+
 
 	bool event (QEvent * event);
 
