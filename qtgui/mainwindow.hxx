@@ -256,6 +256,7 @@ protected:
 	void setCurrentFile(const QString& filename);
 	void updateRecentFileActions();
 	void createActions();
+	void closeEvent(QCloseEvent *event);
 
 private:
 	

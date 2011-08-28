@@ -404,6 +404,15 @@ void cmd_ServerConnect(bool isLittleEndian, NetworkRenderServerThread *serverThr
 		char buf[6];
 		snprintf(buf, 6, "%05d", serverThread->renderServer->getTcpPort());
 		tmpFileList.push_back(string(buf));
+
+		// now perform handshake
+		if (!stream.good() || !serverThread->renderServer->validateAccess(stream)) {
+			LOG( LUX_WARNING,LUX_SYSTEM)<< "Connection handshake failed, session aborted";
+			serverThread->renderServer->setServerState(RenderServer::READY);
+			return;
+		}
+
+		stream << "CONNECTED" << endl;
 	} else
 		stream << "BUSY" << endl;
 }

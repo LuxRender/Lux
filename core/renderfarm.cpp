@@ -145,6 +145,11 @@ bool RenderFarm::connect(ExtRenderingServerInfo &serverInfo) {
 		}
 	}
 
+	// initialize server info
+	serverInfo.sid = "";
+	serverInfo.active = false;
+	serverInfo.flushed = false;
+
 	stringstream ss;
 	string serverName = serverInfo.name + ":" + serverInfo.port;
 
@@ -168,6 +173,7 @@ bool RenderFarm::connect(ExtRenderingServerInfo &serverInfo) {
 
 			return false;
 		}
+
 		// Read the server version
 		if (!getline(stream, result)) {
 			LOG( LUX_ERROR,LUX_SYSTEM) << "Unable read version from server: " << serverName;
@@ -190,11 +196,25 @@ bool RenderFarm::connect(ExtRenderingServerInfo &serverInfo) {
 		}
 
 		string sid = result;
+
+		// Perform handshake
+		stream << sid << endl;
+		stream.flush();
+
+		if (!getline(stream, result)) {
+			LOG( LUX_ERROR,LUX_SYSTEM) << "Unable read handshake from server: " << serverName;
+			return false;
+		}
+
+		if (!stream.good() || result != "CONNECTED") {
+			LOG( LUX_ERROR,LUX_SYSTEM) << "Error connecting to server: " << serverName;
+			return false;
+		}
+
 		LOG( LUX_INFO,LUX_NOERROR) << "Server session ID: " << sid;
 
 		serverInfo.sid = sid;
 		serverInfo.active = true;
-		serverInfo.flushed = false;
 	} catch (exception& e) {
 		LOG(LUX_ERROR,LUX_SYSTEM) << "Unable to connect server: " << serverName;
 		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
@@ -214,8 +234,12 @@ bool RenderFarm::connect(const string &serverName) {
 			decodeServerName(serverName, name, port);
 
 			ExtRenderingServerInfo serverInfo(name, port, "");
-			if (!connect(serverInfo))
+			if (!connect(serverInfo)) {
+				if (serverInfo.active)
+					disconnect(serverInfo);
+
 				return false;
+			}
 
 			serverInfoList.push_back(serverInfo);
 		} catch (exception& e) {

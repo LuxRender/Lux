@@ -198,6 +198,8 @@ void Context::Cleanup() {
 	else if (currentApiState == STATE_WORLD_BLOCK)
 		LOG(LUX_ERROR,LUX_ILLSTATE)<< "luxCleanup() called while inside world block.";
 	
+	renderFarm->disconnectAll();
+
 	// Dade - free memory
 	Free();
 

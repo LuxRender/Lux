@@ -1084,11 +1084,11 @@ void MainWindow::endRenderingSession(bool abort)
 			m_engineThread->join();
 		delete m_engineThread;
 		m_engineThread = NULL;
-		LOG( LUX_INFO,LUX_NOERROR)<< "Freeing resources.";
-		luxCleanup();
 		changeRenderState (WAITING);
 		renderView->setLogoMode ();
 	}
+	LOG( LUX_INFO,LUX_NOERROR)<< "Freeing resources.";
+	luxCleanup();
 }
 
 void MainWindow::copyLog()
@@ -1827,6 +1827,11 @@ void MainWindow::logEvent(LuxLogEvent *event)
 			statusMessage->setText("Check Log Please");
 		}
 	}
+}
+
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+	exitApp();
 }
 
 //user acknowledged error/warning-conditions
