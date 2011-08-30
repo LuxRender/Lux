@@ -48,6 +48,10 @@ void SchlickBRDF::F(const SpectrumWavelengths &sw, const Vector &wo,
 		float depthfactor = depth * (cosi + coso) / (cosi * coso);
 		a = Exp(Alpha * -depthfactor);
 	}
+	if (Rs.Black()) {
+		f_->AddWeighted(INV_PI * coso, a * Rd);
+		return;
+	}
 	const Vector H(Normalize(wo + wi));
 	const float u = AbsDot(wi, H);
 	const SWCSpectrum S(SchlickFresnel(u));

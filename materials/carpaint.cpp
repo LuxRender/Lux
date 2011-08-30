@@ -33,7 +33,7 @@
 #include "microfacet.h"
 #include "lambertian.h"
 #include "textures/constant.h"
-#include "fresnelblend.h"
+#include "schlickbrdf.h"
 #include "paramset.h"
 #include "dynload.h"
 
@@ -95,13 +95,17 @@ BSDF *CarPaint::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 	if (ks3.Filter(sw) > 0.f && m3 > 0.f) {
 		SchlickDistribution *md3 = ARENA_ALLOC(arena, SchlickDistribution)(m3 * m3, 0.f);
 		// The fresnel function is created by the FresnelBlend model
-		//Fresnel *fr3 = ARENA_ALLOC(tspack->arena, FresnelSlick)(r3, 0.f);
+		FresnelSlick *fr3 = ARENA_ALLOC(arena, FresnelSlick)(r3, 0.f);
+		bsdf->Add(ARENA_ALLOC(arena, MicrofacetReflection)(ks3, fr3, md3, true));
+
 		// Clear coat and lambertian base
-		bsdf->Add(ARENA_ALLOC(arena, FresnelBlend)(kd, ks3 * r3, ka, ld, md3));
-	} else {
-		// Lambertian base only
-		bsdf->Add(ARENA_ALLOC(arena, Lambertian)(kd));
-	}
+//		bsdf->Add(ARENA_ALLOC(arena, SchlickBRDF)(kd, ks3 * r3, ka, ld, m3 * m3, 0.f, false));
+	} //else {
+		// Lambertian base only with absorption
+		bsdf->Add(ARENA_ALLOC(arena, SchlickBRDF)(kd, SWCSpectrum(0.f),
+			ka, ld, 1.f, 0.f, false));
+//		bsdf->Add(ARENA_ALLOC(arena, Lambertian)(kd));
+//	}
 
 	// Add ptr to CompositingParams structure
 	bsdf->SetCompositingParams(&compParams);
