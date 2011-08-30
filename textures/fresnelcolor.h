@@ -20,69 +20,38 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// tabulatedfresnel.h*
+// fresnelcolor.h*
 #include "lux.h"
-#include "memory.h"
 #include "texture.h"
-#include "irregular.h"
 #include "fresnelgeneral.h"
 #include "paramset.h"
 
 namespace lux
 {
 
-// TabulatedFresnel Declarations
-class TabulatedFresnel : public Texture<FresnelGeneral> {
+// CauchyTexture Declarations
+class FresnelColorTexture : public Texture<FresnelGeneral> {
 public:
-	// TabulatedFresnel Public Methods
-	TabulatedFresnel(const vector<float> &wl, const vector<float> &n,
-		const vector<float> &k) :
-		N(&wl[0], &n[0], wl.size()), K(&wl[0], &k[0], wl.size()),
-		index(N.Filter()) { }
-	virtual ~TabulatedFresnel() { }
+	// FresnelColorTexture Public Methods
+	FresnelColorTexture(const boost::shared_ptr<Texture<SWCSpectrum> > &c) :
+		color(c) { }
+	virtual ~FresnelColorTexture() { }
 	virtual FresnelGeneral Evaluate(const SpectrumWavelengths &sw,
-		const DifferentialGeometry &) const {
-		// FIXME - Try to detect the best model to use
-		// FIXME - FresnelGeneral should take a float index for accurate
-		// non dispersive behaviour
-		return FresnelGeneral(AUTO_FRESNEL, SWCSpectrum(sw, N), SWCSpectrum(sw, K));
+		const DifferentialGeometry &dg) const {
+		SWCSpectrum c(color->Evaluate(sw, dg));
+		return FresnelGeneral(FULL_FRESNEL,
+			FresnelApproxEta(c), FresnelApproxK(c));
 	}
-	virtual float Y() const { return index; }
+	virtual float Y() const { return FresnelApproxEta(color->Filter()).c[0]; }
 	virtual void GetDuv(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg, float delta,
-		float *du, float *dv) const { *du = *dv = 0.f; }
+		float *du, float *dv) const {
+		color->GetDuv(sw, dg, delta, du, dv);
+	}
 
+	static Texture<FresnelGeneral> *CreateFresnelTexture(const Transform &tex2world, const ParamSet &tp);
 private:
-	IrregularSPD N, K;
-	float index;
-};
-
-// SopraTexture Declarations
-class SopraTexture {
-public:
-	// SopraTexture Public Methods
-	static Texture<FresnelGeneral> *CreateFresnelTexture(const Transform &tex2world, const ParamSet &tp);
-};
-
-// LuxpopTexture Declarations
-class LuxpopTexture {
-public:
-	// LuxpopTexture Public Methods
-	static Texture<FresnelGeneral> *CreateFresnelTexture(const Transform &tex2world, const ParamSet &tp);
-};
-
-// FresnelPreset Declarations
-class FresnelPreset {
-public:
-	// FresnelPreset Public Methods
-	static Texture<FresnelGeneral> *CreateFresnelTexture(const Transform &tex2world, const ParamSet &tp);
-};
-
-// FresnelName Declarations
-class FresnelName {
-public:
-	// FresnelName Public Methods
-	static Texture<FresnelGeneral> *CreateFresnelTexture(const Transform &tex2world, const ParamSet &tp);
+	const boost::shared_ptr<Texture<SWCSpectrum> > &color;
 };
 
 }//namespace lux

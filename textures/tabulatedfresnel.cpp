@@ -335,6 +335,20 @@ Texture<FresnelGeneral> *FresnelPreset::CreateFresnelTexture(const Transform &te
 	return new TabulatedFresnel(wl, n, k);
 }
 
-static DynamicLoader::RegisterFresnelTexture<LuxpopTexture> r1("luxpop");
-static DynamicLoader::RegisterFresnelTexture<FresnelPreset> r2("preset");
-static DynamicLoader::RegisterFresnelTexture<SopraTexture> r3("sopra");
+Texture<FresnelGeneral> *FresnelName::CreateFresnelTexture(const Transform &tex2world,
+	const ParamSet &tp)
+{
+	Texture<FresnelGeneral> *fr;
+	fr = SopraTexture::CreateFresnelTexture(tex2world, tp);
+	if (fr)
+		return fr;
+	fr = LuxpopTexture::CreateFresnelTexture(tex2world, tp);
+	if (fr)
+		return fr;
+	return FresnelPreset::CreateFresnelTexture(tex2world, tp);
+};
+
+static DynamicLoader::RegisterFresnelTexture<SopraTexture> r1("sopra");
+static DynamicLoader::RegisterFresnelTexture<LuxpopTexture> r2("luxpop");
+static DynamicLoader::RegisterFresnelTexture<FresnelPreset> r3("preset");
+static DynamicLoader::RegisterFresnelTexture<FresnelPreset> r4("fresnelname");

@@ -364,6 +364,7 @@ SOURCE_GROUP("Source Files\\Textures\\Uniform" FILES ${lux_uniform_textures_src}
 
 SET(lux_fresnel_textures_src
 	textures/cauchytexture.cpp
+	textures/fresnelcolor.cpp
 	textures/sellmeiertexture.cpp
 	textures/tabulatedfresnel.cpp
 	)
@@ -784,6 +785,7 @@ SET(lux_textures_uniform_hdr
 SOURCE_GROUP("Header Files\\Textures\\Uniform" FILES ${lux_textures_uniform_hdr})
 SET(lux_textures_fresnel_hdr
 	textures/cauchytexture.h
+	textures/fresnelcolor.h
 	textures/sellmeiertexture.h
 	textures/tabulatedfresnel.h
 	)
