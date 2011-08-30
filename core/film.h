@@ -302,15 +302,18 @@ public:
 	virtual ~PerScreenNormalizedBufferScaled() {}
 
 	virtual void GetData(XYZColor *color, float *alpha) const {
-		const float inv = static_cast<float>(1.0f / *numberOfSamples_);
+		scale = scaleUpdate->GetScaleFactor();
+		const float inv = static_cast<float>(scale / *numberOfSamples_);
 		for (u_int y = 0, offset = 0; y < yPixelCount; ++y) {
 			for (u_int x = 0; x < xPixelCount; ++x, ++offset) {
 				const Pixel &pixel = (*pixels)(x, y);
-				color[offset] = pixel.L * inv;
-				if (pixel.weightSum > 0.f)
-					alpha[offset] = pixel.alpha / pixel.weightSum;
-				else
+				if (pixel.weightSum > 0.f) {
+					color[offset] = pixel.L * inv;
+					alpha[offset] = pixel.alpha;
+				} else {
+					color[offset] = 0.f;
 					alpha[offset] = 0.f;
+				}
 			}
 		}
 	}

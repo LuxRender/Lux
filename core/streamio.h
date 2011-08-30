@@ -38,7 +38,7 @@ public:
 	typedef boost::iostreams::seekable_device_tag  category;
 
 	multibuffer_device(size_t _buffer_capacity = 32*1024*1024) 
-			: buffer_capacity(_buffer_capacity), pos(0), end(0) {
+			: buffer_capacity(_buffer_capacity), end(0), pos(0) {
 	}
 
 	~multibuffer_device() {
@@ -65,4 +65,4 @@ private:
 
 } // namespace lux
 
-#endif LUX_STREAMIO_H
+#endif // LUX_STREAMIO_H
