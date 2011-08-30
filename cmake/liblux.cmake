@@ -249,6 +249,7 @@ SET(lux_materials_src
 	materials/matte.cpp
 	materials/mattetranslucent.cpp
 	materials/metal.cpp
+	materials/metal2.cpp
 	materials/mirror.cpp
 	materials/mixmaterial.cpp
 	materials/null.cpp
@@ -662,6 +663,7 @@ SET(lux_materials_hdr
 	materials/matte.h
 	materials/mattetranslucent.h
 	materials/metal.h
+	materials/metal2.h
 	materials/mirror.h
 	materials/mixmaterial.h
 	materials/null.h
