@@ -6,6 +6,8 @@
 ^liblux.a
 ^luxlex
 ^luxparse
+^core/luxlex\..*
+^core/luxparse\..*
 ^doc/html
 ^doxygen/doxygen.conf
 ^doxygen.conf
@@ -15,6 +17,9 @@
 ^qtgui/.*\.depends
 ^qtgui/.*\.cxx_parameters
 ^qtgui/.*\.cxx\.rule
+^qtgui/icons.cpp
+^qtgui/images.cpp
+^qtgui/splash.cpp
 ^html/.*
 syntax: glob
 *.directory
