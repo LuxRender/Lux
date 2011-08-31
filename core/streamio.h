@@ -34,7 +34,7 @@ namespace lux
 
 class multibuffer_device {
 public:
-    typedef char  char_type;
+	typedef char  char_type;
 	typedef boost::iostreams::seekable_device_tag  category;
 
 	multibuffer_device(size_t _buffer_capacity = 32*1024*1024) 
@@ -44,9 +44,9 @@ public:
 	~multibuffer_device() {
 	}
 
-    std::streamsize read(char* s, std::streamsize n);
+	std::streamsize read(char* s, std::streamsize n);
 
-    std::streamsize write(const char* s, std::streamsize n);
+	std::streamsize write(const char* s, std::streamsize n);
 
 	boost::iostreams::stream_offset seek(boost::iostreams::stream_offset off, std::ios_base::seekdir way);
 
