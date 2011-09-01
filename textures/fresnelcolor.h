@@ -51,7 +51,7 @@ public:
 
 	static Texture<FresnelGeneral> *CreateFresnelTexture(const Transform &tex2world, const ParamSet &tp);
 private:
-	const boost::shared_ptr<Texture<SWCSpectrum> > &color;
+	const boost::shared_ptr<Texture<SWCSpectrum> > color;
 };
 
 }//namespace lux

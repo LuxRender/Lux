@@ -49,7 +49,7 @@ public:
 
 private:
 	// Metal2 Private Data
-	boost::shared_ptr<Texture<FresnelGeneral> > &fresnel;
+	boost::shared_ptr<Texture<FresnelGeneral> > fresnel;
 	boost::shared_ptr<Texture<float> > nu, nv;
 };
 
