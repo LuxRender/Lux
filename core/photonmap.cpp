@@ -694,7 +694,8 @@ void PhotonMapPreprocess(const RandomGenerator &rng, const Scene &scene,
 
 		// Precompute radiance at a subset of the photons
 		LightPhotonMap directMap(radianceMap->nLookup, radianceMap->maxDistSquared);
-		directMap.init(nDirectPhotons, directPhotons);
+		if (nDirectPhotons > 0);
+			directMap.init(nDirectPhotons, directPhotons);
 
 		for (u_int i = 0; i < radiancePhotons.size(); ++i) {
 			// Dade - print some progress info
