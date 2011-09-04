@@ -336,9 +336,9 @@ template <class T> Texture<float> *BrickTexture3D<T>::CreateFloatTexture(
 	float bh = tp.FindOneFloat("brickheight", 0.1f);
 	float bd = tp.FindOneFloat("brickdepth", 0.15f);
 	float m = tp.FindOneFloat("mortarsize", 0.01f);
-	float r = tp.FindOneFloat("brickrun",0.5f);
-	float b = tp.FindOneFloat("brickbevel",0.f);
 	string t = tp.FindOneString("brickbond","running");
+	float r = tp.FindOneFloat("brickrun", t == "flemish" ? 0.75f : 0.5f);
+	float b = tp.FindOneFloat("brickbevel",0.f);
 
 	return new BrickTexture3D<float>(tex1, tex2, tex3, bw, bh, bd, m, r, b,
 		t, imap);
@@ -372,9 +372,9 @@ template <class T> Texture<SWCSpectrum> *BrickTexture3D<T>::CreateSWCSpectrumTex
 	float bh = tp.FindOneFloat("brickheight", 0.1f);
 	float bd = tp.FindOneFloat("brickdepth", 0.15f);
 	float m = tp.FindOneFloat("mortarsize", 0.01f);
-	float r = tp.FindOneFloat("brickrun",0.5f);
-	float b = tp.FindOneFloat("brickbevel",0.f);
 	string t = tp.FindOneString("brickbond","running");
+	float r = tp.FindOneFloat("brickrun", t == "flemish" ? 0.75f : 0.5f);
+	float b = tp.FindOneFloat("brickbevel",0.f);
 	
 	return new BrickTexture3D<SWCSpectrum>(tex1, tex2, tex3, bw, bh, bd, m,
 		r, b, t, imap);
