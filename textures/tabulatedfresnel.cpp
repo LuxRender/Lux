@@ -76,7 +76,7 @@ Texture<FresnelGeneral> *SopraTexture::CreateFresnelTexture(const Transform &tex
 	boost::smatch m;
 
 	// read initial line, containing metadata
-	boost::regex header_expr("(\\d+)\\s+(\\d*\\.?\\d+)\\s+(\\d*\\.?\\d+)\\s+(\\d+)");
+	boost::regex header_expr("(\\d+)\\D+(\\d*\\.?\\d+)\\D+(\\d*\\.?\\d+)\\D+(\\d+)");
 
 	if (!boost::regex_search(line, m, header_expr)) {
 		LOG(LUX_ERROR, LUX_BADFILE) << "Bad sopra header in '" << filename << "'";
@@ -119,7 +119,7 @@ Texture<FresnelGeneral> *SopraTexture::CreateFresnelTexture(const Transform &tex
 	const int count = boost::lexical_cast<int>(m[4]);  
 
 	// read nk data
-	boost::regex sample_expr("(\\d*\\.?\\d+)\\s+(\\d*\\.?\\d+)");
+	boost::regex sample_expr("(\\d*\\.?\\d+)\\D+(\\d*\\.?\\d+)");
 
 	vector<float> wl(count);
 	vector<float> n(count);
