@@ -31,7 +31,7 @@ using namespace lux;
 Texture<FresnelGeneral> *FresnelColorTexture::CreateFresnelTexture(const Transform &tex2world,
 	const ParamSet &tp)
 {
-	return new FresnelColorTexture(tp.GetSWCSpectrumTexture("color", RGBColor(.5f)));
+	return new FresnelColorTexture(tp.GetSWCSpectrumTexture("Kr", RGBColor(.5f)));
 }
 
 static DynamicLoader::RegisterFresnelTexture<FresnelColorTexture> r("fresnelcolor");
