@@ -11,7 +11,7 @@
 ^doc/html
 ^doxygen/doxygen.conf
 ^doxygen.conf
-(luxStatic|luxmerger|luxcomp|luxrender|luxconsole|pylux)\.dir
+(luxStatic|luxShared|luxmerger|luxcomp|luxrender|luxconsole|pylux)\.dir
 ^(Debug|Release|x64)/
 ^ipch
 ^qtgui/.*\.depends
