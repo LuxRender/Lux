@@ -281,7 +281,7 @@ u_int IGIIntegrator::Li(const Scene &scene, const Sample &sample) const
 	}
 	const XYZColor color(sw, L);
 	sample.AddContribution(sample.imageX, sample.imageY, color * rayWeight,
-		alpha, bufferId, 0U);
+		alpha, 0.f, 0.f, bufferId, 0U);
 	return L.Black() ? 0 : 1;
 }
 SurfaceIntegrator* IGIIntegrator::CreateSurfaceIntegrator(const ParamSet &params)

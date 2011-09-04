@@ -56,7 +56,7 @@ public:
 		return nxD.size()-1;
 	}
 	void AddContribution(float x, float y, const XYZColor &c, float a,
-		float zd, float v, u_int b = 0, u_int g = 0) const {
+		float zd, float v, u_int b, u_int g) const {
 		contributions.push_back(Contribution(x, y, c, a, zd, v, b, g));
 	}
 
