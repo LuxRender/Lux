@@ -36,7 +36,7 @@ static float eVtolambda(float eV) {
 	// lambda = hc / E, where 
 	//  h is planck's constant in eV*s
 	//  c is speed of light in m/s
-	return (4.135667e-15f * 299792458.f * 1e9f) / eV;
+	return (4.13566733e-15f * 299792458.f * 1e9f) / eV;
 }
 
 // converts wavelength (in micrometer) to wavelength (in nm)
@@ -76,7 +76,7 @@ Texture<FresnelGeneral> *SopraTexture::CreateFresnelTexture(const Transform &tex
 	boost::smatch m;
 
 	// read initial line, containing metadata
-	boost::regex header_expr("(\\d+)\\D+(\\d*\\.?\\d+)\\D+(\\d*\\.?\\d+)\\D+(\\d+)");
+	boost::regex header_expr("(\\d+)[^\\.[:digit:]]+(\\d*\\.?\\d+)[^\\.[:digit:]]+(\\d*\\.?\\d+)[^\\.[:digit:]]+(\\d+)");
 
 	if (!boost::regex_search(line, m, header_expr)) {
 		LOG(LUX_ERROR, LUX_BADFILE) << "Bad sopra header in '" << filename << "'";
@@ -91,8 +91,8 @@ Texture<FresnelGeneral> *SopraTexture::CreateFresnelTexture(const Transform &tex
 	if (m[1] == "1") {
 		// lambda in eV
 		// low eV -> high lambda
-		lambda_last = boost::lexical_cast<float>(m[2]);
 		lambda_first = boost::lexical_cast<float>(m[3]);
+		lambda_last = boost::lexical_cast<float>(m[2]);
 		tolambda = &eVtolambda;
 	} else if (m[1] == "2") {
 		// lambda in um
@@ -101,8 +101,8 @@ Texture<FresnelGeneral> *SopraTexture::CreateFresnelTexture(const Transform &tex
 		tolambda = &umtolambda;
 	} else if (m[1] == "3") {
 		// lambda in cm-1
-		lambda_last = boost::lexical_cast<float>(m[2]);
 		lambda_first = boost::lexical_cast<float>(m[3]);
+		lambda_last = boost::lexical_cast<float>(m[2]);
 		tolambda = &invcmtolambda;
 	} else if (m[1] == "4") {
 		// lambda in nm
@@ -119,16 +119,16 @@ Texture<FresnelGeneral> *SopraTexture::CreateFresnelTexture(const Transform &tex
 	const int count = boost::lexical_cast<int>(m[4]);  
 
 	// read nk data
-	boost::regex sample_expr("(\\d*\\.?\\d+)\\D+(\\d*\\.?\\d+)");
+	boost::regex sample_expr("(\\d*\\.?\\d+)[^\\.[:digit:]]+(\\d*\\.?\\d+)");
 
-	vector<float> wl(count);
-	vector<float> n(count);
-	vector<float> k(count);
+	vector<float> wl(count + 1);
+	vector<float> n(count + 1);
+	vector<float> k(count + 1);
 
 	// we want lambda to go from low to high
 	// so reverse direction
 	const float delta = (lambda_last - lambda_first) / count;
-	for (int i = count - 1; i >= 0; --i) {
+	for (int i = count; i >= 0; --i) {
 
 		if (!getline(fs, line).good()) {
 			LOG(LUX_ERROR, LUX_BADFILE) <<

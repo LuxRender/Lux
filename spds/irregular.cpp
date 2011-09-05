@@ -32,7 +32,7 @@ using namespace lux;
 //  n             number of samples
 //  resolution    resampling resolution (in nm)
 IrregularSPD::IrregularSPD(const float* const wavelengths, const float* const samples,
-	u_int n, float resolution, SPDResamplingMethod resamplignMethod) 
+	u_int n, float resolution, SPDResamplingMethod resamplingMethod) 
 	: SPD()
 {
 	float lambdaMin = wavelengths[0];
@@ -42,7 +42,7 @@ IrregularSPD::IrregularSPD(const float* const wavelengths, const float* const sa
 
 	vector<float> sam(sn);
 
-	if (resamplignMethod == Linear) {
+	if (resamplingMethod == Linear) {
 		u_int k = 0;
 		for (u_int i = 0; i < sn; i++) {
 			float lambda = lambdaMin + i * resolution;
