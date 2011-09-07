@@ -21,7 +21,6 @@
  ***************************************************************************/
 
 // loopsubdiv.h*
-#include "shape.h"
 #include "texture.h"
 #include "error.h"
 #include <set>
@@ -140,22 +139,15 @@ struct SDEdge {
 };
 
 // LoopSubdiv Declarations
-class LoopSubdiv : public Shape {
+class LoopSubdiv {
 public:
 	// LoopSubdiv Public Methods
-	LoopSubdiv(const Transform &o2w, bool ro, u_int nt, u_int nv,
-		const int *vi, const Point *P, const float *uv, const Normal *n,
+	LoopSubdiv(u_int nt, u_int nv, const int *vi,
+		const Point *P, const float *uv, const Normal *n,
 		u_int nlevels, const boost::shared_ptr<Texture<float> > &dismap,
 		float dmscale, float dmoffset, bool dmnormalsmooth,
 		bool dmsharpboundary, bool normalsplit);
 	virtual ~LoopSubdiv();
-	virtual bool CanIntersect() const;
-	virtual void Refine(vector<boost::shared_ptr<Shape> > &refined) const;
-	virtual BBox ObjectBound() const;
-	virtual BBox WorldBound() const;
-
-	static Shape *CreateShape(const Transform &o2w, bool reverseOrientation,
-			const ParamSet &params);
 
 	class SubdivResult {
 	public:

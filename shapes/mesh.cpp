@@ -58,14 +58,9 @@ Mesh::Mesh(const Transform &o2w, bool ro, MeshAccelType acceltype,
 	// Dade - copy vertex data
 	nverts = nv;
 	p = new Point[nverts];
-	if (!mustSubdivide) {
-		// Dade - transform mesh vertices to world space
-		for (u_int i  = 0; i < nverts; ++i)
-			p[i] = ObjectToWorld(P[i]);
-	} else {
-		// Dont transform the mesh vertices to world space yet if subdivision is required
-		memcpy(p, P, nverts * sizeof(Point));
-	}
+	// Dade - transform mesh vertices to world space
+	for (u_int i  = 0; i < nverts; ++i)
+		p[i] = ObjectToWorld(P[i]);
 
 	// Dade - copy UV and N vertex data, if present
 	if (UV) {
@@ -76,17 +71,12 @@ Mesh::Mesh(const Transform &o2w, bool ro, MeshAccelType acceltype,
 
 	if (N) {
 		n = new Normal[nverts];
-		if (!mustSubdivide) {
-			// Dade - transform mesh normals to world space
-			for (u_int i  = 0; i < nverts; ++i) {
-				if (ro)
-					n[i] = Normalize(-ObjectToWorld(N[i]));
-				else
-					n[i] = Normalize(ObjectToWorld(N[i]));
-			}
-		} else {
-			// Dont transform the mesh normals to world space yet if subdivision is required
-			memcpy(n, N, nverts * sizeof(Normal));
+		// Dade - transform mesh normals to world space
+		for (u_int i  = 0; i < nverts; ++i) {
+			if (ro)
+				n[i] = Normalize(-ObjectToWorld(N[i]));
+			else
+				n[i] = Normalize(ObjectToWorld(N[i]));
 		}
 	} else
 		n = NULL;
@@ -269,9 +259,9 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 		switch (concreteSubdivType) {
 			case SUBDIV_LOOP: {
 				// Apply subdivision
-				LoopSubdiv loopsubdiv(ObjectToWorld, reverseOrientation,
-					ntris, nverts, triVertexIndex, p, uvs,
-					n, nSubdivLevels, displacementMap,
+				LoopSubdiv loopsubdiv(ntris, nverts,
+					triVertexIndex, p, uvs, n,
+					nSubdivLevels, displacementMap,
 					displacementMapScale,
 					displacementMapOffset,
 					displacementMapNormalSmooth,
@@ -294,8 +284,7 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 				triVertexIndex = new int[3 * ntris];
 				memcpy(triVertexIndex, res->indices, 3 * ntris * sizeof(int));
 				p = new Point[nverts];
-				for (u_int i = 0; i < nverts; ++i)
-					p[i] = ObjectToWorld(res->P[i]);
+				memcpy(p, res->P, nverts * sizeof(Point));
 				if (res->uv) {
 					uvs = new float[2 * nverts];
 					memcpy(uvs, res->uv, 2 * nverts * sizeof(float));
@@ -304,21 +293,13 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 
 				if (res->N) {
 					n = new Normal[nverts];
-					for (u_int i = 0; i < nverts; ++i)
-						n[i] = Normalize(ObjectToWorld(res->N[i]));
+					memcpy(n, res->N, nverts * sizeof(Normal));
 				} else
 					n = NULL;
 
 				break;
 			}
 			case SUBDIV_MICRODISPLACEMENT:
-				for (u_int i = 0; i < nverts; ++i)
-					p[i] = ObjectToWorld(p[i]);
-				if (n) {
-					for (u_int i = 0; i < nverts; ++i)
-						n[i] = Normalize(ObjectToWorld(n[i]));
-				}
-
 				if (displacementMap) {
 					// get min/max displacement for MD
 					displacementMap->GetMinMaxFloat(&displacementMapMin, &displacementMapMax);

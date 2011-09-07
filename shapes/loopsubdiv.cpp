@@ -22,23 +22,20 @@
 
 // loopsubdiv.cpp*
 #include "loopsubdiv.h"
-#include "context.h"
 #include "spectrumwavelengths.h"
-#include "paramset.h"
-#include "dynload.h"
+#include "geometry/raydifferential.h"
 
 #include <boost/pool/object_pool.hpp>
 
 using namespace lux;
 
 // LoopSubdiv Method Definitions
-LoopSubdiv::LoopSubdiv(const Transform &o2w, bool ro, u_int nfaces,
-	u_int nvertices, const int *vertexIndices, const Point *P,
-	const float *uv, const Normal *n, u_int nl,
+LoopSubdiv::LoopSubdiv(u_int nfaces, u_int nvertices, const int *vertexIndices,
+	const Point *P, const float *uv, const Normal *n, u_int nl,
 	const boost::shared_ptr<Texture<float> > &dismap, float dmscale,
 	float dmoffset, bool dmnormalsmooth, bool dmsharpboundary,
 	bool normalsplit)
-	: Shape(o2w, ro), displacementMap(dismap),
+	: displacementMap(dismap),
 	displacementMapScale(dmscale), displacementMapOffset(dmoffset),
 	displacementMapNormalSmooth(dmnormalsmooth),
 	displacementMapSharpBoundary(dmsharpboundary)
@@ -49,6 +46,7 @@ LoopSubdiv::LoopSubdiv(const Transform &o2w, bool ro, u_int nfaces,
 
 	// Allocate _LoopSubdiv_ vertices and faces
 	SDVertex *verts = new SDVertex[nvertices];
+	vertices.reserve(nvertices);
 	for (u_int i = 0; i < nvertices; ++i) {
 		if (hasUV)
 			verts[i] = SDVertex(P[i], uv[2 * i], uv[2 * i + 1]);
@@ -61,6 +59,7 @@ LoopSubdiv::LoopSubdiv(const Transform &o2w, bool ro, u_int nfaces,
 	}
 
 	SDFace *fs = new SDFace[nfaces];
+	faces.reserve(nfaces);
 	for (u_int i = 0; i < nfaces; ++i)
 		faces.push_back(&fs[i]);
 	// Set face to vertex pointers
@@ -134,26 +133,6 @@ LoopSubdiv::LoopSubdiv(const Transform &o2w, bool ro, u_int nfaces,
 LoopSubdiv::~LoopSubdiv() {
 	delete[] vertices[0];
 	delete[] faces[0];
-}
-
-BBox LoopSubdiv::ObjectBound() const {
-	// Dade - todo: the bbox returned doesn't include the effect of displacement map
-	BBox b;
-	for (u_int i = 0; i < vertices.size(); i++)
-		b = Union(b, vertices[i]->P);
-	return b;
-}
-
-BBox LoopSubdiv::WorldBound() const {
-	// Dade - todo: the bbox returned doesn't include the effect of displacement map
-	BBox b;
-	for (u_int i = 0; i < vertices.size(); i++)
-		b = Union(b, ObjectToWorld(vertices[i]->P));
-	return b;
-}
-
-bool LoopSubdiv::CanIntersect() const {
-	return false;
 }
 
 boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
@@ -382,29 +361,6 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 	return boost::shared_ptr<SubdivResult>(new SubdivResult(ntris, nverts, verts, Plimit, Ns, UVlimit));
 }
 
-void LoopSubdiv::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
-	if (refinedShape) {
-		refined.push_back(refinedShape);
-		return;
-	}
-
-	ParamSet paramSet;
-
-	{
-		boost::shared_ptr<SubdivResult> res(Refine());
-
-		paramSet.AddInt("indices", res->indices, 3 * res->ntris);
-		paramSet.AddPoint("P", res->P, res->nverts);
-		paramSet.AddNormal("N", res->N, res->nverts);
-		if (res->uv)
-			paramSet.AddFloat("uv", res->uv, 2 * res->nverts);
-	}
-	
-	this->refinedShape = MakeShape("trianglemesh", ObjectToWorld,
-		reverseOrientation, paramSet);
-	refined.push_back(this->refinedShape);
-}
-
 void LoopSubdiv::GenerateNormals(const vector<SDVertex *> v) {
 	// Compute vertex tangents on limit surface
 	u_int ringSize = 16;
@@ -463,10 +419,8 @@ void LoopSubdiv::ApplyDisplacementMap(const vector<SDVertex *> verts) const
 		// the vertex has already been displaced
 		if (v->child == v)
 			continue;
-		Point pp = ObjectToWorld(v->P);
-		const Normal nn(Normalize(ObjectToWorld(v->n)));
 		Vector dpdu, dpdv;
-		CoordinateSystem(Vector(nn), &dpdu, &dpdv);
+		CoordinateSystem(Vector(v->n), &dpdu, &dpdv);
 		Vector displacement(v->n);
 
 		SDFace *face = v->startFace;
@@ -477,7 +431,7 @@ void LoopSubdiv::ApplyDisplacementMap(const vector<SDVertex *> verts) const
 		if (v->boundary) {
 			do {
 				SDVertex *vv = face->v[face->vnum(v->P)];
-				DifferentialGeometry dg(pp, nn, dpdu, dpdv,
+				DifferentialGeometry dg(v->P, v->n, dpdu, dpdv,
 					Normal(0, 0, 0), Normal(0, 0, 0),
 					vv->u, vv->v, this);
 
@@ -492,7 +446,7 @@ void LoopSubdiv::ApplyDisplacementMap(const vector<SDVertex *> verts) const
 			face = v->startFace->prevFace(v->P);
 			while (face) {
 				SDVertex *vv = face->v[face->vnum(v->P)];
-				DifferentialGeometry dg(pp, nn, dpdu, dpdv,
+				DifferentialGeometry dg(v->P, v->n, dpdu, dpdv,
 					Normal(0, 0, 0), Normal(0, 0, 0),
 					vv->u, vv->v, this);
 
@@ -507,7 +461,7 @@ void LoopSubdiv::ApplyDisplacementMap(const vector<SDVertex *> verts) const
 		} else {
 			do {
 				SDVertex *vv = face->v[face->vnum(v->P)];
-				DifferentialGeometry dg(pp, nn, dpdu, dpdv,
+				DifferentialGeometry dg(v->P, v->n, dpdu, dpdv,
 					Normal(0, 0, 0), Normal(0, 0, 0),
 					vv->u, vv->v, this);
 
@@ -661,48 +615,3 @@ void LoopSubdiv::weightBoundary(SDVertex *destVert,  SDVertex *vert,
 	destVert->n = N;
 }
 
-Shape *LoopSubdiv::CreateShape(
-		const Transform &o2w,
-		bool reverseOrientation,
-		const ParamSet &params)
-{
-	map<string, boost::shared_ptr<Texture<float> > > *floatTextures = Context::GetActiveFloatTextures();
-	int nlevels = params.FindOneInt("nlevels", 3);
-	u_int nps, nIndices, nuvi, nn;
-	const int *vi = params.FindInt("indices", &nIndices);
-	const Point *P = params.FindPoint("P", &nps);
-	if (!vi || !P) return NULL;
-
-	const float *uvs = params.FindFloat("uv", &nuvi);
-	const Normal *n = params.FindNormal("N", &nn);
-
-	// Dade - the optional displacement map
-	string displacementMapName = params.FindOneString("displacementmap", "");
-	float displacementMapScale = params.FindOneFloat("dmscale", 0.1f);
-	float displacementMapOffset = params.FindOneFloat("dmoffset", 0.0f);
-	bool displacementMapNormalSmooth = params.FindOneBool("dmnormalsmooth", true);
-	bool displacementMapSharpBoundary = params.FindOneBool("dmsharpboundary", false);
-	bool normalSplit = params.FindOneBool("dmnormalsplit", false);
-
-	boost::shared_ptr<Texture<float> > displacementMap;
-	if (displacementMapName != "") {
-		boost::shared_ptr<Texture<float> > dm((*floatTextures)[displacementMapName]);
-		displacementMap = dm;
-
-		if (!displacementMap) {
-            LOG( LUX_WARNING,LUX_SYNTAX) << "Unknown float texture '" << displacementMapName << "' in a LoopSubdiv shape.";
-		}
-	}
-
-	// don't actually use this for now...
-	string scheme = params.FindOneString("scheme", "loop");
-
-	return new LoopSubdiv(o2w, reverseOrientation, nIndices/3, nps,
-		vi, P, uvs, n, nlevels, displacementMap,
-		displacementMapScale, displacementMapOffset,
-		displacementMapNormalSmooth, displacementMapSharpBoundary,
-		normalSplit);
-}
-
-// Lotus - Handled by mesh shape
-//static DynamicLoader::RegisterShape<LoopSubdiv> r("loopsubdiv");
