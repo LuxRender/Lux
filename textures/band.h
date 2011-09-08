@@ -109,6 +109,7 @@ public:
 	}
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const ParamSet &tp);
 	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const ParamSet &tp);
+	static Texture<FresnelGeneral> * CreateFresnelTexture(const Transform &tex2world, const ParamSet &tp);
 private:
 	vector<float> offsets;
 	vector<boost::shared_ptr<Texture<T> > > tex;
@@ -150,6 +151,24 @@ template <class T> Texture<SWCSpectrum> * BandTexture<T>::CreateSWCSpectrumTextu
 	}
 	boost::shared_ptr<Texture<float> > a(tp.GetFloatTexture("amount", 0.f));
 	return new BandTexture<SWCSpectrum>(n, o, tex, a);
+}
+
+template <class T> Texture<FresnelGeneral> * BandTexture<T>::CreateFresnelTexture(const Transform &tex2world,
+	const ParamSet &tp) {
+	u_int n;
+	const float *o = tp.FindFloat("offsets", &n);
+	for (u_int i = 0; i < n - 1; ++i)
+		if (o[i] > o[i + 1])
+			LOG(LUX_ERROR, LUX_LIMIT) << "Offsets in 'band' texture are not in ascending order";
+	vector<boost::shared_ptr<Texture<FresnelGeneral> > > tex;
+	tex.reserve(n);
+	for (u_int i = 0; i < n; ++i) {
+		stringstream ss;
+		ss << "tex" << (i + 1);
+		tex.push_back(tp.GetFresnelTexture(ss.str(), 0.f));
+	}
+	boost::shared_ptr<Texture<float> > a(tp.GetFloatTexture("amount", 0.f));
+	return new BandTexture<FresnelGeneral>(n, o, tex, a);
 }
 
 }//namespace lux

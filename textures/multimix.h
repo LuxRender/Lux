@@ -25,6 +25,7 @@
 #include "spectrum.h"
 #include "texture.h"
 #include "color.h"
+#include "fresnelgeneral.h"
 #include "paramset.h"
 
 #include <sstream>
@@ -110,6 +111,7 @@ public:
 	}
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const ParamSet &tp);
 	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const ParamSet &tp);
+	static Texture<FresnelGeneral> * CreateFresnelTexture(const Transform &tex2world, const ParamSet &tp);
 private:
 	vector<float> weights;
 	vector<boost::shared_ptr<Texture<T> > > tex;
@@ -150,6 +152,24 @@ template <class T> Texture<SWCSpectrum> * MultiMixTexture<T>::CreateSWCSpectrumT
 	}
 
 	return new MultiMixTexture<SWCSpectrum>(n, w, tex);
+}
+
+template <class T> Texture<FresnelGeneral> * MultiMixTexture<T>::CreateFresnelTexture(const Transform &tex2world,
+	const ParamSet &tp) {
+
+	u_int n;
+	const float *w = tp.FindFloat("weights", &n);
+
+	vector<boost::shared_ptr<Texture<FresnelGeneral> > > tex;
+
+	tex.reserve(n);
+	for (u_int i = 0; i < n; ++i) {
+		stringstream ss;
+		ss << "tex" << (i + 1);
+		tex.push_back(tp.GetFresnelTexture(ss.str(), 1.f));
+	}
+
+	return new MultiMixTexture<FresnelGeneral>(n, w, tex);
 }
 
 }//namespace lux

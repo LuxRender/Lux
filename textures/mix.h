@@ -25,6 +25,7 @@
 #include "spectrum.h"
 #include "texture.h"
 #include "color.h"
+#include "fresnelgeneral.h"
 #include "paramset.h"
 
 namespace lux
@@ -79,6 +80,7 @@ public:
 	}
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const ParamSet &tp);
 	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const ParamSet &tp);
+	static Texture<FresnelGeneral> * CreateFresnelTexture(const Transform &tex2world, const ParamSet &tp);
 private:
 	boost::shared_ptr<Texture<T> > tex1, tex2;
 	boost::shared_ptr<Texture<float> > amount;
@@ -99,6 +101,14 @@ template <class T> Texture<SWCSpectrum> * MixTexture<T>::CreateSWCSpectrumTextur
 		tex2(tp.GetSWCSpectrumTexture("tex2", RGBColor(1.f)));
 	boost::shared_ptr<Texture<float> > amount(tp.GetFloatTexture("amount", .5f));
 	return new MixTexture<SWCSpectrum>(tex1, tex2, amount);
+}
+
+template <class T> Texture<FresnelGeneral> * MixTexture<T>::CreateFresnelTexture(const Transform &tex2world,
+	const ParamSet &tp) {
+	boost::shared_ptr<Texture<FresnelGeneral> > tex1(tp.GetFresnelTexture("tex1", 1.f)),
+		tex2(tp.GetFresnelTexture("tex2", 1.5f));
+	boost::shared_ptr<Texture<float> > amount(tp.GetFloatTexture("amount", .5f));
+	return new MixTexture<FresnelGeneral>(tex1, tex2, amount);
 }
 
 }//namespace lux

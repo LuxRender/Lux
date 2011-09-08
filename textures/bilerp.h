@@ -26,6 +26,7 @@
 #include "texture.h"
 #include "color.h"
 #include "spds/rgbillum.h"
+#include "fresnelgeneral.h"
 #include "paramset.h"
 #include "error.h"
 
@@ -72,7 +73,7 @@ public:
 	}	
 
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const ParamSet &tp);
-	
+
 private:
 	// BilerpTexture Private Data
 	TextureMapping2D *mapping;
@@ -125,13 +126,67 @@ public:
 	virtual void SetIlluminant() { isIlluminant = true; }
 	
 	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const ParamSet &tp);
-	
+
 private:
 	// BilerpTexture Private Data
 	TextureMapping2D *mapping;
 	RGBColor v00, v01, v10, v11;
 	static RGBIllumSPD whiteRGBIllum;
 	bool isIlluminant;
+};
+
+class BilerpFresnelTexture : public Texture<FresnelGeneral> {
+public:
+	// BilerpTexture Public Methods
+	BilerpFresnelTexture(TextureMapping2D *m,
+		const boost::shared_ptr<Texture<FresnelGeneral> > &t00,
+		const boost::shared_ptr<Texture<FresnelGeneral> > &t01,
+		const boost::shared_ptr<Texture<FresnelGeneral> > &t10,
+		const boost::shared_ptr<Texture<FresnelGeneral> > &t11) {
+		mapping = m;
+		v00 = t00;
+		v01 = t01;
+		v10 = t10;
+		v11 = t11;
+	}
+	virtual ~BilerpFresnelTexture() { delete mapping; }
+	virtual FresnelGeneral Evaluate(const SpectrumWavelengths &sw,
+		const DifferentialGeometry &dg) const {
+		float s, t;
+		mapping->Map(dg, &s, &t);
+		s -= Floor2Int(s);
+		t -= Floor2Int(t);
+		return (1.f - s) * (1.f - t) * v00->Evaluate(sw, dg) +
+			(1.f - s) * t * v01->Evaluate(sw, dg) +
+			s * (1.f - t) * v10->Evaluate(sw, dg) +
+			s * t * v11->Evaluate(sw, dg);
+	}
+	virtual float Y() const {
+		return (v00->Y() + v01->Y() + v10->Y() + v11->Y()) / 4.f;
+	}
+	virtual float Filter() const {
+		return (v00->Filter() + v01->Filter() + v10->Filter() + v11->Filter()) / 4.f;
+	}
+	virtual void GetDuv(const SpectrumWavelengths &sw,
+		const DifferentialGeometry &dg,
+		float delta, float *du, float *dv) const {
+		float s, t, dsdu, dtdu, dsdv, dtdv;
+		mapping->MapDuv(dg, &s, &t, &dsdu, &dtdu, &dsdv, &dtdv);
+		s -= Floor2Int(s);
+		t -= Floor2Int(t);
+		const float d = v00->Filter() + v11->Filter() - v01->Filter() - v10->Filter();
+		const float d1 = v10->Filter() - v00->Filter();
+		const float d2 = v01->Filter() - v00->Filter();
+		*du = dsdu * (d1 + t * d) + dtdu * (d2 + s * d);
+		*dv = dsdv * (d1 + t * d) + dtdv * (d2 + s * d);
+	}
+
+	static Texture<FresnelGeneral> * CreateFresnelTexture(const Transform &tex2world, const ParamSet &tp);
+
+private:
+	// BilerpTexture Private Data
+	TextureMapping2D *mapping;
+	boost::shared_ptr<Texture<FresnelGeneral> > v00, v01, v10, v11;
 };
 
 }//namespace lux

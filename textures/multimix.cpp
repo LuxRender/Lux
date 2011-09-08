@@ -28,3 +28,4 @@ using namespace lux;
 
 static DynamicLoader::RegisterFloatTexture<MultiMixTexture<float> > r1("multimix");
 static DynamicLoader::RegisterSWCSpectrumTexture<MultiMixTexture<SWCSpectrum> > r2("multimix");
+static DynamicLoader::RegisterFresnelTexture<MultiMixTexture<FresnelGeneral> > r3("multimix");

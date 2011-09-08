@@ -53,6 +53,11 @@ public:
 		else
 			model = m;
 	}
+	FresnelGeneral(float f) {
+		eta = f;
+		k = 0.f;
+		model = CheckModel(eta, k);
+	}
 	virtual ~FresnelGeneral() { }
 	virtual void Evaluate(const SpectrumWavelengths &sw, float cosi,
 			SWCSpectrum *const f) const;
@@ -68,6 +73,23 @@ public:
 		SWCSpectrum *fr, SWCSpectrum *fi) const {
 		*fr = eta;
 		*fi = k;
+	}
+	FresnelGeneral operator+(const FresnelGeneral &f) const {
+		return FresnelGeneral(model, eta + f.eta, k + f.k);
+	}
+	FresnelGeneral &operator+=(const FresnelGeneral &f) {
+		eta += f.eta;
+		k += f.k;
+		return *this;
+	}
+	FresnelGeneral operator-(const FresnelGeneral &f) const {
+		return FresnelGeneral(model, eta - f.eta, k - f.k);
+	}
+	FresnelGeneral operator*(float f) const {
+		return FresnelGeneral(model, eta * f, k * f);
+	}
+	friend FresnelGeneral operator*(float f, const FresnelGeneral &fg) {
+		return FresnelGeneral(fg.model, fg.eta * f, fg.k * f);
 	}
 private:
 	static FresnelModel CheckModel(const SWCSpectrum &e,

@@ -28,3 +28,4 @@ using namespace lux;
 
 static DynamicLoader::RegisterFloatTexture<BandTexture<float> > r1("band");
 static DynamicLoader::RegisterSWCSpectrumTexture<BandTexture<SWCSpectrum> > r2("band");
+static DynamicLoader::RegisterSWCSpectrumTexture<BandTexture<FresnelGeneral> > r3("band");
