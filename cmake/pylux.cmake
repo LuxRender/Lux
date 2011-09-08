@@ -82,34 +82,28 @@ IF(PYTHONLIBS_FOUND OR PYTHON_CUSTOM)
 
 		TARGET_LINK_LIBRARIES(pylux ${LUX_LIBRARY} ${CMAKE_THREAD_LIBS_INIT} ${LUX_LIBRARY_DEPENDS} ${PYTHON_LIBRARIES} ${Boost_python_LIBRARIES})
 		
-		IF (WIN32)
-			IF(CYGWIN)
-				ADD_CUSTOM_COMMAND(
-					TARGET pylux POST_BUILD
-					COMMAND mv cygpylux.dll pylux.dll
-				)
-			ENDIF(CYGWIN)
-
-			IF (MSVC)
-				# Output .pyd files for direct blender plugin usage
-				SET_TARGET_PROPERTIES(pylux
-					PROPERTIES
-					SUFFIX ".pyd"
-				)
-			ENDIF(MSVC)
-			
-		ELSE(WIN32)
-
+		IF(CYGWIN)
+			ADD_CUSTOM_COMMAND(
+				TARGET pylux POST_BUILD
+				COMMAND mv cygpylux.dll pylux.dll
+			)
+		ELSEIF(MSVC)
+			# Output .pyd files for direct blender plugin usage
+			SET_TARGET_PROPERTIES(pylux
+				PROPERTIES
+				SUFFIX ".pyd"
+			)
+		ELSE(CYGWIN)
 			ADD_CUSTOM_COMMAND(
 				TARGET pylux POST_BUILD
 				COMMAND mv libpylux.so pylux.so
 			)
+		ENDIF(CYGWIN)
 
-			ADD_CUSTOM_COMMAND(
-				TARGET pylux POST_BUILD
-				COMMAND cp ${CMAKE_SOURCE_DIR}/python/pyluxconsole.py pyluxconsole.py
-			)
-		ENDIF(WIN32)
+		ADD_CUSTOM_COMMAND(
+			TARGET pylux POST_BUILD
+			COMMAND cp ${CMAKE_SOURCE_DIR}/python/pyluxconsole.py pyluxconsole.py
+		)
 
 	ENDIF(APPLE)
 ELSE(PYTHONLIBS_FOUND OR PYTHON_CUSTOM)
