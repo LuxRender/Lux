@@ -160,6 +160,12 @@ public:
 			ret.c[i] = expf(s.c[i]);
 		return ret;
 	}
+	friend SWCSpectrum Ln(const SWCSpectrum &s) {
+		SWCSpectrum ret;
+		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
+			ret.c[i] = logf(s.c[i]);
+		return ret;
+	}
 	SWCSpectrum Clamp(Scalar low = 0.f,
 	               Scalar high = INFINITY) const {
 		SWCSpectrum ret;

@@ -376,6 +376,7 @@ SET(lux_textures_src
 	textures/bilerp.cpp
 	textures/brick.cpp
 	textures/checkerboard.cpp
+	textures/colordepth.cpp
 	textures/dots.cpp
 	textures/fbm.cpp
 	textures/harlequin.cpp
@@ -743,6 +744,7 @@ SET(lux_textures_hdr
 	textures/bilerp.h
 	textures/brick.h
 	textures/checkerboard.h
+	textures/colordepth.h
 	textures/dots.h
 	textures/fbm.h
 	textures/harlequin.h
