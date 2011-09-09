@@ -25,6 +25,7 @@
 #include "spectrum.h"
 #include "texture.h"
 #include "color.h"
+#include "fresnelgeneral.h"
 #include "paramset.h"
 #include "error.h"
 
