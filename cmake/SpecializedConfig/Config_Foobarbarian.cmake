@@ -64,3 +64,10 @@ SET ( GLEW_SEARCH_PATH         "${DEPS_ROOT}/../glew" )
 ADD_DEFINITIONS ( -DGLEW_STATIC )
 
 INCLUDE_DIRECTORIES ( SYSTEM "${DEPS_HOME}/include" ) # for unistd.h
+
+# You will require some way to generate luxparse and luxlex
+# but I dont have any useful binary for windows so I'm using
+# my linux pc to generate those files and dont have to satisfy
+# the dependency on windows
+SET ( BISON_NOT_AVAILABLE      TRUE )
+SET ( FLEX_NOT_AVAILABLE       TRUE )

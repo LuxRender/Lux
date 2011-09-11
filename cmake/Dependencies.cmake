@@ -81,17 +81,19 @@ ELSE (OPENGL_FOUND)
 ENDIF (OPENGL_FOUND)
 
 
+
 #############################################################################
 #############################################################################
 ###########################      Find BISON       ###########################
 #############################################################################
 #############################################################################
 
-FIND_PACKAGE(BISON REQUIRED)
-IF (NOT BISON_FOUND)
-	MESSAGE(FATAL_ERROR "bison not found - aborting")
-ENDIF (NOT BISON_FOUND)
-
+IF (NOT BISON_NOT_AVAILABLE)
+	FIND_PACKAGE(BISON REQUIRED)
+	IF (NOT BISON_FOUND)
+		MESSAGE(FATAL_ERROR "bison not found - aborting")
+	ENDIF (NOT BISON_FOUND)
+ENDIF (NOT BISON_NOT_AVAILABLE)
 
 #############################################################################
 #############################################################################
@@ -99,11 +101,12 @@ ENDIF (NOT BISON_FOUND)
 #############################################################################
 #############################################################################
 
-FIND_PACKAGE(FLEX REQUIRED)
-IF (NOT FLEX_FOUND)
-	MESSAGE(FATAL_ERROR "flex not found - aborting")
-ENDIF (NOT FLEX_FOUND)
-
+IF (NOT FLEX_NOT_AVAILABLE)
+	FIND_PACKAGE(FLEX REQUIRED)
+	IF (NOT FLEX_FOUND)
+		MESSAGE(FATAL_ERROR "flex not found - aborting")
+	ENDIF (NOT FLEX_FOUND)
+ENDIF (NOT FLEX_NOT_AVAILABLE)
 
 #############################################################################
 #############################################################################
