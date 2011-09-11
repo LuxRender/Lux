@@ -629,7 +629,9 @@ void RenderFarm::send(const string &command, const string &name,
 		if (command != "luxFilm") {
 			file = "";
 			file = params.FindOneString(string("filename"), file);
-			if (file.size())
+			u_int n;
+			const string *embedded = params.FindString(string("filename_data"), &n);
+			if (file.size() && !embedded)
 				sendFile(file);
 		}
 
@@ -713,7 +715,9 @@ void RenderFarm::send(const string &command, const string &name,
 		//send the file
 		std::string file = "";
 		file = params.FindOneString(std::string("filename"), file);
-		if (file.size())
+		u_int n;
+		const string *embedded = params.FindString(string("filename_data"), &n);
+		if (file.size() && !embedded)
 			sendFile(file);
 	} catch (std::exception& e) {
 		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
