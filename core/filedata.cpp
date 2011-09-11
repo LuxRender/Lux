@@ -113,6 +113,12 @@ std::string base64_decode(std::string const& encoded_string) {
 	return ret;
 }
 
+bool FileData::present(const ParamSet &tp, const std::string param_name) {
+	u_int n;
+	const std::string* data = tp.FindString(param_name + "_data", &n);
+	return data != NULL;
+}
+
 bool FileData::decode(const ParamSet &tp, const std::string param_name)
 {
 	u_int nlines = 0;

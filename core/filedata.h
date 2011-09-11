@@ -28,6 +28,7 @@ namespace lux
 class FileData
 {
 public:
+	static bool present(const ParamSet &tp, const std::string param_name);
 	static bool decode(const ParamSet &tp, const std::string param_name);
 };
 

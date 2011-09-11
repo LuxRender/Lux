@@ -35,6 +35,7 @@
 #include "film.h"
 #include "osfunc.h"
 #include "streamio.h"
+#include "filedata.h"
 
 #include <fstream>
 #include <sstream>
@@ -629,9 +630,7 @@ void RenderFarm::send(const string &command, const string &name,
 		if (command != "luxFilm") {
 			file = "";
 			file = params.FindOneString(string("filename"), file);
-			u_int n;
-			const string *embedded = params.FindString(string("filename_data"), &n);
-			if (file.size() && !embedded)
+			if (file.size() && !FileData::present(params, "filename"))
 				sendFile(file);
 		}
 
@@ -715,9 +714,7 @@ void RenderFarm::send(const string &command, const string &name,
 		//send the file
 		std::string file = "";
 		file = params.FindOneString(std::string("filename"), file);
-		u_int n;
-		const string *embedded = params.FindString(string("filename_data"), &n);
-		if (file.size() && !embedded)
+		if (file.size() && !FileData::present(params, "filename"))
 			sendFile(file);
 	} catch (std::exception& e) {
 		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
