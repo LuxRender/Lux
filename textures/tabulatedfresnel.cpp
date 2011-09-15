@@ -298,7 +298,10 @@ static const float AluminiumK[] = {
 Texture<FresnelGeneral> *FresnelPreset::CreateFresnelTexture(const Transform &tex2world,
 	const ParamSet &tp)
 {
-	const string name = tp.FindOneString("name", "");
+	// Allow the filename keyword so that it is compatible with
+	// the fresnelname texture
+	// The name keyword will however have a higher priority
+	const string name = tp.FindOneString("name", tp.FindOneString("filename", ""));
 	vector<float> wl;
 	vector<float> n;
 	vector<float> k;

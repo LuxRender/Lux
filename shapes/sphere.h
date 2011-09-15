@@ -43,7 +43,8 @@ public:
 		Point p = Point(0,0,0) + radius *
 			UniformSampleSphere(u1, u2);
 		*ns = Normalize(ObjectToWorld(Normal(p.x, p.y, p.z)));
-		if (reverseOrientation) *ns *= -1.f;
+		if (reverseOrientation)
+			*ns *= -1.f;
 		return ObjectToWorld(p);
 	}
 	virtual Point Sample(const Point &p, float u1, float u2, float u3,
@@ -54,35 +55,37 @@ public:
 		Vector wcX, wcY;
 		CoordinateSystem(wc, &wcX, &wcY);
 		// Sample uniformly on sphere if \pt is inside it
-		if (DistanceSquared(p, Pcenter) - radius*radius < 1e-4f)
+		if (DistanceSquared(p, Pcenter) - radius * radius < 1e-4f)
 			return Sample(u1, u2, u3, ns);
 		// Sample sphere uniformly inside subtended cone
-		float cosThetaMax = sqrtf(max(0.f, 1.f - radius*radius /
+		float cosThetaMax = sqrtf(max(0.f, 1.f - radius * radius /
 			DistanceSquared(p, Pcenter)));
 		DifferentialGeometry dgSphere;
 		float thit;
 		Point ps;
-		Ray r(p,
-		      UniformSampleCone(u1, u2, cosThetaMax, wcX, wcY, wc));
-		if (!Intersect(r, &thit, &dgSphere)) {
+		Ray r(p, UniformSampleCone(u1, u2, cosThetaMax, wcX, wcY, wc));
+		if (!Intersect(r, &thit, &dgSphere))
 			ps = Pcenter - radius * wc;
-		} else {
+		else
 			ps = r(thit);
-		}
 		*ns = Normal(Normalize(ps - Pcenter));
-		if (reverseOrientation) *ns *= -1.f;
+		if (reverseOrientation)
+			*ns *= -1.f;
 		return ps;
 	}
 	virtual float Pdf(const Point &p, const Point &po) const {
 		Point Pcenter = ObjectToWorld(Point(0,0,0));
 		// Return uniform weight if point inside sphere
-		if (DistanceSquared(p, Pcenter) - radius*radius < 1e-4f)
+		const float dc2 = DistanceSquared(p, Pcenter);
+		const float r2 = radius * radius;
+		if (dc2 - r2 < 1e-4f)
 			return 1.f / Area();
 		// Compute general sphere weight
-		const float cosThetaMax = sqrtf(max(0.f, 1.f - radius*radius /
-			DistanceSquared(p, Pcenter)));
+		const float cosThetaMax = sqrtf(max(0.f, 1.f - r2 / dc2));
 		const Vector w(p - po);
 		const float d2 = w.LengthSquared();
+		if (d2 > dc2 + r2)
+			return 0.f;
 		return UniformConePdf(cosThetaMax) * AbsDot(w, po - Pcenter) /
 			(d2 * sqrtf(d2) * radius);
 	}
