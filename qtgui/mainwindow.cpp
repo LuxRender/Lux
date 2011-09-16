@@ -278,6 +278,11 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	ui->lineEdit_server->completer()->setCompletionRole(Qt::DisplayRole);
 
 	// Queue tab
+	ui->table_queue->setModel(&renderQueueData);
+	renderQueueData.setColumnCount(3);
+	renderQueueData.setHeaderData( 0, Qt::Horizontal, QObject::tr("File Name"));
+	renderQueueData.setHeaderData( 1, Qt::Horizontal, QObject::tr("Status"));
+	renderQueueData.setHeaderData( 2, Qt::Horizontal, QObject::tr("Pass #"));
 	connect(ui->button_addQueueFiles, SIGNAL(clicked()), this, SLOT(addQueueFiles()));
 	connect(ui->button_removeQueueFiles, SIGNAL(clicked()), this, SLOT(removeQueueFiles()));
 	connect(ui->spinBox_overrideHaltSpp, SIGNAL(valueChanged(int)), this, SLOT(overrideHaltSppChanged(int)));
@@ -2245,6 +2250,31 @@ void MainWindow::networknodeSelectionChanged()
 	}
 }
 
+/**
+ * Method to add files to the render queue. Normally called by the command line processor
+ * but it could be possibly engaged by the API for dynamic updates.
+ * It addes the files to the data model, the corresponding View will pick it up automatically.
+ */
+bool MainWindow::addFileToRenderQueue( const QString sceneFileName ) {  
+  int row = renderQueueData.rowCount();
+  // Avoid adiing duplicates
+  if (IsFileInQueue(sceneFileName)) {
+    return(false);    
+  }
+  
+  QStandardItem* fileName = new QStandardItem(sceneFileName);
+  QStandardItem* status = new QStandardItem(tr("Waiting"));
+  QStandardItem* pass = new QStandardItem("0");
+  
+  if (sceneFileName == m_CurrentFile)
+    status->setText(tr("Rendering"));
+  
+  renderQueueData.setItem(row,0,fileName);
+  renderQueueData.setItem(row,1,status);
+  renderQueueData.setItem(row,2,pass);
+  return(true);
+}
+
 void MainWindow::addQueueFiles()
 {
 	QStringList files = QFileDialog::getOpenFileNames(this, tr("Select files to add"), m_lastOpendir, tr("LuxRender Files (*.lxs)"));
@@ -2257,9 +2287,6 @@ void MainWindow::addQueueFiles()
 	for (int i = 0; i < files.count(); i++) {
 		files[i] = QDir::fromNativeSeparators(files[i]);
 	}
-
-
-	int row = ui->table_queue->rowCount();
 
 	if (m_guiRenderState == RENDERING && !IsFileInQueue(m_CurrentFile)) {
 		// add current file to queue, since user created one
@@ -2274,64 +2301,47 @@ void MainWindow::addQueueFiles()
 			overrideWriteFlmChanged(true);
 	}
 
-
-	for (int i = 0; i < files.count(); i++) {
-
-		// not allowing duplicates
-		if (IsFileInQueue(files[i]))
-			continue;
-
-		QTableWidgetItem *filename = new QTableWidgetItem(files[i]);
-		QTableWidgetItem *status = new QTableWidgetItem("");
-		QTableWidgetItem *pass = new QTableWidgetItem("0");
-
-		if (files[i] == m_CurrentFile)
-			status->setText(tr("Rendering"));
-
-		ui->table_queue->insertRow(row);
-
-		ui->table_queue->setItem(row, 0, filename);
-		ui->table_queue->setItem(row, 1, status);
-		ui->table_queue->setItem(row, 2, pass);
-
-		row++;
+  unsigned int numFiles = (unsigned int)files.count();
+	for (int i = 0; i < numFiles; i++) {
+		addFileToRenderQueue(files[i]);
 	}
 
 	ui->table_queue->resizeColumnsToContents();
 
 	if (m_guiRenderState != RENDERING) {
+		LOG(LUX_INFO,LUX_NOERROR) << ">>> " << files.count() << " files added to the Render Queue. Now rendering...";
 		RenderNextFileInQueue();
 	}
 }
 
 void MainWindow::removeQueueFiles()
 {
-	int idx = -1;
-	int idxOffset = 0;
-	for (int i = ui->table_queue->rowCount()-1; i >= 0; i--) {
-		QTableWidgetItem *fname = ui->table_queue->item(i, 0);
-
-		if (!fname->isSelected())
-			continue;
-
-		// increase offset for rows removed above active file
-		if (idx >= 0)
-			idxOffset++;
-
-		// stop rendering if current file is active
+ 
+ 	QItemSelectionModel* selectionModel = ui->table_queue->selectionModel();
+	QModelIndexList indexes = selectionModel->selectedRows();
+  QModelIndex index;
+  QList<int> rows;
+  int currentFileIndex = -1;
+  // Collect the indexes, we don't want to delete from inside the loop...
+  foreach(index, indexes) {
+		QStandardItem *fname = renderQueueData.item(index.row(), 0);
 		if (fname->text() == m_CurrentFile) {
-			idx = i;
+			endRenderingSession();
+			changeRenderState(STOPPED);
+      currentFileIndex = index.row();
 		}
-
-		ui->table_queue->removeRow(i);
-	}
-
-	if (idx >= 0) {
-		endRenderingSession();
-		changeRenderState(STOPPED);
-
-		RenderNextFileInQueue(idx - idxOffset);
-	}
+    rows << index.row();
+  }
+  
+  selectionModel->clear();
+  // Delete now
+  int row;  
+  foreach(row, rows) {
+    renderQueueData.removeRow(row);
+    if (row == currentFileIndex) {
+      RenderNextFileInQueue();      
+    }
+  }
 }
 
 void MainWindow::overrideHaltSppChanged(int value)
@@ -2381,9 +2391,9 @@ void MainWindow::overrideWriteFlmChanged(bool checked)
 }
 
 bool MainWindow::IsFileInQueue(const QString &filename)
-{
-	for (int i = 0; i < ui->table_queue->rowCount(); i++) {
-		QTableWidgetItem *fname = ui->table_queue->item(i, 0);
+{  
+  for (int i = 0; i < renderQueueData.rowCount(); i++) {
+		QStandardItem *fname = renderQueueData.item(i, 0);
 
 		if (fname && (fname->text() == filename))
 			return true;
@@ -2394,39 +2404,36 @@ bool MainWindow::IsFileInQueue(const QString &filename)
 
 bool MainWindow::IsFileQueued()
 {
-	return ui->table_queue->rowCount() > 0;
+	return renderQueueData.rowCount() > 0;
 }
 
 bool MainWindow::RenderNextFileInQueue()
 {
-	int idx = -1;
+//	int idx = -1;
 
 	// update current file
-	for (int i = 0; i < ui->table_queue->rowCount(); i++) {
-		QTableWidgetItem *fname = ui->table_queue->item(i, 0);
 
+  for (int i = 0; i < renderQueueData.rowCount(); i++) {
+		QStandardItem *fname = renderQueueData.item(i, 0);
+		QStandardItem *status = renderQueueData.item(i, 1);
 		if (fname->text() == m_CurrentFile) {
-			idx = i;
-			break;
+      status->setText(tr("Completed ") + QDateTime::currentDateTime().toString(Qt::DefaultLocaleShortDate));
+      LOG(LUX_INFO,LUX_NOERROR) << "==== Queued file '" << qPrintable(m_CurrentFileBaseName) << "' done ====";
 		}
+    else if (status->text() == "Waiting"){
+      return(RenderNextFileInQueue(i));
+    }
 	}
+  return(false);
+//	ui->table_queue->resizeColumnsToContents();
 
-	if (idx >= 0) {
-		QTableWidgetItem *status = ui->table_queue->item(idx, 1);
-		status->setText(tr("Completed ") + QDateTime::currentDateTime().toString(Qt::DefaultLocaleShortDate));
-		LOG(LUX_INFO,LUX_NOERROR) << "==== Queued file '" << qPrintable(m_CurrentFileBaseName) << "' done ====";
-	}
-
-	ui->table_queue->resizeColumnsToContents();
-
-	idx++;
-	return RenderNextFileInQueue(idx);
 }
 
 bool MainWindow::RenderNextFileInQueue(int idx)
 {
 	// render next
-	if (idx >= ui->table_queue->rowCount()) {
+  
+  if (idx >= renderQueueData.rowCount()) {
 		if (ui->checkBox_loopQueue->isChecked()) {
 			ui->table_queue->setColumnHidden(2, false);
 			idx = 0;
@@ -2435,10 +2442,11 @@ bool MainWindow::RenderNextFileInQueue(int idx)
 			return false;
 	}
 
-	QString filename = ui->table_queue->item(idx, 0)->text();
-	QTableWidgetItem *status = ui->table_queue->item(idx, 1);
-	QTableWidgetItem *pass = ui->table_queue->item(idx, 2);
-
+	QString filename = renderQueueData.item(idx, 0)->text();
+	QStandardItem *status = renderQueueData.item(idx, 1);
+	QStandardItem *pass = renderQueueData.item(idx, 2);
+  
+  
 	status->setText(tr("Rendering"));
 	pass->setText(QString("%1").arg(pass->text().toInt() + 1));
 
@@ -2457,7 +2465,7 @@ bool MainWindow::RenderNextFileInQueue(int idx)
 
 void MainWindow::ClearRenderingQueue()
 {
-	ui->table_queue->clearContents();
+	renderQueueData.clear();
 	ui->table_queue->setColumnHidden(2, true);
 }
 
