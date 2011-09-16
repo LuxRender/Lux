@@ -36,6 +36,7 @@ using std::stringstream;
 
 #include <QtGui/QApplication>
 #include <QtGui/QMessageBox>
+#include <QTextStream>
 
 #include "api.h"
 #include "error.h"
@@ -106,6 +107,15 @@ void LuxGuiApp::init(void) {
 		mainwin->SetRenderThreads(m_threads);
 		if (!m_inputFile.isEmpty())
 			mainwin->renderScenefile(m_inputFile);
+
+		// Add files to the render queue
+    if (renderQueueList.count()) {
+      QString renderQueueEntry;
+      foreach( renderQueueEntry, renderQueueList ) {
+        mainwin->addFileToRenderQueue(renderQueueEntry);
+      }
+      mainwin->RenderNextFileInQueue();
+    }
 	} else {
 	}	
 }
@@ -150,6 +160,7 @@ bool LuxGuiApp::ProcessCommandLine(void)
 			("verbose,V", "Increase output verbosity (show DEBUG messages)")
 			("quiet,q", "Reduce output verbosity (hide INFO messages)")
 			("very-quiet,x", "Reduce output verbosity even more (hide WARNING messages)")
+      ("list-file,L", po::value< string >(), "A file that contains a list of files to be rendered in the Queue")
 		;
 
 		// Declare a group of options that will be
@@ -294,6 +305,22 @@ bool LuxGuiApp::ProcessCommandLine(void)
 				luxSetEpsilon(-1.f, maxe);
 			} else
 				luxSetEpsilon(-1.f, -1.f);
+		}
+
+		// Read file names for the Reander Queue
+		if (vm.count("list-file")) {
+			LOG( LUX_INFO,LUX_NOERROR) << "Reading file list from: " << vm["list-file"].as<string>().c_str();
+			QFile listFile(vm["list-file"].as<string>().c_str());
+			QString renderQueueEntry;
+			if ( listFile.open(QIODevice::ReadOnly) ) {
+        QTextStream lfStream(&listFile);
+				while(!lfStream.atEnd()) {
+					renderQueueEntry = lfStream.readLine();
+					if (!renderQueueEntry.isNull()) {
+            renderQueueList << renderQueueEntry;
+					}
+				};
+			}
 		}
 
 		return true;

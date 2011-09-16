@@ -56,6 +56,7 @@
 #include <QVariant>
 #include <QtGui/QTabBar>
 #include <QtGui/QProgressDialog>
+#include <QtGui/QStandardItemModel>
 
 #include "api.h"
 #include "renderview.hxx"
@@ -248,6 +249,8 @@ public:
 	bool m_auto_tonemap;
 
 	void loadFile(const QString &fileName);
+  bool addFileToRenderQueue( const QString sceneFileName );
+	bool RenderNextFileInQueue();
 
 protected:
 	
@@ -361,9 +364,10 @@ private:
 	void ReadSettings();
 	void WriteSettings();
 
+	// The Data Model for the Render Queue
+	QStandardItemModel renderQueueData;
 	bool IsFileInQueue(const QString &filename);
 	bool IsFileQueued();
-	bool RenderNextFileInQueue();
 	bool RenderNextFileInQueue(int idx);
 	void ClearRenderingQueue();
 
@@ -425,7 +429,7 @@ private slots:
 	void updateIntervalChanged(int value);
 	void networknodeSelectionChanged();
 
-	void addQueueFiles();
+	void addQueueFiles();  
 	void removeQueueFiles();
 	void overrideHaltSppChanged(int value);
 	void overrideHaltTimeChanged(int value);
