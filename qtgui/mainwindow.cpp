@@ -21,6 +21,12 @@
  ***************************************************************************/
 
 #define BOOST_FILESYSTEM_VERSION 2
+
+#define TAB_ID_RENDER  1
+#define TAB_ID_QUEUE   2
+#define TAB_ID_NETWORK 3
+#define TAB_ID_LOG     4
+
 #include <boost/bind.hpp>
 #include <boost/filesystem.hpp>
 //#include <boost/filesystem/path.hpp>
@@ -496,7 +502,24 @@ void MainWindow::WriteSettings()
 
 void MainWindow::ShowTabLogIcon ( int index, const QIcon & icon )
 {
-	ui->tabs_main->setTabIcon(index, icon);
+	int tab_index = -1;
+	switch(index) {
+		case TAB_ID_LOG:
+			tab_index = ui->tabs_main->indexOf(ui->tab_log);
+			break;
+		case TAB_ID_NETWORK:
+			tab_index = ui->tabs_main->indexOf(ui->tab_network);
+			break;
+		case TAB_ID_RENDER:
+			tab_index = ui->tabs_main->indexOf(ui->tab_render);
+			break;
+		case TAB_ID_QUEUE:
+			tab_index = ui->tabs_main->indexOf(ui->tab_queue);
+			break;
+	}
+	if (tab_index != -1) {
+		ui->tabs_main->setTabIcon(tab_index, icon);			
+	}
 }
 
 void MainWindow::toneMapParamsChanged()
@@ -1826,7 +1849,7 @@ void MainWindow::logEvent(LuxLogEvent *event)
 		blink = true;
 		if (event->getSeverity() < LUX_ERROR) {
 			static const QIcon icon(":/icons/warningicon.png");
-			ShowTabLogIcon(1, icon);
+			ShowTabLogIcon(TAB_ID_LOG, icon);
 		} else {
 			blinkTrigger();
 			statusMessage->setText("Check Log Please");
@@ -1846,7 +1869,7 @@ void MainWindow::tabChanged(int)
 	if (currentIndex == 1) {
 		blinkTrigger(false);
 		static const QIcon icon(":/icons/logtabicon.png");
-		ShowTabLogIcon(1, icon);
+		ShowTabLogIcon(TAB_ID_LOG, icon);
 		statusMessage->setText("Checking Log acknowledged");
 	}
 }
@@ -1859,17 +1882,17 @@ void MainWindow::blinkTrigger(bool active)
 		blink = !blink;
 		if (blink) {
 			static const QIcon icon(":/icons/erroricon.png");
-			ShowTabLogIcon(1, icon);
+			ShowTabLogIcon(TAB_ID_LOG, icon);
 		}
 		else {
 			static const QIcon icon(":/icons/logtabicon.png");
-			ShowTabLogIcon(1, icon);
+			ShowTabLogIcon(TAB_ID_LOG, icon);
 		}
 	} else {
 		m_blinkTimer->stop();
 		blink = false;
 		static const QIcon icon(":/icons/logtabicon.png");
-		ShowTabLogIcon(1, icon);
+		ShowTabLogIcon(TAB_ID_LOG, icon);
 	}
 }
 
