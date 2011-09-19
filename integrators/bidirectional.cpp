@@ -1174,8 +1174,10 @@ bool BidirPathState::Init(const Scene &scene) {
 		}
 		v.throughputWi /= pdfR;
 
-		if (nEye == 1)
+		if (nEye == 1) {
+			alpha = 1.f;
 			distance = ray.maxt * ray.d.Length();
+		}
 
 		// Possibly add emitted light at path vertex
 		if (specularBounce && isect.arealight) {
@@ -1291,7 +1293,7 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 		}
 	}
 
-		// Generate the rays
+	// Generate the rays
 	bidirState->raysCount = 0;
 	Ray *shadowRays = (Ray *)alloca(sizeof(Ray) * (maxEyeDepth + maxEyeDepth * maxLightDepth));
 	const Sample &sample(bidirState->sample);
@@ -1347,7 +1349,10 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 
 						if (shadowRayEpsilon < length * .5f) {
 							// Store light's contribution
-							const u_int pathWeigth = t - nSpecularVertices[t];
+
+							// Sampling techniques count = k + 2 - nSpecularVertices, k = s + t - 1
+							// here s = 1 => k = t => Sampling techniques count= t + 2 - nSpecularVertices
+							const u_int pathWeigth = t + 2 - nSpecularVertices[t];
 							SWCSpectrum Ld = eyePath.throughputWi * Li / (d2 * pathWeigth);
 
 							if (!Ld.Black()) {
@@ -1400,9 +1405,11 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 						MachineEpsilon::E(length));
 
 				if (shadowRayEpsilon < length * .5f) {
-					const u_int pathWeight = t + s - nSpecularVertices[t + s];
-					const float G = AbsDot(eyePath.bsdf->dgShading.nn, d) * AbsDot(lightPath.bsdf->dgShading.nn, d) / length;
-					Lc = eyePath.throughputWi * ef * G * lf * lightPath.throughputWi * bidirState->Le / pathWeight;
+					// Sampling techniques count = k + 2 - nSpecularVertices, k = s + t - 1
+					// Sampling techniques count = s + t -1 + 2 - nSpecularVertices
+					const u_int pathWeight = t + s + 1 - nSpecularVertices[t + s];
+					const float G = 1.f / length;
+					Lc = (eyePath.throughputWi * ef * G * lf * lightPath.throughputWi * bidirState->Le) / pathWeight;
 
 					if (!Lc.Black()) {
 						const float maxt = length - shadowRayEpsilon;
