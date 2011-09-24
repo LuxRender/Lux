@@ -1350,9 +1350,17 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 						if (shadowRayEpsilon < length * .5f) {
 							// Store light's contribution
 
-							// Sampling techniques count = k + 2 - nSpecularVertices, k = s + t - 1
-							// here s = 1 => k = t => Sampling techniques count= t + 2 - nSpecularVertices
-							const u_int pathWeigth = t + 2 - nSpecularVertices[t];
+							// Using Veach's definitions:
+							//  Sampling techniques count = k + 2 - nSpecularVertices
+							//  k = s + t - 1
+							//  Sampling techniques count = s + t - 1 + 2 - nSpecularVertices
+							//  here s = 0
+							//  Sampling techniques count = 0 + t - 1 + 2 - nSpecularVertices
+							//  Sampling techniques count = t + 1 - nSpecularVertices
+							// I don't connect Light path directly to eye so:
+							//  Sampling techniques count = t + 1 - nSpecularVertices - 1
+							//  Sampling techniques count = t - nSpecularVertices
+							const u_int pathWeigth = t - nSpecularVertices[t];
 							SWCSpectrum Ld = eyePath.throughputWi * Li / (d2 * pathWeigth);
 
 							if (!Ld.Black()) {
@@ -1405,9 +1413,15 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 						MachineEpsilon::E(length));
 
 				if (shadowRayEpsilon < length * .5f) {
-					// Sampling techniques count = k + 2 - nSpecularVertices, k = s + t - 1
-					// Sampling techniques count = s + t - 1 + 2 - nSpecularVertices
-					const u_int pathWeight = t + s + 1 - nSpecularVertices[t + s];
+					// Using Veach's definitions:
+					//  Sampling techniques count = k + 2 - nSpecularVertices
+					//  k = s + t - 1
+					//  Sampling techniques count = s + t - 1 + 2 - nSpecularVertices
+					//  Sampling techniques count = s + t + 1 - nSpecularVertices
+					// I don't connect Light path directly to eye so:
+					//  Sampling techniques count = s + t + 1 - nSpecularVertices - 1
+					//  Sampling techniques count = s + t - nSpecularVertices
+					const u_int pathWeight = t + s - nSpecularVertices[t + s];
 					const float G = 1.f / length;
 					Lc = (eyePath.throughputWi * ef * G * lf * lightPath.throughputWi * bidirState->Le) / pathWeight;
 
@@ -1420,55 +1434,6 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 			}
 		}
 	}
-
-	/*//--------------------------------------------------------------------------
-	// Last light path vertex to the eye connection rays
-	//--------------------------------------------------------------------------
-
-	const u_int t = 0;
-	BidirPathState::BidirStateVertex &eyePath = bidirState->eyePath[t];
-	// For each light path vertex
-	for (u_int s = 1; s < bidirState->lightPathLength; ++s) {
-		BidirPathState::BidirStateVertex &lightPath = bidirState->lightPath[s];
-
-		SWCSpectrum &Lc(bidirState->Lc[t + s * bidirState->eyePathLength]);
-		Lc = SWCSpectrum(0.f);
-
-		if ((lightPath.bsdf->NumComponents(BxDFType(~BSDF_SPECULAR)) > 0) &&
-				(eyePath.bsdf->NumComponents(BxDFType(~BSDF_SPECULAR)) > 0)) {
-			const Point &p = eyePath.bsdf->dgShading.p;
-			Vector d = lightPath.bsdf->dgShading.p - p;
-			const float length = d.Length();
-			d /= length;
-
-			const SWCSpectrum ef(eyePath.bsdf->F(sw, d, eyePath.wo, true, eyePath.flags) *
-				(1 + eyePath.bsdf->NumComponents(BSDF_SPECULAR)));
-			if (ef.Black())
-				continue;
-
-			const SWCSpectrum lf(lightPath.bsdf->F(sw, lightPath.wi, -d, false, lightPath.flags) *
-				(1 + lightPath.bsdf->NumComponents(BSDF_SPECULAR)));
-			if (lf.Black())
-				continue;
-
-			const float shadowRayEpsilon = max(MachineEpsilon::E(p),
-					MachineEpsilon::E(length));
-
-			if (shadowRayEpsilon < length * .5f) {
-				// Sampling techniques count = k + 2 - nSpecularVertices, k = s + t - 1
-				// Sampling techniques count = s + t - 1 + 2 - nSpecularVertices
-				const u_int pathWeight = t + s + 1 - nSpecularVertices[t + s];
-				const float G = 1.f / length;
-				Lc = (eyePath.throughputWi * ef * G * lf * lightPath.throughputWi * bidirState->Le) / pathWeight;
-
-				if (!Lc.Black()) {
-					const float maxt = length - shadowRayEpsilon;
-					shadowRays[bidirState->raysCount] = Ray(p, d, shadowRayEpsilon, maxt, bidirState->sample.realTime);
-					++(bidirState->raysCount);
-				}
-			}
-		}
-	}*/
 
 	//LOG(LUX_DEBUG, LUX_NOERROR) << "Generated rays: " << bidirState->raysCount;
 
