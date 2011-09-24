@@ -1312,69 +1312,73 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 				sampleDirectOffset, t);
 
 			BidirPathState::BidirStateVertex &eyePath = bidirState->eyePath[t];
+			SWCSpectrum &stateLd(bidirState->Ld[t]);
+			stateLd = SWCSpectrum(0.f);
 
-			SWCSpectrum &Ld(bidirState->Ld[t]);
-			Ld = SWCSpectrum(0.f);
+			if (eyePath.bsdf->NumComponents(BxDFType(BSDF_ALL & ~BSDF_SPECULAR)) == 0)
+				continue;
 
-			if (eyePath.bsdf->NumComponents(BxDFType(BSDF_ALL & ~BSDF_SPECULAR)) > 0) {
-				float portal = sampleData[2] * nLights;
-				const u_int lightDirectNumber = min(Floor2UInt(portal), nLights - 1U);
-				const Light *light = scene.lights[lightDirectNumber];
-				portal -= lightDirectNumber;
+			float portal = sampleData[2] * nLights;
+			const u_int lightDirectNumber = min(Floor2UInt(portal), nLights - 1U);
+			const Light *light = scene.lights[lightDirectNumber];
+			portal -= lightDirectNumber;
 
-				const Point &p = eyePath.bsdf->dgShading.p;
+			const Point &p = eyePath.bsdf->dgShading.p;
 
-				// Trace a shadow ray by sampling the light source
-				float lightPdf;
-				SWCSpectrum Li;
-				BSDF *lightBsdf;
-				if (light->SampleL(scene, sample, p, sampleData[0], sampleData[1], portal,
-					&lightBsdf, NULL, &lightPdf, &Li)) {
-					Li *= lightSelectionPdf; // ONE_UNIFORM Strategy Pdf
+			// Trace a shadow ray by sampling the light source
+			float lightPdf;
+			SWCSpectrum Li;
+			BSDF *lightBsdf;
+			if (!light->SampleL(scene, sample, p, sampleData[0], sampleData[1], portal,
+				&lightBsdf, NULL, &lightPdf, &Li))
+				continue;
 
-					const Point &pL(lightBsdf->dgShading.p);
-					const Vector wi0(pL - p);
-					const float d2 = wi0.LengthSquared();
-					const float length = sqrtf(d2);
-					const Vector wi(wi0 / length);
+			Li *= lightSelectionPdf; // ONE_UNIFORM Strategy Pdf
 
-					Vector wo(eyePath.wi);
+			const Point &pL(lightBsdf->dgShading.p);
+			const Vector wi0(pL - p);
+			const float d2 = wi0.LengthSquared();
+			const float length = sqrtf(d2);
+			const Vector wi(wi0 / length);
 
-					Li *= lightBsdf->F(sw, Vector(lightBsdf->nn), -wi, false);
-					Li *= eyePath.bsdf->F(sw, wi, wo, true);
+			Vector wo(eyePath.wi);
 
-					if (!Li.Black()) {
-						const float shadowRayEpsilon = max(MachineEpsilon::E(pL),
-							MachineEpsilon::E(length));
+			Li *= lightBsdf->F(sw, Vector(lightBsdf->nn), -wi, false);
+			Li *= eyePath.bsdf->F(sw, wi, wo, true);
 
-						if (shadowRayEpsilon < length * .5f) {
-							// Store light's contribution
+			if (Li.Black())
+				continue;
 
-							// Using Veach's definitions:
-							//  Sampling techniques count = k + 2 - nSpecularVertices
-							//  k = s + t - 1
-							//  Sampling techniques count = s + t - 1 + 2 - nSpecularVertices
-							//  here s = 0
-							//  Sampling techniques count = 0 + t - 1 + 2 - nSpecularVertices
-							//  Sampling techniques count = t + 1 - nSpecularVertices
-							// I don't connect Light path directly to eye so:
-							//  Sampling techniques count = t + 1 - nSpecularVertices - 1
-							//  Sampling techniques count = t - nSpecularVertices
-							const u_int pathWeigth = t - nSpecularVertices[t];
-							SWCSpectrum Ld = eyePath.throughputWi * Li / (d2 * pathWeigth);
+			const float shadowRayEpsilon = max(MachineEpsilon::E(pL),
+				MachineEpsilon::E(length));
 
-							if (!Ld.Black()) {
-								bidirState->Ld[t] = Ld;
-								bidirState->LdGroup[t] = light->group;
+			if (length * .5f <= shadowRayEpsilon)
+				continue;
 
-								const float maxt = length - shadowRayEpsilon;
-								shadowRays[bidirState->raysCount] = Ray(p, wi, shadowRayEpsilon, maxt, sample.realTime);
-								++(bidirState->raysCount);
-							}
-						}
-					}
-				}
-			}
+			// Store light's contribution
+
+			// Using Veach's definitions:
+			//  Sampling techniques count = k + 2 - nSpecularVertices
+			//  k = s + t - 1
+			//  Sampling techniques count = s + t - 1 + 2 - nSpecularVertices
+			//  here s = 0
+			//  Sampling techniques count = 0 + t - 1 + 2 - nSpecularVertices
+			//  Sampling techniques count = t + 1 - nSpecularVertices
+			// I don't connect Light path directly to eye so:
+			//  Sampling techniques count = t + 1 - nSpecularVertices - 1
+			//  Sampling techniques count = t - nSpecularVertices
+			const u_int pathWeigth = t - nSpecularVertices[t];
+			SWCSpectrum Ld = eyePath.throughputWi * Li / (d2 * pathWeigth);
+
+			if (Ld.Black())
+				continue;
+
+			stateLd = Ld;
+			bidirState->LdGroup[t] = light->group;
+
+			const float maxt = length - shadowRayEpsilon;
+			shadowRays[bidirState->raysCount] = Ray(p, wi, shadowRayEpsilon, maxt, sample.realTime);
+			++(bidirState->raysCount);
 		}
 	}
 
@@ -1389,49 +1393,55 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 			BidirPathState::BidirStateVertex &eyePath = bidirState->eyePath[t];
 			BidirPathState::BidirStateVertex &lightPath = bidirState->lightPath[s];
 
-			SWCSpectrum &Lc(bidirState->Lc[t + s * bidirState->eyePathLength]);
-			Lc = SWCSpectrum(0.f);
+			SWCSpectrum &stateLc(bidirState->Lc[t + s * bidirState->eyePathLength]);
+			stateLc = SWCSpectrum(0.f);
 
-			if ((eyePath.bsdf->NumComponents(BxDFType(~BSDF_SPECULAR)) > 0) &&
-				(lightPath.bsdf->NumComponents(BxDFType(~BSDF_SPECULAR)) > 0)) {
-				const Point &p = eyePath.bsdf->dgShading.p;
-				Vector d = lightPath.bsdf->dgShading.p - p;
-				const float length = d.Length();
-				d /= length;
+			if ((eyePath.bsdf->NumComponents(BxDFType(~BSDF_SPECULAR)) == 0) ||
+				(lightPath.bsdf->NumComponents(BxDFType(~BSDF_SPECULAR)) == 0))
+				continue;
 
-				const SWCSpectrum ef(eyePath.bsdf->F(sw, d, eyePath.wo, true, eyePath.flags) *
-					(1 + eyePath.bsdf->NumComponents(BSDF_SPECULAR)));
-				if (ef.Black())
-					continue;
+			const Point &p = eyePath.bsdf->dgShading.p;
+			const Point &pL = lightPath.bsdf->dgShading.p;
+			Vector d(pL - p);
+			const float d2 = d.LengthSquared();
+			const float length = sqrtf(d2);
+			d /= length;
 
-				const SWCSpectrum lf(lightPath.bsdf->F(sw, lightPath.wi, -d, false, lightPath.flags) *
-					(1 + lightPath.bsdf->NumComponents(BSDF_SPECULAR)));
-				if (lf.Black())
-					continue;
+			const float shadowRayEpsilon = max(MachineEpsilon::E(p),
+					MachineEpsilon::E(length));
 
-				const float shadowRayEpsilon = max(MachineEpsilon::E(p),
-						MachineEpsilon::E(length));
+			if (length * .5f <= shadowRayEpsilon)
+				continue;
 
-				if (shadowRayEpsilon < length * .5f) {
-					// Using Veach's definitions:
-					//  Sampling techniques count = k + 2 - nSpecularVertices
-					//  k = s + t - 1
-					//  Sampling techniques count = s + t - 1 + 2 - nSpecularVertices
-					//  Sampling techniques count = s + t + 1 - nSpecularVertices
-					// I don't connect Light path directly to eye so:
-					//  Sampling techniques count = s + t + 1 - nSpecularVertices - 1
-					//  Sampling techniques count = s + t - nSpecularVertices
-					const u_int pathWeight = t + s - nSpecularVertices[t + s];
-					const float G = 1.f / length;
-					Lc = (eyePath.throughputWi * ef * G * lf * lightPath.throughputWi * bidirState->Le) / pathWeight;
+			const SWCSpectrum ef(eyePath.bsdf->F(sw, d, eyePath.wo, true, eyePath.flags) *
+				(1 + eyePath.bsdf->NumComponents(BSDF_SPECULAR)));
+			if (ef.Black())
+				continue;
 
-					if (!Lc.Black()) {
-						const float maxt = length - shadowRayEpsilon;
-						shadowRays[bidirState->raysCount] = Ray(p, d, shadowRayEpsilon, maxt, bidirState->sample.realTime);
-						++(bidirState->raysCount);
-					}
-				}
-			}
+			const SWCSpectrum lf(lightPath.bsdf->F(sw, lightPath.wi, -d, false, lightPath.flags) *
+				(1 + lightPath.bsdf->NumComponents(BSDF_SPECULAR)));
+			if (lf.Black())
+				continue;
+
+			// Using Veach's definitions:
+			//  Sampling techniques count = k + 2 - nSpecularVertices
+			//  k = s + t - 1
+			//  Sampling techniques count = s + t - 1 + 2 - nSpecularVertices
+			//  Sampling techniques count = s + t + 1 - nSpecularVertices
+			// I don't connect Light path directly to eye so:
+			//  Sampling techniques count = s + t + 1 - nSpecularVertices - 1
+			//  Sampling techniques count = s + t - nSpecularVertices
+			const u_int pathWeight = t + s - nSpecularVertices[t + s];
+			SWCSpectrum Lc = eyePath.throughputWi * ef * lf * lightPath.throughputWi * bidirState->Le / (d2 * pathWeight);
+
+			if (Lc.Black())
+				continue;
+
+			stateLc = Lc;
+
+			const float maxt = length - shadowRayEpsilon;
+			shadowRays[bidirState->raysCount] = Ray(p, d, shadowRayEpsilon, maxt, bidirState->sample.realTime);
+			++(bidirState->raysCount);
 		}
 	}
 
