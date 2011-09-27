@@ -50,8 +50,7 @@ public:
 		const Point &p, float u1, float u2, float u3, BSDF **bsdf,
 		float *pdf, float *pdfDirect, SWCSpectrum *Le) const;
 	void GetSkySpectralRadiance(const SpectrumWavelengths &sw,
-		const float theta, const float phi,
-		SWCSpectrum *const dst_spect) const;
+		const Vector &w, SWCSpectrum *const dst_spect) const;
 
 	static Light *CreateLight(const Transform &light2world,
 		const ParamSet &paramSet);

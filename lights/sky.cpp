@@ -57,19 +57,18 @@ public:
 		bool reverse = false) const {
 		if (reverse || NumComponents(flags) == 0)
 			return false;
-		*wiW = CosineSampleHemisphere(u1, u2);
-		const float cosi = wiW->z;
-		*wiW = Normalize(WorldToLight.GetInverse()(*wiW));
+		const Vector w(CosineSampleHemisphere(u1, u2));
+		const float cosi = w.z;
+		const Vector wi(w.x * dgShading.dpdu + w.y * dgShading.dpdv +
+			w.z * Vector(dgShading.nn));
+		*wiW = Normalize(WorldToLight.GetInverse()(wi));
 		if (sampledType)
 			*sampledType = BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE);
 		*pdf = cosi * INV_PI;
 		if (pdfBack)
 			*pdfBack = 0.f;
-		const Vector w(Normalize(WorldToLight(-(*wiW))));
-		const float phi = SphericalPhi(w);
-		const float theta = SphericalTheta(w);
 		*f_ = SWCSpectrum(M_PI);
-		light.GetSkySpectralRadiance(sw, theta, phi, f_);
+		light.GetSkySpectralRadiance(sw, Normalize(-wi), f_);
 		return true;
 	}
 	virtual float Pdf(const SpectrumWavelengths &sw, const Vector &woW,
@@ -84,10 +83,8 @@ public:
 		const float cosi = Dot(wiW, ng);
 		if (NumComponents(flags) == 1 && cosi > 0.f) {
 			const Vector w(Normalize(WorldToLight(-wiW)));
-			const float phi = SphericalPhi(w);
-			const float theta = SphericalTheta(w);
 			SWCSpectrum L(cosi);
-			light.GetSkySpectralRadiance(sw, theta, phi, &L);
+			light.GetSkySpectralRadiance(sw, w, &L);
 			return L;
 		}
 		return SWCSpectrum(0.f);
@@ -137,10 +134,8 @@ public:
 		if (!(cosi > 0.f))
 			return false;
 		const Vector w(Normalize(WorldToLight(-(*wiW))));
-		const float phi = SphericalPhi(w);
-		const float theta = SphericalTheta(w);
 		*f_ = SWCSpectrum(cosi);
-		light.GetSkySpectralRadiance(sw, theta, phi, f_);
+		light.GetSkySpectralRadiance(sw, w, f_);
 		*pdf = PortalShapes[shapeIndex]->Pdf(ps, dg.p) *
 			DistanceSquared(ps, dg.p) / AbsDot(*wiW, dg.nn);
 		for (u_int i = 0; i < PortalShapes.size(); ++i) {
@@ -185,10 +180,8 @@ public:
 		const float cosi = Dot(wiW, ng);
 		if (NumComponents(flags) == 1 && cosi > 0.f) {
 			const Vector w(Normalize(WorldToLight(-wiW)));
-			const float phi = SphericalPhi(w);
-			const float theta = SphericalTheta(w);
 			SWCSpectrum L(cosi);
-			light.GetSkySpectralRadiance(sw, theta, phi, &L);
+			light.GetSkySpectralRadiance(sw, w, &L);
 			return L;
 		}
 		return SWCSpectrum(0.f);
@@ -220,6 +213,15 @@ static float PerezBase(const float lam[6], float theta, float gamma)
 inline float RiAngleBetween(float thetav, float phiv, float theta, float phi)
 {
 	const float cospsi = sinf(thetav) * sinf(theta) * cosf(phi - phiv) + cosf(thetav) * cosf(theta);
+	if (cospsi >= 1.f)
+		return 0.f;
+	if (cospsi <= -1.f)
+		return M_PI;
+	return acosf(cospsi);
+}
+inline float RiAngleBetween(const Vector &w1, const Vector &w2)
+{
+	const float cospsi = Dot(w1, w2);
 	if (cospsi >= 1.f)
 		return 0.f;
 	if (cospsi <= -1.f)
@@ -379,10 +381,8 @@ bool SkyLight::Le(const Scene &scene, const Sample &sample, const Ray &r,
 			*pdfDirect *= AbsDot(r.d, ns) /
 				(DistanceSquared(r.o, ps) * nrPortalShapes);
 	}
-	const Vector wh = Normalize(WorldToLight(r.d));
-	const float phi = SphericalPhi(wh);
-	const float theta = SphericalTheta(wh);
-	GetSkySpectralRadiance(sample.swl, theta, phi, L);
+	const Vector wh(Normalize(WorldToLight(r.d)));
+	GetSkySpectralRadiance(sample.swl, wh, L);
 	*L *= skyScale;
 	return true;
 }
@@ -611,16 +611,16 @@ void SkyLight::InitSunThetaPhi()
 
 // note - lyc - optimised return call to not create temporaries, passed in scale factor
 void SkyLight::GetSkySpectralRadiance(const SpectrumWavelengths &sw,
-	const float theta, const float phi, SWCSpectrum * const dst_spect) const
+	const Vector &w, SWCSpectrum * const dst_spect) const
 {
 	// add bottom half of hemisphere with horizon colour
-	const float theta_fin = min(theta,(M_PI * 0.5f) - 0.001f);
-	const float gamma = RiAngleBetween(theta,phi,thetaS,phiS);
+	const float theta = min(SphericalTheta(w), (M_PI * .5f) - .001f);
+	const float gamma = RiAngleBetween(w, sundir);
 
 	// Compute xyY values
-	const float x = zenith_x * PerezBase(perez_x, theta_fin, gamma);
-	const float y = zenith_y * PerezBase(perez_y, theta_fin, gamma);
-	const float Y = zenith_Y * PerezBase(perez_Y, theta_fin, gamma);
+	const float x = zenith_x * PerezBase(perez_x, theta, gamma);
+	const float y = zenith_y * PerezBase(perez_y, theta, gamma);
+	const float Y = zenith_Y * PerezBase(perez_Y, theta, gamma);
 
 	ChromaticityToSpectrum(sw, x, y, dst_spect);
 	*dst_spect *= Y;

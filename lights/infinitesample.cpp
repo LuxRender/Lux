@@ -52,9 +52,11 @@ public:
 		bool reverse = false) const {
 		if (reverse || NumComponents(flags) == 0)
 			return false;
-		*wiW = CosineSampleHemisphere(u1, u2);
-		const float cosi = wiW->z;
-		*wiW = Normalize(WorldToLight.GetInverse()(*wiW));
+		const Vector w(CosineSampleHemisphere(u1, u2));
+		const float cosi = w.z;
+		const Vector wi(w.x * dgShading.dpdu + w.y * dgShading.dpdv +
+			w.z * Vector(dgShading.nn));
+		*wiW = Normalize(WorldToLight.GetInverse()(wi));
 		if (sampledType)
 			*sampledType = BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE);
 		*pdf = cosi * INV_PI;
@@ -64,9 +66,8 @@ public:
 			*f_ = SWCSpectrum(1.f);
 			return true;
 		}
-		const Vector wh = Normalize(WorldToLight(-(*wiW)));
 		float s, t, dummy;
-		light.mapping->Map(wh, &s, &t, &dummy);
+		light.mapping->Map(Normalize(-wi), &s, &t, &dummy);
 		*f_ = light.radianceMap->LookupSpectrum(sw, s, t);
 		return true;
 	}
