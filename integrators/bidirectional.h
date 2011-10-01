@@ -50,11 +50,12 @@ private:
 		BSDF *bsdf;
 		BxDFType flags;
 
+		// TOFIX: wi is available also inside the bsdf
 		Vector wi, wo;
 		SWCSpectrum throughputWi, throughputWo;
 	};
 
-	void Terminate(const Scene &scene, const u_int bufferId);
+	void Terminate(const Scene &scene, const u_int eyeBufferId, const u_int lightBufferId);
 
 	// NOTE: the size of this class is extremely important for the total
 	// amount of memory required for hybrid rendering.
@@ -75,6 +76,11 @@ private:
 
 	// One for each connection between eye path and light path
 	SWCSpectrum *Lc;
+
+	// One for each light path vertex (used for direct connection to the eye)
+	SWCSpectrum *LlightPath;
+	float *distanceLightPath;
+	float *imageXYLightPath;
 
 	u_int *raysIndex;
 	u_int raysCount;

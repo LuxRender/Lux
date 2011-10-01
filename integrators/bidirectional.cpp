@@ -927,6 +927,10 @@ BidirPathState::BidirPathState(const Scene &scene, ContributionBuffer *contribBu
 
 	Lc = new SWCSpectrum[bidir->maxEyeDepth * bidir->maxLightDepth];
 
+	LlightPath = new SWCSpectrum[bidir->maxLightDepth];
+	distanceLightPath = new float[bidir->maxLightDepth];
+	imageXYLightPath = new float[2 * bidir->maxLightDepth];
+
 	raysIndex = new u_int[bidir->maxEyeDepth + bidir->maxEyeDepth * bidir->maxLightDepth];
 
 	const u_int lightGroupCount = scene.lightGroups.size();
@@ -1238,13 +1242,18 @@ bool BidirPathState::Init(const Scene &scene) {
 void BidirPathState::Free(const Scene &scene) {
 	delete[] eyePath;
 	delete[] lightPath;
+	delete[] LlightPath;
+	delete[] distanceLightPath;
+	delete[] imageXYLightPath;
 	delete[] raysIndex;
 	delete[] L;
 	delete[] V;
 	scene.sampler->FreeSample(&sample);
 }
 
-void BidirPathState::Terminate(const Scene &scene, const u_int bufferId) {
+void BidirPathState::Terminate(const Scene &scene,
+		const u_int eyeBufferId, const u_int lightBufferId) {
+	// Add the eye buffer samples
 	const u_int lightGroupCount = scene.lightGroups.size();
 	for (u_int i = 0; i < lightGroupCount; ++i) {
 		if (!L[i].Black())
@@ -1252,9 +1261,29 @@ void BidirPathState::Terminate(const Scene &scene, const u_int bufferId) {
 
 		sample.AddContribution(sample.imageX, sample.imageY,
 			XYZColor(sample.swl, L[i]), alpha, distance,
-			V[i], bufferId, i);
+			V[i], eyeBufferId, i);
 	}
+
+	// Add the light buffer samples
+	const bool lightAlpha = light->IsEnvironmental() ? 0.f : 1.f;
+	for (u_int s = 1; s < lightPathLength; ++s) {
+		if (LlightPath[s].Black())
+			continue;
+
+		const u_int index = 2 * s;
+		const float xd = imageXYLightPath[index];
+		const float yd = imageXYLightPath[index + 1];
+
+		sample.AddContribution(xd , yd,
+			XYZColor(sample.swl, LlightPath[s]),
+			lightAlpha,
+			light->IsEnvironmental() ? INFINITY : distanceLightPath[s],
+			0.f, // TOFIX
+			lightBufferId, light->group);
+	}
+
 	sample.sampler->AddSample(sample);
+
 	state = TERMINATE;
 }
 
@@ -1364,11 +1393,8 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 			//  here s = 0
 			//  Sampling techniques count = 0 + t - 1 + 2 - nSpecularVertices
 			//  Sampling techniques count = t + 1 - nSpecularVertices
-			// I don't connect Light path directly to eye so:
-			//  Sampling techniques count = t + 1 - nSpecularVertices - 1
-			//  Sampling techniques count = t - nSpecularVertices
-			const u_int pathWeigth = t - nSpecularVertices[t];
-			SWCSpectrum Ld = eyePath.throughputWi * Li / (d2 * pathWeigth);
+			const u_int pathWeight = t + 1 - nSpecularVertices[t];
+			SWCSpectrum Ld = (eyePath.throughputWi * Li) / (d2 * pathWeight);
 
 			if (Ld.Black())
 				continue;
@@ -1428,16 +1454,79 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 			//  k = s + t - 1
 			//  Sampling techniques count = s + t - 1 + 2 - nSpecularVertices
 			//  Sampling techniques count = s + t + 1 - nSpecularVertices
-			// I don't connect Light path directly to eye so:
-			//  Sampling techniques count = s + t + 1 - nSpecularVertices - 1
-			//  Sampling techniques count = s + t - nSpecularVertices
-			const u_int pathWeight = t + s - nSpecularVertices[t + s];
-			SWCSpectrum Lc = eyePath.throughputWi * ef * lf * lightPath.throughputWi * bidirState->Le / (d2 * pathWeight);
+			const u_int pathWeight = t + s + 1 - nSpecularVertices[t + s];
+			SWCSpectrum Lc = (eyePath.throughputWi * ef * lf * lightPath.throughputWi * bidirState->Le) / (d2 * pathWeight);
 
 			if (Lc.Black())
 				continue;
 
 			stateLc = Lc;
+
+			const float maxt = length - shadowRayEpsilon;
+			shadowRays[bidirState->raysCount] = Ray(p, d, shadowRayEpsilon, maxt, bidirState->sample.realTime);
+			++(bidirState->raysCount);
+		}
+	}
+
+	//--------------------------------------------------------------------------
+	// Light path vertex to the eye connection rays
+	//--------------------------------------------------------------------------
+
+	BidirPathState::BidirStateVertex &eye0 = bidirState->eyePath[0];
+	if (eye0.bsdf->NumComponents(BxDFType(~BSDF_SPECULAR)) == 0) {
+		for (u_int s = 1; s < bidirState->lightPathLength; ++s)
+			bidirState->LlightPath[s] = SWCSpectrum(0.f);
+	} else {
+		const Point &p = eye0.bsdf->dgShading.p;
+
+		// For each light path vertex
+		for (u_int s = 1; s < bidirState->lightPathLength; ++s) {
+			BidirPathState::BidirStateVertex &lightPath = bidirState->lightPath[s];
+
+			SWCSpectrum &stateLlightPath(bidirState->LlightPath[s]);
+			stateLlightPath = SWCSpectrum(0.f);
+
+			if (lightPath.bsdf->NumComponents(BxDFType(~BSDF_SPECULAR)) == 0)
+				continue;
+
+			Vector d = lightPath.bsdf->dgShading.p - p;
+			const float d2 = d.LengthSquared();
+			const float length = sqrtf(d2);
+			d /= length;
+
+			if (!sample.camera->GetSamplePosition(p, d, length,
+				&bidirState->imageXYLightPath[2 * s], &bidirState->imageXYLightPath[2 * s + 1]))
+				continue;
+
+			const SWCSpectrum ef(eye0.bsdf->F(sw, d, eye0.wo, true, eye0.flags) *
+				(1 + eye0.bsdf->NumComponents(BSDF_SPECULAR)));
+			if (ef.Black())
+				continue;
+
+			const SWCSpectrum lf(lightPath.bsdf->F(sw, lightPath.wi, -d, false, lightPath.flags) *
+				(1 + lightPath.bsdf->NumComponents(BSDF_SPECULAR)));
+			if (lf.Black())
+				continue;
+
+			const float shadowRayEpsilon = max(MachineEpsilon::E(p),
+					MachineEpsilon::E(length));
+
+			if (length * .5f <= shadowRayEpsilon)
+				continue;
+
+			// Using Veach's definitions:
+			//  Sampling techniques count = k + 2 - nSpecularVertices
+			//  k = s + t - 1
+			//  Sampling techniques count = s + t - 1 + 2 - nSpecularVertices
+			//  Sampling techniques count = s + t + 1 - nSpecularVertices
+			//  t = 0
+			const u_int pathWeight = s + 1 - nSpecularVertices[s];
+			SWCSpectrum LlightPath = (eye0.throughputWi * ef * lf * lightPath.throughputWi * bidirState->Le) / (d2 * pathWeight);
+
+			if (LlightPath.Black())
+				continue;
+
+			stateLlightPath = LlightPath;
 
 			const float maxt = length - shadowRayEpsilon;
 			shadowRays[bidirState->raysCount] = Ray(p, d, shadowRayEpsilon, maxt, bidirState->sample.realTime);
@@ -1520,7 +1609,29 @@ bool BidirIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, l
 		}
 	}
 
-	bidirState->Terminate(scene, eyeBufferId);
+	//--------------------------------------------------------------------------
+	// Light path to the eye connections
+	//--------------------------------------------------------------------------
+
+	// For each light path vertex
+	for (u_int s = 1; s < bidirState->lightPathLength; ++s) {
+		SWCSpectrum &LlightPath(bidirState->LlightPath[s]);
+
+		if (!LlightPath.Black()) {
+			// Check if something was hit
+			const luxrays::RayHit *rayHit = rayBuffer->GetRayHit(bidirState->raysIndex[rayIndex]);
+
+			// TOFIX: add support for architectural glass, etc.
+			if (rayHit->Miss())
+				++(bidirState->contribCount);
+			else
+				LlightPath = SWCSpectrum(0.f);
+
+			++rayIndex;
+		}
+	}
+
+	bidirState->Terminate(scene, eyeBufferId, lightBufferId);
 
 	*nrContribs = bidirState->contribCount;
 
