@@ -1366,8 +1366,8 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 	u_int filtRes = 1 << max(params.FindOneInt("filterquality", 4), 1);
 
 	// Output Image File Formats
-	string clampMethodString = params.FindOneString("ldr_clamp_method", "lum");
-	int clampMethod = 0;
+	string clampMethodString = params.FindOneString("ldr_clamp_method", "cut");
+	int clampMethod = 2;
 	if (clampMethodString == "lum")
 		clampMethod = 0;
 	else if (clampMethodString == "hue")
@@ -1375,7 +1375,7 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 	else if (clampMethodString == "cut")
 		clampMethod = 2;
 	else {
-		LOG(LUX_WARNING,LUX_BADTOKEN)<< "LDR clamping method  '" << clampMethodString << "' unknown. Using \"lum\".";
+		LOG(LUX_WARNING,LUX_BADTOKEN)<< "LDR clamping method  '" << clampMethodString << "' unknown. Using \"cut\".";
 	}
 
 	// OpenEXR
@@ -1533,15 +1533,15 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 
 	// Tonemapping
 	int s_TonemapKernel = TMK_Reinhard;
-	string tmkernelStr = params.FindOneString("tonemapkernel", "reinhard");
+	string tmkernelStr = params.FindOneString("tonemapkernel", "autolinear");
 	if (tmkernelStr == "reinhard") s_TonemapKernel = TMK_Reinhard;
 	else if (tmkernelStr == "linear") s_TonemapKernel = TMK_Linear;
 	else if (tmkernelStr == "contrast") s_TonemapKernel = TMK_Contrast;
 	else if (tmkernelStr == "maxwhite") s_TonemapKernel = TMK_MaxWhite;
 	else if (tmkernelStr == "autolinear") s_TonemapKernel = TMK_AutoLinear;
 	else {
-		LOG(LUX_WARNING,LUX_BADTOKEN) << "Tonemap kernel  '" << tmkernelStr << "' unknown. Using \"reinhard\".";
-		s_TonemapKernel = TMK_Reinhard;
+		LOG(LUX_WARNING,LUX_BADTOKEN) << "Tonemap kernel  '" << tmkernelStr << "' unknown. Using \"autolinear\".";
+		s_TonemapKernel = TMK_AutoLinear;
 	}
 
 	float s_ReinhardPreScale = params.FindOneFloat("reinhard_prescale", 1.f);
