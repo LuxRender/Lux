@@ -28,6 +28,7 @@
 #include "point.h"
 #include "normal.h"
 #include "ray.h"
+#include "raydifferential.h"
 
 namespace lux
 {
@@ -68,6 +69,8 @@ public:
 	inline Ray operator()(const Ray &r) const;
 	inline void operator()(const Ray &r, Ray *rt) const;
 	BBox operator()(const BBox &b) const;
+	inline DifferentialGeometry operator()(const DifferentialGeometry &) const;
+	inline void operator()(const DifferentialGeometry &, DifferentialGeometry *) const;
 	Transform operator*(const Transform &t2) const;
 	bool SwapsHandedness() const;
 private:
@@ -83,18 +86,50 @@ private:
 #include "transform.inl"
 //#endif
 
-inline Ray Transform::operator()(const Ray &r) const {
-	Ray ret((*this)(r.o), (*this)(r.d), r.mint, r.maxt, r.time);
-
-	return ret;
+inline Ray Transform::operator()(const Ray &r) const
+{
+	return Ray((*this)(r.o), (*this)(r.d), r.mint, r.maxt, r.time);
 }
-inline void Transform::operator()(const Ray &r,
-                                  Ray *rt) const {
+inline void Transform::operator()(const Ray &r, Ray *rt) const
+{
 	(*this)(r.o, &rt->o);
 	(*this)(r.d, &rt->d);
 	rt->mint = r.mint;
 	rt->maxt = r.maxt;
 	rt->time = r.time;
+}
+
+inline DifferentialGeometry Transform::operator()(const DifferentialGeometry &dg) const
+{
+	DifferentialGeometry dgt((*this)(dg.p), Normalize((*this)(dg.nn)),
+		(*this)(dg.dpdu), (*this)(dg.dpdv),
+		(*this)(dg.dndu), (*this)(dg.dndv),
+		(*this)(dg.tangent), (*this)(dg.bitangent), dg.btsign,
+		dg.u, dg.v, dg.handle);
+	dgt.ihandle = dg.ihandle;
+	dgt.time = dg.time;
+	dgt.scattered = dg.scattered;
+	dgt.iData = dg.iData;
+	return dgt;
+}
+inline void Transform::operator()(const DifferentialGeometry &dg, DifferentialGeometry *dgt) const
+{
+	dgt->p = (*this)(dg.p);
+	dgt->nn = Normalize((*this)(dg.nn));
+	dgt->dpdu =  (*this)(dg.dpdu);
+	dgt->dpdv = (*this)(dg.dpdv);
+	dgt->dndu = (*this)(dg.dndu);
+	dgt->dndv = (*this)(dg.dndv);
+	dgt->tangent = (*this)(dg.tangent);
+	dgt->bitangent = (*this)(dg.bitangent);
+	dgt->btsign = dg.btsign;
+	dgt->u = dg.u;
+	dgt->v = dg.v;
+	dgt->handle = dg.handle;
+	dgt->ihandle = dg.ihandle;
+	dgt->time = dg.time;
+	dgt->scattered = dg.scattered;
+	dgt->iData = dg.iData;
 }
 
   Transform Translate(const Vector &delta);

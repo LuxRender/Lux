@@ -67,11 +67,8 @@ public:
 			const void *pr);
 	void AdjustNormal(bool ro, bool swapsHandedness) {
 		// Adjust normal based on orientation and handedness
-		if (ro ^ swapsHandedness) {
-			nn.x = -nn.x;
-			nn.y = -nn.y;
-			nn.z = -nn.z;
-		}
+		if (ro ^ swapsHandedness)
+			nn = -nn;
 	}
 	// DifferentialGeometry Public Data
 	Point p;
