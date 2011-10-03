@@ -35,28 +35,46 @@ public:
 	       float zmin, float zmax, float phiMax);
 	virtual ~Sphere() { }
 	virtual BBox ObjectBound() const;
-	virtual bool Intersect(const Ray &ray, float *tHit,
-	               DifferentialGeometry *dg) const;
+	virtual bool Intersect(const Ray &ray, Intersection *isect) const;
 	virtual bool IntersectP(const Ray &ray) const;
 	virtual float Area() const;
-	virtual Point Sample(float u1, float u2, float u3, Normal *ns) const {
-		Point p = Point(0,0,0) + radius *
-			UniformSampleSphere(u1, u2);
-		*ns = Normalize(ObjectToWorld(Normal(p.x, p.y, p.z)));
-		if (reverseOrientation)
-			*ns *= -1.f;
-		return ObjectToWorld(p);
+	virtual float Sample(float u1, float u2, float u3,
+		DifferentialGeometry *dg) const {
+		// Uniformly sample partial sphere
+		const float Z = zMax - zMin;
+		const float z = Z * u1 + zMin;
+		const float radius2 = radius * radius;
+		const float r = sqrtf(max(0.f, radius2 - z * z));
+		const float phi = phiMax * u2;
+		const Point p(r * cosf(phi), r * sinf(phi), z);
+		const float factor = -Z * z / (r * r);
+		const Vector dpdu(factor * p.x, factor * p.y, Z);
+		const Vector dpdv(-phiMax * p.y, phiMax * p.x, 0.f);
+		*dg = DifferentialGeometry(ObjectToWorld(p),
+			Normalize(ObjectToWorld(Normal(p.x, p.y, p.z))),
+			ObjectToWorld(dpdu), ObjectToWorld(dpdv),
+			ObjectToWorld(Normal(dpdu)), ObjectToWorld(Normal(dpdv)),
+			u1, u2, this);
+		dg->AdjustNormal(reverseOrientation, transformSwapsHandedness);
+		return fabsf(1.f / Dot(Cross(dg->dpdu, dg->dpdv), dg->nn));
 	}
-	virtual Point Sample(const Point &p, float u1, float u2, float u3,
-		Normal *ns) const {
-		// Compute coordinate system for sphere sampling
+	virtual float Pdf(const DifferentialGeometry &dg) const {
+		return fabsf(1.f / Dot(Cross(dg.dpdu, dg.dpdv), dg.nn));
+	}
+	virtual float Sample(const Point &p, float u1, float u2, float u3,
+		DifferentialGeometry *dg) const {
+		return Sample(u1, u2, u3, dg);
+// The following has been disabled because it is erroneous for partial spheres
+/*		// Compute coordinate system for sphere sampling
 		Point Pcenter = ObjectToWorld(Point(0,0,0));
-		Vector wc = Normalize(Pcenter - p);
+		Vector wc = Pcenter - p;
+		const float d2 = wc.LengthSquared();
+		// Sample uniformly on sphere if \pt is inside it
+		if (d2 - radius * radius < 1e-4f)
+			return Sample(u1, u2, u3, dg);
+		wc /= d2;
 		Vector wcX, wcY;
 		CoordinateSystem(wc, &wcX, &wcY);
-		// Sample uniformly on sphere if \pt is inside it
-		if (DistanceSquared(p, Pcenter) - radius * radius < 1e-4f)
-			return Sample(u1, u2, u3, ns);
 		// Sample sphere uniformly inside subtended cone
 		float cosThetaMax = sqrtf(max(0.f, 1.f - radius * radius /
 			DistanceSquared(p, Pcenter)));
@@ -71,10 +89,12 @@ public:
 		*ns = Normal(Normalize(ps - Pcenter));
 		if (reverseOrientation)
 			*ns *= -1.f;
-		return ps;
+		return ps;*/
 	}
-	virtual float Pdf(const Point &p, const Point &po) const {
-		Point Pcenter = ObjectToWorld(Point(0,0,0));
+	virtual float Pdf(const Point &p, const DifferentialGeometry &dg) const {
+		return Pdf(dg);
+// The following has been disabled because it is erroneous for partial spheres
+/*		Point Pcenter = ObjectToWorld(Point(0,0,0));
 		// Return uniform weight if point inside sphere
 		const float dc2 = DistanceSquared(p, Pcenter);
 		const float r2 = radius * radius;
@@ -82,12 +102,12 @@ public:
 			return 1.f / Area();
 		// Compute general sphere weight
 		const float cosThetaMax = sqrtf(max(0.f, 1.f - r2 / dc2));
-		const Vector w(p - po);
+		const Vector w(p - dg.p);
 		const float d2 = w.LengthSquared();
 		if (d2 > dc2 + r2)
 			return 0.f;
-		return UniformConePdf(cosThetaMax) * AbsDot(w, po - Pcenter) /
-			(d2 * sqrtf(d2) * radius);
+		return UniformConePdf(cosThetaMax) * AbsDot(w, dg.p - Pcenter) /
+			(d2 * sqrtf(d2) * radius);*/
 	}
 	
 	static Shape* CreateShape(const Transform &o2w, bool reverseOrientation, const ParamSet &params);
@@ -95,7 +115,7 @@ private:
 	// Sphere Private Data
 	float radius;
 	float phiMax;
-	float zmin, zmax;
+	float zMin, zMax;
 	float thetaMin, thetaMax;
 };
 

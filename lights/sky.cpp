@@ -128,7 +128,7 @@ public:
 			return false;
 		DifferentialGeometry dg;
 		dg.time = dgShading.time;
-		PortalShapes[shapeIndex]->Sample(ps, u1, u2, u3, &dg);
+		*pdf = PortalShapes[shapeIndex]->Sample(ps, u1, u2, u3, &dg);
 		*wiW = Normalize(dg.p - ps);
 		const float cosi = Dot(*wiW, ng);
 		if (!(cosi > 0.f))
@@ -136,8 +136,7 @@ public:
 		const Vector w(Normalize(WorldToLight(-(*wiW))));
 		*f_ = SWCSpectrum(cosi);
 		light.GetSkySpectralRadiance(sw, w, f_);
-		*pdf = PortalShapes[shapeIndex]->Pdf(ps, dg.p) *
-			DistanceSquared(ps, dg.p) / AbsDot(*wiW, dg.nn);
+		*pdf *= DistanceSquared(ps, dg.p) / AbsDot(*wiW, dg.nn);
 		for (u_int i = 0; i < PortalShapes.size(); ++i) {
 			if (i == shapeIndex)
 				continue;
@@ -147,7 +146,7 @@ public:
 			ray.time = dgShading.time;
 			if (PortalShapes[i]->Intersect(ray, &isect) &&
 				Dot(*wiW, isect.dg.nn) > 0.f)
-				*pdf += PortalShapes[i]->Pdf(ps, isect.dg.p) *
+				*pdf += PortalShapes[i]->Pdf(ps, isect.dg) *
 					DistanceSquared(ps, isect.dg.p) /
 					AbsDot(*wiW, isect.dg.nn);
 		}
@@ -169,7 +168,7 @@ public:
 			ray.time = dgShading.time;
 			if (PortalShapes[i]->Intersect(ray, &isect) &&
 				Dot(wiW, isect.dg.nn) > 0.f)
-				pdf += PortalShapes[i]->Pdf(ps, isect.dg.p) *
+				pdf += PortalShapes[i]->Pdf(ps, isect.dg) *
 					DistanceSquared(ps, isect.dg.p) /
 					AbsDot(wiW, isect.dg.nn);
 		}
@@ -371,7 +370,7 @@ bool SkyLight::Le(const Scene &scene, const Sample &sample, const Ray &r,
 				if (PortalShapes[i]->Intersect(ray, &isect) &&
 					Dot(r.d, isect.dg.nn) < 0.f)
 					*pdfDirect += PortalShapes[i]->Pdf(r.o,
-						isect.dg.p) * DistanceSquared(r.o,
+						isect.dg) * DistanceSquared(r.o,
 						isect.dg.p) / AbsDot(r.d, isect.dg.nn);
 			}
 		}
@@ -387,12 +386,12 @@ bool SkyLight::Le(const Scene &scene, const Sample &sample, const Ray &r,
 	return true;
 }
 
-float SkyLight::Pdf(const Point &p, const Point &po, const Normal &ns) const
+float SkyLight::Pdf(const Point &p, const DifferentialGeometry &dg) const
 {
-	const Vector wi(po - p);
+	const Vector wi(dg.p - p);
 	if (!havePortalShape) {
 		const float d2 = wi.LengthSquared();
-		return AbsDot(wi, ns) / (4.f * M_PI * sqrtf(d2) * d2);
+		return AbsDot(wi, dg.nn) / (4.f * M_PI * sqrtf(d2) * d2);
 	} else {
 		const float d2 = wi.LengthSquared();
 		float pdf = 0.f;
@@ -402,11 +401,11 @@ float SkyLight::Pdf(const Point &p, const Point &po, const Normal &ns) const
 			ray.mint = -INFINITY;
 			if (PortalShapes[i]->Intersect(ray, &isect) &&
 				Dot(wi, isect.dg.nn) < 0.f)
-				pdf += PortalShapes[i]->Pdf(p, isect.dg.p) *
+				pdf += PortalShapes[i]->Pdf(p, isect.dg) *
 					DistanceSquared(p, isect.dg.p) /
 					AbsDot(wi, isect.dg.nn);
 		}
-		pdf *= AbsDot(wi, ns) /
+		pdf *= AbsDot(wi, dg.nn) /
 			(d2 * d2 * nrPortalShapes);
 		return pdf;
 	}
@@ -501,14 +500,14 @@ bool SkyLight::SampleL(const Scene &scene, const Sample &sample,
 		}
 		DifferentialGeometry dg;
 		dg.time = sample.realTime;
-		PortalShapes[shapeIndex]->Sample(p, u1, u2, u3, &dg);
+		*pdfDirect = PortalShapes[shapeIndex]->Sample(p, u1, u2, u3, &dg);
+		if (!(*pdfDirect > 0.f))
+			return false;
 		Point ps = dg.p;
 		wi = Normalize(ps - p);
-		if (Dot(wi, dg.nn) < 0.f) {
-			*pdfDirect = PortalShapes[shapeIndex]->Pdf(p, ps) *
-				DistanceSquared(p, ps) / AbsDot(wi, dg.nn);
-		} else
+		if (!(Dot(wi, dg.nn) < 0.f))
 			return false;
+		*pdfDirect *= DistanceSquared(p, ps) / AbsDot(wi, dg.nn);
 	}
 	const Vector toCenter(worldCenter - p);
 	const float centerDistance = Dot(toCenter, toCenter);
@@ -553,7 +552,7 @@ bool SkyLight::SampleL(const Scene &scene, const Sample &sample,
 			if (PortalShapes[i]->Intersect(ray, &isect) &&
 				Dot(wi, isect.dg.nn) < 0.f)
 				*pdfDirect += PortalShapes[i]->Pdf(p,
-					isect.dg.p) * DistanceSquared(p,
+					isect.dg) * DistanceSquared(p,
 					isect.dg.p) / AbsDot(wi, isect.dg.nn);
 		}
 		if (pdf)

@@ -216,15 +216,14 @@ bool InfiniteAreaLightIS::Le(const Scene &scene, const Sample &sample,
 	return true;
 }
 
-float InfiniteAreaLightIS::Pdf(const Point &p, const Point &po,
-	const Normal &ns) const
+float InfiniteAreaLightIS::Pdf(const Point &p, const DifferentialGeometry &dg) const
 {
-	const Vector d(Normalize(po - p));
+	const Vector d(Normalize(dg.p - p));
 	const Vector wh = Normalize(WorldToLight(d));
 	float s, t, pdf;
 	mapping->Map(wh, &s, &t, &pdf);
-	return uvDistrib->Pdf(s, t) * pdf * AbsDot(d, ns) /
-		DistanceSquared(p, po);
+	return uvDistrib->Pdf(s, t) * pdf * AbsDot(d, dg.nn) /
+		DistanceSquared(p, dg.p);
 }
 
 bool InfiniteAreaLightIS::SampleL(const Scene &scene, const Sample &sample,

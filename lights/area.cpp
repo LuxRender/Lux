@@ -194,9 +194,9 @@ float AreaLight::Power(const Scene &scene) const
 	return gain * area * M_PI * Le->Y();
 }
 
-float AreaLight::Pdf(const Point &p, const Point &po, const Normal &ns) const
+float AreaLight::Pdf(const Point &p, const DifferentialGeometry &dg) const
 {
-	return prim->Pdf(p, po);
+	return prim->Pdf(p, dg);
 }
 
 bool AreaLight::SampleL(const Scene &scene, const Sample &sample,
@@ -205,20 +205,19 @@ bool AreaLight::SampleL(const Scene &scene, const Sample &sample,
 {
 	DifferentialGeometry dg;
 	dg.time = sample.realTime;
-	prim->Sample(u1, u2, u3, &dg);
+	*pdf = prim->Sample(u1, u2, u3, &dg);
+	if (!(*pdf > 0.f)) {
+		*Le = 0.f;
+		return false;
+	}
 	if(func)
 		*bsdf = ARENA_ALLOC(sample.arena, GonioAreaBSDF)(dg, dg.nn,
 			prim->GetExterior(), prim->GetInterior(), func);
 	else
 		*bsdf = ARENA_ALLOC(sample.arena, UniformAreaBSDF)(dg, dg.nn,
 			prim->GetExterior(), prim->GetInterior());
-	*pdf = prim->Pdf(dg.p);
-	if (*pdf > 0.f) {
-		*Le = this->Le->Evaluate(sample.swl, dg) * (gain * M_PI / *pdf);
-		return true;
-	}
-	*Le = 0.f;
-	return false;
+	*Le = this->Le->Evaluate(sample.swl, dg) * (gain * M_PI / *pdf);
+	return true;
 }
 bool AreaLight::SampleL(const Scene &scene, const Sample &sample,
 	const Point &p, float u1, float u2, float u3,
@@ -226,24 +225,22 @@ bool AreaLight::SampleL(const Scene &scene, const Sample &sample,
 {
 	DifferentialGeometry dg;
 	dg.time = sample.realTime;
-	prim->Sample(p, u1, u2, u3, &dg);
-	Vector wo(Normalize(dg.p - p));
-	const float pdfd = prim->Pdf(p, dg.p);
-	if (pdfd > 0.f) {
-		if (pdf)
-			*pdf = prim->Pdf(dg.p);
-		*pdfDirect = pdfd;
-		if(func)
-			*bsdf = ARENA_ALLOC(sample.arena, GonioAreaBSDF)(dg, dg.nn,
-				prim->GetExterior(), prim->GetInterior(), func);
-		else
-			*bsdf = ARENA_ALLOC(sample.arena, UniformAreaBSDF)(dg, dg.nn,
-				prim->GetExterior(), prim->GetInterior());
-		*Le = this->Le->Evaluate(sample.swl, dg) * (gain * M_PI / pdfd);
-		return true;
+	const float pdfd = prim->Sample(p, u1, u2, u3, &dg);
+	if (!(pdfd > 0.f)) {
+		*Le = 0.f;
+		return false;
 	}
-	*Le = 0.f;
-	return false;
+	if (pdf)
+		*pdf = prim->Pdf(dg);
+	*pdfDirect = pdfd;
+	if(func)
+		*bsdf = ARENA_ALLOC(sample.arena, GonioAreaBSDF)(dg, dg.nn,
+			prim->GetExterior(), prim->GetInterior(), func);
+	else
+		*bsdf = ARENA_ALLOC(sample.arena, UniformAreaBSDF)(dg, dg.nn,
+			prim->GetExterior(), prim->GetInterior());
+	*Le = this->Le->Evaluate(sample.swl, dg) * (gain * M_PI / pdfd);
+	return true;
 }
 SWCSpectrum AreaLight::L(const Sample &sample, const Ray &ray,
 	const DifferentialGeometry &dg, BSDF **bsdf, float *pdf,
@@ -265,9 +262,9 @@ SWCSpectrum AreaLight::L(const Sample &sample, const Ray &ray,
 			prim->GetExterior(), prim->GetInterior());
 	}
 	if (pdf)
-		*pdf = prim->Pdf(dg.p);
+		*pdf = prim->Pdf(dg);
 	if (pdfDirect)
-		*pdfDirect = prim->Pdf(ray.o, dg.p);
+		*pdfDirect = prim->Pdf(ray.o, dg);
 	return Le->Evaluate(sample.swl, dg) * (gain * M_PI) * (*bsdf)->F(sample.swl, Vector(dg.nn), -ray.d, true);
 }
 

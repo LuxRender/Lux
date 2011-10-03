@@ -295,7 +295,7 @@ bool MeshWaldTriangle::IntersectP(const Ray &ray) const
 	return true;
 }
 
-void MeshWaldTriangle::Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const
+float MeshWaldTriangle::Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const
 {
 	float b1, b2;
 	UniformSampleTriangle(u1, u2, &b1, &b2);
@@ -321,6 +321,7 @@ void MeshWaldTriangle::Sample(float u1, float u2, float u3, DifferentialGeometry
 	dg->iData.baryTriangle.coords[0] = b1;
 	dg->iData.baryTriangle.coords[1] = b2;
 	dg->iData.baryTriangle.coords[2] = b3;
+	return Pdf(*dg);
 }
 
 bool MeshWaldTriangle::isDegenerate() const {

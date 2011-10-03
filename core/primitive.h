@@ -109,15 +109,18 @@ public:
 	 * @param u2 The point coordinate in the second dimension.
 	 * @param u3 The subprimitive to sample.
 	 * @param dg The destination to store the sampled point data in.
+	 * @return The pdf of the sampled point or 0 if invalid
 	 */
-	virtual void Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const;
+	virtual float Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const;
 	/**
 	 * Returns the probablity density for sampling the given point
 	 * (@see Primitive::Sample(float,float,float,DifferentialGeometry*) const).
-	 * @param p The point that was sampled.
+	 * @param dg The differential geometry at the sampled point.
 	 * @return The pdf value (w.r.t. surface area) for the given point.
 	 */
-	virtual float Pdf(const Point &p) const { return 1.f / Area(); }
+	virtual float Pdf(const DifferentialGeometry &dg) const {
+		return 1.f / Area();
+	}
 	/**
 	 * Samples a point on this primitive that will be tested for visibility
 	 * from a given point. Only the p, nn, dpdu, dpdv, u and v need to be
@@ -128,21 +131,22 @@ public:
 	 * @param u2 The point coordinate in the second dimension.
 	 * @param u3 The subprimitive to sample.
 	 * @param dg The destination to store the sampled point data in.
+	 * @return The pdf of the sampled point or 0 if invalid
 	 */
-	virtual void Sample(const Point &p, float u1, float u2, float u3,
+	virtual float Sample(const Point &p, float u1, float u2, float u3,
 		DifferentialGeometry *dg) const {
-		Sample(u1, u2, u3, dg);
+		return Sample(u1, u2, u3, dg);
 	}
 	/**
 	 * Returns the probability density for sampling the given point.
 	 * (@see Primitive::Sample(const Point&,float,float,float,DifferentialGeometry*) const).
 	 * No visibility test is done here.
 	 * @param p  The point that was to be tested for visibility with the result.
-	 * @param po The point that was sampled.
+	 * @param dg The differential geometry at the sampled point.
 	 * @return The pdf value (w.r.t. surface area) for the given point.
 	 */
-	virtual float Pdf(const Point &p, const Point &po) const {
-		return 1.f / Area();
+	virtual float Pdf(const Point &p, const DifferentialGeometry &dg) const {
+		return Pdf(dg);
 	}
 	/**
 	 * Add a tesselated approximation of current primitive to list passed as
@@ -245,16 +249,18 @@ public:
 
 	virtual bool CanSample() const { return prim->CanSample(); }
 	virtual float Area() const { return prim->Area(); }
-	virtual void Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const  {
-		prim->Sample(u1, u2, u3, dg);
+	virtual float Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const  {
+		return prim->Sample(u1, u2, u3, dg);
 	}
-	virtual float Pdf(const Point &p) const { return prim->Pdf(p); }
-	virtual void Sample(const Point &P, float u1, float u2, float u3,
+	virtual float Pdf(const DifferentialGeometry &dg) const {
+		return prim->Pdf(dg);
+	}
+	virtual float Sample(const Point &P, float u1, float u2, float u3,
 		DifferentialGeometry *dg) const {
-		prim->Sample(P, u1, u2, u3, dg);
+		return prim->Sample(P, u1, u2, u3, dg);
 	}
-	virtual float Pdf(const Point &p, const Point &po) const {
-		return prim->Pdf(p, po);
+	virtual float Pdf(const Point &p, const DifferentialGeometry &dg) const {
+		return prim->Pdf(p, dg);
 	}
 
 	virtual void Tesselate(vector<luxrays::TriangleMesh *> *meshList,
@@ -324,34 +330,38 @@ public:
 
 	virtual bool CanSample() const { return instance->CanSample(); }
 	virtual float Area() const { return instance->Area(); }
-	virtual void Sample(float u1, float u2, float u3,
+	virtual float Sample(float u1, float u2, float u3,
 		DifferentialGeometry *dg) const  {
-		instance->Sample(u1, u2, u3, dg);
-		dg->p = InstanceToWorld(dg->p);
-		dg->nn = Normalize(InstanceToWorld(dg->nn));
-		dg->dpdu = InstanceToWorld(dg->dpdu);
-		dg->dpdv = InstanceToWorld(dg->dpdv);
-		dg->dndu = InstanceToWorld(dg->dndu);
-		dg->dndv = InstanceToWorld(dg->dndv);
+		const float pdf = instance->Sample(u1, u2, u3, dg) *
+			fabsf(Dot(Cross(dg->dpdu, dg->dpdv), Vector(dg->nn)));
+		InstanceToWorld(*dg, dg);
+		dg->ihandle = dg->handle;
 		dg->handle = this;
+		return pdf /
+			fabsf(Dot(Cross(dg->dpdu, dg->dpdv), Vector(dg->nn)));
 	}
-	virtual float Pdf(const Point &p) const {
-		return instance->Pdf(WorldToInstance(p));
+	virtual float Pdf(const DifferentialGeometry &dg) const {
+		const DifferentialGeometry dgi(WorldToInstance(dg));
+		return instance->Pdf(dgi) *
+			fabsf(Dot(Cross(dgi.dpdu, dgi.dpdv), Vector(dgi.nn)) /
+			Dot(Cross(dg.dpdu, dg.dpdv), Vector(dg.nn)));
 	}
-	virtual void Sample(const Point &P, float u1, float u2, float u3,
+	virtual float Sample(const Point &P, float u1, float u2, float u3,
 		DifferentialGeometry *dg) const {
-		instance->Sample(WorldToInstance(P), u1, u2, u3, dg);
-		dg->p = InstanceToWorld(dg->p);
-		dg->nn = Normalize(InstanceToWorld(dg->nn));
-		dg->dpdu = InstanceToWorld(dg->dpdu);
-		dg->dpdv = InstanceToWorld(dg->dpdv);
-		dg->dndu = InstanceToWorld(dg->dndu);
-		dg->dndv = InstanceToWorld(dg->dndv);
+		const float pdf = instance->Sample(WorldToInstance(P),
+			u1, u2, u3, dg) *
+			fabsf(Dot(Cross(dg->dpdu, dg->dpdv), Vector(dg->nn)));
+		InstanceToWorld(*dg, dg);
+		dg->ihandle = dg->handle;
 		dg->handle = this;
+		return pdf /
+			fabsf(Dot(Cross(dg->dpdu, dg->dpdv), Vector(dg->nn)));
 	}
-	//FIXME: The various pdf computations should be adapted for scaling
-	virtual float Pdf(const Point &p, const Point &po) const {
-		return instance->Pdf(WorldToInstance(p), WorldToInstance(po));
+	virtual float Pdf(const Point &p, const DifferentialGeometry &dg) const {
+		const DifferentialGeometry dgi(WorldToInstance(dg));
+		return instance->Pdf(p, dgi) *
+			fabsf(Dot(Cross(dgi.dpdu, dgi.dpdv), Vector(dgi.nn)) /
+			Dot(Cross(dg.dpdu, dg.dpdv), Vector(dg.nn)));
 	}
 
 	virtual Transform GetWorldToLocal(float time) const {
@@ -423,40 +433,42 @@ public:
 
 	virtual bool CanSample() const { return instance->CanSample(); }
 	virtual float Area() const { return instance->Area(); }
-	virtual void Sample(float u1, float u2, float u3,
+	virtual float Sample(float u1, float u2, float u3,
 		DifferentialGeometry *dg) const  {
 		Transform InstanceToWorld = motionSystem.Sample(dg->time);
-		instance->Sample(u1, u2, u3, dg);
-		dg->p = InstanceToWorld(dg->p);
-		dg->nn = Normalize(InstanceToWorld(dg->nn));
-		dg->dpdu = InstanceToWorld(dg->dpdu);
-		dg->dpdv = InstanceToWorld(dg->dpdv);
-		dg->dndu = InstanceToWorld(dg->dndu);
-		dg->dndv = InstanceToWorld(dg->dndv);
+		const float pdf = instance->Sample(u1, u2, u3, dg) *
+			fabsf(Dot(Cross(dg->dpdu, dg->dpdv), Vector(dg->nn)));
+		InstanceToWorld(*dg, dg);
+		dg->ihandle = dg->handle;
 		dg->handle = this;
+		return pdf /
+			fabsf(Dot(Cross(dg->dpdu, dg->dpdv), Vector(dg->nn)));
 	}
-	virtual float Pdf(const Point &p) const {
-		return instance->Pdf(p);
+	virtual float Pdf(const DifferentialGeometry &dg) const {
+		const Transform InstanceToWorld = motionSystem.Sample(dg.time);
+		const DifferentialGeometry dgi(InstanceToWorld.GetInverse()(dg));
+		return instance->Pdf(dgi) *
+			fabsf(Dot(Cross(dgi.dpdu, dgi.dpdv), Vector(dgi.nn)) /
+			Dot(Cross(dg.dpdu, dg.dpdv), Vector(dg.nn)));
 	}
-	virtual void Sample(const Point &P, float u1, float u2, float u3,
+	virtual float Sample(const Point &P, float u1, float u2, float u3,
 		DifferentialGeometry *dg) const {
-		Transform InstanceToWorld = motionSystem.Sample(dg->time);
-		instance->Sample(InstanceToWorld.GetInverse()(P),
-			u1, u2, u3, dg);
-		dg->p = InstanceToWorld(dg->p);
-		dg->nn = Normalize(InstanceToWorld(dg->nn));
-		dg->dpdu = InstanceToWorld(dg->dpdu);
-		dg->dpdv = InstanceToWorld(dg->dpdv);
-		dg->dndu = InstanceToWorld(dg->dndu);
-		dg->dndv = InstanceToWorld(dg->dndv);
+		const Transform InstanceToWorld = motionSystem.Sample(dg->time);
+		const float pdf = instance->Sample(InstanceToWorld.GetInverse()(P),
+			u1, u2, u3, dg) *
+			fabsf(Dot(Cross(dg->dpdu, dg->dpdv), Vector(dg->nn)));
+		InstanceToWorld(*dg, dg);
+		dg->ihandle = dg->handle;
 		dg->handle = this;
+		return pdf /
+			fabsf(Dot(Cross(dg->dpdu, dg->dpdv), Vector(dg->nn)));
 	}
-	//FIXME: The various pdf computations should be adapted for scaling
-	//FIXME: The various pdf parameters should be converted to instance
-	// space however there's currently no way to get the current time
-	// the API will have to be adapted
-	virtual float Pdf(const Point &p, const Point &po) const {
-		return instance->Pdf(p, po);
+	virtual float Pdf(const Point &p, const DifferentialGeometry &dg) const {
+		const Transform InstanceToWorld = motionSystem.Sample(dg.time);
+		const DifferentialGeometry dgi(InstanceToWorld.GetInverse()(dg));
+		return instance->Pdf(p, dgi) *
+			fabsf(Dot(Cross(dgi.dpdu, dgi.dpdv), Vector(dgi.nn)) /
+			Dot(Cross(dg.dpdu, dg.dpdv), Vector(dg.nn)));
 	}
 	virtual Transform GetWorldToLocal(float time) const {
 		return instance->GetWorldToLocal(time) *

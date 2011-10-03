@@ -59,7 +59,7 @@ public:
 	virtual bool Le(const Scene &scene, const Sample &sample, const Ray &r,
 		BSDF **bsdf, float *pdf, float *pdfDirect,
 		SWCSpectrum *L) const { return false; }
-	virtual float Pdf(const Point &p, const Point &po, const Normal &ns) const = 0;
+	virtual float Pdf(const Point &p, const DifferentialGeometry &dg) const = 0;
 	virtual bool SampleL(const Scene &scene, const Sample &sample,
 		float u1, float u2, float u3, BSDF **bsdf, float *pdf,
 		SWCSpectrum *L) const = 0;
@@ -101,7 +101,7 @@ public:
 	virtual float Power(const Scene &scene) const;
 	virtual bool IsDeltaLight() const { return false; }
 	virtual bool IsEnvironmental() const { return false; }
-	virtual float Pdf(const Point &p, const Point &po, const Normal &ns) const;
+	virtual float Pdf(const Point &p, const DifferentialGeometry &dg) const;
 	virtual bool SampleL(const Scene &scene, const Sample &sample,
 		float u1, float u2, float u3, BSDF **bsdf, float *pdf,
 		SWCSpectrum *Le) const;

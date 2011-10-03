@@ -476,8 +476,8 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 
 		// Connect light vertex to eye vertex
 		// Compute direct lighting pdf for first light vertex
-		const float directPdf = light->Pdf(eye0.p, light0.p,
-			light0.bsdf->ng) * directWeight;
+		const float directPdf = light->Pdf(eye0.p,
+			light0.bsdf->dgShading) * directWeight;
 		SWCSpectrum Ll(Le);
 		float weight;
 		if (evalPath(scene, sample, *this, eyePath, 1, lightPath,
@@ -539,8 +539,8 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 				// the first 2 vertices
 				if (nLight == 2)
 					lightDirectPdf = light->Pdf(v.p,
-						lightPath[0].p,
-						lightPath[0].bsdf->ng) * directWeight;
+						lightPath[0].bsdf->dgShading) *
+						directWeight;
 
 				// Connect light subpath to eye vertex
 				if (v.bsdf->NumComponents(BxDFType(~BSDF_SPECULAR)) > 0 && eye0.bsdf->NumComponents(BxDFType(~BSDF_SPECULAR)) > 0) {
@@ -759,8 +759,8 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 		// Connect eye subpath to light subpath
 		if (nLight > 0) {
 			// Compute direct lighting pdf for first light vertex
-			float directPdf = light->Pdf(v.p, lightPath[0].p,
-				lightPath[0].bsdf->ng) * directWeight;
+			float directPdf = light->Pdf(v.p,
+				lightPath[0].bsdf->dgShading) * directWeight;
 			// Go through all light vertices
 			for (u_int j = 1; j <= nLight; ++j) {
 				// Use general direct lighting pdf

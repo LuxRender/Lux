@@ -101,7 +101,7 @@ public:
 		DifferentialGeometry *dgShading) const { *dgShading = dg; }
 
 	virtual bool CanSample() const { return true; }
-	virtual void Sample(float u1, float u2, float u3,
+	virtual float Sample(float u1, float u2, float u3,
 		DifferentialGeometry *dg) const {
 		dg->p = Sample(u1, u2, u3, &dg->nn);
 		CoordinateSystem(Vector(dg->nn), &dg->dpdu, &dg->dpdv);
@@ -109,8 +109,9 @@ public:
 		//TODO fill in uv coordinates
 		dg->u = dg->v = .5f;
 		dg->handle = this;
+		return Pdf(*dg);
 	}
-	virtual void Sample(const Point &p, float u1, float u2, float u3,
+	virtual float Sample(const Point &p, float u1, float u2, float u3,
 		DifferentialGeometry *dg) const {
 		dg->p = Sample(p, u1, u2, u3, &dg->nn);
 		CoordinateSystem(Vector(dg->nn), &dg->dpdu, &dg->dpdv);
@@ -118,6 +119,7 @@ public:
 		//TODO fill in uv coordinates
 		dg->u = dg->v = .5f;
 		dg->handle = this;
+		return Pdf(*dg);
 	}
 
 	// Old PBRT Shape interface methods
@@ -172,7 +174,7 @@ public:
 			if (!primitives[i]->CanSample()) return false;
 		return true;
 	}
-	virtual void Sample(float u1, float u2, float u3,
+	virtual float Sample(float u1, float u2, float u3,
 		DifferentialGeometry *dg) const {
 		size_t sn;
 		if (primitives.size() <= 16) {
@@ -183,7 +185,9 @@ public:
 				areaCDF.end(), u3) - areaCDF.begin()),
 				0U, primitives.size() - 1U);
 		}
-		primitives[sn]->Sample(u1, u2, u3, dg);
+		const float pdf = primitives[sn]->Sample(u1, u2, u3, dg);
+		return (sn == 0 ? areaCDF[sn] : areaCDF[sn] - areaCDF[sn - 1]) *
+			pdf;
 	}
 	virtual float Area() const { return area; }
 	virtual Transform GetWorldToLocal(float time) const {

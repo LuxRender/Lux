@@ -154,7 +154,7 @@ float PointLight::Power(const Scene &) const {
 	return Lbase->Y() * gain * 4.f * M_PI;
 }
 
-float PointLight::Pdf(const Point &p, const Point &po, const Normal &ns) const
+float PointLight::Pdf(const Point &p, const DifferentialGeometry &dg) const
 {
 	return 1.f;
 }

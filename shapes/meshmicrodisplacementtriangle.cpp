@@ -716,7 +716,7 @@ float MeshMicroDisplacementTriangle::Area() const
 	return 0.5f * Cross(p2-p1, p3-p1).Length();
 }
 
-void MeshMicroDisplacementTriangle::Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const
+float MeshMicroDisplacementTriangle::Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const
 {
 	// TODO - compute proper derivatives
 
@@ -758,6 +758,7 @@ void MeshMicroDisplacementTriangle::Sample(float u1, float u2, float u3, Differe
 	dg->iData.baryTriangle.coords[0] = b1;
 	dg->iData.baryTriangle.coords[1] = b2;
 	dg->iData.baryTriangle.coords[2] = b3;
+	return Pdf(*dg);
 }
 
 void MeshMicroDisplacementTriangle::GetShadingGeometry(const Transform &obj2world,

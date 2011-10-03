@@ -38,8 +38,7 @@ public:
 	virtual bool IsDeltaLight() const { return true; }
 	virtual bool IsEnvironmental() const { return false; }
 	virtual float Power(const Scene &) const;
-	virtual float Pdf(const Point &p, const Point &po,
-		const Normal &ns) const;
+	virtual float Pdf(const Point &p, const DifferentialGeometry &dg) const;
 	virtual bool SampleL(const Scene &scene, const Sample &sample,
 		float u1, float u2, float u3, BSDF **bsdf, float *pdf,
 		SWCSpectrum *Le) const;

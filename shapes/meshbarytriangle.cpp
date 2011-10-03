@@ -203,7 +203,7 @@ float MeshBaryTriangle::Area() const
 	return 0.5f * Cross(p2-p1, p3-p1).Length();
 }
 
-void MeshBaryTriangle::Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const
+float MeshBaryTriangle::Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const
 {
 	float b1, b2;
 	UniformSampleTriangle(u1, u2, &b1, &b2);
@@ -243,6 +243,7 @@ void MeshBaryTriangle::Sample(float u1, float u2, float u3, DifferentialGeometry
 	dg->iData.baryTriangle.coords[0] = b1;
 	dg->iData.baryTriangle.coords[1] = b2;
 	dg->iData.baryTriangle.coords[2] = b3;
+	return Pdf(*dg);
 }
 
 void MeshBaryTriangle::GetShadingGeometry(const Transform &obj2world,

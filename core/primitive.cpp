@@ -60,10 +60,11 @@ float Primitive::Area() const
 	return 0.f;
 }
 
-void Primitive::Sample(float u1, float u2, float u3,
+float Primitive::Sample(float u1, float u2, float u3,
 	DifferentialGeometry *dg) const
 {
 	LOG( LUX_SEVERE,LUX_BUG)<< "Unimplemented Primitive::Sample method called!";
+	return 0.f;
 }
 
 // Intersection Method Definitions

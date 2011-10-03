@@ -33,18 +33,21 @@ Sphere::Sphere(const Transform &o2w, bool ro, float rad,
 	: Shape(o2w, ro)
 {
 	radius = rad;
-	zmin = Clamp(min(z0, z1), -radius, radius);
-	zmax = Clamp(max(z0, z1), -radius, radius);
-	thetaMin = acosf(Clamp(zmin/radius, -1.f, 1.f));
-	thetaMax = acosf(Clamp(zmax/radius, -1.f, 1.f));
-	phiMax = Radians(Clamp(pm, 0.0f, 360.0f));
+	zMin = Clamp(min(z0, z1), -radius, radius);
+	zMax = Clamp(max(z0, z1), -radius, radius);
+	thetaMin = acosf(Clamp(zMin / radius, -1.f, 1.f));
+	thetaMax = acosf(Clamp(zMax / radius, -1.f, 1.f));
+	phiMax = Radians(Clamp(pm, 0.f, 36.0f));
 }
 BBox Sphere::ObjectBound() const
 {
-	return BBox(Point(-radius, -radius, zmin),
-		Point(radius,  radius, zmax));
+	return BBox(Point(-radius, -radius, zMin),
+		Point(radius,  radius, zMax));
 }
-bool Sphere::Intersect(const Ray &r, float *tHit, DifferentialGeometry *dg) const
+bool Sphere::Intersect(const Ray &r, Intersection *isect) const {
+	return false;
+}
+/*bool Sphere::Intersect(const Ray &r, float *tHit, DifferentialGeometry *dg) const
 {
 	// Transform _Ray_ to object space
 	Ray ray;
@@ -72,7 +75,7 @@ bool Sphere::Intersect(const Ray &r, float *tHit, DifferentialGeometry *dg) cons
 	if (phi < 0.f)
 		phi += 2.f * M_PI;
 	// Test sphere intersection against clipping parameters
-	if (phit.z < zmin || phit.z > zmax || phi > phiMax) {
+	if (phit.z < zMin || phit.z > zMax || phi > phiMax) {
 		if (thit == t1 || t1 > ray.maxt)
 			return false;
 		thit = t1;
@@ -81,7 +84,7 @@ bool Sphere::Intersect(const Ray &r, float *tHit, DifferentialGeometry *dg) cons
 		phi = atan2f(phit.y, phit.x);
 		if (phi < 0.f)
 			phi += 2.f * M_PI;
-		if (phit.z < zmin || phit.z > zmax || phi > phiMax)
+		if (phit.z < zMin || phit.z > zMax || phi > phiMax)
 			return false;
 	}
 	// Find parametric representation of sphere hit
@@ -140,7 +143,7 @@ bool Sphere::Intersect(const Ray &r, float *tHit, DifferentialGeometry *dg) cons
 	// Update _tHit_ for quadric intersection
 	*tHit = thit;
 	return true;
-}
+}*/
 bool Sphere::IntersectP(const Ray &r) const
 {
 	float phi;
@@ -172,7 +175,7 @@ bool Sphere::IntersectP(const Ray &r) const
 	phi = atan2f(phit.y, phit.x);
 	if (phi < 0.) phi += 2.f*M_PI;
 	// Test sphere intersection against clipping parameters
-	if (phit.z < zmin || phit.z > zmax || phi > phiMax) {
+	if (phit.z < zMin || phit.z > zMax || phi > phiMax) {
 		if (thit == t1) return false;
 		if (t1 > ray.maxt) return false;
 		thit = t1;
@@ -180,14 +183,14 @@ bool Sphere::IntersectP(const Ray &r) const
 		phit = ray(thit);
 		phi = atan2f(phit.y, phit.x);
 		if (phi < 0.) phi += 2.f*M_PI;
-		if (phit.z < zmin || phit.z > zmax || phi > phiMax)
+		if (phit.z < zMin || phit.z > zMax || phi > phiMax)
 			return false;
 	}
 	return true;
 }
 float Sphere::Area() const
 {
-	return phiMax * radius * (zmax-zmin);
+	return phiMax * radius * (zMax - zMin);
 }
 Shape* Sphere::CreateShape(const Transform &o2w, bool reverseOrientation,
 	const ParamSet &params)

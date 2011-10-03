@@ -98,7 +98,7 @@ SpotLight::~SpotLight()
 {
 }
 
-float SpotLight::Pdf(const Point &p, const Point &po, const Normal &ns) const
+float SpotLight::Pdf(const Point &p, const DifferentialGeometry &dg) const
 {
 	return 1.f;
 }

@@ -43,8 +43,7 @@ public:
 		return Lbase->Y() * gain * 2.f * M_PI *
 			(1.f - .5f * (cosFalloffStart + cosTotalWidth));
 	}
-	virtual float Pdf(const Point &p, const Point &po,
-		const Normal &ns) const;
+	virtual float Pdf(const Point &p, const DifferentialGeometry &dg) const;
 	virtual bool SampleL(const Scene &scene, const Sample &sample,
 		float u1, float u2, float u3, BSDF **bsdf, float *pdf,
 		SWCSpectrum *Le) const;

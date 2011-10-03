@@ -133,21 +133,14 @@ public:
 			return false;
 		DifferentialGeometry dg;
 		dg.time = dgShading.time;
-		PortalShapes[shapeIndex]->Sample(ps, u1, u2, u3, &dg);
+		*pdf = PortalShapes[shapeIndex]->Sample(ps, u1, u2, u3, &dg);
+		if (!(*pdf > 0.f))
+			return false;
 		*wiW = Normalize(dg.p - ps);
 		const float cosi = Dot(*wiW, ng);
 		if (!(cosi > 0.f))
 			return false;
-		if (light.radianceMap != NULL) {
-			const Vector wh = Normalize(WorldToLight(-(*wiW)));
-			float s, t, dummy;
-			light.mapping->Map(wh, &s, &t, &dummy);
-			*f_ = light.radianceMap->LookupSpectrum(sw, s, t) *
-				(INV_PI * cosi);
-		} else
-			*f_ = SWCSpectrum(INV_PI * cosi);
-		*pdf = PortalShapes[shapeIndex]->Pdf(ps, dg.p) *
-			DistanceSquared(ps, dg.p) / AbsDot(*wiW, dg.nn);
+		*pdf *= DistanceSquared(ps, dg.p) / AbsDot(*wiW, dg.nn);
 		for (u_int i = 0; i < PortalShapes.size(); ++i) {
 			if (i == shapeIndex)
 				continue;
@@ -157,14 +150,21 @@ public:
 			ray.time = dgShading.time;
 			if (PortalShapes[i]->Intersect(ray, &isect) &&
 				Dot(*wiW, isect.dg.nn) > 0.f)
-				*pdf += PortalShapes[i]->Pdf(ps, isect.dg.p) *
+				*pdf += PortalShapes[i]->Pdf(ps, isect.dg) *
 					DistanceSquared(ps, isect.dg.p) /
 					AbsDot(*wiW, isect.dg.nn);
 		}
 		*pdf /= PortalShapes.size();
 		if (pdfBack)
 			*pdfBack = 0.f;
-		*f_ /= *pdf;
+		if (light.radianceMap != NULL) {
+			const Vector wh = Normalize(WorldToLight(-(*wiW)));
+			float s, t, dummy;
+			light.mapping->Map(wh, &s, &t, &dummy);
+			*f_ = light.radianceMap->LookupSpectrum(sw, s, t) *
+				(INV_PI * cosi / *pdf);
+		} else
+			*f_ = SWCSpectrum(INV_PI * cosi / *pdf);
 		return true;
 	}
 	virtual float Pdf(const SpectrumWavelengths &sw, const Vector &woW,
@@ -179,7 +179,7 @@ public:
 			ray.time = dgShading.time;
 			if (PortalShapes[i]->Intersect(ray, &isect) &&
 				Dot(wiW, isect.dg.nn) > 0.f)
-				pdf += PortalShapes[i]->Pdf(ps, isect.dg.p) *
+				pdf += PortalShapes[i]->Pdf(ps, isect.dg) *
 					DistanceSquared(ps, isect.dg.p) /
 					AbsDot(wiW, isect.dg.nn);
 		}
@@ -309,7 +309,7 @@ bool InfiniteAreaLight::Le(const Scene &scene, const Sample &sample,
 				if (PortalShapes[i]->Intersect(ray, &isect) &&
 					Dot(r.d, isect.dg.nn) < 0.f)
 					*pdfDirect += PortalShapes[i]->Pdf(r.o,
-						isect.dg.p) * DistanceSquared(r.o,
+						isect.dg) * DistanceSquared(r.o,
 						isect.dg.p) / DistanceSquared(r.o, ps) *
 						AbsDot(r.d, ns) / AbsDot(r.d,
 						isect.dg.nn);
@@ -330,13 +330,12 @@ bool InfiniteAreaLight::Le(const Scene &scene, const Sample &sample,
 	return true;
 }
 
-float InfiniteAreaLight::Pdf(const Point &p, const Point &po,
-	const Normal &ns) const
+float InfiniteAreaLight::Pdf(const Point &p, const DifferentialGeometry &dg) const
 {
-	const Vector wi(po - p);
+	const Vector wi(dg.p - p);
 	if (!havePortalShape) {
 		const float d2 = wi.LengthSquared();
-		return AbsDot(wi, ns) / (4.f * M_PI * sqrtf(d2) * d2);
+		return AbsDot(wi, dg.nn) / (4.f * M_PI * sqrtf(d2) * d2);
 	} else {
 		float pdf = 0.f;
 		for (u_int i = 0; i < nrPortalShapes; ++i) {
@@ -345,10 +344,10 @@ float InfiniteAreaLight::Pdf(const Point &p, const Point &po,
 			ray.mint = -INFINITY;
 			if (PortalShapes[i]->Intersect(ray, &isect) &&
 				Dot(wi, isect.dg.nn) < 0.f)
-				pdf += PortalShapes[i]->Pdf(p, isect.dg.p) *
+				pdf += PortalShapes[i]->Pdf(p, isect.dg) *
 					DistanceSquared(p, isect.dg.p) /
-					DistanceSquared(p, po) *
-					AbsDot(wi, ns) /
+					DistanceSquared(p, dg.p) *
+					AbsDot(wi, dg.nn) /
 					AbsDot(wi, isect.dg.nn);
 		}
 		pdf /= nrPortalShapes;
@@ -446,17 +445,18 @@ bool InfiniteAreaLight::SampleL(const Scene &scene, const Sample &sample,
 		}
 		DifferentialGeometry dg;
 		dg.time = sample.realTime;
-		PortalShapes[shapeIndex]->Sample(p, u1, u2, u3, &dg);
-		Point ps = dg.p;
-		wi = Normalize(ps - p);
-		if (Dot(wi, dg.nn) < 0.f) {
-			*pdfDirect = PortalShapes[shapeIndex]->Pdf(p, ps);
-			*pdfDirect *= DistanceSquared(p, dg.p) /
-				AbsDot(wi, dg.nn);
-		} else {
+		*pdfDirect = PortalShapes[shapeIndex]->Sample(p, u1, u2, u3, &dg);
+		if (!(*pdfDirect > 0.f)) {
 			*Le = 0.f;
 			return false;
 		}
+		Point ps = dg.p;
+		wi = Normalize(ps - p);
+		if (!(Dot(wi, dg.nn) < 0.f)) {
+			*Le = 0.f;
+			return false;
+		}
+		*pdfDirect *= DistanceSquared(p, dg.p) / AbsDot(wi, dg.nn);
 	}
 	const Vector toCenter(worldCenter - p);
 	const float centerDistance = Dot(toCenter, toCenter);
@@ -506,7 +506,7 @@ bool InfiniteAreaLight::SampleL(const Scene &scene, const Sample &sample,
 			if (PortalShapes[i]->Intersect(ray, &isect) &&
 				Dot(wi, isect.dg.nn) < 0.f)
 				*pdfDirect += PortalShapes[i]->Pdf(p,
-					isect.dg.p) * DistanceSquared(p,
+					isect.dg) * DistanceSquared(p,
 					isect.dg.p) / AbsDot(wi, isect.dg.nn);
 		}
 		*pdfDirect /= nrPortalShapes;

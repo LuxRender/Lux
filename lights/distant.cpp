@@ -124,7 +124,7 @@ bool DistantLight::Le(const Scene &scene, const Sample &sample, const Ray &r,
 				if (PortalShapes[i]->Intersect(ray, &isect)) {
 					float cosPortal = -Dot(lightDir, isect.dg.nn);
 					if (cosPortal > 0.f)
-						*pdf += PortalShapes[i]->Pdf(isect.dg.p) / cosPortal;
+						*pdf += PortalShapes[i]->Pdf(isect.dg) / cosPortal;
 				}
 			}
 			*pdf /= nrPortalShapes;
@@ -138,11 +138,11 @@ bool DistantLight::Le(const Scene &scene, const Sample &sample, const Ray &r,
 	return true;
 }
 
-float DistantLight::Pdf(const Point &p, const Point &po, const Normal &ns) const
+float DistantLight::Pdf(const Point &p, const DifferentialGeometry &dg) const
 {
-	const Vector w(p - po);
+	const Vector w(p - dg.p);
 	const float d2 = w.LengthSquared();
-	const float cosRay = AbsDot(w, ns) / sqrtf(d2);
+	const float cosRay = AbsDot(w, dg.nn) / sqrtf(d2);
 	if (cosRay < cosThetaMax)
 		return 0.f;
 	else
@@ -175,13 +175,15 @@ bool DistantLight::SampleL(const Scene &scene, const Sample &sample,
 
 		DifferentialGeometry dg;
 		dg.time = sample.realTime;
-		PortalShapes[shapeIndex]->Sample(u1, u2, u3, &dg);
-		ps = dg.p;
+		*pdf = PortalShapes[shapeIndex]->Sample(u1, u2, u3, &dg);
+		if (!(*pdf > 0.f))
+			return false;
 		const float cosPortal = Dot(ns, dg.nn);
 		if (cosPortal <= 0.f)
 			return false;
+		*pdf /= cosPortal;
+		ps = dg.p;
 
-		*pdf = PortalShapes[shapeIndex]->Pdf(ps) / cosPortal;
 		for (u_int i = 0; i < nrPortalShapes; ++i) {
 			if (i == shapeIndex)
 				continue;
@@ -192,12 +194,10 @@ bool DistantLight::SampleL(const Scene &scene, const Sample &sample,
 			if (PortalShapes[i]->Intersect(ray, &isect)) {
 				float cosP = Dot(ns, isect.dg.nn);
 				if (cosP > 0.f)
-					*pdf += PortalShapes[i]->Pdf(isect.dg.p) / cosP;
+					*pdf += PortalShapes[i]->Pdf(isect.dg) / cosP;
 			}
 		}
 		*pdf /= nrPortalShapes;
-		if (!(*pdf > 0.f))
-			return false;
 
 		ps += (worldRadius + Dot(worldCenter - ps, lightDir)) * lightDir;
 	}
@@ -247,7 +247,7 @@ bool DistantLight::SampleL(const Scene &scene, const Sample &sample,
 				if (PortalShapes[i]->Intersect(ray, &isect)) {
 					float cosPortal = Dot(ns, isect.dg.nn);
 					if (cosPortal > 0.f)
-						*pdf += PortalShapes[i]->Pdf(isect.dg.p) / cosPortal;
+						*pdf += PortalShapes[i]->Pdf(isect.dg) / cosPortal;
 				}
 			}
 			*pdf /= nrPortalShapes;

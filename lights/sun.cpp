@@ -209,7 +209,7 @@ bool SunLight::Le(const Scene &scene, const Sample &sample, const Ray &r,
 				if (PortalShapes[i]->Intersect(ray, &isect)) {
 					float cosPortal = Dot(-sundir, isect.dg.nn);
 					if (cosPortal > 0.f)
-						*pdf += PortalShapes[i]->Pdf(isect.dg.p) / cosPortal;
+						*pdf += PortalShapes[i]->Pdf(isect.dg) / cosPortal;
 				}
 			}
 			*pdf /= nrPortalShapes;
@@ -221,13 +221,13 @@ bool SunLight::Le(const Scene &scene, const Sample &sample, const Ray &r,
 	return true;
 }
 
-float SunLight::Pdf(const Point &p, const Point &po, const Normal &ns) const
+float SunLight::Pdf(const Point &p, const DifferentialGeometry &dg) const
 {
-	const float cosTheta = AbsDot(Normalize(p - po), ns);
-	if(cosTheta < cosThetaMax)
+	const float cosTheta = AbsDot(Normalize(p - dg.p), dg.nn);
+	if (cosTheta < cosThetaMax)
 		return 0.f;
 	else
-		return INV_PI * cosTheta / (sin2ThetaMax * DistanceSquared(p, po));
+		return INV_PI * cosTheta / (sin2ThetaMax * DistanceSquared(p, dg.p));
 }
 
 bool SunLight::SampleL(const Scene &scene, const Sample &sample,
@@ -256,13 +256,15 @@ bool SunLight::SampleL(const Scene &scene, const Sample &sample,
 
 		DifferentialGeometry dg;
 		dg.time = sample.realTime;
-		PortalShapes[shapeIndex]->Sample(u1, u2, u3, &dg);
+		*pdf = PortalShapes[shapeIndex]->Sample(u1, u2, u3, &dg);
+		if (!(*pdf > 0.f))
+			return false;
 		ps = dg.p;
 		const float cosPortal = Dot(ns, dg.nn);
 		if (cosPortal <= 0.f)
 			return false;
 
-		*pdf = PortalShapes[shapeIndex]->Pdf(ps) / cosPortal;
+		*pdf /= cosPortal;
 		for (u_int i = 0; i < nrPortalShapes; ++i) {
 			if (i == shapeIndex)
 				continue;
@@ -273,12 +275,10 @@ bool SunLight::SampleL(const Scene &scene, const Sample &sample,
 			if (PortalShapes[i]->Intersect(ray, &isect)) {
 				float cosP = Dot(ns, isect.dg.nn);
 				if (cosP > 0.f)
-					*pdf += PortalShapes[i]->Pdf(isect.dg.p) / cosP;
+					*pdf += PortalShapes[i]->Pdf(isect.dg) / cosP;
 			}
 		}
 		*pdf /= nrPortalShapes;
-		if (!(*pdf > 0.f))
-			return false;
 
 		ps += (worldRadius + Dot(worldCenter - ps, sundir)) * sundir;
 	}
@@ -337,7 +337,7 @@ bool SunLight::SampleL(const Scene &scene, const Sample &sample,
 				if (PortalShapes[i]->Intersect(ray, &isect)) {
 					float cosPortal = Dot(ns, isect.dg.nn);
 					if (cosPortal > 0.f)
-						*pdf += PortalShapes[i]->Pdf(isect.dg.p) / cosPortal;
+						*pdf += PortalShapes[i]->Pdf(isect.dg) / cosPortal;
 				}
 			}
 			*pdf /= nrPortalShapes;

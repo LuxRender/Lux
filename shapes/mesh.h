@@ -145,7 +145,7 @@ public:
 
 	virtual bool CanSample() const { return true; }
 	virtual float Area() const;
-	virtual void Sample(float u1, float u2, float u3,
+	virtual float Sample(float u1, float u2, float u3,
 		DifferentialGeometry *dg) const;
 	virtual Transform GetWorldToLocal(float time) const {
 		return mesh->GetWorldToLocal(time);
@@ -189,7 +189,7 @@ public:
 	virtual bool Intersect(const Ray &ray, Intersection *isect) const;
 	virtual bool IntersectP(const Ray &ray) const;
 
-	virtual void Sample(float u1, float u2, float u3,
+	virtual float Sample(float u1, float u2, float u3,
 		DifferentialGeometry *dg) const;
 	
 	virtual bool isDegenerate() const;
@@ -235,7 +235,7 @@ public:
 
 	virtual bool CanSample() const { return true; }
 	virtual float Area() const;
-	virtual void Sample(float u1, float u2, float u3,
+	virtual float Sample(float u1, float u2, float u3,
 		DifferentialGeometry *dg) const;
 	virtual Transform GetWorldToLocal(float time) const {
 		return mesh->GetWorldToLocal(time);
@@ -299,7 +299,7 @@ public:
 
 	virtual bool CanSample() const { return true; }
 	virtual float Area() const;
-	virtual void Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const {
+	virtual float Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const {
 		const Point &p0 = mesh->p[idx[0]];
 		const Point &p1 = mesh->p[idx[1]];
 		const Point &p2 = mesh->p[idx[2]];
@@ -328,6 +328,7 @@ public:
 		GetUVs(uv);
 		dg->u = b0*uv[0][0] + b1*uv[1][0] + b2*uv[2][0] + b3*uv[3][0];
 		dg->v = b0*uv[0][1] + b1*uv[1][1] + b2*uv[2][1] + b3*uv[3][1];
+		return Pdf(*dg);
 	}
 	virtual Transform GetWorldToLocal(float time) const {
 		return mesh->GetWorldToLocal(time);
