@@ -66,7 +66,7 @@ bool SimpleSpecularTransmission::SampleF(const SpectrumWavelengths &sw,
 	if (!architectural) {
 		if (reverse) {
 			fresnel->Evaluate(sw, cost, &F_);
-			*f_ = (SWCSpectrum(1.f) - F_) / eta2;
+			*f_ = (SWCSpectrum(1.f) - F_) * eta2;
 		} else {
 			fresnel->Evaluate(sw, CosTheta(wo), &F_);
 			*f_ = (SWCSpectrum(1.f) - F_) * fabsf(wo.z / cost);
