@@ -179,5 +179,5 @@ void HybridHashGrid::AddFlux(Sample& sample, const Point &hitPoint, const Vector
 
 	HashCell *hc = grid[Hash(ix, iy, iz)];
 	if (hc)
-		return hc->AddFlux(sample, this, hitPoint, wi, sw, photonFlux, lightGroup);
+		hc->AddFlux(sample, this, hitPoint, wi, sw, photonFlux, lightGroup);
 }
