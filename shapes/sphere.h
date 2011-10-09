@@ -53,7 +53,8 @@ public:
 		*dg = DifferentialGeometry(ObjectToWorld(p),
 			Normalize(ObjectToWorld(Normal(p.x, p.y, p.z))),
 			ObjectToWorld(dpdu), ObjectToWorld(dpdv),
-			ObjectToWorld(Normal(dpdu)), ObjectToWorld(Normal(dpdv)),
+			ObjectToWorld(Normal(dpdu / radius)),
+			ObjectToWorld(Normal(dpdv / radius)),
 			u1, u2, this);
 		dg->AdjustNormal(reverseOrientation, transformSwapsHandedness);
 		return fabsf(1.f / Dot(Cross(dg->dpdu, dg->dpdv), dg->nn));
