@@ -27,6 +27,7 @@
 #include "sampling.h"
 
 #include "lookupaccel.h"
+#include "reflection/bxdf.h"
 
 namespace lux
 {
@@ -53,6 +54,7 @@ public:
 	Vector wo;
 
 	BSDF *bsdf;
+	BxDFType flags;
 };
 
 class HitPoint {
