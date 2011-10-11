@@ -406,6 +406,7 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 	structure.push_back(1);	// volume scattering
 	structure.push_back(2);	// bsdf sampling direction
 	structure.push_back(1);	// bsdf sampling component
+	structure.push_back(1);	// bsdf bouncing/storing component
 	eyeSample.AddxD(structure, renderer->sppmi->maxEyePathDepth + 1);
 	renderer->scene->volumeIntegrator->RequestSamples(&eyeSample, *(renderer->scene));
 

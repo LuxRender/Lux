@@ -332,17 +332,38 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, MemoryArena &hp
 
 		const Point &p = bsdf->dgShading.p;
 
-		// Sample BSDF to get new path direction
-		Vector wi;
-		float pdf;
-		BxDFType flags;
-		SWCSpectrum f;
-		if (pathLength == maxDepth || !bsdf->SampleF(sw, wo, &wi,
-			data[1], data[2], data[3], &f, &pdf, BSDF_ALL, &flags,
-			NULL, true)) {
-			// Make it an approximate hitpoint
+		// Choose between storing or bouncing the hitpoint on the surface
+		BxDFType store_component, bounce_component;
+
+		store_component = BxDFType(BSDF_DIFFUSE | BSDF_REFLECTION | BSDF_TRANSMISSION);
+		bounce_component = BxDFType(BSDF_GLOSSY | BSDF_SPECULAR | BSDF_REFLECTION | BSDF_TRANSMISSION);
+
+		bool const has_store_component = bsdf->NumComponents(store_component);
+		bool const has_bounce_component = bsdf->NumComponents(bounce_component);
+
+		float pdf_event;
+		bool store;
+
+		if(has_store_component and has_bounce_component)
+		{
+			// There is both bounce and store component, we choose with a
+			// random number
+			// TODO: do this by importance
+			store = data[4] < .5f;
+			pdf_event = 0.5;
+		}
+		else
+		{
+			// If there is only bounce/store component, we bounce/store
+			// accordingly
+			store = has_store_component;
+			pdf_event = 1.f;
+		}
+
+		if(store)
+		{
 			hpep->type = SURFACE;
-			hpep->pathThroughput = pathThroughput * rayWeight;
+			hpep->pathThroughput = pathThroughput * rayWeight / pdf_event;
 			hpep->position = p;
 			hpep->wo = wo;
 
@@ -351,15 +372,16 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, MemoryArena &hp
 			break;
 		}
 
-		if ((flags & BSDF_DIFFUSE) || ((flags & BSDF_GLOSSY) && (pdf < renderer->sppmi->GlossyThreshold))) {
-			// It is a valid hit point
-			hpep->type = SURFACE;
-			hpep->pathThroughput = pathThroughput * rayWeight;
-			hpep->position = p;
-			hpep->wo = wo;
-
-			// TODO: find a way to copy the generated bsdf to a new one
-			hpep->bsdf = isect.GetBSDF(hp_arena, sw, ray);
+		// Sample BSDF to get new path direction
+		// TODO: restore glossy threshold
+		Vector wi;
+		float pdf;
+		BxDFType flags;
+		SWCSpectrum f;
+		if (pathLength == maxDepth || !bsdf->SampleF(sw, wo, &wi,
+			data[1], data[2], data[3], &f, &pdf, bounce_component, &flags,
+			NULL, true)) {
+			hpep->type = CONSTANT_COLOR;
 			break;
 		}
 
@@ -367,7 +389,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, MemoryArena &hp
 			!(bsdf->Pdf(sw, wi, wo, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) > 0.f))
 			++vertexIndex;
 
-		pathThroughput *= f;
+		pathThroughput *= f / pdf_event;
 		if (pathThroughput.Black()) {
 			hpep->type = CONSTANT_COLOR;
 			break;
