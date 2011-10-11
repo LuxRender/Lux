@@ -166,6 +166,8 @@ void HitPoints::AccumulateFlux(const u_int index, const u_int count) {
 
 		if(hpep->type == SURFACE) {
 			if (hp->accumPhotonCount > 0) {
+				/*
+				TODO: startK disable because incorrect
 				u_int k = renderer->sppmi->photonStartK;
 				if(k > 0 && hp->photonCount == 0)
 				{
@@ -186,6 +188,7 @@ void HitPoints::AccumulateFlux(const u_int index, const u_int count) {
 						hp->accumPhotonCount = k;
 					}
 				}
+				*/
 				const unsigned long long pcount = hp->photonCount + hp->accumPhotonCount;
 
 				// Compute g and do radius reduction
