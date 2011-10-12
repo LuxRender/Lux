@@ -156,6 +156,7 @@ public:
 	 */
 	virtual void Tesselate(vector<luxrays::TriangleMesh *> *meshList,
 		vector<const Primitive *> *primitiveList) const {
+		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "Primitive doesn't support Tesselation";
 	}
 	/**
 	 * This must be implemented if Tesselate() is supported. Translate a LuxRays hit

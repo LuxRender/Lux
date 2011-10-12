@@ -82,7 +82,7 @@ private:
 	float *distanceLightPath;
 	float *imageXYLightPath;
 
-	u_int *raysIndex;
+	u_int *raysIndex; // TODO: this can be replaced by just a single u_int (the first one)
 	u_int raysCount;
 
 	float distance, alpha;
