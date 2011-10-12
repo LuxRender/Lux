@@ -106,6 +106,8 @@ void SurfaceIntegratorStateBuffer::GenerateRays() {
 			SurfaceIntegratorState *s = scene.surfaceIntegrator->NewState(scene, contribBuffer, rng);
 			s->Init(scene);
 			integratorState.push_back(s);
+			newStateCount++;
+
 			if (!scene.surfaceIntegrator->GenerateRays(scene, s, rayBuffer)) {
 				// The RayBuffer is full
 				firstStateIndex = 0;
@@ -114,7 +116,6 @@ void SurfaceIntegratorStateBuffer::GenerateRays() {
 				break;
 			}
 
-			newStateCount++;
 			if (newStateCount >= maxNewPaths) {
 				firstStateIndex = 0;
 				lastStateIndex = integratorState.size() - 1;
