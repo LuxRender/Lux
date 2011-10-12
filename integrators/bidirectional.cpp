@@ -1306,19 +1306,19 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 	}
 
 	// Compute number of specular vertices for each path length
-	const u_int cameraPathLength = bidirState->eyePathLength - 1;
-	const u_int lightPathLength = bidirState->lightPathLength - 1;
+	const u_int eyePathLength = bidirState->eyePathLength;
+	const u_int lightPathLength = bidirState->lightPathLength ;
 
-    int nVerts = cameraPathLength + lightPathLength + 2;
+    int nVerts = eyePathLength + lightPathLength;
     int *nSpecularVertices = (int *)alloca(sizeof(int) * nVerts);
     memset(nSpecularVertices, 0, nVerts * sizeof(int));
-    for (u_int t = 0; t < cameraPathLength; ++t) {
+    for (u_int t = 0; t < eyePathLength; ++t) {
         for (u_int s = 0; s < lightPathLength; ++s) {
 			BidirPathState::BidirStateVertex &eyePath = bidirState->eyePath[t];
 			BidirPathState::BidirStateVertex &lightPath = bidirState->lightPath[s];
 
             if ((eyePath.flags & BSDF_SPECULAR) || (lightPath.flags & BSDF_SPECULAR))
-                ++nSpecularVertices[s + t + 2];
+                ++nSpecularVertices[s + t];
 		}
 	}
 
@@ -1336,7 +1336,7 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 	if (nLights > 0) {
 		const float lightSelectionPdf = nLights;
 
-		for (u_int t = 1; t < bidirState->eyePathLength; ++t) {
+		for (u_int t = 1; t < eyePathLength; ++t) {
 			const float *sampleData = sample.sampler->GetLazyValues(sample,
 				sampleDirectOffset, t);
 
@@ -1413,13 +1413,13 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 	//--------------------------------------------------------------------------
 
 	// For each eye path vertex
-	for (u_int t = 1; t < bidirState->eyePathLength; ++t) {
+	for (u_int t = 1; t < eyePathLength; ++t) {
 		// For each light path vertex
-		for (u_int s = 1; s < bidirState->lightPathLength; ++s) {
+		for (u_int s = 1; s < lightPathLength; ++s) {
 			BidirPathState::BidirStateVertex &eyePath = bidirState->eyePath[t];
 			BidirPathState::BidirStateVertex &lightPath = bidirState->lightPath[s];
 
-			SWCSpectrum &stateLc(bidirState->Lc[t + s * bidirState->eyePathLength]);
+			SWCSpectrum &stateLc(bidirState->Lc[t + s * eyePathLength]);
 			stateLc = SWCSpectrum(0.f);
 
 			if ((eyePath.bsdf->NumComponents(BxDFType(~BSDF_SPECULAR)) == 0) ||
@@ -1474,13 +1474,13 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 
 	BidirPathState::BidirStateVertex &eye0 = bidirState->eyePath[0];
 	if (eye0.bsdf->NumComponents(BxDFType(~BSDF_SPECULAR)) == 0) {
-		for (u_int s = 1; s < bidirState->lightPathLength; ++s)
+		for (u_int s = 1; s < lightPathLength; ++s)
 			bidirState->LlightPath[s] = SWCSpectrum(0.f);
 	} else {
 		const Point &p = eye0.bsdf->dgShading.p;
 
 		// For each light path vertex
-		for (u_int s = 1; s < bidirState->lightPathLength; ++s) {
+		for (u_int s = 1; s < lightPathLength; ++s) {
 			BidirPathState::BidirStateVertex &lightPath = bidirState->lightPath[s];
 
 			SWCSpectrum &stateLlightPath(bidirState->LlightPath[s]);
