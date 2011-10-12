@@ -368,7 +368,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, MemoryArena &hp
 		float pdf_event;
 		bool store;
 
-		if(has_store_component and has_bounce_component)
+		if (has_store_component && has_bounce_component)
 		{
 			// There is both bounce and store component, we choose with a
 			// random number
