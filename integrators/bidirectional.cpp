@@ -1300,15 +1300,15 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 		SurfaceIntegratorState *s, luxrays::RayBuffer *rayBuffer) {
 	BidirPathState *bidirState = (BidirPathState *)s;
 
-	if (bidirState->eyePathLength == 0) {
+	const u_int eyePathLength = bidirState->eyePathLength;
+	const u_int lightPathLength = bidirState->lightPathLength ;
+
+	if ((eyePathLength == 0) /*|| (lightPathLength == 0)*/) {
 		// TODO
 		return true;
 	}
 
 	// Compute number of specular vertices for each path length
-	const u_int eyePathLength = bidirState->eyePathLength;
-	const u_int lightPathLength = bidirState->lightPathLength ;
-
     int nVerts = eyePathLength + lightPathLength;
     int *nSpecularVertices = (int *)alloca(sizeof(int) * nVerts);
     memset(nSpecularVertices, 0, nVerts * sizeof(int));
@@ -1318,7 +1318,7 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 			BidirPathState::BidirStateVertex &lightPath = bidirState->lightPath[s];
 
             if ((eyePath.flags & BSDF_SPECULAR) || (lightPath.flags & BSDF_SPECULAR))
-                ++nSpecularVertices[s + t];
+                ++nSpecularVertices[t + s];
 		}
 	}
 
@@ -1393,7 +1393,12 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 			//  here s = 0
 			//  Sampling techniques count = 0 + t - 1 + 2 - nSpecularVertices
 			//  Sampling techniques count = t + 1 - nSpecularVertices
-			const u_int pathWeight = t + 1 - nSpecularVertices[t];
+			const u_int pathWeight = t + 1 - nSpecularVertices[t] -
+				// The connection of the light path directly with the eye is done if
+				// and only if the vertex is not specular. I account both cases with
+				// the following check.
+				((bidirState->eyePath[1].flags & BSDF_SPECULAR) ? 1 : 0);
+
 			SWCSpectrum Ld = (eyePath.throughputWi * Li) / (d2 * pathWeight);
 
 			if (Ld.Black())
