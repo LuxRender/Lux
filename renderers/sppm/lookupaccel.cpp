@@ -42,7 +42,7 @@ inline float Ekernel(const float d2, float md2) {
 	// Epanechnikov kernel normalised on a disk
 	float s = 1.f - d2 / md2;
 
-	return s / (M_PI * md2) * 2.f;
+	return s / (M_PI * md2) * 3.f;
 }
 
 using namespace lux;
