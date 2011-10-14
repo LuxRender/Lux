@@ -1866,7 +1866,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
 void MainWindow::tabChanged(int)
 {
 	int currentIndex = ui->tabs_main->currentIndex();
-	if (currentIndex == 1) {
+	if (currentIndex == 3) {
 		blinkTrigger(false);
 		static const QIcon icon(":/icons/logtabicon.png");
 		ShowTabLogIcon(TAB_ID_LOG, icon);
