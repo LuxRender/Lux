@@ -453,6 +453,22 @@ void MainWindow::createActions()
 	}
 }
 
+int MainWindow::getTabIndex(int tabID) 
+{
+	switch(tabID) {
+		case TAB_ID_LOG:
+			return ui->tabs_main->indexOf(ui->tab_log);
+		case TAB_ID_NETWORK:
+			return ui->tabs_main->indexOf(ui->tab_network);
+		case TAB_ID_RENDER:
+			return ui->tabs_main->indexOf(ui->tab_render);
+		case TAB_ID_QUEUE:
+			return ui->tabs_main->indexOf(ui->tab_queue);
+		default:
+			return -1;
+	}
+}
+
 void MainWindow::ReadSettings()
 {
 	QSettings settings("luxrender.net", "LuxRender GUI");
@@ -500,23 +516,10 @@ void MainWindow::WriteSettings()
 	settings.endGroup();
 }
 
-void MainWindow::ShowTabLogIcon ( int index, const QIcon & icon )
+void MainWindow::ShowTabLogIcon ( int tabID, const QIcon & icon )
 {
-	int tab_index = -1;
-	switch(index) {
-		case TAB_ID_LOG:
-			tab_index = ui->tabs_main->indexOf(ui->tab_log);
-			break;
-		case TAB_ID_NETWORK:
-			tab_index = ui->tabs_main->indexOf(ui->tab_network);
-			break;
-		case TAB_ID_RENDER:
-			tab_index = ui->tabs_main->indexOf(ui->tab_render);
-			break;
-		case TAB_ID_QUEUE:
-			tab_index = ui->tabs_main->indexOf(ui->tab_queue);
-			break;
-	}
+	int tab_index = getTabIndex(tabID);
+
 	if (tab_index != -1) {
 		ui->tabs_main->setTabIcon(tab_index, icon);			
 	}
@@ -1845,7 +1848,7 @@ void MainWindow::logEvent(LuxLogEvent *event)
 		ui->textEdit_log->ensureCursorVisible();
 
 	int currentIndex = ui->tabs_main->currentIndex();
-	if (currentIndex != 1 && event->getSeverity() > LUX_INFO) {
+	if (currentIndex != getTabIndex(TAB_ID_LOG) && event->getSeverity() > LUX_INFO) {
 		blink = true;
 		if (event->getSeverity() < LUX_ERROR) {
 			static const QIcon icon(":/icons/warningicon.png");
@@ -1866,7 +1869,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
 void MainWindow::tabChanged(int)
 {
 	int currentIndex = ui->tabs_main->currentIndex();
-	if (currentIndex == 3) {
+	if (currentIndex == getTabIndex(TAB_ID_LOG)) {
 		blinkTrigger(false);
 		static const QIcon icon(":/icons/logtabicon.png");
 		ShowTabLogIcon(TAB_ID_LOG, icon);

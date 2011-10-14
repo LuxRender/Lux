@@ -244,7 +244,7 @@ public:
 
 	void UpdateNetworkTree();
 
-	void ShowTabLogIcon( int index , const QIcon & icon);
+	void ShowTabLogIcon( int tabID , const QIcon & icon);
 	
 	bool m_auto_tonemap;
 
@@ -254,6 +254,8 @@ public:
 
 protected:
 	
+	int getTabIndex(int tabID);
+
 	bool saveCurrentImageHDR(const QString &outFile);
 	bool saveAllLightGroups(const QString &outFilename, const bool &asHDR);
 	void setCurrentFile(const QString& filename);
