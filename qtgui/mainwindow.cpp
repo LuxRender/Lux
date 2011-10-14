@@ -2281,24 +2281,25 @@ void MainWindow::networknodeSelectionChanged()
  * but it could be possibly engaged by the API for dynamic updates.
  * It addes the files to the data model, the corresponding View will pick it up automatically.
  */
-bool MainWindow::addFileToRenderQueue( const QString sceneFileName ) {  
-  int row = renderQueueData.rowCount();
-  // Avoid adiing duplicates
-  if (IsFileInQueue(sceneFileName)) {
-    return(false);    
-  }
+bool MainWindow::addFileToRenderQueue(const QString &sceneFileName)
+{
+	int row = renderQueueData.rowCount();
+	// Avoid adiing duplicates
+	if (IsFileInQueue(sceneFileName))
+		return false;    
   
-  QStandardItem* fileName = new QStandardItem(sceneFileName);
-  QStandardItem* status = new QStandardItem(tr("Waiting"));
-  QStandardItem* pass = new QStandardItem("0");
+	QStandardItem* fileName = new QStandardItem(sceneFileName);
+	QStandardItem* status = new QStandardItem(tr("Waiting"));
+	QStandardItem* pass = new QStandardItem("0");
   
-  if (sceneFileName == m_CurrentFile)
-    status->setText(tr("Rendering"));
+	if (sceneFileName == m_CurrentFile)
+		status->setText(tr("Rendering"));
   
-  renderQueueData.setItem(row,0,fileName);
-  renderQueueData.setItem(row,1,status);
-  renderQueueData.setItem(row,2,pass);
-  return(true);
+	renderQueueData.setItem(row,0,fileName);
+	renderQueueData.setItem(row,1,status);
+	renderQueueData.setItem(row,2,pass);
+
+	return true;
 }
 
 void MainWindow::addQueueFiles()
@@ -2327,8 +2328,7 @@ void MainWindow::addQueueFiles()
 			overrideWriteFlmChanged(true);
 	}
 
-  unsigned int numFiles = (unsigned int)files.count();
-	for (int i = 0; i < numFiles; i++) {
+	for (int i = 0; i < files.count(); i++) {
 		addFileToRenderQueue(files[i]);
 	}
 
@@ -2345,29 +2345,29 @@ void MainWindow::removeQueueFiles()
  
  	QItemSelectionModel* selectionModel = ui->table_queue->selectionModel();
 	QModelIndexList indexes = selectionModel->selectedRows();
-  QModelIndex index;
-  QList<int> rows;
-  int currentFileIndex = -1;
-  // Collect the indexes, we don't want to delete from inside the loop...
-  foreach(index, indexes) {
+	QModelIndex index;
+	QList<int> rows;
+	int currentFileIndex = -1;
+	// Collect the indexes, we don't want to delete from inside the loop...
+	foreach(index, indexes) {
 		QStandardItem *fname = renderQueueData.item(index.row(), 0);
 		if (fname->text() == m_CurrentFile) {
 			endRenderingSession();
 			changeRenderState(STOPPED);
-      currentFileIndex = index.row();
+			currentFileIndex = index.row();
 		}
-    rows << index.row();
-  }
+		rows << index.row();
+	}
   
-  selectionModel->clear();
-  // Delete now
-  int row;  
-  foreach(row, rows) {
-    renderQueueData.removeRow(row);
-    if (row == currentFileIndex) {
-      RenderNextFileInQueue();      
-    }
-  }
+	selectionModel->clear();
+	// Delete now
+	int row;
+	foreach(row, rows) {
+		renderQueueData.removeRow(row);
+		if (row == currentFileIndex) {
+			RenderNextFileInQueue();      
+		}
+	}
 }
 
 void MainWindow::overrideHaltSppChanged(int value)

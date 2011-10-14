@@ -249,7 +249,7 @@ public:
 	bool m_auto_tonemap;
 
 	void loadFile(const QString &fileName);
-  bool addFileToRenderQueue( const QString sceneFileName );
+	bool addFileToRenderQueue(const QString &sceneFileName);
 	bool RenderNextFileInQueue();
 
 protected:
