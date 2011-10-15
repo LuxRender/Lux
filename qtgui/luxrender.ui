@@ -320,7 +320,7 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>362</width>
+                  <width>376</width>
                   <height>388</height>
                  </rect>
                 </property>
@@ -403,8 +403,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>362</width>
-                  <height>422</height>
+                  <width>372</width>
+                  <height>417</height>
                  </rect>
                 </property>
                 <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -476,8 +476,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>362</width>
-                  <height>422</height>
+                  <width>372</width>
+                  <height>417</height>
                  </rect>
                 </property>
                 <property name="sizePolicy">
@@ -931,6 +931,9 @@
           <attribute name="verticalHeaderVisible">
            <bool>false</bool>
           </attribute>
+          <attribute name="verticalHeaderVisible">
+           <bool>false</bool>
+          </attribute>
          </widget>
         </item>
        </layout>
@@ -961,6 +964,9 @@
           <property name="wordWrap">
            <bool>true</bool>
           </property>
+          <attribute name="horizontalHeaderVisible">
+           <bool>false</bool>
+          </attribute>
           <attribute name="horizontalHeaderVisible">
            <bool>false</bool>
           </attribute>
@@ -1102,7 +1108,7 @@
      <x>0</x>
      <y>0</y>
      <width>840</width>
-     <height>22</height>
+     <height>23</height>
     </rect>
    </property>
    <property name="nativeMenuBar">
@@ -1127,6 +1133,8 @@
     <addaction name="action_fullScreen"/>
     <addaction name="action_normalScreen"/>
     <addaction name="action_overlayStatsView"/>
+    <addaction name="separator"/>
+    <addaction name="action_Show_Side_Panel"/>
    </widget>
    <widget class="QMenu" name="menu_help">
     <property name="title">
@@ -1541,6 +1549,23 @@
    </property>
    <property name="statusTip">
     <string>Load Settings for the tonemapping, lightgroups and gamma panels from a .ini file</string>
+   </property>
+  </action>
+  <action name="action_Show_Side_Panel">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show Side Panel</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Alt+H</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
    </property>
   </action>
  </widget>

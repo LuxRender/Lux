@@ -193,6 +193,7 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	connect(ui->action_fullScreen, SIGNAL(triggered()), this, SLOT(fullScreen()));
 	connect(ui->action_normalScreen, SIGNAL(triggered()), this, SLOT(normalScreen()));
 	connect(ui->action_overlayStatsView, SIGNAL(triggered(bool)), this, SLOT(overlayStatsChanged(bool)));
+	connect(ui->action_Show_Side_Panel, SIGNAL(triggered(bool)), this, SLOT(ShowSidePanel(bool)));
 
 	// Help menu slots
 	connect(ui->action_aboutDialog, SIGNAL(triggered()), this, SLOT(aboutDialog()));
@@ -488,6 +489,8 @@ void MainWindow::ReadSettings()
 	ui->action_useAlpha->setChecked(settings.value("outputUseAlpha").toBool());
 	ui->action_useAlphaHDR->setChecked(settings.value("outputUseAlphaHDR").toBool());
 	m_recentServersModel->setList(settings.value("recentServers").toStringList());
+	ui->action_Show_Side_Panel->setChecked(settings.value("outputTabs", 1 ).toBool());
+	ui->outputTabs->setVisible(ui->action_Show_Side_Panel->isChecked());
 	settings.endGroup();
 
 	updateRecentFileActions();
@@ -512,6 +515,7 @@ void MainWindow::WriteSettings()
 	settings.setValue("tonemappedHDR", ui->action_HDR_tonemapped->isChecked());
 	settings.setValue("outputUseAlpha", ui->action_useAlpha->isChecked());
 	settings.setValue("outputUseAlphaHDR", ui->action_useAlphaHDR->isChecked());
+	settings.setValue("outputTabs", ui->action_Show_Side_Panel->isChecked());
 	settings.setValue("recentServers", QStringList(m_recentServersModel->list()));
 	settings.endGroup();
 }
@@ -2533,3 +2537,11 @@ void MainWindow::LoadPanelSettings()
 		((LightGroupWidget *)(*it)->getWidget())->LoadSettings( Settings_file );
 	}
 }
+
+// View side panel
+void MainWindow::ShowSidePanel(bool checked)
+{
+	ui->outputTabs->setVisible( checked );
+}
+
+

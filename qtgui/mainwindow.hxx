@@ -445,6 +445,7 @@ private slots:
 
 	void setLightGroupSolo( int index );
 
+	void ShowSidePanel(bool checked);
 };
 
 #endif // MAINWINDOW_H
