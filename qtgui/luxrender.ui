@@ -320,7 +320,7 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>376</width>
+                  <width>362</width>
                   <height>388</height>
                  </rect>
                 </property>
@@ -403,8 +403,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>372</width>
-                  <height>417</height>
+                  <width>100</width>
+                  <height>30</height>
                  </rect>
                 </property>
                 <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -476,8 +476,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>372</width>
-                  <height>417</height>
+                  <width>100</width>
+                  <height>30</height>
                  </rect>
                 </property>
                 <property name="sizePolicy">
@@ -931,9 +931,6 @@
           <attribute name="verticalHeaderVisible">
            <bool>false</bool>
           </attribute>
-          <attribute name="verticalHeaderVisible">
-           <bool>false</bool>
-          </attribute>
          </widget>
         </item>
        </layout>
@@ -964,9 +961,6 @@
           <property name="wordWrap">
            <bool>true</bool>
           </property>
-          <attribute name="horizontalHeaderVisible">
-           <bool>false</bool>
-          </attribute>
           <attribute name="horizontalHeaderVisible">
            <bool>false</bool>
           </attribute>
@@ -1108,7 +1102,7 @@
      <x>0</x>
      <y>0</y>
      <width>840</width>
-     <height>23</height>
+     <height>22</height>
     </rect>
    </property>
    <property name="nativeMenuBar">
@@ -1562,7 +1556,7 @@
     <string>Show Side Panel</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+Alt+H</string>
+    <string>Meta+Ctrl+H</string>
    </property>
    <property name="shortcutContext">
     <enum>Qt::ApplicationShortcut</enum>
