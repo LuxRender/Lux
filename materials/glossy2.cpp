@@ -32,6 +32,10 @@
 #include "color.h"
 #include "paramset.h"
 #include "dynload.h"
+#include "fresnelslick.h"
+#include "schlickdistribution.h"
+#include "microfacet.h"
+#include "specularreflection.h"
 
 using namespace lux;
 
@@ -83,4 +87,65 @@ Material* Glossy2::CreateMaterial(const Transform &xform,
 	return new Glossy2(Kd, Ks, Ka, i, d, uroughness, vroughness, mb, mp);
 }
 
+// GlossyCoating Method Definitions
+BSDF *GlossyCoating::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
+	const Intersection &isect, const DifferentialGeometry &dgs) const
+{
+	DifferentialGeometry dgShading = dgs;
+	basemat->GetShadingGeometry(sw, isect.dg.nn, &dgShading);
+	BSDF *base = basemat->GetBSDF(arena, sw, isect, dgShading);
+
+	// Allocate _BSDF_
+	// NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
+	SWCSpectrum s(Ks->Evaluate(sw, dgs));
+	float i = index->Evaluate(sw, dgs);
+	if (i > 0.f) {
+		const float ti = (i - 1.f) / (i + 1.f);
+		s *= ti * ti;
+	}
+	s = s.Clamp(0.f, 1.f);
+
+	SWCSpectrum a(Ka->Evaluate(sw, dgs).Clamp(0.f, 1.f));
+
+	// Clamp roughness values to avoid artifacts with too small values
+	const float u = Clamp(nu->Evaluate(sw, dgs), 6e-3f, 1.f);
+	const float v = Clamp(nv->Evaluate(sw, dgs), 6e-3f, 1.f);
+	const float u2 = u * u;
+	const float v2 = v * v;
+	float ld = depth->Evaluate(sw, dgs);
+
+	const float anisotropy = u2 < v2 ? 1.f - u2 / v2 : v2 / u2 - 1.f;
+
+	Fresnel *fresnel = ARENA_ALLOC(arena, FresnelSlick)(s, a);
+	//MicrofacetDistribution* md = ARENA_ALLOC(arena, SchlickDistribution)(u * v, anisotropy);
+	//BxDF *top = ARENA_ALLOC(arena, MicrofacetReflection)(SWCSpectrum(1.f), fresnel, md, true);
+	//BxDF *top = ARENA_ALLOC(arena, SimpleSpecularReflection)(fresnel);
+	BxDF *top = ARENA_ALLOC(arena, SchlickGlossyBRDF)(fresnel, u * v, anisotropy, multibounce);
+
+	LayeredBSDF *bsdf = ARENA_ALLOC(arena, LayeredBSDF)(dgs, isect.dg.nn, top, fresnel, base, isect.exterior, isect.interior);
+
+	// Add ptr to CompositingParams structure
+	bsdf->SetCompositingParams(&compParams);
+
+	return bsdf;
+}
+Material* GlossyCoating::CreateMaterial(const Transform &xform,
+		const ParamSet &mp) {
+	boost::shared_ptr<Material> basemat(mp.GetMaterial("basematerial"));
+	if (!basemat) {
+		LOG( LUX_ERROR,LUX_BADTOKEN)<<"Base material for glossycoating is incorrect";
+		return NULL;
+	}
+	boost::shared_ptr<Texture<SWCSpectrum> > Ks(mp.GetSWCSpectrumTexture("Ks", RGBColor(1.f)));
+	boost::shared_ptr<Texture<SWCSpectrum> > Ka(mp.GetSWCSpectrumTexture("Ka", RGBColor(.0f)));
+	boost::shared_ptr<Texture<float> > i(mp.GetFloatTexture("index", 0.0f));
+	boost::shared_ptr<Texture<float> > d(mp.GetFloatTexture("d", .0f));
+	boost::shared_ptr<Texture<float> > uroughness(mp.GetFloatTexture("uroughness", .1f));
+	boost::shared_ptr<Texture<float> > vroughness(mp.GetFloatTexture("vroughness", .1f));
+	bool mb = mp.FindOneBool("multibounce", false);
+
+	return new GlossyCoating(basemat, Ks, Ka, i, d, uroughness, vroughness, mb, mp);
+}
+
 static DynamicLoader::RegisterMaterial<Glossy2> r("glossy");
+static DynamicLoader::RegisterMaterial<GlossyCoating> r2("glossycoating");

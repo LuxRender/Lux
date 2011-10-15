@@ -260,6 +260,44 @@ private:
 	float totalWeight;
 };
 
+// Layered BxDF BSDF declaration
+class  LayeredBSDF : public BSDF  {
+public:
+	// LayeredBSDF Public Methods
+	LayeredBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
+		BxDF *coating, const Fresnel *coatingFresnel, BSDF *base, 
+		const Volume *exterior, const Volume *interior);
+	virtual inline u_int NumComponents() const;
+	virtual inline u_int NumComponents(BxDFType flags) const;
+	/**
+	 * Samples the BSDF.
+	 * Returns the result of the BSDF for the sampled direction in f.
+	 */
+	virtual bool SampleF(const SpectrumWavelengths &sw, const Vector &wo,
+		Vector *wi, float u1, float u2, float u3, SWCSpectrum *const f,
+		float *pdf, BxDFType flags = BSDF_ALL,
+		BxDFType *sampledType = NULL, float *pdfBack = NULL,
+		bool reverse = false) const;
+	virtual float Pdf(const SpectrumWavelengths &sw, const Vector &wo,
+		const Vector &wi, BxDFType flags = BSDF_ALL) const;
+	virtual SWCSpectrum F(const SpectrumWavelengths &sw, const Vector &woW,
+		const Vector &wiW, bool reverse,
+		BxDFType flags = BSDF_ALL) const;
+	virtual SWCSpectrum rho(const SpectrumWavelengths &sw,
+		BxDFType flags = BSDF_ALL) const;
+	virtual SWCSpectrum rho(const SpectrumWavelengths &sw, const Vector &wo,
+		BxDFType flags = BSDF_ALL) const;
+protected:
+	// LayeredBSDF Private Methods
+	virtual ~LayeredBSDF() { }
+	// Helper function, used by SampleF() and Pdf()
+	float CoatingWeight(const SpectrumWavelengths &sw, const Vector &wo) const;
+	// LayeredBSDF Private Data
+	BxDF *coating;
+	const Fresnel *fresnel;
+	BSDF *base;
+};
+
 // BSDF Inline Method Definitions
 inline void MultiBSDF::Add(BxDF *b)
 {
@@ -301,6 +339,15 @@ inline u_int MixBSDF::NumComponents(BxDFType flags) const
 	for (u_int i = 0; i < nBSDFs; ++i)
 		num += bsdfs[i]->NumComponents(flags);
 	return num;
+}
+inline u_int LayeredBSDF::NumComponents() const
+{
+	return 1 + base->NumComponents();
+}
+inline u_int LayeredBSDF::NumComponents(BxDFType flags) const
+{
+	return (coating->MatchesFlags(flags) ? 0 : 1) +
+		base->NumComponents(flags);
 }
 
 }//namespace lux

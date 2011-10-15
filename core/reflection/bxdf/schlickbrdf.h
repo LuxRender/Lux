@@ -81,6 +81,55 @@ protected:
 	bool multibounce;
 };
 
+class  SchlickGlossyBRDF : public BxDF
+{
+public:
+	// SchlickGlossyBRDF Public Methods
+	SchlickGlossyBRDF(const Fresnel *fr, float r, float p, bool mb);
+	virtual ~SchlickGlossyBRDF() { }
+	virtual void F(const SpectrumWavelengths &sw, const Vector &wo,
+		const Vector &wi, SWCSpectrum *const f) const;
+	float SchlickG(float costheta) const {
+		return costheta / (costheta * (1.f - roughness) + roughness);
+	}
+	float SchlickZ(float cosNH) const {
+		const float d = 1.f + (roughness - 1) * cosNH * cosNH;
+		return roughness > 0.f ? roughness / (d * d) : INFINITY;
+	}
+	float SchlickA(const Vector &H) const {
+		const float h = sqrtf(H.x * H.x + H.y * H.y);
+		if (h > 0.f) {
+			const float w = (anisotropy > 0.f ? H.x : H.y) / h;
+			const float p = 1.f - fabsf(anisotropy);
+			return sqrtf(p / (p * p + w * w * (1.f - p * p)));
+		}
+		return 1.f;
+	}
+	float SchlickD(float cos1, float cos2, const Vector &H) const {
+		const float G = SchlickG(cos1) * SchlickG(cos2);
+		const float den = 4.f * M_PI * cos1 * cos2;
+		// Alternative with interreflection in the coating creases
+		if (multibounce)
+			return G * SchlickZ(fabsf(H.z)) * SchlickA(H) / den +
+				Clamp((1.f - G) / den, 0.f, 1.f);
+		else
+			return G * SchlickZ(fabsf(H.z)) * SchlickA(H) / den;
+	}
+	virtual bool SampleF(const SpectrumWavelengths &sw, const Vector &wo,
+		Vector *wi, float u1, float u2, SWCSpectrum *const f,
+		float *pdf, float *pdfBack = NULL, bool reverse = false) const;
+	virtual float Pdf(const SpectrumWavelengths &sw, const Vector &wi,
+		const Vector &wo) const;
+	virtual float Weight(const SpectrumWavelengths &sw,
+		const Vector &wo) const;
+
+protected:
+	// SchlickGlossyBRDF Private Data
+	const Fresnel *fresnel;
+	float roughness, anisotropy;
+	bool multibounce;
+};
+
 class  SchlickDoubleSidedBRDF : public SchlickBRDF
 {
 public:

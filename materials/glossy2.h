@@ -56,4 +56,33 @@ private:
 	bool multibounce;
 };
 
+class GlossyCoating : public Material {
+public:
+	// GlossyCoating Public Methods
+	GlossyCoating(boost::shared_ptr<Material> &bmat,
+		boost::shared_ptr<Texture<SWCSpectrum> > &ks,
+		boost::shared_ptr<Texture<SWCSpectrum> > &ka,
+		boost::shared_ptr<Texture<float> > &i,
+		boost::shared_ptr<Texture<float> > &d,
+		boost::shared_ptr<Texture<float> > &u,
+		boost::shared_ptr<Texture<float> > &v,
+		bool mb,
+		const ParamSet &mp) : Material(mp), basemat(bmat), Ks(ks), Ka(ka),
+		depth(d), index(i), nu(u), nv(v), multibounce(mb) { }
+	virtual ~GlossyCoating() { }
+	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
+		const Intersection &isect,
+		const DifferentialGeometry &dgShading) const;
+	
+	static Material * CreateMaterial(const Transform &xform,
+		const ParamSet &mp);
+private:
+	// GlossyCoating Private Data
+	boost::shared_ptr<Material> basemat;
+	boost::shared_ptr<Texture<SWCSpectrum> > Ks, Ka;
+	boost::shared_ptr<Texture<float> > depth, index;
+	boost::shared_ptr<Texture<float> > nu, nv;
+	bool multibounce;
+};
+
 }//namespace lux
