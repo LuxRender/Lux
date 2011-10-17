@@ -342,11 +342,11 @@ inline u_int MixBSDF::NumComponents(BxDFType flags) const
 }
 inline u_int LayeredBSDF::NumComponents() const
 {
-	return 1 + base->NumComponents();
+	return 1U + base->NumComponents();
 }
 inline u_int LayeredBSDF::NumComponents(BxDFType flags) const
 {
-	return (coating->MatchesFlags(flags) ? 0 : 1) +
+	return (coating->MatchesFlags(flags) ? 1U : 0U) +
 		base->NumComponents(flags);
 }
 

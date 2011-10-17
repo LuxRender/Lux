@@ -507,7 +507,7 @@ bool LayeredBSDF::SampleF(const SpectrumWavelengths &sw, const Vector &woW, Vect
 			basePdfBack = base->Pdf(sw, woW, *wiW, flags);
 	}
 
-	const float w_coatingR = 0.5f * (1.f + coating->Weight(sw, wi));
+	const float w_coatingR = CoatingWeight(sw, wi);
 	const float w_baseR = 1.f - w_coatingR;
 
 	const float sideTest = Dot(*wiW, ng) / Dot(woW, ng);
