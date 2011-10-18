@@ -2439,24 +2439,24 @@ bool MainWindow::IsFileQueued()
 
 bool MainWindow::RenderNextFileInQueue()
 {
-//	int idx = -1;
+	int idx = -1;
 
 	// update current file
-
-  for (int i = 0; i < renderQueueData.rowCount(); i++) {
+	
+	for (int i = 0; i < renderQueueData.rowCount(); i++) {
 		QStandardItem *fname = renderQueueData.item(i, 0);
-		QStandardItem *status = renderQueueData.item(i, 1);
 		if (fname->text() == m_CurrentFile) {
-      status->setText(tr("Completed ") + QDateTime::currentDateTime().toString(Qt::DefaultLocaleShortDate));
-      LOG(LUX_INFO,LUX_NOERROR) << "==== Queued file '" << qPrintable(m_CurrentFileBaseName) << "' done ====";
+			idx = i;
+			break;
 		}
-    else if (status->text() == "Waiting"){
-      return(RenderNextFileInQueue(i));
-    }
 	}
-  return(false);
-//	ui->table_queue->resizeColumnsToContents();
 
+	if (idx >= 0) {
+		QStandardItem *status = renderQueueData.item(idx, 1);
+		status->setText(tr("Completed ") + QDateTime::currentDateTime().toString(Qt::DefaultLocaleShortDate));
+		LOG(LUX_INFO,LUX_NOERROR) << "==== Queued file '" << qPrintable(m_CurrentFileBaseName) << "' done ====";
+	}
+	return RenderNextFileInQueue(++idx);
 }
 
 bool MainWindow::RenderNextFileInQueue(int idx)
