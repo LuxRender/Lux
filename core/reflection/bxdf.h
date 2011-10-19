@@ -260,11 +260,11 @@ private:
 	float totalWeight;
 };
 
-// Layered BxDF BSDF declaration
-class  LayeredBSDF : public BSDF  {
+// FresnelBlendBSDF BxDF BSDF declaration
+class  FresnelBlendBSDF : public BSDF  {
 public:
-	// LayeredBSDF Public Methods
-	LayeredBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
+	// FresnelBlendBSDF Public Methods
+	FresnelBlendBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
 		BxDF *coating, const Fresnel *coatingFresnel, BSDF *base, 
 		const Volume *exterior, const Volume *interior);
 	virtual inline u_int NumComponents() const;
@@ -288,11 +288,11 @@ public:
 	virtual SWCSpectrum rho(const SpectrumWavelengths &sw, const Vector &wo,
 		BxDFType flags = BSDF_ALL) const;
 protected:
-	// LayeredBSDF Private Methods
-	virtual ~LayeredBSDF() { }
+	// FresnelBlendBSDF Private Methods
+	virtual ~FresnelBlendBSDF() { }
 	// Helper function, used by SampleF() and Pdf()
 	float CoatingWeight(const SpectrumWavelengths &sw, const Vector &wo) const;
-	// LayeredBSDF Private Data
+	// FresnelBlendBSDF Private Data
 	BxDF *coating;
 	const Fresnel *fresnel;
 	BSDF *base;
@@ -340,11 +340,11 @@ inline u_int MixBSDF::NumComponents(BxDFType flags) const
 		num += bsdfs[i]->NumComponents(flags);
 	return num;
 }
-inline u_int LayeredBSDF::NumComponents() const
+inline u_int FresnelBlendBSDF::NumComponents() const
 {
 	return 1U + base->NumComponents();
 }
-inline u_int LayeredBSDF::NumComponents(BxDFType flags) const
+inline u_int FresnelBlendBSDF::NumComponents(BxDFType flags) const
 {
 	return (coating->MatchesFlags(flags) ? 1U : 0U) +
 		base->NumComponents(flags);

@@ -122,7 +122,7 @@ BSDF *GlossyCoating::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 	//BxDF *top = ARENA_ALLOC(arena, SimpleSpecularReflection)(fresnel);
 	BxDF *top = ARENA_ALLOC(arena, SchlickGlossyBRDF)(fresnel, u * v, anisotropy, multibounce);
 
-	LayeredBSDF *bsdf = ARENA_ALLOC(arena, LayeredBSDF)(dgs, isect.dg.nn, top, fresnel, base, isect.exterior, isect.interior);
+	FresnelBlendBSDF *bsdf = ARENA_ALLOC(arena, FresnelBlendBSDF)(dgs, isect.dg.nn, top, fresnel, base, isect.exterior, isect.interior);
 
 	// Add ptr to CompositingParams structure
 	bsdf->SetCompositingParams(&compParams);

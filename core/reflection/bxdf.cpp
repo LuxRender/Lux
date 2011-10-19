@@ -442,17 +442,17 @@ SWCSpectrum MixBSDF::rho(const SpectrumWavelengths &sw, const Vector &wo,
 	return ret;
 }
 
-LayeredBSDF::LayeredBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
+FresnelBlendBSDF::FresnelBlendBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
 	BxDF *c, const Fresnel *cf, BSDF *b, const Volume *exterior, const Volume *interior)
 	: coating(c), fresnel(cf), base(b), BSDF(dgs, ngeom, exterior, interior)
 {
 }
-float LayeredBSDF::CoatingWeight(const SpectrumWavelengths &sw, const Vector &wo) const
+float FresnelBlendBSDF::CoatingWeight(const SpectrumWavelengths &sw, const Vector &wo) const
 {
 	// ensures coating is never sampled less than half the time
 	return 0.5f * (1.f + coating->Weight(sw, wo));
 }
-bool LayeredBSDF::SampleF(const SpectrumWavelengths &sw, const Vector &woW, Vector *wiW,
+bool FresnelBlendBSDF::SampleF(const SpectrumWavelengths &sw, const Vector &woW, Vector *wiW,
 	float u1, float u2, float u3, SWCSpectrum *const f_, float *pdf,
 	BxDFType flags, BxDFType *sampledType, float *pdfBack,
 	bool reverse) const
@@ -550,7 +550,7 @@ bool LayeredBSDF::SampleF(const SpectrumWavelengths &sw, const Vector &woW, Vect
 
 	return true;
 }
-float LayeredBSDF::Pdf(const SpectrumWavelengths &sw, const Vector &woW, const Vector &wiW,
+float FresnelBlendBSDF::Pdf(const SpectrumWavelengths &sw, const Vector &woW, const Vector &wiW,
 	BxDFType flags) const
 {
 	Vector wo(WorldToLocal(woW)), wi(WorldToLocal(wiW));
@@ -561,7 +561,7 @@ float LayeredBSDF::Pdf(const SpectrumWavelengths &sw, const Vector &woW, const V
 	return w_base * base->Pdf(sw, woW, wiW, flags) + 
 		w_coating *	(coating->MatchesFlags(flags) ? coating->Pdf(sw, wo, wi) : 0.f);
 }
-SWCSpectrum LayeredBSDF::F(const SpectrumWavelengths &sw, const Vector &woW,
+SWCSpectrum FresnelBlendBSDF::F(const SpectrumWavelengths &sw, const Vector &woW,
 		const Vector &wiW, bool reverse, BxDFType flags) const
 {
 	const float sideTest = Dot(wiW, ng) / Dot(woW, ng);
@@ -610,7 +610,7 @@ SWCSpectrum LayeredBSDF::F(const SpectrumWavelengths &sw, const Vector &woW,
 
 	return f_;
 }
-SWCSpectrum LayeredBSDF::rho(const SpectrumWavelengths &sw, BxDFType flags) const
+SWCSpectrum FresnelBlendBSDF::rho(const SpectrumWavelengths &sw, BxDFType flags) const
 {
 	// TODO - proper implementation
 	SWCSpectrum ret(0.f);
@@ -619,7 +619,7 @@ SWCSpectrum LayeredBSDF::rho(const SpectrumWavelengths &sw, BxDFType flags) cons
 	ret += base->rho(sw, flags);
 	return ret;
 }
-SWCSpectrum LayeredBSDF::rho(const SpectrumWavelengths &sw, const Vector &woW,
+SWCSpectrum FresnelBlendBSDF::rho(const SpectrumWavelengths &sw, const Vector &woW,
 	BxDFType flags) const
 {
 	// TODO - proper implementation
