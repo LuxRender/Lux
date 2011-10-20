@@ -545,6 +545,7 @@ SOURCE_GROUP("Header Files\\Core\\Queryable" FILES ${lux_core_queryable_hdr})
 SET(lux_core_reflection_hdr
 	core/reflection/bxdf.h
 	core/reflection/fresnel.h
+	core/reflection/layeredbsdf.h
 	core/reflection/microfacetdistribution.h
 	)
 SOURCE_GROUP("Header Files\\Core\\Reflection" FILES ${lux_core_reflection_hdr})
@@ -663,6 +664,7 @@ SET(lux_materials_hdr
 	materials/glossy.h
 	materials/glossy2.h
 	materials/glossytranslucent.h
+	materials/layeredmaterial.h
 	materials/matte.h
 	materials/mattetranslucent.h
 	materials/metal.h
