@@ -28,7 +28,7 @@
 #include "geometry/raydifferential.h"
 #include "spectrum.h"
 #include "randomgen.h"
-#include <ctime>		// for rand seed
+#include <boost/thread/mutex.hpp>
 
 namespace lux
 {
@@ -51,7 +51,7 @@ public:
 		Vector *wiW, float u1, float u2, float u3,
 		SWCSpectrum *const f_, float *pdf, BxDFType flags = BSDF_ALL,
 		BxDFType *sampledType = NULL, float *pdfBack = NULL,
-		bool reverse = false) const;
+		bool reverse = false) const ;
 	virtual float Pdf(const SpectrumWavelengths &sw, const Vector &woW,
 		const Vector &wiW, BxDFType flags = BSDF_ALL) const;
 	virtual SWCSpectrum F(const SpectrumWavelengths &sw, const Vector &woW,
@@ -96,6 +96,7 @@ public:
 
 	bool matchesFlags(BxDFType flags) const { return (flags&BSDF_GLOSSY) ? true: false;}
 
+	unsigned int getRandSeed() const;
 
 protected:
 	// LayeredBSDF Private Methods
@@ -110,6 +111,11 @@ protected:
 	int num_f_samples;
 	Vector geom_norm,sn_geom, tn_geom;
 
+	//boost::mutex seed_mutex;
+
+	//RandomGenerator rng_seed;
+	//unsigned int randseed;
+	
 };
 // LayeredBSDF Inline Method Definitions
 inline void LayeredBSDF::Add(BSDF *b, float op)
@@ -117,7 +123,7 @@ inline void LayeredBSDF::Add(BSDF *b, float op)
 	BOOST_ASSERT(nBSDFs < MAX_BSDFS);
 	bsdfs[nBSDFs] = b;
 	opacity[nBSDFs++]=op;
-	max_num_bounces=nBSDFs*3;
+	max_num_bounces=nBSDFs*4;
 
 }
 
@@ -129,5 +135,7 @@ inline u_int LayeredBSDF::NumComponents(BxDFType flags) const
 }
 
 }//namespace lux
+
+
 
 #endif // LUX_LAYERED_H

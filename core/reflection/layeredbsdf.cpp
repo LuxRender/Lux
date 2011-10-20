@@ -28,11 +28,12 @@
 #include "sampling.h"
 #include "fresnel.h"
 #include "volume.h"
-//#include <ctime>		// for rand seed
+
 
 using namespace lux;
 
 //static RandomGenerator rng(1);
+
 
 // LayeredBSDF Method Definitions
 
@@ -46,8 +47,11 @@ LayeredBSDF::LayeredBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
 	tn_geom=Normalize(Cross(ng, sn));
 	sn_geom=Normalize(Cross(tn_geom,ng));
 
-	max_num_bounces=3;
+	max_num_bounces=3; // Note this gets changed when layers are added
 	num_f_samples=10;
+
+	//rng_seed=RandomGenerator(1);
+
 	//type=BSDF_DIFFUSE;
 }
 
@@ -56,7 +60,12 @@ bool LayeredBSDF::SampleF(const SpectrumWavelengths &sw, const Vector &known, Ve
 	BxDFType flags, BxDFType *sampledType, float *pdfBack,
 	bool reverse) const
 {
+	// Currently this checks to see if there is no interaction with the layers based on the opacity settings
+	// If there is no interaction - let the ray pass through and return a specular
+	// Otherwise returns a glossy.
+
 	// Have two possible types to return - glossy or specular - see if either/both have been requested
+	
 	bool glossy= (flags & BSDF_GLOSSY) ? true : false;
 	bool specular= (flags & BSDF_SPECULAR) ? true : false;
 	
@@ -64,7 +73,7 @@ bool LayeredBSDF::SampleF(const SpectrumWavelengths &sw, const Vector &known, Ve
 	bool reflect= (flags & BSDF_REFLECTION) > 0 ? true:false;
 	bool transmit= (flags & BSDF_TRANSMISSION) > 0 ? true:false;
 
-	if (!reflect && !transmit ) { // if neither set convert to both set 
+	if (!reflect && !transmit ) { // if neither set convert to both set (jeanphi convention - is this correct?)
 		reflect=true;
 		transmit=true;
 	}
@@ -76,7 +85,7 @@ bool LayeredBSDF::SampleF(const SpectrumWavelengths &sw, const Vector &known, Ve
 		}
 	}	
 	
-	RandomGenerator rng(GetTickCount()*clock());	// until random is more stable
+	RandomGenerator rng(getRandSeed());	// until random is more stable
 	
 	*pdf=1.0f;
 	if (specular&&transmit) {
@@ -172,14 +181,14 @@ bool LayeredBSDF::SampleF(const SpectrumWavelengths &sw, const Vector &known, Ve
 float LayeredBSDF::Pdf(const SpectrumWavelengths &sw, const Vector &woW,
 	const Vector &wiW, BxDFType flags) const
 {
-	if ((flags & BSDF_GLOSSY) ==0 ) { // can't sample
+	if ((flags & BSDF_GLOSSY) ==0 ) { // can't sample - we only return a glossy 
 		return 0.0f;
 	}
 
 	bool reflect= (flags & BSDF_REFLECTION) > 0 ? true:false;
 	bool transmit= (flags & BSDF_TRANSMISSION) > 0 ? true:false;
 
-	if (!reflect && !transmit ) { // these are now the same as both being true
+	if (!reflect && !transmit ) { // these are now the same as both being true (jeanphi convention?)
 		return INV_PI*0.25f;
 	}
 	if (reflect && transmit ) {
@@ -193,8 +202,7 @@ SWCSpectrum LayeredBSDF::F(const SpectrumWavelengths &sw, const Vector &woW,
 		const Vector &wiW, bool reverse, BxDFType flags) const
 {
 	
-	int seed=GetTickCount(); // program starts
-	RandomGenerator rng(seed*clock());	// until random is more stable
+	RandomGenerator rng(getRandSeed());	// until random is more stable
 	SWCSpectrum ret(0.f);
 	
 	int enter_index= (Dot(ng,wiW)<0) ? nBSDFs-1 : 0;
@@ -326,3 +334,12 @@ SWCSpectrum LayeredBSDF::rho(const SpectrumWavelengths &sw, const Vector &woW,
 	return ret ;
 }
 
+unsigned int LayeredBSDF::getRandSeed() const { 
+		extern unsigned int layered_randseed;
+		//boost::mutex::scoped_lock lock(seed_mutex); 
+		//return rng_seed.uintValue();
+		//return random::uintValueP();
+		return layered_randseed++;
+	}
+
+unsigned int layered_randseed;
