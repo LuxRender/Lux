@@ -36,3 +36,6 @@ qrc_*.cxx
 *.vcxproj*
 *.sln
 *.suo
+*.xcodeproj
+lux.build*
+*.DS_Store
