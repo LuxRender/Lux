@@ -117,6 +117,7 @@ SOURCE_GROUP("Source Files\\Core\\Queryable" FILES ${lux_core_queryable_src})
 SET(lux_core_reflection_src
 	core/reflection/bxdf.cpp
 	core/reflection/fresnel.cpp
+	core/reflection/layeredbsdf.cpp
 	core/reflection/microfacetdistribution.cpp
 	)
 SOURCE_GROUP("Source Files\\Core\\Reflection" FILES ${lux_core_reflection_src})
@@ -246,6 +247,7 @@ SET(lux_materials_src
 	materials/glossy.cpp
 	materials/glossy2.cpp
 	materials/glossytranslucent.cpp
+	materials/layeredmaterial.cpp
 	materials/matte.cpp
 	materials/mattetranslucent.cpp
 	materials/metal.cpp
