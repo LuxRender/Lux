@@ -334,12 +334,11 @@ SWCSpectrum LayeredBSDF::rho(const SpectrumWavelengths &sw, const Vector &woW,
 	return ret ;
 }
 
+unsigned int layered_randseed;
+
 unsigned int LayeredBSDF::getRandSeed() const { 
-		extern unsigned int layered_randseed;
 		//boost::mutex::scoped_lock lock(seed_mutex); 
 		//return rng_seed.uintValue();
 		//return random::uintValueP();
 		return layered_randseed++;
 	}
-
-unsigned int layered_randseed;
