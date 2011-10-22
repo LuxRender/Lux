@@ -320,7 +320,7 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>362</width>
+                  <width>376</width>
                   <height>388</height>
                  </rect>
                 </property>
@@ -931,6 +931,9 @@
           <attribute name="verticalHeaderVisible">
            <bool>false</bool>
           </attribute>
+          <attribute name="verticalHeaderVisible">
+           <bool>false</bool>
+          </attribute>
          </widget>
         </item>
        </layout>
@@ -961,6 +964,9 @@
           <property name="wordWrap">
            <bool>true</bool>
           </property>
+          <attribute name="horizontalHeaderVisible">
+           <bool>false</bool>
+          </attribute>
           <attribute name="horizontalHeaderVisible">
            <bool>false</bool>
           </attribute>
@@ -1102,7 +1108,7 @@
      <x>0</x>
      <y>0</y>
      <width>840</width>
-     <height>22</height>
+     <height>23</height>
     </rect>
    </property>
    <property name="nativeMenuBar">
@@ -1426,7 +1432,10 @@
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>Normal sceen</string>
+    <string>Normal screen</string>
+   </property>
+   <property name="toolTip">
+    <string>Normal screen</string>
    </property>
    <property name="shortcut">
     <string>Esc</string>
@@ -1556,7 +1565,7 @@
     <string>Show Side Panel</string>
    </property>
    <property name="shortcut">
-    <string>Meta+Ctrl+H</string>
+    <string>Ctrl+Alt+I</string>
    </property>
    <property name="shortcutContext">
     <enum>Qt::ApplicationShortcut</enum>
