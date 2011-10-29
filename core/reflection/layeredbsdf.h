@@ -62,7 +62,7 @@ public:
 
 	bool matchesFlags(BxDFType flags) const { return (flags&(BSDF_GLOSSY|BSDF_SPECULAR)) ? true: false;}
 
-	int LayeredBSDF::getPath(const SpectrumWavelengths &sw, const Vector &vin, const int start_index, 
+	int getPath(const SpectrumWavelengths &sw, const Vector &vin, const int start_index, 
 				vector<SWCSpectrum> *path_L, vector<Vector>* path_vec, vector<int>* path_layer, 
 				vector<float>* path_pdf_forward,vector<float>* path_pdf_back,
 				vector<BxDFType> * path_sample_type,
