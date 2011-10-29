@@ -23,6 +23,7 @@
 // layeredmaterial.cpp*
 #include "lux.h"
 #include "material.h"
+#include "layeredbsdf.h"
 
 namespace lux
 {
@@ -38,6 +39,10 @@ public:
 		  boost::shared_ptr<Texture<float> > &op3, boost::shared_ptr<Texture<float> > &op4
 		  ) : Material(mp), mat1(m1),mat2(m2),
 		  mat3(m3),mat4(m4), opacity1(op1),opacity2(op2),opacity3(op3),opacity4(op4) {}
+
+	void addMat(MemoryArena &arena, const SpectrumWavelengths &sw, const Intersection &isect, 
+		const DifferentialGeometry &dgShading, boost::shared_ptr<Material> mat,
+		LayeredBSDF *lbsdf,boost::shared_ptr<Texture<float> > opacity) const;
 
 	//void LayeredMaterial::setMaterial(int slot, boost::shared_ptr<Material> &mat);
 	

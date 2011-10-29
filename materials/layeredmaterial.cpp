@@ -30,8 +30,40 @@
 #include "paramset.h"
 #include "dynload.h"
 #include "color.h"
+#include "nulltransmission.h"
 
 using namespace lux;
+
+void LayeredMaterial::addMat(MemoryArena &arena, const SpectrumWavelengths &sw, const Intersection &isect, 
+							 const DifferentialGeometry &dgShading, boost::shared_ptr<Material> mat,
+							 LayeredBSDF *lbsdf, boost::shared_ptr<Texture<float> > opacity) const{
+
+	DifferentialGeometry dgS = dgShading;
+	mat->GetShadingGeometry(sw, isect.dg.nn, &dgS);
+	BSDF *bsdfmat=mat->GetBSDF(arena,sw,isect, dgS);
+	float op = 1.0f;
+	if (opacity) {	// then need to mix with null
+			op= opacity->Evaluate(sw, dgS);
+			if (op<=0.0f) { // don't bother adding it
+				return;
+			}
+			MixBSDF *mixbsdf = ARENA_ALLOC(arena, MixBSDF)(dgShading, isect.dg.nn,
+				isect.exterior, isect.interior);
+			mixbsdf->Add(op, bsdfmat);
+
+			dgS = dgShading;
+			mat->GetShadingGeometry(sw, isect.dg.nn, &dgS); // Why do we need to do this again?
+
+			SingleBSDF *nullbsdf = ARENA_ALLOC(arena, SingleBSDF)(dgShading,
+				isect.dg.nn, ARENA_ALLOC(arena, NullTransmission)(),
+				isect.exterior, isect.interior);
+
+			mixbsdf->Add(1.0f-op, nullbsdf);
+			bsdfmat=mixbsdf;
+	}
+	lbsdf->Add(bsdfmat,op);
+	return;
+}
 
 // MixMaterial Method Definitions
 BSDF *LayeredMaterial::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
@@ -41,59 +73,16 @@ BSDF *LayeredMaterial::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw
 		isect.exterior, isect.interior);
 	
 	if (mat1) { // mat1
-		DifferentialGeometry dgS = dgShading;
-		mat1->GetShadingGeometry(sw, isect.dg.nn, &dgS);
-		BSDF *bsdfmat=mat1->GetBSDF(arena,sw,isect, dgS);
-
-		float op = 1.0f;
-		if (opacity1) {
-			op= opacity1->Evaluate(sw, dgS);
-		}
-		else { LOG( LUX_ERROR,LUX_BADTOKEN)<<"No opacity value found for mat 1 - using 1.0"; } 
-		//LOG( LUX_ERROR,LUX_BADTOKEN)<<"opacity mat 1 "<<op;
-		if (op>.0f) {
-			bsdf->Add(bsdfmat,op);
-		}
+		addMat(arena,sw,isect,dgShading,mat1,bsdf,opacity1);
 	}
-
 	if (mat2) { // mat2
-		DifferentialGeometry dgS = dgShading;
-		mat2->GetShadingGeometry(sw, isect.dg.nn, &dgS);
-		BSDF *bsdfmat=mat2->GetBSDF(arena,sw,isect, dgS);
-		float op = 1.0f;
-		if (opacity2) {
-			op= opacity2->Evaluate(sw, dgS);
-		}
-		else { LOG( LUX_ERROR,LUX_BADTOKEN)<<"No opacity value found for mat 2 - using 1.0"; } 
-		if (op>.0f) {
-			bsdf->Add(bsdfmat,op);
-		}
+		addMat(arena,sw,isect,dgShading,mat2,bsdf,opacity2);
 	}
 	if (mat3) { // mat3
-		DifferentialGeometry dgS = dgShading;
-		mat3->GetShadingGeometry(sw, isect.dg.nn, &dgS);
-		BSDF *bsdfmat=mat3->GetBSDF(arena,sw,isect, dgS);
-		float op = 1.0f;
-		if (opacity3) {
-			op= opacity3->Evaluate(sw, dgS);
-		}
-		else { LOG( LUX_ERROR,LUX_BADTOKEN)<<"No opacity value found for mat 3 - using 1.0"; } 
-		if (op>.0f) {
-			bsdf->Add(bsdfmat,op);
-		}
+		addMat(arena,sw,isect,dgShading,mat3,bsdf,opacity3);
 	}
 	if (mat4) { // mat4
-		DifferentialGeometry dgS = dgShading;
-		mat4->GetShadingGeometry(sw, isect.dg.nn, &dgS);
-		BSDF *bsdfmat=mat4->GetBSDF(arena,sw,isect, dgS);
-		float op = 1.0f;
-		if (opacity4) {
-			op= opacity4->Evaluate(sw, dgS);
-		}
-		else { LOG( LUX_ERROR,LUX_BADTOKEN)<<"No opacity value found for mat 4 - using 1.0"; } 
-		if (op>.0f) {
-			bsdf->Add(bsdfmat,op);
-		}
+		addMat(arena,sw,isect,dgShading,mat4,bsdf,opacity4);
 	}
 
 	bsdf->SetCompositingParams(&compParams);
@@ -105,6 +94,7 @@ BSDF *LayeredMaterial::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw
 Material* LayeredMaterial::CreateMaterial(const Transform &xform,
 		const ParamSet &mp) {
 	
+	LOG(LUX_WARNING,LUX_UNIMPLEMENT) << "The LayeredMaterial is still in development and may be unstable. USE IT AT YOUR OWN RISK.";
 	
 	boost::shared_ptr<Material> mat1(mp.GetMaterial("namedmaterial1"));
 	boost::shared_ptr<Material> mat2(mp.GetMaterial("namedmaterial2"));

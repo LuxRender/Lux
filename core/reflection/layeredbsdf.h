@@ -32,8 +32,6 @@
 
 namespace lux
 {
-
-
 // LayeredBSDF declaration
 class  LayeredBSDF : public BSDF  {
 public:
@@ -62,59 +60,28 @@ public:
 	virtual SWCSpectrum rho(const SpectrumWavelengths &sw,
 		const Vector &woW, BxDFType flags = BSDF_ALL) const;
 
-	Vector ReflectNg(const Vector &v) const {
-		return v - (2.0f*Dot(geom_norm,v)) * geom_norm;
-	}
+	bool matchesFlags(BxDFType flags) const { return (flags&(BSDF_GLOSSY|BSDF_SPECULAR)) ? true: false;}
 
-	Vector LocalToWorldGeom(const Vector &v) const {
-		return Vector(sn_geom.x * v.x + tn_geom.x * v.y + ng.x * v.z,
-		              sn_geom.y * v.x + tn_geom.y * v.y + ng.y * v.z,
-		              sn_geom.z * v.x + tn_geom.z * v.y + ng.z * v.z);
-	}
+	int LayeredBSDF::getPath(const SpectrumWavelengths &sw, const Vector &vin, const int start_index, 
+				vector<SWCSpectrum> *path_L, vector<Vector>* path_vec, vector<int>* path_layer, 
+				vector<float>* path_pdf_forward,vector<float>* path_pdf_back,
+				vector<BxDFType> * path_sample_type,
+				bool eye) const ;
 
-	// for sampleF: F=f*(ns.wo)*(ng.wi)/(ng.wo)/pdf (reverse=false)
-	float sample_Ftof_revfalse(const Vector &knownW,const Vector &sampledW, float pdf) const{
-		return fabs( pdf/Dot(nn,sampledW) * Dot(ng,knownW) / Dot(nn,knownW) *Dot(nn,sampledW) / Dot(ng,sampledW) );
-	}
-
-	float sample_Ftof_revtrue(const Vector &sampledW, float pdf) const{
-		return fabs (pdf/Dot(nn,sampledW) );
-	}
-
-	// for F:  F = f*(ns.wo) (at least for reverse=false. is reverse irrelevant? )
-	float ftoF_rev_false(const Vector &outgoingW,const Vector &incomingW) const{
-		return fabs( Dot(nn,outgoingW) * Dot(ng,incomingW) / Dot(ng,outgoingW) );
-	}
-
-	float ftoF_rev_true(const Vector &outgoingW,const Vector &incomingW) const{
-		return AbsDot(nn,outgoingW);
-	}
-
-	float Ftof_rev_false(const Vector &outgoingW,const Vector &incomingW) const{
-		return fabs ( Dot(ng,outgoingW) / Dot(ng,incomingW) / Dot(nn,outgoingW) );
-	}
-
-	bool matchesFlags(BxDFType flags) const { return (flags&BSDF_GLOSSY) ? true: false;}
-
-	unsigned int getRandSeed() const;
+	unsigned int getRandSeed() const;	// seed not threadsafe (won't crash but may be corrupt)
 
 protected:
-	// LayeredBSDF Private Methods
+	
 	virtual ~LayeredBSDF() { }
-	// LayeredBSDF Private Data
+	
 	u_int nBSDFs;
 	#define MAX_BSDFS 8
 	BSDF *bsdfs[MAX_BSDFS];
 	float opacity[MAX_BSDFS];
 
 	int max_num_bounces;
-	int num_f_samples;
-	Vector geom_norm,sn_geom, tn_geom;
 
-	//boost::mutex seed_mutex;
-
-	//RandomGenerator rng_seed;
-	//unsigned int randseed;
+	float prob_sample_spec;	// probability of sampling the specular component (vs glossy)
 	
 };
 // LayeredBSDF Inline Method Definitions
@@ -123,14 +90,14 @@ inline void LayeredBSDF::Add(BSDF *b, float op)
 	BOOST_ASSERT(nBSDFs < MAX_BSDFS);
 	bsdfs[nBSDFs] = b;
 	opacity[nBSDFs++]=op;
-	max_num_bounces=nBSDFs*4;
+	max_num_bounces=nBSDFs*3;
 
 }
 
 inline u_int LayeredBSDF::NumComponents(BxDFType flags) const
 {
-	if ((flags & BSDF_GLOSSY)>0) { return 1;}	// one for reflection/transmission
-	if ((flags & BSDF_SPECULAR)>0) { return 1;}	// one for reflection/transmission
+	if ((flags & BSDF_GLOSSY)>0) { return 1;}	// ?should this be 2 - one for transmission/reflection
+	if ((flags & BSDF_SPECULAR)>0) { return 1;}	
 	return 0;
 }
 
