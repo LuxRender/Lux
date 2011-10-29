@@ -480,11 +480,10 @@ SWCSpectrum LayeredBSDF::rho(const SpectrumWavelengths &sw, const Vector &woW,
 	return ret ;
 }
 
-// Threadsafe random seed generator
+// Threadsafe random seed generator - won't crash but seed may get corrupted
 
 unsigned int layered_randseed;
 
 unsigned int LayeredBSDF::getRandSeed() const { 
-	extern unsigned int layered_randseed;
 	return layered_randseed++;
 }
