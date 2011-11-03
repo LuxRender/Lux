@@ -70,6 +70,8 @@ public:
 
 	unsigned int getRandSeed() const;	// seed not threadsafe (won't crash but may be corrupt)
 
+	u_int getNumBSDFs() const { return nBSDFs;}
+
 protected:
 	
 	virtual ~LayeredBSDF() { }

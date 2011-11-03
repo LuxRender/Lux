@@ -40,7 +40,7 @@ LayeredBSDF::LayeredBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
 {
 	nBSDFs = 0;
 	max_num_bounces=1; // Note this gets changed when layers are added
-	prob_sample_spec=0.5f;
+	prob_sample_spec=0.9f;
 
 }
 
@@ -363,7 +363,7 @@ SWCSpectrum LayeredBSDF::F(const SpectrumWavelengths &sw, const Vector &woW,
 		}
 	}
 	
-	return L;
+	return L / (1.0f - prob_sample_spec / 2.0f );
 }
 
 int LayeredBSDF::getPath(const SpectrumWavelengths &sw, const Vector &vin, const int start_index, 
