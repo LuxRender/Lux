@@ -36,6 +36,7 @@
 #define LUX_RANDOM_H
 
 #include "memory.h"
+#include <boost/noncopyable.hpp>
 
 #define MASK 0xffffffffUL
 #define FLOATMASK 0x00ffffffUL
@@ -47,7 +48,7 @@ static const float invUI = (1.f / (FLOATMASK + 1UL));
 namespace lux
 {
 
-class RandomGenerator
+class RandomGenerator : boost::noncopyable
 {
 public:
 	RandomGenerator() {
