@@ -26,6 +26,7 @@
 #include "color.h"
 #include "mc.h"
 #include "bxdf.h"
+#include "singlebsdf.h"
 #include "sampling.h"
 #include "paramset.h"
 #include "dynload.h"

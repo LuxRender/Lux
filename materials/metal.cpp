@@ -23,7 +23,7 @@
 // metal.* - adapted to Lux from code by Asbjørn Heid
 #include "metal.h"
 #include "memory.h"
-#include "bxdf.h"
+#include "singlebsdf.h"
 #include "primitive.h"
 #include "fresnelconductor.h"
 #include "microfacet.h"

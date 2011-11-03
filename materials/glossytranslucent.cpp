@@ -24,7 +24,7 @@
 
 #include "glossytranslucent.h"
 #include "memory.h"
-#include "bxdf.h"
+#include "multibsdf.h"
 #include "primitive.h"
 #include "schlicktranslucentbtdf.h"
 #include "schlickbrdf.h"

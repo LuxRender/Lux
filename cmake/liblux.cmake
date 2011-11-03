@@ -117,10 +117,18 @@ SOURCE_GROUP("Source Files\\Core\\Queryable" FILES ${lux_core_queryable_src})
 SET(lux_core_reflection_src
 	core/reflection/bxdf.cpp
 	core/reflection/fresnel.cpp
-	core/reflection/layeredbsdf.cpp
 	core/reflection/microfacetdistribution.cpp
 	)
 SOURCE_GROUP("Source Files\\Core\\Reflection" FILES ${lux_core_reflection_src})
+
+SET(lux_core_reflection_bsdf_src
+	core/reflection/bsdf/layeredbsdf.cpp
+	core/reflection/bsdf/mixbsdf.cpp
+	core/reflection/bsdf/multibsdf.cpp
+	core/reflection/bsdf/schlickbsdf.cpp
+	core/reflection/bsdf/singlebsdf.cpp
+	)
+SOURCE_GROUP("Source Files\\Core\\Reflection\\BSDF" FILES ${lux_core_reflection_bsdf_src})
 
 SET(lux_core_reflection_bxdf_src
 	core/reflection/bxdf/asperity.cpp
@@ -165,6 +173,7 @@ SET(lux_core_all_src
 	${lux_core_geometry_src}
 	${lux_core_queryable_src}
 	${lux_core_reflection_src}
+	${lux_core_reflection_bsdf_src}
 	${lux_core_reflection_bxdf_src}
 	${lux_core_reflection_fresnel_src}
 	${lux_core_reflection_microfacetdistribution_src}
@@ -545,10 +554,17 @@ SOURCE_GROUP("Header Files\\Core\\Queryable" FILES ${lux_core_queryable_hdr})
 SET(lux_core_reflection_hdr
 	core/reflection/bxdf.h
 	core/reflection/fresnel.h
-	core/reflection/layeredbsdf.h
 	core/reflection/microfacetdistribution.h
 	)
 SOURCE_GROUP("Header Files\\Core\\Reflection" FILES ${lux_core_reflection_hdr})
+SET(lux_core_reflection_bsdf_hdr
+	core/reflection/bsdf/layeredbsdf.h
+	core/reflection/bsdf/mixbsdf.h
+	core/reflection/bsdf/multibsdf.h
+	core/reflection/bsdf/schlickbsdf.h
+	core/reflection/bsdf/singlebsdf.h
+	)
+SOURCE_GROUP("Header Files\\Core\\Reflection\\BSDF" FILES ${lux_core_reflection_bsdf_hdr})
 SET(lux_core_reflection_bxdf_hdr
 	core/reflection/bxdf/asperity.h
 	core/reflection/bxdf/brdftobtdf.h
@@ -821,6 +837,7 @@ SET(lux_lib_hdr
 	${lux_core_geometry_hdr}
 	${lux_core_queryable_hdr}
 	${lux_core_reflection_hdr}
+	${lux_core_reflection_bsdf_hdr}
 	${lux_core_reflection_bxdf_hdr}
 	${lux_core_reflection_fresnel_hdr}
 	${lux_core_reflection_microfacetdistribution_hdr}
@@ -859,6 +876,7 @@ INCLUDE_DIRECTORIES(SYSTEM
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/core
 	${CMAKE_SOURCE_DIR}/core/queryable
 	${CMAKE_SOURCE_DIR}/core/reflection
+	${CMAKE_SOURCE_DIR}/core/reflection/bsdf
 	${CMAKE_SOURCE_DIR}/core/reflection/bxdf
 	${CMAKE_SOURCE_DIR}/core/reflection/fresnel
 	${CMAKE_SOURCE_DIR}/core/reflection/microfacetdistribution

@@ -25,6 +25,7 @@
 #include "memory.h"
 #include "color.h"
 #include "bxdf.h"
+#include "singlebsdf.h"
 #include "mc.h"
 #include "sampling.h"
 #include "paramset.h"

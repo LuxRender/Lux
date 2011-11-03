@@ -26,7 +26,7 @@
 
 #include "carpaint.h"
 #include "memory.h"
-#include "bxdf.h"
+#include "multibsdf.h"
 #include "primitive.h"
 #include "schlickdistribution.h"
 #include "fresnelslick.h"

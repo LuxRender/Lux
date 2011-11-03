@@ -23,7 +23,7 @@
 // mirror.cpp*
 #include "mirror.h"
 #include "memory.h"
-#include "bxdf.h"
+#include "singlebsdf.h"
 #include "primitive.h"
 #include "specularreflection.h"
 #include "fresnelnoop.h"

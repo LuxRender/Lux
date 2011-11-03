@@ -28,6 +28,7 @@
 #include "film.h" // for Film
 #include "specularreflection.h"
 #include "fresnelnoop.h"
+#include "singlebsdf.h"
 #include "paramset.h"
 #include "dynload.h"
 

@@ -24,6 +24,7 @@
 #include "projection.h"
 #include "imagereader.h"
 #include "bxdf.h"
+#include "singlebsdf.h"
 #include "mc.h"
 #include "color.h"
 #include "sampling.h"

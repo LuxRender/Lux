@@ -23,7 +23,8 @@
 // point.cpp*
 #include "pointlight.h"
 #include "mc.h"
-#include "reflection/bxdf.h"
+#include "bxdf.h"
+#include "singlebsdf.h"
 #include "sphericalfunction.h"
 #include "sampling.h"
 #include "paramset.h"

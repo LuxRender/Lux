@@ -23,6 +23,8 @@
 // layeredmaterial.cpp*
 #include "layeredmaterial.h"
 #include "layeredbsdf.h"
+#include "singlebsdf.h"
+#include "mixbsdf.h"
 #include "memory.h"
 #include "bxdf.h"
 #include "primitive.h"

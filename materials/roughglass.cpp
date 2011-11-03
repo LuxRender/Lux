@@ -23,7 +23,7 @@
 // roughglass.cpp*
 #include "roughglass.h"
 #include "memory.h"
-#include "bxdf.h"
+#include "multibsdf.h"
 #include "primitive.h"
 #include "fresnelcauchy.h"
 #include "microfacet.h"

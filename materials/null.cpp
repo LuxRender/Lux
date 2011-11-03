@@ -23,7 +23,7 @@
 // null.cpp*
 #include "null.h"
 #include "memory.h"
-#include "bxdf.h"
+#include "singlebsdf.h"
 #include "primitive.h"
 #include "nulltransmission.h"
 #include "paramset.h"

@@ -23,7 +23,7 @@
 // scattermaterial.cpp*
 #include "scattermaterial.h"
 #include "memory.h"
-#include "bxdf.h"
+#include "singlebsdf.h"
 #include "primitive.h"
 #include "schlickscatter.h"
 #include "texture.h"

@@ -23,7 +23,7 @@
 // matte.cpp*
 #include "matte.h"
 #include "memory.h"
-#include "bxdf.h"
+#include "singlebsdf.h"
 #include "primitive.h"
 #include "lambertian.h"
 #include "orennayar.h"

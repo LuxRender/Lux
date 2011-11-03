@@ -25,7 +25,8 @@
 #include "imagereader.h"
 #include "mcdistribution.h"
 #include "paramset.h"
-#include "reflection/bxdf.h"
+#include "bxdf.h"
+#include "singlebsdf.h"
 #include "sampling.h"
 #include "dynload.h"
 

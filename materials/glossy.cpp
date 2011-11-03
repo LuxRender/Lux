@@ -25,7 +25,7 @@
 // glossy.cpp*
 #include "glossy.h"
 #include "memory.h"
-#include "bxdf.h"
+#include "singlebsdf.h"
 #include "primitive.h"
 #include "fresnelblend.h"
 #include "schlickdistribution.h"

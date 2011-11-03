@@ -23,7 +23,7 @@
 // mixmaterial.cpp*
 #include "mixmaterial.h"
 #include "memory.h"
-#include "bxdf.h"
+#include "mixbsdf.h"
 #include "primitive.h"
 #include "texture.h"
 #include "paramset.h"

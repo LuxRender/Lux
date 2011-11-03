@@ -23,7 +23,7 @@
 // shinymetal.cpp*
 #include "shinymetal.h"
 #include "memory.h"
-#include "bxdf.h"
+#include "multibsdf.h"
 #include "primitive.h"
 #include "fresnelgeneral.h"
 #include "schlickdistribution.h"

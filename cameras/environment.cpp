@@ -26,7 +26,8 @@
 #include "mc.h"
 #include "scene.h" // for struct Intersection
 #include "film.h" // for Film
-#include "reflection/bxdf.h"
+#include "bxdf.h"
+#include "singlebsdf.h"
 #include "light.h"
 #include "paramset.h"
 #include "dynload.h"

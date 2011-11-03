@@ -20,51 +20,53 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// velvet.cpp*
-#include "asperity.h"
-#include "memory.h"
-#include "singlebsdf.h"
-#include "primitive.h"
-#include "velvet.h"
-#include "texture.h"
-#include "color.h"
-#include "paramset.h"
-#include "dynload.h"
+#ifndef LUX_SINGLEBSDF_H
+#define LUX_SINGLEBSDF_H
+// singlebsdf.h*
+#include "bxdf.h"
+#include "geometry/raydifferential.h"
+#include "spectrum.h"
 
-using namespace lux;
-
-// Velvet Method Definitions
-BSDF *Velvet::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
-	const Intersection &isect, const DifferentialGeometry &dgs) const
+namespace lux
 {
-	// Allocate _BSDF_
-	SWCSpectrum r = Kd->Evaluate(sw, dgs).Clamp(0.f, 1.f);
-	
-	float p1 = Clamp(P1->Evaluate(sw, dgs), -100.f, 100.f);
-	float p2 = Clamp(P2->Evaluate(sw, dgs), -100.f, 100.f);
-	float p3 = Clamp(P3->Evaluate(sw, dgs), -100.f, 100.f);
-	
-	float thickness = Clamp(Thickness->Evaluate(sw, dgs), 0.0f, 1.f);
-	
-	BxDF *bxdf = ARENA_ALLOC(arena, Asperity)(r, p1, p2, p3, thickness);
 
-	SingleBSDF *bsdf = ARENA_ALLOC(arena, SingleBSDF)(dgs,
-		isect.dg.nn, bxdf, isect.exterior, isect.interior);
+// Single BxDF BSDF declaration
+class  SingleBSDF : public BSDF  {
+public:
+	// StackedBSDF Public Methods
+	SingleBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
+		const BxDF *b, const Volume *exterior, const Volume *interior) :
+		BSDF(dgs, ngeom, exterior, interior), bxdf(b) { }
+	virtual inline u_int NumComponents() const { return 1; }
+	virtual inline u_int NumComponents(BxDFType flags) const {
+		return bxdf->MatchesFlags(flags) ? 1U : 0U;
+	}
+	/**
+	 * Samples the BSDF.
+	 * Returns the result of the BSDF for the sampled direction in f.
+	 */
+	virtual bool SampleF(const SpectrumWavelengths &sw, const Vector &woW,
+		Vector *wiW, float u1, float u2, float u3,
+		SWCSpectrum *const f_, float *pdf, BxDFType flags = BSDF_ALL,
+		BxDFType *sampledType = NULL, float *pdfBack = NULL,
+		bool reverse = false) const;
+	virtual float Pdf(const SpectrumWavelengths &sw, const Vector &woW,
+		const Vector &wiW, BxDFType flags = BSDF_ALL) const;
+	virtual SWCSpectrum F(const SpectrumWavelengths &sw, const Vector &woW,
+		const Vector &wiW, bool reverse,
+		BxDFType flags = BSDF_ALL) const;
+	virtual SWCSpectrum rho(const SpectrumWavelengths &sw,
+		BxDFType flags = BSDF_ALL) const;
+	virtual SWCSpectrum rho(const SpectrumWavelengths &sw,
+		const Vector &woW, BxDFType flags = BSDF_ALL) const;
 
-	// Add ptr to CompositingParams structure
-	bsdf->SetCompositingParams(&compParams);
+protected:
+	// SingleBSDF Private Methods
+	virtual ~SingleBSDF() { }
+	// SingleBSDF Private Data
+	const BxDF *bxdf;
+};
 
-	return bsdf;
-}
+}//namespace lux
 
-Material* Velvet::CreateMaterial(const Transform &xform,
-		const ParamSet &mp) {
-	boost::shared_ptr<Texture<SWCSpectrum> > Kd(mp.GetSWCSpectrumTexture("Kd", RGBColor(.3f)));
-	boost::shared_ptr<Texture<float> > P1(mp.GetFloatTexture("p1", -2.f));
-	boost::shared_ptr<Texture<float> > P2(mp.GetFloatTexture("p2", 20.f));
-	boost::shared_ptr<Texture<float> > P3(mp.GetFloatTexture("p3", 2.f));
-	boost::shared_ptr<Texture<float> > Thickness(mp.GetFloatTexture("thickness", 0.1f));
-	return new Velvet(Kd, P1, P2, P3, Thickness, mp);
-}
-
-static DynamicLoader::RegisterMaterial<Velvet> r("velvet");
+#endif // LUX_SINGLEBSDF_H

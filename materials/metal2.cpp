@@ -23,7 +23,7 @@
 // metal2.cpp
 #include "metal2.h"
 #include "memory.h"
-#include "bxdf.h"
+#include "singlebsdf.h"
 #include "primitive.h"
 #include "microfacet.h"
 #include "schlickdistribution.h"

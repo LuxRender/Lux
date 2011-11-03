@@ -23,7 +23,7 @@
 // mattetranslucent.cpp*
 #include "mattetranslucent.h"
 #include "memory.h"
-#include "bxdf.h"
+#include "multibsdf.h"
 #include "primitive.h"
 #include "brdftobtdf.h"
 #include "lambertian.h"
