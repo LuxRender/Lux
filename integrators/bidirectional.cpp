@@ -1265,7 +1265,7 @@ void BidirPathState::Terminate(const Scene &scene,
 	}
 
 	// Add the light buffer samples
-	const bool lightAlpha = light->IsEnvironmental() ? 0.f : 1.f;
+	const bool lightAlpha = light->IsEnvironmental();
 	for (u_int s = 1; s < lightPathLength; ++s) {
 		if (LlightPath[s].Black())
 			continue;

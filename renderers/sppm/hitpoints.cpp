@@ -362,8 +362,8 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, MemoryArena &hp
 			}
 		}
 
-		bool const has_store_component = bsdf->NumComponents(store_component);
-		bool const has_bounce_component = bsdf->NumComponents(bounce_component);
+		bool const has_store_component = bsdf->NumComponents(store_component) > 0;
+		bool const has_bounce_component = bsdf->NumComponents(bounce_component) > 0;
 
 		float pdf_event;
 		bool store;
