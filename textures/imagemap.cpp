@@ -32,8 +32,8 @@ using namespace lux;
 void NormalMapTexture::GetDuv(const SpectrumWavelengths &sw,
 	const DifferentialGeometry &dg, float delta, float *du, float *dv) const {
 	
-	float s, t;
-	mapping->Map(dg, &s, &t);
+	float s, t, dsdu, dtdu, dsdv, dtdv;
+	mapping->MapDuv(dg, &s, &t, &dsdu, &dtdu, &dsdv, &dtdv);
 
 	// normal from normal map
 	Vector n(mipmap->LookupRGBAColor(s, t).c);
@@ -41,10 +41,24 @@ void NormalMapTexture::GetDuv(const SpectrumWavelengths &sw,
 	// TODO - implement different methods for decoding normal
 	n = 2.f * n - Vector(1.f, 1.f, 1.f);
 
-	// recover dhdu,dhdv in uv space directly
-	const Vector dpdu = dg.dpdu;
-	const Vector dpdv = dg.dpdv;
-	const Vector k = Vector(dg.nn);
+	// transform dpdu, dpdv to dpds, dpdt
+
+	// invert Jacobian
+	const float invJdet = 1.f / (dsdu * dtdv - dsdv * dtdu);
+		
+	if (fabsf(invJdet) < 1e-5f) {
+		*du = *dv = 0.f;
+		return;
+	}
+
+	const float duds = invJdet * dtdv;
+	const float dudt = invJdet * -dsdv;
+	const float dvds = invJdet * -dtdu;
+	const float dvdt = invJdet * dsdu;
+
+	const Vector dpds = dg.dpdu * duds + dg.dpdv * dvds;
+	const Vector dpdt = dg.dpdu * dudt + dg.dpdv * dvdt;
+	const Vector k = Normalize(Cross(dpds, dpdt));
 
 	// transform n from tangent to object space
 	const Vector t1 = dg.tangent;
@@ -70,21 +84,21 @@ void NormalMapTexture::GetDuv(const SpectrumWavelengths &sw,
 	// Here we solve this system to obtain dhds and dhdt.
 	const float A[3][3] = {
 		{
-			( dpdv.z * k.y - dpdv.y * k.z ),
-			( dpdu.y * k.z - dpdu.z * k.y ),
-			( dpdu.y * dpdv.z - dpdu.z * dpdv.y )
+			( dpdt.z * k.y - dpdt.y * k.z ),
+			( dpds.y * k.z - dpds.z * k.y ),
+			( dpds.y * dpdt.z - dpds.z * dpdt.y )
 		},
 		{
-			( dpdv.x * k.z - dpdv.z * k.x ),
-			( dpdu.z * k.x - dpdu.x * k.z ),
-			( dpdu.z * dpdv.x - dpdu.x * dpdv.z )
+			( dpdt.x * k.z - dpdt.z * k.x ),
+			( dpds.z * k.x - dpds.x * k.z ),
+			( dpds.z * dpdt.x - dpds.x * dpdt.z )
 		},
 		{
-			( dpdv.y * k.x - dpdv.x * k.y ),
-			( dpdu.x * k.y - dpdu.y * k.x ),
-			( dpdu.x * dpdv.y - dpdu.y * dpdv.x )
+			( dpdt.y * k.x - dpdt.x * k.y ),
+			( dpds.x * k.y - dpds.y * k.x ),
+			( dpds.x * dpdt.y - dpds.y * dpdt.x )
 		}};
-	
+
 	const float b[3] = { n.x, n.y, n.z };
 
 	float dh[3];
@@ -93,10 +107,15 @@ void NormalMapTexture::GetDuv(const SpectrumWavelengths &sw,
 		*du = *dv = 0.f;
 		return;
 	}
-
+		
 	// recover dhds and dhdt by dividing by 1/lambda
-	*du = dh[0] / dh[2];
-	*dv = dh[1] / dh[2];
+	float ds = dh[0] / dh[2];
+	float dt = dh[1] / dh[2];
+
+	// transform back to uv space
+	*du = ds * dsdu + dt * dtdu;
+	*dv = ds * dsdv + dt * dtdv;
+
 }
 
 
