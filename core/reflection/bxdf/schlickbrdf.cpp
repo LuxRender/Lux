@@ -148,18 +148,17 @@ SchlickGlossyBRDF::SchlickGlossyBRDF(const Fresnel *fr, float r, float p, bool m
 void SchlickGlossyBRDF::F(const SpectrumWavelengths &sw, const Vector &wo, 
 	 const Vector &wi, SWCSpectrum *const f_) const
 {
-	const float cosi = fabsf(CosTheta(wi));
-	const float coso = fabsf(CosTheta(wo));
-
-	// specular part
-	if (wi.z <= 0.f || wo.z <= 0.f)
+	// No sampling on the back face
+	if (!(wo.z > 0.f) || !(wi.z > 0.f))
 		return;
+	const float coso = fabsf(CosTheta(wo));
+	const float cosi = fabsf(CosTheta(wi));
 
 	const Vector H(Normalize(wo + wi));
 	const float u = AbsDot(wi, H);
 	SWCSpectrum S;
-
 	fresnel->Evaluate(sw, u, &S);
+
 	f_->AddWeighted(coso * SchlickD(cosi, coso, H), S);
 }
 
@@ -167,6 +166,9 @@ bool SchlickGlossyBRDF::SampleF(const SpectrumWavelengths &sw, const Vector &wo,
 	Vector *wi, float u1, float u2, SWCSpectrum *const f_, float *pdf, 
 	float *pdfBack, bool reverse) const
 {
+	// No sampling on the back face
+	if (!(wo.z > 0.f))
+		return false;
 	Vector H;
 	float cosWH;
 	u2 *= 4.f;
@@ -193,7 +195,7 @@ bool SchlickGlossyBRDF::SampleF(const SpectrumWavelengths &sw, const Vector &wo,
 	cosWH = Dot(wo, H);
 	*wi = 2.f * cosWH * H - wo;
 
-	if (!SameHemisphere(wo, *wi))
+	if (!(wi->z > 0.f))
 		return false;
 
 	const float specPdf = SchlickZ(H.z) * SchlickA(H) /
@@ -215,7 +217,8 @@ bool SchlickGlossyBRDF::SampleF(const SpectrumWavelengths &sw, const Vector &wo,
 float SchlickGlossyBRDF::Pdf(const SpectrumWavelengths &sw, const Vector &wo,
 	const Vector &wi) const
 {
-	if (!SameHemisphere(wo, wi))
+	// No sampling on the back face
+	if (!(wo.z > 0.f) || !(wi.z > 0.f))
 		return 0.f;
 	const Vector H(Normalize(wo + wi));
 	return SchlickZ(fabsf(H.z)) * SchlickA(H) /
@@ -223,6 +226,9 @@ float SchlickGlossyBRDF::Pdf(const SpectrumWavelengths &sw, const Vector &wo,
 }
 float SchlickGlossyBRDF::Weight(const SpectrumWavelengths &sw, const Vector &wo) const
 {
+	// No sampling on the back face
+	if (!(wo.z > 0.f))
+		return 0.f;
 	// approximate H by using reflection direction for wi
 	const float u = fabsf(CosTheta(wo));
 

@@ -35,7 +35,8 @@ SchlickBSDF::SchlickBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
 float SchlickBSDF::CoatingWeight(const SpectrumWavelengths &sw, const Vector &wo) const
 {
 	// ensures coating is never sampled less than half the time
-	return 0.5f * (1.f + coating->Weight(sw, wo));
+	// unless we are on the back face
+	return !(wo.z > 0.f) ? 0.f : 0.5f * (1.f + coating->Weight(sw, wo));
 }
 bool SchlickBSDF::SampleF(const SpectrumWavelengths &sw, const Vector &woW, Vector *wiW,
 	float u1, float u2, float u3, SWCSpectrum *const f_, float *pdf,
@@ -44,16 +45,17 @@ bool SchlickBSDF::SampleF(const SpectrumWavelengths &sw, const Vector &woW, Vect
 {
 	Vector wo(WorldToLocal(woW)), wi;
 
-	const float w_coating = CoatingWeight(sw, wo);
-	const float w_base = 1.f - w_coating;
+	const float wCoating = !coating->MatchesFlags(flags) ?
+		0.f : CoatingWeight(sw, wo);
+	const float wBase = 1.f - wCoating;
 
 	float basePdf, basePdfBack;
 	float coatingPdf, coatingPdfBack;
 
 	SWCSpectrum baseF(0.f), coatingF(0.f);
 
-	if (u3 < w_base) {
-		u3 /= w_base;
+	if (u3 < wBase) {
+		u3 /= wBase;
 		// Sample base layer
 		if (!base->SampleF(sw, woW, wiW, u1, u2, u3, &baseF, &basePdf, flags, sampledType, &basePdfBack, reverse))
 			return false;
@@ -61,17 +63,20 @@ bool SchlickBSDF::SampleF(const SpectrumWavelengths &sw, const Vector &woW, Vect
 
 		baseF *= basePdf;
 
-		if (reverse)
-			coating->F(sw, wi, wo, &coatingF);
-		else
-			coating->F(sw, wo, wi, &coatingF);
+		// Don't add the coating scattering if the base sampled
+		// component is specular
+		if (!sampledType || !(*sampledType & BSDF_SPECULAR)) {
+			if (reverse)
+				coating->F(sw, wi, wo, &coatingF);
+			else
+				coating->F(sw, wo, wi, &coatingF);
 
-		coatingPdf = coating->Pdf(sw, wo, wi);
-		if (pdfBack)
-			coatingPdfBack = coating->Pdf(sw, wi, wo);
+			coatingPdf = coating->Pdf(sw, wo, wi);
+			if (pdfBack)
+				coatingPdfBack = coating->Pdf(sw, wi, wo);
+		} else
+			coatingPdf = coatingPdfBack = 0.f;
 	} else {
-		if (!coating->MatchesFlags(flags))
-			return false;
 		// Sample coating BxDF
 		if (!coating->SampleF(sw, wo, &wi, u1, u2, &coatingF,
 			&coatingPdf, &coatingPdfBack, reverse))
@@ -92,44 +97,50 @@ bool SchlickBSDF::SampleF(const SpectrumWavelengths &sw, const Vector &woW, Vect
 			basePdfBack = base->Pdf(sw, woW, *wiW, flags);
 	}
 
-	const float w_coatingR = CoatingWeight(sw, wi);
-	const float w_baseR = 1.f - w_coatingR;
+	const float wCoatingR = !coating->MatchesFlags(flags) ?
+		0.f : CoatingWeight(sw, wi);
+	const float wBaseR = 1.f - wCoatingR;
 
 	const float sideTest = Dot(*wiW, ng) / Dot(woW, ng);
-	if (sideTest > 0.f)
-		// ignore BTDFs
-		flags = BxDFType(flags & ~BSDF_TRANSMISSION);
-	else if (sideTest < 0.f)
-		// ignore BRDFs
-		flags = BxDFType(flags & ~BSDF_REFLECTION);
-	else
-		return false;
-
 	if (sideTest > 0.f) {
-		if (!coating->MatchesFlags(flags))
-			return false;
-		if (!reverse)
-			// only affects top layer, base bsdf should do the same in it's F()
-			coatingF *= fabsf(sideTest);
+		// Reflection
+		if (!(Dot(woW, ng) > 0.f)) {
+			// Back face reflection: no coating
+			*f_ = baseF;
+		} else {
+			// Front face reflection: coating+base
+			if (!reverse)
+				// only affects top layer, base bsdf should do the same in it's F()
+				coatingF *= fabsf(sideTest);
 
+			// coating fresnel factor
+			SWCSpectrum S;
+			const Vector H(Normalize(wo + wi));
+			const float u = AbsDot(wi, H);
+			fresnel->Evaluate(sw, u, &S);
+
+			// blend in base layer Schlick style
+			// assumes coating bxdf takes fresnel factor S into account
+			*f_ = coatingF + (SWCSpectrum(1.f) - S) * baseF;
+		}
+	} else if (sideTest < 0.f) {
+		// Transmission
 		// coating fresnel factor
 		SWCSpectrum S;
-		const Vector H(Normalize(wo + wi));
-		const float u = AbsDot(wi, H);
+		const Vector H(Normalize(Vector(wo.x + wi.x, wo.y + wi.y, wo.z - wi.z)));
+		const float u = AbsDot(wo, H);
 		fresnel->Evaluate(sw, u, &S);
 
-		// blend in base layer Schlick style
-		// assumes coating bxdf takes fresnel factor S into account
-		*f_ = coatingF + (SWCSpectrum(1.f) - S) * baseF;
-	} else if (sideTest < 0.f) {
-		// FIXME - we're ignoring the coating when entering from below
-		*f_ = baseF;
-	}
+		// filter base layer, the square root is just a heuristic
+		// so that a sheet coated on both faces gets a filtering factor
+		// of 1-S like a reflection
+		*f_ = (SWCSpectrum(1.f) - S).Sqrt() * baseF;
+	} else
+		return false;
 
-	// FIXME - different pdf's based on sideTest?
-	*pdf = coatingPdf * w_coating + basePdf * w_base;
+	*pdf = coatingPdf * wCoating + basePdf * wBase;
 	if (pdfBack)
-		*pdfBack = coatingPdfBack * w_coatingR + basePdfBack * w_baseR;
+		*pdfBack = coatingPdfBack * wCoatingR + basePdfBack * wBaseR;
 
 	*f_ /= *pdf;
 
@@ -140,41 +151,36 @@ float SchlickBSDF::Pdf(const SpectrumWavelengths &sw, const Vector &woW, const V
 {
 	Vector wo(WorldToLocal(woW)), wi(WorldToLocal(wiW));
 
-	const float w_coating = CoatingWeight(sw, wo);
-	const float w_base = 1.f - w_coating;
+	const float wCoating = !coating->MatchesFlags(flags) ?
+		0.f : CoatingWeight(sw, wo);
+	const float wBase = 1.f - wCoating;
 
-	return w_base * base->Pdf(sw, woW, wiW, flags) + 
-		w_coating *	(coating->MatchesFlags(flags) ? coating->Pdf(sw, wo, wi) : 0.f);
+	return wBase * base->Pdf(sw, woW, wiW, flags) + 
+		wCoating * coating->Pdf(sw, wo, wi);
 }
 SWCSpectrum SchlickBSDF::F(const SpectrumWavelengths &sw, const Vector &woW,
 		const Vector &wiW, bool reverse, BxDFType flags) const
 {
 	const float sideTest = Dot(wiW, ng) / Dot(woW, ng);
-	if (sideTest > 0.f)
-		// ignore BTDFs
-		flags = BxDFType(flags & ~BSDF_TRANSMISSION);
-	else if (sideTest < 0.f)
-		// ignore BRDFs
-		flags = BxDFType(flags & ~BSDF_REFLECTION);
-	else
-		return SWCSpectrum(0.f);
 
-	if (!coating->MatchesFlags(flags))
-		if (sideTest > 0.f)
-			return SWCSpectrum(0.f);
-		else
-			// FIXME
-			return base->F(sw, woW, wiW, reverse, flags);
-
-	Vector wi(WorldToLocal(wiW)), wo(WorldToLocal(woW));
-	SWCSpectrum f_(0.f);
+	const Vector wi(WorldToLocal(wiW)), wo(WorldToLocal(woW));
 
 	if (sideTest > 0.f) {
-		SWCSpectrum coatingF;
-		coating->F(sw, wo, wi, &coatingF);
-		if (!reverse)
-			// only affects top layer, base bsdf should do the same in it's F()
-			coatingF *= fabsf(sideTest);
+		// Reflection
+		// ignore BTDFs
+		flags = BxDFType(flags & ~BSDF_TRANSMISSION);
+		if (!(wo.z > 0.f)) {
+			// Back face: no coating
+			return base->F(sw, woW, wiW, flags);
+		}
+		// Front face: coating+base
+		SWCSpectrum coatingF(0.f);
+		if (coating->MatchesFlags(flags)) {
+			coating->F(sw, wo, wi, &coatingF);
+			if (!reverse)
+				// only affects top layer, base bsdf should do the same in it's F()
+				coatingF *= fabsf(sideTest);
+		}
 
 		// coating fresnel factor
 		SWCSpectrum S;
@@ -184,16 +190,24 @@ SWCSpectrum SchlickBSDF::F(const SpectrumWavelengths &sw, const Vector &woW,
 
 		// blend in base layer Schlick style
 		// assumes coating bxdf takes fresnel factor S into account
-		f_ = coatingF + (SWCSpectrum(1.f) - S) * base->F(sw, woW, wiW, reverse, flags);
+		return coatingF + (SWCSpectrum(1.f) - S) * base->F(sw, woW, wiW, reverse, flags);
 
 	} else if (sideTest < 0.f) {
-		// FIXME - we're ignoring the coating when entering from below
-		f_ = base->F(sw, woW, wiW, reverse, flags);
-	} else {
-		return SWCSpectrum(0.f);
-	}
+		// Transmission
+		// ignore BRDFs
+		flags = BxDFType(flags & ~BSDF_REFLECTION);
+		// coating fresnel factor
+		SWCSpectrum S;
+		const Vector H(Normalize(Vector(wo.x + wi.x, wo.y + wi.y, wo.z - wi.z)));
+		const float u = AbsDot(wo, H);
+		fresnel->Evaluate(sw, u, &S);
 
-	return f_;
+		// filter base layer, the square root is just a heuristic
+		// so that a sheet coated on both faces gets a filtering factor
+		// of 1-S like a reflection
+		return (SWCSpectrum(1.f) - S).Sqrt() * base->F(sw, woW, wiW, reverse, flags);
+	} else
+		return SWCSpectrum(0.f);
 }
 SWCSpectrum SchlickBSDF::rho(const SpectrumWavelengths &sw, BxDFType flags) const
 {
