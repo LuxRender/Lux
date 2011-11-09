@@ -87,7 +87,7 @@ BSDF *LayeredMaterial::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw
 		addMat(arena,sw,isect,dgShading,mat4,bsdf,opacity4);
 	}
 
-	if (bsdf->getNumBSDFs()==0) { // add a null
+	if (bsdf->GetNumBSDFs()==0) { // add a null
 		SingleBSDF *nullbsdf = ARENA_ALLOC(arena, SingleBSDF)(dgShading,
 				isect.dg.nn, ARENA_ALLOC(arena, NullTransmission)(),
 				isect.exterior, isect.interior);

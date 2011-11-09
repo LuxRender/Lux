@@ -60,20 +60,19 @@ public:
 	virtual SWCSpectrum rho(const SpectrumWavelengths &sw,
 		const Vector &woW, BxDFType flags = BSDF_ALL) const;
 
-	bool matchesFlags(BxDFType flags) const { return (flags&(BSDF_GLOSSY|BSDF_SPECULAR)) ? true: false;}
+	bool MatchesFlags(BxDFType flags) const { return (flags&(BSDF_GLOSSY|BSDF_SPECULAR)) ? true: false;}
 
-	int getPath(const SpectrumWavelengths &sw, const Vector &vin, const int start_index, 
-				vector<SWCSpectrum> *path_L, vector<Vector>* path_vec, vector<int>* path_layer, 
-				vector<float>* path_pdf_forward,vector<float>* path_pdf_back,
-				vector<BxDFType> * path_sample_type,
-				bool eye) const ;
+	int GetPath(const SpectrumWavelengths &sw, const Vector &vin, const int start_index, 
+		vector<SWCSpectrum> *pathL, vector<Vector> *pathVec,
+		vector<int> *pathLayer, vector<float> *pathPdfForward,
+		vector<float> *pathPdfBack, vector<BxDFType> *pathSampleType) const;
 
-	unsigned int getRandSeed() const;	// seed not threadsafe (won't crash but may be corrupt)
+	unsigned int GetRandSeed() const;	// seed not threadsafe (won't crash but may be corrupt)
 
-	u_int getNumBSDFs() const { return nBSDFs;}
+	u_int GetNumBSDFs() const { return nBSDFs; }
 
 protected:
-	
+
 	virtual ~LayeredBSDF() { }
 	
 	u_int nBSDFs;
@@ -81,18 +80,17 @@ protected:
 	BSDF *bsdfs[MAX_BSDFS];
 	float opacity[MAX_BSDFS];
 
-	int max_num_bounces;
+	int maxNumBounces;
 
-	float prob_sample_spec;	// probability of sampling the specular component (vs glossy)
-	
+	float probSampleSpec;	// probability of sampling the specular component (vs glossy)
 };
 // LayeredBSDF Inline Method Definitions
 inline void LayeredBSDF::Add(BSDF *b, float op)
 {
 	BOOST_ASSERT(nBSDFs < MAX_BSDFS);
 	bsdfs[nBSDFs] = b;
-	opacity[nBSDFs++]=op;
-	max_num_bounces=nBSDFs*3;
+	opacity[nBSDFs++] = op;
+	maxNumBounces = nBSDFs * 3;
 
 }
 
@@ -104,7 +102,5 @@ inline u_int LayeredBSDF::NumComponents(BxDFType flags) const
 }
 
 }//namespace lux
-
-
 
 #endif // LUX_LAYERED_H
