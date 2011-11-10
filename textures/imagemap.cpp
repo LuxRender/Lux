@@ -25,15 +25,14 @@
 #include "dynload.h"
 #include "filedata.h"
 #include "geometry/raydifferential.h"
-#include "geometry/matrix3x3.h"
 
 using namespace lux;
 
 void NormalMapTexture::GetDuv(const SpectrumWavelengths &sw,
 	const DifferentialGeometry &dg, float delta, float *du, float *dv) const {
 	
-	float s, t, dsdu, dtdu, dsdv, dtdv;
-	mapping->MapDuv(dg, &s, &t, &dsdu, &dtdu, &dsdv, &dtdv);
+	float s, t;
+	mapping->Map(dg, &s, &t);
 
 	// normal from normal map
 	Vector n(mipmap->LookupRGBAColor(s, t).c);
@@ -41,24 +40,10 @@ void NormalMapTexture::GetDuv(const SpectrumWavelengths &sw,
 	// TODO - implement different methods for decoding normal
 	n = 2.f * n - Vector(1.f, 1.f, 1.f);
 
-	// transform dpdu, dpdv to dpds, dpdt
-
-	// invert Jacobian
-	const float invJdet = 1.f / (dsdu * dtdv - dsdv * dtdu);
-		
-	if (fabsf(invJdet) < 1e-5f) {
-		*du = *dv = 0.f;
-		return;
-	}
-
-	const float duds = invJdet * dtdv;
-	const float dudt = invJdet * -dsdv;
-	const float dvds = invJdet * -dtdu;
-	const float dvdt = invJdet * dsdu;
-
-	const Vector dpds = dg.dpdu * duds + dg.dpdv * dvds;
-	const Vector dpdt = dg.dpdu * dudt + dg.dpdv * dvdt;
-	const Vector k = Normalize(Cross(dpds, dpdt));
+	// recover dhdu,dhdv in uv space directly
+	const Vector dpdu = dg.dpdu;
+	const Vector dpdv = dg.dpdv;
+	const Vector k = Vector(dg.nn);
 
 	// transform n from tangent to object space
 	const Vector t1 = dg.tangent;
@@ -68,54 +53,38 @@ void NormalMapTexture::GetDuv(const SpectrumWavelengths &sw,
 	const float btsign = dg.btsign > 0.f ? 1.f : -1.f;
 
 	// tangent -> object
-	n = Normalize(n.x * t1 + n.y * btsign * t2 + n.z * kk);
+	n = Normalize(n.x * t1 + n.y * btsign * t2 + n.z * kk);	
 
 	// Since n is stored normalized in the normal map
 	// we need to recover the original length (lambda).
 	// We do this by solving 
-	//
-	//   lambda*n = dpds x dpdt
-	//
+	//   lambda*n = dp/du x dp/dv
 	// where 
 	//   p(u,v) = base(u,v) + h(u,v) * k
+	// and
+	//   k = dbase/du x dbase/dv
 	//
-	// After inserting p into the above and rearranging we get 
-	// a system with unknowns dhds/lambda, dhdt/lambda and 1/lambda
-	// Here we solve this system to obtain dhds and dhdt.
-	const float A[3][3] = {
-		{
-			( dpdt.z * k.y - dpdt.y * k.z ),
-			( dpds.y * k.z - dpds.z * k.y ),
-			( dpds.y * dpdt.z - dpds.z * dpdt.y )
-		},
-		{
-			( dpdt.x * k.z - dpdt.z * k.x ),
-			( dpds.z * k.x - dpds.x * k.z ),
-			( dpds.z * dpdt.x - dpds.x * dpdt.z )
-		},
-		{
-			( dpdt.y * k.x - dpdt.x * k.y ),
-			( dpds.x * k.y - dpds.y * k.x ),
-			( dpds.x * dpdt.y - dpds.y * dpdt.x )
-		}};
+	// We recover lambda by dotting the above with k
+	//   k . lambda*n = k . (dp/du x dp/dv)
+	//   lambda = (k . k) / (k . n)
+	// 
+	// We then recover dh/du by dotting the first eq by dp/du
+	//   dp/du . lambda*n = dp/du . (dp/du x dp/dv)
+	//   dp/du . lambda*n = dh/du * [dbase/du . (k x dbase/dv)]
+	//
+	// The term "dbase/du . (k x dbase/dv)" reduces to "-(k . k)", so we get
+	//   dp/du . lambda*n = dh/du * -(k . k)
+	//   dp/du . [(k . k) / (k . n)*n] = dh/du * -(k . k)
+	//   dp/du . [-n / (k . n)] = dh/du
+	// and similar for dh/dv
+	// 
+	// Since the recovered dh/du will be in units of ||k||, we must divide
+	// by ||k|| to get normalized results. Using dg.nn as k in the last eq 
+	// yields the same result.
+	const Vector nn = (-1.f / Dot(k, n)) * n;
 
-	const float b[3] = { n.x, n.y, n.z };
-
-	float dh[3];
-
-	if (!SolveLinearSystem3x3(A, b, dh)) {
-		*du = *dv = 0.f;
-		return;
-	}
-		
-	// recover dhds and dhdt by dividing by 1/lambda
-	float ds = dh[0] / dh[2];
-	float dt = dh[1] / dh[2];
-
-	// transform back to uv space
-	*du = ds * dsdu + dt * dtdu;
-	*dv = ds * dsdv + dt * dtdv;
-
+	*du = Dot(dpdu, nn);
+	*dv = Dot(dpdv, nn);
 }
 
 
