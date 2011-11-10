@@ -23,33 +23,47 @@
 #ifndef LUX_MATRIX3X3_H
 #define LUX_MATRIX3X3_H
 
+#include <boost/limits.hpp>
 #include "geometry/vector.h"
 
 namespace lux
 {
 
-static inline float Determinant3x3(const float matrix[3][3])
+template <typename T>
+static inline T Determinant3x3(const T matrix[3][3])
 {
-	float temp;
+	double temp;
 	temp  = matrix[0][0] * matrix[1][1] * matrix[2][2];
 	temp -= matrix[0][0] * matrix[1][2] * matrix[2][1];
 	temp -= matrix[1][0] * matrix[0][1] * matrix[2][2];
 	temp += matrix[1][0] * matrix[0][2] * matrix[2][1];
 	temp += matrix[2][0] * matrix[0][1] * matrix[1][2];
 	temp -= matrix[2][0] * matrix[0][2] * matrix[1][1];
-	return temp;
+	return static_cast<T>(temp);
 }
 
-static inline bool Invert3x3(const float matrix[3][3], float result[3][3])
+// square of the frobenius norm
+template <typename T>
+static inline T FrobNorm2(const T matrix[3][3])
 {
-	const float det = Determinant3x3(matrix);
-	if (fabsf(det) < 1e-9f)
+	return 
+		matrix[0][0]*matrix[0][0] + matrix[0][1]*matrix[0][1] + matrix[0][2]*matrix[0][2] +
+		matrix[1][0]*matrix[1][0] + matrix[1][1]*matrix[1][1] + matrix[1][2]*matrix[1][2] +
+		matrix[2][0]*matrix[2][0] + matrix[2][1]*matrix[2][1] + matrix[2][2]*matrix[2][2];
+}
+
+template <typename T>
+static inline bool Invert3x3(const T matrix[3][3], T result[3][3])
+{
+	const T det = Determinant3x3(matrix);
+	// ill-conditioned matrices will be caught by check below
+	if (fabs(static_cast<double>(det)) == 0.0)
 		return false;
-	const float a = matrix[0][0], b = matrix[0][1], c = matrix[0][2],
+	const T a = matrix[0][0], b = matrix[0][1], c = matrix[0][2],
 		d = matrix[1][0], e = matrix[1][1], f = matrix[1][2],
 		g = matrix[2][0], h = matrix[2][1], i = matrix[2][2];
 
-	const float idet = 1.f / det;
+	const T idet = static_cast<T>(1) / det;
 
 	result[0][0] = (e * i - f * h) * idet;
 	result[0][1] = (c * h - b * i) * idet;
@@ -61,25 +75,38 @@ static inline bool Invert3x3(const float matrix[3][3], float result[3][3])
 	result[2][1] = (b * g - a * h) * idet;
 	result[2][2] = (a * e - b * d) * idet;
 
+	// check condition number of system
+	const T normA = FrobNorm2(matrix);
+	const T normAinv = FrobNorm2(result);
+
+	// floats have 7 digits precision, demand at least 4
+	// condition number * machine precision (2^-23) > 0.5e-4
+	const T eps = std::numeric_limits<T>::epsilon();
+	if ((normA * normAinv) > (0.25e-8f / (eps * eps)))
+		return false;
+
 	return true;
 }
 
-static inline void Transform3x3(const float matrix[3][3], const float vector[3], float result[3])
+template <typename Tm, typename Tv>
+static inline void Transform3x3(const Tm matrix[3][3], const Tv vector[3], Tv result[3])
 {
-	result[0] = matrix[0][0] * vector[0] + matrix[0][1] * vector[1] + matrix[0][2] * vector[2];
-	result[1] = matrix[1][0] * vector[0] + matrix[1][1] * vector[1] + matrix[1][2] * vector[2];
-	result[2] = matrix[2][0] * vector[0] + matrix[2][1] * vector[1] + matrix[2][2] * vector[2];
+	result[0] = static_cast<Tv>(matrix[0][0] * vector[0] + matrix[0][1] * vector[1] + matrix[0][2] * vector[2]);
+	result[1] = static_cast<Tv>(matrix[1][0] * vector[0] + matrix[1][1] * vector[1] + matrix[1][2] * vector[2]);
+	result[2] = static_cast<Tv>(matrix[2][0] * vector[0] + matrix[2][1] * vector[1] + matrix[2][2] * vector[2]);
 }
 
-static inline Vector Transform3x3(const float matrix[3][3], const Vector &v)
+template <typename T>
+static inline Vector Transform3x3(const T matrix[3][3], const Vector &v)
 {
 	return Vector(
-		matrix[0][0] * v.x + matrix[0][1] * v.y + matrix[0][2] * v.z,
-		matrix[1][0] * v.x + matrix[1][1] * v.y + matrix[1][2] * v.z,
-		matrix[2][0] * v.x + matrix[2][1] * v.y + matrix[2][2] * v.z);
+		static_cast<float>(matrix[0][0] * v.x + matrix[0][1] * v.y + matrix[0][2] * v.z),
+		static_cast<float>(matrix[1][0] * v.x + matrix[1][1] * v.y + matrix[1][2] * v.z),
+		static_cast<float>(matrix[2][0] * v.x + matrix[2][1] * v.y + matrix[2][2] * v.z));
 }
 
-static inline void Multiply3x3(const float a[3][3], const float b[3][3], float result[3][3])
+template <typename T>
+static inline void Multiply3x3(const T a[3][3], const T b[3][3], T result[3][3])
 {
 	result[0][0] = a[0][0] * b[0][0] + a[0][1] * b[1][0] + a[0][2] * b[2][0];
 	result[0][1] = a[0][0] * b[0][1] + a[0][1] * b[1][1] + a[0][2] * b[2][1];
@@ -92,9 +119,10 @@ static inline void Multiply3x3(const float a[3][3], const float b[3][3], float r
 	result[2][2] = a[2][0] * b[0][2] + a[2][1] * b[1][2] + a[2][2] * b[2][2];
 }
 
-static inline bool SolveLinearSystem3x3(const float A[3][3], const float B[3], float x[3])
+template <typename T>
+static inline bool SolveLinearSystem3x3(const T A[3][3], const T B[3], T x[3])
 {
-	float invA[3][3];
+	T invA[3][3];
 
 	if (!Invert3x3(A, invA))
 		return false;
