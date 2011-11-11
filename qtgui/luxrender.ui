@@ -403,8 +403,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>100</width>
-                  <height>30</height>
+                  <width>372</width>
+                  <height>417</height>
                  </rect>
                 </property>
                 <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -442,7 +442,7 @@
             </property>
             <attribute name="icon">
              <iconset resource="icons.qrc">
-              <normaloff>:/icons/rendertabicon.png</normaloff>:/icons/rendertabicon.png</iconset>
+              <normaloff>:/icons/advancedicon.png</normaloff>:/icons/advancedicon.png</iconset>
             </attribute>
             <attribute name="title">
              <string>Advanced</string>
@@ -476,8 +476,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>100</width>
-                  <height>30</height>
+                  <width>372</width>
+                  <height>417</height>
                  </rect>
                 </property>
                 <property name="sizePolicy">
@@ -742,7 +742,7 @@
        </property>
        <attribute name="icon">
         <iconset resource="icons.qrc">
-         <normaloff>:/icons/networktabicon.png</normaloff>:/icons/networktabicon.png</iconset>
+         <normaloff>:/icons/queuetabicon.png</normaloff>:/icons/queuetabicon.png</iconset>
        </attribute>
        <attribute name="title">
         <string>Queue</string>

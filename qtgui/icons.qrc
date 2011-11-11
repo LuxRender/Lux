@@ -1,5 +1,7 @@
 <RCC>
   <qresource prefix="/">
+    <file>icons/queuetabicon.png</file>
+    <file>icons/advancedicon.png</file>
     <file>icons/resolutionicon.png</file>
     <file>icons/collapsedicon.png</file>
     <file>icons/powerofficon.png</file>
