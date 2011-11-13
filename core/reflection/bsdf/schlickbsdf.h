@@ -24,6 +24,7 @@
 #define LUX_SCHLICKBSDF_H
 // schlickbsdf.h*
 #include "bxdf.h"
+#include "microfacetdistribution.h"
 #include "geometry/raydifferential.h"
 #include "spectrum.h"
 
@@ -35,8 +36,8 @@ class  SchlickBSDF : public BSDF  {
 public:
 	// SchlickBSDF Public Methods
 	SchlickBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
-		BxDF *coating, const Fresnel *coatingFresnel, BSDF *base, 
-		const Volume *exterior, const Volume *interior);
+		const Fresnel *coatingFresnel, const MicrofacetDistribution *coatingDistribution,
+		bool multibounce, BSDF *base, const Volume *exterior, const Volume *interior);
 	virtual inline u_int NumComponents() const;
 	virtual inline u_int NumComponents(BxDFType flags) const;
 	/**
@@ -62,9 +63,19 @@ protected:
 	virtual ~SchlickBSDF() { }
 	// Helper function, used by SampleF() and Pdf()
 	float CoatingWeight(const SpectrumWavelengths &sw, const Vector &wo) const;
+	bool CoatingMatchesFlags(BxDFType flags) const;
+	void CoatingF(const SpectrumWavelengths &sw, const Vector &wo,
+		const Vector &wi, SWCSpectrum *const f) const;
+	bool CoatingSampleF(const SpectrumWavelengths &sw, const Vector &wo,
+		Vector *wi, float u1, float u2, SWCSpectrum *const f,
+		float *pdf, float *pdfBack = NULL, bool reverse = false) const;
+	float CoatingPdf(const SpectrumWavelengths &sw, const Vector &wi,
+		const Vector &wo) const;
 	// SchlickBSDF Private Data
-	BxDF *coating;
+	BxDFType coatingType;
 	const Fresnel *fresnel;
+	const MicrofacetDistribution *distribution;
+	bool multibounce;
 	BSDF *base;
 };
 
@@ -75,10 +86,13 @@ inline u_int SchlickBSDF::NumComponents() const
 }
 inline u_int SchlickBSDF::NumComponents(BxDFType flags) const
 {
-	return (coating->MatchesFlags(flags) ? 1U : 0U) +
+	return (CoatingMatchesFlags(flags) ? 1U : 0U) +
 		base->NumComponents(flags);
 }
-
+inline bool SchlickBSDF::CoatingMatchesFlags(BxDFType flags) const
+{
+	return (coatingType & flags) == coatingType;
+}
 }//namespace lux
 
 #endif // LUX_BXDF_H

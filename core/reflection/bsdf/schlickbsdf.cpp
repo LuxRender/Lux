@@ -28,15 +28,93 @@
 using namespace lux;
 
 SchlickBSDF::SchlickBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
-	BxDF *c, const Fresnel *cf, BSDF *b, const Volume *exterior, const Volume *interior)
-	: BSDF(dgs, ngeom, exterior, interior), coating(c), fresnel(cf), base(b)
+	const Fresnel *cf, const MicrofacetDistribution *cd, bool mb, BSDF *b, 
+	const Volume *exterior, const Volume *interior)
+	: BSDF(dgs, ngeom, exterior, interior), coatingType(BxDFType(BSDF_REFLECTION | BSDF_GLOSSY)),
+	fresnel(cf), distribution(cd), multibounce(mb), base(b)
 {
 }
 float SchlickBSDF::CoatingWeight(const SpectrumWavelengths &sw, const Vector &wo) const
 {
+	// No sampling on the back face
+	if (!(wo.z > 0.f))
+		return 0.f;
+	// approximate H by using reflection direction for wi
+	const float u = fabsf(CosTheta(wo));
+
+	SWCSpectrum S(0.f);
+	fresnel->Evaluate(sw, u, &S);
+
 	// ensures coating is never sampled less than half the time
 	// unless we are on the back face
-	return !(wo.z > 0.f) ? 0.f : 0.5f * (1.f + coating->Weight(sw, wo));
+	return !(wo.z > 0.f) ? 0.f : 0.5f * (1.f + S.Filter(sw));
+}
+void SchlickBSDF::CoatingF(const SpectrumWavelengths &sw, const Vector &wo, 
+	 const Vector &wi, SWCSpectrum *const f_) const
+{
+	// No sampling on the back face
+	if (!(wo.z > 0.f) || !(wi.z > 0.f))
+		return;
+	const float coso = fabsf(CosTheta(wo));
+	const float cosi = fabsf(CosTheta(wi));
+
+	const Vector wh(Normalize(wo + wi));
+	const float u = AbsDot(wi, wh);
+	SWCSpectrum S;
+	fresnel->Evaluate(sw, u, &S);
+
+	const float G = distribution->G(wo, wi, wh);
+	// Multibounce - alternative with interreflection in the coating creases
+	const float factor = distribution->D(wh) * G / (4.f * cosi) + 
+		(multibounce ? coso * Clamp((1.f - G) / (4.f * cosi * coso), 0.f, 1.f) : 0.f);
+	f_->AddWeighted(factor, S);
+}
+bool SchlickBSDF::CoatingSampleF(const SpectrumWavelengths &sw, const Vector &wo,
+	Vector *wi, float u1, float u2, SWCSpectrum *const f_, float *pdf, 
+	float *pdfBack, bool reverse) const
+{
+	// No sampling on the back face
+	if (!(wo.z > 0.f))
+		return false;
+	Vector wh;
+	float d, specPdf;
+	distribution->SampleH(u1, u2, &wh, &d, &specPdf);
+	const float cosWH = Dot(wo, wh);
+	*wi = 2.f * cosWH * wh - wo;
+
+	if (!(wi->z > 0.f))
+		return false;
+
+	const float coso = fabsf(CosTheta(wo));
+	const float cosi = fabsf(CosTheta(*wi));
+
+	*pdf = specPdf / (4.f * coso);
+	if (!(*pdf > 0.f))
+		return false;
+	if (pdfBack)
+		*pdfBack = specPdf / (4.f * cosi);
+
+	fresnel->Evaluate(sw, cosWH, f_);
+
+	const float G = distribution->G(wo, *wi, wh);
+	if (reverse)
+		//CoatingF(sw, *wi, wo, f_);
+		*f_ *= (d * G / (4.f * coso) + 
+				(multibounce ? cosi * Clamp((1.f - G) / (4.f * coso * cosi), 0.f, 1.f) : 0.f)) / *pdf;
+	else
+		//CoatingF(sw, wo, *wi, f_);
+		*f_ *= (d * G / (4.f * cosi) + 
+				(multibounce ? coso * Clamp((1.f - G) / (4.f * cosi * coso), 0.f, 1.f) : 0.f)) / *pdf;
+	return true;
+}
+float SchlickBSDF::CoatingPdf(const SpectrumWavelengths &sw, const Vector &wo,
+	const Vector &wi) const
+{
+	// No sampling on the back face
+	if (!(wo.z > 0.f) || !(wi.z > 0.f))
+		return 0.f;
+	const Vector wh(Normalize(wo + wi));
+	return distribution->Pdf(wh) / (4.f * CosTheta(wo));
 }
 bool SchlickBSDF::SampleF(const SpectrumWavelengths &sw, const Vector &woW, Vector *wiW,
 	float u1, float u2, float u3, SWCSpectrum *const f_, float *pdf,
@@ -45,7 +123,7 @@ bool SchlickBSDF::SampleF(const SpectrumWavelengths &sw, const Vector &woW, Vect
 {
 	Vector wo(WorldToLocal(woW)), wi;
 
-	const float wCoating = !coating->MatchesFlags(flags) ?
+	const float wCoating = !CoatingMatchesFlags(flags) ?
 		0.f : CoatingWeight(sw, wo);
 	const float wBase = 1.f - wCoating;
 
@@ -57,33 +135,36 @@ bool SchlickBSDF::SampleF(const SpectrumWavelengths &sw, const Vector &woW, Vect
 	if (u3 < wBase) {
 		u3 /= wBase;
 		// Sample base layer
-		if (!base->SampleF(sw, woW, wiW, u1, u2, u3, &baseF, &basePdf, flags, sampledType, &basePdfBack, reverse))
+		BxDFType sType;
+		if (!base->SampleF(sw, woW, wiW, u1, u2, u3, &baseF, &basePdf, flags, &sType, &basePdfBack, reverse))
 			return false;
 		wi = WorldToLocal(*wiW);
+		if (sampledType)
+			*sampledType = sType;
 
 		baseF *= basePdf;
 
 		// Don't add the coating scattering if the base sampled
 		// component is specular
-		if (!sampledType || !(*sampledType & BSDF_SPECULAR)) {
+		if (!(sType & BSDF_SPECULAR)) {
 			if (reverse)
-				coating->F(sw, wi, wo, &coatingF);
+				CoatingF(sw, wi, wo, &coatingF);
 			else
-				coating->F(sw, wo, wi, &coatingF);
+				CoatingF(sw, wo, wi, &coatingF);
 
-			coatingPdf = coating->Pdf(sw, wo, wi);
+			coatingPdf = CoatingPdf(sw, wo, wi);
 			if (pdfBack)
-				coatingPdfBack = coating->Pdf(sw, wi, wo);
+				coatingPdfBack = CoatingPdf(sw, wi, wo);
 		} else
 			coatingPdf = coatingPdfBack = 0.f;
 	} else {
 		// Sample coating BxDF
-		if (!coating->SampleF(sw, wo, &wi, u1, u2, &coatingF,
+		if (!CoatingSampleF(sw, wo, &wi, u1, u2, &coatingF,
 			&coatingPdf, &coatingPdfBack, reverse))
 			return false;
 		*wiW = LocalToWorld(wi);
 		if (sampledType)
-			*sampledType = coating->type;
+			*sampledType = coatingType;
 
 		coatingF *= coatingPdf;
 
@@ -94,10 +175,10 @@ bool SchlickBSDF::SampleF(const SpectrumWavelengths &sw, const Vector &woW, Vect
 
 		basePdf = base->Pdf(sw, woW, *wiW, flags);
 		if (pdfBack)
-			basePdfBack = base->Pdf(sw, woW, *wiW, flags);
+			basePdfBack = base->Pdf(sw, *wiW, woW, flags);
 	}
 
-	const float wCoatingR = !coating->MatchesFlags(flags) ?
+	const float wCoatingR = !CoatingMatchesFlags(flags) ?
 		0.f : CoatingWeight(sw, wi);
 	const float wBaseR = 1.f - wCoatingR;
 
@@ -120,7 +201,7 @@ bool SchlickBSDF::SampleF(const SpectrumWavelengths &sw, const Vector &woW, Vect
 			fresnel->Evaluate(sw, u, &S);
 
 			// blend in base layer Schlick style
-			// assumes coating bxdf takes fresnel factor S into account
+			// coatingF already takes fresnel factor S into account
 			*f_ = coatingF + (SWCSpectrum(1.f) - S) * baseF;
 		}
 	} else if (sideTest < 0.f) {
@@ -151,12 +232,12 @@ float SchlickBSDF::Pdf(const SpectrumWavelengths &sw, const Vector &woW, const V
 {
 	Vector wo(WorldToLocal(woW)), wi(WorldToLocal(wiW));
 
-	const float wCoating = !coating->MatchesFlags(flags) ?
+	const float wCoating = !CoatingMatchesFlags(flags) ?
 		0.f : CoatingWeight(sw, wo);
 	const float wBase = 1.f - wCoating;
 
 	return wBase * base->Pdf(sw, woW, wiW, flags) + 
-		wCoating * coating->Pdf(sw, wo, wi);
+		wCoating * CoatingPdf(sw, wo, wi);
 }
 SWCSpectrum SchlickBSDF::F(const SpectrumWavelengths &sw, const Vector &woW,
 		const Vector &wiW, bool reverse, BxDFType flags) const
@@ -171,12 +252,12 @@ SWCSpectrum SchlickBSDF::F(const SpectrumWavelengths &sw, const Vector &woW,
 		flags = BxDFType(flags & ~BSDF_TRANSMISSION);
 		if (!(wo.z > 0.f)) {
 			// Back face: no coating
-			return base->F(sw, woW, wiW, flags);
+			return base->F(sw, woW, wiW, reverse, flags);
 		}
 		// Front face: coating+base
 		SWCSpectrum coatingF(0.f);
-		if (coating->MatchesFlags(flags)) {
-			coating->F(sw, wo, wi, &coatingF);
+		if (CoatingMatchesFlags(flags)) {
+			CoatingF(sw, wo, wi, &coatingF);
 			if (!reverse)
 				// only affects top layer, base bsdf should do the same in it's F()
 				coatingF *= fabsf(sideTest);
@@ -211,21 +292,21 @@ SWCSpectrum SchlickBSDF::F(const SpectrumWavelengths &sw, const Vector &woW,
 }
 SWCSpectrum SchlickBSDF::rho(const SpectrumWavelengths &sw, BxDFType flags) const
 {
-	// TODO - proper implementation
 	SWCSpectrum ret(0.f);
-	if (coating->MatchesFlags(flags))
-		ret += coating->rho(sw);
+	// TODO - proper implementation
+//	if (CoatingMatchesFlags(flags))
+//		ret += coating->rho(sw);
 	ret += base->rho(sw, flags);
 	return ret;
 }
 SWCSpectrum SchlickBSDF::rho(const SpectrumWavelengths &sw, const Vector &woW,
 	BxDFType flags) const
 {
-	// TODO - proper implementation
 	Vector wo(WorldToLocal(woW));
 	SWCSpectrum ret(0.f);
-	if (coating->MatchesFlags(flags))
-		ret += coating->rho(sw, wo);
+	// TODO - proper implementation
+//	if (CoatingMatchesFlags(flags))
+//		ret += Coating->rho(sw, wo);
 	ret += base->rho(sw, woW, flags);
 	return ret;
 }

@@ -36,7 +36,6 @@
 #include "fresnelslick.h"
 #include "schlickdistribution.h"
 #include "microfacet.h"
-#include "specularreflection.h"
 
 using namespace lux;
 
@@ -118,12 +117,12 @@ BSDF *GlossyCoating::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 	const float anisotropy = u2 < v2 ? 1.f - u2 / v2 : v2 / u2 - 1.f;
 
 	Fresnel *fresnel = ARENA_ALLOC(arena, FresnelSlick)(s, a);
-	//MicrofacetDistribution* md = ARENA_ALLOC(arena, SchlickDistribution)(u * v, anisotropy);
-	//BxDF *top = ARENA_ALLOC(arena, MicrofacetReflection)(SWCSpectrum(1.f), fresnel, md, true);
-	//BxDF *top = ARENA_ALLOC(arena, SimpleSpecularReflection)(fresnel);
-	BxDF *top = ARENA_ALLOC(arena, SchlickGlossyBRDF)(fresnel, u * v, anisotropy, multibounce);
+	MicrofacetDistribution* md = ARENA_ALLOC(arena, SchlickDistribution)(u * v, anisotropy);
 
-	SchlickBSDF *bsdf = ARENA_ALLOC(arena, SchlickBSDF)(dgs, isect.dg.nn, top, fresnel, base, isect.exterior, isect.interior);
+	SchlickBSDF *bsdf = ARENA_ALLOC(arena, SchlickBSDF)(dgs, isect.dg.nn, fresnel, md, multibounce, base, isect.exterior, isect.interior);
+	//SingleBSDF *bsdf = ARENA_ALLOC(arena, SingleBSDF)(dgs, isect.dg.nn, 
+	//	ARENA_ALLOC(arena, MicrofacetReflection)(SWCSpectrum(1.f), fresnel, md, false), 
+	//	isect.exterior, isect.interior);
 
 	// Add ptr to CompositingParams structure
 	bsdf->SetCompositingParams(&compParams);
