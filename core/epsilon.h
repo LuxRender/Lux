@@ -35,9 +35,9 @@
 //#define MACHINE_EPSILON_DEBUG 1
 
 #if defined(MACHINE_EPSILON_DEBUG)
-#define DEBUG(TYPE, VALUE) DebugPrint(TYPE, VALUE)
+#define DEBUG_PRINT(TYPE, VALUE) DebugPrint(TYPE, VALUE)
 #else
-#define DEBUG(TYPE, VALUE)
+#define DEBUG_PRINT(TYPE, VALUE)
 #endif
 
 namespace lux {
@@ -62,9 +62,9 @@ public:
 
 	// Thread-safe method
 	static float E(const float value) {
-		DEBUG("E(float).value", value);
+		DEBUG_PRINT("E(float).value", value);
 		const float epsilon = fabsf(FloatAdvance(value) - value);
-		DEBUG("E(float).epsilon", epsilon);
+		DEBUG_PRINT("E(float).epsilon", epsilon);
 
 		return Clamp(epsilon, minEpsilon, maxEpsilon);
 	}
