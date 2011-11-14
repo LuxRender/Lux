@@ -71,6 +71,8 @@ protected:
 		float *pdf, float *pdfBack = NULL, bool reverse = false) const;
 	float CoatingPdf(const SpectrumWavelengths &sw, const Vector &wi,
 		const Vector &wo) const;
+	SWCSpectrum CoatingRho(const SpectrumWavelengths &sw, const Vector &w, u_int nSamples = 16) const;
+	SWCSpectrum CoatingRho(const SpectrumWavelengths &sw, u_int nSamples = 16) const;
 	// SchlickBSDF Private Data
 	BxDFType coatingType;
 	const Fresnel *fresnel;

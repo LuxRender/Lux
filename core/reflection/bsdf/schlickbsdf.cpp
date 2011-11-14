@@ -24,8 +24,12 @@
 #include "schlickbsdf.h"
 #include "spectrum.h"
 #include "fresnel.h"
+#include "mc.h"
+#include "sampling.h"
 
 using namespace lux;
+
+static RandomGenerator rng(1);
 
 SchlickBSDF::SchlickBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
 	const Fresnel *cf, const MicrofacetDistribution *cd, bool mb, BSDF *b, 
@@ -290,12 +294,46 @@ SWCSpectrum SchlickBSDF::F(const SpectrumWavelengths &sw, const Vector &woW,
 	} else
 		return SWCSpectrum(0.f);
 }
+SWCSpectrum SchlickBSDF::CoatingRho(const SpectrumWavelengths &sw, const Vector &w, u_int nSamples) const {
+	float* const samples =
+		static_cast<float *>(alloca(2 * nSamples * sizeof(float)));
+	LatinHypercube(rng, samples, nSamples, 2);
+
+	SWCSpectrum r(0.f);
+	for (u_int i = 0; i < nSamples; ++i) {
+		// Estimate one term of $\rho_{dh}$
+		Vector wi;
+		float pdf = 0.f;
+		SWCSpectrum f_(0.f);
+		if (CoatingSampleF(sw, w, &wi, samples[2*i], samples[2*i+1], &f_, &pdf,
+			NULL, true) && pdf > 0.f)
+			r += f_;
+	}
+	return r / nSamples;
+}
+SWCSpectrum SchlickBSDF::CoatingRho(const SpectrumWavelengths &sw, u_int nSamples) const {
+	float* const samples =
+		static_cast<float *>(alloca(4 * nSamples * sizeof(float)));
+	LatinHypercube(rng, samples, nSamples, 4);
+
+	SWCSpectrum r(0.f);
+	for (u_int i = 0; i < nSamples; ++i) {
+		// Estimate one term of $\rho_{hh}$
+		Vector wo, wi;
+		wo = UniformSampleHemisphere(samples[4*i], samples[4*i+1]);
+		float pdf_o = INV_TWOPI, pdf_i = 0.f;
+		SWCSpectrum f_(0.f);
+		if (CoatingSampleF(sw, wo, &wi, samples[4*i+2], samples[4*i+3], &f_,
+			&pdf_i, NULL, true) && pdf_i > 0.f)
+			r.AddWeighted(fabsf(wo.z) / pdf_o, f_);
+	}
+	return r / (M_PI * nSamples);
+}
 SWCSpectrum SchlickBSDF::rho(const SpectrumWavelengths &sw, BxDFType flags) const
 {
 	SWCSpectrum ret(0.f);
-	// TODO - proper implementation
-//	if (CoatingMatchesFlags(flags))
-//		ret += coating->rho(sw);
+	if (CoatingMatchesFlags(flags))
+		ret += CoatingRho(sw);
 	ret += base->rho(sw, flags);
 	return ret;
 }
@@ -304,9 +342,8 @@ SWCSpectrum SchlickBSDF::rho(const SpectrumWavelengths &sw, const Vector &woW,
 {
 	Vector wo(WorldToLocal(woW));
 	SWCSpectrum ret(0.f);
-	// TODO - proper implementation
-//	if (CoatingMatchesFlags(flags))
-//		ret += Coating->rho(sw, wo);
+	if (CoatingMatchesFlags(flags))
+		ret += CoatingRho(sw, wo);
 	ret += base->rho(sw, woW, flags);
 	return ret;
 }
