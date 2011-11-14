@@ -38,7 +38,6 @@ tokens = (
 	"NUM",
 	"IDENTIFIER",
 	"PARAM_ID",
-	# "PARAM_VALUE",
 	"LBRACK", "RBRACK"
 )
 t_ignore_NL			= r'\r+|\n+'
@@ -48,7 +47,6 @@ t_STRING			= r'"([^"]+)"'
 t_NUM				= r'[+-]?\d+\.?(\d+)?'
 v_TYPES				= r'bool|float|color|vector|normal|point|string|texture|integer'
 t_PARAM_ID			= r'["|\']('+v_TYPES+')[ ](\w+)["|\']'
-#t_PARAM_VALUE		= r'\[(.*)\]'
 t_LBRACK			= r'\['
 t_RBRACK			= r'\]'
 
@@ -73,16 +71,90 @@ def t_error(t):
 # PARSER
 #------------------------------------------------------------------------------ 
 
+# Simple graph based on http://www.python.org/doc/essays/graphs.html
+class DataGraph(object):
+	def __init__(self):
+		self.structure = {}
+	
+	def add_arc(self, frm, to):
+		if frm not in self.structure.keys():
+			self.structure[frm] = set()
+		self.structure[frm].add(to)
+	
+	def find_path(self, start, end, path=[]):
+		path = path + [start]
+		if start == end:
+			return path
+		if not start in self.structure.keys():
+			return None
+		for node in self.structure[start]:
+			if node not in path:
+				newpath = self.find_path(node, end, path)
+				if newpath: return newpath
+		return None
+	
+	def find_shortest_path(self, start, end, path=[]):
+		path = path + [start]
+		if start == end:
+			return path
+		if not start in self.structure.keys():
+			return None
+		trg = None
+		for node in self.structure[start]:
+			if node not in path:
+				newpath = self.find_shortest_path(node, end, path)
+				if newpath:
+					if not trg or len(newpath) < len(trg):
+						trg = newpath
+		return trg
+	
+	def all_paths(self):
+		nodes = self.structure.keys()
+		out = []
+		for i in nodes:
+			for j in nodes:
+				if i==j: continue
+				pth = self.find_shortest_path(i,j)
+				if pth==None: continue
+				if len(pth)<2: continue
+				if pth in out: continue
+				
+				out.append(pth)
+		
+		for pth in out:
+			for opth in out:
+				if pth[-1] == opth[0]:
+					for k in pth[:-1]:
+						opth.insert(0,k)
+					out.remove(pth)
+#		
+		for i,pth in enumerate(out):
+			for j,opth in enumerate(out):
+				if i!=j and pth==opth:
+					out.remove(pth)
+		return out
+
+MaterialGraph = DataGraph()
+
 LAST_OBJECT_NAME = ''
+OBJECT_NAME_MAP = {}
 
 def shorten_name(n):
 	return hashlib.md5(n.encode()).hexdigest()[:21] if len(n) > 21 else n
 
-class Texture(object):
+class LBMObjectBase(object):
+	def update_graph(self):
+		global MaterialGraph, OBJECT_NAME_MAP
+		for psi in self.paramset:
+			if psi.type.lower()=='texture':
+				MaterialGraph.add_arc(OBJECT_NAME_MAP[psi.value], self)
+
+class Texture(LBMObjectBase):
 	def __init__(self, name, variant, type):
 		self.name = shorten_name(name)
-		global LAST_OBJECT_NAME
+		global LAST_OBJECT_NAME, OBJECT_NAME_MAP
 		LAST_OBJECT_NAME = self.name
+		OBJECT_NAME_MAP[self.name] = self
 		self.variant = variant
 		self.type = type
 		self.paramset = []
@@ -94,13 +166,14 @@ class Texture(object):
 			'paramset': [psi.asValue() for psi in self.paramset]
 		}
 	def __repr__(self):
-		return json.dumps(self.asValue())
+		return "<Texture %s>" % self.name
 
-class Volume(object):
+class Volume(LBMObjectBase):
 	def __init__(self, name, type):
 		self.name = shorten_name(name)
-		global LAST_OBJECT_NAME
+		global LAST_OBJECT_NAME, OBJECT_NAME_MAP
 		LAST_OBJECT_NAME = self.name
+		OBJECT_NAME_MAP[self.name] = self
 		self.type = type
 		self.paramset = []
 	def asValue(self):
@@ -111,13 +184,14 @@ class Volume(object):
 			'paramset': [psi.asValue() for psi in self.paramset]
 		}
 	def __repr__(self):
-		return json.dumps(self.asValue())
+		return "<Volume %s>" % self.name
 
-class Material(object):
+class Material(LBMObjectBase):
 	def __init__(self, name):
 		self.name = shorten_name(name)
-		global LAST_OBJECT_NAME
+		global LAST_OBJECT_NAME, OBJECT_NAME_MAP
 		LAST_OBJECT_NAME = self.name
+		OBJECT_NAME_MAP[self.name] = self
 		self.paramset = []
 	def asValue(self):
 		return {
@@ -127,7 +201,7 @@ class Material(object):
 			'paramset': [psi.asValue() for psi in self.paramset]
 		}
 	def __repr__(self):
-		return json.dumps(self.asValue())
+		return "<Material %s>" % self.name
 
 class ParamSetItem(object):
 	def __init__(self, pt, name, value):
@@ -145,7 +219,7 @@ class ParamSetItem(object):
 			'value': self.value
 		}
 	def __repr__(self):
-		return json.dumps(self.asValue())
+		return "<ParamSetItem %s:%s>" % (self.type, self.name)
 
 def p_object_list(p):
 	"""
@@ -162,10 +236,11 @@ def p_object_list(p):
 
 def p_texture(p):
 	"""texture : IDENTIFIER STRING STRING STRING paramset"""
-	t = Texture(p[2].replace('"',''), p[3].replace('"',''), p[4].replace('"',''))
+	o = Texture(p[2].replace('"',''), p[3].replace('"',''), p[4].replace('"',''))
 	if p[5] != None:
-		t.paramset.extend( p[5] )
-	p[0] = t
+		o.paramset.extend( p[5] )
+	p[0] = o
+	o.update_graph()
 
 def p_volume(p):
 	"""volume : IDENTIFIER STRING STRING paramset"""
@@ -173,6 +248,7 @@ def p_volume(p):
 	if p[4] != None:
 		o.paramset.extend( p[4] )
 	p[0] = o
+	o.update_graph()
 
 def p_material(p):
 	"""material : IDENTIFIER STRING paramset"""
@@ -180,6 +256,7 @@ def p_material(p):
 	if p[3] != None:
 		o.paramset.extend( p[3] )
 	p[0] = o
+	o.update_graph()
 
 def p_paramset(p):
 	"""
@@ -216,7 +293,7 @@ if __name__ == "__main__":
 	
 	if len(sys.argv) < 3:
 		print("""
-Usage:	lxm_to_lbm2 <input file> <output file> [debug]
+Usage:	lxs_to_lbm2 <input file> <output file> [debug]
 		<input file> should be a well-formed LXM or LXS file, containing
 			only MakeNamedVolume, MakeNamedMaterial or Texture blocks
 		<output file> is the name of the .lbm2 file to write
@@ -240,17 +317,15 @@ Usage:	lxm_to_lbm2 <input file> <output file> [debug]
 			'version': '0.8',
 			'objects': [o.asValue() for o in objs],
 			'metadata': {
-				'comment': 'Converted from LXM data'
+				'comment': 'Converted from LXS data'
 			}
 		}
 		
-		lbm2_str = json.dumps(lbm2,indent=1)
-		
 		with open(sys.argv[2], 'w') as outfile:
-			outfile.write(lbm2_str)
+			json.dump(lbm2, outfile, indent=1)
 		
 		print('Completed, converted %d objects:' % len(objs))
 		for o in objs:
-			print('\t%s : %s' % (o.__class__.__name__, o.name))
+			print('\t%s' % o)
 	except Exception as err:
 		print("ERROR: %s" % err)
