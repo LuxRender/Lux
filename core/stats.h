@@ -59,11 +59,15 @@ public:
 	static string template_string_halttime;
 	static string template_string_renderer;
 
+	const double getPercentComplete() { return percentComplete; }
+
 private:
 	Context *ctx;									// Reference to context that created this StatsData object
 	float previousNetworkSamplesSec;				// Last known network_sps
 	double previousNetworkSamples;					// Last known netsamples
 	double lastUpdateSecElapsed;					// secelapsed value when previous* members were updated
+
+	double percentComplete;
 
 	/**
 	 * Select an appropriate number of decimal places for the given number

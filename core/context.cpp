@@ -1134,6 +1134,11 @@ double Context::Statistics(const string &statName) {
 			luxCurrentScene->IsFilmOnly());
 	else if (statName == "terminated")
 		return terminated;
+	else if (statName == "percentComplete")
+	{
+		PrintableStatistics(false);	// updates statsData
+		return statsData->getPercentComplete();
+	}
 	else if (luxCurrentRenderer != NULL)
 		return luxCurrentRenderer->Statistics(statName);
 	else

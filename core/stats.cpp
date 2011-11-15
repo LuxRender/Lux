@@ -53,7 +53,8 @@ StatsData::StatsData(Context *_ctx) :
 	formattedStatsString(""),
 	previousNetworkSamplesSec(0),
 	previousNetworkSamples(0),
-	lastUpdateSecElapsed(0)
+	lastUpdateSecElapsed(0),
+	percentComplete(0)
 {
 	ctx = _ctx;
 }
@@ -202,11 +203,13 @@ void StatsData::update(const bool add_total)
 		}
 		if (completion_samples > 0.f && timebased == false)
 		{
+			percentComplete = completion_samples;
 			os << template_string_haltspp;
 			os << template_string_time_remaining;
 		}
 		else if (completion_time > 0.f && timebased == true)
 		{
+			percentComplete = completion_time;
 			os << template_string_halttime;
 		}
 
