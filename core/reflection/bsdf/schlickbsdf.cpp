@@ -51,7 +51,7 @@ float SchlickBSDF::CoatingWeight(const SpectrumWavelengths &sw, const Vector &wo
 
 	// ensures coating is never sampled less than half the time
 	// unless we are on the back face
-	return !(wo.z > 0.f) ? 0.f : 0.5f * (1.f + S.Filter(sw));
+	return 0.5f * (1.f + S.Filter(sw));
 }
 void SchlickBSDF::CoatingF(const SpectrumWavelengths &sw, const Vector &wo, 
 	 const Vector &wi, SWCSpectrum *const f_) const
@@ -92,11 +92,11 @@ bool SchlickBSDF::CoatingSampleF(const SpectrumWavelengths &sw, const Vector &wo
 	const float coso = fabsf(CosTheta(wo));
 	const float cosi = fabsf(CosTheta(*wi));
 
-	*pdf = specPdf / (4.f * coso);
+	*pdf = specPdf / (4.f * cosWH);
 	if (!(*pdf > 0.f))
 		return false;
 	if (pdfBack)
-		*pdfBack = specPdf / (4.f * cosi);
+		*pdfBack = *pdf;
 
 	fresnel->Evaluate(sw, cosWH, f_);
 
@@ -118,7 +118,7 @@ float SchlickBSDF::CoatingPdf(const SpectrumWavelengths &sw, const Vector &wo,
 	if (!(wo.z > 0.f) || !(wi.z > 0.f))
 		return 0.f;
 	const Vector wh(Normalize(wo + wi));
-	return distribution->Pdf(wh) / (4.f * CosTheta(wo));
+	return distribution->Pdf(wh) / (4.f * AbsDot(wo, wh));
 }
 bool SchlickBSDF::SampleF(const SpectrumWavelengths &sw, const Vector &woW, Vector *wiW,
 	float u1, float u2, float u3, SWCSpectrum *const f_, float *pdf,

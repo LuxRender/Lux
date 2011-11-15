@@ -115,12 +115,12 @@ bool SchlickBRDF::SampleF(const SpectrumWavelengths &sw, const Vector &wo,
 		return false;
 
 	const float specPdf = SchlickZ(H.z) * SchlickA(H) /
-		(8.f * M_PI);
-	*pdf = fabsf(wi->z) * INV_TWOPI + specPdf / fabsf(wo.z);
+		(8.f * M_PI * cosWH);
+	*pdf = fabsf(wi->z) * INV_TWOPI + specPdf;
 	if (!(*pdf > 0.f))
 		return false;
 	if (pdfBack)
-		*pdfBack = fabsf(wo.z) * INV_TWOPI + specPdf / fabsf(wi->z);
+		*pdfBack = fabsf(wo.z) * INV_TWOPI + specPdf;
 
 	*f_ = SWCSpectrum(0.f);
 	if (reverse)
@@ -137,7 +137,7 @@ float SchlickBRDF::Pdf(const SpectrumWavelengths &sw, const Vector &wo,
 		return 0.f;
 	const Vector H(Normalize(wo + wi));
 	return fabsf(wi.z) * INV_TWOPI + SchlickZ(fabsf(H.z)) * SchlickA(H) /
-		(8.f * M_PI * fabsf(wo.z));
+		(8.f * M_PI * AbsDot(wo, H));
 }
 
 SchlickDoubleSidedBRDF::SchlickDoubleSidedBRDF(const SWCSpectrum &d,
@@ -236,12 +236,12 @@ bool SchlickDoubleSidedBRDF::SampleF(const SpectrumWavelengths &sw, const Vector
 		return false;
 
 	const float specPdf = (back ? SchlickZBack(H.z) * SchlickABack(H) :
-		SchlickZ(H.z) * SchlickA(H)) / (8.f * M_PI);
-	*pdf = fabsf(wi->z) * INV_TWOPI + specPdf / fabsf(wo.z);
+		SchlickZ(H.z) * SchlickA(H)) / (8.f * M_PI * cosWH);
+	*pdf = fabsf(wi->z) * INV_TWOPI + specPdf;
 	if (!(*pdf > 0.f))
 		return false;
 	if (pdfBack)
-		*pdfBack = fabsf(wo.z) * INV_TWOPI + specPdf / fabsf(wi->z);
+		*pdfBack = fabsf(wo.z) * INV_TWOPI + specPdf;
 
 	*f_ = SWCSpectrum(0.f);
 	if (reverse)
@@ -260,6 +260,6 @@ float SchlickDoubleSidedBRDF::Pdf(const SpectrumWavelengths &sw, const Vector &w
 	return fabsf(wi.z) * INV_TWOPI + (CosTheta(H) <= 0.f ?
 		SchlickZBack(fabsf(H.z)) * SchlickABack(H) :
 		SchlickZ(fabsf(H.z)) * SchlickA(H)) /
-		(8.f * M_PI * fabsf(wo.z));
+		(8.f * M_PI * AbsDot(wo, H));
 }
 

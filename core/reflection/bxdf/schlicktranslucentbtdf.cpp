@@ -47,7 +47,7 @@ void SchlickTranslucentBTDF::F(const SpectrumWavelengths &sw, const Vector &wo,
 	const float u = AbsDot(wi, H);
 	const SWCSpectrum S1(SchlickFresnel(u, Rs));
 	const SWCSpectrum S2(SchlickFresnel(u, Rs_bf));
-	SWCSpectrum S((SWCSpectrum(1.f) - S1) * (SWCSpectrum(1.f) - S2) / (SWCSpectrum(1.f) - (S1 + S2) * .5f));
+	SWCSpectrum S(((SWCSpectrum(1.f) - S1) * (SWCSpectrum(1.f) - S2)).Sqrt());
 	if (CosTheta(wi) > 0.f) {
 		if (depth > 0.f || depth_bf > 0.f)
 			S *= Exp(Alpha * -(depth / cosi) + Alpha_bf * -(depth_bf / coso));
@@ -85,4 +85,4 @@ float SchlickTranslucentBTDF::Pdf(const SpectrumWavelengths &sw, const Vector &w
 	const Vector &wi) const
 {
 	return SameHemisphere(wo, wi) ? 0.f : fabsf(wi.z) * INV_PI;
-}	
+}
