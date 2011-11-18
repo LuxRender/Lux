@@ -43,11 +43,11 @@ MotionSystem::MotionSystem(float st, float et,
 	hasTranslationX = hasTranslationY = hasTranslationZ =
 		hasScaleX = hasScaleY = hasScaleZ = hasRotation = isActive = false;
 
-	if (!DecomposeMatrix(startMat, startT)) {
+	if (!DecomposeMatrix(startMat, &startT)) {
 		LOG( LUX_WARNING,LUX_MATH)<< "Singular start matrix in MotionSystem, interpolation disabled";
 		return;
 	}
-	if (!DecomposeMatrix(endMat, endT)) {
+	if (!DecomposeMatrix(endMat, &endT)) {
 		LOG( LUX_WARNING,LUX_MATH)<< "Singular end matrix in MotionSystem, interpolation disabled";
 		return;
 	}
@@ -73,6 +73,18 @@ MotionSystem::MotionSystem(float st, float et,
 
 	isActive = hasTranslation ||
 		hasScale || hasRotation;
+}
+
+ BBox MotionSystem::Bound(BBox ibox) const {
+	// Compute total bounding box by naive unions.
+	BBox tbox;
+	const float N = 1024;
+	for (float i = 0; i <= N; i++) {
+		const float t = Lerp(static_cast<float>(i) / N, startTime, endTime);
+		Transform subT = Sample(t);
+		tbox = Union(tbox, subT(ibox));
+	}
+	return tbox;
 }
 
 Transform MotionSystem::Sample(float time) const {
@@ -110,20 +122,6 @@ Transform MotionSystem::Sample(float time) const {
 		interQ.ToMatrix(interMatrix);
 	} else
 		memcpy(interMatrix, startT.R->m, sizeof(float) * 16);
-
-/*
-	Transform R(interMatrix);
-	Transform S = Scale(
-		Lerp(le, startT.Sx, endT.Sx), 
-		Lerp(le, startT.Sy, endT.Sy), 
-		Lerp(le, startT.Sz, endT.Sz));
-	Transform T = Translate(Vector(
-		Lerp(le, startT.Tx, endT.Tx),
-		Lerp(le, startT.Ty, endT.Ty), 
-		Lerp(le, startT.Tz, endT.Tz)));
-
-	return T * S * R;
-*/
 
 	if (hasScale) {
 		const float Sx = Lerp(le, startT.Sx, endT.Sx);
@@ -172,111 +170,105 @@ void V4MulByMatrix(const boost::shared_ptr<Matrix4x4> &A, const float x[4], floa
 	b[3] = A->m[3][0]*x[0] + A->m[3][1]*x[1] + A->m[3][2]*x[2] + A->m[3][3]*x[3];
 }
 
-bool MotionSystem::DecomposeMatrix(const boost::shared_ptr<Matrix4x4> &m, Transforms &trans) const {
+bool MotionSystem::DecomposeMatrix(const boost::shared_ptr<Matrix4x4> &m, Transforms *trans) const {
 
 	boost::shared_ptr<Matrix4x4> locmat(new Matrix4x4(m->m));
 
-	/* Normalize the matrix. */
+	// Normalize the matrix. 
 	if (locmat->m[3][3] == 0)
 		return false;
 	for (u_int i = 0; i < 4; ++i) {
 		for (u_int j = 0; j < 4; ++j)
 			locmat->m[i][j] /= locmat->m[3][3];
 	}
-	/* pmat is used to solve for perspective, but it also provides
-	 * an easy way to test for singularity of the upper 3x3 component.
-	 */
+	// pmat is used to solve for perspective, but it also provides
+	// an easy way to test for singularity of the upper 3x3 component.	 
 	boost::shared_ptr<Matrix4x4> pmat(new Matrix4x4(locmat->m));
 	for (u_int i = 0; i < 3; i++)
 		pmat->m[i][3] = 0.f;
 	pmat->m[3][3] = 1.f;
 
-	// Note - radiance - disables as memory bug on win32
 	if (pmat->Determinant() == 0.f)
 		return false;
 
-	/* First, isolate perspective.  This is the messiest. */
+	// First, isolate perspective.  This is the messiest. 
 	if (locmat->m[3][0] != 0.f || locmat->m[3][1] != 0.f ||
 		locmat->m[3][2] != 0.f) {
-		/* prhs is the right hand side of the equation. */
+		// prhs is the right hand side of the equation. 
 		float prhs[4];
 		prhs[0] = locmat->m[3][0];
 		prhs[1] = locmat->m[3][1];
 		prhs[2] = locmat->m[3][2];
 		prhs[3] = locmat->m[3][3];
 
-		/* Solve the equation by inverting pmat and multiplying
-		 * prhs by the inverse.  (This is the easiest way, not
-		 * necessarily the best.)
-		 * inverse function (and det4x4, above) from the Matrix
-		 * Inversion gem in the first volume.
-		 */
+		// Solve the equation by inverting pmat and multiplying
+		// prhs by the inverse. This is the easiest way, not
+		// necessarily the best.
 		boost::shared_ptr<Matrix4x4> tinvpmat(pmat->Inverse()->Transpose());
 		float psol[4];
 		V4MulByMatrix(tinvpmat, prhs, psol);
  
-		/* Stuff the answer away. */
-		trans.Px = psol[0];
-		trans.Py = psol[1];
-		trans.Pz = psol[2];
-		trans.Pw = psol[3];
-		//trans.Px = trans.Py = trans.Pz = trans.Pw = 0;
-		/* Clear the perspective partition. */
+		// Stuff the answer away. 
+		trans->Px = psol[0];
+		trans->Py = psol[1];
+		trans->Pz = psol[2];
+		trans->Pw = psol[3];
+		//trans->Px = trans->Py = trans->Pz = trans->Pw = 0;
+		// Clear the perspective partition. 
 		locmat->m[3][0] = locmat->m[3][1] = locmat->m[3][2] = 0.f;
 		locmat->m[3][3] = 1.f;
 	};
-//	else		/* No perspective. */
+//	else		// No perspective. 
 //		tran[U_PERSPX] = tran[U_PERSPY] = tran[U_PERSPZ] =
 //			tran[U_PERSPW] = 0;
 
-	/* Next take care of translation (easy). */
-	trans.Tx = locmat->m[0][3];
-	trans.Ty = locmat->m[1][3];
-	trans.Tz = locmat->m[2][3];
+	// Next take care of translation (easy). 
+	trans->Tx = locmat->m[0][3];
+	trans->Ty = locmat->m[1][3];
+	trans->Tz = locmat->m[2][3];
 	for (u_int i = 0; i < 3; ++i)
 		locmat->m[i][3] = 0.f;
 	
 	Vector row[3];
-	/* Now get scale and shear. */
+	// Now get scale and shear. 
 	for (u_int i = 0; i < 3; ++i) {
 		row[i].x = locmat->m[i][0];
 		row[i].y = locmat->m[i][1];
 		row[i].z = locmat->m[i][2];
 	}
 
-	/* Compute X scale factor and normalize first row. */
-	trans.Sx = row[0].Length();
-	row[0] *= 1.f / trans.Sx;
+	// Compute X scale factor and normalize first row. 
+	trans->Sx = row[0].Length();
+	row[0] *= 1.f / trans->Sx;
 
-	/* Compute XY shear factor and make 2nd row orthogonal to 1st. */
-	trans.Sxy = Dot(row[0], row[1]);
-	row[1] -= trans.Sxy * row[0];
+	// Compute XY shear factor and make 2nd row orthogonal to 1st. 
+	trans->Sxy = Dot(row[0], row[1]);
+	row[1] -= trans->Sxy * row[0];
 
-	/* Now, compute Y scale and normalize 2nd row. */
-	trans.Sy = row[1].Length();
-	row[1] *= 1.f / trans.Sy;
-	trans.Sxy /= trans.Sy;
+	// Now, compute Y scale and normalize 2nd row. 
+	trans->Sy = row[1].Length();
+	row[1] *= 1.f / trans->Sy;
+	trans->Sxy /= trans->Sy;
 
-	/* Compute XZ and YZ shears, orthogonalize 3rd row. */
-	trans.Sxz = Dot(row[0], row[2]);
-	row[2] -= trans.Sxz * row[0];
-	trans.Syz = Dot(row[1], row[2]);
-	row[2] -= trans.Syz * row[1];
+	// Compute XZ and YZ shears, orthogonalize 3rd row. 
+	trans->Sxz = Dot(row[0], row[2]);
+	row[2] -= trans->Sxz * row[0];
+	trans->Syz = Dot(row[1], row[2]);
+	row[2] -= trans->Syz * row[1];
 
-	/* Next, get Z scale and normalize 3rd row. */
-	trans.Sz = row[2].Length();
-	row[2] *= 1.f / trans.Sz;
-	trans.Sxz /= trans.Sz;
-	trans.Syz /= trans.Sz;
+	// Next, get Z scale and normalize 3rd row. 
+	trans->Sz = row[2].Length();
+	row[2] *= 1.f / trans->Sz;
+	trans->Sxz /= trans->Sz;
+	trans->Syz /= trans->Sz;
 
-	/* At this point, the matrix (in rows[]) is orthonormal.
-	 * Check for a coordinate system flip.  If the determinant
-	 * is -1, then negate the matrix and the scaling factors.
-	 */
+	// At this point, the matrix (in rows[]) is orthonormal.
+	// Check for a coordinate system flip.  If the determinant
+	// is -1, then negate the matrix and the scaling factors.	 
 	if (Dot(row[0], Cross(row[1], row[2])) < 0.f) {
-		trans.Sx *= -1.f;
-		trans.Sy *= -1.f;
-		trans.Sz *= -1.f;
+		trans->Sx *= -1.f;
+		trans->Sy *= -1.f;
+		trans->Sz *= -1.f;
 		for (u_int i = 0; i < 3; ++i) {
 			row[i].x *= -1.f;
 			row[i].y *= -1.f;
@@ -284,14 +276,14 @@ bool MotionSystem::DecomposeMatrix(const boost::shared_ptr<Matrix4x4> &m, Transf
 		}
 	}
 
-	/* Now, get the rotations out */
+	// Now, get the rotations out 
 	for (u_int i = 0; i < 3; ++i) {
 		locmat->m[i][0] = row[i].x;
 		locmat->m[i][1] = row[i].y;
 		locmat->m[i][2] = row[i].z;
 	}
-	trans.R = locmat;
-	/* All done! */
+	trans->R = locmat;
+	// All done! 
 	return true;
 }
 

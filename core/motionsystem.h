@@ -34,27 +34,6 @@
 namespace lux
 {
 
-class Transforms {
-public:
-	Transforms() : Sx(0), Sy(0), Sz(0),
-		Sxy(0), Sxz(0), Syz(0), 
-		R(new Matrix4x4()),
-		Tx(0), Ty(0), Tz(0),
-		Px(0), Py(0), Pz(0), Pw(0) {
-	}
-
-	// Scaling
-	float Sx, Sy, Sz;
-	// Shearing
-	float Sxy, Sxz, Syz;
-	// Rotation
-	boost::shared_ptr<Matrix4x4> R;
-	// Translation
-	float Tx, Ty, Tz;
-	// Perspective
-	float Px, Py, Pz, Pw;
-};
-
 class  MotionSystem {
 public:
 	MotionSystem() { startTime = endTime = 0; start = end = Transform(); }
@@ -66,24 +45,34 @@ public:
 
 	Transform Sample(float time) const;
 
-	BBox Bound(BBox ibox) const {
-      		// Compute total bounding box by naive unions.
-		// NOTE - radiance - this needs some work.
-		BBox tbox;
-		const float s = 1.f / 1024.f;
-		for(float time = 0.f; time < 1.f; time += s) {
-			Transform t = Sample(time);
-			tbox = Union(tbox, t(ibox));
-		}
-		return tbox;
-	}
+	BBox Bound(BBox ibox) const;
 
 protected:
+	class Transforms {
+	public:
+		Transforms() : Sx(0), Sy(0), Sz(0),
+			Sxy(0), Sxz(0), Syz(0), 
+			R(new Matrix4x4()),
+			Tx(0), Ty(0), Tz(0),
+			Px(0), Py(0), Pz(0), Pw(0) {
+		}
+
+		// Scaling
+		float Sx, Sy, Sz;
+		// Shearing
+		float Sxy, Sxz, Syz;
+		// Rotation
+		boost::shared_ptr<Matrix4x4> R;
+		// Translation
+		float Tx, Ty, Tz;
+		// Perspective
+		float Px, Py, Pz, Pw;
+	};
 	// decomposes the matrix m into a series of transformations
 	// [Sx][Sy][Sz][Shearx/y][Sx/z][Sz/y][Rx][Ry][Rz][Tx][Ty][Tz][P(x,y,z,w)]
 	// based on unmatrix() by Spencer W. Thomas from Graphic Gems II
-	// TODO - lordcrc - implement extraction of perspective transform
-	bool DecomposeMatrix(const boost::shared_ptr<Matrix4x4> &m, Transforms &trans) const;
+	// TODO - implement extraction of perspective transform
+	bool DecomposeMatrix(const boost::shared_ptr<Matrix4x4> &m, Transforms *trans) const;
 
 	// MotionSystem Protected Data
 	float startTime, endTime;
