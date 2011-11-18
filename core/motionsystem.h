@@ -34,6 +34,8 @@
 namespace lux
 {
 
+
+
 class  MotionSystem {
 public:
 	MotionSystem() { startTime = endTime = 0; start = end = Transform(); }

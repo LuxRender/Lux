@@ -52,11 +52,8 @@ MotionSystem::MotionSystem(float st, float et,
 		return;
 	}
 
-	startQ = Quaternion(startT.R);
-	startQ.Normalize();
-
-	endQ = Quaternion(endT.R);
-	endQ.Normalize();
+	startQ = Normalize(Quaternion(startT.R));
+	endQ = Normalize(Quaternion(endT.R));
 
 	hasTranslationX = startT.Tx != endT.Tx;
 	hasTranslationY = startT.Ty != endT.Ty;
@@ -118,7 +115,7 @@ Transform MotionSystem::Sample(float time) const {
 
 	if (hasRotation) {
 		// Quaternion interpolation of rotation
-		Quaternion interQ = Quaternion::Slerp(le, startQ, endQ);
+		Quaternion interQ = Slerp(le, startQ, endQ);
 		interQ.ToMatrix(interMatrix);
 	} else
 		memcpy(interMatrix, startT.R->m, sizeof(float) * 16);
