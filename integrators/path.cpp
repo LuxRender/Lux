@@ -56,10 +56,13 @@ void PathIntegrator::RequestSamples(Sample *sample, const Scene &scene)
 		if (Context::GetActive()->GetRendererType() == Renderer::HYBRIDSAMPLER_TYPE) {
 			structure.clear();
 			const u_int shadowRaysCount = hints.GetShadowRaysCount();
-			hybridRendererLightStrategy = hints.GetLightStrategy();
+			
+			// use temporary variable so we don't modify hybridRendererLightStrategy since
+			// other threads use it during rendering
+			LightsSamplingStrategy::LightStrategyType lightStrat = hints.GetLightStrategy();
 
 			// Handle the AUTO light sampling strategy
-			if (hybridRendererLightStrategy == LightsSamplingStrategy::SAMPLE_AUTOMATIC) {
+			if (lightStrat == LightsSamplingStrategy::SAMPLE_AUTOMATIC) {
 				if (scene.lights.size() > 5)
 					hybridRendererLightStrategy = LightsSamplingStrategy::SAMPLE_ONE_UNIFORM;
 				else
