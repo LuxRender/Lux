@@ -42,10 +42,11 @@ enum HitPointType {
 
 class HitPointEyePass {
 public:
-	HitPointType type;
-
 	// Eye path data
 	SWCSpectrum pathThroughput; // Used only for SURFACE type
+
+	BSDF *bsdf;
+
 	float alpha;
 	float distance;
 
@@ -53,20 +54,21 @@ public:
 	Point position;
 	Vector wo;
 
-	BSDF *bsdf;
 	BxDFType flags;
+	HitPointType type;
 };
 
 class HitPoint {
 public:
-	// Used to render eye pass n+1 while doing photon pass n
 	HitPointEyePass eyePass;
 
-	float accumPhotonRadius2;
-	float imageX, imageY;
-
+	// photons statistics
 	unsigned long long photonCount;
 	u_int accumPhotonCount;
+	float accumPhotonRadius2;
+
+	float imageX, imageY;
+
 };
 
 class SPPMRenderer;
