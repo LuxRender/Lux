@@ -141,7 +141,7 @@ void StatsData::update(const bool add_total)
 				{
 					// Use real data
 					network_spp = netsamples / px;
-					network_sps = netsamples / secelapsed;
+					network_sps = (netsamples - previousNetworkSamples) / (secelapsed - lastUpdateSecElapsed);
 					network_cps = network_sps * (eff/100.f);
 
 					previousNetworkSamples = netsamples;
