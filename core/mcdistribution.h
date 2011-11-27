@@ -185,7 +185,8 @@ public:
 		*pdf = func[offset] * invFuncInt * invCount;
 		return offset;
 	}
-	float Pdf(float u) const { return func[Offset(u)] * invFuncInt; }
+	float Pdf(u_int offset) const { return func[offset] * invFuncInt; }
+	float Pdf(float u) const { return Pdf(Offset(u)); }
 	float Average() const { return funcInt; }
 	u_int Offset(float u) const {
 		return min(count - 1, Floor2UInt(u * count));
