@@ -56,6 +56,28 @@ public:
 	virtual ~LightsSamplingStrategy() { }
 	virtual void InitParam(const ParamSet &params) { }
 	virtual void Init(const Scene &scene) { }
+	/**
+	 * Samples a light according to the defined strategy.
+	 * The method should be called in a loop until it returns NULL.
+	 * @param scene The current scene
+	 * @param index The current sampling iteration
+	 * @param u A pointer to a random variable in the [0,1) range,
+	 * the value might be adjusted if needed so that it can be used
+	 * to sample the light component
+	 * @param pdf The probability of having sampled that light taking
+	 * the looping process into account
+	 * @return A pointer to the sampled Light or NULL if the looping is over
+	 * in which case u and pdf are left untouched
+	 */
+	virtual const Light *SampleLight(const Scene &scene, u_int index,
+		float *u, float *pdf) const = 0;
+	/**
+	 * The probability of sampling a given light according to the strategy
+	 * @param scene The current scene
+	 * @param light A pointer to the light being queried
+	 * @return The requested probability
+	 */
+	virtual float Pdf(const Scene &scene, const Light *light) const = 0;
 
 	virtual void RequestSamples(const Scene &scene, vector<u_int> &structure) const = 0;
 	virtual u_int RequestSamplesCount(const Scene &scene) const = 0;
@@ -79,6 +101,9 @@ public:
 		const u_int shadowRayCount, const Point &p, const Normal &n,
 		const Vector &wo, BSDF *bsdf, const float *sampleData,
 		const SWCSpectrum &scale, vector<SWCSpectrum> &L) const;
+	virtual const Light *SampleLight(const Scene &scene, u_int index,
+		float *u, float *pdf) const;
+	virtual float Pdf(const Scene &scene, const Light *light) const;
 };
 
 class LSSOneUniform : public LightsSamplingStrategy {
@@ -91,6 +116,9 @@ public:
 		const u_int shadowRayCount, const Point &p, const Normal &n,
 		const Vector &wo, BSDF *bsdf, const float *sampleData,
 		const SWCSpectrum &scale, vector<SWCSpectrum> &L) const;
+	virtual const Light *SampleLight(const Scene &scene, u_int index,
+		float *u, float *pdf) const;
+	virtual float Pdf(const Scene &scene, const Light *light) const;
 };
 
 class LSSAuto : public LightsSamplingStrategy {
@@ -113,6 +141,13 @@ public:
 		return strategy->SampleLights(scene, sample, shadowRayCount,
 			p, n, wo, bsdf, sampleData, scale, L);
 	}
+	virtual const Light *SampleLight(const Scene &scene, u_int index,
+		float *u, float *pdf) const {
+		return strategy->SampleLight(scene, index, u, pdf);
+	}
+	virtual float Pdf(const Scene &scene, const Light *light) const {
+		return strategy->Pdf(scene, light);
+	}
 
 private:
 	LightsSamplingStrategy *strategy;
@@ -120,7 +155,8 @@ private:
 
 class LSSOneImportance : public LightsSamplingStrategy {
 public:
-	LSSOneImportance() : LightsSamplingStrategy(), lightDistribution(NULL) { }
+	LSSOneImportance() :
+		LightsSamplingStrategy(), lightDistribution(NULL) { }
 	virtual ~LSSOneImportance();
 	virtual void Init(const Scene &scene);
 
@@ -130,27 +166,19 @@ public:
 		const u_int shadowRayCount, const Point &p, const Normal &n,
 		const Vector &wo, BSDF *bsdf, const float *sampleData,
 		const SWCSpectrum &scale, vector<SWCSpectrum> &L) const;
-
-private:
-	Distribution1D *lightDistribution;
-};
-
-class LSSOnePowerImportance : public LightsSamplingStrategy {
-public:
-	LSSOnePowerImportance() : LightsSamplingStrategy(), lightDistribution(NULL) { }
-	virtual ~LSSOnePowerImportance();
-	virtual void Init(const Scene &scene);
-
-	virtual void RequestSamples(const Scene &scene, vector<u_int> &structure) const;
-	virtual u_int RequestSamplesCount(const Scene &scene) const { return 6; }
-	// Note: results are added to L
-	virtual u_int SampleLights(const Scene &scene, const Sample &sample,
-		const u_int shadowRayCount, const Point &p, const Normal &n,
-		const Vector &wo, BSDF *bsdf, const float *sampleData,
-		const SWCSpectrum &scale, vector<SWCSpectrum> &L) const;
+	virtual const Light *SampleLight(const Scene &scene, u_int index,
+		float *u, float *pdf) const;
+	virtual float Pdf(const Scene &scene, const Light *light) const;
 
 protected:
 	Distribution1D *lightDistribution;
+};
+
+class LSSOnePowerImportance : public LSSOneImportance {
+public:
+	LSSOnePowerImportance() : LSSOneImportance() { }
+	virtual ~LSSOnePowerImportance() {}
+	virtual void Init(const Scene &scene);
 };
 
 class LSSAllPowerImportance : public LSSOnePowerImportance {
@@ -162,6 +190,9 @@ public:
 		const u_int shadowRayCount, const Point &p, const Normal &n,
 		const Vector &wo, BSDF *bsdf, const float *sampleData,
 		const SWCSpectrum &scale, vector<SWCSpectrum> &L) const;
+	virtual const Light *SampleLight(const Scene &scene, u_int index,
+		float *u, float *pdf) const;
+	virtual float Pdf(const Scene &scene, const Light *light) const;
 };
 
 class LSSOneLogPowerImportance : public LSSOnePowerImportance {
