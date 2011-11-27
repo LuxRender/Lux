@@ -398,7 +398,7 @@ void SurfaceIntegratorRenderingHints::InitParam(const ParamSet &params)
 
 	// For compatibility with past versions
 	string st = params.FindOneString("lightstrategy",
-		param.FindOneString("strategy", "auto"));
+		params.FindOneString("strategy", "auto"));
 
 	if (st == "one")
 		lightStrategyType = LightsSamplingStrategy::SAMPLE_ONE_UNIFORM;
@@ -478,7 +478,7 @@ u_int SurfaceIntegratorRenderingHints::SampleLights(const Scene &scene,
 	const float *data = scene.sampler->GetLazyValues(sample,
 		lightSampleOffset, depth);
 	u_int nContribs = 0;
-	const u_int sampleCount = lsStrategy->RequestSampleCount();
+	const u_int sampleCount = lsStrategy->RequestSamplesCount(scene);
 	for (u_int i = 0, j = 0;; ++i, ++j) {
 		if (j >= shadowRayCount)
 			j = 0;
@@ -488,12 +488,12 @@ u_int SurfaceIntegratorRenderingHints::SampleLights(const Scene &scene,
 		const Light *light = lsStrategy->SampleLight(scene, i, &lc, &pdf);
 		if (!light)
 			break;
-		SWCSpectrum Ll(EstimateDirect(scene, light, sample,
+		SWCSpectrum Ll(EstimateDirect(scene, *light, sample,
 			p, n, wo, bsdf, data[offset + 0], data[offset + 1], lc,
 			data[offset + 3], data[offset + 4], data[offset + 5]));
 
 		if (!Ll.Black()) {
-			L[light.group] += Ll / pdf;
+			L[light->group] += Ll / pdf;
 			++nContribs;
 		}
 	}
