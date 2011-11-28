@@ -30,9 +30,8 @@ namespace lux
 class EnvironmentCamera : public Camera {
 public:
 	// EnvironmentCamera Public Methods
-	EnvironmentCamera(const Transform &world2camStart,
-		const Transform &world2camEnd, float hither, float yon,
-		float sopen, float sclose, int sdist, Film *film);
+	EnvironmentCamera(const MotionSystem &world2cam,
+		float hither, float yon, float sopen, float sclose, int sdist, Film *film);
 	virtual ~EnvironmentCamera() { }
 
 	virtual void SampleMotion(float time);
@@ -55,9 +54,8 @@ public:
 		return new EnvironmentCamera(*this);
 	}
 
-	static Camera *CreateCamera(const Transform &world2camStart,
-		const Transform &world2camEnd, const ParamSet &params,
-		Film *film);
+	static Camera *CreateCamera(const MotionSystem &world2cam,
+		const ParamSet &params, Film *film);
 
 private:
 	Point pos;

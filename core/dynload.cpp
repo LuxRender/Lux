@@ -220,13 +220,12 @@ boost::shared_ptr<Aggregate> MakeAccelerator(const string &name,
 }
 
 Camera *MakeCamera(const string &name,
-	const Transform &world2cam, const Transform &world2camEnd, 
+	const MotionSystem &world2cam,
 	const ParamSet &paramSet, Film *film)
 {
 	if (DynamicLoader::registeredCameras().find(name) !=
 		DynamicLoader::registeredCameras().end()) {
-		Camera *ret = DynamicLoader::registeredCameras()[name](world2cam,
-			world2camEnd, paramSet, film);
+		Camera *ret = DynamicLoader::registeredCameras()[name](world2cam, paramSet, film);
 		paramSet.ReportUnused();
 		return ret;
 	}

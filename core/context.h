@@ -30,6 +30,7 @@
 #include "paramset.h"
 #include "queryableregistry.h"
 #include "renderer.h"
+#include "motionsystem.h"
 
 #include <boost/thread/mutex.hpp>
 #include <map>
@@ -107,6 +108,8 @@ public:
 	void MakeNamedVolume(const string &id, const string &name,
 		const ParamSet &params);
 	void Material(const string &name, const ParamSet &params);
+	void MotionBegin(u_int n, float *t);
+	void MotionEnd();
 	void MotionInstance(const string &name, float startTime, float endTime,
 		const string &toTransform);
 	void NamedMaterial(const string &name);
@@ -256,8 +259,7 @@ private:
 		ParamSet cameraParams;
 		string rendererName;
 		ParamSet rendererParams;
-		lux::Transform worldToCamera;
-		lux::Transform worldToCameraEnd;
+		MotionTransform worldToCamera;
 		mutable vector<Light *> lights;
 		mutable vector<boost::shared_ptr<Primitive> > primitives;
 		mutable vector<Region *> volumeRegions;
@@ -301,12 +303,15 @@ private:
 	string name;
 	lux::Renderer *luxCurrentRenderer;
 	Scene *luxCurrentScene;
-	lux::Transform curTransform;
-	map<string, lux::Transform> namedCoordinateSystems;
+	lux::MotionTransform curTransform;
+	bool inMotionBlock;
+	vector<float> motionBlockTimes; // holds time values for current motion block
+	vector<lux::Transform> motionBlockTransforms; // holds transform for current motion block
+	map<string, lux::MotionTransform> namedCoordinateSystems;
 	RenderOptions *renderOptions;
 	GraphicsState *graphicsState;
 	vector<GraphicsState> pushedGraphicsStates;
-	vector<lux::Transform> pushedTransforms;
+	vector<lux::MotionTransform> pushedTransforms;
 	RenderFarm *renderFarm;
 
 	ParamSet *filmOverrideParams;

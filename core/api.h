@@ -79,6 +79,8 @@ LUX_EXPORT void luxAttributeBegin();
 LUX_EXPORT void luxAttributeEnd();
 LUX_EXPORT void luxTransformBegin();
 LUX_EXPORT void luxTransformEnd();
+LUX_EXPORT void luxMotionBegin(unsigned int n, float *t);
+LUX_EXPORT void luxMotionEnd();
 LUX_EXPORT void luxTexture(const char *name, const char *type, const char *texname, ...);
 LUX_EXPORT void luxTextureV(const char *name, const char *type, const char *texname, unsigned int n, const LuxToken tokens[], const LuxPointer params[]);
 LUX_EXPORT void luxMaterial(const char *name, ...);

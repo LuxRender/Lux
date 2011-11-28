@@ -30,8 +30,7 @@ namespace lux
 class PerspectiveCamera : public ProjectiveCamera {
 public:
 	// PerspectiveCamera Public Methods
-	PerspectiveCamera(const Transform &world2camStart,
-		const Transform &world2camEnd,
+	PerspectiveCamera(const MotionSystem &world2cam,
 		const float Screen[4], float hither, float yon,
 		float sopen, float sclose, int sdist,
 		float lensr, float focald, bool autofocus, float fov,
@@ -61,9 +60,8 @@ public:
 		return new PerspectiveCamera(*this);
 	}
 
-	static Camera *CreateCamera(const Transform &world2camStart,
-		const Transform &world2camEnd, const ParamSet &params,
-		Film *film);
+	static Camera *CreateCamera(const MotionSystem &world2cam,
+		const ParamSet &params, Film *film);
 
 	Point pos;
 	float Apixel, xStart, xEnd, yStart, yEnd;

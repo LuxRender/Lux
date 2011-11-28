@@ -154,6 +154,8 @@ LookAt			{ return LOOKAT;		}
 Material		{ return MATERIAL;		}
 MakeNamedMaterial	{ return MAKENAMEDMATERIAL;	}
 MakeNamedVolume		{ return MAKENAMEDVOLUME;	}
+MotionBegin			{ return MOTIONBEGIN;       }
+MotionEnd			{ return MOTIONEND;         }
 NamedMaterial		{ return NAMEDMATERIAL;		}
 ObjectBegin 		{ return OBJECTBEGIN;		}
 ObjectEnd 		{ return OBJECTEND;		}

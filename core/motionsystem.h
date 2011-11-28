@@ -34,31 +34,37 @@
 namespace lux
 {
 
-
-
-class  MotionSystem {
+// Interpolates between two transforms
+class InterpolatedTransform {
 public:
-	MotionSystem() { startTime = endTime = 0; start = end = Transform(); }
+	InterpolatedTransform() { startTime = endTime = 0; start = end = Transform(); }
 
-	MotionSystem(float st, float et,
+	InterpolatedTransform(float st, float et,
 		const Transform &s, const Transform &e);
-
-	~MotionSystem() {};
 
 	Transform Sample(float time) const;
 
 	BBox Bound(BBox ibox) const;
 
+	// true if start and end transform or time is identical
+	bool IsStatic() const {
+		return !isActive;
+	}
+
 protected:
-	class Transforms {
+	class DecomposedTransform {
 	public:
-		Transforms() : Sx(0), Sy(0), Sz(0),
-			Sxy(0), Sxz(0), Syz(0), 
-			R(new Matrix4x4()),
-			Tx(0), Ty(0), Tz(0),
-			Px(0), Py(0), Pz(0), Pw(0) {
+		DecomposedTransform() : Valid(false) {
 		}
 
+		// Decomposes the matrix m into a series of transformations
+		// [Sx][Sy][Sz][Shearx/y][Sx/z][Sz/y][Rx][Ry][Rz][Tx][Ty][Tz][P(x,y,z,w)]
+		// based on unmatrix() by Spencer W. Thomas from Graphic Gems II
+		// TODO - implement extraction of perspective transform
+		DecomposedTransform(const boost::shared_ptr<Matrix4x4> &m);
+
+		// Represents a valid series of transformations
+		bool Valid;
 		// Scaling
 		float Sx, Sy, Sz;
 		// Shearing
@@ -70,25 +76,86 @@ protected:
 		// Perspective
 		float Px, Py, Pz, Pw;
 	};
-	// decomposes the matrix m into a series of transformations
-	// [Sx][Sy][Sz][Shearx/y][Sx/z][Sz/y][Rx][Ry][Rz][Tx][Ty][Tz][P(x,y,z,w)]
-	// based on unmatrix() by Spencer W. Thomas from Graphic Gems II
-	// TODO - implement extraction of perspective transform
-	bool DecomposeMatrix(const boost::shared_ptr<Matrix4x4> &m, Transforms *trans) const;
 
-	// MotionSystem Protected Data
+	// InterpolatedTransform Protected Data
 	float startTime, endTime;
 	Transform start, end;
-	Transforms startT, endT;
+	DecomposedTransform startT, endT;
 	boost::shared_ptr<Matrix4x4> startMat, endMat;
 	Quaternion startQ, endQ;
 	bool hasRotation, hasTranslation, hasScale;
 	bool hasTranslationX, hasTranslationY, hasTranslationZ;
 	bool hasScaleX, hasScaleY, hasScaleZ;
-public:
 	// false if start and end transformations are identical
-	bool isActive; // At the end to get better data alignment
+	bool isActive;
 };
+
+class MotionSystem {
+public:
+	MotionSystem(const vector<float> &t, const vector<Transform> &transforms);
+	explicit MotionSystem(const Transform &t);
+	MotionSystem();
+
+	bool IsStatic() const;
+
+	float StartTime() const {
+		return times.front();
+	}
+
+	float EndTime() const {
+		return times.back();
+	}
+
+	Transform Sample(float time) const;
+
+	BBox Bound(BBox ibox) const;
+
+private:
+	vector<float> times;
+	vector<InterpolatedTransform> interpolatedTransforms;
+};
+
+// Contains one or more <time, transform> pairs (knots) representing a path
+class MotionTransform {
+public:
+	MotionTransform(const MotionTransform &other);
+	MotionTransform(const vector<float> &times, const vector<Transform> &transforms);
+	MotionTransform(const Transform &t);
+	MotionTransform();
+
+	bool Valid() const;
+
+	size_t Size() const;
+
+	std::pair<float, float> Interval() const;
+
+	// Returns true if this MotionTransform represent a single, time-independent transform
+	bool IsStatic() const {
+		BOOST_ASSERT(Valid());
+		return times.size() == 0;
+	};
+
+	Transform StaticTransform() const;
+	MotionSystem GetMotionSystem() const;
+
+	// Concantenate two MotionTransform.
+	// Extract the unique knots from input MotionTransform'
+	// for each unique knot interpolate the knots from the other MotionTransform and concantenate.
+	// Thus if left hand has knots at (1, 3) and right hand has knots at (1, 4) then output has 
+	// knots at (1, 3, 4) where right hand side has been interpolated at knot t=3 and left hand side
+	// is kept constant after t=3.
+	MotionTransform operator*(const MotionTransform &t) const;
+
+	// 
+	MotionTransform operator*(const Transform &t) const;
+
+	MotionTransform GetInverse() const;
+
+private:
+	vector<float> times;
+	vector<Transform> transforms;
+};
+
 
 }//namespace lux
 

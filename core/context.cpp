@@ -50,9 +50,16 @@ using namespace lux;
 Context *Context::activeContext;
 
 // API Macros
-#define VERIFY_INITIALIZED(func) \
+// for transforms which can be inside motion blocks
+#define VERIFY_INITIALIZED_TRANSFORMS(func) \
 if (currentApiState == STATE_UNINITIALIZED) { \
 		LOG(LUX_SEVERE,LUX_NOTSTARTED)<<"luxInit() must be called before calling  '"<<func<<"'. Ignoring."; \
+	return; \
+}
+#define VERIFY_INITIALIZED(func) \
+VERIFY_INITIALIZED_TRANSFORMS(func); \
+if (inMotionBlock) { \
+	LOG(LUX_ERROR,LUX_NESTING)<<"'"<<func<<"' not allowed allowed inside motion block. Ignoring."; \
 	return; \
 }
 #define VERIFY_OPTIONS(func) \
@@ -65,6 +72,10 @@ if (currentApiState == STATE_WORLD_BLOCK) { \
 VERIFY_INITIALIZED(func); \
 if (currentApiState == STATE_OPTIONS_BLOCK) { \
 	LOG(LUX_ERROR,LUX_NESTING)<<"Scene description must be inside world block; '"<<func<<"' not allowed.  Ignoring."; \
+	return; \
+} \
+if (inMotionBlock) { \
+	LOG(LUX_ERROR,LUX_NESTING)<<"'"<<func<<"' not allowed allowed inside motion block. Ignoring."; \
 	return; \
 }
 
@@ -114,6 +125,7 @@ void Context::Init() {
 	aborted = false;
 	terminated = false;
 	currentApiState = STATE_OPTIONS_BLOCK;
+	inMotionBlock = false;
 	luxCurrentRenderer = NULL;
 	luxCurrentScene = NULL;
 	curTransform = lux::Transform();
@@ -208,52 +220,80 @@ void Context::Cleanup() {
 }
 
 void Context::Identity() {
-	VERIFY_INITIALIZED("Identity");
+	VERIFY_INITIALIZED_TRANSFORMS("Identity");
 	renderFarm->send("luxIdentity");
-	curTransform = lux::Transform();
+	lux::Transform t;
+	if (inMotionBlock)
+		motionBlockTransforms.push_back(t);
+	else
+		curTransform = t;
 }
 
 void Context::Translate(float dx, float dy, float dz) {
-	VERIFY_INITIALIZED("Translate");
+	VERIFY_INITIALIZED_TRANSFORMS("Translate");
 	renderFarm->send("luxTranslate", dx, dy, dz);
-	curTransform = curTransform * lux::Translate(Vector(dx, dy, dz));
+	lux::Transform t = lux::Translate(Vector(dx, dy, dz));
+	if (inMotionBlock)
+		motionBlockTransforms.push_back(t);
+	else
+		curTransform = curTransform * t;
 }
 
 void Context::Transform(float tr[16]) {
-	VERIFY_INITIALIZED("Transform");
+	VERIFY_INITIALIZED_TRANSFORMS("Transform");
 	renderFarm->send("luxTransform", tr);
 	boost::shared_ptr<Matrix4x4> o(new Matrix4x4(
 			tr[0], tr[4], tr[8], tr[12],
 			tr[1], tr[5], tr[9], tr[13],
 			tr[2], tr[6], tr[10], tr[14],
 			tr[3], tr[7], tr[11], tr[15]));
-	curTransform = lux::Transform(o);
+	lux::Transform t = lux::Transform(o);
+	if (inMotionBlock)
+		motionBlockTransforms.push_back(t);
+	else
+		curTransform = t;
 }
 void Context::ConcatTransform(float tr[16]) {
-	VERIFY_INITIALIZED("ConcatTransform");
+	VERIFY_INITIALIZED_TRANSFORMS("ConcatTransform");
 	renderFarm->send("luxConcatTransform", tr);
 	boost::shared_ptr<Matrix4x4> o(new Matrix4x4(tr[0], tr[4], tr[8], tr[12],
 			tr[1], tr[5], tr[9], tr[13],
 			tr[2], tr[6], tr[10], tr[14],
 			tr[3], tr[7], tr[11], tr[15]));
-	curTransform = curTransform * lux::Transform(o);
+	lux::Transform t = lux::Transform(o);
+	if (inMotionBlock)
+		motionBlockTransforms.push_back(t);
+	else
+		curTransform = curTransform * t;
 }
 void Context::Rotate(float angle, float dx, float dy, float dz) {
-	VERIFY_INITIALIZED("Rotate");
+	VERIFY_INITIALIZED_TRANSFORMS("Rotate");
 	renderFarm->send("luxRotate", angle, dx, dy, dz);
-	curTransform = curTransform * lux::Rotate(angle, Vector(dx, dy, dz));
+	lux::Transform t = lux::Rotate(angle, Vector(dx, dy, dz));
+	if (inMotionBlock)
+		motionBlockTransforms.push_back(t);
+	else
+		curTransform = curTransform * t;
 }
 void Context::Scale(float sx, float sy, float sz) {
-	VERIFY_INITIALIZED("Scale");
+	VERIFY_INITIALIZED_TRANSFORMS("Scale");
 	renderFarm->send("luxScale", sx, sy, sz);
-	curTransform = curTransform * lux::Scale(sx, sy, sz);
+	lux::Transform t = lux::Scale(sx, sy, sz);
+	if (inMotionBlock)
+		motionBlockTransforms.push_back(t);
+	else
+		curTransform = curTransform * t;
 }
 void Context::LookAt(float ex, float ey, float ez, float lx, float ly, float lz,
 	float ux, float uy, float uz) {
-	VERIFY_INITIALIZED("LookAt");
+	VERIFY_INITIALIZED_TRANSFORMS("LookAt");
 	renderFarm->send("luxLookAt", ex, ey, ez, lx, ly, lz, ux, uy, uz);
-	curTransform = curTransform * lux::LookAt(Point(ex, ey, ez),
+	lux::Transform t = lux::LookAt(Point(ex, ey, ez),
 		Point(lx, ly, lz), Vector(ux, uy, uz));
+	if (inMotionBlock)
+		motionBlockTransforms.push_back(t);
+	else
+		curTransform = curTransform * t;
 }
 void Context::CoordinateSystem(const string &n) {
 	VERIFY_INITIALIZED("CoordinateSystem");
@@ -261,11 +301,20 @@ void Context::CoordinateSystem(const string &n) {
 	namedCoordinateSystems[n] = curTransform;
 }
 void Context::CoordSysTransform(const string &n) {
-	VERIFY_INITIALIZED("CoordSysTransform");
+	VERIFY_INITIALIZED_TRANSFORMS("CoordSysTransform");
 	renderFarm->send("luxCoordSysTransform", n);
-	if (namedCoordinateSystems.find(n) != namedCoordinateSystems.end())
-		curTransform = namedCoordinateSystems[n];
-	else {
+	if (namedCoordinateSystems.find(n) != namedCoordinateSystems.end()) {
+		MotionTransform mt = namedCoordinateSystems[n];
+		if (inMotionBlock) {
+			if (mt.IsStatic())
+				motionBlockTransforms.push_back(mt.StaticTransform());
+			else {
+				LOG(LUX_ERROR,LUX_NESTING) << "Cannot use motion coordinate system '" << n << "' inside Motion block, ignoring.";
+			}
+		} else{
+			curTransform = mt;
+		}
+	} else {
 		LOG(LUX_ERROR,LUX_SYNTAX) << "Coordinate system '" << n << "' unknown";
 	}
 }
@@ -332,16 +381,33 @@ void Context::Camera(const string &n, const ParamSet &params) {
 	renderFarm->send("luxCamera", n, params);
 	renderOptions->cameraName = n;
 	renderOptions->cameraParams = params;
-	renderOptions->worldToCamera = curTransform;
-	namedCoordinateSystems["camera"] = curTransform.GetInverse();
 
-	string endTransform = renderOptions->cameraParams.FindOneString("endtransform", "");
+	MotionTransform cameraTransform = curTransform;
 
-	if (namedCoordinateSystems.find(endTransform) != namedCoordinateSystems.end())
-		renderOptions->worldToCameraEnd = namedCoordinateSystems[endTransform];
-	else
-		renderOptions->worldToCameraEnd = curTransform;
+	string endTransformName = renderOptions->cameraParams.FindOneString("endtransform", "");
+	if (namedCoordinateSystems.find(endTransformName) != namedCoordinateSystems.end()) {
+		if (curTransform.IsStatic()) {
+			lux::Transform endTransform = namedCoordinateSystems[endTransformName].StaticTransform();
 
+			// this isn't pretty, but it'll have to do until we can fully deprecate it
+			vector<float> times;
+			times.push_back(renderOptions->cameraParams.FindOneFloat("shutteropen", 0.f));
+			times.push_back(renderOptions->cameraParams.FindOneFloat("shutterclose", 1.f));
+
+			vector<lux::Transform> transforms;
+			transforms.push_back(curTransform.StaticTransform());
+			transforms.push_back(endTransform);
+
+			cameraTransform = MotionTransform(times, transforms);
+		} else {
+			LOG(LUX_WARNING, LUX_CONSISTENCY) << "Both motion transform and endtransform specified for camera, ignoring endtransform";
+		}
+	} else if (endTransformName != "") {
+		LOG(LUX_WARNING, LUX_CONSISTENCY) << "Invalid endtransform name for camera: '" << endTransformName << "'";
+	}
+
+	renderOptions->worldToCamera = cameraTransform;
+	namedCoordinateSystems["camera"] = cameraTransform.GetInverse();
 }
 void Context::WorldBegin() {
 	VERIFY_OPTIONS("WorldBegin");
@@ -383,6 +449,30 @@ void Context::TransformEnd() {
 	curTransform = pushedTransforms.back();
 	pushedTransforms.pop_back();
 }
+void Context::MotionBegin(u_int n, float *t) {
+	VERIFY_INITIALIZED("MotionBegin");
+	renderFarm->send("luxMotionBegin");
+	motionBlockTimes.assign(t, t+n);
+	motionBlockTransforms.clear();
+	inMotionBlock = true;
+}
+void Context::MotionEnd() {
+	VERIFY_INITIALIZED_TRANSFORMS("MotionEnd");
+	renderFarm->send("luxMotionEnd");
+	if (!inMotionBlock) {
+		LOG(LUX_ERROR,LUX_ILLSTATE)<< "Unmatched luxMotionEnd() encountered. Ignoring it.";
+		return;
+	}
+	inMotionBlock = false;
+	lux::MotionTransform motionTransform(motionBlockTimes, motionBlockTransforms);
+	motionBlockTimes.clear();
+	motionBlockTransforms.clear();
+	if (!motionTransform.Valid()) {
+		LOG(LUX_WARNING,LUX_CONSISTENCY)<< "Invalid Motion block, ignoring it.";
+		return;
+	}
+	curTransform = curTransform * motionTransform;
+}
 void Context::Texture(const string &n, const string &type,
 	const string &texname, const ParamSet &params) {
 	VERIFY_WORLD("Texture");
@@ -394,7 +484,7 @@ void Context::Texture(const string &n, const string &type,
 			LOG(LUX_WARNING,LUX_SYNTAX) << "Float texture '" << n << "' being redefined.";
 		}
 		boost::shared_ptr<lux::Texture<float> > ft(
-			MakeFloatTexture(texname, curTransform, params));
+			MakeFloatTexture(texname, curTransform.StaticTransform(), params));
 		if (ft)
 			graphicsState->floatTextures[n] = ft;
 	} else if (type == "color") {
@@ -404,7 +494,7 @@ void Context::Texture(const string &n, const string &type,
 			LOG(LUX_WARNING,LUX_SYNTAX) << "Color texture '" << n << "' being redefined.";
 		}
 		boost::shared_ptr<lux::Texture<SWCSpectrum> > st(
-			MakeSWCSpectrumTexture(texname, curTransform, params));
+			MakeSWCSpectrumTexture(texname, curTransform.StaticTransform(), params));
 		if (st)
 			graphicsState->colorTextures[n] = st;
 	} else if (type == "fresnel") {
@@ -414,7 +504,7 @@ void Context::Texture(const string &n, const string &type,
 			LOG(LUX_WARNING,LUX_SYNTAX) << "Fresnel texture '" << n << "' being redefined.";
 		}
 		boost::shared_ptr<lux::Texture<FresnelGeneral> > fr(
-			MakeFresnelTexture(texname, curTransform, params));
+			MakeFresnelTexture(texname, curTransform.StaticTransform(), params));
 		if (fr)
 			graphicsState->fresnelTextures[n] = fr;
 	} else {
@@ -424,7 +514,7 @@ void Context::Texture(const string &n, const string &type,
 void Context::Material(const string &n, const ParamSet &params) {
 	VERIFY_WORLD("Material");
 	renderFarm->send("luxMaterial", n, params);
-	graphicsState->material = MakeMaterial(n, curTransform, params);
+	graphicsState->material = MakeMaterial(n, curTransform.StaticTransform(), params);
 }
 
 void Context::MakeNamedMaterial(const string &n, const ParamSet &_params)
@@ -438,7 +528,7 @@ void Context::MakeNamedMaterial(const string &n, const ParamSet &_params)
 	}
 	string type = params.FindOneString("type", "matte");
 	params.EraseString("type");
-	graphicsState->namedMaterials[n] = MakeMaterial(type, curTransform,
+	graphicsState->namedMaterials[n] = MakeMaterial(type, curTransform.StaticTransform(),
 		params);
 }
 
@@ -452,7 +542,7 @@ void Context::MakeNamedVolume(const string &id, const string &name,
 		LOG(LUX_WARNING, LUX_SYNTAX) << "Named volume '" << id <<
 			"' being redefined.";
 	}
-	graphicsState->namedVolumes[id] = MakeVolume(name, curTransform, params);
+	graphicsState->namedVolumes[id] = MakeVolume(name, curTransform.StaticTransform(), params);
 }
 
 void Context::NamedMaterial(const string &n) {
@@ -505,7 +595,7 @@ void Context::LightSource(const string &n, const ParamSet &params) {
 		sunparams.EraseFloat("dconst");
 		sunparams.EraseFloat("econst");
 
-		Light *lt_sun = MakeLight("sun", curTransform, sunparams);
+		Light *lt_sun = MakeLight("sun", curTransform.StaticTransform(), sunparams);
 		if (lt_sun == NULL) {
 			LOG(LUX_ERROR,LUX_SYNTAX)<< "luxLightSource: light type sun unknown.";
 			graphicsState->currentLightPtr0 = NULL;
@@ -521,7 +611,7 @@ void Context::LightSource(const string &n, const ParamSet &params) {
 		ParamSet skyparams(params);
 		skyparams.EraseFloat("relsize");
 
-		Light *lt_sky = MakeLight("sky", curTransform, skyparams);
+		Light *lt_sky = MakeLight("sky", curTransform.StaticTransform(), skyparams);
 		if (lt_sky == NULL) {
 			LOG(LUX_ERROR,LUX_SYNTAX)<< "luxLightSource: light type sky unknown.";
 			graphicsState->currentLightPtr1 = NULL;
@@ -535,7 +625,7 @@ void Context::LightSource(const string &n, const ParamSet &params) {
 
 	} else {
 		// other lightsource type
-		Light *lt = MakeLight(n, curTransform, params);
+		Light *lt = MakeLight(n, curTransform.StaticTransform(), params);
 		if (lt == NULL) {
 			LOG(LUX_ERROR,LUX_SYNTAX) << "luxLightSource: light type '" << n << "' unknown";
 		} else {
@@ -559,7 +649,7 @@ void Context::AreaLightSource(const string &n, const ParamSet &params) {
 void Context::PortalShape(const string &n, const ParamSet &params) {
 	VERIFY_WORLD("PortalShape");
 	renderFarm->send("luxPortalShape", n, params);
-	boost::shared_ptr<Primitive> sh(MakeShape(n, curTransform,
+	boost::shared_ptr<Primitive> sh(MakeShape(n, curTransform.StaticTransform(),
 		graphicsState->reverseOrientation, params));
 	if (!sh)
 		return;
@@ -577,7 +667,7 @@ void Context::PortalShape(const string &n, const ParamSet &params) {
 void Context::Shape(const string &n, const ParamSet &params) {
 	VERIFY_WORLD("Shape");
 	renderFarm->send("luxShape", n, params);
-	boost::shared_ptr<lux::Shape> sh(MakeShape(n, curTransform,
+	boost::shared_ptr<lux::Shape> sh(MakeShape(n, curTransform.StaticTransform(),
 		graphicsState->reverseOrientation, params));
 	if (!sh)
 		return;
@@ -587,7 +677,7 @@ void Context::Shape(const string &n, const ParamSet &params) {
 	AreaLight *area = NULL;
 	if (graphicsState->areaLight != "") {
 		u_int lg = GetLightGroup();
-		area = MakeAreaLight(graphicsState->areaLight, curTransform,
+		area = MakeAreaLight(graphicsState->areaLight, curTransform.StaticTransform(),
 			graphicsState->areaLightParams, sh);
 		if (area) {
 			area->group = lg;
@@ -600,7 +690,7 @@ void Context::Shape(const string &n, const ParamSet &params) {
 		sh->SetMaterial(graphicsState->material);
 	else {
 		boost::shared_ptr<lux::Material> m(MakeMaterial("matte",
-			curTransform, ParamSet()));
+			curTransform.StaticTransform(), ParamSet()));
 		sh->SetMaterial(m);
 	}
 	sh->SetExterior(graphicsState->exterior);
@@ -640,7 +730,7 @@ void Context::ReverseOrientation() {
 void Context::Volume(const string &n, const ParamSet &params) {
 	VERIFY_WORLD("Volume");
 	renderFarm->send("luxVolume", n, params);
-	Region *vr = MakeVolumeRegion(n, curTransform, params);
+	Region *vr = MakeVolumeRegion(n, curTransform.StaticTransform(), params);
 	if (vr)
 		renderOptions->volumeRegions.push_back(vr);
 }
@@ -721,11 +811,16 @@ void Context::ObjectInstance(const string &n) {
 		in.push_back(accel);
 	}
 
-	// Initialize material for instance
-	boost::shared_ptr<Primitive> o(new InstancePrimitive(in[0],
-		curTransform, graphicsState->material,
-		graphicsState->exterior, graphicsState->interior));
-	renderOptions->primitives.push_back(o);
+	if (curTransform.IsStatic()) {
+		boost::shared_ptr<Primitive> o(new InstancePrimitive(in[0],
+			curTransform.StaticTransform(), graphicsState->material,
+			graphicsState->exterior, graphicsState->interior));
+		renderOptions->primitives.push_back(o);
+	} else {
+		boost::shared_ptr<Primitive> o(new MotionPrimitive(in[0], curTransform.GetMotionSystem(),
+			graphicsState->material, graphicsState->exterior, graphicsState->interior));
+		renderOptions->primitives.push_back(o);
+	}
 }
 void Context::PortalInstance(const string &n) {
 	VERIFY_WORLD("PortalInstance");
@@ -784,16 +879,24 @@ void Context::MotionInstance(const string &n, float startTime, float endTime, co
 	}
 
 	// Fetch named ToTransform coordinatesystem
-	lux::Transform EndTransform;
+	lux::Transform endTransform;
 	if (namedCoordinateSystems.find(toTransform) != namedCoordinateSystems.end())
-		EndTransform = namedCoordinateSystems[toTransform];
+		endTransform = namedCoordinateSystems[toTransform].StaticTransform();
 	else {
 		LOG(LUX_SEVERE,LUX_BUG)<< "Unable to find coordinate system named '" << n << "' for MotionInstance";
 	}
 
-	// Initialize material for instance
-	boost::shared_ptr<Primitive> o(new MotionPrimitive(in[0], curTransform,
-		EndTransform, startTime, endTime, graphicsState->material,
+	vector<float> times;
+	times.push_back(startTime);
+	times.push_back(endTime);
+
+	vector<lux::Transform> transforms;
+	transforms.push_back(curTransform.StaticTransform());
+	transforms.push_back(endTransform);
+
+	MotionSystem ms(times, transforms);
+
+	boost::shared_ptr<Primitive> o(new MotionPrimitive(in[0], ms, graphicsState->material,
 		graphicsState->exterior, graphicsState->interior));
 	renderOptions->primitives.push_back(o);
 }
@@ -863,8 +966,7 @@ Scene *Context::RenderOptions::MakeScene() const {
 	// Create scene objects from API settings
 	lux::Filter *filter = MakeFilter(filterName, filterParams);
 	lux::Film *film = (!filter) ? NULL : MakeFilm(filmName, filmParams, filter);
-	lux::Camera *camera = (!film) ? NULL : MakeCamera(cameraName, worldToCamera,
-		worldToCameraEnd, cameraParams, film);
+	lux::Camera *camera = (!film) ? NULL : MakeCamera(cameraName, worldToCamera.GetMotionSystem(), cameraParams, film);
 	lux::Sampler *sampler = (!film) ? NULL : MakeSampler(samplerName, samplerParams, film);
 	lux::SurfaceIntegrator *surfaceIntegrator = MakeSurfaceIntegrator(
 		surfIntegratorName, surfIntegratorParams);
@@ -922,10 +1024,9 @@ void Context::LoadFLM(const string &flmFileName) {
 		return;
 	}
 	// Update context
-	lux::Transform dummyTransform;
+	MotionSystem dummyTransform;
 	ParamSet dummyParams;
-	lux::Camera *cam = MakeCamera("perspective", dummyTransform,
-		dummyTransform, dummyParams, flm);
+	lux::Camera *cam = MakeCamera("perspective", dummyTransform, dummyParams, flm);
 	if (!cam) {
 		LOG(LUX_SEVERE,LUX_BUG)<< "Unable to create dummy camera";
 		delete flm;

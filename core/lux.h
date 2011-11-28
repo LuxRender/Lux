@@ -207,7 +207,9 @@ namespace lux
   class ContributionBuffer;
   class ContributionPool;
   class ContributionSystem;
+  class InterpolatedTransform;
   class MotionSystem;
+  class MotionTransform;
   class Distribution1D;
   class Distribution2D;
   class IrregularDistribution1D;

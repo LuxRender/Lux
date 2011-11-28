@@ -172,7 +172,7 @@ void InstancePrimitive::GetShadingGeometry(const Transform &obj2world,
 // MotionPrimitive Method Definitions
 bool MotionPrimitive::Intersect(const Ray &r, Intersection *isect) const
 {
-	Transform InstanceToWorld = motionSystem.Sample(r.time);
+	Transform InstanceToWorld = motionPath.Sample(r.time);
 	Transform WorldToInstance = InstanceToWorld.GetInverse();
 
 	Ray ray = WorldToInstance(r);
@@ -202,7 +202,7 @@ bool MotionPrimitive::Intersect(const Ray &r, Intersection *isect) const
 
 bool MotionPrimitive::IntersectP(const Ray &r) const
 {
-	Transform InstanceToWorld = motionSystem.Sample(r.time);
+	Transform InstanceToWorld = motionPath.Sample(r.time);
 	Transform WorldToInstance = InstanceToWorld.GetInverse();
 
 	return instance->IntersectP(WorldToInstance(r));
@@ -210,7 +210,7 @@ bool MotionPrimitive::IntersectP(const Ray &r) const
 void MotionPrimitive::GetShadingGeometry(const Transform &obj2world,
 	const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const
 {
-	Transform InstanceToWorld = motionSystem.Sample(dg.time);
+	Transform InstanceToWorld = motionPath.Sample(dg.time);
 	Transform WorldToInstance = InstanceToWorld.GetInverse();
 	Transform o2w(WorldToInstance * obj2world);
 	// Transform instance's differential geometry to world space
@@ -236,5 +236,5 @@ void MotionPrimitive::GetShadingGeometry(const Transform &obj2world,
 
 BBox MotionPrimitive::WorldBound() const
 {
-	return motionSystem.Bound(instance->WorldBound());
+	return motionPath.Bound(instance->WorldBound());
 }

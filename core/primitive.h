@@ -404,16 +404,12 @@ public:
 	 * Creates a new instance from the given primitive.
 	 *
 	 * @param i   The primitive to instance.
-	 * @param i2ws The instance to world transformation at start time.
-	 * @param i2we The instance to world transformation at end time.
-	 * @param s   The time at start.
-	 * @param e   The time at end.
+	 * @param i2w The instance to world motionsystem.
 	 */
 	MotionPrimitive(boost::shared_ptr<Primitive> &i,
-		const Transform &i2ws, const Transform &i2we,
-		float s, float e, boost::shared_ptr<Material> &mat,
+		const MotionSystem &i2w, boost::shared_ptr<Material> &mat,
 		boost::shared_ptr<Volume> &ex, boost::shared_ptr<Volume> &in) :
-		instance(i), motionSystem(s, e, i2ws, i2we), material(mat),
+		instance(i), motionPath(i2w), material(mat),
 		exterior(ex), interior(in) { }
 	virtual ~MotionPrimitive() { }
 
@@ -436,7 +432,7 @@ public:
 	virtual float Area() const { return instance->Area(); }
 	virtual float Sample(float u1, float u2, float u3,
 		DifferentialGeometry *dg) const  {
-		Transform InstanceToWorld = motionSystem.Sample(dg->time);
+		Transform InstanceToWorld = motionPath.Sample(dg->time);
 		const float pdf = instance->Sample(u1, u2, u3, dg) *
 			fabsf(Dot(Cross(dg->dpdu, dg->dpdv), Vector(dg->nn)));
 		InstanceToWorld(*dg, dg);
@@ -446,7 +442,7 @@ public:
 			fabsf(Dot(Cross(dg->dpdu, dg->dpdv), Vector(dg->nn)));
 	}
 	virtual float Pdf(const DifferentialGeometry &dg) const {
-		const Transform InstanceToWorld = motionSystem.Sample(dg.time);
+		const Transform InstanceToWorld = motionPath.Sample(dg.time);
 		const DifferentialGeometry dgi(InstanceToWorld.GetInverse()(dg));
 		return instance->Pdf(dgi) *
 			fabsf(Dot(Cross(dgi.dpdu, dgi.dpdv), Vector(dgi.nn)) /
@@ -454,7 +450,7 @@ public:
 	}
 	virtual float Sample(const Point &P, float u1, float u2, float u3,
 		DifferentialGeometry *dg) const {
-		const Transform InstanceToWorld = motionSystem.Sample(dg->time);
+		const Transform InstanceToWorld = motionPath.Sample(dg->time);
 		const float pdf = instance->Sample(InstanceToWorld.GetInverse()(P),
 			u1, u2, u3, dg) *
 			fabsf(Dot(Cross(dg->dpdu, dg->dpdv), Vector(dg->nn)));
@@ -465,7 +461,7 @@ public:
 			fabsf(Dot(Cross(dg->dpdu, dg->dpdv), Vector(dg->nn)));
 	}
 	virtual float Pdf(const Point &p, const DifferentialGeometry &dg) const {
-		const Transform InstanceToWorld = motionSystem.Sample(dg.time);
+		const Transform InstanceToWorld = motionPath.Sample(dg.time);
 		const DifferentialGeometry dgi(InstanceToWorld.GetInverse()(dg));
 		return instance->Pdf(p, dgi) *
 			fabsf(Dot(Cross(dgi.dpdu, dgi.dpdv), Vector(dgi.nn)) /
@@ -473,12 +469,12 @@ public:
 	}
 	virtual Transform GetWorldToLocal(float time) const {
 		return instance->GetWorldToLocal(time) *
-			motionSystem.Sample(time).GetInverse();
+			motionPath.Sample(time).GetInverse();
 	}
 private:
 	// MotionPrimitive Private Data
 	boost::shared_ptr<Primitive> instance;
-	MotionSystem motionSystem;
+	MotionSystem motionPath;
 	boost::shared_ptr<Material> material;
 	boost::shared_ptr<Volume> exterior, interior;
 };

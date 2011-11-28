@@ -122,13 +122,12 @@ protected:
 };
 
 // PerspectiveCamera Method Definitions
-PerspectiveCamera::PerspectiveCamera(const Transform &world2camStart,
-		const Transform &world2camEnd,
+PerspectiveCamera::PerspectiveCamera(const MotionSystem &world2cam,
 		const float Screen[4], float hither, float yon,
 		float sopen, float sclose, int sdist,
 		float lensr, float focald, bool autofocus,
 		float fov1, int dist, int sh, int pow, Film *f)
-	: ProjectiveCamera(world2camStart, world2camEnd,
+	: ProjectiveCamera(world2cam,
 	    Perspective(fov1, hither, yon),
 		Screen, hither, yon, sopen, sclose, sdist,
 		lensr, focald, f),
@@ -162,7 +161,7 @@ PerspectiveCamera::PerspectiveCamera(const Transform &world2camStart,
 
 void PerspectiveCamera::SampleMotion(float time)
 {
-	if (!CameraMotion.isActive)
+	if (CameraMotion.IsStatic())
 		return;
 
 	// call base method to sample transform
@@ -256,9 +255,15 @@ bool PerspectiveCamera::SampleW(MemoryArena &arena,
 BBox PerspectiveCamera::Bounds() const
 {
 	float lensr = max(LensRadius, 0.f);
-	BBox bound(Point(-lensr, -lensr, 0.f),
+	BBox orig_bound(Point(-lensr, -lensr, 0.f),
 		Point(lensr, lensr, 0.f));
-	bound = CameraToWorld(bound);
+	// TODO - improve this
+	BBox bound;
+	for (int i = 1024; i >= 0; i--) {
+		// ugly hack, but last thing we do is to sample StartTime, so should be ok
+		const_cast<PerspectiveCamera*>(this)->SampleMotion(Lerp(static_cast<float>(i) / 1024.f, CameraMotion.StartTime(), CameraMotion.EndTime()));
+		bound = Union(bound, CameraToWorld(orig_bound));
+	}
 	bound.Expand(MachineEpsilon::E(bound));
 	return bound;
 }
@@ -325,8 +330,8 @@ void PerspectiveCamera::SampleLens(float u1, float u2, float *dx, float *dy) con
 	*dy = r * sinf(theta);
 }
 
-Camera* PerspectiveCamera::CreateCamera(const Transform &world2camStart,
-	const Transform &world2camEnd, const ParamSet &params, Film *film)
+Camera* PerspectiveCamera::CreateCamera(const MotionSystem &world2cam,
+	const ParamSet &params, Film *film)
 {
 	// Extract common camera parameters from _ParamSet_
 	float hither = max(1e-4f, params.FindOneFloat("hither", 1e-3f));
@@ -391,7 +396,7 @@ Camera* PerspectiveCamera::CreateCamera(const Transform &world2camStart,
 	int shape = params.FindOneInt("blades", 0);
 	int power = params.FindOneInt("power", 3);
 
-	return new PerspectiveCamera(world2camStart, world2camEnd, screen,
+	return new PerspectiveCamera(world2cam, screen,
 		hither, yon, shutteropen, shutterclose, shutterdist, lensradius,
 		focaldistance, autofocus, fov, distribution, shape, power,
 		film);

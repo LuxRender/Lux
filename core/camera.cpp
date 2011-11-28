@@ -35,12 +35,11 @@ using namespace lux;
 Camera::~Camera() {
 	delete film;
 }
-Camera::Camera(const Transform &w2cstart,
-			   const Transform &w2cend,
+Camera::Camera(const MotionSystem &w2c,
                float hither, float yon,
 			   float sopen, float sclose, int sdist, Film *f) 
-			   : Queryable("camera"), CameraMotion(sopen, sclose, w2cstart, w2cend) {
-	WorldToCamera = w2cstart;
+			   : Queryable("camera"), CameraMotion(w2c) {
+	WorldToCamera = CameraMotion.Sample(sopen);
 	CameraToWorld = WorldToCamera.GetInverse();
 	ClipHither = hither;
 	ClipYon = yon;
@@ -104,7 +103,7 @@ bool Camera::GenerateRay(MemoryArena &arena, const SpectrumWavelengths &sw,
 }
 
 void Camera::SampleMotion(float time) {
-	if (!CameraMotion.isActive)
+	if (CameraMotion.IsStatic())
 		return;
 
 	WorldToCamera = CameraMotion.Sample(time);
@@ -131,12 +130,11 @@ float Camera::GetTime(float u1) const {
 	return 0.f;
 }
 
-ProjectiveCamera::ProjectiveCamera(const Transform &w2cs,
-	    const Transform &w2ce,
+ProjectiveCamera::ProjectiveCamera(const MotionSystem &w2c,
 		const Transform &proj, const float Screen[4],
 		float hither, float yon, float sopen,
 		float sclose, int sdist, float lensr, float focald, Film *f)
-	: Camera(w2cs, w2ce, hither, yon, sopen, sclose, sdist, f) {
+	: Camera(w2c, hither, yon, sopen, sclose, sdist, f) {
 	// Initialize depth of field parameters
 	LensRadius = lensr;
 	FocalDistance = focald;
@@ -160,7 +158,7 @@ ProjectiveCamera::ProjectiveCamera(const Transform &w2cs,
 }
 void ProjectiveCamera::SampleMotion(float time) {
 
-	if (!CameraMotion.isActive)
+	if (CameraMotion.IsStatic())
 		return;
 
 	// call base method to sample transform

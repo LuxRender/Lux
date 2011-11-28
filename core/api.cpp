@@ -274,6 +274,16 @@ extern "C" void luxTransformEnd()
 	Context::GetActive()->TransformEnd();
 }
 
+extern "C" void luxMotionBegin(unsigned int n, float *t)
+{
+	Context::GetActive()->MotionBegin(n, t);
+}
+
+extern "C" void luxMotionEnd()
+{
+	Context::GetActive()->MotionEnd();
+}
+
 extern "C" void luxTexture(const char *name, const char *type,
 	const char *texname, ...)
 {

@@ -46,10 +46,10 @@ public:
 };
 
 // EnvironmentCamera Method Definitions
-EnvironmentCamera::EnvironmentCamera(const Transform &world2camStart,
-	const Transform &world2camEnd, float hither, float yon, float sopen,
+EnvironmentCamera::EnvironmentCamera(const MotionSystem &world2cam,
+	float hither, float yon, float sopen,
 	float sclose, int sdist, Film *film)
-	: Camera(world2camStart, world2camEnd, hither, yon, sopen, sclose,
+	: Camera(world2cam, hither, yon, sopen, sclose,
 		sdist, film)
 {
 		pos = CameraToWorld(Point(0, 0, 0));
@@ -57,7 +57,7 @@ EnvironmentCamera::EnvironmentCamera(const Transform &world2camStart,
 
 void EnvironmentCamera::SampleMotion(float time)
 {
-	if (!CameraMotion.isActive)
+	if (CameraMotion.IsStatic())
 		return;
 
 	// call base method to sample transform
@@ -107,7 +107,14 @@ bool EnvironmentCamera::SampleW(MemoryArena &arena,
 
 BBox EnvironmentCamera::Bounds() const
 {
-	BBox bound(pos);
+	// TODO - improve this
+	BBox bound;
+	for (int i = 1024; i >= 0; i--) {
+		// ugly hack, but last thing we do is to sample StartTime, so should be ok
+		const_cast<EnvironmentCamera*>(this)->SampleMotion(Lerp(static_cast<float>(i) / 1024.f, CameraMotion.StartTime(), CameraMotion.EndTime()));
+		bound = Union(bound, BBox(pos));
+	}
+
 	bound.Expand(MachineEpsilon::E(bound));
 
 	return bound;
@@ -139,8 +146,8 @@ void EnvironmentCamera::ClampRay(Ray &ray) const
 	ray.maxt = min(ray.maxt, ClipYon);
 }
 
-Camera* EnvironmentCamera::CreateCamera(const Transform &world2camStart,
-	const Transform &world2camEnd, const ParamSet &params, Film *film)
+Camera* EnvironmentCamera::CreateCamera(const MotionSystem &world2cam,
+	const ParamSet &params, Film *film)
 {
 	// Extract common camera parameters from _ParamSet_
 	float hither = max(1e-4f, params.FindOneFloat("hither", 1e-3f));
@@ -182,7 +189,7 @@ Camera* EnvironmentCamera::CreateCamera(const Transform &world2camStart,
 		memcpy(screen, sw, 4*sizeof(float));
 	(void) lensradius; // don't need this
 	(void) focaldistance; // don't need this
-	return new EnvironmentCamera(world2camStart, world2camEnd, hither, yon,
+	return new EnvironmentCamera(world2cam, hither, yon,
 		shutteropen, shutterclose, shutterdist, film);
 }
 

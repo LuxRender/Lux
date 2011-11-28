@@ -30,8 +30,8 @@ namespace lux
 class OrthoCamera : public ProjectiveCamera {
 public:
 	// OrthoCamera Public Methods
-	OrthoCamera(const Transform &world2camStart,
-		const Transform &world2camEnd, const float Screen[4],
+	OrthoCamera(const MotionSystem &world2cam,
+		const float Screen[4],
 		float hither, float yon, float sopen, float sclose, int sdist, 
 		float lensr, float focald, bool autofocus, Film *film);
 	virtual ~OrthoCamera() { }
@@ -55,9 +55,8 @@ public:
 
 	virtual OrthoCamera* Clone() const { return new OrthoCamera(*this); }
 
-	static Camera *CreateCamera(const Transform &world2camStart,
-		const Transform &world2camEnd, const ParamSet &params,
-		Film *film);
+	static Camera *CreateCamera(const MotionSystem &world2cam,
+		const ParamSet &params, Film *film);
 
 private:
 	// Dade - field used for autofocus feature

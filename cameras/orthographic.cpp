@@ -31,16 +31,16 @@
 #include "singlebsdf.h"
 #include "paramset.h"
 #include "dynload.h"
+#include "motionsystem.h"
 
 using namespace lux;
 
 // OrthographicCamera Definitions
-OrthoCamera::OrthoCamera(const Transform &world2camStart,
-	const Transform &world2camEnd,
+OrthoCamera::OrthoCamera(const MotionSystem &world2cam,
 	const float Screen[4], float hither, float yon,
 	float sopen, float sclose, int sdist, float lensr,
 	float focald, bool autofocus, Film *f)
-	: ProjectiveCamera(world2camStart, world2camEnd,
+	: ProjectiveCamera(world2cam, 
 		Orthographic(hither, yon), Screen, hither, yon, sopen, sclose,
 		sdist, lensr, focald, f), autoFocus(autofocus)
 {
@@ -52,7 +52,7 @@ OrthoCamera::OrthoCamera(const Transform &world2camStart,
 
 void OrthoCamera::SampleMotion(float time)
 {
-	if (!CameraMotion.isActive)
+	if (CameraMotion.IsStatic())
 		return;
 
 	// call base method to sample transform
@@ -145,14 +145,20 @@ void OrthoCamera::ClampRay(Ray &ray) const
 
 BBox OrthoCamera::Bounds() const
 {
-	BBox bound(Point(-1, -1, 0), Point(1, 1, 0));
-	bound = WorldToScreen.GetInverse()(bound);
+	BBox orig_bound(Point(-1, -1, 0), Point(1, 1, 0));
+	// TODO - improve this
+	BBox bound;
+	for (int i = 1024; i >= 0; i--) {
+		// ugly hack, but last thing we do is to sample StartTime, so should be ok
+		const_cast<OrthoCamera*>(this)->SampleMotion(Lerp(static_cast<float>(i) / 1024.f, CameraMotion.StartTime(), CameraMotion.EndTime()));
+		bound = Union(bound, WorldToScreen.GetInverse()(orig_bound));
+	}
 	bound.Expand(MachineEpsilon::E(bound));
 	return bound;
 }
 
-Camera* OrthoCamera::CreateCamera(const Transform &world2camStart,
-	const Transform &world2camEnd, const ParamSet &params, Film *film)
+Camera* OrthoCamera::CreateCamera(const MotionSystem &world2cam,
+	const ParamSet &params, Film *film)
 {
 	// Extract common camera parameters from _ParamSet_
 	float hither = max(1e-4f, params.FindOneFloat("hither", 1e-3f));
@@ -192,7 +198,7 @@ Camera* OrthoCamera::CreateCamera(const Transform &world2camStart,
 	const float *sw = params.FindFloat("screenwindow", &swi);
 	if (sw && swi == 4)
 		memcpy(screen, sw, 4*sizeof(float));
-	return new OrthoCamera(world2camStart, world2camEnd, screen, hither,
+	return new OrthoCamera(world2cam, screen, hither,
 		yon, shutteropen, shutterclose, shutterdist, lensradius,
 		focaldistance, autofocus, film);
 }

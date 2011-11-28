@@ -34,8 +34,8 @@ namespace lux
 class  Camera : public Queryable {
 public:
 	// Camera Interface
-	Camera(const Transform &w2cstart, const Transform &w2cend, float hither,
-		float yon, float sopen, float sclose, int sdist, Film *film);
+	Camera(const MotionSystem &w2c, float hither, float yon, 
+		float sopen, float sclose, int sdist, Film *film);
 	virtual ~Camera();
 	const Volume *GetVolume() const { return volume.get(); }
 	void SetVolume(boost::shared_ptr<Volume> &v) {
@@ -84,8 +84,7 @@ protected:
 class  ProjectiveCamera : public Camera {
 public:
 	// ProjectiveCamera Public Methods
-	ProjectiveCamera(const Transform &world2cam,
-		const Transform &world2camEnd,
+	ProjectiveCamera(const MotionSystem &world2cam,
 		const Transform &proj, const float Screen[4],
 		float hither, float yon,
 		float sopen, float sclose, int sdist,
