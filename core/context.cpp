@@ -451,7 +451,7 @@ void Context::TransformEnd() {
 }
 void Context::MotionBegin(u_int n, float *t) {
 	VERIFY_INITIALIZED("MotionBegin");
-	renderFarm->send("luxMotionBegin");
+	renderFarm->send("luxMotionBegin", n, t);
 	motionBlockTimes.assign(t, t+n);
 	motionBlockTransforms.clear();
 	inMotionBlock = true;

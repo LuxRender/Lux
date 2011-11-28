@@ -93,6 +93,7 @@ public:
 	void send(const std::string &command, float ex, float ey, float ez,
 		float lx, float ly, float lz, float ux, float uy, float uz);
 	void send(const std::string &command, float tr[16]);
+	void send(const std::string &command, u_int n, float *d);
 	void send(const std::string &command, const string &name,
 		const string &type, const string &texname,
 		const ParamSet &params);

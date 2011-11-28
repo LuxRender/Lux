@@ -704,6 +704,18 @@ void RenderFarm::send(const string &command, float tr[16]) {
 	}
 }
 
+void RenderFarm::send(const string &command, u_int n, float *d) {
+	try {
+		netBuffer << command << endl;
+		netBuffer << n << ' ';
+		for (u_int i = 0; i < n; i++)
+			netBuffer << d[i] << ' ';
+		netBuffer << endl;
+	} catch (exception& e) {
+		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
+	}
+}
+
 void RenderFarm::send(const string &command, const string &name,
 		const string &type, const string &texname, const ParamSet &params) {
 	try {

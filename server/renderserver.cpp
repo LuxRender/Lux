@@ -330,6 +330,19 @@ static void processCommand(void (Context::*f)(float[16]), basic_istream<char> &s
 	(Context::GetActive()->*f)(t);
 }
 
+static void processCommand(void (Context::*f)(u_int, float*), basic_istream<char> &stream)
+{
+	u_int n;
+	stream >> n;
+	vector<float> data;
+	for (u_int i = 0; i < n; ++i) {
+		float v;
+		stream >> v;
+		data.push_back(v);
+	}
+	(Context::GetActive()->*f)(n, &data[0]);
+}
+
 static void processCommand(void (Context::*f)(const string &, float, float, const string &), basic_istream<char> &stream)
 {
 	string name, transform;
@@ -613,6 +626,14 @@ void cmd_luxPortalInstance(bool isLittleEndian, NetworkRenderServerThread *serve
 //case CMD_PORTALINSTANCE:
 	processCommand(&Context::PortalInstance, stream);
 }
+void cmd_luxMotionBegin(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_LUXMOTIONBEGIN:
+	processCommand(&Context::MotionBegin, stream);
+}
+void cmd_luxMotionEnd(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_LUXMOTIONEND:
+	luxMotionEnd();
+}
 void cmd_luxMotionInstance(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
 //case CMD_MOTIONINSTANCE:
 	processCommand(&Context::MotionInstance, stream);
@@ -769,6 +790,8 @@ void NetworkRenderServerThread::run(int ipversion, NetworkRenderServerThread *se
 	INSERT_CMD(luxObjectEnd);
 	INSERT_CMD(luxObjectInstance);
 	INSERT_CMD(luxPortalInstance);
+	INSERT_CMD(luxMotionBegin);
+	INSERT_CMD(luxMotionEnd);
 	INSERT_CMD(luxMotionInstance);
 	INSERT_CMD(luxWorldEnd);
 	INSERT_CMD(luxGetFilm);
