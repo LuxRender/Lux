@@ -160,10 +160,11 @@ const Light *LSSOneUniform::SampleLight(const Scene &scene, u_int index,
 {
 	if (index > 0)
 		return NULL;
-	*u *= scene.lights.size();
-	const u_int n = Float2UInt(*u);
+	const u_int nLights = scene.lights.size();
+	*u *= nLights;
+	const u_int n = min(Floor2UInt(*u), nLights - 1);
 	*u -= n;
-	*pdf = 1.f / scene.lights.size();
+	*pdf = 1.f / nLights;
 	return scene.lights[n];
 }
 
@@ -488,7 +489,7 @@ u_int SurfaceIntegratorRenderingHints::SampleLights(const Scene &scene,
 		const Light *light = lsStrategy->SampleLight(scene, i, &lc, &pdf);
 		if (!light)
 			break;
-		SWCSpectrum Ll(EstimateDirect(scene, *light, sample,
+		const SWCSpectrum Ll(scale * EstimateDirect(scene, *light, sample,
 			p, n, wo, bsdf, data[offset + 0], data[offset + 1], lc,
 			data[offset + 3], data[offset + 4], data[offset + 5]));
 
