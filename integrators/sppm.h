@@ -24,6 +24,7 @@
 #include "transport.h"
 #include "renderers/sppm/hitpoints.h"
 #include "renderers/sppm/photonsampler.h"
+#include "renderinghints.h"
 
 namespace lux
 {
@@ -61,6 +62,8 @@ public:
 
 	// Few debugging options
 	//bool dbg_enableradiusdraw, dbg_enablemsedraw;
+	SurfaceIntegratorRenderingHints hints;
+	bool directLightSampling;
 };
 
 }//namespace lux

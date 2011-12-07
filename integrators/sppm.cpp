@@ -33,7 +33,7 @@
 
 using namespace lux;
 
-SPPMIntegrator::SPPMIntegrator() {
+SPPMIntegrator::SPPMIntegrator(): SurfaceIntegrator(), hints() {
 	AddStringConstant(*this, "name", "Name of current surface integrator", "sppm");
 }
 
@@ -44,6 +44,8 @@ void SPPMIntegrator::Preprocess(const RandomGenerator &rng, const Scene &scene) 
 	bufferPhotonId = scene.camera->film->RequestBuffer(BUF_TYPE_PER_SCREEN_SCALED, BUF_FRAMEBUFFER, "photons");
 	bufferEyeId = scene.camera->film->RequestBuffer(BUF_TYPE_PER_PIXEL, BUF_FRAMEBUFFER, "eye");
 	scene.camera->film->CreateBuffers();
+
+	hints.InitStrategies(scene);
 }
 
 u_int SPPMIntegrator::Li(const Scene &scene, const Sample &sample) const {
@@ -89,9 +91,13 @@ SurfaceIntegrator *SPPMIntegrator::CreateSurfaceIntegrator(const ParamSet &param
 	sppmi->photonPerPass = params.FindOneInt("photonperpass", 1000000);
 
 	sppmi->includeEnvironment = params.FindOneBool("includeenvironment", true);
+	sppmi->directLightSampling = params.FindOneBool("directlightsampling", false);
 
 	/*sppmi->dbg_enableradiusdraw = params.FindOneBool("dbg_enableradiusdraw", false);
 	sppmi->dbg_enablemsedraw = params.FindOneBool("dbg_enablemsedraw", false);*/
+
+	// Initialize the rendering hints
+	sppmi->hints.InitParam(params);
 
 	return sppmi;
 }

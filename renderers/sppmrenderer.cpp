@@ -410,6 +410,8 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 	eyeSample.AddxD(structure, renderer->sppmi->maxEyePathDepth + 1);
 	renderer->scene->volumeIntegrator->RequestSamples(&eyeSample, *(renderer->scene));
 
+	renderer->sppmi->hints.RequestSamples(&eyeSample, scene, renderer->sppmi->maxPhotonPathDepth + 1);
+
 	//--------------------------------------------------------------------------
 	// First eye pass
 	//--------------------------------------------------------------------------

@@ -259,10 +259,16 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, MemoryArena &hp
 	const float rayWeight = sample.camera->GenerateRay(scene, sample, &ray);
 
 	const float nLights = scene.lights.size();
-
-	SWCSpectrum pathThroughput(1.f);
 	const u_int lightGroupCount = scene.lightGroups.size();
+
+	vector<SWCSpectrum> Ld(lightGroupCount, 0.f);
+	// Direct lighting samples variance
+	vector<float> Vd(lightGroupCount, 0.f);
+	SWCSpectrum pathThroughput(1.f);
 	vector<SWCSpectrum> L(lightGroupCount, 0.f);
+	vector<float> V(lightGroupCount, 0.f);
+	float VContrib = .1f;
+
 	bool scattered = false;
 	hpep->alpha = 1.f;
 	hpep->distance = INFINITY;
@@ -330,10 +336,29 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, MemoryArena &hp
 			if (!Le.Black()) {
 				Le *= pathThroughput;
 				L[isect.arealight->group] += Le;
+				V[isect.arealight->group] += Le.Filter(sw) * VContrib;
 			}
 		}
 
+
 		const Point &p = bsdf->dgShading.p;
+		const Normal &n = bsdf->dgShading.nn;
+
+		// Estimate direct lighting
+		if (renderer->sppmi->directLightSampling && (nLights > 0)) {
+			for (u_int i = 0; i < lightGroupCount; ++i) {
+				Ld[i] = 0.f;
+				Vd[i] = 0.f;
+			}
+
+			renderer->sppmi->hints.SampleLights(scene, sample, p, n,
+				wo, bsdf, pathLength, pathThroughput, Ld, &Vd);
+
+			for (u_int i = 0; i < lightGroupCount; ++i) {
+				L[i] += Ld[i];
+				V[i] += Vd[i] * VContrib;
+			}
+		}
 
 		// Choose between storing or bouncing the hitpoint on the surface
 		BxDFType store_component, bounce_component;
@@ -425,10 +450,14 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, MemoryArena &hp
 		ray.time = sample.realTime;
 		volume = bsdf->GetVolume(wi);
 	}
-	for(unsigned int j = 0; j < lightGroupCount; ++j)
+	for(unsigned int i = 0; i < lightGroupCount; ++i)
+	{
+		if (!L[i].Black())
+			V[i] /= L[i].Filter(sw);
 		sample.AddContribution(sample.imageX, sample.imageY,
-			XYZColor(sw, L[j] * rayWeight), hp->eyePass.alpha, hp->eyePass.distance,
-			0, renderer->sppmi->bufferEyeId, j);
+			XYZColor(sw, L[i]) * rayWeight, hp->eyePass.alpha, hp->eyePass.distance,
+			0, renderer->sppmi->bufferEyeId, i);
+	}
 }
 
 void HitPoints::UpdatePointsInformation() {

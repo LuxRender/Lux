@@ -98,6 +98,8 @@ void PhotonSampler::TracePhoton(
 	alpha *= alpha2;
 	alpha /= lightPdf;
 
+	const bool directLightSampling = renderer->sppmi->directLightSampling;
+
 	if (!alpha.Black()) {
 		// Follow photon path through scene and record intersections
 		Intersection photonIsect;
@@ -115,8 +117,9 @@ void PhotonSampler::TracePhoton(
 
 			// Deposit Flux (only if we have hit a diffuse or glossy surface)
 			// Note: the hitpoint BSDF allready handle this test, but it optimise a bit and avoid same bias
-			if (photonBSDF->NumComponents(BxDFType(BSDF_REFLECTION | BSDF_TRANSMISSION | BSDF_GLOSSY | BSDF_DIFFUSE)) > 0)
-				renderer->hitPoints->AddFlux(*sample, photonIsect.dg.p, wi, sw, alpha, light->group);
+			if(nIntersections > 1u || !directLightSampling)
+				if (photonBSDF->NumComponents(BxDFType(BSDF_REFLECTION | BSDF_TRANSMISSION | BSDF_GLOSSY | BSDF_DIFFUSE)) > 0)
+					renderer->hitPoints->AddFlux(*sample, photonIsect.dg.p, wi, sw, alpha, light->group);
 
 			if (nIntersections > renderer->sppmi->maxPhotonPathDepth)
 				break;
