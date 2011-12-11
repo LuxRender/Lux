@@ -97,16 +97,6 @@ public:
 ImageData* createImageData(const string &name,
 	FIBITMAP *image);
 
-/**
-FreeImage error handler
-@param fif Format / Plugin responsible for the error
-@param message Error message
-*/
-void FreeImageErrorHandler(FREE_IMAGE_FORMAT fif, const char *message) {
-	LOG(LUX_INFO, LUX_SYSTEM) << "FreeImage error, " <<
-		"format: " << (fif != FIF_UNKNOWN ? FreeImage_GetFormatFromFIF(fif) : "Unknown") << ": '" << message << "'";
-}
-
 template <typename T, int C> void* readImageData(FIBITMAP *image, const u_int *channelMapping) {
 
 	u_int width = FreeImage_GetWidth(image);
@@ -357,8 +347,6 @@ ImageData *StandardImageReader::read(const string &name)
 
 ImageData *ReadImage(const string &name)
 {
-	FreeImage_SetOutputMessage(FreeImageErrorHandler);
-
 	try {
 		boost::filesystem::path imagePath(AdjustFilename(name));
 		// boost::filesystem::exists() can throw an exception under Windows

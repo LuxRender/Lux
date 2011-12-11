@@ -36,12 +36,9 @@
 using boost::uint8_t;
 using boost::uint16_t;
 
-namespace lux {
-
-
 #ifdef LUX_NO_LIBPNG
 template <typename T>
-void FillRow(u_int y, T* const row, u_int xPixelCount, u_int bpp, const u_int *channelMapping, bool output_grayscale, bool output_alpha, const vector<RGBColor> &pixels, const vector<float> &alpha)
+void FillRow(u_int y, T* const row, u_int xPixelCount, u_int bpp, const u_int *channelMapping, bool output_grayscale, bool output_alpha, const vector<lux::RGBColor> &pixels, const vector<float> &alpha)
 {
 	const float Tmax = static_cast<float>(std::numeric_limits<T>::max());
 
@@ -80,7 +77,7 @@ void FillRow(u_int y, T* const row, u_int xPixelCount, u_int bpp, const u_int *c
 		if (output_alpha) {
 			for (u_int x = 0; x < xPixelCount; ++x)
 			{
-				const RGBColor &c = pixels[(x + y * xPixelCount)];
+				const lux::RGBColor &c = pixels[(x + y * xPixelCount)];
 				T r = static_cast<T>(Clamp(Tmax * c.c[0], 0.f, Tmax));
 				T g = static_cast<T>(Clamp(Tmax * c.c[1], 0.f, Tmax));
 				T b = static_cast<T>(Clamp(Tmax * c.c[2], 0.f, Tmax));
@@ -95,7 +92,7 @@ void FillRow(u_int y, T* const row, u_int xPixelCount, u_int bpp, const u_int *c
 		} else {
 			for (u_int x = 0; x < xPixelCount; ++x)
 			{
-				const RGBColor &c = pixels[(x + y * xPixelCount)];
+				const lux::RGBColor &c = pixels[(x + y * xPixelCount)];
 				T r = static_cast<T>(Clamp(Tmax * c.c[0], 0.f, Tmax));
 				T g = static_cast<T>(Clamp(Tmax * c.c[1], 0.f, Tmax));
 				T b = static_cast<T>(Clamp(Tmax * c.c[2], 0.f, Tmax));
@@ -114,6 +111,8 @@ void lux_png_error(png_structp png_, png_const_charp msg)
 		LOG( LUX_SEVERE,LUX_SYSTEM)<< "Cannot open PNG file '"<<msg<<"' for output";
 }
 #endif
+
+namespace lux {
 
 void WritePngImage(int channeltype, bool ubit, bool savezbuf, const string &name, vector<RGBColor> &pixels,
 		vector<float> &alpha, u_int xPixelCount, u_int yPixelCount,
@@ -154,7 +153,9 @@ void WritePngImage(int channeltype, bool ubit, bool savezbuf, const string &name
 		}
 	}
 
-	FreeImage_Save(FIF_PNG, dib, name.c_str(), PNG_DEFAULT);
+	if (!FreeImage_Save(FIF_PNG, dib, name.c_str(), PNG_DEFAULT)) {
+		LOG(LUX_ERROR, LUX_SYSTEM) << "Error writing PNG file '" << name << "'";
+	}
 
 	FreeImage_Unload(dib);
 }

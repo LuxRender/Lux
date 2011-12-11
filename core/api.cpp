@@ -84,6 +84,16 @@ static unsigned int buildParameterList( va_list pArgs, vector<LuxToken>& aTokens
 
 }
 
+/**
+FreeImage error handler
+@param fif Format / Plugin responsible for the error
+@param message Error message
+*/
+void FreeImageErrorHandler(FREE_IMAGE_FORMAT fif, const char *message) {
+	LOG(LUX_INFO, LUX_SYSTEM) << "FreeImage error, " <<
+		"format: " << (fif != FIF_UNKNOWN ? FreeImage_GetFormatFromFIF(fif) : "Unknown") << ": '" << message << "'";
+}
+
 static bool initialized = false;
 
 
@@ -490,6 +500,7 @@ extern "C" void luxInit()
 		Context::SetActive(new Context());
 
 	FreeImage_Initialise(true);
+	FreeImage_SetOutputMessage(FreeImageErrorHandler);
 
 	initialized = true;
 }
