@@ -78,6 +78,13 @@ public:
 	 * @return The requested probability
 	 */
 	virtual float Pdf(const Scene &scene, const Light *light) const = 0;
+	/**
+	 * The maximum number of light samples in one go
+	 * The looping over SampleLight will never exceed he returned value
+	 * @param scene The current scene
+	 * @return The maximum number of sampling events in one go
+	 */
+	virtual u_int GetSamplingLimit(const Scene &scene) const = 0;
 
 	virtual void RequestSamples(const Scene &scene, vector<u_int> &structure) const = 0;
 	virtual u_int RequestSamplesCount(const Scene &scene) const = 0;
@@ -87,6 +94,14 @@ public:
 		const u_int shadowRayCount, const Point &p, const Normal &n,
 		const Vector &wo, BSDF *bsdf, const float *sampleData,
 		const SWCSpectrum &scale, vector<SWCSpectrum> &L) const = 0;
+	/**
+	 * Static function to create a light sampling strategy from a param set
+	 * It will parse the parameters, check the requested strategy and
+	 * return a pointer to the new LightSamplingStrategy.
+	 * @param params The paramset to parse
+	 * @return a pointer to the new light sampling strategy
+	 */
+	static LightsSamplingStrategy *Create(const ParamSet &params);
 };
 
 class LSSAllUniform : public LightsSamplingStrategy {
@@ -104,6 +119,7 @@ public:
 	virtual const Light *SampleLight(const Scene &scene, u_int index,
 		float *u, float *pdf) const;
 	virtual float Pdf(const Scene &scene, const Light *light) const;
+	virtual u_int GetSamplingLimit(const Scene &scene) const;
 };
 
 class LSSOneUniform : public LightsSamplingStrategy {
@@ -119,6 +135,7 @@ public:
 	virtual const Light *SampleLight(const Scene &scene, u_int index,
 		float *u, float *pdf) const;
 	virtual float Pdf(const Scene &scene, const Light *light) const;
+	virtual u_int GetSamplingLimit(const Scene &scene) const { return 1; }
 };
 
 class LSSAuto : public LightsSamplingStrategy {
@@ -148,6 +165,9 @@ public:
 	virtual float Pdf(const Scene &scene, const Light *light) const {
 		return strategy->Pdf(scene, light);
 	}
+	virtual u_int GetSamplingLimit(const Scene &scene) const {
+		return strategy->GetSamplingLimit(scene);
+	}
 
 private:
 	LightsSamplingStrategy *strategy;
@@ -169,6 +189,7 @@ public:
 	virtual const Light *SampleLight(const Scene &scene, u_int index,
 		float *u, float *pdf) const;
 	virtual float Pdf(const Scene &scene, const Light *light) const;
+	virtual u_int GetSamplingLimit(const Scene &scene) const { return 1; }
 
 protected:
 	Distribution1D *lightDistribution;
@@ -193,6 +214,7 @@ public:
 	virtual const Light *SampleLight(const Scene &scene, u_int index,
 		float *u, float *pdf) const;
 	virtual float Pdf(const Scene &scene, const Light *light) const;
+	virtual u_int GetSamplingLimit(const Scene &scene) const;
 };
 
 class LSSOneLogPowerImportance : public LSSOnePowerImportance {

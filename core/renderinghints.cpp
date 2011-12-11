@@ -45,6 +45,64 @@ void LightRenderingHints::InitParam(const ParamSet &params) {
 // Light Sampling Strategies
 //------------------------------------------------------------------------------
 
+LightsSamplingStrategy *LightsSamplingStrategy::Create(const ParamSet &params)
+{
+	enum LightStrategyType lightStrategyType;
+	LightsSamplingStrategy *lsStrategy = NULL;
+	// For compatibility with past versions
+	string st = params.FindOneString("lightstrategy",
+		params.FindOneString("strategy", "auto"));
+
+	if (st == "one")
+		lightStrategyType = LightsSamplingStrategy::SAMPLE_ONE_UNIFORM;
+	else if (st == "all")
+		lightStrategyType = LightsSamplingStrategy::SAMPLE_ALL_UNIFORM;
+	else if (st == "auto")
+		lightStrategyType = LightsSamplingStrategy::SAMPLE_AUTOMATIC;
+	else if (st == "importance")
+		lightStrategyType = LightsSamplingStrategy::SAMPLE_ONE_IMPORTANCE;
+	else if (st == "powerimp")
+		lightStrategyType = LightsSamplingStrategy::SAMPLE_ONE_POWER_IMPORTANCE;
+	else if (st == "allpowerimp")
+		lightStrategyType = LightsSamplingStrategy::SAMPLE_ALL_POWER_IMPORTANCE;
+	else if (st == "logpowerimp")
+		lightStrategyType = LightsSamplingStrategy::SAMPLE_ONE_LOG_POWER_IMPORTANCE;
+	else {
+		LOG( LUX_WARNING,LUX_BADTOKEN) << "Strategy  '" << st << "' unknown. Using \"auto\".";
+		lightStrategyType = LightsSamplingStrategy::SAMPLE_AUTOMATIC;
+	}
+
+	// Create the light strategy
+	switch (lightStrategyType) {
+		case LightsSamplingStrategy::SAMPLE_ALL_UNIFORM:
+			lsStrategy = new LSSAllUniform();
+			break;
+		case LightsSamplingStrategy::SAMPLE_ONE_UNIFORM:
+			lsStrategy =  new LSSOneUniform();
+			break;
+		case LightsSamplingStrategy::SAMPLE_AUTOMATIC:
+			lsStrategy =  new LSSAuto();
+			break;
+		case LightsSamplingStrategy::SAMPLE_ONE_IMPORTANCE:
+			lsStrategy = new LSSOneImportance();
+			break;
+		case LightsSamplingStrategy::SAMPLE_ONE_POWER_IMPORTANCE:
+			lsStrategy = new LSSOnePowerImportance();
+			break;
+		case LightsSamplingStrategy::SAMPLE_ALL_POWER_IMPORTANCE:
+			lsStrategy = new LSSAllPowerImportance();
+			break;
+		case LightsSamplingStrategy::SAMPLE_ONE_LOG_POWER_IMPORTANCE:
+			lsStrategy = new LSSOneLogPowerImportance();
+			break;
+		default:
+			BOOST_ASSERT(false);
+	}
+	if (lsStrategy)
+		lsStrategy->InitParam(params);
+	return lsStrategy;
+}
+
 //******************************************************************************
 // Light Sampling Strategies: LightStrategyAllUniform
 //******************************************************************************
@@ -107,6 +165,11 @@ const Light *LSSAllUniform::SampleLight(const Scene &scene, u_int index,
 float LSSAllUniform::Pdf(const Scene &scene, const Light *light) const
 {
 	return 1.f;
+}
+
+u_int LSSAllUniform::GetSamplingLimit(const Scene &scene) const
+{
+	return scene.lights.size();
 }
 
 //******************************************************************************
@@ -366,6 +429,11 @@ float LSSAllPowerImportance::Pdf(const Scene &scene, const Light *light) const
 			return lightDistribution->Pdf(i) * scene.lights.size();
 	}
 	return 0.f;
+}
+
+u_int LSSAllPowerImportance::GetSamplingLimit(const Scene &scene) const
+{
+	return scene.lights.size();
 }
 
 //******************************************************************************
