@@ -86,14 +86,6 @@ public:
 	 */
 	virtual u_int GetSamplingLimit(const Scene &scene) const = 0;
 
-	virtual void RequestSamples(const Scene &scene, vector<u_int> &structure) const = 0;
-	virtual u_int RequestSamplesCount(const Scene &scene) const = 0;
-
-	// Note: results are added to L
-	virtual u_int SampleLights(const Scene &scene, const Sample &sample,
-		const u_int shadowRayCount, const Point &p, const Normal &n,
-		const Vector &wo, BSDF *bsdf, const float *sampleData,
-		const SWCSpectrum &scale, vector<SWCSpectrum> &L) const = 0;
 	/**
 	 * Static function to create a light sampling strategy from a param set
 	 * It will parse the parameters, check the requested strategy and
@@ -108,14 +100,6 @@ class LSSAllUniform : public LightsSamplingStrategy {
 public:
 	LSSAllUniform() : LightsSamplingStrategy() { }
 	virtual ~LSSAllUniform() { }
-	virtual void RequestSamples(const Scene &scene, vector<u_int> &structure) const;
-	virtual u_int RequestSamplesCount(const Scene &scene) const {
-		return 6;
-	}
-	virtual u_int SampleLights(const Scene &scene, const Sample &sample,
-		const u_int shadowRayCount, const Point &p, const Normal &n,
-		const Vector &wo, BSDF *bsdf, const float *sampleData,
-		const SWCSpectrum &scale, vector<SWCSpectrum> &L) const;
 	virtual const Light *SampleLight(const Scene &scene, u_int index,
 		float *u, float *pdf) const;
 	virtual float Pdf(const Scene &scene, const Light *light) const;
@@ -126,12 +110,6 @@ class LSSOneUniform : public LightsSamplingStrategy {
 public:
 	LSSOneUniform() : LightsSamplingStrategy() { }
 	virtual ~LSSOneUniform() { }
-	virtual void RequestSamples(const Scene &scene, vector<u_int> &structure) const;
-	virtual u_int RequestSamplesCount(const Scene &scene) const { return 6; }
-	virtual u_int SampleLights(const Scene &scene, const Sample &sample,
-		const u_int shadowRayCount, const Point &p, const Normal &n,
-		const Vector &wo, BSDF *bsdf, const float *sampleData,
-		const SWCSpectrum &scale, vector<SWCSpectrum> &L) const;
 	virtual const Light *SampleLight(const Scene &scene, u_int index,
 		float *u, float *pdf) const;
 	virtual float Pdf(const Scene &scene, const Light *light) const;
@@ -144,20 +122,6 @@ public:
 	virtual ~LSSAuto() { delete strategy; }
 	virtual void Init(const Scene &scene);
 
-	virtual void RequestSamples(const Scene &scene, vector<u_int> &structure) const {
-		strategy->RequestSamples(scene, structure);
-	}
-	virtual u_int RequestSamplesCount(const Scene &scene) const {
-		return strategy->RequestSamplesCount(scene);
-	}
-
-	virtual u_int SampleLights(const Scene &scene, const Sample &sample,
-		const u_int shadowRayCount, const Point &p, const Normal &n,
-		const Vector &wo, BSDF *bsdf, const float *sampleData,
-		const SWCSpectrum &scale, vector<SWCSpectrum> &L) const {
-		return strategy->SampleLights(scene, sample, shadowRayCount,
-			p, n, wo, bsdf, sampleData, scale, L);
-	}
 	virtual const Light *SampleLight(const Scene &scene, u_int index,
 		float *u, float *pdf) const {
 		return strategy->SampleLight(scene, index, u, pdf);
@@ -180,12 +144,6 @@ public:
 	virtual ~LSSOneImportance();
 	virtual void Init(const Scene &scene);
 
-	virtual void RequestSamples(const Scene &scene, vector<u_int> &structure) const;
-	virtual u_int RequestSamplesCount(const Scene &scene) const { return 6; }
-	virtual u_int SampleLights(const Scene &scene, const Sample &sample,
-		const u_int shadowRayCount, const Point &p, const Normal &n,
-		const Vector &wo, BSDF *bsdf, const float *sampleData,
-		const SWCSpectrum &scale, vector<SWCSpectrum> &L) const;
 	virtual const Light *SampleLight(const Scene &scene, u_int index,
 		float *u, float *pdf) const;
 	virtual float Pdf(const Scene &scene, const Light *light) const;
@@ -207,10 +165,6 @@ public:
 	LSSAllPowerImportance() : LSSOnePowerImportance() { }
 	virtual ~LSSAllPowerImportance() { }
 	// Note: results are added to L
-	virtual u_int SampleLights(const Scene &scene, const Sample &sample,
-		const u_int shadowRayCount, const Point &p, const Normal &n,
-		const Vector &wo, BSDF *bsdf, const float *sampleData,
-		const SWCSpectrum &scale, vector<SWCSpectrum> &L) const;
 	virtual const Light *SampleLight(const Scene &scene, u_int index,
 		float *u, float *pdf) const;
 	virtual float Pdf(const Scene &scene, const Light *light) const;

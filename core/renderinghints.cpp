@@ -107,52 +107,6 @@ LightsSamplingStrategy *LightsSamplingStrategy::Create(const ParamSet &params)
 // Light Sampling Strategies: LightStrategyAllUniform
 //******************************************************************************
 
-void LSSAllUniform::RequestSamples(const Scene &scene, vector<u_int> &structure) const
-{
-	structure.push_back(2);	// light position sample
-	structure.push_back(1);	// light number/portal sample
-	structure.push_back(2);	// bsdf direction sample for light
-	structure.push_back(1);	// bsdf component sample for light
-}
-
-u_int LSSAllUniform::SampleLights(const Scene &scene, const Sample &sample,
-	const u_int shadowRayCount, const Point &p, const Normal &n,
-	const Vector &wo, BSDF *bsdf, const float *sampleData,
-	const SWCSpectrum &scale, vector<SWCSpectrum> &L) const
-{
-	// Sample all lights in the scene
-	const u_int nLights = scene.lights.size();
-	const SWCSpectrum newScale = scale / shadowRayCount;
-	const u_int sampleCount = RequestSamplesCount(scene);
-	u_int nContribs = 0;
-
-	// Using one sample for all lights
-	SWCSpectrum Ll;
-
-	for (u_int j = 0; j < nLights; ++j) {
-		const Light &light(*(scene.lights[j]));
-
-		for (u_int i = 0; i < shadowRayCount; ++i) {
-			const u_int offset = i * sampleCount;
-			const float *lightSample = sampleData + offset;
-			const float *lightNum = sampleData + offset + 2;
-			const float *bsdfSample = sampleData + offset + 3;
-			const float *bsdfComponent =  sampleData + offset + 5;
-
-			Ll = EstimateDirect(scene, light, sample, p, n, wo,
-				bsdf, lightSample[0], lightSample[1], *lightNum,
-				bsdfSample[0], bsdfSample[1], *bsdfComponent);
-
-			if (!Ll.Black()) {
-				L[light.group] += Ll * newScale;
-				++nContribs;
-			}
-		}
-	}
-
-	return nContribs;
-}
-
 const Light *LSSAllUniform::SampleLight(const Scene &scene, u_int index,
 	float *u, float *pdf) const
 {
@@ -175,48 +129,6 @@ u_int LSSAllUniform::GetSamplingLimit(const Scene &scene) const
 //******************************************************************************
 // Light Sampling Strategies: LightStrategyOneUniform
 //******************************************************************************
-
-void LSSOneUniform::RequestSamples(const Scene &scene, vector<u_int> &structure) const
-{
-	structure.push_back(2);	// light position sample
-	structure.push_back(1);	// light number/portal sample
-	structure.push_back(2);	// bsdf direction sample for light
-	structure.push_back(1);	// bsdf component sample for light
-}
-
-u_int LSSOneUniform::SampleLights(const Scene &scene, const Sample &sample,
-	const u_int shadowRayCount, const Point &p, const Normal &n,
-	const Vector &wo, BSDF *bsdf, const float *sampleData,
-	const SWCSpectrum &scale, vector<SWCSpectrum> &L) const
-{
-	// Randomly choose a single light to sample
-	const u_int nLights = scene.lights.size();
-	const SWCSpectrum newScale = static_cast<float>(nLights) * scale / shadowRayCount;
-	const u_int sampleCount = RequestSamplesCount(scene);
-	u_int nContribs = 0;
-	for (u_int i = 0; i < shadowRayCount; ++i) {
-		const u_int offset = i * sampleCount;
-		const float *lightSample = sampleData + offset;
-		const float *lightNum = sampleData + offset + 2;
-		const float *bsdfSample = sampleData + offset + 3;
-		const float *bsdfComponent =  sampleData + offset + 5;
-
-		float ls3 = *lightNum * nLights;
-		const u_int lightNumber = min(Floor2UInt(ls3), nLights - 1);
-		ls3 -= lightNumber;
-		const Light &light(*(scene.lights[lightNumber]));
-		SWCSpectrum Ll(EstimateDirect(scene, light, sample,
-			p, n, wo, bsdf, lightSample[0], lightSample[1], ls3,
-			bsdfSample[0], bsdfSample[1], *bsdfComponent));
-
-		if (!Ll.Black()) {
-			L[light.group] += Ll * newScale;
-			++nContribs;
-		}
-	}
-
-	return nContribs;
-}
 
 const Light *LSSOneUniform::SampleLight(const Scene &scene, u_int index,
 	float *u, float *pdf) const
@@ -271,46 +183,6 @@ void LSSOneImportance::Init(const Scene &scene) {
 	delete[] lightImportance;
 }
 
-void LSSOneImportance::RequestSamples(const Scene &scene, vector<u_int> &structure) const {
-	structure.push_back(2);	// light position sample
-	structure.push_back(1);	// light number/portal sample
-	structure.push_back(2);	// bsdf direction sample for light
-	structure.push_back(1);	// bsdf component sample for light
-}
-
-u_int LSSOneImportance::SampleLights(const Scene &scene, const Sample &sample,
-	const u_int shadowRayCount, const Point &p, const Normal &n,
-	const Vector &wo, BSDF *bsdf, const float *sampleData,
-	const SWCSpectrum &scale, vector<SWCSpectrum> &L) const {
-	// Choose a single light to sample according the importance
-	const SWCSpectrum newScale = scale / shadowRayCount;
-	const u_int sampleCount = RequestSamplesCount(scene);
-	u_int nContribs = 0;
-	for (u_int i = 0; i < shadowRayCount; ++i) {
-		const u_int offset = i * sampleCount;
-		const float *lightSample = &sampleData[offset];
-		const float *lightNum = &sampleData[offset + 2];
-		const float *bsdfSample = &sampleData[offset + 3];
-		const float *bsdfComponent =  &sampleData[offset + 5];
-
-		float lightPdf, ls3;
-		const u_int lightNumber = lightDistribution->SampleDiscrete(*lightNum, &lightPdf, &ls3);
-		const Light &light(*(scene.lights[lightNumber]));
-
-		SWCSpectrum Ll = EstimateDirect(scene, light, sample,
-			p, n, wo, bsdf, lightSample[0], lightSample[1], ls3,
-			bsdfSample[0], bsdfSample[1], *bsdfComponent);
-
-		if (!Ll.Black()) {
-			Ll *=  newScale / lightPdf;
-			L[light.group] += Ll;
-			++nContribs;
-		}
-	}
-
-	return nContribs;
-}
-
 const Light *LSSOneImportance::SampleLight(const Scene &scene, u_int index,
 	float *u, float *pdf) const
 {
@@ -350,65 +222,6 @@ void LSSOnePowerImportance::Init(const Scene &scene) {
 //******************************************************************************
 // Light Sampling Strategies: LightStrategyAllPowerImportance
 //******************************************************************************
-
-u_int LSSAllPowerImportance::SampleLights(const Scene &scene,
-	const Sample &sample, const u_int shadowRayCount,
-	const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
-	const float *sampleData, const SWCSpectrum &scale,
-	vector<SWCSpectrum> &L) const {
-	// Choose a single light to sample according the importance
-	u_int nLights = scene.lights.size();
-	const u_int sampleCount = RequestSamplesCount(scene);
-	u_int nContribs = 0;
-	u_int shadowBase = 0;
-	const SWCSpectrum newScale = scale / shadowRayCount;
-	if (shadowRayCount >= nLights) {
-		// We have enough shadow ray, trace at least one ray for each light source
-		for (u_int i = 0; i < nLights; ++i) {
-			const u_int offset = i * sampleCount;
-			const float *lightSample = &sampleData[offset];
-			const float *lightNum = &sampleData[offset + 2];
-			const float *bsdfSample = &sampleData[offset + 3];
-			const float *bsdfComponent =  &sampleData[offset + 5];
-
-			const Light &light(*(scene.lights[i]));
-			SWCSpectrum Ll = EstimateDirect(scene, light, sample,
-				p, n, wo, bsdf, lightSample[0], lightSample[1],
-				*lightNum, bsdfSample[0], bsdfSample[1],
-				*bsdfComponent);
-
-			if (!Ll.Black()) {
-				L[light.group] += Ll * newScale * nLights;
-				++nContribs;
-			}
-		}
-		shadowBase = nLights;
-	}
-	// Use lightCDF for any left shadow ray
-	for (u_int i = shadowBase; i < shadowRayCount; ++i) {
-		const u_int offset = i * sampleCount;
-		const float *lightSample = &sampleData[offset];
-		const float *lightNum = &sampleData[offset + 2];
-		const float *bsdfSample = &sampleData[offset + 3];
-		const float *bsdfComponent =  &sampleData[offset + 5];
-
-		float lightPdf, ls3;
-		const u_int lightNumber = lightDistribution->SampleDiscrete(*lightNum, &lightPdf, &ls3);
-		const Light &light(*(scene.lights[lightNumber]));
-
-		SWCSpectrum Ll = EstimateDirect(scene, light, sample,
-			p, n, wo, bsdf, lightSample[0], lightSample[1], ls3,
-			bsdfSample[0], bsdfSample[1], *bsdfComponent);
-
-		if (!Ll.Black()) {
-			Ll *=  newScale / lightPdf;
-			L[light.group] += Ll;
-			++nContribs;
-		}
-	}
-
-	return nContribs;
-}
 
 const Light *LSSAllPowerImportance::SampleLight(const Scene &scene, u_int index,
 	float *u, float *pdf) const
@@ -528,9 +341,16 @@ void SurfaceIntegratorRenderingHints::RequestSamples(Sample *sample, const Scene
 {
 	if (lsStrategy != NULL) {
 		vector<u_int> structure(0);
-		// Request samples for each shadow ray we have to trace
-		for (u_int i = 0; i <  shadowRayCount; ++i)
-			lsStrategy->RequestSamples(scene, structure);
+		// Request samples for each shadow ray we have to trac
+		const u_int samplingCount = lsStrategy->GetSamplingLimit(scene);
+		for (u_int i = 0; i < samplingCount; ++i) {
+			structure.push_back(1); // light source sample
+			for (u_int j = 0; j < shadowRayCount; ++j) {
+				structure.push_back(2); // light direction sample
+				structure.push_back(2); // BSDF direction sample
+				structure.push_back(1); // BSDF component sample
+			}
+		}
 		lightSampleOffset = sample->AddxD(structure, maxDepth);
 	}
 }
@@ -547,29 +367,28 @@ u_int SurfaceIntegratorRenderingHints::SampleLights(const Scene &scene,
 	const float *data = scene.sampler->GetLazyValues(sample,
 		lightSampleOffset, depth);
 	u_int nContribs = 0;
-	const u_int sampleCount = lsStrategy->RequestSamplesCount(scene);
-	for (u_int i = 0, j = 0;; ++i, ++j) {
-		if (j >= shadowRayCount)
-			j = 0;
-		const u_int offset = j * sampleCount;
+	const u_int sampleCount = lsStrategy->GetSamplingLimit(scene);
+	for (u_int i = 0; i < sampleCount; ++i) {
+		const u_int offset = i * (1 + shadowRayCount * 5);
 		float lc = data[offset + 2];
 		float pdf;
 		const Light *light = lsStrategy->SampleLight(scene, i, &lc, &pdf);
 		if (!light)
 			break;
-		const SWCSpectrum Ll(scale * EstimateDirect(scene, *light, sample,
-			p, n, wo, bsdf, data[offset + 0], data[offset + 1], lc,
-			data[offset + 3], data[offset + 4], data[offset + 5]));
+		for (u_int j = 0; j < shadowRayCount; ++j) {
+			const u_int offset2 = offset + j * 5;
+			const SWCSpectrum Ll(scale *
+				EstimateDirect(scene, *light, sample,
+				p, n, wo, bsdf, data[offset2 + 0],
+				data[offset2 + 1], lc, data[offset2 + 2],
+				data[offset2 + 3], data[offset2 + 4]));
 
-		if (!Ll.Black()) {
-			L[light->group] += Ll / pdf;
-			++nContribs;
+			if (!Ll.Black()) {
+				L[light->group] += Ll / pdf;
+				++nContribs;
+			}
 		}
 	}
-/*	const u_int nContribs = lsStrategy->SampleLights(scene, sample,
-		shadowRayCount, p, n, wo, bsdf,
-		scene.sampler->GetLazyValues(sample, lightSampleOffset,
-		depth), scale, L);*/
 
 	if (V) {
 		for (u_int i = 0; i < scene.lightGroups.size(); ++i)
