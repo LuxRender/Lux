@@ -97,30 +97,30 @@ private:
 	/**
 	 * Reduce the magnitude on the input number by dividing into kilo- or Mega- or Giga- units
 	 */
-	inline float magnitude_reduce(const float number) {
-		if (number < 1e3f)
+	inline double magnitude_reduce(const double number) {
+		if (number < 1e3)
 			return number;
 
-		if ( number < 1e6f)
-			return number / 1e3f;
+		if ( number < 1e6)
+			return number / 1e3;
 
-		if ( number < 1e9f)
-			return number / 1e6f;
+		if ( number < 1e9)
+			return number / 1e6;
 
-		return number / 1e9f;
+		return number / 1e9;
 	}
 
 	/**
 	 * Return the magnitude prefix char for kilo- or Mega- or Giga-
 	 */
-	inline const char* magnitude_prefix(float number) {
-		if (number < 1e3f)
+	inline const char* magnitude_prefix(double number) {
+		if (number < 1e3)
 			return "";
 
-		if ( number < 1e6f)
+		if ( number < 1e6)
 			return "k";
 
-		if ( number < 1e9f)
+		if ( number < 1e9)
 			return "M";
 
 		return "G";

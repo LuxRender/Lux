@@ -74,8 +74,8 @@ void StatsData::update(const bool add_total)
 		int px = 0;
 		int haltspp = -1;
 		int halttime = -1;
-		double localsamples = 0;
-		double netsamples = 0;
+		double localsamples = 0.0;
+		double netsamples = 0.0;
 
 		Queryable *film_registry = ctx->registry["film"];
 		if (film_registry)
@@ -94,15 +94,15 @@ void StatsData::update(const bool add_total)
 		}
 
 		int threadCount = ctx->Statistics("threadCount");	// %2
-		float eff = ctx->Statistics("efficiency");			// %7
+		double eff = ctx->Statistics("efficiency");			// %7
 
 		std::ostringstream os;
 		os << template_string_local;
 
 		double secelapsed = ctx->Statistics("secElapsed");	// %1
-		float local_cps = 0;								// %20
-		float local_spp = 0;								// %3, %4
-		float local_sps = 0;								// %5, %6
+		double local_cps = 0;								// %20
+		double local_spp = 0;								// %3, %4
+		double local_sps = 0;								// %5, %6
 		if (secelapsed > 0)
 		{
 			local_spp = localsamples / px;
@@ -111,18 +111,18 @@ void StatsData::update(const bool add_total)
 		}
 
 		// This is so that completion_samples can be calculated if not networking or add_total==false
-		float total_cps = local_cps;						// %24
-		float total_spp = local_spp;						// %14, %15
-		float total_sps = local_sps;						// %16, %17
+		double total_cps = local_cps;						// %24
+		double total_spp = local_spp;						// %14, %15
+		double total_sps = local_sps;						// %16, %17
 
 		int serverCount = ctx->GetServerCount();			// %8
 		bool network_predicted = false;						// %9
-		float network_cps = 0;								// %22
-		float network_spp = 0;								// %10, %11
-		float network_sps = 0;								// %12, %13
+		double network_cps = 0.0;							// %22
+		double network_spp = 0.0;							// %10, %11
+		double network_sps = 0.0;							// %12, %13
 		if (serverCount > 0)
 		{
-			if (netsamples > 0 && secelapsed > 0)
+			if (netsamples > 0.0 && secelapsed > 0.0)
 			{
 				os << template_string_network;
 
@@ -133,7 +133,7 @@ void StatsData::update(const bool add_total)
 									previousNetworkSamples;
 					network_spp = netsamples / px;
 					network_sps = previousNetworkSamplesSec;
-					network_cps = network_sps * (eff/100.f);
+					network_cps = network_sps * (eff / 100.0);
 
 					network_predicted = true;
 				}
@@ -142,7 +142,7 @@ void StatsData::update(const bool add_total)
 					// Use real data
 					network_spp = netsamples / px;
 					network_sps = (netsamples - previousNetworkSamples) / (secelapsed - lastUpdateSecElapsed);
-					network_cps = network_sps * (eff/100.f);
+					network_cps = network_sps * (eff / 100.0);
 
 					previousNetworkSamples = netsamples;
 					previousNetworkSamplesSec = network_sps;
@@ -154,42 +154,39 @@ void StatsData::update(const bool add_total)
 				os << template_string_network_waiting;
 			}
 		}
-		if (add_total && netsamples > 0)
+		if (add_total && netsamples > 0.0)
 		{
 			os << template_string_total;
 
 			total_spp = (localsamples + netsamples) / px;
 			total_sps = (localsamples + netsamples) / secelapsed;
-			total_cps = total_sps * (eff/100.f);
+			total_cps = total_sps * (eff / 100.0);
 		}
 
 
-		float completion_samples = 0.f;						// %18
+		double completion_samples = 0.0;					// %18
 		if (haltspp > 0)
 		{
-			completion_samples = 100.f * (total_spp / haltspp);
-			if (completion_samples > 100.f)
-				completion_samples = 100.f; // keep at 100%
+			completion_samples = min(100.0, 100.0 * (total_spp / haltspp));
 		}
 
-		float completion_time = 0.f;						// %19
+		double completion_time = 0.0;						// %19
 		if (halttime > 0)
 		{
-			completion_time = 100.f * (secelapsed / halttime);
-			if (completion_time > 100.f)
-				completion_time = 100.f; // keep at 100%
+			completion_time = min(100.0, 100.0 * (secelapsed / halttime));
 		}
 
 		// calculate the time remaining in seconds
-		int seconds_remaining = 0;						// %27
+		double seconds_remaining = 0.0;						// %27
 		if (haltspp > 0)
 		{
-			if (((localsamples + netsamples) / px) > 1000) {
+			if (((localsamples + netsamples) / px) > 1000.0) {
 				seconds_remaining = (haltspp - ((localsamples + netsamples) / px)) / (((localsamples + netsamples) / px) / secelapsed);
 			} else {
 				seconds_remaining = (haltspp - total_spp) / (total_spp / secelapsed);
 			}
 		}
+		seconds_remaining = max(0.0, seconds_remaining);
 
 		// Show either one of completion stats, depending on which is greatest
 		static bool timebased; // determine type once at start and keep it
@@ -201,13 +198,13 @@ void StatsData::update(const bool add_total)
 		{
 			timebased = true;
 		}
-		if (completion_samples > 0.f && timebased == false)
+		if (completion_samples > 0.0 && timebased == false)
 		{
 			percentComplete = completion_samples;
 			os << template_string_haltspp;
 			os << template_string_time_remaining;
 		}
-		else if (completion_time > 0.f && timebased == true)
+		else if (completion_time > 0.0 && timebased == true)
 		{
 			percentComplete = completion_time;
 			os << template_string_halttime;
@@ -225,8 +222,10 @@ void StatsData::update(const bool add_total)
 		boost::format stats_formatter = boost::format(os.str().c_str());
 		stats_formatter.exceptions( boost::io::all_error_bits ^(boost::io::too_many_args_bit | boost::io::too_few_args_bit) ); // Ignore extra or missing args
 
+		typedef boost::posix_time::time_duration::sec_type sec_type;
+
 		formattedStatsString = str(stats_formatter
-			/*  %1 */ % boost::posix_time::time_duration(0, 0, secelapsed, 0)
+			/*  %1 */ % boost::posix_time::time_duration(0, 0, static_cast<sec_type>(secelapsed), 0)
 			/*  %2 */ % threadCount
 			/*  %3 */ % magnitude_reduce(local_spp)
 			/*  %4 */ % magnitude_prefix(local_spp)
@@ -252,7 +251,7 @@ void StatsData::update(const bool add_total)
 			/* %24 */ % magnitude_reduce(total_cps)
 			/* %25 */ % magnitude_prefix(total_cps)
 			/* %26 */ % rendererStats
-			/* %27 */ % boost::posix_time::time_duration(0, 0, seconds_remaining, 0)
+			/* %27 */ % boost::posix_time::time_duration(0, 0, static_cast<sec_type>(seconds_remaining), 0)
 		);
 
 	} catch (std::runtime_error e) {
