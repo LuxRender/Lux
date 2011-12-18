@@ -86,6 +86,11 @@ void ContributionPool::Next(ContributionBuffer::Buffer **b, float sc,
 {
 	fast_mutex::scoped_lock poolAction(poolMutex);
 
+	// other thread swapped the buffer while current thread
+	// waited for the lock, all is good
+	if (!((*b)->Filled()))
+		return;
+
 	sampleCount += sc;
 	CFull[bufferGroup][buffer].push_back(*b);
 

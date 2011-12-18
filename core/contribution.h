@@ -27,8 +27,12 @@
 #include "memory.h"
 #include "color.h"
 #include "fastmutex.h"
+#include "osfunc.h"
 
 #include <boost/thread/mutex.hpp>
+#include <boost/cstdint.hpp>
+
+using boost::uint16_t;
 
 namespace lux
 {
@@ -49,12 +53,12 @@ public:
 	Contribution(float x=0.f, float y=0.f, const XYZColor &c=0.f, float a=0.f, float zd=0.f,
 		float v=0.f, u_int b=0, u_int g=0) :
 		imageX(x), imageY(y), color(c), alpha(a), zdepth(zd), variance(v),
-		buffer(b), bufferGroup(g) { }
+		buffer(static_cast<uint16_t>(b)), bufferGroup(static_cast<uint16_t>(g)) { }
 
 	float imageX, imageY;
 	XYZColor color;
 	float alpha, zdepth, variance;
-	u_int buffer, bufferGroup;
+	uint16_t buffer, bufferGroup;
 };
 
 class ContributionBuffer {
@@ -70,11 +74,20 @@ class ContributionBuffer {
 		}
 
 		bool Add(const Contribution &c, float weight=1.f) {
-			contribs[pos] = c;
-			contribs[pos].variance = weight;
+			u_int i = osAtomicInc(&pos);
 
-			++pos;
-			return pos < CONTRIB_BUF_SIZE;
+			// ensure we stay within bounds
+			if (i+1 >= CONTRIB_BUF_SIZE)
+				return false;
+
+			contribs[i] = c;
+			contribs[i].variance = weight;
+
+			return true;
+		}
+
+		bool Filled() const {
+			return pos > CONTRIB_BUF_SIZE/2;
 		}
 
 		void Splat(Film *film);
@@ -136,6 +149,7 @@ inline void ContributionBuffer::Add(const Contribution &c, float weight)
 	Buffer **buf = &(buffers[c.bufferGroup][c.buffer]);
 	if (!(*buf)->Add(c, weight)) {
 		pool->Next(buf, sampleCount, c.bufferGroup, c.buffer);
+		(*buf)->Add(c, weight);
 		sampleCount = 0.f;
 	}
 }

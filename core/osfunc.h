@@ -114,8 +114,12 @@ inline void osAtomicAdd(unsigned int *val, const unsigned int delta) {
 #endif
 }
 
-inline void osAtomicInc(unsigned int *val) {
-	boost::interprocess::detail::atomic_inc32(((boost::uint32_t *)val));
+/**
+ * Atomically increments a variable
+ * @return Previous value, before increment
+ */
+inline unsigned int osAtomicInc(unsigned int *val) {
+	return boost::interprocess::detail::atomic_inc32(((boost::uint32_t *)val));
 }
 
 }//namespace lux
