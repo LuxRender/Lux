@@ -94,57 +94,57 @@ void ContributionPool::Next(ContributionBuffer::Buffer **b, float sc,
 	sampleCount += sc;
 	CFull[bufferGroup][buffer].push_back(*b);
 
-	// If there are no free buffers, perform splat
-	if (CFree.empty()) {
-		// Since we're still holding the pool lock, 
-		// no other thread will perform the above test
-		// until CFree is filled with free buffers again.
-		// This prevents a thread from trying to splat
-		// prematurely.
-		boost::mutex::scoped_lock splattingAction(splattingMutex);
-
-		// CSplat contains available buffers
-		// from last splatting.
-		// CFull contains filled buffers ready for splatting.
-		// CFree is empty.
-		CSplat.swap(CFree);
-		for (u_int i = 0; i < CFull.size(); ++i) {
-			for (u_int j = 0; j < CFull[i].size(); ++j) {
-				CSplat.insert(CSplat.end(),
-					CFull[i][j].begin(), CFull[i][j].end());
-				CFull[i][j].clear();
-			}
-		}
-		// CSplat now contains filled buffers,
-		// CFull is empty and
-		// CFree contains available buffers.
-
-		// Dade - Bug 582 fix: allocate a new buffer if CFree is empty.
-		if (CFree.empty())
-			*b = new ContributionBuffer::Buffer();
-		else {
-			// Store one free buffer for later, this way
-			// we don't have to lock the pool lock again.
-			*b = CFree.back();
-			CFree.pop_back();
-		}
-
-		const float count = sampleCount;
-		sampleCount = 0.f;
-
-		// release the pool lock
-		poolAction.unlock();
-
-		film->AddSampleCount(count);
-		for(u_int i = 0; i < CSplat.size(); ++i)
-			CSplat[i]->Splat(film);
-
-		film->CheckWriteOuputInterval();
+	if (!CFree.empty()) {
+		*b = CFree.back();
+		CFree.pop_back();
 		return;
 	}
 
-	*b = CFree.back();
-	CFree.pop_back();
+	// If there are no free buffers, perform splat
+	// Since we're still holding the pool lock, 
+	// no other thread will perform the above test
+	// until CFree is filled with free buffers again.
+	// This prevents a thread from trying to splat
+	// prematurely.
+	boost::mutex::scoped_lock splattingAction(splattingMutex);
+
+	// CSplat contains available buffers
+	// from last splatting.
+	// CFull contains filled buffers ready for splatting.
+	// CFree is empty.
+	CSplat.swap(CFree);
+	for (u_int i = 0; i < CFull.size(); ++i) {
+		for (u_int j = 0; j < CFull[i].size(); ++j) {
+			CSplat.insert(CSplat.end(),
+				CFull[i][j].begin(), CFull[i][j].end());
+			CFull[i][j].clear();
+		}
+	}
+	// CSplat now contains filled buffers,
+	// CFull is empty and
+	// CFree contains available buffers.
+
+	// Dade - Bug 582 fix: allocate a new buffer if CFree is empty.
+	if (CFree.empty())
+		*b = new ContributionBuffer::Buffer();
+	else {
+		// Store one free buffer for later, this way
+		// we don't have to lock the pool lock again.
+		*b = CFree.back();
+		CFree.pop_back();
+	}
+
+	const float count = sampleCount;
+	sampleCount = 0.f;
+
+	// release the pool lock
+	poolAction.unlock();
+
+	film->AddSampleCount(count);
+	for(u_int i = 0; i < CSplat.size(); ++i)
+		CSplat[i]->Splat(film);
+
+	film->CheckWriteOuputInterval();
 }
 
 void ContributionPool::Flush()
