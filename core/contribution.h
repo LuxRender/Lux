@@ -77,7 +77,7 @@ class ContributionBuffer {
 			u_int i = osAtomicInc(&pos);
 
 			// ensure we stay within bounds
-			if (i+1 >= CONTRIB_BUF_SIZE)
+			if (i+1 > CONTRIB_BUF_SIZE)
 				return false;
 
 			contribs[i] = c;
