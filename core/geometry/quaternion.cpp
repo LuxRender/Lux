@@ -34,7 +34,7 @@ void orthoNormalize(float m[4][4])
 {
 	float len, temp[3][3];
 	for (u_int i = 0; i < 3; ++i) {
-    		for (u_int j = 0; j < 3; ++j)
+		for (u_int j = 0; j < 3; ++j)
 			temp[i][j] = m[i][j];
 	}
 
@@ -43,30 +43,30 @@ void orthoNormalize(float m[4][4])
 	len = (len == 0.f) ? 1.f : 1.f / len;
 	temp[0][0] *= len; temp[0][1] *= len; temp[0][2] *= len;
 
-  	// z = x cross y
-  	temp[2][0] = (temp[0][1] * temp[1][2] - temp[0][2] * temp[1][1]);
-  	temp[2][1] = (temp[0][2] * temp[1][0] - temp[0][0] * temp[1][2]);
-  	temp[2][2] = (temp[0][0] * temp[1][1] - temp[0][1] * temp[1][0]);
+	// z = x cross y
+	temp[2][0] = (temp[0][1] * temp[1][2] - temp[0][2] * temp[1][1]);
+	temp[2][1] = (temp[0][2] * temp[1][0] - temp[0][0] * temp[1][2]);
+	temp[2][2] = (temp[0][0] * temp[1][1] - temp[0][1] * temp[1][0]);
 
-  	// normalize z
-  	len = sqrtf(temp[2][0] * temp[2][0] + temp[2][1] * temp[2][1] + temp[2][2] * temp[2][2]);
-  	len = (len == 0.f) ? 1.f : 1.f / len;
-  	temp[2][0] *= len; temp[2][1] *= len; temp[2][2] *= len;
+	// normalize z
+	len = sqrtf(temp[2][0] * temp[2][0] + temp[2][1] * temp[2][1] + temp[2][2] * temp[2][2]);
+	len = (len == 0.f) ? 1.f : 1.f / len;
+	temp[2][0] *= len; temp[2][1] *= len; temp[2][2] *= len;
 
 	// y = z cross x
 	temp[1][0] = (temp[2][1] * temp[0][2] - temp[2][2] * temp[0][1]);
-  	temp[1][1] = (temp[2][2] * temp[0][0] - temp[2][0] * temp[0][2]);
-  	temp[1][2] = (temp[2][0] * temp[0][1] - temp[2][1] * temp[0][0]);
+	temp[1][1] = (temp[2][2] * temp[0][0] - temp[2][0] * temp[0][2]);
+	temp[1][2] = (temp[2][0] * temp[0][1] - temp[2][1] * temp[0][0]);
 
- 	// normalize y
- 	len = sqrtf(temp[1][0] * temp[1][0] + temp[1][1] * temp[1][1] + temp[1][2] * temp[1][2]);
- 	len = (len == 0.f) ? 1.f : 1.f / len;
-  	temp[1][0] *= len; temp[1][1] *= len; temp[1][2] *= len;
+	// normalize y
+	len = sqrtf(temp[1][0] * temp[1][0] + temp[1][1] * temp[1][1] + temp[1][2] * temp[1][2]);
+	len = (len == 0.f) ? 1.f : 1.f / len;
+	temp[1][0] *= len; temp[1][1] *= len; temp[1][2] *= len;
 
-  	// update matrix
-  	m[0][0] = temp[0][0]; m[0][1] = temp[0][1]; m[0][2] = temp[0][2];
-  	m[1][0] = temp[1][0]; m[1][1] = temp[1][1]; m[1][2] = temp[1][2];
-  	m[2][0] = temp[2][0]; m[2][1] = temp[2][1]; m[2][2] = temp[2][2];
+	// update matrix
+	m[0][0] = temp[0][0]; m[0][1] = temp[0][1]; m[0][2] = temp[0][2];
+	m[1][0] = temp[1][0]; m[1][1] = temp[1][1]; m[1][2] = temp[1][2];
+	m[2][0] = temp[2][0]; m[2][1] = temp[2][1]; m[2][2] = temp[2][2];
 }
 
 // construct a unit quaternion from a rotation matrix
@@ -145,8 +145,7 @@ Quaternion Slerp(float t, const Quaternion &q1, const Quaternion &q2) {
 	cos_phi *= sign;
 
 	float f1, f2;
-	if (1.f - cos_phi > 1e-6f) {
-	
+	if (1.f - cos_phi > 1e-6f) {	
 		float phi = acosf(cos_phi);
 		float sin_phi = sinf(phi);	
 		f1 = sinf((1.f - t) * phi) / sin_phi;
