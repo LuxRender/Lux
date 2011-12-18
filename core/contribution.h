@@ -39,7 +39,7 @@ namespace lux
 
 // Size of a contribution buffer
 // 4096 seems best.
-#define CONTRIB_BUF_SIZE 4096
+#define CONTRIB_BUF_SIZE 4096u
 
 // Minimum number of buffers to keep alive/reuse
 // In practice twice this amount stays allocated

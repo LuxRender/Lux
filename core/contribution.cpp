@@ -30,7 +30,8 @@ namespace lux
 
 void ContributionBuffer::Buffer::Splat(Film *film)
 {
-	for (u_int i = 0; i < pos; ++i)
+	const u_int num_contribs = min(pos, CONTRIB_BUF_SIZE);
+	for (u_int i = 0; i < num_contribs; ++i)
 		film->AddSample(&contribs[i]);
 	pos = 0;
 }
