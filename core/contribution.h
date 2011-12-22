@@ -74,7 +74,7 @@ class ContributionBuffer {
 		}
 
 		bool Add(const Contribution &c, float weight=1.f) {
-			u_int i = osAtomicInc(&pos);
+			const u_int i = osAtomicInc(&pos);
 
 			// ensure we stay within bounds
 			if (i+1 > CONTRIB_BUF_SIZE)
