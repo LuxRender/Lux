@@ -51,7 +51,7 @@ void PhotonSampler::AddFluxToHitPoint(const Sample *sample, const u_int lightGro
 {
 	// TODO: it should be more something like:
 	//XYZColor flux = XYZColor(sw, photonFlux * f) * XYZColor(hp->sample->swl, hp->eyeThroughput);
-	osAtomicInc(&hp->accumPhotonCount);
+	hp->IncPhoton();
 
 	sample->AddContribution(hp->imageX, hp->imageY,
 		flux, hp->eyePass.alpha, hp->eyePass.distance,

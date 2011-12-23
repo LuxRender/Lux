@@ -78,8 +78,7 @@ HitPoints::HitPoints(SPPMRenderer *engine, RandomGenerator *rng)  {
 	for (u_int i = 0; i < (*hitPoints).size(); ++i) {
 		HitPoint *hp = &(*hitPoints)[i];
 
-		hp->photonCount = 0;
-		hp->accumPhotonCount = 0;
+		hp->InitStats();
 	}
 }
 
@@ -98,7 +97,7 @@ const double HitPoints::GetPhotonHitEfficency() {
 		if (hp->IsSurface()) {
 			++surfaceHitPointsCount;
 
-			if (hp->accumPhotonCount > 0)
+			if (hp->GetPhotonCount() > 0)
 				++hitPointsUpdatedCount;
 		}
 	}
@@ -167,42 +166,7 @@ void HitPoints::AccumulateFlux(const u_int index, const u_int count) {
 		HitPoint *hp = &(*hitPoints)[i];
 
 		if(hp->IsSurface()) {
-			if (hp->accumPhotonCount > 0) {
-				/*
-				TODO: startK disable because incorrect
-				u_int k = renderer->sppmi->photonStartK;
-				if(k > 0 && hp->photonCount == 0)
-				{
-					// This heuristic is triggered by hitpoint on the first pass
-					// which gather photons.
-
-					// If the pass gather more than k photons, and with the
-					// assumption that photons are uniformly spread on the
-					// hitpoint, we reduce the search radius.
-
-					if(hp->accumPhotonCount > k)
-					{
-						// We now suppose that we only gather k photons, and
-						// reduce the radius accordingly.
-						// Note: the flux is already normalised, so it does
-						// not depends of the radius, no need to change it.
-						hp->accumPhotonRadius2 *= ((float) k) / ((float) hp->accumPhotonCount);
-						hp->accumPhotonCount = k;
-					}
-				}
-				*/
-				const unsigned long long pcount = hp->photonCount + hp->accumPhotonCount;
-
-				// Compute g and do radius reduction
-				const double alpha = renderer->sppmi->photonAlpha;
-				const float g = alpha * pcount / (hp->photonCount * alpha + hp->accumPhotonCount);
-
-				// Radius reduction
-				hp->accumPhotonRadius2 *= g;
-
-				hp->photonCount = pcount;
-				hp->accumPhotonCount = 0;
-			}
+			hp->DoRadiusReduction(renderer->sppmi->photonAlpha);
 		} else
 			assert(!hp->IsSurface());
 	}
@@ -482,13 +446,14 @@ void HitPoints::UpdatePointsInformation() {
 	HitPoint *hp = &(*hitPoints)[0];
 
 	maxr2 = minr2 = meanr2 = hp->accumPhotonRadius2;
-	minp = maxp = meanp = hp->photonCount;
+	minp = maxp = meanp = hp->GetPhotonCount();
 
 	for (u_int i = 1; i < (*hitPoints).size(); ++i) {
 		hp = &(*hitPoints)[i];
 
 		if (hp->IsSurface()) {
-			if(hp->photonCount == 0)
+			u_int pc = hp->GetPhotonCount();
+			if(pc == 0)
 				++zeroHits;
 
 			bbox = Union(bbox, hp->GetPosition());
@@ -497,9 +462,10 @@ void HitPoints::UpdatePointsInformation() {
 			minr2 = min<float>(minr2, hp->accumPhotonRadius2);
 			meanr2 += hp->accumPhotonRadius2;
 
-			maxp = max<float>(maxp, hp->photonCount);
-			minp = min<float>(minp, hp->photonCount);
-			meanp += hp->photonCount;
+
+			maxp = max<float>(maxp, pc);
+			minp = min<float>(minp, pc);
+			meanp += pc;
 
 			++surfaceHits;
 		}
