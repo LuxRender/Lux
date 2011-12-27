@@ -25,14 +25,15 @@
 #include "contribution.h"
 #include "film.h"
 
+#include <boost/thread/locks.hpp>
+
 namespace lux
 {
 
-void ContributionBuffer::Buffer::Splat(Film *film)
+void ContributionBuffer::Buffer::Splat(Film *film, u_int tileIndex)
 {
 	const u_int num_contribs = min(pos, CONTRIB_BUF_SIZE);
-	for (u_int i = 0; i < num_contribs; ++i)
-		film->AddSample(&contribs[i]);
+	film->AddTileSamples(contribs, num_contribs, tileIndex);
 	pos = 0;
 }
 
@@ -56,15 +57,20 @@ ContributionBuffer::~ContributionBuffer()
 
 ContributionPool::ContributionPool(Film *f) : sampleCount(0.f), film(f)
 {
+	CFull.resize(film->GetTileCount());
+	for (u_int i = 0; i < CFull.size(); ++i)
+		CFull[i].resize(film->GetNumBufferGroups());
+	for (u_int i = 0; i < CFull.size(); ++i)
+		tileSplattingMutexes.push_back(new tile_mutex);
+	splattingTile.resize(CFull.size());
 	for (u_int total = 0; total < CONTRIB_BUF_KEEPALIVE; ++total) {
 		// Add free buffers to both CFree and CSplat
 		// so we can ping-pong between them.
 		CFree.push_back(new ContributionBuffer::Buffer());
-		CSplat.push_back(new ContributionBuffer::Buffer());
 	}
-	CFull.resize(film->GetNumBufferGroups());
-	for (u_int i = 0; i < CFull.size(); ++i)
-		CFull[i].resize(film->GetBufferGroup(i).buffers.size());
+}
+
+ContributionPool::~ContributionPool() {
 }
 
 void ContributionPool::End(ContributionBuffer *c)
@@ -83,80 +89,116 @@ void ContributionPool::End(ContributionBuffer *c)
 }
 
 void ContributionPool::Next(ContributionBuffer::Buffer **b, float sc,
-	u_int bufferGroup, u_int buffer)
+	u_int tileIndex, u_int bufferGroup)
 {
-	fast_mutex::scoped_lock poolAction(poolMutex);
+	fast_mutex::scoped_lock pool_lock(poolMutex);
 
 	// other thread swapped the buffer while current thread
 	// waited for the lock, all is good
 	if (!((*b)->Filled()))
 		return;
 
-	sampleCount += sc;
-	CFull[bufferGroup][buffer].push_back(*b);
+	vector<vector<ContributionBuffer::Buffer*> > &full_buffers(CFull[tileIndex]);
 
-	if (!CFree.empty()) {
-		*b = CFree.back();
-		CFree.pop_back();
-		return;
+	sampleCount += sc;
+	full_buffers[bufferGroup].push_back(*b);
+
+	// isSplattingTile is 0 if no splatting is going on
+	// roll-over just means we have to wait for the tile lock (in which case it's probably a good thing!)
+	u_int isSplattingTile = osAtomicInc(&splattingTile[tileIndex]);
+	if (isSplattingTile > 0) {
+		// Another thread is splatting this tile, so
+		// get a free buffer
+		if (!CFree.empty()) {
+			*b = CFree.back();
+			CFree.pop_back();
+			return;
+		}
+		// No free buffers, try allocating a new one
+		// but make sure we don't allocate too many new buffers
+		const u_int maxBufferMisses = CFull.size() * 4;//CONTRIB_BUF_KEEPALIVE+2;
+		u_int bufferMisses = ++splattingMisses;
+		if (bufferMisses < maxBufferMisses) {
+			*b = new ContributionBuffer::Buffer();
+			return;
+		} 
+		if (bufferMisses > 1000000) {
+			// reset to avoid overflow
+			splattingMisses = maxBufferMisses;
+		}
 	}
 
-	// If there are no free buffers, perform splat
+	// No splatting going on or we couldn't get a free buffer.
+	// Either way, perform splatting
+
+	vector<ContributionBuffer::Buffer*> splat_buffers;
+	for (u_int j = 0; j < full_buffers.size(); ++j) {
+		splat_buffers.insert(splat_buffers.end(),
+			full_buffers[j].begin(), full_buffers[j].end());
+		full_buffers[j].clear();
+	}
+	// splat_buffers contains filled buffers and
+	// CFull[tileIndex] is empty
+
 	// Since we're still holding the pool lock, 
-	// no other thread will perform the above test
+	// no other thread will fail the above test
 	// until CFree is filled with free buffers again.
 	// This prevents a thread from trying to splat
 	// prematurely.
-	boost::mutex::scoped_lock splattingAction(splattingMutex);
-
-	// CSplat contains available buffers
-	// from last splatting.
-	// CFull contains filled buffers ready for splatting.
-	// CFree is empty.
-	CSplat.swap(CFree);
-	for (u_int i = 0; i < CFull.size(); ++i) {
-		for (u_int j = 0; j < CFull[i].size(); ++j) {
-			CSplat.insert(CSplat.end(),
-				CFull[i][j].begin(), CFull[i][j].end());
-			CFull[i][j].clear();
-		}
-	}
-	// CSplat now contains filled buffers,
-	// CFull is empty and
-	// CFree contains available buffers.
-
-	// Dade - Bug 582 fix: allocate a new buffer if CFree is empty.
-	if (CFree.empty())
-		*b = new ContributionBuffer::Buffer();
-	else {
-		// Store one free buffer for later, this way
-		// we don't have to lock the pool lock again.
-		*b = CFree.back();
-		CFree.pop_back();
-	}
+	boost::mutex::scoped_lock main_splatting_lock(mainSplattingMutex);
 
 	const float count = sampleCount;
 	sampleCount = 0.f;
 
 	// release the pool lock
-	poolAction.unlock();
+	pool_lock.unlock();
+
+	// Check if it's time to write
+	// do this here so we don't have to aquire main 
+	// splatting lock again.
+	// Doing it before splatting may not be optimal 
+	// for the first minute or so but shouldn't
+	// matter much after that.
+	film->CheckWriteOuputInterval();
 
 	film->AddSampleCount(count);
-	for(u_int i = 0; i < CSplat.size(); ++i)
-		CSplat[i]->Splat(film);
 
-	film->CheckWriteOuputInterval();
+	{
+		// aquire tile splatting lock
+		tile_mutex::scoped_lock tile_splatting_lock(tileSplattingMutexes[tileIndex]);
+
+		// release main splatting lock
+		main_splatting_lock.unlock();
+
+		for(u_int i = 0; i < splat_buffers.size(); ++i)
+			splat_buffers[i]->Splat(film, tileIndex);
+
+		// indicate we're done splatting this tile
+		osAtomicWrite(&splattingTile[tileIndex], 0);
+	}
+
+	// get buffer from the now free buffers
+	*b = splat_buffers.back();
+	splat_buffers.pop_back();
+
+	{
+		// reaquire pool lock
+		fast_mutex::scoped_lock pool_lock_end(poolMutex);
+
+		// put splatted buffers back
+		CFree.insert(CFree.end(), splat_buffers.begin(), splat_buffers.end());
+	}
 }
 
 void ContributionPool::Flush()
 {
-	for (u_int i = 0; i < CFull.size(); ++i) {
-		for (u_int j = 0; j < CFull[i].size(); ++j) {
-			for (u_int k = 0; k < CFull[i][j].size(); ++k)
-				CFull[i][j][k]->Splat(film);
+	for (u_int tileIndex = 0; tileIndex < CFull.size(); ++tileIndex) {
+		for (u_int j = 0; j < CFull[tileIndex].size(); ++j) {
+			for (u_int k = 0; k < CFull[tileIndex][j].size(); ++k)
+				CFull[tileIndex][j][k]->Splat(film, tileIndex);
 			CFree.insert(CFree.end(),
-				CFull[i][j].begin(), CFull[i][j].end());
-			CFull[i][j].clear();
+				CFull[tileIndex][j].begin(), CFull[tileIndex][j].end());
+			CFull[tileIndex][j].clear();
 		}
 	}
 }
@@ -167,14 +209,19 @@ void ContributionPool::Delete()
 	// At this point CFull doesn't hold any buffer
 	for(u_int i = 0; i < CFree.size(); ++i)
 		delete CFree[i];
-	for(u_int i = 0; i < CSplat.size(); ++i)
-		delete CSplat[i];
+	//for(u_int tileIndex = 0; tileIndex < CSplat.size(); ++tileIndex)
+	//	for(u_int j = 0; j < CSplat[tileIndex].size(); ++j)	
+	//		delete CSplat[tileIndex][j];
 }
 
 void ContributionPool::CheckFilmWriteOuputInterval()
 {
-	boost::mutex::scoped_lock splattingAction(splattingMutex);
+	boost::mutex::scoped_lock splattingLock(mainSplattingMutex);
 	film->CheckWriteOuputInterval();
+}
+
+u_int ContributionPool::GetFilmTileIndexes(const Contribution &contrib, u_int *tileIndex0, u_int *tileIndex1) const {
+	return film->GetTileIndexes(contrib, tileIndex0, tileIndex1);
 }
 
 }

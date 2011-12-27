@@ -30,9 +30,9 @@
 #include "osfunc.h"
 
 #include <boost/thread/mutex.hpp>
+#include <boost/ptr_container/ptr_vector.hpp>
 #include <boost/cstdint.hpp>
 
-using boost::uint16_t;
 
 namespace lux
 {
@@ -53,12 +53,13 @@ public:
 	Contribution(float x=0.f, float y=0.f, const XYZColor &c=0.f, float a=0.f, float zd=0.f,
 		float v=0.f, u_int b=0, u_int g=0) :
 		imageX(x), imageY(y), color(c), alpha(a), zdepth(zd), variance(v),
-		buffer(static_cast<uint16_t>(b)), bufferGroup(static_cast<uint16_t>(g)) { }
+		buffer(static_cast<boost::uint16_t>(b)), bufferGroup(static_cast<boost::uint16_t>(g)) {
+	}
 
 	float imageX, imageY;
 	XYZColor color;
 	float alpha, zdepth, variance;
-	uint16_t buffer, bufferGroup;
+	boost::uint16_t buffer, bufferGroup;
 };
 
 class ContributionBuffer {
@@ -90,7 +91,7 @@ class ContributionBuffer {
 			return pos > CONTRIB_BUF_SIZE/2;
 		}
 
-		void Splat(Film *film);
+		void Splat(Film *film, u_int tileIndex);
 
 	private:
 		u_int pos;
@@ -118,11 +119,12 @@ class ContributionPool {
 public:
 
 	ContributionPool(Film *f);
+	~ContributionPool();
 
 	void End(ContributionBuffer *c);
 
-	void Next(ContributionBuffer::Buffer **b, float sc, u_int bufferGroup,
-		u_int buffer);
+	void Next(ContributionBuffer::Buffer **b, float sc, u_int tileIndex,
+		u_int bufferGroup);
 
 	// Flush() and Delete() are not thread safe,
 	// they can only be called by Scene after rendering is finished.
@@ -133,24 +135,47 @@ public:
 	// to acquire splattingMutex lock
 	void CheckFilmWriteOuputInterval();
 
+	u_int GetFilmTileIndexes(const Contribution &contrib, u_int *tileIndex0, u_int *tileIndex1) const;
+
 private:
+	typedef boost::mutex tile_mutex;
+	//typedef fast_mutex tile_mutex;
+
 	float sampleCount;
 	vector<ContributionBuffer::Buffer*> CFree; // Emptied/available buffers
 	vector<vector<vector<ContributionBuffer::Buffer*> > > CFull; // Full buffers
-	vector<ContributionBuffer::Buffer*> CSplat; // Buffers being splat
+	//vector<vector<ContributionBuffer::Buffer*> > CSplat; // Buffers being splat
+	vector<u_int> splattingTile;
+	u_int splattingMisses;
 
 	Film *film;
 	fast_mutex poolMutex;
-	boost::mutex splattingMutex;
+	boost::ptr_vector<tile_mutex> tileSplattingMutexes;
+	boost::mutex mainSplattingMutex;
 };
 
 inline void ContributionBuffer::Add(const Contribution &c, float weight)
 {
-	Buffer **buf = &(buffers[c.bufferGroup][c.buffer]);
-	if (!(*buf)->Add(c, weight)) {
-		pool->Next(buf, sampleCount, c.bufferGroup, c.buffer);
-		(*buf)->Add(c, weight);
-		sampleCount = 0.f;
+	u_int tileIndex0, tileIndex1;
+	u_int num_tiles = pool->GetFilmTileIndexes(c, &tileIndex0, &tileIndex1);
+
+	//if (num_tiles > 0) {
+	{
+		Buffer **buf = &(buffers[tileIndex0][c.bufferGroup]);
+		if (!(*buf)->Add(c, weight)) {
+			pool->Next(buf, sampleCount, tileIndex0, c.bufferGroup);
+			sampleCount = 0.f;
+			(*buf)->Add(c, weight);
+		}
+	}
+
+	if (num_tiles > 1) {
+		Buffer **buf = &(buffers[tileIndex1][c.bufferGroup]);
+		if (!(*buf)->Add(c, weight)) {
+			pool->Next(buf, sampleCount, tileIndex1, c.bufferGroup);
+			sampleCount = 0.f;
+			(*buf)->Add(c, weight);
+		}
 	}
 }
 

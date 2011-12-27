@@ -49,6 +49,7 @@
 #include <boost/iostreams/filter/bzip2.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/thread.hpp>
 
 #define cimg_display_type  0
 
@@ -650,6 +651,17 @@ Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop
 	}
 	// Precompute filter tables
 	filterLUTs = new FilterLUTs(filt, max(min(filtRes, 64u), 2u));
+
+	const u_int thread_count = boost::thread::hardware_concurrency();
+	const u_int minTileSize = 2 * Ceil2UInt(filter->yWidth) + 1;
+	// TODO - thread_count * 2 is fairly arbitrary, find better choice?
+	tileCount = Clamp(thread_count * 2, 1u, xRealWidth / minTileSize);
+	//tileCount = 2;
+
+	tileHeight = max(Ceil2UInt(static_cast<float>(yPixelCount) / tileCount), 1u);
+	invTileHeight = 1.f / tileHeight;
+	tileOffset = -0.5f - filter->yWidth - xPixelStart;
+	tileOffset2 = 2 * filter->yWidth * invTileHeight;
 }
 
 Film::~Film()
@@ -825,14 +837,14 @@ void Film::AddSampleCount(float count) {
 	}
 }
 
-bool Film::RejectOutlier(Contribution *contrib) {
+bool Film::RejectOutlier(const Contribution &contrib) {
 	// outlier rejection
 
 	// filter-normalized pixel coordinates
-	float fnormX = (contrib->imageX - 0.5f + filter->xWidth) * 0.5f * filter->invXWidth;
-	float fnormY = (contrib->imageY - 0.5f + filter->yWidth) * 0.5f * filter->invYWidth;
+	float fnormX = (contrib.imageX - 0.5f + filter->xWidth) * 0.5f * filter->invXWidth;
+	float fnormY = (contrib.imageY - 0.5f + filter->yWidth) * 0.5f * filter->invYWidth;
 
-	OutlierData sd(fnormX, fnormY, contrib->color);
+	OutlierData sd(fnormX, fnormY, contrib.color);
 
 	int oY = max<int>(0, min<int>(Floor2Int(fnormY), outliers.size()-1));
 	int oX = max<int>(0, min<int>(Floor2Int(fnormX), outliers[0].size()-1));
@@ -873,88 +885,142 @@ bool Film::RejectOutlier(Contribution *contrib) {
 	return false;
 }
 
-void Film::AddSample(Contribution *contrib) {
-	XYZColor xyz = contrib->color;
-	const float alpha = contrib->alpha;
-	const float weight = contrib->variance;
+u_int Film::GetTileCount() const {
+	return tileCount;
+}
 
-	// Issue warning if unexpected radiance value returned
-	if (!(xyz.Y() >= 0.f) || isinf(xyz.Y())) {
-		if(debug_mode) {
-			LOG(LUX_WARNING,LUX_LIMIT) << "Out of bound intensity in Film::AddSample: "
-			   << xyz.Y() << ", sample discarded";
-		}
-		return;
-	}
+u_int Film::GetTileIndexes(const Contribution &contrib, u_int *tile0, u_int *tile1) const {
+	const float imageY = contrib.imageY + tileOffset;
 
-	if (!(alpha >= 0.f) || isinf(alpha)) {
-		if(debug_mode) {
-			LOG(LUX_WARNING,LUX_LIMIT) << "Out of bound  alpha in Film::AddSample: "
-			   << alpha << ", sample discarded";
-		}
-		return;
-	}
+	const float tileY = imageY * invTileHeight;
 
-	if (!(weight >= 0.f) || isinf(weight)) {
-		if(debug_mode) {
-			LOG(LUX_WARNING,LUX_LIMIT) << "Out of bound  weight in Film::AddSample: "
-			   << weight << ", sample discarded";
-		}
-		return;
-	}
+	*tile0 = static_cast<u_int>(Clamp(static_cast<int>(tileY), 0, static_cast<int>(tileCount-1)));
+	*tile1 = *tile0 + 1;
 
-	if (outlierRejection_k > 0) {
-		if (RejectOutlier(contrib))
-			return;
-	} else {
-		// Reject samples higher than max Y() after warmup period
-		if (warmupComplete) {
-			if(xyz.Y() > maxY)
-				return;
-		} else {
- 			maxY = max(maxY, xyz.Y());
-			++warmupSamples;
- 			if (warmupSamples >= reject_warmup_samples)
-				warmupComplete = true;
-		}
-	}
+	if (*tile1 >= tileCount || tileY + tileOffset2 < *tile1)
+		return 1u;
+
+	return 2u;
+}
+
+void Film::GetTileExtent(u_int tileIndex, int *xstart, int *xend, int *ystart, int *yend) const {
+	*xstart = xPixelStart;
+	*xend = xPixelStart + xPixelCount;
+	*ystart = yPixelStart + min(tileIndex * tileHeight, yPixelCount);
+	*yend = yPixelStart + min((tileIndex+1) * tileHeight, yPixelCount);
+}
+
+
+void Film::AddTileSamples(const Contribution* const contribs, u_int num_contribs, u_int tileIndex) {
 	
-	if (premultiplyAlpha)
-		xyz *= alpha;
+	//const int xTilePixelStart = xPixelStart;
+	//const int xTilePixelEnd = xPixelStart + xPixelCount;
+	//const int yTilePixelStart = yPixelStart; 
+	//const int yTilePixelEnd = yPixelStart + yPixelCount;
+	int xTilePixelStart, xTilePixelEnd;
+	int yTilePixelStart, yTilePixelEnd;
+	GetTileExtent(tileIndex, &xTilePixelStart, &xTilePixelEnd, &yTilePixelStart, &yTilePixelEnd);
 
-	BufferGroup &currentGroup = bufferGroups[contrib->bufferGroup];
-	Buffer *buffer = currentGroup.getBuffer(contrib->buffer);
+	for (u_int ci = 0; ci < num_contribs; ci++) {
+		const Contribution &contrib(contribs[ci]);
 
-	// Compute sample's raster extent
-	float dImageX = contrib->imageX - 0.5f;
-	float dImageY = contrib->imageY - 0.5f;
+		XYZColor xyz = contrib.color;
+		const float alpha = contrib.alpha;
+		const float weight = contrib.variance;
 
-	// Get filter coefficients
-	const FilterLUT &filterLUT = 
-		filterLUTs->GetLUT(dImageX - Floor2Int(contrib->imageX), dImageY - Floor2Int(contrib->imageY));
-	const float *lut = filterLUT.GetLUT();
+		// Issue warning if unexpected radiance value returned
+		if (!(xyz.Y() >= 0.f) || isinf(xyz.Y())) {
+			if(debug_mode) {
+				LOG(LUX_WARNING,LUX_LIMIT) << "Out of bound intensity in Film::AddSample: "
+				   << xyz.Y() << ", sample discarded";
+			}
+			continue;
+		}
 
-	int x0 = Ceil2Int (dImageX - filter->xWidth);
-	int x1 = x0 + filterLUT.GetWidth();
-	int y0 = Ceil2Int (dImageY - filter->yWidth);
-	int y1 = y0 + filterLUT.GetHeight();
-	if (x1 < x0 || y1 < y0 || x1 < 0 || y1 < 0)
-		return;
+		if (!(alpha >= 0.f) || isinf(alpha)) {
+			if(debug_mode) {
+				LOG(LUX_WARNING,LUX_LIMIT) << "Out of bound  alpha in Film::AddSample: "
+				   << alpha << ", sample discarded";
+			}
+			continue;
+		}
 
-	for (u_int y = static_cast<u_int>(max(y0, static_cast<int>(yPixelStart))); y < static_cast<u_int>(min(y1, static_cast<int>(yPixelStart + yPixelCount))); ++y) {
-		const int yoffset = (y-y0) * filterLUT.GetWidth();
-		for (u_int x = static_cast<u_int>(max(x0, static_cast<int>(xPixelStart))); x < static_cast<u_int>(min(x1, static_cast<int>(xPixelStart + xPixelCount))); ++x) {
-			// Evaluate filter value at $(x,y)$ pixel
-			const int xoffset = x-x0;
-			const float filterWt = lut[yoffset + xoffset];
-			// Update pixel values with filtered sample contribution
-			buffer->Add(x - xPixelStart,y - yPixelStart,
-				xyz, alpha, filterWt * weight);
-			// Update ZBuffer values with filtered zdepth contribution
-			if(use_Zbuf && contrib->zdepth != 0.f)
-				ZBuffer->Add(x - xPixelStart, y - yPixelStart, contrib->zdepth, 1.0f);
+		if (!(weight >= 0.f) || isinf(weight)) {
+			if(debug_mode) {
+				LOG(LUX_WARNING,LUX_LIMIT) << "Out of bound  weight in Film::AddSample: "
+				   << weight << ", sample discarded";
+			}
+			continue;
+		}
+
+		if (outlierRejection_k > 0) {
+			// TODO - make outlier rejection respect tile boundaries
+			// disabled for now
+			//if (RejectOutlier(contrib))
+			//	continue;
+		} else {
+			// Reject samples higher than max Y() after warmup period
+			if (warmupComplete) {
+				if(xyz.Y() > maxY)
+					continue;
+			} else {
+ 				maxY = max(maxY, xyz.Y());
+				++warmupSamples;
+ 				if (warmupSamples >= reject_warmup_samples)
+					warmupComplete = true;
+			}
+		}
+	
+		if (premultiplyAlpha)
+			xyz *= alpha;
+
+		BufferGroup &currentGroup = bufferGroups[contrib.bufferGroup];
+		Buffer *buffer = currentGroup.getBuffer(contrib.buffer);
+
+		// Compute sample's raster extent
+		float dImageX = contrib.imageX - 0.5f;
+		float dImageY = contrib.imageY - 0.5f;
+
+		// Get filter coefficients
+		const FilterLUT &filterLUT = 
+			filterLUTs->GetLUT(dImageX - Floor2Int(contrib.imageX), dImageY - Floor2Int(contrib.imageY));
+		const float *lut = filterLUT.GetLUT();
+
+		int x0 = Ceil2Int (dImageX - filter->xWidth);
+		int x1 = x0 + filterLUT.GetWidth();
+		int y0 = Ceil2Int (dImageY - filter->yWidth);
+		int y1 = y0 + filterLUT.GetHeight();
+		if (x1 < x0 || y1 < y0 || x1 < 0 || y1 < 0)
+			continue;
+
+		const u_int xStart = static_cast<u_int>(max(x0, xTilePixelStart));
+		const u_int yStart = static_cast<u_int>(max(y0, yTilePixelStart));
+		const u_int xEnd = static_cast<u_int>(min(x1, xTilePixelEnd));
+		const u_int yEnd = static_cast<u_int>(min(y1, yTilePixelEnd));
+
+		for (u_int y = yStart; y < yEnd; ++y) {
+			const int yoffset = (y-y0) * filterLUT.GetWidth();
+			for (u_int x = xStart; x < xEnd; ++x) {
+				// Evaluate filter value at $(x,y)$ pixel
+				const int xoffset = x-x0;
+				const float filterWt = lut[yoffset + xoffset];
+				// Update pixel values with filtered sample contribution
+				buffer->Add(x - xPixelStart,y - yPixelStart,
+					xyz, alpha, filterWt * weight);
+				// Update ZBuffer values with filtered zdepth contribution
+				if(use_Zbuf && contrib.zdepth != 0.f)
+					ZBuffer->Add(x - xPixelStart, y - yPixelStart, contrib.zdepth, 1.0f);
+			}
 		}
 	}
+}
+
+void Film::AddSample(Contribution *contrib) {
+	u_int tileIndex0, tileIndex1;
+	u_int tiles = GetTileIndexes(*contrib, &tileIndex0, &tileIndex1);
+	AddTileSamples(contrib, 1, tileIndex0);
+	if (tiles > 1)
+		AddTileSamples(contrib, 1, tileIndex1);
 }
 
 void Film::SetSample(const Contribution *contrib) {

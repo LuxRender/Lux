@@ -570,6 +570,7 @@ public:
 	virtual ~Film();
 
 	virtual void AddSample(Contribution *contrib);
+	virtual void AddTileSamples(const Contribution* const contribs, u_int num_contribs, u_int tileIndex);
 	virtual void SetSample(const Contribution *contrib);
 	virtual void AddSampleCount(float count);
 	virtual void SaveEXR(const string &exrFilename, bool useHalfFloats, bool includeZBuf, int compressionType, bool tonemapped) {
@@ -594,6 +595,11 @@ public:
 	virtual const BufferConfig& GetBufferConfig(u_int index) const { return bufferConfigs[index]; }
 	virtual u_int GetNumBufferGroups() const { return bufferGroups.size(); }
 	virtual const BufferGroup& GetBufferGroup(u_int index) const { return bufferGroups[index]; }
+
+	// gets indexes to the tiles a contribution spans
+	// returns number of tiles spanned
+	virtual u_int GetTileIndexes(const Contribution &contrib, u_int *tile0, u_int *tile1) const;
+	virtual u_int GetTileCount() const;
 
 	virtual void SetGroupName(u_int index, const string& name);
 	virtual string GetGroupName(u_int index) const;
@@ -627,7 +633,9 @@ public:
 
 protected:
 	double DoTransmitFilm(std::basic_ostream<char> &stream, bool clearBuffers = true, bool transmitParams = false);
-	bool RejectOutlier(Contribution *contrib);
+	bool RejectOutlier(const Contribution &contrib);
+
+	void GetTileExtent(u_int tileIndex, int *xstart, int *xend, int *ystart, int *yend) const;
 
 public:
 	// Film Public Data
@@ -659,6 +667,8 @@ protected: // Put it here for better data alignment
 	string filename;
 
 	u_int xPixelStart, yPixelStart, xPixelCount, yPixelCount;
+	u_int tileCount, tileHeight;
+	float invTileHeight, tileOffset, tileOffset2;
 	ColorSystem colorSpace; // needed here for ComputeGroupScale()
 
 	std::vector<BufferConfig> bufferConfigs;
