@@ -95,7 +95,7 @@ inline void osAtomicAdd(float *val, const float delta) {
 
 		oldVal.f = *val;
 		newVal.f = oldVal.f + delta;
-	} while (boost::interprocess::detail::atomic_cas32(((boost::uint32_t *)val), newVal.i, oldVal.i) != oldVal.i);
+	} while (boost::interprocess::detail::atomic_cas32(reinterpret_cast<boost::uint32_t*>(val), newVal.i, oldVal.i) != oldVal.i);
 }
 
 inline void osAtomicAdd(unsigned int *val, const unsigned int delta) {
@@ -108,18 +108,33 @@ inline void osAtomicAdd(unsigned int *val, const unsigned int delta) {
 #endif
 		oldVal = *val;
 		newVal = oldVal + delta;
-	} while (boost::interprocess::detail::atomic_cas32(((boost::uint32_t*)val), newVal, oldVal) != oldVal);
+	} while (boost::interprocess::detail::atomic_cas32(reinterpret_cast<boost::uint32_t*>(val), newVal, oldVal) != oldVal);
 #else
 	boost::interprocess::detail::atomic_add32(((boost::uint32_t *)val), (boost::uint32_t)delta);
 #endif
 }
 
 /**
- * Atomically increments a variable
+ * Atomically increments a 32bit variable
  * @return Previous value, before increment
  */
 inline unsigned int osAtomicInc(unsigned int *val) {
-	return boost::interprocess::detail::atomic_inc32(((boost::uint32_t *)val));
+	return boost::interprocess::detail::atomic_inc32(reinterpret_cast<boost::uint32_t*>(val));
+}
+
+/**
+ * Atomically reads a 32bit variable
+ * @return Value read
+ */
+inline unsigned int osAtomicRead(unsigned int *val) {
+	return boost::interprocess::detail::atomic_read32(reinterpret_cast<boost::uint32_t*>(val));
+}
+
+/**
+ * Atomically writes a 32bit variable
+ */
+inline void osAtomicWrite(unsigned int *val, unsigned int newVal) {
+	boost::interprocess::detail::atomic_write32(reinterpret_cast<boost::uint32_t*>(val), static_cast<boost::uint32_t>(newVal));
 }
 
 }//namespace lux
