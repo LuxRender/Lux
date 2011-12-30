@@ -28,11 +28,11 @@
 #include <iostream>
 #include <algorithm>
 
-static double sensitivity_presets[NUM_SENSITITIVITY_PRESETS] = {20.0f, 25.0f, 32.0f, 40.0f, 50.0f, 64.0f, 80.0f, 100.0f, 125.0f, 160.0f, 200.0f, 250.0f, 320.0f, 400.0f, 500.0f, 640.0f, 800.0f, 1000.0f, 1250.0f, 1600.0f, 2000.0f, 2500.0f, 3200.0f, 4000.0f, 5000.0f, 6400.0f};
+static double sensitivity_presets[NUM_SENSITITIVITY_PRESETS] = {6400.0f, 5000.0f, 4000.0f, 3200.0f, 2500.0f, 2000.0f, 1600.0f, 1250.0f, 1000.0f, 800.0f, 640.0f, 500.0f, 400.0f, 320.0f, 250.0f, 200.0f, 160.0f, 125.0f, 100.0f, 80.0f, 64.0f, 50.0f, 40.0f, 32.0f, 25.0f, 20.0f};
 
 static double exposure_presets[NUM_EXPOSURE_PRESETS] = {1.0f, 0.5f, 0.25f, 0.125f, 0.066f, 0.033f, 0.016f, 0.008f, 0.004f, 0.002f, 0.001f};
 
-static double fstop_presets[NUM_FSTOP_PRESETS] = {0.5, 0.7, 1.0, 1.4, 2.0, 2.8, 4.0, 5.6, 8.0, 11.0, 16.0, 22.0, 32.0, 45.0, 64.0, 90.0, 128.0};
+static double fstop_presets[NUM_FSTOP_PRESETS] = {128.0, 90.0, 64.0, 45.0, 32.0, 22.0, 16.0, 11.0, 8.0, 5.6, 4.0, 2.8, 2.0, 1.4, 1.0, 0.7, 0.5};
 
 #define DEFAULT_EPSILON_MIN 1e-7f
 static bool EqualDouble(const double a, const double b)
