@@ -579,47 +579,7 @@
             </item>
             <item>
              <property name="text">
-              <string>1/1000</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>1/500</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>1/250</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>1/125</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>1/60</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>1/30</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>1/15</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>1/8</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>1/4</string>
+              <string>1</string>
              </property>
             </item>
             <item>
@@ -629,7 +589,47 @@
             </item>
             <item>
              <property name="text">
-              <string>1</string>
+              <string>1/4</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>1/8</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>1/15</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>1/30</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>1/60</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>1/125</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>1/250</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>1/500</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>1/1000</string>
              </property>
             </item>
            </widget>
