@@ -160,19 +160,20 @@ static void ErrorCB(const char *message)
 
 Shape* PlyMesh::CreateShape(const Transform &o2w,
 		bool reverseOrientation, const ParamSet &params) {
+	string name = params.FindOneString("name", "'plymesh'");
 	const string filename = AdjustFilename(params.FindOneString("filename", "none"));
 	bool smooth = params.FindOneBool("smooth", false);
 
-	LOG( LUX_INFO,LUX_NOERROR) << "Loading PLY mesh file: '" << filename << "'...";
+	SHAPE_LOG(name, LUX_INFO,LUX_NOERROR) << "Loading PLY mesh file: '" << filename << "'...";
 
 	p_ply plyfile = ply_open(filename.c_str(), ErrorCB);
 	if (!plyfile) {
-		LOG( LUX_ERROR,LUX_SYSTEM) << "Unable to read PLY mesh file '" << filename << "'";
+		SHAPE_LOG(name, LUX_ERROR,LUX_SYSTEM) << "Unable to read PLY mesh file '" << filename << "'";
 		return NULL;
 	}
 
 	if (!ply_read_header(plyfile)) {
-		LOG( LUX_ERROR,LUX_BADFILE) << "Unable to read PLY header from '" << filename << "'";
+		SHAPE_LOG(name, LUX_ERROR,LUX_BADFILE) << "Unable to read PLY header from '" << filename << "'";
 		return NULL;
 	}
 
@@ -182,7 +183,7 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 	ply_set_read_cb(plyfile, "vertex", "y", VertexCB, &p, 1);
 	ply_set_read_cb(plyfile, "vertex", "z", VertexCB, &p, 2);
 	if (plyNbVerts <= 0) {
-		LOG( LUX_ERROR,LUX_BADFILE) << "No vertices found in '" << filename << "'";
+		SHAPE_LOG(name, LUX_ERROR,LUX_BADFILE) << "No vertices found in '" << filename << "'";
 		return NULL;
 	}
 
@@ -190,7 +191,7 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 	long plyNbFaces = ply_set_read_cb(plyfile, "face", "vertex_indices",
 		FaceCB, &faceData, 0);
 	if (plyNbFaces <= 0) {
-		LOG( LUX_ERROR,LUX_BADFILE) << "No faces found in '" << filename << "'";
+		SHAPE_LOG(name, LUX_ERROR,LUX_BADFILE) << "No faces found in '" << filename << "'";
 		return NULL;
 	}
 
@@ -225,7 +226,7 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 		uv = new float[2*plyNbUVs];
 
 	if (!ply_read(plyfile)) {
-		LOG( LUX_ERROR,LUX_SYSTEM) << "Unable to parse PLY file '" << filename << "'";
+		SHAPE_LOG(name, LUX_ERROR,LUX_SYSTEM) << "Unable to parse PLY file '" << filename << "'";
 		delete[] p;
 		delete[] n;
 		delete[] uv;
@@ -239,7 +240,7 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 
 	if (smooth || plyNbVerts != plyNbNormals) {
 		if (n) {
-			LOG((smooth ? LUX_DEBUG : LUX_WARNING), LUX_NOERROR) << "Overriding plymesh normals";
+			SHAPE_LOG(name, (smooth ? LUX_DEBUG : LUX_WARNING), LUX_NOERROR) << "Overriding plymesh normals";
 			delete[] n;
 		}
 		// generate face normals
@@ -313,7 +314,7 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 
 	if (plyNbVerts != plyNbUVs) {
 		if (uv) {
-			LOG( LUX_ERROR,LUX_CONSISTENCY)<< "Incorrect number of uv coordinates";
+			SHAPE_LOG(name, LUX_ERROR,LUX_CONSISTENCY)<< "Incorrect number of uv coordinates";
 			delete[] uv;
 			uv = NULL;
 		}
@@ -339,7 +340,7 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 		displacementMap = dm;
 
 		if (!displacementMap) {
-			LOG( LUX_WARNING,LUX_SYNTAX) << "Unknow float texture '" << displacementMapName << "' in a Mesh shape.";
+			SHAPE_LOG(name, LUX_WARNING,LUX_SYNTAX) << "Unknow float texture '" << displacementMapName << "'.";
 		}
 	}
 
@@ -352,14 +353,14 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 	else if (subdivscheme == "microdisplacement")
 		subdivType = Mesh::SUBDIV_MICRODISPLACEMENT;
 	else {
-		LOG(LUX_WARNING,LUX_BADTOKEN) << "Subdivision type  '" << subdivscheme << "' unknown. Using \"loop\".";
+		SHAPE_LOG(name, LUX_WARNING,LUX_BADTOKEN) << "Subdivision type  '" << subdivscheme << "' unknown. Using \"loop\".";
 		subdivType = Mesh::SUBDIV_LOOP;
 	}
 
 	bool genTangents = params.FindOneBool("generatetangents", false);
 
 	boost::shared_ptr<Texture<float> > dummytex;
-	Mesh *mesh = new Mesh(o2w, reverseOrientation, Mesh::ACCEL_AUTO,
+	Mesh *mesh = new Mesh(o2w, reverseOrientation, name, Mesh::ACCEL_AUTO,
 		plyNbVerts, p, n, uv, Mesh::TRI_AUTO, plyNbTris, triVerts,
 		Mesh::QUAD_QUADRILATERAL, plyNbQuads, quadVerts, subdivType,
 		nsubdivlevels, displacementMap, displacementMapScale,

@@ -31,8 +31,8 @@ namespace lux
 class Sphere: public Shape {
 public:
 	// Sphere Public Methods
-	Sphere(const Transform &o2w, bool ro, float rad,
-	       float zmin, float zmax, float phiMax);
+	Sphere(const Transform &o2w, bool ro, const string &name, 
+	       float rad, float zmin, float zmax, float phiMax);
 	virtual ~Sphere() { }
 	virtual BBox ObjectBound() const;
 	virtual bool Intersect(const Ray &ray, Intersection *isect) const;

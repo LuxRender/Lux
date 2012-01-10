@@ -30,7 +30,7 @@ namespace lux
 class Hyperboloid: public Shape {
 public:
 	// Hyperboloid Public Methods
-	Hyperboloid(const Transform &o2w, bool ro,
+	Hyperboloid(const Transform &o2w, bool ro, const string &name, 
 	            const Point &point1, const Point &point2,
 	            float tm);
 	virtual ~Hyperboloid() { }

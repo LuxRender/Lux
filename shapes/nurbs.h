@@ -33,8 +33,8 @@ namespace lux
 class NURBS : public Shape {
 public:
 	// NURBS Methods
-	NURBS(const Transform &o2w, bool reverseOrientation, u_int nu, u_int uorder,
-		const float *uknot, float umin, float umax,
+	NURBS(const Transform &o2w, bool reverseOrientation, const string &name, 
+		u_int nu, u_int uorder, const float *uknot, float umin, float umax,
 		u_int nv, u_int vorder, const float *vknot, float vmin, float vmax,
 		const float *P, bool isHomogeneous);
 	virtual ~NURBS();

@@ -41,6 +41,7 @@ Shape* StlMesh::CreateShape(const Transform &o2w,
 							bool reverseOrientation,
 							const ParamSet &params)
 {
+	string name = params.FindOneString("name", "'stlmesh'");
 	string FileName = params.FindOneString("filename", "none");
 
 	string subdivscheme = params.FindOneString("subdivscheme", "loop");
@@ -57,17 +58,17 @@ Shape* StlMesh::CreateShape(const Transform &o2w,
 		subdivType = Mesh::SUBDIV_MICRODISPLACEMENT;
 	else
 	{
-		LOG(LUX_WARNING,LUX_BADTOKEN) << "Subdivision type  '" << subdivscheme << "' unknown. Using \"loop\".";
+		SHAPE_LOG(name, LUX_WARNING,LUX_BADTOKEN) << "Subdivision type  '" << subdivscheme << "' unknown. Using \"loop\".";
 		subdivType = Mesh::SUBDIV_LOOP;
 	}
 
-	LOG(LUX_INFO, LUX_NOERROR) << "Loading STL mesh file: '" << FileName << "'...";
+	SHAPE_LOG(name, LUX_INFO, LUX_NOERROR) << "Loading STL mesh file: '" << FileName << "'...";
 
 	FILE* pFile = fopen(FileName.c_str(), "rb");
 
 	if(!pFile)
 	{
-		LOG(LUX_ERROR, LUX_SYSTEM) << "Unable to read STL mesh file '" << FileName << "'";
+		SHAPE_LOG(name, LUX_ERROR, LUX_SYSTEM) << "Unable to read STL mesh file '" << FileName << "'";
 		return NULL;
 	}
 
@@ -109,7 +110,7 @@ Shape* StlMesh::CreateShape(const Transform &o2w,
 		if(fread(&uNFaces, sizeof(uNFaces), 1, pFile) != 1)
 		{
 			fclose(pFile);
-			LOG(LUX_ERROR, LUX_SYSTEM) << "Invalid STL mesh file '" << FileName << "'";
+			SHAPE_LOG(name, LUX_ERROR, LUX_SYSTEM) << "Invalid STL mesh file '" << FileName << "'";
 			return NULL;
 		}
 
@@ -123,7 +124,7 @@ Shape* StlMesh::CreateShape(const Transform &o2w,
 		if(fread(&Data[0], 1, Data.size(), pFile) != Data.size())
 		{
 			fclose(pFile);
-			LOG(LUX_ERROR, LUX_SYSTEM) << "Invalid STL mesh file '" << FileName << "'";
+			SHAPE_LOG(name, LUX_ERROR, LUX_SYSTEM) << "Invalid STL mesh file '" << FileName << "'";
 			return NULL;
 		}
 
@@ -153,7 +154,7 @@ Shape* StlMesh::CreateShape(const Transform &o2w,
 
 		if(!(pFile = fopen(FileName.c_str(), "rt")))
 		{
-			LOG(LUX_ERROR, LUX_SYSTEM) << "Unable to read STL mesh file '" << FileName << "'";
+			SHAPE_LOG(name, LUX_ERROR, LUX_SYSTEM) << "Unable to read STL mesh file '" << FileName << "'";
 			return NULL;
 		}
 
@@ -167,7 +168,7 @@ Shape* StlMesh::CreateShape(const Transform &o2w,
 			if(fscanf(pFile, "%127s", Token) != 1)
 			{
 				fclose(pFile);
-				LOG(LUX_ERROR, LUX_SYSTEM) << "Invalid STL mesh file '" << FileName << "'";
+				SHAPE_LOG(name, LUX_ERROR, LUX_SYSTEM) << "Invalid STL mesh file '" << FileName << "'";
 				return NULL;
 			}
 			
@@ -210,7 +211,7 @@ Shape* StlMesh::CreateShape(const Transform &o2w,
 							&Vertices[i*3 + 2].z) != 3) // vertex [v1] [v2] [v3]
 			{
 				fclose(pFile);
-				LOG(LUX_ERROR, LUX_SYSTEM) << "Invalid STL mesh file '" << FileName << "'";
+				SHAPE_LOG(name, LUX_ERROR, LUX_SYSTEM) << "Invalid STL mesh file '" << FileName << "'";
 				return NULL;
 			}
 
@@ -246,7 +247,7 @@ Shape* StlMesh::CreateShape(const Transform &o2w,
 
 	boost::shared_ptr<Texture<float> > displacementMap;
 
-	return new Mesh(o2w, reverseOrientation, Mesh::ACCEL_AUTO,
+	return new Mesh(o2w, reverseOrientation, name, Mesh::ACCEL_AUTO,
 					Vertices.size(), &Vertices[0], NULL, NULL,
 					Mesh::TRI_AUTO, uNFaces, &Faces[0],
 					Mesh::QUAD_QUADRILATERAL, 0, NULL,

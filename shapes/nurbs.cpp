@@ -131,10 +131,11 @@ NURBSEvaluateSurface(u_int uOrder, const float *uKnot, u_int ucp, float u,
     return Point(P.x/P.w, P.y/P.w, P.z/P.w);;
 }
 // NURBS Definitions
-NURBS::NURBS(const Transform &o2w, bool ro, u_int numu, u_int uo, const float *uk,
+NURBS::NURBS(const Transform &o2w, bool ro, const string &name, 
+		u_int numu, u_int uo, const float *uk,
 		float u0, float u1, u_int numv, u_int vo, const float *vk,
 		float v0, float v1, const float *p, bool homogeneous)
-	: Shape(o2w, ro) {
+	: Shape(o2w, ro, name) {
 	nu = numu;    uorder = uo;
 	umin = u0;    umax = u1;
 	nv = numv;    vorder = vo;
@@ -276,6 +277,7 @@ void NURBS::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 }
 Shape* NURBS::CreateShape(const Transform &o2w,
 		bool reverseOrientation, const ParamSet &params) {
+	string name = params.FindOneString("name", "'nurbs'");
 	int nu = params.FindOneInt("nu", -1);
 	int uorder = params.FindOneInt("uorder", -1);
 	u_int nuknots, nvknots;
@@ -304,7 +306,7 @@ Shape* NURBS::CreateShape(const Transform &o2w,
 	}
 	BOOST_ASSERT(P);
 	BOOST_ASSERT(npts == static_cast<u_int>(nu*nv));
-	return new NURBS(o2w, reverseOrientation, nu, uorder, uknots, u0, u1,
+	return new NURBS(o2w, reverseOrientation, name, nu, uorder, uknots, u0, u1,
 		nv, vorder, vknots, v0, v1, const_cast<float *>(P),
 		isHomogeneous);
 }

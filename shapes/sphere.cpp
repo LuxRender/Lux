@@ -28,9 +28,9 @@
 using namespace lux;
 
 // Sphere Method Definitions
-Sphere::Sphere(const Transform &o2w, bool ro, float rad,
-               float z0, float z1, float pm)
-	: Shape(o2w, ro)
+Sphere::Sphere(const Transform &o2w, bool ro, const string &name, 
+	           float rad, float z0, float z1, float pm)
+	: Shape(o2w, ro, name)
 {
 	radius = rad;
 	zMin = Clamp(min(z0, z1), -radius, radius);
@@ -159,11 +159,12 @@ float Sphere::Area() const
 Shape* Sphere::CreateShape(const Transform &o2w, bool reverseOrientation,
 	const ParamSet &params)
 {
+	string name = params.FindOneString("name", "'sphere'");
 	float radius = params.FindOneFloat("radius", 1.f);
 	float zmin = params.FindOneFloat("zmin", -radius);
 	float zmax = params.FindOneFloat("zmax", radius);
 	float phimax = params.FindOneFloat("phimax", 360.f);
-	return new Sphere(o2w, reverseOrientation, radius, zmin, zmax, phimax);
+	return new Sphere(o2w, reverseOrientation, name, radius, zmin, zmax, phimax);
 }
 
 static DynamicLoader::RegisterShape<Sphere> r("sphere");

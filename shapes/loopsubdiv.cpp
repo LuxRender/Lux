@@ -24,6 +24,7 @@
 #include "loopsubdiv.h"
 #include "spectrumwavelengths.h"
 #include "geometry/raydifferential.h"
+#include "shape.h"
 
 #include <boost/pool/object_pool.hpp>
 
@@ -34,11 +35,12 @@ LoopSubdiv::LoopSubdiv(u_int nfaces, u_int nvertices, const int *vertexIndices,
 	const Point *P, const float *uv, const Normal *n, u_int nl,
 	const boost::shared_ptr<Texture<float> > &dismap, float dmscale,
 	float dmoffset, bool dmnormalsmooth, bool dmsharpboundary,
-	bool normalsplit)
+	bool normalsplit, const string &sname)
 	: displacementMap(dismap),
 	displacementMapScale(dmscale), displacementMapOffset(dmoffset),
 	displacementMapNormalSmooth(dmnormalsmooth),
-	displacementMapSharpBoundary(dmsharpboundary)
+	displacementMapSharpBoundary(dmsharpboundary),
+	name(sname)
 {
 	nLevels = nl;
 	hasUV = (uv != NULL);
@@ -103,7 +105,7 @@ LoopSubdiv::LoopSubdiv(u_int nfaces, u_int nvertices, const int *vertexIndices,
 				u_int otherv0 = e.f[0]->vnum(f->v[v0]->P);
 				u_int otherv1 = e.f[0]->vnum(f->v[v1]->P);
 				if (PREV(otherv0) != otherv1) {
-					LOG(LUX_ERROR,LUX_CONSISTENCY)<< "Inconsistent vertex winding in mesh, aborting subdivision.";
+					SHAPE_LOG(name, LUX_ERROR,LUX_CONSISTENCY)<< "Inconsistent vertex winding in mesh, aborting subdivision.";
 					// prevent subdivision
 					nLevels = 0;
 					return;
@@ -142,7 +144,7 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 		return boost::shared_ptr<LoopSubdiv::SubdivResult>();
 	}
 
-	LOG(LUX_INFO,LUX_NOERROR) << "Applying " << nLevels << " levels of loop subdivision to " << faces.size() << " triangles";
+	SHAPE_LOG(name, LUX_INFO,LUX_NOERROR) << "Applying " << nLevels << " levels of loop subdivision to " << faces.size() << " triangles";
 
 	vector<SDFace *> f = faces;
 	vector<SDVertex *> v = vertices;
@@ -331,7 +333,7 @@ boost::shared_ptr<LoopSubdiv::SubdivResult> LoopSubdiv::Refine() const {
 		}
 	}
 
-	LOG( LUX_INFO,LUX_NOERROR) << "Subdivision complete, got " << ntris << " triangles";
+	SHAPE_LOG(name, LUX_INFO,LUX_NOERROR) << "Subdivision complete, got " << ntris << " triangles";
 
 	if (displacementMap) {
 		// Dade - apply the displacement map
@@ -409,7 +411,7 @@ void LoopSubdiv::GenerateNormals(const vector<SDVertex *> v) {
 void LoopSubdiv::ApplyDisplacementMap(const vector<SDVertex *> verts) const
 {
 	// Dade - apply the displacement map
-	LOG(LUX_INFO,LUX_NOERROR) << "Applying displacement map to " << verts.size() << " vertices";
+	SHAPE_LOG(name, LUX_INFO,LUX_NOERROR) << "Applying displacement map to " << verts.size() << " vertices";
 	SpectrumWavelengths swl;
 	swl.Sample(.5f);
 

@@ -30,15 +30,17 @@
 namespace lux
 {
 
+#define SHAPE_LOG(name,severity,code) LOG(severity,code)<<"Shape "<<(name)<<": "
+
 // Lotus - A primitive implementation compatible with the old PBRT Shape class
 // Shape Declarations
 class Shape : public Primitive {
 public:
-	Shape(const Transform &o2w, bool ro);
+	Shape(const Transform &o2w, bool ro, const string &name);
 	Shape(const Transform &o2w, bool ro,
 		boost::shared_ptr<Material> &material,
 		boost::shared_ptr<Volume> &ex,
-		boost::shared_ptr<Volume> &in);
+		boost::shared_ptr<Volume> &in, const string &name);
 	virtual ~Shape() { }
 
 	void SetMaterial(boost::shared_ptr<Material> &mat) {
@@ -144,11 +146,15 @@ public:
 	virtual Transform GetWorldToLocal(float time) const {
 		return WorldToObject;
 	}
+	virtual string Name() const {
+		return shape_name;
+	}
 	// Shape data
 	const Transform ObjectToWorld, WorldToObject;
 protected:
 	boost::shared_ptr<Material> material;
 	boost::shared_ptr<Volume> exterior, interior;
+	const string shape_name;
 public: // Last to get better data alignment
 	const bool reverseOrientation, transformSwapsHandedness;
 };

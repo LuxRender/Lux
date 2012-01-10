@@ -32,14 +32,15 @@
 
 using namespace lux;
 
-Mesh::Mesh(const Transform &o2w, bool ro, MeshAccelType acceltype,
+Mesh::Mesh(const Transform &o2w, bool ro, const string &name,
+	MeshAccelType acceltype,
 	u_int nv, const Point *P, const Normal *N, const float *UV,
 	MeshTriangleType tritype, u_int trisCount, const int *tris,
 	MeshQuadType quadtype, u_int nquadsCount, const int *quads,
 	MeshSubdivType subdivtype, u_int nsubdivlevels,
 	boost::shared_ptr<Texture<float> > &dmMap, float dmScale, float dmOffset,
 	bool dmNormalSmooth, bool dmSharpBoundary, bool normalsplit, bool genTangents)
-	: Shape(o2w, ro)
+	: Shape(o2w, ro, name)
 {
 	accelType = acceltype;
 
@@ -82,7 +83,7 @@ Mesh::Mesh(const Transform &o2w, bool ro, MeshAccelType acceltype,
 		n = NULL;
 
 	if (genTangents && !uvs) {
-		LOG(LUX_ERROR,LUX_CONSISTENCY)<< "Cannot generate tangent space for mesh, mesh does not have UV coordinates.";
+		SHAPE_LOG(Name(), LUX_ERROR,LUX_CONSISTENCY)<< "Cannot generate tangent space for mesh, mesh does not have UV coordinates.";
 		generateTangents = false;
 	} else
 		generateTangents = genTangents;
@@ -142,7 +143,7 @@ Mesh::Mesh(const Transform &o2w, bool ro, MeshAccelType acceltype,
 		//	ss << " to allow subdivision";
 		//else
 		//	ss << " because they are non-planar or non-convex";		
-		LOG(LUX_INFO,LUX_NOERROR)<< ss.str().c_str();
+		SHAPE_LOG(Name(), LUX_INFO,LUX_NOERROR)<< ss.str().c_str();
 	}
 
 	// Dade - copy triangle data
@@ -266,7 +267,7 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 					displacementMapOffset,
 					displacementMapNormalSmooth,
 					displacementMapSharpBoundary,
-					normalSplit);
+					normalSplit, Name());
 				boost::shared_ptr<LoopSubdiv::SubdivResult> res(loopsubdiv.Refine());
 				// Check if subdivision was successfull
 				if (!res)
@@ -305,18 +306,18 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 					displacementMap->GetMinMaxFloat(&displacementMapMin, &displacementMapMax);
 
 					if (displacementMapMin < -1.f || displacementMapMax > 1.f)
-						LOG(LUX_WARNING, LUX_LIMIT) << "Displacement map for microdisplacement reported min/max values of (" 
+						SHAPE_LOG(Name(), LUX_WARNING, LUX_LIMIT) << "Displacement map for microdisplacement reported min/max values of (" 
 							<< displacementMapMin << "," << displacementMapMax << "), actual displacement values will be clamped to [-1,1]";
 
 					triType = TRI_MICRODISPLACEMENT;
 				} else {
-					LOG(LUX_WARNING, LUX_CONSISTENCY) << "No displacement map for microdisplacement, disabling";
+					SHAPE_LOG(Name(), LUX_WARNING, LUX_CONSISTENCY) << "No displacement map for microdisplacement, disabling";
 					triType = TRI_AUTO;
 				}
 
 				break;
 			default: {
-				LOG( LUX_ERROR,LUX_CONSISTENCY) << "Unknow subdivision type in a mesh: " << concreteSubdivType;
+				SHAPE_LOG(Name(), LUX_ERROR,LUX_CONSISTENCY) << "Unknow subdivision type in a mesh: " << concreteSubdivType;
 				break;
 			}
 		}
@@ -394,13 +395,13 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 			}
 			break;
 		default: {
-			LOG( LUX_ERROR,LUX_CONSISTENCY) << "Unknow triangle type in a mesh: " << concreteTriType;
+			SHAPE_LOG(Name(), LUX_ERROR,LUX_CONSISTENCY) << "Unknow triangle type: " << concreteTriType;
 			break;
 		}
 	}
 
 	if (inconsistentShadingTris > 0) {
-		LOG(LUX_WARNING, LUX_CONSISTENCY) <<
+		SHAPE_LOG(Name(), LUX_WARNING, LUX_CONSISTENCY) <<
 			"Inconsistent shading normals in " << 
 			inconsistentShadingTris << " triangle" << (inconsistentShadingTris > 1 ? "s" : "");
 	}
@@ -427,7 +428,7 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 			}
 			break;
 		default: {
-			LOG( LUX_ERROR,LUX_CONSISTENCY) << "Unknow quad type in a mesh: " << quadType;
+			SHAPE_LOG(Name(), LUX_ERROR,LUX_CONSISTENCY) << "Unknow quad type in a mesh: " << quadType;
 			break;
 		}
 	}
@@ -488,7 +489,7 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 		default:
 			ss << "?";
 	}
-	LOG(LUX_DEBUG,LUX_NOERROR)<< ss.str().c_str();
+	SHAPE_LOG(Name(), LUX_DEBUG,LUX_NOERROR)<< ss.str().c_str();
 
 	// Build acceleration structure
 	if (concreteAccelType == ACCEL_NONE) {
@@ -515,7 +516,7 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 				accel = MakeAccelerator("bruteforce", refinedPrims, paramset);
 				break;
 			default:
-				LOG( LUX_ERROR,LUX_CONSISTENCY) << "Unknow accel type in a mesh: " << concreteAccelType;
+				SHAPE_LOG(Name(), LUX_ERROR,LUX_CONSISTENCY) << "Unknow accel type: " << concreteAccelType;
 		}
 		if (refineHints.forSampling)
 			// Lotus - create primitive set to allow sampling
@@ -771,7 +772,7 @@ void mikkts_setTSpaceBasic(const SMikkTSpaceContext * pContext, const float fvTa
 }
 
 void Mesh::GenerateTangentSpace() {
-	LOG(LUX_INFO,LUX_NOERROR)<< "Generating tangent space for mesh.";
+	SHAPE_LOG(Name(), LUX_INFO,LUX_NOERROR)<< "Generating tangent space.";
 
 	// set up data structures for mikktspace, use defaults
 	SMikkTSpaceInterface mif;
@@ -790,25 +791,25 @@ void Mesh::GenerateTangentSpace() {
 	mctx.m_pUserData = &data;
 
 	if (!data.t || !data.sign) {
-		LOG(LUX_ERROR,LUX_SYSTEM)<< "Failed to generate tangent space for mesh, out of memory.";
+		SHAPE_LOG(Name(), LUX_ERROR,LUX_SYSTEM)<< "Failed to generate tangent space, out of memory.";
 		return;
 	}
 
 	// generate tangent space
 	if (!genTangSpaceDefault(&mctx)) {
-		LOG(LUX_ERROR,LUX_SYSTEM)<< "Failed to generate tangent space for mesh.";
+		SHAPE_LOG(Name(), LUX_ERROR,LUX_SYSTEM)<< "Failed to generate tangent space.";
 		return;
 	}
 
 	// tangents are returned unindexed, need to generate new index list
 	// as some vertices may share normals and uv, but have different tangents
-	LOG(LUX_DEBUG,LUX_NOERROR)<< "Generating new index list for mesh.";
+	SHAPE_LOG(Name(), LUX_DEBUG,LUX_NOERROR)<< "Generating new index list.";
 
 	const u_int floatsPerVert = 3 + 3 + 2 + 3 + 1;
 	float* vertDataIn = new float[3 * ntris * floatsPerVert];
 
 	if (!vertDataIn) {
-		LOG(LUX_ERROR,LUX_SYSTEM)<< "Failed to generate tangent space for mesh, out of memory.";
+		SHAPE_LOG(Name(), LUX_ERROR,LUX_SYSTEM)<< "Failed to generate tangent space, out of memory.";
 
 		delete[] vertDataIn;
 		return;
@@ -842,7 +843,7 @@ void Mesh::GenerateTangentSpace() {
 	int* remapTable = new int[3 * ntris];
 
 	if (!vertDataOut || !remapTable) {
-		LOG(LUX_ERROR,LUX_SYSTEM)<< "Failed to generate tangent space for mesh, out of memory.";
+		SHAPE_LOG(Name(), LUX_ERROR,LUX_SYSTEM)<< "Failed to generate tangent space, out of memory.";
 
 		delete[] vertDataIn;
 		delete[] vertDataOut;
@@ -890,6 +891,8 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 						   const string& subdivSchemeStr, u_int nSubdivLevels,
 						   const Point* P, u_int npi,
 						   const Normal* N, u_int nni) {
+
+	string name = params.FindOneString("name", "'mesh'");
 	// Lotus - read general data
 	Mesh::MeshAccelType accelType;
 	if (accelTypeStr == "kdtree")
@@ -905,20 +908,20 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 	else if (accelTypeStr == "auto")
 		accelType = Mesh::ACCEL_AUTO;
 	else {
-		LOG(LUX_WARNING,LUX_BADTOKEN) << "Acceleration structure type  '" << accelTypeStr << "' unknown. Using \"auto\".";
+		SHAPE_LOG(name, LUX_WARNING,LUX_BADTOKEN) << "Acceleration structure type  '" << accelTypeStr << "' unknown. Using \"auto\".";
 		accelType = Mesh::ACCEL_AUTO;
 	}
 
 	// NOTE - lordcrc - Bugfix, pbrt tracker id 0000085: check for correct number of uvs
 	if (UV && (UVCount != npi * 2)) {
-		LOG( LUX_ERROR,LUX_CONSISTENCY)<< "Number of \"UV\"s for mesh must match \"P\"s";
+		SHAPE_LOG(name, LUX_ERROR,LUX_CONSISTENCY)<< "Number of \"UV\"s for mesh must match \"P\"s";
 		UV = NULL;
 	}
 	if (!P)
 		return NULL;
 
 	if (N && (nni != npi)) {
-		LOG( LUX_ERROR,LUX_CONSISTENCY)<< "Number of \"N\"s for mesh must match \"P\"s";
+		SHAPE_LOG(name, LUX_ERROR,LUX_CONSISTENCY)<< "Number of \"N\"s for mesh must match \"P\"s";
 		N = NULL;
 	}
 
@@ -931,14 +934,14 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 	else if (triTypeStr == "auto")
 		triType = Mesh::TRI_AUTO;
 	else {
-		LOG(LUX_WARNING,LUX_BADTOKEN) << "Triangle type  '" << triTypeStr << "' unknown. Using \"auto\".";
+		SHAPE_LOG(name, LUX_WARNING,LUX_BADTOKEN) << "Triangle type  '" << triTypeStr << "' unknown. Using \"auto\".";
 		triType = Mesh::TRI_AUTO;
 	}
 
 	if (triIndices) {
 		for (u_int i = 0; i < triIndicesCount; ++i) {
 			if (static_cast<u_int>(triIndices[i]) >= npi) {
-				LOG( LUX_ERROR,LUX_CONSISTENCY) << "Mesh has out of-bounds triangle vertex index " << triIndices[i] <<
+				SHAPE_LOG(name, LUX_ERROR,LUX_CONSISTENCY) << "Mesh has out of-bounds triangle vertex index " << triIndices[i] <<
 						" (" << npi << "  \"P\" values were given";
 				return NULL;
 			}
@@ -952,14 +955,14 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 	Mesh::MeshQuadType quadType;
 	if (quadTypeStr == "quadrilateral") quadType = Mesh::QUAD_QUADRILATERAL;
 	else {
-		LOG(LUX_WARNING,LUX_BADTOKEN) << "Quad type  '" << quadTypeStr << "' unknown. Using \"quadrilateral\".";
+		SHAPE_LOG(name, LUX_WARNING,LUX_BADTOKEN) << "Quad type  '" << quadTypeStr << "' unknown. Using \"quadrilateral\".";
 		quadType = Mesh::QUAD_QUADRILATERAL;
 	}
 
 	if (quadIndices) {
 		for (u_int i = 0; i < quadIndicesCount; ++i) {
 			if (static_cast<u_int>(quadIndices[i]) >= npi) {
-				LOG( LUX_ERROR,LUX_CONSISTENCY) << "Mesh has out of-bounds quad vertex index " << quadIndices[i] <<
+				SHAPE_LOG(name, LUX_ERROR,LUX_CONSISTENCY) << "Mesh has out of-bounds quad vertex index " << quadIndices[i] <<
 						" (" << npi << "  \"P\" values were given";
 				return NULL;
 			}
@@ -989,7 +992,7 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 		displacementMap = dm;
 
 		if (!displacementMap) {
-			LOG( LUX_WARNING,LUX_SYNTAX) << "Unknow float texture '" << displacementMapName << "' in a Mesh shape.";
+			SHAPE_LOG(name, LUX_WARNING,LUX_SYNTAX) << "Unknow float texture '" << displacementMapName << "'.";
 		}
 	}
 
@@ -999,13 +1002,13 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 	else if (subdivSchemeStr == "microdisplacement")
 		subdivType = Mesh::SUBDIV_MICRODISPLACEMENT;
 	else {
-		LOG(LUX_WARNING,LUX_BADTOKEN) << "Subdivision type  '" << subdivSchemeStr << "' unknown. Using \"loop\".";
+		SHAPE_LOG(name, LUX_WARNING,LUX_BADTOKEN) << "Subdivision type  '" << subdivSchemeStr << "' unknown. Using \"loop\".";
 		subdivType = Mesh::SUBDIV_LOOP;
 	}
 
 	bool genTangents = params.FindOneBool("generatetangents", false);
 
-	return new Mesh(o2w, reverseOrientation,
+	return new Mesh(o2w, reverseOrientation, name,
 		accelType,
 		npi, P, N, UV,
 		triType, triIndicesCount, triIndices,

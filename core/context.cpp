@@ -136,6 +136,7 @@ void Context::Init() {
 	pushedTransforms.clear();
 	renderFarm = new RenderFarm();
 	filmOverrideParams = NULL;
+	shapeNo = 0;
 
 	statsData = new StatsData(this);
 }
@@ -415,6 +416,7 @@ void Context::WorldBegin() {
 	currentApiState = STATE_WORLD_BLOCK;
 	curTransform = lux::Transform();
 	namedCoordinateSystems["world"] = curTransform;
+	shapeNo = 0;
 }
 void Context::AttributeBegin() {
 	VERIFY_WORLD("AttributeBegin");
@@ -667,6 +669,19 @@ void Context::PortalShape(const string &n, const ParamSet &params) {
 void Context::Shape(const string &n, const ParamSet &params) {
 	VERIFY_WORLD("Shape");
 	renderFarm->send("luxShape", n, params);
+	const u_int sIdx = shapeNo++;
+	u_int nItems;
+	const string *sn = params.FindString("name", &nItems);
+	if (!sn || *sn == "") {
+		// generate name based on shape type and declaration index
+		std::stringstream ss("");
+		ss << "#" << sIdx << " (" << n << ")";
+		const string sname = ss.str();
+		const_cast<ParamSet &>(params).AddString("name", &sname);
+	} else if (sn) {
+		const string sname = "'" + *sn + "'";
+		const_cast<ParamSet &>(params).AddString("name", &sname);
+	}
 	boost::shared_ptr<lux::Shape> sh(MakeShape(n, curTransform.StaticTransform(),
 		graphicsState->reverseOrientation, params));
 	if (!sh)

@@ -32,7 +32,8 @@ namespace lux
 class Heightfield : public Shape {
 public:
 	// Heightfield Public Methods
-	Heightfield(const Transform &o2w, bool ro, u_int nu, u_int nv, const float *zs);
+	Heightfield(const Transform &o2w, bool ro, const string &name, 
+		u_int nu, u_int nv, const float *zs);
 	virtual ~Heightfield();
 	virtual bool CanIntersect() const;
 	virtual void Refine(vector<boost::shared_ptr<Shape> > &refined) const;

@@ -28,9 +28,9 @@
 using namespace lux;
 
 // Cylinder Method Definitions
-Cylinder::Cylinder(const Transform &o2w, bool ro, float rad,
-		   float z0, float z1, float pm)
-	: Shape(o2w, ro) {
+Cylinder::Cylinder(const Transform &o2w, bool ro, const string &name, 
+		float rad, float z0, float z1, float pm)
+	: Shape(o2w, ro, name) {
 	radius = rad;
 	zmin = min(z0, z1);
 	zmax = max(z0, z1);
@@ -160,11 +160,12 @@ float Cylinder::Area() const {
 }
 Shape* Cylinder::CreateShape(const Transform &o2w, bool reverseOrientation,
 		const ParamSet &params) {
+	string name = params.FindOneString("name", "'cylinder'");
 	float radius = params.FindOneFloat( "radius", 1 );
 	float zmin = params.FindOneFloat( "zmin", -1 );
 	float zmax = params.FindOneFloat( "zmax", 1 );
 	float phimax = params.FindOneFloat( "phimax", 360 );
-	return new Cylinder(o2w, reverseOrientation, radius, zmin, zmax, phimax);
+	return new Cylinder(o2w, reverseOrientation, name, radius, zmin, zmax, phimax);
 }
 
 static DynamicLoader::RegisterShape<Cylinder> r("cylinder");

@@ -34,9 +34,9 @@
 using namespace lux;
 
 // LensComponent Method Definitions
-LensComponent::LensComponent(const Transform &o2w, bool ro, float rad,
-               float z0, float z1, float pm, float ap)
-               : Shape(o2w, ro) {
+LensComponent::LensComponent(const Transform &o2w, bool ro, const string &name, 
+               float rad, float z0, float z1, float pm, float ap)
+               : Shape(o2w, ro, name) {
                    radius = rad;
                    zmin = Clamp(min(z0, z1), -radius, radius);
                    zmax = Clamp(max(z0, z1), -radius, radius);
@@ -188,12 +188,13 @@ float LensComponent::Area() const {
 Shape* LensComponent::CreateShape(const Transform &o2w,
                    bool reverseOrientation,
                    const ParamSet &params) {
+	string name = params.FindOneString("name", "'lenscomponent'");
     float radius = params.FindOneFloat("radius", 1.f);
     float zmin = params.FindOneFloat("zmin", -radius);
     float zmax = params.FindOneFloat("zmax", radius);
     float phimax = params.FindOneFloat("phimax", 360.f);
     float aperture = params.FindOneFloat("aperture", 1.f);
-    return new LensComponent(o2w, reverseOrientation, radius,
+    return new LensComponent(o2w, reverseOrientation, name, radius,
         zmin, zmax, phimax, aperture);
 }
 

@@ -29,18 +29,18 @@
 using namespace lux;
 
 // Shape Method Definitions
-Shape::Shape(const Transform &o2w, bool ro)
+Shape::Shape(const Transform &o2w, bool ro, const string &_name)
 	: ObjectToWorld(o2w), WorldToObject(o2w.GetInverse()),
 	reverseOrientation(ro),
-	transformSwapsHandedness(o2w.SwapsHandedness())
+	transformSwapsHandedness(o2w.SwapsHandedness()), shape_name(_name)
 {
 }
 
 Shape::Shape(const Transform &o2w, bool ro, boost::shared_ptr<Material> &mat,
-	boost::shared_ptr<Volume> &ex, boost::shared_ptr<Volume> &in)
+	boost::shared_ptr<Volume> &ex, boost::shared_ptr<Volume> &in, const string &_name)
 	: ObjectToWorld(o2w), WorldToObject(o2w.GetInverse()),
 	material(mat), exterior(ex), interior(in), reverseOrientation(ro),
-	transformSwapsHandedness(o2w.SwapsHandedness())
+	transformSwapsHandedness(o2w.SwapsHandedness()), shape_name(_name)
 {
 }
 

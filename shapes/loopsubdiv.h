@@ -146,7 +146,7 @@ public:
 		const Point *P, const float *uv, const Normal *n,
 		u_int nlevels, const boost::shared_ptr<Texture<float> > &dismap,
 		float dmscale, float dmoffset, bool dmnormalsmooth,
-		bool dmsharpboundary, bool normalsplit);
+		bool dmsharpboundary, bool normalsplit, const string &name);
 	virtual ~LoopSubdiv();
 
 	class SubdivResult {
@@ -201,6 +201,8 @@ private:
 
 	bool hasUV, displacementMapNormalSmooth, displacementMapSharpBoundary;
 	bool normalSplit;
+
+	string name;
 
 	// Lotus - a pointer to the refined mesh to avoid double refinement or deletion
 	mutable boost::shared_ptr<Shape> refinedShape;

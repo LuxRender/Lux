@@ -301,6 +301,7 @@ private:
 
 	static Context *activeContext;
 	string name;
+	u_int shapeNo; // used to identify anonymous shapes
 	lux::Renderer *luxCurrentRenderer;
 	Scene *luxCurrentScene;
 	lux::MotionTransform curTransform;
