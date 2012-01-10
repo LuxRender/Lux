@@ -164,9 +164,9 @@ void SPPMRenderer::Render(Scene *s) {
 		RandomGenerator rng(seed);
 
 		// integrator preprocessing
+		// sppm integrator will create film buffers
 		scene->surfaceIntegrator->Preprocess(rng, *scene);
 		scene->volumeIntegrator->Preprocess(rng, *scene);
-		scene->camera->film->CreateBuffers();
 
 		// Told each Buffer how to scale things
 		for(u_int bg = 0; bg < scene->camera->film->GetNumBufferGroups(); ++bg)
