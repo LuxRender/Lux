@@ -60,8 +60,8 @@ bool SchlickScatter::SampleF(const SpectrumWavelengths &sw, const Vector &wo,
 	CoordinateSystem(wo, &x, &y);
 	*wi = SphericalDirection(sqrtf(max(0.f, 1.f - cost * cost)), cost,
 		2.f * M_PI * u2, x, y, wo);
-	// The - stays because cost has already been reversed above
-	const float compcost = 1.f - g * cost;
+	// The - becomes a + because cost has been reversed above
+	const float compcost = 1.f + g * cost;
 	*pdf = (1.f - g * g) / (compcost * compcost * (4.f * M_PI));
 	if (!(*pdf > 0.f))
 		return false;
