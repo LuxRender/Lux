@@ -60,10 +60,13 @@ public:
 	u_int sampleOffset, bufferPhotonId, bufferEyeId;
 	bool includeEnvironment;
 
+	u_int wavelengthStratification;
+
 	// Few debugging options
 	//bool dbg_enableradiusdraw, dbg_enablemsedraw;
 	SurfaceIntegratorRenderingHints hints;
 	bool directLightSampling;
+	bool debug;
 };
 
 }//namespace lux

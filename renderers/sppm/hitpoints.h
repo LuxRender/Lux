@@ -219,7 +219,13 @@ public:
 	const u_int GetPassCount() const { return currentPass; }
 	void IncPass() {
 		++currentPass;
-		wavelengthSample = Halton(currentPass, wavelengthSampleScramble);
+		if (currentPass < wavelengthStratPasses) {
+			const u_int i = currentPass + 1; // use 1-based counting
+			const u_int Nsegments = 1 << Floor2UInt(Log2(i));
+			const u_int j = (2*Nsegments - 1) - i; // reverse order seems better
+			wavelengthSample = static_cast<float>(2*j + 1) / (2*Nsegments);
+		} else
+			wavelengthSample = Halton(currentPass - wavelengthStratPasses, wavelengthSampleScramble);
 		timeSample = Halton(currentPass, timeSampleScramble);
 	}
 
@@ -262,6 +268,7 @@ private:
 	// Only a single set of wavelengths is sampled for each pass
 	float wavelengthSample, timeSample;
 	u_int wavelengthSampleScramble, timeSampleScramble;
+	u_int wavelengthStratPasses;
 };
 
 }//namespace lux

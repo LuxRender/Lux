@@ -41,8 +41,11 @@ SPPMIntegrator::~SPPMIntegrator() {
 }
 
 void SPPMIntegrator::Preprocess(const RandomGenerator &rng, const Scene &scene) {
-	bufferPhotonId = scene.camera->film->RequestBuffer(BUF_TYPE_PER_SCREEN_SCALED, BUF_FRAMEBUFFER, "photons");
-	bufferEyeId = scene.camera->film->RequestBuffer(BUF_TYPE_PER_PIXEL, BUF_FRAMEBUFFER, "eye");
+	BufferOutputConfig config = BUF_FRAMEBUFFER;
+	if (debug)
+		config = BufferOutputConfig(config | BUF_STANDALONE);
+	bufferPhotonId = scene.camera->film->RequestBuffer(BUF_TYPE_PER_SCREEN_SCALED, config, "photons");
+	bufferEyeId = scene.camera->film->RequestBuffer(BUF_TYPE_PER_PIXEL, config, "eye");
 	scene.camera->film->CreateBuffers();
 
 	hints.InitStrategies(scene);
@@ -93,8 +96,12 @@ SurfaceIntegrator *SPPMIntegrator::CreateSurfaceIntegrator(const ParamSet &param
 	sppmi->includeEnvironment = params.FindOneBool("includeenvironment", true);
 	sppmi->directLightSampling = params.FindOneBool("directlightsampling", false);
 
+	sppmi->wavelengthStratification = max(params.FindOneInt("wavelengthstratificationpasses", 8), 0);
+
 	/*sppmi->dbg_enableradiusdraw = params.FindOneBool("dbg_enableradiusdraw", false);
 	sppmi->dbg_enablemsedraw = params.FindOneBool("dbg_enablemsedraw", false);*/
+
+	sppmi->debug = params.FindOneBool("debug", false);
 
 	// Initialize the rendering hints
 	sppmi->hints.InitParam(params);

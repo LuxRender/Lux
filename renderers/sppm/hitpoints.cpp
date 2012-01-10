@@ -55,7 +55,12 @@ HitPoints::HitPoints(SPPMRenderer *engine, RandomGenerator *rng)  {
 
 	wavelengthSampleScramble = rng->uintValue();
 	timeSampleScramble = rng->uintValue();
-	wavelengthSample = Halton(0, wavelengthSampleScramble);
+	wavelengthStratPasses = RoundUpPow2(renderer->sppmi->wavelengthStratification);
+	if (wavelengthStratPasses > 0) {
+		LOG(LUX_DEBUG, LUX_NOERROR) << "Non-random wavelength stratification for " << wavelengthStratPasses << " passes";
+		wavelengthSample = 0.5f; // non-randomly stratified in IncPass for first N passes
+	} else
+		wavelengthSample = Halton(0, wavelengthSampleScramble);
 	timeSample = Halton(0, timeSampleScramble);
 
 	// Get the count of hit points required
