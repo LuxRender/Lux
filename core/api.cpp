@@ -27,6 +27,7 @@
 #include "paramset.h"
 #include "error.h"
 #include "version.h"
+#include "stats.h"
 
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/thread/mutex.hpp>
@@ -1209,3 +1210,12 @@ extern "C" void luxSetEpsilon(const float minValue, const float maxValue)
 {
 	Context::GetActive()->SetEpsilon(minValue < 0.f ? DEFAULT_EPSILON_MIN : minValue, maxValue < 0.f ? DEFAULT_EPSILON_MAX : maxValue);
 }
+
+extern "C" double luxMagnitudeReduce(double number) {
+	return MagnitudeReduce(number);
+}
+
+extern "C" const char* luxMagnitudePrefix(double number) {
+	return MagnitudePrefix(number);
+}
+

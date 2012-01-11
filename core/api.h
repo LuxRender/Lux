@@ -316,6 +316,15 @@ LUX_EXPORT extern void luxErrorIgnore(int code, int severity, const char *messag
 LUX_EXPORT extern void luxErrorPrint(int code, int severity, const char *message);
 LUX_EXPORT extern LuxErrorHandler luxError;
 
+/**
+ * Reduce the magnitude on the input number by dividing into kilo- or Mega- or Giga- units
+ * Used in conjuction with luxMagnitudePrefix
+ */
+LUX_EXPORT extern double luxMagnitudeReduce(double number);
+/**
+ * Return the magnitude prefix char for kilo- or Mega- or Giga-
+ */
+LUX_EXPORT extern const char* luxMagnitudePrefix(double number);
 
 /*
  Error codes

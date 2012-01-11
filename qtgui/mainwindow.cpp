@@ -2195,7 +2195,7 @@ void MainWindow::UpdateNetworkTree()
 
 		spp = pInfoList[n].numberOfSamplesReceived / totalpixels;
 
-		QString s = QString("%1").arg(spp,0,'g',3);
+		QString s = QString("%1 %2S/p").arg(luxMagnitudeReduce(spp),0,'g',3).arg(luxMagnitudePrefix(spp));
 
 		QTableWidgetItem *spp = new QTableWidgetItem(s);
 

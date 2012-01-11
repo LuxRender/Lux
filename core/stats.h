@@ -93,38 +93,6 @@ private:
 		return 0;
 	}
 	*/
-
-	/**
-	 * Reduce the magnitude on the input number by dividing into kilo- or Mega- or Giga- units
-	 */
-	inline double magnitude_reduce(const double number) {
-		if (number < 1e3)
-			return number;
-
-		if ( number < 1e6)
-			return number / 1e3;
-
-		if ( number < 1e9)
-			return number / 1e6;
-
-		return number / 1e9;
-	}
-
-	/**
-	 * Return the magnitude prefix char for kilo- or Mega- or Giga-
-	 */
-	inline const char* magnitude_prefix(double number) {
-		if (number < 1e3)
-			return "";
-
-		if ( number < 1e6)
-			return "k";
-
-		if ( number < 1e9)
-			return "M";
-
-		return "G";
-	}
 };
 
 void StatsPrint(ostream &dest);
@@ -176,6 +144,17 @@ private:
 	// StatsPercentage Private Data
 	StatsCounterType na, nb;
 };
+
+/**
+ * Reduce the magnitude on the input number by dividing into kilo- or Mega- or Giga- units
+ * Used in conjuction with MagnitudePrefix
+ */
+double MagnitudeReduce(double number);
+/**
+ * Return the magnitude prefix char for kilo- or Mega- or Giga-
+ */
+const char* MagnitudePrefix(double number);
+
 
 }
 

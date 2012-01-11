@@ -227,29 +227,29 @@ void StatsData::update(const bool add_total)
 		formattedStatsString = str(stats_formatter
 			/*  %1 */ % boost::posix_time::time_duration(0, 0, static_cast<sec_type>(secelapsed), 0)
 			/*  %2 */ % threadCount
-			/*  %3 */ % magnitude_reduce(local_spp)
-			/*  %4 */ % magnitude_prefix(local_spp)
-			/*  %5 */ % magnitude_reduce(local_sps)
-			/*  %6 */ % magnitude_prefix(local_sps)
+			/*  %3 */ % MagnitudeReduce(local_spp)
+			/*  %4 */ % MagnitudePrefix(local_spp)
+			/*  %5 */ % MagnitudeReduce(local_sps)
+			/*  %6 */ % MagnitudePrefix(local_sps)
 			/*  %7 */ % eff
 			/*  %8 */ % serverCount
 			/*  %9 */ % ((network_predicted)?"~":"")
-			/* %10 */ % magnitude_reduce(network_spp)
-			/* %11 */ % magnitude_prefix(network_spp)
-			/* %12 */ % magnitude_reduce(network_sps)
-			/* %13 */ % magnitude_prefix(network_sps)
-			/* %14 */ % magnitude_reduce(total_spp)
-			/* %15 */ % magnitude_prefix(total_spp)
-			/* %16 */ % magnitude_reduce(total_sps)
-			/* %17 */ % magnitude_prefix(total_sps)
+			/* %10 */ % MagnitudeReduce(network_spp)
+			/* %11 */ % MagnitudePrefix(network_spp)
+			/* %12 */ % MagnitudeReduce(network_sps)
+			/* %13 */ % MagnitudePrefix(network_sps)
+			/* %14 */ % MagnitudeReduce(total_spp)
+			/* %15 */ % MagnitudePrefix(total_spp)
+			/* %16 */ % MagnitudeReduce(total_sps)
+			/* %17 */ % MagnitudePrefix(total_sps)
 			/* %18 */ % completion_samples
 			/* %19 */ % completion_time
-			/* %20 */ % magnitude_reduce(local_cps)
-			/* %21 */ % magnitude_prefix(local_cps)
-			/* %22 */ % magnitude_reduce(network_cps)
-			/* %23 */ % magnitude_prefix(network_cps)
-			/* %24 */ % magnitude_reduce(total_cps)
-			/* %25 */ % magnitude_prefix(total_cps)
+			/* %20 */ % MagnitudeReduce(local_cps)
+			/* %21 */ % MagnitudePrefix(local_cps)
+			/* %22 */ % MagnitudeReduce(network_cps)
+			/* %23 */ % MagnitudePrefix(network_cps)
+			/* %24 */ % MagnitudeReduce(total_cps)
+			/* %25 */ % MagnitudePrefix(total_cps)
 			/* %26 */ % rendererStats
 			/* %27 */ % boost::posix_time::time_duration(0, 0, static_cast<sec_type>(seconds_remaining), 0)
 		);
@@ -279,17 +279,55 @@ void StatsData::updateSPPM(const bool add_total) {
 		formattedStatsString = str(stats_formatter
 				/*  %1 */ % boost::posix_time::time_duration(0, 0, secelapsed, 0)
 				/*  %2 */ % threadCount
-				/*  %3 */ % magnitude_reduce(pass)
-				/*  %4 */ % magnitude_prefix(pass)
-				/*  %5 */ % magnitude_reduce(local_p)
-				/*  %6 */ % magnitude_prefix(local_p)
-				/*  %7 */ % magnitude_reduce(local_pps)
-				/*  %8 */ % magnitude_prefix(local_pps)
+				/*  %3 */ % MagnitudeReduce(pass)
+				/*  %4 */ % MagnitudePrefix(pass)
+				/*  %5 */ % MagnitudeReduce(local_p)
+				/*  %6 */ % MagnitudePrefix(local_p)
+				/*  %7 */ % MagnitudeReduce(local_pps)
+				/*  %8 */ % MagnitudePrefix(local_pps)
 				/*  %9 */ % local_peff
 			);
 	} catch (std::runtime_error e) {
 		LOG(LUX_ERROR, LUX_CONSISTENCY)<< e.what();
 	}
+}
+
+double MagnitudeReduce(double number) {
+	if (isnan(number) || isinf(number))
+		return number;
+
+	if (number < 1e3)
+		return number;
+
+	if (number < 1e6)
+		return number / 1e3;
+
+	if (number < 1e9)
+		return number / 1e6;
+
+	if (number < 1e12)
+		return number / 1e9;
+
+	return number / 1e12;
+}
+
+const char* MagnitudePrefix(double number) {
+	if (isnan(number) || isinf(number))
+		return "";
+
+	if (number < 1e3)
+		return "";
+
+	if (number < 1e6)
+		return "k";
+
+	if (number < 1e9)
+		return "M";
+
+	if (number < 1e12)
+		return "G";
+
+	return "T";
 }
 
 }
