@@ -713,6 +713,21 @@ void Film::CreateBuffers()
 	contribPool = new ContributionPool(this);
 }
 
+void Film::ClearBuffers() {
+	for (u_int i = 0; i < bufferGroups.size(); ++i) {
+
+		BufferGroup& bufferGroup = bufferGroups[i];
+
+		for (u_int j = 0; j < bufferConfigs.size(); ++j) {
+			Buffer* buffer = bufferGroup.getBuffer(j);
+
+			buffer->Clear();
+		}
+
+		bufferGroup.numberOfSamples = 0;
+	}
+}
+
 void Film::SetGroupName(u_int index, const string& name) 
 {
 	if( index >= bufferGroups.size())

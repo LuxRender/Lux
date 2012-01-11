@@ -594,6 +594,7 @@ public:
 	virtual const BufferConfig& GetBufferConfig(u_int index) const { return bufferConfigs[index]; }
 	virtual u_int GetNumBufferGroups() const { return bufferGroups.size(); }
 	virtual const BufferGroup& GetBufferGroup(u_int index) const { return bufferGroups[index]; }
+	virtual void ClearBuffers();
 
 	virtual void SetGroupName(u_int index, const string& name);
 	virtual string GetGroupName(u_int index) const;
