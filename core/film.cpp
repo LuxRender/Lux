@@ -594,7 +594,7 @@ u_int Film::GetYResolution()
 Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop[4], 
 		   const string &filename1, bool premult, bool useZbuffer,
 		   bool w_resume_FLM, bool restart_resume_FLM, bool write_FLM_direct, int haltspp, int halttime,
-		   int reject_warmup, bool debugmode, int outlierk) :
+		   bool debugmode, int outlierk) :
 	Queryable("film"),
 	xResolution(xres), yResolution(yres),
 	EV(0.f), averageLuminance(0.f),  numberOfSamplesFromNetwork(0), numberOfLocalSamples(0),
@@ -603,7 +603,6 @@ Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop
 	colorSpace(0.63f, 0.34f, 0.31f, 0.595f, 0.155f, 0.07f, 0.314275f, 0.329411f), // default is SMPTE
 	ZBuffer(NULL), use_Zbuf(useZbuffer),
 	debug_mode(debugmode), premultiplyAlpha(premult),
-	warmupComplete(false), reject_warmup_samples(reject_warmup),
 	writeResumeFlm(w_resume_FLM), restartResumeFlm(restart_resume_FLM), writeFlmDirect(write_FLM_direct),
 	outlierRejection_k(outlierk), haltSamplesPerPixel(haltspp),
 	haltTime(halttime), histogram(NULL), enoughSamplesPerPixel(false)
@@ -617,13 +616,6 @@ Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop
 	int xRealWidth = Floor2Int(xPixelStart + .5f + xPixelCount + filter->xWidth) - Floor2Int(xPixelStart + .5f - filter->xWidth);
 	int yRealHeight = Floor2Int(yPixelStart + .5f + yPixelCount + filter->yWidth) - Floor2Int(yPixelStart + .5f - filter->yWidth);
 	samplePerPass = xRealWidth * yRealHeight;
-
-	// calculate reject warmup samples
-	reject_warmup_samples = (static_cast<double>(xRealWidth) * static_cast<double>(yRealHeight)) * reject_warmup;
-
-	maxY = debug_mode ? INFINITY : 0.f;
-	warmupSamples = 0;
-	warmupComplete = debug_mode;
 
 	boost::xtime_get(&creationTime, boost::TIME_UTC);
 
@@ -921,17 +913,6 @@ void Film::AddSample(Contribution *contrib) {
 	if (outlierRejection_k > 0) {
 		if (RejectOutlier(contrib))
 			return;
-	} else {
-		// Reject samples higher than max Y() after warmup period
-		if (warmupComplete) {
-			if(xyz.Y() > maxY)
-				return;
-		} else {
- 			maxY = max(maxY, xyz.Y());
-			++warmupSamples;
- 			if (warmupSamples >= reject_warmup_samples)
-				warmupComplete = true;
-		}
 	}
 	
 	if (premultiplyAlpha)

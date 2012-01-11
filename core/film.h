@@ -564,8 +564,7 @@ public:
 	Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop[4],
 		const string &filename1, bool premult, bool useZbuffer,
 		bool w_resume_FLM, bool restart_resume_FLM, bool write_FLM_direct,
-		int haltspp, int halttime,
-		int reject_warmup, bool debugmode, int outlierk);
+		int haltspp, int halttime, bool debugmode, int outlierk);
 
 	virtual ~Film();
 
@@ -669,12 +668,6 @@ protected: // Put it here for better data alignment
 
 	bool debug_mode;
 	bool premultiplyAlpha;
-
-	bool warmupComplete;
-	double reject_warmup_samples;
-	double warmupSamples;
-	float maxY;
-
 
 	bool writeResumeFlm, restartResumeFlm;
 	bool writeFlmDirect;
