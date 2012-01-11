@@ -1497,6 +1497,10 @@ void MainWindow::renderScenefile(const QString& filename)
 
 	indicateActivity ();
 	statusMessage->setText("Loading scene...");
+	if (filename == "-")
+		LOG(LUX_INFO,LUX_NOERROR) << "Loading piped scene...";
+	else
+		LOG(LUX_INFO,LUX_NOERROR) << "Loading scene file: '" << qPrintable(filename) << "'...";
 
 	m_loadTimer->start(1000);
 
