@@ -50,12 +50,14 @@ public:
 	float alpha;
 	float distance;
 
-	// Used for SURFACE type
-	Point position;
 	Vector wo;
 
 	BxDFType flags;
 	HitPointType type;
+
+private:
+	friend class HitPoint;
+	Point position;
 };
 
 class HitPoint {
@@ -69,6 +71,15 @@ public:
 
 	float imageX, imageY;
 
+	Point GetPosition() const
+	{
+		return eyePass.position;
+	}
+
+	void SetPosition(const Point p)
+	{
+		eyePass.position = p;
+	}
 };
 
 class SPPMRenderer;

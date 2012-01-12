@@ -115,7 +115,7 @@ void HitPoints::Init() {
 		HitPointEyePass *hpep = &hp->eyePass;
 
 		if (hpep->type == SURFACE)
-			hpBBox = Union(hpBBox, hpep->position);
+			hpBBox = Union(hpBBox, hp->GetPosition());
 	}
 
 	// Calculate initial radius
@@ -426,7 +426,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, MemoryArena &hp
 		{
 			hpep->type = SURFACE;
 			hpep->pathThroughput = pathThroughput * rayWeight / pdf_event;
-			hpep->position = p;
+			hp->SetPosition(p);
 			hpep->wo = wo;
 
 			hpep->flags = store_component;
@@ -497,7 +497,7 @@ void HitPoints::UpdatePointsInformation() {
 			if(hp->photonCount == 0)
 				++zeroHits;
 
-			bbox = Union(bbox, hpep->position);
+			bbox = Union(bbox, hp->GetPosition());
 
 			maxr2 = max<float>(maxr2, hp->accumPhotonRadius2);
 			minr2 = min<float>(minr2, hp->accumPhotonRadius2);

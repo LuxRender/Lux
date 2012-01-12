@@ -107,8 +107,8 @@ void HashGrid::RefreshMutex() {
 		if (hpep->type == SURFACE) {
 			const float photonRadius = sqrtf(hp->accumPhotonRadius2);
 			const Vector rad(photonRadius, photonRadius, photonRadius);
-			const Vector bMin = ((hpep->position - rad) - hpBBox.pMin) * invCellSize;
-			const Vector bMax = ((hpep->position + rad) - hpBBox.pMin) * invCellSize;
+			const Vector bMin = ((hp->GetPosition() - rad) - hpBBox.pMin) * invCellSize;
+			const Vector bMax = ((hp->GetPosition() + rad) - hpBBox.pMin) * invCellSize;
 
 			for (int iz = abs(int(bMin.z)); iz <= abs(int(bMax.z)); ++iz) {
 				for (int iy = abs(int(bMin.y)); iy <= abs(int(bMax.y)); ++iy) {

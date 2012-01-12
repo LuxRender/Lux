@@ -53,7 +53,7 @@ void HitPointsLookUpAccel::AddFluxToHitPoint(Sample &sample, HitPoint *hp,
 	HitPointEyePass &hpep(hp->eyePass);
 
 	// Check distance
-	const float dist2 = DistanceSquared(hpep.position, hitPoint);
+	const float dist2 = DistanceSquared(hp->GetPosition(), hitPoint);
 	if ((dist2 >  hp->accumPhotonRadius2))
 		return;
 
@@ -127,8 +127,8 @@ HashCell::HCKdTree::~HCKdTree() {
 }
 
 bool HashCell::HCKdTree::CompareNode::operator ()(const HitPoint *d1, const HitPoint *d2) const {
-	return (d1->eyePass.position[axis] == d2->eyePass.position[axis]) ? (d1 < d2) :
-			(d1->eyePass.position[axis] < d2->eyePass.position[axis]);
+	return (d1->GetPosition()[axis] == d2->GetPosition()[axis]) ? (d1 < d2) :
+			(d1->GetPosition()[axis] < d2->GetPosition()[axis]);
 }
 
 void HashCell::HCKdTree::RecursiveBuild(
@@ -153,7 +153,7 @@ void HashCell::HCKdTree::RecursiveBuild(
 	// Compute bounds of data from start to end
 	BBox bound;
 	for (unsigned int i = start; i < end; ++i)
-		bound = Union(bound, buildNodes[i]->eyePass.position);
+		bound = Union(bound, buildNodes[i]->GetPosition());
 	unsigned int splitAxis = bound.MaximumExtent();
 	unsigned int splitPos = (start + end) / 2;
 
@@ -161,7 +161,7 @@ void HashCell::HCKdTree::RecursiveBuild(
 		buildNodes.begin() + end, CompareNode(splitAxis));
 
 	// Allocate kd-tree node and continue recursively
-	nodes[nodeNum].init(buildNodes[splitPos]->eyePass.position[splitAxis], splitAxis);
+	nodes[nodeNum].init(buildNodes[splitPos]->GetPosition()[splitAxis], splitAxis);
 	nodeData[nodeNum] = buildNodes[splitPos];
 
 	if (start < splitPos) {
