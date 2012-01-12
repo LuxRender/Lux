@@ -73,7 +73,7 @@ void HybridHashGrid::RefreshMutex() {
 		HitPoint *hp = hitPoints->GetHitPoint(i);
 		HitPointEyePass *hpep = &hp->eyePass;
 
-		if (hpep->type == SURFACE) {
+		if (hp->IsSurface()) {
 			const float photonRadius = sqrtf(hp->accumPhotonRadius2);
 			const Vector rad(photonRadius, photonRadius, photonRadius);
 			const Vector bMin = ((hp->GetPosition() - rad) - hpBBox.pMin) * invCellSize;

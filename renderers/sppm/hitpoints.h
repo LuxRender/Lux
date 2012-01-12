@@ -53,6 +53,8 @@ public:
 	Vector wo;
 
 	BxDFType flags;
+private:
+	friend class HitPoint;
 	HitPointType type;
 };
 
@@ -70,6 +72,20 @@ public:
 	Point GetPosition() const
 	{
 		return eyePass.bsdf->dgShading.p;
+	}
+
+	void SetConstant()
+	{
+		eyePass.type = CONSTANT_COLOR;
+	}
+	void SetSurface()
+	{
+		eyePass.type = SURFACE;
+	}
+
+	bool IsSurface() const
+	{
+		return eyePass.type == SURFACE;
 	}
 };
 

@@ -101,7 +101,7 @@ void KdTree::RefreshMutex() {
 	maxDistSquared = 0.f;
 	for (unsigned int i = 0; i < maxNNodes; ++i)  {
 		HitPoint * const hp = hitPoints->GetHitPoint(i);
-		if(hp->eyePass.type == SURFACE)
+		if(hp->IsSurface())
 		{
 			buildNodes.push_back(hp);
 			maxDistSquared = max<float>(maxDistSquared, hp->accumPhotonRadius2);

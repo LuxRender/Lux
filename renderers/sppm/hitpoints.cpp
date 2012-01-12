@@ -96,7 +96,7 @@ const double HitPoints::GetPhotonHitEfficency() {
 		HitPoint *hp = &(*hitPoints)[i];
 		HitPointEyePass *hpep = &hp->eyePass;
 
-		if (hpep->type == SURFACE) {
+		if (hp->IsSurface()) {
 			++surfaceHitPointsCount;
 
 			if (hp->accumPhotonCount > 0)
@@ -114,7 +114,7 @@ void HitPoints::Init() {
 		HitPoint *hp = &(*hitPoints)[i];
 		HitPointEyePass *hpep = &hp->eyePass;
 
-		if (hpep->type == SURFACE)
+		if (hp->IsSurface())
 			hpBBox = Union(hpBBox, hp->GetPosition());
 	}
 
@@ -169,7 +169,7 @@ void HitPoints::AccumulateFlux(const u_int index, const u_int count) {
 		HitPoint *hp = &(*hitPoints)[i];
 		HitPointEyePass *hpep = &hp->eyePass;
 
-		if(hpep->type == SURFACE) {
+		if(hp->IsSurface()) {
 			if (hp->accumPhotonCount > 0) {
 				/*
 				TODO: startK disable because incorrect
@@ -207,7 +207,7 @@ void HitPoints::AccumulateFlux(const u_int index, const u_int count) {
 				hp->accumPhotonCount = 0;
 			}
 		} else
-			assert(hpep->type == CONSTANT_COLOR);
+			assert(!hp->IsSurface());
 	}
 }
 
@@ -325,7 +325,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, MemoryArena &hp
 			if (vertexIndex == 0)
 				hpep->alpha = 0.f;
 
-			hpep->type = CONSTANT_COLOR;
+			hp->SetConstant();
 			break;
 		}
 		scattered = bsdf->dgShading.scattered;
@@ -424,7 +424,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, MemoryArena &hp
 
 		if(store)
 		{
-			hpep->type = SURFACE;
+			hp->SetSurface();
 			hpep->pathThroughput = pathThroughput * rayWeight / pdf_event;
 			hpep->wo = wo;
 
@@ -444,7 +444,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, MemoryArena &hp
 		if (pathLength == maxDepth || !bsdf->SampleF(sw, wo, &wi,
 			data[1], data[2], data[3], &f, &pdf, bounce_component, &flags,
 			NULL, true)) {
-			hpep->type = CONSTANT_COLOR;
+			hp->SetConstant();
 			break;
 		}
 
@@ -454,7 +454,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, MemoryArena &hp
 
 		pathThroughput *= f / pdf_event;
 		if (pathThroughput.Black()) {
-			hpep->type = CONSTANT_COLOR;
+			hp->SetConstant();
 			break;
 		}
 
@@ -492,7 +492,7 @@ void HitPoints::UpdatePointsInformation() {
 		hp = &(*hitPoints)[i];
 		hpep = &hp->eyePass;
 
-		if (hpep->type == SURFACE) {
+		if (hp->IsSurface()) {
 			if(hp->photonCount == 0)
 				++zeroHits;
 
