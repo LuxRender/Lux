@@ -36,10 +36,6 @@ namespace lux
 // Eye path hit points
 //------------------------------------------------------------------------------
 
-enum HitPointType {
-	SURFACE, CONSTANT_COLOR
-};
-
 class HitPointEyePass {
 public:
 	// Eye path data
@@ -53,9 +49,6 @@ public:
 	Vector wo;
 
 	BxDFType flags;
-private:
-	friend class HitPoint;
-	HitPointType type;
 };
 
 class HitPoint {
@@ -76,16 +69,17 @@ public:
 
 	void SetConstant()
 	{
-		eyePass.type = CONSTANT_COLOR;
+		eyePass.bsdf = NULL;
 	}
 	void SetSurface()
 	{
-		eyePass.type = SURFACE;
+		// the fact to set something else that NULL in bsdf field set the
+		// hitpoint as a surface
 	}
 
 	bool IsSurface() const
 	{
-		return eyePass.type == SURFACE;
+		return eyePass.bsdf != NULL;
 	}
 };
 
