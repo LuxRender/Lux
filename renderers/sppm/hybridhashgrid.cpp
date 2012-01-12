@@ -71,7 +71,6 @@ void HybridHashGrid::RefreshMutex() {
 	unsigned long long entryCount = 0;
 	for (unsigned int i = 0; i < hitPointsCount; ++i) {
 		HitPoint *hp = hitPoints->GetHitPoint(i);
-		HitPointEyePass *hpep = &hp->eyePass;
 
 		if (hp->IsSurface()) {
 			const float photonRadius = sqrtf(hp->accumPhotonRadius2);

@@ -94,7 +94,6 @@ const double HitPoints::GetPhotonHitEfficency() {
 	u_int hitPointsUpdatedCount = 0;
 	for (u_int i = 0; i < GetSize(); ++i) {
 		HitPoint *hp = &(*hitPoints)[i];
-		HitPointEyePass *hpep = &hp->eyePass;
 
 		if (hp->IsSurface()) {
 			++surfaceHitPointsCount;
@@ -112,7 +111,6 @@ void HitPoints::Init() {
 	BBox hpBBox = BBox();
 	for (u_int i = 0; i < (*hitPoints).size(); ++i) {
 		HitPoint *hp = &(*hitPoints)[i];
-		HitPointEyePass *hpep = &hp->eyePass;
 
 		if (hp->IsSurface())
 			hpBBox = Union(hpBBox, hp->GetPosition());
@@ -167,7 +165,6 @@ void HitPoints::AccumulateFlux(const u_int index, const u_int count) {
 
 	for (u_int i = first; i < last; ++i) {
 		HitPoint *hp = &(*hitPoints)[i];
-		HitPointEyePass *hpep = &hp->eyePass;
 
 		if(hp->IsSurface()) {
 			if (hp->accumPhotonCount > 0) {
@@ -483,14 +480,12 @@ void HitPoints::UpdatePointsInformation() {
 
 	assert((*hitPoints).size() > 0);
 	HitPoint *hp = &(*hitPoints)[0];
-	HitPointEyePass *hpep = &hp->eyePass;
 
 	maxr2 = minr2 = meanr2 = hp->accumPhotonRadius2;
 	minp = maxp = meanp = hp->photonCount;
 
 	for (u_int i = 1; i < (*hitPoints).size(); ++i) {
 		hp = &(*hitPoints)[i];
-		hpep = &hp->eyePass;
 
 		if (hp->IsSurface()) {
 			if(hp->photonCount == 0)
