@@ -426,7 +426,6 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, MemoryArena &hp
 		{
 			hpep->type = SURFACE;
 			hpep->pathThroughput = pathThroughput * rayWeight / pdf_event;
-			hp->SetPosition(p);
 			hpep->wo = wo;
 
 			hpep->flags = store_component;

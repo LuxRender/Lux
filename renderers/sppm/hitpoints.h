@@ -54,10 +54,6 @@ public:
 
 	BxDFType flags;
 	HitPointType type;
-
-private:
-	friend class HitPoint;
-	Point position;
 };
 
 class HitPoint {
@@ -73,12 +69,7 @@ public:
 
 	Point GetPosition() const
 	{
-		return eyePass.position;
-	}
-
-	void SetPosition(const Point p)
-	{
-		eyePass.position = p;
+		return eyePass.bsdf->dgShading.p;
 	}
 };
 
