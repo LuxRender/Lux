@@ -51,6 +51,15 @@ public:
 	BxDFType flags;
 };
 
+/*
+Alignement warning:
+
+HitPoint class is 64 bytes wide, which is perfect for alignement in CPU cache.
+
+Please, do changes in this structure with this point in mind. Please see the
+static_assert at the end of the class.
+*/
+
 class HitPoint {
 public:
 	HitPointEyePass eyePass;
@@ -94,6 +103,7 @@ public:
 		accumPhotonRadius2 *= (pass + alpha) / (pass + 1.0f);
 	}
 };
+BOOST_STATIC_ASSERT(sizeof(HitPoint) == 64);
 
 class SPPMRenderer;
 
@@ -284,7 +294,7 @@ private:
 
 	BBox hitPointBBox;
 	float maxHitPointRadius2;
-	std::vector<HitPoint> *hitPoints;
+	std::vector<HitPoint, AlignedAllocator<HitPoint> > *hitPoints;
 	HitPointsLookUpAccel *lookUpAccel;
 
 	u_int currentPass;

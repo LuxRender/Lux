@@ -71,7 +71,7 @@ HitPoints::HitPoints(SPPMRenderer *engine, RandomGenerator *rng)  {
 	eyeSampler = new HaltonEyeSampler(xstart, xend, ystart, yend,
 		renderer->sppmi->PixelSampler);
 
-	hitPoints = new std::vector<HitPoint>(eyeSampler->GetTotalSamplePos());
+	hitPoints = new std::vector<HitPoint, AlignedAllocator<HitPoint> >(eyeSampler->GetTotalSamplePos());
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Hit points count: " << hitPoints->size();
 
 	// Initialize hit points field
