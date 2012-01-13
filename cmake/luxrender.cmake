@@ -103,7 +103,6 @@ IF(QT4_FOUND)
 	#ADD_EXECUTABLE(luxrender ${GUI_TYPE} ${LUXQTGUI_SRCS} ${LUXQTGUI_MOC_SRCS} ${LUXQTGUI_RC_SRCS} ${LUXQTGUI_UI_HDRS} ${QM_FILES})
 	ADD_EXECUTABLE(luxrender ${GUI_TYPE} ${LUXQTGUI_SRCS} ${LUXQTGUI_MOC_SRCS} ${LUXQTGUI_RC_SRCS} ${LUXQTGUI_UI_HDRS})
 	IF(APPLE)
-		add_dependencies(luxrender luxShared) # explicitly say that the target depends on corelib build first
 		IF( NOT OSX_OPTION_XCODE_4.1)
 			SET_TARGET_PROPERTIES(luxrender PROPERTIES XCODE_ATTRIBUTE_GCC_VERSION 4.2) # QT will not play with xcode-4.0 compiler default llvm-gcc-4.2 !
 		ENDIF( NOT OSX_OPTION_XCODE_4.1)

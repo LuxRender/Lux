@@ -22,7 +22,6 @@
 SOURCE_GROUP("Source Files\\Tools" FILES tools/luxcomp.cpp)
 ADD_EXECUTABLE(luxcomp tools/luxcomp.cpp)
 IF(APPLE)
-	add_dependencies(luxcomp luxShared) # explicitly say that the target depends on corelib build first
 	TARGET_LINK_LIBRARIES(luxcomp ${OSX_SHARED_CORELIB} ${CMAKE_THREAD_LIBS_INIT} ${LUX_LIBRARY_DEPENDS} )
 ELSE(APPLE)
 	TARGET_LINK_LIBRARIES(luxcomp ${LUX_LIBRARY} ${CMAKE_THREAD_LIBS_INIT} ${LUX_LIBRARY_DEPENDS})

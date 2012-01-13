@@ -68,7 +68,6 @@ IF(PYTHONLIBS_FOUND OR PYTHON_CUSTOM)
 
 	ADD_LIBRARY(pylux MODULE python/binding.cpp)
 	IF(APPLE)
-		add_dependencies(pylux luxShared) # explicitly say that the target depends on corelib build first
 		SET_TARGET_PROPERTIES(pylux PROPERTIES XCODE_ATTRIBUTE_DEPLOYMENT_POSTPROCESSING NO) # exclude pylux from strip, not possible with external symbols !
 		TARGET_LINK_LIBRARIES(pylux -Wl,-undefined -Wl,dynamic_lookup ${OSX_SHARED_CORELIB} ${CMAKE_THREAD_LIBS_INIT} ${LUX_LIBRARY_DEPENDS} ${EXTRA_LIBS} ${PYTHON_LIBRARIES} ${Boost_python_LIBRARIES})
 		ADD_CUSTOM_COMMAND(
