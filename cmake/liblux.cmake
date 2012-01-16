@@ -900,8 +900,11 @@ ENDIF(NOT APPLE)
 #############################################################################
 IF(APPLE)
 	ADD_LIBRARY(luxShared SHARED ${lux_cpp_api_src} ${lux_lib_src} ${lux_lib_hdr} ${lux_parser_src})
-	TARGET_LINK_LIBRARIES(luxShared ${OSX_CORELIB_LINKER_FLAGS} ${LUX_LIBRARY_DEPENDS})
+	TARGET_LINK_LIBRARIES(luxShared ${LUX_LIBRARY_DEPENDS})
 	SET_TARGET_PROPERTIES(luxShared PROPERTIES OUTPUT_NAME lux)
+	ADD_CUSTOM_COMMAND(
+		TARGET luxShared POST_BUILD
+		COMMAND install_name_tool -id @loader_path/liblux.dylib Release/liblux.dylib)
 ELSEIF(MSVC)
 	ADD_LIBRARY(luxShared SHARED ${lux_lib_src} ${lux_lib_hdr} ${lux_parser_src})
 	TARGET_LINK_LIBRARIES(luxShared ${LUX_LIBRARY} ${LUX_LIBRARY_DEPENDS})

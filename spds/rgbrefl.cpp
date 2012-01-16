@@ -80,5 +80,6 @@ void RGBReflSPD::init(const RGBColor &s)
 	}
 
 	Scale(refrgb2spect_scale);
+	Clamp();
 }
 
