@@ -39,9 +39,12 @@
 #include <boost/bind.hpp>
 #include <boost/thread/mutex.hpp>
 
-#include <ctime>
+#include <boost/functional/hash.hpp>
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
 #include <boost/random/mersenne_twister.hpp>
-boost::mt19937 scene_rng(std::time(0));
+boost::hash<boost::uuids::uuid> uuid_hasher;
+boost::mt19937 scene_rng(uuid_hasher(boost::uuids::random_generator()()));
 boost::mutex scene_rand_mutex;
 
 using namespace lux;
