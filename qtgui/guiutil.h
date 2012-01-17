@@ -26,6 +26,7 @@
 #include <QString>
 #include <QImage>
 #include <QFontMetrics>
+#include <QMessageBox>
 
 #include "api.h"
 
@@ -41,5 +42,16 @@ QString pathElidedText(const QFontMetrics &fm, const QString &text, int width, i
 void overlayStatistics(QImage *image);
 QImage getFramebufferImage(bool overlayStats = false, bool outputAlpha = false);
 bool saveCurrentImageTonemapped(const QString &outFile, bool overlayStats = false, bool outputAlpha = false);
+
+// A list of button titles and associated button roles, stored as a QPair
+typedef QList<QPair<QString, QMessageBox::ButtonRole> > CustomButtonsList;
+/**
+ * Displays a custom message box.
+ * @param buttons A QList of QPairs, each containing a button title and the associated button role
+ * @param defaultButton Index of the default button in the buttons list
+ * @return Index of the clicked button in the buttons list, or -1 if user exited the dialog without click a button
+ */
+int customMessageBox(QWidget *parent, QMessageBox::Icon icon, const QString &title, const QString &text, 
+	const CustomButtonsList &buttons, int defaultButton = 0);
 
 #endif //GUIUTIL_H

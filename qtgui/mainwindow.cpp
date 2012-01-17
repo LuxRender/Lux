@@ -623,7 +623,15 @@ bool MainWindow::canStopRendering()
 {
 	if (m_guiRenderState == RENDERING) {
 		// Give warning that current rendering is not stopped
-		if (QMessageBox::question(this, tr("Current file is still rendering"),tr("Do you want to stop the current render and start a new one?"), QMessageBox::Yes|QMessageBox::No) == QMessageBox::No) {
+		const int acceptButton = 0;
+		const int rejectButton = 1;
+		if (customMessageBox(this, QMessageBox::Question, 
+				tr("Rendering in progress"),
+				tr("Do you want to stop the current render and load the new scene?"),
+				CustomButtonsList()
+					<< qMakePair(tr("Load new scene"), QMessageBox::AcceptRole)
+					<< qMakePair(tr("Cancel"), QMessageBox::RejectRole),				
+				rejectButton) == rejectButton) {
 			return false;
 		}
 	}

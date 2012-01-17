@@ -23,12 +23,13 @@
 #include <algorithm>
 #include <math.h>
 
+#include "guiutil.h"
+
 #include <QFileInfo>
 #include <QDateTime>
 #include <QTextLayout>
 #include <QPainter>
-
-#include "guiutil.h"
+#include <QPushButton>
 
 using std::min;
 using std::max;
@@ -203,4 +204,27 @@ bool saveCurrentImageTonemapped(const QString &outFile, bool overlayStats, bool 
 		return false;
 
 	return image.save(outFile);
+}
+
+int customMessageBox(QWidget *parent, QMessageBox::Icon icon, const QString &title, const QString &text, 
+	const QList<QPair<QString, QMessageBox::ButtonRole> > &buttons, int defaultButton)
+{
+	QMessageBox msgBox(parent);
+	msgBox.setIcon(icon);
+	msgBox.setText(text);
+	msgBox.setWindowTitle(title);
+
+	QList<QAbstractButton*> mbButtons;
+	for (int i = 0; i < buttons.size(); i++) {
+		QPushButton* b = msgBox.addButton(buttons[i].first, buttons[i].second);
+		mbButtons.append(b);
+		if (i == defaultButton)
+			msgBox.setDefaultButton(b);
+	}
+	
+	msgBox.exec();
+
+	if (msgBox.clickedButton() == 0)
+		return -1;
+	return mbButtons.indexOf(msgBox.clickedButton());
 }
