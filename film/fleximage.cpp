@@ -1084,13 +1084,16 @@ void FlexImageFilm::WriteImage(ImageType type)
 		}
 	}
 	// outside loop in order to write complete image
+	u_int pcount = 0;
 	for (u_int pix = 0; pix < nPix; ++pix) {
-		if (alphaWeight[pix] > 0.f)
+		if (alphaWeight[pix] > 0.f) {
 			alpha[pix] /= alphaWeight[pix];
-		Y += pixels[pix].c[1];
+			Y += pixels[pix].c[1];
+			pcount++;
+		}
 		alpha_buffer[pix] = alpha[pix];
 	}
-	Y /= nPix;
+	Y /= pcount;
 	averageLuminance = Y;
 	WriteImage2(type, pixels, alpha, "");
 	// The relation between EV and luminance in cd.m-2 is:
