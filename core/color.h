@@ -171,6 +171,12 @@ public:
 			if (isnan(c[2])) return true;
 		return false;
 	}
+	bool IsInf() const {
+			if (isinf(c[0])) return true;
+			if (isinf(c[1])) return true;
+			if (isinf(c[2])) return true;
+		return false;
+	}
 
 	friend class lux::ParamSet;
 	

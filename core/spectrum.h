@@ -40,7 +40,7 @@ static const float inv_WAVELENGTH_SAMPLES = 1.f / WAVELENGTH_SAMPLES;
 class SWCSpectrum {
 	friend class boost::serialization::access;
 public:
-	// RGBColor Public Methods
+	// SWCSpectrum Public Methods
 	SWCSpectrum(Scalar v = 0.f) {
 		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
 			c[i] = v;
@@ -176,6 +176,11 @@ public:
 	bool IsNaN() const {
 		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
 			if (isnan(c[i])) return true;
+		return false;
+	}
+	bool IsInf() const {
+		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
+			if (isinf(c[i])) return true;
 		return false;
 	}
 	Scalar Y(const SpectrumWavelengths &sw) const;

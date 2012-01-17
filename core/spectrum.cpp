@@ -20,7 +20,7 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// RGBColor.cpp*
+// SWCSpectrum.cpp*
 #include "spectrum.h"
 #include "spectrumwavelengths.h"
 #include "color.h"
