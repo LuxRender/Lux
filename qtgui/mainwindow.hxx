@@ -233,8 +233,8 @@ public:
 	void updateStatistics();
 	void showRenderresolution();
 	void showZoomfactor();
-	void renderScenefile(const QString& sceneFilename, const QString& flmFilename);
-	void renderScenefile(const QString& filename);
+	void renderScenefile(const QString& sceneFilename, const QString& flmFilename = "");
+	void renderNewScenefile(const QString& sceneFilename, const QString& flmFilename = "");
 	void changeRenderState (LuxGuiRenderState state);
 	void endRenderingSession(bool abort = true);
 	

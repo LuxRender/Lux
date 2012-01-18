@@ -635,8 +635,6 @@ bool MainWindow::canStopRendering()
 			return false;
 		}
 	}
-	// clear rendering queue
-	ClearRenderingQueue();
 	return true;
 }
 
@@ -661,8 +659,7 @@ void MainWindow::openFile()
 	QString fileName = QFileDialog::getOpenFileName(this, tr("Choose a scene file to open"), m_lastOpendir, tr("LuxRender Files (*.lxs)"));
 
 	if(!fileName.isNull()) {
-		endRenderingSession();
-		renderScenefile(fileName);
+		renderNewScenefile(fileName);
 	}
 }
 
@@ -674,8 +671,7 @@ void MainWindow::openRecentFile()
 	QAction *action = qobject_cast<QAction *>(sender());
 
 	if (action) {
-		endRenderingSession();
-		renderScenefile(action->data().toString());
+		renderNewScenefile(action->data().toString());
 	}
 }
 
@@ -700,9 +696,7 @@ void MainWindow::resumeFLM()
 	if(flmFileName.isNull())
 		return;
 
-	endRenderingSession();
-
-	renderScenefile (lxsFileName, flmFileName);
+	renderNewScenefile(lxsFileName, flmFileName);
 }
 
 void MainWindow::loadFLM(QString flmFileName)
@@ -719,6 +713,7 @@ void MainWindow::loadFLM(QString flmFileName)
 	setCurrentFile(flmFileName); // show flm-name in windowheader
 
 	endRenderingSession();
+	ClearRenderingQueue();
 
 	//SetTitle(wxT("LuxRender - ")+fn.GetName());
 
@@ -1013,7 +1008,8 @@ bool MainWindow::saveAllLightGroups(const QString &outFilename, const bool &asHD
 void MainWindow::batchProcess()
 {
 	// Are we rendering?
-	if (!canStopRendering()) return;
+	if (!canStopRendering()) 
+		return;
 
 	// Is there already film in the camera?
 	if(luxStatistics("sceneIsReady") || luxStatistics("filmIsReady")) {
@@ -1064,6 +1060,7 @@ void MainWindow::batchProcess()
 
 	// Make sure rendering is ended
 	endRenderingSession();
+	ClearRenderingQueue();
 
 	QString outExtension = "exr";
 	if(!asHDR) {
@@ -1358,8 +1355,7 @@ void  MainWindow::loadFile(const QString &fileName)
 	if (fileName.endsWith(".lxs")){
 		if (!canStopRendering())
 			return;
-		endRenderingSession();
-		renderScenefile(fileName);
+		renderNewScenefile(fileName);
 	} else if (fileName.endsWith(".flm")){
 		if (!canStopRendering())
 			return;
@@ -1369,6 +1365,7 @@ void  MainWindow::loadFile(const QString &fileName)
 		setCurrentFile(fileName); // show flm-name in windowheader
 
 		endRenderingSession();
+		ClearRenderingQueue();
 
 		indicateActivity ();
 		statusMessage->setText("Loading FLM...");
@@ -1431,15 +1428,39 @@ void MainWindow::viewportChanged() {
 
 void MainWindow::renderScenefile(const QString& sceneFilename, const QString& flmFilename)
 {
-	// Get the absolute path of the flm file
-	boost::filesystem::path fullPath(boost::filesystem::initial_path());
-	fullPath = boost::filesystem::system_complete(boost::filesystem::path(qPrintable(flmFilename), boost::filesystem::native));
+	if (flmFilename != "") {
+		// Get the absolute path of the flm file
+		boost::filesystem::path fullPath(boost::filesystem::initial_path());
+		fullPath = boost::filesystem::system_complete(boost::filesystem::path(qPrintable(flmFilename), boost::filesystem::native));
 
-	// Set the FLM filename
-	luxOverrideResumeFLM(fullPath.string().c_str());
+		// Set the FLM filename
+		luxOverrideResumeFLM(fullPath.string().c_str());
+	}
 
 	// Render the scene
-	renderScenefile(sceneFilename);
+	setCurrentFile(sceneFilename);
+
+	changeRenderState(PARSING);
+
+	indicateActivity ();
+	statusMessage->setText("Loading scene...");
+
+	m_loadTimer->start(1000);
+
+	// Start main render thread
+	if (m_engineThread) {
+		m_engineThread->join();
+		delete m_engineThread;
+	}
+
+	m_engineThread = new boost::thread(boost::bind(&MainWindow::engineThread, this, sceneFilename));
+}
+
+void MainWindow::renderNewScenefile(const QString& sceneFilename, const QString& flmFilename)
+{
+	endRenderingSession();
+	ClearRenderingQueue();
+	renderScenefile(sceneFilename, flmFilename);
 }
 
 void MainWindow::setCurrentFile(const QString& filename)
@@ -1494,31 +1515,6 @@ void MainWindow::updateRecentFileActions()
 		} else
 			m_recentFileActions[j]->setVisible(false);
 	}
-}
-
-void MainWindow::renderScenefile(const QString& filename)
-{
-	// CF
-	setCurrentFile(filename);
-
-	changeRenderState(PARSING);
-
-	indicateActivity ();
-	statusMessage->setText("Loading scene...");
-	if (filename == "-")
-		LOG(LUX_INFO,LUX_NOERROR) << "Loading piped scene...";
-	else
-		LOG(LUX_INFO,LUX_NOERROR) << "Loading scene file: '" << qPrintable(filename) << "'...";
-
-	m_loadTimer->start(1000);
-
-	// Start main render thread
-	if (m_engineThread) {
-		m_engineThread->join();
-		delete m_engineThread;
-	}
-
-	m_engineThread = new boost::thread(boost::bind(&MainWindow::engineThread, this, filename));
 }
 
 // TODO: replace by QStateMachine
