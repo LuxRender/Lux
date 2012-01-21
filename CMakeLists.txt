@@ -91,13 +91,6 @@ IF(APPLE)
 	execute_process(COMMAND sysctl hw.model OUTPUT_VARIABLE MAC_HW OUTPUT_STRIP_TRAILING_WHITESPACE)
 	STRING(SUBSTRING ${MAC_HW} 10 -1 MAC_MODEL)
 
-	execute_process(COMMAND sysctl hw.optional.sse4_1 OUTPUT_VARIABLE HW_SSE_4_1 )
-	if (${HW_SSE_4_1} MATCHES "hw.optional.sse4_1: 1")
-		set(HAS_SSE 4.1)
-	elseif()
-		set(HAS_SSE 3)		
-	endif()
-
 	execute_process(COMMAND sysctl hw.optional.sse4_2 OUTPUT_VARIABLE HW_SSE_4_2 )
 	if (${HW_SSE_4_2} MATCHES "hw.optional.sse4_2: 1")
 		set(HAS_SSE 4.2)
