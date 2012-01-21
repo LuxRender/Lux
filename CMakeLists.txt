@@ -89,7 +89,7 @@ IF(APPLE)
 	########## OSX_OPTIONS ###########
 	option(OSX_OPTION_PYLUX "Build a blender compatible pylux" ON)
 	option(OSX_OPTION_CLANG "Build with CLANG compiler ( XCODE4 )" ON)
-	option(OSX_OPTION_LTO "Build with LINK TIME OPTIMISATION ( MAY BREAK NON-SSE4 MACS COMPATIBILITY )" ON)
+	option(OSX_OPTION_LTO "Build with LINK TIME OPTIMISATION ( MAY BREAK NON-SSE4 MACS COMPATIBILITY )" OFF)
 	option(OSX_OPTION_UNIVERSAL "Force compile universal" OFF)
 	option(OSX_OPTION_LION "BUILD for OSX 10.7, else 10.6 would be deployment-target" OFF)
 	###################################
