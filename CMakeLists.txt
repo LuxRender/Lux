@@ -110,7 +110,7 @@ IF(APPLE)
 	option(OSX_OPTION_USE_MAX_SSE "Build with highest SSE available on mashine ( SSE_${HAS_SSE} )" OFF)
 	option(OSX_OPTION_UNIVERSAL "Force compile universal" OFF)
 	option(OSX_OPTION_LION "BUILD for OSX 10.7, else 10.6 would be deployment-target" OFF)
-	###################################GCC_ENABLE_SSE42_EXTENSIONS
+	###################################
 	if(OSX_OPTION_LION)
 		SET(CMAKE_OSX_DEPLOYMENT_TARGET 10.7)
 		SET(CMAKE_OSX_SYSROOT /Developer/SDKs/MacOSX10.7.sdk)
