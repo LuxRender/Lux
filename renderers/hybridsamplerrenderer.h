@@ -74,7 +74,8 @@ class HybridSamplerRenderer : public HybridRenderer {
 public:
 	HybridSamplerRenderer(const int oclPlatformIndex, bool useGPUs,
 			const u_int forceGPUWorkGroupSize, const string &deviceSelection,
-			const u_int rayBufferSize, const u_int stateBufferCount);
+			const u_int rayBufferSize, const u_int stateBufferCount,
+			const u_int qbvhStackSize);
 	~HybridSamplerRenderer();
 
 	RendererType GetType() const;

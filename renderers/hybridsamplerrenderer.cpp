@@ -162,7 +162,8 @@ bool SurfaceIntegratorStateBuffer::NextState(u_int &nrContribs, u_int &nrSamples
 
 HybridSamplerRenderer::HybridSamplerRenderer(const int oclPlatformIndex, bool useGPUs,
 		const u_int forceGPUWorkGroupSize, const string &deviceSelection,
-		const u_int rayBufSize, const u_int stateBufCount) : HybridRenderer() {
+		const u_int rayBufSize, const u_int stateBufCount,
+		const u_int qbvhStackSize) : HybridRenderer() {
 	state = INIT;
 
 	if (!IsPowerOf2(rayBufSize)) {
@@ -248,8 +249,16 @@ HybridSamplerRenderer::HybridSamplerRenderer(const int oclPlatformIndex, bool us
 			}
 		}
 
+		// The default QBVH stack size (i.e. 24) is too small for the average
+		// LuxRender scene and the slight slow down caused by a bigger stack
+		// should not be noticiable with hybrid rendering. The default is now 32.
+		for (size_t i = 0; i < hardwareDevices.size(); ++i) {
+			if (hardwareDevices[i]->GetType() == luxrays::DEVICE_TYPE_OPENCL)
+				((luxrays::OpenCLIntersectionDevice *)hardwareDevices[i])->SetQBVHMaxStackSize(qbvhStackSize);
+		}
+
 		LOG(LUX_INFO, LUX_NOERROR) << "OpenCL Devices used:";
-		for (size_t i = 0; i< hardwareDevices.size(); ++i)
+		for (size_t i = 0; i < hardwareDevices.size(); ++i)
 			LOG(LUX_INFO, LUX_NOERROR) << " [" << hardwareDevices[i]->GetName() << "]";
 	} else
 		// don't want GPU or no hardware available, use native
@@ -780,10 +789,12 @@ Renderer *HybridSamplerRenderer::CreateRenderer(const ParamSet &params) {
 
 	const u_int forceGPUWorkGroupSize = max(0, configParams.FindOneInt("opencl.gpu.workgroup.size", 0));
 
+	const u_int qbvhStackSize = max(16, configParams.FindOneInt("accelerator.qbvh.stacksize.max", 32));
+
 	params.MarkUsed(configParams);
 	return new HybridSamplerRenderer(platformIndex, useGPUs,
 			forceGPUWorkGroupSize, deviceSelection, rayBufferSize,
-			stateBufferCount);
+			stateBufferCount, qbvhStackSize);
 }
 
 static DynamicLoader::RegisterRenderer<HybridSamplerRenderer> r("hybrid");
