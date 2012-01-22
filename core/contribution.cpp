@@ -82,18 +82,20 @@ void ContributionPool::End(ContributionBuffer *c)
 	// will be done in Flush.
 }
 
-void ContributionPool::Next(ContributionBuffer::Buffer **b, float sc,
+void ContributionPool::Next(ContributionBuffer::Buffer* volatile *b, float sc,
 	u_int bufferGroup, u_int buffer)
 {
+	ContributionBuffer::Buffer* const buf = *b;
+
 	fast_mutex::scoped_lock poolAction(poolMutex);
 
 	// other thread swapped the buffer while current thread
 	// waited for the lock, all is good
-	if (!((*b)->Filled()))
+	if ((*b) != buf)
 		return;
 
 	sampleCount += sc;
-	CFull[bufferGroup][buffer].push_back(*b);
+	CFull[bufferGroup][buffer].push_back(buf);
 
 	if (!CFree.empty()) {
 		*b = CFree.back();

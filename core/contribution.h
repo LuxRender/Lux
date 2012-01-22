@@ -86,10 +86,6 @@ class ContributionBuffer {
 			return true;
 		}
 
-		bool Filled() const {
-			return pos > CONTRIB_BUF_SIZE/2;
-		}
-
 		void Splat(Film *film);
 
 	private:
@@ -121,7 +117,7 @@ public:
 
 	void End(ContributionBuffer *c);
 
-	void Next(ContributionBuffer::Buffer **b, float sc, u_int bufferGroup,
+	void Next(ContributionBuffer::Buffer* volatile *b, float sc, u_int bufferGroup,
 		u_int buffer);
 
 	// Flush() and Delete() are not thread safe,
@@ -146,7 +142,7 @@ private:
 
 inline void ContributionBuffer::Add(const Contribution &c, float weight)
 {
-	Buffer **buf = &(buffers[c.bufferGroup][c.buffer]);
+	Buffer* volatile* const buf = &(buffers[c.bufferGroup][c.buffer]);
 	if (!(*buf)->Add(c, weight)) {
 		pool->Next(buf, sampleCount, c.bufferGroup, c.buffer);
 		(*buf)->Add(c, weight);
