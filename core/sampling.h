@@ -84,8 +84,8 @@ public:
 class  Sampler {
 public:
 	// Sampler Interface
-	Sampler(int xstart, int xend, int ystart, int yend, u_int spp);
-	virtual ~Sampler() {}
+	Sampler(int xstart, int xend, int ystart, int yend, u_int spp, string *smplFileName);
+	virtual ~Sampler();
 	virtual void InitSample(Sample *sample) const = 0;
 	virtual void FreeSample(Sample *sample) const = 0;
 	virtual bool GetNextSample(Sample *sample) = 0;
@@ -106,6 +106,21 @@ public:
 	int xPixelStart, xPixelEnd, yPixelStart, yPixelEnd;
 	u_int samplesPerPixel;
 	Film *film;
+
+protected:
+	virtual void WriteSampleInformationHeader(const Sample &sample) {
+		LOG(LUX_SEVERE, LUX_SYSTEM) << "Internal error, called WriteSampleInformationHeader()";
+	};
+
+	virtual void WriteSampleInformation(const Sample &sample) {
+		LOG(LUX_SEVERE, LUX_SYSTEM) << "Internal error, called WriteSampleInformation()";
+	};
+
+	// Used to save all sample to a file (disabled if sampleFileName is NULL)
+	string *sampleFileName;
+	std::ofstream *sampleFile;
+	boost::mutex sampleFileMutex;
+	bool headerWritten;
 };
 
 // PxLoc X and Y pixel coordinate struct

@@ -21,6 +21,8 @@
  ***************************************************************************/
  
 // lowdiscrepancy.cpp*
+#include <fstream>
+
 #include "lowdiscrepancy.h"
 #include "error.h"
 #include "scene.h"
@@ -72,8 +74,9 @@ LDSampler::LDData::~LDData()
 
 // LDSampler Method Definitions
 LDSampler::LDSampler(int xstart, int xend,
-		int ystart, int yend, u_int ps, string pixelsampler)
-	: Sampler(xstart, xend, ystart, yend, RoundUpPow2(ps)) {
+		int ystart, int yend, u_int ps, string pixelsampler,
+		string *smplFileName)
+	: Sampler(xstart, xend, ystart, yend, RoundUpPow2(ps), smplFileName) {
 	// Initialize PixelSampler
 	pixelSampler = MakePixelSampler(pixelsampler, xstart, xend, ystart, yend);
 
@@ -203,13 +206,69 @@ float *LDSampler::GetLazyValues(const Sample &sample, u_int num, u_int pos)
 	return sd;
 }
 
+void LDSampler::WriteSampleInformationHeader(const Sample &sample) {
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Sample n1D size: " << sample.n1D.size();
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Sample n2D size: " << sample.n2D.size();
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Sample nxD size: " << sample.nxD.size();
+
+	u_int count = 0;
+	for (size_t i = 0; i < sample.n1D.size(); ++i)
+		count += sample.n1D[i];
+	for (size_t i = 0; i < sample.n2D.size(); ++i)
+		count += sample.n2D[i];
+
+	for (size_t i = 0; i < sample.nxD.size(); ++i) {
+		count += sample.nxD[i] * sample.dxD[i];
+		LOG(LUX_DEBUG, LUX_NOERROR) << "Sample nxD[" << i << "] size: " << sample.nxD[i];
+		LOG(LUX_DEBUG, LUX_NOERROR) << "Sample sxD[" << i << "] size: " << sample.dxD[i];
+	}
+
+	sampleFile->write((char *)&count, sizeof(u_int));
+}
+
+void LDSampler::WriteSampleInformation(const Sample &sample) {
+	sampleFile->write((char *)&sample.imageX, sizeof(float));
+	sampleFile->write((char *)&sample.imageY, sizeof(float));
+	sampleFile->write((char *)&sample.lensU, sizeof(float));
+	sampleFile->write((char *)&sample.lensV, sizeof(float));
+	sampleFile->write((char *)&sample.time, sizeof(float));
+	sampleFile->write((char *)&sample.wavelengths, sizeof(float));
+
+	for (size_t i = 0; i < sample.n1D.size(); ++i) {
+		for (size_t j = 0; j < sample.n1D.size(); ++j) {
+			float v = GetOneD(sample, i, j);
+			sampleFile->write((char *)&v, sizeof(float));
+		}
+	}
+
+	for (size_t i = 0; i < sample.n2D.size(); ++i) {
+		for (size_t j = 0; j < sample.n2D.size(); ++j) {
+			float uv[2];
+			GetTwoD(sample, i, j, uv);
+			sampleFile->write((char *)&uv, sizeof(float[2]));
+		}
+	}
+
+	for (size_t i = 0; i < sample.nxD.size(); ++i) {
+		for (size_t j = 0; j < sample.nxD[i]; ++j) {
+			float *data = GetLazyValues(sample, i, j);
+			sampleFile->write((char *)&data, sizeof(float) * sample.dxD[i]);
+		}
+	}
+}
+
 Sampler* LDSampler::CreateSampler(const ParamSet &params, const Film *film) {
 	// Initialize common sampler parameters
 	int xstart, xend, ystart, yend;
 	film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
 	string pixelsampler = params.FindOneString("pixelsampler", "vegas");
 	int nsamp = params.FindOneInt("pixelsamples", 4);
-	return new LDSampler(xstart, xend, ystart, yend, max(nsamp, 0), pixelsampler);
+
+	bool writeSampleFile = params.FindOneBool("write_sample_file", false);
+	string sampleFileName = params.FindOneString("sample_filename", "samples.spl");
+
+	return new LDSampler(xstart, xend, ystart, yend, max(nsamp, 0), pixelsampler,
+			writeSampleFile ? &sampleFileName : NULL);
 }
 
 static DynamicLoader::RegisterSampler<LDSampler> r("lowdiscrepancy");

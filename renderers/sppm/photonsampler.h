@@ -42,7 +42,7 @@ enum PhotonSamplerType {
 class PhotonSampler : public Sampler {
 public:
 	PhotonSampler(SPPMRenderer *sppmr):
-		Sampler(0, 0, 0, 0, 0), renderer(sppmr) { }
+		Sampler(0, 0, 0, 0, 0, NULL), renderer(sppmr) { }
 	virtual ~PhotonSampler() { }
 	virtual u_int GetTotalSamplePos() { return 0; }
 	virtual u_int RoundSize(u_int size) const { return size; }

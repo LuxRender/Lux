@@ -21,6 +21,8 @@
  ***************************************************************************/
 
 // sampling.cpp*
+#include <fstream>
+
 #include "lux.h"
 #include "memory.h"
 #include "sampling.h"
@@ -32,17 +34,54 @@
 using namespace lux;
 
 // Sampler Method Definitions
-Sampler::Sampler(int xstart, int xend, int ystart, int yend, u_int spp)
+Sampler::Sampler(int xstart, int xend, int ystart, int yend, u_int spp, string *smplFileName)
 {
 	xPixelStart = min(xstart, xend);
 	xPixelEnd = max(xstart, xend);
 	yPixelStart = min(ystart, yend);
 	yPixelEnd = max(ystart, yend);
 	samplesPerPixel = spp;
+
+	// Sample file saving
+	sampleFileName = smplFileName;
+	if (sampleFileName) {
+		// Open the file
+		LOG(LUX_INFO, LUX_NOERROR) << "Opening samples file: " << smplFileName;
+		sampleFile = new std::ofstream(smplFileName->c_str(), std::ios_base::out | std::ios_base::binary);
+
+		if(!sampleFile) {
+			LOG(LUX_SEVERE, LUX_SYSTEM) << "Cannot open file '" << smplFileName << "' for writing samples";
+			sampleFileName = NULL;
+		} else {
+			// Write file type tag
+			sampleFile->write("SEPL", 4);
+
+			headerWritten = false;
+		}
+	}
+}
+
+Sampler::~Sampler() {
+	if (sampleFileName)
+		sampleFile->close();
 }
 
 void Sampler::AddSample(const Sample &sample)
 {
+	// Check if I have to write the sample information into the sample file
+	if (sampleFileName) {
+		boost::mutex::scoped_lock lock(sampleFileMutex);
+
+		// Check if I have to write the header
+		if (!headerWritten) {
+			WriteSampleInformationHeader(sample);
+			headerWritten = true;
+		}
+
+		// Write sample
+		WriteSampleInformation(sample);
+	}
+
 	sample.contribBuffer->AddSampleCount(1.f);
 	for (u_int i = 0; i < sample.contributions.size(); ++i)
 		sample.contribBuffer->Add(sample.contributions[i], 1.f);

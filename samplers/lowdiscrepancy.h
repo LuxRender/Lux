@@ -46,7 +46,8 @@ public:
 	// LDSampler Public Methods
 	LDSampler(int xstart, int xend,
 	          int ystart, int yend,
-			  u_int nsamp, string pixelsampler);
+			  u_int nsamp, string pixelsampler,
+			  string *smplFileName);
 	virtual ~LDSampler();
 
 	virtual void InitSample(Sample *sample) const {
@@ -69,6 +70,11 @@ public:
 	virtual float *GetLazyValues(const Sample &sample, u_int num, u_int pos);
 
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
+
+protected:
+	virtual void WriteSampleInformationHeader(const Sample &sample);
+	virtual void WriteSampleInformation(const Sample &sample);
+
 private:
 	// LDSampler Private Data
 	u_int pixelSamples, totalPixels;
