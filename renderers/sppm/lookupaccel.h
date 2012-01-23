@@ -46,8 +46,7 @@ public:
 	HitPointsLookUpAccel() { }
 	virtual ~HitPointsLookUpAccel() { }
 
-	virtual void RefreshMutex() = 0;
-	virtual void RefreshParallel( const u_int index, const u_int count) { }
+	virtual void Refresh( const u_int index, const u_int count, boost::barrier &barrier) = 0;
 
 	virtual void AddFlux(Sample &sample, const Point &hitPoint, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup) = 0;
@@ -81,12 +80,14 @@ public:
 
 	~HashGrid();
 
-	void RefreshMutex();
+	void Refresh( const u_int index, const u_int count, boost::barrier &barrier);
 
 	void AddFlux(Sample& sample, const Point &hitPoint, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup);
 
 private:
+	void RefreshMutex();
+
 	u_int Hash(const int ix, const int iy, const int iz) {
 		return (u_int)((ix * 73856093) ^ (iy * 19349663) ^ (iz * 83492791)) % gridSize;
 	}
@@ -110,12 +111,14 @@ public:
 
 	~KdTree();
 
-	void RefreshMutex();
+	void Refresh( const u_int index, const u_int count, boost::barrier &barrier);
 
 	void AddFlux(Sample& sample, const Point &hitPoint, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup);
 
 private:
+	void RefreshMutex();
+
 	struct KdNode {
 		void init(const float p, const u_int a) {
 			splitPos = p;
@@ -286,13 +289,14 @@ public:
 
 	~HybridHashGrid();
 
-	void RefreshMutex();
-	void RefreshParallel( const u_int index, const u_int count);
+	void Refresh( const u_int index, const u_int count, boost::barrier &barrier);
 
 	void AddFlux(Sample& sample, const Point &hitPoint, const Vector &wi,
 		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup);
 
 private:
+	void RefreshMutex();
+
 	u_int Hash(const int ix, const int iy, const int iz) {
 		return (u_int)((ix * 73856093) ^ (iy * 19349663) ^ (iz * 83492791)) % gridSize;
 	}

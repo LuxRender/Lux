@@ -457,7 +457,6 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 			// than its real value. This is not a big problem when updating
 			// the lookup accelerator.
 			hitPoints->UpdatePointsInformation();
-			hitPoints->RefreshAccelMutex();
 		}
 		// Wait for photon pass
 		allThreadBarrier->wait();
@@ -465,9 +464,7 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 		if(renderer->paused())
 			break;
 
-		hitPoints->RefreshAccelParallel(myThread->n, renderer->renderThreads.size());
-		// Wait for photon pass
-		allThreadBarrier->wait();
+		hitPoints->RefreshAccel(myThread->n, renderer->renderThreads.size(), *allThreadBarrier);
 
 		if (myThread->n == 0) {
 			const double eyePassTime = osWallClockTime() - eyePassStartTime;

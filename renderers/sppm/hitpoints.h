@@ -305,12 +305,8 @@ public:
 	void AccumulateFlux(const u_int index, const u_int count);
 	void SetHitPoints(Sample &sample, RandomGenerator *rng, const u_int index, const u_int count, MemoryArena& arena);
 
-	void RefreshAccelMutex() {
-		lookUpAccel->RefreshMutex();
-	}
-
-	void RefreshAccelParallel(const u_int index, const u_int count) {
-		lookUpAccel->RefreshParallel(index, count);
+	void RefreshAccel(const u_int index, const u_int count, boost::barrier &barrier) {
+		lookUpAccel->Refresh(index, count, barrier);
 	}
 
 private:
