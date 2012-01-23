@@ -75,6 +75,7 @@ SurfaceIntegrator *SPPMIntegrator::CreateSurfaceIntegrator(const ParamSet &param
 	if (acc == "hashgrid") sppmi->lookupAccelType = HASH_GRID;
 	else if (acc == "kdtree") sppmi->lookupAccelType = KD_TREE;
 	else if (acc == "hybridhashgrid") sppmi->lookupAccelType = HYBRID_HASH_GRID;
+	else if (acc == "parallelhashgrid") sppmi->lookupAccelType = PARALLEL_HASH_GRID;
 	else {
 		LOG(LUX_WARNING,LUX_BADTOKEN) << "Lookup accelerator  '" << acc <<"' unknown. Using \"hybridhashgrid\".";
 		sppmi->lookupAccelType = HYBRID_HASH_GRID;
@@ -91,6 +92,7 @@ SurfaceIntegrator *SPPMIntegrator::CreateSurfaceIntegrator(const ParamSet &param
 	sppmi->maxPhotonPathDepth = params.FindOneInt("maxphotondepth", 16);
 	sppmi->GlossyThreshold = params.FindOneFloat("glossythreshold", 100.f);
 
+	sppmi->parallelHashGridSpare = params.FindOneFloat("parallelhashgridspare", 1.0f);
 	sppmi->photonPerPass = params.FindOneInt("photonperpass", 1000000);
 
 	sppmi->includeEnvironment = params.FindOneBool("includeenvironment", true);

@@ -38,7 +38,7 @@ class HitPoints;
 class HashCell;
 
 enum LookUpAccelType {
-	HASH_GRID, KD_TREE, HYBRID_HASH_GRID
+	HASH_GRID, KD_TREE, HYBRID_HASH_GRID, PARALLEL_HASH_GRID
 };
 
 class HitPointsLookUpAccel {
@@ -99,6 +99,34 @@ private:
 	u_int gridSize;
 	float invCellSize;
 	std::list<HitPoint *> **grid;
+};
+
+//------------------------------------------------------------------------------
+// Parallel Hash Grid accelerator
+//------------------------------------------------------------------------------
+
+class ParallelHashGrid : public HitPointsLookUpAccel {
+public:
+	ParallelHashGrid(HitPoints *hps, float const gridCoef);
+
+	~ParallelHashGrid();
+
+	virtual void Refresh( const u_int index, const u_int count, boost::barrier &barrier);
+
+	void AddFlux(Sample& sample, const Point &hitPoint, const Vector &wi,
+		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup);
+
+private:
+	u_int Hash(const int ix, const int iy, const int iz) {
+		return (u_int)((ix * 73856093) ^ (iy * 19349663) ^ (iz * 83492791)) % gridSize;
+	}
+	void JumpInsert(unsigned int hv, unsigned int i);
+
+	HitPoints *hitPoints;
+
+	float invCellSize;
+	unsigned int *grid, *jump_list;
+	unsigned int gridSize, jumpSize;
 };
 
 //------------------------------------------------------------------------------

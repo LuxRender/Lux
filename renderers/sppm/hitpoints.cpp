@@ -148,6 +148,9 @@ void HitPoints::Init() {
 		case HYBRID_HASH_GRID:
 			lookUpAccel = new HybridHashGrid(this);
 			break;
+		case PARALLEL_HASH_GRID:
+			lookUpAccel = new ParallelHashGrid(this, renderer->sppmi->parallelHashGridSpare);
+			break;
 		default:
 			assert (false);
 	}

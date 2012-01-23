@@ -294,6 +294,7 @@ SET(lux_renderers_src
 	renderers/sppm/photonsampler.cpp
 	renderers/sppm/lookupaccel.cpp
 	renderers/sppm/hashgrid.cpp
+	renderers/sppm/parallelhashgrid.cpp
 	renderers/sppm/hitpoints.cpp
 	renderers/sppm/hybridhashgrid.cpp
 	renderers/sppm/kdtree.cpp

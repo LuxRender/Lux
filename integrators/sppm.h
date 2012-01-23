@@ -52,6 +52,7 @@ public:
 	// double instead of float because photon counters declared as int 64bit
 	double photonAlpha;
 	float photonStartRadiusScale;
+	float parallelHashGridSpare;
 	u_int maxEyePathDepth;
 	u_int maxPhotonPathDepth;
 	u_int photonPerPass;
