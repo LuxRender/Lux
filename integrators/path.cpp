@@ -133,6 +133,9 @@ u_int PathIntegrator::Li(const Scene &scene, const Sample &sample) const
 	u_int vertexIndex = 0;
 	const Volume *volume = NULL;
 
+	if (sample.pathInfo)
+		sample.pathInfo->Clear();
+
 	for (u_int pathLength = 0; ; ++pathLength) {
 		const SWCSpectrum prevThroughput(pathThroughput);
 		const float *data = sample.sampler->GetLazyValues(sample,
@@ -261,6 +264,18 @@ u_int PathIntegrator::Li(const Scene &scene, const Sample &sample) const
 		pathThroughput *= f;
 		if (!specular)
 			VContrib += AbsDot(wi, n) / pdf;
+
+		if (sample.pathInfo) {
+			if (vertexIndex == 1) {
+				sample.pathInfo->v1Point = p;
+				sample.pathInfo->v1Normal = n;
+				sample.pathInfo->v1Bsdf = XYZColor(sw, f);
+			} else if (vertexIndex == 2) {
+				sample.pathInfo->v2Point = p;
+				sample.pathInfo->v2Normal = n;
+				sample.pathInfo->v2Bsdf = XYZColor(sw, f);
+			}
+		}
 
 		ray = Ray(p, wi);
 		ray.time = sample.realTime;

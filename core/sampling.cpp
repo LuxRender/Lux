@@ -89,7 +89,7 @@ void Sampler::AddSample(const Sample &sample)
 }
 
 // Sample Method Definitions
-Sample::Sample() : arena(2048), samplerData(NULL)
+Sample::Sample() : arena(2048), samplerData(NULL), pathInfo(NULL)
 {
 }
 

@@ -54,6 +54,9 @@ public:
 		sample->sampler = const_cast<LDSampler *>(this);
 		sample->samplerData = new LDData(*sample, xPixelStart,
 			yPixelStart, pixelSamples);
+
+		if (sampleFileName)
+			sample->pathInfo = new SamplePathInfo();
 	}
 	virtual void FreeSample(Sample *sample) const {
 		delete static_cast<LDData *>(sample->samplerData);

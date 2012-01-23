@@ -211,7 +211,8 @@ void LDSampler::WriteSampleInformationHeader(const Sample &sample) {
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Sample n2D size: " << sample.n2D.size();
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Sample nxD size: " << sample.nxD.size();
 
-	u_int count = 0;
+	// 4 for lensU, lensV, time, wavelengths
+	u_int count = 4;
 	for (size_t i = 0; i < sample.n1D.size(); ++i)
 		count += sample.n1D[i];
 	for (size_t i = 0; i < sample.n2D.size(); ++i)
@@ -227,8 +228,14 @@ void LDSampler::WriteSampleInformationHeader(const Sample &sample) {
 }
 
 void LDSampler::WriteSampleInformation(const Sample &sample) {
+	if (sample.contributions.size() == 0)
+		return;
+
+	// Write screen position
 	sampleFile->write((char *)&sample.imageX, sizeof(float));
 	sampleFile->write((char *)&sample.imageY, sizeof(float));
+
+	// Write random parameters
 	sampleFile->write((char *)&sample.lensU, sizeof(float));
 	sampleFile->write((char *)&sample.lensV, sizeof(float));
 	sampleFile->write((char *)&sample.time, sizeof(float));
@@ -255,6 +262,19 @@ void LDSampler::WriteSampleInformation(const Sample &sample) {
 			sampleFile->write((char *)&data, sizeof(float) * sample.dxD[i]);
 		}
 	}
+
+	// Write sample color
+
+	// TODO: I assume all Contributions have the same imageX, imageY, etc.
+	// TODO: this will work only with some integrator (i.e. path, not with bidir)
+
+	XYZColor c;
+	for (u_int i = 0; i < sample.contributions.size(); ++i)
+		c += sample.contributions[i].color;
+	sampleFile->write((char *)c.c, sizeof(float[3]));
+
+	// Write scene features
+	sampleFile->write((char *)sample.pathInfo, sizeof(SamplePathInfo));
 }
 
 Sampler* LDSampler::CreateSampler(const ParamSet &params, const Film *film) {

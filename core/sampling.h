@@ -24,6 +24,8 @@
 #define LUX_SAMPLING_H
 // sampling.h*
 #include "lux.h"
+#include "geometry/point.h"
+#include "geometry/normal.h"
 #include "randomgen.h"
 #include "contribution.h"
 #include "spectrumwavelengths.h"
@@ -31,6 +33,22 @@
 
 namespace lux
 {
+
+class SamplePathInfo {
+public:
+	SamplePathInfo() { }
+	~SamplePathInfo() { }
+
+	void Clear() { memset(this, 0, sizeof(SamplePathInfo)); }
+
+	Point v1Point;
+	Normal v1Normal;
+	XYZColor v1Bsdf;
+
+	Point v2Point;
+	Normal v2Normal;
+	XYZColor v2Bsdf;
+};
 
 class Sample {
 public:
@@ -77,6 +95,9 @@ public:
 	SpectrumWavelengths swl;
 	Camera *camera;
 	float realTime;
+
+	SamplePathInfo *pathInfo;
+
 public:
 	mutable vector<Contribution> contributions;
 };
