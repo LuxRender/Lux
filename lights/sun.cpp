@@ -61,7 +61,7 @@ public:
 		const float cosTheta = sqrtf(1.f - sin2Theta);
 		const float phi = 2.f * M_PI * u2;
 		*wiW = cosf(phi) * sinTheta * sn + sinf(phi) * sinTheta * tn +
-			cosTheta * Vector(nn);
+			cosTheta * Vector(dgShading.nn);
 		// Approximate pdf value accounting for the fact that theta max
 		// is very small
 		*pdf = INV_PI / sin2ThetaMax;

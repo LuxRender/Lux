@@ -349,7 +349,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, MemoryArena &hp
 		{
 			// Compute perfect mirror direction
 			// TODO: Also handle the refractive direction
-			Vector reflected_direction = 2.f * Dot(Vector(bsdf->nn), Normalize(wo)) * Vector(bsdf->nn) + (-wo);
+			Vector reflected_direction = 2.f * Dot(Vector(bsdf->dgShading.nn), Normalize(wo)) * Vector(bsdf->dgShading.nn) + (-wo);
 			// Glossy threshold
 			float glossy_pdf = bsdf->Pdf(sw, wo, reflected_direction, BxDFType(BSDF_GLOSSY | BSDF_REFLECTION | BSDF_TRANSMISSION));
 

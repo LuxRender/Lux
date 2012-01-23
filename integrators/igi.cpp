@@ -138,7 +138,7 @@ void IGIIntegrator::Preprocess(const RandomGenerator &rng, const Scene &scene)
 			ray.o = bsdf->dgShading.p;
 			SWCSpectrum f;
 			float pdf2;
-			if (!bsdf->SampleF(sw, Vector(bsdf->nn), &ray.d,
+			if (!bsdf->SampleF(sw, Vector(bsdf->dgShading.nn), &ray.d,
 				lightSamp1[2 * sampOffset],
 				lightSamp1[2 * sampOffset + 1],
 				lightSamp1b[sampOffset], &f, &pdf2))

@@ -75,8 +75,8 @@ public:
 	virtual float Pdf(const SpectrumWavelengths &sw, const Vector &woW,
 		const Vector &wiW, BxDFType flags = BSDF_ALL) const {
 		if (NumComponents(flags) == 1 &&
-			Dot(wiW, ng) > 0.f && Dot(wiW, nn) > 0.f)
-			return AbsDot(wiW, nn) * INV_PI;
+			Dot(wiW, ng) > 0.f && Dot(wiW, dgShading.nn) > 0.f)
+			return AbsDot(wiW, dgShading.nn) * INV_PI;
 		return 0.f;
 	}
 	virtual SWCSpectrum F(const SpectrumWavelengths &sw, const Vector &woW,
