@@ -47,10 +47,6 @@ static void workSize(const u_int index, const u_int count, const unsigned int si
 	*last = (index == count - 1) ? size : (*first + workSize);
 }
 
-static int AbsInt(float v) {
-	return abs(static_cast<int>(v));
-}
-
 void ParallelHashGrid::JumpInsert(unsigned int hv, unsigned int i)
 {
 	hv = boost::interprocess::detail::atomic_cas32(reinterpret_cast<volatile boost::uint32_t*>(grid + hv), i, ~0u);
@@ -97,7 +93,7 @@ void ParallelHashGrid::Refresh( const u_int index, const u_int count, boost::bar
 
 		if (hp->IsSurface()) {
 			const Point pos = hp->GetPosition() * invCellSize;
-			JumpInsert(Hash(AbsInt(pos.x), AbsInt(pos.y), AbsInt(pos.z)), i);
+			JumpInsert(Hash(pos.x, pos.y, pos.z), i);
 		}
 	}
 }
@@ -112,12 +108,12 @@ void ParallelHashGrid::AddFlux(Sample &sample, const Point &hitPoint, const Vect
 	const Point p1 = ((hitPoint - rad)) * invCellSize;
 	const Point p2 = ((hitPoint + rad)) * invCellSize;
 
-	const int xMin = min(AbsInt(p1.x), AbsInt(p2.x));
-	const int xMax = max(AbsInt(p1.x), AbsInt(p2.x));
-	const int yMin = min(AbsInt(p1.y), AbsInt(p2.y));
-	const int yMax = max(AbsInt(p1.y), AbsInt(p2.y));
-	const int zMin = min(AbsInt(p1.z), AbsInt(p2.z));
-	const int zMax = max(AbsInt(p1.z), AbsInt(p2.z));
+	const int xMin = p1.x;
+	const int xMax = p2.x;
+	const int yMin = p1.y;
+	const int yMax = p2.y;
+	const int zMin = p1.z;
+	const int zMax = p2.z;
 
 	for (int iz = zMin; iz <= zMax; ++iz) {
 		for (int iy = yMin; iy <= yMax; ++iy) {
