@@ -39,7 +39,7 @@ ParallelHashGrid::~ParallelHashGrid() {
 	delete[] jump_list;
 }
 
-void workSize(const u_int index, const u_int count, const unsigned int size, unsigned int * const first, unsigned int * const last)
+static void workSize(const u_int index, const u_int count, const unsigned int size, unsigned int * const first, unsigned int * const last)
 {
 	// Calculate the index of work this thread has to do
 	const unsigned int workSize = size / count;
