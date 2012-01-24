@@ -49,15 +49,15 @@ void workSize(const u_int index, const u_int count, const unsigned int size, uns
 
 void ParallelHashGrid::JumpInsert(unsigned int hv, unsigned int i)
 {
-	hv = boost::interprocess::detail::atomic_cas32(reinterpret_cast<boost::uint32_t*>(grid + hv), i, -1u);
+	hv = boost::interprocess::detail::atomic_cas32(reinterpret_cast<boost::uint32_t*>(grid + hv), i, ~0u);
 
-	if(hv == -1u)
+	if(hv == ~0u)
 		return;
 
 	do
 	{
-		hv = boost::interprocess::detail::atomic_cas32(reinterpret_cast<boost::uint32_t*>(jump_list + hv), i, -1u);
-	} while(hv != -1u);
+		hv = boost::interprocess::detail::atomic_cas32(reinterpret_cast<boost::uint32_t*>(jump_list + hv), i, ~0u);
+	} while(hv != ~0u);
 }
 
 void ParallelHashGrid::Refresh( const u_int index, const u_int count, boost::barrier &barrier)
@@ -76,12 +76,12 @@ void ParallelHashGrid::Refresh( const u_int index, const u_int count, boost::bar
 	// reset grid
 	workSize(index, count, gridSize, &first, &last);
 	for(unsigned int i = first; i < last; ++i)
-		grid[i] = -1u;
+		grid[i] = ~0u;
 
 	// first and last are used later, so don't change them
 	workSize(index, count, jumpSize, &first, &last);
 	for(unsigned int i = first; i < last; ++i)
-		jump_list[i] = -1u;
+		jump_list[i] = ~0u;
 
 	// wait for the init of both list and invCellSize
 	barrier.wait();
@@ -116,7 +116,7 @@ void ParallelHashGrid::AddFlux(Sample &sample, const Point &hitPoint, const Vect
 				// jumpLookAt
 				unsigned int hp_index = grid[hv];
 
-				if(grid[hv] == -1u)
+				if(grid[hv] == ~0u)
 					continue;
 
 				do
@@ -124,7 +124,7 @@ void ParallelHashGrid::AddFlux(Sample &sample, const Point &hitPoint, const Vect
 					AddFluxToHitPoint(sample, hitPoints->GetHitPoint(hp_index), hitPoint, wi, sw, photonFlux, lightGroup);
 					hp_index = jump_list[hp_index];
 				}
-				while(hp_index != -1u);
+				while(hp_index != ~0u);
 			}
 		}
 	}
