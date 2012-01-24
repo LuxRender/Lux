@@ -125,8 +125,8 @@ private:
 	HitPoints *hitPoints;
 
 	float invCellSize;
-	volatile unsigned int *grid;
-	volatile unsigned int *jump_list;
+	unsigned int *grid;
+	unsigned int *jump_list;
 	unsigned int gridSize, jumpSize;
 };
 
