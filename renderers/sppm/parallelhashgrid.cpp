@@ -47,6 +47,10 @@ void workSize(const u_int index, const u_int count, const unsigned int size, uns
 	*last = (index == count - 1) ? size : (*first + workSize);
 }
 
+static int AbsInt(float v) {
+	return abs(static_cast<int>(v));
+}
+
 void ParallelHashGrid::JumpInsert(unsigned int hv, unsigned int i)
 {
 	hv = boost::interprocess::detail::atomic_cas32(reinterpret_cast<boost::uint32_t*>(grid + hv), i, ~0u);
@@ -93,7 +97,7 @@ void ParallelHashGrid::Refresh( const u_int index, const u_int count, boost::bar
 
 		if (hp->IsSurface()) {
 			const Point pos = hp->GetPosition() * invCellSize;
-			JumpInsert(Hash(int(pos.x), int(pos.y), int(pos.z)), i);
+			JumpInsert(Hash(AbsInt(pos.x), AbsInt(pos.y), AbsInt(pos.z)), i);
 		}
 	}
 }
@@ -105,12 +109,19 @@ void ParallelHashGrid::AddFlux(Sample &sample, const Point &hitPoint, const Vect
 	const Vector rad(maxPhotonRadius, maxPhotonRadius, maxPhotonRadius);
 
 	// Look for eye path hit points near the current hit point
-	const Point bMin = ((hitPoint - rad)) * invCellSize;
-	const Point bMax = ((hitPoint + rad)) * invCellSize;
+	const Point p1 = ((hitPoint - rad)) * invCellSize;
+	const Point p2 = ((hitPoint + rad)) * invCellSize;
 
-	for (int iz = abs(int(bMin.z)); iz <= abs(int(bMax.z)); ++iz) {
-		for (int iy = abs(int(bMin.y)); iy <= abs(int(bMax.y)); ++iy) {
-			for (int ix = abs(int(bMin.x)); ix <= abs(int(bMax.x)); ++ix) {
+	const int xMin = min(AbsInt(p1.x), AbsInt(p2.x));
+	const int xMax = max(AbsInt(p1.x), AbsInt(p2.x));
+	const int yMin = min(AbsInt(p1.y), AbsInt(p2.y));
+	const int yMax = max(AbsInt(p1.y), AbsInt(p2.y));
+	const int zMin = min(AbsInt(p1.z), AbsInt(p2.z));
+	const int zMax = max(AbsInt(p1.z), AbsInt(p2.z));
+
+	for (int iz = zMin; iz <= zMax; ++iz) {
+		for (int iy = yMin; iy <= yMax; ++iy) {
+			for (int ix = xMin; ix <= xMax; ++ix) {
 				unsigned int hv = Hash(ix, iy, iz);
 
 				// jumpLookAt
