@@ -83,6 +83,7 @@ SET(lux_core_src
 	core/renderfarm.cpp
 	core/renderinghints.cpp
 	core/sampling.cpp
+	core/samplefile.cpp
 	core/scene.cpp
 	core/shape.cpp
 	core/spd.cpp

@@ -24,6 +24,7 @@
 #include "sampling.h"
 #include "paramset.h"
 #include "film.h"
+#include "samplefile.h"
 
 namespace lux
 {
@@ -34,7 +35,7 @@ public:
 	class LDData {
 	public:
 		LDData(const Sample &sample, int xPixelStart, int yPixelStart,
-			u_int pixelSamples);
+			u_int sampleFileName);
 		~LDData();
 		int xPos, yPos;
 		u_int samplePos;
@@ -55,7 +56,7 @@ public:
 		sample->samplerData = new LDData(*sample, xPixelStart,
 			yPixelStart, pixelSamples);
 
-		if (sampleFileName)
+		if (sampleFileWriter)
 			sample->pathInfo = new SamplePathInfo();
 	}
 	virtual void FreeSample(Sample *sample) const {
@@ -71,6 +72,7 @@ public:
 	virtual void GetTwoD(const Sample &sample, u_int num, u_int pos,
 		float u[2]);
 	virtual float *GetLazyValues(const Sample &sample, u_int num, u_int pos);
+	virtual void AddSample(const Sample &sample);
 
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
 
@@ -85,6 +87,8 @@ private:
 
 	fast_mutex sampPixelPosMutex;
 	u_int sampPixelPos;
+
+	SampleFileWriter *sampleFileWriter;
 };
 
 }//namespace lux

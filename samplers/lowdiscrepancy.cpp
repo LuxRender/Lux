@@ -75,8 +75,8 @@ LDSampler::LDData::~LDData()
 // LDSampler Method Definitions
 LDSampler::LDSampler(int xstart, int xend,
 		int ystart, int yend, u_int ps, string pixelsampler,
-		string *smplFileName)
-	: Sampler(xstart, xend, ystart, yend, RoundUpPow2(ps), smplFileName) {
+		string *sampleFileName)
+	: Sampler(xstart, xend, ystart, yend, RoundUpPow2(ps)) {
 	// Initialize PixelSampler
 	pixelSampler = MakePixelSampler(pixelsampler, xstart, xend, ystart, yend);
 
@@ -89,6 +89,11 @@ LDSampler::LDSampler(int xstart, int xend,
 	} else
 		pixelSamples = ps;
 	sampPixelPos = 0;
+
+	if (sampleFileName)
+		sampleFileWriter = new SampleFileWriter(*sampleFileName);
+	else
+		sampleFileWriter = NULL;
 }
 
 LDSampler::~LDSampler() {
@@ -206,6 +211,28 @@ float *LDSampler::GetLazyValues(const Sample &sample, u_int num, u_int pos)
 	return sd;
 }
 
+void LDSampler::AddSample(const Sample &sample)
+{
+	// Check if I have to write the sample information into the sample file
+	if (sampleFileWriter) {
+		boost::mutex::scoped_lock lock(sampleFileWriter->fileMutex);
+
+		// Check if I have to write the header
+		if (!sampleFileWriter->headerWritten) {
+			WriteSampleInformationHeader(sample);
+			sampleFileWriter->headerWritten = true;
+		}
+
+		// Write sample
+		WriteSampleInformation(sample);
+	}
+
+	sample.contribBuffer->AddSampleCount(1.f);
+	for (u_int i = 0; i < sample.contributions.size(); ++i)
+		sample.contribBuffer->Add(sample.contributions[i], 1.f);
+	sample.contributions.clear();
+}
+
 void LDSampler::WriteSampleInformationHeader(const Sample &sample) {
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Sample n1D size: " << sample.n1D.size();
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Sample n2D size: " << sample.n2D.size();
@@ -218,13 +245,14 @@ void LDSampler::WriteSampleInformationHeader(const Sample &sample) {
 	for (size_t i = 0; i < sample.n2D.size(); ++i)
 		count += sample.n2D[i];
 
-	for (size_t i = 0; i < sample.nxD.size(); ++i) {
-		count += sample.nxD[i] * sample.dxD[i];
-		LOG(LUX_DEBUG, LUX_NOERROR) << "Sample nxD[" << i << "] size: " << sample.nxD[i];
+	for (size_t i = 0; i < sample.nxD.size(); ++i) { // Only the first 2 path bounces
+		count += min<u_int>(sample.nxD[i], 2) * sample.dxD[i];
+		LOG(LUX_DEBUG, LUX_NOERROR) << "Sample nxD[" << i << "] size: " << sample.nxD[i] <<
+				" (capped to: " << min<u_int>(sample.nxD[i], 2) << ")";
 		LOG(LUX_DEBUG, LUX_NOERROR) << "Sample sxD[" << i << "] size: " << sample.dxD[i];
 	}
 
-	sampleFile->write((char *)&count, sizeof(u_int));
+	sampleFileWriter->Write(&count, sizeof(u_int));
 }
 
 void LDSampler::WriteSampleInformation(const Sample &sample) {
@@ -232,19 +260,19 @@ void LDSampler::WriteSampleInformation(const Sample &sample) {
 		return;
 
 	// Write screen position
-	sampleFile->write((char *)&sample.imageX, sizeof(float));
-	sampleFile->write((char *)&sample.imageY, sizeof(float));
+	sampleFileWriter->Write(&sample.imageX, sizeof(float));
+	sampleFileWriter->Write(&sample.imageY, sizeof(float));
 
 	// Write random parameters
-	sampleFile->write((char *)&sample.lensU, sizeof(float));
-	sampleFile->write((char *)&sample.lensV, sizeof(float));
-	sampleFile->write((char *)&sample.time, sizeof(float));
-	sampleFile->write((char *)&sample.wavelengths, sizeof(float));
+	sampleFileWriter->Write(&sample.lensU, sizeof(float));
+	sampleFileWriter->Write(&sample.lensV, sizeof(float));
+	sampleFileWriter->Write(&sample.time, sizeof(float));
+	sampleFileWriter->Write(&sample.wavelengths, sizeof(float));
 
 	for (size_t i = 0; i < sample.n1D.size(); ++i) {
 		for (size_t j = 0; j < sample.n1D.size(); ++j) {
 			float v = GetOneD(sample, i, j);
-			sampleFile->write((char *)&v, sizeof(float));
+			sampleFileWriter->Write(&v, sizeof(float));
 		}
 	}
 
@@ -252,14 +280,14 @@ void LDSampler::WriteSampleInformation(const Sample &sample) {
 		for (size_t j = 0; j < sample.n2D.size(); ++j) {
 			float uv[2];
 			GetTwoD(sample, i, j, uv);
-			sampleFile->write((char *)&uv, sizeof(float[2]));
+			sampleFileWriter->Write(&uv, sizeof(float[2]));
 		}
 	}
 
 	for (size_t i = 0; i < sample.nxD.size(); ++i) {
-		for (size_t j = 0; j < sample.nxD[i]; ++j) {
+		for (size_t j = 0; j < min<u_int>(sample.nxD[i], 2); ++j) { // Only the first 2 path bounces
 			float *data = GetLazyValues(sample, i, j);
-			sampleFile->write((char *)&data, sizeof(float) * sample.dxD[i]);
+			sampleFileWriter->Write(&data, sizeof(float) * sample.dxD[i]);
 		}
 	}
 
@@ -271,10 +299,10 @@ void LDSampler::WriteSampleInformation(const Sample &sample) {
 	XYZColor c;
 	for (u_int i = 0; i < sample.contributions.size(); ++i)
 		c += sample.contributions[i].color;
-	sampleFile->write((char *)c.c, sizeof(float[3]));
+	sampleFileWriter->Write(c.c, sizeof(float[3]));
 
 	// Write scene features
-	sampleFile->write((char *)sample.pathInfo, sizeof(SamplePathInfo));
+	sampleFileWriter->Write(sample.pathInfo, sizeof(SamplePathInfo));
 }
 
 Sampler* LDSampler::CreateSampler(const ParamSet &params, const Film *film) {

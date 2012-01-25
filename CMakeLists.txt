@@ -405,6 +405,7 @@ INCLUDE(pylux)
 INCLUDE(luxconsole)
 INCLUDE(luxmerger)
 INCLUDE(luxcomp)
+INCLUDE(luxrecons)
 INCLUDE(luxrender)
 
 #############################################################################

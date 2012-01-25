@@ -175,10 +175,7 @@ enum ComparisonTypes {
 };
 
 int main(int ac, char *av[]) {
-
 	try {
-		std::stringstream ss;
-
 		// Declare a group of options that will be
 		// allowed only on command line
 		po::options_description generic("Generic options");

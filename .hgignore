@@ -21,10 +21,11 @@
 ^qtgui/images.cpp
 ^qtgui/splash.cpp
 ^html/.*
-luxcomp
-luxconsole
-luxmerger
-luxrender
+^luxcomp$
+^luxconsole$
+^luxmerger$
+^luxrecons$
+^luxrender$
 pylux.so
 pyluxconsole.py
 syntax: glob

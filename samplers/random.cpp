@@ -47,7 +47,7 @@ RandomSampler::RandomData::~RandomData()
 }
 
 RandomSampler::RandomSampler(int xstart, int xend, int ystart, int yend,
-	u_int ps, string pixelsampler) : Sampler(xstart, xend, ystart, yend, ps, NULL)
+	u_int ps, string pixelsampler) : Sampler(xstart, xend, ystart, yend, ps)
 {
 	pixelSamples = ps;
 
