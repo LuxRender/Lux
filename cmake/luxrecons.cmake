@@ -19,8 +19,13 @@
 #   Lux website: http://www.luxrender.net                                 #
 ###########################################################################
 
-SOURCE_GROUP("Source Files\\Tools" FILES tools/luxrecons.cpp)
-ADD_EXECUTABLE(luxrecons tools/luxrecons.cpp)
+SET(LUXRECONS_SRCS
+	tools/luxrecons.cpp
+	tools/luxrecons/sampledatagrid.cpp
+	)
+SOURCE_GROUP("Source Files\\Tools" FILES ${LUXRECONS_SRCS})
+
+ADD_EXECUTABLE(luxrecons ${LUXRECONS_SRCS})
 IF(APPLE)
 	TARGET_LINK_LIBRARIES(luxrecons ${OSX_SHARED_CORELIB} ${CMAKE_THREAD_LIBS_INIT} ${LUX_LIBRARY_DEPENDS} )
 ELSE(APPLE)

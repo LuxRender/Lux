@@ -20,8 +20,9 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#include <boost/filesystem/operations.hpp>
 #include <string.h>
+
+#include <boost/filesystem/operations.hpp>
 
 #include "lux.h"
 #include "error.h"
@@ -31,8 +32,14 @@
 using namespace lux;
 namespace bf = boost::filesystem;
 
-SampleData::SampleData(float *d, const size_t c, const size_t is) :
-	data(d), count(c), infoSize(is) {
+SampleData::SampleData(float *d, const size_t c, const size_t s) :
+	count(c), infoSize(s), data(d) {
+	randomParametersCount = (infoSize - 2 * sizeof(float) - sizeof(XYZColor) -
+			sizeof(SamplePathInfo)) / sizeof(float);
+}
+
+SampleData::SampleData(float *d, SampleFileReader *reader) :
+	count(reader->sampleInfoCount), infoSize(reader->sampleInfoSize), data(d) {
 	randomParametersCount = (infoSize - 2 * sizeof(float) - sizeof(XYZColor) -
 			sizeof(SamplePathInfo)) / sizeof(float);
 }
@@ -46,14 +53,14 @@ SampleData *SampleData::Merge(vector<SampleData *> samples) {
 		return samples[0];
 
 	size_t size = 0;
-	size_t infoSize = samples[0]->infoSize;
 	size_t count = 0;
+	const size_t infoSize = samples[0]->infoSize;
 	for (size_t i = 0; i < samples.size(); ++i) {
 		LOG(LUX_DEBUG, LUX_NOERROR) << "SampleData Merge " << i << ": " <<
 				samples[i]->infoSize << " [" << samples[i]->count << "]";
 
 		if (samples[i]->infoSize != infoSize)
-			throw std::runtime_error("Different information size in a SampleData Merge");
+			throw std::runtime_error("Different infoSize in a SampleData Merge");
 
 		size += samples[i]->infoSize * samples[i]->count;
 		count += samples[i]->count;
@@ -155,5 +162,70 @@ SampleData *SampleFileReader::ReadAllSamples() {
 
 	file->read((char *)data, sampleInfoCount * sampleInfoSize);
 
-	return new SampleData(data, sampleInfoCount, sampleInfoSize);
+	// Check data sanity
+	size_t imageXY_nans = 0;
+	size_t imageXY_infs = 0;
+	size_t randomParameters_nans = 0;
+	size_t randomParameters_infs = 0;
+	size_t color_nans = 0;
+	size_t color_infs = 0;
+	size_t sceneFeatures_nans = 0;
+	size_t sceneFeatures_infs = 0;
+
+	float *p = data;
+	for (size_t i = 0; i < sampleInfoCount; i++) {
+		// Image X Y
+		if (isnan(p[0]))
+			++imageXY_nans;
+		if (isinf(p[0]))
+			++imageXY_infs;
+		if (isnan(p[1]))
+			++imageXY_nans;
+		if (isinf(p[1]))
+			++imageXY_infs;
+		
+		// Random parameters
+		for (size_t j = 0; j < randomParametersCount; j++) {
+			if (isnan(p[2 + j]))
+				++randomParameters_nans;
+			if (isinf(p[2 + j]))
+				++randomParameters_infs;
+		}
+
+		// XYZColor
+		if (isnan(p[2 + randomParametersCount]))
+			++color_nans;
+		if (isinf(p[2 + randomParametersCount]))
+			++color_infs;
+		if (isnan(p[2 + randomParametersCount + 1]))
+			++color_nans;
+		if (isinf(p[2 + randomParametersCount + 1]))
+			++color_infs;
+		if (isnan(p[2 + randomParametersCount + 2]))
+			++color_nans;
+		if (isinf(p[2 + randomParametersCount + 2]))
+			++color_infs;
+
+		// Scene features
+		for (size_t j = 0; j < sizeof(SamplePathInfo) / sizeof(float); j++) {
+			if (isnan(p[2 + randomParametersCount + 3 + j]))
+				++sceneFeatures_nans;
+			if (isinf(p[2 + randomParametersCount + 3 + j]))
+				++sceneFeatures_infs;
+		}
+
+		p += sampleInfoSize / sizeof(float);
+	}
+
+	LOG(LUX_INFO, LUX_NOERROR) << "Sample info Image XY nans: " << imageXY_nans;
+	LOG(LUX_INFO, LUX_NOERROR) << "Sample info Image XY infs: " << imageXY_infs;
+	LOG(LUX_INFO, LUX_NOERROR) << "Sample info Random parameters nans: " << randomParameters_nans;
+	LOG(LUX_INFO, LUX_NOERROR) << "Sample info Random parameters infs: " << randomParameters_infs;
+	LOG(LUX_INFO, LUX_NOERROR) << "Sample info XYZ color nans: " << color_nans;
+	LOG(LUX_INFO, LUX_NOERROR) << "Sample info XYZ color infs: " << color_infs;
+	LOG(LUX_INFO, LUX_NOERROR) << "Sample info Scene features color nans: " << sceneFeatures_nans;
+	LOG(LUX_INFO, LUX_NOERROR) << "Sample info Scene features infs: " << sceneFeatures_infs;
+
+
+	return new SampleData(data, this);
 }

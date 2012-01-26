@@ -30,6 +30,9 @@
 #include "lux.h"
 #include "error.h"
 #include "samplefile.h"
+#include "exrio.h"
+#include "luxrecons/sampledatagrid.h"
+#include "color.h"
 
 #include <boost/program_options.hpp>
 
@@ -73,6 +76,8 @@ void MainTerminate(void) {
 		std::cerr << "  " << Demangle(strings[i]) << std::endl;
 
 	free(strings);
+
+	abort();
 }
 #endif
 
@@ -82,6 +87,43 @@ namespace po = boost::program_options;
 enum ReconstructionTypes {
 	TYPE_BOX = 0
 };
+
+void Recons_BOX(SampleData *sampleData, const string &outputFileName) {
+	LOG(LUX_INFO, LUX_NOERROR) << "Building sample data grid...";
+	SampleDataGrid sdg(sampleData);
+
+	LOG(LUX_INFO, LUX_NOERROR) << "Box filtering...";
+	const float red[2] = {0.63f, 0.34f};
+	const float green[2] = {0.31f, 0.595f};
+	const float blue[2] = {0.155f, 0.07f};
+	const float white[2] = {0.314275f, 0.329411f};
+	ColorSystem colorSpace = ColorSystem(red[0], red[1], green[0], green[1], blue[0], blue[1], white[0], white[1], 1.f);
+
+	vector<RGBColor> pixels(sdg.xResolution * sdg.yResolution);
+	size_t rgbi = 0;
+	for (size_t y = 0; y < sdg.yResolution; ++y) {
+		for (size_t x = 0; x < sdg.xResolution; ++x) {
+			const vector<size_t> &index = sdg.GetPixelList(x + sdg.xPixelStart, y + sdg.yPixelStart);
+
+			XYZColor c;
+			for (size_t i = 0; i < index.size(); ++i)
+				c += *(sampleData->GetColor(index[i]));
+
+			if (index.size() > 0)
+				c /= index.size();
+
+			pixels[rgbi++] = colorSpace.ToRGBConstrained(c);
+		}
+	}
+
+	LOG(LUX_INFO, LUX_NOERROR) << "Writing EXR image: " << outputFileName;
+	vector<float> dummy;
+	WriteOpenEXRImage(2, false, false, 0, outputFileName, pixels, dummy,
+		sdg.xResolution, sdg.yResolution,
+		sdg.xResolution, sdg.yResolution,
+		0, 0,
+		dummy);
+}
 
 int main(int ac, char *av[]) {
 #if defined(__GNUC__) && !defined(__CYGWIN__)
@@ -147,14 +189,28 @@ int main(int ac, char *av[]) {
 
 	if (vm.count("input-file")) {
 		const std::vector<std::string> &v = vm["input-file"].as < vector<string> > ();
+		const string outputFileName = vm["output"].as<string>();
 
 		vector<SampleData *> samples;
 		for (size_t i = 0; i < v.size(); i++) {
 			SampleFileReader sfr(v[i]);
-			samples.push_back(sfr.ReadAllSamples());
+			SampleData *sd = sfr.ReadAllSamples();
+			if (sd->count > 0)
+				samples.push_back(sd);
+			else
+				LOG(LUX_WARNING, LUX_MISSINGDATA) << "No samples in file: " << v[i];
 		}
 
 		SampleData *sampleData = SampleData::Merge(samples);
+
+		switch(reconType) {
+			case TYPE_BOX:
+				Recons_BOX(sampleData, outputFileName);
+				break;
+			default:
+				throw std::runtime_error("Unknown reconstruction type");
+				break;
+		}
 
 		delete sampleData;
 	} else {

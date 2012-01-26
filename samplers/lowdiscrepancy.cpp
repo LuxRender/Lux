@@ -300,7 +300,7 @@ void LDSampler::WriteSampleInformation(const Sample &sample) {
 	XYZColor c;
 	for (u_int i = 0; i < sample.contributions.size(); ++i)
 		c += sample.contributions[i].color;
-	sampleFileWriter->Write(c.c, sizeof(float[3]));
+	sampleFileWriter->Write(&c, sizeof(XYZColor));
 
 	// Write scene features
 	sampleFileWriter->Write(sample.pathInfo, sizeof(SamplePathInfo));

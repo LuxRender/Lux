@@ -20,81 +20,52 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#ifndef LUX_SAMPLEFILE_H
-#define	LUX_SAMPLEFILE_H
+#include "lux.h"
+#include "error.h"
+#include "sampledatagrid.h"
 
-#include <string>
-#include <fstream>
+using namespace lux;
 
-#include <boost/thread/mutex.hpp>
+SampleDataGrid::SampleDataGrid(SampleData *data) : sampleData(data) {
+	//assert (sampleData->count > 0);
 
-namespace lux
-{
+	// Manually add the first sample
+	const float *imageXY = sampleData->GetImageXY(0);
+	xPixelEnd = xPixelStart = (int)imageXY[0];
+	yPixelEnd = yPixelStart = (int)imageXY[1];
 
-class SampleFileReader;
+	// Check all sample to calculate the image plane extension
+	for (size_t i = 1; i < sampleData->count; ++i) {
+		const float *imageXY = sampleData->GetImageXY(i);
+		const int x = (int)imageXY[0];
+		const int y = (int)imageXY[1];
 
-class SampleData {
-public:
-	SampleData(float *data, const size_t count, const size_t infoSize);
-	SampleData(float *data, SampleFileReader *reader);
-	~SampleData();
-
-	const float *GetImageXY(const size_t index) const {
-		return GetSample(index);
+		xPixelStart = min(xPixelStart, x);
+		xPixelEnd = max(xPixelEnd, x);
+		yPixelStart = min(yPixelStart, y);
+		yPixelEnd = max(yPixelEnd, y);
 	}
 
-	const XYZColor *GetColor(const size_t index) const {
-		const float *p = GetSample(index);
-		return (XYZColor *)(&p[2 + randomParametersCount]);
+	LOG(LUX_DEBUG, LUX_NOERROR) << "SampleDataGrid xPixelStart: " << xPixelStart;
+	LOG(LUX_DEBUG, LUX_NOERROR) << "SampleDataGrid xPixelEnd: " << xPixelEnd;
+	LOG(LUX_DEBUG, LUX_NOERROR) << "SampleDataGrid yPixelStart: " << yPixelStart;
+	LOG(LUX_DEBUG, LUX_NOERROR) << "SampleDataGrid yPixelEnd: " << yPixelEnd;
+
+	// Resize the grid
+	xResolution = xPixelEnd - xPixelStart + 1;
+	yResolution = yPixelEnd - yPixelStart + 1;
+	sampleList.resize(xResolution);
+	for (size_t x = 0; x < xResolution; ++x)
+		sampleList[x].resize(yResolution);
+
+	// Add all samples
+	for (size_t i = 0; i < sampleData->count; ++i) {
+		const float *imageXY = sampleData->GetImageXY(i);
+		const int x = ((int)imageXY[0]) - xPixelStart;
+		const int y = ((int)imageXY[1]) - yPixelStart;
+		sampleList[x][y].push_back(i);
 	}
+}
 
-	static SampleData *Merge(vector<SampleData *> samples);
-
-	size_t count, infoSize;
-	u_int randomParametersCount;
-
-private:
-	const float *GetSample(const size_t index) const {
-		return &data[(infoSize / sizeof(float)) * index];
-	}
-
-	float *data;
-};
-
-class SampleFileWriter {
-public:
-	SampleFileWriter(const string &sampleFileName);
-	~SampleFileWriter();
-
-	void WriteHeader(const u_int count) {
-		file->write((const char *)&count, sizeof(u_int));
-	}
-
-	void Write(const void *data, const size_t size) {
-		file->write((const char *)data, size);
-	}
-
-	boost::mutex fileMutex;
-	string fileName;
-	std::ofstream *file;
-	bool headerWritten;
-};
-
-class SampleFileReader {
-public:
-	SampleFileReader(const string &sampleFileName);
-	~SampleFileReader();
-
-	SampleData *ReadAllSamples();
-
-	size_t sampleInfoCount, sampleInfoSize;
-	u_int randomParametersCount;
-
-private:
-	string fileName;
-	std::ifstream *file;
-};
-
-}//namespace lux
-
-#endif	/* LUX_SAMPLEFILE_H */
+SampleDataGrid::~SampleDataGrid() {
+}

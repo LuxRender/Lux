@@ -20,81 +20,32 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#ifndef LUX_SAMPLEFILE_H
-#define	LUX_SAMPLEFILE_H
+#ifndef LUX_SAMPLEDATAGRID_H
+#define	LUX_SAMPLEDATAGRID_H
 
-#include <string>
-#include <fstream>
-
-#include <boost/thread/mutex.hpp>
+#include "samplefile.h"
 
 namespace lux
 {
 
-class SampleFileReader;
-
-class SampleData {
+class SampleDataGrid {
 public:
-	SampleData(float *data, const size_t count, const size_t infoSize);
-	SampleData(float *data, SampleFileReader *reader);
-	~SampleData();
+	SampleDataGrid(SampleData *data);
+	~SampleDataGrid();
 
-	const float *GetImageXY(const size_t index) const {
-		return GetSample(index);
+	const vector<size_t> &GetPixelList(const int x, const int y) const {
+		return sampleList[x - xPixelStart][y - yPixelStart];
 	}
 
-	const XYZColor *GetColor(const size_t index) const {
-		const float *p = GetSample(index);
-		return (XYZColor *)(&p[2 + randomParametersCount]);
-	}
-
-	static SampleData *Merge(vector<SampleData *> samples);
-
-	size_t count, infoSize;
-	u_int randomParametersCount;
+	int xPixelStart, xPixelEnd, yPixelStart, yPixelEnd;
+	u_int xResolution, yResolution;
 
 private:
-	const float *GetSample(const size_t index) const {
-		return &data[(infoSize / sizeof(float)) * index];
-	}
+	SampleData *sampleData;
 
-	float *data;
-};
-
-class SampleFileWriter {
-public:
-	SampleFileWriter(const string &sampleFileName);
-	~SampleFileWriter();
-
-	void WriteHeader(const u_int count) {
-		file->write((const char *)&count, sizeof(u_int));
-	}
-
-	void Write(const void *data, const size_t size) {
-		file->write((const char *)data, size);
-	}
-
-	boost::mutex fileMutex;
-	string fileName;
-	std::ofstream *file;
-	bool headerWritten;
-};
-
-class SampleFileReader {
-public:
-	SampleFileReader(const string &sampleFileName);
-	~SampleFileReader();
-
-	SampleData *ReadAllSamples();
-
-	size_t sampleInfoCount, sampleInfoSize;
-	u_int randomParametersCount;
-
-private:
-	string fileName;
-	std::ifstream *file;
+	vector<vector<vector<size_t> > > sampleList;
 };
 
 }//namespace lux
 
-#endif	/* LUX_SAMPLEFILE_H */
+#endif	/* LUX_SAMPLEDATAGRID_H */
