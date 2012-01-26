@@ -97,6 +97,7 @@ LDSampler::LDSampler(int xstart, int xend,
 }
 
 LDSampler::~LDSampler() {
+	delete sampleFileWriter;
 }
 
 // return TotalPixels so scene shared thread increment knows total sample positions
@@ -243,7 +244,7 @@ void LDSampler::WriteSampleInformationHeader(const Sample &sample) {
 	for (size_t i = 0; i < sample.n1D.size(); ++i)
 		count += sample.n1D[i];
 	for (size_t i = 0; i < sample.n2D.size(); ++i)
-		count += sample.n2D[i];
+		count += 2 * sample.n2D[i];
 
 	for (size_t i = 0; i < sample.nxD.size(); ++i) { // Only the first 2 path bounces
 		count += min<u_int>(sample.nxD[i], 2) * sample.dxD[i];
@@ -252,12 +253,12 @@ void LDSampler::WriteSampleInformationHeader(const Sample &sample) {
 		LOG(LUX_DEBUG, LUX_NOERROR) << "Sample sxD[" << i << "] size: " << sample.dxD[i];
 	}
 
-	sampleFileWriter->Write(&count, sizeof(u_int));
+	sampleFileWriter->WriteHeader(count);
 }
 
 void LDSampler::WriteSampleInformation(const Sample &sample) {
-	if (sample.contributions.size() == 0)
-		return;
+	/*if (sample.contributions.size() == 0)
+		return;*/
 
 	// Write screen position
 	sampleFileWriter->Write(&sample.imageX, sizeof(float));
@@ -270,7 +271,7 @@ void LDSampler::WriteSampleInformation(const Sample &sample) {
 	sampleFileWriter->Write(&sample.wavelengths, sizeof(float));
 
 	for (size_t i = 0; i < sample.n1D.size(); ++i) {
-		for (size_t j = 0; j < sample.n1D.size(); ++j) {
+		for (size_t j = 0; j < sample.n1D[i]; ++j) {
 			float v = GetOneD(sample, i, j);
 			sampleFileWriter->Write(&v, sizeof(float));
 		}

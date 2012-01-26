@@ -31,10 +31,30 @@
 namespace lux
 {
 
+class SampleData {
+public:
+	SampleData(float *data, const size_t count, const size_t infoSize);
+	~SampleData();
+
+	size_t GetCount() const { return count; }
+	u_int GetRandomParametersCount()  const { return randomParametersCount; }
+
+	static SampleData *Merge(vector<SampleData *> samples);
+
+private:
+	float *data;
+	size_t count, infoSize;
+	u_int randomParametersCount;
+};
+
 class SampleFileWriter {
 public:
 	SampleFileWriter(const string &sampleFileName);
 	~SampleFileWriter();
+
+	void WriteHeader(const u_int count) {
+		file->write((const char *)&count, sizeof(u_int));
+	}
 
 	void Write(const void *data, const size_t size) {
 		file->write((const char *)data, size);
@@ -51,9 +71,10 @@ public:
 	SampleFileReader(const string &sampleFileName);
 	~SampleFileReader();
 
-	//float *ReadAllSamples();
+	SampleData *ReadAllSamples();
 
-	u_int randomParametersSize;
+	size_t sampleInfoCount, sampleInfoSize;
+	u_int randomParametersCount;
 
 private:
 	string fileName;

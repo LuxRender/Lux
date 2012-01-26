@@ -269,11 +269,13 @@ u_int PathIntegrator::Li(const Scene &scene, const Sample &sample) const
 			if (vertexIndex == 1) {
 				sample.pathInfo->v1Point = p;
 				sample.pathInfo->v1Normal = n;
-				sample.pathInfo->v1Bsdf = XYZColor(sw, f);
+				// SampleF with reverse = true is multiplied by Dot(ns, wiW)/pdf
+				sample.pathInfo->v1Bsdf = XYZColor(sw, f * pdf / Dot(n, wi));
 			} else if (vertexIndex == 2) {
 				sample.pathInfo->v2Point = p;
 				sample.pathInfo->v2Normal = n;
-				sample.pathInfo->v2Bsdf = XYZColor(sw, f);
+				// SampleF with reverse = true is multiplied by Dot(ns, wiW)/pdf
+				sample.pathInfo->v2Bsdf = XYZColor(sw, f * pdf / Dot(n, wi));
 			}
 		}
 
