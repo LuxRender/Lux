@@ -143,7 +143,6 @@ IF(APPLE)
 	set(CMAKE_CONFIGURATION_TYPES Release)
 	set(OSX_DEPENDENCY_ROOT ${CMAKE_SOURCE_DIR}/../macos) # can be macos or usr/local for example
 	set(OSX_BUNDLE_COMPONENTS_ROOT ${CMAKE_SOURCE_DIR}/../macos) # bundle resources
-	SET(OSX_SHARED_CORELIB ${OSX_DEPENDENCY_ROOT}/lib/corelib/liblux.dylib) # this is just a safety net
 	INCLUDE(macosx_bundle)
 ENDIF(APPLE)
 
@@ -350,7 +349,8 @@ ENDIF (APPLE)
 
 LINK_DIRECTORIES(${LINK_DIRECTORIES} ${Boost_LIBRARY_DIRS} )
 IF (APPLE)
-	SET(OSX_SHARED_CORELIB luxShared)
+	SET(OSX_CORELIB_LINKER_FLAGS -all_load)
+	SET(OSX_SHARED_CORELIB ${CMAKE_BINARY_DIR}/Release/liblux.dylib)
 ELSEIF(MSVC)
 	IF(MSVC90)
 		# LTCG not correctly set by cmake in the current release - in the meantime the linker will inform you about switching this flag automatically because of /GL

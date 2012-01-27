@@ -22,7 +22,8 @@
 SOURCE_GROUP("Source Files\\Console" FILES console/luxconsole.cpp)
 ADD_EXECUTABLE(luxconsole console/luxconsole.cpp)
 IF(APPLE)
-	TARGET_LINK_LIBRARIES(luxconsole ${OSX_SHARED_CORELIB} ${CMAKE_THREAD_LIBS_INIT} ${LUX_LIBRARY_DEPENDS})
+	add_dependencies(luxconsole luxShared) # explicitly say that the target depends on corelib build first
+	TARGET_LINK_LIBRARIES(luxconsole ${OSX_SHARED_CORELIB} ${CMAKE_THREAD_LIBS_INIT})
 ELSE(APPLE)
 	TARGET_LINK_LIBRARIES(luxconsole ${LUX_LIBRARY} ${CMAKE_THREAD_LIBS_INIT} ${LUX_LIBRARY_DEPENDS})
 ENDIF(APPLE)

@@ -22,7 +22,8 @@
 SOURCE_GROUP("Source Files\\Tools" FILES tools/luxmerger.cpp)
 ADD_EXECUTABLE(luxmerger tools/luxmerger.cpp)
 IF(APPLE)
-	TARGET_LINK_LIBRARIES(luxmerger ${OSX_SHARED_CORELIB} ${CMAKE_THREAD_LIBS_INIT} ${LUX_LIBRARY_DEPENDS})
+	add_dependencies(luxmerger luxShared) # explicitly say that the target depends on corelib build first
+	TARGET_LINK_LIBRARIES(luxmerger ${OSX_SHARED_CORELIB} ${CMAKE_THREAD_LIBS_INIT})
 ELSE(APPLE)
 	TARGET_LINK_LIBRARIES(luxmerger ${LUX_LIBRARY} ${CMAKE_THREAD_LIBS_INIT} ${LUX_LIBRARY_DEPENDS})
 ENDIF(APPLE)
