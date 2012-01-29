@@ -73,8 +73,7 @@ ENDIF()
 IF(APPLE)
 
 	########## OS and hardware detection ###########
-	execute_process(COMMAND xcodebuild -version OUTPUT_VARIABLE XCODE_VERS_BUILDNR )
-	STRING(SUBSTRING ${XCODE_VERS_BUILDNR} 6 5 XCODE_VERSION) # truncate away build-nr
+
 	if(${XCODE_VERSION} GREATER 4.0)
 		set(OSX_OPTION_XCODE_4.1 ON)
 	else()
