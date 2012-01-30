@@ -106,11 +106,13 @@ void Recons_BOX(SampleData *sampleData, const string &outputFileName) {
 			const vector<size_t> &index = sdg.GetPixelList(x + sdg.xPixelStart, y + sdg.yPixelStart);
 
 			XYZColor c;
-			for (size_t i = 0; i < index.size(); ++i)
-				c += *(sampleData->GetColor(index[i]));
+			if (index.size() > 0) {
+				for (size_t i = 0; i < index.size(); ++i)
+					c += *(sampleData->GetColor(index[i]));
 
-			if (index.size() > 0)
 				c /= index.size();
+			}
+			//LOG(LUX_INFO, LUX_NOERROR) << "[" << x << ", " << y << "][" << index.size() << "] = " << c;
 
 			pixels[rgbi++] = colorSpace.ToRGBConstrained(c);
 		}
