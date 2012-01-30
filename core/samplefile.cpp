@@ -183,7 +183,7 @@ SampleData *SampleFileReader::ReadAllSamples() {
 			++imageXY_nans;
 		if (isinf(p[1]))
 			++imageXY_infs;
-		
+
 		// Random parameters
 		for (size_t j = 0; j < randomParametersCount; j++) {
 			if (isnan(p[2 + j]))
@@ -217,15 +217,14 @@ SampleData *SampleFileReader::ReadAllSamples() {
 		p += sampleInfoSize / sizeof(float);
 	}
 
-	LOG(LUX_INFO, LUX_NOERROR) << "Sample info Image XY nans: " << imageXY_nans;
-	LOG(LUX_INFO, LUX_NOERROR) << "Sample info Image XY infs: " << imageXY_infs;
-	LOG(LUX_INFO, LUX_NOERROR) << "Sample info Random parameters nans: " << randomParameters_nans;
-	LOG(LUX_INFO, LUX_NOERROR) << "Sample info Random parameters infs: " << randomParameters_infs;
-	LOG(LUX_INFO, LUX_NOERROR) << "Sample info XYZ color nans: " << color_nans;
-	LOG(LUX_INFO, LUX_NOERROR) << "Sample info XYZ color infs: " << color_infs;
-	LOG(LUX_INFO, LUX_NOERROR) << "Sample info Scene features color nans: " << sceneFeatures_nans;
-	LOG(LUX_INFO, LUX_NOERROR) << "Sample info Scene features infs: " << sceneFeatures_infs;
-
+	LOG(LUX_INFO, LUX_NOERROR) << "Sample info Image XY NaNs: " << imageXY_nans;
+	LOG(LUX_INFO, LUX_NOERROR) << "Sample info Image XY Infs: " << imageXY_infs;
+	LOG(LUX_INFO, LUX_NOERROR) << "Sample info Random parameters NaNs: " << randomParameters_nans;
+	LOG(LUX_INFO, LUX_NOERROR) << "Sample info Random parameters Infs: " << randomParameters_infs;
+	LOG(LUX_INFO, LUX_NOERROR) << "Sample info XYZ color NaNs: " << color_nans;
+	LOG(LUX_INFO, LUX_NOERROR) << "Sample info XYZ color Infs: " << color_infs;
+	LOG(LUX_INFO, LUX_NOERROR) << "Sample info Scene features color NaNs: " << sceneFeatures_nans;
+	LOG(LUX_INFO, LUX_NOERROR) << "Sample info Scene features Infs: " << sceneFeatures_infs;
 
 	return new SampleData(data, this);
 }

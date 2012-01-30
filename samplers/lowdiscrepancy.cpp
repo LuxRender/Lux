@@ -257,8 +257,8 @@ void LDSampler::WriteSampleInformationHeader(const Sample &sample) {
 }
 
 void LDSampler::WriteSampleInformation(const Sample &sample) {
-	/*if (sample.contributions.size() == 0)
-		return;*/
+	if (sample.contributions.size() == 0)
+		return;
 
 	// Write screen position
 	sampleFileWriter->Write(&sample.imageX, sizeof(float));
@@ -281,14 +281,14 @@ void LDSampler::WriteSampleInformation(const Sample &sample) {
 		for (size_t j = 0; j < sample.n2D.size(); ++j) {
 			float uv[2];
 			GetTwoD(sample, i, j, uv);
-			sampleFileWriter->Write(&uv, sizeof(float[2]));
+			sampleFileWriter->Write(uv, sizeof(float[2]));
 		}
 	}
 
 	for (size_t i = 0; i < sample.nxD.size(); ++i) {
 		for (size_t j = 0; j < min<u_int>(sample.nxD[i], 2); ++j) { // Only the first 2 path bounces
 			float *data = GetLazyValues(sample, i, j);
-			sampleFileWriter->Write(&data, sizeof(float) * sample.dxD[i]);
+			sampleFileWriter->Write(data, sizeof(float) * sample.dxD[i]);
 		}
 	}
 
@@ -300,6 +300,7 @@ void LDSampler::WriteSampleInformation(const Sample &sample) {
 	XYZColor c;
 	for (u_int i = 0; i < sample.contributions.size(); ++i)
 		c += sample.contributions[i].color;
+
 	sampleFileWriter->Write(&c, sizeof(XYZColor));
 
 	// Write scene features
