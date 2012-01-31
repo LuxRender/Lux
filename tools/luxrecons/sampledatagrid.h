@@ -37,12 +37,11 @@ public:
 		return sampleList[x - xPixelStart][y - yPixelStart];
 	}
 
+	SampleData *sampleData;
 	int xPixelStart, xPixelEnd, yPixelStart, yPixelEnd;
 	u_int xResolution, yResolution;
 
 private:
-	SampleData *sampleData;
-
 	vector<vector<vector<size_t> > > sampleList;
 };
 

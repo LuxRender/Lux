@@ -36,12 +36,14 @@ SampleData::SampleData(float *d, const size_t c, const size_t s) :
 	count(c), infoSize(s), data(d) {
 	randomParametersCount = (infoSize - 2 * sizeof(float) - sizeof(XYZColor) -
 			sizeof(SamplePathInfo)) / sizeof(float);
+	sceneFeaturesCount = sizeof(SamplePathInfo) / sizeof(float);
 }
 
 SampleData::SampleData(float *d, SampleFileReader *reader) :
 	count(reader->sampleInfoCount), infoSize(reader->sampleInfoSize), data(d) {
 	randomParametersCount = (infoSize - 2 * sizeof(float) - sizeof(XYZColor) -
 			sizeof(SamplePathInfo)) / sizeof(float);
+	sceneFeaturesCount = sizeof(SamplePathInfo) / sizeof(float);
 }
 
 SampleData::~SampleData() {

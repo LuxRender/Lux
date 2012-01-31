@@ -33,6 +33,7 @@
 #include "exrio.h"
 #include "luxrecons/sampledatagrid.h"
 #include "color.h"
+#include "osfunc.h"
 
 #include <boost/program_options.hpp>
 
@@ -85,12 +86,142 @@ using namespace lux;
 namespace po = boost::program_options;
 
 enum ReconstructionTypes {
-	TYPE_BOX = 0
+	TYPE_BOX = 0,
+	TYPE_RPF = 1
 };
+
+//------------------------------------------------------------------------------
+
+void RPF_PresprocessSamples(SampleDataGrid &sampleDataGrig,
+		const int x, const int y,
+		const int b, vector<size_t> *N) {
+	// Compute mean and standard deviation of all samples inside the pixel
+	const vector<size_t> &indexPixelList = sampleDataGrig.GetPixelList(x, y);
+	if (indexPixelList.size() <= 0)
+		return;
+
+	// Scene features mean
+	SampleData &sampleData(*sampleDataGrig.sampleData);
+	const size_t sceneFeaturesSize = sampleData.sceneFeaturesCount;
+
+	vector<float> sceneFeaturesMean(sceneFeaturesSize, 0.f);
+	for (size_t i = 0; i < indexPixelList.size(); ++i) {
+		const float *sceneFeatures = sampleData.GetSceneFeatures(indexPixelList[i]);
+
+		for (size_t j = 0; j < sceneFeaturesSize; ++j)
+			sceneFeaturesMean[j] += sceneFeatures[j];
+	}
+
+	for (size_t j = 0; j < sceneFeaturesSize; ++j)
+		sceneFeaturesMean[j] /= indexPixelList.size();
+
+	// Scene features standard deviation
+	vector<float> sceneFeaturesStandardDeviation(sceneFeaturesSize, 0.f);
+	for (size_t i = 0; i < indexPixelList.size(); ++i) {
+		const float *sceneFeatures = sampleData.GetSceneFeatures(indexPixelList[i]);
+
+		for (size_t j = 0; j < sceneFeaturesSize; ++j) {
+			const float v = sceneFeatures[j] - sceneFeaturesMean[j];
+			sceneFeaturesStandardDeviation[j] = v * v;
+		}
+	}
+
+	for (size_t j = 0; j < sceneFeaturesSize; ++j)
+		sceneFeaturesStandardDeviation[j] = sqrtf(sceneFeaturesStandardDeviation[j] / indexPixelList.size());
+
+	// For all samples inside the filtering box
+	const float filterWidth = b / 2.f;
+	const int x0 = max(Ceil2Int(x - filterWidth), sampleDataGrig.xPixelStart);
+	const int x1 = min(Floor2Int(x + filterWidth), sampleDataGrig.xPixelEnd);
+	const int y0 = max(Ceil2Int(y - filterWidth), sampleDataGrig.yPixelStart);
+	const int y1 = min(Floor2Int(y + filterWidth), sampleDataGrig.yPixelEnd);
+
+	for (int yy = y0; yy <= y1; ++yy) {
+		for (int xx = x0; xx <= x1; ++xx) {
+			const vector<size_t> &indexList = sampleDataGrig.GetPixelList(xx, yy);
+
+			for (size_t i = 0; i < indexList.size(); ++i) {
+				// Check if it is a sample I can use
+				const float *sceneFeatures = sampleData.GetSceneFeatures(indexList[i]);
+
+				bool valid = true;
+				for (size_t j = 0; j < sceneFeaturesSize; ++j) {
+					// World coordinates require a larger constant
+					const float k = ((j <= 2) || (j >= 9 && j <= 11)) ? 30.f : 3.f;
+					const float kk = k * sceneFeaturesStandardDeviation[j];
+					const float fm = fabsf(sceneFeatures[j] - sceneFeaturesMean[j]);
+
+					if ((fm > kk) && ((fm > .1f) || (kk > .1f))) {
+						valid = false;
+						break;
+					}
+				}
+
+				if (valid)
+					N->push_back(indexList[i]);
+			}
+		}
+	}
+
+	// Add to N also all samples inside the current pixel
+	for (size_t i = 0; i < indexPixelList.size(); ++i)
+		N->push_back(indexPixelList[i]);
+}
+
+void Recons_RPF(SampleData *sampleData, const string &outputFileName) {
+	LOG(LUX_INFO, LUX_NOERROR) << "Building sample data grid...";
+	SampleDataGrid sampleDataGrig(sampleData);
+	vector<RGBColor> pixels(sampleDataGrig.xResolution * sampleDataGrig.yResolution);
+
+	const int b = 7;
+	LOG(LUX_INFO, LUX_NOERROR) << "RPF preprocess step, size: " << b;
+	const float red[2] = {0.63f, 0.34f};
+	const float green[2] = {0.31f, 0.595f};
+	const float blue[2] = {0.155f, 0.07f};
+	const float white[2] = {0.314275f, 0.329411f};
+	ColorSystem colorSpace = ColorSystem(red[0], red[1], green[0], green[1], blue[0], blue[1], white[0], white[1], 1.f);
+	size_t rgbi = 0;
+	double lastPrintTime = osWallClockTime();
+	for (size_t y = 0; y < sampleDataGrig.yResolution; ++y) {
+		if (osWallClockTime() - lastPrintTime > 5.0) {
+			LOG(LUX_INFO, LUX_NOERROR) << "RPF preprocess line: " << y << "/" << sampleDataGrig.yResolution - 1;
+			lastPrintTime = osWallClockTime();
+		}
+
+		for (size_t x = 0; x < sampleDataGrig.xResolution; ++x) {
+			vector<size_t> N;
+			RPF_PresprocessSamples(sampleDataGrig,
+					x + sampleDataGrig.xPixelStart, y + sampleDataGrig.yPixelStart,
+					b, &N);
+
+			// For testing
+			XYZColor c;
+			if (N.size() > 0) {
+				for (size_t i = 0; i < N.size(); ++i)
+					c += *(sampleData->GetColor(N[i]));
+
+				c /= N.size();
+			}
+			//LOG(LUX_INFO, LUX_NOERROR) << "[" << x << ", " << y << "][" << N.size() << "] = " << c;
+
+			pixels[rgbi++] = colorSpace.ToRGBConstrained(c);
+		}
+	}
+
+	LOG(LUX_INFO, LUX_NOERROR) << "Writing EXR image: " << outputFileName;
+	vector<float> dummy;
+	WriteOpenEXRImage(2, false, false, 0, outputFileName, pixels, dummy,
+		sampleDataGrig.xResolution, sampleDataGrig.yResolution,
+		sampleDataGrig.xResolution, sampleDataGrig.yResolution,
+		0, 0,
+		dummy);
+}
+
+//------------------------------------------------------------------------------
 
 void Recons_BOX(SampleData *sampleData, const string &outputFileName) {
 	LOG(LUX_INFO, LUX_NOERROR) << "Building sample data grid...";
-	SampleDataGrid sdg(sampleData);
+	SampleDataGrid sampleDataGrig(sampleData);
 
 	LOG(LUX_INFO, LUX_NOERROR) << "Box filtering...";
 	const float red[2] = {0.63f, 0.34f};
@@ -99,11 +230,11 @@ void Recons_BOX(SampleData *sampleData, const string &outputFileName) {
 	const float white[2] = {0.314275f, 0.329411f};
 	ColorSystem colorSpace = ColorSystem(red[0], red[1], green[0], green[1], blue[0], blue[1], white[0], white[1], 1.f);
 
-	vector<RGBColor> pixels(sdg.xResolution * sdg.yResolution);
+	vector<RGBColor> pixels(sampleDataGrig.xResolution * sampleDataGrig.yResolution);
 	size_t rgbi = 0;
-	for (size_t y = 0; y < sdg.yResolution; ++y) {
-		for (size_t x = 0; x < sdg.xResolution; ++x) {
-			const vector<size_t> &index = sdg.GetPixelList(x + sdg.xPixelStart, y + sdg.yPixelStart);
+	for (size_t y = 0; y < sampleDataGrig.yResolution; ++y) {
+		for (size_t x = 0; x < sampleDataGrig.xResolution; ++x) {
+			const vector<size_t> &index = sampleDataGrig.GetPixelList(x + sampleDataGrig.xPixelStart, y + sampleDataGrig.yPixelStart);
 
 			XYZColor c;
 			if (index.size() > 0) {
@@ -121,11 +252,13 @@ void Recons_BOX(SampleData *sampleData, const string &outputFileName) {
 	LOG(LUX_INFO, LUX_NOERROR) << "Writing EXR image: " << outputFileName;
 	vector<float> dummy;
 	WriteOpenEXRImage(2, false, false, 0, outputFileName, pixels, dummy,
-		sdg.xResolution, sdg.yResolution,
-		sdg.xResolution, sdg.yResolution,
+		sampleDataGrig.xResolution, sampleDataGrig.yResolution,
+		sampleDataGrig.xResolution, sampleDataGrig.yResolution,
 		0, 0,
 		dummy);
 }
+
+//------------------------------------------------------------------------------
 
 int main(int ac, char *av[]) {
 #if defined(__GNUC__) && !defined(__CYGWIN__)
@@ -141,7 +274,7 @@ int main(int ac, char *av[]) {
 			("output,o", po::value< std::string >()->default_value("out.exr"), "Output file")
 			("verbose,V", "Increase output verbosity (show DEBUG messages)")
 			("quiet,q", "Reduce output verbosity (hide INFO messages)") // (give once for WARNING only, twice for ERROR only)")
-			("type,t", po::value< int >(), "Select the type of reconstruction (0 = BOX)")
+			("type,t", po::value< int >(), "Select the type of reconstruction (0 = BOX, 1 = RPF)")
 			;
 
 	// Hidden options, will be allowed both on command line and
@@ -183,7 +316,7 @@ int main(int ac, char *av[]) {
 		luxErrorFilter(LUX_WARNING);
 	}
 
-	ReconstructionTypes reconType = TYPE_BOX;
+	ReconstructionTypes reconType = TYPE_RPF;
 	if (vm.count("type"))
 		reconType = (ReconstructionTypes)vm["type"].as<int>();
 
@@ -208,6 +341,9 @@ int main(int ac, char *av[]) {
 		switch(reconType) {
 			case TYPE_BOX:
 				Recons_BOX(sampleData, outputFileName);
+				break;
+			case TYPE_RPF:
+				Recons_RPF(sampleData, outputFileName);
 				break;
 			default:
 				throw std::runtime_error("Unknown reconstruction type");

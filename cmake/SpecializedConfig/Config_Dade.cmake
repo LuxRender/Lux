@@ -19,3 +19,6 @@ SET ( BOOST_SEARCH_PATH        "/home/david/projects/luxrender-dev/boost_1_43_0"
 SET ( BOOST_LIBRARYDIR         "${BOOST_SEARCH_PATH}" )
 SET ( BOOST_python_LIBRARYDIR  "${BOOST_SEARCH_PATH}" )
 SET ( BOOST_ROOT               "${BOOST_SEARCH_PATH}" )
+
+set(CMAKE_BUILD_TYPE "Debug")
+#set(CMAKE_BUILD_TYPE "Release")

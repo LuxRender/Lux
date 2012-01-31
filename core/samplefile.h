@@ -48,10 +48,15 @@ public:
 		return (XYZColor *)(&p[2 + randomParametersCount]);
 	}
 
+	const float *GetSceneFeatures(const size_t index) const {
+		const float *p = GetSample(index);
+		return &p[2 + randomParametersCount];
+	}
+
 	static SampleData *Merge(vector<SampleData *> samples);
 
 	size_t count, infoSize;
-	u_int randomParametersCount;
+	u_int randomParametersCount, sceneFeaturesCount;
 
 private:
 	const float *GetSample(const size_t index) const {
