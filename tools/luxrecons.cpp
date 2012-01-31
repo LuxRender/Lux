@@ -34,6 +34,7 @@
 #include "luxrecons/sampledatagrid.h"
 #include "color.h"
 #include "osfunc.h"
+#include "sampling.h"
 
 #include <boost/program_options.hpp>
 
@@ -87,7 +88,9 @@ namespace po = boost::program_options;
 
 enum ReconstructionTypes {
 	TYPE_BOX = 0,
-	TYPE_RPF = 1
+	TYPE_RPF = 1,
+	TYPE_V1_NORMAL = 2,
+	TYPE_V1_BSDF = 3
 };
 
 //------------------------------------------------------------------------------
@@ -260,6 +263,89 @@ void Recons_BOX(SampleData *sampleData, const string &outputFileName) {
 
 //------------------------------------------------------------------------------
 
+void Recons_V1_NORMAL(SampleData *sampleData, const string &outputFileName) {
+	LOG(LUX_INFO, LUX_NOERROR) << "Building sample data grid...";
+	SampleDataGrid sampleDataGrig(sampleData);
+
+	LOG(LUX_INFO, LUX_NOERROR) << "Path vertex 1 normal output...";
+	vector<RGBColor> pixels(sampleDataGrig.xResolution * sampleDataGrig.yResolution);
+	size_t rgbi = 0;
+	for (size_t y = 0; y < sampleDataGrig.yResolution; ++y) {
+		for (size_t x = 0; x < sampleDataGrig.xResolution; ++x) {
+			const vector<size_t> &index = sampleDataGrig.GetPixelList(x + sampleDataGrig.xPixelStart, y + sampleDataGrig.yPixelStart);
+
+			pixels[rgbi] = RGBColor();
+			if (index.size() > 0) {
+				for (size_t i = 0; i < index.size(); ++i) {
+
+					const SamplePathInfo *pathInfo = (SamplePathInfo *)(sampleData->GetSceneFeatures(index[i]));
+
+					pixels[rgbi].c[0] += pathInfo->v1Normal.x;
+					pixels[rgbi].c[1] += pathInfo->v1Normal.y;
+					pixels[rgbi].c[2] += pathInfo->v1Normal.z;
+				}
+
+				pixels[rgbi] /= index.size();
+			}
+
+			++rgbi;
+		}
+	}
+
+	LOG(LUX_INFO, LUX_NOERROR) << "Writing EXR image: " << outputFileName;
+	vector<float> dummy;
+	WriteOpenEXRImage(2, false, false, 0, outputFileName, pixels, dummy,
+		sampleDataGrig.xResolution, sampleDataGrig.yResolution,
+		sampleDataGrig.xResolution, sampleDataGrig.yResolution,
+		0, 0,
+		dummy);
+}
+
+//------------------------------------------------------------------------------
+
+void Recons_V1_BSDF(SampleData *sampleData, const string &outputFileName) {
+	LOG(LUX_INFO, LUX_NOERROR) << "Building sample data grid...";
+	SampleDataGrid sampleDataGrig(sampleData);
+
+	LOG(LUX_INFO, LUX_NOERROR) << "Path vertex 1 BSDF colour output...";
+	const float red[2] = {0.63f, 0.34f};
+	const float green[2] = {0.31f, 0.595f};
+	const float blue[2] = {0.155f, 0.07f};
+	const float white[2] = {0.314275f, 0.329411f};
+	ColorSystem colorSpace = ColorSystem(red[0], red[1], green[0], green[1], blue[0], blue[1], white[0], white[1], 1.f);
+
+	vector<RGBColor> pixels(sampleDataGrig.xResolution * sampleDataGrig.yResolution);
+	size_t rgbi = 0;
+	for (size_t y = 0; y < sampleDataGrig.yResolution; ++y) {
+		for (size_t x = 0; x < sampleDataGrig.xResolution; ++x) {
+			const vector<size_t> &index = sampleDataGrig.GetPixelList(x + sampleDataGrig.xPixelStart, y + sampleDataGrig.yPixelStart);
+
+			XYZColor c;
+			if (index.size() > 0) {
+				for (size_t i = 0; i < index.size(); ++i) {
+					const SamplePathInfo *pathInfo = (SamplePathInfo *)(sampleData->GetSceneFeatures(index[i]));
+
+					c += pathInfo->v1Bsdf;
+				}
+
+				c /= index.size();
+			}
+
+			pixels[rgbi++] = colorSpace.ToRGBConstrained(c);
+		}
+	}
+
+	LOG(LUX_INFO, LUX_NOERROR) << "Writing EXR image: " << outputFileName;
+	vector<float> dummy;
+	WriteOpenEXRImage(2, false, false, 0, outputFileName, pixels, dummy,
+		sampleDataGrig.xResolution, sampleDataGrig.yResolution,
+		sampleDataGrig.xResolution, sampleDataGrig.yResolution,
+		0, 0,
+		dummy);
+}
+
+//------------------------------------------------------------------------------
+
 int main(int ac, char *av[]) {
 #if defined(__GNUC__) && !defined(__CYGWIN__)
 	std::set_terminate(MainTerminate);
@@ -274,7 +360,7 @@ int main(int ac, char *av[]) {
 			("output,o", po::value< std::string >()->default_value("out.exr"), "Output file")
 			("verbose,V", "Increase output verbosity (show DEBUG messages)")
 			("quiet,q", "Reduce output verbosity (hide INFO messages)") // (give once for WARNING only, twice for ERROR only)")
-			("type,t", po::value< int >(), "Select the type of reconstruction (0 = BOX, 1 = RPF)")
+			("type,t", po::value< int >(), "Select the type of reconstruction (0 = BOX, 1 = RPF, 2 = V1_NORMAL, 3 = V1_BSDF)")
 			;
 
 	// Hidden options, will be allowed both on command line and
@@ -344,6 +430,12 @@ int main(int ac, char *av[]) {
 				break;
 			case TYPE_RPF:
 				Recons_RPF(sampleData, outputFileName);
+				break;
+			case TYPE_V1_NORMAL:
+				Recons_V1_NORMAL(sampleData, outputFileName);
+				break;
+			case TYPE_V1_BSDF:
+				Recons_V1_BSDF(sampleData, outputFileName);
 				break;
 			default:
 				throw std::runtime_error("Unknown reconstruction type");

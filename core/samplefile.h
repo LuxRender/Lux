@@ -50,7 +50,7 @@ public:
 
 	const float *GetSceneFeatures(const size_t index) const {
 		const float *p = GetSample(index);
-		return &p[2 + randomParametersCount];
+		return &p[2 + 3 + randomParametersCount];
 	}
 
 	static SampleData *Merge(vector<SampleData *> samples);
