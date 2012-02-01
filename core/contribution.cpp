@@ -30,6 +30,15 @@
 namespace lux
 {
 
+ContributionBuffer::Buffer::Buffer() : pos(0) {
+	contribs = AllocAligned<Contribution>(CONTRIB_BUF_SIZE);
+}
+
+ContributionBuffer::Buffer::~Buffer() {
+	FreeAligned(contribs);
+}
+
+
 void ContributionBuffer::Buffer::Splat(Film *film, u_int tileIndex)
 {
 	const u_int num_contribs = min(pos, CONTRIB_BUF_SIZE);
@@ -64,8 +73,6 @@ ContributionPool::ContributionPool(Film *f) : sampleCount(0.f), film(f)
 		tileSplattingMutexes.push_back(new tile_mutex);
 	splattingTile.resize(CFull.size());
 	for (u_int total = 0; total < CONTRIB_BUF_KEEPALIVE; ++total) {
-		// Add free buffers to both CFree and CSplat
-		// so we can ping-pong between them.
 		CFree.push_back(new ContributionBuffer::Buffer());
 	}
 }
@@ -88,23 +95,30 @@ void ContributionPool::End(ContributionBuffer *c)
 	// will be done in Flush.
 }
 
-void ContributionPool::Next(ContributionBuffer::Buffer **b, float sc,
+void ContributionPool::Next(ContributionBuffer::Buffer* volatile *b, float *sc,
 	u_int tileIndex, u_int bufferGroup)
 {
+	// store the current Buffer pointer for later comparison
+	ContributionBuffer::Buffer* const buf = *b;
+
 	fast_mutex::scoped_lock pool_lock(poolMutex);
 
-	// other thread swapped the buffer while current thread
-	// waited for the lock, all is good
-	if (!((*b)->Filled()))
+	// If the Buffer* pointed to by b has changed
+	// while we waited for the lock then another thread 
+	// already swapped the buffer while we waited.
+	// The new buffer should be empty so just return.
+	if ((*b) != buf)
 		return;
 
 	vector<vector<ContributionBuffer::Buffer*> > &full_buffers(CFull[tileIndex]);
 
-	sampleCount += sc;
-	full_buffers[bufferGroup].push_back(*b);
+	// Accumulate sample count and reset the ContributionBuffer's count.
+	sampleCount += *sc;
+	*sc = 0.f;
+	full_buffers[bufferGroup].push_back(buf); // use buf here since *b is volatile
 
-	// isSplattingTile is 0 if no splatting is going on
-	// roll-over just means we have to wait for the tile lock (in which case it's probably a good thing!)
+	// isSplattingTile is 0 if no splatting of that tile is going on.
+	// Roll-over just means we have to wait for the tile lock (in which case it's probably a good thing!)
 	u_int isSplattingTile = osAtomicInc(&splattingTile[tileIndex]);
 	if (isSplattingTile > 0) {
 		// Another thread is splatting this tile, so
@@ -115,8 +129,8 @@ void ContributionPool::Next(ContributionBuffer::Buffer **b, float sc,
 			return;
 		}
 		// No free buffers, try allocating a new one
-		// but make sure we don't allocate too many new buffers
-		const u_int maxBufferMisses = CFull.size() * 4;//CONTRIB_BUF_KEEPALIVE+2;
+		// but make sure we don't allocate too many new buffers.
+		const u_int maxBufferMisses = CFull.size() * 32; // TODO less arbitrary limit
 		u_int bufferMisses = ++splattingMisses;
 		if (bufferMisses < maxBufferMisses) {
 			*b = new ContributionBuffer::Buffer();
@@ -209,9 +223,6 @@ void ContributionPool::Delete()
 	// At this point CFull doesn't hold any buffer
 	for(u_int i = 0; i < CFree.size(); ++i)
 		delete CFree[i];
-	//for(u_int tileIndex = 0; tileIndex < CSplat.size(); ++tileIndex)
-	//	for(u_int j = 0; j < CSplat[tileIndex].size(); ++j)	
-	//		delete CSplat[tileIndex][j];
 }
 
 void ContributionPool::CheckFilmWriteOuputInterval()

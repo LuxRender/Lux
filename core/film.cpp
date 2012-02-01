@@ -595,7 +595,7 @@ u_int Film::GetYResolution()
 Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop[4], 
 		   const string &filename1, bool premult, bool useZbuffer,
 		   bool w_resume_FLM, bool restart_resume_FLM, bool write_FLM_direct, int haltspp, int halttime,
-		   int reject_warmup, bool debugmode, int outlierk) :
+		   int reject_warmup, bool debugmode, int outlierk, int tilec) :
 	Queryable("film"),
 	xResolution(xres), yResolution(yres),
 	EV(0.f), averageLuminance(0.f),  numberOfSamplesFromNetwork(0), numberOfLocalSamples(0),
@@ -644,24 +644,53 @@ Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop
 	AddBoolAttribute(*this, "restartResumeFlm", "Restart (overwrite) resume file", restartResumeFlm, &Film::restartResumeFlm, Queryable::ReadWriteAccess);
 	AddBoolAttribute(*this, "writeFlmDirect", "Write resume file directly to disk", writeFlmDirect, &Film::writeFlmDirect, Queryable::ReadWriteAccess);	
 
-	if (outlierRejection_k > 0) {
-		outliers.resize(yRealHeight / (2 * filter->yWidth));
-		for (size_t i = 0; i < outliers.size(); i++)
-			outliers[i].resize(xRealWidth / (2 * filter->xWidth));
-	}
 	// Precompute filter tables
 	filterLUTs = new FilterLUTs(filt, max(min(filtRes, 64u), 2u));
 
+	outlierCellWidth = Floor2UInt(2 * filter->xWidth);
+	outlierInvCellWidth = 1.f / outlierCellWidth;
+	outlierCellHeight = Floor2UInt(2 * filter->yWidth);
+	outlierInvCellHeight = 1.f / outlierCellHeight;
+
 	const u_int thread_count = boost::thread::hardware_concurrency();
-	const u_int minTileSize = 2 * Ceil2UInt(filter->yWidth) + 1;
-	// TODO - thread_count * 2 is fairly arbitrary, find better choice?
-	tileCount = Clamp(thread_count * 2, 1u, xRealWidth / minTileSize);
+	// base min tile size on outlier cell height, as it's a good measure anyway
+	const u_int minTileHeight = outlierCellHeight;
+	if (tilec > 0)
+		tileCount = tilec;
+	else
+		// TODO - thread_count * 2 is fairly arbitrary, find better choice?
+		tileCount = thread_count * (tilec < 0 ? -tilec : 2);
+	
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Requested film tile count: " << tileCount;
+
+	tileCount = Clamp(tileCount, 1u, yRealHeight / minTileHeight);
 	//tileCount = 2;
 
-	tileHeight = max(Ceil2UInt(static_cast<float>(yPixelCount) / tileCount), 1u);
+	tileHeight = max(Ceil2UInt(static_cast<float>(yRealHeight) / tileCount), minTileHeight);
+	if (outlierRejection_k > 0) {
+		// if outlier rejection is enabled, tileHeight must be multiple of outlierCellHeight
+		// increase tileHeight to ensure this
+		tileHeight = outlierCellHeight * max(Ceil2UInt(static_cast<float>(tileHeight) / outlierCellHeight), 1u);
+		tileCount = max(Ceil2UInt(static_cast<float>(yRealHeight) / tileHeight), 1u);
+	}
+
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Actual film tile count: " << tileCount;
+
 	invTileHeight = 1.f / tileHeight;
-	tileOffset = -0.5f - filter->yWidth - xPixelStart;
+	tileOffset = -0.5f - filter->yWidth - yPixelStart;
 	tileOffset2 = 2 * filter->yWidth * invTileHeight;
+
+	if (outlierRejection_k > 0) {
+		const u_int outliers_width = xRealWidth / outlierCellWidth;
+		const u_int outliers_height = yRealHeight / outlierCellHeight;
+		outliers.resize(outliers_height);
+		for (size_t i = 0; i < outliers.size(); i++)
+			outliers[i].resize(outliers_width);
+		// tiles need duplicate data for row above and below tile
+		tileborder_outliers.resize(2 * tileCount);
+		for (size_t i = 0; i < tileborder_outliers.size(); i++)
+			tileborder_outliers[i].resize(outliers_width);
+	}
 }
 
 Film::~Film()
@@ -837,52 +866,90 @@ void Film::AddSampleCount(float count) {
 	}
 }
 
-bool Film::RejectOutlier(const Contribution &contrib) {
-	// outlier rejection
 
-	// filter-normalized pixel coordinates
-	float fnormX = (contrib.imageX - 0.5f + filter->xWidth) * 0.5f * filter->invXWidth;
-	float fnormY = (contrib.imageY - 0.5f + filter->yWidth) * 0.5f * filter->invYWidth;
-
-	OutlierData sd(fnormX, fnormY, contrib.color);
-
-	int oY = max<int>(0, min<int>(Floor2Int(fnormY), outliers.size()-1));
-	int oX = max<int>(0, min<int>(Floor2Int(fnormX), outliers[0].size()-1));
-
-	std::vector<OutlierAccel> &outlierRow = outliers[oY];
-	OutlierAccel &outlierAccel = outlierRow[oX];	
-
-	NearSetPointProcess<OutlierData::Point_t> proc(outlierRejection_k);
-	vector<ClosePoint<OutlierData::Point_t> > closest(outlierRejection_k);
-	proc.points = &closest[0];
-
-	float maxDist = INFINITY;
-
-	outlierAccel.Lookup(sd.p, proc, maxDist);
-
-	float kmeandist = 0.f;
-	for (u_int i = 0; i < proc.foundPoints; i++)
-		kmeandist += proc.points[i].distance;
-	
-	//kmeandist /= proc.foundPoints;
-		
-	if (proc.foundPoints < 1 || kmeandist > proc.foundPoints) { // kmeandist > 1.f
-		// add outlier and return
-		// include surrounding cells so we don't have to
-		// traverse multiple cells for each lookup
-		int oLeft = max<int>(0, oX - 1);
-		int oRight = min<int>(outliers[0].size()-1, oX + 1);
-		int oTop = max<int>(0, oY - 1);
-		int oBottom = min<int>(outliers.size()-1, oY + 1);
-		for (int i = oTop; i <= oBottom; i++) {
-			for (int j = oLeft; j <= oRight; j++) {
-				outliers[i][j].AddNode(sd.p);
-			}
-		}
-		return true;
+std::vector<Film::OutlierAccel>& Film::GetOutlierAccelRow(u_int oY, u_int tileIndex, u_int tileStart, u_int tileEnd) {
+	if (oY < tileStart) {
+		// above currrent tile
+		return tileborder_outliers[2*tileIndex];
+	} else if (oY >= tileEnd) {
+		// below current tile
+		return tileborder_outliers[2*tileIndex+1];
 	}
-	// not an outlier, splat
-	return false;
+
+	// inside current tile
+	return outliers[oY];
+}
+
+void Film::RejectTileOutliers(const Contribution* const contribs, u_int num_contribs, u_int tileIndex, int yTilePixelStart, int yTilePixelEnd) {
+	// outlier rejection
+	const float fnormTileStart = (yTilePixelStart + filter->yWidth) * outlierInvCellHeight;
+	const float fnormTileEnd   = (yTilePixelEnd   + filter->yWidth) * outlierInvCellHeight;
+
+	const u_int tileStart = static_cast<u_int>(max(0, min(Floor2Int(fnormTileStart), static_cast<int>(outliers.size()-1))));
+	const u_int tileEnd =   static_cast<u_int>(max(0, min(Floor2Int(fnormTileEnd),   static_cast<int>(outliers.size()-1))));
+
+	for (u_int ci = 0; ci < num_contribs; ci++) {
+		const Contribution &contrib(contribs[ci]);
+
+		// filter-normalized pixel coordinates
+		const float fnormX = (contrib.imageX - 0.5f + filter->xWidth) * outlierInvCellWidth;
+		const float fnormY = (contrib.imageY - 0.5f + filter->yWidth) * outlierInvCellHeight;
+
+		OutlierData sd(fnormX, fnormY, contrib.color);
+
+		// perform lookup based on original position
+		// constrain to tile only if we need to add the outlier
+		const int oY = max(0, min(Floor2Int(fnormY), static_cast<int>(outliers.size()-1)));
+		const int oX = max(0, min(Floor2Int(fnormX), static_cast<int>(outliers[0].size()-1)));
+		
+		std::vector<OutlierAccel> &outlierRow = GetOutlierAccelRow(oY, tileIndex, tileStart, tileEnd);
+		OutlierAccel &outlierAccel = outlierRow[oX];
+
+		NearSetPointProcess<OutlierData::Point_t> proc(outlierRejection_k);
+		vector<ClosePoint<OutlierData::Point_t> > closest(outlierRejection_k);
+		proc.points = &closest[0];
+
+		float maxDist = INFINITY;
+
+		outlierAccel.Lookup(sd.p, proc, maxDist);
+
+		float kmeandist = 0.f;
+		for (u_int i = 0; i < proc.foundPoints; i++)
+			kmeandist += proc.points[i].distance;
+	
+		//kmeandist /= proc.foundPoints;
+		
+		if (proc.foundPoints < 1 || kmeandist > proc.foundPoints) { // kmeandist > 1.f
+			// add outlier and return
+			// include surrounding cells so we don't have to
+			// traverse multiple cells for each lookup
+			const u_int oLeft = static_cast<u_int>(max(0, oX - 1));
+			const u_int oRight = static_cast<u_int>(min(static_cast<int>(outliers[0].size()-1), oX + 1));
+			const u_int oTop = static_cast<u_int>(max(0, oY - 1));
+			const u_int oBottom = static_cast<u_int>(min(static_cast<int>(outliers.size()-1), oY + 1));
+
+			if (oTop < tileStart || oBottom >= tileEnd) {
+				// outlier spans tile borders
+				for (u_int i = oTop; i <= oBottom; i++) {
+					std::vector<OutlierAccel> &row = GetOutlierAccelRow(oY, tileIndex, tileStart, tileEnd);
+					for (u_int j = oLeft; j <= oRight; j++) {
+						row[j].AddNode(sd.p);
+					}
+				}
+			} else {
+				// we're all inside one tile
+				for (u_int i = oTop; i <= oBottom; i++) {
+					std::vector<OutlierAccel> &row = outliers[oY];
+					for (u_int j = oLeft; j <= oRight; j++) {
+						row[j].AddNode(sd.p);
+					}
+				}
+			}
+			// outlier, reject
+			contrib.variance = -1.f;
+		}
+		// not an outlier, splat
+	}
 }
 
 u_int Film::GetTileCount() const {
@@ -913,13 +980,15 @@ void Film::GetTileExtent(u_int tileIndex, int *xstart, int *xend, int *ystart, i
 
 void Film::AddTileSamples(const Contribution* const contribs, u_int num_contribs, u_int tileIndex) {
 	
-	//const int xTilePixelStart = xPixelStart;
-	//const int xTilePixelEnd = xPixelStart + xPixelCount;
-	//const int yTilePixelStart = yPixelStart; 
-	//const int yTilePixelEnd = yPixelStart + yPixelCount;
 	int xTilePixelStart, xTilePixelEnd;
 	int yTilePixelStart, yTilePixelEnd;
 	GetTileExtent(tileIndex, &xTilePixelStart, &xTilePixelEnd, &yTilePixelStart, &yTilePixelEnd);
+
+	if (outlierRejection_k > 0) {
+		// reject outliers by setting their weight (variance field) to -1
+		RejectTileOutliers(contribs, num_contribs, tileIndex, yTilePixelStart, yTilePixelEnd);
+	}
+
 
 	for (u_int ci = 0; ci < num_contribs; ci++) {
 		const Contribution &contrib(contribs[ci]);
@@ -927,6 +996,16 @@ void Film::AddTileSamples(const Contribution* const contribs, u_int num_contribs
 		XYZColor xyz = contrib.color;
 		const float alpha = contrib.alpha;
 		const float weight = contrib.variance;
+
+		// negative weight means sample was rejected
+		// so do this test first
+		if (!(weight >= 0.f) || isinf(weight)) {
+			if(debug_mode && (weight >= 0.f)) {
+				LOG(LUX_WARNING,LUX_LIMIT) << "Out of bound  weight in Film::AddSample: "
+				   << weight << ", sample discarded";
+			}
+			continue;
+		}
 
 		// Issue warning if unexpected radiance value returned
 		if (!(xyz.Y() >= 0.f) || isinf(xyz.Y())) {
@@ -943,32 +1022,6 @@ void Film::AddTileSamples(const Contribution* const contribs, u_int num_contribs
 				   << alpha << ", sample discarded";
 			}
 			continue;
-		}
-
-		if (!(weight >= 0.f) || isinf(weight)) {
-			if(debug_mode) {
-				LOG(LUX_WARNING,LUX_LIMIT) << "Out of bound  weight in Film::AddSample: "
-				   << weight << ", sample discarded";
-			}
-			continue;
-		}
-
-		if (outlierRejection_k > 0) {
-			// TODO - make outlier rejection respect tile boundaries
-			// disabled for now
-			//if (RejectOutlier(contrib))
-			//	continue;
-		} else {
-			// Reject samples higher than max Y() after warmup period
-			if (warmupComplete) {
-				if(xyz.Y() > maxY)
-					continue;
-			} else {
- 				maxY = max(maxY, xyz.Y());
-				++warmupSamples;
- 				if (warmupSamples >= reject_warmup_samples)
-					warmupComplete = true;
-			}
 		}
 	
 		if (premultiplyAlpha)

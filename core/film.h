@@ -565,11 +565,22 @@ public:
 		const string &filename1, bool premult, bool useZbuffer,
 		bool w_resume_FLM, bool restart_resume_FLM, bool write_FLM_direct,
 		int haltspp, int halttime,
-		int reject_warmup, bool debugmode, int outlierk);
+		int reject_warmup, bool debugmode, int outlierk, int tilecount);
 
 	virtual ~Film();
 
+	/*
+	 * Adds a contribution to the film.
+	 * Not thread-safe!
+	 */
 	virtual void AddSample(Contribution *contrib);
+	/*
+	 * Adds contributions to a given tile of the film.
+	 * This method is thread-safe for different tiles.
+	 * @param contribs Array of contributions to add
+	 * @param num_contribs Number of contributions in the contribs array
+	 * @param tileIndex Index of the tile the contributions should be added to
+	 */
 	virtual void AddTileSamples(const Contribution* const contribs, u_int num_contribs, u_int tileIndex);
 	virtual void SetSample(const Contribution *contrib);
 	virtual void AddSampleCount(float count);
@@ -596,9 +607,18 @@ public:
 	virtual u_int GetNumBufferGroups() const { return bufferGroups.size(); }
 	virtual const BufferGroup& GetBufferGroup(u_int index) const { return bufferGroups[index]; }
 
-	// gets indexes to the tiles a contribution spans
-	// returns number of tiles spanned
+	/**
+	 * Get the indexes that the current contribution spans.
+	 * Current implementation is limited to at most two tiles, ie the tiles are slabs.
+	 * @param tileIndex0 First tile index, always set.
+	 * @param tileIndex1 Second tile index if the contribution spans more than one tile, otherwise undefined.
+	 * @return Number of tiles that the contribution spans, 1 or 2.
+	 */
 	virtual u_int GetTileIndexes(const Contribution &contrib, u_int *tile0, u_int *tile1) const;
+	/*
+	 * Returns the total number of tiles in the film.
+	 * @return Total number of tiles in the film.
+	 */
 	virtual u_int GetTileCount() const;
 
 	virtual void SetGroupName(u_int index, const string& name);
@@ -633,8 +653,9 @@ public:
 
 protected:
 	double DoTransmitFilm(std::basic_ostream<char> &stream, bool clearBuffers = true, bool transmitParams = false);
-	bool RejectOutlier(const Contribution &contrib);
-
+	// Reject outliers for a tile. Rejected contributions get their variance set to -1.
+	void RejectTileOutliers(const Contribution* const contribs, u_int num_contribs, u_int tileIndex, int yTilePixelStart, int yTilePixelEnd);
+	// Gets the extents of a tile, interval is [start, end).
 	void GetTileExtent(u_int tileIndex, int *xstart, int *xend, int *ystart, int *yend) const;
 
 public:
@@ -690,8 +711,12 @@ protected: // Put it here for better data alignment
 
 	// density-based outlier rejection
 	int outlierRejection_k;
+	u_int outlierCellWidth, outlierCellHeight;
+	float outlierInvCellWidth, outlierInvCellHeight;
 	typedef BSH<OutlierData::Point_t, NearSetPointProcess<OutlierData::Point_t>, 9 > OutlierAccel;
 	std::vector<std::vector<OutlierAccel> > outliers;
+	// contains the outliers that lies on the overlap between tiles
+	std::vector<std::vector<OutlierAccel> > tileborder_outliers; 
 
 public:
 	// Samplers will check this flag to know if we have enough samples per
@@ -704,6 +729,9 @@ public:
 	bool enoughSamplesPerPixel; // At the end to get better data alignment
 
 private:
+	// Gets a reference to the appropriate outlier row data for a given position and tile index.
+	std::vector<OutlierAccel>& GetOutlierAccelRow(u_int oY, u_int tileIndex, u_int tileStart, u_int tileEnd);
+	
 	boost::mutex histMutex;
 };
 

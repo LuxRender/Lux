@@ -53,7 +53,7 @@ public:
 		float p_ReinhardBurn, float p_LinearSensitivity, float p_LinearExposure, float p_LinearFStop, float p_LinearGamma,
 		float p_ContrastDisplayAdaptionY, const string &response, float p_Gamma,
 		const float cs_red[2], const float cs_green[2], const float cs_blue[2], const float whitepoint[2],
-		int reject_warmup, bool debugmode, int outlierk);
+		int reject_warmup, bool debugmode, int outlierk, int tilecount);
 
 	virtual ~FlexImageFilm() {
 		delete[] framebuffer;
