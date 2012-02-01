@@ -20,6 +20,13 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
+/*
+exrnormalize out.exr out.n.exr
+exrpptm out.n.exr out.pp.exr
+exrnormalize out.pp.exr out.pp.n.exr
+exrtopng out.pp.n.exr out.png
+*/
+
 #include <iomanip>
 #include <fstream>
 #include <string>
@@ -95,33 +102,31 @@ enum ReconstructionTypes {
 
 //------------------------------------------------------------------------------
 
-void RPF_PresprocessSamples(SampleDataGrid &sampleDataGrig,
+void RPF_PresprocessSamples(const SampleDataGrid &sampleDataGrig,
 		const int x, const int y,
-		const int b, vector<size_t> *N) {
+		const int b, vector<size_t> N) {
 	// Compute mean and standard deviation of all samples inside the pixel
-	const vector<size_t> &indexPixelList = sampleDataGrig.GetPixelList(x, y);
-	if (indexPixelList.size() <= 0)
-		return;
+	const vector<size_t> &P = sampleDataGrig.GetPixelList(x, y);
 
 	// Scene features mean
 	SampleData &sampleData(*sampleDataGrig.sampleData);
 	const size_t sceneFeaturesSize = sampleData.sceneFeaturesCount;
 
 	vector<float> sceneFeaturesMean(sceneFeaturesSize, 0.f);
-	for (size_t i = 0; i < indexPixelList.size(); ++i) {
-		const float *sceneFeatures = sampleData.GetSceneFeatures(indexPixelList[i]);
+	for (size_t i = 0; i < P.size(); ++i) {
+		const float *sceneFeatures = sampleData.GetSceneFeatures(P[i]);
 
 		for (size_t j = 0; j < sceneFeaturesSize; ++j)
 			sceneFeaturesMean[j] += sceneFeatures[j];
 	}
 
 	for (size_t j = 0; j < sceneFeaturesSize; ++j)
-		sceneFeaturesMean[j] /= indexPixelList.size();
+		sceneFeaturesMean[j] /= P.size();
 
 	// Scene features standard deviation
 	vector<float> sceneFeaturesStandardDeviation(sceneFeaturesSize, 0.f);
-	for (size_t i = 0; i < indexPixelList.size(); ++i) {
-		const float *sceneFeatures = sampleData.GetSceneFeatures(indexPixelList[i]);
+	for (size_t i = 0; i < P.size(); ++i) {
+		const float *sceneFeatures = sampleData.GetSceneFeatures(P[i]);
 
 		for (size_t j = 0; j < sceneFeaturesSize; ++j) {
 			const float v = sceneFeatures[j] - sceneFeaturesMean[j];
@@ -130,7 +135,7 @@ void RPF_PresprocessSamples(SampleDataGrid &sampleDataGrig,
 	}
 
 	for (size_t j = 0; j < sceneFeaturesSize; ++j)
-		sceneFeaturesStandardDeviation[j] = sqrtf(sceneFeaturesStandardDeviation[j] / indexPixelList.size());
+		sceneFeaturesStandardDeviation[j] = sqrtf(sceneFeaturesStandardDeviation[j] / P.size());
 
 	// For all samples inside the filtering box
 	const float filterWidth = b / 2.f;
@@ -141,16 +146,16 @@ void RPF_PresprocessSamples(SampleDataGrid &sampleDataGrig,
 
 	for (int yy = y0; yy <= y1; ++yy) {
 		for (int xx = x0; xx <= x1; ++xx) {
-			const vector<size_t> &indexList = sampleDataGrig.GetPixelList(xx, yy);
+			const vector<size_t> &NP = sampleDataGrig.GetPixelList(xx, yy);
 
-			for (size_t i = 0; i < indexList.size(); ++i) {
+			for (size_t i = 0; i < NP.size(); ++i) {
 				// Check if it is a sample I can use
-				const float *sceneFeatures = sampleData.GetSceneFeatures(indexList[i]);
+				const float *sceneFeatures = sampleData.GetSceneFeatures(NP[i]);
 
 				bool valid = true;
 				for (size_t j = 0; j < sceneFeaturesSize; ++j) {
 					// World coordinates require a larger constant
-					const float k = ((j <= 2) || (j >= 9 && j <= 11)) ? 30.f : 3.f;
+					const float k = ((j % 9) <= 2) ? 30.f : 3.f;
 					const float kk = k * sceneFeaturesStandardDeviation[j];
 					const float fm = fabsf(sceneFeatures[j] - sceneFeaturesMean[j]);
 
@@ -161,57 +166,116 @@ void RPF_PresprocessSamples(SampleDataGrid &sampleDataGrig,
 				}
 
 				if (valid)
-					N->push_back(indexList[i]);
+					N.push_back(NP[i]);
 			}
 		}
 	}
 
-	// Add to N also all samples inside the current pixel
-	for (size_t i = 0; i < indexPixelList.size(); ++i)
-		N->push_back(indexPixelList[i]);
+	//LOG(LUX_INFO, LUX_NOERROR) << "[" << x << ", " << y << "] " << N->size() << " + " << indexPixelList.size();
+}
+
+static inline float sqr(const float v) {
+	return v * v;
+}
+
+void RPF_FilterColorSamples(const SampleDataGrid &sampleDataGrig,
+		const vector<size_t> &P, const vector<size_t> &N,
+		const float alpha, const float beta,
+		const vector<XYZColor> &c1, vector<XYZColor> &c2) {
+	//SampleData &sampleData(*sampleDataGrig.sampleData);
+
+	for (size_t i = 0; i < P.size(); ++i)
+		c2[P[i]] = c1[P[i]];
+
+	// Filter the colors of samples in pixel P using bilateral filter
+	/*for (size_t i = 0; i < P.size(); ++i) {
+		const size_t Pi = P[i];
+		c2[Pi] = 0.f;
+		float w = 0.f;
+
+		const float *sceneFeaturesPi = sampleData.GetSceneFeatures(P[i]);
+		for (size_t j = 0; j < N.size(); ++j) {
+			const float *sceneFeaturesNj = sampleData.GetSceneFeatures(N[j]);
+
+			//
+			float wij = expf(sqr(sceneFeaturesPi[0] - sceneFeaturesNj[0]) + sqr(sceneFeaturesPi[1] - sceneFeaturesNj[1]));
+			c2[Pi] += wij * c1[Pi];
+			w += wij;
+		}
+
+		c2[Pi] /= w;
+	}*/
 }
 
 void Recons_RPF(SampleData *sampleData, const string &outputFileName) {
 	LOG(LUX_INFO, LUX_NOERROR) << "Building sample data grid...";
+
 	SampleDataGrid sampleDataGrig(sampleData);
-	vector<RGBColor> pixels(sampleDataGrig.xResolution * sampleDataGrig.yResolution);
+
+	// Build the sample list
+	vector<XYZColor> c1(sampleData->count);
+	for (size_t i = 0; i < sampleData->count; ++i)
+		c1[i] = *(sampleData->GetColor(i));
+	vector<XYZColor> c2(sampleData->count);
 
 	const int b = 7;
-	LOG(LUX_INFO, LUX_NOERROR) << "RPF preprocess step, size: " << b;
+	LOG(LUX_INFO, LUX_NOERROR) << "RPF step, size: " << b;
+	double lastPrintTime = osWallClockTime();
+	for (int y = sampleDataGrig.yPixelStart; y <= sampleDataGrig.yPixelEnd; ++y) {
+		if (osWallClockTime() - lastPrintTime > 5.0) {
+			LOG(LUX_INFO, LUX_NOERROR) << "RPF line: " << (y - sampleDataGrig.yPixelStart + 1) << "/" << sampleDataGrig.yResolution;
+			lastPrintTime = osWallClockTime();
+		}
+
+		for (int x = sampleDataGrig.xPixelStart; x <= sampleDataGrig.xPixelEnd; ++x) {
+			const vector<size_t> &P = sampleDataGrig.GetPixelList(x, y);
+
+			if (P.size() > 0) {
+				// Preprocess the samples and cluster them
+				vector<size_t> N;
+				RPF_PresprocessSamples(sampleDataGrig, x, y, b, N);
+
+				// Compute feature weight
+				// TODO
+				float alpha = 1.f;
+				float beta = 1.f;
+
+				// Filter color samples
+				RPF_FilterColorSamples(sampleDataGrig, P, N, alpha, beta, c1, c2);
+			}
+		}
+	}
+
+	// Copy c'' in c'
+	std::copy(c2.begin(), c2.end(), c1.begin());
+
+	LOG(LUX_INFO, LUX_NOERROR) << "Writing EXR image: " << outputFileName;
+
 	const float red[2] = {0.63f, 0.34f};
 	const float green[2] = {0.31f, 0.595f};
 	const float blue[2] = {0.155f, 0.07f};
 	const float white[2] = {0.314275f, 0.329411f};
 	ColorSystem colorSpace = ColorSystem(red[0], red[1], green[0], green[1], blue[0], blue[1], white[0], white[1], 1.f);
+
+	vector<RGBColor> pixels(sampleDataGrig.xResolution * sampleDataGrig.yResolution);
 	size_t rgbi = 0;
-	double lastPrintTime = osWallClockTime();
-	for (size_t y = 0; y < sampleDataGrig.yResolution; ++y) {
-		if (osWallClockTime() - lastPrintTime > 5.0) {
-			LOG(LUX_INFO, LUX_NOERROR) << "RPF preprocess line: " << y << "/" << sampleDataGrig.yResolution - 1;
-			lastPrintTime = osWallClockTime();
-		}
+	for (int y = sampleDataGrig.yPixelStart; y <= sampleDataGrig.yPixelEnd; ++y) {
+		for (int x = sampleDataGrig.xPixelStart; x <= sampleDataGrig.xPixelEnd; ++x) {
+			const vector<size_t> &P = sampleDataGrig.GetPixelList(x, y);
 
-		for (size_t x = 0; x < sampleDataGrig.xResolution; ++x) {
-			vector<size_t> N;
-			RPF_PresprocessSamples(sampleDataGrig,
-					x + sampleDataGrig.xPixelStart, y + sampleDataGrig.yPixelStart,
-					b, &N);
-
-			// For testing
 			XYZColor c;
-			if (N.size() > 0) {
-				for (size_t i = 0; i < N.size(); ++i)
-					c += *(sampleData->GetColor(N[i]));
+			if (P.size() > 0) {
+				for (size_t i = 0; i < P.size(); ++i)
+					c += c1[P[i]];
 
-				c /= N.size();
+				c /= P.size();
 			}
-			//LOG(LUX_INFO, LUX_NOERROR) << "[" << x << ", " << y << "][" << N.size() << "] = " << c;
+			//LOG(LUX_INFO, LUX_NOERROR) << "[" << x << ", " << y << "][" << indexPixelList.size() << "] = " << c;
 
 			pixels[rgbi++] = colorSpace.ToRGBConstrained(c);
 		}
 	}
 
-	LOG(LUX_INFO, LUX_NOERROR) << "Writing EXR image: " << outputFileName;
 	vector<float> dummy;
 	WriteOpenEXRImage(2, false, false, 0, outputFileName, pixels, dummy,
 		sampleDataGrig.xResolution, sampleDataGrig.yResolution,

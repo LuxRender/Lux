@@ -265,18 +265,11 @@ u_int PathIntegrator::Li(const Scene &scene, const Sample &sample) const
 		if (!specular)
 			VContrib += AbsDot(wi, n) / pdf;
 
-		if (sample.pathInfo) {
-			if (vertexIndex == 1) {
-				sample.pathInfo->v1Point = p;
-				sample.pathInfo->v1Normal = n;
-				// SampleF with reverse = true is multiplied by Dot(ns, wiW)/pdf
-				sample.pathInfo->v1Bsdf = XYZColor(sw, f * pdf / Dot(n, wi));
-			} else if (vertexIndex == 2) {
-				sample.pathInfo->v2Point = p;
-				sample.pathInfo->v2Normal = n;
-				// SampleF with reverse = true is multiplied by Dot(ns, wiW)/pdf
-				sample.pathInfo->v2Bsdf = XYZColor(sw, f * pdf / Dot(n, wi));
-			}
+		if ((sample.pathInfo) && (vertexIndex == 1)) {
+			sample.pathInfo->v1Point = p;
+			sample.pathInfo->v1Normal = n;
+			// SampleF with reverse = true is multiplied by Dot(ns, wiW)/pdf
+			sample.pathInfo->v1Bsdf = XYZColor(sw, f * pdf / Dot(n, wi));
 		}
 
 		ray = Ray(p, wi);

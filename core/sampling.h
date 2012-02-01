@@ -44,10 +44,6 @@ public:
 	Point v1Point;
 	Normal v1Normal;
 	XYZColor v1Bsdf;
-
-	Point v2Point;
-	Normal v2Normal;
-	XYZColor v2Bsdf;
 };
 
 class Sample {
