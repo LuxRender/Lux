@@ -100,13 +100,20 @@ enum ReconstructionTypes {
 	TYPE_V1_BSDF = 3
 };
 
+template<class T> inline T sqr(const T v) {
+	return v * v;
+}
+
 //------------------------------------------------------------------------------
 
 void RPF_PresprocessSamples(const SampleDataGrid &sampleDataGrig,
 		const int x, const int y,
-		const int b, vector<size_t> N) {
-	// Compute mean and standard deviation of all samples inside the pixel
+		const int b, vector<size_t> &N) {
+	// Add all samples in P to N
 	const vector<size_t> &P = sampleDataGrig.GetPixelList(x, y);
+	N.insert(N.end(), P.begin(), P.end());
+
+	// Compute mean and standard deviation of all samples inside the pixel
 
 	// Scene features mean
 	SampleData &sampleData(*sampleDataGrig.sampleData);
@@ -174,37 +181,123 @@ void RPF_PresprocessSamples(const SampleDataGrid &sampleDataGrig,
 	//LOG(LUX_INFO, LUX_NOERROR) << "[" << x << ", " << y << "] " << N->size() << " + " << indexPixelList.size();
 }
 
-static inline float sqr(const float v) {
-	return v * v;
-}
-
 void RPF_FilterColorSamples(const SampleDataGrid &sampleDataGrig,
 		const vector<size_t> &P, const vector<size_t> &N,
 		const float alpha, const float beta,
 		const vector<XYZColor> &c1, vector<XYZColor> &c2) {
-	//SampleData &sampleData(*sampleDataGrig.sampleData);
+	// NOTE: this code assume the first elements in N are the same of P
 
-	for (size_t i = 0; i < P.size(); ++i)
-		c2[P[i]] = c1[P[i]];
+	SampleData &sampleData(*sampleDataGrig.sampleData);
+
+	// Compute the mean
+	float xyMean[2] = { 0.f, 0.f };
+	XYZColor cMean;
+	for (size_t i = 0; i < N.size(); ++i) {
+		const size_t index = N[i];
+		const float *imageXY = sampleData.GetImageXY(index);
+		xyMean[0] += imageXY[0];
+		xyMean[1] += imageXY[1];
+
+		const XYZColor *c = sampleData.GetColor(index);
+		cMean += *c;
+	}
+
+	xyMean[0] /= N.size();
+	xyMean[1] /= N.size();
+	cMean /= N.size();
+
+	// Compute the standard deviation
+	float xyStandardDeviation[2] = { 0.f, 0.f };
+	XYZColor cStandardDeviation;
+	for (size_t i = 0; i < N.size(); ++i) {
+		const size_t index = N[i];
+		const float *imageXY = sampleData.GetImageXY(index);
+		xyStandardDeviation[0] += sqr(imageXY[0] - xyMean[0]);
+		xyStandardDeviation[1] += sqr(imageXY[1] - xyMean[1]);
+
+		const XYZColor *c = sampleData.GetColor(index);
+		cStandardDeviation += sqr(*c - cMean);
+	}
+
+	xyStandardDeviation[0] = sqrtf(xyStandardDeviation[0] / N.size());
+	if (xyStandardDeviation[0] == 0.f)
+		xyStandardDeviation[0] = 1.f; // To avoid / 0.f
+	xyStandardDeviation[1] = sqrtf(xyStandardDeviation[1] / N.size());
+	if (xyStandardDeviation[1] == 0.f)
+		xyStandardDeviation[1] = 1.f; // To avoid / 0.f
+	cStandardDeviation = (cStandardDeviation / N.size()).Sqrt();
+	if (cStandardDeviation.Black())
+		cStandardDeviation = 1.f; // To avoid / 0.f
+
+	// Compute the normalized values
+	vector<float> xNormalized(N.size());
+	vector<float> yNormalized(N.size());
+	vector<XYZColor> cNormalized(N.size());
+
+	for (size_t i = 0; i < N.size(); ++i) {
+		const size_t index = N[i];
+		const float *imageXY = sampleData.GetImageXY(index);
+		xNormalized[i] = (imageXY[0] - xyMean[0]) / xyStandardDeviation[0];
+		yNormalized[i] = (imageXY[1] - xyMean[1]) / xyStandardDeviation[1];
+
+		const XYZColor *c = sampleData.GetColor(index);
+		cNormalized[i] = (*c - cMean) / cStandardDeviation;
+	}
 
 	// Filter the colors of samples in pixel P using bilateral filter
-	/*for (size_t i = 0; i < P.size(); ++i) {
+	//const float o_2_8 = .02f;
+	const float o_2_8 = 20.f;
+	const float o_2 = 8.f * o_2_8 / sampleDataGrig.avgSamplesPerPixel;
+
+	for (size_t i = 0; i < P.size(); ++i) {
+		// Calculate the filter weight
 		const size_t Pi = P[i];
 		c2[Pi] = 0.f;
 		float w = 0.f;
 
-		const float *sceneFeaturesPi = sampleData.GetSceneFeatures(P[i]);
+		const float k = - 1.f / (2.f * o_2);
 		for (size_t j = 0; j < N.size(); ++j) {
-			const float *sceneFeaturesNj = sampleData.GetSceneFeatures(N[j]);
-
-			//
-			float wij = expf(sqr(sceneFeaturesPi[0] - sceneFeaturesNj[0]) + sqr(sceneFeaturesPi[1] - sceneFeaturesNj[1]));
-			c2[Pi] += wij * c1[Pi];
+			// NOTE: this code assume the first elements in N are the same of P
+			const float wij_xy = expf(k * (sqr(xNormalized[i] - xNormalized[j]) +
+					sqr(yNormalized[i] - yNormalized[j])));
+			const float wij_c = expf(k * (sqr(cNormalized[i].c[0] - cNormalized[j].c[0]) +
+					sqr(cNormalized[i].c[1] - cNormalized[j].c[1]) +
+					sqr(cNormalized[i].c[2] - cNormalized[j].c[2])));
+			const float wij = wij_xy * wij_c;
+			c2[Pi] += wij * c1[N[j]];
 			w += wij;
 		}
 
+		/*if (c2[Pi].IsNaN()) {
+			LOG(LUX_INFO, LUX_NOERROR) << "c2[Pi] = " << c2[Pi] << " w = " << w;
+		}*/
+
 		c2[Pi] /= w;
-	}*/
+	}
+
+	// Compute mean and standard deviation of filtered colors
+	XYZColor c2Mean;
+	for (size_t i = 0; i < P.size(); ++i)
+		c2Mean += c2[P[i]];
+
+	XYZColor c2StandardDeviation;
+	for (size_t i = 0; i < P.size(); ++i) {
+		c2StandardDeviation += sqr(c2[P[i]] - c2Mean);
+	}
+	c2StandardDeviation = (cStandardDeviation / P.size()).Sqrt();
+
+	// Outlier rejection
+	for (size_t i = 0; i < P.size(); ++i) {
+		const size_t Pi = P[i];
+		if (c2[Pi].c[0] - cMean.c[0] > c2StandardDeviation.c[0])
+			c2[Pi].c[0] = cMean.c[0];
+
+		if (c2[Pi].c[1] - cMean.c[1] > c2StandardDeviation.c[1])
+			c2[Pi].c[1] = cMean.c[1];
+
+		if (c2[Pi].c[2] - cMean.c[2] > c2StandardDeviation.c[2])
+			c2[Pi].c[2] = cMean.c[2];
+	}
 }
 
 void Recons_RPF(SampleData *sampleData, const string &outputFileName) {
@@ -270,7 +363,8 @@ void Recons_RPF(SampleData *sampleData, const string &outputFileName) {
 
 				c /= P.size();
 			}
-			//LOG(LUX_INFO, LUX_NOERROR) << "[" << x << ", " << y << "][" << indexPixelList.size() << "] = " << c;
+
+			//LOG(LUX_INFO, LUX_NOERROR) << "[" << x << ", " << y << "] = " << c;
 
 			pixels[rgbi++] = colorSpace.ToRGBConstrained(c);
 		}
@@ -311,7 +405,7 @@ void Recons_BOX(SampleData *sampleData, const string &outputFileName) {
 				c /= index.size();
 			}
 			//LOG(LUX_INFO, LUX_NOERROR) << "[" << x << ", " << y << "][" << index.size() << "] = " << c;
-
+			
 			pixels[rgbi++] = colorSpace.ToRGBConstrained(c);
 		}
 	}

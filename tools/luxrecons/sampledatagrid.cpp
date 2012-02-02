@@ -79,6 +79,9 @@ SampleDataGrid::SampleDataGrid(SampleData *data) : sampleData(data) {
 			}
 		}
 	}*/
+
+	avgSamplesPerPixel = sampleData->count / (float)(xResolution * yResolution);
+	LOG(LUX_DEBUG, LUX_NOERROR) << "SampleDataGrid avg. samples per pixel: " << avgSamplesPerPixel;
 }
 
 SampleDataGrid::~SampleDataGrid() {
