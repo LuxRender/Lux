@@ -246,7 +246,7 @@ void RPF_FilterColorSamples(const SampleDataGrid &sampleDataGrig,
 
 	// Filter the colors of samples in pixel P using bilateral filter
 	//const float o_2_8 = .02f;
-	const float o_2_8 = 20.f;
+	const float o_2_8 = 2.f;
 	const float o_2 = 8.f * o_2_8 / sampleDataGrig.avgSamplesPerPixel;
 
 	for (size_t i = 0; i < P.size(); ++i) {
@@ -311,36 +311,41 @@ void Recons_RPF(SampleData *sampleData, const string &outputFileName) {
 		c1[i] = *(sampleData->GetColor(i));
 	vector<XYZColor> c2(sampleData->count);
 
-	const int b = 7;
-	LOG(LUX_INFO, LUX_NOERROR) << "RPF step, size: " << b;
-	double lastPrintTime = osWallClockTime();
-	for (int y = sampleDataGrig.yPixelStart; y <= sampleDataGrig.yPixelEnd; ++y) {
-		if (osWallClockTime() - lastPrintTime > 5.0) {
-			LOG(LUX_INFO, LUX_NOERROR) << "RPF line: " << (y - sampleDataGrig.yPixelStart + 1) << "/" << sampleDataGrig.yResolution;
-			lastPrintTime = osWallClockTime();
-		}
+	//const int bv[4] = { 55, 35, 17, 7 };
+	//const int bv[4] = { 17, 7 };
+	const int bv[4] = { 7 };
+	for (int bi = 0; bi < 1; ++bi) {
+		const int b = bv[bi];
+		LOG(LUX_INFO, LUX_NOERROR) << "RPF step " << bi + 1 <<", size: " << b;
+		double lastPrintTime = osWallClockTime();
+		for (int y = sampleDataGrig.yPixelStart; y <= sampleDataGrig.yPixelEnd; ++y) {
+			if (osWallClockTime() - lastPrintTime > 5.0) {
+				LOG(LUX_INFO, LUX_NOERROR) << "RPF line: " << (y - sampleDataGrig.yPixelStart + 1) << "/" << sampleDataGrig.yResolution;
+				lastPrintTime = osWallClockTime();
+			}
 
-		for (int x = sampleDataGrig.xPixelStart; x <= sampleDataGrig.xPixelEnd; ++x) {
-			const vector<size_t> &P = sampleDataGrig.GetPixelList(x, y);
+			for (int x = sampleDataGrig.xPixelStart; x <= sampleDataGrig.xPixelEnd; ++x) {
+				const vector<size_t> &P = sampleDataGrig.GetPixelList(x, y);
 
-			if (P.size() > 0) {
-				// Preprocess the samples and cluster them
-				vector<size_t> N;
-				RPF_PresprocessSamples(sampleDataGrig, x, y, b, N);
+				if (P.size() > 0) {
+					// Preprocess the samples and cluster them
+					vector<size_t> N;
+					RPF_PresprocessSamples(sampleDataGrig, x, y, b, N);
 
-				// Compute feature weight
-				// TODO
-				float alpha = 1.f;
-				float beta = 1.f;
+					// Compute feature weight
+					// TODO
+					float alpha = 1.f;
+					float beta = 1.f;
 
-				// Filter color samples
-				RPF_FilterColorSamples(sampleDataGrig, P, N, alpha, beta, c1, c2);
+					// Filter color samples
+					RPF_FilterColorSamples(sampleDataGrig, P, N, alpha, beta, c1, c2);
+				}
 			}
 		}
-	}
 
-	// Copy c'' in c'
-	std::copy(c2.begin(), c2.end(), c1.begin());
+		// Copy c'' in c'
+		std::copy(c2.begin(), c2.end(), c1.begin());
+	}
 
 	LOG(LUX_INFO, LUX_NOERROR) << "Writing EXR image: " << outputFileName;
 
