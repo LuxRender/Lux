@@ -30,6 +30,7 @@
 #include "osfunc.h"
 
 #include <boost/thread/mutex.hpp>
+#include <boost/ptr_container/ptr_vector.hpp>
 #include <boost/cstdint.hpp>
 
 using boost::uint16_t;
@@ -38,8 +39,9 @@ namespace lux
 {
 
 // Size of a contribution buffer
-// 4096 seems best.
-#define CONTRIB_BUF_SIZE 4096u
+// 1024 seems better for tiled buffering
+// TODO find best value
+#define CONTRIB_BUF_SIZE 1024u
 
 // Minimum number of buffers to keep alive/reuse
 // In practice twice this amount stays allocated
@@ -57,7 +59,8 @@ public:
 
 	float imageX, imageY;
 	XYZColor color;
-	float alpha, zdepth, variance;
+	float alpha, zdepth;
+	mutable float variance; // set to negative value if contribution is invalid/rejected
 	uint16_t buffer, bufferGroup;
 };
 
@@ -65,19 +68,16 @@ class ContributionBuffer {
 	friend class ContributionPool;
 	class Buffer {
 	public:
-		Buffer() : pos(0) {
-			contribs = AllocAligned<Contribution>(CONTRIB_BUF_SIZE);
-		}
+		Buffer();
+		~Buffer();
 
-		~Buffer() {
-			FreeAligned(contribs);
-		}
-
-		bool Add(const Contribution &c, float weight=1.f) {
+		// Thread-safe way of adding a contribution to a buffer
+		// Returns false if the buffer is full
+		bool Add(const Contribution &c, float weight) {
 			const u_int i = osAtomicInc(&pos);
 
 			// ensure we stay within bounds
-			if (i+1 > CONTRIB_BUF_SIZE)
+			if (!(i < CONTRIB_BUF_SIZE))
 				return false;
 
 			contribs[i] = c;
@@ -86,7 +86,7 @@ class ContributionBuffer {
 			return true;
 		}
 
-		void Splat(Film *film);
+		void Splat(Film *film, u_int tileIndex);
 
 	private:
 		u_int pos;
@@ -114,11 +114,30 @@ class ContributionPool {
 public:
 
 	ContributionPool(Film *f);
+	~ContributionPool();
 
 	void End(ContributionBuffer *c);
 
-	void Next(ContributionBuffer::Buffer* volatile *b, float sc, u_int bufferGroup,
-		u_int buffer);
+	/*
+	 * Takes a pointer to a full Buffer and swaps it with a pointer to an empty Buffer.
+	 * This method is thread-safe, and a different thread may swap the Buffer pointer 
+	 * instead of the calling thread. In this case Next() returns immediately.
+	 * If the calling thread swaps the Buffer pointer, it will accumulate the supplied
+	 * sample counter and reset it.
+	 * 
+	 * @param b Pointer to a Buffer pointer. The Buffer pointer will be replaced by a 
+	 * pointer to an empty Buffer.
+	 *
+	 * @param sc Number of samples that the contributions in the full Buffer represents.
+	 * If the Buffer pointer is swapped, this counter is reset to zero.
+	 *
+	 * @param tileIndex Index of the tile that the contributions in the Buffer should be
+	 * accumulated to in the Film.
+	 *
+	 * @param bufferGroup The buffer group that the contributions in the Buffer belongs to.
+	 */
+	void Next(ContributionBuffer::Buffer* volatile *b, float *sc, u_int tileIndex,
+		u_int bufferGroup);
 
 	// Flush() and Delete() are not thread safe,
 	// they can only be called by Scene after rendering is finished.
@@ -129,25 +148,66 @@ public:
 	// to acquire splattingMutex lock
 	void CheckFilmWriteOuputInterval();
 
+	/**
+	 * Get the indexes that the current contribution spans.
+	 * Current implementation is limited to at most two tiles, ie the tiles are slabs.
+	 * @param tileIndex0 First tile index, always set.
+	 * @param tileIndex1 Second tile index if the contribution spans more than one tile, otherwise undefined.
+	 * @return Number of tiles that the contribution spans, 1 or 2.
+	 */
+	u_int GetFilmTileIndexes(const Contribution &contrib, u_int *tileIndex0, u_int *tileIndex1) const;
+
 private:
+	typedef boost::mutex tile_mutex;
+	//typedef fast_mutex tile_mutex;
+
 	float sampleCount;
 	vector<ContributionBuffer::Buffer*> CFree; // Emptied/available buffers
 	vector<vector<vector<ContributionBuffer::Buffer*> > > CFull; // Full buffers
-	vector<ContributionBuffer::Buffer*> CSplat; // Buffers being splat
+	vector<u_int> splattingTile;
+	u_int splattingMisses;
 
 	Film *film;
 	fast_mutex poolMutex;
-	boost::mutex splattingMutex;
+	boost::ptr_vector<tile_mutex> tileSplattingMutexes;
+	boost::mutex mainSplattingMutex;
 };
 
 inline void ContributionBuffer::Add(const Contribution &c, float weight)
 {
-	Buffer* volatile* const buf = &(buffers[c.bufferGroup][c.buffer]);
-	if (!(*buf)->Add(c, weight)) {
-		pool->Next(buf, sampleCount, c.bufferGroup, c.buffer);
-		(*buf)->Add(c, weight);
-		sampleCount = 0.f;
+
+	u_int tileIndex0, tileIndex1;
+	// Add the contribution to each tile that it spans.
+	u_int num_tiles = pool->GetFilmTileIndexes(c, &tileIndex0, &tileIndex1);
+
+	//if (num_tiles > 0) is always true
+	{
+		Buffer* volatile* const buf = &(buffers[tileIndex0][c.bufferGroup]);
+		u_int i = 0;
+		// Try adding contribution to the active buffer
+		// if the buffer is full, try to get a fresh buffer.
+		// The iteration count is a safeguard against an infinite 
+		// loop in case something goes horribly wrong
+		while (!((*buf)->Add(c, weight)) && (i++ < 10)) {
+			// Get an empty buffer from the pool.
+			// Next() will reset sampleCount if current thread 
+			// swaps buffers.
+			pool->Next(buf, &sampleCount, tileIndex0, c.bufferGroup);
+			// Another thread may have swapped buf before we managed to.
+			// Technically there's a chance we waited so long for the lock
+			// in Next() that the buffer we got back has already been filled
+			// thus we try to Add() again in a loop just to be sure.
+		}
 	}
+
+	if (num_tiles > 1) {		
+		Buffer* volatile* const buf = &(buffers[tileIndex1][c.bufferGroup]);
+		u_int i = 0;
+		while (!((*buf)->Add(c, weight)) && (i++ < 10)) {
+			pool->Next(buf, &sampleCount, tileIndex0, c.bufferGroup);
+		}
+	}
+
 }
 
 }//namespace lux
