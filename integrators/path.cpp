@@ -269,7 +269,9 @@ u_int PathIntegrator::Li(const Scene &scene, const Sample &sample) const
 			sample.pathInfo->v1Point = p;
 			sample.pathInfo->v1Normal = n;
 			// SampleF with reverse = true is multiplied by Dot(ns, wiW)/pdf
-			sample.pathInfo->v1Bsdf = XYZColor(sw, f * pdf / Dot(n, wi));
+			SWCSpectrum surfaceColor = f * (pdf / Dot(n, wi));
+			for (size_t i = 0; i < WAVELENGTH_SAMPLES; ++i)
+				sample.pathInfo->v1SurfaceColor[i] = surfaceColor.c[i];
 		}
 
 		ray = Ray(p, wi);

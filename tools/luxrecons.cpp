@@ -96,8 +96,9 @@ namespace po = boost::program_options;
 enum ReconstructionTypes {
 	TYPE_BOX = 0,
 	TYPE_RPF = 1,
-	TYPE_V1_NORMAL = 2,
-	TYPE_V1_BSDF = 3
+	TYPE_V1_NORMAL = 100,
+	TYPE_V1_BSDF = 101,
+	TYPE_CLUSTER = 102
 };
 
 template<class T> inline T sqr(const T v) {
@@ -117,31 +118,29 @@ void RPF_PresprocessSamples(const SampleDataGrid &sampleDataGrig,
 
 	// Scene features mean
 	SampleData &sampleData(*sampleDataGrig.sampleData);
-	const size_t sceneFeaturesSize = sampleData.sceneFeaturesCount;
+	const size_t sceneFeaturesCount = sampleData.sceneFeaturesCount;
 
-	vector<float> sceneFeaturesMean(sceneFeaturesSize, 0.f);
+	vector<float> sceneFeaturesMean(sceneFeaturesCount, 0.f);
 	for (size_t i = 0; i < P.size(); ++i) {
 		const float *sceneFeatures = sampleData.GetSceneFeatures(P[i]);
 
-		for (size_t j = 0; j < sceneFeaturesSize; ++j)
+		for (size_t j = 0; j < sceneFeaturesCount; ++j)
 			sceneFeaturesMean[j] += sceneFeatures[j];
 	}
 
-	for (size_t j = 0; j < sceneFeaturesSize; ++j)
+	for (size_t j = 0; j < sceneFeaturesCount; ++j)
 		sceneFeaturesMean[j] /= P.size();
 
 	// Scene features standard deviation
-	vector<float> sceneFeaturesStandardDeviation(sceneFeaturesSize, 0.f);
+	vector<float> sceneFeaturesStandardDeviation(sceneFeaturesCount, 0.f);
 	for (size_t i = 0; i < P.size(); ++i) {
 		const float *sceneFeatures = sampleData.GetSceneFeatures(P[i]);
 
-		for (size_t j = 0; j < sceneFeaturesSize; ++j) {
-			const float v = sceneFeatures[j] - sceneFeaturesMean[j];
-			sceneFeaturesStandardDeviation[j] = v * v;
-		}
+		for (size_t j = 0; j < sceneFeaturesCount; ++j)
+			sceneFeaturesStandardDeviation[j] = sqr(sceneFeatures[j] - sceneFeaturesMean[j]);
 	}
 
-	for (size_t j = 0; j < sceneFeaturesSize; ++j)
+	for (size_t j = 0; j < sceneFeaturesCount; ++j)
 		sceneFeaturesStandardDeviation[j] = sqrtf(sceneFeaturesStandardDeviation[j] / P.size());
 
 	// For all samples inside the filtering box
@@ -153,6 +152,10 @@ void RPF_PresprocessSamples(const SampleDataGrid &sampleDataGrig,
 
 	for (int yy = y0; yy <= y1; ++yy) {
 		for (int xx = x0; xx <= x1; ++xx) {
+			// Skip Samples in P, already added
+			if ((xx == x) && (yy == y))
+				continue;
+
 			const vector<size_t> &NP = sampleDataGrig.GetPixelList(xx, yy);
 
 			for (size_t i = 0; i < NP.size(); ++i) {
@@ -160,9 +163,9 @@ void RPF_PresprocessSamples(const SampleDataGrid &sampleDataGrig,
 				const float *sceneFeatures = sampleData.GetSceneFeatures(NP[i]);
 
 				bool valid = true;
-				for (size_t j = 0; j < sceneFeaturesSize; ++j) {
+				for (size_t j = 0; j < sceneFeaturesCount; ++j) {
 					// World coordinates require a larger constant
-					const float k = ((j % 9) <= 2) ? 30.f : 3.f;
+					const float k = ((j % (sizeof(SamplePathInfo) / sizeof(float))) <= 2) ? 30.f : 3.f;
 					const float kk = k * sceneFeaturesStandardDeviation[j];
 					const float fm = fabsf(sceneFeatures[j] - sceneFeaturesMean[j]);
 
@@ -178,7 +181,7 @@ void RPF_PresprocessSamples(const SampleDataGrid &sampleDataGrig,
 		}
 	}
 
-	//LOG(LUX_INFO, LUX_NOERROR) << "[" << x << ", " << y << "] " << N->size() << " + " << indexPixelList.size();
+	//LOG(LUX_INFO, LUX_NOERROR) << "[" << x << ", " << y << "] " << N.size();
 }
 
 void RPF_FilterColorSamples(const SampleDataGrid &sampleDataGrig,
@@ -311,10 +314,10 @@ void Recons_RPF(SampleData *sampleData, const string &outputFileName) {
 		c1[i] = *(sampleData->GetColor(i));
 	vector<XYZColor> c2(sampleData->count);
 
-	//const int bv[4] = { 55, 35, 17, 7 };
+	const int bv[4] = { 55, 35, 17, 7 };
 	//const int bv[4] = { 17, 7 };
-	const int bv[4] = { 7 };
-	for (int bi = 0; bi < 1; ++bi) {
+	//const int bv[4] = { 7 };
+	for (int bi = 0; bi < 4; ++bi) {
 		const int b = bv[bi];
 		LOG(LUX_INFO, LUX_NOERROR) << "RPF step " << bi + 1 <<", size: " << b;
 		double lastPrintTime = osWallClockTime();
@@ -449,6 +452,8 @@ void Recons_V1_NORMAL(SampleData *sampleData, const string &outputFileName) {
 				}
 
 				pixels[rgbi] /= index.size();
+			} else {
+				LOG(LUX_INFO, LUX_NOERROR) << "Missing normals in pixel [" << x << ", " << y <<"]";
 			}
 
 			++rgbi;
@@ -483,18 +488,99 @@ void Recons_V1_BSDF(SampleData *sampleData, const string &outputFileName) {
 		for (size_t x = 0; x < sampleDataGrig.xResolution; ++x) {
 			const vector<size_t> &index = sampleDataGrig.GetPixelList(x + sampleDataGrig.xPixelStart, y + sampleDataGrig.yPixelStart);
 
-			XYZColor c;
+			float c[3];
+			for (size_t i = 0; i < 3; ++i)
+				c[i] = 0.f;
+
 			if (index.size() > 0) {
 				for (size_t i = 0; i < index.size(); ++i) {
 					const SamplePathInfo *pathInfo = (SamplePathInfo *)(sampleData->GetSceneFeatures(index[i]));
 
-					c += pathInfo->v1Bsdf;
+					for (size_t i = 0; i < 3; ++i)
+						c[i] += pathInfo->v1SurfaceColor[i];
 				}
+
+				for (size_t i = 0; i < 3; ++i)
+					c[i] /= index.size();
+			} else {
+				LOG(LUX_INFO, LUX_NOERROR) << "Missing BSDF in pixel [" << x << ", " << y <<"]";
+			}
+
+			pixels[rgbi].c[0] = c[0];
+			pixels[rgbi].c[1] = c[1];
+			pixels[rgbi++].c[2] = c[2];
+		}
+	}
+
+	LOG(LUX_INFO, LUX_NOERROR) << "Writing EXR image: " << outputFileName;
+	vector<float> dummy;
+	WriteOpenEXRImage(2, false, false, 0, outputFileName, pixels, dummy,
+		sampleDataGrig.xResolution, sampleDataGrig.yResolution,
+		sampleDataGrig.xResolution, sampleDataGrig.yResolution,
+		0, 0,
+		dummy);
+}
+
+//------------------------------------------------------------------------------
+
+void Recons_CLUSTER(SampleData *sampleData, const string &outputFileName) {
+	LOG(LUX_INFO, LUX_NOERROR) << "Building sample data grid...";
+	SampleDataGrid sampleDataGrig(sampleData);
+
+	LOG(LUX_INFO, LUX_NOERROR) << "Box filtering...";
+	const float red[2] = {0.63f, 0.34f};
+	const float green[2] = {0.31f, 0.595f};
+	const float blue[2] = {0.155f, 0.07f};
+	const float white[2] = {0.314275f, 0.329411f};
+	ColorSystem colorSpace = ColorSystem(red[0], red[1], green[0], green[1], blue[0], blue[1], white[0], white[1], 1.f);
+
+	vector<RGBColor> pixels(sampleDataGrig.xResolution * sampleDataGrig.yResolution);
+	size_t rgbi = 0;
+	for (size_t y = 0; y < sampleDataGrig.yResolution; ++y) {
+		for (size_t x = 0; x < sampleDataGrig.xResolution; ++x) {
+			const vector<size_t> &index = sampleDataGrig.GetPixelList(x + sampleDataGrig.xPixelStart, y + sampleDataGrig.yPixelStart);
+
+			XYZColor c;
+			if (index.size() > 0) {
+				for (size_t i = 0; i < index.size(); ++i)
+					c += *(sampleData->GetColor(index[i]));
 
 				c /= index.size();
 			}
+			//LOG(LUX_INFO, LUX_NOERROR) << "[" << x << ", " << y << "][" << index.size() << "] = " << c;
 
-			pixels[rgbi++] = colorSpace.ToRGBConstrained(c);
+			pixels[rgbi++] = colorSpace.ToRGBConstrained(c).Y();
+		}
+	}
+
+	const int b = 7;
+	LOG(LUX_INFO, LUX_NOERROR) << "Cluster size: " << b;
+	double lastPrintTime = osWallClockTime();
+	for (int y = sampleDataGrig.yPixelStart; y <= sampleDataGrig.yPixelEnd; y += b) {
+		if (osWallClockTime() - lastPrintTime > 5.0) {
+			LOG(LUX_INFO, LUX_NOERROR) << "Cluster line: " << (y - sampleDataGrig.yPixelStart + 1) << "/" << sampleDataGrig.yResolution;
+			lastPrintTime = osWallClockTime();
+		}
+
+		for (int x = sampleDataGrig.xPixelStart; x <= sampleDataGrig.xPixelEnd; x += b) {
+			const vector<size_t> &P = sampleDataGrig.GetPixelList(x, y);
+
+			if (P.size() > 0) {
+				// Preprocess the samples and cluster them
+				vector<size_t> N;
+				RPF_PresprocessSamples(sampleDataGrig, x, y, b, N);
+
+				for (size_t i = 0; i < N.size(); ++i) {
+					const float *imageXY = sampleData->GetImageXY(N[i]);
+					const int xx = int(imageXY[0]) - sampleDataGrig.xPixelStart;
+					const int yy = int(imageXY[1]) - sampleDataGrig.yPixelStart;
+
+					const int index = xx + yy * sampleDataGrig.xResolution;
+					pixels[index].c[1] = 0.f;
+					pixels[index].c[2] = 0.f;
+				}
+
+			}
 		}
 	}
 
@@ -523,7 +609,7 @@ int main(int ac, char *av[]) {
 			("output,o", po::value< std::string >()->default_value("out.exr"), "Output file")
 			("verbose,V", "Increase output verbosity (show DEBUG messages)")
 			("quiet,q", "Reduce output verbosity (hide INFO messages)") // (give once for WARNING only, twice for ERROR only)")
-			("type,t", po::value< int >(), "Select the type of reconstruction (0 = BOX, 1 = RPF, 2 = V1_NORMAL, 3 = V1_BSDF)")
+			("type,t", po::value< int >(), "Select the type of reconstruction (0 = BOX, 1 = RPF, 100 = V1_NORMAL, 101 = V1_BSDF, 102 = CLUSTER)")
 			;
 
 	// Hidden options, will be allowed both on command line and
@@ -599,6 +685,9 @@ int main(int ac, char *av[]) {
 				break;
 			case TYPE_V1_BSDF:
 				Recons_V1_BSDF(sampleData, outputFileName);
+				break;
+			case TYPE_CLUSTER:
+				Recons_CLUSTER(sampleData, outputFileName);
 				break;
 			default:
 				throw std::runtime_error("Unknown reconstruction type");

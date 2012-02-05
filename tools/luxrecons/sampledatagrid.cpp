@@ -37,8 +37,8 @@ SampleDataGrid::SampleDataGrid(SampleData *data) : sampleData(data) {
 	// Check all sample to calculate the image plane extension
 	for (size_t i = 1; i < sampleData->count; ++i) {
 		const float *imageXY = sampleData->GetImageXY(i);
-		const int x = Floor2Int(imageXY[0] + .5f);
-		const int y = Floor2Int(imageXY[1] + .5f);
+		const int x = (int)imageXY[0];
+		const int y = (int)imageXY[1];
 
 		xPixelStart = min(xPixelStart, x);
 		xPixelEnd = max(xPixelEnd, x);
@@ -61,21 +61,16 @@ SampleDataGrid::SampleDataGrid(SampleData *data) : sampleData(data) {
 	// Add all samples
 	for (size_t i = 0; i < sampleData->count; ++i) {
 		const float *imageXY = sampleData->GetImageXY(i);
-		const int x = Floor2Int(imageXY[0] + .5f) - xPixelStart;
-		const int y = Floor2Int(imageXY[1] + .5f) - yPixelStart;
+		const int x = (int)imageXY[0];
+		const int y = (int)imageXY[1];
 		sampleList[x][y].push_back(i);
 	}
 
 	// Sanity check
 	/*for (size_t y = 0; y < yResolution; ++y) {
 		for (size_t x = 0; x < xResolution; ++x) {
-			for (size_t i = 0; i < sampleList[x][y].size(); ++i) {
-				const float *imageXY = data->GetImageXY(sampleList[x][y][i]);
-
-				if ((fabsf(imageXY[0] - x  - xPixelStart) > .5f) || (fabsf(imageXY[1] - y - yPixelStart) > .5f))
-					LOG(LUX_DEBUG, LUX_NOERROR) << "[" << imageXY[0] << ", " << imageXY[1] << "] "
-							"=> [" << x << ", " << y << "] "
-							"Delta(" << fabsf(imageXY[0] - x - xPixelStart) << ", " << fabsf(imageXY[1] - y - yPixelStart) << ")";
+			if (sampleList[x][y].size() == 0) {
+				LOG(LUX_INFO, LUX_NOERROR) << "Missing samples in pixel [" << x << ", " << y <<"]";
 			}
 		}
 	}*/

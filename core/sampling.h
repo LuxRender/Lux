@@ -43,7 +43,7 @@ public:
 
 	Point v1Point;
 	Normal v1Normal;
-	XYZColor v1Bsdf;
+	float v1SurfaceColor[WAVELENGTH_SAMPLES];
 };
 
 class Sample {
