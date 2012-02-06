@@ -170,6 +170,11 @@ u_int PathIntegrator::Li(const Scene &scene, const Sample &sample) const
 						L[scene.lights[i]->group] += Le;
 						V[scene.lights[i]->group] += Le.Filter(sw) * VContrib;
 						++nrContribs;
+
+						if ((sample.pathInfo) && (vertexIndex == 0)) {
+							for (size_t i = 0; i < WAVELENGTH_SAMPLES; ++i)
+								sample.pathInfo->v1SurfaceColor[i] = Le.c[i];
+						}
 					}
 				}
 			}

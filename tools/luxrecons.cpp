@@ -33,6 +33,7 @@ exrtopng out.pp.n.exr out.png
 #include <sstream>
 #include <exception>
 #include <iostream>
+#include <limits>
 
 #include "lux.h"
 #include "error.h"
@@ -97,9 +98,10 @@ namespace po = boost::program_options;
 enum ReconstructionTypes {
 	TYPE_BOX = 0,
 	TYPE_RPF = 1,
-	TYPE_V1_NORMAL = 100,
-	TYPE_V1_BSDF = 101,
-	TYPE_CLUSTER = 102
+	TYPE_V1_POS = 100,
+	TYPE_V1_NORMAL = 101,
+	TYPE_V1_BSDF = 102,
+	TYPE_CLUSTER = 103
 };
 
 template<class T> inline T sqr(const T v) {
@@ -112,12 +114,13 @@ void RPF_PresprocessSamples(RandomGenerator &rng,
 		const SampleDataGrid &sampleDataGrig,
 		const int x, const int y,
 		const int b, const size_t maxSamples, vector<size_t> &N) {
-	// Add all samples in P to N
 	const vector<size_t> &P = sampleDataGrig.GetPixelList(x, y);
-	N.insert(N.end(), P.begin(), P.end());
-
-	if (N.size() > maxSamples)
+	if (P.size() >= maxSamples) {
+		N.insert(N.begin(), P.begin(), P.end());
 		return;
+	}
+
+	const size_t maxNSize = maxSamples - P.size();
 
 	// Compute mean and standard deviation of all samples inside the pixel
 
@@ -188,17 +191,22 @@ void RPF_PresprocessSamples(RandomGenerator &rng,
 
 	//LOG(LUX_INFO, LUX_NOERROR) << "[" << x << ", " << y << "] " << N.size();
 
-	if (N.size() <= maxSamples)
+	if (N.size() <= maxNSize) {
+		N.insert(N.begin(), P.begin(), P.end());
 		return;
+	}
 
 	// Select a random subset of N
-	for (size_t i = 0; i < maxSamples; ++i) {
+	for (size_t i = 0; i < maxNSize; ++i) {
 		const size_t size = N.size() - i - 1;
 		const size_t index = min<size_t>(Floor2UInt(rng.floatValue() * size), size - 1);
 		swap(N[i], N[i + index]);
 	}
 
-	N.resize(maxSamples);
+	N.resize(maxNSize);
+
+	// Add all samples in P to N. Head insert because required by folowing code
+	N.insert(N.begin(), P.begin(), P.end());
 }
 
 void RPF_FilterColorSamples(const SampleDataGrid &sampleDataGrig,
@@ -277,9 +285,11 @@ void RPF_FilterColorSamples(const SampleDataGrid &sampleDataGrig,
 		const float k = - 1.f / (2.f * o_2);
 		for (size_t j = 0; j < N.size(); ++j) {
 			// NOTE: this code assume the first elements in N are the same of P
-			const float wij_xy = expf(k * (sqr(xNormalized[i] - xNormalized[j]) +
+			const float wij_xy = expf(k * (
+					sqr(xNormalized[i] - xNormalized[j]) +
 					sqr(yNormalized[i] - yNormalized[j])));
-			const float wij_c = expf(k * (sqr(cNormalized[i].c[0] - cNormalized[j].c[0]) +
+			const float wij_c = expf(k * (
+					sqr(cNormalized[i].c[0] - cNormalized[j].c[0]) +
 					sqr(cNormalized[i].c[1] - cNormalized[j].c[1]) +
 					sqr(cNormalized[i].c[2] - cNormalized[j].c[2])));
 			const float wij = wij_xy * wij_c;
@@ -324,8 +334,8 @@ void RPF_Thread(const SampleDataGrid *sampleDataGrig,
 	const vector<XYZColor> *c1, vector<XYZColor> *c2,
 	const size_t threadIndex, const size_t threadCount) {
 
-	RandomGenerator rng(1337);
-	const size_t maxSamples = sqr(b) * sampleDataGrig->avgSamplesPerPixel / 10.f;
+	RandomGenerator rng(1337 + threadIndex);
+	const size_t maxSamples = sqr(b) * sampleDataGrig->avgSamplesPerPixel / 5.f;
 	LOG(LUX_INFO, LUX_NOERROR) << "[thread::" << threadIndex << "] RPF max. samples " << maxSamples << ", size " << b;
 
 	double lastPrintTime = osWallClockTime();
@@ -368,11 +378,10 @@ void Recons_RPF(SampleData *sampleData, const string &outputFileName) {
 		c1[i] = *(sampleData->GetColor(i));
 	vector<XYZColor> c2(sampleData->count);
 
-	RandomGenerator rng(1337);
 	//const int bv[4] = { 55, 35, 17, 7 };
-	const int bv[2] = { 17, 7 };
-	//const int bv[1] = { 7 };
-	for (int bi = 0; bi < 2; ++bi) {
+	//const int bv[2] = { 17, 7 };
+	const int bv[1] = { 7 };
+	for (int bi = 0; bi < 1; ++bi) {
 		const int b = bv[bi];
 
 		// Start all threads
@@ -468,6 +477,59 @@ void Recons_BOX(SampleData *sampleData, const string &outputFileName) {
 
 //------------------------------------------------------------------------------
 
+void Recons_V1_POS(SampleData *sampleData, const string &outputFileName) {
+	LOG(LUX_INFO, LUX_NOERROR) << "Building sample data grid...";
+	SampleDataGrid sampleDataGrig(sampleData);
+
+	LOG(LUX_INFO, LUX_NOERROR) << "Path vertex 1 position output...";
+	vector<RGBColor> pixels(sampleDataGrig.xResolution * sampleDataGrig.yResolution);
+
+	Point offset(std::numeric_limits<float>::max());
+	size_t rgbi = 0;
+	for (size_t y = 0; y < sampleDataGrig.yResolution; ++y) {
+		for (size_t x = 0; x < sampleDataGrig.xResolution; ++x) {
+			const vector<size_t> &index = sampleDataGrig.GetPixelList(x + sampleDataGrig.xPixelStart, y + sampleDataGrig.yPixelStart);
+
+			if (index.size() > 0) {
+				for (size_t i = 0; i < index.size(); ++i) {
+
+					const SamplePathInfo *pathInfo = (SamplePathInfo *)(sampleData->GetSceneFeatures(index[i]));
+
+					offset.x = min(offset.x, pathInfo->v1Point.x);
+					offset.y = min(offset.y, pathInfo->v1Point.y);
+					offset.z = min(offset.z, pathInfo->v1Point.z);
+
+					pixels[rgbi].c[0] += pathInfo->v1Point.x;
+					pixels[rgbi].c[1] += pathInfo->v1Point.y;
+					pixels[rgbi].c[2] += pathInfo->v1Point.z;
+				}
+
+				pixels[rgbi] /= index.size();
+			} else {
+				LOG(LUX_INFO, LUX_NOERROR) << "Missing positions in pixel [" << x << ", " << y <<"]";
+			}
+
+			++rgbi;
+		}
+	}
+
+	for (size_t rgbi = 0; rgbi < pixels.size(); ++rgbi) {
+		pixels[rgbi].c[0] -= offset.x;
+		pixels[rgbi].c[1] -= offset.y;
+		pixels[rgbi].c[2] -= offset.z;
+	}
+
+	LOG(LUX_INFO, LUX_NOERROR) << "Writing EXR image: " << outputFileName;
+	vector<float> dummy;
+	WriteOpenEXRImage(2, false, false, 0, outputFileName, pixels, dummy,
+		sampleDataGrig.xResolution, sampleDataGrig.yResolution,
+		sampleDataGrig.xResolution, sampleDataGrig.yResolution,
+		0, 0,
+		dummy);
+}
+
+//------------------------------------------------------------------------------
+
 void Recons_V1_NORMAL(SampleData *sampleData, const string &outputFileName) {
 	LOG(LUX_INFO, LUX_NOERROR) << "Building sample data grid...";
 	SampleDataGrid sampleDataGrig(sampleData);
@@ -479,15 +541,15 @@ void Recons_V1_NORMAL(SampleData *sampleData, const string &outputFileName) {
 		for (size_t x = 0; x < sampleDataGrig.xResolution; ++x) {
 			const vector<size_t> &index = sampleDataGrig.GetPixelList(x + sampleDataGrig.xPixelStart, y + sampleDataGrig.yPixelStart);
 
-			pixels[rgbi] = RGBColor();
 			if (index.size() > 0) {
 				for (size_t i = 0; i < index.size(); ++i) {
 
 					const SamplePathInfo *pathInfo = (SamplePathInfo *)(sampleData->GetSceneFeatures(index[i]));
 
-					pixels[rgbi].c[0] += pathInfo->v1Normal.x;
-					pixels[rgbi].c[1] += pathInfo->v1Normal.y;
-					pixels[rgbi].c[2] += pathInfo->v1Normal.z;
+					// +1 for avoiding negative values
+					pixels[rgbi].c[0] += pathInfo->v1Normal.x + 1.f;
+					pixels[rgbi].c[1] += pathInfo->v1Normal.y + 1.f;
+					pixels[rgbi].c[2] += pathInfo->v1Normal.z + 1.f;
 				}
 
 				pixels[rgbi] /= index.size();
@@ -586,9 +648,9 @@ void Recons_CLUSTER(SampleData *sampleData, const string &outputFileName) {
 		}
 	}
 
-	const int b = 7;
-	const size_t maxSamples = sqr(b) * sampleDataGrig.avgSamplesPerPixel / 10.f;
-	LOG(LUX_INFO, LUX_NOERROR) << "Cluster size: " << b;
+	const int b = 55;
+	const size_t maxSamples = sqr(b) * sampleDataGrig.avgSamplesPerPixel / 5.f;
+	LOG(LUX_INFO, LUX_NOERROR) << "Cluster max. samples " << maxSamples << ", size " << b;
 	RandomGenerator rng(1337);
 	double lastPrintTime = osWallClockTime();
 	for (int y = sampleDataGrig.yPixelStart; y <= sampleDataGrig.yPixelEnd; y += b) {
@@ -644,7 +706,7 @@ int main(int ac, char *av[]) {
 			("output,o", po::value< std::string >()->default_value("out.exr"), "Output file")
 			("verbose,V", "Increase output verbosity (show DEBUG messages)")
 			("quiet,q", "Reduce output verbosity (hide INFO messages)") // (give once for WARNING only, twice for ERROR only)")
-			("type,t", po::value< int >(), "Select the type of reconstruction (0 = BOX, 1 = RPF, 100 = V1_NORMAL, 101 = V1_BSDF, 102 = CLUSTER)")
+			("type,t", po::value< int >(), "Select the type of reconstruction (0 = BOX, 1 = RPF, 100 = V1_POS, 101 = V1_NORMAL, 102 = V1_BSDF, 103 = CLUSTER)")
 			;
 
 	// Hidden options, will be allowed both on command line and
@@ -714,6 +776,9 @@ int main(int ac, char *av[]) {
 				break;
 			case TYPE_RPF:
 				Recons_RPF(sampleData, outputFileName);
+				break;
+			case TYPE_V1_POS:
+				Recons_V1_POS(sampleData, outputFileName);
 				break;
 			case TYPE_V1_NORMAL:
 				Recons_V1_NORMAL(sampleData, outputFileName);
