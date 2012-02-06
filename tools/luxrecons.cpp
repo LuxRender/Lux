@@ -115,6 +115,7 @@ void RPF_PresprocessSamples(RandomGenerator &rng,
 		const int x, const int y,
 		const int b, const size_t maxSamples, vector<size_t> &N) {
 	const vector<size_t> &P = sampleDataGrig.GetPixelList(x, y);
+
 	if (P.size() >= maxSamples) {
 		N.insert(N.begin(), P.begin(), P.end());
 		return;
@@ -136,8 +137,8 @@ void RPF_PresprocessSamples(RandomGenerator &rng,
 			sceneFeaturesMean[j] += sceneFeatures[j];
 	}
 
-	for (size_t j = 0; j < sceneFeaturesCount; ++j)
-		sceneFeaturesMean[j] /= P.size();
+	for (size_t i = 0; i < sceneFeaturesCount; ++i)
+		sceneFeaturesMean[i] /= P.size();
 
 	// Scene features standard deviation
 	vector<float> sceneFeaturesStandardDeviation(sceneFeaturesCount, 0.f);
@@ -148,8 +149,8 @@ void RPF_PresprocessSamples(RandomGenerator &rng,
 			sceneFeaturesStandardDeviation[j] = sqr(sceneFeatures[j] - sceneFeaturesMean[j]);
 	}
 
-	for (size_t j = 0; j < sceneFeaturesCount; ++j)
-		sceneFeaturesStandardDeviation[j] = sqrtf(sceneFeaturesStandardDeviation[j] / P.size());
+	for (size_t i = 0; i < sceneFeaturesCount; ++i)
+		sceneFeaturesStandardDeviation[i] = sqrtf(sceneFeaturesStandardDeviation[i] / P.size());
 
 	// For all samples inside the filtering box
 	const float filterWidth = b / 2.f;
@@ -160,7 +161,7 @@ void RPF_PresprocessSamples(RandomGenerator &rng,
 
 	for (int yy = y0; yy <= y1; ++yy) {
 		for (int xx = x0; xx <= x1; ++xx) {
-			// Skip Samples in P, already added
+			// Skip Samples in P, they will be all added later
 			if ((xx == x) && (yy == y))
 				continue;
 
@@ -174,10 +175,10 @@ void RPF_PresprocessSamples(RandomGenerator &rng,
 				for (size_t j = 0; j < sceneFeaturesCount; ++j) {
 					// World coordinates require a larger constant
 					const float k = ((j % (sizeof(SamplePathInfo) / sizeof(float))) <= 2) ? 30.f : 3.f;
-					const float kk = k * sceneFeaturesStandardDeviation[j];
+					const float kk = k * max(sceneFeaturesStandardDeviation[j], 0.1f);
 					const float fm = fabsf(sceneFeatures[j] - sceneFeaturesMean[j]);
 
-					if ((fm > kk) && ((fm > .1f) || (kk > .1f))) {
+					if (fm > kk) {
 						valid = false;
 						break;
 					}
@@ -335,7 +336,7 @@ void RPF_Thread(const SampleDataGrid *sampleDataGrig,
 	const size_t threadIndex, const size_t threadCount) {
 
 	RandomGenerator rng(1337 + threadIndex);
-	const size_t maxSamples = sqr(b) * sampleDataGrig->avgSamplesPerPixel / 5.f;
+	const size_t maxSamples = sqr(b) * sampleDataGrig->avgSamplesPerPixel / 10.f;
 	LOG(LUX_INFO, LUX_NOERROR) << "[thread::" << threadIndex << "] RPF max. samples " << maxSamples << ", size " << b;
 
 	double lastPrintTime = osWallClockTime();
@@ -378,10 +379,11 @@ void Recons_RPF(SampleData *sampleData, const string &outputFileName) {
 		c1[i] = *(sampleData->GetColor(i));
 	vector<XYZColor> c2(sampleData->count);
 
-	//const int bv[4] = { 55, 35, 17, 7 };
+	const int bv[4] = { 55, 35, 17, 7 };
+	//const int bv[3] = { 35, 17, 7 };
 	//const int bv[2] = { 17, 7 };
-	const int bv[1] = { 7 };
-	for (int bi = 0; bi < 1; ++bi) {
+	//const int bv[1] = { 7 };
+	for (int bi = 0; bi < 4; ++bi) {
 		const int b = bv[bi];
 
 		// Start all threads
@@ -649,7 +651,7 @@ void Recons_CLUSTER(SampleData *sampleData, const string &outputFileName) {
 	}
 
 	const int b = 55;
-	const size_t maxSamples = sqr(b) * sampleDataGrig.avgSamplesPerPixel / 5.f;
+	const size_t maxSamples = sqr(b) * sampleDataGrig.avgSamplesPerPixel / 10.f;
 	LOG(LUX_INFO, LUX_NOERROR) << "Cluster max. samples " << maxSamples << ", size " << b;
 	RandomGenerator rng(1337);
 	double lastPrintTime = osWallClockTime();
@@ -677,6 +679,37 @@ void Recons_CLUSTER(SampleData *sampleData, const string &outputFileName) {
 					pixels[index].c[2] = 0.f;
 				}
 
+			}
+
+			// Draw the grid
+			const float filterWidth = b / 2.f;
+			const int x0 = max(Ceil2Int(x - filterWidth), sampleDataGrig.xPixelStart);
+			const int x1 = min(Floor2Int(x + filterWidth), sampleDataGrig.xPixelEnd);
+			const int y0 = max(Ceil2Int(y - filterWidth), sampleDataGrig.yPixelStart);
+			const int y1 = min(Floor2Int(y + filterWidth), sampleDataGrig.yPixelEnd);
+
+			for (int yy = y0; yy <= y1; ++yy) {
+				const size_t index1 = x0 + yy * sampleDataGrig.xResolution;
+				pixels[index1].c[0] = 0.f;
+				pixels[index1].c[1] = 0.f;
+				pixels[index1].c[2] = 10.f;
+
+				const size_t index2 = x1 + yy * sampleDataGrig.xResolution;
+				pixels[index2].c[0] = 0.f;
+				pixels[index2].c[1] = 0.f;
+				pixels[index2].c[2] = 10.f;
+			}
+
+			for (int xx = x0; xx <= x1; ++xx) {
+				const size_t index1 = xx + y0 * sampleDataGrig.xResolution;
+				pixels[index1].c[0] = 0.f;
+				pixels[index1].c[1] = 0.f;
+				pixels[index1].c[2] = 10.f;
+
+				const size_t index2 = xx + y1 * sampleDataGrig.xResolution;
+				pixels[index2].c[0] = 0.f;
+				pixels[index2].c[1] = 0.f;
+				pixels[index2].c[2] = 10.f;
 			}
 		}
 	}
