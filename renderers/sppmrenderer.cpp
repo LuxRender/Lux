@@ -180,7 +180,7 @@ void SPPMRenderer::Render(Scene *s) {
 
 		sampPos = 0;
 
-		size_t threadCount = boost::thread::hardware_concurrency();
+		const size_t threadCount = boost::thread::hardware_concurrency();
 		LOG(LUX_INFO, LUX_NOERROR) << "Hardware concurrency: " << threadCount;
 
 		// Create synchronization barriers

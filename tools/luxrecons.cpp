@@ -44,6 +44,7 @@ exrtopng out.pp.n.exr out.png
 #include "sampling.h"
 
 #include <boost/program_options.hpp>
+#include <boost/thread/thread.hpp>
 
 #if defined(__GNUC__) && !defined(__CYGWIN__)
 #include <execinfo.h>
@@ -318,9 +319,47 @@ void RPF_FilterColorSamples(const SampleDataGrid &sampleDataGrig,
 	}
 }
 
-void Recons_RPF(SampleData *sampleData, const string &outputFileName) {
-	LOG(LUX_INFO, LUX_NOERROR) << "Building sample data grid...";
+void RPF_Thread(const SampleDataGrid *sampleDataGrig,
+	const int b,
+	const vector<XYZColor> *c1, vector<XYZColor> *c2,
+	const size_t threadIndex, const size_t threadCount) {
 
+	RandomGenerator rng(1337);
+	const size_t maxSamples = sqr(b) * sampleDataGrig->avgSamplesPerPixel / 10.f;
+	LOG(LUX_INFO, LUX_NOERROR) << "[thread::" << threadIndex << "] RPF max. samples " << maxSamples << ", size " << b;
+
+	double lastPrintTime = osWallClockTime();
+	for (int y = sampleDataGrig->yPixelStart + threadIndex; y <= sampleDataGrig->yPixelEnd; y += threadCount) {
+		if (osWallClockTime() - lastPrintTime > 5.0) {
+			LOG(LUX_INFO, LUX_NOERROR) << "[thread::" << threadIndex << "] RPF line: " << (y - sampleDataGrig->yPixelStart + 1) << "/" << sampleDataGrig->yResolution;
+			lastPrintTime = osWallClockTime();
+		}
+
+		for (int x = sampleDataGrig->xPixelStart; x <= sampleDataGrig->xPixelEnd; ++x) {
+			const vector<size_t> &P = sampleDataGrig->GetPixelList(x, y);
+
+			if (P.size() > 0) {
+				// Preprocess the samples and cluster them
+				vector<size_t> N;
+				RPF_PresprocessSamples(rng, *sampleDataGrig, x, y, b, maxSamples, N);
+
+				// Compute feature weight
+				// TODO
+				float alpha = 1.f;
+				float beta = 1.f;
+
+				// Filter color samples
+				RPF_FilterColorSamples(*sampleDataGrig, P, N, alpha, beta, *c1, *c2);
+			}
+		}
+	}
+}
+
+void Recons_RPF(SampleData *sampleData, const string &outputFileName) {
+	const size_t threadCount = boost::thread::hardware_concurrency();
+	LOG(LUX_INFO, LUX_NOERROR) << "Hardware concurrency: " << threadCount;
+
+	LOG(LUX_INFO, LUX_NOERROR) << "Building sample data grid...";
 	SampleDataGrid sampleDataGrig(sampleData);
 
 	// Build the sample list
@@ -335,33 +374,16 @@ void Recons_RPF(SampleData *sampleData, const string &outputFileName) {
 	//const int bv[1] = { 7 };
 	for (int bi = 0; bi < 2; ++bi) {
 		const int b = bv[bi];
-		const size_t maxSamples = sqr(b) * sampleDataGrig.avgSamplesPerPixel / 10.f;
-		LOG(LUX_INFO, LUX_NOERROR) << "RPF step " << bi + 1 <<", max. samples " << maxSamples << ", size " << b;
-		double lastPrintTime = osWallClockTime();
-		for (int y = sampleDataGrig.yPixelStart; y <= sampleDataGrig.yPixelEnd; ++y) {
-			if (osWallClockTime() - lastPrintTime > 5.0) {
-				LOG(LUX_INFO, LUX_NOERROR) << "RPF line: " << (y - sampleDataGrig.yPixelStart + 1) << "/" << sampleDataGrig.yResolution;
-				lastPrintTime = osWallClockTime();
-			}
 
-			for (int x = sampleDataGrig.xPixelStart; x <= sampleDataGrig.xPixelEnd; ++x) {
-				const vector<size_t> &P = sampleDataGrig.GetPixelList(x, y);
+		// Start all threads
+		LOG(LUX_INFO, LUX_NOERROR) << "Starting " << threadCount << " threads...";
+		vector<boost::thread *> threads(threadCount, NULL);
+		for (size_t i = 0; i < threadCount; ++i)
+			threads[i] = new boost::thread(boost::bind(RPF_Thread, &sampleDataGrig, b, &c1, &c2, i, threadCount));
 
-				if (P.size() > 0) {
-					// Preprocess the samples and cluster them
-					vector<size_t> N;
-					RPF_PresprocessSamples(rng, sampleDataGrig, x, y, b, maxSamples, N);
-
-					// Compute feature weight
-					// TODO
-					float alpha = 1.f;
-					float beta = 1.f;
-
-					// Filter color samples
-					RPF_FilterColorSamples(sampleDataGrig, P, N, alpha, beta, c1, c2);
-				}
-			}
-		}
+		// Wait for all threads
+		for (size_t i = 0; i < threadCount; ++i)
+			threads[i]->join();
 
 		// Copy c'' in c'
 		std::copy(c2.begin(), c2.end(), c1.begin());
