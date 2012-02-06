@@ -107,12 +107,16 @@ template<class T> inline T sqr(const T v) {
 
 //------------------------------------------------------------------------------
 
-void RPF_PresprocessSamples(const SampleDataGrid &sampleDataGrig,
+void RPF_PresprocessSamples(RandomGenerator &rng,
+		const SampleDataGrid &sampleDataGrig,
 		const int x, const int y,
-		const int b, vector<size_t> &N) {
+		const int b, const size_t maxSamples, vector<size_t> &N) {
 	// Add all samples in P to N
 	const vector<size_t> &P = sampleDataGrig.GetPixelList(x, y);
 	N.insert(N.end(), P.begin(), P.end());
+
+	if (N.size() > maxSamples)
+		return;
 
 	// Compute mean and standard deviation of all samples inside the pixel
 
@@ -182,6 +186,18 @@ void RPF_PresprocessSamples(const SampleDataGrid &sampleDataGrig,
 	}
 
 	//LOG(LUX_INFO, LUX_NOERROR) << "[" << x << ", " << y << "] " << N.size();
+
+	if (N.size() <= maxSamples)
+		return;
+
+	// Select a random subset of N
+	for (size_t i = 0; i < maxSamples; ++i) {
+		const size_t size = N.size() - i - 1;
+		const size_t index = min<size_t>(Floor2UInt(rng.floatValue() * size), size - 1);
+		swap(N[i], N[i + index]);
+	}
+
+	N.resize(maxSamples);
 }
 
 void RPF_FilterColorSamples(const SampleDataGrid &sampleDataGrig,
@@ -248,8 +264,7 @@ void RPF_FilterColorSamples(const SampleDataGrid &sampleDataGrig,
 	}
 
 	// Filter the colors of samples in pixel P using bilateral filter
-	//const float o_2_8 = .02f;
-	const float o_2_8 = 2.f;
+	const float o_2_8 = .02f;
 	const float o_2 = 8.f * o_2_8 / sampleDataGrig.avgSamplesPerPixel;
 
 	for (size_t i = 0; i < P.size(); ++i) {
@@ -314,12 +329,14 @@ void Recons_RPF(SampleData *sampleData, const string &outputFileName) {
 		c1[i] = *(sampleData->GetColor(i));
 	vector<XYZColor> c2(sampleData->count);
 
-	const int bv[4] = { 55, 35, 17, 7 };
-	//const int bv[4] = { 17, 7 };
-	//const int bv[4] = { 7 };
-	for (int bi = 0; bi < 4; ++bi) {
+	RandomGenerator rng(1337);
+	//const int bv[4] = { 55, 35, 17, 7 };
+	const int bv[2] = { 17, 7 };
+	//const int bv[1] = { 7 };
+	for (int bi = 0; bi < 2; ++bi) {
 		const int b = bv[bi];
-		LOG(LUX_INFO, LUX_NOERROR) << "RPF step " << bi + 1 <<", size: " << b;
+		const size_t maxSamples = sqr(b) * sampleDataGrig.avgSamplesPerPixel / 10.f;
+		LOG(LUX_INFO, LUX_NOERROR) << "RPF step " << bi + 1 <<", max. samples " << maxSamples << ", size " << b;
 		double lastPrintTime = osWallClockTime();
 		for (int y = sampleDataGrig.yPixelStart; y <= sampleDataGrig.yPixelEnd; ++y) {
 			if (osWallClockTime() - lastPrintTime > 5.0) {
@@ -333,7 +350,7 @@ void Recons_RPF(SampleData *sampleData, const string &outputFileName) {
 				if (P.size() > 0) {
 					// Preprocess the samples and cluster them
 					vector<size_t> N;
-					RPF_PresprocessSamples(sampleDataGrig, x, y, b, N);
+					RPF_PresprocessSamples(rng, sampleDataGrig, x, y, b, maxSamples, N);
 
 					// Compute feature weight
 					// TODO
@@ -476,12 +493,6 @@ void Recons_V1_BSDF(SampleData *sampleData, const string &outputFileName) {
 	SampleDataGrid sampleDataGrig(sampleData);
 
 	LOG(LUX_INFO, LUX_NOERROR) << "Path vertex 1 BSDF colour output...";
-	const float red[2] = {0.63f, 0.34f};
-	const float green[2] = {0.31f, 0.595f};
-	const float blue[2] = {0.155f, 0.07f};
-	const float white[2] = {0.314275f, 0.329411f};
-	ColorSystem colorSpace = ColorSystem(red[0], red[1], green[0], green[1], blue[0], blue[1], white[0], white[1], 1.f);
-
 	vector<RGBColor> pixels(sampleDataGrig.xResolution * sampleDataGrig.yResolution);
 	size_t rgbi = 0;
 	for (size_t y = 0; y < sampleDataGrig.yResolution; ++y) {
@@ -554,7 +565,9 @@ void Recons_CLUSTER(SampleData *sampleData, const string &outputFileName) {
 	}
 
 	const int b = 7;
+	const size_t maxSamples = sqr(b) * sampleDataGrig.avgSamplesPerPixel / 10.f;
 	LOG(LUX_INFO, LUX_NOERROR) << "Cluster size: " << b;
+	RandomGenerator rng(1337);
 	double lastPrintTime = osWallClockTime();
 	for (int y = sampleDataGrig.yPixelStart; y <= sampleDataGrig.yPixelEnd; y += b) {
 		if (osWallClockTime() - lastPrintTime > 5.0) {
@@ -568,7 +581,7 @@ void Recons_CLUSTER(SampleData *sampleData, const string &outputFileName) {
 			if (P.size() > 0) {
 				// Preprocess the samples and cluster them
 				vector<size_t> N;
-				RPF_PresprocessSamples(sampleDataGrig, x, y, b, N);
+				RPF_PresprocessSamples(rng, sampleDataGrig, x, y, b, maxSamples, N);
 
 				for (size_t i = 0; i < N.size(); ++i) {
 					const float *imageXY = sampleData->GetImageXY(N[i]);
