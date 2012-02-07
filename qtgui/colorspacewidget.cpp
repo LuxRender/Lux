@@ -53,6 +53,75 @@ static bool EqualDouble(const double a, const double b)
 	return (fabs(a-b) < DEFAULT_EPSILON_MIN);
 }
 
+/* 
+ * Converts from xy chromaticity coordinates to correlated color temperature
+ */
+static double XyToTemperature(double x, double y)
+{
+	// based "Calculating Correlated Color Temperatures Across the Entire Gamut of Daylight and Skylight Chromaticities"
+	// see http://www.nadn.navy.mil/Users/oceano/raylee/papers/RLee_AO_CCTpaper.pdf
+	const double xe = 0.3366;
+	const double ye = 0.1735;
+	const double n = (x - xe) / (y - ye);
+	const double n2 = n * n;
+	const double n3 = n2 * n;
+
+	const double A0 = -949.86315;
+	const double A1 = 6253.80338;
+	const double t1 = 0.92159;
+	const double A2 = 28.70599;
+	const double t2 = 0.20039;
+	const double A3 = 0.00004;
+	const double t3 = 0.07125;
+
+	return A0 + A1*exp(-n/t1) + A2*exp(-n/t2) + A3*exp(-n/t3);
+}
+
+/* 
+ * Converts from correlated color temperature to xy chromaticity coordinates
+ */
+static void TemperatureToXy(double temperature, double *x, double *y)
+{
+	const double T = temperature;
+	const double T2 = T * T;
+	const double T3 = T2 * T;
+
+	// from http://en.wikipedia.org/wiki/Planckian_locus
+	// based on method in "Design of Advanced Color Temperature Control System for HDTV Applications"
+	if (T < 4000) { // T >= 1667
+		*x = -0.2661239e9 / T3 - 0.2343589e6 / T2 + 0.8776956e3 / T + 0.179910;
+	} else { // T <= 25000
+		*x = -3.0258469e9 / T3 + 2.1070379e6 / T2 + 0.2226347e3 / T + 0.24039;
+	}
+	
+	const double x1 = *x;
+	const double x2 = x1 * x1;
+	const double x3 = x2 * x1;
+
+	if (T < 2222) { // T >= 1667
+		*y = -1.1063814 * x3 - 1.34811020 * x2 + 2.18555832 * x1 - 0.20219683;
+	} else if (T < 4000) {
+		*y = -0.9549476 * x3 - 1.37418593 * x2 + 2.09137015 * x1 - 0.16748867;
+	} else { // T <= 25000
+		*y = 3.0817580 * x3 - 5.8733867 * x2 + 3.75112997 * x1 - 0.37001483;
+	}
+
+/*
+	// alternative method, only valid for T >= 4000 K
+	// see http://www.brucelindbloom.com/index.html?Eqn_DIlluminant.html
+	if (T <= 7000) { // T >= 4000
+		*x = -4.6070e9 / T3 + 2.9678e6 / T2 + 0.09911e3 / T + 0.244063;
+	} else { // T <= 25000
+		*x = -2.0064e9 / T3 + 1.9018e6 / T2 + 0.24748e3 / T + 0.237040;
+	}
+
+	const double x1 = *x;
+	const double x2 = x1 * x1;
+
+	*y = -3.00 * x2 + 2.870 * x1 - 0.275;
+*/
+}
+
 using namespace std;
 
 ColorSpaceWidget::ColorSpaceWidget(QWidget *parent) : QWidget(parent), ui(new Ui::ColorSpaceWidget)
@@ -79,10 +148,14 @@ ColorSpaceWidget::ColorSpaceWidget(QWidget *parent) : QWidget(parent), ui(new Ui
 	connect(ui->spinBox_greenX, SIGNAL(valueChanged(double)), this, SLOT(greenXChanged(double)));
 	connect(ui->slider_greenY, SIGNAL(valueChanged(int)), this, SLOT(greenYChanged(int)));
 	connect(ui->spinBox_greenY, SIGNAL(valueChanged(double)), this, SLOT(greenYChanged(double)));
-	
+
+	connect(ui->slider_temperature, SIGNAL(valueChanged(int)), this, SLOT(temperatureChanged(int)));
+	connect(ui->spinBox_temperature, SIGNAL(valueChanged(double)), this, SLOT(temperatureChanged(double)));
+
 #if defined(__APPLE__)
 	ui->tab_whitepoint->setFont(QFont  ("Lucida Grande", 11));
 	ui->tab_rgb->setFont(QFont  ("Lucida Grande", 11));
+	ui->tab_temperature->setFont(QFont  ("Lucida Grande", 11));
 #endif
 
 }
@@ -102,6 +175,7 @@ void ColorSpaceWidget::precisionChanged(int value)
 		ui->spinBox_greenY->setDecimals(5);ui->spinBox_greenY->setSingleStep(0.0001);
 		ui->spinBox_blueX->setDecimals(5);ui->spinBox_blueX->setSingleStep(0.0001);
 		ui->spinBox_blueY->setDecimals(5);ui->spinBox_blueY->setSingleStep(0.0001);
+		ui->spinBox_temperature->setDecimals(1);ui->spinBox_temperature->setSingleStep(1);
 	}else {
 		ui->spinBox_whitePointX->setDecimals(3);ui->spinBox_whitePointX->setSingleStep(0.010);
 		ui->spinBox_whitePointY->setDecimals(3);ui->spinBox_whitePointY->setSingleStep(0.010);
@@ -111,6 +185,7 @@ void ColorSpaceWidget::precisionChanged(int value)
 		ui->spinBox_greenY->setDecimals(3);ui->spinBox_greenY->setSingleStep(0.010);
 		ui->spinBox_blueX->setDecimals(3);ui->spinBox_blueX->setSingleStep(0.010);
 		ui->spinBox_blueY->setDecimals(3);ui->spinBox_blueY->setSingleStep(0.010);
+		ui->spinBox_temperature->setDecimals(0);ui->spinBox_temperature->setSingleStep(100);
 	}
 
 
@@ -138,6 +213,9 @@ void ColorSpaceWidget::updateWidgetValues()
 	updateWidgetValue(ui->spinBox_blueX, m_TORGB_xblue);
 	updateWidgetValue(ui->slider_blueY, (int)((FLOAT_SLIDER_RES / TORGB_YBLUE_RANGE) * m_TORGB_yblue));
 	updateWidgetValue(ui->spinBox_blueY, m_TORGB_yblue);
+
+	updateWidgetValue(ui->slider_temperature, (int)m_TORGB_temperature);
+	updateWidgetValue(ui->spinBox_temperature, m_TORGB_temperature);
 }
 
 void ColorSpaceWidget::resetValues()
@@ -150,6 +228,7 @@ void ColorSpaceWidget::resetValues()
 	m_TORGB_ygreen = 0.595;
 	m_TORGB_xblue = 0.155;
 	m_TORGB_yblue = 0.07;
+	m_TORGB_temperature = 6504.0; // D65
 }
 
 int ColorSpaceWidget::colorspaceToPreset()
@@ -223,6 +302,7 @@ void ColorSpaceWidget::setColorSpacePreset(int choice)
 	m_TORGB_ygreen = colorspace_presets[5][choice-1];
 	m_TORGB_xblue = colorspace_presets[6][choice-1];
 	m_TORGB_yblue = colorspace_presets[7][choice-1];
+	m_TORGB_temperature = XyToTemperature(m_TORGB_xwhite, m_TORGB_ywhite);
 	
 
 	// Update values in film trough API
@@ -252,6 +332,7 @@ void ColorSpaceWidget::setWhitepointPreset(int choice)
 
 	m_TORGB_xwhite = whitepoint_presets[0][choice-1];
 	m_TORGB_ywhite = whitepoint_presets[1][choice-1];
+	m_TORGB_temperature = XyToTemperature(m_TORGB_xwhite, m_TORGB_ywhite);
 
 	// Update values in film trough API
 	updateParam (LUX_FILM, LUX_FILM_TORGB_X_WHITE, m_TORGB_xwhite);
@@ -275,7 +356,12 @@ void ColorSpaceWidget::whitePointXChanged(double value)
 
 	updateWidgetValue(ui->slider_whitePointX, sliderval);
 	updateWidgetValue(ui->spinBox_whitePointX, m_TORGB_xwhite);
-	
+
+	// update whitepoint temperature
+	m_TORGB_temperature = XyToTemperature(m_TORGB_xwhite, m_TORGB_ywhite);
+	updateWidgetValue(ui->slider_temperature, (int)m_TORGB_temperature);
+	updateWidgetValue(ui->spinBox_temperature, m_TORGB_temperature);
+
 	// Don't trigger yet another event
 	ui->comboBox_colorSpacePreset->blockSignals(true);
 	ui->comboBox_colorSpacePreset->setCurrentIndex(colorspaceToPreset());
@@ -305,6 +391,11 @@ void ColorSpaceWidget::whitePointYChanged (double value)
 	updateWidgetValue(ui->slider_whitePointY, sliderval);
 	updateWidgetValue(ui->spinBox_whitePointY, m_TORGB_ywhite);
 	
+	// update whitepoint temperature
+	m_TORGB_temperature = XyToTemperature(m_TORGB_xwhite, m_TORGB_ywhite);
+	updateWidgetValue(ui->slider_temperature, (int)m_TORGB_temperature);
+	updateWidgetValue(ui->spinBox_temperature, m_TORGB_temperature);
+
 	// Don't trigger yet another event
 	ui->comboBox_colorSpacePreset->blockSignals(true);
 	ui->comboBox_colorSpacePreset->setCurrentIndex(colorspaceToPreset());
@@ -460,6 +551,27 @@ void ColorSpaceWidget::greenXChanged (double value)
 	ui->comboBox_colorSpacePreset->blockSignals(false);
 
 	updateParam (LUX_FILM, LUX_FILM_TORGB_X_GREEN, m_TORGB_xgreen);
+
+	emit valuesChanged();
+}
+
+void ColorSpaceWidget::temperatureChanged(int value)
+{
+	temperatureChanged ( (double)value );
+}
+
+void ColorSpaceWidget::temperatureChanged(double value)
+{
+	TemperatureToXy(value, &m_TORGB_xwhite, &m_TORGB_ywhite);
+
+	// these will modify m_TORGB_temperature
+	whitePointXChanged(m_TORGB_xwhite);
+	whitePointYChanged(m_TORGB_ywhite);
+
+	// so update to the real value afterwards
+	m_TORGB_temperature = value;
+	updateWidgetValue(ui->slider_temperature, (int)m_TORGB_temperature);
+	updateWidgetValue(ui->spinBox_temperature, m_TORGB_temperature);
 
 	emit valuesChanged();
 }

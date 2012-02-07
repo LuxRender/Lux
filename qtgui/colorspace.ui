@@ -29,6 +29,64 @@
        </property>
       </widget>
      </item>
+     <item row="0" column="1" colspan="2">
+      <widget class="QComboBox" name="comboBox_colorSpacePreset">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="toolTip">
+        <string>Select ColorSpace Preset</string>
+       </property>
+       <item>
+        <property name="text">
+         <string>User-defined</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>sRGB - HDTV (ITU-R BT.709-5)</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>ROMM RGB</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Adobe RGB 98</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Apple RGB</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>NTSC (FCC 1953)</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>NTSC (1979) (SMPTE C/-RP 145)</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>PAL/SECAM (EBU 3213)</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>CIE (1931) E</string>
+        </property>
+       </item>
+      </widget>
+     </item>
      <item row="1" column="0" colspan="3">
       <widget class="QTabWidget" name="tabs_colorSpaceTabs">
        <property name="currentIndex">
@@ -496,64 +554,124 @@
          </item>
         </layout>
        </widget>
-      </widget>
-     </item>
-     <item row="0" column="1" colspan="2">
-      <widget class="QComboBox" name="comboBox_colorSpacePreset">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="toolTip">
-        <string>Select ColorSpace Preset</string>
-       </property>
-       <item>
-        <property name="text">
-         <string>User-defined</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>sRGB - HDTV (ITU-R BT.709-5)</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>ROMM RGB</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Adobe RGB 98</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Apple RGB</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>NTSC (FCC 1953)</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>NTSC (1979) (SMPTE C/-RP 145)</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>PAL/SECAM (EBU 3213)</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>CIE (1931) E</string>
-        </property>
-       </item>
+       <widget class="QWidget" name="tab_temperature">
+        <attribute name="title">
+         <string>Temperature</string>
+        </attribute>
+        <layout class="QGridLayout" name="gridLayout_4">
+         <item row="0" column="0">
+          <layout class="QGridLayout" name="gridLayout_3">
+           <item row="1" column="0">
+            <widget class="QLabel" name="label_whitePointTemp">
+             <property name="text">
+              <string>Temperature</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QSlider" name="slider_temperature">
+             <property name="toolTip">
+              <string>Correlated color temperature</string>
+             </property>
+             <property name="minimum">
+              <number>1900</number>
+             </property>
+             <property name="maximum">
+              <number>25000</number>
+             </property>
+             <property name="singleStep">
+              <number>100</number>
+             </property>
+             <property name="pageStep">
+              <number>1000</number>
+             </property>
+             <property name="sliderPosition">
+              <number>6504</number>
+             </property>
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="tickPosition">
+              <enum>QSlider::TicksBelow</enum>
+             </property>
+             <property name="tickInterval">
+              <number>1000</number>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="2">
+            <widget class="QDoubleSpinBox" name="spinBox_temperature">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>0</height>
+              </size>
+             </property>
+             <property name="toolTip">
+              <string>Correlated color temperature</string>
+             </property>
+             <property name="wrapping">
+              <bool>false</bool>
+             </property>
+             <property name="frame">
+              <bool>true</bool>
+             </property>
+             <property name="buttonSymbols">
+              <enum>QAbstractSpinBox::UpDownArrows</enum>
+             </property>
+             <property name="suffix">
+              <string notr="true"> K</string>
+             </property>
+             <property name="decimals">
+              <number>0</number>
+             </property>
+             <property name="minimum">
+              <double>1900.000000000000000</double>
+             </property>
+             <property name="maximum">
+              <double>25000.000000000000000</double>
+             </property>
+             <property name="singleStep">
+              <double>100.000000000000000</double>
+             </property>
+             <property name="value">
+              <double>6504.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item row="2" column="0">
+          <spacer name="verticalSpacer_3">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>147</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="label_whitePointTempNotice">
+           <property name="text">
+            <string>Note: Conversion between xy coordinates and correlated color temperature is approximate, and may be poor for data outside of the range spanned by the CIE A to D75 illuminants.</string>
+           </property>
+           <property name="wordWrap">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
       </widget>
      </item>
     </layout>
