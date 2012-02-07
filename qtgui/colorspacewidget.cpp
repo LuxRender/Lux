@@ -43,7 +43,8 @@ static double colorspace_presets[8][NUM_COLORSPACE_PRESETS] = {
 	
 // standard whitepoints
 static double whitepoint_presets[2][NUM_WHITEPOINT_PRESETS] = {
-	{0.448f, 0.348f, 0.310f, 0.316f, 0.332f, 0.313f, 0.299f, 0.333f, 0.372f, 0.313f, 0.381f, 0.285f}, //xwhite
+//   A       B       C       D50     D55     D65     D75     E       F2      F7      F11     9300
+	{0.448f, 0.348f, 0.310f, 0.346f, 0.332f, 0.313f, 0.299f, 0.333f, 0.372f, 0.313f, 0.381f, 0.285f}, //xwhite
 	{0.407f, 0.352f, 0.316f, 0.359f, 0.347f, 0.329f, 0.315f, 0.333f, 0.375f, 0.329f, 0.377f, 0.293f}  //ywhite
 };
 #define DEFAULT_EPSILON_MIN 0.000005f
