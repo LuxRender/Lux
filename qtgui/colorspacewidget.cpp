@@ -151,32 +151,29 @@ void ColorSpaceWidget::resetValues()
 	m_TORGB_yblue = 0.07;
 }
 
-int ColorSpaceWidget::colorspaceToPreset(double value)
+int ColorSpaceWidget::colorspaceToPreset()
 {
-	int i = 0;
-	while (i < NUM_COLORSPACE_PRESETS) {
-		if (EqualDouble(m_TORGB_xwhite, colorspace_presets[0][i])&& EqualDouble(m_TORGB_ywhite, colorspace_presets[1][i])&&EqualDouble(m_TORGB_xred, colorspace_presets[2][i])&& EqualDouble(m_TORGB_yred, colorspace_presets[3][i])&& EqualDouble(m_TORGB_xgreen, colorspace_presets[4][i])&& EqualDouble(m_TORGB_ygreen, colorspace_presets[5][i])&& EqualDouble(m_TORGB_xblue, colorspace_presets[6][i])&& EqualDouble(m_TORGB_yblue, colorspace_presets[7][i]))
-			break;
-		i++;
+	for (int i = 0; i < NUM_COLORSPACE_PRESETS; i++) {
+		if (EqualDouble(m_TORGB_xwhite, colorspace_presets[0][i])
+				&& EqualDouble(m_TORGB_ywhite, colorspace_presets[1][i])
+				&& EqualDouble(m_TORGB_xred, colorspace_presets[2][i])
+				&& EqualDouble(m_TORGB_yred, colorspace_presets[3][i])
+				&& EqualDouble(m_TORGB_xgreen, colorspace_presets[4][i])
+				&& EqualDouble(m_TORGB_ygreen, colorspace_presets[5][i])
+				&& EqualDouble(m_TORGB_xblue, colorspace_presets[6][i])
+				&& EqualDouble(m_TORGB_yblue, colorspace_presets[7][i]))
+			return i+1;
 	}
-	if (i == NUM_COLORSPACE_PRESETS)
-		i = -1;
-	
-	return i+1;
+	return 0;
 }
 
-int ColorSpaceWidget::whitepointToPreset(double value)
+int ColorSpaceWidget::whitepointToPreset()
 {
-	int i = 0;
-	while (i < NUM_WHITEPOINT_PRESETS) {
+	for (int i = 0; i < NUM_WHITEPOINT_PRESETS; i++) {
 		if (EqualDouble(m_TORGB_xwhite, whitepoint_presets[0][i]) && EqualDouble(m_TORGB_ywhite, whitepoint_presets[1][i]))
-			break;
-		i++;
+			return i+1;
 	}
-	if (i == NUM_WHITEPOINT_PRESETS)
-		i = -1;
-	
-	return i+1;
+	return 0;
 }
 
 void ColorSpaceWidget::resetFromFilm (bool useDefaults)
@@ -199,8 +196,8 @@ void ColorSpaceWidget::resetFromFilm (bool useDefaults)
 	luxSetParameterValue(LUX_FILM, LUX_FILM_TORGB_X_BLUE, m_TORGB_xblue);
 	luxSetParameterValue(LUX_FILM, LUX_FILM_TORGB_Y_BLUE, m_TORGB_yblue);
 	
-	ui->comboBox_whitePointPreset->setCurrentIndex(whitepointToPreset(m_TORGB_xwhite));
-	ui->comboBox_colorSpacePreset->setCurrentIndex(colorspaceToPreset(m_TORGB_xwhite));
+	ui->comboBox_whitePointPreset->setCurrentIndex(whitepointToPreset());
+	ui->comboBox_colorSpacePreset->setCurrentIndex(colorspaceToPreset());
 }
 
 void ColorSpaceWidget::setColorSpacePreset(int choice)
@@ -280,12 +277,12 @@ void ColorSpaceWidget::whitePointXChanged(double value)
 	
 	// Don't trigger yet another event
 	ui->comboBox_colorSpacePreset->blockSignals(true);
-	ui->comboBox_colorSpacePreset->setCurrentIndex(colorspaceToPreset(m_TORGB_xwhite));
+	ui->comboBox_colorSpacePreset->setCurrentIndex(colorspaceToPreset());
 	ui->comboBox_colorSpacePreset->blockSignals(false);
 	
 	// Don't trigger yet another event
 	ui->comboBox_whitePointPreset->blockSignals(true);
-	ui->comboBox_whitePointPreset->setCurrentIndex(whitepointToPreset(m_TORGB_xwhite));
+	ui->comboBox_whitePointPreset->setCurrentIndex(whitepointToPreset());
 	ui->comboBox_whitePointPreset->blockSignals(false);
 
 	updateParam (LUX_FILM, LUX_FILM_TORGB_X_WHITE, m_TORGB_xwhite);
@@ -309,12 +306,12 @@ void ColorSpaceWidget::whitePointYChanged (double value)
 	
 	// Don't trigger yet another event
 	ui->comboBox_colorSpacePreset->blockSignals(true);
-	ui->comboBox_colorSpacePreset->setCurrentIndex(colorspaceToPreset(m_TORGB_ywhite));
+	ui->comboBox_colorSpacePreset->setCurrentIndex(colorspaceToPreset());
 	ui->comboBox_colorSpacePreset->blockSignals(false);
 
 	// Don't trigger yet another event
 	ui->comboBox_whitePointPreset->blockSignals(true);
-	ui->comboBox_whitePointPreset->setCurrentIndex(whitepointToPreset(m_TORGB_ywhite));
+	ui->comboBox_whitePointPreset->setCurrentIndex(whitepointToPreset());
 	ui->comboBox_whitePointPreset->blockSignals(false);
 
 	updateParam (LUX_FILM, LUX_FILM_TORGB_Y_WHITE, m_TORGB_ywhite);
@@ -338,7 +335,7 @@ void ColorSpaceWidget::redYChanged (double value)
 
 	// Don't trigger yet another event
 	ui->comboBox_colorSpacePreset->blockSignals(true);
-	ui->comboBox_colorSpacePreset->setCurrentIndex(colorspaceToPreset(m_TORGB_yred));
+	ui->comboBox_colorSpacePreset->setCurrentIndex(colorspaceToPreset());
 	ui->comboBox_colorSpacePreset->blockSignals(false);
 	
 	updateParam (LUX_FILM, LUX_FILM_TORGB_Y_RED, m_TORGB_yred);
@@ -362,7 +359,7 @@ void ColorSpaceWidget::redXChanged (double value)
 	
 	// Don't trigger yet another event
 	ui->comboBox_colorSpacePreset->blockSignals(true);
-	ui->comboBox_colorSpacePreset->setCurrentIndex(colorspaceToPreset(m_TORGB_xred));
+	ui->comboBox_colorSpacePreset->setCurrentIndex(colorspaceToPreset());
 	ui->comboBox_colorSpacePreset->blockSignals(false);
 	
 	updateParam (LUX_FILM, LUX_FILM_TORGB_X_RED, m_TORGB_xred);
@@ -386,7 +383,7 @@ void ColorSpaceWidget::blueYChanged (double value)
 	
 	// Don't trigger yet another event
 	ui->comboBox_colorSpacePreset->blockSignals(true);
-	ui->comboBox_colorSpacePreset->setCurrentIndex(colorspaceToPreset(m_TORGB_yblue));
+	ui->comboBox_colorSpacePreset->setCurrentIndex(colorspaceToPreset());
 	ui->comboBox_colorSpacePreset->blockSignals(false);
 	
 	updateParam (LUX_FILM, LUX_FILM_TORGB_Y_BLUE, m_TORGB_yblue);
@@ -410,7 +407,7 @@ void ColorSpaceWidget::blueXChanged (double value)
 	
 	// Don't trigger yet another event
 	ui->comboBox_colorSpacePreset->blockSignals(true);
-	ui->comboBox_colorSpacePreset->setCurrentIndex(colorspaceToPreset(m_TORGB_xblue));
+	ui->comboBox_colorSpacePreset->setCurrentIndex(colorspaceToPreset());
 	ui->comboBox_colorSpacePreset->blockSignals(false);
 	
 	updateParam (LUX_FILM, LUX_FILM_TORGB_X_BLUE, m_TORGB_xblue);
@@ -434,7 +431,7 @@ void ColorSpaceWidget::greenYChanged (double value)
 	
 	// Don't trigger yet another event
 	ui->comboBox_colorSpacePreset->blockSignals(true);
-	ui->comboBox_colorSpacePreset->setCurrentIndex(colorspaceToPreset(m_TORGB_ygreen));
+	ui->comboBox_colorSpacePreset->setCurrentIndex(colorspaceToPreset());
 	ui->comboBox_colorSpacePreset->blockSignals(false);
 	
 	updateParam (LUX_FILM, LUX_FILM_TORGB_Y_GREEN, m_TORGB_ygreen);
@@ -458,7 +455,7 @@ void ColorSpaceWidget::greenXChanged (double value)
 	
 	// Don't trigger yet another event
 	ui->comboBox_colorSpacePreset->blockSignals(true);
-	ui->comboBox_colorSpacePreset->setCurrentIndex(colorspaceToPreset(m_TORGB_xgreen));
+	ui->comboBox_colorSpacePreset->setCurrentIndex(colorspaceToPreset());
 	ui->comboBox_colorSpacePreset->blockSignals(false);
 
 	updateParam (LUX_FILM, LUX_FILM_TORGB_X_GREEN, m_TORGB_xgreen);

@@ -66,8 +66,8 @@ private:
 
 	Ui::ColorSpaceWidget *ui;
 	
-    int colorspaceToPreset(double value);
-	int whitepointToPreset(double value);
+	int colorspaceToPreset();
+	int whitepointToPreset();
 
 
 signals:
