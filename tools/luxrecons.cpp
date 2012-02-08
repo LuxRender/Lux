@@ -152,6 +152,11 @@ void RPF_PresprocessSamples(RandomGenerator &rng,
 	for (size_t i = 0; i < sceneFeaturesCount; ++i)
 		sceneFeaturesStandardDeviation[i] = sqrtf(sceneFeaturesStandardDeviation[i] / P.size());
 
+	/*for (size_t i = 0; i < sceneFeaturesCount; ++i) {
+		LOG(LUX_INFO, LUX_NOERROR) << "sceneFeaturesMean[" << i << "] ="<<sceneFeaturesMean[i] <<
+				"  sceneFeaturesStandardDeviation[" << i << "] ="<<sceneFeaturesStandardDeviation[i];
+	}*/
+
 	// For all samples inside the filtering box
 	const float filterWidth = b / 2.f;
 	const int x0 = max(Ceil2Int(x - filterWidth), sampleDataGrig.xPixelStart);
@@ -175,7 +180,7 @@ void RPF_PresprocessSamples(RandomGenerator &rng,
 				for (size_t j = 0; j < sceneFeaturesCount; ++j) {
 					// World coordinates require a larger constant
 					const float k = ((j % (sizeof(SamplePathInfo) / sizeof(float))) <= 2) ? 30.f : 3.f;
-					const float kk = k * max(sceneFeaturesStandardDeviation[j], 0.1f);
+					const float kk = max(k * sceneFeaturesStandardDeviation[j], 0.1f);
 					const float fm = fabsf(sceneFeatures[j] - sceneFeaturesMean[j]);
 
 					if (fm > kk) {
@@ -255,8 +260,12 @@ void RPF_FilterColorSamples(const SampleDataGrid &sampleDataGrig,
 	if (xyStandardDeviation[1] == 0.f)
 		xyStandardDeviation[1] = 1.f; // To avoid / 0.f
 	cStandardDeviation = (cStandardDeviation / N.size()).Sqrt();
-	if (cStandardDeviation.Black())
-		cStandardDeviation = 1.f; // To avoid / 0.f
+	if (cStandardDeviation.c[0] == 0.f)
+		cStandardDeviation.c[0] = 1.f; // To avoid / 0.f
+	if (cStandardDeviation.c[1] == 0.f)
+		cStandardDeviation.c[1] = 1.f; // To avoid / 0.f
+	if (cStandardDeviation.c[2] == 0.f)
+		cStandardDeviation.c[2] = 1.f; // To avoid / 0.f
 
 	// Compute the normalized values
 	vector<float> xNormalized(N.size());
@@ -309,24 +318,18 @@ void RPF_FilterColorSamples(const SampleDataGrid &sampleDataGrig,
 	XYZColor c2Mean;
 	for (size_t i = 0; i < P.size(); ++i)
 		c2Mean += c2[P[i]];
+	c2Mean /= P.size();
 
 	XYZColor c2StandardDeviation;
-	for (size_t i = 0; i < P.size(); ++i) {
+	for (size_t i = 0; i < P.size(); ++i)
 		c2StandardDeviation += sqr(c2[P[i]] - c2Mean);
-	}
 	c2StandardDeviation = (cStandardDeviation / P.size()).Sqrt();
 
 	// Outlier rejection
 	for (size_t i = 0; i < P.size(); ++i) {
 		const size_t Pi = P[i];
-		if (c2[Pi].c[0] - cMean.c[0] > c2StandardDeviation.c[0])
-			c2[Pi].c[0] = cMean.c[0];
-
-		if (c2[Pi].c[1] - cMean.c[1] > c2StandardDeviation.c[1])
-			c2[Pi].c[1] = cMean.c[1];
-
-		if (c2[Pi].c[2] - cMean.c[2] > c2StandardDeviation.c[2])
-			c2[Pi].c[2] = cMean.c[2];
+		if (fabsf(c2[Pi].Y() - cMean.Y()) > c2StandardDeviation.Y())
+			c2[Pi] = cMean;
 	}
 }
 
@@ -336,7 +339,8 @@ void RPF_Thread(const SampleDataGrid *sampleDataGrig,
 	const size_t threadIndex, const size_t threadCount) {
 
 	RandomGenerator rng(1337 + threadIndex);
-	const size_t maxSamples = sqr(b) * sampleDataGrig->avgSamplesPerPixel / 10.f;
+	//const size_t maxSamples = sqr(b) * sampleDataGrig->avgSamplesPerPixel / 2.f;
+	const size_t maxSamples = min(1024.f, sqr(b) * sampleDataGrig->avgSamplesPerPixel / 16.f);
 	LOG(LUX_INFO, LUX_NOERROR) << "[thread::" << threadIndex << "] RPF max. samples " << maxSamples << ", size " << b;
 
 	double lastPrintTime = osWallClockTime();
@@ -650,8 +654,10 @@ void Recons_CLUSTER(SampleData *sampleData, const string &outputFileName) {
 		}
 	}
 
-	const int b = 55;
-	const size_t maxSamples = sqr(b) * sampleDataGrig.avgSamplesPerPixel / 10.f;
+	const int b = 35;
+	//const size_t maxSamples = sqr(b) * sampleDataGrig.avgSamplesPerPixel / 2.f;
+	//const size_t maxSamples = min(1024.f, sqr(b) * sampleDataGrig.avgSamplesPerPixel / 2.f);
+	const size_t maxSamples = std::numeric_limits<int>::max();
 	LOG(LUX_INFO, LUX_NOERROR) << "Cluster max. samples " << maxSamples << ", size " << b;
 	RandomGenerator rng(1337);
 	double lastPrintTime = osWallClockTime();
@@ -675,7 +681,7 @@ void Recons_CLUSTER(SampleData *sampleData, const string &outputFileName) {
 					const int yy = int(imageXY[1]) - sampleDataGrig.yPixelStart;
 
 					const int index = xx + yy * sampleDataGrig.xResolution;
-					pixels[index].c[1] = 0.f;
+					pixels[index].c[0] = 0.f;
 					pixels[index].c[2] = 0.f;
 				}
 
@@ -711,6 +717,10 @@ void Recons_CLUSTER(SampleData *sampleData, const string &outputFileName) {
 				pixels[index2].c[1] = 0.f;
 				pixels[index2].c[2] = 10.f;
 			}
+
+			const size_t index = x + y * sampleDataGrig.xResolution;
+			pixels[index].c[0] = 0.f;
+			pixels[index].c[1] = 0.f;
 		}
 	}
 

@@ -171,6 +171,7 @@ SampleData *SampleFileReader::ReadAllSamples() {
 	size_t randomParameters_infs = 0;
 	size_t color_nans = 0;
 	size_t color_infs = 0;
+	size_t color_blacks = 0;
 	size_t sceneFeatures_nans = 0;
 	size_t sceneFeatures_infs = 0;
 
@@ -208,6 +209,11 @@ SampleData *SampleFileReader::ReadAllSamples() {
 		if (isinf(p[2 + randomParametersCount + 2]))
 			++color_infs;
 
+		if ((p[2 + randomParametersCount] == 0.f) &&
+				(p[2 + randomParametersCount + 1] == 0.f) &&
+				(p[2 + randomParametersCount + 2] == 0.f))
+			++color_blacks;
+
 		// Scene features
 		for (size_t j = 0; j < sizeof(SamplePathInfo) / sizeof(float); j++) {
 			if (isnan(p[2 + randomParametersCount + 3 + j]))
@@ -225,6 +231,7 @@ SampleData *SampleFileReader::ReadAllSamples() {
 	LOG(LUX_INFO, LUX_NOERROR) << "Sample info Random parameters Infs: " << randomParameters_infs;
 	LOG(LUX_INFO, LUX_NOERROR) << "Sample info XYZ color NaNs: " << color_nans;
 	LOG(LUX_INFO, LUX_NOERROR) << "Sample info XYZ color Infs: " << color_infs;
+	LOG(LUX_INFO, LUX_NOERROR) << "Sample info XYZ color Blacks: " << color_blacks;
 	LOG(LUX_INFO, LUX_NOERROR) << "Sample info Scene features color NaNs: " << sceneFeatures_nans;
 	LOG(LUX_INFO, LUX_NOERROR) << "Sample info Scene features Infs: " << sceneFeatures_infs;
 
