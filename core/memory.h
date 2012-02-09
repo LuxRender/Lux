@@ -200,14 +200,12 @@ public:
 	MemoryArena(size_t bs = 32768) {
 		blockSize = bs;
 		curBlockPos = 0;
-		currentBlock = lux::AllocAligned<int8_t>(blockSize);
+		currentBlockIdx = 0;
+		blocks.push_back(lux::AllocAligned<int8_t>(blockSize));
 	}
 	~MemoryArena() {
-		lux::FreeAligned(currentBlock);
-		for (size_t i = 0; i < usedBlocks.size(); ++i)
-			lux::FreeAligned(usedBlocks[i]);
-		for (size_t i = 0; i < availableBlocks.size(); ++i)
-			lux::FreeAligned(availableBlocks[i]);
+		for (size_t i = 0; i < blocks.size(); ++i)
+			lux::FreeAligned(blocks[i]);
 	}
 	void *Alloc(size_t sz) {
 		// Round up _sz_ to minimum machine alignment
@@ -218,31 +216,27 @@ public:
 #endif
 		if (curBlockPos + sz > blockSize) {
 			// Get new block of memory for _MemoryArena_
-			usedBlocks.push_back(currentBlock);
-			if (availableBlocks.size() > 0 && sz <= blockSize) {
-				currentBlock = availableBlocks.back();
-				availableBlocks.pop_back();
-			} else {
-				currentBlock = lux::AllocAligned<int8_t>(max(sz, blockSize));
-			}
+			currentBlockIdx++;
+
+			if(currentBlockIdx == blocks.size())
+				blocks.push_back(lux::AllocAligned<int8_t>(max(sz, blockSize)));
+
 			curBlockPos = 0;
 		}
-		void *ret = currentBlock + curBlockPos;
+		void *ret = blocks[currentBlockIdx] + curBlockPos;
 		curBlockPos += sz;
 		return ret;
 	}
 	void FreeAll() {
 		curBlockPos = 0;
-		while (usedBlocks.size() > 0) {
-			availableBlocks.push_back(usedBlocks.back());
-			usedBlocks.pop_back();
-		}
+		currentBlockIdx = 0;
 	}
 private:
 	// MemoryArena Private Data
 	size_t curBlockPos, blockSize;
-	int8_t *currentBlock;
-	vector<int8_t *> usedBlocks, availableBlocks;
+
+	unsigned int currentBlockIdx;
+	vector<int8_t *> blocks;
 };
 #define ARENA_ALLOC(ARENA,T)  new ((ARENA).Alloc(sizeof(T))) T
 
