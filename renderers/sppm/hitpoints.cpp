@@ -168,10 +168,7 @@ void HitPoints::AccumulateFlux(const u_int index, const u_int count) {
 	for (u_int i = first; i < last; ++i) {
 		HitPoint *hp = &(*hitPoints)[i];
 
-		if(hp->IsSurface()) {
-			hp->DoRadiusReduction(renderer->sppmi->photonAlpha);
-		} else
-			assert(!hp->IsSurface());
+		hp->DoRadiusReduction(renderer->sppmi->photonAlpha, GetPassCount(), renderer->sppmi->useproba);
 	}
 }
 

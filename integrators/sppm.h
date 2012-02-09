@@ -60,6 +60,7 @@ public:
 
 	u_int sampleOffset, bufferPhotonId, bufferEyeId;
 	bool includeEnvironment;
+	bool useproba;
 
 	u_int wavelengthStratification;
 
