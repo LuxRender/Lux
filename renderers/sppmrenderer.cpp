@@ -434,7 +434,7 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 
 	// Set hitpoints
 	hitPoints->SetHitPoints(eyeSample, myThread->threadRng,
-			myThread->n, renderer->renderThreads.size(), myThread->eyePassMemoryArena);
+			myThread->n, renderer->renderThreads.size());
 
 	allThreadBarrier->wait();
 
@@ -550,7 +550,7 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 			eyePassStartTime = osWallClockTime();
 
 		hitPoints->SetHitPoints(eyeSample, myThread->threadRng,
-				myThread->n, renderer->renderThreads.size(), myThread->eyePassMemoryArena);
+				myThread->n, renderer->renderThreads.size());
 	}
 
 	scene.camera->film->contribPool->End(sample.contribBuffer);
