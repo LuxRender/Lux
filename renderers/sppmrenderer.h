@@ -173,7 +173,6 @@ private:
 		Distribution1D *lightCDF;
 		PhotonSampler* sampler;
 		Sample *threadSample;
-		MemoryArena eyePassMemoryArena;
 	};
 
 	double Statistics_GetNumberOfSamples();

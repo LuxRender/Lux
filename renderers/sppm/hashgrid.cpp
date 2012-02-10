@@ -36,6 +36,13 @@ HashGrid::~HashGrid() {
 	delete[] grid;
 }
 
+void HashGrid::Refresh( const u_int index, const u_int count, boost::barrier &barrier)
+{
+	if(index == 0)
+		RefreshMutex();
+	barrier.wait();
+}
+
 void HashGrid::RefreshMutex() {
 	const unsigned int hitPointsCount = hitPoints->GetSize();
 	const BBox &hpBBox = hitPoints->GetBBox();

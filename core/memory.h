@@ -200,14 +200,14 @@ public:
 	MemoryArena(size_t bs = 32768) {
 		blockSize = bs;
 		curBlockPos = 0;
-		currentBlock = lux::AllocAligned<int8_t>(blockSize);
+		currentBlockIdx = 0;
+		blocks.push_back(lux::AllocAligned<int8_t>(blockSize));
+		beginBlockPos = 0;
+		beginBlockIdx = 0;
 	}
 	~MemoryArena() {
-		lux::FreeAligned(currentBlock);
-		for (size_t i = 0; i < usedBlocks.size(); ++i)
-			lux::FreeAligned(usedBlocks[i]);
-		for (size_t i = 0; i < availableBlocks.size(); ++i)
-			lux::FreeAligned(availableBlocks[i]);
+		for (size_t i = 0; i < blocks.size(); ++i)
+			lux::FreeAligned(blocks[i]);
 	}
 	void *Alloc(size_t sz) {
 		// Round up _sz_ to minimum machine alignment
@@ -218,31 +218,65 @@ public:
 #endif
 		if (curBlockPos + sz > blockSize) {
 			// Get new block of memory for _MemoryArena_
-			usedBlocks.push_back(currentBlock);
-			if (availableBlocks.size() > 0 && sz <= blockSize) {
-				currentBlock = availableBlocks.back();
-				availableBlocks.pop_back();
-			} else {
-				currentBlock = lux::AllocAligned<int8_t>(max(sz, blockSize));
-			}
+			currentBlockIdx++;
+
+			if(currentBlockIdx == blocks.size())
+				blocks.push_back(lux::AllocAligned<int8_t>(max(sz, blockSize)));
+
 			curBlockPos = 0;
 		}
-		void *ret = currentBlock + curBlockPos;
+		void *ret = blocks[currentBlockIdx] + curBlockPos;
 		curBlockPos += sz;
 		return ret;
 	}
 	void FreeAll() {
 		curBlockPos = 0;
-		while (usedBlocks.size() > 0) {
-			availableBlocks.push_back(usedBlocks.back());
-			usedBlocks.pop_back();
-		}
+		currentBlockIdx = 0;
+		beginBlockPos = 0;
+		beginBlockIdx = 0;
+	}
+
+	// Those function helps the MemoryArena to only save what is needed for
+	// further usage.
+
+	// After you call Begin, everything in the MemoryArena which has not been
+	// Commited is invalidated.
+	// End put a synchronisation point
+	// If you call Commit, everything between the Begin and the End() call is
+	// guaranteed to be saved in the Arena until the next FreeAll()
+
+	// Example:
+	// AllocateSomethingOnMA(a)
+	// AllocateSomethingOnMA(b)
+	// arena.Begin(); // a and b are invalidated
+	// AllocateSomethingOnMA(c)
+	// arena.Sync();
+	// AllocateSomethingOnMA(d);
+	// arena.Commit(); // d is invalidated, c will stay on the arena
+
+	void Begin()
+	{
+		currentBlockIdx = beginBlockIdx;
+		curBlockPos = beginBlockPos;
+	}
+
+	void End()
+	{
+		endBlockPos = curBlockPos;
+		endBlockIdx = currentBlockIdx;
+	}
+
+	void Commit()
+	{
+		beginBlockIdx = endBlockIdx;
+		beginBlockPos = endBlockPos;
 	}
 private:
 	// MemoryArena Private Data
-	size_t curBlockPos, blockSize;
-	int8_t *currentBlock;
-	vector<int8_t *> usedBlocks, availableBlocks;
+	size_t curBlockPos, blockSize, beginBlockPos, endBlockPos;
+
+	unsigned int currentBlockIdx, beginBlockIdx, endBlockIdx;
+	vector<int8_t *> blocks;
 };
 #define ARENA_ALLOC(ARENA,T)  new ((ARENA).Alloc(sizeof(T))) T
 

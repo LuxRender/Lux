@@ -61,13 +61,14 @@ public:
 	double m_TORGB_xred, m_TORGB_yred;
 	double m_TORGB_xgreen, m_TORGB_ygreen;
 	double m_TORGB_xblue, m_TORGB_yblue;
+	double m_TORGB_temperature;
 
 private:
 
 	Ui::ColorSpaceWidget *ui;
 	
-    int colorspaceToPreset(double value);
-	int whitepointToPreset(double value);
+	int colorspaceToPreset();
+	int whitepointToPreset();
 
 
 signals:
@@ -97,6 +98,9 @@ private slots:
 	void greenXChanged (double value);
 	void greenYChanged (int value);
 	void greenYChanged (double value);
+
+	void temperatureChanged (int value);
+	void temperatureChanged (double value);
 
 };
 

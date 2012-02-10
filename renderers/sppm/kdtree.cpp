@@ -91,6 +91,13 @@ void KdTree::RecursiveBuild(
 	}
 }
 
+void KdTree::Refresh( const u_int index, const u_int count, boost::barrier &barrier)
+{
+	if(index == 0)
+		RefreshMutex();
+	barrier.wait();
+}
+
 void KdTree::RefreshMutex() {
 
 	nextFreeNode = 1;

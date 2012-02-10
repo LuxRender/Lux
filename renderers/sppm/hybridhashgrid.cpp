@@ -128,7 +128,12 @@ void HybridHashGrid::RefreshMutex() {
 	}*/
 }
 
-void HybridHashGrid::RefreshParallel(const unsigned int index, const unsigned int count) {
+void HybridHashGrid::Refresh(const unsigned int index, const unsigned int count, boost::barrier &barrier) {
+	if(index == 0)
+		RefreshMutex();
+
+	barrier.wait();
+
 	if (gridSize == 0)
 		return;
 
@@ -160,6 +165,8 @@ void HybridHashGrid::RefreshParallel(const unsigned int index, const unsigned in
 			}
 		}
 	}*/
+
+	barrier.wait();
 }
 
 void HybridHashGrid::AddFlux(Sample& sample, const Point &hitPoint, const Vector &wi,
