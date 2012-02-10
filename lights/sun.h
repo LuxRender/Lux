@@ -47,7 +47,7 @@ public:
 	virtual bool Le(const Scene &scene, const Sample &sample, const Ray &r,
 		BSDF **bsdf, float *pdf, float *pdfDirect,
 		SWCSpectrum *L) const;
-	virtual float Pdf(const Point &p, const DifferentialGeometry &dg) const;
+	virtual float Pdf(const Point &p, const PartialDifferentialGeometry &dg) const;
 
 	virtual bool SampleL(const Scene &scene, const Sample &sample,
 		float u1, float u2, float u3, BSDF **bsdf, float *pdf,

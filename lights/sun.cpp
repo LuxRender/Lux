@@ -222,7 +222,7 @@ bool SunLight::Le(const Scene &scene, const Sample &sample, const Ray &r,
 	return true;
 }
 
-float SunLight::Pdf(const Point &p, const DifferentialGeometry &dg) const
+float SunLight::Pdf(const Point &p, const PartialDifferentialGeometry &dg) const
 {
 	const float cosTheta = AbsDot(Normalize(p - dg.p), dg.nn);
 	if (cosTheta < cosThetaMax)

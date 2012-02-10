@@ -331,7 +331,7 @@ bool InfiniteAreaLight::Le(const Scene &scene, const Sample &sample,
 	return true;
 }
 
-float InfiniteAreaLight::Pdf(const Point &p, const DifferentialGeometry &dg) const
+float InfiniteAreaLight::Pdf(const Point &p, const PartialDifferentialGeometry &dg) const
 {
 	const Vector wi(dg.p - p);
 	if (!havePortalShape) {

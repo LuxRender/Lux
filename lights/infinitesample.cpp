@@ -217,7 +217,7 @@ bool InfiniteAreaLightIS::Le(const Scene &scene, const Sample &sample,
 	return true;
 }
 
-float InfiniteAreaLightIS::Pdf(const Point &p, const DifferentialGeometry &dg) const
+float InfiniteAreaLightIS::Pdf(const Point &p, const PartialDifferentialGeometry &dg) const
 {
 	const Vector d(Normalize(dg.p - p));
 	const Vector wh = Normalize(WorldToLight(d));

@@ -195,7 +195,7 @@ float AreaLight::Power(const Scene &scene) const
 	return gain * area * M_PI * Le->Y();
 }
 
-float AreaLight::Pdf(const Point &p, const DifferentialGeometry &dg) const
+float AreaLight::Pdf(const Point &p, const PartialDifferentialGeometry &dg) const
 {
 	return prim->Pdf(p, dg);
 }

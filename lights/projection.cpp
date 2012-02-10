@@ -143,7 +143,7 @@ ProjectionLight::~ProjectionLight()
 	delete projectionMap;
 }
 
-float ProjectionLight::Pdf(const Point &p, const DifferentialGeometry &dg) const
+float ProjectionLight::Pdf(const Point &p, const PartialDifferentialGeometry &dg) const
 {
 	return 1.f;
 }

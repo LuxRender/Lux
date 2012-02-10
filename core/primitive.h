@@ -118,7 +118,7 @@ public:
 	 * @param dg The differential geometry at the sampled point.
 	 * @return The pdf value (w.r.t. surface area) for the given point.
 	 */
-	virtual float Pdf(const DifferentialGeometry &dg) const {
+	virtual float Pdf(const PartialDifferentialGeometry &dg) const {
 		return 1.f / Area();
 	}
 	/**
@@ -145,7 +145,7 @@ public:
 	 * @param dg The differential geometry at the sampled point.
 	 * @return The pdf value (w.r.t. surface area) for the given point.
 	 */
-	virtual float Pdf(const Point &p, const DifferentialGeometry &dg) const {
+	virtual float Pdf(const Point &p, const PartialDifferentialGeometry &dg) const {
 		return Pdf(dg);
 	}
 	/**

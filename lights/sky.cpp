@@ -387,7 +387,7 @@ bool SkyLight::Le(const Scene &scene, const Sample &sample, const Ray &r,
 	return true;
 }
 
-float SkyLight::Pdf(const Point &p, const DifferentialGeometry &dg) const
+float SkyLight::Pdf(const Point &p, const PartialDifferentialGeometry &dg) const
 {
 	const Vector wi(dg.p - p);
 	if (!havePortalShape) {
