@@ -339,7 +339,7 @@ public:
 	 * @brief The geometric normal
 	 */
 	const Normal ng;
-	const DifferentialGeometry dgShading; /** The differential shading geometry */
+	const PartialDifferentialGeometry dgShading; /** The differential shading geometry */
 	/**
 	 * @var const Volume *exterior
 	 * @brief The volume in the half space containing the geometric normal
