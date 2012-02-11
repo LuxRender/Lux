@@ -226,6 +226,7 @@ void RPF_FilterColorSamples(const SampleDataGrid &sampleDataGrig,
 	// Compute the mean
 	float xyMean[2] = { 0.f, 0.f };
 	XYZColor cMean;
+	vector<float> fMean(sampleData.sceneFeaturesCount, 0.f);
 	for (size_t i = 0; i < N.size(); ++i) {
 		const size_t index = N[i];
 		const float *imageXY = sampleData.GetImageXY(index);
@@ -234,15 +235,22 @@ void RPF_FilterColorSamples(const SampleDataGrid &sampleDataGrig,
 
 		const XYZColor *c = sampleData.GetColor(index);
 		cMean += *c;
+
+		const float *sceneFeatures = sampleData.GetSceneFeatures(index);
+		for (size_t j = 0; j < sampleData.sceneFeaturesCount; ++j)
+			fMean[j] += sceneFeatures[j];
 	}
 
 	xyMean[0] /= N.size();
 	xyMean[1] /= N.size();
 	cMean /= N.size();
+	for (size_t j = 0; j < sampleData.sceneFeaturesCount; ++j)
+		fMean[j] /= N.size();
 
 	// Compute the standard deviation
 	float xyStandardDeviation[2] = { 0.f, 0.f };
 	XYZColor cStandardDeviation;
+	vector<float> fStandardDeviation(sampleData.sceneFeaturesCount, 0.f);
 	for (size_t i = 0; i < N.size(); ++i) {
 		const size_t index = N[i];
 		const float *imageXY = sampleData.GetImageXY(index);
@@ -251,6 +259,10 @@ void RPF_FilterColorSamples(const SampleDataGrid &sampleDataGrig,
 
 		const XYZColor *c = sampleData.GetColor(index);
 		cStandardDeviation += sqr(*c - cMean);
+
+		const float *sceneFeatures = sampleData.GetSceneFeatures(index);
+		for (size_t j = 0; j < sampleData.sceneFeaturesCount; ++j)
+			fStandardDeviation[j] += sqr(sceneFeatures[j] - fMean[j]);
 	}
 
 	xyStandardDeviation[0] = sqrtf(xyStandardDeviation[0] / N.size());
@@ -266,11 +278,17 @@ void RPF_FilterColorSamples(const SampleDataGrid &sampleDataGrig,
 		cStandardDeviation.c[1] = 1.f; // To avoid / 0.f
 	if (cStandardDeviation.c[2] == 0.f)
 		cStandardDeviation.c[2] = 1.f; // To avoid / 0.f
+	for (size_t j = 0; j < sampleData.sceneFeaturesCount; ++j) {
+		if (fStandardDeviation[j] == 0.f)
+			fStandardDeviation[j] = 1.f; // To avoid / 0.f
+	}
+
 
 	// Compute the normalized values
 	vector<float> xNormalized(N.size());
 	vector<float> yNormalized(N.size());
 	vector<XYZColor> cNormalized(N.size());
+	vector<float *> fNormalized(N.size());
 
 	for (size_t i = 0; i < N.size(); ++i) {
 		const size_t index = N[i];
@@ -280,6 +298,11 @@ void RPF_FilterColorSamples(const SampleDataGrid &sampleDataGrig,
 
 		const XYZColor *c = sampleData.GetColor(index);
 		cNormalized[i] = (*c - cMean) / cStandardDeviation;
+
+		fNormalized[i] = (float *)alloca(sizeof(float) * sampleData.sceneFeaturesCount);
+		const float *sceneFeatures = sampleData.GetSceneFeatures(index);
+		for (size_t j = 0; j < sampleData.sceneFeaturesCount; ++j)
+			fNormalized[i][j] = (sceneFeatures[j] - fMean[j]) / fStandardDeviation[j];
 	}
 
 	// Filter the colors of samples in pixel P using bilateral filter
@@ -292,17 +315,24 @@ void RPF_FilterColorSamples(const SampleDataGrid &sampleDataGrig,
 		c2[Pi] = 0.f;
 		float w = 0.f;
 
-		const float k = - 1.f / (2.f * o_2);
+		const float c = - 1.f / (2.f * o_2);
 		for (size_t j = 0; j < N.size(); ++j) {
 			// NOTE: this code assume the first elements in N are the same of P
-			const float wij_xy = expf(k * (
+			const float wij_xy = expf(c * (
 					sqr(xNormalized[i] - xNormalized[j]) +
 					sqr(yNormalized[i] - yNormalized[j])));
-			const float wij_c = expf(k * (
+
+			const float wij_c = expf(c * (
 					sqr(cNormalized[i].c[0] - cNormalized[j].c[0]) +
 					sqr(cNormalized[i].c[1] - cNormalized[j].c[1]) +
 					sqr(cNormalized[i].c[2] - cNormalized[j].c[2])));
-			const float wij = wij_xy * wij_c;
+
+			float f = 0.f;
+			for (size_t k = 0; k < sampleData.sceneFeaturesCount; ++k)
+				f += sqr(fNormalized[i][k] - fNormalized[j][k]);
+			const float wij_f = expf(c * f);
+
+			const float wij = wij_xy * wij_c * wij_f;
 			c2[Pi] += wij * c1[N[j]];
 			w += wij;
 		}
@@ -383,11 +413,11 @@ void Recons_RPF(SampleData *sampleData, const string &outputFileName) {
 		c1[i] = *(sampleData->GetColor(i));
 	vector<XYZColor> c2(sampleData->count);
 
-	const int bv[4] = { 55, 35, 17, 7 };
+	//const int bv[4] = { 55, 35, 17, 7 };
 	//const int bv[3] = { 35, 17, 7 };
 	//const int bv[2] = { 17, 7 };
-	//const int bv[1] = { 7 };
-	for (int bi = 0; bi < 4; ++bi) {
+	const int bv[1] = { 7 };
+	for (int bi = 0; bi < 1; ++bi) {
 		const int b = bv[bi];
 
 		// Start all threads
