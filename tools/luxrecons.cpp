@@ -215,6 +215,97 @@ void RPF_PresprocessSamples(RandomGenerator &rng,
 	N.insert(N.begin(), P.begin(), P.end());
 }
 
+// Based on Mutual Information computation by Hanchuan Peng
+// at http://www.mathworks.com/matlabcentral/fileexchange/14888
+
+static void CopyVecData(const vector<float> &srcData, vector<int> &desData, int &nState) {
+	int minn, maxx;
+	if (srcData[0] > 0.f)
+		maxx = minn = int(srcData[0] + 0.5);
+	else
+		maxx = minn = int(srcData[0] - 0.5);
+
+	desData.resize(srcData.size());
+	for (size_t i = 0; i < srcData.size(); ++i) {
+		const float tmp = (srcData[i] > 0) ? (int)(srcData[i] + .5f) : (int)(srcData[i] - .5f);
+
+		minn = (minn < tmp) ? minn : tmp;
+		maxx = (maxx > tmp) ? maxx : tmp;
+		desData[i] = tmp;
+	}
+
+	for (size_t i = 0; i < srcData.size(); ++i)
+		desData[i] -= minn;
+
+	nState = maxx - minn + 1;
+}
+
+static void EstimateProbability(const vector<float> &v1, const vector<float> &v2,
+	vector<vector<float> > &p12, vector<float> &p1, vector<float> &p2) {
+	vector<int> i1;
+	int nState1;
+	CopyVecData(v1, i1, nState1);
+
+	vector<int> i2;
+	int nState2;
+	CopyVecData(v2, i2, nState2);
+	
+	// Generate the joint-distribution table
+
+	p12.resize(nState1);
+	for (int i = 0; i < nState1; ++i)
+		p12[i].resize(nState2, 0);
+
+	for (int i = 0; i < nState1; ++i)
+		p12[i1[i]][i2[i]] += 1;
+
+	for (int i = 0; i < nState1; ++i)
+		for (int j = 0; j < nState2; ++j)
+			p12[i][j] /= nState1;
+
+	p1.resize(nState1, 0);
+	for (int i = 0; i < nState1; ++i)
+		for (int j = 0; j < nState2; ++j)
+			p1[i] += p12[i][j];
+
+	p2.resize(nState2, 0);
+	for (int i = 0; i < nState1; ++i)
+		for (int j = 0; j < nState2; ++j)
+			p2[j] += p12[i][j];
+}
+
+static float EstimateMutualInfo(const vector<vector<float> > &p12,
+	const vector<float> &p1, const vector<float> &p2) {
+	// Calculate the mutual information
+
+	float muInfo = 0.f;
+	for (size_t i = 0; i < p12.size(); ++i) {
+		for (size_t j = 0; j < p12[i].size(); ++j) {
+			if (p12[i][j] != 0)
+				muInfo += p12[i][j] * logf(p12[i][j] / (p1[i] * p2[j]));
+		}
+	}
+
+	muInfo /= logf(2.f);
+
+	return muInfo;
+}
+
+static float MutualInfo(const vector<float> &v1, const vector<float> &v2) {
+	vector<vector<float> > p12;
+	vector<float> p1, p2;
+	EstimateProbability(v1, v2, p12, p1, p2);
+
+	return EstimateMutualInfo(p12, p1, p2);
+}
+
+void PRF_ComputeFeatureWeights(const SampleDataGrid &sampleDataGrig,
+		const vector<size_t> &P, const vector<size_t> &N,
+		float *alpha, float *beta) {
+		*alpha = 1.f;
+		*beta = 1.f;
+}
+
 void RPF_FilterColorSamples(const SampleDataGrid &sampleDataGrig,
 		const vector<size_t> &P, const vector<size_t> &N,
 		const float alpha, const float beta,
@@ -279,10 +370,10 @@ void RPF_FilterColorSamples(const SampleDataGrid &sampleDataGrig,
 	if (cStandardDeviation.c[2] == 0.f)
 		cStandardDeviation.c[2] = 1.f; // To avoid / 0.f
 	for (size_t j = 0; j < sampleData.sceneFeaturesCount; ++j) {
+		fStandardDeviation[j] = sqrtf(fStandardDeviation[j] / N.size());
 		if (fStandardDeviation[j] == 0.f)
 			fStandardDeviation[j] = 1.f; // To avoid / 0.f
 	}
-
 
 	// Compute the normalized values
 	vector<float> xNormalized(N.size());
@@ -306,8 +397,9 @@ void RPF_FilterColorSamples(const SampleDataGrid &sampleDataGrig,
 	}
 
 	// Filter the colors of samples in pixel P using bilateral filter
-	const float o_2_8 = .02f;
-	const float o_2 = 8.f * o_2_8 / sampleDataGrig.avgSamplesPerPixel;
+	//const float o_2_8 = .02f;
+	//const float o_2 = 8.f * o_2_8 / sampleDataGrig.avgSamplesPerPixel;
+	const float o_2 = .2f;
 
 	for (size_t i = 0; i < P.size(); ++i) {
 		// Calculate the filter weight
@@ -332,7 +424,7 @@ void RPF_FilterColorSamples(const SampleDataGrid &sampleDataGrig,
 				f += sqr(fNormalized[i][k] - fNormalized[j][k]);
 			const float wij_f = expf(c * f);
 
-			const float wij = wij_xy * wij_c * wij_f;
+			const float wij = wij_xy * alpha * wij_c * beta * wij_f;
 			c2[Pi] += wij * c1[N[j]];
 			w += wij;
 		}
@@ -390,8 +482,8 @@ void RPF_Thread(const SampleDataGrid *sampleDataGrig,
 
 				// Compute feature weight
 				// TODO
-				float alpha = 1.f;
-				float beta = 1.f;
+				float alpha, beta;
+				PRF_ComputeFeatureWeights(*sampleDataGrig, P, N, &alpha, &beta);
 
 				// Filter color samples
 				RPF_FilterColorSamples(*sampleDataGrig, P, N, alpha, beta, *c1, *c2);

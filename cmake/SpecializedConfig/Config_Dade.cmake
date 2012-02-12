@@ -20,5 +20,5 @@ SET ( BOOST_LIBRARYDIR         "${BOOST_SEARCH_PATH}" )
 SET ( BOOST_python_LIBRARYDIR  "${BOOST_SEARCH_PATH}" )
 SET ( BOOST_ROOT               "${BOOST_SEARCH_PATH}" )
 
-#set(CMAKE_BUILD_TYPE "Debug")
-set(CMAKE_BUILD_TYPE "Release")
+set(CMAKE_BUILD_TYPE "Debug")
+#set(CMAKE_BUILD_TYPE "Release")
