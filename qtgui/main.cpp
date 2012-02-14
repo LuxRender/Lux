@@ -21,6 +21,7 @@
  ***************************************************************************/
 
 #include <QTranslator>
+#include <clocale>
 
 #include "luxapp.hxx"
 
@@ -37,6 +38,9 @@ int main(int argc, char *argv[])
 		application.installTranslator(&translator);
 */
 	application.init();
+
+	// force C locale
+	setlocale(LC_NUMERIC,"C");
 	
 	if (application.mainwin != NULL)
 		return application.exec();
