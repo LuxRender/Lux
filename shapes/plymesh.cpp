@@ -221,7 +221,7 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 	}
 
 	boost::shared_ptr<Texture<float> > dummytex;
-	bool  sup = params.FindOneBool( "suport", false );
+	bool  sup = params.FindOneBool( "support", false );
 	bool  proj_text = params.FindOneBool( "projection", false );
 	Point  cam = params.FindOnePoint( "cam", (0,0,0) );
 	Mesh *mesh = new Mesh(o2w, reverseOrientation, sup, proj_text, cam, Mesh::ACCEL_AUTO,

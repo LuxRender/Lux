@@ -158,7 +158,7 @@ bool MeshWaldTriangle::Intersect(const Ray &ray, Intersection *isect, bool null_
 	float o0, o1, o2, d0, d1, d2;
 
 //look if shape is a null type
-if (null_shp_isect && mesh->suport) return false;
+if (null_shp_isect && mesh->support) return false;
 ///
 
 	switch (intersectionType) {

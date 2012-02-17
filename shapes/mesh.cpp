@@ -36,7 +36,7 @@ Mesh::Mesh(const Transform &o2w, bool ro, bool sup, bool proj, Point cam_, MeshA
 	bool dmNormalSmooth, bool dmSharpBoundary) : Shape(o2w, ro)
 {
 
-	suport = sup;
+        support = sup;
 	proj_text = proj;
 	if (sup)
 	 proj_text = true;
@@ -221,7 +221,7 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 		switch (concreteSubdivType) {
 			case SUBDIV_LOOP: {
 				// Apply subdivision
-				LoopSubdiv loopsubdiv(ObjectToWorld, reverseOrientation, suport, proj_text, cam,
+                                LoopSubdiv loopsubdiv(ObjectToWorld, reverseOrientation, support, proj_text, cam,
 					ntris, nverts, triVertexIndex, p, uvs,
 					nSubdivLevels, displacementMap,
 					displacementMapScale, displacementMapOffset,
@@ -584,7 +584,7 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 		subdivType = Mesh::SUBDIV_LOOP;
 	}
 
-	bool  sup = params.FindOneBool( "suport", false );
+        bool  sup = params.FindOneBool( "support", false );
 	bool  proj_text = params.FindOneBool( "projection", false );
 	Point  cam = params.FindOnePoint( "cam", (0,0,0) );
 
@@ -608,7 +608,7 @@ Shape *Mesh::CreateShape(const Transform &o2w, bool reverseOrientation, const Pa
 
 	string subdivscheme = params.FindOneString("subdivscheme", "loop");
 	int nsubdivlevels = params.FindOneInt("nsubdivlevels", 0);
-	bool  sup = params.FindOneBool( "suport", false );
+        bool  sup = params.FindOneBool( "support", false );
 	bool  proj_text = params.FindOneBool( "projection", false );
 	Point  cam = params.FindOnePoint( "cam", (0,0,0) );
 	return ::CreateShape( o2w, reverseOrientation, params, accelTypeStr, triTypeStr,
@@ -628,7 +628,7 @@ Shape* Mesh::BaryMesh::CreateShape(const Transform &o2w, bool reverseOrientation
 	if (uvCoordinates == NULL) {
 		uvCoordinates = params.FindFloat("st", &uvCoordinatesCount);
 	}
-	bool  sup = params.FindOneBool( "suport", false );
+        bool  sup = params.FindOneBool( "support", false );
 	bool  proj_text = params.FindOneBool( "projection", false );
 	Point  cam = params.FindOnePoint( "cam", (0,0,0) );
 	return ::CreateShape( o2w, reverseOrientation, params, accelTypeStr, triTypeStr,
@@ -648,7 +648,7 @@ Shape* Mesh::WaldMesh::CreateShape(const Transform &o2w, bool reverseOrientation
 	if (uvCoordinates == NULL) {
 		uvCoordinates = params.FindFloat("st", &uvCoordinatesCount);
 	}
-	bool  sup = params.FindOneBool( "suport", false );
+        bool  sup = params.FindOneBool( "support", false );
 	bool  proj_text = params.FindOneBool( "projection", false );
 	Point  cam = params.FindOnePoint( "cam", (0,0,0) );
 	return ::CreateShape( o2w, reverseOrientation, params, accelTypeStr, triTypeStr,
@@ -673,7 +673,7 @@ Shape* Mesh::LoopMesh::CreateShape(const Transform &o2w, bool reverseOrientation
 
 	string subdivscheme = params.FindOneString("scheme", "loop");
 	int nsubdivlevels = params.FindOneInt("nlevels", 3);
-	bool  sup = params.FindOneBool( "suport", false );
+        bool  sup = params.FindOneBool( "support", false );
 	bool  proj_text = params.FindOneBool( "projection", false );
 	Point  cam = params.FindOnePoint( "cam", (0,0,0) );
 	return ::CreateShape( o2w, reverseOrientation, params, accelTypeStr, triTypeStr,

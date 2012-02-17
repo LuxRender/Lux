@@ -482,7 +482,7 @@ void Scene::Render() {
 	sampPos = 0;
 
 	///////////////////////////////////////////////////////////////
-	load_suport();	
+        load_support();
 	///////////////////////////////////////////////////////////////
 
 	//start the timer
@@ -600,7 +600,7 @@ void Scene::Transmittance(const TsPack *tsp, const Ray &ray,
     volumeIntegrator->Transmittance(tsp, this, ray, sample, NULL, L);
 }
 
-void Scene::load_suport(void) const{
+void Scene::load_support(void) const{
 
 	vector<boost::shared_ptr<Primitive> > objects;
 	Aggregate *aggr = dynamic_cast<Aggregate*>(aggregate.get());

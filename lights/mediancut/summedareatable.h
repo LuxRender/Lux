@@ -8,8 +8,8 @@
  * @brief   HSM Graphical interface: interface controls
  */
 //________________________________________________
-#ifndef SUMMED_AREA_TABLE_
-#define SUMMED_AREA_TABLE_
+#ifndef SUMMEDAREATABLE_H
+#define SUMMEDAREATABLE_H
 #include <stdio.h>
 #include <math.h>
 
@@ -52,4 +52,4 @@ class SummedAreaTable {
 		bool write( void );
 };
 
-#endif
+#endif // SUMMEDAREATABLE_H

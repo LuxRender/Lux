@@ -131,7 +131,7 @@ public:
 	virtual ~LoopSubdiv();
 	virtual float GetScale() const { return Scale; }
 	virtual bool SetScale(float scale) const { Scale = scale; return true; }
-	virtual bool IsSupport() const { return suport; }
+	virtual bool IsSupport() const { return support; }
 	virtual bool GetNormal(Vector *N) const {
 	
 		return true;
@@ -206,7 +206,7 @@ private:
 	// Lotus - a pointer to the refined mesh to avoid double refinement or deletion
 	mutable boost::shared_ptr<Shape> refinedShape;
 
-	bool suport, proj_text;
+	bool support, proj_text;
 	Point cam;
 	mutable float Scale;
 };

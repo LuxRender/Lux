@@ -1,5 +1,5 @@
-#ifndef DEFS_H_
-#define DEFS_H_
+#ifndef DEFS_H
+#define DEFS_H
 
 #include <vector>
 #include <math.h>
@@ -76,6 +76,6 @@ extern MedCutList  	C_MedCut;
 extern MedCutLight 	C_MCLight;
 
 
-#endif
+#endif // DEFS_H
 
 

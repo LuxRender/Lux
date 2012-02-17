@@ -52,7 +52,6 @@ public:
 	virtual bool IsDeltaLight() const { return false; }
 	virtual bool IsEnvironmental() const { return true; }
 	virtual SWCSpectrum Le(const TsPack *tspack, const RayDifferential &r) const;
-	virtual SWCSpectrum Le_Sup(const TsPack *tspack, const RayDifferential &r) const;
 	virtual SWCSpectrum Le(const TsPack *tspack, const Scene *scene,
 		const Ray &r, const Normal &n, BSDF **bsdf, float *pdf,
 		float *pdfDirect) const;

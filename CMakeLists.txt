@@ -510,8 +510,8 @@ SET(lux_integrators_src
 	integrators/single.cpp
 	)
 SET(lux_lights_src
-	lights/summedareatable.cpp
-	lights/mediancut.cpp
+        lights/mediancut/summedareatable.cpp
+        lights/mediancut/mediancut.cpp
 	lights/area.cpp
 	lights/distant.cpp
 	lights/infinite.cpp

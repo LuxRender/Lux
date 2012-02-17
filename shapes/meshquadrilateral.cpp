@@ -279,7 +279,7 @@ bool MeshQuadrilateral::Intersect(const Ray &ray, Intersection *isect, bool null
 		return false;
 
 //look if shape is a null type
-if (null_shp_isect && mesh->suport) return false;
+if (null_shp_isect && mesh->support) return false;
 ///
 	// Get quadrilateral vertices in _p00_, _p10_, _p11_ and _p01_
 	const Point &p00 = mesh->p[idx[0]];

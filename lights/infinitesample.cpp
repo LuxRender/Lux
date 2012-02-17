@@ -29,7 +29,7 @@
 #include "paramset.h"
 #include "reflection/bxdf.h"
 #include "dynload.h"
-#include "mediancut.h"
+#include "./mediancut/mediancut.h"
 
 using namespace lux;
 
@@ -118,7 +118,6 @@ InfiniteAreaLightIS::InfiniteAreaLightIS(const Transform &light2world,
 	EnvironmentMapping *m, float gain, float gamma)
 	: Light(light2world, ns), SPDbase(l)
 {
-	srand ( time(NULL) );
 
 	// Base illuminant SPD
 	SPDbase.Scale(gain);
@@ -134,10 +133,6 @@ InfiniteAreaLightIS::InfiniteAreaLightIS(const Transform &light2world,
 			H = nv = imgdata->getHeight();
 			radianceMap = imgdata->createMIPMap(BILINEAR, 8.f,
 				TEXTURE_REPEAT, 1.f, gamma);
-		std::stringstream al02;
-		al02 << "Mapa de iluminacao criado "  ;
-		luxError(LUX_NOERROR, LUX_INFO, al02.str().c_str());
-
 		} else
 			radianceMap = NULL;
 	}
@@ -167,7 +162,7 @@ InfiniteAreaLightIS::InfiniteAreaLightIS(const Transform &light2world,
 				img[x + y * nu] = 1.f / pdf;
 
 
-			predata[x + y * nu] = img[x + y * nu] * 2.f*PI*PI;
+                        predata[x + y * nu] = img[x + y * nu] * INV_TWOPI * INV_PI;
 
 		}
 	}
@@ -232,20 +227,6 @@ SWCSpectrum InfiniteAreaLightIS::Le(const TsPack *tspack,
 			radianceMap->LookupSpectrum(tspack, s, t);
 	}
 	return SWCSpectrum(tspack, SPDbase);
-}
-
-SWCSpectrum InfiniteAreaLightIS::Le_Sup(const TsPack *tspack,
-	const RayDifferential &r) const
-{
-	// Compute infinite light radiance for direction
-	if (radianceMap != NULL) {
-		Vector wh = Normalize(WorldToLight(r.d));
-		float s, t, dummy;
-		mapping->Map(wh, &s, &t, &dummy);
-		return SWCSpectrum(tspack, SPDbase) *
-			radianceMap->LookupSpectrum(tspack, s, t);
-	} else
-		return SWCSpectrum(tspack, SPDbase);
 }
 
 

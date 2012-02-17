@@ -90,12 +90,11 @@ u_int ARDirectLightingIntegrator::LiInternal(const TsPack *tspack,
 
 			surf_IsSup = (isect.primitive)->IsSupport();
 			if ( !surf_IsSup ) path_t = true; 
-			// Compute direct lighting for suport materials
+                        // Compute direct lighting for support materials
 			if (nLights > 0) {
 
 				const u_int lightGroupCount = scene->lightGroups.size();
 				vector<SWCSpectrum> Ld(lightGroupCount, 0.f);
-				//if (from_IsSup && rayDepth > 0)
 				nContribs += hints.SampleLights(tspack, scene, p, n, wo, bsdf,
 						sample, rayDepth, 1.f, Ld, rayDepth, from_IsSup, surf_IsSup, path_t );
 

@@ -44,7 +44,7 @@ LoopSubdiv::LoopSubdiv(const Transform &o2w, bool ro, bool sup, bool proj, Point
 	displacementMapOffset(dmoffset), displacementMapNormalSmooth(dmnormalsmooth),
 	displacementMapSharpBoundary(dmsharpboundary) {
 
-	suport = sup;
+	support = sup;
 	proj_text = proj;
 	if (sup)
 	 proj_text = true;
@@ -592,7 +592,7 @@ Shape *LoopSubdiv::CreateShape(
 	float displacementMapOffset = params.FindOneFloat("dmoffset", 0.0f);
 	bool displacementMapNormalSmooth = params.FindOneBool("dmnormalsmooth", true);
 	bool displacementMapSharpBoundary = params.FindOneBool("dmsharpboundary", false);
-	bool  sup = params.FindOneBool( "suport", false );
+	bool  sup = params.FindOneBool( "support", false );
 	bool  proj_text = params.FindOneBool( "projection", false );
 	Point  cam = params.FindOnePoint( "cam", (0,0,0) );
 	boost::shared_ptr<Texture<float> > displacementMap;

@@ -52,7 +52,7 @@ public:
 	virtual bool SetScale(float scale) const {std::stringstream ss;
 				ss << "Scale: "<< Scale;
 				luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str()); Scale = scale; return true; }
-	virtual bool IsSupport() const { return suport; }
+        virtual bool IsSupport() const { return support; }
 	virtual bool CanIntersect() const { return false; }
 	virtual void Refine(vector<boost::shared_ptr<Primitive> > &refined,
 		const PrimitiveRefinementHints &refineHints,
@@ -124,7 +124,7 @@ protected:
 	float displacementMapOffset;
 	bool displacementMapNormalSmooth, displacementMapSharpBoundary;
 
-	bool suport, proj_text;
+        bool support, proj_text;
 	Point cam;
 	mutable float Scale;
 };
@@ -150,7 +150,7 @@ public:
 				//luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str()); 
 return Scale; }
 	virtual bool SetScale(float scale) const { Scale = scale; return true; }
-	virtual bool IsSupport() const { return mesh->suport; }
+        virtual bool IsSupport() const { return mesh->support; }
 	virtual bool CanIntersect() const { return true; }
 	virtual bool Intersect(const Ray &ray, Intersection *isect, bool null_shp_isect=false) const;
 	virtual bool IntersectP(const Ray &ray, bool null_shp_isect=false) const;
@@ -258,7 +258,7 @@ public:
 	virtual void GetShadingGeometry(const Transform &obj2world,
             const DifferentialGeometry &dg,
             DifferentialGeometry *dgShading) const;
-	virtual bool IsSupport() const { return mesh->suport; }
+        virtual bool IsSupport() const { return mesh->support; }
 	virtual bool CanSample() const { return true; }
 	virtual float Area() const;
 	virtual void Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const {

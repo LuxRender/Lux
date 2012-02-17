@@ -1,5 +1,5 @@
-#ifndef MEDIANCUT_H_
-#define MEDIANCUT_H_
+#ifndef MEDIANCUT_H
+#define MEDIANCUT_H
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -17,4 +17,4 @@ center (MedCutList  *MedCut, int k);
 void
 MedCutSample(MedCutList  *MedCut, MedCutLight *MCLight, float *data, int k, int w, int h);
 
-#endif
+#endif // MEDIANCUT_H

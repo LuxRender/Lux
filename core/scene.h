@@ -97,7 +97,7 @@ public:
 	void Transmittance(const TsPack *tspack, const Ray &ray,
 		const Sample *sample, SWCSpectrum *const L) const;
 
-	void load_suport(void) const;
+        void load_support(void) const;
 	//Control methods
 	void Start();
 	void Pause();

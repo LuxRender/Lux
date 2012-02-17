@@ -105,10 +105,7 @@ u_int ARPathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 			// Dade - now I know ray.maxt and I can call volumeIntegrator
 			SWCSpectrum Lv;
 			u_int g;
-			//if(pathLength > 0 && old_as)
-				g = scene->volumeIntegrator->Li(tspack, scene, ray, sample, &Lv, &alpha, from_IsSup, path_type);  
-			//else
-			//	g = scene->volumeIntegrator->Li(tspack, scene, ray, sample, &Lv, &alpha, from_IsSup, path_type);
+                        g = scene->volumeIntegrator->Li(tspack, scene, ray, sample, &Lv, &alpha, from_IsSup, path_type);
 
 			if (!Lv.Black()) {
 				L[g] = Lv;
@@ -179,24 +176,20 @@ u_int ARPathIntegrator::Li(const TsPack *tspack, const Scene *scene,
 		const Normal &n = bsdf->dgShading.nn;
 
 
-		// Estimate direct lighting
-//		if(!(!bs_type && pathLength > 0) || as_type) {
+                if (nLights > 0) {
+                        for (u_int i = 0; i < lightGroupCount; ++i) {
+                                Ld[i] = 0.f;
+                                Vd[i] = 0.f;
+                        }
 
-			if (nLights > 0) {
-				for (u_int i = 0; i < lightGroupCount; ++i) {
-					Ld[i] = 0.f;
-					Vd[i] = 0.f;
-				}
+                        nrContribs += hints.SampleLights(tspack, scene, p, n, wo, bsdf,
+                                sample, pathLength, pathThroughput, Ld, pathLength, from_IsSup, to_IsSup, path_type, &Vd);
 
-				nrContribs += hints.SampleLights(tspack, scene, p, n, wo, bsdf,
-					sample, pathLength, pathThroughput, Ld, pathLength, from_IsSup, to_IsSup, path_type, &Vd);
-
-				for (u_int i = 0; i < lightGroupCount; ++i) {
-					L[i] += Ld[i];
-					V[i] += Vd[i] * VContrib;
-				}
-			}
-//		}
+                        for (u_int i = 0; i < lightGroupCount; ++i) {
+                                L[i] += Ld[i];
+                                V[i] += Vd[i] * VContrib;
+                        }
+                }
 
 		// Sample BSDF to get new path direction
 		Vector wi;
