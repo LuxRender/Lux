@@ -28,18 +28,19 @@
 #include "film.h" // for Film
 #include "specularreflection.h"
 #include "fresnelnoop.h"
+#include "singlebsdf.h"
 #include "paramset.h"
 #include "dynload.h"
+#include "motionsystem.h"
 
 using namespace lux;
 
 // OrthographicCamera Definitions
-OrthoCamera::OrthoCamera(const Transform &world2camStart,
-	const Transform &world2camEnd,
+OrthoCamera::OrthoCamera(const MotionSystem &world2cam,
 	const float Screen[4], float hither, float yon,
 	float sopen, float sclose, int sdist, float lensr,
 	float focald, bool autofocus, Film *f)
-	: ProjectiveCamera(world2camStart, world2camEnd,
+	: ProjectiveCamera(world2cam, 
 		Orthographic(hither, yon), Screen, hither, yon, sopen, sclose,
 		sdist, lensr, focald, f), autoFocus(autofocus)
 {
@@ -51,7 +52,7 @@ OrthoCamera::OrthoCamera(const Transform &world2camStart,
 
 void OrthoCamera::SampleMotion(float time)
 {
-	if (!CameraMotion.isActive)
+	if (CameraMotion.IsStatic())
 		return;
 
 	// call base method to sample transform
@@ -60,7 +61,7 @@ void OrthoCamera::SampleMotion(float time)
 	normal = CameraToWorld(Normal(0,0,1));
 }
 
-void OrthoCamera::AutoFocus(Scene* scene)
+void OrthoCamera::AutoFocus(const Scene &scene)
 {
 	if (autoFocus) {
 		std::stringstream ss;
@@ -85,7 +86,7 @@ void OrthoCamera::AutoFocus(Scene* scene)
 		CameraToWorld(ray, &ray);
 
 		Intersection isect;
-		if (scene->Intersect(ray, &isect))
+		if (scene.Intersect(ray, &isect))
 			FocalDistance = ray.maxt;
 		else
 			LOG(LUX_WARNING, LUX_NOERROR) <<
@@ -96,9 +97,9 @@ void OrthoCamera::AutoFocus(Scene* scene)
 	}
 }
 
-bool OrthoCamera::Sample_W(const TsPack *tspack, const Scene *scene,
-	float u1, float u2, float u3, BSDF **bsdf, float *pdf,
-	SWCSpectrum *We) const
+bool OrthoCamera::SampleW(MemoryArena &arena, const SpectrumWavelengths &sw,
+	const Scene &scene, float u1, float u2, float u3, BSDF **bsdf,
+	float *pdf, SWCSpectrum *We) const
 {
 	Point psC(RasterToCamera(Point(u1, u2, 0.f)));
 	psC.z = 0.f;
@@ -106,16 +107,18 @@ bool OrthoCamera::Sample_W(const TsPack *tspack, const Scene *scene,
 	DifferentialGeometry dg(ps, normal, CameraToWorld(Vector(1, 0, 0)),
 		CameraToWorld(Vector(0, 1, 0)), Normal(0, 0, 0),
 		Normal(0, 0, 0), 0, 0, NULL);
-	*bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dg, normal,
-		ARENA_ALLOC(tspack->arena, SpecularReflection)(SWCSpectrum(1.f),
-		ARENA_ALLOC(tspack->arena, FresnelNoOp)(), 0.f, 0.f), NULL, NULL);
+	const Volume *v = GetVolume();
+	*bsdf = ARENA_ALLOC(arena, SingleBSDF)(dg, normal,
+		ARENA_ALLOC(arena, SpecularReflection)(SWCSpectrum(1.f),
+		ARENA_ALLOC(arena, FresnelNoOp)(), 0.f, 0.f), v, v);
 	*pdf = posPdf;
-	*We = SWCSpectrum(posPdf);
+	*We = SWCSpectrum(1.f);
 	return true;
 }
 
-bool OrthoCamera::Sample_W(const TsPack *tspack, const Scene *scene,
-	const Point &p, const Normal &n, float u1, float u2, float u3,
+bool OrthoCamera::SampleW(MemoryArena &arena, const SpectrumWavelengths &sw,
+	const Scene &scene, const Point &p, const Normal &n,
+	float u1, float u2, float u3,
 	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *We) const
 {
 	return false;
@@ -142,14 +145,20 @@ void OrthoCamera::ClampRay(Ray &ray) const
 
 BBox OrthoCamera::Bounds() const
 {
-	BBox bound(Point(-1, -1, 0), Point(1, 1, 0));
-	bound = WorldToScreen.GetInverse()(bound);
+	BBox orig_bound(Point(-1, -1, 0), Point(1, 1, 0));
+	// TODO - improve this
+	BBox bound;
+	for (int i = 1024; i >= 0; i--) {
+		// ugly hack, but last thing we do is to sample StartTime, so should be ok
+		const_cast<OrthoCamera*>(this)->SampleMotion(Lerp(static_cast<float>(i) / 1024.f, CameraMotion.StartTime(), CameraMotion.EndTime()));
+		bound = Union(bound, WorldToScreen.GetInverse()(orig_bound));
+	}
 	bound.Expand(MachineEpsilon::E(bound));
 	return bound;
 }
 
-Camera* OrthoCamera::CreateCamera(const Transform &world2camStart,
-	const Transform &world2camEnd, const ParamSet &params, Film *film)
+Camera* OrthoCamera::CreateCamera(const MotionSystem &world2cam,
+	const ParamSet &params, Film *film)
 {
 	// Extract common camera parameters from _ParamSet_
 	float hither = max(1e-4f, params.FindOneFloat("hither", 1e-3f));
@@ -189,7 +198,7 @@ Camera* OrthoCamera::CreateCamera(const Transform &world2camStart,
 	const float *sw = params.FindFloat("screenwindow", &swi);
 	if (sw && swi == 4)
 		memcpy(screen, sw, 4*sizeof(float));
-	return new OrthoCamera(world2camStart, world2camEnd, screen, hither,
+	return new OrthoCamera(world2cam, screen, hither,
 		yon, shutteropen, shutterclose, shutterdist, lensradius,
 		focaldistance, autofocus, film);
 }

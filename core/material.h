@@ -25,6 +25,7 @@
 // material.h*
 #include "lux.h"
 #include "spectrum.h"
+
 namespace lux
 {
 
@@ -45,27 +46,24 @@ struct CompositingParams {
 class Material  {
 public:
 	// Material Interface
-	Material();
-	virtual ~Material();
+	Material(const ParamSet &mp, const bool hasBumpMap = true);
+	virtual ~Material() { }
 
-	void InitGeneralParams(const ParamSet &mp);
-
-	virtual BSDF *GetBSDF(const TsPack *tspack,
-		const DifferentialGeometry &dgGeom,
-		const DifferentialGeometry &dgShading,
-		const Volume *exterior, const Volume *interior) const = 0;
-	void Bump(const TsPack *tspack,
-		const boost::shared_ptr<Texture<float> > &d,
+	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
+		const Intersection &isect,
+		const DifferentialGeometry &dgShading) const = 0;
+	void Bump(const SpectrumWavelengths &sw,
 		const Normal &nGeom, DifferentialGeometry *dgBump) const;
-	virtual void GetShadingGeometry(const TsPack *tspack,
-		const Normal &nGeom, DifferentialGeometry *dgBump) const { }
+	virtual void GetShadingGeometry(const SpectrumWavelengths &sw,
+		const Normal &nGeom, DifferentialGeometry *dgBump) const { 
+		if (bumpMap)
+			Bump(sw, nGeom, dgBump);
+	}
 
-	static void FindCompositingParams(const ParamSet &mp, CompositingParams *cp);
-
-	float bumpmapSampleDistance;
-	CompositingParams *compParams;
+	boost::shared_ptr<Texture<float> > bumpMap;
 	boost::shared_ptr<Texture<SWCSpectrum> > Sc;
-
+	float bumpmapSampleDistance;
+	CompositingParams compParams;
 };
 
 }//namespace lux

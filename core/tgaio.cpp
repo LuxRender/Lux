@@ -25,6 +25,14 @@
 #include "error.h"
 #include "color.h"
 
+#include <cstring>
+using std::memset;
+#include <cstdio>
+using std::FILE;
+using std::fopen;
+using std::fputc;
+using std::fclose;
+
 using namespace lux;
 
 namespace lux
@@ -37,9 +45,7 @@ void WriteTargaImage(int channeltype, bool savezbuf, const string &name, vector<
 	// Open file
 	FILE* tgaFile = fopen(name.c_str(),"wb");
 	if (!tgaFile) {
-		std::stringstream ss;
-		ss<< "Cannot open file '"<<name<<"' for output";
-		luxError(LUX_SYSTEM, LUX_SEVERE, ss.str().c_str());
+		LOG( LUX_SEVERE,LUX_SYSTEM)<< "Cannot open file '"<<name<<"' for output";
 		return;
 	}
 

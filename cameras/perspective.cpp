@@ -26,7 +26,8 @@
 #include "mc.h"
 #include "scene.h" // for Intersection
 #include "film.h" // for Film
-#include "reflection/bxdf.h"
+#include "bxdf.h"
+#include "singlebsdf.h"
 #include "light.h"
 #include "paramset.h"
 #include "dynload.h"
@@ -48,10 +49,11 @@ public:
 		return (flags & (BSDF_REFLECTION | BSDF_DIFFUSE)) ==
 			(BSDF_REFLECTION | BSDF_DIFFUSE) ? 1U : 0U;
 	}
-	virtual bool Sample_f(const TsPack *tspack, const Vector &woW, Vector *wiW,
-		float u1, float u2, float u3, SWCSpectrum *const f_, float *pdf,
-		BxDFType flags = BSDF_ALL, BxDFType *sampledType = NULL,
-		float *pdfBack = NULL, bool reverse = false) const {
+	virtual bool SampleF(const SpectrumWavelengths &sw, const Vector &woW,
+		Vector *wiW, float u1, float u2, float u3,
+		SWCSpectrum *const f_, float *pdf, BxDFType flags = BSDF_ALL,
+		BxDFType *sampledType = NULL, float *pdfBack = NULL,
+		bool reverse = false) const {
 		if (!reverse || NumComponents(flags) == 0)
 			return false;
 		// Don't transform directly in world coordinates
@@ -67,12 +69,12 @@ public:
 		*pdf = 1.f / (camera.Apixel * cosi2 * cosi);
 		if (pdfBack)
 			*pdfBack = 0.f;
-		*f_ = SWCSpectrum(*pdf / cosi);
+		*f_ = SWCSpectrum(1.f);
 		if (sampledType)
 			*sampledType = BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE);
 		return true;
 	}
-	virtual float Pdf(const TsPack *tspack, const Vector &woW,
+	virtual float Pdf(const SpectrumWavelengths &sw, const Vector &woW,
 		const Vector &wiW, BxDFType flags = BSDF_ALL) const {
 		const Vector wi(camera.WorldToCamera(wiW));
 		const float cosi = wi.z;
@@ -88,8 +90,8 @@ public:
 		}
 		return 0.f;
 	}
-	virtual SWCSpectrum f(const TsPack *tspack, const Vector &woW,
-		const Vector &wiW, BxDFType flags = BSDF_ALL) const {
+	virtual SWCSpectrum F(const SpectrumWavelengths &sw, const Vector &woW,
+		const Vector &wiW, bool reverse, BxDFType flags = BSDF_ALL) const {
 		const Vector wo(camera.WorldToCamera(woW));
 		const float coso = wo.z;
 		if (NumComponents(flags) == 1 && coso > 0.f) {
@@ -99,15 +101,17 @@ public:
 			if (pO.x >= camera.xStart && pO.x < camera.xEnd &&
 				pO.y >= camera.yStart && pO.y < camera.yEnd) {
 				const float coso2 = coso * coso;
-				return SWCSpectrum(1.f / (camera.Apixel * coso2 * coso2));
+				return SWCSpectrum(1.f / (camera.Apixel * coso * coso2));
 			}
 		}
 		return SWCSpectrum(0.f);
 	}
-	virtual SWCSpectrum rho(const TsPack *tspack,
+	virtual SWCSpectrum rho(const SpectrumWavelengths &sw,
 		BxDFType flags = BSDF_ALL) const { return SWCSpectrum(1.f); }
-	virtual SWCSpectrum rho(const TsPack *tspack, const Vector &woW,
-		BxDFType flags = BSDF_ALL) const { return SWCSpectrum(1.f); }
+	virtual SWCSpectrum rho(const SpectrumWavelengths &sw,
+		const Vector &woW, BxDFType flags = BSDF_ALL) const {
+		return SWCSpectrum(1.f);
+	}
 
 protected:
 	// PerspectiveBSDF Private Methods
@@ -118,13 +122,12 @@ protected:
 };
 
 // PerspectiveCamera Method Definitions
-PerspectiveCamera::PerspectiveCamera(const Transform &world2camStart,
-		const Transform &world2camEnd,
+PerspectiveCamera::PerspectiveCamera(const MotionSystem &world2cam,
 		const float Screen[4], float hither, float yon,
 		float sopen, float sclose, int sdist,
 		float lensr, float focald, bool autofocus,
 		float fov1, int dist, int sh, int pow, Film *f)
-	: ProjectiveCamera(world2camStart, world2camEnd,
+	: ProjectiveCamera(world2cam,
 	    Perspective(fov1, hither, yon),
 		Screen, hither, yon, sopen, sclose, sdist,
 		lensr, focald, f),
@@ -152,11 +155,13 @@ PerspectiveCamera::PerspectiveCamera(const Transform &world2camStart,
 	const float yPixelHeight = templength * (Screen[3] - Screen[2]) / 2.f *
 		(yEnd - yStart) / f->yResolution;
 	Apixel = xPixelWidth * yPixelHeight;
+
+	AddFloatAttribute(*this, "fov", "Field of View in radians", M_PI / 2.f, &PerspectiveCamera::fov);
 }
 
 void PerspectiveCamera::SampleMotion(float time)
 {
-	if (!CameraMotion.isActive)
+	if (CameraMotion.IsStatic())
 		return;
 
 	// call base method to sample transform
@@ -166,7 +171,7 @@ void PerspectiveCamera::SampleMotion(float time)
 	normal = CameraToWorld(Normal(0,0,1));
 }
 
-void PerspectiveCamera::AutoFocus(Scene* scene)
+void PerspectiveCamera::AutoFocus(const Scene &scene)
 {
 	if (autoFocus) {
 		std::stringstream ss;
@@ -192,7 +197,7 @@ void PerspectiveCamera::AutoFocus(Scene* scene)
 		CameraToWorld(ray, &ray);
 
 		Intersection isect;
-		if (scene->Intersect(ray, &isect))
+		if (scene.Intersect(ray, &isect))
 			FocalDistance = ray.maxt;
 		else
 			LOG(LUX_WARNING, LUX_NOERROR) <<
@@ -203,7 +208,8 @@ void PerspectiveCamera::AutoFocus(Scene* scene)
 	}
 }
 
-bool PerspectiveCamera::Sample_W(const TsPack *tspack, const Scene *scene,
+bool PerspectiveCamera::SampleW(MemoryArena &arena,
+	const SpectrumWavelengths &sw, const Scene &scene,
 	float u1, float u2, float u3, BSDF **bsdf, float *pdf,
 	SWCSpectrum *We) const
 {
@@ -217,13 +223,15 @@ bool PerspectiveCamera::Sample_W(const TsPack *tspack, const Scene *scene,
 	DifferentialGeometry dg(ps, normal, CameraToWorld(Vector(1, 0, 0)),
 		CameraToWorld(Vector(0, 1, 0)), Normal(0, 0, 0),
 		Normal(0, 0, 0), 0, 0, NULL);
-	*bsdf = ARENA_ALLOC(tspack->arena, PerspectiveBSDF)(dg, normal,
-		NULL, NULL, *this, LensRadius > 0.f, psC);
+	const Volume *v = GetVolume();
+	*bsdf = ARENA_ALLOC(arena, PerspectiveBSDF)(dg, normal,
+		v, v, *this, LensRadius > 0.f, psC);
 	*pdf = posPdf;
-	*We = SWCSpectrum(posPdf);
+	*We = SWCSpectrum(1.f);
 	return true;
 }
-bool PerspectiveCamera::Sample_W(const TsPack *tspack, const Scene *scene,
+bool PerspectiveCamera::SampleW(MemoryArena &arena,
+	const SpectrumWavelengths &sw, const Scene &scene,
 	const Point &p, const Normal &n, float u1, float u2, float u3,
 	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *We) const
 {
@@ -235,19 +243,27 @@ bool PerspectiveCamera::Sample_W(const TsPack *tspack, const Scene *scene,
 	}
 	Point ps = CameraToWorld(psC);
 	DifferentialGeometry dg(ps, normal, CameraToWorld(Vector(1, 0, 0)), CameraToWorld(Vector(0, 1, 0)), Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
-	*bsdf = ARENA_ALLOC(tspack->arena, PerspectiveBSDF)(dg, normal,
-		NULL, NULL, *this, LensRadius > 0.f, psC);
+	const Volume *v = GetVolume();
+	*bsdf = ARENA_ALLOC(arena, PerspectiveBSDF)(dg, normal,
+		v, v, *this, LensRadius > 0.f, psC);
 	*pdf = posPdf;
 	*pdfDirect = posPdf;
-	*We = SWCSpectrum(posPdf);
+	*We = SWCSpectrum(1.f);
 	return true;
 }
 
 BBox PerspectiveCamera::Bounds() const
 {
-	BBox bound(Point(-LensRadius, -LensRadius, 0.f),
-		Point(LensRadius, LensRadius, 0.f));
-	bound = CameraToWorld(bound);
+	float lensr = max(LensRadius, 0.f);
+	BBox orig_bound(Point(-lensr, -lensr, 0.f),
+		Point(lensr, lensr, 0.f));
+	// TODO - improve this
+	BBox bound;
+	for (int i = 1024; i >= 0; i--) {
+		// ugly hack, but last thing we do is to sample StartTime, so should be ok
+		const_cast<PerspectiveCamera*>(this)->SampleMotion(Lerp(static_cast<float>(i) / 1024.f, CameraMotion.StartTime(), CameraMotion.EndTime()));
+		bound = Union(bound, CameraToWorld(orig_bound));
+	}
 	bound.Expand(MachineEpsilon::E(bound));
 	return bound;
 }
@@ -314,8 +330,8 @@ void PerspectiveCamera::SampleLens(float u1, float u2, float *dx, float *dy) con
 	*dy = r * sinf(theta);
 }
 
-Camera* PerspectiveCamera::CreateCamera(const Transform &world2camStart,
-	const Transform &world2camEnd, const ParamSet &params, Film *film)
+Camera* PerspectiveCamera::CreateCamera(const MotionSystem &world2cam,
+	const ParamSet &params, Film *film)
 {
 	// Extract common camera parameters from _ParamSet_
 	float hither = max(1e-4f, params.FindOneFloat("hither", 1e-3f));
@@ -380,7 +396,7 @@ Camera* PerspectiveCamera::CreateCamera(const Transform &world2camStart,
 	int shape = params.FindOneInt("blades", 0);
 	int power = params.FindOneInt("power", 3);
 
-	return new PerspectiveCamera(world2camStart, world2camEnd, screen,
+	return new PerspectiveCamera(world2cam, screen,
 		hither, yon, shutteropen, shutterclose, shutterdist, lensradius,
 		focaldistance, autofocus, fov, distribution, shape, power,
 		film);

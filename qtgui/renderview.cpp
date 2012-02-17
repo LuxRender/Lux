@@ -22,17 +22,15 @@
 
 #include "renderview.hxx"
 #include "api.h"
+#include "error.h"
+#include "guiutil.h"
 
 #include <iostream>
+#include <algorithm>
 
 using namespace std;
 
-RenderView::RenderView(QWidget *parent, bool opengl) : QGraphicsView(parent) {
-#if !defined(__APPLE__)
-    if (opengl)
-		setViewport(new QGLWidget);
-#endif
-
+RenderView::RenderView(QWidget *parent) : QGraphicsView(parent) {
 	renderscene = new QGraphicsScene();
 	renderscene->setBackgroundBrush(QColor(127,127,127));
 	luxlogo = renderscene->addPixmap(QPixmap(":/images/luxlogo_bg.png"));
@@ -42,6 +40,7 @@ RenderView::RenderView(QWidget *parent, bool opengl) : QGraphicsView(parent) {
 	centerOn(luxlogo);
 	setScene(renderscene);
 	zoomfactor = 100.0f;
+	overlayStats = false;
 }
 
 RenderView::~RenderView () {
@@ -53,27 +52,36 @@ RenderView::~RenderView () {
 void RenderView::copyToClipboard()
 {
 	if ((luxStatistics("sceneIsReady") || luxStatistics("filmIsReady")) && luxfb->isVisible()) {
-		int w = luxStatistics("filmXres"), h = luxStatistics("filmYres");
-		unsigned char* fb = luxFramebuffer();
-		QImage image = QImage(fb, w, h, QImage::Format_RGB888);
+		QImage image = getFramebufferImage(overlayStats);
+		if (image.isNull()) {
+			LOG(LUX_ERROR, LUX_SYSTEM) << tr("Error getting framebuffer").toLatin1().data();
+			return;
+		}
+
 		QClipboard *clipboard = QApplication::clipboard();
 		// QT assumes 32bpp images for clipboard (DIBs)
+		if (!clipboard) {
+			LOG(LUX_ERROR, LUX_SYSTEM) << tr("Copy to clipboard failed, unable to open clipboard").toLatin1().data();
+			return;
+		}
 		clipboard->setImage(image.convertToFormat(QImage::Format_RGB32));
 	}
 }
 
 void RenderView::reload () {
 	if (luxStatistics("sceneIsReady") || luxStatistics("filmIsReady")) {
-		int w = luxStatistics("filmXres"), h = luxStatistics("filmYres");
-		unsigned char* fb = luxFramebuffer();
-
-		if (!fb)
-			return;
+		int w = luxGetIntAttribute("film", "xResolution");
+		int h = luxGetIntAttribute("film", "yResolution");
 			
+		QImage image = getFramebufferImage(overlayStats);
+
+		if (image.isNull())
+			return;
+
 		if (luxlogo->isVisible ())
 			luxlogo->hide ();
-
-		luxfb->setPixmap(QPixmap::fromImage(QImage(fb, w, h, w * 3, QImage::Format_RGB888)));
+		
+		luxfb->setPixmap(QPixmap::fromImage(image));
 
 		if (!luxfb->isVisible()) {
 			resetTransform ();
@@ -124,11 +132,20 @@ void RenderView::wheelEvent (QWheelEvent* event) {
    if (!zoomEnabled)
 	   return;
 
-	qreal factor = 1.2;
-	if (event->delta() < 0)
-		factor = 1.0 / factor;
-	zoomfactor *= factor;
-	scale(factor, factor);
+	const float zoomsteps[] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12.5, 17, 25, 33, 45, 50, 67, 75, 100, 
+		125, 150, 175, 200, 250, 300, 400, 500, 600, 700, 800, 1000, 1200, 1600 };
+	
+	size_t numsteps = sizeof(zoomsteps) / sizeof(*zoomsteps);
+
+	size_t index = min<size_t>(std::upper_bound(zoomsteps, zoomsteps + numsteps, zoomfactor) - zoomsteps, numsteps-1);
+	if (event->delta() < 0) {
+		// if zoomfactor is equal to zoomsteps[index-1] we need index-2
+		while (index > 0 && zoomsteps[--index] == zoomfactor);		
+	}
+	zoomfactor = zoomsteps[index];
+
+	resetTransform();
+	scale(zoomfactor / 100.f, zoomfactor / 100.f);
 
 	emit viewChanged ();
 }
@@ -145,8 +162,8 @@ void RenderView::mousePressEvent (QMouseEvent *event) {
 				setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
 				fitInView(renderscene->sceneRect(), Qt::KeepAspectRatio);
 				// compute correct zoomfactor
-				origw = (luxStatistics("filmXres")/width());
-				origh = (luxStatistics("filmYres")/height());
+				origw = (qreal)luxGetIntAttribute("film", "xResolution")/(qreal)width();
+				origh = (qreal)luxGetIntAttribute("film", "yResolution")/(qreal)height();
 				if (origh > origw)
 					zoomfactor = 100.0f/(origh);
 				else

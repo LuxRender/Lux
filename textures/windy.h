@@ -38,21 +38,21 @@ public:
 	// WindyTexture Public Methods
 	WindyTexture(TextureMapping3D *map) { mapping = map; }
 	virtual ~WindyTexture() { delete mapping; }
-	virtual float Evaluate(const TsPack *tspack, const DifferentialGeometry &dg) const {
-		Vector dpdx, dpdy;
-		Point P = mapping->MapDxy(dg, &dpdx, &dpdy);
-		float windStrength = FBm(.1f * P, .1f * dpdx, .1f * dpdy, .5f, 3);
-		float waveHeight = FBm(P, dpdx, dpdy, .5f, 6);
+	virtual float Evaluate(const SpectrumWavelengths &sw,
+		const DifferentialGeometry &dg) const {
+		Point P(mapping->Map(dg));
+		float windStrength = FBm(.1f * P, 0.f, 0.f, .5f, 3);
+		float waveHeight = FBm(P, 0.f, 0.f, .5f, 6);
 		return fabsf(windStrength) * waveHeight;
 	}
 	virtual float Y() const { return .5f; }
-	virtual void GetDuv(const TsPack *tspack,
+	virtual void GetDuv(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg, float delta,
 		float *du, float *dv) const {
 		//FIXME: Generic derivative computation, replace with exact
 		DifferentialGeometry dgTemp = dg;
 		// Calculate bump map value at intersection point
-		const float base = Evaluate(tspack, dg);
+		const float base = Evaluate(sw, dg);
 
 		// Compute offset positions and evaluate displacement texture
 		const Point origP(dgTemp.p);
@@ -64,7 +64,7 @@ public:
 		dgTemp.p += uu * dgTemp.dpdu;
 		dgTemp.u += uu;
 		dgTemp.nn = Normalize(origN + uu * dgTemp.dndu);
-		*du = (Evaluate(tspack, dgTemp) - base) / uu;
+		*du = (Evaluate(sw, dgTemp) - base) / uu;
 
 		// Shift _dgTemp_ _dv_ in the $v$ direction and calculate value
 		const float vv = delta / dgTemp.dpdv.Length();
@@ -72,7 +72,15 @@ public:
 		dgTemp.u = origU;
 		dgTemp.v += vv;
 		dgTemp.nn = Normalize(origN + vv * dgTemp.dndv);
-		*dv = (Evaluate(tspack, dgTemp) - base) / vv;
+		*dv = (Evaluate(sw, dgTemp) - base) / vv;
+	}
+	virtual void GetMinMaxFloat(float *minValue, float *maxValue) const {
+		// FBm is computed as a geometric series Sum(Ar^k) with A ~ [-1, 1]
+		const float geomsum_wind = (1.f - powf(0.5f, 3)) / (1.f - 0.5f);
+		const float geomsum_wave = (1.f - powf(0.5f, 6)) / (1.f - 0.5f);
+		// TODO - find better bounds
+		*maxValue = geomsum_wind * geomsum_wave / 4.f;
+		*minValue = -*maxValue;
 	}
 	
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const ParamSet &tp);
@@ -84,8 +92,22 @@ private:
 // WindyTexture Method Definitions
 inline Texture<float> * WindyTexture::CreateFloatTexture(const Transform &tex2world,
 	const ParamSet &tp) {
+	TextureMapping3D *imap;
+	// Read mapping coordinates
+	string coords = tp.FindOneString("coordinates", "global");
+	if (coords == "global")
+		imap = new GlobalMapping3D(tex2world);
+	else if (coords == "local")
+		imap = new LocalMapping3D(tex2world);
+	else if (coords == "uv")
+		imap = new UVMapping3D(tex2world);
+	else if (coords == "globalnormal")
+		imap = new GlobalNormalMapping3D(tex2world);
+	else if (coords == "localnormal")
+		imap = new LocalNormalMapping3D(tex2world);
+	else
+		imap = new GlobalMapping3D(tex2world);
 	// Apply texture specified transformation option for 3D mapping
-	IdentityMapping3D *imap = new IdentityMapping3D(tex2world);
 	imap->Apply3DTextureMappingOptions(tp);
 	return new WindyTexture(imap);
 }

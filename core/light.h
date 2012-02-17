@@ -41,44 +41,33 @@ public:
 		: nSamples(max(1U, ns)), LightToWorld(l2w),
 		  WorldToLight(l2w.GetInverse()) {
 		if (WorldToLight.HasScale())
-			luxError(LUX_UNIMPLEMENT,LUX_DEBUG,"Scaling detected in world-to-light transformation! Some lights might not support it yet.");
+			LOG(LUX_DEBUG,LUX_UNIMPLEMENT)<< "Scaling detected in world-to-light transformation! Some lights might not support it yet.";
 		havePortalShape = false;
 		nrPortalShapes = 0;
 		PortalArea = 0;
 	}
-	virtual float Power(const Scene *scene) const = 0;
+	const Volume *GetVolume() const { return volume.get(); }
+	void SetVolume(boost::shared_ptr<Volume> &v) {
+		// Create a temporary to increase shared count
+		// The assignment is just a swap
+		boost::shared_ptr<Volume> vol(v);
+		volume = vol;
+	}
+	virtual float Power(const Scene &scene) const = 0;
 	virtual bool IsDeltaLight() const = 0;
 	virtual bool IsEnvironmental() const = 0;
 	virtual float DirProb(Vector N) const {return 1.f;}
-	virtual SWCSpectrum Le(const TsPack *tspack,
-		const RayDifferential &r) const;
-	virtual SWCSpectrum Le(const TsPack *tspack, const Scene *scene,
-		const Ray &r, const Normal &n, BSDF **bsdf, float *pdf,
-		float *pdfDirect) const;
-	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Point &p,
-		float u1, float u2, float u3, Vector *wi, float *pdf,
-		VisibilityTester *vis) const = 0;
-	virtual float Pdf(const TsPack *tspack, const Point &p,
-		const Vector &wi) const = 0;
-	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Point &p,
-		const Normal &n, float u1, float u2, float u3, Vector *wi,
-		float *pdf, VisibilityTester *visibility) const {
-		return Sample_L(tspack, p, u1, u2, u3, wi, pdf, visibility);
-	}
-	virtual float Pdf(const TsPack *tspack, const Point &p, const Normal &n,
-		const Vector &wi) const { return Pdf(tspack, p, wi); }
-	virtual float Pdf(const TsPack *tspack, const Point &p, const Normal &n,
-		const Point &po, const Normal &ns) const = 0;
-	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Scene *scene,
-		float u1, float u2, float u3, float u4, Ray *ray,
-		float *pdf) const = 0;
-	virtual bool Sample_L(const TsPack *tspack, const Scene *scene,
+	virtual bool Le(const Scene &scene, const Sample &sample, const Ray &r,
+		BSDF **bsdf, float *pdf, float *pdfDirect,
+		SWCSpectrum *L) const { return false; }
+	virtual float Pdf(const Point &p, const DifferentialGeometry &dg) const = 0;
+	virtual bool SampleL(const Scene &scene, const Sample &sample,
 		float u1, float u2, float u3, BSDF **bsdf, float *pdf,
 		SWCSpectrum *L) const = 0;
-	virtual bool Sample_L(const TsPack *tspack, const Scene *scene,
-		const Point &p, const Normal &n, float u1, float u2, float u3,
+	virtual bool SampleL(const Scene &scene, const Sample &sample,
+		const Point &p, float u1, float u2, float u3,
 		BSDF **bsdf, float *pdf, float *pdfDirect,
-		VisibilityTester *visibility, SWCSpectrum *L) const = 0;
+		SWCSpectrum *L) const = 0;
 	const LightRenderingHints *GetRenderingHints() const { return &hints; }
 
 	void AddPortalShape(boost::shared_ptr<Primitive> &shape);
@@ -95,42 +84,8 @@ protected:
 	LightRenderingHints hints;
 public: // Put last for better data alignment
 	bool havePortalShape;
-};
-
-struct VisibilityTester {
-	// VisibilityTester Public Methods
-
-	void SetSegment(const Point &p1, const Point & p2, float time,
-		bool clip = false) {
-		cameraClip = clip;
-		// Dade - need to scale the RAY_EPSILON value because the ray direction
-		// is not normalized (in order to avoid light leaks: bug #295)
-		const Vector w = p2 - p1;
-		const float length = w.Length();
-		const float shadowRayEpsilon = min(length,
-			max(MachineEpsilon::E(p1), MachineEpsilon::E(length)));
-		r = Ray(p1, w / length, shadowRayEpsilon,
-			length - shadowRayEpsilon);
-		r.time = time;
-		volume = NULL;
-	}
-
-	void SetRay(const Point &p, const Vector & w, float time) {
-		r = Ray(p, Normalize(w));
-		r.time = time;
-		cameraClip = false;
-		volume = NULL;
-	}
-
-	bool Unoccluded(const Scene * scene, bool null_shapes_isect = false) const;
-	bool TestOcclusion(const TsPack *tspack, const Scene *scene,
-		SWCSpectrum *f, bool null_shapes_isect = false, float *pdf = NULL, float *pdfR = NULL) const;
-	// modulates the supplied SWCSpectrum with the transmittance along the ray
-	void Transmittance(const TsPack *tspack, const Scene * scene,
-		const Sample *sample, SWCSpectrum *const L) const;
-	Ray r;
-	bool cameraClip;
-	const Volume *volume;
+protected:
+	boost::shared_ptr<Volume> volume;
 };
 
 class AreaLight : public Light {
@@ -141,36 +96,20 @@ public:
 		float pow, float e, SampleableSphericalFunction *ssf,
 		u_int ns, const boost::shared_ptr<Primitive> &prim);
 	virtual ~AreaLight();
-	virtual SWCSpectrum L(const TsPack *tspack,
-		const DifferentialGeometry &dg, const Vector& w) const;
-	virtual SWCSpectrum L(const TsPack *tspack, const Ray &ray,
-		const DifferentialGeometry &dg, const Normal &n, BSDF **bsdf,
-		float *pdf, float *pdfDirect) const;
-	virtual float Power(const Scene *scene) const;
+	virtual SWCSpectrum L(const Sample &sample, const Ray &ray,
+		const DifferentialGeometry &dg, BSDF **bsdf, float *pdf,
+		float *pdfDirect) const;
+	virtual float Power(const Scene &scene) const;
 	virtual bool IsDeltaLight() const { return false; }
 	virtual bool IsEnvironmental() const { return false; }
-	virtual float Pdf(const TsPack *tspack, const Point &,
-		const Vector &) const;
-	virtual float Pdf(const TsPack *, const Point &, const Normal &,
-		const Vector &) const;
-	virtual float Pdf(const TsPack *tspack, const Point &p, const Normal &n,
-		const Point &po, const Normal &ns) const;
-	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Point &P,
-		const Normal &N, float u1, float u2, float u3, Vector *wo,
-		float *pdf, VisibilityTester *visibility) const;
-	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Point &P,
-		float u1, float u2, float u3, Vector *wo, float *pdf,
-		VisibilityTester *visibility) const;
-	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Scene *scene,
-		float u1, float u2, float u3, float u4, Ray *ray,
-		float *pdf) const;
-	virtual bool Sample_L(const TsPack *tspack, const Scene *scene,
+	virtual float Pdf(const Point &p, const DifferentialGeometry &dg) const;
+	virtual bool SampleL(const Scene &scene, const Sample &sample,
 		float u1, float u2, float u3, BSDF **bsdf, float *pdf,
 		SWCSpectrum *Le) const;
-	virtual bool Sample_L(const TsPack *tspack, const Scene *scene,
-		const Point &p, const Normal &n, float u1, float u2, float u3,
+	virtual bool SampleL(const Scene &scene, const Sample &sample,
+		const Point &p, float u1, float u2, float u3,
 		BSDF **bsdf, float *pdf, float *pdfDirect,
-		VisibilityTester *visibility, SWCSpectrum *Le) const;
+		SWCSpectrum *Le) const;
 	static AreaLight *CreateAreaLight(const Transform &light2world,
 		const ParamSet &paramSet,
 		const boost::shared_ptr<Primitive> &prim);

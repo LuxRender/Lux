@@ -27,7 +27,7 @@
 using namespace lux;
 
 // SellmeierTexture Method Definitions
-Texture<const Fresnel *> *SellmeierTexture::CreateFresnelTexture(const Transform &tex2world,
+Texture<FresnelGeneral> *SellmeierTexture::CreateFresnelTexture(const Transform &tex2world,
 	const ParamSet &tp)
 {
 	const float a = tp.FindOneFloat("A", 1.f);

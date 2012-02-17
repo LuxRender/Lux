@@ -43,9 +43,9 @@ void RGBReflSPD::init(const RGBColor &s)
 	for (u_int i = 0; i < n; ++i)
 		samples[i] = 0.f;
 
-	float r = s.c[0];
-	float g = s.c[1];
-	float b = s.c[2];
+	const float r = s.c[0];
+	const float g = s.c[1];
+	const float b = s.c[2];
 
 	if (r <= g && r <= b) {
 		AddWeighted(r, refrgb2spect_white);

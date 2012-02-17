@@ -30,8 +30,8 @@ namespace lux
 class Paraboloid: public Shape {
 public:
 	// Paraboloid Public Methods
-	Paraboloid(const Transform &o2w, bool ro, float rad,
-	           float z0, float z1, float tm );
+	Paraboloid(const Transform &o2w, bool ro, const string &name, 
+	           float rad, float z0, float z1, float tm );
 	virtual ~Paraboloid() { }
 	virtual BBox ObjectBound() const;
 	virtual bool Intersect(const Ray &ray, float *tHit,

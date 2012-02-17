@@ -30,16 +30,17 @@
 namespace lux
 {
 
+#define SHAPE_LOG(name,severity,code) LOG(severity,code)<<"Shape "<<(name)<<": "
+
 // Lotus - A primitive implementation compatible with the old PBRT Shape class
 // Shape Declarations
 class Shape : public Primitive {
 public:
-
-	Shape(const Transform &o2w, bool ro);
+	Shape(const Transform &o2w, bool ro, const string &name);
 	Shape(const Transform &o2w, bool ro,
 		boost::shared_ptr<Material> &material,
 		boost::shared_ptr<Volume> &ex,
-		boost::shared_ptr<Volume> &in);
+		boost::shared_ptr<Volume> &in, const string &name);
 	virtual ~Shape() { }
 
 	void SetMaterial(boost::shared_ptr<Material> &mat) {
@@ -61,10 +62,8 @@ public:
 		interior = v;
 	}
 	Material *GetMaterial() const { return material.get(); }
-
-
-	virtual Volume *GetExterior() const { return exterior.get(); }
-	virtual Volume *GetInterior() const { return interior.get(); }
+	virtual const Volume *GetExterior() const { return exterior.get(); }
+	virtual const Volume *GetInterior() const { return interior.get(); }
 
 	virtual BBox WorldBound() const { return ObjectToWorld(ObjectBound()); }
 	virtual void Refine(vector<boost::shared_ptr<Primitive> > &refined,
@@ -73,14 +72,15 @@ public:
 		vector<boost::shared_ptr<Shape> > todo;
 		Refine(todo); // Use shape refine method
 		for (u_int i = 0; i < todo.size(); ++i) {
-			boost::shared_ptr<Shape> shape(todo[i]);
+			boost::shared_ptr<Shape> &shape(todo[i]);
 			shape->SetMaterial(material);
+			shape->SetExterior(exterior);
+			shape->SetInterior(interior);
 			if (shape->CanIntersect()) {
 				refined.push_back(shape);
 			} else {
 				// Use primitive refine method
-				boost::shared_ptr<Primitive> p(shape);
-				shape->Refine(refined, refineHints, p);
+				shape->Refine(refined, refineHints, shape);
 			}
 		}
 	}
@@ -88,9 +88,9 @@ public:
 	virtual bool IsSupport() const { return false; }
 	virtual bool GetNormal(Vector *N) const { return false; }
 	virtual bool GetBaryPoint(Point *P) const { return false; }
-	virtual bool CanIntersect() const { return true; }
 	virtual float GetScale() const { return 1.f; }
 	virtual bool SetScale(float scale) const { return false; }
+	virtual bool CanIntersect() const { return true; }
 	virtual bool Intersect(const Ray &r, Intersection *isect, bool null_shp_isect = false ) const {
 		float thit;
 		if (!Intersect(r, &thit, &isect->dg, null_shp_isect))
@@ -108,60 +108,60 @@ public:
 		DifferentialGeometry *dgShading) const { *dgShading = dg; }
 
 	virtual bool CanSample() const { return true; }
-	virtual void Sample(float u1, float u2, float u3,
+	virtual float Sample(float u1, float u2, float u3,
 		DifferentialGeometry *dg) const {
 		dg->p = Sample(u1, u2, u3, &dg->nn);
 		CoordinateSystem(Vector(dg->nn), &dg->dpdu, &dg->dpdv);
 		dg->dndu = dg->dndv = Normal(0, 0, 0);
-		dg->dpdx = dg->dpdy = Vector(0, 0, 0);
 		//TODO fill in uv coordinates
 		dg->u = dg->v = .5f;
 		dg->handle = this;
-		dg->dudx = dg->dudy = dg->dvdx = dg->dvdy = 0.f;
+		return Pdf(*dg);
 	}
-	virtual void Sample(const TsPack *tspack, const Point &p,
-		float u1, float u2, float u3, DifferentialGeometry *dg) const {
+	virtual float Sample(const Point &p, float u1, float u2, float u3,
+		DifferentialGeometry *dg) const {
 		dg->p = Sample(p, u1, u2, u3, &dg->nn);
 		CoordinateSystem(Vector(dg->nn), &dg->dpdu, &dg->dpdv);
 		dg->dndu = dg->dndv = Normal(0, 0, 0);
-		dg->dpdx = dg->dpdy = Vector(0, 0, 0);
 		//TODO fill in uv coordinates
 		dg->u = dg->v = .5f;
 		dg->handle = this;
-		dg->dudx = dg->dudy = dg->dvdx = dg->dvdy = 0.f;
+		return Pdf(*dg);
 	}
 
 	// Old PBRT Shape interface methods
 	virtual BBox ObjectBound() const {
-		luxError(LUX_BUG, LUX_SEVERE,
-			"Unimplemented Shape::ObjectBound method called!");
+		LOG( LUX_SEVERE,LUX_BUG)<<"Unimplemented Shape::ObjectBound method called!";
 		return BBox();
 	}
 	virtual void Refine(vector<boost::shared_ptr<Shape> > &refined) const {
-		luxError(LUX_BUG, LUX_SEVERE,
-			"Unimplemented Shape::Refine() method called");
+		LOG(LUX_SEVERE,LUX_BUG)<<"Unimplemented Shape::Refine() method called";
 	}
 	virtual bool Intersect(const Ray &ray, float *t_hitp,
 		DifferentialGeometry *dg, bool null_shp_isect = false ) const {
-		luxError(LUX_BUG, LUX_SEVERE,
-			"Unimplemented Shape::Intersect() method called");
+		LOG(LUX_SEVERE,LUX_BUG)<<"Unimplemented Shape::Intersect() method called";
 		return false;
 	}
 	virtual Point Sample(float u1, float u2, float u3, Normal *Ns) const {
-		luxError(LUX_BUG, LUX_SEVERE,
-			"Unimplemented Shape::Sample() method called");
+		LOG(LUX_SEVERE,LUX_BUG)<<"Unimplemented Shape::Sample() method called";
 		return Point();
 	}
 	virtual Point Sample(const Point &p, float u1, float u2, float u3,
 		Normal *Ns) const { return Sample(u1, u2, u3, Ns); }
+	virtual Transform GetWorldToLocal(float time) const {
+		return WorldToObject;
+	}
+	virtual string Name() const {
+		return shape_name;
+	}
 	// Shape data
 	const Transform ObjectToWorld, WorldToObject;
 protected:
 	boost::shared_ptr<Material> material;
 	boost::shared_ptr<Volume> exterior, interior;
+	const string shape_name;
 public: // Last to get better data alignment
 	const bool reverseOrientation, transformSwapsHandedness;
-
 };
 
 class PrimitiveSet : public Primitive {
@@ -183,14 +183,14 @@ public:
 		return true;
 	}
 	virtual bool Intersect(const Ray &r, Intersection *in, bool null_shp_isect = false ) const;
-	virtual bool IntersectP(const Ray &r, bool null_shp_isect = false) const;
+	virtual bool IntersectP(const Ray &r, bool null_shp_isect = false ) const;
 
 	virtual bool CanSample() const {
 		for (u_int i = 0; i < primitives.size(); ++i)
 			if (!primitives[i]->CanSample()) return false;
 		return true;
 	}
-	virtual void Sample(float u1, float u2, float u3,
+	virtual float Sample(float u1, float u2, float u3,
 		DifferentialGeometry *dg) const {
 		size_t sn;
 		if (primitives.size() <= 16) {
@@ -201,9 +201,14 @@ public:
 				areaCDF.end(), u3) - areaCDF.begin()),
 				0U, primitives.size() - 1U);
 		}
-		primitives[sn]->Sample(u1, u2, u3, dg);
+		const float pdf = primitives[sn]->Sample(u1, u2, u3, dg);
+		return (sn == 0 ? areaCDF[sn] : areaCDF[sn] - areaCDF[sn - 1]) *
+			pdf;
 	}
 	virtual float Area() const { return area; }
+	virtual Transform GetWorldToLocal(float time) const {
+		return Transform();
+	}
 private:
 	void initAreas();
 

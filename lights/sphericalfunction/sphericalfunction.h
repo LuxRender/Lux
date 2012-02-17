@@ -43,8 +43,8 @@ public:
 	 *
 	 * @return The function value for the given direction.
 	 */
-	SWCSpectrum f(const TsPack *tspack, const Vector& w) const {
-		return f(tspack, SphericalPhi(w), SphericalTheta(w));
+	SWCSpectrum f(const SpectrumWavelengths &sw, const Vector& w) const {
+		return f(sw, SphericalPhi(w), SphericalTheta(w));
 	}
 
 	/**
@@ -55,7 +55,7 @@ public:
 	 *
 	 * @return The function value for the given direction.
 	 */
-	virtual SWCSpectrum f(const TsPack *tspack, float phi, float theta) const = 0;
+	virtual SWCSpectrum f(const SpectrumWavelengths &sw, float phi, float theta) const = 0;
 };
 
 /**
@@ -63,7 +63,7 @@ public:
  */
 class NoopSphericalFunction : public SphericalFunction {
 public:
-	SWCSpectrum f(const TsPack *tspack, float phi, float theta) const {
+	SWCSpectrum f(const SpectrumWavelengths &sw, float phi, float theta) const {
 		return SWCSpectrum(1.f);
 	}
 };
@@ -83,7 +83,7 @@ public:
 	}
 
 	using SphericalFunction::f;
-	SWCSpectrum f(const TsPack *tspack, float phi, float theta) const;
+	SWCSpectrum f(const SpectrumWavelengths &sw, float phi, float theta) const;
 private:
 	boost::shared_ptr<const MIPMap> mipMap;
 };
@@ -101,10 +101,10 @@ public:
 	}
 
 	using SphericalFunction::f;
-	SWCSpectrum f(const TsPack *tspack, float phi, float theta) const {
+	SWCSpectrum f(const SpectrumWavelengths &sw, float phi, float theta) const {
 		SWCSpectrum ret(1.f);
 		for (u_int i = 0; i < funcs.size(); ++i)
-			ret *= funcs[i]->f(tspack, phi, theta);
+			ret *= funcs[i]->f(sw, phi, theta);
 		return ret;
 	}
 private:
@@ -121,7 +121,7 @@ public:
 	~SampleableSphericalFunction();
 
 	using SphericalFunction::f;
-	SWCSpectrum f(const TsPack *tspack, float phi, float theta) const;
+	SWCSpectrum f(const SpectrumWavelengths &sw, float phi, float theta) const;
 
 	/**
 	 * Samples this spherical function.
@@ -134,7 +134,7 @@ public:
 	 *
 	 * @return The function value of the sampled direction.
 	 */
-	SWCSpectrum Sample_f(const TsPack *tspack, float u1, float u2,
+	SWCSpectrum SampleF(const SpectrumWavelengths &sw, float u1, float u2,
 		Vector *w, float *pdf) const;
 
 	/**

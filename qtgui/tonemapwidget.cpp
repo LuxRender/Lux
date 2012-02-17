@@ -23,14 +23,16 @@
 #include "ui_tonemap.h"
 #include "tonemapwidget.hxx"
 #include "mainwindow.hxx"
+#include "guiutil.h"
 
 #include <iostream>
+#include <algorithm>
 
-static double sensitivity_presets[NUM_SENSITITIVITY_PRESETS] = {20.0f, 25.0f, 32.0f, 40.0f, 50.0f, 64.0f, 80.0f, 100.0f, 125.0f, 160.0f, 200.0f, 250.0f, 320.0f, 400.0f, 500.0f, 640.0f, 800.0f, 1000.0f, 1250.0f, 1600.0f, 2000.0f, 2500.0f, 3200.0f, 4000.0f, 5000.0f, 6400.0f};
+static double sensitivity_presets[NUM_SENSITITIVITY_PRESETS] = {6400.0f, 5000.0f, 4000.0f, 3200.0f, 2500.0f, 2000.0f, 1600.0f, 1250.0f, 1000.0f, 800.0f, 640.0f, 500.0f, 400.0f, 320.0f, 250.0f, 200.0f, 160.0f, 125.0f, 100.0f, 80.0f, 64.0f, 50.0f, 40.0f, 32.0f, 25.0f, 20.0f};
 
 static double exposure_presets[NUM_EXPOSURE_PRESETS] = {1.0f, 0.5f, 0.25f, 0.125f, 0.066f, 0.033f, 0.016f, 0.008f, 0.004f, 0.002f, 0.001f};
 
-static double fstop_presets[NUM_FSTOP_PRESETS] = {0.5, 0.7, 1.0, 1.4, 2.0, 2.8, 4.0, 5.6, 8.0, 11.0, 16.0, 22.0, 32.0, 45.0, 64.0, 90.0, 128.0};
+static double fstop_presets[NUM_FSTOP_PRESETS] = {128.0, 90.0, 64.0, 45.0, 32.0, 22.0, 16.0, 11.0, 8.0, 5.6, 4.0, 2.8, 2.0, 1.4, 1.0, 0.7, 0.5};
 
 #define DEFAULT_EPSILON_MIN 1e-7f
 static bool EqualDouble(const double a, const double b)
@@ -49,8 +51,10 @@ ToneMapWidget::ToneMapWidget(QWidget *parent) : QWidget(parent), ui(new Ui::Tone
 	ui->frame_toneMapLinear->hide ();
 	ui->frame_toneMapContrast->hide ();
 
-	// Reinhard
 	connect(ui->comboBox_kernel, SIGNAL(currentIndexChanged(int)), this, SLOT(setTonemapKernel(int)));
+	connect(ui->comboBox_clampMethod, SIGNAL(currentIndexChanged(int)), this, SLOT(setClampMethod(int)));
+
+	// Reinhard
 	connect(ui->slider_prescale, SIGNAL(valueChanged(int)), this, SLOT(prescaleChanged(int)));
 	connect(ui->spinBox_prescale, SIGNAL(valueChanged(double)), this, SLOT(prescaleChanged(double)));
 	connect(ui->slider_postscale, SIGNAL(valueChanged(int)), this, SLOT(postscaleChanged(int)));
@@ -70,7 +74,8 @@ ToneMapWidget::ToneMapWidget(QWidget *parent) : QWidget(parent), ui(new Ui::Tone
 	connect(ui->spinBox_fstop, SIGNAL(valueChanged(double)), this, SLOT(fstopChanged(double)));
 	connect(ui->slider_gamma_linear, SIGNAL(valueChanged(int)), this, SLOT(gammaLinearChanged(int)));
 	connect(ui->spinBox_gamma_linear, SIGNAL(valueChanged(double)), this, SLOT(gammaLinearChanged(double)));
-	
+	connect(ui->button_linearEstimate, SIGNAL(clicked()), this, SLOT(estimateLinear()));	
+
 	// Max contrast
 	connect(ui->slider_ywa, SIGNAL(valueChanged(int)), this, SLOT(ywaChanged(int)));
 	connect(ui->spinBox_ywa, SIGNAL(valueChanged(double)), this, SLOT(ywaChanged(double)));
@@ -104,7 +109,7 @@ void ToneMapWidget::updateWidgetValues()
 	updateWidgetValue(ui->spinBox_burn, m_TM_reinhard_burn);
 
 	// Linear widgets
-	updateWidgetValue(ui->slider_exposure, ValueToLogSliderVal(m_TM_linear_exposure, TM_LINEAR_EXPOSURE_LOG_MIN, TM_LINEAR_EXPOSURE_LOG_MAX) );
+	updateWidgetValue(ui->slider_exposure, ValueToLogSliderVal(m_TM_linear_exposure, TM_LINEAR_EXPOSURE_LOG_MIN, TM_LINEAR_EXPOSURE_LOG_MAX, FLOAT_SLIDER_RES) );
 	updateWidgetValue(ui->spinBox_exposure, m_TM_linear_exposure);
 
 	updateWidgetValue(ui->slider_sensitivity, (int)((FLOAT_SLIDER_RES / TM_LINEAR_SENSITIVITY_RANGE) * m_TM_linear_sensitivity) );
@@ -117,7 +122,7 @@ void ToneMapWidget::updateWidgetValues()
 	updateWidgetValue(ui->spinBox_gamma_linear, m_TM_linear_gamma);
 
 	// Contrast widgets
-	updateWidgetValue(ui->slider_ywa, ValueToLogSliderVal(m_TM_contrast_ywa, TM_CONTRAST_YWA_LOG_MIN, TM_CONTRAST_YWA_LOG_MAX) );
+	updateWidgetValue(ui->slider_ywa, ValueToLogSliderVal(m_TM_contrast_ywa, TM_CONTRAST_YWA_LOG_MIN, TM_CONTRAST_YWA_LOG_MAX, FLOAT_SLIDER_RES) );
 	updateWidgetValue(ui->spinBox_ywa, m_TM_contrast_ywa);
 }
 
@@ -183,6 +188,7 @@ void ToneMapWidget::setFStopPreset(int choice)
 void ToneMapWidget::resetValues()
 {
 	m_TM_kernel = 0;
+	m_clamp_method = 0;
 
 	m_TM_reinhard_prescale = 1.0;
 	m_TM_reinhard_postscale = 1.0;
@@ -241,6 +247,7 @@ int ToneMapWidget::fstopToPreset(double value)
 void ToneMapWidget::resetFromFilm (bool useDefaults)
 {
 	m_TM_kernel = (int)retrieveParam( useDefaults, LUX_FILM, LUX_FILM_TM_TONEMAPKERNEL);
+	m_clamp_method = (int)retrieveParam( useDefaults, LUX_FILM, LUX_FILM_LDR_CLAMP_METHOD);
 
 	m_TM_reinhard_prescale = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_TM_REINHARD_PRESCALE);
 	m_TM_reinhard_postscale = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_TM_REINHARD_POSTSCALE);
@@ -251,11 +258,19 @@ void ToneMapWidget::resetFromFilm (bool useDefaults)
 	m_TM_linear_fstop = (double)retrieveParam( useDefaults, LUX_FILM, LUX_FILM_TM_LINEAR_FSTOP);
 	m_TM_linear_gamma = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_TM_LINEAR_GAMMA);
 
+	m_TM_contrast_ywa = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_TM_CONTRAST_YWA);
+
+	SetFromValues();
+}
+
+void ToneMapWidget::SetFromValues ()
+{
 	ui->comboBox_SensitivityPreset->setCurrentIndex(sensitivityToPreset(m_TM_linear_sensitivity));
 	ui->comboBox_ExposurePreset->setCurrentIndex(exposureToPreset(m_TM_linear_exposure));
 	ui->comboBox_FStopPreset->setCurrentIndex(fstopToPreset(m_TM_linear_fstop));
+	ui->comboBox_clampMethod->setCurrentIndex(m_clamp_method);
 
-	m_TM_contrast_ywa = retrieveParam( useDefaults, LUX_FILM, LUX_FILM_TM_CONTRAST_YWA);
+	luxSetParameterValue(LUX_FILM, LUX_FILM_LDR_CLAMP_METHOD, (double)m_clamp_method);
 
 	luxSetParameterValue(LUX_FILM, LUX_FILM_TM_REINHARD_PRESCALE, m_TM_reinhard_prescale);
 	luxSetParameterValue(LUX_FILM, LUX_FILM_TM_REINHARD_POSTSCALE, m_TM_reinhard_postscale);
@@ -268,6 +283,7 @@ void ToneMapWidget::resetFromFilm (bool useDefaults)
 
 	luxSetParameterValue(LUX_FILM, LUX_FILM_TM_CONTRAST_YWA, m_TM_contrast_ywa);
 }
+
 
 void ToneMapWidget::setTonemapKernel(int choice)
 {
@@ -299,9 +315,24 @@ void ToneMapWidget::setTonemapKernel(int choice)
 			ui->frame_toneMapLinear->hide();
 			ui->frame_toneMapContrast->hide();
 			break;
+		case 4:
+			// Auto Linear
+			ui->frame_toneMapReinhard->hide();
+			ui->frame_toneMapLinear->hide();
+			ui->frame_toneMapContrast->hide();
 		default:
 			break;
 	}
+
+	emit valuesChanged();
+}
+
+void ToneMapWidget::setClampMethod(int choice)
+{
+	ui->comboBox_clampMethod->setCurrentIndex(choice);
+	// index -> method
+	m_clamp_method = choice;
+	updateParam(LUX_FILM, LUX_FILM_LDR_CLAMP_METHOD, (double)m_clamp_method);
 
 	emit valuesChanged();
 }
@@ -386,14 +417,14 @@ void ToneMapWidget::sensitivityChanged (double value)
 
 void ToneMapWidget::exposureChanged (int value)
 {
-	exposureChanged ( LogSliderValToValue(value, TM_LINEAR_EXPOSURE_LOG_MIN, TM_LINEAR_EXPOSURE_LOG_MAX) );
+	exposureChanged ( LogSliderValToValue(value, TM_LINEAR_EXPOSURE_LOG_MIN, TM_LINEAR_EXPOSURE_LOG_MAX, FLOAT_SLIDER_RES) );
 }
 
 void ToneMapWidget::exposureChanged (double value)
 {
 	m_TM_linear_exposure = value;
 
-	int sliderval = ValueToLogSliderVal (m_TM_linear_exposure, TM_LINEAR_EXPOSURE_LOG_MIN, TM_LINEAR_EXPOSURE_LOG_MAX);
+	int sliderval = ValueToLogSliderVal (m_TM_linear_exposure, TM_LINEAR_EXPOSURE_LOG_MIN, TM_LINEAR_EXPOSURE_LOG_MAX, FLOAT_SLIDER_RES);
 
 	updateWidgetValue(ui->slider_exposure, sliderval);
 	updateWidgetValue(ui->spinBox_exposure, m_TM_linear_exposure);
@@ -449,16 +480,88 @@ void ToneMapWidget::gammaLinearChanged (double value)
 	emit valuesChanged();
 }
 
+void ToneMapWidget::estimateLinear ()
+{
+	// estimate linear tonemapping parameters
+	const float gamma = retrieveParam(false, LUX_FILM, LUX_FILM_TORGB_GAMMA);
+	const float Y =  luxGetFloatAttribute("film", "averageLuminance");
+
+	const double gfactor = powf(118.f / 255.f, gamma);
+
+	// this is the target factor that autolinear would calculate
+	// we try to get as close as possible to this
+	const double targetFactor = (1.25 / Y * gfactor);
+
+	const int numFStopSettings = 10;
+	static double fStopSettings[10] = { 2.8, 4.0, 5.6, 8.0, 11.0, 16.0, 22.0, 32.0, 45.0, 64.0 };
+	int fStopIdx = 2;
+
+	const int numExposureSettings = 11;
+	static double exposureSettings[11] = { 1.0/1000.0, 1.0/500.0, 1.0/250.0, 1.0/125.0, 1.0/60.0, 1.0/30.0, 1.0/15.0, 1.0/8.0, 1.0/4.0, 1.0/2.0, 1.0 };
+	int exposureIdx = 3;
+
+	const int numSensitivitySettings = 8;
+	static double sensitivitySettings[8] = { 50.0, 100.0, 200.0, 400.0, 800.0, 1600.0, 3200.0, 6400.0 };
+	int sensitivityIdx = 2;
+
+	while (true) {
+		//double exposure = exposureSettings[exposureIdx];
+		double sensitivity = sensitivitySettings[sensitivityIdx];
+		double fstop = fStopSettings[fStopIdx];
+
+		// factor = exposure / (fstop * fstop) * sensitivity / 10.f * powf(118.f / 255.f, gamma);
+		double targetExposure = targetFactor * (fstop * fstop) * 10.0 / (sensitivity * gfactor);
+		
+		if (targetExposure < exposureSettings[0]) {
+			// want shorter exposure, ie too bright
+			if (sensitivityIdx <= 0) {
+				sensitivityIdx = 0;
+				exposureIdx = 0;
+				
+				fStopIdx++;
+				if (fStopIdx >= numFStopSettings) {
+					fStopIdx = numFStopSettings-1;
+					break;
+				}
+			} else
+				sensitivityIdx--;
+		} else if (targetExposure > exposureSettings[numExposureSettings-1]) {
+			// want longer exposure, ie too dark
+			if (sensitivityIdx >= numSensitivitySettings-1) {
+				sensitivityIdx = numSensitivitySettings-1;
+				exposureIdx = numExposureSettings-1;
+				
+				fStopIdx--;
+				if (fStopIdx < 0) {
+					fStopIdx = 0;
+					break;
+				}
+			} else
+				sensitivityIdx++;
+		} else {
+			exposureIdx = static_cast<int>(std::upper_bound(exposureSettings, exposureSettings+(numExposureSettings-1), targetExposure) - exposureSettings);
+			if (targetExposure < exposureSettings[exposureIdx])
+				exposureIdx--;
+			break;
+		}
+	}
+
+	gammaLinearChanged(gamma);
+	sensitivityChanged(sensitivitySettings[sensitivityIdx]);
+	exposureChanged(exposureSettings[exposureIdx]);
+	fstopChanged(fStopSettings[fStopIdx]);
+}
+
 void ToneMapWidget::ywaChanged (int value)
 {
-	ywaChanged (LogSliderValToValue(value, TM_CONTRAST_YWA_LOG_MIN, TM_CONTRAST_YWA_LOG_MAX) );
+	ywaChanged (LogSliderValToValue(value, TM_CONTRAST_YWA_LOG_MIN, TM_CONTRAST_YWA_LOG_MAX, FLOAT_SLIDER_RES) );
 }
 
 void ToneMapWidget::ywaChanged (double value)
 {
 	m_TM_contrast_ywa = value;
 
-	int sliderval = ValueToLogSliderVal (m_TM_contrast_ywa, TM_CONTRAST_YWA_LOG_MIN, TM_CONTRAST_YWA_LOG_MAX);
+	int sliderval = ValueToLogSliderVal (m_TM_contrast_ywa, TM_CONTRAST_YWA_LOG_MIN, TM_CONTRAST_YWA_LOG_MAX, FLOAT_SLIDER_RES);
 
 	updateWidgetValue(ui->slider_ywa, sliderval);
 	updateWidgetValue(ui->spinBox_ywa, m_TM_contrast_ywa);
@@ -467,3 +570,61 @@ void ToneMapWidget::ywaChanged (double value)
 
 	emit valuesChanged();
 }
+
+///////////////////////////////////////////
+// Save and Load settings from a ini file.
+
+void ToneMapWidget::SaveSettings( QString fName )
+{
+	QSettings settings( fName, QSettings::IniFormat );
+
+	settings.beginGroup("tonemapping");
+	if ( settings.status() ) return;
+
+	settings.setValue( "TM_kernel", m_TM_kernel );
+	settings.setValue( "clamp_method", m_clamp_method );
+
+	settings.setValue( "TM_reinhard_prescale", m_TM_reinhard_prescale );
+	settings.setValue( "TM_reinhard_postscale", m_TM_reinhard_postscale );
+	settings.setValue( "TM_reinhard_burn", m_TM_reinhard_burn );
+
+	settings.setValue( "TM_linear_exposure", m_TM_linear_exposure );
+	settings.setValue( "TM_linear_sensitivity", m_TM_linear_sensitivity );
+	settings.setValue( "TM_linear_fstop", m_TM_linear_fstop );
+	settings.setValue( "TM_linear_gamma", m_TM_linear_gamma );
+
+	settings.setValue( "TM_contrast_ywa", m_TM_contrast_ywa );
+
+	settings.endGroup();
+}
+
+void ToneMapWidget::LoadSettings( QString fName )
+{
+	QSettings settings( fName, QSettings::IniFormat );
+
+	settings.beginGroup("tonemapping");
+	if ( settings.status() ) return;
+
+	m_TM_kernel = settings.value("TM_kernel", 0 ).toInt();
+	m_clamp_method = settings.value("clamp_method", 0 ).toInt();
+
+	m_TM_reinhard_prescale = settings.value("TM_reinhard_prescale", 1.0 ).toDouble();
+	m_TM_reinhard_postscale = settings.value("TM_reinhard_postscale", 1.0 ).toDouble();
+	m_TM_reinhard_burn = settings.value("TM_reinhard_burn", 6.0 ).toDouble();
+
+	m_TM_linear_exposure = settings.value("TM_linear_exposure", 1.0 ).toDouble();
+	m_TM_linear_sensitivity = settings.value("TM_linear_sensitivity", 50.0 ).toDouble();
+	m_TM_linear_fstop = settings.value("TM_linear_fstop", 2.8 ).toDouble();
+	m_TM_linear_gamma = settings.value("TM_linear_gamma", 1.0 ).toDouble();
+
+	m_TM_contrast_ywa = settings.value("TM_contrast_ywa", 0.1 ).toDouble();
+
+	settings.endGroup();
+
+	SetFromValues();
+	updateWidgetValues();
+
+	emit valuesChanged();
+}
+
+

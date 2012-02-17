@@ -30,8 +30,8 @@ namespace lux
 class Cylinder: public Shape {
 public:
 	// Cylinder Public Methods
-	Cylinder(const Transform &o2w, bool ro, float rad,
-	         float zmin, float zmax, float phiMax);
+	Cylinder(const Transform &o2w, bool ro, const string &name, 
+	         float rad, float zmin, float zmax, float phiMax);
 	virtual ~Cylinder() { }
 	virtual BBox ObjectBound() const;
 	virtual bool Intersect(const Ray &ray, float *tHit,

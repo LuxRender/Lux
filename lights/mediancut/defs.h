@@ -77,5 +77,3 @@ extern MedCutLight 	C_MCLight;
 
 
 #endif // DEFS_H
-
-

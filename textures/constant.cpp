@@ -39,7 +39,7 @@ Texture<SWCSpectrum> * Constant::CreateSWCSpectrumTexture(const Transform &tex2w
 	return new ConstantRGBColorTexture(tp.FindOneRGBColor("value", RGBColor(1.f)));
 }
 
-Texture<const Fresnel *> *Constant::CreateFresnelTexture(const Transform &tex2world,
+Texture<FresnelGeneral> *Constant::CreateFresnelTexture(const Transform &tex2world,
 	const ParamSet &tp) {
 	return new ConstantFresnelTexture(tp.FindOneFloat("value", 1.f));
 }

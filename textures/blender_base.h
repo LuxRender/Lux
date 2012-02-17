@@ -34,9 +34,23 @@ public:
 	virtual ~BlenderTexture3D() { }
 
 	BlenderTexture3D(const Transform &tex2world, const ParamSet &tp,
-		short type) : mapping(tex2world) {
+		short type) {
+		// Read mapping coordinates
+		string coords = tp.FindOneString("coordinates", "global");
+		if (coords == "global")
+			mapping = new GlobalMapping3D(tex2world);
+		else if (coords == "local")
+			mapping = new LocalMapping3D(tex2world);
+		else if (coords == "uv")
+			mapping = new UVMapping3D(tex2world);
+		else if (coords == "globalnormal")
+			mapping = new GlobalNormalMapping3D(tex2world);
+		else if (coords == "localnormal")
+			mapping = new LocalNormalMapping3D(tex2world);
+		else
+			mapping = new GlobalMapping3D(tex2world);
 		// Apply texture specified transformation option for 3D mapping
-		mapping.Apply3DTextureMappingOptions(tp);
+		mapping->Apply3DTextureMappingOptions(tp);
 		tex1 = tp.GetFloatTexture("tex1", 0.f);
 		tex2 = tp.GetFloatTexture("tex2", 1.f);
 		tex.type = type;
@@ -47,11 +61,11 @@ public:
 		tex.bfac = 1.0f;
 	}
 
-	virtual float Evaluate(const TsPack *tspack,
+	virtual float Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
-		const Point P = mapping.Map(dg);
-		const float t1 = tex1->Evaluate(tspack, dg);
-		const float t2 = tex2->Evaluate(tspack, dg);
+		const Point P = mapping->Map(dg);
+		const float t1 = tex1->Evaluate(sw, dg);
+		const float t2 = tex2->Evaluate(sw, dg);
 
 		return Lerp(GetF(P), t1, t2);
 	}
@@ -59,8 +73,18 @@ public:
 	virtual float Filter() const {
 		return (tex1->Filter() + tex2->Filter()) * .5f;
 	}
-	virtual void GetDuv(const TsPack *tspack, const DifferentialGeometry &dg,
+	virtual void GetDuv(const SpectrumWavelengths &sw,
+		const DifferentialGeometry &dg,
 		float delta, float *du, float *dv) const;
+	virtual void GetMinMaxFloat(float *minValue, float *maxValue) const {
+		float min1, min2;
+		float max1, max2;
+		tex1->GetMinMaxFloat(&min1, &max1);
+		tex2->GetMinMaxFloat(&min2, &max2);
+		// TODO - take amount into account ala mix texture
+		*minValue = min(min1, min2);
+		*maxValue = max(max1, max2);
+	}
 	virtual void SetIlluminant() {
 		// Update sub-textures
 		tex1->SetIlluminant();
@@ -88,7 +112,7 @@ protected:
 	static short GetNoiseBasis(const string &name);
 	static short GetNoiseShape(const string &name);
 	// BlenderBlendTexture3D Private Data
-	IdentityMapping3D mapping;
+	TextureMapping3D *mapping;
 	boost::shared_ptr<Texture<float> > tex1, tex2;
 	blender::Tex tex;
 };

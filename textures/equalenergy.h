@@ -36,13 +36,13 @@ public:
 	// EqualEnergyTexture Public Methods
 	EqualEnergyTexture(float t) : e(t) { }
 	virtual ~EqualEnergyTexture() { }
-	virtual SWCSpectrum Evaluate(const TsPack *tspack,
+	virtual SWCSpectrum Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &) const {
 		return SWCSpectrum(e);
 	}
 	virtual float Y() const { return EqualSPD(e).Y(); }
 	virtual float Filter() const { return e; }
-	virtual void GetDuv(const TsPack *tspack,
+	virtual void GetDuv(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg, float delta,
 		float *du, float *dv) const { *du = *dv = 0.f; }
 	static Texture<SWCSpectrum> *CreateSWCSpectrumTexture(const Transform &tex2world, const ParamSet &tp);

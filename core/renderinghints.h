@@ -36,7 +36,7 @@ public:
 	Strategy() { }
 	virtual ~Strategy() { }
 	virtual void InitParam(const ParamSet &params) = 0;
-	virtual void Init(const Scene *scene) = 0;
+	virtual void Init(const Scene &scene) = 0;
 };
 
 //------------------------------------------------------------------------------
@@ -55,150 +55,109 @@ public:
 	LightsSamplingStrategy() : Strategy() { }
 	virtual ~LightsSamplingStrategy() { }
 	virtual void InitParam(const ParamSet &params) { }
-	virtual void Init(const Scene *scene) { }
+	virtual void Init(const Scene &scene) { }
+	/**
+	 * Samples a light according to the defined strategy.
+	 * The method should be called in a loop until it returns NULL.
+	 * @param scene The current scene
+	 * @param index The current sampling iteration
+	 * @param u A pointer to a random variable in the [0,1) range,
+	 * the value might be adjusted if needed so that it can be used
+	 * to sample the light component
+	 * @param pdf The probability of having sampled that light taking
+	 * the looping process into account
+	 * @return A pointer to the sampled Light or NULL if the looping is over
+	 * in which case u and pdf are left untouched
+	 */
+	virtual const Light *SampleLight(const Scene &scene, u_int index,
+		float *u, float *pdf) const = 0;
+	/**
+	 * The probability of sampling a given light according to the strategy
+	 * @param scene The current scene
+	 * @param light A pointer to the light being queried
+	 * @return The requested probability
+	 */
+	virtual float Pdf(const Scene &scene, const Light *light) const = 0;
+	/**
+	 * The maximum number of light samples in one go
+	 * The looping over SampleLight will never exceed he returned value
+	 * @param scene The current scene
+	 * @return The maximum number of sampling events in one go
+	 */
+	virtual u_int GetSamplingLimit(const Scene &scene) const = 0;
 
-	virtual void RequestSamples(const Scene *scene, vector<u_int> &structure) const = 0;
-	virtual u_int RequestSamplesCount(const Scene *scene) const = 0;
-
-	// Note: results are added to L
-	virtual u_int SampleLights(const TsPack *tspack, const Scene *scene,
-		const u_int shadowRayCount, const Point &p, const Normal &n,
-		const Vector &wo, BSDF *bsdf, const Sample *sample,
-		const float *sampleData, const SWCSpectrum &scale,
-		vector<SWCSpectrum> &L) const = 0;
-
-	// SampleLights Method for Augmented Reality
-	virtual u_int SampleLights(const TsPack *tspack, const Scene *scene,
-		const u_int shadowRayCount, const Point &p, const Normal &n,
-		const Vector &wo, BSDF *bsdf, const Sample *sample,
-		const float *sampleData, const SWCSpectrum &scale,
-		vector<SWCSpectrum> &L, int rayDepth, bool from_IsSup, bool to_IsSup, bool path_type) const = 0;
+	/**
+	 * Static function to create a light sampling strategy from a param set
+	 * It will parse the parameters, check the requested strategy and
+	 * return a pointer to the new LightSamplingStrategy.
+	 * @param params The paramset to parse
+	 * @return a pointer to the new light sampling strategy
+	 */
+	static LightsSamplingStrategy *Create(const ParamSet &params);
 };
 
 class LSSAllUniform : public LightsSamplingStrategy {
 public:
 	LSSAllUniform() : LightsSamplingStrategy() { }
 	virtual ~LSSAllUniform() { }
-	virtual void RequestSamples(const Scene *scene, vector<u_int> &structure) const;
-	virtual u_int RequestSamplesCount(const Scene *scene) const {
-		return 6;
-	}
-	virtual u_int SampleLights(const TsPack *tspack, const Scene *scene,
-		const u_int shadowRayCount, const Point &p, const Normal &n,
-		const Vector &wo, BSDF *bsdf, const Sample *sample,
-		const float *sampleData, const SWCSpectrum &scale,
-		vector<SWCSpectrum> &L) const;
-
-	// SampleLights Method for Augmented Reality
-	virtual u_int SampleLights(const TsPack *tspack, const Scene *scene,
-		const u_int shadowRayCount, const Point &p, const Normal &n,
-		const Vector &wo, BSDF *bsdf, const Sample *sample,
-		const float *sampleData, const SWCSpectrum &scale,
-		vector<SWCSpectrum> &L, int rayDepth, bool from_IsSup, bool to_IsSup, bool path_type) const;
+	virtual const Light *SampleLight(const Scene &scene, u_int index,
+		float *u, float *pdf) const;
+	virtual float Pdf(const Scene &scene, const Light *light) const;
+	virtual u_int GetSamplingLimit(const Scene &scene) const;
 };
 
 class LSSOneUniform : public LightsSamplingStrategy {
 public:
 	LSSOneUniform() : LightsSamplingStrategy() { }
 	virtual ~LSSOneUniform() { }
-	virtual void RequestSamples(const Scene *scene, vector<u_int> &structure) const;
-	virtual u_int RequestSamplesCount(const Scene *scene) const { return 6; }
-	virtual u_int SampleLights(const TsPack *tspack, const Scene *scene,
-		const u_int shadowRayCount, const Point &p, const Normal &n,
-		const Vector &wo, BSDF *bsdf, const Sample *sample,
-		const float *sampleData, const SWCSpectrum &scale,
-		vector<SWCSpectrum> &L) const;
-
-	// SampleLights Method for Augmented Reality
-	virtual u_int SampleLights(const TsPack *tspack, const Scene *scene,
-		const u_int shadowRayCount, const Point &p, const Normal &n,
-		const Vector &wo, BSDF *bsdf, const Sample *sample,
-		const float *sampleData, const SWCSpectrum &scale,
-		vector<SWCSpectrum> &L, int rayDepth, bool from_IsSup, bool to_IsSup, bool path_type) const;
+	virtual const Light *SampleLight(const Scene &scene, u_int index,
+		float *u, float *pdf) const;
+	virtual float Pdf(const Scene &scene, const Light *light) const;
+	virtual u_int GetSamplingLimit(const Scene &scene) const { return 1; }
 };
 
 class LSSAuto : public LightsSamplingStrategy {
 public:
 	LSSAuto() : LightsSamplingStrategy(), strategy(NULL) { }
 	virtual ~LSSAuto() { delete strategy; }
-	virtual void Init(const Scene *scene);
+	virtual void Init(const Scene &scene);
 
-	virtual void RequestSamples(const Scene *scene, vector<u_int> &structure) const {
-		strategy->RequestSamples(scene, structure);
+	virtual const Light *SampleLight(const Scene &scene, u_int index,
+		float *u, float *pdf) const {
+		return strategy->SampleLight(scene, index, u, pdf);
 	}
-	virtual u_int RequestSamplesCount(const Scene *scene) const {
-		return strategy->RequestSamplesCount(scene);
+	virtual float Pdf(const Scene &scene, const Light *light) const {
+		return strategy->Pdf(scene, light);
 	}
-
-	virtual u_int SampleLights(const TsPack *tspack, const Scene *scene,
-		const u_int shadowRayCount, const Point &p, const Normal &n,
-		const Vector &wo, BSDF *bsdf, const Sample *sample,
-		const float *sampleData, const SWCSpectrum &scale,
-		vector<SWCSpectrum> &L) const {
-		return strategy->SampleLights(tspack, scene, shadowRayCount,
-			p, n, wo, bsdf, sample, sampleData, scale, L);
+	virtual u_int GetSamplingLimit(const Scene &scene) const {
+		return strategy->GetSamplingLimit(scene);
 	}
 
-	// SampleLights Method for Augmented Reality
-	virtual u_int SampleLights(const TsPack *tspack, const Scene *scene,
-		const u_int shadowRayCount, const Point &p, const Normal &n,
-		const Vector &wo, BSDF *bsdf, const Sample *sample,
-		const float *sampleData, const SWCSpectrum &scale,
-		vector<SWCSpectrum> &L, int rayDepth, bool from_IsSup, bool to_IsSup, bool path_type) const {
-		return strategy->SampleLights(tspack, scene, shadowRayCount,
-			p, n, wo, bsdf, sample, sampleData, scale, L, rayDepth, from_IsSup, to_IsSup, path_type);
-	}
 private:
 	LightsSamplingStrategy *strategy;
 };
 
 class LSSOneImportance : public LightsSamplingStrategy {
 public:
-	LSSOneImportance() : LightsSamplingStrategy(), lightDistribution(NULL) { }
+	LSSOneImportance() :
+		LightsSamplingStrategy(), lightDistribution(NULL) { }
 	virtual ~LSSOneImportance();
-	virtual void Init(const Scene *scene);
+	virtual void Init(const Scene &scene);
 
-	virtual void RequestSamples(const Scene *scene, vector<u_int> &structure) const;
-	virtual u_int RequestSamplesCount(const Scene *scene) const { return 6; }
-	virtual u_int SampleLights(const TsPack *tspack, const Scene *scene,
-		const u_int shadowRayCount, const Point &p, const Normal &n,
-		const Vector &wo, BSDF *bsdf, const Sample *sample,
-		const float *sampleData, const SWCSpectrum &scale,
-		vector<SWCSpectrum> &L) const;
-	// SampleLights Method for Augmented Reality
-	virtual u_int SampleLights(const TsPack *tspack, const Scene *scene,
-		const u_int shadowRayCount, const Point &p, const Normal &n,
-		const Vector &wo, BSDF *bsdf, const Sample *sample,
-		const float *sampleData, const SWCSpectrum &scale,
-		vector<SWCSpectrum> &L, int rayDepth, bool from_IsSup, bool to_IsSup, bool path_type) const;
-
-private:
-	Distribution1D *lightDistribution;
-};
-
-class LSSOnePowerImportance : public LightsSamplingStrategy {
-public:
-	LSSOnePowerImportance() : LightsSamplingStrategy(), lightDistribution(NULL) { }
-	virtual ~LSSOnePowerImportance();
-	virtual void Init(const Scene *scene);
-
-	virtual void RequestSamples(const Scene *scene, vector<u_int> &structure) const;
-	virtual u_int RequestSamplesCount(const Scene *scene) const { return 6; }
-	// Note: results are added to L
-	virtual u_int SampleLights(const TsPack *tspack, const Scene *scene,
-		const u_int shadowRayCount, const Point &p, const Normal &n,
-		const Vector &wo, BSDF *bsdf, const Sample *sample,
-		const float *sampleData, const SWCSpectrum &scale,
-		vector<SWCSpectrum> &L) const;
-	// SampleLights Method for Augmented Reality
-	virtual u_int SampleLights(const TsPack *tspack, const Scene *scene,
-		const u_int shadowRayCount, const Point &p, const Normal &n,
-		const Vector &wo, BSDF *bsdf, const Sample *sample,
-		const float *sampleData, const SWCSpectrum &scale,
-		vector<SWCSpectrum> &L, int rayDepth, bool from_IsSup, bool to_IsSup, bool path_type) const;
+	virtual const Light *SampleLight(const Scene &scene, u_int index,
+		float *u, float *pdf) const;
+	virtual float Pdf(const Scene &scene, const Light *light) const;
+	virtual u_int GetSamplingLimit(const Scene &scene) const { return 1; }
 
 protected:
 	Distribution1D *lightDistribution;
+};
+
+class LSSOnePowerImportance : public LSSOneImportance {
+public:
+	LSSOnePowerImportance() : LSSOneImportance() { }
+	virtual ~LSSOnePowerImportance() {}
+	virtual void Init(const Scene &scene);
 };
 
 class LSSAllPowerImportance : public LSSOnePowerImportance {
@@ -206,24 +165,17 @@ public:
 	LSSAllPowerImportance() : LSSOnePowerImportance() { }
 	virtual ~LSSAllPowerImportance() { }
 	// Note: results are added to L
-	virtual u_int SampleLights(const TsPack *tspack, const Scene *scene,
-		const u_int shadowRayCount, const Point &p, const Normal &n,
-		const Vector &wo, BSDF *bsdf, const Sample *sample,
-		const float *sampleData, const SWCSpectrum &scale,
-		vector<SWCSpectrum> &L) const;
-	// SampleLights Method for Augmented Reality
-	virtual u_int SampleLights(const TsPack *tspack, const Scene *scene,
-		const u_int shadowRayCount, const Point &p, const Normal &n,
-		const Vector &wo, BSDF *bsdf, const Sample *sample,
-		const float *sampleData, const SWCSpectrum &scale,
-		vector<SWCSpectrum> &L, int rayDepth, bool from_IsSup, bool to_IsSup, bool path_type) const;
+	virtual const Light *SampleLight(const Scene &scene, u_int index,
+		float *u, float *pdf) const;
+	virtual float Pdf(const Scene &scene, const Light *light) const;
+	virtual u_int GetSamplingLimit(const Scene &scene) const;
 };
 
 class LSSOneLogPowerImportance : public LSSOnePowerImportance {
 public:
 	LSSOneLogPowerImportance() : LSSOnePowerImportance() { }
 	virtual ~LSSOneLogPowerImportance() { }
-	virtual void Init(const Scene *scene);
+	virtual void Init(const Scene &scene);
 };
 
 //******************************************************************************
@@ -264,19 +216,20 @@ public:
 	u_int GetShadowRaysCount() const { return shadowRayCount; }
 	LightsSamplingStrategy::LightStrategyType GetLightStrategy() const { return lightStrategyType; }
 
-	void InitStrategies(const Scene *scene);
-	void RequestSamples(Sample *sample, const Scene *scene, u_int maxDepth);
+	void InitStrategies(const Scene &scene);
+	void RequestSamples(Sample *sample, const Scene &scene, u_int maxDepth);
 
 	// Note: results are added to L and optional parameter V content
-	u_int SampleLights(const TsPack *tspack, const Scene *scene,
+	u_int SampleLights(const Scene &scene, const Sample &sample,
 		const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
-		const Sample *sample, u_int depth, const SWCSpectrum &scale,
+		u_int depth, const SWCSpectrum &scale,
 		vector<SWCSpectrum> &L, vector<float> *V = NULL) const;
-	// SampleLights Method for Augmented Reality
-	u_int SampleLights(const TsPack *tspack, const Scene *scene,
+	u_int SampleLights(const Scene &scene, const Sample &sample,
 		const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
-		const Sample *sample, u_int depth, const SWCSpectrum &scale,
-		vector<SWCSpectrum> &L, int rayDepth, bool from_IsSup, bool to_IsSup, bool path_type, vector<float> *V = NULL) const;
+		u_int depth, const SWCSpectrum &scale, vector<SWCSpectrum> &L,
+		int rayDepth, bool from_IsSup, bool to_IsSup, bool path_type, vector<float> *V = NULL) const;
+	//FIXME: temporary until the implementation of DataParallel interface
+	friend class PathIntegrator;
 private:
 	// Light Strategies
 	u_int shadowRayCount, nLights;

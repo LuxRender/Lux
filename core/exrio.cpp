@@ -26,6 +26,7 @@
 #include "color.h"
 #include "spectrum.h"
 #include "imagereader.h"
+#include "texturecolor.h"
 #include <algorithm>
 
 #include <FreeImage.h>
@@ -95,16 +96,6 @@ public:
 	
 ImageData* createImageData(const string &name,
 	FIBITMAP *image);
-
-/**
-FreeImage error handler
-@param fif Format / Plugin responsible for the error
-@param message Error message
-*/
-void FreeImageErrorHandler(FREE_IMAGE_FORMAT fif, const char *message) {
-	LOG(LUX_INFO, LUX_SYSTEM) << "FreeImage error, " <<
-		"format: " << (fif != FIF_UNKNOWN ? FreeImage_GetFormatFromFIF(fif) : "Unknown") << ": '" << message << "'";
-}
 
 template <typename T, int C> void* readImageData(FIBITMAP *image, const u_int *channelMapping) {
 
@@ -356,16 +347,14 @@ ImageData *StandardImageReader::read(const string &name)
 
 ImageData *ReadImage(const string &name)
 {
-	FreeImage_SetOutputMessage(FreeImageErrorHandler);
-
 	try {
-		boost::filesystem::path imagePath(name);
+		boost::filesystem::path imagePath(AdjustFilename(name));
 		// boost::filesystem::exists() can throw an exception under Windows
 		// if the drive in imagePath doesn't exist
 		if (!boost::filesystem::exists(imagePath)) {
 			LOG(LUX_ERROR, LUX_NOFILE) <<
 				"Unable to open image file '" <<
-				imagePath.string() << "'";
+				imagePath.file_string() << "'";
 			return NULL;
 		}
 
@@ -378,7 +367,7 @@ ImageData *ReadImage(const string &name)
 #endif
 
 		StandardImageReader stdImageReader;
-		return stdImageReader.read(name);
+		return stdImageReader.read(imagePath.string());
 
 		LOG(LUX_ERROR, LUX_BADFILE) <<
 			"Cannot recognise file format for image '" <<
@@ -390,6 +379,21 @@ ImageData *ReadImage(const string &name)
 		return NULL;
 	}
 }
+
+/*
+ * To convert a standard EXR to Blender MultiLayer format, change the channel names:
+ * RenderLayer.Combined.R
+ * RenderLayer.Combined.G
+ * RenderLayer.Combined.B
+ * RenderLayer.Combined.A
+ * RenderLayer.Depth.Z
+ * (and force RGBA format)
+ *
+ * and set a header
+ * header.insert("BlenderMultiChannel", StringAttribute("Blender V2.43 and newer"));
+ *
+ * it may also be necessary to flip image data both horizonally and vertically
+ */
 
 void WriteOpenEXRImage(int channeltype, bool halftype, bool savezbuf,
 	int compressiontype, const string &name, vector<RGBColor> &pixels,

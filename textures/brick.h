@@ -82,7 +82,7 @@ public:
 
 #define BRICK_EPSILON 1e-3f
 
-	virtual T Evaluate(const TsPack *tspack,
+	virtual T Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
 		const Point P(mapping->Map(dg));
 
@@ -144,11 +144,11 @@ public:
 			DifferentialGeometry dg2 = dg;
 			dg2.p += Vector(o, o, o);*/
 			// Brick texture * Modulation texture
-			return tex1->Evaluate(tspack, dg) *
-				tex3->Evaluate(tspack,dgb);
+			return tex1->Evaluate(sw, dg) *
+				tex3->Evaluate(sw, dgb);
 		} else {
 			// Mortar texture
-			return tex2->Evaluate(tspack, dg);
+			return tex2->Evaluate(sw, dg);
 		}
 	}
 	virtual float Y() const {
@@ -159,12 +159,13 @@ public:
 		const float m = powf(Clamp(1.f - mortarsize, 0.f, 1.f), 3);
 		return Lerp(m, tex2->Filter(), tex1->Filter());
 	}
-	virtual void GetDuv(const TsPack *tspack, const DifferentialGeometry &dg,
+	virtual void GetDuv(const SpectrumWavelengths &sw,
+		const DifferentialGeometry &dg,
 		float delta, float *du, float *dv) const {
 		//FIXME: Generic derivative computation, replace with exact
 		DifferentialGeometry dgTemp = dg;
 		// Calculate bump map value at intersection point
-		const float base = Texture<T>::EvalFloat(tspack, dg);
+		const float base = Texture<T>::EvalFloat(sw, dg);
 
 		// Compute offset positions and evaluate displacement texture
 		const Point origP(dgTemp.p);
@@ -176,7 +177,7 @@ public:
 		dgTemp.p += uu * dgTemp.dpdu;
 		dgTemp.u += uu;
 		dgTemp.nn = Normalize(origN + uu * dgTemp.dndu);
-		*du = (Texture<T>::EvalFloat(tspack, dgTemp) - base) / uu;
+		*du = (Texture<T>::EvalFloat(sw, dgTemp) - base) / uu;
 
 		// Shift _dgTemp_ _dv_ in the $v$ direction and calculate value
 		const float vv = delta / dgTemp.dpdv.Length();
@@ -184,7 +185,20 @@ public:
 		dgTemp.u = origU;
 		dgTemp.v += vv;
 		dgTemp.nn = Normalize(origN + vv * dgTemp.dndv);
-		*dv = (Texture<T>::EvalFloat(tspack, dgTemp) - base) / vv;
+		*dv = (Texture<T>::EvalFloat(sw, dgTemp) - base) / vv;
+	}
+	virtual void GetMinMaxFloat(float *minValue, float *maxValue) const {
+		float min1, min2, min3;
+		float max1, max2, max3;
+		tex1->GetMinMaxFloat(&min1, &max1);
+		tex2->GetMinMaxFloat(&min2, &max2);
+		tex3->GetMinMaxFloat(&min3, &max3);
+		const float minmin13 = min1 * min3;
+		const float minmax13 = min1 * max3;
+		const float maxmin13 = max1 * min3;
+		const float maxmax13 = max1 * max3;
+		*minValue = min(min(min(minmin13, minmax13), min(maxmin13, maxmax13)), min2);
+		*maxValue = max(max(max(minmin13, minmax13), max(maxmin13, maxmax13)), max2);
 	}
 	virtual void SetIlluminant() {
 		// Update sub-textures
@@ -296,8 +310,22 @@ private:
 
 template <class T> Texture<float> *BrickTexture3D<T>::CreateFloatTexture(
 	const Transform &tex2world, const ParamSet &tp) {
+	TextureMapping3D *imap;
+	// Read mapping coordinates
+	string coords = tp.FindOneString("coordinates", "global");
+	if (coords == "global")
+		imap = new GlobalMapping3D(tex2world);
+	else if (coords == "local")
+		imap = new LocalMapping3D(tex2world);
+	else if (coords == "uv")
+		imap = new UVMapping3D(tex2world);
+	else if (coords == "globalnormal")
+		imap = new GlobalNormalMapping3D(tex2world);
+	else if (coords == "localnormal")
+		imap = new LocalNormalMapping3D(tex2world);
+	else
+		imap = new GlobalMapping3D(tex2world);
 	// Apply texture specified transformation option for 3D mapping
-	IdentityMapping3D *imap = new IdentityMapping3D(tex2world);
 	imap->Apply3DTextureMappingOptions(tp);
 
 	boost::shared_ptr<Texture<float> > tex1(tp.GetFloatTexture("bricktex", 1.f));
@@ -308,9 +336,9 @@ template <class T> Texture<float> *BrickTexture3D<T>::CreateFloatTexture(
 	float bh = tp.FindOneFloat("brickheight", 0.1f);
 	float bd = tp.FindOneFloat("brickdepth", 0.15f);
 	float m = tp.FindOneFloat("mortarsize", 0.01f);
-	float r = tp.FindOneFloat("brickrun",0.5f);
-	float b = tp.FindOneFloat("brickbevel",0.f);
 	string t = tp.FindOneString("brickbond","running");
+	float r = tp.FindOneFloat("brickrun", 0.75f);
+	float b = tp.FindOneFloat("brickbevel",0.f);
 
 	return new BrickTexture3D<float>(tex1, tex2, tex3, bw, bh, bd, m, r, b,
 		t, imap);
@@ -318,8 +346,22 @@ template <class T> Texture<float> *BrickTexture3D<T>::CreateFloatTexture(
 
 template <class T> Texture<SWCSpectrum> *BrickTexture3D<T>::CreateSWCSpectrumTexture(
 	const Transform &tex2world, const ParamSet &tp) {
+	TextureMapping3D *imap;
+	// Read mapping coordinates
+	string coords = tp.FindOneString("coordinates", "global");
+	if (coords == "global")
+		imap = new GlobalMapping3D(tex2world);
+	else if (coords == "local")
+		imap = new LocalMapping3D(tex2world);
+	else if (coords == "uv")
+		imap = new UVMapping3D(tex2world);
+	else if (coords == "globalnormal")
+		imap = new GlobalNormalMapping3D(tex2world);
+	else if (coords == "localnormal")
+		imap = new LocalNormalMapping3D(tex2world);
+	else
+		imap = new GlobalMapping3D(tex2world);
 	// Apply texture specified transformation option for 3D mapping
-	IdentityMapping3D *imap = new IdentityMapping3D(tex2world);
 	imap->Apply3DTextureMappingOptions(tp);
 
 	boost::shared_ptr<Texture<SWCSpectrum> > tex1(tp.GetSWCSpectrumTexture("bricktex", RGBColor(1.f)));
@@ -330,9 +372,9 @@ template <class T> Texture<SWCSpectrum> *BrickTexture3D<T>::CreateSWCSpectrumTex
 	float bh = tp.FindOneFloat("brickheight", 0.1f);
 	float bd = tp.FindOneFloat("brickdepth", 0.15f);
 	float m = tp.FindOneFloat("mortarsize", 0.01f);
-	float r = tp.FindOneFloat("brickrun",0.5f);
-	float b = tp.FindOneFloat("brickbevel",0.f);
 	string t = tp.FindOneString("brickbond","running");
+	float r = tp.FindOneFloat("brickrun", 0.75f);
+	float b = tp.FindOneFloat("brickbevel",0.f);
 	
 	return new BrickTexture3D<SWCSpectrum>(tex1, tex2, tex3, bw, bh, bd, m,
 		r, b, t, imap);

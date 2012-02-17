@@ -23,6 +23,7 @@
 // vegas.cpp*
 #include "vegas.h"
 #include "error.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -60,14 +61,15 @@ u_int VegasPixelSampler::GetTotalPixels() {
 	return TotalPx;
 }
 
-bool VegasPixelSampler::GetNextPixel(int &xPos, int &yPos, u_int *use_pos) {
-	u_int pos = (*use_pos);
+bool VegasPixelSampler::GetNextPixel(int *xPos, int *yPos, const u_int use_pos) {
 	bool hasMorePixel = true;
-	if(pos == TotalPx - 1)
+	if(use_pos == TotalPx - 1)
 		hasMorePixel = false;
 
-	xPos = Pxa[*use_pos].x;
-	yPos = Pxa[*use_pos].y;
+	*xPos = Pxa[use_pos].x;
+	*yPos = Pxa[use_pos].y;
 
 	return hasMorePixel;
 }
+
+static DynamicLoader::RegisterPixelSampler<VegasPixelSampler> r("vegas");

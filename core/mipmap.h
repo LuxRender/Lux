@@ -55,16 +55,19 @@ public:
 	virtual ~MIPMap() { };
 	virtual float LookupFloat(Channel channel, float s, float t,
 		float width = 0.f) const = 0;
-	virtual SWCSpectrum LookupSpectrum(const TsPack *tspack,
+	virtual SWCSpectrum LookupSpectrum(const SpectrumWavelengths &sw,
 		float s, float t, float width = 0.f) const = 0;
+	virtual RGBAColor LookupRGBAColor(float s, float t,
+		float width = 0.f) const = 0;
 	virtual float LookupFloat(Channel channel, float s, float t,
 		float ds0, float dt0, float ds1, float dt1) const = 0;
-	virtual SWCSpectrum LookupSpectrum(const TsPack *tspack,
+	virtual SWCSpectrum LookupSpectrum(const SpectrumWavelengths &sw,
 		float s, float t, float ds0, float dt0, float ds1, float dt1) const = 0;
 	virtual void GetDifferentials(Channel channel, float s, float t,
 		float *ds, float *dt) const = 0;
-	virtual void GetDifferentials(const TsPack *tspack, float s, float t,
-		float *ds, float *dt) const = 0;
+	virtual void GetDifferentials(const SpectrumWavelengths &sw,
+		float s, float t, float *ds, float *dt) const = 0;
+	virtual void GetMinMaxFloat(Channel channel, float *minValue, float *maxValue) const = 0;
 
 	virtual u_int GetMemoryUsed() const = 0;
 	virtual void DiscardMipmaps(u_int n) { }
@@ -82,9 +85,11 @@ public:
 		float width = 0.f) const;
 	virtual float LookupFloat(Channel channel, float s, float t,
 		float ds0, float dt0, float ds1, float dt1) const;
-	virtual SWCSpectrum LookupSpectrum(const TsPack *tspack,
+	virtual RGBAColor LookupRGBAColor(float s, float t,
+		float width = 0.f) const;
+	virtual SWCSpectrum LookupSpectrum(const SpectrumWavelengths &sw,
 		float s, float t, float width = 0.f) const;
-	virtual SWCSpectrum LookupSpectrum(const TsPack *tspack,
+	virtual SWCSpectrum LookupSpectrum(const SpectrumWavelengths &sw,
 		float s, float t, float ds0, float dt0, float ds1, float dt1) const;
 	virtual void GetDifferentials(Channel channel, float s, float t,
 		float *ds, float *dt) const {
@@ -163,8 +168,8 @@ public:
 			}
 		}
 	}
-	virtual void GetDifferentials(const TsPack *tspack, float s, float t,
-		float *ds, float *dt) const {
+	virtual void GetDifferentials(const SpectrumWavelengths &sw,
+		float s, float t, float *ds, float *dt) const {
 		switch (filterType) {
 			case MIPMAP_TRILINEAR:
 			case MIPMAP_EWA: {
@@ -190,15 +195,15 @@ public:
 					t0 = it;
 					t1 = it + 1;
 				}
-				*ds = Lerp(at, Texel(tspack, 0, s1, it).Filter(tspack) -
-					Texel(tspack, 0, s0, it).Filter(tspack),
-					Texel(tspack, 0, s1, it + 1).Filter(tspack) -
-					Texel(tspack, 0, s0, it + 1).Filter(tspack)) *
+				*ds = Lerp(at, Texel(sw, 0, s1, it).Filter(sw) -
+					Texel(sw, 0, s0, it).Filter(sw),
+					Texel(sw, 0, s1, it + 1).Filter(sw) -
+					Texel(sw, 0, s0, it + 1).Filter(sw)) *
 					uSize(0);
-				*dt = Lerp(as, Texel(tspack, 0, is, t1).Filter(tspack) -
-					Texel(tspack, 0, is, t0).Filter(tspack),
-					Texel(tspack, 0, is + 1, t1).Filter(tspack) -
-					Texel(tspack, 0, is + 1, t0).Filter(tspack)) *
+				*dt = Lerp(as, Texel(sw, 0, is, t1).Filter(sw) -
+					Texel(sw, 0, is, t0).Filter(sw),
+					Texel(sw, 0, is + 1, t1).Filter(sw) -
+					Texel(sw, 0, is + 1, t0).Filter(sw)) *
 					vSize(0);
 				break;
 			}
@@ -226,20 +231,22 @@ public:
 					t0 = it;
 					t1 = it + 1;
 				}
-				*ds = Lerp(at, Texel(tspack, 0, s1, it).Filter(tspack) -
-					Texel(tspack, 0, s0, it).Filter(tspack),
-					Texel(tspack, 0, s1, it + 1).Filter(tspack) -
-					Texel(tspack, 0, s0, it + 1).Filter(tspack)) *
+				*ds = Lerp(at, Texel(sw, 0, s1, it).Filter(sw) -
+					Texel(sw, 0, s0, it).Filter(sw),
+					Texel(sw, 0, s1, it + 1).Filter(sw) -
+					Texel(sw, 0, s0, it + 1).Filter(sw)) *
 					singleMap->uSize();
-				*dt = Lerp(as, Texel(tspack, 0, is, t1).Filter(tspack) -
-					Texel(tspack, 0, is, t0).Filter(tspack),
-					Texel(tspack, 0, is + 1, t1).Filter(tspack) -
-					Texel(tspack, 0, is + 1, t0).Filter(tspack)) *
+				*dt = Lerp(as, Texel(sw, 0, is, t1).Filter(sw) -
+					Texel(sw, 0, is, t0).Filter(sw),
+					Texel(sw, 0, is + 1, t1).Filter(sw) -
+					Texel(sw, 0, is + 1, t0).Filter(sw)) *
 					singleMap->vSize();
 				break;
 			}
 		}
 	}
+
+	virtual void GetMinMaxFloat(Channel channel, float *minValue, float *maxValue) const;
 
 	virtual u_int GetMemoryUsed() const {
 		switch (filterType) {
@@ -257,7 +264,7 @@ public:
 				return singleMap->uSize() *
 					singleMap->vSize() * sizeof(T);
 		}
-		LOG(LUX_ERROR, LUX_SYSTEM) << "Internal error in MIPMapFastImpl::~MIPMapFastImpl(), unknown filter type";
+		LOG(LUX_ERROR, LUX_SYSTEM) << "Internal error in MIPMapFastImpl::GetMemoryUsed(), unknown filter type";
 		return 0;
 	}
 
@@ -281,12 +288,14 @@ public:
 protected:
 	// Dade - used by MIPMAP_EWA, MIPMAP_TRILINEAR
 	float Texel(Channel channel, u_int level, int s, int t) const;
-	SWCSpectrum Texel(const TsPack *tspack, u_int level,
+	SWCSpectrum Texel(const SpectrumWavelengths &sw, u_int level,
 		int s, int t) const;
+	RGBAColor Texel(u_int level, int s, int t) const;
 
 	// Dade - used by NEAREST, BILINEAR
 	float Texel(Channel channel, int s, int t) const;
-	SWCSpectrum Texel(const TsPack *tspack, int s, int t) const;
+	SWCSpectrum Texel(const SpectrumWavelengths &sw, int s, int t) const;
+	RGBAColor Texel(int s, int t) const;
 
 private:
 	// MIPMAPImpl Private data types
@@ -322,15 +331,22 @@ private:
 	inline u_int vSize(u_int level) const { return pyramid[level]->vSize(); }
 
 	float Triangle(Channel channel, u_int level, float s, float t) const;
-	SWCSpectrum Triangle(const TsPack *tspack, u_int level,
+	SWCSpectrum Triangle(const SpectrumWavelengths &sw, u_int level,
 		float s, float t) const;
+	RGBAColor Triangle(u_int level, float s, float t) const;
 	float Triangle(Channel channel, float s, float t) const;
-	SWCSpectrum Triangle(const TsPack *tspack, float s, float t) const;
+	SWCSpectrum Triangle(const SpectrumWavelengths &sw,
+		float s, float t) const;
+	RGBAColor Triangle(float s, float t) const;
 	float Nearest(Channel channel, float s, float t) const;
-	SWCSpectrum Nearest(const TsPack *tspack, float s, float t) const;
+	SWCSpectrum Nearest(const SpectrumWavelengths &sw,
+		float s, float t) const;
+	RGBAColor Nearest(float s, float t) const;
 	float EWA(Channel channel, float s, float t,
 		float ds0, float dt0, float ds1, float dt1, u_int level) const;
-	SWCSpectrum EWA(const TsPack *tspack, float s, float t,
+	SWCSpectrum EWA(const SpectrumWavelengths &sw, float s, float t,
+		float ds0, float dt0, float ds1, float dt1, u_int level) const;
+	RGBAColor EWA(float s, float t,
 		float ds0, float dt0, float ds1, float dt1, u_int level) const;
 
 	// MIPMap Private Data
@@ -386,7 +402,7 @@ float MIPMapFastImpl<T>::LookupFloat(Channel channel, float s, float t,
 	return 1.f;
 }
 template <class T>
-SWCSpectrum MIPMapFastImpl<T>::LookupSpectrum(const TsPack *tspack,
+SWCSpectrum MIPMapFastImpl<T>::LookupSpectrum(const SpectrumWavelengths &sw,
 	float s, float t, float width) const
 {
 	switch (filterType) {
@@ -396,26 +412,59 @@ SWCSpectrum MIPMapFastImpl<T>::LookupSpectrum(const TsPack *tspack,
 			const float level = nLevels - 1 + Log2(width);
 			// Perform trilinear interpolation at appropriate level
 			if (level < 0)
-				return Triangle(tspack, 0, s, t);
+				return Triangle(sw, 0, s, t);
 			else if (level >= nLevels - 1)
-				return Texel(tspack, nLevels - 1,
+				return Texel(sw, nLevels - 1,
 					Floor2Int(s * uSize(nLevels - 1)),
 					Floor2Int(t * vSize(nLevels - 1)));
 			else {
 				const u_int iLevel = Floor2UInt(level);
 				const float delta = level - iLevel;
 				return Lerp(delta,
-					Triangle(tspack, iLevel, s, t),
-					Triangle(tspack, iLevel + 1, s, t));
+					Triangle(sw, iLevel, s, t),
+					Triangle(sw, iLevel + 1, s, t));
 			}
 		}
 		case BILINEAR:
-			return Triangle(tspack, s, t);
+			return Triangle(sw, s, t);
 		case NEAREST:
-			return Nearest(tspack, s, t);
+			return Nearest(sw, s, t);
 	}
 	LOG(LUX_ERROR, LUX_SYSTEM) << "Internal error in MIPMapFastImpl::Lookup()";
 	return SWCSpectrum(1.f);
+}
+template <class T>
+RGBAColor MIPMapFastImpl<T>::LookupRGBAColor(float s, float t,
+	float width) const
+{
+	switch (filterType) {
+		case MIPMAP_TRILINEAR:
+		case MIPMAP_EWA: {
+			// Compute MIPMap level for trilinear filtering
+			const float level = nLevels - 1 +
+				Log2(max(width, 1e-8f));
+			// Perform trilinear interpolation at appropriate level
+			if (level < 0)
+				return Triangle(0, s, t);
+			else if (level >= nLevels - 1)
+				return Texel(nLevels - 1,
+					Floor2Int(s * uSize(nLevels - 1)),
+					Floor2Int(t * vSize(nLevels - 1)));
+			else {
+				const u_int iLevel = Floor2UInt(level);
+				const float delta = level - iLevel;
+				return Lerp(delta,
+					Triangle(iLevel, s, t),
+					Triangle(iLevel + 1, s, t));
+			}
+		}
+		case BILINEAR:
+			return Triangle(s, t);
+		case NEAREST:
+			return Nearest(s, t);
+	}
+	LOG(LUX_ERROR, LUX_SYSTEM) << "Internal error in MIPMapFastImpl::Lookup()";
+	return RGBAColor(1.f);
 }
 
 template <class T>
@@ -434,7 +483,22 @@ float MIPMapFastImpl<T>::Triangle(Channel channel, u_int level,
 		Texel(channel, level, s0 + 1, t0 + 1)));
 }
 template <class T>
-SWCSpectrum MIPMapFastImpl<T>::Triangle(const TsPack *tspack, u_int level,
+SWCSpectrum MIPMapFastImpl<T>::Triangle(const SpectrumWavelengths &sw,
+	u_int level, float s, float t) const
+{
+	level = Clamp(level, 0U, nLevels - 1);
+	s *= uSize(level);
+	t *= vSize(level);
+	const int s0 = Floor2Int(s), t0 = Floor2Int(t);
+	const float ds = s - s0, dt = t - t0;
+	return Lerp(ds,
+		Lerp(dt, Texel(sw, level, s0, t0),
+		Texel(sw, level, s0, t0 + 1)),
+		Lerp(dt, Texel(sw, level, s0 + 1, t0),
+		Texel(sw, level, s0 + 1, t0 + 1)));
+}
+template <class T>
+RGBAColor MIPMapFastImpl<T>::Triangle(u_int level,
 	float s, float t) const
 {
 	level = Clamp(level, 0U, nLevels - 1);
@@ -443,10 +507,10 @@ SWCSpectrum MIPMapFastImpl<T>::Triangle(const TsPack *tspack, u_int level,
 	const int s0 = Floor2Int(s), t0 = Floor2Int(t);
 	const float ds = s - s0, dt = t - t0;
 	return Lerp(ds,
-		Lerp(dt, Texel(tspack, level, s0, t0),
-		Texel(tspack, level, s0, t0 + 1)),
-		Lerp(dt, Texel(tspack, level, s0 + 1, t0),
-		Texel(tspack, level, s0 + 1, t0 + 1)));
+		Lerp(dt, Texel(level, s0, t0),
+		Texel(level, s0, t0 + 1)),
+		Lerp(dt, Texel(level, s0 + 1, t0),
+		Texel(level, s0 + 1, t0 + 1)));
 }
 
 template <class T>
@@ -462,7 +526,7 @@ float MIPMapFastImpl<T>::Triangle(Channel channel, float s, float t) const
 		Texel(channel, s0 + 1, t0 + 1)));
 }
 template <class T>
-SWCSpectrum MIPMapFastImpl<T>::Triangle(const TsPack *tspack,
+SWCSpectrum MIPMapFastImpl<T>::Triangle(const SpectrumWavelengths &sw,
 	float s, float t) const
 {
 	s *= singleMap->uSize();
@@ -470,9 +534,20 @@ SWCSpectrum MIPMapFastImpl<T>::Triangle(const TsPack *tspack,
 	const int s0 = Floor2Int(s), t0 = Floor2Int(t);
 	const float ds = s - s0, dt = t - t0;
 	return Lerp(ds,
-		Lerp(dt, Texel(tspack, s0, t0), Texel(tspack, s0, t0 + 1)),
-		Lerp(dt, Texel(tspack, s0 + 1, t0),
-		Texel(tspack, s0 + 1, t0 + 1)));
+		Lerp(dt, Texel(sw, s0, t0), Texel(sw, s0, t0 + 1)),
+		Lerp(dt, Texel(sw, s0 + 1, t0),
+		Texel(sw, s0 + 1, t0 + 1)));
+}
+template <class T>
+RGBAColor MIPMapFastImpl<T>::Triangle(float s, float t) const
+{
+	s *= singleMap->uSize();
+	t *= singleMap->vSize();
+	const int s0 = Floor2Int(s), t0 = Floor2Int(t);
+	const float ds = s - s0, dt = t - t0;
+	return Lerp(ds,
+		Lerp(dt, Texel(s0, t0), Texel(s0, t0 + 1)),
+		Lerp(dt, Texel(s0 + 1, t0),	Texel(s0 + 1, t0 + 1)));
 }
 
 template <class T>
@@ -484,12 +559,21 @@ float MIPMapFastImpl<T>::Nearest(Channel channel, float s, float t) const
 	return Texel(channel, s0, t0);
 }
 template <class T>
-SWCSpectrum MIPMapFastImpl<T>::Nearest(const TsPack *tspack, float s, float t) const
+SWCSpectrum MIPMapFastImpl<T>::Nearest(const SpectrumWavelengths &sw,
+	float s, float t) const
 {
 	s *= singleMap->uSize();
 	t *= singleMap->vSize();
 	const int s0 = Floor2Int(s), t0 = Floor2Int(t);
-	return Texel(tspack, s0, t0);
+	return Texel(sw, s0, t0);
+}
+template <class T>
+RGBAColor MIPMapFastImpl<T>::Nearest(float s, float t) const
+{
+	s *= singleMap->uSize();
+	t *= singleMap->vSize();
+	const int s0 = Floor2Int(s), t0 = Floor2Int(t);
+	return Texel(s0, t0);
 }
 
 template <class T>
@@ -545,12 +629,12 @@ float MIPMapFastImpl<T>::LookupFloat(Channel channel, float s, float t,
 	return 1.f;
 }
 template <class T>
-SWCSpectrum MIPMapFastImpl<T>::LookupSpectrum(const TsPack *tspack,
+SWCSpectrum MIPMapFastImpl<T>::LookupSpectrum(const SpectrumWavelengths &sw,
 	float s, float t, float ds0, float dt0, float ds1, float dt1) const
 {
 	switch (filterType) {
 		case MIPMAP_TRILINEAR:
-			return LookupSpectrum(tspack, s, t,
+			return LookupSpectrum(sw, s, t,
 				2.f * max(max(fabsf(ds0), fabsf(dt0)),
 				max(fabsf(ds1), fabsf(dt1))));
 		case MIPMAP_EWA: {
@@ -574,24 +658,24 @@ SWCSpectrum MIPMapFastImpl<T>::LookupSpectrum(const TsPack *tspack,
 			// Choose level of detail for EWA lookup and perform EWA filtering
 			const float lod = nLevels - 1 + Log2(minorLength);
 			if (lod <= 0.f)
-				return Triangle(tspack, 0, s, t);
+				return Triangle(sw, 0, s, t);
 			else if (lod >= nLevels - 1)
-				return Texel(tspack, nLevels - 1,
+				return Texel(sw, nLevels - 1,
 					Floor2Int(s * uSize(nLevels - 1)),
 					Floor2Int(t * vSize(nLevels - 1)));
 			else {
 				const u_int ilod = Floor2UInt(lod);
 				const float d = lod - ilod;
-				return Lerp(d, EWA(tspack, s, t,
+				return Lerp(d, EWA(sw, s, t,
 					ds0, dt0, ds1, dt1, ilod),
-					EWA(tspack, s, t,
+					EWA(sw, s, t,
 					ds0, dt0, ds1, dt1, ilod + 1));
 			}
 		}
 		case BILINEAR:
-			return Triangle(tspack, s, t);
+			return Triangle(sw, s, t);
 		case NEAREST:
-			return Nearest(tspack, s, t);
+			return Nearest(sw, s, t);
 	}
 	LOG(LUX_ERROR, LUX_SYSTEM) << "Internal error in MIPMapFastImpl::Lookup()";
 	return SWCSpectrum(1.f);
@@ -648,13 +732,14 @@ float MIPMapFastImpl<T>::EWA(Channel channel, float s, float t,
 	return num / den;
 }
 template <class T>
-SWCSpectrum MIPMapFastImpl<T>::EWA(const TsPack *tspack, float s, float t,
+SWCSpectrum MIPMapFastImpl<T>::EWA(const SpectrumWavelengths &sw,
+	float s, float t,
 	float ds0, float dt0, float ds1, float dt1, u_int level) const
 {
 	s = s * uSize(level);
 	t = t * vSize(level);
 	if (level >= nLevels)
-		return Texel(tspack, nLevels - 1, Floor2Int(s), Floor2Int(t));
+		return Texel(sw, nLevels - 1, Floor2Int(s), Floor2Int(t));
 	// Convert EWA coordinates to appropriate scale for level
 	ds0 *= uSize(level);
 	dt0 *= vSize(level);
@@ -689,7 +774,57 @@ SWCSpectrum MIPMapFastImpl<T>::EWA(const TsPack *tspack, float s, float t,
 				const float weight =
 					weightLut[min(Float2Int(r2 *
 					WEIGHT_LUT_SIZE), WEIGHT_LUT_SIZE - 1)];
-				num += Texel(tspack, level, is, it) * weight;
+				num += Texel(sw, level, is, it) * weight;
+				den += weight;
+			}
+		}
+	}
+
+	return num / den;
+}
+template <class T>
+RGBAColor MIPMapFastImpl<T>::EWA(float s, float t,
+	float ds0, float dt0, float ds1, float dt1, u_int level) const
+{
+	s = s * uSize(level);
+	t = t * vSize(level);
+	if (level >= nLevels)
+		return Texel(nLevels - 1, Floor2Int(s), Floor2Int(t));
+	// Convert EWA coordinates to appropriate scale for level
+	ds0 *= uSize(level);
+	dt0 *= vSize(level);
+	ds1 *= uSize(level);
+	dt1 *= vSize(level);
+	// Compute ellipse coefficients to bound EWA filter region
+	float A = dt0 * dt0 + dt1 * dt1 + 1.f;
+	float B = -2.f * (ds0 * dt0 + ds1 * dt1);
+	float C = ds0 * ds0 + ds1 * ds1 + 1.f;
+	const float F = A * C - B * B * 0.25f;
+	// Compute the ellipse's $(s,t)$ bounding box in texture space
+	const float du = sqrtf(C), dv = sqrtf(A);
+	const int s0 = Ceil2Int(s - du);
+	const int s1 = Floor2Int(s + du);
+	const int t0 = Ceil2Int(t - dv);
+	const int t1 = Floor2Int(t + dv);
+
+	const float invF = 1.f / F;
+	A *= invF;
+	B *= invF;
+	C *= invF;
+	// Scan over ellipse bound and compute quadratic equation
+	float num = 0.f;
+	float den = 0.f;
+	for (int it = t0; it <= t1; ++it) {
+		const float tt = it - t;
+		for (int is = s0; is <= s1; ++is) {
+			const float ss = is - s;
+			// Compute squared radius and filter texel if inside ellipse
+			const float r2 = A * ss * ss + B * ss * tt + C * tt * tt;
+			if (r2 < 1.f) {
+				const float weight =
+					weightLut[min(Float2Int(r2 *
+					WEIGHT_LUT_SIZE), WEIGHT_LUT_SIZE - 1)];
+				num += Texel(level, is, it) * weight;
 				den += weight;
 			}
 		}
@@ -894,7 +1029,7 @@ float MIPMapFastImpl<T>::Texel(Channel channel, u_int level, int s, int t) const
 	return l(s, t).GetFloat(channel);
 }
 template <class T>
-SWCSpectrum MIPMapFastImpl<T>::Texel(const TsPack *tspack, u_int level,
+SWCSpectrum MIPMapFastImpl<T>::Texel(const SpectrumWavelengths &sw, u_int level,
 	int s, int t) const
 {
 	const BlockedArray<T> &l = *pyramid[level];
@@ -918,7 +1053,33 @@ SWCSpectrum MIPMapFastImpl<T>::Texel(const TsPack *tspack, u_int level,
 			return SWCSpectrum(1.f);
 	}
 
-	return l(s, t).GetSpectrum(tspack);
+	return l(s, t).GetSpectrum(sw);
+}
+template <class T>
+RGBAColor MIPMapFastImpl<T>::Texel(u_int level, int s, int t) const
+{
+	const BlockedArray<T> &l = *pyramid[level];
+	// Compute texel $(s,t)$ accounting for boundary conditions
+	switch (wrapMode) {
+		case TEXTURE_REPEAT:
+			s = Mod(s, static_cast<int>(l.uSize()));
+			t = Mod(t, static_cast<int>(l.vSize()));
+			break;
+		case TEXTURE_CLAMP:
+			s = Clamp(s, 0, static_cast<int>(l.uSize()) - 1);
+			t = Clamp(t, 0, static_cast<int>(l.vSize()) - 1);
+			break;
+		case TEXTURE_BLACK:
+			if (s < 0 || s >= static_cast<int>(l.uSize()) ||
+				t < 0 || t >= static_cast<int>(l.vSize()))
+			return 0.f;
+		case TEXTURE_WHITE:
+			if (s < 0 || s >= static_cast<int>(l.uSize()) ||
+				t < 0 || t >= static_cast<int>(l.vSize()))
+			return 1.f;
+	}
+
+	return l(s, t).GetRGBAColor();
 }
 
 template <class T>
@@ -948,7 +1109,8 @@ float MIPMapFastImpl<T>::Texel(Channel channel, int s, int t) const
 	return l(s, t).GetFloat(channel);
 }
 template <class T>
-SWCSpectrum MIPMapFastImpl<T>::Texel(const TsPack *tspack, int s, int t) const
+SWCSpectrum MIPMapFastImpl<T>::Texel(const SpectrumWavelengths &sw,
+	int s, int t) const
 {
 	const BlockedArray<T> &l = *singleMap;
 	// Compute texel $(s,t)$ accounting for boundary conditions
@@ -971,7 +1133,49 @@ SWCSpectrum MIPMapFastImpl<T>::Texel(const TsPack *tspack, int s, int t) const
 			return SWCSpectrum(1.f);
 	}
 
-	return l(s, t).GetSpectrum(tspack);
+	return l(s, t).GetSpectrum(sw);
+}
+template <class T>
+RGBAColor MIPMapFastImpl<T>::Texel(int s, int t) const
+{
+	const BlockedArray<T> &l = *singleMap;
+	// Compute texel $(s,t)$ accounting for boundary conditions
+	switch (wrapMode) {
+		case TEXTURE_REPEAT:
+			s = Mod(s, static_cast<int>(l.uSize()));
+			t = Mod(t, static_cast<int>(l.vSize()));
+			break;
+		case TEXTURE_CLAMP:
+			s = Clamp(s, 0, static_cast<int>(l.uSize()) - 1);
+			t = Clamp(t, 0, static_cast<int>(l.vSize()) - 1);
+			break;
+		case TEXTURE_BLACK:
+			if (s < 0 || s >= static_cast<int>(l.uSize()) ||
+				t < 0 || t >= static_cast<int>(l.vSize()))
+			return 0.f;
+		case TEXTURE_WHITE:
+			if (s < 0 || s >= static_cast<int>(l.uSize()) ||
+				t < 0 || t >= static_cast<int>(l.vSize()))
+			return 1.f;
+	}
+
+	return l(s, t).GetRGBAColor();
+}
+
+template <class T>
+void MIPMapFastImpl<T>::GetMinMaxFloat(Channel channel, float *minValue, float *maxValue) const {
+	const BlockedArray<T> &map = (nLevels == 0) ? *singleMap : *pyramid[0];
+	float minv = INFINITY;
+	float maxv = -INFINITY;
+	for (u_int t = 0; t < map.vSize(); ++t) {
+		for (u_int s = 0; s < map.uSize(); ++s) {
+			const float v = map(s, t).GetFloat(channel);
+			minv = min(minv, v);
+			maxv = max(maxv, v);
+		}
+	}
+	*minValue = minv;
+	*maxValue = maxv;
 }
 
 template <class T> class MIPMapImpl : public MIPMapFastImpl<T> {
@@ -989,9 +1193,16 @@ public:
 		return powf(gain * MIPMapFastImpl<T>::LookupFloat(channel, s, t,
 			width), gamma);
 	}
-	virtual SWCSpectrum LookupSpectrum(const TsPack *tspack,
+	virtual RGBAColor LookupRGBAColor(float s, float t,
+		float width = 0.f) const {
+		RGBAColor col = gain * MIPMapFastImpl<T>::LookupRGBAColor(s, t, width);
+		RGBAColor ret = col.Pow(gamma);
+		ret.alpha = col.alpha;
+		return ret;
+	}
+	virtual SWCSpectrum LookupSpectrum(const SpectrumWavelengths &sw,
 		float s, float t, float width = 0.f) const {
-		return (gain * MIPMapFastImpl<T>::LookupSpectrum(tspack, s, t,
+		return (gain * MIPMapFastImpl<T>::LookupSpectrum(sw, s, t,
 			width)).Pow(gamma);
 	}
 	virtual float LookupFloat(Channel channel, float s, float t,
@@ -999,9 +1210,9 @@ public:
 		return powf(gain * MIPMapFastImpl<T>::LookupFloat(channel, s, t,
 			ds0, dt0, ds1, dt1), gamma);
 	}
-	virtual SWCSpectrum LookupSpectrum(const TsPack *tspack,
+	virtual SWCSpectrum LookupSpectrum(const SpectrumWavelengths &sw,
 		float s, float t, float ds0, float dt0, float ds1, float dt1) const {
-		return (gain * MIPMapFastImpl<T>::LookupSpectrum(tspack, s, t,
+		return (gain * MIPMapFastImpl<T>::LookupSpectrum(sw, s, t,
 			ds0, dt0, ds1, dt1)).Pow(gamma);
 	}
 	virtual void GetDifferentials(Channel channel, float s, float t,
@@ -1017,9 +1228,9 @@ public:
 			*dt *= factor;
 		}
 	}
-	virtual void GetDifferentials(const TsPack *tspack, float s, float t,
-		float *ds, float *dt) const {
-		MIPMapFastImpl<T>::GetDifferentials(tspack, s, t, ds, dt);
+	virtual void GetDifferentials(const SpectrumWavelengths &sw,
+		float s, float t, float *ds, float *dt) const {
+		MIPMapFastImpl<T>::GetDifferentials(sw, s, t, ds, dt);
 		*ds *= gain;
 		*dt *= gain;
 		if (gamma != 1.f) {
@@ -1029,6 +1240,11 @@ public:
 			*ds *= factor;
 			*dt *= factor;
 		}
+	}
+	virtual void GetMinMaxFloat(Channel channel, float *minValue, float *maxValue) const {
+		MIPMapFastImpl<T>::GetMinMaxFloat(channel, minValue, maxValue);
+		*minValue = powf(gain * (*minValue), gamma);
+		*maxValue = powf(gain * (*maxValue), gamma);
 	}
 private:
 	float gain, gamma;

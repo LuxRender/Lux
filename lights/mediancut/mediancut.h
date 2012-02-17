@@ -6,15 +6,13 @@
 #include "defs.h"
 
 
-//class Rectangle used by Mediancut 
+//Class Rectangle used by Mediancut 
 
-bool
-split (MedCutList  *MedCut,  Rectangle r);
+bool split (MedCutList  *MedCut,  Rectangle r);
 
-bool
-center (MedCutList  *MedCut, int k);
+bool center (MedCutList  *MedCut, int k);
 
-void
-MedCutSample(MedCutList  *MedCut, MedCutLight *MCLight, float *data, int k, int w, int h);
+void MedCutSample(MedCutList  *MedCut, MedCutLight *MCLight, 
+	float *data, int k, int w, int h);
 
 #endif // MEDIANCUT_H

@@ -28,21 +28,19 @@
 
 using namespace lux;
 
-
-
 // Shape Method Definitions
-Shape::Shape(const Transform &o2w, bool ro)
+Shape::Shape(const Transform &o2w, bool ro, const string &_name)
 	: ObjectToWorld(o2w), WorldToObject(o2w.GetInverse()),
 	reverseOrientation(ro),
-	transformSwapsHandedness(o2w.SwapsHandedness())
+	transformSwapsHandedness(o2w.SwapsHandedness()), shape_name(_name)
 {
 }
 
 Shape::Shape(const Transform &o2w, bool ro, boost::shared_ptr<Material> &mat,
-	boost::shared_ptr<Volume> &ex, boost::shared_ptr<Volume> &in)
+	boost::shared_ptr<Volume> &ex, boost::shared_ptr<Volume> &in, const string &_name)
 	: ObjectToWorld(o2w), WorldToObject(o2w.GetInverse()),
 	material(mat), exterior(ex), interior(in), reverseOrientation(ro),
-	transformSwapsHandedness(o2w.SwapsHandedness())
+	transformSwapsHandedness(o2w.SwapsHandedness()), shape_name(_name)
 {
 }
 
@@ -71,15 +69,14 @@ PrimitiveSet::PrimitiveSet(const vector<boost::shared_ptr<Primitive> > &p) :
 		accelerator = boost::shared_ptr<Primitive>(
 			MakeAccelerator("kdtree", primitives, ParamSet()));
 		if (!accelerator)
-			luxError(LUX_BUG, LUX_SEVERE,
-				"Unable to find \"kdtree\" accelerator");
+			LOG( LUX_SEVERE,LUX_BUG)<<"Unable to find \"kdtree\" accelerator";
 	}
 }
 
 bool PrimitiveSet::Intersect(const Ray &ray, Intersection *in, bool null_shp_isect ) const
 {
 	if (accelerator)
-		return accelerator->Intersect(ray, in,  null_shp_isect );
+		return accelerator->Intersect(ray, in, null_shp_isect );
 	if (worldbound.IntersectP(ray, NULL, NULL, null_shp_isect )) {
 		// NOTE - ratow - Testing each shape for intersections again because the _PrimitiveSet_ can be non-planar.
 		bool anyHit = false;

@@ -30,8 +30,8 @@ namespace lux
 class Disk : public Shape {
 public:
 	// Disk Public Methods
-	Disk(const Transform &o2w, bool ro, float height,
-	     float radius, float innerRadius, float phiMax);
+	Disk(const Transform &o2w, bool ro, const string &name, 
+	     float height, float radius, float innerRadius, float phiMax);
 	virtual ~Disk() { }
 	virtual BBox ObjectBound() const;
 	virtual bool Intersect(const Ray &ray, float *tHit,

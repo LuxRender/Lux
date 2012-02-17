@@ -37,17 +37,17 @@ public:
 		: eta(e), k(kk) {
 	}
 	virtual ~FresnelConductor() { }
-	virtual void Evaluate(const TsPack *tspack, float cosi,
+	virtual void Evaluate(const SpectrumWavelengths &sw, float cosi,
 		SWCSpectrum *const f) const;
-	virtual float Index(const TsPack *tspack) const {
-		return eta.Filter(tspack);
+	virtual float Index(const SpectrumWavelengths &sw) const {
+		return eta.Filter(sw);
 	}
-	virtual SWCSpectrum SigmaA(const TsPack *tspack) const {
+	virtual SWCSpectrum SigmaA(const SpectrumWavelengths &sw) const {
 		// The 4e-9*Pi comes from Beer law (4*Pi) and unit conversion
 		// of w from nm to m
-		return k / SWCSpectrum(tspack->swl->w) * (4e-9f * M_PI);
+		return k / SWCSpectrum(sw.w) * (4e-9f * M_PI);
 	}
-	virtual void ComplexEvaluate(const TsPack *tspack,
+	virtual void ComplexEvaluate(const SpectrumWavelengths &sw,
 		SWCSpectrum *fr, SWCSpectrum *fi) const {
 		*fr = eta;
 		*fi = k;

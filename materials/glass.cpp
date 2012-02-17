@@ -23,7 +23,8 @@
 // glass.cpp*
 #include "glass.h"
 #include "memory.h"
-#include "bxdf.h"
+#include "multibsdf.h"
+#include "primitive.h"
 #include "specularreflection.h"
 #include "speculartransmission.h"
 #include "fresnelcauchy.h"
@@ -35,36 +36,37 @@
 using namespace lux;
 
 // Glass Method Definitions
-BSDF *Glass::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
-	const DifferentialGeometry &dgs,
-	const Volume *exterior, const Volume *interior) const
+BSDF *Glass::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
+	const Intersection &isect, const DifferentialGeometry &dgs) const
 {
 	// Allocate _BSDF_
 	// NOTE - lordcrc - Bugfix, pbrt tracker id 0000078: index of refraction swapped and not recorded
-	float ior = index->Evaluate(tspack, dgs);
-	float cb = cauchyb->Evaluate(tspack, dgs);
+	float ior = index->Evaluate(sw, dgs);
+	float cb = cauchyb->Evaluate(sw, dgs);
 
-	float flm = film->Evaluate(tspack, dgs);
-	float flmindex = filmindex->Evaluate(tspack, dgs);
-	SWCSpectrum bcolor = (Sc->Evaluate(tspack, dgs).Clamp(0.f, 10000.f))*dgs.Scale;
-	MultiBSDF *bsdf = ARENA_ALLOC(tspack->arena, MultiBSDF)(dgs, dgGeom.nn, exterior, interior, bcolor);
+	float flm = film->Evaluate(sw, dgs);
+	float flmindex = filmindex->Evaluate(sw, dgs);
+	SWCSpectrum bcolor = (Sc->Evaluate(sw, dgs).Clamp(0.f, 10000.f))*dgs.Scale;
+
+	MultiBSDF *bsdf = ARENA_ALLOC(arena, MultiBSDF)(dgs, isect.dg.nn,
+		isect.exterior, isect.interior, bcolor);
     // NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
-	SWCSpectrum R = Kr->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
-	SWCSpectrum T = Kt->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
-	Fresnel *fresnel = ARENA_ALLOC(tspack->arena, FresnelCauchy)(ior, cb, 0.f);
+	SWCSpectrum R = Kr->Evaluate(sw, dgs).Clamp(0.f, 1.f);
+	SWCSpectrum T = Kt->Evaluate(sw, dgs).Clamp(0.f, 1.f);
+	Fresnel *fresnel = ARENA_ALLOC(arena, FresnelCauchy)(ior, cb, 0.f);
 	if (!R.Black()) {
 		if (architectural)
-			bsdf->Add(ARENA_ALLOC(tspack->arena, ArchitecturalReflection)(R,
+			bsdf->Add(ARENA_ALLOC(arena, ArchitecturalReflection)(R,
 				fresnel, flm, flmindex));
 		else
-			bsdf->Add(ARENA_ALLOC(tspack->arena, SpecularReflection)(R,
+			bsdf->Add(ARENA_ALLOC(arena, SpecularReflection)(R,
 				fresnel, flm, flmindex));
 	}
 	if (!T.Black())
-		bsdf->Add(ARENA_ALLOC(tspack->arena, SpecularTransmission)(T, fresnel, cb != 0.f, architectural));
+		bsdf->Add(ARENA_ALLOC(arena, SpecularTransmission)(T, fresnel, cb != 0.f, architectural));
 
 	// Add ptr to CompositingParams structure
-	bsdf->SetCompositingParams(compParams);
+	bsdf->SetCompositingParams(&compParams);
 
 	return bsdf;
 }
@@ -78,13 +80,8 @@ Material* Glass::CreateMaterial(const Transform &xform,
 	boost::shared_ptr<Texture<float> > film(mp.GetFloatTexture("film", 0.f));				// Thin film thickness in nanometers
 	boost::shared_ptr<Texture<float> > filmindex(mp.GetFloatTexture("filmindex", 1.5f));				// Thin film index of refraction
 	bool archi = mp.FindOneBool("architectural", false);
-	boost::shared_ptr<Texture<float> > bumpMap(mp.GetFloatTexture("bumpmap"));
 
-	// Get Compositing Params
-	CompositingParams cP;
-	FindCompositingParams(mp, &cP);
-
-	return new Glass(Kr, Kt, index, cbf, film, filmindex, archi, bumpMap, cP, Sc);
+	return new Glass(Kr, Kt, index, cbf, film, filmindex, archi, mp, Sc);
 }
 
 static DynamicLoader::RegisterMaterial<Glass> r("glass");

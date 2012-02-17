@@ -31,20 +31,32 @@ using namespace lux;
 namespace lux
 {
 
-XYZColor::XYZColor(const TsPack *tspack, const SWCSpectrum &s)
+XYZColor::XYZColor(const SpectrumWavelengths &sw, const SWCSpectrum &s)
 {
-	SpectrumWavelengths *sw = tspack->swl;
-	if (sw->single) {
-		const u_int j = sw->single_w;
-		c[0] = sw->cie_X[j] * s.c[j];
-		c[1] = sw->cie_Y[j] * s.c[j];
-		c[2] = sw->cie_Z[j] * s.c[j];
+	if (sw.single) {
+		const u_int j = sw.single_w;
+		SpectrumWavelengths::spd_ciex.Sample(1, sw.binsXYZ + j,
+			sw.offsetsXYZ + j, c);
+		SpectrumWavelengths::spd_ciey.Sample(1, sw.binsXYZ + j,
+			sw.offsetsXYZ + j, c + 1);
+		SpectrumWavelengths::spd_ciez.Sample(1, sw.binsXYZ + j,
+			sw.offsetsXYZ + j, c + 2);
+		c[0] *= s.c[j] * WAVELENGTH_SAMPLES;
+		c[1] *= s.c[j] * WAVELENGTH_SAMPLES;
+		c[2] *= s.c[j] * WAVELENGTH_SAMPLES;
 	} else {
+		SWCSpectrum x, y, z;
+		SpectrumWavelengths::spd_ciex.Sample(WAVELENGTH_SAMPLES,
+			sw.binsXYZ, sw.offsetsXYZ, x.c);
+		SpectrumWavelengths::spd_ciey.Sample(WAVELENGTH_SAMPLES,
+			sw.binsXYZ, sw.offsetsXYZ, y.c);
+		SpectrumWavelengths::spd_ciez.Sample(WAVELENGTH_SAMPLES,
+			sw.binsXYZ, sw.offsetsXYZ, z.c);
 		c[0] = c[1] = c[2] = 0.f;
 		for (u_int j = 0; j < WAVELENGTH_SAMPLES; ++j) {
-			c[0] += sw->cie_X[j] * s.c[j];
-			c[1] += sw->cie_Y[j] * s.c[j];
-			c[2] += sw->cie_Z[j] * s.c[j];
+			c[0] += x.c[j] * s.c[j];
+			c[1] += y.c[j] * s.c[j];
+			c[2] += z.c[j] * s.c[j];
 		}
 	}
 }
@@ -53,7 +65,7 @@ XYZColor::XYZColor(const SPD &s)
 {
 	c[0] = c[1] = c[2] = 0.f;
 	for (u_int i = 0; i < nCIE; ++i) {
-		const float v = s.sample(i + CIEstart);
+		const float v = s.Sample(i + CIEstart);
 		c[0] += v * CIE_X[i];
 		c[1] += v * CIE_Y[i];
 		c[2] += v * CIE_Z[i];
@@ -219,6 +231,48 @@ RGBColor ColorSystem::Limit(const RGBColor &rgb, int method) const
 		return Lerp(parameter, RGBColor(l), rgb);
 	}
 	return rgb;
+}
+
+static const float bradford[3][3] = {
+	{0.8951f, 0.2664f, -0.1614f},
+	{-0.7502f, 1.7135f, 0.0367f},
+	{0.0389f, -0.0685f, 1.0296f}};
+static const float invBradford[3][3] = {
+	{0.9869929f, -0.1470543f, 0.1599627f},
+	{0.4323053f, 0.5183603f, 0.0492912f},
+	{-0.0085287f, 0.0400428f, 0.9684867f}};
+ColorAdaptator::ColorAdaptator(const XYZColor &from, const XYZColor &to)
+{
+	float mat[3][3] = {
+		{to.c[0] / from.c[0], 0.f, 0.f},
+		{0.f, to.c[1] / from.c[1], 0.f},
+		{0.f, 0.f, to.c[2] / from.c[2]}};
+	float temp[3][3];
+	Multiply3x3(mat, bradford, temp);
+	Multiply3x3(invBradford, temp, conv);
+}
+
+XYZColor ColorAdaptator::Adapt(const XYZColor &color) const
+{
+	XYZColor result;
+	Transform3x3(conv, color.c, result.c);
+	return result;
+}
+
+ColorAdaptator ColorAdaptator::operator*(const ColorAdaptator &ca) const
+{
+	ColorAdaptator result(XYZColor(1.f), XYZColor(1.f));
+	Multiply3x3(conv, ca.conv, result.conv);
+	return result;
+}
+
+ColorAdaptator &ColorAdaptator::operator*=(float s)
+{
+	for(u_int i = 0; i < 3; ++i) {
+		for(u_int j = 0; j < 3; ++j)
+			conv[i][j] *= s;
+	}
+	return *this;
 }
 
 }

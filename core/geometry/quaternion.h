@@ -37,52 +37,41 @@ public:
 
 	// generate quaternion from 4x4 matrix
 	Quaternion(const boost::shared_ptr<Matrix4x4> m);
-	Quaternion();
-	Quaternion(const Quaternion &q);
-
-
-	friend Quaternion operator +( const Quaternion& q1, const Quaternion& q2 ) {
-		Quaternion q;
-		q.v = q1.v + q2.v;
-		q.w = q1.w + q2.w;
-		return q;
-	}
-
-	friend Quaternion operator -( const Quaternion& q1, const Quaternion& q2 ) {
-		Quaternion q;
-		q.v = q1.v - q2.v;
-		q.w = q1.w - q2.w;
-		return q;
-	}
-
-
-	friend Quaternion operator *( const Quaternion& q1, const Quaternion& q2 ) {
-		Quaternion q;
-		q.w = q1.w*q2.w - Dot(q1.v, q2.v);
-		q.v = q1.w*q2.v + q2.w*q1.v + Cross(q1.v, q2.v);
-		return q;
-	}
-
-	friend Quaternion operator *( const float& f, const Quaternion& q1 ) {
-		Quaternion q(q1);
-		q.w = q.w * f;
-		q.v = q.v * f;
-		return q;
-	}
-
-	inline void Normalize() {
-		const float invLength = 1.f / sqrtf(w * w + Dot(v, v));
-		w *= invLength;
-		v *= invLength;
-	}
+	Quaternion() : w(1.f), v(0.f) { }
+	Quaternion(const Quaternion &q) : w(q.w), v(q.v) { }
+	Quaternion(float _w, const Vector &_v) : w(_w), v(_v) { }
 
 	// get the rotation matrix from quaternion
 	void ToMatrix(float m[4][4]) const;
-
-	static Quaternion Slerp(float t, const Quaternion &q1, const Quaternion &q2);
 };
 
-float Dot(const Quaternion &q1, const Quaternion &q2);
+inline Quaternion operator +(const Quaternion& q1, const Quaternion& q2) {
+	return Quaternion(q1.w + q2.w, q1.v + q2.v);
+}
+
+inline Quaternion operator -(const Quaternion& q1, const Quaternion& q2) {
+	return Quaternion(q1.w - q2.w, q1.v - q2.v);
+}
+
+inline Quaternion operator *(float f, const Quaternion& q) {
+	return Quaternion(q.w * f, q.v * f);
+}
+
+inline Quaternion operator *( const Quaternion& q1, const Quaternion& q2 ) {
+	return Quaternion(
+		q1.w*q2.w - Dot(q1.v, q2.v),
+		q1.w*q2.v + q2.w*q1.v + Cross(q1.v, q2.v));
+}
+
+inline float Dot(const Quaternion &q1, const Quaternion &q2) {
+	return q1.w * q2.w + Dot(q1.v, q2.v);
+}
+
+inline Quaternion Normalize(const Quaternion &q) {
+	return (1.f / sqrtf(Dot(q, q))) * q;
+}
+
+Quaternion Slerp(float t, const Quaternion &q1, const Quaternion &q2);
 
 }//namespace lux
 

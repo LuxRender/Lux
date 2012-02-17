@@ -24,11 +24,56 @@
 #include "lux.h"
 #include "tonemap.h"
 #include "color.h"
+#include "context.h"
+// #include <math.h>
 
 namespace lux
 {
 
-// MaxWhiteOp Declarations
+// EVOp Declarations
+class EVOp : public ToneMap {
+public:
+	// EVOp Public Methods
+	// Applies a linear factor to the image, determined by the raw film's EV
+	EVOp() { }
+	virtual ~EVOp() { }
+	
+	virtual void Map(vector<XYZColor> &xyz, u_int xRes, u_int yRes, float maxDisplayY) const {
+		// read data from film
+		float gamma = luxGetParameterValue(LUX_FILM, LUX_FILM_TORGB_GAMMA);
+		float Y =  luxGetFloatAttribute("film", "averageLuminance");
+		
+		if (Y <= 0)
+			return;
+
+		/*
+		(fstop * fstop) / exposure = Y*sensitivity/K
+
+		take K = 12.5
+
+		(fstop * fstop) / exposure = Y * sensitivity / 12.5
+
+		exposure = 12.5*(fstop * fstop) / Y * sensitivity
+
+		*/
+
+		// linear tonemap operation
+		//float factor = (exposure / (fstop * fstop) * sensitivity / 10.f * powf(118.f / 255.f, gamma));
+		
+		// substitute exposure, fstop and sensitivity cancel out; collect constants
+		float factor = (1.25f / Y * powf(118.f / 255.f, gamma));
+
+		const u_int numPixels = xRes * yRes;
+		for (u_int i = 0; i < numPixels; ++i)
+			xyz[i] *= factor;
+	}
+	
+	static ToneMap *CreateToneMap(const ParamSet &ps);
+private:
+};
+
+
+// LinearOp Declarations
 class LinearOp : public ToneMap {
 public:
 	// LinearOp Public Methods
@@ -40,11 +85,11 @@ public:
 	// The following relations determine the output:
 	// Hsos = 10 / Ssos and Hsos maps to 118 in [0-255] at gamma=2.2
 	// where Ssos is the ISO speed
-	// q is left to compute for the camera, so the final formula is:
-	// R = L * t / N^2 * (118 / 255)^2.2 / (10 / Ssos)
+	// q is set at 0.65 (should come from camera), so the final formula is:
+	// R = L * 0.65 * t / N^2 * (118 / 255)^2.2 / (10 / Ssos)
 	// This is all taken from the ISO speed article of wikipedia
 	LinearOp(float sensitivity, float exposure, float fstop, float gamma) :
-		factor(exposure / (fstop * fstop) * sensitivity / 10.f * powf(118.f / 255.f, gamma)) { }
+		factor(exposure / (fstop * fstop) * sensitivity * 0.65f / 10.f * powf(118.f / 255.f, gamma)) { }
 	virtual ~LinearOp() { }
 	virtual void Map(vector<XYZColor> &xyz, u_int xRes, u_int yRes, float maxDisplayY) const {
 		const u_int numPixels = xRes * yRes;

@@ -31,40 +31,29 @@ namespace lux {
 
 typedef map<string, short> mapstsh;
 
-void BlenderTexture3D::GetDuv(const TsPack *tspack,
+void BlenderTexture3D::GetDuv(const SpectrumWavelengths &sw,
 	const DifferentialGeometry &dg, float delta, float *du, float *dv) const
 {
 	// Calculate values at intersection point (copy of Evaluate)
-	const Point P(mapping.Map(dg));
+	Vector dpdu, dpdv;
+	const Point P(mapping->MapDuv(dg, &dpdu, &dpdv));
 
 	const float a = GetF(P);
 
-	const float e = tex2->Evaluate(tspack, dg) - tex1->Evaluate(tspack, dg);
+	const float e = tex2->Evaluate(sw, dg) - tex1->Evaluate(sw, dg);
 	float du1, dv1, du2, dv2;
-	tex1->GetDuv(tspack, dg, delta, &du1, &dv1);
-	tex2->GetDuv(tspack, dg, delta, &du2, &dv2);
+	tex1->GetDuv(sw, dg, delta, &du1, &dv1);
+	tex2->GetDuv(sw, dg, delta, &du2, &dv2);
 
 	// Compute offset positions and evaluate displacement texture
-	DifferentialGeometry dgTemp = dg;
-	const Point origP(dgTemp.p);
-	const Normal origN(dgTemp.nn);
-	const float origU = dgTemp.u;
-
-	// Shift _dgTemp_ _du_ in the $u$ direction and calculate value
-	const float uu = delta / dgTemp.dpdu.Length();
-	dgTemp.p += uu * dgTemp.dpdu;
-	dgTemp.u += uu;
-	dgTemp.nn = Normalize(origN + uu * dgTemp.dndu);
-	const Point Pu(mapping.Map(dgTemp));
+	// Shift _P_ _du_ in the $u$ direction and calculate value
+	const float uu = delta / dg.dpdu.Length();
+	const Point Pu(P + dg.dpdu * uu);
 	const float dau = (GetF(Pu) - a) / uu;
 
 	// Shift _dgTemp_ _dv_ in the $v$ direction and calculate value
-	const float vv = delta / dgTemp.dpdv.Length();
-	dgTemp.p = origP + vv * dgTemp.dpdv;
-	dgTemp.u = origU;
-	dgTemp.v += vv;
-	dgTemp.nn = Normalize(origN + vv * dgTemp.dndv);
-	const Point Pv(mapping.Map(dgTemp));
+	const float vv = delta / dg.dpdv.Length();
+	const Point Pv(P + dg.dpdv * vv);
 	const float dav = (GetF(Pv) - a) / vv;
 
 	*du = Lerp(a, du1, du2) + dau * e;
@@ -76,9 +65,7 @@ static short GetValue(const mapstsh &m, const string &type, const string &name)
 	mapstsh::const_iterator t = m.find(name);
 	if (t != m.end())
 		return (*t).second;
-	stringstream ss;
-	ss << "Unknown " << type << " '" << name << "'";
-	luxError(LUX_BADTOKEN, LUX_ERROR, ss.str().c_str());
+	LOG( LUX_ERROR,LUX_BADTOKEN) << "Unknown " << type << " '" << name << "'";
 	return (*m.find("")).second;
 }
 
@@ -137,9 +124,9 @@ short BlenderTexture3D::GetMusgraveType(const string &name)
 
 static const mapstsh::value_type stucciTypeInit[4] = {
 	mapstsh::value_type("", TEX_PLASTIC),
-	mapstsh::value_type("Plastic", TEX_PLASTIC),
-	mapstsh::value_type("Wall In", TEX_WALLIN),
-	mapstsh::value_type("Wall Out", TEX_WALLOUT)
+	mapstsh::value_type("plastic", TEX_PLASTIC),
+	mapstsh::value_type("wall_in", TEX_WALLIN),
+	mapstsh::value_type("wall_out", TEX_WALLOUT)
 };
 static const mapstsh stucciType(stucciTypeInit, stucciTypeInit + 4);
 short BlenderTexture3D::GetStucciType(const string &name)
@@ -196,7 +183,7 @@ static const mapstsh::value_type noiseBasisInit[11] = {
 	mapstsh::value_type("voronoi_f2", TEX_VORONOI_F2),
 	mapstsh::value_type("voronoi_f3", TEX_VORONOI_F3),
 	mapstsh::value_type("voronoi_f4", TEX_VORONOI_F4),
-	mapstsh::value_type("voronoi_f2f1", TEX_VORONOI_F2F1),
+	mapstsh::value_type("voronoi_f2_f1", TEX_VORONOI_F2_F1),
 	mapstsh::value_type("voronoi_crackle", TEX_VORONOI_CRACKLE),
 	mapstsh::value_type("cell_noise", TEX_CELLNOISE)
 };

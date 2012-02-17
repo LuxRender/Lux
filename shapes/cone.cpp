@@ -28,9 +28,9 @@
 using namespace lux;
 
 // Cone Method Definitions
-Cone::Cone(const Transform &o2w, bool ro,
+Cone::Cone(const Transform &o2w, bool ro, const string &name, 
            float ht, float rad, float rad2, float tm)
-	: Shape(o2w, ro) {
+	: Shape(o2w, ro, name) {
 	if (rad2 > rad)
 		swap(rad, rad2);
 	radius = rad;
@@ -227,13 +227,15 @@ float Cone::Area() const {
 
 Shape* Cone::CreateShape(const Transform &o2w,
 		bool reverseOrientation, const ParamSet &params) {
+
+	string name = params.FindOneString("name", "'cone'");
 	float phimax = params.FindOneFloat("phimax", 360.f);
 
 	float radius = params.FindOneFloat("radius", 1.f);
 	float radius2 = params.FindOneFloat("radius2", 0.f);
 	float height = params.FindOneFloat("height", 1.f);
 
-	return new Cone(o2w, reverseOrientation, height, radius, radius2, phimax);
+	return new Cone(o2w, reverseOrientation, name, height, radius, radius2, phimax);
 }
 
 static DynamicLoader::RegisterShape<Cone> r("cone");

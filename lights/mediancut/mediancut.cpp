@@ -199,7 +199,7 @@ void MedCutSample( MedCutList *MedCut, MedCutLight *MCLight, float *data, int k,
 			
 			split( MedCut, (*MedCut)[j] );
 
-	//agora achar o centro
+	//Find the center
 	(*MCLight).clear();
 	float x, y, z, theta, phi;
 

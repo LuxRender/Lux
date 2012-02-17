@@ -1,22 +1,148 @@
-cmake_minimum_required(VERSION 2.4)
+###########################################################################
+#   Copyright (C) 1998-2011 by authors (see AUTHORS.txt )                 #
+#                                                                         #
+#   This file is part of Lux.                                             #
+#                                                                         #
+#   Lux is free software; you can redistribute it and/or modify           #
+#   it under the terms of the GNU General Public License as published by  #
+#   the Free Software Foundation; either version 3 of the License, or     #
+#   (at your option) any later version.                                   #
+#                                                                         #
+#   Lux is distributed in the hope that it will be useful,                #
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of        #
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         #
+#   GNU General Public License for more details.                          #
+#                                                                         #
+#   You should have received a copy of the GNU General Public License     #
+#   along with this program.  If not, see <http://www.gnu.org/licenses/>. #
+#                                                                         #
+#   Lux website: http://www.luxrender.net                                 #
+###########################################################################
+
+MESSAGE(STATUS "CMAKE VERSION DETECTED " ${CMAKE_VERSION})
+IF(MSVC)
+	cmake_minimum_required(VERSION 2.8)
+	cmake_policy(VERSION 2.8)
+ELSEIF(APPLE)
+	cmake_minimum_required(VERSION 2.8.3) # new requirement for simplification
+	cmake_policy(VERSION 2.8.3)
+ELSE(MSVC)
+	cmake_minimum_required(VERSION 2.4)
+ENDIF(MSVC)    
+
 IF(COMMAND cmake_policy)
 	cmake_policy(SET CMP0003 NEW)
 ENDIF(COMMAND cmake_policy)
 
 PROJECT(lux)
-SET(VERSION 0.7)
+SET(VERSION 0.9)
 
 SET(LUX_CMAKE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${LUX_CMAKE_DIR}")
+SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} 
+	"${LUX_CMAKE_DIR}"
+	"${LUX_CMAKE_DIR}/SpecializedConfig"
+)
+option(LUXRAYS_DISABLE_OPENCL "Build without OpenCL support" OFF)
+option(LUX_DOCUMENTATION "Generate project documentation" ON)
 
 # Dade - uncomment to obtain verbose building output
 #SET(CMAKE_VERBOSE_MAKEFILE true)
 
-#Setting Universal Binary Properties, only for Mac OS X
+# Don't overconfigure
+SET(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "limit configs" FORCE)
+# When using single configuration generators like make
+# CMake does need to know which of the possible configurations
+# to generate
+IF (NOT CMAKE_BUILD_TYPE)
+	SET(CMAKE_BUILD_TYPE Release)
+ENDIF(NOT CMAKE_BUILD_TYPE)
+MESSAGE(STATUS "Building mode: " ${CMAKE_BUILD_TYPE})
+
+IF (LUXRAYS_DISABLE_OPENCL)
+	ADD_DEFINITIONS("-DLUXRAYS_DISABLE_OPENCL")
+ENDIF()
+
+#############################################################################
+#############################################################################
+###                OSX general settings and options                       ###
+#############################################################################
+#############################################################################
+
+#Setting Universal Binary Properties and Pylux configuration, only for Mac OS X
+# generate with xcode/crosscompile, setting: ( darwin - 10.x - gcc - g++ - MacOSX10.x.sdk - Find from root, then native system )
 IF(APPLE)
-	SET(CMAKE_OSX_DEPLOYMENT_TARGET 10.5)
-	SET(CMAKE_OSX_ARCHITECTURES i386;x86_64)
-	SET(CMAKE_OSX_SYSROOT /Developer/SDKs/MacOSX10.5.sdk)
+
+	########## OS and hardware detection ###########
+
+	if(${XCODE_VERSION} GREATER 4.0)
+		set(OSX_OPTION_XCODE_4.1 ON)
+	else()
+		set(OSX_OPTION_XCODE_4.1 OFF)
+	endif()
+	execute_process(COMMAND uname -r OUTPUT_VARIABLE MAC_SYS)
+	if (${MAC_SYS} MATCHES 11)
+		set(OSX_SYSTEM 10.7 (Lion))
+	elseif(${MAC_SYS} MATCHES 10)
+		set(OSX_SYSTEM 10.6 (SnowLeopard))
+	else()
+		set(OSX_SYSTEM unsupported)
+	endif()
+	execute_process(COMMAND sysctl hw.model OUTPUT_VARIABLE MAC_HW OUTPUT_STRIP_TRAILING_WHITESPACE)
+	STRING(SUBSTRING ${MAC_HW} 10 -1 MAC_MODEL)
+
+	execute_process(COMMAND sysctl hw.optional.sse4_2 OUTPUT_VARIABLE HW_SSE_4_2 )
+	if (${HW_SSE_4_2} MATCHES "hw.optional.sse4_2: 1")
+		set(HAS_SSE 4.2)
+	else()
+		execute_process(COMMAND sysctl hw.optional.sse4_1 OUTPUT_VARIABLE HW_SSE_4_1 )
+		if (${HW_SSE_4_1} MATCHES "hw.optional.sse4_1: 1")
+			set(HAS_SSE 4.1)
+		else()
+			set(HAS_SSE 3)		
+		endif()
+	endif()
+
+	########## OSX_OPTIONS ###########
+	option(OSX_OPTION_PYLUX "Build a blender compatible pylux" ON)
+	option(OSX_OPTION_CLANG "Build with CLANG compiler ( XCODE4 )" ON)
+	option(OSX_OPTION_LTO "Build with LINK TIME OPTIMISATION ( MAY BREAK NON-SSE4 MACS COMPATIBILITY )" OFF)
+	option(OSX_OPTION_USE_MAX_SSE "Build with highest SSE available on machine ( SSE_${HAS_SSE} )" OFF)
+	option(OSX_OPTION_UNIVERSAL "Force compile universal" OFF)
+	option(OSX_OPTION_LION "BUILD for OSX 10.7, else 10.6 would be deployment-target" OFF)
+	###################################
+	if(OSX_OPTION_LION)
+		SET(CMAKE_OSX_DEPLOYMENT_TARGET 10.7)
+		SET(CMAKE_OSX_SYSROOT /Developer/SDKs/MacOSX10.7.sdk)
+	else(OSX_OPTION_LION)
+		SET(CMAKE_OSX_DEPLOYMENT_TARGET 10.6)
+		SET(CMAKE_OSX_SYSROOT /Developer/SDKs/MacOSX10.6.sdk)
+	endif(OSX_OPTION_LION)
+
+	if(OSX_OPTION_USE_MAX_SSE)
+		if(HAS_SSE MATCHES 4.2)
+			SET(CMAKE_XCODE_ATTRIBUTE_GCC_ENABLE_SSE42_EXTENSIONS YES)
+			SET(CMAKE_XCODE_ATTRIBUTE_GCC_ENABLE_SSE41_EXTENSIONS YES)
+		elseif(HAS_SSE MATCHES 4.1)
+			SET(CMAKE_XCODE_ATTRIBUTE_GCC_ENABLE_SSE41_EXTENSIONS YES)
+		endif()
+
+	endif()
+
+	SET(CMAKE_XCODE_ATTRIBUTE_ARCHS i386\ x86_64) # valid arches
+	SET(CMAKE_XCODE_ATTRIBUTE_DEPLOYMENT_POSTPROCESSING YES) # strip symbols in whole project, disabled in pylux target
+	if(OSX_OPTION_UNIVERSAL)
+		set(CMAKE_XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH NO)
+	endif(OSX_OPTION_UNIVERSAL)
+	if(OSX_OPTION_CLANG)
+		SET(CMAKE_XCODE_ATTRIBUTE_GCC_VERSION com.apple.compilers.llvm.clang.1_0)
+	endif(OSX_OPTION_CLANG)
+	if(OSX_OPTION_LTO)
+		SET(CMAKE_XCODE_ATTRIBUTE_LLVM_LTO YES)
+	endif(OSX_OPTION_LTO)
+	set(CMAKE_CONFIGURATION_TYPES Release)
+	set(OSX_DEPENDENCY_ROOT ${CMAKE_SOURCE_DIR}/../macos) # can be macos or usr/local for example
+	set(OSX_BUNDLE_COMPONENTS_ROOT ${CMAKE_SOURCE_DIR}/../macos) # bundle resources
+	INCLUDE(macosx_bundle)
 ENDIF(APPLE)
 
 
@@ -26,7 +152,7 @@ ENDIF(APPLE)
 #############################################################################
 #############################################################################
 
-IF(NOT APPLE)
+IF(NOT APPLE AND NOT WIN32)
 	EXECUTE_PROCESS(
 		COMMAND ${CMAKE_C_COMPILER} -dumpmachine
 		OUTPUT_VARIABLE MACHINE
@@ -42,7 +168,7 @@ IF(NOT APPLE)
 	STRING(REGEX MATCH "(x86_64-*)|(X86_64-*)|(AMD64-*)|(amd64-*)" _mach_x86_64 ${MACHINE})
 	IF (_mach_x86_64)
 		SET(ARCH_X86_64 1)
-    SET(LIB_SUFFIX 64)
+		SET(LIB_SUFFIX 64)
 		#jromang - Hack to avoid boost bug on x64  Ubuntu 8.10 and Fedora 10 (http://www.luxrender.net/mantis/view.php?id=433)
 		ADD_DEFINITIONS(-DBOOST_NO_INTRINSIC_INT64_T)
 	ENDIF (_mach_x86_64)
@@ -51,199 +177,45 @@ IF(NOT APPLE)
 	IF (_mach_ppc)
 		SET(ARCH_PPC 1)
 	ENDIF (_mach_ppc)
-ENDIF(NOT APPLE)
+ELSEIF(MSVC)
+	STRING(REGEX MATCH "(Win64)" _carch_x64 ${CMAKE_GENERATOR})
+	IF(_carch_x64)
+		SET(ARCH_X86_64 1)
+		MESSAGE(STATUS "Building for target x64")
+	ELSE(_carch_x64)
+		SET(ARCH_X86 1)
+		MESSAGE(STATUS "Building for target Win32")
+	ENDIF(_carch_x64)
+ENDIF(NOT APPLE AND NOT WIN32)
 
-#############################################################################
-#############################################################################
-###########################      Find BISON       ###########################
-#############################################################################
-#############################################################################
-FIND_PROGRAM(BISON_EXECUTABLE bison)
-IF (NOT BISON_EXECUTABLE)
-	MESSAGE(FATAL_ERROR "bison not found - aborting")
-ENDIF (NOT BISON_EXECUTABLE)
-
-
-#############################################################################
-#############################################################################
-###########################      Find FLEX        ###########################
-#############################################################################
-#############################################################################
-FIND_PROGRAM(FLEX_EXECUTABLE flex)
-IF (NOT FLEX_EXECUTABLE)
-	MESSAGE(FATAL_ERROR "flex not found - aborting")
-ENDIF (NOT FLEX_EXECUTABLE)
-
-
-
-#############################################################################
-#############################################################################
-########################### BOOST LIBRARIES SETUP ###########################
-#############################################################################
-#############################################################################
-
-FIND_PACKAGE(Boost 1.41 REQUIRED COMPONENTS python)
-
-SET(Boost_python_FOUND ${Boost_FOUND})
-SET(Boost_python_LIBRARIES ${Boost_LIBRARIES})
-SET(Boost_FOUND)
-SET(Boost_LIBRARIES)
-
-FIND_PACKAGE(Boost 1.41 REQUIRED COMPONENTS thread program_options filesystem serialization iostreams regex system)
-
-IF(Boost_FOUND)
-	MESSAGE(STATUS "Boost library directory: " ${Boost_LIBRARY_DIRS})
-	MESSAGE(STATUS "Boost include directory: " ${Boost_INCLUDE_DIRS})
-ELSE(Boost_FOUND)
-	MESSAGE(FATAL_ERROR "Could not find Boost")
-ENDIF(Boost_FOUND)
-
-
-#############################################################################
-#############################################################################
-######################### OPENEXR LIBRARIES SETUP ###########################
-#############################################################################
-#############################################################################
-
-# !!!!freeimage needs headers from openEXR 1.6x !!!!
-FIND_PATH(OPENEXR_INCLUDE_DIRS
-    ImfXdr.h
-    PATHS
-    /usr/local/include/OpenEXR
-    /usr/include/OpenEXR
-    /sw/include/OpenEXR
-    /opt/local/include/OpenEXR
-    /opt/csw/include/OpenEXR
-    /opt/include/OpenEXR
-) 
-IF(APPLE)
-   SET(OPENEXR_LIBRARIES Half IlmImf Iex Imath IlmThread)
-ELSE(APPLE)
-   SET(OPENEXR_LIBRARIES Half IlmImf Iex Imath)
-ENDIF(APPLE)
-
-#############################################################################
-#############################################################################
-########################### PNG   LIBRARIES SETUP ###########################
-#############################################################################
-#############################################################################
-# - Find the native PNG includes and library
 #
-# This module defines
-#  PNG_INCLUDE_DIR, where to find png.h, etc.
-#  PNG_LIBRARIES, the libraries to link against to use PNG.
-#  PNG_DEFINITIONS - You should ADD_DEFINITONS(${PNG_DEFINITIONS}) before compiling code that includes png library files.
-#  PNG_FOUND, If false, do not try to use PNG.
-# also defined, but not for general use are
-#  PNG_LIBRARY, where to find the PNG library.
-# None of the above will be defined unles zlib can be found.
-# PNG depends on Zlib
-INCLUDE(FindPNG)
-IF(PNG_FOUND)
-ELSE(PNG_FOUND)
-    MESSAGE( STATUS "Warning : could not find PNG - building without png support")
-ENDIF(PNG_FOUND)
-#FIND_PACKAGE(PNG REQUIRED)
-
-
+# Overwrite defaults with Custom Settings
+#
+IF(LUX_CUSTOM_CONFIG)
+	MESSAGE(STATUS "Using custom build config: ${LUX_CUSTOM_CONFIG}")
+	INCLUDE(${LUX_CUSTOM_CONFIG})
+ENDIF(LUX_CUSTOM_CONFIG)
 
 #############################################################################
 #############################################################################
-###########################   FREEIMAGE LIBRARIES    ###########################
+######################    FIND PROJECT DEPENDENCIES    ######################
 #############################################################################
 #############################################################################
-
-IF(APPLE)
-    FIND_PATH(FREEIMAGE_INCLUDE_DIRS
-    freeimage.h
-    PATHS
-    /usr/local/include/
-    /usr/include/
-    )
-    SET(FREEIMAGE_LIBRARIES freeimage)
-ELSE(APPLE)
-    FIND_PACKAGE(FreeImage REQUIRED)
-
-    IF(FREEIMAGE_FOUND)
-        MESSAGE(STATUS "FreeImage library directory: " ${FREEIMAGE_LIBRARIES})
-        MESSAGE(STATUS "FreeImage include directory: " ${FREEIMAGE_INCLUDE_PATH})
-    ELSE(FREEIMAGE_FOUND)
-        MESSAGE(FATAL_ERROR "Could not find FreeImage")
-    ENDIF(FREEIMAGE_FOUND)
-ENDIF(APPLE)
-
-#############################################################################
-#############################################################################
-############################ THREADING LIBRARIES ############################
-#############################################################################
-#############################################################################
-IF(APPLE)
-    FIND_PATH(THREADS_INCLUDE_DIRS
-    pthread.h
-    PATHS
-    /usr/include/pthread
-    )
-	SET(THREADS_LIBRARIES pthread)
-ELSE(APPLE)
-	FIND_PACKAGE(Threads REQUIRED)
-ENDIF(APPLE)
-
-#############################################################################
-#############################################################################
-###########################   SYSTEM LIBRARIES    ###########################
-#############################################################################
-#############################################################################
-IF(APPLE)
-	SET(SYS_LIBRARIES z bz2)
-ENDIF(APPLE)
-IF(CYGWIN)
-	SET(SYS_LIBRARIES wsock32 ws2_32)
-	ADD_DEFINITIONS(-D_WIN32_WINNT=0x0551 -D__USE_W32_SOCKETS -D_GLIBCXX__PTHREADS)
-ENDIF(CYGWIN)
-
-#############################################################################
-#############################################################################
-############################    DOXYGEN          ############################
-#############################################################################
-#############################################################################
-
-#FIND_PACKAGE(Doxygen)
-
-#IF (DOXYGEN_FOUND)
-#	MESSAGE( STATUS "Found Doxygen and generating documentation" )
-			
-#	SET(DOXYGEN_TEMPLATE ${CMAKE_CURRENT_SOURCE_DIR}/doxygen/doxygen.template)
-#	SET(DOXYGEN_INPUT ${CMAKE_CURRENT_BINARY_DIR}/doxygen.conf)
-#	SET(DOXYGEN_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/doc)
-#	SET(DOXYGEN_OUTPUT ${DOXYGEN_OUTPUT_DIR}/html/index.html)
-		
-#	MESSAGE( STATUS "Doxygen output:" ${DOXYGEN_OUTPUT} )
-	
-#	IF(DOXYGEN_DOT_FOUND)
-#		MESSAGE( STATUS "Found dot" )
-#		SET(DOXYGEN_DOT_CONF "HAVE_DOT = YES")
-#	ENDIF(DOXYGEN_DOT_FOUND)
-	
-#	ADD_CUSTOM_COMMAND( 
-#	OUTPUT ${DOXYGEN_OUTPUT}
-	#creating custom doxygen.conf
-#	COMMAND cp ${DOXYGEN_TEMPLATE} ${DOXYGEN_INPUT}
-#	COMMAND echo "INPUT = " ${CMAKE_CURRENT_SOURCE_DIR} >> ${DOXYGEN_INPUT}
-#	COMMAND echo "OUTPUT_DIRECTORY = " ${DOXYGEN_OUTPUT_DIR} >> ${DOXYGEN_INPUT}
-#	COMMAND echo ${DOXYGEN_DOT_CONF} >> ${DOXYGEN_INPUT}
-	#launch doxygen
-#	COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_INPUT}
-#	DEPENDS ${DOXYGEN_TEMPLATE}
-#	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-#	)
-		
-#	ADD_CUSTOM_TARGET(apidoc ALL DEPENDS ${DOXYGEN_OUTPUT})
-#ENDIF (DOXYGEN_FOUND)
-
+INCLUDE(Dependencies)
 
 #############################################################################
 #All dependencies OK !
 #############################################################################
+
+#############################################################################
+#############################################################################
+############################    DOCUMENTATION    ############################
+#############################################################################
+#############################################################################
+
+IF(LUX_DOCUMENTATION)
+	INCLUDE(documentation)
+ENDIF(LUX_DOCUMENTATION)
 
 #Generate the config.h file
 CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/config.h.cmake ${CMAKE_BINARY_DIR}/config.h)
@@ -254,488 +226,119 @@ ADD_DEFINITIONS(-DLUX_USE_CONFIG_H)
 #########################      COMPILER FLAGS     ###########################
 #############################################################################
 #############################################################################
-# Dade - default compiler options
-ADD_DEFINITIONS(-O3 -msse2 -mfpmath=sse -ftree-vectorize -funroll-loops -Wall -fPIC -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
-# The QBVH accelerator needs to be compiled with much reduced optimizations
-# otherwise gcc produces incorrect code and ruins the render on 64bits machines
-IF(NOT APPLE)
+
+IF(APPLE)
+	# Jens - default Mac compiler options
+	ADD_DEFINITIONS(-O3 -ftree-vectorize -msse -msse2 -msse3 -mssse3 -fvariable-expansion-in-unroller -Wall -DHAVE_PTHREAD_H )
+ELSEIF(MSVC)
+	# Default MSVC compiler options
+	MESSAGE(STATUS "MSVC")
+
+	SET(GUI_TYPE WIN32)
+
+	# Change warning to something saner
+	#Force to always compile with W3
+	IF(CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
+		STRING(REGEX REPLACE "/W[0-4]" "/W3" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+	ELSE()
+		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W3")
+	ENDIF()
+
+	IF(MSVC90)
+		MESSAGE(STATUS "Version 9")
+		# Whole Program Opt. gui display fixed in cmake 2.8.5
+		# See http://public.kitware.com/Bug/view.php?id=6794
+		# /GL will be used to build the code but the selection is not displayed in the menu
+
+		# /Qfast_transcendentals causes inlining of those functions but no loss of precision
+
+		SET(MSVC_RELEASE_COMPILER_FLAGS "/O2 /Ob1 /Oi /Oy- /GT /GL /EHsc /MD /GS /fp:precise /Zc:forScope /GR /Gy /Gd /TP /Ot /favor:blend /Qfast_transcendentals /MP")
+		SET(MSVC_RELEASE_WITH_DEBUG_COMPILER_FLAGS "/Zi")
+
+		IF(NOT ARCH_X86_64)
+			SET(MSVC_RELEASE_COMPILER_FLAGS ${MSVC_RELEASE_COMPILER_FLAGS} " /arch:SSE2")
+		ENDIF(NOT ARCH_X86_64)
+
+		SET(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} ${MSVC_RELEASE_COMPILER_FLAGS} ${MSVC_RELEASE_WITH_DEBUG_COMPILER_FLAGS}")
+		SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${MSVC_RELEASE_COMPILER_FLAGS} ${MSVC_RELEASE_WITH_DEBUG_COMPILER_FLAGS}")
+	ELSEIF(MSVC10)
+		MESSAGE(STATUS "Version 10")
+		# Whole Program Opt. gui display fixed in cmake 2.8.5
+		# See http://public.kitware.com/Bug/view.php?id=6794
+		# /GL will be used to build the code but the selection is not displayed in the menu
+
+		# /Qfast_transcendentals causes inlining of those functions but no loss of precision
+
+		SET(MSVC_RELEASE_COMPILER_FLAGS "/WX- /MP /O2 /Ob1 /Oi /Oy- /GT /GL /Gm- /EHsc /MD /GS /fp:precise /Zc:forScope /GR /Gy /openmp /Gd /TP /GL /GF- /Ot /favor:blend /Qfast_transcendentals")
+		SET(MSVC_RELEASE_WITH_DEBUG_COMPILER_FLAGS "/Zi")
+
+		SET(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} ${MSVC_RELEASE_COMPILER_FLAGS} ${MSVC_RELEASE_WITH_DEBUG_COMPILER_FLAGS}")
+		SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${MSVC_RELEASE_COMPILER_FLAGS} ${MSVC_RELEASE_WITH_DEBUG_COMPILER_FLAGS}")
+	ENDIF(MSVC90)
+
+	# Definitions
+	ADD_DEFINITIONS(-D__SSE2__ -D__SSE__ -D__MMX__)
+	ADD_DEFINITIONS(-D_UNICODE -DUNICODE)
+	ADD_DEFINITIONS(-DWIN32_LEAN_AND_MEAN -D_CRT_SECURE_NO_WARNINGS -D_CRT_SECURE_NO_DEPRECATE -D_SCL_SECURE_NO_WARNINGS)
+	
+ELSE(APPLE)
+	# Dade - default compiler options
+	ADD_DEFINITIONS(-O3 -msse2 -mfpmath=sse -ftree-vectorize -funroll-loops -Wall -fPIC -DHAVE_PTHREAD_H)
+	# The QBVH accelerator needs to be compiled with much reduced optimizations
+	# otherwise gcc produces incorrect code and ruins the render on 64bits machines
 	SET_SOURCE_FILES_PROPERTIES(accelerators/qbvhaccel.cpp COMPILE_FLAGS "-O1")
-ENDIF(NOT APPLE)
+ENDIF(APPLE)
 
 #############################################################################
 # Compiler flags for specific setup
 #############################################################################
 
-# doug - When linking liblux as a python extension, need to compile with -fPIC
-#ADD_DEFINITIONS(-fPIC)
-
-# Jens - default Mac compiler options with OpenGL
-#ADD_DEFINITIONS(-O3 -ftree-vectorize -msse -msse2 -msse3 -mssse3 -fvariable-expansion-in-unroller -fpic -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H )
 # Jens - testing Mac compiler options (debug)
-#ADD_DEFINITIONS(-DHAVE_PTHREAD_H)
+#ADD_DEFINITIONS(-O0 -fpic -Wall -DHAVE_PTHREAD_H)
 
 # Dade - GCC Profiling (remember to uncomment the line at the end of file too)
-#ADD_DEFINITIONS(-pg -g -O2 -msse2 -mfpmath=sse -ftree-vectorize -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
+#ADD_DEFINITIONS(-pg -g -O2 -msse2 -mfpmath=sse -ftree-vectorize -Wall -DHAVE_PTHREAD_H)
 
 # Dade - GCC 2 pass optimization (remember to uncomment the line at the end of file too)
-#ADD_DEFINITIONS(-O3 --coverage -march=prescott -mfpmath=sse -ftree-vectorize -funroll-loops -ffast-math -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
-#ADD_DEFINITIONS(-O3 -fbranch-probabilities -march=prescott -mfpmath=sse -ftree-vectorize -funroll-loops -ffast-math -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
+#ADD_DEFINITIONS(-O3 --coverage -march=prescott -mfpmath=sse -ftree-vectorize -funroll-loops -ffast-math -Wall -DHAVE_PTHREAD_H)
+#ADD_DEFINITIONS(-O3 -fbranch-probabilities -march=prescott -mfpmath=sse -ftree-vectorize -funroll-loops -ffast-math -Wall -DHAVE_PTHREAD_H)
 
 # Dade - my settings
-#ADD_DEFINITIONS(-g -O0 -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
-#ADD_DEFINITIONS(-O3 -march=prescott -msse2 -mfpmath=sse -ftree-vectorize -funroll-loops -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
-#ADD_DEFINITIONS(-O3 -march=athlon-xp -m3dnow -msse2 -mfpmath=sse -ftree-vectorize -funroll-loops -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H )
+#ADD_DEFINITIONS(-g -O0 -DHAVE_PTHREAD_H)
+#ADD_DEFINITIONS(-O3 -march=prescott -msse2 -mfpmath=sse -ftree-vectorize -funroll-loops -Wall -DHAVE_PTHREAD_H)
+#ADD_DEFINITIONS(-O3 -march=athlon-xp -m3dnow -msse2 -mfpmath=sse -ftree-vectorize -funroll-loops -Wall -DHAVE_PTHREAD_H )
 
 # Dade - Intel CC settings (double pass, 32bit, remember to uncomment the line at the end of file too)
 #  rm -rf CMakeCache.txt CMakeFiles
 #  CC=/opt/intel/cc/10.1.015/bin/icc CXX=/opt/intel/cc/10.1.015/bin/icpc cmake lux
 # Pass 1
-#ADD_DEFINITIONS(-prof-gen -prof-dir /tmp  -O3 -ipo -mtune=core2 -xT -unroll -fp-model fast=2 -rcd -no-prec-div -DLUX_USE_OPENGL -DHAVE_PTHREAD_H '-D"__sync_fetch_and_add(ptr,addend)=_InterlockedExchangeAdd(const_cast<void*>(reinterpret_cast<volatile void*>(ptr)), addend)"')
+#ADD_DEFINITIONS(-prof-gen -prof-dir /tmp  -O3 -ipo -mtune=core2 -xT -unroll -fp-model fast=2 -rcd -no-prec-div -DHAVE_PTHREAD_H '-D"__sync_fetch_and_add(ptr,addend)=_InterlockedExchangeAdd(const_cast<void*>(reinterpret_cast<volatile void*>(ptr)), addend)"')
 # Pass 2
-#ADD_DEFINITIONS(-prof-use -prof-dir /tmp  -O3 -ipo -mtune=core2 -xT -unroll -fp-model fast=2 -rcd -no-prec-div -DLUX_USE_OPENGL -DHAVE_PTHREAD_H '-D"__sync_fetch_and_add(ptr,addend)=_InterlockedExchangeAdd(const_cast<void*>(reinterpret_cast<volatile void*>(ptr)), addend)"')
+#ADD_DEFINITIONS(-prof-use -prof-dir /tmp  -O3 -ipo -mtune=core2 -xT -unroll -fp-model fast=2 -rcd -no-prec-div -DHAVE_PTHREAD_H '-D"__sync_fetch_and_add(ptr,addend)=_InterlockedExchangeAdd(const_cast<void*>(reinterpret_cast<volatile void*>(ptr)), addend)"')
  
 # Dade - Intel CC settings (single pass, 32bit)
-#ADD_DEFINITIONS(-O3 -ip -mtune=core2 -xT -unroll -fp-model fast=2 -rcd -no-prec-div -DLUX_USE_OPENGL -DHAVE_PTHREAD_H '-D"__sync_fetch_and_add(ptr,addend)=_InterlockedExchangeAdd(const_cast<void*>(reinterpret_cast<volatile void*>(ptr)), addend)"')
+#ADD_DEFINITIONS(-O3 -ip -mtune=core2 -xT -unroll -fp-model fast=2 -rcd -no-prec-div -DHAVE_PTHREAD_H '-D"__sync_fetch_and_add(ptr,addend)=_InterlockedExchangeAdd(const_cast<void*>(reinterpret_cast<volatile void*>(ptr)), addend)"')
 
 # Dade - Intel CC settings (single pass, 64bit)
-#ADD_DEFINITIONS(-O3 -ip -mtune=core2 -xT -unroll -fp-model fast=2 -rcd -no-prec-div -DLUX_USE_OPENGL -DHAVE_PTHREAD_H '-D"__sync_fetch_and_add(ptr,addend)=_InterlockedExchangeAdd(const_cast<void*>(reinterpret_cast<volatile void*>(ptr)), addend)"' -DBOOST_NO_INTRINSIC_INT64_T "-D'__builtin_vsnprintf(__out, __size, __fmt, __args)'='__builtin_vsnprintf(__out, __size, __fmt, (char *) __args)'") 
+#ADD_DEFINITIONS(-O3 -ip -mtune=core2 -xT -unroll -fp-model fast=2 -rcd -no-prec-div -DHAVE_PTHREAD_H '-D"__sync_fetch_and_add(ptr,addend)=_InterlockedExchangeAdd(const_cast<void*>(reinterpret_cast<volatile void*>(ptr)), addend)"' -DBOOST_NO_INTRINSIC_INT64_T "-D'__builtin_vsnprintf(__out, __size, __fmt, __args)'='__builtin_vsnprintf(__out, __size, __fmt, (char *) __args)'") 
 
-#ADD_DEFINITIONS(-O3 -msse -mfpmath=sse -ftree-vectorize -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
-#ADD_DEFINITIONS(-O3 -march=athlon-xp -mmmx -m3dnow -msse -mfpmath=sse -ftree-vectorize -Wall -DLUX_USE_OPENGL -DHAVE_PTHREAD_H )
-#ADD_DEFINITIONS(-O3 -Wall -msse -msse2 -DLUX_USE_SSE -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
-#ADD_DEFINITIONS(-g -Wall -msse -DLUX_USE_OPENGL -DHAVE_PTHREAD_H)
+#ADD_DEFINITIONS(-O3 -msse -mfpmath=sse -ftree-vectorize -Wall -DHAVE_PTHREAD_H)
+#ADD_DEFINITIONS(-O3 -march=athlon-xp -mmmx -m3dnow -msse -mfpmath=sse -ftree-vectorize -Wall -DHAVE_PTHREAD_H )
+#ADD_DEFINITIONS(-O3 -Wall -msse -msse2 -DLUX_USE_SSE -DHAVE_PTHREAD_H)
+#ADD_DEFINITIONS(-g -Wall -msse -DHAVE_PTHREAD_H)
 #ICC definitions
 #ADD_DEFINITIONS(-O3 -ipo -no-prec-div -static -fp-model fast=2 -rcd)
 
 #############################################################################
 #############################################################################
-#########################      CUSTOM COMMAND     ###########################
-#############################################################################
-#############################################################################
-# Create custom command for flex/lex (note the outputs)
-ADD_CUSTOM_COMMAND(
-SOURCE ${CMAKE_SOURCE_DIR}/core/luxlex.l
-COMMAND ${FLEX_EXECUTABLE} 
-ARGS -o${CMAKE_BINARY_DIR}/luxlex.cpp
-      ${CMAKE_SOURCE_DIR}/core/luxlex.l
-TARGET LuxLexer
-#DEPENDS ${CMAKE_BINARY_DIR}/core/pbrtparse.cpp ${lux_BINARY_DIR}/core/pbrtparse.h
-OUTPUTS ${CMAKE_BINARY_DIR}/luxlex.cpp)
-SET_SOURCE_FILES_PROPERTIES(${CMAKE_BINARY_DIR}/luxlex.cpp GENERATED)
-
-# Create custom command for bison/yacc (note the DEPENDS)
-IF(APPLE AND !APPLE_64)
-	ADD_CUSTOM_COMMAND(
-	TARGET LuxParser
-	#DEPENDS ${CMAKE_BINARY_DIR}/core/luxlex.cpp
-	SOURCE ${CMAKE_SOURCE_DIR}/core/luxparse.y
-	COMMAND ${BISON_EXECUTABLE} -y ${CMAKE_SOURCE_DIR}/core/luxparse.y -o ${CMAKE_BINARY_DIR}/luxparse.cpp -d
-	COMMAND mv ${CMAKE_SOURCE_DIR}/luxparse.cpp.h ${CMAKE_BINARY_DIR}/luxparse.hpp
-	OUTPUTS ${CMAKE_BINARY_DIR}/luxparse.cpp ${CMAKE_BINARY_DIR}/luxparse.hpp)
-ELSE(APPLE AND !APPLE_64)
-	ADD_CUSTOM_COMMAND(
-	SOURCE ${CMAKE_SOURCE_DIR}/core/luxparse.y
-	COMMAND ${BISON_EXECUTABLE} 
-	ARGS -y ${CMAKE_SOURCE_DIR}/core/luxparse.y
-	     -o ${CMAKE_BINARY_DIR}/luxparse.cpp
-	     -d
-	TARGET LuxParser
-	#DEPENDS ${CMAKE_BINARY_DIR}/core/luxlex.cpp
-	OUTPUTS ${CMAKE_BINARY_DIR}/luxparse.cpp ${CMAKE_BINARY_DIR}/luxparse.hpp)
-ENDIF(APPLE AND !APPLE_64)
-SET_SOURCE_FILES_PROPERTIES(${CMAKE_BINARY_DIR}/core/luxparse.cpp GENERATED)
-
-
-#############################################################################
-#############################################################################
-##################  APPLE CUSTOM GUI_TYPE MACOSX_BUNDLE  ####################
+###########################   SYSTEM LIBRARIES    ###########################
 #############################################################################
 #############################################################################
 IF(APPLE)
-	ADD_CUSTOM_TARGET(dist DEPENDS luxrenderwx)
-	ADD_CUSTOM_COMMAND(
-	TARGET dist POST_BUILD
-	COMMAND rm -rf luxrenderwx.app 
-	COMMAND mkdir luxrenderwx.app 
-	COMMAND mkdir luxrenderwx.app/Contents 
-	COMMAND mkdir luxrenderwx.app/Contents/MacOS 
-	COMMAND mkdir luxrenderwx.app/Contents/Resources
-	COMMAND cp ../macos/Info.plist luxrenderwx.app/Contents
-	COMMAND cp luxrender.icns luxrenderwx.app/Contents/Resources
-	COMMAND echo APPLnone > luxrenderwx.app/Contents/PkgInfo
-	COMMAND cp luxrenderwx luxrenderwx.app/Contents/MacOS/luxrenderwx)
-	ADD_CUSTOM_TARGET(dist DEPENDS luxrender)
-	ADD_CUSTOM_COMMAND(
-	TARGET dist POST_BUILD
-	COMMAND rm -rf luxrender.app 
-	COMMAND mkdir luxrender.app 
-	COMMAND mkdir luxrender.app/Contents 
-	COMMAND mkdir luxrender.app/Contents/MacOS 
-	COMMAND mkdir luxrender.app/Contents/Resources
-	COMMAND cp ../macos/Info.plist luxrender.app/Contents
-	COMMAND cp luxrender.icns luxrender.app/Contents/Resources
-	COMMAND echo APPLnone > luxrender.app/Contents/PkgInfo
-	COMMAND cp luxrender luxrender.app/Contents/MacOS/luxrender)
-
-	SET(GUI_TYPE MACOSX_BUNDLE)
-	# SET(MACOSX_BUNDLE_LONG_VERSION_STRING "${OPENSCENEGRAPH_MAJOR_VERSION}.${OPENSCENEGRAPH_MINOR_VERSION}.${OPENSCENEGRAPH_PATCH_VERSION}")
-	# Short Version is the "marketing version". It is the version
-	# the user sees in an information panel.
-	SET(MACOSX_BUNDLE_SHORT_VERSION_STRING "${VERSION}")
-	# Bundle version is the version the OS looks at.
-	SET(MACOSX_BUNDLE_BUNDLE_VERSION "${VERSION}")
-	SET(MACOSX_BUNDLE_GUI_IDENTIFIER "org.luxrender.luxrender" )
-	SET(MACOSX_BUNDLE_BUNDLE_NAME "luxrender" )
-	SET(MACOSX_BUNDLE_ICON_FILE "luxrender.icns")
-	# SET(MACOSX_BUNDLE_COPYRIGHT "")
-	# SET(MACOSX_BUNDLE_INFO_STRING "Info string, localized?")
-ENDIF(APPLE)
-
-
-#############################################################################
-#############################################################################
-#####################      SOURCE FILE FOR lux_lib     ######################
-#############################################################################
-#############################################################################
-
-SET(lux_core_reflection_src
-	core/reflection/bxdf.cpp
-	core/reflection/fresnel.cpp
-	core/reflection/microfacetdistribution.cpp
-	core/reflection/bxdf/brdftobtdf.cpp
-	core/reflection/bxdf/cooktorrance.cpp
-	core/reflection/bxdf/fresnelblend.cpp
-	core/reflection/bxdf/lafortune.cpp
-	core/reflection/bxdf/lambertian.cpp
-	core/reflection/bxdf/microfacet.cpp
-	core/reflection/bxdf/nulltransmission.cpp
-	core/reflection/bxdf/orennayar.cpp
-	core/reflection/bxdf/schlickbrdf.cpp
-	core/reflection/bxdf/specularreflection.cpp
-	core/reflection/bxdf/speculartransmission.cpp
-	core/reflection/fresnel/fresnelcauchy.cpp
-	core/reflection/fresnel/fresnelconductor.cpp
-	core/reflection/fresnel/fresneldielectric.cpp
-	core/reflection/fresnel/fresnelgeneral.cpp
-	core/reflection/fresnel/fresnelnoop.cpp
-	core/reflection/fresnel/fresnelslick.cpp
-	core/reflection/microfacetdistribution/anisotropic.cpp
-	core/reflection/microfacetdistribution/beckmann.cpp
-	core/reflection/microfacetdistribution/blinn.cpp
-	core/reflection/microfacetdistribution/schlickdistribution.cpp
-	core/reflection/microfacetdistribution/wardisotropic.cpp
-	)
-SET(lux_core_src
-	${CMAKE_BINARY_DIR}/luxparse.cpp
-	${CMAKE_BINARY_DIR}/luxlex.cpp
-	core/api.cpp
-	core/camera.cpp
-	core/color.cpp
-	core/context.cpp
-	core/contribution.cpp
-	core/dynload.cpp
-	core/epsilon.cpp
-	core/exrio.cpp
-	core/film.cpp
-	core/geometry/bbox.cpp
-	core/geometry/matrix4x4.cpp
-	core/geometry/quaternion.cpp
-	core/geometry/raydifferential.cpp
-	core/geometry/transform.cpp
-	core/igiio.cpp
-	core/imagereader.cpp
-	core/light.cpp
-	core/material.cpp
-	core/mc.cpp
-	core/motionsystem.cpp
-	core/osfunc.cpp
-	core/paramset.cpp
-	core/photonmap.cpp
-	core/pngio.cpp
-	core/primitive.cpp
-	core/queryable/queryable.cpp
-	core/queryable/queryableattribute.cpp
-	core/queryable/queryableregistry.cpp
-	${lux_core_reflection_src}
-	core/renderfarm.cpp
-	core/renderinghints.cpp
-	core/sampling.cpp
-	core/scene.cpp
-	core/shape.cpp
-	core/spd.cpp
-	core/spectrum.cpp
-	core/spectrumwavelengths.cpp
-	core/texture.cpp
-	core/tgaio.cpp
-	core/timer.cpp
-	core/transport.cpp
-	core/util.cpp
-	core/volume.cpp
-	renderer/renderserver.cpp
-	)
-SET(lux_accelerators_src
-	accelerators/bruteforce.cpp
-    accelerators/bvhaccel.cpp
-	accelerators/grid.cpp
-	accelerators/qbvhaccel.cpp
-	accelerators/tabreckdtree.cpp
-	accelerators/unsafekdtree.cpp
-	)
-SET(lux_cameras_src
-	cameras/environment.cpp
-	cameras/perspective.cpp
-	cameras/orthographic.cpp
-	cameras/realistic.cpp
-	)
-SET(lux_films_src
-	film/fleximage.cpp
-	)
-SET(lux_filters_src
-	filters/box.cpp
-	filters/gaussian.cpp
-	filters/mitchell.cpp
-	filters/sinc.cpp
-	filters/triangle.cpp
-	)
-SET(lux_integrators_src
-	integrators/bidirectional.cpp
-	integrators/directlighting.cpp
-	integrators/ardirectlighting.cpp
-	integrators/distributedpath.cpp
-	integrators/emission.cpp
-	integrators/exphotonmap.cpp
-	integrators/igi.cpp
-	integrators/path.cpp
-	integrators/arpath.cpp
-	integrators/single.cpp
-	)
-SET(lux_lights_src
-        lights/mediancut/summedareatable.cpp
-        lights/mediancut/mediancut.cpp
-	lights/area.cpp
-	lights/distant.cpp
-	lights/infinite.cpp
-	lights/infinitesample.cpp
-	lights/pointlight.cpp
-	lights/projection.cpp
-	lights/sphericalfunction/photometricdata_ies.cpp
-	lights/sphericalfunction/sphericalfunction.cpp
-	lights/sphericalfunction/sphericalfunction_ies.cpp
-	lights/spot.cpp
-	lights/sky.cpp
-	lights/sun.cpp
-	)
-SET(lux_materials_src
-	materials/carpaint.cpp
-	materials/glass.cpp
-	materials/glass2.cpp
-	materials/glossy.cpp
-	materials/glossy2.cpp
-	materials/matte.cpp
-	materials/mattetranslucent.cpp
-	materials/metal.cpp
-	materials/mirror.cpp
-	materials/mixmaterial.cpp
-	materials/null.cpp
-	materials/roughglass.cpp
-	materials/shinymetal.cpp
-	)
-SET(lux_pixelsamplers_src
-	pixelsamplers/hilbertpx.cpp
-	pixelsamplers/linear.cpp
-	pixelsamplers/lowdiscrepancypx.cpp
-	pixelsamplers/tilepx.cpp
-	pixelsamplers/vegas.cpp
-	)
-SET(lux_samplers_src
-	samplers/erpt.cpp
-	samplers/lowdiscrepancy.cpp
-	samplers/metrosampler.cpp
-	samplers/random.cpp
-	)
-SET(lux_shapes_src
-	shapes/cone.cpp
-	shapes/cylinder.cpp
-	shapes/disk.cpp
-	shapes/heightfield.cpp
-	shapes/hyperboloid.cpp
-	shapes/lenscomponent.cpp
-	shapes/loopsubdiv.cpp
-	shapes/mesh.cpp
-	shapes/meshbarytriangle.cpp
-	shapes/meshquadrilateral.cpp
-	shapes/meshwaldtriangle.cpp
-	shapes/nurbs.cpp
-	shapes/paraboloid.cpp
-	shapes/plymesh.cpp
-	shapes/plymesh/rply.c
-	shapes/sphere.cpp
-	shapes/torus.cpp
-	)
-SET(lux_spds_src
-	spds/blackbodyspd.cpp
-	spds/equalspd.cpp
-	spds/frequencyspd.cpp
-	spds/gaussianspd.cpp
-	spds/irregular.cpp
-	spds/regular.cpp
-	spds/rgbillum.cpp
-	spds/rgbrefl.cpp
-	)
-SET(lux_blender_textures_src
-	textures/blender_base.cpp
-	textures/blender_blend.cpp
-	textures/blender_clouds.cpp
-	textures/blender_distortednoise.cpp
-	textures/blender_magic.cpp
-	textures/blender_marble.cpp
-	textures/blender_musgrave.cpp
-	textures/blender_noise.cpp
-	textures/blender_noiselib.cpp
-	textures/blender_stucci.cpp
-	textures/blender_texlib.cpp
-	textures/blender_voronoi.cpp
-	textures/blender_wood.cpp
-	)
-SET(lux_uniform_textures_src
-	textures/blackbody.cpp
-	textures/constant.cpp
-	textures/equalenergy.cpp
-	textures/frequencytexture.cpp
-	textures/gaussiantexture.cpp
-	textures/irregulardata.cpp
-	textures/lampspectrum.cpp
-	textures/regulardata.cpp
-	textures/tabulateddata.cpp
-	)
-SET(lux_fresnel_textures_src
-	textures/cauchytexture.cpp
-	textures/sellmeiertexture.cpp
-	textures/tabulatedfresnel.cpp
-	)
-SET(lux_textures_src
-	${lux_uniform_textures_src}
-	${lux_blender_textures_src}
-	${lux_fresnel_textures_src}
-	textures/bilerp.cpp
-	textures/brick.cpp
-	textures/checkerboard.cpp
-	textures/dots.cpp
-        textures/fbm.cpp
-	textures/harlequin.cpp
-	textures/imagemap.cpp
-	textures/marble.cpp
-	textures/mix.cpp
-	textures/scale.cpp
-	textures/uv.cpp
-	textures/uvmask.cpp
-	textures/windy.cpp
-	textures/wrinkled.cpp
-	)
-SET(lux_tonemaps_src
-	tonemaps/contrast.cpp
-	tonemaps/highcontrast.cpp
-	tonemaps/lineartonemap.cpp
-	tonemaps/maxwhite.cpp
-	tonemaps/nonlinear.cpp
-	tonemaps/reinhard.cpp
-	)
-SET(lux_volumes_src
-	volumes/clearvolume.cpp
-	volumes/cloud.cpp
-	volumes/exponential.cpp
-	volumes/homogeneous.cpp
-	volumes/volumegrid.cpp
-	)
-
-SET(lux_lib_src
-	${lux_core_src}
-	${lux_accelerators_src}
-	${lux_cameras_src}
-	${lux_films_src}
-	${lux_filters_src}
-	${lux_integrators_src}
-	${lux_lights_src}
-	${lux_materials_src}
-	${lux_pixelsamplers_src}
-	${lux_samplers_src}
-	${lux_shapes_src}
-	${lux_spds_src}
-	${lux_textures_src}
-	${lux_tonemaps_src}
-	${lux_volumes_src}
-	)
-INCLUDE_DIRECTORIES(SYSTEM
-	${Boost_INCLUDE_DIRS}
-	${CMAKE_SOURCE_DIR}/core/external
-	${JPEG_INCLUDE_DIR}
-	${TIFF_INCLUDE_DIR}
-	${PNG_INCLUDE_DIR}
-	${OPENEXR_INCLUDE_DIRS}
-	)
-INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/core
-	${CMAKE_SOURCE_DIR}/core/queryable
-	${CMAKE_SOURCE_DIR}/core/reflection
-	${CMAKE_SOURCE_DIR}/core/reflection/bxdf
-	${CMAKE_SOURCE_DIR}/core/reflection/fresnel
-	${CMAKE_SOURCE_DIR}/core/reflection/microfacetdistribution
-	${CMAKE_SOURCE_DIR}/spds
-	${CMAKE_SOURCE_DIR}/lights/sphericalfunction
-	${CMAKE_SOURCE_DIR}
-	${CMAKE_BINARY_DIR}
-	)
-
-SET( LUXQTGUI_SRCS
-	qtgui/main.cpp
-	qtgui/histogramview.cpp
-	qtgui/mainwindow.cpp
-	qtgui/renderview.cpp
-	qtgui/luxapp.cpp
-	qtgui/aboutdialog.cpp
-	qtgui/lightgroupwidget.cpp
-	qtgui/tonemapwidget.cpp
-	qtgui/lenseffectswidget.cpp
-	qtgui/colorspacewidget.cpp
-	qtgui/gammawidget.cpp
-	qtgui/noisereductionwidget.cpp
-	qtgui/histogramwidget.cpp
-	qtgui/panewidget.cpp
-	qtgui/backgroundwidget.cpp
-	)
-SET( LUXQTGUI_MOC
-	qtgui/histogramview.hxx
-	qtgui/mainwindow.hxx
-	qtgui/aboutdialog.hxx
-	qtgui/luxapp.hxx
-	qtgui/renderview.hxx
-	qtgui/lightgroupwidget.hxx
-	qtgui/tonemapwidget.hxx
-	qtgui/lenseffectswidget.hxx
-	qtgui/colorspacewidget.hxx
-	qtgui/gammawidget.hxx
-	qtgui/noisereductionwidget.hxx
-	qtgui/histogramwidget.hxx
-	qtgui/panewidget.hxx
-	qtgui/backgroundwidget.hxx
-	)
-SET(LUXQTGUI_UIS
-	qtgui/luxrender.ui
-	qtgui/aboutdialog.ui
-	qtgui/lightgroup.ui
-	qtgui/tonemap.ui
-	qtgui/lenseffects.ui
-	qtgui/colorspace.ui
-	qtgui/gamma.ui
-	qtgui/noisereduction.ui
-	qtgui/histogram.ui
-	qtgui/pane.ui
-	qtgui/background.ui
-	)
-SET( LUXQTGUI_RCS
-	qtgui/icons.qrc
-	qtgui/splash.qrc
-	qtgui/images.qrc
-	)
+	SET(SYS_LIBRARIES z bz2)
+ELSEIF (WIN32)
+	SET(SYS_LIBRARIES ${SYS_LIBRARIES} "shell32.lib")
+ENDIF (APPLE)
 
 #############################################################################
 #############################################################################
@@ -744,229 +347,103 @@ SET( LUXQTGUI_RCS
 #############################################################################
 
 LINK_DIRECTORIES(${LINK_DIRECTORIES} ${Boost_LIBRARY_DIRS} )
+IF (APPLE)
+	SET(OSX_CORELIB_LINKER_FLAGS -all_load)
+	SET(OSX_SHARED_CORELIB ${CMAKE_BINARY_DIR}/Release/liblux.dylib)
+ELSEIF(MSVC)
+	IF(MSVC90)
+		# LTCG not correctly set by cmake in the current release - in the meantime the linker will inform you about switching this flag automatically because of /GL
+		#SET(MSVC_RELEASE_LINKER_FLAGS "/LTCG")
+		SET(MSVC_RELEASE_LINKER_FLAGS "/LTCG /OPT:NOREF /OPT:ICF")
+		SET(MSVC_RELEASE_WITH_DEBUG_LINKER_FLAGS "/DEBUG")
+		SET(STATIC_LIBRARY_FLAGS_RELEASE "${STATIC_LIBRARY_FLAGS_RELEASE} ${MSVC_RELEASE_LINKER_FLAGS} ${MSVC_DEBUG_LINKER_FLAGS}")
+		SET(SHARED_LIBRARY_FLAGS_RELEASE "${SHARED_LIBRARY_FLAGS_RELEASE} ${MSVC_RELEASE_LINKER_FLAGS} ${MSVC_DEBUG_LINKER_FLAGS}")
+		SET(CMAKE_EXE_LINKER_FLAGS "${MSVC_RELEASE_LINKER_FLAGS}")
 
-#Here we build the core library
-ADD_LIBRARY(lux STATIC ${lux_lib_src} )
-#TARGET_LINK_LIBRARIES(lux ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} )
+		# Prevent cmake from adding about any std. lib there is
+		SET(CMAKE_C_STANDARD_LIBRARIES "")
+		SET(CMAKE_CXX_STANDARD_LIBRARIES "")
+	ELSEIF(MSVC10)
+		# LTCG not correctly set by cmake in the current release - in the meantime the linker will inform you about switching this flag automatically because of /GL
+		#SET(MSVC_RELEASE_LINKER_FLAGS "/LTCG")
+		SET(MSVC_RELEASE_LINKER_FLAGS "/LTCG /OPT:REF /OPT:ICF")
+		SET(MSVC_RELEASE_WITH_DEBUG_LINKER_FLAGS "/DEBUG")
+		SET(STATIC_LIBRARY_FLAGS_RELEASE "${STATIC_LIBRARY_FLAGS_RELEASE} ${MSVC_RELEASE_LINKER_FLAGS} ${MSVC_DEBUG_LINKER_FLAGS}")
+		SET(SHARED_LIBRARY_FLAGS_RELEASE "${SHARED_LIBRARY_FLAGS_RELEASE} ${MSVC_RELEASE_LINKER_FLAGS} ${MSVC_DEBUG_LINKER_FLAGS}")
 
-
-#############################################################################
-#Here we build the console executable
-#############################################################################
-ADD_EXECUTABLE(luxconsole renderer/luxconsole.cpp)
-IF(APPLE)
-	TARGET_LINK_LIBRARIES(luxconsole -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} z ${Boost_LIBRARIES} )
+		# Prevent cmake from adding about any std. lib there is
+		SET(CMAKE_C_STANDARD_LIBRARIES "")
+		SET(CMAKE_CXX_STANDARD_LIBRARIES "")
+	ENDIF(MSVC90)
+	ADD_DEFINITIONS(-DLUX_DLL)
+	SET(LUX_LIBRARY luxShared)
 ELSE(APPLE)
-	TARGET_LINK_LIBRARIES(luxconsole -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES}  ${SYS_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARY})
+	SET(LUX_LIBRARY -Wl,--whole-archive luxStatic -Wl,--no-whole-archive)
 ENDIF(APPLE)
+SET(LUX_LIBRARY_DEPENDS ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARIES} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${SYS_LIBRARIES})
 
 #############################################################################
-#Here we build the LuxMerger executable
 #############################################################################
-ADD_EXECUTABLE(luxmerger tools/luxmerger.cpp)
+#########################      LIBRARY BUILD      ###########################
+#############################################################################
+#############################################################################
+INCLUDE(liblux)
+
+#############################################################################
+#############################################################################
+############################   PYTHON LIBRARY    ############################
+#############################################################################
+#############################################################################
+INCLUDE(pylux)
+
+#############################################################################
+#############################################################################
+#############################    Binaries       #############################
+#############################################################################
+#############################################################################
+INCLUDE(luxconsole)
+INCLUDE(luxmerger)
+INCLUDE(luxcomp)
+INCLUDE(luxrender)
+
+#############################################################################
+#############################################################################
+##########################   Install targets       ##########################
+#############################################################################
+#############################################################################
+
 IF(APPLE)
-	TARGET_LINK_LIBRARIES(luxmerger -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} z ${Boost_LIBRARIES} )
+
+#	TODO: custom install
+
+ELSEIF(WIN32)
+
+	#TODO: custom install
+
 ELSE(APPLE)
-	TARGET_LINK_LIBRARIES(luxmerger -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES}  ${SYS_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARY})
-ENDIF(APPLE)
+	INSTALL(TARGETS luxconsole luxmerger RUNTIME DESTINATION bin)
+	IF(QT4_FOUND)
+		INSTALL(TARGETS luxrender RUNTIME DESTINATION bin)
+	ENDIF(QT4_FOUND)
 
-#############################################################################
-#Here we build the LuxComp executable
-#############################################################################
-ADD_EXECUTABLE(luxcomp tools/luxcomp.cpp)
-IF(APPLE)
-	TARGET_LINK_LIBRARIES(luxcomp -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} z ${Boost_LIBRARIES} )
-ELSE(APPLE)
-	TARGET_LINK_LIBRARIES(luxcomp -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES}  ${SYS_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARY})
-ENDIF(APPLE)
+	#Install API/Library
+	INSTALL(FILES ${CMAKE_SOURCE_DIR}/core/api.h DESTINATION include/luxrender/)
+	INSTALL(TARGETS luxStatic DESTINATION lib${LIB_SUFFIX})
 
-#############################################################################
-#Here we build the python module
-#############################################################################
+	#Install Desktop files
+	INSTALL(FILES ${CMAKE_SOURCE_DIR}/wxgui/luxrender.svg DESTINATION share/pixmaps/)
+	INSTALL(FILES ${CMAKE_SOURCE_DIR}/wxgui/luxrender.desktop DESTINATION share/applications/)
 
-#############################################################################
-#############################################################################
-###########################   PYTHON LIBRARIES    ###########################
-#############################################################################
-#############################################################################
-FIND_PACKAGE(PythonLibs)
-IF(PYTHONLIBS_FOUND)
-	MESSAGE(STATUS "Python library directory: " ${PYTHON_LIBRARIES} )
-	MESSAGE(STATUS "Python include directory: " ${PYTHON_INCLUDE_PATH} )
-
-	INCLUDE_DIRECTORIES(SYSTEM ${PYTHON_INCLUDE_PATH})
-	IF(APPLE)
-		ADD_LIBRARY(pylux MODULE python/binding.cpp)
-		TARGET_LINK_LIBRARIES(pylux -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z bz2  ${SYS_LIBRARIES} ${PYTHON_LIBRARIES} ${Boost_python_LIBRARIES})
-### if XCode used for compiling ###
-#		ADD_CUSTOM_COMMAND(
-#			TARGET pylux POST_BUILD
-#			COMMAND mv release/libpylux.so release/pylux.so
-#		)
-	ELSE(APPLE)
-		ADD_LIBRARY(pylux SHARED python/binding.cpp)
-		TARGET_LINK_LIBRARIES(pylux -Wl,--whole-archive lux -Wl,--no-whole-archive ${CMAKE_THREAD_LIBS_INIT} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${SYS_LIBRARIES} ${PYTHON_LIBRARIES} ${Boost_python_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARY})
-		ADD_CUSTOM_COMMAND(
-			TARGET pylux POST_BUILD
-			COMMAND mv libpylux.so pylux.so
-			)
-	ENDIF(APPLE)
-ELSE(PYTHONLIBS_FOUND)
-	MESSAGE( STATUS "Warning : could not find Python libraries - not building python module")
-ENDIF(PYTHONLIBS_FOUND)
-
-
-#############################################################################
-#Here we build the wxWidgets GUI executable
-#############################################################################
-
-#############################################################################
-#############################################################################
-###########################      Find OpenGL       ##########################
-#############################################################################
-#############################################################################
-SET(OPENGL_LIBRARY ${CMAKE_ROOT}/Modules/FindOpenGL.cmake)
-INCLUDE(${CMAKE_ROOT}/Modules/FindOpenGL.cmake)
-
-MESSAGE(STATUS "OpenGL include directory: " ${OPENGL_INCLUDE_DIR})
-
-INCLUDE_DIRECTORIES(SYSTEM ${OPENGL_INCLUDE_DIR})
-
-#############################################################################
-#############################################################################
-######################### wxWidgets LIBRARIES SETUP #########################
-#############################################################################
-#############################################################################
-# Here you can define what libraries of wxWidgets you need for your
-# application. You can figure out what libraries you need here;
-# http://www.wxwidgets.org/manuals/2.8/wx_librarieslist.html
-SET(wxWidgets_USE_LIBS base core gl aui adv )
-FIND_PACKAGE(wxWidgets)
-
-IF(wxWidgets_FOUND)
-	# Include wxWidgets macros
-	INCLUDE(${wxWidgets_USE_FILE})
-	MESSAGE( STATUS "wxWidgets include directory: " ${wxWidgets_INCLUDE_DIRS} )
-
-	ADD_EXECUTABLE(luxrenderwx ${GUI_TYPE} renderer/wxluxapp.cpp renderer/wxluxgui.cpp renderer/wxluxframe.cpp renderer/wxglviewer.cpp renderer/wxviewer.cpp)
-	INCLUDE_DIRECTORIES(SYSTEM ${wxWidgets_INCLUDE_DIRS} )
-
-	IF(APPLE)
-		INCLUDE_DIRECTORIES (SYSTEM /Developer/Headers/FlatCarbon /usr/local/include)
-		FIND_LIBRARY(CARBON_LIBRARY Carbon)
-		FIND_LIBRARY(PYTHON_LIBRARY Python )
-		FIND_LIBRARY(OPENGL_LIBRARY OpenGL )
-		FIND_LIBRARY(AGL_LIBRARY AGL )
-		FIND_LIBRARY(APP_SERVICES_LIBRARY ApplicationServices )
-
-		MESSAGE(STATUS ${CARBON_LIBRARY})
-		MARK_AS_ADVANCED (CARBON_LIBRARY)
-		MARK_AS_ADVANCED (PYTHON_LIBRARY)
-		MARK_AS_ADVANCED (OPENGL_LIBRARY)
-		MARK_AS_ADVANCED (AGL_LIBRARY)
-		MARK_AS_ADVANCED (APP_SERVICES_LIBRARY)
-		SET(EXTRA_LIBS ${CARBON_LIBRARY} ${OPENGL_LIBRARY} ${AGL_LIBRARY} ${APP_SERVICES_LIBRARY})
-		TARGET_LINK_LIBRARIES(luxrenderwx -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${wxWidgets_LIBRARIES} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${BZ2_LIBRARIES} )
-	ELSE(APPLE)
-		TARGET_LINK_LIBRARIES(luxrenderwx -Wl,--whole-archive lux -Wl,--no-whole-archive ${wxWidgets_LIBRARIES} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES}  ${SYS_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARY})
-	ENDIF(APPLE)
-ELSE(wxWidgets_FOUND)
-	MESSAGE( STATUS "Warning : could not find wxWidgets - not building GUI")
-ENDIF(wxWidgets_FOUND)
-
-#############################################################################
-#Here we build the QT4 GUI executable
-#############################################################################
-
-#############################################################################
-#############################################################################
-############################   QT4 LIBRARIES    #############################
-#############################################################################
-#############################################################################
-
-FIND_PACKAGE(Qt4)
-IF(QT4_FOUND)
-	MESSAGE(STATUS "Qt library directory: " ${QT_LIBRARY_DIR} )
-	MESSAGE( STATUS "Qt include directory: " ${QT_INCLUDE_DIR} )
-	SET(QT_USE_QTOPENGL TRUE)
-	INCLUDE(${QT_USE_FILE})
-
-	QT4_ADD_RESOURCES( LUXQTGUI_RC_SRCS ${LUXQTGUI_RCS}) 
-	QT4_WRAP_UI( LUXQTGUI_UI_HDRS ${LUXQTGUI_UIS} )
-	QT4_WRAP_CPP( LUXQTGUI_MOC_SRCS ${LUXQTGUI_MOC} )
-
-	#file (GLOB TRANSLATIONS_FILES qtgui/translations/*.ts)
-	#qt4_create_translation(QM_FILES ${FILES_TO_TRANSLATE} ${TRANSLATIONS_FILES})
-
-	#ADD_EXECUTABLE(luxrender ${GUI_TYPE} ${LUXQTGUI_SRCS} ${LUXQTGUI_MOC_SRCS} ${LUXQTGUI_RC_SRCS} ${LUXQTGUI_UI_HDRS} ${QM_FILES})
-	ADD_EXECUTABLE(luxrender ${GUI_TYPE} ${LUXQTGUI_SRCS} ${LUXQTGUI_MOC_SRCS} ${LUXQTGUI_RC_SRCS} ${LUXQTGUI_UI_HDRS})
-	IF(APPLE)
-		INCLUDE_DIRECTORIES (SYSTEM /Developer/Headers/FlatCarbon /usr/local/include)
-		FIND_LIBRARY(CARBON_LIBRARY Carbon)
-		FIND_LIBRARY(PYTHON_LIBRARY Python )
-		FIND_LIBRARY(QT_LIBRARY QtCore QtGui QtOpenGL)
-		FIND_LIBRARY(OPENGL_LIBRARY OpenGL )
-		FIND_LIBRARY(AGL_LIBRARY AGL )
-		FIND_LIBRARY(APP_SERVICES_LIBRARY ApplicationServices )
-
-		MESSAGE(STATUS ${CARBON_LIBRARY})
-		MARK_AS_ADVANCED (CARBON_LIBRARY)
-		MARK_AS_ADVANCED (PYTHON_LIBRARY)
-		MARK_AS_ADVANCED (QT_LIBRARY)
-		MARK_AS_ADVANCED (OPENGL_LIBRARY)
-		MARK_AS_ADVANCED (AGL_LIBRARY)
-		MARK_AS_ADVANCED (APP_SERVICES_LIBRARY)
-		SET(EXTRA_LIBS ${CARBON_LIBRARY} ${QT_LIBRARY} ${OPENGL_LIBRARY} ${AGL_LIBRARY} ${APP_SERVICES_LIBRARY})
-		TARGET_LINK_LIBRARIES(luxrender -Wl,-undefined -Wl,dynamic_lookup -all_load lux -noall_load ${QT_LIBRARIES} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} z ${BZ2_LIBRARIES} )
-### if XCode used for compiling ###
-#		ADD_CUSTOM_COMMAND(
-#			TARGET luxrender POST_BUILD
-#			COMMAND rm -rf release/luxrender.app/Contents/Resources
-#			COMMAND mkdir release/luxrender.app/Contents/Resources
-#			COMMAND cp ../macos/luxrender.icns release/luxrender.app/Contents/Resources
-#			COMMAND cp ../macos/luxscene.icns release/luxrender.app/Contents/Resources
-#			)
-	ELSE(APPLE)
-	TARGET_LINK_LIBRARIES(luxrender -Wl,--whole-archive lux -Wl,--no-whole-archive ${QT_LIBRARIES} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${EXTRA_LIBS} ${ZLIB_LIBRARIES} ${BZ2_LIBRARIES}  ${SYS_LIBRARIES}  ${OPENGL_LIBRARY} ${OPENEXR_LIBRARIES} ${PNG_LIBRARY})
-	ENDIF(APPLE)
-ELSE(QT4_FOUND)
-	MESSAGE( STATUS "Warning : could not find Qt - not building Qt GUI")
-ENDIF(QT4_FOUND)
-
-#############################################################################
-
-#Install target
-IF(wxWidgets_FOUND)
-	INSTALL(TARGETS luxrender luxrenderwx luxconsole luxmerger
-      	  RUNTIME DESTINATION bin
+	#Source package target
+	ADD_CUSTOM_TARGET(package mkdir lux-${VERSION}
+		COMMAND cp -R ${CMAKE_SOURCE_DIR}/* lux-${VERSION}
+		COMMAND tar -cf ${CMAKE_BINARY_DIR}/lux-${VERSION}.tar lux-${VERSION}
+		COMMAND bzip2 --best ${CMAKE_BINARY_DIR}/lux-${VERSION}.tar
+		WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+		DEPENDS ${lux_lib_src}
+		COMMENT Building source package
 	)
-ELSE(wxWidgets_FOUND)
-	INSTALL(TARGETS luxrender luxconsole luxmerger
-      	  RUNTIME DESTINATION bin
-	)
-ENDIF(wxWidgets_FOUND)
-
-#Install API/Library
-INSTALL(FILES ${CMAKE_SOURCE_DIR}/core/api.h DESTINATION include/luxrender/)
-INSTALL(TARGETS lux DESTINATION lib${LIB_SUFFIX})
-#	ELSE(FIND_LIBRARY_USE_LIB64_PATHS) ARCHIVE DESTINATION lib
-#	ENDIF(FIND_LIBRARY_USE_LIB64_PATHS)
-
-
-#Install Desktop files
-INSTALL(FILES ${CMAKE_SOURCE_DIR}/renderer/luxrender.svg DESTINATION share/pixmaps/)
-INSTALL(FILES ${CMAKE_SOURCE_DIR}/renderer/luxrender.desktop DESTINATION share/applications/)
-
-#Source package target
-ADD_CUSTOM_TARGET(package mkdir lux-${VERSION}
-	COMMAND cp -R ${CMAKE_SOURCE_DIR}/* lux-${VERSION}
-	COMMAND tar -cf ${CMAKE_BINARY_DIR}/lux-${VERSION}.tar lux-${VERSION}
-	COMMAND bzip2 --best ${CMAKE_BINARY_DIR}/lux-${VERSION}.tar
-	WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-	DEPENDS ${lux_lib_src}
-	COMMENT Building source package
-)
-
+ENDIF(APPLE)
 # Dade - GCC Profiling (remember to uncomment the line in the middle of file too)
 #SET_TARGET_PROPERTIES(luxconsole luxmerger luxrender PROPERTIES LINK_FLAGS "-pg")
 
@@ -975,3 +452,38 @@ ADD_CUSTOM_TARGET(package mkdir lux-${VERSION}
 
 # Dade - Intel Compiler optimization
 #REMOVE_DEFINITIONS(-ipo)
+
+IF(APPLE)
+	MESSAGE(STATUS "")
+	MESSAGE(STATUS "################ GENERATED XCODE PROJECT INFORMATION ################")
+	MESSAGE(STATUS "")
+	MESSAGE(STATUS "BUILD_MACHINE_SYS : OSX_" ${OSX_SYSTEM})
+	MESSAGE(STATUS "BUILD_MACHINE_MODEL : " ${MAC_MODEL})
+	MESSAGE(STATUS "BUILD_MACHINE_MAX_SSE_SUPPORTED : SSE_"${HAS_SSE})
+	MESSAGE(STATUS "")
+	MESSAGE(STATUS "OSX_DEPLOYMENT_TARGET : " ${CMAKE_OSX_DEPLOYMENT_TARGET})
+	MESSAGE(STATUS "OSX SDK SETTING : " ${CMAKE_OSX_SYSROOT})
+	MESSAGE(STATUS "OSX_DEPENDENCY_ROOT_PATH : " ${OSX_DEPENDENCY_ROOT})
+	MESSAGE(STATUS "OSX_BUILD_WITH_CLANG : " ${OSX_OPTION_CLANG})
+	MESSAGE(STATUS "OSX_USE_LTO : " ${OSX_OPTION_LTO})
+	MESSAGE(STATUS "")
+	MESSAGE(STATUS "DETECTED_XCODE_VERSION : " ${XCODE_VERSION})
+	MESSAGE(STATUS "USE_XCODE_4.1_FEATURES : " ${OSX_OPTION_XCODE_4.1})
+	MESSAGE(STATUS "VALID_BUILD_ARCHTECTURES : " ${CMAKE_XCODE_ATTRIBUTE_ARCHS})
+	MESSAGE(STATUS "")
+	MESSAGE(STATUS "BUILD_CONFIGURATION_TYPE : " ${CMAKE_CONFIGURATION_TYPES})
+	IF(OSX_OPTION_PYLUX)
+		MESSAGE(STATUS "PYLUX CONFIGURED FOR BLENDER 2.6 USE")
+	ELSE(OSX_OPTION_PYLUX)
+		MESSAGE(STATUS "PYLUX CONFIGURED FOR GENERAL PURPOSE USE")
+	ENDIF(OSX_OPTION_PYLUX)
+	MESSAGE(STATUS "USE_BEST_SSE_OPTIMIZATION : " ${OSX_OPTION_USE_MAX_SSE})
+	MESSAGE(STATUS "ALWAYS_BUILD_UNIVERSAL : " ${OSX_OPTION_UNIVERSAL})
+	IF(NOT OSX_OPTION_USE_MAX_SSE AND NOT OSX_OPTION_LTO AND NOT OSX_OPTION_LION AND ${CMAKE_CONFIGURATION_TYPES} MATCHES Release)
+		MESSAGE(STATUS "COMPATIBILITY INFO : BUILD IS CONFIGURED DISTRIBUTION SAFE")
+	ELSE()
+		MESSAGE(STATUS "COMPATIBILITY INFO : BUILD SETTINGS DO NOT SUPPORT ALL INTEL-MACS")
+	ENDIF()
+	MESSAGE(STATUS "")
+	MESSAGE(STATUS "#####################################################################")
+ENDIF(APPLE)

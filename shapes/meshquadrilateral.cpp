@@ -33,40 +33,49 @@ bool MeshQuadrilateral::IsDegenerate(const Point &p0, const Point &p1, const Poi
 	Vector e2 = p3 - p2;
 	Vector e3 = p0 - p3;
 
-	float el0 = e0.Length();
-	float el1 = e1.Length();
-	float el2 = e2.Length();
-	float el3 = e3.Length();
+	const float el0 = e0.Length();
+	const float el1 = e1.Length();
+	const float el2 = e2.Length();
+	const float el3 = e3.Length();
 
-	return el0 < 1e-30 || el1 < 1e-30 || el2 < 1e-30 || el3 < 1e-30;
+	const float lmin = min(min(el0, el1), min(el2, el3));
+	const float lmax = max(max(el0, el1), max(el2, el3));
+
+	return lmax == 0.0 || (lmin / lmax) < 1e-30;
 }
 
 // checks if a non-degenerate quad is planar
-// most likely susceptible to numerical issues for large quads
 bool MeshQuadrilateral::IsPlanar(const Point &p0, const Point &p1, const Point &p2, const Point &p3) {
 
-	// basis vectors for projection
-	Vector e0 = p1 - p0;
-	Vector e1 = p2 - p0;
+	// calculate normal using Newells method
+	Vector N(Normalize(Cross(p2 - p0, p3 - p1)));
 
-	Point p = p3;
+	// calculate center
+	Vector P(0.25 * (p0 + p1 + p2 + p3));
 
-	if (1.f - fabsf(Dot(e0, e1)) < 1e-6) {
-		// if collinear, use p3
-		e1 = p3 - p0;
-		p = p2;
-	}
+	float D = Dot(N, P);
 
-	Vector n = Cross(e1, e0);
-
-	Vector x = p - p0;
-
-	// find distance from point to plane defined by e0 and e1
-	float D = fabsf(Dot(x, n));
+	const float eps = 1e-3;
+	float dist;
 
 	// if planar, the distance from point to plane should be zero
-	// |x.n|/|n| < eps ==> |x.n| < |n| * eps
-	return D < n.Length() * 1e-6f;
+	dist = fabsf(Dot(N, Vector(p0)) - D);
+	if (dist > eps)
+		return false;
+
+	dist = fabsf(Dot(N, Vector(p1)) - D);
+	if (dist > eps)
+		return false;
+
+	dist = fabsf(Dot(N, Vector(p2)) - D);
+	if (dist > eps)
+		return false;
+
+	dist = fabsf(Dot(N, Vector(p3)) - D);
+	if (dist > eps)
+		return false;
+
+	return true;
 }
 
 // checks if a non-degenerate, planar quad is strictly convex
@@ -186,16 +195,9 @@ MeshQuadrilateral::MeshQuadrilateral(const Mesh *m, u_int n)
 	const Point &p2 = mesh->WorldToObject(mesh->p[idx[2]]);
 	const Point &p3 = mesh->WorldToObject(mesh->p[idx[3]]);
 
+	// assume convex and planar check is performed before
 	if (IsDegenerate(p0, p1, p2, p3)) {
-		luxError(LUX_CONSISTENCY, LUX_ERROR, string("Degenerate quadrilateral detected").c_str());
-		idx = NULL;
-	}
-	else if (!IsPlanar(p0, p1, p2, p3)) {
-		luxError(LUX_CONSISTENCY, LUX_ERROR, string("Non-planar quadrilateral detected").c_str());
-		idx = NULL;
-	}
-	else if (!IsConvex(p0, p1, p2, p3)) {
-		luxError(LUX_CONSISTENCY, LUX_ERROR, string("Non-convex quadrilateral detected").c_str());
+		LOG(LUX_DEBUG, LUX_CONSISTENCY)<< "Degenerate quadrilateral detected";
 		idx = NULL;
 	}
 
@@ -278,9 +280,9 @@ bool MeshQuadrilateral::Intersect(const Ray &ray, Intersection *isect, bool null
 	if (!idx)
 		return false;
 
-//look if shape is a null type
-if (null_shp_isect && mesh->support) return false;
-///
+	//look if shape is a null type
+	if (null_shp_isect && mesh->support) return false;
+
 	// Get quadrilateral vertices in _p00_, _p10_, _p11_ and _p01_
 	const Point &p00 = mesh->p[idx[0]];
 	const Point &p10 = mesh->p[idx[1]];
@@ -450,6 +452,7 @@ void MeshQuadrilateral::GetShadingGeometry(const Transform &obj2world,
 {
 	if (!mesh->n) {
 		*dgShading = dg;
+		dgShading->Scale = GetScale();
 		if (!mesh->uvs) {
 			// Lotus - the length of dpdu/dpdv can be important for bumpmapping
 			const BBox bounds = MeshQuadrilateral::WorldBound();
@@ -528,14 +531,6 @@ void MeshQuadrilateral::GetShadingGeometry(const Transform &obj2world,
 		dndv = obj2world(dndv);
 	}
 
-	*dgShading = DifferentialGeometry(
-		dg.p,
-		ns,
-		ss, ts,
-		dndu, dndv,
-		dg.u, dg.v, this);
-
-	dgShading->dudx = dg.dudx;  dgShading->dvdx = dg.dvdx;
-	dgShading->dudy = dg.dudy;  dgShading->dvdy = dg.dvdy;
-	dgShading->dpdx = dg.dpdx;  dgShading->dpdy = dg.dpdy;
+	*dgShading = DifferentialGeometry(dg.p, ns, ss, ts, dndu, dndv,
+		dg.u, dg.v, this, GetScale());
 }

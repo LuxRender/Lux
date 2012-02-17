@@ -52,8 +52,11 @@ public:
 	virtual bool CanIntersect() const { return true; }
 	virtual bool Intersect(const Ray &ray, Intersection *isect, bool null_shp_isect=false) const;
 	virtual bool IntersectP(const Ray &ray, bool null_shp_isect=false) const;
+	virtual Transform GetWorldToLocal(float time) const {
+		return Transform();
+	}
 
-	virtual void GetPrimitives(vector<boost::shared_ptr<Primitive> > &prims);
+	virtual void GetPrimitives(vector<boost::shared_ptr<Primitive> > &prims) const;
 
 	static Aggregate *CreateAccelerator(const vector<boost::shared_ptr<Primitive> > &prims, const ParamSet &ps);
 

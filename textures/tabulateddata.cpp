@@ -24,6 +24,7 @@
 #include "tabulateddata.h"
 #include "irregulardata.h"
 #include "dynload.h"
+#include "filedata.h"
 
 #include <boost/lexical_cast.hpp>
 #include <boost/regex.hpp>
@@ -76,7 +77,10 @@ Texture<SWCSpectrum> *TabulatedDataTexture::CreateSWCSpectrumTexture(const Trans
 	vector<float> wl;
 	vector<float> data;
 
-	const string filename = tp.FindOneString("filename", "");
+	// Attempt decode of embedded data
+	FileData::decode(tp, "filename");
+
+	const string filename = AdjustFilename(tp.FindOneString("filename", ""));
 	std::ifstream fs;
 	fs.open(filename.c_str());
 	string line;

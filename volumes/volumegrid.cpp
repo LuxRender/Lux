@@ -26,6 +26,9 @@
 #include "dynload.h"
 #include "error.h"
 
+#include <cstring>
+using std::memset;
+
 using namespace lux;
 
 // VolumeGrid Method Definitions
@@ -35,8 +38,7 @@ VolumeGrid::VolumeGrid(const RGBColor &sa, const RGBColor &ss, float gg,
 	: DensityVolume<RGBVolume>(RGBVolume(sa, ss, emit, gg)),
 	nx(x), ny(y), nz(z), extent(e), WorldToVolume(v2w.GetInverse())
 {
-	density = new float[nx * ny * nz];
-	memcpy(density, d, nx * ny * nz * sizeof(float));
+	density.assign(d, d+(nx*ny*nz));
 }
 float VolumeGrid::Density(const Point &p) const
 {
@@ -75,7 +77,7 @@ Region * VolumeGrid::CreateVolumeRegion(const Transform &volume2world,
 	u_int nitems;
 	const float *data = params.FindFloat("density", &nitems);
 	if (!data) {
-		luxError(LUX_MISSINGDATA,LUX_ERROR,"No \"density\" values provided for volume grid?");
+		LOG(LUX_ERROR,LUX_MISSINGDATA)<< "No \"density\" values provided for volume grid?";
 		return NULL;
 	}
 	int nx = params.FindOneInt("nx", 1);
@@ -84,9 +86,7 @@ Region * VolumeGrid::CreateVolumeRegion(const Transform &volume2world,
 	if (nitems != static_cast<u_int>(nx * ny * nz)) {
 		//Error("VolumeGrid has %d density values but nx*ny*nz = %d",
 		//	nitems, nx*ny*nz);
-		std::stringstream ss;
-		ss<<"VolumeGrid has "<<nitems<<" density values but nx*ny*nz = "<<nx*ny*nz;
-		luxError(LUX_CONSISTENCY,LUX_ERROR,ss.str().c_str());
+		LOG(LUX_ERROR,LUX_CONSISTENCY)<<"VolumeGrid has "<<nitems<<" density values but nx*ny*nz = "<<nx*ny*nz;
 		return NULL;
 	}
 	return new VolumeRegion<VolumeGrid>(volume2world, BBox(p0, p1),

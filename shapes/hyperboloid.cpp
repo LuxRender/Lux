@@ -28,9 +28,9 @@
 using namespace lux;
 
 // Hyperboloid Method Definitions
-Hyperboloid::Hyperboloid(const Transform &o2w, bool ro,
+Hyperboloid::Hyperboloid(const Transform &o2w, bool ro, const string &name, 
 		const Point &point1, const Point &point2, float tm)
-	: Shape(o2w, ro) {
+	: Shape(o2w, ro, name) {
 	p1 = point1;
 	p2 = point2;
 	phiMax = Radians(Clamp(tm, 0.0f, 360.0f));
@@ -223,10 +223,11 @@ float Hyperboloid::Area() const {
 #undef QUAD
 Shape* Hyperboloid::CreateShape(const Transform &o2w,
 		bool reverseOrientation, const ParamSet &params) {
+	string name = params.FindOneString("name", "'hyperboloid'");
 	Point p1 = params.FindOnePoint( "p1", Point(0,0,0) );
 	Point p2 = params.FindOnePoint( "p2", Point(1,1,1) );
 	float phimax = params.FindOneFloat( "phimax", 360 );
-	return new Hyperboloid(o2w, reverseOrientation, p1, p2, phimax);
+	return new Hyperboloid(o2w, reverseOrientation, name, p1, p2, phimax);
 }
 
 static DynamicLoader::RegisterShape<Hyperboloid> r("hyperboloid");

@@ -21,9 +21,6 @@
  ***************************************************************************/
 
 // igiio.cpp*
-#include <algorithm>
-#include <fstream>
-
 #include "lux.h"
 #include "error.h"
 #include "color.h"
@@ -31,6 +28,10 @@
 
 #include "igiio.h"
 
+#include <algorithm>
+#include <fstream>
+#include <cstring>
+using std::memset;
 
 using namespace lux;
 // Indigo Image File Format IO - Based on code from GPL Violet Tonemapper.
@@ -63,9 +64,7 @@ void WriteIgiImage(const string &name, vector<RGBColor> &pixels,
 
 	std::ofstream file(name.c_str(), std::ios::binary);
 	if (!file) {
-		std::stringstream ss;
-	 	ss<< "Cannot open file '"<<name<<"' for output";
-		luxError(LUX_SYSTEM, LUX_SEVERE, ss.str().c_str());
+		LOG( LUX_SEVERE,LUX_SYSTEM)<< "Cannot open file '"<<name<<"' for output";
 		return;
 	}
 
@@ -88,9 +87,7 @@ void WriteIgiImage(const string &name, vector<RGBColor> &pixels,
 	file.write(reinterpret_cast<char *>(&xyz[0]), header.image_data_size);
 
 	if (!file.good()) {
-		std::stringstream ss;
-	 	ss<< "Error writing IGI output file '"<<name<<"'";
-		luxError(LUX_SYSTEM, LUX_SEVERE, ss.str().c_str());
+		LOG( LUX_SEVERE,LUX_SYSTEM)<< "Error writing IGI output file '"<<name<<"'";
 		return;
 	}
 

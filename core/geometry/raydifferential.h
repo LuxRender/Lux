@@ -27,37 +27,39 @@
 #include "vector.h"
 #include "point.h"
 #include "normal.h"
-#include "ray.h"
 
 namespace lux
 {
 
-class  RayDifferential : public Ray {
-public:
-	// RayDifferential Methods
-	RayDifferential() { hasDifferentials = false; }
-
-	RayDifferential(const Point &org, const Vector &dir)
-		: Ray(org, dir) {
-		hasDifferentials = false;
-	}
-
-	explicit RayDifferential(const Ray &ray) : Ray(ray) {
-		hasDifferentials = false;
-	}
-	// RayDifferential Public Data
-	
-	Ray rx, ry;
-	bool hasDifferentials;
-};
-
 // DifferentialGeometry Declarations
 class DifferentialGeometry {
 public:
-	DifferentialGeometry() { u = v = 0.; handle = NULL; }
+	typedef union {
+		struct {
+			float coords[3];
+		} baryTriangle;
+		struct {
+			float coords[3];
+			u_int triIndex;
+		} mesh;
+	} IntersectionData;
+
+	DifferentialGeometry() { u = v = 0.; handle = ihandle = NULL; scattered = false; }
 	// DifferentialGeometry Public Methods
 	DifferentialGeometry(
 			const Point &P,
+			const Vector &DPDU,	const Vector &DPDV,
+			const Normal &DNDU, const Normal &DNDV,
+			float uu, float vv,
+			const void *pr);
+	DifferentialGeometry(
+			const Point &P,
+			const Vector &DPDU,	const Vector &DPDV,
+			const Normal &DNDU, const Normal &DNDV,
+			float uu, float vv,
+			const void *pr, float scale);
+	DifferentialGeometry(
+			const Point &P, const Normal &NN,
 			const Vector &DPDU,	const Vector &DPDV,
 			const Normal &DNDU, const Normal &DNDV,
 			float uu, float vv,
@@ -67,33 +69,42 @@ public:
 			const Vector &DPDU,	const Vector &DPDV,
 			const Normal &DNDU, const Normal &DNDV,
 			float uu, float vv,
+			const void *pr, float scale);
+	DifferentialGeometry(
+			const Point &P, const Normal &NN,
+			const Vector &DPDU,	const Vector &DPDV,
+			const Normal &DNDU, const Normal &DNDV,
+			const Vector &T, const Vector &BiT, float BiTsign,
+			float uu, float vv,
 			const void *pr);
-
-	void AdjustNormal(bool ro, bool swapsHandedness) {
+	DifferentialGeometry(
+			const Point &P, const Normal &NN,
+			const Vector &DPDU,	const Vector &DPDV,
+			const Normal &DNDU, const Normal &DNDV,
+			const Vector &T, const Vector &BiT, float BiTsign,
+			float uu, float vv,
+			const void *pr, float scale);
+			void AdjustNormal(bool ro, bool swapsHandedness) {
 		// Adjust normal based on orientation and handedness
-		if (ro ^ swapsHandedness) {
-			nn.x = -nn.x;
-			nn.y = -nn.y;
-			nn.z = -nn.z;
-		}
+		if (ro ^ swapsHandedness)
+			nn = -nn;
 	}
-	void ComputeDifferentials(const RayDifferential &r) const;
 	// DifferentialGeometry Public Data
 	Point p;
 	Normal nn;
 	Vector dpdu, dpdv;
 	Normal dndu, dndv;
-	mutable Vector dpdx, dpdy;
+	Vector tangent, bitangent; // surface tangents, may be different to dpdu,dpdv but in same plane, not normalized
+	float btsign; // sign of the bitangent, actual bitangent is "bitangent * (btsign > 0.f ? 1.f : -1.f)"
 	float u, v;
 	const void* handle;
-	mutable float dudx, dvdx, dudy, dvdy;
+	const void* ihandle; // handle to intersected primitive, used with instances
 	float time;
+	bool scattered;
 	mutable float Scale;
 	// Dade - shape specific data, useful to "transport" informatin between
 	// shape intersection method and GetShadingGeometry()
-	union {
-		float triangleBaryCoords[3];
-	};
+	IntersectionData iData;
 };
 
 }//namespace lux

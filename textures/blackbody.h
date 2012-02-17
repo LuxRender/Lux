@@ -36,13 +36,13 @@ public:
 	// BlackBodyTexture Public Methods
 	BlackBodyTexture(float t) : BBSPD(t) { }
 	virtual ~BlackBodyTexture() { }
-	virtual SWCSpectrum Evaluate(const TsPack *tspack,
+	virtual SWCSpectrum Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &) const {
-		return SWCSpectrum(tspack, BBSPD);
+		return SWCSpectrum(sw, BBSPD);
 	}
 	virtual float Y() const { return BBSPD.Y(); }
 	virtual float Filter() const { return BBSPD.Filter(); }
-	virtual void GetDuv(const TsPack *tspack,
+	virtual void GetDuv(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg, float delta,
 		float *du, float *dv) const { *du = *dv = 0.f; }
 	static Texture<SWCSpectrum> *CreateSWCSpectrumTexture(const Transform &tex2world, const ParamSet &tp);

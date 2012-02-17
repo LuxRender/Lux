@@ -22,40 +22,36 @@
 
 // null.cpp*
 #include "null.h"
-#include "color.h"
-#include "texture.h"
 #include "memory.h"
-#include "bxdf.h"
+#include "singlebsdf.h"
+#include "primitive.h"
 #include "nulltransmission.h"
 #include "paramset.h"
 #include "dynload.h"
+#include "color.h"
+#include "texture.h"
 
 using namespace lux;
 
 // Glass Method Definitions
-BSDF *Null::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
-	const DifferentialGeometry &dgShading,
-	const Volume *exterior, const Volume *interior) const
+BSDF *Null::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
+	const Intersection &isect, const DifferentialGeometry &dgShading) const
 {
-	SWCSpectrum bcolor = (Sc->Evaluate(tspack, dgShading).Clamp(0.f, 10000.f))*dgShading.Scale;
+	SWCSpectrum bcolor = (Sc->Evaluate(sw, dgShading).Clamp(0.f, 10000.f))*dgShading.Scale;
 	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
-	SingleBSDF *bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dgShading,
-		dgGeom.nn, ARENA_ALLOC(tspack->arena, NullTransmission)(),
-		exterior, interior, bcolor);
+	SingleBSDF *bsdf = ARENA_ALLOC(arena, SingleBSDF)(dgShading,
+		isect.dg.nn, ARENA_ALLOC(arena, NullTransmission)(),
+		isect.exterior, isect.interior, bcolor);
 
 	// Add ptr to CompositingParams structure
-	bsdf->SetCompositingParams(compParams);
+	bsdf->SetCompositingParams(&compParams);
 
 	return bsdf;
 }
 Material* Null::CreateMaterial(const Transform &xform,
 		const ParamSet &mp) {
 	boost::shared_ptr<Texture<SWCSpectrum> > Sc(mp.GetSWCSpectrumTexture("Sc", RGBColor(.9f)));
-	// Get Compositing Params
-	CompositingParams cP;
-	FindCompositingParams(mp, &cP);
-
-	return new Null(cP, Sc);
+	return new Null(mp, Sc);
 }
 
 static DynamicLoader::RegisterMaterial<Null> r("null");

@@ -1,5 +1,5 @@
 /**
- * @file    SummedAreaTable.cpp
+ * @file    summedareatable.cpp
  * @author  Aldo Zang <aldo.zang@gmail.com>
  * @author  VISGRAF LAB, IMPA
  * @version 1.5.0

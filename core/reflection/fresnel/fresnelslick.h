@@ -35,21 +35,21 @@ public:
 	FresnelSlick (const SWCSpectrum &r, const SWCSpectrum &a_) :
 		normalIncidence(r), a(a_) { }
 	virtual ~FresnelSlick() { }
-	virtual void Evaluate(const TsPack *tspack, float cosi,
+	virtual void Evaluate(const SpectrumWavelengths &sw, float cosi,
 		SWCSpectrum *const f) const;
-	virtual float Index(const TsPack *tspack) const {
+	virtual float Index(const SpectrumWavelengths &sw) const {
 		return ((SWCSpectrum(1.f) - normalIncidence.Sqrt()) /
-			(SWCSpectrum(1.f) + normalIncidence.Sqrt())).Filter(tspack);
+			(SWCSpectrum(1.f) + normalIncidence.Sqrt())).Filter(sw);
 	}
-	virtual SWCSpectrum SigmaA(const TsPack *tspack) const {
+	virtual SWCSpectrum SigmaA(const SpectrumWavelengths &sw) const {
 		return a;
 	}
-	virtual void ComplexEvaluate(const TsPack *tspack,
+	virtual void ComplexEvaluate(const SpectrumWavelengths &sw,
 		SWCSpectrum *fr, SWCSpectrum *fi) const {
-		*fr = Index(tspack);
+		*fr = Index(sw);
 		// The 4e9*Pi comes from Beer law (4*Pi) and unit conversion
 		// of w from nm to m
-		*fi = a * SWCSpectrum(tspack->swl->w) / (4e9f * M_PI);
+		*fi = a * SWCSpectrum(sw.w) / (4e9f * M_PI);
 	}
 private:
 	SWCSpectrum normalIncidence, a;

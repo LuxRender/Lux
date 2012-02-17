@@ -25,48 +25,52 @@
 // glossy2.cpp*
 #include "glossy2.h"
 #include "memory.h"
-#include "bxdf.h"
+#include "singlebsdf.h"
+#include "schlickbsdf.h"
+#include "primitive.h"
 #include "schlickbrdf.h"
 #include "texture.h"
 #include "color.h"
 #include "paramset.h"
 #include "dynload.h"
+#include "fresnelslick.h"
+#include "schlickdistribution.h"
+#include "microfacet.h"
 
 using namespace lux;
 
 // Glossy Method Definitions
-BSDF *Glossy2::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
-	const DifferentialGeometry &dgs,
-	const Volume *exterior, const Volume *interior) const
+BSDF *Glossy2::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
+	const Intersection &isect, const DifferentialGeometry &dgs) const
 {
 	// Allocate _BSDF_
 	// NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
-	SWCSpectrum bcolor = (Sc->Evaluate(tspack, dgs).Clamp(0.f, 10000.f))*dgs.Scale;
-	SWCSpectrum d(Kd->Evaluate(tspack, dgs).Clamp(0.f, 10000.f));
-	SWCSpectrum s(Ks->Evaluate(tspack, dgs));
-	float i = index->Evaluate(tspack, dgs);
+	SWCSpectrum bcolor = (Sc->Evaluate(sw, dgs).Clamp(0.f, 10000.f))*dgs.Scale;
+	SWCSpectrum d(Kd->Evaluate(sw, dgs).Clamp(0.f, 1.f));
+	SWCSpectrum s(Ks->Evaluate(sw, dgs));
+	float i = index->Evaluate(sw, dgs);
 	if (i > 0.f) {
 		const float ti = (i - 1.f) / (i + 1.f);
 		s *= ti * ti;
 	}
 	s = s.Clamp(0.f, 1.f);
 
-	SWCSpectrum a(Ka->Evaluate(tspack, dgs).Clamp(0.f, 1.f));
+	SWCSpectrum a(Ka->Evaluate(sw, dgs).Clamp(0.f, 1.f));
 
 	// Clamp roughness values to avoid artifacts with too small values
-	const float u = Clamp(nu->Evaluate(tspack, dgs), 1e-4f, 1.f);
-	const float v = Clamp(nv->Evaluate(tspack, dgs), 1e-4f, 1.f);
+	const float u = Clamp(nu->Evaluate(sw, dgs), 6e-3f, 1.f);
+	const float v = Clamp(nv->Evaluate(sw, dgs), 6e-3f, 1.f);
 	const float u2 = u * u;
 	const float v2 = v * v;
-	float ld = depth->Evaluate(tspack, dgs);
+	float ld = depth->Evaluate(sw, dgs);
 
 	const float anisotropy = u2 < v2 ? 1.f - u2 / v2 : v2 / u2 - 1.f;
-	SingleBSDF *bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dgs,
-		dgGeom.nn, ARENA_ALLOC(tspack->arena, SchlickBRDF)(d, s, a, ld,
-		u * v, anisotropy), exterior, interior, bcolor);
+	SingleBSDF *bsdf = ARENA_ALLOC(arena, SingleBSDF)(dgs,
+		isect.dg.nn, ARENA_ALLOC(arena, SchlickBRDF)(d, s, a, ld, u * v,
+		anisotropy, multibounce), isect.exterior, isect.interior, bcolor);
 
 	// Add ptr to CompositingParams structure
-	bsdf->SetCompositingParams(compParams);
+	bsdf->SetCompositingParams(&compParams);
 
 	return bsdf;
 }
@@ -80,13 +84,71 @@ Material* Glossy2::CreateMaterial(const Transform &xform,
 	boost::shared_ptr<Texture<float> > d(mp.GetFloatTexture("d", .0f));
 	boost::shared_ptr<Texture<float> > uroughness(mp.GetFloatTexture("uroughness", .1f));
 	boost::shared_ptr<Texture<float> > vroughness(mp.GetFloatTexture("vroughness", .1f));
-	boost::shared_ptr<Texture<float> > bumpMap(mp.GetFloatTexture("bumpmap"));
+	bool mb = mp.FindOneBool("multibounce", false);
 
-	// Get Compositing Params
-	CompositingParams cP;
-	FindCompositingParams(mp, &cP);
+	return new Glossy2(Kd, Ks, Ka, i, d, uroughness, vroughness, mb, mp, Sc);
+}
 
-	return new Glossy2(Kd, Ks, Ka, i, d, uroughness, vroughness, bumpMap, cP, Sc);
+// GlossyCoating Method Definitions
+BSDF *GlossyCoating::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
+	const Intersection &isect, const DifferentialGeometry &dgs) const
+{
+	DifferentialGeometry dgShading = dgs;
+	basemat->GetShadingGeometry(sw, isect.dg.nn, &dgShading);
+	BSDF *base = basemat->GetBSDF(arena, sw, isect, dgShading);
+	SWCSpectrum bcolor = (Sc->Evaluate(sw, dgs).Clamp(0.f, 10000.f))*dgs.Scale;
+	// Allocate _BSDF_
+	// NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
+	SWCSpectrum s(Ks->Evaluate(sw, dgs));
+	float i = index->Evaluate(sw, dgs);
+	if (i > 0.f) {
+		const float ti = (i - 1.f) / (i + 1.f);
+		s *= ti * ti;
+	}
+	s = s.Clamp(0.f, 1.f);
+
+	SWCSpectrum a(Ka->Evaluate(sw, dgs).Clamp(0.f, 1.f));
+
+	// Clamp roughness values to avoid artifacts with too small values
+	const float u = Clamp(nu->Evaluate(sw, dgs), 6e-3f, 1.f);
+	const float v = Clamp(nv->Evaluate(sw, dgs), 6e-3f, 1.f);
+	const float u2 = u * u;
+	const float v2 = v * v;
+	float ld = depth->Evaluate(sw, dgs);
+
+	const float anisotropy = u2 < v2 ? 1.f - u2 / v2 : v2 / u2 - 1.f;
+
+	Fresnel *fresnel = ARENA_ALLOC(arena, FresnelSlick)(s, a);
+	MicrofacetDistribution* md = ARENA_ALLOC(arena, SchlickDistribution)(u * v, anisotropy);
+
+	SchlickBSDF *bsdf = ARENA_ALLOC(arena, SchlickBSDF)(dgs, isect.dg.nn, fresnel, md, multibounce, base, isect.exterior, isect.interior, bcolor);
+	//SingleBSDF *bsdf = ARENA_ALLOC(arena, SingleBSDF)(dgs, isect.dg.nn, 
+	//	ARENA_ALLOC(arena, MicrofacetReflection)(SWCSpectrum(1.f), fresnel, md, false), 
+	//	isect.exterior, isect.interior);
+
+	// Add ptr to CompositingParams structure
+	bsdf->SetCompositingParams(&compParams);
+
+	return bsdf;
+}
+Material* GlossyCoating::CreateMaterial(const Transform &xform,
+		const ParamSet &mp) {
+	boost::shared_ptr<Material> basemat(mp.GetMaterial("basematerial"));
+	if (!basemat) {
+		LOG( LUX_ERROR,LUX_BADTOKEN)<<"Base material for glossycoating is incorrect";
+		return NULL;
+	}
+	boost::shared_ptr<Texture<SWCSpectrum> > Sc(mp.GetSWCSpectrumTexture("Sc", RGBColor(.9f)));
+	boost::shared_ptr<Texture<SWCSpectrum> > Ks(mp.GetSWCSpectrumTexture("Ks", RGBColor(1.f)));
+	boost::shared_ptr<Texture<SWCSpectrum> > Ka(mp.GetSWCSpectrumTexture("Ka", RGBColor(.0f)));
+	boost::shared_ptr<Texture<float> > i(mp.GetFloatTexture("index", 0.0f));
+	boost::shared_ptr<Texture<float> > d(mp.GetFloatTexture("d", .0f));
+	boost::shared_ptr<Texture<float> > uroughness(mp.GetFloatTexture("uroughness", .1f));
+	boost::shared_ptr<Texture<float> > vroughness(mp.GetFloatTexture("vroughness", .1f));
+	bool mb = mp.FindOneBool("multibounce", false);
+
+	return new GlossyCoating(basemat, Ks, Ka, i, d, uroughness, vroughness, mb, mp, Sc);
 }
 
 static DynamicLoader::RegisterMaterial<Glossy2> r("glossy");
+static DynamicLoader::RegisterMaterial<GlossyCoating> r2("glossycoating");

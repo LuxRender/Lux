@@ -34,32 +34,47 @@ namespace lux
 
 class MetropolisSampler : public Sampler {
 public:
+	class MetropolisData {
+	public:
+		MetropolisData(const Sample &sample);
+		~MetropolisData();
+		u_int normalSamples, totalSamples, totalTimes, consecRejects;
+		float *sampleImage, *currentImage;
+		int *timeImage, *currentTimeImage;
+		u_int *offset, *timeOffset;
+		float *rngRotation;
+		u_int rngBase, rngOffset;
+		bool large;
+		int stamp, currentStamp;
+		float weight, LY, alpha;
+		vector <Contribution> oldContributions;
+		double totalLY, sampleCount;
+	};
 	MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
 		u_int maxRej, float largeProb, float rng, bool useV);
 	virtual ~MetropolisSampler();
 
-	virtual MetropolisSampler* clone() const;
+	virtual void InitSample(Sample *sample) const {
+		sample->sampler = const_cast<MetropolisSampler *>(this);
+		sample->samplerData = new MetropolisData(*sample);
+	}
+	virtual void FreeSample(Sample *sample) const {
+		delete static_cast<MetropolisData *>(sample->samplerData);
+	}
 	virtual u_int GetTotalSamplePos() { return 0; }
 	virtual u_int RoundSize(u_int size) const { return size; }
-	virtual bool GetNextSample(Sample *sample, u_int *use_pos);
-	virtual float *GetLazyValues(Sample *sample, u_int num, u_int pos);
+	virtual bool GetNextSample(Sample *sample);
+	virtual float GetOneD(const Sample &sample, u_int num, u_int pos);
+	virtual void GetTwoD(const Sample &sample, u_int num, u_int pos,
+		float u[2]);
+	virtual float *GetLazyValues(const Sample &sample, u_int num, u_int pos);
 	virtual void AddSample(const Sample &sample);
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
-	virtual bool IsMutating() { return true; }
 
-	u_int normalSamples, totalSamples, totalTimes, maxRejects, consecRejects;
-	float pLarge, pMicro, range;
+	u_int maxRejects;
+	float pLarge, range;
 	bool useVariance;
-	float *sampleImage;
-	int *timeImage;
-	u_int *offset;
-	float *rngSamples, *rngRotation;
-	u_int rngBase, rngOffset;
-	bool large;
-	int stamp;
-	float weight, LY, alpha;
-	vector <Contribution> oldContributions;
-	double totalLY, sampleCount;
+	float *rngSamples;
 };
 
 }//namespace lux

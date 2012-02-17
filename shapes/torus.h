@@ -31,7 +31,8 @@ namespace lux
 class Torus: public Shape {
 public:
 	// Sphere Public Methods
-	Torus(const Transform &o2w, bool ro, float marad, float mirad,
+	Torus(const Transform &o2w, bool ro, const string &name, 
+	       float marad, float mirad,
 	       float zmin, float zmax, float phiMax);
 	virtual ~Torus() { }
 	virtual BBox ObjectBound() const;

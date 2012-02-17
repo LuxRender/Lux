@@ -23,10 +23,14 @@
 #ifndef LUX_CONTEXT_H
 #define LUX_CONTEXT_H
 
+#include "api.h"
 #include "lux.h"
+#include "stats.h"
 #include "geometry/transform.h"
 #include "paramset.h"
 #include "queryableregistry.h"
+#include "renderer.h"
+#include "motionsystem.h"
 
 #include <boost/thread/mutex.hpp>
 #include <map>
@@ -36,10 +40,11 @@ using std::map;
 #define STATE_UNINITIALIZED  0
 #define STATE_OPTIONS_BLOCK  1
 #define STATE_WORLD_BLOCK    2
+#define STATE_PARSE_FAIL     3
 
 namespace lux {
 
-class Context {
+class LUX_EXPORT Context {
 public:
 
 	Context(std::string n = "Lux default context") : name(n) {
@@ -64,7 +69,7 @@ public:
 	static map<string, boost::shared_ptr<lux::Texture<SWCSpectrum> > > *GetActiveColorTextures() {
 		return &(activeContext->graphicsState->colorTextures);
 	}
-	static map<string, boost::shared_ptr<lux::Texture<const Fresnel *> > > *GetActiveFresnelTextures() {
+	static map<string, boost::shared_ptr<lux::Texture<FresnelGeneral> > > *GetActiveFresnelTextures() {
 		return &(activeContext->graphicsState->fresnelTextures);
 	}
 	static u_int GetActiveLightGroup() {
@@ -73,7 +78,7 @@ public:
 
 	boost::shared_ptr<lux::Texture<float> > GetFloatTexture(const string &n) const;
 	boost::shared_ptr<lux::Texture<SWCSpectrum> > GetColorTexture(const string &n) const;
-	boost::shared_ptr<lux::Texture<const Fresnel *> > GetFresnelTexture(const string &n) const;
+	boost::shared_ptr<lux::Texture<FresnelGeneral> > GetFresnelTexture(const string &n) const;
 	boost::shared_ptr<lux::Material > GetMaterial(const string &n) const;
 
 	void Init();
@@ -103,6 +108,8 @@ public:
 	void MakeNamedVolume(const string &id, const string &name,
 		const ParamSet &params);
 	void Material(const string &name, const ParamSet &params);
+	void MotionBegin(u_int n, float *t);
+	void MotionEnd();
 	void MotionInstance(const string &name, float startTime, float endTime,
 		const string &toTransform);
 	void NamedMaterial(const string &name);
@@ -111,6 +118,8 @@ public:
 	void ObjectBegin(const string &name);
 	void ObjectEnd();
 	void ObjectInstance(const string &name);
+	void PortalInstance(const string &name);
+	void Renderer(const string &, const ParamSet &params);
 	void ReverseOrientation();
 	void Rotate(float angle, float ax, float ay, float az);
 	void Sampler(const string &name, const ParamSet &params);
@@ -133,25 +142,35 @@ public:
 	void LoadFLM(const string &name);
 	void SaveFLM(const string &name);
 	void OverrideResumeFLM(const string &name);
+	void OverrideFilename(const string &filename);
 
+	// Save OpenEXR image
+	void SaveEXR(const string &name, bool useHalfFloat, bool includeZBuffer, int compressionType, bool tonemapped);	
+	
 	//CORE engine control
 	//user interactive thread functions
-	void Start();
+	void Resume();
 	void Pause();
-	void Exit();
 	void Wait();
+	void Exit();
+	void Abort();
 
-	void SetHaltSamplePerPixel(int haltspp, bool haveEnoughSamplePerPixel,
+	void SetHaltSamplesPerPixel(int haltspp, bool haveEnoughSamplesPerPixel,
 		bool suspendThreadsWhenDone);
+	// Must be called after Init() otherwise the Renderer is NULL
+	Renderer::RendererType GetRendererType() const;
 
 	//controlling number of threads
 	u_int AddThread();
 	void RemoveThread();
-	u_int GetRenderingThreadsStatus(RenderingThreadInfo *info, u_int maxInfoCount);
+
 
 	//framebuffer access
 	void UpdateFramebuffer();
 	unsigned char* Framebuffer();
+	float* FloatFramebuffer();
+	float* AlphaBuffer();
+	float* ZBuffer();
 
 	//histogram access
 	void GetHistogramImage(unsigned char *outPixels, u_int width, u_int height, int options);
@@ -174,10 +193,13 @@ public:
 
 	// Dade - network rendering
 	void UpdateFilmFromNetwork();
+	void UpdateLogFromNetwork();
 	void SetNetworkServerUpdateInterval(int updateInterval);
 	int GetNetworkServerUpdateInterval();
 	void TransmitFilm(std::basic_ostream<char> &stream);
+	void TransmitFilm(std::basic_ostream<char> &stream, bool useCompression, bool directWrite);
 	void AddServer(const string &name);
+	void RemoveServer(const RenderingServerInfo &rsi);
 	void RemoveServer(const string &name);
 	u_int GetServerCount();
 	u_int GetRenderingServersStatus(RenderingServerInfo *info, u_int maxInfoCount);
@@ -185,6 +207,9 @@ public:
 	//statistics
 	double Statistics(const string &statName);
 	void SceneReady();
+
+	const char* PrintableStatistics(const bool add_total);
+	const char* CustomStatistics(const string custom_template);
 
 	void EnableDebugMode();
 	void DisableRandomMode();
@@ -194,6 +219,8 @@ public:
 	//! Registry containing all queryable objects of the current context
 	//! \author jromang
 	QueryableRegistry registry;
+
+	int currentApiState;
 
 private:
 	// API Local Classes
@@ -208,12 +235,15 @@ private:
 			surfIntegratorName = "path";
 			volIntegratorName = "emission";
 			cameraName = "perspective";
+			rendererName = "sampler";
 			currentInstance = NULL;
 			debugMode = false;
 			randomMode = true;
 		}
 
 		Scene *MakeScene() const;
+		lux::Renderer *MakeRenderer() const;
+
 		// RenderOptions Public Data
 		string filterName;
 		ParamSet filterParams;
@@ -227,8 +257,9 @@ private:
 		ParamSet surfIntegratorParams, volIntegratorParams;
 		string cameraName;
 		ParamSet cameraParams;
-		lux::Transform worldToCamera;
-		lux::Transform worldToCameraEnd;
+		string rendererName;
+		ParamSet rendererParams;
+		MotionTransform worldToCamera;
 		mutable vector<Light *> lights;
 		mutable vector<boost::shared_ptr<Primitive> > primitives;
 		mutable vector<Region *> volumeRegions;
@@ -250,7 +281,7 @@ private:
 		// Graphics State
 		map<string, boost::shared_ptr<lux::Texture<float> > > floatTextures;
 		map<string, boost::shared_ptr<lux::Texture<SWCSpectrum> > > colorTextures;
-		map<string, boost::shared_ptr<lux::Texture<const Fresnel *> > > fresnelTextures;
+		map<string, boost::shared_ptr<lux::Texture<FresnelGeneral> > > fresnelTextures;
 		map<string, boost::shared_ptr<lux::Material> > namedMaterials;
 		map<string, boost::shared_ptr<lux::Volume> > namedVolumes;
 		boost::shared_ptr<lux::Volume> exterior;
@@ -270,22 +301,28 @@ private:
 
 	static Context *activeContext;
 	string name;
+	u_int shapeNo; // used to identify anonymous shapes
+	lux::Renderer *luxCurrentRenderer;
 	Scene *luxCurrentScene;
-	int currentApiState;
-	lux::Transform curTransform;
-	map<string, lux::Transform> namedCoordinateSystems;
+	lux::MotionTransform curTransform;
+	bool inMotionBlock;
+	vector<float> motionBlockTimes; // holds time values for current motion block
+	vector<lux::Transform> motionBlockTransforms; // holds transform for current motion block
+	map<string, lux::MotionTransform> namedCoordinateSystems;
 	RenderOptions *renderOptions;
 	GraphicsState *graphicsState;
 	vector<GraphicsState> pushedGraphicsStates;
-	vector<lux::Transform> pushedTransforms;
+	vector<lux::MotionTransform> pushedTransforms;
 	RenderFarm *renderFarm;
 
 	ParamSet *filmOverrideParams;
 	
 	// Dade - mutex used to wait the end of the rendering
 	mutable boost::mutex renderingMutex;
-	bool luxCurrentSceneReady;
 	bool terminated;
+	bool aborted; // abort rendering
+
+	StatsData *statsData;
 };
 
 }

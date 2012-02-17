@@ -25,6 +25,20 @@
 
 // memory.h*
 
+#if !defined(__APPLE__) && !defined(__OpenBSD__) && !defined(__FreeBSD__)
+#  include <malloc.h> // for _alloca, memalign
+#  if !defined(WIN32) || defined(__CYGWIN__)
+#    include <alloca.h>
+#  else
+#    define memalign(a,b) _aligned_malloc(b, a)
+#    define alloca _alloca
+#  endif
+#elif defined(__APPLE__)
+#  define memalign(a,b) valloc(b)
+#elif defined(__OpenBSD__) || defined(__FreeBSD__)
+#  define memalign(a,b) malloc(b)
+#endif
+
 #include <boost/serialization/split_member.hpp>
 #include <boost/cstdint.hpp>
 using boost::int8_t;
@@ -230,7 +244,7 @@ private:
 	int8_t *currentBlock;
 	vector<int8_t *> usedBlocks, availableBlocks;
 };
-#define ARENA_ALLOC(ARENA,T)  new ((ARENA)->Alloc(sizeof(T))) T
+#define ARENA_ALLOC(ARENA,T)  new ((ARENA).Alloc(sizeof(T))) T
 
 template<class T, int logBlockSize> class BlockedArray {
 public:

@@ -23,12 +23,9 @@
 // infinitesample.cpp*
 #include "lux.h"
 #include "light.h"
-#include "texture.h"
-#include "shape.h"
 #include "scene.h"
 #include "mipmap.h"
 #include "rgbillum.h"
-#include "spectrumwavelengths.h"
 
 namespace lux
 {
@@ -37,38 +34,28 @@ class InfiniteAreaLightIS : public Light {
 public:
 	// InfiniteAreaLightIS Public Methods
 	InfiniteAreaLightIS(const Transform &light2world, const RGBColor &l,
-		u_int ns, int LNs, const string &texmap, EnvironmentMapping *m,
+		u_int ns, int LNs, const string &texmap, u_int imr, EnvironmentMapping *m,
 		float gain, float gamma);
 	virtual ~InfiniteAreaLightIS();
-	virtual float Power(const Scene *scene) const {
+	virtual float Power(const Scene &scene) const {
 		Point worldCenter;
 		float worldRadius;
-		scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
-		return SPDbase.Y() *
-			radianceMap->LookupFloat(CHANNEL_WMEAN, .5f, .5f, .5f) *
-			M_PI * worldRadius * worldRadius;
+		scene.WorldBound().BoundingSphere(&worldCenter, &worldRadius);
+		return SPDbase.Y() * mean_y * M_PI * worldRadius * worldRadius;
 	}
 	virtual float DirProb(Vector N) const;
 	virtual bool IsDeltaLight() const { return false; }
 	virtual bool IsEnvironmental() const { return true; }
-	virtual SWCSpectrum Le(const TsPack *tspack, const RayDifferential &r) const;
-	virtual SWCSpectrum Le(const TsPack *tspack, const Scene *scene,
-		const Ray &r, const Normal &n, BSDF **bsdf, float *pdf,
-		float *pdfDirect) const;
-	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Point &p, float u1, float u2, float u3,
-		Vector *wi, float *pdf, VisibilityTester *visibility) const;
-	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2,
-			float u3, float u4, Ray *ray, float *pdf) const;
-	virtual float Pdf(const TsPack *, const Point &, const Vector &) const;
-	virtual float Pdf(const TsPack *tspack, const Point &p, const Normal &n,
-		const Point &po, const Normal &ns) const;
-	virtual bool Sample_L(const TsPack *tspack, const Scene *scene,
+	virtual bool Le(const Scene &scene, const Sample &sample, const Ray &r,
+		BSDF **bsdf, float *pdf, float *pdfDirect,
+		SWCSpectrum *L) const;
+	virtual float Pdf(const Point &p, const DifferentialGeometry &dg) const;
+	virtual bool SampleL(const Scene &scene, const Sample &sample,
 		float u1, float u2, float u3, BSDF **bsdf, float *pdf,
 		SWCSpectrum *Le) const;
-	virtual bool Sample_L(const TsPack *tspack, const Scene *scene,
-		const Point &p, const Normal &n, float u1, float u2, float u3,
-		BSDF **bsdf, float *pdf, float *pdfDirect,
-		VisibilityTester *visibility, SWCSpectrum *Le) const;
+	virtual bool SampleL(const Scene &scene, const Sample &sample,
+		const Point &p, float u1, float u2, float u3, BSDF **bsdf,
+		float *pdf, float *pdfDirect, SWCSpectrum *Le) const;
 
 	static Light *CreateLight(const Transform &light2world,
 		const ParamSet &paramSet);
@@ -81,6 +68,7 @@ private:
 	// InfiniteAreaLightIS Private Data
 	RGBIllumSPD SPDbase;
 	Distribution2D *uvDistrib;
+	float mean_y;
 	u_int support_sample;
 };
 

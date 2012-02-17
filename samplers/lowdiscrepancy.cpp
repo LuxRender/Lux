@@ -23,63 +23,41 @@
 // lowdiscrepancy.cpp*
 #include "lowdiscrepancy.h"
 #include "error.h"
-#include "pixelsamplers/vegas.h"
-//#include "pixelsamplers/randompx.h"
-#include "pixelsamplers/hilbertpx.h"
-#include "pixelsamplers/linear.h"
-#include "pixelsamplers/lowdiscrepancypx.h"
-#include "pixelsamplers/tilepx.h"
 #include "scene.h"
 #include "dynload.h"
 
 using namespace lux;
 
-// Lux (copy) constructor
-LDSampler* LDSampler::clone() const
- {
-   return new LDSampler(*this);
- }
-
-// LDSampler Method Definitions
-LDSampler::LDSampler(int xstart, int xend,
-		int ystart, int yend, u_int ps, string pixelsampler)
-	: Sampler(xstart, xend, ystart, yend, RoundUpPow2(ps)) {
+LDSampler::LDData::LDData(const Sample &sample, int xPixelStart, int yPixelStart, u_int pixelSamples)
+{
 	xPos = xPixelStart - 1;
 	yPos = yPixelStart;
+	samplePos = pixelSamples - 1;
 
-	// Initialize PixelSampler
-	if(pixelsampler == "vegas")
-		pixelSampler = new VegasPixelSampler(xstart, xend, ystart, yend);
-	else if(pixelsampler == "lowdiscrepancy")
-		pixelSampler = new LowdiscrepancyPixelSampler(xstart, xend, ystart, yend);
-//	else if(pixelsampler == "random")
-//		pixelSampler = new RandomPixelSampler(xstart, xend, ystart, yend);
-    else if((pixelsampler == "tile") || (pixelsampler == "grid"))
-		pixelSampler = new TilePixelSampler(xstart, xend, ystart, yend);
-	else if(pixelsampler == "hilbert")
-		pixelSampler = new HilbertPixelSampler(xstart, xend, ystart, yend);
-	else
-		pixelSampler = new LinearPixelSampler(xstart, xend, ystart, yend);
-
-	TotalPixels = pixelSampler->GetTotalPixels();
-
-	// check/round pixelsamples to power of 2
-	if (!IsPowerOf2(ps)) {
-		luxError(LUX_CONSISTENCY,LUX_WARNING,"Pixel samples being rounded up to power of 2");
-		pixelSamples = RoundUpPow2(ps);
+	// Allocate space for pixel's low-discrepancy sample tables
+	imageSamples = new float[6 * pixelSamples];
+	lensSamples = imageSamples + 2 * pixelSamples;
+	timeSamples = imageSamples + 4 * pixelSamples;
+	wavelengthsSamples = imageSamples + 5 * pixelSamples;
+	oneDSamples = new float *[sample.n1D.size()];
+	n1D = sample.n1D.size();
+	for (u_int i = 0; i < sample.n1D.size(); ++i)
+		oneDSamples[i] = new float[sample.n1D[i] * pixelSamples];
+	twoDSamples = new float *[sample.n2D.size()];
+	n2D = sample.n2D.size();
+	for (u_int i = 0; i < sample.n2D.size(); ++i)
+		twoDSamples[i] = new float[2 * sample.n2D[i] * pixelSamples];
+	xDSamples = new float *[sample.nxD.size()];
+	xD = new float *[sample.nxD.size()];
+	nxD = sample.nxD.size();
+	for (u_int i = 0; i < sample.nxD.size(); ++i) {
+		xDSamples[i] = new float[sample.dxD[i] * sample.nxD[i] *
+			pixelSamples];
+		xD[i] = new float[sample.dxD[i]];
 	}
-	else
-		pixelSamples = ps;
-	samplePos = pixelSamples;
-	oneDSamples = twoDSamples = xDSamples = NULL;
-	imageSamples = new float[6*pixelSamples];
-	lensSamples = imageSamples + 2*pixelSamples;
-	timeSamples = imageSamples + 4*pixelSamples;
-	wavelengthsSamples = imageSamples + 5*pixelSamples;
-	n1D = n2D = nxD = 0;
 }
-
-LDSampler::~LDSampler() {
+LDSampler::LDData::~LDData()
+{
 	delete[] imageSamples;
 	for (u_int i = 0; i < n1D; ++i)
 		delete[] oneDSamples[i];
@@ -92,78 +70,88 @@ LDSampler::~LDSampler() {
 	delete[] xDSamples;
 }
 
-// return TotalPixels so scene shared thread increment knows total sample positions
-u_int LDSampler::GetTotalSamplePos() {
-	return TotalPixels;
+// LDSampler Method Definitions
+LDSampler::LDSampler(int xstart, int xend,
+		int ystart, int yend, u_int ps, string pixelsampler)
+	: Sampler(xstart, xend, ystart, yend, RoundUpPow2(ps)) {
+	// Initialize PixelSampler
+	pixelSampler = MakePixelSampler(pixelsampler, xstart, xend, ystart, yend);
+
+	totalPixels = pixelSampler->GetTotalPixels();
+
+	// check/round pixelsamples to power of 2
+	if (!IsPowerOf2(ps)) {
+		LOG(LUX_WARNING,LUX_CONSISTENCY)<<"Pixel samples being rounded up to power of 2";
+		pixelSamples = RoundUpPow2(ps);
+	} else
+		pixelSamples = ps;
+	sampPixelPos = 0;
 }
 
-bool LDSampler::GetNextSample(Sample *sample, u_int *use_pos) {
-	sample->sampler = this;
-	if (!oneDSamples) {
-		// Allocate space for pixel's low-discrepancy sample tables
-		oneDSamples = new float *[sample->n1D.size()];
-		n1D = sample->n1D.size();
-		for (u_int i = 0; i < sample->n1D.size(); ++i)
-			oneDSamples[i] = new float[sample->n1D[i] *
-		                               pixelSamples];
-		twoDSamples = new float *[sample->n2D.size()];
-		n2D = sample->n2D.size();
-		for (u_int i = 0; i < sample->n2D.size(); ++i)
-			twoDSamples[i] = new float[2 * sample->n2D[i] *
-		                               pixelSamples];
-		xDSamples = new float *[sample->nxD.size()];
-		nxD = sample->nxD.size();
-		for (u_int i = 0; i < sample->nxD.size(); ++i)
-			xDSamples[i] = new float[sample->dxD[i] * sample->nxD[i] *
-		                               pixelSamples];
+LDSampler::~LDSampler() {
+}
 
-		// Fetch first contribution buffer from pool
-		contribBuffer = film->scene->contribPool->Next(NULL);
-	}
+// return TotalPixels so scene shared thread increment knows total sample positions
+u_int LDSampler::GetTotalSamplePos() {
+	return totalPixels;
+}
 
-	bool haveMoreSample = true;
-	if (samplePos == pixelSamples) {
+bool LDSampler::GetNextSample(Sample *sample) {
+	LDData *data = (LDData *)(sample->samplerData);
+	const RandomGenerator &rng(*(sample->rng));
+
+	bool haveMoreSamples = true;
+	++(data->samplePos);
+	if (data->samplePos == pixelSamples) {
+		u_int sampPixelPosToUse;
+		// Move to the next pixel
+		{
+			fast_mutex::scoped_lock lock(sampPixelPosMutex);
+			sampPixelPosToUse = sampPixelPos;
+			sampPixelPos = (sampPixelPos + 1) % totalPixels;
+		}
+
 		// fetch next pixel from pixelsampler
-		if(!pixelSampler->GetNextPixel(xPos, yPos, use_pos)) {
+		if(!pixelSampler->GetNextPixel(&data->xPos, &data->yPos, sampPixelPosToUse)) {
 			// Dade - we are at a valid checkpoint where we can stop the
 			// rendering. Check if we have enough samples per pixel in the film.
-			if (film->enoughSamplePerPixel) {
+			if (film->enoughSamplesPerPixel) {
 				// Dade - pixelSampler->renderingDone is shared among all rendering threads
 				pixelSampler->renderingDone = true;
-				haveMoreSample = false;
+				haveMoreSamples = false;
 			}
 		} else
-			haveMoreSample = (!pixelSampler->renderingDone);
+			haveMoreSamples = (!pixelSampler->renderingDone);
 
-		samplePos = 0;
+		data->samplePos = 0;
 		// Generate low-discrepancy samples for pixel
-		LDShuffleScrambled2D(tspack, 1, pixelSamples, imageSamples);
-		LDShuffleScrambled2D(tspack, 1, pixelSamples, lensSamples);
-		LDShuffleScrambled1D(tspack, 1, pixelSamples, timeSamples);
-		LDShuffleScrambled1D(tspack, 1, pixelSamples, wavelengthsSamples);
+		LDShuffleScrambled2D(rng, 1, pixelSamples, data->imageSamples);
+		LDShuffleScrambled2D(rng, 1, pixelSamples, data->lensSamples);
+		LDShuffleScrambled1D(rng, 1, pixelSamples, data->timeSamples);
+		LDShuffleScrambled1D(rng, 1, pixelSamples, data->wavelengthsSamples);
 		for (u_int i = 0; i < sample->n1D.size(); ++i)
-			LDShuffleScrambled1D(tspack, sample->n1D[i], pixelSamples,
-				oneDSamples[i]);
+			LDShuffleScrambled1D(rng, sample->n1D[i], pixelSamples,
+				data->oneDSamples[i]);
 		for (u_int i = 0; i < sample->n2D.size(); ++i)
-			LDShuffleScrambled2D(tspack, sample->n2D[i], pixelSamples,
-				twoDSamples[i]);
+			LDShuffleScrambled2D(rng, sample->n2D[i], pixelSamples,
+				data->twoDSamples[i]);
 		float *xDSamp;
 		for (u_int i = 0; i < sample->nxD.size(); ++i) {
-			xDSamp = xDSamples[i];
+			xDSamp = data->xDSamples[i];
 			for (u_int j = 0; j < sample->sxD[i].size(); ++j) {
 				switch (sample->sxD[i][j]) {
 				case 1: {
-					LDShuffleScrambled1D(tspack, sample->nxD[i],
+					LDShuffleScrambled1D(rng, sample->nxD[i],
 						pixelSamples, xDSamp);
 					xDSamp += sample->nxD[i] * pixelSamples;
 					break; }
 				case 2: {
-					LDShuffleScrambled2D(tspack, sample->nxD[i],
+					LDShuffleScrambled2D(rng, sample->nxD[i],
 						pixelSamples, xDSamp);
 					xDSamp += 2 * sample->nxD[i] * pixelSamples;
 					break; }
 				default:
-					printf("Unsupported dimension\n");
+					LOG(LUX_ERROR, LUX_LIMIT) << "Unsupported dimension";
 					xDSamp += sample->sxD[i][j] * sample->nxD[i] * pixelSamples;
 					break;
 				}
@@ -171,47 +159,48 @@ bool LDSampler::GetNextSample(Sample *sample, u_int *use_pos) {
 		}
 	}
 
-	// reset so scene knows to increment
-	if (samplePos >= pixelSamples - 1)
-		*use_pos = ~0U;
 	// Copy low-discrepancy samples from tables
-	sample->imageX = xPos + imageSamples[2*samplePos];
-	sample->imageY = yPos + imageSamples[2*samplePos+1];
-	sample->lensU = lensSamples[2*samplePos];
-	sample->lensV = lensSamples[2*samplePos+1];
-	sample->time = timeSamples[samplePos];
-	sample->wavelengths = wavelengthsSamples[samplePos];
-	for (u_int i = 0; i < sample->n1D.size(); ++i) {
-		u_int startSamp = sample->n1D[i] * samplePos;
-		for (u_int j = 0; j < sample->n1D[i]; ++j)
-			sample->oneD[i][j] = oneDSamples[i][startSamp+j];
-	}
-	for (u_int i = 0; i < sample->n2D.size(); ++i) {
-		u_int startSamp = 2 * sample->n2D[i] * samplePos;
-		for (u_int j = 0; j < 2*sample->n2D[i]; ++j)
-			sample->twoD[i][j] = twoDSamples[i][startSamp+j];
-	}
-	++samplePos;
+	sample->imageX = data->xPos + data->imageSamples[2 * data->samplePos];
+	sample->imageY = data->yPos + data->imageSamples[2 * data->samplePos + 1];
+	sample->lensU = data->lensSamples[2 * data->samplePos];
+	sample->lensV = data->lensSamples[2 * data->samplePos + 1];
+	sample->time = data->timeSamples[data->samplePos];
+	sample->wavelengths = data->wavelengthsSamples[data->samplePos];
 
-	return haveMoreSample;
+	return haveMoreSamples;
 }
 
-float *LDSampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
+float LDSampler::GetOneD(const Sample &sample, u_int num, u_int pos)
 {
-	float *data = sample->xD[num] + pos * sample->dxD[num];
-	float *xDSamp = xDSamples[num];
+	LDData *data = (LDData *)(sample.samplerData);
+	return data->oneDSamples[num][sample.n1D[num] * data->samplePos + pos];
+}
+
+void LDSampler::GetTwoD(const Sample &sample, u_int num, u_int pos, float u[2])
+{
+	LDData *data = (LDData *)(sample.samplerData);
+	const u_int startSamp = 2 * (sample.n2D[num] * data->samplePos + pos);
+	u[0] = data->twoDSamples[num][startSamp];
+	u[1] = data->twoDSamples[num][startSamp + 1];
+}
+
+float *LDSampler::GetLazyValues(const Sample &sample, u_int num, u_int pos)
+{
+	LDData *data = (LDData *)(sample.samplerData);
+	float *sd = data->xD[num];
+	float *xDSamp = data->xDSamples[num];
 	u_int offset = 0;
-	for (u_int i = 0; i < sample->sxD[num].size(); ++i) {
-		if (sample->sxD[num][i] == 1) {
-			data[offset] = xDSamp[sample->nxD[num] * (samplePos - 1) + pos];
-		} else if (sample->sxD[num][i] == 2) {
-			data[offset] = xDSamp[2 * (sample->nxD[num] * (samplePos - 1) + pos)];
-			data[offset + 1] = xDSamp[2 * (sample->nxD[num] * (samplePos - 1) + pos) + 1];
+	for (u_int i = 0; i < sample.sxD[num].size(); ++i) {
+		if (sample.sxD[num][i] == 1) {
+			sd[offset] = xDSamp[sample.nxD[num] * data->samplePos + pos];
+		} else if (sample.sxD[num][i] == 2) {
+			sd[offset] = xDSamp[2 * (sample.nxD[num] * data->samplePos + pos)];
+			sd[offset + 1] = xDSamp[2 * (sample.nxD[num] * data->samplePos + pos) + 1];
 		}
-		xDSamp += sample->sxD[num][i] * sample->nxD[num] * pixelSamples;
-		offset += sample->sxD[num][i];
+		xDSamp += sample.sxD[num][i] * sample.nxD[num] * pixelSamples;
+		offset += sample.sxD[num][i];
 	}
-	return data;
+	return sd;
 }
 
 Sampler* LDSampler::CreateSampler(const ParamSet &params, const Film *film) {

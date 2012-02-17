@@ -27,31 +27,33 @@
 
 using namespace lux;
 
-void FresnelDielectric::Evaluate(const TsPack *tspack, float cosi, SWCSpectrum *const f) const {
+void FresnelDielectric::Evaluate(const SpectrumWavelengths &sw, float cosi,
+	SWCSpectrum *const f) const
+{
 	// Compute Fresnel reflectance for dielectric
-	SWCSpectrum cost(sqrtf(max(0.f, 1.f - cosi * cosi)));
+	SWCSpectrum cost(max(0.f, 1.f - cosi * cosi));
 	if (cosi > 0.f)
-		cost /= eta_t;
+		cost /= eta_t * eta_t;
 	else
-		cost *= eta_t;
+		cost *= eta_t * eta_t;
 	cost = cost.Clamp(0.f, 1.f);
-	cost = (SWCSpectrum(1.f) - cost * cost).Sqrt();
-	FrDiel2(fabsf(cosi), cost, eta_t, f);
+	cost = (SWCSpectrum(1.f) - cost).Sqrt();
+	FrDiel2(fabsf(cosi), cost, cosi > 0.f ? eta_t : SWCSpectrum(1.f) / eta_t, f);
 }
 
-float FresnelDielectric::Index(const TsPack *tspack) const
+float FresnelDielectric::Index(const SpectrumWavelengths &sw) const
 {
-	if (tspack->swl->single)
-		return eta_t.c[tspack->swl->single_w];
+	if (sw.single)
+		return eta_t.c[sw.single_w];
 	else
 		return index;
 }
 
-void FresnelDielectric::ComplexEvaluate(const TsPack *tspack,
+void FresnelDielectric::ComplexEvaluate(const SpectrumWavelengths &sw,
 	SWCSpectrum *fr, SWCSpectrum *fi) const
 {
 	*fr = eta_t;
 	// The 4e9*Pi comes from beers law (4*Pi) and unit conversion of w
 	// from nm to m
-	*fi = a * SWCSpectrum(tspack->swl->w) / (4e9f * M_PI);
+	*fi = a * SWCSpectrum(sw.w) / (4e9f * M_PI);
 }

@@ -21,6 +21,7 @@
  ***************************************************************************/
 
 #include "epsilon.h"
+#include "error.h"
 
 using namespace lux;
 
@@ -36,21 +37,15 @@ void MachineEpsilon::SetMax(const float max) {
 }
 
 void MachineEpsilon::Test() {
-	char buf[256];
 	MachineFloat mf;
 	mf.f = DEFAULT_EPSILON_STATIC;
-	sprintf(buf,"Epsilon.DefaultEpsilonStatic: %x", mf.i & 0x7fffff);
-	luxError(LUX_NOERROR, LUX_DEBUG, buf);
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Epsilon.DefaultEpsilonStatic: " << (mf.i & 0x7fffff);
 
-	sprintf(buf,"Epsilon.DefaultEpsilonStaticBitAdvance(0.f): %e", MachineEpsilon::E(0.f));
-	luxError(LUX_NOERROR, LUX_DEBUG, buf);
-	sprintf(buf,"Epsilon.DefaultEpsilonStaticBitAdvance(1.f): %e", MachineEpsilon::E(1.f));
-	luxError(LUX_NOERROR, LUX_DEBUG, buf);
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Epsilon.DefaultEpsilonStaticBitAdvance(0.f): " << MachineEpsilon::E(0.f);
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Epsilon.DefaultEpsilonStaticBitAdvance(1.f): " << MachineEpsilon::E(1.f);
 
 	for (float v = 1e-5f; v < 1e5f; v *= 2.0f) {
-		sprintf(buf,"Epsilon.Test: %f => %e", v, E(v));
-		luxError(LUX_NOERROR, LUX_DEBUG, buf);
-		sprintf(buf,"Epsilon.Test: %f => %e", -v, E(-v));
-		luxError(LUX_NOERROR, LUX_DEBUG, buf);
+		LOG(LUX_DEBUG, LUX_NOERROR) << "Epsilon.Test: " << v << " => " << E(v);
+		LOG(LUX_DEBUG, LUX_NOERROR) << "Epsilon.Test: " << -v << " => " << E(-v);
 	}
 }

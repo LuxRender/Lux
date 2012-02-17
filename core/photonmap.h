@@ -57,22 +57,22 @@ public:
 
 class BasicColorPhoton : public BasicPhoton {
 public:
-	BasicColorPhoton(const TsPack *tspack, const Point &pp,
+	BasicColorPhoton(const SpectrumWavelengths &sw, const Point &pp,
 		const SWCSpectrum &wt)
 		: BasicPhoton(pp), alpha(wt) {
 		for (u_int i = 0; i < WAVELENGTH_SAMPLES; ++i)
-			w[i] = tspack->swl->w[i];
-		if (tspack->swl->single) {
-			const float a = alpha.c[tspack->swl->single_w] * WAVELENGTH_SAMPLES;
+			w[i] = sw.w[i];
+		if (sw.single) {
+			const float a = alpha.c[sw.single_w] * WAVELENGTH_SAMPLES;
 			alpha = SWCSpectrum(0.f);
-			alpha.c[tspack->swl->single_w] = a;
+			alpha.c[sw.single_w] = a;
 		}
 	}
 
 	BasicColorPhoton() : BasicPhoton() { }
 	virtual ~BasicColorPhoton() { }
 
-	SWCSpectrum GetSWCSpectrum(const TsPack* tspack, u_int nb) const;
+	SWCSpectrum GetSWCSpectrum(const SpectrumWavelengths &sw) const;
 
 	virtual void save(bool isLittleEndian, std::basic_ostream<char> &stream) const;
 	virtual void load(bool isLittleEndian, std::basic_istream<char> &stream);
@@ -83,9 +83,9 @@ public:
 
 class LightPhoton : public BasicColorPhoton {
 public:
-	LightPhoton(const TsPack *tspack, const Point &pp,
+	LightPhoton(const SpectrumWavelengths &sw, const Point &pp,
 		const SWCSpectrum &wt, const Vector &wi_)
-		: BasicColorPhoton(tspack, pp, wt), wi(wi_) { }
+		: BasicColorPhoton(sw, pp, wt), wi(wi_) { }
 
 	LightPhoton() : BasicColorPhoton() { }
 	virtual ~LightPhoton() { }
@@ -98,11 +98,11 @@ public:
 
 class RadiancePhoton : public BasicColorPhoton {
 public:
-	RadiancePhoton(const TsPack *tspack, const Point &pp,
+	RadiancePhoton(const SpectrumWavelengths &sw, const Point &pp,
 		const SWCSpectrum &wt, const Normal &nn)
-		: BasicColorPhoton(tspack, pp, wt), n(nn) { }
-	RadiancePhoton(const TsPack *tspack, const Point &pp, const Normal & nn)
-		: BasicColorPhoton(tspack, pp, SWCSpectrum(0.0f)), n(nn) { }
+		: BasicColorPhoton(sw, pp, wt), n(nn) { }
+	RadiancePhoton(const SpectrumWavelengths &sw, const Point &pp, const Normal & nn)
+		: BasicColorPhoton(sw, pp, SWCSpectrum(0.0f)), n(nn) { }
 
 	RadiancePhoton() : BasicColorPhoton() { }
 	virtual ~RadiancePhoton() { }
@@ -148,7 +148,7 @@ public:
 	virtual void save(bool isLittleEndian, std::basic_ostream<char> &stream) {
 	}
 
-	float Sample(const TsPack *tspack, Vector *wi, float u1, float u2, float u3) const {
+	float Sample(Vector *wi, float u1, float u2, float u3) const {
 		size_t dn = Clamp<size_t>(static_cast<size_t>(
 			std::upper_bound(dirs.begin(), dirs.end(), Direction(u3)) - dirs.begin()),
 			0U, dirs.size() - 1);
@@ -157,9 +157,9 @@ public:
 		CoordinateSystem(dirs[dn].dir, &vx, &vy);
 		*wi = UniformSampleCone(u1, u2, dirs[dn].cosRadius, vx, vy, dirs[dn].dir);
 
-		return Pdf(tspack, *wi);
+		return Pdf(*wi);
 	}
-	float Pdf(const TsPack *tspack, const Vector &wi) const {
+	float Pdf(const Vector &wi) const {
 		float pdf = 0.f;
 		for (u_int i = 0; i < dirs.size(); ++i) {
 			if (Dot(dirs[i].dir, wi) > dirs[i].cosRadius)
@@ -318,14 +318,14 @@ public:
 	/**
 	 * Estimates the outgoing radiance at a surface point in a single direction.
 	 *
-	 * @param tspack   The thread specific pack.
+	 * @param sw       The current set of sampled wavelengths.
 	 * @param isect    The surface point intersection.
 	 * @param wo       The outgoing direction.
 	 * @param bxdfType The bxdf types at the surface point to to take into account.
 	 *
 	 * @return A radiance estimate.
 	 */
-	SWCSpectrum LPhoton(const TsPack *tspack, 
+	SWCSpectrum LPhoton(const SpectrumWavelengths &sw, 
 		const Intersection& isect, 
 		const Vector& wo, 
 		const BxDFType bxdfType) const;
@@ -360,21 +360,21 @@ public:
 	/**
 	 * Estimates the incoming irradiance at a surface point.
 	 *
-	 * @param tspack The thread specific pack.
+	 * @param sw     The current set of sampled wavelengths.
 	 * @param p      The position of the surface point.
 	 * @param n      The orientation of the surface.
 	 *
 	 * @return An irradiance estimate.
 	 */
 	SWCSpectrum EPhoton(
-		const TsPack *tspack,
+		const SpectrumWavelengths &sw,
 		const Point &p, 
 		const Normal &n) const;
 
 	/**
 	 * Estimates the outgoing radiance at a surface point in a single direction.
 	 *
-	 * @param tspack   The thread specific pack.
+	 * @param sw       The current set of sampled wavelengths.
 	 * @param bsdf     The bsdf of the surface point.
 	 * @param isect    The surface point intersection.
 	 * @param wo       The outgoing direction.
@@ -383,7 +383,7 @@ public:
 	 * @return A radiance estimate.
 	 */
 	SWCSpectrum LPhoton(
-		const TsPack* tspack,
+		const SpectrumWavelengths &sw,
 		const BSDF *bsdf,
 		const Intersection &isect,
 		const Vector &wo,
@@ -393,7 +393,7 @@ public:
 	 * Estimates the outgoing radiance at a surface point in a single direction
 	 * using a diffuse surface approximation.
 	 *
-	 * @param tspack   The thread specific pack.
+	 * @param sw       The current set of sampled wavelengths.
 	 * @param bsdf     The bsdf of the surface point.
 	 * @param isect    The surface point intersection.
 	 * @param wo       The outgoing direction.
@@ -402,7 +402,7 @@ public:
 	 * @return A radiance estimate.
 	 */
 	SWCSpectrum LPhotonDiffuseApprox(
-		const TsPack* tspack,
+		const SpectrumWavelengths &sw,
 		const BSDF *bsdf,
 		const Intersection &isect,
 		const Vector &wo,
@@ -412,7 +412,7 @@ public:
 	 * Estimates the outgoing radiance by diffuse reflection at a surface point 
 	 * in a single direction.
 	 *
-	 * @param tspack   The thread specific pack.
+	 * @param sw       The current set of sampled wavelengths.
 	 * @param bsdf     The bsdf of the surface point.
 	 * @param isect    The surface point intersection.
 	 * @param wo       The outgoing direction.
@@ -420,7 +420,7 @@ public:
 	 * @return A radiance estimate.
 	 */
 	SWCSpectrum LDiffusePhoton(
-		const TsPack* tspack,
+		const SpectrumWavelengths &sw,
 		const BSDF *bsdf,
 		const Intersection &isect,
 		const Vector &wo) const;
@@ -447,7 +447,7 @@ enum PhotonMapRRStrategy { RR_EFFICIENCY, RR_PROBABILITY, RR_NONE };
  * Creates a number of photonmaps. This function should be called during 
  * the preprocess step of an integrator.
  *
- * @param tspack           The thread specific pack.
+ * @param rng              The random generator to use
  * @param scene            The scene to build the photon maps for.
  * @param mapFileName      The file to load photonmaps from and store them to.
  * @param photonBxdfType   The bxdf types where photons should be stored.
@@ -463,8 +463,8 @@ enum PhotonMapRRStrategy { RR_EFFICIENCY, RR_PROBABILITY, RR_NONE };
  * @param causticMap       The target map for the caustic photons.
  */
 extern void PhotonMapPreprocess(
-	const TsPack* tspack, 
-	const Scene *scene, 
+	const RandomGenerator &rng,
+	const Scene &scene, 
 	const string *mapFileName,
 	const BxDFType photonBxdfType,
 	const BxDFType radianceBxdfType,
@@ -479,7 +479,6 @@ extern void PhotonMapPreprocess(
  * by performing a final gather using sampling with nearby photons and 
  * sampling of the bsdf.
  *
- * @param tspack                   A thread specific pack.
  * @param scene                    The scene.
  * @param sample                   The sample containing all necessary samples.
  * @param sampleFinalGather1Offset The offset for sampling the bsdf. For each 
@@ -500,9 +499,8 @@ extern void PhotonMapPreprocess(
  * @return A radiance estimate.
  */
 extern SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(
-	const TsPack* tspack,
-	const Scene *scene,
-	const Sample *sample,
+	const Scene &scene,
+	const Sample &sample,
 	u_int sampleFinalGather1Offset,
 	u_int sampleFinalGather2Offset,
 	u_int gatherSamples,
@@ -519,7 +517,6 @@ extern SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(
  * Estimates the outgoing radiance from a surface point in a single direction 
  * by performing a final gather using only sampling of the bsdf.
  *
- * @param tspack                  A thread specific pack.
  * @param scene                   The scene.
  * @param sample                  The sample containing all necessary samples.
  * @param sampleFinalGatherOffset The offset for sampling the bsdf. For each 
@@ -536,9 +533,8 @@ extern SWCSpectrum PhotonMapFinalGatherWithImportaceSampling(
  * @return A radiance estimate.
  */
 extern SWCSpectrum PhotonMapFinalGather(
-	const TsPack* tspack,
-	const Scene *scene,
-	const Sample *sample,
+	const Scene &scene,
+	const Sample &sample,
 	u_int sampleFinalGatherOffset,
 	u_int gatherSamples,
 	PhotonMapRRStrategy rrStrategy,

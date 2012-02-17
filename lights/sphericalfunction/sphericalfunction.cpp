@@ -41,9 +41,10 @@ MipMapSphericalFunction::MipMapSphericalFunction(boost::shared_ptr<const MIPMap>
 	SetMipMap(aMipMap);
 }
 
-SWCSpectrum MipMapSphericalFunction::f(const TsPack *tspack, float phi, float theta) const
+SWCSpectrum MipMapSphericalFunction::f(const SpectrumWavelengths &sw,
+	float phi, float theta) const
 {
-	return mipMap->LookupSpectrum(tspack, phi * INV_TWOPI, theta * INV_PI);
+	return mipMap->LookupSpectrum(sw, phi * INV_TWOPI, theta * INV_PI);
 }
 
 // SampleableSphericalFunction
@@ -52,9 +53,7 @@ SampleableSphericalFunction::SampleableSphericalFunction(
 	u_int xRes, u_int yRes) : func(aFunc)
 {
 	// Compute scalar-valued image
-	TsPack tspack;
 	SpectrumWavelengths swl;
-	tspack.swl = &swl;
 	swl.Sample(.5f);
 	float *img = new float[xRes * yRes];
 	average = 0.f;
@@ -65,10 +64,10 @@ SampleableSphericalFunction::SampleableSphericalFunction(
 		normalize += xRes * weight;
 		for (u_int x = 0; x < xRes; ++x) {
 			const float xp = 2.f * M_PI * (x + .5f) / xRes;
-			const float value = func->f(&tspack, xp, yp).Filter(&tspack);
-			average += value * weight;
-			img[x + y * xRes] = func->f(&tspack, xp, yp).Filter(&tspack) *
-				sin(yp);
+			const float value = func->f(swl, xp, yp).Filter(swl) *
+				weight;
+			average += value;
+			img[x + y * xRes] = value;
 		}
 	}
 	average *= 4.f * M_PI / normalize;
@@ -80,12 +79,13 @@ SampleableSphericalFunction::~SampleableSphericalFunction() {
 	delete uvDistrib;
 }
 
-SWCSpectrum SampleableSphericalFunction::f(const TsPack *tspack, float phi, float theta) const
+SWCSpectrum SampleableSphericalFunction::f(const SpectrumWavelengths &sw,
+	float phi, float theta) const
 {
-	return func->f(tspack, phi, theta);
+	return func->f(sw, phi, theta);
 }
 
-SWCSpectrum SampleableSphericalFunction::Sample_f(const TsPack *tspack,
+SWCSpectrum SampleableSphericalFunction::SampleF(const SpectrumWavelengths &sw,
 	float u1, float u2, Vector *w, float *pdf) const
 {
 	// Find floating-point $(u,v)$ sample coordinates
@@ -99,7 +99,7 @@ SWCSpectrum SampleableSphericalFunction::Sample_f(const TsPack *tspack,
 	// Compute PDF for sampled direction
 	*pdf /= 2.f * M_PI * M_PI * sintheta;
 	// Return value for direction
-	return f(tspack, phi, theta);
+	return f(sw, phi, theta) / *pdf;
 }
 
 float SampleableSphericalFunction::Pdf(const Vector& w) const
@@ -117,13 +117,13 @@ float SampleableSphericalFunction::Average_f() const
 SphericalFunction *CreateSphericalFunction(const ParamSet &paramSet)
 {
 	bool flipZ = paramSet.FindOneBool("flipz", false);
-	string texname = paramSet.FindOneString("mapname", "");
-	string iesname = paramSet.FindOneString("iesname", "");
+	const string texname = paramSet.FindOneString("mapname", "");
+	const string iesname = AdjustFilename(paramSet.FindOneString("iesname", ""));
 
 	// Create _mipmap_ for _PointLight_
 	SphericalFunction *mipmapFunc = NULL;
 	if (texname.length() > 0) {
-		auto_ptr<ImageData> imgdata(ReadImage(texname));
+		std::auto_ptr<ImageData> imgdata(ReadImage(texname));
 		if (imgdata.get() != NULL) {
 			boost::shared_ptr<const MIPMap> mm(imgdata->createMIPMap());
 			mipmapFunc = new MipMapSphericalFunction(mm, flipZ);

@@ -26,45 +26,10 @@
 // lux.h*
 // Global Include Files
 #include <cmath>
+
 #ifdef __CYGWIN__
 #include <ieeefp.h>
 #endif
-
-#include <boost/shared_ptr.hpp>
-#include <boost/enable_shared_from_this.hpp>
-
-#if defined (__INTEL_COMPILER) && !defined(WIN32)
-// Dade - to fix a problem with expf undefined with Intel CC
-inline float expf(float a) { return exp(a); }
-#endif
-
-#if !defined(__APPLE__) && !defined(__OpenBSD__) && !defined(__FreeBSD__)
-#  include <malloc.h> // for _alloca, memalign
-#  if !defined(WIN32) || defined(__CYGWIN__)
-#    include <alloca.h>
-#  endif
-#endif
-#if defined(__FreeBSD__)
-#  define memalign(A,B)  malloc(B)
-#endif
-#if defined(WIN32) && !defined(__CYGWIN__)
-#  include <float.h>
-#  pragma warning (disable: 4244) // conversion from double to float (VS2005) - Radiance
-#  pragma warning (disable: 4305) // truncation from double to float (VS2005) - Radiance
-#  pragma warning (disable: 4996) // deprecated functions (VS2005) - Radiance
-#  pragma warning (disable: 4267) // conversion from 'size_t' [asio\detail\socket_ops.hpp; boost\serialization\collections_save_imp.hpp] - zcott
-#  pragma warning (disable: 4311) // pointer truncation from 'void *' to 'long' [Fl_Widget.H; Fl_Menu_Item.H;; asio\detail\win_iocp_socket_service.hpp] - zcott
-#  pragma warning(disable : 4312) // conversion from 'long' to 'void *' of greater size [Fl_Widget.H; Fl_Menu_Item.H; asio\detail\win_iocp_socket_service.hpp] - zcott
-//note: the above are duplicated in compiler options, kept here for reference only - zcott
-#  pragma warning (disable: 4267 4251 4065 4102)
-#  pragma warning (disable: 4190) // extern "C" nonsense when returning a template
-//#define WIN32_LEAN_AND_MEAN //defined in project properties
-#  include <windows.h>
-#endif
-#include <stdlib.h>
-#define _GNU_SOURCE 1 //NOBOOK
-#include <stdio.h>
-#include <string.h>
 #include <string>
 using std::string;
 #include <vector>
@@ -76,26 +41,55 @@ using std::min;
 using std::max;
 using std::swap;
 using std::sort;
-#include <assert.h>
+
+#define BOOST_FILESYSTEM_VERSION 2
+
+#include <boost/shared_ptr.hpp>
+#include <boost/enable_shared_from_this.hpp>
 
 // Platform-specific definitions
 #if defined(WIN32) && !defined(__CYGWIN__)
-#  define memalign(a,b) _aligned_malloc(b, a)
-#  define alloca _alloca
-#  define isnan _isnan
+#  include <float.h>
+#  define isnan(a) _isnan(a)
 #  define isinf(f) (!_finite((f)))
-#elif defined(__APPLE__)
-#  define memalign(a,b) valloc(b)
-#  if (__GNUC__ == 3) || (__GNUC__ == 4)
-extern "C" {
-  int isinf(double);
-  int isnan(double);
+#  pragma warning (disable: 4244) // conversion from double to float (VS2005) - Radiance
+#  pragma warning (disable: 4305) // truncation from double to float (VS2005) - Radiance
+#  pragma warning (disable: 4996) // deprecated functions (VS2005) - Radiance
+#  pragma warning (disable: 4267) // conversion from 'size_t' [asio\detail\socket_ops.hpp; boost\serialization\collections_save_imp.hpp] - zcott
+#  pragma warning (disable: 4311) // pointer truncation from 'void *' to 'long' [Fl_Widget.H; Fl_Menu_Item.H;; asio\detail\win_iocp_socket_service.hpp] - zcott
+#  pragma warning (disable : 4312) // conversion from 'long' to 'void *' of greater size [Fl_Widget.H; Fl_Menu_Item.H; asio\detail\win_iocp_socket_service.hpp] - zcott
+//note: the above are duplicated in compiler options, kept here for reference only - zcott
+#  pragma warning (disable: 4267 4251 4065 4102)
+#  pragma warning (disable: 4190) // extern "C" nonsense when returning a template
+#  pragma warning (disable: 4290) // C++ exception specification ignored except to indicate a function is not __declspec(nothrow) ; pointless warning
+//#define WIN32_LEAN_AND_MEAN //defined in project properties
+#  include <windows.h>
+
+namespace w32util
+{
+# include <stdio.h>
+# include <wincon.h>
+#define FOREGROUND_YELLOW FOREGROUND_RED | FOREGROUND_GREEN
+#define FOREGROUND_WHITE FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE
+inline void ChangeConsoleColor(WORD col)
+{
+	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+
+	// keep user-defined background and foreground intensity
+	CONSOLE_SCREEN_BUFFER_INFO screenBufferInfo;
+	GetConsoleScreenBufferInfo(hConsole, &screenBufferInfo);
+	col |= screenBufferInfo.wAttributes & static_cast<WORD>(FOREGROUND_INTENSITY | BACKGROUND_INTENSITY);
+
+	SetConsoleTextAttribute(hConsole, col);
 }
-#  endif // ONLY GCC 3
-#elif defined(__OpenBSD__)
-#  define memalign(a,b) malloc(b)
-#elif defined(sgi)
-#  define for if (0) ; else for
+}
+#else
+using std::isinf;
+using std::isnan;
+#endif
+#if defined (__INTEL_COMPILER) && !defined(WIN32)
+// Dade - to fix a problem with expf undefined with Intel CC
+inline float expf(float a) { return exp(a); }
 #endif
 
 // Global Constants
@@ -109,9 +103,6 @@ extern "C" {
 #  define INFINITY HUGE_VAL
 //#define INFINITY std::numeric_limits<float>::max()
 #endif
-#define LUX_VERSION 0.7
-#define LUX_VERSION_STRING "0.7"
-#define COLOR_SAMPLES 3
 #if defined(WIN32) && !defined(__CYGWIN__)
 #  define LUX_PATH_SEP ";"
 #else
@@ -119,7 +110,6 @@ extern "C" {
 #endif
 
 // Global Type Declarations
-typedef double StatsCounterType;
 typedef unsigned char u_char;
 typedef unsigned short u_short;
 typedef unsigned int u_int;
@@ -132,10 +122,6 @@ typedef vector<int> SampleGrid[BC_GRID_SIZE][BC_GRID_SIZE];
 class Timer;
 class MemoryArena;
 template<class T, int logBlockSize = 2> class BlockedArray;
-class ProgressReporter;
-class StatsCounter;
-class StatsRatio;
-class StatsPercentage;
 
 namespace lux
 {
@@ -150,6 +136,7 @@ namespace lux
   class BBox;
   class Transform;
   class DifferentialGeometry;
+  class Renderer;
   class Scene;
   class Primitive;
   class AreaLightPrimitive;
@@ -158,6 +145,7 @@ namespace lux
   class Aggregate;
   class Intersection;
   class ImageData;
+  class MIPMap;
   class SWCSpectrum;
   class SpectrumWavelengths;
   class RGBColor;
@@ -165,6 +153,7 @@ namespace lux
   class ColorSystem;
   class SPD;
   class Camera;
+  class CameraResponse;
   class ProjectiveCamera;
   class Sampler;
   class PixelSampler;
@@ -218,12 +207,22 @@ namespace lux
   class ContributionBuffer;
   class ContributionPool;
   class ContributionSystem;
+  class InterpolatedTransform;
   class MotionSystem;
+  class MotionTransform;
   class Distribution1D;
   class Distribution2D;
   class IrregularDistribution1D;
   class MachineEpsilon;
   class SampleableSphericalFunction;
+  class ProgressReporter;
+  class StatsCounter;
+  typedef double StatsCounterType;
+  class StatsRatio;
+  class StatsPercentage;
+
+  class Context;
+  class StatsData;
 
 // Global Function Declarations
   //string hashing function
@@ -231,24 +230,17 @@ namespace lux
 
   bool SolveLinearSystem2x2(const float A[2][2], const float B[2], float x[2]);
 
-	ImageData *ReadImage(const string &name);
+  // accepts platform-specific filenames and performs fallback
+  ImageData *ReadImage(const string &name);
 
-// Radiance - Thread specific pack of pointers to eliminate use of boost tss smart pointers.
-// Initialized per thread in scene.cpp/RenderThread::RenderThread and passed where needed.
-	struct TsPack {
-		// Thread specific data
-		SpectrumWavelengths *swl;
-		RandomGenerator *rng;
-		MemoryArena *arena;
-		Camera *camera;
-		float time;
-	};
-
+  // converts paths to portable format and 
+  // provides fallback mechanism for missing files
+  string AdjustFilename(const string filename, bool silent = false);
 }
 
 // Global Inline Functions
 template<class T> inline T Lerp(float t, T v1, T v2) {
-	return (1.f - t) * v1 + t * v2;
+	return v1 + t * (v2 - v1);
 }
 template<class T> inline T Clamp(T val, T low, T high) {
 	return val > low ? (val < high ? val : high) : low;

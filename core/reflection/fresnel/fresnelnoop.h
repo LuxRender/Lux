@@ -33,9 +33,12 @@ class  FresnelNoOp : public Fresnel {
 public:
 	FresnelNoOp() { }
 	virtual ~FresnelNoOp() { }
-	virtual void Evaluate(const TsPack *tspack, float, SWCSpectrum *const f) const { *f = SWCSpectrum(1.f); }
-	virtual float Index(const TsPack *tspack) const { return INFINITY; }
-	virtual void ComplexEvaluate(const TsPack *tspack,
+	virtual void Evaluate(const SpectrumWavelengths &sw, float,
+		SWCSpectrum *const f) const { *f = SWCSpectrum(1.f); }
+	virtual float Index(const SpectrumWavelengths &sw) const {
+		return INFINITY;
+	}
+	virtual void ComplexEvaluate(const SpectrumWavelengths &sw,
 		SWCSpectrum *fr, SWCSpectrum *fi) const {
 		*fr = SWCSpectrum(INFINITY);
 		*fi = SWCSpectrum(0.f);

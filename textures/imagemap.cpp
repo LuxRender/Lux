@@ -23,8 +23,70 @@
 // imagemap.cpp*
 #include "imagemap.h"
 #include "dynload.h"
+#include "filedata.h"
+#include "geometry/raydifferential.h"
 
 using namespace lux;
+
+void NormalMapTexture::GetDuv(const SpectrumWavelengths &sw,
+	const DifferentialGeometry &dg, float delta, float *du, float *dv) const {
+	
+	float s, t;
+	mapping->Map(dg, &s, &t);
+
+	// normal from normal map
+	Vector n(mipmap->LookupRGBAColor(s, t).c);
+
+	// TODO - implement different methods for decoding normal
+	n = 2.f * n - Vector(1.f, 1.f, 1.f);
+
+	// recover dhdu,dhdv in uv space directly
+	const Vector dpdu = dg.dpdu;
+	const Vector dpdv = dg.dpdv;
+	const Vector k = Vector(dg.nn);
+
+	// transform n from tangent to object space
+	const Vector t1 = dg.tangent;
+	const Vector t2 = dg.bitangent;
+	// magnitude of dg.tsign is the magnitude of the interpolated normal
+	const Vector kk = k * fabsf(dg.btsign);
+	const float btsign = dg.btsign > 0.f ? 1.f : -1.f;
+
+	// tangent -> object
+	n = Normalize(n.x * t1 + n.y * btsign * t2 + n.z * kk);	
+
+	// Since n is stored normalized in the normal map
+	// we need to recover the original length (lambda).
+	// We do this by solving 
+	//   lambda*n = dp/du x dp/dv
+	// where 
+	//   p(u,v) = base(u,v) + h(u,v) * k
+	// and
+	//   k = dbase/du x dbase/dv
+	//
+	// We recover lambda by dotting the above with k
+	//   k . lambda*n = k . (dp/du x dp/dv)
+	//   lambda = (k . k) / (k . n)
+	// 
+	// We then recover dh/du by dotting the first eq by dp/du
+	//   dp/du . lambda*n = dp/du . (dp/du x dp/dv)
+	//   dp/du . lambda*n = dh/du * [dbase/du . (k x dbase/dv)]
+	//
+	// The term "dbase/du . (k x dbase/dv)" reduces to "-(k . k)", so we get
+	//   dp/du . lambda*n = dh/du * -(k . k)
+	//   dp/du . [(k . k) / (k . n)*n] = dh/du * -(k . k)
+	//   dp/du . [-n / (k . n)] = dh/du
+	// and similar for dh/dv
+	// 
+	// Since the recovered dh/du will be in units of ||k||, we must divide
+	// by ||k|| to get normalized results. Using dg.nn as k in the last eq 
+	// yields the same result.
+	const Vector nn = (-1.f / Dot(k, n)) * n;
+
+	*du = Dot(dpdu, nn);
+	*dv = Dot(dpdv, nn);
+}
+
 
 Texture<float> *ImageFloatTexture::CreateFloatTexture(const Transform &tex2world,
 	const ParamSet &tp)
@@ -98,6 +160,7 @@ Texture<float> *ImageFloatTexture::CreateFloatTexture(const Transform &tex2world
 	float gain = tp.FindOneFloat("gain", 1.0f);
 	float gamma = tp.FindOneFloat("gamma", 1.0f);
 
+	FileData::decode(tp, "filename");
 	string filename = tp.FindOneString("filename", "");
 	int discardmm = tp.FindOneInt("discardmipmaps", 0);
 
@@ -127,12 +190,14 @@ Texture<float> *ImageFloatTexture::CreateFloatTexture(const Transform &tex2world
 	return tex;
 }
 
+RGBIllumSPD ImageSpectrumTexture::whiteRGBIllum;
+
 Texture<SWCSpectrum> *ImageSpectrumTexture::CreateSWCSpectrumTexture(const Transform &tex2world,
 	const ParamSet &tp)
 {
 	// Initialize 2D texture mapping _map_ from _tp_
 	TextureMapping2D *map = NULL;
-
+	
 	string sFilterType = tp.FindOneString("filtertype", "bilinear");
 	ImageTextureFilterType filterType = BILINEAR;
 	if (sFilterType == "bilinear")
@@ -152,15 +217,15 @@ Texture<SWCSpectrum> *ImageSpectrumTexture::CreateSWCSpectrumTexture(const Trans
 		float dv = tp.FindOneFloat("vdelta", 0.f);
 		map = new UVMapping2D(su, sv, du, dv);
 	} else if (type == "projector"){
-		float su = tp.FindOneFloat("uscale", 1.);
-		float sv = tp.FindOneFloat("vscale", 1.);
-		float du = tp.FindOneFloat("udelta", 0.);
-		float dv = tp.FindOneFloat("vdelta", 0.);
+		float su = tp.FindOneFloat("uscale", 1.f);
+		float sv = tp.FindOneFloat("vscale", 1.f);
+		float du = tp.FindOneFloat("udelta", 0.f);
+		float dv = tp.FindOneFloat("vdelta", 0.f);
 		Vector dir = tp.FindOneVector("dir", Vector(0,0,1));
 		Vector up = tp.FindOneVector("up", Vector(0,1,0));
-		float fov = tp.FindOneFloat("fov", 0.);
-		float yox = tp.FindOneFloat("y/x", 0.);
-		map = new ProjectorMapping2D(su, sv, du, dv, dir, up, fov, yox);
+		float fov = tp.FindOneFloat("fov", 0.f);
+		float yox = tp.FindOneFloat("y/x", 0.f);
+		map = new ProjectorMapping2D(su, sv, du, dv,dir, up, fov, yox);
 	} else if (type == "spherical") {
 		float su = tp.FindOneFloat("uscale", 1.f);
 		float sv = tp.FindOneFloat("vscale", 1.f);
@@ -200,6 +265,7 @@ Texture<SWCSpectrum> *ImageSpectrumTexture::CreateSWCSpectrumTexture(const Trans
 	float gamma = tp.FindOneFloat("gamma", 1.0f);
 	bool ar_scale = tp.FindOneBool("ARScale", false);
 
+	FileData::decode(tp, "filename");
 	string filename = tp.FindOneString("filename", "");
 	int discardmm = tp.FindOneInt("discardmipmaps", 0);
 
@@ -209,7 +275,90 @@ Texture<SWCSpectrum> *ImageSpectrumTexture::CreateSWCSpectrumTexture(const Trans
 	return tex;
 }
 
+Texture<float> *NormalMapTexture::CreateFloatTexture(const Transform &tex2world,
+	const ParamSet &tp)
+{
+	// Initialize 2D texture mapping _map_ from _tp_
+	TextureMapping2D *map = NULL;
+	
+	string sFilterType = tp.FindOneString("filtertype", "bilinear");
+	ImageTextureFilterType filterType = BILINEAR;
+	if (sFilterType == "bilinear")
+		filterType = BILINEAR;
+	else if (sFilterType == "mipmap_trilinear")
+		filterType = MIPMAP_TRILINEAR;
+	else if (sFilterType == "mipmap_ewa")
+		filterType = MIPMAP_EWA;
+	else if (sFilterType == "nearest")
+		filterType = NEAREST;
+
+	string type = tp.FindOneString("mapping", "uv");
+	if (type == "uv") {
+		float su = tp.FindOneFloat("uscale", 1.f);
+		float sv = tp.FindOneFloat("vscale", 1.f);
+		float du = tp.FindOneFloat("udelta", 0.f);
+		float dv = tp.FindOneFloat("vdelta", 0.f);
+		map = new UVMapping2D(su, sv, du, dv);
+	} else if (type == "projector"){
+		float su = tp.FindOneFloat("uscale", 1.f);
+		float sv = tp.FindOneFloat("vscale", 1.f);
+		float du = tp.FindOneFloat("udelta", 0.f);
+		float dv = tp.FindOneFloat("vdelta", 0.f);
+		Vector dir = tp.FindOneVector("dir", Vector(0,0,1));
+		Vector up = tp.FindOneVector("up", Vector(0,1,0));
+		float fov = tp.FindOneFloat("fov", 0.f);
+		float yox = tp.FindOneFloat("y/x", 0.f);
+		map = new ProjectorMapping2D(su, sv, du, dv,dir, up, fov, yox);
+	} else if (type == "spherical") {
+		float su = tp.FindOneFloat("uscale", 1.f);
+		float sv = tp.FindOneFloat("vscale", 1.f);
+		float du = tp.FindOneFloat("udelta", 0.f);
+		float dv = tp.FindOneFloat("vdelta", 0.f);
+		map = new SphericalMapping2D(tex2world.GetInverse(),
+		                             su, sv, du, dv);
+	} else if (type == "cylindrical") {
+		float su = tp.FindOneFloat("uscale", 1.f);
+		float du = tp.FindOneFloat("udelta", 0.f);
+		map = new CylindricalMapping2D(tex2world.GetInverse(), su, du);
+	} else if (type == "planar") {
+		map = new PlanarMapping2D(tp.FindOneVector("v1", Vector(1,0,0)),
+			tp.FindOneVector("v2", Vector(0,1,0)),
+			tp.FindOneFloat("udelta", 0.f),
+			tp.FindOneFloat("vdelta", 0.f));
+	} else {
+		LOG(LUX_ERROR, LUX_BADTOKEN) << "2D texture mapping  '" <<
+			type << "' unknown";
+		map = new UVMapping2D;
+	}
+
+	// Initialize _ImageTexture_ parameters
+	float maxAniso = tp.FindOneFloat("maxanisotropy", 8.f);
+	string wrap = tp.FindOneString("wrap", "repeat");
+	ImageWrap wrapMode = TEXTURE_REPEAT;
+	if (wrap == "repeat")
+		wrapMode = TEXTURE_REPEAT;
+	else if (wrap == "black")
+		wrapMode = TEXTURE_BLACK;
+	else if (wrap == "white")
+		wrapMode = TEXTURE_WHITE;
+	else if (wrap == "clamp")
+		wrapMode = TEXTURE_CLAMP;
+
+	float gain = tp.FindOneFloat("gain", 1.0f);
+	float gamma = tp.FindOneFloat("gamma", 1.0f);
+
+	FileData::decode(tp, "filename");
+	string filename = tp.FindOneString("filename", "");
+	int discardmm = tp.FindOneInt("discardmipmaps", 0);
+
+	NormalMapTexture *tex = new NormalMapTexture(map, filterType,
+		filename, discardmm, maxAniso, wrapMode, gain, gamma);
+
+	return tex;
+}
+
 map<ImageTexture::TexInfo, boost::shared_ptr<MIPMap> > ImageTexture::textures;
 
 static DynamicLoader::RegisterFloatTexture<ImageFloatTexture> r1("imagemap");
 static DynamicLoader::RegisterSWCSpectrumTexture<ImageSpectrumTexture> r2("imagemap");
+static DynamicLoader::RegisterFloatTexture<NormalMapTexture> r3("normalmap");

@@ -23,32 +23,95 @@
 #ifndef LUX_STATS_H
 #define LUX_STATS_H
 
-// stats.h*
-
+// stats.h
 #include "lux.h"
+
+#include <ostream>
+using std::ostream;
 
 namespace lux
 {
-  void StatsPrint(FILE *dest);
-  void StatsCleanup();
-}
+
+/**
+ * Store a few pieces of stats info in order to
+ * allow a simple bit of prediction between network
+ * updates. One of these objects is kept per Context
+ * instance.
+ */
+class StatsData {
+public:
+	StatsData(Context *_ctx);
+	~StatsData() {};
+
+	void update(const bool add_total);
+	void updateSPPM(const bool add_total);
+
+	// Outputs
+	string formattedStatsString;
+
+	// Inputs
+	static string template_string_local;
+	static string template_string_network_waiting;
+	static string template_string_network;
+	static string template_string_total;
+	static string template_string_haltspp;
+	static string template_string_time_remaining;
+	static string template_string_halttime;
+	static string template_string_renderer;
+
+	const double getPercentComplete() { return percentComplete; }
+
+private:
+	Context *ctx;									// Reference to context that created this StatsData object
+	float previousNetworkSamplesSec;				// Last known network_sps
+	double previousNetworkSamples;					// Last known netsamples
+	double lastUpdateSecElapsed;					// secelapsed value when previous* members were updated
+
+	double percentComplete;
+
+	/**
+	 * Select an appropriate number of decimal places for the given number
+	 */
+	/*
+	int magnitude_dp(const float number) {
+		// 1.01
+		// 9.91
+		// 10.1
+		// 99.1
+		// 101.1
+		// 991.1
+		// 1011
+		// 9911
+		float reduced = magnitude_reduce(number);
+
+		if (reduced < 10)
+			return 2;
+
+		if (reduced < 1000)
+			return 1;
+
+		return 0;
+	}
+	*/
+};
+
+void StatsPrint(ostream &dest);
+void StatsCleanup();
 
 class ProgressReporter {
 public:
 	// ProgressReporter Public Methods
-	ProgressReporter(u_int totalWork, const string &title, u_int barLength=58);
+	ProgressReporter(u_int totalWork, const string &title_, u_int barLength=58);
 	~ProgressReporter();
 	void Update(u_int num = 1) const;
 	void Done() const;
 	// ProgressReporter Data
 	const u_int totalPlusses;
 	float frequency;
+	string title;
 	mutable float count;
 	mutable u_int plussesPrinted;
 	mutable Timer *timer;
-	FILE *outFile;
-	char *buf;
-	mutable char *curSpace;
 };
 class StatsCounter {
 public:
@@ -81,6 +144,19 @@ private:
 	// StatsPercentage Private Data
 	StatsCounterType na, nb;
 };
+
+/**
+ * Reduce the magnitude on the input number by dividing into kilo- or Mega- or Giga- units
+ * Used in conjuction with MagnitudePrefix
+ */
+double MagnitudeReduce(double number);
+/**
+ * Return the magnitude prefix char for kilo- or Mega- or Giga-
+ */
+const char* MagnitudePrefix(double number);
+
+
+}
 
 #endif // LUX_STATS_H
 

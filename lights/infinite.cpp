@@ -22,11 +22,14 @@
 
 // infinite.cpp*
 #include "infinite.h"
-#include "randomgen.h"
 #include "imagereader.h"
 #include "mc.h"
 #include "paramset.h"
-#include "reflection/bxdf.h"
+#include "bxdf.h"
+#include "singlebsdf.h"
+#include "primitive.h"
+#include "sampling.h"
+#include "scene.h"
 #include "dynload.h"
 
 using namespace lux;
@@ -44,58 +47,60 @@ public:
 		return (flags & (BSDF_REFLECTION | BSDF_DIFFUSE)) ==
 			(BSDF_REFLECTION | BSDF_DIFFUSE) ? 1U : 0U;
 	}
-	virtual bool Sample_f(const TsPack *tspack, const Vector &woW, Vector *wiW,
-		float u1, float u2, float u3, SWCSpectrum *const f_, float *pdf,
-		BxDFType flags = BSDF_ALL, BxDFType *sampledType = NULL,
-		float *pdfBack = NULL, bool reverse = false) const {
+	virtual bool SampleF(const SpectrumWavelengths &sw, const Vector &woW,
+		Vector *wiW, float u1, float u2, float u3,
+		SWCSpectrum *const f_, float *pdf, BxDFType flags = BSDF_ALL,
+		BxDFType *sampledType = NULL, float *pdfBack = NULL,
+		bool reverse = false) const {
 		if (reverse || NumComponents(flags) == 0)
 			return false;
-		*wiW = Normalize(LocalToWorld(CosineSampleHemisphere(u1, u2)));
-		if (!(Dot(*wiW, ng) > 0.f))
-			return false;
-		if (!(Dot(*wiW, nn) > 0.f))
-			return false;
+		const Vector w(CosineSampleHemisphere(u1, u2));
+		const float cosi = w.z;
+		const Vector wi(w.x * dgShading.dpdu + w.y * dgShading.dpdv +
+			w.z * Vector(dgShading.nn));
+		*wiW = Normalize(WorldToLight.GetInverse()(wi));
 		if (sampledType)
 			*sampledType = BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE);
-		*pdf = AbsDot(*wiW, nn) * INV_PI;
+		*pdf = cosi * INV_PI;
 		if (pdfBack)
 			*pdfBack = 0.f;
 		if (light.radianceMap == NULL) {
-			*f_ = SWCSpectrum(INV_PI);
+			*f_ = SWCSpectrum(1.f);
 			return true;
 		}
-		const Vector wh = Normalize(WorldToLight(-(*wiW)));
 		float s, t, dummy;
-		light.mapping->Map(wh, &s, &t, &dummy);
-		*f_ = light.radianceMap->LookupSpectrum(tspack, s, t) *
-			INV_PI;
+		light.mapping->Map(Normalize(-wi), &s, &t, &dummy);
+		*f_ = light.radianceMap->LookupSpectrum(sw, s, t);
 		return true;
 	}
-	virtual float Pdf(const TsPack *tspack, const Vector &woW,
+	virtual float Pdf(const SpectrumWavelengths &sw, const Vector &woW,
 		const Vector &wiW, BxDFType flags = BSDF_ALL) const {
 		if (NumComponents(flags) == 1 &&
 			Dot(wiW, ng) > 0.f && Dot(wiW, nn) > 0.f)
 			return AbsDot(wiW, nn) * INV_PI;
 		return 0.f;
 	}
-	virtual SWCSpectrum f(const TsPack *tspack, const Vector &woW,
-		const Vector &wiW, BxDFType flags = BSDF_ALL) const {
-		if (NumComponents(flags) == 1 && Dot(wiW, ng) > 0.f) {
+	virtual SWCSpectrum F(const SpectrumWavelengths &sw, const Vector &woW,
+		const Vector &wiW, bool reverse, BxDFType flags = BSDF_ALL) const {
+		const float cosi = Dot(wiW, ng);
+		if (NumComponents(flags) == 1 && cosi > 0.f) {
 			if (light.radianceMap == NULL) {
-				return SWCSpectrum(INV_PI);
+				return SWCSpectrum(reverse ? INV_PI : INV_PI * cosi);
 			}
 			const Vector wh = Normalize(WorldToLight(-wiW));
 			float s, t, dummy;
 			light.mapping->Map(wh, &s, &t, &dummy);
-			return light.radianceMap->LookupSpectrum(tspack, s, t) *
-				INV_PI;
+			return light.radianceMap->LookupSpectrum(sw, s, t) *
+				(reverse ? INV_PI : INV_PI * cosi);
 		}
 		return SWCSpectrum(0.f);
 	}
-	virtual SWCSpectrum rho(const TsPack *tspack,
+	virtual SWCSpectrum rho(const SpectrumWavelengths &sw,
 		BxDFType flags = BSDF_ALL) const { return SWCSpectrum(1.f); }
-	virtual SWCSpectrum rho(const TsPack *tspack, const Vector &woW,
-		BxDFType flags = BSDF_ALL) const { return SWCSpectrum(1.f); }
+	virtual SWCSpectrum rho(const SpectrumWavelengths &sw,
+		const Vector &woW, BxDFType flags = BSDF_ALL) const {
+		return SWCSpectrum(1.f);
+	}
 
 protected:
 	// InfiniteBSDF Private Methods
@@ -120,80 +125,88 @@ public:
 		return (flags & (BSDF_REFLECTION | BSDF_DIFFUSE)) ==
 			(BSDF_REFLECTION | BSDF_DIFFUSE) ? 1U : 0U;
 	}
-	virtual bool Sample_f(const TsPack *tspack, const Vector &woW, Vector *wiW,
-		float u1, float u2, float u3, SWCSpectrum *const f_, float *pdf,
-		BxDFType flags = BSDF_ALL, BxDFType *sampledType = NULL,
-		float *pdfBack = NULL, bool reverse = false) const {
+	virtual bool SampleF(const SpectrumWavelengths &sw, const Vector &woW,
+		Vector *wiW, float u1, float u2, float u3,
+		SWCSpectrum *const f_, float *pdf, BxDFType flags = BSDF_ALL,
+		BxDFType *sampledType = NULL, float *pdfBack = NULL,
+		bool reverse = false) const {
 		if (shapeIndex == ~0U || reverse || NumComponents(flags) == 0)
 			return false;
 		DifferentialGeometry dg;
-		dg.time = tspack->time;
-		PortalShapes[shapeIndex]->Sample(tspack, ps, u1, u2, u3, &dg);
-		*wiW = Normalize(dg.p - ps);
-		if (!(Dot(*wiW, nn) > 0.f))
+		dg.time = dgShading.time;
+		*pdf = PortalShapes[shapeIndex]->Sample(ps, u1, u2, u3, &dg);
+		if (!(*pdf > 0.f))
 			return false;
-		if (light.radianceMap != NULL) {
-			const Vector wh = Normalize(WorldToLight(-(*wiW)));
-			float s, t, dummy;
-			light.mapping->Map(wh, &s, &t, &dummy);
-			*f_ = light.radianceMap->LookupSpectrum(tspack, s, t) *
-				INV_PI;
-		} else
-			*f_ = SWCSpectrum(INV_PI);
-		*pdf = PortalShapes[shapeIndex]->Pdf(ps, dg.p) *
-			DistanceSquared(ps, dg.p) / AbsDot(*wiW, dg.nn);
+		*wiW = Normalize(dg.p - ps);
+		const float cosi = Dot(*wiW, ng);
+		if (!(cosi > 0.f))
+			return false;
+		*pdf *= DistanceSquared(ps, dg.p) / AbsDot(*wiW, dg.nn);
 		for (u_int i = 0; i < PortalShapes.size(); ++i) {
 			if (i == shapeIndex)
 				continue;
 			Intersection isect;
-			RayDifferential ray(ps, *wiW);
+			Ray ray(ps, *wiW);
 			ray.mint = -INFINITY;
+			ray.time = dgShading.time;
 			if (PortalShapes[i]->Intersect(ray, &isect) &&
 				Dot(*wiW, isect.dg.nn) > 0.f)
-				*pdf += PortalShapes[i]->Pdf(ps, isect.dg.p) *
+				*pdf += PortalShapes[i]->Pdf(ps, isect.dg) *
 					DistanceSquared(ps, isect.dg.p) /
 					AbsDot(*wiW, isect.dg.nn);
 		}
 		*pdf /= PortalShapes.size();
 		if (pdfBack)
 			*pdfBack = 0.f;
+		if (light.radianceMap != NULL) {
+			const Vector wh = Normalize(WorldToLight(-(*wiW)));
+			float s, t, dummy;
+			light.mapping->Map(wh, &s, &t, &dummy);
+			*f_ = light.radianceMap->LookupSpectrum(sw, s, t) *
+				(INV_PI * cosi / *pdf);
+		} else
+			*f_ = SWCSpectrum(INV_PI * cosi / *pdf);
 		return true;
 	}
-	virtual float Pdf(const TsPack *tspack, const Vector &woW,
+	virtual float Pdf(const SpectrumWavelengths &sw, const Vector &woW,
 		const Vector &wiW, BxDFType flags = BSDF_ALL) const {
 		if (NumComponents(flags) == 0 && !(Dot(wiW, nn) > 0.f))
 			return 0.f;
 		float pdf = 0.f;
 		for (u_int i = 0; i < PortalShapes.size(); ++i) {
 			Intersection isect;
-			RayDifferential ray(ps, wiW);
+			Ray ray(ps, wiW);
 			ray.mint = -INFINITY;
+			ray.time = dgShading.time;
 			if (PortalShapes[i]->Intersect(ray, &isect) &&
 				Dot(wiW, isect.dg.nn) > 0.f)
-				pdf += PortalShapes[i]->Pdf(ps, isect.dg.p) *
+				pdf += PortalShapes[i]->Pdf(ps, isect.dg) *
 					DistanceSquared(ps, isect.dg.p) /
 					AbsDot(wiW, isect.dg.nn);
 		}
 		return pdf / PortalShapes.size();
 	}
-	virtual SWCSpectrum f(const TsPack *tspack, const Vector &woW,
-		const Vector &wiW, BxDFType flags = BSDF_ALL) const {
+	virtual SWCSpectrum F(const SpectrumWavelengths &sw, const Vector &woW,
+		const Vector &wiW, bool reverse, BxDFType flags = BSDF_ALL) const {
+		const float cosi = Dot(wiW, ng);
 		if (NumComponents(flags) == 1 && Dot(wiW, ng) > 0.f) {
 			if (light.radianceMap == NULL) {
-				return SWCSpectrum(INV_PI);
+				return SWCSpectrum(reverse ? INV_PI : INV_PI * cosi);
 			}
 			const Vector wh = Normalize(WorldToLight(-wiW));
 			float s, t, dummy;
 			light.mapping->Map(wh, &s, &t, &dummy);
-			return light.radianceMap->LookupSpectrum(tspack, s, t) *
-			INV_PI;
+			return light.radianceMap->LookupSpectrum(sw, s, t) *
+			(reverse ? INV_PI : INV_PI * cosi);
 		}
 		return SWCSpectrum(0.f);
 	}
-	virtual SWCSpectrum rho(const TsPack *tspack,
+	virtual SWCSpectrum rho(const SpectrumWavelengths &sw,
 		BxDFType flags = BSDF_ALL) const { return SWCSpectrum(1.f); }
-	virtual SWCSpectrum rho(const TsPack *tspack, const Vector &woW,
-		BxDFType flags = BSDF_ALL) const { return SWCSpectrum(1.f); }
+	virtual SWCSpectrum rho(const SpectrumWavelengths &sw,
+		const Vector &woW, BxDFType flags = BSDF_ALL) const {
+		return SWCSpectrum(1.f);
+	}
 
 protected:
 	// InfinitePortalBSDF Private Methods
@@ -223,47 +236,31 @@ InfiniteAreaLight::InfiniteAreaLight(const Transform &light2world,
 	mapping = m;
 	radianceMap = NULL;
 	if (texmap != "") {
-		auto_ptr<ImageData> imgdata(ReadImage(texmap));
-		if (imgdata.get() != NULL) {
+		std::auto_ptr<ImageData> imgdata(ReadImage(texmap));
+		if (imgdata.get() != NULL)
 			radianceMap = imgdata->createMIPMap(BILINEAR, 8.f,
 				TEXTURE_REPEAT, 1.f, gamma);
-		} else
-			radianceMap = NULL;
 	}
 }
 
-float InfiniteAreaLight::Power(const Scene *scene) const
+float InfiniteAreaLight::Power(const Scene &scene) const
 {
 	Point worldCenter;
 	float worldRadius;
-	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
+	scene.WorldBound().BoundingSphere(&worldCenter, &worldRadius);
 	float power = SPDbase.Y() * M_PI * 4.f * M_PI * worldRadius * worldRadius;
 	if (radianceMap != NULL)
 		power *= radianceMap->LookupFloat(CHANNEL_MEAN, .5f, .5f, .5f);
 	return power;
 }
 
-SWCSpectrum InfiniteAreaLight::Le(const TsPack *tspack,
-	const RayDifferential &r) const
-{
-	// Compute infinite light radiance for direction
-	if (radianceMap != NULL) {
-		Vector wh = Normalize(WorldToLight(r.d));
-		float s, t, dummy;
-		mapping->Map(wh, &s, &t, &dummy);
-		return SWCSpectrum(tspack, SPDbase) *
-			radianceMap->LookupSpectrum(tspack, s, t);
-	} else
-		return SWCSpectrum(tspack, SPDbase);
-}
-
-SWCSpectrum InfiniteAreaLight::Le(const TsPack *tspack, const Scene *scene,
-	const Ray &r, const Normal &n, BSDF **bsdf, float *pdf,
-	float *pdfDirect) const
+bool InfiniteAreaLight::Le(const Scene &scene, const Sample &sample,
+	const Ray &r, BSDF **bsdf, float *pdf, float *pdfDirect,
+	SWCSpectrum *L) const
 {
 	Point worldCenter;
 	float worldRadius;
-	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
+	scene.WorldBound().BoundingSphere(&worldCenter, &worldRadius);
 	const Vector toCenter(worldCenter - r.o);
 	const float centerDistance = Dot(toCenter, toCenter);
 	const float approach = Dot(toCenter, r.d);
@@ -275,233 +272,98 @@ SWCSpectrum InfiniteAreaLight::Le(const TsPack *tspack, const Scene *scene,
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Normal(0, 0, 0),
 		Normal(0, 0, 0), 0, 0, NULL);
-	dg.time = tspack->time;
+	dg.time = sample.realTime;
+	const Volume *v = GetVolume();
 	if (!havePortalShape) {
-		*bsdf = ARENA_ALLOC(tspack->arena, InfiniteBSDF)(dg, ns,
-			NULL, NULL, *this, WorldToLight);
-		*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
-		*pdfDirect = AbsDot(r.d, n) * INV_TWOPI * AbsDot(r.d, ns) /
-			DistanceSquared(r.o, ps);
+		*bsdf = ARENA_ALLOC(sample.arena, InfiniteBSDF)(dg, ns,
+			v, v, *this, WorldToLight);
+		if (pdf)
+			*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
+		if (pdfDirect)
+			*pdfDirect = AbsDot(r.d, ns) /
+				(4.f * M_PI * DistanceSquared(r.o, ps));
 	} else {
-		*bsdf = ARENA_ALLOC(tspack->arena, InfinitePortalBSDF)(dg, ns,
-			NULL, NULL, *this, WorldToLight, ps, PortalShapes,
+		*bsdf = ARENA_ALLOC(sample.arena, InfinitePortalBSDF)(dg, ns,
+			v, v, *this, WorldToLight, ps, PortalShapes,
 			~0U);
-		*pdf = 0.f;
-		*pdfDirect = 0.f;
+		if (pdf)
+			*pdf = 0.f;
+		if (pdfDirect)
+			*pdfDirect = 0.f;
 		DifferentialGeometry dgs;
+		dgs.time = sample.realTime;
 		for (u_int i = 0; i < nrPortalShapes; ++i) {
-			PortalShapes[i]->Sample(.5f, .5f, .5f, &dgs);
-			const Vector w(dgs.p - ps);
-			if (Dot(w, dgs.nn) > 0.f) {
-				const float distance = w.LengthSquared();
-				*pdf += AbsDot(ns, w) /
-					(sqrtf(distance) * distance);
+			if (pdf) {
+				PortalShapes[i]->Sample(.5f, .5f, .5f, &dgs);
+				const Vector w(dgs.p - ps);
+				if (Dot(w, dgs.nn) > 0.f) {
+					const float distance = w.LengthSquared();
+					*pdf += AbsDot(ns, w) /
+						(sqrtf(distance) * distance);
+				}
 			}
-			Intersection isect;
-			RayDifferential ray(r);
-			ray.mint = -INFINITY;
-			if (PortalShapes[i]->Intersect(ray, &isect) &&
-				Dot(r.d, isect.dg.nn) < 0.f)
-				*pdfDirect += PortalShapes[i]->Pdf(r.o,
-					isect.dg.p) * DistanceSquared(r.o,
-					isect.dg.p) / DistanceSquared(r.o, ps) *
-					AbsDot(r.d, ns) / AbsDot(r.d,
-					isect.dg.nn);
+			if (pdfDirect) {
+				Intersection isect;
+				Ray ray(r);
+				ray.mint = -INFINITY;
+				ray.time = sample.realTime;
+				if (PortalShapes[i]->Intersect(ray, &isect) &&
+					Dot(r.d, isect.dg.nn) < 0.f)
+					*pdfDirect += PortalShapes[i]->Pdf(r.o,
+						isect.dg) * DistanceSquared(r.o,
+						isect.dg.p) / DistanceSquared(r.o, ps) *
+						AbsDot(r.d, ns) / AbsDot(r.d,
+						isect.dg.nn);
+			}
 		}
-		*pdf *= INV_TWOPI / nrPortalShapes;
-		*pdfDirect /= nrPortalShapes;
+		if (pdf)
+			*pdf *= INV_TWOPI / nrPortalShapes;
+		if (pdfDirect)
+			*pdfDirect /= nrPortalShapes;
 	}
+	*L *= SWCSpectrum(sample.swl, SPDbase);
 	if (radianceMap != NULL) {
 		const Vector wh = Normalize(WorldToLight(r.d));
 		float s, t, dummy;
 		mapping->Map(wh, &s, &t, &dummy);
-		return SWCSpectrum(tspack, SPDbase) *
-			radianceMap->LookupSpectrum(tspack, s, t);
-	} else
-		return SWCSpectrum(tspack, SPDbase);
-}
-
-SWCSpectrum InfiniteAreaLight::Sample_L(const TsPack *tspack, const Point &p,
-	const Normal &n, float u1, float u2, float u3, Vector *wi, float *pdf,
-	VisibilityTester *visibility) const
-{
-	if(!havePortalShape) {
-		// Sample cosine-weighted direction on unit sphere
-		float x, y, z;
-		ConcentricSampleDisk(u1, u2, &x, &y);
-		z = sqrtf(max(0.f, 1.f - x*x - y*y));
-		if (u3 < .5) z *= -1;
-		*wi = Vector(x, y, z);
-		// Compute _pdf_ for cosine-weighted infinite light direction
-		*pdf = fabsf(wi->z) * INV_TWOPI;
-		// Transform direction to world space
-		Vector v1, v2;
-		CoordinateSystem(Normalize(Vector(n)), &v1, &v2);
-		*wi = v1 * wi->x + v2 * wi->y + Vector(n) * wi->z;
-	} else {
-		// Sample Portal
-		u_int shapeidx = 0;
-		if(nrPortalShapes > 1) 
-			shapeidx = min(nrPortalShapes - 1U,
-				Floor2UInt(u3 * nrPortalShapes));
-		DifferentialGeometry dg;
-		dg.time = tspack->time;
-		Point ps;
-		bool found = false;
-		for (u_int i = 0; i < nrPortalShapes; ++i) {
-			PortalShapes[shapeidx]->Sample(tspack, p, u1, u2, u3,
-				&dg);
-			ps = dg.p;
-			*wi = Normalize(ps - p);
-			if (Dot(*wi, dg.nn) < 0.f) {
-				found = true;
-				break;
-			}
-
-			if (++shapeidx >= nrPortalShapes)
-				shapeidx = 0;
-		}
-
-		if (found)
-			*pdf = PortalShapes[shapeidx]->Pdf(p, *wi);
-		else {
-			*pdf = 0.f;
-			return SWCSpectrum(0.f);
-		}
+		*L *= radianceMap->LookupSpectrum(sample.swl, s, t);
 	}
-	visibility->SetRay(p, *wi, tspack->time);
-	return Le(tspack, RayDifferential(p, *wi));
+	return true;
 }
-float InfiniteAreaLight::Pdf(const TsPack *tspack, const Point &,
-	const Normal &n, const Vector &wi) const
+
+float InfiniteAreaLight::Pdf(const Point &p, const DifferentialGeometry &dg) const
 {
-	return AbsDot(n, wi) * INV_TWOPI;
-}
-float InfiniteAreaLight::Pdf(const TsPack *tspack, const Point &p,
-	const Normal &n, const Point &po, const Normal &ns) const
-{
-	const Vector wi(po - p);
+	const Vector wi(dg.p - p);
 	if (!havePortalShape) {
 		const float d2 = wi.LengthSquared();
-		return AbsDot(n, wi) * INV_TWOPI * AbsDot(wi, ns) / (d2 * d2);
+		return AbsDot(wi, dg.nn) / (4.f * M_PI * sqrtf(d2) * d2);
 	} else {
 		float pdf = 0.f;
 		for (u_int i = 0; i < nrPortalShapes; ++i) {
 			Intersection isect;
-			RayDifferential ray(p, wi);
+			Ray ray(p, wi);
 			ray.mint = -INFINITY;
 			if (PortalShapes[i]->Intersect(ray, &isect) &&
 				Dot(wi, isect.dg.nn) < 0.f)
-				pdf += PortalShapes[i]->Pdf(p, isect.dg.p) *
+				pdf += PortalShapes[i]->Pdf(p, isect.dg) *
 					DistanceSquared(p, isect.dg.p) /
-					DistanceSquared(p, po) *
-					AbsDot(wi, ns) /
+					DistanceSquared(p, dg.p) *
+					AbsDot(wi, dg.nn) /
 					AbsDot(wi, isect.dg.nn);
 		}
 		pdf /= nrPortalShapes;
 		return pdf;
 	}
 }
-SWCSpectrum InfiniteAreaLight::Sample_L(const TsPack *tspack, const Point &p,
-	float u1, float u2, float u3, Vector *wi, float *pdf,
-	VisibilityTester *visibility) const
-{
-	if(!havePortalShape) {
-		*wi = UniformSampleSphere(u1, u2);
-		*pdf = UniformSpherePdf();
-	} else {
-	    // Sample a random Portal
-		u_int shapeidx = 0;
-		if(nrPortalShapes > 1) 
-			shapeidx = min(nrPortalShapes - 1U,
-				Floor2UInt(u3 * nrPortalShapes));
-		DifferentialGeometry dg;
-		dg.time = tspack->time;
-		Point ps;
-		bool found = false;
-		for (u_int i = 0; i < nrPortalShapes; ++i) {
-			PortalShapes[shapeidx]->Sample(tspack, p, u1, u2, u3,
-				&dg);
-			ps = dg.p;
-			*wi = Normalize(ps - p);
-			if (Dot(*wi, dg.nn) < 0.f) {
-				found = true;
-				break;
-			}
 
-			if (++shapeidx >= nrPortalShapes)
-				shapeidx = 0;
-		}
-
-		if (found)
-			*pdf = PortalShapes[shapeidx]->Pdf(p, *wi);
-		else {
-			*pdf = 0.f;
-			return SWCSpectrum(0.f);
-		}
-	}
-	visibility->SetRay(p, *wi, tspack->time);
-	return Le(tspack, RayDifferential(p, *wi));
-}
-
-float InfiniteAreaLight::Pdf(const TsPack *tspack, const Point &,
-	const Vector &) const
-{
-	return 1.f / (4.f * M_PI);
-}
-
-SWCSpectrum InfiniteAreaLight::Sample_L(const TsPack *tspack,
-	const Scene *scene, float u1, float u2, float u3, float u4,
-	Ray *ray, float *pdf) const
-{
-	if(!havePortalShape) {
-		// Choose two points _p1_ and _p2_ on scene bounding sphere
-		Point worldCenter;
-		float worldRadius;
-		scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
-		worldRadius *= 1.01f;
-		Point p1 = worldCenter + worldRadius *
-			UniformSampleSphere(u1, u2);
-		Point p2 = worldCenter + worldRadius *
-			UniformSampleSphere(u3, u4);
-		// Construct ray between _p1_ and _p2_
-		ray->o = p1;
-		ray->d = Normalize(p2-p1);
-		// Compute _InfiniteAreaLight_ ray weight
-		Vector to_center = Normalize(worldCenter - p1);
-		float costheta = AbsDot(to_center,ray->d);
-		*pdf = costheta / ((4.f * M_PI * worldRadius * worldRadius));
-	} else {
-		// Dade - choose a random portal. This strategy is quite bad if there
-		// is more than one portal.
-		u_int shapeidx = 0;
-		if (nrPortalShapes > 1) 
-			shapeidx = min(nrPortalShapes - 1,
-				Floor2UInt(tspack->rng->floatValue() *
-				nrPortalShapes));  // TODO - REFACT - add passed value from sample
-
-		DifferentialGeometry dg;
-		dg.time = tspack->time;
-		PortalShapes[shapeidx]->Sample(u1, u2,
-			tspack->rng->floatValue(), &dg); // TODO - REFACT - add passed value from sample
-		ray->o = dg.p;
-		ray->d = UniformSampleSphere(u3, u4);
-		if (Dot(ray->d, dg.nn) < 0.f)
-			ray->d *= -1;
-
-		*pdf = PortalShapes[shapeidx]->Pdf(ray->o) * INV_TWOPI /
-			nrPortalShapes;
-	}
-
-	return Le(tspack, RayDifferential(ray->o, -ray->d));
-}
-bool InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene,
+bool InfiniteAreaLight::SampleL(const Scene &scene, const Sample &sample,
 	float u1, float u2, float u3, BSDF **bsdf, float *pdf,
 	SWCSpectrum *Le) const
 {
 	Point worldCenter;
 	float worldRadius;
-	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
+	scene.WorldBound().BoundingSphere(&worldCenter, &worldRadius);
+	const Volume *v = GetVolume();
 	if (!havePortalShape) {
 		const Point ps = worldCenter +
 			worldRadius * UniformSampleSphere(u1, u2);
@@ -510,8 +372,9 @@ bool InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene,
 		CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 		DifferentialGeometry dg(ps, ns, dpdu, dpdv, Normal(0, 0, 0),
 			Normal (0, 0, 0), 0, 0, NULL);
-		*bsdf = ARENA_ALLOC(tspack->arena, InfiniteBSDF)(dg, ns,
-			NULL, NULL, *this, WorldToLight);
+		dg.time = sample.realTime;
+		*bsdf = ARENA_ALLOC(sample.arena, InfiniteBSDF)(dg, ns,
+			v, v, *this, WorldToLight);
 		*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	} else {
 		// Sample a random Portal
@@ -522,7 +385,7 @@ bool InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene,
 			u3 -= shapeIndex;
 		}
 		DifferentialGeometry dgs;
-		dgs.time = tspack->time;
+		dgs.time = sample.realTime;
 		PortalShapes[shapeIndex]->Sample(.5f, .5f, .5f, &dgs);
 		Vector wi(UniformSampleHemisphere(u1, u2));
 		wi = Normalize(wi.x * Normalize(dgs.dpdu) +
@@ -539,8 +402,9 @@ bool InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene,
 		CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 		DifferentialGeometry dg(ps, ns, dpdu, dpdv, Normal(0, 0, 0),
 			Normal(0, 0, 0), 0, 0, NULL);
-		*bsdf = ARENA_ALLOC(tspack->arena, InfinitePortalBSDF)(dg, ns,
-			NULL, NULL, *this, WorldToLight, ps, PortalShapes,
+		dg.time = sample.realTime;
+		*bsdf = ARENA_ALLOC(sample.arena, InfinitePortalBSDF)(dg, ns,
+			v, v, *this, WorldToLight, ps, PortalShapes,
 			shapeIndex);
 		*pdf = AbsDot(ns, wi) / (distance * distance);
 		for (u_int i = 0; i < nrPortalShapes; ++i) {
@@ -556,28 +420,23 @@ bool InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene,
 		}
 		*pdf *= INV_TWOPI / nrPortalShapes;
 	}
-	*Le = SWCSpectrum(tspack, SPDbase) * M_PI;
+	*Le = SWCSpectrum(sample.swl, SPDbase) * (M_PI / *pdf);
 	return true;
 }
-bool InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene,
-	const Point &p, const Normal &n, float u1, float u2, float u3,
-	BSDF **bsdf, float *pdf, float *pdfDirect,
-	VisibilityTester *visibility, SWCSpectrum *Le) const
+bool InfiniteAreaLight::SampleL(const Scene &scene, const Sample &sample,
+	const Point &p, float u1, float u2, float u3,
+	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *Le) const
 {
 	Vector wi;
 	u_int shapeIndex = 0;
 	Point worldCenter;
 	float worldRadius;
-	scene->WorldBound().BoundingSphere(&worldCenter, &worldRadius);
+	scene.WorldBound().BoundingSphere(&worldCenter, &worldRadius);
 	if(!havePortalShape) {
-		// Sample cosine-weighted direction on unit sphere
-		wi = CosineSampleHemisphere(u1, u2);
-		// Compute _pdf_ for cosine-weighted infinite light direction
-		*pdfDirect = fabsf(wi.z) * INV_PI;
-		// Transform direction to world space
-		Vector v1, v2;
-		CoordinateSystem(Normalize(Vector(n)), &v1, &v2);
-		wi = Vector(wi.x * v1 + wi.y * v2 + wi.z * Vector(n));
+		// Sample uniform direction on unit sphere
+		wi = UniformSampleSphere(u1, u2);
+		// Compute _pdf_ for uniform infinite light direction
+		*pdfDirect = .25f * INV_PI;
 	} else {
 		// Sample a random Portal
 		if (nrPortalShapes > 1) {
@@ -586,18 +445,19 @@ bool InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene,
 			u3 -= shapeIndex;
 		}
 		DifferentialGeometry dg;
-		dg.time = tspack->time;
-		PortalShapes[shapeIndex]->Sample(tspack, p, u1, u2, u3, &dg);
-		Point ps = dg.p;
-		wi = Normalize(ps - p);
-		if (Dot(wi, dg.nn) < 0.f) {
-			*pdfDirect = PortalShapes[shapeIndex]->Pdf(p, ps);
-			*pdfDirect *= DistanceSquared(p, dg.p) /
-				AbsDot(wi, dg.nn);
-		} else {
+		dg.time = sample.realTime;
+		*pdfDirect = PortalShapes[shapeIndex]->Sample(p, u1, u2, u3, &dg);
+		if (!(*pdfDirect > 0.f)) {
 			*Le = 0.f;
 			return false;
 		}
+		Point ps = dg.p;
+		wi = Normalize(ps - p);
+		if (!(Dot(wi, dg.nn) < 0.f)) {
+			*Le = 0.f;
+			return false;
+		}
+		*pdfDirect *= DistanceSquared(p, dg.p) / AbsDot(wi, dg.nn);
 	}
 	const Vector toCenter(worldCenter - p);
 	const float centerDistance = Dot(toCenter, toCenter);
@@ -610,47 +470,50 @@ bool InfiniteAreaLight::Sample_L(const TsPack *tspack, const Scene *scene,
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Normal(0, 0, 0),
 		Normal (0, 0, 0), 0, 0, NULL);
+	dg.time = sample.realTime;
+	const Volume *v = GetVolume();
 	if (!havePortalShape) {
-		*bsdf = ARENA_ALLOC(tspack->arena, InfiniteBSDF)(dg, ns,
-			NULL, NULL, *this, WorldToLight);
-		*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
+		*bsdf = ARENA_ALLOC(sample.arena, InfiniteBSDF)(dg, ns,
+			v, v, *this, WorldToLight);
+		if (pdf)
+			*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	} else {
-		*bsdf = ARENA_ALLOC(tspack->arena, InfinitePortalBSDF)(dg, ns,
-			NULL, NULL, *this, WorldToLight, ps, PortalShapes,
+		*bsdf = ARENA_ALLOC(sample.arena, InfinitePortalBSDF)(dg, ns,
+			v, v, *this, WorldToLight, ps, PortalShapes,
 			shapeIndex);
-		*pdf = 0.f;
-		DifferentialGeometry dgs;
-		dgs.time = tspack->time;
-		for (u_int i = 0; i < nrPortalShapes; ++i) {
-			PortalShapes[i]->Sample(.5f, .5f, .5f, &dgs);
-			Vector w(ps - dgs.p);
-			if (Dot(wi, dgs.nn) < 0.f) {
-				float distance = w.LengthSquared();
-				*pdf += AbsDot(ns, w) / (sqrtf(distance) * distance);
+		if (pdf) {
+			*pdf = 0.f;
+			DifferentialGeometry dgs;
+			dgs.time = sample.realTime;
+			for (u_int i = 0; i < nrPortalShapes; ++i) {
+				PortalShapes[i]->Sample(.5f, .5f, .5f, &dgs);
+				Vector w(ps - dgs.p);
+				if (Dot(wi, dgs.nn) < 0.f) {
+					float distance = w.LengthSquared();
+					*pdf += AbsDot(ns, w) / (sqrtf(distance) * distance);
+				}
 			}
+			*pdf *= INV_TWOPI / nrPortalShapes;
 		}
-		*pdf *= INV_TWOPI / nrPortalShapes;
 	}
-	*pdfDirect *= AbsDot(wi, ns) / (distance * distance);
 	if (havePortalShape) {
 		for (u_int i = 0; i < nrPortalShapes; ++i) {
 			if (i == shapeIndex)
 				continue;
 			Intersection isect;
-			RayDifferential ray(p, wi);
+			Ray ray(p, wi);
 			ray.mint = -INFINITY;
+			ray.time = sample.realTime;
 			if (PortalShapes[i]->Intersect(ray, &isect) &&
 				Dot(wi, isect.dg.nn) < 0.f)
 				*pdfDirect += PortalShapes[i]->Pdf(p,
-					isect.dg.p) * DistanceSquared(p,
-					isect.dg.p) / DistanceSquared(p, ps) *
-					AbsDot(wi, ns) / AbsDot(wi,
-					isect.dg.nn);
+					isect.dg) * DistanceSquared(p,
+					isect.dg.p) / AbsDot(wi, isect.dg.nn);
 		}
 		*pdfDirect /= nrPortalShapes;
 	}
-	visibility->SetSegment(p, ps, tspack->time);
-	*Le = SWCSpectrum(tspack, SPDbase) * M_PI;
+	*pdfDirect *= AbsDot(wi, ns) / (distance * distance);
+	*Le = SWCSpectrum(sample.swl, SPDbase) * (M_PI / *pdfDirect);
 	return true;
 }
 

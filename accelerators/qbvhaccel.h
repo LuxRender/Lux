@@ -262,11 +262,15 @@ public:
 	*/
 	virtual bool IntersectP(const Ray &ray, bool null_shapes_isect=false) const;
 
+	virtual Transform GetWorldToLocal(float time) const {
+		return Transform();
+	}
+
 	/**
 	   Fills an array with the primitives
 	   @param prims vector to be filled
 	*/
-	virtual void GetPrimitives(vector<boost::shared_ptr<Primitive> > &prims);
+	virtual void GetPrimitives(vector<boost::shared_ptr<Primitive> > &prims) const;
 
 	/**
 	   Read configuration parameters and create a new QBVH accelerator

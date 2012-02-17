@@ -24,11 +24,22 @@
 #include "motionsystem.h"
 #include "error.h"
 
+#include <cstring>
+using std::memset;
+
+#include <vector>
+#include <algorithm>
+#include <utility>
+
+
 using namespace lux;
 
-MotionSystem::MotionSystem(float st, float et,
-		const Transform &s, const Transform &e) {
-	
+InterpolatedTransform::InterpolatedTransform(float st, float et,
+		const Transform &s, const Transform &e)
+		: hasTranslationX(false), hasTranslationY(false), hasTranslationZ(false), 
+		hasScaleX(false), hasScaleY(false), hasScaleZ(false), hasRotation(false), 
+		isActive(false)
+{
 	startTime = st;
 	endTime = et;
 	start = s;
@@ -36,24 +47,24 @@ MotionSystem::MotionSystem(float st, float et,
 	startMat = start.GetMatrix();
 	endMat = end.GetMatrix();
 
-	// initialize to false
-	hasTranslationX = hasTranslationY = hasTranslationZ =
-		hasScaleX = hasScaleY = hasScaleZ = hasRotation = isActive = false;
-
-	if (!DecomposeMatrix(startMat, startT)) {
-		luxError(LUX_MATH, LUX_WARNING, "Singular start matrix in MotionSystem, interpolation disabled");
-		return;
-	}
-	if (!DecomposeMatrix(endMat, endT)) {
-		luxError(LUX_MATH, LUX_WARNING, "Singular end matrix in MotionSystem, interpolation disabled");
+	if (startTime == endTime) {
 		return;
 	}
 
-	startQ = Quaternion(startT.R);
-	startQ.Normalize();
+	startT = DecomposedTransform(startMat);
+	endT = DecomposedTransform(endMat);
 
-	endQ = Quaternion(endT.R);
-	endQ.Normalize();
+	if (!startT.Valid) {
+		LOG( LUX_WARNING,LUX_MATH)<< "Singular start matrix in InterpolatedTransform, interpolation disabled";
+		return;
+	}
+	if (!endT.Valid) {
+		LOG( LUX_WARNING,LUX_MATH)<< "Singular end matrix in InterpolatedTransform, interpolation disabled";
+		return;
+	}
+
+	startQ = Normalize(Quaternion(startT.R));
+	endQ = Normalize(Quaternion(endT.R));
 
 	hasTranslationX = startT.Tx != endT.Tx;
 	hasTranslationY = startT.Ty != endT.Ty;
@@ -72,7 +83,19 @@ MotionSystem::MotionSystem(float st, float et,
 		hasScale || hasRotation;
 }
 
-Transform MotionSystem::Sample(float time) const {
+BBox InterpolatedTransform::Bound(BBox ibox) const {
+	// Compute total bounding box by naive unions.
+	BBox tbox;
+	const float N = 1024;
+	for (float i = 0; i <= N; i++) {
+		const float t = Lerp(static_cast<float>(i) / N, startTime, endTime);
+		Transform subT = Sample(t);
+		tbox = Union(tbox, subT(ibox));
+	}
+	return tbox;
+}
+
+Transform InterpolatedTransform::Sample(float time) const {
 	if (!isActive)
 		return start;
 
@@ -103,24 +126,10 @@ Transform MotionSystem::Sample(float time) const {
 
 	if (hasRotation) {
 		// Quaternion interpolation of rotation
-		Quaternion interQ = Quaternion::Slerp(le, startQ, endQ);
+		Quaternion interQ = Slerp(le, startQ, endQ);
 		interQ.ToMatrix(interMatrix);
 	} else
 		memcpy(interMatrix, startT.R->m, sizeof(float) * 16);
-
-/*
-	Transform R(interMatrix);
-	Transform S = Scale(
-		Lerp(le, startT.Sx, endT.Sx), 
-		Lerp(le, startT.Sy, endT.Sy), 
-		Lerp(le, startT.Sz, endT.Sz));
-	Transform T = Translate(Vector(
-		Lerp(le, startT.Tx, endT.Tx),
-		Lerp(le, startT.Ty, endT.Ty), 
-		Lerp(le, startT.Tz, endT.Tz)));
-
-	return T * S * R;
-*/
 
 	if (hasScale) {
 		const float Sx = Lerp(le, startT.Sx, endT.Sx);
@@ -162,118 +171,112 @@ Transform MotionSystem::Sample(float time) const {
 	return Transform(interMatrix);
 }
 
-void V4MulByMatrix(const boost::shared_ptr<Matrix4x4> &A, const float x[4], float b[4]) {
+static void V4MulByMatrix(const boost::shared_ptr<Matrix4x4> &A, const float x[4], float b[4]) {
 	b[0] = A->m[0][0]*x[0] + A->m[0][1]*x[1] + A->m[0][2]*x[2] + A->m[0][3]*x[3];
 	b[1] = A->m[1][0]*x[0] + A->m[1][1]*x[1] + A->m[1][2]*x[2] + A->m[1][3]*x[3];
 	b[2] = A->m[2][0]*x[0] + A->m[2][1]*x[1] + A->m[2][2]*x[2] + A->m[2][3]*x[3];
 	b[3] = A->m[3][0]*x[0] + A->m[3][1]*x[1] + A->m[3][2]*x[2] + A->m[3][3]*x[3];
 }
 
-bool MotionSystem::DecomposeMatrix(const boost::shared_ptr<Matrix4x4> &m, Transforms &trans) const {
+InterpolatedTransform::DecomposedTransform::DecomposedTransform(const boost::shared_ptr<Matrix4x4> &m) : Valid(false) {
 
 	boost::shared_ptr<Matrix4x4> locmat(new Matrix4x4(m->m));
 
-	/* Normalize the matrix. */
+	// Normalize the matrix. 
 	if (locmat->m[3][3] == 0)
-		return false;
+		return;
 	for (u_int i = 0; i < 4; ++i) {
 		for (u_int j = 0; j < 4; ++j)
 			locmat->m[i][j] /= locmat->m[3][3];
 	}
-	/* pmat is used to solve for perspective, but it also provides
-	 * an easy way to test for singularity of the upper 3x3 component.
-	 */
+	// pmat is used to solve for perspective, but it also provides
+	// an easy way to test for singularity of the upper 3x3 component.	 
 	boost::shared_ptr<Matrix4x4> pmat(new Matrix4x4(locmat->m));
 	for (u_int i = 0; i < 3; i++)
 		pmat->m[i][3] = 0.f;
 	pmat->m[3][3] = 1.f;
 
-	// Note - radiance - disables as memory bug on win32
 	if (pmat->Determinant() == 0.f)
-		return false;
+		return;
 
-	/* First, isolate perspective.  This is the messiest. */
+	// First, isolate perspective.  This is the messiest. 
 	if (locmat->m[3][0] != 0.f || locmat->m[3][1] != 0.f ||
 		locmat->m[3][2] != 0.f) {
-		/* prhs is the right hand side of the equation. */
+		// prhs is the right hand side of the equation. 
 		float prhs[4];
 		prhs[0] = locmat->m[3][0];
 		prhs[1] = locmat->m[3][1];
 		prhs[2] = locmat->m[3][2];
 		prhs[3] = locmat->m[3][3];
 
-		/* Solve the equation by inverting pmat and multiplying
-		 * prhs by the inverse.  (This is the easiest way, not
-		 * necessarily the best.)
-		 * inverse function (and det4x4, above) from the Matrix
-		 * Inversion gem in the first volume.
-		 */
+		// Solve the equation by inverting pmat and multiplying
+		// prhs by the inverse. This is the easiest way, not
+		// necessarily the best.
 		boost::shared_ptr<Matrix4x4> tinvpmat(pmat->Inverse()->Transpose());
 		float psol[4];
 		V4MulByMatrix(tinvpmat, prhs, psol);
  
-		/* Stuff the answer away. */
-		trans.Px = psol[0];
-		trans.Py = psol[1];
-		trans.Pz = psol[2];
-		trans.Pw = psol[3];
-		//trans.Px = trans.Py = trans.Pz = trans.Pw = 0;
-		/* Clear the perspective partition. */
+		// Stuff the answer away. 
+		Px = psol[0];
+		Py = psol[1];
+		Pz = psol[2];
+		Pw = psol[3];
+		//Px = Py = Pz = Pw = 0;
+		// Clear the perspective partition. 
 		locmat->m[3][0] = locmat->m[3][1] = locmat->m[3][2] = 0.f;
 		locmat->m[3][3] = 1.f;
 	};
-//	else		/* No perspective. */
+//	else		// No perspective. 
 //		tran[U_PERSPX] = tran[U_PERSPY] = tran[U_PERSPZ] =
 //			tran[U_PERSPW] = 0;
 
-	/* Next take care of translation (easy). */
-	trans.Tx = locmat->m[0][3];
-	trans.Ty = locmat->m[1][3];
-	trans.Tz = locmat->m[2][3];
+	// Next take care of translation (easy). 
+	Tx = locmat->m[0][3];
+	Ty = locmat->m[1][3];
+	Tz = locmat->m[2][3];
 	for (u_int i = 0; i < 3; ++i)
 		locmat->m[i][3] = 0.f;
 	
 	Vector row[3];
-	/* Now get scale and shear. */
+	// Now get scale and shear. 
 	for (u_int i = 0; i < 3; ++i) {
 		row[i].x = locmat->m[i][0];
 		row[i].y = locmat->m[i][1];
 		row[i].z = locmat->m[i][2];
 	}
 
-	/* Compute X scale factor and normalize first row. */
-	trans.Sx = row[0].Length();
-	row[0] *= 1.f / trans.Sx;
+	// Compute X scale factor and normalize first row. 
+	Sx = row[0].Length();
+	row[0] *= 1.f / Sx;
 
-	/* Compute XY shear factor and make 2nd row orthogonal to 1st. */
-	trans.Sxy = Dot(row[0], row[1]);
-	row[1] -= trans.Sxy * row[0];
+	// Compute XY shear factor and make 2nd row orthogonal to 1st. 
+	Sxy = Dot(row[0], row[1]);
+	row[1] -= Sxy * row[0];
 
-	/* Now, compute Y scale and normalize 2nd row. */
-	trans.Sy = row[1].Length();
-	row[1] *= 1.f / trans.Sy;
-	trans.Sxy /= trans.Sy;
+	// Now, compute Y scale and normalize 2nd row. 
+	Sy = row[1].Length();
+	row[1] *= 1.f / Sy;
+	Sxy /= Sy;
 
-	/* Compute XZ and YZ shears, orthogonalize 3rd row. */
-	trans.Sxz = Dot(row[0], row[2]);
-	row[2] -= trans.Sxz * row[0];
-	trans.Syz = Dot(row[1], row[2]);
-	row[2] -= trans.Syz * row[1];
+	// Compute XZ and YZ shears, orthogonalize 3rd row. 
+	Sxz = Dot(row[0], row[2]);
+	row[2] -= Sxz * row[0];
+	Syz = Dot(row[1], row[2]);
+	row[2] -= Syz * row[1];
 
-	/* Next, get Z scale and normalize 3rd row. */
-	trans.Sz = row[2].Length();
-	row[2] *= 1.f / trans.Sz;
-	trans.Sxz /= trans.Sz;
-	trans.Syz /= trans.Sz;
+	// Next, get Z scale and normalize 3rd row. 
+	Sz = row[2].Length();
+	row[2] *= 1.f / Sz;
+	Sxz /= Sz;
+	Syz /= Sz;
 
-	/* At this point, the matrix (in rows[]) is orthonormal.
-	 * Check for a coordinate system flip.  If the determinant
-	 * is -1, then negate the matrix and the scaling factors.
-	 */
+	// At this point, the matrix (in rows[]) is orthonormal.
+	// Check for a coordinate system flip.  If the determinant
+	// is -1, then negate the matrix and the scaling factors.	 
 	if (Dot(row[0], Cross(row[1], row[2])) < 0.f) {
-		trans.Sx *= -1.f;
-		trans.Sy *= -1.f;
-		trans.Sz *= -1.f;
+		Sx *= -1.f;
+		Sy *= -1.f;
+		Sz *= -1.f;
 		for (u_int i = 0; i < 3; ++i) {
 			row[i].x *= -1.f;
 			row[i].y *= -1.f;
@@ -281,14 +284,233 @@ bool MotionSystem::DecomposeMatrix(const boost::shared_ptr<Matrix4x4> &m, Transf
 		}
 	}
 
-	/* Now, get the rotations out */
+	// Now, get the rotations out 
 	for (u_int i = 0; i < 3; ++i) {
 		locmat->m[i][0] = row[i].x;
 		locmat->m[i][1] = row[i].y;
 		locmat->m[i][2] = row[i].z;
 	}
-	trans.R = locmat;
-	/* All done! */
+	R = locmat;
+	// All done! 
+	Valid = true;
+}
+
+MotionSystem::MotionSystem(const vector<float> &t, const vector<Transform> &transforms) : times(t) {
+	typedef vector<float>::const_iterator time_it;
+	typedef vector<Transform>::const_iterator trans_cit;
+
+	// allocate one non-interpolating InterpolatedTransform at start and end of the array
+	// this saves us extra bounds checking
+	time_it time = times.begin();
+	time_it prev_time = times.begin();
+	trans_cit prev_trans = transforms.begin();
+	trans_cit trans = transforms.begin();
+
+	interpolatedTransforms.reserve(times.size() + 1);
+
+	while (time != times.end()) {
+		interpolatedTransforms.push_back(InterpolatedTransform(*prev_time, *time, *prev_trans, *trans));
+		prev_time = time;
+		time++;
+		prev_trans = trans;
+		trans++;
+	}
+
+	interpolatedTransforms.push_back(InterpolatedTransform(*prev_time, *prev_time, *prev_trans, *prev_trans));
+}
+
+MotionSystem::MotionSystem(const Transform &t) : times(1, 0.f), interpolatedTransforms(1, InterpolatedTransform(0.f, 0.f, t, t)) {
+}
+
+MotionSystem::MotionSystem() : times(1, 0.f), interpolatedTransforms(1, InterpolatedTransform(0.f, 0.f, Transform(), Transform())) {
+}
+
+bool MotionSystem::IsStatic() const {
+	if (times.size() == 0)
+		return true;
+
+	return false;
+}
+
+Transform MotionSystem::Sample(float time) const {
+	size_t index = std::upper_bound(times.begin(), times.end(), time) - times.begin();
+
+	index = min(index, times.size()-1);
+
+	return interpolatedTransforms[index].Sample(time);
+}
+
+BBox MotionSystem::Bound(BBox ibox) const {;
+	typedef vector<InterpolatedTransform>::const_iterator msys_cit;
+
+	BBox result;
+
+	for(msys_cit ms = interpolatedTransforms.begin(); ms != interpolatedTransforms.end(); ms++) {
+		result = Union(result, ms->Bound(ibox));
+	}
+
+	return result;
+}
+
+// Contains one or more <time, transform> pairs (knots) representing a path
+MotionTransform::MotionTransform(const MotionTransform &other) : times(other.times), transforms(other.transforms) { }
+
+MotionTransform::MotionTransform(const vector<float> &t, const vector<Transform> &trans) : times(t), transforms(trans) {
+}
+
+MotionTransform::MotionTransform(const Transform &t) : times(), transforms(1, t) {
+}
+
+MotionTransform::MotionTransform() : times(), transforms(1, Transform()) {
+}
+
+bool MotionTransform::Valid() const {
+	// static
+	if (times.size() == 0 && transforms.size() == 1)
+		return true;
+
+	// now perform dynamic tests
+	if (times.size() > 0 && times.size() != transforms.size())
+		return false;
+
+	// first check monotonically increasing
+	if (*std::max_element(times.begin(), times.end()) != times.back())
+		return false;
+
+	// then check strictly increasing
+	if (std::adjacent_find(times.begin(), times.end()) != times.end())
+		return false;
+
 	return true;
 }
 
+size_t MotionTransform::Size() const {
+	return times.size();
+}
+
+std::pair<float, float> MotionTransform::Interval() const {
+	return std::make_pair(times.front(), times.back());
+}
+
+Transform MotionTransform::StaticTransform() const {
+	if (!IsStatic()) {
+		LOG(LUX_WARNING, LUX_CONSISTENCY) << "Motion transform used on non-motion element. Using transform at T=0";
+		return MotionSystem(times, transforms).Sample(0.f);
+	}
+
+	return transforms.front();
+}
+
+MotionSystem MotionTransform::GetMotionSystem() const {
+	if (IsStatic())
+		return MotionSystem(transforms.front());
+	else
+		return MotionSystem(times, transforms);
+}
+
+// Concantenates two MotionTransforms.
+// Extract the unique knots from input MotionTransform
+// for each unique knot interpolate the knots from the other MotionTransform and concantenate.
+// Thus if left hand has knots at (1, 3) and right hand has knots at (1, 4) then output has 
+// knots at (1, 3, 4) where right hand side has been interpolated at knot t=3 and left hand side
+// is kept constant after t=3.
+MotionTransform MotionTransform::operator*(const MotionTransform &t) const {		
+
+	BOOST_ASSERT(Valid());
+	BOOST_ASSERT(t.Valid());
+
+	if (IsStatic() && t.IsStatic())
+		return MotionTransform(transforms.front() * t.transforms.front());
+
+	vector<float> new_times(times.size() + t.times.size());
+	vector<Transform> new_transforms;
+
+	// remove duplicates
+	size_t new_size = std::set_union(times.begin(), times.end(), t.times.begin(), t.times.end(), new_times.begin()) - new_times.begin();		
+	new_times.resize(new_size);
+
+	typedef vector<float>::const_iterator time_it;
+	typedef vector<Transform>::iterator trans_it;
+	typedef vector<Transform>::const_iterator trans_cit;
+
+	// used so we have valid time iterators in case either is static
+	vector<float> time_zero(1, 0.f);
+
+	// left side's times and transforms
+	time_it timeL = IsStatic() ? time_zero.begin() : times.begin();
+	time_it timeEndL = IsStatic() ? time_zero.end() : times.end();
+	trans_cit transL = transforms.begin();
+	time_it prev_timeL = timeL;
+	trans_cit prev_transL = transL;
+
+	// right side's times and transforms
+	time_it timeR = IsStatic() ? time_zero.begin() : t.times.begin();
+	time_it timeEndR = IsStatic() ? time_zero.end() : t.times.end();
+	trans_cit transR = t.transforms.begin();
+	time_it prev_timeR = timeR;
+	trans_cit prev_transR = transR;
+
+	// motion systems interpolating left side knots
+	InterpolatedTransform itL(*prev_timeL, *timeL, *prev_transL, *transL);
+	// motion systems interpolating right side knots
+	InterpolatedTransform itR(*prev_timeR, *timeR, *prev_transR, *transR);
+
+	// loop over unique knots
+	for (time_it timeN = new_times.begin(); timeN != new_times.end(); timeN++) {
+		float t_N = *timeN;
+		float t_L = *timeL;
+		float t_R = *timeR;
+		if (*timeL <= *timeN) {
+			// need to move to next knot
+			prev_timeL = timeL;
+			timeL = min(timeL+1, timeEndL-1);
+			prev_transL = transL;
+			transL = min(transL+1, transforms.end()-1);
+			// update for interpolation
+			itL = InterpolatedTransform(*prev_timeL, *timeL, *prev_transL, *transL);
+		}
+		if (*timeR <= *timeN) {
+			// need to move to next knot
+			prev_timeR = timeR;
+			timeR = min(timeR+1, timeEndR-1);
+			prev_transR = transR;
+			transR = min(transR+1, t.transforms.end()-1);
+			// update for interpolation
+			itR = InterpolatedTransform(*prev_timeR, *timeR, *prev_transR, *transR);
+		}
+
+		// get (possibly interpolated) left and right hand values at new knot
+		Transform tL = itL.Sample(*timeN);
+		Transform tR = itR.Sample(*timeN);
+
+		// append the concantenated result
+		new_transforms.push_back(tL * tR);
+	}
+
+	return MotionTransform(new_times, new_transforms);
+}
+
+// 
+MotionTransform MotionTransform::operator*(const Transform &t) const {	
+	MotionTransform cmt(*this);
+
+	typedef vector<Transform>::iterator trans_it;
+
+	for (trans_it trans = cmt.transforms.begin(); trans != cmt.transforms.end(); trans++) {
+		*trans = *trans * t;
+	}
+
+	return cmt;
+}
+
+MotionTransform MotionTransform::GetInverse() const {
+	MotionTransform imt(*this);
+
+	typedef vector<Transform>::iterator trans_it;
+
+	for (trans_it trans = imt.transforms.begin(); trans != imt.transforms.end(); trans++) {
+		*trans = trans->GetInverse();
+	}
+
+	return imt;
+}

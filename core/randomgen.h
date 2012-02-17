@@ -36,6 +36,7 @@
 #define LUX_RANDOM_H
 
 #include "memory.h"
+#include <boost/noncopyable.hpp>
 
 #define MASK 0xffffffffUL
 #define FLOATMASK 0x00ffffffUL
@@ -47,12 +48,17 @@ static const float invUI = (1.f / (FLOATMASK + 1UL));
 namespace lux
 {
 
-class RandomGenerator
+class RandomGenerator : boost::noncopyable
 {
 public:
 	RandomGenerator() {
 		buf = lux::AllocAligned<unsigned long>(RAN_BUFFER_AMOUNT);
 		bufid = RAN_BUFFER_AMOUNT;
+	}
+	RandomGenerator(unsigned long tn) {
+		buf = lux::AllocAligned<unsigned long>(RAN_BUFFER_AMOUNT);
+		bufid = RAN_BUFFER_AMOUNT;
+		taus113_set(tn);
 	}
 
 	~RandomGenerator() { lux::FreeAligned(buf); }
@@ -61,18 +67,20 @@ public:
 		taus113_set(tn);
 	}
 
-	inline unsigned long uintValue() {
+	inline unsigned long uintValue() const {
 		// Repopulate buffer if necessary
-		if (bufid == RAN_BUFFER_AMOUNT) {
+		const unsigned int offset = bufid; // for thread safety
+		if (offset >= RAN_BUFFER_AMOUNT) {
 			for(int i = 0; i < RAN_BUFFER_AMOUNT; ++i)
 				buf[i] = nobuf_generateUInt();
-			bufid = 0;
+			bufid = 1;
+			return buf[0];
 		}
-
-		return buf[bufid++];
+		bufid = offset + 1;
+		return buf[offset];
 	}
 
-	inline float floatValue() {
+	inline float floatValue() const {
 		return (uintValue() & FLOATMASK) * invUI; 
 	}
 
@@ -102,7 +110,7 @@ private:
 			nobuf_generateUInt();
 	}
 
-	inline unsigned long nobuf_generateUInt() {
+	inline unsigned long nobuf_generateUInt() const {
 		const unsigned long b1 = ((((z1 << 6UL) & MASK) ^ z1) >> 13UL);
 		z1 = ((((z1 & 4294967294UL) << 18UL) & MASK) ^ b1);
 
@@ -118,28 +126,20 @@ private:
 		return (z1 ^ z2 ^ z3 ^ z4);
 	}
 
-	unsigned long z1, z2, z3, z4;
+	mutable unsigned long z1, z2, z3, z4;
 	unsigned long *buf;
-	int bufid;
+	mutable int bufid;
 };
 
 namespace random {
 
-static RandomGenerator* PGen;
+static RandomGenerator PGen(1);
 // request RN's during engine initialization (pre threads)
 inline unsigned long uintValueP() { 
-	if (!PGen) {
-		PGen = new RandomGenerator();
-		PGen->init(1);
-	}
-	return PGen->uintValue();
+	return PGen.uintValue();
 }
 inline float floatValueP() { 
-	if (!PGen) {
-		PGen = new RandomGenerator();
-		PGen->init(1);
-	}
-	return PGen->floatValue();
+	return PGen.floatValue();
 }
 
 } // random

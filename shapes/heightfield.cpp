@@ -28,9 +28,9 @@
 using namespace lux;
 
 // Heightfield Method Definitions
-Heightfield::Heightfield(const Transform &o2w, bool ro, u_int x, u_int y,
-		const float *zs)
-	: Shape(o2w, ro) {
+Heightfield::Heightfield(const Transform &o2w, bool ro, const string &name, 
+		u_int x, u_int y, const float *zs)
+	: Shape(o2w, ro, name) {
 	nx = x;
 	ny = y;
 	z = new float[nx*ny];
@@ -94,6 +94,7 @@ void Heightfield::Refine(vector<boost::shared_ptr<Shape> > &refined) const {
 }
 Shape* Heightfield::CreateShape(const Transform &o2w,
 		bool reverseOrientation, const ParamSet &params) {
+	string name = params.FindOneString("name", "'heightfield'");
 	int nu = params.FindOneInt("nu", 0);
 	int nv = params.FindOneInt("nv", 0);
 	u_int nItems;
@@ -102,7 +103,7 @@ Shape* Heightfield::CreateShape(const Transform &o2w,
 		return NULL;
 	BOOST_ASSERT(nItems == static_cast<u_int>(nu*nv));
 	BOOST_ASSERT(nu != -1 && nv != -1 && Pz != NULL);
-	return new Heightfield(o2w, reverseOrientation, nu, nv, Pz);
+	return new Heightfield(o2w, reverseOrientation, name, nu, nv, Pz);
 }
 
 static DynamicLoader::RegisterShape<Heightfield> r("heightfield");

@@ -24,27 +24,32 @@
 #include "lux.h"
 #include "texture.h"
 #include "fresnelcauchy.h"
+#include "fresnelgeneral.h"
 #include "paramset.h"
 
 namespace lux
 {
 
 // CauchyTexture Declarations
-class CauchyTexture : public Texture<const Fresnel *> {
+class CauchyTexture : public Texture<FresnelGeneral> {
 public:
 	// ConstantTexture Public Methods
 	CauchyTexture(float cauchya, float cauchyb) :
 		fresnel(cauchya, cauchyb, 0.f), index(cauchya + cauchyb * 1e6f /
 		(WAVELENGTH_END * WAVELENGTH_START)) { }
 	virtual ~CauchyTexture() { }
-	virtual const Fresnel *Evaluate(const TsPack *tspack,
-		const DifferentialGeometry &dg) const { return &fresnel; }
+	virtual FresnelGeneral Evaluate(const SpectrumWavelengths &sw,
+		const DifferentialGeometry &dg) const {
+		SWCSpectrum e, k;
+		fresnel.ComplexEvaluate(sw, &e, &k);
+		return FresnelGeneral(DIELECTRIC_FRESNEL, e, k);
+	}
 	virtual float Y() const { return index; }
-	virtual void GetDuv(const TsPack *tspack,
+	virtual void GetDuv(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg, float delta,
 		float *du, float *dv) const { *du = *dv = 0.f; }
 
-	static Texture<const Fresnel *> *CreateFresnelTexture(const Transform &tex2world, const ParamSet &tp);
+	static Texture<FresnelGeneral> *CreateFresnelTexture(const Transform &tex2world, const ParamSet &tp);
 private:
 	FresnelCauchy fresnel;
 	float index;

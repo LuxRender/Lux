@@ -25,7 +25,8 @@
 // glossy.cpp*
 #include "glossy.h"
 #include "memory.h"
-#include "bxdf.h"
+#include "singlebsdf.h"
+#include "primitive.h"
 #include "fresnelblend.h"
 #include "schlickdistribution.h"
 #include "texture.h"
@@ -36,42 +37,38 @@
 using namespace lux;
 
 // Glossy Method Definitions
-SWCSpectrum Glossy::GetKd(const TsPack *tspack,	const DifferentialGeometry &dgs) const {
-		return Kd->Evaluate(tspack, dgs).Clamp(0.f, 10000.f); }	
-
-BSDF *Glossy::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
-	const DifferentialGeometry &dgs,
-	const Volume *exterior, const Volume *interior) const
+BSDF *Glossy::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
+	const Intersection &isect, const DifferentialGeometry &dgs) const
 {
 	// Allocate _BSDF_
 	// NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
-	SWCSpectrum bcolor = (Sc->Evaluate(tspack, dgs).Clamp(0.f, 10000.f))*dgs.Scale;
-	SWCSpectrum d = Kd->Evaluate(tspack, dgs).Clamp(0.f, 100.f);
-	SWCSpectrum s = Ks->Evaluate(tspack, dgs);
-	float i = index->Evaluate(tspack, dgs);
+	SWCSpectrum bcolor = (Sc->Evaluate(sw, dgs).Clamp(0.f, 10000.f))*dgs.Scale;
+	SWCSpectrum d = Kd->Evaluate(sw, dgs).Clamp(0.f, 1.f);
+	SWCSpectrum s = Ks->Evaluate(sw, dgs);
+	float i = index->Evaluate(sw, dgs);
 	if (i > 0.f) {
 		const float ti = (i-1)/(i+1);
 		s *= ti*ti;
 	}
-	s = s.Clamp(0.f, 10.f);
+	s = s.Clamp(0.f, 1.f);
 
-	SWCSpectrum a = Ka->Evaluate(tspack, dgs).Clamp(0.f, 10.f);
+	SWCSpectrum a = Ka->Evaluate(sw, dgs).Clamp(0.f, 1.f);
 
-	float u = nu->Evaluate(tspack, dgs);
-	float v = nv->Evaluate(tspack, dgs);
+	float u = nu->Evaluate(sw, dgs);
+	float v = nv->Evaluate(sw, dgs);
 	const float u2 = u * u;
 	const float v2 = v * v;
-	float ld = depth->Evaluate(tspack, dgs);
+	float ld = depth->Evaluate(sw, dgs);
 
 	const float anisotropy = u2 < v2 ? 1.f - u2 / v2 : v2 / u2 - 1.f;
 
-	SchlickDistribution *md = ARENA_ALLOC(tspack->arena, SchlickDistribution)(u * v, anisotropy);
-	SingleBSDF *bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dgs,
-		dgGeom.nn, ARENA_ALLOC(tspack->arena, FresnelBlend)(d, s, a, ld,
-		md), exterior, interior, bcolor);
+	SchlickDistribution *md = ARENA_ALLOC(arena, SchlickDistribution)(u * v, anisotropy);
+	SingleBSDF *bsdf = ARENA_ALLOC(arena, SingleBSDF)(dgs,
+		isect.dg.nn, ARENA_ALLOC(arena, FresnelBlend)(d, s, a, ld, md),
+		isect.exterior, isect.interior, bcolor);
 
 	// Add ptr to CompositingParams structure
-	bsdf->SetCompositingParams(compParams);
+	bsdf->SetCompositingParams(&compParams);
 
 	return bsdf;
 }
@@ -85,13 +82,8 @@ Material* Glossy::CreateMaterial(const Transform &xform,
 	boost::shared_ptr<Texture<float> > d(mp.GetFloatTexture("d", .0f));
 	boost::shared_ptr<Texture<float> > uroughness(mp.GetFloatTexture("uroughness", .1f));
 	boost::shared_ptr<Texture<float> > vroughness(mp.GetFloatTexture("vroughness", .1f));
-	boost::shared_ptr<Texture<float> > bumpMap(mp.GetFloatTexture("bumpmap"));
 
-	// Get Compositing Params
-	CompositingParams cP;
-	FindCompositingParams(mp, &cP);
-
-	return new Glossy(Kd, Ks, Ka, i, d, uroughness, vroughness, bumpMap, cP, Sc);
+	return new Glossy(Kd, Ks, Ka, i, d, uroughness, vroughness, mp, Sc);
 }
 
 static DynamicLoader::RegisterMaterial<Glossy> r("glossy_lossy");

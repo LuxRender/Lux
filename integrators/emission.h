@@ -32,13 +32,27 @@ namespace lux
 class EmissionIntegrator : public VolumeIntegrator {
 public:
 	// EmissionIntegrator Public Methods
-	EmissionIntegrator(float ss, u_int g) : group(g) { stepSize = ss; }
+	EmissionIntegrator(float ss, u_int g) 
+		: VolumeIntegrator(), stepSize(ss), group(g) {
+		AddStringConstant(*this, "name", "Name of current volume integrator", "single");
+	}
 	virtual ~EmissionIntegrator() { }
-	virtual void RequestSamples(Sample *sample, const Scene *scene);
-	virtual void Transmittance(const TsPack *tspack, const Scene *, const Ray &ray,
-		const Sample *sample, float *alpha, SWCSpectrum *const L) const;
-	virtual u_int Li(const TsPack *tspack, const Scene *, const RayDifferential &ray, const Sample *sample, SWCSpectrum *L, float *alpha) const;
-	virtual u_int Li(const TsPack *tspack, const Scene *, const RayDifferential &ray, const Sample *sample, SWCSpectrum *L, float *alpha, bool from_IsSup, bool path_type) const;
+	virtual void RequestSamples(Sample *sample, const Scene &scene);
+	virtual void Transmittance(const Scene &, const Ray &ray,
+		const Sample &sample, float *alpha, SWCSpectrum *const L) const;
+	virtual u_int Li(const Scene &, const Ray &ray,
+		const Sample &sample, SWCSpectrum *L, float *alpha) const;
+	virtual u_int Li(const Scene &, const Ray &ray,
+		const Sample &sample, SWCSpectrum *L, float *alpha, bool from_IsSup, bool path_type) const;
+	virtual bool Intersect(const Scene &scene, const Sample &sample,
+		const Volume *volume, bool scatteredStart, const Ray &ray,
+		float u, Intersection *isect, BSDF **bsdf, float *pdf,
+		float *pdfBack, SWCSpectrum *L) const;
+	// Used to complete intersection data with LuxRays
+	virtual bool Intersect(const Scene &scene, const Sample &sample,
+		const Volume *volume, bool scatteredStart, const Ray &ray,
+		const luxrays::RayHit &rayHit, float u, Intersection *isect,
+		BSDF **bsdf, float *pdf, float *pdfBack, SWCSpectrum *L) const;
 	static VolumeIntegrator *CreateVolumeIntegrator(const ParamSet &params);
 private:
 	// EmissionIntegrator Private Data

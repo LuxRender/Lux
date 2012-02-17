@@ -76,7 +76,7 @@ bool BruteForceAccel::IntersectP(const Ray &ray, bool null_shp_isect) const {
 	return false;
 }
 
-void BruteForceAccel::GetPrimitives(vector<boost::shared_ptr<Primitive> > &primitives) {
+void BruteForceAccel::GetPrimitives(vector<boost::shared_ptr<Primitive> > &primitives) const {
 	primitives.reserve(prims.size());
 	for(u_int i=0; i < prims.size(); i++) {
 		primitives.push_back(prims[i]);

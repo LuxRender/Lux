@@ -34,32 +34,51 @@ namespace lux
 
 class ERPTSampler : public Sampler {
 public:
+	class ERPTData {
+	public:
+		ERPTData(const Sample &sample);
+		~ERPTData();
+		u_int normalSamples, totalSamples, totalTimes;
+		float *baseImage, *sampleImage, *currentImage;
+		int *baseTimeImage, *timeImage, *currentTimeImage;
+		u_int *offset, *timeOffset;
+		u_int numChains, chain, mutation;
+		int stamp, currentStamp;
+		float baseLY, quantum, weight, LY, alpha;
+		vector<Contribution> oldContributions, baseContributions;
+		double totalLY, sampleCount;
+		void *baseSamplerData;
+	};
 	ERPTSampler(u_int totMutations, float rng, Sampler *sampler);
 	virtual ~ERPTSampler();
 
-	virtual ERPTSampler* clone() const;
+	virtual void InitSample(Sample *sample) const {
+		ERPTData* data = new ERPTData(*sample);
+		baseSampler->InitSample(sample);
+		data->baseSamplerData = sample->samplerData;
+		sample->sampler = const_cast<ERPTSampler *>(this);
+		sample->samplerData = data;
+	}
+	virtual void FreeSample(Sample *sample) const {
+		delete static_cast<ERPTData *>(sample->samplerData);
+		sample->samplerData = NULL;
+	}
+	virtual void SetFilm(Film* f) { film = f; baseSampler->SetFilm(f); }
 	virtual void GetBufferType(BufferType *type) {*type = BUF_TYPE_PER_SCREEN;}
 	virtual u_int GetTotalSamplePos() { return baseSampler->GetTotalSamplePos(); }
 	virtual u_int RoundSize(u_int size) const { return baseSampler->RoundSize(size); }
-	virtual bool GetNextSample(Sample *sample, u_int *use_pos);
-	virtual float *GetLazyValues(Sample *sample, u_int num, u_int pos);
+	virtual bool GetNextSample(Sample *sample);
+	virtual float GetOneD(const Sample &sample, u_int num, u_int pos);
+	virtual void GetTwoD(const Sample &sample, u_int num, u_int pos,
+		float u[2]);
+	virtual float *GetLazyValues(const Sample &sample, u_int num, u_int pos);
 	//void AddSample(float imageX, float imageY, const Sample &sample, const Ray &ray, const XYZColor &L, float alpha, int id=0);
 	virtual void AddSample(const Sample &sample);
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
 
-	virtual bool IsMutating() { return true; }
-
-	u_int normalSamples, totalSamples, totalTimes, totalMutations;
+	u_int totalMutations;
 	float pMicro, range;
 	Sampler *baseSampler;
-	float *baseImage, *sampleImage, *currentImage;
-	int *baseTimeImage, *timeImage, *currentTimeImage;
-	u_int *offset;
-	u_int numChains, chain, mutation;
-	int stamp;
-	float baseLY, quantum, weight, LY, alpha;
-	vector<Contribution> oldContributions, baseContributions;
-	double totalLY, sampleCount;
 };
 
 }//namespace lux

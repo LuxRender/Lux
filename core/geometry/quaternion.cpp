@@ -24,6 +24,9 @@
 #include "quaternion.h"
 #include "geometry/matrix4x4.h"
 
+#include <cstring>
+using std::memset;
+
 namespace lux
 {
 
@@ -31,39 +34,39 @@ void orthoNormalize(float m[4][4])
 {
 	float len, temp[3][3];
 	for (u_int i = 0; i < 3; ++i) {
-    		for (u_int j = 0; j < 3; ++j)
+		for (u_int j = 0; j < 3; ++j)
 			temp[i][j] = m[i][j];
 	}
 
-	/* normalize x */
+	// normalize x
 	len = sqrtf(temp[0][0] * temp[0][0] + temp[0][1] * temp[0][1] + temp[0][2] * temp[0][2]);
 	len = (len == 0.f) ? 1.f : 1.f / len;
 	temp[0][0] *= len; temp[0][1] *= len; temp[0][2] *= len;
 
-  	/* z = x cross y */
-  	temp[2][0] = (temp[0][1] * temp[1][2] - temp[0][2] * temp[1][1]);
-  	temp[2][1] = (temp[0][2] * temp[1][0] - temp[0][0] * temp[1][2]);
-  	temp[2][2] = (temp[0][0] * temp[1][1] - temp[0][1] * temp[1][0]);
+	// z = x cross y
+	temp[2][0] = (temp[0][1] * temp[1][2] - temp[0][2] * temp[1][1]);
+	temp[2][1] = (temp[0][2] * temp[1][0] - temp[0][0] * temp[1][2]);
+	temp[2][2] = (temp[0][0] * temp[1][1] - temp[0][1] * temp[1][0]);
 
-  	/* normalize z */
-  	len = sqrtf(temp[2][0] * temp[2][0] + temp[2][1] * temp[2][1] + temp[2][2] * temp[2][2]);
-  	len = (len == 0.f) ? 1.f : 1.f / len;
-  	temp[2][0] *= len; temp[2][1] *= len; temp[2][2] *= len;
+	// normalize z
+	len = sqrtf(temp[2][0] * temp[2][0] + temp[2][1] * temp[2][1] + temp[2][2] * temp[2][2]);
+	len = (len == 0.f) ? 1.f : 1.f / len;
+	temp[2][0] *= len; temp[2][1] *= len; temp[2][2] *= len;
 
-	/* y = z cross x */
+	// y = z cross x
 	temp[1][0] = (temp[2][1] * temp[0][2] - temp[2][2] * temp[0][1]);
-  	temp[1][1] = (temp[2][2] * temp[0][0] - temp[2][0] * temp[0][2]);
-  	temp[1][2] = (temp[2][0] * temp[0][1] - temp[2][1] * temp[0][0]);
+	temp[1][1] = (temp[2][2] * temp[0][0] - temp[2][0] * temp[0][2]);
+	temp[1][2] = (temp[2][0] * temp[0][1] - temp[2][1] * temp[0][0]);
 
- 	/* normalize y */
- 	len = sqrtf(temp[1][0] * temp[1][0] + temp[1][1] * temp[1][1] + temp[1][2] * temp[1][2]);
- 	len = (len == 0.f) ? 1.f : 1.f / len;
-  	temp[1][0] *= len; temp[1][1] *= len; temp[1][2] *= len;
+	// normalize y
+	len = sqrtf(temp[1][0] * temp[1][0] + temp[1][1] * temp[1][1] + temp[1][2] * temp[1][2]);
+	len = (len == 0.f) ? 1.f : 1.f / len;
+	temp[1][0] *= len; temp[1][1] *= len; temp[1][2] *= len;
 
-  	/* update matrix */
-  	m[0][0] = temp[0][0]; m[0][1] = temp[0][1]; m[0][2] = temp[0][2];
-  	m[1][0] = temp[1][0]; m[1][1] = temp[1][1]; m[1][2] = temp[1][2];
-  	m[2][0] = temp[2][0]; m[2][1] = temp[2][1]; m[2][2] = temp[2][2];
+	// update matrix
+	m[0][0] = temp[0][0]; m[0][1] = temp[0][1]; m[0][2] = temp[0][2];
+	m[1][0] = temp[1][0]; m[1][1] = temp[1][1]; m[1][2] = temp[1][2];
+	m[2][0] = temp[2][0]; m[2][1] = temp[2][1]; m[2][2] = temp[2][2];
 }
 
 // construct a unit quaternion from a rotation matrix
@@ -81,19 +84,22 @@ Quaternion::Quaternion(const boost::shared_ptr<Matrix4x4> m) {
 		v.z = ( ortho[0][1] - ortho[1][0] ) / s;
 		w = 0.25f * s;
 	} else {
-		if ( ortho[0][0] > ortho[1][1] && ortho[0][0] > ortho[2][2] )  {	// Column 0: 
+		if ( ortho[0][0] > ortho[1][1] && ortho[0][0] > ortho[2][2] )  {
+			// Column 0: 
 			const float s  = sqrtf(1.f + ortho[0][0] - ortho[1][1] - ortho[2][2]) * 2.f;
 			v.x = 0.25f * s;
 			v.y = (ortho[0][1] + ortho[1][0] ) / s;
 			v.z = (ortho[2][0] + ortho[0][2] ) / s;
 			w = (ortho[1][2] - ortho[2][1] ) / s;
-		} else if ( ortho[1][1] > ortho[2][2] ) {			// Column 1: 
+		} else if ( ortho[1][1] > ortho[2][2] ) {
+			// Column 1: 
 			const float s  = sqrtf(1.f + ortho[1][1] - ortho[0][0] - ortho[2][2]) * 2.f;
 			v.x = (ortho[0][1] + ortho[1][0] ) / s;
 			v.y = 0.25f * s;
 			v.z = (ortho[1][2] + ortho[2][1] ) / s;
 			w = (ortho[2][0] - ortho[0][2] ) / s;
-		} else {						// Column 2:
+		} else {
+			// Column 2:
 			const float s  = sqrtf(1.f + ortho[2][2] - ortho[0][0] - ortho[1][1]) * 2.f;
 			v.x = (ortho[2][0] + ortho[0][2] ) / s;
 			v.y = (ortho[1][2] + ortho[2][1] ) / s;
@@ -101,75 +107,6 @@ Quaternion::Quaternion(const boost::shared_ptr<Matrix4x4> m) {
 			w = (ortho[0][1] - ortho[1][0] ) / s;
 		}
 	}
-
-/*
-	if (trace > 1e-6) {
-		float s = 2*sqrt(trace);
-		
-		w = 0.25 * s;
-
-		v.x = ( ortho[2][1] - ortho[1][2] ) / s;
-		v.y = ( ortho[0][2] - ortho[2][0] ) / s;
-		v.z = ( ortho[1][0] - ortho[0][1] ) / s;
-	} else {
-		// determine largest diagonal element
-		if ( ortho[0][0] > ortho[1][1] && ortho[0][0] > ortho[2][2] )  {	
-			// Column 0: 
-			float s = sqrt( 1.0 + ortho[0][0] - ortho[1][1] - ortho[2][2] ) * 2;
-			v.x = 0.25 * s;
-			v.y = (ortho[2][0] + ortho[0][1] ) / s;
-			v.z = (ortho[1][2] + ortho[2][0] ) / s;
-			w = (ortho[2][1] - ortho[1][2] ) / s;
-		} else if ( ortho[1][1] > ortho[1][1] ) {			
-			// Column 1: 
-			float s = sqrt( 1.0 + ortho[1][1] - ortho[0][0] - ortho[2][2] ) * 2;
-			v.x = (ortho[2][0] + ortho[0][1] ) / s;
-			v.y = 0.25 * s;
-			v.z = (ortho[2][1] + ortho[1][2] ) / s;
-			w = (ortho[1][2] - ortho[2][0] ) / s;
-		} else {						
-			// Column 2:
-			float s = sqrt( 1.0 + ortho[2][2] - ortho[0][0] - ortho[1][1] ) * 2;
-			v.x = (ortho[1][2] + ortho[2][0] ) / s;
-			v.y = (ortho[2][1] + ortho[1][2] ) / s;
-			v.z = 0.25 * s;
-			w = (ortho[2][0] - ortho[0][1] ) / s;
-		}
-	}
-*/
-}
-
-Quaternion::Quaternion(const Quaternion &q) {
-	w = q.w;
-	v = q.v;
-}
-
-Quaternion::Quaternion() {
-	w = 1.f;
-}
-
-Quaternion Quaternion::Slerp(float t, const Quaternion &q1, const Quaternion &q2) {
-
-	float cos_phi = Dot(q1, q2);
-	float sign = (cos_phi > 0.f) ? 1.f : -1.f;
-	
-	cos_phi *= sign;
-
-	float f1, f2;
-	if (1.f - cos_phi > 1e-6f) {
-	
-		float phi = acosf(cos_phi);
-		float sin_phi = sinf(phi);	
-		f1 = sinf((1.f - t) * phi) / sin_phi;
-		f2 = sinf(t * phi) / sin_phi;
-	} else {
-		// start and end are very close
-		// perform linear interpolation
-		f1 = 1.f - t;
-		f2 = t;
-	}
-
-	return f1 * q1 + (sign * f2) * q2;
 }
 
 // get the rotation matrix from quaternion
@@ -200,9 +137,28 @@ void Quaternion::ToMatrix(float m[4][4]) const {
 	m[3][3] = 1.f;
 }
 
-float Dot(const Quaternion &q1, const Quaternion &q2) {
-	return q1.w * q2.w + Dot(q1.v, q2.v);
-}
+Quaternion Slerp(float t, const Quaternion &q1, const Quaternion &q2) {
+
+	float cos_phi = Dot(q1, q2);
+	float sign = (cos_phi > 0.f) ? 1.f : -1.f;
+	
+	cos_phi *= sign;
+
+	float f1, f2;
+	if (1.f - cos_phi > 1e-6f) {	
+		float phi = acosf(cos_phi);
+		float sin_phi = sinf(phi);	
+		f1 = sinf((1.f - t) * phi) / sin_phi;
+		f2 = sinf(t * phi) / sin_phi;
+	} else {
+		// start and end are very close
+		// perform linear interpolation
+		f1 = 1.f - t;
+		f2 = t;
+	}
+
+	return f1 * q1 + (sign * f2) * q2;
+} 
 
 }//namespace lux
 

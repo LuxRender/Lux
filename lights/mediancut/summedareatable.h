@@ -1,5 +1,5 @@
 /**
- * @file    SummedAreaTable.h
+ * @file    summedareatable.h
  * @author  Aldo Zang <aldo.zang@gmail.com>
  * @author  VISGRAF LAB, IMPA
  * @version 1.5.0

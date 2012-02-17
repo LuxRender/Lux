@@ -32,7 +32,7 @@ namespace lux
 {
 
 // TabulatedFresnel Declarations
-class TabulatedFresnel : public Texture<const Fresnel *> {
+class TabulatedFresnel : public Texture<FresnelGeneral> {
 public:
 	// TabulatedFresnel Public Methods
 	TabulatedFresnel(const vector<float> &wl, const vector<float> &n,
@@ -40,17 +40,15 @@ public:
 		N(&wl[0], &n[0], wl.size()), K(&wl[0], &k[0], wl.size()),
 		index(N.Filter()) { }
 	virtual ~TabulatedFresnel() { }
-	virtual const Fresnel *Evaluate(const TsPack *tspack,
+	virtual FresnelGeneral Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &) const {
 		// FIXME - Try to detect the best model to use
 		// FIXME - FresnelGeneral should take a float index for accurate
 		// non dispersive behaviour
-		return ARENA_ALLOC(tspack->arena,
-			FresnelGeneral)(SWCSpectrum(tspack, N),
-			SWCSpectrum(tspack, K));
+		return FresnelGeneral(AUTO_FRESNEL, SWCSpectrum(sw, N), SWCSpectrum(sw, K));
 	}
 	virtual float Y() const { return index; }
-	virtual void GetDuv(const TsPack *tspack,
+	virtual void GetDuv(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg, float delta,
 		float *du, float *dv) const { *du = *dv = 0.f; }
 
@@ -63,21 +61,28 @@ private:
 class SopraTexture {
 public:
 	// SopraTexture Public Methods
-	static Texture<const Fresnel *> *CreateFresnelTexture(const Transform &tex2world, const ParamSet &tp);
+	static Texture<FresnelGeneral> *CreateFresnelTexture(const Transform &tex2world, const ParamSet &tp);
 };
 
 // LuxpopTexture Declarations
 class LuxpopTexture {
 public:
 	// LuxpopTexture Public Methods
-	static Texture<const Fresnel *> *CreateFresnelTexture(const Transform &tex2world, const ParamSet &tp);
+	static Texture<FresnelGeneral> *CreateFresnelTexture(const Transform &tex2world, const ParamSet &tp);
 };
 
 // FresnelPreset Declarations
 class FresnelPreset {
 public:
 	// FresnelPreset Public Methods
-	static Texture<const Fresnel *> *CreateFresnelTexture(const Transform &tex2world, const ParamSet &tp);
+	static Texture<FresnelGeneral> *CreateFresnelTexture(const Transform &tex2world, const ParamSet &tp);
+};
+
+// FresnelName Declarations
+class FresnelName {
+public:
+	// FresnelName Public Methods
+	static Texture<FresnelGeneral> *CreateFresnelTexture(const Transform &tex2world, const ParamSet &tp);
 };
 
 }//namespace lux

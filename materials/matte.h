@@ -23,7 +23,6 @@
 // matte.cpp*
 #include "lux.h"
 #include "material.h"
-#include "spectrum.h"
 
 namespace lux
 {
@@ -34,33 +33,18 @@ public:
 	// Matte Public Methods
 	Matte(boost::shared_ptr<Texture<SWCSpectrum> > &kd,
 		boost::shared_ptr<Texture<float> > &sig,
-		boost::shared_ptr<Texture<float> > &bump,
-		const CompositingParams &cp, boost::shared_ptr<Texture<SWCSpectrum> > &sc) : Kd(kd), sigma(sig),
-		bumpMap(bump) {
-		compParams = new CompositingParams(cp);
-		Sc = sc; 
-	}
+		const ParamSet &mp, boost::shared_ptr<Texture<SWCSpectrum> > &sc) : Material(mp), Kd(kd), sigma(sig) { Sc = sc; }
 	virtual ~Matte() { }
-	virtual void GetShadingGeometry(const TsPack *tspack,
-		const Normal &nGeom, DifferentialGeometry *dgBump) const {
-		if (bumpMap)
-			Bump(tspack, bumpMap, nGeom, dgBump);
-	}
-
-
-	virtual BSDF *GetBSDF(const TsPack *tspack,
-		const DifferentialGeometry &dgGeom,
-		const DifferentialGeometry &dgShading,
-		const Volume *exterior, const Volume *interior) const;
-
-	virtual SWCSpectrum GetKd(const TsPack *tspack,	const DifferentialGeometry &dgs) const;
-              
+	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
+		const Intersection &isect,
+		const DifferentialGeometry &dgShading) const;
+	              
 	static Material * CreateMaterial(const Transform &xform,
 		const ParamSet &mp);
 private:
 	// Matte Private Data
 	boost::shared_ptr<Texture<SWCSpectrum> > Kd;
-	boost::shared_ptr<Texture<float> > sigma, bumpMap;
+	boost::shared_ptr<Texture<float> > sigma;
 };
 
 }//namespace lux

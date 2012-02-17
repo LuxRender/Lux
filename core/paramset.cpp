@@ -39,10 +39,9 @@ bool LookupType(const char *token, ParamType *type, string &name)
 	while (*strp && isspace(*strp))
 		++strp;
 	if (!*strp) {
-		std::stringstream ss;
-		ss << "Parameter '" << token <<
+		LOG( LUX_ERROR,LUX_SYNTAX)
+			<< "Parameter '" << token <<
 			"' doesn't have a type declaration?!";
-		luxError(LUX_SYNTAX, LUX_ERROR, ss.str().c_str());
 		name = string(token);
 		return false;
 	}
@@ -60,9 +59,7 @@ bool LookupType(const char *token, ParamType *type, string &name)
 	else TRY_DECODING_TYPE("texture", PARAM_TYPE_TEXTURE)
 	else TRY_DECODING_TYPE("color", PARAM_TYPE_COLOR)
 	else {
-		std::stringstream ss;
-		ss << "Unable to decode type for token '" << token << "'";
-		luxError(LUX_SYNTAX, LUX_ERROR, ss.str().c_str());
+		LOG( LUX_ERROR,LUX_SYNTAX) << "Unable to decode type for token '" << token << "'";
 		name = string(token);
 		return false;
 	}
@@ -121,10 +118,17 @@ template <class T> inline void CheckUnused(const vector<ParamSetItem<T> *> &vec)
 {
 	for (u_int i = 0; i < vec.size(); ++i)
 		if (!vec[i]->lookedUp) {
-			std::stringstream ss;
-			ss << "Parameter '" << vec[i]->name << "' not used";
-			luxError(LUX_NOERROR, LUX_WARNING, ss.str().c_str());
+			LOG( LUX_WARNING,LUX_NOERROR) << "Parameter '" << vec[i]->name << "' not used";
 		}
+}
+template <class T> inline void MarkAsUsed(const vector<ParamSetItem<T> *> &vec, const vector<ParamSetItem<T> *> &vecOther)
+{
+	for (u_int i = 0; i < vecOther.size(); ++i) {
+		if (vecOther[i]->lookedUp) {
+			u_int n;
+			LookupPtr(vec, vecOther[i]->name, &n);
+		}
+	}
 }
 
 // ParamSet Methods
@@ -229,6 +233,11 @@ ParamSet::ParamSet(u_int n, const char * pluginName, const char * const tokens[]
 				else if (s == "vknots")
 					np = FindOneInt("nv", 1) +
 						FindOneInt("vorder", 1);
+				else if (s == "offsets")
+					np = FindOneInt("noffsets", 1);
+				else if (s == "weights")
+					np = FindOneInt("nweights", 1);
+
 				AddFloat(s, (float*)(params[i]), np);
 				break;
 			}
@@ -360,6 +369,8 @@ ParamSet::ParamSet(u_int n, const char * pluginName, const char * const tokens[]
 		if (s == "filmdiag")
 			AddFloat(s, (float*)(params[i]));
 		if (s == "filmdistance")
+			AddFloat(s, (float*)(params[i]));
+		if (s == "filterquality")
 			AddFloat(s, (float*)(params[i]));
 		if (s == "focaldistance")
 			AddFloat(s, (float*)(params[i]));
@@ -601,6 +612,8 @@ ParamSet::ParamSet(u_int n, const char * pluginName, const char * const tokens[]
 			AddInt(s, (int*)(params[i]));
 		if (s == "finalgathersamples")
 			AddInt(s, (int*)(params[i]));
+		if (s == "flmwriteinterval")
+			AddInt(s, (int*)(params[i]));
 		if (s == "glossyreflectdepth")
 			AddInt(s, (int*)(params[i]));
 		if (s == "glossyreflectsamples")
@@ -657,6 +670,8 @@ ParamSet::ParamSet(u_int n, const char * pluginName, const char * const tokens[]
 		if (s == "nz")
 			AddInt(s, (int*)(params[i]));
 		if (s == "octaves")
+			AddInt(s, (int*)(params[i]));
+		if (s == "outlierrejection_k")
 			AddInt(s, (int*)(params[i]));
 		if (s == "pixelsamples")
 			AddInt(s, (int*)(params[i]));
@@ -778,6 +793,8 @@ ParamSet::ParamSet(u_int n, const char * pluginName, const char * const tokens[]
 			AddBool(s, (bool*)(params[i]));
 		if (s == "write_exr_halftype")
 			AddBool(s, (bool*)(params[i]));
+		if (s == "write_exr_straightcolors")
+			AddBool(s, (bool*)(params[i]));
 		if (s == "write_png")
 			AddBool(s, (bool*)(params[i]));
 		if (s == "write_png_16bit")
@@ -794,13 +811,19 @@ ParamSet::ParamSet(u_int n, const char * pluginName, const char * const tokens[]
 			AddBool(s, (bool*)(params[i]));
 		if (s == "write_tga_gamutclamp")
 			AddBool(s, (bool*)(params[i]));
-		
+		if (s == "recenter_mesh")
+			AddBool(s, (bool*)(params[i]));		
+
 		//string parameters
 		if (s == "aamode")
 			AddString(s, new string(params[i]));
 		if (s == "acceltype")
 			AddString(s, new string(params[i]));
 		if (s == "basesampler")
+			AddString(s, new string(params[i]));
+		if (s == "cameraresponse")
+			AddString(s, new string(params[i]));
+		if (s == "configfile")
 			AddString(s, new string(params[i]));
 		if (s == "displacementmap")
 			AddString(s, new string(params[i]));
@@ -875,6 +898,8 @@ ParamSet::ParamSet(u_int n, const char * pluginName, const char * const tokens[]
 		if (s == "write_tga_channels")
 			AddString(s, new string(params[i]));
 		if (s == "write_tga_zbuf_normalization")
+			AddString(s, new string(params[i]));
+		if (s == "coordinates")
 			AddString(s, new string(params[i]));
 
 		//point parameters
@@ -1002,15 +1027,13 @@ ParamSet::ParamSet(u_int n, const char * pluginName, const char * const tokens[]
 		if (s == "v11")
 			AddRGBColor(s, new RGBColor((float*)params[i]));
 		if (s == "value")
-			AddRGBColor(s, new RGBColor((float*)params[i]));
-		
+			AddRGBColor(s, new RGBColor((float*)params[i]));	
+
 		//unknown parameter
 		/*
 		else
 		{
-			std::stringstream ss;
-			ss<<"Unknown parameter '"<<p<<":"<<s<<"', Ignoring.";
-			luxError(LUX_SYNTAX,LUX_ERROR,ss.str().c_str());
+			LOG(LUX_ERROR,LUX_SYNTAX)<<"Unknown parameter '"<<p<<":"<<s<<"', Ignoring.";
 		}*/
 	}
 }
@@ -1193,6 +1216,18 @@ const string &ParamSet::FindTexture(const string &name) const
 	static const string empty("");
 	return LookupOne(textures, name, empty);
 }
+void ParamSet::MarkUsed(const ParamSet &p2) const {
+	// marks any used params in p2 as used in this
+	MarkAsUsed(ints, p2.ints);
+	MarkAsUsed(bools, p2.bools);
+	MarkAsUsed(floats, p2.floats);
+	MarkAsUsed(points, p2.points);
+	MarkAsUsed(vectors, p2.vectors);
+	MarkAsUsed(normals, p2.normals);
+	MarkAsUsed(spectra, p2.spectra);
+	MarkAsUsed(strings, p2.strings);
+	MarkAsUsed(textures, p2.textures);
+}
 void ParamSet::ReportUnused() const {
 	CheckUnused(ints);
 	CheckUnused(bools);
@@ -1316,15 +1351,15 @@ boost::shared_ptr<Texture<float> >
 	float val = FindOneFloat(n, def);
 	return boost::shared_ptr<Texture<float> >(new ConstantFloatTexture(val));
 }
-boost::shared_ptr<Texture<const Fresnel *> >
+boost::shared_ptr<Texture<FresnelGeneral> >
 	ParamSet::GetFresnelTexture(const string &n, float def) const
 {
-	boost::shared_ptr<Texture<const Fresnel *> > texture(
+	boost::shared_ptr<Texture<FresnelGeneral> > texture(
 		Context::GetActive()->GetFresnelTexture(FindTexture(n)));
 	if (texture)
 		return texture;
 	float val = FindOneFloat(n, def);
-	return boost::shared_ptr<Texture<const Fresnel *> >(new ConstantFresnelTexture(val));
+	return boost::shared_ptr<Texture<FresnelGeneral> >(new ConstantFresnelTexture(val));
 }
 boost::shared_ptr<Material> ParamSet::GetMaterial(const string &n) const
 {

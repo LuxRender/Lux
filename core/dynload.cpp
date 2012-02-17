@@ -59,10 +59,7 @@ boost::shared_ptr<Material> MakeMaterial(const string &name,
 	if (DynamicLoader::registeredMaterials().find(name) !=
 		DynamicLoader::registeredMaterials().end()) {
 		boost::shared_ptr<Material> ret(DynamicLoader::registeredMaterials()[name](mtl2world, mp));
-		if (ret) {
-			ret->InitGeneralParams(mp);
-			mp.ReportUnused();
-		}
+		mp.ReportUnused();
 		return ret;
 	}
 
@@ -99,18 +96,18 @@ boost::shared_ptr<Texture<SWCSpectrum> > MakeSWCSpectrumTexture(const string &na
 	return boost::shared_ptr<Texture<SWCSpectrum> >();
 }
 
-boost::shared_ptr<Texture<const Fresnel *> > MakeFresnelTexture(const string &name,
+boost::shared_ptr<Texture<FresnelGeneral> > MakeFresnelTexture(const string &name,
 	const Transform &tex2world, const ParamSet &tp)
 {
 	if (DynamicLoader::registeredFresnelTextures().find(name) !=
 		DynamicLoader::registeredFresnelTextures().end()) {
-		boost::shared_ptr<Texture<const Fresnel *> > ret(DynamicLoader::registeredFresnelTextures()[name](tex2world, tp));
+		boost::shared_ptr<Texture<FresnelGeneral> > ret(DynamicLoader::registeredFresnelTextures()[name](tex2world, tp));
 		tp.ReportUnused();
 		return ret;
 	}
 
 	LoadError("fresnel texture", name);
-	return boost::shared_ptr<Texture<const Fresnel *> >();
+	return boost::shared_ptr<Texture<FresnelGeneral> >();
 }
 
 Light *MakeLight(const string &name,
@@ -223,13 +220,12 @@ boost::shared_ptr<Aggregate> MakeAccelerator(const string &name,
 }
 
 Camera *MakeCamera(const string &name,
-	const Transform &world2cam, const Transform &world2camEnd, 
+	const MotionSystem &world2cam,
 	const ParamSet &paramSet, Film *film)
 {
 	if (DynamicLoader::registeredCameras().find(name) !=
 		DynamicLoader::registeredCameras().end()) {
-		Camera *ret = DynamicLoader::registeredCameras()[name](world2cam,
-			world2camEnd, paramSet, film);
+		Camera *ret = DynamicLoader::registeredCameras()[name](world2cam, paramSet, film);
 		paramSet.ReportUnused();
 		return ret;
 	}
@@ -297,16 +293,29 @@ Film *MakeFilm(const string &name,
 }
 
 PixelSampler *MakePixelSampler(const string &name,
-	const ParamSet &paramSet)
+	int xstart, int xend, int ystart, int yend)
 {
 	if (DynamicLoader::registeredPixelSamplers().find(name) !=
 		DynamicLoader::registeredPixelSamplers().end()) {
-		PixelSampler *ret = DynamicLoader::registeredPixelSamplers()[name](paramSet);
-		paramSet.ReportUnused();
+		PixelSampler *ret = DynamicLoader::registeredPixelSamplers()[name](xstart, xend, ystart, yend);
 		return ret;
 	}
 
 	LoadError("pixel sampler", name);
+	return NULL;
+}
+
+Renderer *MakeRenderer(const string &name,
+	const ParamSet &paramSet)
+{
+	if (DynamicLoader::registeredRenderer().find(name) !=
+		DynamicLoader::registeredRenderer().end()) {
+		Renderer *ret = DynamicLoader::registeredRenderer()[name](paramSet);
+		paramSet.ReportUnused();
+		return ret;
+	}
+
+	LoadError("renderer", name);
 	return NULL;
 }
 
@@ -398,6 +407,11 @@ map<string, DynamicLoader::CreateFilm> &DynamicLoader::registeredFilms()
 map<string, DynamicLoader::CreatePixelSampler> &DynamicLoader::registeredPixelSamplers()
 {
 	static map<string, DynamicLoader::CreatePixelSampler> *Map = new map<string, DynamicLoader::CreatePixelSampler>;
+	return *Map;
+}
+map<string, DynamicLoader::CreateRenderer> &DynamicLoader::registeredRenderer()
+{
+	static map<string, DynamicLoader::CreateRenderer> *Map = new map<string, DynamicLoader::CreateRenderer>;
 	return *Map;
 }
 

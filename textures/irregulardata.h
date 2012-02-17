@@ -37,13 +37,13 @@ public:
 	IrregularDataTexture(u_int n, const float *wl, const float *data,
 		float resolution = 5.f) : SPD(wl, data, n, resolution) { }
 	virtual ~IrregularDataTexture() { }
-	virtual SWCSpectrum Evaluate(const TsPack *tspack,
+	virtual SWCSpectrum Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &) const {
-		return SWCSpectrum(tspack, SPD);
+		return SWCSpectrum(sw, SPD);
 	}
 	virtual float Y() const { return SPD.Y(); }
 	virtual float Filter() const { return SPD.Filter(); }
-	virtual void GetDuv(const TsPack *tspack,
+	virtual void GetDuv(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg, float delta,
 		float *du, float *dv) const { *du = *dv = 0.f; }
 	static Texture<SWCSpectrum> *CreateSWCSpectrumTexture(const Transform &tex2world, const ParamSet &tp);

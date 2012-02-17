@@ -20,41 +20,48 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-
 #include "mesh.h"
 #include "mc.h"
 
 using namespace lux;
 
 MeshBaryTriangle::MeshBaryTriangle(const Mesh *m, u_int n) :
-	mesh(m), v(&(mesh->triVertexIndex[3 * n]))
+	mesh(m), v(&(mesh->triVertexIndex[3 * n])), is_Degenerate(false)
 {
 	int *v_ = const_cast<int *>(v);
 	if (m->reverseOrientation ^ m->transformSwapsHandedness)
 		swap(v_[1], v_[2]);
+
+	const Point &v0 = m->p[v[0]];
+	const Point &v1 = m->p[v[1]];
+	const Point &v2 = m->p[v[2]];
+	Vector e1 = v1 - v0;
+	Vector e2 = v2 - v0;
+
+	Normal normalizedNormal(Normalize(Cross(e1, e2)));
+
+	if (isnan(normalizedNormal.x) || 
+		isnan(normalizedNormal.y) ||
+		isnan(normalizedNormal.z))
+	{
+		is_Degenerate = true;
+		return;
+	}
+
 	// Reorder vertices if geometric normal doesn't match shading normal
 	if (m->n) {
-		const Point &v0 = m->p[v[0]];
-		const Point &v1 = m->p[v[1]];
-		const Point &v2 = m->p[v[2]];
-		Vector e1 = v1 - v0;
-		Vector e2 = v2 - v0;
-
-		Normal normalizedNormal(Normalize(Cross(e1, e2)));
 		const float cos0 = Dot(normalizedNormal, m->n[v[0]]);
 		if (cos0 < 0.f) {
 			if (Dot(normalizedNormal, m->n[v[1]]) < 0.f &&
 				Dot(normalizedNormal, m->n[v[2]]) < 0.f)
 				swap(v_[1], v_[2]);
 			else {
-				LOG(LUX_WARNING, LUX_CONSISTENCY) <<
-					"Inconsistent shading normals";
+				m->inconsistentShadingTris++;
 			}
 		} else if (cos0 > 0.f) {
 			if (!(Dot(normalizedNormal, m->n[v[1]]) > 0.f &&
 				Dot(normalizedNormal, m->n[v[2]]) > 0.f)) {
-				LOG(LUX_WARNING, LUX_CONSISTENCY) <<
-					"Inconsistent shading normals";
+				m->inconsistentShadingTris++;
 			}
 		}
 	}
@@ -83,9 +90,10 @@ bool MeshBaryTriangle::Intersect(const Ray &ray, Intersection* isect, bool null_
 {
 	Vector e1, e2, s1;
 	// Compute $\VEC{s}_1$
-//look if shape is a null type
-if (null_shp_isect && mesh->support) return false;
-///
+
+	//look if shape is a null type
+	if (null_shp_isect && mesh->support) return false;
+
 	// Get triangle vertices in _p1_, _p2_, and _p3_
 	const Point &p1 = mesh->p[v[0]];
 	const Point &p2 = mesh->p[v[1]];
@@ -148,9 +156,9 @@ if (null_shp_isect && mesh->support) return false;
 
 	isect->Set(mesh->WorldToObject, this, mesh->GetMaterial(),
 		mesh->GetExterior(), mesh->GetInterior());
-	isect->dg.triangleBaryCoords[0] = b0;
-	isect->dg.triangleBaryCoords[1] = b1;
-	isect->dg.triangleBaryCoords[2] = b2;
+	isect->dg.iData.baryTriangle.coords[0] = b0;
+	isect->dg.iData.baryTriangle.coords[1] = b1;
+	isect->dg.iData.baryTriangle.coords[2] = b2;
 	ray.maxt = t;
 
 	return true;
@@ -168,9 +176,8 @@ bool MeshBaryTriangle::IntersectP(const Ray &ray, bool null_shp_isect) const
 	Vector s1 = Cross(ray.d, e2);
 	const float divisor = Dot(s1, e1);
 
-//look if shape is a null type
-if (null_shp_isect && mesh->support) return false;
-///
+	//look if shape is a null type
+	if (null_shp_isect && mesh->support) return false;
 
 	if (divisor == 0.f)
 		return false;
@@ -204,7 +211,7 @@ float MeshBaryTriangle::Area() const
 	return 0.5f * Cross(p2-p1, p3-p1).Length();
 }
 
-void MeshBaryTriangle::Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const
+float MeshBaryTriangle::Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const
 {
 	float b1, b2;
 	UniformSampleTriangle(u1, u2, &b1, &b2);
@@ -234,7 +241,6 @@ void MeshBaryTriangle::Sample(float u1, float u2, float u3, DifferentialGeometry
 		dg->dpdv = (-du2 * dp1 + du1 * dp2) * invdet;
 	}
 	dg->dndu = dg->dndv = Normal(0, 0, 0);
-	dg->dpdx = dg->dpdy = Vector(0, 0, 0);
 
 	// Interpolate $(u,v)$ triangle parametric coordinates
 	dg->u = b1 * uvs[0][0] + b2 * uvs[1][0] + b3 * uvs[2][0];
@@ -242,35 +248,57 @@ void MeshBaryTriangle::Sample(float u1, float u2, float u3, DifferentialGeometry
 
 	dg->handle = this;
 
-	dg->dudx = dg->dudy = dg->dvdx = dg->dvdy = 0.f;
-
-	dg->triangleBaryCoords[0] = b1;
-	dg->triangleBaryCoords[1] = b2;
-	dg->triangleBaryCoords[2] = b3;
+	dg->iData.baryTriangle.coords[0] = b1;
+	dg->iData.baryTriangle.coords[1] = b2;
+	dg->iData.baryTriangle.coords[2] = b3;
+	return Pdf(*dg);
 }
 
 void MeshBaryTriangle::GetShadingGeometry(const Transform &obj2world,
 	const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const
 {
-
-
 	if (!mesh->n) {
 		*dgShading = dg;
+		dgShading->Scale = GetScale();
 		return;
 	}
 
 	// Use _n_ to compute shading tangents for triangle, _ss_ and _ts_
-	const Normal ns = Normalize(dg.triangleBaryCoords[0] * mesh->n[v[0]] +
-		dg.triangleBaryCoords[1] * mesh->n[v[1]] + dg.triangleBaryCoords[2] * mesh->n[v[2]]);
+	const Normal nsi = dg.iData.baryTriangle.coords[0] * mesh->n[v[0]] +
+		dg.iData.baryTriangle.coords[1] * mesh->n[v[1]] + dg.iData.baryTriangle.coords[2] * mesh->n[v[2]];
+	const Normal ns = Normalize(nsi);
 
-	Vector ts(Normalize(Cross(ns, dg.dpdu)));
-	Vector ss(Cross(ts, ns));
-	// Lotus - the length of dpdu/dpdv can be important for bumpmapping
+	Vector ss, ts;
+	Vector tangent, bitangent;
+	float btsign;
+	// if we got a generated tangent space, use that
+	if (mesh->t) {
+		// length of these vectors is essential for sampled normal mapping
+		// they should be normalized at vertex level, and NOT normalized after interpolation
+		tangent = dg.iData.baryTriangle.coords[0] * mesh->t[v[0]] +
+			dg.iData.baryTriangle.coords[1] * mesh->t[v[1]] + dg.iData.baryTriangle.coords[2] * mesh->t[v[2]];
+		// only degenerate triangles will have different vertex signs
+		bitangent = Cross(nsi, tangent);
+		// store sign, and also magnitude of interpolated normal so we can recover it
+		btsign = (mesh->btsign[v[0]] ? 1.f : -1.f) * nsi.Length();
+
+		ss = Normalize(tangent);
+		ts = Normalize(bitangent);
+	} else {
+		ts = Normalize(Cross(ns, dg.dpdu));
+		ss = Cross(ts, ns);
+
+		ts *= Dot(dg.dpdv, ts) > 0.f ? 1.f : -1.f;
+
+		tangent = ss;
+		bitangent = ts;
+
+		btsign = (Dot(ts, ns) > 0.f ? 1.f : -1.f);
+	}
+
+	// the length of dpdu/dpdv can be important for bumpmapping
 	ss *= dg.dpdu.Length();
-	if (Dot(dg.dpdv, ts) < 0.f)
-		ts *= -dg.dpdv.Length();
-	else
-		ts *= dg.dpdv.Length();
+	ts *= dg.dpdv.Length();
 
 	Normal dndu, dndv;
 	// Compute \dndu and \dndv for triangle shading geometry
@@ -295,10 +323,5 @@ void MeshBaryTriangle::GetShadingGeometry(const Transform &obj2world,
 	}
 
 	*dgShading = DifferentialGeometry(dg.p, ns, ss, ts,
-		dndu, dndv, dg.u, dg.v, this);
-
-
-	dgShading->dudx = dg.dudx;  dgShading->dvdx = dg.dvdx;
-	dgShading->dudy = dg.dudy;  dgShading->dvdy = dg.dvdy;
-	dgShading->dpdx = dg.dpdx;  dgShading->dpdy = dg.dpdy;
+		dndu, dndv, tangent, bitangent, btsign, dg.u, dg.v, this, GetScale());
 }

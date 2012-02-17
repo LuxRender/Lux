@@ -35,12 +35,11 @@ using namespace lux;
 Camera::~Camera() {
 	delete film;
 }
-Camera::Camera(const Transform &w2cstart,
-			   const Transform &w2cend,
+Camera::Camera(const MotionSystem &w2c,
                float hither, float yon,
 			   float sopen, float sclose, int sdist, Film *f) 
-			   : CameraMotion(sopen, sclose, w2cstart, w2cend) {
-	WorldToCamera = w2cstart;
+			   : Queryable("camera"), CameraMotion(w2c) {
+	WorldToCamera = CameraMotion.Sample(sopen);
 	CameraToWorld = WorldToCamera.GetInverse();
 	ClipHither = hither;
 	ClipYon = yon;
@@ -48,55 +47,52 @@ Camera::Camera(const Transform &w2cstart,
 	ShutterClose = sclose;
 	ShutterDistribution = sdist;
 	film = f;
+
+	AddFloatAttribute(*this, "ShutterOpen", "Time when shutter opens", 0.f, &Camera::ShutterOpen);
+	AddFloatAttribute(*this, "ShutterClose", "Time when shutter closes", 1.f, &Camera::ShutterClose);
 }
 
-float Camera::GenerateRay(const TsPack *tspack, const Scene *scene,
-	const Sample &sample, RayDifferential *ray) const
+float Camera::GenerateRay(const Scene &scene, const Sample &sample,
+	Ray *ray) const
 {
+	const SpectrumWavelengths &sw(sample.swl);
 	if (IsLensBased()) {
 		const float o1 = sample.lensU;
 		const float o2 = sample.lensV;
 		const float d1 = sample.imageX;
 		const float d2 = sample.imageY;
-		if (!GenerateRay(tspack, scene, o1, o2, d1, d2, ray))
+		if (!GenerateRay(sample.arena, sw, scene, o1, o2, d1, d2, ray))
 			return 0.f;
-		if (GenerateRay(tspack, scene, o1, o2, d1 + 1, d2, &(ray->rx)) &&
-			GenerateRay(tspack, scene, o1, o2, d1, d2 + 1, &(ray->ry)))
-			ray->hasDifferentials = true;
 	} else {
 		const float o1 = sample.imageX;
 		const float o2 = sample.imageY;
 		const float d1 = sample.lensU;
 		const float d2 = sample.lensV;
-		if (!GenerateRay(tspack, scene, o1, o2, d1, d2, ray))
+		if (!GenerateRay(sample.arena, sw, scene, o1, o2, d1, d2, ray))
 			return 0.f;
-		if (GenerateRay(tspack, scene, o1, o2, d1 + 1, d2, &(ray->rx)) &&
-			GenerateRay(tspack, scene, o1, o2, d1, d2 + 1, &(ray->ry)))
-			ray->hasDifferentials = true;
 	}
 
 	// Set ray time value
 	ray->time = GetTime(sample.time);
-	ray->rx.time = ray->ry.time = ray->time;
 
 	return 1.f;
 }
 
-bool Camera::GenerateRay(const TsPack *tspack, const Scene *scene,
-	float o1, float o2, float d1, float d2, Ray *ray) const
+bool Camera::GenerateRay(MemoryArena &arena, const SpectrumWavelengths &sw,
+	const Scene &scene, float o1, float o2, float d1, float d2, Ray *ray) const
 {
 	SWCSpectrum We;
 	BSDF *bsdf;
 	float pdf;
 	// Sample ray origin
 	//FIXME: Replace dummy .5f by a sampled value if needed
-	if (!Sample_W(tspack, scene, o1, o2, .5f, &bsdf, &pdf, &We))
+	if (!SampleW(arena, sw, scene, o1, o2, .5f, &bsdf, &pdf, &We))
 		return false;
 	ray->o = bsdf->dgShading.p;
 
 	// Sample ray direction
 	//FIXME: Replace dummy .5f by a sampled value if needed
-	if (!bsdf->Sample_f(tspack, Vector(bsdf->nn), &(ray->d), d1, d2, .5f,
+	if (!bsdf->SampleF(sw, Vector(bsdf->nn), &(ray->d), d1, d2, .5f,
 		&We, &pdf, BSDF_ALL, NULL, NULL, true))
 		return false;
 
@@ -107,7 +103,7 @@ bool Camera::GenerateRay(const TsPack *tspack, const Scene *scene,
 }
 
 void Camera::SampleMotion(float time) {
-	if (!CameraMotion.isActive)
+	if (CameraMotion.IsStatic())
 		return;
 
 	WorldToCamera = CameraMotion.Sample(time);
@@ -134,12 +130,11 @@ float Camera::GetTime(float u1) const {
 	return 0.f;
 }
 
-ProjectiveCamera::ProjectiveCamera(const Transform &w2cs,
-	    const Transform &w2ce,
+ProjectiveCamera::ProjectiveCamera(const MotionSystem &w2c,
 		const Transform &proj, const float Screen[4],
 		float hither, float yon, float sopen,
 		float sclose, int sdist, float lensr, float focald, Film *f)
-	: Camera(w2cs, w2ce, hither, yon, sopen, sclose, sdist, f) {
+	: Camera(w2c, hither, yon, sopen, sclose, sdist, f) {
 	// Initialize depth of field parameters
 	LensRadius = lensr;
 	FocalDistance = focald;
@@ -157,10 +152,13 @@ ProjectiveCamera::ProjectiveCamera(const Transform &w2cs,
 	RasterToCamera = CameraToRaster.GetInverse();
 	WorldToRaster = ScreenToRaster * WorldToScreen;
 	RasterToWorld = WorldToRaster.GetInverse();
+
+	AddFloatAttribute(*this, "LensRadius", "Lens radius", 0.f, &ProjectiveCamera::LensRadius);
+	AddFloatAttribute(*this, "FocalDistance", "Focal distance", &ProjectiveCamera::FocalDistance);
 }
 void ProjectiveCamera::SampleMotion(float time) {
 
-	if (!CameraMotion.isActive)
+	if (CameraMotion.IsStatic())
 		return;
 
 	// call base method to sample transform

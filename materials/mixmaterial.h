@@ -34,15 +34,12 @@ public:
 	MixMaterial(boost::shared_ptr<Texture<float> > &a,
 		boost::shared_ptr<Material> &m1,
 		boost::shared_ptr<Material> &m2,
-		const CompositingParams &cp, boost::shared_ptr<Texture<SWCSpectrum> > &sc) : amount(a), mat1(m1), mat2(m2) {
-		compParams = new CompositingParams(cp);
-		Sc = sc;
-	}
+		const ParamSet &mp, boost::shared_ptr<Texture<SWCSpectrum> > &sc) : Material(mp, false), amount(a),
+		mat1(m1), mat2(m2) { Sc = sc; }
 	virtual ~MixMaterial() { }
-	virtual BSDF *GetBSDF(const TsPack *tspack,
-		const DifferentialGeometry &dgGeom,
-		const DifferentialGeometry &dgShading,
-		const Volume *exterior, const Volume *interior) const;
+	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
+		const Intersection &isect,
+		const DifferentialGeometry &dgShading) const;
 
 	static Material * CreateMaterial(const Transform &xform,
 		const ParamSet &mp);

@@ -25,7 +25,7 @@
 #include "paramset.h"
 #include "shape.h"
 #include "spectrum.h"
-#include "fresnel.h"
+#include "fresnelgeneral.h"
 
 namespace lux
 {
@@ -78,16 +78,6 @@ void UVMapping2D::Map(const DifferentialGeometry &dg, float *s, float *t) const
 	*s = su * dg.u + du;
 	*t = sv * dg.v + dv;
 }
-void UVMapping2D::MapDxy(const DifferentialGeometry &dg, float *s, float *t,
-	float *dsdx, float *dtdx, float *dsdy, float *dtdy) const
-{
-	Map(dg, s, t);
-	// Compute texture differentials for 2D identity mapping
-	*dsdx = su * dg.dudx;
-	*dtdx = sv * dg.dvdx;
-	*dsdy = su * dg.dudy;
-	*dtdy = sv * dg.dvdy;
-}
 void UVMapping2D::MapDuv(const DifferentialGeometry &dg, float *s, float *t,
 	float *dsdu, float *dtdu, float *dsdv, float *dtdv) const
 {
@@ -101,7 +91,8 @@ void UVMapping2D::MapDuv(const DifferentialGeometry &dg, float *s, float *t,
 
 //Projection texture methods
 ProjectorMapping2D::ProjectorMapping2D(float _su, float _sv,
-	float _du, float _dv,   Vector sdir, Vector sup , float fov, float yox) {
+	float _du, float _dv,   Vector sdir, Vector sup , float fov, float yox) 
+{
 	su = _su; sv = _sv;
 	du = _du; dv = _dv;
 	right =Normalize(Cross(sdir,sup));
@@ -111,12 +102,10 @@ ProjectorMapping2D::ProjectorMapping2D(float _su, float _sv,
 	alfa = tan(fov/360.f*M_PI);
 	beta = tan(fov/360.f*M_PI)*yox;
 	r=1.f; g=1.f; b=1.f;
-
 }
-
 void ProjectorMapping2D::Map(const DifferentialGeometry &dg,
-		float *s, float *t) const {
-
+	float *s, float *t) const 
+{
 	Vector ray( sin(dg.v)*cos(dg.u), sin(dg.v)*sin(dg.u), cos(dg.v));
 
 	ray= Normalize(ray);
@@ -131,18 +120,6 @@ void ProjectorMapping2D::Map(const DifferentialGeometry &dg,
 
 	*s = su * (a+alfa)/(2.f*alfa) + du;
 	*t = sv * (c+beta)/(2.f*beta) + dv;
-
-}
-
-void ProjectorMapping2D::MapDxy(const DifferentialGeometry &dg, float *s, float *t,
-	float *dsdx, float *dtdx, float *dsdy, float *dtdy) const
-{
-	Map(dg, s, t);
-	// Compute texture differentials for 2D identity mapping
-	*dsdx = 0.0f; //su * dg.dudx;
-	*dtdx = 0.0f; //sv * dg.dvdx;
-	*dsdy = 0.0f; //su * dg.dudy;
-	*dtdy = 0.0f; //sv * dg.dvdy;
 }
 void ProjectorMapping2D::MapDuv(const DifferentialGeometry &dg, float *s, float *t,
 	float *dsdu, float *dtdu, float *dsdv, float *dtdv) const
@@ -155,30 +132,12 @@ void ProjectorMapping2D::MapDuv(const DifferentialGeometry &dg, float *s, float 
 	*dtdv = sv;
 }
 
-
 void SphericalMapping2D::Map(const DifferentialGeometry &dg,
 	float *s, float *t) const
 {
 	const Vector p(Normalize(Vector(WorldToTexture(dg.p))));
 	*s = SphericalPhi(p)   * scaledInvTwoPi + du;
 	*t = SphericalTheta(p) * scaledInvPi    + dv;
-}
-void SphericalMapping2D::MapDxy(const DifferentialGeometry &dg,
-	float *s, float *t,
-	float *dsdx, float *dtdx, float *dsdy, float *dtdy) const
-{
-	const Vector p(Normalize(Vector(WorldToTexture(dg.p))));
-	*s = SphericalPhi(p)   * scaledInvTwoPi + du;
-	*t = SphericalTheta(p) * scaledInvPi    + dv;
-	// Compute texture coordinate differentials for sphere $(u,v)$ mapping
-	const Vector dpdx(WorldToTexture(dg.dpdx));
-	const Vector dpdy(WorldToTexture(dg.dpdy));
-	const float scaledInvTwoPiOverXY2 = scaledInvTwoPi / (p.x * p.x + p.y * p.y);
-	*dsdx = (dpdx.y * p.x - p.y * dpdx.x) * scaledInvTwoPiOverXY2;
-	*dsdy = (dpdy.y * p.x - p.y * dpdy.x) * scaledInvTwoPiOverXY2;
-	const float scaledInvPiOverHypo = scaledInvPi / sqrtf(1.f - p.z * p.z);
-	*dtdx = dpdx.z * scaledInvPiOverHypo;
-	*dtdy = dpdy.z * scaledInvPiOverHypo;
 }
 void SphericalMapping2D::MapDuv(const DifferentialGeometry &dg,
 	float *s, float *t,
@@ -207,24 +166,6 @@ void CylindricalMapping2D::Map(const DifferentialGeometry &dg,
 	p.y /= lenXY;
 	*s = SphericalPhi(p) * scaledInvTwoPi + du;
 	*t = 0.5f - 0.5f * p.z;
-}
-void CylindricalMapping2D::MapDxy(const DifferentialGeometry &dg,
-	float *s, float *t,
-	float *dsdx, float *dtdx, float *dsdy, float *dtdy) const
-{
-	Vector p(WorldToTexture(dg.p));
-	const float lenXY = sqrtf(p.x * p.x + p.y * p.y);
-	p.x /= lenXY;
-	p.y /= lenXY;
-	*s = SphericalPhi(p) * scaledInvTwoPi + du;
-	*t = 0.5f - 0.5f * p.z;
-	// Compute texture coordinate differentials for cylinder $(u,v)$ mapping
-	const Vector dpdx(WorldToTexture(dg.dpdx));
-	const Vector dpdy(WorldToTexture(dg.dpdy));
-	*dsdx = (dpdx.y * p.x - p.y * dpdx.x) * scaledInvTwoPi;
-	*dsdy = (dpdy.y * p.x - p.y * dpdy.x) * scaledInvTwoPi;
-	*dtdx = -0.5f * dpdx.z;
-	*dtdy = -0.5f * dpdy.z;
 }
 void CylindricalMapping2D::MapDuv(const DifferentialGeometry &dg,
 	float *s, float *t,
@@ -260,15 +201,6 @@ void PlanarMapping2D::Map(const DifferentialGeometry &dg,
 	*s = ds + Dot(p, vs);
 	*t = dt + Dot(p, vt);
 }
-void PlanarMapping2D::MapDxy(const DifferentialGeometry &dg, float *s, float *t,
-	float *dsdx, float *dtdx, float *dsdy, float *dtdy) const
-{
-	Map(dg, s, t);
-	*dsdx = Dot(dg.dpdx, vs);
-	*dtdx = Dot(dg.dpdx, vt);
-	*dsdy = Dot(dg.dpdy, vs);
-	*dtdy = Dot(dg.dpdy, vt);
-}
 void PlanarMapping2D::MapDuv(const DifferentialGeometry &dg, float *s, float *t,
 	float *dsdu, float *dtdu, float *dsdv, float *dtdv) const
 {
@@ -279,25 +211,7 @@ void PlanarMapping2D::MapDuv(const DifferentialGeometry &dg, float *s, float *t,
 	*dtdv = Dot(dg.dpdv, vt);
 }
 
-Point IdentityMapping3D::Map(const DifferentialGeometry &dg) const
-{
-	return WorldToTexture(dg.p);
-}
-Point IdentityMapping3D::MapDxy(const DifferentialGeometry &dg,
-	Vector *dpdx, Vector *dpdy) const
-{
-	*dpdx = WorldToTexture(dg.dpdx);
-	*dpdy = WorldToTexture(dg.dpdy);
-	return Map(dg);
-}
-Point IdentityMapping3D::MapDuv(const DifferentialGeometry &dg,
-	Vector *dpdu, Vector *dpdv) const
-{
-	*dpdu = WorldToTexture(dg.dpdu);
-	*dpdv = WorldToTexture(dg.dpdv);
-	return Map(dg);
-}
-void IdentityMapping3D::Apply3DTextureMappingOptions(const ParamSet &tp)
+void TextureMapping3D::Apply3DTextureMappingOptions(const ParamSet &tp)
 {
 	// Apply inverted scale
 	Vector scale = tp.FindOneVector("scale", Vector(1.f, 1.f, 1.f));
@@ -311,6 +225,72 @@ void IdentityMapping3D::Apply3DTextureMappingOptions(const ParamSet &tp)
 	// Apply negated Translation
 	Vector translate = tp.FindOneVector("translate", Vector(0.f, 0.f, 0.f));
 	WorldToTexture = WorldToTexture * Translate(-translate);
+}
+Point GlobalMapping3D::Map(const DifferentialGeometry &dg) const
+{
+	return WorldToTexture(dg.p);
+}
+Point GlobalMapping3D::MapDuv(const DifferentialGeometry &dg,
+	Vector *dpdu, Vector *dpdv) const
+{
+	*dpdu = WorldToTexture(dg.dpdu);
+	*dpdv = WorldToTexture(dg.dpdv);
+	return Map(dg);
+}
+Point LocalMapping3D::Map(const DifferentialGeometry &dg) const
+{
+	const Transform W2T(WorldToTexture *
+		static_cast<const Primitive *>(dg.handle)->GetWorldToLocal(dg.time));
+	return W2T(dg.p);
+}
+Point LocalMapping3D::MapDuv(const DifferentialGeometry &dg,
+	Vector *dpdu, Vector *dpdv) const
+{
+	const Transform W2T(WorldToTexture *
+		static_cast<const Primitive *>(dg.handle)->GetWorldToLocal(dg.time));
+	*dpdu = W2T(dg.dpdu);
+	*dpdv = W2T(dg.dpdv);
+	return W2T(dg.p);
+}
+Point UVMapping3D::Map(const DifferentialGeometry &dg) const
+{
+	return WorldToTexture(Point(dg.u, dg.v, 0.f));
+}
+Point UVMapping3D::MapDuv(const DifferentialGeometry &dg,
+	Vector *dpdu, Vector *dpdv) const
+{
+	*dpdu = WorldToTexture(Vector(1.f, 0.f, 0.f));
+	*dpdv = WorldToTexture(Vector(0.f, 1.f, 0.f));
+	return Map(dg);
+}
+Point GlobalNormalMapping3D::Map(const DifferentialGeometry &dg) const
+{
+	const Normal n(WorldToTexture(dg.nn));
+	return Point(n.x, n.y, n.z);
+}
+Point GlobalNormalMapping3D::MapDuv(const DifferentialGeometry &dg,
+	Vector *dpdu, Vector *dpdv) const
+{
+	*dpdu = Vector(WorldToTexture(dg.dndu));
+	*dpdv = Vector(WorldToTexture(dg.dndv));
+	return Map(dg);
+}
+Point LocalNormalMapping3D::Map(const DifferentialGeometry &dg) const
+{
+	const Transform W2T(WorldToTexture *
+		static_cast<const Primitive *>(dg.handle)->GetWorldToLocal(dg.time));
+	const Normal n(W2T(dg.nn));
+	return Point(n.x, n.y, n.z);
+}
+Point LocalNormalMapping3D::MapDuv(const DifferentialGeometry &dg,
+	Vector *dpdu, Vector *dpdv) const
+{
+	const Transform W2T(WorldToTexture *
+		static_cast<const Primitive *>(dg.handle)->GetWorldToLocal(dg.time));
+	*dpdu = Vector(W2T(dg.dndu));
+	*dpdv = Vector(W2T(dg.dndv));
+	const Normal n(W2T(dg.nn));
+	return Point(n.x, n.y, n.z);
 }
 
 void LatLongMapping::Map(const Vector &wh, float *s, float *t, float *pdf) const
@@ -475,15 +455,15 @@ void VerticalCrossMapping::Map(float s, float t, Vector *wh, float *pdf) const
 		*pdf = ima * ima * ima / 48.f;
 }
 
-template<> float Texture<SWCSpectrum>::EvalFloat(const TsPack *tspack,
+template<> float Texture<SWCSpectrum>::EvalFloat(const SpectrumWavelengths &sw,
 	const DifferentialGeometry &dg) const
 {
-	return Evaluate(tspack, dg).Filter(tspack);
+	return Evaluate(sw, dg).Filter(sw);
 }
-template<> float Texture<const Fresnel *>::EvalFloat(const TsPack *tspack,
+template<> float Texture<FresnelGeneral>::EvalFloat(const SpectrumWavelengths &sw,
 	const DifferentialGeometry &dg) const
 {
-	return Evaluate(tspack, dg)->Index(tspack);
+	return Evaluate(sw, dg).Index(sw);
 }
 
 // Texture Function Definitions
@@ -577,6 +557,11 @@ float Turbulence(const Point &P, const Vector &dpdx, const Vector &dpdy,
 	const float partialOctave = foctaves - static_cast<float>(octaves);
 	sum += o * SmoothStep(.3f, .7f, partialOctave) *
 	       fabsf(Noise(lambda * P));
+
+	// finally, add in value to account for average value of fabsf(Noise())
+	// (~0.2) for the remaining octaves...
+	sum += (maxOctaves - foctaves) * 0.2f;
+
 	return sum;
 }
 

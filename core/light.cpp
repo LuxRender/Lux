@@ -30,61 +30,6 @@
 using namespace lux;
 
 // Light Method Definitions
-bool VisibilityTester::Unoccluded(const Scene *scene, bool null_shapes_isect) const
-{
-	return !scene->IntersectP(r, null_shapes_isect);
-}
-
-bool VisibilityTester::TestOcclusion(const TsPack *tspack, const Scene *scene,
-	SWCSpectrum *f, bool null_shapes_isect, float *pdf, float *pdfR) const
-{
-	RayDifferential ray(r);
-	ray.time = tspack->time;
-	if (cameraClip)
-		tspack->camera->ClampRay(ray);
-	Vector d(Normalize(ray.d));
-	Intersection isect;
-	const BxDFType flags(BxDFType(BSDF_SPECULAR | BSDF_TRANSMISSION));
-	// The for loop prevent an infinite sequence when the ray is almost
-	// parallel to the surface and is self shadowed
-	// This should be much less frequent with dynamic epsilon,
-	// but it's safer to keep it
-	const Volume *vol = volume;
-	BSDF *bsdf;
-	for (u_int i = 0; i < 10000; ++i) {
-		if (!scene->Intersect(tspack, vol, ray, &isect, &bsdf, f, null_shapes_isect))
-			return true;
-
-		*f *= bsdf->f(tspack, d, -d, flags);
-		if (f->Black())
-			return false;
-		*f *= AbsDot(bsdf->dgShading.nn, d);
-		if (pdf)
-			*pdf *= bsdf->Pdf(tspack, d, -d);
-		if (pdfR)
-			*pdfR *= bsdf->Pdf(tspack, -d, d);
-
-		ray.mint = ray.maxt + MachineEpsilon::E(ray.maxt);
-		ray.maxt = r.maxt;
-		vol = bsdf->GetVolume(d);
-	}
-	return false;
-}
-
-void VisibilityTester::Transmittance(const TsPack *tspack, const Scene *scene, 
-	const Sample *sample, SWCSpectrum *const L) const
-{
-	scene->Transmittance(tspack, r, sample, L);
-}
-SWCSpectrum Light::Le(const TsPack *tspack, const RayDifferential &) const
-{
-	return SWCSpectrum(0.f);
-}
-SWCSpectrum Light::Le(const TsPack *tspack, const Scene *scene, const Ray &r,
-	const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const
-{
-	return SWCSpectrum(0.f);
-}
 
 void Light::AddPortalShape(boost::shared_ptr<Primitive> &s)
 {

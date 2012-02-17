@@ -312,12 +312,10 @@ bool TaBRecKdTreeAccel::Intersect(const Ray &ray, Intersection *isect, bool null
         bool hit = false;
 
         // Dade - debugging code
-        //std::stringstream ss;
-        //ss<<"\n-----------------------------------------------------\n"<<
+        //LOG(LUX_INFO,LUX_NOERROR))<<"\n-----------------------------------------------------\n"<<
         //	"nPrims = "<<nPrimitives<<" hit = "<<hit<<
         //   //" ray.mint = "<<ray.mint<<" ray.maxt = "<<ray.maxt<<
         //    " tmin = "<<tmin<<" tmax = "<<tmax;
-        //luxError(LUX_NOERROR,LUX_INFO,ss.str().c_str());
 
         if (nPrimitives == 1) {
             hit |= currNode->onePrimitive->Intersect(ray, isect, null_shp_isect);
@@ -435,11 +433,9 @@ bool TaBRecKdTreeAccel::IntersectP(const Ray &ray, bool null_shapes_isect) const
         u_int nPrimitives = currNode->nPrimitives();
 
         // Dade - debugging code
-        //std::stringstream ss;
-        //ss<<"\n-----------------------------------------------------\n"<<
+        //LOG(LUX_INFO,LUX_NOERROR)<<"\n-----------------------------------------------------\n"<<
         //       "nPrims = "<<nPrimitives<<
         //        " ray.mint = "<<ray.mint<<" ray.maxt = "<<ray.maxt;
-        //luxError(LUX_NOERROR,LUX_INFO,ss.str().c_str());
 
         if (nPrimitives == 1) {
             Primitive *pp = currNode->onePrimitive;
@@ -479,7 +475,7 @@ bool TaBRecKdTreeAccel::IntersectP(const Ray &ray, bool null_shapes_isect) const
     return false;
 }
 
-void TaBRecKdTreeAccel::GetPrimitives(vector<boost::shared_ptr<Primitive> > &primitives) {
+void TaBRecKdTreeAccel::GetPrimitives(vector<boost::shared_ptr<Primitive> > &primitives) const {
 	primitives.reserve(nPrims);
 	for(u_int i=0; i<nPrims; i++) {
 		primitives.push_back(prims[i]);

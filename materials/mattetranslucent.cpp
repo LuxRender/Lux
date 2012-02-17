@@ -23,7 +23,8 @@
 // mattetranslucent.cpp*
 #include "mattetranslucent.h"
 #include "memory.h"
-#include "bxdf.h"
+#include "multibsdf.h"
+#include "primitive.h"
 #include "brdftobtdf.h"
 #include "lambertian.h"
 #include "orennayar.h"
@@ -35,37 +36,38 @@
 using namespace lux;
 
 // Matte Method Definitions
-BSDF *MatteTranslucent::GetBSDF(const TsPack *tspack,
-	const DifferentialGeometry &dgGeom,
-	const DifferentialGeometry &dgs,
-	const Volume *exterior, const Volume *interior) const
+BSDF *MatteTranslucent::GetBSDF(MemoryArena &arena,
+	const SpectrumWavelengths &sw,
+	const Intersection &isect, const DifferentialGeometry &dgs) const
 {
 	// Allocate _BSDF_
-	SWCSpectrum bcolor = (Sc->Evaluate(tspack, dgs).Clamp(0.f, 10000.f))*dgs.Scale;
-	MultiBSDF *bsdf = ARENA_ALLOC(tspack->arena, MultiBSDF)(dgs, dgGeom.nn,
-		exterior, interior, bcolor);
+	SWCSpectrum bcolor = (Sc->Evaluate(sw, dgs).Clamp(0.f, 10000.f))*dgs.Scale;
+	MultiBSDF *bsdf = ARENA_ALLOC(arena, MultiBSDF)(dgs, isect.dg.nn,
+		isect.exterior, isect.interior, bcolor);
 	// NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
-	SWCSpectrum R = Kr->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
-	SWCSpectrum T = Kt->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
-	float sig = Clamp(sigma->Evaluate(tspack, dgs), 0.f, 90.f);
+	SWCSpectrum R = Kr->Evaluate(sw, dgs).Clamp(0.f, 1.f);
+	SWCSpectrum T = Kt->Evaluate(sw, dgs).Clamp(0.f, 1.f);
+	if (energyConserving)
+		T *= SWCSpectrum(1.f) - R;
+	float sig = Clamp(sigma->Evaluate(sw, dgs), 0.f, 90.f);
 
 	if (!R.Black()) {
 		if (sig == 0.f)
-			bsdf->Add(ARENA_ALLOC(tspack->arena, Lambertian)(R));
+			bsdf->Add(ARENA_ALLOC(arena, Lambertian)(R));
 		else
-			bsdf->Add(ARENA_ALLOC(tspack->arena, OrenNayar)(R, sig));
+			bsdf->Add(ARENA_ALLOC(arena, OrenNayar)(R, sig));
 	}
 	if (!T.Black()) {
 		BxDF *base;
 		if (sig == 0.f)
-			base = ARENA_ALLOC(tspack->arena, Lambertian)(T);
+			base = ARENA_ALLOC(arena, Lambertian)(T);
 		else
-			base = ARENA_ALLOC(tspack->arena, OrenNayar)(T, sig);
-		bsdf->Add(ARENA_ALLOC(tspack->arena, BRDFToBTDF)(base));
+			base = ARENA_ALLOC(arena, OrenNayar)(T, sig);
+		bsdf->Add(ARENA_ALLOC(arena, BRDFToBTDF)(base));
 	}
 
 	// Add ptr to CompositingParams structure
-	bsdf->SetCompositingParams(compParams);
+	bsdf->SetCompositingParams(&compParams);
 
 	return bsdf;
 }
@@ -75,13 +77,9 @@ Material* MatteTranslucent::CreateMaterial(const Transform &xform,
 	boost::shared_ptr<Texture<SWCSpectrum> > Kr(mp.GetSWCSpectrumTexture("Kr", RGBColor(1.f)));
 	boost::shared_ptr<Texture<SWCSpectrum> > Kt(mp.GetSWCSpectrumTexture("Kt", RGBColor(1.f)));
 	boost::shared_ptr<Texture<float> > sigma(mp.GetFloatTexture("sigma", 0.f));
-	boost::shared_ptr<Texture<float> > bumpMap(mp.GetFloatTexture("bumpmap"));
+	bool conserving = mp.FindOneBool("energyconserving", false);
 
-	// Get Compositing Params
-	CompositingParams cP;
-	FindCompositingParams(mp, &cP);
-
-	return new MatteTranslucent(Kr, Kt, sigma, bumpMap, cP, Sc);
+	return new MatteTranslucent(Kr, Kt, sigma, conserving, mp, Sc);
 }
 
 static DynamicLoader::RegisterMaterial<MatteTranslucent> r("mattetranslucent");

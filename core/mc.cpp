@@ -47,53 +47,66 @@ float SampleStep1d(const float *f, const float *cdf, float c, u_int nSteps,
 	float u, float *pdf)
 {
 	// Find surrounding cdf segments
-	const float *ptr = std::lower_bound(cdf, cdf + nSteps + 1, u);
-	u_int offset = static_cast<u_int>(max<int>(ptr - cdf - 1, 0));
+	if (u >= cdf[nSteps]) {
+		*pdf = f[nSteps - 1] / c;
+		return 1.f;
+	}
+	if (u <= cdf[0]) {
+		*pdf = f[0] / c;
+		return 0.f;
+	}
+	const float *ptr = std::upper_bound(cdf, cdf + nSteps + 1, u);
+	u_int offset = static_cast<u_int>(ptr - cdf - 1);
 	// Return offset along current cdf segment
 	u = (u - cdf[offset]) / (cdf[offset + 1] - cdf[offset]);
 	*pdf = f[offset] / c;
 	return (offset + u) / nSteps;
 }
-void RejectionSampleDisk(const TsPack *tspack, float *x, float *y) {
+void RejectionSampleDisk(const RandomGenerator &rng, float *x, float *y)
+{
 	float sx, sy;
 	do {
-		sx = 1.f - 2.f * tspack->rng->floatValue();
-		sy = 1.f - 2.f * tspack->rng->floatValue();
-	} while (sx*sx + sy*sy > 1.f);
+		sx = 1.f - 2.f * rng.floatValue();
+		sy = 1.f - 2.f * rng.floatValue();
+	} while (sx * sx + sy * sy > 1.f);
 	*x = sx;
 	*y = sy;
 }
- Vector UniformSampleHemisphere(float u1, float u2) {
-	float z = u1;
-	float r = sqrtf(max(0.f, 1.f - z*z));
-	float phi = 2.f * M_PI * u2;
-	float x = r * cosf(phi);
-	float y = r * sinf(phi);
+Vector UniformSampleHemisphere(float u1, float u2)
+{
+	const float z = u1;
+	const float r = sqrtf(max(0.f, 1.f - z*z));
+	const float phi = 2.f * M_PI * u2;
+	const float x = r * cosf(phi);
+	const float y = r * sinf(phi);
 	return Vector(x, y, z);
 }
- float UniformHemispherePdf(float theta, float phi) {
+float UniformHemispherePdf(float theta, float phi)
+{
 	return INV_TWOPI;
 }
- Vector UniformSampleSphere(float u1, float u2) {
-	float z = 1.f - 2.f * u1;
-	float r = sqrtf(max(0.f, 1.f - z*z));
-	float phi = 2.f * M_PI * u2;
-	float x = r * cosf(phi);
-	float y = r * sinf(phi);
+Vector UniformSampleSphere(float u1, float u2)
+{
+	const float z = 1.f - 2.f * u1;
+	const float r = sqrtf(max(0.f, 1.f - z * z));
+	const float phi = 2.f * M_PI * u2;
+	const float x = r * cosf(phi);
+	const float y = r * sinf(phi);
 	return Vector(x, y, z);
 }
- float UniformSpherePdf() {
+float UniformSpherePdf()
+{
 	return 1.f / (4.f * M_PI);
 }
- void UniformSampleDisk(float u1, float u2,
-		float *x, float *y) {
-	float r = sqrtf(u1);
-	float theta = 2.0f * M_PI * u2;
+void UniformSampleDisk(float u1, float u2, float *x, float *y)
+{
+	const float r = sqrtf(u1);
+	const float theta = 2.0f * M_PI * u2;
 	*x = r * cosf(theta);
 	*y = r * sinf(theta);
 }
- void ConcentricSampleDisk(float u1, float u2,
-		float *dx, float *dy) {
+void ConcentricSampleDisk(float u1, float u2, float *dx, float *dy)
+{
 	float r, theta;
 	// Map uniform random numbers to $[-1,1]^2$
 	float sx = 2.f * u1 - 1.f;
@@ -110,78 +123,73 @@ void RejectionSampleDisk(const TsPack *tspack, float *x, float *y) {
 			// Handle first region of disk
 			r = sx;
 			if (sy > 0.f)
-				theta = sy/r;
+				theta = sy / r;
 			else
-				theta = 8.0f + sy/r;
-		}
-		else {
+				theta = 8.f + sy / r;
+		} else {
 			// Handle second region of disk
 			r = sy;
-			theta = 2.0f - sx/r;
+			theta = 2.f - sx / r;
 		}
-	}
-	else {
+	} else {
 		if (sx <= sy) {
 			// Handle third region of disk
 			r = -sx;
-			theta = 4.0f - sy/r;
-		}
-		else {
+			theta = 4.f - sy / r;
+		} else {
 			// Handle fourth region of disk
 			r = -sy;
-			theta = 6.0f + sx/r;
+			theta = 6.f + sx / r;
 		}
 	}
 	theta *= M_PI / 4.f;
-	*dx = r*cosf(theta);
-	*dy = r*sinf(theta);
+	*dx = r * cosf(theta);
+	*dy = r * sinf(theta);
 }
- void UniformSampleTriangle(float u1, float u2,
-		float *u, float *v) {
-	float su1 = sqrtf(u1);
+void UniformSampleTriangle(float u1, float u2, float *u, float *v)
+{
+	const float su1 = sqrtf(u1);
 	*u = 1.f - su1;
 	*v = u2 * su1;
 }
- float UniformConePdf(float cosThetaMax) {
+float UniformConePdf(float cosThetaMax)
+{
 	return 1.f / (2.f * M_PI * (1.f - cosThetaMax));
 }
-Vector UniformSampleCone(float u1, float u2,
-		float costhetamax) {
-	float costheta = Lerp(u1, costhetamax, 1.f);
-	float sintheta = sqrtf(1.f - costheta*costheta);
-	float phi = u2 * 2.f * M_PI;
-	return Vector(cosf(phi) * sintheta,
-	              sinf(phi) * sintheta,
-		          costheta);
+Vector UniformSampleCone(float u1, float u2, float costhetamax)
+{
+	const float costheta = Lerp(u1, costhetamax, 1.f);
+	const float sintheta = sqrtf(1.f - costheta * costheta);
+	const float phi = u2 * 2.f * M_PI;
+	return Vector(cosf(phi) * sintheta, sinf(phi) * sintheta, costheta);
 }
- Vector UniformSampleCone(float u1, float u2, float costhetamax,
-		const Vector &x, const Vector &y, const Vector &z) {
-	float costheta = Lerp(u1, costhetamax, 1.f);
-	float sintheta = sqrtf(1.f - costheta*costheta);
-	float phi = u2 * 2.f * M_PI;
+Vector UniformSampleCone(float u1, float u2, float costhetamax,
+	const Vector &x, const Vector &y, const Vector &z)
+{
+	const float costheta = Lerp(u1, costhetamax, 1.f);
+	const float sintheta = sqrtf(1.f - costheta * costheta);
+	const float phi = u2 * 2.f * M_PI;
 	return cosf(phi) * sintheta * x + sinf(phi) * sintheta * y +
 		costheta * z;
 }
- Vector SampleHG(const Vector &w, float g,
-		float u1, float u2) {
+Vector SampleHG(const Vector &w, float g, float u1, float u2)
+{
 	float costheta;
 	if (fabsf(g) < 1e-3f)
 		costheta = 1.f - 2.f * u1;
 	else {
 		// NOTE - lordcrc - Bugfix, pbrt tracker id 0000082: bug in SampleHG
-		float sqrTerm = (1.f - g * g) /
-			(1.f - g + 2.f * g * u1);
+		const float sqrTerm = (1.f - g * g) / (1.f - g + 2.f * g * u1);
 		costheta = (1.f + g * g - sqrTerm * sqrTerm) / (2.f * g);
 	}
-	float sintheta = sqrtf(max(0.f, 1.f-costheta*costheta));
-	float phi = 2.f * M_PI * u2;
+	const float sintheta = sqrtf(max(0.f, 1.f - costheta * costheta));
+	const float phi = 2.f * M_PI * u2;
 	Vector v1, v2;
 	CoordinateSystem(w, &v1, &v2);
-	return SphericalDirection(sintheta, costheta,
-		phi, v1, v2, w);
+	return SphericalDirection(sintheta, costheta, phi, v1, v2, w);
 }
- float HGPdf(const Vector &w, const Vector &wp,
-		float g) {
+float HGPdf(const Vector &w, const Vector &wp, float g)
+{
 	return PhaseHG(w, wp, g);
 }
 
@@ -252,7 +260,8 @@ inline float normsinvf(float p)
 	return static_cast<float>(normsinv(p));
 }
 
-float NormalCDFInverse(float u) {
+float NormalCDFInverse(float u)
+{
 	return normsinvf(u);
 }
 

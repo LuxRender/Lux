@@ -27,6 +27,7 @@
 #include "error.h"
 #include "paramset.h"
 #include "context.h"
+#include "color.h"
 #include <stdarg.h>
 #include <sstream>
 
@@ -47,7 +48,7 @@ void yyerror(const char *str)
 	if (lineNum > 0)
 		ss << " at line " << lineNum;
 	ss << ": " << str;
-	luxError(LUX_SYNTAX, LUX_SEVERE, ss.str().c_str());
+	LOG(LUX_SEVERE,LUX_SYNTAX)<< ss.str().c_str();
 }
 
 class ParamListElem {
@@ -133,10 +134,9 @@ static bool VerifyArrayLength(ParamArray *arr, u_int required,
 	const char *command)
 {
 	if (arr->nelems != required) {
-		std::stringstream ss;
-		ss << command << " requires a(n) " << required <<
-			" element array!";
-		luxError(LUX_SYNTAX, LUX_SEVERE, ss.str().c_str());
+		LOG( LUX_SEVERE,LUX_SYNTAX)
+			<< command << " requires a(n) "
+			<< required << " element array!";
 		return false;
 	}
 	return true;
@@ -163,9 +163,10 @@ ParamArray *ribarray;
 %token ACCELERATOR AREALIGHTSOURCE ATTRIBUTEBEGIN ATTRIBUTEEND
 %token CAMERA CONCATTRANSFORM COORDINATESYSTEM COORDSYSTRANSFORM EXTERIOR
 %token FILM IDENTITY INTERIOR LIGHTSOURCE LOOKAT MATERIAL MAKENAMEDMATERIAL
-%token MAKENAMEDVOLUME NAMEDMATERIAL OBJECTBEGIN OBJECTEND OBJECTINSTANCE
-%token MOTIONINSTANCE LIGHTGROUP PIXELFILTER REVERSEORIENTATION ROTATE SAMPLER
-%token SCALE SEARCHPATH PORTALSHAPE SHAPE SURFACEINTEGRATOR TEXTURE
+%token MAKENAMEDVOLUME MOTIONBEGIN MOTIONEND NAMEDMATERIAL 
+%token OBJECTBEGIN OBJECTEND OBJECTINSTANCE PORTALINSTANCE
+%token MOTIONINSTANCE LIGHTGROUP PIXELFILTER RENDERER REVERSEORIENTATION ROTATE 
+%token SAMPLER SCALE SEARCHPATH PORTALSHAPE SHAPE SURFACEINTEGRATOR TEXTURE
 %token TRANSFORMBEGIN TRANSFORMEND TRANSFORM TRANSLATE VOLUME VOLUMEINTEGRATOR
 %token WORLDBEGIN WORLDEND
 
@@ -409,6 +410,15 @@ ri_stmt: ACCELERATOR STRING paramlist
 	Context::GetActive()->MakeNamedVolume($2, $3, params);
 	FreeArgs();
 }
+| MOTIONBEGIN num_array
+{
+	luxMotionBegin($2->nelems, static_cast<float *>($2->array));
+	ArrayFree($2);
+}
+| MOTIONEND
+{
+	luxMotionEnd();
+}
 | NAMEDMATERIAL STRING
 {
 	Context::GetActive()->NamedMaterial($2);
@@ -425,6 +435,10 @@ ri_stmt: ACCELERATOR STRING paramlist
 {
 	luxObjectInstance($2);
 }
+| PORTALINSTANCE STRING
+{
+	luxPortalInstance($2);
+}
 | MOTIONINSTANCE STRING NUM NUM STRING
 {
 	luxMotionInstance($2, $3, $4, $5);
@@ -434,6 +448,13 @@ ri_stmt: ACCELERATOR STRING paramlist
 	ParamSet params;
 	InitParamSet(params, CPS, CP);
 	Context::GetActive()->PixelFilter($2, params);
+	FreeArgs();
+}
+| RENDERER STRING paramlist
+{
+	ParamSet params;
+	InitParamSet(params, CPS, CP);
+	Context::GetActive()->Renderer($2, params);
 	FreeArgs();
 }
 | REVERSEORIENTATION
@@ -534,18 +555,14 @@ static void InitParamSet(ParamSet &ps, u_int count, ParamListElem *list) {
 		ParamType type;
 		string name;
 		if (!LookupType(list[i].token, &type, name)) {
-			std::stringstream ss;
-			ss << "Type of parameter '" << list[i].token <<
-				"' is unknown";
-			luxError(LUX_SYNTAX, LUX_WARNING, ss.str().c_str());
+			LOG( LUX_WARNING,LUX_SYNTAX)
+				<< "Type of parameter '" << list[i].token << "' is unknown";
 			continue;
 		}
 		if (list[i].textureHelper && type != PARAM_TYPE_TEXTURE &&
 			type != PARAM_TYPE_STRING) {
-			std::stringstream ss;
-			ss << "Bad type for " << name <<
-				". Changing it to a texture.";
-			luxError(LUX_SYNTAX, LUX_WARNING, ss.str().c_str());
+			LOG( LUX_WARNING,LUX_SYNTAX)
+				<< "Bad type for " << name << ". Changing it to a texture.";
 			type = PARAM_TYPE_TEXTURE;
 		}
 		void *data = list[i].arg;
@@ -568,12 +585,9 @@ static void InitParamSet(ParamSet &ps, u_int count, ParamListElem *list) {
 				else if (s == "false")
 					bdata[j] = false;
 				else {
-					std::stringstream ss;
-					ss << "Value '" << s << "' unknown for boolean parameter '" <<
-						list[i].token <<
-						"'. Using 'false'.";
-					luxError(LUX_SYNTAX, LUX_WARNING,
-						ss.str().c_str());
+					LOG( LUX_WARNING,LUX_SYNTAX)
+						<< "Value '" << s << "' unknown for boolean parameter '" <<
+						list[i].token << "'. Using 'false'.";
 					bdata[j] = false;
 				}
 			}
@@ -600,10 +614,7 @@ static void InitParamSet(ParamSet &ps, u_int count, ParamListElem *list) {
 				string val(*static_cast<const char **>(data));
 				ps.AddTexture(name, val);
 			} else {
-				std::stringstream ss;
-				ss << "Only one string allowed for 'texture' parameter " << name;
-				luxError(LUX_SYNTAX, LUX_ERROR,
-					ss.str().c_str());
+				LOG( LUX_ERROR,LUX_SYNTAX) << "Only one string allowed for 'texture' parameter " << name;
 			}
 		}
 	}

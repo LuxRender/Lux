@@ -36,13 +36,14 @@ public:
 		BxDF(BxDFType(BSDF_REFLECTION | BSDF_SPECULAR)),
 		fresnel(fr) { }
 	virtual ~SimpleSpecularReflection() { }
-	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi,
-		SWCSpectrum *const f_) const { }
-	virtual bool Sample_f(const TsPack *tspack, const Vector &wo,
+	virtual void F(const SpectrumWavelengths &sw, const Vector &wo,
+		const Vector &wi, SWCSpectrum *const f_) const { }
+	virtual bool SampleF(const SpectrumWavelengths &sw, const Vector &wo,
 		Vector *wi, float u1, float u2, SWCSpectrum *const f,
 		float *pdf, float *pdfBack = NULL, bool reverse = false) const;
-	virtual float Weight(const TsPack *tspack, const Vector &wo) const;
-	virtual float Pdf(const TsPack *tspack, const Vector &wo,
+	virtual float Weight(const SpectrumWavelengths &sw,
+		const Vector &wo) const;
+	virtual float Pdf(const SpectrumWavelengths &sw, const Vector &wo,
 		const Vector &wi) const { return 0.f; }
 protected:
 	const Fresnel *fresnel;
@@ -53,10 +54,11 @@ public:
 	SimpleArchitecturalReflection(const Fresnel *fr) :
 		SimpleSpecularReflection(fr) { }
 	virtual ~SimpleArchitecturalReflection() { }
-	virtual bool Sample_f(const TsPack *tspack, const Vector &wo,
+	virtual bool SampleF(const SpectrumWavelengths &sw, const Vector &wo,
 		Vector *wi, float u1, float u2, SWCSpectrum *const f,
 		float *pdf, float *pdfBack = NULL, bool reverse = false) const;
-	virtual float Weight(const TsPack *tspack, const Vector &wo) const;
+	virtual float Weight(const SpectrumWavelengths &sw,
+		const Vector &wo) const;
 };
 
 class  SpecularReflection : public SimpleSpecularReflection {
@@ -66,8 +68,9 @@ public:
 		float flmindex) : SimpleSpecularReflection(fr), R(r),
 		film(flm), filmindex(flmindex) { }
 	virtual ~SpecularReflection() { }
-	virtual bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
-		float u1, float u2, SWCSpectrum *const f, float *pdf, float *pdfBack = NULL, bool reverse = false) const;
+	virtual bool SampleF(const SpectrumWavelengths &sw, const Vector &wo,
+		Vector *wi, float u1, float u2, SWCSpectrum *const f,
+		float *pdf, float *pdfBack = NULL, bool reverse = false) const;
 protected:
 	// SpecularReflection Private Data
 	SWCSpectrum R;
@@ -79,9 +82,11 @@ public:
 	ArchitecturalReflection(const SWCSpectrum &r, const Fresnel *fr, float flm, float flmindex)
 		: SpecularReflection(r, fr, flm, flmindex) {}
 	virtual ~ArchitecturalReflection() { }
-	virtual bool Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
-		float u1, float u2, SWCSpectrum *const f, float *pdf, float *pdfBack = NULL, bool reverse = false) const;
-	virtual float Weight(const TsPack *tspack, const Vector &wo) const;
+	virtual bool SampleF(const SpectrumWavelengths &sw, const Vector &wo,
+		Vector *wi, float u1, float u2, SWCSpectrum *const f,
+		float *pdf, float *pdfBack = NULL, bool reverse = false) const;
+	virtual float Weight(const SpectrumWavelengths &sw,
+		const Vector &wo) const;
 };
 
 }//namespace lux

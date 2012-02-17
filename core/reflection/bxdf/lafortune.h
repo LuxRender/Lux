@@ -36,12 +36,12 @@ public:
 	Lafortune(const SWCSpectrum &x, const SWCSpectrum &y,
 		const SWCSpectrum &z, const SWCSpectrum &e);
 	virtual ~Lafortune() { }
-	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi,
-		SWCSpectrum *const f) const;
-	virtual bool Sample_f(const TsPack *tspack, const Vector &wi,
+	virtual void F(const SpectrumWavelengths &sw, const Vector &wo,
+		const Vector &wi, SWCSpectrum *const f) const;
+	virtual bool SampleF(const SpectrumWavelengths &sw, const Vector &wi,
 		Vector *sampled_f, float u1, float u2, SWCSpectrum *const f,
 		float *pdf, float *pdfBack = NULL, bool reverse = false) const;
-	virtual float Pdf(const TsPack *tspack, const Vector &wi,
+	virtual float Pdf(const SpectrumWavelengths &sw, const Vector &wi,
 		const Vector &wo) const;
 private:
 	// Lafortune Private Data

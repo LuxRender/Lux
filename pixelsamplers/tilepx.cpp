@@ -22,6 +22,7 @@
  
 #include "tilepx.h"
 #include "error.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -30,10 +31,8 @@ TilePixelSampler::TilePixelSampler(
         int xStart, int xEnd,
         int yStart, int yEnd) {
     // Dade - debugging code
-    //std::stringstream ss;
-    //ss << "xstart: " << xstart << " xend: " << xend <<
+    //LOG( LUX_INFO,LUX_NOERROR) << "xstart: " << xstart << " xend: " << xend <<
     //        " ystart: " << ystart << " yend: " << yend;
-    //luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
     int xSize = xEnd - xStart;
     int ySize = yEnd - yStart;
@@ -42,9 +41,7 @@ TilePixelSampler::TilePixelSampler(
     int tileYSize = ySize / TILEPX_SIZE + ((ySize % TILEPX_SIZE == 0) ? 0 : 1);
     
     // Dade - debugging code
-    //ss.str("");
-    //ss << "tileXSize: " << tileXSize << " tileYSize: " << tileYSize;
-    //luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+    //LOG( LUX_INFO,LUX_NOERROR) << "tileXSize: " << tileXSize << " tileYSize: " << tileYSize;
 
     TotalPx = 0;
     for(int yg = 0; yg < tileYSize; yg++) {
@@ -67,14 +64,16 @@ u_int TilePixelSampler::GetTotalPixels() {
 	return TotalPx;
 }
 
-bool TilePixelSampler::GetNextPixel(int &xPos, int &yPos, u_int *use_pos) {
-	u_int pos = (*use_pos);
+bool TilePixelSampler::GetNextPixel(int *xPos, int *yPos, const u_int use_pos) {
 	bool hasMorePixel = true;
-	if(pos == TotalPx - 1)
+	if(use_pos == TotalPx - 1)
 		hasMorePixel = false;
 
-	xPos = Pxa[pos].x;
-	yPos = Pxa[pos].y;
+	*xPos = Pxa[use_pos].x;
+	*yPos = Pxa[use_pos].y;
 
-    return hasMorePixel;
+	return hasMorePixel;
 }
+
+static DynamicLoader::RegisterPixelSampler<TilePixelSampler> r1("tile");
+static DynamicLoader::RegisterPixelSampler<TilePixelSampler> r2("grid");

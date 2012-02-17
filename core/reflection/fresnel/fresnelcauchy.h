@@ -37,13 +37,13 @@ public:
 		cb = cB * 1e6f;
 	}
 	virtual ~FresnelCauchy() { }
-	virtual void Evaluate(const TsPack *tspack, float cosi,
+	virtual void Evaluate(const SpectrumWavelengths &sw, float cosi,
 		SWCSpectrum *const f) const;
-	virtual float Index(const TsPack *tspack) const;
-	virtual SWCSpectrum SigmaA(const TsPack *tspack) const {
+	virtual float Index(const SpectrumWavelengths &sw) const;
+	virtual SWCSpectrum SigmaA(const SpectrumWavelengths &sw) const {
 		return a;
 	}
-	virtual void ComplexEvaluate(const TsPack *tspack,
+	virtual void ComplexEvaluate(const SpectrumWavelengths &sw,
 		SWCSpectrum *fr, SWCSpectrum *fi) const;
 private:
 	// FresnelCauchy Private Data

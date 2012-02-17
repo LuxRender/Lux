@@ -24,6 +24,7 @@
 #define LUX_PARAMSET_H
 // paramset.h*
 #include "lux.h"
+#include "api.h"
 
 #include <boost/serialization/split_member.hpp>
 
@@ -91,7 +92,7 @@ template <class T> struct ParamSetItem {
 	T *data;
 	mutable bool lookedUp;
 };
-class  ParamSet {
+class LUX_EXPORT ParamSet {
 	friend class boost::serialization::access;
 	
 public:
@@ -146,9 +147,10 @@ public:
 		GetFloatTexture(const string &name) const;
 	boost::shared_ptr<Texture<float> >
 		GetFloatTexture(const string &name, float def) const;
-	boost::shared_ptr<Texture<const Fresnel *> >
+	boost::shared_ptr<Texture<FresnelGeneral> >
 		GetFresnelTexture(const string &name, float def) const;
 	boost::shared_ptr<Material> GetMaterial(const string &name) const;
+	void MarkUsed(const ParamSet &p2) const;
 	void ReportUnused() const;
 	~ParamSet() {
 		Clear();

@@ -85,7 +85,7 @@ public:
 	}
 	void BoundingSphere(Point *c, float *rad) const;
 	bool IntersectP(const Ray &ray,
-	                float *hitt0 = NULL,
+			float *hitt0 = NULL,
 					float *hitt1 = NULL, bool null_shp_isect = false) const;
 	// BBox Public Data
 	Point pMin, pMax;

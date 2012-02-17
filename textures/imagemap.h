@@ -28,6 +28,7 @@
 #include "imagereader.h"
 #include "paramset.h"
 #include "error.h"
+#include "rgbillum.h"
 #include <map>
 using std::map;
 
@@ -119,17 +120,16 @@ public:
 
 	virtual ~ImageFloatTexture() { }
 
-	virtual float Evaluate(const TsPack *tspack,
+	virtual float Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
-		float s, t, dsdx, dtdx, dsdy, dtdy;
-		mapping->MapDxy(dg, &s, &t, &dsdx, &dtdx, &dsdy, &dtdy);
-		return mipmap->LookupFloat(channel, s, t,
-			dsdx, dtdx, dsdy, dtdy);
+		float s, t;
+		mapping->Map(dg, &s, &t);
+		return mipmap->LookupFloat(channel, s, t);
 	}
 	virtual float Y() const {
 		return mipmap->LookupFloat(channel, .5f, .5f, .5f);
 	}
-	virtual void GetDuv(const TsPack *tspack,
+	virtual void GetDuv(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg, float delta,
 		float *du, float *dv) const {
 		float s, t, dsdu, dtdu, dsdv, dtdv;
@@ -138,6 +138,10 @@ public:
 		mipmap->GetDifferentials(channel, s, t, &ds, &dt);
 		*du = ds * dsdu + dt * dtdu;
 		*dv = ds * dsdv + dt * dtdv;
+	}
+
+	virtual void GetMinMaxFloat(float *minValue, float *maxValue) const {
+		mipmap->GetMinMaxFloat(channel, minValue, maxValue);
 	}
 
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const ParamSet &tp);
@@ -154,35 +158,80 @@ public:
 		const string &filename, int discardmm, float maxAniso,
 		ImageWrap wrapMode, float gain, float gamma, bool ar_scale) :
 		ImageTexture(m, type, filename, discardmm, maxAniso, wrapMode,
-			gain, gamma, ar_scale) { }
+			gain, gamma, ar_scale), isIlluminant(false) { }
 
 	virtual ~ImageSpectrumTexture() { }
 
-	virtual SWCSpectrum Evaluate(const TsPack *tspack,
+	virtual SWCSpectrum Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
-		float s, t, dsdx, dtdx, dsdy, dtdy;
-		mapping->MapDxy(dg, &s, &t, &dsdx, &dtdx, &dsdy, &dtdy);
-		return mipmap->LookupSpectrum(tspack, s, t,
-			dsdx, dtdx, dsdy, dtdy);
+		float s, t;
+		mapping->Map(dg, &s, &t);
+		if (isIlluminant)
+			return SWCSpectrum(sw, whiteRGBIllum) * mipmap->LookupSpectrum(sw, s, t);
+		else
+			return mipmap->LookupSpectrum(sw, s, t);
 	}
 	virtual float Y() const {
-		return mipmap->LookupFloat(CHANNEL_WMEAN, .5f, .5f, .5f);
+		return (isIlluminant ? whiteRGBIllum.Y() : 1.f) * 
+			mipmap->LookupFloat(CHANNEL_WMEAN, .5f, .5f, .5f);
 	}
 	virtual float Filter() const {
-		return mipmap->LookupFloat(CHANNEL_MEAN, .5f, .5f, .5f);
+		return (isIlluminant ? whiteRGBIllum.Filter() : 1.f) *
+			mipmap->LookupFloat(CHANNEL_MEAN, .5f, .5f, .5f);
 	}
-	virtual void GetDuv(const TsPack *tspack,
+	virtual void GetDuv(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg, float delta,
 		float *du, float *dv) const {
 		float s, t, dsdu, dtdu, dsdv, dtdv;
 		mapping->MapDuv(dg, &s, &t, &dsdu, &dtdu, &dsdv, &dtdv);
 		float ds, dt;
-		mipmap->GetDifferentials(tspack, s, t, &ds, &dt);
+		mipmap->GetDifferentials(sw, s, t, &ds, &dt);
 		*du = ds * dsdu + dt * dtdu;
 		*dv = ds * dsdv + dt * dtdv;
 	}
 
+	virtual void SetIlluminant() {
+		isIlluminant = true;
+	}
+
+	static RGBIllumSPD whiteRGBIllum;
 	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const ParamSet &tp);
+private:
+	bool isIlluminant;
+};
+
+
+class NormalMapTexture : public Texture<float>, public ImageTexture {
+public:
+	// NormalMapTexture Public Methods
+	NormalMapTexture(TextureMapping2D *m, ImageTextureFilterType type,
+		const string &filename, int discardmm, float maxAniso,
+		ImageWrap wrapMode, float gain, float gamma) :
+		ImageTexture(m, type, filename, discardmm, maxAniso, wrapMode,
+			gain, gamma, false) { }
+
+	virtual ~NormalMapTexture() { }
+
+	virtual float Evaluate(const SpectrumWavelengths &sw,
+		const DifferentialGeometry &dg) const {
+		return 0.f;
+	}
+	virtual float Y() const {
+		return 0.f;
+	}
+	virtual void GetDuv(const SpectrumWavelengths &sw,
+		const DifferentialGeometry &dg, float delta,
+		float *du, float *dv) const;
+
+	virtual void GetMinMaxFloat(float *minValue, float *maxValue) const {
+		*minValue = 0.f;
+		*maxValue = 0.f;
+	}
+
+	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const ParamSet &tp);
+
+private:
+	// NormalMapTexture Private Data
 };
 
 // ImageTexture Method Definitions
@@ -190,7 +239,6 @@ inline boost::shared_ptr<MIPMap> ImageTexture::GetTexture(ImageTextureFilterType
 	const string &filename, int discardmm, float maxAniso, ImageWrap wrap, float gain,
 	float gamma, bool ar_scale)
 {
-
 	// Look for texture in texture cache
 	TexInfo texInfo(filterType, filename, discardmm, maxAniso, wrap, gain, gamma);
 	if (textures.find(texInfo) != textures.end()) {
@@ -199,7 +247,7 @@ inline boost::shared_ptr<MIPMap> ImageTexture::GetTexture(ImageTextureFilterType
 		return textures[texInfo];
 	}
 	int width, height;
-	auto_ptr<ImageData> imgdata(ReadImage(filename));
+	std::auto_ptr<ImageData> imgdata(ReadImage(filename));
 	if (ar_scale)
 		imgdata->data_scale();
 	boost::shared_ptr<MIPMap> ret;

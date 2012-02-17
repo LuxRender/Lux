@@ -23,6 +23,7 @@
 // tabulatedfresnel.cpp*
 #include "tabulatedfresnel.h"
 #include "dynload.h"
+#include "filedata.h"
 
 #include <boost/lexical_cast.hpp>
 #include <boost/regex.hpp>
@@ -35,7 +36,7 @@ static float eVtolambda(float eV) {
 	// lambda = hc / E, where 
 	//  h is planck's constant in eV*s
 	//  c is speed of light in m/s
-	return (4.135667e-15f * 299792458.f * 1e9f) / eV;
+	return (4.13566733e-15f * 299792458.f * 1e9f) / eV;
 }
 
 // converts wavelength (in micrometer) to wavelength (in nm)
@@ -56,10 +57,14 @@ static float nmtolambda(float nm)
 }
 
 // SopraTexture Method Definitions
-Texture<const Fresnel *> *SopraTexture::CreateFresnelTexture(const Transform &tex2world,
+Texture<FresnelGeneral> *SopraTexture::CreateFresnelTexture(const Transform &tex2world,
 	const ParamSet &tp)
 {
-	const string filename = tp.FindOneString("filename", "");
+
+	// Attempt decode of embedded data
+	FileData::decode(tp, "filename");
+
+	const string filename = AdjustFilename(tp.FindOneString("filename", ""));
 	std::ifstream fs;
 	fs.open(filename.c_str());
 	string line;
@@ -71,7 +76,7 @@ Texture<const Fresnel *> *SopraTexture::CreateFresnelTexture(const Transform &te
 	boost::smatch m;
 
 	// read initial line, containing metadata
-	boost::regex header_expr("(\\d+)\\s+(\\d*\\.?\\d+)\\s+(\\d*\\.?\\d+)\\s+(\\d+)");
+	boost::regex header_expr("(\\d+)[^\\.[:digit:]]+(\\d*\\.?\\d+)[^\\.[:digit:]]+(\\d*\\.?\\d+)[^\\.[:digit:]]+(\\d+)");
 
 	if (!boost::regex_search(line, m, header_expr)) {
 		LOG(LUX_ERROR, LUX_BADFILE) << "Bad sopra header in '" << filename << "'";
@@ -86,8 +91,8 @@ Texture<const Fresnel *> *SopraTexture::CreateFresnelTexture(const Transform &te
 	if (m[1] == "1") {
 		// lambda in eV
 		// low eV -> high lambda
-		lambda_last = boost::lexical_cast<float>(m[2]);
 		lambda_first = boost::lexical_cast<float>(m[3]);
+		lambda_last = boost::lexical_cast<float>(m[2]);
 		tolambda = &eVtolambda;
 	} else if (m[1] == "2") {
 		// lambda in um
@@ -96,8 +101,8 @@ Texture<const Fresnel *> *SopraTexture::CreateFresnelTexture(const Transform &te
 		tolambda = &umtolambda;
 	} else if (m[1] == "3") {
 		// lambda in cm-1
-		lambda_last = boost::lexical_cast<float>(m[2]);
 		lambda_first = boost::lexical_cast<float>(m[3]);
+		lambda_last = boost::lexical_cast<float>(m[2]);
 		tolambda = &invcmtolambda;
 	} else if (m[1] == "4") {
 		// lambda in nm
@@ -114,16 +119,16 @@ Texture<const Fresnel *> *SopraTexture::CreateFresnelTexture(const Transform &te
 	const int count = boost::lexical_cast<int>(m[4]);  
 
 	// read nk data
-	boost::regex sample_expr("(\\d*\\.?\\d+)\\s+(\\d*\\.?\\d+)");
+	boost::regex sample_expr("(\\d*\\.?\\d+)[^\\.[:digit:]]+(\\d*\\.?\\d+)");
 
-	vector<float> wl(count);
-	vector<float> n(count);
-	vector<float> k(count);
+	vector<float> wl(count + 1);
+	vector<float> n(count + 1);
+	vector<float> k(count + 1);
 
 	// we want lambda to go from low to high
 	// so reverse direction
 	const float delta = (lambda_last - lambda_first) / count;
-	for (int i = count - 1; i >= 0; --i) {
+	for (int i = count; i >= 0; --i) {
 
 		if (!getline(fs, line).good()) {
 			LOG(LUX_ERROR, LUX_BADFILE) <<
@@ -149,10 +154,13 @@ Texture<const Fresnel *> *SopraTexture::CreateFresnelTexture(const Transform &te
 }
 
 // LuxpopTexture Method Definitions
-Texture<const Fresnel *> *LuxpopTexture::CreateFresnelTexture(const Transform &tex2world,
+Texture<FresnelGeneral> *LuxpopTexture::CreateFresnelTexture(const Transform &tex2world,
 	const ParamSet &tp)
 {
-	const string filename = tp.FindOneString("filename", "");
+	// Attempt decode of embedded data
+	FileData::decode(tp, "filename");
+
+	const string filename = AdjustFilename(tp.FindOneString("filename", ""));
 	std::ifstream fs;
 	fs.open(filename.c_str());
 	vector<float> wl;
@@ -287,10 +295,13 @@ static const float AluminiumK[] = {
 	7.15, 7.31, 7.48, 7.65, 7.82, 8.01, 8.21, 8.39, 8.57, 8.62, 8.6, 8.45,
 	8.31, 8.21, 8.21 };
 
-Texture<const Fresnel *> *FresnelPreset::CreateFresnelTexture(const Transform &tex2world,
+Texture<FresnelGeneral> *FresnelPreset::CreateFresnelTexture(const Transform &tex2world,
 	const ParamSet &tp)
 {
-	const string name = tp.FindOneString("name", "");
+	// Allow the filename keyword so that it is compatible with
+	// the fresnelname texture
+	// The name keyword will however have a higher priority
+	const string name = tp.FindOneString("name", tp.FindOneString("filename", ""));
 	vector<float> wl;
 	vector<float> n;
 	vector<float> k;
@@ -327,6 +338,20 @@ Texture<const Fresnel *> *FresnelPreset::CreateFresnelTexture(const Transform &t
 	return new TabulatedFresnel(wl, n, k);
 }
 
-static DynamicLoader::RegisterFresnelTexture<LuxpopTexture> r1("luxpop");
-static DynamicLoader::RegisterFresnelTexture<FresnelPreset> r2("preset");
-static DynamicLoader::RegisterFresnelTexture<SopraTexture> r3("sopra");
+Texture<FresnelGeneral> *FresnelName::CreateFresnelTexture(const Transform &tex2world,
+	const ParamSet &tp)
+{
+	Texture<FresnelGeneral> *fr;
+	fr = SopraTexture::CreateFresnelTexture(tex2world, tp);
+	if (fr)
+		return fr;
+	fr = LuxpopTexture::CreateFresnelTexture(tex2world, tp);
+	if (fr)
+		return fr;
+	return FresnelPreset::CreateFresnelTexture(tex2world, tp);
+};
+
+static DynamicLoader::RegisterFresnelTexture<SopraTexture> r1("sopra");
+static DynamicLoader::RegisterFresnelTexture<LuxpopTexture> r2("luxpop");
+static DynamicLoader::RegisterFresnelTexture<FresnelPreset> r3("preset");
+static DynamicLoader::RegisterFresnelTexture<FresnelPreset> r4("fresnelname");

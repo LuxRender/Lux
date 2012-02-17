@@ -42,20 +42,19 @@ public:
 		mapping = map;
 	}
 	virtual ~FBmTexture() { delete mapping; }
-	virtual float Evaluate(const TsPack *tspack,
+	virtual float Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
-		Vector dpdx, dpdy;
-		const Point P(mapping->MapDxy(dg, &dpdx, &dpdy));
-		return FBm(P, dpdx, dpdy, omega, octaves);
+		const Point P(mapping->Map(dg));
+		return FBm(P, 0.f, 0.f, omega, octaves);
 	}
 	virtual float Y() const { return .5f; }
-	virtual void GetDuv(const TsPack *tspack,
+	virtual void GetDuv(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg, float delta,
 		float *du, float *dv) const {
 		//FIXME: Generic derivative computation, replace with exact
 		DifferentialGeometry dgTemp = dg;
 		// Calculate bump map value at intersection point
-		const float base = Evaluate(tspack, dg);
+		const float base = Evaluate(sw, dg);
 
 		// Compute offset positions and evaluate displacement texture
 		const Point origP(dgTemp.p);
@@ -67,7 +66,7 @@ public:
 		dgTemp.p += uu * dgTemp.dpdu;
 		dgTemp.u += uu;
 		dgTemp.nn = Normalize(origN + uu * dgTemp.dndu);
-		*du = (Evaluate(tspack, dgTemp) - base) / uu;
+		*du = (Evaluate(sw, dgTemp) - base) / uu;
 
 		// Shift _dgTemp_ _dv_ in the $v$ direction and calculate value
 		const float vv = delta / dgTemp.dpdv.Length();
@@ -75,7 +74,15 @@ public:
 		dgTemp.u = origU;
 		dgTemp.v += vv;
 		dgTemp.nn = Normalize(origN + vv * dgTemp.dndv);
-		*dv = (Evaluate(tspack, dgTemp) - base) / vv;
+		*dv = (Evaluate(sw, dgTemp) - base) / vv;
+	}
+	virtual void GetMinMaxFloat(float *minValue, float *maxValue) const {
+		// FBm is computed as a geometric series Sum(Ar^k) with A ~ [-1, 1]
+		const float geomsum = (1.f - powf(omega, octaves)) / (1.f - omega);
+		// this seems to be a fair conservative bound on the min/max values
+		// TODO - find better bounds
+		*maxValue = max(1.f, geomsum/2.f);
+		*minValue = -*maxValue;
 	}
 
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const ParamSet &tp);
@@ -90,8 +97,22 @@ private:
 // FBmTexture Method Definitions
 Texture<float> * FBmTexture::CreateFloatTexture(const Transform &tex2world,
 	const ParamSet &tp) {
+	TextureMapping3D *imap;
+	// Read mapping coordinates
+	string coords = tp.FindOneString("coordinates", "global");
+	if (coords == "global")
+		imap = new GlobalMapping3D(tex2world);
+	else if (coords == "local")
+		imap = new LocalMapping3D(tex2world);
+	else if (coords == "uv")
+		imap = new UVMapping3D(tex2world);
+	else if (coords == "globalnormal")
+		imap = new GlobalNormalMapping3D(tex2world);
+	else if (coords == "localnormal")
+		imap = new LocalNormalMapping3D(tex2world);
+	else
+		imap = new GlobalMapping3D(tex2world);
 	// Apply texture specified transformation option for 3D mapping
-	IdentityMapping3D *imap = new IdentityMapping3D(tex2world);
 	imap->Apply3DTextureMappingOptions(tp);
 
 	return new FBmTexture(tp.FindOneInt("octaves", 8),

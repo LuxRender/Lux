@@ -25,6 +25,7 @@
 
 #include <QtGui/QWidget>
 #include <QEvent>
+#include <QtGui/QFileDialog>
 
 #define TORGB_GAMMA_RANGE 5.0f
 
@@ -48,15 +49,27 @@ public:
 	void resetValues();
 	void resetFromFilm (bool useDefaults);
 
+	void SaveSettings( QString fName );
+	void LoadSettings( QString fName );
+
 	bool m_Gamma_enabled;
 	double m_TORGB_gamma;
 
+	bool m_CRF_enabled;
+	QString m_CRF_file;
+	
+	void Update();
 signals:
 	void valuesChanged();
 
 private:
 
 	Ui::GammaWidget *ui;
+	QString m_lastOpendir;
+	void activateCRF();
+	void deactivateCRF();
+
+	void addPreset( QString listName, QString realName );
 
 protected:
 
@@ -66,6 +79,9 @@ private slots:
 
 	void gammaChanged (int value);
 	void gammaChanged (double value);
+	void CRFChanged (int value);
+	void SetCRFPreset(QString sOption);
+	void loadCRF();
 
 };
 

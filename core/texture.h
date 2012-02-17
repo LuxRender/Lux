@@ -25,7 +25,6 @@
 // texture.h*
 #include "lux.h"
 #include "geometry/transform.h"
-#include "spectrum.h"
 
 namespace lux
 {
@@ -37,9 +36,6 @@ public:
 	virtual ~TextureMapping2D() { }
 	virtual void Map(const DifferentialGeometry &dg,
 		float *s, float *t) const = 0;
-	virtual void MapDxy(const DifferentialGeometry &dg,
-		float *s, float *t, float *dsdx, float *dtdx,
-		float *dsdy, float *dtdy) const = 0;
 	virtual void MapDuv(const DifferentialGeometry &dg,
 		float *s, float *t, float *dsdu, float *dtdu,
 		float *dsdv, float *dtdv) const = 0;
@@ -52,17 +48,12 @@ public:
 	virtual ~UVMapping2D() { }
 	virtual void Map(const DifferentialGeometry &dg,
 		float *s, float *t) const;
-	virtual void MapDxy(const DifferentialGeometry &dg,
-		float *s, float *t, float *dsdx, float *dtdx,
-		float *dsdy, float *dtdy) const;
 	virtual void MapDuv(const DifferentialGeometry &dg,
 		float *s, float *t, float *dsdu, float *dtdu,
 		float *dsdv, float *dtdv) const;
 private:
 	float su, sv, du, dv;
 };
-
-
 class  ProjectorMapping2D : public TextureMapping2D {
 public:
 	// ProjectorMapping2D Public Methods
@@ -70,9 +61,6 @@ public:
 		float du = 0, float dv = 0,  Vector dir = 0, Vector up = 0, float fov= 0, float yox=0);
 	virtual ~ProjectorMapping2D() { }
 	virtual void Map(const DifferentialGeometry &dg, float *s, float *t) const;
-	virtual void MapDxy(const DifferentialGeometry &dg,
-		float *s, float *t, float *dsdx, float *dtdx,
-		float *dsdy, float *dtdy) const;
 	virtual void MapDuv(const DifferentialGeometry &dg,
 		float *s, float *t, float *dsdu, float *dtdu,
 		float *dsdv, float *dtdv) const;
@@ -83,8 +71,6 @@ private:
 	float beta;
 	float r,g,b;
 };
-
-
 class  SphericalMapping2D : public TextureMapping2D {
 public:
 	// SphericalMapping2D Public Methods
@@ -98,9 +84,6 @@ public:
 	virtual ~SphericalMapping2D() { }
 	virtual void Map(const DifferentialGeometry &dg,
 		float *s, float *t) const;
-	virtual void MapDxy(const DifferentialGeometry &dg,
-		float *s, float *t, float *dsdx, float *dtdx,
-		float *dsdy, float *dtdy) const;
 	virtual void MapDuv(const DifferentialGeometry &dg,
 		float *s, float *t, float *dsdu, float *dtdu,
 		float *dsdv, float *dtdv) const;
@@ -122,9 +105,6 @@ public:
 	virtual ~CylindricalMapping2D() { }
 	virtual void Map(const DifferentialGeometry &dg,
 		float *s, float *t) const;
-	virtual void MapDxy(const DifferentialGeometry &dg,
-		float *s, float *t, float *dsdx, float *dtdx,
-		float *dsdy, float *dtdy) const;
 	virtual void MapDuv(const DifferentialGeometry &dg,
 		float *s, float *t, float *dsdu, float *dtdu,
 		float *dsdv, float *dtdv) const;
@@ -140,9 +120,6 @@ public:
 	virtual ~PlanarMapping2D() { }
 	virtual void Map(const DifferentialGeometry &dg,
 		float *s, float *t) const;
-	virtual void MapDxy(const DifferentialGeometry &dg,
-		float *s, float *t, float *dsdx, float *dtdx,
-		float *dsdy, float *dtdy) const;
 	virtual void MapDuv(const DifferentialGeometry &dg,
 		float *s, float *t, float *dsdu, float *dtdu,
 		float *dsdv, float *dtdv) const;
@@ -153,26 +130,54 @@ private:
 class  TextureMapping3D {
 public:
 	// TextureMapping3D Interface
+	TextureMapping3D(const Transform &x) : WorldToTexture(x) { }
 	virtual ~TextureMapping3D() { }
 	virtual Point Map(const DifferentialGeometry &dg) const = 0;
-	virtual Point MapDxy(const DifferentialGeometry &dg,
-		Vector *dpdx, Vector *dpdy) const = 0;
 	virtual Point MapDuv(const DifferentialGeometry &dg,
 		Vector *dpdu, Vector *dpdv) const = 0;
-};
-class  IdentityMapping3D : public TextureMapping3D {
-public:
-	IdentityMapping3D(const Transform &x)
-		: WorldToTexture(x) { }
-	virtual ~IdentityMapping3D() { }
-	virtual Point Map(const DifferentialGeometry &dg) const;
-	virtual Point MapDxy(const DifferentialGeometry &dg,
-		Vector *dpdx, Vector *dpdy) const;
-	virtual Point MapDuv(const DifferentialGeometry &dg,
-		Vector *dpdu, Vector *dpdv) const;
 	void Apply3DTextureMappingOptions(const ParamSet &tp);
 //private:
 	Transform WorldToTexture;
+};
+class GlobalMapping3D : public TextureMapping3D {
+public:
+	GlobalMapping3D(const Transform &x) : TextureMapping3D(x) { }
+	virtual ~GlobalMapping3D() { }
+	virtual Point Map(const DifferentialGeometry &dg) const;
+	virtual Point MapDuv(const DifferentialGeometry &dg,
+		Vector *dpdu, Vector *dpdv) const;
+};
+class LocalMapping3D : public TextureMapping3D {
+public:
+	LocalMapping3D(const Transform &x) : TextureMapping3D(x) { }
+	virtual ~LocalMapping3D() { }
+	virtual Point Map(const DifferentialGeometry &dg) const;
+	virtual Point MapDuv(const DifferentialGeometry &dg,
+		Vector *dpdu, Vector *dpdv) const;
+};
+class  UVMapping3D : public TextureMapping3D {
+public:
+	UVMapping3D(const Transform &x) : TextureMapping3D(x) { }
+	virtual ~UVMapping3D() { }
+	virtual Point Map(const DifferentialGeometry &dg) const;
+	virtual Point MapDuv(const DifferentialGeometry &dg,
+		Vector *dpdu, Vector *dpdv) const;
+};
+class GlobalNormalMapping3D : public TextureMapping3D {
+public:
+	GlobalNormalMapping3D(const Transform &x) : TextureMapping3D(x) { }
+	virtual ~GlobalNormalMapping3D() { }
+	virtual Point Map(const DifferentialGeometry &dg) const;
+	virtual Point MapDuv(const DifferentialGeometry &dg,
+		Vector *dpdu, Vector *dpdv) const;
+};
+class LocalNormalMapping3D : public TextureMapping3D {
+public:
+	LocalNormalMapping3D(const Transform &x) : TextureMapping3D(x) { }
+	virtual ~LocalNormalMapping3D() { }
+	virtual Point Map(const DifferentialGeometry &dg) const;
+	virtual Point MapDuv(const DifferentialGeometry &dg,
+		Vector *dpdu, Vector *dpdv) const;
 };
 class  EnvironmentMapping {
 public:
@@ -215,23 +220,28 @@ template <class T> class Texture {
 public:
 	//typedef boost::shared_ptr<Texture> TexturePtr; <<! Not working with GCC
 	// Texture Interface
-	virtual T Evaluate(const TsPack *tspack,
+	virtual T Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &) const = 0;
-	float EvalFloat(const TsPack *tspack,
+	float EvalFloat(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const;
 	virtual float Y() const = 0;
 	virtual float Filter() const { return Y(); }
 	virtual void SetIlluminant() { }
-	virtual void GetDuv(const TsPack *tspack,
+	virtual void GetDuv(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg, float delta,
 		float *du, float *dv) const = 0;
+	virtual void GetMinMaxFloat(float *minValue, float *maxValue) const {
+		LOG(LUX_WARNING, LUX_SYSTEM) << "Invalid call to Texture<T>::GetMinMaxFloat";
+		*minValue = -1.f;
+		*maxValue = 1.f;
+	}
 	virtual ~Texture() { }
 };
 
-template<> inline float Texture<float>::EvalFloat(const TsPack *tspack,
+template<> inline float Texture<float>::EvalFloat(const SpectrumWavelengths &sw,
 	const DifferentialGeometry &dg) const
 {
-	return Evaluate(tspack, dg);
+	return Evaluate(sw, dg);
 }
 
 float Noise(float x, float y = .5f, float z = .5f);

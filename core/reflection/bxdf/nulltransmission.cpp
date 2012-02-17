@@ -26,7 +26,7 @@
 
 using namespace lux;
 
-bool NullTransmission::Sample_f(const TsPack *tspack, const Vector &wo,
+bool NullTransmission::SampleF(const SpectrumWavelengths &sw, const Vector &wo,
 	Vector *wi, float u1, float u2, SWCSpectrum *const f_, float *pdf, 
 	float *pdfBack,	bool reverse) const
 {
@@ -34,7 +34,19 @@ bool NullTransmission::Sample_f(const TsPack *tspack, const Vector &wo,
 	*pdf = 1.f;
 	if (pdfBack)
 		*pdfBack = 1.f;
-	*f_ = 1.f / fabsf(CosTheta(*wi));
+	*f_ = SWCSpectrum(1.f);
+	return true;
+}
+
+bool FilteredTransmission::SampleF(const SpectrumWavelengths &sw, const Vector &wo,
+	Vector *wi, float u1, float u2, SWCSpectrum *const f_, float *pdf, 
+	float *pdfBack,	bool reverse) const
+{
+	*wi = -wo;
+	*pdf = 1.f;
+	if (pdfBack)
+		*pdfBack = 1.f;
+	*f_ = R;
 	return true;
 }
 

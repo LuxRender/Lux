@@ -30,7 +30,7 @@ namespace lux
 class Cone: public Shape {
 public:
 	// Cone Public Methods
-	Cone(const Transform &o2w, bool ro,
+	Cone(const Transform &o2w, bool ro, const string &name, 
 	     float height, float rad,  float rad2, float tm );
 	virtual ~Cone() { }
 

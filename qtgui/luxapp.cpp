@@ -36,17 +36,36 @@ using std::stringstream;
 
 #include <QtGui/QApplication>
 #include <QtGui/QMessageBox>
+#include <QTextStream>
 
 #include "api.h"
+#include "error.h"
 
 #include "mainwindow.hxx"
 #include "luxapp.hxx"
 
+#if defined(WIN32) && !defined(__CYGWIN__)
+// for stderr redirection
+#include <windows.h>
+#include <stdio.h>
+#include <io.h>
+#include <fcntl.h> 
+
+void AttachStderr()
+{
+	int hCrt = _open_osfhandle((intptr_t)GetStdHandle(STD_ERROR_HANDLE), _O_TEXT);
+
+	FILE *hf = _fdopen(hCrt, "w");
+	*stderr = *hf;
+
+	setvbuf(stderr, NULL, _IONBF, 0);
+} 
+#endif
+
 namespace po = boost::program_options;
 
-LuxGuiApp::LuxGuiApp(int argc, char **argv) : QApplication(argc, argv)
+LuxGuiApp::LuxGuiApp(int &argc, char **argv) : QApplication(argc, argv), m_argc(argc)
 {
-	m_argc = argc;
 	m_argv = argv;
 	mainwin = NULL;
 }
@@ -65,17 +84,57 @@ void LuxGuiApp::init(void) {
 	setlocale(LC_ALL, "C");
 	
 	luxInit();
-	m_openglEnabled = true;
 
 	if (ProcessCommandLine()) {
-		mainwin = new MainWindow(0,m_openglEnabled,m_copyLog2Console);
+
+// AttachConsole is XP only, restrict to SSE2+
+#if defined(WIN32) && !defined(__CYGWIN__) && (_M_IX86_FP >= 2)
+		// attach to parent process' console if it exists, otherwise ignore
+		if (m_copyLog2Console) {
+			if (AttachConsole(ATTACH_PARENT_PROCESS)) {
+				AttachStderr();
+				std::cerr << "\nRedirecting log to console...\n";
+			}
+		}
+#endif
+
+		mainwin = new MainWindow(0,m_copyLog2Console);
 		mainwin->show();
+#if defined(__APPLE__)
+		mainwin->raise();
+		mainwin->activateWindow();
+#endif
 		mainwin->SetRenderThreads(m_threads);
 		if (!m_inputFile.isEmpty())
 			mainwin->renderScenefile(m_inputFile);
+
+		// Add files to the render queue
+    if (renderQueueList.count()) {
+      QString renderQueueEntry;
+      foreach( renderQueueEntry, renderQueueList ) {
+        mainwin->addFileToRenderQueue(renderQueueEntry);
+      }
+      mainwin->RenderNextFileInQueue();
+    }
 	} else {
 	}	
 }
+
+#if defined(__APPLE__) // Doubleclick or dragging .lxs in OSX Finder to LuxRender
+bool LuxGuiApp::event(QEvent *event)
+{
+	switch (event->type()) {
+        case QEvent::FileOpen:
+			if (m_inputFile.isEmpty()){
+				mainwin->loadFile(static_cast<QFileOpenEvent *>(event)->file());
+				return true;
+			}
+        default:
+            break;
+    }
+	return QApplication::event(event);
+}
+#endif
 
 void LuxGuiApp::InfoDialogBox(const string &msg, const string &caption = "LuxRender") {
 	QMessageBox msgBox;
@@ -98,7 +157,10 @@ bool LuxGuiApp::ProcessCommandLine(void)
 			("fixedseed,f", "Disable random seed mode")
 			("minepsilon,e", po::value< float >(), "Set minimum epsilon")
 			("maxepsilon,E", po::value< float >(), "Set maximum epsilon")
-			("verbosity,V", po::value< int >(), "Log output verbosity")
+			("verbose,V", "Increase output verbosity (show DEBUG messages)")
+			("quiet,q", "Reduce output verbosity (hide INFO messages)")
+			("very-quiet,x", "Reduce output verbosity even more (hide WARNING messages)")
+      ("list-file,L", po::value< string >(), "A file that contains a list of files to be rendered in the Queue")
 		;
 
 		// Declare a group of options that will be
@@ -118,16 +180,6 @@ bool LuxGuiApp::ProcessCommandLine(void)
 		hidden.add_options()
 			("input-file", po::value < vector < string > >(), "input file")
 		;
-
-		#ifdef LUX_USE_OPENGL
-			generic.add_options()
-				("noopengl", "Disable OpenGL to display the image")
-			;
-		#else
-			hidden.add_options()
-				("noopengl", "Disable OpenGL to display the image")
-			;
-		#endif // LUX_USE_OPENGL
 
 		po::options_description cmdline_options(line_length);
 		cmdline_options.add(generic).add(config).add(hidden);
@@ -160,9 +212,6 @@ bool LuxGuiApp::ProcessCommandLine(void)
 			return false;
 		}
 
-		if (vm.count("verbosity"))
-			luxErrorFilter(vm["verbosity"].as<int>());
-
 		if(vm.count("version")) {
 			stringstream ss;
 			ss << "Lux version " << luxVersion() << " of " << __DATE__ << " at " << __TIME__ << endl;
@@ -185,8 +234,20 @@ bool LuxGuiApp::ProcessCommandLine(void)
 		}
 
 		if(vm.count("debug")) {
-			luxError(LUX_NOERROR, LUX_INFO, "Debug mode enabled");
+			LOG( LUX_INFO,LUX_NOERROR)<< "Debug mode enabled";
 			luxEnableDebugMode();
+		}
+
+		if (vm.count("verbose")) {
+			luxErrorFilter(LUX_DEBUG);
+		}
+
+		if (vm.count("quiet")) {
+			luxErrorFilter(LUX_WARNING);
+		}
+
+		if (vm.count("very-quiet")) {
+			luxErrorFilter(LUX_ERROR);
 		}
 
 		if (vm.count("fixedseed"))
@@ -206,9 +267,7 @@ bool LuxGuiApp::ProcessCommandLine(void)
 			vector<string> names = vm["useserver"].as<vector<string> >();
 
 			for(vector<string>::iterator i = names.begin(); i < names.end(); i++) {
-				ss.str("");
-				ss << "Connecting to server '" <<(*i) << "'";
-				luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+				LOG(LUX_INFO,LUX_NOERROR) << "Connecting to server '" <<(*i) << "'";
 
 				//TODO jromang : try to connect to the server, and get version number. display message to see if it was successfull
 				luxAddServer((*i).c_str());
@@ -216,24 +275,15 @@ bool LuxGuiApp::ProcessCommandLine(void)
 
 			m_useServer = true;
 
-			ss.str("");
-			ss << "Server requests interval:  " << serverInterval << " secs";
-			luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+			LOG( LUX_INFO,LUX_NOERROR) << "Server requests interval:  " << serverInterval << " secs";
 		} else {
 			m_useServer = false;
-		}
-
-		if(vm.count("noopengl")) {
-			m_openglEnabled = false;
-			luxError(LUX_SYSTEM, LUX_INFO, "OpenGL support will not be used.");
-		} else {
-			m_openglEnabled = true;
 		}
 
 		if(vm.count("input-file")) {
 			const vector<string> &v = vm["input-file"].as<vector<string> >();
 			if(v.size() > 1) {
-				luxError(LUX_SYSTEM, LUX_SEVERE, "More than one file passed on command line : rendering the first one.");
+				LOG( LUX_SEVERE,LUX_SYSTEM)<< "More than one file passed on command line : rendering the first one.";
 			}
 
 			m_inputFile = QString(v[0].c_str());
@@ -255,6 +305,22 @@ bool LuxGuiApp::ProcessCommandLine(void)
 				luxSetEpsilon(-1.f, maxe);
 			} else
 				luxSetEpsilon(-1.f, -1.f);
+		}
+
+		// Read file names for the Reander Queue
+		if (vm.count("list-file")) {
+			LOG( LUX_INFO,LUX_NOERROR) << "Reading file list from: " << vm["list-file"].as<string>().c_str();
+			QFile listFile(vm["list-file"].as<string>().c_str());
+			QString renderQueueEntry;
+			if ( listFile.open(QIODevice::ReadOnly) ) {
+        QTextStream lfStream(&listFile);
+				while(!lfStream.atEnd()) {
+					renderQueueEntry = lfStream.readLine();
+					if (!renderQueueEntry.isNull()) {
+            renderQueueList << renderQueueEntry;
+					}
+				};
+			}
 		}
 
 		return true;

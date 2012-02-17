@@ -45,8 +45,8 @@ void QueryableRegistry::Erase(Queryable* object)
 const char * QueryableRegistry::GetContent()
 {
 	std::stringstream XMLOutput;
-	//ATTRIBUTE_NONE, ATTRIBUTE_INT,ATTRIBUTE_FLOAT,ATTRIBUTE_STRING
-	static const char* typeString[]= {"none","int","float","string"};
+	//ATTRIBUTE_NONE, ATTRIBUTE_INT,ATTRIBUTE_FLOAT,ATTRIBUTE_DOUBLE,ATTRIBUTE_STRING
+	//static const char* typeString[]= {"none","int","float","double","string"};
 
 
 	XMLOutput<<"<?xml version='1.0' encoding='utf-8'?>"<<std::endl;
@@ -59,12 +59,20 @@ const char * QueryableRegistry::GetContent()
 		XMLOutput << "  <object>"<<std::endl;
 		XMLOutput << "    <name>"<<pairQObject.first<<"</name>"<<std::endl;
 
-		std::pair<std::string, QueryableAttribute> pairQAttribute;
+		std::pair<std::string, boost::shared_ptr<QueryableAttribute> > pairQAttribute;
 		BOOST_FOREACH( pairQAttribute, *(pairQObject.second) )
 		{
 			XMLOutput<<"    <attribute>"<<std::endl;
-			XMLOutput<<"      <name>"<< pairQAttribute.second.name <<"</name>"<<std::endl;
-			XMLOutput<<"      <type>"<< typeString[pairQAttribute.second.type] <<"</type>"<<std::endl;
+			XMLOutput<<"      <name>"<< pairQAttribute.second->name <<"</name>"<<std::endl;
+			XMLOutput<<"      <type>"<< pairQAttribute.second->TypeStr() <<"</type>"<<std::endl;
+			XMLOutput<<"      <description>"<< pairQAttribute.second->description <<"</description>"<<std::endl;
+			XMLOutput<<"      <value>"<< pairQAttribute.second->Value() <<"</value>"<<std::endl;
+			if (pairQAttribute.second->HasDefaultValue())
+				XMLOutput<<"      <default>"<< pairQAttribute.second->DefaultValue() <<"</default>"<<std::endl;
+			if (pairQAttribute.second->HasMinValue())
+				XMLOutput<<"      <min>"<< pairQAttribute.second->MinFloatValue() <<"</min>"<<std::endl;
+			if (pairQAttribute.second->HasMaxValue())
+				XMLOutput<<"      <max>"<< pairQAttribute.second->MaxFloatValue() <<"</max>"<<std::endl;
 			XMLOutput<<"    </attribute>"<<std::endl;
 		}
 

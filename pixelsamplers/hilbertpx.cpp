@@ -22,6 +22,7 @@
  
 #include "hilbertpx.h"
 #include "error.h"
+#include "dynload.h"
 
 using namespace lux;
 
@@ -34,18 +35,6 @@ void HilbertPixelSampler::HilberCurve(u_int n, int xo, int yo,
 			px.x = xo;
 			px.y = yo;
 			
-			// Dade - sanity check
-			/*bool found = false;
-			for (u_int i = 0; i < TotalPx; i++) {
-				if ((Pxa[i].x == px.x) && (Pxa[i].y == px.y)) {
-					found = true;
-					break;
-				}
-			}
-
-			if (found)
-				printf("Sanity check error: %d, %d\n", px.x, px.y);*/
-
 			Pxa.push_back(px);
 			TotalPx++;
 		}
@@ -53,21 +42,21 @@ void HilbertPixelSampler::HilberCurve(u_int n, int xo, int yo,
 		const u_int n2 = n >> 1;
 
 		HilberCurve(n2,
-				xo,
-				yo,
-				xp, yp, xd, yd, xEnd, yEnd);
+			xo,
+			yo,
+			xp, yp, xd, yd, xEnd, yEnd);
 		HilberCurve(n2,
-				xo + xp * static_cast<int>(n2),
-				yo + yp * static_cast<int>(n2),
-				xd, yd, xp, yp, xEnd, yEnd);
+			xo + xd * static_cast<int>(n2),
+			yo + yd * static_cast<int>(n2),
+			xd, yd, xp, yp, xEnd, yEnd);
 		HilberCurve(n2,
-				xo + (xp + xd) * static_cast<int>(n2),
-				yo + (yp + yd) * static_cast<int>(n2),
-				xd, yd, xp, yp, xEnd, yEnd);
+			xo + (xp + xd) * static_cast<int>(n2),
+			yo + (yp + yd) * static_cast<int>(n2),
+			xd, yd, xp, yp, xEnd, yEnd);
 		HilberCurve(n2,
-				xo + xp * static_cast<int>(n2 - 1) + xd * static_cast<int>(n - 1),
-				yo + yp * static_cast<int>(n2 - 1) + yd * static_cast<int>(n - 1),
-				-xp, -yp, -xd, -yd, xEnd, yEnd);
+			xo + xd * static_cast<int>(n2 - 1) + xp * static_cast<int>(n - 1),
+			yo + yd * static_cast<int>(n2 - 1) + yp * static_cast<int>(n - 1),
+			-xp, -yp, -xd, -yd, xEnd, yEnd);
 	}
 }
 
@@ -84,23 +73,8 @@ HilbertPixelSampler::HilbertPixelSampler(int xStart, int xEnd,
 	if (!IsPowerOf2(n))
 		n = RoundUpPow2(n);
 	HilberCurve(n, xStart, yStart, 0, 1, 1, 0, xEnd, yEnd);
-
-	// Dade - sanity check
-	/*for(int y = yStart; y <= yEnd; y++) {
-		for(int x = xStart; x <= xEnd; x++) {
-			// Dade - look for the pixel
-			bool found = false;
-			for (u_int i = 0; i < TotalPx; i++) {
-				if ((Pxa[i].x == short(x)) && (Pxa[i].y == short(y))) {
-					found = true;
-					break;
-				}
-			}
-
-			if (!found)
-				printf("Sanity check error: %d, %d\n", x, y);
-		}
-	}*/
+	if (TotalPx != xSize * ySize)
+		LOG(LUX_DEBUG, LUX_BUG) << "Hilbert sampler generated wrong number of samples";
 }
 
 u_int HilbertPixelSampler::GetTotalPixels()
@@ -108,12 +82,12 @@ u_int HilbertPixelSampler::GetTotalPixels()
 	return TotalPx;
 }
 
-bool HilbertPixelSampler::GetNextPixel(int &xPos, int &yPos, u_int *use_pos)
+bool HilbertPixelSampler::GetNextPixel(int *xPos, int *yPos, const u_int usePos)
 {
-	const u_int pos = (*use_pos);
+	*xPos = Pxa[usePos].x;
+	*yPos = Pxa[usePos].y;
 
-	xPos = Pxa[pos].x;
-	yPos = Pxa[pos].y;
-
-	return pos != TotalPx - 1;
+	return usePos != TotalPx - 1;
 }
+
+static DynamicLoader::RegisterPixelSampler<HilbertPixelSampler> r("hilbert");

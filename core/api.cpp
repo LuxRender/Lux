@@ -26,10 +26,21 @@
 #include "context.h"
 #include "paramset.h"
 #include "error.h"
+#include "version.h"
+#include "stats.h"
 
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/thread/mutex.hpp>
 #include <vector>
+using std::vector;
+#include <string>
+using std::string;
+#include <iostream>
+using std::cerr;
+using std::endl;
 #include <cstdarg>
+#include <cstdio>
+using std::FILE;
 
 #include <FreeImage.h>
 
@@ -39,8 +50,8 @@ using namespace lux;
 	va_list	pArgs; \
 	va_start( pArgs, _start ); \
 \
-	std::vector<LuxToken> aTokens; \
-	std::vector<LuxPointer> aValues; \
+	vector<LuxToken> aTokens; \
+	vector<LuxPointer> aValues; \
 	unsigned int count = buildParameterList( pArgs, aTokens, aValues );
 
 #define PASS_PARAMETERS \
@@ -54,7 +65,7 @@ namespace lux
 // Helper function to build a parameter list to pass on to the V style functions.
 // returns a parameter count.
 
-static unsigned int buildParameterList( va_list pArgs, std::vector<LuxToken>& aTokens, std::vector<LuxPointer>& aValues )
+static unsigned int buildParameterList( va_list pArgs, vector<LuxToken>& aTokens, vector<LuxPointer>& aValues )
 {
     unsigned int count = 0;
     LuxToken pToken = va_arg( pArgs, LuxToken );
@@ -74,19 +85,29 @@ static unsigned int buildParameterList( va_list pArgs, std::vector<LuxToken>& aT
 
 }
 
+/**
+FreeImage error handler
+@param fif Format / Plugin responsible for the error
+@param message Error message
+*/
+void FreeImageErrorHandler(FREE_IMAGE_FORMAT fif, const char *message) {
+	LOG(LUX_INFO, LUX_SYSTEM) << "FreeImage error, " <<
+		"format: " << (fif != FIF_UNKNOWN ? FreeImage_GetFormatFromFIF(fif) : "Unknown") << ": '" << message << "'";
+}
+
 static bool initialized = false;
 
 
 // API Function Definitions
 
-extern "C" void luxAddServer(const char * name)
+extern "C" LUX_EXPORT void luxAddServer(const char * name)
 {
-	Context::GetActive()->AddServer(std::string(name));
+	Context::GetActive()->AddServer(string(name));
 }
 
 extern "C" void luxRemoveServer(const char * name)
 {
-	Context::GetActive()->RemoveServer(std::string(name));
+	Context::GetActive()->RemoveServer(string(name));
 }
 
 extern "C" unsigned int luxGetServerCount()
@@ -145,11 +166,11 @@ extern "C" void luxLookAt(float ex, float ey, float ez,
 }
 extern "C" void luxCoordinateSystem(const char *name)
 {
-	Context::GetActive()->CoordinateSystem(std::string(name));
+	Context::GetActive()->CoordinateSystem(string(name));
 }
 extern "C" void luxCoordSysTransform(const char *name)
 {
-	Context::GetActive()->CoordSysTransform(std::string(name));
+	Context::GetActive()->CoordSysTransform(string(name));
 }
 extern "C" void luxPixelFilter(const char *name, ...)
 {
@@ -264,6 +285,16 @@ extern "C" void luxTransformEnd()
 	Context::GetActive()->TransformEnd();
 }
 
+extern "C" void luxMotionBegin(unsigned int n, float *t)
+{
+	Context::GetActive()->MotionBegin(n, t);
+}
+
+extern "C" void luxMotionEnd()
+{
+	Context::GetActive()->MotionEnd();
+}
+
 extern "C" void luxTexture(const char *name, const char *type,
 	const char *texname, ...)
 {
@@ -361,6 +392,18 @@ extern "C" void luxShapeV(const char *name, unsigned int n,
 	Context::GetActive()->Shape(name, ParamSet(n, name, tokens, params));
 }
 
+extern "C" void luxRenderer(const char *name, ...)
+{
+	EXTRACT_PARAMETERS(name)
+	luxRendererV(name, PASS_PARAMETERS);
+}
+
+extern "C" void luxRendererV(const char *name, unsigned int n,
+	const LuxToken tokens[], const LuxPointer params[])
+{
+	Context::GetActive()->Renderer(name, ParamSet(n, name, tokens, params));
+}
+
 extern "C" void luxReverseOrientation() {
 	Context::GetActive()->ReverseOrientation();
 }
@@ -401,7 +444,7 @@ extern "C" void luxInterior(const char *name)
 
 extern "C" void luxObjectBegin(const char *name)
 {
-	Context::GetActive()->ObjectBegin(std::string(name));
+	Context::GetActive()->ObjectBegin(string(name));
 }
 extern "C" void luxObjectEnd()
 {
@@ -409,15 +452,21 @@ extern "C" void luxObjectEnd()
 }
 extern "C" void luxObjectInstance(const char *name)
 {
-	Context::GetActive()->ObjectInstance(std::string(name));
+	Context::GetActive()->ObjectInstance(string(name));
+}
+extern "C" void luxPortalInstance(const char *name)
+{
+	Context::GetActive()->PortalInstance(string(name));
 }
 extern "C" void luxMotionInstance(const char *name, float startTime,
 	float endTime, const char *toTransform)
 {
-	Context::GetActive()->MotionInstance(std::string(name), startTime,
-		endTime, std::string(toTransform));
+	Context::GetActive()->MotionInstance(string(name), startTime,
+		endTime, string(toTransform));
 }
 extern "C" void luxWorldEnd() {
+	// initialize rand() number generator
+	srand(time(NULL));
 	Context::GetActive()->WorldEnd();
 }
 
@@ -452,19 +501,21 @@ extern "C" void luxInit()
 		Context::SetActive(new Context());
 
 	FreeImage_Initialise(true);
+	FreeImage_SetOutputMessage(FreeImageErrorHandler);
 
 	initialized = true;
 }
 
-// Parsing Global Interface
-int luxParse(const char *filename)
-{
+bool parseFile(const char *filename) {
+	//TODO jromang - add thread lock here (we can only parse in one context)
 	extern FILE *yyin;
 	extern int yyparse(void);
 	extern void yyrestart( FILE *new_file );
 	extern void include_clear();
 	extern string currentFile;
 	extern u_int lineNum;
+
+	bool parse_success = false;
 
 	if (strcmp(filename, "-") == 0)
 		yyin = stdin;
@@ -479,21 +530,45 @@ int luxParse(const char *filename)
 		// before parsing
 		include_clear();
 		yyrestart(yyin);
-		if (yyparse() != 0) {
-			// syntax error
-			Context::GetActive()->Free();
-			Context::GetActive()->Init();
-		}
+		parse_success = (yyparse() == 0);
+		
 		if (yyin != stdin)
 			fclose(yyin);
 	} else {
-		LOG(LUX_SEVERE, LUX_NOFILE) << "Unable to read scenefile '" <<
-			filename << "'";
+		LOG(LUX_SEVERE, LUX_NOFILE) << "Unable to read scenefile '" << filename << "'";
 	}
 
 	currentFile = "";
 	lineNum = 0;
-	return (yyin != NULL);
+	return (yyin != NULL) && parse_success;
+}
+
+// Parsing Global Interface
+int luxParse(const char *filename)
+{
+	bool parse_success = parseFile(filename);
+
+	if (!parse_success) {
+		// syntax error
+		Context::GetActive()->Free();
+		Context::GetActive()->Init();
+		Context::GetActive()->currentApiState = STATE_PARSE_FAIL;
+	} else if (Context::GetActive()->currentApiState == STATE_WORLD_BLOCK) {
+		// file doesn't contain valid world block
+		LOG(LUX_SEVERE, LUX_BADFILE) << "Missing WorldEnd in scenefile '" << filename << "'";
+		Context::GetActive()->Free();
+		Context::GetActive()->Init();
+		Context::GetActive()->currentApiState = STATE_PARSE_FAIL;
+		parse_success = false;
+	}
+
+	return parse_success;
+}
+
+int luxParsePartial(const char *filename)
+{
+	// caller does error handling
+	return parseFile(filename);
 }
 
 // Load/save FLM file
@@ -512,6 +587,17 @@ extern "C" void luxOverrideResumeFLM(const char *name)
 	Context::GetActive()->OverrideResumeFLM(string(name));
 }
 
+extern "C" void luxOverrideFilename(const char *name)
+{
+	Context::GetActive()->OverrideFilename(string(name));
+}
+
+// Write film to a floating point OpenEXR image
+extern "C" void luxSaveEXR(const char* name, bool useHalfFloat, bool includeZBuffer, int compressionType, bool tonemapped)
+{
+	Context::GetActive()->SaveEXR(string(name), useHalfFloat, includeZBuffer, compressionType, tonemapped);
+}
+
 //interactive control
 
 //CORE engine control
@@ -519,7 +605,7 @@ extern "C" void luxOverrideResumeFLM(const char *name)
 //user interactive thread functions
 extern "C" void luxStart()
 {
-	Context::GetActive()->Start();
+	Context::GetActive()->Resume();
 }
 
 extern "C" void luxPause()
@@ -532,16 +618,21 @@ extern "C" void luxExit()
 	Context::GetActive()->Exit();
 }
 
+extern "C" void luxAbort()
+{
+	Context::GetActive()->Abort();
+}
+
 extern "C" void luxWait()
 {
 	Context::GetActive()->Wait();
 }
 
-extern "C" void luxSetHaltSamplePerPixel(int haltspp,
-	bool haveEnoughSamplePerPixel, bool suspendThreadsWhenDone)
+extern "C" void luxSetHaltSamplesPerPixel(int haltspp,
+	bool haveEnoughSamplesPerPixel, bool suspendThreadsWhenDone)
 {
-	Context::GetActive()->SetHaltSamplePerPixel(haltspp,
-		haveEnoughSamplePerPixel, suspendThreadsWhenDone);
+	Context::GetActive()->SetHaltSamplesPerPixel(haltspp,
+		haveEnoughSamplesPerPixel, suspendThreadsWhenDone);
 }
 //controlling number of threads
 extern "C" unsigned int luxAddThread()
@@ -554,13 +645,6 @@ extern "C" void luxRemoveThread()
 	Context::GetActive()->RemoveThread();
 }
 
-extern "C" unsigned int luxGetRenderingThreadsStatus(RenderingThreadInfo *info,
-	unsigned int maxInfoCount)
-{
-	return Context::GetActive()->GetRenderingThreadsStatus(info,
-		maxInfoCount);
-}
-
 //framebuffer access
 extern "C" void luxUpdateFramebuffer()
 {
@@ -570,6 +654,16 @@ extern "C" void luxUpdateFramebuffer()
 extern "C" unsigned char* luxFramebuffer()
 {
 	return Context::GetActive()->Framebuffer();
+}
+
+extern "C" float* luxFloatFramebuffer()
+{
+	return Context::GetActive()->FloatFramebuffer();
+}
+
+extern "C" float* luxAlphaBuffer()
+{
+	return Context::GetActive()->AlphaBuffer();
 }
 
 //histogram access
@@ -641,49 +735,333 @@ extern "C" double luxStatistics(const char *statName)
 	return 0.;
 }
 
-extern "C" const char* luxGetOptions()
+extern "C" const char* luxPrintableStatistics(const bool add_total)
+{
+	if (initialized)
+		return Context::GetActive()->PrintableStatistics(add_total);
+	LOG(LUX_SEVERE,LUX_NOTSTARTED)<<"luxInit() must be called before calling 'luxStatistics'. Ignoring.";
+	return "";
+}
+
+extern "C" const char* luxCustomStatistics(const char *template_string)
+{
+	if (initialized)
+		return Context::GetActive()->CustomStatistics(template_string);
+	LOG(LUX_SEVERE,LUX_NOTSTARTED)<<"luxInit() must be called before calling 'luxStatistics'. Ignoring.";
+	return "";
+}
+
+extern "C" const char* luxGetAttributes()
 {
 	return Context::GetActive()->registry.GetContent();
 }
 
-extern "C" int luxGetIntOption(const char * objectName, const char * attributeName)
+extern "C" bool luxHasObject(const char * objectName)
 {
-	Queryable *object=Context::GetActive()->registry[objectName];
-	if(object!=0) return (*object)[attributeName].IntValue();
-	else return 0;
+	return Context::GetActive()->registry[objectName] != NULL;
 }
 
-extern "C" void luxSetOption(const char * objectName, const char * attributeName, int n, void *values)
+extern "C" bool luxHasAttribute(const char * objectName, const char * attributeName)
+{
+	Queryable *object = Context::GetActive()->registry[objectName];
+	if (object) {
+		try {
+			return object->HasAttribute(attributeName);
+		} catch (std::runtime_error e) {
+			LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
+		}
+	} else {
+		LOG(LUX_ERROR,LUX_BADTOKEN) << "Unknown object '" <<
+			objectName << "'";
+	}
+	return false;
+}
+
+extern "C" luxAttributeType luxGetAttributeType(const char *objectName, const char *attributeName)
+{
+	Queryable *object = Context::GetActive()->registry[objectName];
+	if (!object) {
+		LOG(LUX_ERROR, LUX_BADTOKEN) << "Unknown object '" <<
+			objectName << "'";
+		return LUX_ATTRIBUTETYPE_NONE;
+	}
+	if (!object->HasAttribute(attributeName)) {
+		LOG(LUX_ERROR, LUX_BADTOKEN) << "Unknown attribute '" <<
+			attributeName << "' in object '" << objectName << "'";
+		return LUX_ATTRIBUTETYPE_NONE;
+	}
+	switch ((*object)[attributeName].Type()) {
+	case AttributeType::None:
+		return LUX_ATTRIBUTETYPE_NONE;
+	case AttributeType::Bool:
+		return LUX_ATTRIBUTETYPE_BOOL;
+	case AttributeType::Int:
+		return LUX_ATTRIBUTETYPE_INT;
+	case AttributeType::Float:
+		return LUX_ATTRIBUTETYPE_FLOAT;
+	case AttributeType::Double:
+		return LUX_ATTRIBUTETYPE_DOUBLE;
+	case AttributeType::String:
+		return LUX_ATTRIBUTETYPE_STRING;
+	}
+	LOG(LUX_ERROR, LUX_BADTOKEN) << "Unknown type for attribute '" <<
+		attributeName << "' in object '" << objectName << "'";
+	return LUX_ATTRIBUTETYPE_NONE;
+}
+
+extern "C" bool luxHasAttributeDefaultValue(const char * objectName, const char * attributeName)
 {
 	Queryable *object=Context::GetActive()->registry[objectName];
-	if(object!=0)
-	{
+	if (object) {
+		try {
+			return (*object)[attributeName].HasDefaultValue();
+		} catch (std::runtime_error e) {
+			LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
+		}
+	} else {
+		LOG(LUX_ERROR,LUX_BADTOKEN)<<"Unknown object '"<<objectName<<"'";
+	}
+	return false;
+}
+
+extern "C" const char* luxGetStringAttribute(const char * objectName, const char * attributeName)
+{
+	try { 
+		Queryable *object=Context::GetActive()->registry[objectName];
+		if (object) 
+			return (*object)[attributeName].StringValue().c_str();
+	} catch (std::runtime_error e) {
+		LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
+	}
+
+	return 0;
+}
+
+extern "C" const char* luxGetStringAttributeDefault(const char * objectName, const char * attributeName)
+{
+	try { 
+		Queryable *object=Context::GetActive()->registry[objectName];
+		if (object) 
+			return (*object)[attributeName].DefaultStringValue().c_str();
+	} catch (std::runtime_error e) {
+		LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
+	}
+
+	return 0;
+}
+
+extern "C" void luxSetStringAttribute(const char * objectName, const char * attributeName, const char * value)
+{
+	Queryable *object=Context::GetActive()->registry[objectName];
+	if (object) {
+		try {
+			(*object)[attributeName] = std::string(value);
+		} catch (std::runtime_error e) {
+			LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
+		}
+	} else {
+		LOG(LUX_ERROR,LUX_BADTOKEN)<<"Unknown object '"<<objectName<<"'";
+	}
+}
+
+extern "C" float luxGetFloatAttribute(const char * objectName, const char * attributeName)
+{
+	try { 
+		Queryable *object=Context::GetActive()->registry[objectName];
+		if (object) 
+			return (*object)[attributeName].FloatValue();
+	} catch (std::runtime_error e) {
+		LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
+	}
+
+	return 0;
+}
+
+extern "C" void luxSetFloatAttribute(const char * objectName, const char * attributeName, float value)
+{
+	Queryable *object=Context::GetActive()->registry[objectName];
+	if (object) {
+		try {
+			(*object)[attributeName] = value;
+		} catch (std::runtime_error e) {
+			LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
+		}
+	} else {
+		LOG(LUX_ERROR,LUX_BADTOKEN)<<"Unknown object '"<<objectName<<"'";
+	}
+}
+
+extern "C" float luxGetFloatAttributeDefault(const char * objectName, const char * attributeName)
+{
+	try { 
+		Queryable *object=Context::GetActive()->registry[objectName];
+		if (object) 
+			return (*object)[attributeName].DefaultFloatValue();
+	} catch (std::runtime_error e) {
+		LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
+	}
+
+	return 0;
+}
+
+extern "C" double luxGetDoubleAttribute(const char * objectName, const char * attributeName)
+{
+	try { 
+		Queryable *object=Context::GetActive()->registry[objectName];
+		if (object) 
+			return (*object)[attributeName].DoubleValue();
+	} catch (std::runtime_error e) {
+		LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
+	}
+
+	return 0;
+}
+
+extern "C" void luxSetDoubleAttribute(const char * objectName, const char * attributeName, double value)
+{
+	Queryable *object=Context::GetActive()->registry[objectName];
+	if (object) {
+		try {
+			(*object)[attributeName] = value;
+		} catch (std::runtime_error e) {
+			LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
+		}
+	} else {
+		LOG(LUX_ERROR,LUX_BADTOKEN)<<"Unknown object '"<<objectName<<"'";
+	}
+}
+
+extern "C" double luxGetDoubleAttributeDefault(const char * objectName, const char * attributeName)
+{
+	try { 
+		Queryable *object=Context::GetActive()->registry[objectName];
+		if (object) 
+			return (*object)[attributeName].DefaultDoubleValue();
+	} catch (std::runtime_error e) {
+		LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
+	}
+
+	return 0;
+}
+
+extern "C" int luxGetIntAttribute(const char * objectName, const char * attributeName)
+{
+	try { 
+		Queryable *object=Context::GetActive()->registry[objectName];
+		if (object) 
+			return (*object)[attributeName].IntValue();
+	} catch (std::runtime_error e) {
+		LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
+	}
+
+	return 0;
+}
+
+extern "C" int luxGetIntAttributeDefault(const char * objectName, const char * attributeName)
+{
+	try { 
+		Queryable *object=Context::GetActive()->registry[objectName];
+		if (object) 
+			return (*object)[attributeName].DefaultIntValue();
+	} catch (std::runtime_error e) {
+		LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
+	}
+
+	return 0;
+}
+
+extern "C" void luxSetIntAttribute(const char * objectName, const char * attributeName, int value)
+{
+	Queryable *object=Context::GetActive()->registry[objectName];
+	if (object) {
+		try {
+			(*object)[attributeName] = value;
+		} catch (std::runtime_error e) {
+			LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
+		}
+	} else {
+		LOG(LUX_ERROR,LUX_BADTOKEN)<<"Unknown object '"<<objectName<<"'";
+	}
+}
+
+extern "C" bool luxGetBoolAttribute(const char * objectName, const char * attributeName)
+{
+	try { 
+		Queryable *object=Context::GetActive()->registry[objectName];
+		if (object) 
+			return (*object)[attributeName].BoolValue();
+	} catch (std::runtime_error e) {
+		LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
+	}
+
+	return 0;
+}
+
+extern "C" bool luxGetBoolAttributeDefault(const char * objectName, const char * attributeName)
+{
+	try { 
+		Queryable *object=Context::GetActive()->registry[objectName];
+		if (object) 
+			return (*object)[attributeName].DefaultBoolValue();
+	} catch (std::runtime_error e) {
+		LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
+	}
+
+	return 0;
+}
+
+extern "C" void luxSetBoolAttribute(const char * objectName, const char * attributeName, bool value)
+{
+	Queryable *object=Context::GetActive()->registry[objectName];
+	if (object) {
+		try {
+			(*object)[attributeName] = value;
+		} catch (std::runtime_error e) {
+			LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
+		}
+	} else {
+		LOG(LUX_ERROR,LUX_BADTOKEN)<<"Unknown object '"<<objectName<<"'";
+	}
+}
+
+extern "C" void luxSetAttribute(const char * objectName, const char * attributeName, int n, void *values)
+{
+	Queryable *object=Context::GetActive()->registry[objectName];
+	if (object) {
 		QueryableAttribute &attribute=(*object)[attributeName];
-		//return (*object)[attributeName].IntValue();
-		switch(attribute.type)
+		switch(attribute.Type())
 		{
-		case ATTRIBUTE_INT :
+		case AttributeType::Bool :
 			BOOST_ASSERT(n==1);
-			attribute.SetValue(*((int*)values));
+			attribute = (*((bool*)values));
 			break;
 
-		case ATTRIBUTE_FLOAT :
+		case AttributeType::Int :
 			BOOST_ASSERT(n==1);
-			attribute.SetValue(*((float*)values));
+			attribute = (*((int*)values));
 			break;
 
-		case ATTRIBUTE_STRING :
+		case AttributeType::Float :
 			BOOST_ASSERT(n==1);
-			attribute.SetValue((char*)values);
+			attribute = (*((float*)values));
 			break;
 
-		case ATTRIBUTE_NONE :
+		case AttributeType::Double :
+			BOOST_ASSERT(n==1);
+			attribute = (*((double*)values));
+			break;
+
+		case AttributeType::String :
+			BOOST_ASSERT(n==1);
+			attribute = std::string((char*)values);
+			break;
+
+		case AttributeType::None :
 		default:
 			LOG(LUX_ERROR,LUX_BUG)<<"Unknown attribute type for '"<<attributeName<<"' in object '"<<objectName<<"'";
 		}
 	}
-	else
-	{
+	else {
 		LOG(LUX_ERROR,LUX_BADTOKEN)<<"Unknown object '"<<objectName<<"'";
 	}
 }
@@ -703,6 +1081,11 @@ extern "C" void luxUpdateFilmFromNetwork()
 	Context::GetActive()->UpdateFilmFromNetwork();
 }
 
+extern "C" void luxUpdateLogFromNetwork()
+{
+	Context::GetActive()->UpdateLogFromNetwork();
+}
+
 extern "C" void luxSetNetworkServerUpdateInterval(int updateInterval)
 {
 	Context::GetActive()->SetNetworkServerUpdateInterval(updateInterval);
@@ -718,7 +1101,7 @@ int luxLastError = LUX_NOERROR;
 
 namespace lux
 {
-	int luxLogFilter = LUX_DEBUG; //jromang TODO : should set filter to DEBUG only if there is a 'DEBUG' compile time option, otherwise set to LUX_INFO
+	int luxLogFilter = LUX_INFO; //jromang TODO : should set filter to DEBUG only if there is a 'DEBUG' compile time option, otherwise set to LUX_INFO
 }
 
 extern "C" void luxErrorFilter(int severity)
@@ -749,57 +1132,90 @@ extern "C" void luxErrorIgnore(int code, int severity, const char *message)
 	luxLastError = code;
 }
 
+boost::mutex stdout_mutex;
+
 extern "C" void luxErrorPrint(int code, int severity, const char *message)
 {
+	boost::mutex::scoped_lock lock(stdout_mutex);
+
 	luxLastError = code;
-	std::cerr<<"[";
-#ifndef WIN32 //windows does not support ANSI escape codes
+	cerr<<"[";
+#if !defined(WIN32) || defined(__CYGWIN__) //windows does not support ANSI escape codes (but CYGWIN does) ...
 	//set the color
 	switch (severity) {
 	case LUX_DEBUG:
-		std::cerr<<"\033[0;34m";
+		cerr<<"\033[0;34m";		// BLUE
 		break;
 	case LUX_INFO:
-		std::cerr<<"\033[0;32m";
+		cerr<<"\033[0;32m";		// GREEN
 		break;
 	case LUX_WARNING:
-		std::cerr<<"\033[0;33m";
+		cerr<<"\033[0;33m";		// YELLOW
 		break;
 	case LUX_ERROR:
-		std::cerr<<"\033[0;31m";
+		cerr<<"\033[0;31m";		// RED
 		break;
 	case LUX_SEVERE:
-		std::cerr<<"\033[0;31m";
+		cerr<<"\033[0;31m";		// RED
 		break;
 	}
-#endif
-	std::cerr<<"Lux ";
-	std::cerr<<boost::posix_time::second_clock::local_time()<<' ';
+#else // ... but it does have it's own console API
 	switch (severity) {
 	case LUX_DEBUG:
-		std::cerr<<"DEBUG";
+		w32util::ChangeConsoleColor( FOREGROUND_BLUE );
 		break;
 	case LUX_INFO:
-		std::cerr<<"INFO";
+		w32util::ChangeConsoleColor( FOREGROUND_GREEN );
 		break;
 	case LUX_WARNING:
-		std::cerr<<"WARNING";
+		w32util::ChangeConsoleColor( FOREGROUND_YELLOW );
 		break;
 	case LUX_ERROR:
-		std::cerr<<"ERROR";
+		w32util::ChangeConsoleColor( FOREGROUND_RED );
 		break;
 	case LUX_SEVERE:
-		std::cerr<<"SEVERE ERROR";
+		w32util::ChangeConsoleColor( FOREGROUND_RED );
 		break;
 	}
-	std::cerr<<" : "<<code;
-#ifndef WIN32 //windows does not support ANSI escape codes
-	std::cerr<<"\033[0m";
 #endif
-	std::cerr<<"] "<<message<<std::endl;
+	cerr<<"Lux ";
+	cerr<<boost::posix_time::second_clock::local_time()<<' ';
+	switch (severity) {
+	case LUX_DEBUG:
+		cerr<<"DEBUG";
+		break;
+	case LUX_INFO:
+		cerr<<"INFO";
+		break;
+	case LUX_WARNING:
+		cerr<<"WARNING";
+		break;
+	case LUX_ERROR:
+		cerr<<"ERROR";
+		break;
+	case LUX_SEVERE:
+		cerr<<"SEVERE ERROR";
+		break;
+	}
+	cerr<<" : "<<code;
+#if !defined(WIN32) || defined(__CYGWIN__) // windows does not support ANSI escape codes (but CYGWIN does) ...
+	cerr<<"\033[0m";
+#else // ... but it does have it's own console API
+	w32util::ChangeConsoleColor( FOREGROUND_WHITE );
+#endif
+	cerr<<"] "<<message<<endl<<std::flush;
 }
 
 extern "C" void luxSetEpsilon(const float minValue, const float maxValue)
 {
 	Context::GetActive()->SetEpsilon(minValue < 0.f ? DEFAULT_EPSILON_MIN : minValue, maxValue < 0.f ? DEFAULT_EPSILON_MAX : maxValue);
 }
+
+extern "C" double luxMagnitudeReduce(double number) {
+	return MagnitudeReduce(number);
+}
+
+extern "C" const char* luxMagnitudePrefix(double number) {
+	return MagnitudePrefix(number);
+}
+

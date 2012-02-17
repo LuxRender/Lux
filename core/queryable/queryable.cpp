@@ -30,13 +30,19 @@ namespace lux
 Queryable::Queryable(std::string _name) : name(_name)
 {
 	//add this object to the registry
-	Context::GetActive()->registry.Insert(this);
+	if (Context::GetActive())
+		Context::GetActive()->registry.Insert(this);
+	else
+		LOG(LUX_ERROR, LUX_NOTSTARTED) << "luxInit() not called";
 }
 
 Queryable::~Queryable()
 {
 	//remove this object from the registry
-	Context::GetActive()->registry.Erase(this);
+	if (Context::GetActive())
+		Context::GetActive()->registry.Erase(this);
+	else
+		LOG(LUX_ERROR, LUX_NOTSTARTED) << "luxInit() not called";
 }
 
 }//namespace lux

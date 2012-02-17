@@ -89,7 +89,10 @@ public:
 				return true;
 		return false;
 	}
-        virtual void GetPrimitives(vector<boost::shared_ptr<Primitive> > &prims)
+	virtual Transform GetWorldToLocal(float time) const {
+		return Transform();
+	}
+	virtual void GetPrimitives(vector<boost::shared_ptr<Primitive> > &prims) const
 	{
 		prims.reserve(prims.size() + 4);
 		for (u_int i = 0; i < 4; ++i)
@@ -242,9 +245,9 @@ public:
 			triangle->mesh->GetMaterial(),
 			triangle->mesh->GetExterior(),
 			triangle->mesh->GetInterior());
-		isect->dg.triangleBaryCoords[0] = _b0;
-		isect->dg.triangleBaryCoords[1] = _b1;
-		isect->dg.triangleBaryCoords[2] = _b2;
+		isect->dg.iData.baryTriangle.coords[0] = _b0;
+		isect->dg.iData.baryTriangle.coords[1] = _b1;
+		isect->dg.iData.baryTriangle.coords[2] = _b2;
 
 		return true;
 	}
@@ -342,7 +345,13 @@ void QBVHAccel::BuildTree(u_int start, u_int end, u_int *primsIndexes,
 {
 	// Create a leaf ?
 	//********
-	if (end - start <= maxPrimsPerLeaf) {
+	if (depth > 64 || end - start <= maxPrimsPerLeaf) {
+		if (depth > 64) {
+			LOG(LUX_WARNING,LUX_LIMIT) << "Maximum recursion depth reached while constructing QBVH, forcing a leaf node";
+			if (end - start > 64) {
+				LOG(LUX_ERROR,LUX_LIMIT) << "QBVH unable to handle geometry, too many primitives in leaf";
+			}
+		}
 		CreateTempLeaf(parentIndex, childIndex, start, end, nodeBbox);
 		return;
 	}
@@ -748,7 +757,7 @@ BBox QBVHAccel::WorldBound() const
 	return worldBound;
 }
 
-void QBVHAccel::GetPrimitives(vector<boost::shared_ptr<Primitive> > &primitives)
+void QBVHAccel::GetPrimitives(vector<boost::shared_ptr<Primitive> > &primitives) const
 {
 	primitives.reserve(primitives.size() + nPrims);
 	for(u_int i = 0; i < nPrims; ++i)

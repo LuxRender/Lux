@@ -27,24 +27,29 @@
 #include "scene.h"
 #include "api.h"
 #include "error.h"
+#include "version.h"
 #include "paramset.h"
 #include "renderfarm.h"
 #include "camera.h"
 #include "color.h"
 #include "film.h"
 #include "osfunc.h"
+#include "streamio.h"
+#include "filedata.h"
 
 #include <fstream>
 #include <sstream>
 #include <boost/asio.hpp>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/bind.hpp>
+#include <boost/iostreams/stream.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filtering_streambuf.hpp>
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/zlib.hpp>
 #include <boost/iostreams/filter/bzip2.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
+#include <boost/algorithm/string.hpp>
 
 using namespace boost::iostreams;
 using namespace boost::posix_time;
@@ -84,6 +89,15 @@ void FilmUpdaterThread::updateFilm(FilmUpdaterThread *filmUpdaterThread) {
 	}
 }
 
+RenderFarm::RenderFarm() : serverUpdateInterval(3 * 60), filmUpdateThread(NULL),
+		netBuffer(std::stringstream::in | std::stringstream::out  | std::stringstream::binary),
+		netBufferComplete(false), isLittleEndian(osIsLittleEndian())
+{
+		// set precision for accurate transmission of floats
+		netBuffer << std::scientific << std::setprecision(16);
+}
+
+
 // Dade - used to periodically update the film
 void RenderFarm::startFilmUpdater(Scene *scene) {
 	if (filmUpdateThread == NULL) {
@@ -91,7 +105,7 @@ void RenderFarm::startFilmUpdater(Scene *scene) {
 		filmUpdateThread->thread = new boost::thread(boost::bind(
 			FilmUpdaterThread::updateFilm, filmUpdateThread));
 	} else {
-		luxError(LUX_ILLSTATE,LUX_ERROR,"RenderFarm::startFilmUpdater() called but update thread already started.");
+		LOG(LUX_ERROR,LUX_ILLSTATE)<<"RenderFarm::startFilmUpdater() called but update thread already started.";
 	}
 }
 
@@ -104,14 +118,15 @@ void RenderFarm::stopFilmUpdater() {
 	// Dade - stopFilmUpdater() is called multiple times at the moment (for instance
 	// haltspp + luxconsole)
 	/*else {
-		luxError(LUX_ILLSTATE,LUX_ERROR,"RenderFarm::stopFilmUpdater() called but update thread not started.");
+		LOG(LUX_ERROR,LUX_ILLSTATE)<<"RenderFarm::stopFilmUpdater() called but update thread not started.";
 	}*/
 }
 
 void RenderFarm::decodeServerName(const string &serverName, string &name, string &port) {
 	// Dade - check if the server name includes the port
 	size_t idx = serverName.find_last_of(':');
-	if (idx != string::npos) {
+	size_t idx_v6 = serverName.rfind("::");
+	if (idx != string::npos && idx != idx_v6+1) {
 		// Dade - the server name includes the port number
 
 		name = serverName.substr(0, idx);
@@ -123,63 +138,87 @@ void RenderFarm::decodeServerName(const string &serverName, string &name, string
 }
 
 bool RenderFarm::connect(ExtRenderingServerInfo &serverInfo) {
+
+	// check to see if we're already connected (active), if so ignore
+	for (vector<ExtRenderingServerInfo>::iterator it = serverInfoList.begin(); it < serverInfoList.end(); it++ ) {
+		if (serverInfo.name.compare(it->name) == 0 && serverInfo.port.compare(it->port) == 0 && it->active) {
+			return false;
+		}
+	}
+
+	// initialize server info
+	serverInfo.sid = "";
+	serverInfo.active = false;
+	serverInfo.flushed = false;
+
 	stringstream ss;
 	string serverName = serverInfo.name + ":" + serverInfo.port;
 
 	try {
-		ss.str("");
-			ss << "Connecting server: " << serverName;
-		luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+		LOG( LUX_INFO,LUX_NOERROR) << "Connecting server: " << serverName;
 
 		tcp::iostream stream(serverInfo.name, serverInfo.port);
 		stream << "ServerConnect" << std::endl;
 
-		// Dede - check if the server accepted the connection
-
+		// Check if the server accepted the connection
 		string result;
 		if (!getline(stream, result)) {
-			ss.str("");
-				ss << "Unable to connect server: " << serverName;
-			luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
-
+			LOG( LUX_ERROR,LUX_SYSTEM) << "Unable to connect server: " << serverName;
 			return false;
 		}
 
-		ss.str("");
-		ss << "Server connect result: " << result;
-		luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
-
-		string sid;
+		LOG( LUX_INFO,LUX_NOERROR) << "Server connect result: " << result;
+		
 		if ("OK" != result) {
-			ss.str("");
-				ss << "Unable to connect server: " << serverName;
-			luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
+			LOG( LUX_ERROR,LUX_SYSTEM) << "Unable to connect server: " << serverName;
 
 			return false;
-		} else {
-			// Dade - read the session ID
-			if (!getline(stream, result)) {
-				ss.str("");
-					ss << "Unable read session ID from server: " << serverName;
-				luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
-
-				return false;
-			}
-
-			sid = result;
-			ss.str("");
-			ss << "Server session ID: " << sid;
-			luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 		}
+
+		// Read the server version
+		if (!getline(stream, result)) {
+			LOG( LUX_ERROR,LUX_SYSTEM) << "Unable read version from server: " << serverName;
+			return false;
+		}
+		// search for protocol field in version string
+		// if not found we're dealing with a pre 0.8 server
+		if (result.find("protocol") == string::npos) {
+			LOG( LUX_ERROR,LUX_SYSTEM) << "Server returned invalid version string, this is most likely due to an old server executable, got '" << result << "', expected '" << LUX_SERVER_VERSION_STRING << "'";
+			return false;
+		}
+		if (result != LUX_SERVER_VERSION_STRING) {
+			LOG( LUX_ERROR,LUX_SYSTEM) << "Version mismatch, server reports version '" << result << "', required version is '" << LUX_SERVER_VERSION_STRING << "'";
+			return false;
+		}
+		// Read the session ID
+		if (!getline(stream, result)) {
+			LOG( LUX_ERROR,LUX_SYSTEM) << "Unable read session ID from server: " << serverName;
+			return false;
+		}
+
+		string sid = result;
+
+		// Perform handshake
+		stream << sid << endl;
+		stream.flush();
+
+		if (!getline(stream, result)) {
+			LOG( LUX_ERROR,LUX_SYSTEM) << "Unable read handshake from server: " << serverName;
+			return false;
+		}
+
+		if (!stream.good() || result != "CONNECTED") {
+			LOG( LUX_ERROR,LUX_SYSTEM) << "Error connecting to server: " << serverName;
+			return false;
+		}
+
+		LOG( LUX_INFO,LUX_NOERROR) << "Server session ID: " << sid;
 
 		serverInfo.sid = sid;
-		serverInfo.flushed = false;
+		serverInfo.active = true;
 	} catch (exception& e) {
-		ss.str("");
-		ss << "Unable to connect server: " << serverName;
-		luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
-
-		luxError(LUX_SYSTEM, LUX_ERROR, e.what());
+		LOG(LUX_ERROR,LUX_SYSTEM) << "Unable to connect server: " << serverName;
+		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
 		return false;
 	}
 
@@ -196,15 +235,17 @@ bool RenderFarm::connect(const string &serverName) {
 			decodeServerName(serverName, name, port);
 
 			ExtRenderingServerInfo serverInfo(name, port, "");
-			connect(serverInfo);
+			if (!connect(serverInfo)) {
+				if (serverInfo.active)
+					disconnect(serverInfo);
+
+				return false;
+			}
 
 			serverInfoList.push_back(serverInfo);
 		} catch (exception& e) {
-			ss.str("");
-			ss << "Unable to connect server: " << serverName;
-			luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
-
-			luxError(LUX_SYSTEM, LUX_ERROR, e.what());
+			LOG(LUX_ERROR,LUX_SYSTEM) << "Unable to connect server: " << serverName;
+			LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
 			return false;
 		}
 	}
@@ -238,19 +279,33 @@ void RenderFarm::disconnect(const string &serverName) {
 	}
 }
 
-void RenderFarm::disconnect(const ExtRenderingServerInfo &serverInfo) {
+void RenderFarm::disconnect(const RenderingServerInfo &serverInfo) {
 	stringstream ss;
 	try {
-		ss.str("");
-		ss << "Disconnect from server: " <<
-				serverInfo.name << ":" << serverInfo.port;
-		luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+		LOG( LUX_INFO,LUX_NOERROR)
+			<< "Disconnect from server: "
+			<< serverInfo.name << ":" << serverInfo.port;
 
 		tcp::iostream stream(serverInfo.name, serverInfo.port);
 		stream << "ServerDisconnect" << endl;
 		stream << serverInfo.sid << endl;
 	} catch (exception& e) {
-		luxError(LUX_SYSTEM, LUX_ERROR, e.what());
+		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
+	}
+}
+
+void RenderFarm::disconnect(const ExtRenderingServerInfo &serverInfo) {
+	stringstream ss;
+	try {
+		LOG( LUX_INFO,LUX_NOERROR)
+			<< "Disconnect from server: "
+			<< serverInfo.name << ":" << serverInfo.port;
+
+		tcp::iostream stream(serverInfo.name, serverInfo.port);
+		stream << "ServerDisconnect" << endl;
+		stream << serverInfo.sid << endl;
+	} catch (exception& e) {
+		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
 	}
 }
 
@@ -259,40 +314,61 @@ void RenderFarm::flushImpl() {
 	// Dade - the buffers with all commands
 	string commands = netBuffer.str();
 
-	ss.str("");
-	ss << "Compiled scene size: " << (commands.size() / 1024) << "KBytes";
-	luxError(LUX_NOERROR, LUX_DEBUG, ss.str().c_str());
+	LOG(LUX_DEBUG,LUX_NOERROR) << "Compiled scene size: " << (commands.size() / 1024) << "KBytes";
 
 	//flush network buffer
 	for (size_t i = 0; i < serverInfoList.size(); i++) {
-		if(serverInfoList[i].flushed == false) {
+		if(serverInfoList[i].active && !serverInfoList[i].flushed) {
 			try {
-				ss.str("");
-				ss << "Sending commands to server: " <<
+				LOG( LUX_INFO,LUX_NOERROR) << "Sending commands to server: " <<
 						serverInfoList[i].name << ":" << serverInfoList[i].port;
-				luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
 				tcp::iostream stream(serverInfoList[i].name, serverInfoList[i].port);
 				stream << commands << endl;
 
 				serverInfoList[i].flushed = true;
 			} catch (exception& e) {
-				luxError(LUX_SYSTEM, LUX_ERROR, e.what());
+				LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
 			}
 		}
 	}
 
 	// Dade - write info only if there was the communication with some server
 	if (serverInfoList.size() > 0) {
-		ss.str("");
-		ss << "All servers are aligned";
-		luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+		LOG( LUX_DEBUG,LUX_NOERROR) << "All servers are aligned";
 	}
 }
 
 void RenderFarm::flush() {
 	boost::mutex::scoped_lock lock(serverListMutex);
 
+	flushImpl();
+}
+
+void RenderFarm::reconnectFailed() {
+	// NOTE - requires serverListMutex to be aquired by caller
+	// attempts to reconnect to all failed (inactive) servers
+
+	for (size_t i = 0; i < serverInfoList.size(); i++) {
+		if (serverInfoList[i].active)
+			continue;
+
+		ExtRenderingServerInfo *serverInfo = &serverInfoList[i];
+		try {
+			LOG(LUX_INFO,LUX_NOERROR)
+				<< "Trying to reconnect server: "
+				<< serverInfo->name << ":" << serverInfo->port;
+
+			this->connect(*serverInfo);
+		} catch (std::exception& e) {
+			LOG(LUX_ERROR,LUX_SYSTEM)
+				<< "Error while reconnecting with server: "
+				<< serverInfo->name << ":" << serverInfo->port;
+			LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
+		}
+	}
+
+	// Send the scene to all servers
 	flushImpl();
 }
 
@@ -304,32 +380,29 @@ void RenderFarm::updateFilm(Scene *scene) {
 	// Dade - network rendering supports only FlexImageFilm
 	Film *film = scene->camera->film;
 
-	vector<int> failedServerIndexList;
+	// first try to reconnect to failed servers which may be up now
+	reconnectFailed();
+
 	stringstream ss;
 	for (size_t i = 0; i < serverInfoList.size(); i++) {
+		if (!serverInfoList[i].active)
+			// skip servers which are still down
+			continue;
+
 		try {
-			ss.str("");
-			ss << "Getting samples from: " <<
+			LOG( LUX_INFO,LUX_NOERROR) << "Getting samples from: " <<
 					serverInfoList[i].name << ":" << serverInfoList[i].port;
-			luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
-			// I'm using directly a tcp::socket here in order to be able to enable
-			// keep alive option and to set keep alive parameters
-			boost::asio::io_service ioService;
-			tcp::resolver resolver(ioService);
-			tcp::resolver::query query(serverInfoList[i].name, serverInfoList[i].port);
-			tcp::resolver::iterator iterator = resolver.resolve(query);
+			tcp::iostream stream;
+			stream.exceptions(tcp::iostream::failbit | tcp::iostream::badbit);
 
-			// Connect to the server
-			tcp::socket serverSocket(ioService);
-			serverSocket.connect(*iterator);
+			stream.connect(serverInfoList[i].name, serverInfoList[i].port);
 
 			// Enable keep alive option
-			boost::asio::socket_base::keep_alive option(true);
-			serverSocket.set_option(option);
+			stream.rdbuf()->set_option(boost::asio::socket_base::keep_alive(true));
 #if defined(__linux__) || defined(__MACOSX__)
 			// Set keep alive parameters on *nix platforms
-			const int nativeSocket = static_cast<int>(serverSocket.native());
+			const int nativeSocket = static_cast<int>(stream.rdbuf()->native());
 			int optval = 3; // Retry count
 			const socklen_t optlen = sizeof(optval);
 			setsockopt(nativeSocket, SOL_TCP, TCP_KEEPCNT, &optval, optlen);
@@ -340,33 +413,22 @@ void RenderFarm::updateFilm(Scene *scene) {
 #endif
 
 			// Send the command to get the film
-			ss.str("");
-			ss << "luxGetFilm" << std::endl;
-			boost::asio::write(serverSocket, boost::asio::buffer(ss.str().c_str(), ss.str().size()));
-			ss.str("");
-			ss << serverInfoList[i].sid << std::endl;
-			boost::asio::write(serverSocket, boost::asio::buffer(ss.str().c_str(), ss.str().size()));
+			stream << "luxGetFilm" << std::endl;
+			stream << serverInfoList[i].sid << std::endl;
 
 			// Receive the film in a compressed format
-			std::stringstream compressedStream(std::stringstream::in |
-					std::stringstream::out | std::stringstream::binary);
-			boost::array<char, 16 * 1024 > buf;
-			std::streamsize compressedSize = 0;
-			for (bool done = false; !done;) {
-				boost::system::error_code error;
-				std::size_t count = boost::asio::read(
-						serverSocket, boost::asio::buffer(buf),
-						boost::asio::transfer_all(), error);
-				if (error == boost::asio::error::eof)
-					done = true;
-				else if (error)
-					throw boost::system::system_error(error);
+			//std::stringstream compressedStream(std::stringstream::in |
+			//		std::stringstream::out | std::stringstream::binary);
+			multibuffer_device mbdev;
+			boost::iostreams::stream<multibuffer_device> compressedStream(mbdev);
 
-				compressedStream.write(buf.c_array(), count);
-				compressedSize += count;
-			}
+			compressedStream << stream.rdbuf();
 
-			serverSocket.close();
+			stream.close();
+
+			std::streampos compressedSize = compressedStream.tellp();
+
+			compressedStream.seekg(0, BOOST_IOS::beg);
 
 			// Decopress and merge the film
 			const double sampleCount = film->UpdateFilm(compressedStream);
@@ -374,53 +436,96 @@ void RenderFarm::updateFilm(Scene *scene) {
 				throw string("Received 0 samples from server");
 			serverInfoList[i].numberOfSamplesReceived += sampleCount;
 
-			ss.str("");
-			ss << "Samples received from '" <<
+			LOG( LUX_INFO,LUX_NOERROR) << "Samples received from '" <<
 					serverInfoList[i].name << ":" << serverInfoList[i].port << "' (" <<
 					(compressedSize / 1024) << " Kbytes)";
-			luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
 
 			serverInfoList[i].timeLastContact = second_clock::local_time();
 		} catch (string s) {
-			luxError(LUX_SYSTEM, LUX_ERROR, s.c_str());
-			// Add the index to the list of failed slves
-			failedServerIndexList.push_back(i);
+			LOG(LUX_ERROR,LUX_SYSTEM)<< s.c_str();
+			// Mark as failed (inactive)
+			serverInfoList[i].active = false;
 		} catch (std::exception& e) {
-			ss.str("");
-			ss << "Error while communicating with server: " <<
+			LOG( LUX_ERROR,LUX_SYSTEM) << "Error while communicating with server: " <<
+					serverInfoList[i].name << ":" << serverInfoList[i].port << " ( " << e.what() << ")";
+			// Mark as failed (inactive)
+			serverInfoList[i].active = false;
+		}
+	}
+
+	// attempt to reconnect
+	reconnectFailed();
+}
+
+void RenderFarm::updateLog() {
+	// Using the mutex in order to not allow server disconnection while
+	// I'm downloading a film
+	boost::mutex::scoped_lock lock(serverListMutex);
+
+	// first try to reconnect to failed servers which may be up now
+	reconnectFailed();
+
+	for (size_t i = 0; i < serverInfoList.size(); i++) {
+		if (!serverInfoList[i].active)
+			// skip servers which are still down
+			continue;
+
+		try {
+			LOG( LUX_INFO,LUX_NOERROR) << "Getting log from: " <<
 					serverInfoList[i].name << ":" << serverInfoList[i].port;
-			luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
-			luxError(LUX_SYSTEM, LUX_ERROR, e.what());
 
-			// Add the index to the list of failed slves
-			failedServerIndexList.push_back(i);
-		}
-	}
+			// Connect to the server
+			tcp::iostream stream;
+			stream.exceptions(tcp::iostream::failbit | tcp::iostream::badbit);
 
-	// Check if there was some failed server
-	if (failedServerIndexList.size() > 0) {
-		// Try to reconect failed servers
-		for (size_t i = 0; i < failedServerIndexList.size(); ++i) {
-			ExtRenderingServerInfo *serverInfo = &serverInfoList[failedServerIndexList[i]];
-			try {
-				ss.str("");
-				ss << "Trying to reconnect server: " <<
-						serverInfo->name << ":" << serverInfo->port;
-				luxError(LUX_NOERROR, LUX_INFO, ss.str().c_str());
+			stream.connect(serverInfoList[i].name, serverInfoList[i].port);
 
-				this->connect(*serverInfo);
-			} catch (std::exception& e) {
-				ss.str("");
-				ss << "Error while reconnecting with server: " <<
-						serverInfo->name << ":" << serverInfo->port;
-				luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
-				luxError(LUX_SYSTEM, LUX_ERROR, e.what());
+			LOG( LUX_INFO,LUX_NOERROR) << "Connected to: " << stream.rdbuf()->remote_endpoint();
+
+			// Send the command to get the log
+			stream << "luxGetLog" << std::endl;
+			stream << serverInfoList[i].sid << std::endl;
+
+			// Receive the log
+			std::stringstream log;
+			log << stream.rdbuf();
+
+			stream.close();
+
+			//serverInfoList[i].log = log.str();
+
+			while (log.good()) {
+				int code, severity;
+				string message;
+
+				log >> code;
+				log >> severity;
+				log >> std::ws;
+				getline(log, message);
+
+				if (message == "")
+					continue;
+
+				LOG(code, severity) << "[" << serverInfoList[i].name << ":" << serverInfoList[i].port << "] " 
+					<< message;
 			}
-		}
 
-		// Send the scene to all servers
-		this->flushImpl();
+			serverInfoList[i].timeLastContact = second_clock::local_time();
+		} catch (string s) {
+			LOG(LUX_ERROR,LUX_SYSTEM)<< s.c_str();
+			// Mark as failed (inactive)
+			serverInfoList[i].active = false;
+		} catch (std::exception& e) {
+			LOG( LUX_ERROR,LUX_SYSTEM) << "Error while communicating with server: " <<
+					serverInfoList[i].name << ":" << serverInfoList[i].port << " ( " << e.what() << ")";
+			LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
+			// Mark as failed (inactive)
+			serverInfoList[i].active = false;
+		}
 	}
+
+	// attempt to reconnect
+	reconnectFailed();
 }
 
 void RenderFarm::sendParams(const ParamSet &params) {
@@ -456,8 +561,10 @@ void RenderFarm::send(const string &command) {
 		netBufferComplete = true;
 }
 
-void RenderFarm::sendFile(const string file) {
-	std::ifstream in(file.c_str(), std::ios::in | std::ios::binary);
+void RenderFarm::sendFile(const string &file) {
+	// silent replacement, since relevant plugin will report replacement
+	const string filename = AdjustFilename(file, true);
+	std::ifstream in(filename.c_str(), std::ios::in | std::ios::binary);
 
 	// Get length of file:
 	in.seekg (0, std::ifstream::end);
@@ -466,9 +573,8 @@ void RenderFarm::sendFile(const string file) {
 	in.seekg (0, std::ifstream::beg);
 
 	if (in.fail()) {
-		std::stringstream ss;
-		ss << "There was an error while checking the size of file '" << file << "'";
-		luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
+		// AdjustFilename should guarantee that file exists, if not return just normalized filename
+		LOG( LUX_ERROR,LUX_SYSTEM) << "There was an error while checking the size of file '" << filename << "'";
 
 		// Send an empty file ot the server
 		netBuffer << "0\n";
@@ -479,9 +585,7 @@ void RenderFarm::sendFile(const string file) {
 		in.read(buf, len);
 
 		if (in.fail()) {
-			std::stringstream ss;
-			ss << "There was an error while reading file '" << file << "'";
-			luxError(LUX_SYSTEM, LUX_ERROR, ss.str().c_str());
+			LOG( LUX_ERROR,LUX_SYSTEM) << "There was an error while reading file '" << filename << "'";
 
 			// Send an empty file to the server
 			netBuffer << "0\n";
@@ -517,8 +621,21 @@ void RenderFarm::send(const string &command, const string &name,
 		file = params.FindOneString(string("iesname"), file);
 		if (file.size())
 			sendFile(file);
+
+		file = "";
+		file = params.FindOneString(string("configfile"), file);
+		if (file.size())
+			sendFile(file);
+
+		if (command != "luxFilm") {
+			file = "";
+			file = params.FindOneString(string("filename"), file);
+			if (file.size() && !FileData::present(params, "filename"))
+				sendFile(file);
+		}
+
 	} catch (exception& e) {
-		luxError(LUX_SYSTEM, LUX_ERROR, e.what());
+		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
 	}
 }
 
@@ -530,7 +647,7 @@ void RenderFarm::send(const string &command, const string &id,
 		sendParams(params);
 		netBuffer << "\n";
 	} catch (exception& e) {
-		luxError(LUX_SYSTEM, LUX_ERROR, e.what());
+		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
 	}
 }
 
@@ -538,7 +655,7 @@ void RenderFarm::send(const string &command, const string &name) {
 	try {
 		netBuffer << command << endl << name << endl;
 	} catch (exception& e) {
-		luxError(LUX_SYSTEM, LUX_ERROR, e.what());
+		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
 	}
 }
 
@@ -546,7 +663,7 @@ void RenderFarm::send(const string &command, float x, float y, float z) {
 	try {
 		netBuffer << command << endl << x << ' ' << y << ' ' << z << endl;
 	} catch (exception& e) {
-		luxError(LUX_SYSTEM, LUX_ERROR, e.what());
+		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
 	}
 }
 
@@ -554,7 +671,7 @@ void RenderFarm::send(const string &command, float x, float y) {
 	try {
 		netBuffer << command << endl << x << ' ' << y << endl;
 	} catch (exception& e) {
-		luxError(LUX_SYSTEM, LUX_ERROR, e.what());
+		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
 	}
 }
 
@@ -563,7 +680,7 @@ void RenderFarm::send(const string &command, float a, float x, float y,
 	try {
 		netBuffer << command << endl << a << ' ' << x << ' ' << y << ' ' << z << endl;
 	} catch (exception& e) {
-		luxError(LUX_SYSTEM, LUX_ERROR, e.what());
+		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
 	}
 }
 
@@ -572,7 +689,7 @@ void RenderFarm::send(const string &command, float ex, float ey, float ez,
 	try {
 		netBuffer << command << endl << ex << ' ' << ey << ' ' << ez << ' ' << lx << ' ' << ly << ' ' << lz << ' ' << ux << ' ' << uy << ' ' << uz << endl;
 	} catch (exception& e) {
-		luxError(LUX_SYSTEM, LUX_ERROR, e.what());
+		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
 	}
 }
 
@@ -583,7 +700,19 @@ void RenderFarm::send(const string &command, float tr[16]) {
 			netBuffer << tr[i] << ' ';
 		netBuffer << endl;
 	} catch (exception& e) {
-		luxError(LUX_SYSTEM, LUX_ERROR, e.what());
+		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
+	}
+}
+
+void RenderFarm::send(const string &command, u_int n, float *d) {
+	try {
+		netBuffer << command << endl;
+		netBuffer << n << ' ';
+		for (u_int i = 0; i < n; i++)
+			netBuffer << d[i] << ' ';
+		netBuffer << endl;
+	} catch (exception& e) {
+		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
 	}
 }
 
@@ -597,18 +726,18 @@ void RenderFarm::send(const string &command, const string &name,
 		//send the file
 		std::string file = "";
 		file = params.FindOneString(std::string("filename"), file);
-		if (file.size())
+		if (file.size() && !FileData::present(params, "filename"))
 			sendFile(file);
 	} catch (std::exception& e) {
-		luxError(LUX_SYSTEM, LUX_ERROR, e.what());
+		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
 	}
 }
 
 void RenderFarm::send(const string &command, const string &name, float a, float b, const string &transform) {
 	try {
-		netBuffer << command << endl << name << ' ' << a << ' ' << b << ' ' << transform << endl;
+		netBuffer << command << endl << name << endl << a << " " << b << endl << transform << endl;
 	} catch (exception& e) {
-		luxError(LUX_SYSTEM, LUX_ERROR, e.what());
+		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
 	}
 }
 

@@ -22,56 +22,49 @@
 
 // mixmaterial.cpp*
 #include "mixmaterial.h"
-#include "color.h"
 #include "memory.h"
-#include "bxdf.h"
+#include "mixbsdf.h"
+#include "primitive.h"
 #include "texture.h"
 #include "paramset.h"
 #include "dynload.h"
+#include "color.h"
 
 using namespace lux;
 
 // MixMaterial Method Definitions
-BSDF *MixMaterial::GetBSDF(const TsPack *tspack,
-	const DifferentialGeometry &dgGeom,
-	const DifferentialGeometry &dgShading,
-	const Volume *exterior, const Volume *interior) const {
-	SWCSpectrum bcolor = (Sc->Evaluate(tspack, dgShading).Clamp(0.f, 10000.f))*dgShading.Scale;
-	MixBSDF *bsdf = ARENA_ALLOC(tspack->arena, MixBSDF)(dgShading,
-		dgGeom.nn, exterior, interior, bcolor);
-	float amt = amount->Evaluate(tspack, dgShading);
+BSDF *MixMaterial::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
+	const Intersection &isect, const DifferentialGeometry &dgShading) const {
+	SWCSpectrum bcolor = (Sc->Evaluate(sw, dgShading).Clamp(0.f, 10000.f))*dgShading.Scale;
+	MixBSDF *bsdf = ARENA_ALLOC(arena, MixBSDF)(dgShading, isect.dg.nn,
+		isect.exterior, isect.interior, bcolor);
+	float amt = amount->Evaluate(sw, dgShading);
 	DifferentialGeometry dgS = dgShading;
-	mat1->GetShadingGeometry(tspack, dgGeom.nn, &dgS);
-	bsdf->Add(1.f - amt, mat1->GetBSDF(tspack, dgGeom, dgS,
-		exterior, interior));
+	mat1->GetShadingGeometry(sw, isect.dg.nn, &dgS);
+	bsdf->Add(1.f - amt, mat1->GetBSDF(arena, sw, isect, dgS));
 	dgS = dgShading;
-	mat2->GetShadingGeometry(tspack, dgGeom.nn, &dgS);
-	bsdf->Add(amt, mat2->GetBSDF(tspack, dgGeom, dgS,
-		exterior, interior));
-	bsdf->SetCompositingParams(compParams);
+	mat2->GetShadingGeometry(sw, isect.dg.nn, &dgS);
+	bsdf->Add(amt, mat2->GetBSDF(arena, sw, isect, dgS));
+	bsdf->SetCompositingParams(&compParams);
 	return bsdf;
 }
 Material* MixMaterial::CreateMaterial(const Transform &xform,
 		const ParamSet &mp) {
 	boost::shared_ptr<Material> mat1(mp.GetMaterial("namedmaterial1"));
 	if (!mat1) {
-		luxError(LUX_BADTOKEN, LUX_ERROR,
-			"First material of the mix is incorrect");
+		LOG( LUX_ERROR,LUX_BADTOKEN)<<"First material of the mix is incorrect";
 		return NULL;
 	}
 	boost::shared_ptr<Material> mat2(mp.GetMaterial("namedmaterial2"));
 	if (!mat2) {
-		luxError(LUX_BADTOKEN, LUX_ERROR,
-			"Second material of the mix is incorrect");
+		LOG( LUX_ERROR,LUX_BADTOKEN)<<"Second material of the mix is incorrect";
 		return NULL;
 	}
+
 	boost::shared_ptr<Texture<SWCSpectrum> > Sc(mp.GetSWCSpectrumTexture("Sc", RGBColor(.9f)));
 	boost::shared_ptr<Texture<float> > amount(mp.GetFloatTexture("amount", 0.5f));
 
-	// Get Compositing Params
-	CompositingParams cP;
-	FindCompositingParams(mp, &cP);
-	return new MixMaterial(amount, mat1, mat2, cP, Sc);
+	return new MixMaterial(amount, mat1, mat2, mp, Sc);
 }
 
 static DynamicLoader::RegisterMaterial<MixMaterial> r("mix");

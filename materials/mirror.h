@@ -34,22 +34,12 @@ public:
 	Mirror(boost::shared_ptr<Texture<SWCSpectrum> > &r, 
 		boost::shared_ptr<Texture<float> > &flm,
 		boost::shared_ptr<Texture<float> > &flmindex, 
-		boost::shared_ptr<Texture<float> > &bump,
-		const CompositingParams &cp, boost::shared_ptr<Texture<SWCSpectrum> > &sc) : Kr(r), film(flm),
-		filmindex(flmindex), bumpMap(bump) {
-		compParams = new CompositingParams(cp);
-		Sc = sc;
-	}
+		const ParamSet &mp, boost::shared_ptr<Texture<SWCSpectrum> > &sc) : Material(mp), Kr(r), film(flm),
+		filmindex(flmindex) { Sc = sc; }
 	virtual ~Mirror() { }
-	virtual void GetShadingGeometry(const TsPack *tspack,
-		const Normal &nGeom, DifferentialGeometry *dgBump) const {
-		if (bumpMap)
-			Bump(tspack, bumpMap, nGeom, dgBump);
-	}
-	virtual BSDF *GetBSDF(const TsPack *tspack,
-		const DifferentialGeometry &dgGeom,
-		const DifferentialGeometry &dgShading,
-		const Volume *exterior, const Volume *interior) const;
+	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
+		const Intersection &isect,
+		const DifferentialGeometry &dgShading) const;
 
 	static Material * CreateMaterial(const Transform &xform,
 		const ParamSet &mp);
@@ -57,7 +47,6 @@ private:
 	// Mirror Private Data
 	boost::shared_ptr<Texture<SWCSpectrum> > Kr;
 	boost::shared_ptr<Texture<float> > film, filmindex;
-	boost::shared_ptr<Texture<float> > bumpMap;
 };
 
 }//namespace lux

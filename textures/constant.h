@@ -25,7 +25,7 @@
 #include "texture.h"
 #include "rgbrefl.h"
 #include "rgbillum.h"
-#include "fresneldielectric.h"
+#include "fresnelgeneral.h"
 #include "paramset.h"
 
 namespace lux
@@ -37,14 +37,18 @@ public:
 	// ConstantTexture Public Methods
 	ConstantFloatTexture(float v) : value(v) { }
 	virtual ~ConstantFloatTexture() { }
-	virtual float Evaluate(const TsPack *tspack,
+	virtual float Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &) const {
 		return value;
 	}
 	virtual float Y() const { return value; }
-	virtual void GetDuv(const TsPack *tspack,
+	virtual void GetDuv(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg, float delta,
 		float *du, float *dv) const { *du = *dv = 0.f; }
+	virtual void GetMinMaxFloat(float *minValue, float *maxValue) const {
+		*minValue = value;
+		*maxValue = value;
+	}
 private:
 	float value;
 };
@@ -56,13 +60,13 @@ public:
 		RGBSPD = new RGBReflSPD(color);
 	}
 	virtual ~ConstantRGBColorTexture() { delete RGBSPD; }
-	virtual SWCSpectrum Evaluate(const TsPack *tspack,
+	virtual SWCSpectrum Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &) const {
-		return SWCSpectrum(tspack, *RGBSPD);
+		return SWCSpectrum(sw, *RGBSPD);
 	}
 	virtual float Y() const { return RGBSPD->Y(); }
 	virtual float Filter() const { return RGBSPD->Filter(); }
-	virtual void GetDuv(const TsPack *tspack,
+	virtual void GetDuv(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg, float delta,
 		float *du, float *dv) const { *du = *dv = 0.f; }
 	virtual void SetIlluminant() {
@@ -74,22 +78,22 @@ private:
 	RGBColor color;
 };
 
-class ConstantFresnelTexture : public Texture<const Fresnel *> {
+class ConstantFresnelTexture : public Texture<FresnelGeneral> {
 public:
 	// ConstantTexture Public Methods
 	ConstantFresnelTexture(float v) :
-		value(v, SWCSpectrum(v), 0.f), val(v) { }
+		value(DIELECTRIC_FRESNEL, SWCSpectrum(v), 0.f), val(v) { }
 	virtual ~ConstantFresnelTexture() { }
-	virtual const Fresnel *Evaluate(const TsPack *tspack,
+	virtual FresnelGeneral Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &) const {
-		return &value;
+		return value;
 	}
 	virtual float Y() const { return val; }
-	virtual void GetDuv(const TsPack *tspack,
+	virtual void GetDuv(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg, float delta,
 		float *du, float *dv) const { *du = *dv = 0.f; }
 private:
-	FresnelDielectric value;
+	FresnelGeneral value;
 	float val;
 };
 
@@ -98,7 +102,7 @@ class Constant
 public:
 	static Texture<float> *CreateFloatTexture(const Transform &tex2world, const ParamSet &tp);
 	static Texture<SWCSpectrum> *CreateSWCSpectrumTexture(const Transform &tex2world, const ParamSet &tp);
-	static Texture<const Fresnel *> *CreateFresnelTexture(const Transform &tex2world, const ParamSet &tp);
+	static Texture<FresnelGeneral> *CreateFresnelTexture(const Transform &tex2world, const ParamSet &tp);
 };
 
 }//namespace lux

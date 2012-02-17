@@ -67,21 +67,17 @@ void ImageFilm::AddSample(float sX, float sY,
 
 	// Issue warning if unexpected radiance value returned
 	if (L.IsNaN()) {
-		//std::stringstream error;
-		//error<<"THR"<<myThread->n+1<<": Nan radiance value returned.";
-		//luxError(LUX_BUG,LUX_ERROR,error.str().c_str());
+		//LOG(LUX_ERROR,LUX_BUG)<<"THR"<<myThread->n+1<<": Nan radiance value returned.";
 		//L = Spectrum(0.f);
 		return;
 	}
 	else if (L.y() < -1e-5) {
-		//std::stringstream error;
-		//error<<"THR"<<myThread->n+1<<": NegLum value, "<<Ls.y()<<" returned.";
-		//luxError(LUX_BUG,LUX_ERROR,error.str().c_str());
+		//LOG(LUX_ERROR,LUX_BUG)<<"THR"<<myThread->n+1<<": NegLum value, "<<Ls.y()<<" returned.";
 		//L = Spectrum(0.f);
 		return;
 	}
 	else if (isinf(L.y())) {
-		//luxError(LUX_BUG,LUX_ERROR,"InfinLum value returned.");
+		//LOG(LUX_ERROR,LUX_BUG)<<"InfinLum value returned.";
 		//L = Spectrum(0.f);
 		return;
 	}
@@ -198,7 +194,7 @@ void ImageFilm::WriteImage() {
 	}
 	// Write RGBA image
 	//printf("\n\nWriting OpenEXR(RGBA) image to file \"%s\"...\n", filename.c_str());
-	luxError(LUX_NOERROR, LUX_INFO, (std::string("Writing OpenEXR(RGBA) image to file ")+filename).c_str());
+	LOG(LUX_INFO,LUX_NOERROR)<< "Writing OpenEXR(RGBA) image to file "<< filename;
 	WriteRGBAImage(filename, rgb, alpha,
 		xPixelCount, yPixelCount,
 		xResolution, yResolution,

@@ -35,9 +35,9 @@
 
 using namespace lux;
 
-SWCSpectrum VirtualLight::GetSWCSpectrum(const TsPack* tspack) const
+SWCSpectrum VirtualLight::GetSWCSpectrum(const SpectrumWavelengths &sw) const
 {
-	const float delta = (tspack->swl->w[0] - w[0]) * WAVELENGTH_SAMPLES /
+	const float delta = (sw.w[0] - w[0]) * WAVELENGTH_SAMPLES /
 		(WAVELENGTH_END - WAVELENGTH_START);
 	SWCSpectrum result;
 	if (delta < 0.f) {
@@ -54,198 +54,234 @@ SWCSpectrum VirtualLight::GetSWCSpectrum(const TsPack* tspack) const
 }
 
 // IGIIntegrator Implementation
-IGIIntegrator::IGIIntegrator(u_int nl, u_int ns, u_int d, float md)
+IGIIntegrator::IGIIntegrator(u_int nl, u_int ns, u_int d, float gl) : SurfaceIntegrator()
 {
 	nLightPaths = RoundUpPow2(nl);
 	nLightSets = RoundUpPow2(ns);
-	minDist2 = md * md;
+	gLimit = gl;
 	maxSpecularDepth = d;
 	virtualLights.resize(nLightSets);
+	AddStringConstant(*this, "name", "Name of current surface integrator", "igi");
 }
-void IGIIntegrator::RequestSamples(Sample *sample, const Scene *scene)
+void IGIIntegrator::RequestSamples(Sample *sample, const Scene &scene)
 {
 	// Request samples for area light sampling
-	u_int nLights = scene->lights.size();
+	u_int nLights = scene.lights.size();
 	lightSampleOffset = new u_int[nLights];
+	lightSampleNumber = new u_int[nLights];
 	bsdfSampleOffset = new u_int[nLights];
 	bsdfComponentOffset = new u_int[nLights];
 	for (u_int i = 0; i < nLights; ++i) {
 		u_int lightSamples = 1;
 		lightSampleOffset[i] = sample->Add2D(lightSamples);
+		lightSampleNumber[i] = sample->Add1D(lightSamples);
 		bsdfSampleOffset[i] = sample->Add2D(lightSamples);
 		bsdfComponentOffset[i] = sample->Add1D(lightSamples);
 	}
 	vlSetOffset = sample->Add1D(1);
+
+	vector<u_int> structure;
+	structure.push_back(1);	// bsdf component
+	structure.push_back(1); // scattering
+	sampleOffset = sample->AddxD(structure, maxSpecularDepth + 1);
 }
-void IGIIntegrator::Preprocess(const TsPack *tspack, const Scene *scene)
+void IGIIntegrator::Preprocess(const RandomGenerator &rng, const Scene &scene)
 {
 	// Prepare image buffers
 	BufferOutputConfig config = BUF_FRAMEBUFFER;
 	BufferType type = BUF_TYPE_PER_PIXEL;
-	scene->sampler->GetBufferType(&type);
-	bufferId = scene->camera->film->RequestBuffer(type, config, "eye");
+	scene.sampler->GetBufferType(&type);
+	bufferId = scene.camera->film->RequestBuffer(type, config, "eye");
 
-	if (scene->lights.size() == 0)
+	if (scene.lights.size() == 0)
 		return;
 	// Compute samples for emitted rays from lights
 	float *lightNum = new float[nLightPaths * nLightSets];
-	float *lightSamp0 = new float[2 * nLightPaths *	nLightSets];
+	float *lightSamp0 = new float[2 * nLightPaths * nLightSets];
+	float *lightSamp0b = new float[nLightPaths * nLightSets];
 	float *lightSamp1 = new float[2 * nLightPaths * nLightSets];
-	LDShuffleScrambled1D(tspack, nLightPaths, nLightSets, lightNum);
-	LDShuffleScrambled2D(tspack, nLightPaths, nLightSets, lightSamp0);
-	LDShuffleScrambled2D(tspack, nLightPaths, nLightSets, lightSamp1);
+	float *lightSamp1b = new float[nLightPaths * nLightSets];
+	LDShuffleScrambled1D(rng, nLightPaths, nLightSets, lightNum);
+	LDShuffleScrambled2D(rng, nLightPaths, nLightSets, lightSamp0);
+	LDShuffleScrambled1D(rng, nLightPaths, nLightSets, lightSamp0b);
+	LDShuffleScrambled2D(rng, nLightPaths, nLightSets, lightSamp1);
+	LDShuffleScrambled1D(rng, nLightPaths, nLightSets, lightSamp1b);
 	// Precompute information for light sampling densities
-	tspack->swl->Sample(.5f);
-	u_int nLights = scene->lights.size();
+	Sample sample;
+	sample.rng = &rng;
+	SpectrumWavelengths &sw(sample.swl);
+	u_int nLights = scene.lights.size();
 	float *lightPower = new float[nLights];
 	for (u_int i = 0; i < nLights; ++i)
-		lightPower[i] = scene->lights[i]->Power(scene);
+		lightPower[i] = scene.lights[i]->Power(scene);
 	Distribution1D lightCDF(lightPower, nLights);
 	delete[] lightPower;
 	for (u_int s = 0; s < nLightSets; ++s) {
 		for (u_int i = 0; i < nLightPaths; ++i) {
-			tspack->swl->Sample(tspack->rng->floatValue());
+			sw.Sample(rng.floatValue());
 			// Follow path _i_ from light to create virtual lights
 			u_int sampOffset = s * nLightPaths + i;
 			// Choose light source to trace path from
 			float lightPdf;
 			u_int lNum = lightCDF.SampleDiscrete(lightNum[sampOffset], &lightPdf);
-			Light *light = scene->lights[lNum];
+			Light *light = scene.lights[lNum];
 			// Sample ray leaving light source
-			RayDifferential ray;
+			BSDF *bsdf;
 			float pdf;
-			SWCSpectrum alpha(light->Sample_L(tspack, scene,
-				lightSamp0[2 * sampOffset],
+			SWCSpectrum alpha;
+			if (!light->SampleL(scene, sample,
+				lightSamp0[2 * sampOffset ],
 				lightSamp0[2 * sampOffset + 1],
+				lightSamp0b[sampOffset], &bsdf, &pdf, &alpha))
+				continue;
+			Ray ray;
+			ray.o = bsdf->dgShading.p;
+			SWCSpectrum f;
+			float pdf2;
+			if (!bsdf->SampleF(sw, Vector(bsdf->nn), &ray.d,
 				lightSamp1[2 * sampOffset],
 				lightSamp1[2 * sampOffset + 1],
-				&ray, &pdf));
-			if (pdf == 0.f || alpha.Black())
+				lightSamp1b[sampOffset], &f, &pdf2))
 				continue;
-			alpha /= pdf * lightPdf;
+			alpha *= f;
+			alpha /= lightPdf;
 			Intersection isect;
-			BSDF *bsdf;
 			const Volume *volume = NULL; //FIXME: get it from the light
 			u_int nIntersections = 0;
-			while (scene->Intersect(tspack, volume, ray, &isect,
-				&bsdf, &alpha) && !alpha.Black()) {
+			while (scene.Intersect(sample, volume, false, ray, 1.f,
+				&isect, &bsdf, NULL, NULL, &alpha) &&
+				!alpha.Black()) {
 				++nIntersections;
-//				alpha *= scene->Transmittance(ray);
 				Vector wo = -ray.d;
 				// Create virtual light at ray intersection point
-				SWCSpectrum Le = alpha * bsdf->rho(tspack, wo) / M_PI;
-				virtualLights[s].push_back(
-					VirtualLight(tspack, isect.dg.p,
-					isect.dg.nn, Le));
+				if (bsdf->NumComponents(BxDFType(~BSDF_SPECULAR))) {
+					const SWCSpectrum Le(alpha *
+						bsdf->rho(sw, wo) * INV_PI);
+					virtualLights[s].push_back(VirtualLight(sw,
+						isect.dg.p, isect.dg.nn, Le));
+				}
 				// Sample new ray direction and update weight
 				Vector wi;
 				float pdf;
 				BxDFType flags;
 				SWCSpectrum fr;
-			       	if (!bsdf->Sample_f(tspack, wo, &wi,
-					tspack->rng->floatValue(),
-					tspack->rng->floatValue(),
-					tspack->rng->floatValue(),
+			       	if (!bsdf->SampleF(sw, wo, &wi,
+					rng.floatValue(),
+					rng.floatValue(),
+					rng.floatValue(),
 					&fr, &pdf, BSDF_ALL, &flags))
 					break;
-				SWCSpectrum anew = fr * AbsDot(wi, bsdf->dgShading.nn) / pdf;
-				float r = min(1.f, anew.Filter(tspack));
-				if (tspack->rng->floatValue() > r)
+				float r = min(1.f, fr.Filter(sw));
+				if (rng.floatValue() > r)
 					break;
-				alpha *= anew / r;
-				ray = RayDifferential(isect.dg.p, wi);
+				alpha *= fr / r;
+				ray = Ray(isect.dg.p, wi);
 				volume = bsdf->GetVolume(wi);
 			}
 		}
 	}
 	delete[] lightNum; // NOBOOK
 	delete[] lightSamp0; // NOBOOK
+	delete[] lightSamp0b; // NOBOOK
 	delete[] lightSamp1; // NOBOOK
+	delete[] lightSamp1b; // NOBOOK
 }
-u_int IGIIntegrator::Li(const TsPack *tspack, const Scene *scene,
-	const Sample *sample) const
+u_int IGIIntegrator::Li(const Scene &scene, const Sample &sample) const
 {
-	RayDifferential r;
-	float rayWeight = tspack->camera->GenerateRay(tspack, scene, *sample,
-		&r);
-
-	RayDifferential ray(r);
+	Ray ray;
+	float rayWeight = sample.camera->GenerateRay(scene, sample, &ray);
+	const SpectrumWavelengths &sw(sample.swl);
 	SWCSpectrum L(0.f), pathThroughput(1.f);
 	float alpha = 1.f;
 	const Volume *volume = NULL;
+	bool scattered = false;
 	for (u_int depth = 0; ; ++depth) {
+		const float *data = sample.sampler->GetLazyValues(sample, sampleOffset, depth);
 		Intersection isect;
 		BSDF *bsdf;
-		if (!scene->Intersect(tspack, volume, r, &isect, &bsdf,
-			&pathThroughput)) {
+		float spdf;
+		if (!scene.Intersect(sample, volume, scattered, ray, data[1],
+			&isect, &bsdf, &spdf, NULL, &pathThroughput)) {
+			pathThroughput /= spdf;
 			// Handle ray with no intersection
 			if (depth == 0)
 				alpha = 0.f;
-			for (u_int i = 0; i < scene->lights.size(); ++i)
-				L += pathThroughput * scene->lights[i]->Le(tspack, r);
+			BSDF *ibsdf;
+			for (u_int i = 0; i < scene.lights.size(); ++i) {
+				SWCSpectrum Le(pathThroughput);
+				if (scene.lights[i]->Le(scene, sample, ray,
+					&ibsdf, NULL, NULL, &Le))
+					L += Le;
+			}
 			break;
 		}
-		Vector wo = -r.d;
-		// Compute emitted light if ray hit an area light source
-		L += pathThroughput * isect.Le(tspack, wo);
-		// Evaluate BSDF at hit point
+		scattered = bsdf->dgShading.scattered;
+		pathThroughput /= spdf;
+		Vector wo = -ray.d;
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;
-		for (u_int i = 0; i < scene->lights.size(); ++i) {
+		// Compute emitted light if ray hit an area light source
+		if (isect.arealight) {
+			BSDF *ibsdf;
+			L += pathThroughput * isect.Le(sample, ray, &ibsdf,
+				NULL, NULL);
+		}
+		for (u_int i = 0; i < scene.lights.size(); ++i) {
 			SWCSpectrum Ld(0.f);
-			float ln = Clamp((i + tspack->rng->floatValue()) / scene->lights.size(), 0.f, 1.f);
-			UniformSampleOneLight(tspack, scene, p, n, wo, bsdf,
-				sample, sample->twoD[lightSampleOffset[i]],
-				&ln,
-				sample->twoD[bsdfSampleOffset[i]],
-				sample->oneD[bsdfComponentOffset[i]], &Ld);
-			L += pathThroughput * Ld / scene->lights.size();
+			float lightPos[2], bsdfPos[2];
+			const float ln = (i + sample.sampler->GetOneD(sample,
+				lightSampleNumber[i], 0)) / scene.lights.size();
+			sample.sampler->GetTwoD(sample, lightSampleOffset[i], 0,
+				lightPos);
+			sample.sampler->GetTwoD(sample, bsdfSampleOffset[i], 0,
+				bsdfPos);
+			const float bsdfComp = sample.sampler->GetOneD(sample,
+				bsdfComponentOffset[i], 0);
+			UniformSampleOneLight(scene, sample, p, n, wo, bsdf,
+				lightPos, &ln, bsdfPos, &bsdfComp, &Ld);
+			L += pathThroughput * Ld / scene.lights.size();
 		}
 		// Compute indirect illumination with virtual lights
-		size_t lSet = min<size_t>(Floor2UInt(sample->oneD[vlSetOffset][0] * nLightSets),
-			max<size_t>(1U, virtualLights.size()) - 1U);
-		for (size_t i = 0; i < virtualLights[lSet].size(); ++i) {
+		size_t lSet = min<size_t>(Floor2UInt(sample.sampler->GetOneD(sample,
+			vlSetOffset, 0) * nLightSets), nLightSets - 1U);
+		for (u_int i = 0; i < virtualLights[lSet].size(); ++i) {
 			const VirtualLight &vl = virtualLights[lSet][i];
 			// Add contribution from _VirtualLight_ _vl_
 			// Ignore light if it's too close
 			float d2 = DistanceSquared(p, vl.p);
-			if (d2 < .8f * minDist2)
-				continue;
-			float distScale = SmoothStep(.8f * minDist2,
-				1.2f * minDist2, d2);
-			// Compute virtual light's tentative contribution _Llight_
 			Vector wi = Normalize(vl.p - p);
-			SWCSpectrum f = distScale * bsdf->f(tspack, wi, wo, BxDFType(~BSDF_SPECULAR));
-			if (f.Black())
+			float G = AbsDot(wi, vl.n) / d2;
+			G = min(G, gLimit);
+			// Compute virtual light's tentative contribution _Llight_
+			SWCSpectrum f(bsdf->F(sw, wi, wo, true,
+				BxDFType(~BSDF_SPECULAR)));
+			if (!(G > 0.f) || f.Black())
 				continue;
-			float G = AbsDot(wi, n) * AbsDot(wi, vl.n) / d2;
-			SWCSpectrum Llight = f * vl.GetSWCSpectrum(tspack) *
-				(G / virtualLights[lSet].size());
-			if (scene->Connect(tspack, bsdf->GetVolume(wi),
-				p, vl.p, false, &Llight, NULL, NULL)) {
-				scene->Transmittance(tspack, Ray(p, vl.p - p),
-					sample, &Llight);
+			SWCSpectrum Llight = f * vl.GetSWCSpectrum(sw) *
+				(G / nLightPaths);
+			if (scene.Connect(sample, bsdf->GetVolume(wi),
+				scattered, false, p, vl.p, false, &Llight, NULL,
+				NULL)) {
 				L += pathThroughput * Llight;
 			}
 		}
-		// Trace rays for specular reflection and refraction
 		if (depth >= maxSpecularDepth)
 			break;
 		Vector wi;
-		// Trace rays for specular reflection and refraction
 		SWCSpectrum f;
 		float pdf;
-		if (!bsdf->Sample_f(tspack, wo, &wi, .5f, .5f, tspack->rng->floatValue(), &f, &pdf, BxDFType(BSDF_SPECULAR | BSDF_REFLECTION | BSDF_TRANSMISSION)))
+		// Trace rays for specular reflection and refraction
+		if (!bsdf->SampleF(sw, wo, &wi, .5f, .5f, *data, &f, &pdf,
+			BxDFType(BSDF_SPECULAR | BSDF_REFLECTION | BSDF_TRANSMISSION)))
 			break;
-		// Compute ray differential _rd_ for specular reflection
-		r = RayDifferential(p, wi);
-		r.time = ray.time;
-		pathThroughput *= f * (AbsDot(wi, n) / pdf);
+		ray = Ray(p, wi);
+		ray.time = sample.realTime;
+		pathThroughput *= f;
 		volume = bsdf->GetVolume(wi);
 	}
-	const XYZColor color(tspack, L);
-	sample->AddContribution(sample->imageX, sample->imageY,
-		color * rayWeight, alpha, bufferId, 0U);
+	const XYZColor color(sw, L);
+	sample.AddContribution(sample.imageX, sample.imageY, color * rayWeight,
+		alpha, 0.f, 0.f, bufferId, 0U);
 	return L.Black() ? 0 : 1;
 }
 SurfaceIntegrator* IGIIntegrator::CreateSurfaceIntegrator(const ParamSet &params)
@@ -253,8 +289,9 @@ SurfaceIntegrator* IGIIntegrator::CreateSurfaceIntegrator(const ParamSet &params
 	int nLightSets = params.FindOneInt("nsets", 4);
 	int nLightPaths = params.FindOneInt("nlights", 64);
 	int maxDepth = params.FindOneInt("maxdepth", 5);
-	float minDist = params.FindOneFloat("mindist", .1f);
-	return new IGIIntegrator(max(nLightPaths, 0), max(nLightSets, 0), max(maxDepth, 0), minDist);
+	float maxG = params.FindOneFloat("glimit",
+		1.f / params.FindOneFloat("mindist", .1f));
+	return new IGIIntegrator(max(nLightPaths, 0), max(nLightSets, 0), max(maxDepth, 0), maxG);
 }
 
 static DynamicLoader::RegisterSurfaceIntegrator<IGIIntegrator> r("igi");

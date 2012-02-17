@@ -330,9 +330,9 @@ int cubic(double A[4], double X[3])
  }
  
 // Torus Method Definitions
-Torus::Torus(const Transform &o2w, bool ro, float marad, float mirad,
+Torus::Torus(const Transform &o2w, bool ro, const string &name, float marad, float mirad,
                float tmi, float tma, float pm)
-	: Shape(o2w, ro) {
+	: Shape(o2w, ro, name) {
 	majorRadius = marad;
 	minorRadius = mirad;
 	thetaMin = Radians(Clamp(min(tmi, tma), 0.f, 360.f));
@@ -454,12 +454,13 @@ float Torus::Area() const {
 Shape* Torus::CreateShape(const Transform &o2w,
 					   bool reverseOrientation,
 					   const ParamSet &params) {
+	string name = params.FindOneString("name", "'torus'");
 	float majorRadius = params.FindOneFloat("majorradius", 1.f);
 	float minorRadius = params.FindOneFloat("minorradius", .25f);
 	float thetamin = params.FindOneFloat("thetamin", 0);
 	float thetamax = params.FindOneFloat("thetamax", 360.f);
 	float phimax = params.FindOneFloat("phimax", 360.f);
-	return new Torus(o2w, reverseOrientation, majorRadius, minorRadius,
+	return new Torus(o2w, reverseOrientation, name, majorRadius, minorRadius,
 		thetamin, thetamax, phimax);
 }
 

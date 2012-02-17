@@ -38,23 +38,13 @@ public:
 		boost::shared_ptr<Texture<float> > &d,
 		boost::shared_ptr<Texture<float> > &u,
 		boost::shared_ptr<Texture<float> > &v,
-		boost::shared_ptr<Texture<float> > &bump,
-		const CompositingParams &cp,
-		boost::shared_ptr<Texture<SWCSpectrum> > &sc) : Kd(kd), Ks(ks), Ka(ka), depth(d),
-		index(i), nu(u), nv(v), bumpMap(bump) {
-		compParams = new CompositingParams(cp);
-		Sc = sc;
-	}
+		bool mb,
+		const ParamSet &mp, boost::shared_ptr<Texture<SWCSpectrum> > &sc) : Material(mp), Kd(kd), Ks(ks), Ka(ka),
+		depth(d), index(i), nu(u), nv(v), multibounce(mb) { Sc = sc; }
 	virtual ~Glossy2() { }
-	virtual void GetShadingGeometry(const TsPack *tspack,
-		const Normal &nGeom, DifferentialGeometry *dgBump) const {
-		if (bumpMap)
-			Bump(tspack, bumpMap, nGeom, dgBump);
-	}
-	virtual BSDF *GetBSDF(const TsPack *tspack,
-		const DifferentialGeometry &dgGeom,
-		const DifferentialGeometry &dgShading,
-		const Volume *exterior, const Volume *interior) const;
+	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
+		const Intersection &isect,
+		const DifferentialGeometry &dgShading) const;
 	
 	static Material * CreateMaterial(const Transform &xform,
 		const ParamSet &mp);
@@ -63,7 +53,36 @@ private:
 	boost::shared_ptr<Texture<SWCSpectrum> > Kd, Ks, Ka;
 	boost::shared_ptr<Texture<float> > depth, index;
 	boost::shared_ptr<Texture<float> > nu, nv;
-	boost::shared_ptr<Texture<float> > bumpMap;
+	bool multibounce;
+};
+
+class GlossyCoating : public Material {
+public:
+	// GlossyCoating Public Methods
+	GlossyCoating(boost::shared_ptr<Material> &bmat,
+		boost::shared_ptr<Texture<SWCSpectrum> > &ks,
+		boost::shared_ptr<Texture<SWCSpectrum> > &ka,
+		boost::shared_ptr<Texture<float> > &i,
+		boost::shared_ptr<Texture<float> > &d,
+		boost::shared_ptr<Texture<float> > &u,
+		boost::shared_ptr<Texture<float> > &v,
+		bool mb,
+		const ParamSet &mp, boost::shared_ptr<Texture<SWCSpectrum> > &sc) : Material(mp), basemat(bmat), Ks(ks), Ka(ka),
+		depth(d), index(i), nu(u), nv(v), multibounce(mb) { Sc = sc; }
+	virtual ~GlossyCoating() { }
+	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
+		const Intersection &isect,
+		const DifferentialGeometry &dgShading) const;
+	
+	static Material * CreateMaterial(const Transform &xform,
+		const ParamSet &mp);
+private:
+	// GlossyCoating Private Data
+	boost::shared_ptr<Material> basemat;
+	boost::shared_ptr<Texture<SWCSpectrum> > Ks, Ka;
+	boost::shared_ptr<Texture<float> > depth, index;
+	boost::shared_ptr<Texture<float> > nu, nv;
+	bool multibounce;
 };
 
 }//namespace lux

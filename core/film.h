@@ -28,7 +28,7 @@
 #include "color.h"
 #include "memory.h"
 #include "queryable.h"
-#include "imagereader.h"
+#include "bsh.h"
 
 #include <boost/serialization/split_member.hpp>
 #include <boost/thread/mutex.hpp>
@@ -38,9 +38,11 @@ namespace lux {
 
 enum ImageType {
     IMAGE_NONE = 0, // Don't write anything
-    IMAGE_FILEOUTPUT = 1 << 1, // Write image to file
+    IMAGE_FILEOUTPUT = 1 << 0, // Write image to file
+    IMAGE_FLMOUTPUT = 1 << 1, // Write flm file
     IMAGE_FRAMEBUFFER = 1 << 2, // Display image
-    IMAGE_ALL = IMAGE_FILEOUTPUT | IMAGE_FRAMEBUFFER
+	IMAGE_FILE_ALL = IMAGE_FILEOUTPUT | IMAGE_FLMOUTPUT, // All filebased output
+    IMAGE_ALL = IMAGE_FLMOUTPUT | IMAGE_FILEOUTPUT | IMAGE_FRAMEBUFFER
 };
 
 // Buffer types
@@ -48,6 +50,7 @@ enum ImageType {
 enum BufferType {
     BUF_TYPE_PER_PIXEL = 0, // Per pixel normalized buffer
     BUF_TYPE_PER_SCREEN, // Per screen normalized buffer
+    BUF_TYPE_PER_SCREEN_SCALED, // Per screen with custom normalisation factor. Internal use of SPPM
     BUF_TYPE_RAW, // No normalization
     NUM_OF_BUFFER_TYPES
 };
@@ -113,6 +116,13 @@ public:
 		pixel.L.AddWeighted(wt, L);
 		pixel.alpha += alpha * wt;
 		pixel.weightSum += wt;
+	}
+
+	void Set(u_int x, u_int y, XYZColor L, float alpha) {
+		Pixel &pixel = (*pixels)(x, y);
+		pixel.L = L;
+		pixel.alpha = alpha;
+		pixel.weightSum = 1.f;
 	}
 
 	void Clear() {
@@ -212,6 +222,12 @@ public:
 		fpixel.weightSum += wt;
 	}
 
+	void Set(u_int x, u_int y, float value, float wt) {
+		FloatPixel &fpixel = (*floatpixels)(x, y);
+		fpixel.V = value;
+		fpixel.weightSum = 1.f;
+	}
+
 /*	void GetData(Color *color, float *alpha) const {
 		for (int y = 0, offset = 0; y < yPixelCount; ++y) {
 			for (int x = 0; x < xPixelCount; ++x, ++offset) {
@@ -275,12 +291,66 @@ private:
 	const double *numberOfSamples_;
 };
 
+// this buffer is used by SPPM
+// It is a copyPaste of PerScreenNormalizedBuffer, but without the x*y
+// normalization facter and with added a custom normalisation factor.
+class PerScreenNormalizedBufferScaled : public Buffer {
+public:
+	PerScreenNormalizedBufferScaled(u_int x, u_int y, const double *samples) :
+		Buffer(x, y), numberOfSamples_(samples) { }
+
+	virtual ~PerScreenNormalizedBufferScaled() {}
+
+	virtual void GetData(XYZColor *color, float *alpha) const {
+		scale = scaleUpdate->GetScaleFactor();
+		const float inv = static_cast<float>(scale / *numberOfSamples_);
+		for (u_int y = 0, offset = 0; y < yPixelCount; ++y) {
+			for (u_int x = 0; x < xPixelCount; ++x, ++offset) {
+				const Pixel &pixel = (*pixels)(x, y);
+				if (pixel.weightSum > 0.f) {
+					color[offset] = pixel.L * inv;
+					alpha[offset] = pixel.alpha;
+				} else {
+					color[offset] = 0.f;
+					alpha[offset] = 0.f;
+				}
+			}
+		}
+	}
+	virtual float GetData(u_int x, u_int y, XYZColor *color, float *alpha) const {
+		if(x == 0 && y == 0)
+			scale = scaleUpdate->GetScaleFactor();
+
+		const Pixel &pixel = (*pixels)(x, y);
+		if (pixel.weightSum > 0.f) {
+			*color = pixel.L * static_cast<float>(scale / *numberOfSamples_);
+			*alpha = pixel.alpha;
+		} else {
+			*color = XYZColor(0.f);
+			*alpha = 0.f;
+		}
+		return pixel.weightSum;
+	}
+
+	class ScaleUpdateInterface
+	{
+		public:
+			virtual float GetScaleFactor() = 0;
+	};
+	const double *numberOfSamples_;
+
+	ScaleUpdateInterface *scaleUpdate;
+private:
+	mutable float scale;
+};
+
 
 class BufferGroup {
 public:
 	BufferGroup(const string &n) : numberOfSamples(0.f), name(n),
 		globalScale(1.f), temperature(0.f),
-		rgbScale(1.f), scale(1.f), enable(true) { }
+		rgbScale(1.f), convert(XYZColor(1.f), XYZColor(1.f)),
+		enable(true) { }
 	~BufferGroup() {
 		for(vector<Buffer *>::iterator buffer = buffers.begin(); buffer != buffers.end(); ++buffer)
 			delete *buffer;
@@ -294,6 +364,9 @@ public:
 				break;
 			case BUF_TYPE_PER_SCREEN:
 				buffers.push_back(new PerScreenNormalizedBuffer(x, y, &numberOfSamples));
+				break;
+			case BUF_TYPE_PER_SCREEN_SCALED:
+				buffers.push_back(new PerScreenNormalizedBufferScaled(x, y, &numberOfSamples));
 				break;
 			case BUF_TYPE_RAW:
 				buffers.push_back(new RawBuffer(x, y));
@@ -312,7 +385,7 @@ public:
 	string name;
 	float globalScale, temperature;
 	RGBColor rgbScale;
-	XYZColor scale;
+	ColorAdaptator convert;
 	bool enable;
 };
 
@@ -375,24 +448,150 @@ private:
 	boost::mutex m_mutex;
 };
 
+// SamplePoint
+
+//------------------------------------------------------------------------------
+// Filter Look Up Table
+//------------------------------------------------------------------------------
+
+class FilterLUT {
+public:
+	FilterLUT() : lut() { }
+
+	FilterLUT(Filter *filter, const float offsetX, const float offsetY);
+
+	~FilterLUT() { }
+
+	const u_int GetWidth() const { return lutWidth; }
+	const u_int GetHeight() const { return lutHeight; }
+
+	const float *GetLUT() const {
+		return &lut.front();
+	}
+
+private:
+	u_int lutWidth, lutHeight;
+	std::vector<float> lut;
+};
+
+class FilterLUTs {
+public:
+	FilterLUTs(Filter *filter, const u_int size);
+
+	~FilterLUTs() {	}
+
+	const FilterLUT &GetLUT(const float x, const float y) const {
+		const int ix = max<int>(0, min<int>(Floor2Int(lutsSize * (x + 0.5f)), lutsSize - 1));
+		const int iy = max<int>(0, min<int>(Floor2Int(lutsSize * (y + 0.5f)), lutsSize - 1));
+
+		return luts[ix + iy * lutsSize];
+	}
+
+private:
+	unsigned int lutsSize;
+	float step;
+	std::vector<FilterLUT> luts;
+};
+
+class OutlierDataXYRGB {
+public:
+	typedef PointN<5> Point_t;
+
+	OutlierDataXYRGB() : p() {
+	}
+
+	OutlierDataXYRGB(float x, float y, const XYZColor &color) {
+		RGBColor rgb = cs.ToRGBConstrained(color);
+		p.x[0] = x;
+		p.x[1] = y;
+		//p.x[2] = rgb.c[0] * (1.f / 255.f);
+		//p.x[3] = rgb.c[1] * (1.f / 255.f);
+		//p.x[4] = rgb.c[2] * (1.f / 255.f);
+		p.x[2] = logf(1.f + rgb.c[0]);
+		p.x[3] = logf(1.f + rgb.c[1]);
+		p.x[4] = logf(1.f + rgb.c[2]);
+	}
+
+	Point_t p;
+
+	static ColorSystem cs;
+};
+
+class OutlierDataRGB {
+public:
+	typedef PointN<3> Point_t;
+
+	OutlierDataRGB() : p() {
+	}
+
+	OutlierDataRGB(float x, float y, const XYZColor &color) {
+		RGBColor rgb = cs.ToRGBConstrained(color);
+		p.x[0] = rgb.c[0] * (1.f / 255.f);
+		p.x[1] = rgb.c[1] * (1.f / 255.f);
+		p.x[2] = rgb.c[2] * (1.f / 255.f);
+	}
+
+	Point_t p;
+
+	static ColorSystem cs;
+};
+
+class OutlierDataXYLY {
+public:
+	typedef PointN<3> Point_t;
+
+	OutlierDataXYLY() : p() {
+	}
+
+	OutlierDataXYLY(float x, float y, const XYZColor &color) {
+		p.x[0] = x;
+		p.x[1] = y;
+		p.x[2] = logf(1.f + color.Y());
+	}
+
+	Point_t p;
+
+	static ColorSystem cs;
+};
+
+//typedef OutlierDataXYRGB OutlierData;
+typedef OutlierDataXYLY OutlierData;
+
 // Film Declarations
 class Film : public Queryable {
 public:
 	// Film Interface
-	Film(u_int xres, u_int yres, Filter *filt, const float crop[4],
+	Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop[4],
 		const string &filename1, bool premult, bool useZbuffer,
-		bool w_resume_FLM, bool restart_resume_FLM, int haltspp, int halttime,
-		int reject_warmup, bool debugmode);
+		bool w_resume_FLM, bool restart_resume_FLM, bool write_FLM_direct,
+		int haltspp, int halttime, bool debugmode, int outlierk, int tilecount);
 
 	virtual ~Film();
 
+	/*
+	 * Adds a contribution to the film.
+	 * Not thread-safe!
+	 */
 	virtual void AddSample(Contribution *contrib);
+	/*
+	 * Adds contributions to a given tile of the film.
+	 * This method is thread-safe for different tiles.
+	 * @param contribs Array of contributions to add
+	 * @param num_contribs Number of contributions in the contribs array
+	 * @param tileIndex Index of the tile the contributions should be added to
+	 */
+	virtual void AddTileSamples(const Contribution* const contribs, u_int num_contribs, u_int tileIndex);
+	virtual void SetSample(const Contribution *contrib);
 	virtual void AddSampleCount(float count);
+	virtual void SaveEXR(const string &exrFilename, bool useHalfFloats, bool includeZBuf, int compressionType, bool tonemapped) {
+		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SaveEXR not implemented";
+	}
 	virtual void WriteImage(ImageType type) = 0;
 	virtual void WriteFilm(const string &fname) { WriteResumeFilm(fname); }
 	virtual void CheckWriteOuputInterval() { }
 	// Dade - method useful for transmitting the samples to a client
-	virtual bool TransmitFilm(std::basic_ostream<char> &stream, bool clearBuffers = true, bool transmitParams = false);
+	bool TransmitFilm(std::basic_ostream<char> &stream, bool clearBuffers = true, bool transmitParams = false, 
+		bool useCompression = true, bool directWrite = false);
 	virtual double UpdateFilm(std::basic_istream<char> &stream);
 	virtual void WriteResumeFilm(const string &filename);
 	virtual bool LoadResumeFilm(const string &filename);
@@ -406,6 +605,21 @@ public:
 	virtual const BufferConfig& GetBufferConfig(u_int index) const { return bufferConfigs[index]; }
 	virtual u_int GetNumBufferGroups() const { return bufferGroups.size(); }
 	virtual const BufferGroup& GetBufferGroup(u_int index) const { return bufferGroups[index]; }
+	virtual void ClearBuffers();
+
+	/**
+	 * Get the indexes that the current contribution spans.
+	 * Current implementation is limited to at most two tiles, ie the tiles are slabs.
+	 * @param tileIndex0 First tile index, always set.
+	 * @param tileIndex1 Second tile index if the contribution spans more than one tile, otherwise undefined.
+	 * @return Number of tiles that the contribution spans, 1 or 2.
+	 */
+	virtual u_int GetTileIndexes(const Contribution &contrib, u_int *tile0, u_int *tile1) const;
+	/*
+	 * Returns the total number of tiles in the film.
+	 * @return Total number of tiles in the film.
+	 */
+	virtual u_int GetTileCount() const;
 
 	virtual void SetGroupName(u_int index, const string& name);
 	virtual string GetGroupName(u_int index) const;
@@ -423,11 +637,12 @@ public:
 	u_int GetYPixelCount() const { return yPixelCount; }
 
 	virtual unsigned char* getFrameBuffer() = 0;
+	virtual float* getFloatFrameBuffer() = 0;
+	virtual float* getAlphaBuffer() = 0;
+	virtual float* getZBuffer() = 0;
 	virtual void updateFrameBuffer() = 0;
 	virtual int getldrDisplayInterval() = 0;
 	void getHistogramImage(unsigned char *outPixels, u_int width, u_int height, int options);
-
-	void SetScene(Scene *scene1) { scene = scene1; }
 
 	// Parameter Access functions
 	virtual void SetParameterValue(luxComponentParameters param, double value, u_int index) = 0;
@@ -436,12 +651,27 @@ public:
 	virtual void SetStringParameterValue(luxComponentParameters param, const string& value, u_int index) = 0;
 	virtual string GetStringParameterValue(luxComponentParameters param, u_int index) = 0;
 
+protected:
+	double DoTransmitFilm(std::basic_ostream<char> &stream, bool clearBuffers = true, bool transmitParams = false);
+	// Reject outliers for a tile. Rejected contributions get their variance set to -1.
+	void RejectTileOutliers(const Contribution* const contribs, u_int num_contribs, u_int tileIndex, int yTilePixelStart, int yTilePixelEnd);
+	// Gets the extents of a tile, interval is [start, end).
+	void GetTileExtent(u_int tileIndex, int *xstart, int *xend, int *ystart, int *yend) const;
+
 public:
 	// Film Public Data
 	u_int GetXResolution();
 	u_int GetYResolution();
 
 	u_int xResolution, yResolution;
+
+	// Statistics
+	float EV;
+	float averageLuminance;
+	double numberOfSamplesFromNetwork;
+	double numberOfLocalSamples;
+
+	ContributionPool *contribPool;
 
 protected: // Put it here for better data alignment
 	// Dade - (xResolution + filter->xWidth) * (yResolution + filter->yWidth)
@@ -453,10 +683,13 @@ protected: // Put it here for better data alignment
 
 	Filter *filter;
 	float *filterTable;
+	FilterLUTs *filterLUTs;
 
 	string filename;
 
 	u_int xPixelStart, yPixelStart, xPixelCount, yPixelCount;
+	u_int tileCount, tileHeight;
+	float invTileHeight, tileOffset, tileOffset2;
 	ColorSystem colorSpace; // needed here for ComputeGroupScale()
 
 	std::vector<BufferConfig> bufferConfigs;
@@ -467,25 +700,34 @@ protected: // Put it here for better data alignment
 	bool debug_mode;
 	bool premultiplyAlpha;
 
-	bool warmupComplete;
-	double reject_warmup_samples;
-	double warmupSamples;
-	float maxY;
 
 	bool writeResumeFlm, restartResumeFlm;
+	bool writeFlmDirect;
+
+	// density-based outlier rejection
+	int outlierRejection_k;
+	u_int outlierCellWidth, outlierCellHeight;
+	float outlierInvCellWidth, outlierInvCellHeight;
+	typedef BSH<OutlierData::Point_t, NearSetPointProcess<OutlierData::Point_t>, 9 > OutlierAccel;
+	std::vector<std::vector<OutlierAccel> > outliers;
+	// contains the outliers that lies on the overlap between tiles
+	std::vector<std::vector<OutlierAccel> > tileborder_outliers; 
 
 	XYZColor *back;
 public:
 	// Samplers will check this flag to know if we have enough samples per
 	// pixel and it is time to stop
-	int haltSamplePerPixel;
+	int haltSamplesPerPixel;
 	// Seconds to wait before to stop. Any value <= 0 will never stop the rendering
 	int haltTime;
-	float EV;
-	Scene *scene;
+
 	Histogram *histogram;
-	bool enoughSamplePerPixel; // At the end to get better data alignment
+	bool enoughSamplesPerPixel; // At the end to get better data alignment
+
 private:
+	// Gets a reference to the appropriate outlier row data for a given position and tile index.
+	std::vector<OutlierAccel>& GetOutlierAccelRow(u_int oY, u_int tileIndex, u_int tileStart, u_int tileEnd);
+	
 	boost::mutex histMutex;
 };
 
@@ -493,15 +735,15 @@ private:
 void ApplyImagingPipeline(vector<XYZColor> &pixels,
 	u_int xResolution, u_int yResolution, 
 	const GREYCStorationParams &GREYCParams, const ChiuParams &chiuParams,
-	ColorSystem &colorSpace, Histogram *histogram, bool HistogramEnabled,
+	const ColorSystem &colorSpace, Histogram *histogram, bool HistogramEnabled,
 	bool &haveBloomImage, XYZColor *&bloomImage, bool bloomUpdate,
 	float bloomRadius, float bloomWeight,
 	bool VignettingEnabled, float VignetScale,
 	bool aberrationEnabled, float aberrationAmount,
 	bool &haveGlareImage, XYZColor *&glareImage, bool glareUpdate,
 	float glareAmount, float glareRadius, u_int glareBlades, float glareThreshold,
-	const char *tonemap, const ParamSet *toneMapParams, float gamma,
-	float dither);
+	const char *tonemap, const ParamSet *toneMapParams,
+	const CameraResponse *response, float dither);
 
 }//namespace lux;
 

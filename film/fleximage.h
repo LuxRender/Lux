@@ -29,6 +29,7 @@
 #include "paramset.h"
 #include "tonemap.h"
 #include "sampling.h"
+#include <boost/thread/mutex.hpp>
 
 namespace lux {
 
@@ -37,32 +38,40 @@ class FlexImageFilm : public Film {
 public:
 	enum OutputChannels { Y, YA, RGB, RGBA };
 	enum ZBufNormalization { None, CameraStartEnd, MinMax };
+	enum TonemapKernels { TMK_Reinhard = 0, TMK_Linear, TMK_Contrast, TMK_MaxWhite, TMK_AutoLinear };
 
 	// FlexImageFilm Public Methods
 
-	FlexImageFilm(u_int xres, u_int yres, Filter *filt, const float crop[4],
-		const string &filename1, const string &filename_back1, bool premult, int wI, int dI, int cM,
+	FlexImageFilm(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop[4],
+		const string &filename1, const string &filename_back1, bool premult, int wI, int fwI, int dI, int cM,
 		bool cw_EXR, OutputChannels cw_EXR_channels, bool cw_EXR_halftype, int cw_EXR_compressiontype, bool cw_EXR_applyimaging,
-		bool cw_EXR_gamutclamp, bool cw_EXR_ZBuf, ZBufNormalization cw_EXR_ZBuf_normalizationtype,
+		bool cw_EXR_gamutclamp, bool cw_EXR_ZBuf, ZBufNormalization cw_EXR_ZBuf_normalizationtype, bool cw_EXR_straight_colors,
 		bool cw_PNG, OutputChannels cw_PNG_channels, bool cw_PNG_16bit, bool cw_PNG_gamutclamp, bool cw_PNG_ZBuf, ZBufNormalization cw_PNG_ZBuf_normalizationtype,
 		bool cw_TGA, OutputChannels cw_TGA_channels, bool cw_TGA_gamutclamp, bool cw_TGA_ZBuf, ZBufNormalization cw_TGA_ZBuf_normalizationtype, 
-		bool w_resume_FLM, bool restart_resume_FLM, int haltspp, int halttime,
+		bool w_resume_FLM, bool restart_resume_FLM, bool write_FLM_direct, int haltspp, int halttime,
 		int p_TonemapKernel, float p_ReinhardPreScale, float p_ReinhardPostScale,
 		float p_ReinhardBurn, float p_LinearSensitivity, float p_LinearExposure, float p_LinearFStop, float p_LinearGamma,
-		float p_ContrastDisplayAdaptionY, float p_Gamma,
+		float p_ContrastDisplayAdaptionY, const string &response, float p_Gamma,
 		const float cs_red[2], const float cs_green[2], const float cs_blue[2], const float whitepoint[2],
-		int reject_warmup, bool debugmode);
+		bool debugmode, int outlierk, int tilecount);
 
 	virtual ~FlexImageFilm() {
 		delete[] framebuffer;
+		delete[] float_framebuffer;
+		delete[] alpha_buffer;
+		delete[] z_buffer;
 	}	
 
+	virtual void SaveEXR(const string &exrFilename, bool useHalfFloats, bool includeZBuf, int compressionType, bool tonemapped);
 	virtual void WriteImage(ImageType type);
 	virtual void CheckWriteOuputInterval();
 
 	// GUI display methods
 	virtual void updateFrameBuffer();
 	virtual unsigned char* getFrameBuffer();
+	virtual float* getFloatFrameBuffer();
+	virtual float* getAlphaBuffer();
+	virtual float* getZBuffer();
 	virtual void createFrameBuffer();
 	virtual int getldrDisplayInterval() { return displayInterval; }
 
@@ -83,6 +92,7 @@ public:
 private:
 	static void GetColorspaceParam(const ParamSet &params, const string name, float values[2]);
 
+	vector<RGBColor>& ApplyPipeline(const ColorSystem &colorSpace, vector<XYZColor> &color);
 	void WriteImage2(ImageType type, vector<XYZColor> &color, vector<float> &alpha, string postfix);
 	void WriteTGAImage(vector<RGBColor> &rgb, vector<float> &alpha, const string &filename);
 	void WritePNGImage(vector<RGBColor> &rgb, vector<float> &alpha, const string &filename);
@@ -90,6 +100,9 @@ private:
 
 	// FlexImageFilm Private Data
 	unsigned char *framebuffer;
+	float *float_framebuffer;
+	float *alpha_buffer;
+	float *z_buffer;
 
 	float m_RGB_X_White, d_RGB_X_White;
 	float m_RGB_Y_White, d_RGB_Y_White;
@@ -112,12 +125,17 @@ private:
 	float m_LinearGamma, d_LinearGamma;
 	float m_ContrastYwa, d_ContrastYwa;
 
+	boost::mutex write_mutex; // WriteImage synchronization
 	int writeInterval;
 	boost::xtime lastWriteImageTime;
+	int flmWriteInterval;
+	boost::xtime lastWriteFLMTime;
 	int displayInterval;
 	int write_EXR_compressiontype;
 	ZBufNormalization write_EXR_ZBuf_normalizationtype;
-	OutputChannels write_EXR_channels;
+	//OutputChannels write_EXR_channels;
+	int write_EXR_channels;
+	bool write_EXR_straight_colors;
 	ZBufNormalization write_PNG_ZBuf_normalizationtype;
 	OutputChannels write_PNG_channels;
 	ZBufNormalization write_TGA_ZBuf_normalizationtype;
@@ -129,6 +147,10 @@ private:
 
 	GREYCStorationParams m_GREYCStorationParams, d_GREYCStorationParams;
 	ChiuParams m_chiuParams, d_chiuParams;
+
+	bool m_CameraResponseEnabled, d_CameraResponseEnabled;
+	string m_CameraResponseFile, d_CameraResponseFile; // Path to the data file
+	boost::shared_ptr<CameraResponse> cameraResponse; // Actual data processor
 
 	XYZColor * m_bloomImage; // Persisting bloom layer image 
 	float m_BloomRadius, d_BloomRadius;
@@ -146,14 +168,13 @@ private:
 	XYZColor * m_glareImage; // Persisting glarelayer image 
 	float m_GlareAmount, d_GlareAmount;
 	float m_GlareRadius, d_GlareRadius;
-	u_int m_GlareBlades, d_GlareBlades;
+	int m_GlareBlades, d_GlareBlades;
 	float m_GlareThreshold, d_GlareThreshold;
 	bool m_GlareUpdateLayer;
 	bool m_GlareDeleteLayer;
 	bool m_HaveGlareImage;
 
 	bool m_HistogramEnabled, d_HistogramEnabled;
-	bool BackgroundEnabled;
 };
 
 }//namespace lux

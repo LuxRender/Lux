@@ -28,10 +28,10 @@
 using namespace lux;
 
 // Paraboloid Method Definitions
-Paraboloid::Paraboloid(const Transform &o2w, bool ro,
+Paraboloid::Paraboloid(const Transform &o2w, bool ro, const string &name, 
                        float rad, float z0, float z1,
 					   float tm)
-	: Shape(o2w, ro) {
+	: Shape(o2w, ro, name) {
 	radius = rad;
 	zmin = min(z0,z1);
 	zmax = max(z0,z1);
@@ -177,11 +177,12 @@ float Paraboloid::Area() const {
 }
 Shape* Paraboloid::CreateShape(const Transform &o2w,
 		bool reverseOrientation, const ParamSet &params) {
+	string name = params.FindOneString("name", "'paraboloid'");
 	float radius = params.FindOneFloat( "radius", 1 );
 	float zmin = params.FindOneFloat( "zmin", 0 );
 	float zmax = params.FindOneFloat( "zmax", 1 );
 	float phimax = params.FindOneFloat( "phimax", 360 );
-	return new Paraboloid(o2w, reverseOrientation, radius, zmin, zmax, phimax);
+	return new Paraboloid(o2w, reverseOrientation, name, radius, zmin, zmax, phimax);
 }
 
 static DynamicLoader::RegisterShape<Paraboloid> r("paraboloid");

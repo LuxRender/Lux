@@ -42,6 +42,10 @@ public:
 	RegularSPD(const float* const s, float lMin, float lMax, u_int n) : SPD() {
 		init(lMin, lMax, s, n);
 	}
+	RegularSPD(const float* const s, float lMin, float lMax, u_int n, float scale) : SPD() {
+		init(lMin, lMax, s, n);
+		Scale(scale);
+	}
 
 	virtual ~RegularSPD() {}
 

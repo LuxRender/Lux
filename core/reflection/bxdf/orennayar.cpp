@@ -27,7 +27,7 @@
 
 using namespace lux;
 
-void OrenNayar::f(const TsPack *tspack, const Vector &wo, 
+void OrenNayar::F(const SpectrumWavelengths &sw, const Vector &wo, 
 	const Vector &wi, SWCSpectrum *const f_) const
 {
 	float sinthetai = SinTheta(wi);
@@ -40,15 +40,39 @@ void OrenNayar::f(const TsPack *tspack, const Vector &wo,
 		float dcos = cosphii * cosphio + sinphii * sinphio;
 		maxcos = max(0.f, dcos);
 	}
-	// Compute sine and tangent terms of Oren--Nayar model
-	float sinalpha, tanbeta;
-	if (fabsf(CosTheta(wi)) > fabsf(CosTheta(wo))) {
-		sinalpha = sinthetao;
-		tanbeta = sinthetai / fabsf(CosTheta(wi));
-	} else {
-		sinalpha = sinthetai;
-		tanbeta = sinthetao / fabsf(CosTheta(wo));
+	f_->AddWeighted(INV_PI * fabsf(CosTheta(wo)) *
+		(A + B * maxcos * sinthetao * sinthetai /
+		max(fabsf(CosTheta(wi)), fabsf(CosTheta(wo)))), R);
+}
+
+bool OrenNayar::SampleF(const SpectrumWavelengths &sw, const Vector &wo,
+	Vector *wi, float u1, float u2, SWCSpectrum *const f_, float *pdf,
+	float *pdfBack, bool reverse) const
+{
+	// Cosine-sample the hemisphere, flipping the direction if necessary
+	*wi = CosineSampleHemisphere(u1, u2);
+	if (wo.z < 0.f) wi->z *= -1.f;
+	// wi may be in the tangent plane, which will 
+	// fail the SameHemisphere test in Pdf()
+	if (!SameHemisphere(wo, *wi)) 
+		return false;
+	*pdf = Pdf(sw, wo, *wi);
+	if (pdfBack)
+		*pdfBack = Pdf(sw, *wi, wo);
+	float sinthetai = SinTheta(*wi);
+	float sinthetao = SinTheta(wo);
+	// Compute cosine term of Oren--Nayar model
+	float maxcos = 0.f;
+	if (sinthetai > 1e-4f && sinthetao > 1e-4f) {
+		float sinphii = SinPhi(*wi), cosphii = CosPhi(*wi);
+		float sinphio = SinPhi(wo), cosphio = CosPhi(wo);
+		float dcos = cosphii * cosphio + sinphii * sinphio;
+		maxcos = max(0.f, dcos);
 	}
-	f_->AddWeighted(INV_PI * (A + B * maxcos * sinalpha * tanbeta), R);
+	*f_ = (A + B * maxcos * sinthetao * sinthetai /
+		max(fabsf(CosTheta(*wi)), fabsf(CosTheta(wo)))) * R;
+	if (!reverse)
+		*f_ *= fabsf(wo.z / wi->z);
+	return true;
 }
 

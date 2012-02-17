@@ -137,7 +137,7 @@ int multitex(const Tex *tex, const float *texvec, TexResult *texres);
 #define TEX_VORONOI_F2		4
 #define TEX_VORONOI_F3		5
 #define TEX_VORONOI_F4		6
-#define TEX_VORONOI_F2F1	7
+#define TEX_VORONOI_F2_F1	7
 #define TEX_VORONOI_CRACKLE		8
 #define TEX_CELLNOISE		14
 

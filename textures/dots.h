@@ -39,7 +39,7 @@ public:
 		boost::shared_ptr<Texture<float> > &c2) :
 		outsideDot(c1), insideDot(c2), mapping(m) { }
 	virtual ~DotsTexture() { delete mapping; }
-	virtual float Evaluate(const TsPack *tspack,
+	virtual float Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
 		// Compute cell indices for dots
 		float s, t;
@@ -56,16 +56,16 @@ public:
 				Noise(sCell + 4.5f, tCell + 9.8f);
 			const float ds = s - sCenter, dt = t - tCenter;
 			if (ds * ds + dt * dt < radius * radius)
-				return insideDot->Evaluate(tspack, dg);
+				return insideDot->Evaluate(sw, dg);
 		}
-		return outsideDot->Evaluate(tspack, dg);
+		return outsideDot->Evaluate(sw, dg);
 	}
 	virtual float Y() const {
 		return (insideDot->Y() + outsideDot->Y()) * .5f;
 	}
 	virtual float Filter() const {
 		return (insideDot->Filter() + outsideDot->Filter()) * .5f; }
-	virtual void GetDuv(const TsPack *tspack,
+	virtual void GetDuv(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg, float delta,
 		float *du, float *dv) const {
 		// Compute cell indices for dots
@@ -99,20 +99,32 @@ public:
 		}
 		const float dst2 = dst * dst * .25f;
 		if (r2 < radius2) {
-			insideDot->GetDuv(tspack, dg, delta, du, dv);
+			insideDot->GetDuv(sw, dg, delta, du, dv);
 			if (r2 > radius2 + dst2 - dst * radius) {
-				const float d = (outsideDot->Evaluate(tspack, dg) - insideDot->Evaluate(tspack, dg)) / (sqrtf(r2) * delta);
+				const float d = (outsideDot->Evaluate(sw, dg) -
+					insideDot->Evaluate(sw, dg)) /
+					(sqrtf(r2) * delta);
 				*du += d * (dsdu + dtdu);
 				*dv += d * (dsdv + dtdv);
 			}
 		} else {
-			outsideDot->GetDuv(tspack, dg, delta, du, dv);
+			outsideDot->GetDuv(sw, dg, delta, du, dv);
 			if (r2 < radius2 + dst2 + dst * radius) {
-				const float d = (outsideDot->Evaluate(tspack, dg) - insideDot->Evaluate(tspack, dg)) / (sqrtf(r2) * delta);
+				const float d = (outsideDot->Evaluate(sw, dg) -
+					insideDot->Evaluate(sw, dg)) /
+					(sqrtf(r2) * delta);
 				*du -= d * (dsdu + dtdu);
 				*dv -= d * (dsdv + dtdv);
 			}
 		}
+	}
+	virtual void GetMinMaxFloat(float *minValue, float *maxValue) const {
+		float min1, min2;
+		float max1, max2;
+		insideDot->GetMinMaxFloat(&min1, &max1);
+		outsideDot->GetMinMaxFloat(&min2, &max2);
+		*minValue = min(min1, min2);
+		*maxValue = max(max1, max2);
 	}
 	virtual void SetIlluminant() {
 		// Update sub-textures
@@ -157,9 +169,7 @@ inline Texture<float> * DotsTexture::CreateFloatTexture(const Transform &tex2wor
 			tp.FindOneFloat("udelta", 0.f),
 			tp.FindOneFloat("vdelta", 0.f));
 	} else {
-		std::stringstream ss;
-		ss << "2D texture mapping  '" << type << "' unknown";
-		luxError(LUX_BADTOKEN, LUX_ERROR, ss.str().c_str());
+		LOG( LUX_ERROR,LUX_BADTOKEN) << "2D texture mapping  '" << type << "' unknown";
 		map = new UVMapping2D;
 	}
 	boost::shared_ptr<Texture<float> > in(tp.GetFloatTexture("inside", 1.f)),

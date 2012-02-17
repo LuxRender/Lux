@@ -23,10 +23,6 @@
 // sky.h*
 #include "lux.h"
 #include "light.h"
-#include "texture.h"
-#include "shape.h"
-#include "scene.h"
-#include "spd.h"
 
 namespace lux
 {
@@ -35,43 +31,38 @@ namespace lux
 class SkyLight : public Light {
 public:
 	// SkyLight Public Methods
-	SkyLight(const Transform &light2world,	const float skyscale, u_int ns, Vector sd, float turb, float aconst, float bconst, float cconst, float dconst, float econst);
+	SkyLight(const Transform &light2world, float skyscale, u_int ns,
+		Vector sd, float turb, float aconst, float bconst,
+		float cconst, float dconst, float econst);
 	virtual ~SkyLight();
-	virtual float Power(const Scene *scene) const;
+	virtual float Power(const Scene &scene) const;
 	virtual bool IsDeltaLight() const { return false; }
 	virtual bool IsEnvironmental() const { return true; }
-	virtual SWCSpectrum Le(const TsPack *tspack, const RayDifferential &r) const;
-	virtual SWCSpectrum Le(const TsPack *tspack, const Scene *scene, const Ray &r,
-		const Normal &n, BSDF **bsdf, float *pdf, float *pdfDirect) const;
-	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Point &p, const Normal &n,
-		float u1, float u2, float u3, Vector *wi, float *pdf,
-		VisibilityTester *visibility) const;
-	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Point &p, float u1, float u2, float u3,
-		Vector *wi, float *pdf, VisibilityTester *visibility) const;
-	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2,
-		float u3, float u4, Ray *ray, float *pdf) const;
-	virtual float Pdf(const TsPack *, const Point &, const Normal &, const Vector &) const;
-	virtual float Pdf(const TsPack *, const Point &, const Vector &) const;
-	virtual float Pdf(const TsPack *tspack, const Point &p, const Normal &n,
-		const Point &po, const Normal &ns) const;
-	virtual bool Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2, float u3, BSDF **bsdf, float *pdf, SWCSpectrum *Le) const;
-	virtual bool Sample_L(const TsPack *tspack, const Scene *scene, const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf, float *pdfDirect, VisibilityTester *visibility, SWCSpectrum *Le) const;
-	void		GetSkySpectralRadiance(const TsPack *tspack, const float theta, const float phi, SWCSpectrum * const dst_spect) const;
+	virtual bool Le(const Scene &scene, const Sample &sample, const Ray &r,
+		BSDF **bsdf, float *pdf, float *pdfDirect,
+		SWCSpectrum *L) const;
+	virtual float Pdf(const Point &p, const DifferentialGeometry &dg) const;
+	virtual bool SampleL(const Scene &scene, const Sample &sample,
+		float u1, float u2, float u3, BSDF **bsdf, float *pdf,
+		SWCSpectrum *Le) const;
+	virtual bool SampleL(const Scene &scene, const Sample &sample,
+		const Point &p, float u1, float u2, float u3, BSDF **bsdf,
+		float *pdf, float *pdfDirect, SWCSpectrum *Le) const;
+	void GetSkySpectralRadiance(const SpectrumWavelengths &sw,
+		const Vector &w, SWCSpectrum *const dst_spect) const;
 
 	static Light *CreateLight(const Transform &light2world,
 		const ParamSet &paramSet);
 
 private:
-		// internal methods
-	Vector		GetSunPosition() const;
-	void		SunThetaPhi(float &theta, float &phi) const;
-	RGBColor	GetSunSpectralRadiance() const;
-	float		GetSunSolidAngle() const;
-	void		GetAtmosphericEffects(const Vector &viewer, const Vector &source,
-									RGBColor &atmAttenuation, RGBColor &atmInscatter ) const;
+	// internal methods
+	Vector GetSunPosition() const;
+	void SunThetaPhi(float &theta, float &phi) const;
 
-	void		InitSunThetaPhi();
-	void		ChromaticityToSpectrum(const TsPack *tspack, const float x, const float y, SWCSpectrum * const dst_spect) const;
+	void InitSunThetaPhi();
+	void ChromaticityToSpectrum(const SpectrumWavelengths &sw,
+		const float x, const float y,
+		SWCSpectrum *const dst_spect) const;
 
 	// SkyLight Private Data
 	float skyScale;

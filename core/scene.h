@@ -27,47 +27,22 @@
 #include "api.h"
 #include "primitive.h"
 #include "transport.h"
-#include "timer.h"
-
-#include "fastmutex.h"
 
 #include <boost/thread/thread.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/thread/mutex.hpp>
 
+#include "luxrays/core/dataset.h"
+
 namespace lux {
-
-class RenderThread : public boost::noncopyable {
-public:
-	RenderThread(u_int _n, ThreadSignals _signal, SurfaceIntegrator* _Si,
-		VolumeIntegrator* _Vi, Sampler* _Splr, Camera* _Cam,
-		Scene* _Scn);
-
-	~RenderThread();
-
-	static void Render(RenderThread *r);
-
-	u_int  n;
-	ThreadSignals signal;
-	SurfaceIntegrator *surfaceIntegrator;
-	VolumeIntegrator *volumeIntegrator;
-	Sample *sample;
-	Sampler *sampler;
-	Camera *camera;
-	Scene *scene;
-	TsPack *tspack;
-	boost::thread *thread; // keep pointer to delete the thread object
-	double samples, blackSamples;
-	fast_mutex statLock;
-};
 
 // Scene Declarations
 class  Scene {
 public:
 	// Scene Public Methods
-	void Render();
 	Scene(Camera *c, SurfaceIntegrator *in, VolumeIntegrator *vi,
-		Sampler *s, boost::shared_ptr<Primitive> &accel,
+		Sampler *s, vector<boost::shared_ptr<Primitive> >  prims,
+		boost::shared_ptr<Primitive> &accel,
 		const vector<Light *> &lts, const vector<string> &lg,
 		Region *vr);
 	Scene(Camera *c);
@@ -75,43 +50,73 @@ public:
 	bool Intersect(const Ray &ray, Intersection *isect, bool null_shp_isect = false) const {
 		return aggregate->Intersect(ray, isect, null_shp_isect);
 	}
-	bool Intersect(const TsPack *tspack, const Volume *volume,
-		const RayDifferential &ray, Intersection *isect, BSDF **bsdf,
-		SWCSpectrum *f, bool null_shp_isect = false) const {
-		return volumeIntegrator->Intersect(tspack, this, volume, ray,
-			isect, bsdf, f, null_shp_isect);
+	bool Intersect(const luxrays::RayHit &rayHit, Intersection *isect, bool null_shp_isect = false) const {
+		if (rayHit.Miss())
+			return false;
+		else {
+			// Something was hit
+			const unsigned int currentTriangleIndex = rayHit.index;
+			const unsigned int currentPrimIndex = dataSet->GetMeshID(currentTriangleIndex);
+			const unsigned int triIndex = dataSet->GetMeshTriangleID(currentTriangleIndex);
+
+			tesselatedPrimitives[currentPrimIndex]->GetIntersection(rayHit, triIndex, isect);
+
+			return true;
+		}
 	}
-	bool Connect(const TsPack *tspack, const Volume *volume,
-		const Point &p0, const Point &p1, bool clip, SWCSpectrum *f,
-		float *pdf, float *pdfR) const {
-		return volumeIntegrator->Connect(tspack, this, volume, p0, p1,
-			clip, f, pdf, pdfR);
+	bool Intersect(const Sample &sample, const Volume *volume,
+		bool scatteredStart, const Ray &ray, float u,
+		Intersection *isect, BSDF **bsdf, float *pdf, float *pdfBack,
+		SWCSpectrum *f, bool null_shp_isect = false) const {
+		return volumeIntegrator->Intersect(*this, sample, volume,
+			scatteredStart, ray, u, isect, bsdf, pdf, pdfBack, f, null_shp_isect);
+	}
+	// Used to complete intersection data with LuxRays
+	bool Intersect(const Sample &sample, const Volume *volume,
+		bool scatteredStart, const Ray &ray,
+		const luxrays::RayHit &rayHit, float u, Intersection *isect,
+		BSDF **bsdf, float *pdf, float *pdfBack, SWCSpectrum *f, bool null_shp_isect = false) const {
+		return volumeIntegrator->Intersect(*this, sample, volume,
+			scatteredStart, ray, rayHit, u, isect, bsdf, pdf,
+			pdfBack, f, null_shp_isect);
+	}
+
+	bool Connect(const Sample &sample, const Volume *volume,
+		bool scatteredStart, bool scatteredEnd, const Point &p0,
+		const Point &p1, bool clip, SWCSpectrum *f, float *pdf,
+		float *pdfR, bool null_shapes_isect = false) const {
+		return volumeIntegrator->Connect(*this, sample, volume,
+			scatteredStart, scatteredEnd, p0, p1, clip, f, pdf,
+			pdfR, null_shapes_isect);
+	}
+	// Used with LuxRays
+	int Connect(const Sample &sample, const Volume **volume,
+		bool scatteredStart, bool scatteredEnd, const Ray &ray,
+		const luxrays::RayHit &rayHit, SWCSpectrum *f, float *pdf,
+		float *pdfR, bool null_shapes_isect = false) const {
+		return volumeIntegrator->Connect(*this, sample, volume,
+			scatteredStart, scatteredEnd, ray, rayHit, f, pdf,
+			pdfR, null_shapes_isect);
 	}
 	bool IntersectP(const Ray &ray, bool null_shp_isect = false) const {
 		return aggregate->IntersectP(ray, null_shp_isect);
 	}
 	const BBox &WorldBound() const { return bound; }
-	SWCSpectrum Li(const RayDifferential &ray, const Sample *sample,
+	SWCSpectrum Li(const Ray &ray, const Sample &sample,
 		float *alpha = NULL) const;
 	// modulates the supplied SWCSpectrum with the transmittance along the ray
-	void Transmittance(const TsPack *tspack, const Ray &ray,
-		const Sample *sample, SWCSpectrum *const L) const;
+	void Transmittance(const Ray &ray, const Sample &sample,
+		SWCSpectrum *const L) const;
 
-        void load_support(void) const;
-	//Control methods
-	void Start();
-	void Pause();
-	void Exit();
-
-	u_int CreateRenderThread();
-	void RemoveRenderThread();
-	void SignalThreads(ThreadSignals signal);
-	u_int GetThreadsStatus(RenderingThreadInfo *info, u_int maxInfoCount);
-
+	void arlux_setup(void);
 	//framebuffer access
 	void UpdateFramebuffer();
 	unsigned char* GetFramebuffer();
+	float* GetFloatFramebuffer();
+	float* GetAlphaBuffer();
+	float* GetZBuffer();
 	void SaveFLM(const string& filename);
+	void SaveEXR(const string& filename, bool useHalfFloat, bool includeZBuffer, int compressionType, bool tonemapped);
 
 	//histogram access
 	void GetHistogramImage(unsigned char *outPixels, u_int width,
@@ -135,22 +140,12 @@ public:
 	u_int FilmXres();
 	u_int FilmYres();
 
-	//statistics
-	double Statistics(const string &statName);
-	double GetNumberOfSamples();
-	double Statistics_SamplesPSec();
-	double Statistics_SamplesPTotSec();
-	double Statistics_Efficiency();
-	double Statistics_SamplesPPx();
+	bool ready;
+	void SetReady() { ready = true; }
+	bool IsReady() { return ready; }
 	bool IsFilmOnly() const { return filmOnly; }
 
 	// Scene Data
-	// Put those first for better data alignment
-	Timer s_Timer;
-	double lastSamples, lastTime;
-	double numberOfSamplesFromNetwork;
-	double stat_Samples, stat_blackSamples;
-
 	boost::shared_ptr<Primitive> aggregate;
 	vector<Light *> lights;
 	vector<string> lightGroups;
@@ -161,23 +156,16 @@ public:
 	Sampler *sampler;
 	BBox bound;
 	u_long seedBase;
+	bool terminated; // rendering is terminated
 
-	ContributionPool *contribPool;
+	// The following data are used when tracing rays with LuxRays
+	// The list of original primitives. It is required by LuxRays to build the DataSet.
+	vector<boost::shared_ptr<Primitive> > primitives;
+	vector<const Primitive *> tesselatedPrimitives;
+	luxrays::DataSet *dataSet;
 
 private:
-	// mutex used for adding/removing threads
-	boost::mutex renderThreadsMutex;
-	std::vector<RenderThread*> renderThreads;
-	ThreadSignals CurThreadSignal;
-	TsPack *tspack;
 	bool filmOnly; // whether this scene has entire scene (incl. geometry, ..) or only a film
-
-public: // Put them last for better data alignment
-	// used to suspend render threads until the preprocessing phase is done
-	bool preprocessDone;
-
-	// tell rendering threads what to do when they have done
-	bool suspendThreadsWhenDone;
 };
 
 }//namespace lux

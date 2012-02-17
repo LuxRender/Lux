@@ -27,8 +27,8 @@ namespace lux
 
 class LensComponent : public Shape {
 public:
-    LensComponent(const Transform &o2w, bool ro, float rad,
-        float zmin, float zmax, float phiMax, float aperture);
+    LensComponent(const Transform &o2w, bool ro, const string &name, 
+		float rad, float zmin, float zmax, float phiMax, float aperture);
     virtual ~LensComponent() { }
     // LensComponent public data
     virtual BBox ObjectBound() const;

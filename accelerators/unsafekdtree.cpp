@@ -208,7 +208,7 @@ void UnsafeKdTreeAccel::buildTree(int nodeNum,
 bool UnsafeKdTreeAccel::Intersect(const Ray &ray, Intersection *isect, bool null_shp_isect) const {
     // Compute initial parametric range of ray inside kd-tree extent
     float tmin, tmax;
-    if (!bounds.IntersectP(ray, &tmin, &tmax))
+    if (!bounds.IntersectP(ray, &tmin, &tmax, null_shp_isect))
         return false;
     // Prepare to traverse kd-tree for ray
     int rayId = curMailboxId++;
@@ -388,7 +388,7 @@ bool UnsafeKdTreeAccel::IntersectP(const Ray &ray, bool null_shp_isect) const {
     return false;
 }
 
-void UnsafeKdTreeAccel::GetPrimitives(vector<boost::shared_ptr<Primitive> > &primitives) {
+void UnsafeKdTreeAccel::GetPrimitives(vector<boost::shared_ptr<Primitive> > &primitives) const {
 	primitives.reserve(nMailboxes);
 	for(u_int i=0; i < nMailboxes; i++) {
 		primitives.push_back(mailboxPrims[i].primitive);

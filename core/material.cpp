@@ -29,34 +29,26 @@
 using namespace lux;
 
 // Material Method Definitions
-Material::Material() : bumpmapSampleDistance(.001f) {
-	compParams = NULL;
+Material::Material(const ParamSet &mp, bool hasBumpMap) {
+	// so we can accurately report unused params if material doesn't support bump mapping
+	if (hasBumpMap) {
+		bumpmapSampleDistance = mp.FindOneFloat("bumpmapsampledistance", .001f);
+		boost::shared_ptr<Texture<float> > bump(mp.GetFloatTexture("bumpmap"));
+		bumpMap = bump;
+	}
+	compParams.tVm = mp.FindOneBool("compo_visible_material", true);
+	compParams.tVl = mp.FindOneBool("compo_visible_emission", true);
+	compParams.tiVm = mp.FindOneBool("compo_visible_indirect_material", true);
+	compParams.tiVl = mp.FindOneBool("compo_visible_indirect_emission", true);
+	compParams.oA = mp.FindOneBool("compo_override_alpha", false);
+	compParams.A = mp.FindOneFloat("compo_override_alpha_value", 0.f);
 }
 
-Material::~Material() {
-	if(compParams) delete compParams; 
-}
-
-void Material::InitGeneralParams(const ParamSet &mp) {
-	bumpmapSampleDistance = mp.FindOneFloat("bumpmapsampledistance", .001f);
-}
-
-void Material::FindCompositingParams(const ParamSet &mp, CompositingParams *cp)
-{
-	cp->tVm = mp.FindOneBool("compo_visible_material", true);
-	cp->tVl = mp.FindOneBool("compo_visible_emission", true);
-	cp->tiVm = mp.FindOneBool("compo_visible_indirect_material", true);
-	cp->tiVl = mp.FindOneBool("compo_visible_indirect_emission", true);
-	cp->oA = mp.FindOneBool("compo_override_alpha", false);
-	cp->A = mp.FindOneFloat("compo_override_alpha_value", 0.f);
-}
-
-void Material::Bump(const TsPack *tspack,
-	const boost::shared_ptr<Texture<float> > &d, const Normal &nGeom,
-	DifferentialGeometry *dgBump) const
+void Material::Bump(const SpectrumWavelengths &sw,
+	const Normal &nGeom, DifferentialGeometry *dgBump) const
 {
 	float du, dv;
-	d->GetDuv(tspack, *dgBump, bumpmapSampleDistance, &du, &dv);
+	bumpMap->GetDuv(sw, *dgBump, bumpmapSampleDistance, &du, &dv);
 	dgBump->dpdu += du * Vector(dgBump->nn);   // different to book, as displace*dgs.dndu creates artefacts
 	dgBump->dpdv += dv * Vector(dgBump->nn);   // different to book, as displace*dgs.dndv creates artefacts
 	const Normal nn(dgBump->nn);

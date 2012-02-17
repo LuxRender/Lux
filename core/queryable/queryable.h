@@ -26,12 +26,30 @@
 #include <vector>
 #include <map>
 #include <string>
+#include <boost/shared_ptr.hpp>
 #include "error.h"
 #include "queryableattribute.h"
 
 
 namespace lux
 {
+
+namespace queryable {
+	// internal function for Queryable API
+	// used to set field of an object
+	template <class T, class D> void setfield(T &obj, D T::*field, D value) {
+		obj.*field = value;
+	}
+	template <class D> D getvalue(const D &value) {
+		return value;
+	}
+	template <class T, class E> int getenumfield(T &obj, E T::*field) {
+		return obj.*field;
+	}
+	template <class T, class E> void setenumfield(T &obj, E T::*field, int value) {
+		obj.*field = static_cast<E>(value);
+	}
+}
 
 /*! \class Queryable
  * \brief Parent class of all Queryable objects in the core module
@@ -60,9 +78,11 @@ public:
 	Queryable(std::string _name);
 	virtual ~Queryable();
 
-	void AddAttribute(QueryableAttribute attr)
+	void AddAttribute(boost::shared_ptr<QueryableAttribute> attr)
 	{
-		attributes.insert ( std::pair<std::string,QueryableAttribute>(attr.name,attr) );
+		// replace any existing attribute with same name
+		attributes.erase(attr->name);
+		attributes.insert ( std::pair<std::string,boost::shared_ptr<QueryableAttribute> >(attr->name,attr) );
 	}
 
 	//Access by iterators : we are simply redirecting the calls to the map
@@ -73,92 +93,249 @@ public:
 	 * (*it).second;            // the mapped value (of type T)
 	 *  (*it);                   // the "element value" (of type pair<const Key,T>)
 	 */
-	typedef std::map<std::string, QueryableAttribute>::iterator iterator;
-	typedef std::map<std::string, QueryableAttribute>::const_iterator const_iterator;
+	typedef std::map<std::string, boost::shared_ptr<QueryableAttribute> >::iterator iterator;
+	typedef std::map<std::string, boost::shared_ptr<QueryableAttribute> >::const_iterator const_iterator;
 	iterator begin() { return attributes.begin(); }
 	const_iterator begin() const { return attributes.begin(); }
     iterator end() { return attributes.end(); }
     const_iterator end() const { return attributes.end(); }
 
+	bool HasAttribute(const std::string attributeName)
+	{
+		iterator it = attributes.find(attributeName);
+		return it != attributes.end();
+	}
 
     //If s matches the name of an attribute in this object, the function returns a reference to its QueryableAttribute.
     //Otherwise, it throws an error.
-	QueryableAttribute& operator[] (const std::string &s)
+	QueryableAttribute& operator[] (const std::string &attributeName)
 	{
-		iterator it=attributes.find(s);
-		if(it!=attributes.end()) return((*it).second);
-		else
-		{
-			LOG(LUX_SEVERE,LUX_BADTOKEN) << "Attribute '" << s << "' does not exist in Queryable object";
-			//exit(1);
-			return nullAttribute;
-		}
+		iterator it = attributes.find(attributeName);
+		if (it != attributes.end())
+			return(*it->second);
+
+		LOG(LUX_SEVERE,LUX_BADTOKEN) << "Attribute '" << attributeName << "' does not exist in Queryable object";
+		return nullAttribute;		
 	}
 
-	const std::string GetName()
+	const std::string GetName() const
 	{
 		return name;
 	}
 
-/*	void AddFloatAttribute(std::string attributeName, boost::function<float (void)> getFunc, boost::function<void (float)> setFunc=boost::bind(&QueryableAttribute::ReadOnlyFloatError,_1))
-	{
-		QueryableAttribute tmpAttribute(attributeName,ATTRIBUTE_FLOAT);
-		tmpAttribute.setFloatFunc=setFunc;
-		tmpAttribute.getFloatFunc=getFunc;
-		AddAttribute(tmpAttribute);
-	}*/
+	enum AttributeAccess { ReadOnlyAccess, ReadWriteAccess };
+
+	template<class T> friend void AddBoolConstant(T &object,
+		const std::string &name, const std::string &description,
+		bool b) {
+
+		AddValueAttrib<QueryableBoolAttribute>(object, name, description, b);
+	}
+	template<class T> friend void AddBoolAttribute(T &object,
+		const std::string &name, const std::string &description,
+		bool T::*b, AttributeAccess access = ReadOnlyAccess) {
+
+		AddFieldAttrib<QueryableBoolAttribute>(object, name, description, b, access);
+	}
+	template<class T> friend void AddBoolAttribute(T &object,
+		const std::string &name, const std::string &description,
+		bool defaultValue, bool T::*b,
+		AttributeAccess access = ReadOnlyAccess) {
+
+		AddFieldAttrib<QueryableBoolAttribute>(object, name, description, defaultValue, b, access);
+	}
+	template<class T> friend void AddBoolAttribute(T &object,
+		const std::string &name, const std::string &description,
+		bool (T::*get)(), void (T::*set)(bool) = NULL) {
+
+		AddAttrib<QueryableBoolAttribute>(object, name, description, get, set);
+	}
+
+	template<class T> friend void AddStringConstant(T &object,
+		const std::string &name, const std::string &description,
+		const std::string &s) {
+
+		AddValueAttrib<QueryableStringAttribute>(object, name, description, s);
+	}
+	template<class T> friend void AddStringAttribute(T &object,
+		const std::string &name, const std::string &description,
+		std::string T::*s, AttributeAccess access = ReadOnlyAccess) {
+
+		AddFieldAttrib<QueryableStringAttribute>(object, name, description, s, access);
+	}
+	template<class T> friend void AddStringAttribute(T &object,
+		const std::string &name, const std::string &description,
+		std::string defaultValue, std::string T::*s,
+		AttributeAccess access = ReadOnlyAccess) {
+
+		AddFieldAttrib<QueryableStringAttribute>(object, name, description, defaultValue, s, access);
+	}
+	template<class T> friend void AddStringAttribute(T &object,
+		const std::string &name, const std::string &description,
+		std::string (T::*get)(), void (T::*set)(std::string) = NULL) {
+
+		AddAttrib<QueryableStringAttribute>(object, name, description, get, set);
+	}
+
+	template<class T> friend void AddFloatConstant(T &object,
+		const std::string &name, const std::string &description,
+		float f) {
+
+		AddValueAttrib<QueryableFloatAttribute>(object, name, description, f);
+	}
 	template<class T> friend void AddFloatAttribute(T &object,
-		const std::string &name, float (T::*get)(),
-		void (T::*set)(float) = NULL) {
-		QueryableAttribute tmpAttribute(name, ATTRIBUTE_FLOAT);
-		if (set)
-			tmpAttribute.setFloatFunc = boost::bind(set,
-				boost::ref(object), _1);
-		else
-			tmpAttribute.setFloatFunc = boost::bind(&QueryableAttribute::ReadOnlyFloatError, _1);
-		tmpAttribute.getFloatFunc = boost::bind(get, boost::ref(object));
-		object.AddAttribute(tmpAttribute);
+		const std::string &name, const std::string &description,
+		float T::*f, AttributeAccess access = ReadOnlyAccess) {
+
+		AddFieldAttrib<QueryableFloatAttribute>(object, name, description, f, access);
+	}
+	template<class T> friend void AddFloatAttribute(T &object,
+		const std::string &name, const std::string &description,
+		float defaultValue, float T::*f,
+		AttributeAccess access = ReadOnlyAccess) {
+
+		AddFieldAttrib<QueryableFloatAttribute>(object, name, description, defaultValue, f, access);
+	}
+	template<class T> friend void AddFloatAttribute(T &object,
+		const std::string &name, const std::string &description,
+		float (T::*get)(), void (T::*set)(float) = NULL) {
+
+		AddAttrib<QueryableFloatAttribute>(object, name, description, get, set);
 	}
 
-/*	void AddIntAttribute(std::string attributeName, boost::function<int (void)> getFunc, boost::function<void (int)> setFunc=boost::bind(&QueryableAttribute::ReadOnlyIntError, _1))
-	{
-		QueryableAttribute tmpAttribute(attributeName,ATTRIBUTE_INT);
-		tmpAttribute.setIntFunc=setFunc;
-		tmpAttribute.getIntFunc=getFunc;
-		AddAttribute(tmpAttribute);
-	}*/
+	template<class T> friend void AddDoubleConstant(T &object,
+		const std::string &name, const std::string &description,
+		double d) {
+
+		AddValueAttrib<QueryableDoubleAttribute>(object, name, description, d);
+	}
+	template<class T> friend void AddDoubleAttribute(T &object,
+		const std::string &name, const std::string &description,
+		double T::*f, AttributeAccess access = ReadOnlyAccess) {
+
+		AddFieldAttrib<QueryableDoubleAttribute>(object, name, description, f, access);
+	}
+	template<class T> friend void AddDoubleAttribute(T &object,
+		const std::string &name, const std::string &description,
+		double defaultValue, double T::*f,
+		AttributeAccess access = ReadOnlyAccess) {
+
+		AddFieldAttrib<QueryableDoubleAttribute>(object, name, description, defaultValue, f, access);
+	}
+	template<class T> friend void AddDoubleAttribute(T &object,
+		const std::string &name, const std::string &description,
+		double (T::*get)(), void (T::*set)(double) = NULL) {
+
+		AddAttrib<QueryableDoubleAttribute>(object, name, description, get, set);
+	}
+
+	template<class T, class E> friend void AddIntEnumAttribute(T &object,
+		const std::string &name, const std::string &description,
+		E T::*e, AttributeAccess access = ReadOnlyAccess) {
+
+		AddEnumFieldAttrib<QueryableIntAttribute>(object, name, description, e, access);
+	}
+	template<class T> friend void AddIntConstant(T &object,
+		const std::string &name, const std::string &description,
+		int i) {
+
+		AddValueAttrib<QueryableIntAttribute>(object, name, description, i);
+	}
 	template<class T> friend void AddIntAttribute(T &object,
-		const std::string &name, unsigned int (T::*get)(),
-		void (T::*set)(unsigned int) = NULL) {
-		QueryableAttribute tmpAttribute(name, ATTRIBUTE_INT);
-		if (set)
-			tmpAttribute.setIntFunc = boost::bind(set,
-				boost::ref(object), _1);
-		else
-			tmpAttribute.setIntFunc = boost::bind(&QueryableAttribute::ReadOnlyIntError, _1);
-		tmpAttribute.getIntFunc = boost::bind(get, boost::ref(object));
-		object.AddAttribute(tmpAttribute);
+		const std::string &name, const std::string &description,
+		int T::*i, AttributeAccess access = ReadOnlyAccess) {
+
+		AddFieldAttrib<QueryableIntAttribute>(object, name, description, i, access);
 	}
 	template<class T> friend void AddIntAttribute(T &object,
-		const std::string &name, int (T::*get)(),
-		void (T::*set)(int) = NULL) {
-		QueryableAttribute tmpAttribute(name, ATTRIBUTE_INT);
-		if (set)
-			tmpAttribute.setIntFunc = boost::bind(set,
-				boost::ref(object), _1);
-		else
-			tmpAttribute.setIntFunc = boost::bind(&QueryableAttribute::ReadOnlyIntError, _1);
-		tmpAttribute.getIntFunc = boost::bind(get, boost::ref(object));
-		object.AddAttribute(tmpAttribute);
+		const std::string &name, const std::string &description,
+		int defaultValue, int T::*i,
+		AttributeAccess access = ReadOnlyAccess) {
+
+		AddFieldAttrib<QueryableIntAttribute>(object, name, description, defaultValue, i, access);
 	}
+	template<class T> friend void AddIntAttribute(T &object,
+		const std::string &name, const std::string &description,
+		unsigned int (T::*get)(), void (T::*set)(unsigned int) = NULL) {
 
+		AddAttrib<QueryableIntAttribute>(object, name, description, get, set);
+	}
+	template<class T> friend void AddIntAttribute(T &object,
+		const std::string &name, const std::string &description,
+		int (T::*get)(), void (T::*set)(int) = NULL) {
 
+		AddAttrib<QueryableIntAttribute>(object, name, description, get, set);
+	}
+protected:
+	template<class QA, class T, class D> static void AddValueAttrib(T &object,
+		const std::string &name, const std::string &description,
+		const D &value) {
+
+		boost::shared_ptr<QA> attribute(
+			new QA(name, description));
+
+		attribute->getFunc = boost::bind(lux::queryable::getvalue<D>, value);
+		object.AddAttribute(attribute);
+	}
+	template<class QA, class T, class E> static void AddEnumFieldAttrib(T &object,
+		const std::string &name, const std::string &description,
+		E T::*field, AttributeAccess access) {
+
+		boost::shared_ptr<QA> attribute(
+			new QA(name, description));
+
+		if (access == ReadWriteAccess)
+			attribute->setFunc = boost::bind(lux::queryable::setenumfield<T, E>, boost::ref(object), field, _1);
+
+		attribute->getFunc = boost::bind(lux::queryable::getenumfield<T, E>, boost::ref(object), field);
+		object.AddAttribute(attribute);
+	}
+	template<class QA, class T, class D> static void AddFieldAttrib(T &object,
+		const std::string &name, const std::string &description,
+		D T::*field, AttributeAccess access) {
+
+		boost::shared_ptr<QA> attribute(
+			new QA(name, description));
+
+		if (access == ReadWriteAccess)
+			attribute->setFunc = boost::bind(lux::queryable::setfield<T, D>, boost::ref(object), field, _1);
+
+		attribute->getFunc = boost::bind(field, boost::ref(object));
+		object.AddAttribute(attribute);
+	}
+	template<class QA, class T, class D> static void AddFieldAttrib(T &object,
+		const std::string &name, const std::string &description,
+		D defaultValue, D T::*field, AttributeAccess access) {
+
+		boost::shared_ptr<QA> attribute(
+			new QA(name, description, defaultValue));
+
+		if (access == ReadWriteAccess)
+			attribute->setFunc = boost::bind(lux::queryable::setfield<T, D>, boost::ref(object), field, _1);
+
+		attribute->getFunc = boost::bind(field, boost::ref(object));
+		object.AddAttribute(attribute);
+	}
+	template<class QA, class T, class D> static void AddAttrib(T &object,
+		const std::string &name, const std::string &description,
+		D (T::*get)(), void (T::*set)(D)) {
+
+		boost::shared_ptr<QA> attribute(
+			new QA(name, description));
+
+		if (set)
+			attribute->setFunc = boost::bind(set, boost::ref(object), _1);
+
+		attribute->getFunc = boost::bind(get, boost::ref(object));
+		object.AddAttribute(attribute);
+	}
 
 private:
-	std::map<std::string, QueryableAttribute> attributes;
+	std::map<std::string, boost::shared_ptr<QueryableAttribute> > attributes;
 	std::string name;
-	QueryableAttribute nullAttribute;
+	NullAttribute nullAttribute;
 };
+
 
 }//namespace lux
 

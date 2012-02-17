@@ -25,6 +25,8 @@
 #include "texture.h"
 #include "geometry/raydifferential.h"
 #include "fresnel.h"
+#include "sampling.h"
+#include "spectrum.h"
 
 namespace lux
 {
@@ -32,42 +34,59 @@ namespace lux
 // ClearVolume Declarations
 class ClearVolume : public Volume {
 public:
-	ClearVolume(const boost::shared_ptr<Texture<const lux::Fresnel *> > &fr,
+	ClearVolume(const boost::shared_ptr<Texture<FresnelGeneral> > &fr,
 		boost::shared_ptr<Texture<SWCSpectrum> > &a) :
 		fresnel(fr), absorption(a) { }
 	virtual ~ClearVolume() { }
-	virtual SWCSpectrum SigmaA(const TsPack *tspack, const Point &p,
-		const Vector &) const {
-		DifferentialGeometry dg; //FIXME give it as argument
-		dg.p = p;
-		return fresnel->Evaluate(tspack, dg)->SigmaA(tspack) +
-			absorption->Evaluate(tspack, dg);
+	virtual SWCSpectrum SigmaA(const SpectrumWavelengths &sw,
+		const DifferentialGeometry &dg) const {
+		return fresnel->Evaluate(sw, dg).SigmaA(sw) +
+			absorption->Evaluate(sw, dg);
 	}
-	virtual SWCSpectrum SigmaS(const TsPack *tspack, const Point &,
-		const Vector &) const { return SWCSpectrum(0.f); }
-	virtual SWCSpectrum Lve(const TsPack *tspack, const Point &,
-		const Vector &) const { return SWCSpectrum(0.f); }
-	virtual float P(const TsPack *, const Point &, const Vector &,
-		const Vector &) const { return 0.f; }
-	virtual SWCSpectrum SigmaT(const TsPack *tspack, const Point &p,
-		const Vector &w) const { return SigmaA(tspack, p, w); }
-	virtual SWCSpectrum Tau(const TsPack *tspack, const Ray &ray,
+	virtual SWCSpectrum SigmaS(const SpectrumWavelengths &sw,
+		const DifferentialGeometry &dg) const {
+		return SWCSpectrum(0.f);
+	}
+	virtual SWCSpectrum Lve(const SpectrumWavelengths &sw,
+		const DifferentialGeometry &dg) const {
+		return SWCSpectrum(0.f);
+	}
+	virtual float P(const SpectrumWavelengths &,
+		const DifferentialGeometry &dg,
+		const Vector &, const Vector &) const { return 0.f; }
+	virtual SWCSpectrum SigmaT(const SpectrumWavelengths &sw,
+		const DifferentialGeometry &dg) const {
+		return SigmaA(sw, dg);
+	}
+	virtual SWCSpectrum Tau(const SpectrumWavelengths &sw, const Ray &ray,
 		float step = 1.f, float offset = .5f) const {
-		const SWCSpectrum sigma(SigmaT(tspack, ray.o, ray.d));
+		DifferentialGeometry dg;
+		dg.p = ray.o;
+		dg.nn = Normal(-ray.d);
+		const SWCSpectrum sigma(SigmaT(sw, dg));
 		if (sigma.Black())
 			return SWCSpectrum(0.f);
 		return sigma * ray.d.Length() * (ray.maxt - ray.mint);
 	}
-	virtual const lux::Fresnel *Fresnel(const TsPack *tspack, const Point &p,
-		const Vector &) const {
-		DifferentialGeometry dg; //FIXME give it as argument
-		dg.p = p;
-		return fresnel->Evaluate(tspack, dg);
+	virtual FresnelGeneral Fresnel(const SpectrumWavelengths &sw,
+		const DifferentialGeometry &dg) const {
+		return fresnel->Evaluate(sw, dg);
+	}
+	bool Scatter(const Sample &sample, bool scatteredStart, const Ray &ray,
+		float u, Intersection *isect, float *pdf, float *pdfBack,
+		SWCSpectrum *L) const {
+		if (L)
+			*L *= Exp(-Tau(sample.swl, ray));
+		if (pdf)
+			*pdf = 1.f;
+		if (pdfBack)
+			*pdfBack = 1.f;
+		return false;
 	}
 	// ClearVolume Public Methods
 	static Volume *CreateVolume(const Transform &volume2world, const ParamSet &params);
 private:
-	boost::shared_ptr<Texture<const lux::Fresnel *> > fresnel;
+	boost::shared_ptr<Texture<FresnelGeneral> > fresnel;
 	boost::shared_ptr<Texture<SWCSpectrum> > absorption;
 };
 

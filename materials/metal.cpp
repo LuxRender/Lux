@@ -23,16 +23,17 @@
 // metal.* - adapted to Lux from code by Asbjørn Heid
 #include "metal.h"
 #include "memory.h"
-#include "bxdf.h"
+#include "singlebsdf.h"
+#include "primitive.h"
 #include "fresnelconductor.h"
 #include "microfacet.h"
 #include "schlickdistribution.h"
 #include "texture.h"
 #include "paramset.h"
 #include "dynload.h"
+#include "filedata.h"
 #include "error.h"
 #include "color.h"
-
 #include "irregular.h"
 
 #include <boost/lexical_cast.hpp>
@@ -44,37 +45,35 @@ using namespace lux;
 Metal::Metal(boost::shared_ptr<SPD > &n, boost::shared_ptr<SPD > &k, 
 	boost::shared_ptr<Texture<float> > &u,
 	boost::shared_ptr<Texture<float> > &v,
-	boost::shared_ptr<Texture<float> > &bump,
-	const CompositingParams &cp, boost::shared_ptr<Texture<SWCSpectrum> > &sc) : N(n), K(k), nu(u), nv(v), bumpMap(bump)
+	const ParamSet &mp, boost::shared_ptr<Texture<SWCSpectrum> > &sc) : Material(mp), N(n), K(k), nu(u), nv(v)
 {
-	compParams = new CompositingParams(cp);
 	Sc = sc;
 }
 
-BSDF *Metal::GetBSDF(const TsPack *tspack, const DifferentialGeometry &dgGeom,
-	const DifferentialGeometry &dgs,
-	const Volume *exterior, const Volume *interior) const
+BSDF *Metal::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
+	const Intersection &isect, const DifferentialGeometry &dgs) const
 {
 	// Allocate _BSDF_
-	SWCSpectrum n(tspack, *N);
-	SWCSpectrum k(tspack, *K);
-	SWCSpectrum bcolor = (Sc->Evaluate(tspack, dgs).Clamp(0.f, 10000.f))*dgs.Scale;
-	float u = nu->Evaluate(tspack, dgs);
-	float v = nv->Evaluate(tspack, dgs);
+	SWCSpectrum n(sw, *N);
+	SWCSpectrum k(sw, *K);
+	SWCSpectrum bcolor = (Sc->Evaluate(sw, dgs).Clamp(0.f, 10000.f))*dgs.Scale;
+
+	float u = nu->Evaluate(sw, dgs);
+	float v = nv->Evaluate(sw, dgs);
 	const float u2 = u * u;
 	const float v2 = v * v;
 
 	const float anisotropy = u2 < v2 ? 1.f - u2 / v2 : v2 / u2 - 1.f;
-	SchlickDistribution *md = ARENA_ALLOC(tspack->arena, SchlickDistribution)(u * v, anisotropy);
+	SchlickDistribution *md = ARENA_ALLOC(arena, SchlickDistribution)(u * v, anisotropy);
 
-	FresnelConductor *fresnel = ARENA_ALLOC(tspack->arena, FresnelConductor)(n, k);
-	MicrofacetReflection *bxdf = ARENA_ALLOC(tspack->arena, MicrofacetReflection)(1.f,
+	FresnelConductor *fresnel = ARENA_ALLOC(arena, FresnelConductor)(n, k);
+	MicrofacetReflection *bxdf = ARENA_ALLOC(arena, MicrofacetReflection)(1.f,
 		fresnel, md);
-	SingleBSDF *bsdf = ARENA_ALLOC(tspack->arena, SingleBSDF)(dgs,
-		dgGeom.nn, bxdf, exterior, interior, bcolor);
+	SingleBSDF *bsdf = ARENA_ALLOC(arena, SingleBSDF)(dgs,
+		isect.dg.nn, bxdf, isect.exterior, isect.interior, bcolor);
 
 	// Add ptr to CompositingParams structure
-	bsdf->SetCompositingParams(compParams);
+	bsdf->SetCompositingParams(&compParams);
 
 	return bsdf;
 }
@@ -316,8 +315,7 @@ void IORFromName(const string name, vector<float> &wl, vector<float> &n, vector<
 	} else {
 		if (name != "aluminium") {
 			// NOTE - lordcrc - added warning
-			string msg = "Metal '" + name + "' not found, using default (" + DEFAULT_METAL + ").";
-			luxError(LUX_NOERROR, LUX_WARNING, msg.c_str());
+			LOG(LUX_WARNING,LUX_NOERROR)<< "Metal '" << name << "' not found, using default (" << DEFAULT_METAL << ").";
 		}
 		ns = SopraSamples;
 		sw = SopraWavelengths;
@@ -358,10 +356,15 @@ int IORFromFile(const string filename, vector<float> &wl, vector<float> &n, vect
 }
 
 Material *Metal::CreateMaterial(const Transform &xform, const ParamSet &tp) {
+	
+	// Attempt decode of embedded data; not supporting "name" parameter
+	FileData::decode(tp, "filename");
+	
 	//FIXME: "name" is deprecated in favor of "filename"
 	// keep it until v0.8 until the exporters have fully transitioned
-	string metalname = tp.FindOneString("filename", tp.FindOneString("name", ""));
+	string metalname = AdjustFilename(tp.FindOneString("filename", tp.FindOneString("name", "")));
 	boost::shared_ptr<Texture<SWCSpectrum> > Sc(tp.GetSWCSpectrumTexture("Sc", RGBColor(.9f)));
+
 	if (metalname == "")
 		metalname = DEFAULT_METAL;
 
@@ -374,8 +377,7 @@ Material *Metal::CreateMaterial(const Transform &xform, const ParamSet &tp) {
 	int result = IORFromFile(metalname, s_wl, s_n, s_k);
 	switch (result) {
 	case 0: {
-		string msg = "Error loading data file '" + metalname + "'. Using default (" + DEFAULT_METAL + ").";
-		luxError(LUX_NOERROR, LUX_WARNING, msg.c_str());
+		LOG(LUX_WARNING,LUX_NOERROR)<< "Error loading data file '" << metalname << "'. Using default (" << DEFAULT_METAL << ").";
 		metalname = DEFAULT_METAL;
 			}
 	case -1:
@@ -390,14 +392,8 @@ Material *Metal::CreateMaterial(const Transform &xform, const ParamSet &tp) {
 
 	boost::shared_ptr<Texture<float> > uroughness(tp.GetFloatTexture("uroughness", .1f));
 	boost::shared_ptr<Texture<float> > vroughness(tp.GetFloatTexture("vroughness", .1f));
-	boost::shared_ptr<Texture<float> > bumpMap(tp.GetFloatTexture("bumpmap"));
 
-
-	// Get Compositing Params
-	CompositingParams cP;
-	FindCompositingParams(tp, &cP);
-
-	return new Metal(n, k, uroughness, vroughness, bumpMap, cP, Sc);
+	return new Metal(n, k, uroughness, vroughness, tp, Sc);
 }
 
 static DynamicLoader::RegisterMaterial<Metal> r("metal");

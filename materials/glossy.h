@@ -23,7 +23,6 @@
 // glossy.cpp*
 #include "lux.h"
 #include "material.h"
-#include "spectrum.h"
 
 namespace lux
 {
@@ -39,24 +38,12 @@ public:
 		boost::shared_ptr<Texture<float> > &d,
 		boost::shared_ptr<Texture<float> > &u,
 		boost::shared_ptr<Texture<float> > &v,
-		boost::shared_ptr<Texture<float> > &bump,
-		const CompositingParams &cp, boost::shared_ptr<Texture<SWCSpectrum> > &sc) : Kd(kd), Ks(ks), Ka(ka), depth(d),
-		index(i), nu(u), nv(v), bumpMap(bump) {
-		compParams = new CompositingParams(cp);
-		Sc = sc; 
-	}
+		const ParamSet &mp, boost::shared_ptr<Texture<SWCSpectrum> > &sc) : Material(mp), Kd(kd), Ks(ks), Ka(ka),
+		depth(d), index(i), nu(u), nv(v) { Sc = sc; }
 	virtual ~Glossy() { }
-	virtual void GetShadingGeometry(const TsPack *tspack,
-		const Normal &nGeom, DifferentialGeometry *dgBump) const {
-		if (bumpMap)
-			Bump(tspack, bumpMap, nGeom, dgBump);
-	}
-	virtual BSDF *GetBSDF(const TsPack *tspack,
-		const DifferentialGeometry &dgGeom,
-		const DifferentialGeometry &dgShading,
-		const Volume *exterior, const Volume *interior) const;
-
-	virtual SWCSpectrum GetKd(const TsPack *tspack,	const DifferentialGeometry &dgs) const; 
+	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
+		const Intersection &isect,
+		const DifferentialGeometry &dgShading) const;
 	
 	static Material * CreateMaterial(const Transform &xform,
 		const ParamSet &mp);
@@ -65,7 +52,6 @@ private:
 	boost::shared_ptr<Texture<SWCSpectrum> > Kd, Ks, Ka;
 	boost::shared_ptr<Texture<float> > depth, index;
 	boost::shared_ptr<Texture<float> > nu, nv;
-	boost::shared_ptr<Texture<float> > bumpMap;
 };
 
 }//namespace lux

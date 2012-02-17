@@ -20,8 +20,7 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// loopsubdiv.cpp*
-#include "shape.h"
+// loopsubdiv.h*
 #include "texture.h"
 #include "error.h"
 #include <set>
@@ -39,17 +38,16 @@ namespace lux
 struct SDFace;
 struct SDVertex {
 	// SDVertex Constructor
-	SDVertex(Point pt = Point(0,0,0), float uu = 0.0f, float vv = 0.0f)
-		: P(pt), u(uu), v(vv), startFace(NULL), child(NULL),
-		regular(false), boundary(false) {
-	}
+	SDVertex(Point pt = Point(0,0,0), float uu = 0.0f, float vv = 0.0f,
+		Normal nn = Normal(0, 0, 0)) : P(pt), n(nn), u(uu), v(vv),
+		startFace(NULL), child(NULL), regular(false), boundary(false) {}
 
 	// SDVertex Methods
-	u_int valence();
-	void oneRing(Point *P);
-	void oneRing(SDVertex **V);
+	u_int valence() const;
+	void oneRing(Point *P) const;
 
 	Point P;
+	Normal n;
 	float u, v;
 	SDFace *startFace;
 	SDVertex *child;
@@ -67,32 +65,32 @@ struct SDFace {
 			children[i] = NULL;
 	}
 	// SDFace Methods
-	u_int vnum(SDVertex *vert) const {
+	u_int vnum(const Point &p) const {
 		for (u_int i = 0; i < 3; ++i) {
-			if (v[i] == vert)
+			if (v[i]->P == p)
 				return i;
 		}
-		luxError(LUX_BUG,LUX_SEVERE,"Basic logic error in SDFace::vnum()");
+		LOG(LUX_SEVERE,LUX_BUG)<<"Basic logic error in SDFace::vnum()";
 		return 0;
 	}
-	SDFace *nextFace(SDVertex *vert) {
-		return f[vnum(vert)];
+	SDFace *nextFace(const Point &p) const {
+		return f[vnum(p)];
 	}
-	SDFace *prevFace(SDVertex *vert) {
-		return f[PREV(vnum(vert))];
+	SDFace *prevFace(const Point &p) const {
+		return f[PREV(vnum(p))];
 	}
-	SDVertex *nextVert(SDVertex *vert) {
-		return v[NEXT(vnum(vert))];
+	SDVertex *nextVert(const Point &p) const {
+		return v[NEXT(vnum(p))];
 	}
-	SDVertex *prevVert(SDVertex *vert) {
-		return v[PREV(vnum(vert))];
+	SDVertex *prevVert(const Point &p) const {
+		return v[PREV(vnum(p))];
 	}
-	SDVertex *otherVert(SDVertex *v0, SDVertex *v1) {
+	SDVertex *otherVert(const Point &p0, const Point &p1) const {
 		for (u_int i = 0; i < 3; ++i) {
-			if (v[i] != v0 && v[i] != v1)
+			if (v[i]->P != p0 && v[i]->P != p1)
 				return v[i];
 		}
-		luxError(LUX_BUG,LUX_SEVERE,"Basic logic error in SDVertex::otherVert()");
+		LOG(LUX_SEVERE,LUX_BUG)<<"Basic logic error in SDVertex::otherVert()";
 		return NULL;
 	}
 	SDVertex *v[3];
@@ -102,51 +100,59 @@ struct SDFace {
 
 struct SDEdge {
 	// SDEdge Constructor
-	SDEdge(SDVertex *v0 = NULL, SDVertex *v1 = NULL) {
-		v[0] = min(v0, v1);
-		v[1] = max(v0, v1);
+	SDEdge(const SDVertex *v0, const SDVertex *v1) {
+		if (PInf(v0->P, v1->P)) {
+			v[0] = v0;
+			v[1] = v1;
+		} else {
+			v[0] = v1;
+			v[1] = v0;
+		}
 		f[0] = f[1] = NULL;
 		f0edgeNum = 0;
 	}
 	// SDEdge Comparison Function
-	bool operator<(const SDEdge &e2) const {
-		if (v[0] == e2.v[0]) return v[1] < e2.v[1];
-		return v[0] < e2.v[0];
+	bool PInf(const Point &p1, const Point &p2) const {
+		if (p1.x == p2.x)
+			return p1.y == p2.y ? p1.z < p2.z : p1.y < p2.y;
+		return p1.x < p2.x;
 	}
-	SDVertex *v[2];
+	bool NInf(const Normal &n1, const Normal &n2) const {
+		if (n1.x == n2.x)
+			return n1.y == n2.y ? n1.z < n2.z : n1.y < n2.y;
+		return n1.x < n2.x;
+	}
+	bool operator<(const SDEdge &e2) const {
+		if (v[0]->P == e2.v[0]->P) {
+			if (v[1]->P == e2.v[1]->P) {
+				if (v[0]->n == e2.v[0]->n)
+					return NInf(v[1]->n, e2.v[1]->n);
+				return NInf(v[0]->n, e2.v[0]->n);
+			}
+			return PInf(v[1]->P, e2.v[1]->P);
+		}
+		return PInf(v[0]->P, e2.v[0]->P);
+	}
+	const SDVertex *v[2];
 	SDFace *f[2];
 	u_int f0edgeNum;
 };
 
 // LoopSubdiv Declarations
-class LoopSubdiv : public Shape {
+class LoopSubdiv {
 public:
 	// LoopSubdiv Public Methods
-	LoopSubdiv(const Transform &o2w, bool ro, bool sup, bool proj, Point cam_,
-			u_int nt, u_int nv, const int *vi,
-			const Point *P, const float *uv, u_int nlevels,
-			const boost::shared_ptr<Texture<float> > &dismap,
-			float dmscale, float dmoffset,
-			bool dmnormalsmooth, bool dmsharpboundary);
+	LoopSubdiv(bool sup, bool proj, Point cam_, u_int nt, u_int nv, const int *vi,
+		const Point *P, const float *uv, const Normal *n,
+		u_int nlevels, const boost::shared_ptr<Texture<float> > &dismap,
+		float dmscale, float dmoffset, bool dmnormalsmooth,
+		bool dmsharpboundary, bool normalsplit, const string &name);
 	virtual ~LoopSubdiv();
 	virtual float GetScale() const { return Scale; }
 	virtual bool SetScale(float scale) const { Scale = scale; return true; }
 	virtual bool IsSupport() const { return support; }
-	virtual bool GetNormal(Vector *N) const {
-	
-		return true;
-	}
-	virtual bool GetBaryPoint(Point *P) const {
-		
-		return true;
-	}
-	virtual bool CanIntersect() const;
-	virtual void Refine(vector<boost::shared_ptr<Shape> > &refined) const;
-	virtual BBox ObjectBound() const;
-	virtual BBox WorldBound() const;
-
-	static Shape *CreateShape(const Transform &o2w, bool reverseOrientation,
-			const ParamSet &params);
+	virtual bool GetNormal(Vector *N) const { return true; }
+	virtual bool GetBaryPoint(Point *P) const { return true; }
 
 	class SubdivResult {
 	public:
@@ -184,12 +190,9 @@ private:
 	float gamma(u_int valence) const {
 		return 1.f / (valence + 3.f / (8.f * beta(valence)));
 	}
-	static void GenerateNormals(const vector<SDVertex *> verts, Normal *Ns);
+	static void GenerateNormals(const vector<SDVertex *> verts);
 
-	void ApplyDisplacementMap(
-			const vector<SDVertex *> verts,
-			const Normal *norms,
-			const float *uvs) const;
+	void ApplyDisplacementMap(const vector<SDVertex *> verts) const;
 
 	// LoopSubdiv Private Data
 	u_int nLevels;
@@ -202,6 +205,9 @@ private:
 	float displacementMapOffset;
 
 	bool hasUV, displacementMapNormalSmooth, displacementMapSharpBoundary;
+	bool normalSplit;
+
+	string name;
 
 	// Lotus - a pointer to the refined mesh to avoid double refinement or deletion
 	mutable boost::shared_ptr<Shape> refinedShape;
@@ -212,25 +218,39 @@ private:
 };
 
 // LoopSubdiv Inline Functions
-inline u_int SDVertex::valence() {
+inline u_int SDVertex::valence() const {
 	SDFace *f = startFace;
 	if (!boundary) {
 		// Compute valence of interior vertex
 		u_int nf = 0;
 		do {
-			f = f->nextFace(this);
+			SDVertex *v = f->v[f->vnum(P)];
+			if (v->startFace != startFace)
+				v->startFace = startFace;
 			++nf;
+			f = f->nextFace(v->P);
 		} while (f != startFace);
 		return nf;
 	} else {
 		// Compute valence of boundary vertex
-		u_int nf = 1;
-		while ((f = f->nextFace(this)) != NULL)
+		u_int nf = 0;
+		while (f) {
+			SDVertex *v = f->v[f->vnum(P)];
+			if (v->startFace != startFace)
+				v->startFace = startFace;
 			++nf;
+			f = f->nextFace(v->P);
+		}
+
 		f = startFace;
-		while ((f = f->prevFace(this)) != NULL)
+		while (f) {
+			SDVertex *v = f->v[f->vnum(P)];
+			if (v->startFace != startFace)
+				v->startFace = startFace;
 			++nf;
-		return nf+1;
+			f = f->prevFace(v->P);
+		}
+		return nf;
 	}
 }
 

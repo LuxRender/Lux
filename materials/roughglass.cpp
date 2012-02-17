@@ -23,7 +23,8 @@
 // roughglass.cpp*
 #include "roughglass.h"
 #include "memory.h"
-#include "bxdf.h"
+#include "multibsdf.h"
+#include "primitive.h"
 #include "fresnelcauchy.h"
 #include "microfacet.h"
 #include "schlickdistribution.h"
@@ -35,41 +36,40 @@
 using namespace lux;
 
 // RoughGlass Method Definitions
-BSDF *RoughGlass::GetBSDF(const TsPack *tspack,
-	const DifferentialGeometry &dgGeom,
-	const DifferentialGeometry &dgs,
-	const Volume *exterior, const Volume *interior) const
+BSDF *RoughGlass::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
+	const Intersection &isect, const DifferentialGeometry &dgs) const
 {
 	// Allocate _BSDF_
 	// NOTE - lordcrc - Bugfix, pbrt tracker id 0000078: index of refraction swapped and not recorded
-	float ior = index->Evaluate(tspack, dgs);
-	float cb = cauchyb->Evaluate(tspack, dgs);
-	SWCSpectrum bcolor = (Sc->Evaluate(tspack, dgs).Clamp(0.f, 10000.f))*dgs.Scale;
-	MultiBSDF *bsdf = ARENA_ALLOC(tspack->arena, MultiBSDF)(dgs, dgGeom.nn,
-		exterior, interior, bcolor);
+	float ior = index->Evaluate(sw, dgs);
+	float cb = cauchyb->Evaluate(sw, dgs);
+	SWCSpectrum bcolor = (Sc->Evaluate(sw, dgs).Clamp(0.f, 10000.f))*dgs.Scale;
+
+	MultiBSDF *bsdf = ARENA_ALLOC(arena, MultiBSDF)(dgs, isect.dg.nn,
+		isect.exterior, isect.interior, bcolor );
 	// NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
-	SWCSpectrum R = Kr->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
-	SWCSpectrum T = Kt->Evaluate(tspack, dgs).Clamp(0.f, 1.f);
-	float u = uroughness->Evaluate(tspack, dgs);
-	float v = vroughness->Evaluate(tspack, dgs);
+	SWCSpectrum R = Kr->Evaluate(sw, dgs).Clamp(0.f, 1.f);
+	SWCSpectrum T = Kt->Evaluate(sw, dgs).Clamp(0.f, 1.f);
+	float u = Clamp(uroughness->Evaluate(sw, dgs), 6e-3f, 1.f);
+	float v = Clamp(vroughness->Evaluate(sw, dgs), 6e-3f, 1.f);
 	const float u2 = u * u;
 	const float v2 = v * v;
 
 	const float anisotropy = u2 < v2 ? 1.f - u2 / v2 : v2 / u2 - 1.f;
-	SchlickDistribution *md = ARENA_ALLOC(tspack->arena, SchlickDistribution)(u * v, anisotropy);
-	const FresnelCauchy *fresnel = ARENA_ALLOC(tspack->arena, FresnelCauchy)
+	SchlickDistribution *md = ARENA_ALLOC(arena, SchlickDistribution)(u * v, anisotropy);
+	const FresnelCauchy *fresnel = ARENA_ALLOC(arena, FresnelCauchy)
 		(ior, cb, 0.f);
 	if (!R.Black()) {
-		bsdf->Add(ARENA_ALLOC(tspack->arena, MicrofacetReflection)(R,
+		bsdf->Add(ARENA_ALLOC(arena, MicrofacetReflection)(R,
 			fresnel, md));
 	}
 	if (!T.Black()) {
-		bsdf->Add(ARENA_ALLOC(tspack->arena, MicrofacetTransmission)(T,
+		bsdf->Add(ARENA_ALLOC(arena, MicrofacetTransmission)(T,
 			fresnel, md));
 	}
 
 	// Add ptr to CompositingParams structure
-	bsdf->SetCompositingParams(compParams);
+	bsdf->SetCompositingParams(&compParams);
 
 	return bsdf;
 }
@@ -82,13 +82,8 @@ Material* RoughGlass::CreateMaterial(const Transform &xform,
 	boost::shared_ptr<Texture<float> > vroughness(mp.GetFloatTexture("vroughness", .001f));
 	boost::shared_ptr<Texture<float> > index(mp.GetFloatTexture("index", 1.5f));
 	boost::shared_ptr<Texture<float> > cbf(mp.GetFloatTexture("cauchyb", 0.f));				// Cauchy B coefficient
-	boost::shared_ptr<Texture<float> > bumpMap(mp.GetFloatTexture("bumpmap"));
 
-	// Get Compositing Params
-	CompositingParams cP;
-	FindCompositingParams(mp, &cP);
-
-	return new RoughGlass(Kr, Kt, uroughness, vroughness, index, cbf, bumpMap, cP, Sc);
+	return new RoughGlass(Kr, Kt, uroughness, vroughness, index, cbf, mp, Sc);
 }
 
 static DynamicLoader::RegisterMaterial<RoughGlass> r("roughglass");

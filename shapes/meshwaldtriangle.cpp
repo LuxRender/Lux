@@ -20,7 +20,6 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-
 #include "mesh.h"
 #include "mc.h"
 
@@ -155,12 +154,10 @@ MeshWaldTriangle::MeshWaldTriangle(const Mesh *m, u_int n)
 
 bool MeshWaldTriangle::Intersect(const Ray &ray, Intersection *isect, bool null_shp_isect) const
 {
+	//look if shape is a null type
+	if (null_shp_isect && mesh->support) return false;
+
 	float o0, o1, o2, d0, d1, d2;
-
-//look if shape is a null type
-if (null_shp_isect && mesh->support) return false;
-///
-
 	switch (intersectionType) {
 		case DOMINANT_X: {
 			o0 = ray.o.x;
@@ -224,32 +221,29 @@ if (null_shp_isect && mesh->support) return false;
 	float uvs[3][2];
 	GetUVs(uvs);
 	// Interpolate $(u,v)$ triangle parametric coordinates
-	float tu_, tv_;
-	tu_ = b0 * uvs[0][0] + uu * uvs[1][0] + vv * uvs[2][0];
-	tv_ = b0 * uvs[0][1] + uu * uvs[1][1] + vv * uvs[2][1];
-//	const float tu = b0 * uvs[0][0] + uu * uvs[1][0] + vv * uvs[2][0];
-//	const float tv = b0 * uvs[0][1] + uu * uvs[1][1] + vv * uvs[2][1];
+
+	float tu_ = b0 * uvs[0][0] + uu * uvs[1][0] + vv * uvs[2][0];
+	float tv_ = b0 * uvs[0][1] + uu * uvs[1][1] + vv * uvs[2][1];
 
 	const Point pp(b0 * mesh->p[v[0]] + uu * mesh->p[v[1]] + vv * mesh->p[v[2]]);
-//Aldo
-if (mesh->proj_text){
-Point end = pp;//ray(t);
-Vector wh = Normalize(end-mesh->cam);
 
-tu_ = SphericalPhi(wh) ;
-tv_ = SphericalTheta(wh) ;
-}
-const float tu = tu_;
-const float tv = tv_;
-//fim Aldo
+	if (mesh->proj_text){
+		Point end = pp;
+		Vector wh = Normalize(end-mesh->cam);
+
+		tu_ = SphericalPhi(wh) ;
+		tv_ = SphericalTheta(wh) ;
+	}
+	const float tu = tu_;
+	const float tv = tv_;
 
 	isect->dg = DifferentialGeometry(pp, normalizedNormal, dpdu, dpdv,
 		Normal(0, 0, 0), Normal(0, 0, 0), tu, tv, this);
 	isect->Set(mesh->WorldToObject, this, mesh->GetMaterial(),
 		mesh->GetExterior(), mesh->GetInterior());
-	isect->dg.triangleBaryCoords[0] = b0;
-	isect->dg.triangleBaryCoords[1] = uu;
-	isect->dg.triangleBaryCoords[2] = vv;
+	isect->dg.iData.baryTriangle.coords[0] = b0;
+	isect->dg.iData.baryTriangle.coords[1] = uu;
+	isect->dg.iData.baryTriangle.coords[2] = vv;
 	ray.maxt = tt;
 
 	return true;
@@ -315,7 +309,7 @@ bool MeshWaldTriangle::IntersectP(const Ray &ray, bool null_shp_isect) const
 	return true;
 }
 
-void MeshWaldTriangle::Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const
+float MeshWaldTriangle::Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const
 {
 	float b1, b2;
 	UniformSampleTriangle(u1, u2, &b1, &b2);
@@ -330,7 +324,6 @@ void MeshWaldTriangle::Sample(float u1, float u2, float u3, DifferentialGeometry
 	dg->dpdu = dpdu;
 	dg->dpdv = dpdv;
 	dg->dndu = dg->dndv = Normal(0, 0, 0);
-	dg->dpdx = dg->dpdy = Vector(0, 0, 0);
 
 	float uv[3][2];
 	GetUVs(uv);
@@ -339,11 +332,10 @@ void MeshWaldTriangle::Sample(float u1, float u2, float u3, DifferentialGeometry
 
 	dg->handle = this;
 
-	dg->dudx = dg->dudy = dg->dvdx = dg->dvdy = 0.f;
-
-	dg->triangleBaryCoords[0] = b1;
-	dg->triangleBaryCoords[1] = b2;
-	dg->triangleBaryCoords[2] = b3;
+	dg->iData.baryTriangle.coords[0] = b1;
+	dg->iData.baryTriangle.coords[1] = b2;
+	dg->iData.baryTriangle.coords[2] = b3;
+	return Pdf(*dg);
 }
 
 bool MeshWaldTriangle::isDegenerate() const {

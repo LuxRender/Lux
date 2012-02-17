@@ -40,14 +40,14 @@ static const float inv_WAVELENGTH_SAMPLES = 1.f / WAVELENGTH_SAMPLES;
 class SWCSpectrum {
 	friend class boost::serialization::access;
 public:
-	// RGBColor Public Methods
+	// SWCSpectrum Public Methods
 	SWCSpectrum(Scalar v = 0.f) {
 		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
 			c[i] = v;
 	}
-	SWCSpectrum(const TsPack *tspack, const RGBColor &s);							// Note -radiance- - REFACT - can inline now.
+	SWCSpectrum(const SpectrumWavelengths &sw, const RGBColor &s);
 
-	SWCSpectrum(const TsPack *tspack, const SPD &s);
+	SWCSpectrum(const SpectrumWavelengths &sw, const SPD &s);
 
 	SWCSpectrum(const float cs[WAVELENGTH_SAMPLES]) {
 		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
@@ -160,6 +160,12 @@ public:
 			ret.c[i] = expf(s.c[i]);
 		return ret;
 	}
+	friend SWCSpectrum Ln(const SWCSpectrum &s) {
+		SWCSpectrum ret;
+		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
+			ret.c[i] = logf(s.c[i]);
+		return ret;
+	}
 	SWCSpectrum Clamp(Scalar low = 0.f,
 	               Scalar high = INFINITY) const {
 		SWCSpectrum ret;
@@ -172,15 +178,16 @@ public:
 			if (isnan(c[i])) return true;
 		return false;
 	}
-	void Print(FILE *f) const {
+	bool IsInf() const {
 		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
-			fprintf(f, "%f ", c[i]);
+			if (isinf(c[i])) return true;
+		return false;
 	}
-	Scalar Y(const TsPack *tspack) const;
-	Scalar Filter(const TsPack *tspack) const;
+	Scalar Y(const SpectrumWavelengths &sw) const;
+	inline Scalar Filter(const SpectrumWavelengths &sw) const;
 
 //	bool operator<(const SWCSpectrum &s2) const {
-//		return y() < s2.y();												// Note - radiance - REFACT - need to rewrite without use of Spectrumwavelengths
+//		return y() < s2.y();
 //		return false;
 //	}
 	friend class lux::ParamSet;
@@ -198,5 +205,19 @@ private:
 };
 
 }//namespace lux
+
+// SpectrumWavelengths needs the SWCSpectrum class fully defined
+#include "spectrumwavelengths.h"
+
+// This is one of the most used functions so make it an inline candidate
+// However it requires SpectrumWavelengths to be fully defined
+inline Scalar lux::SWCSpectrum::Filter(const SpectrumWavelengths &sw) const {
+	if (sw.single)
+		return c[sw.single_w];
+	Scalar result = 0.f;
+	for (u_int i = 0; i < WAVELENGTH_SAMPLES; ++i)
+		result += c[i];
+	return result * inv_WAVELENGTH_SAMPLES;
+}
 
 #endif // LUX_SWCSPECTRUM_H

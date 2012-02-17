@@ -22,144 +22,126 @@
 
 // random.cpp*
 #include "random.h"
-#include "pixelsamplers/vegas.h"
-//#include "pixelsamplers/randompx.h"
-#include "pixelsamplers/hilbertpx.h"
-#include "pixelsamplers/lowdiscrepancypx.h"
-#include "pixelsamplers/linear.h"
-#include "pixelsamplers/tilepx.h"
 #include "scene.h"
 #include "dynload.h"
 #include "error.h"
 
 using namespace lux;
 
-// Lux (copy) constructor
-RandomSampler* RandomSampler::clone() const
- {
-   return new RandomSampler(*this);
- }
-
-RandomSampler::RandomSampler(int xstart, int xend,
-                             int ystart, int yend, u_int ps, string pixelsampler)
-        : Sampler(xstart, xend, ystart, yend, ps)
+RandomSampler::RandomData::RandomData(const Sample &sample, int xPixelStart,
+	int yPixelStart, u_int pixelSamples)
 {
 	xPos = xPixelStart;
 	yPos = yPixelStart;
+	samplePos = pixelSamples;
+	xD = new float *[sample.nxD.size()];
+	nxD = sample.nxD.size();
+	for (u_int i = 0; i < sample.nxD.size(); ++i)
+		xD[i] = new float[sample.dxD[i]];
+}
+RandomSampler::RandomData::~RandomData()
+{
+	for (u_int i = 0; i < nxD; ++i)
+		delete[] xD[i];
+	delete[] xD;
+}
+
+RandomSampler::RandomSampler(int xstart, int xend, int ystart, int yend,
+	u_int ps, string pixelsampler) : Sampler(xstart, xend, ystart, yend, ps)
+{
 	pixelSamples = ps;
 
-	init = true;
-
 	// Initialize PixelSampler
-	if(pixelsampler == "vegas")
-		pixelSampler = new VegasPixelSampler(xstart, xend, ystart, yend);
-	else if(pixelsampler == "lowdiscrepancy")
-		pixelSampler = new LowdiscrepancyPixelSampler(xstart, xend, ystart, yend);
-//	else if(pixelsampler == "random")
-//		pixelSampler = new RandomPixelSampler(xstart, xend, ystart, yend);
-	else if((pixelsampler == "tile") || (pixelsampler == "grid"))
-		pixelSampler = new TilePixelSampler(xstart, xend, ystart, yend);
-	else if(pixelsampler == "hilbert")
-		pixelSampler = new HilbertPixelSampler(xstart, xend, ystart, yend);
-	else
-		pixelSampler = new LinearPixelSampler(xstart, xend, ystart, yend);
+	pixelSampler = MakePixelSampler(pixelsampler, xstart, xend, ystart, yend);
 
-	TotalPixels = pixelSampler->GetTotalPixels();
-
-	// Get storage for a pixel's worth of stratified samples
-	imageSamples = AllocAligned<float>(6 * pixelSamples);
-	lensSamples = imageSamples + 2 * pixelSamples;
-	timeSamples = lensSamples +  2 * pixelSamples;
-	wavelengthsSamples = timeSamples + pixelSamples;
-
-	samplePos = pixelSamples;
+	totalPixels = pixelSampler->GetTotalPixels();
+	sampPixelPos = 0;
 }
 
 RandomSampler::~RandomSampler()
 {
-	FreeAligned(imageSamples);
 }
 
 // return TotalPixels so scene shared thread increment knows total sample positions
 u_int RandomSampler::GetTotalSamplePos()
 {
-	return TotalPixels;
+	return totalPixels;
 }
 
-bool RandomSampler::GetNextSample(Sample *sample, u_int *use_pos)
+bool RandomSampler::GetNextSample(Sample *sample)
 {
-	sample->sampler = this;
-
-	if(init) {
-		init = false;
-		// Fetch first contribution buffer from pool
-		contribBuffer = film->scene->contribPool->Next(NULL);
-	}
+	RandomData *data = (RandomData *)(sample->samplerData);
 
 	// Compute new set of samples if needed for next pixel
-	bool haveMoreSample = true;
-	if (samplePos == pixelSamples) {
-		// fetch next pixel from pixelsampler
-		if(!pixelSampler->GetNextPixel(xPos, yPos, use_pos)) {
-			// Dade - we are at a valid checkpoint where we can stop the
-			// rendering. Check if we have enough samples per pixel in the film.
-			if (film->enoughSamplePerPixel) {
-				// Dade - pixelSampler->renderingDone is shared among all rendering threads
-				pixelSampler->renderingDone = true;
-				haveMoreSample = false;
-			}
-		} else
-			haveMoreSample = (!pixelSampler->renderingDone);
-
-		for (u_int i = 0; i < 6 * pixelSamples; ++i) {
-			imageSamples[i] = tspack->rng->floatValue();
+	bool haveMoreSamples = true;
+	if (data->samplePos == pixelSamples) {
+		u_int sampPixelPosToUse;
+		// Move to the next pixel
+		{
+			fast_mutex::scoped_lock lock(sampPixelPosMutex);
+			sampPixelPosToUse = sampPixelPos;
+			sampPixelPos = (sampPixelPos + 1) % totalPixels;
 		}
 
-		samplePos = 0;
+		// fetch next pixel from pixelsampler
+		if(!pixelSampler->GetNextPixel(&data->xPos, &data->yPos, sampPixelPosToUse)) {
+			// Dade - we are at a valid checkpoint where we can stop the
+			// rendering. Check if we have enough samples per pixel in the film.
+			if (film->enoughSamplesPerPixel) {
+				// Dade - pixelSampler->renderingDone is shared among all rendering threads
+				pixelSampler->renderingDone = true;
+				haveMoreSamples = false;
+			}
+		} else
+			haveMoreSamples = (!pixelSampler->renderingDone);
+
+		data->samplePos = 0;
 	}
-	// reset so scene knows to increment
-	if (samplePos >= pixelSamples-1)
-		*use_pos = ~0U;
+
 	// Return next \mono{RandomSampler} sample point
-	sample->imageX = xPos + imageSamples[2*samplePos];
-	sample->imageY = yPos + imageSamples[2*samplePos+1];
-	sample->lensU = lensSamples[2*samplePos];
-	sample->lensV = lensSamples[2*samplePos+1];
-	sample->time = timeSamples[samplePos];
-	sample->wavelengths = wavelengthsSamples[samplePos];
-	// Generate stratified samples for integrators
-	for (u_int i = 0; i < sample->n1D.size(); ++i) {
-		for (u_int j = 0; j < sample->n1D[i]; ++j)
-			sample->oneD[i][j] = tspack->rng->floatValue();
-	}
-	for (u_int i = 0; i < sample->n2D.size(); ++i) {
-		for (u_int j = 0; j < 2*sample->n2D[i]; ++j)
-			sample->twoD[i][j] = tspack->rng->floatValue();
-	}
+	sample->imageX = data->xPos + sample->rng->floatValue();
+	sample->imageY = data->yPos + sample->rng->floatValue();
+	sample->lensU = sample->rng->floatValue();
+	sample->lensV = sample->rng->floatValue();
+	sample->time = sample->rng->floatValue();
+	sample->wavelengths = sample->rng->floatValue();
 
-	++samplePos;
+	++(data->samplePos);
 
-	return haveMoreSample;
+	return haveMoreSamples;
 }
 
-float *RandomSampler::GetLazyValues(Sample *sample, u_int num, u_int pos)
+float RandomSampler::GetOneD(const Sample &sample, u_int num, u_int pos)
 {
-	float *data = sample->xD[num] + pos * sample->dxD[num];
-	for (u_int i = 0; i < sample->dxD[num]; ++i)
-		data[i] = tspack->rng->floatValue();
-	return data;
+	return sample.rng->floatValue();
+}
+
+void RandomSampler::GetTwoD(const Sample &sample, u_int num, u_int pos, float u[2])
+{
+	u[0] = sample.rng->floatValue();
+	u[1] = sample.rng->floatValue();
+}
+
+float *RandomSampler::GetLazyValues(const Sample &sample, u_int num, u_int pos)
+{
+	RandomData *data = (RandomData *)(sample.samplerData);
+	float *sd = data->xD[num];
+	for (u_int i = 0; i < sample.dxD[num]; ++i)
+		sd[i] = sample.rng->floatValue();
+	return sd;
 }
 
 Sampler* RandomSampler::CreateSampler(const ParamSet &params, const Film *film)
 {
-	int nsamp = params.FindOneInt("pixelsamples", -1);
 	// for backwards compatibility
-	if (nsamp < 0) {
-		luxError(LUX_NOERROR, LUX_WARNING, 
-			"Parameters 'xsamples' and 'ysamples' are deprecated, use 'pixelsamples' instead");
-		int xsamp = params.FindOneInt("xsamples", 2);
-		int ysamp = params.FindOneInt("ysamples", 2);
-		nsamp = xsamp*ysamp;
+	int nsamp = params.FindOneInt("pixelsamples", 4);
+
+	int xsamp = params.FindOneInt("xsamples", -1);
+	int ysamp = params.FindOneInt("ysamples", -1);
+
+	if (xsamp >= 0 || ysamp >= 0) {
+		LOG(LUX_WARNING, LUX_NOERROR) << "Parameters 'xsamples' and 'ysamples' are deprecated, use 'pixelsamples' instead";		
+		nsamp = (xsamp < 0 ? 2 : xsamp) * (ysamp < 0 ? 2 : ysamp);
 	}
 
 	string pixelsampler = params.FindOneString("pixelsampler", "vegas");
@@ -167,7 +149,7 @@ Sampler* RandomSampler::CreateSampler(const ParamSet &params, const Film *film)
     film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
     return new RandomSampler(xstart, xend,
                              ystart, yend,
-                             max(nsamp, 0), pixelsampler);
+                             max(nsamp, 1), pixelsampler);
 }
 
 static DynamicLoader::RegisterSampler<RandomSampler> r("random");

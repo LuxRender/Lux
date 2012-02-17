@@ -23,8 +23,8 @@
 // projection.cpp*
 #include "lux.h"
 #include "light.h"
-#include "shape.h"
 #include "mipmap.h"
+#include "texture.h"
 
 namespace lux
 {
@@ -39,29 +39,18 @@ public:
 	virtual ~ProjectionLight();
 	virtual bool IsDeltaLight() const { return true; }
 	virtual bool IsEnvironmental() const { return false; }
-	SWCSpectrum Projection(const TsPack *tspack, const Vector &w) const;
-	virtual float Power(const Scene *) const {
+	virtual float Power(const Scene &) const {
 		return Lbase->Y() * gain * 
 			2.f * M_PI * (1.f - cosTotalWidth) *
 			projectionMap->LookupFloat(CHANNEL_WMEAN, .5f, .5f, .5f);
 	}
-	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Point &P, float u1, float u2, float u3,
-		Vector *wo, float *pdf, VisibilityTester *visibility) const;
-	virtual SWCSpectrum Sample_L(const TsPack *tspack, const Scene *scene, float u1, float u2,
-		float u3, float u4, Ray *ray, float *pdf) const;
-	virtual float Pdf(const TsPack *, const Point &, const Vector &) const;
-	virtual float Pdf(const TsPack *tspack, const Point &p, const Normal &n,
-		const Point &po, const Normal &ns) const;
-	virtual bool Sample_L(const TsPack *tspack, const Scene *scene,
+	virtual float Pdf(const Point &p, const DifferentialGeometry &dg) const;
+	virtual bool SampleL(const Scene &scene, const Sample &sample,
 		float u1, float u2, float u3, BSDF **bsdf, float *pdf,
 		SWCSpectrum *Le) const;
-	virtual bool Sample_L(const TsPack *tspack, const Scene *scene,
-		const Point &p, const Normal &n, float u1, float u2, float u3,
-		BSDF **bsdf, float *pdf, float *pdfDirect,
-		VisibilityTester *visibility, SWCSpectrum *Le) const;
-	virtual SWCSpectrum Le(const TsPack *tspack, const Scene *scene,
-		const Ray &r, const Normal &n, BSDF **bsdf, float *pdf,
-		float *pdfDirect) const;
+	virtual bool SampleL(const Scene &scene, const Sample &sample,
+		const Point &p, float u1, float u2, float u3, BSDF **bsdf,
+		float *pdf, float *pdfDirect, SWCSpectrum *Le) const;
 	
 	static Light *CreateLight(const Transform &light2world,
 		const ParamSet &paramSet);
@@ -70,7 +59,6 @@ private:
 	MIPMap *projectionMap;
 	Point lightPos;
 	boost::shared_ptr<Texture<SWCSpectrum> > Lbase;
-	DifferentialGeometry dummydg;
 	float gain;
 	Transform lightProjection;
 	float hither, yon;

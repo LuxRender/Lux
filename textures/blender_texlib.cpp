@@ -191,7 +191,7 @@ static int wood(const Tex *tex, const float *texvec, TexResult *texres) {
 
     return rv;
 }
-#include <stdio.h>
+
 /* computes basic marble intensity at x,y,z */
 static float marble_int(const Tex *tex, float x, float y, float z) {
     float n, mi;

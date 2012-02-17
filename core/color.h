@@ -32,6 +32,7 @@ namespace lux
 
 // Color Declarations
 class  Color {
+#define COLOR_SAMPLES 3
     // Dade - serialization here is required by network rendering
 	friend class boost::serialization::access;
 
@@ -170,9 +171,11 @@ public:
 			if (isnan(c[2])) return true;
 		return false;
 	}
-	void Print(FILE *f) const {
-		for (int i = 0; i < 3; ++i)
-			fprintf(f, "%f ", c[i]);
+	bool IsInf() const {
+			if (isinf(c[0])) return true;
+			if (isinf(c[1])) return true;
+			if (isinf(c[2])) return true;
+		return false;
 	}
 
 	friend class lux::ParamSet;
@@ -205,7 +208,29 @@ public:
 	float Y() const {
 		return 0.212671f * c[0] + 0.715160f * c[1] + 0.072169f * c[2];
 	}
-	float Filter() const { return (c[0] + c[1] + c[2]) / 3.f; }
+	float Filter() const { return (c[0] + c[1] + c[2]) * (1.f / 3.f); }
+};
+
+// RGBAColor Declarations
+class  RGBAColor : public Color {
+public:
+	// RGBAColor Public Methods
+	RGBAColor(float v = 0.f) { c[0] = v; c[1] = v; c[2] = v; alpha = v; }
+	RGBAColor(float r, float g, float b) { c[0] = r; c[1] = g; c[2] = b; alpha = 0.f; }
+	RGBAColor(float r, float g, float b, float a) { c[0] = r; c[1] = g; c[2] = b; alpha = a; }
+	RGBAColor(const float cs[3]) {
+		c[0] = cs[0]; c[1] = cs[1]; c[2] = cs[2]; alpha = 0.f;
+	}
+	RGBAColor(const Color &color) { // so that operators work
+		c[0] = color.c[0]; c[1] = color.c[1]; c[2] = color.c[2]; alpha = 0.f;
+	}
+
+	float Y() const {
+		return 0.212671f * c[0] + 0.715160f * c[1] + 0.072169f * c[2];
+	}
+	float Filter() const { return (c[0] + c[1] + c[2]) * (1.f / 3.f); }
+
+	float alpha;
 };
 
 // XYZColor Declarations
@@ -224,7 +249,7 @@ public:
 	XYZColor(const Color &color) { // so that operators work
 		c[0] = color.c[0]; c[1] = color.c[1]; c[2] = color.c[2];
 	}
-	XYZColor(const TsPack *tspack, const SWCSpectrum &s);
+	XYZColor(const SpectrumWavelengths &sw, const SWCSpectrum &s);
 	XYZColor(const SPD &s);
 
 	float Y() const {
@@ -287,6 +312,44 @@ public:
 	float luminance; //!<White intensity
 	float XYZToRGB[3][3]; //!<Corresponding conversion matrix from XYZ to RGB
 	float RGBToXYZ[3][3]; //!<Corresponding conversion matrix from RGB to XYZ
+};
+
+//!
+//! Color space white point conversion using Bradford matrices
+//!
+class ColorAdaptator {
+public:
+	//!
+	//! \param[in] from initial color
+	//! \param[in] to final color
+	//!
+	//! Construct the conversion matrix to convert corresponding
+	//! to the provided initial and final colors with Bradford matrices
+	//!
+	ColorAdaptator(const XYZColor &from, const XYZColor &to);
+	//!
+	//! \param[in] color a color to convert
+	//! \return the converted color in the new colorspace
+	//!
+	//! Converts a color in the new colorspace
+	//!
+	XYZColor Adapt(const XYZColor &color) const;
+	//!
+	//! \param[in] ca a color adaptator
+	//! \return the composition of the 2 color adaptators
+	//!
+	//! Compose 2 color adaptators
+	//!
+	ColorAdaptator operator*(const ColorAdaptator &ca) const;
+	//!
+	//! \param[in] s a scaling factor
+	//! \return a reference to self once scaled
+	//!
+	//! Scale the color adaptator
+	//!
+	ColorAdaptator &operator*=(float s);
+private:
+	float conv[3][3]; //!<Conversion matrix
 };
 
 // RGBColor Method Definitions

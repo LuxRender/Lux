@@ -38,11 +38,14 @@ public:
 		  R(reflectance), RoverPI(reflectance * INV_PI) {
 	}
 	virtual ~Lambertian() { }
-	virtual void f(const TsPack *tspack, const Vector &wo, const Vector &wi,
-		SWCSpectrum *const f) const;
-	virtual SWCSpectrum rho(const TsPack *tspack, const Vector &, u_int,
-		float *) const { return R; }
-	virtual SWCSpectrum rho(const TsPack *tspack, u_int,
+	virtual void F(const SpectrumWavelengths &sw, const Vector &wo,
+		const Vector &wi, SWCSpectrum *const f) const;
+	bool SampleF(const SpectrumWavelengths &sw, const Vector &wo,
+		Vector *wi, float u1, float u2, SWCSpectrum *const f_,
+		float *pdf, float *pdfBack, bool reverse) const;
+	virtual SWCSpectrum rho(const SpectrumWavelengths &sw, const Vector &,
+		u_int, float *) const { return R; }
+	virtual SWCSpectrum rho(const SpectrumWavelengths &sw, u_int,
 		float *) const { return R; }
 private:
 	// Lambertian Private Data

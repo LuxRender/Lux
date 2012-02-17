@@ -23,7 +23,7 @@
 // sellmeiertexture.h*
 #include "lux.h"
 #include "texture.h"
-#include "fresneldielectric.h"
+#include "fresnelgeneral.h"
 #include "spectrumwavelengths.h"
 #include "memory.h"
 #include "paramset.h"
@@ -32,7 +32,7 @@ namespace lux
 {
 
 // SellmeierTexture Declarations
-class SellmeierTexture : public Texture<const Fresnel *> {
+class SellmeierTexture : public Texture<FresnelGeneral> {
 public:
 	// SellmeierTexture Public Methods
 	SellmeierTexture(float a_, u_int n, const float *b_, const float *c_) :
@@ -51,22 +51,22 @@ public:
 		index /= (WAVELENGTH_END - WAVELENGTH_START);
 	}
 	virtual ~SellmeierTexture() { }
-	virtual const Fresnel *Evaluate(const TsPack *tspack,
+	virtual FresnelGeneral Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
-		const SWCSpectrum w(tspack->swl->w);
+		const SWCSpectrum w(sw.w);
 		const SWCSpectrum w2(w * w);
 		SWCSpectrum ior2(a);
 		for (u_int i = 0; i < b.size(); ++i)
 			ior2 += b[i] * w2 / (w2 - SWCSpectrum(c[i]));
-		return ARENA_ALLOC(tspack->arena, FresnelDielectric)(index,
-			ior2.Sqrt(), SWCSpectrum(0.f));
+		return FresnelGeneral(DIELECTRIC_FRESNEL, ior2.Sqrt(),
+			SWCSpectrum(0.f));
 	}
 	virtual float Y() const { return index; }
-	virtual void GetDuv(const TsPack *tspack,
+	virtual void GetDuv(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg, float delta,
 		float *du, float *dv) const { *du = *dv = 0.f; }
 
-	static Texture<const Fresnel *> *CreateFresnelTexture(const Transform &tex2world, const ParamSet &tp);
+	static Texture<FresnelGeneral> *CreateFresnelTexture(const Transform &tex2world, const ParamSet &tp);
 private:
 	vector<float> b, c;
 	float a, index;

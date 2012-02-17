@@ -28,9 +28,9 @@
 using namespace lux;
 
 // Disk Method Definitions
-Disk::Disk(const Transform &o2w, bool ro, float ht,
-           float r, float ri, float tmax)
-	: Shape(o2w, ro) {
+Disk::Disk(const Transform &o2w, bool ro, const string &name, 
+           float ht, float r, float ri, float tmax)
+	: Shape(o2w, ro, name) {
 	height = ht;
 	radius = r;
 	innerRadius = ri;
@@ -111,11 +111,12 @@ float Disk::Area() const {
 }
 Shape* Disk::CreateShape(const Transform &o2w,
 		bool reverseOrientation, const ParamSet &params) {
+	string name = params.FindOneString("name", "'disk'");
 	float height = params.FindOneFloat( "height", 0. );
 	float radius = params.FindOneFloat( "radius", 1 );
 	float inner_radius = params.FindOneFloat( "innerradius", 0 );
 	float phimax = params.FindOneFloat( "phimax", 360 );
-	return new Disk(o2w, reverseOrientation, height, radius, inner_radius, phimax);
+	return new Disk(o2w, reverseOrientation, name, height, radius, inner_radius, phimax);
 }
 
 static DynamicLoader::RegisterShape<Disk> r("disk");

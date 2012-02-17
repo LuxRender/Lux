@@ -47,6 +47,10 @@ public:
 	void ResetValues();
 	void ResetValuesFromFilm(bool useDefaults);
 	void SetWidgetsEnabled(bool enabled);
+	void SetFromValues();
+
+	void SaveSettings( QString fName );
+	void LoadSettings( QString fName );
 
 signals:
 	void valuesChanged();
@@ -85,7 +89,7 @@ private slots:
 	void colortempChanged(double value);
 	void colorPicker();
 
-    void colorSelected(const QColor & color);
+   void colorSelected(const QColor & color);
 };
 
 #endif // LIGHTGROUPWIDGET_H

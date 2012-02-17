@@ -28,20 +28,20 @@
 using namespace lux;
 
 // BxDF Method Definitions
-void BRDFToBTDF::f(const TsPack *tspack, const Vector &wo,
+void BRDFToBTDF::F(const SpectrumWavelengths &sw, const Vector &wo,
 	const Vector &wi, SWCSpectrum *const f_) const
 {
 	if (etai == etat) {
-		brdf->f(tspack, wo, otherHemisphere(wi), f_);
+		brdf->F(sw, wo, otherHemisphere(wi), f_);
 		return;
 	}
 	// Figure out which $\eta$ is incident and which is transmitted
 	const bool entering = CosTheta(wo) > 0.f;
 	float ei = etai, et = etat;
 
-	if(cb != 0.f) {
+	if (cb != 0.f) {
 		// Handle dispersion using cauchy formula
-		const float w = tspack->swl->SampleSingle();
+		const float w = sw.SampleSingle();
 		et += (cb * 1000000.f) / (w * w);
 	}
 
@@ -56,22 +56,19 @@ void BRDFToBTDF::f(const TsPack *tspack, const Vector &wo,
 	if (H.z < 0.f)
 		return;
 	Vector wiR(2.f * cos1 * H - wo);
-	SWCSpectrum tf(0.f);
-	brdf->f(tspack, wo, wiR, &tf);
-	tf *= fabsf(wiR.z / wi.z);
-	*f_ += tf;
+	brdf->F(sw, wo, wiR, f_);
 }
-bool BRDFToBTDF::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
+bool BRDFToBTDF::SampleF(const SpectrumWavelengths &sw, const Vector &wo, Vector *wi,
 	float u1, float u2, SWCSpectrum *const f_, float *pdf, float *pdfBack,
 	bool reverse) const
 {
 	if (etai == etat) {
-		if (!brdf->Sample_f(tspack, wo, wi, u1, u2, f_, pdf, pdfBack, reverse))
+		if (!brdf->SampleF(sw, wo, wi, u1, u2, f_, pdf, pdfBack, reverse))
 			return false;
 		*wi = otherHemisphere(*wi);
 		return true;
 	}
-	if (!brdf->Sample_f(tspack, wo, wi, u1, u2, f_, pdf, pdfBack, reverse))
+	if (!brdf->SampleF(sw, wo, wi, u1, u2, f_, pdf, pdfBack, reverse))
 		return false;
 	Vector H(Normalize(wo + *wi));
 	if (H.z < 0.f)
@@ -83,7 +80,7 @@ bool BRDFToBTDF::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 
 	if(cb != 0.f) {
 		// Handle dispersion using cauchy formula
-		const float w = tspack->swl->SampleSingle();
+		const float w = sw.SampleSingle();
 		et += (cb * 1000000.f) / (w * w);
 	}
 
@@ -104,28 +101,24 @@ bool BRDFToBTDF::Sample_f(const TsPack *tspack, const Vector &wo, Vector *wi,
 	float cost = sqrtf(max(0.f, 1.f - sint2));
 	if (entering)
 		cost = -cost;
-	float factor = wi->z;
 	*wi = (cost + eta * cosi) * H - eta * wo;
-	factor /= wi->z;
 	if (reverse)
-		*f_ *= fabsf(factor) * eta2;
-	else
-		*f_ *= fabsf(factor);
+		*f_ *= eta2;
 	return true;
 }
 
-float BRDFToBTDF::Pdf(const TsPack *tspack, const Vector &wo,
+float BRDFToBTDF::Pdf(const SpectrumWavelengths &sw, const Vector &wo,
 		const Vector &wi) const
 {
 	if (etai == etat)
-		return brdf->Pdf(tspack, wo, otherHemisphere(wi));
+		return brdf->Pdf(sw, wo, otherHemisphere(wi));
 	// Figure out which $\eta$ is incident and which is transmitted
 	const bool entering = CosTheta(wo) > 0.f;
 	float ei = etai, et = etat;
 
 	if(cb != 0.f) {
 		// Handle dispersion using cauchy formula
-		const float w = tspack->swl->SampleSingle();
+		const float w = sw.SampleSingle();
 		et += (cb * 1000000.f) / (w * w);
 	}
 
@@ -139,5 +132,5 @@ float BRDFToBTDF::Pdf(const TsPack *tspack, const Vector &wo,
 		H = -H;
 	if (H.z < 0.f)
 		return 0.f;
-	return brdf->Pdf(tspack, wo, 2.f * Dot(wo, H) * H - wo);
+	return brdf->Pdf(sw, wo, 2.f * Dot(wo, H) * H - wo);
 }
