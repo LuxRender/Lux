@@ -24,8 +24,8 @@
 IF(APPLE)
 	IF(OSX_OPTION_PYLUX)
 		# use Blender python libs for static compiling !
-		SET(PYTHON_LIBRARIES ${CMAKE_SOURCE_DIR}/../macos/lib/BF_pythonlibs/py32_uni_intel/libbf_python_ext.a ${CMAKE_SOURCE_DIR}/../macos/lib/BF_pythonlibs/py32_uni_intel/libbf_python.a)
-		SET(PYTHON_INCLUDE_PATH ${CMAKE_SOURCE_DIR}/../macos/include/Python3.2)
+		SET(PYTHON_LIBRARIES ${OSX_DEPENDENCY_ROOT}/lib/BF_pythonlibs/py32_uni_intel/libbf_python_ext.a ${OSX_DEPENDENCY_ROOT}/lib/BF_pythonlibs/py32_uni_intel/libbf_python.a)
+		SET(PYTHON_INCLUDE_PATH ${OSX_DEPENDENCY_ROOT}/include/Python3.2)
 		SET(PYTHONLIBS_FOUND ON)
 	ELSE(OSX_OPTION_PYLUX)
 		# compile pylux for genral purpose against Python framework
@@ -70,7 +70,7 @@ IF(PYTHONLIBS_FOUND OR PYTHON_CUSTOM)
 	IF(APPLE)
 		SET_TARGET_PROPERTIES(pylux PROPERTIES XCODE_ATTRIBUTE_DEPLOYMENT_POSTPROCESSING NO) # exclude pylux from strip, not possible with external symbols !
 		add_dependencies(pylux luxShared) # explicitly say that the target depends on corelib build first
-		TARGET_LINK_LIBRARIES(pylux -Wl,-undefined -Wl,dynamic_lookup ${OSX_SHARED_CORELIB} ${CMAKE_THREAD_LIBS_INIT} ${PYTHON_LIBRARIES} ${Boost_python_LIBRARIES})
+		TARGET_LINK_LIBRARIES(pylux -Wl,-undefined -Wl,dynamic_lookup ${OSX_SHARED_CORELIB} ${CMAKE_THREAD_LIBS_INIT} ${PYTHON_LIBRARIES} ${Boost_python_LIBRARIES} ${Boost_LIBRARIES})
 		ADD_CUSTOM_COMMAND(
 			TARGET pylux POST_BUILD
 			COMMAND mv release/libpylux.so release/pylux.so

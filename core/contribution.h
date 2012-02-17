@@ -204,7 +204,7 @@ inline void ContributionBuffer::Add(const Contribution &c, float weight)
 		Buffer* volatile* const buf = &(buffers[tileIndex1][c.bufferGroup]);
 		u_int i = 0;
 		while (!((*buf)->Add(c, weight)) && (i++ < 10)) {
-			pool->Next(buf, &sampleCount, tileIndex0, c.bufferGroup);
+			pool->Next(buf, &sampleCount, tileIndex1, c.bufferGroup);
 		}
 	}
 

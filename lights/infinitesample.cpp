@@ -306,7 +306,7 @@ bool InfiniteAreaLightIS::SampleL(const Scene &scene, const Sample &sample,
 	Vector wi;
 	float pdfMap;
 	mapping->Map(uv[0], uv[1], &wi, &pdfMap);
-	wi= Normalize(LightToWorld(wi));
+	wi = Normalize(LightToWorld(wi)); 
 	if (!(pdfMap > 0.f))
 		return false;
 	// Compute PDF for sampled direction

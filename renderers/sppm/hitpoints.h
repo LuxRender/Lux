@@ -51,6 +51,13 @@ public:
 	BxDFType flags;
 };
 
+/*
+Probabilistic approach TODO:
+
+a) remove statistics if unneeded
+b) align data structure in memory
+*/
+
 class HitPoint {
 public:
 	HitPointEyePass eyePass;
@@ -97,9 +104,13 @@ public:
 	{
 		return photonCount;
 	}
-	void DoRadiusReduction(float const alpha)
+	void DoRadiusReduction(float const alpha, float const pass, bool useproba)
 	{
-		if (accumPhotonCount > 0) {
+		if(useproba)
+		{
+			accumPhotonRadius2 *= (pass + alpha) / (pass + 1.0f);
+		}
+		else if (accumPhotonCount > 0) {
 			/*
 			TODO: startK disable because incorrect
 			u_int k = renderer->sppmi->photonStartK;
@@ -130,10 +141,10 @@ public:
 
 			// Radius reduction
 			accumPhotonRadius2 *= g;
-
-			photonCount = pcount;
-			accumPhotonCount = 0;
 		}
+
+		photonCount += accumPhotonCount;
+		accumPhotonCount = 0;
 	}
 };
 
@@ -303,14 +314,14 @@ public:
 		lookUpAccel->AddFlux(sample, hitPoint, wi, sw, photonFlux, lightGroup);
 	}
 	void AccumulateFlux(const u_int index, const u_int count);
-	void SetHitPoints(Sample &sample, RandomGenerator *rng, const u_int index, const u_int count, MemoryArena& arena);
+	void SetHitPoints(Sample &sample, RandomGenerator *rng, const u_int index, const u_int count);
 
 	void RefreshAccel(const u_int index, const u_int count, boost::barrier &barrier) {
 		lookUpAccel->Refresh(index, count, barrier);
 	}
 
 private:
-	void TraceEyePath(HitPoint *hp, const Sample &sample, MemoryArena &arena);
+	void TraceEyePath(HitPoint *hp, const Sample &sample);
 
 	SPPMRenderer *renderer;
 public:

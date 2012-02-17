@@ -168,25 +168,20 @@ void HitPoints::AccumulateFlux(const u_int index, const u_int count) {
 	for (u_int i = first; i < last; ++i) {
 		HitPoint *hp = &(*hitPoints)[i];
 
-		if(hp->IsSurface()) {
-			hp->DoRadiusReduction(renderer->sppmi->photonAlpha);
-		} else
-			assert(!hp->IsSurface());
+		hp->DoRadiusReduction(renderer->sppmi->photonAlpha, GetPassCount(), renderer->sppmi->useproba);
 	}
 }
 
-void HitPoints::SetHitPoints(Sample &sample, RandomGenerator *rng, const u_int index, const u_int count, MemoryArena &arena) {
+void HitPoints::SetHitPoints(Sample &sample, RandomGenerator *rng, const u_int index, const u_int count) {
 	const unsigned int workSize = hitPoints->size() / count;
 	const unsigned int first = workSize * index;
 	const unsigned int last = (index == count - 1) ? hitPoints->size() : (first + workSize);
-
-	arena.FreeAll();
 
 	assert (first >= 0);
 	assert (last <= hitPoints->size());
 
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Building hit points: " << first << " to " << last - 1;
-
+	sample.arena.FreeAll();
 	for (u_int i = first; i < last; ++i) {
 		static_cast<HaltonEyeSampler::HaltonEyeSamplerData *>(sample.samplerData)->index = i; //FIXME sampler data shouldn't be accessed directly
 		static_cast<HaltonEyeSampler::HaltonEyeSamplerData *>(sample.samplerData)->pathCount = currentPass; //FIXME sampler data shouldn't be accessed directly
@@ -200,7 +195,7 @@ void HitPoints::SetHitPoints(Sample &sample, RandomGenerator *rng, const u_int i
 		HitPoint *hp = &(*hitPoints)[i];
 
 		// Trace the eye path
-		TraceEyePath(hp, sample, arena);
+		TraceEyePath(hp, sample);
 
 		// add contributions directly so we don't increase sample count
 		// as sample count is a proxy for photon count which is used for 
@@ -213,12 +208,10 @@ void HitPoints::SetHitPoints(Sample &sample, RandomGenerator *rng, const u_int i
 
 		hp->imageX = sample.imageX;
 		hp->imageY = sample.imageY;
-
-		sample.arena.FreeAll();
 	}
 }
 
-void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, MemoryArena &hp_arena)
+void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample)
 {
 	HitPointEyePass *hpep = &hp->eyePass;
 
@@ -261,6 +254,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, MemoryArena &hp
 		Intersection isect;
 		BSDF *bsdf;
 		float spdf;
+		sample.arena.Begin();
 		if (!scene.Intersect(sample, volume, scattered, ray, data[0],
 			&isect, &bsdf, &spdf, NULL, &pathThroughput)) {
 			pathThroughput /= spdf;
@@ -292,6 +286,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, MemoryArena &hp
 			hp->SetConstant();
 			break;
 		}
+		sample.arena.End();
 		scattered = bsdf->dgShading.scattered;
 		pathThroughput /= spdf;
 		if (vertexIndex == 0)
@@ -394,8 +389,8 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, MemoryArena &hp
 
 			hpep->flags = store_component;
 
-			// TODO: find a way to copy the generated bsdf to a new one
-			hpep->bsdf = isect.GetBSDF(hp_arena, sw, ray);
+			hpep->bsdf = bsdf;
+			sample.arena.Commit();
 			break;
 		}
 
