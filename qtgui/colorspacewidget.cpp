@@ -63,8 +63,6 @@ static double XyToTemperature(double x, double y)
 	const double xe = 0.3366;
 	const double ye = 0.1735;
 	const double n = (x - xe) / (y - ye);
-	const double n2 = n * n;
-	const double n3 = n2 * n;
 
 	const double A0 = -949.86315;
 	const double A1 = 6253.80338;

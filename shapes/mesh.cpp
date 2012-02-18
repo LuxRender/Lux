@@ -83,7 +83,7 @@ Mesh::Mesh(const Transform &o2w, bool ro, const string &name,
 		n = NULL;
 
 	if (genTangents && !uvs) {
-		SHAPE_LOG(Name(), LUX_ERROR,LUX_CONSISTENCY)<< "Cannot generate tangent space for mesh, mesh does not have UV coordinates.";
+		SHAPE_LOG(name, LUX_ERROR,LUX_CONSISTENCY)<< "Cannot generate tangent space for mesh, mesh does not have UV coordinates.";
 		generateTangents = false;
 	} else
 		generateTangents = genTangents;
@@ -143,7 +143,7 @@ Mesh::Mesh(const Transform &o2w, bool ro, const string &name,
 		//	ss << " to allow subdivision";
 		//else
 		//	ss << " because they are non-planar or non-convex";		
-		SHAPE_LOG(Name(), LUX_INFO,LUX_NOERROR)<< ss.str().c_str();
+		SHAPE_LOG(name, LUX_INFO,LUX_NOERROR)<< ss.str().c_str();
 	}
 
 	// Dade - copy triangle data
@@ -267,7 +267,7 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 					displacementMapOffset,
 					displacementMapNormalSmooth,
 					displacementMapSharpBoundary,
-					normalSplit, Name());
+					normalSplit, name);
 				boost::shared_ptr<LoopSubdiv::SubdivResult> res(loopsubdiv.Refine());
 				// Check if subdivision was successfull
 				if (!res)
@@ -306,18 +306,18 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 					displacementMap->GetMinMaxFloat(&displacementMapMin, &displacementMapMax);
 
 					if (displacementMapMin < -1.f || displacementMapMax > 1.f)
-						SHAPE_LOG(Name(), LUX_WARNING, LUX_LIMIT) << "Displacement map for microdisplacement reported min/max values of (" 
+						SHAPE_LOG(name, LUX_WARNING, LUX_LIMIT) << "Displacement map for microdisplacement reported min/max values of (" 
 							<< displacementMapMin << "," << displacementMapMax << "), actual displacement values will be clamped to [-1,1]";
 
 					triType = TRI_MICRODISPLACEMENT;
 				} else {
-					SHAPE_LOG(Name(), LUX_WARNING, LUX_CONSISTENCY) << "No displacement map for microdisplacement, disabling";
+					SHAPE_LOG(name, LUX_WARNING, LUX_CONSISTENCY) << "No displacement map for microdisplacement, disabling";
 					triType = TRI_AUTO;
 				}
 
 				break;
 			default: {
-				SHAPE_LOG(Name(), LUX_ERROR,LUX_CONSISTENCY) << "Unknow subdivision type in a mesh: " << concreteSubdivType;
+				SHAPE_LOG(name, LUX_ERROR,LUX_CONSISTENCY) << "Unknow subdivision type in a mesh: " << concreteSubdivType;
 				break;
 			}
 		}
@@ -395,13 +395,13 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 			}
 			break;
 		default: {
-			SHAPE_LOG(Name(), LUX_ERROR,LUX_CONSISTENCY) << "Unknow triangle type: " << concreteTriType;
+			SHAPE_LOG(name, LUX_ERROR,LUX_CONSISTENCY) << "Unknow triangle type: " << concreteTriType;
 			break;
 		}
 	}
 
 	if (inconsistentShadingTris > 0) {
-		SHAPE_LOG(Name(), LUX_WARNING, LUX_CONSISTENCY) <<
+		SHAPE_LOG(name, LUX_WARNING, LUX_CONSISTENCY) <<
 			"Inconsistent shading normals in " << 
 			inconsistentShadingTris << " triangle" << (inconsistentShadingTris > 1 ? "s" : "");
 	}
@@ -428,7 +428,7 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 			}
 			break;
 		default: {
-			SHAPE_LOG(Name(), LUX_ERROR,LUX_CONSISTENCY) << "Unknow quad type in a mesh: " << quadType;
+			SHAPE_LOG(name, LUX_ERROR,LUX_CONSISTENCY) << "Unknow quad type in a mesh: " << quadType;
 			break;
 		}
 	}
@@ -489,7 +489,7 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 		default:
 			ss << "?";
 	}
-	SHAPE_LOG(Name(), LUX_DEBUG,LUX_NOERROR)<< ss.str().c_str();
+	SHAPE_LOG(name, LUX_DEBUG,LUX_NOERROR)<< ss.str().c_str();
 
 	// Build acceleration structure
 	if (concreteAccelType == ACCEL_NONE) {
@@ -516,7 +516,7 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 				accel = MakeAccelerator("bruteforce", refinedPrims, paramset);
 				break;
 			default:
-				SHAPE_LOG(Name(), LUX_ERROR,LUX_CONSISTENCY) << "Unknow accel type: " << concreteAccelType;
+				SHAPE_LOG(name, LUX_ERROR,LUX_CONSISTENCY) << "Unknow accel type: " << concreteAccelType;
 		}
 		if (refineHints.forSampling)
 			// Lotus - create primitive set to allow sampling
@@ -772,7 +772,7 @@ void mikkts_setTSpaceBasic(const SMikkTSpaceContext * pContext, const float fvTa
 }
 
 void Mesh::GenerateTangentSpace() {
-	SHAPE_LOG(Name(), LUX_INFO,LUX_NOERROR)<< "Generating tangent space.";
+	SHAPE_LOG(name, LUX_INFO,LUX_NOERROR)<< "Generating tangent space.";
 
 	// set up data structures for mikktspace, use defaults
 	SMikkTSpaceInterface mif;
@@ -791,25 +791,25 @@ void Mesh::GenerateTangentSpace() {
 	mctx.m_pUserData = &data;
 
 	if (!data.t || !data.sign) {
-		SHAPE_LOG(Name(), LUX_ERROR,LUX_SYSTEM)<< "Failed to generate tangent space, out of memory.";
+		SHAPE_LOG(name, LUX_ERROR,LUX_SYSTEM)<< "Failed to generate tangent space, out of memory.";
 		return;
 	}
 
 	// generate tangent space
 	if (!genTangSpaceDefault(&mctx)) {
-		SHAPE_LOG(Name(), LUX_ERROR,LUX_SYSTEM)<< "Failed to generate tangent space.";
+		SHAPE_LOG(name, LUX_ERROR,LUX_SYSTEM)<< "Failed to generate tangent space.";
 		return;
 	}
 
 	// tangents are returned unindexed, need to generate new index list
 	// as some vertices may share normals and uv, but have different tangents
-	SHAPE_LOG(Name(), LUX_DEBUG,LUX_NOERROR)<< "Generating new index list.";
+	SHAPE_LOG(name, LUX_DEBUG,LUX_NOERROR)<< "Generating new index list.";
 
 	const u_int floatsPerVert = 3 + 3 + 2 + 3 + 1;
 	float* vertDataIn = new float[3 * ntris * floatsPerVert];
 
 	if (!vertDataIn) {
-		SHAPE_LOG(Name(), LUX_ERROR,LUX_SYSTEM)<< "Failed to generate tangent space, out of memory.";
+		SHAPE_LOG(name, LUX_ERROR,LUX_SYSTEM)<< "Failed to generate tangent space, out of memory.";
 
 		delete[] vertDataIn;
 		return;
@@ -843,7 +843,7 @@ void Mesh::GenerateTangentSpace() {
 	int* remapTable = new int[3 * ntris];
 
 	if (!vertDataOut || !remapTable) {
-		SHAPE_LOG(Name(), LUX_ERROR,LUX_SYSTEM)<< "Failed to generate tangent space, out of memory.";
+		SHAPE_LOG(name, LUX_ERROR,LUX_SYSTEM)<< "Failed to generate tangent space, out of memory.";
 
 		delete[] vertDataIn;
 		delete[] vertDataOut;

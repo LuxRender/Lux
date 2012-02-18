@@ -246,12 +246,9 @@ inline boost::shared_ptr<MIPMap> ImageTexture::GetTexture(ImageTextureFilterType
 			filename << "'";
 		return textures[texInfo];
 	}
-	int width, height;
 	std::auto_ptr<ImageData> imgdata(ReadImage(filename));
 	boost::shared_ptr<MIPMap> ret;
 	if (imgdata.get() != NULL) {
-		width=imgdata->getWidth();
-		height=imgdata->getHeight();
 		ret = boost::shared_ptr<MIPMap>(imgdata->createMIPMap(filterType, maxAniso, wrap, gain, gamma));
 	} else {
 		// Create one-valued _MIPMap_

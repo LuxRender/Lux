@@ -61,7 +61,6 @@ u_int EmissionIntegrator::Li(const Scene &scene, const Ray &ray,
 	const u_int N = Ceil2Int((t1 - t0) / stepSize);
 	const float step = (t1 - t0) / N;
 	SWCSpectrum Tr(1.f);
-	const Vector w = -ray.d;
 	t0 += sample.sampler->GetOneD(sample, scatterSampleOffset, 0) * step;
 	DifferentialGeometry dg;
 	dg.nn = Normal(-ray.d);
