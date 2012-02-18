@@ -147,7 +147,7 @@ IF(APPLE)
 	if(OSX_OPTION_LTO)
 		SET(CMAKE_XCODE_ATTRIBUTE_LLVM_LTO YES)
 	endif(OSX_OPTION_LTO)
-	SET(CMAKE_BUILD_TYPE "Release" CACHE STRING "limit configs" FORCE)
+	SET(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE} CACHE STRING "assure config" FORCE)
 	set(OSX_DEPENDENCY_ROOT ${CMAKE_SOURCE_DIR}/../my_macos) # can be macos or usr/local for example
 	set(OSX_BUNDLE_COMPONENTS_ROOT ${CMAKE_SOURCE_DIR}/../my_macos) # bundle resources
 	INCLUDE(macosx_bundle)
@@ -356,7 +356,7 @@ ENDIF (APPLE)
 
 LINK_DIRECTORIES(${LINK_DIRECTORIES} ${Boost_LIBRARY_DIRS} )
 IF (APPLE)
-	SET(OSX_SHARED_CORELIB ${CMAKE_BINARY_DIR}/Release/liblux.dylib)
+	SET(OSX_SHARED_CORELIB ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/liblux.dylib)
 ELSEIF(MSVC)
 	IF(MSVC90)
 		# LTCG not correctly set by cmake in the current release - in the meantime the linker will inform you about switching this flag automatically because of /GL

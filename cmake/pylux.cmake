@@ -73,11 +73,11 @@ IF(PYTHONLIBS_FOUND OR PYTHON_CUSTOM)
 		TARGET_LINK_LIBRARIES(pylux -Wl,-undefined -Wl,dynamic_lookup ${OSX_SHARED_CORELIB} ${CMAKE_THREAD_LIBS_INIT} ${PYTHON_LIBRARIES} ${Boost_python_LIBRARIES} ${Boost_LIBRARIES})
 		ADD_CUSTOM_COMMAND(
 			TARGET pylux POST_BUILD
-			COMMAND mv release/libpylux.so release/pylux.so
+			COMMAND mv ${CMAKE_BUILD_TYPE}/libpylux.so ${CMAKE_BUILD_TYPE}/pylux.so
 		)
 		ADD_CUSTOM_COMMAND(
 			TARGET pylux POST_BUILD
-			COMMAND cp ${CMAKE_SOURCE_DIR}/python/pyluxconsole.py release/pyluxconsole.py
+			COMMAND cp ${CMAKE_SOURCE_DIR}/python/pyluxconsole.py ${CMAKE_BUILD_TYPE}/pyluxconsole.py
 		)
 	ELSE(APPLE)
 
