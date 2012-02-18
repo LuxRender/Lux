@@ -159,8 +159,8 @@ IF(APPLE)
 		SET(CMAKE_CONFIGURATION_TYPES "Debug" CACHE STRING "limit configs" FORCE) # valid for xcode 4.3
 	endif()
 
-	set(OSX_DEPENDENCY_ROOT ${CMAKE_SOURCE_DIR}/../my_macos) # can be macos or usr/local for example
-	set(OSX_BUNDLE_COMPONENTS_ROOT ${CMAKE_SOURCE_DIR}/../my_macos) # bundle resources
+	set(OSX_DEPENDENCY_ROOT ${CMAKE_SOURCE_DIR}/../macos) # can be macos or usr/local for example
+	set(OSX_BUNDLE_COMPONENTS_ROOT ${CMAKE_SOURCE_DIR}/../macos) # bundle resources
 	INCLUDE(macosx_bundle)
 ENDIF(APPLE)
 
