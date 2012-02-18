@@ -334,18 +334,21 @@ QBVHAccel::QBVHAccel(const vector<boost::shared_ptr<Primitive> > &p,
 	
 	// Collect statistics
 	SAHCost = 0.f;
+	avgLeafPrimReferences = 0.f;
 	maxDepth = 0;
 	nodeCount = 0;
-	leafCount = 0;
+	noEmptyLeafCount = 0;
 	emptyLeafCount = 0;
 	primReferences = CollectStatistics(0);
+	avgLeafPrimReferences /= noEmptyLeafCount;
 	
 	// Print the statistics
 	LOG(LUX_DEBUG, LUX_NOERROR)<< "QBVH SAH total cost: " << SAHCost;
 	LOG(LUX_DEBUG, LUX_NOERROR)<< "QBVH max. depth: " << maxDepth;
 	LOG(LUX_DEBUG, LUX_NOERROR)<< "QBVH node count: " << nodeCount;
-	LOG(LUX_DEBUG, LUX_NOERROR)<< "QBVH leaf count: " << leafCount;
 	LOG(LUX_DEBUG, LUX_NOERROR)<< "QBVH empty leaf count: " << emptyLeafCount;
+	LOG(LUX_DEBUG, LUX_NOERROR)<< "QBVH not empty leaf count: " << noEmptyLeafCount;
+	LOG(LUX_DEBUG, LUX_NOERROR)<< "QBVH avg. primitive references per leaf: " << avgLeafPrimReferences;
 	LOG(LUX_DEBUG, LUX_NOERROR)<< "QBVH primitive references: " << primReferences << "/" << nPrims;
 	
 	// Release temporary memory
@@ -370,8 +373,9 @@ u_int QBVHAccel::CollectStatistics(int32_t nodeIndex, u_int depth) {
 				childPrimReferences[i] = 0;
 			} else {
 				maxDepth = max(maxDepth, depth + 1);
-				++leafCount;
+				++noEmptyLeafCount;
 				childPrimReferences[i] = nodes[nodeIndex].NbPrimitivesInLeaf(i);
+				avgLeafPrimReferences += childPrimReferences[i];
 			}
 		} else
 			childPrimReferences[i] = CollectStatistics(nodes[nodeIndex].children[i], depth + 1);

@@ -421,8 +421,8 @@ private:
 	u_int maxPrimsPerLeaf;
 
 	// Some statistics about the quality of the built accelerator
-	float SAHCost;
-	u_int maxDepth, nodeCount, leafCount, emptyLeafCount, primReferences;
+	float SAHCost, avgLeafPrimReferences;
+	u_int maxDepth, nodeCount, noEmptyLeafCount, emptyLeafCount, primReferences;
 	
 	// Adapted from Robin Bourianes (robin.bourianes@free.fr)
 	// Array indicating the order of visit
