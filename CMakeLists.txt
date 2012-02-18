@@ -148,6 +148,17 @@ IF(APPLE)
 		SET(CMAKE_XCODE_ATTRIBUTE_LLVM_LTO YES)
 	endif(OSX_OPTION_LTO)
 	SET(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE} CACHE STRING "assure config" FORCE)
+
+	### This is a hack for xcode to affect default buildtype so it matches copy pathes ###
+	### it does  work in xcode 4.3 due it defaults to "Debug" and needs this mandatory ###
+	### you must change build configuration in xcode4.3 itself until solution is found ###
+
+	if(${XCODE_VERSION} LESS 4.3 AND ${CMAKE_BUILD_TYPE} MATCHES Release)
+		SET(CMAKE_CONFIGURATION_TYPES "Release" CACHE STRING "limit configs" FORCE) # not valid for xcode 4.3
+	elseif(${CMAKE_BUILD_TYPE} MATCHES Debug)
+		SET(CMAKE_CONFIGURATION_TYPES "Debug" CACHE STRING "limit configs" FORCE) # valid for xcode 4.3
+	endif()
+
 	set(OSX_DEPENDENCY_ROOT ${CMAKE_SOURCE_DIR}/../my_macos) # can be macos or usr/local for example
 	set(OSX_BUNDLE_COMPONENTS_ROOT ${CMAKE_SOURCE_DIR}/../my_macos) # bundle resources
 	INCLUDE(macosx_bundle)
