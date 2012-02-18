@@ -205,7 +205,16 @@ public:
 		}
 	}
 
-	
+	// Return the bounding box of the ith child
+	inline void GetBBox(int i, BBox &bbox) {
+		bbox.pMin.x = reinterpret_cast<float *>(&(bboxes[0][0]))[i];
+		bbox.pMax.x = reinterpret_cast<float *>(&(bboxes[1][0]))[i];
+		bbox.pMin.y = reinterpret_cast<float *>(&(bboxes[0][1]))[i];
+		bbox.pMax.y = reinterpret_cast<float *>(&(bboxes[1][1]))[i];
+		bbox.pMin.z = reinterpret_cast<float *>(&(bboxes[0][2]))[i];
+		bbox.pMax.z = reinterpret_cast<float *>(&(bboxes[1][2]))[i];
+	}
+
 	/**
 	   Intersect a ray described by sse variables with the 4 bounding boxes
 	   of the node.
@@ -359,6 +368,8 @@ private:
 	void CreateSwizzledLeaf(int32_t parentIndex, int32_t childIndex, 
 		u_int *primsIndexes, const vector<boost::shared_ptr<Primitive> > &vPrims);
 
+	u_int CollectStatistics(int32_t nodeIndex, u_int depth = 1);
+
 	/**
 	   the actual number of quads
 	*/
@@ -409,6 +420,9 @@ private:
 	*/
 	u_int maxPrimsPerLeaf;
 
+	// Some statistics about the quality of the built accelerator
+	float SAHCost;
+	u_int maxDepth, nodeCount, leafCount, emptyLeafCount, primReferences;
 	
 	// Adapted from Robin Bourianes (robin.bourianes@free.fr)
 	// Array indicating the order of visit

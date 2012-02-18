@@ -21,6 +21,7 @@
 ^qtgui/images.cpp
 ^qtgui/splash.cpp
 ^html/.*
+^nbproject/*
 luxcomp
 luxconsole
 luxmerger

@@ -332,10 +332,61 @@ QBVHAccel::QBVHAccel(const vector<boost::shared_ptr<Primitive> > &p,
 	PreSwizzle(0, primsIndexes, vPrims);
 	LOG(LUX_DEBUG,LUX_NOERROR)<< "QBVH completed with " << nNodes << "/" << maxNodes << " nodes";
 	
+	// Collect statistics
+	SAHCost = 0.f;
+	maxDepth = 0;
+	nodeCount = 0;
+	leafCount = 0;
+	emptyLeafCount = 0;
+	primReferences = CollectStatistics(0);
+	
+	// Print the statistics
+	LOG(LUX_DEBUG, LUX_NOERROR)<< "QBVH SAH total cost: " << SAHCost;
+	LOG(LUX_DEBUG, LUX_NOERROR)<< "QBVH max. depth: " << maxDepth;
+	LOG(LUX_DEBUG, LUX_NOERROR)<< "QBVH node count: " << nodeCount;
+	LOG(LUX_DEBUG, LUX_NOERROR)<< "QBVH leaf count: " << leafCount;
+	LOG(LUX_DEBUG, LUX_NOERROR)<< "QBVH empty leaf count: " << emptyLeafCount;
+	LOG(LUX_DEBUG, LUX_NOERROR)<< "QBVH primitive references: " << primReferences << "/" << nPrims;
+	
 	// Release temporary memory
 	delete[] primsBboxes;
 	delete[] primsCentroids;
 	delete[] primsIndexes;
+}
+
+u_int QBVHAccel::CollectStatistics(int32_t nodeIndex, u_int depth) {
+	++nodeCount;
+
+	BBox nodeBBox;
+	BBox childBBoxes[4];
+	u_int childPrimReferences[4];
+	for (int i = 0; i < 4; ++i) {
+		nodes[nodeIndex].GetBBox(i, childBBoxes[i]);
+		nodeBBox = Union(nodeBBox, childBBoxes[i]);
+
+		if (nodes[nodeIndex].ChildIsLeaf(i)) {
+			if (nodes[nodeIndex].LeafIsEmpty(i)) {
+				++emptyLeafCount;
+				childPrimReferences[i] = 0;
+			} else {
+				maxDepth = max(maxDepth, depth + 1);
+				++leafCount;
+				childPrimReferences[i] = nodes[nodeIndex].NbPrimitivesInLeaf(i);
+			}
+		} else
+			childPrimReferences[i] = CollectStatistics(nodes[nodeIndex].children[i], depth + 1);
+	}			
+
+	SAHCost += 1.f; // Ct, the cost of traversing a node
+	for (int i = 0; i < 4; ++i) {
+		if (!nodes[nodeIndex].ChildIsLeaf(i) || !nodes[nodeIndex].LeafIsEmpty(i)) {
+			SAHCost += (childBBoxes[i].SurfaceArea() / nodeBBox.SurfaceArea()) *
+					childPrimReferences[i] * 0.25f; // 0.25 => Ci, the cost of intersecting a primitive (4-way SSE vector)
+		}
+	}
+
+	return childPrimReferences[0] + childPrimReferences[1] +
+			childPrimReferences[2] + childPrimReferences[3];
 }
 
 /***************************************************/
