@@ -272,7 +272,7 @@ QBVHAccel::QBVHAccel(const vector<boost::shared_ptr<Primitive> > &p,
 			p[i]->Refine(vPrims, refineHints, p[i]);
 	}
 
-	// Initialize primitives for _BVHAccel_
+	// Initialize primitives for _QBVHAccel_
 	nPrims = vPrims.size();
 
 	// Temporary data for building
@@ -330,7 +330,7 @@ QBVHAccel::QBVHAccel(const vector<boost::shared_ptr<Primitive> > &p,
 	prims = AllocAligned<boost::shared_ptr<QuadPrimitive> >(nQuads);
 	nQuads = 0;
 	PreSwizzle(0, primsIndexes, vPrims);
-	LOG(LUX_DEBUG,LUX_NOERROR)<< "QBVH completed with " << nNodes << "/" << maxNodes << " nodes";
+	LOG(LUX_DEBUG,LUX_NOERROR) << "QBVH completed with " << nNodes << "/" << maxNodes << " nodes";
 	
 	// Collect statistics
 	SAHCost = 0.f;
@@ -343,13 +343,13 @@ QBVHAccel::QBVHAccel(const vector<boost::shared_ptr<Primitive> > &p,
 	avgLeafPrimReferences /= noEmptyLeafCount;
 	
 	// Print the statistics
-	LOG(LUX_DEBUG, LUX_NOERROR)<< "QBVH SAH total cost: " << SAHCost;
-	LOG(LUX_DEBUG, LUX_NOERROR)<< "QBVH max. depth: " << maxDepth;
-	LOG(LUX_DEBUG, LUX_NOERROR)<< "QBVH node count: " << nodeCount;
-	LOG(LUX_DEBUG, LUX_NOERROR)<< "QBVH empty leaf count: " << emptyLeafCount;
-	LOG(LUX_DEBUG, LUX_NOERROR)<< "QBVH not empty leaf count: " << noEmptyLeafCount;
-	LOG(LUX_DEBUG, LUX_NOERROR)<< "QBVH avg. primitive references per leaf: " << avgLeafPrimReferences;
-	LOG(LUX_DEBUG, LUX_NOERROR)<< "QBVH primitive references: " << primReferences << "/" << nPrims;
+	LOG(LUX_DEBUG, LUX_NOERROR) << "QBVH SAH total cost: " << SAHCost;
+	LOG(LUX_DEBUG, LUX_NOERROR) << "QBVH max. depth: " << maxDepth;
+	LOG(LUX_DEBUG, LUX_NOERROR) << "QBVH node count: " << nodeCount;
+	LOG(LUX_DEBUG, LUX_NOERROR) << "QBVH empty leaf count: " << emptyLeafCount;
+	LOG(LUX_DEBUG, LUX_NOERROR) << "QBVH not empty leaf count: " << noEmptyLeafCount;
+	LOG(LUX_DEBUG, LUX_NOERROR) << "QBVH avg. primitive references per leaf: " << avgLeafPrimReferences;
+	LOG(LUX_DEBUG, LUX_NOERROR) << "QBVH primitive references: " << primReferences << "/" << nPrims;
 	
 	// Release temporary memory
 	delete[] primsBboxes;
@@ -395,156 +395,43 @@ u_int QBVHAccel::CollectStatistics(int32_t nodeIndex, u_int depth) {
 
 /***************************************************/
 void QBVHAccel::BuildTree(u_int start, u_int end, u_int *primsIndexes,
-	BBox *primsBboxes, Point *primsCentroids, const BBox &nodeBbox,
+	const BBox *primsBboxes, const Point *primsCentroids, const BBox &nodeBbox,
 	const BBox &centroidsBbox, int32_t parentIndex, int32_t childIndex, int depth)
 {
 	// Create a leaf ?
 	//********
 	if (depth > 64 || end - start <= maxPrimsPerLeaf) {
 		if (depth > 64) {
-			LOG(LUX_WARNING,LUX_LIMIT) << "Maximum recursion depth reached while constructing QBVH, forcing a leaf node";
+			LOG(LUX_WARNING, LUX_LIMIT) << "Maximum recursion depth reached while constructing QBVH, forcing a leaf node";
 			if (end - start > 64) {
-				LOG(LUX_ERROR,LUX_LIMIT) << "QBVH unable to handle geometry, too many primitives in leaf";
+				LOG(LUX_ERROR, LUX_LIMIT) << "QBVH unable to handle geometry, too many primitives in leaf";
+				end = start + 64;
 			}
 		}
 		CreateTempLeaf(parentIndex, childIndex, start, end, nodeBbox);
 		return;
 	}
 
-	int32_t currentNode = parentIndex;
-	int32_t leftChildIndex = childIndex;
-	int32_t rightChildIndex = childIndex + 1;
+	// Look for the split position
+	int axis;
+	float splitPos = BuildObjectSplit(start, end, primsIndexes, primsBboxes,
+		primsCentroids, centroidsBbox, axis);
 	
-	// Number of primitives in each bin
-	int bins[NB_BINS];
-	// Bbox of the primitives in the bin
-	BBox binsBbox[NB_BINS];
-	
-	//--------------
-	// Fill in the bins, considering all the primitives when a given
-	// threshold is reached, else considering only a portion of the
-	// primitives for the binned-SAH process. Also compute the bins bboxes
-	// for the primitives. 
-
-	for (u_int i = 0; i < NB_BINS; ++i)
-		bins[i] = 0;
-
-	u_int step = (end - start < fullSweepThreshold) ? 1 : skipFactor;
-
-	// Choose the split axis, taking the axis of maximum extent for the
-	// centroids (else weird cases can occur, where the maximum extent axis
-	// for the nodeBbox is an axis of 0 extent for the centroids one.).
-	const int axis = centroidsBbox.MaximumExtent();
-
-	// Precompute values that are constant with respect to the current
-	// primitive considered.
-	const float k0 = centroidsBbox.pMin[axis];
-	const float k1 = NB_BINS / (centroidsBbox.pMax[axis] - k0);
-	
-	// If the bbox is a point, create a leaf, hoping there are not more
-	// than 64 primitives that share the same center.
-	if (isinf(k1)) {
-		if (end - start > 64)
-		{ LOG(LUX_ERROR,LUX_LIMIT) << "QBVH unable to handle geometry, too many primitives with the same centroid"; }
+	if (splitPos == std::numeric_limits<float>::quiet_NaN()) {
+		if (end - start > 64) {
+			LOG(LUX_ERROR, LUX_LIMIT) << "QBVH unable to handle geometry, too many primitives with the same centroid";
+			end = start + 64;
+		}
 		CreateTempLeaf(parentIndex, childIndex, start, end, nodeBbox);
 		return;
 	}
-
-	// Create an intermediate node if the depth indicates to do so.
-	// Register the split axis.
-	if (depth % 2 == 0) {
-		currentNode = CreateIntermediateNode(parentIndex, childIndex, nodeBbox);
-		leftChildIndex = 0;
-		rightChildIndex = 2;
-	}
-
-	for (u_int i = start; i < end; i += step) {
-		u_int primIndex = primsIndexes[i];
-		
-		// Binning is relative to the centroids bbox and to the
-		// primitives' centroid.
-		const int binId = min(NB_BINS - 1, Floor2Int(k1 * (primsCentroids[primIndex][axis] - k0)));
-
-		bins[binId]++;
-		binsBbox[binId] = Union(binsBbox[binId], primsBboxes[primIndex]);
-	}
-
-	//--------------
-	// Evaluate where to split.
-
-	// Cumulative number of primitives in the bins from the first to the
-	// ith, and from the last to the ith.
-	int nbPrimsLeft[NB_BINS];
-	int nbPrimsRight[NB_BINS];
-	// The corresponding cumulative bounding boxes.
-	BBox bboxesLeft[NB_BINS];
-	BBox bboxesRight[NB_BINS];
-
-	// The corresponding volumes.
-	float vLeft[NB_BINS];
-	float vRight[NB_BINS];	
-
-	BBox currentBboxLeft, currentBboxRight;
-	int currentNbLeft = 0, currentNbRight = 0;
-
-	for (int i = 0; i < NB_BINS; ++i) {
-		//-----
-		// Left side
-		// Number of prims
-		currentNbLeft += bins[i];
-		nbPrimsLeft[i] = currentNbLeft;
-		// Prims bbox
-		currentBboxLeft = Union(currentBboxLeft, binsBbox[i]);
-		bboxesLeft[i] = currentBboxLeft;
-		// Surface area
-		vLeft[i] = currentBboxLeft.SurfaceArea();
-		
-
-		//-----
-		// Right side
-		// Number of prims
-		int rightIndex = NB_BINS - 1 - i;
-		currentNbRight += bins[rightIndex];
-		nbPrimsRight[rightIndex] = currentNbRight;
-		// Prims bbox
-		currentBboxRight = Union(currentBboxRight, binsBbox[rightIndex]);
-		bboxesRight[rightIndex] = currentBboxRight;
-		// Surface area
-		vRight[rightIndex] = currentBboxRight.SurfaceArea();
-	}
-
-	int minBin = -1;
-	float minCost = INFINITY;
-	// Find the best split axis,
-	// there must be at least a bin on the right side
-	for (int i = 0; i < NB_BINS - 1; ++i) {
-		float cost = vLeft[i] * nbPrimsLeft[i] +
-			vRight[i + 1] * nbPrimsRight[i + 1];
-		if (cost < minCost) {
-			minBin = i;
-			minCost = cost;
-		}
-	}
-
-	//-----------------
-	// Make the partition, in a "quicksort partitioning" way,
-	// the pivot being the position of the split plane
-	// (no more binId computation)
-	// track also the bboxes (primitives and centroids)
-	// for the left and right halves.
-
-	// The split plane coordinate is the coordinate of the end of
-	// the chosen bin along the split axis
-	float splitPos = centroidsBbox.pMin[axis] + (minBin + 1) *
-		(centroidsBbox.pMax[axis] - centroidsBbox.pMin[axis]) / NB_BINS;
-
 
 	BBox leftChildBbox, rightChildBbox;
 	BBox leftChildCentroidsBbox, rightChildCentroidsBbox;
 
 	u_int storeIndex = start;
 	for (u_int i = start; i < end; ++i) {
-		u_int primIndex = primsIndexes[i];
+		const u_int primIndex = primsIndexes[i];
 		
 		if (primsCentroids[primIndex][axis] <= splitPos) {
 			// Swap
@@ -564,6 +451,18 @@ void QBVHAccel::BuildTree(u_int start, u_int end, u_int *primsIndexes,
 		}
 	}
 
+	int32_t currentNode = parentIndex;
+	int32_t leftChildIndex = childIndex;
+	int32_t rightChildIndex = childIndex + 1;
+
+	// Create an intermediate node if the depth indicates to do so.
+	// Register the split axis.
+	if (depth % 2 == 0) {
+		currentNode = CreateIntermediateNode(parentIndex, childIndex, nodeBbox);
+		leftChildIndex = 0;
+		rightChildIndex = 2;
+	}
+
 	// Build recursively
 	BuildTree(start, storeIndex, primsIndexes, primsBboxes, primsCentroids,
 		leftChildBbox, leftChildCentroidsBbox, currentNode,
@@ -571,6 +470,118 @@ void QBVHAccel::BuildTree(u_int start, u_int end, u_int *primsIndexes,
 	BuildTree(storeIndex, end, primsIndexes, primsBboxes, primsCentroids,
 		rightChildBbox, rightChildCentroidsBbox, currentNode,
 		rightChildIndex, depth + 1);
+}
+
+float QBVHAccel::BuildObjectSplit(const u_int start, const u_int end,
+		const u_int *primsIndexes, const BBox *primsBboxes, const Point *primsCentroids,
+		const BBox &centroidsBbox, int &axis) {
+	// Choose the split axis, taking the axis of maximum extent for the
+	// centroids (else weird cases can occur, where the maximum extent axis
+	// for the nodeBbox is an axis of 0 extent for the centroids one.).
+	axis = centroidsBbox.MaximumExtent();
+
+	// Precompute values that are constant with respect to the current
+	// primitive considered.
+	const float k0 = centroidsBbox.pMin[axis];
+	const float k1 = NB_BINS / (centroidsBbox.pMax[axis] - k0);
+	
+	// If the bbox is a point
+	if (isinf(k1))
+		return std::numeric_limits<float>::quiet_NaN();
+
+	// Number of primitives in each bin
+	int bins[NB_BINS];
+	// Bbox of the primitives in the bin
+	BBox binsBbox[NB_BINS];
+
+	//--------------
+	// Fill in the bins, considering all the primitives when a given
+	// threshold is reached, else considering only a portion of the
+	// primitives for the binned-SAH process. Also compute the bins bboxes
+	// for the primitives. 
+
+	for (int i = 0; i < NB_BINS; ++i)
+		bins[i] = 0.f;
+
+	u_int step = (end - start < fullSweepThreshold) ? 1 : skipFactor;
+
+	for (u_int i = start; i < end; i += step) {
+		const u_int primIndex = primsIndexes[i];
+		
+		// Binning is relative to the centroids bbox and to the
+		// primitives' centroid.
+		const int binId = min(NB_BINS - 1, Floor2Int(k1 * (primsCentroids[primIndex][axis] - k0)));
+		bins[binId]++;
+		binsBbox[binId] = Union(binsBbox[binId], primsBboxes[primIndex]);
+	}
+
+	//--------------
+	// Evaluate where to split.
+
+	// Cumulative number of primitives in the bins from the first to the
+	// ith, and from the last to the ith.
+	int nbPrimsLeft[NB_BINS];
+	int nbPrimsRight[NB_BINS];
+	// The corresponding cumulative bounding boxes.
+	BBox bboxesLeft[NB_BINS];
+	BBox bboxesRight[NB_BINS];
+
+	// The corresponding SAHs
+	float sahLeft[NB_BINS];
+	float sahRight[NB_BINS];	
+
+	BBox currentBboxLeft, currentBboxRight;
+	int currentNbLeft = 0, currentNbRight = 0;
+
+	for (int i = 0; i < NB_BINS; ++i) {
+		//-----
+		// Left side
+		// Number of prims
+		currentNbLeft += bins[i];
+		nbPrimsLeft[i] = currentNbLeft;
+		// Prims bbox
+		currentBboxLeft = Union(currentBboxLeft, binsBbox[i]);
+		bboxesLeft[i] = currentBboxLeft;
+		// Surface area
+		sahLeft[i] = currentBboxLeft.SurfaceArea();
+		
+		//-----
+		// Right side
+		// Number of prims
+		const int rightIndex = NB_BINS - 1 - i;
+		currentNbRight += bins[rightIndex];
+		nbPrimsRight[rightIndex] = currentNbRight;
+		// Prims bbox
+		currentBboxRight = Union(currentBboxRight, binsBbox[rightIndex]);
+		bboxesRight[rightIndex] = currentBboxRight;
+		// Surface area
+		sahRight[rightIndex] = currentBboxRight.SurfaceArea();
+	}
+
+	int minBin = -1;
+	float minCost = INFINITY;
+	// Find the best split axis,
+	// there must be at least a bin on the right side
+	for (int i = 0; i < NB_BINS - 1; ++i) {
+		float cost = sahLeft[i] * nbPrimsLeft[i] +
+			sahRight[i + 1] * nbPrimsRight[i + 1];
+		if (cost < minCost) {
+			minBin = i;
+			minCost = cost;
+		}
+	}
+
+	//-----------------
+	// Make the partition, in a "quicksort partitioning" way,
+	// the pivot being the position of the split plane
+	// (no more binId computation)
+	// track also the bboxes (primitives and centroids)
+	// for the left and right halves.
+
+	// The split plane coordinate is the coordinate of the end of
+	// the chosen bin along the split axis
+	return centroidsBbox.pMin[axis] + (minBin + 1) *
+		(centroidsBbox.pMax[axis] - centroidsBbox.pMin[axis]) / NB_BINS;
 }
 
 /***************************************************/
@@ -603,7 +614,7 @@ void QBVHAccel::CreateTempLeaf(int32_t parentIndex, int32_t childIndex,
 	nQuads += quads;
 }
 
-void QBVHAccel::PreSwizzle(int32_t nodeIndex, u_int *primsIndexes,
+void QBVHAccel::PreSwizzle(int32_t nodeIndex, const u_int *primsIndexes,
 	const vector<boost::shared_ptr<Primitive> > &vPrims)
 {
 	for (int i = 0; i < 4; ++i) {
@@ -615,7 +626,7 @@ void QBVHAccel::PreSwizzle(int32_t nodeIndex, u_int *primsIndexes,
 }
 
 void QBVHAccel::CreateSwizzledLeaf(int32_t parentIndex, int32_t childIndex,
-	u_int *primsIndexes, const vector<boost::shared_ptr<Primitive> > &vPrims)
+	const u_int *primsIndexes, const vector<boost::shared_ptr<Primitive> > &vPrims)
 {
 	QBVHNode &node = nodes[parentIndex];
 	if (node.LeafIsEmpty(childIndex))

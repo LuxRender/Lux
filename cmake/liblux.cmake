@@ -185,6 +185,7 @@ SET(lux_accelerators_src
 	accelerators/bruteforce.cpp
 	accelerators/bvhaccel.cpp
 	accelerators/qbvhaccel.cpp
+	accelerators/sqbvhaccel.cpp
 	accelerators/tabreckdtree.cpp
 	accelerators/unsafekdtree.cpp
 	)

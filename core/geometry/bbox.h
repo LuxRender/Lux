@@ -49,8 +49,9 @@ public:
 	}
 	friend inline ostream &
 		operator<<(ostream &os, const BBox &b);
-	friend  BBox Union(const BBox &b, const Point &p);
-	friend  BBox Union(const BBox &b, const BBox &b2);
+	friend BBox Union(const BBox &b, const Point &p);
+	friend BBox Union(const BBox &b, const BBox &b2);
+	friend bool Overlap(BBox &result, const BBox &b1, const BBox &b2);
 	bool Overlaps(const BBox &b) const {
 		bool x = (pMax.x >= b.pMin.x) && (pMin.x <= b.pMax.x);
 		bool y = (pMax.y >= b.pMin.y) && (pMin.y <= b.pMax.y);

@@ -288,6 +288,13 @@ public:
 	*/
 	static Aggregate *CreateAccelerator(const vector<boost::shared_ptr<Primitive> > &prims, const ParamSet &ps);
 
+protected:
+	QBVHAccel() { }
+
+	float BuildObjectSplit(const u_int start, const u_int end,
+		const u_int *primsIndexes, const BBox *primsBboxes, const Point *primsCentroids,
+		const BBox &centroidsBbox, int &axis);
+
 private:
 	/**
 	   Build the tree that will contain the primitives indexed from start
@@ -304,11 +311,12 @@ private:
 	   (its child number)
 	   @param depth the current depth.
 	*/
-	void BuildTree(u_int start, u_int end, u_int *primsIndexes, BBox *primsBboxes,
-		Point *primsCentroids, const BBox &nodeBbox,
+	void BuildTree(u_int start, u_int end, u_int *primsIndexes, const BBox *primsBboxes,
+		const Point *primsCentroids, const BBox &nodeBbox,
 		const BBox &centroidsBbox, int32_t parentIndex, int32_t childIndex,
 		int depth);
-	
+
+protected:	
 	/**
 	   Create a leaf using the traditional QBVH layout
 	   @param parentIndex
@@ -353,7 +361,7 @@ private:
 	   @param primsIndexes
 	   @param vPrims
 	*/
-	void PreSwizzle(int32_t nodeIndex, u_int *primsIndexes,
+	void PreSwizzle(int32_t nodeIndex, const u_int *primsIndexes,
 		const vector<boost::shared_ptr<Primitive> > &vPrims);
 
 	/**
@@ -366,7 +374,7 @@ private:
 	   @param vPrims
 	*/
 	void CreateSwizzledLeaf(int32_t parentIndex, int32_t childIndex, 
-		u_int *primsIndexes, const vector<boost::shared_ptr<Primitive> > &vPrims);
+		const u_int *primsIndexes, const vector<boost::shared_ptr<Primitive> > &vPrims);
 
 	u_int CollectStatistics(int32_t nodeIndex, u_int depth = 1);
 
