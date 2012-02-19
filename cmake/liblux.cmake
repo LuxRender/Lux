@@ -903,9 +903,14 @@ IF(APPLE)
 	ADD_LIBRARY(luxShared SHARED ${lux_cpp_api_src} ${lux_lib_src} ${lux_lib_hdr} ${lux_parser_src})
 	TARGET_LINK_LIBRARIES(luxShared ${LUX_LIBRARY_DEPENDS})
 	SET_TARGET_PROPERTIES(luxShared PROPERTIES OUTPUT_NAME lux)
-	ADD_CUSTOM_COMMAND(
-		TARGET luxShared POST_BUILD
-		COMMAND install_name_tool -id @loader_path/liblux.dylib ${CMAKE_BUILD_TYPE}/liblux.dylib)
+
+	if(${CMAKE_GENERATOR} MATCHES "Xcode")
+		SET_TARGET_PROPERTIES(luxShared PROPERTIES XCODE_ATTRIBUTE_LD_DYLIB_INSTALL_NAME @loader_path/liblux.dylib)
+	else()
+		ADD_CUSTOM_COMMAND(
+			TARGET luxShared POST_BUILD
+			COMMAND install_name_tool -id @loader_path/liblux.dylib ${CMAKE_BUILD_TYPE}/liblux.dylib)
+	endif()
 ELSEIF(MSVC)
 	ADD_LIBRARY(luxShared SHARED ${lux_lib_src} ${lux_lib_hdr} ${lux_parser_src})
 	TARGET_LINK_LIBRARIES(luxShared ${LUX_LIBRARY} ${LUX_LIBRARY_DEPENDS})

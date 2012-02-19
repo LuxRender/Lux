@@ -39,18 +39,36 @@
 	# SET(MACOSX_BUNDLE_COPYRIGHT "")
 	# SET(MACOSX_BUNDLE_INFO_STRING "Info string, localized?")
 	ADD_CUSTOM_TARGET(DYNAMIC_BUILD DEPENDS luxShared luxrender luxconsole luxmerger luxcomp pylux )
-	ADD_CUSTOM_COMMAND(
-		TARGET DYNAMIC_BUILD POST_BUILD
-		COMMAND rm -rf ${CMAKE_BUILD_TYPE}/luxrender.app/Contents/Resources
-		COMMAND mkdir ${CMAKE_BUILD_TYPE}/luxrender.app/Contents/Resources
-		COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/icons/luxrender.icns ${CMAKE_BUILD_TYPE}/luxrender.app/Contents/Resources
-		COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/icons/luxscene.icns ${CMAKE_BUILD_TYPE}/luxrender.app/Contents/Resources
-		COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/icons/luxfilm.icns ${CMAKE_BUILD_TYPE}/luxrender.app/Contents/Resources
-		COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/plists/09/Info.plist ${CMAKE_BUILD_TYPE}/luxrender.app/Contents
-		COMMAND mv ${CMAKE_BUILD_TYPE}/luxrender.app ${CMAKE_BUILD_TYPE}/LuxRender.app
-#		COMMAND macdeployqt ${CMAKE_BUILD_TYPE}/LuxRender.app ### uncomment for bundling Qt frameworks ###
-		COMMAND mv ${CMAKE_BUILD_TYPE}/luxconsole ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/MacOS/luxconsole
-		COMMAND mv ${CMAKE_BUILD_TYPE}/luxcomp ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/MacOS/luxcomp
-		COMMAND mv ${CMAKE_BUILD_TYPE}/luxmerger ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/MacOS/luxmerger
-		COMMAND cp ${CMAKE_BUILD_TYPE}/liblux.dylib ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/MacOS/liblux.dylib
-		)
+	if(${CMAKE_GENERATOR} MATCHES "Xcode") # use XCode env vars
+		ADD_CUSTOM_COMMAND(
+			TARGET DYNAMIC_BUILD POST_BUILD
+			COMMAND rm -rf $(CONFIGURATION)/luxrender.app/Contents/Resources
+			COMMAND mkdir $(CONFIGURATION)/luxrender.app/Contents/Resources
+			COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/icons/luxrender.icns $(CONFIGURATION)/luxrender.app/Contents/Resources
+			COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/icons/luxscene.icns $(CONFIGURATION)/luxrender.app/Contents/Resources
+			COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/icons/luxfilm.icns $(CONFIGURATION)/luxrender.app/Contents/Resources
+			COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/plists/09/Info.plist $(CONFIGURATION)/luxrender.app/Contents
+			COMMAND mv $(CONFIGURATION)/luxrender.app $(CONFIGURATION)/LuxRender.app
+#			COMMAND macdeployqt $(CONFIGURATION)/LuxRender.app ### uncomment for bundling Qt frameworks ###
+			COMMAND mv $(CONFIGURATION)/luxconsole ${CMAKE_BINARY_DIR}/$(CONFIGURATION)/LuxRender.app/Contents/MacOS/luxconsole
+			COMMAND mv $(CONFIGURATION)/luxcomp ${CMAKE_BINARY_DIR}/$(CONFIGURATION)/LuxRender.app/Contents/MacOS/luxcomp
+			COMMAND mv $(CONFIGURATION)/luxmerger ${CMAKE_BINARY_DIR}/$(CONFIGURATION)/LuxRender.app/Contents/MacOS/luxmerger
+			COMMAND cp $(CONFIGURATION)/liblux.dylib ${CMAKE_BINARY_DIR}/$(CONFIGURATION)/LuxRender.app/Contents/MacOS/liblux.dylib
+			)
+	else()
+		ADD_CUSTOM_COMMAND(
+			TARGET DYNAMIC_BUILD POST_BUILD
+			COMMAND rm -rf ${CMAKE_BUILD_TYPE}/luxrender.app/Contents/Resources
+			COMMAND mkdir ${CMAKE_BUILD_TYPE}/luxrender.app/Contents/Resources
+			COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/icons/luxrender.icns ${CMAKE_BUILD_TYPE}/luxrender.app/Contents/Resources
+			COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/icons/luxscene.icns ${CMAKE_BUILD_TYPE}/luxrender.app/Contents/Resources
+			COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/icons/luxfilm.icns ${CMAKE_BUILD_TYPE}/luxrender.app/Contents/Resources
+			COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/plists/09/Info.plist ${CMAKE_BUILD_TYPE}/luxrender.app/Contents
+			COMMAND mv ${CMAKE_BUILD_TYPE}/luxrender.app ${CMAKE_BUILD_TYPE}/LuxRender.app
+#			COMMAND macdeployqt ${CMAKE_BUILD_TYPE}/LuxRender.app ### uncomment for bundling Qt frameworks ###
+			COMMAND mv ${CMAKE_BUILD_TYPE}/luxconsole ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/MacOS/luxconsole
+			COMMAND mv ${CMAKE_BUILD_TYPE}/luxcomp ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/MacOS/luxcomp
+			COMMAND mv ${CMAKE_BUILD_TYPE}/luxmerger ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/MacOS/luxmerger
+			COMMAND cp ${CMAKE_BUILD_TYPE}/liblux.dylib ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/MacOS/liblux.dylib
+			)
+	endif()

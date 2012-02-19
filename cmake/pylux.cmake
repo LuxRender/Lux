@@ -71,14 +71,25 @@ IF(PYTHONLIBS_FOUND OR PYTHON_CUSTOM)
 		SET_TARGET_PROPERTIES(pylux PROPERTIES XCODE_ATTRIBUTE_DEPLOYMENT_POSTPROCESSING NO) # exclude pylux from strip, not possible with external symbols !
 		add_dependencies(pylux luxShared) # explicitly say that the target depends on corelib build first
 		TARGET_LINK_LIBRARIES(pylux -Wl,-undefined -Wl,dynamic_lookup ${OSX_SHARED_CORELIB} ${CMAKE_THREAD_LIBS_INIT} ${PYTHON_LIBRARIES} ${Boost_python_LIBRARIES} ${Boost_LIBRARIES})
-		ADD_CUSTOM_COMMAND(
-			TARGET pylux POST_BUILD
-			COMMAND mv ${CMAKE_BUILD_TYPE}/libpylux.so ${CMAKE_BUILD_TYPE}/pylux.so
-		)
-		ADD_CUSTOM_COMMAND(
-			TARGET pylux POST_BUILD
-			COMMAND cp ${CMAKE_SOURCE_DIR}/python/pyluxconsole.py ${CMAKE_BUILD_TYPE}/pyluxconsole.py
-		)
+		if(${CMAKE_GENERATOR} MATCHES "Xcode") # use XCode env vars
+			ADD_CUSTOM_COMMAND(
+				TARGET pylux POST_BUILD
+				COMMAND mv $(CONFIGURATION)/libpylux.so $(CONFIGURATION)/pylux.so
+				)
+			ADD_CUSTOM_COMMAND(
+				TARGET pylux POST_BUILD
+				COMMAND cp ${CMAKE_SOURCE_DIR}/python/pyluxconsole.py $(CONFIGURATION)/pyluxconsole.py
+				)
+		else()
+			ADD_CUSTOM_COMMAND(
+				TARGET pylux POST_BUILD
+				COMMAND mv ${CMAKE_BUILD_TYPE}/libpylux.so ${CMAKE_BUILD_TYPE}/pylux.so
+				)
+			ADD_CUSTOM_COMMAND(
+				TARGET pylux POST_BUILD
+				COMMAND cp ${CMAKE_SOURCE_DIR}/python/pyluxconsole.py ${CMAKE_BUILD_TYPE}/pyluxconsole.py
+				)
+		endif()
 	ELSE(APPLE)
 
 		TARGET_LINK_LIBRARIES(pylux ${LUX_LIBRARY} ${CMAKE_THREAD_LIBS_INIT} ${LUX_LIBRARY_DEPENDS} ${PYTHON_LIBRARIES} ${Boost_python_LIBRARIES})
