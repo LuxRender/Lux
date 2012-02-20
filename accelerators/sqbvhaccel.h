@@ -29,6 +29,9 @@
 namespace lux
 {
 
+// The number of bins for spatial split
+#define SPATIAL_SPLIT_BINS 256
+
 class SBVHNode {
 public:
 	SBVHNode() {
@@ -87,9 +90,9 @@ private:
 			const int32_t parentIndex, const int32_t childIndex,
 			const int depth);
 
-	float BuildSpatialSplit(u_int start, u_int end, u_int *primsIndexes,
-		const BBox *primsBboxes, const Point *primsCentroids,
-		const BBox &nodeBbox, const BBox &centroidsBbox,
+	float BuildSpatialSplit(const u_int start, const u_int end,
+		const u_int *primsIndexes,
+		const BBox *primsBboxes, const Point *primsCentroids, const BBox &centroidsBbox,
 		int &axis, BBox &leftChildBBox, BBox &rightChildBBox,
 		int &spatialLeftChildReferences, int &spatialRightChildReferences);
 

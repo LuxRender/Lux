@@ -50,7 +50,7 @@ BBox Union(const BBox &b, const BBox &b2) {
 	return ret;
 }
 
-bool Overlap(BBox &result, const BBox &b1, const BBox &b2) {
+bool Overlaps(BBox &result, const BBox &b1, const BBox &b2) {
 	if (!b1.Overlaps(b2))
 		return false;
 	

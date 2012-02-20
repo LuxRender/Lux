@@ -384,8 +384,8 @@ u_int QBVHAccel::CollectStatistics(int32_t nodeIndex, u_int depth) {
 	SAHCost += 1.f; // Ct, the cost of traversing a node
 	for (int i = 0; i < 4; ++i) {
 		if (!nodes[nodeIndex].ChildIsLeaf(i) || !nodes[nodeIndex].LeafIsEmpty(i)) {
-			SAHCost += (childBBoxes[i].SurfaceArea() / nodeBBox.SurfaceArea()) *
-					childPrimReferences[i] * 0.25f; // 0.25 => Ci, the cost of intersecting a primitive (4-way SSE vector)
+			SAHCost += (childBBoxes[i].SurfaceArea() / worldBound.SurfaceArea()) *
+					childPrimReferences[i]; // * 1.f => Ci, the cost of intersecting a primitive (4-way SSE vector)
 		}
 	}
 
@@ -417,7 +417,7 @@ void QBVHAccel::BuildTree(u_int start, u_int end, u_int *primsIndexes,
 	float splitPos = BuildObjectSplit(start, end, primsIndexes, primsBboxes,
 		primsCentroids, centroidsBbox, axis);
 	
-	if (splitPos == std::numeric_limits<float>::quiet_NaN()) {
+	if (isnan(splitPos)) {
 		if (end - start > 64) {
 			LOG(LUX_ERROR, LUX_LIMIT) << "QBVH unable to handle geometry, too many primitives with the same centroid";
 			end = start + 64;
@@ -483,16 +483,16 @@ float QBVHAccel::BuildObjectSplit(const u_int start, const u_int end,
 	// Precompute values that are constant with respect to the current
 	// primitive considered.
 	const float k0 = centroidsBbox.pMin[axis];
-	const float k1 = NB_BINS / (centroidsBbox.pMax[axis] - k0);
+	const float k1 = OBJECT_SPLIT_BINS / (centroidsBbox.pMax[axis] - k0);
 	
 	// If the bbox is a point
 	if (isinf(k1))
 		return std::numeric_limits<float>::quiet_NaN();
 
 	// Number of primitives in each bin
-	int bins[NB_BINS];
+	int bins[OBJECT_SPLIT_BINS];
 	// Bbox of the primitives in the bin
-	BBox binsBbox[NB_BINS];
+	BBox binsBbox[OBJECT_SPLIT_BINS];
 
 	//--------------
 	// Fill in the bins, considering all the primitives when a given
@@ -500,7 +500,7 @@ float QBVHAccel::BuildObjectSplit(const u_int start, const u_int end,
 	// primitives for the binned-SAH process. Also compute the bins bboxes
 	// for the primitives. 
 
-	for (int i = 0; i < NB_BINS; ++i)
+	for (int i = 0; i < OBJECT_SPLIT_BINS; ++i)
 		bins[i] = 0.f;
 
 	u_int step = (end - start < fullSweepThreshold) ? 1 : skipFactor;
@@ -510,7 +510,7 @@ float QBVHAccel::BuildObjectSplit(const u_int start, const u_int end,
 		
 		// Binning is relative to the centroids bbox and to the
 		// primitives' centroid.
-		const int binId = min(NB_BINS - 1, Floor2Int(k1 * (primsCentroids[primIndex][axis] - k0)));
+		const int binId = min(OBJECT_SPLIT_BINS - 1, Floor2Int(k1 * (primsCentroids[primIndex][axis] - k0)));
 		bins[binId]++;
 		binsBbox[binId] = Union(binsBbox[binId], primsBboxes[primIndex]);
 	}
@@ -520,20 +520,20 @@ float QBVHAccel::BuildObjectSplit(const u_int start, const u_int end,
 
 	// Cumulative number of primitives in the bins from the first to the
 	// ith, and from the last to the ith.
-	int nbPrimsLeft[NB_BINS];
-	int nbPrimsRight[NB_BINS];
+	int nbPrimsLeft[OBJECT_SPLIT_BINS];
+	int nbPrimsRight[OBJECT_SPLIT_BINS];
 	// The corresponding cumulative bounding boxes.
-	BBox bboxesLeft[NB_BINS];
-	BBox bboxesRight[NB_BINS];
+	BBox bboxesLeft[OBJECT_SPLIT_BINS];
+	BBox bboxesRight[OBJECT_SPLIT_BINS];
 
 	// The corresponding SAHs
-	float sahLeft[NB_BINS];
-	float sahRight[NB_BINS];	
+	float sahLeft[OBJECT_SPLIT_BINS];
+	float sahRight[OBJECT_SPLIT_BINS];	
 
 	BBox currentBboxLeft, currentBboxRight;
 	int currentNbLeft = 0, currentNbRight = 0;
 
-	for (int i = 0; i < NB_BINS; ++i) {
+	for (int i = 0; i < OBJECT_SPLIT_BINS; ++i) {
 		//-----
 		// Left side
 		// Number of prims
@@ -548,7 +548,7 @@ float QBVHAccel::BuildObjectSplit(const u_int start, const u_int end,
 		//-----
 		// Right side
 		// Number of prims
-		const int rightIndex = NB_BINS - 1 - i;
+		const int rightIndex = OBJECT_SPLIT_BINS - 1 - i;
 		currentNbRight += bins[rightIndex];
 		nbPrimsRight[rightIndex] = currentNbRight;
 		// Prims bbox
@@ -562,7 +562,7 @@ float QBVHAccel::BuildObjectSplit(const u_int start, const u_int end,
 	float minCost = INFINITY;
 	// Find the best split axis,
 	// there must be at least a bin on the right side
-	for (int i = 0; i < NB_BINS - 1; ++i) {
+	for (int i = 0; i < OBJECT_SPLIT_BINS - 1; ++i) {
 		float cost = sahLeft[i] * nbPrimsLeft[i] +
 			sahRight[i + 1] * nbPrimsRight[i + 1];
 		if (cost < minCost) {
@@ -581,7 +581,7 @@ float QBVHAccel::BuildObjectSplit(const u_int start, const u_int end,
 	// The split plane coordinate is the coordinate of the end of
 	// the chosen bin along the split axis
 	return centroidsBbox.pMin[axis] + (minBin + 1) *
-		(centroidsBbox.pMax[axis] - centroidsBbox.pMin[axis]) / NB_BINS;
+		(centroidsBbox.pMax[axis] - centroidsBbox.pMin[axis]) / OBJECT_SPLIT_BINS;
 }
 
 /***************************************************/
