@@ -47,6 +47,11 @@
        </item>
        <item>
         <property name="text">
+         <string>SMTPE (D65)</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
          <string>sRGB - HDTV (ITU-R BT.709-5)</string>
         </property>
        </item>
@@ -191,9 +196,14 @@
              </item>
              <item>
               <property name="text">
-               <string>9300</string>
+               <string>9300K</string>
               </property>
              </item>
+             <item>
+              <property name="text">
+               <string>D65 (SMPTE)</string>
+              </property>
+             </item>             
             </widget>
            </item>
            <item row="1" column="0" colspan="2">
