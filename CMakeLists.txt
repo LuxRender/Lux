@@ -359,7 +359,11 @@ ENDIF (APPLE)
 
 LINK_DIRECTORIES(${LINK_DIRECTORIES} ${Boost_LIBRARY_DIRS} )
 IF (APPLE)
-	SET(OSX_SHARED_CORELIB ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/liblux.dylib)
+	if(${CMAKE_GENERATOR} MATCHES "Xcode") # use XCode env vars
+		SET(OSX_SHARED_CORELIB ${CMAKE_BINARY_DIR}/$(CONFIGURATION)/liblux.dylib)
+	else()
+		SET(OSX_SHARED_CORELIB ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/liblux.dylib)
+	endif()
 ELSEIF(MSVC)
 	IF(MSVC90)
 		# LTCG not correctly set by cmake in the current release - in the meantime the linker will inform you about switching this flag automatically because of /GL
