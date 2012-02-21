@@ -17,7 +17,7 @@
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>. #
 #                                                                         #
 #   Lux website: http://www.luxrender.net                                 #
-###########################################################################$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)
+###########################################################################
 
 SOURCE_GROUP("Source Files\\Tools" FILES tools/luxcomp.cpp)
 ADD_EXECUTABLE(luxcomp tools/luxcomp.cpp)
