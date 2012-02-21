@@ -157,6 +157,8 @@ IF(APPLE)
 		# Setup binaries output directory in Xcode manner
 		SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE} CACHE PATH "per configuration" FORCE)
 		SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE} CACHE PATH "per configuration" FORCE)
+	else() # replace CMAKE_BUILD_TYPE with XCode env var $(CONFIGURATION) globally
+		SET(CMAKE_BUILD_TYPE "$(CONFIGURATION)" )
 	endif()
 	set(OSX_DEPENDENCY_ROOT ${CMAKE_SOURCE_DIR}/../macos) # can be macos or usr/local for example
 	set(OSX_BUNDLE_COMPONENTS_ROOT ${CMAKE_SOURCE_DIR}/../macos) # bundle resources
@@ -367,11 +369,7 @@ ENDIF (APPLE)
 
 LINK_DIRECTORIES(${LINK_DIRECTORIES} ${Boost_LIBRARY_DIRS} )
 IF (APPLE)
-	if(${CMAKE_GENERATOR} MATCHES "Xcode") # use XCode env vars
-		SET(OSX_SHARED_CORELIB ${CMAKE_BINARY_DIR}/$(CONFIGURATION)/liblux.dylib)
-	else()
-		SET(OSX_SHARED_CORELIB ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/liblux.dylib)
-	endif()
+	SET(OSX_SHARED_CORELIB ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/liblux.dylib)
 ELSEIF(MSVC)
 	IF(MSVC90)
 		# LTCG not correctly set by cmake in the current release - in the meantime the linker will inform you about switching this flag automatically because of /GL
