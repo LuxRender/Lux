@@ -85,19 +85,23 @@ private:
 	   @param depth the current depth.
 	*/
 	void BuildTree(const std::vector<u_int> &primsIndexes,
+			const vector<boost::shared_ptr<Primitive> > &vPrims,
 			const BBox *primsBboxes, const Point *primsCentroids,
 			const BBox &nodeBbox, const BBox &centroidsBbox,
 			const int32_t parentIndex, const int32_t childIndex,
 			const int depth);
 
 	float BuildSpatialSplit(const u_int start, const u_int end,
-		const u_int *primsIndexes,
+		const u_int *primsIndexes, const vector<boost::shared_ptr<Primitive> > &vPrims,
 		const BBox *primsBboxes, const Point *primsCentroids, const BBox &centroidsBbox,
 		int &axis, BBox &leftChildBBox, BBox &rightChildBBox,
 		int &spatialLeftChildReferences, int &spatialRightChildReferences);
 
 	vector<vector<u_int> > nodesPrims[4]; // Temporary data for building
 	float alpha;
+
+	// Some statistics about the quality of the built accelerator
+	u_int objectSplitCount, spatialSplitCount;
 };
 
 } // namespace lux

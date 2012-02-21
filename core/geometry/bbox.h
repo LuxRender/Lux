@@ -88,6 +88,15 @@ public:
 	bool IntersectP(const Ray &ray,
 	                float *hitt0 = NULL,
 					float *hitt1 = NULL) const;
+
+	// Returns the bounding box of a triangle clipped against this bounding box, the
+	// returned bounding box is not valid if the triangle doesn't intersect
+	// the bounding box)
+	BBox ClipTriangle(const Point &v0, const Point &v1, const Point &v2) const;
+	bool IsValid() const {
+		return (pMin.x <= pMax.x) && (pMin.y <= pMax.y) && (pMin.z <= pMax.z);
+	}
+	
 	// BBox Public Data
 	Point pMin, pMax;
 	

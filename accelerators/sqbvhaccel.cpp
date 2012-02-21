@@ -93,7 +93,9 @@ SQBVHAccel::SQBVHAccel(const vector<boost::shared_ptr<Primitive> > &p,
 
 	nNodes = 0;
 	nQuads = 0;
-	BuildTree(primsIndexesList, primsBboxes, primsCentroids, worldBound, centroidsBbox,
+	objectSplitCount = 0;
+	spatialSplitCount = 0;
+	BuildTree(primsIndexesList, vPrims, primsBboxes, primsCentroids, worldBound, centroidsBbox,
 			-1, 0, 0);
 
 	prims = AllocAligned<boost::shared_ptr<QuadPrimitive> >(nQuads);
@@ -147,6 +149,8 @@ SQBVHAccel::SQBVHAccel(const vector<boost::shared_ptr<Primitive> > &p,
 	
 	// Print the statistics
 	LOG(LUX_DEBUG, LUX_NOERROR) << "SQBVH SAH total cost: " << SAHCost;
+	LOG(LUX_DEBUG, LUX_NOERROR) << "SQBVH object split counts: " << objectSplitCount;
+	LOG(LUX_DEBUG, LUX_NOERROR) << "SQBVH spatial split counts: " << spatialSplitCount;
 	LOG(LUX_DEBUG, LUX_NOERROR) << "SQBVH max. depth: " << maxDepth;
 	LOG(LUX_DEBUG, LUX_NOERROR) << "SQBVH node count: " << nodeCount;
 	LOG(LUX_DEBUG, LUX_NOERROR) << "SQBVH empty leaf count: " << emptyLeafCount;
@@ -161,10 +165,11 @@ SQBVHAccel::SQBVHAccel(const vector<boost::shared_ptr<Primitive> > &p,
 }
 
 void SQBVHAccel::BuildTree(const std::vector<u_int> &primsIndexes,
-			const BBox *primsBboxes, const Point *primsCentroids,
-			const BBox &nodeBbox, const BBox &centroidsBbox,
-			const int32_t parentIndex, const int32_t childIndex,
-			const int depth) {
+		const vector<boost::shared_ptr<Primitive> > &vPrims,
+		const BBox *primsBboxes, const Point *primsCentroids,
+		const BBox &nodeBbox, const BBox &centroidsBbox,
+		const int32_t parentIndex, const int32_t childIndex,
+		const int depth) {
 	const u_int nPrimsIndexes = primsIndexes.size();
 
 	// Create a leaf ?
@@ -230,12 +235,12 @@ void SQBVHAccel::BuildTree(const std::vector<u_int> &primsIndexes,
 	BBox spatialLeftChildBbox, spatialRightChildBbox;
 
 	BBox childIntersectionBbox;
-	if (Overlaps(childIntersectionBbox, objectLeftChildBbox, objectRightChildBbox) &&
+	if (depth < 3 && Overlaps(childIntersectionBbox, objectLeftChildBbox, objectRightChildBbox) &&
 			(childIntersectionBbox.SurfaceArea() / worldBound.SurfaceArea() > alpha)) {
 		// It is worth trying a spatial split
 
 		spatialSplitPos = BuildSpatialSplit(0, primsIndexes.size(), &primsIndexes[0],
-				primsBboxes, primsCentroids, centroidsBbox,
+				vPrims, primsBboxes, primsCentroids, centroidsBbox,
 				spatialSplitAxis, spatialLeftChildBbox, spatialRightChildBbox,
 				spatialLeftChildReferences, spatialRightChildReferences);
 
@@ -276,6 +281,7 @@ void SQBVHAccel::BuildTree(const std::vector<u_int> &primsIndexes,
 		
 		leftChildBbox = &objectLeftChildBbox;
 		rightChildBbox = &objectRightChildBbox;
+		++objectSplitCount;
 	} else {
 		// Do spatial split
 		for (u_int i = 0; i < primsIndexes.size(); ++i) {
@@ -300,6 +306,7 @@ void SQBVHAccel::BuildTree(const std::vector<u_int> &primsIndexes,
 		
 		leftChildBbox = &spatialLeftChildBbox;
 		rightChildBbox = &spatialRightChildBbox;
+		++spatialSplitCount;
 	}
 
 	int32_t currentNode = parentIndex;
@@ -320,16 +327,16 @@ void SQBVHAccel::BuildTree(const std::vector<u_int> &primsIndexes,
 	}
 
 	// Build recursively
-	BuildTree(leftPrimsIndexes, primsBboxes, primsCentroids,
+	BuildTree(leftPrimsIndexes, vPrims, primsBboxes, primsCentroids,
 		*leftChildBbox, leftChildCentroidsBbox, currentNode,
 		leftChildIndex, depth + 1);
-	BuildTree(rightPrimsIndexes, primsBboxes, primsCentroids,
+	BuildTree(rightPrimsIndexes, vPrims, primsBboxes, primsCentroids,
 		*rightChildBbox, rightChildCentroidsBbox, currentNode,
 		rightChildIndex, depth + 1);
 }
 
 float SQBVHAccel::BuildSpatialSplit(const u_int start, const u_int end,
-		const u_int *primsIndexes,
+		const u_int *primsIndexes, const vector<boost::shared_ptr<Primitive> > &vPrims,
 		const BBox *primsBboxes, const Point *primsCentroids, const BBox &centroidsBbox,
 		int &axis, BBox &leftChildBBox, BBox &rightChildBBox,
 		int &spatialLeftChildReferences, int &spatialRightChildReferences) {
@@ -337,7 +344,7 @@ float SQBVHAccel::BuildSpatialSplit(const u_int start, const u_int end,
 	// centroids (else weird cases can occur, where the maximum extent axis
 	// for the nodeBbox is an axis of 0 extent for the centroids one.).
 	axis = centroidsBbox.MaximumExtent();
-
+	
 	// Build the reference node bounding box
 	BBox nodeBbox;
 	for (u_int i = start; i < end; ++i) {
@@ -374,20 +381,34 @@ float SQBVHAccel::BuildSpatialSplit(const u_int start, const u_int end,
 	}
 
 	// Bbox of primitives inside the bins
-	for (u_int i = start; i < end; ++i) {
-		const u_int primIndex = primsIndexes[i];
+	for (int i = 0; i < SPATIAL_SPLIT_BINS; ++i) {
+		for (u_int j = start; j < end; ++j) {
+			const u_int primIndex = primsIndexes[j];
 
-		for (int j = 0; j < SPATIAL_SPLIT_BINS; ++j) {
-			BBox binPrimBbox;
-			if (!Overlaps(binPrimBbox, binsBbox[j], primsBboxes[primIndex]))
+			if (!binsBbox[i].Overlaps(primsBboxes[primIndex]))
 				continue;
 
-			binsPrimBbox[j] = Union(binsPrimBbox[j], binPrimBbox);
+			// Safety check
+			MeshBaryTriangle *tri = dynamic_cast<MeshBaryTriangle *>(vPrims[primIndex].get());
+			if (tri == NULL) {
+				// SQBVH is able to work only with triangles, it will fall back to
+				// standard object split in the case a no-triangle primitive is
+				// found
+				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "A primitive used in a SQBVH isn't a triangle, falling back to 'object split'-only building";
+				return std::numeric_limits<float>::quiet_NaN();
+			}
 
-			if (binsBbox[j].Inside(primsBboxes[primIndex].pMin))
-				entryBins[j] += 1;
-			if (binsBbox[j].Inside(primsBboxes[primIndex].pMax))
-				exitBins[j] += 1;
+			// Clip triangle with bin bounding box
+			BBox binPrimBbox = binsBbox[i].ClipTriangle(tri->GetP(0), tri->GetP(1), tri->GetP(2));
+			if (!binPrimBbox.IsValid())
+				continue;
+
+			binsPrimBbox[i] = Union(binsPrimBbox[i], binPrimBbox);
+
+			if (binsBbox[i].Inside(primsBboxes[primIndex].pMin))
+				entryBins[i] += 1;
+			if (binsBbox[i].Inside(primsBboxes[primIndex].pMax))
+				exitBins[i] += 1;
 		}
 	}
 
@@ -397,8 +418,8 @@ float SQBVHAccel::BuildSpatialSplit(const u_int start, const u_int end,
 	BBox bboxesLeft[SPATIAL_SPLIT_BINS];
 	BBox bboxesRight[SPATIAL_SPLIT_BINS];
 	BBox currentBboxLeft, currentBboxRight;
-	float costLeft[SPATIAL_SPLIT_BINS];
-	float costRight[SPATIAL_SPLIT_BINS];
+	float areaLeft[SPATIAL_SPLIT_BINS];
+	float areaRight[SPATIAL_SPLIT_BINS];
 	int currentPrimsLeft = 0;
 	int currentPrimsRight = 0;
 	for (int i = 0; i < SPATIAL_SPLIT_BINS; ++i) {
@@ -407,7 +428,7 @@ float SQBVHAccel::BuildSpatialSplit(const u_int start, const u_int end,
 		nbPrimsLeft[i]= currentPrimsLeft;
 		currentBboxLeft = Union(currentBboxLeft, binsPrimBbox[i]);
 		bboxesLeft[i] = currentBboxLeft;
-		costLeft[i] = bboxesLeft[i].SurfaceArea();
+		areaLeft[i] = bboxesLeft[i].SurfaceArea();
 		
 		// Right child
 		const int rightIndex = SPATIAL_SPLIT_BINS - 1 - i;
@@ -415,7 +436,7 @@ float SQBVHAccel::BuildSpatialSplit(const u_int start, const u_int end,
 		nbPrimsRight[rightIndex] = currentPrimsRight;
 		currentBboxRight = Union(currentBboxRight, binsPrimBbox[rightIndex]);
 		bboxesRight[rightIndex] = currentBboxRight;
-		costRight[rightIndex] = bboxesRight[rightIndex].SurfaceArea();
+		areaRight[rightIndex] = bboxesRight[rightIndex].SurfaceArea();
 	}
 
 	int minBin = -1;
@@ -423,8 +444,8 @@ float SQBVHAccel::BuildSpatialSplit(const u_int start, const u_int end,
 	// Find the best split axis,
 	// there must be at least a bin on the right side
 	for (int i = 0; i < SPATIAL_SPLIT_BINS - 1; ++i) {
-		float cost = costLeft[i] * nbPrimsLeft[i] +
-			costRight[i + 1] * nbPrimsRight[i + 1];
+		float cost = areaLeft[i] * nbPrimsLeft[i] +
+			areaRight[i + 1] * nbPrimsRight[i + 1];
 		if (cost < minCost) {
 			minBin = i;
 			minCost = cost;
@@ -444,8 +465,7 @@ Aggregate *SQBVHAccel::CreateAccelerator(const vector<boost::shared_ptr<Primitiv
 	int maxPrimsPerLeaf = ps.FindOneInt("maxprimsperleaf", 4);
 	int fullSweepThreshold = ps.FindOneInt("fullsweepthreshold", 4 * maxPrimsPerLeaf);
 	int skipFactor = ps.FindOneInt("skipfactor", 1);
-	//float alpha = ps.FindOneFloat("alpha", 1e-5f);
-	float alpha = ps.FindOneFloat("alpha", 1e-2f);
+	float alpha = ps.FindOneFloat("alpha", 1e-5f);
 	return new SQBVHAccel(prims, maxPrimsPerLeaf, fullSweepThreshold, skipFactor, alpha);
 }
 

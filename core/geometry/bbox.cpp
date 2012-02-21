@@ -69,6 +69,41 @@ void BBox::BoundingSphere(Point *c, float *rad) const {
 	*rad = Inside(*c) ? Distance(*c, pMax) : 0.f;
 }
 
+BBox BBox::ClipTriangle(const Point &v0, const Point &v1, const Point &v2) const {
+	const Vector edge0  = v1 - v0;
+	const Vector edge1  = v2 - v1;
+	const Vector edge2  = v0 - v2;
+
+	const Ray ray0(v0, edge0, 0.f, 1.f);
+	const Ray ray1(v1, edge1, 0.f, 1.f);
+	const Ray ray2(v2, edge2, 0.f, 1.f);
+
+	float hitt0Edge0, hitt1Edge0;
+	const float hitEdge0 = IntersectP(ray0, &hitt0Edge0, &hitt1Edge0);
+	float hitt0Edge1, hitt1Edge1;
+	const float hitEdge1 = IntersectP(ray1, &hitt0Edge1, &hitt1Edge1);
+	float hitt0Edge2, hitt1Edge2;
+	const float hitEdge2 = IntersectP(ray2, &hitt0Edge2, &hitt1Edge2);
+
+	BBox result;
+	if (hitEdge0) {
+		result = Union(result, ray0(hitt0Edge0));
+		result = Union(result, ray0(hitt1Edge0));
+	}
+
+	if (hitEdge1) {
+		result = Union(result, ray1(hitt0Edge1));
+		result = Union(result, ray1(hitt1Edge1));
+	}
+
+	if (hitEdge2) {
+		result = Union(result, ray2(hitt0Edge2));
+		result = Union(result, ray2(hitt1Edge2));
+	}
+
+	return result;
+}
+
 // NOTE - lordcrc - BBox::IntersectP relies on IEEE 754 behaviour of infinity and /fp:fast breaks this
 #if defined(WIN32) && !defined(__CYGWIN__)
 #pragma float_control(push)
