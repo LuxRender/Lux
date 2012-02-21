@@ -31,6 +31,7 @@ namespace lux
 {
 
 // Multiple BxDF BSDF declaration
+template<int MAX_BxDFS>
 class  MultiBSDF : public BSDF  {
 public:
 	// MultiBSDF Public Methods
@@ -61,19 +62,20 @@ public:
 protected:
 	// MultiBSDF Private Methods
 	virtual ~MultiBSDF() { }
-	// MultiBSDF Private Data
 	u_int nBxDFs;
-	#define MAX_BxDFS 8
+	// MultiBSDF Private Data
 	BxDF *bxdfs[MAX_BxDFS];
 };
 
 // BSDF Inline Method Definitions
-inline void MultiBSDF::Add(BxDF *b)
+template<int MAX_BxDFS>
+inline void MultiBSDF<MAX_BxDFS>::Add(BxDF *b)
 {
 	BOOST_ASSERT(nBxDFs < MAX_BxDFS);
 	bxdfs[nBxDFs++] = b;
 }
-inline u_int MultiBSDF::NumComponents(BxDFType flags) const
+template<int MAX_BxDFS>
+inline u_int MultiBSDF<MAX_BxDFS>::NumComponents(BxDFType flags) const
 {
 	u_int num = 0;
 	for (u_int i = 0; i < nBxDFs; ++i) {
@@ -83,13 +85,15 @@ inline u_int MultiBSDF::NumComponents(BxDFType flags) const
 	return num;
 }
 
-inline MultiBSDF::MultiBSDF(const DifferentialGeometry &dg, const Normal &ngeom,
+template<int MAX_BxDFS>
+MultiBSDF<MAX_BxDFS>::MultiBSDF(const DifferentialGeometry &dg, const Normal &ngeom,
 	const Volume *exterior, const Volume *interior) :
 	BSDF(dg, ngeom, exterior, interior)
 {
 	nBxDFs = 0;
 }
-inline bool MultiBSDF::SampleF(const SpectrumWavelengths &sw, const Vector &woW, Vector *wiW,
+template<int MAX_BxDFS>
+bool MultiBSDF<MAX_BxDFS>::SampleF(const SpectrumWavelengths &sw, const Vector &woW, Vector *wiW,
 	float u1, float u2, float u3, SWCSpectrum *const f_, float *pdf,
 	BxDFType flags, BxDFType *sampledType, float *pdfBack,
 	bool reverse) const
@@ -195,7 +199,8 @@ inline bool MultiBSDF::SampleF(const SpectrumWavelengths &sw, const Vector &woW,
 		*f_ *= fabsf(sideTest);
 	return true;
 }
-inline float MultiBSDF::Pdf(const SpectrumWavelengths &sw, const Vector &woW, const Vector &wiW,
+template<int MAX_BxDFS>
+float MultiBSDF<MAX_BxDFS>::Pdf(const SpectrumWavelengths &sw, const Vector &woW, const Vector &wiW,
 	BxDFType flags) const
 {
 	Vector wo(WorldToLocal(woW)), wi(WorldToLocal(wiW));
@@ -210,7 +215,8 @@ inline float MultiBSDF::Pdf(const SpectrumWavelengths &sw, const Vector &woW, co
 	return totalWeight > 0.f ? pdf / totalWeight : 0.f;
 }
 
-inline SWCSpectrum MultiBSDF::F(const SpectrumWavelengths &sw, const Vector &woW,
+template<int MAX_BxDFS>
+SWCSpectrum MultiBSDF<MAX_BxDFS>::F(const SpectrumWavelengths &sw, const Vector &woW,
 		const Vector &wiW, bool reverse, BxDFType flags) const
 {
 	const float sideTest = Dot(wiW, ng) / Dot(woW, ng);
@@ -231,7 +237,8 @@ inline SWCSpectrum MultiBSDF::F(const SpectrumWavelengths &sw, const Vector &woW
 		f_ *= fabsf(sideTest);
 	return f_;
 }
-inline SWCSpectrum MultiBSDF::rho(const SpectrumWavelengths &sw, BxDFType flags) const
+template<int MAX_BxDFS>
+SWCSpectrum MultiBSDF<MAX_BxDFS>::rho(const SpectrumWavelengths &sw, BxDFType flags) const
 {
 	SWCSpectrum ret(0.f);
 	for (u_int i = 0; i < nBxDFs; ++i)
@@ -239,7 +246,8 @@ inline SWCSpectrum MultiBSDF::rho(const SpectrumWavelengths &sw, BxDFType flags)
 			ret += bxdfs[i]->rho(sw);
 	return ret;
 }
-inline SWCSpectrum MultiBSDF::rho(const SpectrumWavelengths &sw, const Vector &woW,
+template<int MAX_BxDFS>
+SWCSpectrum MultiBSDF<MAX_BxDFS>::rho(const SpectrumWavelengths &sw, const Vector &woW,
 	BxDFType flags) const
 {
 	Vector wo(WorldToLocal(woW));

@@ -84,7 +84,7 @@ BSDF *GlossyTranslucent::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &
 	const float broughness = bu * bv;
 	const float banisotropy = bu2 < bv2 ? 1.f - bu2 / bv2 : bv2 / bu2 - 1.f;
 	
-	MultiBSDF *bsdf = ARENA_ALLOC(arena, MultiBSDF)(dgs, isect.dg.nn,
+	MultiBSDF<2> *bsdf = ARENA_ALLOC(arena, MultiBSDF<2>)(dgs, isect.dg.nn,
 		isect.exterior, isect.interior);
 	
 	// add the BRDF
