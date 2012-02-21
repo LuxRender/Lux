@@ -78,10 +78,7 @@ IF(PYTHONLIBS_FOUND OR PYTHON_CUSTOM)
 				COMMAND cp ${CMAKE_SOURCE_DIR}/python/pyluxconsole.py $(CONFIGURATION)/pyluxconsole.py
 				)
 		else()
-			ADD_CUSTOM_COMMAND(
-				TARGET pylux POST_BUILD
-				COMMAND mv ${CMAKE_BUILD_TYPE}/libpylux.so ${CMAKE_BUILD_TYPE}/pylux.so
-				)
+			SET_TARGET_PROPERTIES(pylux PROPERTIES PREFIX "")
 			ADD_CUSTOM_COMMAND(
 				TARGET pylux POST_BUILD
 				COMMAND cp ${CMAKE_SOURCE_DIR}/python/pyluxconsole.py ${CMAKE_BUILD_TYPE}/pyluxconsole.py

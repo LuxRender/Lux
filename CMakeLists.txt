@@ -149,6 +149,9 @@ IF(APPLE)
 	endif(OSX_OPTION_LTO)
 	if(NOT ${CMAKE_GENERATOR} MATCHES "Xcode") # will be set later in XCode
 		SET(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE} CACHE STRING "assure config" FORCE)
+		# Setup binaries output directory in Xcode manner
+		SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE} CACHE PATH "per configuration" FORCE)
+		SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE} CACHE PATH "per configuration" FORCE)
 	endif()
 	set(OSX_DEPENDENCY_ROOT ${CMAKE_SOURCE_DIR}/../macos) # can be macos or usr/local for example
 	set(OSX_BUNDLE_COMPONENTS_ROOT ${CMAKE_SOURCE_DIR}/../macos) # bundle resources
@@ -506,4 +509,5 @@ IF(APPLE)
 	ENDIF()
 	MESSAGE(STATUS "")
 	MESSAGE(STATUS "#####################################################################")
+MESSAGE(STATUS "checking output : " ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 ENDIF(APPLE)
