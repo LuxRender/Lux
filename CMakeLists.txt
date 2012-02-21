@@ -74,6 +74,11 @@ IF(APPLE)
 
 	########## OS and hardware detection ###########
 
+	if(NOT ${CMAKE_GENERATOR} MATCHES "Xcode") # unix makefile generator does not fill XCODE_VERSION var ! 
+		execute_process(COMMAND xcodebuild -version OUTPUT_VARIABLE XCODE_VERS_BUILDNR )
+		STRING(SUBSTRING ${XCODE_VERS_BUILDNR} 6 5 XCODE_VERSION) # truncate away build-nr
+	endif()
+
 	if(${XCODE_VERSION} GREATER 4.0)
 		set(OSX_OPTION_XCODE_4.1 ON)
 	else()
