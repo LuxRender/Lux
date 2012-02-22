@@ -91,7 +91,7 @@ void PhotonSampler::TracePhoton(
 	float pdf2;
 	SWCSpectrum alpha2;
 	GetTwoD(*sample, 1, 0, u);
-	if (!bsdf->SampleF(sw, Vector(bsdf->nn), &photonRay.d,
+	if (!bsdf->SampleF(sw, Vector(bsdf->dgShading.nn), &photonRay.d,
 		u[0], u[1], GetOneD(*sample, 2, 0), &alpha2,
 		&pdf2))
 		return;

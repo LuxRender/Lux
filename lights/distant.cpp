@@ -139,7 +139,7 @@ bool DistantLight::Le(const Scene &scene, const Sample &sample, const Ray &r,
 	return true;
 }
 
-float DistantLight::Pdf(const Point &p, const DifferentialGeometry &dg) const
+float DistantLight::Pdf(const Point &p, const PartialDifferentialGeometry &dg) const
 {
 	const Vector w(p - dg.p);
 	const float d2 = w.LengthSquared();

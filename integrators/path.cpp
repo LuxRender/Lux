@@ -496,7 +496,7 @@ void PathIntegrator::BuildShadowRays(const Scene &scene, PathState *pathState, B
 					const SpectrumWavelengths &sw(pathState->sample.swl);
 					Vector wo(-pathState->pathRay.d);
 
-					Li *= lightBsdf->F(sw, Vector(lightBsdf->nn), -wi, false);
+					Li *= lightBsdf->F(sw, Vector(lightBsdf->dgShading.nn), -wi, false);
 					Li *= bsdf->F(sw, wi, wo, true);
 
 					if (!Li.Black()) {

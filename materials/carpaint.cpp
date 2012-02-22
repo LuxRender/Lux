@@ -62,7 +62,7 @@ BSDF *CarPaint::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 	const Intersection &isect, const DifferentialGeometry &dgs) const
 {
 	// Allocate _BSDF_
-	MultiBSDF *bsdf = ARENA_ALLOC(arena, MultiBSDF)(dgs, isect.dg.nn,
+	MultiBSDF<4> *bsdf = ARENA_ALLOC(arena, MultiBSDF<4>)(dgs, isect.dg.nn,
 		isect.exterior, isect.interior);
 
 	// The Carpaint BRDF is really a Multi-lobe Microfacet model with a Lambertian base
