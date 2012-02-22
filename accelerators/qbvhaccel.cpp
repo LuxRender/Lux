@@ -563,8 +563,8 @@ float QBVHAccel::BuildObjectSplit(const u_int start, const u_int end,
 	// Find the best split axis,
 	// there must be at least a bin on the right side
 	for (int i = 0; i < OBJECT_SPLIT_BINS - 1; ++i) {
-		float cost = sahLeft[i] * nbPrimsLeft[i] +
-			sahRight[i + 1] * nbPrimsRight[i + 1];
+		float cost = sahLeft[i] * QuadCount(nbPrimsLeft[i]) +
+			sahRight[i + 1] * QuadCount(nbPrimsRight[i + 1]);
 		if (cost < minCost) {
 			minBin = i;
 			minCost = cost;
@@ -604,9 +604,7 @@ void QBVHAccel::CreateTempLeaf(int32_t parentIndex, int32_t childIndex,
 
 	node.SetBBox(childIndex, nodeBbox);
 
-
-	// Next multiple of 4, divided by 4
-	u_int quads = (nbPrimsTotal + 3) / 4;
+	u_int quads = QuadCount(nbPrimsTotal + 3);
 	
 	// Use the same encoding as the final one, but with a different meaning.
 	node.InitializeLeaf(childIndex, quads, start);

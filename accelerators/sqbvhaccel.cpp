@@ -221,6 +221,20 @@ void SQBVHAccel::BuildTree(const std::vector<u_int> &primsIndexes,
 			++objectRightChildReferences;
 		}
 	}
+	
+	if (!Overlaps(objectLeftChildBbox, objectLeftChildBbox, nodeBbox) ||
+			!Overlaps(objectRightChildBbox, objectRightChildBbox, nodeBbox)) {
+		LOG(LUX_WARNING,LUX_LIMIT) << "Not overlapping parent/children in a SQBVH node, forcing a leaf node";
+
+		if (nPrimsIndexes > 64) {
+			LOG(LUX_ERROR, LUX_LIMIT) << "SQBVH unable to handle geometry, too many primitives in a not overlapping parent/children node";
+		}
+
+		CreateTempLeaf(parentIndex, childIndex, 0, primsIndexes.size(), nodeBbox);
+		nodesPrims[childIndex][parentIndex].insert(nodesPrims[childIndex][parentIndex].begin(),
+			primsIndexes.begin(), primsIndexes.end());
+		return;
+	}
 
 	//--------------------------------------------------------------------------
 	// Check if a spatial split is worth trying spatial split
@@ -235,22 +249,22 @@ void SQBVHAccel::BuildTree(const std::vector<u_int> &primsIndexes,
 	BBox spatialLeftChildBbox, spatialRightChildBbox;
 
 	BBox childIntersectionBbox;
-	if (depth < 3 && Overlaps(childIntersectionBbox, objectLeftChildBbox, objectRightChildBbox) &&
+	if (Overlaps(childIntersectionBbox, objectLeftChildBbox, objectRightChildBbox) &&
 			(childIntersectionBbox.SurfaceArea() / worldBound.SurfaceArea() > alpha)) {
 		// It is worth trying a spatial split
 
 		spatialSplitPos = BuildSpatialSplit(0, primsIndexes.size(), &primsIndexes[0],
-				vPrims, primsBboxes, primsCentroids, centroidsBbox,
+				vPrims, primsBboxes, primsCentroids, nodeBbox, centroidsBbox,
 				spatialSplitAxis, spatialLeftChildBbox, spatialRightChildBbox,
 				spatialLeftChildReferences, spatialRightChildReferences);
 
 		if (!isnan(spatialSplitPos)) {
 			// Check if spatial split is better than object split
 
-			const float objectSplitCost = objectLeftChildBbox.SurfaceArea() * objectLeftChildReferences +
-				objectRightChildBbox.SurfaceArea() * objectRightChildReferences;
-			const float spatialSplitCost = spatialLeftChildBbox.SurfaceArea() * spatialLeftChildReferences +
-				spatialRightChildBbox.SurfaceArea() * spatialRightChildReferences;
+			const float objectSplitCost = objectLeftChildBbox.SurfaceArea() * QuadCount(objectLeftChildReferences) +
+				objectRightChildBbox.SurfaceArea() * QuadCount(objectRightChildReferences);
+			const float spatialSplitCost = spatialLeftChildBbox.SurfaceArea() * QuadCount(spatialLeftChildReferences) +
+				spatialRightChildBbox.SurfaceArea() * QuadCount(spatialRightChildReferences);
 
 			doObjectSplit = (spatialSplitCost >= objectSplitCost);
 		}
@@ -337,21 +351,13 @@ void SQBVHAccel::BuildTree(const std::vector<u_int> &primsIndexes,
 
 float SQBVHAccel::BuildSpatialSplit(const u_int start, const u_int end,
 		const u_int *primsIndexes, const vector<boost::shared_ptr<Primitive> > &vPrims,
-		const BBox *primsBboxes, const Point *primsCentroids, const BBox &centroidsBbox,
-		int &axis, BBox &leftChildBBox, BBox &rightChildBBox,
+		const BBox *primsBboxes, const Point *primsCentroids, const BBox &nodeBbox, 
+		const BBox &centroidsBbox, int &axis, BBox &leftChildBBox, BBox &rightChildBBox,
 		int &spatialLeftChildReferences, int &spatialRightChildReferences) {
 	// Choose the split axis, taking the axis of maximum extent for the
 	// centroids (else weird cases can occur, where the maximum extent axis
 	// for the nodeBbox is an axis of 0 extent for the centroids one.).
 	axis = centroidsBbox.MaximumExtent();
-	
-	// Build the reference node bounding box
-	BBox nodeBbox;
-	for (u_int i = start; i < end; ++i) {
-		const u_int primIndex = primsIndexes[i];
-		
-		nodeBbox = Union(nodeBbox, primsBboxes[primIndex]);
-	}
 	
 	// Precompute values that are constant with respect to the current
 	// primitive considered.
@@ -369,24 +375,37 @@ float SQBVHAccel::BuildSpatialSplit(const u_int start, const u_int end,
 	BBox binsBbox[SPATIAL_SPLIT_BINS];
 	BBox binsPrimBbox[SPATIAL_SPLIT_BINS];
 
-	for (int i = 0; i < SPATIAL_SPLIT_BINS; ++i) {
-		entryBins[i] = 0;
-		exitBins[i] = 0;
+	for (int j = 0; j < SPATIAL_SPLIT_BINS; ++j) {
+		entryBins[j] = 0;
+		exitBins[j] = 0;
 
-		binsBbox[i] = nodeBbox;
-		if (i != 0)
-			binsBbox[i].pMin[axis] = binsBbox[i - 1].pMax[axis];
-		if (i != SPATIAL_SPLIT_BINS - 1)
-			binsBbox[i].pMax[axis] = k0 + k1 * (i + 1);
+		binsBbox[j] = nodeBbox;
+		if (j != 0)
+			binsBbox[j].pMin[axis] = binsBbox[j - 1].pMax[axis];
+		if (j != SPATIAL_SPLIT_BINS - 1)
+			binsBbox[j].pMax[axis] = k0 + k1 * (j + 1);
 	}
 
 	// Bbox of primitives inside the bins
-	for (int i = 0; i < SPATIAL_SPLIT_BINS; ++i) {
-		for (u_int j = start; j < end; ++j) {
-			const u_int primIndex = primsIndexes[j];
+	for (u_int i = start; i < end; ++i) {
+		const u_int primIndex = primsIndexes[i];
 
-			if (!binsBbox[i].Overlaps(primsBboxes[primIndex]))
+		bool entryFound = false;
+		bool exitFound = false;
+		for (int j = 0; j < SPATIAL_SPLIT_BINS && (!entryFound || !exitFound); ++j) {
+			// Check if the primitive is all outside the bin bounding box
+			if (!binsBbox[j].Overlaps(primsBboxes[primIndex]))
 				continue;
+
+			// Update entry and exit counters
+			if (!entryFound && (primsBboxes[primIndex].pMin[axis] <= binsBbox[j].pMax[axis])) {
+				entryBins[j] += 1;
+				entryFound = true;
+			}
+			if (!exitFound && (primsBboxes[primIndex].pMax[axis] <= binsBbox[j].pMax[axis])) {
+				exitBins[j] += 1;
+				exitFound = true;
+			}
 
 			// Safety check
 			MeshBaryTriangle *tri = dynamic_cast<MeshBaryTriangle *>(vPrims[primIndex].get());
@@ -399,16 +418,21 @@ float SQBVHAccel::BuildSpatialSplit(const u_int start, const u_int end,
 			}
 
 			// Clip triangle with bin bounding box
-			BBox binPrimBbox = binsBbox[i].ClipTriangle(tri->GetP(0), tri->GetP(1), tri->GetP(2));
-			if (!binPrimBbox.IsValid())
+			vector<Point> vertexList;
+			vertexList.push_back(tri->GetP(0));
+			vertexList.push_back(tri->GetP(1));
+			vertexList.push_back(tri->GetP(2));
+
+			vector<Point> clipVertexList = binsBbox[j].ClipPolygon(vertexList);
+			if (clipVertexList.size() == 0) // All vertices are outside the bounding box
 				continue;
 
-			binsPrimBbox[i] = Union(binsPrimBbox[i], binPrimBbox);
-
-			if (binsBbox[i].Inside(primsBboxes[primIndex].pMin))
-				entryBins[i] += 1;
-			if (binsBbox[i].Inside(primsBboxes[primIndex].pMax))
-				exitBins[i] += 1;
+			BBox binPrimBbox;
+			for (u_int k = 0; k < clipVertexList.size(); ++k)
+				binPrimBbox = Union(binPrimBbox, clipVertexList[k]);
+			binPrimBbox.Expand(MachineEpsilon::E(binPrimBbox));
+			
+			binsPrimBbox[j] = Union(binsPrimBbox[j], binPrimBbox);
 		}
 	}
 
@@ -422,16 +446,16 @@ float SQBVHAccel::BuildSpatialSplit(const u_int start, const u_int end,
 	float areaRight[SPATIAL_SPLIT_BINS];
 	int currentPrimsLeft = 0;
 	int currentPrimsRight = 0;
-	for (int i = 0; i < SPATIAL_SPLIT_BINS; ++i) {
+	for (int j = 0; j < SPATIAL_SPLIT_BINS; ++j) {
 		// Left child
-		currentPrimsLeft += entryBins[i];
-		nbPrimsLeft[i]= currentPrimsLeft;
-		currentBboxLeft = Union(currentBboxLeft, binsPrimBbox[i]);
-		bboxesLeft[i] = currentBboxLeft;
-		areaLeft[i] = bboxesLeft[i].SurfaceArea();
+		currentPrimsLeft += entryBins[j];
+		nbPrimsLeft[j]= currentPrimsLeft;
+		currentBboxLeft = Union(currentBboxLeft, binsPrimBbox[j]);
+		bboxesLeft[j] = currentBboxLeft;
+		areaLeft[j] = bboxesLeft[j].SurfaceArea();
 		
 		// Right child
-		const int rightIndex = SPATIAL_SPLIT_BINS - 1 - i;
+		const int rightIndex = SPATIAL_SPLIT_BINS - 1 - j;
 		currentPrimsRight += exitBins[rightIndex];
 		nbPrimsRight[rightIndex] = currentPrimsRight;
 		currentBboxRight = Union(currentBboxRight, binsPrimBbox[rightIndex]);
@@ -443,11 +467,11 @@ float SQBVHAccel::BuildSpatialSplit(const u_int start, const u_int end,
 	float minCost = INFINITY;
 	// Find the best split axis,
 	// there must be at least a bin on the right side
-	for (int i = 0; i < SPATIAL_SPLIT_BINS - 1; ++i) {
-		float cost = areaLeft[i] * nbPrimsLeft[i] +
-			areaRight[i + 1] * nbPrimsRight[i + 1];
+	for (int j = 0; j < SPATIAL_SPLIT_BINS - 1; ++j) {
+		float cost = areaLeft[j] * QuadCount(nbPrimsLeft[j]) +
+			areaRight[j + 1] * QuadCount(nbPrimsRight[j + 1]);
 		if (cost < minCost) {
-			minBin = i;
+			minBin = j;
 			minCost = cost;
 		}
 	}

@@ -431,7 +431,7 @@ protected:
 	// Some statistics about the quality of the built accelerator
 	float SAHCost, avgLeafPrimReferences;
 	u_int maxDepth, nodeCount, noEmptyLeafCount, emptyLeafCount, primReferences;
-	
+
 	// Adapted from Robin Bourianes (robin.bourianes@free.fr)
 	// Array indicating the order of visit
 
@@ -449,6 +449,11 @@ protected:
 	// 4 bits per index, stored in 32bit int. 4 means no intersection.
 	// 16 visit * 8 idx * 4 bbox = 128 * ints = 512bytes
 	static const boost::int16_t pathTable[128];
+
+	static inline u_int QuadCount(const u_int nPrims) {
+		// Next multiple of 4, divided by 4
+		return (nPrims + 3) / 4;
+	}
 };
 
 } // namespace lux

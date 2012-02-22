@@ -93,7 +93,8 @@ private:
 
 	float BuildSpatialSplit(const u_int start, const u_int end,
 		const u_int *primsIndexes, const vector<boost::shared_ptr<Primitive> > &vPrims,
-		const BBox *primsBboxes, const Point *primsCentroids, const BBox &centroidsBbox,
+		const BBox *primsBboxes, const Point *primsCentroids, const BBox &nodeBbox, 
+		const BBox &centroidsBbox,
 		int &axis, BBox &leftChildBBox, BBox &rightChildBBox,
 		int &spatialLeftChildReferences, int &spatialRightChildReferences);
 

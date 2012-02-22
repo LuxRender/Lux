@@ -23,6 +23,7 @@
 // bbox.cpp*
 #include "bbox.h"
 #include "ray.h"
+#include "normal.h"
 
 namespace lux
 {
@@ -69,39 +70,64 @@ void BBox::BoundingSphere(Point *c, float *rad) const {
 	*rad = Inside(*c) ? Distance(*c, pMax) : 0.f;
 }
 
-BBox BBox::ClipTriangle(const Point &v0, const Point &v1, const Point &v2) const {
-	const Vector edge0  = v1 - v0;
-	const Vector edge1  = v2 - v1;
-	const Vector edge2  = v0 - v2;
+static inline Point ClipEdge(const Point &planeOrig, const Normal &planeNormal,
+		const Point &a, const Point &b) {
+	const float distA = Dot(a - planeOrig, planeNormal);
+	const float distB = Dot(b - planeOrig, planeNormal);
 
-	const Ray ray0(v0, edge0, 0.f, 1.f);
-	const Ray ray1(v1, edge1, 0.f, 1.f);
-	const Ray ray2(v2, edge2, 0.f, 1.f);
+	const float s = distA / (distA - distB);
 
-	float hitt0Edge0, hitt1Edge0;
-	const float hitEdge0 = IntersectP(ray0, &hitt0Edge0, &hitt1Edge0);
-	float hitt0Edge1, hitt1Edge1;
-	const float hitEdge1 = IntersectP(ray1, &hitt0Edge1, &hitt1Edge1);
-	float hitt0Edge2, hitt1Edge2;
-	const float hitEdge2 = IntersectP(ray2, &hitt0Edge2, &hitt1Edge2);
+	return Point(a.x + s * (b.x - a.x),
+			a.y + s * (b.y - a.y),
+			a.z + s * (b.z - a.z));
+}
 
-	BBox result;
-	if (hitEdge0) {
-		result = Union(result, ray0(hitt0Edge0));
-		result = Union(result, ray0(hitt1Edge0));
+vector<Point> BBox::ClipPolygon(const vector<Point> &vertexList) const {
+	const Point clippingPlaneOrigin[6] = {
+		pMin,
+		pMin,
+		pMin,
+		pMax,
+		pMax,
+		pMax
+	};
+
+	static const Normal clippingPlaneNormal[6] = {
+		Normal(1.f, 0.f, 0.f),
+		Normal(0.f, 1.f, 0.f),
+		Normal(0.f, 0.f, 1.f),
+		Normal(-1.f, 0.f, 0.f),
+		Normal(0.f, -1.f, 0.f),
+		Normal(0.f, 0.f, -1.f),
+	};
+	
+	vector<Point> outputList = vertexList;
+	// For each bounding box plane
+	for (size_t i = 0; i < 6; ++i) {
+		vector<Point> inputList = outputList;
+		outputList.clear();
+
+		if (inputList.size() == 0)
+			return vector<Point>();
+
+		Point S = inputList[inputList.size() - 1];
+		for (size_t j = 0; j < inputList.size(); ++j) {
+			const Point &E = inputList[j];
+
+			if (Dot(E - clippingPlaneOrigin[i], clippingPlaneNormal[i]) >= 0.f) {
+				if (Dot(S - clippingPlaneOrigin[i], clippingPlaneNormal[i]) < 0.f)
+					outputList.push_back(ClipEdge(clippingPlaneOrigin[i], clippingPlaneNormal[i], S, E));
+
+				outputList.push_back(E);
+			} else if (Dot(S - clippingPlaneOrigin[i], clippingPlaneNormal[i]) >= 0.f) {
+				outputList.push_back(ClipEdge(clippingPlaneOrigin[i], clippingPlaneNormal[i], S, E));
+			}
+
+			S = E;
+		}
 	}
 
-	if (hitEdge1) {
-		result = Union(result, ray1(hitt0Edge1));
-		result = Union(result, ray1(hitt1Edge1));
-	}
-
-	if (hitEdge2) {
-		result = Union(result, ray2(hitt0Edge2));
-		result = Union(result, ray2(hitt1Edge2));
-	}
-
-	return result;
+	return outputList;
 }
 
 // NOTE - lordcrc - BBox::IntersectP relies on IEEE 754 behaviour of infinity and /fp:fast breaks this
