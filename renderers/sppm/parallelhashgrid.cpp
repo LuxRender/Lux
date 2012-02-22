@@ -96,6 +96,8 @@ void ParallelHashGrid::Refresh( const u_int index, const u_int count, boost::bar
 			JumpInsert(Hash(pos.x, pos.y, pos.z), i);
 		}
 	}
+
+	barrier.wait();
 }
 
 void ParallelHashGrid::AddFlux(Sample &sample, const Point &hitPoint, const Vector &wi,
