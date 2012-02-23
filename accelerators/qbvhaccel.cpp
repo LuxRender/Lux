@@ -366,7 +366,7 @@ void QBVHAccel::CollectStatistics(const int32_t nodeIndex, const u_int depth,
 	SAHCost += 1.f; // 1.f => Ct, the cost of traversing a node
 	for (int i = 0; i < 4; ++i) {
 		BBox childBBox;
-		node.GetBBox(i, childBBox);
+		childBBox = node.GetBBox(i);
 
 		if (node.ChildIsLeaf(i)) {
 			if (node.LeafIsEmpty(i))
@@ -501,7 +501,8 @@ float QBVHAccel::BuildObjectSplit(const u_int start, const u_int end,
 		
 		// Binning is relative to the centroids bbox and to the
 		// primitives' centroid.
-		const int binId = min(OBJECT_SPLIT_BINS - 1, Floor2Int(k1 * (primsCentroids[primIndex][axis] - k0)));
+		const int binId = max(0, min(OBJECT_SPLIT_BINS - 1,
+				Floor2Int(k1 * (primsCentroids[primIndex][axis] - k0))));
 		bins[binId]++;
 		binsBbox[binId] = Union(binsBbox[binId], primsBboxes[primIndex]);
 	}
@@ -518,8 +519,8 @@ float QBVHAccel::BuildObjectSplit(const u_int start, const u_int end,
 	BBox bboxesRight[OBJECT_SPLIT_BINS];
 
 	// The corresponding SAHs
-	float sahLeft[OBJECT_SPLIT_BINS];
-	float sahRight[OBJECT_SPLIT_BINS];	
+	float areaLeft[OBJECT_SPLIT_BINS];
+	float areaRight[OBJECT_SPLIT_BINS];	
 
 	BBox currentBboxLeft, currentBboxRight;
 	int currentNbLeft = 0, currentNbRight = 0;
@@ -534,7 +535,7 @@ float QBVHAccel::BuildObjectSplit(const u_int start, const u_int end,
 		currentBboxLeft = Union(currentBboxLeft, binsBbox[i]);
 		bboxesLeft[i] = currentBboxLeft;
 		// Surface area
-		sahLeft[i] = currentBboxLeft.SurfaceArea();
+		areaLeft[i] = currentBboxLeft.SurfaceArea();
 		
 		//-----
 		// Right side
@@ -546,7 +547,7 @@ float QBVHAccel::BuildObjectSplit(const u_int start, const u_int end,
 		currentBboxRight = Union(currentBboxRight, binsBbox[rightIndex]);
 		bboxesRight[rightIndex] = currentBboxRight;
 		// Surface area
-		sahRight[rightIndex] = currentBboxRight.SurfaceArea();
+		areaRight[rightIndex] = currentBboxRight.SurfaceArea();
 	}
 
 	int minBin = -1;
@@ -554,8 +555,8 @@ float QBVHAccel::BuildObjectSplit(const u_int start, const u_int end,
 	// Find the best split axis,
 	// there must be at least a bin on the right side
 	for (int i = 0; i < OBJECT_SPLIT_BINS - 1; ++i) {
-		float cost = sahLeft[i] * QuadCount(nbPrimsLeft[i]) +
-			sahRight[i + 1] * QuadCount(nbPrimsRight[i + 1]);
+		float cost = areaLeft[i] * QuadCount(nbPrimsLeft[i]) +
+			areaRight[i + 1] * QuadCount(nbPrimsRight[i + 1]);
 		if (cost < minCost) {
 			minBin = i;
 			minCost = cost;

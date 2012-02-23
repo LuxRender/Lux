@@ -206,13 +206,16 @@ public:
 	}
 
 	// Return the bounding box of the ith child
-	inline void GetBBox(int i, BBox &bbox) const {
+	inline BBox GetBBox(int i) const {
+		BBox bbox;
 		bbox.pMin.x = reinterpret_cast<const float *>(&(bboxes[0][0]))[i];
 		bbox.pMax.x = reinterpret_cast<const float *>(&(bboxes[1][0]))[i];
 		bbox.pMin.y = reinterpret_cast<const float *>(&(bboxes[0][1]))[i];
 		bbox.pMax.y = reinterpret_cast<const float *>(&(bboxes[1][1]))[i];
 		bbox.pMin.z = reinterpret_cast<const float *>(&(bboxes[0][2]))[i];
 		bbox.pMax.z = reinterpret_cast<const float *>(&(bboxes[1][2]))[i];
+
+		return bbox;
 	}
 
 	/**

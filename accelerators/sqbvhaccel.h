@@ -96,7 +96,7 @@ private:
 		const BBox *primsBboxes, const Point *primsCentroids, const BBox &nodeBbox, 
 		const BBox &centroidsBbox,
 		int &axis, BBox &leftChildBBox, BBox &rightChildBBox,
-		int &spatialLeftChildReferences, int &spatialRightChildReferences);
+		u_int &spatialLeftChildReferences, u_int &spatialRightChildReferences);
 
 	vector<vector<u_int> > nodesPrims[4]; // Temporary data for building
 	float alpha;
