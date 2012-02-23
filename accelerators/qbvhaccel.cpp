@@ -334,13 +334,12 @@ QBVHAccel::QBVHAccel(const vector<boost::shared_ptr<Primitive> > &p,
 	
 	// Collect statistics
 	SAHCost = 0.f;
-	avgLeafPrimReferences = 0.f;
 	maxDepth = 0;
 	nodeCount = 0;
 	noEmptyLeafCount = 0;
 	emptyLeafCount = 0;
-	primReferences = CollectStatistics(0);
-	avgLeafPrimReferences /= noEmptyLeafCount;
+	CollectStatistics(0, 0, worldBound.SurfaceArea(), worldBound);
+	avgLeafPrimReferences = primReferences / noEmptyLeafCount;
 	
 	// Print the statistics
 	LOG(LUX_DEBUG, LUX_NOERROR) << "QBVH SAH total cost: " << SAHCost;
@@ -357,40 +356,32 @@ QBVHAccel::QBVHAccel(const vector<boost::shared_ptr<Primitive> > &p,
 	delete[] primsIndexes;
 }
 
-u_int QBVHAccel::CollectStatistics(int32_t nodeIndex, u_int depth) {
+void QBVHAccel::CollectStatistics(const int32_t nodeIndex, const u_int depth,
+		const float rootSA, const BBox &nodeBBox) {
+	maxDepth = max(maxDepth, depth);
 	++nodeCount;
 
-	BBox nodeBBox;
-	BBox childBBoxes[4];
-	u_int childPrimReferences[4];
-	for (int i = 0; i < 4; ++i) {
-		nodes[nodeIndex].GetBBox(i, childBBoxes[i]);
-		nodeBBox = Union(nodeBBox, childBBoxes[i]);
+	const QBVHNode &node = nodes[nodeIndex];
 
-		if (nodes[nodeIndex].ChildIsLeaf(i)) {
-			if (nodes[nodeIndex].LeafIsEmpty(i)) {
+	SAHCost += 1.f; // 1.f => Ct, the cost of traversing a node
+	for (int i = 0; i < 4; ++i) {
+		BBox childBBox;
+		node.GetBBox(i, childBBox);
+
+		if (node.ChildIsLeaf(i)) {
+			if (node.LeafIsEmpty(i))
 				++emptyLeafCount;
-				childPrimReferences[i] = 0;
-			} else {
-				maxDepth = max(maxDepth, depth + 1);
+			else {
 				++noEmptyLeafCount;
-				childPrimReferences[i] = nodes[nodeIndex].NbPrimitivesInLeaf(i);
-				avgLeafPrimReferences += childPrimReferences[i];
+				const u_int nPrims = node.NbPrimitivesInLeaf(i);
+				primReferences += nPrims;
+				SAHCost += (childBBox.SurfaceArea() / rootSA) * nPrims; // * 1.f => Ci, the cost of intersecting
 			}
-		} else
-			childPrimReferences[i] = CollectStatistics(nodes[nodeIndex].children[i], depth + 1);
-	}			
-
-	SAHCost += 1.f; // Ct, the cost of traversing a node
-	for (int i = 0; i < 4; ++i) {
-		if (!nodes[nodeIndex].ChildIsLeaf(i) || !nodes[nodeIndex].LeafIsEmpty(i)) {
-			SAHCost += (childBBoxes[i].SurfaceArea() / worldBound.SurfaceArea()) *
-					childPrimReferences[i]; // * 1.f => Ci, the cost of intersecting a primitive (4-way SSE vector)
+		} else {
+			SAHCost += childBBox.SurfaceArea() / rootSA;
+			CollectStatistics(node.children[i], depth + 1, rootSA, childBBox);
 		}
 	}
-
-	return childPrimReferences[0] + childPrimReferences[1] +
-			childPrimReferences[2] + childPrimReferences[3];
 }
 
 /***************************************************/

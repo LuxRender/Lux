@@ -206,13 +206,13 @@ public:
 	}
 
 	// Return the bounding box of the ith child
-	inline void GetBBox(int i, BBox &bbox) {
-		bbox.pMin.x = reinterpret_cast<float *>(&(bboxes[0][0]))[i];
-		bbox.pMax.x = reinterpret_cast<float *>(&(bboxes[1][0]))[i];
-		bbox.pMin.y = reinterpret_cast<float *>(&(bboxes[0][1]))[i];
-		bbox.pMax.y = reinterpret_cast<float *>(&(bboxes[1][1]))[i];
-		bbox.pMin.z = reinterpret_cast<float *>(&(bboxes[0][2]))[i];
-		bbox.pMax.z = reinterpret_cast<float *>(&(bboxes[1][2]))[i];
+	inline void GetBBox(int i, BBox &bbox) const {
+		bbox.pMin.x = reinterpret_cast<const float *>(&(bboxes[0][0]))[i];
+		bbox.pMax.x = reinterpret_cast<const float *>(&(bboxes[1][0]))[i];
+		bbox.pMin.y = reinterpret_cast<const float *>(&(bboxes[0][1]))[i];
+		bbox.pMax.y = reinterpret_cast<const float *>(&(bboxes[1][1]))[i];
+		bbox.pMin.z = reinterpret_cast<const float *>(&(bboxes[0][2]))[i];
+		bbox.pMax.z = reinterpret_cast<const float *>(&(bboxes[1][2]))[i];
 	}
 
 	/**
@@ -376,7 +376,8 @@ protected:
 	void CreateSwizzledLeaf(int32_t parentIndex, int32_t childIndex, 
 		const u_int *primsIndexes, const vector<boost::shared_ptr<Primitive> > &vPrims);
 
-	u_int CollectStatistics(int32_t nodeIndex, u_int depth = 1);
+	void CollectStatistics(const int32_t nodeIndex, const u_int depth,
+		const float parentSA, const BBox &nodeBBox);
 
 	/**
 	   the actual number of quads

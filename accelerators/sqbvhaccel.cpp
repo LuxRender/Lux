@@ -139,13 +139,12 @@ SQBVHAccel::SQBVHAccel(const vector<boost::shared_ptr<Primitive> > &p,
 	
 	// Collect statistics
 	SAHCost = 0.f;
-	avgLeafPrimReferences = 0.f;
 	maxDepth = 0;
 	nodeCount = 0;
 	noEmptyLeafCount = 0;
 	emptyLeafCount = 0;
-	primReferences = CollectStatistics(0);
-	avgLeafPrimReferences /= noEmptyLeafCount;
+	CollectStatistics(0, 0, worldBound.SurfaceArea(), worldBound);
+	avgLeafPrimReferences = primReferences / noEmptyLeafCount;
 	
 	// Print the statistics
 	LOG(LUX_DEBUG, LUX_NOERROR) << "SQBVH SAH total cost: " << SAHCost;
