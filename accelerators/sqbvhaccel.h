@@ -30,7 +30,7 @@ namespace lux
 {
 
 // The number of bins for spatial split
-#define SPATIAL_SPLIT_BINS 256
+#define SPATIAL_SPLIT_BINS 8
 
 class SBVHNode {
 public:
@@ -72,31 +72,20 @@ private:
 	/**
 	   Build the tree that will contain the primitives indexed from start
 	   to end in the primsIndexes array.
-	   @param start
-	   @param end
-	   @param primsBboxes the bounding boxes for all the primitives
-	   @param primsbboxes the centroids of all the primitives
-	   @param nodeBbox the bounding box of the node.
-	   @param centroidsBbox the bounding box of the centroids of the
-	   primitives in the node.
-	   @param parentIndex the index of the parent node
-	   @param childIndex the index of the node in the parent node
-	   (its child number)
-	   @param depth the current depth.
 	*/
 	void BuildTree(const std::vector<u_int> &primsIndexes,
 			const vector<boost::shared_ptr<Primitive> > &vPrims,
-			const BBox *primsBboxes, const Point *primsCentroids,
-			const BBox &nodeBbox, const BBox &centroidsBbox,
+			const std::vector<BBox> &primsBboxes, const BBox &nodeBbox,
 			const int32_t parentIndex, const int32_t childIndex,
 			const int depth);
 
-	float BuildSpatialSplit(const u_int start, const u_int end,
-		const u_int *primsIndexes, const vector<boost::shared_ptr<Primitive> > &vPrims,
-		const BBox *primsBboxes, const Point *primsCentroids, const BBox &nodeBbox, 
-		const BBox &centroidsBbox,
+	float BuildSpatialSplit(const std::vector<u_int> &primsIndexes,
+		const vector<boost::shared_ptr<Primitive> > &vPrims,
+		const std::vector<BBox> &primsBboxes, const BBox &nodeBbox,
 		int &axis, BBox &leftChildBBox, BBox &rightChildBBox,
 		u_int &spatialLeftChildReferences, u_int &spatialRightChildReferences);
+
+	float BuildObjectSplit(const std::vector<BBox> &primsBboxes, int &axis);
 
 	vector<vector<u_int> > nodesPrims[4]; // Temporary data for building
 	float alpha;

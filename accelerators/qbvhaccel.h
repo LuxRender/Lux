@@ -294,11 +294,11 @@ public:
 protected:
 	QBVHAccel() { }
 
+private:
 	float BuildObjectSplit(const u_int start, const u_int end,
 		const u_int *primsIndexes, const BBox *primsBboxes, const Point *primsCentroids,
 		const BBox &centroidsBbox, int &axis);
 
-private:
 	/**
 	   Build the tree that will contain the primitives indexed from start
 	   to end in the primsIndexes array.

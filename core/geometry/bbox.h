@@ -95,6 +95,10 @@ public:
 	bool IsValid() const {
 		return (pMin.x <= pMax.x) && (pMin.y <= pMax.y) && (pMin.z <= pMax.z);
 	}
+
+	Point Center() const {
+		return (pMin + pMax) * .5f;
+	}
 	
 	// BBox Public Data
 	Point pMin, pMax;
