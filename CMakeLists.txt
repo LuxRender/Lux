@@ -250,7 +250,7 @@ ADD_DEFINITIONS(-DLUX_USE_CONFIG_H)
 
 IF(APPLE)
 	# Jens - default Mac compiler options
-	ADD_DEFINITIONS(-O3 -ftree-vectorize -msse -msse2 -msse3 -mssse3 -fvariable-expansion-in-unroller -Wall -DHAVE_PTHREAD_H )
+	ADD_DEFINITIONS(-O3 -ftree-vectorize -msse -msse2 -msse3 -mssse3 -fvisibility=hidden -fvisibility-inlines-hidden -fvariable-expansion-in-unroller -Wall -DHAVE_PTHREAD_H )
 ELSEIF(MSVC)
 	# Default MSVC compiler options
 	MESSAGE(STATUS "MSVC")
@@ -370,6 +370,7 @@ ENDIF (APPLE)
 LINK_DIRECTORIES(${LINK_DIRECTORIES} ${Boost_LIBRARY_DIRS} )
 IF (APPLE)
 	SET(OSX_SHARED_CORELIB ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/liblux.dylib)
+	ADD_DEFINITIONS(-DLUX_DLL) # define we use dynamic corelib
 ELSEIF(MSVC)
 	IF(MSVC90)
 		# LTCG not correctly set by cmake in the current release - in the meantime the linker will inform you about switching this flag automatically because of /GL

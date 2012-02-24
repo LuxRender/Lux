@@ -30,6 +30,12 @@
 #		else
 #			define LUX_EXPORT __declspec(dllimport)
 #		endif
+#	else // unix
+#		ifdef LUX_INTERNAL
+#			define LUX_EXPORT __attribute__ ((visibility ("default")))
+#		else
+#			define LUX_EXPORT
+#		endif
 #	endif
 #else
 #	define LUX_EXPORT

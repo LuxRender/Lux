@@ -903,6 +903,7 @@ IF(APPLE)
 	ADD_LIBRARY(luxShared SHARED ${lux_cpp_api_src} ${lux_lib_src} ${lux_lib_hdr} ${lux_parser_src})
 	TARGET_LINK_LIBRARIES(luxShared ${LUX_LIBRARY_DEPENDS})
 	SET_TARGET_PROPERTIES(luxShared PROPERTIES OUTPUT_NAME lux)
+	SET_TARGET_PROPERTIES(luxShared PROPERTIES DEFINE_SYMBOL LUX_INTERNAL) # for controlling visibility
 
 	if(${CMAKE_GENERATOR} MATCHES "Xcode")
 		SET_TARGET_PROPERTIES(luxShared PROPERTIES XCODE_ATTRIBUTE_LD_DYLIB_INSTALL_NAME @loader_path/liblux.dylib)

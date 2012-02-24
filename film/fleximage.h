@@ -34,7 +34,7 @@
 namespace lux {
 
 // FlexImageFilm Declarations
-class FlexImageFilm : public Film {
+LUX_EXPORT class FlexImageFilm : public Film {
 public:
 	enum OutputChannels { Y, YA, RGB, RGBA };
 	enum ZBufNormalization { None, CameraStartEnd, MinMax };
