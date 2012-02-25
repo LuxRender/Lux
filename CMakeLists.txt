@@ -304,7 +304,7 @@ ELSEIF(MSVC)
 	
 ELSE(APPLE)
 	# Dade - default compiler options
-	ADD_DEFINITIONS(-O3 -msse2 -mfpmath=sse -ftree-vectorize -funroll-loops -Wall -fPIC -DHAVE_PTHREAD_H)
+	ADD_DEFINITIONS(-O3 -msse2 -mfpmath=sse -ftree-vectorize -fvisibility=hidden -fvisibility-inlines-hidden -funroll-loops -Wall -fPIC -DHAVE_PTHREAD_H)
 	# The QBVH accelerator needs to be compiled with much reduced optimizations
 	# otherwise gcc produces incorrect code and ruins the render on 64bits machines
 	SET_SOURCE_FILES_PROPERTIES(accelerators/qbvhaccel.cpp COMPILE_FLAGS "-O1")
@@ -399,7 +399,10 @@ ELSEIF(MSVC)
 	ADD_DEFINITIONS(-DLUX_DLL)
 	SET(LUX_LIBRARY luxShared)
 ELSE(APPLE)
-	SET(LUX_LIBRARY -Wl,--whole-archive luxStatic -Wl,--no-whole-archive)
+	SET(LUX_LIBRARY luxShared)
+	ADD_DEFINITIONS(-DLUX_DLL) # for controlling visibility
+	SET(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
+	SET(CMAKE_INSTALL_RPATH "$ORIGIN")
 ENDIF(APPLE)
 SET(LUX_LIBRARY_DEPENDS ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARIES} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${SYS_LIBRARIES})
 
@@ -449,7 +452,7 @@ ELSE(APPLE)
 
 	#Install API/Library
 	INSTALL(FILES ${CMAKE_SOURCE_DIR}/core/api.h DESTINATION include/luxrender/)
-	INSTALL(TARGETS luxStatic DESTINATION lib${LIB_SUFFIX})
+	INSTALL(TARGETS luxShared DESTINATION lib${LIB_SUFFIX})
 
 	#Install Desktop files
 	INSTALL(FILES ${CMAKE_SOURCE_DIR}/wxgui/luxrender.svg DESTINATION share/pixmaps/)

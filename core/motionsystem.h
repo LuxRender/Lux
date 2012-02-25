@@ -116,7 +116,7 @@ private:
 };
 
 // Contains one or more <time, transform> pairs (knots) representing a path
-LUX_EXPORT class MotionTransform {
+class LUX_EXPORT MotionTransform {
 public:
 	MotionTransform(const MotionTransform &other);
 	MotionTransform(const vector<float> &times, const vector<Transform> &transforms);

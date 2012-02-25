@@ -890,11 +890,11 @@ INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/core
 #############################################################################
 # Here we build the static core library liblux.a
 #############################################################################
-IF(NOT APPLE)
-	ADD_LIBRARY(luxStatic STATIC ${lux_lib_src} ${lux_lib_hdr} ${lux_parser_src})
-	#TARGET_LINK_LIBRARIES(luxStatic ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} )
-	SET_TARGET_PROPERTIES(luxStatic PROPERTIES OUTPUT_NAME lux)
-ENDIF(NOT APPLE)
+#IF(NOT APPLE)
+#	ADD_LIBRARY(luxStatic STATIC ${lux_lib_src} ${lux_lib_hdr} ${lux_parser_src})
+#	#TARGET_LINK_LIBRARIES(luxStatic ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} )
+#	SET_TARGET_PROPERTIES(luxStatic PROPERTIES OUTPUT_NAME lux)
+#ENDIF(NOT APPLE)
 
 #############################################################################
 # Here we build the shared core library liblux.so
@@ -919,12 +919,10 @@ ELSEIF(MSVC)
 	SET_TARGET_PROPERTIES(luxShared PROPERTIES OUTPUT_NAME lux)
 	SET_TARGET_PROPERTIES(luxShared PROPERTIES DEFINE_SYMBOL LUX_INTERNAL)
 ELSE(APPLE)
-# TOFIX !!!!!!!!!!!!!!!
-#	ADD_LIBRARY(luxShared SHARED ${lux_lib_src} ${lux_lib_hdr} ${lux_parser_src})
-#	TARGET_LINK_LIBRARIES(luxShared ${LUX_LIBRARY} ${LUX_LIBRARY_DEPENDS})
-	# Make CMake output both libs with the same name
-#	SET_TARGET_PROPERTIES(luxShared PROPERTIES OUTPUT_NAME lux)
-#	SET_TARGET_PROPERTIES(luxShared PROPERTIES DEFINE_SYMBOL LUX_INTERNAL)
+	ADD_LIBRARY(luxShared SHARED ${lux_cpp_api_src} ${lux_lib_src} ${lux_lib_hdr} ${lux_parser_src})
+	TARGET_LINK_LIBRARIES(luxShared ${LUX_LIBRARY_DEPENDS})
+	SET_TARGET_PROPERTIES(luxShared PROPERTIES OUTPUT_NAME lux)
+	SET_TARGET_PROPERTIES(luxShared PROPERTIES DEFINE_SYMBOL LUX_INTERNAL) # for controlling visibility
 ENDIF(APPLE)
 
 
