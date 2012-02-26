@@ -71,14 +71,12 @@ IF(PYTHONLIBS_FOUND OR PYTHON_CUSTOM)
 		SET_TARGET_PROPERTIES(pylux PROPERTIES XCODE_ATTRIBUTE_DEPLOYMENT_POSTPROCESSING NO) # exclude pylux from strip, not possible with external symbols !
 		add_dependencies(pylux luxShared) # explicitly say that the target depends on corelib build first
 		TARGET_LINK_LIBRARIES(pylux -Wl,-undefined -Wl,dynamic_lookup ${OSX_SHARED_CORELIB} ${CMAKE_THREAD_LIBS_INIT} ${PYTHON_LIBRARIES} ${Boost_python_LIBRARIES} ${Boost_LIBRARIES})
-		ADD_CUSTOM_COMMAND(
-			TARGET pylux POST_BUILD
-			COMMAND mv ${CMAKE_BUILD_TYPE}/libpylux.so ${CMAKE_BUILD_TYPE}/pylux.so
-		)
+		SET_TARGET_PROPERTIES(pylux PROPERTIES XCODE_ATTRIBUTE_EXECUTABLE_PREFIX "") # just not set prefix instead of renaming later
+		SET_TARGET_PROPERTIES(pylux PROPERTIES PREFIX "") # just not set prefix instead of renaming later
 		ADD_CUSTOM_COMMAND(
 			TARGET pylux POST_BUILD
 			COMMAND cp ${CMAKE_SOURCE_DIR}/python/pyluxconsole.py ${CMAKE_BUILD_TYPE}/pyluxconsole.py
-		)
+			)
 	ELSE(APPLE)
 
 		TARGET_LINK_LIBRARIES(pylux ${LUX_LIBRARY} ${CMAKE_THREAD_LIBS_INIT} ${LUX_LIBRARY_DEPENDS} ${PYTHON_LIBRARIES} ${Boost_python_LIBRARIES})

@@ -323,7 +323,7 @@ static bool getDirectLight(const Scene &scene, const Sample &sample,
 		&vL.bsdf, &vL.dAWeight, &ePdfDirect, Ld))
 		return false;
 	vL.p = vL.bsdf->dgShading.p;
-	vL.wi = Vector(vL.bsdf->nn);
+	vL.wi = Vector(vL.bsdf->dgShading.nn);
 	vL.cosi = AbsDot(vL.wi, vL.bsdf->ng);
 	vL.dAWeight /= scene.lights.size();
 	if (light->IsDeltaLight())
@@ -371,7 +371,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 	BidirVertex &eye0(eyePath[0]);
 	// Initialize eye vertex
 	eye0.p = eye0.bsdf->dgShading.p;
-	eye0.wo = Vector(eye0.bsdf->nn);
+	eye0.wo = Vector(eye0.bsdf->dgShading.nn);
 	eye0.coso = AbsDot(eye0.wo, eye0.bsdf->ng);
 	// Light path cannot intersect camera (FIXME)
 	eye0.dARWeight = 0.f;
@@ -461,7 +461,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 		BidirVertex &light0(lightPath[0]);
 		// Initialize light vertex
 		light0.p = light0.bsdf->dgShading.p;
-		light0.wi = Vector(light0.bsdf->nn);
+		light0.wi = Vector(light0.bsdf->dgShading.nn);
 		light0.cosi = AbsDot(light0.wi, light0.bsdf->ng);
 		// Give the light point probability for the weighting
 		// if the light is not delta
@@ -673,7 +673,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 					eyePath[nEye - 1].d2;
 				if (!v.bsdf->dgShading.scattered)
 					v.dARWeight *= v.coso;
-				v.pdf = v.bsdf->Pdf(sw, Vector(v.bsdf->nn),
+				v.pdf = v.bsdf->Pdf(sw, Vector(v.bsdf->dgShading.nn),
 					v.wo);
 				// No check for pdf > 0
 				// in the case of portal, the eye path can hit
@@ -733,7 +733,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 				&v.dAWeight, &ePdfDirect));
 			if (eBsdf && !Ll.Black()) {
 				v.flags = BxDFType(~BSDF_SPECULAR);
-				v.pdf = eBsdf->Pdf(sw, Vector(eBsdf->nn), v.wo,
+				v.pdf = eBsdf->Pdf(sw, Vector(eBsdf->dgShading.nn), v.wo,
 					v.flags);
 				Ll *= v.flux;
 				// Evaluate factors for path weighting
@@ -1004,7 +1004,7 @@ bool BidirPathState::Init(const Scene &scene) {
 			++lightPathLength;
 
 			// Initialize light vertex
-			light0.wi = Vector(light0.bsdf->nn);
+			light0.wi = Vector(light0.bsdf->dgShading.nn);
 
 			// pdf of ONE_UNIFORM light sampling strategy
 			Le *= numberOfLights;
@@ -1104,7 +1104,7 @@ bool BidirPathState::Init(const Scene &scene) {
 		return result;
 
 	// Initialize eye vertex
-	eye0.wo = Vector(eye0.bsdf->nn);
+	eye0.wo = Vector(eye0.bsdf->dgShading.nn);
 
 	// Sample eye subpath initial direction and finish vertex initialization
 	const float lensU = sample.camera->IsLensBased() ? sample.imageX : sample.lensU;
@@ -1372,7 +1372,7 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 
 			Vector wo(eyePath.wi);
 
-			Li *= lightBsdf->F(sw, Vector(lightBsdf->nn), -wi, false);
+			Li *= lightBsdf->F(sw, Vector(lightBsdf->dgShading.nn), -wi, false);
 			Li *= eyePath.bsdf->F(sw, wi, wo, true);
 
 			if (Li.Black())

@@ -31,8 +31,31 @@
 namespace lux
 {
 
+class PartialDifferentialGeometry
+{
+public:
+	Point p;
+	Normal nn;
+	Vector dpdu, dpdv;
+	float time;
+	bool scattered;
+
+	PartialDifferentialGeometry() { scattered = false; }
+
+	PartialDifferentialGeometry(
+			const Point &P,
+			const Vector &DPDU,
+			const Vector &DPDV);
+
+	PartialDifferentialGeometry(
+		const Point &P,
+		const Normal &NN,
+		const Vector &DPDU,
+		const Vector &DPDV);
+};
+
 // DifferentialGeometry Declarations
-class DifferentialGeometry {
+class DifferentialGeometry : public PartialDifferentialGeometry {
 public:
 	typedef union {
 		struct {
@@ -71,17 +94,12 @@ public:
 			nn = -nn;
 	}
 	// DifferentialGeometry Public Data
-	Point p;
-	Normal nn;
-	Vector dpdu, dpdv;
 	Normal dndu, dndv;
 	Vector tangent, bitangent; // surface tangents, may be different to dpdu,dpdv but in same plane, not normalized
 	float btsign; // sign of the bitangent, actual bitangent is "bitangent * (btsign > 0.f ? 1.f : -1.f)"
 	float u, v;
 	const void* handle;
 	const void* ihandle; // handle to intersected primitive, used with instances
-	float time;
-	bool scattered;
 
 	// Dade - shape specific data, useful to "transport" informatin between
 	// shape intersection method and GetShadingGeometry()

@@ -891,11 +891,11 @@ INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/core
 #############################################################################
 # Here we build the static core library liblux.a
 #############################################################################
-IF(NOT APPLE)
-	ADD_LIBRARY(luxStatic STATIC ${lux_lib_src} ${lux_lib_hdr} ${lux_parser_src})
-	#TARGET_LINK_LIBRARIES(luxStatic ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} )
-	SET_TARGET_PROPERTIES(luxStatic PROPERTIES OUTPUT_NAME lux)
-ENDIF(NOT APPLE)
+#IF(NOT APPLE)
+#	ADD_LIBRARY(luxStatic STATIC ${lux_lib_src} ${lux_lib_hdr} ${lux_parser_src})
+#	#TARGET_LINK_LIBRARIES(luxStatic ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} )
+#	SET_TARGET_PROPERTIES(luxStatic PROPERTIES OUTPUT_NAME lux)
+#ENDIF(NOT APPLE)
 
 #############################################################################
 # Here we build the shared core library liblux.so
@@ -904,9 +904,15 @@ IF(APPLE)
 	ADD_LIBRARY(luxShared SHARED ${lux_cpp_api_src} ${lux_lib_src} ${lux_lib_hdr} ${lux_parser_src})
 	TARGET_LINK_LIBRARIES(luxShared ${LUX_LIBRARY_DEPENDS})
 	SET_TARGET_PROPERTIES(luxShared PROPERTIES OUTPUT_NAME lux)
-	ADD_CUSTOM_COMMAND(
-		TARGET luxShared POST_BUILD
-		COMMAND install_name_tool -id @loader_path/liblux.dylib ${CMAKE_BUILD_TYPE}/liblux.dylib)
+	SET_TARGET_PROPERTIES(luxShared PROPERTIES DEFINE_SYMBOL LUX_INTERNAL) # for controlling visibility
+
+	if(${CMAKE_GENERATOR} MATCHES "Xcode")
+		SET_TARGET_PROPERTIES(luxShared PROPERTIES XCODE_ATTRIBUTE_LD_DYLIB_INSTALL_NAME @loader_path/liblux.dylib)
+	else()
+		ADD_CUSTOM_COMMAND(
+			TARGET luxShared POST_BUILD
+			COMMAND install_name_tool -id @loader_path/liblux.dylib ${CMAKE_BUILD_TYPE}/liblux.dylib)
+	endif()
 ELSEIF(MSVC)
 	ADD_LIBRARY(luxShared SHARED ${lux_lib_src} ${lux_lib_hdr} ${lux_parser_src})
 	TARGET_LINK_LIBRARIES(luxShared ${LUX_LIBRARY} ${LUX_LIBRARY_DEPENDS})
@@ -914,12 +920,10 @@ ELSEIF(MSVC)
 	SET_TARGET_PROPERTIES(luxShared PROPERTIES OUTPUT_NAME lux)
 	SET_TARGET_PROPERTIES(luxShared PROPERTIES DEFINE_SYMBOL LUX_INTERNAL)
 ELSE(APPLE)
-# TOFIX !!!!!!!!!!!!!!!
-#	ADD_LIBRARY(luxShared SHARED ${lux_lib_src} ${lux_lib_hdr} ${lux_parser_src})
-#	TARGET_LINK_LIBRARIES(luxShared ${LUX_LIBRARY} ${LUX_LIBRARY_DEPENDS})
-	# Make CMake output both libs with the same name
-#	SET_TARGET_PROPERTIES(luxShared PROPERTIES OUTPUT_NAME lux)
-#	SET_TARGET_PROPERTIES(luxShared PROPERTIES DEFINE_SYMBOL LUX_INTERNAL)
+	ADD_LIBRARY(luxShared SHARED ${lux_cpp_api_src} ${lux_lib_src} ${lux_lib_hdr} ${lux_parser_src})
+	TARGET_LINK_LIBRARIES(luxShared ${LUX_LIBRARY_DEPENDS})
+	SET_TARGET_PROPERTIES(luxShared PROPERTIES OUTPUT_NAME lux)
+	SET_TARGET_PROPERTIES(luxShared PROPERTIES DEFINE_SYMBOL LUX_INTERNAL) # for controlling visibility
 ENDIF(APPLE)
 
 

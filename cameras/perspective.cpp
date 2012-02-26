@@ -64,7 +64,7 @@ public:
 		if (hasLens)
 			*wiW -= Vector(p) * (wiW->z / camera.FocalDistance);
 		*wiW = Normalize(camera.CameraToWorld(*wiW));
-		const float cosi = Dot(*wiW, nn);
+		const float cosi = Dot(*wiW, dgShading.nn);
 		const float cosi2 = cosi * cosi;
 		*pdf = 1.f / (camera.Apixel * cosi2 * cosi);
 		if (pdfBack)

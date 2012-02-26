@@ -30,6 +30,12 @@
 #		else
 #			define LUX_EXPORT __declspec(dllimport)
 #		endif
+#	else // unix
+#		ifdef LUX_INTERNAL
+#			define LUX_EXPORT __attribute__ ((visibility ("default")))
+#		else
+#			define LUX_EXPORT
+#		endif
 #	endif
 #else
 #	define LUX_EXPORT
@@ -309,7 +315,7 @@ LUX_EXPORT void luxDisableRandomMode();
 /* Error Handlers */
 LUX_EXPORT extern int luxLastError; /*  Keeps track of the last error code */
 LUX_EXPORT extern void luxErrorFilter(int severity); /* Sets the minimal level of severity to report */
-LUX_EXPORT typedef void (*LuxErrorHandler)(int code, int severity, const char *msg);
+typedef void (*LuxErrorHandler)(int code, int severity, const char *msg);
 LUX_EXPORT extern void luxErrorHandler(LuxErrorHandler handler);
 LUX_EXPORT extern void luxErrorAbort(int code, int severity, const char *message);
 LUX_EXPORT extern void luxErrorIgnore(int code, int severity, const char *message);

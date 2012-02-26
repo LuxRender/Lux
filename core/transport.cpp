@@ -246,14 +246,14 @@ SWCSpectrum EstimateDirect(const Scene &scene, const Light &light,
 			false, p, pL, false, &Li, NULL, NULL)) {
 			const float d2 = wi0.LengthSquared();
 			const Vector wi(wi0 / sqrtf(d2));
-			Li *= lightBsdf->F(sample.swl, Vector(lightBsdf->nn), -wi, false);
+			Li *= lightBsdf->F(sample.swl, Vector(lightBsdf->dgShading.nn), -wi, false);
 			Li *= bsdf->F(sample.swl, wi, wo, true);
 			if (!Li.Black()) {
 				if (mis) {
 					const float bsdfPdf = bsdf->Pdf(sample.swl,
 						wo, wi);
 					Li *= PowerHeuristic(1, lightPdf * d2 /
-						AbsDot(wi, lightBsdf->nn),
+						AbsDot(wi, lightBsdf->dgShading.nn),
 						1, bsdfPdf);
 				}
 				// Add light's contribution
@@ -289,7 +289,7 @@ SWCSpectrum EstimateDirect(const Scene &scene, const Light &light,
 			if (lit) {
 				const float d2 = DistanceSquared(p, lightBsdf->dgShading.p);
 				const float lightPdf2 = lightPdf * d2 /
-					AbsDot(wi, lightBsdf->nn);
+					AbsDot(wi, lightBsdf->dgShading.nn);
 				const float weight = PowerHeuristic(1, bsdfPdf,
 					1, lightPdf2);
 				Ld += Li * weight;

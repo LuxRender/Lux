@@ -558,7 +558,7 @@ void PhotonMapPreprocess(const RandomGenerator &rng, const Scene &scene,
 		photonRay.o = bsdf->dgShading.p;
 		float pdf2;
 		SWCSpectrum alpha2;
-		if (!bsdf->SampleF(sw, Vector(bsdf->nn), &photonRay.d,
+		if (!bsdf->SampleF(sw, Vector(bsdf->dgShading.nn), &photonRay.d,
 			u[3], u[4], u[5], &alpha2, &pdf2))
 			continue;
 		alpha *= alpha2;

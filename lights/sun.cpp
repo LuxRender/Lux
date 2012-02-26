@@ -61,7 +61,7 @@ public:
 		const float cosTheta = sqrtf(1.f - sin2Theta);
 		const float phi = 2.f * M_PI * u2;
 		*wiW = cosf(phi) * sinTheta * sn + sinf(phi) * sinTheta * tn +
-			cosTheta * Vector(nn);
+			cosTheta * Vector(dgShading.nn);
 		// Approximate pdf value accounting for the fact that theta max
 		// is very small
 		*pdf = INV_PI / sin2ThetaMax;
@@ -222,7 +222,7 @@ bool SunLight::Le(const Scene &scene, const Sample &sample, const Ray &r,
 	return true;
 }
 
-float SunLight::Pdf(const Point &p, const DifferentialGeometry &dg) const
+float SunLight::Pdf(const Point &p, const PartialDifferentialGeometry &dg) const
 {
 	const float cosTheta = AbsDot(Normalize(p - dg.p), dg.nn);
 	if (cosTheta < cosThetaMax)

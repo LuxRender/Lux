@@ -31,21 +31,21 @@
 
 // colorspacepresets and colorspace whitepoints
 static double colorspace_presets[8][NUM_COLORSPACE_PRESETS] = {
-	{0.314275f, 0.3460f, 0.313f, 0.313f, 0.310f, 0.313f, 0.313f, 0.3330f}, //xwhite
-	{0.329411f, 0.3590f, 0.329f, 0.329f, 0.316f, 0.329f, 0.329f, 0.3330f}, //ywhite
-	{0.630000f, 0.7347f, 0.640f, 0.625f, 0.670f, 0.630f, 0.640f, 0.7347f}, //xred
-	{0.340000f, 0.2653f, 0.340f, 0.340f, 0.330f, 0.340f, 0.330f, 0.2653f}, //yred
-	{0.310000f, 0.1596f, 0.210f, 0.280f, 0.210f, 0.310f, 0.290f, 0.2738f}, //xgreen
-	{0.595000f, 0.8404f, 0.710f, 0.595f, 0.710f, 0.595f, 0.600f, 0.7174f}, //ygreen
-	{0.155000f, 0.0366f, 0.150f, 0.155f, 0.140f, 0.155f, 0.150f, 0.1666f}, //xblue
-	{0.070000f, 0.0001f, 0.060f, 0.070f, 0.080f, 0.070f, 0.060f, 0.0089f}  //yblue
+	{0.314275f, 0.31271f, 0.3460f, 0.313f, 0.313f, 0.310f, 0.313f, 0.313f, 0.33333f}, //xwhite
+	{0.329411f, 0.32902f, 0.3590f, 0.329f, 0.329f, 0.316f, 0.329f, 0.329f, 0.33333f}, //ywhite
+	{0.630000f, 0.6400f, 0.7347f, 0.640f, 0.625f, 0.670f, 0.630f, 0.640f, 0.7347f}, //xred
+	{0.340000f, 0.3300f, 0.2653f, 0.340f, 0.340f, 0.330f, 0.340f, 0.330f, 0.2653f}, //yred
+	{0.310000f, 0.3000f, 0.1596f, 0.210f, 0.280f, 0.210f, 0.310f, 0.290f, 0.2738f}, //xgreen
+	{0.595000f, 0.6000f, 0.8404f, 0.710f, 0.595f, 0.710f, 0.595f, 0.600f, 0.7174f}, //ygreen
+	{0.155000f, 0.1500f, 0.0366f, 0.150f, 0.155f, 0.140f, 0.155f, 0.150f, 0.1666f}, //xblue
+	{0.070000f, 0.0600f, 0.0001f, 0.060f, 0.070f, 0.080f, 0.070f, 0.060f, 0.0089f}  //yblue
 };
 	
 // standard whitepoints
 static double whitepoint_presets[2][NUM_WHITEPOINT_PRESETS] = {
-//   A       B       C       D50     D55     D65     D75     E       F2      F7      F11     9300
-	{0.448f, 0.348f, 0.310f, 0.346f, 0.332f, 0.313f, 0.299f, 0.333f, 0.372f, 0.313f, 0.381f, 0.285f}, //xwhite
-	{0.407f, 0.352f, 0.316f, 0.359f, 0.347f, 0.329f, 0.315f, 0.333f, 0.375f, 0.329f, 0.377f, 0.293f}  //ywhite
+//   A         B         C         D50       D55       D65       D75       E         F2        F7        F11       9300K     D65 (SMPTE)
+	{0.44757f, 0.34842f, 0.31006f, 0.34567f, 0.33242f, 0.31271f, 0.29902f, 0.33333f, 0.37208f, 0.31292f, 0.38052f, 0.28480f, 0.314275f}, //xwhite
+	{0.40745f, 0.35161f, 0.31616f, 0.35850f, 0.34743f, 0.32902f, 0.31485f, 0.33333f, 0.37529f, 0.32933f, 0.37713f, 0.29320f, 0.329411f}  //ywhite
 };
 #define DEFAULT_EPSILON_MIN 0.000005f
 static bool EqualDouble(const double a, const double b)
@@ -218,15 +218,15 @@ void ColorSpaceWidget::updateWidgetValues()
 
 void ColorSpaceWidget::resetValues()
 {
-	m_TORGB_xwhite = 0.314275;
-	m_TORGB_ywhite = 0.329411;
-	m_TORGB_xred = 0.63;
-	m_TORGB_yred = 0.34;
-	m_TORGB_xgreen = 0.31;
-	m_TORGB_ygreen = 0.595;
-	m_TORGB_xblue = 0.155;
-	m_TORGB_yblue = 0.07;
-	m_TORGB_temperature = 6504.0; // D65
+	m_TORGB_xwhite = colorspace_presets[0][0];
+	m_TORGB_ywhite = colorspace_presets[1][0];
+	m_TORGB_xred = colorspace_presets[2][0];
+	m_TORGB_yred = colorspace_presets[3][0];
+	m_TORGB_xgreen = colorspace_presets[4][0];
+	m_TORGB_ygreen = colorspace_presets[5][0];
+	m_TORGB_xblue = colorspace_presets[6][0];
+	m_TORGB_yblue = colorspace_presets[7][0];
+	m_TORGB_temperature = XyToTemperature(m_TORGB_xwhite, m_TORGB_ywhite);
 }
 
 int ColorSpaceWidget::colorspaceToPreset()
@@ -274,7 +274,7 @@ void ColorSpaceWidget::resetFromFilm (bool useDefaults)
 	luxSetParameterValue(LUX_FILM, LUX_FILM_TORGB_X_BLUE, m_TORGB_xblue);
 	luxSetParameterValue(LUX_FILM, LUX_FILM_TORGB_Y_BLUE, m_TORGB_yblue);
 	
-	ui->comboBox_whitePointPreset->setCurrentIndex(whitepointToPreset());
+	// this will trigger the changed signal, which will update whitepoint preset as well
 	ui->comboBox_colorSpacePreset->setCurrentIndex(colorspaceToPreset());
 }
 
@@ -283,14 +283,14 @@ void ColorSpaceWidget::setColorSpacePreset(int choice)
 	ui->comboBox_colorSpacePreset->blockSignals(true);
 	ui->comboBox_colorSpacePreset->setCurrentIndex(choice);
 	ui->comboBox_colorSpacePreset->blockSignals(false);
-	
-	ui->comboBox_colorSpacePreset->blockSignals(true);
-	ui->comboBox_whitePointPreset->setCurrentIndex(0);
-	ui->comboBox_colorSpacePreset->blockSignals(false);
-	
+		
 	// first choice is "User-defined"
-	if (choice < 1)
+	if (choice < 1) {
+		ui->comboBox_colorSpacePreset->blockSignals(true);
+		ui->comboBox_whitePointPreset->setCurrentIndex(0);
+		ui->comboBox_colorSpacePreset->blockSignals(false);
 		return;
+	}
 	
 	m_TORGB_xwhite = colorspace_presets[0][choice-1];
 	m_TORGB_ywhite = colorspace_presets[1][choice-1];
@@ -302,6 +302,10 @@ void ColorSpaceWidget::setColorSpacePreset(int choice)
 	m_TORGB_yblue = colorspace_presets[7][choice-1];
 	m_TORGB_temperature = XyToTemperature(m_TORGB_xwhite, m_TORGB_ywhite);
 	
+	// update whitepoint preset dropdown as well
+	ui->comboBox_colorSpacePreset->blockSignals(true);
+	ui->comboBox_whitePointPreset->setCurrentIndex(whitepointToPreset());
+	ui->comboBox_colorSpacePreset->blockSignals(false);
 
 	// Update values in film trough API
 	updateParam (LUX_FILM, LUX_FILM_TORGB_X_WHITE, m_TORGB_xwhite);

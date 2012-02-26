@@ -203,7 +203,7 @@ public:
 	 * bump mapping, ...
 	 */
 	bool HasShadingGeometry() const {
-		return (nn.x != ng.x || nn.y != ng.y || nn.z != ng.z);
+		return (dgShading.nn.x != ng.x || dgShading.nn.y != ng.y || dgShading.nn.z != ng.z);
 	}
 	/**
 	 * Converts a vector in world space to a vector in local surface space
@@ -211,7 +211,7 @@ public:
 	 * @return The local vector
 	 */
 	Vector WorldToLocal(const Vector &wW) const {
-		return Vector(Dot(wW, sn), Dot(wW, tn), Dot(wW, nn));
+		return Vector(Dot(wW, sn), Dot(wW, tn), Dot(wW, dgShading.nn));
 	}
 	/**
 	 * Converts a vector in local surface space to a vector in world space
@@ -219,7 +219,7 @@ public:
 	 * @return The world vector
 	 */
 	Vector LocalToWorld(const Vector &w) const {
-		return Vector(sn * w.x + tn * w.y + Vector(nn) * w.z);
+		return Vector(sn * w.x + tn * w.y + Vector(dgShading.nn) * w.z);
 	}
 	/**
 	 * Gets the volume corresponding to a direction relative to the
@@ -338,8 +338,8 @@ public:
 	 * @var const Normal ng
 	 * @brief The geometric normal
 	 */
-	const Normal nn, ng;
-	const DifferentialGeometry dgShading; /** The differential shading geometry */
+	const Normal ng;
+	const PartialDifferentialGeometry dgShading; /** The differential shading geometry */
 	/**
 	 * @var const Volume *exterior
 	 * @brief The volume in the half space containing the geometric normal
