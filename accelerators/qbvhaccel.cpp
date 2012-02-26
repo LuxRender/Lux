@@ -596,7 +596,7 @@ void QBVHAccel::CreateTempLeaf(int32_t parentIndex, int32_t childIndex,
 
 	node.SetBBox(childIndex, nodeBbox);
 
-	u_int quads = QuadCount(nbPrimsTotal + 3);
+	u_int quads = QuadCount(nbPrimsTotal);
 	
 	// Use the same encoding as the final one, but with a different meaning.
 	node.InitializeLeaf(childIndex, quads, start);
