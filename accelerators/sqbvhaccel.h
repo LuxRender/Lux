@@ -30,7 +30,7 @@ namespace lux
 {
 
 // The number of bins for spatial split
-#define SPATIAL_SPLIT_BINS 8
+#define SPATIAL_SPLIT_BINS 64
 
 class SBVHNode {
 public:

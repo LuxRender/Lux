@@ -63,6 +63,11 @@ public:
 	            pt.y >= pMin.y && pt.y <= pMax.y &&
 	            pt.z >= pMin.z && pt.z <= pMax.z);
 	}
+	bool Inside(const BBox &bb) const {
+		return (bb.pMin.x >= pMin.x && bb.pMax.x <= pMax.x &&
+				bb.pMin.y >= pMin.y && bb.pMax.y <= pMax.y &&
+				bb.pMin.z >= pMin.z && bb.pMax.z <= pMax.z);
+	}
 	void Expand(float delta) {
 		pMin -= Vector(delta, delta, delta);
 		pMax += Vector(delta, delta, delta);

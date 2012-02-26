@@ -48,7 +48,7 @@ class QuadPrimitive;
 /**
    the number of bins for object split
 */
-#define OBJECT_SPLIT_BINS 32
+#define OBJECT_SPLIT_BINS 8
 
 /**
    The QBVH node structure, 128 bytes long (perfect for cache)
