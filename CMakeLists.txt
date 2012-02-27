@@ -250,8 +250,8 @@ ADD_DEFINITIONS(-DLUX_USE_CONFIG_H)
 IF(APPLE)
 	# Jens - default Mac compiler options
 	ADD_DEFINITIONS(-fvisibility=hidden -fvisibility-inlines-hidden -Wall -DHAVE_PTHREAD_H) # global compile definitions
-	set(OSX_FLAGS_RELEASE "-ftree-vectorize -msse -msse2 -msse3 -mssse3 -fvariable-expansion-in-unroller")
-	set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} ${OSX_FLAGS_RELEASE}")
+	set(OSX_FLAGS_RELEASE "-ftree-vectorize -msse -msse2 -msse3 -mssse3 -fvariable-expansion-in-unroller") # only additional flags
+	set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} ${OSX_FLAGS_RELEASE}") # cmake emits "-O3 -DNDEBUG" for Release by default, "-O0 -g" for Debug
 	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${OSX_FLAGS_RELEASE}")
 ELSEIF(MSVC)
 	# Default MSVC compiler options
