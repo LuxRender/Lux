@@ -250,7 +250,13 @@ ADD_DEFINITIONS(-DLUX_USE_CONFIG_H)
 
 IF(APPLE)
 	# Jens - default Mac compiler options
-	ADD_DEFINITIONS(-O3 -ftree-vectorize -msse -msse2 -msse3 -mssse3 -fvisibility=hidden -fvisibility-inlines-hidden -fvariable-expansion-in-unroller -Wall -DHAVE_PTHREAD_H )
+	ADD_DEFINITIONS(-DHAVE_PTHREAD_H) # global compile definitions
+	set(OSX_FLAGS_DEBUG "-fvisibility=hidden -fvisibility-inlines-hidden -Wall")
+	set(OSX_FLAGS_RELEASE "-ftree-vectorize -msse -msse2 -msse3 -mssse3 -fvariable-expansion-in-unroller -fvisibility=hidden -fvisibility-inlines-hidden -Wall")
+	set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${OSX_FLAGS_DEBUG}")
+	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${OSX_FLAGS_DEBUG}")
+	set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} ${OSX_FLAGS_RELEASE}")
+	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${OSX_FLAGS_RELEASE}")
 ELSEIF(MSVC)
 	# Default MSVC compiler options
 	MESSAGE(STATUS "MSVC")
@@ -313,9 +319,6 @@ ENDIF(APPLE)
 #############################################################################
 # Compiler flags for specific setup
 #############################################################################
-
-# Jens - testing Mac compiler options (debug)
-#ADD_DEFINITIONS(-O0 -fpic -Wall -DHAVE_PTHREAD_H)
 
 # Dade - GCC Profiling (remember to uncomment the line at the end of file too)
 #ADD_DEFINITIONS(-pg -g -O2 -msse2 -mfpmath=sse -ftree-vectorize -Wall -DHAVE_PTHREAD_H)
