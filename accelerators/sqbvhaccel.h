@@ -87,6 +87,8 @@ private:
 
 	float BuildObjectSplit(const std::vector<BBox> &primsBboxes, int &axis);
 
+	vector<Point> GetPolygonVertexList(const Primitive *prim) const;
+	
 	vector<vector<u_int> > nodesPrims[4]; // Temporary data for building
 	float alpha;
 

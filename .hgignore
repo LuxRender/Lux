@@ -4,6 +4,7 @@
 ^cmake_install.cmake
 ^config.h
 ^liblux.a
+^liblux.so
 ^luxlex
 ^luxparse
 ^core/luxlex\..*

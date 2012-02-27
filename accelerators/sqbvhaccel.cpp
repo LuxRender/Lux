@@ -114,7 +114,7 @@ SQBVHAccel::SQBVHAccel(const vector<boost::shared_ptr<Primitive> > &p,
 				
 				QBVHNode &node = nodes[j];
 				// Next multiple of 4, divided by 4
-				u_int quads = (nbPrimsTotal + 3) / 4;
+				u_int quads = QuadCount(nbPrimsTotal);
 				// Use the same encoding as the final one, but with a different meaning.
 				node.InitializeLeaf(i, quads, start);
 			}
@@ -128,7 +128,7 @@ SQBVHAccel::SQBVHAccel(const vector<boost::shared_ptr<Primitive> > &p,
 		nodesPrims[i].clear();
 	
 	PreSwizzle(0, primsIndexes, vPrims);
-	LOG(LUX_DEBUG,LUX_NOERROR) << "QBVH completed with " << nNodes << "/" << maxNodes << " nodes";
+	LOG(LUX_DEBUG,LUX_NOERROR) << "SQBVH completed with " << nNodes << "/" << maxNodes << " nodes";
 	
 	// Collect statistics
 	SAHCost = 0.f;
@@ -288,15 +288,10 @@ void SQBVHAccel::BuildTree(const std::vector<u_int> &primsIndexes,
 
 			if (primsBboxes[i].pMin[spatialSplitAxis] <= spatialSplitPos) {
 				leftPrimsIndexes.push_back(primIndex);
-				
-				MeshBaryTriangle *tri = dynamic_cast<MeshBaryTriangle *>(vPrims[primIndex].get());
-				assert (tri != NULL);
 
 				// Clip triangle with left bounding box
-				vector<Point> vertexList;
-				vertexList.push_back(tri->GetP(0));
-				vertexList.push_back(tri->GetP(1));
-				vertexList.push_back(tri->GetP(2));
+				vector<Point> vertexList = GetPolygonVertexList(vPrims[primIndex].get());
+				assert (vertexList.size() > 0);
 
 				vector<Point> clipVertexList = spatialLeftChildBbox.ClipPolygon(vertexList);
 				assert (clipVertexList.size() > 0);
@@ -313,14 +308,9 @@ void SQBVHAccel::BuildTree(const std::vector<u_int> &primsIndexes,
 			if (primsBboxes[i].pMax[spatialSplitAxis] > spatialSplitPos) {
 				rightPrimsIndexes.push_back(primIndex);
 
-				MeshBaryTriangle *tri = dynamic_cast<MeshBaryTriangle *>(vPrims[primIndex].get());
-				assert (tri != NULL);
-
 				// Clip triangle with right bounding box
-				vector<Point> vertexList;
-				vertexList.push_back(tri->GetP(0));
-				vertexList.push_back(tri->GetP(1));
-				vertexList.push_back(tri->GetP(2));
+				vector<Point> vertexList = GetPolygonVertexList(vPrims[primIndex].get());
+				assert (vertexList.size() > 0);
 
 				vector<Point> clipVertexList = spatialRightChildBbox.ClipPolygon(vertexList);
 				assert (clipVertexList.size() > 0);
@@ -377,6 +367,28 @@ void SQBVHAccel::BuildTree(const std::vector<u_int> &primsIndexes,
 			currentNode, leftChildIndex, depth + 1);
 	BuildTree(rightPrimsIndexes, vPrims, rightPrimsBbox, *rightBbox,
 			currentNode, rightChildIndex, depth + 1);
+}
+
+vector<Point> SQBVHAccel::GetPolygonVertexList(const Primitive *prim) const {
+	vector<Point> vertexList;
+
+	const MeshBaryTriangle *tri = dynamic_cast<const MeshBaryTriangle *>(prim);
+	if (tri != NULL) {
+		// It is a triangle
+		vertexList.push_back(tri->GetP(0));
+		vertexList.push_back(tri->GetP(1));
+		vertexList.push_back(tri->GetP(2));
+		
+		return vertexList;
+	}
+
+	const AreaLightPrimitive *alp = dynamic_cast<const AreaLightPrimitive *>(prim);
+	if (alp != NULL) {
+		// It is an area light primitive
+		return GetPolygonVertexList(alp->GetPrimitive().get());
+	}
+	
+	return vertexList;
 }
 
 float SQBVHAccel::BuildSpatialSplit(const std::vector<u_int> &primsIndexes,
@@ -442,22 +454,18 @@ float SQBVHAccel::BuildSpatialSplit(const std::vector<u_int> &primsIndexes,
 				exitFound = true;
 			}
 
+			vector<Point> vertexList = GetPolygonVertexList(vPrims[primsIndexes[i]].get());
 			// Safety check
-			MeshBaryTriangle *tri = dynamic_cast<MeshBaryTriangle *>(vPrims[primsIndexes[i]].get());
-			if (tri == NULL) {
+			if (vertexList.size() == 0) {
 				// SQBVH is able to work only with triangles, it will fall back to
 				// standard object split in the case a no-triangle primitive is
 				// found
-				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "A primitive used in a SQBVH isn't a triangle, falling back to 'object split'-only building";
+				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "A primitive of type " << typeid(*(vPrims[primsIndexes[i]].get())).name() <<
+						", used in a SQBVH, isn't a triangle, falling back to 'object split'-only building";
 				return std::numeric_limits<float>::quiet_NaN();
 			}
 
 			// Clip triangle with bin bounding box
-			vector<Point> vertexList;
-			vertexList.push_back(tri->GetP(0));
-			vertexList.push_back(tri->GetP(1));
-			vertexList.push_back(tri->GetP(2));
-
 			vector<Point> clipVertexList = binsBbox[j].ClipPolygon(vertexList);
 			assert (clipVertexList.size() != 0);
 				

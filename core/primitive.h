@@ -264,6 +264,10 @@ public:
 		return prim->Pdf(p, dg);
 	}
 
+	const boost::shared_ptr<Primitive> &GetPrimitive() const {
+		return prim;
+	}
+
 	virtual void Tesselate(vector<luxrays::TriangleMesh *> *meshList,
 		vector<const Primitive *> *primitiveList) const {
 		vector<const Primitive *> plist;
