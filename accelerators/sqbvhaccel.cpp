@@ -252,84 +252,23 @@ void SQBVHAccel::BuildTree(const std::vector<u_int> &primsIndexes,
 	BBox *leftBbox, *rightBbox;
 	if (doObjectSplit) {
 		// Do object split
-		leftPrimsIndexes.reserve(objectLeftChildReferences);
-		rightPrimsIndexes.reserve(objectRightChildReferences);
-		leftPrimsBbox.reserve(objectLeftChildReferences);
-		rightPrimsBbox.reserve(objectLeftChildReferences);
-
-		for (u_int i = 0; i < nPrimsIndexes; ++i) {
-			const u_int primIndex = primsIndexes[i];
-			const float c = (primsBboxes[i].pMin[objectSplitAxis] + primsBboxes[i].pMax[objectSplitAxis]) * .5f;
-
-			if (c <= objectSplitPos) {
-				leftPrimsIndexes.push_back(primIndex);
-				leftPrimsBbox.push_back(primsBboxes[i]);
-			} else {
-				rightPrimsIndexes.push_back(primIndex);
-				rightPrimsBbox.push_back(primsBboxes[i]);
-			}
-		}
-
-		assert (leftPrimsIndexes.size() == objectLeftChildReferences);
-		assert (rightPrimsIndexes.size() == objectRightChildReferences);
+		DoObjectSplit(primsIndexes, primsBboxes, objectSplitPos, objectSplitAxis,
+				objectLeftChildReferences, objectRightChildReferences,
+				leftPrimsIndexes, rightPrimsIndexes,
+				leftPrimsBbox, rightPrimsBbox);
 
 		leftBbox = &objectLeftChildBbox;
 		rightBbox = &objectRightChildBbox;
-		++objectSplitCount;
 	} else {
 		// Do spatial split
-		leftPrimsIndexes.reserve(spatialLeftChildReferences);
-		rightPrimsIndexes.reserve(spatialRightChildReferences);
-		leftPrimsBbox.reserve(spatialLeftChildReferences);
-		rightPrimsBbox.reserve(spatialLeftChildReferences);
-
-		for (u_int i = 0; i < nPrimsIndexes; ++i) {
-			u_int primIndex = primsIndexes[i];
-
-			if (primsBboxes[i].pMin[spatialSplitAxis] <= spatialSplitPos) {
-				leftPrimsIndexes.push_back(primIndex);
-
-				// Clip triangle with left bounding box
-				vector<Point> vertexList = GetPolygonVertexList(vPrims[primIndex].get());
-				assert (vertexList.size() > 0);
-
-				vector<Point> clipVertexList = spatialLeftChildBbox.ClipPolygon(vertexList);
-				assert (clipVertexList.size() > 0);
-				
-				// Compute the bounding box of the clipped triangle
-				BBox primBbox;
-				for (u_int k = 0; k < clipVertexList.size(); ++k)
-					primBbox = Union(primBbox, clipVertexList[k]);
-				assert (primBbox.IsValid());
-			
-				leftPrimsBbox.push_back(primBbox);
-			}
-
-			if (primsBboxes[i].pMax[spatialSplitAxis] > spatialSplitPos) {
-				rightPrimsIndexes.push_back(primIndex);
-
-				// Clip triangle with right bounding box
-				vector<Point> vertexList = GetPolygonVertexList(vPrims[primIndex].get());
-				assert (vertexList.size() > 0);
-
-				vector<Point> clipVertexList = spatialRightChildBbox.ClipPolygon(vertexList);
-				assert (clipVertexList.size() > 0);
-				
-				// Compute the bounding box of the clipped triangle
-				BBox primBbox;
-				for (u_int k = 0; k < clipVertexList.size(); ++k)
-					primBbox = Union(primBbox, clipVertexList[k]);
-				assert (primBbox.IsValid());
-				rightPrimsBbox.push_back(primBbox);
-			}
-		}
-
-		assert (leftPrimsIndexes.size() == spatialLeftChildReferences);
-		assert (rightPrimsIndexes.size() == spatialRightChildReferences);
+		DoSpatialSplit(primsIndexes, vPrims, primsBboxes, spatialSplitPos, spatialSplitAxis,
+				spatialLeftChildReferences, spatialRightChildReferences,
+				leftPrimsIndexes, rightPrimsIndexes,
+				leftPrimsBbox, rightPrimsBbox,
+				spatialLeftChildBbox, spatialRightChildBbox);
 
 		leftBbox = &spatialLeftChildBbox;
 		rightBbox = &spatialRightChildBbox;
-		++spatialSplitCount;
 	}
 
 	leftBbox->Expand(MachineEpsilon::E(*leftBbox));
@@ -367,6 +306,96 @@ void SQBVHAccel::BuildTree(const std::vector<u_int> &primsIndexes,
 			currentNode, leftChildIndex, depth + 1);
 	BuildTree(rightPrimsIndexes, vPrims, rightPrimsBbox, *rightBbox,
 			currentNode, rightChildIndex, depth + 1);
+}
+
+void SQBVHAccel::DoObjectSplit(const std::vector<u_int> &primsIndexes, const std::vector<BBox> &primsBboxes,
+		const float objectSplitPos, const int objectSplitAxis,
+		const u_int objectLeftChildReferences, const u_int objectRightChildReferences,
+		std::vector<u_int> &leftPrimsIndexes, std::vector<u_int> &rightPrimsIndexes,
+		std::vector<BBox> &leftPrimsBbox, std::vector<BBox> &rightPrimsBbox) {
+	// Do object split
+	leftPrimsIndexes.reserve(objectLeftChildReferences);
+	rightPrimsIndexes.reserve(objectRightChildReferences);
+	leftPrimsBbox.reserve(objectLeftChildReferences);
+	rightPrimsBbox.reserve(objectRightChildReferences);
+
+	for (u_int i = 0; i < primsIndexes.size(); ++i) {
+		const u_int primIndex = primsIndexes[i];
+		const float centroid = (primsBboxes[i].pMin[objectSplitAxis] + primsBboxes[i].pMax[objectSplitAxis]) * .5f;
+
+		if (centroid <= objectSplitPos) {
+			leftPrimsIndexes.push_back(primIndex);
+			leftPrimsBbox.push_back(primsBboxes[i]);
+		} else {
+			rightPrimsIndexes.push_back(primIndex);
+			rightPrimsBbox.push_back(primsBboxes[i]);
+		}
+	}
+
+	assert (leftPrimsIndexes.size() == objectLeftChildReferences);
+	assert (rightPrimsIndexes.size() == objectRightChildReferences);
+
+	++objectSplitCount;
+}
+
+void SQBVHAccel::DoSpatialSplit(const std::vector<u_int> &primsIndexes,
+		const vector<boost::shared_ptr<Primitive> > &vPrims, const std::vector<BBox> &primsBboxes,
+		const float spatialSplitPos, const int spatialSplitAxis,
+		const u_int spatialLeftChildReferences, const u_int spatialRightChildReferences,
+		std::vector<u_int> &leftPrimsIndexes, std::vector<u_int> &rightPrimsIndexes,
+		std::vector<BBox> &leftPrimsBbox, std::vector<BBox> &rightPrimsBbox,
+		BBox &spatialLeftChildBbox, BBox &spatialRightChildBbox) {
+	// Do spatial split
+	leftPrimsIndexes.reserve(spatialLeftChildReferences);
+	rightPrimsIndexes.reserve(spatialRightChildReferences);
+	leftPrimsBbox.reserve(spatialLeftChildReferences);
+	rightPrimsBbox.reserve(spatialRightChildReferences);
+
+	for (u_int i = 0; i < primsIndexes.size(); ++i) {
+		u_int primIndex = primsIndexes[i];
+
+		if (primsBboxes[i].pMin[spatialSplitAxis] <= spatialSplitPos) {
+			leftPrimsIndexes.push_back(primIndex);
+
+			// Clip triangle with left bounding box
+			vector<Point> vertexList = GetPolygonVertexList(vPrims[primIndex].get());
+			assert (vertexList.size() > 0);
+
+			vector<Point> clipVertexList = spatialLeftChildBbox.ClipPolygon(vertexList);
+			assert (clipVertexList.size() > 0);
+
+			// Compute the bounding box of the clipped triangle
+			BBox primBbox;
+			for (u_int k = 0; k < clipVertexList.size(); ++k)
+				primBbox = Union(primBbox, clipVertexList[k]);
+			assert (primBbox.IsValid());
+
+			leftPrimsBbox.push_back(primBbox);
+		}
+
+		if (primsBboxes[i].pMax[spatialSplitAxis] > spatialSplitPos) {
+			rightPrimsIndexes.push_back(primIndex);
+
+			// Clip triangle with right bounding box
+			vector<Point> vertexList = GetPolygonVertexList(vPrims[primIndex].get());
+			assert (vertexList.size() > 0);
+
+			vector<Point> clipVertexList = spatialRightChildBbox.ClipPolygon(vertexList);
+			assert (clipVertexList.size() > 0);
+
+			// Compute the bounding box of the clipped triangle
+			BBox primBbox;
+			for (u_int k = 0; k < clipVertexList.size(); ++k)
+				primBbox = Union(primBbox, clipVertexList[k]);
+			assert (primBbox.IsValid());
+			rightPrimsBbox.push_back(primBbox);
+		}
+	}
+
+	assert (leftPrimsIndexes.size() == spatialLeftChildReferences);
+	assert (rightPrimsIndexes.size() == spatialRightChildReferences);
+
+	++spatialSplitCount;
 }
 
 vector<Point> SQBVHAccel::GetPolygonVertexList(const Primitive *prim) const {
@@ -411,8 +440,8 @@ float SQBVHAccel::BuildSpatialSplit(const std::vector<u_int> &primsIndexes,
 	const float k0 = nodeBbox.pMin[axis];
 	const float k1 = (nodeBbox.pMax[axis] - k0) / SPATIAL_SPLIT_BINS;
 
-	// If the bbox is a point or just too small
-	if (k1 < 0.01f)
+	// If the bounding box is a point
+	if (k1 == .0f)
 		return std::numeric_limits<float>::quiet_NaN();
 
 	// Entry and Exit counters as described in SBVH paper

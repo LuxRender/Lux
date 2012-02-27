@@ -32,23 +32,6 @@ namespace lux
 // The number of bins for spatial split
 #define SPATIAL_SPLIT_BINS 64
 
-class SBVHNode {
-public:
-	SBVHNode() {
-		// All children are empty leaves by default
-		for (int i = 0; i < 4; ++i)
-			childs[i] = NULL;
-	}
-	~SBVHNode() {
-		for (int i = 0; i < 4; ++i)
-			delete childs[i];
-	}
-
-	BBox childBboxes[4];
-	SBVHNode *childs[4];
-	std::vector<u_int> childPrims[4];
-};
-
 class SQBVHAccel : public QBVHAccel {
 public:
 	/**
@@ -86,6 +69,19 @@ private:
 		u_int &spatialLeftChildReferences, u_int &spatialRightChildReferences);
 
 	float BuildObjectSplit(const std::vector<BBox> &primsBboxes, int &axis);
+
+	void DoObjectSplit(const std::vector<u_int> &primsIndexes, const std::vector<BBox> &primsBboxes,
+		const float objectSplitPos, const int objectSplitAxis,
+		const u_int objectLeftChildReferences, const u_int objectRightChildReferences,
+		std::vector<u_int> &leftPrimsIndexes, std::vector<u_int> &rightPrimsIndexes,
+		std::vector<BBox> &leftPrimsBbox, std::vector<BBox> &rightPrimsBbox);
+	void DoSpatialSplit(const std::vector<u_int> &primsIndexes,
+		const vector<boost::shared_ptr<Primitive> > &vPrims, const std::vector<BBox> &primsBboxes,
+		const float spatialSplitPos, const int spatialSplitAxis,
+		const u_int spatialLeftChildReferences, const u_int spatialRightChildReferences,
+		std::vector<u_int> &leftPrimsIndexes, std::vector<u_int> &rightPrimsIndexes,
+		std::vector<BBox> &leftPrimsBbox, std::vector<BBox> &rightPrimsBbox,
+		BBox &spatialLeftChildBbox, BBox &spatialRightChildBbox);
 
 	vector<Point> GetPolygonVertexList(const Primitive *prim) const;
 	
