@@ -440,8 +440,8 @@ float SQBVHAccel::BuildSpatialSplit(const std::vector<u_int> &primsIndexes,
 	const float k0 = nodeBbox.pMin[axis];
 	const float k1 = (nodeBbox.pMax[axis] - k0) / SPATIAL_SPLIT_BINS;
 
-	// If the bounding box is a point
-	if (k1 == .0f)
+	// If the bounding box is a point or too small anyway
+	if (k1 < .01f)
 		return std::numeric_limits<float>::quiet_NaN();
 
 	// Entry and Exit counters as described in SBVH paper
@@ -497,7 +497,7 @@ float SQBVHAccel::BuildSpatialSplit(const std::vector<u_int> &primsIndexes,
 			// Clip triangle with bin bounding box
 			vector<Point> clipVertexList = binsBbox[j].ClipPolygon(vertexList);
 			assert (clipVertexList.size() != 0);
-				
+
 			// Compute the bounding box of the clipped triangle
 			BBox binPrimBbox;
 			for (u_int k = 0; k < clipVertexList.size(); ++k) {
@@ -510,7 +510,7 @@ float SQBVHAccel::BuildSpatialSplit(const std::vector<u_int> &primsIndexes,
 				binPrimBbox = Union(binPrimBbox, clipVertexList[k]);
 			}
 			assert (binPrimBbox.IsValid());
-			
+
 			binsPrimBbox[j] = Union(binsPrimBbox[j], binPrimBbox);
 		}
 
@@ -604,6 +604,43 @@ float SQBVHAccel::BuildSpatialSplit(const std::vector<u_int> &primsIndexes,
 		assert (rightRef == nbPrimsRight[i + 1]);
 	}
 #endif
+
+	//--------------------------------------------------------------------------
+	// Reference unsplitting
+	//--------------------------------------------------------------------------
+
+	/*const float spatialSplitCost = leftChildBBox.SurfaceArea() * QuadCount(spatialLeftChildReferences) +
+				rightChildBBox.SurfaceArea() * QuadCount(spatialRightChildReferences);
+
+	for (u_int i = 0; i < primsIndexes.size(); ++i) {
+		const bool overlapLeft = (primsBboxes[i].pMin[axis] <= splitPos);
+		const bool overlapRight = (primsBboxes[i].pMax[axis] > splitPos);
+
+		if (overlapLeft && overlapRight) {
+			// Check if it is worth applying reference unsplitting
+
+			assert (spatialLeftChildReferences > 0);
+			assert (spatialRightChildReferences > 0);
+
+			BBox extendedLeftChildBBox = Union(leftChildBBox, primsBboxes[i]);
+			const float c1 = extendedLeftChildBBox.SurfaceArea() * QuadCount(spatialLeftChildReferences) +
+				rightChildBBox.SurfaceArea() * QuadCount(spatialRightChildReferences - 1);
+
+			BBox extendedRightChildBBox = Union(rightChildBBox, primsBboxes[i]);
+			const float c2 = leftChildBBox.SurfaceArea() * QuadCount(spatialLeftChildReferences - 1) +
+				extendedRightChildBBox.SurfaceArea() * QuadCount(spatialRightChildReferences);
+
+			if (c1 < spatialSplitCost) {
+				// Put the primitive only in left child
+				leftChildBBox = extendedLeftChildBBox;
+			}
+
+			if (c2 < spatialSplitCost) {
+				// Put the primitive only in right child
+				rightChildBBox = extendedRightChildBBox;
+			}
+		}
+	}*/
 
 	return splitPos;
 }

@@ -304,7 +304,7 @@ ELSEIF(MSVC)
 	
 ELSE(APPLE)
 	# Dade - default compiler options
-	ADD_DEFINITIONS(-O0 -g -msse2 -mfpmath=sse -ftree-vectorize -fvisibility=hidden -fvisibility-inlines-hidden -funroll-loops -Wall -fPIC -DHAVE_PTHREAD_H)
+	ADD_DEFINITIONS(-O3 -msse2 -mfpmath=sse -ftree-vectorize -fvisibility=hidden -fvisibility-inlines-hidden -funroll-loops -Wall -fPIC -DHAVE_PTHREAD_H)
 	# The QBVH accelerator needs to be compiled with much reduced optimizations
 	# otherwise gcc produces incorrect code and ruins the render on 64bits machines
 	SET_SOURCE_FILES_PROPERTIES(accelerators/qbvhaccel.cpp COMPILE_FLAGS "-O1")
