@@ -138,7 +138,6 @@ IF(APPLE)
 		elseif(HAS_SSE MATCHES 4.1)
 			SET(CMAKE_XCODE_ATTRIBUTE_GCC_ENABLE_SSE41_EXTENSIONS YES)
 		endif()
-
 	endif()
 
 	SET(CMAKE_XCODE_ATTRIBUTE_ARCHS i386\ x86_64) # valid arches
@@ -250,11 +249,8 @@ ADD_DEFINITIONS(-DLUX_USE_CONFIG_H)
 
 IF(APPLE)
 	# Jens - default Mac compiler options
-	ADD_DEFINITIONS(-DHAVE_PTHREAD_H) # global compile definitions
-	set(OSX_FLAGS_DEBUG "-fvisibility=hidden -fvisibility-inlines-hidden -Wall")
-	set(OSX_FLAGS_RELEASE "-ftree-vectorize -msse -msse2 -msse3 -mssse3 -fvariable-expansion-in-unroller -fvisibility=hidden -fvisibility-inlines-hidden -Wall")
-	set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${OSX_FLAGS_DEBUG}")
-	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${OSX_FLAGS_DEBUG}")
+	ADD_DEFINITIONS(-fvisibility=hidden -fvisibility-inlines-hidden -Wall -DHAVE_PTHREAD_H) # global compile definitions
+	set(OSX_FLAGS_RELEASE "-ftree-vectorize -msse -msse2 -msse3 -mssse3 -fvariable-expansion-in-unroller")
 	set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} ${OSX_FLAGS_RELEASE}")
 	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${OSX_FLAGS_RELEASE}")
 ELSEIF(MSVC)
