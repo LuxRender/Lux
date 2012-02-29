@@ -66,9 +66,10 @@ private:
 		const vector<boost::shared_ptr<Primitive> > &vPrims,
 		const std::vector<BBox> &primsBboxes, const BBox &nodeBbox,
 		int &axis, BBox &leftChildBBox, BBox &rightChildBBox,
-		u_int &spatialLeftChildReferences, u_int &spatialRightChildReferences);
-
-	float BuildObjectSplit(const std::vector<BBox> &primsBboxes, int &axis);
+		u_int &leftChildReferences, u_int &rightChildReferences);
+	float BuildObjectSplit(const std::vector<BBox> &primsBboxes, int &axis,
+		BBox &leftChildBBox, BBox &rightChildBBox,
+		u_int &leftChildReferences, u_int &rightChildReferences);
 
 	void DoObjectSplit(const std::vector<u_int> &primsIndexes, const std::vector<BBox> &primsBboxes,
 		const float objectSplitPos, const int objectSplitAxis,
