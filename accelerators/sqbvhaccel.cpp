@@ -83,7 +83,7 @@ SQBVHAccel::SQBVHAccel(const vector<boost::shared_ptr<Primitive> > &p,
 	worldBound.Expand(MachineEpsilon::E(worldBound));
 
 	// Recursively build the tree
-	LOG(LUX_DEBUG,LUX_NOERROR) << "Building SQBVH, primitives: " << nPrims << ", initial nodes: " << maxNodes;
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Building SQBVH, primitives: " << nPrims << ", initial nodes: " << maxNodes;
 
 	nNodes = 0;
 	nQuads = 0;
@@ -128,7 +128,7 @@ SQBVHAccel::SQBVHAccel(const vector<boost::shared_ptr<Primitive> > &p,
 		nodesPrims[i].clear();
 	
 	PreSwizzle(0, primsIndexes, vPrims);
-	LOG(LUX_DEBUG,LUX_NOERROR) << "SQBVH completed with " << nNodes << "/" << maxNodes << " nodes";
+	LOG(LUX_DEBUG, LUX_NOERROR) << "SQBVH completed with " << nNodes << "/" << maxNodes << " nodes";
 	
 	// Collect statistics
 	SAHCost = 0.f;
@@ -472,32 +472,34 @@ float SQBVHAccel::BuildSpatialSplit(const std::vector<u_int> &primsIndexes,
 			vector<Point> vertexList = GetPolygonVertexList(vPrims[primsIndexes[i]].get());
 			// Safety check
 			if (vertexList.size() == 0) {
-				// SQBVH is able to work only with triangles, it will fall back to
-				// standard object split in the case a no-triangle primitive is
-				// found
-				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "A primitive of type " << typeid(*(vPrims[primsIndexes[i]].get())).name() <<
-						", used in a SQBVH, isn't a triangle, falling back to 'object split'-only building";
-				return std::numeric_limits<float>::quiet_NaN();
-			}
+				// SQBVH is able to work only with triangles, I will clip the
+				// bounding box instead of the primitive
+				LOG(LUX_INFO, LUX_UNIMPLEMENT) << "A primitive of type " << typeid(*(vPrims[primsIndexes[i]].get())).name() <<
+						", used in a SQBVH, isn't a triangle, falling back to bounding box clipping for building";
 
-			// Clip triangle with bin bounding box
-			vector<Point> clipVertexList = binsBbox[j].ClipPolygon(vertexList);
-			assert (clipVertexList.size() != 0);
+				BBox binPrimBbox = primsBboxes[i];
+				binPrimBbox.pMax[axis] = binsBbox[j].pMax[axis];
+				binsPrimBbox[j] = Union(binsPrimBbox[j], binPrimBbox);
+			} else {
+				// Clip triangle with bin bounding box
+				vector<Point> clipVertexList = binsBbox[j].ClipPolygon(vertexList);
+				assert (clipVertexList.size() != 0);
 
-			// Compute the bounding box of the clipped triangle
-			BBox binPrimBbox;
-			for (u_int k = 0; k < clipVertexList.size(); ++k) {
+				// Compute the bounding box of the clipped triangle
+				BBox binPrimBbox;
+				for (u_int k = 0; k < clipVertexList.size(); ++k) {
 #if !defined(NDEBUG)
-				// Safety check
-				BBox binBbox = binsBbox[j];
-				binBbox.Expand(MachineEpsilon::E(binBbox));
-				assert (binBbox.Inside(clipVertexList[k]));
+					// Safety check
+					BBox binBbox = binsBbox[j];
+					binBbox.Expand(MachineEpsilon::E(binBbox));
+					assert (binBbox.Inside(clipVertexList[k]));
 #endif
-				binPrimBbox = Union(binPrimBbox, clipVertexList[k]);
-			}
-			assert (binPrimBbox.IsValid());
+					binPrimBbox = Union(binPrimBbox, clipVertexList[k]);
+				}
+				assert (binPrimBbox.IsValid());
 
-			binsPrimBbox[j] = Union(binsPrimBbox[j], binPrimBbox);
+				binsPrimBbox[j] = Union(binsPrimBbox[j], binPrimBbox);
+			}
 		}
 
 		assert (entryFound);
