@@ -379,8 +379,8 @@ protected:
 	void CreateSwizzledLeaf(int32_t parentIndex, int32_t childIndex, 
 		const u_int *primsIndexes, const vector<boost::shared_ptr<Primitive> > &vPrims);
 
-	void CollectStatistics(const int32_t nodeIndex, const u_int depth,
-		const float parentSA, const BBox &nodeBBox);
+	float CollectStatistics(const int32_t nodeIndex, const u_int depth,
+		const BBox &nodeBBox);
 
 	/**
 	   the actual number of quads

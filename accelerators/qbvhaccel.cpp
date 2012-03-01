@@ -333,12 +333,12 @@ QBVHAccel::QBVHAccel(const vector<boost::shared_ptr<Primitive> > &p,
 	LOG(LUX_DEBUG,LUX_NOERROR) << "QBVH completed with " << nNodes << "/" << maxNodes << " nodes";
 	
 	// Collect statistics
-	SAHCost = 0.f;
 	maxDepth = 0;
 	nodeCount = 0;
 	noEmptyLeafCount = 0;
 	emptyLeafCount = 0;
-	CollectStatistics(0, 0, worldBound.SurfaceArea(), worldBound);
+	primReferences = 0;
+	SAHCost = CollectStatistics(0, 0, worldBound);
 	avgLeafPrimReferences = primReferences / noEmptyLeafCount;
 	
 	// Print the statistics
@@ -356,14 +356,15 @@ QBVHAccel::QBVHAccel(const vector<boost::shared_ptr<Primitive> > &p,
 	delete[] primsIndexes;
 }
 
-void QBVHAccel::CollectStatistics(const int32_t nodeIndex, const u_int depth,
-		const float rootSA, const BBox &nodeBBox) {
+float QBVHAccel::CollectStatistics(const int32_t nodeIndex, const u_int depth,
+		const BBox &nodeBBox) {
 	maxDepth = max(maxDepth, depth);
 	++nodeCount;
 
 	const QBVHNode &node = nodes[nodeIndex];
 
-	SAHCost += 1.f; // 1.f => Ct, the cost of traversing a node
+	float cost = 1.f; // 1.f => Ct, the cost of traversing a node
+	const float nodeSA = nodeBBox.SurfaceArea();
 	for (int i = 0; i < 4; ++i) {
 		BBox childBBox;
 		childBBox = node.GetBBox(i);
@@ -375,13 +376,18 @@ void QBVHAccel::CollectStatistics(const int32_t nodeIndex, const u_int depth,
 				++noEmptyLeafCount;
 				const u_int nPrims = node.NbPrimitivesInLeaf(i);
 				primReferences += nPrims;
-				SAHCost += (childBBox.SurfaceArea() / rootSA) * nPrims; // * 1.f => Ci, the cost of intersecting
+				// The classic SAH (Surface Area Heuristic)
+				cost += (childBBox.SurfaceArea() / nodeSA) * nPrims; // * 1.f => Ci, the cost of intersecting
 			}
 		} else {
-			SAHCost += childBBox.SurfaceArea() / rootSA;
-			CollectStatistics(node.children[i], depth + 1, rootSA, childBBox);
+			// The probability to intersect the child node multiplied for the cost
+			// of traveling the child node
+			cost += childBBox.SurfaceArea() / nodeSA *
+					CollectStatistics(node.children[i], depth + 1, childBBox);
 		}
 	}
+
+	return cost;
 }
 
 /***************************************************/
