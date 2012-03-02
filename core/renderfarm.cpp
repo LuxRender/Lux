@@ -534,21 +534,19 @@ void RenderFarm::updateLog() {
 
 			stream.close();
 
-			//serverInfoList[i].log = log.str();
-
 			while (log.good()) {
 				int code, severity;
 				string message;
 
-				log >> code;
 				log >> severity;
+				log >> code;
 				log >> std::ws;
 				getline(log, message);
 
 				if (message == "")
 					continue;
 
-				LOG(code, severity) << "[" << serverInfoList[i].name << ":" << serverInfoList[i].port << "] " 
+				LOG(severity, code) << "[" << serverInfoList[i].name << ":" << serverInfoList[i].port << "] " 
 					<< message;
 			}
 

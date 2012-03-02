@@ -718,7 +718,7 @@ void cmd_luxGetLog(bool isLittleEndian, NetworkRenderServerThread *serverThread,
 
 		for (vector<RenderServer::ErrorMessage>::iterator it = serverThread->renderServer->errorMessages.begin(); it != serverThread->renderServer->errorMessages.end(); ++it) {
 			stringstream ss("");
-			ss << it->code << " " << it->severity << " " << it->message << "\n";
+			ss << it->severity << " " << it->code << " " << it->message << "\n";
 			stream << ss.str();
 		}
 
