@@ -103,6 +103,7 @@ ProjectionLight::ProjectionLight(const Transform &light2world,
 		float g, const string &texname,
 		float fov, bool sup)
 	: Light(light2world), Lbase(L) {
+	support = sup;
 	lightPos = LightToWorld(Point(0,0,0));
 	Lbase->SetIlluminant();
 	gain = g;

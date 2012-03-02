@@ -245,6 +245,7 @@ SkyLight::SkyLight(const Transform &light2world, float skyscale, u_int ns,
 	Vector sd, float turb,
 	float aconst, float bconst, float cconst, float dconst, float econst, bool sup)
 	: Light(light2world, ns) {
+	support = sup;
 	skyScale = skyscale;
 	sundir = sd;
 	turbidity = turb;

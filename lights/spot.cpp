@@ -83,6 +83,7 @@ SpotLight::SpotLight(const Transform &light2world,
 	float g, float power, float efficacy, float width, float fall, bool sup)
 	: Light(light2world), Lbase(L), gain(g)
 {
+	support = sup;
 	lightPos = LightToWorld(Point(0,0,0));
 
 	cosTotalWidth = cosf(Radians(width));

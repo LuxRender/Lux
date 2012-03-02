@@ -142,6 +142,7 @@ PointLight::PointLight(const Transform &light2world,
 	SampleableSphericalFunction *ssf, bool sup) :
 	Light(light2world), Lbase(L), gain(g), func(ssf)
 {
+	support = sup;
 	lightPos = LightToWorld(Point(0,0,0));
 	Lbase->SetIlluminant(); // Illuminant must be set before calling Le->Y()
 	const float gainFactor = power * efficacy / (4.f * M_PI * Lbase->Y());

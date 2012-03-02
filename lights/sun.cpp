@@ -107,6 +107,7 @@ protected:
 SunLight::SunLight(const Transform &light2world, const float sunscale,
 	const Vector &dir, float turb , float relSize, u_int ns, bool sup)
 	: Light(light2world, ns) {
+	support = sup;
 	sundir = Normalize(LightToWorld(dir));
 	turbidity = turb;
 
