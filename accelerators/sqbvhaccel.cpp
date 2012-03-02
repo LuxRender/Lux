@@ -745,8 +745,8 @@ float SQBVHAccel::BuildObjectSplit(const std::vector<BBox> &primsBboxes, int &ax
 	leftChildReferences = nbPrimsLeft[minBin];
 	rightChildReferences = nbPrimsRight[minBin + 1];
 
-	assert ((leftChildReferences == 0) || leftChildBbox.IsValid());
-	assert ((rghtChildReferences == 0) || rightChildBbox.IsValid());
+	assert ((leftChildReferences == 0) || leftChildBBox.IsValid());
+	assert ((rightChildReferences == 0) || rightChildBBox.IsValid());
 
 	//-----------------
 	// Make the partition, in a "quicksort partitioning" way,
