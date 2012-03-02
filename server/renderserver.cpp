@@ -388,6 +388,8 @@ void cmd_ServerDisconnect(bool isLittleEndian, NetworkRenderServerThread *server
 	if (!serverThread->renderServer->validateAccess(stream))
 		return;
 
+	LOG( LUX_INFO,LUX_NOERROR) << "Master ended session, cleaning up";
+
 	// Dade - stop the rendering and cleanup
 	luxExit();
 	luxWait();
@@ -398,6 +400,7 @@ void cmd_ServerDisconnect(bool isLittleEndian, NetworkRenderServerThread *server
 		remove(tmpFileList[i]);
 
 	serverThread->renderServer->setServerState(RenderServer::READY);
+	LOG( LUX_INFO,LUX_NOERROR) << "Server ready";
 }
 void cmd_ServerConnect(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
 //case CMD_SERVER_CONNECT:
