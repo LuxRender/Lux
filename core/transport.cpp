@@ -348,103 +348,105 @@ SWCSpectrum EstimateDirect(const Scene &scene, const Light &light,
 {
 	SWCSpectrum Ld(0.f);
 
-	if (to_IsSup && ( path_type || rayDepth == 0 ) ) {
-		// Check if MIS is needed
-		const BxDFType noDiffuse = BxDFType(BSDF_ALL & ~(BSDF_DIFFUSE));
-		const bool mis = !(light.IsDeltaLight()) &&
-			(bsdf->NumComponents(noDiffuse) > 0);
-		// Trace a shadow ray by sampling the light source
-		float lightPdf;
-		SWCSpectrum Li;
-		BSDF *lightBsdf;
-		if (light.SampleL(scene, sample, p, ls1, ls2, ls3,
-			&lightBsdf, NULL, &lightPdf, &Li)) {
-			const Point &pL(lightBsdf->dgShading.p);
-			const Vector wi0(pL - p);
-			const Volume *volume = bsdf->GetVolume(wi0);
-			if (!volume)
-				volume = lightBsdf->GetVolume(-wi0);
-			if(!mis) {
-				if (scene.Connect(sample, volume, bsdf->dgShading.scattered,
-					false, p, pL, false, &Li, NULL, NULL, true)) {
-					const float d2 = wi0.LengthSquared();
-					const Vector wi(wi0 / sqrtf(d2));
-					Li *= lightBsdf->F(sample.swl, Vector(lightBsdf->nn), -wi, false);
-					Li *= bsdf->F(sample.swl, wi, wo, true);
-					if (!Li.Black()) {
-						// Add light's contribution
-						Ld += bsdf->Bcolor * AbsDot (wi, Vector(bsdf->nn));
-					}
-				}
-			} else {
-				if (rayDepth > 0) {
-					if (scene.Connect(sample, volume, bsdf->dgShading.scattered,
-						false, p, pL, false, &Li, NULL, NULL, false)) {
-						const float d2 = wi0.LengthSquared();
-						const Vector wi(wi0 / sqrtf(d2));
-						Li *= lightBsdf->F(sample.swl, Vector(lightBsdf->nn), -wi, false);
-						Li *= bsdf->F(sample.swl, wi, wo, true);
-						if (!Li.Black()) {
-							const float bsdfPdf = bsdf->Pdf(sample.swl,wo, wi);
-							Li *= PowerHeuristic(1, lightPdf * d2 /
-								AbsDot(wi, lightBsdf->nn), 1, bsdfPdf);
-
-							// Add light's contribution
-							Ld += bsdf->Bcolor * AbsDot (wi, n);
-							Ld += Li / d2;
-						}
-					}
-				} else {
+	if ( to_IsSup ) {
+		if ( path_type || rayDepth == 0 ) {
+			// Check if MIS is needed
+			const BxDFType noDiffuse = BxDFType(BSDF_ALL & ~(BSDF_DIFFUSE));
+			const bool mis = !(light.IsDeltaLight()) &&
+				(bsdf->NumComponents(noDiffuse) > 0);
+			// Trace a shadow ray by sampling the light source
+			float lightPdf;
+			SWCSpectrum Li;
+			BSDF *lightBsdf;
+			if (light.SampleL(scene, sample, p, ls1, ls2, ls3,
+				&lightBsdf, NULL, &lightPdf, &Li)) {
+				const Point &pL(lightBsdf->dgShading.p);
+				const Vector wi0(pL - p);
+				const Volume *volume = bsdf->GetVolume(wi0);
+				if (!volume)
+					volume = lightBsdf->GetVolume(-wi0);
+				if(!mis) {
 					if (scene.Connect(sample, volume, bsdf->dgShading.scattered,
 						false, p, pL, false, &Li, NULL, NULL, true)) {
 						const float d2 = wi0.LengthSquared();
 						const Vector wi(wi0 / sqrtf(d2));
 						Li *= lightBsdf->F(sample.swl, Vector(lightBsdf->nn), -wi, false);
-						Li = bsdf->F(sample.swl, wi, wo, true);
+						Li *= bsdf->F(sample.swl, wi, wo, true);
 						if (!Li.Black()) {
-							const float bsdfPdf = bsdf->Pdf(sample.swl, wo, wi);
-							Li *= PowerHeuristic(1, lightPdf * d2 /
-								AbsDot(wi, lightBsdf->nn), 1, bsdfPdf);
-
 							// Add light's contribution
-							Ld += bsdf->Bcolor * AbsDot (wi, n);
+							Ld += bsdf->Bcolor * AbsDot (wi, Vector(bsdf->nn));
+						}
+					}
+				} else {
+					if (rayDepth > 0) {
+						if (scene.Connect(sample, volume, bsdf->dgShading.scattered,
+							false, p, pL, false, &Li, NULL, NULL, false)) {
+							const float d2 = wi0.LengthSquared();
+							const Vector wi(wi0 / sqrtf(d2));
+							Li *= lightBsdf->F(sample.swl, Vector(lightBsdf->nn), -wi, false);
+							Li *= bsdf->F(sample.swl, wi, wo, true);
+							if (!Li.Black()) {
+								const float bsdfPdf = bsdf->Pdf(sample.swl,wo, wi);
+								Li *= PowerHeuristic(1, lightPdf * d2 /
+									AbsDot(wi, lightBsdf->nn), 1, bsdfPdf);
+
+								// Add light's contribution
+								Ld += bsdf->Bcolor * AbsDot (wi, n);
+								Ld += Li / d2;
+							}
+						}
+					} else {
+						if (scene.Connect(sample, volume, bsdf->dgShading.scattered,
+							false, p, pL, false, &Li, NULL, NULL, true)) {
+							const float d2 = wi0.LengthSquared();
+							const Vector wi(wi0 / sqrtf(d2));
+							Li *= lightBsdf->F(sample.swl, Vector(lightBsdf->nn), -wi, false);
+							Li = bsdf->F(sample.swl, wi, wo, true);
+							if (!Li.Black()) {
+								const float bsdfPdf = bsdf->Pdf(sample.swl, wo, wi);
+								Li *= PowerHeuristic(1, lightPdf * d2 /
+									AbsDot(wi, lightBsdf->nn), 1, bsdfPdf);
+
+								// Add light's contribution
+								Ld += bsdf->Bcolor * AbsDot (wi, n);
+							}
 						}
 					}
 				}
 			}
-		}
-		if (mis) {
-			// Trace a second shadow ray by sampling the BSDF
-			Vector wi;
-			float bsdfPdf;
-			BxDFType sampledType;
-			if (bsdf->SampleF(sample.swl, wo, &wi, bs1, bs2, bcs,
-				&Li, &bsdfPdf, BSDF_ALL, &sampledType, NULL, true) &&
-				(sampledType & BSDF_SPECULAR) == 0) {
-				// Add light contribution from BSDF sampling
-				Intersection lightIsect;
-				Ray ray(p, wi);
-				ray.time = sample.time;
-				BSDF *ibsdf;
-				const Volume *volume = bsdf->GetVolume(wi);
-				bool lit = false;
-				if (!scene.Intersect(sample, volume,
-					bsdf->dgShading.scattered, ray, 1.f,
-					&lightIsect, &ibsdf, NULL, NULL, &Li)) {
-					lit = light.Le(scene, sample, ray, &lightBsdf,
-					NULL, &lightPdf, &Li);
-					if (rayDepth == 0)
-						Li *= 0.f;
-				}
-				else if (lightIsect.arealight == &light) {
-					Li *= lightIsect.Le(sample, ray, &lightBsdf, NULL, &lightPdf);
-					lit = !Li.Black();
-				}
-				if (lit) {
-					const float d2 = DistanceSquared(p, lightBsdf->dgShading.p);
-					const float lightPdf2 = lightPdf * d2 /	AbsDot(wi, lightBsdf->nn);
-					const float weight = PowerHeuristic(1, bsdfPdf,	1, lightPdf2);
-					Ld += Li * weight;
+			if (mis) {
+				// Trace a second shadow ray by sampling the BSDF
+				Vector wi;
+				float bsdfPdf;
+				BxDFType sampledType;
+				if (bsdf->SampleF(sample.swl, wo, &wi, bs1, bs2, bcs,
+					&Li, &bsdfPdf, BSDF_ALL, &sampledType, NULL, true) &&
+					(sampledType & BSDF_SPECULAR) == 0) {
+					// Add light contribution from BSDF sampling
+					Intersection lightIsect;
+					Ray ray(p, wi);
+					ray.time = sample.time;
+					BSDF *ibsdf;
+					const Volume *volume = bsdf->GetVolume(wi);
+					bool lit = false;
+					if (!scene.Intersect(sample, volume,
+						bsdf->dgShading.scattered, ray, 1.f,
+						&lightIsect, &ibsdf, NULL, NULL, &Li)) {
+						lit = light.Le(scene, sample, ray, &lightBsdf,
+						NULL, &lightPdf, &Li);
+						if (rayDepth == 0)
+							Li *= 0.f;
+					}
+					else if (lightIsect.arealight == &light) {
+						Li *= lightIsect.Le(sample, ray, &lightBsdf, NULL, &lightPdf);
+						lit = !Li.Black();
+					}
+					if (lit) {
+						const float d2 = DistanceSquared(p, lightBsdf->dgShading.p);
+						const float lightPdf2 = lightPdf * d2 /	AbsDot(wi, lightBsdf->nn);
+						const float weight = PowerHeuristic(1, bsdfPdf,	1, lightPdf2);
+						Ld += Li * weight;
+					}
 				}
 			}
 		}
