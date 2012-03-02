@@ -1122,6 +1122,10 @@ extern "C" void luxErrorFilter(int severity)
 	lux::luxLogFilter=severity;
 }
 
+extern "C" int luxGetErrorFilter()
+{
+	return lux::luxLogFilter;
+}
 
 // The internal error handling function. It can be changed through the
 // API and allows to perform filtering on the errors by using the

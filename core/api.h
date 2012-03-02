@@ -316,6 +316,7 @@ LUX_EXPORT void luxDisableRandomMode();
 /* Error Handlers */
 LUX_EXPORT extern int luxLastError; /*  Keeps track of the last error code */
 LUX_EXPORT extern void luxErrorFilter(int severity); /* Sets the minimal level of severity to report */
+LUX_EXPORT extern int luxGetErrorFilter(); /* Gets the minimal level of severity to report */
 typedef void (*LuxErrorHandler)(int code, int severity, const char *msg);
 LUX_EXPORT extern void luxErrorHandler(LuxErrorHandler handler);
 LUX_EXPORT extern void luxErrorAbort(int code, int severity, const char *message);
