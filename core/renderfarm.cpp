@@ -534,6 +534,8 @@ void RenderFarm::updateLog() {
 
 			stream.close();
 
+			int severityFilter = luxGetErrorFilter();
+
 			while (log.good()) {
 				int code, severity;
 				string message;
@@ -544,6 +546,10 @@ void RenderFarm::updateLog() {
 				getline(log, message);
 
 				if (message == "")
+					continue;
+
+				// unless we're running in verbose mode, filter away debug and info messages from slaves
+				if (severityFilter > LUX_DEBUG && severity < max(LUX_WARNING, severityFilter))
 					continue;
 
 				LOG(severity, code) << "[" << serverInfoList[i].name << ":" << serverInfoList[i].port << "] " 
