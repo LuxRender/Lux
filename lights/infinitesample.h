@@ -35,7 +35,7 @@ public:
 	// InfiniteAreaLightIS Public Methods
 	InfiniteAreaLightIS(const Transform &light2world, const RGBColor &l,
 		u_int ns, int LNs, const string &texmap, u_int imr, EnvironmentMapping *m,
-		float gain, float gamma);
+		float gain, float gamma, bool sup);
 	virtual ~InfiniteAreaLightIS();
 	virtual float Power(const Scene &scene) const {
 		Point worldCenter;
@@ -44,6 +44,7 @@ public:
 		return SPDbase.Y() * mean_y * M_PI * worldRadius * worldRadius;
 	}
 	virtual float DirProb(Vector N) const;
+	virtual bool IsSupport() const { return support; }
 	virtual bool IsDeltaLight() const { return false; }
 	virtual bool IsEnvironmental() const { return true; }
 	virtual bool Le(const Scene &scene, const Sample &sample, const Ray &r,
@@ -70,6 +71,7 @@ private:
 	Distribution2D *uvDistrib;
 	float mean_y;
 	u_int support_sample;
+	bool support;
 };
 
 }

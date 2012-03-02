@@ -33,8 +33,9 @@ public:
 	// SkyLight Public Methods
 	SkyLight(const Transform &light2world, float skyscale, u_int ns,
 		Vector sd, float turb, float aconst, float bconst,
-		float cconst, float dconst, float econst);
+		float cconst, float dconst, float econst, bool sup);
 	virtual ~SkyLight();
+	virtual bool IsSupport() const { return support; }
 	virtual float Power(const Scene &scene) const;
 	virtual bool IsDeltaLight() const { return false; }
 	virtual bool IsEnvironmental() const { return true; }
@@ -55,6 +56,7 @@ public:
 		const ParamSet &paramSet);
 
 private:
+	bool support;
 	// internal methods
 	Vector GetSunPosition() const;
 	void SunThetaPhi(float &theta, float &phi) const;

@@ -35,8 +35,9 @@ public:
 	// ProjectionLight Public Methods
 	ProjectionLight(const Transform &light2world, 
 		const boost::shared_ptr< Texture<SWCSpectrum> > &L, float gain,
-		const string &texname, float fov);
+		const string &texname, float fov, bool sup);
 	virtual ~ProjectionLight();
+	virtual bool IsSupport() const { return support; }
 	virtual bool IsDeltaLight() const { return true; }
 	virtual bool IsEnvironmental() const { return false; }
 	virtual float Power(const Scene &) const {
@@ -64,6 +65,7 @@ private:
 	float hither, yon;
 	float screenX0, screenX1, screenY0, screenY1, area;
 	float cosTotalWidth;
+	bool support;
 };
 
 }//namespace lux

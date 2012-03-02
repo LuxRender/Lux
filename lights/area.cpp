@@ -190,6 +190,11 @@ AreaLight::~AreaLight()
 	delete func;
 }
 
+bool AreaLight::IsSupport() const
+{
+	return prim->IsSupport();
+}
+
 float AreaLight::Power(const Scene &scene) const
 {
 	return gain * area * M_PI * Le->Y();

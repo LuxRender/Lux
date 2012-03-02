@@ -33,8 +33,9 @@ public:
 	// PointLight Public Methods
 	PointLight(const Transform &light2world, 
 		const boost::shared_ptr< Texture<SWCSpectrum> > &L, float gain,
-		float power, float efficacy, SampleableSphericalFunction *ssf);
+		float power, float efficacy, SampleableSphericalFunction *ssf, bool sup);
 	virtual ~PointLight();
+	virtual bool IsSupport() const { return support; }
 	virtual bool IsDeltaLight() const { return true; }
 	virtual bool IsEnvironmental() const { return false; }
 	virtual float Power(const Scene &) const;
@@ -54,6 +55,7 @@ private:
 	boost::shared_ptr< Texture<SWCSpectrum> > Lbase;
 	float gain;
 	SampleableSphericalFunction *func;
+	bool support;
 };
 
 }//namespace lux

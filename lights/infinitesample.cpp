@@ -117,9 +117,10 @@ InfiniteAreaLightIS::~InfiniteAreaLightIS() {
 }
 InfiniteAreaLightIS::InfiniteAreaLightIS(const Transform &light2world,
 	const RGBColor &l, u_int ns, int LNs, const string &texmap, u_int immaxres,
-	EnvironmentMapping *m, float gain, float gamma)
+	EnvironmentMapping *m, float gain, float gamma, bool sup )
 	: Light(light2world, ns), SPDbase(l)
 {
+	support = sup;
 	// Base illuminant SPD
 	SPDbase.Scale(gain);
 
@@ -341,6 +342,7 @@ Light* InfiniteAreaLightIS::CreateLight(const Transform &light2world,
 	int nSamples = paramSet.FindOneInt("nsamples", 1);
 	int LNsamples= paramSet.FindOneInt("LNsamples", 9);
 	int imapmaxres = paramSet.FindOneInt("imapmaxresolution", 500);
+	bool sup = paramSet.FindOneBool("support", false);
 
 	EnvironmentMapping *map = NULL;
 	string type = paramSet.FindOneString("mapping", "");
@@ -355,7 +357,7 @@ Light* InfiniteAreaLightIS::CreateLight(const Transform &light2world,
 	float gain = paramSet.FindOneFloat("gain", 1.0f);
 	float gamma = paramSet.FindOneFloat("gamma", 1.0f);
 
-	InfiniteAreaLightIS *l = new InfiniteAreaLightIS(light2world, L, nSamples, LNsamples, texmap, imapmaxres, map, gain, gamma);
+	InfiniteAreaLightIS *l = new InfiniteAreaLightIS(light2world, L, nSamples, LNsamples, texmap, imapmaxres, map, gain, gamma, sup);
 	l->hints.InitParam(paramSet);
 	return l;
 }

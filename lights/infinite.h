@@ -36,9 +36,10 @@ public:
 	// InfiniteAreaLight Public Methods
 	InfiniteAreaLight(const Transform &light2world, const RGBColor &l,
 		u_int ns, const string &texmap, EnvironmentMapping *m,
-		float gain, float gamma);
+		float gain, float gamma, bool sup);
 	virtual ~InfiniteAreaLight();
 	virtual float Power(const Scene &scene) const;
+	virtual bool IsSupport() const { return support; }
 	virtual bool IsDeltaLight() const { return false; }
 	virtual bool IsEnvironmental() const { return true; }
 	virtual bool Le(const Scene &scene, const Sample &arena, const Ray &r,
@@ -60,6 +61,7 @@ public:
 private:
 	// InfiniteAreaLight Private Data
 	RGBIllumSPD SPDbase;
+	bool support;
 };
 
 }//namespace lux

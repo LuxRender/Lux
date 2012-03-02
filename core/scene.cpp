@@ -208,16 +208,17 @@ void Scene::arlux_setup(void)
 			if( shp->IsSupport() ) {
 				Vector N;
 				Point P;
+				float Pow =0.f;
 				shp->GetNormal(&N);
 				shp->GetBaryPoint(&P);
 				Z = cam-P;
 				if( Dot(N,Z) < 0.f )  
 					N = N * (-1);
 				for( u_int k=0 ; k < lights.size() ; k++ )
-					if (lights[k]->IsEnvironmental()) {
-						float Pow = lights[k]->DirProb(N);
-						shp->SetScale(Pow);
+					if (lights[k]->IsSupport()) {
+						Pow += lights[k]->DirProb(N);
 					}
+				shp->SetScale(Pow);
 			}
 		}
 	}

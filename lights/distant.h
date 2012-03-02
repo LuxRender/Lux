@@ -35,8 +35,9 @@ public:
 	// DistantLight Public Methods
 	DistantLight(const Transform &light2world, 
 		const boost::shared_ptr<Texture<SWCSpectrum> > &L, float gain, 
-		float theta, const Vector &dir);
+		float theta, const Vector &dir, bool sup);
 	virtual ~DistantLight();
+	virtual bool IsSupport() const { return support; }
 	virtual bool IsDeltaLight() const { return false; }
 	virtual bool IsEnvironmental() const { return true; }
 	virtual float Power(const Scene &scene) const {
@@ -65,6 +66,7 @@ private:
 	boost::shared_ptr<Texture<SWCSpectrum> > Lbase;
 	float gain, sin2ThetaMax, cosThetaMax;
 	BxDF *bxdf;
+	bool support;
 };
 
 }//namespace lux

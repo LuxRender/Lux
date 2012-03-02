@@ -243,7 +243,7 @@ SkyLight::~SkyLight()
 
 SkyLight::SkyLight(const Transform &light2world, float skyscale, u_int ns,
 	Vector sd, float turb,
-	float aconst, float bconst, float cconst, float dconst, float econst)
+	float aconst, float bconst, float cconst, float dconst, float econst, bool sup)
 	: Light(light2world, ns) {
 	skyScale = skyscale;
 	sundir = sd;
@@ -567,6 +567,7 @@ bool SkyLight::SampleL(const Scene &scene, const Sample &sample,
 
 Light* SkyLight::CreateLight(const Transform &light2world,
 		const ParamSet &paramSet) {
+	bool sup = paramSet.FindOneBool("support", false);
 	float scale = paramSet.FindOneFloat("gain", 1.f);				// gain (aka scale) factor to apply to sun/skylight (0.005)
 	int nSamples = paramSet.FindOneInt("nsamples", 1);
 	Vector sundir = paramSet.FindOneVector("sundir", Vector(0,0,1));	// direction vector of the sun
@@ -584,7 +585,7 @@ Light* SkyLight::CreateLight(const Transform &light2world,
 	float econst = paramSet.FindOneFloat("econst",
 		paramSet.FindOneFloat("backscattering", 1.0f));
 
-	SkyLight *l = new SkyLight(light2world, scale, nSamples, sundir, turb, aconst, bconst, cconst, dconst, econst);
+	SkyLight *l = new SkyLight(light2world, scale, nSamples, sundir, turb, aconst, bconst, cconst, dconst, econst, sup);
 	l->hints.InitParam(paramSet);
 	return l;
 }

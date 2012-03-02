@@ -56,6 +56,7 @@ public:
 	virtual float Power(const Scene &scene) const = 0;
 	virtual bool IsDeltaLight() const = 0;
 	virtual bool IsEnvironmental() const = 0;
+        virtual bool IsSupport() const { return false; }
 	virtual float DirProb(Vector N) const {return 1.f;}
 	virtual bool Le(const Scene &scene, const Sample &sample, const Ray &r,
 		BSDF **bsdf, float *pdf, float *pdfDirect,
