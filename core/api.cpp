@@ -809,6 +809,19 @@ extern "C" luxAttributeType luxGetAttributeType(const char *objectName, const ch
 	return LUX_ATTRIBUTETYPE_NONE;
 }
 
+extern "C" const char* luxGetAttributeDescription(const char * objectName, const char * attributeName)
+{
+	try { 
+		Queryable *object=Context::GetActive()->registry[objectName];
+		if (object) 
+			return (*object)[attributeName].Description().c_str();
+	} catch (std::runtime_error e) {
+		LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
+	}
+
+	return 0;
+}
+
 extern "C" bool luxHasAttributeDefaultValue(const char * objectName, const char * attributeName)
 {
 	Queryable *object=Context::GetActive()->registry[objectName];

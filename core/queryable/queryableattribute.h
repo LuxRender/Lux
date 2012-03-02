@@ -107,6 +107,10 @@ public:
 
 
 	//Get accessors
+	const std::string& Description() {
+		return description;
+	}
+
 	virtual std::string Value() const = 0;
 
 	virtual bool BoolValue() const {

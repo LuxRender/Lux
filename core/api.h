@@ -260,6 +260,7 @@ LUX_EXPORT const char* luxGetAttributes(); /* Returns an XML string containing a
 LUX_EXPORT bool luxHasObject(const char * objectName); /* Returns true if the given object exists in the registry */
 LUX_EXPORT bool luxHasAttribute(const char * objectName, const char * attributeName); /* Returns true if object has the given attribute */
 LUX_EXPORT luxAttributeType luxGetAttributeType(const char *objectName, const char *attributeName); /* Returns the type of the attribute */
+LUX_EXPORT const char* luxGetAttributeDescription(const char * objectName, const char * attributeName); /* Returns the description of the attribute */
 LUX_EXPORT bool luxHasAttributeDefaultValue(const char * objectName, const char * attributeName); /* Returns true if attribute has a default value */
 
 LUX_EXPORT const char* luxGetStringAttribute(const char * objectName, const char * attributeName); 
