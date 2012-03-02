@@ -225,6 +225,43 @@ bool RenderFarm::connect(ExtRenderingServerInfo &serverInfo) {
 	return true;
 }
 
+bool RenderFarm::reconnect(ExtRenderingServerInfo &serverInfo) {
+	stringstream ss;
+	string serverName = serverInfo.name + ":" + serverInfo.port;
+
+	try {
+		LOG( LUX_INFO,LUX_NOERROR) << "Reconnecting to server: " << serverName;
+
+		tcp::iostream stream(serverInfo.name, serverInfo.port);
+		stream << "ServerReconnect" << std::endl;
+		stream << serverInfo.sid << std::endl;
+
+		// Check if the server accepted the connection
+		string result;
+		if (!getline(stream, result)) {
+			LOG( LUX_ERROR,LUX_SYSTEM) << "Unable to reconnect server: " << serverName;
+			return false;
+		}
+
+		LOG( LUX_INFO,LUX_NOERROR) << "Server reconnect result: " << result;
+		
+		if ("CONNECTED" != result) {
+			// unable to reconnect
+			serverInfo.active = false;
+			return false;
+		}
+
+		serverInfo.active = true;
+		serverInfo.flushed = true;
+	} catch (exception& e) {
+		LOG(LUX_ERROR,LUX_SYSTEM) << "Unable to reconnect server: " << serverName;
+		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
+		return false;
+	}
+
+	return true;	
+}
+
 bool RenderFarm::connect(const string &serverName) {
 	{
 		boost::mutex::scoped_lock lock(serverListMutex);
@@ -234,7 +271,7 @@ bool RenderFarm::connect(const string &serverName) {
 			string name, port;
 			decodeServerName(serverName, name, port);
 
-			ExtRenderingServerInfo serverInfo(name, port, "");
+			ExtRenderingServerInfo serverInfo(name, port);
 			if (!connect(serverInfo)) {
 				if (serverInfo.active)
 					disconnect(serverInfo);
@@ -353,17 +390,22 @@ void RenderFarm::reconnectFailed() {
 		if (serverInfoList[i].active)
 			continue;
 
-		ExtRenderingServerInfo *serverInfo = &serverInfoList[i];
+		ExtRenderingServerInfo &serverInfo(serverInfoList[i]);
 		try {
 			LOG(LUX_INFO,LUX_NOERROR)
 				<< "Trying to reconnect server: "
-				<< serverInfo->name << ":" << serverInfo->port;
+				<< serverInfo.name << ":" << serverInfo.port;
 
-			this->connect(*serverInfo);
+			if (!this->reconnect(serverInfo)) {
+				LOG(LUX_INFO,LUX_NOERROR)
+					<< "Reconnection failed, attemting to establish new session with server: "
+					<< serverInfo.name << ":" << serverInfo.port;
+				this->connect(serverInfo);
+			}
 		} catch (std::exception& e) {
 			LOG(LUX_ERROR,LUX_SYSTEM)
 				<< "Error while reconnecting with server: "
-				<< serverInfo->name << ":" << serverInfo->port;
+				<< serverInfo.name << ":" << serverInfo.port;
 			LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
 		}
 	}

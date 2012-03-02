@@ -76,7 +76,7 @@ public:
 	void disconnectAll();
 	void disconnect(const string &serverName);
 	void disconnect(const RenderingServerInfo &serverInfo);
-
+	
 	// signal that rendering is done
 	void renderingDone() { netBufferComplete = false; };
 
@@ -121,7 +121,7 @@ public:
 
 private:
 	struct ExtRenderingServerInfo {
-		ExtRenderingServerInfo(string n, string p, string id) :
+		ExtRenderingServerInfo(string n, string p, string id = "") :
 			timeLastContact(boost::posix_time::second_clock::local_time()),
 			numberOfSamplesReceived(0.),
 			name(n), port(p), sid(id), active(false), flushed(false) { }
@@ -142,6 +142,7 @@ private:
 
 	static void decodeServerName(const string &serverName, string &name, string &port);
 	bool connect(ExtRenderingServerInfo &serverInfo);
+	bool reconnect(ExtRenderingServerInfo &serverInfo);
 	void flushImpl();
 	void disconnect(const ExtRenderingServerInfo &serverInfo);
 	void sendParams(const ParamSet &params);
