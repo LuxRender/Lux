@@ -136,8 +136,8 @@ public:
 template <class T>
 class QMRUListModel : public QAbstractListModel {
 public:
-	QMRUListModel() : maxCount(0), QAbstractListModel() { }
-	QMRUListModel(int count, QObject *parent = 0) : maxCount(count), QAbstractListModel(parent) { }
+	QMRUListModel() : QAbstractListModel(), maxCount(0) { }
+	QMRUListModel(int count, QObject *parent = 0) : QAbstractListModel(parent), maxCount(count)  { }
 	QMRUListModel(const QMRUListModel<T> &other) 
 		: maxCount(other.maxCount), mruList(other.mruList), QAbstractListModel(other.parent()) {
 	}
