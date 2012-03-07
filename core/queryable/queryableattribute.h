@@ -237,7 +237,7 @@ GenericQueryableAttribute<D>(const std::string &_name, const std::string &_desc,
 	}
 
 public:
-	~GenericQueryableAttribute<D>() {}
+	virtual ~GenericQueryableAttribute<D>() {}
 
 	virtual std::string Value() const {
 		return boost::lexical_cast<std::string>(getFunc());
