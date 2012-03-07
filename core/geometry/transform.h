@@ -71,6 +71,8 @@ public:
 	BBox operator()(const BBox &b) const;
 	inline DifferentialGeometry operator()(const DifferentialGeometry &) const;
 	inline void operator()(const DifferentialGeometry &, DifferentialGeometry *) const;
+	inline PartialDifferentialGeometry operator()(const PartialDifferentialGeometry &) const;
+	inline void operator()(const PartialDifferentialGeometry &, PartialDifferentialGeometry *) const;
 	Transform operator*(const Transform &t2) const;
 	bool SwapsHandedness() const;
 private:
@@ -130,6 +132,23 @@ inline void Transform::operator()(const DifferentialGeometry &dg, DifferentialGe
 	dgt->time = dg.time;
 	dgt->scattered = dg.scattered;
 	dgt->iData = dg.iData;
+}
+inline PartialDifferentialGeometry Transform::operator()(const PartialDifferentialGeometry &dg) const
+{
+	PartialDifferentialGeometry dgt((*this)(dg.p), Normalize((*this)(dg.nn)),
+		(*this)(dg.dpdu), (*this)(dg.dpdv));
+	dgt.time = dg.time;
+	dgt.scattered = dg.scattered;
+	return dgt;
+}
+inline void Transform::operator()(const PartialDifferentialGeometry &dg, PartialDifferentialGeometry *dgt) const
+{
+	dgt->p = (*this)(dg.p);
+	dgt->nn = Normalize((*this)(dg.nn));
+	dgt->dpdu =  (*this)(dg.dpdu);
+	dgt->dpdv = (*this)(dg.dpdv);
+	dgt->time = dg.time;
+	dgt->scattered = dg.scattered;
 }
 
   Transform Translate(const Vector &delta);

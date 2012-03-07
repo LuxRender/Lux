@@ -253,14 +253,14 @@ public:
 	virtual float Sample(float u1, float u2, float u3, DifferentialGeometry *dg) const  {
 		return prim->Sample(u1, u2, u3, dg);
 	}
-	virtual float Pdf(const DifferentialGeometry &dg) const {
+	virtual float Pdf(const PartialDifferentialGeometry &dg) const {
 		return prim->Pdf(dg);
 	}
 	virtual float Sample(const Point &P, float u1, float u2, float u3,
 		DifferentialGeometry *dg) const {
 		return prim->Sample(P, u1, u2, u3, dg);
 	}
-	virtual float Pdf(const Point &p, const DifferentialGeometry &dg) const {
+	virtual float Pdf(const Point &p, const PartialDifferentialGeometry &dg) const {
 		return prim->Pdf(p, dg);
 	}
 
@@ -345,8 +345,8 @@ public:
 		return pdf /
 			fabsf(Dot(Cross(dg->dpdu, dg->dpdv), Vector(dg->nn)));
 	}
-	virtual float Pdf(const DifferentialGeometry &dg) const {
-		const DifferentialGeometry dgi(WorldToInstance(dg));
+	virtual float Pdf(const PartialDifferentialGeometry &dg) const {
+		const PartialDifferentialGeometry dgi(WorldToInstance(dg));
 		return instance->Pdf(dgi) *
 			fabsf(Dot(Cross(dgi.dpdu, dgi.dpdv), Vector(dgi.nn)) /
 			Dot(Cross(dg.dpdu, dg.dpdv), Vector(dg.nn)));
@@ -362,8 +362,8 @@ public:
 		return pdf /
 			fabsf(Dot(Cross(dg->dpdu, dg->dpdv), Vector(dg->nn)));
 	}
-	virtual float Pdf(const Point &p, const DifferentialGeometry &dg) const {
-		const DifferentialGeometry dgi(WorldToInstance(dg));
+	virtual float Pdf(const Point &p, const PartialDifferentialGeometry &dg) const {
+		const PartialDifferentialGeometry dgi(WorldToInstance(dg));
 		return instance->Pdf(p, dgi) *
 			fabsf(Dot(Cross(dgi.dpdu, dgi.dpdv), Vector(dgi.nn)) /
 			Dot(Cross(dg.dpdu, dg.dpdv), Vector(dg.nn)));
@@ -445,9 +445,9 @@ public:
 		return pdf /
 			fabsf(Dot(Cross(dg->dpdu, dg->dpdv), Vector(dg->nn)));
 	}
-	virtual float Pdf(const DifferentialGeometry &dg) const {
+	virtual float Pdf(const PartialDifferentialGeometry &dg) const {
 		const Transform InstanceToWorld = motionPath.Sample(dg.time);
-		const DifferentialGeometry dgi(InstanceToWorld.GetInverse()(dg));
+		const PartialDifferentialGeometry dgi(InstanceToWorld.GetInverse()(dg));
 		return instance->Pdf(dgi) *
 			fabsf(Dot(Cross(dgi.dpdu, dgi.dpdv), Vector(dgi.nn)) /
 			Dot(Cross(dg.dpdu, dg.dpdv), Vector(dg.nn)));
@@ -464,9 +464,9 @@ public:
 		return pdf /
 			fabsf(Dot(Cross(dg->dpdu, dg->dpdv), Vector(dg->nn)));
 	}
-	virtual float Pdf(const Point &p, const DifferentialGeometry &dg) const {
+	virtual float Pdf(const Point &p, const PartialDifferentialGeometry &dg) const {
 		const Transform InstanceToWorld = motionPath.Sample(dg.time);
-		const DifferentialGeometry dgi(InstanceToWorld.GetInverse()(dg));
+		const PartialDifferentialGeometry dgi(InstanceToWorld.GetInverse()(dg));
 		return instance->Pdf(p, dgi) *
 			fabsf(Dot(Cross(dgi.dpdu, dgi.dpdv), Vector(dgi.nn)) /
 			Dot(Cross(dg.dpdu, dg.dpdv), Vector(dg.nn)));
