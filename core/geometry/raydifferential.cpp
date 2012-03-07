@@ -50,7 +50,6 @@ DifferentialGeometry::DifferentialGeometry(const Point &P,
 	: PartialDifferentialGeometry(P, DPDU, DPDV), dndu(DNDU), dndv(DNDV),
 	  tangent(DPDU), bitangent(DPDV), btsign(1.f) {
 	// Initialize _DifferentialGeometry_ from parameters
-	nn = Normal(Normalize(Cross(dpdu, dpdv)));
 	u = uu;
 	v = vv;
 	handle = pr;

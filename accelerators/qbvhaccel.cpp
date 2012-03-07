@@ -357,7 +357,8 @@ QBVHAccel::QBVHAccel(const vector<boost::shared_ptr<Primitive> > &p,
 }
 
 float QBVHAccel::CollectStatistics(const int32_t nodeIndex, const u_int depth,
-		const BBox &nodeBBox) {
+	const BBox &nodeBBox)
+{
 	maxDepth = max(maxDepth, depth);
 	++nodeCount;
 
@@ -383,7 +384,7 @@ float QBVHAccel::CollectStatistics(const int32_t nodeIndex, const u_int depth,
 			// The probability to intersect the child node multiplied for the cost
 			// of traveling the child node
 			cost += childBBox.SurfaceArea() / nodeSA *
-					CollectStatistics(node.children[i], depth + 1, childBBox);
+				CollectStatistics(node.children[i], depth + 1, childBBox);
 		}
 	}
 
@@ -470,8 +471,9 @@ void QBVHAccel::BuildTree(u_int start, u_int end, u_int *primsIndexes,
 }
 
 float QBVHAccel::BuildObjectSplit(const u_int start, const u_int end,
-		const u_int *primsIndexes, const BBox *primsBboxes, const Point *primsCentroids,
-		const BBox &centroidsBbox, int &axis) {
+	const u_int *primsIndexes, const BBox *primsBboxes,
+	const Point *primsCentroids, const BBox &centroidsBbox, int &axis)
+{
 	// Choose the split axis, taking the axis of maximum extent for the
 	// centroids (else weird cases can occur, where the maximum extent axis
 	// for the nodeBbox is an axis of 0 extent for the centroids one.).

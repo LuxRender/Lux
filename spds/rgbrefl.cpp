@@ -80,6 +80,6 @@ void RGBReflSPD::init(const RGBColor &s)
 	}
 
 	Scale(refrgb2spect_scale);
-	Clamp();
+	// Don't clamp the values as negative values are needed for scattering
 }
 

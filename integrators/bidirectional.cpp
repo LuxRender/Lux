@@ -720,22 +720,22 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 		SWCSpectrum &L(vecL[lightGroup]);
 		float &variance(vecV[lightGroup]);
 		// Go through all eye vertices
-		for (u_int j = 1; j <= nEye; ++j) {
+		for (u_int j = 0; j < nEye; ++j) {
 			// Compute direct lighting pdf for first light vertex
-			const float directPdf = light->Pdf(eyePath[j - 1].p,
+			const float directPdf = light->Pdf(eyePath[j].p,
 				light0.bsdf->dgShading) * directWeight;
 			SWCSpectrum Ll(Le);
 			float weight;
 			// Save data modified by evalPath
-			BidirVertex &vE(eyePath[j - 1]);
+			BidirVertex &vE(eyePath[j]);
 			const BxDFType eflags = vE.flags;
 			const float err = vE.rr;
 			const float errR = vE.rrR;
 			const float edARWeight = vE.dARWeight;
-			if (evalPath(scene, sample, *this, eyePath, j,
+			if (evalPath(scene, sample, *this, eyePath, j + 1,
 				lightPath, nLight, directPdf, false, &weight,
 				&Ll)) {
-				if (j == 1) {
+				if (j == 0) {
 					if (eyeConnect(sample, eye0,
 						XYZColor(sw, Ll),
 						light->IsEnvironmental() ? 0.f : 1.f,
@@ -812,22 +812,23 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 
 				// Connect eye subpath to light subpath
 				// Go through all eye vertices
-				for (u_int j = 1; j <= nEye; ++j) {
-					if (eyePath[j - 1].bsdf->NumComponents(BxDFType(~BSDF_SPECULAR)) == 0 ||
+				for (u_int j = 0; j < nEye; ++j) {
+					if (eyePath[j].bsdf->NumComponents(BxDFType(~BSDF_SPECULAR)) == 0 ||
 						v.bsdf->NumComponents(BxDFType(~BSDF_SPECULAR)) == 0)
 						continue;
 					SWCSpectrum Ll(Le);
 					float weight;
 					// Save data modified by evalPath
-					BidirVertex &vE(eyePath[j - 1]);
+					BidirVertex &vE(eyePath[j]);
 					const BxDFType eflags = vE.flags;
 					const float err = vE.rr;
 					const float errR = vE.rrR;
 					const float edARWeight = vE.dARWeight;
 					if (evalPath(scene, sample, *this,
-						eyePath, j, lightPath, nLight,
+						eyePath, j + 1,
+						lightPath, nLight,
 						lightDirectPdf, false, &weight, &Ll)) {
-						if (j == 1) {
+						if (j == 0) {
 							if (eyeConnect(sample, eye0,
 								XYZColor(sw, Ll), 1.f,
 								sqrtf(eye0.d2), weight,

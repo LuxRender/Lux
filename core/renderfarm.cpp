@@ -225,7 +225,8 @@ bool RenderFarm::connect(ExtRenderingServerInfo &serverInfo) {
 	return true;
 }
 
-bool RenderFarm::reconnect(ExtRenderingServerInfo &serverInfo) {
+bool RenderFarm::reconnect(ExtRenderingServerInfo &serverInfo)
+{
 	stringstream ss;
 	string serverName = serverInfo.name + ":" + serverInfo.port;
 
