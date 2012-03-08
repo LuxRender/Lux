@@ -50,24 +50,16 @@ struct BidirVertex {
 // Bidirectional Method Definitions
 void BidirIntegrator::RequestSamples(Sample *sample, const Scene &scene)
 {
-	if (lightStrategy == SAMPLE_AUTOMATIC) {
-		if (scene.lights.size() > 5)
-			lightStrategy = SAMPLE_ONE_UNIFORM;
-		else
-			lightStrategy = SAMPLE_ALL_UNIFORM;
-	}
-
 	lightNumOffset = sample->Add1D(1);
 	lightComponentOffset = sample->Add1D(1);
 	lightPosOffset = sample->Add2D(1);
 	lightDirOffset = sample->Add2D(1);
+	samplingCount = lightDirectStrategy->GetSamplingLimit(scene);
 	vector<u_int> structure;
 	// Direct lighting samples
-	for (u_int i = 0; i < scene.lights.size(); ++i) {
-		structure.push_back(2);	//light position
+	for (u_int i = 0; i < samplingCount; ++i) {
 		structure.push_back(1);	//light number or portal
-		if (lightStrategy == SAMPLE_ONE_UNIFORM)
-			break;
+		structure.push_back(2);	//light position
 	}
 	sampleDirectOffset = sample->AddxD(structure, maxEyeDepth);
 	structure.clear();
@@ -96,6 +88,7 @@ void BidirIntegrator::Preprocess(const RandomGenerator &rng, const Scene &scene)
 	eyeBufferId = scene.camera->film->RequestBuffer(type, config, "eye");
 	lightBufferId = scene.camera->film->RequestBuffer(BUF_TYPE_PER_SCREEN,
 		config, "light");
+	lightDirectStrategy->Init(scene);
 }
 
 // Weighting of path with regard to alternate methods of obtaining it
@@ -352,8 +345,6 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 	if (numberOfLights == 0)
 		return nrContribs;
 	const SpectrumWavelengths &sw(sample.swl);
-	const float directWeight = (lightStrategy == SAMPLE_ONE_UNIFORM) ?
-		1.f / numberOfLights : 1.f;
 	vector<SWCSpectrum> vecL(nGroups, SWCSpectrum(0.f));
 	vector<float> vecV(nGroups, 0.f);
 	float alpha = 1.f;
@@ -379,66 +370,32 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 	// Do eye vertex direct lighting
 	const float *directData0 = sample.sampler->GetLazyValues(sample,
 		sampleDirectOffset, 0);
-	switch (lightStrategy) {
-		case SAMPLE_ONE_UNIFORM: {
-			SWCSpectrum Ld;
-			float dWeight;
-			float portal = directData0[2] * numberOfLights;
-			const u_int lightDirectNumber = min(Floor2UInt(portal),
-				numberOfLights - 1U);
-			const Light *light = scene.lights[lightDirectNumber];
-			portal -= lightDirectNumber;
-			if (getDirectLight(scene, sample, *this, eyePath, 1,
-				light, directData0[0], directData0[1], portal,
-				directWeight, &Ld, &dWeight)) {
-				if (light->IsEnvironmental()) {
-					if (eyeConnect(sample, eye0,
-						XYZColor(sw, Ld), 0.f,
-						INFINITY, dWeight,
-						lightBufferId, light->group))
-						++nrContribs;
-				} else {
-					if (eyeConnect(sample, eye0,
-						XYZColor(sw, Ld), 1.f,
-						sqrtf(eye0.d2), dWeight,
-						lightBufferId, light->group))
-						++nrContribs;
-				}
+	for (u_int l = 0; l < samplingCount; ++l) {
+		SWCSpectrum Ld;
+		float dWeight, dPdf;
+		float portal = directData0[0];
+		const Light *light = lightDirectStrategy->SampleLight(scene, l,
+			&portal, &dPdf);
+		if (getDirectLight(scene, sample, *this, eyePath, 1, light,
+			directData0[1], directData0[2], portal, dPdf, &Ld,
+			&dWeight)) {
+			if (light->IsEnvironmental()) {
+				if (eyeConnect(sample, eye0,
+					XYZColor(sw, Ld), 0.f,
+					INFINITY, dWeight,
+					lightBufferId,
+					light->group))
+					++nrContribs;
+			} else {
+				if (eyeConnect(sample, eye0,
+					XYZColor(sw, Ld), 1.f,
+					sqrtf(eye0.d2), dWeight,
+					lightBufferId,
+					light->group))
+					++nrContribs;
 			}
-			break;
 		}
-		case SAMPLE_ALL_UNIFORM: {
-			SWCSpectrum Ld;
-			float dWeight;
-			for (u_int l = 0; l < scene.lights.size(); ++l) {
-				const Light *light = scene.lights[l];
-				if (getDirectLight(scene, sample, *this,
-					eyePath, 1, light,
-					directData0[0], directData0[1],
-					directData0[2], directWeight,
-					&Ld, &dWeight)) {
-					if (light->IsEnvironmental()) {
-						if (eyeConnect(sample, eye0,
-							XYZColor(sw, Ld), 0.f,
-							INFINITY, dWeight,
-							lightBufferId,
-							light->group))
-							++nrContribs;
-					} else {
-						if (eyeConnect(sample, eye0,
-							XYZColor(sw, Ld), 1.f,
-							sqrtf(eye0.d2), dWeight,
-							lightBufferId,
-							light->group))
-							++nrContribs;
-					}
-				}
-				directData0 += 3;
-			}
-			break;
-		}
-		default:
-			break;
+		directData0 += 3;
 	}
 
 	// Sample eye subpath initial direction and finish vertex initialization
@@ -510,7 +467,8 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 				// in the case of portal, the eye path can hit
 				// the light outside portals
 				v.dAWeight /= scene.lights.size();
-				ePdfDirect *= directWeight;
+				ePdfDirect *= lightDirectStrategy->Pdf(scene,
+					lightNumber);
 				eyePath[nEye - 1].dAWeight = v.pdf * v.tPdf *
 					spdf / eyePath[nEye - 1].d2;
 				if (!eyePath[nEye - 1].bsdf->dgShading.scattered)
@@ -569,7 +527,8 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 				Ll *= v.flux;
 				// Evaluate factors for path weighting
 				v.dAWeight /= scene.lights.size();
-				ePdfDirect *= directWeight;
+				ePdfDirect *= lightDirectStrategy->Pdf(scene,
+					isect.arealight);
 				eyePath[nEye - 2].dAWeight = v.pdf * v.tPdf /
 					eyePath[nEye - 2].d2;
 				if (!eyePath[nEye - 2].bsdf->dgShading.scattered)
@@ -594,46 +553,19 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 		// Do direct lighting
 		const float *directData = sample.sampler->GetLazyValues(sample,
 			sampleDirectOffset, sampleIndex);
-		switch (lightStrategy) {
-			case SAMPLE_ONE_UNIFORM: {
-				SWCSpectrum Ld;
-				float dWeight;
-				float portal = directData[2] * numberOfLights;
-				const u_int lightDirectNumber =
-					min(Floor2UInt(portal),
-					numberOfLights - 1U);
-				portal -= lightDirectNumber;
-				const Light *directLight = scene.lights[lightDirectNumber];
-				if (getDirectLight(scene, sample, *this,
-					eyePath, nEye, directLight,
-					directData[0], directData[1], portal,
-					directWeight, &Ld, &dWeight)) {
-					vecL[directLight->group] += Ld;
-					vecV[directLight->group] += Ld.Filter(sw) * dWeight;
-					++nrContribs;
-				}
-				break;
+		for (u_int l = 0; l < samplingCount; ++l) {
+			SWCSpectrum Ld;
+			float dWeight, dPdf;
+			float portal = directData[0];
+			const Light *directLight = lightDirectStrategy->SampleLight(scene, l, &portal, &dPdf);
+			if (getDirectLight(scene, sample, *this, eyePath, nEye,
+				directLight, directData[1], directData[2],
+				portal, dPdf, &Ld, &dWeight)) {
+				vecL[directLight->group] += Ld;
+				vecV[directLight->group] += Ld.Filter(sw) * dWeight;
+				++nrContribs;
 			}
-			case SAMPLE_ALL_UNIFORM: {
-				SWCSpectrum Ld;
-				float dWeight;
-				for (u_int l = 0; l < scene.lights.size(); ++l) {
-					const Light *directLight = scene.lights[l];
-					if (getDirectLight(scene, sample, *this,
-						eyePath, nEye, directLight,
-						directData[0], directData[1],
-						directData[2], directWeight,
-						&Ld, &dWeight)) {
-						vecL[directLight->group] += Ld;
-						vecV[directLight->group] += Ld.Filter(sw) * dWeight;
-						++nrContribs;
-					}
-					directData += 3;
-				}
-				break;
-			}
-			default:
-				break;
+			directData += 3;
 		}
 
 		SWCSpectrum f;
@@ -708,8 +640,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 		// Give the light point probability for the weighting
 		// if the light is not delta
 		light0.dAWeight /= numberOfLights;
-		// Divide by Pdf because this value isn't used when the eye
-		// ray hits a light source, only for light paths
+		// Divide by Pdf
 		Le *= numberOfLights;
 		// Trick to tell subsequent functions that the light is delta
 		if (light->IsDeltaLight())
@@ -719,6 +650,8 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 		// Connect eye subpath to first light vertex
 		SWCSpectrum &L(vecL[lightGroup]);
 		float &variance(vecV[lightGroup]);
+		const float directWeight = lightDirectStrategy->Pdf(scene,
+			lightNum);
 		// Go through all eye vertices
 		for (u_int j = 0; j < nEye; ++j) {
 			// Compute direct lighting pdf for first light vertex
@@ -1665,18 +1598,10 @@ SurfaceIntegrator* BidirIntegrator::CreateSurfaceIntegrator(const ParamSet &para
 	int lightDepth = params.FindOneInt("lightdepth", 8);
 	float eyeThreshold = params.FindOneFloat("eyerrthreshold", 0.f);
 	float lightThreshold = params.FindOneFloat("lightrrthreshold", 0.f);
-	LightStrategy estrategy;
-	string st = params.FindOneString("strategy", "auto");
-	if (st == "one") estrategy = SAMPLE_ONE_UNIFORM;
-	else if (st == "all") estrategy = SAMPLE_ALL_UNIFORM;
-	else if (st == "auto") estrategy = SAMPLE_AUTOMATIC;
-	else {
-		LOG(LUX_WARNING,LUX_BADTOKEN)<<"Strategy  '"<<st<<"' for direct lighting unknown. Using \"auto\".";
-		estrategy = SAMPLE_AUTOMATIC;
-	}
+	LightsSamplingStrategy *lds = LightsSamplingStrategy::Create(params);
 	bool debug = params.FindOneBool("debug", false);
 	return new BidirIntegrator(max(eyeDepth, 0), max(lightDepth, 0),
-		eyeThreshold, lightThreshold, estrategy, debug);
+		eyeThreshold, lightThreshold, lds, debug);
 }
 
 static DynamicLoader::RegisterSurfaceIntegrator<BidirIntegrator> r("bidirectional");

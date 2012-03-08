@@ -122,6 +122,11 @@ float LSSAllUniform::Pdf(const Scene &scene, const Light *light) const
 	return 1.f;
 }
 
+float LSSAllUniform::Pdf(const Scene &scene, u_int light) const
+{
+	return 1.f;
+}
+
 u_int LSSAllUniform::GetSamplingLimit(const Scene &scene) const
 {
 	return scene.lights.size();
@@ -145,6 +150,11 @@ const Light *LSSOneUniform::SampleLight(const Scene &scene, u_int index,
 }
 
 float LSSOneUniform::Pdf(const Scene &scene, const Light *light) const
+{
+	return 1.f / scene.lights.size();
+}
+
+float LSSOneUniform::Pdf(const Scene &scene, u_int light) const
 {
 	return 1.f / scene.lights.size();
 }
@@ -201,6 +211,11 @@ float LSSOneImportance::Pdf(const Scene &scene, const Light *light) const
 	return 0.f;
 }
 
+float LSSOneImportance::Pdf(const Scene &scene, u_int light) const
+{
+	return light < scene.lights.size() ? lightDistribution->Pdf(light) : 0.f;
+}
+
 //******************************************************************************
 // Light Sampling Strategies: LightStrategyOnePowerImportance
 //******************************************************************************
@@ -243,6 +258,12 @@ float LSSAllPowerImportance::Pdf(const Scene &scene, const Light *light) const
 			return lightDistribution->Pdf(i) * scene.lights.size();
 	}
 	return 0.f;
+}
+
+float LSSAllPowerImportance::Pdf(const Scene &scene, u_int light) const
+{
+	return light < scene.lights.size() ?
+		lightDistribution->Pdf(light) * scene.lights.size() : 0.f;
 }
 
 u_int LSSAllPowerImportance::GetSamplingLimit(const Scene &scene) const

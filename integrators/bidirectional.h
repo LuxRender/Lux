@@ -25,6 +25,7 @@
 #include "sampling.h"
 #include "transport.h"
 #include "reflection/bxdf.h"
+#include "renderinghints.h"
 
 namespace lux
 {
@@ -97,17 +98,12 @@ private:
 // Bidirectional Local Declarations
 class BidirIntegrator : public SurfaceIntegrator {
 public:
-	// PathIntegrator types
-	enum LightStrategy { SAMPLE_ALL_UNIFORM, SAMPLE_ONE_UNIFORM,
-		SAMPLE_AUTOMATIC
-	};
-//	enum RRStrategy { RR_EFFICIENCY, RR_PROBABILITY, RR_NONE };
-
-	BidirIntegrator(u_int ed, u_int ld, float et, float lt, LightStrategy ls,
-		bool d) : SurfaceIntegrator(),
+	BidirIntegrator(u_int ed, u_int ld, float et, float lt,
+		LightsSamplingStrategy *lds, bool d) : SurfaceIntegrator(),
 		maxEyeDepth(ed), maxLightDepth(ld),
 		eyeThreshold(et), lightThreshold(lt),
-		lightStrategy(ls), debug(d) {
+		lightDirectStrategy(lds), debug(d) {
+		samplingCount = 0;
 		eyeBufferId = 0;
 		lightBufferId = 0;
 		AddStringConstant(*this, "name", "Name of current surface integrator", "bidirectional");
@@ -125,8 +121,8 @@ public:
 	virtual bool IsDataParallelSupported() const { return true; }
 
 	virtual bool CheckLightStrategy() const {
-		if (lightStrategy != SAMPLE_ONE_UNIFORM) {
-			LOG(LUX_ERROR, LUX_SEVERE)<< "The (light) strategy must be ONE_UNIFORM.";
+		if (samplingCount != 1) {
+			LOG(LUX_ERROR, LUX_SEVERE)<< "The direct light sampling strategy must sample a single light, not " << samplingCount << ".";
 			return false;
 		}
 
@@ -150,7 +146,8 @@ public:
 
 private:
 	// BidirIntegrator Data
-	LightStrategy lightStrategy;
+	LightsSamplingStrategy *lightDirectStrategy;
+	u_int samplingCount;
 	u_int lightNumOffset, lightComponentOffset;
 	u_int lightPosOffset, lightDirOffset, sampleDirectOffset;
 	bool debug;

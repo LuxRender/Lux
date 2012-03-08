@@ -79,6 +79,13 @@ public:
 	 */
 	virtual float Pdf(const Scene &scene, const Light *light) const = 0;
 	/**
+	 * The probability of sampling a given light according to the strategy
+	 * @param scene The current scene
+	 * @param light The index of the light being queried in scene.lights
+	 * @return The requested probability
+	 */
+	virtual float Pdf(const Scene &scene, u_int light) const = 0;
+	/**
 	 * The maximum number of light samples in one go
 	 * The looping over SampleLight will never exceed he returned value
 	 * @param scene The current scene
@@ -103,6 +110,7 @@ public:
 	virtual const Light *SampleLight(const Scene &scene, u_int index,
 		float *u, float *pdf) const;
 	virtual float Pdf(const Scene &scene, const Light *light) const;
+	virtual float Pdf(const Scene &scene, u_int light) const;
 	virtual u_int GetSamplingLimit(const Scene &scene) const;
 };
 
@@ -113,6 +121,7 @@ public:
 	virtual const Light *SampleLight(const Scene &scene, u_int index,
 		float *u, float *pdf) const;
 	virtual float Pdf(const Scene &scene, const Light *light) const;
+	virtual float Pdf(const Scene &scene, u_int light) const;
 	virtual u_int GetSamplingLimit(const Scene &scene) const { return 1; }
 };
 
@@ -127,6 +136,9 @@ public:
 		return strategy->SampleLight(scene, index, u, pdf);
 	}
 	virtual float Pdf(const Scene &scene, const Light *light) const {
+		return strategy->Pdf(scene, light);
+	}
+	virtual float Pdf(const Scene &scene, u_int light) const {
 		return strategy->Pdf(scene, light);
 	}
 	virtual u_int GetSamplingLimit(const Scene &scene) const {
@@ -147,6 +159,7 @@ public:
 	virtual const Light *SampleLight(const Scene &scene, u_int index,
 		float *u, float *pdf) const;
 	virtual float Pdf(const Scene &scene, const Light *light) const;
+	virtual float Pdf(const Scene &scene, u_int light) const;
 	virtual u_int GetSamplingLimit(const Scene &scene) const { return 1; }
 
 protected:
@@ -168,6 +181,7 @@ public:
 	virtual const Light *SampleLight(const Scene &scene, u_int index,
 		float *u, float *pdf) const;
 	virtual float Pdf(const Scene &scene, const Light *light) const;
+	virtual float Pdf(const Scene &scene, u_int light) const;
 	virtual u_int GetSamplingLimit(const Scene &scene) const;
 };
 
