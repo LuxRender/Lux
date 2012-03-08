@@ -145,7 +145,7 @@ public:
 	PdfPhoton() : BasicPhoton(), dirs(0) { }
 	virtual ~PdfPhoton() { }
 
-	virtual void save(bool isLittleEndian, std::basic_ostream<char> &stream) {
+	virtual void save(bool isLittleEndian, std::basic_ostream<char> &stream) const {
 	}
 
 	float Sample(Vector *wi, float u1, float u2, float u3) const {
