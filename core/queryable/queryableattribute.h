@@ -125,7 +125,7 @@ public:
 	virtual double DoubleValue() const {
 		throw std::runtime_error("Parameter type '" + TypeStr() + "' is not compatible with type 'double'");
 	}
-	virtual const std::string& StringValue() const {
+	virtual std::string StringValue() const {
 		throw std::runtime_error("Parameter type '" + TypeStr() + "' is not compatible with type 'string'");
 	}
 
@@ -456,17 +456,13 @@ public:
 		setFunc(v);
 	}
 
-	virtual const std::string& StringValue() const {
-		value = getFunc();
-		return value;
+	virtual std::string StringValue() const {
+		return getFunc();
 	}
 
 	virtual const std::string& DefaultStringValue() const {
 		return defaultValue;
 	}
-private:
-	// used to cache value, so a reference can be returned
-	mutable std::string value;
 };
 
 }//namespace lux

@@ -22,6 +22,7 @@
 
 #include <algorithm>
 #include <math.h>
+#include <vector>
 
 #include "guiutil.h"
 
@@ -69,6 +70,19 @@ QString pathElidedText(const QFontMetrics &fm, const QString &text, int width, i
 
 	return fm.elidedText(path, Qt::ElideMiddle, width - fwidth, flags) + filename;
 }
+
+QString getStringAttribute(const char *objectName, const char *attributeName) {
+	std::vector<char> buf(1 << 16, '\0');
+	luxGetStringAttribute(objectName, attributeName, &buf[0], static_cast<unsigned int>(buf.size()));
+	return QString::fromUtf8(&buf[0]);
+}
+
+QString getAttributeDescription(const char *objectName, const char *attributeName) {
+	std::vector<char> buf(1 << 16, '\0');
+	luxGetAttributeDescription(objectName, attributeName, &buf[0], static_cast<unsigned int>(buf.size()));
+	return QString::fromUtf8(&buf[0]);
+}
+
 
 void overlayStatistics(QImage *image)
 {

@@ -809,12 +809,15 @@ extern "C" luxAttributeType luxGetAttributeType(const char *objectName, const ch
 	return LUX_ATTRIBUTETYPE_NONE;
 }
 
-extern "C" const char* luxGetAttributeDescription(const char * objectName, const char * attributeName)
+extern "C" unsigned int luxGetAttributeDescription(const char * objectName, const char * attributeName, char * dst, unsigned int dstlen)
 {
 	try { 
 		Queryable *object=Context::GetActive()->registry[objectName];
-		if (object) 
-			return (*object)[attributeName].Description().c_str();
+		if (object && dstlen > 0) {
+			const size_t length = (*object)[attributeName].Description().copy(dst, dstlen-1);
+			dst[length] = 0;
+			return length;
+		}
 	} catch (std::runtime_error e) {
 		LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
 	}
@@ -837,12 +840,15 @@ extern "C" bool luxHasAttributeDefaultValue(const char * objectName, const char 
 	return false;
 }
 
-extern "C" const char* luxGetStringAttribute(const char * objectName, const char * attributeName)
+extern "C" unsigned int luxGetStringAttribute(const char * objectName, const char * attributeName, char * dst, unsigned int dstlen)
 {
 	try { 
 		Queryable *object=Context::GetActive()->registry[objectName];
-		if (object) 
-			return (*object)[attributeName].StringValue().c_str();
+		if (object && dstlen > 0) {
+			const size_t length = (*object)[attributeName].StringValue().copy(dst, dstlen-1);
+			dst[length] = 0;
+			return length;
+		}
 	} catch (std::runtime_error e) {
 		LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
 	}
@@ -850,12 +856,15 @@ extern "C" const char* luxGetStringAttribute(const char * objectName, const char
 	return 0;
 }
 
-extern "C" const char* luxGetStringAttributeDefault(const char * objectName, const char * attributeName)
+extern "C" unsigned int luxGetStringAttributeDefault(const char * objectName, const char * attributeName, char * dst, unsigned int dstlen)
 {
 	try { 
 		Queryable *object=Context::GetActive()->registry[objectName];
-		if (object) 
-			return (*object)[attributeName].DefaultStringValue().c_str();
+		if (object && dstlen > 0) {
+			const size_t length = (*object)[attributeName].DefaultStringValue().copy(dst, dstlen-1);
+			dst[length] = 0;
+			return length;
+		}
 	} catch (std::runtime_error e) {
 		LOG(LUX_ERROR,LUX_CONSISTENCY)<< e.what();
 	}

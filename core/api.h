@@ -260,11 +260,11 @@ LUX_EXPORT const char* luxGetAttributes(); /* Returns an XML string containing a
 LUX_EXPORT bool luxHasObject(const char * objectName); /* Returns true if the given object exists in the registry */
 LUX_EXPORT bool luxHasAttribute(const char * objectName, const char * attributeName); /* Returns true if object has the given attribute */
 LUX_EXPORT luxAttributeType luxGetAttributeType(const char *objectName, const char *attributeName); /* Returns the type of the attribute */
-LUX_EXPORT const char* luxGetAttributeDescription(const char * objectName, const char * attributeName); /* Returns the description of the attribute */
+LUX_EXPORT unsigned int luxGetAttributeDescription(const char * objectName, const char * attributeName, char * dst, unsigned int dstlen); /* Gets the description of the attribute */
 LUX_EXPORT bool luxHasAttributeDefaultValue(const char * objectName, const char * attributeName); /* Returns true if attribute has a default value */
 
-LUX_EXPORT const char* luxGetStringAttribute(const char * objectName, const char * attributeName); 
-LUX_EXPORT const char* luxGetStringAttributeDefault(const char * objectName, const char * attributeName); 
+LUX_EXPORT unsigned int luxGetStringAttribute(const char * objectName, const char * attributeName, char * dst, unsigned int dstlen);
+LUX_EXPORT unsigned int luxGetStringAttributeDefault(const char * objectName, const char * attributeName, char * dst, unsigned int dstlen);
 LUX_EXPORT void luxSetStringAttribute(const char * objectName, const char * attributeName, const char * value);
 LUX_EXPORT float luxGetFloatAttribute(const char * objectName, const char * attributeName); /* Returns the value of a float attribute */
 LUX_EXPORT float luxGetFloatAttributeDefault(const char * objectName, const char * attributeName); /* Returns the default value of a float attribute */

@@ -54,15 +54,15 @@ void AdvancedInfoWidget::updateWidgetValues()
 	info.append("<p><table>");
 	info.append("<tr>");
 	info.append(QString("<td>Type:</td><td>%1</td>").arg(
-		QString(luxGetStringAttribute("renderer", "name"))));
+		getStringAttribute("renderer", "name")));
 	info.append("</tr>");
 	info.append("<tr>");
 	info.append(QString("<td>Surface integrator:</td><td>%1</td>").arg(
-		QString(luxGetStringAttribute("surfaceintegrator", "name"))));
+		getStringAttribute("surfaceintegrator", "name")));
 	info.append("</tr>");
 	info.append("<tr>");
 	info.append(QString("<td>Volume integrator:</td><td>%1</td>").arg(
-		QString(luxGetStringAttribute("volumeintegrator", "name"))));
+		getStringAttribute("volumeintegrator", "name")));
 	info.append("</tr>");
 	info.append("</table></p>");
 
@@ -79,7 +79,7 @@ void AdvancedInfoWidget::updateWidgetValues()
 	info.append("</tr>");	
 	info.append("<tr>");
 	info.append(QString("<td>Output:</td><td>\"%1\"</td>").arg(
-		QString(luxGetStringAttribute("film", "filename"))));
+		getStringAttribute("film", "filename")));
 	info.append("</tr>");
 	info.append("<tr>");
 	info.append(QString("<td>Write EXR:</td><td>%1</td>").arg(
