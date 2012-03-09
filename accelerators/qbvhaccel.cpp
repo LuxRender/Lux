@@ -339,7 +339,7 @@ QBVHAccel::QBVHAccel(const vector<boost::shared_ptr<Primitive> > &p,
 	emptyLeafCount = 0;
 	primReferences = 0;
 	SAHCost = CollectStatistics(0, 0, worldBound);
-	avgLeafPrimReferences = primReferences / noEmptyLeafCount;
+	avgLeafPrimReferences = primReferences / (noEmptyLeafCount > 0 ? noEmptyLeafCount : 1);
 	
 	// Print the statistics
 	LOG(LUX_DEBUG, LUX_NOERROR) << "QBVH SAH total cost: " << SAHCost;
