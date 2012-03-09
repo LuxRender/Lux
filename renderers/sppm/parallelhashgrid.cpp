@@ -49,14 +49,14 @@ static void workSize(const u_int index, const u_int count, const unsigned int si
 
 void ParallelHashGrid::JumpInsert(unsigned int hv, unsigned int i)
 {
-	hv = boost::interprocess::detail::atomic_cas32(reinterpret_cast<volatile boost::uint32_t*>(grid + hv), i, ~0u);
+	hv = atomic_cas32(reinterpret_cast<volatile boost::uint32_t*>(grid + hv), i, ~0u);
 
 	if(hv == ~0u)
 		return;
 
 	do
 	{
-		hv = boost::interprocess::detail::atomic_cas32(reinterpret_cast<volatile boost::uint32_t*>(jump_list + hv), i, ~0u);
+		hv = atomic_cas32(reinterpret_cast<volatile boost::uint32_t*>(jump_list + hv), i, ~0u);
 	} while(hv != ~0u);
 }
 

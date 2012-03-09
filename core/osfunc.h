@@ -24,12 +24,20 @@
 #define LUX_OSFUNC_H
 
 #include <boost/cstdint.hpp>
+#include <boost/version.hpp>
 using boost::int32_t;
 using boost::uint32_t;
 #include <istream>
 #include <ostream>
 
 #include <boost/interprocess/detail/atomic.hpp>
+
+#if BOOST_VERSION >= 104800
+using namespace boost::interprocess::ipcdetail;
+#else
+using namespace boost::interprocess::detail;
+#endif // BOOST_VERSION >= 104800
+
 
 #if defined(__linux__) || defined(__APPLE__) || defined(__CYGWIN__)
 #include <stddef.h>
@@ -95,7 +103,7 @@ inline void osAtomicAdd(float *val, const float delta) {
 
 		oldVal.f = *val;
 		newVal.f = oldVal.f + delta;
-	} while (boost::interprocess::detail::atomic_cas32(reinterpret_cast<boost::uint32_t*>(val), newVal.i, oldVal.i) != oldVal.i);
+	} while (atomic_cas32(reinterpret_cast<boost::uint32_t*>(val), newVal.i, oldVal.i) != oldVal.i);
 }
 
 inline void osAtomicAdd(unsigned int *val, const unsigned int delta) {
@@ -108,9 +116,9 @@ inline void osAtomicAdd(unsigned int *val, const unsigned int delta) {
 #endif
 		oldVal = *val;
 		newVal = oldVal + delta;
-	} while (boost::interprocess::detail::atomic_cas32(reinterpret_cast<boost::uint32_t*>(val), newVal, oldVal) != oldVal);
+	} while (atomic_cas32(reinterpret_cast<boost::uint32_t*>(val), newVal, oldVal) != oldVal);
 #else
-	boost::interprocess::detail::atomic_add32(((boost::uint32_t *)val), (boost::uint32_t)delta);
+	atomic_add32(((boost::uint32_t *)val), (boost::uint32_t)delta);
 #endif
 }
 
@@ -119,7 +127,7 @@ inline void osAtomicAdd(unsigned int *val, const unsigned int delta) {
  * @return Previous value, before increment
  */
 inline unsigned int osAtomicInc(unsigned int *val) {
-	return boost::interprocess::detail::atomic_inc32(reinterpret_cast<boost::uint32_t*>(val));
+	return atomic_inc32(reinterpret_cast<boost::uint32_t*>(val));
 }
 
 /**
@@ -127,14 +135,14 @@ inline unsigned int osAtomicInc(unsigned int *val) {
  * @return Value read
  */
 inline unsigned int osAtomicRead(unsigned int *val) {
-	return boost::interprocess::detail::atomic_read32(reinterpret_cast<boost::uint32_t*>(val));
+	return atomic_read32(reinterpret_cast<boost::uint32_t*>(val));
 }
 
 /**
  * Atomically writes a 32bit variable
  */
 inline void osAtomicWrite(unsigned int *val, unsigned int newVal) {
-	boost::interprocess::detail::atomic_write32(reinterpret_cast<boost::uint32_t*>(val), static_cast<boost::uint32_t>(newVal));
+	atomic_write32(reinterpret_cast<boost::uint32_t*>(val), static_cast<boost::uint32_t>(newVal));
 }
 
 }//namespace lux
