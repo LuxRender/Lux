@@ -50,7 +50,7 @@ using std::sort;
 // Platform-specific definitions
 #if defined(WIN32) && !defined(__CYGWIN__)
 #  include <float.h>
-#  define isnan(a) (!_isnan(a))
+#  define isnan(a) (_isnan(a))
 #  define isinf(f) (!_finite((f)))
 #  pragma warning (disable: 4244) // conversion from double to float (VS2005) - Radiance
 #  pragma warning (disable: 4305) // truncation from double to float (VS2005) - Radiance
