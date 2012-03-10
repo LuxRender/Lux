@@ -30,15 +30,6 @@ using boost::uint32_t;
 #include <istream>
 #include <ostream>
 
-#include <boost/interprocess/detail/atomic.hpp>
-
-#if BOOST_VERSION >= 104800
-using namespace boost::interprocess::ipcdetail;
-#else
-using namespace boost::interprocess::detail;
-#endif // BOOST_VERSION >= 104800
-
-
 #if defined(__linux__) || defined(__APPLE__) || defined(__CYGWIN__)
 #include <stddef.h>
 #include <sys/time.h>
@@ -47,6 +38,28 @@ using namespace boost::interprocess::detail;
 #else
 #error "Unsupported Platform !!!"
 #endif
+
+#include <boost/version.hpp>
+#include <boost/interprocess/detail/atomic.hpp>
+
+#if (BOOST_VERSION < 104800)
+using boost::interprocess::detail::atomic_cas32;
+using boost::interprocess::detail::atomic_inc32;
+using boost::interprocess::detail::atomic_read32;
+using boost::interprocess::detail::atomic_write32;
+#if !defined(WIN32)
+using boost::interprocess::detail::atomic_add32;
+#endif
+#else
+using boost::interprocess::ipcdetail::atomic_cas32;
+using boost::interprocess::ipcdetail::atomic_inc32;
+using boost::interprocess::ipcdetail::atomic_read32;
+using boost::interprocess::ipcdetail::atomic_write32;
+#if !defined(WIN32)
+using boost::interprocess::detail::atomic_add32;
+#endif
+#endif // BOOST_VERSION >= 104800
+
 
 namespace lux
 {
