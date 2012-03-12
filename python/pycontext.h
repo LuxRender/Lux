@@ -899,9 +899,11 @@ public:
 				return boost::python::object(luxGetFloatAttribute(objectName, attributeName));
 			case LUX_ATTRIBUTETYPE_DOUBLE:
 				return boost::python::object(luxGetDoubleAttribute(objectName, attributeName));
-			case LUX_ATTRIBUTETYPE_STRING:
-				return boost::python::object(luxGetStringAttribute(objectName, attributeName));
-
+			case LUX_ATTRIBUTETYPE_STRING: {
+				std::vector<char> buf(1 << 16, '\0');
+				luxGetStringAttribute(objectName, attributeName, &buf[0], static_cast<unsigned int>(buf.size()));
+				return boost::python::object(&buf[0]);
+			}
 			case LUX_ATTRIBUTETYPE_NONE:
 				break;
 			default:

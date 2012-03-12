@@ -4,6 +4,7 @@
 ^cmake_install.cmake
 ^config.h
 ^liblux.a
+^liblux.so
 ^luxlex
 ^luxparse
 ^core/luxlex\..*
@@ -21,6 +22,7 @@
 ^qtgui/images.cpp
 ^qtgui/splash.cpp
 ^html/.*
+^nbproject/*
 luxcomp
 luxconsole
 luxmerger

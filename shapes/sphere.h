@@ -59,7 +59,7 @@ public:
 		dg->AdjustNormal(reverseOrientation, transformSwapsHandedness);
 		return fabsf(1.f / Dot(Cross(dg->dpdu, dg->dpdv), dg->nn));
 	}
-	virtual float Pdf(const DifferentialGeometry &dg) const {
+	virtual float Pdf(const PartialDifferentialGeometry &dg) const {
 		return fabsf(1.f / Dot(Cross(dg.dpdu, dg.dpdv), dg.nn));
 	}
 	virtual float Sample(const Point &p, float u1, float u2, float u3,
@@ -92,7 +92,7 @@ public:
 			*ns *= -1.f;
 		return ps;*/
 	}
-	virtual float Pdf(const Point &p, const DifferentialGeometry &dg) const {
+	virtual float Pdf(const Point &p, const PartialDifferentialGeometry &dg) const {
 		return Pdf(dg);
 // The following has been disabled because it is erroneous for partial spheres
 /*		Point Pcenter = ObjectToWorld(Point(0,0,0));

@@ -177,6 +177,7 @@ void RenderView::mousePressEvent (QMouseEvent *event) {
 				resetTransform ();
 				zoomfactor = 100.0f;
 				emit viewChanged ();
+			default:
 				break;
 		}
 	}

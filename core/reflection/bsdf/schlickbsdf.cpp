@@ -32,10 +32,11 @@ using namespace lux;
 static RandomGenerator rng(1);
 
 SchlickBSDF::SchlickBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
-	const Fresnel *cf, const MicrofacetDistribution *cd, bool mb, BSDF *b, 
+	const Fresnel *cf, const MicrofacetDistribution *cd, bool mb, 
+	const SWCSpectrum &a, float d, BSDF *b, 
 	const Volume *exterior, const Volume *interior, const SWCSpectrum bcolor)
 	: BSDF(dgs, ngeom, exterior, interior, bcolor), coatingType(BxDFType(BSDF_REFLECTION | BSDF_GLOSSY)),
-	fresnel(cf), distribution(cd), multibounce(mb), base(b)
+	fresnel(cf), distribution(cd), multibounce(mb), Alpha(a), depth(d), base(b)
 {
 }
 float SchlickBSDF::CoatingWeight(const SpectrumWavelengths &sw, const Vector &wo) const
@@ -120,6 +121,15 @@ float SchlickBSDF::CoatingPdf(const SpectrumWavelengths &sw, const Vector &wo,
 	const Vector wh(Normalize(wo + wi));
 	return distribution->Pdf(wh) / (4.f * AbsDot(wo, wh));
 }
+static SWCSpectrum CoatingAbsorption(float cosi, float coso, const SWCSpectrum &alpha, float depth) {
+	if (depth > 0.f) {
+		// 1/cosi+1/coso=(cosi+coso)/(cosi*coso)
+		float depthfactor = depth * (cosi + coso) / (cosi * coso);
+		return Exp(alpha * -depthfactor);
+	} else {
+		return SWCSpectrum(1.f);
+	}
+}
 bool SchlickBSDF::SampleF(const SpectrumWavelengths &sw, const Vector &woW, Vector *wiW,
 	float u1, float u2, float u3, SWCSpectrum *const f_, float *pdf,
 	BxDFType flags, BxDFType *sampledType, float *pdfBack,
@@ -186,6 +196,12 @@ bool SchlickBSDF::SampleF(const SpectrumWavelengths &sw, const Vector &woW, Vect
 		0.f : CoatingWeight(sw, wi);
 	const float wBaseR = 1.f - wCoatingR;
 
+
+	// absorption
+	const float cosi = fabsf(CosTheta(wi));
+	const float coso = fabsf(CosTheta(wo));
+	SWCSpectrum a(CoatingAbsorption(cosi, coso, Alpha, depth));	
+
 	const float sideTest = Dot(*wiW, ng) / Dot(woW, ng);
 	if (sideTest > 0.f) {
 		// Reflection
@@ -206,7 +222,7 @@ bool SchlickBSDF::SampleF(const SpectrumWavelengths &sw, const Vector &woW, Vect
 
 			// blend in base layer Schlick style
 			// coatingF already takes fresnel factor S into account
-			*f_ = coatingF + (SWCSpectrum(1.f) - S) * baseF;
+			*f_ = coatingF + a * (SWCSpectrum(1.f) - S) * baseF;
 		}
 	} else if (sideTest < 0.f) {
 		// Transmission
@@ -219,7 +235,7 @@ bool SchlickBSDF::SampleF(const SpectrumWavelengths &sw, const Vector &woW, Vect
 		// filter base layer, the square root is just a heuristic
 		// so that a sheet coated on both faces gets a filtering factor
 		// of 1-S like a reflection
-		*f_ = (SWCSpectrum(1.f) - S).Sqrt() * baseF;
+		*f_ = a * (SWCSpectrum(1.f) - S).Sqrt() * baseF;
 	} else
 		return false;
 
@@ -246,10 +262,14 @@ float SchlickBSDF::Pdf(const SpectrumWavelengths &sw, const Vector &woW, const V
 SWCSpectrum SchlickBSDF::F(const SpectrumWavelengths &sw, const Vector &woW,
 		const Vector &wiW, bool reverse, BxDFType flags) const
 {
-	const float sideTest = Dot(wiW, ng) / Dot(woW, ng);
-
 	const Vector wi(WorldToLocal(wiW)), wo(WorldToLocal(woW));
 
+	// absorption
+	const float cosi = fabsf(CosTheta(wi));
+	const float coso = fabsf(CosTheta(wo));
+	SWCSpectrum a(CoatingAbsorption(cosi, coso, Alpha, depth));
+	
+	const float sideTest = Dot(wiW, ng) / Dot(woW, ng);
 	if (sideTest > 0.f) {
 		// Reflection
 		// ignore BTDFs
@@ -275,7 +295,7 @@ SWCSpectrum SchlickBSDF::F(const SpectrumWavelengths &sw, const Vector &woW,
 
 		// blend in base layer Schlick style
 		// assumes coating bxdf takes fresnel factor S into account
-		return coatingF + (SWCSpectrum(1.f) - S) * base->F(sw, woW, wiW, reverse, flags);
+		return coatingF + a * (SWCSpectrum(1.f) - S) * base->F(sw, woW, wiW, reverse, flags);
 
 	} else if (sideTest < 0.f) {
 		// Transmission
@@ -290,7 +310,7 @@ SWCSpectrum SchlickBSDF::F(const SpectrumWavelengths &sw, const Vector &woW,
 		// filter base layer, the square root is just a heuristic
 		// so that a sheet coated on both faces gets a filtering factor
 		// of 1-S like a reflection
-		return (SWCSpectrum(1.f) - S).Sqrt() * base->F(sw, woW, wiW, reverse, flags);
+		return a * (SWCSpectrum(1.f) - S).Sqrt() * base->F(sw, woW, wiW, reverse, flags);
 	} else
 		return SWCSpectrum(0.f);
 }

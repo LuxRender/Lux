@@ -49,8 +49,9 @@ public:
 	}
 	friend inline ostream &
 		operator<<(ostream &os, const BBox &b);
-	friend  BBox Union(const BBox &b, const Point &p);
-	friend  BBox Union(const BBox &b, const BBox &b2);
+	friend BBox Union(const BBox &b, const Point &p);
+	friend BBox Union(const BBox &b, const BBox &b2);
+	friend bool Overlaps(BBox &result, const BBox &b1, const BBox &b2);
 	bool Overlaps(const BBox &b) const {
 		bool x = (pMax.x >= b.pMin.x) && (pMin.x <= b.pMax.x);
 		bool y = (pMax.y >= b.pMin.y) && (pMin.y <= b.pMax.y);
@@ -61,6 +62,11 @@ public:
 		return (pt.x >= pMin.x && pt.x <= pMax.x &&
 	            pt.y >= pMin.y && pt.y <= pMax.y &&
 	            pt.z >= pMin.z && pt.z <= pMax.z);
+	}
+	bool Inside(const BBox &bb) const {
+		return (bb.pMin.x >= pMin.x && bb.pMax.x <= pMax.x &&
+				bb.pMin.y >= pMin.y && bb.pMax.y <= pMax.y &&
+				bb.pMin.z >= pMin.z && bb.pMax.z <= pMax.z);
 	}
 	void Expand(float delta) {
 		pMin -= Vector(delta, delta, delta);
@@ -87,6 +93,18 @@ public:
 	bool IntersectP(const Ray &ray,
 			float *hitt0 = NULL,
 					float *hitt1 = NULL, bool null_shp_isect = false) const;
+
+	// Returns the list of vertices of the clipped polygon
+	// against this bounding box
+	vector<Point> ClipPolygon(const vector<Point> &vertexList) const;
+	bool IsValid() const {
+		return (pMin.x <= pMax.x) && (pMin.y <= pMax.y) && (pMin.z <= pMax.z);
+	}
+
+	Point Center() const {
+		return (pMin + pMax) * .5f;
+	}
+	
 	// BBox Public Data
 	Point pMin, pMax;
 	

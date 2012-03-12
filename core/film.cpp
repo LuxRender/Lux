@@ -676,11 +676,11 @@ Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop
 		const u_int outliers_width = xRealWidth / outlierCellWidth;
 		const u_int outliers_height = yRealHeight / outlierCellHeight;
 		outliers.resize(outliers_height);
-		for (size_t i = 0; i < outliers.size(); i++)
+		for (size_t i = 0; i < outliers.size(); ++i)
 			outliers[i].resize(outliers_width);
 		// tiles need duplicate data for row above and below tile
 		tileborder_outliers.resize(2 * tileCount);
-		for (size_t i = 0; i < tileborder_outliers.size(); i++)
+		for (size_t i = 0; i < tileborder_outliers.size(); ++i)
 			tileborder_outliers[i].resize(outliers_width);
 	}
 }
@@ -746,7 +746,8 @@ void Film::CreateBuffers()
 	contribPool = new ContributionPool(this);
 }
 
-void Film::ClearBuffers() {
+void Film::ClearBuffers()
+{
 	for (u_int i = 0; i < bufferGroups.size(); ++i) {
 
 		BufferGroup& bufferGroup = bufferGroups[i];
@@ -874,28 +875,30 @@ void Film::AddSampleCount(float count) {
 }
 
 
-std::vector<Film::OutlierAccel>& Film::GetOutlierAccelRow(u_int oY, u_int tileIndex, u_int tileStart, u_int tileEnd) {
+std::vector<Film::OutlierAccel>& Film::GetOutlierAccelRow(u_int oY, u_int tileIndex, u_int tileStart, u_int tileEnd)
+{
 	if (oY < tileStart) {
 		// above currrent tile
-		return tileborder_outliers[2*tileIndex];
+		return tileborder_outliers[2 * tileIndex];
 	} else if (oY >= tileEnd) {
 		// below current tile
-		return tileborder_outliers[2*tileIndex+1];
+		return tileborder_outliers[2 * tileIndex + 1];
 	}
 
 	// inside current tile
 	return outliers[oY];
 }
 
-void Film::RejectTileOutliers(const Contribution* const contribs, u_int num_contribs, u_int tileIndex, int yTilePixelStart, int yTilePixelEnd) {
+void Film::RejectTileOutliers(const Contribution* const contribs, u_int num_contribs, u_int tileIndex, int yTilePixelStart, int yTilePixelEnd)
+{
 	// outlier rejection
 	const float fnormTileStart = (yTilePixelStart + filter->yWidth) * outlierInvCellHeight;
 	const float fnormTileEnd   = (yTilePixelEnd   + filter->yWidth) * outlierInvCellHeight;
 
-	const u_int tileStart = static_cast<u_int>(max(0, min(Floor2Int(fnormTileStart), static_cast<int>(outliers.size()-1))));
-	const u_int tileEnd =   static_cast<u_int>(max(0, min(Floor2Int(fnormTileEnd),   static_cast<int>(outliers.size()-1))));
+	const u_int tileStart = static_cast<u_int>(max(0, min(Floor2Int(fnormTileStart), static_cast<int>(outliers.size() - 1))));
+	const u_int tileEnd =   static_cast<u_int>(max(0, min(Floor2Int(fnormTileEnd),   static_cast<int>(outliers.size() - 1))));
 
-	for (u_int ci = 0; ci < num_contribs; ci++) {
+	for (u_int ci = 0; ci < num_contribs; ++ci) {
 		const Contribution &contrib(contribs[ci]);
 
 		// filter-normalized pixel coordinates
@@ -906,8 +909,8 @@ void Film::RejectTileOutliers(const Contribution* const contribs, u_int num_cont
 
 		// perform lookup based on original position
 		// constrain to tile only if we need to add the outlier
-		const int oY = max(0, min(Floor2Int(fnormY), static_cast<int>(outliers.size()-1)));
-		const int oX = max(0, min(Floor2Int(fnormX), static_cast<int>(outliers[0].size()-1)));
+		const int oY = max(0, min(Floor2Int(fnormY), static_cast<int>(outliers.size() - 1)));
+		const int oX = max(0, min(Floor2Int(fnormX), static_cast<int>(outliers[0].size() - 1)));
 		
 		std::vector<OutlierAccel> &outlierRow = GetOutlierAccelRow(oY, tileIndex, tileStart, tileEnd);
 		OutlierAccel &outlierAccel = outlierRow[oX];
@@ -931,23 +934,23 @@ void Film::RejectTileOutliers(const Contribution* const contribs, u_int num_cont
 			// include surrounding cells so we don't have to
 			// traverse multiple cells for each lookup
 			const u_int oLeft = static_cast<u_int>(max(0, oX - 1));
-			const u_int oRight = static_cast<u_int>(min(static_cast<int>(outliers[0].size()-1), oX + 1));
+			const u_int oRight = static_cast<u_int>(min(static_cast<int>(outliers[0].size() - 1), oX + 1));
 			const u_int oTop = static_cast<u_int>(max(0, oY - 1));
-			const u_int oBottom = static_cast<u_int>(min(static_cast<int>(outliers.size()-1), oY + 1));
+			const u_int oBottom = static_cast<u_int>(min(static_cast<int>(outliers.size() - 1), oY + 1));
 
 			if (oTop < tileStart || oBottom >= tileEnd) {
 				// outlier spans tile borders
-				for (u_int i = oTop; i <= oBottom; i++) {
+				for (u_int i = oTop; i <= oBottom; ++i) {
 					std::vector<OutlierAccel> &row = GetOutlierAccelRow(oY, tileIndex, tileStart, tileEnd);
-					for (u_int j = oLeft; j <= oRight; j++) {
+					for (u_int j = oLeft; j <= oRight; ++j) {
 						row[j].AddNode(sd.p);
 					}
 				}
 			} else {
 				// we're all inside one tile
-				for (u_int i = oTop; i <= oBottom; i++) {
+				for (u_int i = oTop; i <= oBottom; ++i) {
 					std::vector<OutlierAccel> &row = outliers[oY];
-					for (u_int j = oLeft; j <= oRight; j++) {
+					for (u_int j = oLeft; j <= oRight; ++j) {
 						row[j].AddNode(sd.p);
 					}
 				}

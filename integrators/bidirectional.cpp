@@ -50,24 +50,16 @@ struct BidirVertex {
 // Bidirectional Method Definitions
 void BidirIntegrator::RequestSamples(Sample *sample, const Scene &scene)
 {
-	if (lightStrategy == SAMPLE_AUTOMATIC) {
-		if (scene.lights.size() > 5)
-			lightStrategy = SAMPLE_ONE_UNIFORM;
-		else
-			lightStrategy = SAMPLE_ALL_UNIFORM;
-	}
-
 	lightNumOffset = sample->Add1D(1);
 	lightComponentOffset = sample->Add1D(1);
 	lightPosOffset = sample->Add2D(1);
 	lightDirOffset = sample->Add2D(1);
+	samplingCount = lightDirectStrategy->GetSamplingLimit(scene);
 	vector<u_int> structure;
 	// Direct lighting samples
-	for (u_int i = 0; i < scene.lights.size(); ++i) {
-		structure.push_back(2);	//light position
+	for (u_int i = 0; i < samplingCount; ++i) {
 		structure.push_back(1);	//light number or portal
-		if (lightStrategy == SAMPLE_ONE_UNIFORM)
-			break;
+		structure.push_back(2);	//light position
 	}
 	sampleDirectOffset = sample->AddxD(structure, maxEyeDepth);
 	structure.clear();
@@ -96,6 +88,7 @@ void BidirIntegrator::Preprocess(const RandomGenerator &rng, const Scene &scene)
 	eyeBufferId = scene.camera->film->RequestBuffer(type, config, "eye");
 	lightBufferId = scene.camera->film->RequestBuffer(BUF_TYPE_PER_SCREEN,
 		config, "light");
+	lightDirectStrategy->Init(scene);
 }
 
 // Weighting of path with regard to alternate methods of obtaining it
@@ -323,7 +316,7 @@ static bool getDirectLight(const Scene &scene, const Sample &sample,
 		&vL.bsdf, &vL.dAWeight, &ePdfDirect, Ld))
 		return false;
 	vL.p = vL.bsdf->dgShading.p;
-	vL.wi = Vector(vL.bsdf->nn);
+	vL.wi = Vector(vL.bsdf->dgShading.nn);
 	vL.cosi = AbsDot(vL.wi, vL.bsdf->ng);
 	vL.dAWeight /= scene.lights.size();
 	if (light->IsDeltaLight())
@@ -352,8 +345,6 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 	if (numberOfLights == 0)
 		return nrContribs;
 	const SpectrumWavelengths &sw(sample.swl);
-	const float directWeight = (lightStrategy == SAMPLE_ONE_UNIFORM) ?
-		1.f / numberOfLights : 1.f;
 	vector<SWCSpectrum> vecL(nGroups, SWCSpectrum(0.f));
 	vector<float> vecV(nGroups, 0.f);
 	float alpha = 1.f;
@@ -371,7 +362,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 	BidirVertex &eye0(eyePath[0]);
 	// Initialize eye vertex
 	eye0.p = eye0.bsdf->dgShading.p;
-	eye0.wo = Vector(eye0.bsdf->nn);
+	eye0.wo = Vector(eye0.bsdf->dgShading.nn);
 	eye0.coso = AbsDot(eye0.wo, eye0.bsdf->ng);
 	// Light path cannot intersect camera (FIXME)
 	eye0.dARWeight = 0.f;
@@ -379,67 +370,250 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 	// Do eye vertex direct lighting
 	const float *directData0 = sample.sampler->GetLazyValues(sample,
 		sampleDirectOffset, 0);
-	switch (lightStrategy) {
-		case SAMPLE_ONE_UNIFORM: {
-			SWCSpectrum Ld;
-			float dWeight;
-			float portal = directData0[2] * numberOfLights;
-			const u_int lightDirectNumber = min(Floor2UInt(portal),
-				numberOfLights - 1U);
-			const Light *light = scene.lights[lightDirectNumber];
-			portal -= lightDirectNumber;
-			if (getDirectLight(scene, sample, *this, eyePath, 1,
-				light, directData0[0], directData0[1], portal,
-				directWeight, &Ld, &dWeight)) {
-				if (light->IsEnvironmental()) {
-					if (eyeConnect(sample, eye0,
-						XYZColor(sw, Ld), 0.f,
-						INFINITY, dWeight,
-						lightBufferId, light->group))
-						++nrContribs;
-				} else {
-					if (eyeConnect(sample, eye0,
-						XYZColor(sw, Ld), 1.f,
-						sqrtf(eye0.d2), dWeight,
-						lightBufferId, light->group))
-						++nrContribs;
-				}
+	for (u_int l = 0; l < samplingCount; ++l) {
+		SWCSpectrum Ld;
+		float dWeight, dPdf;
+		float portal = directData0[0];
+		const Light *light = lightDirectStrategy->SampleLight(scene, l,
+			&portal, &dPdf);
+		if (getDirectLight(scene, sample, *this, eyePath, 1, light,
+			directData0[1], directData0[2], portal, dPdf, &Ld,
+			&dWeight)) {
+			if (light->IsEnvironmental()) {
+				if (eyeConnect(sample, eye0,
+					XYZColor(sw, Ld), 0.f,
+					INFINITY, dWeight,
+					lightBufferId,
+					light->group))
+					++nrContribs;
+			} else {
+				if (eyeConnect(sample, eye0,
+					XYZColor(sw, Ld), 1.f,
+					sqrtf(eye0.d2), dWeight,
+					lightBufferId,
+					light->group))
+					++nrContribs;
 			}
-			break;
 		}
-		case SAMPLE_ALL_UNIFORM: {
-			SWCSpectrum Ld;
-			float dWeight;
-			for (u_int l = 0; l < scene.lights.size(); ++l) {
-				const Light *light = scene.lights[l];
-				if (getDirectLight(scene, sample, *this,
-					eyePath, 1, light,
-					directData0[0], directData0[1],
-					directData0[2], directWeight,
-					&Ld, &dWeight)) {
-					if (light->IsEnvironmental()) {
-						if (eyeConnect(sample, eye0,
-							XYZColor(sw, Ld), 0.f,
-							INFINITY, dWeight,
-							lightBufferId,
-							light->group))
-							++nrContribs;
-					} else {
-						if (eyeConnect(sample, eye0,
-							XYZColor(sw, Ld), 1.f,
-							sqrtf(eye0.d2), dWeight,
-							lightBufferId,
-							light->group))
-							++nrContribs;
-					}
-				}
-				directData0 += 3;
-			}
-			break;
-		}
-		default:
-			break;
+		directData0 += 3;
 	}
+
+	// Sample eye subpath initial direction and finish vertex initialization
+	const float lensU = sample.camera->IsLensBased() ? sample.imageX :
+		sample.lensU;
+	const float lensV = sample.camera->IsLensBased() ? sample.imageY :
+		sample.lensV;
+	//Jeanphi - Replace dummy .5f by a sampled value if needed
+	SWCSpectrum f0;
+	if (maxEyeDepth <= 1 || !eye0.bsdf->SampleF(sw,
+		eye0.wo, &eye0.wi, lensU, lensV, .5f,
+		&f0, &eye0.pdfR, BSDF_ALL, &eye0.flags,
+		&eye0.pdf, true))
+			return nrContribs;
+	eye0.flux *= f0;
+	eye0.cosi = AbsDot(eye0.wi, eye0.bsdf->ng);
+	eye0.rr = min(1.f, max(lightThreshold,
+		f0.Filter(sw) * eye0.coso / eye0.cosi));
+	eye0.rrR = min(1.f, max(eyeThreshold, f0.Filter(sw)));
+	Ray ray(eyePath[0].p, eyePath[0].wi);
+	ray.time = sample.realTime;
+	sample.camera->ClampRay(ray);
+	Intersection isect;
+	u_int nEye = 1;
+	eyePath[nEye].flux = eye0.flux;
+
+	// Trace eye subpath
+	const Volume *volume = eye0.bsdf->GetVolume(ray.d);
+	bool scattered = eye0.bsdf->dgShading.scattered;
+	for (u_int sampleIndex = 1; sampleIndex < maxEyeDepth; ++sampleIndex) {
+		const float *data = sample.sampler->GetLazyValues(sample,
+			sampleEyeOffset, sampleIndex);
+		BidirVertex &v = eyePath[nEye];
+		float spdf, spdfR;
+		if (!scene.Intersect(sample, volume, scattered, ray, data[4],
+			&isect, &v.bsdf, &spdfR, &spdf, &v.flux)) {
+			v.flux /= spdfR;
+			vector<BidirVertex> path(0);
+			// Reinitalize ray origin to the previous
+			// non passthrough intersection
+			ray.o = eyePath[nEye - 1].p;
+			for (u_int lightNumber = 0; lightNumber < scene.lights.size(); ++lightNumber) {
+				const Light *light = scene.lights[lightNumber];
+				if (!light->IsEnvironmental())
+					continue;
+				float ePdfDirect;
+				SWCSpectrum Le(v.flux);
+				// No check for dAWeight > 0
+				// in the case of portal, the eye path can hit
+				// the light outside portals
+				if (!light->Le(scene, sample, ray, &v.bsdf,
+					&v.dAWeight, &ePdfDirect, &Le))
+					continue;
+				v.wo = -ray.d;
+				v.flags = BxDFType(~BSDF_SPECULAR);
+				v.p = v.bsdf->dgShading.p;
+				v.coso = AbsDot(v.wo, v.bsdf->ng);
+				eyePath[nEye - 1].d2 =
+					DistanceSquared(eyePath[nEye - 1].p, v.p);
+				// Evaluate factors for path weighting
+				v.dARWeight = eyePath[nEye - 1].pdfR *
+					eyePath[nEye - 1].tPdfR * spdfR /
+					eyePath[nEye - 1].d2;
+				if (!v.bsdf->dgShading.scattered)
+					v.dARWeight *= v.coso;
+				v.pdf = v.bsdf->Pdf(sw, Vector(v.bsdf->dgShading.nn),
+					v.wo);
+				// No check for pdf > 0
+				// in the case of portal, the eye path can hit
+				// the light outside portals
+				v.dAWeight /= scene.lights.size();
+				ePdfDirect *= lightDirectStrategy->Pdf(scene,
+					lightNumber);
+				eyePath[nEye - 1].dAWeight = v.pdf * v.tPdf *
+					spdf / eyePath[nEye - 1].d2;
+				if (!eyePath[nEye - 1].bsdf->dgShading.scattered)
+					eyePath[nEye - 1].dAWeight *= eyePath[nEye - 1].cosi;
+				vector<BidirVertex> path(0);
+				const float w = weightPath(eyePath,
+					nEye + 1, maxEyeDepth, path, 0,
+					maxLightDepth, ePdfDirect,
+					false);
+				const u_int eGroup = light->group;
+				Le /= w;
+				vecV[eGroup] += Le.Filter(sw) / w;
+				vecL[eGroup] += Le;
+				++nrContribs;
+			}
+			if (nEye == 1) {
+				// Remove directly visible environment
+				// to allow compositing
+				alpha = 0.f;
+				// Tweak intersection distance for Z buffer
+				eyePath[0].d2 = INFINITY;
+			}
+			// End eye path tracing
+			break;
+		}
+
+		// Initialize new intersection vertex
+		scattered = v.bsdf->dgShading.scattered;
+		v.flux /= spdfR;
+		eyePath[nEye - 1].tPdfR *= spdfR;
+		v.tPdf *= spdf;
+		v.wo = -ray.d;
+		v.p = isect.dg.p;
+		v.coso = AbsDot(v.wo, v.bsdf->ng);
+		eyePath[nEye - 1].d2 =
+			DistanceSquared(eyePath[nEye - 1].p, v.p);
+		v.dARWeight = eyePath[nEye - 1].pdfR *
+			eyePath[nEye - 1].tPdfR / eyePath[nEye - 1].d2;
+		if (!scattered)
+			v.dARWeight *= v.coso;
+		++nEye;
+
+		// Test intersection with a light source
+		if (isect.arealight) {
+			BSDF *eBsdf;
+			float ePdfDirect;
+			// Reinitalize ray origin to the previous
+			// non passthrough intersection
+			ray.o = eyePath[nEye - 2].p;
+			SWCSpectrum Ll(isect.Le(sample, ray, &eBsdf,
+				&v.dAWeight, &ePdfDirect));
+			if (eBsdf && !Ll.Black()) {
+				v.flags = BxDFType(~BSDF_SPECULAR);
+				v.pdf = eBsdf->Pdf(sw, Vector(eBsdf->dgShading.nn), v.wo,
+					v.flags);
+				Ll *= v.flux;
+				// Evaluate factors for path weighting
+				v.dAWeight /= scene.lights.size();
+				ePdfDirect *= lightDirectStrategy->Pdf(scene,
+					isect.arealight);
+				eyePath[nEye - 2].dAWeight = v.pdf * v.tPdf /
+					eyePath[nEye - 2].d2;
+				if (!eyePath[nEye - 2].bsdf->dgShading.scattered)
+					eyePath[nEye - 2].dAWeight *= eyePath[nEye - 2].cosi;
+				vector<BidirVertex> path(0);
+				const float w = weightPath(eyePath,
+					nEye, maxEyeDepth, path, 0,
+					maxLightDepth, ePdfDirect,
+					false);
+				const u_int eGroup = isect.arealight->group;
+				Ll /= w;
+				vecV[eGroup] += Ll.Filter(sw) / w;
+				vecL[eGroup] += Ll;
+				++nrContribs;
+			}
+		}
+
+		// Break out if path is too long
+		if (sampleIndex >= maxEyeDepth)
+			break;
+
+		// Do direct lighting
+		const float *directData = sample.sampler->GetLazyValues(sample,
+			sampleDirectOffset, sampleIndex);
+		for (u_int l = 0; l < samplingCount; ++l) {
+			SWCSpectrum Ld;
+			float dWeight, dPdf;
+			float portal = directData[0];
+			const Light *directLight = lightDirectStrategy->SampleLight(scene, l, &portal, &dPdf);
+			if (getDirectLight(scene, sample, *this, eyePath, nEye,
+				directLight, directData[1], directData[2],
+				portal, dPdf, &Ld, &dWeight)) {
+				vecL[directLight->group] += Ld;
+				vecV[directLight->group] += Ld.Filter(sw) * dWeight;
+				++nrContribs;
+			}
+			directData += 3;
+		}
+
+		SWCSpectrum f;
+		if (!v.bsdf->SampleF(sw, v.wo, &v.wi, data[1], data[2],
+			data[3], &f, &v.pdfR, BSDF_ALL, &v.flags, &v.pdf, true))
+			break;
+
+		// Check if the scattering is a passthrough event
+		if (v.flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) ||
+			!(v.bsdf->Pdf(sw, v.wo, v.wi, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) > 0.f)) {
+			// Possibly terminate path sampling
+			if (nEye == maxEyeDepth)
+				break;
+			eyePath[nEye - 2].dAWeight = v.pdf * v.tPdf /
+				eyePath[nEye - 2].d2;
+			if (!eyePath[nEye - 2].bsdf->dgShading.scattered)
+				eyePath[nEye - 2].dAWeight *= eyePath[nEye - 2].cosi;
+			v.cosi = AbsDot(v.wi, v.bsdf->ng);
+			v.rr = min(1.f, max(lightThreshold,
+				f.Filter(sw) * v.coso / v.cosi));
+			v.rrR = min(1.f, max(eyeThreshold, f.Filter(sw)));
+			v.flux *= f;
+			if (nEye > rrStart) {
+				if (v.rrR < data[0])
+					break;
+				v.flux /= v.rrR;
+			}
+			eyePath[nEye].flux = v.flux;
+		} else {
+			--nEye;
+			v.flux *= f;
+			eyePath[nEye - 1].tPdfR *= v.pdfR;
+			v.tPdf *= v.pdf;
+			if (sampleIndex + 1 >= maxEyeDepth) {
+				eyePath[nEye - 1].rrR = 0.f;
+				break;
+			}
+		}
+
+		// Initialize _ray_ for next segment of path
+		ray = Ray(v.p, v.wi);
+		ray.time = sample.realTime;
+		volume = v.bsdf->GetVolume(ray.d);
+	}
+	const float d = sqrtf(eyePath[0].d2);
+	float xl, yl;
+	if (!sample.camera->GetSamplePosition(eyePath[0].p, eyePath[0].wi, d, &xl, &yl))
+		return 0;
 
 	// Choose light
 	const u_int lightNum = min(Floor2UInt(sample.sampler->GetOneD(sample,
@@ -461,32 +635,59 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 		BidirVertex &light0(lightPath[0]);
 		// Initialize light vertex
 		light0.p = light0.bsdf->dgShading.p;
-		light0.wi = Vector(light0.bsdf->nn);
+		light0.wi = Vector(light0.bsdf->dgShading.nn);
 		light0.cosi = AbsDot(light0.wi, light0.bsdf->ng);
 		// Give the light point probability for the weighting
 		// if the light is not delta
 		light0.dAWeight /= numberOfLights;
-		// Divide by Pdf because this value isn't used when the eye
-		// ray hits a light source, only for light paths
+		// Divide by Pdf
 		Le *= numberOfLights;
 		// Trick to tell subsequent functions that the light is delta
 		if (light->IsDeltaLight())
 			light0.dAWeight = -light0.dAWeight;
 		nLight = 1;
 
-		// Connect light vertex to eye vertex
-		// Compute direct lighting pdf for first light vertex
-		const float directPdf = light->Pdf(eye0.p,
-			light0.bsdf->dgShading) * directWeight;
-		SWCSpectrum Ll(Le);
-		float weight;
-		if (evalPath(scene, sample, *this, eyePath, 1, lightPath,
-			nLight, directPdf, false, &weight, &Ll) &&
-			eyeConnect(sample, eye0, XYZColor(sw, Ll),
-			light->IsEnvironmental() ? 0.f : 1.f,
-			light->IsEnvironmental() ? INFINITY : sqrtf(eye0.d2),
-			weight, lightBufferId, lightGroup))
-			++nrContribs;
+		// Connect eye subpath to first light vertex
+		SWCSpectrum &L(vecL[lightGroup]);
+		float &variance(vecV[lightGroup]);
+		const float directWeight = lightDirectStrategy->Pdf(scene,
+			lightNum);
+		// Go through all eye vertices
+		for (u_int j = 0; j < nEye; ++j) {
+			// Compute direct lighting pdf for first light vertex
+			const float directPdf = light->Pdf(eyePath[j].p,
+				light0.bsdf->dgShading) * directWeight;
+			SWCSpectrum Ll(Le);
+			float weight;
+			// Save data modified by evalPath
+			BidirVertex &vE(eyePath[j]);
+			const BxDFType eflags = vE.flags;
+			const float err = vE.rr;
+			const float errR = vE.rrR;
+			const float edARWeight = vE.dARWeight;
+			if (evalPath(scene, sample, *this, eyePath, j + 1,
+				lightPath, nLight, directPdf, false, &weight,
+				&Ll)) {
+				if (j == 0) {
+					if (eyeConnect(sample, eye0,
+						XYZColor(sw, Ll),
+						light->IsEnvironmental() ? 0.f : 1.f,
+						light->IsEnvironmental() ? INFINITY : sqrtf(eye0.d2),
+						weight, lightBufferId,
+						lightGroup))
+						++nrContribs;
+				} else {
+					L += Ll;
+					variance += weight * Ll.Filter(sw);
+					++nrContribs;
+				}
+			}
+			// Restore modified data
+			vE.flags = eflags;
+			vE.rr = err;
+			vE.rrR = errR;
+			vE.dARWeight = edARWeight;
+		}
 
 		// Sample light subpath initial direction and
 		// finish vertex initialization if needed
@@ -542,19 +743,41 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 						lightPath[0].bsdf->dgShading) *
 						directWeight;
 
-				// Connect light subpath to eye vertex
-				if (v.bsdf->NumComponents(BxDFType(~BSDF_SPECULAR)) > 0 && eye0.bsdf->NumComponents(BxDFType(~BSDF_SPECULAR)) > 0) {
+				// Connect eye subpath to light subpath
+				// Go through all eye vertices
+				for (u_int j = 0; j < nEye; ++j) {
+					if (eyePath[j].bsdf->NumComponents(BxDFType(~BSDF_SPECULAR)) == 0 ||
+						v.bsdf->NumComponents(BxDFType(~BSDF_SPECULAR)) == 0)
+						continue;
 					SWCSpectrum Ll(Le);
 					float weight;
+					// Save data modified by evalPath
+					BidirVertex &vE(eyePath[j]);
+					const BxDFType eflags = vE.flags;
+					const float err = vE.rr;
+					const float errR = vE.rrR;
+					const float edARWeight = vE.dARWeight;
 					if (evalPath(scene, sample, *this,
-						eyePath, 1, lightPath, nLight,
-						lightDirectPdf, false,
-						&weight, &Ll) &&
-						eyeConnect(sample, eye0,
-						XYZColor(sw, Ll), 1.f,
-						sqrtf(eye0.d2), weight,
-						lightBufferId, lightGroup))
-						++nrContribs;
+						eyePath, j + 1,
+						lightPath, nLight,
+						lightDirectPdf, false, &weight, &Ll)) {
+						if (j == 0) {
+							if (eyeConnect(sample, eye0,
+								XYZColor(sw, Ll), 1.f,
+								sqrtf(eye0.d2), weight,
+								lightBufferId, lightGroup))
+								++nrContribs;
+						} else {
+							L += Ll;
+							variance += weight * Ll.Filter(sw);
+							++nrContribs;
+						}
+					}
+					// Restore modified data
+					vE.flags = eflags;
+					vE.rr = err;
+					vE.rrR = errR;
+					vE.dARWeight = edARWeight;
 				}
 
 				// Break out if path is too long
@@ -608,284 +831,6 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 		}
 	}
 
-	// Sample eye subpath initial direction and finish vertex initialization
-	const float lensU = sample.camera->IsLensBased() ? sample.imageX :
-		sample.lensU;
-	const float lensV = sample.camera->IsLensBased() ? sample.imageY :
-		sample.lensV;
-	//Jeanphi - Replace dummy .5f by a sampled value if needed
-	SWCSpectrum f0;
-	if (maxEyeDepth <= 1 || !eye0.bsdf->SampleF(sw,
-		eye0.wo, &eye0.wi, lensU, lensV, .5f,
-		&f0, &eye0.pdfR, BSDF_ALL, &eye0.flags,
-		&eye0.pdf, true))
-			return nrContribs;
-	eye0.flux *= f0;
-	eye0.cosi = AbsDot(eye0.wi, eye0.bsdf->ng);
-	eye0.rr = min(1.f, max(lightThreshold,
-		f0.Filter(sw) * eye0.coso / eye0.cosi));
-	eye0.rrR = min(1.f, max(eyeThreshold, f0.Filter(sw)));
-	Ray ray(eyePath[0].p, eyePath[0].wi);
-	ray.time = sample.realTime;
-	sample.camera->ClampRay(ray);
-	Intersection isect;
-	u_int nEye = 1;
-	eyePath[nEye].flux = eye0.flux;
-
-	// Trace eye subpath and connect to light subpath
-	SWCSpectrum &L(vecL[lightGroup]);
-	float &variance(vecV[lightGroup]);
-	const Volume *volume = eye0.bsdf->GetVolume(ray.d);
-	bool scattered = eye0.bsdf->dgShading.scattered;
-	for (u_int sampleIndex = 1; sampleIndex < maxEyeDepth; ++sampleIndex) {
-		const float *data = sample.sampler->GetLazyValues(sample,
-			sampleEyeOffset, sampleIndex);
-		BidirVertex &v = eyePath[nEye];
-		float spdf, spdfR;
-		if (!scene.Intersect(sample, volume, scattered, ray, data[4],
-			&isect, &v.bsdf, &spdfR, &spdf, &v.flux)) {
-			v.flux /= spdfR;
-			vector<BidirVertex> path(0);
-			// Reinitalize ray origin to the previous
-			// non passthrough intersection
-			ray.o = eyePath[nEye - 1].p;
-			for (u_int lightNumber = 0; lightNumber < scene.lights.size(); ++lightNumber) {
-				const Light *light = scene.lights[lightNumber];
-				if (!light->IsEnvironmental())
-					continue;
-				float ePdfDirect;
-				SWCSpectrum Le(v.flux);
-				// No check for dAWeight > 0
-				// in the case of portal, the eye path can hit
-				// the light outside portals
-				if (!light->Le(scene, sample, ray, &v.bsdf,
-					&v.dAWeight, &ePdfDirect, &Le))
-					continue;
-				v.wo = -ray.d;
-				v.flags = BxDFType(~BSDF_SPECULAR);
-				v.p = v.bsdf->dgShading.p;
-				v.coso = AbsDot(v.wo, v.bsdf->ng);
-				eyePath[nEye - 1].d2 =
-					DistanceSquared(eyePath[nEye - 1].p, v.p);
-				// Evaluate factors for path weighting
-				v.dARWeight = eyePath[nEye - 1].pdfR *
-					eyePath[nEye - 1].tPdfR * spdfR /
-					eyePath[nEye - 1].d2;
-				if (!v.bsdf->dgShading.scattered)
-					v.dARWeight *= v.coso;
-				v.pdf = v.bsdf->Pdf(sw, Vector(v.bsdf->nn),
-					v.wo);
-				// No check for pdf > 0
-				// in the case of portal, the eye path can hit
-				// the light outside portals
-				v.dAWeight /= scene.lights.size();
-				ePdfDirect *= directWeight;
-				eyePath[nEye - 1].dAWeight = v.pdf * v.tPdf *
-					spdf / eyePath[nEye - 1].d2;
-				if (!eyePath[nEye - 1].bsdf->dgShading.scattered)
-					eyePath[nEye - 1].dAWeight *= eyePath[nEye - 1].cosi;
-				vector<BidirVertex> path(0);
-				const float w = weightPath(eyePath,
-					nEye + 1, maxEyeDepth, path, 0,
-					maxLightDepth, ePdfDirect,
-					false);
-				const u_int eGroup = light->group;
-				Le /= w;
-				vecV[eGroup] += Le.Filter(sw) / w;
-				vecL[eGroup] += Le;
-				++nrContribs;
-			}
-			if (nEye == 1) {
-				// Remove directly visible environment
-				// to allow compositing
-				alpha = 0.f;
-				// Tweak intersection distance for Z buffer
-				eyePath[0].d2 = INFINITY;
-			}
-			// End eye path tracing
-			break;
-		}
-
-		// Initialize new intersection vertex
-		scattered = v.bsdf->dgShading.scattered;
-		v.flux /= spdfR;
-		eyePath[nEye - 1].tPdfR *= spdfR;
-		v.tPdf *= spdf;
-		v.wo = -ray.d;
-		v.p = isect.dg.p;
-		v.coso = AbsDot(v.wo, v.bsdf->ng);
-		eyePath[nEye - 1].d2 =
-			DistanceSquared(eyePath[nEye - 1].p, v.p);
-		v.dARWeight = eyePath[nEye - 1].pdfR *
-			eyePath[nEye - 1].tPdfR / eyePath[nEye - 1].d2;
-		if (!scattered)
-			v.dARWeight *= v.coso;
-		++nEye;
-
-		// Test intersection with a light source
-		if (isect.arealight) {
-			BSDF *eBsdf;
-			float ePdfDirect;
-			// Reinitalize ray origin to the previous
-			// non passthrough intersection
-			ray.o = eyePath[nEye - 2].p;
-			SWCSpectrum Ll(isect.Le(sample, ray, &eBsdf,
-				&v.dAWeight, &ePdfDirect));
-			if (eBsdf && !Ll.Black()) {
-				v.flags = BxDFType(~BSDF_SPECULAR);
-				v.pdf = eBsdf->Pdf(sw, Vector(eBsdf->nn), v.wo,
-					v.flags);
-				Ll *= v.flux;
-				// Evaluate factors for path weighting
-				v.dAWeight /= scene.lights.size();
-				ePdfDirect *= directWeight;
-				eyePath[nEye - 2].dAWeight = v.pdf * v.tPdf /
-					eyePath[nEye - 2].d2;
-				if (!eyePath[nEye - 2].bsdf->dgShading.scattered)
-					eyePath[nEye - 2].dAWeight *= eyePath[nEye - 2].cosi;
-				vector<BidirVertex> path(0);
-				const float w = weightPath(eyePath,
-					nEye, maxEyeDepth, path, 0,
-					maxLightDepth, ePdfDirect,
-					false);
-				const u_int eGroup = isect.arealight->group;
-				Ll /= w;
-				vecV[eGroup] += Ll.Filter(sw) / w;
-				vecL[eGroup] += Ll;
-				++nrContribs;
-			}
-		}
-
-		// Connect eye subpath to light subpath
-		if (nLight > 0) {
-			// Compute direct lighting pdf for first light vertex
-			float directPdf = light->Pdf(v.p,
-				lightPath[0].bsdf->dgShading) * directWeight;
-			// Go through all light vertices
-			for (u_int j = 1; j <= nLight; ++j) {
-				// Use general direct lighting pdf
-				if (j >= 2)
-					directPdf = lightDirectPdf;
-				if (v.bsdf->NumComponents(BxDFType(~BSDF_SPECULAR)) == 0 || lightPath[j - 1].bsdf->NumComponents(BxDFType(~BSDF_SPECULAR)) == 0)
-					continue;
-				SWCSpectrum Ll(Le);
-				float weight;
-				// Save data modified by evalPath
-				BidirVertex &vL(lightPath[j - 1]);
-				const BxDFType lflags = vL.flags;
-				const float lrr = vL.rr;
-				const float lrrR = vL.rrR;
-				const float ldARWeight = vL.dARWeight;
-				if (evalPath(scene, sample, *this,
-					eyePath, nEye, lightPath, j,
-					directPdf, false, &weight, &Ll)) {
-					L += Ll;
-					variance += weight * Ll.Filter(sw);
-					++nrContribs;
-				}
-				// Restore modified data
-				vL.flags = lflags;
-				vL.rr = lrr;
-				vL.rrR = lrrR;
-				vL.dARWeight = ldARWeight;
-			}
-		}
-
-		// Break out if path is too long
-		if (sampleIndex >= maxEyeDepth)
-			break;
-
-		// Do direct lighting
-		const float *directData = sample.sampler->GetLazyValues(sample,
-			sampleDirectOffset, sampleIndex);
-		switch (lightStrategy) {
-			case SAMPLE_ONE_UNIFORM: {
-				SWCSpectrum Ld;
-				float dWeight;
-				float portal = directData[2] * numberOfLights;
-				const u_int lightDirectNumber =
-					min(Floor2UInt(portal),
-					numberOfLights - 1U);
-				portal -= lightDirectNumber;
-				const Light *directLight = scene.lights[lightDirectNumber];
-				if (getDirectLight(scene, sample, *this,
-					eyePath, nEye, directLight,
-					directData[0], directData[1], portal,
-					directWeight, &Ld, &dWeight)) {
-					vecL[directLight->group] += Ld;
-					vecV[directLight->group] += Ld.Filter(sw) * dWeight;
-					++nrContribs;
-				}
-				break;
-			}
-			case SAMPLE_ALL_UNIFORM: {
-				SWCSpectrum Ld;
-				float dWeight;
-				for (u_int l = 0; l < scene.lights.size(); ++l) {
-					const Light *directLight = scene.lights[l];
-					if (getDirectLight(scene, sample, *this,
-						eyePath, nEye, directLight,
-						directData[0], directData[1],
-						directData[2], directWeight,
-						&Ld, &dWeight)) {
-						vecL[directLight->group] += Ld;
-						vecV[directLight->group] += Ld.Filter(sw) * dWeight;
-						++nrContribs;
-					}
-					directData += 3;
-				}
-				break;
-			}
-			default:
-				break;
-		}
-
-		SWCSpectrum f;
-		if (!v.bsdf->SampleF(sw, v.wo, &v.wi, data[1], data[2],
-			data[3], &f, &v.pdfR, BSDF_ALL, &v.flags, &v.pdf, true))
-			break;
-
-		// Check if the scattering is a passthrough event
-		if (v.flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) ||
-			!(v.bsdf->Pdf(sw, v.wo, v.wi, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) > 0.f)) {
-			// Possibly terminate path sampling
-			if (nEye == maxEyeDepth)
-				break;
-			eyePath[nEye - 2].dAWeight = v.pdf * v.tPdf /
-				eyePath[nEye - 2].d2;
-			if (!eyePath[nEye - 2].bsdf->dgShading.scattered)
-				eyePath[nEye - 2].dAWeight *= eyePath[nEye - 2].cosi;
-			v.cosi = AbsDot(v.wi, v.bsdf->ng);
-			v.rr = min(1.f, max(lightThreshold,
-				f.Filter(sw) * v.coso / v.cosi));
-			v.rrR = min(1.f, max(eyeThreshold, f.Filter(sw)));
-			v.flux *= f;
-			if (nEye > rrStart) {
-				if (v.rrR < data[0])
-					break;
-				v.flux /= v.rrR;
-			}
-			eyePath[nEye].flux = v.flux;
-		} else {
-			--nEye;
-			v.flux *= f;
-			eyePath[nEye - 1].tPdfR *= v.pdfR;
-			v.tPdf *= v.pdf;
-			if (sampleIndex + 1 >= maxEyeDepth) {
-				eyePath[nEye - 1].rrR = 0.f;
-				break;
-			}
-		}
-
-		// Initialize _ray_ for next segment of path
-		ray = Ray(v.p, v.wi);
-		ray.time = sample.realTime;
-		volume = v.bsdf->GetVolume(ray.d);
-	}
-	const float d = sqrtf(eyePath[0].d2);
-	float xl, yl;
-	if (!sample.camera->GetSamplePosition(eyePath[0].p, eyePath[0].wi, d, &xl, &yl))
-		return nrContribs;
 	for (u_int i = 0; i < nGroups; ++i) {
 		if (!vecL[i].Black())
 			vecV[i] /= vecL[i].Filter(sw);
@@ -1004,7 +949,7 @@ bool BidirPathState::Init(const Scene &scene) {
 			++lightPathLength;
 
 			// Initialize light vertex
-			light0.wi = Vector(light0.bsdf->nn);
+			light0.wi = Vector(light0.bsdf->dgShading.nn);
 
 			// pdf of ONE_UNIFORM light sampling strategy
 			Le *= numberOfLights;
@@ -1104,7 +1049,7 @@ bool BidirPathState::Init(const Scene &scene) {
 		return result;
 
 	// Initialize eye vertex
-	eye0.wo = Vector(eye0.bsdf->nn);
+	eye0.wo = Vector(eye0.bsdf->dgShading.nn);
 
 	// Sample eye subpath initial direction and finish vertex initialization
 	const float lensU = sample.camera->IsLensBased() ? sample.imageX : sample.lensU;
@@ -1372,7 +1317,7 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 
 			Vector wo(eyePath.wi);
 
-			Li *= lightBsdf->F(sw, Vector(lightBsdf->nn), -wi, false);
+			Li *= lightBsdf->F(sw, Vector(lightBsdf->dgShading.nn), -wi, false);
 			Li *= eyePath.bsdf->F(sw, wi, wo, true);
 
 			if (Li.Black())
@@ -1653,18 +1598,10 @@ SurfaceIntegrator* BidirIntegrator::CreateSurfaceIntegrator(const ParamSet &para
 	int lightDepth = params.FindOneInt("lightdepth", 8);
 	float eyeThreshold = params.FindOneFloat("eyerrthreshold", 0.f);
 	float lightThreshold = params.FindOneFloat("lightrrthreshold", 0.f);
-	LightStrategy estrategy;
-	string st = params.FindOneString("strategy", "auto");
-	if (st == "one") estrategy = SAMPLE_ONE_UNIFORM;
-	else if (st == "all") estrategy = SAMPLE_ALL_UNIFORM;
-	else if (st == "auto") estrategy = SAMPLE_AUTOMATIC;
-	else {
-		LOG(LUX_WARNING,LUX_BADTOKEN)<<"Strategy  '"<<st<<"' for direct lighting unknown. Using \"auto\".";
-		estrategy = SAMPLE_AUTOMATIC;
-	}
+	LightsSamplingStrategy *lds = LightsSamplingStrategy::Create(params);
 	bool debug = params.FindOneBool("debug", false);
 	return new BidirIntegrator(max(eyeDepth, 0), max(lightDepth, 0),
-		eyeThreshold, lightThreshold, estrategy, debug);
+		eyeThreshold, lightThreshold, lds, debug);
 }
 
 static DynamicLoader::RegisterSurfaceIntegrator<BidirIntegrator> r("bidirectional");

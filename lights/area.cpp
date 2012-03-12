@@ -65,14 +65,14 @@ public:
 		*pdf = cosi * INV_PI;
 		if (pdfBack)
 			*pdfBack = 0.f;
-		*f_ = SWCSpectrum(fabsf(cosig * Dot(woW, nn) / cosi));
+		*f_ = SWCSpectrum(fabsf(cosig * Dot(woW, dgShading.nn) / cosi));
 		return true;
 	}
 	virtual float Pdf(const SpectrumWavelengths &sw, const Vector &woW,
 		const Vector &wiW, BxDFType flags = BSDF_ALL) const {
 		if (NumComponents(flags) == 1 &&
 			Dot(wiW, ng) > 0.f) {
-			const float cosi = Dot(wiW, nn);
+			const float cosi = Dot(wiW, dgShading.nn);
 			if (cosi > 0.f)
 				return cosi * INV_PI;
 		}
@@ -82,7 +82,7 @@ public:
 		const Vector &wiW, bool reverse, BxDFType flags = BSDF_ALL) const {
 		const float cosig = Dot(wiW, ng);
 		if (NumComponents(flags) == 1 && cosig > 0.f)
-			return SWCSpectrum(INV_PI * fabsf(reverse ? Dot(woW, nn) : cosig * Dot(woW, nn)));
+			return SWCSpectrum(INV_PI * fabsf(reverse ? Dot(woW, dgShading.nn) : cosig * Dot(woW, dgShading.nn)));
 		return SWCSpectrum(0.f);
 	}
 	virtual SWCSpectrum rho(const SpectrumWavelengths &sw,
@@ -117,8 +117,8 @@ public:
 			return false;
 		*f_ = sf->SampleF(sw, u1, u2, wiW, pdf);
 		*wiW = Normalize(LocalToWorld(*wiW));
-		*f_ *= fabsf(Dot(*wiW, ng) * Dot(woW, nn) /
-			(Dot(*wiW, nn) * sf->Average_f()));
+		*f_ *= fabsf(Dot(*wiW, ng) * Dot(woW, dgShading.nn) /
+			(Dot(*wiW, dgShading.nn) * sf->Average_f()));
 		if (sampledType)
 			*sampledType = BSDF_DIFFUSE;
 		if (pdfBack)
@@ -135,9 +135,9 @@ public:
 		const Vector &wiW, bool reverse, BxDFType flags = BSDF_ALL) const {
 		if (NumComponents(flags) == 1)
 			return sf->f(sw, WorldToLocal(wiW)) *
-				fabsf(reverse ? Dot(woW, nn)  / sf->Average_f() :
-				Dot(wiW, ng) * Dot(woW, nn) /
-				(Dot(wiW, nn) * sf->Average_f()));
+				fabsf(reverse ? Dot(woW, dgShading.nn)  / sf->Average_f() :
+				Dot(wiW, ng) * Dot(woW, dgShading.nn) /
+				(Dot(wiW, dgShading.nn) * sf->Average_f()));
 		return SWCSpectrum(0.f);
 	}
 	virtual SWCSpectrum rho(const SpectrumWavelengths &sw,
@@ -200,7 +200,7 @@ float AreaLight::Power(const Scene &scene) const
 	return gain * area * M_PI * Le->Y();
 }
 
-float AreaLight::Pdf(const Point &p, const DifferentialGeometry &dg) const
+float AreaLight::Pdf(const Point &p, const PartialDifferentialGeometry &dg) const
 {
 	return prim->Pdf(p, dg);
 }

@@ -56,7 +56,7 @@ HRHardwareDeviceDescription::HRHardwareDeviceDescription(HRHostDescription *h, l
 
 void HRHardwareDeviceDescription::SetUsedUnitsCount(const unsigned int units) {
 	// I assume there is only one single virtual device in use
-	if ((units < 0) || (units > 1))
+	if (units > 1)
 		throw std::runtime_error("A not valid amount of units used in HRDeviceDescription::SetUsedUnitsCount()");
 
 	enabled = (units == 1);

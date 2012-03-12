@@ -74,6 +74,11 @@ IF(APPLE)
 
 	########## OS and hardware detection ###########
 
+	if(NOT ${CMAKE_GENERATOR} MATCHES "Xcode") # unix makefile generator does not fill XCODE_VERSION var ! 
+		execute_process(COMMAND xcodebuild -version OUTPUT_VARIABLE XCODE_VERS_BUILDNR )
+		STRING(SUBSTRING ${XCODE_VERS_BUILDNR} 6 3 XCODE_VERSION) # truncate away build-nr
+	endif()
+
 	if(${XCODE_VERSION} GREATER 4.0)
 		set(OSX_OPTION_XCODE_4.1 ON)
 	else()
@@ -133,7 +138,6 @@ IF(APPLE)
 		elseif(HAS_SSE MATCHES 4.1)
 			SET(CMAKE_XCODE_ATTRIBUTE_GCC_ENABLE_SSE41_EXTENSIONS YES)
 		endif()
-
 	endif()
 
 	SET(CMAKE_XCODE_ATTRIBUTE_ARCHS i386\ x86_64) # valid arches
@@ -147,10 +151,18 @@ IF(APPLE)
 	if(OSX_OPTION_LTO)
 		SET(CMAKE_XCODE_ATTRIBUTE_LLVM_LTO YES)
 	endif(OSX_OPTION_LTO)
-	SET(CMAKE_BUILD_TYPE "Release" CACHE STRING "limit configs" FORCE)
-	set(OSX_DEPENDENCY_ROOT ${CMAKE_SOURCE_DIR}/../my_macos) # can be macos or usr/local for example
-	set(OSX_BUNDLE_COMPONENTS_ROOT ${CMAKE_SOURCE_DIR}/../my_macos) # bundle resources
+	if(NOT ${CMAKE_GENERATOR} MATCHES "Xcode") # will be set later in XCode
+		SET(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE} CACHE STRING "assure config" FORCE)
+		# Setup binaries output directory in Xcode manner
+		SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE} CACHE PATH "per configuration" FORCE)
+		SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE} CACHE PATH "per configuration" FORCE)
+	else() # replace CMAKE_BUILD_TYPE with XCode env var $(CONFIGURATION) globally
+		SET(CMAKE_BUILD_TYPE "$(CONFIGURATION)" )
+	endif()
+	set(OSX_DEPENDENCY_ROOT ${CMAKE_SOURCE_DIR}/../macos) # can be macos or usr/local for example
+	set(OSX_BUNDLE_COMPONENTS_ROOT ${CMAKE_SOURCE_DIR}/../macos) # bundle resources
 	INCLUDE(macosx_bundle)
+
 ENDIF(APPLE)
 
 
@@ -237,7 +249,10 @@ ADD_DEFINITIONS(-DLUX_USE_CONFIG_H)
 
 IF(APPLE)
 	# Jens - default Mac compiler options
-	ADD_DEFINITIONS(-O3 -ftree-vectorize -msse -msse2 -msse3 -mssse3 -fvariable-expansion-in-unroller -Wall -DHAVE_PTHREAD_H )
+	ADD_DEFINITIONS(-fvisibility=hidden -fvisibility-inlines-hidden -Wall -DHAVE_PTHREAD_H) # global compile definitions
+	set(OSX_FLAGS_RELEASE "-ftree-vectorize -msse -msse2 -msse3 -mssse3 -fvariable-expansion-in-unroller") # only additional flags
+	set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} ${OSX_FLAGS_RELEASE}") # cmake emits "-O3 -DNDEBUG" for Release by default, "-O0 -g" for Debug
+	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${OSX_FLAGS_RELEASE}")
 ELSEIF(MSVC)
 	# Default MSVC compiler options
 	MESSAGE(STATUS "MSVC")
@@ -291,7 +306,7 @@ ELSEIF(MSVC)
 	
 ELSE(APPLE)
 	# Dade - default compiler options
-	ADD_DEFINITIONS(-O3 -msse2 -mfpmath=sse -ftree-vectorize -funroll-loops -Wall -fPIC -DHAVE_PTHREAD_H)
+	ADD_DEFINITIONS(-O3 -msse2 -mfpmath=sse -ftree-vectorize -fvisibility=hidden -fvisibility-inlines-hidden -funroll-loops -Wall -fPIC -DHAVE_PTHREAD_H)
 	# The QBVH accelerator needs to be compiled with much reduced optimizations
 	# otherwise gcc produces incorrect code and ruins the render on 64bits machines
 	SET_SOURCE_FILES_PROPERTIES(accelerators/qbvhaccel.cpp COMPILE_FLAGS "-O1")
@@ -300,9 +315,6 @@ ENDIF(APPLE)
 #############################################################################
 # Compiler flags for specific setup
 #############################################################################
-
-# Jens - testing Mac compiler options (debug)
-#ADD_DEFINITIONS(-O0 -fpic -Wall -DHAVE_PTHREAD_H)
 
 # Dade - GCC Profiling (remember to uncomment the line at the end of file too)
 #ADD_DEFINITIONS(-pg -g -O2 -msse2 -mfpmath=sse -ftree-vectorize -Wall -DHAVE_PTHREAD_H)
@@ -356,7 +368,8 @@ ENDIF (APPLE)
 
 LINK_DIRECTORIES(${LINK_DIRECTORIES} ${Boost_LIBRARY_DIRS} )
 IF (APPLE)
-	SET(OSX_SHARED_CORELIB ${CMAKE_BINARY_DIR}/Release/liblux.dylib)
+	SET(OSX_SHARED_CORELIB ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/liblux.dylib)
+	ADD_DEFINITIONS(-DLUX_DLL) # define we use dynamic corelib
 ELSEIF(MSVC)
 	IF(MSVC90)
 		# LTCG not correctly set by cmake in the current release - in the meantime the linker will inform you about switching this flag automatically because of /GL
@@ -385,7 +398,10 @@ ELSEIF(MSVC)
 	ADD_DEFINITIONS(-DLUX_DLL)
 	SET(LUX_LIBRARY luxShared)
 ELSE(APPLE)
-	SET(LUX_LIBRARY -Wl,--whole-archive luxStatic -Wl,--no-whole-archive)
+	SET(LUX_LIBRARY luxShared)
+	ADD_DEFINITIONS(-DLUX_DLL) # for controlling visibility
+	SET(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
+	SET(CMAKE_INSTALL_RPATH "$ORIGIN")
 ENDIF(APPLE)
 SET(LUX_LIBRARY_DEPENDS ${LUXRAYS_LIBRARY} ${OPENCL_LIBRARIES} ${OPENGL_LIBRARY} ${FREEIMAGE_LIBRARIES} ${Boost_LIBRARIES} ${SYS_LIBRARIES})
 
@@ -435,7 +451,7 @@ ELSE(APPLE)
 
 	#Install API/Library
 	INSTALL(FILES ${CMAKE_SOURCE_DIR}/core/api.h DESTINATION include/luxrender/)
-	INSTALL(TARGETS luxStatic DESTINATION lib${LIB_SUFFIX})
+	INSTALL(TARGETS luxShared DESTINATION lib${LIB_SUFFIX})
 
 	#Install Desktop files
 	INSTALL(FILES ${CMAKE_SOURCE_DIR}/wxgui/luxrender.svg DESTINATION share/pixmaps/)
@@ -462,7 +478,9 @@ ENDIF(APPLE)
 
 IF(APPLE)
 	MESSAGE(STATUS "")
-	MESSAGE(STATUS "################ GENERATED XCODE PROJECT INFORMATION ################")
+	MESSAGE(STATUS "################ GENERATED OSX PROJECT INFORMATION ################")
+	MESSAGE(STATUS "")
+	MESSAGE(STATUS "GENERATED_PROJECT_TYPE : " ${CMAKE_GENERATOR})
 	MESSAGE(STATUS "")
 	MESSAGE(STATUS "BUILD_MACHINE_SYS : OSX_" ${OSX_SYSTEM})
 	MESSAGE(STATUS "BUILD_MACHINE_MODEL : " ${MAC_MODEL})
@@ -478,7 +496,11 @@ IF(APPLE)
 	MESSAGE(STATUS "USE_XCODE_4.1_FEATURES : " ${OSX_OPTION_XCODE_4.1})
 	MESSAGE(STATUS "VALID_BUILD_ARCHTECTURES : " ${CMAKE_XCODE_ATTRIBUTE_ARCHS})
 	MESSAGE(STATUS "")
-	MESSAGE(STATUS "BUILD_TYPE : " ${CMAKE_BUILD_TYPE})
+	if(${CMAKE_GENERATOR} MATCHES "Xcode")
+		MESSAGE(STATUS "BUILD_TYPE : Please set in Xcode DYNAMIC_BUILD target to aimed type")
+	else()
+		MESSAGE(STATUS "BUILD_TYPE : " ${CMAKE_BUILD_TYPE} " - compile with: make DYNAMIC_BUILD" )
+	endif()
 	IF(OSX_OPTION_PYLUX)
 		MESSAGE(STATUS "PYLUX CONFIGURED FOR BLENDER 2.6 USE")
 	ELSE(OSX_OPTION_PYLUX)

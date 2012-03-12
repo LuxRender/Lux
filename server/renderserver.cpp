@@ -388,6 +388,8 @@ void cmd_ServerDisconnect(bool isLittleEndian, NetworkRenderServerThread *server
 	if (!serverThread->renderServer->validateAccess(stream))
 		return;
 
+	LOG( LUX_INFO,LUX_NOERROR) << "Master ended session, cleaning up";
+
 	// Dade - stop the rendering and cleanup
 	luxExit();
 	luxWait();
@@ -398,6 +400,7 @@ void cmd_ServerDisconnect(bool isLittleEndian, NetworkRenderServerThread *server
 		remove(tmpFileList[i]);
 
 	serverThread->renderServer->setServerState(RenderServer::READY);
+	LOG( LUX_INFO,LUX_NOERROR) << "Server ready";
 }
 void cmd_ServerConnect(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
 //case CMD_SERVER_CONNECT:
@@ -428,6 +431,18 @@ void cmd_ServerConnect(bool isLittleEndian, NetworkRenderServerThread *serverThr
 		stream << "CONNECTED" << endl;
 	} else
 		stream << "BUSY" << endl;
+}
+void cmd_ServerReconnect(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_SERVER_RECONNECT:
+	if (serverThread->renderServer->validateAccess(stream)) {
+		stream << "CONNECTED" << endl;
+	} else if (serverThread->renderServer->getServerState() == RenderServer::BUSY) {
+		// server is busy, but validation failed, means the master's SID didn't match ours.
+		stream << "DENIED" << endl;
+	} else {
+		// server doesn't have an active session
+		stream << "IDLE" << endl;
+	}
 }
 void cmd_luxInit(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
 //case CMD_LUXINIT:
@@ -703,7 +718,7 @@ void cmd_luxGetLog(bool isLittleEndian, NetworkRenderServerThread *serverThread,
 
 		for (vector<RenderServer::ErrorMessage>::iterator it = serverThread->renderServer->errorMessages.begin(); it != serverThread->renderServer->errorMessages.end(); ++it) {
 			stringstream ss("");
-			ss << it->code << " " << it->severity << " " << it->message << "\n";
+			ss << it->severity << " " << it->code << " " << it->message << "\n";
 			stream << ss.str();
 		}
 
@@ -750,6 +765,7 @@ void NetworkRenderServerThread::run(int ipversion, NetworkRenderServerThread *se
 
 	INSERT_CMD(ServerDisconnect);
 	INSERT_CMD(ServerConnect);
+	INSERT_CMD(ServerReconnect);
 	INSERT_CMD(luxInit);
 	INSERT_CMD(luxTranslate);
 	INSERT_CMD(luxRotate);

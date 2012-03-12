@@ -50,7 +50,7 @@ using std::sort;
 // Platform-specific definitions
 #if defined(WIN32) && !defined(__CYGWIN__)
 #  include <float.h>
-#  define isnan(a) _isnan(a)
+#  define isnan(a) (_isnan(a))
 #  define isinf(f) (!_finite((f)))
 #  pragma warning (disable: 4244) // conversion from double to float (VS2005) - Radiance
 #  pragma warning (disable: 4305) // truncation from double to float (VS2005) - Radiance
@@ -62,6 +62,7 @@ using std::sort;
 #  pragma warning (disable: 4267 4251 4065 4102)
 #  pragma warning (disable: 4190) // extern "C" nonsense when returning a template
 #  pragma warning (disable: 4290) // C++ exception specification ignored except to indicate a function is not __declspec(nothrow) ; pointless warning
+#  pragma warning (disable: 4355) // 'this' used in base member initializer list
 //#define WIN32_LEAN_AND_MEAN //defined in project properties
 #  include <windows.h>
 

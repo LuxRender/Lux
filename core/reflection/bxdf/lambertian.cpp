@@ -30,7 +30,7 @@ using namespace lux;
 void Lambertian::F(const SpectrumWavelengths &sw, const Vector &wo, 
 	const Vector &wi, SWCSpectrum *const f_) const
 {
-	*f_ += RoverPI * fabsf(wo.z);
+	*f_ += R * (INV_PI * fabsf(wo.z));
 }
 
 bool Lambertian::SampleF(const SpectrumWavelengths &sw, const Vector &wo,

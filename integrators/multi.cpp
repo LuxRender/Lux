@@ -113,7 +113,7 @@ u_int MultiScattering::Li(const Scene &scene, const Ray &ray,
 						NULL, NULL)) {
 						const Vector wo(Normalize(r.o - ibsdf->dgShading.p));
 						*Lv += Tr * ss * L *
-							ibsdf->F(sw, Vector(ibsdf->nn), wo, false) *
+							ibsdf->F(sw, Vector(ibsdf->dgShading.nn), wo, false) *
 							(vr->P(sw, dg, w, wo) *
 							nLights);
 					}

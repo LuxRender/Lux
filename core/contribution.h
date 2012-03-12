@@ -77,7 +77,7 @@ class ContributionBuffer {
 			const u_int i = osAtomicInc(&pos);
 
 			// ensure we stay within bounds
-			if (!(i < CONTRIB_BUF_SIZE))
+			if (i >= CONTRIB_BUF_SIZE)
 				return false;
 
 			contribs[i] = c;

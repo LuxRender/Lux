@@ -151,15 +151,12 @@ public:
 	virtual Transform GetWorldToLocal(float time) const {
 		return WorldToObject;
 	}
-	virtual string Name() const {
-		return shape_name;
-	}
 	// Shape data
 	const Transform ObjectToWorld, WorldToObject;
 protected:
 	boost::shared_ptr<Material> material;
 	boost::shared_ptr<Volume> exterior, interior;
-	const string shape_name;
+	const string name;
 public: // Last to get better data alignment
 	const bool reverseOrientation, transformSwapsHandedness;
 };

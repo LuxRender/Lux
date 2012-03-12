@@ -1234,7 +1234,7 @@ u_int Context::GetLightGroup() {
 			LOG(LUX_ERROR,LUX_BADFILE) << "Undefined lightgroup '" <<
 				graphicsState->currentLightGroup <<
 				"', using 'default' instead";
-			graphicsState->currentLightGroup == "";
+			graphicsState->currentLightGroup = "";
 			lg = GetLightGroup();
 		}
 	}

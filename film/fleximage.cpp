@@ -203,7 +203,6 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, u_int filtRes
 			int nv = imgdata->getHeight();
 			back=new XYZColor[nu*nv];
 			TextureColor<float, 3u > *ret=static_cast<TextureColor<float, 3u >*>(imgdata->getData());
-			float R_=0.f,G_=0.f,B_=0.f;
 
 			for ( int i = 0 ; i < nu*nv ; i++ )
 			back[i] = colorSpace.ToXYZ(RGBColor(ret[i].c));
@@ -1114,11 +1113,14 @@ void FlexImageFilm::WriteImage(ImageType type)
 			pcount++;
 		}
 		alpha_buffer[pix] = alpha[pix];
-	}
-	if(back!=NULL) {
-		for(u_int pix = 0; pix < nPix; ++pix)
+
+		if(back!=NULL) {
 			pixels[pix] = back[pix]*(1.f-alpha[pix])+pixels[pix];
+			alpha[pix] = 1.f;
+		}
+
 	}
+
 
 	Y /= pcount;
 	averageLuminance = Y;

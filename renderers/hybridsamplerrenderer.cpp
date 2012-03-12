@@ -787,7 +787,12 @@ Renderer *HybridSamplerRenderer::CreateRenderer(const ParamSet &params) {
 
 	bool useGPUs = configParams.FindOneBool("opencl.gpu.use", true);
 
-	const u_int forceGPUWorkGroupSize = max(0, configParams.FindOneInt("opencl.gpu.workgroup.size", 0));
+	// With a value of 0 we would end to use the default OpenCL driver for
+	// the compiled kernel. However, 99% of times, the default OpenCL driver is
+	// not a valid value for the kernel (and local GPU memory) we are going to use.
+	// Better to use 64 as default value (a valid and good values in for
+	// about all OpenCL devices).
+	const u_int forceGPUWorkGroupSize = max(0, configParams.FindOneInt("opencl.gpu.workgroup.size", 64));
 
 	const u_int qbvhStackSize = max(16, configParams.FindOneInt("accelerator.qbvh.stacksize.max", 32));
 

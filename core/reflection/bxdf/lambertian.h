@@ -35,7 +35,7 @@ public:
 	// Lambertian Public Methods
 	Lambertian(const SWCSpectrum &reflectance)
 		: BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)),
-		  R(reflectance), RoverPI(reflectance * INV_PI) {
+		  R(reflectance) {
 	}
 	virtual ~Lambertian() { }
 	virtual void F(const SpectrumWavelengths &sw, const Vector &wo,
@@ -49,7 +49,7 @@ public:
 		float *) const { return R; }
 private:
 	// Lambertian Private Data
-	SWCSpectrum R, RoverPI;
+	SWCSpectrum R;
 };
 
 }//namespace lux

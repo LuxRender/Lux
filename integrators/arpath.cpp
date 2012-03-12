@@ -137,8 +137,8 @@ u_int ARPathIntegrator::Li(const Scene &scene, const Sample &sample) const
 	u_int vertexIndex = 0;
 	const Volume *volume = NULL;
 
-	bool old_as= true, as_type = true, bs_type = true;
-	bool old_IsSup= false, from_IsSup = false, to_IsSup = false, path_type = false;
+//	bool old_as= true, as_type = true, bs_type = true;
+	bool from_IsSup = false, to_IsSup = false, path_type = false;
 
 	for (u_int pathLength = 0; ; ++pathLength) {
 		const SWCSpectrum prevThroughput(pathThroughput);
@@ -148,7 +148,6 @@ u_int ARPathIntegrator::Li(const Scene &scene, const Sample &sample) const
 		Intersection isect;
 		BSDF *bsdf;
 		float spdf;
-		old_IsSup = from_IsSup;
 		from_IsSup = to_IsSup;
 		if (!scene.Intersect(sample, volume, scattered, ray, data[3], &isect,
 			&bsdf, &spdf, NULL, &pathThroughput)) {
@@ -207,7 +206,7 @@ u_int ARPathIntegrator::Li(const Scene &scene, const Sample &sample) const
 
 		// Possibly add emitted light at path vertex
 		Vector wo(-ray.d);
-		if (specularBounce && isect.arealight && bs_type) {
+		if (specularBounce && isect.arealight && path_type) {
 			BSDF *ibsdf;
 			SWCSpectrum Le(isect.Le(sample, ray, &ibsdf, NULL,
 				NULL));
@@ -509,7 +508,7 @@ void ARPathIntegrator::BuildShadowRays(const Scene &scene, ARPathState *pathStat
                                         const SpectrumWavelengths &sw(pathState->sample.swl);
                                         Vector wo(-pathState->pathRay.d);
 
-					Li *= lightBsdf->F(sw, Vector(lightBsdf->nn), -wi, false);
+					Li *= lightBsdf->F(sw, Vector(lightBsdf->dgShading.nn), -wi, false);
 					Li *= bsdf->F(sw, wi, wo, true);
 
 					if (!Li.Black()) {

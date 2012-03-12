@@ -45,7 +45,7 @@ public:
 			2.f * M_PI * (1.f - cosTotalWidth) *
 			projectionMap->LookupFloat(CHANNEL_WMEAN, .5f, .5f, .5f);
 	}
-	virtual float Pdf(const Point &p, const DifferentialGeometry &dg) const;
+	virtual float Pdf(const Point &p, const PartialDifferentialGeometry &dg) const;
 	virtual bool SampleL(const Scene &scene, const Sample &sample,
 		float u1, float u2, float u3, BSDF **bsdf, float *pdf,
 		SWCSpectrum *Le) const;

@@ -32,14 +32,19 @@ namespace lux
 
 void QueryableRegistry::Insert(Queryable* object)
 {
-	//TODO jromang - add assertion (not duplicate name)
+	std::map<std::string, Queryable*>::iterator it = queryableObjects.find(object->GetName());
+	if (it != queryableObjects.end()) {
+		LOG(LUX_ERROR, LUX_BUG) << "Duplicate registration of Queryable object '" << object->GetName() << "' detected";
+		queryableObjects.erase(it);
+	}
 	queryableObjects.insert(std::pair<std::string,Queryable*>(object->GetName(),object));
 }
 
 void QueryableRegistry::Erase(Queryable* object)
 {
-	//TODO jromang - add assertion (existing object)
-	queryableObjects.erase(object->GetName());
+	if (!queryableObjects.erase(object->GetName())) {
+		LOG(LUX_ERROR, LUX_BUG) << "Deregistration of non-existing Queryable object '" << object->GetName() << "' detected";
+	}
 }
 
 const char * QueryableRegistry::GetContent()

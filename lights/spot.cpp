@@ -100,7 +100,7 @@ SpotLight::~SpotLight()
 {
 }
 
-float SpotLight::Pdf(const Point &p, const DifferentialGeometry &dg) const
+float SpotLight::Pdf(const Point &p, const PartialDifferentialGeometry &dg) const
 {
 	return 1.f;
 }

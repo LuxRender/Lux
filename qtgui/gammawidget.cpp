@@ -26,6 +26,7 @@
 #include "mainwindow.hxx"
 
 #include "api.h"
+#include "guiutil.h"
 
 GammaWidget::GammaWidget(QWidget *parent) : QWidget(parent), ui(new Ui::GammaWidget)
 {
@@ -131,11 +132,7 @@ void GammaWidget::resetFromFilm (bool useDefaults)
 
 	//ui->checkBox_CRF->setChecked(m_CRF_enabled);
 
-#if defined(__APPLE__) // OSX locale is UTF-8, TODO check this for other OS
-	m_CRF_file = QString::fromUtf8(luxGetStringAttribute("film", "CameraResponse"));
-#else
-	m_CRF_file = QString::fromAscii(luxGetStringAttribute("film", "CameraResponse"));
-#endif
+	m_CRF_file = getStringAttribute("film", "CameraResponse");
 
 	// not ideal as this will reset gamma
 	// which wont happen if CRF was defined in the scene file

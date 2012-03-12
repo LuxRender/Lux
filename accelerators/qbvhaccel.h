@@ -46,9 +46,9 @@ class QuadPrimitive;
 */
 
 /**
-   the number of bins for construction
+   the number of bins for object split
 */
-#define NB_BINS 8
+#define OBJECT_SPLIT_BINS 8
 
 /**
    The QBVH node structure, 128 bytes long (perfect for cache)
@@ -205,7 +205,19 @@ public:
 		}
 	}
 
-	
+	// Return the bounding box of the ith child
+	inline BBox GetBBox(int i) const {
+		BBox bbox;
+		bbox.pMin.x = reinterpret_cast<const float *>(&(bboxes[0][0]))[i];
+		bbox.pMax.x = reinterpret_cast<const float *>(&(bboxes[1][0]))[i];
+		bbox.pMin.y = reinterpret_cast<const float *>(&(bboxes[0][1]))[i];
+		bbox.pMax.y = reinterpret_cast<const float *>(&(bboxes[1][1]))[i];
+		bbox.pMin.z = reinterpret_cast<const float *>(&(bboxes[0][2]))[i];
+		bbox.pMax.z = reinterpret_cast<const float *>(&(bboxes[1][2]))[i];
+
+		return bbox;
+	}
+
 	/**
 	   Intersect a ray described by sse variables with the 4 bounding boxes
 	   of the node.
@@ -279,7 +291,14 @@ public:
 	*/
 	static Aggregate *CreateAccelerator(const vector<boost::shared_ptr<Primitive> > &prims, const ParamSet &ps);
 
+protected:
+	QBVHAccel() { }
+
 private:
+	float BuildObjectSplit(const u_int start, const u_int end,
+		const u_int *primsIndexes, const BBox *primsBboxes, const Point *primsCentroids,
+		const BBox &centroidsBbox, int &axis);
+
 	/**
 	   Build the tree that will contain the primitives indexed from start
 	   to end in the primsIndexes array.
@@ -295,11 +314,12 @@ private:
 	   (its child number)
 	   @param depth the current depth.
 	*/
-	void BuildTree(u_int start, u_int end, u_int *primsIndexes, BBox *primsBboxes,
-		Point *primsCentroids, const BBox &nodeBbox,
+	void BuildTree(u_int start, u_int end, u_int *primsIndexes, const BBox *primsBboxes,
+		const Point *primsCentroids, const BBox &nodeBbox,
 		const BBox &centroidsBbox, int32_t parentIndex, int32_t childIndex,
 		int depth);
-	
+
+protected:	
 	/**
 	   Create a leaf using the traditional QBVH layout
 	   @param parentIndex
@@ -344,7 +364,7 @@ private:
 	   @param primsIndexes
 	   @param vPrims
 	*/
-	void PreSwizzle(int32_t nodeIndex, u_int *primsIndexes,
+	void PreSwizzle(int32_t nodeIndex, const u_int *primsIndexes,
 		const vector<boost::shared_ptr<Primitive> > &vPrims);
 
 	/**
@@ -357,7 +377,10 @@ private:
 	   @param vPrims
 	*/
 	void CreateSwizzledLeaf(int32_t parentIndex, int32_t childIndex, 
-		u_int *primsIndexes, const vector<boost::shared_ptr<Primitive> > &vPrims);
+		const u_int *primsIndexes, const vector<boost::shared_ptr<Primitive> > &vPrims);
+
+	float CollectStatistics(const int32_t nodeIndex, const u_int depth,
+		const BBox &nodeBBox);
 
 	/**
 	   the actual number of quads
@@ -409,7 +432,10 @@ private:
 	*/
 	u_int maxPrimsPerLeaf;
 
-	
+	// Some statistics about the quality of the built accelerator
+	float SAHCost, avgLeafPrimReferences;
+	u_int maxDepth, nodeCount, noEmptyLeafCount, emptyLeafCount, primReferences;
+
 	// Adapted from Robin Bourianes (robin.bourianes@free.fr)
 	// Array indicating the order of visit
 
@@ -427,6 +453,11 @@ private:
 	// 4 bits per index, stored in 32bit int. 4 means no intersection.
 	// 16 visit * 8 idx * 4 bbox = 128 * ints = 512bytes
 	static const boost::int16_t pathTable[128];
+
+	static inline u_int QuadCount(const u_int nPrims) {
+		// Next multiple of 4, divided by 4
+		return (nPrims + 3) / 4;
+	}
 };
 
 } // namespace lux

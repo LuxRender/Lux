@@ -35,10 +35,11 @@ using std::memset;
 using namespace lux;
 
 InterpolatedTransform::InterpolatedTransform(float st, float et,
-		const Transform &s, const Transform &e)
-		: hasTranslationX(false), hasTranslationY(false), hasTranslationZ(false), 
-		hasScaleX(false), hasScaleY(false), hasScaleZ(false), hasRotation(false), 
-		isActive(false)
+	const Transform &s, const Transform &e)
+	: hasRotation(false),
+	hasTranslationX(false), hasTranslationY(false), hasTranslationZ(false),
+	hasScaleX(false), hasScaleY(false), hasScaleZ(false),
+	isActive(false)
 {
 	startTime = st;
 	endTime = et;
@@ -457,9 +458,6 @@ MotionTransform MotionTransform::operator*(const MotionTransform &t) const {
 
 	// loop over unique knots
 	for (time_it timeN = new_times.begin(); timeN != new_times.end(); timeN++) {
-		float t_N = *timeN;
-		float t_L = *timeL;
-		float t_R = *timeR;
 		if (*timeL <= *timeN) {
 			// need to move to next knot
 			prev_timeL = timeL;

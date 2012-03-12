@@ -23,12 +23,13 @@
 // bbox.cpp*
 #include "bbox.h"
 #include "ray.h"
+#include "normal.h"
 
 namespace lux
 {
 
 // BBox Method Definitions
- BBox Union(const BBox &b, const Point &p) {
+BBox Union(const BBox &b, const Point &p) {
 	BBox ret = b;
 	ret.pMin.x = min(b.pMin.x, p.x);
 	ret.pMin.y = min(b.pMin.y, p.y);
@@ -38,7 +39,8 @@ namespace lux
 	ret.pMax.z = max(b.pMax.z, p.z);
 	return ret;
 }
- BBox Union(const BBox &b, const BBox &b2) {
+
+BBox Union(const BBox &b, const BBox &b2) {
 	BBox ret;
 	ret.pMin.x = min(b.pMin.x, b2.pMin.x);
 	ret.pMin.y = min(b.pMin.y, b2.pMin.y);
@@ -48,11 +50,86 @@ namespace lux
 	ret.pMax.z = max(b.pMax.z, b2.pMax.z);
 	return ret;
 }
- 
+
+bool Overlaps(BBox &result, const BBox &b1, const BBox &b2) {
+	if (!b1.Overlaps(b2))
+		return false;
+	
+	result.pMin.x = max(b1.pMin.x, b2.pMin.x);
+	result.pMin.y = max(b1.pMin.y, b2.pMin.y);
+	result.pMin.z = max(b1.pMin.z, b2.pMin.z);
+	result.pMax.x = min(b1.pMax.x, b2.pMax.x);
+	result.pMax.y = min(b1.pMax.y, b2.pMax.y);
+	result.pMax.z = min(b1.pMax.z, b2.pMax.z);
+
+	return true;
+}
+
 void BBox::BoundingSphere(Point *c, float *rad) const {
 	*c = .5f * pMin + .5f * pMax;
 	*rad = Inside(*c) ? Distance(*c, pMax) : 0.f;
 }
+
+static inline Point ClipEdge(const Point &planeOrig, const Normal &planeNormal,
+		const Point &a, const Point &b) {
+	const float distA = Dot(a - planeOrig, planeNormal);
+	const float distB = Dot(b - planeOrig, planeNormal);
+
+	const float s = distA / (distA - distB);
+
+	return Point(a.x + s * (b.x - a.x),
+			a.y + s * (b.y - a.y),
+			a.z + s * (b.z - a.z));
+}
+
+vector<Point> BBox::ClipPolygon(const vector<Point> &vertexList) const {
+	const Point clippingPlaneOrigin[6] = {
+		pMin,
+		pMin,
+		pMin,
+		pMax,
+		pMax,
+		pMax
+	};
+
+	static const Normal clippingPlaneNormal[6] = {
+		Normal(1.f, 0.f, 0.f),
+		Normal(0.f, 1.f, 0.f),
+		Normal(0.f, 0.f, 1.f),
+		Normal(-1.f, 0.f, 0.f),
+		Normal(0.f, -1.f, 0.f),
+		Normal(0.f, 0.f, -1.f),
+	};
+	
+	vector<Point> outputList = vertexList;
+	// For each bounding box plane
+	for (size_t i = 0; i < 6; ++i) {
+		vector<Point> inputList = outputList;
+		outputList.clear();
+
+		if (inputList.size() == 0)
+			return vector<Point>();
+
+		Point S = inputList[inputList.size() - 1];
+		for (size_t j = 0; j < inputList.size(); ++j) {
+			const Point &E = inputList[j];
+
+			if (Dot(E - clippingPlaneOrigin[i], clippingPlaneNormal[i]) >= 0.f) {
+				if (Dot(S - clippingPlaneOrigin[i], clippingPlaneNormal[i]) < 0.f)
+					outputList.push_back(ClipEdge(clippingPlaneOrigin[i], clippingPlaneNormal[i], S, E));
+
+				outputList.push_back(E);
+			} else if (Dot(S - clippingPlaneOrigin[i], clippingPlaneNormal[i]) >= 0.f) {
+				outputList.push_back(ClipEdge(clippingPlaneOrigin[i], clippingPlaneNormal[i], S, E));
+			}
+
+			S = E;
+		}
+	}
+
+	return outputList;
+}
+
 // NOTE - lordcrc - BBox::IntersectP relies on IEEE 754 behaviour of infinity and /fp:fast breaks this
 #if defined(WIN32) && !defined(__CYGWIN__)
 #pragma float_control(push)

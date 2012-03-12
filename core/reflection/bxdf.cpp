@@ -106,9 +106,9 @@ float BxDF::Weight(const SpectrumWavelengths &sw, const Vector &w) const
 }
 BSDF::BSDF(const DifferentialGeometry &dg, const Normal &ngeom,
 	const Volume *ex, const Volume *in, const SWCSpectrum bcolor)
-	: nn(dg.nn), ng(ngeom), dgShading(dg), exterior(ex), interior(in), Bcolor(bcolor)
+	: ng(ngeom), dgShading(dg), exterior(ex), interior(in), Bcolor(bcolor)
 {
 	sn = Normalize(dgShading.dpdu);
-	tn = Cross(nn, sn);
+	tn = Cross(dg.nn, sn);
 	compParams = NULL; 
 }

@@ -39,6 +39,9 @@ float LogSliderValToValue(int sliderval, const float logLowerBound, const float 
 
 QString pathElidedText(const QFontMetrics &fm, const QString &text, int width, int flags = 0);
 
+QString getStringAttribute(const char *objectName, const char *attributeName);
+QString getAttributeDescription(const char *objectName, const char *attributeName);
+
 void overlayStatistics(QImage *image);
 QImage getFramebufferImage(bool overlayStats = false, bool outputAlpha = false);
 bool saveCurrentImageTonemapped(const QString &outFile, bool overlayStats = false, bool outputAlpha = false);
