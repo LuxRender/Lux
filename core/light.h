@@ -101,6 +101,7 @@ public:
 		const DifferentialGeometry &dg, BSDF **bsdf, float *pdf,
 		float *pdfDirect) const;
 	virtual float Power(const Scene &scene) const;
+	virtual bool IsSupport() const;
 	virtual bool IsDeltaLight() const { return false; }
 	virtual bool IsEnvironmental() const { return false; }
 	virtual float Pdf(const Point &p, const DifferentialGeometry &dg) const;
