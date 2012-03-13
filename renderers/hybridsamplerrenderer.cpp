@@ -358,7 +358,7 @@ void HybridSamplerRenderer::Render(Scene *s) {
 			return;
 		}
 
-		if (!scene->surfaceIntegrator->CheckLightStrategy()) {
+		if (!scene->surfaceIntegrator->CheckLightStrategy(*scene)) {
 			state = TERMINATE;
 			return;
 		}

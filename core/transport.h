@@ -60,7 +60,7 @@ public:
 	// DataParallel interface, optionally supported, used by HybridRenderer
 	virtual bool IsDataParallelSupported() const { return false; }
 	//FIXME: just to check SurfaceIntegratorRenderingHints light strategy, to remove
-	virtual bool CheckLightStrategy() const { return false; }
+	virtual bool CheckLightStrategy(const Scene &scene) const { return false; }
 	virtual SurfaceIntegratorState *NewState(const Scene &scene,
 		ContributionBuffer *contribBuffer, RandomGenerator *rng) {
 		throw std::runtime_error("Internal error: called SurfaceIntegrator::NewSurfaceIntegratorState()");
