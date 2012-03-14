@@ -540,6 +540,9 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 			LOG(LUX_INFO, LUX_NOERROR) << "Photon pass time: " << photonPassTime << "secs";
 		}
 
+		// Wait for other threads
+		allThreadBarrier->wait();
+
 		if(renderer->paused())
 			break;
 
