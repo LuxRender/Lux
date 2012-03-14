@@ -1033,8 +1033,8 @@ void Film::AddTileSamples(const Contribution* const contribs, u_int num_contribs
 			continue;
 		}
 	
-	if (premultiplyAlpha)
-		xyz *= alpha;
+		if (premultiplyAlpha)
+			xyz *= alpha;
 
 		BufferGroup &currentGroup = bufferGroups[contrib.bufferGroup];
 		Buffer *buffer = currentGroup.getBuffer(contrib.buffer);
