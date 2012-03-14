@@ -182,6 +182,7 @@ static void rotateImage(const vector<XYZColor> &in, vector<XYZColor> &out,
 	}
 }
 
+namespace lux {
 
 // Image Pipeline Function Definitions
 void ApplyImagingPipeline(vector<XYZColor> &xyzpixels,
@@ -2166,4 +2167,4 @@ void Histogram::MakeImage(unsigned char *outPixels, u_int canvasW, u_int canvasH
 	}
 }
 
-
+} // namespace lux
