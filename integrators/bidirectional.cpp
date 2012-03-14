@@ -185,6 +185,12 @@ static float weightPath(const vector<BidirVertex> &eye, u_int nEye, u_int eyeDep
 	return weight;
 }
 
+/* Modifies the following properties:
+ * In eye[nEye - 1]: rr, rrR, dAWeight, wi, d2
+ * In eye[nEye - 2]: dAWeight
+ * In light[nLight - 1]: rr, rrR, dARWeight
+ * In light[nLight - 2]: not dARWeight because saved
+ */
 static bool evalPath(const Scene &scene, const Sample &sample,
 	const BidirIntegrator &bidir,
 	vector<BidirVertex> &eye, u_int nEye,
@@ -254,6 +260,7 @@ static bool evalPath(const Scene &scene, const Sample &sample,
 	eyeV.dAWeight = lpdf * ltPdf / d2;
 	if (!eScat)
 		eyeV.dAWeight *= ecosi;
+	const float eWeight = nEye > 1 ? eye[nEye - 2].dAWeight : 0.f;
 	if (nEye > 1) {
 		eye[nEye - 2].dAWeight = epdf * eyeV.tPdf / eye[nEye - 2].d2;
 		if (!eye[nEye - 2].bsdf->dgShading.scattered)
@@ -270,7 +277,6 @@ static bool evalPath(const Scene &scene, const Sample &sample,
 	lightV.dARWeight = epdfR * etPdfR / d2;
 	if (!lScat)
 		lightV.dARWeight *= lcoso;
-	const float lWeight = nLight > 1 ? light[nLight - 2].dARWeight : 0.f;
 	if (nLight > 1) {
 		light[nLight - 2].dARWeight = lpdfR * lightV.tPdfR /
 			light[nLight - 2].d2;
@@ -281,8 +287,8 @@ static bool evalPath(const Scene &scene, const Sample &sample,
 		lightDepth, pdfLightDirect, isLightDirect);
 	*weight = w;
 	*L *= w;
-	if (nLight > 1)
-		light[nLight - 2].dARWeight = lWeight;
+	if (nEye > 1)
+		eye[nEye - 2].dAWeight = eWeight;
 	// return back some eye data
 	eyeV.wi = ewi;
 	eyeV.d2 = d2;
@@ -415,7 +421,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 	eye0.rr = min(1.f, max(lightThreshold,
 		f0.Filter(sw) * eye0.coso / eye0.cosi));
 	eye0.rrR = min(1.f, max(eyeThreshold, f0.Filter(sw)));
-	Ray ray(eyePath[0].p, eyePath[0].wi);
+	Ray ray(eye0.p, eye0.wi);
 	ray.time = sample.realTime;
 	sample.camera->ClampRay(ray);
 	Intersection isect;
@@ -489,7 +495,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 				// to allow compositing
 				alpha = 0.f;
 				// Tweak intersection distance for Z buffer
-				eyePath[0].d2 = INFINITY;
+				eye0.d2 = INFINITY;
 			}
 			// End eye path tracing
 			break;
@@ -610,7 +616,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 		ray.time = sample.realTime;
 		volume = v.bsdf->GetVolume(ray.d);
 	}
-	const float d = sqrtf(eyePath[0].d2);
+	const float d = sqrtf(eye0.d2);
 	float xl, yl;
 	if (!sample.camera->GetSamplePosition(eyePath[0].p, eyePath[0].wi, d, &xl, &yl))
 		return 0;
@@ -664,7 +670,9 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 			const BxDFType eflags = vE.flags;
 			const float err = vE.rr;
 			const float errR = vE.rrR;
-			const float edARWeight = vE.dARWeight;
+			const float edAWeight = vE.dAWeight;
+			const float ed2 = vE.d2;
+			const Vector ewi(vE.wi);
 			if (evalPath(scene, sample, *this, eyePath, j + 1,
 				lightPath, nLight, directPdf, false, &weight,
 				&Ll)) {
@@ -686,7 +694,9 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 			vE.flags = eflags;
 			vE.rr = err;
 			vE.rrR = errR;
-			vE.dARWeight = edARWeight;
+			vE.dAWeight = edAWeight;
+			vE.d2 = ed2;
+			vE.wi = ewi;
 		}
 
 		// Sample light subpath initial direction and
@@ -757,6 +767,8 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 					const float err = vE.rr;
 					const float errR = vE.rrR;
 					const float edARWeight = vE.dARWeight;
+					const float ed2 = vE.d2;
+					const Vector ewi(vE.wi);
 					if (evalPath(scene, sample, *this,
 						eyePath, j + 1,
 						lightPath, nLight,
@@ -778,6 +790,8 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 					vE.rr = err;
 					vE.rrR = errR;
 					vE.dARWeight = edARWeight;
+					vE.d2 = ed2;
+					vE.wi = ewi;
 				}
 
 				// Break out if path is too long
