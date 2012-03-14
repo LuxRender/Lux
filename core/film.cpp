@@ -88,10 +88,9 @@ using namespace cimg_library;
 using namespace boost::iostreams;
 using namespace lux;
 
-namespace lux
-{
 
-template<class T> T bilinearSampleImage(const vector<T> &pixels,
+template<typename T> 
+static T bilinearSampleImage(const vector<T> &pixels,
 	const u_int xResolution, const u_int yResolution, 
 	const float x, const float y)
 {
@@ -112,7 +111,7 @@ template<class T> T bilinearSampleImage(const vector<T> &pixels,
 }
 
 // horizontal blur
-void horizontalGaussianBlur(const vector<XYZColor> &in, vector<XYZColor> &out,
+static void horizontalGaussianBlur(const vector<XYZColor> &in, vector<XYZColor> &out,
 	const u_int xResolution, const u_int yResolution, float std_dev)
 {
 	u_int rad_needed = Ceil2UInt(std_dev * 4.f);//kernel_radius;
@@ -157,7 +156,7 @@ void horizontalGaussianBlur(const vector<XYZColor> &in, vector<XYZColor> &out,
 	}
 }
 
-void rotateImage(const vector<XYZColor> &in, vector<XYZColor> &out,
+static void rotateImage(const vector<XYZColor> &in, vector<XYZColor> &out,
 	const u_int xResolution, const u_int yResolution, float angle)
 {
 	const u_int maxRes = max(xResolution, yResolution);
@@ -2167,6 +2166,4 @@ void Histogram::MakeImage(unsigned char *outPixels, u_int canvasW, u_int canvasH
 	}
 }
 
-
-}//namespace lux
 
