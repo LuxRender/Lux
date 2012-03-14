@@ -660,13 +660,13 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 			lightNum);
 		// Go through all eye vertices
 		for (u_int j = 0; j < nEye; ++j) {
+			BidirVertex &vE(eyePath[j]);
 			// Compute direct lighting pdf for first light vertex
-			const float directPdf = light->Pdf(eyePath[j].p,
+			const float directPdf = light->Pdf(vE.p,
 				light0.bsdf->dgShading) * directWeight;
 			SWCSpectrum Ll(Le);
 			float weight;
 			// Save data modified by evalPath
-			BidirVertex &vE(eyePath[j]);
 			const BxDFType eflags = vE.flags;
 			const float err = vE.rr;
 			const float errR = vE.rrR;
@@ -756,17 +756,17 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 				// Connect eye subpath to light subpath
 				// Go through all eye vertices
 				for (u_int j = 0; j < nEye; ++j) {
-					if (eyePath[j].bsdf->NumComponents(BxDFType(~BSDF_SPECULAR)) == 0 ||
+					BidirVertex &vE(eyePath[j]);
+					if (vE.bsdf->NumComponents(BxDFType(~BSDF_SPECULAR)) == 0 ||
 						v.bsdf->NumComponents(BxDFType(~BSDF_SPECULAR)) == 0)
 						continue;
 					SWCSpectrum Ll(Le);
 					float weight;
 					// Save data modified by evalPath
-					BidirVertex &vE(eyePath[j]);
 					const BxDFType eflags = vE.flags;
 					const float err = vE.rr;
 					const float errR = vE.rrR;
-					const float edARWeight = vE.dARWeight;
+					const float edAWeight = vE.dAWeight;
 					const float ed2 = vE.d2;
 					const Vector ewi(vE.wi);
 					if (evalPath(scene, sample, *this,
@@ -789,7 +789,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 					vE.flags = eflags;
 					vE.rr = err;
 					vE.rrR = errR;
-					vE.dARWeight = edARWeight;
+					vE.dAWeight = edAWeight;
 					vE.d2 = ed2;
 					vE.wi = ewi;
 				}
