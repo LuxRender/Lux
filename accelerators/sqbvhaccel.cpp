@@ -66,7 +66,7 @@ SQBVHAccel::SQBVHAccel(const vector<boost::shared_ptr<Primitive> > &p,
 	std::vector<u_int> primsIndexesList(nPrims);
 	// The arrays that will contain
 	// - the bounding boxes for all triangles
-	// - the centroids for all triangles	
+	// - the centroids for all triangles
 	std::vector<BBox> primsBboxes(nPrims);
 	
 	// Fill each base array
@@ -74,11 +74,18 @@ SQBVHAccel::SQBVHAccel(const vector<boost::shared_ptr<Primitive> > &p,
 		// This array will be reorganized during construction. 
 		primsIndexesList[i] = i;
 
-		// Compute the bounding box for the triangle
+		// Compute the bounding box for the primitive
 		primsBboxes[i] = vPrims[i]->WorldBound();
 
 		// Update the global bounding boxes
 		worldBound = Union(worldBound, primsBboxes[i]);
+
+		// SQBVH is able to clip only triangle primitive. Fire a warning if some
+		// other kind of primitive is used.
+		if (!DoesSupportPolygonVertexList(vPrims[i].get())) {
+			LOG(LUX_INFO, LUX_UNIMPLEMENT) << "A primitive of type " << typeid(*(vPrims[i].get())).name() <<
+					", used in a SQBVH, isn't a triangle, falling back to bounding box clipping for building";
+		}
 	}
 	worldBound.Expand(MachineEpsilon::E(worldBound));
 
@@ -345,16 +352,22 @@ void SQBVHAccel::DoSpatialSplit(const std::vector<u_int> &primsIndexes,
 
 			// Clip triangle with left bounding box
 			vector<Point> vertexList = GetPolygonVertexList(vPrims[primIndex].get());
-			assert (vertexList.size() > 0);
-
-			vector<Point> clipVertexList = spatialLeftChildBbox.ClipPolygon(vertexList);
-			assert (clipVertexList.size() > 0);
-
-			// Compute the bounding box of the clipped triangle
 			BBox primBbox;
-			for (u_int k = 0; k < clipVertexList.size(); ++k)
-				primBbox = Union(primBbox, clipVertexList[k]);
-			assert (primBbox.IsValid());
+			if (vertexList.size() == 0) {
+				// The primitive isn't a triangle so I'm unable to clip with a
+				// plane. I have to clip the bounding box.
+
+				primBbox = primsBboxes[i];
+				primBbox.pMax[spatialSplitAxis] = min(primBbox.pMax[spatialSplitAxis], spatialSplitPos);
+			} else {
+				vector<Point> clipVertexList = spatialLeftChildBbox.ClipPolygon(vertexList);
+				assert (clipVertexList.size() > 0);
+
+				// Compute the bounding box of the clipped triangle
+				for (u_int k = 0; k < clipVertexList.size(); ++k)
+					primBbox = Union(primBbox, clipVertexList[k]);
+				assert (primBbox.IsValid());				
+			}
 
 			leftPrimsBbox.push_back(primBbox);
 		}
@@ -364,16 +377,23 @@ void SQBVHAccel::DoSpatialSplit(const std::vector<u_int> &primsIndexes,
 
 			// Clip triangle with right bounding box
 			vector<Point> vertexList = GetPolygonVertexList(vPrims[primIndex].get());
-			assert (vertexList.size() > 0);
-
-			vector<Point> clipVertexList = spatialRightChildBbox.ClipPolygon(vertexList);
-			assert (clipVertexList.size() > 0);
-
-			// Compute the bounding box of the clipped triangle
 			BBox primBbox;
-			for (u_int k = 0; k < clipVertexList.size(); ++k)
-				primBbox = Union(primBbox, clipVertexList[k]);
-			assert (primBbox.IsValid());
+			if (vertexList.size() == 0) {
+				// The primitive isn't a triangle so I'm unable to clip with a
+				// plane. I have to clip the bounding box.
+
+				primBbox = primsBboxes[i];
+				primBbox.pMin[spatialSplitAxis] = max(primBbox.pMin[spatialSplitAxis], spatialSplitPos);
+			} else {
+				vector<Point> clipVertexList = spatialRightChildBbox.ClipPolygon(vertexList);
+				assert (clipVertexList.size() > 0);
+
+				// Compute the bounding box of the clipped triangle
+				for (u_int k = 0; k < clipVertexList.size(); ++k)
+					primBbox = Union(primBbox, clipVertexList[k]);
+				assert (primBbox.IsValid());
+			}
+
 			rightPrimsBbox.push_back(primBbox);
 		}
 	}
@@ -382,6 +402,20 @@ void SQBVHAccel::DoSpatialSplit(const std::vector<u_int> &primsIndexes,
 	assert (rightPrimsIndexes.size() == spatialRightChildReferences);
 
 	++spatialSplitCount;
+}
+
+bool SQBVHAccel::DoesSupportPolygonVertexList(const Primitive *prim) const {
+	const MeshBaryTriangle *tri = dynamic_cast<const MeshBaryTriangle *>(prim);
+	if (tri != NULL)
+		return true;
+
+	const AreaLightPrimitive *alp = dynamic_cast<const AreaLightPrimitive *>(prim);
+	if (alp != NULL) {
+		// It is an area light primitive
+		return DoesSupportPolygonVertexList(alp->GetPrimitive().get());
+	}
+
+	return false;
 }
 
 vector<Point> SQBVHAccel::GetPolygonVertexList(const Primitive *prim) const {
@@ -402,7 +436,7 @@ vector<Point> SQBVHAccel::GetPolygonVertexList(const Primitive *prim) const {
 		// It is an area light primitive
 		return GetPolygonVertexList(alp->GetPrimitive().get());
 	}
-	
+
 	return vertexList;
 }
 
@@ -470,15 +504,9 @@ float SQBVHAccel::BuildSpatialSplit(const std::vector<u_int> &primsIndexes,
 			}
 
 			vector<Point> vertexList = GetPolygonVertexList(vPrims[primsIndexes[i]].get());
-			// Safety check
 			if (vertexList.size() == 0) {
-				// SQBVH is able to work only with triangles, I will clip the
-				// bounding box instead of the primitive
-				LOG(LUX_INFO, LUX_UNIMPLEMENT) << "A primitive of type " << typeid(*(vPrims[primsIndexes[i]].get())).name() <<
-						", used in a SQBVH, isn't a triangle, falling back to bounding box clipping for building";
-
 				BBox binPrimBbox = primsBboxes[i];
-				binPrimBbox.pMax[axis] = binsBbox[j].pMax[axis];
+				binPrimBbox.pMax[axis] = min(binPrimBbox.pMax[axis], binsBbox[j].pMax[axis]);
 				binsPrimBbox[j] = Union(binsPrimBbox[j], binPrimBbox);
 			} else {
 				// Clip triangle with bin bounding box

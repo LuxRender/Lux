@@ -84,6 +84,7 @@ private:
 		std::vector<BBox> &leftPrimsBbox, std::vector<BBox> &rightPrimsBbox,
 		BBox &spatialLeftChildBbox, BBox &spatialRightChildBbox);
 
+	bool DoesSupportPolygonVertexList(const Primitive *prim) const;
 	vector<Point> GetPolygonVertexList(const Primitive *prim) const;
 	
 	vector<vector<u_int> > nodesPrims[4]; // Temporary data for building
