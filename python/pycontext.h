@@ -889,7 +889,7 @@ public:
 		checkActiveContext();
 		if (!luxHasObject(objectName) ||
 			!luxHasAttribute(objectName, attributeName))
-			return boost::python::object(0);
+			return boost::python::object();
 		switch (luxGetAttributeType(objectName, attributeName)) {
 			case LUX_ATTRIBUTETYPE_BOOL:
 				return boost::python::object(luxGetBoolAttribute(objectName, attributeName));
@@ -901,15 +901,16 @@ public:
 				return boost::python::object(luxGetDoubleAttribute(objectName, attributeName));
 			case LUX_ATTRIBUTETYPE_STRING: {
 				std::vector<char> buf(1 << 16, '\0');
-				luxGetStringAttribute(objectName, attributeName, &buf[0], static_cast<unsigned int>(buf.size()));
-				return boost::python::object(&buf[0]);
+				if (luxGetStringAttribute(objectName, attributeName, &buf[0], static_cast<unsigned int>(buf.size())) > 0)
+					return boost::python::object(std::string(&buf[0]));
+				return boost::python::object();
 			}
 			case LUX_ATTRIBUTETYPE_NONE:
 				break;
 			default:
 				LOG(LUX_ERROR,LUX_BUG)<<"Unknown attribute type in pyLuxGetOption";
 		}
-		return boost::python::object(0);
+		return boost::python::object();
 	}
 
 	void setAttribute(const char * objectName, const char * attributeName, boost::python::object value)
