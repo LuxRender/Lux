@@ -1013,16 +1013,17 @@ public:
 		return context->Statistics(statName);
 	}
 
+	// Deprecated
 	const char* printableStatistics(const bool add_total)
 	{
 		checkActiveContext();
-		return context->PrintableStatistics(add_total);
+		return luxPrintableStatistics(add_total);
 	}
 
-	const char* customStatistics(const string custom_template)
+	void updateStatisticsWindow()
 	{
 		checkActiveContext();
-		return context->CustomStatistics(custom_template);
+		context->UpdateStatisticsWindow();
 	}
 
 	void enableDebugMode()
@@ -1438,10 +1439,10 @@ void export_PyContext()
 			args("Context", "add_total"),
 			ds_pylux_Context_printable_statistics
 		)
-		.def("customStatistics",
-			&PyContext::customStatistics,
-			args("Context", "template_string"),
-			ds_pylux_Context_custom_statistics
+		.def("updateStatisticsWindow",
+			&PyContext::updateStatisticsWindow,
+			args("Context"),
+			ds_pylux_Context_update_statistics_window
 		)
 		.def("surfaceIntegrator",
 			&PyContext::surfaceIntegrator,

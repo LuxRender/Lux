@@ -128,19 +128,22 @@ void RenderServer::errorHandler(int code, int severity, const char *msg) {
 
 static void printInfoThread()
 {
+	std::vector<char> buf(1 << 16, '\0');
 	while (true) {
 		boost::xtime xt;
 		boost::xtime_get(&xt, boost::TIME_UTC);
 		xt.sec += 5;
 		boost::thread::sleep(xt);
 
-		int sampleSec = static_cast<int>(luxStatistics("samplesSec"));
 		// Print only if we are rendering something
-		if (sampleSec > 0)
-			LOG( LUX_INFO,LUX_NOERROR) << luxPrintableStatistics(true);
+		if (Context::GetActive()->IsRendering())
+		{
+			luxUpdateStatisticsWindow();
+			luxGetStringAttribute("renderer_statistics_formatted", "_recommended_string", &buf[0], static_cast<unsigned int>(buf.size()));
+			LOG( LUX_INFO,LUX_NOERROR) << std::string(buf.begin(), buf.end());
+		}
 	}
 }
-
 static void writeTransmitFilm(basic_ostream<char> &stream, const string &filename)
 {
 	string file = filename;

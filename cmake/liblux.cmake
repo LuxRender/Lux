@@ -61,7 +61,6 @@ SET(lux_core_src
 	core/camera.cpp
 	core/cameraresponse.cpp
 	core/color.cpp
-	core/stats.cpp
 	core/context.cpp
 	core/contribution.cpp
 	core/dynload.cpp
@@ -80,6 +79,7 @@ SET(lux_core_src
 	core/photonmap.cpp
 	core/pngio.cpp
 	core/primitive.cpp
+	core/rendererstatistics.cpp
 	core/renderfarm.cpp
 	core/renderinghints.cpp
 	core/sampling.cpp
@@ -309,6 +309,13 @@ SET(lux_renderers_src
 endif(NOT LUXRAYS_DISABLE_OPENCL)
 SOURCE_GROUP("Source Files\\Renderers" FILES ${lux_renderers_src})
 
+SET(lux_rendererstatistics_src
+	renderers/statistics/samplerstatistics.cpp
+	renderers/statistics/hybridsamplerstatistics.cpp
+	renderers/statistics/sppmstatistics.cpp
+	)
+SOURCE_GROUP("Source Files\\Renderers\\Statistics" FILES ${lux_rendererstatistics_src})
+
 SET(lux_shapes_src
 	shapes/cone.cpp
 	shapes/cylinder.cpp
@@ -441,6 +448,7 @@ SET(lux_modules_src
 	${lux_materials_src}
 	${lux_pixelsamplers_src}
 	${lux_renderers_src}
+	${lux_rendererstatistics_src}
 	${lux_samplers_src}
 	${lux_shapes_src}
 	${lux_spds_src}
@@ -504,6 +512,7 @@ SET(lux_core_hdr
 	core/primitive.h
 	core/randomgen.h
 	core/renderer.h
+	core/rendererstatistics.h
 	core/renderfarm.h
 	core/renderinghints.h
 	core/sampling.h
@@ -512,7 +521,6 @@ SET(lux_core_hdr
 	core/spd.h
 	core/spectrum.h
 	core/spectrumwavelengths.h
-	core/stats.h
 	core/streamio.h
 	core/texture.h
 	core/texturecolor.h
@@ -711,6 +719,12 @@ SET(lux_renderers_hdr
 	renderers/sppmrenderer.h
 	)
 SOURCE_GROUP("Header Files\\Renderers" FILES ${lux_renderers_hdr})
+SET(lux_rendererstatistics_hdr
+	renderers/statistics/samplerstatistics.h
+	renderers/statistics/hybridsamplerstatistics.h
+	renderers/statistics/sppmstatistics.h
+	)
+SOURCE_GROUP("Header Files\\Renderers\\Statistics" FILES ${lux_rendererstatistics_hdr})
 SET(lux_renderers_sppm_hdr
 	renderers/sppm/hitpoints.h
 	renderers/sppm/lookupaccel.h
@@ -857,6 +871,7 @@ SET(lux_lib_hdr
 	${lux_pixelsamplers_hdr}
 	${lux_renderers_hdr}
 	${lux_renderers_sppm_hdr}
+	${lux_rendererstatistics_hdr}
 	${lux_sampelrs_hdr}
 	${lux_shapes_hdr}
 	${lux_spds_hdr}

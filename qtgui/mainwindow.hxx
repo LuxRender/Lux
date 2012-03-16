@@ -35,6 +35,8 @@
 #include <QtGui/QSpinBox>
 #include <QtGui/QDoubleSpinBox>
 #include <QtGui/QCheckBox>
+#include <QtGui/QFrame>
+#include <QtGui/QHBoxLayout>
 #include <QSpacerItem>
 #include <QTimer>
 #include <QEvent>
@@ -278,9 +280,11 @@ private:
 	QLabel *activityMessage;
 	QLabel *statusMessage;
 	QProgressBar *statusProgress;
-	QLabel *statsMessage;
 	QSpacerItem *spacer;
-	
+
+	QFrame *statsBox;
+	QHBoxLayout *statsBoxLayout;
+
 	RenderView *renderView;
 	QString m_CurrentFile;
 	QString m_CurrentFileBaseName;

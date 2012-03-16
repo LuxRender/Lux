@@ -306,8 +306,8 @@ LUX_EXPORT unsigned int luxGetRenderingServersStatus(RenderingServerInfo *info, 
 
 /* Informations and statistics */
 LUX_EXPORT double luxStatistics(const char *statName);
-LUX_EXPORT const char* luxPrintableStatistics(const bool add_total);
-LUX_EXPORT const char* luxCustomStatistics(const char *custom_template);
+LUX_EXPORT const char* luxPrintableStatistics(const bool add_total);	// Deprecated
+LUX_EXPORT void luxUpdateStatisticsWindow();
 
 // Dade - enable debug mode
 LUX_EXPORT void luxEnableDebugMode();

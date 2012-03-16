@@ -137,8 +137,6 @@ void Context::Init() {
 	renderFarm = new RenderFarm();
 	filmOverrideParams = NULL;
 	shapeNo = 0;
-
-	statsData = new StatsData(this);
 }
 
 void Context::Free() {
@@ -161,9 +159,6 @@ void Context::Free() {
 
 	delete filmOverrideParams;
 	filmOverrideParams = NULL;
-
-	delete statsData;
-	statsData = NULL;
 }
 
 // API Function Definitions
@@ -204,7 +199,6 @@ u_int Context::GetRenderingServersStatus(RenderingServerInfo *info, u_int maxInf
 void Context::Cleanup() {
 	renderFarm->send("luxCleanup");
 
-	StatsCleanup();
 	// API Cleanup
 	if (currentApiState == STATE_UNINITIALIZED)
 		LOG(LUX_ERROR,LUX_NOTSTARTED)<< "luxCleanup() called without luxInit().";
@@ -971,7 +965,6 @@ void Context::WorldEnd() {
 	//delete scene;
 	// Clean up after rendering
 	currentApiState = STATE_OPTIONS_BLOCK;
-	StatsPrint(std::cout);
 	curTransform = lux::Transform();
 	namedCoordinateSystems.erase(namedCoordinateSystems.begin(),
 		namedCoordinateSystems.end());
@@ -1250,13 +1243,6 @@ double Context::Statistics(const string &statName) {
 			luxCurrentScene->IsFilmOnly());
 	else if (statName == "terminated")
 		return terminated;
-	else if (statName == "percentComplete")
-	{
-		PrintableStatistics(false);	// updates statsData
-		return statsData->getPercentComplete();
-	}
-	else if (luxCurrentRenderer != NULL)
-		return luxCurrentRenderer->Statistics(statName);
 	else
 		return 0;
 }
@@ -1266,53 +1252,13 @@ void Context::SceneReady() {
 	luxCurrentScene->SetReady();
 }
 
-const char* Context::PrintableStatistics(const bool add_total) {
-	// change the behavior according the kind of Renderer
-
-	if (luxCurrentRenderer && luxCurrentRenderer->GetType() == Renderer::SPPM_TYPE) {
-		// SPPM Renderer statistics
-		statsData->updateSPPM(add_total);
-	} else {
-		// Default behavior
-		statsData->update(add_total);
-	}
-
-	return statsData->formattedStatsString.c_str();
+void Context::UpdateStatisticsWindow() {
+	if (luxCurrentRenderer)
+		luxCurrentRenderer->rendererStatistics->updateStatisticsWindow();
 }
 
-const char* Context::CustomStatistics(const string custom_template)
-{
-	// BEWARE capitalisation in this function StatsData vs. statsData
-
-	// TODO: need a mutex here, modifying StatsData is not thread safe
-
-	const string _ts1 = StatsData::template_string_local;
-	const string _ts2 = StatsData::template_string_network_waiting;
-	const string _ts3 = StatsData::template_string_network;
-	const string _ts4 = StatsData::template_string_total;
-	const string _ts5 = StatsData::template_string_haltspp;
-	const string _ts6 = StatsData::template_string_halttime;
-	const string _ts7 = StatsData::template_string_renderer;
-
-	StatsData::template_string_local = custom_template;
-	StatsData::template_string_network_waiting = "";
-	StatsData::template_string_network = "";
-	StatsData::template_string_total = "";
-	StatsData::template_string_haltspp = "";
-	StatsData::template_string_halttime = "";
-	StatsData::template_string_renderer = "";
-	statsData->update(true);
-	const char* custom_stats = statsData->formattedStatsString.c_str();
-
-	StatsData::template_string_local = _ts1;
-	StatsData::template_string_network_waiting = _ts2;
-	StatsData::template_string_network = _ts3;
-	StatsData::template_string_total = _ts4;
-	StatsData::template_string_haltspp = _ts5;
-	StatsData::template_string_halttime = _ts6;
-	StatsData::template_string_renderer = _ts7;
-
-	return custom_stats;
+bool Context::IsRendering() {
+	return luxCurrentRenderer != NULL && luxCurrentRenderer->GetState() == Renderer::RUN;
 }
 
 void Context::TransmitFilm(std::basic_ostream<char> &stream) {
