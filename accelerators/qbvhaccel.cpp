@@ -430,7 +430,12 @@ void QBVHAccel::BuildTree(u_int start, u_int end, u_int *primsIndexes,
 	u_int storeIndex = start;
 	for (u_int i = start; i < end; ++i) {
 		const u_int primIndex = primsIndexes[i];
-		
+
+		// This test isn't really correct because produces different results from
+		// the one in BuildObjectSplit(). For instance, it happens when the centroid
+		// is exactly on the split. SQBVH uses the right approach. However, this
+		// kind of problem has no side effects in a pure QBVH so it is not worth
+		// fixing here.
 		if (primsCentroids[primIndex][axis] <= splitPos) {
 			// Swap
 			primsIndexes[i] = primsIndexes[storeIndex];

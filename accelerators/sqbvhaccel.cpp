@@ -191,11 +191,11 @@ void SQBVHAccel::BuildTree(const std::vector<u_int> &primsIndexes,
 	int objectSplitAxis;
 	BBox objectLeftChildBbox, objectRightChildBbox;
 	u_int objectLeftChildReferences, objectRightChildReferences;
-	const float objectSplitPos = BuildObjectSplit(primsBboxes, objectSplitAxis,
+	const int objectSplitBin = BuildObjectSplit(primsBboxes, objectSplitAxis,
 			objectLeftChildBbox, objectRightChildBbox,
 			objectLeftChildReferences, objectRightChildReferences);
 
-	if (isnan(objectSplitPos)) {
+	if (objectSplitBin == -1) {
 		if (nPrimsIndexes > 64) {
 			LOG(LUX_ERROR, LUX_LIMIT) << "SQBVH unable to handle geometry, too many primitives with the same centroid";
 		}
@@ -213,7 +213,7 @@ void SQBVHAccel::BuildTree(const std::vector<u_int> &primsIndexes,
 
 	bool doObjectSplit = true;
 
-	float spatialSplitPos;
+	int spatialSplitBin;
 	int spatialSplitAxis;
 	u_int spatialLeftChildReferences, spatialRightChildReferences;
 	BBox spatialLeftChildBbox, spatialRightChildBbox;
@@ -223,12 +223,12 @@ void SQBVHAccel::BuildTree(const std::vector<u_int> &primsIndexes,
 			(childIntersectionBbox.SurfaceArea() / worldBound.SurfaceArea() > alpha)) {
 		// It is worth trying a spatial split
 
-		spatialSplitPos = BuildSpatialSplit(primsIndexes, vPrims,
+		spatialSplitBin = BuildSpatialSplit(primsIndexes, vPrims,
 				primsBboxes, nodeBbox, spatialSplitAxis,
 				spatialLeftChildBbox, spatialRightChildBbox,
 				spatialLeftChildReferences, spatialRightChildReferences);
 
-		if (!isnan(spatialSplitPos)) {
+		if (spatialSplitBin != -1) {
 			// Check if spatial split is better than object split
 
 			const float objectSplitCost = objectLeftChildBbox.SurfaceArea() * QuadCount(objectLeftChildReferences) +
@@ -245,7 +245,7 @@ void SQBVHAccel::BuildTree(const std::vector<u_int> &primsIndexes,
 	BBox *leftBbox, *rightBbox;
 	if (doObjectSplit) {
 		// Do object split
-		DoObjectSplit(primsIndexes, primsBboxes, objectSplitPos, objectSplitAxis,
+		DoObjectSplit(primsIndexes, primsBboxes, objectSplitBin, objectSplitAxis,
 				objectLeftChildReferences, objectRightChildReferences,
 				leftPrimsIndexes, rightPrimsIndexes,
 				leftPrimsBbox, rightPrimsBbox);
@@ -254,7 +254,8 @@ void SQBVHAccel::BuildTree(const std::vector<u_int> &primsIndexes,
 		rightBbox = &objectRightChildBbox;
 	} else {
 		// Do spatial split
-		DoSpatialSplit(primsIndexes, vPrims, primsBboxes, spatialSplitPos, spatialSplitAxis,
+		DoSpatialSplit(primsIndexes, vPrims, primsBboxes, nodeBbox,
+				spatialSplitBin, spatialSplitAxis,
 				spatialLeftChildReferences, spatialRightChildReferences,
 				leftPrimsIndexes, rightPrimsIndexes,
 				leftPrimsBbox, rightPrimsBbox,
@@ -302,21 +303,33 @@ void SQBVHAccel::BuildTree(const std::vector<u_int> &primsIndexes,
 }
 
 void SQBVHAccel::DoObjectSplit(const std::vector<u_int> &primsIndexes, const std::vector<BBox> &primsBboxes,
-		const float objectSplitPos, const int objectSplitAxis,
+		const int objectSplitBin, const int objectSplitAxis,
 		const u_int objectLeftChildReferences, const u_int objectRightChildReferences,
 		std::vector<u_int> &leftPrimsIndexes, std::vector<u_int> &rightPrimsIndexes,
 		std::vector<BBox> &leftPrimsBbox, std::vector<BBox> &rightPrimsBbox) {
+	// Build the centroids list and bounding box
+	BBox centroidsBbox;
+	for (u_int i = 0; i < primsBboxes.size(); ++i) {
+		const Point center = primsBboxes[i].Center();
+		centroidsBbox = Union(centroidsBbox, center);
+	}
+
 	// Do object split
 	leftPrimsIndexes.reserve(objectLeftChildReferences);
 	rightPrimsIndexes.reserve(objectRightChildReferences);
 	leftPrimsBbox.reserve(objectLeftChildReferences);
 	rightPrimsBbox.reserve(objectRightChildReferences);
 
+	const float k0 = centroidsBbox.pMin[objectSplitAxis];
+	const float k1 = OBJECT_SPLIT_BINS / (centroidsBbox.pMax[objectSplitAxis] - k0);
+
 	for (u_int i = 0; i < primsIndexes.size(); ++i) {
 		const u_int primIndex = primsIndexes[i];
 		const float centroid = (primsBboxes[i].pMin[objectSplitAxis] + primsBboxes[i].pMax[objectSplitAxis]) * .5f;
+		const int binId = max(0, min(OBJECT_SPLIT_BINS - 1,
+				Floor2Int(k1 * (centroid - k0))));
 
-		if (centroid <= objectSplitPos) {
+		if (binId <= objectSplitBin) {
 			leftPrimsIndexes.push_back(primIndex);
 			leftPrimsBbox.push_back(primsBboxes[i]);
 		} else {
@@ -333,11 +346,15 @@ void SQBVHAccel::DoObjectSplit(const std::vector<u_int> &primsIndexes, const std
 
 void SQBVHAccel::DoSpatialSplit(const std::vector<u_int> &primsIndexes,
 		const vector<boost::shared_ptr<Primitive> > &vPrims, const std::vector<BBox> &primsBboxes,
-		const float spatialSplitPos, const int spatialSplitAxis,
+		const BBox &nodeBbox, const int spatialSplitBin, const int spatialSplitAxis,
 		const u_int spatialLeftChildReferences, const u_int spatialRightChildReferences,
 		std::vector<u_int> &leftPrimsIndexes, std::vector<u_int> &rightPrimsIndexes,
 		std::vector<BBox> &leftPrimsBbox, std::vector<BBox> &rightPrimsBbox,
 		BBox &spatialLeftChildBbox, BBox &spatialRightChildBbox) {
+	const float k0 = nodeBbox.pMin[spatialSplitAxis];
+	const float k1 = (nodeBbox.pMax[spatialSplitAxis] - k0) / SPATIAL_SPLIT_BINS;
+	const float spatialSplitPos = k0 + k1 * (spatialSplitBin + 1);
+
 	// Do spatial split
 	leftPrimsIndexes.reserve(spatialLeftChildReferences);
 	rightPrimsIndexes.reserve(spatialRightChildReferences);
@@ -440,7 +457,7 @@ vector<Point> SQBVHAccel::GetPolygonVertexList(const Primitive *prim) const {
 	return vertexList;
 }
 
-float SQBVHAccel::BuildSpatialSplit(const std::vector<u_int> &primsIndexes,
+int SQBVHAccel::BuildSpatialSplit(const std::vector<u_int> &primsIndexes,
 		const vector<boost::shared_ptr<Primitive> > &vPrims,
 		const std::vector<BBox> &primsBboxes, const BBox &nodeBbox,
 		int &axis, BBox &leftChildBBox, BBox &rightChildBBox,
@@ -462,7 +479,7 @@ float SQBVHAccel::BuildSpatialSplit(const std::vector<u_int> &primsIndexes,
 
 	// If the bounding box is a point or too small anyway
 	if (k1 < .01f)
-		return std::numeric_limits<float>::quiet_NaN();
+		return -1;
 
 	// Entry and Exit counters as described in SBVH paper
 	int entryBins[SPATIAL_SPLIT_BINS];
@@ -582,13 +599,12 @@ float SQBVHAccel::BuildSpatialSplit(const std::vector<u_int> &primsIndexes,
 	}
 
 	if (minBin == -1)
-		return std::numeric_limits<float>::quiet_NaN();
+		return -1;
 
 	leftChildBBox = bboxesLeft[minBin];
 	rightChildBBox = bboxesRight[minBin + 1];
 	leftChildReferences = nbPrimsLeft[minBin];
 	rightChildReferences = nbPrimsRight[minBin + 1];
-	const float splitPos = binsBbox[minBin].pMax[axis];
 
 	assert (leftChildBBox.IsValid());
 	assert (rightChildBBox.IsValid());
@@ -658,19 +674,17 @@ float SQBVHAccel::BuildSpatialSplit(const std::vector<u_int> &primsIndexes,
 		}
 	}*/
 
-	return splitPos;
+	return minBin;
 }
 
-float SQBVHAccel::BuildObjectSplit(const std::vector<BBox> &primsBboxes, int &axis,
+int SQBVHAccel::BuildObjectSplit(const std::vector<BBox> &primsBboxes, int &axis,
 		BBox &leftChildBBox, BBox &rightChildBBox,
 		u_int &leftChildReferences, u_int &rightChildReferences) {
 	// Build the centroids list and bounding box
 	BBox centroidsBbox;
-	std::vector<Point> primsCentroids(primsBboxes.size());
 	for (u_int i = 0; i < primsBboxes.size(); ++i) {
 		const Point center = primsBboxes[i].Center();
 		centroidsBbox = Union(centroidsBbox, center);
-		primsCentroids[i] = center;
 	}
 
 	// Choose the split axis, taking the axis of maximum extent for the
@@ -685,7 +699,7 @@ float SQBVHAccel::BuildObjectSplit(const std::vector<BBox> &primsBboxes, int &ax
 	
 	// If the bbox is a point
 	if (isinf(k1))
-		return std::numeric_limits<float>::quiet_NaN();
+		return -1;
 
 	// Number of primitives in each bin
 	int bins[OBJECT_SPLIT_BINS];
@@ -706,8 +720,10 @@ float SQBVHAccel::BuildObjectSplit(const std::vector<BBox> &primsBboxes, int &ax
 	for (u_int i = 0; i < primsBboxes.size(); i += step) {
 		// Binning is relative to the centroids bbox and to the
 		// primitives' centroid.
+		const float centroid = (primsBboxes[i].pMin[axis] + primsBboxes[i].pMax[axis]) * .5f;
 		const int binId = max(0, min(OBJECT_SPLIT_BINS - 1,
-				Floor2Int(k1 * (primsCentroids[i][axis] - k0))));
+				Floor2Int(k1 * (centroid - k0))));
+		
 		bins[binId]++;
 		binsBbox[binId] = Union(binsBbox[binId], primsBboxes[i]);
 	}
@@ -776,17 +792,7 @@ float SQBVHAccel::BuildObjectSplit(const std::vector<BBox> &primsBboxes, int &ax
 	assert ((leftChildReferences == 0) || leftChildBBox.IsValid());
 	assert ((rightChildReferences == 0) || rightChildBBox.IsValid());
 
-	//-----------------
-	// Make the partition, in a "quicksort partitioning" way,
-	// the pivot being the position of the split plane
-	// (no more binId computation)
-	// track also the bboxes (primitives and centroids)
-	// for the left and right halves.
-
-	// The split plane coordinate is the coordinate of the end of
-	// the chosen bin along the split axis
-	return centroidsBbox.pMin[axis] + (minBin + 1) *
-		(centroidsBbox.pMax[axis] - centroidsBbox.pMin[axis]) / OBJECT_SPLIT_BINS;
+	return minBin;
 }
 
 Aggregate *SQBVHAccel::CreateAccelerator(const vector<boost::shared_ptr<Primitive> > &prims, const ParamSet &ps)
