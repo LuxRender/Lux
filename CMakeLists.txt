@@ -306,7 +306,10 @@ ELSEIF(MSVC)
 	
 ELSE(APPLE)
 	# Dade - default compiler options
-	ADD_DEFINITIONS(-O3 -msse2 -mfpmath=sse -ftree-vectorize -fvisibility=hidden -fvisibility-inlines-hidden -funroll-loops -Wall -fPIC -DHAVE_PTHREAD_H)
+	# Removed "-O3" from definitions in order to have CMake Release/Debug options to work
+	ADD_DEFINITIONS(-msse2 -mfpmath=sse -ftree-vectorize -funroll-loops -Wall -fPIC -DHAVE_PTHREAD_H)
+	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fvisibility=hidden -fvisibility-inlines-hidden")
+	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fvisibility=hidden -fvisibility-inlines-hidden")
 	# The QBVH accelerator needs to be compiled with much reduced optimizations
 	# otherwise gcc produces incorrect code and ruins the render on 64bits machines
 	SET_SOURCE_FILES_PROPERTIES(accelerators/qbvhaccel.cpp COMPILE_FLAGS "-O1")
