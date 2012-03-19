@@ -57,6 +57,7 @@ SQBVHAccel::SQBVHAccel(const vector<boost::shared_ptr<Primitive> > &p,
 	for (u_int layer = ((nPrims + maxPrimsPerLeaf - 1) / maxPrimsPerLeaf + 3) / 4; layer > 1; layer = (layer + 3) / 4)
 		maxNodes += layer;
 	nodes = AllocAligned<QBVHNode>(maxNodes);
+	vector<vector<u_int> > nodesPrims[4]; // Temporary data for building
 	for (int i = 0; i < 4; ++i)
 		nodesPrims[i].resize(maxNodes);
 	for (u_int i = 0; i < maxNodes; ++i)
@@ -96,7 +97,7 @@ SQBVHAccel::SQBVHAccel(const vector<boost::shared_ptr<Primitive> > &p,
 	nQuads = 0;
 	objectSplitCount = 0;
 	spatialSplitCount = 0;
-	BuildTree(primsIndexesList, vPrims, primsBboxes, worldBound, -1, 0, 0);
+	BuildTree(nodesPrims, primsIndexesList, vPrims, primsBboxes, worldBound, -1, 0, 0);
 
 	prims = AllocAligned<boost::shared_ptr<QuadPrimitive> >(nQuads);
 	nQuads = 0;
@@ -130,9 +131,6 @@ SQBVHAccel::SQBVHAccel(const vector<boost::shared_ptr<Primitive> > &p,
 	primsIndexes[index++] = nPrims - 1;
 	primsIndexes[index++] = nPrims - 1;
 	primsIndexes[index++] = nPrims - 1;
-	// Free memory
-	for (int i = 0; i < 4; ++i)
-		nodesPrims[i].clear();
 	
 	PreSwizzle(0, primsIndexes, vPrims);
 	LOG(LUX_DEBUG, LUX_NOERROR) << "SQBVH completed with " << nNodes << "/" << maxNodes << " nodes";
@@ -161,11 +159,12 @@ SQBVHAccel::SQBVHAccel(const vector<boost::shared_ptr<Primitive> > &p,
 	delete[] primsIndexes;
 }
 
-void SQBVHAccel::BuildTree(const std::vector<u_int> &primsIndexes,
-			const vector<boost::shared_ptr<Primitive> > &vPrims,
-			const std::vector<BBox> &primsBboxes, const BBox &nodeBbox,
-			const int32_t parentIndex, const int32_t childIndex,
-			const int depth) {
+void SQBVHAccel::BuildTree(vector<vector<u_int> > *nodesPrims,
+		const std::vector<u_int> &primsIndexes,
+		const vector<boost::shared_ptr<Primitive> > &vPrims,
+		const std::vector<BBox> &primsBboxes, const BBox &nodeBbox,
+		const int32_t parentIndex, const int32_t childIndex,
+		const int depth) {
 	const u_int nPrimsIndexes = primsIndexes.size();
 
 	// Create a leaf ?
@@ -179,7 +178,9 @@ void SQBVHAccel::BuildTree(const std::vector<u_int> &primsIndexes,
 		}
 
 		CreateTempLeaf(parentIndex, childIndex, 0, nPrimsIndexes, nodeBbox);
-		nodesPrims[childIndex][parentIndex].insert(nodesPrims[childIndex][parentIndex].begin(),
+
+		const int32_t pi = max(0, parentIndex); // For the case where all the tree is just a leaf
+		nodesPrims[childIndex][pi].insert(nodesPrims[childIndex][pi].begin(),
 			primsIndexes.begin(), primsIndexes.end());
 		return;
 	}
@@ -201,7 +202,9 @@ void SQBVHAccel::BuildTree(const std::vector<u_int> &primsIndexes,
 		}
 
 		CreateTempLeaf(parentIndex, childIndex, 0, nPrimsIndexes, nodeBbox);
-		nodesPrims[childIndex][parentIndex].insert(nodesPrims[childIndex][parentIndex].begin(),
+
+		const int32_t pi = max(0, parentIndex); // For the case where all the tree is just a leaf
+		nodesPrims[childIndex][pi].insert(nodesPrims[childIndex][pi].begin(),
 			primsIndexes.begin(), primsIndexes.end());
 		return;
 	}
@@ -296,9 +299,9 @@ void SQBVHAccel::BuildTree(const std::vector<u_int> &primsIndexes,
 	}
 
 	// Build recursively
-	BuildTree(leftPrimsIndexes, vPrims, leftPrimsBbox, *leftBbox,
+	BuildTree(nodesPrims, leftPrimsIndexes, vPrims, leftPrimsBbox, *leftBbox,
 			currentNode, leftChildIndex, depth + 1);
-	BuildTree(rightPrimsIndexes, vPrims, rightPrimsBbox, *rightBbox,
+	BuildTree(nodesPrims, rightPrimsIndexes, vPrims, rightPrimsBbox, *rightBbox,
 			currentNode, rightChildIndex, depth + 1);
 }
 

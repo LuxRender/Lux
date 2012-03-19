@@ -56,7 +56,8 @@ private:
 	   Build the tree that will contain the primitives indexed from start
 	   to end in the primsIndexes array.
 	*/
-	void BuildTree(const std::vector<u_int> &primsIndexes,
+	void BuildTree(vector<vector<u_int> > *nodesPrims,
+			const std::vector<u_int> &primsIndexes,
 			const vector<boost::shared_ptr<Primitive> > &vPrims,
 			const std::vector<BBox> &primsBboxes, const BBox &nodeBbox,
 			const int32_t parentIndex, const int32_t childIndex,
@@ -86,8 +87,7 @@ private:
 
 	bool DoesSupportPolygonVertexList(const Primitive *prim) const;
 	vector<Point> GetPolygonVertexList(const Primitive *prim) const;
-	
-	vector<vector<u_int> > nodesPrims[4]; // Temporary data for building
+
 	float alpha;
 
 	// Some statistics about the quality of the built accelerator
