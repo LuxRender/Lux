@@ -179,7 +179,7 @@ void SQBVHAccel::BuildTree(vector<vector<u_int> > *nodesPrims,
 
 		CreateTempLeaf(parentIndex, childIndex, 0, nPrimsIndexes, nodeBbox);
 
-		const int32_t pi = max(0, parentIndex); // For the case where all the tree is just a leaf
+		const int32_t pi = max<int32_t>(0, parentIndex); // For the case where all the tree is just a leaf
 		nodesPrims[childIndex][pi].insert(nodesPrims[childIndex][pi].begin(),
 			primsIndexes.begin(), primsIndexes.end());
 		return;
@@ -203,14 +203,14 @@ void SQBVHAccel::BuildTree(vector<vector<u_int> > *nodesPrims,
 
 		CreateTempLeaf(parentIndex, childIndex, 0, nPrimsIndexes, nodeBbox);
 
-		const int32_t pi = max(0, parentIndex); // For the case where all the tree is just a leaf
+		const int32_t pi = max<int32_t>(0, parentIndex); // For the case where all the tree is just a leaf
 		nodesPrims[childIndex][pi].insert(nodesPrims[childIndex][pi].begin(),
 			primsIndexes.begin(), primsIndexes.end());
 		return;
 	}
 
 	//--------------------------------------------------------------------------
-	// Check if a spatial split is worth trying spatial split
+	// Check if a spatial split is worth trying
 	// Test: (SAH intersection left/right child) / (SAH _root_ node) > alpha
 	//--------------------------------------------------------------------------
 
