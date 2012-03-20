@@ -66,17 +66,17 @@ private:
 	int BuildSpatialSplit(const std::vector<u_int> &primsIndexes,
 		const vector<boost::shared_ptr<Primitive> > &vPrims,
 		const std::vector<BBox> &primsBboxes, const BBox &nodeBbox,
-		int &axis, BBox &leftChildBBox, BBox &rightChildBBox,
+		int &axis, BBox &leftChildBbox, BBox &rightChildBbox,
 		u_int &leftChildReferences, u_int &rightChildReferences);
 	int BuildObjectSplit(const std::vector<BBox> &primsBboxes, int &axis,
-		BBox &leftChildBBox, BBox &rightChildBBox,
+		BBox &leftChildBbox, BBox &rightChildBbox,
 		u_int &leftChildReferences, u_int &rightChildReferences);
 
 	void DoObjectSplit(const std::vector<u_int> &primsIndexes, const std::vector<BBox> &primsBboxes,
 		const int objectSplitBin, const int objectSplitAxis,
 		const u_int objectLeftChildReferences, const u_int objectRightChildReferences,
 		std::vector<u_int> &leftPrimsIndexes, std::vector<u_int> &rightPrimsIndexes,
-		std::vector<BBox> &leftPrimsBbox, std::vector<BBox> &rightPrimsBbox);
+		std::vector<BBox> &objectLeftPrimsBbox, std::vector<BBox> &objectRightPrimsBbox);
 	void DoSpatialSplit(const std::vector<u_int> &primsIndexes,
 		const vector<boost::shared_ptr<Primitive> > &vPrims, const std::vector<BBox> &primsBboxes,
 		const BBox &nodeBbox, const int spatialSplitBin, const int spatialSplitAxis,

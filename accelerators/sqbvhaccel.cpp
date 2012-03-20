@@ -309,7 +309,7 @@ void SQBVHAccel::DoObjectSplit(const std::vector<u_int> &primsIndexes, const std
 		const int objectSplitBin, const int objectSplitAxis,
 		const u_int objectLeftChildReferences, const u_int objectRightChildReferences,
 		std::vector<u_int> &leftPrimsIndexes, std::vector<u_int> &rightPrimsIndexes,
-		std::vector<BBox> &leftPrimsBbox, std::vector<BBox> &rightPrimsBbox) {
+		std::vector<BBox> &objectLeftPrimsBbox, std::vector<BBox> &objectRightPrimsBbox) {
 	// Build the centroids list and bounding box
 	BBox centroidsBbox;
 	for (u_int i = 0; i < primsBboxes.size(); ++i) {
@@ -320,8 +320,8 @@ void SQBVHAccel::DoObjectSplit(const std::vector<u_int> &primsIndexes, const std
 	// Do object split
 	leftPrimsIndexes.reserve(objectLeftChildReferences);
 	rightPrimsIndexes.reserve(objectRightChildReferences);
-	leftPrimsBbox.reserve(objectLeftChildReferences);
-	rightPrimsBbox.reserve(objectRightChildReferences);
+	objectLeftPrimsBbox.reserve(objectLeftChildReferences);
+	objectRightPrimsBbox.reserve(objectRightChildReferences);
 
 	const float k0 = centroidsBbox.pMin[objectSplitAxis];
 	const float k1 = OBJECT_SPLIT_BINS / (centroidsBbox.pMax[objectSplitAxis] - k0);
@@ -334,10 +334,10 @@ void SQBVHAccel::DoObjectSplit(const std::vector<u_int> &primsIndexes, const std
 
 		if (binId <= objectSplitBin) {
 			leftPrimsIndexes.push_back(primIndex);
-			leftPrimsBbox.push_back(primsBboxes[i]);
+			objectLeftPrimsBbox.push_back(primsBboxes[i]);
 		} else {
 			rightPrimsIndexes.push_back(primIndex);
-			rightPrimsBbox.push_back(primsBboxes[i]);
+			objectRightPrimsBbox.push_back(primsBboxes[i]);
 		}
 	}
 
@@ -386,7 +386,7 @@ void SQBVHAccel::DoSpatialSplit(const std::vector<u_int> &primsIndexes,
 				// Compute the bounding box of the clipped triangle
 				for (u_int k = 0; k < clipVertexList.size(); ++k)
 					primBbox = Union(primBbox, clipVertexList[k]);
-				assert (primBbox.IsValid());				
+				assert (primBbox.IsValid());
 			}
 
 			leftPrimsBbox.push_back(primBbox);
@@ -463,7 +463,7 @@ vector<Point> SQBVHAccel::GetPolygonVertexList(const Primitive *prim) const {
 int SQBVHAccel::BuildSpatialSplit(const std::vector<u_int> &primsIndexes,
 		const vector<boost::shared_ptr<Primitive> > &vPrims,
 		const std::vector<BBox> &primsBboxes, const BBox &nodeBbox,
-		int &axis, BBox &leftChildBBox, BBox &rightChildBBox,
+		int &axis, BBox &leftChildBbox, BBox &rightChildBbox,
 		u_int &leftChildReferences, u_int &rightChildReferences) {
 	// Build the centroids bounding box
 	BBox centroidsBbox;
@@ -531,7 +531,7 @@ int SQBVHAccel::BuildSpatialSplit(const std::vector<u_int> &primsIndexes,
 			} else {
 				// Clip triangle with bin bounding box
 				vector<Point> clipVertexList = binsBbox[j].ClipPolygon(vertexList);
-				assert (clipVertexList.size() != 0);
+				assert (clipVertexList.size() > 0);
 
 				// Compute the bounding box of the clipped triangle
 				BBox binPrimBbox;
@@ -604,14 +604,14 @@ int SQBVHAccel::BuildSpatialSplit(const std::vector<u_int> &primsIndexes,
 	if (minBin == -1)
 		return -1;
 
-	leftChildBBox = bboxesLeft[minBin];
-	rightChildBBox = bboxesRight[minBin + 1];
+	leftChildBbox = bboxesLeft[minBin];
+	rightChildBbox = bboxesRight[minBin + 1];
 	leftChildReferences = nbPrimsLeft[minBin];
 	rightChildReferences = nbPrimsRight[minBin + 1];
 
-	assert (leftChildBBox.IsValid());
-	assert (rightChildBBox.IsValid());
-	assert (leftChildBBox.pMax[axis] <= rightChildBBox.pMin[axis] + DEFAULT_EPSILON_STATIC);
+	assert (leftChildBbox.IsValid());
+	assert (rightChildBbox.IsValid());
+	assert (leftChildBbox.pMax[axis] <= rightChildBbox.pMin[axis] + DEFAULT_EPSILON_STATIC);
 	assert (leftChildReferences + rightChildReferences >= primsIndexes.size());
 
 #if !defined(NDEBUG)
@@ -681,7 +681,7 @@ int SQBVHAccel::BuildSpatialSplit(const std::vector<u_int> &primsIndexes,
 }
 
 int SQBVHAccel::BuildObjectSplit(const std::vector<BBox> &primsBboxes, int &axis,
-		BBox &leftChildBBox, BBox &rightChildBBox,
+		BBox &leftChildBbox, BBox &rightChildBbox,
 		u_int &leftChildReferences, u_int &rightChildReferences) {
 	// Build the centroids list and bounding box
 	BBox centroidsBbox;
@@ -787,13 +787,13 @@ int SQBVHAccel::BuildObjectSplit(const std::vector<BBox> &primsBboxes, int &axis
 		}
 	}
 
-	leftChildBBox = bboxesLeft[minBin];
-	rightChildBBox = bboxesRight[minBin + 1];
+	leftChildBbox = bboxesLeft[minBin];
+	rightChildBbox = bboxesRight[minBin + 1];
 	leftChildReferences = nbPrimsLeft[minBin];
 	rightChildReferences = nbPrimsRight[minBin + 1];
 
-	assert ((leftChildReferences == 0) || leftChildBBox.IsValid());
-	assert ((rightChildReferences == 0) || rightChildBBox.IsValid());
+	assert ((leftChildReferences == 0) || leftChildBbox.IsValid());
+	assert ((rightChildReferences == 0) || rightChildBbox.IsValid());
 
 	return minBin;
 }
