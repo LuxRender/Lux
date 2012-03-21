@@ -358,6 +358,9 @@ void SQBVHAccel::DoSpatialSplit(const std::vector<u_int> &primsIndexes,
 	const float k1 = (nodeBbox.pMax[spatialSplitAxis] - k0) / SPATIAL_SPLIT_BINS;
 	const float spatialSplitPos = k0 + k1 * (spatialSplitBin + 1);
 
+	// I have to use an extended bounding box for clipping the triangles (and
+	// than clip the resulting bounding box with the original) in order to avoid
+	// numerical precision problems.
 	BBox leftBbox = spatialLeftChildBbox;
 	leftBbox.Expand(MachineEpsilon::E(leftBbox));
 	BBox rightBbox = spatialRightChildBbox;
