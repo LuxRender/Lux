@@ -107,9 +107,6 @@ public:
 	
 	// BBox Public Data
 	Point pMin, pMax;
-	
-
-	
 };
 
 inline ostream &operator<<(ostream &os, const BBox &b) {
