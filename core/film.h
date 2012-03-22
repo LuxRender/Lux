@@ -558,7 +558,7 @@ public:
 typedef OutlierDataXYLY OutlierData;
 
 // Film Declarations
-class Film : public Queryable {
+class LUX_EXPORT Film : public Queryable {
 public:
 	// Film Interface
 	Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop[4],
