@@ -193,6 +193,9 @@ public:
 
 		const MeshBaryTriangle *triangle(static_cast<const MeshBaryTriangle *>(primitives[hit].get()));
 
+		//look if shape is a null type
+		if (null_shp_isect && triangle->IsSupport()) return false;
+
 		const Point o(reinterpret_cast<const float *>(&origx)[hit],
 			reinterpret_cast<const float *>(&origy)[hit],
 			reinterpret_cast<const float *>(&origz)[hit]);
@@ -233,10 +236,19 @@ public:
 		}
 
 		// Interpolate $(u,v)$ triangle parametric coordinates
-		const float tu = _b0 * uvs[0][0] + _b1 * uvs[1][0] +
+		float tu_ = _b0 * uvs[0][0] + _b1 * uvs[1][0] +
 			_b2 * uvs[2][0];
-		const float tv = _b0 * uvs[0][1] + _b1 * uvs[1][1] +
+		float tv_ = _b0 * uvs[0][1] + _b1 * uvs[1][1] +
 			_b2 * uvs[2][1];
+
+		if (triangle->mesh->proj_text) {
+			Vector wh = Normalize(pp - triangle->mesh->cam);
+			tu_ = SphericalPhi(wh) ;
+			tv_ = SphericalTheta(wh) ;
+		}
+		const float tu = tu_;
+		const float tv = tv_;
+
 
 		isect->dg = DifferentialGeometry(pp, nn, dpdu, dpdv,
 			Normal(0, 0, 0), Normal(0, 0, 0), tu, tv, triangle);
@@ -430,7 +442,12 @@ void QBVHAccel::BuildTree(u_int start, u_int end, u_int *primsIndexes,
 	u_int storeIndex = start;
 	for (u_int i = start; i < end; ++i) {
 		const u_int primIndex = primsIndexes[i];
-		
+
+		// This test isn't really correct because produces different results from
+		// the one in BuildObjectSplit(). For instance, it happens when the centroid
+		// is exactly on the split. SQBVH uses the right approach. However, this
+		// kind of problem has no side effects in a pure QBVH so it is not worth
+		// fixing here.
 		if (primsCentroids[primIndex][axis] <= splitPos) {
 			// Swap
 			primsIndexes[i] = primsIndexes[storeIndex];
@@ -823,10 +840,10 @@ BBox QBVHAccel::WorldBound() const
 
 void QBVHAccel::GetPrimitives(vector<boost::shared_ptr<Primitive> > &primitives) const
 {
-	primitives.reserve(primitives.size() + nPrims);
-	for(u_int i = 0; i < nPrims; ++i)
+	primitives.reserve(primitives.size() + nQuads);
+	for(u_int i = 0; i < nQuads; ++i)
 		primitives.push_back(prims[i]);
-	for (u_int i = 0; i < nPrims; ++i)
+	for (u_int i = 0; i < nQuads; ++i)
 		prims[i]->GetPrimitives(primitives);
 }
 

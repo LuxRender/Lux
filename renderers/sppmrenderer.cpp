@@ -131,7 +131,8 @@ void SPPMRenderer::Render(Scene *s) {
 		boost::mutex::scoped_lock lock(classWideMutex);
 
 		scene = s;
-		scene->arlux_setup();
+		// Not yet available!
+		//scene->arlux_setup();
 
 		sppmi = dynamic_cast<SPPMIntegrator*>(scene->surfaceIntegrator);
 		if (!sppmi) {
@@ -540,6 +541,9 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 			const double photonPassTime = osWallClockTime() - photonPassStartTime;
 			LOG(LUX_INFO, LUX_NOERROR) << "Photon pass time: " << photonPassTime << "secs";
 		}
+
+		// Wait for other threads
+		allThreadBarrier->wait();
 
 		if(renderer->paused())
 			break;

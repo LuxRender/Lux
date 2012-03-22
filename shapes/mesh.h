@@ -79,6 +79,7 @@ public:
 	friend class MeshBaryTriangle;
 	friend class MeshMicroDisplacementTriangle;
 	friend class MeshQuadrilateral;
+	friend class QuadTriangle;
 
 	static Shape* CreateShape(const Transform &o2w, bool reverseOrientation,
 		const ParamSet &params);

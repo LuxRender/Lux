@@ -120,8 +120,8 @@ public:
 
 	virtual bool IsDataParallelSupported() const { return true; }
 
-	virtual bool CheckLightStrategy() const {
-		if (samplingCount != 1) {
+	virtual bool CheckLightStrategy(const Scene &scene) const {
+		if (lightDirectStrategy->GetSamplingLimit(scene) != 1) {
 			LOG(LUX_ERROR, LUX_SEVERE)<< "The direct light sampling strategy must sample a single light, not " << samplingCount << ".";
 			return false;
 		}

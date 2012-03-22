@@ -107,9 +107,6 @@ public:
 	
 	// BBox Public Data
 	Point pMin, pMax;
-	
-
-	
 };
 
 inline ostream &operator<<(ostream &os, const BBox &b) {
@@ -117,6 +114,11 @@ inline ostream &operator<<(ostream &os, const BBox &b) {
 	return os;
 }
 
+extern Point PlaneClipEdge(const Point &planeOrig, const Normal &planeNormal,
+		const Point &a, const Point &b);
+extern vector<Point> PlaneClipPolygon(const Point &clippingPlaneOrigin,
+		const Normal &clippingPlaneNormal,
+		const vector<Point> &vertexList);
 
 }//namespace lux
 

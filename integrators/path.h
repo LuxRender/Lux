@@ -145,7 +145,7 @@ public:
 	// DataParallel interface
 	virtual bool IsDataParallelSupported() const { return true; }
 	//FIXME: just to check SurfaceIntegratorRenderingHints light strategy, to remove
-	virtual bool CheckLightStrategy() const {
+	virtual bool CheckLightStrategy(const Scene &scene) const {
 		if ((hints.GetLightStrategy() != LightsSamplingStrategy::SAMPLE_ONE_UNIFORM) &&
 			(hints.GetLightStrategy() != LightsSamplingStrategy::SAMPLE_ALL_UNIFORM) &&
 			(hints.GetLightStrategy() != LightsSamplingStrategy::SAMPLE_AUTOMATIC)) {

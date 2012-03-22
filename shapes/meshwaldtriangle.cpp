@@ -228,9 +228,7 @@ bool MeshWaldTriangle::Intersect(const Ray &ray, Intersection *isect, bool null_
 	const Point pp(b0 * mesh->p[v[0]] + uu * mesh->p[v[1]] + vv * mesh->p[v[2]]);
 
 	if (mesh->proj_text){
-		Point end = pp;
-		Vector wh = Normalize(end-mesh->cam);
-
+		Vector wh = Normalize(pp-mesh->cam);
 		tu_ = SphericalPhi(wh) ;
 		tv_ = SphericalTheta(wh) ;
 	}

@@ -70,7 +70,7 @@ void BBox::BoundingSphere(Point *c, float *rad) const {
 	*rad = Inside(*c) ? Distance(*c, pMax) : 0.f;
 }
 
-static inline Point ClipEdge(const Point &planeOrig, const Normal &planeNormal,
+Point PlaneClipEdge(const Point &planeOrig, const Normal &planeNormal,
 		const Point &a, const Point &b) {
 	const float distA = Dot(a - planeOrig, planeNormal);
 	const float distB = Dot(b - planeOrig, planeNormal);
@@ -80,6 +80,32 @@ static inline Point ClipEdge(const Point &planeOrig, const Normal &planeNormal,
 	return Point(a.x + s * (b.x - a.x),
 			a.y + s * (b.y - a.y),
 			a.z + s * (b.z - a.z));
+}
+
+vector<Point> PlaneClipPolygon(const Point &clippingPlaneOrigin,
+		const Normal &clippingPlaneNormal,
+		const vector<Point> &vertexList) {
+	if (vertexList.size() == 0)
+		return vector<Point>();
+
+	vector<Point> outputList;
+	Point S = vertexList[vertexList.size() - 1];
+	for (size_t j = 0; j < vertexList.size(); ++j) {
+		const Point &E = vertexList[j];
+
+		if (Dot(E - clippingPlaneOrigin, clippingPlaneNormal) >= 0.f) {
+			if (Dot(S - clippingPlaneOrigin, clippingPlaneNormal) < 0.f)
+				outputList.push_back(PlaneClipEdge(clippingPlaneOrigin, clippingPlaneNormal, S, E));
+
+			outputList.push_back(E);
+		} else if (Dot(S - clippingPlaneOrigin, clippingPlaneNormal) >= 0.f) {
+			outputList.push_back(PlaneClipEdge(clippingPlaneOrigin, clippingPlaneNormal, S, E));
+		}
+
+		S = E;
+	}
+
+	return outputList;
 }
 
 vector<Point> BBox::ClipPolygon(const vector<Point> &vertexList) const {
@@ -101,33 +127,12 @@ vector<Point> BBox::ClipPolygon(const vector<Point> &vertexList) const {
 		Normal(0.f, 0.f, -1.f),
 	};
 	
-	vector<Point> outputList = vertexList;
+	vector<Point> vlist = vertexList;
 	// For each bounding box plane
-	for (size_t i = 0; i < 6; ++i) {
-		vector<Point> inputList = outputList;
-		outputList.clear();
+	for (size_t i = 0; i < 6; ++i)
+		vlist = PlaneClipPolygon(clippingPlaneOrigin[i], clippingPlaneNormal[i], vlist);
 
-		if (inputList.size() == 0)
-			return vector<Point>();
-
-		Point S = inputList[inputList.size() - 1];
-		for (size_t j = 0; j < inputList.size(); ++j) {
-			const Point &E = inputList[j];
-
-			if (Dot(E - clippingPlaneOrigin[i], clippingPlaneNormal[i]) >= 0.f) {
-				if (Dot(S - clippingPlaneOrigin[i], clippingPlaneNormal[i]) < 0.f)
-					outputList.push_back(ClipEdge(clippingPlaneOrigin[i], clippingPlaneNormal[i], S, E));
-
-				outputList.push_back(E);
-			} else if (Dot(S - clippingPlaneOrigin[i], clippingPlaneNormal[i]) >= 0.f) {
-				outputList.push_back(ClipEdge(clippingPlaneOrigin[i], clippingPlaneNormal[i], S, E));
-			}
-
-			S = E;
-		}
-	}
-
-	return outputList;
+	return vlist;
 }
 
 // NOTE - lordcrc - BBox::IntersectP relies on IEEE 754 behaviour of infinity and /fp:fast breaks this

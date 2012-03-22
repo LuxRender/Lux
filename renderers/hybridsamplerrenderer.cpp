@@ -340,6 +340,8 @@ void HybridSamplerRenderer::Render(Scene *s) {
 		boost::mutex::scoped_lock lock(classWideMutex);
 
 		scene = s;
+		// Not yet available!
+		//scene->arlux_setup();
 
 		if (scene->IsFilmOnly()) {
 			state = TERMINATE;
@@ -358,7 +360,7 @@ void HybridSamplerRenderer::Render(Scene *s) {
 			return;
 		}
 
-		if (!scene->surfaceIntegrator->CheckLightStrategy()) {
+		if (!scene->surfaceIntegrator->CheckLightStrategy(*scene)) {
 			state = TERMINATE;
 			return;
 		}

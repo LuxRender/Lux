@@ -145,11 +145,19 @@ bool MeshBaryTriangle::Intersect(const Ray &ray, Intersection* isect, bool null_
 	}
 
 	// Interpolate $(u,v)$ triangle parametric coordinates
-	const float tu = b0 * uvs[0][0] + b1 * uvs[1][0] + b2 * uvs[2][0];
-	const float tv = b0 * uvs[0][1] + b1 * uvs[1][1] + b2 * uvs[2][1];
+	float tu_ = b0 * uvs[0][0] + b1 * uvs[1][0] + b2 * uvs[2][0];
+	float tv_ = b0 * uvs[0][1] + b1 * uvs[1][1] + b2 * uvs[2][1];
 
 	const Normal nn = Normal(Normalize(Cross(e1, e2)));
 	const Point pp(p1 + b1 * e1 + b2 * e2);
+
+	if (mesh->proj_text){
+		Vector wh = Normalize(pp-mesh->cam);
+		tu_ = SphericalPhi(wh) ;
+		tv_ = SphericalTheta(wh) ;
+	}
+	const float tu = tu_;
+	const float tv = tv_;
 
 	isect->dg = DifferentialGeometry(pp, nn, dpdu, dpdv,
 		Normal(0, 0, 0), Normal(0, 0, 0), tu, tv, this);
