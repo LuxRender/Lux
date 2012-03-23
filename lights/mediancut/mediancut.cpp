@@ -6,9 +6,9 @@ SummedAreaTable AL = SummedAreaTable();
 MedCutList  C_MedCut;
 MedCutLight C_MCLight;
 
-bool split ( MedCutList  *MedCut, Rectangle r ) {
+bool split ( MedCutList  *MedCut, Box2D r ) {
 
-	Rectangle a, b;
+	Box2D a, b;
 
 	if ( ( r.x0 == r.x1 ) && ( r.y0 == r.y1 ) ) {
 
@@ -190,12 +190,12 @@ void MedCutSample( MedCutList *MedCut, MedCutLight *MCLight, float *data, int k,
 
 
 	(*MedCut).clear();
-	Rectangle rec = Rectangle( 0, 0, w-1, h-1, 0, 0, AL.A[w*h-1], 1 );
+	Box2D rec = Box2D( 0, 0, w-1, h-1, 0, 0, AL.A[w*h-1], 1 );
 	(*MedCut).push_back( rec );
 
 	for ( int i = 0 ; i < k ; i++ )
 
-		for( int j = (int)( pow( 2, i ) - 1 ) ; j < (int)( pow( 2, i + 1 ) - 1 ) ; j++ )
+		for( int j = (int)( pow( 2.f, i ) - 1 ) ; j < (int)( pow( 2.f, i + 1 ) - 1 ) ; j++ )
 			
 			split( MedCut, (*MedCut)[j] );
 
@@ -203,7 +203,7 @@ void MedCutSample( MedCutList *MedCut, MedCutLight *MCLight, float *data, int k,
 	(*MCLight).clear();
 	float x, y, z, theta, phi;
 
-	for ( int j = (int)( pow( 2, k ) - 1 ) ; j < (int)( pow( 2, k + 1 ) - 1 ) ; j++ ) {
+	for ( int j = (int)( pow( 2.f, k ) - 1 ) ; j < (int)( pow( 2.f, k + 1 ) - 1 ) ; j++ ) {
 
 		if ( (*MedCut)[j].x0 > -1 ) {
 

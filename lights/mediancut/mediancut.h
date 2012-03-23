@@ -6,9 +6,9 @@
 #include "defs.h"
 
 
-//Class Rectangle used by Mediancut 
+//Class Box2D used by Mediancut 
 
-bool split (MedCutList  *MedCut,  Rectangle r);
+bool split (MedCutList  *MedCut,  Box2D r);
 
 bool center (MedCutList  *MedCut, int k);
 

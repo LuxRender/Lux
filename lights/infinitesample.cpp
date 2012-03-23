@@ -186,8 +186,8 @@ InfiniteAreaLightIS::InfiniteAreaLightIS(const Transform &light2world,
 
 	LNsamples = LNs;
 	MedCutSample( &C_MedCut, &C_MCLight, predata, LNsamples, W, H );
-	lightdata = new float[4*(int)(pow(2, (float)LNsamples))];
-	for( int i=0; i<(int)(pow(2,LNsamples)); i++){
+	lightdata = new float[4*(int)(pow(2.f, (int)LNsamples))];
+	for( int i=0; i<(int)(pow(2.f, (int)LNsamples)); i++){
 		lightdata[4*i]  = C_MCLight[i].x;
 		lightdata[4*i+1]= C_MCLight[i].y;
 		lightdata[4*i+2]= C_MCLight[i].z;
@@ -205,7 +205,7 @@ float InfiniteAreaLightIS::DirProb(Vector N) const
 		Vector wh = Normalize(WorldToLight(w));
 		float T_rad = 0.f, P_rad = 0.f; 
 
-		for( int i=0; i<(int)(pow(2,LNsamples)); i++) {
+		for( int i=0; i<(int)(pow(2.f, (int)LNsamples)); i++) {
 			Vector dummy;
 			dummy.x = lightdata[4*i];
 			dummy.y = lightdata[4*i+1];

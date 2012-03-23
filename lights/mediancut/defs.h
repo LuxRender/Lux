@@ -15,9 +15,9 @@
 
 using namespace std;
 
-//----------------------------------- Rectangle class ----------------------------------------//
+//----------------------------------- Box2D class ----------------------------------------//
 
-class Rectangle
+class Box2D
 {
 	public:
 		int   x0, y0, x1, y1;
@@ -25,11 +25,11 @@ class Rectangle
 		float Avsum;
 		int   coord;
 
-		Rectangle() {
+		Box2D() {
 			x0 = y0 = x1 = y1 = u = v = coord = 0; 
 			Avsum = 0.f; 
 		}
-		Rectangle( int x_0, int y_0, int x_1, int y_1, int u_, int v_,  float Avsum_, int coord_ ) {
+		Box2D( int x_0, int y_0, int x_1, int y_1, int u_, int v_,  float Avsum_, int coord_ ) {
 			x0 = x_0; 
 			y0 = y_0; 
 			x1 = x_1; 
@@ -40,7 +40,7 @@ class Rectangle
 			Avsum = Avsum_;
 			coord = coord_; 
 		}
-		~Rectangle() {}
+		~Box2D() {}
 		void setcoord() { ( x1 - x0 ) > ( y1 - y0 ) ? coord = 1 : coord = 0; };
 };
 
@@ -65,7 +65,7 @@ class MC
 		~MC() {};
 };
 
-typedef vector<Rectangle>  MedCutList;
+typedef vector<Box2D>  MedCutList;
 typedef vector<MC>         MedCutLight;
 
 

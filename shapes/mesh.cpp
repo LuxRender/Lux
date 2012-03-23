@@ -1017,7 +1017,7 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 
 	bool  sup = params.FindOneBool( "support", false );
 	bool  proj_text = params.FindOneBool( "projection", false );
-	Point  cam = params.FindOnePoint( "cam", (0,0,0) );
+	Point  cam = params.FindOnePoint( "cam", Point(0,0,0) );
 
 	return new Mesh(o2w, reverseOrientation, name,
 		sup, proj_text, cam, accelType,
