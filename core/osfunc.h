@@ -56,7 +56,7 @@ using boost::interprocess::ipcdetail::atomic_inc32;
 using boost::interprocess::ipcdetail::atomic_read32;
 using boost::interprocess::ipcdetail::atomic_write32;
 #if !defined(WIN32)
-using boost::interprocess::detail::atomic_add32;
+using boost::interprocess::ipcdetail::atomic_add32;
 #endif
 #endif // BOOST_VERSION >= 104800
 
