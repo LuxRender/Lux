@@ -72,7 +72,7 @@ namespace queryable {
  *      );'
  *
  */
-class Queryable
+class LUX_EXPORT Queryable
 {
 public:
 	Queryable(std::string _name);

@@ -51,7 +51,7 @@ public:
 	enum DataType { None, Bool, Int, Float, Double, String };
 };
 
-class QueryableAttribute
+class LUX_EXPORT QueryableAttribute
 {
 protected:
 	QueryableAttribute(const std::string &n, const std::string &d)
@@ -185,7 +185,7 @@ public:
 };
 
 
-class NullAttribute : public QueryableAttribute {
+class LUX_EXPORT NullAttribute : public QueryableAttribute {
 public:
 	~NullAttribute() {}
 
