@@ -380,10 +380,7 @@ void SamplerRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 
 	// Dade - wait the end of the preprocessing phase
 	while (!renderer->preprocessDone) {
-		boost::xtime xt;
-		boost::xtime_get(&xt, boost::TIME_UTC);
-		++xt.sec;
-		boost::thread::sleep(xt);
+		boost::this_thread::sleep(boost::posix_time::seconds(1));
 	}
 
 	// ContribBuffer has to wait until the end of the preprocessing
@@ -409,10 +406,7 @@ void SamplerRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 				// Dade - wait for a resume rendering or exit
 				renderer->Pause();
 				while (renderer->state == PAUSE) {
-					boost::xtime xt;
-					boost::xtime_get(&xt, boost::TIME_UTC);
-					xt.sec += 1;
-					boost::thread::sleep(xt);
+					boost::this_thread::sleep(boost::posix_time::seconds(1));
 				}
 
 				if (renderer->state == TERMINATE)
@@ -434,10 +428,7 @@ void SamplerRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 		sample.swl.Sample(sample.wavelengths);
 
 		while (renderer->state == PAUSE && !boost::this_thread::interruption_requested()) {
-			boost::xtime xt;
-			boost::xtime_get(&xt, boost::TIME_UTC);
-			xt.sec += 1;
-			boost::thread::sleep(xt);
+			boost::this_thread::sleep(boost::posix_time::seconds(1));
 		}
 		if ((renderer->state == TERMINATE) || boost::this_thread::interruption_requested())
 			break;

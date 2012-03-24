@@ -347,10 +347,7 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 
 	// Dade - wait the end of the preprocessing phase
 	while (!renderer->preprocessDone) {
-		boost::xtime xt;
-		boost::xtime_get(&xt, boost::TIME_UTC);
-		++xt.sec;
-		boost::thread::sleep(xt);
+		boost::this_thread::sleep(boost::posix_time::seconds(1));
 	}
 
 	// Wait for other threads

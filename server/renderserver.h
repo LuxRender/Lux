@@ -27,7 +27,6 @@
 #include "api.h"
 
 #include <fstream>
-#include <boost/thread/xtime.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>

@@ -644,10 +644,7 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 
 	// Dade - wait the end of the preprocessing phase
 	while (!renderer->preprocessDone) {
-		boost::xtime xt;
-		boost::xtime_get(&xt, boost::TIME_UTC);
-		++xt.sec;
-		boost::thread::sleep(xt);
+		boost::this_thread::sleep(boost::posix_time::seconds(1));
 	}
 
 	// ContribBuffer has to wait until the end of the preprocessing
@@ -685,10 +682,7 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 
 	for(;;) {
 		while (renderer->state == PAUSE) {
-			boost::xtime xt;
-			boost::xtime_get(&xt, boost::TIME_UTC);
-			xt.sec += 1;
-			boost::thread::sleep(xt);
+			boost::this_thread::sleep(boost::posix_time::seconds(1));
 		}
 		if ((renderer->state == TERMINATE) || boost::this_thread::interruption_requested()) {
 			// Pop left rayBuffers
@@ -715,10 +709,7 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 				renderer->Pause();
 				// Dade - wait for a resume rendering or exit
 				while (renderer->state == PAUSE) {
-					boost::xtime xt;
-					boost::xtime_get(&xt, boost::TIME_UTC);
-					xt.sec += 1;
-					boost::thread::sleep(xt);
+					boost::this_thread::sleep(boost::posix_time::seconds(1));
 				}
 
 				if (renderer->state == TERMINATE) {

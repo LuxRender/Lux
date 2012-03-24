@@ -33,8 +33,6 @@
 #include "color.h"
 #include "mc.h"
 
-#include <boost/thread/xtime.hpp>
-
 using namespace lux;
 
 ExPhotonIntegrator::ExPhotonIntegrator(RenderingMode rm,

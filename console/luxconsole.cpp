@@ -35,7 +35,6 @@
 
 #include <boost/program_options.hpp>
 #include <boost/thread.hpp>
-#include <boost/thread/xtime.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/operations.hpp>
@@ -70,10 +69,7 @@ void engineThread() {
 void infoThread() {
 	while (!boost::this_thread::interruption_requested()) {
 		try {
-			boost::xtime xt;
-			boost::xtime_get(&xt, boost::TIME_UTC);
-			xt.sec += 5;
-			boost::thread::sleep(xt);
+			boost::this_thread::sleep(boost::posix_time::seconds(5));
 
 			LOG(LUX_INFO,LUX_NOERROR) << luxPrintableStatistics(true);
 		} catch(boost::thread_interrupted ex) {
@@ -298,10 +294,7 @@ int main(int ac, char *av[]) {
 
 				//wait the scene parsing to finish
 				while (!luxStatistics("sceneIsReady") && !parseError) {
-					boost::xtime xt;
-					boost::xtime_get(&xt, boost::TIME_UTC);
-					xt.sec += 1;
-					boost::thread::sleep(xt);
+					boost::this_thread::sleep(boost::posix_time::seconds(1));
 				}
 
 				if (parseError) {

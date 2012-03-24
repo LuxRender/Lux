@@ -50,6 +50,7 @@
 #include <boost/iostreams/filter/bzip2.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/thread/xtime.hpp>
 
 using namespace boost::iostreams;
 using namespace boost::posix_time;

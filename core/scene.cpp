@@ -35,7 +35,6 @@
 #include "spectrumwavelengths.h"
 #include "transport.h"
 
-#include <boost/thread/xtime.hpp>
 #include <boost/bind.hpp>
 #include <boost/thread/mutex.hpp>
 
