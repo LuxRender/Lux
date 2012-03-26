@@ -198,7 +198,7 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, u_int filtRes
 
 	if (filename_back != "")  {
 		std::auto_ptr<ImageData> imgdata(ReadImage(filename_back));
-		if (imgdata.get() != NULL){
+		if (imgdata.get() != NULL && imgdata->getPixelDataType() == 2){
 			int nu = imgdata->getWidth();
 			int nv = imgdata->getHeight();
 			back=new XYZColor[nu*nv];
@@ -209,8 +209,10 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, u_int filtRes
 
 			premultiplyAlpha = true;
 		}
-		else
+		else {
 			back = NULL;
+			LOG(LUX_WARNING, LUX_LIMIT) << "Cannot Load Background image " << filename_back << ". Works only with HDR formats.";
+		}
 	}
 	else
 		back = NULL;

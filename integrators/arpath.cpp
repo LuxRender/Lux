@@ -166,7 +166,7 @@ u_int ARPathIntegrator::Li(const Scene &scene, const Sample &sample) const
 			// Stop path sampling since no intersection was found
 			// Possibly add horizon in render & reflections
 			if (!enableDirectLightSampling || (
-					(includeEnvironment || vertexIndex > 0) && specularBounce && path_type)) {
+					(includeEnvironment || vertexIndex > 0) && specularBounce && (path_type || pathLength==0) )) {
 				BSDF *ibsdf;
 				for (u_int i = 0; i < nLights; ++i) {
 					SWCSpectrum Le(pathThroughput);
