@@ -129,10 +129,7 @@ void RenderServer::errorHandler(int code, int severity, const char *msg) {
 static void printInfoThread()
 {
 	while (true) {
-		boost::xtime xt;
-		boost::xtime_get(&xt, boost::TIME_UTC);
-		xt.sec += 5;
-		boost::thread::sleep(xt);
+		boost::this_thread::sleep(boost::posix_time::seconds(5));
 
 		int sampleSec = static_cast<int>(luxStatistics("samplesSec"));
 		// Print only if we are rendering something
@@ -659,10 +656,7 @@ void cmd_luxWorldEnd(bool isLittleEndian, NetworkRenderServerThread *serverThrea
 
 	// Wait the scene parsing to finish
 	while (!luxStatistics("sceneIsReady")) {
-		boost::xtime xt;
-		boost::xtime_get(&xt, boost::TIME_UTC);
-		xt.sec += 1;
-		boost::thread::sleep(xt);
+		boost::this_thread::sleep(boost::posix_time::seconds(1));
 	}
 
 	// Dade - start the info thread only if it is not already running

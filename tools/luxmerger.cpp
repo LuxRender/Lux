@@ -34,7 +34,6 @@
 
 #include <boost/program_options.hpp>
 #include <boost/thread.hpp>
-#include <boost/thread/xtime.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/operations.hpp>

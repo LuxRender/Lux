@@ -358,6 +358,9 @@ void SQBVHAccel::DoSpatialSplit(const std::vector<u_int> &primsIndexes,
 	const float k1 = (nodeBbox.pMax[spatialSplitAxis] - k0) / SPATIAL_SPLIT_BINS;
 	const float spatialSplitPos = k0 + k1 * (spatialSplitBin + 1);
 
+	const float leftSpatialSplitPos = spatialSplitPos;
+	const float rightSpatialSplitPos = spatialSplitPos;
+
 	// I have to use an extended bounding box for clipping the triangles (and
 	// than clip the resulting bounding box with the original) in order to avoid
 	// numerical precision problems.
@@ -365,6 +368,10 @@ void SQBVHAccel::DoSpatialSplit(const std::vector<u_int> &primsIndexes,
 	leftBbox.Expand(MachineEpsilon::E(leftBbox));
 	BBox rightBbox = spatialRightChildBbox;
 	rightBbox.Expand(MachineEpsilon::E(rightBbox));
+
+	// The version used when Reference unsplitting is enabled
+	//const float leftSpatialSplitPos = leftBbox.pMax[spatialSplitAxis];
+	//const float rightSpatialSplitPos = rightBbox.pMin[spatialSplitAxis];
 
 	// Do spatial split
 	leftPrimsIndexes.reserve(spatialLeftChildReferences);
@@ -375,7 +382,7 @@ void SQBVHAccel::DoSpatialSplit(const std::vector<u_int> &primsIndexes,
 	for (u_int i = 0; i < primsIndexes.size(); ++i) {
 		u_int primIndex = primsIndexes[i];
 
-		if (primsBboxes[i].pMin[spatialSplitAxis] <= spatialSplitPos) {
+		if (primsBboxes[i].pMin[spatialSplitAxis] <= leftSpatialSplitPos) {
 			leftPrimsIndexes.push_back(primIndex);
 
 			// Clip triangle with left bounding box
@@ -386,23 +393,23 @@ void SQBVHAccel::DoSpatialSplit(const std::vector<u_int> &primsIndexes,
 				// plane. I have to clip the bounding box.
 
 				primBbox = primsBboxes[i];
-				primBbox.pMax[spatialSplitAxis] = min(primBbox.pMax[spatialSplitAxis], spatialSplitPos);
+				primBbox.pMax[spatialSplitAxis] = min(primBbox.pMax[spatialSplitAxis], leftSpatialSplitPos);
 			} else {
 				vector<Point> clipVertexList = leftBbox.ClipPolygon(vertexList);
-				assert (clipVertexList.size() > 0);
+				if (clipVertexList.size() > 0) {
+					// Compute the bounding box of the clipped triangle
+					for (u_int k = 0; k < clipVertexList.size(); ++k)
+						primBbox = Union(primBbox, clipVertexList[k]);
+					assert (primBbox.IsValid());
 
-				// Compute the bounding box of the clipped triangle
-				for (u_int k = 0; k < clipVertexList.size(); ++k)
-					primBbox = Union(primBbox, clipVertexList[k]);
-				assert (primBbox.IsValid());
-
-				Overlaps(primBbox, spatialLeftChildBbox, primBbox);
+					Overlaps(primBbox, spatialLeftChildBbox, primBbox);
+				}
 			}
 
 			leftPrimsBbox.push_back(primBbox);
 		}
 
-		if (primsBboxes[i].pMax[spatialSplitAxis] > spatialSplitPos) {
+		if (primsBboxes[i].pMax[spatialSplitAxis] > rightSpatialSplitPos) {
 			rightPrimsIndexes.push_back(primIndex);
 
 			// Clip triangle with right bounding box
@@ -413,17 +420,17 @@ void SQBVHAccel::DoSpatialSplit(const std::vector<u_int> &primsIndexes,
 				// plane. I have to clip the bounding box.
 
 				primBbox = primsBboxes[i];
-				primBbox.pMin[spatialSplitAxis] = max(primBbox.pMin[spatialSplitAxis], spatialSplitPos);
+				primBbox.pMin[spatialSplitAxis] = max(primBbox.pMin[spatialSplitAxis], rightSpatialSplitPos);
 			} else {
 				vector<Point> clipVertexList = rightBbox.ClipPolygon(vertexList);
-				assert (clipVertexList.size() > 0);
+				if (clipVertexList.size() > 0) {
+					// Compute the bounding box of the clipped triangle
+					for (u_int k = 0; k < clipVertexList.size(); ++k)
+						primBbox = Union(primBbox, clipVertexList[k]);
+					assert (primBbox.IsValid());
 
-				// Compute the bounding box of the clipped triangle
-				for (u_int k = 0; k < clipVertexList.size(); ++k)
-					primBbox = Union(primBbox, clipVertexList[k]);
-				assert (primBbox.IsValid());
-
-				Overlaps(primBbox, spatialRightChildBbox, primBbox);
+					Overlaps(primBbox, spatialRightChildBbox, primBbox);
+				}
 			}
 
 			rightPrimsBbox.push_back(primBbox);
@@ -477,15 +484,7 @@ int SQBVHAccel::BuildSpatialSplit(const std::vector<u_int> &primsIndexes,
 		const std::vector<BBox> &primsBboxes, const BBox &nodeBbox,
 		int &axis, BBox &leftChildBbox, BBox &rightChildBbox,
 		u_int &leftChildReferences, u_int &rightChildReferences) {
-	// Build the centroids bounding box
-	BBox centroidsBbox;
-	for (u_int i = 0; i < primsBboxes.size(); ++i)
-		centroidsBbox = Union(centroidsBbox, primsBboxes[i].Center());
-
-	// Choose the split axis, taking the axis of maximum extent for the
-	// centroids (else weird cases can occur, where the maximum extent axis
-	// for the nodeBbox is an axis of 0 extent for the centroids one.).
-	axis = centroidsBbox.MaximumExtent();
+	axis = nodeBbox.MaximumExtent();
 	
 	// Precompute values that are constant with respect to the current
 	// primitive considered.
@@ -543,22 +542,22 @@ int SQBVHAccel::BuildSpatialSplit(const std::vector<u_int> &primsIndexes,
 			} else {
 				// Clip triangle with bin bounding box
 				vector<Point> clipVertexList = binsBbox[j].ClipPolygon(vertexList);
-				assert (clipVertexList.size() > 0);
-
-				// Compute the bounding box of the clipped triangle
-				BBox binPrimBbox;
-				for (u_int k = 0; k < clipVertexList.size(); ++k) {
+				if (clipVertexList.size() > 0) {
+					// Compute the bounding box of the clipped triangle
+					BBox binPrimBbox;
+					for (u_int k = 0; k < clipVertexList.size(); ++k) {
 #if !defined(NDEBUG)
-					// Safety check
-					BBox binBbox = binsBbox[j];
-					binBbox.Expand(MachineEpsilon::E(binBbox));
-					assert (binBbox.Inside(clipVertexList[k]));
+						// Safety check
+						BBox binBbox = binsBbox[j];
+						binBbox.Expand(MachineEpsilon::E(binBbox));
+						assert (binBbox.Inside(clipVertexList[k]));
 #endif
-					binPrimBbox = Union(binPrimBbox, clipVertexList[k]);
-				}
-				assert (binPrimBbox.IsValid());
+						binPrimBbox = Union(binPrimBbox, clipVertexList[k]);
+					}
+					assert (binPrimBbox.IsValid());
 
-				binsPrimBbox[j] = Union(binsPrimBbox[j], binPrimBbox);
+					binsPrimBbox[j] = Union(binsPrimBbox[j], binPrimBbox);
+				}
 			}
 		}
 
@@ -656,12 +655,9 @@ int SQBVHAccel::BuildSpatialSplit(const std::vector<u_int> &primsIndexes,
 	// Reference unsplitting
 	//--------------------------------------------------------------------------
 
-	/*const float spatialSplitCost = leftChildBBox.SurfaceArea() * QuadCount(spatialLeftChildReferences) +
-				rightChildBBox.SurfaceArea() * QuadCount(spatialRightChildReferences);
-
-	for (u_int i = 0; i < primsIndexes.size(); ++i) {
-		const bool overlapLeft = (primsBboxes[i].pMin[axis] <= splitPos);
-		const bool overlapRight = (primsBboxes[i].pMax[axis] > splitPos);
+	/*for (u_int i = 0; i < primsIndexes.size(); ++i) {
+		const bool overlapLeft = (primsBboxes[i].pMin[axis] <= leftChildBbox.pMax[axis]);
+		const bool overlapRight = (primsBboxes[i].pMax[axis] > rightChildBbox.pMin[axis]);
 
 		if (overlapLeft && overlapRight) {
 			// Check if it is worth applying reference unsplitting
@@ -669,22 +665,25 @@ int SQBVHAccel::BuildSpatialSplit(const std::vector<u_int> &primsIndexes,
 			assert (spatialLeftChildReferences > 0);
 			assert (spatialRightChildReferences > 0);
 
-			BBox extendedLeftChildBBox = Union(leftChildBBox, primsBboxes[i]);
-			const float c1 = extendedLeftChildBBox.SurfaceArea() * QuadCount(spatialLeftChildReferences) +
-				rightChildBBox.SurfaceArea() * QuadCount(spatialRightChildReferences - 1);
+			const float spatialSplitCost = leftChildBbox.SurfaceArea() * QuadCount(leftChildReferences) +
+				rightChildBbox.SurfaceArea() * QuadCount(rightChildReferences);
 
-			BBox extendedRightChildBBox = Union(rightChildBBox, primsBboxes[i]);
-			const float c2 = leftChildBBox.SurfaceArea() * QuadCount(spatialLeftChildReferences - 1) +
-				extendedRightChildBBox.SurfaceArea() * QuadCount(spatialRightChildReferences);
+			BBox extendedLeftChildBbox = Union(leftChildBbox, primsBboxes[i]);
+			const float leftExtendCost = extendedLeftChildBbox.SurfaceArea() * QuadCount(leftChildReferences) +
+				rightChildBbox.SurfaceArea() * QuadCount(rightChildReferences - 1);
 
-			if (c1 < spatialSplitCost) {
+			BBox extendedRightChildBbox = Union(rightChildBbox, primsBboxes[i]);
+			const float rightExtendCost = leftChildBbox.SurfaceArea() * QuadCount(leftChildReferences - 1) +
+				extendedRightChildBbox.SurfaceArea() * QuadCount(rightChildReferences);
+
+			if (leftExtendCost < spatialSplitCost) {
 				// Put the primitive only in left child
-				leftChildBBox = extendedLeftChildBBox;
-			}
-
-			if (c2 < spatialSplitCost) {
+				leftChildBbox = extendedLeftChildBbox;
+				rightChildReferences -= 1;
+			} else if (rightExtendCost < spatialSplitCost) {
 				// Put the primitive only in right child
-				rightChildBBox = extendedRightChildBBox;
+				rightChildBbox = extendedRightChildBbox;
+				leftChildReferences -= 1;
 			}
 		}
 	}*/
