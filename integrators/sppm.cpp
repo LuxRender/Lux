@@ -95,8 +95,8 @@ SurfaceIntegrator *SPPMIntegrator::CreateSurfaceIntegrator(const ParamSet &param
 	sppmi->photonPerPass = params.FindOneInt("photonperpass", 1000000);
 
 	sppmi->includeEnvironment = params.FindOneBool("includeenvironment", true);
-	sppmi->directLightSampling = params.FindOneBool("directlightsampling", false);
-	sppmi->useproba = params.FindOneBool("useproba", false);
+	sppmi->directLightSampling = params.FindOneBool("directlightsampling", true);
+	sppmi->useproba = params.FindOneBool("useproba", true);
 
 	sppmi->wavelengthStratification = max(params.FindOneInt("wavelengthstratificationpasses", 8), 0);
 
