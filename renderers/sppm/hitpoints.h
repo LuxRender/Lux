@@ -37,7 +37,7 @@ struct PhotonData
 	Point p;
 	Vector wi;
 	SWCSpectrum alpha;
-	uint lightGroup;
+	u_int lightGroup;
 };
 
 
