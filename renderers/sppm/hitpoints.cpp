@@ -245,6 +245,9 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample)
 	u_int vertexIndex = 0;
 	const Volume *volume = NULL;
 
+	bool specularBounce = true;
+	const bool enableDirectLightSampling = renderer->sppmi->directLightSampling;
+
 	for (u_int pathLength = 0; ; ++pathLength) {
 		const SWCSpectrum prevThroughput(pathThroughput);
 
@@ -269,7 +272,8 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample)
 
 			// Stop path sampling since no intersection was found
 			// Possibly add horizon in render & reflections
-			if (includeEnvironment || (vertexIndex > 0)) {
+			if (!enableDirectLightSampling || (
+					(includeEnvironment || vertexIndex > 0) && specularBounce)) {
 				BSDF *ibsdf;
 				for (u_int i = 0; i < nLights; ++i) {
 					SWCSpectrum Le(pathThroughput);
@@ -302,7 +306,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample)
 
 		// Possibly add emitted light at path vertex
 		Vector wo(-ray.d);
-		if (isect.arealight) {
+		if (specularBounce && isect.arealight) {
 			BSDF *ibsdf;
 			SWCSpectrum Le(isect.Le(sample, ray, &ibsdf, NULL, NULL));
 			if (!Le.Black()) {
@@ -385,7 +389,10 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample)
 
 		if (flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) ||
 			!(bsdf->Pdf(sw, wi, wo, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) > 0.f))
+		{
 			++vertexIndex;
+			specularBounce = (flags & BSDF_SPECULAR) != 0;
+		}
 
 		pathThroughput *= f / pdf_event;
 		if (pathThroughput.Black()) {
