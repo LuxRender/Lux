@@ -25,8 +25,7 @@
 
 using namespace lux;
 
-HashGrid::HashGrid(HitPoints *hps) {
-	hitPoints = hps;
+HashGrid::HashGrid(HitPoints *hps): HitPointsLookUpAccel(hps) {
 	grid = NULL;
 }
 

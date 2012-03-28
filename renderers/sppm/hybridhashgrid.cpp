@@ -25,8 +25,7 @@
 
 using namespace lux;
 
-HybridHashGrid::HybridHashGrid(HitPoints *hps) {
-	hitPoints = hps;
+HybridHashGrid::HybridHashGrid(HitPoints *hps): HitPointsLookUpAccel(hps) {
 	grid = NULL;
 	kdtreeThreshold = 2;
 }

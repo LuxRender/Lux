@@ -25,8 +25,7 @@
 
 using namespace lux;
 
-ParallelHashGrid::ParallelHashGrid(HitPoints *hps, float gridCoef) {
-	hitPoints = hps;
+ParallelHashGrid::ParallelHashGrid(HitPoints *hps, float gridCoef):HitPointsLookUpAccel(hps) {
 	gridSize = gridCoef * hitPoints->GetSize();
 	jumpSize = hitPoints->GetSize();
 

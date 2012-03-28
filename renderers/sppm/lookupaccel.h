@@ -44,7 +44,7 @@ enum LookUpAccelType {
 
 class HitPointsLookUpAccel {
 public:
-	HitPointsLookUpAccel() { }
+	HitPointsLookUpAccel(HitPoints *hps): hitPoints(hps) { }
 	virtual ~HitPointsLookUpAccel() { }
 
 	virtual void Refresh( const u_int index, const u_int count, boost::barrier &barrier) = 0;
@@ -55,6 +55,8 @@ public:
 
 protected:
 	void AddFluxToHitPoint(Sample &sample, HitPoint *hp, const PhotonData &photon);
+
+	HitPoints *hitPoints;
 };
 
 
@@ -92,7 +94,6 @@ private:
 		return (u_int)((ix * 997 + iy) * 443 + iz) % gridSize;
 	}*/
 
-	HitPoints *hitPoints;
 	u_int gridSize;
 	float invCellSize;
 	std::list<HitPoint *> **grid;
@@ -117,8 +118,6 @@ private:
 		return (u_int)((ix * 73856093) ^ (iy * 19349663) ^ (iz * 83492791)) % gridSize;
 	}
 	void JumpInsert(unsigned int hv, unsigned int i);
-
-	HitPoints *hitPoints;
 
 	float invCellSize;
 	unsigned int *grid;
@@ -179,8 +178,6 @@ private:
 	void RecursiveBuild(
 		const u_int nodeNum, const u_int start,
 		const u_int end, std::vector<HitPoint *> &buildNodes);
-
-	HitPoints *hitPoints;
 
 	KdNode *nodes;
 	HitPoint **nodeData;
@@ -321,7 +318,6 @@ private:
 	}
 
 	u_int kdtreeThreshold;
-	HitPoints *hitPoints;
 	u_int gridSize;
 	float invCellSize;
 	int maxHashIndexX, maxHashIndexY, maxHashIndexZ;

@@ -25,8 +25,7 @@
 
 using namespace lux;
 
-KdTree::KdTree(HitPoints *hps) {
-	hitPoints = hps;
+KdTree::KdTree(HitPoints *hps): HitPointsLookUpAccel(hps) {
 	maxNNodes = hitPoints->GetSize();
 
 	nextFreeNode = 1;
