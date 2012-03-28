@@ -56,8 +56,6 @@ public:
 	float distance;
 
 	Vector wo;
-
-	BxDFType flags;
 };
 
 /*

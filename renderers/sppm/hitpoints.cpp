@@ -338,27 +338,6 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample)
 		store_component = BxDFType(BSDF_DIFFUSE | BSDF_REFLECTION | BSDF_TRANSMISSION);
 		bounce_component = BxDFType(BSDF_SPECULAR | BSDF_GLOSSY | BSDF_REFLECTION | BSDF_TRANSMISSION);
 
-		// To choose between storing or bouncing behavior for glossy surface,
-		// we look at the pdf in the perfect mirror solution. If this pdf is
-		// important, we have a high glossy surface which must be integrated by
-		// bouncing. Otherwise, it is a near diffuse surface, which can be
-		// integrated by SPPM.
-		if(bsdf->NumComponents(BxDFType(BSDF_GLOSSY | BSDF_REFLECTION | BSDF_TRANSMISSION)) > 0)
-		{
-			// Compute perfect mirror direction
-			// TODO: Also handle the refractive direction
-			Vector reflected_direction = 2.f * Dot(Vector(bsdf->dgShading.nn), Normalize(wo)) * Vector(bsdf->dgShading.nn) + (-wo);
-			// Glossy threshold
-			float glossy_pdf = bsdf->Pdf(sw, wo, reflected_direction, BxDFType(BSDF_GLOSSY | BSDF_REFLECTION | BSDF_TRANSMISSION));
-
-			if(glossy_pdf < renderer->sppmi->GlossyThreshold)
-			{
-				// This glossy surface is near diffuse, we can store hitpoint on the glossy part.
-				store_component = BxDFType(BSDF_DIFFUSE | BSDF_GLOSSY | BSDF_REFLECTION | BSDF_TRANSMISSION);
-				bounce_component = BxDFType(BSDF_SPECULAR | BSDF_REFLECTION | BSDF_TRANSMISSION);
-			}
-		}
-
 		bool const has_store_component = bsdf->NumComponents(store_component) > 0;
 		bool const has_bounce_component = bsdf->NumComponents(bounce_component) > 0;
 
@@ -387,15 +366,12 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample)
 			hpep->pathThroughput = pathThroughput * rayWeight / pdf_event;
 			hpep->wo = wo;
 
-			hpep->flags = store_component;
-
 			hpep->bsdf = bsdf;
 			sample.arena.Commit();
 			break;
 		}
 
 		// Sample BSDF to get new path direction
-		// TODO: restore glossy threshold
 		Vector wi;
 		float pdf;
 		BxDFType flags;
