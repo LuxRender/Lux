@@ -100,6 +100,13 @@ void PhotonSampler::TracePhoton(
 
 	const bool directLightSampling = renderer->sppmi->directLightSampling;
 
+	// store the state of the path:
+	//     - if directLightPath is true, the photon is still on a direct light
+	//     path and should not be accounted for if directLightSampling is true
+	//     - else, the photon has survived an indirect bounce, so it must be
+	//     accounted in the density estimation.
+	bool directLightPath = true;
+
 	if (!alpha.Black()) {
 		// Follow photon path through scene and record intersections
 		Intersection photonIsect;
@@ -117,7 +124,7 @@ void PhotonSampler::TracePhoton(
 
 			// Deposit Flux (only if we have hit a diffuse or glossy surface)
 			// Note: the hitpoint BSDF allready handle this test, but it optimise a bit and avoid same bias
-			if(nIntersections > 1u || !directLightSampling)
+			if(!directLightPath || !directLightSampling)
 				if (photonBSDF->NumComponents(BxDFType(BSDF_REFLECTION | BSDF_TRANSMISSION | BSDF_GLOSSY | BSDF_DIFFUSE)) > 0)
 				{
 					struct PhotonData photon;
@@ -159,6 +166,13 @@ void PhotonSampler::TracePhoton(
 			alpha *= fr;
 			photonRay = Ray(photonIsect.dg.p, wo);
 			volume = photonBSDF->GetVolume(photonRay.d);
+
+			// Check if the scattering is not a passthrough event
+			if (flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) ||
+				!(photonBSDF->Pdf(sw, wo, wi, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) > 0.f)) {
+				// this is not a passthrough event, so now the photon path is indirect light
+				directLightPath = false;
+			}
 		}
 	}
 	sample->arena.FreeAll();
