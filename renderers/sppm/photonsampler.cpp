@@ -119,7 +119,16 @@ void PhotonSampler::TracePhoton(
 			// Note: the hitpoint BSDF allready handle this test, but it optimise a bit and avoid same bias
 			if(nIntersections > 1u || !directLightSampling)
 				if (photonBSDF->NumComponents(BxDFType(BSDF_REFLECTION | BSDF_TRANSMISSION | BSDF_GLOSSY | BSDF_DIFFUSE)) > 0)
-					renderer->hitPoints->AddFlux(*sample, photonIsect.dg.p, wi, sw, alpha, light->group);
+				{
+					struct PhotonData photon;
+					photon.p = photonIsect.dg.p;
+					photon.wi = wi;
+					photon.alpha = alpha;
+					photon.lightGroup = light->group;
+					photon.sw = sw;
+
+					renderer->hitPoints->AddFlux(*sample, photon);
+				}
 
 			if (nIntersections > renderer->sppmi->maxPhotonPathDepth)
 				break;

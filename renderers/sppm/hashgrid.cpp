@@ -179,10 +179,9 @@ void HashGrid::RefreshMutex() {
 	std::cerr << "HashGrid.emptyCells = " << (100.f * emptyCells / gridSize) << "%" << std::endl;*/
 }
 
-void HashGrid::AddFlux(Sample &sample, const Point &hitPoint, const Vector &wi,
-		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup) {
+void HashGrid::AddFlux(Sample &sample, const PhotonData &photon) {
 	// Look for eye path hit points near the current hit point
-	Vector hh = (hitPoint - hitPoints->GetBBox().pMin) * invCellSize;
+	Vector hh = (photon.p - hitPoints->GetBBox().pMin) * invCellSize;
 	const int ix = abs(int(hh.x));
 	const int iy = abs(int(hh.y));
 	const int iz = abs(int(hh.z));
@@ -194,7 +193,7 @@ void HashGrid::AddFlux(Sample &sample, const Point &hitPoint, const Vector &wi,
 		while (iter != hps->end()) {
 			HitPoint *hp = *iter++;
 
-			AddFluxToHitPoint(sample, hp, hitPoint, wi, sw, photonFlux, lightGroup);
+			AddFluxToHitPoint(sample, hp, photon);
 		}
 	}
 }

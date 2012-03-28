@@ -123,8 +123,7 @@ void KdTree::RefreshMutex() {
 	assert (nNodes == nextFreeNode);
 }
 
-void KdTree::AddFlux(Sample &sample, const Point &p, const Vector &wi,
-		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup) {
+void KdTree::AddFlux(Sample &sample, const PhotonData &photon) {
 	unsigned int nodeNumStack[64];
 	// Start from the first node
 	nodeNumStack[0] = 0;
@@ -136,9 +135,9 @@ void KdTree::AddFlux(Sample &sample, const Point &p, const Vector &wi,
 
 		const int axis = node->splitAxis;
 		if (axis != 3) {
-			const float dist = p[axis] - node->splitPos;
+			const float dist = photon.p[axis] - node->splitPos;
 			const float dist2 = dist * dist;
-			if (p[axis] <= node->splitPos) {
+			if (photon.p[axis] <= node->splitPos) {
 				if ((dist2 < maxDistSquared) && (node->rightChild < nNodes))
 					nodeNumStack[++stackIndex] = node->rightChild;
 				if (node->hasLeftChild)
@@ -153,6 +152,6 @@ void KdTree::AddFlux(Sample &sample, const Point &p, const Vector &wi,
 
 		// Process the leaf
 		HitPoint *hp = nodeData[nodeNum];
-		AddFluxToHitPoint(sample, hp, p, wi, sw, photonFlux, lightGroup);
+		AddFluxToHitPoint(sample, hp, photon);
 	}
 }
