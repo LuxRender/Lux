@@ -80,6 +80,9 @@ HitPoints::HitPoints(SPPMRenderer *engine, RandomGenerator *rng)  {
 
 		hp->InitStats();
 	}
+
+	store_component = BxDFType(BSDF_DIFFUSE | BSDF_REFLECTION | BSDF_TRANSMISSION);
+	bounce_component = BxDFType(BSDF_SPECULAR | BSDF_GLOSSY | BSDF_REFLECTION | BSDF_TRANSMISSION);
 }
 
 HitPoints::~HitPoints() {
@@ -337,11 +340,6 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample)
 		}
 
 		// Choose between storing or bouncing the hitpoint on the surface
-		BxDFType store_component, bounce_component;
-
-		store_component = BxDFType(BSDF_DIFFUSE | BSDF_REFLECTION | BSDF_TRANSMISSION);
-		bounce_component = BxDFType(BSDF_SPECULAR | BSDF_GLOSSY | BSDF_REFLECTION | BSDF_TRANSMISSION);
-
 		bool const has_store_component = bsdf->NumComponents(store_component) > 0;
 		bool const has_bounce_component = bsdf->NumComponents(bounce_component) > 0;
 

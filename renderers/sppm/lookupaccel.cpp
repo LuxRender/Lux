@@ -55,7 +55,7 @@ void HitPointsLookUpAccel::AddFluxToHitPoint(Sample &sample, HitPoint *hp, const
 	if ((dist2 >  hp->accumPhotonRadius2))
 		return;
 
-	const SWCSpectrum f = hpep.bsdf->F(sample.swl, photon.wi, hpep.wo, true, BxDFType(BSDF_DIFFUSE | BSDF_TRANSMISSION | BSDF_REFLECTION));
+	const SWCSpectrum f = hpep.bsdf->F(sample.swl, photon.wi, hpep.wo, true, hitPoints->store_component);
 	if (f.Black())
 		return;
 

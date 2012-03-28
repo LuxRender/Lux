@@ -334,6 +334,8 @@ private:
 public:
 	Sampler *eyeSampler;
 
+	BxDFType store_component, bounce_component;
+
 private:
 	// Hit points information
 	float initialPhotonRadius;
