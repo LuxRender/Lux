@@ -68,6 +68,7 @@ public:
 	SurfaceIntegratorRenderingHints hints;
 	bool directLightSampling;
 	bool debug;
+	bool storeGlossy;
 };
 
 }//namespace lux

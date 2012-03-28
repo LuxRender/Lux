@@ -82,7 +82,12 @@ HitPoints::HitPoints(SPPMRenderer *engine, RandomGenerator *rng)  {
 	}
 
 	store_component = BxDFType(BSDF_DIFFUSE | BSDF_REFLECTION | BSDF_TRANSMISSION);
-	bounce_component = BxDFType(BSDF_SPECULAR | BSDF_GLOSSY | BSDF_REFLECTION | BSDF_TRANSMISSION);
+	bounce_component = BxDFType(BSDF_SPECULAR | BSDF_REFLECTION | BSDF_TRANSMISSION);
+
+	if(engine->sppmi->storeGlossy)
+		store_component = BxDFType(store_component | BSDF_GLOSSY);
+	else
+		bounce_component = BxDFType(bounce_component | BSDF_GLOSSY);
 }
 
 HitPoints::~HitPoints() {

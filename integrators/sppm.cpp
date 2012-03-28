@@ -108,6 +108,11 @@ SurfaceIntegrator *SPPMIntegrator::CreateSurfaceIntegrator(const ParamSet &param
 	// Initialize the rendering hints
 	sppmi->hints.InitParam(params);
 
+
+	// Do the density estimation on glossy surface. It is not recomanded for
+	// variance reduction, but it may be the only way for some scenes.
+	sppmi->storeGlossy = params.FindOneBool("storeglossy", false);
+
 	return sppmi;
 }
 
