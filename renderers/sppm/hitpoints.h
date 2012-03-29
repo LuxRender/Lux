@@ -32,8 +32,9 @@
 namespace lux
 {
 
-struct PhotonData
+class PhotonData
 {
+public:
 	Point p;
 	Vector wi;
 	SWCSpectrum alpha;

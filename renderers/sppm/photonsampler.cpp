@@ -127,7 +127,7 @@ void PhotonSampler::TracePhoton(
 			if(!directLightPath || !directLightSampling)
 				if (photonBSDF->NumComponents(BxDFType(BSDF_REFLECTION | BSDF_TRANSMISSION | BSDF_GLOSSY | BSDF_DIFFUSE)) > 0)
 				{
-					struct PhotonData photon;
+					PhotonData photon;
 					photon.p = photonIsect.dg.p;
 					photon.wi = wi;
 					photon.alpha = alpha;
