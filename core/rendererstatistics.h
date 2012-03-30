@@ -49,38 +49,63 @@ public:
 
 	class Formatted : public Queryable {
 	public:
-		Formatted(RendererStatistics* rs);
 		virtual ~Formatted() {};
 
 	protected:
+		Formatted(RendererStatistics* rs, const std::string& name);
+
 		RendererStatistics* rs;
 
-		virtual std::string getRecommendedStringTemplate();
-
-		std::string getStringFromTemplate(const std::string& t, bool shortStrings = false);
-
 		std::string getRecommendedString();
-		std::string getRecommendedStringShort();
+		std::string getStringFromTemplate(const std::string& t);
+
+		virtual std::string getRecommendedStringTemplate() = 0;
 
 		std::string getElapsedTime();
 		std::string getRemainingTime();
 		std::string getHaltTime();
-		std::string getPercentHaltTimeComplete();
-		std::string getPercentComplete();
-		std::string getEfficiency();
-		std::string getThreadCount();
-		std::string getSlaveNodeCount();
-
-		std::string getPercentHaltTimeCompleteShort();
-		std::string getPercentCompleteShort();
-		std::string getEfficiencyShort();
-		std::string getThreadCountShort();
-		std::string getSlaveNodeCountShort();
-
-		std::string pluralize(const std::string& label, u_int value) const;
 	};
 
-	Formatted* formatted;
+	class FormattedShort;	// Forward declaration
+	class FormattedLong : public Formatted {
+	public:
+		virtual ~FormattedLong() {};
+
+	protected:
+		FormattedLong(RendererStatistics* rs);
+
+		virtual std::string getRecommendedStringTemplate();
+
+		std::string getPercentHaltTimeComplete();
+
+		virtual std::string getPercentComplete();
+		virtual std::string getEfficiency();
+		virtual std::string getThreadCount();
+		virtual std::string getSlaveNodeCount();
+
+		friend class RendererStatistics;
+		friend class RendererStatistics::FormattedShort;
+	};
+
+	class FormattedShort : public Formatted {
+	public:
+		virtual ~FormattedShort() {};
+
+	protected:
+		FormattedShort(RendererStatistics* rs);
+
+		virtual std::string getRecommendedStringTemplate();
+
+		std::string getPercentHaltTimeComplete();
+
+		virtual std::string getPercentComplete();
+		virtual std::string getEfficiency();
+		virtual std::string getThreadCount();
+		virtual std::string getSlaveNodeCount();
+	};
+
+	FormattedLong* formattedLong;
+	FormattedShort* formattedShort;
 
 protected:
 	boost::mutex windowMutex;
@@ -109,6 +134,9 @@ double MagnitudeReduce(double number);
 
 // Return the magnitude prefix char for kilo- or Mega- or Giga-
 const char* MagnitudePrefix(double number);
+
+// Append the appropriate 's' or 'es' to a string based on value
+std::string Pluralize(const std::string& label, u_int value);
 
 } // namespace lux
 

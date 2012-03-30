@@ -34,11 +34,11 @@ namespace lux
 class HSRStatistics : public RendererStatistics {
 public:
 	HSRStatistics(HybridSamplerRenderer* renderer);
-	~HSRStatistics() { delete formatted; }
+	~HSRStatistics();
 
-	class Formatted : public RendererStatistics::Formatted {
+	class FormattedLong : public RendererStatistics::FormattedLong {
 	public:
-		Formatted(HSRStatistics* rs);
+		FormattedLong(HSRStatistics* rs);
 
 	private:
 		HSRStatistics* rs;
@@ -66,10 +66,22 @@ public:
 		std::string getTotalAverageSamplesPerSecond();
 		std::string getTotalAverageSamplesPerSecondWindow();
 
-		std::string getPercentHaltSppCompleteShort();
+		friend class HSRStatistics;
+		friend class HSRStatistics::FormattedShort;
+	};
 
-		std::string getGpuCountShort();
-		std::string getAverageGpuEfficiencyShort();
+	class FormattedShort : public RendererStatistics::FormattedShort {
+	public:
+		FormattedShort(HSRStatistics* rs);
+
+	private:
+		HSRStatistics* rs;
+
+		virtual std::string getRecommendedStringTemplate();
+
+		std::string getPercentHaltSppComplete();
+		std::string getGpuCount();
+		std::string getAverageGpuEfficiency();
 	};
 
 private:

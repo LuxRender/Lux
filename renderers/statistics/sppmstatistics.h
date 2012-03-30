@@ -34,11 +34,11 @@ namespace lux
 class SPPMRStatistics : public RendererStatistics {
 public:
 	SPPMRStatistics(SPPMRenderer* renderer);
-	~SPPMRStatistics() { delete formatted; }
+	~SPPMRStatistics();
 
-	class Formatted : public RendererStatistics::Formatted {
+	class FormattedLong : public RendererStatistics::FormattedLong {
 	public:
-		Formatted(SPPMRStatistics* rs);
+		FormattedLong(SPPMRStatistics* rs);
 
 	private:
 		SPPMRStatistics* rs;
@@ -46,20 +46,34 @@ public:
 		virtual std::string getRecommendedStringTemplate();
 
 		std::string getPassCount();
-		std::string getAveragePassesPerSecond();
-		std::string getAveragePassesPerSecondWindow();
 		std::string getHaltPass();
 		std::string getRemainingPasses();
 		std::string getPercentHaltPassesComplete();
 		std::string getPhotonCount();
+
+		std::string getAveragePassesPerSecond();
+		std::string getAveragePassesPerSecondWindow();
 		std::string getAveragePhotonsPerSecond();
 		std::string getAveragePhotonsPerSecondWindow();
 
-		std::string getPassCountShort();
-		std::string getHaltPassShort();
-		std::string getRemainingPassesShort();
-		std::string getPercentHaltPassesCompleteShort();
-		std::string getPhotonCountShort();
+		friend class SPPMRStatistics;
+		friend class SPPMRStatistics::FormattedShort;
+	};
+
+	class FormattedShort : public RendererStatistics::FormattedShort {
+	public:
+		FormattedShort(SPPMRStatistics* rs);
+
+	private:
+		SPPMRStatistics* rs;
+
+		virtual std::string getRecommendedStringTemplate();
+
+		std::string getPassCount();
+		std::string getHaltPass();
+		std::string getRemainingPasses();
+		std::string getPercentHaltPassesComplete();
+		std::string getPhotonCount();
 	};
 
 private:

@@ -139,7 +139,7 @@ static void printInfoThread()
 		if (Context::GetActive()->IsRendering())
 		{
 			luxUpdateStatisticsWindow();
-			luxGetStringAttribute("renderer_statistics_formatted", "_recommended_string", &buf[0], static_cast<unsigned int>(buf.size()));
+			luxGetStringAttribute("renderer_statistics_formatted_short", "_recommended_string", &buf[0], static_cast<unsigned int>(buf.size()));
 			LOG( LUX_INFO,LUX_NOERROR) << std::string(buf.begin(), buf.end());
 		}
 	}

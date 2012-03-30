@@ -34,11 +34,11 @@ namespace lux
 class SRStatistics : public RendererStatistics {
 public:
 	SRStatistics(SamplerRenderer* renderer);
-	~SRStatistics() { delete formatted; }
+	~SRStatistics();
 
-	class Formatted : public RendererStatistics::Formatted {
+	class FormattedLong : public RendererStatistics::FormattedLong {
 	public:
-		Formatted(SRStatistics* rs);
+		FormattedLong(SRStatistics* rs);
 
 	private:
 		SRStatistics* rs;
@@ -63,7 +63,20 @@ public:
 		std::string getTotalAverageSamplesPerSecond();
 		std::string getTotalAverageSamplesPerSecondWindow();
 
-		std::string getPercentHaltSppCompleteShort();
+		friend class SRStatistics;
+		friend class SRStatistics::FormattedShort;
+	};
+
+	class FormattedShort : public RendererStatistics::FormattedShort {
+	public:
+		FormattedShort(SRStatistics* rs);
+
+	private:
+		SRStatistics* rs;
+
+		virtual std::string getRecommendedStringTemplate();
+
+		std::string getPercentHaltSppComplete();
 	};
 
 private:
