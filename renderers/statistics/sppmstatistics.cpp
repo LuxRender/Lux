@@ -120,17 +120,18 @@ double SPPMRStatistics::getAveragePhotonsPerSecond() {
 SPPMRStatistics::FormattedLong::FormattedLong(SPPMRStatistics* rs)
 	: RendererStatistics::FormattedLong(rs), rs(rs)
 {
-	AddStringAttribute(*this, "passCount", "Number of completed passes", &SPPMRStatistics::FormattedLong::getPassCount);
-	AddStringAttribute(*this, "passesPerSecond", "Average number of passes per second", &SPPMRStatistics::FormattedLong::getAveragePassesPerSecond);
-	AddStringAttribute(*this, "passesPerSecondWindow", "Average number of passes per second in current time window", &SPPMRStatistics::FormattedLong::getAveragePassesPerSecondWindow);
+	typedef SPPMRStatistics::FormattedLong FL;
+	AddStringAttribute(*this, "passCount", "Number of completed passes", &FL::getPassCount);
+	AddStringAttribute(*this, "passesPerSecond", "Average number of passes per second", &FL::getAveragePassesPerSecond);
+	AddStringAttribute(*this, "passesPerSecondWindow", "Average number of passes per second in current time window", &FL::getAveragePassesPerSecondWindow);
 
-	AddStringAttribute(*this, "haltPass", "Number of passes to complete before halting", &SPPMRStatistics::FormattedLong::getHaltPass);
-	AddStringAttribute(*this, "remainingPasses", "Number of passes remaining", &SPPMRStatistics::FormattedLong::getRemainingPasses);
-	AddStringAttribute(*this, "percentHaltPassesComplete", "Percent of halt passes completed", &SPPMRStatistics::FormattedLong::getPercentHaltPassesComplete);
+	AddStringAttribute(*this, "haltPass", "Number of passes to complete before halting", &FL::getHaltPass);
+	AddStringAttribute(*this, "remainingPasses", "Number of passes remaining", &FL::getRemainingPasses);
+	AddStringAttribute(*this, "percentHaltPassesComplete", "Percent of halt passes completed", &FL::getPercentHaltPassesComplete);
 
-	AddStringAttribute(*this, "photonCount", "Current photon count", &SPPMRStatistics::FormattedLong::getPhotonCount);
-	AddStringAttribute(*this, "photonsPerSecond", "Average number of photons per second", &SPPMRStatistics::FormattedLong::getAveragePhotonsPerSecond);
-	AddStringAttribute(*this, "photonsPerSecondWindow", "Average number of photons per second in current time window", &SPPMRStatistics::FormattedLong::getAveragePhotonsPerSecondWindow);
+	AddStringAttribute(*this, "photonCount", "Current photon count", &FL::getPhotonCount);
+	AddStringAttribute(*this, "photonsPerSecond", "Average number of photons per second", &FL::getAveragePhotonsPerSecond);
+	AddStringAttribute(*this, "photonsPerSecondWindow", "Average number of photons per second in current time window", &FL::getAveragePhotonsPerSecondWindow);
 }
 
 std::string SPPMRStatistics::FormattedLong::getRecommendedStringTemplate()
@@ -193,17 +194,18 @@ SPPMRStatistics::FormattedShort::FormattedShort(SPPMRStatistics* rs)
 {
 	FormattedLong* fl = static_cast<SPPMRStatistics::FormattedLong*>(rs->formattedLong);
 
+	typedef SPPMRStatistics::FormattedLong FL;
 	AddStringAttribute(*this, "passCount", "Number of completed passes", &SPPMRStatistics::FormattedShort::getPassCount);
-	AddStringAttribute(*this, "passesPerSecond", "Average number of passes per second", boost::bind(&SPPMRStatistics::FormattedLong::getAveragePassesPerSecond, fl));
-	AddStringAttribute(*this, "passesPerSecondWindow", "Average number of passes per second in current time window", boost::bind(&SPPMRStatistics::FormattedLong::getAveragePassesPerSecondWindow, fl));
+	AddStringAttribute(*this, "passesPerSecond", "Average number of passes per second", boost::bind(&FL::getAveragePassesPerSecond, fl));
+	AddStringAttribute(*this, "passesPerSecondWindow", "Average number of passes per second in current time window", boost::bind(&FL::getAveragePassesPerSecondWindow, fl));
 
 	AddStringAttribute(*this, "haltPass", "Number of passes to complete before halting", &SPPMRStatistics::FormattedShort::getHaltPass);
 	AddStringAttribute(*this, "remainingPasses", "Number of passes remaining", &SPPMRStatistics::FormattedShort::getRemainingPasses);
 	AddStringAttribute(*this, "percentHaltPassesComplete", "Percent of halt passes completed", &SPPMRStatistics::FormattedShort::getPercentHaltPassesComplete);
 
 	AddStringAttribute(*this, "photonCount", "Current photon count", &SPPMRStatistics::FormattedShort::getPhotonCount);
-	AddStringAttribute(*this, "photonsPerSecond", "Average number of photons per second", boost::bind(&SPPMRStatistics::FormattedLong::getAveragePhotonsPerSecond, fl));
-	AddStringAttribute(*this, "photonsPerSecondWindow", "Average number of photons per second in current time window", boost::bind(&SPPMRStatistics::FormattedLong::getAveragePhotonsPerSecondWindow, fl));
+	AddStringAttribute(*this, "photonsPerSecond", "Average number of photons per second", boost::bind(&FL::getAveragePhotonsPerSecond, fl));
+	AddStringAttribute(*this, "photonsPerSecondWindow", "Average number of photons per second in current time window", boost::bind(&FL::getAveragePhotonsPerSecondWindow, fl));
 }
 
 std::string SPPMRStatistics::FormattedShort::getRecommendedStringTemplate()

@@ -189,26 +189,27 @@ double HSRStatistics::getNetworkSampleCount(bool estimate) {
 HSRStatistics::FormattedLong::FormattedLong(HSRStatistics* rs)
 	: RendererStatistics::FormattedLong(rs), rs(rs)
 {
-	AddStringAttribute(*this, "haltSamplesPerPixel", "Average number of samples per pixel to complete before halting", &HSRStatistics::FormattedLong::getHaltSpp);
-	AddStringAttribute(*this, "remainingSamplesPerPixel", "Average number of samples per pixel remaining", &HSRStatistics::FormattedLong::getRemainingSamplesPerPixel);
-	AddStringAttribute(*this, "percentHaltSppComplete", "Percent of halt S/p completed", &HSRStatistics::FormattedLong::getPercentHaltSppComplete);
+	typedef HSRStatistics::FormattedLong FL;
+	AddStringAttribute(*this, "haltSamplesPerPixel", "Average number of samples per pixel to complete before halting", &FL::getHaltSpp);
+	AddStringAttribute(*this, "remainingSamplesPerPixel", "Average number of samples per pixel remaining", &FL::getRemainingSamplesPerPixel);
+	AddStringAttribute(*this, "percentHaltSppComplete", "Percent of halt S/p completed", &FL::getPercentHaltSppComplete);
 
-	AddStringAttribute(*this, "gpuCount", "Number of GPUs in use", &HSRStatistics::FormattedLong::getGpuCount);
-	AddStringAttribute(*this, "gpuEfficiency", "Percent of time GPUs have rays available to trace", &HSRStatistics::FormattedLong::getAverageGpuEfficiency);
+	AddStringAttribute(*this, "gpuCount", "Number of GPUs in use", &FL::getGpuCount);
+	AddStringAttribute(*this, "gpuEfficiency", "Percent of time GPUs have rays available to trace", &FL::getAverageGpuEfficiency);
 
-	AddStringAttribute(*this, "samplesPerPixel", "Average number of samples per pixel by local node", &HSRStatistics::FormattedLong::getAverageSamplesPerPixel);
-	AddStringAttribute(*this, "samplesPerSecond", "Average number of samples per second by local node", &HSRStatistics::FormattedLong::getAverageSamplesPerSecond);
-	AddStringAttribute(*this, "samplesPerSecondWindow", "Average number of samples per second by local node in current time window", &HSRStatistics::FormattedLong::getAverageSamplesPerSecondWindow);
-	AddStringAttribute(*this, "contributionsPerSecond", "Average number of contributions per second by local node", &HSRStatistics::FormattedLong::getAverageContributionsPerSecond);
-	AddStringAttribute(*this, "contributionsPerSecondWindow", "Average number of contributions per second by local node in current time window", &HSRStatistics::FormattedLong::getAverageContributionsPerSecondWindow);
+	AddStringAttribute(*this, "samplesPerPixel", "Average number of samples per pixel by local node", &FL::getAverageSamplesPerPixel);
+	AddStringAttribute(*this, "samplesPerSecond", "Average number of samples per second by local node", &FL::getAverageSamplesPerSecond);
+	AddStringAttribute(*this, "samplesPerSecondWindow", "Average number of samples per second by local node in current time window", &FL::getAverageSamplesPerSecondWindow);
+	AddStringAttribute(*this, "contributionsPerSecond", "Average number of contributions per second by local node", &FL::getAverageContributionsPerSecond);
+	AddStringAttribute(*this, "contributionsPerSecondWindow", "Average number of contributions per second by local node in current time window", &FL::getAverageContributionsPerSecondWindow);
 
-	AddStringAttribute(*this, "netSamplesPerPixel", "Average number of samples per pixel by slave nodes", &HSRStatistics::FormattedLong::getNetworkAverageSamplesPerPixel);
-	AddStringAttribute(*this, "netSamplesPerSecond", "Average number of samples per second by slave nodes", &HSRStatistics::FormattedLong::getNetworkAverageSamplesPerSecond);
-	AddStringAttribute(*this, "netSamplesPerSecondWindow", "Average number of samples per second by slave nodes in current time window", &HSRStatistics::FormattedLong::getNetworkAverageSamplesPerSecondWindow);
+	AddStringAttribute(*this, "netSamplesPerPixel", "Average number of samples per pixel by slave nodes", &FL::getNetworkAverageSamplesPerPixel);
+	AddStringAttribute(*this, "netSamplesPerSecond", "Average number of samples per second by slave nodes", &FL::getNetworkAverageSamplesPerSecond);
+	AddStringAttribute(*this, "netSamplesPerSecondWindow", "Average number of samples per second by slave nodes in current time window", &FL::getNetworkAverageSamplesPerSecondWindow);
 
-	AddStringAttribute(*this, "totalSamplesPerPixel", "Average number of samples per pixel", &HSRStatistics::FormattedLong::getTotalAverageSamplesPerPixel);
-	AddStringAttribute(*this, "totalSamplesPerSecond", "Average number of samples per second", &HSRStatistics::FormattedLong::getTotalAverageSamplesPerSecond);
-	AddStringAttribute(*this, "totalSamplesPerSecondWindow", "Average number of samples per second in current time window", &HSRStatistics::FormattedLong::getTotalAverageSamplesPerSecondWindow);
+	AddStringAttribute(*this, "totalSamplesPerPixel", "Average number of samples per pixel", &FL::getTotalAverageSamplesPerPixel);
+	AddStringAttribute(*this, "totalSamplesPerSecond", "Average number of samples per second", &FL::getTotalAverageSamplesPerSecond);
+	AddStringAttribute(*this, "totalSamplesPerSecondWindow", "Average number of samples per second in current time window", &FL::getTotalAverageSamplesPerSecondWindow);
 }
 
 std::string HSRStatistics::FormattedLong::getRecommendedStringTemplate()
@@ -310,26 +311,27 @@ HSRStatistics::FormattedShort::FormattedShort(HSRStatistics* rs)
 {
 	FormattedLong* fl = static_cast<HSRStatistics::FormattedLong*>(rs->formattedLong);
 
-	AddStringAttribute(*this, "haltSamplesPerPixel", "Average number of samples per pixel to complete before halting", boost::bind(&HSRStatistics::FormattedLong::getHaltSpp, fl));
-	AddStringAttribute(*this, "remainingSamplesPerPixel", "Average number of samples per pixel remaining", boost::bind(&HSRStatistics::FormattedLong::getRemainingSamplesPerPixel, fl));
+	typedef HSRStatistics::FormattedLong FL;
+	AddStringAttribute(*this, "haltSamplesPerPixel", "Average number of samples per pixel to complete before halting", boost::bind(&FL::getHaltSpp, fl));
+	AddStringAttribute(*this, "remainingSamplesPerPixel", "Average number of samples per pixel remaining", boost::bind(&FL::getRemainingSamplesPerPixel, fl));
 	AddStringAttribute(*this, "percentHaltSppComplete", "Percent of halt S/p completed", &HSRStatistics::FormattedShort::getPercentHaltSppComplete);
 
 	AddStringAttribute(*this, "gpuCount", "Number of GPUs in use", &HSRStatistics::FormattedShort::getGpuCount);
 	AddStringAttribute(*this, "gpuEfficiency", "Percent of time GPUs have rays available to trace", &HSRStatistics::FormattedShort::getAverageGpuEfficiency);
 
-	AddStringAttribute(*this, "samplesPerPixel", "Average number of samples per pixel by local node", boost::bind(&HSRStatistics::FormattedLong::getAverageSamplesPerPixel, fl));
-	AddStringAttribute(*this, "samplesPerSecond", "Average number of samples per second by local node", boost::bind(&HSRStatistics::FormattedLong::getAverageSamplesPerSecond, fl));
-	AddStringAttribute(*this, "samplesPerSecondWindow", "Average number of samples per second by local node in current time window", boost::bind(&HSRStatistics::FormattedLong::getAverageSamplesPerSecondWindow, fl));
-	AddStringAttribute(*this, "contributionsPerSecond", "Average number of contributions per second by local node", boost::bind(&HSRStatistics::FormattedLong::getAverageContributionsPerSecond, fl));
-	AddStringAttribute(*this, "contributionsPerSecondWindow", "Average number of contributions per second by local node in current time window", boost::bind(&HSRStatistics::FormattedLong::getAverageContributionsPerSecondWindow, fl));
+	AddStringAttribute(*this, "samplesPerPixel", "Average number of samples per pixel by local node", boost::bind(&FL::getAverageSamplesPerPixel, fl));
+	AddStringAttribute(*this, "samplesPerSecond", "Average number of samples per second by local node", boost::bind(&FL::getAverageSamplesPerSecond, fl));
+	AddStringAttribute(*this, "samplesPerSecondWindow", "Average number of samples per second by local node in current time window", boost::bind(&FL::getAverageSamplesPerSecondWindow, fl));
+	AddStringAttribute(*this, "contributionsPerSecond", "Average number of contributions per second by local node", boost::bind(&FL::getAverageContributionsPerSecond, fl));
+	AddStringAttribute(*this, "contributionsPerSecondWindow", "Average number of contributions per second by local node in current time window", boost::bind(&FL::getAverageContributionsPerSecondWindow, fl));
 
-	AddStringAttribute(*this, "netSamplesPerPixel", "Average number of samples per pixel by slave nodes", boost::bind(&HSRStatistics::FormattedLong::getNetworkAverageSamplesPerPixel, fl));
-	AddStringAttribute(*this, "netSamplesPerSecond", "Average number of samples per second by slave nodes", boost::bind(&HSRStatistics::FormattedLong::getNetworkAverageSamplesPerSecond, fl));
-	AddStringAttribute(*this, "netSamplesPerSecondWindow", "Average number of samples per second by slave nodes in current time window", boost::bind(&HSRStatistics::FormattedLong::getNetworkAverageSamplesPerSecondWindow, fl));
+	AddStringAttribute(*this, "netSamplesPerPixel", "Average number of samples per pixel by slave nodes", boost::bind(&FL::getNetworkAverageSamplesPerPixel, fl));
+	AddStringAttribute(*this, "netSamplesPerSecond", "Average number of samples per second by slave nodes", boost::bind(&FL::getNetworkAverageSamplesPerSecond, fl));
+	AddStringAttribute(*this, "netSamplesPerSecondWindow", "Average number of samples per second by slave nodes in current time window", boost::bind(&FL::getNetworkAverageSamplesPerSecondWindow, fl));
 
-	AddStringAttribute(*this, "totalSamplesPerPixel", "Average number of samples per pixel", boost::bind(&HSRStatistics::FormattedLong::getTotalAverageSamplesPerPixel, fl));
-	AddStringAttribute(*this, "totalSamplesPerSecond", "Average number of samples per second", boost::bind(&HSRStatistics::FormattedLong::getTotalAverageSamplesPerSecond, fl));
-	AddStringAttribute(*this, "totalSamplesPerSecondWindow", "Average number of samples per second in current time window", boost::bind(&HSRStatistics::FormattedLong::getTotalAverageSamplesPerSecondWindow, fl));
+	AddStringAttribute(*this, "totalSamplesPerPixel", "Average number of samples per pixel", boost::bind(&FL::getTotalAverageSamplesPerPixel, fl));
+	AddStringAttribute(*this, "totalSamplesPerSecond", "Average number of samples per second", boost::bind(&FL::getTotalAverageSamplesPerSecond, fl));
+	AddStringAttribute(*this, "totalSamplesPerSecondWindow", "Average number of samples per second in current time window", boost::bind(&FL::getTotalAverageSamplesPerSecondWindow, fl));
 }
 
 std::string HSRStatistics::FormattedShort::getRecommendedStringTemplate()
