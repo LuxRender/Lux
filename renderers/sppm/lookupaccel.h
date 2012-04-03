@@ -36,6 +36,7 @@ namespace lux
 class HitPoint;
 class HitPoints;
 class HashCell;
+class PhotonData;
 
 enum LookUpAccelType {
 	HASH_GRID, KD_TREE, HYBRID_HASH_GRID, PARALLEL_HASH_GRID
@@ -43,20 +44,19 @@ enum LookUpAccelType {
 
 class HitPointsLookUpAccel {
 public:
-	HitPointsLookUpAccel() { }
+	HitPointsLookUpAccel(HitPoints *hps): hitPoints(hps) { }
 	virtual ~HitPointsLookUpAccel() { }
 
 	virtual void Refresh( const u_int index, const u_int count, boost::barrier &barrier) = 0;
 
-	virtual void AddFlux(Sample &sample, const Point &hitPoint, const Vector &wi,
-		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup) = 0;
+	virtual void AddFlux(Sample &sample, const PhotonData &photon) = 0;
 
 	friend class HashCell;
 
 protected:
-	void AddFluxToHitPoint(Sample &sample, HitPoint *hp,
-		const Point &hitPoint, const Vector &wi,
-		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup);
+	void AddFluxToHitPoint(Sample &sample, HitPoint *hp, const PhotonData &photon);
+
+	HitPoints *hitPoints;
 };
 
 
@@ -82,8 +82,7 @@ public:
 
 	void Refresh( const u_int index, const u_int count, boost::barrier &barrier);
 
-	void AddFlux(Sample& sample, const Point &hitPoint, const Vector &wi,
-		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup);
+	virtual void AddFlux(Sample &sample, const PhotonData &photon);
 
 private:
 	void RefreshMutex();
@@ -95,7 +94,6 @@ private:
 		return (u_int)((ix * 997 + iy) * 443 + iz) % gridSize;
 	}*/
 
-	HitPoints *hitPoints;
 	u_int gridSize;
 	float invCellSize;
 	std::list<HitPoint *> **grid;
@@ -113,16 +111,13 @@ public:
 
 	virtual void Refresh( const u_int index, const u_int count, boost::barrier &barrier);
 
-	void AddFlux(Sample& sample, const Point &hitPoint, const Vector &wi,
-		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup);
+	virtual void AddFlux(Sample &sample, const PhotonData &photon);
 
 private:
 	u_int Hash(const int ix, const int iy, const int iz) {
 		return (u_int)((ix * 73856093) ^ (iy * 19349663) ^ (iz * 83492791)) % gridSize;
 	}
 	void JumpInsert(unsigned int hv, unsigned int i);
-
-	HitPoints *hitPoints;
 
 	float invCellSize;
 	unsigned int *grid;
@@ -142,8 +137,7 @@ public:
 
 	void Refresh( const u_int index, const u_int count, boost::barrier &barrier);
 
-	void AddFlux(Sample& sample, const Point &hitPoint, const Vector &wi,
-		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup);
+	virtual void AddFlux(Sample &sample, const PhotonData &photon);
 
 private:
 	void RefreshMutex();
@@ -184,8 +178,6 @@ private:
 	void RecursiveBuild(
 		const u_int nodeNum, const u_int start,
 		const u_int end, std::vector<HitPoint *> &buildNodes);
-
-	HitPoints *hitPoints;
 
 	KdNode *nodes;
 	HitPoint **nodeData;
@@ -240,9 +232,7 @@ public:
 
 	void TransformToKdTree();
 
-	void AddFlux(Sample& sample, HitPointsLookUpAccel *accel,
-		const Point &hitPoint, const Vector &wi,
-		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup);
+	virtual void AddFlux(Sample &sample, HitPointsLookUpAccel *accel, const PhotonData &photon);
 
 	u_int GetSize() const { return size; }
 
@@ -252,9 +242,7 @@ private:
 		HCKdTree( std::list<HitPoint *> *hps, const u_int count);
 		~HCKdTree();
 
-		void AddFlux(Sample& sample, HitPointsLookUpAccel *accel,
-			const Point &hitPoint, const Vector &wi,
-			const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup);
+	virtual void AddFlux(Sample &sample, HitPointsLookUpAccel *accel, const PhotonData &photon);
 
 	private:
 		struct KdNode {
@@ -320,8 +308,7 @@ public:
 
 	void Refresh( const u_int index, const u_int count, boost::barrier &barrier);
 
-	void AddFlux(Sample& sample, const Point &hitPoint, const Vector &wi,
-		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup);
+	virtual void AddFlux(Sample &sample, const PhotonData &photon);
 
 private:
 	void RefreshMutex();
@@ -331,7 +318,6 @@ private:
 	}
 
 	u_int kdtreeThreshold;
-	HitPoints *hitPoints;
 	u_int gridSize;
 	float invCellSize;
 	int maxHashIndexX, maxHashIndexY, maxHashIndexZ;

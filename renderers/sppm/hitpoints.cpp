@@ -80,6 +80,14 @@ HitPoints::HitPoints(SPPMRenderer *engine, RandomGenerator *rng)  {
 
 		hp->InitStats();
 	}
+
+	store_component = BxDFType(BSDF_DIFFUSE | BSDF_REFLECTION | BSDF_TRANSMISSION);
+	bounce_component = BxDFType(BSDF_SPECULAR | BSDF_REFLECTION | BSDF_TRANSMISSION);
+
+	if(engine->sppmi->storeGlossy)
+		store_component = BxDFType(store_component | BSDF_GLOSSY);
+	else
+		bounce_component = BxDFType(bounce_component | BSDF_GLOSSY);
 }
 
 HitPoints::~HitPoints() {
@@ -245,6 +253,9 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample)
 	u_int vertexIndex = 0;
 	const Volume *volume = NULL;
 
+	bool specularBounce = true;
+	const bool enableDirectLightSampling = renderer->sppmi->directLightSampling;
+
 	for (u_int pathLength = 0; ; ++pathLength) {
 		const SWCSpectrum prevThroughput(pathThroughput);
 
@@ -269,7 +280,8 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample)
 
 			// Stop path sampling since no intersection was found
 			// Possibly add horizon in render & reflections
-			if (includeEnvironment || (vertexIndex > 0)) {
+			if (!enableDirectLightSampling || (
+					(includeEnvironment || vertexIndex > 0) && specularBounce)) {
 				BSDF *ibsdf;
 				for (u_int i = 0; i < nLights; ++i) {
 					SWCSpectrum Le(pathThroughput);
@@ -302,7 +314,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample)
 
 		// Possibly add emitted light at path vertex
 		Vector wo(-ray.d);
-		if (isect.arealight) {
+		if (specularBounce && isect.arealight) {
 			BSDF *ibsdf;
 			SWCSpectrum Le(isect.Le(sample, ray, &ibsdf, NULL, NULL));
 			if (!Le.Black()) {
@@ -333,32 +345,6 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample)
 		}
 
 		// Choose between storing or bouncing the hitpoint on the surface
-		BxDFType store_component, bounce_component;
-
-		store_component = BxDFType(BSDF_DIFFUSE | BSDF_REFLECTION | BSDF_TRANSMISSION);
-		bounce_component = BxDFType(BSDF_SPECULAR | BSDF_GLOSSY | BSDF_REFLECTION | BSDF_TRANSMISSION);
-
-		// To choose between storing or bouncing behavior for glossy surface,
-		// we look at the pdf in the perfect mirror solution. If this pdf is
-		// important, we have a high glossy surface which must be integrated by
-		// bouncing. Otherwise, it is a near diffuse surface, which can be
-		// integrated by SPPM.
-		if(bsdf->NumComponents(BxDFType(BSDF_GLOSSY | BSDF_REFLECTION | BSDF_TRANSMISSION)) > 0)
-		{
-			// Compute perfect mirror direction
-			// TODO: Also handle the refractive direction
-			Vector reflected_direction = 2.f * Dot(Vector(bsdf->dgShading.nn), Normalize(wo)) * Vector(bsdf->dgShading.nn) + (-wo);
-			// Glossy threshold
-			float glossy_pdf = bsdf->Pdf(sw, wo, reflected_direction, BxDFType(BSDF_GLOSSY | BSDF_REFLECTION | BSDF_TRANSMISSION));
-
-			if(glossy_pdf < renderer->sppmi->GlossyThreshold)
-			{
-				// This glossy surface is near diffuse, we can store hitpoint on the glossy part.
-				store_component = BxDFType(BSDF_DIFFUSE | BSDF_GLOSSY | BSDF_REFLECTION | BSDF_TRANSMISSION);
-				bounce_component = BxDFType(BSDF_SPECULAR | BSDF_REFLECTION | BSDF_TRANSMISSION);
-			}
-		}
-
 		bool const has_store_component = bsdf->NumComponents(store_component) > 0;
 		bool const has_bounce_component = bsdf->NumComponents(bounce_component) > 0;
 
@@ -387,15 +373,12 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample)
 			hpep->pathThroughput = pathThroughput * rayWeight / pdf_event;
 			hpep->wo = wo;
 
-			hpep->flags = store_component;
-
 			hpep->bsdf = bsdf;
 			sample.arena.Commit();
 			break;
 		}
 
 		// Sample BSDF to get new path direction
-		// TODO: restore glossy threshold
 		Vector wi;
 		float pdf;
 		BxDFType flags;
@@ -409,7 +392,10 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample)
 
 		if (flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) ||
 			!(bsdf->Pdf(sw, wi, wo, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) > 0.f))
+		{
 			++vertexIndex;
+			specularBounce = (flags & BSDF_SPECULAR) != 0;
+		}
 
 		pathThroughput *= f / pdf_event;
 		if (pathThroughput.Black()) {

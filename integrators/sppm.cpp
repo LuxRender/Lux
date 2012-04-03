@@ -90,14 +90,13 @@ SurfaceIntegrator *SPPMIntegrator::CreateSurfaceIntegrator(const ParamSet &param
 	// TODO: disable because of incorrect
 	sppmi->photonStartK = 0;
 	sppmi->maxPhotonPathDepth = params.FindOneInt("maxphotondepth", 16);
-	sppmi->GlossyThreshold = params.FindOneFloat("glossythreshold", 100.f);
 
 	sppmi->parallelHashGridSpare = params.FindOneFloat("parallelhashgridspare", 1.0f);
 	sppmi->photonPerPass = params.FindOneInt("photonperpass", 1000000);
 
 	sppmi->includeEnvironment = params.FindOneBool("includeenvironment", true);
-	sppmi->directLightSampling = params.FindOneBool("directlightsampling", false);
-	sppmi->useproba = params.FindOneBool("useproba", false);
+	sppmi->directLightSampling = params.FindOneBool("directlightsampling", true);
+	sppmi->useproba = params.FindOneBool("useproba", true);
 
 	sppmi->wavelengthStratification = max(params.FindOneInt("wavelengthstratificationpasses", 8), 0);
 
@@ -108,6 +107,11 @@ SurfaceIntegrator *SPPMIntegrator::CreateSurfaceIntegrator(const ParamSet &param
 
 	// Initialize the rendering hints
 	sppmi->hints.InitParam(params);
+
+
+	// Do the density estimation on glossy surface. It is not recomanded for
+	// variance reduction, but it may be the only way for some scenes.
+	sppmi->storeGlossy = params.FindOneBool("storeglossy", false);
 
 	return sppmi;
 }

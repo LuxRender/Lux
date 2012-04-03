@@ -47,38 +47,35 @@ inline float Ekernel(const float d2, float md2) {
 
 using namespace lux;
 
-void HitPointsLookUpAccel::AddFluxToHitPoint(Sample &sample, HitPoint *hp,
-		const Point &hitPoint, const Vector &wi,
-		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, u_int lightGroup) {
+void HitPointsLookUpAccel::AddFluxToHitPoint(Sample &sample, HitPoint *hp, const PhotonData &photon) {
 	HitPointEyePass &hpep(hp->eyePass);
 
 	// Check distance
-	const float dist2 = DistanceSquared(hp->GetPosition(), hitPoint);
+	const float dist2 = DistanceSquared(hp->GetPosition(), photon.p);
 	if ((dist2 >  hp->accumPhotonRadius2))
 		return;
 
-	const SWCSpectrum f = hpep.bsdf->F(sw, wi, hpep.wo, true, hpep.flags);
+	const SWCSpectrum f = hpep.bsdf->F(sample.swl, photon.wi, hpep.wo, true, hitPoints->store_component);
 	if (f.Black())
 		return;
 
-	XYZColor flux = XYZColor(sw, photonFlux * f * hpep.pathThroughput) * Ekernel(dist2, hp->accumPhotonRadius2);
+	XYZColor flux = XYZColor(sample.swl, photon.alpha * f * hpep.pathThroughput) * Ekernel(dist2, hp->accumPhotonRadius2);
 
-	dynamic_cast<PhotonSampler *>(sample.sampler)->AddSample(&sample, lightGroup, hp, flux);
+	dynamic_cast<PhotonSampler *>(sample.sampler)->AddSample(&sample, photon.lightGroup, hp, flux);
 }
 
-void HashCell::AddFlux(Sample& sample, HitPointsLookUpAccel *accel, const Point &hitPoint,
-		const Vector &wi, const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup) {
+void HashCell::AddFlux(Sample& sample, HitPointsLookUpAccel *accel, const PhotonData &photon) {
 	switch (type) {
 		case HH_LIST: {
 			std::list<HitPoint *>::iterator iter = list->begin();
 			while (iter != list->end()) {
 				HitPoint *hp = *iter++;
-				accel->AddFluxToHitPoint(sample, hp, hitPoint, wi, sw, photonFlux, lightGroup);
+				accel->AddFluxToHitPoint(sample, hp, photon);
 			}
 			break;
 		}
 		case HH_KD_TREE: {
-			kdtree->AddFlux(sample, accel, hitPoint, wi, sw, photonFlux, lightGroup);
+			kdtree->AddFlux(sample, accel, photon);
 			break;
 		}
 		default:
@@ -176,8 +173,7 @@ void HashCell::HCKdTree::RecursiveBuild(
 	}
 }
 
-void HashCell::HCKdTree::AddFlux(Sample& sample, HitPointsLookUpAccel *accel, const Point &p,
-		const Vector &wi, const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, u_int lightGroup) {
+void HashCell::HCKdTree::AddFlux(Sample& sample, HitPointsLookUpAccel *accel, const PhotonData &photon) {
 	unsigned int nodeNumStack[64];
 	// Start from the first node
 	nodeNumStack[0] = 0;
@@ -189,9 +185,9 @@ void HashCell::HCKdTree::AddFlux(Sample& sample, HitPointsLookUpAccel *accel, co
 
 		const int axis = node->splitAxis;
 		if (axis != 3) {
-			const float dist = p[axis] - node->splitPos;
+			const float dist = photon.p[axis] - node->splitPos;
 			const float dist2 = dist * dist;
-			if (p[axis] <= node->splitPos) {
+			if (photon.p[axis] <= node->splitPos) {
 				if ((dist2 < maxDistSquared) && (node->rightChild < nNodes))
 					nodeNumStack[++stackIndex] = node->rightChild;
 				if (node->hasLeftChild)
@@ -206,6 +202,6 @@ void HashCell::HCKdTree::AddFlux(Sample& sample, HitPointsLookUpAccel *accel, co
 
 		// Process the leaf
 		HitPoint *hp = nodeData[nodeNum];
-		accel->AddFluxToHitPoint(sample, hp, p, wi, sw, photonFlux, lightGroup);
+		accel->AddFluxToHitPoint(sample, hp, photon);
 	}
 }

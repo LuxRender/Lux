@@ -32,6 +32,16 @@
 namespace lux
 {
 
+class PhotonData
+{
+public:
+	Point p;
+	Vector wi;
+	SWCSpectrum alpha;
+	u_int lightGroup;
+};
+
+
 //------------------------------------------------------------------------------
 // Eye path hit points
 //------------------------------------------------------------------------------
@@ -47,8 +57,6 @@ public:
 	float distance;
 
 	Vector wo;
-
-	BxDFType flags;
 };
 
 /*
@@ -309,9 +317,9 @@ public:
 	const float GetWavelengthSample() { return wavelengthSample; }
 	const float GetTimeSample() { return timeSample; }
 
-	void AddFlux(Sample &sample, const Point &hitPoint, const Vector &wi,
-		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup) {
-		lookUpAccel->AddFlux(sample, hitPoint, wi, sw, photonFlux, lightGroup);
+	void AddFlux(Sample &sample, const PhotonData &photon)
+	{
+		lookUpAccel->AddFlux(sample, photon);
 	}
 	void AccumulateFlux(const u_int index, const u_int count);
 	void SetHitPoints(Sample &sample, RandomGenerator *rng, const u_int index, const u_int count);
@@ -326,6 +334,8 @@ private:
 	SPPMRenderer *renderer;
 public:
 	Sampler *eyeSampler;
+
+	BxDFType store_component, bounce_component;
 
 private:
 	// Hit points information

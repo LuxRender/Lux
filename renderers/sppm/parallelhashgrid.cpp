@@ -25,8 +25,7 @@
 
 using namespace lux;
 
-ParallelHashGrid::ParallelHashGrid(HitPoints *hps, float gridCoef) {
-	hitPoints = hps;
+ParallelHashGrid::ParallelHashGrid(HitPoints *hps, float gridCoef):HitPointsLookUpAccel(hps) {
 	gridSize = gridCoef * hitPoints->GetSize();
 	jumpSize = hitPoints->GetSize();
 
@@ -100,15 +99,13 @@ void ParallelHashGrid::Refresh( const u_int index, const u_int count, boost::bar
 	barrier.wait();
 }
 
-void ParallelHashGrid::AddFlux(Sample &sample, const Point &hitPoint, const Vector &wi,
-		const SpectrumWavelengths &sw, const SWCSpectrum &photonFlux, const u_int lightGroup) {
-
+void ParallelHashGrid::AddFlux(Sample &sample, const PhotonData &photon) {
 	const float maxPhotonRadius = sqrtf(hitPoints->GetMaxPhotonRadius2());
 	const Vector rad(maxPhotonRadius, maxPhotonRadius, maxPhotonRadius);
 
 	// Look for eye path hit points near the current hit point
-	const Point p1 = ((hitPoint - rad)) * invCellSize;
-	const Point p2 = ((hitPoint + rad)) * invCellSize;
+	const Point p1 = ((photon.p - rad)) * invCellSize;
+	const Point p2 = ((photon.p + rad)) * invCellSize;
 
 	const int xMin = p1.x;
 	const int xMax = p2.x;
@@ -130,7 +127,7 @@ void ParallelHashGrid::AddFlux(Sample &sample, const Point &hitPoint, const Vect
 
 				do
 				{
-					AddFluxToHitPoint(sample, hitPoints->GetHitPoint(hp_index), hitPoint, wi, sw, photonFlux, lightGroup);
+					AddFluxToHitPoint(sample, hitPoints->GetHitPoint(hp_index), photon);
 					hp_index = jump_list[hp_index];
 				}
 				while(hp_index != ~0u);

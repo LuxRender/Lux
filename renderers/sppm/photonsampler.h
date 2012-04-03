@@ -38,7 +38,6 @@ enum PhotonSamplerType {
 	HALTON, AMC
 };
 
-
 class PhotonSampler : public Sampler {
 public:
 	PhotonSampler(SPPMRenderer *sppmr):

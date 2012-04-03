@@ -45,7 +45,6 @@ public:
 
 	// Variables used by the hybrid sppm renderer
 	string PixelSampler;
-	float GlossyThreshold;
 	PhotonSamplerType photonSamplerType;
 	LookUpAccelType lookupAccelType;
 
@@ -69,6 +68,7 @@ public:
 	SurfaceIntegratorRenderingHints hints;
 	bool directLightSampling;
 	bool debug;
+	bool storeGlossy;
 };
 
 }//namespace lux
