@@ -248,7 +248,7 @@ bool RenderFarm::reconnect(ExtRenderingServerInfo &serverInfo)
 		LOG( LUX_INFO,LUX_NOERROR) << "Server reconnect result: " << result;
 		
 		if ("CONNECTED" != result) {
-			// unable to reconnect
+			// slave rejected reconnect attempt, signal by setting active to false
 			serverInfo.active = false;
 			return false;
 		}
@@ -398,7 +398,11 @@ void RenderFarm::reconnectFailed() {
 				<< "Trying to reconnect server: "
 				<< serverInfo.name << ":" << serverInfo.port;
 
-			if (!this->reconnect(serverInfo)) {
+			// If reconnect() fails the active flag will determine
+			// if the connection was broken during reconnect attempt
+			// (active kept true) or if slave did not accept the reconnection
+			// (active set to false)
+			if (!this->reconnect(serverInfo) && !serverInfo.active) {
 				LOG(LUX_INFO,LUX_NOERROR)
 					<< "Reconnection failed, attemting to establish new session with server: "
 					<< serverInfo.name << ":" << serverInfo.port;
