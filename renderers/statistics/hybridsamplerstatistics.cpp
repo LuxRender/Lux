@@ -235,7 +235,7 @@ std::string HSRStatistics::FormattedLong::getHaltSpp() {
 
 std::string HSRStatistics::FormattedLong::getRemainingSamplesPerPixel() {
 	double rspp = rs->getRemainingSamplesPerPixel();
-	return boost::str(boost::format("%1$0.2f%2% S/p") % MagnitudeReduce(rspp) % MagnitudePrefix(rspp));
+	return boost::str(boost::format("%1$0.2f %2%S/p") % MagnitudeReduce(rspp) % MagnitudePrefix(rspp));
 }
 
 std::string HSRStatistics::FormattedLong::getPercentHaltSppComplete() {
@@ -253,57 +253,57 @@ std::string HSRStatistics::FormattedLong::getAverageGpuEfficiency() {
 
 std::string HSRStatistics::FormattedLong::getAverageSamplesPerPixel() {
 	double spp = rs->getAverageSamplesPerPixel();
-	return boost::str(boost::format("%1$0.2f%2% S/p") % MagnitudeReduce(spp) % MagnitudePrefix(spp));
+	return boost::str(boost::format("%1$0.2f %2%S/p") % MagnitudeReduce(spp) % MagnitudePrefix(spp));
 }
 
 std::string HSRStatistics::FormattedLong::getAverageSamplesPerSecond() {
 	double sps = rs->getAverageSamplesPerSecond();
-	return boost::str(boost::format("%1$0.2f%2% S/s") % MagnitudeReduce(sps) % MagnitudePrefix(sps));
+	return boost::str(boost::format("%1$0.2f %2%S/s") % MagnitudeReduce(sps) % MagnitudePrefix(sps));
 }
 
 std::string HSRStatistics::FormattedLong::getAverageSamplesPerSecondWindow() {
 	double spsw = rs->getAverageSamplesPerSecondWindow();
-	return boost::str(boost::format("%1$0.2f%2% S/s") % MagnitudeReduce(spsw) % MagnitudePrefix(spsw));
+	return boost::str(boost::format("%1$0.2f %2%S/s") % MagnitudeReduce(spsw) % MagnitudePrefix(spsw));
 }
 
 std::string HSRStatistics::FormattedLong::getAverageContributionsPerSecond() {
 	double cps = rs->getAverageContributionsPerSecond();
-	return boost::str(boost::format("%1$0.2f%2% C/s") % MagnitudeReduce(cps) % MagnitudePrefix(cps));
+	return boost::str(boost::format("%1$0.2f %2%C/s") % MagnitudeReduce(cps) % MagnitudePrefix(cps));
 }
 
 std::string HSRStatistics::FormattedLong::getAverageContributionsPerSecondWindow() {
 	double cpsw = rs->getAverageContributionsPerSecondWindow();
-	return boost::str(boost::format("%1$0.2f%2% C/s") % MagnitudeReduce(cpsw) % MagnitudePrefix(cpsw));
+	return boost::str(boost::format("%1$0.2f %2%C/s") % MagnitudeReduce(cpsw) % MagnitudePrefix(cpsw));
 }
 
 std::string HSRStatistics::FormattedLong::getNetworkAverageSamplesPerPixel() {
 	double spp = rs->getNetworkAverageSamplesPerPixel();
-	return boost::str(boost::format("%1$0.2f%2% S/p") % MagnitudeReduce(spp) % MagnitudePrefix(spp));
+	return boost::str(boost::format("%1$0.2f %2%S/p") % MagnitudeReduce(spp) % MagnitudePrefix(spp));
 }
 
 std::string HSRStatistics::FormattedLong::getNetworkAverageSamplesPerSecond() {
 	double sps = rs->getNetworkAverageSamplesPerSecond();
-	return boost::str(boost::format("%1$0.2f%2% S/s") % MagnitudeReduce(sps) % MagnitudePrefix(sps));
+	return boost::str(boost::format("%1$0.2f %2%S/s") % MagnitudeReduce(sps) % MagnitudePrefix(sps));
 }
 
 std::string HSRStatistics::FormattedLong::getNetworkAverageSamplesPerSecondWindow() {
 	double spsw = rs->getNetworkAverageSamplesPerSecondWindow();
-	return boost::str(boost::format("%1$0.2f%2% S/s") % MagnitudeReduce(spsw) % MagnitudePrefix(spsw));
+	return boost::str(boost::format("%1$0.2f %2%S/s") % MagnitudeReduce(spsw) % MagnitudePrefix(spsw));
 }
 
 std::string HSRStatistics::FormattedLong::getTotalAverageSamplesPerPixel() {
 	double spp = rs->getTotalAverageSamplesPerPixel();
-	return boost::str(boost::format("%1$0.2f%2% S/p") % MagnitudeReduce(spp) % MagnitudePrefix(spp));
+	return boost::str(boost::format("%1$0.2f %2%S/p") % MagnitudeReduce(spp) % MagnitudePrefix(spp));
 }
 
 std::string HSRStatistics::FormattedLong::getTotalAverageSamplesPerSecond() {
 	double sps = rs->getTotalAverageSamplesPerSecond();
-	return boost::str(boost::format("%1$0.2f%2% S/s") % MagnitudeReduce(sps) % MagnitudePrefix(sps));
+	return boost::str(boost::format("%1$0.2f %2%S/s") % MagnitudeReduce(sps) % MagnitudePrefix(sps));
 }
 
 std::string HSRStatistics::FormattedLong::getTotalAverageSamplesPerSecondWindow() {
 	double spsw = rs->getTotalAverageSamplesPerSecondWindow();
-	return boost::str(boost::format("%1$0.2f%2% S/s") % MagnitudeReduce(spsw) % MagnitudePrefix(spsw));
+	return boost::str(boost::format("%1$0.2f %2%S/s") % MagnitudeReduce(spsw) % MagnitudePrefix(spsw));
 }
 
 HSRStatistics::FormattedShort::FormattedShort(HSRStatistics* rs)

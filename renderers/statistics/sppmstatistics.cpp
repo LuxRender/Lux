@@ -152,12 +152,12 @@ std::string SPPMRStatistics::FormattedLong::getPassCount() {
 
 std::string SPPMRStatistics::FormattedLong::getAveragePassesPerSecond() {
 	double pps = rs->getAveragePassesPerSecond();
-	return boost::str(boost::format("%1$0.2f%2% P/s") % MagnitudeReduce(pps) % MagnitudePrefix(pps));
+	return boost::str(boost::format("%1$0.2f %2%P/s") % MagnitudeReduce(pps) % MagnitudePrefix(pps));
 }
 
 std::string SPPMRStatistics::FormattedLong::getAveragePassesPerSecondWindow() {
 	double pps = rs->getAveragePassesPerSecondWindow();
-	return boost::str(boost::format("%1$0.2f%2% P/s") % MagnitudeReduce(pps) % MagnitudePrefix(pps));
+	return boost::str(boost::format("%1$0.2f %2%P/s") % MagnitudeReduce(pps) % MagnitudePrefix(pps));
 }
 
 std::string SPPMRStatistics::FormattedLong::getHaltPass() {
@@ -176,17 +176,17 @@ std::string SPPMRStatistics::FormattedLong::getPercentHaltPassesComplete() {
 
 std::string SPPMRStatistics::FormattedLong::getPhotonCount() {
 	double pc = rs->getPhotonCount();
-	return boost::str(boost::format("%1$0.2f%2% %3%") % MagnitudeReduce(pc) % MagnitudePrefix(pc) % Pluralize("Photon", pc));
+	return boost::str(boost::format("%1$0.2f %2%%3%") % MagnitudeReduce(pc) % MagnitudePrefix(pc) % Pluralize("Photon", pc));
 }
 
 std::string SPPMRStatistics::FormattedLong::getAveragePhotonsPerSecond() {
 	double pps = rs->getAveragePhotonsPerSecond();
-	return boost::str(boost::format("%1$0.2f%2% Y/s") % MagnitudeReduce(pps) % MagnitudePrefix(pps));
+	return boost::str(boost::format("%1$0.2f %2%Y/s") % MagnitudeReduce(pps) % MagnitudePrefix(pps));
 }
 
 std::string SPPMRStatistics::FormattedLong::getAveragePhotonsPerSecondWindow() {
 	double pps = rs->getAveragePhotonsPerSecondWindow();
-	return boost::str(boost::format("%1$0.2f%2% Y/s") % MagnitudeReduce(pps) % MagnitudePrefix(pps));
+	return boost::str(boost::format("%1$0.2f %2%Y/s") % MagnitudeReduce(pps) % MagnitudePrefix(pps));
 }
 
 SPPMRStatistics::FormattedShort::FormattedShort(SPPMRStatistics* rs)
@@ -237,5 +237,5 @@ std::string SPPMRStatistics::FormattedShort::getPercentHaltPassesComplete() {
 
 std::string SPPMRStatistics::FormattedShort::getPhotonCount() {
 	double pc = rs->getPhotonCount();
-	return boost::str(boost::format("%1$0.2f%2% Y") % MagnitudeReduce(pc) % MagnitudePrefix(pc));
+	return boost::str(boost::format("%1$0.2f %2%Y") % MagnitudeReduce(pc) % MagnitudePrefix(pc));
 }
