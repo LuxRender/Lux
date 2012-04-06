@@ -336,6 +336,7 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	statsBox->setFrameStyle(QFrame::Panel | QFrame::Sunken);
 	statsBoxLayout->setSpacing(0);
 	statsBoxLayout->setContentsMargins(1, 0, 1, 0);
+	statsBoxLayout->addStretch(-1);
 
 	ui->statusbar->addPermanentWidget(activityLabel, 1);
 	ui->statusbar->addPermanentWidget(activityMessage, 1);
@@ -1398,53 +1399,86 @@ void  MainWindow::loadFile(const QString &fileName)
 // Helper class for MainWindow::updateStatistics()
 class AttributeFormatter {
 public:
-	AttributeFormatter(QLayout* l) : layout(l) {}
+	AttributeFormatter(QBoxLayout* l, int& label_count) : layout(l), count(label_count) { }
 
 	std::string operator()(boost::smatch m) {
 		// leading text in first capture subgroup
-		if (m[1].matched && m[1].str().length() > 0)
-			layout->addWidget(new QLabel(m[1].str().c_str()));
+		if (m[1].matched && m[1].str().length() > 0) {
+			QLabel* label = getNextLabel();
+			label->setText(m[1].str().c_str());
+			label->setToolTip("");
+		}
 
 		// attribute in second capture subgroup
 		if (m[2].matched) {
+			QLabel* label = getNextLabel();
 			if (m[2].str().length() > 0) {
 				std::string attr_name = m[2];
-				QLabel* label = new QLabel(getStringAttribute("renderer_statistics_formatted", attr_name.c_str()));
+				label->setText(getStringAttribute("renderer_statistics_formatted", attr_name.c_str()));
 				label->setToolTip(getAttributeDescription("renderer_statistics_formatted", attr_name.c_str()));
-				layout->addWidget(label);
-			} else
-				layout->addWidget(new QLabel("%"));
+			} else {
+				label->setText("%");
+				label->setToolTip("");
+			}
 		}
 
 		// trailing text in third capture subgroup
-		if (m[3].matched && m[3].str().length() > 0)
-			layout->addWidget(new QLabel(m[3].str().c_str()));
+		if (m[3].matched && m[3].str().length() > 0) {
+			QLabel* label = getNextLabel();
+			label->setText(m[3].str().c_str());
+			label->setToolTip("");
+		}
 
 		return "";	// don't care about the string replacement
 	}
 
 private:
-	QLayout* layout;
+	QLabel* getNextLabel() {
+		const int idx = count++;
+		QLayoutItem* item = layout->itemAt(idx);
+
+		// if item is a stretcher then widget() returns null
+		QLabel* label = item ? qobject_cast<QLabel*>(item->widget()) : NULL;
+		if (!label) {
+			// no existing label, create new
+			label = new QLabel("");
+			layout->insertWidget(idx, label);
+			label->setVisible(true);
+		}
+
+		return label;
+	}
+
+
+	QBoxLayout* layout;
+	int& count;
 };
 
 void MainWindow::updateStatistics()
 {
-	QLayoutItem* item;
-	while (item = statsBoxLayout->takeAt(0))
-	{
-		delete item->widget();
-		delete item;
-	}
+	// prevent redraws while updating
+	statsBox->setUpdatesEnabled(false);
 
 	luxUpdateStatisticsWindow();
 
 	std::string st = getStringAttribute("renderer_statistics_formatted", "_recommended_string_template").toStdString();
 
-	AttributeFormatter fmt(statsBoxLayout);
+	int active_label_count = 0;
+	AttributeFormatter fmt(statsBoxLayout, active_label_count);
 	boost::regex attrib_expr("([^%]*)%([^%]*)%([^%]*)");
 	boost::regex_replace(st, attrib_expr, fmt, boost::match_default | boost::format_all);
 
-	statsBoxLayout->addStretch(1);
+	// clear remaining labels
+	QLayoutItem* item;
+	while ((item = statsBoxLayout->itemAt(active_label_count++)) != NULL) {
+		QLabel* label = qobject_cast<QLabel*>(item->widget());
+		if (!label)
+			continue;
+		label->setText("");
+		label->setToolTip("");
+	}
+
+	statsBox->setUpdatesEnabled(true);
 }
 
 // show the render-resolution
