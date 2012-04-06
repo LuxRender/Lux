@@ -27,7 +27,6 @@
 #include "paramset.h"
 #include "error.h"
 #include "version.h"
-#include "stats.h"
 
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/thread/mutex.hpp>
@@ -735,20 +734,27 @@ extern "C" double luxStatistics(const char *statName)
 	return 0.;
 }
 
+// Deprecated - Not thread safe
 extern "C" const char* luxPrintableStatistics(const bool add_total)
 {
+	static std::vector<char> buf(1 << 16, '\0');
+
+	LOG(LUX_WARNING,LUX_NOERROR)<<"'luxPrintableStatistics' is deprecated. Use 'luxGetStringAttribute' instead.";
+
 	if (initialized)
-		return Context::GetActive()->PrintableStatistics(add_total);
-	LOG(LUX_SEVERE,LUX_NOTSTARTED)<<"luxInit() must be called before calling 'luxStatistics'. Ignoring.";
-	return "";
+		luxGetStringAttribute("renderer_statistics_formatted", "_recommended_string", &buf[0], static_cast<unsigned int>(buf.size()));
+	else
+		LOG(LUX_SEVERE,LUX_NOTSTARTED)<<"luxInit() must be called before calling 'luxPrintableStatistics'. Ignoring.";
+
+	return &buf[0];
 }
 
-extern "C" const char* luxCustomStatistics(const char *template_string)
+extern "C" void luxUpdateStatisticsWindow()
 {
 	if (initialized)
-		return Context::GetActive()->CustomStatistics(template_string);
-	LOG(LUX_SEVERE,LUX_NOTSTARTED)<<"luxInit() must be called before calling 'luxStatistics'. Ignoring.";
-	return "";
+		Context::GetActive()->UpdateStatisticsWindow();
+	else
+		LOG(LUX_SEVERE,LUX_NOTSTARTED)<<"luxInit() must be called before calling 'luxUpdateStatisticsWindow'. Ignoring.";
 }
 
 extern "C" const char* luxGetAttributes()

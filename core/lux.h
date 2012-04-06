@@ -216,14 +216,8 @@ namespace lux
   class IrregularDistribution1D;
   class MachineEpsilon;
   class SampleableSphericalFunction;
-  class ProgressReporter;
-  class StatsCounter;
-  typedef double StatsCounterType;
-  class StatsRatio;
-  class StatsPercentage;
 
   class Context;
-  class StatsData;
 
 // Global Function Declarations
   //string hashing function

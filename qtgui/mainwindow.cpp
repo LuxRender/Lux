@@ -33,6 +33,7 @@
 //#include <boost/filesystem/operations.hpp>
 #include <boost/thread.hpp>
 #include <boost/cast.hpp>
+#include <boost/regex.hpp>
 
 #include <sstream>
 #include <clocale>
@@ -312,22 +313,29 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	// Statusbar
 	activityLabel = new QLabel(tr("  Status:"));
 	activityMessage = new QLabel();
+
 	statusLabel = new QLabel(tr(" Activity:"));
 	statusMessage = new QLabel();
 	statusProgress = new QProgressBar();
+
 	statsLabel = new QLabel(tr(" Statistics:"));
-	statsMessage = new QLabel();
+	statsBox = new QFrame();
+	statsBoxLayout = new QHBoxLayout(statsBox);
 
 	activityLabel->setMaximumWidth(60);
 	activityMessage->setFrameStyle(QFrame::Panel | QFrame::Sunken);
 	activityMessage->setMaximumWidth(140);
+
 	statusLabel->setMaximumWidth(60);
 	statusMessage->setFrameStyle(QFrame::Panel | QFrame::Sunken);
 	statusMessage->setMaximumWidth(320);
 	statusProgress->setMaximumWidth(100);
 	statusProgress->setRange(0, 100);
+
 	statsLabel->setMaximumWidth(70);
-	statsMessage->setFrameStyle(QFrame::Panel | QFrame::Sunken);
+	statsBox->setFrameStyle(QFrame::Panel | QFrame::Sunken);
+	statsBoxLayout->setSpacing(0);
+	statsBoxLayout->setContentsMargins(1, 0, 1, 0);
 
 	ui->statusbar->addPermanentWidget(activityLabel, 1);
 	ui->statusbar->addPermanentWidget(activityMessage, 1);
@@ -335,8 +343,9 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	ui->statusbar->addPermanentWidget(statusLabel, 1);
 	ui->statusbar->addPermanentWidget(statusMessage, 1);
 	ui->statusbar->addPermanentWidget(statusProgress, 1);
+
 	ui->statusbar->addPermanentWidget(statsLabel, 1);
-	ui->statusbar->addPermanentWidget(statsMessage, 1);
+	ui->statusbar->addPermanentWidget(statsBox, 1);
 
 	// Update timers
 	m_renderTimer = new QTimer();
@@ -422,7 +431,8 @@ MainWindow::~MainWindow()
 	WriteSettings();
 
 	delete ui;
-	delete statsMessage;
+	delete statsBoxLayout;
+	delete statsBox;
 	delete m_engineThread;
 	delete m_updateThread;
 	delete m_flmloadThread;
@@ -1385,22 +1395,56 @@ void  MainWindow::loadFile(const QString &fileName)
 }
 #endif
 
+// Helper class for MainWindow::updateStatistics()
+class AttributeFormatter {
+public:
+	AttributeFormatter(QLayout* l) : layout(l) {}
+
+	std::string operator()(boost::smatch m) {
+		// leading text in first capture subgroup
+		if (m[1].matched && m[1].str().length() > 0)
+			layout->addWidget(new QLabel(m[1].str().c_str()));
+
+		// attribute in second capture subgroup
+		if (m[2].matched) {
+			if (m[2].str().length() > 0) {
+				std::string attr_name = m[2];
+				QLabel* label = new QLabel(getStringAttribute("renderer_statistics_formatted", attr_name.c_str()));
+				label->setToolTip(getAttributeDescription("renderer_statistics_formatted", attr_name.c_str()));
+				layout->addWidget(label);
+			} else
+				layout->addWidget(new QLabel("%"));
+		}
+
+		// trailing text in third capture subgroup
+		if (m[3].matched && m[3].str().length() > 0)
+			layout->addWidget(new QLabel(m[3].str().c_str()));
+
+		return "";	// don't care about the string replacement
+	}
+
+private:
+	QLayout* layout;
+};
+
 void MainWindow::updateStatistics()
 {
-//	m_samplesSec = luxStatistics("samplesSec");
-//	int samplesSec = Floor2Int(m_samplesSec);
-//	int samplesTotSec = Floor2Int(luxStatistics("samplesTotSec"));
-//	int secElapsed = Floor2Int(luxStatistics("secElapsed"));
-//	double samplesPx = luxStatistics("samplesPx");
-//	int efficiency = Floor2Int(luxStatistics("efficiency"));
-//	int EV = luxGetFloatAttribute("film", "EV");
-//
-//	int secs = (secElapsed) % 60;
-//	int mins = (secElapsed / 60) % 60;
-//	int hours = (secElapsed / 3600);
-//
-//	statsMessage->setText(QString("%1:%2:%3 - %4 S/s - %5 TotS/s - %6 S/px - %7% eff - EV = %8").arg(hours,2,10,QChar('0')).arg(mins, 2,10,QChar('0')).arg(secs,2,10,QChar('0')).arg(samplesSec).arg(samplesTotSec).arg(samplesPx, 0, 'f', 2).arg(efficiency).arg(EV));
-	statsMessage->setText(QString( luxPrintableStatistics(true) ));
+	QLayoutItem* item;
+	while (item = statsBoxLayout->takeAt(0))
+	{
+		delete item->widget();
+		delete item;
+	}
+
+	luxUpdateStatisticsWindow();
+
+	std::string st = getStringAttribute("renderer_statistics_formatted", "_recommended_string_template").toStdString();
+
+	AttributeFormatter fmt(statsBoxLayout);
+	boost::regex attrib_expr("([^%]*)%([^%]*)%([^%]*)");
+	boost::regex_replace(st, attrib_expr, fmt, boost::match_default | boost::format_all);
+
+	statsBoxLayout->addStretch(1);
 }
 
 // show the render-resolution
@@ -1929,8 +1973,7 @@ void MainWindow::statsTimeout()
 {
 	if(luxStatistics("sceneIsReady") || luxStatistics("filmIsReady")) {
 		updateStatistics();
-		if ((m_guiRenderState == STOPPING || m_guiRenderState == ENDING || m_guiRenderState == FINISHED)
-			&& luxStatistics("samplesSec") == 0.0) {
+		if ((m_guiRenderState == STOPPING || m_guiRenderState == ENDING || m_guiRenderState == FINISHED)) {
 			// Render threads stopped, do one last render update
 			LOG(LUX_INFO,LUX_NOERROR)<< tr("GUI: Updating framebuffer...").toLatin1().data();
 			statusMessage->setText(tr("Tonemapping..."));

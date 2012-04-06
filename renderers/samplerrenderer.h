@@ -101,8 +101,6 @@ public:
 	vector<RendererHostDescription *> &GetHostDescs();
 	void SuspendWhenDone(bool v);
 
-	double Statistics(const string &statName);
-
 	void Render(Scene *scene);
 
 	void Pause();
@@ -111,6 +109,7 @@ public:
 
 	friend class SRDeviceDescription;
 	friend class SRHostDescription;
+	friend class SRStatistics;
 
 	static Renderer *CreateRenderer(const ParamSet &params);
 
@@ -136,12 +135,6 @@ private:
 	void CreateRenderThread();
 	void RemoveRenderThread();
 
-	double Statistics_GetNumberOfSamples();
-	double Statistics_SamplesPSec();
-	double Statistics_SamplesPTotSec();
-	double Statistics_Efficiency();
-	double Statistics_SamplesPPx();
-
 	//--------------------------------------------------------------------------
 
 	mutable boost::mutex classWideMutex;
@@ -154,10 +147,6 @@ private:
 
 	fast_mutex sampPosMutex;
 	u_int sampPos;
-
-	Timer s_Timer;
-	double lastSamples, lastTime;
-	double stat_Samples, stat_blackSamples;
 
 	// Put them last for better data alignment
 	// used to suspend render threads until the preprocessing phase is done

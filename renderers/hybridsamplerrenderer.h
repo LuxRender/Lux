@@ -31,6 +31,7 @@
 #include "fastmutex.h"
 #include "timer.h"
 #include "dynload.h"
+#include "transport.h"
 #include "hybridrenderer.h"
 
 #include "luxrays/luxrays.h"
@@ -84,15 +85,13 @@ public:
 	vector<RendererHostDescription *> &GetHostDescs();
 	void SuspendWhenDone(bool v);
 
-	double Statistics(const string &statName);
-
 	void Render(Scene *scene);
 
 	void Pause();
 	void Resume();
 	void Terminate();
 	
-	string GetStats();
+	friend class HSRStatistics;
 
 	static Renderer *CreateRenderer(const ParamSet &params);
 
@@ -122,12 +121,6 @@ private:
 	void RemoveRenderThread();
 	size_t GetRenderThreadCount() const  { return renderThreads.size(); }
 
-	double Statistics_GetNumberOfSamples();
-	double Statistics_SamplesPSec();
-	double Statistics_SamplesPTotSec();
-	double Statistics_Efficiency();
-	double Statistics_SamplesPPx();
-
 	//--------------------------------------------------------------------------
 
 	luxrays::Context *ctx;
@@ -144,10 +137,6 @@ private:
 	vector<RenderThread *> renderThreads;
 	Scene *scene;
 	u_long lastUsedSeed;
-
-	Timer s_Timer;
-	double lastSamples, lastTime;
-	double stat_Samples, stat_blackSamples;
 
 	// Put them last for better data alignment
 	// used to suspend render threads until the preprocessing phase is done

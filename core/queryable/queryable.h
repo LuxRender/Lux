@@ -26,7 +26,11 @@
 #include <vector>
 #include <map>
 #include <string>
+
+#include <boost/bind.hpp>
+#include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
+
 #include "error.h"
 #include "queryableattribute.h"
 
@@ -173,6 +177,12 @@ public:
 	template<class T> friend void AddStringAttribute(T &object,
 		const std::string &name, const std::string &description,
 		std::string (T::*get)(), void (T::*set)(std::string) = NULL) {
+
+		AddAttrib<QueryableStringAttribute>(object, name, description, get, set);
+	}
+	template<class T> friend void AddStringAttribute(T &object,
+		const std::string &name, const std::string &description,
+		const boost::function<std::string (void)> &get, const boost::function<void (std::string)> set = NULL) {
 
 		AddAttrib<QueryableStringAttribute>(object, name, description, get, set);
 	}
@@ -329,7 +339,19 @@ protected:
 		attribute->getFunc = boost::bind(get, boost::ref(object));
 		object.AddAttribute(attribute);
 	}
+	template<class QA, class T, class D> static void AddAttrib(T &object,
+		const std::string &name, const std::string &description,
+		const boost::function<D (void)> &get, const boost::function<void (D)> &set) {
 
+		boost::shared_ptr<QA> attribute(
+			new QA(name, description));
+
+		if (set)
+			attribute->setFunc = set;
+
+		attribute->getFunc = get;
+		object.AddAttribute(attribute);
+	}
 private:
 	std::map<std::string, boost::shared_ptr<QueryableAttribute> > attributes;
 	std::string name;

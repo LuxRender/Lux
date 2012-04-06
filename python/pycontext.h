@@ -889,7 +889,7 @@ public:
 		checkActiveContext();
 		if (!luxHasObject(objectName) ||
 			!luxHasAttribute(objectName, attributeName))
-			return boost::python::object(0);
+			return boost::python::object();
 		switch (luxGetAttributeType(objectName, attributeName)) {
 			case LUX_ATTRIBUTETYPE_BOOL:
 				return boost::python::object(luxGetBoolAttribute(objectName, attributeName));
@@ -901,15 +901,16 @@ public:
 				return boost::python::object(luxGetDoubleAttribute(objectName, attributeName));
 			case LUX_ATTRIBUTETYPE_STRING: {
 				std::vector<char> buf(1 << 16, '\0');
-				luxGetStringAttribute(objectName, attributeName, &buf[0], static_cast<unsigned int>(buf.size()));
-				return boost::python::object(&buf[0]);
+				if (luxGetStringAttribute(objectName, attributeName, &buf[0], static_cast<unsigned int>(buf.size())) > 0)
+					return boost::python::object(std::string(&buf[0]));
+				return boost::python::object();
 			}
 			case LUX_ATTRIBUTETYPE_NONE:
 				break;
 			default:
 				LOG(LUX_ERROR,LUX_BUG)<<"Unknown attribute type in pyLuxGetOption";
 		}
-		return boost::python::object(0);
+		return boost::python::object();
 	}
 
 	void setAttribute(const char * objectName, const char * attributeName, boost::python::object value)
@@ -1013,16 +1014,17 @@ public:
 		return context->Statistics(statName);
 	}
 
+	// Deprecated
 	const char* printableStatistics(const bool add_total)
 	{
 		checkActiveContext();
-		return context->PrintableStatistics(add_total);
+		return luxPrintableStatistics(add_total);
 	}
 
-	const char* customStatistics(const string custom_template)
+	void updateStatisticsWindow()
 	{
 		checkActiveContext();
-		return context->CustomStatistics(custom_template);
+		context->UpdateStatisticsWindow();
 	}
 
 	void enableDebugMode()
@@ -1438,10 +1440,10 @@ void export_PyContext()
 			args("Context", "add_total"),
 			ds_pylux_Context_printable_statistics
 		)
-		.def("customStatistics",
-			&PyContext::customStatistics,
-			args("Context", "template_string"),
-			ds_pylux_Context_custom_statistics
+		.def("updateStatisticsWindow",
+			&PyContext::updateStatisticsWindow,
+			args("Context"),
+			ds_pylux_Context_update_statistics_window
 		)
 		.def("surfaceIntegrator",
 			&PyContext::surfaceIntegrator,

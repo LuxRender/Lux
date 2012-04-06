@@ -67,11 +67,14 @@ void engineThread() {
 }
 
 void infoThread() {
+	std::vector<char> buf(1 << 16, '\0');
 	while (!boost::this_thread::interruption_requested()) {
 		try {
 			boost::this_thread::sleep(boost::posix_time::seconds(5));
 
-			LOG(LUX_INFO,LUX_NOERROR) << luxPrintableStatistics(true);
+			luxUpdateStatisticsWindow();
+			luxGetStringAttribute("renderer_statistics_formatted_short", "_recommended_string", &buf[0], static_cast<unsigned int>(buf.size()));
+			LOG(LUX_INFO,LUX_NOERROR) << std::string(buf.begin(), buf.end());
 		} catch(boost::thread_interrupted ex) {
 			break;
 		}

@@ -145,8 +145,8 @@ public:
 
 	// Stats
 	double statistics(const char* statName);
-	const char* printableStatistics(const bool addTotal);
-	const char* customStatistics(const char* custom_template);
+	const char* printableStatistics(const bool addTotal);	// Deprecated
+	void updateStatisticsWindow();
 
 	// Debugging interface
 	void enableDebugMode();

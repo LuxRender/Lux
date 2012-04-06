@@ -326,23 +326,14 @@ const char * ds_pylux_Context_statistics =
 "Return the named statistic from the current rendering. Valid statistic names are:\n"
 "- sceneIsReady : returns truthy if the scene has been built and is ready for rendering\n"
 "- filmIsReady : ?\n"
-"- terminated : ?\n"
-"- secElapsed : number of seconds since the rendering started\n"
-"- samplesSec : current local rendering speed in samples per second\n"
-"- samplesTotSec : current average total rendering speed in samples per second\n"
-"- samplesPx : current number of samples per pixel\n"
-"- efficiency : current rendering efficiency in percent\n"
-"- displayInterval : current framebuffer update/display interval in seconds\n"
-"- filmEV : current film Exposure Value\n"
-"- enoughSamples : returns truthy if the rendering has reached a haltspp condition";
+"- terminated : ?";
 
 const char * ds_pylux_Context_printable_statistics =
 "Return a formatted statistics string. If add_total=True, then the Local and Net"
 " stats will be summed and also shown.";
 
-const char * ds_pylux_Context_custom_statistics =
-"Return a formatted statistics string. The string argument should contain the\n"
-"appropriate template placeholders for the stats to be formatted into.";
+const char * ds_pylux_Context_update_statistics_window =
+"Update the renderer statistics window";
 
 const char * ds_pylux_Context_surfaceIntegrator =
 "Initialise the surface integrator to use for rendering. Valid types are:\n"

@@ -42,6 +42,7 @@
 #include "reflection/bxdf.h"
 #include "sppmrenderer.h"
 #include "integrators/sppm.h"
+#include "renderers/statistics/sppmstatistics.h"
 
 using namespace lux;
 
@@ -87,10 +88,14 @@ SPPMRenderer::SPPMRenderer() : Renderer() {
 	hitPoints = NULL;
 
 	AddStringConstant(*this, "name", "Name of current renderer", "sppm");
+
+	rendererStatistics = new SPPMRStatistics(this);
 }
 
 SPPMRenderer::~SPPMRenderer() {
 	boost::mutex::scoped_lock lock(classWideMutex);
+
+	delete rendererStatistics;
 
 	if ((state != TERMINATE) && (state != INIT))
 		throw std::runtime_error("Internal error: called SPPMRenderer::~SPPMRenderer() while not in TERMINATE or INIT state.");
@@ -152,7 +157,7 @@ void SPPMRenderer::Render(Scene *s) {
 		state = RUN;
 
 		// Initialize the stats
-		s_Timer.Reset();
+		rendererStatistics->reset();
 	
 		// Dade - I have to do initiliaziation here for the current thread.
 		// It can be used by the Preprocess() methods.
@@ -193,7 +198,7 @@ void SPPMRenderer::Render(Scene *s) {
 		photonHitEfficiency = 0;
 
 		// start the timer
-		s_Timer.Start();
+		rendererStatistics->timer.Start();
 
 		// Dade - preprocessing done
 		preprocessDone = true;
@@ -241,74 +246,18 @@ void SPPMRenderer::Render(Scene *s) {
 void SPPMRenderer::Pause() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 	state = PAUSE;
-	s_Timer.Stop();
+	rendererStatistics->timer.Stop();
 }
 
 void SPPMRenderer::Resume() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 	state = RUN;
-	s_Timer.Start();
+	rendererStatistics->timer.Start();
 }
 
 void SPPMRenderer::Terminate() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 	state = TERMINATE;
-}
-
-//------------------------------------------------------------------------------
-// Statistic methods
-//------------------------------------------------------------------------------
-
-// Statistics Access
-double SPPMRenderer::Statistics(const string &statName) {
-	if(statName=="secElapsed") {
-		// Dade - s_Timer is inizialized only after the preprocess phase
-		if (preprocessDone)
-			return s_Timer.Time();
-		else
-			return 0.0;
-	} else if(statName=="samplesSec")
-		return 0.0;
-	else if(statName=="samplesTotSec")
-		return 0.0;
-	else if(statName=="samplesPx")
-		return 0.0;
-	else if(statName=="efficiency")
-		return 0.0;
-	else if(statName=="displayInterval")
-		return scene->DisplayInterval();
-	else if(statName == "filmEV")
-		return scene->camera->film->EV;
-	else if(statName == "averageLuminance")
-		return scene->camera->film->averageLuminance;
-	else if(statName == "numberOfLocalSamples")
-		return scene->camera->film->numberOfLocalSamples;
-	else if (statName == "enoughSamples")
-		return scene->camera->film->enoughSamplesPerPixel;
-	else if (statName == "threadCount")
-		return renderThreads.size();
-	else if (statName == "pass") {
-		return (hitPoints) ? double(hitPoints->GetPassCount()) : 0.0;
-	} else if (statName == "photonCount") {
-		return double(photonTracedTotal + photonTracedPass);
-	} else if (statName == "photonPerSecond")
-	{
-		int delta = photonTracedPass - last_pps_photons;
-		double new_time = osWallClockTime();
-		if(delta < 0)
-			return 0.0;
-
-		double res =  delta / (new_time - last_pps_time);
-		last_pps_photons = photonTracedPass;
-		last_pps_time = osWallClockTime();
-
-		return res;
-	} else if (statName == "hitPointsUpdateEfficiency") {
-		return photonHitEfficiency;
-	} else {
-		LOG(LUX_ERROR,LUX_BADTOKEN)<< "luxStatistics - requested an invalid data : "<< statName;
-		return 0.;
-	}
 }
 
 //------------------------------------------------------------------------------
@@ -473,11 +422,7 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 
 		double photonPassStartTime = 0.0;
 		if (myThread->n == 0)
-		{
 			photonPassStartTime = osWallClockTime();
-			renderer->last_pps_photons = renderer->photonTracedPass;
-			renderer->last_pps_time = osWallClockTime();
-		}
 		
 		// Initialize new wavelengths and time
 		sample.wavelengths = hitPoints->GetWavelengthSample();
@@ -518,7 +463,7 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 			hitPoints->IncPass();
 
 			// Check for termination
-			int passCount = luxStatistics("pass");
+			int passCount = renderer->hitPoints->GetPassCount();
 			int hltSpp = scene.camera->film->haltSamplesPerPixel;
 			if(hltSpp > 0){
 				if(passCount == hltSpp){
@@ -526,13 +471,14 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 				}
 			}
 
-			int secsElapsed = luxStatistics("secElapsed");
-			int hltTime = scene.camera->film->haltTime;
-			if(hltTime > 0){
+			double secsElapsed = renderer->rendererStatistics->timer.Time();
+			double hltTime = scene.camera->film->haltTime;
+			if(hltTime > 0.0){
 				if(secsElapsed > hltTime){
 					renderer->Terminate();
 				}
 			}
+
 			const double photonPassTime = osWallClockTime() - photonPassStartTime;
 			LOG(LUX_INFO, LUX_NOERROR) << "Photon pass time: " << photonPassTime << "secs";
 		}

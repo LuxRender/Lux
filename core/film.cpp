@@ -29,7 +29,6 @@
 #include "cameraresponse.h"
 #include "filter.h"
 #include "contribution.h"
-#include "stats.h"
 #include "blackbodyspd.h"
 #include "osfunc.h"
 #include "streamio.h"
