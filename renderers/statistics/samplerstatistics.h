@@ -49,6 +49,8 @@ public:
 		std::string getRemainingSamplesPerPixel();
 		std::string getPercentHaltSppComplete();
 
+		std::string getResumedAverageSamplesPerPixel();
+
 		std::string getAverageSamplesPerPixel();
 		std::string getAverageSamplesPerSecond();
 		std::string getAverageSamplesPerSecondWindow();
@@ -99,6 +101,8 @@ private:
 	double getRemainingSamplesPerPixel() { return (std::max)(0.0, getHaltSpp() - (getAverageSamplesPerPixel() + getNetworkAverageSamplesPerPixel())); }
 	double getPercentHaltSppComplete();
 
+	double getResumedAverageSamplesPerPixel() { return getResumedSampleCount() / getPixelCount(); }
+
 	double getAverageSamplesPerPixel() { return getSampleCount() / getPixelCount(); }
 	double getAverageSamplesPerSecond();
 	double getAverageSamplesPerSecondWindow() { return windowSps; }
@@ -109,11 +113,12 @@ private:
 	double getNetworkAverageSamplesPerSecond();
 	double getNetworkAverageSamplesPerSecondWindow() { return windowNetworkSps; }
 
-	double getTotalAverageSamplesPerPixel() { return getAverageSamplesPerPixel() + getNetworkAverageSamplesPerPixel(); }
+	double getTotalAverageSamplesPerPixel() { return (getResumedSampleCount() + getSampleCount() + getNetworkSampleCount()) / getPixelCount(); }
 	double getTotalAverageSamplesPerSecond() { return getAverageSamplesPerSecond() + getNetworkAverageSamplesPerSecond(); }
 	double getTotalAverageSamplesPerSecondWindow() { return getAverageSamplesPerSecondWindow() + getNetworkAverageSamplesPerSecondWindow(); }
 
 	u_int getPixelCount();
+	double getResumedSampleCount();
 	double getSampleCount();
 	double getNetworkSampleCount(bool estimate = true);
 };

@@ -49,6 +49,8 @@ HSRStatistics::HSRStatistics(HybridSamplerRenderer* renderer)
 	AddIntAttribute(*this, "gpuCount", "Number of GPUs in use", &HSRStatistics::getGpuCount);
 	AddDoubleAttribute(*this, "gpuEfficiency", "Percent of time GPUs have rays available to trace", &HSRStatistics::getAverageGpuEfficiency);
 
+	AddDoubleAttribute(*this, "resumedSamplesPerPixel", "Average number of samples per pixel loaded from FLM", &HSRStatistics::getResumedAverageSamplesPerPixel);
+
 	AddDoubleAttribute(*this, "samplesPerPixel", "Average number of samples per pixel by local node", &HSRStatistics::getAverageSamplesPerPixel);
 	AddDoubleAttribute(*this, "samplesPerSecond", "Average number of samples per second by local node", &HSRStatistics::getAverageSamplesPerSecond);
 	AddDoubleAttribute(*this, "samplesPerSecondWindow", "Average number of samples per second by local node in current time window", &HSRStatistics::getAverageSamplesPerSecondWindow);
@@ -87,16 +89,17 @@ void HSRStatistics::updateStatisticsWindowDerived()
 	windowSampleCount = sampleCount;
 
 	// Get network sample count
-	double networkSampleCount = 0.0;
-	Queryable* filmRegistry = Context::GetActive()->registry["film"];
-	if (filmRegistry)
-		networkSampleCount = (*filmRegistry)["numberOfSamplesFromNetwork"].DoubleValue();
-
+	double networkSampleCount = getNetworkSampleCount(false);
 	if (networkSampleCount != windowNetworkSampleCount)
 	{
 		windowNetworkSps = (networkSampleCount - windowNetworkSampleCount) / (getElapsedTime() - windowNetworkStartTime);
 		windowNetworkSampleCount = networkSampleCount;
 		windowNetworkStartTime = getElapsedTime();
+	}
+	else if (getSlaveNodeCount() == 0 && windowNetworkStartTime != 0.0)
+	{
+		windowNetworkSps = 0.0;
+		windowNetworkStartTime = 0.0;
 	}
 }
 
@@ -162,6 +165,16 @@ u_int HSRStatistics::getPixelCount() {
 	return ((xend - xstart) * (yend - ystart));
 }
 
+double HSRStatistics::getResumedSampleCount() {
+	double resumedSampleCount = 0.0;
+
+	Queryable* filmRegistry = Context::GetActive()->registry["film"];
+	if (filmRegistry)
+		resumedSampleCount = (*filmRegistry)["numberOfResumedSamples"].DoubleValue();
+
+	return resumedSampleCount;
+}
+
 double HSRStatistics::getSampleCount() {
 	double sampleCount = 0.0;
 
@@ -180,7 +193,7 @@ double HSRStatistics::getNetworkSampleCount(bool estimate) {
 		networkSampleCount = (*filmRegistry)["numberOfSamplesFromNetwork"].DoubleValue();
 
 	// Add estimated network sample count
-	if (estimate && networkSampleCount == windowNetworkSampleCount)
+	if (estimate && getSlaveNodeCount() != 0 && networkSampleCount == windowNetworkSampleCount)
 		networkSampleCount += ((getElapsedTime() - windowNetworkStartTime) * windowNetworkSps);
 
 	return networkSampleCount;
@@ -196,6 +209,8 @@ HSRStatistics::FormattedLong::FormattedLong(HSRStatistics* rs)
 
 	AddStringAttribute(*this, "gpuCount", "Number of GPUs in use", &FL::getGpuCount);
 	AddStringAttribute(*this, "gpuEfficiency", "Percent of time GPUs have rays available to trace", &FL::getAverageGpuEfficiency);
+
+	AddStringAttribute(*this, "resumedSamplesPerPixel", "Average number of samples per pixel loaded from FLM", &FL::getResumedAverageSamplesPerPixel);
 
 	AddStringAttribute(*this, "samplesPerPixel", "Average number of samples per pixel by local node", &FL::getAverageSamplesPerPixel);
 	AddStringAttribute(*this, "samplesPerSecond", "Average number of samples per second by local node", &FL::getAverageSamplesPerSecond);
@@ -223,8 +238,19 @@ std::string HSRStatistics::FormattedLong::getRecommendedStringTemplate()
 	stringTemplate += " %samplesPerSecondWindow% %contributionsPerSecondWindow% %efficiency%";
 	if (rs->getGpuCount() != 0)
 		stringTemplate += " %gpuEfficiency%";
-	if (rs->getSlaveNodeCount() != 0 && rs->getNetworkAverageSamplesPerPixel() != 0.0)
-		stringTemplate += " Net: ~%netSamplesPerPixel% ~%netSamplesPerSecondWindow% Tot: ~%totalSamplesPerPixel% ~%totalSamplesPerSecondWindow%";
+
+	if (rs->getNetworkSampleCount() != 0.0)
+	{
+		if (rs->getSlaveNodeCount() != 0)
+			stringTemplate += " | Net: ~%netSamplesPerPixel% ~%netSamplesPerSecondWindow%";
+		else
+			stringTemplate += " | Net: %netSamplesPerPixel% %netSamplesPerSecondWindow%";
+	}
+
+	if (rs->getNetworkSampleCount() != 0.0 && rs->getSlaveNodeCount())
+		stringTemplate += " | Tot: ~%totalSamplesPerPixel% ~%totalSamplesPerSecondWindow%";
+	else if (rs->getResumedSampleCount() != 0.0)
+		stringTemplate += " | Tot: %totalSamplesPerPixel% %totalSamplesPerSecondWindow%";
 
 	return stringTemplate;
 }
@@ -249,6 +275,11 @@ std::string HSRStatistics::FormattedLong::getGpuCount() {
 
 std::string HSRStatistics::FormattedLong::getAverageGpuEfficiency() {
 	return boost::str(boost::format("%1$0.0f%% GPU Efficiency") % rs->getAverageGpuEfficiency());
+}
+
+std::string HSRStatistics::FormattedLong::getResumedAverageSamplesPerPixel() {
+	double spp = rs->getResumedAverageSamplesPerPixel();
+	return boost::str(boost::format("%1$0.2f %2%S/p") % MagnitudeReduce(spp) % MagnitudePrefix(spp));
 }
 
 std::string HSRStatistics::FormattedLong::getAverageSamplesPerPixel() {
@@ -319,6 +350,8 @@ HSRStatistics::FormattedShort::FormattedShort(HSRStatistics* rs)
 	AddStringAttribute(*this, "gpuCount", "Number of GPUs in use", &HSRStatistics::FormattedShort::getGpuCount);
 	AddStringAttribute(*this, "gpuEfficiency", "Percent of time GPUs have rays available to trace", &HSRStatistics::FormattedShort::getAverageGpuEfficiency);
 
+	AddStringAttribute(*this, "resumedSamplesPerPixel", "Average number of samples per pixel loaded from FLM", boost::bind(&FL::getResumedAverageSamplesPerPixel, fl));
+
 	AddStringAttribute(*this, "samplesPerPixel", "Average number of samples per pixel by local node", boost::bind(&FL::getAverageSamplesPerPixel, fl));
 	AddStringAttribute(*this, "samplesPerSecond", "Average number of samples per second by local node", boost::bind(&FL::getAverageSamplesPerSecond, fl));
 	AddStringAttribute(*this, "samplesPerSecondWindow", "Average number of samples per second by local node in current time window", boost::bind(&FL::getAverageSamplesPerSecondWindow, fl));
@@ -345,8 +378,19 @@ std::string HSRStatistics::FormattedShort::getRecommendedStringTemplate()
 	stringTemplate += " %samplesPerSecondWindow% %contributionsPerSecondWindow% %efficiency%";
 	if (rs->getGpuCount() != 0)
 		stringTemplate += " %gpuEfficiency%";
-	if (rs->getSlaveNodeCount() != 0 && rs->getNetworkAverageSamplesPerPixel() != 0.0)
-		stringTemplate += " Net: ~%netSamplesPerPixel% ~%netSamplesPerSecondWindow% Tot: ~%totalSamplesPerPixel% ~%totalSamplesPerSecondWindow%";
+
+	if (rs->getNetworkSampleCount() != 0.0)
+	{
+		if (rs->getSlaveNodeCount() != 0)
+			stringTemplate += " | Net: ~%netSamplesPerPixel% ~%netSamplesPerSecondWindow%";
+		else
+			stringTemplate += " | Net: %netSamplesPerPixel% %netSamplesPerSecondWindow%";
+	}
+
+	if (rs->getNetworkSampleCount() != 0.0 && rs->getSlaveNodeCount())
+		stringTemplate += " | Tot: ~%totalSamplesPerPixel% ~%totalSamplesPerSecondWindow%";
+	else if (rs->getResumedSampleCount() != 0.0)
+		stringTemplate += " | Tot: %totalSamplesPerPixel% %totalSamplesPerSecondWindow%";
 
 	return stringTemplate;
 }

@@ -670,6 +670,7 @@ public:
 	float averageLuminance;
 	double numberOfSamplesFromNetwork;
 	double numberOfLocalSamples;
+	double numberOfResumedSamples;
 
 	ContributionPool *contribPool;
 

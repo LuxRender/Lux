@@ -52,6 +52,8 @@ public:
 		std::string getGpuCount();
 		std::string getAverageGpuEfficiency();
 
+		std::string getResumedAverageSamplesPerPixel();
+
 		std::string getAverageSamplesPerPixel();
 		std::string getAverageSamplesPerSecond();
 		std::string getAverageSamplesPerSecondWindow();
@@ -107,6 +109,8 @@ private:
 	u_int getGpuCount() { return renderer->hardwareDevices.size(); };
 	double getAverageGpuEfficiency();
 
+	double getResumedAverageSamplesPerPixel() { return getResumedSampleCount() / getPixelCount(); }
+
 	double getAverageSamplesPerPixel() { return getSampleCount() / getPixelCount(); }
 	double getAverageSamplesPerSecond();
 	double getAverageSamplesPerSecondWindow() { return windowSps; }
@@ -117,11 +121,12 @@ private:
 	double getNetworkAverageSamplesPerSecond();
 	double getNetworkAverageSamplesPerSecondWindow() { return windowNetworkSps; }
 
-	double getTotalAverageSamplesPerPixel() { return getAverageSamplesPerPixel() + getNetworkAverageSamplesPerPixel(); }
+	double getTotalAverageSamplesPerPixel() { return (getResumedSampleCount() + getSampleCount() + getNetworkSampleCount()) / getPixelCount(); }
 	double getTotalAverageSamplesPerSecond() { return getAverageSamplesPerSecond() + getNetworkAverageSamplesPerSecond(); }
 	double getTotalAverageSamplesPerSecondWindow() { return getAverageSamplesPerSecondWindow() + getNetworkAverageSamplesPerSecondWindow(); }
 
 	u_int getPixelCount();
+	double getResumedSampleCount();
 	double getSampleCount();
 	double getNetworkSampleCount(bool estimate = true);
 };

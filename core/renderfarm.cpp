@@ -483,6 +483,7 @@ void RenderFarm::updateFilm(Scene *scene) {
 			if (sampleCount == 0.)
 				throw string("Received 0 samples from server");
 			serverInfoList[i].numberOfSamplesReceived += sampleCount;
+			film->numberOfSamplesFromNetwork += sampleCount;
 
 			LOG( LUX_INFO,LUX_NOERROR) << "Samples received from '" <<
 					serverInfoList[i].name << ":" << serverInfoList[i].port << "' (" <<
