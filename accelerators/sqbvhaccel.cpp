@@ -268,9 +268,6 @@ void SQBVHAccel::BuildTree(vector<vector<u_int> > *nodesPrims,
 		rightBbox = &spatialRightChildBbox;
 	}
 
-	leftBbox->Expand(MachineEpsilon::E(*leftBbox));
-	rightBbox->Expand(MachineEpsilon::E(*rightBbox));
-
 #if !defined(NDEBUG)
 	for (u_int i = 0; i < leftPrimsBbox.size(); ++i) {
 		assert (leftBbox->Inside(leftPrimsBbox[i]));
@@ -402,11 +399,13 @@ void SQBVHAccel::DoSpatialSplit(const std::vector<u_int> &primsIndexes,
 						primBbox = Union(primBbox, clipVertexList[k]);
 					assert (primBbox.IsValid());
 
+					Overlaps(primBbox, primsBboxes[i], primBbox);
 					Overlaps(primBbox, spatialLeftChildBbox, primBbox);
 				}
 			}
 
-			leftPrimsBbox.push_back(primBbox);
+			if (primBbox.IsValid())
+				leftPrimsBbox.push_back(primBbox);
 		}
 
 		if (primsBboxes[i].pMax[spatialSplitAxis] > rightSpatialSplitPos) {
@@ -429,11 +428,13 @@ void SQBVHAccel::DoSpatialSplit(const std::vector<u_int> &primsIndexes,
 						primBbox = Union(primBbox, clipVertexList[k]);
 					assert (primBbox.IsValid());
 
+					Overlaps(primBbox, primsBboxes[i], primBbox);
 					Overlaps(primBbox, spatialRightChildBbox, primBbox);
 				}
 			}
 
-			rightPrimsBbox.push_back(primBbox);
+			if (primBbox.IsValid())
+				rightPrimsBbox.push_back(primBbox);
 		}
 	}
 
@@ -492,7 +493,7 @@ int SQBVHAccel::BuildSpatialSplit(const std::vector<u_int> &primsIndexes,
 	const float k1 = (nodeBbox.pMax[axis] - k0) / SPATIAL_SPLIT_BINS;
 
 	// If the bounding box is a point or too small anyway
-	if (k1 < .01f)
+	if (k1 < 10.f * MachineEpsilon::E(nodeBbox))
 		return -1;
 
 	// Entry and Exit counters as described in SBVH paper
@@ -556,6 +557,7 @@ int SQBVHAccel::BuildSpatialSplit(const std::vector<u_int> &primsIndexes,
 					}
 					assert (binPrimBbox.IsValid());
 
+					Overlaps(binPrimBbox, primsBboxes[i], binPrimBbox);
 					binsPrimBbox[j] = Union(binsPrimBbox[j], binPrimBbox);
 				}
 			}
@@ -616,7 +618,9 @@ int SQBVHAccel::BuildSpatialSplit(const std::vector<u_int> &primsIndexes,
 		return -1;
 
 	leftChildBbox = bboxesLeft[minBin];
+	leftChildBbox.Expand(MachineEpsilon::E(leftChildBbox));
 	rightChildBbox = bboxesRight[minBin + 1];
+	rightChildBbox.Expand(MachineEpsilon::E(rightChildBbox));
 	leftChildReferences = nbPrimsLeft[minBin];
 	rightChildReferences = nbPrimsRight[minBin + 1];
 
@@ -799,7 +803,10 @@ int SQBVHAccel::BuildObjectSplit(const std::vector<BBox> &primsBboxes, int &axis
 	}
 
 	leftChildBbox = bboxesLeft[minBin];
+	leftChildBbox.Expand(MachineEpsilon::E(leftChildBbox));
 	rightChildBbox = bboxesRight[minBin + 1];
+	rightChildBbox.Expand(MachineEpsilon::E(rightChildBbox));
+	
 	leftChildReferences = nbPrimsLeft[minBin];
 	rightChildReferences = nbPrimsRight[minBin + 1];
 
