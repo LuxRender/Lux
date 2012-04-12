@@ -76,9 +76,9 @@ public:
 
 		virtual std::string getRecommendedStringTemplate();
 
+		std::string getPercentComplete();
 		std::string getPercentHaltTimeComplete();
 
-		virtual std::string getPercentComplete();
 		virtual std::string getEfficiency();
 		virtual std::string getThreadCount();
 		virtual std::string getSlaveNodeCount();
@@ -98,7 +98,6 @@ public:
 
 		std::string getPercentHaltTimeComplete();
 
-		virtual std::string getPercentComplete();
 		virtual std::string getEfficiency();
 		virtual std::string getThreadCount();
 		virtual std::string getSlaveNodeCount();
@@ -112,13 +111,13 @@ protected:
 	double windowStartTime;
 
 	double getElapsedTime() { return timer.Time(); }
-	double getRemainingTime();
 	double getHaltTime();
 	double getPercentHaltTimeComplete();
 	u_int getSlaveNodeCount();
 
-	// This method must be overridden for renderers
+	// These methods must be overridden for renderers
 	// which provide alternative measurable halt conditions
+	virtual double getRemainingTime();
 	virtual double getPercentComplete();
 
 	virtual double getEfficiency() = 0;

@@ -103,6 +103,13 @@ void HSRStatistics::updateStatisticsWindowDerived()
 	}
 }
 
+double HSRStatistics::getRemainingTime() {
+	double remainingTime = RendererStatistics::getRemainingTime();
+	double remainingSamples = std::max(0.0, getHaltSpp() - getTotalAverageSamplesPerPixel()) * getPixelCount();
+
+	return std::min(remainingTime, remainingSamples / getTotalAverageSamplesPerSecondWindow());
+}
+
 // Returns haltSamplesPerPixel if set, otherwise infinity
 double HSRStatistics::getHaltSpp() {
 	double haltSpp = 0.0;
@@ -132,7 +139,7 @@ double HSRStatistics::getEfficiency() {
 
 // Returns percent of haltSamplesPerPixel completed, zero if haltSamplesPerPixel is not set
 double HSRStatistics::getPercentHaltSppComplete() {
-	return ((getAverageSamplesPerPixel() + getNetworkAverageSamplesPerPixel()) / getHaltSpp()) * 100.0;
+	return (getTotalAverageSamplesPerPixel() / getHaltSpp()) * 100.0;
 }
 
 // Returns percent of GPU efficiency, zero if no GPUs
@@ -265,7 +272,7 @@ std::string HSRStatistics::FormattedLong::getRemainingSamplesPerPixel() {
 }
 
 std::string HSRStatistics::FormattedLong::getPercentHaltSppComplete() {
-	return boost::str(boost::format("%1$0.0f%% S/p Complete") % rs->getPercentHaltSppComplete());
+	return boost::str(boost::format("%1$0.0f%% S/p") % rs->getPercentHaltSppComplete());
 }
 
 std::string HSRStatistics::FormattedLong::getGpuCount() {
@@ -345,7 +352,7 @@ HSRStatistics::FormattedShort::FormattedShort(HSRStatistics* rs)
 	typedef HSRStatistics::FormattedLong FL;
 	AddStringAttribute(*this, "haltSamplesPerPixel", "Average number of samples per pixel to complete before halting", boost::bind(&FL::getHaltSpp, fl));
 	AddStringAttribute(*this, "remainingSamplesPerPixel", "Average number of samples per pixel remaining", boost::bind(&FL::getRemainingSamplesPerPixel, fl));
-	AddStringAttribute(*this, "percentHaltSppComplete", "Percent of halt S/p completed", &HSRStatistics::FormattedShort::getPercentHaltSppComplete);
+	AddStringAttribute(*this, "percentHaltSppComplete", "Percent of halt S/p completed", boost::bind(&FL::getPercentHaltSppComplete, fl));
 
 	AddStringAttribute(*this, "gpuCount", "Number of GPUs in use", &HSRStatistics::FormattedShort::getGpuCount);
 	AddStringAttribute(*this, "gpuEfficiency", "Percent of time GPUs have rays available to trace", &HSRStatistics::FormattedShort::getAverageGpuEfficiency);
@@ -393,10 +400,6 @@ std::string HSRStatistics::FormattedShort::getRecommendedStringTemplate()
 		stringTemplate += " | Tot: %totalSamplesPerPixel% %totalSamplesPerSecondWindow%";
 
 	return stringTemplate;
-}
-
-std::string HSRStatistics::FormattedShort::getPercentHaltSppComplete() {
-	return boost::str(boost::format("%1$0.0f%% S/p Cmplt") % rs->getPercentHaltSppComplete());
 }
 
 std::string HSRStatistics::FormattedShort::getGpuCount() {

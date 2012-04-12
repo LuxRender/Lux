@@ -87,7 +87,7 @@ double RendererStatistics::getPercentHaltTimeComplete() {
 
 // Returns time remaining until halttime, infinity if halttime is not set
 double RendererStatistics::getRemainingTime() {
-	return (std::max)(0.0, getHaltTime() - getElapsedTime());
+	return std::max(0.0, getHaltTime() - getElapsedTime());
 }
 
 double RendererStatistics::getPercentComplete() {
@@ -163,8 +163,10 @@ RendererStatistics::FormattedLong::FormattedLong(RendererStatistics* rs)
 
 std::string RendererStatistics::FormattedLong::getRecommendedStringTemplate() {
 	std::string stringTemplate = "%elapsedTime%";
-	if (rs->getHaltTime() != std::numeric_limits<double>::infinity())
-		stringTemplate += " [%remainingTime%] (%percentHaltTimeComplete%)";
+	if (rs->getRemainingTime() != std::numeric_limits<double>::infinity())
+		stringTemplate += " [%remainingTime%]";
+	if (rs->getPercentHaltTimeComplete() != 0.0)
+		stringTemplate += " (%percentHaltTimeComplete%)";
 	stringTemplate += " - %threadCount%";
 	if (rs->getSlaveNodeCount() != 0)
 		stringTemplate += " %slaveNodeCount%";
@@ -173,11 +175,11 @@ std::string RendererStatistics::FormattedLong::getRecommendedStringTemplate() {
 }
 
 std::string RendererStatistics::FormattedLong::getPercentComplete() {
-	return boost::str(boost::format("%1$0.0f%% Complete") % rs->getPercentComplete());
+	return boost::str(boost::format("%1$0.0f%%") % rs->getPercentComplete());
 }
 
 std::string RendererStatistics::FormattedLong::getPercentHaltTimeComplete() {
-	return boost::str(boost::format("%1$0.0f%% Time Complete") % rs->getPercentHaltTimeComplete());
+	return boost::str(boost::format("%1$0.0f%% Time") % rs->getPercentHaltTimeComplete());
 }
 
 std::string RendererStatistics::FormattedLong::getEfficiency() {
@@ -197,8 +199,11 @@ std::string RendererStatistics::FormattedLong::getSlaveNodeCount() {
 RendererStatistics::FormattedShort::FormattedShort(RendererStatistics* rs)
 	: Formatted(rs, "renderer_statistics_formatted_short")
 {
+	FormattedLong* fl = static_cast<RendererStatistics::FormattedLong*>(rs->formattedLong);
+
+	typedef RendererStatistics::FormattedLong FL;
+	AddStringAttribute(*this, "percentComplete", "Percent of render completed", boost::bind(&FL::getPercentComplete, fl));
 	AddStringAttribute(*this, "percentHaltTimeComplete", "Percent of halt time completed", &RendererStatistics::FormattedShort::getPercentHaltTimeComplete);
-	AddStringAttribute(*this, "percentComplete", "Percent of render completed", &RendererStatistics::FormattedShort::getPercentComplete);
 
 	AddStringAttribute(*this, "efficiency", "Efficiency of renderer", &RendererStatistics::FormattedShort::getEfficiency);
 
@@ -208,8 +213,10 @@ RendererStatistics::FormattedShort::FormattedShort(RendererStatistics* rs)
 
 std::string RendererStatistics::FormattedShort::getRecommendedStringTemplate() {
 	std::string stringTemplate = "%elapsedTime%";
-	if (rs->getHaltTime() != std::numeric_limits<double>::infinity())
-		stringTemplate += " [%remainingTime%] (%percentHaltTimeComplete%)";
+	if (rs->getRemainingTime() != std::numeric_limits<double>::infinity())
+		stringTemplate += " [%remainingTime%]";
+	if (rs->getPercentHaltTimeComplete() != 0.0)
+		stringTemplate += " (%percentHaltTimeComplete%)";
 	stringTemplate += " - %threadCount%";
 	if (rs->getSlaveNodeCount() != 0)
 		stringTemplate += " %slaveNodeCount%";
@@ -217,12 +224,8 @@ std::string RendererStatistics::FormattedShort::getRecommendedStringTemplate() {
 	return stringTemplate;
 }
 
-std::string RendererStatistics::FormattedShort::getPercentComplete() {
-	return boost::str(boost::format("%1$0.0f%% Cmplt") % rs->getPercentComplete());
-}
-
 std::string RendererStatistics::FormattedShort::getPercentHaltTimeComplete() {
-	return boost::str(boost::format("%1$0.0f%% T Cmplt") % rs->getPercentHaltTimeComplete());
+	return boost::str(boost::format("%1$0.0f%% T") % rs->getPercentHaltTimeComplete());
 }
 
 std::string RendererStatistics::FormattedShort::getEfficiency() {

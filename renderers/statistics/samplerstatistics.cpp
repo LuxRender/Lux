@@ -100,6 +100,13 @@ void SRStatistics::updateStatisticsWindowDerived()
 	}
 }
 
+double SRStatistics::getRemainingTime() {
+	double remainingTime = RendererStatistics::getRemainingTime();
+	double remainingSamples = std::max(0.0, getHaltSpp() - getTotalAverageSamplesPerPixel()) * getPixelCount();
+
+	return std::min(remainingTime, remainingSamples / getTotalAverageSamplesPerSecondWindow());
+}
+
 // Returns haltSamplesPerPixel if set, otherwise infinity
 double SRStatistics::getHaltSpp() {
 	double haltSpp = 0.0;
@@ -129,7 +136,7 @@ double SRStatistics::getEfficiency() {
 
 // Returns percent of haltSamplesPerPixel completed, zero if haltSamplesPerPixel is not set
 double SRStatistics::getPercentHaltSppComplete() {
-	return ((getAverageSamplesPerPixel() + getNetworkAverageSamplesPerPixel()) / getHaltSpp()) * 100.0;
+	return (getTotalAverageSamplesPerPixel() / getHaltSpp()) * 100.0;
 }
 
 double SRStatistics::getAverageSamplesPerSecond() {
@@ -243,7 +250,7 @@ std::string SRStatistics::FormattedLong::getRemainingSamplesPerPixel() {
 }
 
 std::string SRStatistics::FormattedLong::getPercentHaltSppComplete() {
-	return boost::str(boost::format("%1$0.0f%% S/p Complete") % rs->getPercentHaltSppComplete());
+	return boost::str(boost::format("%1$0.0f%% S/p") % rs->getPercentHaltSppComplete());
 }
 
 std::string SRStatistics::FormattedLong::getResumedAverageSamplesPerPixel() {
@@ -314,7 +321,7 @@ SRStatistics::FormattedShort::FormattedShort(SRStatistics* rs)
 	typedef SRStatistics::FormattedLong FL;
 	AddStringAttribute(*this, "haltSamplesPerPixel", "Average number of samples per pixel to complete before halting", boost::bind(&FL::getHaltSpp, fl));
 	AddStringAttribute(*this, "remainingSamplesPerPixel", "Average number of samples per pixel remaining", boost::bind(&FL::getRemainingSamplesPerPixel, fl));
-	AddStringAttribute(*this, "percentHaltSppComplete", "Percent of halt S/p completed", &SRStatistics::FormattedShort::getPercentHaltSppComplete);
+	AddStringAttribute(*this, "percentHaltSppComplete", "Percent of halt S/p completed", boost::bind(&FL::getPercentHaltSppComplete, fl));
 
 	AddStringAttribute(*this, "resumedSamplesPerPixel", "Average number of samples per pixel loaded from FLM", boost::bind(&FL::getResumedAverageSamplesPerPixel, fl));
 
@@ -355,8 +362,4 @@ std::string SRStatistics::FormattedShort::getRecommendedStringTemplate()
 		stringTemplate += " | Tot: %totalSamplesPerPixel% %totalSamplesPerSecondWindow%";
 
 	return stringTemplate;
-}
-
-std::string SRStatistics::FormattedShort::getPercentHaltSppComplete() {
-	return boost::str(boost::format("%1$0.0f%% S/p Cmplt") % rs->getPercentHaltSppComplete());
 }

@@ -81,7 +81,6 @@ public:
 
 		virtual std::string getRecommendedStringTemplate();
 
-		std::string getPercentHaltSppComplete();
 		std::string getGpuCount();
 		std::string getAverageGpuEfficiency();
 	};
@@ -98,12 +97,13 @@ private:
 	virtual void resetDerived();
 	virtual void updateStatisticsWindowDerived();
 
-	virtual double getPercentComplete() { return (std::max)(getPercentHaltTimeComplete(), getPercentHaltSppComplete()); }
+	virtual double getRemainingTime();
+	virtual double getPercentComplete() { return std::max(getPercentHaltTimeComplete(), getPercentHaltSppComplete()); }
 	virtual u_int getThreadCount() { return renderer->renderThreads.size(); }
 
 	double getHaltSpp();
 	double getEfficiency();
-	double getRemainingSamplesPerPixel() { return (std::max)(0.0, getHaltSpp() - (getAverageSamplesPerPixel() + getNetworkAverageSamplesPerPixel())); }
+	double getRemainingSamplesPerPixel() { return std::max(0.0, getHaltSpp() - getTotalAverageSamplesPerPixel()); }
 	double getPercentHaltSppComplete();
 
 	u_int getGpuCount() { return renderer->hardwareDevices.size(); };

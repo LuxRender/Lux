@@ -77,8 +77,6 @@ public:
 		SRStatistics* rs;
 
 		virtual std::string getRecommendedStringTemplate();
-
-		std::string getPercentHaltSppComplete();
 	};
 
 private:
@@ -93,12 +91,13 @@ private:
 	virtual void resetDerived();
 	virtual void updateStatisticsWindowDerived();
 
-	virtual double getPercentComplete() { return (std::max)(getPercentHaltTimeComplete(), getPercentHaltSppComplete()); }
+	virtual double getRemainingTime();
+	virtual double getPercentComplete() { return std::max(getPercentHaltTimeComplete(), getPercentHaltSppComplete()); }
 	virtual u_int getThreadCount() { return renderer->renderThreads.size(); }
 
 	double getHaltSpp();
 	double getEfficiency();
-	double getRemainingSamplesPerPixel() { return (std::max)(0.0, getHaltSpp() - (getAverageSamplesPerPixel() + getNetworkAverageSamplesPerPixel())); }
+	double getRemainingSamplesPerPixel() { return std::max(0.0, getHaltSpp() - getTotalAverageSamplesPerPixel()); }
 	double getPercentHaltSppComplete();
 
 	double getResumedAverageSamplesPerPixel() { return getResumedSampleCount() / getPixelCount(); }

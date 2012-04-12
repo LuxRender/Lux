@@ -89,7 +89,7 @@ private:
 	virtual void resetDerived();
 	virtual void updateStatisticsWindowDerived();
 
-	virtual double getPercentComplete() { return (std::max)(getPercentHaltTimeComplete(), getPercentHaltPassesComplete()); }
+	virtual double getPercentComplete() { return std::max(getPercentHaltTimeComplete(), getPercentHaltPassesComplete()); }
 	virtual u_int getThreadCount() { return renderer->renderThreads.size(); }
 
 	double getPassCount() { return renderer->hitPoints ? renderer->hitPoints->GetPassCount() : 0.0; }
@@ -97,7 +97,7 @@ private:
 	double getAveragePassesPerSecondWindow() { return windowPps; }
 
 	double getHaltPass();
-	double getRemainingPasses() { return (std::max)(0.0, getHaltPass() - getPassCount()); }
+	double getRemainingPasses() { return std::max(0.0, getHaltPass() - getPassCount()); }
 	double getPercentHaltPassesComplete();
 
 	double getEfficiency() { return renderer->photonHitEfficiency; }
