@@ -118,6 +118,7 @@ int main(int ac, char *av[]) {
 				("verbose,V", "Increase output verbosity (show DEBUG messages)")
 				("quiet,q", "Reduce output verbosity (hide INFO messages)")
 				("very-quiet,x", "Reduce output verbosity even more (hide WARNING messages)")
+				("configfile,C", po::value< std::string >(), "Specify the configuration file to use")
 				;
 
 		// Declare a group of options that will be
@@ -159,8 +160,10 @@ int main(int ac, char *av[]) {
 		store(po::command_line_parser(ac, av).
 			style(cmdstyle).options(cmdline_options).positional(p).run(), vm);
 
-		std::ifstream
-		ifs("luxconsole.cfg");
+		std::string configFile("luxconsole.cfg");
+		if (vm.count("configfile"))
+			configFile = vm["configfile"].as<std::string>();
+		std::ifstream ifs(configFile.c_str());
 		store(parse_config_file(ifs, config_file_options), vm);
 		notify(vm);
 

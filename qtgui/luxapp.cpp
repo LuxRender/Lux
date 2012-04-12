@@ -160,6 +160,7 @@ bool LuxGuiApp::ProcessCommandLine(void)
 			("verbose,V", "Increase output verbosity (show DEBUG messages)")
 			("quiet,q", "Reduce output verbosity (hide INFO messages)")
 			("very-quiet,x", "Reduce output verbosity even more (hide WARNING messages)")
+			("configfile,C", po::value< std::string >(), "Specify the configuration file to use")
       ("list-file,L", po::value< string >(), "A file that contains a list of files to be rendered in the Queue")
 		;
 
@@ -199,7 +200,10 @@ bool LuxGuiApp::ProcessCommandLine(void)
 		store(po::command_line_parser(m_argc, m_argv).
 			options(cmdline_options).positional(p).run(), vm);
 
-		ifstream ifs("luxrender.cfg");
+		std::string configFile("luxconsole.cfg");
+		if (vm.count("configfile"))
+			configFile = vm["configfile"].as<std::string>();
+		std::ifstream ifs(configFile.c_str());
 		store(parse_config_file(ifs, config_file_options), vm);
 		po::notify(vm);
 
