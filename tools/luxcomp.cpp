@@ -33,8 +33,7 @@
 #include <boost/program_options.hpp>
 #include <boost/thread.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/filesystem/path.hpp>
-#include <boost/filesystem/operations.hpp>
+#include <boost/filesystem.hpp>
 #include <boost/scoped_ptr.hpp>
 
 #if defined(WIN32) && !defined(__CYGWIN__) /* We need the following two to set stdout to binary */
@@ -42,18 +41,11 @@
 #include <fcntl.h>
 #endif
 
-#if defined(WIN32) && !defined(__CYGWIN__)
-#include "direct.h"
-#define chdir _chdir
-#endif
-
 using namespace lux;
 namespace po = boost::program_options;
 
 void CheckFilePath(const std::string fileName) {
-	boost::filesystem::path fullPath(boost::filesystem::initial_path());
-	fullPath = boost::filesystem::system_complete(boost::filesystem::path(
-			fileName, boost::filesystem::native));
+	boost::filesystem::path fullPath(boost::filesystem::system_complete(fileName));
 
 	if (!boost::filesystem::exists(fullPath)) {
 		LOG(LUX_SEVERE,LUX_NOFILE) << "Unable to open file '" << fullPath.string() << "'";

@@ -42,8 +42,6 @@ using std::max;
 using std::swap;
 using std::sort;
 
-#define BOOST_FILESYSTEM_VERSION 2
-
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
 

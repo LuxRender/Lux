@@ -20,8 +20,6 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#define BOOST_FILESYSTEM_VERSION 2
-
 #define TAB_ID_RENDER  1
 #define TAB_ID_QUEUE   2
 #define TAB_ID_NETWORK 3
@@ -29,8 +27,6 @@
 
 #include <boost/bind.hpp>
 #include <boost/filesystem.hpp>
-//#include <boost/filesystem/path.hpp>
-//#include <boost/filesystem/operations.hpp>
 #include <boost/thread.hpp>
 #include <boost/cast.hpp>
 #include <boost/regex.hpp>
@@ -984,7 +980,7 @@ bool MainWindow::saveAllLightGroups(const QString &outFilename, const bool &asHD
 
 		// Output image
 		QString outputName = QString("%1/%2-%3").arg(filenamePath.parent_path().string().c_str())
-			.arg(filenamePath.stem().c_str()).arg(lgName);
+			.arg(filenamePath.stem().string().c_str()).arg(lgName);
 
 		if (asHDR)
 			if (ui->action_HDR_tonemapped->isChecked())
@@ -994,7 +990,7 @@ bool MainWindow::saveAllLightGroups(const QString &outFilename, const bool &asHD
 		else {
 			QImage image = getFramebufferImage();
 			if(!image.isNull())
-				result = image.save(QString("%1%2").arg(outputName).arg(filenamePath.extension().c_str()));
+				result = image.save(QString("%1%2").arg(outputName).arg(filenamePath.extension().string().c_str()));
 			else
 				result = false;
 		}
@@ -1224,10 +1220,9 @@ void MainWindow::applyTonemapping(bool withlayercomputation)
 
 void MainWindow::engineThread(QString filename)
 {
-	boost::filesystem::path fullPath(boost::filesystem::initial_path());
-	fullPath = boost::filesystem::system_complete(boost::filesystem::path(qPrintable(filename), boost::filesystem::native));
+	boost::filesystem::path fullPath(boost::filesystem::system_complete(qPrintable(filename)));
 
-	chdir(fullPath.branch_path().string().c_str());
+	chdir(fullPath.parent_path().string().c_str());
 
 	// NOTE - lordcrc - initialize rand()
 	qsrand(time(NULL));
@@ -1236,7 +1231,7 @@ void MainWindow::engineThread(QString filename)
 	if (filename == QString::fromAscii("-"))
 		luxParse(qPrintable(filename));
 	else
-		luxParse(fullPath.leaf().c_str());
+		luxParse(fullPath.filename().string().c_str());
 
 	if (luxStatistics("terminated"))
 		return;
@@ -1286,7 +1281,7 @@ void MainWindow::batchProcessThread(QString inDir, QString outDir, QString outEx
 		if(curPath.extension() == ".flm")
 		{
 			flmFiles.push_back(curPath.string());
-			flmStems.push_back(curPath.stem());
+			flmStems.push_back(curPath.stem().string());
 		}
 	}
 
@@ -1508,8 +1503,7 @@ void MainWindow::renderScenefile(const QString& sceneFilename, const QString& fl
 {
 	if (flmFilename != "") {
 		// Get the absolute path of the flm file
-		boost::filesystem::path fullPath(boost::filesystem::initial_path());
-		fullPath = boost::filesystem::system_complete(boost::filesystem::path(qPrintable(flmFilename), boost::filesystem::native));
+		boost::filesystem::path fullPath(boost::filesystem::system_complete(qPrintable(flmFilename)));
 
 		// Set the FLM filename
 		luxOverrideResumeFLM(fullPath.string().c_str());

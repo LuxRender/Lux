@@ -35,18 +35,12 @@
 #include <boost/program_options.hpp>
 #include <boost/thread.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/filesystem/path.hpp>
-#include <boost/filesystem/operations.hpp>
+#include <boost/filesystem.hpp>
 #include <boost/scoped_ptr.hpp>
 
 #if defined(WIN32) && !defined(__CYGWIN__) /* We need the following two to set stdout to binary */
 #include <io.h>
 #include <fcntl.h>
-#endif
-
-#if defined(WIN32) && !defined(__CYGWIN__)
-#include "direct.h"
-#define chdir _chdir
 #endif
 
 using namespace lux;
@@ -122,8 +116,7 @@ int main(int ac, char *av[]) {
 		if (vm.count("input-file")) {
 			const std::vector<std::string> &v = vm["input-file"].as < vector<string> > ();
 			for (unsigned int i = 0; i < v.size(); i++) {
-				boost::filesystem::path fullPath(boost::filesystem::initial_path());
-				fullPath = boost::filesystem::system_complete(boost::filesystem::path(v[i], boost::filesystem::native));
+				boost::filesystem::path fullPath(boost::filesystem::system_complete(v[i]));
 
 				if (!boost::filesystem::exists(fullPath) && v[i] != "-") {
 					LOG(LUX_SEVERE,LUX_NOFILE) << "Unable to open file '" << fullPath.string() << "'";

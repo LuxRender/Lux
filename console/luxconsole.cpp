@@ -36,8 +36,7 @@
 #include <boost/program_options.hpp>
 #include <boost/thread.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/filesystem/path.hpp>
-#include <boost/filesystem/operations.hpp>
+#include <boost/filesystem.hpp>
 
 #if defined(WIN32) && !defined(__CYGWIN__) /* We need the following two to set stdout to binary */
 #include <io.h>
@@ -91,9 +90,6 @@ void serverErrorHandler(int code, int severity, const char *msg) {
 }
 
 int main(int ac, char *av[]) {
-
-	boost::filesystem::path initial_path = boost::filesystem::initial_path();
-
 	// Dade - initialize rand() number generator
 	srand(time(NULL));
 
@@ -280,19 +276,24 @@ int main(int ac, char *av[]) {
 		}
 
 		if (vm.count("input-file")) {
-			const std::vector<std::string> &v = vm["input-file"].as < vector<string> > ();
+			std::vector<std::string> v = vm["input-file"].as < vector<string> > ();
+
+			// Resolve relative paths before changing directories
+			for (unsigned int i = 0; i < v.size(); i++)
+				v[i] = boost::filesystem::system_complete(v[i]).string();
+
 			for (unsigned int i = 0; i < v.size(); i++) {
 				//change the working directory
-				boost::filesystem::path fullPath = boost::filesystem::complete(boost::filesystem::path(v[i], boost::filesystem::native), initial_path);
+				boost::filesystem::path fullPath(v[i]);
 
 				if (!boost::filesystem::exists(fullPath) && v[i] != "-") {
 					LOG(LUX_SEVERE,LUX_NOFILE) << "Unable to open scenefile '" << fullPath.string() << "'";
 					continue;
 				}
 
-				sceneFileName = fullPath.leaf();
-				if (chdir(fullPath.branch_path().string().c_str())) {
-					LOG(LUX_SEVERE,LUX_NOFILE) << "Unable to go into directory '" << fullPath.branch_path().string() << "'";
+				sceneFileName = fullPath.filename().string();
+				if (chdir(fullPath.parent_path().string().c_str())) {
+					LOG(LUX_SEVERE,LUX_NOFILE) << "Unable to go into directory '" << fullPath.parent_path().string() << "'";
 				}
 
 				parseError = false;

@@ -42,8 +42,7 @@
 #include "filedata.h"
 
 #include <boost/thread/xtime.hpp>
-#include <boost/filesystem/path.hpp>
-#include <boost/filesystem/operations.hpp>
+#include <boost/filesystem.hpp>
 
 using namespace lux;
 
@@ -1274,7 +1273,7 @@ float* FlexImageFilm::getZBuffer()
 
 void FlexImageFilm::WriteTGAImage(vector<RGBColor> &rgb, vector<float> &alpha, const string &filename)
 {
-	string fullpath = boost::filesystem::complete(boost::filesystem::path(filename, boost::filesystem::native), boost::filesystem::current_path()).file_string();
+	string fullpath = boost::filesystem::system_complete(filename).string();
 	// Write Truevision Targa TGA image
 	LOG( LUX_INFO,LUX_NOERROR)<< "Writing Tonemapped TGA image to file '"<< fullpath << "'";
 	WriteTargaImage(write_TGA_channels, write_TGA_ZBuf, filename, rgb, alpha,
@@ -1285,7 +1284,7 @@ void FlexImageFilm::WriteTGAImage(vector<RGBColor> &rgb, vector<float> &alpha, c
 
 void FlexImageFilm::WritePNGImage(vector<RGBColor> &rgb, vector<float> &alpha, const string &filename)
 {
-	string fullpath = boost::filesystem::complete(boost::filesystem::path(filename, boost::filesystem::native), boost::filesystem::current_path()).file_string();
+	string fullpath = boost::filesystem::system_complete(filename).string();
 	// Write Portable Network Graphics PNG image
 	// Assumes colors are "straight", ie not premultiplied
 	LOG( LUX_INFO,LUX_NOERROR)<< "Writing Tonemapped PNG image to file '"<< fullpath << "'";
@@ -1298,7 +1297,7 @@ void FlexImageFilm::WritePNGImage(vector<RGBColor> &rgb, vector<float> &alpha, c
 
 void FlexImageFilm::WriteEXRImage(vector<RGBColor> &rgb, vector<float> &alpha, const string &filename, vector<float> &zbuf)
 {
-	string fullpath = boost::filesystem::complete(boost::filesystem::path(filename, boost::filesystem::native), boost::filesystem::current_path()).file_string();
+	string fullpath = boost::filesystem::system_complete(filename).string();
 	// Assumes colors are premultiplied	
 
 	if(write_EXR_ZBuf) {

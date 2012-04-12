@@ -24,8 +24,7 @@
 #include "texturecolor.h"
 #include "error.h"
 
-#include <boost/filesystem/path.hpp>
-#include <boost/filesystem/convenience.hpp>
+#include <boost/filesystem.hpp>
 
 namespace lux {
 
@@ -188,10 +187,6 @@ static bool FileExists(const boost::filesystem::path &path) {
 	}	
 }
 
-static bool FileExists(const string filename) {
-	return FileExists(boost::filesystem::path(filename));
-}
-
 // converts filename to platform independent form
 // and searches for file in current dir if it doesn't 
 // exist in specified location
@@ -208,7 +203,7 @@ string AdjustFilename(const string filename, bool silent) {
 
 	// file not found, try fallback
 	if (FileExists(filePath.filename()))
-		result = filePath.filename();
+		result = filePath.filename().string();
 	else
 		// we failed, just return the normalized name
 		return result;

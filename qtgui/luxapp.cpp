@@ -22,6 +22,7 @@
 
 #include <boost/program_options.hpp>
 #include <boost/thread.hpp>
+#include <boost/filesystem.hpp>
 #include <vector>
 using std::vector;
 #include <string>
@@ -290,7 +291,7 @@ bool LuxGuiApp::ProcessCommandLine(void)
 				LOG( LUX_SEVERE,LUX_SYSTEM)<< "More than one file passed on command line : rendering the first one.";
 			}
 
-			m_inputFile = QString(v[0].c_str());
+			m_inputFile = QString(boost::filesystem::system_complete(v[0]).string().c_str());
 		} else {
 			m_inputFile.clear();
 		}
@@ -319,7 +320,7 @@ bool LuxGuiApp::ProcessCommandLine(void)
 			if ( listFile.open(QIODevice::ReadOnly) ) {
         QTextStream lfStream(&listFile);
 				while(!lfStream.atEnd()) {
-					renderQueueEntry = lfStream.readLine();
+					renderQueueEntry = QString(boost::filesystem::system_complete(lfStream.readLine().toStdString()).string().c_str());
 					if (!renderQueueEntry.isNull()) {
             renderQueueList << renderQueueEntry;
 					}

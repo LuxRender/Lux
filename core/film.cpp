@@ -1156,7 +1156,7 @@ void Film::SetSample(const Contribution *contrib) {
 
 void Film::WriteResumeFilm(const string &filename)
 {
-	string fullfilename = boost::filesystem::complete(boost::filesystem::path(filename, boost::filesystem::native), boost::filesystem::current_path()).file_string();
+	string fullfilename = boost::filesystem::system_complete(filename).string();
 	// Dade - save the status of the film to the file
 	LOG(LUX_INFO, LUX_NOERROR) << "Writing resume film file";
 
@@ -1175,11 +1175,6 @@ void Film::WriteResumeFilm(const string &filename)
 
 	if (writeSuccessful) {
 		try {
-#if !defined(BOOST_FILESYSTEM_VERSION) || (BOOST_FILESYSTEM_VERSION < 3)
-			// boost filesystem v2 does not have POSIX compliant rename()
-			if (boost::filesystem::exists(fullfilename))
-				boost::filesystem::remove(fullfilename);
-#endif
 			boost::filesystem::rename(tempfilename, fullfilename);
 			LOG(LUX_INFO, LUX_NOERROR) << "Resume film written to '" << fullfilename << "'";
 		} catch (std::runtime_error e) {

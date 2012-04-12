@@ -117,8 +117,8 @@ ENDIF (NOT FLEX_NOT_AVAILABLE)
 IF(APPLE)
 	SET(BOOST_ROOT ${OSX_DEPENDENCY_ROOT})
 ENDIF(APPLE)
-SET(Boost_MINIMUM_VERSION "1.43")
-SET(Boost_ADDITIONAL_VERSIONS "1.47.0" "1.46.1" "1.46.0" "1.46" "1.45.0" "1.45" "1.44.0" "1.44" "1.43.0" "1.43")
+SET(Boost_MINIMUM_VERSION "1.44.0")
+SET(Boost_ADDITIONAL_VERSIONS "1.47.0" "1.46.1" "1.46.0" "1.46" "1.45.0" "1.45" "1.44.0" "1.44" )
 SET(Boost_COMPONENTS thread program_options filesystem serialization iostreams regex system)
 IF(WIN32)
 	SET(Boost_COMPONENTS ${Boost_COMPONENTS} zlib)
@@ -150,8 +150,10 @@ IF(Boost_FOUND)
 	MESSAGE(STATUS "Boost library directory: " ${Boost_LIBRARY_DIRS})
 	MESSAGE(STATUS "Boost include directory: " ${Boost_INCLUDE_DIRS})
 
-	# Don't use latest boost versions interfaces
-	ADD_DEFINITIONS(-DBOOST_FILESYSTEM_VERSION=2)
+	# Don't use old boost versions interfaces
+	ADD_DEFINITIONS(-DBOOST_FILESYSTEM_NO_DEPRECATED)
+	# Retain compatibility with Boost 1.44 and 1.45
+	ADD_DEFINITIONS(-DBOOST_FILESYSTEM_VERSION=3)
 	INCLUDE_DIRECTORIES(SYSTEM ${Boost_INCLUDE_DIRS})
 ELSE(Boost_FOUND)
 	MESSAGE(FATAL_ERROR "Could not find Boost")
