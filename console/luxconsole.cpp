@@ -127,6 +127,7 @@ int main(int ac, char *av[]) {
 				("serverinterval,i", po::value < int >(), "Specify the number of seconds between requests to rendering servers.")
 				("serverport,p", po::value < int >(), "Specify the tcp port used in server mode.")
 				("serverwriteflm,W", "Write film to disk before transmitting in server mode.")
+				("cachedir,c", po::value< std::string >(), "Specify the cache directory to use")
 				;
 
 		// Hidden options, will be allowed both on command line and
@@ -353,6 +354,23 @@ int main(int ac, char *av[]) {
 			}
 		} else if (vm.count("server")) {
 			bool writeFlmFile = vm.count("serverwriteflm") != 0;
+
+			std::string cachedir;
+			if (vm.count("cachedir")) {
+				cachedir = vm["cachedir"].as<std::string>();
+				boost::filesystem::path cachePath(cachedir);
+				try {
+					if (!boost::filesystem::is_directory(cachePath))
+						boost::filesystem::create_directory(cachePath);
+
+					boost::filesystem::current_path(cachePath);
+				} catch (std::exception &e) {
+					LOG(LUX_SEVERE,LUX_NOFILE) << "Unable to use cache directory '" << cachedir << "': " << e.what();
+					return 1;
+				}
+				LOG(LUX_INFO,LUX_NOERROR) << "Using cache directory '" << cachedir << "'";
+			}
+
 			renderServer = new RenderServer(threads, serverPort, writeFlmFile);
 
 			prevErrorHandler = luxError;
