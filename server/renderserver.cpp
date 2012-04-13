@@ -360,14 +360,14 @@ void RenderServer::createNewSessionID() {
 }
 
 bool RenderServer::validateAccess(basic_istream<char> &stream) const {
+	string sidstr;
+	if (!getline(stream, sidstr))
+		return false;
+	
 	if (serverThread->renderServer->state != RenderServer::BUSY) {
 		LOG( LUX_INFO,LUX_NOERROR)<< "Slave does not have an active session";
 		return false;
 	}
-
-	string sidstr;
-	if (!getline(stream, sidstr))
-		return false;
 
 	boost::uuids::uuid sid = boost::uuids::string_generator()(sidstr);
 
