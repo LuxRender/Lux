@@ -360,10 +360,8 @@ void HybridSamplerRenderer::Render(Scene *s) {
 			return;
 		}
 
-		if (!scene->surfaceIntegrator->CheckLightStrategy(*scene)) {
-			state = TERMINATE;
-			return;
-		}
+		// scene->surfaceIntegrator->CheckLightStrategy() can not been used before
+		// preprocess anymore.
 
 		state = RUN;
 
@@ -402,8 +400,10 @@ void HybridSamplerRenderer::Render(Scene *s) {
 		preprocessDone = true;
 		scene->SetReady();
 
-		// add a thread
-		CreateRenderThread();
+		if (scene->surfaceIntegrator->CheckLightStrategy(*scene)) {
+			// add a thread
+			CreateRenderThread();
+		}
 	}
 
 	if (renderThreads.size() > 0) {
