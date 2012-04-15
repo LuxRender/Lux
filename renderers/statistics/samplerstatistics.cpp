@@ -82,7 +82,9 @@ void SRStatistics::updateStatisticsWindowDerived()
 {
 	// Get local sample count
 	double sampleCount = getSampleCount();
-	windowSps = (sampleCount - windowSampleCount) / (getElapsedTime() - windowStartTime);
+	double elapsedTime = getElapsedTime() - windowStartTime;
+
+	windowSps = elapsedTime ? (sampleCount - windowSampleCount) / elapsedTime : 0;
 	windowSampleCount = sampleCount;
 
 	// Get network sample count
