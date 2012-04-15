@@ -30,6 +30,7 @@
 #include <boost/thread.hpp>
 #include <boost/cast.hpp>
 #include <boost/regex.hpp>
+#include <boost/format.hpp>
 
 #include <sstream>
 #include <clocale>
@@ -1471,6 +1472,17 @@ void MainWindow::updateStatistics()
 			continue;
 		label->setText("");
 		label->setToolTip("");
+	}
+
+	// fallback statistics
+	if (active_label_count == 2)	// if only the spacer exists
+	{
+		int pixels = luxGetIntAttribute("film", "xResolution") * luxGetIntAttribute("film", "yResolution");
+		double spp = luxGetDoubleAttribute("film", "numberOfResumedSamples") / pixels;
+
+		QLabel* label = new QLabel(boost::str(boost::format("%1$0.2f %2%S/p") % luxMagnitudeReduce(spp) % luxMagnitudePrefix(spp)).c_str());
+		label->setToolTip("Average number of samples per pixel");
+		statsBoxLayout->insertWidget(0, label);
 	}
 
 	statsBox->setUpdatesEnabled(true);
