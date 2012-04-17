@@ -668,6 +668,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 			const float err = vE.rr;
 			const float errR = vE.rrR;
 			const float edARWeight = vE.dARWeight;
+			const Vector ewi(vE.wi);
 			if (evalPath(scene, sample, *this, eyePath, j,
 				lightPath, nLight, directPdf, false, &weight,
 				&Ll)) {
@@ -687,6 +688,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 			vE.rr = err;
 			vE.rrR = errR;
 			vE.dARWeight = edARWeight;
+			vE.wi = ewi;
 		}
 
 		// Sample light subpath initial direction and
@@ -757,6 +759,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 					const float err = vE.rr;
 					const float errR = vE.rrR;
 					const float edARWeight = vE.dARWeight;
+					const Vector ewi(vE.wi);
 					if (evalPath(scene, sample, *this,
 						eyePath, j, lightPath, nLight,
 						lightDirectPdf, false, &weight, &Ll)) {
@@ -776,6 +779,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 					vE.rr = err;
 					vE.rrR = errR;
 					vE.dARWeight = edARWeight;
+					vE.wi = ewi;
 				}
 
 				// Break out if path is too long
