@@ -28,6 +28,8 @@
 
 #include <algorithm>
 
+#include <boost/circular_buffer.hpp>
+
 namespace lux
 {
 
@@ -88,7 +90,7 @@ public:
 private:
 	HybridSamplerRenderer* renderer;
 
-	double windowSps;
+	boost::circular_buffer<double> windowSps;
 	double windowSampleCount;
 	double windowNetworkSps;
 	double windowNetworkStartTime;
@@ -113,9 +115,9 @@ private:
 
 	double getAverageSamplesPerPixel() { return getSampleCount() / getPixelCount(); }
 	double getAverageSamplesPerSecond();
-	double getAverageSamplesPerSecondWindow() { return windowSps; }
+	double getAverageSamplesPerSecondWindow();
 	double getAverageContributionsPerSecond() { return getAverageSamplesPerSecond() * (getEfficiency() / 100.0); }
-	double getAverageContributionsPerSecondWindow() { return windowSps * (getEfficiency() / 100.0); }
+	double getAverageContributionsPerSecondWindow() { return getAverageSamplesPerSecondWindow() * (getEfficiency() / 100.0); }
 
 	double getNetworkAverageSamplesPerPixel() { return getNetworkSampleCount() / getPixelCount(); }
 	double getNetworkAverageSamplesPerSecond();

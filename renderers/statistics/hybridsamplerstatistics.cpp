@@ -27,18 +27,21 @@
 #include "scene.h"
 
 #include <limits>
+#include <numeric>
 #include <string>
 
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
+#include <boost/thread/mutex.hpp>
 
 using namespace lux;
 
 HSRStatistics::HSRStatistics(HybridSamplerRenderer* renderer)
 	: renderer(renderer),
-	windowSps(0.0), windowSampleCount(0.0),
-	windowNetworkSps(0.0), windowNetworkStartTime(0.0), windowNetworkSampleCount(0.0)
+	windowSampleCount(0.0),	windowNetworkSps(0.0), windowNetworkStartTime(0.0), windowNetworkSampleCount(0.0)
 {
+	windowSps.set_capacity(60);
+
 	formattedLong = new HSRStatistics::FormattedLong(this);
 	formattedShort = new HSRStatistics::FormattedShort(this);
 
@@ -73,7 +76,7 @@ HSRStatistics::~HSRStatistics()
 }
 
 void HSRStatistics::resetDerived() {
-	windowSps = 0.0;
+	windowSps.clear();
 	windowSampleCount = 0.0;
 
 	windowNetworkSps = 0.0;
@@ -87,7 +90,10 @@ void HSRStatistics::updateStatisticsWindowDerived()
 	double sampleCount = getSampleCount();
 	double elapsedTime = getElapsedTime() - windowStartTime;
 
-	windowSps = elapsedTime ? (sampleCount - windowSampleCount) / elapsedTime : 0;
+	if (elapsedTime == 0.0)
+		windowSps.clear();
+	else
+		windowSps.push_back((sampleCount - windowSampleCount) / elapsedTime);
 	windowSampleCount = sampleCount;
 
 	// Get network sample count
@@ -159,6 +165,13 @@ double HSRStatistics::getAverageGpuEfficiency() {
 double HSRStatistics::getAverageSamplesPerSecond() {
 	double et = getElapsedTime();
 	return (et == 0.0) ? 0.0 : getSampleCount() / et;
+}
+
+double HSRStatistics::getAverageSamplesPerSecondWindow() {
+	boost::mutex::scoped_lock window_mutex(windowMutex);
+
+	int s = windowSps.size();
+	return (s == 0) ? 0 : std::accumulate(windowSps.begin(), windowSps.end(), 0) / s;
 }
 
 double HSRStatistics::getNetworkAverageSamplesPerSecond() {
