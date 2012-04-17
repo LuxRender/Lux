@@ -281,22 +281,25 @@ int main(int ac, char *av[]) {
 
 			// Resolve relative paths before changing directories
 			for (unsigned int i = 0; i < v.size(); i++)
-				v[i] = boost::filesystem::system_complete(v[i]).string();
+				if (v[i] != "-")
+					v[i] = boost::filesystem::system_complete(v[i]).string();
 
 			for (unsigned int i = 0; i < v.size(); i++) {
 				//change the working directory
 				boost::filesystem::path fullPath(v[i]);
 
-				if (!boost::filesystem::exists(fullPath) && v[i] != "-") {
-					LOG(LUX_SEVERE,LUX_NOFILE) << "Unable to open scenefile '" << fullPath.string() << "'";
-					continue;
+				if (v[i] != "-") {
+					if (!boost::filesystem::exists(fullPath)) {
+						LOG(LUX_SEVERE,LUX_NOFILE) << "Unable to open scenefile '" << fullPath.string() << "'";
+						continue;
+					}
+
+					if (chdir(fullPath.parent_path().string().c_str())) {
+						LOG(LUX_SEVERE,LUX_NOFILE) << "Unable to go into directory '" << fullPath.parent_path().string() << "'";
+					}
 				}
 
 				sceneFileName = fullPath.filename().string();
-				if (chdir(fullPath.parent_path().string().c_str())) {
-					LOG(LUX_SEVERE,LUX_NOFILE) << "Unable to go into directory '" << fullPath.parent_path().string() << "'";
-				}
-
 				parseError = false;
 				boost::thread engine(&engineThread);
 

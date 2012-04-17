@@ -291,7 +291,10 @@ bool LuxGuiApp::ProcessCommandLine(void)
 				LOG( LUX_SEVERE,LUX_SYSTEM)<< "More than one file passed on command line : rendering the first one.";
 			}
 
-			m_inputFile = QString(boost::filesystem::system_complete(v[0]).string().c_str());
+			if (v[0] != "-")
+				m_inputFile = QString(boost::filesystem::system_complete(v[0]).string().c_str());
+			else
+				m_inputFile = QString(v[0].c_str());
 		} else {
 			m_inputFile.clear();
 		}
