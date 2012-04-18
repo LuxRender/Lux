@@ -62,10 +62,11 @@ CarPaint::CarPaint(boost::shared_ptr<Texture<SWCSpectrum> > &kd,
 BSDF *CarPaint::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 	const Intersection &isect, const DifferentialGeometry &dgs) const
 {
-	SWCSpectrum bcolor = (Sc->Evaluate(sw, dgs).Clamp(0.f, 10000.f))*dgs.Scale;
+	SWCSpectrum bcolor = Sc->Evaluate(sw, dgs);
+	float bscale = dgs.Scale;
 	// Allocate _BSDF_
 	MultiBSDF<4> *bsdf = ARENA_ALLOC(arena, MultiBSDF<4>)(dgs, isect.dg.nn,
-		isect.exterior, isect.interior, bcolor);
+		isect.exterior, isect.interior, bcolor, bscale);
 
 	// The Carpaint BRDF is really a Multi-lobe Microfacet model with a Lambertian base
 	// NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection

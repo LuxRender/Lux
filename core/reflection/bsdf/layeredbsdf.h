@@ -37,7 +37,7 @@ class  LayeredBSDF : public BSDF  {
 public:
 	// LayeredBSDF Public Methods
 	LayeredBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
-		const Volume *exterior, const Volume *interior, const SWCSpectrum bcolor = SWCSpectrum(0.f));
+		const Volume *exterior, const Volume *interior, const SWCSpectrum bcolor = SWCSpectrum(0.f), const float bscale = 1.f);
 	inline void Add(BSDF *bsdf, float opacity);
 	virtual inline u_int NumComponents() const { return 2; } // reflection/transmission
 	virtual inline u_int NumComponents(BxDFType flags) const;

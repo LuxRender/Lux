@@ -36,7 +36,7 @@ class  MultiBSDF : public BSDF  {
 public:
 	// MultiBSDF Public Methods
 	MultiBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
-		const Volume *exterior, const Volume *interior, const SWCSpectrum bcolor = SWCSpectrum(0.f));
+		const Volume *exterior, const Volume *interior, const SWCSpectrum bcolor = SWCSpectrum(0.f), const float bscale = 1.f);
 	inline void Add(BxDF *bxdf);
 	virtual inline u_int NumComponents() const { return nBxDFs; }
 	virtual inline u_int NumComponents(BxDFType flags) const;
@@ -87,8 +87,8 @@ inline u_int MultiBSDF<MAX_BxDFS>::NumComponents(BxDFType flags) const
 
 template<int MAX_BxDFS>
 MultiBSDF<MAX_BxDFS>::MultiBSDF(const DifferentialGeometry &dg, const Normal &ngeom,
-	const Volume *exterior, const Volume *interior, const SWCSpectrum bcolor) :
-	BSDF(dg, ngeom, exterior, interior, bcolor)
+	const Volume *exterior, const Volume *interior, const SWCSpectrum bcolor, const float bscale ) :
+	BSDF(dg, ngeom, exterior, interior, bcolor, bscale)
 {
 	nBxDFs = 0;
 }

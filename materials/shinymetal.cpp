@@ -41,10 +41,11 @@ BSDF *ShinyMetal::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 	const Intersection &isect, const DifferentialGeometry &dgs) const
 {
 	// Allocate _BSDF_
-	SWCSpectrum bcolor = (Sc->Evaluate(sw, dgs).Clamp(0.f, 10000.f))*dgs.Scale;
+	SWCSpectrum bcolor = Sc->Evaluate(sw, dgs);
+	float bscale = dgs.Scale;
 
 	MultiBSDF<2> *bsdf = ARENA_ALLOC(arena, MultiBSDF<2>)(dgs, isect.dg.nn,
-		isect.exterior, isect.interior, bcolor);
+		isect.exterior, isect.interior, bcolor, bscale);
 	SWCSpectrum spec = Ks->Evaluate(sw, dgs).Clamp();
 	SWCSpectrum R = Kr->Evaluate(sw, dgs).Clamp();
 

@@ -35,7 +35,7 @@ class MixBSDF : public BSDF {
 public:
 	// MixBSDF Public Methods
 	MixBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
-		const Volume *exterior, const Volume *interior, const SWCSpectrum bcolor = SWCSpectrum(0.f));
+		const Volume *exterior, const Volume *interior, const SWCSpectrum bcolor = SWCSpectrum(0.f), const float bscale = 1.f);
 	inline void Add(float weight, BSDF *bsdf);
 	virtual inline u_int NumComponents() const;
 	virtual inline u_int NumComponents(BxDFType flags) const;

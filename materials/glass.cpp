@@ -46,10 +46,11 @@ BSDF *Glass::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 
 	float flm = film->Evaluate(sw, dgs);
 	float flmindex = filmindex->Evaluate(sw, dgs);
-	SWCSpectrum bcolor = (Sc->Evaluate(sw, dgs).Clamp(0.f, 10000.f))*dgs.Scale;
+	SWCSpectrum bcolor = Sc->Evaluate(sw, dgs);
+	float bscale = dgs.Scale;
 
 	MultiBSDF<2> *bsdf = ARENA_ALLOC(arena, MultiBSDF<2>)(dgs, isect.dg.nn,
-		isect.exterior, isect.interior, bcolor);
+		isect.exterior, isect.interior, bcolor, bscale);
     // NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
 	SWCSpectrum R = Kr->Evaluate(sw, dgs).Clamp(0.f, 1.f);
 	SWCSpectrum T = Kt->Evaluate(sw, dgs).Clamp(0.f, 1.f);

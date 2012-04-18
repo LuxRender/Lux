@@ -45,7 +45,8 @@ BSDF *Glossy2::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 {
 	// Allocate _BSDF_
 	// NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
-	SWCSpectrum bcolor = (Sc->Evaluate(sw, dgs).Clamp(0.f, 10000.f))*dgs.Scale;
+	SWCSpectrum bcolor = Sc->Evaluate(sw, dgs);
+	float bscale = dgs.Scale;
 	SWCSpectrum d(Kd->Evaluate(sw, dgs).Clamp(0.f, 1.f));
 	SWCSpectrum s(Ks->Evaluate(sw, dgs));
 	float i = index->Evaluate(sw, dgs);
@@ -67,7 +68,7 @@ BSDF *Glossy2::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 	const float anisotropy = u2 < v2 ? 1.f - u2 / v2 : v2 / u2 - 1.f;
 	SingleBSDF *bsdf = ARENA_ALLOC(arena, SingleBSDF)(dgs,
 		isect.dg.nn, ARENA_ALLOC(arena, SchlickBRDF)(d, s, a, ld, u * v,
-		anisotropy, multibounce), isect.exterior, isect.interior, bcolor);
+		anisotropy, multibounce), isect.exterior, isect.interior, bcolor, bscale);
 
 	// Add ptr to CompositingParams structure
 	bsdf->SetCompositingParams(&compParams);

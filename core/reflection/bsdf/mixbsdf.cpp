@@ -27,8 +27,8 @@
 using namespace lux;
 
 MixBSDF::MixBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
-	const Volume *exterior, const Volume *interior, const SWCSpectrum bcolor) :
-	BSDF(dgs, ngeom, exterior, interior, bcolor), totalWeight(1.f)
+	const Volume *exterior, const Volume *interior, const SWCSpectrum bcolor, const float bscale ) :
+	BSDF(dgs, ngeom, exterior, interior, bcolor, bscale), totalWeight(1.f)
 {
 	// totalWeight is initialized to 1 to avoid divisions by 0 when there
 	// are no components in the mix

@@ -41,7 +41,8 @@ BSDF *Matte::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 	// Allocate _BSDF_
 	// Evaluate textures for _Matte_ material and allocate BRDF
 	// NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
-	SWCSpectrum bcolor = (Sc->Evaluate(sw, dgs).Clamp(0.f, 10000.f))*dgs.Scale;
+	SWCSpectrum bcolor = Sc->Evaluate(sw, dgs);
+	float bscale = dgs.Scale;
 	SWCSpectrum r = Kd->Evaluate(sw, dgs).Clamp(0.f, 1.f);
 	float sig = Clamp(sigma->Evaluate(sw, dgs), 0.f, 90.f);
 	BxDF *bxdf;
@@ -50,7 +51,7 @@ BSDF *Matte::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 	else
 		bxdf = ARENA_ALLOC(arena, OrenNayar)(r, sig);
 	SingleBSDF *bsdf = ARENA_ALLOC(arena, SingleBSDF)(dgs,
-		isect.dg.nn, bxdf, isect.exterior, isect.interior, bcolor);
+		isect.dg.nn, bxdf, isect.exterior, isect.interior, bcolor, bscale);
 
 	// Add ptr to CompositingParams structure
 	bsdf->SetCompositingParams(&compParams);

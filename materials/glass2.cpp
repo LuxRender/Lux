@@ -67,10 +67,10 @@ BSDF *Glass2::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 			SWCSpectrum(1.f), SWCSpectrum(0.f));
 
 
-	SWCSpectrum bcolor = (Sc->Evaluate(sw, dgs).Clamp(0.f, 10000.f))*dgs.Scale;
-
+	SWCSpectrum bcolor = Sc->Evaluate(sw, dgs);
+	float bscale = dgs.Scale;
 	MultiBSDF<2> *bsdf = ARENA_ALLOC(arena, MultiBSDF<2>)(dgs, isect.dg.nn,
-		isect.exterior, isect.interior, bcolor);
+		isect.exterior, isect.interior, bcolor, bscale);
 
 	if (architectural)
 		bsdf->Add(ARENA_ALLOC(arena,

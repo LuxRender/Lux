@@ -224,6 +224,20 @@ float InfiniteAreaLightIS::DirProb(Vector N) const
 	return 0.5f;
 }
 
+bool InfiniteAreaLightIS::LeSupport(const Scene &scene, const Sample &sample,
+	const Vector wr, SWCSpectrum *L) const
+{
+
+	*L *= SWCSpectrum(sample.swl, SPDbase);
+	const Vector wh = Normalize(WorldToLight(wr));
+	float s, t, pdfMap;
+	mapping->Map(wh, &s, &t, &pdfMap);
+	if (radianceMap != NULL)
+		*L *= radianceMap->LookupSpectrum(sample.swl, s, t);
+
+	return true;
+}
+
 bool InfiniteAreaLightIS::Le(const Scene &scene, const Sample &sample,
 	const Ray &r, BSDF **bsdf, float *pdf, float *pdfDirect,
 	SWCSpectrum *L) const

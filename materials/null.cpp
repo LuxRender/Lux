@@ -37,11 +37,12 @@ using namespace lux;
 BSDF *Null::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 	const Intersection &isect, const DifferentialGeometry &dgShading) const
 {
-	SWCSpectrum bcolor = (Sc->Evaluate(sw, dgShading).Clamp(0.f, 10000.f))*dgShading.Scale;
+	SWCSpectrum bcolor = Sc->Evaluate(sw, dgShading);
+	float bscale = dgShading.Scale;
 	// Allocate _BSDF_, possibly doing bump-mapping with _bumpMap_
 	SingleBSDF *bsdf = ARENA_ALLOC(arena, SingleBSDF)(dgShading,
 		isect.dg.nn, ARENA_ALLOC(arena, NullTransmission)(),
-		isect.exterior, isect.interior, bcolor);
+		isect.exterior, isect.interior, bcolor, bscale);
 
 	// Add ptr to CompositingParams structure
 	bsdf->SetCompositingParams(&compParams);

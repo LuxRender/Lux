@@ -242,6 +242,10 @@ public:
 		const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
 		u_int depth, const SWCSpectrum &scale, vector<SWCSpectrum> &L,
 		int rayDepth, bool from_IsSup, bool to_IsSup, bool path_type, vector<float> *V = NULL) const;
+	u_int EnvSampleLights(const Scene &scene, const Sample &sample,
+		const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
+		u_int depth, const SWCSpectrum &scale, vector<SWCSpectrum> &L,
+		int rayDepth, bool from_IsSup, bool to_IsSup, bool path_type, vector<float> *V = NULL) const;
 	//FIXME: temporary until the implementation of DataParallel interface
 	friend class PathIntegrator;
 private:

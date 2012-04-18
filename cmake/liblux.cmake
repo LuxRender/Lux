@@ -220,6 +220,7 @@ SET(lux_integrators_src
 	integrators/directlighting.cpp
 	integrators/distributedpath.cpp
 	integrators/emission.cpp
+	integrators/envpath.cpp
 	integrators/exphotonmap.cpp
 	integrators/igi.cpp
 	integrators/multi.cpp

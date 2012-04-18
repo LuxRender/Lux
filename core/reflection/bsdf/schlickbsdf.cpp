@@ -34,8 +34,8 @@ static RandomGenerator rng(1);
 SchlickBSDF::SchlickBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
 	const Fresnel *cf, const MicrofacetDistribution *cd, bool mb, 
 	const SWCSpectrum &a, float d, BSDF *b, 
-	const Volume *exterior, const Volume *interior, const SWCSpectrum bcolor)
-	: BSDF(dgs, ngeom, exterior, interior, bcolor), coatingType(BxDFType(BSDF_REFLECTION | BSDF_GLOSSY)),
+	const Volume *exterior, const Volume *interior, const SWCSpectrum bcolor, const float bscale )
+	: BSDF(dgs, ngeom, exterior, interior, bcolor, bscale), coatingType(BxDFType(BSDF_REFLECTION | BSDF_GLOSSY)),
 	fresnel(cf), distribution(cd), multibounce(mb), Alpha(a), depth(d), base(b)
 {
 }

@@ -35,8 +35,8 @@ class  SingleBSDF : public BSDF  {
 public:
 	// StackedBSDF Public Methods
 	SingleBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
-		const BxDF *b, const Volume *exterior, const Volume *interior, const SWCSpectrum bcolor = SWCSpectrum(0.f) ) :
-		BSDF(dgs, ngeom, exterior, interior, bcolor), bxdf(b) { }
+		const BxDF *b, const Volume *exterior, const Volume *interior, const SWCSpectrum bcolor = SWCSpectrum(0.f), const float bscale = 1.f ) :
+		BSDF(dgs, ngeom, exterior, interior, bcolor, bscale), bxdf(b) { }
 	virtual inline u_int NumComponents() const { return 1; }
 	virtual inline u_int NumComponents(BxDFType flags) const {
 		return bxdf->MatchesFlags(flags) ? 1U : 0U;

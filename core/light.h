@@ -58,6 +58,8 @@ public:
 	virtual bool IsEnvironmental() const = 0;
         virtual bool IsSupport() const { return false; }
 	virtual float DirProb(Vector N) const {return 1.f;}
+	virtual bool LeSupport(const Scene &scene, const Sample &sample,
+		const Vector wr, SWCSpectrum *L) const {return false;}
 	virtual bool Le(const Scene &scene, const Sample &sample, const Ray &r,
 		BSDF **bsdf, float *pdf, float *pdfDirect,
 		SWCSpectrum *L) const { return false; }
