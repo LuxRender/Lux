@@ -185,6 +185,20 @@ static float weightPath(const vector<BidirVertex> &eye, u_int nEye, u_int eyeDep
 	return weight;
 }
 
+/*
+ * Modified fields:
+ * eyeV.flags
+ * lightV.flags
+ * eyeV.rr
+ * eyeV.rrR
+ * eyeV.dAWeight
+ * lightV.rr
+ * lightV.rrR
+ * lightV.dARWeight
+ * light[nLight - 2].dARWeight
+ * eyeV.wi
+ * eyeV.d2
+ */
 static bool evalPath(const Scene &scene, const Sample &sample,
 	const BidirIntegrator &bidir,
 	vector<BidirVertex> &eye, u_int nEye,
@@ -254,6 +268,7 @@ static bool evalPath(const Scene &scene, const Sample &sample,
 	eyeV.dAWeight = lpdf * ltPdf / d2;
 	if (!eScat)
 		eyeV.dAWeight *= ecosi;
+	const float eWeight = nEye > 1 ? eye[nEye - 2].dAWeight : 0.f;
 	if (nEye > 1) {
 		eye[nEye - 2].dAWeight = epdf * eyeV.tPdf / eye[nEye - 2].d2;
 		if (!eye[nEye - 2].bsdf->dgShading.scattered)
@@ -270,7 +285,6 @@ static bool evalPath(const Scene &scene, const Sample &sample,
 	lightV.dARWeight = epdfR * etPdfR / d2;
 	if (!lScat)
 		lightV.dARWeight *= lcoso;
-	const float lWeight = nLight > 1 ? light[nLight - 2].dARWeight : 0.f;
 	if (nLight > 1) {
 		light[nLight - 2].dARWeight = lpdfR * lightV.tPdfR /
 			light[nLight - 2].d2;
@@ -281,8 +295,8 @@ static bool evalPath(const Scene &scene, const Sample &sample,
 		lightDepth, pdfLightDirect, isLightDirect);
 	*weight = w;
 	*L *= w;
-	if (nLight > 1)
-		light[nLight - 2].dARWeight = lWeight;
+	if (nEye > 1)
+		eye[nEye - 2].dAWeight = eWeight;
 	// return back some eye data
 	eyeV.wi = ewi;
 	eyeV.d2 = d2;
@@ -667,7 +681,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 			const BxDFType eflags = vE.flags;
 			const float err = vE.rr;
 			const float errR = vE.rrR;
-			const float edARWeight = vE.dARWeight;
+			const float edAWeight = vE.dAWeight;
 			const Vector ewi(vE.wi);
 			const float ed2 = vE.d2;
 			if (evalPath(scene, sample, *this, eyePath, j,
@@ -688,7 +702,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 			vE.flags = eflags;
 			vE.rr = err;
 			vE.rrR = errR;
-			vE.dARWeight = edARWeight;
+			vE.dAWeight = edAWeight;
 			vE.wi = ewi;
 			vE.d2 = ed2;
 		}
@@ -760,7 +774,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 					const BxDFType eflags = vE.flags;
 					const float err = vE.rr;
 					const float errR = vE.rrR;
-					const float edARWeight = vE.dARWeight;
+					const float edAWeight = vE.dAWeight;
 					const Vector ewi(vE.wi);
 					const float ed2 = vE.d2;
 					if (evalPath(scene, sample, *this,
@@ -781,7 +795,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 					vE.flags = eflags;
 					vE.rr = err;
 					vE.rrR = errR;
-					vE.dARWeight = edARWeight;
+					vE.dAWeight = edAWeight;
 					vE.wi = ewi;
 					vE.d2 = ed2;
 				}
