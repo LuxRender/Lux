@@ -28,6 +28,7 @@
 #include "samplerrenderer.h"
 #include "randomgen.h"
 #include "context.h"
+#include "renderers/statistics/samplerstatistics.h"
 
 using namespace lux;
 
@@ -83,10 +84,14 @@ SamplerRenderer::SamplerRenderer() : Renderer() {
 	suspendThreadsWhenDone = false;
 
 	AddStringConstant(*this, "name", "Name of current renderer", "sampler");
+
+	rendererStatistics = new SRStatistics(this);
 }
 
 SamplerRenderer::~SamplerRenderer() {
 	boost::mutex::scoped_lock lock(classWideMutex);
+
+	delete rendererStatistics;
 
 	if ((state != TERMINATE) && (state != INIT))
 		throw std::runtime_error("Internal error: called SamplerRenderer::~SamplerRenderer() while not in TERMINATE or INIT state.");
@@ -143,11 +148,7 @@ void SamplerRenderer::Render(Scene *s) {
 		state = RUN;
 
 		// Initialize the stats
-		lastSamples = 0.;
-		lastTime = 0.;
-		stat_Samples = 0.;
-		stat_blackSamples = 0.;
-		s_Timer.Reset();
+		rendererStatistics->reset();
 	
 		// Dade - I have to do initiliaziation here for the current thread.
 		// It can be used by the Preprocess() methods.
@@ -170,7 +171,7 @@ void SamplerRenderer::Render(Scene *s) {
 		sampPos = 0;
 		
 		// start the timer
-		s_Timer.Start();
+		rendererStatistics->timer.Start();
 
 		// Dade - preprocessing done
 		preprocessDone = true;
@@ -210,119 +211,18 @@ void SamplerRenderer::Render(Scene *s) {
 void SamplerRenderer::Pause() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 	state = PAUSE;
-	s_Timer.Stop();
+	rendererStatistics->timer.Stop();
 }
 
 void SamplerRenderer::Resume() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 	state = RUN;
-	s_Timer.Start();
+	rendererStatistics->timer.Start();
 }
 
 void SamplerRenderer::Terminate() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 	state = TERMINATE;
-}
-
-//------------------------------------------------------------------------------
-// Statistic methods
-//------------------------------------------------------------------------------
-
-// Statistics Access
-double SamplerRenderer::Statistics(const string &statName) {
-	if(statName=="secElapsed") {
-		// Dade - s_Timer is inizialized only after the preprocess phase
-		if (preprocessDone)
-			return s_Timer.Time();
-		else
-			return 0.0;
-	} else if(statName=="samplesSec")
-		return Statistics_SamplesPSec();
-	else if(statName=="samplesTotSec")
-		return Statistics_SamplesPTotSec();
-	else if(statName=="samplesPx")
-		return Statistics_SamplesPPx();
-	else if(statName=="efficiency")
-		return Statistics_Efficiency();
-	else if(statName=="displayInterval")
-		return scene->DisplayInterval();
-	else if(statName == "filmEV")
-		return scene->camera->film->EV;
-	else if(statName == "averageLuminance")
-		return scene->camera->film->averageLuminance;
-	else if(statName == "numberOfLocalSamples")
-		return scene->camera->film->numberOfLocalSamples;
-	else if (statName == "enoughSamples")
-		return scene->camera->film->enoughSamplesPerPixel;
-	else if (statName == "threadCount")
-		return renderThreads.size();
-	else {
-		LOG( LUX_ERROR,LUX_BADTOKEN)<< "luxStatistics - requested an invalid data : "<< statName;
-		return 0.;
-	}
-}
-
-double SamplerRenderer::Statistics_GetNumberOfSamples() {
-	if (s_Timer.Time() - lastTime > .5f) {
-		boost::mutex::scoped_lock lock(renderThreadsMutex);
-
-		for (u_int i = 0; i < renderThreads.size(); ++i) {
-			fast_mutex::scoped_lock lockStats(renderThreads[i]->statLock);
-			stat_Samples += renderThreads[i]->samples;
-			stat_blackSamples += renderThreads[i]->blackSamples;
-			renderThreads[i]->samples = 0.;
-			renderThreads[i]->blackSamples = 0.;
-		}
-	}
-
-	return stat_Samples + scene->camera->film->numberOfSamplesFromNetwork;
-}
-
-double SamplerRenderer::Statistics_SamplesPPx() {
-	// divide by total pixels
-	int xstart, xend, ystart, yend;
-	scene->camera->film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
-	return Statistics_GetNumberOfSamples() / ((xend - xstart) * (yend - ystart));
-}
-
-double SamplerRenderer::Statistics_SamplesPSec() {
-	// Dade - s_Timer is inizialized only after the preprocess phase
-	if (!preprocessDone)
-		return 0.0;
-
-	double samples = Statistics_GetNumberOfSamples();
-	double time = s_Timer.Time();
-	double dif_samples = samples - lastSamples;
-	double elapsed = time - lastTime;
-	lastSamples = samples;
-	lastTime = time;
-
-	// return current samples / sec total
-	if (elapsed == 0.0)
-		return 0.0;
-	else
-		return dif_samples / elapsed;
-}
-
-double SamplerRenderer::Statistics_SamplesPTotSec() {
-	// Dade - s_Timer is inizialized only after the preprocess phase
-	if (!preprocessDone)
-		return 0.0;
-
-	double samples = Statistics_GetNumberOfSamples();
-	double time = s_Timer.Time();
-
-	// return current samples / total elapsed secs
-	return samples / time;
-}
-
-double SamplerRenderer::Statistics_Efficiency() {
-	Statistics_GetNumberOfSamples(); // required before eff can be calculated.
-
-	if (stat_Samples == 0.0)
-		return 0.0;
-
-	return (100.f * stat_blackSamples) / stat_Samples;
 }
 
 //------------------------------------------------------------------------------

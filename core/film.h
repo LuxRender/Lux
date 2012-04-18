@@ -294,10 +294,11 @@ private:
 // this buffer is used by SPPM
 // It is a copyPaste of PerScreenNormalizedBuffer, but without the x*y
 // normalization facter and with added a custom normalisation factor.
+// TODO scale is initialized to 1.0 but this is not correct for AMC
 class PerScreenNormalizedBufferScaled : public Buffer {
 public:
 	PerScreenNormalizedBufferScaled(u_int x, u_int y, const double *samples) :
-		Buffer(x, y), numberOfSamples_(samples) { }
+		Buffer(x, y), numberOfSamples_(samples), scaleUpdate(NULL), scale(1.0) { }
 
 	virtual ~PerScreenNormalizedBufferScaled() {}
 
@@ -318,7 +319,7 @@ public:
 		}
 	}
 	virtual float GetData(u_int x, u_int y, XYZColor *color, float *alpha) const {
-		if(x == 0 && y == 0)
+		if(x == 0 && y == 0 && scaleUpdate != NULL)
 			scale = scaleUpdate->GetScaleFactor();
 
 		const Pixel &pixel = (*pixels)(x, y);
@@ -670,6 +671,7 @@ public:
 	float averageLuminance;
 	double numberOfSamplesFromNetwork;
 	double numberOfLocalSamples;
+	double numberOfResumedSamples;
 
 	ContributionPool *contribPool;
 

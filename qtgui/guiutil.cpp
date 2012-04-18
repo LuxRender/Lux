@@ -92,7 +92,7 @@ void overlayStatistics(QImage *image)
 
 	stats = "LuxRender " + QString::fromLatin1(luxVersion()) + " ";
 	stats += "|Saved: " + QDateTime::currentDateTime().toString(Qt::DefaultLocaleShortDate) + " ";
-	stats += "|Statistics: " + QString::fromLatin1(luxPrintableStatistics(true)) + " ";
+	stats += "|Statistics: " + getStringAttribute("renderer_statistics_formatted", "_recommended_string") + " ";
 
 	// convert regular spaces to non-breaking spaces, so that it will prefer to wrap
 	// between segments

@@ -25,7 +25,6 @@
 
 #include "api.h"
 #include "lux.h"
-#include "stats.h"
 #include "geometry/transform.h"
 #include "paramset.h"
 #include "queryableregistry.h"
@@ -208,8 +207,8 @@ public:
 	double Statistics(const string &statName);
 	void SceneReady();
 
-	const char* PrintableStatistics(const bool add_total);
-	const char* CustomStatistics(const string custom_template);
+	void UpdateStatisticsWindow();
+	bool IsRendering();
 
 	void EnableDebugMode();
 	void DisableRandomMode();
@@ -321,8 +320,6 @@ private:
 	mutable boost::mutex renderingMutex;
 	bool terminated;
 	bool aborted; // abort rendering
-
-	StatsData *statsData;
 };
 
 }

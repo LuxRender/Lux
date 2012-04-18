@@ -138,8 +138,8 @@ public:
 
 	// Stats
 	virtual double statistics(const char* statName) = 0;
-	virtual const char* printableStatistics(const bool addTotal) = 0;
-	virtual const char* customStatistics(const char* custom_template) = 0;
+	virtual const char* printableStatistics(const bool addTotal) = 0;	// Deprecated
+	virtual void updateStatisticsWindow() = 0;
 
 	// Debugging interface
 	virtual void enableDebugMode() = 0;

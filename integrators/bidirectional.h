@@ -56,6 +56,9 @@ private:
 		SWCSpectrum throughputWi, throughputWo;
 	};
 
+	void Connect(const Scene &scene, luxrays::RayBuffer *rayBuffer,
+		u_int &rayIndex, const BSDF *bsdf,
+		SWCSpectrum *L, SWCSpectrum *Lresult, float *Vresult);
 	void Terminate(const Scene &scene, const u_int eyeBufferId, const u_int lightBufferId);
 
 	// NOTE: the size of this class is extremely important for the total

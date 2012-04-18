@@ -565,17 +565,18 @@ double lux_wrapped_context::statistics(const char* statName)
 	checkContext();
 	return ctx->Statistics( std::string(statName) );
 }
+// Deprecated
 const char* lux_wrapped_context::printableStatistics(const bool addTotal)
 {
 	boost::mutex::scoped_lock lock(ctxMutex);
 	checkContext();
-	return ctx->PrintableStatistics(addTotal);
+	return luxPrintableStatistics(addTotal);
 }
-const char* lux_wrapped_context::customStatistics(const char* custom_template)
+void lux_wrapped_context::updateStatisticsWindow()
 {
 	boost::mutex::scoped_lock lock(ctxMutex);
 	checkContext();
-	return ctx->CustomStatistics(custom_template);
+	ctx->UpdateStatisticsWindow();
 }
 
 // Debugging interface

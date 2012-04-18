@@ -104,8 +104,6 @@ public:
 	vector<RendererHostDescription *> &GetHostDescs();
 	void SuspendWhenDone(bool v);
 
-	double Statistics(const string &statName);
-
 	void Render(Scene *scene);
 
 	void Pause();
@@ -119,6 +117,7 @@ public:
 
 	friend class HitPoints;
 	friend class PhotonSampler;
+	friend class SPPMRStatistics;
 
 	// loop if renderer is in pause and return true if renderer is terminate
 	bool paused()
@@ -175,12 +174,6 @@ private:
 		Sample *threadSample;
 	};
 
-	double Statistics_GetNumberOfSamples();
-	double Statistics_SamplesPSec();
-	double Statistics_SamplesPTotSec();
-	double Statistics_Efficiency();
-	double Statistics_SamplesPPx();
-
 	//--------------------------------------------------------------------------
 
 	mutable boost::mutex classWideMutex;
@@ -206,13 +199,9 @@ private:
 	// Used by AMC Photon Sampler
 	// TODO: try to remove this stuff
 	float accumulatedFluxScale;
-	double last_pps_time;
-	u_int last_pps_photons;
 
 	fast_mutex sampPosMutex;
 	u_int sampPos;
-
-	Timer s_Timer;
 
 	// Put them last for better data alignment
 	// used to suspend render threads until the preprocessing phase is done

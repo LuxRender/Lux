@@ -33,11 +33,7 @@
 #include "version.h"
 
 #include <boost/version.hpp>
-#if (BOOST_VERSION < 103401)
-#include <boost/filesystem/operations.hpp>
-#else
 #include <boost/filesystem.hpp>
-#endif
 #include <fstream>
 #include <boost/asio.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
@@ -128,16 +124,19 @@ void RenderServer::errorHandler(int code, int severity, const char *msg) {
 
 static void printInfoThread()
 {
+	std::vector<char> buf(1 << 16, '\0');
 	while (true) {
 		boost::this_thread::sleep(boost::posix_time::seconds(5));
 
-		int sampleSec = static_cast<int>(luxStatistics("samplesSec"));
 		// Print only if we are rendering something
-		if (sampleSec > 0)
-			LOG( LUX_INFO,LUX_NOERROR) << luxPrintableStatistics(true);
+		if (Context::GetActive()->IsRendering())
+		{
+			luxUpdateStatisticsWindow();
+			luxGetStringAttribute("renderer_statistics_formatted_short", "_recommended_string", &buf[0], static_cast<unsigned int>(buf.size()));
+			LOG( LUX_INFO,LUX_NOERROR) << std::string(buf.begin(), buf.end());
+		}
 	}
 }
-
 static void writeTransmitFilm(basic_ostream<char> &stream, const string &filename)
 {
 	string file = filename;
@@ -289,6 +288,7 @@ static void processCommand(bool isLittleEndian,
 
 	processFile("mapname", params, tmpFileList, stream);
 	processFile("iesname", params, tmpFileList, stream);
+	processFile("configfile", params, tmpFileList, stream);
 	processFile("filename", params, tmpFileList, stream);
 
 	(Context::GetActive()->*f)(type, params);
@@ -360,14 +360,14 @@ void RenderServer::createNewSessionID() {
 }
 
 bool RenderServer::validateAccess(basic_istream<char> &stream) const {
+	string sidstr;
+	if (!getline(stream, sidstr))
+		return false;
+	
 	if (serverThread->renderServer->state != RenderServer::BUSY) {
 		LOG( LUX_INFO,LUX_NOERROR)<< "Slave does not have an active session";
 		return false;
 	}
-
-	string sidstr;
-	if (!getline(stream, sidstr))
-		return false;
 
 	boost::uuids::uuid sid = boost::uuids::string_generator()(sidstr);
 

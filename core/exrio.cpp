@@ -31,8 +31,7 @@
 
 #include <FreeImage.h>
 
-#include <boost/filesystem/path.hpp>
-#include <boost/filesystem/convenience.hpp>
+#include <boost/filesystem.hpp>
 
 #define cimg_display_type  0
 
@@ -354,17 +353,9 @@ ImageData *ReadImage(const string &name)
 		if (!boost::filesystem::exists(imagePath)) {
 			LOG(LUX_ERROR, LUX_NOFILE) <<
 				"Unable to open image file '" <<
-				imagePath.file_string() << "'";
+				imagePath.string() << "'";
 			return NULL;
 		}
-
-		std::string extension = boost::filesystem::extension(imagePath).substr(1);
-		//transform extension to lowercase
-#if defined(WIN32) && !defined(__CYGWIN__)
-		std::transform(extension.begin(), extension.end(), extension.begin(), (int(*)(int)) tolower);
-#else
-		std::transform(extension.begin(), extension.end(), extension.begin(), (int(*)(int)) std::tolower);
-#endif
 
 		StandardImageReader stdImageReader;
 		return stdImageReader.read(imagePath.string());

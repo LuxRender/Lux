@@ -29,7 +29,6 @@
 #include "cameraresponse.h"
 #include "filter.h"
 #include "contribution.h"
-#include "stats.h"
 #include "blackbodyspd.h"
 #include "osfunc.h"
 #include "streamio.h"
@@ -598,7 +597,8 @@ Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop
 		   bool debugmode, int outlierk, int tilec) :
 	Queryable("film"),
 	xResolution(xres), yResolution(yres),
-	EV(0.f), averageLuminance(0.f),  numberOfSamplesFromNetwork(0), numberOfLocalSamples(0),
+	EV(0.f), averageLuminance(0.f),
+	numberOfSamplesFromNetwork(0), numberOfLocalSamples(0), numberOfResumedSamples(0),
 	contribPool(NULL), filter(filt), filterTable(NULL), filterLUTs(NULL),
 	filename(filename1),
 	colorSpace(0.63f, 0.34f, 0.31f, 0.595f, 0.155f, 0.07f, 0.314275f, 0.329411f), // default is SMPTE
@@ -629,6 +629,7 @@ Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop
 	AddFloatAttribute(*this, "averageLuminance", "Average Image Luminance", &Film::averageLuminance);
 	AddDoubleAttribute(*this, "numberOfLocalSamples", "Number of samples contributed to film on the local machine", &Film::numberOfLocalSamples);
 	AddDoubleAttribute(*this, "numberOfSamplesFromNetwork", "Number of samples contributed from network slaves", &Film::numberOfSamplesFromNetwork);
+	AddDoubleAttribute(*this, "numberOfResumedSamples", "Number of samples loaded from saved film", &Film::numberOfResumedSamples);
 	AddBoolAttribute(*this, "enoughSamples", "Indicates if the halt condition been reached", &Film::enoughSamplesPerPixel);
 	AddIntAttribute(*this, "haltSamplesPerPixel", "Halt Samples per Pixel", haltSamplesPerPixel, &Film::haltSamplesPerPixel, Queryable::ReadWriteAccess);
 	AddIntAttribute(*this, "haltTime", "Halt time in seconds", haltTime, &Film::haltTime, Queryable::ReadWriteAccess);
@@ -735,7 +736,7 @@ void Film::CreateBuffers()
 			if(ifs.good()) {
 				// Dade - read the data
 				LOG(LUX_INFO,LUX_NOERROR)<< "Reading film status from file " << fname;
-				UpdateFilm(ifs);
+				numberOfResumedSamples = UpdateFilm(ifs);
 			}
 
 			ifs.close();
@@ -1155,7 +1156,7 @@ void Film::SetSample(const Contribution *contrib) {
 
 void Film::WriteResumeFilm(const string &filename)
 {
-	string fullfilename = boost::filesystem::complete(boost::filesystem::path(filename, boost::filesystem::native), boost::filesystem::current_path()).file_string();
+	string fullfilename = boost::filesystem::system_complete(filename).string();
 	// Dade - save the status of the film to the file
 	LOG(LUX_INFO, LUX_NOERROR) << "Writing resume film file";
 
@@ -1174,11 +1175,6 @@ void Film::WriteResumeFilm(const string &filename)
 
 	if (writeSuccessful) {
 		try {
-#if !defined(BOOST_FILESYSTEM_VERSION) || (BOOST_FILESYSTEM_VERSION < 3)
-			// boost filesystem v2 does not have POSIX compliant rename()
-			if (boost::filesystem::exists(fullfilename))
-				boost::filesystem::remove(fullfilename);
-#endif
 			boost::filesystem::rename(tempfilename, fullfilename);
 			LOG(LUX_INFO, LUX_NOERROR) << "Resume film written to '" << fullfilename << "'";
 		} catch (std::runtime_error e) {
@@ -1825,8 +1821,6 @@ double Film::UpdateFilm(std::basic_istream<char> &stream) {
 			totNumberOfSamples += bufferGroupNumSamples[i];
 			maxTotNumberOfSamples = max(maxTotNumberOfSamples, bufferGroupNumSamples[i]);
 		}
-
-		numberOfSamplesFromNetwork += maxTotNumberOfSamples;
 
 		LOG( LUX_DEBUG,LUX_NOERROR) << "Received film with " << totNumberOfSamples << " samples";
 	} else

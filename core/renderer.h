@@ -26,6 +26,7 @@
 #include <vector>
 #include "queryable.h"
 #include "lux.h"
+#include "rendererstatistics.h"
 
 namespace lux
 {
@@ -101,13 +102,6 @@ public:
 	 */
 	virtual void SuspendWhenDone(bool v) = 0;
 
-	/*! \brief Return the value of a statistic.
-	 *
-	 * Must be thread-safe. Can be called in any state. The list of values supported
-	 * by statName is related to the type of Renderer used.
-	 */
-	virtual double Statistics(const string &statName) = 0;
-
 	/*! \brief Starts the rendering of a Scene.
 	 *
 	 * Must be thread-safe. Change the state from INIT to RUN. Can be called only
@@ -146,6 +140,8 @@ public:
 	 * states: PAUSE, RUN, TERMINATE. Change the state to TERMINATE.
 	 */
 	virtual void Terminate() = 0;
+
+	RendererStatistics* rendererStatistics;
 };
 
 }//namespace lux

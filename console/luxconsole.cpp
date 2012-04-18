@@ -36,8 +36,7 @@
 #include <boost/program_options.hpp>
 #include <boost/thread.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/filesystem/path.hpp>
-#include <boost/filesystem/operations.hpp>
+#include <boost/filesystem.hpp>
 
 #if defined(WIN32) && !defined(__CYGWIN__) /* We need the following two to set stdout to binary */
 #include <io.h>
@@ -67,11 +66,14 @@ void engineThread() {
 }
 
 void infoThread() {
+	std::vector<char> buf(1 << 16, '\0');
 	while (!boost::this_thread::interruption_requested()) {
 		try {
 			boost::this_thread::sleep(boost::posix_time::seconds(5));
 
-			LOG(LUX_INFO,LUX_NOERROR) << luxPrintableStatistics(true);
+			luxUpdateStatisticsWindow();
+			luxGetStringAttribute("renderer_statistics_formatted_short", "_recommended_string", &buf[0], static_cast<unsigned int>(buf.size()));
+			LOG(LUX_INFO,LUX_NOERROR) << std::string(buf.begin(), buf.end());
 		} catch(boost::thread_interrupted ex) {
 			break;
 		}
@@ -88,9 +90,6 @@ void serverErrorHandler(int code, int severity, const char *msg) {
 }
 
 int main(int ac, char *av[]) {
-
-	boost::filesystem::path initial_path = boost::filesystem::initial_path();
-
 	// Dade - initialize rand() number generator
 	srand(time(NULL));
 
@@ -115,6 +114,7 @@ int main(int ac, char *av[]) {
 				("verbose,V", "Increase output verbosity (show DEBUG messages)")
 				("quiet,q", "Reduce output verbosity (hide INFO messages)")
 				("very-quiet,x", "Reduce output verbosity even more (hide WARNING messages)")
+				("configfile,C", po::value< std::string >(), "Specify the configuration file to use")
 				;
 
 		// Declare a group of options that will be
@@ -127,6 +127,7 @@ int main(int ac, char *av[]) {
 				("serverinterval,i", po::value < int >(), "Specify the number of seconds between requests to rendering servers.")
 				("serverport,p", po::value < int >(), "Specify the tcp port used in server mode.")
 				("serverwriteflm,W", "Write film to disk before transmitting in server mode.")
+				("cachedir,c", po::value< std::string >(), "Specify the cache directory to use")
 				;
 
 		// Hidden options, will be allowed both on command line and
@@ -156,8 +157,10 @@ int main(int ac, char *av[]) {
 		store(po::command_line_parser(ac, av).
 			style(cmdstyle).options(cmdline_options).positional(p).run(), vm);
 
-		std::ifstream
-		ifs("luxconsole.cfg");
+		std::string configFile("luxconsole.cfg");
+		if (vm.count("configfile"))
+			configFile = vm["configfile"].as<std::string>();
+		std::ifstream ifs(configFile.c_str());
 		store(parse_config_file(ifs, config_file_options), vm);
 		notify(vm);
 
@@ -274,21 +277,29 @@ int main(int ac, char *av[]) {
 		}
 
 		if (vm.count("input-file")) {
-			const std::vector<std::string> &v = vm["input-file"].as < vector<string> > ();
+			std::vector<std::string> v = vm["input-file"].as < vector<string> > ();
+
+			// Resolve relative paths before changing directories
+			for (unsigned int i = 0; i < v.size(); i++)
+				if (v[i] != "-")
+					v[i] = boost::filesystem::system_complete(v[i]).string();
+
 			for (unsigned int i = 0; i < v.size(); i++) {
 				//change the working directory
-				boost::filesystem::path fullPath = boost::filesystem::complete(boost::filesystem::path(v[i], boost::filesystem::native), initial_path);
+				boost::filesystem::path fullPath(v[i]);
 
-				if (!boost::filesystem::exists(fullPath) && v[i] != "-") {
-					LOG(LUX_SEVERE,LUX_NOFILE) << "Unable to open scenefile '" << fullPath.string() << "'";
-					continue;
+				if (v[i] != "-") {
+					if (!boost::filesystem::exists(fullPath)) {
+						LOG(LUX_SEVERE,LUX_NOFILE) << "Unable to open scenefile '" << fullPath.string() << "'";
+						continue;
+					}
+
+					if (chdir(fullPath.parent_path().string().c_str())) {
+						LOG(LUX_SEVERE,LUX_NOFILE) << "Unable to go into directory '" << fullPath.parent_path().string() << "'";
+					}
 				}
 
-				sceneFileName = fullPath.leaf();
-				if (chdir(fullPath.branch_path().string().c_str())) {
-					LOG(LUX_SEVERE,LUX_NOFILE) << "Unable to go into directory '" << fullPath.branch_path().string() << "'";
-				}
-
+				sceneFileName = fullPath.filename().string();
 				parseError = false;
 				boost::thread engine(&engineThread);
 
@@ -346,6 +357,23 @@ int main(int ac, char *av[]) {
 			}
 		} else if (vm.count("server")) {
 			bool writeFlmFile = vm.count("serverwriteflm") != 0;
+
+			std::string cachedir;
+			if (vm.count("cachedir")) {
+				cachedir = vm["cachedir"].as<std::string>();
+				boost::filesystem::path cachePath(cachedir);
+				try {
+					if (!boost::filesystem::is_directory(cachePath))
+						boost::filesystem::create_directory(cachePath);
+
+					boost::filesystem::current_path(cachePath);
+				} catch (std::exception &e) {
+					LOG(LUX_SEVERE,LUX_NOFILE) << "Unable to use cache directory '" << cachedir << "': " << e.what();
+					return 1;
+				}
+				LOG(LUX_INFO,LUX_NOERROR) << "Using cache directory '" << cachedir << "'";
+			}
+
 			renderServer = new RenderServer(threads, serverPort, writeFlmFile);
 
 			prevErrorHandler = luxError;
