@@ -56,6 +56,16 @@ private:
 		SWCSpectrum throughputWi, throughputWo;
 	};
 
+	static const BidirStateVertex *GetPathVertex(const u_int index,
+		const BidirStateVertex *eyePath, const u_int eyePathVertexCount,
+		const BidirStateVertex *lightPath, const u_int lightPathVertexCount);
+	static float EvalPathWeight(const BidirStateVertex *eyePath,
+		const u_int eyePathVertexCount, const bool isLightVertexSpecular);
+	static float EvalPathWeight(const BidirStateVertex *eyePath, const u_int eyePathVertexCount,
+		const BidirStateVertex *lightPath, const u_int lightPathVertexCount);
+	static float EvalPathWeight(const bool isEyeVertexSpecular,
+		const BidirStateVertex *lightPath, const u_int lightPathVertexCount);
+
 	void Connect(const Scene &scene, luxrays::RayBuffer *rayBuffer,
 		u_int &rayIndex, const BSDF *bsdf,
 		SWCSpectrum *L, SWCSpectrum *Lresult, float *Vresult);
