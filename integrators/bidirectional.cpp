@@ -869,8 +869,8 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 //
 // The general idea here is to trace the light and eye path on the CPU than
 // generate in a single shot all shadow rays for direct lighting and
-// eyepath/lightpath connection. The generated (long) list of rays will
-// be trace on the GPUs.
+// eye/light path connections. The generated (long) list of rays will
+// be traced on the GPUs.
 //------------------------------------------------------------------------------
 
 BidirPathState::BidirPathState(const Scene &scene, ContributionBuffer *contribBuffer, RandomGenerator *rng) {
@@ -997,53 +997,77 @@ bool BidirPathState::Init(const Scene &scene) {
 					// Trace light subpath and connect to eye vertex
 					const Volume *volume = light0.bsdf->GetVolume(ray.d);
 					bool scattered = light0.bsdf->dgShading.scattered;
+
+					u_int nLight = 1;
+					lightPath[1].throughputWi = lightPath[0].throughputWo;
+
 					for (u_int sampleIndex = 1; sampleIndex < maxLightDepth; ++sampleIndex) {
 						data = sample.sampler->GetLazyValues(sample,
 							bidir->sampleLightOffset, sampleIndex);
 
-						BidirStateVertex &v = lightPath[sampleIndex];
-						v.throughputWi = lightPath[sampleIndex - 1].throughputWo;
+						BidirStateVertex &lightVertex = lightPath[nLight];
 
 						if (!scene.Intersect(sample, volume, scattered,
-							ray, data[4], &isect, &v.bsdf, &pdf,
-							&pdfR, &v.throughputWi))
+							ray, data[4], &isect, &lightVertex.bsdf, &pdf,
+							&pdfR, &lightVertex.throughputWi))
 							break;
 
-						scattered = v.bsdf->dgShading.scattered;
-						v.throughputWi /= pdf;
+						// Initialize new path vertex
+						lightVertex.wi = -ray.d;
+						lightVertex.throughputWi /= pdf;
+						scattered = lightVertex.bsdf->dgShading.scattered;
+
+						// Extend the light path
 						++lightPathLength;
 
-						// Initialize new intersection vertex
-						v.wi = -ray.d;
-
-						// Break out if path is too long
-						if (sampleIndex >= maxLightDepth)
-							break;
-
 						SWCSpectrum f;
-						if (!v.bsdf->SampleF(sw, v.wi, &v.wo,
+						if (!lightVertex.bsdf->SampleF(sw, lightVertex.wi, &lightVertex.wo,
 							data[1], data[2], data[3], &f, &pdf,
-							BSDF_ALL, &v.flags, &pdfR))
+							BSDF_ALL, &lightVertex.flags, &pdfR))
 							break;
-						v.throughputWo = v.throughputWi * f;
 
-						// Russian Roulette
-						if (v.flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) ||
-							!(v.bsdf->Pdf(sw, v.wi, v.wo, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) > 0.f)) {
+						// Check if passthrough specular transmission. In this
+						// case I don't record the hit point as a path vertex
+						if (lightVertex.flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) ||
+							!(lightVertex.bsdf->Pdf(sw, lightVertex.wo, lightVertex.wi, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) > 0.f)) {
+							lightVertex.throughputWo = lightVertex.throughputWi * f;
+
+							// Russian Roulette
 							// Possibly terminate the path
-							if (sampleIndex > 3) {
+							if (lightPathLength > 3) {
 								const float q = min<float>(1.f, f.Filter(sw));
 								if (q < data[0])
 									break;
 								// increase path contribution
-								v.throughputWo /= q;
+								lightVertex.throughputWo /= q;
 							}
-						}
 
-						// Initialize _ray_ for next segment of path
-						ray = Ray(v.bsdf->dgShading.p, v.wo);
-						ray.time = sample.realTime;
-						volume = v.bsdf->GetVolume(ray.d);
+							// Initialize ray for next segment of path
+							ray = Ray(lightVertex.bsdf->dgShading.p, lightVertex.wo);
+							ray.time = sample.realTime;
+							volume = lightVertex.bsdf->GetVolume(ray.d);
+
+							// Switch to the next vertex
+							++nLight;
+							if (nLight >= maxLightDepth)
+								break;
+
+							lightPath[nLight].throughputWi =
+									lightPath[nLight - 1].throughputWo;
+						} else {
+							// It a passthrough specular transmission
+							lightPath[nLight - 1].throughputWo *= f;
+							lightPath[nLight].throughputWi =
+									lightPath[nLight - 1].throughputWo;
+
+							// Roolback the light path
+							--lightPathLength;
+
+							// Initialize ray for next segment of path
+							ray = Ray(lightVertex.bsdf->dgShading.p, lightVertex.wo);
+							ray.time = sample.realTime;
+							volume = lightVertex.bsdf->GetVolume(ray.d);
+						}
 					}
 				}
 			}
@@ -1091,7 +1115,6 @@ bool BidirPathState::Init(const Scene &scene) {
 	ray.time = sample.realTime;
 	sample.camera->ClampRay(ray);
 	Intersection isect;
-	u_int nEye = 1;
 	eye0.throughputWo = eye0.throughputWi;
 	++eyePathLength;
 
@@ -1099,14 +1122,18 @@ bool BidirPathState::Init(const Scene &scene) {
 	const Volume *volume = eye0.bsdf->GetVolume(ray.d);
 	bool scattered = eye0.bsdf->dgShading.scattered;
 	bool specularBounce = true;
+
+	u_int nEye = 1;
+	eyePath[1].throughputWi = eyePath[0].throughputWo;
+
 	for (u_int sampleIndex = 1; sampleIndex < maxEyeDepth; ++sampleIndex) {
 		const float *data = sample.sampler->GetLazyValues(sample,
 			bidir->sampleEyeOffset, sampleIndex);
-		BidirStateVertex &v = eyePath[nEye];
-		v.throughputWi = eyePath[nEye - 1].throughputWo;
+
+		BidirStateVertex &eyeVertex = eyePath[nEye];
 
 		if (!scene.Intersect(sample, volume, scattered, ray, data[4],
-			&isect, &v.bsdf, &pdfR, &pdf, &v.throughputWi)) {
+			&isect, &eyeVertex.bsdf, &pdfR, &pdf, &eyeVertex.throughputWi)) {
 			if (nEye == 1) {
 				alpha = 0.f;
 				// Tweak intersection distance for Z buffer
@@ -1146,7 +1173,6 @@ bool BidirPathState::Init(const Scene &scene) {
 			// End eye path tracing
 			break;
 		}
-		v.throughputWi /= pdfR;
 
 		if (nEye == 1) {
 			alpha = 1.f;
@@ -1166,41 +1192,66 @@ bool BidirPathState::Init(const Scene &scene) {
 			}
 		}
 
-		// Initialize new intersection vertex
-		scattered = v.bsdf->dgShading.scattered;
-		v.wo = -ray.d;
-		++nEye;
+		// Initialize new path vertex
+		eyeVertex.wo = -ray.d;
+		eyeVertex.throughputWi /= pdfR;
+		scattered = eyeVertex.bsdf->dgShading.scattered;
+
+		// Extend the light path
 		++eyePathLength;
 
-		// Break out if path is too long
-		if (sampleIndex >= maxEyeDepth)
-			break;
-
 		SWCSpectrum f;
-		if (!v.bsdf->SampleF(sw, v.wo, &v.wi, data[1], data[2],
-			data[3], &f, &pdfR, BSDF_ALL, &v.flags, NULL, true))
+		if (!eyeVertex.bsdf->SampleF(sw, eyeVertex.wo, &eyeVertex.wi, data[1], data[2],
+			data[3], &f, &pdfR, BSDF_ALL, &eyeVertex.flags, NULL, true))
 			break;
 
-		specularBounce = ((v.flags & BSDF_SPECULAR) != 0);
-		v.throughputWo = v.throughputWi * f;
+		// Check if passthrough specular transmission. In this
+		// case I don't record the hit point as a path vertex
+		if (eyeVertex.flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) ||
+			!(eyeVertex.bsdf->Pdf(sw, eyeVertex.wo, eyeVertex.wi, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) > 0.f)) {
+			eyeVertex.throughputWo = eyeVertex.throughputWi * f;
+			specularBounce = ((eyeVertex.flags & BSDF_SPECULAR) != 0);
 
-		// Russian Roulette
-		if (v.flags != (BSDF_SPECULAR | BSDF_TRANSMISSION) ||
-			!(v.bsdf->Pdf(sw, v.wi, v.wo, BxDFType(BSDF_SPECULAR | BSDF_TRANSMISSION)) > 0.f)) {
-			// Possibly terminate the path
-			if (sampleIndex > 3) {
-				const float q = min<float>(1.f, f.Filter(sw));
-				if (q < data[0])
-					break;
-				// increase path contribution
-				v.throughputWo /= q;
+			// Russian Roulette
+			if (eyeVertex.flags != (BSDF_SPECULAR | BSDF_TRANSMISSION) ||
+				!(eyeVertex.bsdf->Pdf(sw, eyeVertex.wi, eyeVertex.wo,
+					BxDFType(BSDF_SPECULAR | BSDF_TRANSMISSION)) > 0.f)) {
+				// Possibly terminate the path
+				if (sampleIndex > 3) {
+					const float q = min<float>(1.f, f.Filter(sw));
+					if (q < data[0])
+						break;
+					// increase path contribution
+					eyeVertex.throughputWo /= q;
+				}
 			}
-		}
 
-		// Initialize _ray_ for next segment of path
-		ray = Ray(v.bsdf->dgShading.p, v.wi);
-		ray.time = sample.realTime;
-		volume = v.bsdf->GetVolume(ray.d);
+			// Initialize ray for next segment of path
+			ray = Ray(eyeVertex.bsdf->dgShading.p, eyeVertex.wi);
+			ray.time = sample.realTime;
+			volume = eyeVertex.bsdf->GetVolume(ray.d);
+
+			// Switch to the next vertex
+			++nEye;
+			if (nEye >= maxEyeDepth)
+				break;
+
+			eyePath[nEye].throughputWi =
+					eyePath[nEye - 1].throughputWo;
+		} else {
+			// It a passthrough specular transmission
+			eyePath[nEye - 1].throughputWo *= f;
+			eyePath[nEye].throughputWi =
+					eyePath[nEye - 1].throughputWo;
+
+			// Roolback the eye path
+			--eyePathLength;
+
+			// Initialize ray for next segment of path
+			ray = Ray(eyeVertex.bsdf->dgShading.p, eyeVertex.wi);
+			ray.time = sample.realTime;
+			volume = eyeVertex.bsdf->GetVolume(ray.d);
+		}
 	}
 
 	//LOG(LUX_DEBUG, LUX_NOERROR) << "Eye path length: " << eyePathLength;
