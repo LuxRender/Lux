@@ -41,7 +41,7 @@ HSRStatistics::HSRStatistics(HybridSamplerRenderer* renderer)
 	: renderer(renderer),
 	windowSampleCount(0.0)
 {
-	windowSps.set_capacity(60);
+	windowSps.set_capacity(samplesInWindow);
 
 	formattedLong = new HSRStatistics::FormattedLong(this);
 	formattedShort = new HSRStatistics::FormattedShort(this);

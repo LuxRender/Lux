@@ -41,7 +41,7 @@ SRStatistics::SRStatistics(SamplerRenderer* renderer)
 	: renderer(renderer),
 	windowSampleCount(0.0)
 {
-	windowSps.set_capacity(60);
+	windowSps.set_capacity(samplesInWindow);
 
 	formattedLong = new SRStatistics::FormattedLong(this);
 	formattedShort = new SRStatistics::FormattedShort(this);

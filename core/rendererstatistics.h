@@ -39,6 +39,8 @@ class Renderer;
 
 class RendererStatistics : public Queryable {
 public:
+	static const size_t samplesInWindow = 600;
+
 	RendererStatistics();
 	virtual ~RendererStatistics() {};
 
