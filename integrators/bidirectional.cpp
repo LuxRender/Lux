@@ -1496,6 +1496,19 @@ SurfaceIntegratorState *BidirIntegrator::NewState(const Scene &scene,
 	return new BidirPathState(scene, contribBuffer, rng);
 }
 
+static void InitRay(luxrays::Ray *r, const Point &o, const Vector &d,
+		const float mint, const float maxt) {
+	// LuxRays Point/Vector data type are different from LuxRender Point/Vector
+	r->o.x = o.x;
+	r->o.y = o.y;
+	r->o.z = o.z;
+	r->d.x = d.x;
+	r->d.y = d.y;
+	r->d.z = d.z;
+	r->mint = mint;
+	r->maxt = maxt;
+}
+
 bool BidirIntegrator::GenerateRays(const Scene &scene,
 		SurfaceIntegratorState *s, luxrays::RayBuffer *rayBuffer) {
 	BidirPathState *bidirState = (BidirPathState *)s;
@@ -1511,7 +1524,7 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 	// Generate the rays
 	bidirState->raysCount = 0;
 	// Direct light sampling rays + eye/light connection rays
-	Ray *shadowRays = (Ray *)alloca(sizeof(Ray) *
+	luxrays::Ray *shadowRays = (luxrays::Ray *)alloca(sizeof(luxrays::Ray) *
 			((maxEyeDepth - 1) + // Direct light sampling rays
 			(maxEyeDepth - 1) * (maxLightDepth - 1) + // Eye/light connection rays
 			(maxLightDepth - 1) // Light path vertex to the eye connection rays
@@ -1589,7 +1602,7 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 			bidirState->LdGroup[t] = light->group;
 
 			const float maxt = length - shadowRayEpsilon;
-			shadowRays[bidirState->raysCount] = Ray(p, wi, shadowRayEpsilon, maxt, sample.realTime);
+			InitRay(&shadowRays[bidirState->raysCount],p ,wi, shadowRayEpsilon, maxt);
 			++(bidirState->raysCount);
 		}
 	}
@@ -1642,7 +1655,7 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 			stateLc = Lc;
 
 			const float maxt = length - shadowRayEpsilon;
-			shadowRays[bidirState->raysCount] = Ray(p, d, shadowRayEpsilon, maxt, bidirState->sample.realTime);
+			InitRay(&shadowRays[bidirState->raysCount],p ,d, shadowRayEpsilon, maxt);
 			++(bidirState->raysCount);
 		}
 	}
@@ -1706,7 +1719,7 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 			stateLlightPath = LlightPath;
 
 			const float maxt = length - shadowRayEpsilon;
-			shadowRays[bidirState->raysCount] = Ray(p, d, shadowRayEpsilon, maxt, bidirState->sample.realTime);
+			InitRay(&shadowRays[bidirState->raysCount],p ,d, shadowRayEpsilon, maxt);
 			++(bidirState->raysCount);
 		}
 	}
@@ -1718,14 +1731,7 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 		return false;
 
 	// Add all shadow rays to the  RayBuffer
-	for (u_int i = 0; i < bidirState->raysCount; ++i) {
-		// A pointer trick
-		luxrays::Ray *ray = (luxrays::Ray *)&shadowRays[i];
-		if (i == 0)
-			bidirState->raysIndexStart = rayBuffer->AddRay(*ray);
-		else
-			rayBuffer->AddRay(*ray);
-	}
+	bidirState->raysIndexStart = rayBuffer->AddRays(shadowRays, bidirState->raysCount);
 
 	return true;
 }
