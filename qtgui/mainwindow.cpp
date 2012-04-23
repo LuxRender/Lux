@@ -2278,21 +2278,24 @@ void MainWindow::UpdateNetworkTree()
 	ui->table_servers->setRowCount(nServers);
 
 	double totalpixels = luxGetIntAttribute("film", "xResolution") * luxGetIntAttribute("film", "yResolution");
-	double spp;
 
 	for( int n = 0; n < nServers; n++ ) {
 		QTableWidgetItem *servername = new QTableWidgetItem(QString::fromUtf8(pInfoList[n].name));
 		QTableWidgetItem *port = new QTableWidgetItem(QString::fromUtf8(pInfoList[n].port));
 
-		spp = pInfoList[n].numberOfSamplesReceived / totalpixels;
+		double spp = pInfoList[n].numberOfSamplesReceived / totalpixels;
+		double sps = pInfoList[n].calculatedSamplesPerSecond;
 
-		QString s = QString("%1 %2S/p").arg(luxMagnitudeReduce(spp),0,'g',3).arg(luxMagnitudePrefix(spp));
+		QString spp_string = QString("%1 %2S/p").arg(luxMagnitudeReduce(spp),0,'g',3).arg(luxMagnitudePrefix(spp));
+		QString sps_string = QString("%1 %2S/s").arg(luxMagnitudeReduce(sps),0,'g',3).arg(luxMagnitudePrefix(sps));
 
-		QTableWidgetItem *spp = new QTableWidgetItem(s);
+		QTableWidgetItem *spp_widget = new QTableWidgetItem(spp_string);
+		QTableWidgetItem *sps_widget = new QTableWidgetItem(sps_string);
 
 		ui->table_servers->setItem(n, 0, servername);
 		ui->table_servers->setItem(n, 1, port);
-		ui->table_servers->setItem(n, 2, spp);
+		ui->table_servers->setItem(n, 2, spp_widget);
+		ui->table_servers->setItem(n, 3, sps_widget);
 	}
 
 	ui->table_servers->blockSignals (true);

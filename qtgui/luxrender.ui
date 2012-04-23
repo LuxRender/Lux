@@ -931,9 +931,6 @@
           <attribute name="verticalHeaderVisible">
            <bool>false</bool>
           </attribute>
-          <attribute name="verticalHeaderVisible">
-           <bool>false</bool>
-          </attribute>
          </widget>
         </item>
        </layout>
@@ -967,9 +964,6 @@
           <attribute name="horizontalHeaderVisible">
            <bool>false</bool>
           </attribute>
-          <attribute name="horizontalHeaderVisible">
-           <bool>false</bool>
-          </attribute>
           <column>
            <property name="text">
             <string>IP</string>
@@ -983,6 +977,11 @@
           <column>
            <property name="text">
             <string>Samples</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Rate</string>
            </property>
           </column>
          </widget>

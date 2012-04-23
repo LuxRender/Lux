@@ -29,6 +29,7 @@
 #include <limits>
 #include <numeric>
 #include <string>
+#include <vector>
 
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
@@ -38,7 +39,7 @@ using namespace lux;
 
 HSRStatistics::HSRStatistics(HybridSamplerRenderer* renderer)
 	: renderer(renderer),
-	windowSampleCount(0.0),	windowNetworkSps(0.0), windowNetworkStartTime(0.0), windowNetworkSampleCount(0.0)
+	windowSampleCount(0.0)
 {
 	windowSps.set_capacity(60);
 
@@ -62,7 +63,6 @@ HSRStatistics::HSRStatistics(HybridSamplerRenderer* renderer)
 
 	AddDoubleAttribute(*this, "netSamplesPerPixel", "Average number of samples per pixel by slave nodes", &HSRStatistics::getNetworkAverageSamplesPerPixel);
 	AddDoubleAttribute(*this, "netSamplesPerSecond", "Average number of samples per second by slave nodes", &HSRStatistics::getNetworkAverageSamplesPerSecond);
-	AddDoubleAttribute(*this, "netSamplesPerSecondWindow", "Average number of samples per second by slave nodes in current time window", &HSRStatistics::getNetworkAverageSamplesPerSecondWindow);
 
 	AddDoubleAttribute(*this, "totalSamplesPerPixel", "Average number of samples per pixel", &HSRStatistics::getTotalAverageSamplesPerPixel);
 	AddDoubleAttribute(*this, "totalSamplesPerSecond", "Average number of samples per second", &HSRStatistics::getTotalAverageSamplesPerSecond);
@@ -78,10 +78,6 @@ HSRStatistics::~HSRStatistics()
 void HSRStatistics::resetDerived() {
 	windowSps.clear();
 	windowSampleCount = 0.0;
-
-	windowNetworkSps = 0.0;
-	windowNetworkStartTime = 0.0;
-	windowNetworkSampleCount = 0.0;
 }
 
 void HSRStatistics::updateStatisticsWindowDerived()
@@ -95,20 +91,6 @@ void HSRStatistics::updateStatisticsWindowDerived()
 	else
 		windowSps.push_back((sampleCount - windowSampleCount) / elapsedTime);
 	windowSampleCount = sampleCount;
-
-	// Get network sample count
-	double networkSampleCount = getNetworkSampleCount(false);
-	if (networkSampleCount != windowNetworkSampleCount)
-	{
-		windowNetworkSps = (networkSampleCount - windowNetworkSampleCount) / (getElapsedTime() - windowNetworkStartTime);
-		windowNetworkSampleCount = networkSampleCount;
-		windowNetworkStartTime = getElapsedTime();
-	}
-	else if (getSlaveNodeCount() == 0 && windowNetworkStartTime != 0.0)
-	{
-		windowNetworkSps = 0.0;
-		windowNetworkStartTime = 0.0;
-	}
 }
 
 double HSRStatistics::getRemainingTime() {
@@ -175,8 +157,19 @@ double HSRStatistics::getAverageSamplesPerSecondWindow() {
 }
 
 double HSRStatistics::getNetworkAverageSamplesPerSecond() {
-	double et = getElapsedTime();
-	return (et == 0.0) ? 0.0 : getNetworkSampleCount() / et;
+	double nsps = 0.0;
+
+	size_t nServers = getSlaveNodeCount();
+	if (nServers > 0)
+	{
+		std::vector<RenderingServerInfo> nodes(nServers);
+		nServers = luxGetRenderingServersStatus (&nodes[0], nServers);
+
+		for (size_t n = 0; n < nServers; n++)
+			nsps += nodes[n].calculatedSamplesPerSecond;
+	}
+
+	return nsps;
 }
 
 u_int HSRStatistics::getPixelCount() {
@@ -215,8 +208,14 @@ double HSRStatistics::getNetworkSampleCount(bool estimate) {
 		networkSampleCount = (*filmRegistry)["numberOfSamplesFromNetwork"].DoubleValue();
 
 	// Add estimated network sample count
-	if (estimate && getSlaveNodeCount() != 0 && networkSampleCount == windowNetworkSampleCount)
-		networkSampleCount += ((getElapsedTime() - windowNetworkStartTime) * windowNetworkSps);
+	size_t nServers = getSlaveNodeCount();
+	if (estimate && nServers > 0) {
+		std::vector<RenderingServerInfo> nodes(nServers);
+		nServers = luxGetRenderingServersStatus (&nodes[0], nServers);
+
+		for (size_t n = 0; n < nServers; n++)
+			networkSampleCount += nodes[n].calculatedSamplesPerSecond * nodes[n].secsSinceLastSamples;
+	}
 
 	return networkSampleCount;
 }
@@ -243,7 +242,6 @@ HSRStatistics::FormattedLong::FormattedLong(HSRStatistics* rs)
 
 	AddStringAttribute(*this, "netSamplesPerPixel", "Average number of samples per pixel by slave nodes", &FL::getNetworkAverageSamplesPerPixel);
 	AddStringAttribute(*this, "netSamplesPerSecond", "Average number of samples per second by slave nodes", &FL::getNetworkAverageSamplesPerSecond);
-	AddStringAttribute(*this, "netSamplesPerSecondWindow", "Average number of samples per second by slave nodes in current time window", &FL::getNetworkAverageSamplesPerSecondWindow);
 
 	AddStringAttribute(*this, "totalSamplesPerPixel", "Average number of samples per pixel", &FL::getTotalAverageSamplesPerPixel);
 	AddStringAttribute(*this, "totalSamplesPerSecond", "Average number of samples per second", &FL::getTotalAverageSamplesPerSecond);
@@ -265,15 +263,15 @@ std::string HSRStatistics::FormattedLong::getRecommendedStringTemplate()
 	if (rs->getNetworkSampleCount() != 0.0)
 	{
 		if (rs->getSlaveNodeCount() != 0)
-			stringTemplate += " | Net: ~%netSamplesPerPixel% ~%netSamplesPerSecondWindow%";
+			stringTemplate += " | Net: ~%netSamplesPerPixel% ~%netSamplesPerSecond%";
 		else
-			stringTemplate += " | Net: %netSamplesPerPixel% %netSamplesPerSecondWindow%";
+			stringTemplate += " | Net: %netSamplesPerPixel% %netSamplesPerSecond%";
 	}
 
 	if (rs->getNetworkSampleCount() != 0.0 && rs->getSlaveNodeCount())
-		stringTemplate += " | Tot: ~%totalSamplesPerPixel% ~%totalSamplesPerSecondWindow%";
+		stringTemplate += " | Tot: ~%totalSamplesPerPixel% ~%totalSamplesPerSecond%";
 	else if (rs->getResumedSampleCount() != 0.0)
-		stringTemplate += " | Tot: %totalSamplesPerPixel% %totalSamplesPerSecondWindow%";
+		stringTemplate += " | Tot: %totalSamplesPerPixel% %totalSamplesPerSecond%";
 
 	return stringTemplate;
 }
@@ -340,11 +338,6 @@ std::string HSRStatistics::FormattedLong::getNetworkAverageSamplesPerSecond() {
 	return boost::str(boost::format("%1$0.2f %2%S/s") % MagnitudeReduce(sps) % MagnitudePrefix(sps));
 }
 
-std::string HSRStatistics::FormattedLong::getNetworkAverageSamplesPerSecondWindow() {
-	double spsw = rs->getNetworkAverageSamplesPerSecondWindow();
-	return boost::str(boost::format("%1$0.2f %2%S/s") % MagnitudeReduce(spsw) % MagnitudePrefix(spsw));
-}
-
 std::string HSRStatistics::FormattedLong::getTotalAverageSamplesPerPixel() {
 	double spp = rs->getTotalAverageSamplesPerPixel();
 	return boost::str(boost::format("%1$0.2f %2%S/p") % MagnitudeReduce(spp) % MagnitudePrefix(spp));
@@ -385,7 +378,6 @@ HSRStatistics::FormattedShort::FormattedShort(HSRStatistics* rs)
 
 	AddStringAttribute(*this, "netSamplesPerPixel", "Average number of samples per pixel by slave nodes", boost::bind(boost::mem_fn(&FL::getNetworkAverageSamplesPerPixel), fl));
 	AddStringAttribute(*this, "netSamplesPerSecond", "Average number of samples per second by slave nodes", boost::bind(boost::mem_fn(&FL::getNetworkAverageSamplesPerSecond), fl));
-	AddStringAttribute(*this, "netSamplesPerSecondWindow", "Average number of samples per second by slave nodes in current time window", boost::bind(boost::mem_fn(&FL::getNetworkAverageSamplesPerSecondWindow), fl));
 
 	AddStringAttribute(*this, "totalSamplesPerPixel", "Average number of samples per pixel", boost::bind(boost::mem_fn(&FL::getTotalAverageSamplesPerPixel), fl));
 	AddStringAttribute(*this, "totalSamplesPerSecond", "Average number of samples per second", boost::bind(boost::mem_fn(&FL::getTotalAverageSamplesPerSecond), fl));
@@ -407,15 +399,15 @@ std::string HSRStatistics::FormattedShort::getRecommendedStringTemplate()
 	if (rs->getNetworkSampleCount() != 0.0)
 	{
 		if (rs->getSlaveNodeCount() != 0)
-			stringTemplate += " | Net: ~%netSamplesPerPixel% ~%netSamplesPerSecondWindow%";
+			stringTemplate += " | Net: ~%netSamplesPerPixel% ~%netSamplesPerSecond%";
 		else
-			stringTemplate += " | Net: %netSamplesPerPixel% %netSamplesPerSecondWindow%";
+			stringTemplate += " | Net: %netSamplesPerPixel% %netSamplesPerSecond%";
 	}
 
 	if (rs->getNetworkSampleCount() != 0.0 && rs->getSlaveNodeCount())
-		stringTemplate += " | Tot: ~%totalSamplesPerPixel% ~%totalSamplesPerSecondWindow%";
+		stringTemplate += " | Tot: ~%totalSamplesPerPixel% ~%totalSamplesPerSecond%";
 	else if (rs->getResumedSampleCount() != 0.0)
-		stringTemplate += " | Tot: %totalSamplesPerPixel% %totalSamplesPerSecondWindow%";
+		stringTemplate += " | Tot: %totalSamplesPerPixel% %totalSamplesPerSecond%";
 
 	return stringTemplate;
 }
