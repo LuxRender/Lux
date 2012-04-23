@@ -1513,20 +1513,6 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 		return true;
 	}
 
-	// Compute number of specular vertices for each path length
-    int nVerts = eyePathLength + lightPathLength;
-    int *nSpecularVertices = (int *)alloca(sizeof(int) * nVerts);
-    memset(nSpecularVertices, 0, nVerts * sizeof(int));
-    for (u_int t = 0; t < eyePathLength; ++t) {
-        for (u_int s = 0; s < lightPathLength; ++s) {
-			BidirPathState::BidirStateVertex &eyePath = bidirState->eyePath[t];
-			BidirPathState::BidirStateVertex &lightPath = bidirState->lightPath[s];
-
-            if ((eyePath.flags & BSDF_SPECULAR) || (lightPath.flags & BSDF_SPECULAR))
-                ++nSpecularVertices[t + s];
-		}
-	}
-
 	// Generate the rays
 	bidirState->raysCount = 0;
 	// Direct light sampling rays + eye/light connection rays
