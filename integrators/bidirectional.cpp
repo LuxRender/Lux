@@ -899,8 +899,6 @@ BidirPathState::BidirPathState(const Scene &scene, ContributionBuffer *contribBu
 	distanceLightPath = new float[bidir->maxLightDepth];
 	imageXYLightPath = new float[2 * bidir->maxLightDepth];
 
-	raysIndex = new u_int[bidir->maxEyeDepth + bidir->maxEyeDepth * bidir->maxLightDepth];
-
 	const u_int lightGroupCount = scene.lightGroups.size();
 	L = new SWCSpectrum[lightGroupCount];
 	V = new float[lightGroupCount];
@@ -1265,7 +1263,6 @@ void BidirPathState::Free(const Scene &scene) {
 	delete[] LlightPath;
 	delete[] distanceLightPath;
 	delete[] imageXYLightPath;
-	delete[] raysIndex;
 	delete[] L;
 	delete[] V;
 	scene.sampler->FreeSample(&sample);
@@ -1401,7 +1398,7 @@ void BidirPathState::Connect(const Scene &scene, luxrays::RayBuffer *rayBuffer,
 	if (!Li->Black()) {
 		const SpectrumWavelengths &sw(sample.swl);
 
-		const size_t ri = raysIndex[rayIndex];
+		const size_t ri = raysIndexStart + rayIndex;
 		const luxrays::Ray &firstShadowRay = (rayBuffer->GetRayBuffer())[ri];
 		// A pointer trick
 		const Point *ro = (const Point *)(&firstShadowRay.o);
@@ -1514,7 +1511,11 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 	// Generate the rays
 	bidirState->raysCount = 0;
 	// Direct light sampling rays + eye/light connection rays
-	Ray *shadowRays = (Ray *)alloca(sizeof(Ray) * (maxEyeDepth + maxEyeDepth * maxLightDepth));
+	Ray *shadowRays = (Ray *)alloca(sizeof(Ray) *
+			((maxEyeDepth - 1) + // Direct light sampling rays
+			(maxEyeDepth - 1) * (maxLightDepth - 1) + // Eye/light connection rays
+			(maxLightDepth - 1) // Light path vertex to the eye connection rays
+			));
 	const Sample &sample(bidirState->sample);
 	const SpectrumWavelengths &sw(bidirState->sample.swl);
 
@@ -1720,7 +1721,10 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 	for (u_int i = 0; i < bidirState->raysCount; ++i) {
 		// A pointer trick
 		luxrays::Ray *ray = (luxrays::Ray *)&shadowRays[i];
-		bidirState->raysIndex[i] = rayBuffer->AddRay(*ray);
+		if (i == 0)
+			bidirState->raysIndexStart = rayBuffer->AddRay(*ray);
+		else
+			rayBuffer->AddRay(*ray);
 	}
 
 	return true;

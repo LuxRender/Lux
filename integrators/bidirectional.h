@@ -96,7 +96,7 @@ private:
 	float *distanceLightPath;
 	float *imageXYLightPath;
 
-	u_int *raysIndex; // TODO: this can be replaced by just a single u_int (the first one)
+	u_int raysIndexStart; // Index of the first ray in the RayBuffer
 	u_int raysCount;
 
 	float distance, alpha;
