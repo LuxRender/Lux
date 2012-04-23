@@ -247,9 +247,9 @@ std::string SRStatistics::FormattedLong::getRecommendedStringTemplate()
 	}
 
 	if (rs->getNetworkSampleCount() != 0.0 && rs->getSlaveNodeCount())
-		stringTemplate += " | Tot: ~%totalSamplesPerPixel% ~%totalSamplesPerSecond%";
+		stringTemplate += " | Tot: ~%totalSamplesPerPixel% ~%totalSamplesPerSecondWindow%";
 	else if (rs->getResumedSampleCount() != 0.0)
-		stringTemplate += " | Tot: %totalSamplesPerPixel% %totalSamplesPerSecond%";
+		stringTemplate += " | Tot: %totalSamplesPerPixel% %totalSamplesPerSecondWindow%";
 
 	return stringTemplate;
 }
@@ -366,9 +366,9 @@ std::string SRStatistics::FormattedShort::getRecommendedStringTemplate()
 	}
 
 	if (rs->getNetworkSampleCount() != 0.0 && rs->getSlaveNodeCount())
-		stringTemplate += " | Tot: ~%totalSamplesPerPixel% ~%totalSamplesPerSecond%";
+		stringTemplate += " | Tot: ~%totalSamplesPerPixel% ~%totalSamplesPerSecondWindow%";
 	else if (rs->getResumedSampleCount() != 0.0)
-		stringTemplate += " | Tot: %totalSamplesPerPixel% %totalSamplesPerSecond%";
+		stringTemplate += " | Tot: %totalSamplesPerPixel% %totalSamplesPerSecondWindow%";
 
 	return stringTemplate;
 }
