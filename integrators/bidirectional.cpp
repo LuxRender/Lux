@@ -987,19 +987,18 @@ bool BidirPathState::Init(const Scene &scene) {
 
 				if (light0.bsdf->SampleF(sw, light0.wi,
 					&light0.wo, data[1], data[2], data[3],
-					&light0.throughputWi, &pdf, BSDF_ALL, &light0.flags,
+					&light0.throughput, &pdf, BSDF_ALL, &light0.flags,
 					&pdfR)) {
 					Ray ray(light0.bsdf->dgShading.p, light0.wo);
 					ray.time = sample.realTime;
 					Intersection isect;
-					light0.throughputWo =  light0.throughputWi;
 
 					// Trace light subpath and connect to eye vertex
 					const Volume *volume = light0.bsdf->GetVolume(ray.d);
 					bool scattered = light0.bsdf->dgShading.scattered;
 
 					u_int nLight = 1;
-					lightPath[1].throughputWi = lightPath[0].throughputWo;
+					lightPath[1].throughput = lightPath[0].throughput;
 
 					for (u_int sampleIndex = 1; sampleIndex < maxLightDepth; ++sampleIndex) {
 						data = sample.sampler->GetLazyValues(sample,
@@ -1009,12 +1008,12 @@ bool BidirPathState::Init(const Scene &scene) {
 
 						if (!scene.Intersect(sample, volume, scattered,
 							ray, data[4], &isect, &lightVertex.bsdf, &pdf,
-							&pdfR, &lightVertex.throughputWi))
+							&pdfR, &lightVertex.throughput))
 							break;
 
 						// Initialize new path vertex
 						lightVertex.wi = -ray.d;
-						lightVertex.throughputWi /= pdf;
+						lightVertex.throughput /= pdf;
 						scattered = lightVertex.bsdf->dgShading.scattered;
 
 						// Extend the light path
@@ -1030,7 +1029,7 @@ bool BidirPathState::Init(const Scene &scene) {
 						// case I don't record the hit point as a path vertex
 						if (lightVertex.flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) ||
 							!(lightVertex.bsdf->Pdf(sw, lightVertex.wo, lightVertex.wi, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) > 0.f)) {
-							lightVertex.throughputWo = lightVertex.throughputWi * f;
+							lightVertex.throughput *= f;
 
 							// Russian Roulette
 							// Possibly terminate the path
@@ -1039,7 +1038,7 @@ bool BidirPathState::Init(const Scene &scene) {
 								if (q < data[0])
 									break;
 								// increase path contribution
-								lightVertex.throughputWo /= q;
+								lightVertex.throughput /= q;
 							}
 
 							// Initialize ray for next segment of path
@@ -1052,13 +1051,13 @@ bool BidirPathState::Init(const Scene &scene) {
 							if (nLight >= maxLightDepth)
 								break;
 
-							lightPath[nLight].throughputWi =
-									lightPath[nLight - 1].throughputWo;
+							lightPath[nLight].throughput =
+									lightPath[nLight - 1].throughput;
 						} else {
 							// It a passthrough specular transmission
-							lightPath[nLight - 1].throughputWo *= f;
-							lightPath[nLight].throughputWi =
-									lightPath[nLight - 1].throughputWo;
+							lightPath[nLight - 1].throughput *= f;
+							lightPath[nLight].throughput =
+									lightPath[nLight - 1].throughput;
 
 							// Roolback the light path
 							--lightPathLength;
@@ -1092,7 +1091,7 @@ bool BidirPathState::Init(const Scene &scene) {
 	BidirStateVertex &eye0(eyePath[0]);
 	if (!sample.camera->SampleW(sample.arena, sw, scene,
 		posX, posY, .5f, &eye0.bsdf, &pdf,
-		&eye0.throughputWi))
+		&eye0.throughput))
 		return result;
 
 	// Initialize eye vertex
@@ -1110,12 +1109,11 @@ bool BidirPathState::Init(const Scene &scene) {
 		&pdf, true))
 			return result;
 
-	eye0.throughputWi *= f0;
+	eye0.throughput *= f0;
 	Ray ray(eye0.bsdf->dgShading.p, eyePath[0].wi);
 	ray.time = sample.realTime;
 	sample.camera->ClampRay(ray);
 	Intersection isect;
-	eye0.throughputWo = eye0.throughputWi;
 	++eyePathLength;
 
 	// Trace eye subpath
@@ -1124,7 +1122,7 @@ bool BidirPathState::Init(const Scene &scene) {
 	bool specularBounce = true;
 
 	u_int nEye = 1;
-	eyePath[1].throughputWi = eyePath[0].throughputWo;
+	eyePath[1].throughput = eyePath[0].throughput;
 
 	for (u_int sampleIndex = 1; sampleIndex < maxEyeDepth; ++sampleIndex) {
 		const float *data = sample.sampler->GetLazyValues(sample,
@@ -1133,14 +1131,14 @@ bool BidirPathState::Init(const Scene &scene) {
 		BidirStateVertex &eyeVertex = eyePath[nEye];
 
 		if (!scene.Intersect(sample, volume, scattered, ray, data[4],
-			&isect, &eyeVertex.bsdf, &pdfR, &pdf, &eyeVertex.throughputWi)) {
+			&isect, &eyeVertex.bsdf, &pdfR, &pdf, &eyeVertex.throughput)) {
 			if (nEye == 1) {
 				alpha = 0.f;
 				// Tweak intersection distance for Z buffer
 				distance = INFINITY;
 			}
 
-			const SWCSpectrum pathThroughput = eyePath[nEye - 1].throughputWo / pdfR;
+			const SWCSpectrum pathThroughput = eyePath[nEye - 1].throughput / pdfR;
 
 			// Dade - now I know ray.maxt and I can call volumeIntegrator
 			SWCSpectrum Lv;
@@ -1185,7 +1183,7 @@ bool BidirPathState::Init(const Scene &scene) {
 			SWCSpectrum Le(isect.Le(sample, ray, &ibsdf, NULL, NULL));
 			if (!Le.Black()) {
 				const float pathWeight = EvalPathWeight(eyePath, nEye, ibsdf->NumComponents(BSDF_SPECULAR));
-				Le *= eyePath[nEye - 1].throughputWo * pathWeight;
+				Le *= eyePath[nEye - 1].throughput * pathWeight;
 				L[isect.arealight->group] += Le;
 				V[isect.arealight->group] += Le.Filter(sw); // TOFIX
 				++contribCount;
@@ -1194,7 +1192,7 @@ bool BidirPathState::Init(const Scene &scene) {
 
 		// Initialize new path vertex
 		eyeVertex.wo = -ray.d;
-		eyeVertex.throughputWi /= pdfR;
+		eyeVertex.throughput /= pdfR;
 		scattered = eyeVertex.bsdf->dgShading.scattered;
 
 		// Extend the light path
@@ -1209,7 +1207,7 @@ bool BidirPathState::Init(const Scene &scene) {
 		// case I don't record the hit point as a path vertex
 		if (eyeVertex.flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) ||
 			!(eyeVertex.bsdf->Pdf(sw, eyeVertex.wo, eyeVertex.wi, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) > 0.f)) {
-			eyeVertex.throughputWo = eyeVertex.throughputWi * f;
+			eyeVertex.throughput *= f;
 			specularBounce = ((eyeVertex.flags & BSDF_SPECULAR) != 0);
 
 			// Russian Roulette
@@ -1222,7 +1220,7 @@ bool BidirPathState::Init(const Scene &scene) {
 					if (q < data[0])
 						break;
 					// increase path contribution
-					eyeVertex.throughputWo /= q;
+					eyeVertex.throughput /= q;
 				}
 			}
 
@@ -1236,13 +1234,13 @@ bool BidirPathState::Init(const Scene &scene) {
 			if (nEye >= maxEyeDepth)
 				break;
 
-			eyePath[nEye].throughputWi =
-					eyePath[nEye - 1].throughputWo;
+			eyePath[nEye].throughput =
+					eyePath[nEye - 1].throughput;
 		} else {
 			// It a passthrough specular transmission
-			eyePath[nEye - 1].throughputWo *= f;
-			eyePath[nEye].throughputWi =
-					eyePath[nEye - 1].throughputWo;
+			eyePath[nEye - 1].throughput *= f;
+			eyePath[nEye].throughput =
+					eyePath[nEye - 1].throughput;
 
 			// Roolback the eye path
 			--eyePathLength;
@@ -1582,7 +1580,7 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 			// Store light's contribution
 			const float pathWeight = BidirPathState::EvalPathWeight(
 				bidirState->eyePath, t + 1, lightBsdf->NumComponents(BSDF_SPECULAR));
-			SWCSpectrum Ld = (eyePath.throughputWi * Li * pathWeight) / d2;
+			SWCSpectrum Ld = (eyePath.throughput * Li * pathWeight) / d2;
 			if (Ld.Black())
 				continue;
 
@@ -1636,7 +1634,7 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 
 			const float pathWeight = BidirPathState::EvalPathWeight(
 				bidirState->eyePath, t + 1, bidirState->lightPath, s + 1);
-			SWCSpectrum Lc = (eyePath.throughputWi * ef * lf * lightPath.throughputWi * bidirState->Le * pathWeight) / d2;
+			SWCSpectrum Lc = (eyePath.throughput * ef * lf * lightPath.throughput * bidirState->Le * pathWeight) / d2;
 			if (Lc.Black())
 				continue;
 
@@ -1700,7 +1698,7 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 			// Store light's contribution
 			const float pathWeight = BidirPathState::EvalPathWeight(
 				eye0.bsdf->NumComponents(BSDF_SPECULAR), bidirState->lightPath, s + 1);
-			SWCSpectrum LlightPath = (eye0.throughputWi * ef * lf * lightPath.throughputWi * bidirState->Le * pathWeight) / d2;
+			SWCSpectrum LlightPath = (eye0.throughput * ef * lf * lightPath.throughput * bidirState->Le * pathWeight) / d2;
 			if (LlightPath.Black())
 				continue;
 

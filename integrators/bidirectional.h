@@ -46,14 +46,14 @@ public:
 
 private:
 	struct BidirStateVertex {
-		BidirStateVertex() : bsdf(NULL), flags(BxDFType(0)), throughputWi(1.f), throughputWo(1.f) {}
+		BidirStateVertex() : bsdf(NULL), flags(BxDFType(0)), throughput(1.f) {}
 
 		BSDF *bsdf;
 		BxDFType flags;
 
 		// TOFIX: wi is available also inside the bsdf
 		Vector wi, wo;
-		SWCSpectrum throughputWi, throughputWo;
+		SWCSpectrum throughput;
 	};
 
 	static const BidirStateVertex *GetPathVertex(const u_int index,
