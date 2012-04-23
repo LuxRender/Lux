@@ -326,13 +326,14 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	statusLabel->setMaximumWidth(60);
 	statusMessage->setFrameStyle(QFrame::Panel | QFrame::Sunken);
 	statusMessage->setMaximumWidth(320);
+	statusMessage->setMinimumWidth(100);
 	statusProgress->setMaximumWidth(100);
 	statusProgress->setRange(0, 100);
 
 	statsLabel->setMaximumWidth(70);
 	statsBox->setFrameStyle(QFrame::Panel | QFrame::Sunken);
 	statsBoxLayout->setSpacing(0);
-	statsBoxLayout->setContentsMargins(1, 0, 1, 0);
+	statsBoxLayout->setContentsMargins(3, 0, 3, 0);
 	statsBoxLayout->addStretch(-1);
 
 	ui->statusbar->addPermanentWidget(activityLabel, 1);
