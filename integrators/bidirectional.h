@@ -46,7 +46,8 @@ public:
 
 private:
 	struct BidirStateVertex {
-		BidirStateVertex() : bsdf(NULL), flags(BxDFType(0)), throughput(1.f) {}
+		BidirStateVertex() : bsdf(NULL), flags(BxDFType(0)), throughput(1.f),
+			pdf(0.f), pdfR(0.f), rr(1.f), rrR(1.f) {}
 
 		BSDF *bsdf;
 		BxDFType flags;
@@ -54,6 +55,9 @@ private:
 		// TOFIX: wi is available also inside the bsdf
 		Vector wi, wo;
 		SWCSpectrum throughput;
+
+		// Fields used for evaluating path weight with MIS
+		float pdf, pdfR, rr, rrR;
 	};
 
 	static const BidirStateVertex *GetPathVertex(const u_int index,

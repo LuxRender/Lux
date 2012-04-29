@@ -942,6 +942,8 @@ bool BidirPathState::Init(const Scene &scene) {
 	BidirIntegrator *bidir = (BidirIntegrator *)scene.surfaceIntegrator;
 	const u_int maxEyeDepth = bidir->maxEyeDepth;
 	const u_int maxLightDepth = bidir->maxLightDepth;
+	const float eyeThreshold = bidir->eyeThreshold;
+	const float lightThreshold = bidir->lightThreshold;
 
 	float pdf, pdfR;
 
@@ -985,8 +987,8 @@ bool BidirPathState::Init(const Scene &scene) {
 
 				if (light0.bsdf->SampleF(sw, light0.wi,
 					&light0.wo, data[1], data[2], data[3],
-					&light0.throughput, &pdf, BSDF_ALL, &light0.flags,
-					&pdfR)) {
+					&light0.throughput, &light0.pdf, BSDF_ALL, &light0.flags,
+					&light0.pdfR)) {
 					Ray ray(light0.bsdf->dgShading.p, light0.wo);
 					ray.time = sample.realTime;
 					Intersection isect;
@@ -1019,8 +1021,8 @@ bool BidirPathState::Init(const Scene &scene) {
 
 						SWCSpectrum f;
 						if (!lightVertex.bsdf->SampleF(sw, lightVertex.wi, &lightVertex.wo,
-							data[1], data[2], data[3], &f, &pdf,
-							BSDF_ALL, &lightVertex.flags, &pdfR))
+							data[1], data[2], data[3], &f, &lightVertex.pdf,
+							BSDF_ALL, &lightVertex.flags, &lightVertex.pdfR))
 							break;
 
 						// Check if passthrough specular transmission. In this
@@ -1029,14 +1031,18 @@ bool BidirPathState::Init(const Scene &scene) {
 							!(lightVertex.bsdf->Pdf(sw, lightVertex.wo, lightVertex.wi, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) > 0.f)) {
 							lightVertex.throughput *= f;
 
-							// Russian Roulette
-							// Possibly terminate the path
-							if (lightPathLength > 3) {
-								const float q = min<float>(1.f, f.Filter(sw));
-								if (q < data[0])
+							// Russian Roulette, ossibly terminate the path
+							const float cosi = AbsDot(lightVertex.wi, lightVertex.bsdf->ng);
+							const float coso = AbsDot(lightVertex.wo, lightVertex.bsdf->ng);
+							lightVertex.rr = min(1.f, max(lightThreshold,
+									f.Filter(sw)));
+							lightVertex.rrR = min(1.f, max(eyeThreshold, f.Filter(sw) * cosi / coso));
+
+							if (lightPathLength > rrStart) {
+								if (lightVertex.rr < data[0])
 									break;
 								// increase path contribution
-								lightVertex.throughput /= q;
+								lightVertex.throughput /= lightVertex.rr;
 							}
 
 							// Initialize ray for next segment of path
@@ -1059,6 +1065,11 @@ bool BidirPathState::Init(const Scene &scene) {
 
 							// Roolback the light path
 							--lightPathLength;
+
+							if (sampleIndex + 1 >= maxLightDepth) {
+								lightPath[nLight - 1].rr = 0.f;
+								break;
+							}
 
 							// Initialize ray for next segment of path
 							ray = Ray(lightVertex.bsdf->dgShading.p, lightVertex.wo);
@@ -1103,11 +1114,12 @@ bool BidirPathState::Init(const Scene &scene) {
 	SWCSpectrum f0;
 	if ((maxEyeDepth <= 1) || !eye0.bsdf->SampleF(sw,
 		eye0.wo, &eye0.wi, lensU, lensV, .5f,
-		&f0, &pdfR, BSDF_ALL, &eye0.flags,
-		&pdf, true))
+		&f0, &eye0.pdfR, BSDF_ALL, &eye0.flags,
+		&eye0.pdf, true))
 			return result;
 
 	eye0.throughput *= f0;
+
 	Ray ray(eye0.bsdf->dgShading.p, eyePath[0].wi);
 	ray.time = sample.realTime;
 	sample.camera->ClampRay(ray);
@@ -1198,7 +1210,7 @@ bool BidirPathState::Init(const Scene &scene) {
 
 		SWCSpectrum f;
 		if (!eyeVertex.bsdf->SampleF(sw, eyeVertex.wo, &eyeVertex.wi, data[1], data[2],
-			data[3], &f, &pdfR, BSDF_ALL, &eyeVertex.flags, NULL, true))
+			data[3], &f, &eyeVertex.pdfR, BSDF_ALL, &eyeVertex.flags, &eyeVertex.pdf, true))
 			break;
 
 		// Check if passthrough specular transmission. In this
@@ -1208,18 +1220,18 @@ bool BidirPathState::Init(const Scene &scene) {
 			eyeVertex.throughput *= f;
 			specularBounce = ((eyeVertex.flags & BSDF_SPECULAR) != 0);
 
-			// Russian Roulette
-			if (eyeVertex.flags != (BSDF_SPECULAR | BSDF_TRANSMISSION) ||
-				!(eyeVertex.bsdf->Pdf(sw, eyeVertex.wi, eyeVertex.wo,
-					BxDFType(BSDF_SPECULAR | BSDF_TRANSMISSION)) > 0.f)) {
-				// Possibly terminate the path
-				if (sampleIndex > 3) {
-					const float q = min<float>(1.f, f.Filter(sw));
-					if (q < data[0])
-						break;
-					// increase path contribution
-					eyeVertex.throughput /= q;
-				}
+			// Russian Roulette, ossibly terminate the path
+			const float cosi = AbsDot(eyeVertex.wi, eyeVertex.bsdf->ng);
+			const float coso = AbsDot(eyeVertex.wo, eyeVertex.bsdf->ng);
+			eyeVertex.rr = min(1.f, max(lightThreshold,
+					f.Filter(sw) * coso / cosi));
+			eyeVertex.rrR = min(1.f, max(eyeThreshold, f.Filter(sw)));
+
+			if (nEye > rrStart) {
+				if (eyeVertex.rrR < data[0])
+					break;
+				// Increase path contribution
+				eyeVertex.throughput /= eyeVertex.rrR;
 			}
 
 			// Initialize ray for next segment of path
@@ -1240,8 +1252,13 @@ bool BidirPathState::Init(const Scene &scene) {
 			eyePath[nEye].throughput =
 					eyePath[nEye - 1].throughput;
 
-			// Roolback the eye path
+			// Rollback the eye path
 			--eyePathLength;
+
+			if (sampleIndex + 1 >= maxEyeDepth) {
+				eyePath[nEye - 1].rrR = 0.f;
+				break;
+			}
 
 			// Initialize ray for next segment of path
 			ray = Ray(eyeVertex.bsdf->dgShading.p, eyeVertex.wi);
