@@ -63,6 +63,17 @@ private:
 	static const BidirStateVertex *GetPathVertex(const u_int index,
 		const BidirStateVertex *eyePath, const u_int eyePathVertexCount,
 		const BidirStateVertex *lightPath, const u_int lightPathVertexCount);
+
+	// Evaluation of total path weight with MIS
+	static float EvalPathMISWeight(
+		const BidirStateVertex *eyePath,
+		const u_int eyePathVertexCount,
+		const float lightPdf);
+	/*static float EvalPathMISWeight(
+		const BidirStateVertex *eyePath,
+		const u_int eyePathVertexCount);*/
+
+	// Evaluation of total path weight by averaging
 	static float EvalPathWeight(const BidirStateVertex *eyePath,
 		const u_int eyePathVertexCount, const bool isLightVertexSpecular);
 	static float EvalPathWeight(const BidirStateVertex *eyePath, const u_int eyePathVertexCount,
@@ -116,10 +127,10 @@ private:
 class BidirIntegrator : public SurfaceIntegrator {
 public:
 	BidirIntegrator(u_int ed, u_int ld, float et, float lt,
-		LightsSamplingStrategy *lds, bool d) : SurfaceIntegrator(),
+		LightsSamplingStrategy *lds, bool mis, bool d) : SurfaceIntegrator(),
 		maxEyeDepth(ed), maxLightDepth(ld),
 		eyeThreshold(et), lightThreshold(lt),
-		lightDirectStrategy(lds), debug(d) {
+		lightDirectStrategy(lds), hybridUseMIS(mis), debug(d) {
 		samplingCount = 0;
 		eyeBufferId = 0;
 		lightBufferId = 0;
@@ -167,7 +178,7 @@ private:
 	u_int samplingCount;
 	u_int lightNumOffset, lightComponentOffset;
 	u_int lightPosOffset, lightDirOffset, sampleDirectOffset;
-	bool debug;
+	bool hybridUseMIS, debug;
 };
 
 }//namespace lux

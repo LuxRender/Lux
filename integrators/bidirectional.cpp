@@ -968,11 +968,13 @@ bool BidirPathState::Init(const Scene &scene) {
 		if (light->SampleL(
 				scene, sample,
 				lightPos[0], lightPos[1], component, &lightPath[0].bsdf,
-				&pdf, &Le)) {
+				&light0.pdf, &Le)) {
 			++lightPathLength;
 
 			// Initialize light vertex
 			light0.wi = Vector(light0.bsdf->dgShading.nn);
+			// ONE light strategy
+			light0.pdf /= numberOfLights;
 
 			// pdf of ONE_UNIFORM light sampling strategy
 			Le *= numberOfLights;
@@ -1167,9 +1169,17 @@ bool BidirPathState::Init(const Scene &scene) {
 				BSDF *ibsdf;
 				for (u_int i = 0; i < numberOfLights; ++i) {
 					SWCSpectrum Le(pathThroughput);
+					float lpdf;
 					if (scene.lights[i]->Le(scene, sample,
-						ray, &ibsdf, NULL, NULL, &Le)) {
-						const float pathWeight = EvalPathWeight(eyePath, nEye, ibsdf->NumComponents(BSDF_SPECULAR));
+						ray, &ibsdf, &lpdf, NULL, &Le)) {
+						float pathWeight;
+						if (bidir->hybridUseMIS) {
+							// ONE light strategy
+							const float lightPdf =  lpdf / numberOfLights;
+							pathWeight = EvalPathMISWeight(eyePath, nEye, lightPdf);
+						} else
+							pathWeight = EvalPathWeight(eyePath, nEye, ibsdf->NumComponents(BSDF_SPECULAR));
+
 						Le *= pathWeight;
 						L[scene.lights[i]->group] += Le;
 						V[scene.lights[i]->group] += Le.Filter(sw); // TOFIX
@@ -1192,7 +1202,14 @@ bool BidirPathState::Init(const Scene &scene) {
 			BSDF *ibsdf;
 			SWCSpectrum Le(isect.Le(sample, ray, &ibsdf, NULL, NULL));
 			if (!Le.Black()) {
-				const float pathWeight = EvalPathWeight(eyePath, nEye, ibsdf->NumComponents(BSDF_SPECULAR));
+				float pathWeight;
+				if (bidir->hybridUseMIS) {
+					// ONE light strategy
+					const float lightPdf =  light->Pdf(eyeVertex.bsdf->dgShading.p, eyeVertex.bsdf->dgShading) / numberOfLights;
+					pathWeight = EvalPathMISWeight(eyePath, nEye, lightPdf);
+				} else
+					pathWeight = EvalPathWeight(eyePath, nEye, ibsdf->NumComponents(BSDF_SPECULAR));
+
 				Le *= eyePath[nEye - 1].throughput * pathWeight;
 				L[isect.arealight->group] += Le;
 				V[isect.arealight->group] += Le.Filter(sw); // TOFIX
@@ -1298,6 +1315,187 @@ const BidirPathState::BidirStateVertex *BidirPathState::GetPathVertex(const u_in
 	
 }
 
+//------------------------------------------------------------------------------
+// Evaluation of total path with MIS
+//------------------------------------------------------------------------------
+
+// This method is used for weight of the path for path tracing and
+// direct light sampling
+float BidirPathState::EvalPathMISWeight(
+		const BidirStateVertex *eyePath,
+		const u_int eyePathVertexCount,
+		const float lightPdf) {
+	// The pdf of the current path
+	float pathPdf = 1.f;
+	for (u_int i = 0; i < eyePathVertexCount; ++i) {
+		pathPdf *= eyePath[i].pdfR;
+		if (i > rrStart)
+			pathPdf *= eyePath[i].rrR;
+	}
+	// Power heuristic pdf^2
+	pathPdf *= pathPdf;
+
+	// The sum of all pdf for all possible ways to sample this path
+	const u_int totalPathVertexCount = eyePathVertexCount + 1;
+	float totalPdf = 1.f;
+
+	// Account for: Path tracing
+	if (totalPathVertexCount == 2) {
+		// Russian Roulette can not be applied
+		// Power heuristic pdf^2
+		totalPdf *= eyePath[0].pdfR * eyePath[0].pdfR;
+	} else if ((totalPathVertexCount >= 3) && (eyePath[eyePathVertexCount - 1].flags & BSDF_SPECULAR)) {
+		// I have already this pdf^2
+		totalPdf *= pathPdf;
+	}
+
+	// Account for: Direct light sampling
+	if ((totalPathVertexCount >= 3) &&
+			!(eyePath[eyePathVertexCount - 1].flags & BSDF_SPECULAR)) {
+		float pdf = 1.f;
+		for (u_int i = 0; i < eyePathVertexCount - 1; ++i) {
+			pdf *= eyePath[i].pdfR;
+			if (i > rrStart)
+				pdf *= eyePath[i].rrR;
+		}
+
+		pdf *= lightPdf;
+
+		// Power heuristic pdf^2
+		totalPdf *= pdf * pdf;
+	}
+
+	// Account for: Eye path and light path connections
+	if (totalPathVertexCount >= 4) {
+		float accPdf = 1.f;
+
+		for (u_int i = 1; i < eyePathVertexCount - 1; ++i) {
+			if (!(eyePath[i].flags & BSDF_SPECULAR) && !(eyePath[i + 1].flags & BSDF_SPECULAR)) {
+				float pdf = 1.f;
+
+				// Eye path pdf
+				for (u_int s = 0; s <= i; ++s) {
+					pdf *= eyePath[s].pdfR;
+					if (i > rrStart)
+						pdf *= eyePath[s].rrR;
+				}
+
+				// Light path pdf
+				const BidirStateVertex *lightPathVertex = &eyePath[eyePathVertexCount - 1];
+				for (u_int t = 0; t <= i; ++t, --lightPathVertex) {
+					pdf *= lightPathVertex->pdf;
+					if (t > rrStart)
+						pdf *= lightPathVertex->rr;
+				}
+
+				// Power heuristic pdf^2
+				accPdf *= pdf * pdf;
+			}
+		}
+
+		totalPdf *= accPdf;
+	}
+
+	// Account for: Light path to eye (i.e. eye[0]) connections
+	if ((totalPathVertexCount >= 3) && !(eyePath[1].flags & BSDF_SPECULAR)) {
+		float pdf = 1.f;
+
+		// Light path pdf
+		const BidirStateVertex *lightPathVertex = &eyePath[eyePathVertexCount - 1];
+		for (u_int t = 0; t < eyePathVertexCount; ++t, --lightPathVertex) {
+			pdf *= lightPathVertex->pdf;
+			if (t > rrStart)
+				pdf *= lightPathVertex->rr;
+		}
+
+		// Power heuristic pdf^2
+		totalPdf *= pdf * pdf;
+	}
+
+	if (totalPdf > 0)
+		return pathPdf / totalPdf;
+	else
+		return 0.f;
+}
+
+// This method is used for weight of the path when connecting light path
+// vertices directly to the eye
+/*float BidirPathState::EvalPathMISWeight(const BidirStateVertex *lightPath,
+		const u_int lightPathVertexCount) {
+	// The pdf of the current path
+	float pathPdf = 1.f;
+	for (u_int i = 0; i < eyePathVertexCount; ++i) {
+		pathPdf *= lightPath[i].pdf;
+		if (i > rrStart)
+			pathPdf *= lightPath[i].rr;
+	}
+	// Power heuristic pdf^2
+	pathPdf *= pathPdf;
+
+	// The sum of all pdf for all possible ways to sample this path
+	const u_int totalPathVertexCount = 1 + lightPathVertexCount;
+	float totalPdf = 1.f;
+
+	if (totalPathVertexCount == 2) {
+		// Russian Roulette can not be applied
+		// Power heuristic pdf^2
+		totalPdf *= lightPath[0].pdf * lightPath[0].pdf;
+	} else if ((totalPathVertexCount >= 3) && (lightPath[1].flags & BSDF_SPECULAR)) {
+		const BidirStateVertex *eyePathVertex = &lightPath[lightPathVertexCount - 1];
+		for (u_int s = 0; s <= i; ++s, --eyePathVertex) {
+			pdf *= eyePathVertex->pdfR;
+			if (s > rrStart)
+				pdf *= lightPathVertex->rrR;
+		}
+		
+		// Power heuristic pdf^2
+		totalPdf *= pdf * pdf;
+	}
+
+	// Account for: Direct light sampling
+	if ((totalPathVertexCount >= 3) &&
+			!(lightPath[1].flags & BSDF_SPECULAR))
+		++samplingWays;
+ 
+	if ((totalPathVertexCount >= 3) &&
+			!(lightPath[1].flags & BSDF_SPECULAR)) {
+		float pdf = 1.f;
+		for (u_int i = 0; i < eyePathVertexCount - 1; ++i) {
+			pdf *= eyePath[i].pdfR;
+			if (i > rrStart)
+				pdf *= eyePath[i].rrR;
+		}
+
+		pdf *= lightPdf;
+
+		// Power heuristic pdf^2
+		totalPdf *= pdf * pdf;
+	}
+		
+	// Account for: Eye path and light path connections
+	if (totalPathVertexCount >= 4) {
+		for (u_int i = 1; i < lightPathVertexCount - 1; ++i) {
+			if (!(lightPath[i].flags & BSDF_SPECULAR) && !(lightPath[i + 1].flags & BSDF_SPECULAR))
+				++samplingWays;
+		}
+	}
+
+	// Account for: Light path to eye (i.e. eye[0]) connections
+	if ((totalPathVertexCount >= 3) && !(lightPath[lightPathVertexCount - 1].flags & BSDF_SPECULAR))
+		++samplingWays;
+
+	if (totalPdf > 0)
+		return pathPdf / totalPdf;
+	else
+		return 0.f;
+}*/
+
+//------------------------------------------------------------------------------
+// Evaluation of total path weight by averaging
+//------------------------------------------------------------------------------
+
+// This method is used for weight of the path for path tracing and
+// direct light sampling
 float BidirPathState::EvalPathWeight(const BidirStateVertex *eyePath,
 		const u_int eyePathVertexCount, const bool isLightVertexSpecular) {
 	const u_int totalPathVertexCount = eyePathVertexCount + 1;
@@ -1323,10 +1521,8 @@ float BidirPathState::EvalPathWeight(const BidirStateVertex *eyePath,
 	}
 
 	// Account for: Light path to eye (i.e. eye[0]) connections
-	if (totalPathVertexCount >= 3) {
-		if (!(eyePath[1].flags & BSDF_SPECULAR))
-			++samplingWays;
-	}
+	if ((totalPathVertexCount >= 3) && !(eyePath[1].flags & BSDF_SPECULAR))
+		++samplingWays;
 
 	if (samplingWays > 0)
 		return 1.f / samplingWays;
@@ -1362,10 +1558,9 @@ float BidirPathState::EvalPathWeight(
 	}
 
 	// Account for: Light path to eye (i.e. eye[0]) connections
-	if (totalPathVertexCount >= 3) {
-		if (!(eyePath[1].flags & BSDF_SPECULAR))
-			++samplingWays;
-	}
+	if ((totalPathVertexCount >= 3) && !(eyePath[1].flags & BSDF_SPECULAR))
+		++samplingWays;
+
 
 	if (samplingWays > 0)
 		return 1.f / samplingWays;
@@ -1373,6 +1568,8 @@ float BidirPathState::EvalPathWeight(
 		return 0.f;
 }
 
+// This method is used for weight of the path when connecting light path
+// vertices directly to the eye
 float BidirPathState::EvalPathWeight(const bool isEyeVertexSpecular,
 		const BidirStateVertex *lightPath, const u_int lightPathVertexCount) {
 	const u_int totalPathVertexCount = 1 + lightPathVertexCount;
@@ -1398,10 +1595,8 @@ float BidirPathState::EvalPathWeight(const bool isEyeVertexSpecular,
 	}
 
 	// Account for: Light path to eye (i.e. eye[0]) connections
-	if (totalPathVertexCount >= 3) {
-		if (!(lightPath[lightPathVertexCount - 1].flags & BSDF_SPECULAR))
-			++samplingWays;
-	}
+	if ((totalPathVertexCount >= 3) && !(lightPath[lightPathVertexCount - 1].flags & BSDF_SPECULAR))
+		++samplingWays;
 
 	if (samplingWays > 0)
 		return 1.f / samplingWays;
@@ -1555,16 +1750,14 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 
 	const u_int nLights = scene.lights.size();
 	if (nLights > 0) {
-		const float lightSelectionPdf = nLights;
+		// ONE light strategy
+		const float lightSelectionInvPdf = nLights;
 
-		u_int specularVertexCount = (bidirState->eyePath[0].flags & BSDF_SPECULAR) ? 1 : 0;
 		for (u_int t = 1; t < eyePathLength; ++t) {
 			const float *sampleData = sample.sampler->GetLazyValues(sample,
 				sampleDirectOffset, t);
 
 			BidirPathState::BidirStateVertex &eyePath = bidirState->eyePath[t];
-			if (eyePath.flags & BSDF_SPECULAR)
-				++specularVertexCount;
 			SWCSpectrum &stateLd(bidirState->Ld[t]);
 			stateLd = SWCSpectrum(0.f);
 
@@ -1586,7 +1779,7 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 				&lightBsdf, NULL, &lightPdf, &Li))
 				continue;
 
-			Li *= lightSelectionPdf; // ONE_UNIFORM Strategy Pdf
+			Li *= lightSelectionInvPdf; // ONE_UNIFORM Strategy Pdf
 
 			const Point &pL(lightBsdf->dgShading.p);
 			const Vector wi0(pL - p);
@@ -1609,8 +1802,14 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 				continue;
 
 			// Store light's contribution
-			const float pathWeight = BidirPathState::EvalPathWeight(
-				bidirState->eyePath, t + 1, lightBsdf->NumComponents(BSDF_SPECULAR));
+			float pathWeight;
+			if (hybridUseMIS)
+				pathWeight = BidirPathState::EvalPathWeight(
+						bidirState->eyePath, t + 1, lightPdf / lightSelectionInvPdf);
+			else
+				pathWeight = BidirPathState::EvalPathWeight(
+						bidirState->eyePath, t + 1, lightBsdf->NumComponents(BSDF_SPECULAR));
+
 			SWCSpectrum Ld = (eyePath.throughput * Li * pathWeight) / d2;
 			if (Ld.Black())
 				continue;
@@ -1663,8 +1862,13 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 			if (lf.Black())
 				continue;
 
-			const float pathWeight = BidirPathState::EvalPathWeight(
-				bidirState->eyePath, t + 1, bidirState->lightPath, s + 1);
+			float pathWeight;
+			if (hybridUseMIS)
+				pathWeight = 1.f;
+			else
+				pathWeight = BidirPathState::EvalPathWeight(
+						bidirState->eyePath, t + 1, bidirState->lightPath, s + 1);
+
 			SWCSpectrum Lc = (eyePath.throughput * ef * lf * lightPath.throughput * bidirState->Le * pathWeight) / d2;
 			if (Lc.Black())
 				continue;
@@ -1689,11 +1893,8 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 		const Point &p = eye0.bsdf->dgShading.p;
 
 		// For each light path vertex
-		u_int specularVertexCount = (bidirState->lightPath[0].flags & BSDF_SPECULAR) ? 1 : 0;
 		for (u_int s = 1; s < lightPathLength; ++s) {
 			BidirPathState::BidirStateVertex &lightPath = bidirState->lightPath[s];
-			if (lightPath.flags & BSDF_SPECULAR)
-                ++specularVertexCount;
 
 			SWCSpectrum &stateLlightPath(bidirState->LlightPath[s]);
 			stateLlightPath = SWCSpectrum(0.f);
@@ -1710,13 +1911,11 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 				&bidirState->imageXYLightPath[2 * s], &bidirState->imageXYLightPath[2 * s + 1]))
 				continue;
 
-			const SWCSpectrum ef(eye0.bsdf->F(sw, d, eye0.wo, true, eye0.flags) *
-				(1 + eye0.bsdf->NumComponents(BSDF_SPECULAR)));
+			const SWCSpectrum ef(eye0.bsdf->F(sw, d, eye0.wo, true, eye0.flags));
 			if (ef.Black())
 				continue;
 
-			const SWCSpectrum lf(lightPath.bsdf->F(sw, lightPath.wi, -d, false, lightPath.flags) *
-				(1 + lightPath.bsdf->NumComponents(BSDF_SPECULAR)));
+			const SWCSpectrum lf(lightPath.bsdf->F(sw, lightPath.wi, -d, false, lightPath.flags));
 			if (lf.Black())
 				continue;
 
@@ -1727,8 +1926,13 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 				continue;
 
 			// Store light's contribution
-			const float pathWeight = BidirPathState::EvalPathWeight(
-				eye0.bsdf->NumComponents(BSDF_SPECULAR), bidirState->lightPath, s + 1);
+			float pathWeight;
+			if (hybridUseMIS)
+				pathWeight = 1.f;
+			else
+				pathWeight = BidirPathState::EvalPathWeight(
+						eye0.bsdf->NumComponents(BSDF_SPECULAR), bidirState->lightPath, s + 1);
+
 			SWCSpectrum LlightPath = (eye0.throughput * ef * lf * lightPath.throughput * bidirState->Le * pathWeight) / d2;
 			if (LlightPath.Black())
 				continue;
@@ -1800,6 +2004,11 @@ bool BidirIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s,
 					&LlightPath, &Ll, NULL);
 		LlightPath = Ll;
 	}
+	/*for (u_int s = 1; s < bidirState->lightPathLength; ++s) {
+		SWCSpectrum &LlightPath(bidirState->LlightPath[s]);
+		SWCSpectrum Ll(0.f);
+		LlightPath = Ll;
+	}*/
 
 	bidirState->Terminate(scene, eyeBufferId, lightBufferId);
 
@@ -1819,9 +2028,13 @@ SurfaceIntegrator* BidirIntegrator::CreateSurfaceIntegrator(const ParamSet &para
 	float eyeThreshold = params.FindOneFloat("eyerrthreshold", 0.f);
 	float lightThreshold = params.FindOneFloat("lightrrthreshold", 0.f);
 	LightsSamplingStrategy *lds = LightsSamplingStrategy::Create(params);
+	// This parameter works only with hybrid BiDir, it will be removed
+	// once MIS code is complete
+	bool mis = params.FindOneBool("hybridusemis", false);
 	bool debug = params.FindOneBool("debug", false);
+
 	return new BidirIntegrator(max(eyeDepth, 0), max(lightDepth, 0),
-		eyeThreshold, lightThreshold, lds, debug);
+		eyeThreshold, lightThreshold, lds, mis, debug);
 }
 
 static DynamicLoader::RegisterSurfaceIntegrator<BidirIntegrator> r("bidirectional");
