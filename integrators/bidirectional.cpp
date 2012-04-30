@@ -1637,7 +1637,7 @@ void BidirPathState::Connect(const Scene &scene, luxrays::RayBuffer *rayBuffer,
 			Intersection lightIsect;
 			BSDF *ibsdf;
 			const Volume *volume = bsdf->GetVolume(shadowRay.d);
-			for (u_int n = 0; n < 1000; ++n) {
+			for (u_int n = 0; n < passThroughLimit; ++n) {
 				if (!scene.Intersect(sample, volume,
 					bsdf->dgShading.scattered, shadowRay, 1.f,
 					&lightIsect, &ibsdf, NULL, NULL, Li)) {

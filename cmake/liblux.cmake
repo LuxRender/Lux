@@ -223,6 +223,7 @@ SET(lux_integrators_src
 	integrators/multi.cpp
 	integrators/path.cpp
 	integrators/single.cpp
+	integrators/none.cpp
 	integrators/sppm.cpp
 	)
 SOURCE_GROUP("Source Files\\Integrators" FILES ${lux_integrators_src})

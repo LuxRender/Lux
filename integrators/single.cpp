@@ -214,7 +214,7 @@ bool SingleScattering::Intersect(const Scene &scene, const Sample &sample,
 }
 
 VolumeIntegrator* SingleScattering::CreateVolumeIntegrator(const ParamSet &params) {
-	float stepSize  = params.FindOneFloat("stepsize", 1.f);
+	const float stepSize  = params.FindOneFloat("stepsize", 1.f);
 	return new SingleScattering(stepSize);
 }
 
