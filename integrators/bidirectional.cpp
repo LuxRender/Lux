@@ -1200,12 +1200,13 @@ bool BidirPathState::Init(const Scene &scene) {
 		// Possibly add emitted light at path vertex
 		if (specularBounce && isect.arealight) {
 			BSDF *ibsdf;
-			SWCSpectrum Le(isect.Le(sample, ray, &ibsdf, NULL, NULL));
+			float lpdf;
+			SWCSpectrum Le(isect.Le(sample, ray, &ibsdf, &lpdf, NULL));
 			if (!Le.Black()) {
 				float pathWeight;
 				if (bidir->hybridUseMIS) {
 					// ONE light strategy
-					const float lightPdf =  light->Pdf(eyeVertex.bsdf->dgShading.p, eyeVertex.bsdf->dgShading) / numberOfLights;
+					const float lightPdf =  lpdf / numberOfLights;
 					pathWeight = EvalPathMISWeight(eyePath, nEye, lightPdf);
 				} else
 					pathWeight = EvalPathWeight(eyePath, nEye, ibsdf->NumComponents(BSDF_SPECULAR));
@@ -1337,36 +1338,35 @@ float BidirPathState::EvalPathMISWeight(
 
 	// The sum of all pdf for all possible ways to sample this path
 	const u_int totalPathVertexCount = eyePathVertexCount + 1;
-	float totalPdf = 1.f;
+	float totalPdf = 0.f;
 
 	// Account for: Path tracing
 	if (totalPathVertexCount == 2) {
 		// Russian Roulette can not be applied
+		const float pdf = eyePath[0].pdfR;
 		// Power heuristic pdf^2
-		totalPdf *= eyePath[0].pdfR * eyePath[0].pdfR;
+		totalPdf += pdf * pdf;
 	} else if ((totalPathVertexCount >= 3) && (eyePath[eyePathVertexCount - 1].flags & BSDF_SPECULAR)) {
 		// I have already this pdf^2
-		totalPdf *= pathPdf;
+		totalPdf += pathPdf;
 	}
 
 	// Account for: Direct light sampling
 	if ((totalPathVertexCount >= 3) &&
 			!(eyePath[eyePathVertexCount - 1].flags & BSDF_SPECULAR)) {
-		float pdf = 1.f;
+		float pdf = lightPdf;
 		for (u_int i = 0; i < eyePathVertexCount - 1; ++i) {
 			pdf *= eyePath[i].pdfR;
 			if (i > rrStart)
 				pdf *= eyePath[i].rrR;
 		}
 
-		pdf *= lightPdf;
-
 		// Power heuristic pdf^2
-		totalPdf *= pdf * pdf;
+		totalPdf += pdf * pdf;
 	}
 
 	// Account for: Eye path and light path connections
-	if (totalPathVertexCount >= 4) {
+	/*if (totalPathVertexCount >= 4) {
 		float accPdf = 1.f;
 
 		for (u_int i = 1; i < eyePathVertexCount - 1; ++i) {
@@ -1394,22 +1394,19 @@ float BidirPathState::EvalPathMISWeight(
 		}
 
 		totalPdf *= accPdf;
-	}
+	}*/
 
 	// Account for: Light path to eye (i.e. eye[0]) connections
 	if ((totalPathVertexCount >= 3) && !(eyePath[1].flags & BSDF_SPECULAR)) {
-		float pdf = 1.f;
-
-		// Light path pdf
-		const BidirStateVertex *lightPathVertex = &eyePath[eyePathVertexCount - 1];
-		for (u_int t = 0; t < eyePathVertexCount; ++t, --lightPathVertex) {
-			pdf *= lightPathVertex->pdf;
+		float pdf = lightPdf;
+		for (u_int t = 0; t < eyePathVertexCount; ++t) {
+			pdf *= eyePath[t].pdf;
 			if (t > rrStart)
-				pdf *= lightPathVertex->rr;
+				pdf *= eyePath[t].rr;
 		}
 
 		// Power heuristic pdf^2
-		totalPdf *= pdf * pdf;
+		totalPdf += pdf * pdf;
 	}
 
 	if (totalPdf > 0)
@@ -1420,11 +1417,20 @@ float BidirPathState::EvalPathMISWeight(
 
 // This method is used for weight of the path when connecting light path
 // vertices directly to the eye
-/*float BidirPathState::EvalPathMISWeight(const BidirStateVertex *lightPath,
+float BidirPathState::EvalPathMISWeight(
+		const SpectrumWavelengths &sw,
+		const BidirStateVertex &eyeVertex0,
+		const float lightStrategyPdf,
+		const BidirStateVertex *lightPath,
 		const u_int lightPathVertexCount) {
 	// The pdf of the current path
-	float pathPdf = 1.f;
-	for (u_int i = 0; i < eyePathVertexCount; ++i) {
+	const BidirStateVertex &lastLightVertex(lightPath[lightPathVertexCount - 1]);
+	const Vector d(eyeVertex0.bsdf->dgShading.p - lastLightVertex.bsdf->dgShading.p);
+	const float connectPdf = eyeVertex0.bsdf->Pdf(sw, eyeVertex0.wo, -d, eyeVertex0.flags) *
+			lastLightVertex.bsdf->Pdf(sw, lastLightVertex.wi, d, lastLightVertex.flags);
+	float pathPdf = connectPdf;
+	
+	for (u_int i = 0; i < lightPathVertexCount; ++i) {
 		pathPdf *= lightPath[i].pdf;
 		if (i > rrStart)
 			pathPdf *= lightPath[i].rr;
@@ -1434,61 +1440,57 @@ float BidirPathState::EvalPathMISWeight(
 
 	// The sum of all pdf for all possible ways to sample this path
 	const u_int totalPathVertexCount = 1 + lightPathVertexCount;
-	float totalPdf = 1.f;
+	float totalPdf = 0.f;
 
 	if (totalPathVertexCount == 2) {
 		// Russian Roulette can not be applied
 		// Power heuristic pdf^2
-		totalPdf *= lightPath[0].pdf * lightPath[0].pdf;
+		totalPdf += connectPdf *  connectPdf;
 	} else if ((totalPathVertexCount >= 3) && (lightPath[1].flags & BSDF_SPECULAR)) {
-		const BidirStateVertex *eyePathVertex = &lightPath[lightPathVertexCount - 1];
-		for (u_int s = 0; s <= i; ++s, --eyePathVertex) {
-			pdf *= eyePathVertex->pdfR;
+		float pdf = connectPdf;
+		for (u_int s = 0; s < lightPathVertexCount; ++s) {
+			pdf *= lightPath[s].pdfR;
 			if (s > rrStart)
-				pdf *= lightPathVertex->rrR;
+				pdf *= lightPath[s].rrR;
 		}
 		
 		// Power heuristic pdf^2
-		totalPdf *= pdf * pdf;
+		totalPdf += pdf * pdf;
 	}
 
 	// Account for: Direct light sampling
 	if ((totalPathVertexCount >= 3) &&
-			!(lightPath[1].flags & BSDF_SPECULAR))
-		++samplingWays;
- 
-	if ((totalPathVertexCount >= 3) &&
 			!(lightPath[1].flags & BSDF_SPECULAR)) {
-		float pdf = 1.f;
-		for (u_int i = 0; i < eyePathVertexCount - 1; ++i) {
-			pdf *= eyePath[i].pdfR;
-			if (i > rrStart)
-				pdf *= eyePath[i].rrR;
+		float pdf = connectPdf * lightStrategyPdf;
+		for (u_int s = 0; s < lightPathVertexCount - 1; ++s) {
+			pdf *= lightPath[s].pdfR;
+			if (s > rrStart)
+				pdf *= lightPath[s].rrR;
 		}
 
-		pdf *= lightPdf;
-
 		// Power heuristic pdf^2
-		totalPdf *= pdf * pdf;
+		totalPdf += pathPdf;
 	}
 		
 	// Account for: Eye path and light path connections
-	if (totalPathVertexCount >= 4) {
+	/*if (totalPathVertexCount >= 4) {
 		for (u_int i = 1; i < lightPathVertexCount - 1; ++i) {
 			if (!(lightPath[i].flags & BSDF_SPECULAR) && !(lightPath[i + 1].flags & BSDF_SPECULAR))
 				++samplingWays;
 		}
-	}
+	}*/
 
 	// Account for: Light path to eye (i.e. eye[0]) connections
-	if ((totalPathVertexCount >= 3) && !(lightPath[lightPathVertexCount - 1].flags & BSDF_SPECULAR))
-		++samplingWays;
+	if ((totalPathVertexCount >= 3) && !(lightPath[lightPathVertexCount - 1].flags & BSDF_SPECULAR)) {
+		// I have already this pdf^2
+		totalPdf += pathPdf;
+	}
 
 	if (totalPdf > 0)
 		return pathPdf / totalPdf;
 	else
 		return 0.f;
-}*/
+}
 
 //------------------------------------------------------------------------------
 // Evaluation of total path weight by averaging
@@ -1864,7 +1866,7 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 
 			float pathWeight;
 			if (hybridUseMIS)
-				pathWeight = 1.f;
+				pathWeight = 0.f;
 			else
 				pathWeight = BidirPathState::EvalPathWeight(
 						bidirState->eyePath, t + 1, bidirState->lightPath, s + 1);
@@ -1891,6 +1893,7 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 			bidirState->LlightPath[s] = SWCSpectrum(0.f);
 	} else {
 		const Point &p = eye0.bsdf->dgShading.p;
+		const float lightStrategyPdf = 1.f / nLights;
 
 		// For each light path vertex
 		for (u_int s = 1; s < lightPathLength; ++s) {
@@ -1928,7 +1931,8 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 			// Store light's contribution
 			float pathWeight;
 			if (hybridUseMIS)
-				pathWeight = 1.f;
+				pathWeight = BidirPathState::EvalPathMISWeight(sw, eye0, lightStrategyPdf,
+						bidirState->lightPath, s + 1);
 			else
 				pathWeight = BidirPathState::EvalPathWeight(
 						eye0.bsdf->NumComponents(BSDF_SPECULAR), bidirState->lightPath, s + 1);

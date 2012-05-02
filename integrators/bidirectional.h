@@ -69,9 +69,12 @@ private:
 		const BidirStateVertex *eyePath,
 		const u_int eyePathVertexCount,
 		const float lightPdf);
-	/*static float EvalPathMISWeight(
-		const BidirStateVertex *eyePath,
-		const u_int eyePathVertexCount);*/
+	static float EvalPathMISWeight(
+		const SpectrumWavelengths &sw,
+		const BidirStateVertex &eyeVertex0,
+		const float lightStrategyPdf,
+		const BidirStateVertex *lightPath,
+		const u_int lightPathVertexCount);
 
 	// Evaluation of total path weight by averaging
 	static float EvalPathWeight(const BidirStateVertex *eyePath,
