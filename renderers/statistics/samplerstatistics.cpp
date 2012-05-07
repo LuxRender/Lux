@@ -81,7 +81,7 @@ void SRStatistics::updateStatisticsWindowDerived()
 {
 	// Get local sample count
 	double sampleCount = getSampleCount();
-	double elapsedTime = getElapsedTime() - windowStartTime;
+	double elapsedTime = windowCurrentTime - windowStartTime;
 
 	if (elapsedTime == 0.0)
 		windowSps.clear();

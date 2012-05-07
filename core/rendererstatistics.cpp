@@ -39,7 +39,8 @@ RendererStatistics::RendererStatistics()
 	: Queryable("renderer_statistics"),
 	formattedLong(NULL),
 	formattedShort(NULL),
-	windowStartTime(0.0)
+	windowStartTime(0.0),
+	windowCurrentTime(0.0)
 {
 	AddDoubleAttribute(*this, "elapsedTime", "Elapsed rendering time", &RendererStatistics::getElapsedTime);
 	AddDoubleAttribute(*this, "remainingTime", "Remaining rendering time", &RendererStatistics::getRemainingTime);
@@ -59,14 +60,15 @@ void RendererStatistics::reset() {
 
 	timer.Reset();
 	windowStartTime = 0.0;
+	windowCurrentTime = 0.0;
 }
 
 void RendererStatistics::updateStatisticsWindow() {
 	boost::mutex::scoped_lock window_mutex(windowMutex);
 
+	windowCurrentTime = getElapsedTime();
 	updateStatisticsWindowDerived();
-
-	windowStartTime = getElapsedTime();
+	windowStartTime = windowCurrentTime;
 }
 
 // Returns halttime if set, otherwise infinity

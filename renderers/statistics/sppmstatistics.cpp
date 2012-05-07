@@ -78,16 +78,16 @@ void SPPMRStatistics::updateStatisticsWindowDerived()
 
 	if (passCount != windowPassCount)
 	{
-		windowPps = (passCount - windowPassCount) / (getElapsedTime() - windowPassStartTime);
+		windowPps = (passCount - windowPassCount) / (windowCurrentTime - windowPassStartTime);
 		windowPassCount = passCount;
-		windowPassStartTime = getElapsedTime();
+		windowPassStartTime = windowCurrentTime;
 	}
 
 	if (photonCount != windowPhotonCount)
 	{
-		windowYps = (photonCount - windowPhotonCount) / (getElapsedTime() - windowPhotonStartTime);
+		windowYps = (photonCount - windowPhotonCount) / (windowCurrentTime - windowPhotonStartTime);
 		windowPhotonCount = photonCount;
-		windowPhotonStartTime = getElapsedTime();
+		windowPhotonStartTime = windowCurrentTime;
 	}
 }
 

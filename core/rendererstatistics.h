@@ -111,6 +111,7 @@ public:
 protected:
 	boost::mutex windowMutex;
 	double windowStartTime;
+	double windowCurrentTime;
 
 	double getElapsedTime() { return timer.Time(); }
 	double getHaltTime();
