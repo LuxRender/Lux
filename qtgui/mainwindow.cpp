@@ -1396,6 +1396,8 @@ void  MainWindow::loadFile(const QString &fileName)
 // Helper class for MainWindow::updateStatistics()
 class AttributeFormatter {
 public:
+	static const int maxStatLength = 10;
+
 	AttributeFormatter(QBoxLayout* l, int& label_count) : layout(l), count(label_count) { }
 
 	std::string operator()(boost::smatch m) {
@@ -1411,8 +1413,20 @@ public:
 			QLabel* label = getNextLabel();
 			if (m[2].str().length() > 0) {
 				std::string attr_name = m[2];
-				label->setText(getStringAttribute("renderer_statistics_formatted", attr_name.c_str()));
-				label->setToolTip(getAttributeDescription("renderer_statistics_formatted", attr_name.c_str()));
+
+				QString statValue = getStringAttribute("renderer_statistics_formatted", attr_name.c_str());
+				QString statDesc;
+
+				if (statValue.length() <= maxStatLength)
+					statDesc = getAttributeDescription("renderer_statistics_formatted", attr_name.c_str());
+				else
+				{
+					statValue = getStringAttribute("renderer_statistics_formatted_short", attr_name.c_str());
+					statDesc = getAttributeDescription("renderer_statistics_formatted_short", attr_name.c_str());
+				}
+
+				label->setText(statValue);
+				label->setToolTip(statDesc);
 			} else {
 				label->setText("%");
 				label->setToolTip("");
