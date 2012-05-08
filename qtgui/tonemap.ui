@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>498</width>
-    <height>497</height>
+    <height>544</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -570,11 +570,31 @@
              <number>0</number>
             </property>
             <property name="maxVisibleItems">
-             <number>11</number>
+             <number>15</number>
             </property>
             <item>
              <property name="text">
               <string>User</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>10</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>5</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>3</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>2</string>
              </property>
             </item>
             <item>
