@@ -462,7 +462,8 @@ u_int DistributedPath::Li(const Scene &scene, const Sample &sample) const
 	u_int nrContribs = 0;
 	float zdepth = 0.f;
 	Ray ray;
-	float rayWeight = sample.camera->GenerateRay(scene, sample, &ray);
+	float xi, yi;
+	float rayWeight = sample.camera->GenerateRay(scene, sample, &ray, &xi, &yi);
 
 	vector<SWCSpectrum> L(scene.lightGroups.size(), SWCSpectrum(0.f));
 	float alpha = 1.f;
@@ -470,7 +471,7 @@ u_int DistributedPath::Li(const Scene &scene, const Sample &sample) const
 		nrContribs);
 
 	for (u_int i = 0; i < L.size(); ++i)
-		sample.AddContribution(sample.imageX, sample.imageY,
+		sample.AddContribution(xi, yi,
 			XYZColor(sample.swl, L[i]) * rayWeight, alpha, zdepth,
 			0.f, bufferId, i);
 

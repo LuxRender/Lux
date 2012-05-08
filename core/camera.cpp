@@ -53,7 +53,7 @@ Camera::Camera(const MotionSystem &w2c,
 }
 
 float Camera::GenerateRay(const Scene &scene, const Sample &sample,
-	Ray *ray) const
+	Ray *ray, float *x, float *y) const
 {
 	const SpectrumWavelengths &sw(sample.swl);
 	if (IsLensBased()) {
@@ -73,9 +73,12 @@ float Camera::GenerateRay(const Scene &scene, const Sample &sample,
 	}
 
 	// Set ray time value
-	ray->time = GetTime(sample.time);
+	ray->time = sample.realTime;
 
-	return 1.f;
+	// Do depth clamping
+	ClampRay(*ray);
+
+	return GetSamplePosition(ray->o, ray->d, INFINITY, x, y) ? 1.f : 0.f;
 }
 
 bool Camera::GenerateRay(MemoryArena &arena, const SpectrumWavelengths &sw,
@@ -88,16 +91,16 @@ bool Camera::GenerateRay(MemoryArena &arena, const SpectrumWavelengths &sw,
 	//FIXME: Replace dummy .5f by a sampled value if needed
 	if (!SampleW(arena, sw, scene, o1, o2, .5f, &bsdf, &pdf, &We))
 		return false;
-	ray->o = bsdf->dgShading.p;
 
 	// Sample ray direction
 	//FIXME: Replace dummy .5f by a sampled value if needed
-	if (!bsdf->SampleF(sw, Vector(bsdf->dgShading.nn), &(ray->d), d1, d2, .5f,
+	Vector w;
+	if (!bsdf->SampleF(sw, Vector(bsdf->dgShading.nn), &w, d1, d2, .5f,
 		&We, &pdf, BSDF_ALL, NULL, NULL, true))
 		return false;
 
-	// Do depth clamping
-	ClampRay(*ray);
+	//Initialize ray
+	*ray = Ray(bsdf->dgShading.p, w);
 
 	return true;
 }

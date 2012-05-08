@@ -189,7 +189,8 @@ void IGIIntegrator::Preprocess(const RandomGenerator &rng, const Scene &scene)
 u_int IGIIntegrator::Li(const Scene &scene, const Sample &sample) const
 {
 	Ray ray;
-	float rayWeight = sample.camera->GenerateRay(scene, sample, &ray);
+	float xi, yi;
+	float rayWeight = sample.camera->GenerateRay(scene, sample, &ray, &xi, &yi);
 	const SpectrumWavelengths &sw(sample.swl);
 	SWCSpectrum L(0.f), pathThroughput(1.f);
 	float alpha = 1.f;
@@ -280,8 +281,8 @@ u_int IGIIntegrator::Li(const Scene &scene, const Sample &sample) const
 		volume = bsdf->GetVolume(wi);
 	}
 	const XYZColor color(sw, L);
-	sample.AddContribution(sample.imageX, sample.imageY, color * rayWeight,
-		alpha, 0.f, 0.f, bufferId, 0U);
+	sample.AddContribution(xi, yi, color * rayWeight, alpha, 0.f, 0.f,
+		bufferId, 0U);
 	return L.Black() ? 0 : 1;
 }
 SurfaceIntegrator* IGIIntegrator::CreateSurfaceIntegrator(const ParamSet &params)

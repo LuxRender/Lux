@@ -1673,14 +1673,17 @@ void BidirPathState::Connect(const Scene &scene, luxrays::RayBuffer *rayBuffer,
 void BidirPathState::Terminate(const Scene &scene,
 		const u_int eyeBufferId, const u_int lightBufferId) {
 	// Add the eye buffer samples
-	const u_int lightGroupCount = scene.lightGroups.size();
-	for (u_int i = 0; i < lightGroupCount; ++i) {
-		if (!L[i].Black())
-			V[i] /= L[i].Filter(sample.swl);
+	float xi, yi;
+	if (sample.camera->GetSamplePosition(eyePath[0].bsdf->dgShading.p, eyePath[0].wi, distance, &xi, &yi)) {
+		const u_int lightGroupCount = scene.lightGroups.size();
+		for (u_int i = 0; i < lightGroupCount; ++i) {
+			if (!L[i].Black())
+				V[i] /= L[i].Filter(sample.swl);
 
-		sample.AddContribution(sample.imageX, sample.imageY,
-			XYZColor(sample.swl, L[i]), alpha, distance,
-			V[i], eyeBufferId, i);
+			sample.AddContribution(xi, yi,
+				XYZColor(sample.swl, L[i]), alpha, distance,
+				V[i], eyeBufferId, i);
+		}
 	}
 
 	// Add the light buffer samples

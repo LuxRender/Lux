@@ -164,7 +164,8 @@ void ExPhotonIntegrator::Preprocess(const RandomGenerator &rng,
 u_int ExPhotonIntegrator::Li(const Scene &scene, const Sample &sample) const 
 {
 	Ray ray;
-	float rayWeight = sample.camera->GenerateRay(scene, sample, &ray);
+	float xi, yi;
+	float rayWeight = sample.camera->GenerateRay(scene, sample, &ray, &xi, &yi);
 
 	SWCSpectrum L(0.f);
 	float alpha = 1.f;
@@ -180,7 +181,7 @@ u_int ExPhotonIntegrator::Li(const Scene &scene, const Sample &sample) const
 			BOOST_ASSERT(false);
 	}
 
-	sample.AddContribution(sample.imageX, sample.imageY,
+	sample.AddContribution(xi, yi,
 		XYZColor(sample.swl, L) * rayWeight, alpha, 0.f, 0.f,
 		bufferId, 0);
 

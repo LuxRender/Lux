@@ -73,7 +73,7 @@ bool EnvironmentCamera::SampleW(MemoryArena &arena,
 {
 	const float theta = M_PI * u2 / film->yResolution;
 	const float phi = 2 * M_PI * u1 / film->xResolution;
-	Normal ns(sinf(theta) * sinf(phi), cosf(theta),
+	Normal ns(-sinf(theta) * sinf(phi), cosf(theta),
 		-sinf(theta) * cosf(phi));
 	CameraToWorld(ns, &ns);
 	Vector dpdu, dpdv;

@@ -213,9 +213,6 @@ void HitPoints::SetHitPoints(Sample &sample, RandomGenerator *rng, const u_int i
 			sample.contribBuffer->Add(sample.contributions[si], 1.f);
 		}
 		sample.contributions.clear();
-
-		hp->imageX = sample.imageX;
-		hp->imageY = sample.imageY;
 	}
 }
 
@@ -234,7 +231,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample)
 	// Declare common path integration variables
 	const SpectrumWavelengths &sw(sample.swl);
 	Ray ray;
-	const float rayWeight = sample.camera->GenerateRay(scene, sample, &ray);
+	const float rayWeight = sample.camera->GenerateRay(scene, sample, &ray, &(hp->imageX), &(hp->imageY));
 
 	const float nLights = scene.lights.size();
 	const u_int lightGroupCount = scene.lightGroups.size();
@@ -411,7 +408,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample)
 	{
 		if (!L[i].Black())
 			V[i] /= L[i].Filter(sw);
-		sample.AddContribution(sample.imageX, sample.imageY,
+		sample.AddContribution(hp->imageX, hp->imageY,
 			XYZColor(sw, L[i]) * rayWeight, hp->eyePass.alpha, hp->eyePass.distance,
 			0, renderer->sppmi->bufferEyeId, i);
 	}

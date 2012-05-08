@@ -45,7 +45,7 @@ public:
 		volume = vol;
 	}
 	float GenerateRay(const Scene &scene, const Sample &sample,
-		Ray *ray) const;
+		Ray *ray, float *x, float *y) const;
 	virtual bool SampleW(MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Scene &scene, float u1, float u2, float u3, BSDF **bsdf,
 		float *pdf, SWCSpectrum *We) const = 0;
