@@ -570,11 +570,21 @@
              <number>0</number>
             </property>
             <property name="maxVisibleItems">
-             <number>15</number>
+             <number>17</number>
             </property>
             <item>
              <property name="text">
               <string>User</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>30</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>20</string>
              </property>
             </item>
             <item>
