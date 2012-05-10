@@ -226,7 +226,7 @@ bool RenderFarm::connect(ExtRenderingServerInfo &serverInfo) {
 	return true;
 }
 
-bool RenderFarm::reconnect(ExtRenderingServerInfo &serverInfo)
+RenderFarm::reconnect_status_t RenderFarm::reconnect(ExtRenderingServerInfo &serverInfo)
 {
 	stringstream ss;
 	string serverName = serverInfo.name + ":" + serverInfo.port;
@@ -243,7 +243,7 @@ bool RenderFarm::reconnect(ExtRenderingServerInfo &serverInfo)
 		if (!getline(stream, result)) {
 			LOG( LUX_ERROR,LUX_SYSTEM) << "Unable to reconnect server: " << serverName;
 			serverInfo.calculatedSamplesPerSecond = 0;
-			return false;
+			return reconnect_status::error;
 		}
 
 		LOG( LUX_INFO,LUX_NOERROR) << "Server reconnect result: " << result;
@@ -252,7 +252,7 @@ bool RenderFarm::reconnect(ExtRenderingServerInfo &serverInfo)
 			// slave rejected reconnect attempt, signal by setting active to false
 			serverInfo.active = false;
 			serverInfo.calculatedSamplesPerSecond = 0;
-			return false;
+			return reconnect_status::rejected;
 		}
 
 		serverInfo.active = true;
@@ -261,11 +261,11 @@ bool RenderFarm::reconnect(ExtRenderingServerInfo &serverInfo)
 		LOG(LUX_ERROR,LUX_SYSTEM) << "Unable to reconnect server: " << serverName;
 		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
 		serverInfo.calculatedSamplesPerSecond = 0;
-		return false;
+		return reconnect_status::error;
 	}
 
 	serverInfo.timeLastSamples = boost::posix_time::second_clock::local_time();
-	return true;	
+	return reconnect_status::success;
 }
 
 bool RenderFarm::connect(const string &serverName) {
@@ -402,11 +402,10 @@ void RenderFarm::reconnectFailed() {
 				<< "Trying to reconnect server: "
 				<< serverInfo.name << ":" << serverInfo.port;
 
-			// If reconnect() fails the active flag will determine
-			// if the connection was broken during reconnect attempt
-			// (active kept true) or if slave did not accept the reconnection
-			// (active set to false)
-			if (!this->reconnect(serverInfo) && !serverInfo.active) {
+			// If reconnect() returns rejected, the slave actively
+			// rejected the reconnection attempt, in which case we 
+			// try to establish a new session
+			if (this->reconnect(serverInfo) == reconnect_status::rejected) {
 				LOG(LUX_INFO,LUX_NOERROR)
 					<< "Reconnection failed, attemting to establish new session with server: "
 					<< serverInfo.name << ":" << serverInfo.port;
