@@ -142,9 +142,14 @@ private:
 		bool flushed;
 	};
 
+	struct reconnect_status {
+		enum type { error, rejected, success };
+	};
+	typedef reconnect_status::type reconnect_status_t;
+
 	static void decodeServerName(const string &serverName, string &name, string &port);
 	bool connect(ExtRenderingServerInfo &serverInfo);
-	bool reconnect(ExtRenderingServerInfo &serverInfo);
+	reconnect_status_t reconnect(ExtRenderingServerInfo &serverInfo);
 	void flushImpl();
 	void disconnect(const ExtRenderingServerInfo &serverInfo);
 	void sendParams(const ParamSet &params);
