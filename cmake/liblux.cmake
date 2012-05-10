@@ -91,6 +91,7 @@ SET(lux_core_src
 	core/texture.cpp
 	core/tgaio.cpp
 	core/timer.cpp
+	core/tigerhash.cpp
 	core/transport.cpp
 	core/util.cpp
 	core/volume.cpp
@@ -527,6 +528,7 @@ SET(lux_core_hdr
 	core/texturecolor.h
 	core/tgaio.h
 	core/timer.h
+	core/tigerhash.h
 	core/tonemap.h
 	core/transport.h
 	core/version.h
