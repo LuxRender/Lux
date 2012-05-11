@@ -28,6 +28,8 @@
 
 #include <algorithm>
 
+#include <boost/circular_buffer.hpp>
+
 namespace lux
 {
 
@@ -79,12 +81,10 @@ public:
 private:
 	SPPMRenderer* renderer;
 
-	double windowPps;
-	double windowYps;
+	boost::circular_buffer<double> windowPps;
+	boost::circular_buffer<double> windowYps;
 	double windowPassCount;
 	double windowPhotonCount;
-	double windowPassStartTime;
-	double windowPhotonStartTime;
 
 	virtual void resetDerived();
 	virtual void updateStatisticsWindowDerived();
@@ -94,7 +94,7 @@ private:
 
 	double getPassCount() { return renderer->hitPoints ? renderer->hitPoints->GetPassCount() : 0.0; }
 	double getAveragePassesPerSecond();
-	double getAveragePassesPerSecondWindow() { return windowPps; }
+	double getAveragePassesPerSecondWindow();
 
 	double getHaltPass();
 	double getRemainingPasses() { return std::max(0.0, getHaltPass() - getPassCount()); }
@@ -104,7 +104,7 @@ private:
 
 	double getPhotonCount() { return double(renderer->photonTracedTotal + renderer->photonTracedPass); }
 	double getAveragePhotonsPerSecond();
-	double getAveragePhotonsPerSecondWindow() { return windowYps; }
+	double getAveragePhotonsPerSecondWindow();
 };
 
 }//namespace lux

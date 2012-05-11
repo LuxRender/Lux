@@ -24,22 +24,23 @@
 #include "context.h"
 
 #include <limits>
+#include <numeric>
 #include <string>
 
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
+#include <boost/thread/mutex.hpp>
 
 using namespace lux;
 
 SPPMRStatistics::SPPMRStatistics(SPPMRenderer* renderer)
 	: renderer(renderer),
-	windowPps(0.0),
-	windowYps(0.0),
 	windowPassCount(0.0),
-	windowPhotonCount(0.0),
-	windowPassStartTime(0.0),
-	windowPhotonStartTime(0.0)
+	windowPhotonCount(0.0)
 {
+	windowPps.set_capacity(samplesInWindow);
+	windowYps.set_capacity(samplesInWindow);
+
 	formattedLong = new SPPMRStatistics::FormattedLong(this);
 	formattedShort = new SPPMRStatistics::FormattedShort(this);
 
@@ -63,37 +64,44 @@ SPPMRStatistics::~SPPMRStatistics()
 }
 
 void SPPMRStatistics::resetDerived() {
-	windowPps = 0.0;
-	windowYps = 0.0;
+	windowPps.clear();
+	windowYps.clear();
+
 	windowPassCount = 0.0;
 	windowPhotonCount = 0.0;
-	windowPassStartTime = 0.0;
-	windowPhotonStartTime = 0.0;
 }
 
 void SPPMRStatistics::updateStatisticsWindowDerived()
 {
 	double passCount = getPassCount();
 	double photonCount = getPhotonCount();
+	double elapsedTime = windowCurrentTime - windowStartTime;
 
-	if (passCount != windowPassCount)
+	if (elapsedTime == 0.0)
 	{
-		windowPps = (passCount - windowPassCount) / (windowCurrentTime - windowPassStartTime);
-		windowPassCount = passCount;
-		windowPassStartTime = windowCurrentTime;
+		windowPps.clear();
+		windowYps.clear();
+	}
+	else
+	{
+		windowPps.push_back((passCount - windowPassCount) / elapsedTime);
+		windowYps.push_back((photonCount - windowPhotonCount) / elapsedTime);
 	}
 
-	if (photonCount != windowPhotonCount)
-	{
-		windowYps = (photonCount - windowPhotonCount) / (windowCurrentTime - windowPhotonStartTime);
-		windowPhotonCount = photonCount;
-		windowPhotonStartTime = windowCurrentTime;
-	}
+	windowPassCount = passCount;
+	windowPhotonCount = photonCount;
 }
 
 double SPPMRStatistics::getAveragePassesPerSecond() {
 	double et = getElapsedTime();
 	return (et == 0.0) ? 0.0 : getPassCount() / et;
+}
+
+double SPPMRStatistics::getAveragePassesPerSecondWindow() {
+	boost::mutex::scoped_lock window_mutex(windowMutex);
+
+	int s = windowPps.size();
+	return (s == 0) ? 0 : std::accumulate(windowPps.begin(), windowPps.end(), 0.0) / s;
 }
 
 // Returns haltSamplesPerPixel if set, otherwise infinity
@@ -115,6 +123,13 @@ double SPPMRStatistics::getPercentHaltPassesComplete() {
 double SPPMRStatistics::getAveragePhotonsPerSecond() {
 	double et = getElapsedTime();
 	return (et == 0.0) ? 0.0 : getPhotonCount() / et;
+}
+
+double SPPMRStatistics::getAveragePhotonsPerSecondWindow() {
+	boost::mutex::scoped_lock window_mutex(windowMutex);
+
+	int s = windowYps.size();
+	return (s == 0) ? 0 : std::accumulate(windowYps.begin(), windowYps.end(), 0.0) / s;
 }
 
 SPPMRStatistics::FormattedLong::FormattedLong(SPPMRStatistics* rs)
