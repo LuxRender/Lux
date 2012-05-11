@@ -741,6 +741,11 @@ void RenderFarm::updateFilm(Scene *scene) {
 			multibuffer_device mbdev;
 			boost::iostreams::stream<multibuffer_device> compressedStream(mbdev);
 
+			// Get the time here before we fetch the stream in case it takes
+			// a very long time to transfer the data. This time will be used
+			// to calculate the slave nodes samples per second.
+			boost::posix_time::ptime samplesRetrievedTime = second_clock::local_time();
+
 			compressedStream << stream.rdbuf();
 
 			stream.close();
@@ -753,8 +758,10 @@ void RenderFarm::updateFilm(Scene *scene) {
 			const double sampleCount = film->UpdateFilm(compressedStream);
 			if (sampleCount == 0.)
 				throw string("Received 0 samples from server");
-			serverInfoList[i].numberOfSamplesReceived += sampleCount;
 			film->numberOfSamplesFromNetwork += sampleCount;
+			serverInfoList[i].numberOfSamplesReceived += sampleCount;
+			serverInfoList[i].calculatedSamplesPerSecond = sampleCount / (samplesRetrievedTime - serverInfoList[i].timeLastSamples).total_seconds();
+			serverInfoList[i].timeLastSamples = samplesRetrievedTime;
 
 			LOG( LUX_INFO,LUX_NOERROR) << "Samples received from '" <<
 					serverInfoList[i].name << ":" << serverInfoList[i].port << "' (" <<
@@ -1021,9 +1028,10 @@ u_int RenderFarm::getServersStatus(RenderingServerInfo *info, u_int maxInfoCount
 		info[i].port = serverInfoList[i].port.c_str();
 		info[i].sid = serverInfoList[i].sid.c_str();
 
-		time_duration td = now - serverInfoList[i].timeLastContact;
-		info[i].secsSinceLastContact = td.seconds();
+		info[i].secsSinceLastContact = time_duration(now - serverInfoList[i].timeLastContact).seconds();
+		info[i].secsSinceLastSamples = time_duration(now - serverInfoList[i].timeLastSamples).seconds();
 		info[i].numberOfSamplesReceived = serverInfoList[i].numberOfSamplesReceived;
+		info[i].calculatedSamplesPerSecond = serverInfoList[i].calculatedSamplesPerSecond;
 	}
 
 	return serverInfoList.size();
