@@ -138,7 +138,7 @@ double SRStatistics::getAverageSamplesPerSecondWindow() {
 	boost::mutex::scoped_lock window_mutex(windowMutex);
 
 	int s = windowSps.size();
-	return (s == 0) ? 0 : std::accumulate(windowSps.begin(), windowSps.end(), 0) / s;
+	return (s == 0) ? 0 : std::accumulate(windowSps.begin(), windowSps.end(), 0.0) / s;
 }
 
 double SRStatistics::getNetworkAverageSamplesPerSecond() {
