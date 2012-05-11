@@ -31,10 +31,12 @@
 #include "color.h"
 #include "osfunc.h"
 #include "version.h"
+#include "tigerhash.h"
 
 #include <boost/version.hpp>
 #include <boost/filesystem.hpp>
 #include <fstream>
+#include <boost/cstdint.hpp>
 #include <boost/asio.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filtering_streambuf.hpp>
@@ -137,6 +139,39 @@ static void printInfoThread()
 		}
 	}
 }
+
+static bool read_response(std::iostream &stream, const std::string &expected_response) {
+	
+	// flush any output
+	stream << std::flush;
+
+	std::string response;
+	if (!getline(stream, response)) {
+		LOG( LUX_ERROR,LUX_SYSTEM) << "Error reading from master";
+		return false;
+	}
+
+	if (response != expected_response) {
+		LOG( LUX_ERROR,LUX_SYSTEM) << "Wrong response from master, expected '" << expected_response << "', got '" << response << "'";
+		return false;
+	}
+
+	return true;
+}
+
+static std::string get_response(std::iostream &stream) {
+	// flush any output
+	stream << std::flush;
+
+	std::string response;
+	if (!getline(stream, response)) {
+		LOG( LUX_ERROR,LUX_SYSTEM) << "Error reading from master";
+		return "";
+	}
+
+	return response;
+}
+
 static void writeTransmitFilm(basic_ostream<char> &stream, const string &filename)
 {
 	string file = filename;
@@ -187,10 +222,162 @@ static void processCommandParams(bool isLittleEndian,
 	// Deserialize the parameters
 	boost::archive::text_iarchive ia(uzos);
 	ia >> params;
+	string s;
+	getline(stream, s);
+	if (s != "")
+		LOG( LUX_ERROR,LUX_SYSTEM) << "Error processing paramset, got '" << s << "'";
+}
+
+static bool receiveFile(const std::string &filename, const std::string &filehash, std::iostream &stream) {
+	string fname;
+	getline(stream, fname);
+
+	string slen;
+	getline(stream, slen);
+
+	boost::uint64_t len = boost::lexical_cast<boost::uint64_t>(slen);
+
+	LOG( LUX_INFO,LUX_NOERROR) << "Receiving file: '" << fname << "' as '" << filename << "', size: " << (len / 1000) << " Kbytes";
+
+	// Dade - fix for bug 514: avoid to create the file if it is empty
+	if (len > 0) {
+		ofstream out(filename.c_str(), ios::out | ios::binary);
+
+		//std::streamsize written = boost::iostreams::copy(
+		//	boost::iostreams::restrict(stream, 0, len), out);
+
+		tigerhash h;
+
+		boost::uint64_t source_len = len;
+
+		vector<char> buffer(1 * 1024 * 1024, 0);
+		while (len > 0 && !stream.bad()) {
+			const std::streamsize rs = static_cast<std::streamsize>(min(static_cast<boost::uint64_t>(buffer.size()), len));
+
+			stream.read(&buffer[0], rs);
+			h.update(&buffer[0], rs);
+			out.write(&buffer[0], rs);
+
+			len -= rs;
+		}
+
+		out.flush();
+
+		string hash = digest_string(h.end_message());
+		
+		boost::uint64_t written = source_len - len;
+
+		if (out.fail() || written != source_len || hash != filehash) {
+			bool output_error = out.fail();
+			out.close();
+
+			LOG( LUX_ERROR,LUX_SYSTEM) << "There was an error while receiving file '" << filename << "', received " << written 
+				<< " bytes, source size " << source_len << " bytes, received file hash " << hash << ", source hash " << filehash;
+			LOG( LUX_INFO,LUX_SYSTEM) << "Removing incomplete file '" << filename << "'";
+
+			boost::system::error_code ec;
+			if (!boost::filesystem::remove(filename, ec)) {
+				LOG( LUX_ERROR,LUX_SYSTEM) << "Error removing file '" << filename << "', error code: '" << ec << "'";
+			}
+
+			if (output_error)
+				// throw exception so the connection is terminated
+				throw std::runtime_error("Error writing file '" + filename + "'");
+			
+			return false;
+		}
+	}
+	return true;
+}
+
+//static void processFiles(ParamSet &params, std::set<string> &tmpFiles, std::iostream &stream) {
+static void processFiles(ParamSet &params, std::iostream &stream) {
+	LOG(LUX_DEBUG,LUX_NOERROR) << "Receiving file index";
+
+	string s = get_response(stream);
+	if (s == "FILE INDEX EMPTY") {
+		LOG(LUX_DEBUG,LUX_NOERROR) << "No files";
+		return;
+	}
+
+	if (s != "BEGIN FILE INDEX") {
+		LOG( LUX_ERROR,LUX_SYSTEM)<< "Expected 'BEGIN FILE INDEX', got '" << s << "'";
+		return;
+	}
+
+	stream << "BEGIN FILE INDEX OK" << endl;
+
+	vector<std::pair<string, string> > neededFiles;
+
+	while (true) {
+		string paramName = get_response(stream);
+		if (paramName == "END FILE INDEX") {
+			LOG(LUX_DEBUG,LUX_NOERROR) << "End of file index";
+			break;
+		}
+
+		string filename = get_response(stream);
+		string hash = get_response(stream);
+		string empty = get_response(stream); // empty line
+		
+		if (paramName == "" || filename == "" || hash == "" || empty != "") {
+			LOG( LUX_ERROR,LUX_SYSTEM)<< "Invalid file index entry " 
+				<< "param: '" << paramName << "', "
+				<< "filename: '" << filename << "', "
+				<< "hash: '" << hash << "', "
+				<< "empty: '" << empty << "'";
+			stream << "FILE INDEX INVALID" << endl;
+			return;
+		}
+
+		LOG(LUX_DEBUG,LUX_NOERROR) << "File param '" << paramName << "', filename '" << filename << "', hash '" << hash << "'";
+
+		boost::filesystem::path fname(filename);
+
+		boost::filesystem::path tfile("tmp_" + hash);
+		tfile.replace_extension(fname.extension());
+
+		//if (tmpFiles.find(tfile.string()) == tmpFiles.end()) {
+		boost::system::error_code ec;
+		if (!boost::filesystem::exists(tfile, ec)) {
+			LOG( LUX_INFO,LUX_NOERROR) << "Requesting file '" << filename << "' (as '" << tfile.string() << "')";
+			neededFiles.push_back(std::make_pair(hash, tfile.string()));
+		} else {
+			LOG( LUX_DEBUG,LUX_NOERROR) << "Using existing file  '" << filename << "' (as '" << tfile.string() << "')";
+		}
+		
+		// replace parameter
+		params.AddString(paramName, &tfile.string());
+	}
+
+	stream << "END FILE INDEX OK" << endl;
+
+	// now lets grab the files we need
+	if (!read_response(stream, "BEGIN FILES"))
+		return;
+	stream << "BEGIN FILES OK" << endl;
+
+	for (size_t i = 0; i < neededFiles.size(); i++) {
+		const string& hash(neededFiles[i].first);
+		const string& fname(neededFiles[i].second);
+		stream << hash << endl << flush;
+		if (!receiveFile(fname, hash, stream)) {
+			stream << "RESEND FILE" << endl << flush;
+			if (!receiveFile(fname, hash, stream))
+				throw std::runtime_error("Error receiving file '" + fname + "'");
+		}
+		stream << "FILE OK" << endl;
+		//tmpFiles.insert(neededFiles[i].second);
+	}
+
+	stream << "END FILES" << endl;
+
+	if (!read_response(stream, "END FILES OK"))
+		return;
 }
 
 static void processCommandFilm(bool isLittleEndian,
-		void (Context::*f)(const string &, const ParamSet &), basic_istream<char> &stream)
+		void (Context::*f)(const string &, const ParamSet &), std::iostream &stream)
 {
 	string type;
 	getline(stream, type);
@@ -202,6 +389,8 @@ static void processCommandFilm(bool isLittleEndian,
 
 	ParamSet params;
 	processCommandParams(isLittleEndian, params, stream);
+
+	processFiles(params, stream);
 
 	// Dade - overwrite some option for the servers
 
@@ -225,60 +414,9 @@ static void processCommandFilm(bool isLittleEndian,
 	(Context::GetActive()->*f)(type, params);
 }
 
-static void processFile(const string &fileParam, ParamSet &params, vector<string> &tmpFileList, basic_istream<char> &stream)
-{
-	string originalFile = params.FindOneString(fileParam, "");
-	if (originalFile.size()) {
-		// Dade - look for file extension
-		string fileExt = "";
-		size_t idx = originalFile.find_last_of('.');
-		if (idx != string::npos)
-			fileExt = originalFile.substr(idx);
-
-		// Dade - replace the file name with a temporary name
-		char buf[64];
-		// MSVC doesn't support z length modifier (size_t) for snprintf, so workaround by casting to unsigned long...
-		if (tmpFileList.size())
-			snprintf(buf, 64, "%5s_%08lu%s", tmpFileList[0].c_str(),
-				((unsigned long)tmpFileList.size()), fileExt.c_str()); // %08zu should be ued but it could be not supported by the compiler
-		else
-			snprintf(buf, 64, "00000_%08lu%s",
-				((unsigned long)tmpFileList.size()), fileExt.c_str()); // %08zu should be ued but it could be not supported by the compiler
-		string file = string(buf);
-
-		// Dade - replace the filename parameter
-		params.AddString(fileParam, &file);
-
-		// Read the file size
-		string slen;
-		getline(stream, slen); // Eat the \n
-		getline(stream, slen);
-		// Limiting the file size to 2G should be a problem
-		int len = atoi(slen.c_str());
-
-		LOG( LUX_INFO,LUX_NOERROR) << "Receiving file: '" << originalFile << "' (in '" <<
-			file << "' size: " << (len / 1024) << " Kbytes)";
-
-		// Dade - fix for bug 514: avoid to create the file if it is empty
-		if (len > 0) {
-			ofstream out(file.c_str(), ios::out | ios::binary);
-
-			std::streamsize written = boost::iostreams::copy(
-				boost::iostreams::restrict(stream, 0, len), out);
-
-			out.flush();
-			tmpFileList.push_back(file);
-
-			if (out.fail() || written != len) {
-				LOG( LUX_ERROR,LUX_SYSTEM) << "There was an error while writing file '" << file << "'";
-			}
-		}
-	}
-}
-
 static void processCommand(bool isLittleEndian,
 	void (Context::*f)(const string &, const ParamSet &),
-	vector<string> &tmpFileList, basic_istream<char> &stream)
+	vector<string> &tmpFileList, std::iostream &stream)
 {
 	string type;
 	getline(stream, type);
@@ -286,10 +424,11 @@ static void processCommand(bool isLittleEndian,
 	ParamSet params;
 	processCommandParams(isLittleEndian, params, stream);
 
-	processFile("mapname", params, tmpFileList, stream);
-	processFile("iesname", params, tmpFileList, stream);
-	processFile("configfile", params, tmpFileList, stream);
-	processFile("filename", params, tmpFileList, stream);
+	//processFile("mapname", params, tmpFileList, stream);
+	//processFile("iesname", params, tmpFileList, stream);
+	//processFile("configfile", params, tmpFileList, stream);
+	//processFile("filename", params, tmpFileList, stream);
+	processFiles(params, stream);
 
 	(Context::GetActive()->*f)(type, params);
 }
@@ -355,6 +494,20 @@ static void processCommand(void (Context::*f)(const string &, float, float, cons
 }
 
 
+static void cleanupSession(NetworkRenderServerThread *serverThread, vector<string> &tmpFileList) {
+	// Dade - stop the rendering and cleanup
+	luxExit();
+	luxWait();
+	luxCleanup();
+
+	// Dade - remove all temporary files
+	for (size_t i = 1; i < tmpFileList.size(); i++)
+		remove(tmpFileList[i]);
+
+	serverThread->renderServer->setServerState(RenderServer::READY);
+	LOG( LUX_INFO,LUX_NOERROR) << "Server ready";
+}
+
 void RenderServer::createNewSessionID() {
 	currentSID = boost::uuids::random_generator()();
 }
@@ -363,7 +516,7 @@ bool RenderServer::validateAccess(basic_istream<char> &stream) const {
 	string sidstr;
 	if (!getline(stream, sidstr))
 		return false;
-	
+
 	if (serverThread->renderServer->state != RenderServer::BUSY) {
 		LOG( LUX_INFO,LUX_NOERROR)<< "Slave does not have an active session";
 		return false;
@@ -387,17 +540,7 @@ void cmd_ServerDisconnect(bool isLittleEndian, NetworkRenderServerThread *server
 
 	LOG( LUX_INFO,LUX_NOERROR) << "Master ended session, cleaning up";
 
-	// Dade - stop the rendering and cleanup
-	luxExit();
-	luxWait();
-	luxCleanup();
-
-	// Dade - remove all temporary files
-	for (size_t i = 1; i < tmpFileList.size(); i++)
-		remove(tmpFileList[i]);
-
-	serverThread->renderServer->setServerState(RenderServer::READY);
-	LOG( LUX_INFO,LUX_NOERROR) << "Server ready";
+	cleanupSession(serverThread, tmpFileList);
 }
 void cmd_ServerConnect(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
 //case CMD_SERVER_CONNECT:
@@ -558,7 +701,8 @@ void cmd_luxTexture(bool isLittleEndian, NetworkRenderServerThread *serverThread
 
 	processCommandParams(isLittleEndian, params, stream);
 
-	processFile("filename", params, tmpFileList, stream);
+	//processFile("filename", params, tmpFileList, stream);
+	processFiles(params, stream);
 
 	Context::GetActive()->Texture(name, type, texname, params);
 }
@@ -607,6 +751,7 @@ void cmd_luxMakeNamedVolume(bool isLittleEndian, NetworkRenderServerThread *serv
 
 	processCommandParams(isLittleEndian,
 		params, stream);
+	processFiles(params, stream); // expected due to presence of ParamSet
 
 	Context::GetActive()->MakeNamedVolume(id, name, params);
 }
@@ -842,28 +987,35 @@ void NetworkRenderServerThread::run(int ipversion, NetworkRenderServerThread *se
 			//reading the command
 			string command;
 			LOG( LUX_DEBUG,LUX_NOERROR) << "Server receiving commands...";
-			while (getline(stream, command)) {
+			try {
+				while (getline(stream, command)) {
 
-				if ((command != "") && (command != " ")) {
-					LOG(LUX_DEBUG,LUX_NOERROR) << "... processing command: '" << command << "'";
+					if ((command != "") && (command != " ")) {
+						LOG(LUX_DEBUG,LUX_NOERROR) << "... processing command: '" << command << "'";
+					}
+
+					if (cmds.find(command) != cmds.end()) {
+						cmdfunc_t cmdhandler = cmds.find(command)->second;
+						cmdhandler(stream);
+					} else {
+						throw std::runtime_error("Unknown command");
+					}
+
+					//END OF COMMAND PROCESSING
 				}
+			} catch (std::runtime_error& e) {
+				LOG(LUX_SEVERE,LUX_BUG) << "Exception processing command '" << command << "': " << e.what();
+				LOG(LUX_INFO,LUX_NOERROR) << "Ending session, cleaning up";
 
-				if (cmds.find(command) != cmds.end()) {
-					cmdfunc_t cmdhandler = cmds.find(command)->second;
-					cmdhandler(stream);
-				} else {
-					LOG( LUX_SEVERE,LUX_BUG) << "Unknown command '" << command << "'. Ignoring";
-				}
-
-				//END OF COMMAND PROCESSING
+				cleanupSession(serverThread, tmpFileList);
 			}
 		}
 	} catch (boost::system::system_error& e) {
 		if (e.code() != boost::asio::error::address_family_not_supported)
-			LOG(LUX_ERROR,LUX_BUG) << "Internal error: " << e.what();
+			LOG(LUX_SEVERE,LUX_BUG) << "Internal error: " << e.what();
 		else
 			LOG(LUX_INFO,LUX_NOERROR) << "IPv" << ipversion << " not available";
 	} catch (exception& e) {
-		LOG(LUX_ERROR,LUX_BUG) << "Internal error: " << e.what();
+		LOG(LUX_SEVERE,LUX_BUG) << "Internal error: " << e.what();
 	}
 }

@@ -142,6 +142,93 @@ private:
 		bool flushed;
 	};
 
+	typedef std::string filehash_t;
+
+	class CompiledFile {
+	public:
+		CompiledFile(const std::string & filename);
+
+		const std::string& filename() const {
+			return fname;
+		}
+
+		const filehash_t& hash() const {
+			return fhash;
+		}
+
+		bool send(std::iostream &stream) const;
+
+		bool operator<(const CompiledFile& other) const {
+			return fhash < other.fhash;
+		}
+
+	private:
+		std::string fname;
+		std::string fhash;
+	};
+
+	class CompiledFiles {
+	public:
+		CompiledFile add(const std::string &filename);
+
+		const CompiledFile& fromFilename(std::string filename) const;
+		const CompiledFile& fromHash(filehash_t hash) const;
+
+		bool send(std::iostream &stream) const;
+
+	private:
+		std::vector<CompiledFile> files;
+		typedef std::map<std::string, size_t> name_index_t;
+		typedef std::map<filehash_t, size_t> hash_index_t;
+		name_index_t nameIndex;
+		hash_index_t hashIndex;
+	};
+
+	class CompiledCommand {
+	public:
+		CompiledCommand(const std::string &cmd);
+		CompiledCommand(const CompiledCommand &other);
+
+		CompiledCommand& operator= (const CompiledCommand &other);
+
+		std::ostream& buffer();
+
+		void addParams(const ParamSet &params);
+		void addFile(const std::string &paramName, const CompiledFile &cf);
+
+		bool send(std::iostream &stream) const;
+
+		bool sendFiles() const {
+			return hasParams && !files.empty();
+		}
+
+	private:
+		std::string command;
+		bool hasParams;
+		std::stringstream paramsBuf;
+		std::vector<std::pair<std::string, CompiledFile> > files;
+	};
+
+	class CompiledCommands {
+	public:
+		CompiledCommand& add(const std::string command);
+
+		size_t size() const {
+			return commands.size();
+		}
+
+		CompiledCommand& operator[](size_t index) {
+			return commands[index];
+		}
+
+		const CompiledCommand& operator[](size_t index) const {
+			return commands[index];
+		}
+
+	private:
+		std::vector<CompiledCommand> commands;
+	};
+
 	struct reconnect_status {
 		enum type { error, rejected, success };
 	};
@@ -152,8 +239,6 @@ private:
 	reconnect_status_t reconnect(ExtRenderingServerInfo &serverInfo);
 	void flushImpl();
 	void disconnect(const ExtRenderingServerInfo &serverInfo);
-	void sendParams(const ParamSet &params);
-	void sendFile(const std::string &file);
 	void reconnectFailed();
 
 	// Any operation on servers must be synchronized via this mutex
@@ -163,7 +248,10 @@ private:
 	// Dade - film update information
 	FilmUpdaterThread *filmUpdateThread;
 
-	std::stringstream netBuffer;
+	CompiledCommands compiledCommands;
+	CompiledFiles compiledFiles;
+
+	//std::stringstream netBuffer;
 	bool netBufferComplete; // Raise this flag if the scene is complete
 	bool isLittleEndian;
 };
