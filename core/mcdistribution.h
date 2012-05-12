@@ -99,7 +99,10 @@ public:
 		// funcInt is the sum of all f elements divided by the number
 		// of elements, ie the average value of f over [0;1)
 		ComputeStep1dCDF(func, n, &funcInt, cdf);
-		invFuncInt = 1.f / funcInt;
+		const float invFuncInt = 1.f / funcInt;
+		// Normalize func to speed up computations
+		for (u_int i = 0; i < count; ++i)
+			func[i] *= invFuncInt;
 		invCount = 1.f / count;
 	}
 	~Distribution1D() {
@@ -120,13 +123,13 @@ public:
 	float SampleContinuous(float u, float *pdf, u_int *off = NULL) const {
 		// Find surrounding CDF segments and _offset_
 		if (u >= cdf[count]) {
-			*pdf = func[count - 1] * invFuncInt;
+			*pdf = func[count - 1];
 			if (off)
 				*off = count - 1;
 			return 1.f;
 		}
 		if (u <= cdf[0]) {
-			*pdf = func[0] * invFuncInt;
+			*pdf = func[0];
 			if (off)
 				*off = 0;
 			return 0.f;
@@ -139,7 +142,7 @@ public:
 			(cdf[offset + 1] - cdf[offset]);
 
 		// Compute PDF for sampled offset
-		*pdf = func[offset] * invFuncInt;
+		*pdf = func[offset];
 
 		// Save offset
 		if (off)
@@ -164,13 +167,13 @@ public:
 		if (u >= cdf[count]) {
 			if (du)
 				*du = 1.f;
-			*pdf = func[count - 1] * invFuncInt * invCount;
+			*pdf = func[count - 1];
 			return count - 1;
 		}
 		if (u <= cdf[0]) {
 			if (du)
 				*du = 0.f;
-			*pdf = func[0] * invFuncInt * invCount;
+			*pdf = func[0];
 			return 0;
 		}
 		float *ptr = std::upper_bound(cdf, cdf + count + 1, u);
@@ -182,10 +185,10 @@ public:
 				(cdf[offset + 1] - cdf[offset]);
 
 		// Compute PDF for sampled offset
-		*pdf = func[offset] * invFuncInt * invCount;
+		*pdf = func[offset];
 		return offset;
 	}
-	float Pdf(u_int offset) const { return func[offset] * invFuncInt; }
+	float Pdf(u_int offset) const { return func[offset]; }
 	float Pdf(float u) const { return Pdf(Offset(u)); }
 	float Average() const { return funcInt; }
 	u_int Offset(float u) const {
@@ -202,7 +205,7 @@ private:
 	 * The function integral (assuming it is regularly sampled with an interval of 1),
 	 * the inverted function integral and the inverted count.
 	 */
-	float funcInt, invFuncInt, invCount;
+	float funcInt, invCount;
 	/*
 	 * The number of function values. The number of cdf values is count+1.
 	 */

@@ -36,12 +36,16 @@
 #include "osfunc.h"
 #include "streamio.h"
 #include "filedata.h"
+#include "tigerhash.h"
 
+#include <algorithm>
 #include <fstream>
 #include <sstream>
+#include <exception> 
 #include <boost/asio.hpp>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/bind.hpp>
+#include <boost/iostreams/device/file.hpp>
 #include <boost/iostreams/stream.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filtering_streambuf.hpp>
@@ -49,6 +53,8 @@
 #include <boost/iostreams/filter/zlib.hpp>
 #include <boost/iostreams/filter/bzip2.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
+#include <boost/iostreams/positioning.hpp>
+#include <boost/cstdint.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/thread/xtime.hpp>
 
@@ -57,6 +63,38 @@ using namespace boost::posix_time;
 using namespace lux;
 using namespace std;
 using boost::asio::ip::tcp;
+
+static bool read_response(std::iostream &stream, const std::string &expected_response) {
+	
+	// flush any output
+	stream << std::flush;
+
+	std::string response;
+	if (!getline(stream, response)) {
+		LOG( LUX_ERROR,LUX_SYSTEM) << "Error reading from slave";
+		return false;
+	}
+
+	if (response != expected_response) {
+		LOG( LUX_ERROR,LUX_SYSTEM) << "Wrong response from slave, expected '" << expected_response << "', got '" << response << "'";
+		return false;
+	}
+
+	return true;
+}
+
+static std::string get_response(std::iostream &stream) {
+	// flush any output
+	stream << std::flush;
+
+	std::string response;
+	if (!getline(stream, response)) {
+		LOG( LUX_ERROR,LUX_SYSTEM) << "Error reading from slave";
+		return "";
+	}
+
+	return response;
+}
 
 void FilmUpdaterThread::updateFilm(FilmUpdaterThread *filmUpdaterThread) {
 	// Dade - thread to update the film with data from servers
@@ -90,12 +128,238 @@ void FilmUpdaterThread::updateFilm(FilmUpdaterThread *filmUpdaterThread) {
 	}
 }
 
+RenderFarm::CompiledFile::CompiledFile(const std::string &filename) : fname(filename) {
+	fhash = digest_string(file_hash<tigerhash>(filename));
+}
+
+bool RenderFarm::CompiledFile::send(std::iostream &stream) const {
+	LOG(LUX_DEBUG,LUX_NOERROR) << "Sending file '" << filename() << "'";
+
+	// silent replacement, since relevant plugin will report replacement
+	const string real_filename = AdjustFilename(filename(), true);
+	std::ifstream in(real_filename.c_str(), std::ios::in | std::ios::binary);
+
+	// Get length of file
+	in.seekg(0, std::ifstream::end);
+	boost::uint64_t len = boost::iostreams::position_to_offset(in.tellg());
+	in.seekg(0, std::ifstream::beg);
+
+	if (in.fail()) {
+		// AdjustFilename should guarantee that file exists, if not return just normalized filename
+		LOG( LUX_ERROR,LUX_SYSTEM) << "There was an error while checking the size of file '" << real_filename << "'";
+
+		// Send an empty file ot the server
+		stream << "0\n";
+	} else {
+		// Send the file length
+		stream << filename() << "\n";
+		stream << len << "\n";
+
+		// Send the file
+		vector<char> buffer(1 * 1024 * 1024, 0);
+		while (len > 0) {
+			const std::streamsize rs = static_cast<std::streamsize>(min(static_cast<boost::uint64_t>(buffer.size()), len));
+			in.read(&buffer[0], rs);
+			stream.write(&buffer[0], rs);
+			len -= rs;
+		}
+
+		if (in.bad()) {
+			LOG( LUX_ERROR,LUX_SYSTEM) << "There was an error sending file '" << real_filename << "'";
+			return false;
+		}
+	}
+
+	in.close();
+
+	return true;
+}
+
+RenderFarm::CompiledFile RenderFarm::CompiledFiles::add(const std::string &filename) {
+	// 
+	if (nameIndex.find(filename) != nameIndex.end())
+		return files[nameIndex[filename]];
+
+	CompiledFile cf(filename);
+
+	size_t index = files.size();
+	files.push_back(cf);
+
+	nameIndex[cf.filename()] = index;
+	hashIndex[cf.hash()] = index;
+
+	return cf;
+}
+
+const RenderFarm::CompiledFile& RenderFarm::CompiledFiles::fromFilename(std::string filename) const {
+	name_index_t::const_iterator it = nameIndex.find(filename);
+	if (it == nameIndex.end())
+		throw std::range_error("Invalid filename lookup in CompiledFiles: '" + filename + "'");
+	return files[it->second];
+}
+
+const RenderFarm::CompiledFile& RenderFarm::CompiledFiles::fromHash(filehash_t hash) const {
+	hash_index_t::const_iterator it = hashIndex.find(hash);
+	if (it == hashIndex.end())
+		throw std::range_error("Invalid file hash lookup in CompiledFiles: '" + hash + "'");
+	return files[it->second];
+}
+
+bool RenderFarm::CompiledFiles::send(std::iostream &stream) const {
+	LOG(LUX_DEBUG,LUX_NOERROR) << "Sending files";
+
+	stream << "BEGIN FILES" << endl;
+
+	if (!read_response(stream, "BEGIN FILES OK"))
+		return false;
+
+	std::string hash;
+	while (true) {
+		hash = get_response(stream);
+
+		if (hash == "")
+			return false;
+
+		if (hash == "END FILES")
+			break;
+
+		LOG(LUX_DEBUG,LUX_NOERROR) << "File hash request: '" << hash << "'";
+
+		// TODO - catch exception in case of invalid hash
+		const CompiledFile &cf(fromHash(hash));
+
+		if (!cf.send(stream))
+			return false;
+
+		std::string response = get_response(stream);
+		if (response == "FILE OK")
+			continue;
+
+		if (response != "RESEND FILE") {
+			LOG( LUX_ERROR,LUX_SYSTEM) << "Invalid response '" << response << "', expected 'RESEND FILE'";
+			return false;
+		}
+
+		// resend file once
+		if (!cf.send(stream))
+			return false;
+	}
+
+	stream << "END FILES OK" << endl;
+
+	LOG(LUX_DEBUG,LUX_NOERROR) << "Sent files";
+
+	return true;
+}
+
+RenderFarm::CompiledCommand::CompiledCommand(const std::string &cmd) 
+	: command(cmd), hasParams(false), paramsBuf(std::stringstream::in | std::stringstream::out  | std::stringstream::binary) 
+{
+	// set precision for accurate transmission of floats
+	paramsBuf << std::scientific << std::setprecision(16);
+}
+
+RenderFarm::CompiledCommand::CompiledCommand(const RenderFarm::CompiledCommand &other) 
+	: command(other.command), hasParams(other.hasParams), paramsBuf(std::stringstream::in | std::stringstream::out  | std::stringstream::binary), files(other.files)
+{
+	// set precision for accurate transmission of floats
+	paramsBuf << std::scientific << std::setprecision(16) << other.paramsBuf.str();
+}
+
+RenderFarm::CompiledCommand& RenderFarm::CompiledCommand::operator=(const RenderFarm::CompiledCommand &other) {
+	if (this == &other)
+		return *this;
+
+	command = other.command;
+	hasParams = other.hasParams;
+	paramsBuf.str(other.paramsBuf.str());
+	files.clear();
+	files.assign(other.files.begin(), other.files.end());
+
+	return *this;
+}
+
+std::ostream& RenderFarm::CompiledCommand::buffer() {
+	return paramsBuf;
+}
+
+void RenderFarm::CompiledCommand::addParams(const ParamSet &params) {
+	// Serialize the parameters
+	stringstream zos(stringstream::in | stringstream::out | stringstream::binary);
+	std::streamsize size;
+	{
+		stringstream os(stringstream::in | stringstream::out | stringstream::binary);
+		{
+			// Serialize the parameters
+			boost::archive::text_oarchive oa(os);
+			oa << params;
+		}
+
+		// Compress the parameters
+		filtering_streambuf<input> in;
+		in.push(gzip_compressor(9));
+		in.push(os);
+		size = boost::iostreams::copy(in , zos);
+	}
+
+	// Write the size of the compressed chunk
+	osWriteLittleEndianUInt(osIsLittleEndian(), paramsBuf, size);
+	// Copy the compressed parameters to the newtwork buffer
+	paramsBuf << zos.str() << "\n";
+	hasParams = true;
+}
+
+void RenderFarm::CompiledCommand::addFile(const std::string &paramName, const CompiledFile &cf) {
+	files.push_back(std::make_pair(paramName, cf));
+}
+
+bool RenderFarm::CompiledCommand::send(std::iostream &stream) const {
+	stream << command << endl;
+	string buf = paramsBuf.str();
+	stream << buf;
+	string response;
+
+	// no params means no files
+	if (!hasParams)
+		return true;
+
+	if (files.empty()) {
+		stream << "FILE INDEX EMPTY" << endl;
+		return true;
+	}
+
+	LOG(LUX_DEBUG,LUX_NOERROR) << "Sending file index";
+	stream << "BEGIN FILE INDEX" << endl;
+
+	if (!read_response(stream, "BEGIN FILE INDEX OK"))
+		return false;
+
+	LOG(LUX_DEBUG,LUX_NOERROR) << "File index size: " << files.size();
+	for (size_t i = 0; i < files.size(); ++i) {		
+		stream << files[i].first << endl; // param name
+		stream << files[i].second.filename() << endl;
+		stream << files[i].second.hash() << endl;
+		stream << endl;
+	}
+
+	stream << "END FILE INDEX" << endl;
+
+	if (!read_response(stream, "END FILE INDEX OK"))
+		return false;
+
+	LOG(LUX_DEBUG,LUX_NOERROR) << "File index sent ok";
+
+	return true;
+}
+
+RenderFarm::CompiledCommand& RenderFarm::CompiledCommands::add(const std::string command) {
+	commands.push_back(CompiledCommand(command));
+	return commands.back();
+}
+
 RenderFarm::RenderFarm() : serverUpdateInterval(3 * 60), filmUpdateThread(NULL),
-		netBuffer(std::stringstream::in | std::stringstream::out  | std::stringstream::binary),
 		netBufferComplete(false), isLittleEndian(osIsLittleEndian())
 {
-		// set precision for accurate transmission of floats
-		netBuffer << std::scientific << std::setprecision(16);
 }
 
 
@@ -226,7 +490,7 @@ bool RenderFarm::connect(ExtRenderingServerInfo &serverInfo) {
 	return true;
 }
 
-bool RenderFarm::reconnect(ExtRenderingServerInfo &serverInfo)
+RenderFarm::reconnect_status_t RenderFarm::reconnect(ExtRenderingServerInfo &serverInfo)
 {
 	stringstream ss;
 	string serverName = serverInfo.name + ":" + serverInfo.port;
@@ -242,7 +506,8 @@ bool RenderFarm::reconnect(ExtRenderingServerInfo &serverInfo)
 		string result;
 		if (!getline(stream, result)) {
 			LOG( LUX_ERROR,LUX_SYSTEM) << "Unable to reconnect server: " << serverName;
-			return false;
+			serverInfo.calculatedSamplesPerSecond = 0;
+			return reconnect_status::error;
 		}
 
 		LOG( LUX_INFO,LUX_NOERROR) << "Server reconnect result: " << result;
@@ -250,7 +515,8 @@ bool RenderFarm::reconnect(ExtRenderingServerInfo &serverInfo)
 		if ("CONNECTED" != result) {
 			// slave rejected reconnect attempt, signal by setting active to false
 			serverInfo.active = false;
-			return false;
+			serverInfo.calculatedSamplesPerSecond = 0;
+			return reconnect_status::rejected;
 		}
 
 		serverInfo.active = true;
@@ -258,10 +524,12 @@ bool RenderFarm::reconnect(ExtRenderingServerInfo &serverInfo)
 	} catch (exception& e) {
 		LOG(LUX_ERROR,LUX_SYSTEM) << "Unable to reconnect server: " << serverName;
 		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
-		return false;
+		serverInfo.calculatedSamplesPerSecond = 0;
+		return reconnect_status::error;
 	}
 
-	return true;	
+	serverInfo.timeLastSamples = boost::posix_time::second_clock::local_time();
+	return reconnect_status::success;
 }
 
 bool RenderFarm::connect(const string &serverName) {
@@ -349,12 +617,6 @@ void RenderFarm::disconnect(const ExtRenderingServerInfo &serverInfo) {
 }
 
 void RenderFarm::flushImpl() {
-	std::stringstream ss;
-	// Dade - the buffers with all commands
-	string commands = netBuffer.str();
-
-	LOG(LUX_DEBUG,LUX_NOERROR) << "Compiled scene size: " << (commands.size() / 1024) << "KBytes";
-
 	//flush network buffer
 	for (size_t i = 0; i < serverInfoList.size(); i++) {
 		if(serverInfoList[i].active && !serverInfoList[i].flushed) {
@@ -363,7 +625,19 @@ void RenderFarm::flushImpl() {
 						serverInfoList[i].name << ":" << serverInfoList[i].port;
 
 				tcp::iostream stream(serverInfoList[i].name, serverInfoList[i].port);
-				stream << commands << endl;
+				//stream << commands << endl;
+				for (size_t j = 0; j < compiledCommands.size(); j++) {
+					// send command
+					if (!compiledCommands[j].send(stream))
+						break;
+
+					// and then send any requested files
+					if (!compiledCommands[j].sendFiles())
+						continue;
+
+					if (!compiledFiles.send(stream))
+						break;
+				}
 
 				serverInfoList[i].flushed = true;
 			} catch (exception& e) {
@@ -398,11 +672,10 @@ void RenderFarm::reconnectFailed() {
 				<< "Trying to reconnect server: "
 				<< serverInfo.name << ":" << serverInfo.port;
 
-			// If reconnect() fails the active flag will determine
-			// if the connection was broken during reconnect attempt
-			// (active kept true) or if slave did not accept the reconnection
-			// (active set to false)
-			if (!this->reconnect(serverInfo) && !serverInfo.active) {
+			// If reconnect() returns rejected, the slave actively
+			// rejected the reconnection attempt, in which case we 
+			// try to establish a new session
+			if (this->reconnect(serverInfo) == reconnect_status::rejected) {
 				LOG(LUX_INFO,LUX_NOERROR)
 					<< "Reconnection failed, attemting to establish new session with server: "
 					<< serverInfo.name << ":" << serverInfo.port;
@@ -465,10 +738,13 @@ void RenderFarm::updateFilm(Scene *scene) {
 			stream << serverInfoList[i].sid << std::endl;
 
 			// Receive the film in a compressed format
-			//std::stringstream compressedStream(std::stringstream::in |
-			//		std::stringstream::out | std::stringstream::binary);
 			multibuffer_device mbdev;
 			boost::iostreams::stream<multibuffer_device> compressedStream(mbdev);
+
+			// Get the time here before we fetch the stream in case it takes
+			// a very long time to transfer the data. This time will be used
+			// to calculate the slave nodes samples per second.
+			boost::posix_time::ptime samplesRetrievedTime = second_clock::local_time();
 
 			compressedStream << stream.rdbuf();
 
@@ -482,8 +758,10 @@ void RenderFarm::updateFilm(Scene *scene) {
 			const double sampleCount = film->UpdateFilm(compressedStream);
 			if (sampleCount == 0.)
 				throw string("Received 0 samples from server");
-			serverInfoList[i].numberOfSamplesReceived += sampleCount;
 			film->numberOfSamplesFromNetwork += sampleCount;
+			serverInfoList[i].numberOfSamplesReceived += sampleCount;
+			serverInfoList[i].calculatedSamplesPerSecond = sampleCount / (samplesRetrievedTime - serverInfoList[i].timeLastSamples).total_seconds();
+			serverInfoList[i].timeLastSamples = samplesRetrievedTime;
 
 			LOG( LUX_INFO,LUX_NOERROR) << "Samples received from '" <<
 					serverInfoList[i].name << ":" << serverInfoList[i].port << "' (" <<
@@ -581,110 +859,41 @@ void RenderFarm::updateLog() {
 	reconnectFailed();
 }
 
-void RenderFarm::sendParams(const ParamSet &params) {
-	// Serialize the parameters
-	stringstream zos(stringstream::in | stringstream::out | stringstream::binary);
-	std::streamsize size;
-	{
-		stringstream os(stringstream::in | stringstream::out | stringstream::binary);
-		{
-			// Serialize the parameters
-			boost::archive::text_oarchive oa(os);
-			oa << params;
-		}
-
-		// Compress the parameters
-		filtering_streambuf<input> in;
-		in.push(gzip_compressor(9));
-		in.push(os);
-		size = boost::iostreams::copy(in , zos);
-	}
-
-	// Write the size of the compressed chunk
-	osWriteLittleEndianUInt(isLittleEndian, netBuffer, size);
-	// Copy the compressed parameters to the newtwork buffer
-	netBuffer << zos.str();
-}
-
 void RenderFarm::send(const string &command) {
-	netBuffer << command << endl;
+	compiledCommands.add(command);
 
 	// Check if the scene is complete
 	if (command == "luxWorldEnd")
 		netBufferComplete = true;
 }
 
-void RenderFarm::sendFile(const string &file) {
-	// silent replacement, since relevant plugin will report replacement
-	const string filename = AdjustFilename(file, true);
-	std::ifstream in(filename.c_str(), std::ios::in | std::ios::binary);
-
-	// Get length of file:
-	in.seekg (0, std::ifstream::end);
-	// Limiting the file size to 2G shouldn't be a problem
-	const int len = static_cast<int>(in.tellg());
-	in.seekg (0, std::ifstream::beg);
-
-	if (in.fail()) {
-		// AdjustFilename should guarantee that file exists, if not return just normalized filename
-		LOG( LUX_ERROR,LUX_SYSTEM) << "There was an error while checking the size of file '" << filename << "'";
-
-		// Send an empty file ot the server
-		netBuffer << "0\n";
-	} else {
-		// Allocate a buffer to read all the file
-		char *buf = new char[len];
-
-		in.read(buf, len);
-
-		if (in.fail()) {
-			LOG( LUX_ERROR,LUX_SYSTEM) << "There was an error while reading file '" << filename << "'";
-
-			// Send an empty file to the server
-			netBuffer << "0\n";
-		} else {
-			// Send the file length
-			netBuffer << len << "\n";
-
-			// Send the file
-			netBuffer.write(buf, len);
-		}
-
-		delete buf;
-	}
-
-	in.close();
-}
-
 void RenderFarm::send(const string &command, const string &name,
 		const ParamSet &params) {
 	try {
-		netBuffer << command << endl << name << endl;
-		sendParams(params);
-		netBuffer << "\n";
+		CompiledCommand &ccmd(compiledCommands.add(command));
 
-		//send the files
-		string file;
-		file = "";
-		file = params.FindOneString(string("mapname"), file);
-		if (file.size())
-			sendFile(file);
+		ccmd.buffer() << name << endl;
 
-		file = "";
-		file = params.FindOneString(string("iesname"), file);
-		if (file.size())
-			sendFile(file);
+		ccmd.addParams(params);
 
-		file = "";
-		file = params.FindOneString(string("configfile"), file);
-		if (file.size())
-			sendFile(file);
+		vector<string> fileParams;
+		fileParams.push_back("mapname");
+		fileParams.push_back("iesname");
+		fileParams.push_back("configfile");
+		if (command != "luxFilm")
+			fileParams.push_back("filename");
 
-		if (command != "luxFilm") {
-			file = "";
-			file = params.FindOneString(string("filename"), file);
-			if (file.size() && !FileData::present(params, "filename"))
-				sendFile(file);
+		for (size_t i = 0; i < fileParams.size(); i++) {
+			const string& paramName(fileParams[i]);
+			//send the files
+			string file;
+			file = params.FindOneString(paramName, "");
+			if (file == "" || FileData::present(params, paramName))
+				continue;
+
+			CompiledFile cf = compiledFiles.add(file);
+
+			ccmd.addFile(paramName, cf);
 		}
 
 	} catch (exception& e) {
@@ -696,9 +905,10 @@ void RenderFarm::send(const string &command, const string &id,
 	const string &name, const ParamSet &params)
 {
 	try {
-		netBuffer << command << endl << id << endl << name << endl;
-		sendParams(params);
-		netBuffer << "\n";
+		CompiledCommand &ccmd(compiledCommands.add(command));
+
+		ccmd.buffer() << id << endl << name << endl;
+		ccmd.addParams(params);
 	} catch (exception& e) {
 		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
 	}
@@ -706,7 +916,9 @@ void RenderFarm::send(const string &command, const string &id,
 
 void RenderFarm::send(const string &command, const string &name) {
 	try {
-		netBuffer << command << endl << name << endl;
+		CompiledCommand &ccmd(compiledCommands.add(command));
+
+		ccmd.buffer() << name << endl;
 	} catch (exception& e) {
 		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
 	}
@@ -714,7 +926,9 @@ void RenderFarm::send(const string &command, const string &name) {
 
 void RenderFarm::send(const string &command, float x, float y, float z) {
 	try {
-		netBuffer << command << endl << x << ' ' << y << ' ' << z << endl;
+		CompiledCommand &ccmd(compiledCommands.add(command));
+
+		ccmd.buffer() << x << ' ' << y << ' ' << z << endl;
 	} catch (exception& e) {
 		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
 	}
@@ -722,7 +936,9 @@ void RenderFarm::send(const string &command, float x, float y, float z) {
 
 void RenderFarm::send(const string &command, float x, float y) {
 	try {
-		netBuffer << command << endl << x << ' ' << y << endl;
+		CompiledCommand &ccmd(compiledCommands.add(command));
+
+		ccmd.buffer() << x << ' ' << y << ' ' << endl;
 	} catch (exception& e) {
 		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
 	}
@@ -731,7 +947,9 @@ void RenderFarm::send(const string &command, float x, float y) {
 void RenderFarm::send(const string &command, float a, float x, float y,
 		float z) {
 	try {
-		netBuffer << command << endl << a << ' ' << x << ' ' << y << ' ' << z << endl;
+		CompiledCommand &ccmd(compiledCommands.add(command));
+
+		ccmd.buffer() << a << ' ' << x << ' ' << y << ' ' << z << endl;
 	} catch (exception& e) {
 		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
 	}
@@ -740,7 +958,9 @@ void RenderFarm::send(const string &command, float a, float x, float y,
 void RenderFarm::send(const string &command, float ex, float ey, float ez,
 		float lx, float ly, float lz, float ux, float uy, float uz) {
 	try {
-		netBuffer << command << endl << ex << ' ' << ey << ' ' << ez << ' ' << lx << ' ' << ly << ' ' << lz << ' ' << ux << ' ' << uy << ' ' << uz << endl;
+		CompiledCommand &ccmd(compiledCommands.add(command));
+
+		ccmd.buffer() << ex << ' ' << ey << ' ' << ez << ' ' << lx << ' ' << ly << ' ' << lz << ' ' << ux << ' ' << uy << ' ' << uz << endl;
 	} catch (exception& e) {
 		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
 	}
@@ -748,10 +968,11 @@ void RenderFarm::send(const string &command, float ex, float ey, float ez,
 
 void RenderFarm::send(const string &command, float tr[16]) {
 	try {
-		netBuffer << command << endl; //<<x<<' '<<y<<' '<<z<<' ';
+		CompiledCommand &ccmd(compiledCommands.add(command));
+
 		for (int i = 0; i < 16; i++)
-			netBuffer << tr[i] << ' ';
-		netBuffer << endl;
+			ccmd.buffer() << tr[i] << ' ';
+		ccmd.buffer() << endl;
 	} catch (exception& e) {
 		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
 	}
@@ -759,11 +980,12 @@ void RenderFarm::send(const string &command, float tr[16]) {
 
 void RenderFarm::send(const string &command, u_int n, float *d) {
 	try {
-		netBuffer << command << endl;
-		netBuffer << n << ' ';
-		for (u_int i = 0; i < n; i++)
-			netBuffer << d[i] << ' ';
-		netBuffer << endl;
+		CompiledCommand &ccmd(compiledCommands.add(command));
+
+		ccmd.buffer() << n << ' ';
+		for (int i = 0; i < 16; i++)
+			ccmd.buffer() << d[i] << ' ';
+		ccmd.buffer() << endl;
 	} catch (exception& e) {
 		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
 	}
@@ -772,15 +994,17 @@ void RenderFarm::send(const string &command, u_int n, float *d) {
 void RenderFarm::send(const string &command, const string &name,
 		const string &type, const string &texname, const ParamSet &params) {
 	try {
-		netBuffer << command << endl << name << endl << type << endl << texname << endl;
-		sendParams(params);
-		netBuffer << "\n";
+		CompiledCommand &ccmd(compiledCommands.add(command));
 
-		//send the file
-		std::string file = "";
-		file = params.FindOneString(std::string("filename"), file);
-		if (file.size() && !FileData::present(params, "filename"))
-			sendFile(file);
+		ccmd.buffer() << name << endl << type << endl << texname << endl;
+		ccmd.addParams(params);
+
+		const std::string paramName("filename");
+		string file = params.FindOneString(paramName, "");
+		if (file != "" && !FileData::present(params, paramName)) {
+			CompiledFile cf = compiledFiles.add(file);
+			ccmd.addFile(paramName, cf);
+		}
 	} catch (std::exception& e) {
 		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
 	}
@@ -788,7 +1012,9 @@ void RenderFarm::send(const string &command, const string &name,
 
 void RenderFarm::send(const string &command, const string &name, float a, float b, const string &transform) {
 	try {
-		netBuffer << command << endl << name << endl << a << " " << b << endl << transform << endl;
+		CompiledCommand &ccmd(compiledCommands.add(command));
+
+		ccmd.buffer() << name << endl << a << " " << b << endl << transform << endl;
 	} catch (exception& e) {
 		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
 	}
@@ -802,9 +1028,10 @@ u_int RenderFarm::getServersStatus(RenderingServerInfo *info, u_int maxInfoCount
 		info[i].port = serverInfoList[i].port.c_str();
 		info[i].sid = serverInfoList[i].sid.c_str();
 
-		time_duration td = now - serverInfoList[i].timeLastContact;
-		info[i].secsSinceLastContact = td.seconds();
+		info[i].secsSinceLastContact = time_duration(now - serverInfoList[i].timeLastContact).seconds();
+		info[i].secsSinceLastSamples = time_duration(now - serverInfoList[i].timeLastSamples).seconds();
 		info[i].numberOfSamplesReceived = serverInfoList[i].numberOfSamplesReceived;
+		info[i].calculatedSamplesPerSecond = serverInfoList[i].calculatedSamplesPerSecond;
 	}
 
 	return serverInfoList.size();

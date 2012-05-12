@@ -29,6 +29,7 @@
 #include <limits>
 #include <numeric>
 #include <string>
+#include <vector>
 
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
@@ -38,9 +39,9 @@ using namespace lux;
 
 SRStatistics::SRStatistics(SamplerRenderer* renderer)
 	: renderer(renderer),
-	windowSampleCount(0.0),	windowNetworkSps(0.0), windowNetworkStartTime(0.0), windowNetworkSampleCount(0.0)
+	windowSampleCount(0.0)
 {
-	windowSps.set_capacity(60);
+	windowSps.set_capacity(samplesInWindow);
 
 	formattedLong = new SRStatistics::FormattedLong(this);
 	formattedShort = new SRStatistics::FormattedShort(this);
@@ -59,7 +60,6 @@ SRStatistics::SRStatistics(SamplerRenderer* renderer)
 
 	AddDoubleAttribute(*this, "netSamplesPerPixel", "Average number of samples per pixel by slave nodes", &SRStatistics::getNetworkAverageSamplesPerPixel);
 	AddDoubleAttribute(*this, "netSamplesPerSecond", "Average number of samples per second by slave nodes", &SRStatistics::getNetworkAverageSamplesPerSecond);
-	AddDoubleAttribute(*this, "netSamplesPerSecondWindow", "Average number of samples per second by slave nodes in current time window", &SRStatistics::getNetworkAverageSamplesPerSecondWindow);
 
 	AddDoubleAttribute(*this, "totalSamplesPerPixel", "Average number of samples per pixel", &SRStatistics::getTotalAverageSamplesPerPixel);
 	AddDoubleAttribute(*this, "totalSamplesPerSecond", "Average number of samples per second", &SRStatistics::getTotalAverageSamplesPerSecond);
@@ -75,37 +75,19 @@ SRStatistics::~SRStatistics()
 void SRStatistics::resetDerived() {
 	windowSps.clear();
 	windowSampleCount = 0.0;
-
-	windowNetworkSps = 0.0;
-	windowNetworkStartTime = 0.0;
-	windowNetworkSampleCount = 0.0;
 }
 
 void SRStatistics::updateStatisticsWindowDerived()
 {
 	// Get local sample count
 	double sampleCount = getSampleCount();
-	double elapsedTime = getElapsedTime() - windowStartTime;
+	double elapsedTime = windowCurrentTime - windowStartTime;
 
 	if (elapsedTime == 0.0)
 		windowSps.clear();
 	else
 		windowSps.push_back((sampleCount - windowSampleCount) / elapsedTime);
 	windowSampleCount = sampleCount;
-
-	// Get network sample count
-	double networkSampleCount = getNetworkSampleCount(false);
-	if (networkSampleCount != windowNetworkSampleCount)
-	{
-		windowNetworkSps = (networkSampleCount - windowNetworkSampleCount) / (getElapsedTime() - windowNetworkStartTime);
-		windowNetworkSampleCount = networkSampleCount;
-		windowNetworkStartTime = getElapsedTime();
-	}
-	else if (getSlaveNodeCount() == 0 && windowNetworkStartTime != 0.0)
-	{
-		windowNetworkSps = 0.0;
-		windowNetworkStartTime = 0.0;
-	}
 }
 
 double SRStatistics::getRemainingTime() {
@@ -156,12 +138,23 @@ double SRStatistics::getAverageSamplesPerSecondWindow() {
 	boost::mutex::scoped_lock window_mutex(windowMutex);
 
 	int s = windowSps.size();
-	return (s == 0) ? 0 : std::accumulate(windowSps.begin(), windowSps.end(), 0) / s;
+	return (s == 0) ? 0 : std::accumulate(windowSps.begin(), windowSps.end(), 0.0) / s;
 }
 
 double SRStatistics::getNetworkAverageSamplesPerSecond() {
-	double et = getElapsedTime();
-	return (et == 0.0) ? 0.0 : getNetworkSampleCount() / et;
+	double nsps = 0.0;
+
+	size_t nServers = getSlaveNodeCount();
+	if (nServers > 0)
+	{
+		std::vector<RenderingServerInfo> nodes(nServers);
+		nServers = luxGetRenderingServersStatus (&nodes[0], nServers);
+
+		for (size_t n = 0; n < nServers; n++)
+			nsps += nodes[n].calculatedSamplesPerSecond;
+	}
+
+	return nsps;
 }
 
 u_int SRStatistics::getPixelCount() {
@@ -200,8 +193,14 @@ double SRStatistics::getNetworkSampleCount(bool estimate) {
 		networkSampleCount = (*filmRegistry)["numberOfSamplesFromNetwork"].DoubleValue();
 
 	// Add estimated network sample count
-	if (estimate && getSlaveNodeCount() != 0 && networkSampleCount == windowNetworkSampleCount)
-		networkSampleCount += ((getElapsedTime() - windowNetworkStartTime) * windowNetworkSps);
+	size_t nServers = getSlaveNodeCount();
+	if (estimate && nServers > 0) {
+		std::vector<RenderingServerInfo> nodes(nServers);
+		nServers = luxGetRenderingServersStatus (&nodes[0], nServers);
+
+		for (size_t n = 0; n < nServers; n++)
+			networkSampleCount += nodes[n].calculatedSamplesPerSecond * nodes[n].secsSinceLastSamples;
+	}
 
 	return networkSampleCount;
 }
@@ -210,6 +209,7 @@ SRStatistics::FormattedLong::FormattedLong(SRStatistics* rs)
 	: RendererStatistics::FormattedLong(rs), rs(rs)
 {
 	typedef SRStatistics::FormattedLong FL;
+
 	AddStringAttribute(*this, "haltSamplesPerPixel", "Average number of samples per pixel to complete before halting", &FL::getHaltSpp);
 	AddStringAttribute(*this, "remainingSamplesPerPixel", "Average number of samples per pixel remaining", &FL::getRemainingSamplesPerPixel);
 	AddStringAttribute(*this, "percentHaltSppComplete", "Percent of halt S/p completed", &FL::getPercentHaltSppComplete);
@@ -224,7 +224,6 @@ SRStatistics::FormattedLong::FormattedLong(SRStatistics* rs)
 
 	AddStringAttribute(*this, "netSamplesPerPixel", "Average number of samples per pixel by slave nodes", &FL::getNetworkAverageSamplesPerPixel);
 	AddStringAttribute(*this, "netSamplesPerSecond", "Average number of samples per second by slave nodes", &FL::getNetworkAverageSamplesPerSecond);
-	AddStringAttribute(*this, "netSamplesPerSecondWindow", "Average number of samples per second by slave nodes in current time window", &FL::getNetworkAverageSamplesPerSecondWindow);
 
 	AddStringAttribute(*this, "totalSamplesPerPixel", "Average number of samples per pixel", &FL::getTotalAverageSamplesPerPixel);
 	AddStringAttribute(*this, "totalSamplesPerSecond", "Average number of samples per second", &FL::getTotalAverageSamplesPerSecond);
@@ -242,9 +241,9 @@ std::string SRStatistics::FormattedLong::getRecommendedStringTemplate()
 	if (rs->getNetworkSampleCount() != 0.0)
 	{
 		if (rs->getSlaveNodeCount() != 0)
-			stringTemplate += " | Net: ~%netSamplesPerPixel% ~%netSamplesPerSecondWindow%";
+			stringTemplate += " | Net: ~%netSamplesPerPixel% ~%netSamplesPerSecond%";
 		else
-			stringTemplate += " | Net: %netSamplesPerPixel% %netSamplesPerSecondWindow%";
+			stringTemplate += " | Net: %netSamplesPerPixel% %netSamplesPerSecond%";
 	}
 
 	if (rs->getNetworkSampleCount() != 0.0 && rs->getSlaveNodeCount())
@@ -308,11 +307,6 @@ std::string SRStatistics::FormattedLong::getNetworkAverageSamplesPerSecond() {
 	return boost::str(boost::format("%1$0.2f %2%S/s") % MagnitudeReduce(sps) % MagnitudePrefix(sps));
 }
 
-std::string SRStatistics::FormattedLong::getNetworkAverageSamplesPerSecondWindow() {
-	double spsw = rs->getNetworkAverageSamplesPerSecondWindow();
-	return boost::str(boost::format("%1$0.2f %2%S/s") % MagnitudeReduce(spsw) % MagnitudePrefix(spsw));
-}
-
 std::string SRStatistics::FormattedLong::getTotalAverageSamplesPerPixel() {
 	double spp = rs->getTotalAverageSamplesPerPixel();
 	return boost::str(boost::format("%1$0.2f %2%S/p") % MagnitudeReduce(spp) % MagnitudePrefix(spp));
@@ -334,25 +328,25 @@ SRStatistics::FormattedShort::FormattedShort(SRStatistics* rs)
 	FormattedLong* fl = static_cast<SRStatistics::FormattedLong*>(rs->formattedLong);
 
 	typedef SRStatistics::FormattedLong FL;
-	AddStringAttribute(*this, "haltSamplesPerPixel", "Average number of samples per pixel to complete before halting", boost::bind(&FL::getHaltSpp, fl));
-	AddStringAttribute(*this, "remainingSamplesPerPixel", "Average number of samples per pixel remaining", boost::bind(&FL::getRemainingSamplesPerPixel, fl));
-	AddStringAttribute(*this, "percentHaltSppComplete", "Percent of halt S/p completed", boost::bind(&FL::getPercentHaltSppComplete, fl));
 
-	AddStringAttribute(*this, "resumedSamplesPerPixel", "Average number of samples per pixel loaded from FLM", boost::bind(&FL::getResumedAverageSamplesPerPixel, fl));
+	AddStringAttribute(*this, "haltSamplesPerPixel", "Average number of samples per pixel to complete before halting", boost::bind(boost::mem_fn(&FL::getHaltSpp), fl));
+	AddStringAttribute(*this, "remainingSamplesPerPixel", "Average number of samples per pixel remaining", boost::bind(boost::mem_fn(&FL::getRemainingSamplesPerPixel), fl));
+	AddStringAttribute(*this, "percentHaltSppComplete", "Percent of halt S/p completed", boost::bind(boost::mem_fn(&FL::getPercentHaltSppComplete), fl));
 
-	AddStringAttribute(*this, "samplesPerPixel", "Average number of samples per pixel by local node", boost::bind(&FL::getAverageSamplesPerPixel, fl));
-	AddStringAttribute(*this, "samplesPerSecond", "Average number of samples per second by local node", boost::bind(&FL::getAverageSamplesPerSecond, fl));
-	AddStringAttribute(*this, "samplesPerSecondWindow", "Average number of samples per second by local node in current time window", boost::bind(&FL::getAverageSamplesPerSecondWindow, fl));
-	AddStringAttribute(*this, "contributionsPerSecond", "Average number of contributions per second by local node", boost::bind(&FL::getAverageContributionsPerSecond, fl));
-	AddStringAttribute(*this, "contributionsPerSecondWindow", "Average number of contributions per second by local node in current time window", boost::bind(&FL::getAverageContributionsPerSecondWindow, fl));
+	AddStringAttribute(*this, "resumedSamplesPerPixel", "Average number of samples per pixel loaded from FLM", boost::bind(boost::mem_fn(&FL::getResumedAverageSamplesPerPixel), fl));
 
-	AddStringAttribute(*this, "netSamplesPerPixel", "Average number of samples per pixel by slave nodes", boost::bind(&FL::getNetworkAverageSamplesPerPixel, fl));
-	AddStringAttribute(*this, "netSamplesPerSecond", "Average number of samples per second by slave nodes", boost::bind(&FL::getNetworkAverageSamplesPerSecond, fl));
-	AddStringAttribute(*this, "netSamplesPerSecondWindow", "Average number of samples per second by slave nodes in current time window", boost::bind(&FL::getNetworkAverageSamplesPerSecondWindow, fl));
+	AddStringAttribute(*this, "samplesPerPixel", "Average number of samples per pixel by local node", boost::bind(boost::mem_fn(&FL::getAverageSamplesPerPixel), fl));
+	AddStringAttribute(*this, "samplesPerSecond", "Average number of samples per second by local node", boost::bind(boost::mem_fn(&FL::getAverageSamplesPerSecond), fl));
+	AddStringAttribute(*this, "samplesPerSecondWindow", "Average number of samples per second by local node in current time window", boost::bind(boost::mem_fn(&FL::getAverageSamplesPerSecondWindow), fl));
+	AddStringAttribute(*this, "contributionsPerSecond", "Average number of contributions per second by local node", boost::bind(boost::mem_fn(&FL::getAverageContributionsPerSecond), fl));
+	AddStringAttribute(*this, "contributionsPerSecondWindow", "Average number of contributions per second by local node in current time window", boost::bind(boost::mem_fn(&FL::getAverageContributionsPerSecondWindow), fl));
 
-	AddStringAttribute(*this, "totalSamplesPerPixel", "Average number of samples per pixel", boost::bind(&FL::getTotalAverageSamplesPerPixel, fl));
-	AddStringAttribute(*this, "totalSamplesPerSecond", "Average number of samples per second", boost::bind(&FL::getTotalAverageSamplesPerSecond, fl));
-	AddStringAttribute(*this, "totalSamplesPerSecondWindow", "Average number of samples per second in current time window", boost::bind(&FL::getTotalAverageSamplesPerSecondWindow, fl));
+	AddStringAttribute(*this, "netSamplesPerPixel", "Average number of samples per pixel by slave nodes", boost::bind(boost::mem_fn(&FL::getNetworkAverageSamplesPerPixel), fl));
+	AddStringAttribute(*this, "netSamplesPerSecond", "Average number of samples per second by slave nodes", boost::bind(boost::mem_fn(&FL::getNetworkAverageSamplesPerSecond), fl));
+
+	AddStringAttribute(*this, "totalSamplesPerPixel", "Average number of samples per pixel", boost::bind(boost::mem_fn(&FL::getTotalAverageSamplesPerPixel), fl));
+	AddStringAttribute(*this, "totalSamplesPerSecond", "Average number of samples per second", boost::bind(boost::mem_fn(&FL::getTotalAverageSamplesPerSecond), fl));
+	AddStringAttribute(*this, "totalSamplesPerSecondWindow", "Average number of samples per second in current time window", boost::bind(boost::mem_fn(&FL::getTotalAverageSamplesPerSecondWindow), fl));
 }
 
 std::string SRStatistics::FormattedShort::getRecommendedStringTemplate()
@@ -366,9 +360,9 @@ std::string SRStatistics::FormattedShort::getRecommendedStringTemplate()
 	if (rs->getNetworkSampleCount() != 0.0)
 	{
 		if (rs->getSlaveNodeCount() != 0)
-			stringTemplate += " | Net: ~%netSamplesPerPixel% ~%netSamplesPerSecondWindow%";
+			stringTemplate += " | Net: ~%netSamplesPerPixel% ~%netSamplesPerSecond%";
 		else
-			stringTemplate += " | Net: %netSamplesPerPixel% %netSamplesPerSecondWindow%";
+			stringTemplate += " | Net: %netSamplesPerPixel% %netSamplesPerSecond%";
 	}
 
 	if (rs->getNetworkSampleCount() != 0.0 && rs->getSlaveNodeCount())

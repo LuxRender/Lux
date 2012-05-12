@@ -64,7 +64,6 @@ public:
 
 		std::string getNetworkAverageSamplesPerPixel();
 		std::string getNetworkAverageSamplesPerSecond();
-		std::string getNetworkAverageSamplesPerSecondWindow();
 
 		std::string getTotalAverageSamplesPerPixel();
 		std::string getTotalAverageSamplesPerSecond();
@@ -92,9 +91,6 @@ private:
 
 	boost::circular_buffer<double> windowSps;
 	double windowSampleCount;
-	double windowNetworkSps;
-	double windowNetworkStartTime;
-	double windowNetworkSampleCount;
 
 	virtual void resetDerived();
 	virtual void updateStatisticsWindowDerived();
@@ -121,11 +117,10 @@ private:
 
 	double getNetworkAverageSamplesPerPixel() { return getNetworkSampleCount() / getPixelCount(); }
 	double getNetworkAverageSamplesPerSecond();
-	double getNetworkAverageSamplesPerSecondWindow() { return windowNetworkSps; }
 
 	double getTotalAverageSamplesPerPixel() { return (getResumedSampleCount() + getSampleCount() + getNetworkSampleCount()) / getPixelCount(); }
 	double getTotalAverageSamplesPerSecond() { return getAverageSamplesPerSecond() + getNetworkAverageSamplesPerSecond(); }
-	double getTotalAverageSamplesPerSecondWindow() { return getAverageSamplesPerSecondWindow() + getNetworkAverageSamplesPerSecondWindow(); }
+	double getTotalAverageSamplesPerSecondWindow() { return getAverageSamplesPerSecondWindow() + getNetworkAverageSamplesPerSecond(); }
 
 	u_int getPixelCount();
 	double getResumedSampleCount();

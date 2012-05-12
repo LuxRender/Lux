@@ -181,7 +181,8 @@ u_int DirectLightingIntegrator::Li(const Scene &scene,
 	const Sample &sample) const
 {
         Ray ray;
-        float rayWeight = sample.camera->GenerateRay(scene, sample, &ray);
+	float xi, yi;
+        float rayWeight = sample.camera->GenerateRay(scene, sample, &ray, &xi, &yi);
 
 	vector<SWCSpectrum> L(scene.lightGroups.size(), SWCSpectrum(0.f));
 	float alpha = 1.f;
@@ -190,7 +191,7 @@ u_int DirectLightingIntegrator::Li(const Scene &scene,
 		distance, 0);
 
 	for (u_int i = 0; i < scene.lightGroups.size(); ++i)
-		sample.AddContribution(sample.imageX, sample.imageY,
+		sample.AddContribution(xi, yi,
 			XYZColor(sample.swl, L[i]) * rayWeight, alpha,
 			distance, 0.f, bufferId, i);
 

@@ -115,7 +115,8 @@ u_int PathIntegrator::Li(const Scene &scene, const Sample &sample) const
 	// Declare common path integration variables
 	const SpectrumWavelengths &sw(sample.swl);
 	Ray ray;
-	float rayWeight = sample.camera->GenerateRay(scene, sample, &ray);
+	float xi, yi;
+	float rayWeight = sample.camera->GenerateRay(scene, sample, &ray, &xi, &yi);
 
 	const float nLights = scene.lights.size();
 	const u_int lightGroupCount = scene.lightGroups.size();
@@ -269,7 +270,7 @@ u_int PathIntegrator::Li(const Scene &scene, const Sample &sample) const
 	for (u_int i = 0; i < lightGroupCount; ++i) {
 		if (!L[i].Black())
 			V[i] /= L[i].Filter(sw);
-		sample.AddContribution(sample.imageX, sample.imageY,
+		sample.AddContribution(xi, yi,
 			XYZColor(sw, L[i]) * rayWeight, alpha, distance,
 			V[i], bufferId, i);
 	}
@@ -340,7 +341,7 @@ bool PathState::Init(const Scene &scene) {
 	// Mandatory initialization of mint and maxt
 	pathRay.mint = MachineEpsilon::E(1.f);
 	pathRay.maxt = INFINITY;
-	const float eyeRayWeight = sample.camera->GenerateRay(scene, sample, &pathRay);
+	const float eyeRayWeight = sample.camera->GenerateRay(scene, sample, &pathRay, &xi, &yi);
 	bouncePdf = 1.f;
 	lastBounce = pathRay.o;
 
@@ -370,7 +371,7 @@ void PathState::Terminate(const Scene &scene, const u_int bufferId,
 		if (!L[i].Black())
 			V[i] /= L[i].Filter(sample.swl);
 
-		sample.AddContribution(sample.imageX, sample.imageY,
+		sample.AddContribution(xi, yi,
 			XYZColor(sample.swl, L[i]), alpha, distance,
 			V[i], bufferId, i);
 	}

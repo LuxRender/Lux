@@ -354,4 +354,4 @@ Texture<FresnelGeneral> *FresnelName::CreateFresnelTexture(const Transform &tex2
 static DynamicLoader::RegisterFresnelTexture<SopraTexture> r1("sopra");
 static DynamicLoader::RegisterFresnelTexture<LuxpopTexture> r2("luxpop");
 static DynamicLoader::RegisterFresnelTexture<FresnelPreset> r3("preset");
-static DynamicLoader::RegisterFresnelTexture<FresnelPreset> r4("fresnelname");
+static DynamicLoader::RegisterFresnelTexture<FresnelName> r4("fresnelname");

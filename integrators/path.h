@@ -123,6 +123,7 @@ private:
 	//  scattered (1bit)
 	// Use Get/SetState to access this
 	u_short flags;
+	float xi, yi; // Hold the image coordinates of the sample
 };
 
 // PathIntegrator Declarations

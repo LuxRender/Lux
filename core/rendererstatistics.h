@@ -39,6 +39,8 @@ class Renderer;
 
 class RendererStatistics : public Queryable {
 public:
+	static const size_t samplesInWindow = 600;
+
 	RendererStatistics();
 	virtual ~RendererStatistics() {};
 
@@ -109,6 +111,7 @@ public:
 protected:
 	boost::mutex windowMutex;
 	double windowStartTime;
+	double windowCurrentTime;
 
 	double getElapsedTime() { return timer.Time(); }
 	double getHaltTime();

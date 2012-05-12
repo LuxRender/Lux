@@ -298,7 +298,9 @@ struct RenderingServerInfo {
 	const char *sid; // Dade - session id for the server
 
 	double numberOfSamplesReceived;
+	double calculatedSamplesPerSecond;
 	unsigned int secsSinceLastContact;
+	unsigned int secsSinceLastSamples;
 };
 // Dade - return the number of rendering servers and fill the info buffer with
 // information about the servers

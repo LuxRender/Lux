@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2011 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -20,23 +20,41 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#ifndef LUX_VERSION_H
-#define LUX_VERSION_H
-// version.h*
+// single.cpp*
+#include "volume.h"
+#include "transport.h"
+#include "scene.h"
 
-#define XVERSION_STR(v) #v
-#define VERSION_STR(v) XVERSION_STR(v)
+namespace lux
+{
 
+// SingleScattering Declarations
+class NoneScattering : public VolumeIntegrator {
+public:
+	// SingleScattering Public Methods
+	NoneScattering() : VolumeIntegrator() {
+		AddStringConstant(*this, "name", "Name of current volume integrator", "none");
+	}
+	virtual ~NoneScattering() { }
 
-#define LUX_VERSION 1.0
-#define LUX_VERSION_POSTFIX "RC1"
+	virtual void Transmittance(const Scene &, const Ray &ray,
+		const Sample &sample, float *alpha, SWCSpectrum *const L) const;
+	virtual void RequestSamples(Sample *sample, const Scene &scene);
+	virtual u_int Li(const Scene &, const Ray &ray,
+		const Sample &sample, SWCSpectrum *L, float *alpha) const;
+	virtual u_int Li(const Scene &, const Ray &ray,
+		const Sample &sample, SWCSpectrum *L, float *alpha, bool from_IsSup, bool path_type) const;
+	virtual bool Intersect(const Scene &scene, const Sample &sample,
+		const Volume *volume, bool scatteredStart, const Ray &ray,
+		float u, Intersection *isect, BSDF **bsdf, float *pdf,
+		float *pdfBack, SWCSpectrum *L) const;
+	// Used to complete intersection data with LuxRays
+	virtual bool Intersect(const Scene &scene, const Sample &sample,
+		const Volume *volume, bool scatteredStart, const Ray &ray,
+		const luxrays::RayHit &rayHit, float u, Intersection *isect,
+		BSDF **bsdf, float *pdf, float *pdfBack, SWCSpectrum *L) const;
 
-#define LUX_SERVER_PROTOCOL_VERSION 1007
+	static VolumeIntegrator *CreateVolumeIntegrator(const ParamSet &params);
+};
 
-
-#define LUX_VERSION_STRING    VERSION_STR(LUX_VERSION) LUX_VERSION_POSTFIX
-
-// renderfarm relies on the 'protocol' part of in server version string
-#define LUX_SERVER_VERSION_STRING    LUX_VERSION_STRING " (protocol: " VERSION_STR(LUX_SERVER_PROTOCOL_VERSION) ")"
-
-#endif // LUX_VERSION_H
+}//namespace lux

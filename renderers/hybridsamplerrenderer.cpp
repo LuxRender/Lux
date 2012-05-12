@@ -584,6 +584,8 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 		// Advance the next step
 		//----------------------------------------------------------------------
 
+		//const double t1 = luxrays::WallClockTime();
+
 		bool renderIsOver = false;
 		u_int nrContribs = 0;
 		u_int nrSamples = 0;
@@ -625,12 +627,18 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 			break;
 		}
 
+		//LOG(LUX_DEBUG, LUX_NOERROR) << "NextState() time: " << int((luxrays::WallClockTime() - t1) * 1000.0) << "ms";
+
 		//----------------------------------------------------------------------
 		// File the RayBuffer with the generated rays
 		//----------------------------------------------------------------------
 
+		//const double t2 = luxrays::WallClockTime();
+
 		rayBuffer->Reset();
 		stateBuffer->GenerateRays();
+
+		//LOG(LUX_DEBUG, LUX_NOERROR) << "GenerateRays() time: " << (luxrays::WallClockTime() - t2) * 1000.0 << "ms";
 
 		//----------------------------------------------------------------------
 		// Trace the RayBuffer

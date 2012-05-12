@@ -91,6 +91,7 @@ SET(lux_core_src
 	core/texture.cpp
 	core/tgaio.cpp
 	core/timer.cpp
+	core/tigerhash.cpp
 	core/transport.cpp
 	core/util.cpp
 	core/volume.cpp
@@ -226,6 +227,7 @@ SET(lux_integrators_src
 	integrators/multi.cpp
 	integrators/path.cpp
 	integrators/single.cpp
+	integrators/none.cpp
 	integrators/sppm.cpp
 	)
 SOURCE_GROUP("Source Files\\Integrators" FILES ${lux_integrators_src})
@@ -531,6 +533,7 @@ SET(lux_core_hdr
 	core/texturecolor.h
 	core/tgaio.h
 	core/timer.h
+	core/tigerhash.h
 	core/tonemap.h
 	core/transport.h
 	core/version.h

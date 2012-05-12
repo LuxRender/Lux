@@ -39,7 +39,8 @@ RendererStatistics::RendererStatistics()
 	: Queryable("renderer_statistics"),
 	formattedLong(NULL),
 	formattedShort(NULL),
-	windowStartTime(0.0)
+	windowStartTime(0.0),
+	windowCurrentTime(0.0)
 {
 	AddDoubleAttribute(*this, "elapsedTime", "Elapsed rendering time", &RendererStatistics::getElapsedTime);
 	AddDoubleAttribute(*this, "remainingTime", "Remaining rendering time", &RendererStatistics::getRemainingTime);
@@ -59,14 +60,15 @@ void RendererStatistics::reset() {
 
 	timer.Reset();
 	windowStartTime = 0.0;
+	windowCurrentTime = 0.0;
 }
 
 void RendererStatistics::updateStatisticsWindow() {
 	boost::mutex::scoped_lock window_mutex(windowMutex);
 
+	windowCurrentTime = getElapsedTime();
 	updateStatisticsWindowDerived();
-
-	windowStartTime = getElapsedTime();
+	windowStartTime = windowCurrentTime;
 }
 
 // Returns halttime if set, otherwise infinity
@@ -152,13 +154,15 @@ std::string RendererStatistics::Formatted::getHaltTime() {
 RendererStatistics::FormattedLong::FormattedLong(RendererStatistics* rs)
 	: Formatted(rs, "renderer_statistics_formatted")
 {
-	AddStringAttribute(*this, "percentHaltTimeComplete", "Percent of halt time completed", &RendererStatistics::FormattedLong::getPercentHaltTimeComplete);
-	AddStringAttribute(*this, "percentComplete", "Percent of render completed", &RendererStatistics::FormattedLong::getPercentComplete);
+	typedef RendererStatistics::FormattedLong FL;
 
-	AddStringAttribute(*this, "efficiency", "Efficiency of renderer", &RendererStatistics::FormattedLong::getEfficiency);
+	AddStringAttribute(*this, "percentHaltTimeComplete", "Percent of halt time completed", &FL::getPercentHaltTimeComplete);
+	AddStringAttribute(*this, "percentComplete", "Percent of render completed", &FL::getPercentComplete);
 
-	AddStringAttribute(*this, "threadCount", "Number of rendering threads on local node", &RendererStatistics::FormattedLong::getThreadCount);
-	AddStringAttribute(*this, "slaveNodeCount", "Number of network slave nodes", &RendererStatistics::FormattedLong::getSlaveNodeCount);
+	AddStringAttribute(*this, "efficiency", "Efficiency of renderer", &FL::getEfficiency);
+
+	AddStringAttribute(*this, "threadCount", "Number of rendering threads on local node", &FL::getThreadCount);
+	AddStringAttribute(*this, "slaveNodeCount", "Number of network slave nodes", &FL::getSlaveNodeCount);
 }
 
 std::string RendererStatistics::FormattedLong::getRecommendedStringTemplate() {
@@ -202,13 +206,15 @@ RendererStatistics::FormattedShort::FormattedShort(RendererStatistics* rs)
 	FormattedLong* fl = static_cast<RendererStatistics::FormattedLong*>(rs->formattedLong);
 
 	typedef RendererStatistics::FormattedLong FL;
-	AddStringAttribute(*this, "percentComplete", "Percent of render completed", boost::bind(&FL::getPercentComplete, fl));
-	AddStringAttribute(*this, "percentHaltTimeComplete", "Percent of halt time completed", &RendererStatistics::FormattedShort::getPercentHaltTimeComplete);
+	typedef RendererStatistics::FormattedShort FS;
 
-	AddStringAttribute(*this, "efficiency", "Efficiency of renderer", &RendererStatistics::FormattedShort::getEfficiency);
+	AddStringAttribute(*this, "percentComplete", "Percent of render completed", boost::bind(boost::mem_fn(&FL::getPercentComplete), fl));
+	AddStringAttribute(*this, "percentHaltTimeComplete", "Percent of halt time completed", &FS::getPercentHaltTimeComplete);
 
-	AddStringAttribute(*this, "threadCount", "Number of rendering threads on local node", &RendererStatistics::FormattedShort::getThreadCount);
-	AddStringAttribute(*this, "slaveNodeCount", "Number of network slave nodes", &RendererStatistics::FormattedShort::getSlaveNodeCount);
+	AddStringAttribute(*this, "efficiency", "Efficiency of renderer", &FS::getEfficiency);
+
+	AddStringAttribute(*this, "threadCount", "Number of rendering threads on local node", &FS::getThreadCount);
+	AddStringAttribute(*this, "slaveNodeCount", "Number of network slave nodes", &FS::getSlaveNodeCount);
 }
 
 std::string RendererStatistics::FormattedShort::getRecommendedStringTemplate() {
