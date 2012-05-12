@@ -177,8 +177,9 @@ public:
 
 	u_int maxEyeDepth, maxLightDepth;
 	float eyeThreshold, lightThreshold;
-	u_int sampleEyeOffset, sampleLightOffset;
+	u_int sampleEyeOffset;
 	u_int eyeBufferId, lightBufferId;
+	vector<u_int> sampleLightOffsets;
 
 private:
 	// BidirIntegrator Data
