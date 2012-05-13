@@ -978,8 +978,6 @@ bool BidirPathState::Init(const Scene &scene) {
 
 			// Initialize light vertex
 			light0.wi = Vector(light0.bsdf->dgShading.nn);
-			// ONE light strategy
-			light0.pdf /= numberOfLights;
 
 			// pdf of ONE_UNIFORM light sampling strategy
 			Le *= numberOfLights;
@@ -996,6 +994,10 @@ bool BidirPathState::Init(const Scene &scene) {
 					&light0.wo, data[1], data[2], data[3],
 					&light0.throughput, &light0.pdf, BSDF_ALL, &light0.flags,
 					&light0.pdfR)) {
+					// ONE light strategy
+					light0.pdf /= numberOfLights;
+					light0.pdfR /= numberOfLights;
+
 					Ray ray(light0.bsdf->dgShading.p, light0.wo);
 					ray.time = sample.realTime;
 					Intersection isect;
@@ -1085,6 +1087,11 @@ bool BidirPathState::Init(const Scene &scene) {
 						}
 					}
 				}
+			} else {
+				// TODO: check if this works
+
+				// ONE light strategy
+				light0.pdf /= numberOfLights;
 			}
 		}
 	}
