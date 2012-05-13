@@ -36,7 +36,7 @@ FIND_PATH(OPENCL_INCLUDE_DIR
 	DOC "The directory where CL/cl.hpp resides")
 FIND_PATH(OPENCL_INCLUDE_DIR
 	NAMES CL/cl.hpp OpenCL/cl.hpp
-	PATHS /usr /usr/local /sw /opt/local
+	PATHS /usr /usr/local /sw /opt/local $ENV{ATISTREAMSDKROOT} $ENV{AMDAPPSDKROOT}
 	PATH_SUFFIXES ${OPENCL_INC_SUFFIXES}
 	DOC "The directory where CL/cl.hpp resides")
 SET(OPENCL_NAMES_REL opencl OpenCL)
@@ -62,7 +62,7 @@ FIND_LIBRARY(OPENCL_LIBRARY_REL
 )
 FIND_LIBRARY(OPENCL_LIBRARY_REL
 	NAMES ${OPENCL_NAMES_REL}
-	PATHS /usr/local /usr /sw /opt/local /opt/csw /opt
+	PATHS /usr/local /usr /sw /opt/local /opt/csw /opt $ENV{ATISTREAMSDKROOT} $ENV{AMDAPPSDKROOT}
 	PATH_SUFFIXES ${OPENCL_LIB_SUFFIXES_REL}
 	DOC "The OpenCL release library"
 )
@@ -75,7 +75,7 @@ FIND_LIBRARY(OPENCL_LIBRARY_DBG
 )
 FIND_LIBRARY(OPENCL_LIBRARY_DBG
 	NAMES ${OPENCL_NAMES_DBG}
-	PATHS /usr/local /usr /sw /opt/local /opt/csw /opt
+	PATHS /usr/local /usr /sw /opt/local /opt/csw /opt $ENV{ATISTREAMSDKROOT} $ENV{AMDAPPSDKROOT}
 	PATH_SUFFIXES ${OPENCL_LIB_SUFFIXES_DBG}
 	DOC "The OpenCL debug library"
 )
