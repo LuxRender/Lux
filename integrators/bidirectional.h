@@ -183,7 +183,7 @@ private:
 	// BidirIntegrator Data
 	LightsSamplingStrategy *lightDirectStrategy;
 	u_int samplingCount;
-	u_int lightNumOffset, lightComponentOffset;
+	u_int lightNumOffset;
 	u_int lightPosOffset, lightDirOffset, sampleDirectOffset;
 	bool hybridUseMIS, debug;
 };

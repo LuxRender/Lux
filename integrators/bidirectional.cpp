@@ -70,6 +70,7 @@ void BidirIntegrator::RequestSamples(Sample *sample, const Scene &scene)
 	sampleEyeOffset = sample->AddxD(structure, maxEyeDepth);
 	structure.clear();
 	// Light subpath samples
+	sampleLightOffsets.clear(); // Needed for the hybrid version
 	for (u_int i = 0; i < samplingCount; ++i) {
 		structure.push_back(1); //continue light
 		structure.push_back(2); //bsdf sampling for light path
@@ -965,14 +966,14 @@ bool BidirPathState::Init(const Scene &scene) {
 	lightPathLength = 0;
 	if (maxLightDepth > 0) {
 		// Choose light
-		const u_int lightNum = min(Floor2UInt(sample.sampler->GetOneD(sample,
-			bidir->lightNumOffset, 0) * numberOfLights), numberOfLights - 1U);
+		float component = sample.sampler->GetOneD(sample,
+			bidir->lightNumOffset, 0) * numberOfLights;
+		const u_int lightNum = min(Floor2UInt(component), numberOfLights - 1U);
+		component -= lightNum;
 		light = scene.lights[lightNum];
 
 		float lightPos[2];
 		sample.sampler->GetTwoD(sample, bidir->lightPosOffset, 0, lightPos);
-		const float component = sample.sampler->GetOneD(sample,
-			bidir->lightComponentOffset, 0);
 
 		// Sample light subpath origin
 		BidirStateVertex &light0(lightPath[0]);
