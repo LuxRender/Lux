@@ -192,7 +192,7 @@ AreaLight::~AreaLight()
 
 bool AreaLight::IsSupport() const
 {
-	return prim->IsSupport();
+    return ( ShapeType(AR_SHAPE) == prim->GetPrimitiveType() );
 }
 
 float AreaLight::Power(const Scene &scene) const

@@ -24,7 +24,7 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// path.cpp*
+// envpath.cpp*
 #include "sampling.h"
 #include "scene.h"
 #include "bxdf.h"
@@ -42,8 +42,8 @@ using namespace lux;
 
 static const u_int passThroughLimit = 10000;
 
-// EnvPathIntegrator Method Definitions
-void EnvPathIntegrator::RequestSamples(Sample *sample, const Scene &scene)
+// ENVPathIntegrator Method Definitions
+void ENVPathIntegrator::RequestSamples(Sample *sample, const Scene &scene)
 {
 	vector<u_int> structure;
 	structure.push_back(2);	// bsdf direction sample for path
@@ -99,7 +99,7 @@ void EnvPathIntegrator::RequestSamples(Sample *sample, const Scene &scene)
 	}
 }
 
-void EnvPathIntegrator::Preprocess(const RandomGenerator &rng, const Scene &scene)
+void ENVPathIntegrator::Preprocess(const RandomGenerator &rng, const Scene &scene)
 {
 	// Prepare image buffers
 	BufferType type = BUF_TYPE_PER_PIXEL;
@@ -113,13 +113,14 @@ void EnvPathIntegrator::Preprocess(const RandomGenerator &rng, const Scene &scen
 // SamplerRenderer integrator code
 //------------------------------------------------------------------------------
 
-u_int EnvPathIntegrator::Li(const Scene &scene, const Sample &sample) const
+u_int ENVPathIntegrator::Li(const Scene &scene, const Sample &sample) const
 {
 	u_int nrContribs = 0;
 	// Declare common path integration variables
 	const SpectrumWavelengths &sw(sample.swl);
-	Ray ray;
-	float rayWeight = sample.camera->GenerateRay(scene, sample, &ray);
+	Ray ray, ray2;
+	float xi, yi;
+	float rayWeight = sample.camera->GenerateRay(scene, sample, &ray, &xi, &yi);
 
 	const float nLights = scene.lights.size();
 	const u_int lightGroupCount = scene.lightGroups.size();
@@ -136,26 +137,25 @@ u_int EnvPathIntegrator::Li(const Scene &scene, const Sample &sample) const
 	float distance = INFINITY;
 	u_int vertexIndex = 0;
 	const Volume *volume = NULL;
-
-//	bool old_as= true, as_type = true, bs_type = true;
 	bool from_IsSup = false, to_IsSup = false, path_type = false;
+	Point cam( scene.camera->CameraToWorld( Point(0.f, 0.f, 0.f) ) );
 
 	for (u_int pathLength = 0; ; ++pathLength) {
 		const SWCSpectrum prevThroughput(pathThroughput);
 		const float *data = sample.sampler->GetLazyValues(sample,
-			sampleOffset, pathLength);
+								  sampleOffset, pathLength);
 		// Find next vertex of path
 		Intersection isect;
 		BSDF *bsdf;
 		float spdf;
 		from_IsSup = to_IsSup;
 		if (!scene.Intersect(sample, volume, scattered, ray, data[3], &isect,
-			&bsdf, &spdf, NULL, &pathThroughput)) {
+				     &bsdf, &spdf, NULL, &pathThroughput)) {
 			pathThroughput /= spdf;
 			// Dade - now I know ray.maxt and I can call volumeIntegrator
 			SWCSpectrum Lv;
 			u_int g = scene.volumeIntegrator->Li(scene, ray, sample,
-				&Lv, &alpha, from_IsSup, path_type);
+							     &Lv, &alpha, from_IsSup, path_type);
 			if (!Lv.Black()) {
 				Lv *= prevThroughput;
 				L[g] += Lv;
@@ -166,12 +166,12 @@ u_int EnvPathIntegrator::Li(const Scene &scene, const Sample &sample) const
 			// Stop path sampling since no intersection was found
 			// Possibly add horizon in render & reflections
 			if (!enableDirectLightSampling || (
-					(includeEnvironment || vertexIndex > 0) && specularBounce && (path_type || pathLength==0) )) {
+						(includeEnvironment || vertexIndex > 0) && specularBounce && (path_type || pathLength==0) )) {
 				BSDF *ibsdf;
 				for (u_int i = 0; i < nLights; ++i) {
 					SWCSpectrum Le(pathThroughput);
 					if (scene.lights[i]->Le(scene, sample,
-						ray, &ibsdf, NULL, NULL, &Le)) {
+								ray, &ibsdf, NULL, NULL, &Le)) {
 						L[scene.lights[i]->group] += Le;
 						V[scene.lights[i]->group] += Le.Filter(sw) * VContrib;
 						++nrContribs;
@@ -184,19 +184,57 @@ u_int EnvPathIntegrator::Li(const Scene &scene, const Sample &sample) const
 				alpha = 0.f;
 			break;
 		}
+		if (isect.primitive) {
+
+			if ( ShapeType(ENV_SHAPE) == isect.primitive->GetPrimitiveType() ){
+				pathThroughput /= spdf;
+				// Dade - now I know ray.maxt and I can call volumeIntegrator
+				SWCSpectrum Lv;
+				ray2 = Ray( Point(0.f), Vector(isect.dg.p - cam ) );
+				u_int g = scene.volumeIntegrator->Li(scene, ray2, sample,
+								     &Lv, &alpha, from_IsSup, path_type);
+				if (!Lv.Black()) {
+					Lv *= prevThroughput;
+					L[g] += Lv;
+					V[g] += Lv.Filter(sw) * VContrib;
+					++nrContribs;
+				}
+
+				// Stop path sampling since no intersection was found
+				// Possibly add horizon in render & reflections
+				if (!enableDirectLightSampling || (
+							(includeEnvironment || vertexIndex > 0) && specularBounce && (path_type || pathLength==0) )) {
+					BSDF *ibsdf;
+					for (u_int i = 0; i < nLights; ++i) {
+						SWCSpectrum Le(pathThroughput);
+						if (scene.lights[i]->Le(scene, sample,
+									ray2, &ibsdf, NULL, NULL, &Le)) {
+							L[scene.lights[i]->group] += Le;
+							V[scene.lights[i]->group] += Le.Filter(sw) * VContrib;
+							++nrContribs;
+						}
+					}
+				}
+
+				// Set alpha channel
+				if (vertexIndex == 0)
+					alpha = 0.f;
+				break;
+			}
+		}
 		scattered = bsdf->dgShading.scattered;
 		pathThroughput /= spdf;
 		if (vertexIndex == 0) {
 			distance = ray.maxt * ray.d.Length();
 		}
-		if (isect.primitive) { 
-			to_IsSup = (isect.primitive)->IsSupport();
+		if (isect.primitive) {
+			to_IsSup = ( ShapeType(AR_SHAPE) == (isect.primitive)->GetPrimitiveType() );
 			if (!to_IsSup) path_type = true;
 		}
 
 		SWCSpectrum Lv;
 		const u_int g = scene.volumeIntegrator->Li(scene, ray, sample,
-			&Lv, &alpha, from_IsSup, path_type);
+							   &Lv, &alpha, from_IsSup, path_type);
 		if (!Lv.Black()) {
 			Lv *= prevThroughput;
 			L[g] += Lv;
@@ -271,6 +309,20 @@ u_int EnvPathIntegrator::Li(const Scene &scene, const Sample &sample) const
 			specular = specular && specularBounce;
 		}
 		pathThroughput *= f;
+
+		if (to_IsSup) {
+			SWCSpectrum SupLi(1.f);
+			Vector Wsup ( p - cam );
+			Ray( Point(0.f), Vector(isect.dg.p - scene.camera->CameraToWorld( Point(0.f, 0.f, 0.f) ) ) );
+			for (u_int i = 0; i < nLights; ++i) {
+				//SWCSpectrum Le(1.f);
+				if (scene.lights[i]->IsSupport()) {
+					scene.lights[i]->LeSupport(scene, sample, Wsup, &SupLi);
+				}
+			}
+			//LeSupport(scene, sample, Wsup, &SupLi);
+			pathThroughput *= (bsdf->GetBscale() * SupLi.Y(sw) * AbsDot (wi, n) );//0.001f;
+		}
 		if (!specular)
 			VContrib += AbsDot(wi, n) / pdf;
 
@@ -281,7 +333,7 @@ u_int EnvPathIntegrator::Li(const Scene &scene, const Sample &sample) const
 	for (u_int i = 0; i < lightGroupCount; ++i) {
 		if (!L[i].Black())
 			V[i] /= L[i].Filter(sw);
-		sample.AddContribution(sample.imageX, sample.imageY,
+		sample.AddContribution(xi, yi,
 			XYZColor(sw, L[i]) * rayWeight, alpha, distance,
 			V[i], bufferId, i);
 	}
@@ -290,10 +342,10 @@ u_int EnvPathIntegrator::Li(const Scene &scene, const Sample &sample) const
 }
 
 //------------------------------------------------------------------------------
-// DataParallel integrator EnvPathState code
+// DataParallel integrator ENVPathState code
 //------------------------------------------------------------------------------
 
-EnvPathState::EnvPathState(const Scene &scene, ContributionBuffer *contribBuffer, RandomGenerator *rng) {
+ENVPathState::ENVPathState(const Scene &scene, ContributionBuffer *contribBuffer, RandomGenerator *rng) {
 	SetState(TO_INIT);
 
 	scene.surfaceIntegrator->RequestSamples(&sample, scene);
@@ -308,7 +360,7 @@ EnvPathState::EnvPathState(const Scene &scene, ContributionBuffer *contribBuffer
 	L = new SWCSpectrum[lightGroupCount];
 	V = new float[lightGroupCount];
 
-        EnvPathIntegrator *pi = (EnvPathIntegrator *)scene.surfaceIntegrator;
+	ENVPathIntegrator *pi = (ENVPathIntegrator *)scene.surfaceIntegrator;
 	const u_int shadowRaysCount = (pi->hybridRendererLightStrategy == LightsSamplingStrategy::SAMPLE_ONE_UNIFORM) ?
 		(pi->hints.GetShadowRaysCount()) :
 		(pi->hints.GetShadowRaysCount() * scene.lights.size());
@@ -321,7 +373,7 @@ EnvPathState::EnvPathState(const Scene &scene, ContributionBuffer *contribBuffer
 	shadowVolume = new const Volume *[shadowRaysCount];
 }
 
-bool EnvPathState::Init(const Scene &scene) {
+bool ENVPathState::Init(const Scene &scene) {
 	// Free BSDF memory from computing image sample value
 	sample.arena.FreeAll();
 
@@ -352,18 +404,18 @@ bool EnvPathState::Init(const Scene &scene) {
 	// Mandatory initialization of mint and maxt
 	pathRay.mint = MachineEpsilon::E(1.f);
 	pathRay.maxt = INFINITY;
-	const float eyeRayWeight = sample.camera->GenerateRay(scene, sample, &pathRay);
+	const float eyeRayWeight = sample.camera->GenerateRay(scene, sample, &pathRay, &xi, &yi);
 	bouncePdf = 1.f;
 	lastBounce = pathRay.o;
 
 	pathThroughput = eyeRayWeight;
 
-        SetState(EnvPathState::EYE_VERTEX);
+	SetState(ENVPathState::EYE_VERTEX);
 
 	return result;
 }
 
-void EnvPathState::Free(const Scene &scene) {
+void ENVPathState::Free(const Scene &scene) {
 	delete[] L;
 	delete[] V;
 	delete[] Ld;
@@ -375,68 +427,68 @@ void EnvPathState::Free(const Scene &scene) {
 	scene.sampler->FreeSample(&sample);
 }
 
-void EnvPathState::Terminate(const Scene &scene, const u_int bufferId,
+void ENVPathState::Terminate(const Scene &scene, const u_int bufferId,
 		const float alpha) {
 	const u_int lightGroupCount = scene.lightGroups.size();
 	for (u_int i = 0; i < lightGroupCount; ++i) {
 		if (!L[i].Black())
 			V[i] /= L[i].Filter(sample.swl);
 
-		sample.AddContribution(sample.imageX, sample.imageY,
+		sample.AddContribution(xi, yi,
 			XYZColor(sample.swl, L[i]), alpha, distance,
 			V[i], bufferId, i);
 	}
 	sample.sampler->AddSample(sample);
-        SetState(EnvPathState::TERMINATE);
+	SetState(ENVPathState::TERMINATE);
 }
 
 //------------------------------------------------------------------------------
 // DataParallel integrator PathIntegrator code
 //------------------------------------------------------------------------------
 
-SurfaceIntegratorState *EnvPathIntegrator::NewState(const Scene &scene,
+SurfaceIntegratorState *ENVPathIntegrator::NewState(const Scene &scene,
 		ContributionBuffer *contribBuffer, RandomGenerator *rng) {
-        return new EnvPathState(scene, contribBuffer, rng);
+	return new ENVPathState(scene, contribBuffer, rng);
 }
 
-bool EnvPathIntegrator::GenerateRays(const Scene &,
+bool ENVPathIntegrator::GenerateRays(const Scene &,
 		SurfaceIntegratorState *s, luxrays::RayBuffer *rayBuffer) {
-        EnvPathState *pathState = (EnvPathState *)s;
+	ENVPathState *pathState = (ENVPathState *)s;
 	const u_int leftSpace = rayBuffer->LeftSpace();
 
-        switch (pathState->GetState()) {
-                case EnvPathState::EYE_VERTEX: {
+	switch (pathState->GetState()) {
+		case ENVPathState::EYE_VERTEX: {
 			if (1 > leftSpace)
 				return false;
 
 			// A pointer trick
-                        luxrays::Ray *ray = (luxrays::Ray *)&pathState->pathRay;
-                        pathState->currentPathRayIndex = rayBuffer->AddRay(*ray);
+			luxrays::Ray *ray = (luxrays::Ray *)&pathState->pathRay;
+			pathState->currentPathRayIndex = rayBuffer->AddRay(*ray);
 			break;
 		}
-                case EnvPathState::NEXT_VERTEX: {
-                        if (1u + pathState->tracedShadowRayCount > leftSpace)
+		case ENVPathState::NEXT_VERTEX: {
+			if (1u + pathState->tracedShadowRayCount > leftSpace)
 				return false;
 
 			// A pointer trick
-                        luxrays::Ray *ray = (luxrays::Ray *)&pathState->pathRay;
-                        pathState->currentPathRayIndex = rayBuffer->AddRay(*ray);
+			luxrays::Ray *ray = (luxrays::Ray *)&pathState->pathRay;
+			pathState->currentPathRayIndex = rayBuffer->AddRay(*ray);
 
-                        for (u_short i = 0; i < pathState->tracedShadowRayCount; ++i) {
+			for (u_short i = 0; i < pathState->tracedShadowRayCount; ++i) {
 				// A pointer trick
-                                luxrays::Ray *ray = (luxrays::Ray *)&pathState->shadowRay[i];
-                                pathState->currentShadowRayIndex[i] = rayBuffer->AddRay(*ray);
+				luxrays::Ray *ray = (luxrays::Ray *)&pathState->shadowRay[i];
+				pathState->currentShadowRayIndex[i] = rayBuffer->AddRay(*ray);
 			}
 			break;
 		}
-                case EnvPathState::CONTINUE_SHADOWRAY: {
-                        if (pathState->tracedShadowRayCount > leftSpace)
+		case ENVPathState::CONTINUE_SHADOWRAY: {
+			if (pathState->tracedShadowRayCount > leftSpace)
 				return false;
 
-                        for (u_short i = 0; i < pathState->tracedShadowRayCount; ++i) {
+			for (u_short i = 0; i < pathState->tracedShadowRayCount; ++i) {
 				// A pointer trick
-                                luxrays::Ray *ray = (luxrays::Ray *)&pathState->shadowRay[i];
-                                pathState->currentShadowRayIndex[i] = rayBuffer->AddRay(*ray);
+				luxrays::Ray *ray = (luxrays::Ray *)&pathState->shadowRay[i];
+				pathState->currentShadowRayIndex[i] = rayBuffer->AddRay(*ray);
 			}
 			break;
 		}
@@ -447,14 +499,14 @@ bool EnvPathIntegrator::GenerateRays(const Scene &,
 	return true;
 }
 
-void EnvPathIntegrator::BuildShadowRays(const Scene &scene, EnvPathState *pathState, BSDF *bsdf) {
-        pathState->tracedShadowRayCount = 0;
+void ENVPathIntegrator::BuildShadowRays(const Scene &scene, ENVPathState *pathState, BSDF *bsdf) {
+	pathState->tracedShadowRayCount = 0;
 
 	const u_int nLights = scene.lights.size();
 	if (enableDirectLightSampling && (nLights > 0) &&
 			(bsdf->NumComponents(BxDFType(BSDF_ALL & ~BSDF_SPECULAR)) > 0)) {
-                const float *sampleData = pathState->sample.sampler->GetLazyValues(pathState->sample,
-                        hybridRendererLightSampleOffset, pathState->pathLength);
+		const float *sampleData = pathState->sample.sampler->GetLazyValues(pathState->sample,
+			hybridRendererLightSampleOffset, pathState->pathLength);
 
 		const u_int shadowRaysCount = hints.GetShadowRaysCount();
 
@@ -493,7 +545,7 @@ void EnvPathIntegrator::BuildShadowRays(const Scene &scene, EnvPathState *pathSt
 				float lightPdf;
 				SWCSpectrum Li;
 				BSDF *lightBsdf;
-                                if (light->SampleL(scene, pathState->sample, p, lightSample[0], lightSample[1], lightPortal,
+				if (light->SampleL(scene, pathState->sample, p, lightSample[0], lightSample[1], lightPortal,
 					&lightBsdf, NULL, &lightPdf, &Li)) {
 					//FIXME specific to one uniform strategy
 					lightPdf /= lightSelectionPdf;
@@ -505,8 +557,8 @@ void EnvPathIntegrator::BuildShadowRays(const Scene &scene, EnvPathState *pathSt
 					const float length = sqrtf(d2);
 					const Vector wi(wi0 / length);
 
-                                        const SpectrumWavelengths &sw(pathState->sample.swl);
-                                        Vector wo(-pathState->pathRay.d);
+					const SpectrumWavelengths &sw(pathState->sample.swl);
+					Vector wo(-pathState->pathRay.d);
 
 					Li *= lightBsdf->F(sw, Vector(lightBsdf->dgShading.nn), -wi, false);
 					Li *= bsdf->F(sw, wi, wo, true);
@@ -520,14 +572,14 @@ void EnvPathIntegrator::BuildShadowRays(const Scene &scene, EnvPathState *pathSt
 								Li *= PowerHeuristic(1, lightPdf * d2 / AbsDot(wi, lightBsdf->ng), 1, bsdf->Pdf(sw, wo, wi));
 
 							// Store light's contribution
-                                                        pathState->Ld[pathState->tracedShadowRayCount] = pathState->pathThroughput * Li / d2;
-                                                        pathState->Vd[pathState->tracedShadowRayCount] = pathState->Ld[pathState->tracedShadowRayCount].Filter(sw) * pathState->VContrib;
-                                                        pathState->LdGroup[pathState->tracedShadowRayCount] = light->group;
+							pathState->Ld[pathState->tracedShadowRayCount] = pathState->pathThroughput * Li / d2;
+							pathState->Vd[pathState->tracedShadowRayCount] = pathState->Ld[pathState->tracedShadowRayCount].Filter(sw) * pathState->VContrib;
+							pathState->LdGroup[pathState->tracedShadowRayCount] = light->group;
 
 							const float maxt = length - shadowRayEpsilon;
-                                                        pathState->shadowRay[pathState->tracedShadowRayCount] = Ray(p, wi, shadowRayEpsilon, maxt, pathState->sample.realTime);
-                                                        pathState->shadowVolume[pathState->tracedShadowRayCount] = bsdf->GetVolume(wi);
-                                                        ++(pathState->tracedShadowRayCount);
+							pathState->shadowRay[pathState->tracedShadowRayCount] = Ray(p, wi, shadowRayEpsilon, maxt, pathState->sample.realTime);
+							pathState->shadowVolume[pathState->tracedShadowRayCount] = bsdf->GetVolume(wi);
+							++(pathState->tracedShadowRayCount);
 						}
 					}
 				}
@@ -536,8 +588,8 @@ void EnvPathIntegrator::BuildShadowRays(const Scene &scene, EnvPathState *pathSt
 	}
 }
 
-bool EnvPathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, luxrays::RayBuffer *rayBuffer, u_int *nrContribs) {
-        EnvPathState *pathState = (EnvPathState *)s;
+bool ENVPathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, luxrays::RayBuffer *rayBuffer, u_int *nrContribs) {
+	ENVPathState *pathState = (ENVPathState *)s;
 
 	*nrContribs = 0;
 
@@ -545,35 +597,35 @@ bool EnvPathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s,
 	// Finish direct light sampling
 	//--------------------------------------------------------------------------
 
-        const EnvPathState::EnvPathStateType state = pathState->GetState();
-        if (((state == EnvPathState::NEXT_VERTEX) ||
-                (state == EnvPathState::CONTINUE_SHADOWRAY))) {
+	const ENVPathState::ENVPathStateType state = pathState->GetState();
+	if (((state == ENVPathState::NEXT_VERTEX) ||
+		(state == ENVPathState::CONTINUE_SHADOWRAY))) {
 		u_short leftShadowRaysToTrace = 0;
 
-                for (u_short i = 0; i < pathState->tracedShadowRayCount; ++i) {
-                        int result = scene.Connect(pathState->sample, pathState->shadowVolume + i,
-                                pathState->GetScattered(), false, pathState->shadowRay[i],
-                                *(rayBuffer->GetRayHit(pathState->currentShadowRayIndex[i])),
-                                &pathState->Ld[i], NULL, NULL);
+		for (u_short i = 0; i < pathState->tracedShadowRayCount; ++i) {
+			int result = scene.Connect(pathState->sample, pathState->shadowVolume + i,
+				pathState->GetScattered(), false, pathState->shadowRay[i],
+				*(rayBuffer->GetRayHit(pathState->currentShadowRayIndex[i])),
+				&pathState->Ld[i], NULL, NULL);
 			if (result == 1) {
-                                const u_int group = pathState->LdGroup[i];
-                                pathState->L[group] += pathState->Ld[i];
-                                pathState->V[group] += pathState->Vd[i];
+				const u_int group = pathState->LdGroup[i];
+				pathState->L[group] += pathState->Ld[i];
+				pathState->V[group] += pathState->Vd[i];
 				++(*nrContribs);
 			} else if (result == 0) {
 				// I have to continue to trace the ray
-                                pathState->shadowRay[leftShadowRaysToTrace] = pathState->shadowRay[i];
-                                pathState->shadowVolume[leftShadowRaysToTrace] = pathState->shadowVolume[i];
+				pathState->shadowRay[leftShadowRaysToTrace] = pathState->shadowRay[i];
+				pathState->shadowVolume[leftShadowRaysToTrace] = pathState->shadowVolume[i];
 				++leftShadowRaysToTrace;
 			}
 		}
 
 		if (leftShadowRaysToTrace > 0) {
 			// I have to continue to trace shadow rays
-                        if (state == EnvPathState::NEXT_VERTEX)
-                                pathState->pathRayHit = *(rayBuffer->GetRayHit(pathState->currentPathRayIndex));
-                        pathState->SetState(EnvPathState::CONTINUE_SHADOWRAY);
-                        pathState->tracedShadowRayCount = leftShadowRaysToTrace;
+			if (state == ENVPathState::NEXT_VERTEX)
+				pathState->pathRayHit = *(rayBuffer->GetRayHit(pathState->currentPathRayIndex));
+			pathState->SetState(ENVPathState::CONTINUE_SHADOWRAY);
+			pathState->tracedShadowRayCount = leftShadowRaysToTrace;
 
 			return false;
 		}
@@ -584,78 +636,78 @@ bool EnvPathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s,
 	//--------------------------------------------------------------------------
 
 	const luxrays::RayHit *rayHit;
-        if (state == EnvPathState::CONTINUE_SHADOWRAY)
-                rayHit = &(pathState->pathRayHit);
+	if (state == ENVPathState::CONTINUE_SHADOWRAY)
+		rayHit = &(pathState->pathRayHit);
 	else
-                rayHit = rayBuffer->GetRayHit(pathState->currentPathRayIndex);
+		rayHit = rayBuffer->GetRayHit(pathState->currentPathRayIndex);
 	const u_int nLights = scene.lights.size();
-        const SpectrumWavelengths &sw(pathState->sample.swl);
+	const SpectrumWavelengths &sw(pathState->sample.swl);
 
-        const float *data = pathState->sample.sampler->GetLazyValues(pathState->sample,
-                        sampleOffset, pathState->pathLength);
+	const float *data = pathState->sample.sampler->GetLazyValues(pathState->sample,
+			sampleOffset, pathState->pathLength);
 	BSDF *bsdf;
 	Intersection isect;
 	float spdf;
-        if (!scene.Intersect(pathState->sample, pathState->volume, pathState->GetScattered(),
-                pathState->pathRay, *rayHit, data[3], &isect, &bsdf, &spdf, NULL,
-                &pathState->pathThroughput)) {
+	if (!scene.Intersect(pathState->sample, pathState->volume, pathState->GetScattered(),
+		pathState->pathRay, *rayHit, data[3], &isect, &bsdf, &spdf, NULL,
+		&pathState->pathThroughput)) {
 		// Stop path sampling since no intersection was found
 		// Possibly add horizon in render & reflections
-                if ((includeEnvironment || pathState->pathLength > 0)) {
-                        pathState->pathThroughput /= spdf;
+		if ((includeEnvironment || pathState->pathLength > 0)) {
+			pathState->pathThroughput /= spdf;
 			// Reset ray origin
-                        pathState->pathRay.o = pathState->lastBounce;
+			pathState->pathRay.o = pathState->lastBounce;
 			BSDF *ibsdf;
 			for (u_int i = 0; i < nLights; ++i) {
 				float pdf;
-                                SWCSpectrum Le(pathState->pathThroughput);
-                                if (scene.lights[i]->Le(scene, pathState->sample,
-                                        pathState->pathRay, &ibsdf, NULL, &pdf, &Le)) {
-                                        if (!pathState->GetSpecularBounce())
-                                                Le *= PowerHeuristic(1, pathState->bouncePdf, 1, pdf * DistanceSquared(pathState->pathRay.o, ibsdf->dgShading.p) / (AbsDot(pathState->pathRay.d, ibsdf->ng) * nLights));
-                                        pathState->L[scene.lights[i]->group] += Le;
-                                        pathState->V[scene.lights[i]->group] += Le.Filter(sw) * pathState->VContrib;
+				SWCSpectrum Le(pathState->pathThroughput);
+				if (scene.lights[i]->Le(scene, pathState->sample,
+					pathState->pathRay, &ibsdf, NULL, &pdf, &Le)) {
+					if (!pathState->GetSpecularBounce())
+						Le *= PowerHeuristic(1, pathState->bouncePdf, 1, pdf * DistanceSquared(pathState->pathRay.o, ibsdf->dgShading.p) / (AbsDot(pathState->pathRay.d, ibsdf->ng) * nLights));
+					pathState->L[scene.lights[i]->group] += Le;
+					pathState->V[scene.lights[i]->group] += Le.Filter(sw) * pathState->VContrib;
 					++(*nrContribs);
 				}
 			}
 		}
 
 		// Set alpha channel
-                const float alpha = (pathState->pathLength == 0) ? 0.f : 1.f;
+		const float alpha = (pathState->pathLength == 0) ? 0.f : 1.f;
 
 		// The path is finished
-                pathState->Terminate(scene, bufferId, alpha);
+		pathState->Terminate(scene, bufferId, alpha);
 
 		return true;
 	}
-        pathState->SetScattered(bsdf->dgShading.scattered);
-        pathState->pathThroughput /= spdf;
-        if (pathState->pathLength == 0)
-                pathState->distance = pathState->pathRay.maxt * pathState->pathRay.d.Length();
+	pathState->SetScattered(bsdf->dgShading.scattered);
+	pathState->pathThroughput /= spdf;
+	if (pathState->pathLength == 0)
+		pathState->distance = pathState->pathRay.maxt * pathState->pathRay.d.Length();
 
 	// Possibly add emitted light at path vertex
-        Vector wo(-pathState->pathRay.d);
+	Vector wo(-pathState->pathRay.d);
 
 	if (isect.arealight) {
 		// Reset ray origin
-                pathState->pathRay.o = pathState->lastBounce;
+		pathState->pathRay.o = pathState->lastBounce;
 		BSDF *ibsdf;
 		float pdf;
-                SWCSpectrum Le(isect.Le(pathState->sample, pathState->pathRay, &ibsdf, NULL, &pdf));
+		SWCSpectrum Le(isect.Le(pathState->sample, pathState->pathRay, &ibsdf, NULL, &pdf));
 
 		if (!Le.Black()) {
-                        if (!pathState->GetSpecularBounce())
-                                Le *= PowerHeuristic(1, pathState->bouncePdf, 1, pdf * DistanceSquared(pathState->pathRay.o, ibsdf->dgShading.p) / (AbsDot(pathState->pathRay.d, ibsdf->ng) * nLights));
-                        Le *= pathState->pathThroughput;
-                        pathState->L[isect.arealight->group] += Le;
-                        pathState->V[isect.arealight->group] += Le.Filter(sw) * pathState->VContrib;
+			if (!pathState->GetSpecularBounce())
+				Le *= PowerHeuristic(1, pathState->bouncePdf, 1, pdf * DistanceSquared(pathState->pathRay.o, ibsdf->dgShading.p) / (AbsDot(pathState->pathRay.d, ibsdf->ng) * nLights));
+			Le *= pathState->pathThroughput;
+			pathState->L[isect.arealight->group] += Le;
+			pathState->V[isect.arealight->group] += Le.Filter(sw) * pathState->VContrib;
 			++(*nrContribs);
 		}
 	}
 
 	// Check if we have reached the max. path depth
-        if (pathState->pathLength == maxDepth) {
-                pathState->Terminate(scene, bufferId);
+	if (pathState->pathLength == maxDepth) {
+		pathState->Terminate(scene, bufferId);
 		return true;
 	}
 
@@ -665,7 +717,7 @@ bool EnvPathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s,
 
 	// Direct light sampling, only if there's a non specular component and
 	// direct light sampling is enabled
-        BuildShadowRays(scene, pathState, bsdf);
+	BuildShadowRays(scene, pathState, bsdf);
 
 	// Sample BSDF to get new path direction
 	Vector wi;
@@ -674,45 +726,45 @@ bool EnvPathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s,
 	SWCSpectrum f;
 	if (!bsdf->SampleF(sw, wo, &wi, data[0], data[1], data[2], &f,
 		&pdf, BSDF_ALL, &flags, NULL, true)) {
-                pathState->Terminate(scene, bufferId);
+		pathState->Terminate(scene, bufferId);
 		return true;
 	}
 
 	if (flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) ||
 		!(bsdf->Pdf(sw, wi, wo, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) > 0.f)) {
 		// Possibly terminate the path
-                if (pathState->pathLength > 3) {
+		if (pathState->pathLength > 3) {
 			if (rrStrategy == RR_EFFICIENCY) { // use efficiency optimized RR
 				const float q = min<float>(1.f, f.Filter(sw));
 				if (q < data[4]) {
-                                        pathState->Terminate(scene, bufferId);
+					pathState->Terminate(scene, bufferId);
 					return true;
 				}
 				// increase path contribution
 				f /= q;
 			} else if (rrStrategy == RR_PROBABILITY) { // use normal/probability RR
 				if (continueProbability < data[4]) {
-                                        pathState->Terminate(scene, bufferId);
+					pathState->Terminate(scene, bufferId);
 					return true;
 				}
 				// increase path contribution
 				f /= continueProbability;
 			}
 		}
-                pathState->lastBounce = p;
-                pathState->bouncePdf = pdf;
-                pathState->SetSpecularBounce((flags & BSDF_SPECULAR) != 0);
-                pathState->SetSpecular(pathState->GetSpecular() && pathState->GetSpecularBounce());
+		pathState->lastBounce = p;
+		pathState->bouncePdf = pdf;
+		pathState->SetSpecularBounce((flags & BSDF_SPECULAR) != 0);
+		pathState->SetSpecular(pathState->GetSpecular() && pathState->GetSpecularBounce());
 	}
-        pathState->pathRay = Ray(p, wi);
-        pathState->pathRay.time = pathState->sample.realTime;
-        ++(pathState->pathLength);
-        pathState->pathThroughput *= f;
-        if (!pathState->GetSpecular())
-                pathState->VContrib += AbsDot(wi, n) / pdf;
+	pathState->pathRay = Ray(p, wi);
+	pathState->pathRay.time = pathState->sample.realTime;
+	++(pathState->pathLength);
+	pathState->pathThroughput *= f;
+	if (!pathState->GetSpecular())
+		pathState->VContrib += AbsDot(wi, n) / pdf;
 
-        pathState->volume = bsdf->GetVolume(wi);
-        pathState->SetState(EnvPathState::NEXT_VERTEX);
+	pathState->volume = bsdf->GetVolume(wi);
+	pathState->SetState(ENVPathState::NEXT_VERTEX);
 
 	return false;
 }
@@ -721,7 +773,7 @@ bool EnvPathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s,
 // Integrator parsing code
 //------------------------------------------------------------------------------
 
-SurfaceIntegrator* EnvPathIntegrator::CreateSurfaceIntegrator(const ParamSet &params)
+SurfaceIntegrator* ENVPathIntegrator::CreateSurfaceIntegrator(const ParamSet &params)
 {
 	// general
 	int maxDepth = params.FindOneInt("maxdepth", 16);
@@ -739,7 +791,7 @@ SurfaceIntegrator* EnvPathIntegrator::CreateSurfaceIntegrator(const ParamSet &pa
 	bool include_environment = params.FindOneBool("includeenvironment", true);
 	bool directLightSampling = params.FindOneBool("directlightsampling", true);
 
-	EnvPathIntegrator *pi = new EnvPathIntegrator(rstrategy, max(maxDepth, 0), RRcontinueProb,
+	ENVPathIntegrator *pi = new ENVPathIntegrator(rstrategy, max(maxDepth, 0), RRcontinueProb,
 			include_environment, directLightSampling);
 	// Initialize the rendering hints
 	pi->hints.InitParam(params);
@@ -747,4 +799,4 @@ SurfaceIntegrator* EnvPathIntegrator::CreateSurfaceIntegrator(const ParamSet &pa
 	return pi;
 }
 
-static DynamicLoader::RegisterSurfaceIntegrator<EnvPathIntegrator> r("envpath");
+static DynamicLoader::RegisterSurfaceIntegrator<ENVPathIntegrator> r("envpath");

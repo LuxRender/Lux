@@ -62,7 +62,7 @@ public:
 		const PrimitiveRefinementHints &refineHints,
 		const boost::shared_ptr<Primitive> &thisPtr);
 
-	virtual bool IsSupport() const { return false; }
+    virtual ShapeType GetPrimitiveType() const { return ShapeType(LUX_SHAPE); }
 	virtual bool GetNormal(Vector *N) const;
 	virtual bool GetBaryPoint(Point *P) const;
 	virtual float GetScale() const;
@@ -238,14 +238,14 @@ public:
 		AreaLight* aArealight) : prim(aPrim), areaLight(aArealight) { }
 	virtual ~AreaLightPrimitive() { }
 
-	virtual BBox WorldBound() const { return prim->WorldBound(); };
+	virtual BBox WorldBound() const { return prim->WorldBound(); }
 	virtual const Volume *GetExterior() const { return prim->GetExterior(); }
 	virtual const Volume *GetInterior() const { return prim->GetInterior(); }
 	virtual void Refine(vector<boost::shared_ptr<Primitive> > &refined,
 		const PrimitiveRefinementHints& refineHints,
 		const boost::shared_ptr<Primitive> &thisPtr);
 
-	virtual bool IsSupport() const { return prim->IsSupport(); }
+    virtual ShapeType GetPrimitiveType() const { return prim->GetPrimitiveType(); }
 	virtual bool CanIntersect() const { return prim->CanIntersect(); }
 	virtual bool Intersect(const Ray &r, Intersection *in, bool null_shp_isect = false) const;
 	virtual bool IntersectP(const Ray &r, bool null_shp_isect = false) const { return prim->IntersectP(r, null_shp_isect); }
@@ -333,7 +333,7 @@ public:
 		return interior ? interior.get() : instance->GetInterior();
 	}
 
-	virtual bool IsSupport() const { return instance->IsSupport(); }
+    virtual ShapeType GetPrimitiveType() const { return instance->GetPrimitiveType(); }
 	virtual bool CanIntersect() const { return instance->CanIntersect(); }
 	virtual bool Intersect(const Ray &r, Intersection *in, bool null_shp_isect = false) const;
 	virtual bool IntersectP(const Ray &r, bool null_shp_isect = false) const;
@@ -392,7 +392,7 @@ class Aggregate : public Primitive {
 public:
 	// Aggregate Public Methods
 	virtual ~Aggregate() { }
-	virtual bool IsSupport() const { return false; }
+    virtual ShapeType GetPrimitiveType() const { return ShapeType(LUX_SHAPE); }
 	virtual bool CanIntersect() const { return true; }
 	virtual bool CanSample() const { return false; }
 
@@ -434,7 +434,7 @@ public:
 		return interior ? interior.get() : instance->GetInterior();
 	}
 
-	virtual bool IsSupport() const { return instance->IsSupport(); }
+    virtual ShapeType GetPrimitiveType() const { return instance->GetPrimitiveType(); }
 	virtual bool CanIntersect() const { return instance->CanIntersect(); }
 	virtual bool Intersect(const Ray &r, Intersection *in, bool null_shp_isect = false) const;
 	virtual bool IntersectP(const Ray &r, bool null_shp_isect = false) const;
@@ -534,7 +534,7 @@ public:
 	 * Returns whether this primitive can be sampled.
 	 */
 	virtual bool CanSample() const { return false; }
-	virtual bool IsSupport() const { return false; }
+    virtual ShapeType GetPrimitiveType() const { return ShapeType(LUX_SHAPE); }
 	virtual Transform GetWorldToLocal(float time) const {
 		return Transform();
 	}

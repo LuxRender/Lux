@@ -24,7 +24,7 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// directlighting.cpp*
+// ardirectlighting.cpp*
 #include "ardirectlighting.h"
 #include "bxdf.h"
 #include "camera.h"
@@ -100,7 +100,7 @@ u_int ARDirectLightingIntegrator::LiInternal(const Scene &scene,
 		const Normal &n = bsdf->dgShading.nn;
 		if (isect.primitive) { 
 
-			surf_IsSup = (isect.primitive)->IsSupport();
+            surf_IsSup = ( ShapeType(AR_SHAPE) == (isect.primitive)->GetPrimitiveType() );
 			if ( !surf_IsSup ) path_t = true; 
 			// Compute direct lighting for suport materials
 			if (nLights > 0) {
@@ -195,7 +195,8 @@ u_int ARDirectLightingIntegrator::Li(const Scene &scene,
 	const Sample &sample) const
 {
         Ray ray;
-        float rayWeight = sample.camera->GenerateRay(scene, sample, &ray);
+	float xi, yi;
+	float rayWeight = sample.camera->GenerateRay(scene, sample, &ray, &xi, &yi);
 
 	vector<SWCSpectrum> L(scene.lightGroups.size(), SWCSpectrum(0.f));
 	float alpha = 1.f;
@@ -204,7 +205,7 @@ u_int ARDirectLightingIntegrator::Li(const Scene &scene,
 		distance, 0, false, false);
 
 	for (u_int i = 0; i < scene.lightGroups.size(); ++i)
-		sample.AddContribution(sample.imageX, sample.imageY,
+		sample.AddContribution(xi, yi,
 			XYZColor(sample.swl, L[i]) * rayWeight, alpha,
 			distance, 0.f, bufferId, i);
 

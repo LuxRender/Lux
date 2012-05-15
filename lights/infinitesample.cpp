@@ -184,17 +184,19 @@ InfiniteAreaLightIS::InfiniteAreaLightIS(const Transform &light2world,
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Finished computing importance sampling map";
 	uvDistrib = new Distribution2D(&img[0], dnu, dnv);
 
-	LNsamples = LNs;
-	MedCutSample( &C_MedCut, &C_MCLight, predata, LNsamples, W, H );
-	lightdata = new float[4*(int)(pow(2.f, (int)LNsamples))];
-	for( int i=0; i<(int)(pow(2.f, (int)LNsamples)); i++){
+	MedCutLight C_MCLight;
+	MedCutSample( &C_MCLight, predata, NULL, LNs, W, H );
+	LNsamples = C_MCLight.size();
+	lightdata = new float[4*LNsamples];
+	for( int i=0; i< LNsamples; i++){
 		lightdata[4*i]  = C_MCLight[i].x;
 		lightdata[4*i+1]= C_MCLight[i].y;
 		lightdata[4*i+2]= C_MCLight[i].z;
 		lightdata[4*i+3]= C_MCLight[i].lum;
 	}
 	C_MCLight.clear();
-	C_MedCut.clear();
+	delete [] predata;
+
 }
 
 float InfiniteAreaLightIS::DirProb(Vector N) const
@@ -205,7 +207,7 @@ float InfiniteAreaLightIS::DirProb(Vector N) const
 		Vector wh = Normalize(WorldToLight(w));
 		float T_rad = 0.f, P_rad = 0.f; 
 
-		for( int i=0; i<(int)(pow(2.f, (int)LNsamples)); i++) {
+		for( int i=0; i < LNsamples; i++) {
 			Vector dummy;
 			dummy.x = lightdata[4*i];
 			dummy.y = lightdata[4*i+1];

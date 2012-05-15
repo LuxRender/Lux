@@ -334,7 +334,7 @@ ImageData *StandardImageReader::read(const string &name)
 	// ok, let's load the file
 	FIBITMAP *image = FreeImage_Load(fif, name.c_str(), flags);
 	// unless a bad file format, we are done !
-	
+
 	ImageData *data = createImageData(name, image);		
 	
 	// data may be NULL in case of error

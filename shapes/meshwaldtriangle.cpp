@@ -155,7 +155,7 @@ MeshWaldTriangle::MeshWaldTriangle(const Mesh *m, u_int n)
 bool MeshWaldTriangle::Intersect(const Ray &ray, Intersection *isect, bool null_shp_isect) const
 {
 	//look if shape is a null type
-	if (null_shp_isect && mesh->support) return false;
+    if ( null_shp_isect && GetPrimitiveType() == ShapeType(AR_SHAPE) ) return false;
 
 	float o0, o1, o2, d0, d1, d2;
 	switch (intersectionType) {

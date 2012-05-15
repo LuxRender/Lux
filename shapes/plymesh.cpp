@@ -358,17 +358,28 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 	}
 
 	bool genTangents = params.FindOneBool("generatetangents", false);
-	bool  sup = params.FindOneBool( "support", false );
+	string  type = params.FindOneString( "type", "native" );
+
+	ShapeType shpType;
+
+	if (type == "native")
+		shpType = ShapeType(LUX_SHAPE);
+	else if (type == "support")
+		shpType = ShapeType(AR_SHAPE);
+	else if (type == "environment")
+		shpType = ShapeType(ENV_SHAPE);
+
+
 	bool  proj_text = params.FindOneBool( "projection", false );
 	Point  cam = params.FindOnePoint( "cam", Point(0,0,0) );
 
 	boost::shared_ptr<Texture<float> > dummytex;
-	Mesh *mesh = new Mesh(o2w, reverseOrientation, name, sup, proj_text, cam, Mesh::ACCEL_AUTO,
-		plyNbVerts, p, n, uv, Mesh::TRI_AUTO, plyNbTris, triVerts,
-		Mesh::QUAD_QUADRILATERAL, plyNbQuads, quadVerts, subdivType,
-		nsubdivlevels, displacementMap, displacementMapScale,
-		displacementMapOffset, displacementMapNormalSmooth,
-		displacementMapSharpBoundary, normalSplit, genTangents);
+	Mesh *mesh = new Mesh(o2w, reverseOrientation, name, shpType, proj_text, cam, Mesh::ACCEL_AUTO,
+			      plyNbVerts, p, n, uv, Mesh::TRI_AUTO, plyNbTris, triVerts,
+			      Mesh::QUAD_QUADRILATERAL, plyNbQuads, quadVerts, subdivType,
+			      nsubdivlevels, displacementMap, displacementMapScale,
+			      displacementMapOffset, displacementMapNormalSmooth,
+			      displacementMapSharpBoundary, normalSplit, genTangents);
 	delete[] p;
 	delete[] n;
 	delete[] uv;

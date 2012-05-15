@@ -36,6 +36,7 @@ namespace lux
 // Shape Declarations
 class Shape : public Primitive {
 public:
+//	enum ShapeType { LUX_SHAPE, AR_SHAPE, ENV_SHAPE };
 	Shape(const Transform &o2w, bool ro, const string &name);
 	Shape(const Transform &o2w, bool ro,
 		boost::shared_ptr<Material> &material,
@@ -85,7 +86,7 @@ public:
 		}
 	}
 
-	virtual bool IsSupport() const { return false; }
+    virtual ShapeType GetPrimitiveType() const { return ShapeType(LUX_SHAPE); }
 	virtual bool GetNormal(Vector *N) const { return false; }
 	virtual bool GetBaryPoint(Point *P) const { return false; }
 	virtual float GetScale() const { return 1.f; }
@@ -169,11 +170,7 @@ public:
 	virtual ~PrimitiveSet() { }
 
 	virtual BBox WorldBound() const { return worldbound; }
-	virtual bool IsSupport() const {
-		for (u_int i = 0; i < primitives.size(); ++i)
-			if (!primitives[i]->IsSupport()) return false;
-		return true;
-	}
+    virtual ShapeType GetPrimitiveType() const { return ShapeType(LUX_SHAPE); }
 	virtual bool CanIntersect() const {
 		for (u_int i = 0; i < primitives.size(); ++i)
 			if (!primitives[i]->CanIntersect()) return false;

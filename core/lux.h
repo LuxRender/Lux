@@ -124,6 +124,7 @@ template<class T, int logBlockSize = 2> class BlockedArray;
 
 namespace lux
 {
+  enum ShapeType { LUX_SHAPE, AR_SHAPE, ENV_SHAPE };
   class Matrix4x4;
   class ParamSet;
   template <class T> struct ParamSetItem;

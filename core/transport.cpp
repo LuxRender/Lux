@@ -132,7 +132,13 @@ bool VolumeIntegrator::Connect(const Scene &scene, const Sample &sample,
 			if (pdfR)
 				*pdfR *= spdf;
 			return true;
+	}
+	if (isect.primitive) {
+
+            if( ShapeType(ENV_SHAPE) == isect.primitive->GetPrimitiveType() )
+				return true;
 		}
+
 
 		*f *= bsdf->F(sample.swl, d, -d, true, flags);
 		if (f->Black())
@@ -374,7 +380,7 @@ SWCSpectrum EstimateDirect(const Scene &scene, const Light &light,
 						Li *= bsdf->F(sample.swl, wi, wo, true);
 						if (!Li.Black()) {
 							// Add light's contribution
-							Ld += bsdf->ScaledBcolor() * AbsDot (wi, Vector(bsdf->dgShading.nn));
+							Ld += bsdf->ScaledBcolor() * AbsDot (wi, n);
 						}
 					}
 				} else {
@@ -529,6 +535,7 @@ SWCSpectrum EnvEstimateDirect(const Scene &scene, const Light &light,
 {
 	SWCSpectrum Ld(0.f);
 
+	Point cam( scene.camera->CameraToWorld( Point(0.f, 0.f, 0.f) ) );
 	if ( to_IsSup ) {
 		if ( path_type || rayDepth == 0 ) {
 			// Check if MIS is needed
@@ -540,11 +547,11 @@ SWCSpectrum EnvEstimateDirect(const Scene &scene, const Light &light,
 			SWCSpectrum Li;
 			SWCSpectrum SupLi(1.f);
 			BSDF *lightBsdf;
-			Vector Wsup = p - scene.camera->CameraToWorld( Point(0.f, 0.f, 0.f) );
+			Vector Wsup ( p - cam );
 			if (light.SampleL(scene, sample, p, ls1, ls2, ls3,
 				&lightBsdf, NULL, &lightPdf, &Li)) {
 				const Point &pL(lightBsdf->dgShading.p);
-				const Vector wi0(pL - p);
+				const Vector wi0(pL);
 				const Volume *volume = bsdf->GetVolume(wi0);
 				if (!volume)
 					volume = lightBsdf->GetVolume(-wi0);
@@ -557,8 +564,10 @@ SWCSpectrum EnvEstimateDirect(const Scene &scene, const Light &light,
 						Li *= bsdf->F(sample.swl, wi, wo, true);
 						if (!Li.Black()) {
 							// Add light's contribution
-							light.LeSupport(scene, sample,	Wsup, &SupLi);
-							Ld += bsdf->GetBscale() * SupLi * AbsDot (wi, Vector(bsdf->dgShading.nn));
+							if( light.LeSupport(scene, sample, Wsup, &SupLi) )
+								Ld +=  SupLi * AbsDot (wi, n);
+							else
+								Ld += bsdf->GetBscale() * SupLi * AbsDot (wi, n);
 						}
 					}
 				} else {
@@ -571,13 +580,14 @@ SWCSpectrum EnvEstimateDirect(const Scene &scene, const Light &light,
 							Li *= bsdf->F(sample.swl, wi, wo, true);
 							if (!Li.Black()) {
 								const float bsdfPdf = bsdf->Pdf(sample.swl,wo, wi);
-								Li *= PowerHeuristic(1, lightPdf * d2 /
-									AbsDot(wi, lightBsdf->dgShading.nn), 1, bsdfPdf);
+								Li *= PowerHeuristic(1, lightPdf * d2, 1, bsdfPdf);
 
 								// Add light's contribution
-								light.LeSupport(scene, sample,	Wsup, &SupLi);
-								Ld += bsdf->GetBscale() * SupLi * AbsDot (wi, n);
-								Ld += Li / d2;
+								if( light.LeSupport(scene, sample, Wsup, &SupLi) )
+									Ld +=  SupLi * AbsDot (wi, n);
+								else
+									Ld += bsdf->GetBscale() * SupLi * AbsDot (wi, n);
+								Ld += Li / d2;//botar um fator de aspescto
 							}
 						}
 					} else {
@@ -589,12 +599,13 @@ SWCSpectrum EnvEstimateDirect(const Scene &scene, const Light &light,
 							Li = bsdf->F(sample.swl, wi, wo, true);
 							if (!Li.Black()) {
 								const float bsdfPdf = bsdf->Pdf(sample.swl, wo, wi);
-								Li *= PowerHeuristic(1, lightPdf * d2 /
-									AbsDot(wi, lightBsdf->dgShading.nn), 1, bsdfPdf);
+								Li *= PowerHeuristic(1, lightPdf * d2, 1, bsdfPdf);
 
 								// Add light's contribution
-								light.LeSupport(scene, sample,	Wsup, &SupLi);
-								Ld += bsdf->GetBscale() * SupLi * AbsDot (wi, n);
+								if( light.LeSupport(scene, sample, Wsup, &SupLi) )
+									Ld +=  SupLi * AbsDot (wi, n);
+								else
+									Ld += bsdf->GetBscale() * SupLi * AbsDot (wi, n);
 							}
 						}
 					}
@@ -627,6 +638,17 @@ SWCSpectrum EnvEstimateDirect(const Scene &scene, const Light &light,
 						Li *= lightIsect.Le(sample, ray, &lightBsdf, NULL, &lightPdf);
 						lit = !Li.Black();
 					}
+					else if (lightIsect.primitive) {
+                        if ( lightIsect.primitive->GetPrimitiveType() == ShapeType(ENV_SHAPE) && rayDepth > 0 ) {
+						    Ray ray2(Point(0.f), Vector(lightIsect.dg.p - cam));
+						    light.Le(scene, sample, ray2, &lightBsdf,
+						    NULL, &lightPdf, &Li);
+						    //float d2 = DistanceSquared(p, lightBsdf->dgShading.p);
+						    float lightPdf2 = lightPdf ;
+						    float weight = PowerHeuristic(1, bsdfPdf, 1, lightPdf2);
+						    Ld += Li * weight;
+						}
+					}
 					if (lit) {
 						const float d2 = DistanceSquared(p, lightBsdf->dgShading.p);
 						const float lightPdf2 = lightPdf * d2 /	AbsDot(wi, lightBsdf->dgShading.nn);
@@ -648,7 +670,7 @@ SWCSpectrum EnvEstimateDirect(const Scene &scene, const Light &light,
 		if (light.SampleL(scene, sample, p, ls1, ls2, ls3,
 			&lightBsdf, NULL, &lightPdf, &Li)) {
 			const Point &pL(lightBsdf->dgShading.p);
-			const Vector wi0(pL - p);
+			const Vector wi0(pL);
 			const Volume *volume = bsdf->GetVolume(wi0);
 			if (!volume)
 				volume = lightBsdf->GetVolume(-wi0);
@@ -661,8 +683,7 @@ SWCSpectrum EnvEstimateDirect(const Scene &scene, const Light &light,
 				if (!Li.Black()) {
 					if (mis) {
 						const float bsdfPdf = bsdf->Pdf(sample.swl, wo, wi);
-						Li *= PowerHeuristic(1, lightPdf * d2 /
-							AbsDot(wi, lightBsdf->dgShading.nn), 1, bsdfPdf);
+						Li *= PowerHeuristic(1, lightPdf * d2, 1, bsdfPdf);
 					}
 					// Add light's contribution
 					Ld += Li / d2;
@@ -675,8 +696,8 @@ SWCSpectrum EnvEstimateDirect(const Scene &scene, const Light &light,
 			float bsdfPdf;
 			BxDFType sampledType;
 			if (bsdf->SampleF(sample.swl, wo, &wi, bs1, bs2, bcs,
-				&Li, &bsdfPdf, BSDF_ALL, &sampledType, NULL, true) &&
-				(sampledType & BSDF_SPECULAR) == 0) {
+					  &Li, &bsdfPdf, BSDF_ALL, &sampledType, NULL, true) &&
+					(sampledType & BSDF_SPECULAR) == 0) {
 				// Add light contribution from BSDF sampling
 				Intersection lightIsect;
 				Ray ray(p, wi);
@@ -694,10 +715,21 @@ SWCSpectrum EnvEstimateDirect(const Scene &scene, const Light &light,
 						NULL, &lightPdf);
 					lit = !Li.Black();
 				}
+				else if (lightIsect.primitive) {
+					if ( lightIsect.primitive->GetPrimitiveType() == ShapeType(ENV_SHAPE) ) {
+						Ray ray2(Point(0.f), Vector(lightIsect.dg.p - cam));
+						light.Le(scene, sample, ray2, &lightBsdf,
+							 NULL, &lightPdf, &Li);
+						//float d2 = DistanceSquared(p, lightBsdf->dgShading.p);
+						float lightPdf2 = lightPdf ;
+						float weight = PowerHeuristic(1, bsdfPdf, 1, lightPdf2);
+						Ld += Li * weight;
+					}
+				}
 				if (lit) {
 					const float d2 = DistanceSquared(p, lightBsdf->dgShading.p);
 					const float lightPdf2 = lightPdf * d2 /
-						AbsDot(wi, lightBsdf->dgShading.nn);
+							AbsDot(wi, lightBsdf->dgShading.nn);
 					const float weight = PowerHeuristic(1, bsdfPdf, 1, lightPdf2);
 					Ld += Li * weight;
 				}

@@ -62,7 +62,9 @@ void SummedAreaTable::doSum( void ) {
 			pixel( i, j ) = pixel( i, j ) + pixel( i - 1, j ) + pixel( i, j - 1 ) - pixel( i - 1, j - 1 );
 	}
 }
+
 //-------------------------------------------------------------------------//
+
 float SummedAreaTable::sumRectangle( int x0, int y0, int x1, int y1 ) {
 
 	if ( x0 > 0 ) {

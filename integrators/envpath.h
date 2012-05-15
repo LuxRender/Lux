@@ -24,7 +24,7 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// path.cpp*
+// envpath.cpp*
 #include "lux.h"
 #include "transport.h"
 #include "renderinghints.h"
@@ -32,58 +32,58 @@
 namespace lux
 {
 
-class EnvPathState : public SurfaceIntegratorState {
+class ENVPathState : public SurfaceIntegratorState {
 public:
-	enum EnvPathStateType {
+	enum ENVPathStateType {
 		TO_INIT, EYE_VERTEX, NEXT_VERTEX, CONTINUE_SHADOWRAY, TERMINATE
 	};
 
-	EnvPathState(const Scene &scene, ContributionBuffer *contribBuffer, RandomGenerator *rng);
-	~EnvPathState() { }
+	ENVPathState(const Scene &scene, ContributionBuffer *contribBuffer, RandomGenerator *rng);
+	~ENVPathState() { }
 
 	bool Init(const Scene &scene);
 	void Free(const Scene &scene);
 
-	friend class EnvPathIntegrator;
+	friend class ENVPathIntegrator;
 
 private:
 	void Terminate(const Scene &scene, const u_int bufferId,
-		const float alpha = 1.f);
+			const float alpha = 1.f);
 
-	EnvPathStateType GetState() const {
-		return (EnvPathStateType)pathState;
+	ENVPathStateType GetState() const {
+		return (ENVPathStateType)pathState;
 	}
 
-	void SetState(const EnvPathStateType s) {
+	void SetState(const ENVPathStateType s) {
 		pathState = s;
 	}
 
-#define EnvPathState_FLAGS_SPECULARBOUNCE (1<<0)
-#define EnvPathState_FLAGS_SPECULAR (1<<1)
-#define EnvPathState_FLAGS_SCATTERED (1<<2)
+#define PATHSTATE_FLAGS_SPECULARBOUNCE (1<<0)
+#define PATHSTATE_FLAGS_SPECULAR (1<<1)
+#define PATHSTATE_FLAGS_SCATTERED (1<<2)
 
 	bool GetSpecularBounce() const {
-		return (flags & EnvPathState_FLAGS_SPECULARBOUNCE) != 0;
+		return (flags & PATHSTATE_FLAGS_SPECULARBOUNCE) != 0;
 	}
 
 	void SetSpecularBounce(const bool v) {
-		flags = v ? (flags | EnvPathState_FLAGS_SPECULARBOUNCE) : (flags & ~EnvPathState_FLAGS_SPECULARBOUNCE);
+		flags = v ? (flags | PATHSTATE_FLAGS_SPECULARBOUNCE) : (flags & ~PATHSTATE_FLAGS_SPECULARBOUNCE);
 	}
 
 	bool GetSpecular() const {
-		return (flags & EnvPathState_FLAGS_SPECULAR) != 0;
+		return (flags & PATHSTATE_FLAGS_SPECULAR) != 0;
 	}
 
 	void SetSpecular(const bool v) {
-		flags = v ? (flags | EnvPathState_FLAGS_SPECULAR) : (flags & ~EnvPathState_FLAGS_SPECULAR);
+		flags = v ? (flags | PATHSTATE_FLAGS_SPECULAR) : (flags & ~PATHSTATE_FLAGS_SPECULAR);
 	}
 
 	bool GetScattered() const {
-		return (flags & EnvPathState_FLAGS_SCATTERED) != 0;
+		return (flags & PATHSTATE_FLAGS_SCATTERED) != 0;
 	}
 
 	void SetScattered(const bool v) {
-		flags = v ? (flags | EnvPathState_FLAGS_SCATTERED) : (flags & ~EnvPathState_FLAGS_SCATTERED);
+		flags = v ? (flags | PATHSTATE_FLAGS_SCATTERED) : (flags & ~PATHSTATE_FLAGS_SCATTERED);
 	}
 
 	// NOTE: the size of this class is extremely important for the total
@@ -127,16 +127,17 @@ private:
 	//  scattered (1bit)
 	// Use Get/SetState to access this
 	u_short flags;
+	float xi, yi; // Hold the image coordinates of the sample
 };
 
-// EnvPathIntegrator Declarations
-class EnvPathIntegrator : public SurfaceIntegrator {
+// ENVPathIntegrator Declarations
+class ENVPathIntegrator : public SurfaceIntegrator {
 public:
-	// EnvPathIntegrator types
+	// ENVPathIntegrator types
 	enum RRStrategy { RR_EFFICIENCY, RR_PROBABILITY, RR_NONE };
 
-	// PathIntegrator Public Methods
-	EnvPathIntegrator(RRStrategy rst, u_int md, float cp, bool ie, bool dls) : SurfaceIntegrator(),
+	// ENVPathIntegrator Public Methods
+	ENVPathIntegrator(RRStrategy rst, u_int md, float cp, bool ie, bool dls) : SurfaceIntegrator(),
 		hints(), rrStrategy(rst), maxDepth(md), continueProbability(cp),
 		sampleOffset(0), bufferId(0), includeEnvironment(ie), enableDirectLightSampling(dls) {
 		AddStringConstant(*this, "name", "Name of current surface integrator", "envpath");
@@ -149,7 +150,7 @@ public:
 	// DataParallel interface
 	virtual bool IsDataParallelSupported() const { return true; }
 	//FIXME: just to check SurfaceIntegratorRenderingHints light strategy, to remove
-	virtual bool CheckLightStrategy() const {
+	virtual bool CheckLightStrategy(const Scene &scene) const {
 		if ((hints.GetLightStrategy() != LightsSamplingStrategy::SAMPLE_ONE_UNIFORM) &&
 			(hints.GetLightStrategy() != LightsSamplingStrategy::SAMPLE_ALL_UNIFORM) &&
 			(hints.GetLightStrategy() != LightsSamplingStrategy::SAMPLE_AUTOMATIC)) {
@@ -168,15 +169,15 @@ public:
 
 	static SurfaceIntegrator *CreateSurfaceIntegrator(const ParamSet &params);
 
-	friend class EnvPathState;
+	friend class ENVPathState;
 
 private:
 	// Used by DataParallel methods
-	void BuildShadowRays(const Scene &scene, EnvPathState *EnvPathState, BSDF *bsdf);
+	void BuildShadowRays(const Scene &scene, ENVPathState *pathState, BSDF *bsdf);
 
 	SurfaceIntegratorRenderingHints hints;
 
-	// PathIntegrator Private Data
+	// ENVPathIntegrator Private Data
 	RRStrategy rrStrategy;
 	u_int maxDepth;
 	float continueProbability;

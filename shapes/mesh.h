@@ -36,7 +36,7 @@ public:
 	enum MeshSubdivType { SUBDIV_LOOP, SUBDIV_MICRODISPLACEMENT };
 
 	Mesh(const Transform &o2w, bool ro, const string &name,
-		bool sup, bool proj, Point cam_, MeshAccelType acceltype,
+		ShapeType type, bool proj, Point cam_, MeshAccelType acceltype,
 		u_int nv, const Point *P, const Normal *N, const float *UV,
 		MeshTriangleType tritype, u_int trisCount, const int *tris,
 		MeshQuadType quadtype, u_int nquadsCount, const int *quads,
@@ -50,9 +50,9 @@ public:
 
 	virtual BBox ObjectBound() const;
 	virtual BBox WorldBound() const;
-	virtual float GetScale() const { return Scale; }
-	virtual bool SetScale(float scale) const { Scale = scale; return true; }
-	virtual bool IsSupport() const { return support; }
+	virtual float GetScale() const { return 1.f; }
+	virtual bool SetScale(float scale) const { return true; }
+	virtual ShapeType GetPrimitiveType() const { return shape_type; }
 	virtual bool CanIntersect() const { return false; }
 	virtual void Refine(vector<boost::shared_ptr<Primitive> > &refined,
 		const PrimitiveRefinementHints &refineHints,
@@ -133,9 +133,9 @@ protected:
 	mutable u_int inconsistentShadingTris;
 
 	// ARLuxrender support information
-	bool support, proj_text;
+	ShapeType shape_type;
+	bool proj_text;
 	Point cam;
-	mutable float Scale;
 };
 
 //------------------------------------------------------------------------------
@@ -155,7 +155,7 @@ public:
 	Material *GetMaterial() const { return mesh->material.get(); }
 	virtual float GetScale() const { return Scale; }
 	virtual bool SetScale(float scale) const { Scale = scale; return true; }
-	virtual bool IsSupport() const { return mesh->support; }
+	virtual ShapeType GetPrimitiveType() const { return mesh->shape_type; }
 	virtual bool CanIntersect() const { return true; }
 	virtual bool Intersect(const Ray &ray, Intersection *isect, bool null_shp_isect=false) const;
 	virtual bool IntersectP(const Ray &ray, bool null_shp_isect=false) const;
@@ -256,7 +256,7 @@ public:
 	Material *GetMaterial() const { return mesh->material.get(); }
 	virtual float GetScale() const { return Scale; }
 	virtual bool SetScale(float scale) const { Scale = scale; return true; }
-	virtual bool IsSupport() const { return mesh->support; }
+	virtual ShapeType GetPrimitiveType() const { return mesh->shape_type; }
 	virtual bool CanIntersect() const { return true; }
 	virtual bool Intersect(const Ray &ray, Intersection *isect, bool null_shp_isect=false) const;
 	virtual bool IntersectP(const Ray &ray, bool null_shp_isect=false) const;
@@ -331,7 +331,7 @@ public:
 	Material *GetMaterial() const { return mesh->material.get(); }
 	virtual float GetScale() const { return Scale; }
 	virtual bool SetScale(float scale) const { Scale = scale; return true; }
-	virtual bool IsSupport() const { return mesh->support; }
+	virtual ShapeType GetPrimitiveType() const { return mesh->shape_type; }
 	virtual bool CanIntersect() const { return true; }
 	virtual bool Intersect(const Ray &ray, Intersection *isect, bool null_shp_isect=false) const;
 	virtual bool IntersectP(const Ray &ray, bool null_shp_isect=false) const;

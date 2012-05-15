@@ -204,7 +204,8 @@ void Scene::arlux_setup(void)
 
 		shp = objects[i].get();
 		if( shp != NULL ) {
-			if( shp->IsSupport() ) {
+
+            if( shp->GetPrimitiveType() == ShapeType(AR_SHAPE) ) {
 				Vector N;
 				Point P;
 				float Pow =0.f;
@@ -215,7 +216,7 @@ void Scene::arlux_setup(void)
 					N = N * (-1);
 				for( u_int k=0 ; k < lights.size() ; k++ )
 					if (lights[k]->IsSupport()) {
-						Pow += lights[k]->DirProb(N);
+						Pow += lights[k]->DirProb(N, -Z);
 					}
 				shp->SetScale(Pow);
 			}

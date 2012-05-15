@@ -24,7 +24,7 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// directlighting.cpp*
+// ardirectlighting.cpp*
 #include "lux.h"
 #include "light.h"
 #include "transport.h"

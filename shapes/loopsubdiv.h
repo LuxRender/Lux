@@ -142,7 +142,7 @@ struct SDEdge {
 class LoopSubdiv {
 public:
 	// LoopSubdiv Public Methods
-	LoopSubdiv(bool sup, bool proj, Point cam_, u_int nt, u_int nv, const int *vi,
+	LoopSubdiv(u_int shpType, bool proj, Point cam_, u_int nt, u_int nv, const int *vi,
 		const Point *P, const float *uv, const Normal *n,
 		u_int nlevels, const boost::shared_ptr<Texture<float> > &dismap,
 		float dmscale, float dmoffset, bool dmnormalsmooth,
@@ -150,7 +150,7 @@ public:
 	virtual ~LoopSubdiv();
 	virtual float GetScale() const { return Scale; }
 	virtual bool SetScale(float scale) const { Scale = scale; return true; }
-	virtual bool IsSupport() const { return support; }
+	virtual u_int GetPrimitiveType() const { return shape_type; }
 	virtual bool GetNormal(Vector *N) const { return true; }
 	virtual bool GetBaryPoint(Point *P) const { return true; }
 
@@ -212,7 +212,8 @@ private:
 	// Lotus - a pointer to the refined mesh to avoid double refinement or deletion
 	mutable boost::shared_ptr<Shape> refinedShape;
 
-	bool support, proj_text;
+	u_int shape_type;
+	bool proj_text;
 	Point cam;
 	mutable float Scale;
 };

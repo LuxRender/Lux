@@ -22,12 +22,7 @@ class SummedAreaTable {
 		float *A;
 		int width, height;
 
-		SummedAreaTable() {
-			A = 0; 
-			height = 0; 
-			width = 0;
-		}
-		SummedAreaTable( int w , int h );
+        SummedAreaTable( int w = 0, int h = 0 );
 		~SummedAreaTable() { if ( A ) delete [] A; }
 
 		bool setSize( int w, int h );

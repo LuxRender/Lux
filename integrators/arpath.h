@@ -24,7 +24,7 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// path.cpp*
+// arpath.cpp*
 #include "lux.h"
 #include "transport.h"
 #include "renderinghints.h"
@@ -48,7 +48,7 @@ public:
 
 private:
 	void Terminate(const Scene &scene, const u_int bufferId,
-		const float alpha = 1.f);
+			const float alpha = 1.f);
 
 	ARPathStateType GetState() const {
 		return (ARPathStateType)pathState;
@@ -58,32 +58,32 @@ private:
 		pathState = s;
 	}
 
-#define ARPathState_FLAGS_SPECULARBOUNCE (1<<0)
-#define ARPathState_FLAGS_SPECULAR (1<<1)
-#define ARPathState_FLAGS_SCATTERED (1<<2)
+#define PATHSTATE_FLAGS_SPECULARBOUNCE (1<<0)
+#define PATHSTATE_FLAGS_SPECULAR (1<<1)
+#define PATHSTATE_FLAGS_SCATTERED (1<<2)
 
 	bool GetSpecularBounce() const {
-		return (flags & ARPathState_FLAGS_SPECULARBOUNCE) != 0;
+		return (flags & PATHSTATE_FLAGS_SPECULARBOUNCE) != 0;
 	}
 
 	void SetSpecularBounce(const bool v) {
-		flags = v ? (flags | ARPathState_FLAGS_SPECULARBOUNCE) : (flags & ~ARPathState_FLAGS_SPECULARBOUNCE);
+		flags = v ? (flags | PATHSTATE_FLAGS_SPECULARBOUNCE) : (flags & ~PATHSTATE_FLAGS_SPECULARBOUNCE);
 	}
 
 	bool GetSpecular() const {
-		return (flags & ARPathState_FLAGS_SPECULAR) != 0;
+		return (flags & PATHSTATE_FLAGS_SPECULAR) != 0;
 	}
 
 	void SetSpecular(const bool v) {
-		flags = v ? (flags | ARPathState_FLAGS_SPECULAR) : (flags & ~ARPathState_FLAGS_SPECULAR);
+		flags = v ? (flags | PATHSTATE_FLAGS_SPECULAR) : (flags & ~PATHSTATE_FLAGS_SPECULAR);
 	}
 
 	bool GetScattered() const {
-		return (flags & ARPathState_FLAGS_SCATTERED) != 0;
+		return (flags & PATHSTATE_FLAGS_SCATTERED) != 0;
 	}
 
 	void SetScattered(const bool v) {
-		flags = v ? (flags | ARPathState_FLAGS_SCATTERED) : (flags & ~ARPathState_FLAGS_SCATTERED);
+		flags = v ? (flags | PATHSTATE_FLAGS_SCATTERED) : (flags & ~PATHSTATE_FLAGS_SCATTERED);
 	}
 
 	// NOTE: the size of this class is extremely important for the total
@@ -127,6 +127,7 @@ private:
 	//  scattered (1bit)
 	// Use Get/SetState to access this
 	u_short flags;
+	float xi, yi; // Hold the image coordinates of the sample
 };
 
 // ARPathIntegrator Declarations
@@ -135,7 +136,7 @@ public:
 	// ARPathIntegrator types
 	enum RRStrategy { RR_EFFICIENCY, RR_PROBABILITY, RR_NONE };
 
-	// PathIntegrator Public Methods
+	// ARPathIntegrator Public Methods
 	ARPathIntegrator(RRStrategy rst, u_int md, float cp, bool ie, bool dls) : SurfaceIntegrator(),
 		hints(), rrStrategy(rst), maxDepth(md), continueProbability(cp),
 		sampleOffset(0), bufferId(0), includeEnvironment(ie), enableDirectLightSampling(dls) {
@@ -149,7 +150,7 @@ public:
 	// DataParallel interface
 	virtual bool IsDataParallelSupported() const { return true; }
 	//FIXME: just to check SurfaceIntegratorRenderingHints light strategy, to remove
-	virtual bool CheckLightStrategy() const {
+	virtual bool CheckLightStrategy(const Scene &scene) const {
 		if ((hints.GetLightStrategy() != LightsSamplingStrategy::SAMPLE_ONE_UNIFORM) &&
 			(hints.GetLightStrategy() != LightsSamplingStrategy::SAMPLE_ALL_UNIFORM) &&
 			(hints.GetLightStrategy() != LightsSamplingStrategy::SAMPLE_AUTOMATIC)) {
@@ -172,11 +173,11 @@ public:
 
 private:
 	// Used by DataParallel methods
-	void BuildShadowRays(const Scene &scene, ARPathState *ARPathState, BSDF *bsdf);
+	void BuildShadowRays(const Scene &scene, ARPathState *pathState, BSDF *bsdf);
 
 	SurfaceIntegratorRenderingHints hints;
 
-	// PathIntegrator Private Data
+	// ARPathIntegrator Private Data
 	RRStrategy rrStrategy;
 	u_int maxDepth;
 	float continueProbability;

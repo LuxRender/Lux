@@ -92,7 +92,7 @@ bool MeshBaryTriangle::Intersect(const Ray &ray, Intersection* isect, bool null_
 	// Compute $\VEC{s}_1$
 
 	//look if shape is a null type
-	if (null_shp_isect && mesh->support) return false;
+    if ( null_shp_isect && GetPrimitiveType() == ShapeType(AR_SHAPE) ) return false;
 
 	// Get triangle vertices in _p1_, _p2_, and _p3_
 	const Point &p1 = mesh->p[v[0]];
@@ -185,7 +185,7 @@ bool MeshBaryTriangle::IntersectP(const Ray &ray, bool null_shp_isect) const
 	const float divisor = Dot(s1, e1);
 
 	//look if shape is a null type
-	if (null_shp_isect && mesh->support) return false;
+    if ( null_shp_isect && GetPrimitiveType() == ShapeType(AR_SHAPE) ) return false;
 
 	if (divisor == 0.f)
 		return false;

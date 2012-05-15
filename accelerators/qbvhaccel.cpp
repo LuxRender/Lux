@@ -194,7 +194,7 @@ public:
 		const MeshBaryTriangle *triangle(static_cast<const MeshBaryTriangle *>(primitives[hit].get()));
 
 		//look if shape is a null type
-		if (null_shp_isect && triangle->IsSupport()) return false;
+        if (null_shp_isect && triangle->GetPrimitiveType() == lux::ShapeType(AR_SHAPE) ) return false;
 
 		const Point o(reinterpret_cast<const float *>(&origx)[hit],
 			reinterpret_cast<const float *>(&origy)[hit],

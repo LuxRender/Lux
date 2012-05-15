@@ -33,7 +33,7 @@
 using namespace lux;
 
 Mesh::Mesh(const Transform &o2w, bool ro, const string &name,
-	bool sup, bool proj, Point cam_, MeshAccelType acceltype,
+	ShapeType shpType, bool proj, Point cam_, MeshAccelType acceltype,
 	u_int nv, const Point *P, const Normal *N, const float *UV,
 	MeshTriangleType tritype, u_int trisCount, const int *tris,
 	MeshQuadType quadtype, u_int nquadsCount, const int *quads,
@@ -42,9 +42,9 @@ Mesh::Mesh(const Transform &o2w, bool ro, const string &name,
 	bool dmNormalSmooth, bool dmSharpBoundary, bool normalsplit, bool genTangents)
 	: Shape(o2w, ro, name)
 {
-	support = sup;
+	shape_type = shpType;
 	proj_text = proj;
-	if (sup)
+	if ( shape_type == ShapeType(AR_SHAPE) )
 		proj_text = true;
 	cam = cam_;
 
@@ -266,7 +266,7 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 		switch (concreteSubdivType) {
 			case SUBDIV_LOOP: {
 				// Apply subdivision
-				LoopSubdiv loopsubdiv(support, proj_text, cam, ntris, nverts,
+				LoopSubdiv loopsubdiv(shape_type, proj_text, cam, ntris, nverts,
 					triVertexIndex, p, uvs, n,
 					nSubdivLevels, displacementMap,
 					displacementMapScale,
@@ -1015,12 +1015,21 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 
 	bool genTangents = params.FindOneBool("generatetangents", false);
 
-	bool  sup = params.FindOneBool( "support", false );
+	string  type = params.FindOneString( "type", "native" );
+
+	ShapeType shpType;
+	if (type == "native")
+		shpType = ShapeType(LUX_SHAPE);
+	else if (type == "support")
+		shpType = ShapeType(AR_SHAPE);
+	else if (type == "environment")
+		shpType = ShapeType(ENV_SHAPE);
+
 	bool  proj_text = params.FindOneBool( "projection", false );
 	Point  cam = params.FindOnePoint( "cam", Point(0,0,0) );
 
 	return new Mesh(o2w, reverseOrientation, name,
-		sup, proj_text, cam, accelType,
+		shpType, proj_text, cam, accelType,
 		npi, P, N, UV,
 		triType, triIndicesCount, triIndices,
 		quadType, quadIndicesCount, quadIndices,
