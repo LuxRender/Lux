@@ -38,11 +38,12 @@ using namespace lux;
 // mutate a value in the range [0-1]
 static float mutate(const float x, const float randomValue)
 {
-	static const float s1 = 1.f / 1024.f, s2 = 1.f / 16.f;
-	float dx = s2 * powf(s1 / s2, fabsf(2.f * randomValue - 1.f));
+	static const float s1 = 1.f / 512.f, s2 = 1.f / 16.f;
+	const float dx = s1 / (s1 / s2 + fabsf(2.f * randomValue - 1.f)) -
+		s1 / (s1 / s2 + 1.f);
 	if (randomValue < 0.5f) {
 		float x1 = x + dx;
-		return (x1 > 1.f) ? x1 - 1.f : x1;
+		return (x1 < 1.f) ? x1 : x1 - 1.f;
 	} else {
 		float x1 = x - dx;
 		return (x1 < 0.f) ? x1 + 1.f : x1;
@@ -52,10 +53,12 @@ static float mutate(const float x, const float randomValue)
 // mutate a value in the range [min-max]
 static float mutateScaled(const float x, const float randomValue, const float mini, const float maxi, const float range)
 {
-	float dx = range * expf(-logf(2.f * range) * fabsf(2.f * randomValue - 1.f));
+	static const float s1 = 32.f;
+	const float dx = range / (s1 / (1.f + s1) + (s1 * s1) / (1.f + s1) *
+		fabsf(2.f * randomValue - 1.f)) - range / s1;
 	if (randomValue < 0.5f) {
 		float x1 = x + dx;
-		return (x1 > maxi) ? x1 - maxi + mini : x1;
+		return (x1 < maxi) ? x1 : x1 - maxi + mini;
 	} else {
 		float x1 = x - dx;
 		return (x1 < mini) ? x1 - mini + maxi : x1;
@@ -156,12 +159,10 @@ bool ERPTSampler::GetNextSample(Sample *sample)
 	} else {
 		if (data->mutation == 0) {
 			// *** new chain ***
-			for (u_int i = 0; i < data->totalSamples; ++i)
-				data->currentImage[i] = data->baseImage[i];
-			for (u_int i = 0; i < data->totalTimes; ++i) {
+			memcpy(data->currentImage, data->baseImage, data->totalSamples * sizeof(float));
+			memcpy(data->currentTimeImage, data->baseTimeImage, data->totalTimes * sizeof(int));
+			for (u_int i = 0; i < data->totalTimes; ++i)
 				data->timeImage[i] = -1;
-				data->currentTimeImage[i] = data->baseTimeImage[i];
-			}
 			data->currentStamp = 0;
 			data->stamp = 0;
 		}
@@ -278,8 +279,8 @@ void ERPTSampler::AddSample(const Sample &sample)
 			data->numChains = max(1U, Floor2UInt(data->quantum + .5f));
 			// The following line avoids to block on a pixel
 			// if the initial sample is extremely bright
-			data->numChains = min(data->numChains, totalMutations);
-			data->quantum /= data->numChains;
+//			data->numChains = min(data->numChains, totalMutations);
+			data->quantum /= data->numChains * totalMutations;
 			data->baseLY = newLY;
 			data->baseContributions = newContributions;
 			data->mutation = 0;
