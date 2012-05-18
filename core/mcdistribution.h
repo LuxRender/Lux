@@ -99,7 +99,7 @@ public:
 		// funcInt is the sum of all f elements divided by the number
 		// of elements, ie the average value of f over [0;1)
 		ComputeStep1dCDF(func, n, &funcInt, cdf);
-		const float invFuncInt = 1.f / funcInt;
+		const float invFuncInt = 1.f / (funcInt * count);
 		// Normalize func to speed up computations
 		for (u_int i = 0; i < count; ++i)
 			func[i] *= invFuncInt;
