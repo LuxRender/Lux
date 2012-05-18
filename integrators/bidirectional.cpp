@@ -207,6 +207,7 @@ static bool evalPath(const Scene &scene, const Sample &sample,
 	vector<BidirVertex> &light, u_int nLight,
 	float pdfLightDirect, bool isLightDirect, float *weight, SWCSpectrum *L)
 {
+	// If each path has at least 1 vertex, connect them
 	if (nLight <= 0 || nEye <= 0)
 		return false;
 	const SpectrumWavelengths &sw(sample.swl);
@@ -216,7 +217,6 @@ static bool evalPath(const Scene &scene, const Sample &sample,
 	const float lightThreshold = bidir.lightThreshold;
 	*weight = 0.f;
 	// Be carefull, eye and light last vertex can be modified here
-	// If each path has at least 1 vertex, connect them
 	BidirVertex &eyeV(eye[nEye - 1]);
 	BidirVertex &lightV(light[nLight - 1]);
 	// Check Connectability
@@ -242,24 +242,15 @@ static bool evalPath(const Scene &scene, const Sample &sample,
 	if (!scene.Connect(sample, volume, eScat, lScat, eyeV.p, lightV.p,
 		nEye == 1, L, &ltPdf, &etPdfR))
 		return false;
-	// Prepare eye vertex for connection
-	const float ecosi = AbsDot(ewi, eyeV.bsdf->ng);
 	const float d2 = DistanceSquared(eyeV.p, lightV.p);
 	if (d2 < max(MachineEpsilon::E(eyeV.p), MachineEpsilon::E(lightV.p)))
 		return false;
-	SWCSpectrum eflux(ef); // No pdf as it is a direct connection
-	eflux *= eyeV.flux;
-	// Prepare light vertex for connection
-	const float lcoso = AbsDot(lwo, lightV.bsdf->ng);
-	SWCSpectrum lflux(lf); // No pdf as it is a direct connection
-	lflux *= lightV.flux;
 	// Connect eye and light vertices
-	*L *= eflux;
-	*L *= lflux;
-	*L /= d2;
+	*L *= lightV.flux * lf * ef * eyeV.flux / d2;
 	if (L->Black())
 		return false;
 	// Evaluate factors for eye path weighting
+	const float ecosi = AbsDot(ewi, eyeV.bsdf->ng);
 	const float epdf = eyeV.bsdf->Pdf(sw, ewi, eyeV.wo, eyeV.flags);
 	if (nEye == 1)
 		eyeV.rr = 1.f;
@@ -277,6 +268,7 @@ static bool evalPath(const Scene &scene, const Sample &sample,
 			eye[nEye - 2].dAWeight *= eye[nEye - 2].cosi;
 	}
 	// Evaluate factors for light path weighting
+	const float lcoso = AbsDot(lwo, lightV.bsdf->ng);
 	const float lpdfR = lightV.bsdf->Pdf(sw, lwo, lightV.wi, lightV.flags);
 	lightV.rr = min(1.f, max(lightThreshold, lf.Filter(sw) / lpdf));
 	if (nLight == 1)
