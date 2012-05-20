@@ -1189,7 +1189,7 @@ bool BidirPathState::Init(const Scene &scene) {
 								(AbsDot(ray.d, ibsdf->dgShading.nn) * numberOfLights);
 							pathWeight = EvalPathMISWeight_PathTracing(eyePath, nEye, lpdf);
 						} else
-							pathWeight = EvalPathWeight(eyePath, nEye, ibsdf->NumComponents(BSDF_SPECULAR));
+							pathWeight = EvalPathWeight(eyePath, nEye, ibsdf->NumComponents(BSDF_SPECULAR) != 0);
 
 						Le *= pathWeight;
 						L[scene.lights[i]->group] += Le;
@@ -1221,7 +1221,7 @@ bool BidirPathState::Init(const Scene &scene) {
 								(AbsDot(ray.d, ibsdf->dgShading.nn) * numberOfLights);
 					pathWeight = EvalPathMISWeight_PathTracing(eyePath, nEye, lpdf);
 				} else
-					pathWeight = EvalPathWeight(eyePath, nEye, ibsdf->NumComponents(BSDF_SPECULAR));
+					pathWeight = EvalPathWeight(eyePath, nEye, ibsdf->NumComponents(BSDF_SPECULAR) != 0);
 
 				Le *= eyePath[nEye - 1].throughput * pathWeight;
 				L[isect.arealight->group] += Le;
@@ -1869,7 +1869,7 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 						lpdf);
 			} else
 				pathWeight = BidirPathState::EvalPathWeight(
-						bidirState->eyePath, t + 1, lightBsdf->NumComponents(BSDF_SPECULAR));
+						bidirState->eyePath, t + 1, lightBsdf->NumComponents(BSDF_SPECULAR) != 0);
 
 			SWCSpectrum Ld = (bidirState->eyePath[t - 1].throughput * Li * pathWeight) / d2;
 			if (Ld.Black())
@@ -1995,7 +1995,7 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 						eye0.bsdf->Pdf(sw, eye0.wo, d, eye0.flags));*/
 			else
 				pathWeight = BidirPathState::EvalPathWeight(
-						eye0.bsdf->NumComponents(BSDF_SPECULAR), bidirState->lightPath, s + 1);
+						eye0.bsdf->NumComponents(BSDF_SPECULAR) != 0, bidirState->lightPath, s + 1);
 
 			SWCSpectrum LlightPath = (eye0.throughput * ef * lf * lightPath.throughput * bidirState->Le * pathWeight) / d2;
 			if (LlightPath.Black())
