@@ -50,6 +50,7 @@ struct BidirVertex {
 // Bidirectional Method Definitions
 void BidirIntegrator::RequestSamples(Sample *sample, const Scene &scene)
 {
+	boost::mutex::scoped_lock lock(requestSamplesMutex);
 	samplingCount = lightDirectStrategy->GetSamplingLimit(scene);
 	lightNumOffset = sample->Add1D(samplingCount);
 	lightPosOffset = sample->Add2D(samplingCount);
@@ -70,13 +71,18 @@ void BidirIntegrator::RequestSamples(Sample *sample, const Scene &scene)
 	sampleEyeOffset = sample->AddxD(structure, maxEyeDepth);
 	structure.clear();
 	// Light subpath samples
-	sampleLightOffsets.clear(); // Needed for the hybrid version
+	const bool initOffsets = sampleLightOffsets.empty();
+	// Needed for the hybrid version
 	for (u_int i = 0; i < samplingCount; ++i) {
 		structure.push_back(1); //continue light
 		structure.push_back(2); //bsdf sampling for light path
 		structure.push_back(1); //bsdf component for light path
 		structure.push_back(1); //scattering
-		sampleLightOffsets.push_back(sample->AddxD(structure, maxLightDepth));
+		const u_int lightOffset = sample->AddxD(structure, maxLightDepth);
+		if (initOffsets) {
+			// only initialize once, in case thread is added after rendering has started
+			sampleLightOffsets.push_back(lightOffset);
+		}
 	}
 }
 void BidirIntegrator::Preprocess(const RandomGenerator &rng, const Scene &scene)

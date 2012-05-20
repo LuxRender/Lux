@@ -26,6 +26,7 @@
 #include "transport.h"
 #include "reflection/bxdf.h"
 #include "renderinghints.h"
+#include <boost/thread/mutex.hpp>
 
 namespace lux
 {
@@ -186,6 +187,7 @@ private:
 	u_int lightNumOffset;
 	u_int lightPosOffset, lightDirOffset, sampleDirectOffset;
 	bool hybridUseMIS, debug;
+	boost::mutex requestSamplesMutex;
 };
 
 }//namespace lux
