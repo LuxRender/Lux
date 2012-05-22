@@ -303,13 +303,12 @@ public:
 	virtual ~PerScreenNormalizedBufferScaled() {}
 
 	virtual void GetData(XYZColor *color, float *alpha) const {
-		scale = scaleUpdate->GetScaleFactor();
-		const float inv = static_cast<float>(scale / *numberOfSamples_);
+		scale = scaleUpdate->GetScaleFactor(1.0 / *numberOfSamples_);
 		for (u_int y = 0, offset = 0; y < yPixelCount; ++y) {
 			for (u_int x = 0; x < xPixelCount; ++x, ++offset) {
 				const Pixel &pixel = (*pixels)(x, y);
 				if (pixel.weightSum > 0.f) {
-					color[offset] = pixel.L * inv;
+					color[offset] = pixel.L * scale;
 					alpha[offset] = pixel.alpha;
 				} else {
 					color[offset] = 0.f;
@@ -320,11 +319,11 @@ public:
 	}
 	virtual float GetData(u_int x, u_int y, XYZColor *color, float *alpha) const {
 		if(x == 0 && y == 0 && scaleUpdate != NULL)
-			scale = scaleUpdate->GetScaleFactor();
+			scale = scaleUpdate->GetScaleFactor(1.0 / *numberOfSamples_);
 
 		const Pixel &pixel = (*pixels)(x, y);
 		if (pixel.weightSum > 0.f) {
-			*color = pixel.L * static_cast<float>(scale / *numberOfSamples_);
+			*color = pixel.L * static_cast<float>(scale);
 			*alpha = pixel.alpha;
 		} else {
 			*color = XYZColor(0.f);
@@ -336,7 +335,7 @@ public:
 	class ScaleUpdateInterface
 	{
 		public:
-			virtual float GetScaleFactor() = 0;
+			virtual float GetScaleFactor(const double nos) = 0;
 	};
 	const double *numberOfSamples_;
 

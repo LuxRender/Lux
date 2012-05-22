@@ -131,7 +131,7 @@ public:
 		return ((state == TERMINATE) || boost::this_thread::interruption_requested());
 	}
 
-	float GetScaleFactor() const;
+	float GetScaleFactor(double const scale) const;
 
 private:
 
@@ -140,9 +140,9 @@ private:
 		public:
 			ScaleUpdaterSPPM(SPPMRenderer *renderer_): renderer(renderer_) {}
 
-			virtual float GetScaleFactor()
+			virtual float GetScaleFactor(double const scale)
 			{
-				return renderer->GetScaleFactor();
+				return renderer->GetScaleFactor(scale);
 			}
 
 			SPPMRenderer *renderer;

@@ -543,12 +543,12 @@ Renderer *SPPMRenderer::CreateRenderer(const ParamSet &params) {
 	return new SPPMRenderer();
 }
 
-float SPPMRenderer::GetScaleFactor() const
+float SPPMRenderer::GetScaleFactor(const double scale) const
 {
 	if (sppmi->photonSamplerType == AMC) {
-		return uniformCount / ((float)photonTracedTotal + (float)photonTracedPass);
+		return uniformCount * scale * scale;
 	} else
-		return 1.f;
+		return scale;
 }
 
 static DynamicLoader::RegisterRenderer<SPPMRenderer> r("sppm");
