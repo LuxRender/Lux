@@ -257,3 +257,13 @@ std::string SPPMRStatistics::FormattedShort::getPhotonCount() {
 	double pc = rs->getPhotonCount();
 	return boost::str(boost::format("%1$0.2f %2%Y") % MagnitudeReduce(pc) % MagnitudePrefix(pc));
 }
+
+double SPPMRStatistics::getPhotonCount() {
+	double sampleCount = 0.0;
+
+	Queryable* filmRegistry = Context::GetActive()->registry["film"];
+	if (filmRegistry)
+		sampleCount = (*filmRegistry)["numberOfLocalSamples"].DoubleValue();
+
+	return sampleCount;
+}

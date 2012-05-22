@@ -102,7 +102,7 @@ private:
 
 	double getEfficiency() { return renderer->photonHitEfficiency; }
 
-	double getPhotonCount() { return double(renderer->photonTracedTotal + renderer->photonTracedPass); }
+	double getPhotonCount();
 	double getAveragePhotonsPerSecond();
 	double getAveragePhotonsPerSecondWindow();
 };
