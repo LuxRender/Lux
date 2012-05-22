@@ -651,6 +651,18 @@ public:
 	virtual void SetStringParameterValue(luxComponentParameters param, const string& value, u_int index) = 0;
 	virtual string GetStringParameterValue(luxComponentParameters param, u_int index) = 0;
 
+	/*
+	 * Accesseur for samplePerPass
+	 * It is only used by SPPM and may disappears once the Buffer API allows for
+	 * different numberOfSamples per buffer
+	 *
+	 * Please, avoid using this function.
+	 */
+	double GetSamplePerPass() const
+	{
+		return samplePerPass;
+	}
+
 protected:
 	double DoTransmitFilm(std::basic_ostream<char> &stream, bool clearBuffers = true, bool transmitParams = false);
 	// Reject outliers for a tile. Rejected contributions get their variance set to -1.

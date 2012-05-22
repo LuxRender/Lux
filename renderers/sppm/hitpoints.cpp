@@ -205,14 +205,12 @@ void HitPoints::SetHitPoints(Sample &sample, RandomGenerator *rng, const u_int i
 		// Trace the eye path
 		TraceEyePath(hp, sample);
 
-		// add contributions directly so we don't increase sample count
 		// as sample count is a proxy for photon count which is used for 
 		// weighting the photon buffer
 		// eye buffer weighting is done per-pixel, so should work out
-		for (u_int si = 0; si < sample.contributions.size(); ++si) {
-			sample.contribBuffer->Add(sample.contributions[si], 1.f);
-		}
-		sample.contributions.clear();
+		// to pre-remove the contribution weight
+		sample.contribBuffer->AddSampleCount(-1.f);
+		eyeSampler->AddSample(sample);
 	}
 }
 

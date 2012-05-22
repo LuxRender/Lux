@@ -411,7 +411,7 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 		hitPoints->Init();
 
 	// Trace rays: The main loop
-	while (true) {
+	while (!scene.camera->film->enoughSamplesPerPixel) {
 		allThreadBarrier->wait();
 
 		if(renderer->paused())
@@ -483,23 +483,6 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 		if (myThread->n == 0) {
 			hitPoints->IncPass();
 
-			// Check for termination
-			int passCount = renderer->hitPoints->GetPassCount();
-			int hltSpp = scene.camera->film->haltSamplesPerPixel;
-			if(hltSpp > 0){
-				if(passCount == hltSpp){
-					renderer->Terminate();
-				}
-			}
-
-			double secsElapsed = renderer->rendererStatistics->timer.Time();
-			double hltTime = scene.camera->film->haltTime;
-			if(hltTime > 0.0){
-				if(secsElapsed > hltTime){
-					renderer->Terminate();
-				}
-			}
-
 			const double photonPassTime = osWallClockTime() - photonPassStartTime;
 			LOG(LUX_INFO, LUX_NOERROR) << "Photon pass time: " << photonPassTime << "secs";
 		}
@@ -546,7 +529,7 @@ Renderer *SPPMRenderer::CreateRenderer(const ParamSet &params) {
 float SPPMRenderer::GetScaleFactor(const double scale) const
 {
 	if (sppmi->photonSamplerType == AMC) {
-		return uniformCount * scale * scale;
+		return uniformCount / (sppmi->photonPerPass / scene->camera->film->GetSamplePerPass()) * scale * scale;
 	} else
 		return scale;
 }

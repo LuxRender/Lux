@@ -98,6 +98,9 @@ void PhotonSampler::TracePhoton(
 	alpha *= alpha2;
 	alpha /= lightPdf;
 
+	// The weight of the photon of the pass should be one, see ContribSample.
+	alpha /= renderer->sppmi->photonPerPass / renderer->scene->camera->film->GetSamplePerPass();
+
 	const bool directLightSampling = renderer->sppmi->directLightSampling;
 
 	// store the state of the path:
@@ -183,6 +186,21 @@ void PhotonSampler::TracePhoton(
 // Photon Sampler
 //------------------------------------------------------------------------------
 
+void PhotonSampler::ContribSample(Sample *sample)
+{
+	// cheat the sample count of the photon buffer
+	// normally the photon buffer should be normalized by the number of photon
+	// (hence the automatic +1 of AddSample which needs to be removed by a -1.f)
+	// instead we normalize it by the number of pass, so the number of
+	// contribution is 1.0 / photonPerPass
+	//
+	// WARNING: this is link to AMCMC weighting
+	// (SPPMRenderer::ScaleUpdaterSPPM) and alpha in TracePhoton.
+	sample->contribBuffer->AddSampleCount(-1.0 + 1.0 / renderer->sppmi->photonPerPass * renderer->scene->camera->film->GetSamplePerPass());
+	dynamic_cast<Sampler*>(this)->AddSample(*sample);
+}
+
+
 void PhotonSampler::TracePhotons(
 		Sample *sample,
 		Distribution1D *lightCDF)
@@ -194,7 +212,7 @@ void PhotonSampler::TracePhotons(
 		IncPhoton();
 		TracePhoton(sample, lightCDF);
 
-		dynamic_cast<Sampler*>(this)->AddSample(*sample);
+		ContribSample(sample);
 	}
 }
 
@@ -250,7 +268,7 @@ void AMCMCPhotonSampler::TracePhotons(
 
 		}
 		pathCurrent->Splat(sample, this);
-		dynamic_cast<Sampler*>(this)->AddSample(*sample);
+		ContribSample(sample);
 	}
 
 	LOG(LUX_DEBUG, LUX_NOERROR) << "AMCMC mutationSize " << mutationSize << " accepted " << accepted << " mutated " << mutated << " uniform " << renderer->uniformCount;

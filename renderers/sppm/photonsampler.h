@@ -53,6 +53,7 @@ public:
 		float u[2]) = 0;
 	virtual float *GetLazyValues(const Sample &sample, u_int num, u_int pos) = 0;
 
+	void ContribSample(Sample *sample);
 
 	void AddFluxToHitPoint(const Sample *sample, const u_int lightGroup, HitPoint * const hp, const XYZColor flux);
 

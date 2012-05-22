@@ -31,6 +31,9 @@
 #include <boost/format.hpp>
 #include <boost/thread/mutex.hpp>
 
+#include "integrators/sppm.h"
+#include "core/camera.h"
+
 using namespace lux;
 
 SPPMRStatistics::SPPMRStatistics(SPPMRenderer* renderer)
@@ -265,5 +268,6 @@ double SPPMRStatistics::getPhotonCount() {
 	if (filmRegistry)
 		sampleCount = (*filmRegistry)["numberOfLocalSamples"].DoubleValue();
 
-	return sampleCount;
+	// The amount of photon is stored "by pass"
+	return sampleCount * (renderer->sppmi->photonPerPass) / renderer->scene->camera->film->GetSamplePerPass();
 }
