@@ -196,9 +196,9 @@ private:
 	unsigned long long photonTracedTotal;
 	u_int photonTracedPass;
 
+	friend class AMCMCPhotonSampler;
 	// Used by AMC Photon Sampler
-	// TODO: try to remove this stuff
-	float accumulatedFluxScale;
+	u_int uniformCount;
 
 	fast_mutex sampPosMutex;
 	u_int sampPos;

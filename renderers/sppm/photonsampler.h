@@ -75,7 +75,7 @@ public:
 	void IncPhoton() const;
 	bool ContinueTracing() const;
 
-private:
+protected:
 	SPPMRenderer *renderer;
 };
 
@@ -333,7 +333,6 @@ class AMCMCPhotonSampler : public UniformPhotonSampler
 			mutationSize = 1.f;
 			accepted = 1;
 			mutated = 0;
-			uniformCount = 1;
 		}
 		virtual ~AMCMCPhotonSampler() { }
 
@@ -385,9 +384,6 @@ class AMCMCPhotonSampler : public UniformPhotonSampler
 
 		mutable AMCMCPath *pathCurrent, *pathCandidate;
 		mutable AMCMCPath paths[2];
-
-	public:
-		u_int uniformCount;
 };
 
 }//namespace lux

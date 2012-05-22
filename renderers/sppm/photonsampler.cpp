@@ -229,7 +229,7 @@ void AMCMCPhotonSampler::TracePhotons(
 		if(pathCandidate->isVisible())
 		{
 			swap();
-			++uniformCount;
+			osAtomicInc(&renderer->uniformCount);
 		}
 		else
 		{
@@ -253,7 +253,7 @@ void AMCMCPhotonSampler::TracePhotons(
 		dynamic_cast<Sampler*>(this)->AddSample(*sample);
 	}
 
-	LOG(LUX_DEBUG, LUX_NOERROR) << "AMCMC mutationSize " << mutationSize << " accepted " << accepted << " mutated " << mutated << " uniform " << uniformCount;
+	LOG(LUX_DEBUG, LUX_NOERROR) << "AMCMC mutationSize " << mutationSize << " accepted " << accepted << " mutated " << mutated << " uniform " << renderer->uniformCount;
 }
 
 // -------------------------------------

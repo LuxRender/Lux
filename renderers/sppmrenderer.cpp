@@ -208,6 +208,10 @@ void SPPMRenderer::Render(Scene *s) {
 		photonTracedPass = 0;
 		photonHitEfficiency = 0;
 
+		// For AMCMC
+		// TODO: check if it is really 1, or 0, or N-threads
+		uniformCount = 1.f;
+
 		// start the timer
 		rendererStatistics->timer.Start();
 
@@ -542,10 +546,6 @@ Renderer *SPPMRenderer::CreateRenderer(const ParamSet &params) {
 float SPPMRenderer::GetScaleFactor() const
 {
 	if (sppmi->photonSamplerType == AMC) {
-		u_int uniformCount = 0;
-		for (u_int i = 0; i < renderThreads.size(); ++i)
-			uniformCount += dynamic_cast<AMCMCPhotonSampler*>(renderThreads[i]->sampler)->uniformCount;
-
 		return uniformCount / ((float)photonTracedTotal + (float)photonTracedPass);
 	} else
 		return 1.f;
