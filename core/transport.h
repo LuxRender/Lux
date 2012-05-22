@@ -38,7 +38,7 @@ public:
 	// Integrator Interface
 	virtual ~Integrator() { }
 	virtual void Preprocess(const RandomGenerator &rng, const Scene &scene) { }
-	virtual void RequestSamples(Sampler * const sampler, const Scene &scene) { }
+	virtual void RequestSamples(Sampler *sampler, const Scene &scene) { }
 };
 
 class SurfaceIntegratorState {
