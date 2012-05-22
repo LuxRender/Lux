@@ -28,6 +28,7 @@
 
 #include "lookupaccel.h"
 #include "reflection/bxdf.h"
+#include "scheduler.h"
 
 namespace lux
 {
@@ -321,11 +322,12 @@ public:
 	{
 		lookUpAccel->AddFlux(sample, photon);
 	}
-	void AccumulateFlux(const u_int index, const u_int count);
-	void SetHitPoints(Sample &sample, RandomGenerator *rng, const u_int index, const u_int count);
+	void AccumulateFlux(scheduling::Range *range);
+	void SetHitPoints(scheduling::Range *range);
 
-	void RefreshAccel(const u_int index, const u_int count, boost::barrier &barrier) {
-		lookUpAccel->Refresh(index, count, barrier);
+	void RefreshAccel(scheduling::Scheduler *scheduler)
+	{
+		lookUpAccel->Refresh(scheduler);
 	}
 
 private:

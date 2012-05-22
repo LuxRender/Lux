@@ -127,25 +127,14 @@ void HybridHashGrid::RefreshMutex() {
 	}*/
 }
 
-void HybridHashGrid::Refresh(const unsigned int index, const unsigned int count, boost::barrier &barrier) {
-	if(index == 0)
-		RefreshMutex();
-
-	barrier.wait();
-
-	if (gridSize == 0)
-		return;
-
-	// Calculate the index of work this thread has to do
-	const unsigned int workSize = gridSize / count;
-	const unsigned int first = workSize * index;
-	const unsigned int last = (index == count - 1) ? gridSize : (first + workSize);
-	assert (first >= 0);
-	assert (last <= gridSize);
-
+void HybridHashGrid::ConvertKdTree(scheduling::Range *range)
+{
 	unsigned int HHGKdTreeEntries = 0;
 	unsigned int HHGlistEntries = 0;
-	for (unsigned int i = first; i < last; ++i) {
+
+	for(unsigned i = range->begin();
+			i != range->end();
+			i = range->next()) {
 		HashCell *hc = grid[i];
 
 		if (hc && hc->GetSize() > kdtreeThreshold) {
@@ -164,8 +153,15 @@ void HybridHashGrid::Refresh(const unsigned int index, const unsigned int count,
 			}
 		}
 	}*/
+}
 
-	barrier.wait();
+void HybridHashGrid::Refresh(scheduling::Scheduler *scheduler) {
+	RefreshMutex();
+
+	if (gridSize == 0)
+		return;
+
+	scheduler->Launch(boost::bind(&HybridHashGrid::ConvertKdTree, this, _1), 0, gridSize);
 }
 
 void HybridHashGrid::AddFlux(Sample& sample, const PhotonData &photon) {

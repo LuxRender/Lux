@@ -65,16 +65,14 @@ public:
 
 	virtual void TracePhotons(
 		Sample *sample,
-		Distribution1D *lightCDF
+		Distribution1D *lightCDF,
+		scheduling::Range *range
 		);
 
 	void TracePhoton(
 		Sample *sample,
 		Distribution1D *lightCDF
 		);
-
-	void IncPhoton() const;
-	bool ContinueTracing() const;
 
 protected:
 	SPPMRenderer *renderer;
@@ -374,10 +372,13 @@ class AMCMCPhotonSampler : public UniformPhotonSampler
 
 	virtual void TracePhotons(
 		Sample *sample,
-		Distribution1D *lightCDF
+		Distribution1D *lightCDF,
+		scheduling::Range *range
 		);
 
 	private:
+		// TODO: try to moves thoses attributes in the sample, hence keeping
+		// only one sampler per thread
 		// AMC data
 		float mutationSize;
 		u_int accepted;

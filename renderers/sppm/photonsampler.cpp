@@ -34,19 +34,6 @@ using namespace lux;
 
 // Photon tracing
 
-bool PhotonSampler::ContinueTracing() const
-{
-	if(renderer->paused())
-		return false;
-
-	return renderer->photonTracedPass < renderer->sppmi->photonPerPass;
-}
-
-void PhotonSampler::IncPhoton() const
-{
-	osAtomicInc(&renderer->photonTracedPass);
-}
-
 void PhotonSampler::AddFluxToHitPoint(const Sample *sample, const u_int lightGroup, HitPoint * const hp, const XYZColor flux)
 {
 	// TODO: it should be more something like:
@@ -203,13 +190,14 @@ void PhotonSampler::ContribSample(Sample *sample)
 
 void PhotonSampler::TracePhotons(
 		Sample *sample,
-		Distribution1D *lightCDF)
+		Distribution1D *lightCDF,
+		scheduling::Range *range)
 {
-	while(ContinueTracing())
+	range->begin();
+	while(range->next() != range->end())
 	{
 		GetNextSample(sample);
 
-		IncPhoton();
 		TracePhoton(sample, lightCDF);
 
 		ContribSample(sample);
@@ -226,7 +214,8 @@ void PhotonSampler::TracePhotons(
 
 void AMCMCPhotonSampler::TracePhotons(
 		Sample *sample,
-		Distribution1D *lightCDF)
+		Distribution1D *lightCDF,
+		scheduling::Range *range)
 {
 	// Sample uniform
 	do
@@ -237,9 +226,9 @@ void AMCMCPhotonSampler::TracePhotons(
 
 	swap(); // Current = Candidate
 
-	while(ContinueTracing()) {
-		IncPhoton();
-
+	range->begin();
+	while(range->next() != range->end())
+	{
 		// Sample Uniform
 		GetNextSample(sample, true);
 		TracePhoton(sample, lightCDF);

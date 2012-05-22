@@ -90,7 +90,7 @@ private:
 	virtual void updateStatisticsWindowDerived();
 
 	virtual double getPercentComplete() { return std::max(getPercentHaltTimeComplete(), getPercentHaltPassesComplete()); }
-	virtual u_int getThreadCount() { return renderer->renderThreads.size(); }
+	virtual u_int getThreadCount() { return renderer->scheduler->ThreadCount(); }
 
 	double getPassCount() { return renderer->hitPoints ? renderer->hitPoints->GetPassCount() : 0.0; }
 	double getAveragePassesPerSecond();
