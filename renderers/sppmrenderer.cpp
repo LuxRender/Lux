@@ -319,6 +319,7 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 	myThread->threadRng = new RandomGenerator(seed);
 	
 	// Initialize the photon sampler
+	// TODO: there must be only one photon sampler instance instead of one by thread
 	PhotonSampler * &sampler = myThread->sampler;
 	switch (renderer->sppmi->photonSamplerType) {
 		case HALTON:
@@ -339,17 +340,17 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 //	sample.camera = scene.camera->Clone(); // Unneeded for photons
 	// sample.realTime and sample.swl are intialized later
 	// Describe sampling data
-	sample.Add1D(1); // light sampling
-	sample.Add2D(1); // light position sampling
-	sample.Add1D(1); // light position portal sampling
-	sample.Add2D(1); // light direction sampling
-	sample.Add1D(1); // light direction portal sampling
+	sampler->Add1D(1); // light sampling
+	sampler->Add2D(1); // light position sampling
+	sampler->Add1D(1); // light position portal sampling
+	sampler->Add2D(1); // light direction sampling
+	sampler->Add1D(1); // light direction portal sampling
 	vector<u_int> structure;
 	structure.push_back(2); // BSDF direction sampling
 	structure.push_back(1); // BSDF component sampling
 	structure.push_back(1); // RR sampling
-	sample.AddxD(structure, renderer->sppmi->maxPhotonPathDepth + 1);
-	renderer->scene->volumeIntegrator->RequestSamples(&sample, *(renderer->scene));
+	sampler->AddxD(structure, renderer->sppmi->maxPhotonPathDepth + 1);
+	renderer->scene->volumeIntegrator->RequestSamples(sampler, *(renderer->scene));
 	sampler->InitSample(&sample);
 
 	// initialise the eye sample
@@ -358,16 +359,6 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 	eyeSample.camera = scene.camera->Clone();
 	eyeSample.realTime = 0.f;
 	eyeSample.rng = myThread->threadRng;
-
-	structure.clear();
-	structure.push_back(1);	// volume scattering
-	structure.push_back(2);	// bsdf sampling direction
-	structure.push_back(1);	// bsdf sampling component
-	structure.push_back(1);	// bsdf bouncing/storing component
-	eyeSample.AddxD(structure, renderer->sppmi->maxEyePathDepth + 1);
-	renderer->scene->volumeIntegrator->RequestSamples(&eyeSample, *(renderer->scene));
-
-	renderer->sppmi->hints.RequestSamples(&eyeSample, scene, renderer->sppmi->maxPhotonPathDepth + 1);
 
 	//--------------------------------------------------------------------------
 	// First eye pass
@@ -382,6 +373,21 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 	allThreadBarrier->wait();
 
 	HitPoints *hitPoints = renderer->hitPoints;
+
+	if(myThread->n == 0)
+	{
+		structure.clear();
+		structure.push_back(1);	// volume scattering
+		structure.push_back(2);	// bsdf sampling direction
+		structure.push_back(1);	// bsdf sampling component
+		structure.push_back(1);	// bsdf bouncing/storing component
+
+		hitPoints->eyeSampler->AddxD(structure, renderer->sppmi->maxEyePathDepth + 1);
+		renderer->scene->volumeIntegrator->RequestSamples(hitPoints->eyeSampler, *(renderer->scene));
+		renderer->sppmi->hints.RequestSamples(hitPoints->eyeSampler, scene, renderer->sppmi->maxPhotonPathDepth + 1);
+	}
+
+	allThreadBarrier->wait();
 
 	hitPoints->eyeSampler->InitSample(&eyeSample);
 

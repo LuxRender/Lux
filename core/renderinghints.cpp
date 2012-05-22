@@ -359,7 +359,7 @@ void SurfaceIntegratorRenderingHints::InitStrategies(const Scene &scene) {
 		lsStrategy->Init(scene);
 }
 
-void SurfaceIntegratorRenderingHints::RequestSamples(Sample *sample, const Scene &scene, u_int maxDepth)
+void SurfaceIntegratorRenderingHints::RequestSamples(Sampler *sampler, const Scene &scene, u_int maxDepth)
 {
 	if (lsStrategy != NULL) {
 		vector<u_int> structure(0);
@@ -375,7 +375,7 @@ void SurfaceIntegratorRenderingHints::RequestSamples(Sample *sample, const Scene
 				structure.push_back(1); // light portal sample
 			}
 		}
-		lightSampleOffset = sample->AddxD(structure, maxDepth);
+		lightSampleOffset = sampler->AddxD(structure, maxDepth);
 	}
 }
 

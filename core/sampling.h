@@ -38,31 +38,11 @@ public:
 	Sample();
 	~Sample();
 
-	u_int Add1D(u_int num) {
-		n1D.push_back(num);
-		return n1D.size()-1;
-	}
-	u_int Add2D(u_int num) {
-		n2D.push_back(num);
-		return n2D.size()-1;
-	}
-	u_int AddxD(vector<u_int> &structure, u_int num) {
-		nxD.push_back(num);
-		sxD.push_back(structure);
-		u_int d = 0;
-		for (u_int i = 0; i < structure.size(); ++i)
-			d += structure[i];
-		dxD.push_back(d);
-		return nxD.size()-1;
-	}
 	void AddContribution(float x, float y, const XYZColor &c, float a,
 		float zd, float v, u_int b, u_int g) const {
 		contributions.push_back(Contribution(x, y, c, a, zd, v, b, g));
 	}
 
-	//Sample public data
-	vector<u_int> n1D, n2D, nxD, dxD;
-	vector<vector<u_int> > sxD;
 	// Reference to the sampler for lazy evaluation
 	mutable MemoryArena arena;
 	const RandomGenerator *rng;
@@ -101,11 +81,33 @@ public:
 	virtual void SetFilm(Film* f) { film = f; }
 	virtual void GetBufferType(BufferType *t) { }
 	virtual void AddSample(const Sample &sample);
+	
+	u_int Add1D(u_int num) {
+		n1D.push_back(num);
+		return n1D.size()-1;
+	}
+	u_int Add2D(u_int num) {
+		n2D.push_back(num);
+		return n2D.size()-1;
+	}
+	u_int AddxD(vector<u_int> &structure, u_int num) {
+		nxD.push_back(num);
+		sxD.push_back(structure);
+		u_int d = 0;
+		for (u_int i = 0; i < structure.size(); ++i)
+			d += structure[i];
+		dxD.push_back(d);
+		return nxD.size()-1;
+	}
 
 	// Sampler Public Data
 	int xPixelStart, xPixelEnd, yPixelStart, yPixelEnd;
 	u_int samplesPerPixel;
 	Film *film;
+	
+	//Shape of sampled data
+	vector<u_int> n1D, n2D, nxD, dxD;
+	vector<vector<u_int> > sxD;
 };
 
 // PxLoc X and Y pixel coordinate struct

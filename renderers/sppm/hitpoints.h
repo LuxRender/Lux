@@ -168,32 +168,32 @@ public:
 	public:
 		HaltonEyeSamplerData(const Sample &sample, u_int sz) :
 			size(sz), index(0), pathCount(0) {
-			values = new float *[max<u_int>(1U, sample.n1D.size() +
-				sample.n2D.size() + sample.nxD.size())];
+			values = new float *[max<u_int>(1U, sample.sampler->n1D.size() +
+				sample.sampler->n2D.size() + sample.sampler->nxD.size())];
 			u_int n = 0;
-			for (u_int i = 0; i < sample.n1D.size(); ++i)
-				n += sample.n1D[i];
-			for (u_int i = 0; i < sample.n2D.size(); ++i)
-				n += 2 * sample.n2D[i];
-			for (u_int i = 0; i < sample.nxD.size(); ++i)
-				n += sample.dxD[i];
-			// Reserve space for screen and lens samples
+			for (u_int i = 0; i < sample.sampler->n1D.size(); ++i)
+				n += sample.sampler->n1D[i];
+			for (u_int i = 0; i < sample.sampler->n2D.size(); ++i)
+				n += 2 * sample.sampler->n2D[i];
+			for (u_int i = 0; i < sample.sampler->nxD.size(); ++i)
+				n += sample.sampler->dxD[i];
+			// Reserve space for screen and lens sample.sampler->
 			float *buffer = new float[n + 4] + 4;
 			values[0] = buffer;	// in case n == 0
 			u_int offset = 0;
-			for (u_int i = 0; i < sample.n1D.size(); ++i) {
+			for (u_int i = 0; i < sample.sampler->n1D.size(); ++i) {
 				values[offset + i] = buffer;
-				buffer += sample.n1D[i];
+				buffer += sample.sampler->n1D[i];
 			}
-			offset += sample.n1D.size();
-			for (u_int i = 0; i < sample.n2D.size(); ++i) {
+			offset += sample.sampler->n1D.size();
+			for (u_int i = 0; i < sample.sampler->n2D.size(); ++i) {
 				values[offset + i] = buffer;
-				buffer += 2 * sample.n2D[i];
+				buffer += 2 * sample.sampler->n2D[i];
 			}
-			offset += sample.n2D.size();
-			for (u_int i = 0; i < sample.nxD.size(); ++i) {
+			offset += sample.sampler->n2D.size();
+			for (u_int i = 0; i < sample.sampler->nxD.size(); ++i) {
 				values[offset + i] = buffer;
-				buffer += sample.dxD[i];
+				buffer += sample.sampler->dxD[i];
 			}
 		}
 		~HaltonEyeSamplerData() {
@@ -214,10 +214,10 @@ public:
 	virtual void InitSample(Sample *sample) const {
 		sample->sampler = const_cast<HaltonEyeSampler *>(this);
 		u_int size = 0;
-		for (u_int i = 0; i < sample->n1D.size(); ++i)
-			size += sample->n1D[i];
-		for (u_int i = 0; i < sample->n2D.size(); ++i)
-			size += 2 * sample->n2D[i];
+		for (u_int i = 0; i < sample->sampler->n1D.size(); ++i)
+			size += sample->sampler->n1D[i];
+		for (u_int i = 0; i < sample->sampler->n2D.size(); ++i)
+			size += 2 * sample->sampler->n2D[i];
 		boost::mutex::scoped_lock lock(initMutex);
 		if (halton.size() == 0) {
 			for (u_int i = 0; i < nPixels; ++i) {
@@ -257,13 +257,13 @@ public:
 	virtual void GetTwoD(const Sample &sample, u_int num, u_int pos,
 		float u[2]) {
 		HaltonEyeSamplerData *data = static_cast<HaltonEyeSamplerData *>(sample.samplerData);
-		u[0] = data->values[sample.n1D.size() + num][2 * pos];
-		u[1] = data->values[sample.n1D.size() + num][2 * pos + 1];
+		u[0] = data->values[sample.sampler->n1D.size() + num][2 * pos];
+		u[1] = data->values[sample.sampler->n1D.size() + num][2 * pos + 1];
 	}
 	virtual float *GetLazyValues(const Sample &sample, u_int num, u_int pos) {
 		HaltonEyeSamplerData *data = static_cast<HaltonEyeSamplerData *>(sample.samplerData);
-		float *result = data->values[sample.n1D.size() + sample.n2D.size() + num];
-		for (u_int i = 0; i < sample.dxD[num]; ++i)
+		float *result = data->values[sample.sampler->n1D.size() + sample.sampler->n2D.size() + num];
+		for (u_int i = 0; i < sample.sampler->dxD[num]; ++i)
 			result[i] = sample.rng->floatValue();
 		return result;
 	}

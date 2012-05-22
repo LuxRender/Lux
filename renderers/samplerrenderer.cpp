@@ -164,6 +164,9 @@ void SamplerRenderer::Render(Scene *s) {
 		scene->volumeIntegrator->Preprocess(rng, *scene);
 		scene->camera->film->CreateBuffers();
 
+		scene->surfaceIntegrator->RequestSamples(scene->sampler, *scene);
+		scene->volumeIntegrator->RequestSamples(scene->sampler, *scene);
+
 		// Dade - to support autofocus for some camera model
 		scene->camera->AutoFocus(*scene);
 
@@ -274,8 +277,6 @@ void SamplerRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 
 	Sampler *sampler = scene.sampler;
 	Sample sample;
-	scene.surfaceIntegrator->RequestSamples(&sample, scene);
-	scene.volumeIntegrator->RequestSamples(&sample, scene);
 	sampler->InitSample(&sample);
 
 	// Dade - wait the end of the preprocessing phase

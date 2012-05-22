@@ -48,27 +48,27 @@ struct BidirVertex {
 };
 
 // Bidirectional Method Definitions
-void BidirIntegrator::RequestSamples(Sample *sample, const Scene &scene)
+void BidirIntegrator::RequestSamples(Sampler *sampler, const Scene &scene)
 {
 	boost::mutex::scoped_lock lock(requestSamplesMutex);
 	samplingCount = lightDirectStrategy->GetSamplingLimit(scene);
-	lightNumOffset = sample->Add1D(samplingCount);
-	lightPosOffset = sample->Add2D(samplingCount);
-	lightDirOffset = sample->Add2D(samplingCount);
+	lightNumOffset = sampler->Add1D(samplingCount);
+	lightPosOffset = sampler->Add2D(samplingCount);
+	lightDirOffset = sampler->Add2D(samplingCount);
 	vector<u_int> structure;
 	// Direct lighting samples
 	for (u_int i = 0; i < samplingCount; ++i) {
 		structure.push_back(1);	//light number or portal
 		structure.push_back(2);	//light position
 	}
-	sampleDirectOffset = sample->AddxD(structure, maxEyeDepth);
+	sampleDirectOffset = sampler->AddxD(structure, maxEyeDepth);
 	structure.clear();
 	// Eye subpath samples
 	structure.push_back(1);	//continue eye
 	structure.push_back(2);	//bsdf sampling for eye path
 	structure.push_back(1);	//bsdf component for eye path
 	structure.push_back(1); //scattering
-	sampleEyeOffset = sample->AddxD(structure, maxEyeDepth);
+	sampleEyeOffset = sampler->AddxD(structure, maxEyeDepth);
 	structure.clear();
 	// Light subpath samples
 	const bool initOffsets = sampleLightOffsets.empty();
@@ -78,7 +78,7 @@ void BidirIntegrator::RequestSamples(Sample *sample, const Scene &scene)
 		structure.push_back(2); //bsdf sampling for light path
 		structure.push_back(1); //bsdf component for light path
 		structure.push_back(1); //scattering
-		const u_int lightOffset = sample->AddxD(structure, maxLightDepth);
+		const u_int lightOffset = sampler->AddxD(structure, maxLightDepth);
 		if (initOffsets) {
 			// only initialize once, in case thread is added after rendering has started
 			sampleLightOffsets.push_back(lightOffset);
@@ -886,8 +886,6 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 BidirPathState::BidirPathState(const Scene &scene, ContributionBuffer *contribBuffer, RandomGenerator *rng) {
 	BidirIntegrator *bidir = (BidirIntegrator *)scene.surfaceIntegrator;
 
-	scene.surfaceIntegrator->RequestSamples(&sample, scene);
-	scene.volumeIntegrator->RequestSamples(&sample, scene);
 	scene.sampler->InitSample(&sample);
 	sample.contribBuffer = contribBuffer;
 	sample.camera = scene.camera->Clone();

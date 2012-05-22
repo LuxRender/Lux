@@ -70,7 +70,7 @@ DistributedPath::DistributedPath(LightStrategy st, bool da, u_int ds, bool dd, b
 	AddStringConstant(*this, "name", "Name of current surface integrator", "distributedpath");
 }
 
-void DistributedPath::RequestSamples(Sample *sample, const Scene &scene) {
+void DistributedPath::RequestSamples(Sampler *sampler, const Scene &scene) {
 	if (lightStrategy == SAMPLE_AUTOMATIC) {
 		if (scene.lights.size() > 7)
 			lightStrategy = SAMPLE_ONE_UNIFORM;
@@ -87,51 +87,51 @@ void DistributedPath::RequestSamples(Sample *sample, const Scene &scene) {
 	maxDepth = max(maxDepth, specularRefractDepth);
 
 	// Scattering
-	scatterOffset = sample->Add1D(maxDepth);
+	scatterOffset = sampler->Add1D(maxDepth);
 
 	// Direct lighting
 	// eye vertex
-	lightSampleOffset = sample->Add2D(directSamples);
-	lightNumOffset = sample->Add1D(directSamples);
-	bsdfSampleOffset = sample->Add2D(directSamples);
-	bsdfComponentOffset = sample->Add1D(directSamples);
+	lightSampleOffset = sampler->Add2D(directSamples);
+	lightNumOffset = sampler->Add1D(directSamples);
+	bsdfSampleOffset = sampler->Add2D(directSamples);
+	bsdfComponentOffset = sampler->Add1D(directSamples);
 	// remaining vertices
-	indirectLightSampleOffset = sample->Add2D(indirectSamples * maxDepth);
-	indirectLightNumOffset = sample->Add1D(indirectSamples * maxDepth);
-	indirectBsdfSampleOffset = sample->Add2D(indirectSamples * maxDepth);
-	indirectBsdfComponentOffset = sample->Add1D(indirectSamples * maxDepth);
+	indirectLightSampleOffset = sampler->Add2D(indirectSamples * maxDepth);
+	indirectLightNumOffset = sampler->Add1D(indirectSamples * maxDepth);
+	indirectBsdfSampleOffset = sampler->Add2D(indirectSamples * maxDepth);
+	indirectBsdfComponentOffset = sampler->Add1D(indirectSamples * maxDepth);
 
 	// Diffuse reflection
 	// eye vertex
-	diffuseReflectSampleOffset = sample->Add2D(diffuseReflectSamples);
-	diffuseReflectComponentOffset = sample->Add1D(diffuseReflectSamples);
+	diffuseReflectSampleOffset = sampler->Add2D(diffuseReflectSamples);
+	diffuseReflectComponentOffset = sampler->Add1D(diffuseReflectSamples);
 	// remaining vertices
-	indirectDiffuseReflectSampleOffset = sample->Add2D(diffuseReflectDepth);
-	indirectDiffuseReflectComponentOffset = sample->Add1D(diffuseReflectDepth);
+	indirectDiffuseReflectSampleOffset = sampler->Add2D(diffuseReflectDepth);
+	indirectDiffuseReflectComponentOffset = sampler->Add1D(diffuseReflectDepth);
 
 	// Diffuse refraction
 	// eye vertex
-	diffuseRefractSampleOffset = sample->Add2D(diffuseRefractSamples);
-	diffuseRefractComponentOffset = sample->Add1D(diffuseRefractSamples);
+	diffuseRefractSampleOffset = sampler->Add2D(diffuseRefractSamples);
+	diffuseRefractComponentOffset = sampler->Add1D(diffuseRefractSamples);
 	// remaining vertices
-	indirectDiffuseRefractSampleOffset = sample->Add2D(diffuseRefractDepth);
-	indirectDiffuseRefractComponentOffset = sample->Add1D(diffuseRefractDepth);
+	indirectDiffuseRefractSampleOffset = sampler->Add2D(diffuseRefractDepth);
+	indirectDiffuseRefractComponentOffset = sampler->Add1D(diffuseRefractDepth);
 
 	// Glossy reflection
 	// eye vertex
-	glossyReflectSampleOffset = sample->Add2D(glossyReflectSamples);
-	glossyReflectComponentOffset = sample->Add1D(glossyReflectSamples);
+	glossyReflectSampleOffset = sampler->Add2D(glossyReflectSamples);
+	glossyReflectComponentOffset = sampler->Add1D(glossyReflectSamples);
 	// remaining vertices
-	indirectGlossyReflectSampleOffset = sample->Add2D(glossyReflectDepth);
-	indirectGlossyReflectComponentOffset = sample->Add1D(glossyReflectDepth);
+	indirectGlossyReflectSampleOffset = sampler->Add2D(glossyReflectDepth);
+	indirectGlossyReflectComponentOffset = sampler->Add1D(glossyReflectDepth);
 
 	// Glossy refraction
 	// eye vertex
-	glossyRefractSampleOffset = sample->Add2D(glossyRefractSamples);
-	glossyRefractComponentOffset = sample->Add1D(glossyRefractSamples);
+	glossyRefractSampleOffset = sampler->Add2D(glossyRefractSamples);
+	glossyRefractComponentOffset = sampler->Add1D(glossyRefractSamples);
 	// remaining vertices
-	indirectGlossyRefractSampleOffset = sample->Add2D(glossyRefractDepth);
-	indirectGlossyRefractComponentOffset = sample->Add1D(glossyRefractDepth);
+	indirectGlossyRefractSampleOffset = sampler->Add2D(glossyRefractDepth);
+	indirectGlossyRefractComponentOffset = sampler->Add1D(glossyRefractDepth);
 }
 void DistributedPath::Preprocess(const RandomGenerator &rng, const Scene &scene)
 {

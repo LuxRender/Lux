@@ -90,40 +90,40 @@ public:
 		HaltonPhotonSamplerData(const Sample &sample, u_int sz) :
 			halton(sz, *(sample.rng)), size(sz),
 			haltonOffset(sample.rng->floatValue()), pathCount(0) {
-			if (sample.n1D.size() + sample.n2D.size() +
-				sample.nxD.size() == 0) {
+			if (sample.sampler->n1D.size() + sample.sampler->n2D.size() +
+				sample.sampler->nxD.size() == 0) {
 				values = NULL;
 				return;
 			}
-			values = new float *[sample.n1D.size() +
-				sample.n2D.size() + sample.nxD.size()];
+			values = new float *[sample.sampler->n1D.size() +
+				sample.sampler->n2D.size() + sample.sampler->nxD.size()];
 			u_int n = 0;
 
-			for (u_int i = 0; i < sample.n1D.size(); ++i)
-				n += sample.n1D[i];
-			for (u_int i = 0; i < sample.n2D.size(); ++i)
-				n += 2 * sample.n2D[i];
-			for (u_int i = 0; i < sample.nxD.size(); ++i)
-				n += sample.dxD[i];
+			for (u_int i = 0; i < sample.sampler->n1D.size(); ++i)
+				n += sample.sampler->n1D[i];
+			for (u_int i = 0; i < sample.sampler->n2D.size(); ++i)
+				n += 2 * sample.sampler->n2D[i];
+			for (u_int i = 0; i < sample.sampler->nxD.size(); ++i)
+				n += sample.sampler->dxD[i];
 			if (n == 0) {
 				values[0] = NULL;
 				return;
 			}
 			float *buffer = new float[n];
 			u_int offset = 0;
-			for (u_int i = 0; i < sample.n1D.size(); ++i) {
+			for (u_int i = 0; i < sample.sampler->n1D.size(); ++i) {
 				values[offset + i] = buffer;
-				buffer += sample.n1D[i];
+				buffer += sample.sampler->n1D[i];
 			}
-			offset += sample.n1D.size();
-			for (u_int i = 0; i < sample.n2D.size(); ++i) {
+			offset += sample.sampler->n1D.size();
+			for (u_int i = 0; i < sample.sampler->n2D.size(); ++i) {
 				values[offset + i] = buffer;
-				buffer += 2 * sample.n2D[i];
+				buffer += 2 * sample.sampler->n2D[i];
 			}
-			offset += sample.n2D.size();
-			for (u_int i = 0; i < sample.nxD.size(); ++i) {
+			offset += sample.sampler->n2D.size();
+			for (u_int i = 0; i < sample.sampler->nxD.size(); ++i) {
 				values[offset + i] = buffer;
-				buffer += sample.dxD[i];
+				buffer += sample.sampler->dxD[i];
 			}
 		}
 		~HaltonPhotonSamplerData() {
@@ -142,10 +142,10 @@ public:
 	virtual void InitSample(Sample *sample) const {
 		sample->sampler = const_cast<HaltonPhotonSampler *>(this);
 		u_int size = 0;
-		for (u_int i = 0; i < sample->n1D.size(); ++i)
-			size += sample->n1D[i];
-		for (u_int i = 0; i < sample->n2D.size(); ++i)
-			size += 2 * sample->n2D[i];
+		for (u_int i = 0; i < sample->sampler->n1D.size(); ++i)
+			size += sample->sampler->n1D[i];
+		for (u_int i = 0; i < sample->sampler->n2D.size(); ++i)
+			size += 2 * sample->sampler->n2D[i];
 		sample->samplerData = new HaltonPhotonSamplerData(*sample, size);
 	}
 	virtual void FreeSample(Sample *sample) const {
@@ -169,13 +169,13 @@ public:
 	virtual void GetTwoD(const Sample &sample, u_int num, u_int pos,
 		float u[2]) {
 		HaltonPhotonSamplerData *data = static_cast<HaltonPhotonSamplerData *>(sample.samplerData);
-		u[0] = data->values[sample.n1D.size() + num][2 * pos];
-		u[1] = data->values[sample.n1D.size() + num][2 * pos + 1];
+		u[0] = data->values[sample.sampler->n1D.size() + num][2 * pos];
+		u[1] = data->values[sample.sampler->n1D.size() + num][2 * pos + 1];
 	}
 	virtual float *GetLazyValues(const Sample &sample, u_int num, u_int pos) {
 		HaltonPhotonSamplerData *data = static_cast<HaltonPhotonSamplerData *>(sample.samplerData);
-		float *result = data->values[sample.n1D.size() + sample.n2D.size() + num];
-		for (u_int i = 0; i < sample.dxD[num]; ++i)
+		float *result = data->values[sample.sampler->n1D.size() + sample.sampler->n2D.size() + num];
+		for (u_int i = 0; i < sample.sampler->dxD[num]; ++i)
 			result[i] = sample.rng->floatValue();
 		return result;
 	}
@@ -190,22 +190,22 @@ public:
 	class UniformPhotonSamplerData {
 	public:
 		UniformPhotonSamplerData(const Sample &sample) {
-			if (sample.n1D.size() + sample.n2D.size() +
-				sample.nxD.size() == 0) {
+			if (sample.sampler->n1D.size() + sample.sampler->n2D.size() +
+				sample.sampler->nxD.size() == 0) {
 				values = NULL;
 				return;
 			}
-			values = new float *[sample.n1D.size() +
-				sample.n2D.size() + sample.nxD.size()];
+			values = new float *[sample.sampler->n1D.size() +
+				sample.sampler->n2D.size() + sample.sampler->nxD.size()];
 
 			n = 0;
 
-			for (u_int i = 0; i < sample.n1D.size(); ++i)
-				n += sample.n1D[i];
-			for (u_int i = 0; i < sample.n2D.size(); ++i)
-				n += 2 * sample.n2D[i];
-			for (u_int i = 0; i < sample.nxD.size(); ++i)
-				n += sample.dxD[i] * sample.nxD[i];
+			for (u_int i = 0; i < sample.sampler->n1D.size(); ++i)
+				n += sample.sampler->n1D[i];
+			for (u_int i = 0; i < sample.sampler->n2D.size(); ++i)
+				n += 2 * sample.sampler->n2D[i];
+			for (u_int i = 0; i < sample.sampler->nxD.size(); ++i)
+				n += sample.sampler->dxD[i] * sample.sampler->nxD[i];
 			if (n == 0) {
 				values[0] = NULL;
 				return;
@@ -213,19 +213,19 @@ public:
 
 			float *buffer = new float[n];
 			u_int offset = 0;
-			for (u_int i = 0; i < sample.n1D.size(); ++i) {
+			for (u_int i = 0; i < sample.sampler->n1D.size(); ++i) {
 				values[offset + i] = buffer;
-				buffer += sample.n1D[i];
+				buffer += sample.sampler->n1D[i];
 			}
-			offset += sample.n1D.size();
-			for (u_int i = 0; i < sample.n2D.size(); ++i) {
+			offset += sample.sampler->n1D.size();
+			for (u_int i = 0; i < sample.sampler->n2D.size(); ++i) {
 				values[offset + i] = buffer;
-				buffer += 2 * sample.n2D[i];
+				buffer += 2 * sample.sampler->n2D[i];
 			}
-			offset += sample.n2D.size();
-			for (u_int i = 0; i < sample.nxD.size(); ++i) {
+			offset += sample.sampler->n2D.size();
+			for (u_int i = 0; i < sample.sampler->nxD.size(); ++i) {
 				values[offset + i] = buffer;
-				buffer += sample.dxD[i];
+				buffer += sample.sampler->dxD[i];
 			}
 		}
 
@@ -273,12 +273,12 @@ public:
 	virtual void GetTwoD(const Sample &sample, u_int num, u_int pos,
 		float u[2]) {
 		UniformPhotonSamplerData *data = static_cast<UniformPhotonSamplerData *>(sample.samplerData);
-		u[0] = data->values[sample.n1D.size() + num][2 * pos];
-		u[1] = data->values[sample.n1D.size() + num][2 * pos + 1];
+		u[0] = data->values[sample.sampler->n1D.size() + num][2 * pos];
+		u[1] = data->values[sample.sampler->n1D.size() + num][2 * pos + 1];
 	}
 	virtual float *GetLazyValues(const Sample &sample, u_int num, u_int pos) {
 		UniformPhotonSamplerData *data = static_cast<UniformPhotonSamplerData *>(sample.samplerData);
-		return &data->values[sample.n1D.size() + sample.n2D.size() + num][pos * sample.dxD[num]];
+		return &data->values[sample.sampler->n1D.size() + sample.sampler->n2D.size() + num][pos * sample.sampler->dxD[num]];
 	}
 };
 

@@ -41,21 +41,21 @@ MetropolisSampler::MetropolisData::MetropolisData(const Sample &sample) :
 	u_int i;
 	// Compute number of non lazy samples
 	normalSamples = SAMPLE_FLOATS;
-	for (i = 0; i < sample.n1D.size(); ++i)
-		normalSamples += sample.n1D[i];
-	for (i = 0; i < sample.n2D.size(); ++i)
-		normalSamples += 2 * sample.n2D[i];
+	for (i = 0; i < sample.sampler->n1D.size(); ++i)
+		normalSamples += sample.sampler->n1D[i];
+	for (i = 0; i < sample.sampler->n2D.size(); ++i)
+		normalSamples += 2 * sample.sampler->n2D[i];
 
 	// Compute number of lazy samples and initialize management data
 	totalSamples = normalSamples;
-	offset = new u_int[sample.nxD.size()];
+	offset = new u_int[sample.sampler->nxD.size()];
 	totalTimes = 0;
-	timeOffset = new u_int[sample.nxD.size()];
-	for (i = 0; i < sample.nxD.size(); ++i) {
+	timeOffset = new u_int[sample.sampler->nxD.size()];
+	for (i = 0; i < sample.sampler->nxD.size(); ++i) {
 		timeOffset[i] = totalTimes;
 		offset[i] = totalSamples;
-		totalTimes += sample.nxD[i];
-		totalSamples += sample.dxD[i] * sample.nxD[i];
+		totalTimes += sample.sampler->nxD[i];
+		totalSamples += sample.sampler->dxD[i] * sample.sampler->nxD[i];
 	}
 
 	// Allocate sample image to hold the current reference
@@ -225,7 +225,7 @@ float MetropolisSampler::GetOneD(const Sample &sample, u_int num, u_int pos)
 	MetropolisData *data = (MetropolisData *)(sample.samplerData);
 	u_int offset = SAMPLE_FLOATS;
 	for (u_int i = 0; i < num; ++i)
-		offset += sample.n1D[i];
+		offset += sample.sampler->n1D[i];
 	return data->currentImage[offset + pos];
 }
 
@@ -233,10 +233,10 @@ void MetropolisSampler::GetTwoD(const Sample &sample, u_int num, u_int pos, floa
 {
 	MetropolisData *data = (MetropolisData *)(sample.samplerData);
 	u_int offset = SAMPLE_FLOATS;
-	for (u_int i = 0; i < sample.n1D.size(); ++i)
-		offset += sample.n1D[i];
+	for (u_int i = 0; i < sample.sampler->n1D.size(); ++i)
+		offset += sample.sampler->n1D[i];
 	for (u_int i = 0; i < num; ++i)
-		offset += sample.n2D[i] * 2;
+		offset += sample.sampler->n2D[i] * 2;
 	u[0] = data->currentImage[offset + pos];
 	u[1] = data->currentImage[offset + pos + 1];
 }
@@ -245,7 +245,7 @@ float *MetropolisSampler::GetLazyValues(const Sample &sample, u_int num, u_int p
 {
 	MetropolisData *data = (MetropolisData *)(sample.samplerData);
 	// Get size and position of current lazy values node
-	const u_int size = sample.dxD[num];
+	const u_int size = sample.sampler->dxD[num];
 	const u_int offset = data->offset[num] + pos * size;
 	const u_int timeOffset = data->timeOffset[num] + pos;
 	// If we are at the target, don't do anything

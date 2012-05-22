@@ -83,7 +83,7 @@ ExPhotonIntegrator::~ExPhotonIntegrator()
 	delete radianceMap;
 }
 
-void ExPhotonIntegrator::RequestSamples(Sample *sample, const Scene &scene)
+void ExPhotonIntegrator::RequestSamples(Sampler *sampler, const Scene &scene)
 {
 	// Dade - allocate and request samples
 	if (renderingMode == RM_DIRECTLIGHTING) {
@@ -93,7 +93,7 @@ void ExPhotonIntegrator::RequestSamples(Sample *sample, const Scene &scene)
 		structure.push_back(1);	// reflection bsdf component sample
 		structure.push_back(1); // scattering
 
-		sampleOffset = sample->AddxD(structure, maxDepth + 1);
+		sampleOffset = sampler->AddxD(structure, maxDepth + 1);
 
 		if (finalGather) {
 			// Dade - use half samples for sampling along the BSDF and the other
@@ -105,14 +105,14 @@ void ExPhotonIntegrator::RequestSamples(Sample *sample, const Scene &scene)
 			structure.push_back(1);	// gather bsdf component sample 1
 			if (rrStrategy != RR_NONE)
 				structure.push_back(1); // RR
-			sampleFinalGather1Offset = sample->AddxD(structure, gatherSamples);
+			sampleFinalGather1Offset = sampler->AddxD(structure, gatherSamples);
 
 			structure.clear();
 			structure.push_back(2);	// gather bsdf direction sample 2
 			structure.push_back(1);	// gather bsdf component sample 2
 			if (rrStrategy != RR_NONE)
 				structure.push_back(1); // RR
-			sampleFinalGather2Offset = sample->AddxD(structure, gatherSamples);
+			sampleFinalGather2Offset = sampler->AddxD(structure, gatherSamples);
 		}
 	} else if (renderingMode == RM_PATH) {
 		vector<u_int> structure;
@@ -125,12 +125,12 @@ void ExPhotonIntegrator::RequestSamples(Sample *sample, const Scene &scene)
 		if (rrStrategy != RR_NONE)
 			structure.push_back(1);	// continue sample
 
-		sampleOffset = sample->AddxD(structure, maxDepth + 1);
+		sampleOffset = sampler->AddxD(structure, maxDepth + 1);
 	} else
 		BOOST_ASSERT(false);
 
 	// Allocate and request samples for light sampling
-	hints.RequestSamples(sample, scene, maxDepth + 1);
+	hints.RequestSamples(sampler, scene, maxDepth + 1);
 }
 
 void ExPhotonIntegrator::Preprocess(const RandomGenerator &rng,

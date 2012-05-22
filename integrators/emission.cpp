@@ -31,10 +31,10 @@
 using namespace lux;
 
 // EmissionIntegrator Method Definitions
-void EmissionIntegrator::RequestSamples(Sample *sample, const Scene &scene)
+void EmissionIntegrator::RequestSamples(Sampler *sampler, const Scene &scene)
 {
-	tauSampleOffset = sample->Add1D(1);
-	scatterSampleOffset = sample->Add1D(1);
+	tauSampleOffset = sampler->Add1D(1);
+	scatterSampleOffset = sampler->Add1D(1);
 }
 
 void EmissionIntegrator::Transmittance(const Scene &scene, const Ray &ray,
