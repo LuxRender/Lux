@@ -50,7 +50,6 @@ struct BidirVertex {
 // Bidirectional Method Definitions
 void BidirIntegrator::RequestSamples(Sampler *sampler, const Scene &scene)
 {
-	boost::mutex::scoped_lock lock(requestSamplesMutex);
 	samplingCount = lightDirectStrategy->GetSamplingLimit(scene);
 	lightNumOffset = sampler->Add1D(samplingCount);
 	lightPosOffset = sampler->Add2D(samplingCount);
