@@ -36,7 +36,7 @@ class ERPTSampler : public Sampler {
 public:
 	class ERPTData {
 	public:
-		ERPTData(const Sample &sample);
+		ERPTData(const Sampler &sampler);
 		~ERPTData();
 		u_int normalSamples, totalSamples, totalTimes;
 		float *baseImage, *sampleImage, *currentImage;
@@ -53,7 +53,16 @@ public:
 	virtual ~ERPTSampler();
 
 	virtual void InitSample(Sample *sample) const {
-		ERPTData* data = new ERPTData(*sample);
+		if (baseSampler->n1D.size() != n1D.size() ||
+			baseSampler->n2D.size() != n2D.size() ||
+			baseSampler->nxD.size() != nxD.size()) {
+			baseSampler->n1D = n1D;
+			baseSampler->n2D = n2D;
+			baseSampler->nxD = nxD;
+			baseSampler->dxD = dxD;
+			baseSampler->sxD = sxD;
+		}
+		ERPTData* data = new ERPTData(*this);
 		baseSampler->InitSample(sample);
 		data->baseSamplerData = sample->samplerData;
 		sample->sampler = const_cast<ERPTSampler *>(this);

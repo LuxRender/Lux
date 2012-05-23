@@ -36,7 +36,7 @@ class MetropolisSampler : public Sampler {
 public:
 	class MetropolisData {
 	public:
-		MetropolisData(const Sample &sample);
+		MetropolisData(const Sampler &sampler);
 		~MetropolisData();
 		u_int normalSamples, totalSamples, totalTimes, consecRejects;
 		float *sampleImage, *currentImage;
@@ -56,7 +56,7 @@ public:
 
 	virtual void InitSample(Sample *sample) const {
 		sample->sampler = const_cast<MetropolisSampler *>(this);
-		sample->samplerData = new MetropolisData(*sample);
+		sample->samplerData = new MetropolisData(*this);
 	}
 	virtual void FreeSample(Sample *sample) const {
 		delete static_cast<MetropolisData *>(sample->samplerData);
