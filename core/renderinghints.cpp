@@ -388,7 +388,7 @@ u_int SurfaceIntegratorRenderingHints::SampleLights(const Scene &scene,
 	if (nLights == 0)
 		return 0;
 
-	const float *data = scene.sampler->GetLazyValues(sample,
+	const float *data = sample.sampler->GetLazyValues(sample,
 		lightSampleOffset, depth);
 	u_int nContribs = 0;
 	// Use multiple importance sampling if the surface is not diffuse

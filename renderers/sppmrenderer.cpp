@@ -152,16 +152,6 @@ void SPPMRenderer::Render(Scene *s) {
 			return;
 		}
 
-		// Currently the sampler is never used, except for direct lighting, and
-		// only the random sampler is able to work without segfault
-		// TODO: fixit
-
-		if(!dynamic_cast<RandomSampler*>(scene->sampler))
-		{
-			LOG(LUX_SEVERE,LUX_CONSISTENCY)<< "SPPM renderer requires the Random Sampler.";
-			return;
-		}
-
 		if (scene->IsFilmOnly()) {
 			state = TERMINATE;
 			return;
