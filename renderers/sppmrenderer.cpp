@@ -425,7 +425,7 @@ Renderer *SPPMRenderer::CreateRenderer(const ParamSet &params) {
 float SPPMRenderer::GetScaleFactor(const double scale) const
 {
 	if (sppmi->photonSamplerType == AMC) {
-		return uniformCount / (sppmi->photonPerPass / scene->camera->film->GetSamplePerPass()) * scale * scale;
+		return uniformCount / (sppmi->photonPerPass / scene->camera->film->GetSamplePerPass() * scale * scale);
 	} else
 		return scale;
 }

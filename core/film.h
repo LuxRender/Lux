@@ -303,7 +303,7 @@ public:
 	virtual ~PerScreenNormalizedBufferScaled() {}
 
 	virtual void GetData(XYZColor *color, float *alpha) const {
-		scale = scaleUpdate->GetScaleFactor(1.0 / *numberOfSamples_);
+		scale = scaleUpdate->GetScaleFactor(*numberOfSamples_);
 		for (u_int y = 0, offset = 0; y < yPixelCount; ++y) {
 			for (u_int x = 0; x < xPixelCount; ++x, ++offset) {
 				const Pixel &pixel = (*pixels)(x, y);
@@ -319,7 +319,7 @@ public:
 	}
 	virtual float GetData(u_int x, u_int y, XYZColor *color, float *alpha) const {
 		if(x == 0 && y == 0 && scaleUpdate != NULL)
-			scale = scaleUpdate->GetScaleFactor(1.0 / *numberOfSamples_);
+			scale = scaleUpdate->GetScaleFactor(*numberOfSamples_);
 
 		const Pixel &pixel = (*pixels)(x, y);
 		if (pixel.weightSum > 0.f) {
@@ -652,7 +652,7 @@ public:
 	virtual string GetStringParameterValue(luxComponentParameters param, u_int index) = 0;
 
 	/*
-	 * Accesseur for samplePerPass
+	 * Accessor for samplePerPass
 	 * It is only used by SPPM and may disappears once the Buffer API allows for
 	 * different numberOfSamples per buffer
 	 *
