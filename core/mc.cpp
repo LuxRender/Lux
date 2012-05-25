@@ -159,7 +159,7 @@ float UniformConePdf(float cosThetaMax)
 Vector UniformSampleCone(float u1, float u2, float costhetamax)
 {
 	const float costheta = Lerp(u1, costhetamax, 1.f);
-	const float sintheta = sqrtf(1.f - costheta * costheta);
+	const float sintheta = sqrtf(max(0.f, 1.f - costheta * costheta));
 	const float phi = u2 * 2.f * M_PI;
 	return Vector(cosf(phi) * sintheta, sinf(phi) * sintheta, costheta);
 }
@@ -167,7 +167,7 @@ Vector UniformSampleCone(float u1, float u2, float costhetamax,
 	const Vector &x, const Vector &y, const Vector &z)
 {
 	const float costheta = Lerp(u1, costhetamax, 1.f);
-	const float sintheta = sqrtf(1.f - costheta * costheta);
+	const float sintheta = sqrtf(max(0.f, 1.f - costheta * costheta));
 	const float phi = u2 * 2.f * M_PI;
 	return cosf(phi) * sintheta * x + sinf(phi) * sintheta * y +
 		costheta * z;
