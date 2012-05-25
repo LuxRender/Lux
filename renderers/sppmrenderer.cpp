@@ -417,7 +417,7 @@ float SPPMRenderer::GetScaleFactor(const double scale) const
 	if (sppmi->photonSamplerType == AMC) {
 		return uniformCount / (sppmi->photonPerPass / scene->camera->film->GetSamplePerPass() * scale * scale);
 	} else
-		return scale;
+		return 1.0 / scale;
 }
 
 static DynamicLoader::RegisterRenderer<SPPMRenderer> r("sppm");
