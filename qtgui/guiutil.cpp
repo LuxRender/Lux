@@ -161,6 +161,7 @@ QImage getFramebufferImage(bool overlayStats, bool outputAlpha)
 	const unsigned char* fb = luxFramebuffer();
 
 	QImage image;
+	image.setText("Software", "LuxRender");
 
 	// If all looks okay, proceed
 	if (!(w > 0 && h > 0 && fb))
