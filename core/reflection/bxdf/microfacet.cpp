@@ -102,9 +102,9 @@ float MicrofacetReflection::Pdf(const SpectrumWavelengths &sw, const Vector &wo,
 }
 
 MicrofacetTransmission::MicrofacetTransmission(const SWCSpectrum &transmitance,
-	const Fresnel *fr, MicrofacetDistribution *d)
+	const Fresnel *fr, MicrofacetDistribution *d, bool disp)
 	: BxDF(BxDFType(BSDF_TRANSMISSION | BSDF_GLOSSY)),
-	  T(transmitance), distribution(d), fresnel(fr)
+	  T(transmitance), distribution(d), fresnel(fr), dispersion(disp)
 {
 }
 
@@ -112,6 +112,31 @@ void MicrofacetTransmission::F(const SpectrumWavelengths &sw, const Vector &wo,
 	const Vector &wi, SWCSpectrum *const f_) const
 {
 	const bool entering = CosTheta(wo) > 0.f;
+	if (dispersion && !sw.single) {
+		const float cosThetaI = fabsf(CosTheta(wi));
+		SpectrumWavelengths swl(sw);
+		swl.single = true;
+		for (swl.single_w = 0; swl.single_w < WAVELENGTH_SAMPLES; ++swl.single_w) {
+			const float eta = entering ?
+				1.f / fresnel->Index(swl) : fresnel->Index(swl);
+			Vector wh(eta * wo + wi);
+			if (wh.z < 0.f)
+				wh = -wh;
+			const float lengthSquared = wh.LengthSquared();
+			if (!(lengthSquared > 0.f))
+				continue;
+			wh /= sqrtf(lengthSquared);
+			const float cosThetaIH = AbsDot(wi, wh);
+			const float cosThetaOH = Dot(wo, wh);
+			SWCSpectrum F;
+			fresnel->Evaluate(swl, cosThetaOH, &F);
+			f_->c[swl.single_w] += fabsf(cosThetaOH) * cosThetaIH *
+				distribution->D(wh) * distribution->G(wo, wi, wh) /
+				(cosThetaI * lengthSquared) *
+				T.c[swl.single_w] * (1.f - F.c[swl.single_w]);
+		}
+		return;
+	}
 	const float eta = entering ?
 		1.f / fresnel->Index(sw) : fresnel->Index(sw);
 	Vector wh(eta * wo + wi);
@@ -141,8 +166,12 @@ bool MicrofacetTransmission::SampleF(const SpectrumWavelengths &sw,
 	if (wh.z < 0.f)
 		wh = -wh;
 	const bool entering = CosTheta(wo) > 0.f;
+	const bool single = sw.single; // save the initial value
+	if (dispersion)
+		sw.single = true;
 	const float eta = entering ?
 		1.f / fresnel->Index(sw) : fresnel->Index(sw);
+	sw.single = single;
 	const float cosThetaOH = Dot(wo, wh);
 	const float sinThetaIH2 = eta * eta * max(0.f,
 		1.f - cosThetaOH * cosThetaOH);
@@ -153,6 +182,18 @@ bool MicrofacetTransmission::SampleF(const SpectrumWavelengths &sw,
 		cosThetaIH = -cosThetaIH;
 	const float length = eta * cosThetaOH + cosThetaIH;
 	*wi = length * wh - eta * wo;
+	if (dispersion && !sw.single) {
+		*f_ = SWCSpectrum(0.f);
+		if (reverse)
+			F(sw, *wi, wo, f_);
+		else
+			F(sw, wo, *wi, f_);
+		*pdf = Pdf(sw, wo, *wi);
+		*f_ /= *pdf;
+		if (pdfBack)
+			*pdfBack = Pdf(sw, *wi, wo);
+		return true;
+	}
 	const float lengthSquared = length * length;
 	if (pdfBack)
 		*pdfBack = *pdf * fabsf(cosThetaOH) * eta * eta / lengthSquared;
@@ -178,6 +219,25 @@ float MicrofacetTransmission::Pdf(const SpectrumWavelengths &sw,
 	if (SameHemisphere(wo, wi))
 		return 0.f;
 	const bool entering = CosTheta(wo) > 0.f;
+	if (dispersion && !sw.single) {
+		SpectrumWavelengths swl(sw);
+		swl.single = true;
+		float result = 0.f;
+		for (swl.single_w = 0; swl.single_w < WAVELENGTH_SAMPLES; ++swl.single_w) {
+			const float eta = entering ?
+				1.f / fresnel->Index(swl) : fresnel->Index(swl);
+			Vector wh(eta * wo + wi);
+			if (wh.z < 0.f)
+				wh = -wh;
+			const float lengthSquared = wh.LengthSquared();
+			if (!(lengthSquared > 0.f))
+				continue;
+			wh /= sqrtf(lengthSquared);
+			const float cosThetaIH = AbsDot(wi, wh);
+			result += distribution->Pdf(wh) * cosThetaIH / lengthSquared;
+		}
+		return result * .25f;
+	}
 	const float eta = entering ?
 		1.f / fresnel->Index(sw) : fresnel->Index(sw);
 	Vector wh(eta * wo + wi);
