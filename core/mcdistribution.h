@@ -99,7 +99,7 @@ public:
 		// funcInt is the sum of all f elements divided by the number
 		// of elements, ie the average value of f over [0;1)
 		ComputeStep1dCDF(func, n, &funcInt, cdf);
-		const float invFuncInt = 1.f / (funcInt * count);
+		const float invFuncInt = 1.f / funcInt;
 		// Normalize func to speed up computations
 		for (u_int i = 0; i < count; ++i)
 			func[i] *= invFuncInt;
@@ -111,7 +111,8 @@ public:
 	}
 
 	/**
-	 * Samples from this distribution.
+	 * Samples a point from this distribution.
+	 * The pdf is computed so that int(u=0..1, pdf(u)*du) = 1
 	 *
 	 * @param u   The random value used to sample.
 	 * @param pdf The pointer to the float where the pdf of the sample
@@ -153,7 +154,9 @@ public:
 	}
 
 	/**
-	 * Samples from this distribution.
+	 * Samples an interval from this distribution.
+	 * The pdf is computed so that sum(i=0..n-1, pdf(i)) = 1
+	 * with n the number of intervals
 	 *
 	 * @param u   The random value used to sample.
 	 * @param pdf The pointer to the float where the pdf of the sample
@@ -167,13 +170,13 @@ public:
 		if (u >= cdf[count]) {
 			if (du)
 				*du = 1.f;
-			*pdf = func[count - 1];
+			*pdf = func[count - 1] * invCount;
 			return count - 1;
 		}
 		if (u <= cdf[0]) {
 			if (du)
 				*du = 0.f;
-			*pdf = func[0];
+			*pdf = func[0] * invCount;
 			return 0;
 		}
 		float *ptr = std::upper_bound(cdf, cdf + count + 1, u);
@@ -185,11 +188,25 @@ public:
 				(cdf[offset + 1] - cdf[offset]);
 
 		// Compute PDF for sampled offset
-		*pdf = func[offset];
+		*pdf = func[offset] * invCount;
 		return offset;
 	}
-	float Pdf(u_int offset) const { return func[offset]; }
-	float Pdf(float u) const { return Pdf(Offset(u)); }
+	/**
+	 * The pdf associated to a given interval
+	 * 
+	 * @param offset The interval number in the [0,n) range
+	 *
+	 * @return The pdf so that sum(i=0..n-1, pdf(i)) = 1
+	 */
+	float Pdf(u_int offset) const { return func[offset] * invCount; }
+	/**
+	 * The pdf associated to a given point
+	 * 
+	 * @param offset The point position in the [0,1) range
+	 *
+	 * @return The pdf so that int(u=0..1, pdf(u)*du) = 1
+	 */
+	float Pdf(float u) const { return func[Offset(u)]; }
 	float Average() const { return funcInt; }
 	u_int Offset(float u) const {
 		return min(count - 1, Floor2UInt(u * count));
