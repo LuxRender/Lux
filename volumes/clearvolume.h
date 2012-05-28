@@ -41,7 +41,7 @@ public:
 	virtual SWCSpectrum SigmaA(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
 		return fresnel->Evaluate(sw, dg).SigmaA(sw) +
-			absorption->Evaluate(sw, dg);
+			absorption->Evaluate(sw, dg).Clamp();
 	}
 	virtual SWCSpectrum SigmaS(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
