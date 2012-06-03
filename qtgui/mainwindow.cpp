@@ -665,10 +665,20 @@ void MainWindow::openFile()
 	if (!canStopRendering())
 		return;
 
-	QString fileName = QFileDialog::getOpenFileName(this, tr("Choose a scene file to open"), m_lastOpendir, tr("LuxRender Files (*.lxs)"));
+	QString fileName = QFileDialog::getOpenFileName(this, tr("Choose a scene file to open"), m_lastOpendir, tr("LuxRender Files (*.lxs *.lxq)"));
 
 	if(!fileName.isNull()) {
-		renderNewScenefile(fileName);
+		if (fileName.endsWith(".lxs")){
+			renderNewScenefile(fileName);
+		} else {
+			// handle queue files
+			QMessageBox msgBox;
+			msgBox.setIcon(QMessageBox::Information);
+			QFileInfo fi(fileName);
+			QString name = fi.fileName();
+			msgBox.setText("lxq-loading is work in progress, use queue filedialog for now");
+			msgBox.exec();
+		}
 	}
 }
 
@@ -1391,7 +1401,7 @@ void  MainWindow::loadFile(const QString &fileName)
 			msgBox.setIcon(QMessageBox::Information);
 			QFileInfo fi(fileName);
 			QString name = fi.fileName();
-			msgBox.setText(name +(" loading is work in progress, use queue filedialog for now"));
+			msgBox.setText("lxq-loading is work in progress, use queue filedialog for now");
 			msgBox.exec();
 
 	} else {
