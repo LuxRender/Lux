@@ -1382,6 +1382,18 @@ void  MainWindow::loadFile(const QString &fileName)
 
 		delete m_flmloadThread;
 		m_flmloadThread = new boost::thread(boost::bind(&MainWindow::flmLoadThread, this, fileName));
+	} else if (fileName.endsWith(".lxq")){
+		if (!canStopRendering())
+			return;
+		if(fileName.isNull())
+			return;
+			QMessageBox msgBox;
+			msgBox.setIcon(QMessageBox::Information);
+			QFileInfo fi(fileName);
+			QString name = fi.fileName();
+			msgBox.setText(name +(" loading is work in progress, use queue filedialog for now"));
+			msgBox.exec();
+
 	} else {
 		QMessageBox msgBox;
 		msgBox.setIcon(QMessageBox::Information);
