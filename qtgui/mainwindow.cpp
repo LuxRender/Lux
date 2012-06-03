@@ -665,19 +665,31 @@ void MainWindow::openFile()
 	if (!canStopRendering())
 		return;
 
-	QString fileName = QFileDialog::getOpenFileName(this, tr("Choose a scene file to open"), m_lastOpendir, tr("LuxRender Files (*.lxs *.lxq)"));
+	QString fileName = QFileDialog::getOpenFileName(this, tr("Choose a scene- or queue-file file to open"), m_lastOpendir, tr("LuxRender Files (*.lxs *.lxq)"));
 
 	if(!fileName.isNull()) {
 		if (fileName.endsWith(".lxs")){
 			renderNewScenefile(fileName);
 		} else {
 			// handle queue files
-			QMessageBox msgBox;
-			msgBox.setIcon(QMessageBox::Information);
-			QFileInfo fi(fileName);
-			QString name = fi.fileName();
-			msgBox.setText("lxq-loading is work in progress, use queue filedialog for now");
-			msgBox.exec();
+			QFile listFile(fileName);
+			QString renderQueueEntry;
+			if ( listFile.open(QIODevice::ReadOnly) ) {
+				QTextStream lfStream(&listFile);
+				while(!lfStream.atEnd()) {
+					// todo: adding correct filelocation to the list entries
+					renderQueueEntry = QString(boost::filesystem::system_complete(lfStream.readLine().toStdString()).string().c_str());
+					if (!renderQueueEntry.isNull()) {
+						renderQueueList << renderQueueEntry;
+					}
+				};
+			}
+			if (renderQueueList.count()) {
+				foreach( renderQueueEntry, renderQueueList ) {
+					addFileToRenderQueue(renderQueueEntry);
+				}
+				RenderNextFileInQueue();
+			}
 		}
 	}
 }

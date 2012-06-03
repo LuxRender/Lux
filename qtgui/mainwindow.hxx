@@ -376,6 +376,7 @@ private:
 	bool IsFileQueued();
 	bool RenderNextFileInQueue(int idx);
 	void ClearRenderingQueue();
+	QStringList renderQueueList;
 
 public slots:
 
