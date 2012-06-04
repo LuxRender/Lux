@@ -672,35 +672,40 @@ void MainWindow::openFile()
 			renderNewScenefile(fileName);
 		} else {
 			// handle queue files
-			QMessageBox msgBox;
-			msgBox.setIcon(QMessageBox::Information);
-			QFileInfo fi(fileName);
-			QString name = fi.fileName();
-			msgBox.setText("Set wished haltspp or haltime for this queue");
-			msgBox.exec();
-			QFile listFile(fileName);
-			QString renderQueueEntry;
-			if ( listFile.open(QIODevice::ReadOnly) ) {
-				QTextStream lfStream(&listFile);
-				boost::filesystem::path fullPath(boost::filesystem::system_complete(qPrintable(fileName)));				
-				chdir(fullPath.parent_path().string().c_str());
-				while(!lfStream.atEnd()) {
-					renderQueueEntry = QString(boost::filesystem::system_complete(lfStream.readLine().toStdString()).string().c_str());
-					if (!renderQueueEntry.isNull()) {
-						renderQueueList << renderQueueEntry;
-					}
-				};
-			}
-			if (renderQueueList.count()) {
-				foreach( renderQueueEntry, renderQueueList ) {
-					addFileToRenderQueue(renderQueueEntry);
-				}
-				RenderNextFileInQueue();
-			}
+			openQueueFile(fileName);
 		}
 	}
 }
 
+void MainWindow::openQueueFile(const QString& fileName)
+{
+	QMessageBox msgBox;
+	msgBox.setIcon(QMessageBox::Information);
+	QFileInfo fi(fileName);
+	QString name = fi.fileName();
+	msgBox.setText("Set wished haltspp or haltime for this queue");
+	msgBox.exec();
+	QFile listFile(fileName);
+	QString renderQueueEntry;
+	if ( listFile.open(QIODevice::ReadOnly) ) {
+		QTextStream lfStream(&listFile);
+		boost::filesystem::path fullPath(boost::filesystem::system_complete(qPrintable(fileName)));				
+		chdir(fullPath.parent_path().string().c_str());
+		while(!lfStream.atEnd()) {
+			renderQueueEntry = QString(boost::filesystem::system_complete(lfStream.readLine().toStdString()).string().c_str());
+			if (!renderQueueEntry.isNull()) {
+				renderQueueList << renderQueueEntry;
+			}
+		};
+	}
+	if (renderQueueList.count()) {
+		foreach( renderQueueEntry, renderQueueList ) {
+			addFileToRenderQueue(renderQueueEntry);
+		}
+		RenderNextFileInQueue();
+	}
+}	
+	
 void MainWindow::openRecentFile()
 {
 	if (!canStopRendering())
@@ -1416,12 +1421,7 @@ void  MainWindow::loadFile(const QString &fileName)
 			return;
 		if(fileName.isNull())
 			return;
-			QMessageBox msgBox;
-			msgBox.setIcon(QMessageBox::Information);
-			QFileInfo fi(fileName);
-			QString name = fi.fileName();
-			msgBox.setText("lxq-loading is work in progress, use queue filedialog for now");
-			msgBox.exec();
+		openQueueFile(fileName);
 
 	} else {
 		QMessageBox msgBox;
