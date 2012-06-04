@@ -683,8 +683,9 @@ void MainWindow::openQueueFile(const QString& fileName)
 	msgBox.setIcon(QMessageBox::Information);
 	QFileInfo fi(fileName);
 	QString name = fi.fileName();
-	msgBox.setText("Set wished haltspp or haltime for this queue");
+	msgBox.setText("Set now the wished haltspp or haltime for this queue");
 	msgBox.exec();
+	ui->tabs_main->setCurrentIndex(1);	// jump to queue tab
 	QFile listFile(fileName);
 	QString renderQueueEntry;
 	if ( listFile.open(QIODevice::ReadOnly) ) {
