@@ -672,6 +672,12 @@ void MainWindow::openFile()
 			renderNewScenefile(fileName);
 		} else {
 			// handle queue files
+			QMessageBox msgBox;
+			msgBox.setIcon(QMessageBox::Information);
+			QFileInfo fi(fileName);
+			QString name = fi.fileName();
+			msgBox.setText("Set wished haltspp or haltime for this queue");
+			msgBox.exec();
 			QFile listFile(fileName);
 			QString renderQueueEntry;
 			if ( listFile.open(QIODevice::ReadOnly) ) {
