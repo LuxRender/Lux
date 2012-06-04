@@ -677,7 +677,8 @@ void MainWindow::openFile()
 			if ( listFile.open(QIODevice::ReadOnly) ) {
 				QTextStream lfStream(&listFile);
 				while(!lfStream.atEnd()) {
-					// todo: adding correct filelocation to the list entries
+					boost::filesystem::path fullPath(boost::filesystem::system_complete(qPrintable(fileName)));				
+					chdir(fullPath.parent_path().string().c_str());
 					renderQueueEntry = QString(boost::filesystem::system_complete(lfStream.readLine().toStdString()).string().c_str());
 					if (!renderQueueEntry.isNull()) {
 						renderQueueList << renderQueueEntry;
