@@ -633,9 +633,6 @@ public:
 	virtual float GetGroupTemperature(u_int index) const;
 	virtual void ComputeGroupScale(u_int index);
 
-	u_int GetXPixelCount() const { return xPixelCount; }
-	u_int GetYPixelCount() const { return yPixelCount; }
-
 	virtual unsigned char* getFrameBuffer() = 0;
 	virtual float* getFloatFrameBuffer() = 0;
 	virtual float* getAlphaBuffer() = 0;
@@ -674,6 +671,15 @@ public:
 	// Film Public Data
 	u_int GetXResolution();
 	u_int GetYResolution();
+
+	u_int GetXPixelStart();
+	u_int GetYPixelStart();
+
+	u_int GetXPixelCount();
+	u_int GetYPixelCount();
+
+	u_int GetXPixelCount() const { return xPixelCount; }
+	u_int GetYPixelCount() const { return yPixelCount; }
 
 	u_int xResolution, yResolution;
 
