@@ -1551,8 +1551,13 @@ void MainWindow::showRenderresolution()
 	if (luxHasObject("film")) {
 		int w = luxGetIntAttribute("film", "xResolution");
 		int h = luxGetIntAttribute("film", "yResolution");
+		int cw = luxGetIntAttribute("film", "xPixelCount");
+		int ch = luxGetIntAttribute("film", "yPixelCount");
 		ui->resolutioniconLabel->setPixmap(QPixmap(":/icons/resolutionicon.png"));
-		ui->resinfoLabel->setText(QString(" %1 x %2 ").arg(w).arg(h));
+		if (cw != w || ch != h)
+			ui->resinfoLabel->setText(QString(" %1 x %2 (%3 x %4) ").arg(cw).arg(ch).arg(w).arg(h));
+		else 
+			ui->resinfoLabel->setText(QString(" %1 x %2 ").arg(w).arg(h));
 		ui->resinfoLabel->setVisible(true);
 	} else {
 		ui->resinfoLabel->setVisible(false);
@@ -2334,7 +2339,7 @@ void MainWindow::UpdateNetworkTree()
 
 	ui->table_servers->setRowCount(nServers);
 
-	double totalpixels = luxGetIntAttribute("film", "xResolution") * luxGetIntAttribute("film", "yResolution");
+	double totalpixels = luxGetIntAttribute("film", "xPixelCount") * luxGetIntAttribute("film", "yPixelCount");
 
 	for( int n = 0; n < nServers; n++ ) {
 		QTableWidgetItem *servername = new QTableWidgetItem(QString::fromUtf8(pInfoList[n].name));
