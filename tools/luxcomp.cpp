@@ -26,6 +26,7 @@
 #include <sstream>
 #include <exception>
 #include <iostream>
+#include <limits>
 
 #include "api.h"
 #include "film/fleximage.h"
@@ -83,29 +84,33 @@ static inline double sqr(double a) {
 	return a * a;
 }
 
-bool CheckFilms(u_int bufferIndex, FlexImageFilm &refFilm, FlexImageFilm &testFilm) {
-	std::stringstream ss;
+bool CheckFilms(FlexImageFilm &refFilm, FlexImageFilm &testFilm) {
 
-	// Dade - there are several assumption here about the number of buffers, etc.
-	Buffer *refBuf = refFilm.GetBufferGroup(0).getBuffer(bufferIndex);
-	Buffer *testBuf = testFilm.GetBufferGroup(0).getBuffer(bufferIndex);
-
-	if (refBuf->xPixelCount != testBuf->xPixelCount) {
-		LOG( LUX_WARNING,LUX_NOERROR) << "Wrong film width: " << refBuf->xPixelCount << "!=" << testBuf->xPixelCount;
+	if (refFilm.GetXPixelCount() != testFilm.GetXPixelCount()) {
+		LOG( LUX_SEVERE, LUX_CONSISTENCY) << "Mismatch in reference and test film resolution.";
+		LOG( LUX_SEVERE, LUX_CONSISTENCY) << "Wrong film width: " << refFilm.GetXPixelCount() << " != " << testFilm.GetXPixelCount() << ".";
 		return false;
 	}
 
-	if (refBuf->yPixelCount != testBuf->yPixelCount) {
-		LOG( LUX_WARNING,LUX_NOERROR) << "Wrong film height: " << refBuf->yPixelCount << "!=" << testBuf->yPixelCount;
+	if (refFilm.GetYPixelCount() != testFilm.GetYPixelCount()) {
+		LOG( LUX_SEVERE, LUX_CONSISTENCY) << "Mismatch in reference and test film resolution.";
+		LOG( LUX_SEVERE, LUX_CONSISTENCY) << "Wrong film height: " << refFilm.GetYPixelCount() << " != " << testFilm.GetYPixelCount() << ".";
 		return false;
 	}
 
 	return true;
 }
 
-// Dade - compare 2 buffers returning the Mean Square Error
-double CompareFilmWithMSE(u_int bufferIndex, FlexImageFilm &refFilm, FlexImageFilm &testFilm) {
-	if (!CheckFilms(bufferIndex, refFilm, testFilm))
+enum ComparisonTypes {
+	TYPE_MSE = 0,
+	TYPE_RMS = 1
+};
+
+// zsolnai - compares the buffers returning the chosen error metric given in compType:
+// TYPE_MSE - 0 (Mean Square Error) aka sum_{i=1}^n (reference-measured)^2
+// TYPE_RMS - 1 (Root Mean Square Error) sqrt(mse) or 1/sqrt(n)*sum_{i=1}^n sqrt((reference-measured)^2) if you will
+double CompareFilmWith(u_int bufferIndex, FlexImageFilm &refFilm, FlexImageFilm &testFilm, ComparisonTypes compType) {
+	if (!CheckFilms(refFilm, testFilm))
 		return INFINITY;
 
 	// Dade - there are several assumption here about the number of buffers, etc.
@@ -113,14 +118,18 @@ double CompareFilmWithMSE(u_int bufferIndex, FlexImageFilm &refFilm, FlexImageFi
 	Buffer *testBuf = testFilm.GetBufferGroup(0).getBuffer(bufferIndex);
 
 	// Dade - some metric here was copied exrdiff from PBRT 2.0
-
 	double mse = 0.0;
+	double rms = 0.0;
 	double sum1 = 0.0;
 	double sum2 = 0.0;
 	int smallDiff = 0;
+	int medDiff = 0;
 	int bigDiff = 0;
+	double maxDiff = -std::numeric_limits<double>::max();
+	double minDiff = std::numeric_limits<double>::max();
 	XYZColor refXYZ, testXYZ;
 	float refAlpha, testAlpha;
+
 	for (u_int y = 0; y < refBuf->yPixelCount; y++) {
 		for (u_int x = 0; x < refBuf->xPixelCount; x++) {
 			refBuf->GetData(x, y, &refXYZ, &refAlpha);
@@ -137,9 +146,16 @@ double CompareFilmWithMSE(u_int bufferIndex, FlexImageFilm &refFilm, FlexImageFi
 				else
 					d = fabs(refXYZ.c[i] - testXYZ.c[i]) / refXYZ.c[i];
 
-				if (d > 0.05)
+				if(d>maxDiff)
+					maxDiff = d;
+				if(d<minDiff)
+					minDiff = d;
+
+				if(d <= 0.1)
 					smallDiff++;
-				if (d > 0.5)
+				else if(d > 0.1 && d <= 0.5)
+					medDiff++;
+				else if (d > 0.5)
 					bigDiff++;
 			}
 		}
@@ -151,19 +167,63 @@ double CompareFilmWithMSE(u_int bufferIndex, FlexImageFilm &refFilm, FlexImageFi
     double avgDelta = 100.0 * (avg1 - avg2) / min(avg1, avg2);
 	const u_int compCount = 3 * pixelCount;
 	mse /= compCount;
+	rms = sqrt(mse);
 
-	LOG(LUX_INFO,LUX_NOERROR) << "Big diff.: " << bigDiff << " (" << (100.0 * bigDiff / compCount) << "%)";
 	LOG(LUX_INFO,LUX_NOERROR) << "Small diff.: " << smallDiff << " (" << (100.0 * smallDiff / compCount) << "%)";
+	LOG(LUX_INFO,LUX_NOERROR) << "Medium diff.: " << medDiff << " (" << (100.0 * medDiff / compCount) << "%)";
+	LOG(LUX_INFO,LUX_NOERROR) << "Big diff.: " << bigDiff << " (" << (100.0 * bigDiff / compCount) << "%)";
+	LOG(LUX_INFO,LUX_NOERROR) << "Min diff.: " << minDiff;
+	LOG(LUX_INFO,LUX_NOERROR) << "Max diff.: " << maxDiff;
 	LOG(LUX_INFO,LUX_NOERROR) << "Avg. reference: " << avg1;
 	LOG(LUX_INFO,LUX_NOERROR) << "Avg. test: " << avg2;
 	LOG(LUX_INFO,LUX_NOERROR) << "Avg. delta: " << avgDelta;
+	LOG(LUX_INFO,LUX_NOERROR) << "Avg. |reference-test|: " << fabs(avg1-avg2);
 	LOG(LUX_INFO,LUX_NOERROR) << "MSE: " << mse;
-	return mse;
+	LOG(LUX_INFO,LUX_NOERROR) << "RMS: " << rms;
+
+	if(compType == TYPE_MSE)
+		return mse;
+	else if(compType == TYPE_RMS)
+		return rms;
+
+	LOG(LUX_ERROR,LUX_BUG) << "Invalid compare type: " << compType;
+	return 0.0;
 }
 
-enum ComparisonTypes {
-	TYPE_MSE = 0
-};
+// zsolnai - compares the image framebuffers returning the chosen error metric given in compType (same as above).
+double CompareFramebufferWith(FlexImageFilm &refFilm, FlexImageFilm &testFilm, ComparisonTypes compType=TYPE_RMS) {
+	refFilm.WriteImage(IMAGE_FRAMEBUFFER);
+	testFilm.WriteImage(IMAGE_FRAMEBUFFER);
+
+	if (!CheckFilms(refFilm, testFilm))
+		return INFINITY;
+	
+	const u_int pixelCount = refFilm.GetXPixelCount()*refFilm.GetYPixelCount();
+	const u_int compCount = 3 * pixelCount;
+	double mse = 0.0;
+	double rms = 0.0;
+
+	const float* p_ref = refFilm.getFloatFrameBuffer();
+	const float* p_test = testFilm.getFloatFrameBuffer();
+
+	for(u_int i=0;i<compCount;i++) { // note: this is on (0,pixelCount*3)
+			mse += sqr(p_ref[i] - p_test[i]);
+	}
+
+	mse /= compCount;
+	rms = sqrt(mse);
+
+	LOG(LUX_INFO,LUX_NOERROR) << "MSE: " << mse;
+	LOG(LUX_INFO,LUX_NOERROR) << "RMS: " << rms;
+
+	if(compType == TYPE_MSE)
+		return mse;
+	else if(compType == TYPE_RMS)
+		return rms;
+
+	LOG(LUX_ERROR,LUX_BUG) << "Invalid compare type: " << compType;
+	return 0.0;
+}
 
 int main(int ac, char *av[]) {
 
@@ -282,7 +342,10 @@ int main(int ac, char *av[]) {
 						switch (compType) {
 							default:
 							case TYPE_MSE:
-								bufResult = CompareFilmWithMSE(i, *refFilm, *testFilm);
+								bufResult = CompareFilmWith(i, *refFilm, *testFilm, TYPE_MSE);
+								break;
+							case TYPE_RMS:
+								bufResult = CompareFilmWith(i, *refFilm, *testFilm, TYPE_RMS);
 								break;
 						}
 
@@ -290,7 +353,9 @@ int main(int ac, char *av[]) {
 						LOG( LUX_INFO,LUX_NOERROR) << "Result buffer index " << i << ": " << bufResult <<
 								" (" << result << ")";
 					}
-					std::cout << result << std::endl;
+					LOG( LUX_INFO,LUX_NOERROR)<< "-------------------------------";
+					LOG( LUX_INFO,LUX_NOERROR)<< "Image comparison error metrics:";
+					CompareFramebufferWith(*refFilm, *testFilm);
 
 					if (vm.count("error")) {
 						double treshold = vm["error"].as<double>();
