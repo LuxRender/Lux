@@ -107,8 +107,8 @@ bool CheckFilms(FlexImageFilm &refFilm, FlexImageFilm &testFilm) {
 }
 
 // zsolnai - compares the buffers returning the chosen error metric given in compType:
-// TYPE_MSE - 0 (Mean Square Error) aka sum_{i=1}^n (reference-measured)^2
-// TYPE_RMS - 1 (Root Mean Square Error) sqrt(mse) or 1/sqrt(n)*sum_{i=1}^n sqrt((reference-measured)^2) if you will
+// TYPE_MSE - 0 (Mean Square Error) aka 1/n*sum_{i=1}^n (reference-measured)^2
+// TYPE_RMS - 1 (Root Mean Square Error) aka sqrt(mse) or 1/sqrt(n)*sum_{i=1}^n sqrt((reference-measured)^2) if you will
 double CompareFilmWith(u_int bufferIndex, FlexImageFilm &refFilm, FlexImageFilm &testFilm, ComparisonTypes compType) {
 	if (!CheckFilms(refFilm, testFilm))
 		return INFINITY;
@@ -207,7 +207,7 @@ double CompareFramebufferWith(FlexImageFilm &refFilm, FlexImageFilm &testFilm, C
 	const float* p_test = testFilm.getFloatFrameBuffer();
 
 	for(u_int i=0;i<compCount;i++) { // note: this is on (0,pixelCount*3)
-			mse += sqr(p_ref[i] - p_test[i]);
+		mse += sqr(p_ref[i] - p_test[i]);
 	}
 
 	mse /= compCount;
