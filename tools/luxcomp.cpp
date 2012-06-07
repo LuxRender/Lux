@@ -45,6 +45,15 @@
 using namespace lux;
 namespace po = boost::program_options;
 
+enum ComparisonTypes {
+	TYPE_MSE = 0,
+	TYPE_RMS = 1
+};
+
+static inline double sqr(double a) {
+	return a * a;
+}
+
 void CheckFilePath(const std::string fileName) {
 	boost::filesystem::path fullPath(boost::filesystem::system_complete(fileName));
 
@@ -80,10 +89,6 @@ void PrintFilmInfo(const FlexImageFilm &film) {
 	}
 }
 
-static inline double sqr(double a) {
-	return a * a;
-}
-
 bool CheckFilms(FlexImageFilm &refFilm, FlexImageFilm &testFilm) {
 
 	if (refFilm.GetXPixelCount() != testFilm.GetXPixelCount()) {
@@ -100,11 +105,6 @@ bool CheckFilms(FlexImageFilm &refFilm, FlexImageFilm &testFilm) {
 
 	return true;
 }
-
-enum ComparisonTypes {
-	TYPE_MSE = 0,
-	TYPE_RMS = 1
-};
 
 // zsolnai - compares the buffers returning the chosen error metric given in compType:
 // TYPE_MSE - 0 (Mean Square Error) aka sum_{i=1}^n (reference-measured)^2
