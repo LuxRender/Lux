@@ -43,7 +43,7 @@ using namespace lux;
 static const u_int passThroughLimit = 10000;
 
 // ENVPathIntegrator Method Definitions
-void ENVPathIntegrator::RequestSamples(Sample *sample, const Scene &scene)
+void ENVPathIntegrator::RequestSamples(Sampler *sampler, const Scene &scene)
 {
 	vector<u_int> structure;
 	structure.push_back(2);	// bsdf direction sample for path
@@ -52,7 +52,7 @@ void ENVPathIntegrator::RequestSamples(Sample *sample, const Scene &scene)
 	if (rrStrategy != RR_NONE)
 		structure.push_back(1);	// continue sample
 
-	sampleOffset = sample->AddxD(structure, maxDepth + 1);
+	sampleOffset = sampler->AddxD(structure, maxDepth + 1);
 
 	if (enableDirectLightSampling) {
 		// This is a bit tricky way to discover the kind of Renderer but otherwise
@@ -91,10 +91,10 @@ void ENVPathIntegrator::RequestSamples(Sample *sample, const Scene &scene)
 			} else
 				assert (false);
 
-			hybridRendererLightSampleOffset = sample->AddxD(structure, maxDepth + 1);
+			hybridRendererLightSampleOffset = sampler->AddxD(structure, maxDepth + 1);
 		} else {
 			// Allocate and request samples for light sampling, RR, etc.
-			hints.RequestSamples(sample, scene, maxDepth + 1);
+			hints.RequestSamples(sampler, scene, maxDepth + 1);
 		}
 	}
 }
@@ -356,8 +356,6 @@ u_int ENVPathIntegrator::Li(const Scene &scene, const Sample &sample) const
 ENVPathState::ENVPathState(const Scene &scene, ContributionBuffer *contribBuffer, RandomGenerator *rng) {
 	SetState(TO_INIT);
 
-	scene.surfaceIntegrator->RequestSamples(&sample, scene);
-	scene.volumeIntegrator->RequestSamples(&sample, scene);
 	scene.sampler->InitSample(&sample);
 	sample.contribBuffer = contribBuffer;
 	sample.camera = scene.camera->Clone();

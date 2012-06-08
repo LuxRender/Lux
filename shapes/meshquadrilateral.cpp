@@ -276,7 +276,7 @@ bool MeshQuadrilateral::Intersect(const Ray &ray, Intersection *isect, bool null
 	// by Ares Lagae and Philip Dutr�
 	// http://www.cs.kuleuven.be/~graphics/CGRG.PUBLICATIONS/LagaeDutre2005AnEfficientRayQuadrilateralIntersectionTest/
 	// http://jgt.akpeters.com/papers/LagaeDutre05/erqit.cpp.html
-//LOG(LUX_INFO, LUX_NOERROR) << "Mesh Quadrilateral intersect ";
+LOG(LUX_INFO, LUX_NOERROR) << "Mesh Quadrilateral intersect ";
 	if (!idx)
 		return false;
 

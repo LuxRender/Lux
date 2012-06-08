@@ -80,8 +80,9 @@ Mesh::Mesh(const Transform &o2w, bool ro, const string &name,
 	// Aldo - copy WUV, if present
 	if (WUV) {
 		wuv = new Point[nverts];
-		for (u_int i  = 0; i < nverts; ++i)
+		for (u_int i  = 0; i < nverts; ++i){
 			wuv[i] = WUV[i];
+		}
 	} else
 		wuv = NULL;
 
@@ -137,7 +138,7 @@ Mesh::Mesh(const Transform &o2w, bool ro, const string &name,
 	vector<int> quadsToSplit;
 	if (nquads == 0)
 		quadVertexIndex = NULL;
-	else { LOG(LUX_INFO, LUX_NOERROR) << "NQUaDS nao nulo: "<< nquads<< "Must subdivide?: "<< mustSubdivide;
+	else { //LOG(LUX_INFO, LUX_NOERROR) << "NQUaDS nao nulo: "<< nquads<< "Must subdivide?: "<< mustSubdivide;
 		// Dade - check quads and split them if required
 		for (u_int i = 0; i < nquads; i++) {
 			const u_int idx = 4 * i;
@@ -297,6 +298,7 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 
 	// Possibly subdivide the triangles
 	if (mustSubdivide) {
+		LOG(LUX_INFO, LUX_NOERROR) << "Refine: must Subdivide ";
 		MeshSubdivType concreteSubdivType = subdivType;
 		switch (concreteSubdivType) {
 			case SUBDIV_LOOP: {
@@ -319,7 +321,7 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 				delete[] n;
 				delete[] uvs;
 				delete[] triVertexIndex;
-
+LOG(LUX_INFO, LUX_NOERROR) << "Refine:loop subdiv ";
 				// Copy the new mesh data
 				nverts = res->nverts;
 				ntris = res->ntris;
@@ -587,7 +589,6 @@ void Mesh::GetIntersection(const luxrays::RayHit &rayHit, const u_int index, Int
 	const Point &p3 = p[v2];
 	const Vector e1 = p2 - p1;
 	const Vector e2 = p3 - p1;
-LOG(LUX_INFO, LUX_NOERROR) << "Mesh::GetIntersection ";
 	// Fill in _DifferentialGeometry_ from triangle hit
 	// Compute triangle partial derivatives
 	Vector dpdu, dpdv;
@@ -648,8 +649,7 @@ LOG(LUX_INFO, LUX_NOERROR) << "Mesh::GetIntersection ";
 
 void Mesh::GetShadingGeometry(const Transform &obj2world,
 	const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const
-{ LOG(LUX_INFO, LUX_NOERROR) << "Mesh::GetShadingGeometry";
-
+{
 	if (!n) {
 		*dgShading = dg;
 		dgShading->Scale = ( GetScale(0)+GetScale(1)+GetScale(2) )/3.f;
@@ -1071,7 +1071,6 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 
 	bool  proj_text = params.FindOneBool( "projection", false );
 	Point  cam = params.FindOnePoint( "cam", Point(0,0,0) );
-LOG(LUX_INFO, LUX_NOERROR) << "Mesh Criando Shape 1";
 	return new Mesh(o2w, reverseOrientation, name,
 		shpType, proj_text, cam, accelType,
 		npi, P, N, UV, WUV,
@@ -1119,7 +1118,6 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 	accelTypeStr = params.FindOneString("acceltype", accelTypeStr);
  	string subdivscheme = params.FindOneString("subdivscheme", "loop");
 	int nSubdivLevels = max(0, params.FindOneInt("nsubdivlevels", params.FindOneInt("nlevels", 0)));
-LOG(LUX_INFO, LUX_NOERROR) << "Mesh Criando Shape 2";
 	return CreateShape(o2w, reverseOrientation, params,
 		accelTypeStr, triTypeStr, quadTypeStr,
 		triIndices, triIndicesCount,
@@ -1131,14 +1129,12 @@ LOG(LUX_INFO, LUX_NOERROR) << "Mesh Criando Shape 2";
 }
 
 Shape *Mesh::CreateShape(const Transform &o2w, bool reverseOrientation, const ParamSet &params) {
-	LOG(LUX_INFO, LUX_NOERROR) << "Mesh create shape 0:";
 	return ::CreateShape( o2w, reverseOrientation, params, "auto", "auto");
 }
 
 static DynamicLoader::RegisterShape<Mesh> r("mesh");
 
 Shape* Mesh::BaryMesh::CreateShape(const Transform &o2w, bool reverseOrientation, const ParamSet &params) {
-	LOG(LUX_INFO, LUX_NOERROR) << "Mesh create shape 1:";
 	return ::CreateShape( o2w, reverseOrientation, params, "auto", "bary");
 }
 

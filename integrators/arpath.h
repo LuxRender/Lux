@@ -144,7 +144,7 @@ public:
 	}
 
 	virtual u_int Li(const Scene &scene, const Sample &sample) const;
-	virtual void RequestSamples(Sample *sample, const Scene &scene);
+	virtual void RequestSamples(Sampler *sampler, const Scene &scene);
 	virtual void Preprocess(const RandomGenerator &rng, const Scene &scene);
 
 	// DataParallel interface

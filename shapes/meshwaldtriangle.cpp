@@ -155,7 +155,7 @@ MeshWaldTriangle::MeshWaldTriangle(const Mesh *m, u_int n)
 bool MeshWaldTriangle::Intersect(const Ray &ray, Intersection *isect, bool null_shp_isect) const
 {//LOG(LUX_INFO, LUX_NOERROR) << "Mesh Waldtriangle intersect ";
 	//look if shape is a null type
-    if ( null_shp_isect && GetPrimitiveType() == ShapeType(AR_SHAPE) ) return false;
+	if ( null_shp_isect && GetPrimitiveType() == ShapeType(AR_SHAPE) ) return false;
 
 	float o0, o1, o2, d0, d1, d2;
 	switch (intersectionType) {
@@ -238,8 +238,9 @@ bool MeshWaldTriangle::Intersect(const Ray &ray, Intersection *isect, bool null_
 	Point wtext = pp;
 	if (mesh->wuv) {
 		wtext = Point(b0 * mesh->wuv[v[0]] + uu * mesh->wuv[v[1]] + vv * mesh->wuv[v[2]]);
+		//LOG(LUX_INFO, LUX_NOERROR) << "Mesh Wald WUV: "<< mesh->wuv[v[0]] << "  "<< mesh->wuv[v[1]] << "  "<< mesh->wuv[v[2]];
 	}
-//LOG(LUX_INFO, LUX_NOERROR) << "Mesh Wald: "<< wtext;
+	//LOG(LUX_INFO, LUX_NOERROR) << "Mesh Wald: "<< wtext;
 	isect->dg = DifferentialGeometry(pp, normalizedNormal, dpdu, dpdv,
 		Normal(0, 0, 0), Normal(0, 0, 0), tu, tv, this, 0.f, wtext);
 	isect->Set(mesh->WorldToObject, this, mesh->GetMaterial(),

@@ -42,12 +42,12 @@ ARDirectLightingIntegrator::ARDirectLightingIntegrator(u_int md) : SurfaceIntegr
 	AddStringConstant(*this, "name", "Name of current surface integrator", "ardirectlighting");	
 }
 
-void ARDirectLightingIntegrator::RequestSamples(Sample *sample, const Scene &scene) {
+void ARDirectLightingIntegrator::RequestSamples(Sampler *sampler, const Scene &scene) {
 	// Allocate and request samples for light sampling
-	hints.RequestSamples(sample, scene, maxDepth + 1);
+	hints.RequestSamples(sampler, scene, maxDepth + 1);
 	vector<u_int> structure;
 	structure.push_back(1);	//scattering
-	scatterOffset = sample->AddxD(structure, maxDepth + 1);
+	scatterOffset = sampler->AddxD(structure, maxDepth + 1);
 }
 
 void ARDirectLightingIntegrator::Preprocess(const RandomGenerator &rng,

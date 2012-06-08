@@ -87,7 +87,7 @@ BBox MeshBaryTriangle::WorldBound() const
 }
 
 bool MeshBaryTriangle::Intersect(const Ray &ray, Intersection* isect, bool null_shp_isect) const
-{//LOG(LUX_INFO, LUX_NOERROR) << "Mesh Barytriangle intersect ";
+{LOG(LUX_INFO, LUX_NOERROR) << "Mesh Barytriangle intersect ";
 	Vector e1, e2, s1;
 	// Compute $\VEC{s}_1$
 
