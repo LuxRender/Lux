@@ -149,7 +149,7 @@ bool RenderFarm::CompiledFile::send(std::iostream &stream) const {
 		LOG( LUX_ERROR,LUX_SYSTEM) << "There was an error while checking the size of file '" << real_filename << "'";
 
 		// Send an empty file ot the server
-		stream << "0\n";
+		stream << "\n0\n";
 	} else {
 		// Send the file length
 		stream << filename() << "\n";
