@@ -207,54 +207,49 @@ EnvironmentLight::EnvironmentLight(const Transform &light2world,
 	MedCutLight C_MCLight;
 	MedCutSample( &C_MCLight, predata, depth, LNs, W, H );
 	LNsamples = C_MCLight.size();
-	lightdata = new float[4*LNsamples];
+
+	llum = new float[LNsamples];
+	lpos = new Point[LNsamples];
+	tlum = 0.f;
 	for( int i=0; i< LNsamples; i++){
-		lightdata[4*i]  = C_MCLight[i].x*C_MCLight[i].r;
-		lightdata[4*i+1]= C_MCLight[i].y*C_MCLight[i].r;
-		lightdata[4*i+2]= C_MCLight[i].z*C_MCLight[i].r;
-		lightdata[4*i+3]= C_MCLight[i].lum;
+		lpos[i] = LightToWorld( Point( C_MCLight[i].x*C_MCLight[i].r, C_MCLight[i].y*C_MCLight[i].r, C_MCLight[i].z*C_MCLight[i].r ) );
+		llum[i]= C_MCLight[i].lum;
+		tlum += llum[i];
 	}
+
 	C_MCLight.clear();
 	delete [] predata;
 	delete [] depth;
+	LOG(LUX_INFO, LUX_NOERROR) << "Environment light created";
 
 }
 
-float EnvironmentLight::DirProb(Vector N, Vector Z) const
+float EnvironmentLight::DirProb(Vector N, Point P) const
 {
-	Vector w = N;
 	// Compute infinite light radiance for direction
-	if (lightdata != NULL) {
-		Vector wh = Normalize(WorldToLight(w));
-		Vector dh = WorldToLight(Z);
-		float T_rad = 0.f, P_rad = 0.f; 
+	if (llum != NULL) {
+		float P_rad = 0.f;
+		Vector  dir;
+		for( int i = 0 ; i < LNsamples ; i++ ) {
 
-        for( int i=0; i < LNsamples; i++) {
-			Vector dummy, dir;
-			dummy.x = lightdata[4*i];
-			dummy.y = lightdata[4*i+1];
-			dummy.z = lightdata[4*i+2];
-			dir = Normalize(Vector(dummy-dh));
-			float cosN = Dot( wh, dir );
-	
+			dir = Normalize( Vector(lpos[i] - P) );
+			float cosN = Dot( N, dir );
+
 			if ( cosN > 0.f ) {
-				P_rad += lightdata[4*i+3] * cosN; 
-				T_rad += lightdata[4*i+3]; 
+				P_rad += llum[i] * cosN;
 			}
-			else
-				T_rad += lightdata[4*i+3];
 		}
-		return T_rad/P_rad;
+		return tlum/P_rad;
 	}
 	return 0.5f;
 }
 
 bool EnvironmentLight::LeSupport(const Scene &scene, const Sample &sample,
-	const Vector wr, SWCSpectrum *L) const
+	const Point p, SWCSpectrum *L) const
 {
-
 	*L *= SWCSpectrum(sample.swl, SPDbase);
-	const Vector wh = Normalize(WorldToLight(wr));
+	//Point lpos = WorldToLight(p);
+	const Vector wh = Normalize( Vector( WorldToLight(p) ) );
 	float s, t, pdfMap;
 	mapping->Map(wh, &s, &t, &pdfMap);
 	if (radianceMap != NULL) {
@@ -291,7 +286,13 @@ bool EnvironmentLight::Le(const Scene &scene, const Sample &sample,
 	*bsdf = ARENA_ALLOC(sample.arena, EnvironmentBSDF)(dg, ns,
 		v, v, *this, WorldToLight);
 	*L *= SWCSpectrum(sample.swl, SPDbase);
-	const Vector wh = Normalize(WorldToLight(r.d));
+
+
+//	const Vector wh = Normalize(WorldToLight(r.d));
+
+	const Vector wh = Normalize( Vector( WorldToLight(Point(r.d.x, r.d.y, r.d.z) ) ) );
+
+
 	float s, t, pdfMap;
 	mapping->Map(wh, &s, &t, &pdfMap);
 	if (radianceMap != NULL)
@@ -301,6 +302,25 @@ bool EnvironmentLight::Le(const Scene &scene, const Sample &sample,
 	if (pdfDirect)
         *pdfDirect = uvDistrib->Pdf(s, t) * pdfMap ;//*	AbsDot(r.d, ns) / DistanceSquared(r.o, ps);
 	return true;
+}
+
+bool EnvironmentLight::Le(const Scene &scene, const Sample &sample,
+	const Point &p, BSDF **bsdf, float *pdf, float *pdfDirect,
+	SWCSpectrum *L) const
+{
+
+	*L *= SWCSpectrum(sample.swl, SPDbase);
+	const Vector wh = Normalize( Vector( WorldToLight(p) ) );
+
+	float s, t, pdfMap;
+	mapping->Map(wh, &s, &t, &pdfMap);
+	if (radianceMap != NULL)
+		*L *= radianceMap->LookupSpectrum(sample.swl, s, t);
+
+	if (pdfDirect)
+		*pdfDirect = uvDistrib->Pdf(s, t) * pdfMap ; // *AbsDot(r.d, ns) / DistanceSquared(r.o, ps);
+	return true;
+
 }
 
 float EnvironmentLight::Pdf(const Point &p, const PartialDifferentialGeometry &dg) const
@@ -340,40 +360,77 @@ bool EnvironmentLight::SampleL(const Scene &scene, const Sample &sample,
 	const Point &p, float u1, float u2, float u3, BSDF **bsdf, float *pdf,
 	float *pdfDirect, SWCSpectrum *Le) const
 {
-
-    float worldRadius;
+	float worldRadius;
 	// Find floating-point $(u,v)$ sample coordinates
 	float uv[2];
 	uvDistrib->SampleContinuous(u1, u2, uv, pdfDirect);
 	// Convert sample point to direction on the unit sphere
 	Vector wi;
 	float pdfMap;
-    mapping->Map(uv[0], uv[1], &wi, &pdfMap);
-    worldRadius = radianceMap->LookupFloat(CHANNEL_ALPHA, uv[0], uv[1]);
-    // Find the light point in World space
-    wi = LightToWorld( worldRadius*wi );
+	mapping->Map(uv[0], uv[1], &wi, &pdfMap);
+	worldRadius = radianceMap->LookupFloat(CHANNEL_ALPHA, uv[0], uv[1]);
+	// Find the light point in World space
+	wi = LightToWorld( worldRadius*wi );
 
 	if (!(pdfMap > 0.f))
 		return false;
 	// Compute PDF for sampled direction
 	*pdfDirect *= pdfMap;
-    // Squared distance from origin to light point
-    const float distance2 =  Dot(wi, wi);
+	// Squared distance from origin to light point
+	const float distance2 =  Dot(wi, wi);
 
-    const Point ps(wi.x, wi.y, wi.z);
-    const Normal ns( Normalize(-wi) );
+	const Point ps(wi.x, wi.y, wi.z);
+	const Normal ns( Normalize(-wi) );
 	Vector dpdu, dpdv;
-    CoordinateSystem(Vector(ns), &dpdu, &dpdv);
+	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 	DifferentialGeometry dg(ps, ns, dpdu, dpdv, Normal(0, 0, 0),
-		Normal (0, 0, 0), 0, 0, NULL);
+				Normal (0, 0, 0), 0, 0, NULL);
 	dg.time = sample.realTime;
 	const Volume *v = GetVolume();
-    *bsdf = ARENA_ALLOC(sample.arena, EnvironmentBSDF)(dg, ns,
-		v, v, *this, WorldToLight);
+	*bsdf = ARENA_ALLOC(sample.arena, EnvironmentBSDF)(dg, ns,
+							   v, v, *this, WorldToLight);
 	if (pdf)
 		*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
-    //AbsDot(Normalize(wi), ns) = 1.f
-    *pdfDirect *= 1.f / distance2;
+	//AbsDot(Normalize(wi), ns) = 1.f
+	*pdfDirect *= 1.f / distance2;
+
+	*Le = SWCSpectrum(sample.swl, SPDbase) * (M_PI / *pdfDirect);
+	return true;
+}
+
+bool EnvironmentLight::SampleL(const Scene &scene, const Sample &sample,
+	const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf, float *pdf,
+	float *pdfDirect, SWCSpectrum *Le) const
+{
+	float worldRadius;
+	// Find floating-point $(u,v)$ sample coordinates
+	float uv[2];
+	uvDistrib->SampleContinuous(u1, u2, uv, pdfDirect);
+	// Convert sample point to direction on the unit sphere
+	Vector wi;
+	float pdfMap;
+	mapping->Map(uv[0], uv[1], &wi, &pdfMap);
+	worldRadius = radianceMap->LookupFloat(CHANNEL_ALPHA, uv[0], uv[1]);
+	// Find the light point in World space
+	const Point ps = LightToWorld( worldRadius * Point(wi.x ,wi.y, wi.z) );
+	wi = Normalize(ps - p);
+	if (!(pdfMap > 0.f))
+		return false;
+	// Compute PDF for sampled direction
+	*pdfDirect *= pdfMap;
+
+	Vector dpdu, dpdv;
+	CoordinateSystem(Vector(n), &dpdu, &dpdv);
+	DifferentialGeometry dg(ps, n, dpdu, dpdv, Normal(0, 0, 0),
+				Normal (0, 0, 0), 0, 0, NULL);
+	dg.time = sample.realTime;
+	const Volume *v = GetVolume();
+	*bsdf = ARENA_ALLOC(sample.arena, EnvironmentBSDF)(dg, n,
+							   v, v, *this, WorldToLight);
+	if (pdf)
+		*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
+
+	*pdfDirect *= AbsDot(Normalize(wi), n) / (worldRadius*worldRadius);
 
 	*Le = SWCSpectrum(sample.swl, SPDbase) * (M_PI / *pdfDirect);
 	return true;

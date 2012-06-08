@@ -148,8 +148,8 @@ public:
 		float dmscale, float dmoffset, bool dmnormalsmooth,
 		bool dmsharpboundary, bool normalsplit, const string &name);
 	virtual ~LoopSubdiv();
-	virtual float GetScale() const { return Scale; }
-	virtual bool SetScale(float scale) const { Scale = scale; return true; }
+    virtual float GetScale(u_int i) const { return 1.f; }
+    virtual bool SetScale(float scale, u_int i) const {  return false; }
 	virtual u_int GetPrimitiveType() const { return shape_type; }
 	virtual bool GetNormal(Vector *N) const { return true; }
 	virtual bool GetBaryPoint(Point *P) const { return true; }
@@ -215,7 +215,7 @@ private:
 	u_int shape_type;
 	bool proj_text;
 	Point cam;
-	mutable float Scale;
+	float *Scale;
 };
 
 // LoopSubdiv Inline Functions

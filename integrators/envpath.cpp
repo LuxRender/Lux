@@ -190,7 +190,7 @@ u_int ENVPathIntegrator::Li(const Scene &scene, const Sample &sample) const
 				pathThroughput /= spdf;
 				// Dade - now I know ray.maxt and I can call volumeIntegrator
 				SWCSpectrum Lv;
-				ray2 = Ray( Point(0.f), Vector(isect.dg.p - cam ) );
+				ray2 = Ray( Point(0.f), Vector(isect.dg.p ) );
 				u_int g = scene.volumeIntegrator->Li(scene, ray2, sample,
 								     &Lv, &alpha, from_IsSup, path_type);
 				if (!Lv.Black()) {
@@ -205,10 +205,15 @@ u_int ENVPathIntegrator::Li(const Scene &scene, const Sample &sample) const
 				if (!enableDirectLightSampling || (
 							(includeEnvironment || vertexIndex > 0) && specularBounce && (path_type || pathLength==0) )) {
 					BSDF *ibsdf;
+
+					//Point dir = isect.dg.p;
+					//if (isect.primitive->UseWorldMapping())
+					//	dir = isect.dg.wuv;
+					//bsdf->dgShading.wuv
 					for (u_int i = 0; i < nLights; ++i) {
 						SWCSpectrum Le(pathThroughput);
 						if (scene.lights[i]->Le(scene, sample,
-									ray2, &ibsdf, NULL, NULL, &Le)) {
+									bsdf->dgShading.wuv, &ibsdf, NULL, NULL, &Le)) {
 							L[scene.lights[i]->group] += Le;
 							V[scene.lights[i]->group] += Le.Filter(sw) * VContrib;
 							++nrContribs;
@@ -312,12 +317,15 @@ u_int ENVPathIntegrator::Li(const Scene &scene, const Sample &sample) const
 
 		if (to_IsSup) {
 			SWCSpectrum SupLi(1.f);
-			Vector Wsup ( p - cam );
-			Ray( Point(0.f), Vector(isect.dg.p - scene.camera->CameraToWorld( Point(0.f, 0.f, 0.f) ) ) );
+			//Vector Wsup ( p - cam );
+			//Ray( Point(0.f), Vector(isect.dg.p - scene.camera->CameraToWorld( Point(0.f, 0.f, 0.f) ) ) );
+			//Point dir = p;
+			//if (isect.primitive->UseWorldMapping())
+			//	dir = isect.dg.wuv;
 			for (u_int i = 0; i < nLights; ++i) {
 				//SWCSpectrum Le(1.f);
 				if (scene.lights[i]->IsSupport()) {
-					scene.lights[i]->LeSupport(scene, sample, Wsup, &SupLi);
+					scene.lights[i]->LeSupport(scene, sample, bsdf->dgShading.wuv, &SupLi);
 				}
 			}
 			//LeSupport(scene, sample, Wsup, &SupLi);

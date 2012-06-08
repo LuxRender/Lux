@@ -86,11 +86,11 @@ public:
 		}
 	}
 
-    virtual ShapeType GetPrimitiveType() const { return ShapeType(LUX_SHAPE); }
-	virtual bool GetNormal(Vector *N) const { return false; }
-	virtual bool GetBaryPoint(Point *P) const { return false; }
-	virtual float GetScale() const { return 1.f; }
-	virtual bool SetScale(float scale) const { return false; }
+	virtual ShapeType GetPrimitiveType() const { return ShapeType(LUX_SHAPE); }
+	virtual Vector GetNormal(u_int i) const { return Vector(0.f); }
+	virtual Point GetPoint(u_int i) const { return Point(0.f); }
+	virtual float GetScale(u_int i) const { return 1.f; }
+	virtual bool SetScale(float scale, u_int i) const { return false; }
 	virtual bool CanIntersect() const { return true; }
 	virtual bool Intersect(const Ray &r, Intersection *isect, bool null_shp_isect = false ) const {
 		float thit;
@@ -170,7 +170,7 @@ public:
 	virtual ~PrimitiveSet() { }
 
 	virtual BBox WorldBound() const { return worldbound; }
-    virtual ShapeType GetPrimitiveType() const { return ShapeType(LUX_SHAPE); }
+	virtual ShapeType GetPrimitiveType() const { return ShapeType(LUX_SHAPE); }
 	virtual bool CanIntersect() const {
 		for (u_int i = 0; i < primitives.size(); ++i)
 			if (!primitives[i]->CanIntersect()) return false;

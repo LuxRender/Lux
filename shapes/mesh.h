@@ -37,7 +37,7 @@ public:
 
 	Mesh(const Transform &o2w, bool ro, const string &name,
 		ShapeType type, bool proj, Point cam_, MeshAccelType acceltype,
-		u_int nv, const Point *P, const Normal *N, const float *UV,
+		u_int nv, const Point *P, const Normal *N, const float *UV, const Point *WUV,
 		MeshTriangleType tritype, u_int trisCount, const int *tris,
 		MeshQuadType quadtype, u_int nquadsCount, const int *quads,
 		MeshSubdivType subdivType, u_int nsubdivlevels,
@@ -50,9 +50,10 @@ public:
 
 	virtual BBox ObjectBound() const;
 	virtual BBox WorldBound() const;
-	virtual float GetScale() const { return 1.f; }
-	virtual bool SetScale(float scale) const { return true; }
+	virtual float GetScale(u_int i) const { return 1.f; }
+	virtual bool SetScale(float scale, u_int i) const { return false; }
 	virtual ShapeType GetPrimitiveType() const { return shape_type; }
+	virtual bool UseWorldMapping() const { return worldmap; }
 	virtual bool CanIntersect() const { return false; }
 	virtual void Refine(vector<boost::shared_ptr<Primitive> > &refined,
 		const PrimitiveRefinementHints &refineHints,
@@ -66,14 +67,8 @@ public:
 	virtual void GetShadingGeometry(const Transform &obj2world,
 		const DifferentialGeometry &dg,
 		DifferentialGeometry *dgShading) const;
-	virtual bool GetNormal(Vector *N) const {
-		*N = Normalize( Cross( p[1]-p[0] , p[2] - p[0] ) ) ;
-		return true;
-	}
-	virtual bool GetBaryPoint(Point *P) const {
-		*P = 0.33333333f*(p[0]+p[1]+p[2]);
-		return true;
-	}
+	virtual Vector GetNormal(u_int i) const { return Vector(0.f); }
+	virtual Point GetPoint(u_int i) const { return Point(0.f); }
 
 	friend class MeshWaldTriangle;
 	friend class MeshBaryTriangle;
@@ -99,6 +94,7 @@ protected:
 	// Dade - vertices data
 	u_int nverts;
 	Point *p; // in world space if no subdivision is needed, object space otherwise
+	Point *wuv;
 	Normal *n; // in object space
 	float *uvs;
 	Vector *t;
@@ -134,8 +130,9 @@ protected:
 
 	// ARLuxrender support information
 	ShapeType shape_type;
-	bool proj_text;
+	bool proj_text, worldmap;
 	Point cam;
+	float *Scale;
 };
 
 //------------------------------------------------------------------------------
@@ -153,8 +150,8 @@ public:
 	virtual const Volume *GetExterior() const { return mesh->GetExterior(); }
 	virtual const Volume *GetInterior() const { return mesh->GetInterior(); }
 	Material *GetMaterial() const { return mesh->material.get(); }
-	virtual float GetScale() const { return Scale; }
-	virtual bool SetScale(float scale) const { Scale = scale; return true; }
+	virtual float GetScale(u_int i) const { return mesh->Scale[v[i]]; }
+	virtual bool SetScale(float scale, u_int i) const { mesh->Scale[v[i]] = scale; return true; }
 	virtual ShapeType GetPrimitiveType() const { return mesh->shape_type; }
 	virtual bool CanIntersect() const { return true; }
 	virtual bool Intersect(const Ray &ray, Intersection *isect, bool null_shp_isect=false) const;
@@ -194,19 +191,13 @@ public:
 		}
 	}
 	const Point &GetP(u_int i) const { return mesh->p[v[i]]; }
-	virtual bool GetNormal(Vector *N) const {
-		*N = Normalize( Cross( mesh->p[v[1]]-mesh->p[v[0]] , mesh->p[v[2]] - mesh->p[v[0]] ) ) ;
-		return true;
-	}
-	virtual bool GetBaryPoint(Point *P) const {
-		*P = 0.33333333f*(mesh->p[v[0]]+mesh->p[v[1]]+mesh->p[v[2]]);
-		return true;
-	}
+	virtual Vector GetNormal(u_int i) const { if (i < 3)  return Vector(mesh->n[v[i]]); return Vector(0.f); }
+	virtual Point GetPoint(u_int i) const { return mesh->p[v[i]]; }
 	// BaryTriangle Data
 	const Mesh *mesh;
 	const int *v;
 	bool is_Degenerate;
-	mutable float Scale;
+	//mutable float Scale;
 };
 
 class MeshWaldTriangle : public MeshBaryTriangle {
@@ -254,8 +245,8 @@ public:
 	virtual const Volume *GetExterior() const { return mesh->GetExterior(); }
 	virtual const Volume *GetInterior() const { return mesh->GetInterior(); }
 	Material *GetMaterial() const { return mesh->material.get(); }
-	virtual float GetScale() const { return Scale; }
-	virtual bool SetScale(float scale) const { Scale = scale; return true; }
+	virtual float GetScale(u_int i) const { return mesh->Scale[v[i]]; }
+	virtual bool SetScale(float scale, u_int i) const { mesh->Scale[v[i]] = scale; return true; }
 	virtual ShapeType GetPrimitiveType() const { return mesh->shape_type; }
 	virtual bool CanIntersect() const { return true; }
 	virtual bool Intersect(const Ray &ray, Intersection *isect, bool null_shp_isect=false) const;
@@ -297,21 +288,15 @@ public:
 	const Point &GetP(u_int i) const { return mesh->p[v[i]]; }
 	Point GetDisplacedP(const Point &pbase, const Vector &n, const float u, const float v, const float w) const;
 	Vector GetN(u_int i) const;
-	virtual bool GetNormal(Vector *N) const {
-		*N = Normalize( Cross( mesh->p[v[1]]-mesh->p[v[0]] , mesh->p[v[2]] - mesh->p[v[0]] ) ) ;
-		return true;
-	}
-	virtual bool GetBaryPoint(Point *P) const {
-		*P = 0.33333333f*(mesh->p[v[0]]+mesh->p[v[1]]+mesh->p[v[2]]);
-		return true;
-	}
+	virtual Vector GetNormal(u_int i) const { if(i < 3) return Vector(mesh->n[v[i]]) ; return Vector(0.f); }
+	virtual Point GetPoint(u_int i) const { return	mesh->p[v[i]];	}
 	// BaryTriangle Data
 	const Mesh *mesh;
 	const int *v;
 	Vector dpdu, dpdv, normalizedNormal;
 	float uvs[3][2];
 	bool is_Degenerate;
-	mutable float Scale;
+	//mutable float Scale;
 };
 
 //------------------------------------------------------------------------------
@@ -329,8 +314,8 @@ public:
 	virtual BBox ObjectBound() const;
 	virtual BBox WorldBound() const;
 	Material *GetMaterial() const { return mesh->material.get(); }
-	virtual float GetScale() const { return Scale; }
-	virtual bool SetScale(float scale) const { Scale = scale; return true; }
+	virtual float GetScale(u_int i) const { return mesh->Scale[idx[i]]; }
+	virtual bool SetScale(float scale, u_int i) const { mesh->Scale[idx[i]] = scale; return true; }
 	virtual ShapeType GetPrimitiveType() const { return mesh->shape_type; }
 	virtual bool CanIntersect() const { return true; }
 	virtual bool Intersect(const Ray &ray, Intersection *isect, bool null_shp_isect=false) const;
@@ -384,14 +369,8 @@ public:
 	static bool IsPlanar(const Point &p0, const Point &p1, const Point &p2, const Point &p3);
 	static bool IsDegenerate(const Point &p0, const Point &p1, const Point &p2, const Point &p3);
 	static bool IsConvex(const Point &p0, const Point &p1, const Point &p2, const Point &p3);
-	virtual bool GetNormal(Vector *N) const {
-		*N = Normalize( Cross( mesh->p[1]-mesh->p[0] , mesh->p[2] - mesh->p[0] ) ) ;
-		return true;
-	}
-	virtual bool GetBaryPoint(Point *P) const {
-		*P = 0.33333333f*(mesh->p[0]+mesh->p[1]+mesh->p[2]);
-		return true;
-	}
+	virtual Vector GetNormal(u_int i) const { return Vector(mesh->n[idx[i]]); }
+	virtual Point GetPoint(u_int i) const { return mesh->p[idx[i]]; }
 private:
 	static u_int MajorAxis(const Vector &v);
 
@@ -422,7 +401,7 @@ private:
 	// Quadrilateral Private Data
 	const Mesh *mesh;
 	const int *idx;
-	mutable float Scale;
+	//mutable float Scale;
 };
 
 }//namespace lux

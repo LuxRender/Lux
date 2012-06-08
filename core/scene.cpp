@@ -205,20 +205,26 @@ void Scene::arlux_setup(void)
 		shp = objects[i].get();
 		if( shp != NULL ) {
 
-            if( shp->GetPrimitiveType() == ShapeType(AR_SHAPE) ) {
+			if( shp->GetPrimitiveType() == ShapeType(AR_SHAPE) ) {
+
 				Vector N;
 				Point P;
-				float Pow =0.f;
-				shp->GetNormal(&N);
-				shp->GetBaryPoint(&P);
-				Z = cam-P;
-				if( Dot(N,Z) < 0.f )  
-					N = N * (-1);
-				for( u_int k=0 ; k < lights.size() ; k++ )
-					if (lights[k]->IsSupport()) {
-						Pow += lights[k]->DirProb(N, -Z);
+				for (u_int j = 0 ; j < 4 ; j++) {
+					float Pow =0.f;
+					N = shp->GetNormal(j);
+					if (N.LengthSquared() > 0.000001f) {
+						P = shp->GetPoint(j);
+						Z = cam-P;
+						if( Dot(N,Z) < 0.f )
+							N = N * (-1);
+						for( u_int k=0 ; k < lights.size() ; k++ )
+							if (lights[k]->IsSupport()) {
+								Pow += lights[k]->DirProb(N, P);
+							}
+						shp->SetScale(Pow, j);
 					}
-				shp->SetScale(Pow);
+
+				}
 			}
 		}
 	}

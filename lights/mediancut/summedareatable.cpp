@@ -83,6 +83,24 @@ float SummedAreaTable::sumRectangle( int x0, int y0, int x1, int y1 ) {
 	}
 }
 
+
+float SummedAreaTable::MeanValue( int x0, int y0, int x1, int y1 ) {
+
+    if ( x0 > 0 ) {
+
+	if ( y0 > 0 )
+	    return ( ( A[ width*(y0-1)+(x0-1) ] + A[ width*y1+x1 ] ) - ( A[ width*(y0-1)+x1 ] + A[ width*y1+(x0-1) ] ) ) / ( (x1-x0+1)*(y1-y0+1) ) ;
+	else
+	    return ( A[ width*y1+x1 ] - A[ width*y1+(x0-1) ] ) / ( (x1-x0+1)*(y1-y0+1) ) ;
+    }
+    else {
+
+	if ( y0 > 0 )
+	    return ( A[ width*y1+x1 ] - A[ width*(y0-1)+x1 ] ) / ( (x1-x0+1)*(y1-y0+1) ) ;
+	else
+	    return ( A[ width*y1+x1 ] ) / ( (x1-x0+1)*(y1-y0+1) ) ;
+    }
+}
 //-------------------------------------------------------------------------//
 
 float SummedAreaTable::getMaxValue( void ) {

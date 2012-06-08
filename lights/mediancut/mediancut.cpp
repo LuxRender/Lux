@@ -236,7 +236,7 @@ int MedCutSample( MedCutLight *MCLight, float *data, float *depth, int k, int w,
 			y = sin( theta ) * sin( phi );
 			z = cos( theta );
 			if(depth !=NULL)
-				radius = BL->sumRectangle(MedCut0[j].x0, MedCut0[j].y0, MedCut0[j].x1, MedCut0[j].y1);
+				radius = BL->MeanValue( MedCut0[j].x0, MedCut0[j].y0, MedCut0[j].x1, MedCut0[j].y1 );
 			MC mc = MC( ( (float)( MedCut0[j].u) + 0.5f ), ( (float)( MedCut0[j].v ) + 0.5f ), x, y, z, MedCut0[j].Avsum, radius);
 			(*MCLight).push_back( mc );
 		}

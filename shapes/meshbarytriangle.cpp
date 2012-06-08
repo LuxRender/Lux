@@ -87,12 +87,12 @@ BBox MeshBaryTriangle::WorldBound() const
 }
 
 bool MeshBaryTriangle::Intersect(const Ray &ray, Intersection* isect, bool null_shp_isect) const
-{
+{//LOG(LUX_INFO, LUX_NOERROR) << "Mesh Barytriangle intersect ";
 	Vector e1, e2, s1;
 	// Compute $\VEC{s}_1$
 
 	//look if shape is a null type
-    if ( null_shp_isect && GetPrimitiveType() == ShapeType(AR_SHAPE) ) return false;
+	if ( null_shp_isect && GetPrimitiveType() == ShapeType(AR_SHAPE) ) return false;
 
 	// Get triangle vertices in _p1_, _p2_, and _p3_
 	const Point &p1 = mesh->p[v[0]];
@@ -159,8 +159,12 @@ bool MeshBaryTriangle::Intersect(const Ray &ray, Intersection* isect, bool null_
 	const float tu = tu_;
 	const float tv = tv_;
 
+	Point wtext = pp;
+	if (mesh->wuv) {
+		wtext = Point (mesh->wuv[v[0]] + b1 * (mesh->wuv[v[1]] - mesh->wuv[v[0]]) + b2 * (mesh->wuv[v[2]] - mesh->wuv[v[0]]));
+	}
 	isect->dg = DifferentialGeometry(pp, nn, dpdu, dpdv,
-		Normal(0, 0, 0), Normal(0, 0, 0), tu, tv, this);
+		Normal(0, 0, 0), Normal(0, 0, 0), tu, tv, this, 0.f, wtext );
 
 	isect->Set(mesh->WorldToObject, this, mesh->GetMaterial(),
 		mesh->GetExterior(), mesh->GetInterior());
@@ -267,7 +271,8 @@ void MeshBaryTriangle::GetShadingGeometry(const Transform &obj2world,
 {
 	if (!mesh->n) {
 		*dgShading = dg;
-		dgShading->Scale = GetScale();
+	if ( mesh->shape_type == ShapeType(AR_SHAPE) )
+	    dgShading->Scale =  ( GetScale(0)+GetScale(1)+GetScale(2) )/3.f ;
 		return;
 	}
 
@@ -275,6 +280,11 @@ void MeshBaryTriangle::GetShadingGeometry(const Transform &obj2world,
 	const Normal nsi = dg.iData.baryTriangle.coords[0] * mesh->n[v[0]] +
 		dg.iData.baryTriangle.coords[1] * mesh->n[v[1]] + dg.iData.baryTriangle.coords[2] * mesh->n[v[2]];
 	const Normal ns = Normalize(nsi);
+
+    float lscale = 1.f;
+    if ( mesh->shape_type == ShapeType(AR_SHAPE) )
+	  lscale = dg.iData.baryTriangle.coords[0] * mesh->Scale[v[0]] +
+	    dg.iData.baryTriangle.coords[1] * mesh->Scale[v[1]] + dg.iData.baryTriangle.coords[2] * mesh->Scale[v[2]];
 
 	Vector ss, ts;
 	Vector tangent, bitangent;
@@ -331,5 +341,5 @@ void MeshBaryTriangle::GetShadingGeometry(const Transform &obj2world,
 	}
 
 	*dgShading = DifferentialGeometry(dg.p, ns, ss, ts,
-		dndu, dndv, tangent, bitangent, btsign, dg.u, dg.v, this, GetScale());
+		dndu, dndv, tangent, bitangent, btsign, dg.u, dg.v, this, lscale, dg.wuv);
 }

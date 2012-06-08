@@ -194,7 +194,7 @@ public:
 		const MeshBaryTriangle *triangle(static_cast<const MeshBaryTriangle *>(primitives[hit].get()));
 
 		//look if shape is a null type
-        if (null_shp_isect && triangle->GetPrimitiveType() == lux::ShapeType(AR_SHAPE) ) return false;
+		if (null_shp_isect && triangle->GetPrimitiveType() == lux::ShapeType(AR_SHAPE) ) return false;
 
 		const Point o(reinterpret_cast<const float *>(&origx)[hit],
 			reinterpret_cast<const float *>(&origy)[hit],
@@ -249,9 +249,14 @@ public:
 		const float tu = tu_;
 		const float tv = tv_;
 
+		Point wtext = pp;
+		if (triangle->mesh->wuv) {
+			//wtext = Point (o + _b1 * e1 + _b2 * e2);
+			wtext = Point (triangle->mesh->wuv[triangle->v[0]] + _b1 * (triangle->mesh->wuv[triangle->v[1]] - triangle->mesh->wuv[triangle->v[0]]) + _b2 * (triangle->mesh->wuv[triangle->v[2]] - triangle->mesh->wuv[triangle->v[0]]));
+		}
 
 		isect->dg = DifferentialGeometry(pp, nn, dpdu, dpdv,
-			Normal(0, 0, 0), Normal(0, 0, 0), tu, tv, triangle);
+			Normal(0, 0, 0), Normal(0, 0, 0), tu, tv, triangle, 0.f, wtext);
 
 		isect->Set(triangle->mesh->WorldToObject, triangle,
 			triangle->mesh->GetMaterial(),

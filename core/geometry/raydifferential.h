@@ -39,6 +39,7 @@ public:
 	Vector dpdu, dpdv;
 	float time;
 	bool scattered;
+	Point wuv;
 
 	PartialDifferentialGeometry() { scattered = false; }
 
@@ -48,10 +49,21 @@ public:
 			const Vector &DPDV);
 
 	PartialDifferentialGeometry(
+			const Point &P,
+			const Vector &DPDU,
+			const Vector &DPDV, const Point &WUV);
+
+	PartialDifferentialGeometry(
 		const Point &P,
 		const Normal &NN,
 		const Vector &DPDU,
 		const Vector &DPDV);
+
+	PartialDifferentialGeometry(
+		const Point &P,
+		const Normal &NN,
+		const Vector &DPDU,
+		const Vector &DPDV, const Point &WUV);
 };
 
 // DifferentialGeometry Declarations
@@ -80,7 +92,7 @@ public:
 			const Vector &DPDU,	const Vector &DPDV,
 			const Normal &DNDU, const Normal &DNDV,
 			float uu, float vv,
-			const void *pr, float scale);
+			const void *pr, float scale, const Point &WUV);
 	DifferentialGeometry(
 			const Point &P, const Normal &NN,
 			const Vector &DPDU,	const Vector &DPDV,
@@ -92,7 +104,7 @@ public:
 			const Vector &DPDU,	const Vector &DPDV,
 			const Normal &DNDU, const Normal &DNDV,
 			float uu, float vv,
-			const void *pr, float scale);
+			const void *pr, float scale, const Point &WUV);
 	DifferentialGeometry(
 			const Point &P, const Normal &NN,
 			const Vector &DPDU,	const Vector &DPDV,
@@ -106,7 +118,7 @@ public:
 			const Normal &DNDU, const Normal &DNDV,
 			const Vector &T, const Vector &BiT, float BiTsign,
 			float uu, float vv,
-			const void *pr, float scale);
+			const void *pr, float scale, const Point &WUV);
 	void AdjustNormal(bool ro, bool swapsHandedness) {
 		// Adjust normal based on orientation and handedness
 		if (ro ^ swapsHandedness)
@@ -120,6 +132,7 @@ public:
 	const void* handle;
 	const void* ihandle; // handle to intersected primitive, used with instances
 	mutable float Scale;
+
 
 	// Dade - shape specific data, useful to "transport" informatin between
 	// shape intersection method and GetShadingGeometry()

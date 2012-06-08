@@ -535,7 +535,6 @@ SWCSpectrum EnvEstimateDirect(const Scene &scene, const Light &light,
 {
 	SWCSpectrum Ld(0.f);
 
-	Point cam( scene.camera->CameraToWorld( Point(0.f, 0.f, 0.f) ) );
 	if ( to_IsSup ) {
 		if ( path_type || rayDepth == 0 ) {
 			// Check if MIS is needed
@@ -547,11 +546,10 @@ SWCSpectrum EnvEstimateDirect(const Scene &scene, const Light &light,
 			SWCSpectrum Li;
 			SWCSpectrum SupLi(1.f);
 			BSDF *lightBsdf;
-			Vector Wsup ( p - cam );
-			if (light.SampleL(scene, sample, p, ls1, ls2, ls3,
+			if (light.SampleL(scene, sample, p, n, ls1, ls2, ls3,
 				&lightBsdf, NULL, &lightPdf, &Li)) {
 				const Point &pL(lightBsdf->dgShading.p);
-				const Vector wi0(pL);
+				const Vector wi0(pL - p);
 				const Volume *volume = bsdf->GetVolume(wi0);
 				if (!volume)
 					volume = lightBsdf->GetVolume(-wi0);
@@ -564,7 +562,7 @@ SWCSpectrum EnvEstimateDirect(const Scene &scene, const Light &light,
 						Li *= bsdf->F(sample.swl, wi, wo, true);
 						if (!Li.Black()) {
 							// Add light's contribution
-							if( light.LeSupport(scene, sample, Wsup, &SupLi) )
+							if( light.LeSupport(scene, sample, bsdf->dgShading.wuv, &SupLi) )
 								Ld +=  SupLi * AbsDot (wi, n);
 							else
 								Ld += bsdf->GetBscale() * SupLi * AbsDot (wi, n);
@@ -580,10 +578,10 @@ SWCSpectrum EnvEstimateDirect(const Scene &scene, const Light &light,
 							Li *= bsdf->F(sample.swl, wi, wo, true);
 							if (!Li.Black()) {
 								const float bsdfPdf = bsdf->Pdf(sample.swl,wo, wi);
-								Li *= PowerHeuristic(1, lightPdf * d2, 1, bsdfPdf);
+								Li *= PowerHeuristic(1, lightPdf * d2 / AbsDot(wi, lightBsdf->dgShading.nn), 1, bsdfPdf);
 
 								// Add light's contribution
-								if( light.LeSupport(scene, sample, Wsup, &SupLi) )
+								if( light.LeSupport(scene, sample, bsdf->dgShading.wuv, &SupLi) )
 									Ld +=  SupLi * AbsDot (wi, n);
 								else
 									Ld += bsdf->GetBscale() * SupLi * AbsDot (wi, n);
@@ -599,10 +597,10 @@ SWCSpectrum EnvEstimateDirect(const Scene &scene, const Light &light,
 							Li = bsdf->F(sample.swl, wi, wo, true);
 							if (!Li.Black()) {
 								const float bsdfPdf = bsdf->Pdf(sample.swl, wo, wi);
-								Li *= PowerHeuristic(1, lightPdf * d2, 1, bsdfPdf);
+								Li *= PowerHeuristic(1, lightPdf * d2 / AbsDot(wi, lightBsdf->dgShading.nn), 1, bsdfPdf);
 
 								// Add light's contribution
-								if( light.LeSupport(scene, sample, Wsup, &SupLi) )
+								if( light.LeSupport(scene, sample, bsdf->dgShading.wuv, &SupLi) )
 									Ld +=  SupLi * AbsDot (wi, n);
 								else
 									Ld += bsdf->GetBscale() * SupLi * AbsDot (wi, n);
@@ -639,14 +637,14 @@ SWCSpectrum EnvEstimateDirect(const Scene &scene, const Light &light,
 						lit = !Li.Black();
 					}
 					else if (lightIsect.primitive) {
-                        if ( lightIsect.primitive->GetPrimitiveType() == ShapeType(ENV_SHAPE) && rayDepth > 0 ) {
-						    Ray ray2(Point(0.f), Vector(lightIsect.dg.p - cam));
-						    light.Le(scene, sample, ray2, &lightBsdf,
-						    NULL, &lightPdf, &Li);
-						    //float d2 = DistanceSquared(p, lightBsdf->dgShading.p);
-						    float lightPdf2 = lightPdf ;
-						    float weight = PowerHeuristic(1, bsdfPdf, 1, lightPdf2);
-						    Ld += Li * weight;
+						if ( lightIsect.primitive->GetPrimitiveType() == ShapeType(ENV_SHAPE) && rayDepth > 0 ) {
+
+							light.Le(scene, sample, ibsdf->dgShading.wuv, &lightBsdf,
+								 NULL, &lightPdf, &Li);
+							//float d2 = DistanceSquared(p, lightBsdf->dgShading.p);
+							//float lightPdf2 = lightPdf ;
+							float weight = PowerHeuristic(1, bsdfPdf, 1, lightPdf);
+							Ld += Li * weight;
 						}
 					}
 					if (lit) {
@@ -717,12 +715,12 @@ SWCSpectrum EnvEstimateDirect(const Scene &scene, const Light &light,
 				}
 				else if (lightIsect.primitive) {
 					if ( lightIsect.primitive->GetPrimitiveType() == ShapeType(ENV_SHAPE) ) {
-						Ray ray2(Point(0.f), Vector(lightIsect.dg.p - cam));
-						light.Le(scene, sample, ray2, &lightBsdf,
+						//Ray ray2(Point(0.f), Vector(lightIsect.dg.p - cam));
+						light.Le(scene, sample, ibsdf->dgShading.wuv, &lightBsdf,
 							 NULL, &lightPdf, &Li);
 						//float d2 = DistanceSquared(p, lightBsdf->dgShading.p);
-						float lightPdf2 = lightPdf ;
-						float weight = PowerHeuristic(1, bsdfPdf, 1, lightPdf2);
+						//float lightPdf2 = lightPdf ;
+						float weight = PowerHeuristic(1, bsdfPdf, 1, lightPdf);
 						Ld += Li * weight;
 					}
 				}

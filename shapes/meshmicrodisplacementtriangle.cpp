@@ -239,6 +239,7 @@ enum LastChange { iplus, jminus, kplus, iminus, jplus, kminus };
 
 bool MeshMicroDisplacementTriangle::Intersect(const Ray &ray, Intersection* isect, bool null_shp_isect) const
 {
+	//LOG(LUX_INFO, LUX_NOERROR) << "Mesh MeshMicroDisplacementTriangle: ";
 	// Compute $\VEC{s}_1$
 	// Get triangle vertices in _p1_, _p2_, and _p3_
 	const Point &p1 = mesh->p[v[0]];
@@ -764,7 +765,8 @@ void MeshMicroDisplacementTriangle::GetShadingGeometry(const Transform &obj2worl
 {
 	if (!mesh->displacementMapNormalSmooth || !mesh->n) {
 		*dgShading = dg;
-		dgShading->Scale = GetScale();
+		if ( mesh->shape_type == ShapeType(AR_SHAPE) )
+			dgShading->Scale = ( GetScale(0)+GetScale(1)+GetScale(2 ) ) / 3.f;
 		return;
 	}
 
@@ -774,6 +776,11 @@ void MeshMicroDisplacementTriangle::GetShadingGeometry(const Transform &obj2worl
 	// Use _n_ to compute shading tangents for triangle, _ss_ and _ts_
 	const Normal ns = Normalize(dg.iData.baryTriangle.coords[0] * mesh->n[v[0]] +
 		dg.iData.baryTriangle.coords[1] * mesh->n[v[1]] + dg.iData.baryTriangle.coords[2] * mesh->n[v[2]]);
+
+	float lscale = 1.f;
+	if ( mesh->shape_type == ShapeType(AR_SHAPE) )
+		lscale = dg.iData.baryTriangle.coords[0] * mesh->Scale[v[0]] +
+				dg.iData.baryTriangle.coords[1] * mesh->Scale[v[1]] + dg.iData.baryTriangle.coords[2] * mesh->Scale[v[2]];
 
 	Vector ts(Normalize(Cross(ns, dpdu)));
 	Vector ss(Cross(ts, ns));
@@ -805,7 +812,7 @@ void MeshMicroDisplacementTriangle::GetShadingGeometry(const Transform &obj2worl
 	}
 
 	*dgShading = DifferentialGeometry(p, ns, ss, ts,
-		dndu, dndv, dg.u, dg.v, this, GetScale());
+		dndu, dndv, dg.u, dg.v, this, lscale, dg.wuv);
 	float dddu, dddv;
 	SpectrumWavelengths sw;
 	mesh->displacementMap->GetDuv(sw, *dgShading, 0.001f, &dddu, &dddv);

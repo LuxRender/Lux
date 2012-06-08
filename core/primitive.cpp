@@ -36,19 +36,19 @@ void Primitive::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 	LOG( LUX_SEVERE,LUX_BUG)<< "Unimplemented Primitive::Refine method called!";
 }
 
-bool Primitive::GetNormal(Vector *N) const
+Vector Primitive::GetNormal(u_int i) const
 {
 	LOG( LUX_SEVERE,LUX_BUG)<< "Unimplemented Primitive::GetNormal method called!";
-	return false;
+	return Vector(0.f);
 }
 
-bool Primitive::GetBaryPoint(Point *P) const
+Point Primitive::GetPoint(u_int i) const
 {
 	LOG( LUX_SEVERE,LUX_BUG)<< "Unimplemented Primitive::GetBaryPoint method called!";
-	return false;
+	return Point(0.f);
 }
 
-float Primitive::GetScale() const
+float Primitive::GetScale(u_int i) const
 {
 	return 1.f;
 }

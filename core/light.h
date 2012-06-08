@@ -57,10 +57,13 @@ public:
 	virtual bool IsDeltaLight() const = 0;
 	virtual bool IsEnvironmental() const = 0;
         virtual bool IsSupport() const { return false; }
-	virtual float DirProb(Vector N, Vector Z = Vector(0.f) ) const { return 1.f; }
+	virtual float DirProb(Vector N, Point P = Point(0.f) ) const { return 1.f; }
 	virtual bool LeSupport(const Scene &scene, const Sample &sample,
-		const Vector wr, SWCSpectrum *L) const { return false; }
+		const Point wr, SWCSpectrum *L) const { return false; }
 	virtual bool Le(const Scene &scene, const Sample &sample, const Ray &r,
+		BSDF **bsdf, float *pdf, float *pdfDirect,
+		SWCSpectrum *L) const { return false; }
+	virtual bool Le(const Scene &scene, const Sample &sample, const Point &p,
 		BSDF **bsdf, float *pdf, float *pdfDirect,
 		SWCSpectrum *L) const { return false; }
 	virtual float Pdf(const Point &p, const PartialDifferentialGeometry &dg) const = 0;
@@ -71,6 +74,10 @@ public:
 		const Point &p, float u1, float u2, float u3,
 		BSDF **bsdf, float *pdf, float *pdfDirect,
 		SWCSpectrum *L) const = 0;
+	virtual bool SampleL(const Scene &scene, const Sample &sample,
+		const Point &p, const Normal &n, float u1, float u2, float u3,
+		BSDF **bsdf, float *pdf, float *pdfDirect,
+		SWCSpectrum *L) const {return false;}
 	const LightRenderingHints *GetRenderingHints() const { return &hints; }
 
 	void AddPortalShape(boost::shared_ptr<Primitive> &shape);

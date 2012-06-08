@@ -36,10 +36,28 @@ PartialDifferentialGeometry::PartialDifferentialGeometry(
 
 PartialDifferentialGeometry::PartialDifferentialGeometry(
 		const Point &P,
+		const Vector &DPDU,
+		const Vector &DPDV, const Point &WUV )
+	: p(P), dpdu(DPDU), dpdv(DPDV), wuv(WUV) {
+	nn = Normal(Normalize(Cross(dpdu, dpdv)));
+	scattered = false;
+}
+
+PartialDifferentialGeometry::PartialDifferentialGeometry(
+		const Point &P,
 		const Normal &NN,
 		const Vector &DPDU,
 		const Vector &DPDV)
 	: p(P), nn(NN), dpdu(DPDU), dpdv(DPDV) {
+	scattered = false;
+}
+
+PartialDifferentialGeometry::PartialDifferentialGeometry(
+		const Point &P,
+		const Normal &NN,
+		const Vector &DPDU,
+		const Vector &DPDV, const Point &WUV )
+	: p(P), nn(NN), dpdu(DPDU), dpdv(DPDV), wuv(WUV) {
 	scattered = false;
 }
 
@@ -59,8 +77,8 @@ DifferentialGeometry::DifferentialGeometry(const Point &P,
 DifferentialGeometry::DifferentialGeometry(const Point &P,
 		const Vector &DPDU, const Vector &DPDV,
 		const Normal &DNDU, const Normal &DNDV,
-		float uu, float vv, const void *pr, float scale)
-	: PartialDifferentialGeometry(P, DPDU, DPDV), dndu(DNDU), dndv(DNDV),
+					   float uu, float vv, const void *pr, float scale, const Point &WUV )
+	: PartialDifferentialGeometry(P, DPDU, DPDV, WUV), dndu(DNDU), dndv(DNDV),
 	  tangent(DPDU), bitangent(DPDV), btsign(1.f), Scale(scale) {
 	// Initialize _DifferentialGeometry_ from parameters
 	u = uu;
@@ -87,8 +105,8 @@ DifferentialGeometry::DifferentialGeometry(const Point &P,
 		const Normal &NN,
 		const Vector &DPDU, const Vector &DPDV,
 		const Normal &DNDU, const Normal &DNDV,
-		float uu, float vv, const void *pr, float scale)
-	: PartialDifferentialGeometry(P, NN, DPDU, DPDV), dndu(DNDU), dndv(DNDV),
+		float uu, float vv, const void *pr, float scale, const Point &WUV)
+	: PartialDifferentialGeometry(P, NN, DPDU, DPDV, WUV), dndu(DNDU), dndv(DNDV),
 	  tangent(DPDU), bitangent(DPDV), btsign(1.f), Scale(scale) {
 	// Initialize _DifferentialGeometry_ from parameters
 	u = uu;
@@ -115,8 +133,8 @@ DifferentialGeometry::DifferentialGeometry(const Point &P,
 		const Vector &DPDU, const Vector &DPDV,
 		const Normal &DNDU, const Normal &DNDV,
 		const Vector &T, const Vector &BiT, float BiTsign,
-		float uu, float vv, const void *pr, float scale)
-	: PartialDifferentialGeometry(P, NN, DPDU, DPDV), dndu(DNDU), dndv(DNDV),
+		float uu, float vv, const void *pr, float scale, const Point &WUV)
+	: PartialDifferentialGeometry(P, NN, DPDU, DPDV, WUV), dndu(DNDU), dndv(DNDV),
 	  tangent(T), bitangent(BiT), btsign(BiTsign), Scale(scale) {
 	// Initialize _DifferentialGeometry_ from parameters
 	u = uu;

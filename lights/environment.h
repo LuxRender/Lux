@@ -43,13 +43,16 @@ public:
 		scene.WorldBound().BoundingSphere(&worldCenter, &worldRadius);
 		return SPDbase.Y() * mean_y * M_PI * worldRadius * worldRadius;
 	}
-	virtual float DirProb(Vector N, Vector Z  ) const;
+	virtual float DirProb(Vector N, Point P  ) const;
 	virtual bool IsSupport() const { return support; }
 	virtual bool IsDeltaLight() const { return false; }
 	virtual bool IsEnvironmental() const { return true; }
 	virtual bool LeSupport(const Scene &scene, const Sample &sample,
-		const Vector wr, SWCSpectrum *L) const;
+		const Point wr, SWCSpectrum *L) const;
 	virtual bool Le(const Scene &scene, const Sample &sample, const Ray &r,
+		BSDF **bsdf, float *pdf, float *pdfDirect,
+		SWCSpectrum *L) const;
+	virtual bool Le(const Scene &scene, const Sample &sample, const Point &p,
 		BSDF **bsdf, float *pdf, float *pdfDirect,
 		SWCSpectrum *L) const;
 	virtual float Pdf(const Point &p, const PartialDifferentialGeometry &dg) const;
@@ -59,6 +62,9 @@ public:
 	virtual bool SampleL(const Scene &scene, const Sample &sample,
 		const Point &p, float u1, float u2, float u3, BSDF **bsdf,
 		float *pdf, float *pdfDirect, SWCSpectrum *Le) const;
+	virtual bool SampleL(const Scene &scene, const Sample &sample,
+		const Point &p, const Normal &n, float u1, float u2, float u3, BSDF **bsdf,
+		float *pdf, float *pdfDirect, SWCSpectrum *Le) const;
 
 	static Light *CreateLight(const Transform &light2world,
 		const ParamSet &paramSet);
@@ -66,7 +72,9 @@ public:
 	MIPMap *radianceMap, *contribMap;
 	EnvironmentMapping *mapping;
 	u_int W, H, LNsamples;
-	float *lightdata;
+	float tlum;
+	float *llum;
+	Point *lpos;
 private:
 	// EnvironmentLight Private Data
 	RGBIllumSPD SPDbase;

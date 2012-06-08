@@ -42,7 +42,7 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
 	"${LUX_CMAKE_DIR}"
 	"${LUX_CMAKE_DIR}/SpecializedConfig"
 )
-option(LUXRAYS_DISABLE_OPENCL "Build without OpenCL support" OFF)
+option(LUXRAYS_DISABLE_OPENCL "Build without OpenCL support" ON)
 option(LUX_DOCUMENTATION "Generate project documentation" ON)
 
 # Dade - uncomment to obtain verbose building output

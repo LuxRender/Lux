@@ -227,11 +227,11 @@ float InfiniteAreaLightIS::DirProb(Vector N) const
 }
 
 bool InfiniteAreaLightIS::LeSupport(const Scene &scene, const Sample &sample,
-	const Vector wr, SWCSpectrum *L) const
+	const Point wr, SWCSpectrum *L) const
 {
 
 	*L *= SWCSpectrum(sample.swl, SPDbase);
-	const Vector wh = Normalize(WorldToLight(wr));
+	const Vector wh = Normalize( Vector(WorldToLight(wr)) );
 	float s, t, pdfMap;
 	mapping->Map(wh, &s, &t, &pdfMap);
 	if (radianceMap != NULL)

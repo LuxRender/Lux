@@ -35,6 +35,7 @@ class SummedAreaTable {
 		float &pixel( int x , int y ) { return A[width*y+x]; }
 		float &operator()( int x, int y ) { return A[width*y+x]; }
 		float sumRectangle( int x0, int y0, int x1, int y1 );
+		float MeanValue( int x0, int y0, int x1, int y1 );
 		float pixelOverAverage( int x, int y ) {
 
 			float pixel = sumRectangle(x,y,x,y) * width * height;
