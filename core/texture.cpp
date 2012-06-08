@@ -152,7 +152,7 @@ void SphericalMapping2D::MapDuv(const DifferentialGeometry &dg,
 	const float scaledInvTwoPiOverXY2 = scaledInvTwoPi / (p.x * p.x + p.y * p.y);
 	*dsdu = (dpdu.y * p.x - p.y * dpdu.x) * scaledInvTwoPiOverXY2;
 	*dsdv = (dpdv.y * p.x - p.y * dpdv.x) * scaledInvTwoPiOverXY2;
-	const float scaledInvPiOverHypo = scaledInvPi / sqrtf(1.f - p.z * p.z);
+	const float scaledInvPiOverHypo = scaledInvPi / sqrtf(max(0.f, 1.f - p.z * p.z));
 	*dtdu = dpdu.z * scaledInvPiOverHypo;
 	*dtdv = dpdv.z * scaledInvPiOverHypo;
 }

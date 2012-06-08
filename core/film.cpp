@@ -591,6 +591,26 @@ u_int Film::GetYResolution()
 	return yResolution;
 }
 
+u_int Film::GetXPixelStart()
+{
+	return xPixelStart;
+}
+
+u_int Film::GetYPixelStart()
+{
+	return yPixelStart;
+}
+
+u_int Film::GetXPixelCount()
+{
+	return xPixelCount;
+}
+
+u_int Film::GetYPixelCount()
+{
+	return yPixelCount;
+}
+
 Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop[4], 
 		   const string &filename1, bool premult, bool useZbuffer,
 		   bool w_resume_FLM, bool restart_resume_FLM, bool write_FLM_direct, int haltspp, int halttime,
@@ -623,6 +643,8 @@ Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop
 	//Queryable parameters
 	AddIntAttribute(*this, "xResolution", "Horizontal resolution (pixels)", &Film::GetXResolution);
 	AddIntAttribute(*this, "yResolution", "Vertical resolution (pixels)", &Film::GetYResolution);
+	AddIntAttribute(*this, "xPixelCount", "Horizontal pixel count (after cropping)", &Film::GetXPixelCount);
+	AddIntAttribute(*this, "yPixelCount", "Vertical pixel count (after cropping)", &Film::GetYPixelCount);
 	AddBoolAttribute(*this, "premultiplyAlpha", "Premultiplied alpha enabled", &Film::premultiplyAlpha);
 	AddStringAttribute(*this, "filename", "Output filename", filename, &Film::filename, Queryable::ReadWriteAccess);
 	AddFloatAttribute(*this, "EV", "Exposure value", &Film::EV);

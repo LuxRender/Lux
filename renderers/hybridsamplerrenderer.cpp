@@ -312,8 +312,6 @@ HybridSamplerRenderer::~HybridSamplerRenderer() {
 }
 
 Renderer::RendererType HybridSamplerRenderer::GetType() const {
-	boost::mutex::scoped_lock lock(classWideMutex);
-
 	return HYBRIDSAMPLER_TYPE;
 }
 
@@ -384,6 +382,9 @@ void HybridSamplerRenderer::Render(Scene *s) {
 		scene->surfaceIntegrator->Preprocess(rng, *scene);
 		scene->volumeIntegrator->Preprocess(rng, *scene);
 		scene->camera->film->CreateBuffers();
+
+		scene->surfaceIntegrator->RequestSamples(scene->sampler, *scene);
+		scene->volumeIntegrator->RequestSamples(scene->sampler, *scene);
 
 		// Dade - to support autofocus for some camera model
 		scene->camera->AutoFocus(*scene);

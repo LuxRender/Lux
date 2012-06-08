@@ -95,6 +95,7 @@ SET(lux_core_src
 	core/transport.cpp
 	core/util.cpp
 	core/volume.cpp
+	core/scheduler.cpp
 	server/renderserver.cpp
 	)
 SOURCE_GROUP("Source Files\\Core" FILES ${lux_core_src})

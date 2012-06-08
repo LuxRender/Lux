@@ -164,55 +164,45 @@ void HitPoints::Init() {
 	}
 }
 
-void HitPoints::AccumulateFlux(const u_int index, const u_int count) {
-	const unsigned int workSize = hitPoints->size() / count;
-	const unsigned int first = workSize * index;
-	const unsigned int last = (index == count - 1) ? hitPoints->size() : (first + workSize);
-	assert (first >= 0);
-	assert (last <= hitPoints->size());
-
-	LOG(LUX_DEBUG, LUX_NOERROR) << "Accumulate photons flux: " << first << " to " << last - 1;
-
-	for (u_int i = first; i < last; ++i) {
+void HitPoints::AccumulateFlux(scheduling::Range *range) {
+	for(unsigned i = range->begin(); i != range->end(); i = range->next()) {
 		HitPoint *hp = &(*hitPoints)[i];
 
 		hp->DoRadiusReduction(renderer->sppmi->photonAlpha, GetPassCount(), renderer->sppmi->useproba);
 	}
 }
 
-void HitPoints::SetHitPoints(Sample &sample, RandomGenerator *rng, const u_int index, const u_int count) {
-	const unsigned int workSize = hitPoints->size() / count;
-	const unsigned int first = workSize * index;
-	const unsigned int last = (index == count - 1) ? hitPoints->size() : (first + workSize);
+void HitPoints::SetHitPoints(scheduling::Range *range)
+{
+	SPPMRenderer::RenderThread *thread = dynamic_cast<SPPMRenderer::RenderThread*>(range->thread);
+	HitPoints *hitpoints = thread->renderer->hitPoints;
+	Sample &sample = thread->eyeSample;
 
-	assert (first >= 0);
-	assert (last <= hitPoints->size());
-
-	LOG(LUX_DEBUG, LUX_NOERROR) << "Building hit points: " << first << " to " << last - 1;
 	sample.arena.FreeAll();
-	for (u_int i = first; i < last; ++i) {
+
+	for(unsigned i = range->begin();
+			i != range->end();
+			i = range->next()) {
 		static_cast<HaltonEyeSampler::HaltonEyeSamplerData *>(sample.samplerData)->index = i; //FIXME sampler data shouldn't be accessed directly
-		static_cast<HaltonEyeSampler::HaltonEyeSamplerData *>(sample.samplerData)->pathCount = currentPass; //FIXME sampler data shouldn't be accessed directly
-		sample.wavelengths = wavelengthSample;
-		sample.time = timeSample;
+		static_cast<HaltonEyeSampler::HaltonEyeSamplerData *>(sample.samplerData)->pathCount = hitpoints->currentPass; //FIXME sampler data shouldn't be accessed directly
+		sample.wavelengths = hitpoints->wavelengthSample;
+		sample.time = hitpoints->timeSample;
 		sample.swl.Sample(sample.wavelengths);
 		sample.realTime = sample.camera->GetTime(sample.time);
 		sample.camera->SampleMotion(sample.realTime);
 		// Generate the sample values
-		eyeSampler->GetNextSample(&sample);
-		HitPoint *hp = &(*hitPoints)[i];
+		hitpoints->eyeSampler->GetNextSample(&sample);
+		HitPoint *hp = &(*hitpoints->hitPoints)[i];
 
 		// Trace the eye path
-		TraceEyePath(hp, sample);
+		hitpoints->TraceEyePath(hp, sample);
 
-		// add contributions directly so we don't increase sample count
 		// as sample count is a proxy for photon count which is used for 
 		// weighting the photon buffer
 		// eye buffer weighting is done per-pixel, so should work out
-		for (u_int si = 0; si < sample.contributions.size(); ++si) {
-			sample.contribBuffer->Add(sample.contributions[si], 1.f);
-		}
-		sample.contributions.clear();
+		// to pre-remove the contribution weight
+		sample.contribBuffer->AddSampleCount(-1.f);
+		eyeSampler->AddSample(sample);
 	}
 }
 

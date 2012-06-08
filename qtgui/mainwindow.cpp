@@ -665,13 +665,48 @@ void MainWindow::openFile()
 	if (!canStopRendering())
 		return;
 
-	QString fileName = QFileDialog::getOpenFileName(this, tr("Choose a scene file to open"), m_lastOpendir, tr("LuxRender Files (*.lxs)"));
+	QString fileName = QFileDialog::getOpenFileName(this, tr("Choose a scene- or queue-file file to open"), m_lastOpendir, tr("LuxRender Files (*.lxs *.lxq)"));
 
 	if(!fileName.isNull()) {
-		renderNewScenefile(fileName);
+		if (fileName.endsWith(".lxs")){
+			renderNewScenefile(fileName);
+		} else {
+			// handle queue files
+			openQueueFile(fileName);
+		}
 	}
 }
 
+void MainWindow::openQueueFile(const QString& fileName)
+{
+	ui->tabs_main->setCurrentIndex(1);	// jump to queue tab
+	QMessageBox msgBox;
+	msgBox.setIcon(QMessageBox::Information);
+	QFileInfo fi(fileName);
+	QString name = fi.fileName();
+	msgBox.setText("Set now the wished haltspp or haltime for this queue");
+	msgBox.exec();
+	QFile listFile(fileName);
+	QString renderQueueEntry;
+	if ( listFile.open(QIODevice::ReadOnly) ) {
+		QTextStream lfStream(&listFile);
+		boost::filesystem::path fullPath(boost::filesystem::system_complete(qPrintable(fileName)));				
+		chdir(fullPath.parent_path().string().c_str());
+		while(!lfStream.atEnd()) {
+			renderQueueEntry = QString(boost::filesystem::system_complete(lfStream.readLine().toStdString()).string().c_str());
+			if (!renderQueueEntry.isNull()) {
+				renderQueueList << renderQueueEntry;
+			}
+		};
+	}
+	if (renderQueueList.count()) {
+		foreach( renderQueueEntry, renderQueueList ) {
+			addFileToRenderQueue(renderQueueEntry);
+		}
+		RenderNextFileInQueue();
+	}
+}	
+	
 void MainWindow::openRecentFile()
 {
 	if (!canStopRendering())
@@ -1382,6 +1417,13 @@ void  MainWindow::loadFile(const QString &fileName)
 
 		delete m_flmloadThread;
 		m_flmloadThread = new boost::thread(boost::bind(&MainWindow::flmLoadThread, this, fileName));
+	} else if (fileName.endsWith(".lxq")){
+		if (!canStopRendering())
+			return;
+		if(fileName.isNull())
+			return;
+		openQueueFile(fileName);
+
 	} else {
 		QMessageBox msgBox;
 		msgBox.setIcon(QMessageBox::Information);
@@ -1509,8 +1551,13 @@ void MainWindow::showRenderresolution()
 	if (luxHasObject("film")) {
 		int w = luxGetIntAttribute("film", "xResolution");
 		int h = luxGetIntAttribute("film", "yResolution");
+		int cw = luxGetIntAttribute("film", "xPixelCount");
+		int ch = luxGetIntAttribute("film", "yPixelCount");
 		ui->resolutioniconLabel->setPixmap(QPixmap(":/icons/resolutionicon.png"));
-		ui->resinfoLabel->setText(QString(" %1 x %2 ").arg(w).arg(h));
+		if (cw != w || ch != h)
+			ui->resinfoLabel->setText(QString(" %1 x %2 (%3 x %4) ").arg(cw).arg(ch).arg(w).arg(h));
+		else 
+			ui->resinfoLabel->setText(QString(" %1 x %2 ").arg(w).arg(h));
 		ui->resinfoLabel->setVisible(true);
 	} else {
 		ui->resinfoLabel->setVisible(false);
@@ -2292,7 +2339,7 @@ void MainWindow::UpdateNetworkTree()
 
 	ui->table_servers->setRowCount(nServers);
 
-	double totalpixels = luxGetIntAttribute("film", "xResolution") * luxGetIntAttribute("film", "yResolution");
+	double totalpixels = luxGetIntAttribute("film", "xPixelCount") * luxGetIntAttribute("film", "yPixelCount");
 
 	for( int n = 0; n < nServers; n++ ) {
 		QTableWidgetItem *servername = new QTableWidgetItem(QString::fromUtf8(pInfoList[n].name));

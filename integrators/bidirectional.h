@@ -27,6 +27,7 @@
 #include "reflection/bxdf.h"
 #include "renderinghints.h"
 
+
 namespace lux
 {
 
@@ -145,7 +146,7 @@ public:
 	virtual ~BidirIntegrator() { }
 	// BidirIntegrator Public Methods
 	virtual u_int Li(const Scene &scene, const Sample &sample) const;
-	virtual void RequestSamples(Sample *sample, const Scene &scene);
+	virtual void RequestSamples(Sampler *sample, const Scene &scene);
 	virtual void Preprocess(const RandomGenerator &rng, const Scene &scene);
 
 	//--------------------------------------------------------------------------
@@ -175,14 +176,15 @@ public:
 
 	u_int maxEyeDepth, maxLightDepth;
 	float eyeThreshold, lightThreshold;
-	u_int sampleEyeOffset, sampleLightOffset;
+	u_int sampleEyeOffset;
 	u_int eyeBufferId, lightBufferId;
+	vector<u_int> sampleLightOffsets;
 
 private:
 	// BidirIntegrator Data
 	LightsSamplingStrategy *lightDirectStrategy;
 	u_int samplingCount;
-	u_int lightNumOffset, lightComponentOffset;
+	u_int lightNumOffset;
 	u_int lightPosOffset, lightDirOffset, sampleDirectOffset;
 	bool hybridUseMIS, debug;
 };

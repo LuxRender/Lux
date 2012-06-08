@@ -31,6 +31,9 @@
 #include <boost/format.hpp>
 #include <boost/thread/mutex.hpp>
 
+#include "integrators/sppm.h"
+#include "core/camera.h"
+
 using namespace lux;
 
 SPPMRStatistics::SPPMRStatistics(SPPMRenderer* renderer)
@@ -256,4 +259,15 @@ std::string SPPMRStatistics::FormattedShort::getPercentHaltPassesComplete() {
 std::string SPPMRStatistics::FormattedShort::getPhotonCount() {
 	double pc = rs->getPhotonCount();
 	return boost::str(boost::format("%1$0.2f %2%Y") % MagnitudeReduce(pc) % MagnitudePrefix(pc));
+}
+
+double SPPMRStatistics::getPhotonCount() {
+	double sampleCount = 0.0;
+
+	Queryable* filmRegistry = Context::GetActive()->registry["film"];
+	if (filmRegistry)
+		sampleCount = (*filmRegistry)["numberOfLocalSamples"].DoubleValue();
+
+	// The amount of photon is stored "by pass"
+	return sampleCount * (renderer->sppmi->photonPerPass) / renderer->scene->camera->film->GetSamplePerPass();
 }

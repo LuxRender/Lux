@@ -200,6 +200,12 @@ const char * ds_pylux_Context_material =
 "- roughglass\n"
 "- shinymetal";
 
+const char * ds_pylux_Context_motionBegin =
+"Defines a moving transformation, which can be used to animate an object using objectInstance(). (Ref.: RiSpec 3.2 p.96).";
+
+const char * ds_pylux_Context_motionEnd =
+"Ends a moving transformation. (Ref.: RiSpec 3.2 p.96).";
+
 const char * ds_pylux_Context_motionInstance =
 "Instantiates a moving object. See also objectInstance(). (Sim.: RiSpec 3.2 p.96).";
 

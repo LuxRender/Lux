@@ -231,7 +231,7 @@ public:
 	LightsSamplingStrategy::LightStrategyType GetLightStrategy() const { return lightStrategyType; }
 
 	void InitStrategies(const Scene &scene);
-	void RequestSamples(Sample *sample, const Scene &scene, u_int maxDepth);
+	void RequestSamples(Sampler *sampler, const Scene &scene, u_int maxDepth);
 
 	// Note: results are added to L and optional parameter V content
 	u_int SampleLights(const Scene &scene, const Sample &sample,

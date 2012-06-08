@@ -90,11 +90,9 @@ void KdTree::RecursiveBuild(
 	}
 }
 
-void KdTree::Refresh( const u_int index, const u_int count, boost::barrier &barrier)
+void KdTree::Refresh(scheduling::Scheduler*)
 {
-	if(index == 0)
-		RefreshMutex();
-	barrier.wait();
+	RefreshMutex();
 }
 
 void KdTree::RefreshMutex() {

@@ -39,7 +39,7 @@ public:
 
 	virtual void Transmittance(const Scene &, const Ray &ray,
 		const Sample &sample, float *alpha, SWCSpectrum *const L) const;
-	virtual void RequestSamples(Sample *sample, const Scene &scene);
+	virtual void RequestSamples(Sampler *sampler, const Scene &scene);
 	virtual u_int Li(const Scene &, const Ray &ray,
 		const Sample &sample, SWCSpectrum *L, float *alpha) const;
 	virtual u_int Li(const Scene &, const Ray &ray,

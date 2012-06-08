@@ -47,7 +47,7 @@ void WardIsotropic::SampleH(float u1, float u2, Vector *wh, float *d,
 {
 	// Compute sampled half-angle vector $\wh$ for Ward distribution
 
-	const float theta = atanf(r * sqrtf(-logf(1.f - u1)));
+	const float theta = atanf(r * sqrtf(max(0.f, -logf(1.f - u1))));
 	const float cosTheta = cosf(theta);
 	const float sinTheta = sqrtf(max(0.f, 1.f - cosTheta * cosTheta));
 	const float phi = u2 * 2.f * M_PI;

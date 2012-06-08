@@ -43,6 +43,7 @@
 #include "sppmrenderer.h"
 #include "integrators/sppm.h"
 #include "renderers/statistics/sppmstatistics.h"
+#include "samplers/random.h"
 
 using namespace lux;
 
@@ -51,11 +52,20 @@ using namespace lux;
 //------------------------------------------------------------------------------
 
 unsigned int SPPMRDeviceDescription::GetUsedUnitsCount() const {
-	boost::mutex::scoped_lock lock(host->renderer->renderThreadsMutex);
-	return host->renderer->renderThreads.size();
+	return host->renderer->scheduler->ThreadCount();
 }
 
 void SPPMRDeviceDescription::SetUsedUnitsCount(const unsigned int units) {
+	unsigned int target = max(units, 1u);
+	size_t current = host->renderer->scheduler->ThreadCount();
+
+	if (current > target) {
+		for (unsigned int i = 0; i < current - target; ++i)
+			host->renderer->scheduler->DelThread();
+	} else if (current < target) {
+		for (unsigned int i = 0; i < target - current; ++i)
+			host->renderer->scheduler->AddThread(new SPPMRenderer::RenderThread(host->renderer));
+	}
 }
 
 //------------------------------------------------------------------------------
@@ -90,6 +100,8 @@ SPPMRenderer::SPPMRenderer() : Renderer() {
 	AddStringConstant(*this, "name", "Name of current renderer", "sppm");
 
 	rendererStatistics = new SPPMRStatistics(this);
+
+	scheduler = new scheduling::Scheduler(1000); // TODO: set blocksize as a parameter
 }
 
 SPPMRenderer::~SPPMRenderer() {
@@ -100,16 +112,13 @@ SPPMRenderer::~SPPMRenderer() {
 	if ((state != TERMINATE) && (state != INIT))
 		throw std::runtime_error("Internal error: called SPPMRenderer::~SPPMRenderer() while not in TERMINATE or INIT state.");
 
-	if (renderThreads.size() > 0)
-		throw std::runtime_error("Internal error: called SPPMRenderer::~SPPMRenderer() while list of RenderThreads is not empty.");
-
 	for (size_t i = 0; i < hosts.size(); ++i)
 		delete hosts[i];
+
+	delete scheduler; // TODO: ask Done ?
 }
 
 Renderer::RendererType SPPMRenderer::GetType() const {
-	boost::mutex::scoped_lock lock(classWideMutex);
-
 	return SPPM_TYPE;
 }
 
@@ -168,12 +177,12 @@ void SPPMRenderer::Render(Scene *s) {
 		u_long seed = scene->seedBase - 1;
 		LOG(LUX_INFO, LUX_NOERROR) << "Preprocess thread uses seed: " << seed;
 
-		RandomGenerator rng(seed);
+		rng = new RandomGenerator(seed);
 
 		// integrator preprocessing
 		// sppm integrator will create film buffers
-		scene->surfaceIntegrator->Preprocess(rng, *scene);
-		scene->volumeIntegrator->Preprocess(rng, *scene);
+		scene->surfaceIntegrator->Preprocess(*rng, *scene);
+		scene->volumeIntegrator->Preprocess(*rng, *scene);
 
 		// Told each Buffer how to scale things
 		for(u_int bg = 0; bg < scene->camera->film->GetNumBufferGroups(); ++bg)
@@ -185,75 +194,41 @@ void SPPMRenderer::Render(Scene *s) {
 		// Dade - to support autofocus for some camera model
 		scene->camera->AutoFocus(*scene);
 
-		sampPos = 0;
-
 		size_t threadCount = boost::thread::hardware_concurrency();
 		LOG(LUX_INFO, LUX_NOERROR) << "Hardware concurrency: " << threadCount;
 
-		// Create synchronization barriers
-		allThreadBarrier = new boost::barrier(threadCount);
-		exitBarrier = new boost::barrier(threadCount);
-
 		// initialise
-		photonTracedTotal = 0;
-		photonTracedPass = 0;
 		photonHitEfficiency = 0;
+
+		// For AMCMC
+		// TODO: check if it is really 1, or 0, or N-threads
+		uniformCount = 1.f;
 
 		// start the timer
 		rendererStatistics->timer.Start();
 
-		// Dade - preprocessing done
-		preprocessDone = true;
 		Context::GetActive()->SceneReady();
-
-		// Start all threads
-		for (size_t i = 0; i < threadCount; ++i) {
-			// Start the threads
-			RenderThread *rt = new  RenderThread(i, this);
-
-			renderThreads.push_back(rt);
-			rt->thread = new boost::thread(boost::bind(RenderThread::RenderImpl, rt));
-		}
 	}
 
-	if (renderThreads.size() > 0) {
-		// The first thread can not be removed
-		// it will terminate when the rendering is finished
-		renderThreads[0]->thread->join();
+	// Add the first thread // TODO: why
+	scheduler->AddThread(new RenderThread(this));
 
-		// rendering done, now I can remove all rendering threads
-		{
-			boost::mutex::scoped_lock lock(renderThreadsMutex);
+	RenderMain(scene);
 
-			for (u_int i = 0; i < renderThreads.size(); ++i) {
-				renderThreads[i]->thread->join();
-				delete renderThreads[i];
-			}
-			renderThreads.clear();
-
-			// I change the current signal to exit in order to disable the creation
-			// of new threads after this point
-			Terminate();
-		}
-
-		// Flush the contribution pool
-		scene->camera->film->contribPool->Flush();
-		scene->camera->film->contribPool->Delete();
-	}
-
-	delete allThreadBarrier;
-	delete exitBarrier;
+	scheduler->Done();
 }
 
 void SPPMRenderer::Pause() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 	state = PAUSE;
+	scheduler->Pause();
 	rendererStatistics->timer.Stop();
 }
 
 void SPPMRenderer::Resume() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 	state = RUN;
+	scheduler->Resume();
 	rendererStatistics->timer.Start();
 }
 
@@ -266,10 +241,14 @@ void SPPMRenderer::Terminate() {
 // Render thread
 //------------------------------------------------------------------------------
 
-SPPMRenderer::RenderThread::RenderThread(u_int index, SPPMRenderer *r) :
-	n(index), renderer(r), thread(NULL) {
-	threadRng = NULL;
-	
+SPPMRenderer::RenderThread::RenderThread(SPPMRenderer *r) :
+	renderer(r) {
+
+	// Initialize the thread's rangen
+	u_long seed = renderer->rng->uintValue();
+	threadRng = new RandomGenerator(seed);
+
+	// TODO: this can be done in the sampler ?
 	// Compute light power CDF for photon shooting
 	u_int nLights = renderer->scene->lights.size();
 	float *lightPower = new float[nLights];
@@ -284,15 +263,7 @@ SPPMRenderer::RenderThread::~RenderThread() {
 	delete lightCDF;
 }
 
-void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
-	SPPMRenderer *renderer = myThread->renderer;
-	boost::barrier *allThreadBarrier = renderer->allThreadBarrier;
-	boost::barrier *barrierExit = renderer->exitBarrier;
-
-	Scene &scene(*(renderer->scene));
-	if (scene.IsFilmOnly())
-		return;
-
+void SPPMRenderer::RenderThread::Init() {
 	// To avoid interrupt exception
 	boost::this_thread::disable_interruption di;
 
@@ -301,16 +272,10 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 		boost::this_thread::sleep(boost::posix_time::seconds(1));
 	}
 
-	// Wait for other threads
-	allThreadBarrier->wait();
+	Scene &scene = *renderer->scene;
 
-	// Initialize the thread's rangen
-	u_long seed = scene.seedBase + myThread->n;
-	LOG(LUX_INFO, LUX_NOERROR) << "Render thread " << myThread->n << " uses seed: " << seed;
-	myThread->threadRng = new RandomGenerator(seed);
-	
 	// Initialize the photon sampler
-	PhotonSampler * &sampler = myThread->sampler;
+	// TODO: there must be only one photon sampler instance instead of one by thread
 	switch (renderer->sppmi->photonSamplerType) {
 		case HALTON:
 			sampler = new HaltonPhotonSampler(renderer);
@@ -323,183 +288,114 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 	}
 
 	// Initialize the photon sample
-	Sample sample;
 	sample.contribBuffer = new ContributionBuffer(scene.camera->film->contribPool);
 	// The RNG might be used when initializing the sampler data below
-	sample.rng = myThread->threadRng;
+	sample.rng = threadRng;
 //	sample.camera = scene.camera->Clone(); // Unneeded for photons
 	// sample.realTime and sample.swl are intialized later
 	// Describe sampling data
-	sample.Add1D(1); // light sampling
-	sample.Add2D(1); // light position sampling
-	sample.Add1D(1); // light position portal sampling
-	sample.Add2D(1); // light direction sampling
-	sample.Add1D(1); // light direction portal sampling
+	sampler->Add1D(1); // light sampling
+	sampler->Add2D(1); // light position sampling
+	sampler->Add1D(1); // light position portal sampling
+	sampler->Add2D(1); // light direction sampling
+	sampler->Add1D(1); // light direction portal sampling
 	vector<u_int> structure;
 	structure.push_back(2); // BSDF direction sampling
 	structure.push_back(1); // BSDF component sampling
 	structure.push_back(1); // RR sampling
-	sample.AddxD(structure, renderer->sppmi->maxPhotonPathDepth + 1);
-	renderer->scene->volumeIntegrator->RequestSamples(&sample, *(renderer->scene));
+	sampler->AddxD(structure, renderer->sppmi->maxPhotonPathDepth + 1);
+	renderer->scene->volumeIntegrator->RequestSamples(sampler, *(renderer->scene));
 	sampler->InitSample(&sample);
 
 	// initialise the eye sample
-	Sample eyeSample;
 	eyeSample.contribBuffer = new ContributionBuffer(scene.camera->film->contribPool);
 	eyeSample.camera = scene.camera->Clone();
 	eyeSample.realTime = 0.f;
-	eyeSample.rng = myThread->threadRng;
+	eyeSample.rng = threadRng;
 
-	structure.clear();
-	structure.push_back(1);	// volume scattering
-	structure.push_back(2);	// bsdf sampling direction
-	structure.push_back(1);	// bsdf sampling component
-	structure.push_back(1);	// bsdf bouncing/storing component
-	eyeSample.AddxD(structure, renderer->sppmi->maxEyePathDepth + 1);
-	renderer->scene->volumeIntegrator->RequestSamples(&eyeSample, *(renderer->scene));
+	renderer->hitPoints->eyeSampler->InitSample(&eyeSample);
+}
 
-	renderer->sppmi->hints.RequestSamples(&eyeSample, scene, renderer->sppmi->maxPhotonPathDepth + 1);
+void SPPMRenderer::TracePhotons(scheduling::Range *range)
+{
+	RenderThread* thread = dynamic_cast<RenderThread*>(range->thread);
+	Sample &sample = thread->sample;
+	PhotonSampler *sampler = thread->sampler;
+
+	sample.wavelengths = hitPoints->GetWavelengthSample();
+	sample.time = hitPoints->GetTimeSample();
+	sample.swl.Sample(sample.wavelengths);
+	sample.realTime = scene->camera->GetTime(sample.time);
+//		sample.camera->SampleMotion(sample.realTime); // Unneeded for photons
+
+	//--------------------------------------------------------------
+	// Photon pass: trace photons
+	//--------------------------------------------------------------
+	sampler->TracePhotons(&sample, thread->lightCDF, range);
+}
+
+void SPPMRenderer::RenderMain(Scene *scene)
+{
+	if (scene->IsFilmOnly())
+		return;
 
 	//--------------------------------------------------------------------------
 	// First eye pass
 	//--------------------------------------------------------------------------
 
-	if (myThread->n == 0) {
-		// One thread initialize the hit points
-		renderer->hitPoints = new HitPoints(renderer, myThread->threadRng);
-	}
+	// One thread initialize the hit points
+	hitPoints = new HitPoints(this, rng);
 
-	// Wait for other threads
-	allThreadBarrier->wait();
+	vector<u_int> structure;
+	structure.push_back(1);	// volume scattering
+	structure.push_back(2);	// bsdf sampling direction
+	structure.push_back(1);	// bsdf sampling component
+	structure.push_back(1);	// bsdf bouncing/storing component
+	hitPoints->eyeSampler->AddxD(structure, sppmi->maxEyePathDepth + 1);
 
-	HitPoints *hitPoints = renderer->hitPoints;
+	scene->volumeIntegrator->RequestSamples(hitPoints->eyeSampler, *scene);
+	sppmi->hints.RequestSamples(hitPoints->eyeSampler, *scene, sppmi->maxPhotonPathDepth + 1);
 
-	hitPoints->eyeSampler->InitSample(&eyeSample);
+	preprocessDone = true;
 
 	double eyePassStartTime = 0.0;
-	if (myThread->n == 0)
-		eyePassStartTime = osWallClockTime();
+	eyePassStartTime = osWallClockTime();
 
-	// Set hitpoints
-	hitPoints->SetHitPoints(eyeSample, myThread->threadRng,
-			myThread->n, renderer->renderThreads.size());
+	scheduler->Launch(boost::bind(&HitPoints::SetHitPoints, hitPoints, _1), 0, hitPoints->GetSize());
 
-	allThreadBarrier->wait();
-
-	renderer->paused(); // no return because we are not in the loop
-
-	if (myThread->n == 0)
-		hitPoints->Init();
+	hitPoints->Init();
 
 	// Trace rays: The main loop
-	while (true) {
-		allThreadBarrier->wait();
+	while (!scene->camera->film->enoughSamplesPerPixel && state != TERMINATE) {
+		hitPoints->UpdatePointsInformation();
 
-		if(renderer->paused())
-			break;
+		hitPoints->RefreshAccel(scheduler);
 
-		if (myThread->n == 0) {
-			// Updating information of maxHitPointRadius2 is not thread safe
-			// because HitPoint->accumPhotonRadius2 is updated by Photon Pass Threads.
-			// However the only pratical result is that maxHitPointRadius2 is larger
-			// than its real value. This is not a big problem when updating
-			// the lookup accelerator.
-			hitPoints->UpdatePointsInformation();
-		}
-		// Wait for photon pass
-		allThreadBarrier->wait();
-
-		if(renderer->paused())
-			break;
-
-		hitPoints->RefreshAccel(myThread->n, renderer->renderThreads.size(), *allThreadBarrier);
-
-		if (myThread->n == 0) {
-			const double eyePassTime = osWallClockTime() - eyePassStartTime;
-			LOG(LUX_INFO, LUX_NOERROR) << "Eye pass time: " << eyePassTime << "secs";
-		}
-
-		if(renderer->paused())
-			break;
+		const double eyePassTime = osWallClockTime() - eyePassStartTime;
+		LOG(LUX_INFO, LUX_NOERROR) << "Eye pass time: " << eyePassTime << "secs";
 
 		double photonPassStartTime = 0.0;
-		if (myThread->n == 0)
-			photonPassStartTime = osWallClockTime();
-		
-		// Initialize new wavelengths and time
-		sample.wavelengths = hitPoints->GetWavelengthSample();
-		sample.time = hitPoints->GetTimeSample();
-		sample.swl.Sample(sample.wavelengths);
-		sample.realTime = scene.camera->GetTime(sample.time);
-//		sample.camera->SampleMotion(sample.realTime); // Unneeded for photons
+		photonPassStartTime = osWallClockTime();
 
-		//--------------------------------------------------------------
-		// Photon pass: trace photons
-		//--------------------------------------------------------------
-		sampler->TracePhotons(&sample, myThread->lightCDF);
+		scheduler->Launch(boost::bind(&SPPMRenderer::TracePhotons, this, _1), 0, sppmi->photonPerPass);
 
-		// Wait for other threads
-		allThreadBarrier->wait();
+		photonHitEfficiency = hitPoints->GetPhotonHitEfficency();
 
-		// The first thread has to do some special task for the eye pass
-		if (myThread->n == 0) {
-			renderer->photonHitEfficiency = renderer->hitPoints->GetPhotonHitEfficency();
+		scheduler->Launch(boost::bind(&HitPoints::AccumulateFlux, hitPoints, _1), 0, hitPoints->GetSize());
 
-			// First thread only tasks
-			renderer->photonTracedTotal += renderer->photonTracedPass;
-			renderer->photonTracedPass = 0;
-		}
+		hitPoints->IncPass();
 
-		// Wait for other threads
-		allThreadBarrier->wait();
+		const double photonPassTime = osWallClockTime() - photonPassStartTime;
+		LOG(LUX_INFO, LUX_NOERROR) << "Photon pass time: " << photonPassTime << "secs";
 
-		hitPoints->AccumulateFlux(myThread->n, renderer->renderThreads.size());
+		eyePassStartTime = osWallClockTime();
 
-		// Wait for other threads
-		allThreadBarrier->wait();
-
-		if(renderer->paused())
-			break;
-
-		if (myThread->n == 0) {
-			hitPoints->IncPass();
-
-			// Check for termination
-			int passCount = renderer->hitPoints->GetPassCount();
-			int hltSpp = scene.camera->film->haltSamplesPerPixel;
-			if(hltSpp > 0){
-				if(passCount == hltSpp){
-					renderer->Terminate();
-				}
-			}
-
-			double secsElapsed = renderer->rendererStatistics->timer.Time();
-			double hltTime = scene.camera->film->haltTime;
-			if(hltTime > 0.0){
-				if(secsElapsed > hltTime){
-					renderer->Terminate();
-				}
-			}
-
-			const double photonPassTime = osWallClockTime() - photonPassStartTime;
-			LOG(LUX_INFO, LUX_NOERROR) << "Photon pass time: " << photonPassTime << "secs";
-		}
-
-		// Wait for other threads
-		allThreadBarrier->wait();
-
-		if(renderer->paused())
-			break;
-
-		// Wait for other threads
-		allThreadBarrier->wait();
-
-		if (myThread->n == 0)
-			eyePassStartTime = osWallClockTime();
-
-		hitPoints->SetHitPoints(eyeSample, myThread->threadRng,
-				myThread->n, renderer->renderThreads.size());
+		scheduler->Launch(boost::bind(&HitPoints::SetHitPoints, hitPoints, _1), 0, hitPoints->GetSize());
 	}
+}
+
+void SPPMRenderer::RenderThread::End() {
+	Scene &scene = *renderer->scene;
 
 	scene.camera->film->contribPool->End(sample.contribBuffer);
 	scene.camera->film->contribPool->End(eyeSample.contribBuffer);
@@ -507,33 +403,23 @@ void SPPMRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 	eyeSample.contribBuffer = NULL;
 
 	sampler->FreeSample(&sample);
-	hitPoints->eyeSampler->FreeSample(&eyeSample);
+	renderer->hitPoints->eyeSampler->FreeSample(&eyeSample);
 
 	//delete sample.camera; //FIXME deleting the camera clone would delete the film!
 	//delete eyeSample.camera; //FIXME deleting the camera clone would delete the film!
 	delete sampler;
-
-	// Wait for other threads
-	barrierExit->wait();
-
-	if (myThread->n == 0)
-		delete hitPoints;
 }
 
 Renderer *SPPMRenderer::CreateRenderer(const ParamSet &params) {
 	return new SPPMRenderer();
 }
 
-float SPPMRenderer::GetScaleFactor() const
+float SPPMRenderer::GetScaleFactor(const double scale) const
 {
 	if (sppmi->photonSamplerType == AMC) {
-		u_int uniformCount = 0;
-		for (u_int i = 0; i < renderThreads.size(); ++i)
-			uniformCount += dynamic_cast<AMCMCPhotonSampler*>(renderThreads[i]->sampler)->uniformCount;
-
-		return uniformCount / ((float)photonTracedTotal + (float)photonTracedPass);
+		return uniformCount / (sppmi->photonPerPass / scene->camera->film->GetSamplePerPass() * scale * scale);
 	} else
-		return 1.f;
+		return 1.0 / scale;
 }
 
 static DynamicLoader::RegisterRenderer<SPPMRenderer> r("sppm");

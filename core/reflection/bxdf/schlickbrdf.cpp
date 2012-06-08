@@ -88,9 +88,9 @@ bool SchlickBRDF::SampleF(const SpectrumWavelengths &sw, const Vector &wo,
 	} else {
 		u1 -= 1.f;
 		u2 *= 4.f;
-		const float cos2theta = u1 / (roughness * (1 - u1) + u1);
+		const float cos2theta = u1 / (roughness * (1.f - u1) + u1);
 		const float costheta = sqrtf(cos2theta);
-		const float sintheta = sqrtf(1.f - cos2theta);
+		const float sintheta = sqrtf(max(0.f, 1.f - cos2theta));
 		const float p = 1.f - fabsf(anisotropy);
 		float phi;
 		if (u2 < 1.f) {
@@ -211,7 +211,7 @@ bool SchlickDoubleSidedBRDF::SampleF(const SpectrumWavelengths &sw, const Vector
 		u2 *= 4.f;
 		const float cos2theta = u1 / ((back ? roughness_bf : roughness) * (1 - u1) + u1);
 		const float costheta = sqrtf(cos2theta);
-		const float sintheta = sqrtf(1.f - cos2theta);
+		const float sintheta = sqrtf(max(0.f, 1.f - cos2theta));
 		const float p = 1.f - fabsf(back ? anisotropy_bf : anisotropy);
 		float phi;
 		if (u2 < 1.f) {

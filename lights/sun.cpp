@@ -58,7 +58,7 @@ public:
 			return false;
 		const float sin2Theta = Lerp(u1, 0.f, sin2ThetaMax);
 		const float sinTheta = sqrtf(sin2Theta);
-		const float cosTheta = sqrtf(1.f - sin2Theta);
+		const float cosTheta = sqrtf(max(0.f, 1.f - sin2Theta));
 		const float phi = 2.f * M_PI * u2;
 		*wiW = cosf(phi) * sinTheta * sn + sinf(phi) * sinTheta * tn +
 			cosTheta * Vector(dgShading.nn);
@@ -120,7 +120,7 @@ SunLight::SunLight(const Transform &light2world, const float sunscale,
 	if (relSize * sunRadius <= sunMeanDistance) {
 		sin2ThetaMax = relSize * sunRadius / sunMeanDistance;
 		sin2ThetaMax *= sin2ThetaMax;
-		cosThetaMax = sqrtf(1.f - sin2ThetaMax);
+		cosThetaMax = sqrtf(max(0.f, 1.f - sin2ThetaMax));
 	} else {
 		LOG( LUX_WARNING,LUX_LIMIT) << "Reducing relative sun size to " << sunMeanDistance / sunRadius;
 		cosThetaMax = 0.f;
@@ -306,7 +306,7 @@ bool SunLight::SampleL(const Scene &scene, const Sample &sample,
 	} else {
 		const float sin2Theta = Lerp(u1, 0.f, sin2ThetaMax);
 		const float sinTheta = sqrtf(sin2Theta);
-		const float cosTheta = sqrtf(1.f - sin2Theta);
+		const float cosTheta = sqrtf(max(0.f, 1.f - sin2Theta));
 		const float phi = 2.f * M_PI * u2;
 		wi = cosf(phi) * sinTheta * x + sinf(phi) * sinTheta * y +
 			cosTheta * sundir;

@@ -33,7 +33,7 @@ class RandomSampler : public Sampler
 public:
 	class RandomData {
 	public:
-		RandomData(const Sample &sample, int xPixelStart,
+		RandomData(const Sampler &sampler, int xPixelStart,
 			int yPixelStart, u_int pixelSamples);
 		~RandomData();
 		int xPos, yPos;
@@ -46,7 +46,7 @@ public:
 
 	virtual void InitSample(Sample *sample) const {
 		sample->sampler = const_cast<RandomSampler *>(this);
-		sample->samplerData = new RandomData(*sample, xPixelStart,
+		sample->samplerData = new RandomData(*this, xPixelStart,
 			yPixelStart, pixelSamples);
 	}
 	virtual void FreeSample(Sample *sample) const {

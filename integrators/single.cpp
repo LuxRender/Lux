@@ -32,10 +32,10 @@
 using namespace lux;
 
 // SingleScattering Method Definitions
-void SingleScattering::RequestSamples(Sample *sample, const Scene &scene)
+void SingleScattering::RequestSamples(Sampler *sampler, const Scene &scene)
 {
-	tauSampleOffset = sample->Add1D(1);
-	scatterSampleOffset = sample->Add1D(1);
+	tauSampleOffset = sampler->Add1D(1);
+	scatterSampleOffset = sampler->Add1D(1);
 }
 
 void SingleScattering::Transmittance(const Scene &scene, const Ray &ray,

@@ -38,12 +38,12 @@ DirectLightingIntegrator::DirectLightingIntegrator(u_int md) : SurfaceIntegrator
 	AddStringConstant(*this, "name", "Name of current surface integrator", "directlighting");	
 }
 
-void DirectLightingIntegrator::RequestSamples(Sample *sample, const Scene &scene) {
+void DirectLightingIntegrator::RequestSamples(Sampler *sampler, const Scene &scene) {
 	// Allocate and request samples for light sampling
-	hints.RequestSamples(sample, scene, maxDepth + 1);
+	hints.RequestSamples(sampler, scene, maxDepth + 1);
 	vector<u_int> structure;
 	structure.push_back(1);	//scattering
-	scatterOffset = sample->AddxD(structure, maxDepth + 1);
+	scatterOffset = sampler->AddxD(structure, maxDepth + 1);
 }
 
 void DirectLightingIntegrator::Preprocess(const RandomGenerator &rng,

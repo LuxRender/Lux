@@ -37,7 +37,7 @@ public:
 		AddStringConstant(*this, "name", "Name of current volume integrator", "single");
 	}
 	virtual ~EmissionIntegrator() { }
-	virtual void RequestSamples(Sample *sample, const Scene &scene);
+	virtual void RequestSamples(Sampler *sampler, const Scene &scene);
 	virtual void Transmittance(const Scene &, const Ray &ray,
 		const Sample &sample, float *alpha, SWCSpectrum *const L) const;
 	virtual u_int Li(const Scene &, const Ray &ray,

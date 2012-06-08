@@ -41,7 +41,7 @@ public:
 	virtual SWCSpectrum SigmaA(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
 		return fresnel->Evaluate(sw, dg).SigmaA(sw) +
-			sigmaA->Evaluate(sw, dg);
+			sigmaA->Evaluate(sw, dg).Clamp();
 	}
 	virtual SWCSpectrum SigmaS(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
@@ -66,7 +66,13 @@ public:
 		const SWCSpectrum sigma(SigmaT(sw, dg));
 		if (sigma.Black())
 			return SWCSpectrum(0.f);
-		return sigma * ray.d.Length() * (ray.maxt - ray.mint);
+		const float rl = ray.d.Length() * (ray.maxt - ray.mint);
+		SWCSpectrum tau;
+		for (u_int i = 0; i < WAVELENGTH_SAMPLES; i++) {
+			// avoid NaNs by defining zero absorption coefficient as no absorption
+			tau.c[i] = (sigma.c[i] <= 0.f) ? 0.f : sigma.c[i] * rl;
+		}
+		return tau;
 	}
 	virtual FresnelGeneral Fresnel(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {

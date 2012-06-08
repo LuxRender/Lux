@@ -303,13 +303,12 @@ public:
 	virtual ~PerScreenNormalizedBufferScaled() {}
 
 	virtual void GetData(XYZColor *color, float *alpha) const {
-		scale = scaleUpdate->GetScaleFactor();
-		const float inv = static_cast<float>(scale / *numberOfSamples_);
+		scale = scaleUpdate->GetScaleFactor(*numberOfSamples_);
 		for (u_int y = 0, offset = 0; y < yPixelCount; ++y) {
 			for (u_int x = 0; x < xPixelCount; ++x, ++offset) {
 				const Pixel &pixel = (*pixels)(x, y);
 				if (pixel.weightSum > 0.f) {
-					color[offset] = pixel.L * inv;
+					color[offset] = pixel.L * scale;
 					alpha[offset] = pixel.alpha;
 				} else {
 					color[offset] = 0.f;
@@ -320,11 +319,11 @@ public:
 	}
 	virtual float GetData(u_int x, u_int y, XYZColor *color, float *alpha) const {
 		if(x == 0 && y == 0 && scaleUpdate != NULL)
-			scale = scaleUpdate->GetScaleFactor();
+			scale = scaleUpdate->GetScaleFactor(*numberOfSamples_);
 
 		const Pixel &pixel = (*pixels)(x, y);
 		if (pixel.weightSum > 0.f) {
-			*color = pixel.L * static_cast<float>(scale / *numberOfSamples_);
+			*color = pixel.L * static_cast<float>(scale);
 			*alpha = pixel.alpha;
 		} else {
 			*color = XYZColor(0.f);
@@ -336,7 +335,7 @@ public:
 	class ScaleUpdateInterface
 	{
 		public:
-			virtual float GetScaleFactor() = 0;
+			virtual float GetScaleFactor(const double nos) = 0;
 	};
 	const double *numberOfSamples_;
 
@@ -634,9 +633,6 @@ public:
 	virtual float GetGroupTemperature(u_int index) const;
 	virtual void ComputeGroupScale(u_int index);
 
-	u_int GetXPixelCount() const { return xPixelCount; }
-	u_int GetYPixelCount() const { return yPixelCount; }
-
 	virtual unsigned char* getFrameBuffer() = 0;
 	virtual float* getFloatFrameBuffer() = 0;
 	virtual float* getAlphaBuffer() = 0;
@@ -652,6 +648,18 @@ public:
 	virtual void SetStringParameterValue(luxComponentParameters param, const string& value, u_int index) = 0;
 	virtual string GetStringParameterValue(luxComponentParameters param, u_int index) = 0;
 
+	/*
+	 * Accessor for samplePerPass
+	 * It is only used by SPPM and may disappears once the Buffer API allows for
+	 * different numberOfSamples per buffer
+	 *
+	 * Please, avoid using this function.
+	 */
+	double GetSamplePerPass() const
+	{
+		return samplePerPass;
+	}
+
 protected:
 	double DoTransmitFilm(std::basic_ostream<char> &stream, bool clearBuffers = true, bool transmitParams = false);
 	// Reject outliers for a tile. Rejected contributions get their variance set to -1.
@@ -663,6 +671,15 @@ public:
 	// Film Public Data
 	u_int GetXResolution();
 	u_int GetYResolution();
+
+	u_int GetXPixelStart();
+	u_int GetYPixelStart();
+
+	u_int GetXPixelCount();
+	u_int GetYPixelCount();
+
+	u_int GetXPixelCount() const { return xPixelCount; }
+	u_int GetYPixelCount() const { return yPixelCount; }
 
 	u_int xResolution, yResolution;
 

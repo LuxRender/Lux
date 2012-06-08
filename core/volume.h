@@ -77,7 +77,7 @@ public:
 	virtual ~RGBVolume() { }
 	virtual SWCSpectrum SigmaA(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
-		return SWCSpectrum(sw, sigA);
+		return SWCSpectrum(sw, sigA).Clamp();
 	}
 	virtual SWCSpectrum SigmaS(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
@@ -98,8 +98,16 @@ public:
 		DifferentialGeometry dg;
 		dg.p = ray.o;
 		dg.nn = Normal(-ray.d);
-		return SigmaT(sw, dg) *
-			(ray.d.Length() * (ray.maxt - ray.mint));
+		const SWCSpectrum sigma(SigmaT(sw, dg));
+		if (sigma.Black())
+			return SWCSpectrum(0.f);
+		const float rl = ray.d.Length() * (ray.maxt - ray.mint);
+		SWCSpectrum tau;
+		for (u_int i = 0; i < WAVELENGTH_SAMPLES; i++) {
+			// avoid NaNs by defining zero absorption coefficient as no absorption
+			tau.c[i] = (sigma.c[i] <= 0.f) ? 0.f : sigma.c[i] * rl;
+		}
+		return tau;
 	}
 	virtual FresnelGeneral Fresnel(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {

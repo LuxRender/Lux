@@ -25,6 +25,7 @@
 #include <vector>
 
 #include "osfunc.h"
+#include "scheduler.h"
 
 namespace lux
 {
@@ -47,7 +48,7 @@ public:
 	HitPointsLookUpAccel(HitPoints *hps): hitPoints(hps) { }
 	virtual ~HitPointsLookUpAccel() { }
 
-	virtual void Refresh( const u_int index, const u_int count, boost::barrier &barrier) = 0;
+	virtual void Refresh(scheduling::Scheduler *scheduler) = 0;
 
 	virtual void AddFlux(Sample &sample, const PhotonData &photon) = 0;
 
@@ -80,7 +81,7 @@ public:
 
 	~HashGrid();
 
-	void Refresh( const u_int index, const u_int count, boost::barrier &barrier);
+	void Refresh(scheduling::Scheduler *scheduler);
 
 	virtual void AddFlux(Sample &sample, const PhotonData &photon);
 
@@ -109,11 +110,14 @@ public:
 
 	~ParallelHashGrid();
 
-	virtual void Refresh( const u_int index, const u_int count, boost::barrier &barrier);
+	void Refresh(scheduling::Scheduler *scheduler);
 
 	virtual void AddFlux(Sample &sample, const PhotonData &photon);
 
 private:
+	void ResetGrid(scheduling::Range *range, unsigned *data);
+	void Fill(scheduling::Range *range);
+
 	u_int Hash(const int ix, const int iy, const int iz) {
 		return (u_int)((ix * 73856093) ^ (iy * 19349663) ^ (iz * 83492791)) % gridSize;
 	}
@@ -135,7 +139,7 @@ public:
 
 	~KdTree();
 
-	void Refresh( const u_int index, const u_int count, boost::barrier &barrier);
+	void Refresh(scheduling::Scheduler *scheduler);
 
 	virtual void AddFlux(Sample &sample, const PhotonData &photon);
 
@@ -306,11 +310,12 @@ public:
 
 	~HybridHashGrid();
 
-	void Refresh( const u_int index, const u_int count, boost::barrier &barrier);
+	void Refresh(scheduling::Scheduler *scheduler);
 
 	virtual void AddFlux(Sample &sample, const PhotonData &photon);
 
 private:
+	void ConvertKdTree(scheduling::Range *range);
 	void RefreshMutex();
 
 	u_int Hash(const int ix, const int iy, const int iz) {

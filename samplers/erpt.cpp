@@ -38,11 +38,12 @@ using namespace lux;
 // mutate a value in the range [0-1]
 static float mutate(const float x, const float randomValue)
 {
-	static const float s1 = 1.f / 1024.f, s2 = 1.f / 16.f;
-	float dx = s2 * powf(s1 / s2, fabsf(2.f * randomValue - 1.f));
+	static const float s1 = 1.f / 512.f, s2 = 1.f / 16.f;
+	const float dx = s1 / (s1 / s2 + fabsf(2.f * randomValue - 1.f)) -
+		s1 / (s1 / s2 + 1.f);
 	if (randomValue < 0.5f) {
 		float x1 = x + dx;
-		return (x1 > 1.f) ? x1 - 1.f : x1;
+		return (x1 < 1.f) ? x1 : x1 - 1.f;
 	} else {
 		float x1 = x - dx;
 		return (x1 < 0.f) ? x1 + 1.f : x1;
@@ -52,36 +53,38 @@ static float mutate(const float x, const float randomValue)
 // mutate a value in the range [min-max]
 static float mutateScaled(const float x, const float randomValue, const float mini, const float maxi, const float range)
 {
-	float dx = range * expf(-logf(2.f * range) * fabsf(2.f * randomValue - 1.f));
+	static const float s1 = 32.f;
+	const float dx = range / (s1 / (1.f + s1) + (s1 * s1) / (1.f + s1) *
+		fabsf(2.f * randomValue - 1.f)) - range / s1;
 	if (randomValue < 0.5f) {
 		float x1 = x + dx;
-		return (x1 > maxi) ? x1 - maxi + mini : x1;
+		return (x1 < maxi) ? x1 : x1 - maxi + mini;
 	} else {
 		float x1 = x - dx;
 		return (x1 < mini) ? x1 - mini + maxi : x1;
 	}
 }
 
-ERPTSampler::ERPTData::ERPTData(const Sample &sample) :
+ERPTSampler::ERPTData::ERPTData(const Sampler &sampler) :
 	numChains(0), chain(0), mutation(~0U), stamp(0), currentStamp(0),
 	baseLY(0.f), quantum(0.f), weight(0.f), LY(0.f), alpha(0.f),
 	totalLY(0.), sampleCount(0.)
 {
 	u_int i;
 	normalSamples = SAMPLE_FLOATS;
-	for (i = 0; i < sample.n1D.size(); ++i)
-		normalSamples += sample.n1D[i];
-	for (i = 0; i < sample.n2D.size(); ++i)
-		normalSamples += 2 * sample.n2D[i];
+	for (i = 0; i < sampler.n1D.size(); ++i)
+		normalSamples += sampler.n1D[i];
+	for (i = 0; i < sampler.n2D.size(); ++i)
+		normalSamples += 2 * sampler.n2D[i];
 	totalSamples = normalSamples;
-	timeOffset = new u_int[sample.nxD.size()];
-	offset = new u_int[sample.nxD.size()];
+	timeOffset = new u_int[sampler.nxD.size()];
+	offset = new u_int[sampler.nxD.size()];
 	totalTimes = 0;
-	for (i = 0; i < sample.nxD.size(); ++i) {
+	for (i = 0; i < sampler.nxD.size(); ++i) {
 		timeOffset[i] = totalTimes;
 		offset[i] = totalSamples;
-		totalTimes += sample.nxD[i];
-		totalSamples += sample.dxD[i] * sample.nxD[i];
+		totalTimes += sampler.nxD[i];
+		totalSamples += sampler.dxD[i] * sampler.nxD[i];
 	}
 	sampleImage = AllocAligned<float>(totalSamples);
 	currentImage = AllocAligned<float>(totalSamples);
@@ -135,12 +138,12 @@ bool ERPTSampler::GetNextSample(Sample *sample)
 		*image++ = sample->lensV;
 		*image++ = sample->time;
 		*image++ = sample->wavelengths;
-		for (u_int i = 0; i < sample->n1D.size(); ++i) {
-			for (u_int j = 0; j < sample->n1D[i]; ++j)
+		for (u_int i = 0; i < n1D.size(); ++i) {
+			for (u_int j = 0; j < n1D[i]; ++j)
 				*image++ = baseSampler->GetOneD(*sample, i, j);
 		}
-		for (u_int i = 0; i < sample->n2D.size(); ++i) {
-			for (u_int j = 0; j < sample->n2D[i]; ++j) {
+		for (u_int i = 0; i < n2D.size(); ++i) {
+			for (u_int j = 0; j < n2D[i]; ++j) {
 				float u[2];
 				baseSampler->GetTwoD(*sample, i, j, u);
 				*image++ = u[0];
@@ -156,12 +159,10 @@ bool ERPTSampler::GetNextSample(Sample *sample)
 	} else {
 		if (data->mutation == 0) {
 			// *** new chain ***
-			for (u_int i = 0; i < data->totalSamples; ++i)
-				data->currentImage[i] = data->baseImage[i];
-			for (u_int i = 0; i < data->totalTimes; ++i) {
+			memcpy(data->currentImage, data->baseImage, data->totalSamples * sizeof(float));
+			memcpy(data->currentTimeImage, data->baseTimeImage, data->totalTimes * sizeof(int));
+			for (u_int i = 0; i < data->totalTimes; ++i)
 				data->timeImage[i] = -1;
-				data->currentTimeImage[i] = data->baseTimeImage[i];
-			}
 			data->currentStamp = 0;
 			data->stamp = 0;
 		}
@@ -188,7 +189,7 @@ float ERPTSampler::GetOneD(const Sample &sample, u_int num, u_int pos)
 	ERPTData *data = (ERPTData *)(sample.samplerData);
 	u_int offset = SAMPLE_FLOATS;
 	for (u_int i = 0; i < num; ++i)
-		offset += sample.n1D[i];
+		offset += n1D[i];
 	if (data->mutation == ~0U)
 		return data->baseImage[offset + pos];
 	else
@@ -199,10 +200,10 @@ void ERPTSampler::GetTwoD(const Sample &sample, u_int num, u_int pos, float u[2]
 {
 	ERPTData *data = (ERPTData *)(sample.samplerData);
 	u_int offset = SAMPLE_FLOATS;
-	for (u_int i = 0; i < sample.n1D.size(); ++i)
-		offset += sample.n1D[i];
+	for (u_int i = 0; i < n1D.size(); ++i)
+		offset += n1D[i];
 	for (u_int i = 0; i < num; ++i)
-		offset += sample.n2D[i] * 2;
+		offset += n2D[i] * 2;
 	if (data->mutation == ~0U) {
 		u[0] = data->baseImage[offset + pos * 2];
 		u[1] = data->baseImage[offset + pos * 2 + 1];
@@ -215,7 +216,7 @@ void ERPTSampler::GetTwoD(const Sample &sample, u_int num, u_int pos, float u[2]
 float *ERPTSampler::GetLazyValues(const Sample &sample, u_int num, u_int pos)
 {
 	ERPTData *data = (ERPTData *)(sample.samplerData);
-	const u_int size = sample.dxD[num];
+	const u_int size = dxD[num];
 	const u_int first = data->offset[num] + pos * size;
 	int &baseTime(data->baseTimeImage[data->timeOffset[num] + pos]);
 	if (baseTime == -1) {
@@ -278,8 +279,8 @@ void ERPTSampler::AddSample(const Sample &sample)
 			data->numChains = max(1U, Floor2UInt(data->quantum + .5f));
 			// The following line avoids to block on a pixel
 			// if the initial sample is extremely bright
-			data->numChains = min(data->numChains, totalMutations);
-			data->quantum /= data->numChains;
+//			data->numChains = min(data->numChains, totalMutations);
+			data->quantum /= data->numChains * totalMutations;
 			data->baseLY = newLY;
 			data->baseContributions = newContributions;
 			data->mutation = 0;

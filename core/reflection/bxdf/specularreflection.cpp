@@ -74,7 +74,7 @@ inline void PhaseDifference(const SpectrumWavelengths &sw, const Vector &wo,
 	float film, float filmindex, SWCSpectrum *const Pd)
 {
 	const float swo = SinTheta(wo);
-	const float s = sqrtf(filmindex * filmindex - /*1.f * 1.f **/ swo * swo);
+	const float s = sqrtf(max(0.f, filmindex * filmindex - /*1.f * 1.f **/ swo * swo));
 	for(int i = 0; i < WAVELENGTH_SAMPLES; ++i) {
 		const float pd = (4.f * M_PI * film / sw.w[i]) * s + M_PI;
 		const float cpd = cosf(pd);

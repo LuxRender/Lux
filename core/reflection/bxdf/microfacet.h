@@ -55,7 +55,7 @@ class  MicrofacetTransmission : public BxDF {
 public:
 	// MicrofacetTransmission Public Methods
 	MicrofacetTransmission(const SWCSpectrum &reflectance, const Fresnel *f,
-		MicrofacetDistribution *d);
+		MicrofacetDistribution *d, bool disp);
 	virtual ~MicrofacetTransmission() { }
 	virtual void F(const SpectrumWavelengths &sw, const Vector &wo,
 		const Vector &wi, SWCSpectrum *const f) const;
@@ -69,6 +69,7 @@ private:
 	SWCSpectrum T;
 	MicrofacetDistribution *distribution;
 	const Fresnel *fresnel;
+	bool dispersion;
 };
 
 }//namespace lux

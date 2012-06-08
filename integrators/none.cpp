@@ -32,7 +32,7 @@
 using namespace lux;
 
 // NoneScattering Method Definitions
-void NoneScattering::RequestSamples(Sample *sample, const Scene &scene) {
+void NoneScattering::RequestSamples(Sampler *sampler, const Scene &scene) {
 }
 
 void NoneScattering::Transmittance(const Scene &scene, const Ray &ray,

@@ -132,6 +132,9 @@
             <property name="buttonSymbols">
              <enum>QAbstractSpinBox::UpDownArrows</enum>
             </property>
+            <property name="keyboardTracking">
+             <bool>false</bool>
+            </property>
             <property name="prefix">
              <string/>
             </property>
@@ -320,7 +323,7 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>376</width>
+                  <width>362</width>
                   <height>388</height>
                  </rect>
                 </property>
@@ -403,8 +406,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>372</width>
-                  <height>417</height>
+                  <width>100</width>
+                  <height>30</height>
                  </rect>
                 </property>
                 <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -476,8 +479,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>372</width>
-                  <height>417</height>
+                  <width>100</width>
+                  <height>30</height>
                  </rect>
                 </property>
                 <property name="sizePolicy">
@@ -809,6 +812,9 @@
             <property name="toolTip">
              <string>Override halt sample-per-pixel condition, or zero to disable</string>
             </property>
+            <property name="keyboardTracking">
+             <bool>false</bool>
+            </property>
             <property name="minimum">
              <number>0</number>
             </property>
@@ -843,6 +849,9 @@
             </property>
             <property name="toolTip">
              <string>Override halt time condition (seconds), or zero to disable</string>
+            </property>
+            <property name="keyboardTracking">
+             <bool>false</bool>
             </property>
             <property name="minimum">
              <number>0</number>
@@ -1107,7 +1116,7 @@
      <x>0</x>
      <y>0</y>
      <width>840</width>
-     <height>23</height>
+     <height>22</height>
     </rect>
    </property>
    <property name="nativeMenuBar">

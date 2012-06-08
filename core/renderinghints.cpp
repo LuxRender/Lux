@@ -360,7 +360,7 @@ void SurfaceIntegratorRenderingHints::InitStrategies(const Scene &scene) {
 		lsStrategy->Init(scene);
 }
 
-void SurfaceIntegratorRenderingHints::RequestSamples(Sample *sample, const Scene &scene, u_int maxDepth)
+void SurfaceIntegratorRenderingHints::RequestSamples(Sampler *sampler, const Scene &scene, u_int maxDepth)
 {
 	if (lsStrategy != NULL) {
 		vector<u_int> structure(0);
@@ -376,7 +376,7 @@ void SurfaceIntegratorRenderingHints::RequestSamples(Sample *sample, const Scene
 				structure.push_back(1); // light portal sample
 			}
 		}
-		lightSampleOffset = sample->AddxD(structure, maxDepth);
+		lightSampleOffset = sampler->AddxD(structure, maxDepth);
 	}
 }
 
@@ -389,7 +389,7 @@ u_int SurfaceIntegratorRenderingHints::SampleLights(const Scene &scene,
 	if (nLights == 0)
 		return 0;
 
-	const float *data = scene.sampler->GetLazyValues(sample,
+	const float *data = sample.sampler->GetLazyValues(sample,
 		lightSampleOffset, depth);
 	u_int nContribs = 0;
 	// Use multiple importance sampling if the surface is not diffuse

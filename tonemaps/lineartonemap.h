@@ -40,10 +40,10 @@ public:
 	
 	virtual void Map(vector<XYZColor> &xyz, u_int xRes, u_int yRes, float maxDisplayY) const {
 		// read data from film
-		float gamma = luxGetParameterValue(LUX_FILM, LUX_FILM_TORGB_GAMMA);
-		float Y =  luxGetFloatAttribute("film", "averageLuminance");
+		const float gamma = luxGetParameterValue(LUX_FILM, LUX_FILM_TORGB_GAMMA);
+		const float Y = luxGetFloatAttribute("film", "averageLuminance");
 		
-		if (Y <= 0)
+		if (Y <= 0.f)
 			return;
 
 		/*
@@ -61,7 +61,7 @@ public:
 		//float factor = (exposure / (fstop * fstop) * sensitivity / 10.f * powf(118.f / 255.f, gamma));
 		
 		// substitute exposure, fstop and sensitivity cancel out; collect constants
-		float factor = (1.25f / Y * powf(118.f / 255.f, gamma));
+		const float factor = (1.25f / Y * powf(118.f / 255.f, gamma));
 
 		const u_int numPixels = xRes * yRes;
 		for (u_int i = 0; i < numPixels; ++i)

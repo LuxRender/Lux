@@ -329,8 +329,8 @@ bool SkyLight::Le(const Scene &scene, const Sample &sample, const Ray &r,
 	const Vector toCenter(worldCenter - r.o);
 	const float centerDistance = Dot(toCenter, toCenter);
 	const float approach = Dot(toCenter, r.d);
-	const float distance = approach + sqrtf(worldRadius * worldRadius -
-		centerDistance + approach * approach);
+	const float distance = approach + sqrtf(max(0.f, worldRadius * worldRadius -
+		centerDistance + approach * approach));
 	const Point ps(r.o + distance * r.d);
 	const Normal ns(Normalize(worldCenter - ps));
 	Vector dpdu, dpdv;
@@ -451,8 +451,8 @@ bool SkyLight::SampleL(const Scene &scene, const Sample &sample,
 		const float centerDistance = Dot(toCenter, toCenter);
 		const float approach = Dot(toCenter, wi);
 		const float distance = approach +
-			sqrtf(worldRadius * worldRadius - centerDistance +
-			approach * approach);
+			sqrtf(max(0.f, worldRadius * worldRadius - centerDistance +
+			approach * approach));
 		const Point ps(dgs.p + distance * wi);
 		const Normal ns(Normalize(worldCenter - ps));
 		Vector dpdu, dpdv;
@@ -514,8 +514,8 @@ bool SkyLight::SampleL(const Scene &scene, const Sample &sample,
 	const Vector toCenter(worldCenter - p);
 	const float centerDistance = Dot(toCenter, toCenter);
 	const float approach = Dot(toCenter, wi);
-	const float distance = approach + sqrtf(worldRadius * worldRadius -
-		centerDistance + approach * approach);
+	const float distance = approach + sqrtf(max(0.f, worldRadius * worldRadius -
+		centerDistance + approach * approach));
 	const Point ps(p + distance * wi);
 	const Normal ns(Normalize(worldCenter - ps));
 	Vector dpdu, dpdv;
