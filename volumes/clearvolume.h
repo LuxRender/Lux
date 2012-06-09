@@ -70,7 +70,7 @@ public:
 		SWCSpectrum tau;
 		for (u_int i = 0; i < WAVELENGTH_SAMPLES; i++) {
 			// avoid NaNs by defining zero absorption coefficient as no absorption
-			tau.c[i] = (sigma.c[i] <= 0.f) ? 0.f : sigma.c[i] * rl;
+			tau.c[i] = (sigma.c[i] > 0.f) ? sigma.c[i] * rl : 0.f;
 		}
 		return tau;
 	}
