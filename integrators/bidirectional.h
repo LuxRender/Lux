@@ -134,11 +134,14 @@ private:
 class BidirIntegrator : public SurfaceIntegrator {
 public:
 	BidirIntegrator(u_int ed, u_int ld, float et, float lt,
-		LightsSamplingStrategy *lds, bool mis, bool d) : SurfaceIntegrator(),
+		LightsSamplingStrategy *lds, LightsSamplingStrategy *lps,
+		bool mis, bool d) : SurfaceIntegrator(),
 		maxEyeDepth(ed), maxLightDepth(ld),
 		eyeThreshold(et), lightThreshold(lt),
-		lightDirectStrategy(lds), hybridUseMIS(mis), debug(d) {
-		samplingCount = 0;
+		lightDirectStrategy(lds), lightPathStrategy(lps),
+		hybridUseMIS(mis), debug(d) {
+		directSamplingCount = 0;
+		pathSamplingCount = 0;
 		eyeBufferId = 0;
 		lightBufferId = 0;
 		AddStringConstant(*this, "name", "Name of current surface integrator", "bidirectional");
@@ -157,7 +160,7 @@ public:
 
 	virtual bool CheckLightStrategy(const Scene &scene) const {
 		if (lightDirectStrategy->GetSamplingLimit(scene) != 1) {
-			LOG(LUX_ERROR, LUX_SEVERE)<< "The direct light sampling strategy must sample a single light, not " << samplingCount << ".";
+			LOG(LUX_ERROR, LUX_SEVERE)<< "The direct light sampling strategy must sample a single light, not " << directSamplingCount << ".";
 			return false;
 		}
 
@@ -182,8 +185,8 @@ public:
 
 private:
 	// BidirIntegrator Data
-	LightsSamplingStrategy *lightDirectStrategy;
-	u_int samplingCount;
+	LightsSamplingStrategy *lightDirectStrategy, *lightPathStrategy;
+	u_int directSamplingCount, pathSamplingCount;
 	u_int lightNumOffset;
 	u_int lightPosOffset, lightDirOffset, sampleDirectOffset;
 	bool hybridUseMIS, debug;

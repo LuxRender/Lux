@@ -46,12 +46,13 @@ void LightRenderingHints::InitParam(const ParamSet &params) {
 // Light Sampling Strategies
 //------------------------------------------------------------------------------
 
-LightsSamplingStrategy *LightsSamplingStrategy::Create(const ParamSet &params)
+LightsSamplingStrategy *LightsSamplingStrategy::Create(const string &name,
+	const ParamSet &params)
 {
 	enum LightStrategyType lightStrategyType;
 	LightsSamplingStrategy *lsStrategy = NULL;
 	// For compatibility with past versions
-	string st = params.FindOneString("lightstrategy",
+	string st = params.FindOneString(name,
 		params.FindOneString("strategy", "auto"));
 
 	if (st == "one")
@@ -299,58 +300,7 @@ void SurfaceIntegratorRenderingHints::InitParam(const ParamSet &params)
 	shadowRayCount = max(params.FindOneInt("shadowraycount", 1), 1);
 
 	// Light Strategy
-
-	// For compatibility with past versions
-	string st = params.FindOneString("lightstrategy",
-		params.FindOneString("strategy", "auto"));
-
-	if (st == "one")
-		lightStrategyType = LightsSamplingStrategy::SAMPLE_ONE_UNIFORM;
-	else if (st == "all")
-		lightStrategyType = LightsSamplingStrategy::SAMPLE_ALL_UNIFORM;
-	else if (st == "auto")
-		lightStrategyType = LightsSamplingStrategy::SAMPLE_AUTOMATIC;
-	else if (st == "importance")
-		lightStrategyType = LightsSamplingStrategy::SAMPLE_ONE_IMPORTANCE;
-	else if (st == "powerimp")
-		lightStrategyType = LightsSamplingStrategy::SAMPLE_ONE_POWER_IMPORTANCE;
-	else if (st == "allpowerimp")
-		lightStrategyType = LightsSamplingStrategy::SAMPLE_ALL_POWER_IMPORTANCE;
-	else if (st == "logpowerimp")
-		lightStrategyType = LightsSamplingStrategy::SAMPLE_ONE_LOG_POWER_IMPORTANCE;
-	else {
-		LOG( LUX_WARNING,LUX_BADTOKEN) << "Strategy  '" << st << "' unknown. Using \"auto\".";
-		lightStrategyType = LightsSamplingStrategy::SAMPLE_AUTOMATIC;
-	}
-
-	// Create the light strategy
-	switch (lightStrategyType) {
-		case LightsSamplingStrategy::SAMPLE_ALL_UNIFORM:
-			lsStrategy = new LSSAllUniform();
-			break;
-		case LightsSamplingStrategy::SAMPLE_ONE_UNIFORM:
-			lsStrategy =  new LSSOneUniform();
-			break;
-		case LightsSamplingStrategy::SAMPLE_AUTOMATIC:
-			lsStrategy =  new LSSAuto();
-			break;
-		case LightsSamplingStrategy::SAMPLE_ONE_IMPORTANCE:
-			lsStrategy = new LSSOneImportance();
-			break;
-		case LightsSamplingStrategy::SAMPLE_ONE_POWER_IMPORTANCE:
-			lsStrategy = new LSSOnePowerImportance();
-			break;
-		case LightsSamplingStrategy::SAMPLE_ALL_POWER_IMPORTANCE:
-			lsStrategy = new LSSAllPowerImportance();
-			break;
-		case LightsSamplingStrategy::SAMPLE_ONE_LOG_POWER_IMPORTANCE:
-			lsStrategy = new LSSOneLogPowerImportance();
-			break;
-		default:
-			BOOST_ASSERT(false);
-	}
-	if (lsStrategy)
-		lsStrategy->InitParam(params);
+	lsStrategy = LightsSamplingStrategy::Create("lightstrategy", params);
 }
 
 void SurfaceIntegratorRenderingHints::InitStrategies(const Scene &scene) {
