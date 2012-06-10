@@ -208,7 +208,7 @@ const RenderFarm::CompiledFile& RenderFarm::CompiledFiles::fromHash(filehash_t h
 bool RenderFarm::CompiledFiles::send(std::iostream &stream) const {
 	LOG(LUX_DEBUG,LUX_NOERROR) << "Sending files";
 
-	stream << "BEGIN FILES" << endl;
+	stream << "BEGIN FILES" << "\n";
 
 	if (!read_response(stream, "BEGIN FILES OK"))
 		return false;
@@ -245,7 +245,7 @@ bool RenderFarm::CompiledFiles::send(std::iostream &stream) const {
 			return false;
 	}
 
-	stream << "END FILES OK" << endl;
+	stream << "END FILES OK" << "\n";
 
 	LOG(LUX_DEBUG,LUX_NOERROR) << "Sent files";
 
@@ -314,7 +314,7 @@ void RenderFarm::CompiledCommand::addFile(const std::string &paramName, const Co
 }
 
 bool RenderFarm::CompiledCommand::send(std::iostream &stream) const {
-	stream << command << endl;
+	stream << command << "\n";
 	string buf = paramsBuf.str();
 	stream << buf;
 	string response;
@@ -324,25 +324,25 @@ bool RenderFarm::CompiledCommand::send(std::iostream &stream) const {
 		return true;
 
 	if (files.empty()) {
-		stream << "FILE INDEX EMPTY" << endl;
+		stream << "FILE INDEX EMPTY" << "\n";
 		return true;
 	}
 
 	LOG(LUX_DEBUG,LUX_NOERROR) << "Sending file index";
-	stream << "BEGIN FILE INDEX" << endl;
+	stream << "BEGIN FILE INDEX" << "\n";
 
 	if (!read_response(stream, "BEGIN FILE INDEX OK"))
 		return false;
 
 	LOG(LUX_DEBUG,LUX_NOERROR) << "File index size: " << files.size();
 	for (size_t i = 0; i < files.size(); ++i) {		
-		stream << files[i].first << endl; // param name
-		stream << files[i].second.filename() << endl;
-		stream << files[i].second.hash() << endl;
-		stream << endl;
+		stream << files[i].first << "\n"; // param name
+		stream << files[i].second.filename() << "\n";
+		stream << files[i].second.hash() << "\n";
+		stream << "\n";
 	}
 
-	stream << "END FILE INDEX" << endl;
+	stream << "END FILE INDEX" << "\n";
 
 	if (!read_response(stream, "END FILE INDEX OK"))
 		return false;
@@ -625,6 +625,7 @@ void RenderFarm::flushImpl() {
 						serverInfoList[i].name << ":" << serverInfoList[i].port;
 
 				tcp::iostream stream(serverInfoList[i].name, serverInfoList[i].port);
+				stream.rdbuf()->set_option(tcp::no_delay(true));
 				//stream << commands << endl;
 				for (size_t j = 0; j < compiledCommands.size(); j++) {
 					// send command

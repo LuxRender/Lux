@@ -301,11 +301,10 @@ static void processFiles(ParamSet &params, std::iostream &stream) {
 	}
 
 	if (s != "BEGIN FILE INDEX") {
-		LOG( LUX_ERROR,LUX_SYSTEM)<< "Expected 'BEGIN FILE INDEX', got '" << s << "'";
-		return;
+		throw std::runtime_error("Expected 'BEGIN FILE INDEX', got '" + s + "'");
 	}
 
-	stream << "BEGIN FILE INDEX OK" << endl;
+	stream << "BEGIN FILE INDEX OK" << "\n";
 
 	vector<std::pair<string, string> > neededFiles;
 
@@ -326,7 +325,7 @@ static void processFiles(ParamSet &params, std::iostream &stream) {
 				<< "filename: '" << filename << "', "
 				<< "hash: '" << hash << "', "
 				<< "empty: '" << empty << "'";
-			stream << "FILE INDEX INVALID" << endl;
+			stream << "FILE INDEX INVALID" << "\n";
 			return;
 		}
 
@@ -350,12 +349,12 @@ static void processFiles(ParamSet &params, std::iostream &stream) {
 		params.AddString(paramName, &tfile.string());
 	}
 
-	stream << "END FILE INDEX OK" << endl;
+	stream << "END FILE INDEX OK" << "\n";
 
 	// now lets grab the files we need
 	if (!read_response(stream, "BEGIN FILES"))
 		return;
-	stream << "BEGIN FILES OK" << endl;
+	stream << "BEGIN FILES OK" << "\n";
 
 	for (size_t i = 0; i < neededFiles.size(); i++) {
 		const string& hash(neededFiles[i].first);
@@ -366,11 +365,11 @@ static void processFiles(ParamSet &params, std::iostream &stream) {
 			if (!receiveFile(fname, hash, stream))
 				throw std::runtime_error("Error receiving file '" + fname + "'");
 		}
-		stream << "FILE OK" << endl;
+		stream << "FILE OK" << "\n";
 		//tmpFiles.insert(neededFiles[i].second);
 	}
 
-	stream << "END FILES" << endl;
+	stream << "END FILES" << "\n";
 
 	if (!read_response(stream, "END FILES OK"))
 		return;
@@ -992,6 +991,7 @@ void NetworkRenderServerThread::run(int ipversion, NetworkRenderServerThread *se
 			tcp::iostream stream;
 			stream.rdbuf()->pubsetbuf(&buffer[0], buffer.size());
 			acceptor.accept(*stream.rdbuf());
+			stream.rdbuf()->set_option(boost::asio::ip::tcp::no_delay(true));
 			stream.setf(ios::scientific, ios::floatfield);
 			stream.precision(16);
 
