@@ -785,7 +785,18 @@ void cmd_luxPortalInstance(bool isLittleEndian, NetworkRenderServerThread *serve
 }
 void cmd_luxMotionBegin(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
 //case CMD_LUXMOTIONBEGIN:
-	processCommand(&Context::MotionBegin, stream);
+	u_int n;
+	vector<float> d;
+
+	stream >> n;
+	d.reserve(n);
+
+	for (u_int i = 0; i < n; i++) {
+		float f;
+		stream >> f;
+		d.push_back(f);
+	}
+	Context::GetActive()->MotionBegin(n, &d[0]);
 }
 void cmd_luxMotionEnd(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
 //case CMD_LUXMOTIONEND:

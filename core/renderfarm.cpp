@@ -983,7 +983,7 @@ void RenderFarm::send(const string &command, u_int n, float *d) {
 		CompiledCommand &ccmd(compiledCommands.add(command));
 
 		ccmd.buffer() << n << ' ';
-		for (int i = 0; i < 16; i++)
+		for (u_int i = 0; i < n; i++)
 			ccmd.buffer() << d[i] << ' ';
 		ccmd.buffer() << endl;
 	} catch (exception& e) {
