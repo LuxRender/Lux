@@ -74,6 +74,11 @@ void AdvancedInfoWidget::updateWidgetValues()
 		luxGetIntAttribute("film", "yResolution")));
 	info.append("</tr>");
 	info.append("<tr>");
+	info.append(QString("<td>Effective resolution:</td><td>%1x%2</td>").arg(
+		luxGetIntAttribute("film", "xPixelCount")).arg(
+		luxGetIntAttribute("film", "yPixelCount")));
+	info.append("</tr>");
+	info.append("<tr>");
 	info.append(QString("<td>Premult. alpha:</td><td>%1</td>").arg(
 		luxGetBoolAttribute("film", "premultiplyAlpha") ? tr("Yes") : tr("No")));
 	info.append("</tr>");	
