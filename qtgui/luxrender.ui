@@ -406,8 +406,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>100</width>
-                  <height>30</height>
+                  <width>362</width>
+                  <height>422</height>
                  </rect>
                 </property>
                 <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -479,8 +479,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>100</width>
-                  <height>30</height>
+                  <width>362</width>
+                  <height>422</height>
                  </rect>
                 </property>
                 <property name="sizePolicy">
@@ -794,7 +794,7 @@
           <item>
            <widget class="QLabel" name="label_overrideHaltSpp">
             <property name="text">
-             <string>Overide halt spp:</string>
+             <string>Override halt spp:</string>
             </property>
             <property name="buddy">
              <cstring>spinBox_overrideHaltSpp</cstring>
@@ -832,7 +832,7 @@
           <item>
            <widget class="QLabel" name="label_overrideHaltTime">
             <property name="text">
-             <string>Overide halt time:</string>
+             <string>Override halt time:</string>
             </property>
             <property name="buddy">
              <cstring>spinBox_overrideHaltTime</cstring>
