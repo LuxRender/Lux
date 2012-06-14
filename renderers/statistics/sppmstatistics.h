@@ -28,8 +28,6 @@
 
 #include <algorithm>
 
-#include <boost/circular_buffer.hpp>
-
 namespace lux
 {
 
@@ -81,10 +79,10 @@ public:
 private:
 	SPPMRenderer* renderer;
 
-	boost::circular_buffer<double> windowPps;
-	boost::circular_buffer<double> windowYps;
 	double windowPassCount;
 	double windowPhotonCount;
+	double exponentialMovingAveragePass;
+	double exponentialMovingAveragePhotons;
 
 	virtual void resetDerived();
 	virtual void updateStatisticsWindowDerived();

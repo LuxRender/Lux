@@ -28,8 +28,6 @@
 
 #include <algorithm>
 
-#include <boost/circular_buffer.hpp>
-
 namespace lux
 {
 
@@ -89,8 +87,8 @@ public:
 private:
 	HybridSamplerRenderer* renderer;
 
-	boost::circular_buffer<double> windowSps;
 	double windowSampleCount;
+	double exponentialMovingAverage;
 
 	virtual void resetDerived();
 	virtual void updateStatisticsWindowDerived();
