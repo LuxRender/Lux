@@ -53,7 +53,7 @@ float PhaseHG(const Vector &w, const Vector &wp, float g) {
 
 float PhaseSchlick(const Vector &w,
                    const Vector &wp, float g) {
-	const float k = g * (1.55f - .55f * g * g);
+	const float k = g * (1.5f - .5f * g * g);
 	const float compkcostheta = 1.f - k * Dot(w, wp);
 	return (1.f - k * k) / (4.f * M_PI * compkcostheta * compkcostheta);
 }
