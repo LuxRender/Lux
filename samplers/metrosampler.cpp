@@ -152,6 +152,10 @@ MetropolisSampler::~MetropolisSampler() {
 // interface for new ray/samples from scene
 bool MetropolisSampler::GetNextSample(Sample *sample)
 {
+	// Stop right away if the rendering limit has been reached
+	// as it seems no major artifacts from QMC are observed
+	if (film->enoughSamplesPerPixel)
+		return false;
 	MetropolisData *data = (MetropolisData *)(sample->samplerData);
 
 	// Advance to the next vector in the QMC sequence and stay inside the
@@ -163,10 +167,6 @@ bool MetropolisSampler::GetNextSample(Sample *sample)
 	// change the Cranley-Paterson rotation vector
 	// This is also responsible for first time initialization of the vector
 	if (data->rngBase == 0) {
-		// This is a safe point to stop without too visible patterns
-		// if the render has to stop
-		if (film->enoughSamplesPerPixel)
-			return false;
 		for (u_int i = 0; i < data->totalSamples; ++i)
 			data->rngRotation[i] = sample->rng->floatValue();
 	}
