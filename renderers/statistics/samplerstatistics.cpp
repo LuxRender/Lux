@@ -39,10 +39,8 @@ using namespace lux;
 
 SRStatistics::SRStatistics(SamplerRenderer* renderer)
 	: renderer(renderer),
-	windowSampleCount(0.0)
+	exponentialMovingAverage(0.0)
 {
-	windowSps.set_capacity(samplesInWindow);
-
 	formattedLong = new SRStatistics::FormattedLong(this);
 	formattedShort = new SRStatistics::FormattedShort(this);
 
@@ -73,8 +71,8 @@ SRStatistics::~SRStatistics()
 }
 
 void SRStatistics::resetDerived() {
-	windowSps.clear();
 	windowSampleCount = 0.0;
+	exponentialMovingAverage = 0.0;
 }
 
 void SRStatistics::updateStatisticsWindowDerived()
@@ -83,10 +81,15 @@ void SRStatistics::updateStatisticsWindowDerived()
 	double sampleCount = getSampleCount();
 	double elapsedTime = windowCurrentTime - windowStartTime;
 
-	if (elapsedTime == 0.0)
-		windowSps.clear();
-	else
-		windowSps.push_back((sampleCount - windowSampleCount) / elapsedTime);
+	if (elapsedTime != 0.0)
+	{
+		double sps = (sampleCount - windowSampleCount) / elapsedTime;
+
+		if (exponentialMovingAverage == 0.0)
+			exponentialMovingAverage = sps;
+
+		exponentialMovingAverage += emaWeightOfMostRecent * (sps - exponentialMovingAverage);
+	}
 	windowSampleCount = sampleCount;
 }
 
@@ -136,9 +139,7 @@ double SRStatistics::getAverageSamplesPerSecond() {
 
 double SRStatistics::getAverageSamplesPerSecondWindow() {
 	boost::mutex::scoped_lock window_mutex(windowMutex);
-
-	int s = windowSps.size();
-	return (s == 0) ? 0 : std::accumulate(windowSps.begin(), windowSps.end(), 0.0) / s;
+	return exponentialMovingAverage;
 }
 
 double SRStatistics::getNetworkAverageSamplesPerSecond() {

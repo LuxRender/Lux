@@ -39,11 +39,10 @@ using namespace lux;
 SPPMRStatistics::SPPMRStatistics(SPPMRenderer* renderer)
 	: renderer(renderer),
 	windowPassCount(0.0),
-	windowPhotonCount(0.0)
+	windowPhotonCount(0.0),
+	exponentialMovingAveragePass(0.0),
+	exponentialMovingAveragePhotons(0.0)
 {
-	windowPps.set_capacity(samplesInWindow);
-	windowYps.set_capacity(samplesInWindow);
-
 	formattedLong = new SPPMRStatistics::FormattedLong(this);
 	formattedShort = new SPPMRStatistics::FormattedShort(this);
 
@@ -67,11 +66,10 @@ SPPMRStatistics::~SPPMRStatistics()
 }
 
 void SPPMRStatistics::resetDerived() {
-	windowPps.clear();
-	windowYps.clear();
-
 	windowPassCount = 0.0;
 	windowPhotonCount = 0.0;
+	exponentialMovingAveragePass = 0.0;
+	exponentialMovingAveragePhotons = 0.0;
 }
 
 void SPPMRStatistics::updateStatisticsWindowDerived()
@@ -80,15 +78,18 @@ void SPPMRStatistics::updateStatisticsWindowDerived()
 	double photonCount = getPhotonCount();
 	double elapsedTime = windowCurrentTime - windowStartTime;
 
-	if (elapsedTime == 0.0)
+	if (elapsedTime != 0.0)
 	{
-		windowPps.clear();
-		windowYps.clear();
-	}
-	else
-	{
-		windowPps.push_back((passCount - windowPassCount) / elapsedTime);
-		windowYps.push_back((photonCount - windowPhotonCount) / elapsedTime);
+		double pps = (passCount - windowPassCount) / elapsedTime;
+		double yps = (photonCount - windowPhotonCount) / elapsedTime;
+
+		if (exponentialMovingAveragePass == 0.0)
+			exponentialMovingAveragePass = pps;
+		if (exponentialMovingAveragePhotons == 0.0)
+			exponentialMovingAveragePhotons = yps;
+
+		exponentialMovingAveragePass += emaWeightOfMostRecent * (pps - exponentialMovingAveragePass);
+		exponentialMovingAveragePhotons += emaWeightOfMostRecent * (yps - exponentialMovingAveragePhotons);
 	}
 
 	windowPassCount = passCount;
@@ -102,9 +103,7 @@ double SPPMRStatistics::getAveragePassesPerSecond() {
 
 double SPPMRStatistics::getAveragePassesPerSecondWindow() {
 	boost::mutex::scoped_lock window_mutex(windowMutex);
-
-	int s = windowPps.size();
-	return (s == 0) ? 0 : std::accumulate(windowPps.begin(), windowPps.end(), 0.0) / s;
+	return exponentialMovingAveragePass;
 }
 
 // Returns haltSamplesPerPixel if set, otherwise infinity
@@ -130,9 +129,7 @@ double SPPMRStatistics::getAveragePhotonsPerSecond() {
 
 double SPPMRStatistics::getAveragePhotonsPerSecondWindow() {
 	boost::mutex::scoped_lock window_mutex(windowMutex);
-
-	int s = windowYps.size();
-	return (s == 0) ? 0 : std::accumulate(windowYps.begin(), windowYps.end(), 0.0) / s;
+	return exponentialMovingAveragePhotons;
 }
 
 SPPMRStatistics::FormattedLong::FormattedLong(SPPMRStatistics* rs)

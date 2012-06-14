@@ -35,6 +35,9 @@ using boost::posix_time::time_duration;
 namespace lux
 {
 
+// Exponential moving average weight of most recent value
+const float RendererStatistics::emaWeightOfMostRecent = 0.15;
+
 RendererStatistics::RendererStatistics()
 	: Queryable("renderer_statistics"),
 	formattedLong(NULL),
