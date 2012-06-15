@@ -395,6 +395,7 @@ SET(lux_fresnel_textures_src
 SOURCE_GROUP("Source Files\\Textures\\Fresnel" FILES ${lux_fresnel_textures_src})
 
 SET(lux_textures_src
+	textures/add.cpp
 	textures/band.cpp
 	textures/bilerp.cpp
 	textures/brick.cpp
@@ -408,6 +409,7 @@ SET(lux_textures_src
 	textures/mix.cpp
 	textures/multimix.cpp
 	textures/scale.cpp
+	textures/subtract.cpp
 	textures/uv.cpp
 	textures/uvmask.cpp
 	textures/windy.cpp

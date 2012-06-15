@@ -65,6 +65,18 @@ public:
 			c[i] += s2.c[i];
 		return *this;
 	}
+  // Needed for addition of textures
+	SWCSpectrum operator+(Scalar a) const {
+		SWCSpectrum ret = *this;
+		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
+			ret.c[i] += a;
+		return ret;
+	}
+  // Needed for addition of textures
+  friend inline
+	SWCSpectrum operator+(Scalar a, const SWCSpectrum &s) {
+		return s + a;
+	}
 	SWCSpectrum operator-(const SWCSpectrum &s2) const {
 		SWCSpectrum ret = *this;
 		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
@@ -75,6 +87,18 @@ public:
 		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
 			c[i] -= s2.c[i];
 		return *this;
+	}
+  // Needed for subtraction of textures
+  friend inline
+	SWCSpectrum operator-(Scalar a, const SWCSpectrum &s) {
+		return s - a;
+	}
+  // Needed for subtraction of textures
+	SWCSpectrum operator-(Scalar a) const {
+		SWCSpectrum ret = *this;
+		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
+			ret.c[i] -= a;
+		return ret;
 	}
 	SWCSpectrum operator/(const SWCSpectrum &s2) const {
 		SWCSpectrum ret = *this;
