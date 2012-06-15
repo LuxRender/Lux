@@ -38,7 +38,11 @@
 	SET(MACOSX_BUNDLE_ICON_FILE "luxrender.icns")
 	# SET(MACOSX_BUNDLE_COPYRIGHT "")
 	# SET(MACOSX_BUNDLE_INFO_STRING "Info string, localized?")
-	ADD_CUSTOM_TARGET(DYNAMIC_BUILD DEPENDS luxShared luxrender luxconsole luxmerger luxcomp pylux )
+	if(OSX_OPTION_PYLUX)
+		ADD_CUSTOM_TARGET(DYNAMIC_BUILD DEPENDS luxShared luxrender luxconsole luxmerger luxcomp pylux )
+	else()
+		ADD_CUSTOM_TARGET(DYNAMIC_BUILD DEPENDS luxShared luxrender luxconsole luxmerger luxcomp)
+	endif()
 	ADD_CUSTOM_COMMAND(
 		TARGET DYNAMIC_BUILD POST_BUILD
 		COMMAND rm -rf ${CMAKE_BUILD_TYPE}/luxrender.app/Contents/Resources
