@@ -55,9 +55,8 @@ public:
 		return tex1->Evaluate(sw, dg) + tex2->Evaluate(sw, dg);
 	}
 	
-	// In Y() one of the textures must use Filter to avoid double W->lm conv
 	virtual float Y() const { 
-		return tex1->Filter() + tex2->Y(); 
+		return tex1->Y() + tex2->Y(); 
 	}
 	
 	virtual float Filter() const { 
@@ -70,10 +69,8 @@ public:
 		float du1, dv1, du2, dv2;
 		tex1->GetDuv(sw, dg, delta, &du1, &dv1);
 		tex2->GetDuv(sw, dg, delta, &du2, &dv2);
-		float t1 = tex1->EvalFloat(sw, dg);
-		float t2 = tex2->EvalFloat(sw, dg);
-		*du = t1 + du2 + t2 + du1;
-		*dv = t1 + dv2 + t2 + dv1;
+		*du = du1 + du2;
+		*dv = dv1 + dv2;
 	}
 	
 	virtual void GetMinMaxFloat(float *minValue, float *maxValue) const {
