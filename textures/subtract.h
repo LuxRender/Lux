@@ -116,15 +116,9 @@ template <class T, class U> inline Texture<float> * SubtractTexture<T,U>::Create
 template <class T,class U> inline Texture<SWCSpectrum> * SubtractTexture<T,U>::CreateSWCSpectrumTexture(const Transform &tex2world,
 	const ParamSet &tp)
 {
-	boost::shared_ptr<Texture<SWCSpectrum> > tex2(tp.GetSWCSpectrumTexture("tex2", RGBColor(1.f)));
-	map<string, boost::shared_ptr<Texture<float> > > *ft = Context::GetActiveFloatTextures();
-	if (ft->find(string("tex1")) == ft->end()) {
-		boost::shared_ptr<Texture<SWCSpectrum> > tex1(tp.GetSWCSpectrumTexture("tex1", RGBColor(1.f)));
-		return new SubtractTexture<SWCSpectrum, SWCSpectrum>(tex1, tex2);
-	} else {
-		boost::shared_ptr<Texture<float> > ftex1(tp.GetFloatTexture("tex1", 1.f));
-		return new SubtractTexture<float, SWCSpectrum>(ftex1, tex2);
-	}
+	boost::shared_ptr<Texture<SWCSpectrum> > tex1(tp.GetSWCSpectrumTexture("tex1", RGBColor(1.f))),
+		tex2(tp.GetSWCSpectrumTexture("tex2", RGBColor(1.f)));
+	return new SubtractTexture<SWCSpectrum, SWCSpectrum>(tex1, tex2);
 }
 
 }//namespace lux
