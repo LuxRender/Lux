@@ -42,6 +42,8 @@ ReinhardOp::ReinhardOp(float prS, float poS, float b)
 	burn = b;
 }
 
+// This is the implementation of equation (4) of this paper: http://www.cs.utah.edu/~reinhard/cdrom/tonemap.pdf
+// TODO implement the local operator of equation (9) with reasonable speed
 void ReinhardOp::Map(vector<XYZColor> &xyz, u_int xRes, u_int yRes, float maxDisplayY) const
 {
 	const float alpha = .1f;
