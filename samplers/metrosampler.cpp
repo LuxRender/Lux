@@ -128,9 +128,9 @@ static float fracf(const float &v) {
 
 // Metropolis method definitions
 MetropolisSampler::MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
-	u_int maxRej, float largeProb, float rng, bool useV) :
+	u_int maxRej, float largeProb, float rng, bool useV, bool useC) :
 	Sampler(xStart, xEnd, yStart, yEnd, 1), maxRejects(maxRej),
-	pLarge(largeProb), range(rng), useVariance(useV)
+	pLargeTarget(largeProb), range(rng), useVariance(useV), useCooldown(useC)
 {
 	// Allocate and compute all values of the rng
 	rngSamples = AllocAligned<float>(rngN);
@@ -143,6 +143,15 @@ MetropolisSampler::MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
 	}
 	RandomGenerator rndg(1);
 	Shuffle(rndg, rngSamples, rngN, 1);
+	// 15 seconds of cooldown time for evey .1 difference from 0.5 in pLarge
+	if(useCooldown) {
+		pLarge = 0.5f;
+		cooldownTime = Ceil2UInt(150.f * fabsf(pLargeTarget - 0.5f));
+		LOG(LUX_INFO, LUX_NOERROR) << "Metropolis cooldown time will be " << cooldownTime << " seconds";
+	} else {
+		pLarge = pLargeTarget;
+		cooldownTime = 0;
+	}
 }
 
 MetropolisSampler::~MetropolisSampler() {
@@ -343,6 +352,10 @@ void MetropolisSampler::AddSample(const Sample &sample)
 		++(data->consecRejects);
 	}
 	newContributions.clear();
+	if (useCooldown && luxGetDoubleAttribute("renderer_statistics", "elapsedTime") >= cooldownTime) {
+		pLarge = pLargeTarget;
+		useCooldown = false;
+	}
 	const float mutationSelector = sample.rng->floatValue();
 	data->large = (mutationSelector < pLarge);
 }
@@ -355,9 +368,10 @@ Sampler* MetropolisSampler::CreateSampler(const ParamSet &params, const Film *fi
 	float largeMutationProb = params.FindOneFloat("largemutationprob", 0.4f);	// probability of generating a large sample mutation
 	float range = params.FindOneFloat("mutationrange", (xEnd - xStart + yEnd - yStart) / 32.f);	// maximum distance in pixel for a small mutation
 	bool useVariance = params.FindOneBool("usevariance", false);
+	bool useCooldown = params.FindOneBool("usecooldown", false);
 
 	return new MetropolisSampler(xStart, xEnd, yStart, yEnd, max(maxConsecRejects, 0),
-		largeMutationProb, range, useVariance);
+		largeMutationProb, range, useVariance, useCooldown);
 }
 
 static DynamicLoader::RegisterSampler<MetropolisSampler> r("metropolis");

@@ -51,7 +51,7 @@ public:
 		double totalLY, sampleCount;
 	};
 	MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
-		u_int maxRej, float largeProb, float rng, bool useV);
+		u_int maxRej, float largeProb, float rng, bool useV, bool useC);
 	virtual ~MetropolisSampler();
 
 	virtual void InitSample(Sample *sample) const {
@@ -72,8 +72,9 @@ public:
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
 
 	u_int maxRejects;
-	float pLarge, range;
-	bool useVariance;
+	float pLarge, pLargeTarget, range;
+	bool useVariance, useCooldown;
+	u_int cooldownTime;
 	float *rngSamples;
 };
 
