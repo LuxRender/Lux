@@ -52,6 +52,12 @@ public:
 		const Normal &NN,
 		const Vector &DPDU,
 		const Vector &DPDV);
+
+	/**
+	 * Returns the volume defined by dpdu, dpdv and nn
+	 * @return The volume defined by dpdu, dpdv and nn
+	 */
+	float Volume() const { return fabsf(Dot(Cross(dpdu, dpdv), Vector(nn))); }
 };
 
 // DifferentialGeometry Declarations

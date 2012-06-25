@@ -59,6 +59,7 @@ public:
 		BxDFType flags = BSDF_ALL) const;
 	virtual SWCSpectrum rho(const SpectrumWavelengths &sw,
 		const Vector &woW, BxDFType flags = BSDF_ALL) const;
+	virtual float ApplyTransform(const Transform &transform);
 
 	bool MatchesFlags(BxDFType flags) const { return (flags&(BSDF_GLOSSY|BSDF_SPECULAR)) ? true: false;}
 

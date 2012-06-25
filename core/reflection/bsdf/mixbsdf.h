@@ -62,6 +62,7 @@ public:
 		BxDFType flags = BSDF_ALL) const;
 	virtual SWCSpectrum rho(const SpectrumWavelengths &sw, const Vector &wo,
 		BxDFType flags = BSDF_ALL) const;
+	virtual float ApplyTransform(const Transform &transform);
 private:
 	// MixBSDF Private Methods
 	virtual ~MixBSDF() { }

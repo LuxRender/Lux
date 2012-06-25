@@ -682,18 +682,6 @@ void Context::Shape(const string &n, const ParamSet &params) {
 		return;
 	params.ReportUnused();
 
-	// Initialize area light for shape
-	AreaLight *area = NULL;
-	if (graphicsState->areaLight != "") {
-		u_int lg = GetLightGroup();
-		area = MakeAreaLight(graphicsState->areaLight, curTransform.StaticTransform(),
-			graphicsState->areaLightParams, sh);
-		if (area) {
-			area->group = lg;
-			area->SetVolume(graphicsState->exterior); //unused
-		}
-	}
-
 	// Lotus - Set the material
 	if (graphicsState->material)
 		sh->SetMaterial(graphicsState->material);
@@ -706,24 +694,44 @@ void Context::Shape(const string &n, const ParamSet &params) {
 	sh->SetInterior(graphicsState->interior);
 
 	// Create primitive and add to scene or current instance
-	boost::shared_ptr<Primitive> pr(sh);
 	if (renderOptions->currentInstance) {
-		if (area)
+		if (graphicsState->areaLight != "") {
 			LOG(LUX_WARNING,LUX_UNIMPLEMENT)<<"Area lights not supported with object instancing";
-		if (!pr->CanIntersect())
-			pr->Refine(*(renderOptions->currentInstance),
-				PrimitiveRefinementHints(false), pr);
-		else
-			renderOptions->currentInstance->push_back(pr);
-	} else if (area) {
+/*			// Lotus - add a decorator to set the arealight field
+			boost::shared_ptr<Primitive> prim(
+				new AreaLightPrimitive(pr, area));
+			if (!prim->CanIntersect())
+				prim->Refine(*(renderOptions->currentInstance),
+					PrimitiveRefinementHints(false), prim);
+			else
+				renderOptions->currentInstance->push_back(prim);
+			// Add area light for primitive to light vector
+			renderOptions->currentLightInstance->push_back(area);*/
+		} else {
+			if (!sh->CanIntersect())
+				sh->Refine(*(renderOptions->currentInstance),
+					PrimitiveRefinementHints(false), sh);
+			else
+				renderOptions->currentInstance->push_back(sh);
+		}
+	} else if (graphicsState->areaLight != "") {
+		u_int lg = GetLightGroup();
+		AreaLight *area = MakeAreaLight(graphicsState->areaLight,
+			curTransform.StaticTransform(),
+			graphicsState->areaLightParams, sh);
+		if (area) {
+			area->group = lg;
+			area->SetVolume(graphicsState->exterior); //unused
+		}
 		// Lotus - add a decorator to set the arealight field
+		boost::shared_ptr<Primitive> pr(sh);
 		boost::shared_ptr<Primitive> prim(new AreaLightPrimitive(pr,
 			area));
 		renderOptions->primitives.push_back(prim);
 		// Add area light for primitive to light vector
 		renderOptions->lights.push_back(area);
 	} else
-		renderOptions->primitives.push_back(pr);
+		renderOptions->primitives.push_back(sh);
 }
 void Context::Renderer(const string &n, const ParamSet &params) {
 	VERIFY_OPTIONS("Renderer");

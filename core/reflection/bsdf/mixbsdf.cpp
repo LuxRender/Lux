@@ -121,3 +121,10 @@ SWCSpectrum MixBSDF::rho(const SpectrumWavelengths &sw, const Vector &wo,
 	return ret;
 }
 
+float MixBSDF::ApplyTransform(const Transform &transform)
+{
+	for (u_int i = 0; i < nBSDFs; ++i)
+		bsdfs[i]->ApplyTransform(transform);
+	return this->BSDF::ApplyTransform(transform);
+}
+
