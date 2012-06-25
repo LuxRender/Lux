@@ -546,6 +546,7 @@ SET(lux_core_external_hdr
 SOURCE_GROUP("Header Files\\Core\\External" FILES ${lux_core_external_hdr})
 SET(lux_core_geometry_hdr
 	core/geometry/bbox.h
+	core/geometry/matrix2x2.h
 	core/geometry/matrix3x3.h
 	core/geometry/matrix4x4-sse.h
 	core/geometry/matrix4x4.h

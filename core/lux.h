@@ -221,8 +221,6 @@ namespace lux
   //string hashing function
   unsigned int DJBHash(const std::string& str);
 
-  bool SolveLinearSystem2x2(const float A[2][2], const float B[2], float x[2]);
-
   // accepts platform-specific filenames and performs fallback
   ImageData *ReadImage(const string &name);
 

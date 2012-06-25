@@ -59,11 +59,6 @@ boost::shared_ptr<Matrix4x4> Matrix4x4::Transpose() const
 	return o;
 }
 
-// TODO - lordcrc - move to proper header file
-float Det2x2(const float a00, const float a01, const float a10, const float a11) {
-	return a00*a11 - a01*a10;
-}
-
 float Matrix4x4::Determinant() const {
 
 	// row expansion along the last row
