@@ -596,7 +596,10 @@ void Context::LightSource(const string &n, const ParamSet &params) {
 			LOG(LUX_ERROR,LUX_SYNTAX)<< "luxLightSource: light type sun unknown.";
 			graphicsState->currentLightPtr0 = NULL;
 		} else {
-			renderOptions->lights.push_back(lt_sun);
+			if (renderOptions->currentLightInstance)
+				renderOptions->currentLightInstance->push_back(boost::shared_ptr<Light>(lt_sun));
+			else
+				renderOptions->lights.push_back(lt_sun);
 			graphicsState->currentLight = n;
 			graphicsState->currentLightPtr0 = lt_sun;
 			lt_sun->group = lg;
@@ -612,20 +615,25 @@ void Context::LightSource(const string &n, const ParamSet &params) {
 			LOG(LUX_ERROR,LUX_SYNTAX)<< "luxLightSource: light type sky unknown.";
 			graphicsState->currentLightPtr1 = NULL;
 		} else {
-			renderOptions->lights.push_back(lt_sky);
+			if (renderOptions->currentLightInstance)
+				renderOptions->currentLightInstance->push_back(boost::shared_ptr<Light>(lt_sky));
+			else
+				renderOptions->lights.push_back(lt_sky);
 			graphicsState->currentLight = n;
 			graphicsState->currentLightPtr1 = lt_sky;
 			lt_sky->group = lg;
 			lt_sky->SetVolume(graphicsState->exterior);
 		}
-
 	} else {
 		// other lightsource type
 		Light *lt = MakeLight(n, curTransform.StaticTransform(), params);
 		if (lt == NULL) {
 			LOG(LUX_ERROR,LUX_SYNTAX) << "luxLightSource: light type '" << n << "' unknown";
 		} else {
-			renderOptions->lights.push_back(lt);
+			if (renderOptions->currentLightInstance)
+				renderOptions->currentLightInstance->push_back(boost::shared_ptr<Light>(lt));
+			else
+				renderOptions->lights.push_back(lt);
 			graphicsState->currentLight = n;
 			graphicsState->currentLightPtr0 = lt;
 			graphicsState->currentLightPtr1 = NULL;
@@ -707,7 +715,7 @@ void Context::Shape(const string &n, const ParamSet &params) {
 				renderOptions->currentInstance->push_back(prim);
 			// Add area light for primitive to light vector
 			renderOptions->currentLightInstance->push_back(area);*/
-		} else {
+		} /*else*/ {
 			if (!sh->CanIntersect())
 				sh->Refine(*(renderOptions->currentInstance),
 					PrimitiveRefinementHints(false), sh);
@@ -787,79 +795,109 @@ void Context::ObjectBegin(const string &n) {
 	VERIFY_WORLD("ObjectBegin");
 	renderFarm->send("luxObjectBegin", n);
 	AttributeBegin();
-	if (renderOptions->currentInstance)
-		LOG(LUX_ERROR,LUX_NESTING)<< "ObjectBegin called inside of instance definition";
+	if (renderOptions->currentInstance) {
+		LOG(LUX_ERROR,LUX_NESTING) <<
+			"ObjectBegin called inside of instance definition";
+		return;
+	}
 	renderOptions->instances[n] = vector<boost::shared_ptr<Primitive> >();
 	renderOptions->currentInstance = &renderOptions->instances[n];
+	renderOptions->lightInstances[n] = vector<boost::shared_ptr<Light> >();
+	renderOptions->currentLightInstance = &renderOptions->lightInstances[n];
 }
 void Context::ObjectEnd() {
 	VERIFY_WORLD("ObjectEnd");
 	renderFarm->send("luxObjectEnd");
-	if (!renderOptions->currentInstance)
-		LOG(LUX_ERROR,LUX_NESTING)<< "ObjectEnd called outside of instance definition";
+	if (!renderOptions->currentInstance) {
+		LOG(LUX_ERROR,LUX_NESTING) <<
+			"ObjectEnd called outside of instance definition";
+		return;
+	}
 	renderOptions->currentInstance = NULL;
+	renderOptions->currentLightInstance = NULL;
 	AttributeEnd();
 }
 void Context::ObjectInstance(const string &n) {
 	VERIFY_WORLD("ObjectInstance");
 	renderFarm->send("luxObjectInstance", n);
 	// Object instance error checking
-	if (renderOptions->currentInstance) {
-		LOG(LUX_ERROR,LUX_NESTING)<< "ObjectInstance can't be called inside instance definition";
-		return;
-	}
 	if (renderOptions->instances.find(n) == renderOptions->instances.end()) {
 		LOG(LUX_ERROR,LUX_BADTOKEN) << "Unable to find instance named '" << n << "'";
 		return;
 	}
 	vector<boost::shared_ptr<Primitive> > &in = renderOptions->instances[n];
-	if (in.size() == 0)
+	if (renderOptions->currentInstance == &in) {
+		LOG(LUX_ERROR,LUX_NESTING) << "ObjectInstance '" << n << "' self reference";
 		return;
-	if (in.size() > 1 || !in[0]->CanIntersect()) {
-		// Refine instance _Primitive_s and create aggregate
-		boost::shared_ptr<Primitive> accel(
-			MakeAccelerator(renderOptions->acceleratorName, in,
-			renderOptions->acceleratorParams));
-		if (!accel)
-			accel = MakeAccelerator("kdtree", in, ParamSet());
-		if (!accel)
-			LOG(LUX_SEVERE,LUX_BUG)<< "Unable to find \"kdtree\" accelerator";
-		in.clear();
-		in.push_back(accel);
 	}
+	if (in.size() != 0) {
+		if (in.size() > 1 || !in[0]->CanIntersect()) {
+			// Refine instance _Primitive_s and create aggregate
+			boost::shared_ptr<Primitive> accel(
+				MakeAccelerator(renderOptions->acceleratorName,
+				in, renderOptions->acceleratorParams));
+			if (!accel)
+				accel = MakeAccelerator("kdtree", in,
+					ParamSet());
+			if (!accel)
+				LOG(LUX_SEVERE,LUX_BUG) <<
+					"Unable to find \"kdtree\" accelerator";
+			in.clear();
+			in.push_back(accel);
+		}
 
-	if (curTransform.IsStatic()) {
-		boost::shared_ptr<Primitive> o(new InstancePrimitive(in[0],
-			curTransform.StaticTransform(), graphicsState->material,
-			graphicsState->exterior, graphicsState->interior));
-		renderOptions->primitives.push_back(o);
-	} else {
-		boost::shared_ptr<Primitive> o(new MotionPrimitive(in[0], curTransform.GetMotionSystem(),
-			graphicsState->material, graphicsState->exterior, graphicsState->interior));
-		renderOptions->primitives.push_back(o);
+		boost::shared_ptr<Primitive> o;
+		if (curTransform.IsStatic()) {
+			o = boost::shared_ptr<Primitive>(new InstancePrimitive(in[0],
+				curTransform.StaticTransform(),
+				graphicsState->material,
+				graphicsState->exterior,
+				graphicsState->interior));
+		} else {
+			o = boost::shared_ptr<Primitive>(new MotionPrimitive(in[0],
+				curTransform.GetMotionSystem(),
+				graphicsState->material,
+				graphicsState->exterior,
+				graphicsState->interior));
+		}
+		if (renderOptions->currentInstance)
+			renderOptions->currentInstance->push_back(o);
+		else
+			renderOptions->primitives.push_back(o);
+	}
+	vector<boost::shared_ptr<Light> > &li = renderOptions->lightInstances[n];
+	for (u_int i = 0; i < li.size(); ++i) {
+		Light *l;
+		if (curTransform.IsStatic())
+			l = new InstanceLight(curTransform.StaticTransform(),
+				li[i]);
+		else
+			l = new MotionLight(curTransform.GetMotionSystem(),
+				li[i]);
+		if (renderOptions->currentLightInstance)
+			renderOptions->currentLightInstance->push_back(boost::shared_ptr<Light>(l));
+		else
+			renderOptions->lights.push_back(l);
 	}
 }
 void Context::PortalInstance(const string &n) {
 	VERIFY_WORLD("PortalInstance");
 	renderFarm->send("luxPortalInstance", n);
 	// Portal instance error checking
-	if (renderOptions->currentInstance) {
-		LOG(LUX_ERROR,LUX_NESTING)<< "PortalInstance can't be called inside instance definition";
-		return;
-	}
 	if (renderOptions->instances.find(n) == renderOptions->instances.end()) {
 		LOG(LUX_ERROR,LUX_BADTOKEN) << "Unable to find instance named '" << n << "'";
+		return;
+	}
+	vector<boost::shared_ptr<Primitive> > &in = renderOptions->instances[n];
+	if (renderOptions->currentInstance == &in) {
+		LOG(LUX_ERROR,LUX_NESTING) << "PortalInstance '" << n << "' self reference";
 		return;
 	}
 
 	if (graphicsState->currentLight == "")
 		return;
 
-	vector<boost::shared_ptr<Primitive> > &in = renderOptions->instances[n];
-	if (in.size() == 0)
-		return;
-
-	for (size_t i = 0; i < in.size(); i++) {
+	for (size_t i = 0; i < in.size(); ++i) {
 		if (graphicsState->currentLightPtr0)
 			graphicsState->currentLightPtr0->AddPortalShape(in[i]);
 
@@ -870,16 +908,17 @@ void Context::PortalInstance(const string &n) {
 void Context::MotionInstance(const string &n, float startTime, float endTime, const string &toTransform) {
 	VERIFY_WORLD("MotionInstance");
 	renderFarm->send("luxMotionInstance", n, startTime, endTime, toTransform);
+	LOG(LUX_WARNING, LUX_SYNTAX) << "MotionInstance '" << n << "' is deprecated, use a MotionBegin/MotionEnd block with an ObjectInstance inside";
 	// Object instance error checking
-	if (renderOptions->currentInstance) {
-		LOG(LUX_ERROR,LUX_NESTING)<< "MotionInstance can't be called inside instance definition";
-		return;
-	}
 	if (renderOptions->instances.find(n) == renderOptions->instances.end()) {
 		LOG(LUX_ERROR,LUX_BADTOKEN) << "Unable to find instance named '" << n << "'";
 		return;
 	}
 	vector<boost::shared_ptr<Primitive> > &in = renderOptions->instances[n];
+	if (renderOptions->currentInstance == &in) {
+		LOG(LUX_ERROR,LUX_NESTING) << "MotionInstance '" << n << "' self reference";
+		return;
+	}
 	if (in.size() == 0)
 		return;
 	if (in.size() > 1 || !in[0]->CanIntersect()) {
@@ -1018,7 +1057,9 @@ Scene *Context::RenderOptions::MakeScene() const {
 	lights.clear();
 	volumeRegions.clear();
 	currentInstance = NULL;
+	currentLightInstance = NULL;
 	instances.clear();
+	lightInstances.clear();
 
 	// Set a fixed seed for animations or debugging
 	if (debugMode || !randomMode)
