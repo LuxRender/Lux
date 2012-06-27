@@ -39,6 +39,9 @@ class Renderer;
 
 class RendererStatistics : public Queryable {
 public:
+	// Window size in seconds
+	static const unsigned int statisticsWindowSize = 5;
+
 	RendererStatistics();
 	virtual ~RendererStatistics() {};
 
@@ -107,8 +110,6 @@ public:
 	FormattedShort* formattedShort;
 
 protected:
-	static const float emaWeightOfMostRecent;
-
 	boost::mutex windowMutex;
 	double windowStartTime;
 	double windowCurrentTime;

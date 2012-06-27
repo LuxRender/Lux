@@ -88,8 +88,8 @@ void SPPMRStatistics::updateStatisticsWindowDerived()
 		if (exponentialMovingAveragePhotons == 0.0)
 			exponentialMovingAveragePhotons = yps;
 
-		exponentialMovingAveragePass += emaWeightOfMostRecent * (pps - exponentialMovingAveragePass);
-		exponentialMovingAveragePhotons += emaWeightOfMostRecent * (yps - exponentialMovingAveragePhotons);
+		exponentialMovingAveragePass += min(1.0, elapsedTime / statisticsWindowSize) * (pps - exponentialMovingAveragePass);
+		exponentialMovingAveragePhotons += min(1.0, elapsedTime / statisticsWindowSize) * (yps - exponentialMovingAveragePhotons);
 	}
 
 	windowPassCount = passCount;

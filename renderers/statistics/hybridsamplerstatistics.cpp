@@ -91,7 +91,7 @@ void HSRStatistics::updateStatisticsWindowDerived()
 		if (exponentialMovingAverage == 0.0)
 			exponentialMovingAverage = sps;
 
-		exponentialMovingAverage += emaWeightOfMostRecent * (sps - exponentialMovingAverage);
+		exponentialMovingAverage += min(1.0, elapsedTime / statisticsWindowSize) * (sps - exponentialMovingAverage);
 	}
 	windowSampleCount = sampleCount;
 }
