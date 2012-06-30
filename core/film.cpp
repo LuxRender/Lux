@@ -183,6 +183,48 @@ static void rotateImage(const vector<XYZColor> &in, vector<XYZColor> &out,
 
 namespace lux {
 
+void BloomBody(
+	u_int const xResolution,
+	u_int const yResolution,
+	u_int const bloomWidth,
+	vector<float> const &bloomFilter,
+	XYZColor * const bloomImage,
+	vector<XYZColor> const &xyzpixels
+)
+{
+	// Apply bloom filter to image pixels
+	//			vector<Color> bloomImage(nPix);
+//			ProgressReporter prog(yResolution, "Bloom filter"); //NOBOOK //intermediate crashfix until imagepipelinerefactor is done - Jens
+	for (u_int y = 0; y < yResolution; ++y) {
+		for (u_int x = 0; x < xResolution; ++x) {
+			// Compute bloom for pixel _(x,y)_
+			// Compute extent of pixels contributing bloom
+			const u_int x0 = max(x, bloomWidth) - bloomWidth;
+			const u_int x1 = min(x + bloomWidth, xResolution - 1);
+			const u_int y0 = max(y, bloomWidth) - bloomWidth;
+			const u_int y1 = min(y + bloomWidth, yResolution - 1);
+			const u_int offset = y * xResolution + x;
+			float sumWt = 0.f;
+			for (u_int by = y0; by <= y1; ++by) {
+				for (u_int bx = x0; bx <= x1; ++bx) {
+					if (bx == x && by == y)
+						continue;
+					// Accumulate bloom from pixel $(bx,by)$
+					const u_int dist2 = (x - bx) * (x - bx) + (y - by) * (y - by);
+					if (dist2 < bloomWidth * bloomWidth) {
+						u_int bloomOffset = bx + by * xResolution;
+						float wt = bloomFilter[dist2];
+						sumWt += wt;
+						bloomImage[offset].AddWeighted(wt, xyzpixels[bloomOffset]);
+					}
+				}
+			}
+			bloomImage[offset] /= sumWt;
+		}
+//				prog.Update(); //NOBOOK //intermediate crashfix until imagepipelinerefactor is done - Jens
+	}
+}
+
 // Image Pipeline Function Definitions
 void ApplyImagingPipeline(vector<XYZColor> &xyzpixels,
 	u_int xResolution, u_int yResolution,
@@ -224,37 +266,7 @@ void ApplyImagingPipeline(vector<XYZColor> &xyzpixels,
 				haveBloomImage = true;
 			}
 
-			// Apply bloom filter to image pixels
-			//			vector<Color> bloomImage(nPix);
-//			ProgressReporter prog(yResolution, "Bloom filter"); //NOBOOK //intermediate crashfix until imagepipelinerefactor is done - Jens
-			for (u_int y = 0; y < yResolution; ++y) {
-				for (u_int x = 0; x < xResolution; ++x) {
-					// Compute bloom for pixel _(x,y)_
-					// Compute extent of pixels contributing bloom
-					const u_int x0 = max(x, bloomWidth) - bloomWidth;
-					const u_int x1 = min(x + bloomWidth, xResolution - 1);
-					const u_int y0 = max(y, bloomWidth) - bloomWidth;
-					const u_int y1 = min(y + bloomWidth, yResolution - 1);
-					const u_int offset = y * xResolution + x;
-					float sumWt = 0.f;
-					for (u_int by = y0; by <= y1; ++by) {
-						for (u_int bx = x0; bx <= x1; ++bx) {
-							if (bx == x && by == y)
-								continue;
-							// Accumulate bloom from pixel $(bx,by)$
-							const u_int dist2 = (x - bx) * (x - bx) + (y - by) * (y - by);
-							if (dist2 < bloomWidth * bloomWidth) {
-								u_int bloomOffset = bx + by * xResolution;
-								float wt = bloomFilter[dist2];
-								sumWt += wt;
-								bloomImage[offset].AddWeighted(wt, xyzpixels[bloomOffset]);
-							}
-						}
-					}
-					bloomImage[offset] /= sumWt;
-				}
-//				prog.Update(); //NOBOOK //intermediate crashfix until imagepipelinerefactor is done - Jens
-			}
+			BloomBody(xResolution, yResolution, bloomWidth, bloomFilter, bloomImage, xyzpixels);
 //			prog.Done(); //NOBOOK //intermediate crashfix until imagepipelinerefactor is done - Jens
 		}
 
