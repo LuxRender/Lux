@@ -50,6 +50,8 @@
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
 
+#include <tbb/tbb.h>
+
 #define cimg_display_type  0
 
 #ifdef LUX_USE_CONFIG_H
@@ -189,14 +191,15 @@ void BloomBody(
 	u_int const bloomWidth,
 	vector<float> const &bloomFilter,
 	XYZColor * const bloomImage,
-	vector<XYZColor> const &xyzpixels
+	vector<XYZColor> const &xyzpixels,
+	tbb::blocked_range2d<u_int> const &r
 )
 {
 	// Apply bloom filter to image pixels
 	//			vector<Color> bloomImage(nPix);
 //			ProgressReporter prog(yResolution, "Bloom filter"); //NOBOOK //intermediate crashfix until imagepipelinerefactor is done - Jens
-	for (u_int y = 0; y < yResolution; ++y) {
-		for (u_int x = 0; x < xResolution; ++x) {
+	for (u_int y = r.rows().begin(); y < r.rows().end(); ++y) {
+		for (u_int x = r.cols().begin(); x < r.cols().end(); ++x) {
 			// Compute bloom for pixel _(x,y)_
 			// Compute extent of pixels contributing bloom
 			const u_int x0 = max(x, bloomWidth) - bloomWidth;
@@ -266,7 +269,8 @@ void ApplyImagingPipeline(vector<XYZColor> &xyzpixels,
 				haveBloomImage = true;
 			}
 
-			BloomBody(xResolution, yResolution, bloomWidth, bloomFilter, bloomImage, xyzpixels);
+			tbb::parallel_for(tbb::blocked_range2d<u_int>(0, yResolution, 0, xResolution), boost::bind(
+			&BloomBody, xResolution, yResolution, bloomWidth, bloomFilter, bloomImage, xyzpixels, _1));
 //			prog.Done(); //NOBOOK //intermediate crashfix until imagepipelinerefactor is done - Jens
 		}
 
