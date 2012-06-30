@@ -294,6 +294,7 @@ SOURCE_GROUP("Source Files\\Samplers" FILES ${lux_samplers_src})
 
 SET(lux_renderers_src
 	renderers/samplerrenderer.cpp
+	renderers/samplertbbrenderer.cpp
 	renderers/sppmrenderer.cpp
 	renderers/sppm/photonsampler.cpp
 	renderers/sppm/lookupaccel.cpp
@@ -723,6 +724,7 @@ SET(lux_renderers_hdr
 	renderers/hybridrenderer.h
 	renderers/hybridsamplerrenderer.h
 	renderers/samplerrenderer.h
+	renderers/samplertbbrenderer.h
 	renderers/sppmrenderer.h
 	)
 SOURCE_GROUP("Header Files\\Renderers" FILES ${lux_renderers_hdr})

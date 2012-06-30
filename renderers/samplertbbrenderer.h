@@ -20,8 +20,8 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#ifndef LUX_SAMPLERRENDERER_H
-#define LUX_SAMPLERRENDERER_H
+#ifndef LUX_SAMPLERTBBRENDERER_H
+#define LUX_SAMPLERTBBRENDERER_H
 
 #include <vector>
 #include <boost/thread.hpp>
@@ -31,71 +31,99 @@
 #include "fastmutex.h"
 #include "timer.h"
 #include "dynload.h"
+#include <tbb/tbb.h>
 
 namespace lux
 {
 
+class SamplerTBBRenderer;
+class SRTBBHostDescription;
 
+template<class T>
+class Pool
+{
+	public:
+		Pool(){}
 
-class SamplerRenderer;
-class SRHostDescription;
+		T* Get()
+		{
+			fast_mutex::scoped_lock lockStats(lock);
+		
+			if(data.size() > 0)
+			{
+				T* res = data.back();	
+				data.pop_back();
+				return res;
+			}
+			return NULL;
+		}	
+
+		void Release(T* t)
+		{
+			fast_mutex::scoped_lock lockStats(lock);
+			data.push_back(t);
+		}
+	private:
+		std::vector<T*> data;
+		fast_mutex lock;
+};
 
 //------------------------------------------------------------------------------
-// SRDeviceDescription
+// SRTBBDeviceDescription
 //------------------------------------------------------------------------------
 
-class SRDeviceDescription : protected RendererDeviceDescription {
+class SRTBBDeviceDescription : protected RendererDeviceDescription {
 public:
 	const string &GetName() const { return name; }
 
 	unsigned int GetAvailableUnitsCount() const {
-		return max(boost::thread::hardware_concurrency(), 1u);
+		return 1u; // not implemented with TBB
 	}
 	unsigned int GetUsedUnitsCount() const;
 	void SetUsedUnitsCount(const unsigned int units);
 
-	friend class SamplerRenderer;
-	friend class SRHostDescription;
+	friend class SamplerTBBRenderer;
+	friend class SRTBBHostDescription;
 
 private:
-	SRDeviceDescription(SRHostDescription *h, const string &n) :
+	SRTBBDeviceDescription(SRTBBHostDescription *h, const string &n) :
 		host(h), name(n) { }
-	~SRDeviceDescription() { }
+	~SRTBBDeviceDescription() { }
 
-	SRHostDescription *host;
+	SRTBBHostDescription *host;
 	string name;
 };
 
 //------------------------------------------------------------------------------
-// SRHostDescription
+// SRTBBHostDescription
 //------------------------------------------------------------------------------
 
-class SRHostDescription : protected RendererHostDescription {
+class SRTBBHostDescription : protected RendererHostDescription {
 public:
 	const string &GetName() const { return name; }
 
 	vector<RendererDeviceDescription *> &GetDeviceDescs() { return devs; }
 
-	friend class SamplerRenderer;
-	friend class SRDeviceDescription;
+	friend class SamplerTBBRenderer;
+	friend class SRTBBDeviceDescription;
 
 private:
-	SRHostDescription(SamplerRenderer *r, const string &n);
-	~SRHostDescription();
+	SRTBBHostDescription(SamplerTBBRenderer *r, const string &n);
+	~SRTBBHostDescription();
 
-	SamplerRenderer *renderer;
+	SamplerTBBRenderer *renderer;
 	string name;
 	vector<RendererDeviceDescription *> devs;
 };
 
 //------------------------------------------------------------------------------
-// SamplerRenderer
+// SamplerTBBRenderer
 //------------------------------------------------------------------------------
 
-class SamplerRenderer : public Renderer {
+class SamplerTBBRenderer : public Renderer {
 public:
-	SamplerRenderer();
-	~SamplerRenderer();
+	SamplerTBBRenderer();
+	~SamplerTBBRenderer();
 
 	RendererType GetType() const;
 
@@ -109,11 +137,12 @@ public:
 	void Resume();
 	void Terminate();
 
-	friend class SRDeviceDescription;
-	friend class SRHostDescription;
+	friend class SRTBBDeviceDescription;
+	friend class SRTBBHostDescription;
 	friend class SRStatistics;
 
 	static Renderer *CreateRenderer(const ParamSet &params);
+	void RenderImpl(tbb::blocked_range<u_int> const & range);
 
 private:
 	//--------------------------------------------------------------------------
@@ -122,13 +151,12 @@ private:
 
 	class RenderThread : public boost::noncopyable {
 	public:
-		RenderThread(u_int index, SamplerRenderer *renderer);
+		RenderThread(u_int index, SamplerTBBRenderer *renderer);
 		~RenderThread();
 
-		static void RenderImpl(RenderThread *r);
 
 		u_int  n;
-		SamplerRenderer *renderer;
+		SamplerTBBRenderer *renderer;
 		boost::thread *thread; // keep pointer to delete the thread object
 		double samples, blackSamples;
 		fast_mutex statLock;
@@ -154,6 +182,8 @@ private:
 	// used to suspend render threads until the preprocessing phase is done
 	bool preprocessDone;
 	bool suspendThreadsWhenDone;
+
+	Pool<Sample> samplePool;
 };
 
 }//namespace lux
