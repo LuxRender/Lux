@@ -224,7 +224,7 @@ inline void LDShuffleScrambled1D(const RandomGenerator &rng, u_int nSamples,
 inline void LDShuffleScrambled2D(const RandomGenerator &rng, u_int nSamples,
 	u_int nPixel, float *samples)
 {
-	u_int scramble[2] = { rng.uintValue(), rng.uintValue() };
+	u_int scramble[2] = { (u_int) rng.uintValue(), (u_int) rng.uintValue() };
 	for (u_int i = 0; i < nSamples * nPixel; ++i)
 		Sample02(i, scramble, &samples[2*i]);
 	for (u_int i = 0; i < nPixel; ++i)
@@ -244,7 +244,7 @@ inline void HaltonShuffleScrambled1D(const RandomGenerator &rng, u_int nSamples,
 inline void HaltonShuffleScrambled2D(const RandomGenerator &rng, u_int nSamples,
 	u_int nPixel, float *samples)
 {
-	u_int scramble[2] = { rng.uintValue(), rng.uintValue() };
+	u_int scramble[2] = { (u_int) rng.uintValue(), (u_int) rng.uintValue() };
 	for (u_int i = 0; i < nSamples * nPixel; ++i)
 		SampleHalton(i, scramble, &samples[2*i]);
 	for (u_int i = 0; i < nPixel; ++i)
