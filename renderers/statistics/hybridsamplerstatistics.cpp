@@ -48,6 +48,7 @@ HSRStatistics::HSRStatistics(HybridSamplerRenderer* renderer)
 	AddDoubleAttribute(*this, "remainingSamplesPerPixel", "Average number of samples per pixel remaining", &HSRStatistics::getRemainingSamplesPerPixel);
 	AddDoubleAttribute(*this, "percentHaltSppComplete", "Percent of halt S/p completed", &HSRStatistics::getPercentHaltSppComplete);
 
+	AddDoubleAttribute(*this, "pathEfficiency", "Efficiency of generated paths", &HSRStatistics::getPathEfficiency);
 	AddIntAttribute(*this, "gpuCount", "Number of GPUs in use", &HSRStatistics::getGpuCount);
 	AddDoubleAttribute(*this, "gpuEfficiency", "Percent of time GPUs have rays available to trace", &HSRStatistics::getAverageGpuEfficiency);
 
@@ -128,6 +129,22 @@ double HSRStatistics::getEfficiency() {
 	}
 
 	return sampleCount ? (100.0 * blackSampleCount) / sampleCount : 0.0;
+}
+
+double HSRStatistics::getPathEfficiency() {
+	double sampleCount = 0.0;
+	double blackSamplePathCount = 0.0;
+
+	// Get the current counts from the renderthreads
+	// Cannot just use getSampleCount() because the blackSamplePathCount is necessary
+	boost::mutex::scoped_lock lock(renderer->classWideMutex);
+	for (u_int i = 0; i < renderer->renderThreads.size(); ++i) {
+		fast_mutex::scoped_lock lockStats(renderer->renderThreads[i]->statLock);
+		sampleCount += renderer->renderThreads[i]->samples;
+		blackSamplePathCount += renderer->renderThreads[i]->blackSamplePaths;
+	}
+
+	return sampleCount ? (100.0 * blackSamplePathCount) / sampleCount : 0.0;
 }
 
 // Returns percent of haltSamplesPerPixel completed, zero if haltSamplesPerPixel is not set
@@ -233,6 +250,7 @@ HSRStatistics::FormattedLong::FormattedLong(HSRStatistics* rs)
 	AddStringAttribute(*this, "gpuCount", "Number of GPUs in use", &FL::getGpuCount);
 	AddStringAttribute(*this, "gpuEfficiency", "Percent of time GPUs have rays available to trace", &FL::getAverageGpuEfficiency);
 
+	AddStringAttribute(*this, "pathEfficiency", "Efficiency of generated paths", &FL::getPathEfficiency);
 	AddStringAttribute(*this, "resumedSamplesPerPixel", "Average number of samples per pixel loaded from FLM", &FL::getResumedAverageSamplesPerPixel);
 
 	AddStringAttribute(*this, "samplesPerPixel", "Average number of samples per pixel by local node", &FL::getAverageSamplesPerPixel);
@@ -290,6 +308,9 @@ std::string HSRStatistics::FormattedLong::getPercentHaltSppComplete() {
 	return boost::str(boost::format("%1$0.0f%% S/p") % rs->getPercentHaltSppComplete());
 }
 
+std::string HSRStatistics::FormattedLong::getPathEfficiency() {
+	return boost::str(boost::format("%1$0.0f%% Path Efficiency") % rs->getPathEfficiency());
+}
 std::string HSRStatistics::FormattedLong::getGpuCount() {
 	u_int gc = rs->getGpuCount();
 	return boost::str(boost::format("%1% %2%") % gc % Pluralize("GPU", gc));
@@ -369,6 +390,7 @@ HSRStatistics::FormattedShort::FormattedShort(HSRStatistics* rs)
 	AddStringAttribute(*this, "gpuCount", "Number of GPUs in use", &FS::getGpuCount);
 	AddStringAttribute(*this, "gpuEfficiency", "Percent of time GPUs have rays available to trace", &FS::getAverageGpuEfficiency);
 
+	AddStringAttribute(*this, "pathEfficiency", "Efficiency of generated paths", &FS::getPathEfficiency);
 	AddStringAttribute(*this, "resumedSamplesPerPixel", "Average number of samples per pixel loaded from FLM", boost::bind(boost::mem_fn(&FL::getResumedAverageSamplesPerPixel), fl));
 
 	AddStringAttribute(*this, "samplesPerPixel", "Average number of samples per pixel by local node", boost::bind(boost::mem_fn(&FL::getAverageSamplesPerPixel), fl));
@@ -411,6 +433,10 @@ std::string HSRStatistics::FormattedShort::getRecommendedStringTemplate()
 		stringTemplate += " | Tot: %totalSamplesPerPixel% %totalSamplesPerSecondWindow%";
 
 	return stringTemplate;
+}
+
+std::string HSRStatistics::FormattedShort::getPathEfficiency() {
+	return boost::str(boost::format("%1$0.0f%% PEff") % rs->getPathEfficiency());
 }
 
 std::string HSRStatistics::FormattedShort::getGpuCount() {

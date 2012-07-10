@@ -258,7 +258,7 @@ void SamplerRenderer::RemoveRenderThread() {
 //------------------------------------------------------------------------------
 
 SamplerRenderer::RenderThread::RenderThread(u_int index, SamplerRenderer *r) :
-	n(index), renderer(r), thread(NULL), samples(0.), blackSamples(0.) {
+	n(index), renderer(r), thread(NULL), samples(0.), blackSamples(0.), blackSamplePaths(0.) {
 }
 
 SamplerRenderer::RenderThread::~RenderThread() {
@@ -339,6 +339,8 @@ void SamplerRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 			// update samples statistics
 			fast_mutex::scoped_lock lockStats(myThread->statLock);
 			myThread->blackSamples += nContribs;
+			if (nContribs > 0)
+				++(myThread->blackSamplePaths);
 			++(myThread->samples);
 		}
 

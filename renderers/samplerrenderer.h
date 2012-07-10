@@ -128,7 +128,7 @@ private:
 		u_int  n;
 		SamplerRenderer *renderer;
 		boost::thread *thread; // keep pointer to delete the thread object
-		double samples, blackSamples;
+		double samples, blackSamples, blackSamplePaths;
 		fast_mutex statLock;
 	};
 

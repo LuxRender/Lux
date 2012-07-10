@@ -48,6 +48,7 @@ SRStatistics::SRStatistics(SamplerRenderer* renderer)
 	AddDoubleAttribute(*this, "remainingSamplesPerPixel", "Average number of samples per pixel remaining", &SRStatistics::getRemainingSamplesPerPixel);
 	AddDoubleAttribute(*this, "percentHaltSppComplete", "Percent of halt S/p completed", &SRStatistics::getPercentHaltSppComplete);
 
+	AddDoubleAttribute(*this, "pathEfficiency", "Efficiency of generated paths", &SRStatistics::getPathEfficiency);
 	AddDoubleAttribute(*this, "resumedSamplesPerPixel", "Average number of samples per pixel loaded from FLM", &SRStatistics::getResumedAverageSamplesPerPixel);
 
 	AddDoubleAttribute(*this, "samplesPerPixel", "Average number of samples per pixel by local node", &SRStatistics::getAverageSamplesPerPixel);
@@ -124,6 +125,22 @@ double SRStatistics::getEfficiency() {
 	}
 
 	return sampleCount ? (100.0 * blackSampleCount) / sampleCount : 0.0;
+}
+
+double SRStatistics::getPathEfficiency() {
+	double sampleCount = 0.0;
+	double blackSamplePathCount = 0.0;
+
+	// Get the current counts from the renderthreads
+	// Cannot just use getSampleCount() because the blackSamplePathCount is necessary
+	boost::mutex::scoped_lock lock(renderer->renderThreadsMutex);
+	for (u_int i = 0; i < renderer->renderThreads.size(); ++i) {
+		fast_mutex::scoped_lock lockStats(renderer->renderThreads[i]->statLock);
+		sampleCount += renderer->renderThreads[i]->samples;
+		blackSamplePathCount += renderer->renderThreads[i]->blackSamplePaths;
+	}
+
+	return sampleCount ? (100.0 * blackSamplePathCount) / sampleCount : 0.0;
 }
 
 // Returns percent of haltSamplesPerPixel completed, zero if haltSamplesPerPixel is not set
@@ -214,6 +231,7 @@ SRStatistics::FormattedLong::FormattedLong(SRStatistics* rs)
 	AddStringAttribute(*this, "remainingSamplesPerPixel", "Average number of samples per pixel remaining", &FL::getRemainingSamplesPerPixel);
 	AddStringAttribute(*this, "percentHaltSppComplete", "Percent of halt S/p completed", &FL::getPercentHaltSppComplete);
 
+	AddStringAttribute(*this, "pathEfficiency", "Efficiency of generated paths", &FL::getPathEfficiency);
 	AddStringAttribute(*this, "resumedSamplesPerPixel", "Average number of samples per pixel loaded from FLM", &FL::getResumedAverageSamplesPerPixel);
 
 	AddStringAttribute(*this, "samplesPerPixel", "Average number of samples per pixel by local node", &FL::getAverageSamplesPerPixel);
@@ -265,6 +283,10 @@ std::string SRStatistics::FormattedLong::getRemainingSamplesPerPixel() {
 
 std::string SRStatistics::FormattedLong::getPercentHaltSppComplete() {
 	return boost::str(boost::format("%1$0.0f%% S/p") % rs->getPercentHaltSppComplete());
+}
+
+std::string SRStatistics::FormattedLong::getPathEfficiency() {
+	return boost::str(boost::format("%1$0.0f%% Path Efficiency") % rs->getPathEfficiency());
 }
 
 std::string SRStatistics::FormattedLong::getResumedAverageSamplesPerPixel() {
@@ -328,11 +350,13 @@ SRStatistics::FormattedShort::FormattedShort(SRStatistics* rs)
 	FormattedLong* fl = static_cast<SRStatistics::FormattedLong*>(rs->formattedLong);
 
 	typedef SRStatistics::FormattedLong FL;
+	typedef SRStatistics::FormattedShort FS;
 
 	AddStringAttribute(*this, "haltSamplesPerPixel", "Average number of samples per pixel to complete before halting", boost::bind(boost::mem_fn(&FL::getHaltSpp), fl));
 	AddStringAttribute(*this, "remainingSamplesPerPixel", "Average number of samples per pixel remaining", boost::bind(boost::mem_fn(&FL::getRemainingSamplesPerPixel), fl));
 	AddStringAttribute(*this, "percentHaltSppComplete", "Percent of halt S/p completed", boost::bind(boost::mem_fn(&FL::getPercentHaltSppComplete), fl));
 
+	AddStringAttribute(*this, "pathEfficiency", "Efficiency of generated paths", &FS::getPathEfficiency);
 	AddStringAttribute(*this, "resumedSamplesPerPixel", "Average number of samples per pixel loaded from FLM", boost::bind(boost::mem_fn(&FL::getResumedAverageSamplesPerPixel), fl));
 
 	AddStringAttribute(*this, "samplesPerPixel", "Average number of samples per pixel by local node", boost::bind(boost::mem_fn(&FL::getAverageSamplesPerPixel), fl));
@@ -371,4 +395,8 @@ std::string SRStatistics::FormattedShort::getRecommendedStringTemplate()
 		stringTemplate += " | Tot: %totalSamplesPerPixel% %totalSamplesPerSecondWindow%";
 
 	return stringTemplate;
+}
+
+std::string SRStatistics::FormattedShort::getPathEfficiency() {
+	return boost::str(boost::format("%1$0.0f%% PEff") % rs->getPathEfficiency());
 }

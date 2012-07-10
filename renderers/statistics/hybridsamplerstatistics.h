@@ -52,6 +52,7 @@ public:
 		std::string getGpuCount();
 		std::string getAverageGpuEfficiency();
 
+		std::string getPathEfficiency();
 		std::string getResumedAverageSamplesPerPixel();
 
 		std::string getAverageSamplesPerPixel();
@@ -80,6 +81,7 @@ public:
 
 		virtual std::string getRecommendedStringTemplate();
 
+		std::string getPathEfficiency();
 		std::string getGpuCount();
 		std::string getAverageGpuEfficiency();
 	};
@@ -99,6 +101,7 @@ private:
 
 	double getHaltSpp();
 	double getEfficiency();
+	double getPathEfficiency();
 	double getRemainingSamplesPerPixel() { return std::max(0.0, getHaltSpp() - getTotalAverageSamplesPerPixel()); }
 	double getPercentHaltSppComplete();
 

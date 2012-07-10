@@ -49,6 +49,7 @@ public:
 		std::string getRemainingSamplesPerPixel();
 		std::string getPercentHaltSppComplete();
 
+		std::string getPathEfficiency();
 		std::string getResumedAverageSamplesPerPixel();
 
 		std::string getAverageSamplesPerPixel();
@@ -76,6 +77,8 @@ public:
 		SRStatistics* rs;
 
 		virtual std::string getRecommendedStringTemplate();
+
+		std::string getPathEfficiency();
 	};
 
 private:
@@ -93,6 +96,7 @@ private:
 
 	double getHaltSpp();
 	double getEfficiency();
+	double getPathEfficiency();
 	double getRemainingSamplesPerPixel() { return std::max(0.0, getHaltSpp() - getTotalAverageSamplesPerPixel()); }
 	double getPercentHaltSppComplete();
 
