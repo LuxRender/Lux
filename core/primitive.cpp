@@ -78,14 +78,12 @@ BSDF *Intersection::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 	return material->GetBSDF(arena, sw, *this, dgShading);
 }
 
-SWCSpectrum Intersection::Le(const Sample &sample, const Ray &ray,
-	BSDF **bsdf, float *pdf, float *pdfDirect) const
+bool Intersection::Le(const Sample &sample, const Ray &ray,
+	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *L) const
 {
 	if (arealight)
-		return arealight->L(sample, ray, dg, bsdf, pdf, pdfDirect);
-	*pdf = *pdfDirect = 0.f;
-	*bsdf = NULL;
-	return 0.f;
+		return arealight->L(sample, ray, dg, bsdf, pdf, pdfDirect, L);
+	return false;
 }
 
 // AreaLightPrimitive Method Definitions

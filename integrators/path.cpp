@@ -176,12 +176,10 @@ u_int PathIntegrator::Li(const Scene &scene, const Sample &sample) const
 
 		// Possibly add emitted light at path vertex
 		Vector wo(-ray.d);
-		if (specularBounce && isect.arealight) {
+		if (specularBounce) {
+			SWCSpectrum Le(pathThroughput);
 			BSDF *ibsdf;
-			SWCSpectrum Le(isect.Le(sample, ray, &ibsdf, NULL,
-				NULL));
-			if (!Le.Black()) {
-				Le *= pathThroughput;
+			if (isect.Le(sample, ray, &ibsdf, NULL, NULL, &Le)) {
 				L[isect.arealight->group] += Le;
 				V[isect.arealight->group] += Le.Filter(sw) * VContrib;
 				++nrContribs;
@@ -594,21 +592,18 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 	// Possibly add emitted light at path vertex
 	Vector wo(-pathState->pathRay.d);
 
-	if (isect.arealight) {
-		// Reset ray origin
-		pathState->pathRay.o = pathState->lastBounce;
-		BSDF *ibsdf;
-		float pdf;
-		SWCSpectrum Le(isect.Le(pathState->sample, pathState->pathRay, &ibsdf, NULL, &pdf));
-
-		if (!Le.Black()) {
-			if (!pathState->GetSpecularBounce())
-				Le *= PowerHeuristic(1, pathState->bouncePdf, 1, pdf * hints.Pdf(scene, isect.arealight) * shadowRaysCount * DistanceSquared(pathState->pathRay.o, ibsdf->dgShading.p) / (AbsDot(pathState->pathRay.d, ibsdf->ng)));
-			Le *= pathState->pathThroughput;
-			pathState->L[isect.arealight->group] += Le;
-			pathState->V[isect.arealight->group] += Le.Filter(sw) * pathState->VContrib;
-			++(*nrContribs);
-		}
+	// Reset ray origin
+	pathState->pathRay.o = pathState->lastBounce;
+	BSDF *ibsdf;
+	float pdf;
+	SWCSpectrum Le(pathState->pathThroughput);
+	if (isect.Le(pathState->sample, pathState->pathRay, &ibsdf, NULL, &pdf,
+		&Le)) {
+		if (!pathState->GetSpecularBounce())
+			Le *= PowerHeuristic(1, pathState->bouncePdf, 1, pdf * hints.Pdf(scene, isect.arealight) * shadowRaysCount * DistanceSquared(pathState->pathRay.o, ibsdf->dgShading.p) / (AbsDot(pathState->pathRay.d, ibsdf->ng)));
+		pathState->L[isect.arealight->group] += Le;
+		pathState->V[isect.arealight->group] += Le.Filter(sw) * pathState->VContrib;
+		++(*nrContribs);
 	}
 
 	// Check if we have reached the max. path depth
@@ -627,7 +622,6 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 
 	// Sample BSDF to get new path direction
 	Vector wi;
-	float pdf;
 	BxDFType flags;
 	SWCSpectrum f;
 	if (!bsdf->SampleF(sw, wo, &wi, data[0], data[1], data[2], &f,

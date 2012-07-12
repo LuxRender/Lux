@@ -222,11 +222,10 @@ u_int IGIIntegrator::Li(const Scene &scene, const Sample &sample) const
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;
 		// Compute emitted light if ray hit an area light source
-		if (isect.arealight) {
-			BSDF *ibsdf;
-			L += pathThroughput * isect.Le(sample, ray, &ibsdf,
-				NULL, NULL);
-		}
+		SWCSpectrum Ll(pathThroughput);
+		BSDF *ibsdf;
+		if (isect.Le(sample, ray, &ibsdf, NULL, NULL, &Ll))
+			L += Ll;
 		for (u_int i = 0; i < scene.lights.size(); ++i) {
 			SWCSpectrum Ld(0.f);
 			float lightPos[2], bsdfPos[2];

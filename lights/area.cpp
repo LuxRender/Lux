@@ -243,22 +243,16 @@ bool AreaLight::SampleL(const Scene &scene, const Sample &sample,
 	*Le = this->Le->Evaluate(sample.swl, dg) * (gain * M_PI / pdfd);
 	return true;
 }
-SWCSpectrum AreaLight::L(const Sample &sample, const Ray &ray,
+bool AreaLight::L(const Sample &sample, const Ray &ray,
 	const DifferentialGeometry &dg, BSDF **bsdf, float *pdf,
-	float *pdfDirect) const
+	float *pdfDirect, SWCSpectrum *Le) const
 {
 	if(func) {
 		*bsdf = ARENA_ALLOC(sample.arena, GonioAreaBSDF)(dg, dg.nn,
 			prim->GetExterior(), prim->GetInterior(), func);
 	} else {
-		if (!(Dot(dg.nn, ray.d) < 0.f)) {
-			if (pdf)
-				*pdf = 0.f;
-			if (pdfDirect)
-				*pdfDirect = 0.f;
-			*bsdf = NULL;
-			return SWCSpectrum(0.f);
-		}
+		if (!(Dot(dg.nn, ray.d) < 0.f))
+			return false;
 		*bsdf = ARENA_ALLOC(sample.arena, UniformAreaBSDF)(dg, dg.nn,
 			prim->GetExterior(), prim->GetInterior());
 	}
@@ -266,7 +260,8 @@ SWCSpectrum AreaLight::L(const Sample &sample, const Ray &ray,
 		*pdf = prim->Pdf(dg);
 	if (pdfDirect)
 		*pdfDirect = prim->Pdf(ray.o, dg);
-	return Le->Evaluate(sample.swl, dg) * (gain * M_PI) * (*bsdf)->F(sample.swl, Vector(dg.nn), -ray.d, true);
+	*Le *= this->Le->Evaluate(sample.swl, dg) * (gain * M_PI) * (*bsdf)->F(sample.swl, Vector(dg.nn), -ray.d, true);
+	return !Le->Black();
 }
 
 AreaLight* AreaLight::CreateAreaLight(const Transform &light2world,

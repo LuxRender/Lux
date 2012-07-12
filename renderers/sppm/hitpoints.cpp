@@ -301,11 +301,10 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample)
 
 		// Possibly add emitted light at path vertex
 		Vector wo(-ray.d);
-		if (specularBounce && isect.arealight) {
+		if (specularBounce) {
 			BSDF *ibsdf;
-			SWCSpectrum Le(isect.Le(sample, ray, &ibsdf, NULL, NULL));
-			if (!Le.Black()) {
-				Le *= pathThroughput;
+			SWCSpectrum Le(pathThroughput);
+			if (isect.Le(sample, ray, &ibsdf, NULL, NULL, &Le)) {
 				L[isect.arealight->group] += Le;
 				V[isect.arealight->group] += Le.Filter(sw) * VContrib;
 			}

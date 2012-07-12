@@ -520,38 +520,35 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 			++nEye;
 
 			// Test intersection with a light source
-			if (isect.arealight) {
-				BSDF *eBsdf;
-				float ePdfDirect;
+			SWCSpectrum Ll(v.flux);
+			BSDF *eBsdf;
+			float ePdfDirect;
+			if (isect.Le(sample, ray, &eBsdf, &v.dAWeight,
+				&ePdfDirect, &Ll)) {
 				// Reinitalize ray origin to the previous
 				// non passthrough intersection
 				ray.o = eyePath[nEye - 2].p;
-				SWCSpectrum Ll(isect.Le(sample, ray, &eBsdf,
-					&v.dAWeight, &ePdfDirect));
-				if (eBsdf && !Ll.Black()) {
-					v.flags = BxDFType(~BSDF_SPECULAR);
-					v.pdf = eBsdf->Pdf(sw, Vector(eBsdf->dgShading.nn), v.wo,
-						v.flags);
-					Ll *= v.flux;
-					// Evaluate factors for path weighting
-					v.dAWeight *= lightPathStrategy->Pdf(scene,
-						isect.arealight);
-					ePdfDirect *= lightDirectStrategy->Pdf(scene,
-						isect.arealight);
-					eyePath[nEye - 2].dAWeight = v.pdf * v.tPdf /
-						eyePath[nEye - 2].d2;
-					if (!eyePath[nEye - 2].bsdf->dgShading.scattered)
-						eyePath[nEye - 2].dAWeight *= eyePath[nEye - 2].cosi;
-					vector<BidirVertex> path(0);
-					const float w = WeightPath(eyePath,
-						nEye, path, 0,
-						ePdfDirect, false);
-					const u_int eGroup = isect.arealight->group;
-					Ll /= w;
-					vecV[eGroup] += Ll.Filter(sw) / w;
-					vecL[eGroup] += Ll;
-					++nrContribs;
-				}
+				v.flags = BxDFType(~BSDF_SPECULAR);
+				v.pdf = eBsdf->Pdf(sw,
+					Vector(eBsdf->dgShading.nn), v.wo,
+					v.flags);
+				// Evaluate factors for path weighting
+				v.dAWeight *= lightPathStrategy->Pdf(scene,
+					isect.arealight);
+				ePdfDirect *= lightDirectStrategy->Pdf(scene,
+					isect.arealight);
+				eyePath[nEye - 2].dAWeight = v.pdf * v.tPdf /
+					eyePath[nEye - 2].d2;
+				if (!eyePath[nEye - 2].bsdf->dgShading.scattered)
+					eyePath[nEye - 2].dAWeight *= eyePath[nEye - 2].cosi;
+				vector<BidirVertex> path(0);
+				const float w = WeightPath(eyePath, nEye, path,
+					0, ePdfDirect, false);
+				const u_int eGroup = isect.arealight->group;
+				Ll /= w;
+				vecV[eGroup] += Ll.Filter(sw) / w;
+				vecL[eGroup] += Ll;
+				++nrContribs;
 			}
 
 			// Break out if path is too long
@@ -1196,11 +1193,12 @@ bool BidirPathState::Init(const Scene &scene) {
 		}
 
 		// Possibly add emitted light at path vertex
-		if ((specularBounce || bidir->hybridUseMIS) && isect.arealight) {
+		if ((specularBounce || bidir->hybridUseMIS)) {
 			BSDF *ibsdf;
 			float lightPdf, lightDirectPdf;
-			SWCSpectrum Le(isect.Le(sample, ray, &ibsdf, &lightPdf, &lightDirectPdf));
-			if (!Le.Black()) {
+			SWCSpectrum Le(eyePath[nEye - 1].throughput);
+			if (isect.Le(sample, ray, &ibsdf, &lightPdf,
+				&lightDirectPdf, &Le)) {
 				float pathWeight;
 				if (bidir->hybridUseMIS) {
 					// ONE light strategy
@@ -1210,7 +1208,7 @@ bool BidirPathState::Init(const Scene &scene) {
 				} else
 					pathWeight = EvalPathWeight(eyePath, nEye, ibsdf->NumComponents(BSDF_SPECULAR) != 0);
 
-				Le *= eyePath[nEye - 1].throughput * pathWeight;
+				Le *= pathWeight;
 				L[isect.arealight->group] += Le;
 				V[isect.arealight->group] += Le.Filter(sw); // TOFIX
 				++contribCount;

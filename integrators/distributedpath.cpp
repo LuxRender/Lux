@@ -263,12 +263,11 @@ void DistributedPath::LiInternal(const Scene &scene, const Sample &sample,
 				*alpha = bsdf->compParams->A;
 
 			// Compute emitted light if ray hit an area light source with Visibility check
-			if(bsdf->compParams->tVl && includeEmit &&
-				isect.arealight) {
+			if(bsdf->compParams->tVl && includeEmit) {
 				BSDF *ibsdf;
-				const SWCSpectrum Le(isect.Le(sample, ray,
-					&ibsdf, NULL, NULL));
-				if (!Le.Black()) {
+				SWCSpectrum Le(1.f);
+				if (isect.Le(sample, ray, &ibsdf, NULL, NULL,
+					&Le)) {
 					L[isect.arealight->group] += Le;
 					++nrContribs;
 				}
@@ -283,12 +282,11 @@ void DistributedPath::LiInternal(const Scene &scene, const Sample &sample,
 		} else {
 
 			// Compute emitted light if ray hit an area light source with Visibility check
-			if(bsdf->compParams->tiVl && includeEmit &&
-				isect.arealight) {
+			if(bsdf->compParams->tiVl && includeEmit) {
 				BSDF *ibsdf;
-				const SWCSpectrum Le(isect.Le(sample, ray,
-					&ibsdf, NULL, NULL));
-				if (!Le.Black()) {
+				SWCSpectrum Le(1.f);
+				if (isect.Le(sample, ray, &ibsdf, NULL, NULL,
+					&Le)) {
 					L[isect.arealight->group] += Le;
 					++nrContribs;
 				}

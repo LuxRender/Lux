@@ -96,9 +96,9 @@ public:
 		float pow, float e, SampleableSphericalFunction *ssf,
 		u_int ns, const boost::shared_ptr<Primitive> &prim);
 	virtual ~AreaLight();
-	virtual SWCSpectrum L(const Sample &sample, const Ray &ray,
+	virtual bool L(const Sample &sample, const Ray &ray,
 		const DifferentialGeometry &dg, BSDF **bsdf, float *pdf,
-		float *pdfDirect) const;
+		float *pdfDirect, SWCSpectrum *Le) const;
 	virtual float Power(const Scene &scene) const;
 	virtual bool IsDeltaLight() const { return false; }
 	virtual bool IsEnvironmental() const { return false; }

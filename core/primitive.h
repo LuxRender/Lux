@@ -197,7 +197,9 @@ public:
 		interior(NULL), arealight(NULL) { }
 	BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Ray &ray) const;
-	SWCSpectrum Le(const Sample &sample, const Ray &ray, BSDF **bsdf, float *pdf, float *pdfDirect) const;
+	bool Le(const Sample &sample, const Ray &r,
+		BSDF **bsdf, float *pdf, float *pdfDirect,
+		SWCSpectrum *L) const;
 
 	void Set(const Transform& world2object,
 			const Primitive* prim, const Material* mat,

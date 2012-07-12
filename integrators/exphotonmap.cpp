@@ -215,9 +215,11 @@ SWCSpectrum ExPhotonIntegrator::LiDirectLightingMode(const Scene &scene,
 		const Normal &ng = isect.dg.nn;
 
 		// Compute emitted light if ray hit an area light source
-		if (specularBounce && isect.arealight) {
+		if (specularBounce) {
+			SWCSpectrum Ll(1.f);
 			BSDF *ibsdf;
-			L += isect.Le(sample, ray, &ibsdf, NULL, NULL);
+			if (isect.Le(sample, ray, &ibsdf, NULL, NULL, &Ll))
+				L += Ll;
 		}
 
 		// Compute direct lighting
@@ -374,9 +376,11 @@ SWCSpectrum ExPhotonIntegrator::LiPathMode(const Scene &scene,
 		// Possibly add emitted light at path vertex
 		Vector wo(-ray.d);
 		
-		if (specularBounce && isect.arealight) {
+		if (specularBounce) {
+			SWCSpectrum Ll(1.f);
 			BSDF *ibsdf;
-			L += isect.Le(sample, ray, &ibsdf, NULL, NULL);
+			if (isect.Le(sample, ray, &ibsdf, NULL, NULL, &Ll))
+				L += Ll;
 		}
 
 		if (pathLength == maxDepth) {

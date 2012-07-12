@@ -388,24 +388,23 @@ u_int SurfaceIntegratorRenderingHints::SampleLights(const Scene &scene,
 					}
 					break;
 				} else {
-					if (lightIsect.arealight) {
-						BSDF *lightBsdf;
-						float lightPdf;
-						Li = Lt * lightIsect.Le(sample, ray, &lightBsdf,
-							NULL, &lightPdf);
-						if (!Li.Black()) {
-							const float d2 = DistanceSquared(p,
-								lightBsdf->dgShading.p);
-							const float lsPdf = lsStrategy->Pdf(scene, lightIsect.arealight) * shadowRayCount;
-							const float lightPdf2 = lightPdf *
-								lsPdf * d2 /
-								AbsDot(wi, lightBsdf->dgShading.nn);
-							const float weight = PowerHeuristic(1,
-								bsdfPdf, 1, lightPdf2);
-							L[lightIsect.arealight->group] += Li *
-								weight;
-							++nContribs;
-						}
+					Li = Lt;
+					BSDF *lightBsdf;
+					float lightPdf;
+					if (lightIsect.Le(sample, ray,
+						&lightBsdf, NULL, &lightPdf,
+						&Li)) {
+						const float d2 = DistanceSquared(p,
+							lightBsdf->dgShading.p);
+						const float lsPdf = lsStrategy->Pdf(scene, lightIsect.arealight) * shadowRayCount;
+						const float lightPdf2 = lightPdf *
+							lsPdf * d2 /
+							AbsDot(wi, lightBsdf->dgShading.nn);
+						const float weight = PowerHeuristic(1,
+							bsdfPdf, 1, lightPdf2);
+						L[lightIsect.arealight->group] += Li *
+							weight;
+						++nContribs;
 					}
 					bsdfPdf *= ibsdf->Pdf(sample.swl, -wi, wi,
 						BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR));

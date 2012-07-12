@@ -281,11 +281,9 @@ SWCSpectrum EstimateDirect(const Scene &scene, const Light &light,
 				&lightIsect, &ibsdf, NULL, NULL, &Li))
 				lit = light.Le(scene, sample, ray, &lightBsdf,
 					NULL, &lightPdf, &Li);
-			else if (lightIsect.arealight == &light) {
-				Li *= lightIsect.Le(sample, ray, &lightBsdf,
-					NULL, &lightPdf);
-				lit = !Li.Black();
-			}
+			else if (lightIsect.arealight == &light)
+				lit = lightIsect.Le(sample, ray, &lightBsdf,
+					NULL, &lightPdf, &Li);
 			if (lit) {
 				const float d2 = DistanceSquared(p, lightBsdf->dgShading.p);
 				const float lightPdf2 = lightPdf * d2 /
