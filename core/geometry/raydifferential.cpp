@@ -53,7 +53,7 @@ DifferentialGeometry::DifferentialGeometry(const Point &P,
 	u = uu;
 	v = vv;
 	handle = pr;
-	ihandle = NULL;
+	ihandle = pr;
 }
 
 // Dade - added this costructor as a little optimization if the
@@ -69,7 +69,7 @@ DifferentialGeometry::DifferentialGeometry(const Point &P,
 	u = uu;
 	v = vv;
 	handle = pr;
-	ihandle = NULL;
+	ihandle = pr;
 }
 DifferentialGeometry::DifferentialGeometry(const Point &P,
 		const Normal &NN,
@@ -83,5 +83,5 @@ DifferentialGeometry::DifferentialGeometry(const Point &P,
 	u = uu;
 	v = vv;
 	handle = pr;
-	ihandle = NULL;
+	ihandle = pr;
 }
