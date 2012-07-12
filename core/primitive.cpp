@@ -120,16 +120,9 @@ bool InstancePrimitive::Intersect(const Ray &r, Intersection *isect) const
 	r.maxt = ray.maxt;
 	isect->WorldToObject = isect->WorldToObject * WorldToInstance;
 	// Transform instance's differential geometry to world space
-	isect->dg.p = InstanceToWorld(isect->dg.p);
-	isect->dg.nn = Normalize(InstanceToWorld(isect->dg.nn));
-	isect->dg.dpdu = InstanceToWorld(isect->dg.dpdu);
-	isect->dg.dpdv = InstanceToWorld(isect->dg.dpdv);
-	isect->dg.dndu = InstanceToWorld(isect->dg.dndu);
-	isect->dg.dndv = InstanceToWorld(isect->dg.dndv);
+	InstanceToWorld(isect->dg, &isect->dg);
 	isect->dg.handle = this;
-	isect->dg.ihandle = isect->primitive;
 	isect->primitive = this;
-	isect->dg.time = r.time;
 	if (material)
 		isect->material = material.get();
 	if (exterior)
@@ -147,24 +140,11 @@ bool InstancePrimitive::IntersectP(const Ray &r) const
 void InstancePrimitive::GetShadingGeometry(const Transform &obj2world,
 	const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const
 {
-	Transform o2w(WorldToInstance * obj2world);
 	// Transform instance's differential geometry to world space
-	DifferentialGeometry dgl(WorldToInstance(dg.p),
-		Normalize(WorldToInstance(dg.nn)),
-		WorldToInstance(dg.dpdu), WorldToInstance(dg.dpdv),
-		WorldToInstance(dg.dndu), WorldToInstance(dg.dndv),
-		dg.u, dg.v, dg.handle);
-	memcpy(&dgl.iData, &dg.iData,
-		sizeof(DifferentialGeometry::IntersectionData));
+	DifferentialGeometry dgl(obj2world.GetInverse()(dg));
 
-	reinterpret_cast<const Primitive *>(dg.ihandle)->GetShadingGeometry(o2w,
-			dgl, dgShading);
-	dgShading->p = InstanceToWorld(dgShading->p);
-	dgShading->nn = Normalize(InstanceToWorld(dgShading->nn));
-	dgShading->dpdu = InstanceToWorld(dgShading->dpdu);
-	dgShading->dpdv = InstanceToWorld(dgShading->dpdv);
-	dgShading->dndu = InstanceToWorld(dgShading->dndu);
-	dgShading->dndv = InstanceToWorld(dgShading->dndv);
+	dg.ihandle->GetShadingGeometry(obj2world, dgl, dgShading);
+	obj2world(*dgShading, dgShading);
 	dgShading->handle = this;
 	dgShading->ihandle = dg.ihandle;
 }
@@ -181,16 +161,9 @@ bool MotionPrimitive::Intersect(const Ray &r, Intersection *isect) const
 	r.maxt = ray.maxt;
 	isect->WorldToObject = isect->WorldToObject * WorldToInstance;
 	// Transform instance's differential geometry to world space
-	isect->dg.p = InstanceToWorld(isect->dg.p);
-	isect->dg.nn = Normalize(InstanceToWorld(isect->dg.nn));
-	isect->dg.dpdu = InstanceToWorld(isect->dg.dpdu);
-	isect->dg.dpdv = InstanceToWorld(isect->dg.dpdv);
-	isect->dg.dndu = InstanceToWorld(isect->dg.dndu);
-	isect->dg.dndv = InstanceToWorld(isect->dg.dndv);
+	InstanceToWorld(isect->dg, &isect->dg);
 	isect->dg.handle = this;
-	isect->dg.ihandle = isect->primitive;
 	isect->primitive = this;
-	isect->dg.time = r.time;
 	if (material)
 		isect->material = material.get();
 	if (exterior)
@@ -210,26 +183,11 @@ bool MotionPrimitive::IntersectP(const Ray &r) const
 void MotionPrimitive::GetShadingGeometry(const Transform &obj2world,
 	const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const
 {
-	Transform InstanceToWorld = motionPath.Sample(dg.time);
-	Transform WorldToInstance = InstanceToWorld.GetInverse();
-	Transform o2w(WorldToInstance * obj2world);
 	// Transform instance's differential geometry to world space
-	DifferentialGeometry dgl(WorldToInstance(dg.p),
-		Normalize(WorldToInstance(dg.nn)),
-		WorldToInstance(dg.dpdu), WorldToInstance(dg.dpdv),
-		WorldToInstance(dg.dndu), WorldToInstance(dg.dndv),
-		dg.u, dg.v, dg.handle);
-	memcpy(&dgl.iData, &dg.iData,
-		sizeof(DifferentialGeometry::IntersectionData));
+	DifferentialGeometry dgl(obj2world.GetInverse()(dg));
 
-	reinterpret_cast<const Primitive *>(dg.ihandle)->GetShadingGeometry(o2w,
-			dgl, dgShading);
-	dgShading->p = InstanceToWorld(dgShading->p);
-	dgShading->nn = Normalize(InstanceToWorld(dgShading->nn));
-	dgShading->dpdu = InstanceToWorld(dgShading->dpdu);
-	dgShading->dpdv = InstanceToWorld(dgShading->dpdv);
-	dgShading->dndu = InstanceToWorld(dgShading->dndu);
-	dgShading->dndv = InstanceToWorld(dgShading->dndv);
+	instance->GetShadingGeometry(obj2world, dgl, dgShading);
+	obj2world(*dgShading, dgShading);
 	dgShading->handle = this;
 	dgShading->ihandle = dg.ihandle;
 }
