@@ -67,7 +67,7 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, u_int filtRes
 	colorSpace = ColorSystem(cs_red[0], cs_red[1], cs_green[0], cs_green[1], cs_blue[0], cs_blue[1], whitepoint[0], whitepoint[1], 1.f);
 
 	// Set Image Output parameters
-	clampMethod = cM;
+	clampMethod = d_clampMethod = cM;
 
 	write_EXR = cw_EXR;
 	AddBoolAttribute(*this, "write_EXR", "Write EXR image", write_EXR, &FlexImageFilm::write_EXR, Queryable::ReadWriteAccess);
@@ -776,7 +776,7 @@ double FlexImageFilm::GetDefaultParameterValue(luxComponentParameters param, u_i
 			break;
 
 		case LUX_FILM_LDR_CLAMP_METHOD:
-			return 0;
+			return d_clampMethod;
 			break;
 
 		default:
