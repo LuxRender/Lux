@@ -140,15 +140,15 @@ std::string RendererStatistics::Formatted::getRecommendedString() {
 }
 
 std::string RendererStatistics::Formatted::getElapsedTime() {
-	return boost::posix_time::to_simple_string(time_duration(0, 0, static_cast<time_duration::sec_type>(rs->getElapsedTime()), 0));
+	return boost::posix_time::to_simple_string(time_duration(0, 0, Round2UInt(rs->getElapsedTime()), 0));
 }
 
 std::string RendererStatistics::Formatted::getRemainingTime() {
-	return boost::posix_time::to_simple_string(time_duration(0, 0, static_cast<time_duration::sec_type>(rs->getRemainingTime()), 0));
+	return boost::posix_time::to_simple_string(time_duration(0, 0, Round2UInt(rs->getRemainingTime()), 0));
 }
 
 std::string RendererStatistics::Formatted::getHaltTime() {
-	return boost::posix_time::to_simple_string(time_duration(0, 0, static_cast<time_duration::sec_type>(rs->getHaltTime()), 0));
+	return boost::posix_time::to_simple_string(time_duration(0, 0, Round2UInt(rs->getHaltTime()), 0));
 }
 
 RendererStatistics::FormattedLong::FormattedLong(RendererStatistics* rs)
