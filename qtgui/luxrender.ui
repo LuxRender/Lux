@@ -406,8 +406,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>362</width>
-                  <height>422</height>
+                  <width>100</width>
+                  <height>30</height>
                  </rect>
                 </property>
                 <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -479,8 +479,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>362</width>
-                  <height>422</height>
+                  <width>100</width>
+                  <height>30</height>
                  </rect>
                 </property>
                 <property name="sizePolicy">
@@ -1141,6 +1141,7 @@
     <addaction name="action_fullScreen"/>
     <addaction name="action_normalScreen"/>
     <addaction name="action_overlayStatsView"/>
+    <addaction name="action_Mask_Background"/>
     <addaction name="separator"/>
     <addaction name="action_Show_Side_Panel"/>
    </widget>
@@ -1577,6 +1578,17 @@
    </property>
    <property name="shortcutContext">
     <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="action_Mask_Background">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Mask Background</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Alt+A</string>
    </property>
   </action>
  </widget>

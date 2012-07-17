@@ -73,7 +73,7 @@ void RenderView::reload () {
 		int w = luxGetIntAttribute("film", "xPixelCount");
 		int h = luxGetIntAttribute("film", "yPixelCount");
 			
-		QImage image = getFramebufferImage(overlayStats);
+		QImage image = getFramebufferImage(overlayStats, maskBackground);
 
 		if (image.isNull())
 			return;

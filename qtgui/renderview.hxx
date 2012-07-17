@@ -45,6 +45,7 @@ public:
 
 	void setZoomEnabled (bool enabled = true) { zoomEnabled = enabled; };
 	void setOverlayStatistics (bool value = true) { overlayStats = value; };
+	void setMask_Background (bool value = true) { maskBackground = value; };
 	void reload ();
 	void setLogoMode ();
 	int getZoomFactor ();
@@ -60,7 +61,8 @@ private:
 	QPoint currentpos;
 
 	bool overlayStats;
-
+	bool maskBackground;
+	
 	QGraphicsScene *renderscene;
 	QGraphicsPixmapItem *luxlogo;
 	QGraphicsPixmapItem *luxfb;

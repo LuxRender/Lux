@@ -190,6 +190,7 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	connect(ui->action_clearLog, SIGNAL(triggered()), this, SLOT(clearLog()));
 	connect(ui->action_fullScreen, SIGNAL(triggered()), this, SLOT(fullScreen()));
 	connect(ui->action_normalScreen, SIGNAL(triggered()), this, SLOT(normalScreen()));
+	connect(ui->action_Mask_Background, SIGNAL(triggered(bool)), this, SLOT(Mask_BackgroundChanged(bool)));
 	connect(ui->action_overlayStatsView, SIGNAL(triggered(bool)), this, SLOT(overlayStatsChanged(bool)));
 	connect(ui->action_Show_Side_Panel, SIGNAL(triggered(bool)), this, SLOT(ShowSidePanel(bool)));
 
@@ -1224,6 +1225,12 @@ void MainWindow::normalScreen()
 void MainWindow::overlayStatsChanged(bool checked)
 {
 	renderView->setOverlayStatistics(checked);
+	renderView->reload();
+}
+
+void MainWindow::Mask_BackgroundChanged(bool checked)
+{
+	renderView->setMask_Background(checked);
 	renderView->reload();
 }
 
