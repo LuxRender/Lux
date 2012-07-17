@@ -41,7 +41,7 @@ RenderView::RenderView(QWidget *parent) : QGraphicsView(parent) {
 	setScene(renderscene);
 	zoomfactor = 100.0f;
 	overlayStats = false;
-	maskBackground = false;
+	showAlpha = false;
 }
 
 RenderView::~RenderView () {
@@ -74,8 +74,8 @@ void RenderView::reload () {
 		int w = luxGetIntAttribute("film", "xPixelCount");
 		int h = luxGetIntAttribute("film", "yPixelCount");
 			
-		QImage image = getFramebufferImage(overlayStats, maskBackground);
-		if (maskBackground == true) {
+		QImage image = getFramebufferImage(overlayStats, showAlpha);
+		if (showAlpha == true) {
 			QPixmap checkerboard(":/images/checkerboard.png");
 			renderscene->setBackgroundBrush(checkerboard);
 		} else {

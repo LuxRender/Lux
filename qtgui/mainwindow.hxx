@@ -409,7 +409,7 @@ private slots:
 	void viewportChanged ();
 	void fullScreen ();
 	void normalScreen ();
-	void Mask_BackgroundChanged (bool);
+	void showAlphaChanged (bool);
 	void overlayStatsChanged (bool);
 	void aboutDialog ();
 	void openDocumentation ();
