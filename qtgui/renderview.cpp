@@ -53,7 +53,7 @@ RenderView::~RenderView () {
 void RenderView::copyToClipboard()
 {
 	if ((luxStatistics("sceneIsReady") || luxStatistics("filmIsReady")) && luxfb->isVisible()) {
-		QImage image = getFramebufferImage(overlayStats);
+		QImage image = getFramebufferImage(overlayStats, showAlpha);
 		if (image.isNull()) {
 			LOG(LUX_ERROR, LUX_SYSTEM) << tr("Error getting framebuffer").toLatin1().data();
 			return;
@@ -65,7 +65,7 @@ void RenderView::copyToClipboard()
 			LOG(LUX_ERROR, LUX_SYSTEM) << tr("Copy to clipboard failed, unable to open clipboard").toLatin1().data();
 			return;
 		}
-		clipboard->setImage(image.convertToFormat(QImage::Format_RGB32));
+		clipboard->setImage(image.convertToFormat(QImage::Format_ARGB32));
 	}
 }
 

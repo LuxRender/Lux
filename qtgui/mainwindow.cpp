@@ -1231,6 +1231,13 @@ void MainWindow::overlayStatsChanged(bool checked)
 void MainWindow::showAlphaChanged(bool checked)
 {
 	renderView->setshowAlpha(checked);
+	static const QIcon alphaicon(":/icons/clipboardicon_alpha.png");
+	static const QIcon icon(":/icons/clipboardicon.png");
+	if(checked){
+		ui->button_copyToClipboard->setIcon(alphaicon);
+	}else{
+		ui->button_copyToClipboard->setIcon(icon);	
+	}
 	renderView->reload();
 }
 
