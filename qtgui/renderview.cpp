@@ -41,7 +41,7 @@ RenderView::RenderView(QWidget *parent) : QGraphicsView(parent) {
 	setScene(renderscene);
 	zoomfactor = 100.0f;
 	overlayStats = false;
-	maskBackground =false;
+	maskBackground = false;
 }
 
 RenderView::~RenderView () {
