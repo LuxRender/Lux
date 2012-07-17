@@ -93,6 +93,7 @@ SurfaceIntegrator *SPPMIntegrator::CreateSurfaceIntegrator(const ParamSet &param
 
 	sppmi->parallelHashGridSpare = params.FindOneFloat("parallelhashgridspare", 1.0f);
 	sppmi->photonPerPass = params.FindOneInt("photonperpass", 1000000);
+	sppmi->hitpointPerPass = params.FindOneInt("hitpointperpass", 0);
 
 	sppmi->includeEnvironment = params.FindOneBool("includeenvironment", true);
 	sppmi->directLightSampling = params.FindOneBool("directlightsampling", true);

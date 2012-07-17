@@ -36,12 +36,19 @@ using namespace lux;
 //------------------------------------------------------------------------------
 
 HaltonEyeSampler::HaltonEyeSampler(int x0, int x1, int y0, int y1,
-	const string &ps) : Sampler(x0, x1, y0, y1, 1)
+	const string &ps, uint npix) : Sampler(x0, x1, y0, y1, 1)
 {
 	pixelSampler = MakePixelSampler(ps, x0, x1, y0, y1);
-	nPixels = pixelSampler->GetTotalPixels();
+
+	if(npix == 0)
+		nPixels = pixelSampler->GetTotalPixels();
+	else
+		nPixels = npix;
+
 	halton.reserve(nPixels);
 	haltonOffset.reserve(nPixels);
+
+	offset = 0;
 }
 
 //------------------------------------------------------------------------------
@@ -69,9 +76,13 @@ HitPoints::HitPoints(SPPMRenderer *engine, RandomGenerator *rng)  {
 
 	// Set the sampler
 	eyeSampler = new HaltonEyeSampler(xstart, xend, ystart, yend,
-		renderer->sppmi->PixelSampler);
+		renderer->sppmi->PixelSampler, renderer->sppmi->hitpointPerPass);
 
-	hitPoints = new std::vector<HitPoint>(eyeSampler->GetTotalSamplePos());
+	// the eyeSampler may decide that it allocates less or more hitpointPerPass
+	renderer->sppmi->hitpointPerPass = eyeSampler->GetTotalSamplePos();
+	nSamplePerPass = renderer->sppmi->hitpointPerPass;
+
+	hitPoints = new std::vector<HitPoint>(nSamplePerPass);
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Hit points count: " << hitPoints->size();
 
 	// Initialize hit points field
@@ -126,7 +137,7 @@ void HitPoints::Init() {
 	// Calculate initial radius
 	Vector ssize = hpBBox.pMax - hpBBox.pMin;
 	initialPhotonRadius = renderer->sppmi->photonStartRadiusScale *
-		((ssize.x + ssize.y + ssize.z) / 3.f) / sqrtf(eyeSampler->GetTotalSamplePos()) * 2.f;
+		((ssize.x + ssize.y + ssize.z) / 3.f) / sqrtf(nSamplePerPass) * 2.f;
 	const float photonRadius2 = initialPhotonRadius * initialPhotonRadius;
 
 	// Expand the bounding box by used radius
@@ -180,6 +191,8 @@ void HitPoints::SetHitPoints(scheduling::Range *range)
 
 	sample.arena.FreeAll();
 
+	float invPixelPdf = dynamic_cast<HaltonEyeSampler*>(hitpoints->eyeSampler)->GetInvPixelPdf();
+
 	for(unsigned i = range->begin();
 			i != range->end();
 			i = range->next()) {
@@ -195,7 +208,7 @@ void HitPoints::SetHitPoints(scheduling::Range *range)
 		HitPoint *hp = &(*hitpoints->hitPoints)[i];
 
 		// Trace the eye path
-		hitpoints->TraceEyePath(hp, sample);
+		hitpoints->TraceEyePath(hp, sample, invPixelPdf);
 
 		// as sample count is a proxy for photon count which is used for 
 		// weighting the photon buffer
@@ -206,7 +219,7 @@ void HitPoints::SetHitPoints(scheduling::Range *range)
 	}
 }
 
-void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample)
+void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, float const invPixelPdf)
 {
 	HitPointEyePass *hpep = &hp->eyePass;
 
@@ -229,7 +242,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample)
 	vector<SWCSpectrum> Ld(lightGroupCount, 0.f);
 	// Direct lighting samples variance
 	vector<float> Vd(lightGroupCount, 0.f);
-	SWCSpectrum pathThroughput(1.f);
+	SWCSpectrum pathThroughput(1.0f); // pathThroughput is normalised perpixel for the eyepass contribution, so no need for invPixelPdf normalisation;
 	vector<SWCSpectrum> L(lightGroupCount, 0.f);
 	vector<float> V(lightGroupCount, 0.f);
 	float VContrib = .1f;
@@ -356,7 +369,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample)
 		if(store)
 		{
 			hp->SetSurface();
-			hpep->pathThroughput = pathThroughput * rayWeight / pdf_event;
+			hpep->pathThroughput = pathThroughput * rayWeight / pdf_event * invPixelPdf;
 			hpep->wo = wo;
 
 			hpep->bsdf = bsdf;
