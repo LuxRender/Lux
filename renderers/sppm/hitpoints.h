@@ -207,7 +207,7 @@ public:
 		u_int pathCount;
 		float **values;
 	};
-	HaltonEyeSampler(int x0, int x1, int y0, int y1, const string &ps, uint npix);
+	HaltonEyeSampler(int x0, int x1, int y0, int y1, const string &ps, u_int npix);
 	virtual ~HaltonEyeSampler() { }
 	virtual u_int GetTotalSamplePos() { return nPixels; }
 	virtual u_int RoundSize(u_int sz) const { return sz; }
