@@ -75,7 +75,13 @@ void RenderView::reload () {
 		int h = luxGetIntAttribute("film", "yPixelCount");
 			
 		QImage image = getFramebufferImage(overlayStats, maskBackground);
-
+		if (maskBackground == true) {
+			QPixmap checkerboard(":/images/checkerboard.png");
+			renderscene->setBackgroundBrush(checkerboard);
+		} else {
+			renderscene->setBackgroundBrush(QColor(127,127,127));
+		}
+		
 		if (image.isNull())
 			return;
 
