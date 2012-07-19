@@ -799,7 +799,7 @@ void RenderFarm::updateLog() {
 			continue;
 
 		try {
-			LOG( LUX_INFO,LUX_NOERROR) << "Getting log from: " <<
+			LOG( LUX_DEBUG,LUX_NOERROR) << "Getting log from: " <<
 					serverInfoList[i].name << ":" << serverInfoList[i].port;
 
 			// Connect to the server
@@ -808,7 +808,7 @@ void RenderFarm::updateLog() {
 
 			stream.connect(serverInfoList[i].name, serverInfoList[i].port);
 
-			LOG( LUX_INFO,LUX_NOERROR) << "Connected to: " << stream.rdbuf()->remote_endpoint();
+			LOG( LUX_DEBUG,LUX_NOERROR) << "Connected to: " << stream.rdbuf()->remote_endpoint();
 
 			// Send the command to get the log
 			stream << "luxGetLog" << std::endl;
