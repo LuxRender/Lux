@@ -418,7 +418,7 @@ Sampler* MetropolisSampler::CreateSampler(const ParamSet &params, const Film *fi
 	float largeMutationProb = params.FindOneFloat("largemutationprob", 0.4f);	// probability of generating a large sample mutation
 	float range = params.FindOneFloat("mutationrange", (xEnd - xStart + yEnd - yStart) / 32.f);	// maximum distance in pixel for a small mutation
 	bool useVariance = params.FindOneBool("usevariance", false);
-	bool useCooldown = params.FindOneBool("usecooldown", false);
+	bool useCooldown = params.FindOneBool("usecooldown", true);
 	bool adaptiveLargeMutationProb = params.FindOneBool("adaptive_largemutationprob", false);
 
 	return new MetropolisSampler(xStart, xEnd, yStart, yEnd, max(maxConsecRejects, 0),
