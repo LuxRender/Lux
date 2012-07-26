@@ -57,6 +57,7 @@
 #include <boost/cstdint.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/thread/xtime.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 using namespace boost::iostreams;
 using namespace boost::posix_time;
@@ -135,9 +136,7 @@ RenderFarm::CompiledFile::CompiledFile(const std::string &filename) : fname(file
 bool RenderFarm::CompiledFile::send(std::iostream &stream) const {
 	LOG(LUX_DEBUG,LUX_NOERROR) << "Sending file '" << filename() << "'";
 
-	// silent replacement, since relevant plugin will report replacement
-	const string real_filename = AdjustFilename(filename(), true);
-	std::ifstream in(real_filename.c_str(), std::ios::in | std::ios::binary);
+	std::ifstream in(filename().c_str(), std::ios::in | std::ios::binary);
 
 	// Get length of file
 	in.seekg(0, std::ifstream::end);
@@ -146,7 +145,7 @@ bool RenderFarm::CompiledFile::send(std::iostream &stream) const {
 
 	if (in.fail()) {
 		// AdjustFilename should guarantee that file exists, if not return just normalized filename
-		LOG( LUX_ERROR,LUX_SYSTEM) << "There was an error while checking the size of file '" << real_filename << "'";
+		LOG( LUX_ERROR,LUX_SYSTEM) << "There was an error while checking the size of file '" << filename() << "'";
 
 		// Send an empty file ot the server
 		stream << "\n0\n";
@@ -165,7 +164,7 @@ bool RenderFarm::CompiledFile::send(std::iostream &stream) const {
 		}
 
 		if (in.bad()) {
-			LOG( LUX_ERROR,LUX_SYSTEM) << "There was an error sending file '" << real_filename << "'";
+			LOG( LUX_ERROR,LUX_SYSTEM) << "There was an error sending file '" << filename() << "'";
 			return false;
 		}
 	}
@@ -892,7 +891,9 @@ void RenderFarm::send(const string &command, const string &name,
 			if (file == "" || FileData::present(params, paramName))
 				continue;
 
-			CompiledFile cf = compiledFiles.add(file);
+			// silent replacement, since relevant plugin will report replacement
+			const string real_filename = AdjustFilename(file, true);
+			CompiledFile cf = compiledFiles.add(real_filename);
 
 			ccmd.addFile(paramName, cf);
 		}
@@ -1003,7 +1004,9 @@ void RenderFarm::send(const string &command, const string &name,
 		const std::string paramName("filename");
 		string file = params.FindOneString(paramName, "");
 		if (file != "" && !FileData::present(params, paramName)) {
-			CompiledFile cf = compiledFiles.add(file);
+			// silent replacement, since relevant plugin will report replacement
+			const string real_filename = AdjustFilename(file, true);
+			CompiledFile cf = compiledFiles.add(real_filename);
 			ccmd.addFile(paramName, cf);
 		}
 	} catch (std::exception& e) {
