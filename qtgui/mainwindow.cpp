@@ -329,6 +329,7 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	statusMessage->setMaximumWidth(320);
 	statusMessage->setMinimumWidth(100);
 	statusProgress->setMaximumWidth(100);
+	statusProgress->setTextVisible(false);
 	statusProgress->setRange(0, 100);
 
 	statsLabel->setMaximumWidth(70);
@@ -548,15 +549,8 @@ void MainWindow::toneMapParamsChanged()
 void MainWindow::indicateActivity(bool active)
 {
 	if (active) {
-#if !defined(__APPLE__)
-		statusProgress->show ();
-#endif
 		statusProgress->setRange(0, 0);
-	}
-	else {
-#if !defined(__APPLE__)
-		statusProgress->hide ();
-#endif
+	} else {
 		statusProgress->setRange(0, 100);
 	}
 }
@@ -1556,6 +1550,10 @@ void MainWindow::updateStatistics()
 		statsBoxLayout->insertWidget(0, label);
 	}
 
+	// update progress bar
+	double percentComplete = luxGetDoubleAttribute("renderer_statistics", "percentComplete");
+	statusProgress->setValue(static_cast<int>(min(percentComplete, 100.0)));
+
 	statsBox->setUpdatesEnabled(true);
 }
 
@@ -2115,6 +2113,7 @@ void MainWindow::statsTimeout()
 void MainWindow::loadTimeout()
 {
 	if(luxStatistics("sceneIsReady") || m_guiRenderState == FINISHED) {
+		statusProgress->setValue(0);
 		indicateActivity(false);
 		statusMessage->setText("");
 		m_loadTimer->stop();
@@ -2160,6 +2159,7 @@ void MainWindow::loadTimeout()
 		}
 	}
 	else if ( luxStatistics("filmIsReady") ) {
+		statusProgress->setValue(0);
 		indicateActivity(false);
 		statusMessage->setText("");
 		m_loadTimer->stop();
