@@ -163,8 +163,9 @@ MetropolisSampler::MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
 		LOG(LUX_INFO, LUX_NOERROR) << "Large mutation probability is set to 'adaptive'";
 		LOG(LUX_INFO, LUX_NOERROR) << "Metropolis cooldown time will be " << cooldownTime << " seconds";
 	}
-	dtime = elapsedTime = pEffWindow = .0f;
+	pEffWindow = .0f;
 	optimumThreshold = 85;
+	mutationCount = 0;
 }
 
 MetropolisSampler::~MetropolisSampler() {
@@ -376,16 +377,17 @@ void MetropolisSampler::AddSample(const Sample &sample)
 		if (useCooldown) {
 			useCooldown = false;
 			LOG(LUX_INFO, LUX_NOERROR) << "Cooldown process has now ended";
+			mutationCount = 0;
 		}
 	}
+	mutationCount++;
 	// zsolnai - an algorithm for determining the optimum plarge value for an arbitrary scene.
 	// Details will be discussed in the paper.
 	if (!useCooldown && !doneOptimizing) {
 		boost::mutex::scoped_lock optimizationLock(metropolisSamplerMutex);
-		elapsedTime = luxGetDoubleAttribute("renderer_statistics", "elapsedTime");
-		if (fabsf(elapsedTime - dtime) >= 0.05f) {
+		if (mutationCount > 1500) {
+			mutationCount = 0;
 			pEffWindow = luxGetDoubleAttribute("renderer_statistics", "pathEfficiencyWindow");
-			dtime = elapsedTime;
 
 			if (pEffWindow >= 0.01f) {
 				if (pLarge >= 0.026f)

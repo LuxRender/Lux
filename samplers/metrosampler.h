@@ -72,8 +72,8 @@ public:
 	virtual void AddSample(const Sample &sample);
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
 
-	u_int maxRejects, cooldownTime, optimumThreshold;
-	float pLarge, pLargeTarget, range, pEffWindow, elapsedTime, dtime;
+	u_int maxRejects, cooldownTime, optimumThreshold, mutationCount;
+	float pLarge, pLargeTarget, range, pEffWindow;
 	bool useVariance, useCooldown, adaptiveLargeMutationProb, doneOptimizing;
 	float *rngSamples;
 	boost::mutex metropolisSamplerMutex;
