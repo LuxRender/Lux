@@ -293,6 +293,8 @@ SET(lux_samplers_src
 SOURCE_GROUP("Source Files\\Samplers" FILES ${lux_samplers_src})
 
 SET(lux_renderers_src
+	renderers/hybridrenderer.cpp
+	renderers/hybridsamplerrenderer.cpp
 	renderers/samplerrenderer.cpp
 	renderers/sppmrenderer.cpp
 	renderers/sppm/photonsampler.cpp
@@ -303,13 +305,6 @@ SET(lux_renderers_src
 	renderers/sppm/hybridhashgrid.cpp
 	renderers/sppm/kdtree.cpp
 	)
-IF(NOT LUXRAYS_DISABLE_OPENCL)
-SET(lux_renderers_src
-	${lux_renderers_src}
-	renderers/hybridrenderer.cpp
-	renderers/hybridsamplerrenderer.cpp
-	)
-endif(NOT LUXRAYS_DISABLE_OPENCL)
 SOURCE_GROUP("Source Files\\Renderers" FILES ${lux_renderers_src})
 
 SET(lux_rendererstatistics_src
