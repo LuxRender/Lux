@@ -25,6 +25,7 @@
 
 //#ifndef LUX_USE_SSE
 #include "matrix4x4.h"
+#include "matrix3x3.h"
 #include "error.h"
 
 #include <cstring>
@@ -58,19 +59,6 @@ boost::shared_ptr<Matrix4x4> Matrix4x4::Transpose() const
 	return o;
 }
 
-// TODO - lordcrc - move to proper header file
-float Det2x2(const float a00, const float a01, const float a10, const float a11) {
-	return a00*a11 - a01*a10;
-}
-
-// TODO - lordcrc - move to proper header file
-float Det3x3(float A[3][3]) {
-	return 
-		A[0][0] * Det2x2(A[1][1], A[1][2], A[2][1], A[2][2]) -
-		A[0][1] * Det2x2(A[1][0], A[1][2], A[2][0], A[2][2]) +
-		A[0][2] * Det2x2(A[1][0], A[1][1], A[2][0], A[2][1]);
-}
-
 float Matrix4x4::Determinant() const {
 
 	// row expansion along the last row
@@ -91,7 +79,7 @@ float Matrix4x4::Determinant() const {
 	
 	while (true) {
 		if (m[3][k] != 0.f)
-			result += s * m[3][k] * Det3x3(A);
+			result += s * m[3][k] * Determinant3x3(A);
 
 		// we're done
 		if (k >= 3)

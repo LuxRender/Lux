@@ -435,7 +435,7 @@ void LoopSubdiv::ApplyDisplacementMap(const vector<SDVertex *> verts) const
 				SDVertex *vv = face->v[face->vnum(v->P)];
 				DifferentialGeometry dg(v->P, v->n, dpdu, dpdv,
 					Normal(0, 0, 0), Normal(0, 0, 0),
-					vv->u, vv->v, this);
+					vv->u, vv->v, NULL);
 
 				dl += displacementMap->Evaluate(swl, dg);
 				++nf;
@@ -450,7 +450,7 @@ void LoopSubdiv::ApplyDisplacementMap(const vector<SDVertex *> verts) const
 				SDVertex *vv = face->v[face->vnum(v->P)];
 				DifferentialGeometry dg(v->P, v->n, dpdu, dpdv,
 					Normal(0, 0, 0), Normal(0, 0, 0),
-					vv->u, vv->v, this);
+					vv->u, vv->v, NULL);
 
 				dl += displacementMap->Evaluate(swl, dg);
 				++nf;
@@ -465,7 +465,7 @@ void LoopSubdiv::ApplyDisplacementMap(const vector<SDVertex *> verts) const
 				SDVertex *vv = face->v[face->vnum(v->P)];
 				DifferentialGeometry dg(v->P, v->n, dpdu, dpdv,
 					Normal(0, 0, 0), Normal(0, 0, 0),
-					vv->u, vv->v, this);
+					vv->u, vv->v, NULL);
 
 				dl += displacementMap->Evaluate(swl, dg);
 				++nf;

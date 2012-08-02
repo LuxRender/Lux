@@ -197,7 +197,9 @@ public:
 		interior(NULL), arealight(NULL) { }
 	BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Ray &ray) const;
-	SWCSpectrum Le(const Sample &sample, const Ray &ray, BSDF **bsdf, float *pdf, float *pdfDirect) const;
+	bool Le(const Sample &sample, const Ray &r,
+		BSDF **bsdf, float *pdf, float *pdfDirect,
+		SWCSpectrum *L) const;
 
 	void Set(const Transform& world2object,
 			const Primitive* prim, const Material* mat,
@@ -337,36 +339,33 @@ public:
 	virtual float Area() const { return instance->Area(); }
 	virtual float Sample(float u1, float u2, float u3,
 		DifferentialGeometry *dg) const  {
-		const float pdf = instance->Sample(u1, u2, u3, dg) *
-			fabsf(Dot(Cross(dg->dpdu, dg->dpdv), Vector(dg->nn)));
+		float pdf = instance->Sample(u1, u2, u3, dg);
+		pdf *= dg->Volume();
 		InstanceToWorld(*dg, dg);
+		pdf /= dg->Volume();
 		dg->ihandle = dg->handle;
 		dg->handle = this;
-		return pdf /
-			fabsf(Dot(Cross(dg->dpdu, dg->dpdv), Vector(dg->nn)));
+		return pdf;
 	}
 	virtual float Pdf(const PartialDifferentialGeometry &dg) const {
 		const PartialDifferentialGeometry dgi(WorldToInstance(dg));
-		return instance->Pdf(dgi) *
-			fabsf(Dot(Cross(dgi.dpdu, dgi.dpdv), Vector(dgi.nn)) /
-			Dot(Cross(dg.dpdu, dg.dpdv), Vector(dg.nn)));
+		const float factor = dgi.Volume() / dg.Volume();
+		return instance->Pdf(dgi) * factor;
 	}
 	virtual float Sample(const Point &P, float u1, float u2, float u3,
 		DifferentialGeometry *dg) const {
-		const float pdf = instance->Sample(WorldToInstance(P),
-			u1, u2, u3, dg) *
-			fabsf(Dot(Cross(dg->dpdu, dg->dpdv), Vector(dg->nn)));
+		float pdf = instance->Sample(WorldToInstance(P), u1, u2, u3, dg);
+		pdf *= dg->Volume();
 		InstanceToWorld(*dg, dg);
+		pdf /= dg->Volume();
 		dg->ihandle = dg->handle;
 		dg->handle = this;
-		return pdf /
-			fabsf(Dot(Cross(dg->dpdu, dg->dpdv), Vector(dg->nn)));
+		return pdf;
 	}
 	virtual float Pdf(const Point &p, const PartialDifferentialGeometry &dg) const {
 		const PartialDifferentialGeometry dgi(WorldToInstance(dg));
-		return instance->Pdf(p, dgi) *
-			fabsf(Dot(Cross(dgi.dpdu, dgi.dpdv), Vector(dgi.nn)) /
-			Dot(Cross(dg.dpdu, dg.dpdv), Vector(dg.nn)));
+		const float factor = dgi.Volume() / dg.Volume();
+		return instance->Pdf(p, dgi) * factor;
 	}
 
 	virtual Transform GetWorldToLocal(float time) const {
@@ -436,40 +435,37 @@ public:
 	virtual float Area() const { return instance->Area(); }
 	virtual float Sample(float u1, float u2, float u3,
 		DifferentialGeometry *dg) const  {
-		Transform InstanceToWorld = motionPath.Sample(dg->time);
-		const float pdf = instance->Sample(u1, u2, u3, dg) *
-			fabsf(Dot(Cross(dg->dpdu, dg->dpdv), Vector(dg->nn)));
+		const Transform InstanceToWorld(motionPath.Sample(dg->time));
+		float pdf = instance->Sample(u1, u2, u3, dg);
+		pdf *= dg->Volume();
 		InstanceToWorld(*dg, dg);
+		pdf /= dg->Volume();
 		dg->ihandle = dg->handle;
 		dg->handle = this;
-		return pdf /
-			fabsf(Dot(Cross(dg->dpdu, dg->dpdv), Vector(dg->nn)));
+		return pdf;
 	}
 	virtual float Pdf(const PartialDifferentialGeometry &dg) const {
-		const Transform InstanceToWorld = motionPath.Sample(dg.time);
+		const Transform InstanceToWorld(motionPath.Sample(dg.time));
 		const PartialDifferentialGeometry dgi(InstanceToWorld.GetInverse()(dg));
-		return instance->Pdf(dgi) *
-			fabsf(Dot(Cross(dgi.dpdu, dgi.dpdv), Vector(dgi.nn)) /
-			Dot(Cross(dg.dpdu, dg.dpdv), Vector(dg.nn)));
+		const float factor = dgi.Volume() / dg.Volume();
+		return instance->Pdf(dgi) * factor;
 	}
 	virtual float Sample(const Point &P, float u1, float u2, float u3,
 		DifferentialGeometry *dg) const {
-		const Transform InstanceToWorld = motionPath.Sample(dg->time);
-		const float pdf = instance->Sample(InstanceToWorld.GetInverse()(P),
-			u1, u2, u3, dg) *
-			fabsf(Dot(Cross(dg->dpdu, dg->dpdv), Vector(dg->nn)));
+		const Transform InstanceToWorld(motionPath.Sample(dg->time));
+		float pdf = instance->Sample(InstanceToWorld.GetInverse()(P), u1, u2, u3, dg);
+		pdf *= dg->Volume();
 		InstanceToWorld(*dg, dg);
+		pdf /= dg->Volume();
 		dg->ihandle = dg->handle;
 		dg->handle = this;
-		return pdf /
-			fabsf(Dot(Cross(dg->dpdu, dg->dpdv), Vector(dg->nn)));
+		return pdf;
 	}
 	virtual float Pdf(const Point &p, const PartialDifferentialGeometry &dg) const {
-		const Transform InstanceToWorld = motionPath.Sample(dg.time);
+		const Transform InstanceToWorld(motionPath.Sample(dg.time));
 		const PartialDifferentialGeometry dgi(InstanceToWorld.GetInverse()(dg));
-		return instance->Pdf(p, dgi) *
-			fabsf(Dot(Cross(dgi.dpdu, dgi.dpdv), Vector(dgi.nn)) /
-			Dot(Cross(dg.dpdu, dg.dpdv), Vector(dg.nn)));
+		const float factor = dgi.Volume() / dg.Volume();
+		return instance->Pdf(p, dgi) * factor;
 	}
 	virtual Transform GetWorldToLocal(float time) const {
 		return instance->GetWorldToLocal(time) *

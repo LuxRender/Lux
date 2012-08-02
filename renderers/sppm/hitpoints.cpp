@@ -36,12 +36,19 @@ using namespace lux;
 //------------------------------------------------------------------------------
 
 HaltonEyeSampler::HaltonEyeSampler(int x0, int x1, int y0, int y1,
-	const string &ps) : Sampler(x0, x1, y0, y1, 1)
+	const string &ps, u_int npix) : Sampler(x0, x1, y0, y1, 1)
 {
 	pixelSampler = MakePixelSampler(ps, x0, x1, y0, y1);
-	nPixels = pixelSampler->GetTotalPixels();
+
+	if(npix == 0)
+		nPixels = pixelSampler->GetTotalPixels();
+	else
+		nPixels = npix;
+
 	halton.reserve(nPixels);
 	haltonOffset.reserve(nPixels);
+
+	offset = 0;
 }
 
 //------------------------------------------------------------------------------
@@ -69,9 +76,13 @@ HitPoints::HitPoints(SPPMRenderer *engine, RandomGenerator *rng)  {
 
 	// Set the sampler
 	eyeSampler = new HaltonEyeSampler(xstart, xend, ystart, yend,
-		renderer->sppmi->PixelSampler);
+		renderer->sppmi->PixelSampler, renderer->sppmi->hitpointPerPass);
 
-	hitPoints = new std::vector<HitPoint>(eyeSampler->GetTotalSamplePos());
+	// the eyeSampler may decide that it allocates less or more hitpointPerPass
+	renderer->sppmi->hitpointPerPass = eyeSampler->GetTotalSamplePos();
+	nSamplePerPass = renderer->sppmi->hitpointPerPass;
+
+	hitPoints = new std::vector<HitPoint>(nSamplePerPass);
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Hit points count: " << hitPoints->size();
 
 	// Initialize hit points field
@@ -126,7 +137,7 @@ void HitPoints::Init() {
 	// Calculate initial radius
 	Vector ssize = hpBBox.pMax - hpBBox.pMin;
 	initialPhotonRadius = renderer->sppmi->photonStartRadiusScale *
-		((ssize.x + ssize.y + ssize.z) / 3.f) / sqrtf(eyeSampler->GetTotalSamplePos()) * 2.f;
+		((ssize.x + ssize.y + ssize.z) / 3.f) / sqrtf(nSamplePerPass) * 2.f;
 	const float photonRadius2 = initialPhotonRadius * initialPhotonRadius;
 
 	// Expand the bounding box by used radius
@@ -164,59 +175,51 @@ void HitPoints::Init() {
 	}
 }
 
-void HitPoints::AccumulateFlux(const u_int index, const u_int count) {
-	const unsigned int workSize = hitPoints->size() / count;
-	const unsigned int first = workSize * index;
-	const unsigned int last = (index == count - 1) ? hitPoints->size() : (first + workSize);
-	assert (first >= 0);
-	assert (last <= hitPoints->size());
-
-	LOG(LUX_DEBUG, LUX_NOERROR) << "Accumulate photons flux: " << first << " to " << last - 1;
-
-	for (u_int i = first; i < last; ++i) {
+void HitPoints::AccumulateFlux(scheduling::Range *range) {
+	for(unsigned i = range->begin(); i != range->end(); i = range->next()) {
 		HitPoint *hp = &(*hitPoints)[i];
 
 		hp->DoRadiusReduction(renderer->sppmi->photonAlpha, GetPassCount(), renderer->sppmi->useproba);
 	}
 }
 
-void HitPoints::SetHitPoints(Sample &sample, RandomGenerator *rng, const u_int index, const u_int count) {
-	const unsigned int workSize = hitPoints->size() / count;
-	const unsigned int first = workSize * index;
-	const unsigned int last = (index == count - 1) ? hitPoints->size() : (first + workSize);
+void HitPoints::SetHitPoints(scheduling::Range *range)
+{
+	SPPMRenderer::RenderThread *thread = dynamic_cast<SPPMRenderer::RenderThread*>(range->thread);
+	HitPoints *hitpoints = thread->renderer->hitPoints;
+	Sample &sample = thread->eyeSample;
 
-	assert (first >= 0);
-	assert (last <= hitPoints->size());
-
-	LOG(LUX_DEBUG, LUX_NOERROR) << "Building hit points: " << first << " to " << last - 1;
 	sample.arena.FreeAll();
-	for (u_int i = first; i < last; ++i) {
+
+	float invPixelPdf = dynamic_cast<HaltonEyeSampler*>(hitpoints->eyeSampler)->GetInvPixelPdf();
+
+	for(unsigned i = range->begin();
+			i != range->end();
+			i = range->next()) {
 		static_cast<HaltonEyeSampler::HaltonEyeSamplerData *>(sample.samplerData)->index = i; //FIXME sampler data shouldn't be accessed directly
-		static_cast<HaltonEyeSampler::HaltonEyeSamplerData *>(sample.samplerData)->pathCount = currentPass; //FIXME sampler data shouldn't be accessed directly
-		sample.wavelengths = wavelengthSample;
-		sample.time = timeSample;
+		static_cast<HaltonEyeSampler::HaltonEyeSamplerData *>(sample.samplerData)->pathCount = hitpoints->currentPass; //FIXME sampler data shouldn't be accessed directly
+		sample.wavelengths = hitpoints->wavelengthSample;
+		sample.time = hitpoints->timeSample;
 		sample.swl.Sample(sample.wavelengths);
 		sample.realTime = sample.camera->GetTime(sample.time);
 		sample.camera->SampleMotion(sample.realTime);
 		// Generate the sample values
-		eyeSampler->GetNextSample(&sample);
-		HitPoint *hp = &(*hitPoints)[i];
+		hitpoints->eyeSampler->GetNextSample(&sample);
+		HitPoint *hp = &(*hitpoints->hitPoints)[i];
 
 		// Trace the eye path
-		TraceEyePath(hp, sample);
+		hitpoints->TraceEyePath(hp, sample, invPixelPdf);
 
-		// add contributions directly so we don't increase sample count
 		// as sample count is a proxy for photon count which is used for 
 		// weighting the photon buffer
 		// eye buffer weighting is done per-pixel, so should work out
-		for (u_int si = 0; si < sample.contributions.size(); ++si) {
-			sample.contribBuffer->Add(sample.contributions[si], 1.f);
-		}
-		sample.contributions.clear();
+		// to pre-remove the contribution weight
+		sample.contribBuffer->AddSampleCount(-1.f);
+		eyeSampler->AddSample(sample);
 	}
 }
 
-void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample)
+void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, float const invPixelPdf)
 {
 	HitPointEyePass *hpep = &hp->eyePass;
 
@@ -239,7 +242,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample)
 	vector<SWCSpectrum> Ld(lightGroupCount, 0.f);
 	// Direct lighting samples variance
 	vector<float> Vd(lightGroupCount, 0.f);
-	SWCSpectrum pathThroughput(1.f);
+	SWCSpectrum pathThroughput(1.0f); // pathThroughput is normalised perpixel for the eyepass contribution, so no need for invPixelPdf normalisation;
 	vector<SWCSpectrum> L(lightGroupCount, 0.f);
 	vector<float> V(lightGroupCount, 0.f);
 	float VContrib = .1f;
@@ -311,11 +314,10 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample)
 
 		// Possibly add emitted light at path vertex
 		Vector wo(-ray.d);
-		if (specularBounce && isect.arealight) {
+		if (specularBounce) {
 			BSDF *ibsdf;
-			SWCSpectrum Le(isect.Le(sample, ray, &ibsdf, NULL, NULL));
-			if (!Le.Black()) {
-				Le *= pathThroughput;
+			SWCSpectrum Le(pathThroughput);
+			if (isect.Le(sample, ray, &ibsdf, NULL, NULL, &Le)) {
 				L[isect.arealight->group] += Le;
 				V[isect.arealight->group] += Le.Filter(sw) * VContrib;
 			}
@@ -367,7 +369,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample)
 		if(store)
 		{
 			hp->SetSurface();
-			hpep->pathThroughput = pathThroughput * rayWeight / pdf_event;
+			hpep->pathThroughput = pathThroughput * rayWeight / pdf_event * invPixelPdf;
 			hpep->wo = wo;
 
 			hpep->bsdf = bsdf;

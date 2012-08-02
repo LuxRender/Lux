@@ -27,7 +27,7 @@ AboutImage::AboutImage(QWidget *parent) : QGraphicsView(parent) {
 	this->setBackgroundBrush(QImage(":/images/splash.png"));
 	this->setCacheMode(QGraphicsView::CacheBackground);
 	
-	authors = new QGraphicsTextItem(QString::fromUtf8("Jean-Philippe Grimaldi, David Bucciarelli, Asbjørn Heid, Tom Bech, Jean-François Romang, Doug Hammond, Jens Verwiebe, Vlad Miller, Matt Pharr, Greg Humphreys, Thomas De Bodt, Thomas Ludwig, David Washington, Abel Groenewolt, Liang Ma, Peter Bienkowski, Pascal Aebischer, Michael Gangolf, Anir-Ban Deb, Terrence Vergauwen, Ricardo Lipas Augusto, Campbell Barton, Seth Berrier"));
+	authors = new QGraphicsTextItem(QString::fromUtf8("Jean-Philippe Grimaldi, David Bucciarelli, Asbjørn Heid, Tom Bech, Jean-François Romang, Doug Hammond, Jens Verwiebe, Vlad Miller, Guillaume Bouchard, Matt Pharr, Greg Humphreys, Thomas De Bodt, Thomas Ludwig, David Washington, Abel Groenewolt, Liang Ma, Peter Bienkowski, Pascal Aebischer, Michael Gangolf, Anir-Ban Deb, Károly Zsolnai, Terrence Vergauwen, Ricardo Lipas Augusto, Campbell Barton, Seth Berrier"));
 	authors->setDefaultTextColor(Qt::white);
 	scene->addItem(authors);
 	authors->setPos(540,297);

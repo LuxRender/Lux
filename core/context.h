@@ -236,6 +236,7 @@ private:
 			cameraName = "perspective";
 			rendererName = "sampler";
 			currentInstance = NULL;
+			currentLightInstance = NULL;
 			debugMode = false;
 			randomMode = true;
 		}
@@ -263,8 +264,10 @@ private:
 		mutable vector<boost::shared_ptr<Primitive> > primitives;
 		mutable vector<Region *> volumeRegions;
 		mutable map<string, vector<boost::shared_ptr<Primitive> > > instances;
+		mutable map<string, vector<boost::shared_ptr<Light> > > lightInstances;
 		mutable vector<string> lightGroups;
 		mutable vector<boost::shared_ptr<Primitive> > *currentInstance;
+		mutable vector<boost::shared_ptr<Light> > *currentLightInstance;
 		bool gotSearchPath;
 		bool debugMode;
 		bool randomMode;

@@ -97,10 +97,12 @@ public:
 	 * Static function to create a light sampling strategy from a param set
 	 * It will parse the parameters, check the requested strategy and
 	 * return a pointer to the new LightSamplingStrategy.
+	 * @param name The parameter name to check, "strategy" will also be checked for
 	 * @param params The paramset to parse
 	 * @return a pointer to the new light sampling strategy
 	 */
-	static LightsSamplingStrategy *Create(const ParamSet &params);
+	static LightsSamplingStrategy *Create(const string &name,
+		const ParamSet &params);
 };
 
 class LSSAllUniform : public LightsSamplingStrategy {
@@ -218,7 +220,6 @@ public:
 	SurfaceIntegratorRenderingHints() {
 		shadowRayCount = 1;
 		nLights = 0;
-		lightStrategyType = LightsSamplingStrategy::SAMPLE_AUTOMATIC;
 		lsStrategy = NULL;
 	}
 	~SurfaceIntegratorRenderingHints() {
@@ -228,10 +229,53 @@ public:
 	void InitParam(const ParamSet &params);
 
 	u_int GetShadowRaysCount() const { return shadowRayCount; }
-	LightsSamplingStrategy::LightStrategyType GetLightStrategy() const { return lightStrategyType; }
+	/**
+	 * Samples a light according to the defined strategy.
+	 * The method should be called in a loop until it returns NULL.
+	 * @param scene The current scene
+	 * @param index The current sampling iteration
+	 * @param u A pointer to a random variable in the [0,1) range,
+	 * the value might be adjusted if needed so that it can be used
+	 * to sample the light component
+	 * @param pdf The probability of having sampled that light taking
+	 * the looping process into account
+	 * @return A pointer to the sampled Light or NULL if the looping is over
+	 * in which case u and pdf are left untouched
+	 */
+	const Light *SampleLight(const Scene &scene, u_int index,
+		float *u, float *pdf) const {
+		return lsStrategy->SampleLight(scene, index, u, pdf);
+	}
+	/**
+	 * The probability of sampling a given light according to the strategy
+	 * @param scene The current scene
+	 * @param light A pointer to the light being queried
+	 * @return The requested probability
+	 */
+	float Pdf(const Scene &scene, const Light *light) const {
+		return lsStrategy->Pdf(scene, light);
+	}
+	/**
+	 * The probability of sampling a given light according to the strategy
+	 * @param scene The current scene
+	 * @param light The index of the light being queried in scene.lights
+	 * @return The requested probability
+	 */
+	float Pdf(const Scene &scene, u_int light) const {
+		return lsStrategy->Pdf(scene, light);
+	}
+	/**
+	 * The maximum number of light samples in one go
+	 * The looping over SampleLight will never exceed he returned value
+	 * @param scene The current scene
+	 * @return The maximum number of sampling events in one go
+	 */
+	u_int GetSamplingLimit(const Scene &scene) const {
+		return lsStrategy->GetSamplingLimit(scene);
+	}
 
 	void InitStrategies(const Scene &scene);
-	void RequestSamples(Sample *sample, const Scene &scene, u_int maxDepth);
+	void RequestSamples(Sampler *sampler, const Scene &scene, u_int maxDepth);
 
 	// Note: results are added to L and optional parameter V content
 	u_int SampleLights(const Scene &scene, const Sample &sample,
@@ -244,7 +288,6 @@ public:
 private:
 	// Light Strategies
 	u_int shadowRayCount, nLights;
-	LightsSamplingStrategy::LightStrategyType lightStrategyType;
 	LightsSamplingStrategy *lsStrategy;
 	u_int lightSampleOffset;
 };

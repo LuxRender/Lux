@@ -340,8 +340,8 @@ int main(int ac, char *av[]) {
 					// Get pointer to framebuffer data if needed
 					unsigned char* fb = luxFramebuffer();
 
-					int w = luxGetIntAttribute("film", "xResolution");
-					int h = luxGetIntAttribute("film", "yResolution");
+					int w = luxGetIntAttribute("film", "xPixelCount");
+					int h = luxGetIntAttribute("film", "yPixelCount");
 					luxUpdateFramebuffer();
 
 #if defined(WIN32) && !defined(__CYGWIN__) /* On WIN32 we need to set stdout to binary */

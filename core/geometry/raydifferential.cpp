@@ -46,14 +46,14 @@ PartialDifferentialGeometry::PartialDifferentialGeometry(
 DifferentialGeometry::DifferentialGeometry(const Point &P,
 		const Vector &DPDU, const Vector &DPDV,
 		const Normal &DNDU, const Normal &DNDV,
-		float uu, float vv, const void *pr)
+		float uu, float vv, const Primitive *pr)
 	: PartialDifferentialGeometry(P, DPDU, DPDV), dndu(DNDU), dndv(DNDV),
 	  tangent(DPDU), bitangent(DPDV), btsign(1.f) {
 	// Initialize _DifferentialGeometry_ from parameters
 	u = uu;
 	v = vv;
 	handle = pr;
-	ihandle = NULL;
+	ihandle = pr;
 }
 
 // Dade - added this costructor as a little optimization if the
@@ -62,26 +62,26 @@ DifferentialGeometry::DifferentialGeometry(const Point &P,
 		const Normal &NN,
 		const Vector &DPDU, const Vector &DPDV,
 		const Normal &DNDU, const Normal &DNDV,
-		float uu, float vv, const void *pr)
+		float uu, float vv, const Primitive *pr)
 	: PartialDifferentialGeometry(P, NN, DPDU, DPDV), dndu(DNDU), dndv(DNDV),
 	  tangent(DPDU), bitangent(DPDV), btsign(1.f) {
 	// Initialize _DifferentialGeometry_ from parameters
 	u = uu;
 	v = vv;
 	handle = pr;
-	ihandle = NULL;
+	ihandle = pr;
 }
 DifferentialGeometry::DifferentialGeometry(const Point &P,
 		const Normal &NN,
 		const Vector &DPDU, const Vector &DPDV,
 		const Normal &DNDU, const Normal &DNDV,
 		const Vector &T, const Vector &BiT, float BiTsign,
-		float uu, float vv, const void *pr)
+		float uu, float vv, const Primitive *pr)
 	: PartialDifferentialGeometry(P, NN, DPDU, DPDV), dndu(DNDU), dndv(DNDV),
 	  tangent(T), bitangent(BiT), btsign(BiTsign) {
 	// Initialize _DifferentialGeometry_ from parameters
 	u = uu;
 	v = vv;
 	handle = pr;
-	ihandle = NULL;
+	ihandle = pr;
 }

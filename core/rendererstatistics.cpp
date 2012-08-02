@@ -48,6 +48,7 @@ RendererStatistics::RendererStatistics()
 	AddDoubleAttribute(*this, "percentHaltTimeComplete", "Percent of halt time completed", &RendererStatistics::getPercentHaltTimeComplete);
 	AddDoubleAttribute(*this, "percentComplete", "Percent of render completed", &RendererStatistics::getPercentComplete);
 	AddDoubleAttribute(*this, "efficiency", "Efficiency of renderer", &RendererStatistics::getEfficiency);
+	AddDoubleAttribute(*this, "efficiencyWindow", "Efficiency of renderer", &RendererStatistics::getEfficiencyWindow);
 
 	AddIntAttribute(*this, "threadCount", "Number of rendering threads on local node", &RendererStatistics::getThreadCount);
 	AddIntAttribute(*this, "slaveNodeCount", "Number of network slave nodes", &RendererStatistics::getSlaveNodeCount);
@@ -140,15 +141,15 @@ std::string RendererStatistics::Formatted::getRecommendedString() {
 }
 
 std::string RendererStatistics::Formatted::getElapsedTime() {
-	return boost::posix_time::to_simple_string(time_duration(0, 0, static_cast<time_duration::sec_type>(rs->getElapsedTime()), 0));
+	return boost::posix_time::to_simple_string(time_duration(0, 0, Round2UInt(rs->getElapsedTime()), 0));
 }
 
 std::string RendererStatistics::Formatted::getRemainingTime() {
-	return boost::posix_time::to_simple_string(time_duration(0, 0, static_cast<time_duration::sec_type>(rs->getRemainingTime()), 0));
+	return boost::posix_time::to_simple_string(time_duration(0, 0, Round2UInt(rs->getRemainingTime()), 0));
 }
 
 std::string RendererStatistics::Formatted::getHaltTime() {
-	return boost::posix_time::to_simple_string(time_duration(0, 0, static_cast<time_duration::sec_type>(rs->getHaltTime()), 0));
+	return boost::posix_time::to_simple_string(time_duration(0, 0, Round2UInt(rs->getHaltTime()), 0));
 }
 
 RendererStatistics::FormattedLong::FormattedLong(RendererStatistics* rs)
@@ -160,6 +161,7 @@ RendererStatistics::FormattedLong::FormattedLong(RendererStatistics* rs)
 	AddStringAttribute(*this, "percentComplete", "Percent of render completed", &FL::getPercentComplete);
 
 	AddStringAttribute(*this, "efficiency", "Efficiency of renderer", &FL::getEfficiency);
+	AddStringAttribute(*this, "efficiencyWindow", "Efficiency of renderer", &FL::getEfficiencyWindow);
 
 	AddStringAttribute(*this, "threadCount", "Number of rendering threads on local node", &FL::getThreadCount);
 	AddStringAttribute(*this, "slaveNodeCount", "Number of network slave nodes", &FL::getSlaveNodeCount);
@@ -190,6 +192,10 @@ std::string RendererStatistics::FormattedLong::getEfficiency() {
 	return boost::str(boost::format("%1$0.0f%% Efficiency") % rs->getEfficiency());
 }
 
+std::string RendererStatistics::FormattedLong::getEfficiencyWindow() {
+	return boost::str(boost::format("%1$0.0f%% Efficiency") % rs->getEfficiencyWindow());
+}
+
 std::string RendererStatistics::FormattedLong::getThreadCount() {
 	u_int tc = rs->getThreadCount();
 	return boost::str(boost::format("%1% %2%") % tc % Pluralize("Thread", tc));
@@ -212,6 +218,7 @@ RendererStatistics::FormattedShort::FormattedShort(RendererStatistics* rs)
 	AddStringAttribute(*this, "percentHaltTimeComplete", "Percent of halt time completed", &FS::getPercentHaltTimeComplete);
 
 	AddStringAttribute(*this, "efficiency", "Efficiency of renderer", &FS::getEfficiency);
+	AddStringAttribute(*this, "efficiencyWindow", "Efficiency of renderer", &FS::getEfficiencyWindow);
 
 	AddStringAttribute(*this, "threadCount", "Number of rendering threads on local node", &FS::getThreadCount);
 	AddStringAttribute(*this, "slaveNodeCount", "Number of network slave nodes", &FS::getSlaveNodeCount);
@@ -236,6 +243,10 @@ std::string RendererStatistics::FormattedShort::getPercentHaltTimeComplete() {
 
 std::string RendererStatistics::FormattedShort::getEfficiency() {
 	return boost::str(boost::format("%1$0.0f%% Eff") % rs->getEfficiency());
+}
+
+std::string RendererStatistics::FormattedShort::getEfficiencyWindow() {
+	return boost::str(boost::format("%1$0.0f%% Eff") % rs->getEfficiencyWindow());
 }
 
 std::string RendererStatistics::FormattedShort::getThreadCount() {

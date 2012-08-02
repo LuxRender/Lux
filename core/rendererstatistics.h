@@ -39,7 +39,8 @@ class Renderer;
 
 class RendererStatistics : public Queryable {
 public:
-	static const size_t samplesInWindow = 600;
+	// Window size in seconds
+	static const unsigned int statisticsWindowSize = 5;
 
 	RendererStatistics();
 	virtual ~RendererStatistics() {};
@@ -82,6 +83,7 @@ public:
 		std::string getPercentHaltTimeComplete();
 
 		virtual std::string getEfficiency();
+		virtual std::string getEfficiencyWindow();
 		virtual std::string getThreadCount();
 		virtual std::string getSlaveNodeCount();
 
@@ -101,6 +103,7 @@ public:
 		std::string getPercentHaltTimeComplete();
 
 		virtual std::string getEfficiency();
+		virtual std::string getEfficiencyWindow();
 		virtual std::string getThreadCount();
 		virtual std::string getSlaveNodeCount();
 	};
@@ -124,6 +127,7 @@ protected:
 	virtual double getPercentComplete();
 
 	virtual double getEfficiency() = 0;
+	virtual double getEfficiencyWindow() = 0;
 	virtual u_int getThreadCount() = 0;
 
 	virtual void resetDerived() = 0;

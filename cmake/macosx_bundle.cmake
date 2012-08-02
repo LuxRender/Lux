@@ -38,7 +38,11 @@
 	SET(MACOSX_BUNDLE_ICON_FILE "luxrender.icns")
 	# SET(MACOSX_BUNDLE_COPYRIGHT "")
 	# SET(MACOSX_BUNDLE_INFO_STRING "Info string, localized?")
-	ADD_CUSTOM_TARGET(DYNAMIC_BUILD DEPENDS luxShared luxrender luxconsole luxmerger luxcomp pylux )
+	if(OSX_OPTION_PYLUX)
+		ADD_CUSTOM_TARGET(DYNAMIC_BUILD DEPENDS luxShared luxrender luxconsole luxmerger luxcomp pylux )
+	else()
+		ADD_CUSTOM_TARGET(DYNAMIC_BUILD DEPENDS luxShared luxrender luxconsole luxmerger luxcomp)
+	endif()
 	ADD_CUSTOM_COMMAND(
 		TARGET DYNAMIC_BUILD POST_BUILD
 		COMMAND rm -rf ${CMAKE_BUILD_TYPE}/luxrender.app/Contents/Resources
@@ -46,7 +50,8 @@
 		COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/icons/luxrender.icns ${CMAKE_BUILD_TYPE}/luxrender.app/Contents/Resources
 		COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/icons/luxscene.icns ${CMAKE_BUILD_TYPE}/luxrender.app/Contents/Resources
 		COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/icons/luxfilm.icns ${CMAKE_BUILD_TYPE}/luxrender.app/Contents/Resources
-		COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/plists/09/Info.plist ${CMAKE_BUILD_TYPE}/luxrender.app/Contents
+		COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/icons/luxqueue.icns ${CMAKE_BUILD_TYPE}/luxrender.app/Contents/Resources
+		COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/plists/10/Info.plist ${CMAKE_BUILD_TYPE}/luxrender.app/Contents
 		COMMAND mv ${CMAKE_BUILD_TYPE}/luxrender.app ${CMAKE_BUILD_TYPE}/LuxRender.app
 #		COMMAND macdeployqt ${CMAKE_BUILD_TYPE}/LuxRender.app ### uncomment for bundling Qt frameworks ###
 		COMMAND mv ${CMAKE_BUILD_TYPE}/luxconsole ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/MacOS/luxconsole

@@ -34,28 +34,28 @@ using namespace lux;
 static const u_int rngN = 8191;
 static const u_int rngA = 884;
 
-MetropolisSampler::MetropolisData::MetropolisData(const Sample &sample) :
+MetropolisSampler::MetropolisData::MetropolisData(const Sampler &sampler) :
 	consecRejects(0), large(true), stamp(0), currentStamp(0), weight(0.f),
 	LY(0.f), alpha(0.f), totalLY(0.f), sampleCount(0.f)
 {
 	u_int i;
 	// Compute number of non lazy samples
 	normalSamples = SAMPLE_FLOATS;
-	for (i = 0; i < sample.n1D.size(); ++i)
-		normalSamples += sample.n1D[i];
-	for (i = 0; i < sample.n2D.size(); ++i)
-		normalSamples += 2 * sample.n2D[i];
+	for (i = 0; i < sampler.n1D.size(); ++i)
+		normalSamples += sampler.n1D[i];
+	for (i = 0; i < sampler.n2D.size(); ++i)
+		normalSamples += 2 * sampler.n2D[i];
 
 	// Compute number of lazy samples and initialize management data
 	totalSamples = normalSamples;
-	offset = new u_int[sample.nxD.size()];
+	offset = new u_int[sampler.nxD.size()];
 	totalTimes = 0;
-	timeOffset = new u_int[sample.nxD.size()];
-	for (i = 0; i < sample.nxD.size(); ++i) {
+	timeOffset = new u_int[sampler.nxD.size()];
+	for (i = 0; i < sampler.nxD.size(); ++i) {
 		timeOffset[i] = totalTimes;
 		offset[i] = totalSamples;
-		totalTimes += sample.nxD[i];
-		totalSamples += sample.dxD[i] * sample.nxD[i];
+		totalTimes += sampler.nxD[i];
+		totalSamples += sampler.dxD[i] * sampler.nxD[i];
 	}
 
 	// Allocate sample image to hold the current reference
@@ -125,12 +125,12 @@ static float fracf(const float &v) {
 #define rngGet(__pos) (fracf(rngSamples[(data->rngBase + (__pos)) % rngN] + data->rngRotation[(__pos)]))
 #define rngGet2(__pos,__off) (fracf(rngSamples[(data->rngBase + (__pos) + (__off)) % rngN] + data->rngRotation[(__pos)]))
 
-
 // Metropolis method definitions
 MetropolisSampler::MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
-	u_int maxRej, float largeProb, float rng, bool useV) :
+	u_int maxRej, float largeProb, float rng, bool useV, bool useC, bool adaptivelmprob) :
 	Sampler(xStart, xEnd, yStart, yEnd, 1), maxRejects(maxRej),
-	pLarge(largeProb), range(rng), useVariance(useV)
+	pLargeTarget(largeProb), range(rng), useVariance(useV), useCooldown(useC), 
+	adaptiveLargeMutationProb(adaptivelmprob)
 {
 	// Allocate and compute all values of the rng
 	rngSamples = AllocAligned<float>(rngN);
@@ -143,6 +143,29 @@ MetropolisSampler::MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
 	}
 	RandomGenerator rndg(1);
 	Shuffle(rndg, rngSamples, rngN, 1);
+	// 15 seconds of cooldown time for every .1 difference from 0.5 in pLarge
+	doneOptimizing = true;
+	if (useCooldown) {
+		pLarge = 0.5f;
+		cooldownTime = Ceil2UInt(150.f * fabsf(pLargeTarget - 0.5f));
+		if (!adaptiveLargeMutationProb)
+			LOG(LUX_INFO, LUX_NOERROR) << "Metropolis cooldown time will be " << cooldownTime << " seconds";
+	} else {
+		pLarge = pLargeTarget;
+		cooldownTime = 0;
+	}
+	// Mandatory cooldown if adaptive large mutation probability is used
+	if (adaptiveLargeMutationProb) {
+		pLarge = 0.5f;
+		useCooldown = true;
+		doneOptimizing = false;
+		cooldownTime = 30;
+		LOG(LUX_INFO, LUX_NOERROR) << "Large mutation probability is set to 'adaptive'";
+		LOG(LUX_INFO, LUX_NOERROR) << "Metropolis cooldown time will be " << cooldownTime << " seconds";
+	}
+	pEffWindow = .0f;
+	optimumThreshold = 85;
+	mutationCount = 0;
 }
 
 MetropolisSampler::~MetropolisSampler() {
@@ -152,6 +175,10 @@ MetropolisSampler::~MetropolisSampler() {
 // interface for new ray/samples from scene
 bool MetropolisSampler::GetNextSample(Sample *sample)
 {
+	// Stop right away if the rendering limit has been reached
+	// as it seems no major artifacts from QMC are observed
+	if (film->enoughSamplesPerPixel)
+		return false;
 	MetropolisData *data = (MetropolisData *)(sample->samplerData);
 
 	// Advance to the next vector in the QMC sequence and stay inside the
@@ -163,10 +190,6 @@ bool MetropolisSampler::GetNextSample(Sample *sample)
 	// change the Cranley-Paterson rotation vector
 	// This is also responsible for first time initialization of the vector
 	if (data->rngBase == 0) {
-		// This is a safe point to stop without too visible patterns
-		// if the render has to stop
-		if (film->enoughSamplesPerPixel)
-			return false;
 		for (u_int i = 0; i < data->totalSamples; ++i)
 			data->rngRotation[i] = sample->rng->floatValue();
 	}
@@ -225,7 +248,7 @@ float MetropolisSampler::GetOneD(const Sample &sample, u_int num, u_int pos)
 	MetropolisData *data = (MetropolisData *)(sample.samplerData);
 	u_int offset = SAMPLE_FLOATS;
 	for (u_int i = 0; i < num; ++i)
-		offset += sample.n1D[i];
+		offset += n1D[i];
 	return data->currentImage[offset + pos];
 }
 
@@ -233,10 +256,10 @@ void MetropolisSampler::GetTwoD(const Sample &sample, u_int num, u_int pos, floa
 {
 	MetropolisData *data = (MetropolisData *)(sample.samplerData);
 	u_int offset = SAMPLE_FLOATS;
-	for (u_int i = 0; i < sample.n1D.size(); ++i)
-		offset += sample.n1D[i];
+	for (u_int i = 0; i < n1D.size(); ++i)
+		offset += n1D[i];
 	for (u_int i = 0; i < num; ++i)
-		offset += sample.n2D[i] * 2;
+		offset += n2D[i] * 2;
 	u[0] = data->currentImage[offset + pos];
 	u[1] = data->currentImage[offset + pos + 1];
 }
@@ -245,7 +268,7 @@ float *MetropolisSampler::GetLazyValues(const Sample &sample, u_int num, u_int p
 {
 	MetropolisData *data = (MetropolisData *)(sample.samplerData);
 	// Get size and position of current lazy values node
-	const u_int size = sample.dxD[num];
+	const u_int size = dxD[num];
 	const u_int offset = data->offset[num] + pos * size;
 	const u_int timeOffset = data->timeOffset[num] + pos;
 	// If we are at the target, don't do anything
@@ -343,6 +366,48 @@ void MetropolisSampler::AddSample(const Sample &sample)
 		++(data->consecRejects);
 	}
 	newContributions.clear();
+
+	if (useCooldown && luxGetDoubleAttribute("renderer_statistics", "elapsedTime") >= cooldownTime) {
+		if (!adaptiveLargeMutationProb)
+			pLarge = pLargeTarget;
+		else
+			pLarge = 1.0f;
+
+		boost::mutex::scoped_lock cooldownLock(metropolisSamplerMutex);
+		if (useCooldown) {
+			useCooldown = false;
+			LOG(LUX_INFO, LUX_NOERROR) << "Cooldown process has now ended";
+			mutationCount = 0;
+		}
+	}
+	mutationCount++;
+	// zsolnai - an algorithm for determining the optimum plarge value for an arbitrary scene.
+	// Details will be discussed in the paper.
+	if (!useCooldown && !doneOptimizing) {
+		boost::mutex::scoped_lock optimizationLock(metropolisSamplerMutex);
+		if (mutationCount > 1500) {
+			mutationCount = 0;
+			pEffWindow = luxGetDoubleAttribute("renderer_statistics", "pathEfficiencyWindow");
+
+			if (pEffWindow >= 0.01f) {
+				if (pLarge >= 0.026f)
+					pLarge -= 0.025f;
+				if (pEffWindow >= optimumThreshold) {
+					doneOptimizing = true;
+					LOG(LUX_INFO, LUX_NOERROR) << "Optimization pass done";
+					LOG(LUX_INFO, LUX_NOERROR) << "Optimum plarge found: " << pLarge << "";
+				}
+				else if (pEffWindow < optimumThreshold && pLarge <= 0.026f) {
+					doneOptimizing = true;
+					double eff = luxGetDoubleAttribute("renderer_statistics", "efficiencyWindow");
+					LOG(LUX_INFO, LUX_NOERROR) << "Optimization pass done";
+					LOG(LUX_INFO, LUX_NOERROR) << "Scene efficiency is critically low (Eff: " << eff << "%, Peff: " << pEffWindow << "%)";
+					LOG(LUX_INFO, LUX_NOERROR) << "Optimum plarge found: " << pLarge;
+				}
+			}
+		}
+	}
+
 	const float mutationSelector = sample.rng->floatValue();
 	data->large = (mutationSelector < pLarge);
 }
@@ -355,9 +420,11 @@ Sampler* MetropolisSampler::CreateSampler(const ParamSet &params, const Film *fi
 	float largeMutationProb = params.FindOneFloat("largemutationprob", 0.4f);	// probability of generating a large sample mutation
 	float range = params.FindOneFloat("mutationrange", (xEnd - xStart + yEnd - yStart) / 32.f);	// maximum distance in pixel for a small mutation
 	bool useVariance = params.FindOneBool("usevariance", false);
+	bool useCooldown = params.FindOneBool("usecooldown", true);
+	bool adaptiveLargeMutationProb = params.FindOneBool("adaptive_largemutationprob", false);
 
 	return new MetropolisSampler(xStart, xEnd, yStart, yEnd, max(maxConsecRejects, 0),
-		largeMutationProb, range, useVariance);
+		largeMutationProb, range, useVariance, useCooldown, adaptiveLargeMutationProb);
 }
 
 static DynamicLoader::RegisterSampler<MetropolisSampler> r("metropolis");

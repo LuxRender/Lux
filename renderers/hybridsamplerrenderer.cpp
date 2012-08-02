@@ -312,8 +312,6 @@ HybridSamplerRenderer::~HybridSamplerRenderer() {
 }
 
 Renderer::RendererType HybridSamplerRenderer::GetType() const {
-	boost::mutex::scoped_lock lock(classWideMutex);
-
 	return HYBRIDSAMPLER_TYPE;
 }
 
@@ -382,6 +380,9 @@ void HybridSamplerRenderer::Render(Scene *s) {
 		scene->surfaceIntegrator->Preprocess(rng, *scene);
 		scene->volumeIntegrator->Preprocess(rng, *scene);
 		scene->camera->film->CreateBuffers();
+
+		scene->surfaceIntegrator->RequestSamples(scene->sampler, *scene);
+		scene->volumeIntegrator->RequestSamples(scene->sampler, *scene);
 
 		// Dade - to support autofocus for some camera model
 		scene->camera->AutoFocus(*scene);
@@ -511,7 +512,7 @@ void HybridSamplerRenderer::RemoveRenderThread() {
 //------------------------------------------------------------------------------
 
 HybridSamplerRenderer::RenderThread::RenderThread(u_int index, HybridSamplerRenderer *r, luxrays::IntersectionDevice * idev) :
-	n(index), thread(NULL), renderer(r), iDevice(idev), samples(0.), blackSamples(0.) {
+	n(index), thread(NULL), renderer(r), iDevice(idev), samples(0.), blackSamples(0.), blackSamplePaths(0.) {
 }
 
 HybridSamplerRenderer::RenderThread::~RenderThread() {
@@ -615,6 +616,8 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 			// update samples statistics
 			fast_mutex::scoped_lock lockStats(renderThread->statLock);
 			renderThread->blackSamples += nrContribs;
+			if (nrContribs > 0)
+				++(renderThread->blackSamplePaths);
 			renderThread->samples += nrSamples;
 		}
 

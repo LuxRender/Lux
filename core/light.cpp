@@ -26,6 +26,7 @@
 #include "shape.h"
 #include "camera.h"
 #include "reflection/bxdf.h"
+#include "sampling.h"
 
 using namespace lux;
 
@@ -50,3 +51,95 @@ void Light::AddPortalShape(boost::shared_ptr<Primitive> &s)
 	}
 	havePortalShape = true;
 }
+
+bool InstanceLight::Le(const Scene &scene, const Sample &sample, const Ray &r,
+	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *L) const
+{
+	if (!light->Le(scene, sample, WorldToLight(r), bsdf,
+		pdf, pdfDirect, L))
+		return false;
+	float factor = (*bsdf)->dgShading.Volume();
+	factor /= (*bsdf)->ApplyTransform(LightToWorld);
+	if (pdf)
+		*pdf *= factor;
+	if (pdfDirect)
+		*pdfDirect *= factor;
+	return true;
+}
+
+bool InstanceLight::SampleL(const Scene &scene, const Sample &sample,
+	float u1, float u2, float u3, BSDF **bsdf, float *pdf,
+	SWCSpectrum *L) const
+{
+	if (!light->SampleL(scene, sample, u1, u2, u3, bsdf, pdf, L))
+		return false;
+	float factor = (*bsdf)->dgShading.Volume();
+	factor /= (*bsdf)->ApplyTransform(LightToWorld);
+	*pdf *= factor;
+	*L /= factor;
+	return true;
+}
+
+bool InstanceLight::SampleL(const Scene &scene, const Sample &sample,
+	const Point &p, float u1, float u2, float u3,
+	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *L) const
+{
+	if (!light->SampleL(scene, sample, WorldToLight(p), u1, u2, u3,
+		bsdf, pdf, pdfDirect, L))
+		return false;
+	float factor = (*bsdf)->dgShading.Volume();
+	factor /= (*bsdf)->ApplyTransform(LightToWorld);
+	if (pdf)
+		*pdf *= factor;
+	*pdfDirect *= factor;
+	*L /= factor;
+	return true;
+}
+
+bool MotionLight::Le(const Scene &scene, const Sample &sample, const Ray &r,
+	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *L) const
+{
+	const Transform LightToWorld(motionPath.Sample(sample.realTime));
+	if (!light->Le(scene, sample, LightToWorld.GetInverse()(r), bsdf,
+		pdf, pdfDirect, L))
+		return false;
+	float factor = (*bsdf)->dgShading.Volume();
+	factor /= (*bsdf)->ApplyTransform(LightToWorld);
+	if (pdf)
+		*pdf *= factor;
+	if (pdfDirect)
+		*pdfDirect *= factor;
+	return true;
+}
+
+bool MotionLight::SampleL(const Scene &scene, const Sample &sample,
+	float u1, float u2, float u3, BSDF **bsdf, float *pdf,
+	SWCSpectrum *L) const
+{
+	if (!light->SampleL(scene, sample, u1, u2, u3, bsdf, pdf, L))
+		return false;
+	const Transform LightToWorld(motionPath.Sample(sample.realTime));
+	float factor = (*bsdf)->dgShading.Volume();
+	factor /= (*bsdf)->ApplyTransform(LightToWorld);
+	*pdf *= factor;
+	*L /= factor;
+	return true;
+}
+
+bool MotionLight::SampleL(const Scene &scene, const Sample &sample,
+	const Point &p, float u1, float u2, float u3,
+	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *L) const
+{
+	const Transform LightToWorld(motionPath.Sample(sample.realTime));
+	if (!light->SampleL(scene, sample, LightToWorld.GetInverse()(p), u1, u2, u3,
+		bsdf, pdf, pdfDirect, L))
+		return false;
+	float factor = (*bsdf)->dgShading.Volume();
+	factor /= (*bsdf)->ApplyTransform(LightToWorld);
+	if (pdf)
+		*pdf *= factor;
+	*pdfDirect *= factor;
+	*L /= factor;
+	return true;
+}
+

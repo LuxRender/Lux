@@ -38,14 +38,6 @@ ParallelHashGrid::~ParallelHashGrid() {
 	delete[] jump_list;
 }
 
-static void workSize(const u_int index, const u_int count, const unsigned int size, unsigned int * const first, unsigned int * const last)
-{
-	// Calculate the index of work this thread has to do
-	const unsigned int workSize = size / count;
-	*first = workSize * index;
-	*last = (index == count - 1) ? size : (*first + workSize);
-}
-
 void ParallelHashGrid::JumpInsert(unsigned int hv, unsigned int i)
 {
 	hv = atomic_cas32(reinterpret_cast<volatile boost::uint32_t*>(grid + hv), i, ~0u);
@@ -59,35 +51,15 @@ void ParallelHashGrid::JumpInsert(unsigned int hv, unsigned int i)
 	} while(hv != ~0u);
 }
 
-void ParallelHashGrid::Refresh( const u_int index, const u_int count, boost::barrier &barrier)
+void ParallelHashGrid::ResetGrid(scheduling::Range *range, unsigned *data)
 {
-	u_int first, last;
+	for(unsigned int i = range->begin(); i != range->end(); i = range->next())
+		data[i] = ~0u;
+}
 
-	const float maxPhotonRadius2 = hitPoints->GetMaxPhotonRadius2();
-	const float cellSize = sqrtf(maxPhotonRadius2) * 2.f;
-
-	if(index == 0)
-	{
-		invCellSize = 1.f / cellSize;
-		LOG(LUX_DEBUG, LUX_NOERROR) << "Building hit points hash grid";
-	}
-
-	// reset grid
-	workSize(index, count, gridSize, &first, &last);
-	for(unsigned int i = first; i < last; ++i)
-		grid[i] = ~0u;
-
-	// first and last are used later, so don't change them
-	workSize(index, count, jumpSize, &first, &last);
-	for(unsigned int i = first; i < last; ++i)
-		jump_list[i] = ~0u;
-
-	// wait for the init of both list and invCellSize
-	barrier.wait();
-
-	// first and last are already computed by the init of jump_list
-	for(unsigned int i = first; i < last; ++i)
-	{
+void ParallelHashGrid::Fill(scheduling::Range *range)
+{
+	for(unsigned int i = range->begin(); i != range->end(); i = range->next()) {
 		HitPoint *hp = hitPoints->GetHitPoint(i);
 
 		if (hp->IsSurface()) {
@@ -95,8 +67,22 @@ void ParallelHashGrid::Refresh( const u_int index, const u_int count, boost::bar
 			JumpInsert(Hash(pos.x, pos.y, pos.z), i);
 		}
 	}
+}
 
-	barrier.wait();
+void ParallelHashGrid::Refresh(scheduling::Scheduler *scheduler)
+{
+	const float maxPhotonRadius2 = hitPoints->GetMaxPhotonRadius2();
+	const float cellSize = sqrtf(maxPhotonRadius2) * 2.f;
+
+	invCellSize = 1.f / cellSize;
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Building hit points hash grid";
+
+	// Reset grid
+	scheduler->Launch(boost::bind(&ParallelHashGrid::ResetGrid, this, _1, grid), 0, gridSize);
+	// Reset jump
+	scheduler->Launch(boost::bind(&ParallelHashGrid::ResetGrid, this, _1, jump_list), 0, jumpSize);
+
+	scheduler->Launch(boost::bind(&ParallelHashGrid::Fill, this, _1), 0, hitPoints->GetSize());
 }
 
 void ParallelHashGrid::AddFlux(Sample &sample, const PhotonData &photon) {

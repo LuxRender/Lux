@@ -28,6 +28,7 @@
 
 #include "lookupaccel.h"
 #include "reflection/bxdf.h"
+#include "scheduler.h"
 
 namespace lux
 {
@@ -166,34 +167,34 @@ class HaltonEyeSampler : public Sampler {
 public:
 	class HaltonEyeSamplerData {
 	public:
-		HaltonEyeSamplerData(const Sample &sample, u_int sz) :
+		HaltonEyeSamplerData(const Sampler &sampler, u_int sz) :
 			size(sz), index(0), pathCount(0) {
-			values = new float *[max<u_int>(1U, sample.n1D.size() +
-				sample.n2D.size() + sample.nxD.size())];
+			values = new float *[max<u_int>(1U, sampler.n1D.size() +
+				sampler.n2D.size() + sampler.nxD.size())];
 			u_int n = 0;
-			for (u_int i = 0; i < sample.n1D.size(); ++i)
-				n += sample.n1D[i];
-			for (u_int i = 0; i < sample.n2D.size(); ++i)
-				n += 2 * sample.n2D[i];
-			for (u_int i = 0; i < sample.nxD.size(); ++i)
-				n += sample.dxD[i];
-			// Reserve space for screen and lens samples
+			for (u_int i = 0; i < sampler.n1D.size(); ++i)
+				n += sampler.n1D[i];
+			for (u_int i = 0; i < sampler.n2D.size(); ++i)
+				n += 2 * sampler.n2D[i];
+			for (u_int i = 0; i < sampler.nxD.size(); ++i)
+				n += sampler.dxD[i];
+			// Reserve space for screen and lens sample.sampler->
 			float *buffer = new float[n + 4] + 4;
 			values[0] = buffer;	// in case n == 0
 			u_int offset = 0;
-			for (u_int i = 0; i < sample.n1D.size(); ++i) {
+			for (u_int i = 0; i < sampler.n1D.size(); ++i) {
 				values[offset + i] = buffer;
-				buffer += sample.n1D[i];
+				buffer += sampler.n1D[i];
 			}
-			offset += sample.n1D.size();
-			for (u_int i = 0; i < sample.n2D.size(); ++i) {
+			offset += sampler.n1D.size();
+			for (u_int i = 0; i < sampler.n2D.size(); ++i) {
 				values[offset + i] = buffer;
-				buffer += 2 * sample.n2D[i];
+				buffer += 2 * sampler.n2D[i];
 			}
-			offset += sample.n2D.size();
-			for (u_int i = 0; i < sample.nxD.size(); ++i) {
+			offset += sampler.n2D.size();
+			for (u_int i = 0; i < sampler.nxD.size(); ++i) {
 				values[offset + i] = buffer;
-				buffer += sample.dxD[i];
+				buffer += sampler.dxD[i];
 			}
 		}
 		~HaltonEyeSamplerData() {
@@ -206,7 +207,7 @@ public:
 		u_int pathCount;
 		float **values;
 	};
-	HaltonEyeSampler(int x0, int x1, int y0, int y1, const string &ps);
+	HaltonEyeSampler(int x0, int x1, int y0, int y1, const string &ps, u_int npix);
 	virtual ~HaltonEyeSampler() { }
 	virtual u_int GetTotalSamplePos() { return nPixels; }
 	virtual u_int RoundSize(u_int sz) const { return sz; }
@@ -214,10 +215,10 @@ public:
 	virtual void InitSample(Sample *sample) const {
 		sample->sampler = const_cast<HaltonEyeSampler *>(this);
 		u_int size = 0;
-		for (u_int i = 0; i < sample->n1D.size(); ++i)
-			size += sample->n1D[i];
-		for (u_int i = 0; i < sample->n2D.size(); ++i)
-			size += 2 * sample->n2D[i];
+		for (u_int i = 0; i < n1D.size(); ++i)
+			size += n1D[i];
+		for (u_int i = 0; i < n2D.size(); ++i)
+			size += 2 * n2D[i];
 		boost::mutex::scoped_lock lock(initMutex);
 		if (halton.size() == 0) {
 			for (u_int i = 0; i < nPixels; ++i) {
@@ -226,7 +227,7 @@ public:
 			}
 		}
 		lock.unlock();
-		sample->samplerData = new HaltonEyeSamplerData(*sample, size);
+		sample->samplerData = new HaltonEyeSamplerData(*this, size);
 	}
 	virtual void FreeSample(Sample *sample) const {
 		HaltonEyeSamplerData *data = static_cast<HaltonEyeSamplerData *>(sample->samplerData);
@@ -237,7 +238,11 @@ public:
 		halton[data->index]->Sample(data->pathCount,
 			data->values[0] - 4);
 		int x, y;
-		pixelSampler->GetNextPixel(&x, &y, data->index);
+
+		// please note that offset may overflow, but it is handled by the
+		// modulo
+		osAtomicInc(&offset);
+		pixelSampler->GetNextPixel(&x, &y, offset % pixelSampler->GetTotalPixels());
 
 		// Add an offset to the samples to avoid to start with 0.f values
 		for (int i = -4; i < static_cast<int>(data->size); ++i) {
@@ -257,15 +262,20 @@ public:
 	virtual void GetTwoD(const Sample &sample, u_int num, u_int pos,
 		float u[2]) {
 		HaltonEyeSamplerData *data = static_cast<HaltonEyeSamplerData *>(sample.samplerData);
-		u[0] = data->values[sample.n1D.size() + num][2 * pos];
-		u[1] = data->values[sample.n1D.size() + num][2 * pos + 1];
+		u[0] = data->values[n1D.size() + num][2 * pos];
+		u[1] = data->values[n1D.size() + num][2 * pos + 1];
 	}
 	virtual float *GetLazyValues(const Sample &sample, u_int num, u_int pos) {
 		HaltonEyeSamplerData *data = static_cast<HaltonEyeSamplerData *>(sample.samplerData);
-		float *result = data->values[sample.n1D.size() + sample.n2D.size() + num];
-		for (u_int i = 0; i < sample.dxD[num]; ++i)
+		float *result = data->values[n1D.size() + n2D.size() + num];
+		for (u_int i = 0; i < dxD[num]; ++i)
 			result[i] = sample.rng->floatValue();
 		return result;
+	}
+
+	float GetInvPixelPdf()
+	{
+		return ((float) pixelSampler->GetTotalPixels()) / nPixels;
 	}
 //	virtual void AddSample(const Sample &sample);
 	PixelSampler *pixelSampler;
@@ -275,6 +285,8 @@ private:
 	vector<PermutedHalton *> halton;
 	vector<float> haltonOffset;
 	mutable boost::mutex initMutex;
+
+	u_int offset;
 };
 
 class HitPoints {
@@ -321,15 +333,16 @@ public:
 	{
 		lookUpAccel->AddFlux(sample, photon);
 	}
-	void AccumulateFlux(const u_int index, const u_int count);
-	void SetHitPoints(Sample &sample, RandomGenerator *rng, const u_int index, const u_int count);
+	void AccumulateFlux(scheduling::Range *range);
+	void SetHitPoints(scheduling::Range *range);
 
-	void RefreshAccel(const u_int index, const u_int count, boost::barrier &barrier) {
-		lookUpAccel->Refresh(index, count, barrier);
+	void RefreshAccel(scheduling::Scheduler *scheduler)
+	{
+		lookUpAccel->Refresh(scheduler);
 	}
 
 private:
-	void TraceEyePath(HitPoint *hp, const Sample &sample);
+	void TraceEyePath(HitPoint *hp, const Sample &sample, float const invPixelPdf);
 
 	SPPMRenderer *renderer;
 public:
@@ -352,6 +365,8 @@ private:
 	float wavelengthSample, timeSample;
 	u_int wavelengthSampleScramble, timeSampleScramble;
 	u_int wavelengthStratPasses;
+
+	u_int nSamplePerPass;
 };
 
 }//namespace lux

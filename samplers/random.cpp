@@ -28,16 +28,16 @@
 
 using namespace lux;
 
-RandomSampler::RandomData::RandomData(const Sample &sample, int xPixelStart,
+RandomSampler::RandomData::RandomData(const Sampler &sampler, int xPixelStart,
 	int yPixelStart, u_int pixelSamples)
 {
 	xPos = xPixelStart;
 	yPos = yPixelStart;
 	samplePos = pixelSamples;
-	xD = new float *[sample.nxD.size()];
-	nxD = sample.nxD.size();
-	for (u_int i = 0; i < sample.nxD.size(); ++i)
-		xD[i] = new float[sample.dxD[i]];
+	xD = new float *[sampler.nxD.size()];
+	nxD = sampler.nxD.size();
+	for (u_int i = 0; i < sampler.nxD.size(); ++i)
+		xD[i] = new float[sampler.dxD[i]];
 }
 RandomSampler::RandomData::~RandomData()
 {
@@ -126,7 +126,7 @@ float *RandomSampler::GetLazyValues(const Sample &sample, u_int num, u_int pos)
 {
 	RandomData *data = (RandomData *)(sample.samplerData);
 	float *sd = data->xD[num];
-	for (u_int i = 0; i < sample.dxD[num]; ++i)
+	for (u_int i = 0; i < dxD[num]; ++i)
 		sd[i] = sample.rng->floatValue();
 	return sd;
 }

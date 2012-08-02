@@ -499,6 +499,35 @@ public:
 		context->TransformEnd();
 	}
 
+	void motionBegin(boost::python::list tx)
+	{
+		boost::python::extract<boost::python::list> listExtractor(tx);
+
+		//std::cout<<"this is a LIST - WARNING ASSUMING FLOATS :";
+		boost::python::list t=listExtractor();
+		boost::python::ssize_t listSize=boost::python::len(t);
+		float *pFloat=(float *)memoryPool.ordered_malloc(sizeof(float)*listSize);
+		for(boost::python::ssize_t j=0;j<listSize;j++)
+		{
+				boost::python::extract<float> listFloatExtractor(t[j]);
+				//jromang - Assuming floats here, but do we only have floats in lists ?
+				BOOST_ASSERT(listFloatExtractor.check());
+				pFloat[j]=listFloatExtractor();
+				//std::cout<<pFloat[j]<<';';
+		}
+		//std::cout<<std::endl;
+
+		checkActiveContext();
+		context->MotionBegin(static_cast<u_int>(listSize), pFloat);
+		memoryPool.purge_memory();
+	}
+
+	void motionEnd()
+	{
+		checkActiveContext();
+		context->MotionEnd();
+	}
+
 	void texture(const char *name, const char *type, const char *texname, boost::python::list params)
 	{
 		EXTRACT_PARAMETERS(params);
@@ -1280,6 +1309,16 @@ void export_PyContext()
 			&PyContext::material,
 			args("Context", "type", "ParamSet"),
 			ds_pylux_Context_material
+		)
+		.def("motionBegin",
+			&PyContext::motionBegin,
+			args("Context"),
+			ds_pylux_Context_motionBegin
+		)
+		.def("motionEnd",
+			&PyContext::motionEnd,
+			args("Context"),
+			ds_pylux_Context_motionEnd
 		)
 		.def("motionInstance",
 			&PyContext::motionInstance,

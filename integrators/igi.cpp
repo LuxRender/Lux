@@ -63,7 +63,7 @@ IGIIntegrator::IGIIntegrator(u_int nl, u_int ns, u_int d, float gl) : SurfaceInt
 	virtualLights.resize(nLightSets);
 	AddStringConstant(*this, "name", "Name of current surface integrator", "igi");
 }
-void IGIIntegrator::RequestSamples(Sample *sample, const Scene &scene)
+void IGIIntegrator::RequestSamples(Sampler *sampler, const Scene &scene)
 {
 	// Request samples for area light sampling
 	u_int nLights = scene.lights.size();
@@ -73,17 +73,17 @@ void IGIIntegrator::RequestSamples(Sample *sample, const Scene &scene)
 	bsdfComponentOffset = new u_int[nLights];
 	for (u_int i = 0; i < nLights; ++i) {
 		u_int lightSamples = 1;
-		lightSampleOffset[i] = sample->Add2D(lightSamples);
-		lightSampleNumber[i] = sample->Add1D(lightSamples);
-		bsdfSampleOffset[i] = sample->Add2D(lightSamples);
-		bsdfComponentOffset[i] = sample->Add1D(lightSamples);
+		lightSampleOffset[i] = sampler->Add2D(lightSamples);
+		lightSampleNumber[i] = sampler->Add1D(lightSamples);
+		bsdfSampleOffset[i] = sampler->Add2D(lightSamples);
+		bsdfComponentOffset[i] = sampler->Add1D(lightSamples);
 	}
-	vlSetOffset = sample->Add1D(1);
+	vlSetOffset = sampler->Add1D(1);
 
 	vector<u_int> structure;
 	structure.push_back(1);	// bsdf component
 	structure.push_back(1); // scattering
-	sampleOffset = sample->AddxD(structure, maxSpecularDepth + 1);
+	sampleOffset = sampler->AddxD(structure, maxSpecularDepth + 1);
 }
 void IGIIntegrator::Preprocess(const RandomGenerator &rng, const Scene &scene)
 {
@@ -222,11 +222,10 @@ u_int IGIIntegrator::Li(const Scene &scene, const Sample &sample) const
 		const Point &p = bsdf->dgShading.p;
 		const Normal &n = bsdf->dgShading.nn;
 		// Compute emitted light if ray hit an area light source
-		if (isect.arealight) {
-			BSDF *ibsdf;
-			L += pathThroughput * isect.Le(sample, ray, &ibsdf,
-				NULL, NULL);
-		}
+		SWCSpectrum Ll(pathThroughput);
+		BSDF *ibsdf;
+		if (isect.Le(sample, ray, &ibsdf, NULL, NULL, &Ll))
+			L += Ll;
 		for (u_int i = 0; i < scene.lights.size(); ++i) {
 			SWCSpectrum Ld(0.f);
 			float lightPos[2], bsdfPos[2];

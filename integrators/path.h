@@ -140,20 +140,13 @@ public:
 	}
 
 	virtual u_int Li(const Scene &scene, const Sample &sample) const;
-	virtual void RequestSamples(Sample *sample, const Scene &scene);
+	virtual void RequestSamples(Sampler *sampler, const Scene &scene);
 	virtual void Preprocess(const RandomGenerator &rng, const Scene &scene);
 
 	// DataParallel interface
 	virtual bool IsDataParallelSupported() const { return true; }
 	//FIXME: just to check SurfaceIntegratorRenderingHints light strategy, to remove
 	virtual bool CheckLightStrategy(const Scene &scene) const {
-		if ((hints.GetLightStrategy() != LightsSamplingStrategy::SAMPLE_ONE_UNIFORM) &&
-			(hints.GetLightStrategy() != LightsSamplingStrategy::SAMPLE_ALL_UNIFORM) &&
-			(hints.GetLightStrategy() != LightsSamplingStrategy::SAMPLE_AUTOMATIC)) {
-			LOG(LUX_ERROR, LUX_SEVERE)<< "The LightsSamplingStrategy must be ONE_UNIFORM or ALL_UNIFORM or AUTO.";
-			return false;
-		}
-
 		return true;
 	}
 	virtual SurfaceIntegratorState *NewState(const Scene &scene,
@@ -182,7 +175,7 @@ private:
 
 	// Used only for HybridSampler
 	u_int hybridRendererLightSampleOffset;
-	LightsSamplingStrategy::LightStrategyType hybridRendererLightStrategy;
+	u_int samplingCount;
 
 	bool includeEnvironment, enableDirectLightSampling;
 };

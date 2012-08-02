@@ -286,6 +286,13 @@ SWCSpectrum LayeredBSDF::F(const SpectrumWavelengths &sw, const Vector &woW,
 	return L / (1.f - probSampleSpec / 2.f);
 }
 
+float LayeredBSDF::ApplyTransform(const Transform &transform)
+{
+	for (u_int i = 0; i < nBSDFs; ++i)
+		bsdfs[i]->ApplyTransform(transform);
+	return this->BSDF::ApplyTransform(transform);
+}
+
 int LayeredBSDF::GetPath(const SpectrumWavelengths &sw, const Vector &vin,
 	const int startIndex, vector<SWCSpectrum> *pathL,
 	vector<Vector> *pathVec, vector<int> *pathLayer, 

@@ -95,6 +95,7 @@ SET(lux_core_src
 	core/transport.cpp
 	core/util.cpp
 	core/volume.cpp
+	core/scheduler.cpp
 	server/renderserver.cpp
 	)
 SOURCE_GROUP("Source Files\\Core" FILES ${lux_core_src})
@@ -292,6 +293,8 @@ SET(lux_samplers_src
 SOURCE_GROUP("Source Files\\Samplers" FILES ${lux_samplers_src})
 
 SET(lux_renderers_src
+	renderers/hybridrenderer.cpp
+	renderers/hybridsamplerrenderer.cpp
 	renderers/samplerrenderer.cpp
 	renderers/sppmrenderer.cpp
 	renderers/sppm/photonsampler.cpp
@@ -302,13 +305,6 @@ SET(lux_renderers_src
 	renderers/sppm/hybridhashgrid.cpp
 	renderers/sppm/kdtree.cpp
 	)
-IF(NOT LUXRAYS_DISABLE_OPENCL)
-SET(lux_renderers_src
-	${lux_renderers_src}
-	renderers/hybridrenderer.cpp
-	renderers/hybridsamplerrenderer.cpp
-	)
-endif(NOT LUXRAYS_DISABLE_OPENCL)
 SOURCE_GROUP("Source Files\\Renderers" FILES ${lux_renderers_src})
 
 SET(lux_rendererstatistics_src
@@ -394,6 +390,7 @@ SET(lux_fresnel_textures_src
 SOURCE_GROUP("Source Files\\Textures\\Fresnel" FILES ${lux_fresnel_textures_src})
 
 SET(lux_textures_src
+	textures/add.cpp
 	textures/band.cpp
 	textures/bilerp.cpp
 	textures/brick.cpp
@@ -407,6 +404,7 @@ SET(lux_textures_src
 	textures/mix.cpp
 	textures/multimix.cpp
 	textures/scale.cpp
+	textures/subtract.cpp
 	textures/uv.cpp
 	textures/uvmask.cpp
 	textures/windy.cpp
@@ -543,6 +541,7 @@ SET(lux_core_external_hdr
 SOURCE_GROUP("Header Files\\Core\\External" FILES ${lux_core_external_hdr})
 SET(lux_core_geometry_hdr
 	core/geometry/bbox.h
+	core/geometry/matrix2x2.h
 	core/geometry/matrix3x3.h
 	core/geometry/matrix4x4-sse.h
 	core/geometry/matrix4x4.h

@@ -340,7 +340,7 @@ Shape* PlyMesh::CreateShape(const Transform &o2w,
 		displacementMap = dm;
 
 		if (!displacementMap) {
-			SHAPE_LOG(name, LUX_WARNING,LUX_SYNTAX) << "Unknow float texture '" << displacementMapName << "'.";
+			SHAPE_LOG(name, LUX_WARNING,LUX_SYNTAX) << "Unknown float texture '" << displacementMapName << "'.";
 		}
 	}
 

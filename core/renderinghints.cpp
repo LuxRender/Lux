@@ -46,12 +46,13 @@ void LightRenderingHints::InitParam(const ParamSet &params) {
 // Light Sampling Strategies
 //------------------------------------------------------------------------------
 
-LightsSamplingStrategy *LightsSamplingStrategy::Create(const ParamSet &params)
+LightsSamplingStrategy *LightsSamplingStrategy::Create(const string &name,
+	const ParamSet &params)
 {
 	enum LightStrategyType lightStrategyType;
 	LightsSamplingStrategy *lsStrategy = NULL;
 	// For compatibility with past versions
-	string st = params.FindOneString("lightstrategy",
+	string st = params.FindOneString(name,
 		params.FindOneString("strategy", "auto"));
 
 	if (st == "one")
@@ -299,58 +300,7 @@ void SurfaceIntegratorRenderingHints::InitParam(const ParamSet &params)
 	shadowRayCount = max(params.FindOneInt("shadowraycount", 1), 1);
 
 	// Light Strategy
-
-	// For compatibility with past versions
-	string st = params.FindOneString("lightstrategy",
-		params.FindOneString("strategy", "auto"));
-
-	if (st == "one")
-		lightStrategyType = LightsSamplingStrategy::SAMPLE_ONE_UNIFORM;
-	else if (st == "all")
-		lightStrategyType = LightsSamplingStrategy::SAMPLE_ALL_UNIFORM;
-	else if (st == "auto")
-		lightStrategyType = LightsSamplingStrategy::SAMPLE_AUTOMATIC;
-	else if (st == "importance")
-		lightStrategyType = LightsSamplingStrategy::SAMPLE_ONE_IMPORTANCE;
-	else if (st == "powerimp")
-		lightStrategyType = LightsSamplingStrategy::SAMPLE_ONE_POWER_IMPORTANCE;
-	else if (st == "allpowerimp")
-		lightStrategyType = LightsSamplingStrategy::SAMPLE_ALL_POWER_IMPORTANCE;
-	else if (st == "logpowerimp")
-		lightStrategyType = LightsSamplingStrategy::SAMPLE_ONE_LOG_POWER_IMPORTANCE;
-	else {
-		LOG( LUX_WARNING,LUX_BADTOKEN) << "Strategy  '" << st << "' unknown. Using \"auto\".";
-		lightStrategyType = LightsSamplingStrategy::SAMPLE_AUTOMATIC;
-	}
-
-	// Create the light strategy
-	switch (lightStrategyType) {
-		case LightsSamplingStrategy::SAMPLE_ALL_UNIFORM:
-			lsStrategy = new LSSAllUniform();
-			break;
-		case LightsSamplingStrategy::SAMPLE_ONE_UNIFORM:
-			lsStrategy =  new LSSOneUniform();
-			break;
-		case LightsSamplingStrategy::SAMPLE_AUTOMATIC:
-			lsStrategy =  new LSSAuto();
-			break;
-		case LightsSamplingStrategy::SAMPLE_ONE_IMPORTANCE:
-			lsStrategy = new LSSOneImportance();
-			break;
-		case LightsSamplingStrategy::SAMPLE_ONE_POWER_IMPORTANCE:
-			lsStrategy = new LSSOnePowerImportance();
-			break;
-		case LightsSamplingStrategy::SAMPLE_ALL_POWER_IMPORTANCE:
-			lsStrategy = new LSSAllPowerImportance();
-			break;
-		case LightsSamplingStrategy::SAMPLE_ONE_LOG_POWER_IMPORTANCE:
-			lsStrategy = new LSSOneLogPowerImportance();
-			break;
-		default:
-			BOOST_ASSERT(false);
-	}
-	if (lsStrategy)
-		lsStrategy->InitParam(params);
+	lsStrategy = LightsSamplingStrategy::Create("lightstrategy", params);
 }
 
 void SurfaceIntegratorRenderingHints::InitStrategies(const Scene &scene) {
@@ -359,7 +309,7 @@ void SurfaceIntegratorRenderingHints::InitStrategies(const Scene &scene) {
 		lsStrategy->Init(scene);
 }
 
-void SurfaceIntegratorRenderingHints::RequestSamples(Sample *sample, const Scene &scene, u_int maxDepth)
+void SurfaceIntegratorRenderingHints::RequestSamples(Sampler *sampler, const Scene &scene, u_int maxDepth)
 {
 	if (lsStrategy != NULL) {
 		vector<u_int> structure(0);
@@ -375,7 +325,7 @@ void SurfaceIntegratorRenderingHints::RequestSamples(Sample *sample, const Scene
 				structure.push_back(1); // light portal sample
 			}
 		}
-		lightSampleOffset = sample->AddxD(structure, maxDepth);
+		lightSampleOffset = sampler->AddxD(structure, maxDepth);
 	}
 }
 
@@ -388,7 +338,7 @@ u_int SurfaceIntegratorRenderingHints::SampleLights(const Scene &scene,
 	if (nLights == 0)
 		return 0;
 
-	const float *data = scene.sampler->GetLazyValues(sample,
+	const float *data = sample.sampler->GetLazyValues(sample,
 		lightSampleOffset, depth);
 	u_int nContribs = 0;
 	// Use multiple importance sampling if the surface is not diffuse
@@ -438,24 +388,23 @@ u_int SurfaceIntegratorRenderingHints::SampleLights(const Scene &scene,
 					}
 					break;
 				} else {
-					if (lightIsect.arealight) {
-						BSDF *lightBsdf;
-						float lightPdf;
-						Li = Lt * lightIsect.Le(sample, ray, &lightBsdf,
-							NULL, &lightPdf);
-						if (!Li.Black()) {
-							const float d2 = DistanceSquared(p,
-								lightBsdf->dgShading.p);
-							const float lsPdf = lsStrategy->Pdf(scene, lightIsect.arealight) * shadowRayCount;
-							const float lightPdf2 = lightPdf *
-								lsPdf * d2 /
-								AbsDot(wi, lightBsdf->dgShading.nn);
-							const float weight = PowerHeuristic(1,
-								bsdfPdf, 1, lightPdf2);
-							L[lightIsect.arealight->group] += Li *
-								weight;
-							++nContribs;
-						}
+					Li = Lt;
+					BSDF *lightBsdf;
+					float lightPdf;
+					if (lightIsect.Le(sample, ray,
+						&lightBsdf, NULL, &lightPdf,
+						&Li)) {
+						const float d2 = DistanceSquared(p,
+							lightBsdf->dgShading.p);
+						const float lsPdf = lsStrategy->Pdf(scene, lightIsect.arealight) * shadowRayCount;
+						const float lightPdf2 = lightPdf *
+							lsPdf * d2 /
+							AbsDot(wi, lightBsdf->dgShading.nn);
+						const float weight = PowerHeuristic(1,
+							bsdfPdf, 1, lightPdf2);
+						L[lightIsect.arealight->group] += Li *
+							weight;
+						++nContribs;
 					}
 					bsdfPdf *= ibsdf->Pdf(sample.swl, -wi, wi,
 						BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR));

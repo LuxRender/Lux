@@ -63,7 +63,7 @@ BSDF *RoughGlass::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 	}
 	if (!T.Black()) {
 		bsdf->Add(ARENA_ALLOC(arena, MicrofacetTransmission)(T,
-			fresnel, md));
+			fresnel, md, dispersion));
 	}
 
 	// Add ptr to CompositingParams structure
@@ -79,8 +79,9 @@ Material* RoughGlass::CreateMaterial(const Transform &xform,
 	boost::shared_ptr<Texture<float> > vroughness(mp.GetFloatTexture("vroughness", .001f));
 	boost::shared_ptr<Texture<float> > index(mp.GetFloatTexture("index", 1.5f));
 	boost::shared_ptr<Texture<float> > cbf(mp.GetFloatTexture("cauchyb", 0.f));				// Cauchy B coefficient
+	bool disp = mp.FindOneBool("dispersion", false);
 
-	return new RoughGlass(Kr, Kt, uroughness, vroughness, index, cbf, mp);
+	return new RoughGlass(Kr, Kt, uroughness, vroughness, index, cbf, disp, mp);
 }
 
 static DynamicLoader::RegisterMaterial<RoughGlass> r("roughglass");

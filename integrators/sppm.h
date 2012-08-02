@@ -54,6 +54,7 @@ public:
 	float parallelHashGridSpare;
 	u_int maxEyePathDepth;
 	u_int maxPhotonPathDepth;
+	u_int hitpointPerPass;
 	u_int photonPerPass;
 	u_int photonStartK;
 
@@ -69,6 +70,7 @@ public:
 	bool directLightSampling;
 	bool debug;
 	bool storeGlossy;
+
 };
 
 }//namespace lux

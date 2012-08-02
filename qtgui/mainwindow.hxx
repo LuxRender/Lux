@@ -237,6 +237,7 @@ public:
 	void showZoomfactor();
 	void renderScenefile(const QString& sceneFilename, const QString& flmFilename = "");
 	void renderNewScenefile(const QString& sceneFilename, const QString& flmFilename = "");
+	void openQueueFile(const QString& fileName);
 	void changeRenderState (LuxGuiRenderState state);
 	void endRenderingSession(bool abort = true);
 	
@@ -376,6 +377,7 @@ private:
 	bool IsFileQueued();
 	bool RenderNextFileInQueue(int idx);
 	void ClearRenderingQueue();
+	QStringList renderQueueList;
 
 public slots:
 
@@ -407,6 +409,7 @@ private slots:
 	void viewportChanged ();
 	void fullScreen ();
 	void normalScreen ();
+	void showAlphaChanged (bool);
 	void overlayStatsChanged (bool);
 	void aboutDialog ();
 	void openDocumentation ();

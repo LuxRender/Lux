@@ -40,18 +40,6 @@ using std::cout;
 namespace lux
 {
 
-// Matrix Method Definitions
-bool SolveLinearSystem2x2(const float A[2][2], const float B[2], float x[2])
-{
-	float det = A[0][0]*A[1][1] - A[0][1]*A[1][0];
-	if (fabsf(det) < 1e-5)
-		return false;
-	float invDet = 1.0f/det;
-	x[0] = (A[1][1]*B[0] - A[0][1]*B[1]) * invDet;
-	x[1] = (A[0][0]*B[1] - A[1][0]*B[0]) * invDet;
-	return true;
-}
-
 /* string hashing function
  * An algorithm produced by Professor Daniel J. Bernstein and shown first to the world on the usenet newsgroup comp.lang.c. It is one of the most efficient hash functions ever published.
  */

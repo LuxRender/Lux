@@ -146,6 +146,7 @@ private:
 
 	class CompiledFile {
 	public:
+		CompiledFile() { }
 		CompiledFile(const std::string & filename);
 
 		const std::string& filename() const {
@@ -169,6 +170,7 @@ private:
 
 	class CompiledFiles {
 	public:
+		// filename must be the actual file on disk, call AdjustFilename first
 		CompiledFile add(const std::string &filename);
 
 		const CompiledFile& fromFilename(std::string filename) const;
@@ -186,6 +188,7 @@ private:
 
 	class CompiledCommand {
 	public:
+		CompiledCommand() { }
 		CompiledCommand(const std::string &cmd);
 		CompiledCommand(const CompiledCommand &other);
 

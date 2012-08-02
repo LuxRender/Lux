@@ -29,6 +29,7 @@
 #include <string>
 #include <boost/cstdint.hpp>
 #include <boost/array.hpp>
+#include "error.h"
 
 // TODO - Tiger hash implementation as not been verified on big endian platforms
 
@@ -115,6 +116,9 @@ typename HashAlgorithm::digest_type file_hash(const std::string &filename) {
 	streamhasher<HashAlgorithm> hasher;
 
 	hasher << fs.rdbuf();
+
+	if (fs.fail())
+		LOG( LUX_ERROR,LUX_SYSTEM) << "Error hashing file '" << filename << "'";
 
 	return hasher();
 }

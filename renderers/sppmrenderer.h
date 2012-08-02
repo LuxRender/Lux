@@ -33,6 +33,7 @@
 #include "dynload.h"
 #include "sppm/hitpoints.h"
 #include "sppm/photonsampler.h"
+#include "core/scheduler.h"
 
 namespace lux
 {
@@ -105,6 +106,7 @@ public:
 	void SuspendWhenDone(bool v);
 
 	void Render(Scene *scene);
+	void RenderMain(Scene *scene);
 
 	void Pause();
 	void Resume();
@@ -131,18 +133,19 @@ public:
 		return ((state == TERMINATE) || boost::this_thread::interruption_requested());
 	}
 
-	float GetScaleFactor() const;
+	float GetScaleFactor(double const scale) const;
 
 private:
+	void TracePhotons(scheduling::Range *range);
 
 	class ScaleUpdaterSPPM : public PerScreenNormalizedBufferScaled::ScaleUpdateInterface
 	{
 		public:
 			ScaleUpdaterSPPM(SPPMRenderer *renderer_): renderer(renderer_) {}
 
-			virtual float GetScaleFactor()
+			virtual float GetScaleFactor(double const scale)
 			{
-				return renderer->GetScaleFactor();
+				return renderer->GetScaleFactor(scale);
 			}
 
 			SPPMRenderer *renderer;
@@ -151,9 +154,9 @@ private:
 	// Render threads
 	//--------------------------------------------------------------------------
 
-	class RenderThread : public boost::noncopyable {
+	class RenderThread : public boost::noncopyable, public scheduling::Thread {
 	public:
-		RenderThread(u_int index, SPPMRenderer *renderer);
+		RenderThread(SPPMRenderer *renderer);
 		~RenderThread();
 
 		void TracePhotons(PhotonSampler &sampler, Sample *sample);
@@ -162,28 +165,25 @@ private:
 			Sample *sample,
 			Scene &scene);
 
-		static void RenderImpl(RenderThread *r);
+		void Init();
+		void End();
 
-		u_int  n;
 		SPPMRenderer *renderer;
-		boost::thread *thread; // keep pointer to delete the thread object
 
 		RandomGenerator *threadRng;
 		Distribution1D *lightCDF;
 		PhotonSampler* sampler;
-		Sample *threadSample;
+
+		Sample sample, eyeSample;
 	};
 
 	//--------------------------------------------------------------------------
 
 	mutable boost::mutex classWideMutex;
 	mutable boost::mutex renderThreadsMutex;
-	boost::barrier *allThreadBarrier;
-	boost::barrier *exitBarrier;
 
 	RendererState state;
 	vector<RendererHostDescription *> hosts;
-	vector<RenderThread *> renderThreads;
 
 	Scene *scene;
 	SPPMIntegrator *sppmi;
@@ -192,21 +192,17 @@ private:
 	// Statistics
 	double photonHitEfficiency;
 
-	// Store number of photon traced by lightgroup
-	unsigned long long photonTracedTotal;
-	u_int photonTracedPass;
-
+	friend class AMCMCPhotonSampler;
 	// Used by AMC Photon Sampler
-	// TODO: try to remove this stuff
-	float accumulatedFluxScale;
-
-	fast_mutex sampPosMutex;
-	u_int sampPos;
+	u_int uniformCount;
 
 	// Put them last for better data alignment
 	// used to suspend render threads until the preprocessing phase is done
 	bool preprocessDone;
 	bool suspendThreadsWhenDone;
+
+	scheduling::Scheduler *scheduler;
+	RandomGenerator* rng;
 };
 
 }//namespace lux

@@ -28,8 +28,6 @@
 
 #include <algorithm>
 
-#include <boost/circular_buffer.hpp>
-
 namespace lux
 {
 
@@ -50,8 +48,10 @@ public:
 		std::string getHaltSpp();
 		std::string getRemainingSamplesPerPixel();
 		std::string getPercentHaltSppComplete();
-
 		std::string getResumedAverageSamplesPerPixel();
+
+		std::string getPathEfficiency();
+		std::string getPathEfficiencyWindow();
 
 		std::string getAverageSamplesPerPixel();
 		std::string getAverageSamplesPerSecond();
@@ -78,13 +78,20 @@ public:
 		SRStatistics* rs;
 
 		virtual std::string getRecommendedStringTemplate();
+
+		std::string getPathEfficiency();
+		std::string getPathEfficiencyWindow();
 	};
 
 private:
 	SamplerRenderer* renderer;
 
-	boost::circular_buffer<double> windowSps;
 	double windowSampleCount;
+	double exponentialMovingAverage;
+	double windowEffSampleCount;
+	double windowEffBlackSampleCount;
+	double windowPEffSampleCount;
+	double windowPEffBlackSampleCount;
 
 	virtual void resetDerived();
 	virtual void updateStatisticsWindowDerived();
@@ -94,11 +101,14 @@ private:
 	virtual u_int getThreadCount() { return renderer->renderThreads.size(); }
 
 	double getHaltSpp();
-	double getEfficiency();
 	double getRemainingSamplesPerPixel() { return std::max(0.0, getHaltSpp() - getTotalAverageSamplesPerPixel()); }
 	double getPercentHaltSppComplete();
-
 	double getResumedAverageSamplesPerPixel() { return getResumedSampleCount() / getPixelCount(); }
+
+	double getEfficiency();
+	double getEfficiencyWindow();
+	double getPathEfficiency();
+	double getPathEfficiencyWindow();
 
 	double getAverageSamplesPerPixel() { return getSampleCount() / getPixelCount(); }
 	double getAverageSamplesPerSecond();

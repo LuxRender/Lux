@@ -31,16 +31,18 @@
 #include <boost/format.hpp>
 #include <boost/thread/mutex.hpp>
 
+#include "integrators/sppm.h"
+#include "core/camera.h"
+
 using namespace lux;
 
 SPPMRStatistics::SPPMRStatistics(SPPMRenderer* renderer)
 	: renderer(renderer),
 	windowPassCount(0.0),
-	windowPhotonCount(0.0)
+	windowPhotonCount(0.0),
+	exponentialMovingAveragePass(0.0),
+	exponentialMovingAveragePhotons(0.0)
 {
-	windowPps.set_capacity(samplesInWindow);
-	windowYps.set_capacity(samplesInWindow);
-
 	formattedLong = new SPPMRStatistics::FormattedLong(this);
 	formattedShort = new SPPMRStatistics::FormattedShort(this);
 
@@ -64,11 +66,10 @@ SPPMRStatistics::~SPPMRStatistics()
 }
 
 void SPPMRStatistics::resetDerived() {
-	windowPps.clear();
-	windowYps.clear();
-
 	windowPassCount = 0.0;
 	windowPhotonCount = 0.0;
+	exponentialMovingAveragePass = 0.0;
+	exponentialMovingAveragePhotons = 0.0;
 }
 
 void SPPMRStatistics::updateStatisticsWindowDerived()
@@ -77,15 +78,18 @@ void SPPMRStatistics::updateStatisticsWindowDerived()
 	double photonCount = getPhotonCount();
 	double elapsedTime = windowCurrentTime - windowStartTime;
 
-	if (elapsedTime == 0.0)
+	if (elapsedTime != 0.0)
 	{
-		windowPps.clear();
-		windowYps.clear();
-	}
-	else
-	{
-		windowPps.push_back((passCount - windowPassCount) / elapsedTime);
-		windowYps.push_back((photonCount - windowPhotonCount) / elapsedTime);
+		double pps = (passCount - windowPassCount) / elapsedTime;
+		double yps = (photonCount - windowPhotonCount) / elapsedTime;
+
+		if (exponentialMovingAveragePass == 0.0)
+			exponentialMovingAveragePass = pps;
+		if (exponentialMovingAveragePhotons == 0.0)
+			exponentialMovingAveragePhotons = yps;
+
+		exponentialMovingAveragePass += min(1.0, elapsedTime / statisticsWindowSize) * (pps - exponentialMovingAveragePass);
+		exponentialMovingAveragePhotons += min(1.0, elapsedTime / statisticsWindowSize) * (yps - exponentialMovingAveragePhotons);
 	}
 
 	windowPassCount = passCount;
@@ -99,9 +103,7 @@ double SPPMRStatistics::getAveragePassesPerSecond() {
 
 double SPPMRStatistics::getAveragePassesPerSecondWindow() {
 	boost::mutex::scoped_lock window_mutex(windowMutex);
-
-	int s = windowPps.size();
-	return (s == 0) ? 0 : std::accumulate(windowPps.begin(), windowPps.end(), 0.0) / s;
+	return exponentialMovingAveragePass;
 }
 
 // Returns haltSamplesPerPixel if set, otherwise infinity
@@ -127,9 +129,7 @@ double SPPMRStatistics::getAveragePhotonsPerSecond() {
 
 double SPPMRStatistics::getAveragePhotonsPerSecondWindow() {
 	boost::mutex::scoped_lock window_mutex(windowMutex);
-
-	int s = windowYps.size();
-	return (s == 0) ? 0 : std::accumulate(windowYps.begin(), windowYps.end(), 0.0) / s;
+	return exponentialMovingAveragePhotons;
 }
 
 SPPMRStatistics::FormattedLong::FormattedLong(SPPMRStatistics* rs)
@@ -256,4 +256,15 @@ std::string SPPMRStatistics::FormattedShort::getPercentHaltPassesComplete() {
 std::string SPPMRStatistics::FormattedShort::getPhotonCount() {
 	double pc = rs->getPhotonCount();
 	return boost::str(boost::format("%1$0.2f %2%Y") % MagnitudeReduce(pc) % MagnitudePrefix(pc));
+}
+
+double SPPMRStatistics::getPhotonCount() {
+	double sampleCount = 0.0;
+
+	Queryable* filmRegistry = Context::GetActive()->registry["film"];
+	if (filmRegistry)
+		sampleCount = (*filmRegistry)["numberOfLocalSamples"].DoubleValue();
+
+	// The amount of photon is stored "by pass"
+	return sampleCount * (renderer->sppmi->photonPerPass) / renderer->scene->camera->film->GetSamplePerPass();
 }

@@ -37,8 +37,10 @@ public:
 		boost::shared_ptr<Texture<float> > &vrough,
 		boost::shared_ptr<Texture<float> > &i,
 		boost::shared_ptr<Texture<float> > &cbf,
+		bool disp,
 		const ParamSet &mp) : Material(mp), Kr(r), Kt(t), index(i),
-		cauchyb(cbf), uroughness(urough), vroughness(vrough) { }
+		cauchyb(cbf), uroughness(urough), vroughness(vrough),
+		dispersion(disp) { }
 	virtual ~RoughGlass() { }
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,
@@ -53,6 +55,7 @@ private:
 	boost::shared_ptr<Texture<float> > cauchyb;
 	boost::shared_ptr<Texture<float> > uroughness;
 	boost::shared_ptr<Texture<float> > vroughness;
+	bool dispersion;
 };
 
 }//namespace lux

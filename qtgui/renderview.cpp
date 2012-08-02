@@ -41,6 +41,7 @@ RenderView::RenderView(QWidget *parent) : QGraphicsView(parent) {
 	setScene(renderscene);
 	zoomfactor = 100.0f;
 	overlayStats = false;
+	showAlpha = false;
 }
 
 RenderView::~RenderView () {
@@ -52,7 +53,7 @@ RenderView::~RenderView () {
 void RenderView::copyToClipboard()
 {
 	if ((luxStatistics("sceneIsReady") || luxStatistics("filmIsReady")) && luxfb->isVisible()) {
-		QImage image = getFramebufferImage(overlayStats);
+		QImage image = getFramebufferImage(overlayStats, showAlpha);
 		if (image.isNull()) {
 			LOG(LUX_ERROR, LUX_SYSTEM) << tr("Error getting framebuffer").toLatin1().data();
 			return;
@@ -64,17 +65,23 @@ void RenderView::copyToClipboard()
 			LOG(LUX_ERROR, LUX_SYSTEM) << tr("Copy to clipboard failed, unable to open clipboard").toLatin1().data();
 			return;
 		}
-		clipboard->setImage(image.convertToFormat(QImage::Format_RGB32));
+		clipboard->setImage(image.convertToFormat(QImage::Format_ARGB32));
 	}
 }
 
 void RenderView::reload () {
 	if (luxStatistics("sceneIsReady") || luxStatistics("filmIsReady")) {
-		int w = luxGetIntAttribute("film", "xResolution");
-		int h = luxGetIntAttribute("film", "yResolution");
+		int w = luxGetIntAttribute("film", "xPixelCount");
+		int h = luxGetIntAttribute("film", "yPixelCount");
 			
-		QImage image = getFramebufferImage(overlayStats);
-
+		QImage image = getFramebufferImage(overlayStats, showAlpha);
+		if (showAlpha == true) {
+			QPixmap checkerboard(":/images/checkerboard.png");
+			renderscene->setBackgroundBrush(checkerboard);
+		} else {
+			renderscene->setBackgroundBrush(QColor(127,127,127));
+		}
+		
 		if (image.isNull())
 			return;
 
@@ -162,8 +169,8 @@ void RenderView::mousePressEvent (QMouseEvent *event) {
 				setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
 				fitInView(renderscene->sceneRect(), Qt::KeepAspectRatio);
 				// compute correct zoomfactor
-				origw = (qreal)luxGetIntAttribute("film", "xResolution")/(qreal)width();
-				origh = (qreal)luxGetIntAttribute("film", "yResolution")/(qreal)height();
+				origw = (qreal)luxGetIntAttribute("film", "xPixelCount")/(qreal)width();
+				origh = (qreal)luxGetIntAttribute("film", "yPixelCount")/(qreal)height();
 				if (origh > origw)
 					zoomfactor = 100.0f/(origh);
 				else

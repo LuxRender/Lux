@@ -25,6 +25,7 @@
 // bxdf.h*
 #include "lux.h"
 #include "geometry/raydifferential.h"
+#include "geometry/transform.h"
 #include "spectrum.h"
 
 namespace lux
@@ -329,6 +330,14 @@ public:
 	virtual SWCSpectrum rho(const SpectrumWavelengths &sw, const Vector &wW,
 		BxDFType flags = BSDF_ALL) const = 0;
 
+	/**
+	 * Apply a transformation to the BSDF
+	 * This is useful for light instances.
+	 * @param transform The transformation to be applied
+	 * @return The volume defined by the transformed dpdu, dpdv and nn
+	 */
+	virtual float ApplyTransform(const Transform &transform);
+
 	// BSDF Public Data
 	/**
 	 * @var const Normal nn
@@ -338,8 +347,8 @@ public:
 	 * @var const Normal ng
 	 * @brief The geometric normal
 	 */
-	const Normal ng;
-	const PartialDifferentialGeometry dgShading; /** The differential shading geometry */
+	Normal ng;
+	PartialDifferentialGeometry dgShading; /** The differential shading geometry */
 	/**
 	 * @var const Volume *exterior
 	 * @brief The volume in the half space containing the geometric normal

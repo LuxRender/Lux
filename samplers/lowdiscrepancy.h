@@ -33,7 +33,7 @@ class LDSampler : public Sampler {
 public:
 	class LDData {
 	public:
-		LDData(const Sample &sample, int xPixelStart, int yPixelStart,
+		LDData(const Sampler &sampler, int xPixelStart, int yPixelStart,
 			u_int pixelSamples);
 		~LDData();
 		int xPos, yPos;
@@ -51,7 +51,7 @@ public:
 
 	virtual void InitSample(Sample *sample) const {
 		sample->sampler = const_cast<LDSampler *>(this);
-		sample->samplerData = new LDData(*sample, xPixelStart,
+		sample->samplerData = new LDData(*this, xPixelStart,
 			yPixelStart, pixelSamples);
 	}
 	virtual void FreeSample(Sample *sample) const {

@@ -48,7 +48,7 @@ void Beckmann::SampleH(float u1, float u2, Vector *wh, float *d,
 	// Adapted from B. Walter et al, Microfacet Models for Refraction,
 	// Eurographics Symposium on Rendering, 2007, page 7
 
-	float theta = atanf(sqrtf(-(r * r) * logf(1.f - u1)));
+	float theta = atanf(sqrtf(max(0.f, -(r * r) * logf(1.f - u1))));
 	float cosTheta = cosf(theta);
 	float sinTheta = sqrtf(max(0.f, 1.f - cosTheta * cosTheta));
 	float phi = u2 * 2.f * M_PI;

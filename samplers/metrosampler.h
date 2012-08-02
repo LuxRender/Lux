@@ -25,6 +25,7 @@
 #ifndef LUX_METROSAMPLER_H
 #define LUX_METROSAMPLER_H
 
+#include <boost/thread/mutex.hpp>
 #include "sampling.h"
 #include "paramset.h"
 #include "film.h"
@@ -36,7 +37,7 @@ class MetropolisSampler : public Sampler {
 public:
 	class MetropolisData {
 	public:
-		MetropolisData(const Sample &sample);
+		MetropolisData(const Sampler &sampler);
 		~MetropolisData();
 		u_int normalSamples, totalSamples, totalTimes, consecRejects;
 		float *sampleImage, *currentImage;
@@ -51,12 +52,12 @@ public:
 		double totalLY, sampleCount;
 	};
 	MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
-		u_int maxRej, float largeProb, float rng, bool useV);
+		u_int maxRej, float largeProb, float rng, bool useV, bool useC, bool adaptivelmprob);
 	virtual ~MetropolisSampler();
 
 	virtual void InitSample(Sample *sample) const {
 		sample->sampler = const_cast<MetropolisSampler *>(this);
-		sample->samplerData = new MetropolisData(*sample);
+		sample->samplerData = new MetropolisData(*this);
 	}
 	virtual void FreeSample(Sample *sample) const {
 		delete static_cast<MetropolisData *>(sample->samplerData);
@@ -71,10 +72,11 @@ public:
 	virtual void AddSample(const Sample &sample);
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
 
-	u_int maxRejects;
-	float pLarge, range;
-	bool useVariance;
+	u_int maxRejects, cooldownTime, optimumThreshold, mutationCount;
+	float pLarge, pLargeTarget, range, pEffWindow;
+	bool useVariance, useCooldown, adaptiveLargeMutationProb, doneOptimizing;
 	float *rngSamples;
+	boost::mutex metropolisSamplerMutex;
 };
 
 }//namespace lux

@@ -35,11 +35,9 @@ HashGrid::~HashGrid() {
 	delete[] grid;
 }
 
-void HashGrid::Refresh( const u_int index, const u_int count, boost::barrier &barrier)
+void HashGrid::Refresh(scheduling::Scheduler *scheduler)
 {
-	if(index == 0)
-		RefreshMutex();
-	barrier.wait();
+	RefreshMutex();
 }
 
 void HashGrid::RefreshMutex() {

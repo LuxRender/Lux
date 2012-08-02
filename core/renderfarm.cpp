@@ -57,6 +57,7 @@
 #include <boost/cstdint.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/thread/xtime.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 using namespace boost::iostreams;
 using namespace boost::posix_time;
@@ -135,9 +136,7 @@ RenderFarm::CompiledFile::CompiledFile(const std::string &filename) : fname(file
 bool RenderFarm::CompiledFile::send(std::iostream &stream) const {
 	LOG(LUX_DEBUG,LUX_NOERROR) << "Sending file '" << filename() << "'";
 
-	// silent replacement, since relevant plugin will report replacement
-	const string real_filename = AdjustFilename(filename(), true);
-	std::ifstream in(real_filename.c_str(), std::ios::in | std::ios::binary);
+	std::ifstream in(filename().c_str(), std::ios::in | std::ios::binary);
 
 	// Get length of file
 	in.seekg(0, std::ifstream::end);
@@ -146,10 +145,10 @@ bool RenderFarm::CompiledFile::send(std::iostream &stream) const {
 
 	if (in.fail()) {
 		// AdjustFilename should guarantee that file exists, if not return just normalized filename
-		LOG( LUX_ERROR,LUX_SYSTEM) << "There was an error while checking the size of file '" << real_filename << "'";
+		LOG( LUX_ERROR,LUX_SYSTEM) << "There was an error while checking the size of file '" << filename() << "'";
 
 		// Send an empty file ot the server
-		stream << "0\n";
+		stream << "\n0\n";
 	} else {
 		// Send the file length
 		stream << filename() << "\n";
@@ -165,7 +164,7 @@ bool RenderFarm::CompiledFile::send(std::iostream &stream) const {
 		}
 
 		if (in.bad()) {
-			LOG( LUX_ERROR,LUX_SYSTEM) << "There was an error sending file '" << real_filename << "'";
+			LOG( LUX_ERROR,LUX_SYSTEM) << "There was an error sending file '" << filename() << "'";
 			return false;
 		}
 	}
@@ -208,7 +207,7 @@ const RenderFarm::CompiledFile& RenderFarm::CompiledFiles::fromHash(filehash_t h
 bool RenderFarm::CompiledFiles::send(std::iostream &stream) const {
 	LOG(LUX_DEBUG,LUX_NOERROR) << "Sending files";
 
-	stream << "BEGIN FILES" << endl;
+	stream << "BEGIN FILES" << "\n";
 
 	if (!read_response(stream, "BEGIN FILES OK"))
 		return false;
@@ -245,7 +244,7 @@ bool RenderFarm::CompiledFiles::send(std::iostream &stream) const {
 			return false;
 	}
 
-	stream << "END FILES OK" << endl;
+	stream << "END FILES OK" << "\n";
 
 	LOG(LUX_DEBUG,LUX_NOERROR) << "Sent files";
 
@@ -314,7 +313,7 @@ void RenderFarm::CompiledCommand::addFile(const std::string &paramName, const Co
 }
 
 bool RenderFarm::CompiledCommand::send(std::iostream &stream) const {
-	stream << command << endl;
+	stream << command << "\n";
 	string buf = paramsBuf.str();
 	stream << buf;
 	string response;
@@ -324,25 +323,25 @@ bool RenderFarm::CompiledCommand::send(std::iostream &stream) const {
 		return true;
 
 	if (files.empty()) {
-		stream << "FILE INDEX EMPTY" << endl;
+		stream << "FILE INDEX EMPTY" << "\n";
 		return true;
 	}
 
 	LOG(LUX_DEBUG,LUX_NOERROR) << "Sending file index";
-	stream << "BEGIN FILE INDEX" << endl;
+	stream << "BEGIN FILE INDEX" << "\n";
 
 	if (!read_response(stream, "BEGIN FILE INDEX OK"))
 		return false;
 
 	LOG(LUX_DEBUG,LUX_NOERROR) << "File index size: " << files.size();
 	for (size_t i = 0; i < files.size(); ++i) {		
-		stream << files[i].first << endl; // param name
-		stream << files[i].second.filename() << endl;
-		stream << files[i].second.hash() << endl;
-		stream << endl;
+		stream << files[i].first << "\n"; // param name
+		stream << files[i].second.filename() << "\n";
+		stream << files[i].second.hash() << "\n";
+		stream << "\n";
 	}
 
-	stream << "END FILE INDEX" << endl;
+	stream << "END FILE INDEX" << "\n";
 
 	if (!read_response(stream, "END FILE INDEX OK"))
 		return false;
@@ -625,6 +624,7 @@ void RenderFarm::flushImpl() {
 						serverInfoList[i].name << ":" << serverInfoList[i].port;
 
 				tcp::iostream stream(serverInfoList[i].name, serverInfoList[i].port);
+				stream.rdbuf()->set_option(tcp::no_delay(true));
 				//stream << commands << endl;
 				for (size_t j = 0; j < compiledCommands.size(); j++) {
 					// send command
@@ -798,7 +798,7 @@ void RenderFarm::updateLog() {
 			continue;
 
 		try {
-			LOG( LUX_INFO,LUX_NOERROR) << "Getting log from: " <<
+			LOG( LUX_DEBUG,LUX_NOERROR) << "Getting log from: " <<
 					serverInfoList[i].name << ":" << serverInfoList[i].port;
 
 			// Connect to the server
@@ -807,7 +807,7 @@ void RenderFarm::updateLog() {
 
 			stream.connect(serverInfoList[i].name, serverInfoList[i].port);
 
-			LOG( LUX_INFO,LUX_NOERROR) << "Connected to: " << stream.rdbuf()->remote_endpoint();
+			LOG( LUX_DEBUG,LUX_NOERROR) << "Connected to: " << stream.rdbuf()->remote_endpoint();
 
 			// Send the command to get the log
 			stream << "luxGetLog" << std::endl;
@@ -891,7 +891,9 @@ void RenderFarm::send(const string &command, const string &name,
 			if (file == "" || FileData::present(params, paramName))
 				continue;
 
-			CompiledFile cf = compiledFiles.add(file);
+			// silent replacement, since relevant plugin will report replacement
+			const string real_filename = AdjustFilename(file, true);
+			CompiledFile cf = compiledFiles.add(real_filename);
 
 			ccmd.addFile(paramName, cf);
 		}
@@ -983,7 +985,7 @@ void RenderFarm::send(const string &command, u_int n, float *d) {
 		CompiledCommand &ccmd(compiledCommands.add(command));
 
 		ccmd.buffer() << n << ' ';
-		for (int i = 0; i < 16; i++)
+		for (u_int i = 0; i < n; i++)
 			ccmd.buffer() << d[i] << ' ';
 		ccmd.buffer() << endl;
 	} catch (exception& e) {
@@ -1002,7 +1004,9 @@ void RenderFarm::send(const string &command, const string &name,
 		const std::string paramName("filename");
 		string file = params.FindOneString(paramName, "");
 		if (file != "" && !FileData::present(params, paramName)) {
-			CompiledFile cf = compiledFiles.add(file);
+			// silent replacement, since relevant plugin will report replacement
+			const string real_filename = AdjustFilename(file, true);
+			CompiledFile cf = compiledFiles.add(real_filename);
 			ccmd.addFile(paramName, cf);
 		}
 	} catch (std::exception& e) {
