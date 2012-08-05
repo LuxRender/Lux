@@ -52,7 +52,7 @@ public:
 		double totalLY, sampleCount;
 	};
 	MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
-		u_int maxRej, float largeProb, float rng, bool useV, bool useC, bool adaptivelmprob);
+		u_int maxRej, float largeProb, float rng, bool useV, bool useC);
 	virtual ~MetropolisSampler();
 
 	virtual void InitSample(Sample *sample) const {
@@ -72,9 +72,10 @@ public:
 	virtual void AddSample(const Sample &sample);
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
 
-	u_int maxRejects, cooldownTime, optimumThreshold, mutationCount;
-	float pLarge, pLargeTarget, range, pEffWindow;
-	bool useVariance, useCooldown, adaptiveLargeMutationProb, doneOptimizing;
+	u_int maxRejects;
+	float pLarge, pLargeTarget, range;
+	bool useVariance, useCooldown;
+	u_int cooldownTime;
 	float *rngSamples;
 	boost::mutex metropolisSamplerMutex;
 };

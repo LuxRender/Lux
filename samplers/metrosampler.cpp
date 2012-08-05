@@ -125,12 +125,12 @@ static float fracf(const float &v) {
 #define rngGet(__pos) (fracf(rngSamples[(data->rngBase + (__pos)) % rngN] + data->rngRotation[(__pos)]))
 #define rngGet2(__pos,__off) (fracf(rngSamples[(data->rngBase + (__pos) + (__off)) % rngN] + data->rngRotation[(__pos)]))
 
+
 // Metropolis method definitions
 MetropolisSampler::MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
-	u_int maxRej, float largeProb, float rng, bool useV, bool useC, bool adaptivelmprob) :
+	u_int maxRej, float largeProb, float rng, bool useV, bool useC) :
 	Sampler(xStart, xEnd, yStart, yEnd, 1), maxRejects(maxRej),
-	pLargeTarget(largeProb), range(rng), useVariance(useV), useCooldown(useC), 
-	adaptiveLargeMutationProb(adaptivelmprob)
+	pLargeTarget(largeProb), range(rng), useVariance(useV), useCooldown(useC)
 {
 	// Allocate and compute all values of the rng
 	rngSamples = AllocAligned<float>(rngN);
@@ -143,29 +143,15 @@ MetropolisSampler::MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
 	}
 	RandomGenerator rndg(1);
 	Shuffle(rndg, rngSamples, rngN, 1);
-	// 15 seconds of cooldown time for every .1 difference from 0.5 in pLarge
-	doneOptimizing = true;
-	if (useCooldown) {
+	// 15 seconds of cooldown time for evey .1 difference from 0.5 in pLarge
+	if(useCooldown) {
 		pLarge = 0.5f;
 		cooldownTime = Ceil2UInt(150.f * fabsf(pLargeTarget - 0.5f));
-		if (!adaptiveLargeMutationProb)
-			LOG(LUX_INFO, LUX_NOERROR) << "Metropolis cooldown time will be " << cooldownTime << " seconds";
+		LOG(LUX_INFO, LUX_NOERROR) << "Metropolis cooldown time will be " << cooldownTime << " seconds";
 	} else {
 		pLarge = pLargeTarget;
 		cooldownTime = 0;
 	}
-	// Mandatory cooldown if adaptive large mutation probability is used
-	if (adaptiveLargeMutationProb) {
-		pLarge = 0.5f;
-		useCooldown = true;
-		doneOptimizing = false;
-		cooldownTime = 30;
-		LOG(LUX_INFO, LUX_NOERROR) << "Large mutation probability is set to 'adaptive'";
-		LOG(LUX_INFO, LUX_NOERROR) << "Metropolis cooldown time will be " << cooldownTime << " seconds";
-	}
-	pEffWindow = .0f;
-	optimumThreshold = 85;
-	mutationCount = 0;
 }
 
 MetropolisSampler::~MetropolisSampler() {
@@ -366,48 +352,14 @@ void MetropolisSampler::AddSample(const Sample &sample)
 		++(data->consecRejects);
 	}
 	newContributions.clear();
-
 	if (useCooldown && luxGetDoubleAttribute("renderer_statistics", "elapsedTime") >= cooldownTime) {
-		if (!adaptiveLargeMutationProb)
-			pLarge = pLargeTarget;
-		else
-			pLarge = 1.0f;
-
+		pLarge = pLargeTarget;
 		boost::mutex::scoped_lock cooldownLock(metropolisSamplerMutex);
 		if (useCooldown) {
 			useCooldown = false;
 			LOG(LUX_INFO, LUX_NOERROR) << "Cooldown process has now ended";
-			mutationCount = 0;
 		}
 	}
-	mutationCount++;
-	// zsolnai - an algorithm for determining the optimum plarge value for an arbitrary scene.
-	// Details will be discussed in the paper.
-	if (!useCooldown && !doneOptimizing) {
-		boost::mutex::scoped_lock optimizationLock(metropolisSamplerMutex);
-		if (mutationCount > 1500) {
-			mutationCount = 0;
-			pEffWindow = luxGetDoubleAttribute("renderer_statistics", "pathEfficiencyWindow");
-
-			if (pEffWindow >= 0.01f) {
-				if (pLarge >= 0.026f)
-					pLarge -= 0.025f;
-				if (pEffWindow >= optimumThreshold) {
-					doneOptimizing = true;
-					LOG(LUX_INFO, LUX_NOERROR) << "Optimization pass done";
-					LOG(LUX_INFO, LUX_NOERROR) << "Optimum plarge found: " << pLarge << "";
-				}
-				else if (pEffWindow < optimumThreshold && pLarge <= 0.026f) {
-					doneOptimizing = true;
-					double eff = luxGetDoubleAttribute("renderer_statistics", "efficiencyWindow");
-					LOG(LUX_INFO, LUX_NOERROR) << "Optimization pass done";
-					LOG(LUX_INFO, LUX_NOERROR) << "Scene efficiency is critically low (Eff: " << eff << "%, Peff: " << pEffWindow << "%)";
-					LOG(LUX_INFO, LUX_NOERROR) << "Optimum plarge found: " << pLarge;
-				}
-			}
-		}
-	}
-
 	const float mutationSelector = sample.rng->floatValue();
 	data->large = (mutationSelector < pLarge);
 }
@@ -421,10 +373,9 @@ Sampler* MetropolisSampler::CreateSampler(const ParamSet &params, const Film *fi
 	float range = params.FindOneFloat("mutationrange", (xEnd - xStart + yEnd - yStart) / 32.f);	// maximum distance in pixel for a small mutation
 	bool useVariance = params.FindOneBool("usevariance", false);
 	bool useCooldown = params.FindOneBool("usecooldown", true);
-	bool adaptiveLargeMutationProb = params.FindOneBool("adaptive_largemutationprob", false);
 
 	return new MetropolisSampler(xStart, xEnd, yStart, yEnd, max(maxConsecRejects, 0),
-		largeMutationProb, range, useVariance, useCooldown, adaptiveLargeMutationProb);
+		largeMutationProb, range, useVariance, useCooldown);
 }
 
 static DynamicLoader::RegisterSampler<MetropolisSampler> r("metropolis");
