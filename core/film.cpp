@@ -579,6 +579,34 @@ FilterLUTs::FilterLUTs(Filter *filter, const unsigned int size) {
 // OutlierData Definitions
 ColorSystem OutlierData::cs(0.63f, 0.34f, 0.31f, 0.595f, 0.155f, 0.07f, 0.314275f, 0.329411f);
 
+void BufferGroup::CreateBuffers(const vector<BufferConfig> &configs, u_int x, u_int y) {
+	for(vector<BufferConfig>::const_iterator config = configs.begin(); config != configs.end(); ++config) {
+		Buffer *buffer;
+		switch ((*config).type) {
+		case BUF_TYPE_PER_PIXEL:
+			buffer = new PerPixelNormalizedBuffer(x, y);
+			break;
+		case BUF_TYPE_PER_SCREEN:
+			buffer = new PerScreenNormalizedBuffer(x, y, &numberOfSamples);
+			break;
+		case BUF_TYPE_PER_SCREEN_SCALED:
+			buffer = new PerScreenNormalizedBufferScaled(x, y, &numberOfSamples);
+			break;
+		case BUF_TYPE_RAW:
+			buffer = new RawBuffer(x, y);
+			break;
+		default:
+			assert(0);
+		}
+		if (buffer && buffer->xPixelCount && buffer->yPixelCount)
+			buffers.push_back(buffer);
+		else {
+			LOG(LUX_SEVERE, LUX_NOMEM) << "Couldn't allocate film buffers, aborting";
+			assert(0);
+		}
+	}
+}
+
 // Film Function Definitions
 
 u_int Film::GetXResolution()
@@ -1641,7 +1669,7 @@ double Film::DoTransmitFilm(
 			Buffer* buffer = bufferGroup.getBuffer(j);
 
 			// Write pixels
-			const BlockedArray<Pixel>* pixelBuf = buffer->pixels;
+			const BlockedArray<Pixel>* pixelBuf = &(buffer->pixels);
 			for (u_int y = 0; y < pixelBuf->vSize(); ++y) {
 				for (u_int x = 0; x < pixelBuf->uSize(); ++x) {
 					const Pixel &pixel = (*pixelBuf)(x, y);
@@ -1825,7 +1853,7 @@ double Film::UpdateFilm(std::basic_istream<char> &stream) {
 				for (u_int y = 0; y < buffer->yPixelCount; ++y) {
 					for (u_int x = 0; x < buffer->xPixelCount; ++x) {
 						const Pixel &pixel = (*receivedPixels)(x, y);
-						Pixel &pixelResult = (*buffer->pixels)(x, y);
+						Pixel &pixelResult = buffer->pixels(x, y);
 						pixelResult.L.c[0] += pixel.L.c[0];
 						pixelResult.L.c[1] += pixel.L.c[1];
 						pixelResult.L.c[2] += pixel.L.c[2];

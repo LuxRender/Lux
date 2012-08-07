@@ -103,23 +103,22 @@ struct FloatPixel {
 
 class Buffer {
 public:
-	Buffer(u_int x, u_int y) : xPixelCount(x), yPixelCount(y) {
-		pixels = new BlockedArray<Pixel>(x, y);
+	Buffer(u_int x, u_int y) : pixels(x, y) {
+		xPixelCount = pixels.uSize();
+		yPixelCount = pixels.vSize();
 	}
 
-	virtual ~Buffer() {
-		delete pixels; 
-	}
+	virtual ~Buffer() { }
 
 	void Add(u_int x, u_int y, XYZColor L, float alpha, float wt) {
-		Pixel &pixel = (*pixels)(x, y);
+		Pixel &pixel = pixels(x, y);
 		pixel.L.AddWeighted(wt, L);
 		pixel.alpha += alpha * wt;
 		pixel.weightSum += wt;
 	}
 
 	void Set(u_int x, u_int y, XYZColor L, float alpha) {
-		Pixel &pixel = (*pixels)(x, y);
+		Pixel &pixel = pixels(x, y);
 		pixel.L = L;
 		pixel.alpha = alpha;
 		pixel.weightSum = 1.f;
@@ -128,7 +127,7 @@ public:
 	void Clear() {
 		for (u_int y = 0, offset = 0; y < yPixelCount; ++y) {
 			for (u_int x = 0; x < xPixelCount; ++x, ++offset) {
-				Pixel &pixel = (*pixels)(x, y);
+				Pixel &pixel = pixels(x, y);
 				pixel.L.c[0] = 0.0f;
 				pixel.L.c[1] = 0.0f;
 				pixel.L.c[2] = 0.0f;
@@ -141,7 +140,7 @@ public:
 	virtual void GetData(XYZColor *color, float *alpha) const = 0;
 	virtual float GetData(u_int x, u_int y, XYZColor *color, float *alpha) const = 0;
 	u_int xPixelCount, yPixelCount;
-	BlockedArray<Pixel> *pixels;
+	BlockedArray<Pixel> pixels;
 	float scaleFactor;
 	bool isFramebuffer;
 };
@@ -156,14 +155,14 @@ public:
 	virtual void GetData(XYZColor *color, float *alpha) const {
 		for (u_int y = 0, offset = 0; y < yPixelCount; ++y) {
 			for (u_int x = 0; x < xPixelCount; ++x, ++offset) {
-				const Pixel &pixel = (*pixels)(x, y);
+				const Pixel &pixel = pixels(x, y);
 				color[offset] = pixel.L;
 				alpha[offset] = pixel.alpha;
 			}
 		}
 	}
 	virtual float GetData(u_int x, u_int y, XYZColor *color, float *alpha) const {
-		const Pixel &pixel = (*pixels)(x, y);
+		const Pixel &pixel = pixels(x, y);
 		*color = pixel.L;
 		*alpha = pixel.alpha;
 		return pixel.weightSum;
@@ -180,7 +179,7 @@ public:
 	virtual void GetData(XYZColor *color, float *alpha) const {
 		for (u_int y = 0, offset = 0; y < yPixelCount; ++y) {
 			for (u_int x = 0; x < xPixelCount; ++x, ++offset) {
-				const Pixel &pixel = (*pixels)(x, y);
+				const Pixel &pixel = pixels(x, y);
 				if (pixel.weightSum == 0.f) {
 					color[offset] = XYZColor(0.f);
 					alpha[offset] = 0.f;
@@ -193,7 +192,7 @@ public:
 		}
 	}
 	virtual float GetData(u_int x, u_int y, XYZColor *color, float *alpha) const {
-		const Pixel &pixel = (*pixels)(x, y);
+		const Pixel &pixel = pixels(x, y);
 		if (pixel.weightSum == 0.f) {
 			*color = XYZColor(0.f);
 			*alpha = 0.f;
@@ -208,22 +207,18 @@ public:
 // Per pixel normalized floating point buffer
 class PerPixelNormalizedFloatBuffer {
 public:
-	PerPixelNormalizedFloatBuffer(u_int x, u_int y) {
-		floatpixels = new BlockedArray<FloatPixel>(x, y);
-	}
+	PerPixelNormalizedFloatBuffer(u_int x, u_int y) : floatpixels(x, y) { }
 
-	~PerPixelNormalizedFloatBuffer() {
-		delete floatpixels;
-	}
+	~PerPixelNormalizedFloatBuffer() { }
 
 	void Add(u_int x, u_int y, float value, float wt) {
-		FloatPixel &fpixel = (*floatpixels)(x, y);
+		FloatPixel &fpixel = floatpixels(x, y);
 		fpixel.V += value;
 		fpixel.weightSum += wt;
 	}
 
 	void Set(u_int x, u_int y, float value, float wt) {
-		FloatPixel &fpixel = (*floatpixels)(x, y);
+		FloatPixel &fpixel = floatpixels(x, y);
 		fpixel.V = value;
 		fpixel.weightSum = 1.f;
 	}
@@ -245,14 +240,13 @@ public:
 	}
 	*/
 	float GetData(u_int x, u_int y) const {
-		const FloatPixel &pixel = (*floatpixels)(x, y);
+		const FloatPixel &pixel = floatpixels(x, y);
 		if (pixel.weightSum == 0.f) {
 			return 0.f;
 		}
 		return pixel.V / pixel.weightSum;
 	} 
-private:
-	BlockedArray<FloatPixel> *floatpixels;
+	BlockedArray<FloatPixel> floatpixels;
 };
 
 // Per screen normalized XYZColor buffer
@@ -267,7 +261,7 @@ public:
 		const float inv = static_cast<float>(xPixelCount * yPixelCount / *numberOfSamples_);
 		for (u_int y = 0, offset = 0; y < yPixelCount; ++y) {
 			for (u_int x = 0; x < xPixelCount; ++x, ++offset) {
-				const Pixel &pixel = (*pixels)(x, y);
+				const Pixel &pixel = pixels(x, y);
 				color[offset] = pixel.L * inv;
 				if (pixel.weightSum > 0.f)
 					alpha[offset] = pixel.alpha / pixel.weightSum;
@@ -277,7 +271,7 @@ public:
 		}
 	}
 	virtual float GetData(u_int x, u_int y, XYZColor *color, float *alpha) const {
-		const Pixel &pixel = (*pixels)(x, y);
+		const Pixel &pixel = pixels(x, y);
 		if (pixel.weightSum > 0.f) {
 			*color = pixel.L * static_cast<float>(xPixelCount * yPixelCount / *numberOfSamples_);
 			*alpha = pixel.alpha;
@@ -306,7 +300,7 @@ public:
 		scale = scaleUpdate->GetScaleFactor(*numberOfSamples_);
 		for (u_int y = 0, offset = 0; y < yPixelCount; ++y) {
 			for (u_int x = 0; x < xPixelCount; ++x, ++offset) {
-				const Pixel &pixel = (*pixels)(x, y);
+				const Pixel &pixel = pixels(x, y);
 				if (pixel.weightSum > 0.f) {
 					color[offset] = pixel.L * scale;
 					alpha[offset] = pixel.alpha;
@@ -321,7 +315,7 @@ public:
 		if(x == 0 && y == 0 && scaleUpdate != NULL)
 			scale = scaleUpdate->GetScaleFactor(*numberOfSamples_);
 
-		const Pixel &pixel = (*pixels)(x, y);
+		const Pixel &pixel = pixels(x, y);
 		if (pixel.weightSum > 0.f) {
 			*color = pixel.L * static_cast<float>(scale);
 			*alpha = pixel.alpha;
@@ -356,26 +350,7 @@ public:
 			delete *buffer;
 	}
 
-	void CreateBuffers(const vector<BufferConfig> &configs, u_int x, u_int y) {
-		for(vector<BufferConfig>::const_iterator config = configs.begin(); config != configs.end(); ++config) {
-			switch ((*config).type) {
-			case BUF_TYPE_PER_PIXEL:
-				buffers.push_back(new PerPixelNormalizedBuffer(x, y));
-				break;
-			case BUF_TYPE_PER_SCREEN:
-				buffers.push_back(new PerScreenNormalizedBuffer(x, y, &numberOfSamples));
-				break;
-			case BUF_TYPE_PER_SCREEN_SCALED:
-				buffers.push_back(new PerScreenNormalizedBufferScaled(x, y, &numberOfSamples));
-				break;
-			case BUF_TYPE_RAW:
-				buffers.push_back(new RawBuffer(x, y));
-				break;
-			default:
-				assert(0);
-			}
-		}
-	}
+	void CreateBuffers(const vector<BufferConfig> &configs, u_int x, u_int y);
 
 	Buffer *getBuffer(u_int index) const {
 		return buffers[index];

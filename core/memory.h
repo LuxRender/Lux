@@ -292,6 +292,11 @@ public:
 		uBlocks = RoundUp(uRes) >> logBlockSize;
 		size_t nAlloc = RoundUp(uRes) * RoundUp(vRes);
 		data = lux::AllocAligned<T>(nAlloc);
+		if (!data) {
+			uRes = 0;
+			vRes = 0;
+			return;
+		}
 		for (size_t i = 0; i < nAlloc; ++i)
 			new (&data[i]) T(b.data[i]);
 		if (d) {
@@ -307,6 +312,11 @@ public:
 		uBlocks = RoundUp(uRes) >> logBlockSize;
 		size_t nAlloc = RoundUp(uRes) * RoundUp(vRes);
 		data = lux::AllocAligned<T>(nAlloc);
+		if (!data) {
+			uRes = 0;
+			vRes = 0;
+			return;
+		}
 		for (size_t i = 0; i < nAlloc; ++i)
 			new (&data[i]) T();
 		if (d) {
