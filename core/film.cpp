@@ -641,7 +641,8 @@ u_int Film::GetYPixelCount()
 
 Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop[4], 
 		   const string &filename1, bool premult, bool useZbuffer,
-		   bool w_resume_FLM, bool restart_resume_FLM, bool write_FLM_direct, int haltspp, int halttime,
+		   bool w_resume_FLM, bool restart_resume_FLM, bool write_FLM_direct,
+		   int haltspp, int halttime, float haltthreshold,
 		   bool debugmode, int outlierk, int tilec) :
 	Queryable("film"),
 	xResolution(xres), yResolution(yres),
@@ -650,11 +651,14 @@ Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop
 	contribPool(NULL), filter(filt), filterTable(NULL), filterLUTs(NULL),
 	filename(filename1),
 	colorSpace(0.63f, 0.34f, 0.31f, 0.595f, 0.155f, 0.07f, 0.314275f, 0.329411f), // default is SMPTE
+	convergenceBufferReference(NULL), convergenceBufferReferenceCount(NULL),
+	convergenceBufferDelta(NULL),
 	ZBuffer(NULL), use_Zbuf(useZbuffer),
 	debug_mode(debugmode), premultiplyAlpha(premult),
 	writeResumeFlm(w_resume_FLM), restartResumeFlm(restart_resume_FLM), writeFlmDirect(write_FLM_direct),
 	outlierRejection_k(outlierk), haltSamplesPerPixel(haltspp),
-	haltTime(halttime), histogram(NULL), enoughSamplesPerPixel(false)
+	haltTime(halttime), haltThreshold(haltthreshold), haltThresholdComplete(0.f),
+	histogram(NULL), enoughSamplesPerPixel(false)
 {
 	// Compute film image extent
 	memcpy(cropWindow, crop, 4 * sizeof(float));
@@ -683,6 +687,8 @@ Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop
 	AddBoolAttribute(*this, "enoughSamples", "Indicates if the halt condition been reached", &Film::enoughSamplesPerPixel);
 	AddIntAttribute(*this, "haltSamplesPerPixel", "Halt Samples per Pixel", haltSamplesPerPixel, &Film::haltSamplesPerPixel, Queryable::ReadWriteAccess);
 	AddIntAttribute(*this, "haltTime", "Halt time in seconds", haltTime, &Film::haltTime, Queryable::ReadWriteAccess);
+	AddFloatAttribute(*this, "haltThreshold", "Halt threshold", haltThreshold, &Film::haltThreshold, Queryable::ReadWriteAccess);
+	AddFloatAttribute(*this, "haltThresholdComplete", "Halt threshold complete", &Film::haltThresholdComplete);
 	AddBoolAttribute(*this, "writeResumeFlm", "Write resume file", writeResumeFlm, &Film::writeResumeFlm, Queryable::ReadWriteAccess);
 	AddBoolAttribute(*this, "restartResumeFlm", "Restart (overwrite) resume file", restartResumeFlm, &Film::restartResumeFlm, Queryable::ReadWriteAccess);
 	AddBoolAttribute(*this, "writeFlmDirect", "Write resume file directly to disk", writeFlmDirect, &Film::writeFlmDirect, Queryable::ReadWriteAccess);	
@@ -741,6 +747,9 @@ Film::~Film()
 	delete filterLUTs;
 	delete filter;
 	delete ZBuffer;
+	delete convergenceBufferReference;
+	delete convergenceBufferReferenceCount;
+	delete convergenceBufferDelta;
 	delete histogram;
 	delete contribPool;
 }
@@ -763,11 +772,22 @@ void Film::CreateBuffers()
 	if (bufferGroups.size() == 0)
 		bufferGroups.push_back(BufferGroup("default"));
 	for (u_int i = 0; i < bufferGroups.size(); ++i)
-		bufferGroups[i].CreateBuffers(bufferConfigs,xPixelCount,yPixelCount);
+		bufferGroups[i].CreateBuffers(bufferConfigs,xPixelCount, yPixelCount);
 
 	// Allocate ZBuf buffer if needed
-	if(use_Zbuf)
-		ZBuffer = new PerPixelNormalizedFloatBuffer(xPixelCount,yPixelCount);
+	if (use_Zbuf)
+		ZBuffer = new PerPixelNormalizedFloatBuffer(xPixelCount, yPixelCount);
+	
+	// Allocate convergence buffers if needed
+	if (haltThreshold > 0.f) {
+		convergenceBufferReference = new BlockedArray<RGBColor>(xPixelCount, yPixelCount);
+		convergenceBufferReferenceCount = new BlockedArray<float>(xPixelCount, yPixelCount);
+		convergenceBufferReferenceCount->Fill(0.f);
+		convergenceBufferDelta = new BlockedArray<float>(xPixelCount, yPixelCount);
+		convergenceBufferDelta->Fill(-1.f);
+		convergenceBufferMap.resize(xPixelCount * yPixelCount, false);
+		convergencePixelCount = 0;
+	}
 
     // Dade - check if we have to resume a rendering and restore the buffers
     if(writeResumeFlm) {
@@ -1039,8 +1059,8 @@ void Film::GetTileExtent(u_int tileIndex, int *xstart, int *xend, int *ystart, i
 }
 
 
-void Film::AddTileSamples(const Contribution* const contribs, u_int num_contribs, u_int tileIndex) {
-	
+void Film::AddTileSamples(const Contribution* const contribs, u_int num_contribs,
+		u_int tileIndex, const ColorSystem *colorSpace) {
 	int xTilePixelStart, xTilePixelEnd;
 	int yTilePixelStart, yTilePixelEnd;
 	GetTileExtent(tileIndex, &xTilePixelStart, &xTilePixelEnd, &yTilePixelStart, &yTilePixelEnd);
@@ -1049,7 +1069,6 @@ void Film::AddTileSamples(const Contribution* const contribs, u_int num_contribs
 		// reject outliers by setting their weight (variance field) to -1
 		RejectTileOutliers(contribs, num_contribs, tileIndex, yTilePixelStart, yTilePixelEnd);
 	}
-
 
 	for (u_int ci = 0; ci < num_contribs; ci++) {
 		const Contribution &contrib(contribs[ci]);
@@ -1088,6 +1107,7 @@ void Film::AddTileSamples(const Contribution* const contribs, u_int num_contribs
 		if (premultiplyAlpha)
 			xyz *= alpha;
 
+		BufferConfig &currentGroupConfig = bufferConfigs[contrib.bufferGroup];
 		BufferGroup &currentGroup = bufferGroups[contrib.bufferGroup];
 		Buffer *buffer = currentGroup.getBuffer(contrib.buffer);
 
@@ -1113,17 +1133,78 @@ void Film::AddTileSamples(const Contribution* const contribs, u_int num_contribs
 		const u_int yEnd = static_cast<u_int>(min(y1, yTilePixelEnd));
 
 		for (u_int y = yStart; y < yEnd; ++y) {
-			const int yoffset = (y-y0) * filterLUT.GetWidth();
+			const int yoffset = (y - y0) * filterLUT.GetWidth();
+			const u_int yPixel = y - yPixelStart;
 			for (u_int x = xStart; x < xEnd; ++x) {
 				// Evaluate filter value at $(x,y)$ pixel
 				const int xoffset = x-x0;
 				const float filterWt = lut[yoffset + xoffset];
 				// Update pixel values with filtered sample contribution
-				buffer->Add(x - xPixelStart,y - yPixelStart,
+				const u_int xPixel = x - xPixelStart;
+				buffer->Add(xPixel, yPixel,
 					xyz, alpha, filterWt * weight);
 				// Update ZBuffer values with filtered zdepth contribution
 				if(use_Zbuf && contrib.zdepth != 0.f)
-					ZBuffer->Add(x - xPixelStart, y - yPixelStart, contrib.zdepth, 1.0f);
+					ZBuffer->Add(xPixel, yPixel, contrib.zdepth, 1.0f);
+
+				if ((haltThreshold > 0.f) && (currentGroupConfig.output & BUF_FRAMEBUFFER)) {
+					// Check if we have enough samples to evaluate convergence speed again
+
+					// Merge all buffer results
+					XYZColor c;
+					float newSampleCount = 0.f;
+					for(u_int j = 0; j < bufferGroups.size(); ++j) {
+						if (!bufferGroups[j].enable)
+							continue;
+
+						for(u_int i = 0; i < bufferConfigs.size(); ++i) {
+							const Buffer &buffer = *(bufferGroups[j].buffers[i]);
+							if (!(bufferConfigs[i].output & BUF_FRAMEBUFFER))
+								continue;
+
+							XYZColor p;
+							float a;
+
+							newSampleCount += buffer.GetData(xPixel, yPixel, &p, &a);
+							c += bufferGroups[j].convert.Adapt(p);
+						}
+					}
+
+					float &oldSampleCount = (*convergenceBufferReferenceCount)(xPixel, yPixel);
+
+					if (newSampleCount - oldSampleCount > 2.f) {
+						// We have enough samples, update the convergence map
+
+						const RGBColor newC = colorSpace->ToRGBConstrained(c);
+						RGBColor &oldC = (*convergenceBufferReference)(xPixel, yPixel);
+
+						const float newDelta = max(max(
+								fabs(newC.c[0] - oldC.c[0]),
+								fabs(newC.c[1] - oldC.c[1])),
+								fabs(newC.c[2] - oldC.c[2])) / 256.f;
+						float &oldDelta = (*convergenceBufferDelta)(xPixel, yPixel);
+
+						// Update values
+						oldC = newC;
+						oldSampleCount = newSampleCount;
+						oldDelta = newDelta;
+
+						const size_t mapOffset = xPixel + yPixel * (xPixelCount);
+						if (newDelta < haltThreshold) {
+							// Convergence condition has been satisfied
+							if (!convergenceBufferMap[mapOffset])
+								++convergencePixelCount;
+							convergenceBufferMap[mapOffset] = true;
+						} else {
+							// Convergence condition has been satisfied
+							if (convergenceBufferMap[mapOffset])
+								--convergencePixelCount;
+							convergenceBufferMap[mapOffset] = false;
+						}
+
+						haltThresholdComplete = convergencePixelCount / (float)(xPixelCount * yPixelCount);
+					}
+				}
 			}
 		}
 	}
@@ -1132,9 +1213,9 @@ void Film::AddTileSamples(const Contribution* const contribs, u_int num_contribs
 void Film::AddSample(Contribution *contrib) {
 	u_int tileIndex0, tileIndex1;
 	u_int tiles = GetTileIndexes(*contrib, &tileIndex0, &tileIndex1);
-	AddTileSamples(contrib, 1, tileIndex0);
+	AddTileSamples(contrib, 1, tileIndex0, GetColorSpace());
 	if (tiles > 1)
-		AddTileSamples(contrib, 1, tileIndex1);
+		AddTileSamples(contrib, 1, tileIndex1, GetColorSpace());
 }
 
 void Film::SetSample(const Contribution *contrib) {

@@ -48,7 +48,7 @@ public:
 		bool cw_EXR_gamutclamp, bool cw_EXR_ZBuf, ZBufNormalization cw_EXR_ZBuf_normalizationtype, bool cw_EXR_straight_colors,
 		bool cw_PNG, OutputChannels cw_PNG_channels, bool cw_PNG_16bit, bool cw_PNG_gamutclamp, bool cw_PNG_ZBuf, ZBufNormalization cw_PNG_ZBuf_normalizationtype,
 		bool cw_TGA, OutputChannels cw_TGA_channels, bool cw_TGA_gamutclamp, bool cw_TGA_ZBuf, ZBufNormalization cw_TGA_ZBuf_normalizationtype, 
-		bool w_resume_FLM, bool restart_resume_FLM, bool write_FLM_direct, int haltspp, int halttime,
+		bool w_resume_FLM, bool restart_resume_FLM, bool write_FLM_direct, int haltspp, int halttime, float haltthreshold,
 		int p_TonemapKernel, float p_ReinhardPreScale, float p_ReinhardPostScale,
 		float p_ReinhardBurn, float p_LinearSensitivity, float p_LinearExposure, float p_LinearFStop, float p_LinearGamma,
 		float p_ContrastDisplayAdaptionY, const string &response, float p_Gamma,
@@ -113,7 +113,7 @@ private:
 	float m_RGB_X_Blue, d_RGB_X_Blue;
 	float m_RGB_Y_Blue, d_RGB_Y_Blue;
 	float m_Gamma, d_Gamma;
-	int clampMethod, d_clampMethod;	
+	int clampMethod, d_clampMethod;
 
 	int m_TonemapKernel, d_TonemapKernel;
 	float m_ReinhardPreScale, d_ReinhardPreScale;

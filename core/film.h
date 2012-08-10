@@ -539,7 +539,7 @@ public:
 	Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop[4],
 		const string &filename1, bool premult, bool useZbuffer,
 		bool w_resume_FLM, bool restart_resume_FLM, bool write_FLM_direct,
-		int haltspp, int halttime, bool debugmode, int outlierk, int tilecount);
+		int haltspp, int halttime, float haltthreshold, bool debugmode, int outlierk, int tilecount);
 
 	virtual ~Film();
 
@@ -554,8 +554,10 @@ public:
 	 * @param contribs Array of contributions to add
 	 * @param num_contribs Number of contributions in the contribs array
 	 * @param tileIndex Index of the tile the contributions should be added to
+	 * @param colorSpace Color space used for convergence test (can be NULL)
 	 */
-	virtual void AddTileSamples(const Contribution* const contribs, u_int num_contribs, u_int tileIndex);
+	virtual void AddTileSamples(const Contribution* const contribs, u_int num_contribs,
+		u_int tileIndex, const ColorSystem *colorSpace);
 	virtual void SetSample(const Contribution *contrib);
 	virtual void AddSampleCount(float count);
 	virtual void SaveEXR(const string &exrFilename, bool useHalfFloats, bool includeZBuf, int compressionType, bool tonemapped) {
@@ -623,6 +625,8 @@ public:
 	virtual void SetStringParameterValue(luxComponentParameters param, const string& value, u_int index) = 0;
 	virtual string GetStringParameterValue(luxComponentParameters param, u_int index) = 0;
 
+	virtual ColorSystem *GetColorSpace(){ return &colorSpace; }
+
 	/*
 	 * Accessor for samplePerPass
 	 * It is only used by SPPM and may disappears once the Buffer API allows for
@@ -688,6 +692,13 @@ protected: // Put it here for better data alignment
 
 	std::vector<BufferConfig> bufferConfigs;
 	std::vector<BufferGroup> bufferGroups;
+
+	BlockedArray<RGBColor> *convergenceBufferReference;
+	BlockedArray<float> *convergenceBufferReferenceCount;
+	BlockedArray<float> *convergenceBufferDelta;
+	vector<bool> convergenceBufferMap;
+	u_int convergencePixelCount;
+
 	PerPixelNormalizedFloatBuffer *ZBuffer;
 	bool use_Zbuf;
 
@@ -713,6 +724,9 @@ public:
 	int haltSamplesPerPixel;
 	// Seconds to wait before to stop. Any value <= 0 will never stop the rendering
 	int haltTime;
+	// Convergence threshold to reach before to stop the rendering
+	float haltThreshold;
+	float haltThresholdComplete;
 
 	Histogram *histogram;
 	bool enoughSamplesPerPixel; // At the end to get better data alignment
