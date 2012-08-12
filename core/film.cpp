@@ -1172,7 +1172,7 @@ void Film::AddTileSamples(const Contribution* const contribs, u_int num_contribs
 
 					float &oldSampleCount = (*convergenceBufferReferenceCount)(xPixel, yPixel);
 
-					if (newSampleCount - oldSampleCount > 2.f) {
+					if (newSampleCount - oldSampleCount > 4.f) {
 						// We have enough samples, update the convergence map
 
 						const RGBColor newC = colorSpace->ToRGBConstrained(c);
@@ -1189,16 +1189,16 @@ void Film::AddTileSamples(const Contribution* const contribs, u_int num_contribs
 						oldSampleCount = newSampleCount;
 						oldDelta = newDelta;
 
-						const size_t mapOffset = xPixel + yPixel * (xPixelCount);
+						const size_t mapOffset = xPixel + yPixel * xPixelCount;
 						if (newDelta < haltThreshold) {
 							// Convergence condition has been satisfied
 							if (!convergenceBufferMap[mapOffset])
-								++convergencePixelCount;
+								osAtomicInc(&convergencePixelCount);
 							convergenceBufferMap[mapOffset] = true;
 						} else {
-							// Convergence condition has been satisfied
+							// Convergence condition has not been satisfied
 							if (convergenceBufferMap[mapOffset])
-								--convergencePixelCount;
+								osAtomicAdd(&convergencePixelCount, -1);
 							convergenceBufferMap[mapOffset] = false;
 						}
 
