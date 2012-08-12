@@ -1172,7 +1172,7 @@ void Film::AddTileSamples(const Contribution* const contribs, u_int num_contribs
 
 					float &oldSampleCount = (*convergenceBufferReferenceCount)(xPixel, yPixel);
 
-					if (newSampleCount - oldSampleCount > 4.f) {
+					if (newSampleCount - oldSampleCount > 8.f) {
 						// We have enough samples, update the convergence map
 
 						const RGBColor newC = colorSpace->ToRGBConstrained(c);
@@ -1202,7 +1202,15 @@ void Film::AddTileSamples(const Contribution* const contribs, u_int num_contribs
 							convergenceBufferMap[mapOffset] = false;
 						}
 
-						haltThresholdComplete = convergencePixelCount / (float)(xPixelCount * yPixelCount);
+						// Check if we can stop the rendering
+						const u_int pixelCount = xPixelCount * yPixelCount;
+						if (convergencePixelCount == pixelCount)
+							enoughSamplesPerPixel = true;
+
+						if (enoughSamplesPerPixel)
+							haltThresholdComplete = 1.f;
+						else
+							haltThresholdComplete = convergencePixelCount / (float)pixelCount;
 					}
 				}
 			}
