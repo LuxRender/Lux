@@ -173,7 +173,7 @@ void SPPMRenderer::Render(Scene *s) {
 
 		// initialize the thread's rangen
 		u_long seed = scene->seedBase - 1;
-		LOG(LUX_INFO, LUX_NOERROR) << "Preprocess thread uses seed: " << seed;
+		LOG(LUX_DEBUG, LUX_NOERROR) << "Preprocess thread uses seed: " << seed;
 
 		rng = new RandomGenerator(seed);
 

@@ -544,7 +544,7 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 		renderer->lastUsedSeed++;
 		seed = renderer->lastUsedSeed;
 	}
-	LOG(LUX_INFO, LUX_NOERROR) << "Thread " << renderThread->n << " uses seed: " << seed;
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Thread " << renderThread->n << " uses seed: " << seed;
 
 	RandomGenerator rng(seed);
 

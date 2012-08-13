@@ -152,7 +152,7 @@ void SamplerRenderer::Render(Scene *s) {
 
 		// initialize the thread's rangen
 		u_long seed = scene->seedBase - 1;
-		LOG( LUX_INFO,LUX_NOERROR) << "Preprocess thread uses seed: " << seed;
+		LOG( LUX_DEBUG,LUX_NOERROR) << "Preprocess thread uses seed: " << seed;
 
 		RandomGenerator rng(seed);
 
@@ -289,7 +289,7 @@ void SamplerRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 
 	// initialize the thread's rangen
 	u_long seed = scene.seedBase + myThread->n;
-	LOG( LUX_INFO,LUX_NOERROR) << "Thread " << myThread->n << " uses seed: " << seed;
+	LOG( LUX_DEBUG,LUX_NOERROR) << "Thread " << myThread->n << " uses seed: " << seed;
 
 	RandomGenerator rng(seed);
 	sample.camera = scene.camera->Clone();

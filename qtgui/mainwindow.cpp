@@ -1248,10 +1248,10 @@ void MainWindow::applyTonemapping(bool withlayercomputation)
 	if (m_updateThread == NULL && ( luxStatistics("sceneIsReady") || luxStatistics("filmIsReady") ) &&
 		(!isMinimized () || m_guiRenderState == FINISHED)) {
 		if (!withlayercomputation) {
-			LOG(LUX_INFO,LUX_NOERROR)<< tr("GUI: Updating framebuffer...").toLatin1().data();
+			LOG(LUX_DEBUG,LUX_NOERROR)<< tr("GUI: Updating framebuffer...").toLatin1().data();
 			statusMessage->setText(tr("Tonemapping..."));
 		} else {
-			LOG(LUX_INFO,LUX_NOERROR)<< tr("GUI: Updating framebuffer/Computing Lens Effect Layer(s)...").toLatin1().data();
+			LOG(LUX_DEBUG,LUX_NOERROR)<< tr("GUI: Updating framebuffer/Computing Lens Effect Layer(s)...").toLatin1().data();
 			statusMessage->setText(tr("Computing Lens Effect Layer(s) & Tonemapping..."));
 			indicateActivity();
 		}
@@ -2077,7 +2077,7 @@ void MainWindow::renderTimeout()
 {
 	if (m_updateThread == NULL && (luxStatistics("sceneIsReady") || luxStatistics("filmIsReady")) &&
 		(!isMinimized () || m_guiRenderState == FINISHED)) {
-		LOG(LUX_INFO,LUX_NOERROR)<< tr("GUI: Updating framebuffer...").toLatin1().data();
+		LOG(LUX_DEBUG,LUX_NOERROR)<< tr("GUI: Updating framebuffer...").toLatin1().data();
 		statusMessage->setText("Tonemapping...");
 		m_updateThread = new boost::thread(boost::bind(&MainWindow::updateThread, this));
 	}
@@ -2089,7 +2089,7 @@ void MainWindow::statsTimeout()
 		updateStatistics();
 		if ((m_guiRenderState == STOPPING || m_guiRenderState == ENDING || m_guiRenderState == FINISHED)) {
 			// Render threads stopped, do one last render update
-			LOG(LUX_INFO,LUX_NOERROR)<< tr("GUI: Updating framebuffer...").toLatin1().data();
+			LOG(LUX_DEBUG,LUX_NOERROR)<< tr("GUI: Updating framebuffer...").toLatin1().data();
 			statusMessage->setText(tr("Tonemapping..."));
 			if (m_updateThread)
 				m_updateThread->join();
