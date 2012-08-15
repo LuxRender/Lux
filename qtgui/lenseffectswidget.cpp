@@ -96,7 +96,7 @@ void LensEffectsWidget::updateWidgetValues()
 	updateWidgetValue (ui->slider_gaussianAmount, (int)((FLOAT_SLIDER_RES / BLOOMWEIGHT_RANGE) * m_bloomweight));
 	updateWidgetValue (ui->spinBox_gaussianAmount, m_bloomweight);
 
-	updateWidgetValue (ui->slider_gaussianRadius, (int)((FLOAT_SLIDER_RES / BLOOMRADIUS_RANGE) * m_bloomweight));
+	updateWidgetValue (ui->slider_gaussianRadius, (int)((FLOAT_SLIDER_RES / BLOOMRADIUS_RANGE) * m_bloomradius));
 	updateWidgetValue (ui->spinBox_gaussianRadius, m_bloomradius);
 
 	// Vignetting
