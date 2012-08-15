@@ -285,10 +285,6 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 
 	// Queue tab
 	ui->table_queue->setModel(&renderQueueData);
-	renderQueueData.setColumnCount(3);
-	renderQueueData.setHeaderData( 0, Qt::Horizontal, QObject::tr("File Name"));
-	renderQueueData.setHeaderData( 1, Qt::Horizontal, QObject::tr("Status"));
-	renderQueueData.setHeaderData( 2, Qt::Horizontal, QObject::tr("Pass #"));
 	connect(ui->button_addQueueFiles, SIGNAL(clicked()), this, SLOT(addQueueFiles()));
 	connect(ui->button_removeQueueFiles, SIGNAL(clicked()), this, SLOT(removeQueueFiles()));
 	connect(ui->spinBox_overrideHaltSpp, SIGNAL(valueChanged(int)), this, SLOT(overrideHaltSppChanged(int)));
@@ -2462,7 +2458,7 @@ void MainWindow::networknodeSelectionChanged()
 bool MainWindow::addFileToRenderQueue(const QString &sceneFileName)
 {
 	int row = renderQueueData.rowCount();
-	// Avoid adiing duplicates
+	// Avoid adding duplicates
 	if (IsFileInQueue(sceneFileName))
 		return false;    
   
@@ -2472,12 +2468,21 @@ bool MainWindow::addFileToRenderQueue(const QString &sceneFileName)
   
 	if (sceneFileName == m_CurrentFile)
 		status->setText(tr("Rendering"));
-  
+		addQueueHeaders();
+	
 	renderQueueData.setItem(row,0,fileName);
 	renderQueueData.setItem(row,1,status);
 	renderQueueData.setItem(row,2,pass);
 
 	return true;
+}
+
+void MainWindow::addQueueHeaders()
+{
+	renderQueueData.setColumnCount(3);
+	renderQueueData.setHeaderData( 0, Qt::Horizontal, QObject::tr("File Name"));
+	renderQueueData.setHeaderData( 1, Qt::Horizontal, QObject::tr("Status"));
+	renderQueueData.setHeaderData( 2, Qt::Horizontal, QObject::tr("Pass #"));
 }
 
 void MainWindow::addQueueFiles()
