@@ -285,6 +285,7 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 
 	// Queue tab
 	ui->table_queue->setModel(&renderQueueData);
+	addQueueHeaders();
 	connect(ui->button_addQueueFiles, SIGNAL(clicked()), this, SLOT(addQueueFiles()));
 	connect(ui->button_removeQueueFiles, SIGNAL(clicked()), this, SLOT(removeQueueFiles()));
 	connect(ui->spinBox_overrideHaltSpp, SIGNAL(valueChanged(int)), this, SLOT(overrideHaltSppChanged(int)));
@@ -2455,6 +2456,15 @@ void MainWindow::networknodeSelectionChanged()
  * but it could be possibly engaged by the API for dynamic updates.
  * It addes the files to the data model, the corresponding View will pick it up automatically.
  */
+
+void MainWindow::addQueueHeaders()
+{
+	renderQueueData.setColumnCount(3);
+	renderQueueData.setHeaderData( 0, Qt::Horizontal, QObject::tr("File Name"));
+	renderQueueData.setHeaderData( 1, Qt::Horizontal, QObject::tr("Status"));
+	renderQueueData.setHeaderData( 2, Qt::Horizontal, QObject::tr("Pass #"));
+}
+
 bool MainWindow::addFileToRenderQueue(const QString &sceneFileName)
 {
 	int row = renderQueueData.rowCount();
@@ -2468,12 +2478,8 @@ bool MainWindow::addFileToRenderQueue(const QString &sceneFileName)
   
 	if (sceneFileName == m_CurrentFile)
 		status->setText(tr("Rendering"));
-
-	renderQueueData.setColumnCount(3);
-	renderQueueData.setHeaderData( 0, Qt::Horizontal, QObject::tr("File Name"));
-	renderQueueData.setHeaderData( 1, Qt::Horizontal, QObject::tr("Status"));
-	renderQueueData.setHeaderData( 2, Qt::Horizontal, QObject::tr("Pass #"));
 	
+	ui->table_queue->setColumnHidden(2, false);
 	renderQueueData.setItem(row,0,fileName);
 	renderQueueData.setItem(row,1,status);
 	renderQueueData.setItem(row,2,pass);
@@ -2671,6 +2677,7 @@ bool MainWindow::RenderNextFileInQueue(int idx)
 void MainWindow::ClearRenderingQueue()
 {
 	renderQueueData.clear();
+	addQueueHeaders(); // restore headers from Data Model for the Render Queue
 	ui->table_queue->setColumnHidden(2, true);
 }
 
