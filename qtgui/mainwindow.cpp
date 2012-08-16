@@ -1683,6 +1683,7 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 		case WAITING:
 			ui->button_resume->setEnabled (false);
 			ui->action_resumeRender->setEnabled (false);
+			ui->action_saveFLM->setEnabled (false);
 			ui->button_pause->setEnabled (false);
 			ui->action_pauseRender->setEnabled (false);
 			ui->button_stop->setEnabled (false);
@@ -1702,6 +1703,7 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			// Waiting for input file. Most controls disabled.
 			ui->button_resume->setEnabled (false);
 			ui->action_resumeRender->setEnabled(false);
+			ui->action_saveFLM->setEnabled (false);
 			ui->button_pause->setEnabled (false);
 			ui->action_pauseRender->setEnabled(false);
 			ui->button_stop->setEnabled (false);
@@ -1721,6 +1723,7 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			// Rendering is in progress.
 			ui->button_resume->setEnabled (false);
 			ui->action_resumeRender->setEnabled (false);
+			ui->action_saveFLM->setEnabled (true);
 			ui->button_pause->setEnabled (true);
 			ui->action_pauseRender->setEnabled (true);
 			ui->button_stop->setEnabled (true);
@@ -1738,6 +1741,7 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 		case FINISHED:
 			ui->button_resume->setEnabled (false);
 			ui->action_resumeRender->setEnabled (false);
+			ui->action_saveFLM->setEnabled (true);
 			ui->button_pause->setEnabled (false);
 			ui->action_pauseRender->setEnabled (false);
 			ui->button_stop->setEnabled (false);
@@ -1756,6 +1760,7 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			// Rendering is being stopped.
 			ui->button_resume->setEnabled (false);
 			ui->action_resumeRender->setEnabled (false);
+			ui->action_saveFLM->setEnabled (true);
 			ui->button_pause->setEnabled (false);
 			ui->action_pauseRender->setEnabled (false);
 			ui->button_stop->setEnabled (false);
@@ -1772,6 +1777,7 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			// Rendering is stopped.
 			ui->button_resume->setEnabled (true);
 			ui->action_resumeRender->setEnabled (true);
+			ui->action_saveFLM->setEnabled (true);
 			ui->button_pause->setEnabled (false);
 			ui->action_pauseRender->setEnabled (false);
 			ui->button_stop->setEnabled (false);
@@ -1789,6 +1795,7 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			// Rendering is ending.
 			ui->button_resume->setEnabled (false);
 			ui->action_resumeRender->setEnabled (false);
+			ui->action_saveFLM->setEnabled (true);
 			ui->button_pause->setEnabled (false);
 			ui->action_pauseRender->setEnabled (false);
 			ui->button_stop->setEnabled (false);
@@ -1805,6 +1812,7 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			// Rendering has ended.
 			ui->button_resume->setEnabled (false);
 			ui->action_resumeRender->setEnabled (false);
+			ui->action_saveFLM->setEnabled (true);
 			ui->button_pause->setEnabled (false);
 			ui->action_pauseRender->setEnabled (false);
 			ui->button_stop->setEnabled (false);
@@ -1822,6 +1830,7 @@ void MainWindow::changeRenderState(LuxGuiRenderState state)
 			// Rendering is paused.
 			ui->button_resume->setEnabled (true);
 			ui->action_resumeRender->setEnabled (true);
+			ui->action_saveFLM->setEnabled (true);
 			ui->button_pause->setEnabled (false);
 			ui->action_pauseRender->setEnabled (false);
 			ui->button_stop->setEnabled (false);
