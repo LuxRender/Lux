@@ -438,7 +438,6 @@ private slots:
 	void updateIntervalChanged(int value);
 	void networknodeSelectionChanged();
 
-	void addQueueHeaders();
 	void addQueueFiles();  
 	void removeQueueFiles();
 	void overrideHaltSppChanged(int value);

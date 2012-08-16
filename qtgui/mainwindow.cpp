@@ -2468,21 +2468,17 @@ bool MainWindow::addFileToRenderQueue(const QString &sceneFileName)
   
 	if (sceneFileName == m_CurrentFile)
 		status->setText(tr("Rendering"));
-		addQueueHeaders();
+
+	renderQueueData.setColumnCount(3);
+	renderQueueData.setHeaderData( 0, Qt::Horizontal, QObject::tr("File Name"));
+	renderQueueData.setHeaderData( 1, Qt::Horizontal, QObject::tr("Status"));
+	renderQueueData.setHeaderData( 2, Qt::Horizontal, QObject::tr("Pass #"));
 	
 	renderQueueData.setItem(row,0,fileName);
 	renderQueueData.setItem(row,1,status);
 	renderQueueData.setItem(row,2,pass);
 
 	return true;
-}
-
-void MainWindow::addQueueHeaders()
-{
-	renderQueueData.setColumnCount(3);
-	renderQueueData.setHeaderData( 0, Qt::Horizontal, QObject::tr("File Name"));
-	renderQueueData.setHeaderData( 1, Qt::Horizontal, QObject::tr("Status"));
-	renderQueueData.setHeaderData( 2, Qt::Horizontal, QObject::tr("Pass #"));
 }
 
 void MainWindow::addQueueFiles()
