@@ -1003,9 +1003,29 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 					framebuffer[3 * i + 2] = static_cast<unsigned char>(Clamp(256 * rgbcolor[i].c[2], 0.f, 255.f));
 					
 					// Some debug code used to show the convergence map
-					//framebuffer[3 * i] = framebuffer[3 * i + 1] = framebuffer[3 * i + 2] = convergenceBufferMap[i] ? 255.f : 0.f;
+					/*if ((*convergenceBufferReferenceCount)(i % xPixelCount, i / yPixelCount) > 0.f)
+						framebuffer[3 * i] = framebuffer[3 * i + 1] = framebuffer[3 * i + 2] = convergenceBufferMap[i] ? 255 : 0;
+					else {
+						framebuffer[3 * i] = 255.f;
+						framebuffer[3 * i + 1] = framebuffer[3 * i + 2] = 0.f;
+					}*/
 				}
+
+				// Some debug code used to show the pixel sample counts
+				/*float maxv = 0.f;
+				for (u_int i = 0; i < nPix; i++) {
+					const float v = (*convergenceBufferReferenceCount)(i % xPixelCount, i / yPixelCount);
+					maxv = max(maxv, v);
+				}
+				const float invMaxV = 1.f / maxv;
+				//const float invMaxV = 1.f / 250.f;
+				for (u_int i = 0; i < nPix; i++) {
+					const float v = (*convergenceBufferReferenceCount)(i % xPixelCount, i / yPixelCount);
+					framebuffer[3 * i] = framebuffer[3 * i + 1] = framebuffer[3 * i + 2] = 
+							static_cast<unsigned char>(Clamp(256 * v * invMaxV, 0.f, 255.f));
+				}*/
 			}
+
 			if ((type & IMAGE_FRAMEBUFFER) && float_framebuffer) {
 				for (u_int i = 0; i < nPix; i++) {
 					float_framebuffer[3 * i] = rgbcolor[i].c[0];

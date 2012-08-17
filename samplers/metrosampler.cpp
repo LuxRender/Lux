@@ -25,6 +25,7 @@
 // metrosampler.cpp*
 #include "metrosampler.h"
 #include "memory.h"
+#include "mcdistribution.h"
 #include "scene.h"
 #include "dynload.h"
 
@@ -128,9 +129,11 @@ static float fracf(const float &v) {
 
 // Metropolis method definitions
 MetropolisSampler::MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
-	u_int maxRej, float largeProb, float rng, bool useV, bool useC) :
+	u_int maxRej, float largeProb, float rng, bool useV, bool useC, bool useConv) :
 	Sampler(xStart, xEnd, yStart, yEnd, 1), maxRejects(maxRej),
-	pLargeTarget(largeProb), range(rng), useVariance(useV), useCooldown(useC)
+	pLargeTarget(largeProb), range(rng),
+	convergenceMap(NULL), convergenceMapCompletePercentage(0.f),
+	useVariance(useV), useCooldown(useC), useConvergence(useConv)
 {
 	// Allocate and compute all values of the rng
 	rngSamples = AllocAligned<float>(rngN);
@@ -156,6 +159,7 @@ MetropolisSampler::MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
 
 MetropolisSampler::~MetropolisSampler() {
 	FreeAligned(rngSamples);
+	delete convergenceMap;
 }
 
 // interface for new ray/samples from scene
@@ -182,8 +186,78 @@ bool MetropolisSampler::GetNextSample(Sample *sample)
 	if (data->large) {
 		// *** large mutation ***
 		// Initialize all non lazy samples
-		data->currentImage[0] = rngGet(0) * (xPixelEnd - xPixelStart) + xPixelStart;
-		data->currentImage[1] = rngGet(1) * (yPixelEnd - yPixelStart) + yPixelStart;
+		if (useConvergence && (film->haltThreshold > 0.f)) {
+			// Check if convergence information are already available and
+			// convergence map is up to date			
+			boost::mutex::scoped_lock lock(convergenceMapMutex);
+
+			const float haltThresholdComplete= film->haltThresholdComplete;
+			if (!convergenceMap || (haltThresholdComplete > convergenceMapCompletePercentage + 0.1f)) {
+				convergenceMapCompletePercentage = haltThresholdComplete;
+				LOG(LUX_INFO, LUX_NOERROR) << "Updating Metropolis convergence map: " << convergenceMapCompletePercentage * 100.f<< "%";
+
+				// It is time to update the convergenceMap
+				const u_int xPixelCount = film->GetXPixelCount();
+				const u_int yPixelCount = film->GetYPixelCount();
+				float *delta = (float *)alloca(sizeof(float) * xPixelCount * yPixelCount);
+				film->GetConvergenceBufferDelta(delta);
+
+				float maxDelta = 0.f;
+				float *tmp = delta;
+				bool hasPixelsToSample = false;
+				for (u_int i = 0; i < xPixelCount * yPixelCount; ++i) {
+					const float v = *tmp++;
+
+					// -1 means a pixel that have yet to be sampled
+					if (v == -1.f) {
+						hasPixelsToSample = true;
+						break;
+					}
+
+					maxDelta = max(maxDelta, v);
+				}
+
+				if (hasPixelsToSample) {
+					LOG(LUX_INFO, LUX_NOERROR) << "Metropolis convergence map based on: pixels yet to be sampled";
+
+					// Just sample some of yet to be sampled pixels
+					tmp = delta;
+					for (u_int i = 0; i < xPixelCount * yPixelCount; ++i) {
+						*tmp = (*tmp == -1.f) ? 1.f : 0.f;
+						++tmp;
+					}
+				} else if (maxDelta > 0.f) {
+					LOG(LUX_INFO, LUX_NOERROR) << "Metropolis convergence map based on: convergence information";
+					float invTotalDelta = 1.f / maxDelta;
+					tmp = delta;
+					for (u_int i = 0; i < xPixelCount * yPixelCount; ++i) {
+						float v = *tmp++;
+
+						// Normalize
+						v *= invTotalDelta;
+						// %1-99%range
+						v = max(0.01f, min(0.99f, v));
+					}
+				} else {
+					LOG(LUX_INFO, LUX_NOERROR) << "Metropolis convergence map based on: uniform image sampling";
+					// This shouldn't really happen
+					tmp = delta;
+					for (u_int i = 0; i < xPixelCount * yPixelCount; ++i)
+						*tmp = 1.f;
+				}
+
+				delete convergenceMap;
+				convergenceMap = new Distribution2D(delta, film->GetXPixelCount(), film->GetYPixelCount());
+			}
+
+			float uv[2], pdf[2];
+			convergenceMap->SampleContinuous(rngGet(0), rngGet(1), uv, pdf);
+			data->currentImage[0] = uv[0] * (xPixelEnd - xPixelStart) + xPixelStart;
+			data->currentImage[1] = uv[1] * (yPixelEnd - yPixelStart) + yPixelStart;
+		} else {
+			data->currentImage[0] = rngGet(0) * (xPixelEnd - xPixelStart) + xPixelStart;
+			data->currentImage[1] = rngGet(1) * (yPixelEnd - yPixelStart) + yPixelStart;
+		}
 		for (u_int i = 2; i < data->normalSamples; ++i)
 			data->currentImage[i] = rngGet(i);
 		sample->imageX = data->currentImage[0];
@@ -370,12 +444,14 @@ Sampler* MetropolisSampler::CreateSampler(const ParamSet &params, const Film *fi
 	film->GetSampleExtent(&xStart, &xEnd, &yStart, &yEnd);
 	int maxConsecRejects = params.FindOneInt("maxconsecrejects", 512);	// number of consecutive rejects before a next mutation is forced
 	float largeMutationProb = params.FindOneFloat("largemutationprob", 0.4f);	// probability of generating a large sample mutation
-	float range = params.FindOneFloat("mutationrange", (xEnd - xStart + yEnd - yStart) / 32.f);	// maximum distance in pixel for a small mutation
 	bool useVariance = params.FindOneBool("usevariance", false);
 	bool useCooldown = params.FindOneBool("usecooldown", true);
+	bool useConvergence = params.FindOneBool("useconvergence", false);
+	const float defaultRange = (useConvergence) ? 2.f : ((xEnd - xStart + yEnd - yStart) / 32.f);
+	float range = params.FindOneFloat("mutationrange", defaultRange);	// maximum distance in pixel for a small mutation
 
 	return new MetropolisSampler(xStart, xEnd, yStart, yEnd, max(maxConsecRejects, 0),
-		largeMutationProb, range, useVariance, useCooldown);
+		largeMutationProb, range, useVariance, useCooldown, useConvergence);
 }
 
 static DynamicLoader::RegisterSampler<MetropolisSampler> r("metropolis");

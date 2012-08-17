@@ -52,7 +52,8 @@ public:
 		double totalLY, sampleCount;
 	};
 	MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
-		u_int maxRej, float largeProb, float rng, bool useV, bool useC);
+		u_int maxRej, float largeProb, float rng,
+		bool useV, bool useC, bool useConv);
 	virtual ~MetropolisSampler();
 
 	virtual void InitSample(Sample *sample) const {
@@ -74,10 +75,15 @@ public:
 
 	u_int maxRejects;
 	float pLarge, pLargeTarget, range;
-	bool useVariance, useCooldown;
 	u_int cooldownTime;
 	float *rngSamples;
 	boost::mutex metropolisSamplerMutex;
+
+	Distribution2D *convergenceMap;
+	float convergenceMapCompletePercentage;
+	boost::mutex convergenceMapMutex;
+
+	bool useVariance, useCooldown, useConvergence;
 };
 
 }//namespace lux

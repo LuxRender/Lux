@@ -626,6 +626,7 @@ public:
 	virtual string GetStringParameterValue(luxComponentParameters param, u_int index) = 0;
 
 	virtual ColorSystem *GetColorSpace(){ return &colorSpace; }
+	virtual void GetConvergenceBufferDelta(float *a) { convergenceBufferDelta->GetLinearArray(a); }
 
 	/*
 	 * Accessor for samplePerPass
