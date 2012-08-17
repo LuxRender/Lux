@@ -644,10 +644,14 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 			// Give the light point probability for the weighting
 			// if the light is not delta
 			light0.dAWeight *= lPdf;
-			// Divide by the light selection Pdf (light position is already
-			// accounted for
+			// Divide by the light selection Pdf
+			// (light position is already accounted for)
 			Le /= lPdf;
 			light0.flux = SWCSpectrum(1.f);
+			// Initialize tPdf and tPdfR in case of multiple paths
+			light0.tPdf = 1.f;
+			light0.tPdfR = 1.f;
+
 			// Trick to tell subsequent functions that the light is delta
 			if (light->IsDeltaLight())
 				light0.dAWeight = -light0.dAWeight;
@@ -719,6 +723,13 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 				const Volume *volume = light0.bsdf->GetVolume(ray.d);
 				bool scattered = light0.bsdf->dgShading.scattered;
 				for (u_int sampleIndex = 1; sampleIndex < maxLightDepth; ++sampleIndex) {
+					// Initialize tPDf and tPdfR for
+					// multiple paths
+					// Use sampleIndex instead of nLight
+					// to prevent overwriting values for
+					// passthrough materials
+					lightPath[sampleIndex].tPdf = 1.f;
+					lightPath[sampleIndex].tPdfR = 1.f;
 					data = sample.sampler->GetLazyValues(sample,
 						sampleLightOffsets[l], sampleIndex);
 					BidirVertex &v = lightPath[nLight];
