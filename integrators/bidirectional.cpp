@@ -567,7 +567,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 					&portal, &dPdf);
 				if (GetDirectLight(scene, sample, eyePath, nEye,
 					directLight, directData[1], directData[2],
-					portal, dPdf, dPdf, &Ld, &dWeight)) {
+					portal, lightPathStrategy->Pdf(scene, directLight), dPdf, &Ld, &dWeight)) {
 					vecL[directLight->group] +=Ld;
 					vecV[directLight->group] += Ld.Filter(sw) *
 						dWeight;
