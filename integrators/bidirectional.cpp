@@ -64,7 +64,7 @@ public:
 void BidirIntegrator::RequestSamples(Sampler *sampler, const Scene &scene)
 {
 	directSamplingCount = lightDirectStrategy->GetSamplingLimit(scene);
-	pathSamplingCount = lightDirectStrategy->GetSamplingLimit(scene);
+	pathSamplingCount = lightPathStrategy->GetSamplingLimit(scene);
 	lightNumOffset = sampler->Add1D(pathSamplingCount);
 	lightPosOffset = sampler->Add2D(pathSamplingCount);
 	lightDirOffset = sampler->Add2D(pathSamplingCount);
@@ -85,11 +85,11 @@ void BidirIntegrator::RequestSamples(Sampler *sampler, const Scene &scene)
 	structure.clear();
 	// Light subpath samples
 	const bool initOffsets = sampleLightOffsets.empty();
+	structure.push_back(1); //continue light
+	structure.push_back(2); //bsdf sampling for light path
+	structure.push_back(1); //bsdf component for light path
+	structure.push_back(1); //scattering
 	for (u_int i = 0; i < pathSamplingCount; ++i) {
-		structure.push_back(1); //continue light
-		structure.push_back(2); //bsdf sampling for light path
-		structure.push_back(1); //bsdf component for light path
-		structure.push_back(1); //scattering
 		const u_int lightOffset = sampler->AddxD(structure, maxLightDepth);
 		if (initOffsets) {
 			// only initialize once, in case thread is added after rendering has started
