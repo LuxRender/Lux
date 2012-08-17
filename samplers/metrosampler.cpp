@@ -28,6 +28,7 @@
 #include "mcdistribution.h"
 #include "scene.h"
 #include "dynload.h"
+#include "timer.h"
 
 using namespace lux;
 
@@ -132,7 +133,7 @@ MetropolisSampler::MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
 	u_int maxRej, float largeProb, float rng, bool useV, bool useC, bool useConv) :
 	Sampler(xStart, xEnd, yStart, yEnd, 1), maxRejects(maxRej),
 	pLargeTarget(largeProb), range(rng),
-	convergenceMap(NULL), convergenceMapCompletePercentage(0.f),
+	convergenceMap(NULL), convergenceMapUpdateTime(0.0),
 	useVariance(useV), useCooldown(useC), useConvergence(useConv)
 {
 	// Allocate and compute all values of the rng
@@ -191,10 +192,14 @@ bool MetropolisSampler::GetNextSample(Sample *sample)
 			// convergence map is up to date			
 			boost::mutex::scoped_lock lock(convergenceMapMutex);
 
-			const float haltThresholdComplete= film->haltThresholdComplete;
-			if (!convergenceMap || (haltThresholdComplete > convergenceMapCompletePercentage + 0.1f)) {
-				convergenceMapCompletePercentage = haltThresholdComplete;
-				LOG(LUX_INFO, LUX_NOERROR) << "Updating Metropolis convergence map: " << convergenceMapCompletePercentage * 100.f<< "%";
+			if (useConvergence)
+				convergenceMapTimer.Start();
+
+			const double now = convergenceMapTimer.Time();
+			const double deltaTime = now - convergenceMapUpdateTime;
+			if (!convergenceMap || (deltaTime > 10.0)) {
+				convergenceMapUpdateTime = now;
+				LOG(LUX_INFO, LUX_NOERROR) << "Updating Metropolis convergence map: " << deltaTime<< "secs since last update";
 
 				// It is time to update the convergenceMap
 				const u_int xPixelCount = film->GetXPixelCount();

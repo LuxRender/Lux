@@ -29,6 +29,7 @@
 #include "sampling.h"
 #include "paramset.h"
 #include "film.h"
+#include "timer.h"
 
 namespace lux
 {
@@ -80,7 +81,8 @@ public:
 	boost::mutex metropolisSamplerMutex;
 
 	Distribution2D *convergenceMap;
-	float convergenceMapCompletePercentage;
+	float convergenceMapUpdateTime;
+	Timer convergenceMapTimer;
 	boost::mutex convergenceMapMutex;
 
 	bool useVariance, useCooldown, useConvergence;
