@@ -64,6 +64,8 @@ bool LayeredBSDF::SampleF(const SpectrumWavelengths &sw, const Vector &known, Ve
 		return false;
 
 	*pdf = 1.f;
+	if (pdfBack)
+		*pdfBack = 1.f;
 	
 	if (glossy && specular) { // then choose one
 		if (u3 < probSampleSpec) {
