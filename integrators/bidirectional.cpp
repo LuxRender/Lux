@@ -551,10 +551,6 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 				++nrContribs;
 			}
 
-			// Break out if path is too long
-			if (sampleIndex >= maxEyeDepth)
-				break;
-
 			// Do direct lighting
 			const float *directData = sample.sampler->GetLazyValues(sample,
 				sampleDirectOffset, sampleIndex);
@@ -567,7 +563,8 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 					&portal, &dPdf);
 				if (GetDirectLight(scene, sample, eyePath, nEye,
 					directLight, directData[1], directData[2],
-					portal, lightPathStrategy->Pdf(scene, directLight), dPdf, &Ld, &dWeight)) {
+					portal, lightPathStrategy->Pdf(scene,
+					directLight), dPdf, &Ld, &dWeight)) {
 					vecL[directLight->group] +=Ld;
 					vecV[directLight->group] += Ld.Filter(sw) *
 						dWeight;
@@ -793,9 +790,6 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 						vE.d2 = ed2;
 					}
 
-					// Break out if path is too long
-					if (sampleIndex >= maxLightDepth)
-						break;
 					SWCSpectrum f;
 					if (!v.bsdf->SampleF(sw, v.wi, &v.wo,
 						data[1], data[2], data[3], &f, &v.pdf,
