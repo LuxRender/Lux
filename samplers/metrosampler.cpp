@@ -221,35 +221,28 @@ bool MetropolisSampler::GetNextSample(Sample *sample)
 					maxDelta = max(maxDelta, v);
 				}
 
-				if (hasPixelsToSample) {
+				if (hasPixelsToSample || maxDelta <= 0.f) {
 					LOG(LUX_DEBUG, LUX_NOERROR) << "Metropolis convergence map based on: pixels yet to be sampled";
 
-					// Just sample some of yet to be sampled pixels
-					tmp = delta;
-					for (u_int i = 0; i < nPix; ++i) {
-						*tmp = (*tmp == -1.f) ? 1.f : 0.f;
-						++tmp;
-					}
-				} else if (maxDelta > 0.f) {
+					// Just use a uniform distribution
+					std::fill(delta, delta + nPix, 1.f);
+				} else {
 					LOG(LUX_DEBUG, LUX_NOERROR) << "Metropolis convergence map based on: convergence information";
-					float invTotalDelta = 1.f / maxDelta;
+					float invMaxDelta = 1.f / maxDelta;
 					tmp = delta;
 					for (u_int i = 0; i < nPix; ++i) {
-						float v = *tmp++;
+						float v = *tmp;
 
 						// Normalize
-						v *= invTotalDelta;
-						// %1-99%range
-						v = max(0.01f, min(0.99f, v));
-					}
-				} else {
-					LOG(LUX_DEBUG, LUX_NOERROR) << "Metropolis convergence map based on: uniform image sampling";
-					// This shouldn't really happen
-					tmp = delta;
-					for (u_int i = 0; i < nPix; ++i)
-						*tmp = 1.f;
-				}
+						v *= invMaxDelta;
+						// MSE = delta^2
+						v *= v;
+						// To be still unbiased
+						//v = max(0.001f, v);
 
+						*tmp++ = v;
+					}
+				}
 				delete convergenceMap;
 				convergenceMap = new Distribution2D(delta, xPixelCount, yPixelCount);
 			}
@@ -451,7 +444,7 @@ Sampler* MetropolisSampler::CreateSampler(const ParamSet &params, const Film *fi
 	bool useVariance = params.FindOneBool("usevariance", false);
 	bool useCooldown = params.FindOneBool("usecooldown", true);
 	bool useConvergence = params.FindOneBool("useconvergence", false);
-	const float defaultRange = (useConvergence) ? 2.f : ((xEnd - xStart + yEnd - yStart) / 32.f);
+	const float defaultRange = (useConvergence) ? 1.0f : ((xEnd - xStart + yEnd - yStart) / 32.f);
 	float range = params.FindOneFloat("mutationrange", defaultRange);	// maximum distance in pixel for a small mutation
 
 	return new MetropolisSampler(xStart, xEnd, yStart, yEnd, max(maxConsecRejects, 0),

@@ -994,14 +994,14 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 				WriteTGAImage(rgbcolor, alpha, filename + postfix + ".tga");
 			if ((type & IMAGE_FILEOUTPUT) && write_PNG)
 				WritePNGImage(rgbcolor, alpha, filename + postfix + ".png");
-			
+
 			// Copy to framebuffer pixels
 			if ((type & IMAGE_FRAMEBUFFER) && framebuffer) {
 				for (u_int i = 0; i < nPix; i++) {
 					framebuffer[3 * i] = static_cast<unsigned char>(Clamp(256 * rgbcolor[i].c[0], 0.f, 255.f));
 					framebuffer[3 * i + 1] = static_cast<unsigned char>(Clamp(256 * rgbcolor[i].c[1], 0.f, 255.f));
 					framebuffer[3 * i + 2] = static_cast<unsigned char>(Clamp(256 * rgbcolor[i].c[2], 0.f, 255.f));
-					
+
 					// Some debug code used to show the convergence map
 					/*if (convergenceBufferReferenceCount[i] > 0.f)
 						framebuffer[3 * i] = framebuffer[3 * i + 1] = framebuffer[3 * i + 2] = convergenceBufferMap[i] ? 255 : 0;
