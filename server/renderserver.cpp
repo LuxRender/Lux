@@ -116,7 +116,7 @@ void RenderServer::stop()
 }
 
 void RenderServer::errorHandler(int code, int severity, const char *msg) {
-	boost::mutex::scoped_lock(errorMessageLock);
+	boost::mutex::scoped_lock lock(errorMessageMutex);
 	errorMessages.push_back(ErrorMessage(code, severity, msg));
 }
 
@@ -865,15 +865,20 @@ void cmd_luxGetLog(bool isLittleEndian, NetworkRenderServerThread *serverThread,
 
 		LOG( LUX_DEBUG,LUX_NOERROR)<< "Transmitting log";
 
-		for (vector<RenderServer::ErrorMessage>::iterator it = serverThread->renderServer->errorMessages.begin(); it != serverThread->renderServer->errorMessages.end(); ++it) {
-			stringstream ss("");
-			ss << it->severity << " " << it->code << " " << it->message << "\n";
-			stream << ss.str();
+		{
+			// ensure no logging is performed while we hold the lock
+			boost::mutex::scoped_lock lock(serverThread->renderServer->errorMessageMutex);
+
+			for (vector<RenderServer::ErrorMessage>::iterator it = serverThread->renderServer->errorMessages.begin(); it != serverThread->renderServer->errorMessages.end(); ++it) {
+				stringstream ss("");
+				ss << it->severity << " " << it->code << " " << it->message << "\n";
+				stream << ss.str();
+			}
+
+			stream.close();
+
+			serverThread->renderServer->errorMessages.clear();
 		}
-
-		stream.close();
-
-		serverThread->renderServer->errorMessages.clear();
 
 		LOG( LUX_DEBUG,LUX_NOERROR)<< "Finished log transmission";
 	} else {

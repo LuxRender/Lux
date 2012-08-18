@@ -140,7 +140,7 @@ public:
 
 	void errorHandler(int code, int severity, const char *msg);
 
-	boost::mutex errorMessageLock;
+	boost::mutex errorMessageMutex;
 	vector<ErrorMessage> errorMessages;
 
 	friend class NetworkRenderServerThread;
