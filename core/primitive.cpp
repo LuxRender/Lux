@@ -184,7 +184,7 @@ void MotionPrimitive::GetShadingGeometry(const Transform &obj2world,
 	// Transform instance's differential geometry to world space
 	DifferentialGeometry dgl(obj2world.GetInverse()(dg));
 
-	instance->GetShadingGeometry(obj2world, dgl, dgShading);
+	dg.ihandle->GetShadingGeometry(obj2world, dgl, dgShading);
 	obj2world(*dgShading, dgShading);
 	dgShading->handle = this;
 	dgShading->ihandle = dg.ihandle;
