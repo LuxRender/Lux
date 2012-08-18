@@ -42,7 +42,7 @@ ContributionBuffer::Buffer::~Buffer() {
 void ContributionBuffer::Buffer::Splat(Film *film, u_int tileIndex)
 {
 	const u_int num_contribs = min(pos, CONTRIB_BUF_SIZE);
-	film->AddTileSamples(contribs, num_contribs, tileIndex, film->GetColorSpace());
+	film->AddTileSamples(contribs, num_contribs, tileIndex);
 	pos = 0;
 }
 

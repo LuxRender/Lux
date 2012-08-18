@@ -1003,7 +1003,7 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 					framebuffer[3 * i + 2] = static_cast<unsigned char>(Clamp(256 * rgbcolor[i].c[2], 0.f, 255.f));
 					
 					// Some debug code used to show the convergence map
-					/*if ((*convergenceBufferReferenceCount)(i % xPixelCount, i / yPixelCount) > 0.f)
+					/*if (convergenceBufferReferenceCount[i] > 0.f)
 						framebuffer[3 * i] = framebuffer[3 * i + 1] = framebuffer[3 * i + 2] = convergenceBufferMap[i] ? 255 : 0;
 					else {
 						framebuffer[3 * i] = 255.f;
@@ -1014,13 +1014,13 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 				// Some debug code used to show the pixel sample counts
 				/*float maxv = 0.f;
 				for (u_int i = 0; i < nPix; i++) {
-					const float v = (*convergenceBufferReferenceCount)(i % xPixelCount, i / yPixelCount);
+					const float v = convergenceBufferReferenceCount[i];
 					maxv = max(maxv, v);
 				}
 				const float invMaxV = 1.f / maxv;
 				//const float invMaxV = 1.f / 250.f;
 				for (u_int i = 0; i < nPix; i++) {
-					const float v = (*convergenceBufferReferenceCount)(i % xPixelCount, i / yPixelCount);
+					const float v = convergenceBufferReferenceCount[i];
 					framebuffer[3 * i] = framebuffer[3 * i + 1] = framebuffer[3 * i + 2] = 
 							static_cast<unsigned char>(Clamp(256 * v * invMaxV, 0.f, 255.f));
 				}*/
@@ -1123,6 +1123,12 @@ void FlexImageFilm::WriteImage(ImageType type)
 	// where L is the luminance, S is the ISO speed and K is a constant
 	// usually S is taken to be 100 and K to be 12.5
 	EV = logf(Y * 8.f) / logf(2.f);
+
+	// Update convergence information if required
+	if ((haltThreshold > 0.f) && (type & IMAGE_FRAMEBUFFER) && float_framebuffer) {
+		// The framebuffer has been update
+		UpdateConvergenceInfo(float_framebuffer);
+	}
 }
 
 void FlexImageFilm::SaveEXR(const string &exrFilename, bool useHalfFloats, bool includeZBuf, int compressionType, bool tonemapped)

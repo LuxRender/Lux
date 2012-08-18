@@ -554,10 +554,9 @@ public:
 	 * @param contribs Array of contributions to add
 	 * @param num_contribs Number of contributions in the contribs array
 	 * @param tileIndex Index of the tile the contributions should be added to
-	 * @param colorSpace Color space used for convergence test (can be NULL)
 	 */
 	virtual void AddTileSamples(const Contribution* const contribs, u_int num_contribs,
-		u_int tileIndex, const ColorSystem *colorSpace);
+		u_int tileIndex);
 	virtual void SetSample(const Contribution *contrib);
 	virtual void AddSampleCount(float count);
 	virtual void SaveEXR(const string &exrFilename, bool useHalfFloats, bool includeZBuf, int compressionType, bool tonemapped) {
@@ -625,8 +624,8 @@ public:
 	virtual void SetStringParameterValue(luxComponentParameters param, const string& value, u_int index) = 0;
 	virtual string GetStringParameterValue(luxComponentParameters param, u_int index) = 0;
 
-	virtual ColorSystem *GetColorSpace(){ return &colorSpace; }
-	virtual void GetConvergenceBufferDelta(float *a) { convergenceBufferDelta->GetLinearArray(a); }
+	virtual const float *GetConvergenceBufferDelta() { return convergenceBufferDelta; }
+	virtual const u_int GetConvergenceBufferVersion() { return convergenceBufferVersion; }
 
 	/*
 	 * Accessor for samplePerPass
@@ -646,6 +645,7 @@ protected:
 	void RejectTileOutliers(const Contribution* const contribs, u_int num_contribs, u_int tileIndex, int yTilePixelStart, int yTilePixelEnd);
 	// Gets the extents of a tile, interval is [start, end).
 	void GetTileExtent(u_int tileIndex, int *xstart, int *xend, int *ystart, int *yend) const;
+	void UpdateConvergenceInfo(const float *framebuffer);
 
 public:
 	// Film Public Data
@@ -694,11 +694,11 @@ protected: // Put it here for better data alignment
 	std::vector<BufferConfig> bufferConfigs;
 	std::vector<BufferGroup> bufferGroups;
 
-	BlockedArray<RGBColor> *convergenceBufferReference;
-	BlockedArray<float> *convergenceBufferReferenceCount;
-	BlockedArray<float> *convergenceBufferDelta;
+	float *convergenceBufferReference;
+	float *convergenceBufferReferenceCount;
+	float *convergenceBufferDelta;
 	vector<bool> convergenceBufferMap;
-	u_int convergencePixelCount;
+	u_int convergencePixelCount, convergenceBufferVersion;
 
 	PerPixelNormalizedFloatBuffer *ZBuffer;
 	bool use_Zbuf;

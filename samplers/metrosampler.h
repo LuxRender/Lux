@@ -81,8 +81,7 @@ public:
 	boost::mutex metropolisSamplerMutex;
 
 	Distribution2D *convergenceMap;
-	float convergenceMapUpdateTime;
-	Timer convergenceMapTimer;
+	u_int convergenceMapVersion;
 	boost::mutex convergenceMapMutex;
 
 	bool useVariance, useCooldown, useConvergence;

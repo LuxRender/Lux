@@ -133,7 +133,7 @@ MetropolisSampler::MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
 	u_int maxRej, float largeProb, float rng, bool useV, bool useC, bool useConv) :
 	Sampler(xStart, xEnd, yStart, yEnd, 1), maxRejects(maxRej),
 	pLargeTarget(largeProb), range(rng),
-	convergenceMap(NULL), convergenceMapUpdateTime(0.0),
+	convergenceMap(NULL), convergenceMapVersion(std::numeric_limits<u_int>::max()),
 	useVariance(useV), useCooldown(useC), useConvergence(useConv)
 {
 	// Allocate and compute all values of the rng
@@ -192,25 +192,24 @@ bool MetropolisSampler::GetNextSample(Sample *sample)
 			// convergence map is up to date			
 			boost::mutex::scoped_lock lock(convergenceMapMutex);
 
-			if (useConvergence)
-				convergenceMapTimer.Start();
-
-			const double now = convergenceMapTimer.Time();
-			const double deltaTime = now - convergenceMapUpdateTime;
-			if (!convergenceMap || (deltaTime > 10.0)) {
-				convergenceMapUpdateTime = now;
-				LOG(LUX_INFO, LUX_NOERROR) << "Updating Metropolis convergence map: " << deltaTime<< "secs since last update";
+			const u_int mapVersion = film->GetConvergenceBufferVersion();
+			if (!convergenceMap || (convergenceMapVersion != mapVersion)) {
+				convergenceMapVersion = mapVersion;
+				LOG(LUX_DEBUG, LUX_NOERROR) << "Updating Metropolis convergence map: " << mapVersion << " version";
 
 				// It is time to update the convergenceMap
 				const u_int xPixelCount = film->GetXPixelCount();
 				const u_int yPixelCount = film->GetYPixelCount();
-				float *delta = (float *)alloca(sizeof(float) * xPixelCount * yPixelCount);
-				film->GetConvergenceBufferDelta(delta);
+				const u_int nPix = xPixelCount * yPixelCount;
+				// Make a copy of convergence information in order to not have
+				// problems with multi-threading
+				float *delta = (float *)alloca(sizeof(float) * nPix);
+				std::copy(film->GetConvergenceBufferDelta(), film->GetConvergenceBufferDelta() + nPix, delta);
 
 				float maxDelta = 0.f;
 				float *tmp = delta;
 				bool hasPixelsToSample = false;
-				for (u_int i = 0; i < xPixelCount * yPixelCount; ++i) {
+				for (u_int i = 0; i < nPix; ++i) {
 					const float v = *tmp++;
 
 					// -1 means a pixel that have yet to be sampled
@@ -223,19 +222,19 @@ bool MetropolisSampler::GetNextSample(Sample *sample)
 				}
 
 				if (hasPixelsToSample) {
-					LOG(LUX_INFO, LUX_NOERROR) << "Metropolis convergence map based on: pixels yet to be sampled";
+					LOG(LUX_DEBUG, LUX_NOERROR) << "Metropolis convergence map based on: pixels yet to be sampled";
 
 					// Just sample some of yet to be sampled pixels
 					tmp = delta;
-					for (u_int i = 0; i < xPixelCount * yPixelCount; ++i) {
+					for (u_int i = 0; i < nPix; ++i) {
 						*tmp = (*tmp == -1.f) ? 1.f : 0.f;
 						++tmp;
 					}
 				} else if (maxDelta > 0.f) {
-					LOG(LUX_INFO, LUX_NOERROR) << "Metropolis convergence map based on: convergence information";
+					LOG(LUX_DEBUG, LUX_NOERROR) << "Metropolis convergence map based on: convergence information";
 					float invTotalDelta = 1.f / maxDelta;
 					tmp = delta;
-					for (u_int i = 0; i < xPixelCount * yPixelCount; ++i) {
+					for (u_int i = 0; i < nPix; ++i) {
 						float v = *tmp++;
 
 						// Normalize
@@ -244,15 +243,15 @@ bool MetropolisSampler::GetNextSample(Sample *sample)
 						v = max(0.01f, min(0.99f, v));
 					}
 				} else {
-					LOG(LUX_INFO, LUX_NOERROR) << "Metropolis convergence map based on: uniform image sampling";
+					LOG(LUX_DEBUG, LUX_NOERROR) << "Metropolis convergence map based on: uniform image sampling";
 					// This shouldn't really happen
 					tmp = delta;
-					for (u_int i = 0; i < xPixelCount * yPixelCount; ++i)
+					for (u_int i = 0; i < nPix; ++i)
 						*tmp = 1.f;
 				}
 
 				delete convergenceMap;
-				convergenceMap = new Distribution2D(delta, film->GetXPixelCount(), film->GetYPixelCount());
+				convergenceMap = new Distribution2D(delta, xPixelCount, yPixelCount);
 			}
 
 			float uv[2], pdf[2];
