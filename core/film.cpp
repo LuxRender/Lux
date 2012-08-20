@@ -652,7 +652,7 @@ Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop
 	filename(filename1),
 	colorSpace(0.63f, 0.34f, 0.31f, 0.595f, 0.155f, 0.07f, 0.314275f, 0.329411f), // default is SMPTE
 	convergenceBufferReference(NULL), convergenceBufferReferenceCount(NULL),
-	convergenceBufferDelta(NULL),
+	convergenceBufferDelta(NULL), varianceBuffer(NULL),
 	ZBuffer(NULL), use_Zbuf(useZbuffer),
 	debug_mode(debugmode), premultiplyAlpha(premult),
 	writeResumeFlm(w_resume_FLM), restartResumeFlm(restart_resume_FLM), writeFlmDirect(write_FLM_direct),
@@ -750,6 +750,7 @@ Film::~Film()
 	delete []convergenceBufferReference;
 	delete []convergenceBufferReferenceCount;
 	delete []convergenceBufferDelta;
+	delete varianceBuffer;
 	delete histogram;
 	delete contribPool;
 }
@@ -792,6 +793,9 @@ void Film::CreateBuffers()
 		convergenceBufferMap.resize(nPix, false);
 		convergencePixelCount = 0;
 		convergenceBufferVersion = 0;
+
+		varianceBuffer = new VarianceBuffer(xPixelCount, yPixelCount);
+		varianceBuffer->Clear();
 	}
 
     // Dade - check if we have to resume a rendering and restore the buffers
@@ -1215,13 +1219,19 @@ void Film::AddTileSamples(const Contribution* const contribs, u_int num_contribs
 				// Evaluate filter value at $(x,y)$ pixel
 				const int xoffset = x-x0;
 				const float filterWt = lut[yoffset + xoffset];
+
 				// Update pixel values with filtered sample contribution
 				const u_int xPixel = x - xPixelStart;
-				buffer->Add(xPixel, yPixel,
-					xyz, alpha, filterWt * weight);
+				const float w = filterWt * weight;
+				buffer->Add(xPixel, yPixel, xyz, alpha, w);
+
 				// Update ZBuffer values with filtered zdepth contribution
 				if(use_Zbuf && contrib.zdepth != 0.f)
 					ZBuffer->Add(xPixel, yPixel, contrib.zdepth, 1.0f);
+
+				// Update variance information
+				if (varianceBuffer)
+					varianceBuffer->Add(xPixel, yPixel, xyz, w);
 			}
 		}
 	}

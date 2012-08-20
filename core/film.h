@@ -100,7 +100,6 @@ struct FloatPixel {
 	float V, weightSum;
 };
 
-
 class Buffer {
 public:
 	Buffer(u_int x, u_int y) : pixels(x, y) {
@@ -423,7 +422,69 @@ private:
 	boost::mutex m_mutex;
 };
 
-// SamplePoint
+//------------------------------------------------------------------------------
+// Used to compute variance
+//------------------------------------------------------------------------------
+
+struct VariancePixel {
+	VariancePixel() : Sn(0.f), mean(0.f), weightSum(0.f) { }
+
+	float Sn, mean, weightSum;
+};
+
+class VarianceBuffer {
+public:
+	VarianceBuffer(u_int x, u_int y) : pixels(x, y) {
+	}
+
+	~VarianceBuffer() { }
+
+	void Add(u_int x, u_int y, XYZColor L, float wt) {
+		if (wt == 0.f)
+			return;
+
+		VariancePixel &pixel = pixels(x, y);
+
+		const float v = L.Y();
+		const float newWeightSum = pixel.weightSum + wt;
+
+		// Incremental computation of weighted mean:
+		// mean_n = mean_n-1 + (weight_n / weightSum_n)(x_n − mean_n−1 )
+		const float newMean = pixel.mean + (wt / newWeightSum) * (v - pixel.mean);
+
+		// Incremental computation of weighted variance:
+		//  S_n = S_n−1 + weight_n (x_n − mean_n−1)(x_n − mean_n)
+		//  Var = sqrt(S_n / weightSum_n)
+		const float newSn = pixel.Sn + wt * (v - pixel.mean) * (v - newMean);
+
+		pixel.Sn = newSn;
+		pixel.mean = newMean;
+		pixel.weightSum = newWeightSum;
+	}
+
+	void Clear() {
+		for (u_int y = 0; y < pixels.vSize(); ++y) {
+			for (u_int x = 0; x < pixels.uSize(); ++x) {
+				VariancePixel &pixel = pixels(x, y);
+				pixel.Sn = 0.f;
+				pixel.mean = 0.f;
+				pixel.weightSum = 0.f;
+			}
+		}
+	}
+
+	float GetVariance(u_int x, u_int y) const {
+		const VariancePixel &pixel = pixels(x, y);
+
+		// Var = sqrt(S_n / weightSum_n)
+		if (pixel.weightSum > 0.f)
+			return sqrtf(fabs(pixel.Sn / pixel.weightSum));
+		else
+			return 0.f;
+	}
+	
+	BlockedArray<VariancePixel> pixels;
+};
 
 //------------------------------------------------------------------------------
 // Filter Look Up Table
@@ -697,8 +758,11 @@ protected: // Put it here for better data alignment
 	float *convergenceBufferReference;
 	float *convergenceBufferReferenceCount;
 	float *convergenceBufferDelta;
+	float *convergenceBufferVariance;
 	vector<bool> convergenceBufferMap;
 	u_int convergencePixelCount, convergenceBufferVersion;
+
+	VarianceBuffer *varianceBuffer;
 
 	PerPixelNormalizedFloatBuffer *ZBuffer;
 	bool use_Zbuf;
