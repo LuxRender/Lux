@@ -872,9 +872,19 @@ void MainWindow::endRender()
 
 void MainWindow::outputTonemapped()
 {
-	QString fileName = QFileDialog::getSaveFileName(this, tr("Save Tonemapped Image"), m_lastOpendir + "/" + m_CurrentFileBaseName, tr("PNG Image (*.png);;JPEG Image (*.jpg);;Windows Bitmap (*.bmp);;TIFF Image (*.tif)"));
+	QString filter;
+	QString fileName = QFileDialog::getSaveFileName(this, tr("Save Tonemapped Image"), m_lastOpendir + "/" + m_CurrentFileBaseName, tr("PNG Image (*.png);;JPEG Image (*.jpg *.jpeg);;Windows Bitmap (*.bmp);;TIFF Image (*.tif *.tiff)"), &filter);
 	if (fileName.isEmpty())
 		return;
+	QString suffix = QFileInfo(fileName).suffix().toLower();
+	if (filter == "PNG Image (*.png)" && suffix != "png")
+		fileName += ".png";
+	else if (filter == "JPEG Image (*.jpg *.jpeg)" && (suffix != "jpg" || suffix != "jpeg"))
+		fileName += ".jpg";
+	else if (filter == "Windows Bitmap (*.bmp)" && suffix != "bmp")
+		fileName += ".bmp";
+	else if (filter == "TIFF Image (*.tif *.tiff)" && (suffix != "tif" || suffix != "tiff"))
+		fileName += ".tif";
 
 	if (saveCurrentImageTonemapped(fileName, ui->action_overlayStats->isChecked(), ui->action_useAlpha->isChecked())) {
 		statusMessage->setText(tr("Tonemapped image saved"));
