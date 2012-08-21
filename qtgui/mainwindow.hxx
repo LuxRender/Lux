@@ -255,6 +255,9 @@ public:
 	bool addFileToRenderQueue(const QString &sceneFileName);
 	bool RenderNextFileInQueue();
 
+	void AddNetworkSlaves(const QVector<QString> &slaves);
+	void RemoveNetworkSlaves(const QVector<QString> &slaves);
+
 protected:
 	
 	int getTabIndex(int tabID);

@@ -74,7 +74,19 @@ void infoThread() {
 			luxUpdateStatisticsWindow();
 			luxGetStringAttribute("renderer_statistics_formatted_short", "_recommended_string", &buf[0], static_cast<unsigned int>(buf.size()));
 			LOG(LUX_INFO,LUX_NOERROR) << std::string(buf.begin(), buf.end());
-		} catch(boost::thread_interrupted ex) {
+		} catch(boost::thread_interrupted&) {
+			break;
+		}
+	}
+}
+
+void addNetworkSlavesThread(std::vector<std::string> slaves) {
+	for (std::vector<std::string>::iterator i = slaves.begin(); i < slaves.end(); i++) {
+		try {
+			if (boost::this_thread::interruption_requested())
+				break;
+			luxAddServer((*i).c_str());
+		} catch(boost::thread_interrupted&) {
 			break;
 		}
 	}
@@ -221,13 +233,12 @@ int main(int ac, char *av[]) {
 		} else
 			serverInterval = luxGetNetworkServerUpdateInterval();
 
+		std::vector<std::string> slaves;
 		if (vm.count("useserver")) {
-			std::vector<std::string> names = vm["useserver"].as<std::vector<std::string> >();
+			// add slaves later, so we can start rendering first
+			slaves = vm["useserver"].as<std::vector<std::string> >();
 
-			for (std::vector<std::string>::iterator i = names.begin(); i < names.end(); i++)
-				luxAddServer((*i).c_str());
-
-			LOG(LUX_INFO,LUX_NOERROR) << "Server requests interval: " << serverInterval << " secs";
+			LOG(LUX_INFO,LUX_NOERROR) << "Server request interval: " << serverInterval << " secs";
 		}
 
 		int serverPort = RenderServer::DEFAULT_TCP_PORT;
@@ -303,6 +314,9 @@ int main(int ac, char *av[]) {
 				parseError = false;
 				boost::thread engine(&engineThread);
 
+				// add slaves, need to do this for each scene file
+				boost::thread addSlaves(boost::bind(addNetworkSlavesThread, slaves));
+
 				//wait the scene parsing to finish
 				while (!luxStatistics("sceneIsReady") && !parseError) {
 					boost::this_thread::sleep(boost::posix_time::seconds(1));
@@ -326,7 +340,11 @@ int main(int ac, char *av[]) {
 
 				// We have to stop the info thread before to call luxExit()/luxCleanup()
 				info.interrupt();
+				// Stop adding slaves before proceeding
+				addSlaves.interrupt();
+
 				info.join();
+				addSlaves.join();
 
 				luxExit();
 
@@ -380,6 +398,12 @@ int main(int ac, char *av[]) {
 			luxErrorHandler(serverErrorHandler);
 
 			renderServer->start();
+
+			// add slaves, no need to do this in a separate thread since we're just waiting for
+			// the server to finish
+			for (std::vector<std::string>::iterator i = slaves.begin(); i < slaves.end(); i++)
+				luxAddServer((*i).c_str());
+
 			renderServer->join();
 			delete renderServer;
 		} else {

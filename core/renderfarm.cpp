@@ -863,8 +863,10 @@ void RenderFarm::send(const string &command) {
 	compiledCommands.add(command);
 
 	// Check if the scene is complete
-	if (command == "luxWorldEnd")
+	if (command == "luxWorldEnd") {
 		netBufferComplete = true;
+		flush();
+	}
 }
 
 void RenderFarm::send(const string &command, const string &name,
