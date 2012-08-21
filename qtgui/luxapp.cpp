@@ -110,13 +110,13 @@ void LuxGuiApp::init(void) {
 			mainwin->renderScenefile(m_inputFile);
 
 		// Add files to the render queue
-    if (renderQueueList.count()) {
-      QString renderQueueEntry;
-      foreach( renderQueueEntry, renderQueueList ) {
-        mainwin->addFileToRenderQueue(renderQueueEntry);
-      }
-      mainwin->RenderNextFileInQueue();
-    }
+		if (renderQueueList.count()) {
+			QString renderQueueEntry;
+			foreach( renderQueueEntry, renderQueueList ) {
+				mainwin->addFileToRenderQueue(renderQueueEntry);
+			}
+			mainwin->RenderNextFileInQueue();
+		}
 	} else {
 	}	
 }
@@ -321,11 +321,11 @@ bool LuxGuiApp::ProcessCommandLine(void)
 			QFile listFile(vm["list-file"].as<string>().c_str());
 			QString renderQueueEntry;
 			if ( listFile.open(QIODevice::ReadOnly) ) {
-        QTextStream lfStream(&listFile);
+				QTextStream lfStream(&listFile);
 				while(!lfStream.atEnd()) {
 					renderQueueEntry = QString(boost::filesystem::system_complete(lfStream.readLine().toStdString()).string().c_str());
 					if (!renderQueueEntry.isNull()) {
-            renderQueueList << renderQueueEntry;
+						renderQueueList << renderQueueEntry;
 					}
 				};
 			}

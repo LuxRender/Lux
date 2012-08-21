@@ -36,7 +36,7 @@ public:
 
 	LuxGuiApp(int &argc, char **argv);
 	~LuxGuiApp();
-	
+
 	void init(void);
 	void InfoDialogBox(const std::string &msg, const std::string &caption);
 
@@ -47,8 +47,8 @@ private:
 	bool m_useServer, m_copyLog2Console;
 	bool ProcessCommandLine (void);
 	QString m_inputFile;
-  // This is the list of files provided using the --file-list option
-  QStringList renderQueueList;
+	// This is the list of files provided using the --file-list option
+	QStringList renderQueueList;
 #if defined(__APPLE__)
 protected:
 	bool event(QEvent *);
