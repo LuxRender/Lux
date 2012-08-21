@@ -28,6 +28,32 @@ namespace lux
 {
 
 // Glossy Class Declarations
+class GlossyCombined : public Material {
+public:
+	// GlossyCombined Public Methods
+	GlossyCombined(boost::shared_ptr<Texture<SWCSpectrum> > &kd,
+		boost::shared_ptr<Texture<SWCSpectrum> > &ks,
+		boost::shared_ptr<Texture<SWCSpectrum> > &ka,
+		boost::shared_ptr<Texture<float> > &i,
+		boost::shared_ptr<Texture<float> > &d,
+		boost::shared_ptr<Texture<float> > &u,
+		boost::shared_ptr<Texture<float> > &v,
+		bool mb,
+		const ParamSet &mp) : Material(mp), Kd(kd), Ks(ks), Ka(ka),
+		depth(d), index(i), nu(u), nv(v), multibounce(mb) { }
+	virtual ~GlossyCombined() { }
+	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
+		const Intersection &isect,
+		const DifferentialGeometry &dgShading) const;
+	
+private:
+	// Glossy Private Data
+	boost::shared_ptr<Texture<SWCSpectrum> > Kd, Ks, Ka;
+	boost::shared_ptr<Texture<float> > depth, index;
+	boost::shared_ptr<Texture<float> > nu, nv;
+	bool multibounce;
+};
+
 class Glossy2 : public Material {
 public:
 	// Glossy Public Methods
@@ -38,9 +64,11 @@ public:
 		boost::shared_ptr<Texture<float> > &d,
 		boost::shared_ptr<Texture<float> > &u,
 		boost::shared_ptr<Texture<float> > &v,
+		boost::shared_ptr<Texture<float> > &s,
 		bool mb,
-		const ParamSet &mp) : Material(mp), Kd(kd), Ks(ks), Ka(ka),
-		depth(d), index(i), nu(u), nv(v), multibounce(mb) { }
+		const ParamSet &mp) : Material(mp), Kd(kd), Ks(ks), Ka(ka),	
+		depth(d), index(i), nu(u), nv(v), sigma(s), 
+		multibounce(mb) { }
 	virtual ~Glossy2() { }
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,
@@ -53,6 +81,7 @@ private:
 	boost::shared_ptr<Texture<SWCSpectrum> > Kd, Ks, Ka;
 	boost::shared_ptr<Texture<float> > depth, index;
 	boost::shared_ptr<Texture<float> > nu, nv;
+	boost::shared_ptr<Texture<float> > sigma;
 	bool multibounce;
 };
 
