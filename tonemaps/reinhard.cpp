@@ -58,7 +58,7 @@ void ReinhardOp::Map(vector<XYZColor> &xyz, u_int xRes, u_int yRes, float maxDis
 		Ywa = 1.f;
 
 	const float Yw = pre_scale * alpha * burn;
-	const float invY2 = 1.f / (Yw * Yw);
+	const float invY2 = Yw > 0.f ? 1.f / (Yw * Yw) : 1e5f;
 	const float pScale = post_scale * pre_scale * alpha / Ywa;
 
 	for (u_int i = 0; i < numPixels; ++i) {
