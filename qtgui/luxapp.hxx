@@ -44,9 +44,11 @@ private:
 	int &m_argc;
 	char **m_argv;
 	int m_threads;
-	bool m_useServer, m_copyLog2Console;
+	bool m_copyLog2Console;
 	bool ProcessCommandLine (void);
 	QString m_inputFile;
+	// This is the list of servers provided using the --useserver option
+	QStringList serverList;
 	// This is the list of files provided using the --file-list option
 	QStringList renderQueueList;
 #if defined(__APPLE__)

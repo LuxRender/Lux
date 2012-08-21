@@ -2415,6 +2415,13 @@ void MainWindow::addRemoveSlaves(QVector<QString> slaves, ChangeSlavesAction act
 	m_networkAddRemoveSlavesThread = new boost::thread(boost::bind(&MainWindow::networkAddRemoveSlavesThread, this, slaves, action));
 }
 
+void MainWindow::AddNetworkSlaves(const QVector<QString> &slaves) {
+	addRemoveSlaves(slaves, AddSlaves);
+}
+
+void MainWindow::RemoveNetworkSlaves(const QVector<QString> &slaves) {
+	addRemoveSlaves(slaves, RemoveSlaves);
+}
 
 void MainWindow::addServer()
 {
@@ -2424,7 +2431,7 @@ void MainWindow::addServer()
 		QVector<QString> slaves;
 		slaves.push_back(server);
 
-		addRemoveSlaves(slaves, AddSlaves);
+		AddNetworkSlaves(slaves);
 
 		m_recentServersModel->add(server);
 	}
@@ -2438,7 +2445,7 @@ void MainWindow::removeServer()
 		QVector<QString> slaves;
 		slaves.push_back(server);
 
-		addRemoveSlaves(slaves, RemoveSlaves);
+		RemoveNetworkSlaves(slaves);
 	}
 }
 

@@ -117,6 +117,11 @@ void LuxGuiApp::init(void) {
 			}
 			mainwin->RenderNextFileInQueue();
 		}
+
+		// Add slaves
+		if (!serverList.empty()) {
+			mainwin->AddNetworkSlaves(serverList.toVector());
+		}
 	} else {
 	}	
 }
@@ -272,17 +277,10 @@ bool LuxGuiApp::ProcessCommandLine(void)
 			vector<string> names = vm["useserver"].as<vector<string> >();
 
 			for(vector<string>::iterator i = names.begin(); i < names.end(); i++) {
-				LOG(LUX_INFO,LUX_NOERROR) << "Connecting to server '" <<(*i) << "'";
-
-				//TODO jromang : try to connect to the server, and get version number. display message to see if it was successfull
-				luxAddServer((*i).c_str());
+				serverList << (*i).c_str();
 			}
 
-			m_useServer = true;
-
 			LOG( LUX_INFO,LUX_NOERROR) << "Server requests interval:  " << serverInterval << " secs";
-		} else {
-			m_useServer = false;
 		}
 
 		if(vm.count("input-file")) {
