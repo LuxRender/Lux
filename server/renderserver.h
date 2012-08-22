@@ -94,7 +94,7 @@ public:
 
 	enum ServerState { UNSTARTED, READY, BUSY, STOPPED };
 
-	RenderServer(int threadCount, int tcpPort = DEFAULT_TCP_PORT, bool writeFlmFile = false);
+	RenderServer(int threadCount, const std::string &serverPassword, int tcpPort = DEFAULT_TCP_PORT, bool writeFlmFile = false);
 	~RenderServer();
 
 	void start();
@@ -105,6 +105,10 @@ public:
 	ServerState getServerState() const { return  state; }
 	void setServerState(ServerState newState) {
 		state = newState;
+	}
+
+	std::string getServerPass() const {
+		return serverPass;
 	}
 
 	boost::uuids::uuid getCurrentSID() const {
@@ -150,6 +154,7 @@ private:
 	int tcpPort;
 	bool writeFlmFile;
 	ServerState state;
+	std::string serverPass;
 	boost::uuids::uuid currentSID;
 	NetworkRenderServerThread *serverThread;
 };

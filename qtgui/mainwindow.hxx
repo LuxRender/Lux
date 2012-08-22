@@ -438,6 +438,7 @@ private slots:
 
 	void addServer();
 	void removeServer();
+	void resetServer();
 	void updateIntervalChanged(int value);
 	void networknodeSelectionChanged();
 

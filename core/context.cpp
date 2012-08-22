@@ -188,6 +188,10 @@ void Context::RemoveServer(const string &n) {
 		renderFarm->stopFilmUpdater();
 }
 
+void Context::ResetServer(const string &n, const string &p) {
+	renderFarm->sessionReset(n, p);
+}
+
 u_int Context::GetServerCount() {
 	return renderFarm->getServerCount();
 }

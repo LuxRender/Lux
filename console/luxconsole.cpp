@@ -118,6 +118,7 @@ int main(int ac, char *av[]) {
 				("overrideresume,R", po::value< std::string >(), "Resume from specified FLM")
 				("output,o", po::value< std::string >(), "Output filename")
 				("server,s", "Launch in server mode")
+				("resetserver", po::value< std::vector<std::string> >()->composing(), "Force the specified rendering server to reset")
 				("bindump,b", "Dump binary RGB framebuffer to stdout when finished")
 				("debug,d", "Enable debug mode")
 				("fixedseed,f", "Disable random seed mode")
@@ -135,10 +136,11 @@ int main(int ac, char *av[]) {
 		po::options_description config("Configuration");
 		config.add_options()
 				("threads,t", po::value < int >(), "Specify the number of threads that Lux will run in parallel.")
-				("useserver,u", po::value< std::vector<std::string> >()->composing(), "Specify the adress of a rendering server to use.")
+				("useserver,u", po::value< std::vector<std::string> >()->composing(), "Specify the address of a rendering server to use.")
 				("serverinterval,i", po::value < int >(), "Specify the number of seconds between requests to rendering servers.")
 				("serverport,p", po::value < int >(), "Specify the tcp port used in server mode.")
 				("serverwriteflm,W", "Write film to disk before transmitting in server mode.")
+				("password,P", po::value< std::string >()->default_value(""), "Specify the servers reset password.")
 				("cachedir,c", po::value< std::string >(), "Specify the cache directory to use")
 				;
 
@@ -190,6 +192,15 @@ int main(int ac, char *av[]) {
 		
 		if (vm.count("version"))
 			return 0;
+
+		if (vm.count("resetserver")) {
+			std::vector<std::string> slaves = vm["resetserver"].as<std::vector<std::string> >();
+			std::string password = vm["password"].as<std::string>();
+			for (std::vector<std::string>::iterator i = slaves.begin(); i < slaves.end(); i++) {
+				luxResetServer((*i).c_str(), password.c_str());
+			}
+			return 0;
+		}
 
 		if (vm.count("threads"))
 			threads = vm["threads"].as<int>();
@@ -392,7 +403,8 @@ int main(int ac, char *av[]) {
 				LOG(LUX_INFO,LUX_NOERROR) << "Using cache directory '" << cachedir << "'";
 			}
 
-			renderServer = new RenderServer(threads, serverPort, writeFlmFile);
+			std::string password = vm["password"].as<std::string>();
+			renderServer = new RenderServer(threads, password, serverPort, writeFlmFile);
 
 			prevErrorHandler = luxError;
 			luxErrorHandler(serverErrorHandler);

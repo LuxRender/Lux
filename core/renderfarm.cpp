@@ -615,6 +615,85 @@ void RenderFarm::disconnect(const ExtRenderingServerInfo &serverInfo) {
 	}
 }
 
+bool RenderFarm::sessionReset(const string &serverName, const string &password) {
+	boost::mutex::scoped_lock lock(serverListMutex);
+
+	string name, port;
+	decodeServerName(serverName, name, port);
+
+	// check to see if we're already connected, if so disconnect
+	for (vector<ExtRenderingServerInfo>::iterator it = serverInfoList.begin(); it < serverInfoList.end(); it++ ) {
+		if (name.compare(it->name) == 0 && port.compare(it->port) == 0) {			
+			disconnect(*it);
+			serverInfoList.erase(it);
+			break;
+		}
+	}
+
+	string formattedServerName = name + ":" + port;
+
+	try {
+		LOG( LUX_INFO,LUX_NOERROR) << "Resetting server: " << formattedServerName;
+
+		tcp::iostream stream(name, port);
+		stream << "ServerReset" << std::endl << std::flush;
+
+		// Check if the server accepted the connection
+		string result;
+		if (!getline(stream, result)) {
+			LOG( LUX_ERROR,LUX_SYSTEM) << "Error resetting server: " << formattedServerName;
+			return false;
+		}
+
+		LOG( LUX_DEBUG,LUX_NOERROR) << "Server reset response: " << result;
+		
+		if ("IDLE" == result) {
+			// slave is idle, nothing to reset
+			return true;
+		}
+
+		if ("CHALLENGE" != result) {
+			// unknown response
+			LOG( LUX_ERROR,LUX_SYSTEM) << "Unable to reset server: " << formattedServerName << " (response: '" << result << "')";
+			return false;
+		}
+
+		string salt;
+		if (!getline(stream, salt)) {
+			LOG( LUX_ERROR,LUX_SYSTEM) << "Error resetting server: " << formattedServerName;
+			return false;
+		}
+
+		const string hashedpass = digest_string(string_hash<tigerhash>(
+				salt + password + salt));
+
+		stream << hashedpass << std::endl << std::flush;
+
+		if (!getline(stream, result)) {
+			LOG( LUX_ERROR,LUX_SYSTEM) << "Error resetting server: " << formattedServerName;
+			return false;
+		}
+
+		if ("DENIED" == result) {
+			LOG( LUX_ERROR,LUX_SYSTEM) << "Authentication failed trying to reset server: " << formattedServerName;
+			return false;
+		}
+
+		if ("RESET" != result) {
+			LOG( LUX_ERROR,LUX_SYSTEM) << "Unable to reset server: " << formattedServerName << " (response: '" << result << "')";
+			return false;
+		}
+		
+		LOG( LUX_INFO,LUX_NOERROR) << "Server reset: "  << formattedServerName;
+
+	} catch (exception& e) {
+		LOG(LUX_ERROR,LUX_SYSTEM) << "Unable to reset server: " << formattedServerName;
+		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
+		return false;
+	}
+
+	return true;
+}
 void RenderFarm::flushImpl() {
 	//flush network buffer
 	for (size_t i = 0; i < serverInfoList.size(); i++) {

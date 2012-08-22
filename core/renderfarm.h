@@ -75,7 +75,10 @@ public:
 	void disconnectAll();
 	void disconnect(const string &serverName);
 	void disconnect(const RenderingServerInfo &serverInfo);
-	
+
+	// Resets server's rendering session
+	bool sessionReset(const string &serverName, const string &password);
+
 	// signal that rendering is done
 	void renderingDone() { netBufferComplete = false; };
 

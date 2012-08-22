@@ -36,6 +36,7 @@
 #include <clocale>
 
 #include <QProgressDialog>
+#include <QInputDialog>
 
 #include <QList>
 
@@ -276,6 +277,7 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	connect(ui->button_addServer, SIGNAL(clicked()), this, SLOT(addServer()));
 	connect(ui->lineEdit_server, SIGNAL(returnPressed()), this, SLOT(addServer()));
 	connect(ui->button_removeServer, SIGNAL(clicked()), this, SLOT(removeServer()));
+	connect(ui->button_resetServer, SIGNAL(clicked()), this, SLOT(resetServer()));
 	connect(ui->spinBox_updateInterval, SIGNAL(valueChanged(int)), this, SLOT(updateIntervalChanged(int)));
 	connect(ui->table_servers, SIGNAL(itemSelectionChanged()), this, SLOT(networknodeSelectionChanged()));
 
@@ -2457,6 +2459,26 @@ void MainWindow::removeServer()
 
 		RemoveNetworkSlaves(slaves);
 	}
+}
+
+void MainWindow::resetServer()
+{
+	QString server = ui->lineEdit_server->text();
+
+	if (server.isEmpty())
+		return;
+
+	bool ok;
+	QString password = QInputDialog::getText(this, tr("Reset server session"),
+		tr("Server password (leave empty for no password):"), 
+		QLineEdit::Password, "", &ok);
+
+	if (!ok)
+		return;
+
+	luxResetServer(server.toAscii(), password.toAscii());
+
+	qApp->postEvent(this, new NetworkUpdateTreeEvent());
 }
 
 void MainWindow::updateIntervalChanged(int value)

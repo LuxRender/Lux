@@ -283,6 +283,7 @@ LUX_EXPORT void luxSetAttribute(const char * objectName, const char * attributeN
 /* Networking */
 LUX_EXPORT void luxAddServer(const char * name);
 LUX_EXPORT void luxRemoveServer(const char * name);
+LUX_EXPORT void luxResetServer(const char * name, const char * password);
 LUX_EXPORT unsigned int luxGetServerCount();
 LUX_EXPORT void luxUpdateFilmFromNetwork();
 LUX_EXPORT void luxUpdateLogFromNetwork();

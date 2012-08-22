@@ -50,6 +50,7 @@
 #include <boost/thread/thread.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
+#include <boost/lexical_cast.hpp>
 
 using namespace lux;
 using namespace boost::iostreams;
@@ -61,8 +62,8 @@ using boost::asio::ip::tcp;
 // RenderServer
 //------------------------------------------------------------------------------
 
-RenderServer::RenderServer(int tCount, int port, bool wFlmFile) : errorMessages(), threadCount(tCount),
-	tcpPort(port), writeFlmFile(wFlmFile), state(UNSTARTED), serverThread(NULL)
+RenderServer::RenderServer(int tCount, const std::string &serverPassword, int port, bool wFlmFile) : errorMessages(), threadCount(tCount),
+	tcpPort(port), writeFlmFile(wFlmFile), state(UNSTARTED), serverPass(serverPassword), serverThread(NULL)
 {
 }
 
@@ -172,10 +173,9 @@ static std::string get_response(std::iostream &stream) {
 	return response;
 }
 
-static void writeTransmitFilm(basic_ostream<char> &stream, const string &filename)
+static bool writeTransmitFilm(string &filename)
 {
-	string file = filename;
-	string tempfile = file + ".temp";
+	string tempfile = filename + ".temp";
 
 	LOG( LUX_DEBUG,LUX_NOERROR) << "Writing film samples to file '" << tempfile << "'";
 
@@ -183,26 +183,37 @@ static void writeTransmitFilm(basic_ostream<char> &stream, const string &filenam
 	Context::GetActive()->TransmitFilm(out, true, false);
 	out.close();
 
-	if (!out.fail()) {
-		remove(file.c_str());
-		if (rename(tempfile.c_str(), file.c_str())) {
-			LOG(LUX_ERROR, LUX_SYSTEM) << 
-				"Failed to rename new film file, leaving new film file as '" << tempfile << "'";
-			file = tempfile;
-		}
-
-		LOG( LUX_DEBUG,LUX_NOERROR) << "Transmitting film samples from file '" << file << "'";
-		ifstream in(file.c_str(), ios::in | ios::binary);
-
-		boost::iostreams::copy(in, stream);
-
-		if (in.fail())
-			LOG(LUX_ERROR, LUX_SYSTEM) << "There was an error while transmitting from file '" << file << "'";
-
-		in.close();
-	} else {
+	if (out.fail()) {
 		LOG(LUX_ERROR, LUX_SYSTEM) << "There was an error while writing file '" << tempfile << "'";
+		return false;
 	}
+
+	remove(filename.c_str());
+	if (rename(tempfile.c_str(), filename.c_str())) {
+		LOG(LUX_ERROR, LUX_SYSTEM) << 
+			"Failed to rename new film file, leaving new film file as '" << tempfile << "'";
+		filename = tempfile;
+	}
+
+	return true;
+}
+
+static void writeTransmitFilm(basic_ostream<char> &stream, const string &filename)
+{
+	string file = filename;
+	// writeTransmitFilm may modify filename if temp file can't be renamed
+	if (!writeTransmitFilm(file))
+		return;
+
+	LOG( LUX_DEBUG,LUX_NOERROR) << "Transmitting film samples from file '" << file << "'";
+	ifstream in(file.c_str(), ios::in | ios::binary);
+
+	boost::iostreams::copy(in, stream);
+
+	if (in.fail())
+		LOG(LUX_ERROR, LUX_SYSTEM) << "There was an error while transmitting from file '" << file << "'";
+
+	in.close();
 }
 
 static void processCommandParams(bool isLittleEndian,
@@ -517,7 +528,7 @@ bool RenderServer::validateAccess(basic_istream<char> &stream) const {
 		return false;
 
 	if (serverThread->renderServer->state != RenderServer::BUSY) {
-		LOG( LUX_INFO,LUX_NOERROR)<< "Slave does not have an active session";
+		LOG( LUX_INFO,LUX_NOERROR)<< "Server does not have an active session";
 		return false;
 	}
 
@@ -580,6 +591,50 @@ void cmd_ServerReconnect(bool isLittleEndian, NetworkRenderServerThread *serverT
 		stream << "DENIED" << endl;
 	} else {
 		// server doesn't have an active session
+		stream << "IDLE" << endl;
+	}
+}
+void cmd_ServerReset(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_SERVER_RESET:
+	if (serverThread->renderServer->getServerState() == RenderServer::BUSY) {
+		LOG( LUX_INFO,LUX_NOERROR) << "Master requested a server reset, authenticating";
+		std::string salt = boost::lexical_cast<std::string>(boost::uuids::random_generator()());
+		stream << "CHALLENGE" << endl;
+		stream << salt << endl << flush;
+
+		string masterpass;
+		getline(stream, masterpass);
+
+		LOG( LUX_DEBUG,LUX_NOERROR) << "Master password hash: '" << masterpass << "'";
+
+		const string hashedpass = digest_string(string_hash<tigerhash>(
+				salt + serverThread->renderServer->getServerPass() + salt));
+
+		LOG( LUX_DEBUG,LUX_NOERROR) << "Server password hash: '" << hashedpass << "'";
+
+		if (masterpass == hashedpass) {
+			LOG( LUX_INFO,LUX_NOERROR) << "Authentication accepted, performing reset";
+
+			if (Context::GetActive()->IsRendering()) {
+				string file = "server_reset";
+				if (tmpFileList.size())
+					file += "_" + tmpFileList[0];
+				file += ".flm";
+				LOG( LUX_INFO,LUX_NOERROR) << "Writing resume film to '" << file << "'";
+				writeTransmitFilm(file);
+			}
+
+			LOG( LUX_INFO,LUX_NOERROR) << "Cleaning up";
+			cleanupSession(serverThread, tmpFileList);
+
+			stream << "RESET" << endl;
+		} else {
+			LOG( LUX_WARNING,LUX_SYSTEM) << "Authentication failed trying to reset server";
+			stream << "DENIED" << endl;
+		}
+	} else {
+		// server doesn't have an active session
+		LOG( LUX_DEBUG,LUX_NOERROR) << "Server already idle";
 		stream << "IDLE" << endl;
 	}
 }
@@ -838,7 +893,7 @@ void cmd_luxGetFilm(bool isLittleEndian, NetworkRenderServerThread *serverThread
 		if (serverThread->renderServer->getWriteFlmFile()) {
 			string file = "server_resume";
 			if (tmpFileList.size())
-			file += "_" + tmpFileList[0];
+				file += "_" + tmpFileList[0];
 			file += ".flm";
 
 			writeTransmitFilm(stream, file);
@@ -920,6 +975,7 @@ void NetworkRenderServerThread::run(int ipversion, NetworkRenderServerThread *se
 	INSERT_CMD(ServerDisconnect);
 	INSERT_CMD(ServerConnect);
 	INSERT_CMD(ServerReconnect);
+	INSERT_CMD(ServerReset);
 	INSERT_CMD(luxInit);
 	INSERT_CMD(luxTranslate);
 	INSERT_CMD(luxRotate);
