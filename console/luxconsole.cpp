@@ -193,6 +193,18 @@ int main(int ac, char *av[]) {
 		if (vm.count("version"))
 			return 0;
 
+		if (vm.count("verbose")) {
+			luxErrorFilter(LUX_DEBUG);
+		}
+
+		if (vm.count("quiet")) {
+			luxErrorFilter(LUX_WARNING);
+		}
+
+		if (vm.count("very-quiet")) {
+			luxErrorFilter(LUX_ERROR);
+		}
+
 		if (vm.count("resetserver")) {
 			std::vector<std::string> slaves = vm["resetserver"].as<std::vector<std::string> >();
 			std::string password = vm["password"].as<std::string>();
@@ -216,18 +228,6 @@ int main(int ac, char *av[]) {
 		if (vm.count("debug")) {
 			LOG(LUX_INFO,LUX_NOERROR)<< "Debug mode enabled";
 			luxEnableDebugMode();
-		}
-
-		if (vm.count("verbose")) {
-			luxErrorFilter(LUX_DEBUG);
-		}
-
-		if (vm.count("quiet")) {
-			luxErrorFilter(LUX_WARNING);
-		}
-
-		if (vm.count("very-quiet")) {
-			luxErrorFilter(LUX_ERROR);
 		}
 
 		if (vm.count("fixedseed")) {
