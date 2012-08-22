@@ -475,7 +475,7 @@ void PathIntegrator::BuildShadowRays(const Scene &scene, PathState *pathState, B
 			if (Li.Black())
 				continue;
 			if (!light->IsDeltaLight())
-				Li *= PowerHeuristic(1, lightPdf * d2 / AbsDot(wi, lightBsdf->dgShading.nn),
+				Li *= PowerHeuristic(1, lightPdf * d2 / AbsDot(wi, lightBsdf->ng),
 					1, bsdf->Pdf(sw, wo, wi));
 
 			// Store light's contribution
