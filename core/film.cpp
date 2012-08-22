@@ -1197,11 +1197,12 @@ void Film::SetSample(const Contribution *contrib) {
 	BufferGroup &currentGroup = bufferGroups[contrib->bufferGroup];
 	Buffer *buffer = currentGroup.getBuffer(contrib->buffer);
 
-	buffer->Set(x, y, xyz, alpha);
+	buffer->Set(x - xPixelStart, y - yPixelStart, xyz, alpha);
 
 	// Update ZBuffer values with filtered zdepth contribution
 	if(use_Zbuf && contrib->zdepth != 0.f)
-		ZBuffer->Add(x, y, contrib->zdepth, 1.0f);
+		ZBuffer->Add(x - xPixelStart, y - yPixelStart,
+			contrib->zdepth, 1.0f);
 }
 
 void Film::WriteResumeFilm(const string &filename)

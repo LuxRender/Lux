@@ -997,17 +997,27 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 			
 			// Copy to framebuffer pixels
 			if ((type & IMAGE_FRAMEBUFFER) && framebuffer) {
-				for (u_int i = 0; i < nPix; i++) {
-					framebuffer[3 * i] = static_cast<unsigned char>(Clamp(256 * rgbcolor[i].c[0], 0.f, 255.f));
-					framebuffer[3 * i + 1] = static_cast<unsigned char>(Clamp(256 * rgbcolor[i].c[1], 0.f, 255.f));
-					framebuffer[3 * i + 2] = static_cast<unsigned char>(Clamp(256 * rgbcolor[i].c[2], 0.f, 255.f));
+				u_int i = 0;
+				for (u_int y = yPixelStart; y < yPixelStart + yPixelCount; ++y) {
+					for (u_int x = xPixelStart; x < xPixelStart + xPixelCount; ++x) {
+						const u_int offset = 3 * (y * xResolution + x);
+						framebuffer[offset] = static_cast<unsigned char>(Clamp(256 * rgbcolor[i].c[0], 0.f, 255.f));
+						framebuffer[offset + 1] = static_cast<unsigned char>(Clamp(256 * rgbcolor[i].c[1], 0.f, 255.f));
+						framebuffer[offset + 2] = static_cast<unsigned char>(Clamp(256 * rgbcolor[i].c[2], 0.f, 255.f));
+						++i;
+					}
 				}
 			}
 			if ((type & IMAGE_FRAMEBUFFER) && float_framebuffer) {
-				for (u_int i = 0; i < nPix; i++) {
-					float_framebuffer[3 * i] = rgbcolor[i].c[0];
-					float_framebuffer[3 * i + 1] = rgbcolor[i].c[1];
-					float_framebuffer[3 * i + 2] = rgbcolor[i].c[2];
+				u_int i = 0;
+				for (u_int y = yPixelStart; y < yPixelStart + yPixelCount; ++y) {
+					for (u_int x = xPixelStart; x < xPixelStart + xPixelCount; ++x) {
+						const u_int offset = 3 * (y * xResolution + x);
+						float_framebuffer[offset] = rgbcolor[i].c[0];
+						float_framebuffer[offset + 1] = rgbcolor[i].c[1];
+						float_framebuffer[offset + 2] = rgbcolor[i].c[2];
+						++i;
+					}
 				}
 			}
 		}
@@ -1084,13 +1094,18 @@ void FlexImageFilm::WriteImage(ImageType type)
 	}
 	// outside loop in order to write complete image
 	u_int pcount = 0;
-	for (u_int pix = 0; pix < nPix; ++pix) {
-		if (alphaWeight[pix] > 0.f) {
-			alpha[pix] /= alphaWeight[pix];
-			Y += pixels[pix].c[1];
-			pcount++;
+	u_int pix = 0;
+	for (u_int y = yPixelStart; y < yPixelStart + yPixelCount; ++y) {
+		for (u_int x = xPixelStart; x < xPixelStart + xPixelCount; ++x) {
+			const u_int offset = y * xResolution + x;
+			if (alphaWeight[pix] > 0.f) {
+				alpha[pix] /= alphaWeight[pix];
+				Y += pixels[pix].c[1];
+				pcount++;
+			}
+			alpha_buffer[offset] = alpha[pix];
+			++pix;
 		}
-		alpha_buffer[pix] = alpha[pix];
 	}
 	Y /= pcount;
 	averageLuminance = Y;
@@ -1169,9 +1184,9 @@ void FlexImageFilm::SaveEXR(const string &exrFilename, bool useHalfFloats, bool 
 	
 	// convert to rgb
 	colorSpace = ColorSystem(m_RGB_X_Red, m_RGB_Y_Red,
-							 m_RGB_X_Green, m_RGB_Y_Green,
-							 m_RGB_X_Blue, m_RGB_Y_Blue,
-							 m_RGB_X_White, m_RGB_Y_White, 1.f);			
+		m_RGB_X_Green, m_RGB_Y_Green,
+		m_RGB_X_Blue, m_RGB_Y_Blue,
+		m_RGB_X_White, m_RGB_Y_White, 1.f);
 	
 	// Backup members that affect WriteEXRImage()
 	bool lOrigZbuf = write_EXR_ZBuf;
@@ -1209,7 +1224,7 @@ void FlexImageFilm::SaveEXR(const string &exrFilename, bool useHalfFloats, bool 
 void FlexImageFilm::createFrameBuffer()
 {
 	// allocate pixels
-	unsigned int nPix = xPixelCount * yPixelCount;
+	unsigned int nPix = xResolution * yResolution;
 	framebuffer = new unsigned char[3*nPix];			// TODO delete data
 	float_framebuffer = new float[3*nPix];
 	alpha_buffer = new float[nPix];
@@ -1261,8 +1276,9 @@ float* FlexImageFilm::getZBuffer()
 
 	if (ZBuffer)
 	{
-		for (u_int offset = 0, y = 0; y < yPixelCount; ++y) {
-			for (u_int x = 0; x < xPixelCount; ++x,++offset) {
+		for (u_int y = 0; y < yPixelCount; ++y) {
+			for (u_int x = 0; x < xPixelCount; ++x) {
+				const u_int offset = (yPixelStart + y) * xResolution + xPixelStart + x;
 				z_buffer[offset] = ZBuffer->GetData(x, y);
 			}
 		}

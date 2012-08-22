@@ -155,8 +155,8 @@ void overlayStatistics(QImage *image)
 QImage getFramebufferImage(bool overlayStats, bool outputAlpha)
 {
 	// Get width, height and pixel buffer
-	int w = luxGetIntAttribute("film", "xPixelCount");
-	int h = luxGetIntAttribute("film", "yPixelCount");
+	int w = luxGetIntAttribute("film", "xResolution");
+	int h = luxGetIntAttribute("film", "yResolution");
 	// pointer needs to be const so QImage doesn't write to it
 	const unsigned char* fb = luxFramebuffer();
 
