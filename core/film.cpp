@@ -652,7 +652,7 @@ Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop
 	filename(filename1),
 	colorSpace(0.63f, 0.34f, 0.31f, 0.595f, 0.155f, 0.07f, 0.314275f, 0.329411f), // default is SMPTE
 	convergenceBufferReference(NULL), convergenceBufferReferenceCount(NULL),
-	convergenceBufferDelta(NULL), varianceBuffer(NULL),
+	varianceBuffer(NULL),
 	ZBuffer(NULL), use_Zbuf(useZbuffer),
 	debug_mode(debugmode), premultiplyAlpha(premult),
 	writeResumeFlm(w_resume_FLM), restartResumeFlm(restart_resume_FLM), writeFlmDirect(write_FLM_direct),
@@ -749,7 +749,6 @@ Film::~Film()
 	delete ZBuffer;
 	delete []convergenceBufferReference;
 	delete []convergenceBufferReferenceCount;
-	delete []convergenceBufferDelta;
 	delete varianceBuffer;
 	delete histogram;
 	delete contribPool;
@@ -773,12 +772,12 @@ void Film::CreateBuffers()
 	if (bufferGroups.size() == 0)
 		bufferGroups.push_back(BufferGroup("default"));
 	for (u_int i = 0; i < bufferGroups.size(); ++i)
-		bufferGroups[i].CreateBuffers(bufferConfigs,xPixelCount, yPixelCount);
+		bufferGroups[i].CreateBuffers(bufferConfigs, xPixelCount, yPixelCount);
 
 	// Allocate ZBuf buffer if needed
 	if (use_Zbuf)
 		ZBuffer = new PerPixelNormalizedFloatBuffer(xPixelCount, yPixelCount);
-	
+
 	// Allocate convergence buffers if needed
 	if (haltThreshold > 0.f) {
 		const u_int nPix = xPixelCount * yPixelCount;
@@ -787,12 +786,8 @@ void Film::CreateBuffers()
 		convergenceBufferReferenceCount = new float[nPix];
 		std::fill(convergenceBufferReferenceCount, convergenceBufferReferenceCount + nPix, 0.f);
 
-		convergenceBufferDelta = new float[nPix];
-		std::fill(convergenceBufferDelta, convergenceBufferDelta + nPix, -1.f);
-
 		convergenceBufferMap.resize(nPix, false);
 		convergencePixelCount = 0;
-		convergenceBufferVersion = 0;
 
 		varianceBuffer = new VarianceBuffer(xPixelCount, yPixelCount);
 		varianceBuffer->Clear();
@@ -1090,10 +1085,8 @@ void Film::UpdateConvergenceInfo(const float *framebuffer) {
 			}
 
 			float &oldSampleCount = convergenceBufferReferenceCount[pixelIndex];
-
 			if (newSampleCount - oldSampleCount > 8.f) {
 				// We have enough samples, update the convergence map
-
 				float newC[3];
 				newC[0] = Clamp(framebuffer[3 * pixelIndex], 0.f, 1.f);
 				newC[1] = Clamp(framebuffer[3 * pixelIndex + 1], 0.f, 1.f);
@@ -1110,7 +1103,6 @@ void Film::UpdateConvergenceInfo(const float *framebuffer) {
 				oldC[1] = newC[1];
 				oldC[2] = newC[2];
 				oldSampleCount = newSampleCount;
-				convergenceBufferDelta[pixelIndex] = newDelta;
 
 				if ((oldSampleCount > 0.f) && (newDelta <= haltThreshold)) {
 					// Convergence condition has been satisfied
@@ -1136,8 +1128,6 @@ void Film::UpdateConvergenceInfo(const float *framebuffer) {
 		haltThresholdComplete = 1.f;
 	else
 		haltThresholdComplete = convergencePixelCount / (float)pixelCount;
-
-	++convergenceBufferVersion;
 }
 
 void Film::AddTileSamples(const Contribution* const contribs, u_int num_contribs,

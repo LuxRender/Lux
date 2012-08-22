@@ -80,11 +80,11 @@ public:
 	float *rngSamples;
 	boost::mutex metropolisSamplerMutex;
 
-	Distribution2D *convergenceMap;
-	u_int convergenceMapVersion;
-	boost::mutex convergenceMapMutex;
+	Distribution2D *varianceMap;
+	double varianceMapSampleCount;
+	boost::mutex varianceMapMutex;
 
-	bool useVariance, useCooldown, useConvergence;
+	bool useVariance, useCooldown, useVarianceMap;
 };
 
 }//namespace lux
