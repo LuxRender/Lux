@@ -994,6 +994,12 @@ public:
 		context->RemoveServer(std::string(name));
 	}
 
+	void resetServer(const char * name, const char * password)
+	{
+		checkActiveContext();
+		context->ResetServer(std::string(name), std::string(password));
+	}
+
 	unsigned int getServerCount()
 	{
 		checkActiveContext();
@@ -1398,6 +1404,11 @@ void export_PyContext()
 			&PyContext::removeThread,
 			args("Context"),
 			ds_pylux_Context_removeThread
+		)
+		.def("resetServer",
+			&PyContext::resetServer,
+			args("Context", "address", "password"),
+			ds_pylux_Context_resetServer
 		)
 		.def("reverseOrientation",
 			&PyContext::reverseOrientation,
