@@ -26,9 +26,7 @@
 #define TAB_ID_LOG     4
 
 #include <boost/bind.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
-#include <boost/cast.hpp>
 #include <boost/regex.hpp>
 #include <boost/format.hpp>
 
@@ -56,11 +54,6 @@
 #include "batchprocessdialog.hxx"
 #include "openexroptionsdialog.hxx"
 #include "guiutil.h"
-
-#if defined(WIN32) && !defined(__CYGWIN__)
-#include "direct.h"
-#define chdir _chdir
-#endif
 
 inline int Floor2Int(float val) {
 	return static_cast<int>(floorf(val));
@@ -684,10 +677,9 @@ void MainWindow::openQueueFile(const QString& fileName)
 	QString renderQueueEntry;
 	if ( listFile.open(QIODevice::ReadOnly) ) {
 		QTextStream lfStream(&listFile);
-		boost::filesystem::path fullPath(boost::filesystem::system_complete(qPrintable(fileName)));				
-		chdir(fullPath.parent_path().string().c_str());
+		QDir::setCurrent(QFileInfo(fileName).absoluteDir().path());
 		while(!lfStream.atEnd()) {
-			renderQueueEntry = QString(boost::filesystem::system_complete(lfStream.readLine().toStdString()).string().c_str());
+			renderQueueEntry = QFileInfo(lfStream.readLine()).absoluteFilePath();
 			if (!renderQueueEntry.isNull()) {
 				renderQueueList << renderQueueEntry;
 			}
@@ -1001,7 +993,7 @@ bool MainWindow::saveAllLightGroups(const QString &outFilename, const bool &asHD
 	}
 
 	// Prepare filename (will hack up when outputting each light group)
-	boost::filesystem::path filenamePath(qPrintable(outFilename));
+	QFileInfo filenamePath(outFilename);
 
 	// Get film resolution (only needed for tonemapped case but better off being outside loop)
 	int w = luxGetIntAttribute("film", "xResolution");
@@ -1020,18 +1012,17 @@ bool MainWindow::saveAllLightGroups(const QString &outFilename, const bool &asHD
 			luxUpdateFramebuffer();
 
 		// Output image
-		QString outputName = QString("%1/%2-%3").arg(filenamePath.parent_path().string().c_str())
-			.arg(filenamePath.stem().string().c_str()).arg(lgName);
+		QString outputName = QDir(filenamePath.absolutePath()).absoluteFilePath(filenamePath.completeBaseName() + "-" + lgName);
 
 		if (asHDR)
 			if (ui->action_HDR_tonemapped->isChecked())
-				luxSaveEXR(QString("%1.exr").arg(outputName).toAscii().data(), openExrHalfFloats, openExrDepthBuffer, openExrCompressionType, true);
+				luxSaveEXR(qPrintable(outputName + ".exr"), openExrHalfFloats, openExrDepthBuffer, openExrCompressionType, true);
 			else
-				luxSaveEXR(QString("%1.exr").arg(outputName).toAscii().data(), openExrHalfFloats, openExrDepthBuffer, openExrCompressionType, false);
+				luxSaveEXR(qPrintable(outputName + ".exr"), openExrHalfFloats, openExrDepthBuffer, openExrCompressionType, false);
 		else {
 			QImage image = getFramebufferImage();
 			if(!image.isNull())
-				result = image.save(QString("%1%2").arg(outputName).arg(filenamePath.extension().string().c_str()));
+				result = image.save(outputName + filenamePath.suffix());
 			else
 				result = false;
 		}
@@ -1274,18 +1265,17 @@ void MainWindow::applyTonemapping(bool withlayercomputation)
 
 void MainWindow::engineThread(QString filename)
 {
-	boost::filesystem::path fullPath(boost::filesystem::system_complete(qPrintable(filename)));
-
-	chdir(fullPath.parent_path().string().c_str());
-
 	// NOTE - lordcrc - initialize rand()
 	qsrand(time(NULL));
 
 	// if stdin is input, don't use full path
 	if (filename == QString::fromAscii("-"))
 		luxParse(qPrintable(filename));
-	else
-		luxParse(fullPath.filename().string().c_str());
+	else {
+		QFileInfo fullPath(filename);
+		QDir::setCurrent(fullPath.absoluteDir().path());
+		luxParse(qPrintable(fullPath.absoluteFilePath()));
+	}
 
 	if (luxStatistics("terminated"))
 		return;
@@ -1326,51 +1316,46 @@ void MainWindow::flmSaveThread(QString filename)
 void MainWindow::batchProcessThread(QString inDir, QString outDir, QString outExtension, bool allLightGroups, bool asHDR)
 {
 	// Find 'flm' files in the input directory
-	QVector<string> flmFiles, flmStems;
-	for(boost::filesystem::directory_iterator itr(qPrintable(inDir));
-		itr != boost::filesystem::directory_iterator();
-		itr++)
-	{
-		const boost::filesystem::path curPath = itr->path();
-		if(curPath.extension() == ".flm")
-		{
-			flmFiles.push_back(curPath.string());
-			flmStems.push_back(curPath.stem().string());
-		}
-	}
+	QFileInfoList flmFiles(QDir(inDir).entryInfoList(QStringList("*.flm"),
+		QDir::Files));
 
 	// Process the 'flm' files
-	for(int i=0; i<flmFiles.size(); i++)
-	{
+	u_int i = 0;
+	for(QFileInfoList::Iterator f(flmFiles.begin()); f != flmFiles.end(); ++i, ++f) {
 		// Update progress
-		qApp->postEvent(this, new BatchEvent(QString(flmStems[i].c_str()), i, flmFiles.size()));
+		qApp->postEvent(this, new BatchEvent(f->completeBaseName(), i, flmFiles.size()));
 
 		// Load FLM into Lux engine
-		luxLoadFLM(flmFiles[i].c_str());
-		if(!luxStatistics("filmIsReady")) continue;
+		luxLoadFLM(qPrintable(f->absoluteFilePath()));
+		if(!luxStatistics("filmIsReady"))
+			continue;
 
 		// Check for cancel
-		if (batchProgress && batchProgress->wasCanceled()) return;
+		if (batchProgress && batchProgress->wasCanceled())
+			return;
 
 		// Make output filename
-		QString outName = QString("%1/%2.%3").arg(outDir).arg(flmStems[i].c_str()).arg(outExtension);
+		QString outName = QDir(outDir).absoluteFilePath(f->completeBaseName() + "." + outExtension);
 
 		// Save loaded FLM
-		if(allLightGroups) saveAllLightGroups(outName, asHDR);
-		else
-		{
+		if(allLightGroups)
+			saveAllLightGroups(outName, asHDR);
+		else {
 			luxUpdateFramebuffer();
-			if(asHDR) saveCurrentImageHDR(outName);
-			else saveCurrentImageTonemapped(outName);
+			if(asHDR)
+				saveCurrentImageHDR(outName);
+			else
+				saveCurrentImageTonemapped(outName);
 		}
-		LOG(LUX_INFO, LUX_NOERROR) << "Saved '" << flmFiles[i] << "' as '" << qPrintable(outName);
+		LOG(LUX_INFO, LUX_NOERROR) << "Saved '" << qPrintable(f->path()) << "' as '" << qPrintable(outName);
 
 		// Check again for cancel
-		if (batchProgress && batchProgress->wasCanceled()) return;
+		if (batchProgress && batchProgress->wasCanceled())
+			return;
 	}
 
 	// Signal completion
-	qApp->postEvent(this, new BatchEvent(flmFiles[flmFiles.size()-1].c_str(), flmFiles.size(), flmFiles.size()));
+	qApp->postEvent(this, new BatchEvent("", flmFiles.size(), flmFiles.size()));
 }
 
 void MainWindow::networkAddRemoveSlavesThread(QVector<QString> slaves, ChangeSlavesAction action) {
@@ -1597,11 +1582,8 @@ void MainWindow::viewportChanged() {
 void MainWindow::renderScenefile(const QString& sceneFilename, const QString& flmFilename)
 {
 	if (flmFilename != "") {
-		// Get the absolute path of the flm file
-		boost::filesystem::path fullPath(boost::filesystem::system_complete(qPrintable(flmFilename)));
-
 		// Set the FLM filename
-		luxOverrideResumeFLM(fullPath.string().c_str());
+		luxOverrideResumeFLM(qPrintable(QFileInfo(flmFilename).absoluteFilePath()));
 	}
 
 	// Render the scene

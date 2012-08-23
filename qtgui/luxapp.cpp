@@ -22,7 +22,6 @@
 
 #include <boost/program_options.hpp>
 #include <boost/thread.hpp>
-#include <boost/filesystem.hpp>
 #include <vector>
 using std::vector;
 #include <string>
@@ -290,7 +289,7 @@ bool LuxGuiApp::ProcessCommandLine(void)
 			}
 
 			if (v[0] != "-")
-				m_inputFile = QString(boost::filesystem::system_complete(v[0]).string().c_str());
+				m_inputFile = QFileInfo(v[0].c_str()).absoluteFilePath();
 			else
 				m_inputFile = QString(v[0].c_str());
 		} else {
@@ -321,7 +320,7 @@ bool LuxGuiApp::ProcessCommandLine(void)
 			if ( listFile.open(QIODevice::ReadOnly) ) {
 				QTextStream lfStream(&listFile);
 				while(!lfStream.atEnd()) {
-					renderQueueEntry = QString(boost::filesystem::system_complete(lfStream.readLine().toStdString()).string().c_str());
+					renderQueueEntry = QFileInfo(lfStream.readLine()).absoluteFilePath();
 					if (!renderQueueEntry.isNull()) {
 						renderQueueList << renderQueueEntry;
 					}
