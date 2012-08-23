@@ -1444,7 +1444,7 @@ public:
 		QRegExp m("([^%]*)%([^%]*)%([^%]*)");
 		for (int pos = 0; (pos = m.indexIn(s, pos)) >= 0; pos += m.matchedLength()) {
 			// leading text in first capture subgroup
-			if (m.pos(1) >= 0) {
+			if (m.pos(1) >= 0 && m.cap(1).length() > 0) {
 				QLabel* label = getNextLabel();
 				label->setText(m.cap(1));
 				label->setToolTip("");
@@ -1453,28 +1453,29 @@ public:
 			// attribute in second capture subgroup
 			if (m.pos(2) >= 0) {
 				QLabel* label = getNextLabel();
-				const char *attr = qPrintable(m.cap(2));
+				if (m.cap(2).length() > 0) {
+					QString attr(m.cap(2));
 
-				QString statValue(getStringAttribute("renderer_statistics_formatted", attr));
-				QString statDesc;
+					QString statValue = getStringAttribute("renderer_statistics_formatted", qPrintable(attr));
+					QString statDesc;
 
-				if (statValue.length() <= maxStatLength)
-					statDesc = getAttributeDescription("renderer_statistics_formatted", attr);
-				else {
-					statValue = getStringAttribute("renderer_statistics_formatted_short", attr);
-					statDesc = getAttributeDescription("renderer_statistics_formatted_short", attr);
+					if (statValue.length() <= maxStatLength)
+						statDesc = getAttributeDescription("renderer_statistics_formatted", qPrintable(attr));
+					else {
+						statValue = getStringAttribute("renderer_statistics_formatted_short", qPrintable(attr));
+						statDesc = getAttributeDescription("renderer_statistics_formatted_short", qPrintable(attr));
+					}
+
+					label->setText(statValue);
+					label->setToolTip(statDesc);
+				} else {
+					label->setText("%");
+					label->setToolTip("");
 				}
-
-				label->setText(statValue);
-				label->setToolTip(statDesc);
-			} else {
-				QLabel* label = getNextLabel();
-				label->setText("%");
-				label->setToolTip("");
 			}
 
 			// trailing text in third capture subgroup
-			if (m.pos(3) >= 0) {
+			if (m.pos(3) >= 0 && m.cap(3).length() > 0) {
 				QLabel* label = getNextLabel();
 				label->setText(m.cap(3));
 				label->setToolTip("");
