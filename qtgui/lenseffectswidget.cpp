@@ -27,6 +27,8 @@
 
 #include "api.h"
 
+#include <cmath>
+
 LensEffectsWidget::LensEffectsWidget(QWidget *parent) : QWidget(parent), ui(new Ui::LensEffectsWidget)
 {
 	ui->setupUi(this);
@@ -103,7 +105,7 @@ void LensEffectsWidget::updateWidgetValues()
 	if (m_Vignetting_Scale >= 0.f)
 		sliderval = (int) (FLOAT_SLIDER_RES/2) + (( (FLOAT_SLIDER_RES/2) / VIGNETTING_SCALE_RANGE ) * (m_Vignetting_Scale));
 	else
-		sliderval = (int)(( FLOAT_SLIDER_RES/2 * VIGNETTING_SCALE_RANGE ) * (1.f - fabsf(m_Vignetting_Scale)));
+		sliderval = (int)(( FLOAT_SLIDER_RES/2 * VIGNETTING_SCALE_RANGE ) * (1.f - std::fabs(m_Vignetting_Scale)));
 	
 	updateWidgetValue (ui->slider_vignettingAmount, sliderval);
 	updateWidgetValue (ui->spinBox_vignettingAmount, m_Vignetting_Scale);

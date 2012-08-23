@@ -25,11 +25,7 @@
 #define TAB_ID_NETWORK 3
 #define TAB_ID_LOG     4
 
-#include <boost/regex.hpp>
-#include <boost/format.hpp>
-
-#include <sstream>
-#include <clocale>
+#include <cmath>
 
 #include <QProgressDialog>
 #include <QInputDialog>
@@ -54,7 +50,7 @@
 #include "guiutil.h"
 
 inline int Floor2Int(float val) {
-	return static_cast<int>(floorf(val));
+	return static_cast<int>(std::floor(val));
 }
 
 bool copyLog2Console = false;
@@ -1444,47 +1440,46 @@ public:
 
 	AttributeFormatter(QBoxLayout* l, int& label_count) : layout(l), count(label_count) { }
 
-	std::string operator()(boost::smatch m) {
-		// leading text in first capture subgroup
-		if (m[1].matched && m[1].str().length() > 0) {
-			QLabel* label = getNextLabel();
-			label->setText(m[1].str().c_str());
-			label->setToolTip("");
-		}
+	void operator()(QString s) {
+		QRegExp m("([^%]*)%([^%]*)%([^%]*)");
+		for (int pos = 0; (pos = m.indexIn(s, pos)) >= 0; pos += m.matchedLength()) {
+			// leading text in first capture subgroup
+			if (m.pos(1) >= 0) {
+				QLabel* label = getNextLabel();
+				label->setText(m.cap(1));
+				label->setToolTip("");
+			}
 
-		// attribute in second capture subgroup
-		if (m[2].matched) {
-			QLabel* label = getNextLabel();
-			if (m[2].str().length() > 0) {
-				std::string attr_name = m[2];
+			// attribute in second capture subgroup
+			if (m.pos(2) >= 0) {
+				QLabel* label = getNextLabel();
+				const char *attr = qPrintable(m.cap(2));
 
-				QString statValue = getStringAttribute("renderer_statistics_formatted", attr_name.c_str());
+				QString statValue(getStringAttribute("renderer_statistics_formatted", attr));
 				QString statDesc;
 
 				if (statValue.length() <= maxStatLength)
-					statDesc = getAttributeDescription("renderer_statistics_formatted", attr_name.c_str());
-				else
-				{
-					statValue = getStringAttribute("renderer_statistics_formatted_short", attr_name.c_str());
-					statDesc = getAttributeDescription("renderer_statistics_formatted_short", attr_name.c_str());
+					statDesc = getAttributeDescription("renderer_statistics_formatted", attr);
+				else {
+					statValue = getStringAttribute("renderer_statistics_formatted_short", attr);
+					statDesc = getAttributeDescription("renderer_statistics_formatted_short", attr);
 				}
 
 				label->setText(statValue);
 				label->setToolTip(statDesc);
 			} else {
+				QLabel* label = getNextLabel();
 				label->setText("%");
 				label->setToolTip("");
 			}
-		}
 
-		// trailing text in third capture subgroup
-		if (m[3].matched && m[3].str().length() > 0) {
-			QLabel* label = getNextLabel();
-			label->setText(m[3].str().c_str());
-			label->setToolTip("");
+			// trailing text in third capture subgroup
+			if (m.pos(3) >= 0) {
+				QLabel* label = getNextLabel();
+				label->setText(m.cap(3));
+				label->setToolTip("");
+			}
 		}
-
-		return "";	// don't care about the string replacement
 	}
 
 private:
@@ -1516,12 +1511,11 @@ void MainWindow::updateStatistics()
 
 	luxUpdateStatisticsWindow();
 
-	std::string st = getStringAttribute("renderer_statistics_formatted", "_recommended_string_template").toStdString();
+	QString st(getStringAttribute("renderer_statistics_formatted", "_recommended_string_template"));
 
 	int active_label_count = 0;
 	AttributeFormatter fmt(statsBoxLayout, active_label_count);
-	boost::regex attrib_expr("([^%]*)%([^%]*)%([^%]*)");
-	boost::regex_replace(st, attrib_expr, fmt, boost::match_default | boost::format_all);
+	fmt(st);
 
 	// clear remaining labels
 	QLayoutItem* item;
@@ -1539,7 +1533,7 @@ void MainWindow::updateStatistics()
 		int pixels = luxGetIntAttribute("film", "xResolution") * luxGetIntAttribute("film", "yResolution");
 		double spp = luxGetDoubleAttribute("film", "numberOfResumedSamples") / pixels;
 
-		QLabel* label = new QLabel(boost::str(boost::format("%1$0.2f %2%S/p") % luxMagnitudeReduce(spp) % luxMagnitudePrefix(spp)).c_str());
+		QLabel* label = new QLabel(QString("%1 %2S/p").arg(luxMagnitudeReduce(spp), 0, 'f', 2).arg(luxMagnitudePrefix(spp)));
 		label->setToolTip("Average number of samples per pixel");
 		statsBoxLayout->insertWidget(0, label);
 	}

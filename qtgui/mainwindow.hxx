@@ -23,8 +23,6 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <boost/thread.hpp>
-
 #include <QtGui/QMainWindow>
 #include <QtGui/QProgressBar>
 #include <QtGui/QGraphicsView>
