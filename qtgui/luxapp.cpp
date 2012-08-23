@@ -21,7 +21,6 @@
  ***************************************************************************/
 
 #include <boost/program_options.hpp>
-#include <boost/thread.hpp>
 #include <vector>
 using std::vector;
 #include <string>
@@ -37,6 +36,7 @@ using std::stringstream;
 #include <QtGui/QApplication>
 #include <QtGui/QMessageBox>
 #include <QTextStream>
+#include <QThread>
 
 #include "api.h"
 #include "error.h"
@@ -237,8 +237,8 @@ bool LuxGuiApp::ProcessCommandLine(void)
 			m_threads = vm["threads"].as < int >();
 		} else {
 			// Dade - check for the hardware concurrency available
-			m_threads = boost::thread::hardware_concurrency();
-			if (m_threads == 0)
+			m_threads = QThread::idealThreadCount();
+			if (m_threads <= 0)
 				m_threads = 1;
 		}
 

@@ -25,8 +25,6 @@
 #define TAB_ID_NETWORK 3
 #define TAB_ID_LOG     4
 
-#include <boost/bind.hpp>
-#include <boost/thread.hpp>
 #include <boost/regex.hpp>
 #include <boost/format.hpp>
 
@@ -619,7 +617,6 @@ bool MainWindow::canStopRendering()
 {
 	if (m_guiRenderState == RENDERING) {
 		// Give warning that current rendering is not stopped
-		const int acceptButton = 0;
 		const int rejectButton = 1;
 		if (customMessageBox(this, QMessageBox::Question, 
 				tr("Rendering in progress"),
@@ -754,7 +751,8 @@ void MainWindow::loadFLM(QString flmFileName)
 	m_loadTimer->start(1000);
 
 	delete m_flmloadThread;
-	m_flmloadThread = new boost::thread(boost::bind(&MainWindow::flmLoadThread, this, flmFileName));
+	m_flmloadThread = new FlmLoadThread(this, flmFileName);
+	m_flmloadThread->start();
 }
 
 void MainWindow::saveFLM()
@@ -781,7 +779,8 @@ void MainWindow::saveFLM()
 	m_saveTimer->start(1000);
 
 	delete m_flmsaveThread;
-	m_flmsaveThread = new boost::thread(boost::bind(&MainWindow::flmSaveThread, this, flmFileName));
+	m_flmsaveThread = new FlmSaveThread(this, flmFileName);
+	m_flmsaveThread->start();
 }
 
 // Render menu slots
@@ -995,10 +994,6 @@ bool MainWindow::saveAllLightGroups(const QString &outFilename, const bool &asHD
 	// Prepare filename (will hack up when outputting each light group)
 	QFileInfo filenamePath(outFilename);
 
-	// Get film resolution (only needed for tonemapped case but better off being outside loop)
-	int w = luxGetIntAttribute("film", "xResolution");
-	int h = luxGetIntAttribute("film", "yResolution");
-
 	// Now, turn one light group on at a time, update the film and save to an image
 	bool result = true;
 	for(int i=0; i<lgCount; i++) {
@@ -1120,8 +1115,10 @@ void MainWindow::batchProcess()
 	batchProgress->show();
 
 	// Execute in seperate thread
-	if(m_batchProcessThread != NULL) delete m_batchProcessThread;
-	m_batchProcessThread = new boost::thread(boost::bind(&MainWindow::batchProcessThread, this, inDir, outDir, outExtension, allLightGroups, asHDR));
+	if(m_batchProcessThread != NULL)
+		delete m_batchProcessThread;
+	m_batchProcessThread = new BatchProcessThread(this, inDir, outDir, outExtension, allLightGroups, asHDR);
+	m_batchProcessThread->start();
 }
 
 // Stop rendering session entirely - this is different from stopping it; it's not resumable
@@ -1142,15 +1139,15 @@ void MainWindow::endRenderingSession(bool abort)
 			clearLog();
 
 		if (m_flmloadThread)
-			m_flmloadThread->join();
+			m_flmloadThread->wait();
 		delete m_flmloadThread;
 		m_flmloadThread = NULL;
 		if (m_flmsaveThread)
-			m_flmsaveThread->join();
+			m_flmsaveThread->wait();
 		delete m_flmsaveThread;
 		m_flmsaveThread = NULL;
 		if (m_updateThread)
-			m_updateThread->join();
+			m_updateThread->wait();
 		delete m_updateThread;
 		m_updateThread = NULL;
 
@@ -1160,7 +1157,7 @@ void MainWindow::endRenderingSession(bool abort)
 		else
 			luxExit();
 		if (m_engineThread)
-			m_engineThread->join();
+			m_engineThread->wait();
 		delete m_engineThread;
 		m_engineThread = NULL;
 		changeRenderState (WAITING);
@@ -1255,7 +1252,8 @@ void MainWindow::applyTonemapping(bool withlayercomputation)
 			statusMessage->setText(tr("Computing Lens Effect Layer(s) & Tonemapping..."));
 			indicateActivity();
 		}
-		m_updateThread = new boost::thread(boost::bind(&MainWindow::updateThread, this));
+		m_updateThread = new UpdateThread(this);
+		m_updateThread->start();
 	}
 	else if (m_updateThread != NULL ) // Tonemapping in progress, request second event, hack for "tonemapping lag."
 	{
@@ -1263,7 +1261,7 @@ void MainWindow::applyTonemapping(bool withlayercomputation)
 	}
 }
 
-void MainWindow::engineThread(QString filename)
+void MainWindow::EngineThread::run()
 {
 	// NOTE - lordcrc - initialize rand()
 	qsrand(time(NULL));
@@ -1281,40 +1279,41 @@ void MainWindow::engineThread(QString filename)
 		return;
 
 	if(!luxStatistics("sceneIsReady")) {
-		qApp->postEvent(this, new QEvent((QEvent::Type)EVT_LUX_PARSEERROR));
+		qApp->postEvent(mainWindow, new QEvent((QEvent::Type)EVT_LUX_PARSEERROR));
 		luxWait();
 	} else {
 		luxWait();
-		qApp->postEvent(this, new QEvent((QEvent::Type)EVT_LUX_FINISHED));
+		qApp->postEvent(mainWindow, new QEvent((QEvent::Type)EVT_LUX_FINISHED));
 		LOG(LUX_INFO,LUX_NOERROR)<< tr("Rendering done.").toLatin1().data();
 	}
 }
 
-void MainWindow::updateThread()
+void MainWindow::UpdateThread::run()
 {
 	luxUpdateFramebuffer ();
 	luxUpdateLogFromNetwork();
-	qApp->postEvent(this, new QEvent((QEvent::Type)EVT_LUX_TONEMAPPED));
+	qApp->postEvent(mainWindow, new QEvent((QEvent::Type)EVT_LUX_TONEMAPPED));
 }
 
-void MainWindow::flmLoadThread(QString filename)
+void MainWindow::FlmLoadThread::run()
 {
 	luxLoadFLM(qPrintable(filename));
 
 	if (!luxStatistics("filmIsReady")) {
-		qApp->postEvent(this, new QEvent((QEvent::Type)EVT_LUX_FLMLOADERROR));
+		qApp->postEvent(mainWindow, new QEvent((QEvent::Type)EVT_LUX_FLMLOADERROR));
 	}
 }
 
-void MainWindow::flmSaveThread(QString filename)
+void MainWindow::FlmSaveThread::run()
 {
 	luxSaveFLM(qPrintable(filename));
 
-	qApp->postEvent(this, new QEvent((QEvent::Type)EVT_LUX_SAVEDFLM));
+	qApp->postEvent(mainWindow, new QEvent((QEvent::Type)EVT_LUX_SAVEDFLM));
 }
 
-void MainWindow::batchProcessThread(QString inDir, QString outDir, QString outExtension, bool allLightGroups, bool asHDR)
+void MainWindow::BatchProcessThread::run()
 {
+	QProgressDialog *batchProgress = mainWindow->batchProgress;
 	// Find 'flm' files in the input directory
 	QFileInfoList flmFiles(QDir(inDir).entryInfoList(QStringList("*.flm"),
 		QDir::Files));
@@ -1323,7 +1322,7 @@ void MainWindow::batchProcessThread(QString inDir, QString outDir, QString outEx
 	uint i = 0;
 	for(QFileInfoList::Iterator f(flmFiles.begin()); f != flmFiles.end(); ++i, ++f) {
 		// Update progress
-		qApp->postEvent(this, new BatchEvent(f->completeBaseName(), i, flmFiles.size()));
+		qApp->postEvent(mainWindow, new BatchEvent(f->completeBaseName(), i, flmFiles.size()));
 
 		// Load FLM into Lux engine
 		luxLoadFLM(qPrintable(f->absoluteFilePath()));
@@ -1339,11 +1338,11 @@ void MainWindow::batchProcessThread(QString inDir, QString outDir, QString outEx
 
 		// Save loaded FLM
 		if(allLightGroups)
-			saveAllLightGroups(outName, asHDR);
+			mainWindow->saveAllLightGroups(outName, asHDR);
 		else {
 			luxUpdateFramebuffer();
 			if(asHDR)
-				saveCurrentImageHDR(outName);
+				mainWindow->saveCurrentImageHDR(outName);
 			else
 				saveCurrentImageTonemapped(outName);
 		}
@@ -1358,7 +1357,7 @@ void MainWindow::batchProcessThread(QString inDir, QString outDir, QString outEx
 	qApp->postEvent(this, new BatchEvent("", flmFiles.size(), flmFiles.size()));
 }
 
-void MainWindow::networkAddRemoveSlavesThread(QVector<QString> slaves, ChangeSlavesAction action) {
+void MainWindow::NetworkAddRemoveSlavesThread::run() {
 	for (int i = 0; i < slaves.size(); ++i) {
 		switch (action) {
 			case AddSlaves:
@@ -1371,7 +1370,7 @@ void MainWindow::networkAddRemoveSlavesThread(QVector<QString> slaves, ChangeSla
 				break;
 		}
 	}
-	qApp->postEvent(this, new NetworkUpdateTreeEvent());
+	qApp->postEvent(mainWindow, new NetworkUpdateTreeEvent());
 }
 
 
@@ -1418,7 +1417,8 @@ void  MainWindow::loadFile(const QString &fileName)
 		m_loadTimer->start(1000);
 
 		delete m_flmloadThread;
-		m_flmloadThread = new boost::thread(boost::bind(&MainWindow::flmLoadThread, this, fileName));
+		m_flmloadThread = new FlmLoadThread(this, fileName);
+		m_flmloadThread->start();
 	} else if (fileName.endsWith(".lxq")){
 		if (!canStopRendering())
 			return;
@@ -1602,11 +1602,12 @@ void MainWindow::renderScenefile(const QString& sceneFilename, const QString& fl
 
 	// Start main render thread
 	if (m_engineThread) {
-		m_engineThread->join();
+		m_engineThread->wait();
 		delete m_engineThread;
 	}
 
-	m_engineThread = new boost::thread(boost::bind(&MainWindow::engineThread, this, sceneFilename));
+	m_engineThread = new EngineThread(this, sceneFilename);
+	m_engineThread->start();
 }
 
 void MainWindow::renderNewScenefile(const QString& sceneFilename, const QString& flmFilename)
@@ -1852,7 +1853,7 @@ bool MainWindow::event (QEvent *event)
 	if (eventtype == EVT_LUX_TONEMAPPED) {
 		// Make sure the update thread has ended so we can start another one later.
 		if (m_updateThread)
-			m_updateThread->join();
+			m_updateThread->wait();
 		delete m_updateThread;
 		m_updateThread = NULL;
 		statusMessage->setText("");
@@ -1882,7 +1883,7 @@ bool MainWindow::event (QEvent *event)
 		indicateActivity(false);
 		statusMessage->setText("Loading aborted");
 		if (m_flmloadThread) {
-			m_flmloadThread->join();
+			m_flmloadThread->wait();
 			delete m_flmloadThread;
 			m_flmloadThread = NULL;
 		}
@@ -1913,7 +1914,7 @@ bool MainWindow::event (QEvent *event)
 		// reset progressindicator
 		indicateActivity(false);
 		if (m_flmsaveThread)
-			m_flmsaveThread->join();
+			m_flmsaveThread->wait();
 		delete m_flmsaveThread;
 		m_flmsaveThread = NULL;
 		retval = TRUE;
@@ -1965,8 +1966,6 @@ void MainWindow::logEvent(LuxLogEvent *event)
 
 	QTextStream ss(new QString());
 	ss << '[' << QDateTime::currentDateTime().toString(tr("yyyy-MM-dd hh:mm:ss")) << ' ';
-	bool warning = false;
-	bool error = false;
 
 	// changing cursor does not change the visible cursor
 	QTextCursor cursor = ui->textEdit_log->textCursor();
@@ -1992,12 +1991,10 @@ void MainWindow::logEvent(LuxLogEvent *event)
 		case LUX_WARNING:
 			ss << tr("Warning: ");
 			textColor = warningColour;
-			warning = true;
 			break;
 		case LUX_ERROR:
 			ss << tr("Error: ");
 			textColor = errorColour;
-			error = true;
 			break;
 		case LUX_SEVERE:
 			ss << tr("Severe error: ");
@@ -2079,7 +2076,8 @@ void MainWindow::renderTimeout()
 		(!isMinimized () || m_guiRenderState == FINISHED)) {
 		LOG(LUX_DEBUG,LUX_NOERROR)<< tr("GUI: Updating framebuffer...").toLatin1().data();
 		statusMessage->setText("Tonemapping...");
-		m_updateThread = new boost::thread(boost::bind(&MainWindow::updateThread, this));
+		m_updateThread = new UpdateThread(this);
+		m_updateThread->start();
 	}
 }
 
@@ -2092,9 +2090,10 @@ void MainWindow::statsTimeout()
 			LOG(LUX_DEBUG,LUX_NOERROR)<< tr("GUI: Updating framebuffer...").toLatin1().data();
 			statusMessage->setText(tr("Tonemapping..."));
 			if (m_updateThread)
-				m_updateThread->join();
+				m_updateThread->wait();
 			delete m_updateThread;
-			m_updateThread = new boost::thread(boost::bind(&MainWindow::updateThread, this));
+			m_updateThread = new UpdateThread(this);
+			m_updateThread->start();
 			m_statsTimer->stop();
 			//luxPause();
 			if (m_guiRenderState == FINISHED)
@@ -2165,7 +2164,7 @@ void MainWindow::loadTimeout()
 		m_loadTimer->stop();
 
 		if(m_flmloadThread) {
-			m_flmloadThread->join();
+			m_flmloadThread->wait();
 			delete m_flmloadThread;
 			m_flmloadThread = NULL;
 		}
@@ -2399,14 +2398,15 @@ void MainWindow::saveNetworkSlaves() {
 void MainWindow::addRemoveSlaves(QVector<QString> slaves, ChangeSlavesAction action) {
 
 	if (m_networkAddRemoveSlavesThread != NULL) {
-		m_networkAddRemoveSlavesThread->join();
+		m_networkAddRemoveSlavesThread->wait();
 		delete m_networkAddRemoveSlavesThread;
 	}
 
 	ui->button_addServer->setEnabled(false);
 	ui->button_removeServer->setEnabled(false);
 
-	m_networkAddRemoveSlavesThread = new boost::thread(boost::bind(&MainWindow::networkAddRemoveSlavesThread, this, slaves, action));
+	m_networkAddRemoveSlavesThread = new NetworkAddRemoveSlavesThread(this, slaves, action);
+	m_networkAddRemoveSlavesThread->start();
 }
 
 void MainWindow::AddNetworkSlaves(const QVector<QString> &slaves) {

@@ -59,6 +59,7 @@
 #include <QtGui/QTabBar>
 #include <QtGui/QProgressDialog>
 #include <QtGui/QStandardItemModel>
+#include <QThread>
 
 #include "api.h"
 #include "renderview.hxx"
@@ -322,7 +323,64 @@ private:
 	
 	QTimer *m_renderTimer, *m_statsTimer, *m_loadTimer, *m_saveTimer, *m_netTimer, *m_blinkTimer;
 	
-	boost::thread *m_engineThread, *m_updateThread, *m_flmloadThread, *m_flmsaveThread, *m_batchProcessThread, *m_networkAddRemoveSlavesThread;
+	class FlmLoadThread : public QThread {
+	public:
+		FlmLoadThread(MainWindow *mw, const QString &fn) :
+			mainWindow(mw), filename(fn) { }
+		virtual ~FlmLoadThread() { }
+		virtual void run();
+		MainWindow *mainWindow;
+		QString filename;
+	} *m_flmloadThread;
+	class FlmSaveThread : public QThread {
+	public:
+		FlmSaveThread(MainWindow *mw, const QString &fn) :
+			mainWindow(mw), filename(fn) { }
+		virtual ~FlmSaveThread() { }
+		virtual void run();
+		MainWindow *mainWindow;
+		QString filename;
+	} *m_flmsaveThread;
+	class BatchProcessThread : public QThread {
+	public:
+		BatchProcessThread(MainWindow *mw, const QString &id,
+			const QString &od, const QString &oe, bool alg, bool ah) :
+			mainWindow(mw), inDir(id), outDir(od), outExtension(oe),
+			allLightGroups(alg), asHDR(ah) { }
+		virtual ~BatchProcessThread() { }
+		virtual void run();
+		MainWindow *mainWindow;
+		QString inDir, outDir, outExtension;
+		bool allLightGroups, asHDR;
+	} *m_batchProcessThread;
+	class UpdateThread : public QThread {
+	public:
+		UpdateThread(MainWindow *mw) : mainWindow(mw) { }
+		virtual ~UpdateThread() { }
+		virtual void run();
+		MainWindow *mainWindow;
+	} *m_updateThread;
+	class EngineThread : public QThread {
+	public:
+		EngineThread(MainWindow *mw, const QString &fn) :
+			mainWindow(mw), filename(fn) { }
+		virtual ~EngineThread() { }
+		virtual void run();
+		MainWindow *mainWindow;
+		QString filename;
+	} *m_engineThread;
+	enum ChangeSlavesAction { AddSlaves, RemoveSlaves };
+	class NetworkAddRemoveSlavesThread : public QThread {
+	public:
+		NetworkAddRemoveSlavesThread(MainWindow *mw,
+			const QVector<QString> &s, ChangeSlavesAction a) :
+			mainWindow(mw), slaves(s), action(a) { }
+		virtual ~NetworkAddRemoveSlavesThread() { }
+		virtual void run();
+		MainWindow *mainWindow;
+		QVector<QString> slaves;
+		ChangeSlavesAction action;
+	} *m_networkAddRemoveSlavesThread;
 
 	bool openExrHalfFloats, openExrDepthBuffer;
 	int openExrCompressionType;
@@ -338,17 +396,9 @@ private:
 	static void LuxGuiErrorHandler(int code, int severity, const char *msg);
 	static QWidget *instance;
 	
-	void engineThread(QString filename);
-	void updateThread();
-	void flmLoadThread(QString filename);
-	void flmSaveThread(QString filename);
-	void batchProcessThread(QString inDir, QString outDir, QString outExtension, bool allLightGroups, bool asHDR);
 
 	enum { MaxRecentServers = 20 };
 	QStringMRUListModel *m_recentServersModel;
-
-	enum ChangeSlavesAction { AddSlaves, RemoveSlaves };
-	void networkAddRemoveSlavesThread(QVector<QString> slaves, ChangeSlavesAction action);
 
 	void addRemoveSlaves(QVector<QString> slaves, ChangeSlavesAction action);
 
