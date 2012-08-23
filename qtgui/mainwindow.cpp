@@ -1320,7 +1320,7 @@ void MainWindow::batchProcessThread(QString inDir, QString outDir, QString outEx
 		QDir::Files));
 
 	// Process the 'flm' files
-	u_int i = 0;
+	uint i = 0;
 	for(QFileInfoList::Iterator f(flmFiles.begin()); f != flmFiles.end(); ++i, ++f) {
 		// Update progress
 		qApp->postEvent(this, new BatchEvent(f->completeBaseName(), i, flmFiles.size()));
