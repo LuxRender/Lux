@@ -106,6 +106,7 @@ void LuxGuiApp::init(void) {
 #endif
 		mainwin->SetRenderThreads(m_threads);
 		mainwin->setVerbosity(m_verbosity);
+		
 		if (!m_inputFile.isEmpty())
 			mainwin->renderScenefile(m_inputFile);
 
@@ -249,18 +250,15 @@ bool LuxGuiApp::ProcessCommandLine(void)
 		}
 
 		if (vm.count("verbose")) {
-			luxErrorFilter(LUX_DEBUG);
-			m_verbosity=0;
+			m_verbosity = 1;
 		}
 
 		if (vm.count("quiet")) {
-			luxErrorFilter(LUX_WARNING);
-			m_verbosity=1;
+			m_verbosity = 2 ;
 		}
 
 		if (vm.count("very-quiet")) {
-			luxErrorFilter(LUX_ERROR);
-			m_verbosity=2;
+			m_verbosity = 3;
 		}
 
 		if (vm.count("fixedseed"))

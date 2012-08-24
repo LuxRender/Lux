@@ -1137,22 +1137,30 @@
           </item>
           <item>
            <widget class="QComboBox" name="comboBox_verbosity">
+            <property name="currentIndex">
+             <number>0</number>
+            </property>
             <property name="maxVisibleItems">
-             <number>3</number>
+             <number>4</number>
             </property>
             <item>
              <property name="text">
-              <string>verbose</string>
+              <string>Info</string>
              </property>
             </item>
             <item>
              <property name="text">
-              <string>quiet</string>
+              <string>Debug</string>
              </property>
             </item>
             <item>
              <property name="text">
-              <string>very quiet</string>
+              <string>Warning</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Error</string>
              </property>
             </item>
            </widget>

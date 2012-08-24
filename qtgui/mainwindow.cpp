@@ -2759,19 +2759,24 @@ void MainWindow::setVerbosity(int choice)
 	ui->comboBox_verbosity->setCurrentIndex(choice);
 	switch (choice) {
 		case 0:
-			//verbose
-			lux::luxLogFilter=LUX_DEBUG;
-			statusMessage->setText(tr("Log level set to verbose"));
+			//default
+			lux::luxLogFilter=LUX_INFO;
+			statusMessage->setText(tr("Log level set to Default"));
 			break;
 		case 1:
-			//quiet
-			lux::luxLogFilter=LUX_WARNING;
-			statusMessage->setText(tr("Log level set to quiet"));
+			//verbose
+			lux::luxLogFilter=LUX_DEBUG;
+			statusMessage->setText(tr("Log level set to Verbose"));
 			break;
 		case 2:
+			//quiet
+			lux::luxLogFilter=LUX_WARNING;
+			statusMessage->setText(tr("Log level set to Quiet"));
+			break;
+		case 3:
 			//very quiet
 			lux::luxLogFilter=LUX_ERROR;
-			statusMessage->setText(tr("Log level set to very quiet"));
+			statusMessage->setText(tr("Log level set to Very Quiet"));
 			break;
 		default:
 			break;
