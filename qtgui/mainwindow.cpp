@@ -282,6 +282,9 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	connect(ui->checkBox_loopQueue, SIGNAL(stateChanged(int)), this, SLOT(loopQueueChanged(int)));
 	connect(ui->checkBox_overrideWriteFlm, SIGNAL(toggled(bool)), this, SLOT(overrideWriteFlmChanged(bool)));
 	ui->table_queue->setColumnHidden(2, true);
+	
+	// Log tab
+	connect(ui->comboBox_verbosity, SIGNAL(currentIndexChanged(int)), this, SLOT(setVerbosity(int)));
 
 	// Buttons
 	connect(ui->button_imagingApply, SIGNAL(clicked()), this, SLOT(applyTonemapping()));
@@ -2751,4 +2754,27 @@ void MainWindow::ShowSidePanel(bool checked)
 	ui->outputTabs->setVisible( checked );
 }
 
+void MainWindow::setVerbosity(int choice)
+{
+	ui->comboBox_verbosity->setCurrentIndex(choice);
+	switch (choice) {
+		case 0:
+			//verbose
+			lux::luxLogFilter=LUX_DEBUG;
+			statusMessage->setText(tr("Log level set to verbose"));
+			break;
+		case 1:
+			//quiet
+			lux::luxLogFilter=LUX_WARNING;
+			statusMessage->setText(tr("Log level set to quiet"));
+			break;
+		case 2:
+			//very quiet
+			lux::luxLogFilter=LUX_ERROR;
+			statusMessage->setText(tr("Log level set to very quiet"));
+			break;
+		default:
+			break;
+	}
+}
 

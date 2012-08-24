@@ -270,7 +270,7 @@ protected:
 
 private:
 	
-	Ui::MainWindow *thorizontalLayout_5;
+	Ui::MainWindow *thorizontalLayout_5, *thorizontalLayout_log;
 	
 	QLabel *resinfoLabel;
 	QLabel *zoominfoLabel; 
@@ -435,6 +435,7 @@ public slots:
 	void applyTonemapping (bool withlayercomputation = false);
 	void resetToneMapping ();
 	void indicateActivity (bool active = true);
+	void setVerbosity(int choice);
 
 private slots:
 

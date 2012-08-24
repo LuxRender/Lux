@@ -1113,12 +1113,64 @@
         <string>Log</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_9">
-        <item row="0" column="0">
+        <item row="6" column="0">
          <widget class="QTextEdit" name="textEdit_log">
           <property name="readOnly">
            <bool>true</bool>
           </property>
          </widget>
+        </item>
+        <item row="1" column="0">
+         <layout class="QHBoxLayout" name="horizontalLayout_log">
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="QLabel" name="label_verbosity">
+            <property name="text">
+             <string>Log Level:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="comboBox_verbosity">
+            <property name="maxVisibleItems">
+             <number>3</number>
+            </property>
+            <item>
+             <property name="text">
+              <string>verbose</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>quiet</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>very quiet</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_3">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
         </item>
        </layout>
       </widget>

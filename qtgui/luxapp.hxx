@@ -44,6 +44,7 @@ private:
 	int &m_argc;
 	char **m_argv;
 	int m_threads;
+	int m_verbosity;
 	bool m_copyLog2Console;
 	bool ProcessCommandLine (void);
 	QString m_inputFile;
