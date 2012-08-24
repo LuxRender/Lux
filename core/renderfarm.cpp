@@ -356,29 +356,47 @@ RenderFarm::CompiledCommand& RenderFarm::CompiledCommands::add(const std::string
 	return commands.back();
 }
 
-RenderFarm::RenderFarm() : serverUpdateInterval(3 * 60), filmUpdateThread(NULL),
+RenderFarm::RenderFarm() : serverUpdateInterval(3 * 60), filmUpdateThread(NULL), flushThread(NULL),
 		netBufferComplete(false), isLittleEndian(osIsLittleEndian())
 {
 }
 
 
 // Dade - used to periodically update the film
-void RenderFarm::startFilmUpdater(Scene *scene) {
-	if (filmUpdateThread == NULL) {
-		filmUpdateThread = new FilmUpdaterThread(this, scene);
-		filmUpdateThread->thread = new boost::thread(boost::bind(
-			FilmUpdaterThread::updateFilm, filmUpdateThread));
-	} else {
-		LOG(LUX_ERROR,LUX_ILLSTATE)<<"RenderFarm::startFilmUpdater() called but update thread already started.";
-	}
+void RenderFarm::start(Scene *scene) {
+	boost::mutex::scoped_lock lock(serverListMutex);
+
+	if (serverInfoList.empty() || !scene)
+		return;
+
+	// already started
+	if (filmUpdateThread)
+		return;
+
+	filmUpdateThread = new FilmUpdaterThread(this, scene);
+	filmUpdateThread->thread = new boost::thread(boost::bind(
+		FilmUpdaterThread::updateFilm, filmUpdateThread));
 }
 
-void RenderFarm::stopFilmUpdater() {
-	if (filmUpdateThread != NULL) {
+void RenderFarm::stop() {
+	boost::mutex::scoped_lock lock(serverListMutex);
+
+	if (serverInfoList.empty())
+		return;
+
+	if (filmUpdateThread) {
 		filmUpdateThread->interrupt();
 		delete filmUpdateThread;
 		filmUpdateThread = NULL;
 	}
+
+	if (flushThread) {
+		flushThread->interrupt();
+		flushThread->join();
+		delete flushThread;
+		flushThread = NULL;
+	}
+
 	// Dade - stopFilmUpdater() is called multiple times at the moment (for instance
 	// haltspp + luxconsole)
 	/*else {
@@ -938,12 +956,23 @@ void RenderFarm::updateLog() {
 	reconnectFailed();
 }
 
+// to catch the interrupted exception
+static void flush_thread_func(RenderFarm *renderFarm) {
+	try {
+		renderFarm->flush();
+	} catch (boost::thread_interrupted&) {
+	}
+}
+
 void RenderFarm::send(const string &command) {
 	compiledCommands.add(command);
 
 	// Check if the scene is complete
 	if (command == "luxWorldEnd") {
 		netBufferComplete = true;
+		// perform async flush
+		//flushThread = new boost::thread(boost::bind(flush_thread_func, this));
+		// synch flush
 		flush();
 	}
 }
@@ -1105,7 +1134,11 @@ void RenderFarm::send(const string &command, const string &name, float a, float 
 	}
 }
 
-u_int RenderFarm::getServersStatus(RenderingServerInfo *info, u_int maxInfoCount) {
+u_int RenderFarm::getServerCount() const {
+	return serverInfoList.size();
+}
+
+u_int RenderFarm::getServersStatus(RenderingServerInfo *info, u_int maxInfoCount) const {
 	ptime now = second_clock::local_time();
 	for (size_t i = 0; i < min<size_t>(serverInfoList.size(), maxInfoCount); ++i) {
 		info[i].serverIndex = i;

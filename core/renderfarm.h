@@ -105,12 +105,12 @@ public:
 	//!< Sends immediately all commands in the buffer to the servers
 	void flush();
 
-	u_int getServerCount() { return serverInfoList.size(); }
-	u_int getServersStatus(RenderingServerInfo *info, u_int maxInfoCount);
+	u_int getServerCount() const;
+	u_int getServersStatus(RenderingServerInfo *info, u_int maxInfoCount) const;
 
-	// Dade - used to periodically update the film
-	void startFilmUpdater(Scene *scene);
-	void stopFilmUpdater();
+	// Start the rendering server (including the film update thread)
+	void start(Scene *scene);
+	void stop();
 	//!<Gets the films from the network, and merge them to the film given in parameter
 	void updateFilm(Scene *scene);
 
@@ -248,11 +248,14 @@ private:
 	void reconnectFailed();
 
 	// Any operation on servers must be synchronized via this mutex
-	boost::mutex serverListMutex;
+	mutable boost::mutex serverListMutex;
 	std::vector<ExtRenderingServerInfo> serverInfoList;
 
 	// Dade - film update information
 	FilmUpdaterThread *filmUpdateThread;
+
+	// for async flushing
+	boost::thread *flushThread;
 
 	CompiledCommands compiledCommands;
 	CompiledFiles compiledFiles;
