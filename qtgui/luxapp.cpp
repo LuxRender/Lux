@@ -44,7 +44,7 @@ using std::stringstream;
 #include "mainwindow.hxx"
 #include "luxapp.hxx"
 
-#if defined(WIN32) && !defined(__CYGWIN__)
+#if defined(WIN32) && !defined(__CYGWIN__) && (_M_IX86_FP >= 2)
 // for stderr redirection
 #include <windows.h>
 #include <stdio.h>
@@ -64,19 +64,8 @@ void AttachStderr()
 
 namespace po = boost::program_options;
 
-LuxGuiApp::LuxGuiApp(int &argc, char **argv) : QApplication(argc, argv), m_argc(argc)
+LuxGuiApp::LuxGuiApp(int &argc, char **argv) : QApplication(argc, argv), mainwin(NULL)
 {
-	m_argv = argv;
-	mainwin = NULL;
-}
-
-LuxGuiApp::~LuxGuiApp()
-{
-	if (mainwin != NULL)
-		delete mainwin;
-}
-
-void LuxGuiApp::init(void) {
 	// Dade - initialize rand() number generator
 	srand(time(NULL));
 
@@ -85,72 +74,79 @@ void LuxGuiApp::init(void) {
 	
 	luxInit();
 
-	if (ProcessCommandLine()) {
+	if (ProcessCommandLine(argc, argv))
+		init();
+}
 
-// AttachConsole is XP only, restrict to SSE2+
+LuxGuiApp::~LuxGuiApp()
+{
+	delete mainwin;
+}
+
+void LuxGuiApp::init(void)
+{
+	// AttachConsole is XP only, restrict to SSE2+
 #if defined(WIN32) && !defined(__CYGWIN__) && (_M_IX86_FP >= 2)
-		// attach to parent process' console if it exists, otherwise ignore
-		if (m_copyLog2Console) {
-			if (AttachConsole(ATTACH_PARENT_PROCESS)) {
-				AttachStderr();
-				std::cerr << "\nRedirecting log to console...\n";
-			}
-		}
+	// attach to parent process' console if it exists, otherwise ignore
+	if (m_copyLog2Console && AttachConsole(ATTACH_PARENT_PROCESS)) {
+		AttachStderr();
+		std::cerr << "\nRedirecting log to console...\n";
+	}
 #endif
 
-		mainwin = new MainWindow(0,m_copyLog2Console);
-		mainwin->show();
+	mainwin = new MainWindow(0, m_copyLog2Console);
+	mainwin->show();
 #if defined(__APPLE__)
-		mainwin->raise();
-		mainwin->activateWindow();
+	mainwin->raise();
+	mainwin->activateWindow();
 #endif
-		mainwin->SetRenderThreads(m_threads);
-		mainwin->setVerbosity(m_verbosity);
-		
-		if (!m_inputFile.isEmpty())
-			mainwin->renderScenefile(m_inputFile);
+	mainwin->SetRenderThreads(m_threads);
+	mainwin->setVerbosity(m_verbosity);
 
-		// Add files to the render queue
-		if (renderQueueList.count()) {
-			QString renderQueueEntry;
-			foreach( renderQueueEntry, renderQueueList ) {
-				mainwin->addFileToRenderQueue(renderQueueEntry);
-			}
-			mainwin->RenderNextFileInQueue();
-		}
+	if (!m_inputFile.isEmpty())
+		mainwin->renderScenefile(m_inputFile);
 
-		// Add slaves
-		if (!serverList.empty()) {
-			mainwin->AddNetworkSlaves(serverList.toVector());
+	// Add files to the render queue
+	if (renderQueueList.count()) {
+		QString renderQueueEntry;
+		foreach( renderQueueEntry, renderQueueList ) {
+			mainwin->addFileToRenderQueue(renderQueueEntry);
 		}
-	} else {
-	}	
+		mainwin->RenderNextFileInQueue();
+	}
+
+	// Add slaves
+	if (!serverList.empty()) {
+		mainwin->AddNetworkSlaves(serverList.toVector());
+	}
 }
 
 #if defined(__APPLE__) // Doubleclick or dragging .lxs in OSX Finder to LuxRender
 bool LuxGuiApp::event(QEvent *event)
 {
 	switch (event->type()) {
-        case QEvent::FileOpen:
-			if (m_inputFile.isEmpty()){
-				mainwin->loadFile(static_cast<QFileOpenEvent *>(event)->file());
-				return true;
-			}
-        default:
-            break;
-    }
+	case QEvent::FileOpen:
+		if (m_inputFile.isEmpty()) {
+			mainwin->loadFile(static_cast<QFileOpenEvent *>(event)->file());
+			return true;
+		}
+		break;
+	default:
+		break;
+	}
 	return QApplication::event(event);
 }
 #endif
 
-void LuxGuiApp::InfoDialogBox(const string &msg, const string &caption = "LuxRender") {
+void LuxGuiApp::InfoDialogBox(const string &msg, const string &caption = "LuxRender")
+{
 	QMessageBox msgBox;
 	msgBox.setIcon(QMessageBox::Information);
 	msgBox.setText(msg.c_str());
 	msgBox.exec();
 }
 
-bool LuxGuiApp::ProcessCommandLine(void)
+bool LuxGuiApp::ProcessCommandLine(int &argc, char **argv)
 {
 	try {
 		const int line_length = 150;
@@ -204,7 +200,7 @@ bool LuxGuiApp::ProcessCommandLine(void)
 
 		po::variables_map vm;
 		
-		store(po::command_line_parser(m_argc, m_argv).
+		store(po::command_line_parser(argc, argv).
 			options(cmdline_options).positional(p).run(), vm);
 
 		std::string configFile("luxconsole.cfg");
@@ -277,7 +273,7 @@ bool LuxGuiApp::ProcessCommandLine(void)
 
 			vector<string> names = vm["useserver"].as<vector<string> >();
 
-			for(vector<string>::iterator i = names.begin(); i < names.end(); i++) {
+			for(vector<string>::iterator i = names.begin(); i != names.end(); ++i) {
 				serverList << (*i).c_str();
 			}
 

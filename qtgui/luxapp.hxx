@@ -41,12 +41,10 @@ public:
 	void InfoDialogBox(const std::string &msg, const std::string &caption);
 
 private:
-	int &m_argc;
-	char **m_argv;
 	int m_threads;
 	int m_verbosity;
 	bool m_copyLog2Console;
-	bool ProcessCommandLine (void);
+	bool ProcessCommandLine (int &argc, char **argv);
 	QString m_inputFile;
 	// This is the list of servers provided using the --useserver option
 	QStringList serverList;
