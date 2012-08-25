@@ -147,7 +147,7 @@ MetropolisSampler::MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
 	if(useCooldown) {
 		pLarge = 0.5f;
 		cooldownTime = Ceil2UInt(150.f * fabsf(pLargeTarget - 0.5f));
-		LOG(LUX_INFO, LUX_NOERROR) << "Metropolis cooldown time will be " << cooldownTime << " seconds";
+		LOG(LUX_INFO, LUX_NOERROR) << "Metropolis cooldown during first " << (xPixelEnd - xPixelStart) * (yPixelEnd - yPixelStart) << " samples";
 	} else {
 		pLarge = pLargeTarget;
 		cooldownTime = 0;
@@ -352,7 +352,7 @@ void MetropolisSampler::AddSample(const Sample &sample)
 		++(data->consecRejects);
 	}
 	newContributions.clear();
-	if (useCooldown && luxGetDoubleAttribute("renderer_statistics", "elapsedTime") >= cooldownTime) {
+	if (useCooldown && data->sampleCount >= (xPixelEnd - xPixelStart) * (yPixelEnd - yPixelStart)) {
 		pLarge = pLargeTarget;
 		boost::mutex::scoped_lock cooldownLock(metropolisSamplerMutex);
 		if (useCooldown) {
