@@ -91,6 +91,7 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, u_int filtRes
 	write_PNG = cw_PNG;
 	AddBoolAttribute(*this, "write_PNG", "Write PNG image", write_PNG, &FlexImageFilm::write_PNG, Queryable::ReadWriteAccess);
 	write_PNG_16bit = cw_PNG_16bit;
+	AddBoolAttribute(*this, "write_PNG_16bit", "Write PNG 16bit", write_PNG_16bit, &FlexImageFilm::write_PNG_16bit, Queryable::ReadWriteAccess);
 	write_PNG_gamutclamp = cw_PNG_gamutclamp;
 	write_PNG_ZBuf = cw_PNG_ZBuf;
 	write_PNG_ZBuf_normalizationtype = cw_PNG_ZBuf_normalizationtype;
