@@ -91,9 +91,9 @@ void AdvancedInfoWidget::updateWidgetValues()
 		luxGetBoolAttribute("film", "write_EXR") ? tr("Yes") : tr("No")));
 	info.append("</tr>");
 	info.append("<tr>");
-	info.append(QString("<td>Write PNG:</td><td>%1, 16bit: %2</td>").arg(
+	info.append(QString("<td>Write PNG:</td><td>%1, %2</td>").arg(
 		luxGetBoolAttribute("film", "write_PNG") ? tr("Yes") : tr("No")).arg(
-		luxGetBoolAttribute("film", "write_PNG_16bit") ? tr("Yes") : tr("No")));
+		luxGetBoolAttribute("film", "write_PNG_16bit") ? tr("16bit") : tr("8bit")));
 	info.append("</tr>");
 	info.append("<tr>");
 	info.append(QString("<td>Write FLM:</td><td>%1</td>").arg(
