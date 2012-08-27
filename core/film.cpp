@@ -940,7 +940,7 @@ std::vector<Film::OutlierAccel>& Film::GetOutlierAccelRow(u_int oY, u_int tileIn
 	return outliers[oY];
 }
 
-void Film::RejectTileOutliers(const Contribution* const contribs, u_int num_contribs, u_int tileIndex, int yTilePixelStart, int yTilePixelEnd)
+void Film::RejectTileOutliers(const Contribution &contrib, u_int tileIndex, int yTilePixelStart, int yTilePixelEnd)
 {
 	// outlier rejection
 	const float fnormTileStart = (yTilePixelStart + filter->yWidth) * outlierInvCellHeight;
@@ -949,22 +949,19 @@ void Film::RejectTileOutliers(const Contribution* const contribs, u_int num_cont
 	const u_int tileStart = static_cast<u_int>(max(0, min(Floor2Int(fnormTileStart), static_cast<int>(outliers.size() - 1))));
 	const u_int tileEnd =   static_cast<u_int>(max(0, min(Floor2Int(fnormTileEnd),   static_cast<int>(outliers.size() - 1))));
 
-	for (u_int ci = 0; ci < num_contribs; ++ci) {
-		const Contribution &contrib(contribs[ci]);
+	// filter-normalized pixel coordinates
+	const float fnormX = (contrib.imageX - 0.5f + filter->xWidth) * outlierInvCellWidth;
+	const float fnormY = (contrib.imageY - 0.5f + filter->yWidth) * outlierInvCellHeight;
 
-		// filter-normalized pixel coordinates
-		const float fnormX = (contrib.imageX - 0.5f + filter->xWidth) * outlierInvCellWidth;
-		const float fnormY = (contrib.imageY - 0.5f + filter->yWidth) * outlierInvCellHeight;
+	OutlierData sd(fnormX, fnormY, contrib.color);
 
-		OutlierData sd(fnormX, fnormY, contrib.color);
+	// perform lookup based on original position
+	// constrain to tile only if we need to add the outlier
+	const int oY = max(0, min(Floor2Int(fnormY), static_cast<int>(outliers.size() - 1)));
 
-		// perform lookup based on original position
-		// constrain to tile only if we need to add the outlier
-		const int oY = max(0, min(Floor2Int(fnormY), static_cast<int>(outliers.size() - 1)));
-		const int oX = max(0, min(Floor2Int(fnormX), static_cast<int>(outliers[0].size() - 1)));
-		
-		std::vector<OutlierAccel> &outlierRow = GetOutlierAccelRow(oY, tileIndex, tileStart, tileEnd);
-		OutlierAccel &outlierAccel = outlierRow[oX];
+	std::vector<OutlierAccel> &outlierRow = GetOutlierAccelRow(oY, tileIndex, tileStart, tileEnd);
+	const int oX = max(0, min(Floor2Int(fnormX), static_cast<int>(outlierRow.size() - 1)));
+	OutlierAccel &outlierAccel = outlierRow[oX];
 
 	NearSetPointProcess<OutlierData::Point_t> proc(outlierRejection_k);
 	vector<ClosePoint<OutlierData::Point_t> > closest(outlierRejection_k);
@@ -975,42 +972,41 @@ void Film::RejectTileOutliers(const Contribution* const contribs, u_int num_cont
 	outlierAccel.Lookup(sd.p, proc, maxDist);
 
 	float kmeandist = 0.f;
-	for (u_int i = 0; i < proc.foundPoints; i++)
+	for (u_int i = 0; i < proc.foundPoints; ++i)
 		kmeandist += proc.points[i].distance;
 	
 	//kmeandist /= proc.foundPoints;
 		
-		if (proc.foundPoints < 1 || kmeandist > proc.foundPoints) { // kmeandist > 1.f
-			// add outlier and return
-			// include surrounding cells so we don't have to
-			// traverse multiple cells for each lookup
-			const u_int oLeft = static_cast<u_int>(max(0, oX - 1));
-			const u_int oRight = static_cast<u_int>(min(static_cast<int>(outliers[0].size() - 1), oX + 1));
-			const u_int oTop = static_cast<u_int>(max(0, oY - 1));
-			const u_int oBottom = static_cast<u_int>(min(static_cast<int>(outliers.size() - 1), oY + 1));
+	if (proc.foundPoints < 1 || kmeandist > proc.foundPoints) { // kmeandist > 1.f
+		// add outlier and return
+		// include surrounding cells so we don't have to
+		// traverse multiple cells for each lookup
+		const u_int oLeft = static_cast<u_int>(max(0, oX - 1));
+		const u_int oRight = static_cast<u_int>(min(static_cast<int>(outliers[0].size() - 1), oX + 1));
+		const u_int oTop = static_cast<u_int>(max(0, oY - 1));
+		const u_int oBottom = static_cast<u_int>(min(static_cast<int>(outliers.size() - 1), oY + 1));
 
-			if (oTop < tileStart || oBottom >= tileEnd) {
-				// outlier spans tile borders
-				for (u_int i = oTop; i <= oBottom; ++i) {
-					std::vector<OutlierAccel> &row = GetOutlierAccelRow(oY, tileIndex, tileStart, tileEnd);
-					for (u_int j = oLeft; j <= oRight; ++j) {
-						row[j].AddNode(sd.p);
-					}
-				}
-			} else {
-				// we're all inside one tile
-				for (u_int i = oTop; i <= oBottom; ++i) {
-					std::vector<OutlierAccel> &row = outliers[oY];
-					for (u_int j = oLeft; j <= oRight; ++j) {
-						row[j].AddNode(sd.p);
-					}
+		if (oTop < tileStart || oBottom >= tileEnd) {
+			// outlier spans tile borders
+			for (u_int i = oTop; i <= oBottom; ++i) {
+				std::vector<OutlierAccel> &row = GetOutlierAccelRow(i, tileIndex, tileStart, tileEnd);
+				for (u_int j = oLeft; j <= oRight; ++j) {
+					row[j].AddNode(sd.p);
 				}
 			}
-			// outlier, reject
-			contrib.variance = -1.f;
+		} else {
+			// we're all inside one tile
+			for (u_int i = oTop; i <= oBottom; ++i) {
+				std::vector<OutlierAccel> &row = outliers[i];
+				for (u_int j = oLeft; j <= oRight; ++j) {
+					row[j].AddNode(sd.p);
+				}
+			}
 		}
-		// not an outlier, splat
+		// outlier, reject
+		contrib.variance = -1.f;
 	}
+	// not an outlier, splat
 }
 
 u_int Film::GetTileCount() const {
@@ -1045,28 +1041,11 @@ void Film::AddTileSamples(const Contribution* const contribs, u_int num_contribs
 	int yTilePixelStart, yTilePixelEnd;
 	GetTileExtent(tileIndex, &xTilePixelStart, &xTilePixelEnd, &yTilePixelStart, &yTilePixelEnd);
 
-	if (outlierRejection_k > 0) {
-		// reject outliers by setting their weight (variance field) to -1
-		RejectTileOutliers(contribs, num_contribs, tileIndex, yTilePixelStart, yTilePixelEnd);
-	}
-
-
 	for (u_int ci = 0; ci < num_contribs; ci++) {
 		const Contribution &contrib(contribs[ci]);
 
 		XYZColor xyz = contrib.color;
 		const float alpha = contrib.alpha;
-		const float weight = contrib.variance;
-
-		// negative weight means sample was rejected
-		// so do this test first
-		if (!(weight >= 0.f) || isinf(weight)) {
-			if(debug_mode && (weight >= 0.f)) {
-				LOG(LUX_WARNING,LUX_LIMIT) << "Out of bound  weight in Film::AddSample: "
-				   << weight << ", sample discarded";
-			}
-			continue;
-		}
 
 		// Issue warning if unexpected radiance value returned
 		if (!(xyz.Y() >= 0.f) || isinf(xyz.Y())) {
@@ -1085,6 +1064,22 @@ void Film::AddTileSamples(const Contribution* const contribs, u_int num_contribs
 			continue;
 		}
 	
+		if (outlierRejection_k > 0) {
+			// reject outliers by setting their weight (variance field) to -1
+			RejectTileOutliers(contrib, tileIndex, yTilePixelStart, yTilePixelEnd);
+		}
+
+		const float weight = contrib.variance;
+
+		// negative weight means sample was rejected
+		if (!(weight >= 0.f) || isinf(weight)) {
+			if(debug_mode && (weight >= 0.f)) {
+				LOG(LUX_WARNING,LUX_LIMIT) << "Out of bound  weight in Film::AddSample: "
+				   << weight << ", sample discarded";
+			}
+			continue;
+		}
+
 		if (premultiplyAlpha)
 			xyz *= alpha;
 
