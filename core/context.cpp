@@ -439,7 +439,7 @@ void Context::TransformBegin() {
 void Context::TransformEnd() {
 	VERIFY_INITIALIZED("TransformEnd");
 	renderFarm->send("luxTransformEnd");
-	if (!pushedTransforms.size()) {
+	if (!(pushedTransforms.size() > pushedGraphicsStates.size())) {
 		LOG(LUX_ERROR,LUX_ILLSTATE)<< "Unmatched luxTransformEnd() encountered. Ignoring it.";
 		return;
 	}
