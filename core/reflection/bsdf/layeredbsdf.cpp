@@ -40,7 +40,7 @@ LayeredBSDF::LayeredBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
 {
 	nBSDFs = 0;
 	maxNumBounces = 1; // Note this gets changed when layers are added
-	probSampleSpec = .9f;
+	probSampleSpec = .5f;
 }
 
 bool LayeredBSDF::SampleF(const SpectrumWavelengths &sw, const Vector &known, Vector *sampled,
@@ -232,7 +232,7 @@ SWCSpectrum LayeredBSDF::F(const SpectrumWavelengths &sw, const Vector &woW,
 				int curLayer = eyeLayer[i];
 				// First calculate the total L for the path
 				
-				SWCSpectrum Lpath = bsdfs[curLayer]->F(sw, eyeVector[i], lightVector[j], true, BxDFType(BSDF_ALL)); // calc how much goes between them
+				SWCSpectrum Lpath = bsdfs[curLayer]->F(sw, eyeVector[i], lightVector[j], true, BxDFType(BSDF_ALL)) / AbsDot(eyeVector[i], bsdfs[curLayer]->dgShading.nn); // calc how much goes between them
 				// NOTE: used reverse==True to get F=f*|wo.ns| = f * cos(theta_in)
 			
 				Lpath = eyeL[i] * Lpath * lightL[j];
@@ -243,36 +243,40 @@ SWCSpectrum LayeredBSDF::F(const SpectrumWavelengths &sw, const Vector &woW,
 
 					// Now calc the probability of sampling this path (surely there must be a better way!!!)
 					float totProb = 0.f;
+					float pathProb = 1.f;
 
 					// construct the list of fwd/back probs
-					float* fwdProb = new float[i + j + 3];
-					float* backProb = new float[i + j + 3];
-					bool* spec = new bool[i + j + 3];
-					for (size_t k = 0; k <= j; ++k) {
-						fwdProb[k] = lightPdfForward[k];
-						backProb[k] = lightPdfBack[k];
-						spec[k] = (BSDF_SPECULAR & lightType[k]) != 0;
+					float* fwdProb = new float[i + j + 1];
+					float* backProb = new float[i + j + 1];
+					bool* spec = new bool[i + j + 1];
+					for (size_t k = 0; k < j; ++k) {
+						fwdProb[k] = lightPdfForward[k + 1];
+						backProb[k] = lightPdfBack[k + 1];
+						spec[k] = (BSDF_SPECULAR & lightType[k + 1]) != 0;
 					}
-					fwdProb[j + 1] = pgapFwd;
-					backProb[j + 1] = pgapBack;
-					spec[j + 1] = false;		// if this is true then the bsdf above will ==0 and cancel it out anyway
-					for (size_t k = 0; k <= i; ++k) {	
-						fwdProb[j + 2 + i - k] = eyePdfBack[k];
-						backProb[j + 2 + i - k] = eyePdfForward[k];
-						spec[j + 2 + i - k] = (BSDF_SPECULAR & eyeType[k]) != 0;
+					fwdProb[j] = pgapFwd;
+					backProb[j] = pgapBack;
+					spec[j] = false;		// if this is true then the bsdf above will ==0 and cancel it out anyway
+					for (size_t k = 0; k < i; ++k) {	
+						fwdProb[j + i - k] = eyePdfBack[k];
+						backProb[j + i - k] = eyePdfForward[k];
+						spec[j + i - k] = (BSDF_SPECULAR & eyeType[k]) != 0;
 					}
 
 					for (size_t join = 0; join <= i + j; ++join) {
+						if (spec[join]) // can't use it -  if these terms are specular then the delta functions make the L term 0
+							continue;
 						float curProb = 1.f;
-						for (size_t k = 0; k <= join; ++k)
+						for (size_t k = 0; k < join; ++k)
 							curProb *= fwdProb[k];
-						for (size_t k = join + 2; k < i + j + 3 ; ++k)
+						for (size_t k = join + 1; k <= i + j; ++k)
 							curProb *= backProb[k];
-						if (!spec[join + 1]) // can use it -  if these terms are specular then the delta functions make the L term 0
-							totProb += curProb;
+						totProb += curProb;
+						if (join == j)
+							pathProb = curProb;
 					}
 					if (totProb > 0.f)
-						L += Lpath / totProb;
+						L += Lpath * (pathProb / totProb);
 					delete[] fwdProb;
 					delete[] backProb;
 					delete[] spec;
@@ -285,7 +289,7 @@ SWCSpectrum LayeredBSDF::F(const SpectrumWavelengths &sw, const Vector &woW,
 	// a light path (reverse=false)
 	if (!reverse)
 		L *= fabsf(Dot(wiW, ng) / Dot(woW, ng));
-	return L / (1.f - probSampleSpec / 2.f);
+	return L * AbsDot(woW, dgShading.nn);
 }
 
 float LayeredBSDF::ApplyTransform(const Transform &transform)
@@ -338,7 +342,7 @@ int LayeredBSDF::GetPath(const SpectrumWavelengths &sw, const Vector &vin,
 			&sampledType, &pdfBack, true)) // then couldn't sample
 				return i;
 
-		L *= newF * pdfForward;	// NOTE: remove pdf adjustment
+		L *= newF;
 
 		if (Dot(ng, curVout) > 0.f)
 			--curLayer;	// ie, if woW is in same direction as normal - decrement layer index
