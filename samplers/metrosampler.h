@@ -25,7 +25,6 @@
 #ifndef LUX_METROSAMPLER_H
 #define LUX_METROSAMPLER_H
 
-#include <boost/thread/mutex.hpp>
 #include "sampling.h"
 #include "paramset.h"
 #include "film.h"
@@ -37,7 +36,7 @@ class MetropolisSampler : public Sampler {
 public:
 	class MetropolisData {
 	public:
-		MetropolisData(const Sampler &sampler);
+		MetropolisData(const MetropolisSampler &sampler);
 		~MetropolisData();
 		u_int normalSamples, totalSamples, totalTimes, consecRejects;
 		float *sampleImage, *currentImage;
@@ -50,6 +49,7 @@ public:
 		float weight, LY, alpha;
 		vector <Contribution> oldContributions;
 		double totalLY, sampleCount;
+		bool cooldown;
 	};
 	MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
 		u_int maxRej, float largeProb, float rng, bool useV, bool useC);
@@ -73,11 +73,10 @@ public:
 	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
 
 	u_int maxRejects;
-	float pLarge, pLargeTarget, range;
-	bool useVariance, useCooldown;
+	float pLarge, range;
+	bool useVariance;
 	u_int cooldownTime;
 	float *rngSamples;
-	boost::mutex metropolisSamplerMutex;
 };
 
 }//namespace lux
