@@ -38,6 +38,8 @@ HybridHashGrid::~HybridHashGrid() {
 
 void HybridHashGrid::RefreshMutex() {
 	const unsigned int hitPointsCount = hitPoints->GetSize();
+	if (hitPointsCount <= 0)
+		return;
 	const BBox &hpBBox = hitPoints->GetBBox();
 
 	// Calculate the size of the grid cell

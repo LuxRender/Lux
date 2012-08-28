@@ -136,6 +136,9 @@ static void horizontalGaussianBlur(const vector<XYZColor> &in, vector<XYZColor> 
 
 	const u_int pixel_rad = rad_needed;
 
+	for (u_int x = 0; x <= pixel_rad; ++x)
+		filter_weights[x] *= sweight;
+
 	//------------------------------------------------------------------
 	//blur in x direction
 	//------------------------------------------------------------------
@@ -596,6 +599,7 @@ void BufferGroup::CreateBuffers(const vector<BufferConfig> &configs, u_int x, u_
 			buffer = new RawBuffer(x, y);
 			break;
 		default:
+			buffer = NULL;
 			assert(0);
 		}
 		if (buffer && buffer->xPixelCount && buffer->yPixelCount)
@@ -690,9 +694,9 @@ Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop
 	// Precompute filter tables
 	filterLUTs = new FilterLUTs(filt, max(min(filtRes, 64u), 2u));
 
-	outlierCellWidth = Floor2UInt(2 * filter->xWidth);
+	outlierCellWidth = max(1U, Floor2UInt(2 * filter->xWidth));
 	outlierInvCellWidth = 1.f / outlierCellWidth;
-	outlierCellHeight = Floor2UInt(2 * filter->yWidth);
+	outlierCellHeight = max(1U, Floor2UInt(2 * filter->yWidth));
 	outlierInvCellHeight = 1.f / outlierCellHeight;
 
 	const u_int thread_count = boost::thread::hardware_concurrency();
