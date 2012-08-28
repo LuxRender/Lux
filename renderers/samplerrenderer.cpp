@@ -262,6 +262,7 @@ SamplerRenderer::RenderThread::RenderThread(u_int index, SamplerRenderer *r) :
 }
 
 SamplerRenderer::RenderThread::~RenderThread() {
+	delete thread;
 }
 
 void SamplerRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
@@ -356,6 +357,7 @@ void SamplerRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 	}
 
 	scene.camera->film->contribPool->End(sample.contribBuffer);
+	// don't delete contribBuffer as references are held in the pool
 	sample.contribBuffer = NULL;
 
 	//delete myThread->sample->camera; //FIXME deleting the camera clone would delete the film!

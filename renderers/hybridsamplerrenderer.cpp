@@ -64,6 +64,8 @@ SurfaceIntegratorStateBuffer::~SurfaceIntegratorStateBuffer() {
 		integratorState[i]->Free(scene);
 		delete integratorState[i];
 	}
+	// don't delete contribBuffer as references might still be held in the pool
+	delete rayBuffer;
 }
 
 void SurfaceIntegratorStateBuffer::GenerateRays() {
@@ -516,6 +518,7 @@ HybridSamplerRenderer::RenderThread::RenderThread(u_int index, HybridSamplerRend
 }
 
 HybridSamplerRenderer::RenderThread::~RenderThread() {
+	delete thread;
 }
 
 void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread) {
@@ -651,10 +654,8 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 	scene.camera->film->contribPool->End(contribBuffer);
 
 	// Free memory
-	for (size_t i = 0; i < stateBuffers.size(); ++i) {
-		delete stateBuffers[i]->GetRayBuffer();
+	for (size_t i = 0; i < stateBuffers.size(); ++i)
 		delete stateBuffers[i];
-	}
 }
 
 Renderer *HybridSamplerRenderer::CreateRenderer(const ParamSet &params) {
