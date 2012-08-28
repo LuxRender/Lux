@@ -49,7 +49,7 @@ private:
 	// This is the list of servers provided using the --useserver option
 	QStringList serverList;
 	// This is the list of files provided using the --file-list option
-	QStringList renderQueueList;
+	QString renderQueueName;
 #if defined(__APPLE__)
 protected:
 	bool event(QEvent *);

@@ -107,18 +107,12 @@ void LuxGuiApp::init(void)
 		mainwin->renderScenefile(m_inputFile);
 
 	// Add files to the render queue
-	if (renderQueueList.count()) {
-		QString renderQueueEntry;
-		foreach( renderQueueEntry, renderQueueList ) {
-			mainwin->addFileToRenderQueue(renderQueueEntry);
-		}
-		mainwin->RenderNextFileInQueue();
-	}
+	if (!renderQueueName.isNull())
+		mainwin->openQueueFile(renderQueueName);
 
 	// Add slaves
-	if (!serverList.empty()) {
+	if (!serverList.empty())
 		mainwin->AddNetworkSlaves(serverList.toVector());
-	}
 }
 
 #if defined(__APPLE__) // Doubleclick or dragging .lxs in OSX Finder to LuxRender
@@ -312,18 +306,7 @@ bool LuxGuiApp::ProcessCommandLine(int &argc, char **argv)
 
 		// Read file names for the Reander Queue
 		if (vm.count("list-file")) {
-			LOG( LUX_INFO,LUX_NOERROR) << "Reading file list from: " << vm["list-file"].as<string>().c_str();
-			QFile listFile(vm["list-file"].as<string>().c_str());
-			QString renderQueueEntry;
-			if ( listFile.open(QIODevice::ReadOnly) ) {
-				QTextStream lfStream(&listFile);
-				while(!lfStream.atEnd()) {
-					renderQueueEntry = QFileInfo(lfStream.readLine()).absoluteFilePath();
-					if (!renderQueueEntry.isNull()) {
-						renderQueueList << renderQueueEntry;
-					}
-				};
-			}
+			renderQueueName = vm["list-file"].as<string>().c_str();
 		}
 
 		return true;

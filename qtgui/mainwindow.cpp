@@ -662,26 +662,31 @@ void MainWindow::openFile()
 
 void MainWindow::openQueueFile(const QString& fileName)
 {
-	ui->tabs_main->setCurrentIndex(1);	// jump to queue tab
-	QMessageBox msgBox;
-	msgBox.setIcon(QMessageBox::Information);
-	QFileInfo fi(fileName);
-	QString name = fi.fileName();
-	msgBox.setText("Please select the desired haltspp or halttime for this queue");
-	msgBox.exec();
 	QFile listFile(fileName);
 	QString renderQueueEntry;
 	if ( listFile.open(QIODevice::ReadOnly) ) {
+		LOG(LUX_INFO, LUX_NOERROR) << "Reading queue file '" << qPrintable(fileName) << "'";
 		QTextStream lfStream(&listFile);
 		QDir::setCurrent(QFileInfo(fileName).absoluteDir().path());
 		while(!lfStream.atEnd()) {
-			renderQueueEntry = QFileInfo(lfStream.readLine()).absoluteFilePath();
+			QString name(lfStream.readLine());
+			renderQueueEntry = QFileInfo(name).absoluteFilePath();
 			if (!renderQueueEntry.isNull()) {
+				LOG(LUX_INFO, LUX_NOERROR) << "Adding file '" << qPrintable(name) << "'";
 				renderQueueList << renderQueueEntry;
+			} else {
+				LOG(LUX_WARNING, LUX_NOFILE) << "Skipping file '" << qPrintable(name) << "'";
 			}
 		};
+	} else {
+		LOG(LUX_ERROR, LUX_NOFILE) << "Could not open queue file '" << qPrintable(fileName) << "'";
 	}
 	if (renderQueueList.count()) {
+		ui->tabs_main->setCurrentIndex(1);	// jump to queue tab
+		QMessageBox msgBox;
+		msgBox.setIcon(QMessageBox::Information);
+		msgBox.setText("Please select the desired haltspp or halttime for this queue");
+		msgBox.exec();
 		foreach( renderQueueEntry, renderQueueList ) {
 			addFileToRenderQueue(renderQueueEntry);
 		}
