@@ -203,6 +203,8 @@ SOURCE_GROUP("Source Files\\Cameras" FILES ${lux_cameras_src})
 
 SET(lux_films_src
 	film/fleximage.cpp
+	film/pdiff/LPyramid.cpp
+	film/pdiff/Metric.cpp
 	)
 SOURCE_GROUP("Source Files\\Films" FILES ${lux_films_src})
 

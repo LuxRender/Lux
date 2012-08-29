@@ -32,6 +32,7 @@
 #include "blackbodyspd.h"
 #include "osfunc.h"
 #include "streamio.h"
+#include "film/pdiff/Metric.h"
 
 #include <iostream>
 #include <fstream>
@@ -651,8 +652,7 @@ Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop
 	contribPool(NULL), filter(filt), filterTable(NULL), filterLUTs(NULL),
 	filename(filename1),
 	colorSpace(0.63f, 0.34f, 0.31f, 0.595f, 0.155f, 0.07f, 0.314275f, 0.329411f), // default is SMPTE
-	convergenceBufferReference(NULL), convergenceBufferReferenceCount(NULL),
-	varianceBuffer(NULL),
+	convergenceReference(NULL), varianceBuffer(NULL),
 	ZBuffer(NULL), use_Zbuf(useZbuffer),
 	debug_mode(debugmode), premultiplyAlpha(premult),
 	writeResumeFlm(w_resume_FLM), restartResumeFlm(restart_resume_FLM), writeFlmDirect(write_FLM_direct),
@@ -747,8 +747,7 @@ Film::~Film()
 	delete filterLUTs;
 	delete filter;
 	delete ZBuffer;
-	delete []convergenceBufferReference;
-	delete []convergenceBufferReferenceCount;
+	delete []convergenceReference;
 	delete varianceBuffer;
 	delete histogram;
 	delete contribPool;
@@ -780,15 +779,6 @@ void Film::CreateBuffers()
 
 	// Allocate convergence buffers if needed
 	if (haltThreshold > 0.f) {
-		const u_int nPix = xPixelCount * yPixelCount;
-		convergenceBufferReference = new float[3 * nPix];
-
-		convergenceBufferReferenceCount = new float[nPix];
-		std::fill(convergenceBufferReferenceCount, convergenceBufferReferenceCount + nPix, 0.f);
-
-		convergenceBufferMap.resize(nPix, false);
-		convergencePixelCount = 0;
-
 		varianceBuffer = new VarianceBuffer(xPixelCount, yPixelCount);
 		varianceBuffer->Clear();
 	}
@@ -1063,71 +1053,61 @@ void Film::GetTileExtent(u_int tileIndex, int *xstart, int *xend, int *ystart, i
 }
 
 void Film::UpdateConvergenceInfo(const float *framebuffer) {
-	u_int pixelIndex = 0;
+	const u_int pixelCount = xPixelCount * yPixelCount;
+	if (!convergenceReference) {
+		// Check if we have at least 8 samples per pixel
+		bool missingSamples = false;
+		for (u_int yPixel = 0; !missingSamples && (yPixel < yPixelCount); ++yPixel) {
+			for (u_int xPixel = 0; xPixel < xPixelCount; ++xPixel) {
+				// Check if we have enough samples to evaluate convergence speed again
 
-	for (u_int yPixel = 0; yPixel < yPixelCount; ++yPixel) {
-		for (u_int xPixel = 0; xPixel < xPixelCount; ++xPixel, ++pixelIndex) {
-			// Check if we have enough samples to evaluate convergence speed again
-
-			// Merge all buffer results
-			float newSampleCount = 0.f;
-			for(u_int j = 0; j < bufferGroups.size(); ++j) {
-				if (!bufferGroups[j].enable)
-					continue;
-
-				for(u_int i = 0; i < bufferConfigs.size(); ++i) {
-					const Buffer &buffer = *(bufferGroups[j].buffers[i]);
-					if (!(bufferConfigs[i].output & BUF_FRAMEBUFFER))
+				// Merge all buffer results
+				float sampleCount = 0.f;
+				for(u_int j = 0; j < bufferGroups.size(); ++j) {
+					if (!bufferGroups[j].enable)
 						continue;
 
-					newSampleCount += buffer.pixels(xPixel, yPixel).weightSum;
+					for(u_int i = 0; i < bufferConfigs.size(); ++i) {
+						const Buffer &buffer = *(bufferGroups[j].buffers[i]);
+						if (!(bufferConfigs[i].output & BUF_FRAMEBUFFER))
+							continue;
+
+						sampleCount += buffer.pixels(xPixel, yPixel).weightSum;
+					}
 				}
-			}
 
-			float &oldSampleCount = convergenceBufferReferenceCount[pixelIndex];
-			if (newSampleCount - oldSampleCount > 8.f) {
-				// We have enough samples, update the convergence map
-				float newC[3];
-				newC[0] = Clamp(framebuffer[3 * pixelIndex], 0.f, 1.f);
-				newC[1] = Clamp(framebuffer[3 * pixelIndex + 1], 0.f, 1.f);
-				newC[2] = Clamp(framebuffer[3 * pixelIndex + 2], 0.f, 1.f);
-				float *oldC = &convergenceBufferReference[3 * pixelIndex];
-
-				const float newDelta = max(max(
-						fabs(newC[0] - oldC[0]),
-						fabs(newC[1] - oldC[1])),
-						fabs(newC[2] - oldC[2]));
-
-				// Update values
-				oldC[0] = newC[0];
-				oldC[1] = newC[1];
-				oldC[2] = newC[2];
-				oldSampleCount = newSampleCount;
-
-				if ((oldSampleCount > 0.f) && (newDelta <= haltThreshold)) {
-					// Convergence condition has been satisfied
-					if (!convergenceBufferMap[pixelIndex])
-						++convergencePixelCount;
-					convergenceBufferMap[pixelIndex] = true;
-				} else {
-					// Convergence condition has not been satisfied
-					if (convergenceBufferMap[pixelIndex])
-						--convergencePixelCount;
-					convergenceBufferMap[pixelIndex] = false;
+				if (sampleCount < 8.f) {
+					missingSamples = true;
+					break;
 				}
 			}
 		}
+
+		// Start the convergence test only if we have enough samples per pixel
+		if (!missingSamples) {
+			// Allocate the reference buffer and make a copy
+			convergenceReference = new float[3 * pixelCount];
+			std::copy(framebuffer, framebuffer + 3 * pixelCount, convergenceReference);
+
+			convergenceDiff.resize(pixelCount, false);
+		}
+	} else {
+		// Compare the new buffer with the old one
+		const u_int failedPixels = Yee_Compare(convergenceReference, framebuffer, convergenceDiff,
+				xPixelCount, yPixelCount);
+
+		// Make a copy for the new reference image
+		std::copy(framebuffer, framebuffer + 3 * pixelCount, convergenceReference);
+
+		// Check if we can stop the rendering
+		if (failedPixels == 0)
+			enoughSamplesPerPixel = true;
+
+		if (enoughSamplesPerPixel)
+			haltThresholdComplete = 1.f;
+		else
+			haltThresholdComplete = (pixelCount - failedPixels) / (float)pixelCount;
 	}
-
-	// Check if we can stop the rendering
-	const u_int pixelCount = xPixelCount * yPixelCount;
-	if (convergencePixelCount == pixelCount)
-		enoughSamplesPerPixel = true;
-
-	if (enoughSamplesPerPixel)
-		haltThresholdComplete = 1.f;
-	else
-		haltThresholdComplete = convergencePixelCount / (float)pixelCount;
 }
 
 void Film::AddTileSamples(const Contribution* const contribs, u_int num_contribs,

@@ -486,72 +486,6 @@ public:
 	BlockedArray<VariancePixel> pixels;
 };
 
-
-/*struct VariancePixel {
-	VariancePixel() : Sn(0.f), mean(0.f), weightSum(0.f) { }
-
-	RGBColor Sn, mean, weightSum;
-};
-
-class VarianceBuffer {
-public:
-	VarianceBuffer(u_int x, u_int y) : pixels(x, y) {
-	}
-
-	~VarianceBuffer() { }
-
-	void Add(u_int x, u_int y, RGBColor v, float wt) {
-		if (wt == 0.f)
-			return;
-
-		VariancePixel &pixel = pixels(x, y);
-
-		const RGBColor weight(wt);
-		const RGBColor newWeightSum = pixel.weightSum + weight;
-
-		// Incremental computation of weighted mean:
-		// mean_n = mean_n-1 + (weight_n / weightSum_n)(x_n − mean_n−1 )
-		const RGBColor newMean = pixel.mean + (weight / newWeightSum) * (v - pixel.mean);
-
-		// Incremental computation of weighted variance:
-		//  S_n = S_n−1 + weight_n (x_n − mean_n−1)(x_n − mean_n)
-		//  Var = sqrt(S_n / weightSum_n)
-		const RGBColor newSn = pixel.Sn + wt * (v - pixel.mean) * (v - newMean);
-
-		pixel.Sn = newSn;
-		pixel.mean = newMean;
-		pixel.weightSum = newWeightSum;
-	}
-
-	void Clear() {
-		for (u_int y = 0; y < pixels.vSize(); ++y) {
-			for (u_int x = 0; x < pixels.uSize(); ++x) {
-				VariancePixel &pixel = pixels(x, y);
-				pixel.Sn = 0.f;
-				pixel.mean = 0.f;
-				pixel.weightSum = 0.f;
-			}
-		}
-	}
-
-	float GetVariance(u_int x, u_int y) const {
-		const VariancePixel &pixel = pixels(x, y);
-
-		// Var = sqrt(S_n / weightSum_n)
-		float result = 0.f;
-		if (pixel.weightSum.c[0] > 0.f)
-			result = max(result, sqrtf(fabs(pixel.Sn.c[0] / pixel.weightSum.c[0])));
-		if (pixel.weightSum.c[1] > 0.f)
-			result = max(result, sqrtf(fabs(pixel.Sn.c[1] / pixel.weightSum.c[1])));
-		if (pixel.weightSum.c[2] > 0.f)
-			result = max(result, sqrtf(fabs(pixel.Sn.c[2] / pixel.weightSum.c[2])));
-
-		return result;
-	}
-
-	BlockedArray<VariancePixel> pixels;
-};*/
-
 //------------------------------------------------------------------------------
 // Filter Look Up Table
 //------------------------------------------------------------------------------
@@ -820,10 +754,8 @@ protected: // Put it here for better data alignment
 	std::vector<BufferConfig> bufferConfigs;
 	std::vector<BufferGroup> bufferGroups;
 
-	float *convergenceBufferReference;
-	float *convergenceBufferReferenceCount;
-	vector<bool> convergenceBufferMap;
-	u_int convergencePixelCount;
+	float *convergenceReference;
+	vector<bool> convergenceDiff;
 
 	VarianceBuffer *varianceBuffer;
 

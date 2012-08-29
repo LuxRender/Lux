@@ -1009,6 +1009,12 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 						framebuffer[3 * i] = 255.f;
 						framebuffer[3 * i + 1] = framebuffer[3 * i + 2] = 0.f;
 					}*/
+					/*if (convergenceBufferReferenceCount[i] > 0.f)
+						framebuffer[3 * i] = framebuffer[3 * i + 1] = framebuffer[3 * i + 2] = convergenceDiff[i] ? 255 : 0;
+					else {
+						framebuffer[3 * i] = 255.f;
+						framebuffer[3 * i + 1] = framebuffer[3 * i + 2] = 0.f;
+					}*/
 				}
 					
 				// Some debug code used to show the variance
