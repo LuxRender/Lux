@@ -196,7 +196,7 @@ bool MetropolisSampler::GetNextSample(Sample *sample)
 			const u_int xPixelCount = film->GetXPixelCount();
 			const u_int yPixelCount = film->GetYPixelCount();
 			const u_int nPix = xPixelCount * yPixelCount;
-			if (!varianceMap || (film->numberOfLocalSamples - varianceMapSampleCount > 8.0 * nPix)) {
+			if (!varianceMap || (film->numberOfLocalSamples - varianceMapSampleCount > 32.0 * nPix)) {
 				LOG(LUX_DEBUG, LUX_NOERROR) << "Updating Metropolis variance map: after " << film->numberOfLocalSamples - varianceMapSampleCount << " samples";
 				varianceMapSampleCount = film->numberOfLocalSamples;
 
@@ -223,15 +223,16 @@ bool MetropolisSampler::GetNextSample(Sample *sample)
 				}
 
 				if (hasPixelsToSample || maxVariance <= 0.f) {
-					LOG(LUX_DEBUG, LUX_NOERROR) << "Metropolis variance map based on: pixels yet to be sampled";
+					LOG(LUX_DEBUG, LUX_NOERROR) << "Metropolis image sampling based on: pixels yet to be sampled";
 
 					// Just use a uniform distribution for not sampled pixels
 					for (u_int i = 0; i < nPix; ++i)
 						variance[i] = (variance[i] == -1.f) ? 1.f : 0.f;
 				} else {
-					LOG(LUX_DEBUG, LUX_NOERROR) << "Metropolis variance map based on: variance information";
+					LOG(LUX_DEBUG, LUX_NOERROR) << "Metropolis image sampling based on: variance information";
 					float invMaxDelta = 1.f / maxVariance;
 					tmp = variance;
+					//const vector<bool> &convergenceMap = film->GetConvergenceMap();
 					for (u_int i = 0; i < nPix; ++i) {
 						float v = *tmp;
 
@@ -239,6 +240,10 @@ bool MetropolisSampler::GetNextSample(Sample *sample)
 						v *= invMaxDelta;
 						// To be still unbiased
 						v = max(0.01f, v);
+
+						// Assign a very low probability to sample converged pixel
+						//if ((convergenceMap.size() > 0) && convergenceMap[i])
+							//v *= 0.1f;
 
 						*tmp++ = v;
 					}
@@ -444,7 +449,7 @@ Sampler* MetropolisSampler::CreateSampler(const ParamSet &params, const Film *fi
 	bool useVariance = params.FindOneBool("usevariance", false);
 	bool useCooldown = params.FindOneBool("usecooldown", true);
 	bool useVarianceMap = params.FindOneBool("usevariancemap", false);
-	const float defaultRange = (useVarianceMap) ? 1.0f : ((xEnd - xStart + yEnd - yStart) / 32.f);
+	const float defaultRange = (useVarianceMap) ? 4.0f : ((xEnd - xStart + yEnd - yStart) / 32.f);
 	float range = params.FindOneFloat("mutationrange", defaultRange);	// maximum distance in pixel for a small mutation
 
 	return new MetropolisSampler(xStart, xEnd, yStart, yEnd, max(maxConsecRejects, 0),

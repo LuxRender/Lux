@@ -1003,18 +1003,10 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 					framebuffer[3 * i + 2] = static_cast<unsigned char>(Clamp(256 * rgbcolor[i].c[2], 0.f, 255.f));
 
 					// Some debug code used to show the convergence map
-					/*if (convergenceBufferReferenceCount[i] > 0.f)
-						framebuffer[3 * i] = framebuffer[3 * i + 1] = framebuffer[3 * i + 2] = convergenceBufferMap[i] ? 255 : 0;
-					else {
-						framebuffer[3 * i] = 255.f;
-						framebuffer[3 * i + 1] = framebuffer[3 * i + 2] = 0.f;
-					}*/
-					/*if (convergenceBufferReferenceCount[i] > 0.f)
+					/*if (convergenceDiff.size() > 0)
 						framebuffer[3 * i] = framebuffer[3 * i + 1] = framebuffer[3 * i + 2] = convergenceDiff[i] ? 255 : 0;
-					else {
-						framebuffer[3 * i] = 255.f;
-						framebuffer[3 * i + 1] = framebuffer[3 * i + 2] = 0.f;
-					}*/
+					else
+						framebuffer[3 * i] = framebuffer[3 * i + 1] = framebuffer[3 * i + 2] = 0;*/
 				}
 					
 				// Some debug code used to show the variance
@@ -1033,16 +1025,44 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 
 				// Some debug code used to show the pixel sample counts
 				/*float maxv = 0.f;
-				for (u_int i = 0; i < nPix; i++) {
-					const float v = convergenceBufferReferenceCount[i];
-					maxv = max(maxv, v);
+				for (u_int p = 0; p < nPix; p++) {
+					// Merge all buffer results
+					float sampleCount = 0.f;
+					for(u_int j = 0; j < bufferGroups.size(); ++j) {
+						if (!bufferGroups[j].enable)
+							continue;
+
+						for(u_int i = 0; i < bufferConfigs.size(); ++i) {
+							const Buffer &buffer = *(bufferGroups[j].buffers[i]);
+							if (!(bufferConfigs[i].output & BUF_FRAMEBUFFER))
+								continue;
+
+							sampleCount += buffer.pixels(p % xPixelCount, p / xPixelCount).weightSum;
+						}
+					}
+
+					maxv = max(maxv, sampleCount);
 				}
 				const float invMaxV = 1.f / maxv;
 				//const float invMaxV = 1.f / 250.f;
-				for (u_int i = 0; i < nPix; i++) {
-					const float v = convergenceBufferReferenceCount[i];
-					framebuffer[3 * i] = framebuffer[3 * i + 1] = framebuffer[3 * i + 2] = 
-							static_cast<unsigned char>(Clamp(256 * v * invMaxV, 0.f, 255.f));
+				for (u_int p = 0; p < nPix; p++) {
+					// Merge all buffer results
+					float sampleCount = 0.f;
+					for(u_int j = 0; j < bufferGroups.size(); ++j) {
+						if (!bufferGroups[j].enable)
+							continue;
+
+						for(u_int i = 0; i < bufferConfigs.size(); ++i) {
+							const Buffer &buffer = *(bufferGroups[j].buffers[i]);
+							if (!(bufferConfigs[i].output & BUF_FRAMEBUFFER))
+								continue;
+
+							sampleCount += buffer.pixels(p % xPixelCount, p / xPixelCount).weightSum;
+						}
+					}
+
+					framebuffer[3 * p] = framebuffer[3 * p + 1] = framebuffer[3 * p + 2] = 
+							static_cast<unsigned char>(Clamp(256 * sampleCount * invMaxV, 0.f, 255.f));
 				}*/
 			}
 
@@ -1145,7 +1165,7 @@ void FlexImageFilm::WriteImage(ImageType type)
 	EV = logf(Y * 8.f) / logf(2.f);
 
 	// Update convergence information if required
-	if ((haltThreshold > 0.f) && (type & IMAGE_FRAMEBUFFER) && float_framebuffer) {
+	if ((haltThreshold >= 0.f) && (type & IMAGE_FRAMEBUFFER) && float_framebuffer) {
 		// The framebuffer has been update
 		UpdateConvergenceInfo(float_framebuffer);
 	}

@@ -686,6 +686,7 @@ public:
 	virtual string GetStringParameterValue(luxComponentParameters param, u_int index) = 0;
 
 	virtual const VarianceBuffer *GetVarianceBuffer() const { return varianceBuffer; }
+	virtual const vector<bool> &GetConvergenceMap() const { return convergenceDiff; }
 
 	/*
 	 * Accessor for samplePerPass

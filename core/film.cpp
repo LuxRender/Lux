@@ -1055,14 +1055,13 @@ void Film::GetTileExtent(u_int tileIndex, int *xstart, int *xend, int *ystart, i
 void Film::UpdateConvergenceInfo(const float *framebuffer) {
 	const u_int pixelCount = xPixelCount * yPixelCount;
 	if (!convergenceReference) {
-		// Check if we have at least 8 samples per pixel
+		// Check if we have at least a sample per pixel
 		bool missingSamples = false;
 		for (u_int yPixel = 0; !missingSamples && (yPixel < yPixelCount); ++yPixel) {
-			for (u_int xPixel = 0; xPixel < xPixelCount; ++xPixel) {
+			for (u_int xPixel = 0; !missingSamples && (xPixel < xPixelCount); ++xPixel) {
 				// Check if we have enough samples to evaluate convergence speed again
 
 				// Merge all buffer results
-				float sampleCount = 0.f;
 				for(u_int j = 0; j < bufferGroups.size(); ++j) {
 					if (!bufferGroups[j].enable)
 						continue;
@@ -1072,25 +1071,26 @@ void Film::UpdateConvergenceInfo(const float *framebuffer) {
 						if (!(bufferConfigs[i].output & BUF_FRAMEBUFFER))
 							continue;
 
-						sampleCount += buffer.pixels(xPixel, yPixel).weightSum;
+						if (buffer.pixels(xPixel, yPixel).weightSum <= 0.f) {
+							missingSamples = true;
+							break;
+						}
 					}
-				}
-
-				if (sampleCount < 8.f) {
-					missingSamples = true;
-					break;
 				}
 			}
 		}
 
 		// Start the convergence test only if we have enough samples per pixel
 		if (!missingSamples) {
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Enough samples per pixel to start convergence test";
+
 			// Allocate the reference buffer and make a copy
 			convergenceReference = new float[3 * pixelCount];
 			std::copy(framebuffer, framebuffer + 3 * pixelCount, convergenceReference);
 
 			convergenceDiff.resize(pixelCount, false);
-		}
+		} else
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Not enough samples per pixel to start convergence test";
 	} else {
 		// Compare the new buffer with the old one
 		const u_int failedPixels = Yee_Compare(convergenceReference, framebuffer, convergenceDiff,
@@ -1100,11 +1100,12 @@ void Film::UpdateConvergenceInfo(const float *framebuffer) {
 		std::copy(framebuffer, framebuffer + 3 * pixelCount, convergenceReference);
 
 		// Check if we can stop the rendering
-		if (failedPixels == 0)
+		const float failedPercentage = failedPixels / (float)pixelCount;
+		if (failedPercentage <= haltThreshold)
 			enoughSamplesPerPixel = true;
 
 		if (enoughSamplesPerPixel)
-			haltThresholdComplete = 1.f;
+			haltThresholdComplete = 1.f - haltThreshold;
 		else
 			haltThresholdComplete = (pixelCount - failedPixels) / (float)pixelCount;
 	}

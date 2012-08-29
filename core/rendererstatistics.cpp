@@ -219,7 +219,7 @@ std::string RendererStatistics::FormattedLong::getPercentHaltTimeComplete() {
 }
 
 std::string RendererStatistics::FormattedLong::getPercentHaltThresholdComplete() {
-	return boost::str(boost::format("%1$0.2f%% Convergence") % rs->getPercentHaltThresholdComplete());
+	return boost::str(boost::format("%1$0f%% Convergence") % rs->getPercentHaltThresholdComplete());
 }
 
 std::string RendererStatistics::FormattedLong::getEfficiency() {
@@ -279,7 +279,7 @@ std::string RendererStatistics::FormattedShort::getPercentHaltTimeComplete() {
 }
 
 std::string RendererStatistics::FormattedShort::getPercentHaltThresholdComplete() {
-	return boost::str(boost::format("%1$0.2f%% Conv") % rs->getPercentHaltThresholdComplete());
+	return boost::str(boost::format("%1$0f%% Conv") % rs->getPercentHaltThresholdComplete());
 }
 
 std::string RendererStatistics::FormattedShort::getEfficiency() {
