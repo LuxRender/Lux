@@ -2154,9 +2154,11 @@ void MainWindow::loadTimeout()
 			ui->action_resumeRender->activate(QAction::Trigger);
 
 			// Enable tonemapping options and reset from values trough API
-			ui->outputTabs->setEnabled (true);
-			resetToneMappingFromFilm (false);
-			ResetLightGroupsFromFilm (false);
+			resetToneMappingFromFilm(false);
+			ResetLightGroupsFromFilm(false);
+			// reset values from film before enabling the tabs
+			// to prevent overwriting film settings
+			ui->outputTabs->setEnabled(true);
 
 			renderView->resetTransform();
 		}
@@ -2176,9 +2178,11 @@ void MainWindow::loadTimeout()
 		changeRenderState(TONEMAPPING);
 
 		// Enable tonemapping options and reset from values trough API
-		ui->outputTabs->setEnabled (true);
-		resetToneMappingFromFilm (false);
-		ResetLightGroupsFromFilm( false );
+		resetToneMappingFromFilm(false);
+		ResetLightGroupsFromFilm(false);
+		// reset values from film before enabling the tabs
+		// to prevent overwriting film settings
+		ui->outputTabs->setEnabled(true);
 		// Update framebuffer
 		if (!m_auto_tonemap)
 			// if auto tonemap is enabled then
