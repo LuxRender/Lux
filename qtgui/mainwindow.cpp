@@ -26,6 +26,7 @@
 #define TAB_ID_LOG     4
 
 #include <cmath>
+#include <ctime>
 
 #include <QProgressDialog>
 #include <QInputDialog>
