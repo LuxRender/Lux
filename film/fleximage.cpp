@@ -40,6 +40,7 @@
 #include "osfunc.h"
 #include "dynload.h"
 #include "filedata.h"
+#include "contribution.h"
 
 #include <boost/thread/xtime.hpp>
 #include <boost/filesystem.hpp>
@@ -808,7 +809,6 @@ string FlexImageFilm::GetStringParameterValue(luxComponentParameters param, u_in
 	return "";
 }
 
-
 void FlexImageFilm::CheckWriteOuputInterval()
 {
 	// Check write output interval
@@ -1027,11 +1027,15 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 
 void FlexImageFilm::WriteImage(ImageType type)
 {
+	// ensure we dont try to perform multiple writes at once
+	// needed since we can't put the pool lock up here
 	boost::mutex::scoped_lock(write_mutex);
 	
 	// save the current status of the film if required
 	// do it here instead of in WriteImage2 to reduce
 	// memory usage
+	// perform before pool locking, as WriteResumeFilm will
+	// do its own pool locking internally
 	if (type & IMAGE_FLMOUTPUT) {
 		if (writeResumeFlm)
 			WriteResumeFilm(filename + ".flm");
@@ -1039,6 +1043,8 @@ void FlexImageFilm::WriteImage(ImageType type)
 
 	if (!framebuffer || !float_framebuffer || !alpha_buffer || !z_buffer)
 		createFrameBuffer();
+
+	ScopedPoolLock poolLock(contribPool);
 
 	const u_int nPix = xPixelCount * yPixelCount;
 	vector<XYZColor> pixels(nPix);
@@ -1110,6 +1116,10 @@ void FlexImageFilm::WriteImage(ImageType type)
 	}
 	Y /= pcount;
 	averageLuminance = Y;
+
+	// release pool lock before writing output
+	poolLock.unlock();
+
 	WriteImage2(type, pixels, alpha, "");
 	// The relation between EV and luminance in cd.m-2 is:
 	// EV = log2(L * S / K)
@@ -1120,7 +1130,9 @@ void FlexImageFilm::WriteImage(ImageType type)
 
 void FlexImageFilm::SaveEXR(const string &exrFilename, bool useHalfFloats, bool includeZBuf, int compressionType, bool tonemapped)
 {
-	boost::mutex::scoped_lock(write_mutex);
+	//boost::mutex::scoped_lock(write_mutex);
+	// don't need the write mutex since we're just protecting the buffers
+	ScopedPoolLock poolLock(contribPool);
 
 	// Seth - Code below based on FlexImageFilm::WriteImage()
 	const u_int nPix = xPixelCount * yPixelCount;

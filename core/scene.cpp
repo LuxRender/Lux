@@ -59,11 +59,6 @@ void Scene::SaveEXR(const string& filename, bool useHalfFloat, bool includeZBuff
 // Framebuffer Access for GUI
 void Scene::UpdateFramebuffer() {
     camera->film->updateFrameBuffer();
-
-	// I have to call ContributionPool method here in order
-	// to acquire splattingMutex lock
-	if (camera->film->contribPool && !filmOnly)
-		camera->film->contribPool->CheckFilmWriteOuputInterval();
 }
 
 unsigned char* Scene::GetFramebuffer() {

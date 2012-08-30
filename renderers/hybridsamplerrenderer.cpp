@@ -334,6 +334,21 @@ void HybridSamplerRenderer::SuspendWhenDone(bool v) {
 	suspendThreadsWhenDone = v;
 }
 
+static void writeIntervalCheck(Film *film) {
+	if (!film)
+		return;
+
+	while (!boost::this_thread::interruption_requested()) {
+		try {
+			boost::this_thread::sleep(boost::posix_time::seconds(1));
+
+			film->CheckWriteOuputInterval();
+		} catch(boost::thread_interrupted&) {
+			break;
+		}
+	}
+}
+
 void HybridSamplerRenderer::Render(Scene *s) {
 	luxrays::DataSet *dataSet;
 
@@ -410,9 +425,15 @@ void HybridSamplerRenderer::Render(Scene *s) {
 	}
 
 	if (renderThreads.size() > 0) {
+		// thread for checking write interval
+		boost::thread writeIntervalThread = boost::thread(boost::bind(writeIntervalCheck, scene->camera->film));
+		
 		// The first thread can not be removed
 		// it will terminate when the rendering is finished
 		renderThreads[0]->thread->join();
+
+		// stop write interval checking
+		writeIntervalThread.interrupt();
 
 		// rendering done, now I can remove all rendering threads
 		{
@@ -429,6 +450,9 @@ void HybridSamplerRenderer::Render(Scene *s) {
 			// of new threads after this point
 			state = TERMINATE;
 		}
+
+		// possibly wait for writing to finish
+		writeIntervalThread.join();
 
 		// Flush the contribution pool
 		scene->camera->film->contribPool->Flush();

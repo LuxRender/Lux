@@ -139,6 +139,21 @@ void SPPMRenderer::SuspendWhenDone(bool v) {
 	suspendThreadsWhenDone = v;
 }
 
+static void writeIntervalCheck(Film *film) {
+	if (!film)
+		return;
+
+	while (!boost::this_thread::interruption_requested()) {
+		try {
+			boost::this_thread::sleep(boost::posix_time::seconds(1));
+
+			film->CheckWriteOuputInterval();
+		} catch(boost::thread_interrupted&) {
+			break;
+		}
+	}
+}
+
 void SPPMRenderer::Render(Scene *s) {
 	{
 		// Section under mutex
@@ -211,9 +226,17 @@ void SPPMRenderer::Render(Scene *s) {
 	// Add the first thread // TODO: why
 	scheduler->AddThread(new RenderThread(this));
 
+	// thread for checking write interval
+	boost::thread writeIntervalThread = boost::thread(boost::bind(writeIntervalCheck, scene->camera->film));
+
 	RenderMain(scene);
 
 	scheduler->Done();
+
+	// stop write interval checking
+	writeIntervalThread.interrupt();
+	// possibly wait for writing to finish
+	writeIntervalThread.join();
 }
 
 void SPPMRenderer::Pause() {

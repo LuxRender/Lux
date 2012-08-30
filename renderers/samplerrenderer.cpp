@@ -124,6 +124,21 @@ void SamplerRenderer::SuspendWhenDone(bool v) {
 	suspendThreadsWhenDone = v;
 }
 
+static void writeIntervalCheck(Film *film) {
+	if (!film)
+		return;
+
+	while (!boost::this_thread::interruption_requested()) {
+		try {
+			boost::this_thread::sleep(boost::posix_time::seconds(1));
+
+			film->CheckWriteOuputInterval();
+		} catch(boost::thread_interrupted&) {
+			break;
+		}
+	}
+}
+
 void SamplerRenderer::Render(Scene *s) {
 	{
 		// Section under mutex
@@ -182,9 +197,15 @@ void SamplerRenderer::Render(Scene *s) {
 	}
 
 	if (renderThreads.size() > 0) {
+		// thread for checking write interval
+		boost::thread writeIntervalThread = boost::thread(boost::bind(writeIntervalCheck, scene->camera->film));
+
 		// The first thread can not be removed
 		// it will terminate when the rendering is finished
 		renderThreads[0]->thread->join();
+
+		// stop write interval checking
+		writeIntervalThread.interrupt();
 
 		// rendering done, now I can remove all rendering threads
 		{
@@ -201,6 +222,9 @@ void SamplerRenderer::Render(Scene *s) {
 			// of new threads after this point
 			Terminate();
 		}
+
+		// possibly wait for writing to finish
+		writeIntervalThread.join();
 
 		// Flush the contribution pool
 		scene->camera->film->contribPool->Flush();
@@ -256,6 +280,7 @@ void SamplerRenderer::RemoveRenderThread() {
 //------------------------------------------------------------------------------
 // RenderThread methods
 //------------------------------------------------------------------------------
+
 
 SamplerRenderer::RenderThread::RenderThread(u_int index, SamplerRenderer *r) :
 	n(index), renderer(r), thread(NULL), samples(0.), blackSamples(0.), blackSamplePaths(0.) {

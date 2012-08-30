@@ -773,6 +773,10 @@ void Film::CreateBuffers()
 	if(use_Zbuf)
 		ZBuffer = new PerPixelNormalizedFloatBuffer(xPixelCount,yPixelCount);
 
+	// initialize the contribution pool
+	// needs to be done before anyone tries to lock it
+	contribPool = new ContributionPool(this);
+
     // Dade - check if we have to resume a rendering and restore the buffers
     if(writeResumeFlm) {
 		const string fname = filename+".flm";
@@ -796,9 +800,6 @@ void Film::CreateBuffers()
 			ifs.close();
 		}
     }
-
-	// initialize the contribution pool
-	contribPool = new ContributionPool(this);
 }
 
 void Film::ClearBuffers()
@@ -1214,7 +1215,7 @@ void Film::WriteResumeFilm(const string &filename)
 
     std::ofstream filestr(tempfilename.c_str(), std::ios_base::out | std::ios_base::binary);
 	if(!filestr) {
-		LOG(LUX_SEVERE,LUX_SYSTEM) << "Cannot open file '" << tempfilename << "' for writing resume film";
+		LOG(LUX_ERROR,LUX_SYSTEM) << "Cannot open file '" << tempfilename << "' for writing resume film";
 
 		return;
 	}
@@ -1558,6 +1559,8 @@ double Film::DoTransmitFilm(
 		bool clearBuffers,
 		bool transmitParams)
 {
+	ScopedPoolLock lock(contribPool);
+
 	const bool isLittleEndian = osIsLittleEndian();
 
 	LOG(LUX_DEBUG,LUX_NOERROR)<< "Transmitting film (little endian=" <<(isLittleEndian ? "true" : "false") << ")";
@@ -1842,6 +1845,9 @@ double Film::UpdateFilm(std::basic_istream<char> &stream) {
 		// Update parameters
 		for (vector<FlmParameter>::iterator it = header.params.begin(); it != header.params.end(); ++it)
 			it->Set(this);
+
+		// lock the pool
+		ScopedPoolLock poolLock(contribPool);
 
 		// Dade - add all received data
 		for (u_int i = 0; i < bufferGroups.size(); ++i) {
