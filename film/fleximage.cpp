@@ -1221,21 +1221,29 @@ void FlexImageFilm::SaveEXR(const string &exrFilename, bool useHalfFloats, bool 
 	write_EXR_compressiontype = lOrigCompression;
 }
 
+template <typename T>
+static void allocate_framebuffer(T** framebuffer, u_int width, u_int height, u_int elms_per_pixel) 
+{
+	if (*framebuffer)
+		return;
+
+	const u_int elms = width * height * elms_per_pixel;
+
+	delete[] *framebuffer;
+	*framebuffer = new T[elms];
+	memset(*framebuffer, 0, sizeof(T) * elms);
+}
+
 // GUI LDR framebuffer access methods
 void FlexImageFilm::createFrameBuffer()
 {
-	// allocate pixels
-	unsigned int nPix = xResolution * yResolution;
-	framebuffer = new unsigned char[3*nPix];			// TODO delete data
-	float_framebuffer = new float[3*nPix];
-	alpha_buffer = new float[nPix];
-	z_buffer = new float[nPix];
+	boost::mutex::scoped_lock lock(framebufferMutex);
 
-	// zero it out
-	memset(framebuffer,0,sizeof(*framebuffer)*3*nPix);
-	memset(float_framebuffer,0,sizeof(*float_framebuffer)*3*nPix);
-	memset(alpha_buffer,0,sizeof(*alpha_buffer)*nPix);
-	memset(z_buffer,0,sizeof(*z_buffer)*nPix);
+	// allocate pixels and zero out
+	allocate_framebuffer(&framebuffer, xResolution, yResolution, 3);
+	allocate_framebuffer(&float_framebuffer, xResolution, yResolution, 3);
+	allocate_framebuffer(&alpha_buffer, xResolution, yResolution, 1);
+	allocate_framebuffer(&z_buffer, xResolution, yResolution, 1);
 }
 
 void FlexImageFilm::updateFrameBuffer()
@@ -1246,6 +1254,7 @@ void FlexImageFilm::updateFrameBuffer()
 
 	WriteImage(IMAGE_FRAMEBUFFER);
 }
+
 unsigned char* FlexImageFilm::getFrameBuffer()
 {
 	if(!framebuffer)
