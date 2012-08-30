@@ -33,16 +33,7 @@ class MaxWhiteOp : public ToneMap {
 public:
 	// MaxWhiteOp Public Methods
 	virtual ~MaxWhiteOp() { }
-	virtual void Map(vector<XYZColor> &xyz, u_int xRes, u_int yRes, float maxDisplayY) const {
-		const u_int numPixels = xRes * yRes;
-		// Compute maximum luminance of all pixels
-		float maxY = 0.f;
-		for (u_int i = 0; i < numPixels; ++i)
-			maxY = max(maxY, xyz[i].Y());
-		const float s = 1.f / maxY;
-		for (u_int i = 0; i < numPixels; ++i)
-			xyz[i] *= s;
-	}
+	virtual void Map(vector<XYZColor> &xyz, u_int xRes, u_int yRes, float maxDisplayY) const;
 	
 	static ToneMap *CreateToneMap(const ParamSet &ps);
 };

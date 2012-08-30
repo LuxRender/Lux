@@ -35,11 +35,8 @@
 using namespace lux;
 
 // ReinhardOp Method Definitions
-ReinhardOp::ReinhardOp(float prS, float poS, float b)
-{
-	pre_scale = prS;
-	post_scale = poS;
-	burn = b;
+ReinhardOp::ReinhardOp(float prS, float poS, float b) 
+	: pre_scale(prS), post_scale(poS), burn(b) {
 }
 
 // This is the implementation of equation (4) of this paper: http://www.cs.utah.edu/~reinhard/cdrom/tonemap.pdf
