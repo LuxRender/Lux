@@ -411,7 +411,7 @@ class Histogram {
 public:
 	Histogram();
 	~Histogram();
-	void Calculate(vector<RGBColor> &pixels, unsigned int width, unsigned int height);
+	void Calculate(vector<RGBColor> &pixels, const vector<float> &alpha, unsigned int width, unsigned int height);
 	void MakeImage(unsigned char *outPixels, unsigned int width, unsigned int height, int options);
 private:
 	void CheckBucketNr();
@@ -725,7 +725,7 @@ private:
 };
 
 // Image Pipeline Declarations
-void ApplyImagingPipeline(vector<XYZColor> &pixels,
+void ApplyImagingPipeline(vector<XYZColor> &pixels, const vector<float> &alpha,
 	u_int xResolution, u_int yResolution, 
 	const GREYCStorationParams &GREYCParams, const ChiuParams &chiuParams,
 	const ColorSystem &colorSpace, Histogram *histogram, bool HistogramEnabled,

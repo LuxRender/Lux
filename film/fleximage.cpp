@@ -843,7 +843,7 @@ void FlexImageFilm::CheckWriteOuputInterval()
 		lastWriteFLMTime = currentTime;
 }
 
-vector<RGBColor>& FlexImageFilm::ApplyPipeline(const ColorSystem &colorSpace, vector<XYZColor> &xyzcolor)
+vector<RGBColor>& FlexImageFilm::ApplyPipeline(const ColorSystem &colorSpace, vector<XYZColor> &xyzcolor, const vector<float> &alpha)
 {
 	// Apply the imaging/tonemapping pipeline
 	// not reentrant!
@@ -903,7 +903,7 @@ vector<RGBColor>& FlexImageFilm::ApplyPipeline(const ColorSystem &colorSpace, ve
 	}
 
 	// Apply chosen tonemapper
-	ApplyImagingPipeline(xyzcolor, xPixelCount, yPixelCount, m_GREYCStorationParams, m_chiuParams,
+	ApplyImagingPipeline(xyzcolor, alpha, xPixelCount, yPixelCount, m_GREYCStorationParams, m_chiuParams,
 		colorSpace, histogram, m_HistogramEnabled, m_HaveBloomImage, m_bloomImage, m_BloomUpdateLayer,
 		m_BloomRadius, m_BloomWeight, m_VignettingEnabled, m_VignettingScale, m_AberrationEnabled, m_AberrationAmount,
 		m_HaveGlareImage, m_glareImage, m_GlareUpdateLayer, m_GlareAmount, m_GlareRadius, m_GlareBlades, m_GlareThreshold,
@@ -966,7 +966,7 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 		const u_int nPix = xPixelCount * yPixelCount;
 
 		// DO NOT USE xyzcolor ANYMORE AFTER THIS POINT
-		vector<RGBColor> &rgbcolor = ApplyPipeline(colorSpace, xyzcolor);		
+		vector<RGBColor> &rgbcolor = ApplyPipeline(colorSpace, xyzcolor, alpha);		
 		
 		// write out tonemapped EXR
 		if ((type & IMAGE_FILEOUTPUT) && write_EXR && write_EXR_applyimaging) {
@@ -1214,7 +1214,7 @@ void FlexImageFilm::SaveEXR(const string &exrFilename, bool useHalfFloats, bool 
 	vector<RGBColor> &rgbcolor = reinterpret_cast<vector<RGBColor> &>(xyzcolor);
 	// DO NOT USE xyzcolor ANYMORE AFTER THIS POINT
 	if (tonemapped) {
-		rgbcolor = ApplyPipeline(colorSpace, xyzcolor);
+		rgbcolor = ApplyPipeline(colorSpace, xyzcolor, alpha);
 	} else {
 		for ( u_int i = 0; i < nPix; i++ )
 			rgbcolor[i] = colorSpace.ToRGBConstrained(xyzcolor[i]);

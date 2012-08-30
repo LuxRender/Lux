@@ -38,7 +38,8 @@ public:
 	EVOp() { }
 	virtual ~EVOp() { }
 	
-	virtual void Map(vector<XYZColor> &xyz, u_int xRes, u_int yRes, float maxDisplayY) const;
+	virtual void Map(vector<XYZColor> &xyz, const vector<float> &alpha, 
+		u_int xRes, u_int yRes, float maxDisplayY) const;
 	
 	static ToneMap *CreateToneMap(const ParamSet &ps);
 private:
@@ -63,7 +64,8 @@ public:
 	LinearOp(float sensitivity, float exposure, float fstop, float gamma) :
 		factor(exposure / (fstop * fstop) * sensitivity * 0.65f / 10.f * powf(118.f / 255.f, gamma)) { }
 	virtual ~LinearOp() { }
-	virtual void Map(vector<XYZColor> &xyz, u_int xRes, u_int yRes, float maxDisplayY) const;
+	virtual void Map(vector<XYZColor> &xyz, const vector<float> &alpha, 
+		u_int xRes, u_int yRes, float maxDisplayY) const;
 	
 	static ToneMap *CreateToneMap(const ParamSet &ps);
 private:

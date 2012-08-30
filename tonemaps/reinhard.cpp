@@ -41,22 +41,27 @@ ReinhardOp::ReinhardOp(float prS, float poS, float b)
 
 // This is the implementation of equation (4) of this paper: http://www.cs.utah.edu/~reinhard/cdrom/tonemap.pdf
 // TODO implement the local operator of equation (9) with reasonable speed
-void ReinhardOp::Map(vector<XYZColor> &xyz, u_int xRes, u_int yRes, float maxDisplayY) const
+void ReinhardOp::Map(vector<XYZColor> &xyz, const vector<float> &alpha, 
+	u_int xRes, u_int yRes, float maxDisplayY) const
 {
-	const float alpha = .1f;
+	const float a = .1f; // alpha parameter
 	const u_int numPixels = xRes * yRes;
 
 	float Ywa = 0.f;
 	// Compute world adaptation luminance, _Ywa_
-	for (u_int i = 0; i < numPixels; ++i)
-		if (xyz[i].Y() > 0.f) Ywa += xyz[i].Y();
-	Ywa /= numPixels;
-	if (Ywa == 0.f)
-		Ywa = 1.f;
+	u_int nPixels = 0;
+	for (u_int i = 0; i < xRes * yRes; ++i) {
+		if (alpha[i] <= 0.f)
+			continue;
+		if (xyz[i].Y() > 0) 
+			Ywa += xyz[i].Y();
+		nPixels++;
+	}
+	Ywa = (Ywa > 0.f) ? Ywa / max(1U, nPixels) : 1.f;
 
-	const float Yw = pre_scale * alpha * burn;
+	const float Yw = pre_scale * a * burn;
 	const float invY2 = Yw > 0.f ? 1.f / (Yw * Yw) : 1e5f;
-	const float pScale = post_scale * pre_scale * alpha / Ywa;
+	const float pScale = post_scale * pre_scale * a / Ywa;
 
 	for (u_int i = 0; i < numPixels; ++i) {
 		const float ys = xyz[i].c[1];

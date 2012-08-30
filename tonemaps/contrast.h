@@ -32,8 +32,8 @@ class ContrastOp : public ToneMap {
 public:
 	ContrastOp(float day) { displayAdaptationY = day; }
 	virtual ~ContrastOp() { }
-	virtual void Map(vector<XYZColor> &xyz, u_int xRes, u_int yRes,
-		 float maxDisplayY) const;
+	virtual void Map(vector<XYZColor> &xyz, const vector<float> &alpha, 
+		u_int xRes, u_int yRes, float maxDisplayY) const;
 	static ToneMap *CreateToneMap(const ParamSet &ps);
 private:
 	float displayAdaptationY;

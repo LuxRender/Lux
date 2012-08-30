@@ -92,7 +92,7 @@ public:
 private:
 	static void GetColorspaceParam(const ParamSet &params, const string name, float values[2]);
 
-	vector<RGBColor>& ApplyPipeline(const ColorSystem &colorSpace, vector<XYZColor> &color);
+	vector<RGBColor>& ApplyPipeline(const ColorSystem &colorSpace, vector<XYZColor> &color, const vector<float> &alpha);
 	void WriteImage2(ImageType type, vector<XYZColor> &color, vector<float> &alpha, string postfix);
 	void WriteTGAImage(vector<RGBColor> &rgb, vector<float> &alpha, const string &filename);
 	void WritePNGImage(vector<RGBColor> &rgb, vector<float> &alpha, const string &filename);
