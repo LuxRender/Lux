@@ -225,65 +225,66 @@ SWCSpectrum LayeredBSDF::F(const SpectrumWavelengths &sw, const Vector &woW,
 	// now connect them
 	SWCSpectrum L(0.f);	// this is the accumulated L value for the current path 
 	SWCSpectrum newF(0.f);
-			
+
+	const u_int maxVertices = eyeLayer.size() + lightLayer.size() - 1;
+	float* fwdProb = new float[maxVertices];
+	float* backProb = new float[maxVertices];
+	bool* spec = new bool[maxVertices];
 	for (size_t i = 0; i < eyeLayer.size(); ++i) { // for every vertex in the eye path
 		for (size_t j = 0;j < lightLayer.size(); ++j) { // try to connect to every vert in the light path
-			if (eyeLayer[i] == lightLayer[j]) { // then pass the "visibility test" so connect them
-				int curLayer = eyeLayer[i];
-				// First calculate the total L for the path
-				
-				SWCSpectrum Lpath = bsdfs[curLayer]->F(sw, eyeVector[i], lightVector[j], true, BxDFType(BSDF_ALL)) / AbsDot(eyeVector[i], bsdfs[curLayer]->dgShading.nn); // calc how much goes between them
-				// NOTE: used reverse==True to get F=f*|wo.ns| = f * cos(theta_in)
-			
-				Lpath = eyeL[i] * Lpath * lightL[j];
+			if (eyeLayer[i] != lightLayer[j]) // then pass the "visibility test" so connect them
+				continue;
+			int curLayer = eyeLayer[i];
+			// First calculate the total L for the path
 
-				if (!Lpath.Black() ) {	// if it is black we may have a specular connection
-					float pgapFwd = bsdfs[curLayer]->Pdf(sw, lightVector[j], eyeVector[i], BxDFType(BSDF_ALL)); // should be prob of sampling eye vector given light vector
-					float pgapBack = bsdfs[curLayer]->Pdf(sw, eyeVector[i], lightVector[j], BxDFType(BSDF_ALL));
+			SWCSpectrum Lpath = bsdfs[curLayer]->F(sw, eyeVector[i], lightVector[j], true, BxDFType(BSDF_ALL)) / AbsDot(eyeVector[i], bsdfs[curLayer]->dgShading.nn); // calc how much goes between them
+			// NOTE: used reverse==True to get F=f*|wo.ns| = f * cos(theta_in)
 
-					// Now calc the probability of sampling this path (surely there must be a better way!!!)
-					float totProb = 0.f;
-					float pathProb = 1.f;
+			Lpath = eyeL[i] * Lpath * lightL[j];
 
-					// construct the list of fwd/back probs
-					float* fwdProb = new float[i + j + 1];
-					float* backProb = new float[i + j + 1];
-					bool* spec = new bool[i + j + 1];
-					for (size_t k = 0; k < j; ++k) {
-						fwdProb[k] = lightPdfForward[k + 1];
-						backProb[k] = lightPdfBack[k + 1];
-						spec[k] = (BSDF_SPECULAR & lightType[k + 1]) != 0;
-					}
-					fwdProb[j] = pgapFwd;
-					backProb[j] = pgapBack;
-					spec[j] = false;		// if this is true then the bsdf above will ==0 and cancel it out anyway
-					for (size_t k = 0; k < i; ++k) {	
-						fwdProb[j + i - k] = eyePdfBack[k];
-						backProb[j + i - k] = eyePdfForward[k];
-						spec[j + i - k] = (BSDF_SPECULAR & eyeType[k]) != 0;
-					}
+			if (Lpath.Black())	// if it is black we may have a specular connection
+				continue;
+			float pgapFwd = bsdfs[curLayer]->Pdf(sw, lightVector[j], eyeVector[i], BxDFType(BSDF_ALL)); // should be prob of sampling eye vector given light vector
+			float pgapBack = bsdfs[curLayer]->Pdf(sw, eyeVector[i], lightVector[j], BxDFType(BSDF_ALL));
 
-					for (size_t join = 0; join <= i + j; ++join) {
-						if (spec[join]) // can't use it -  if these terms are specular then the delta functions make the L term 0
-							continue;
-						float curProb = 1.f;
-						for (size_t k = 0; k < join; ++k)
-							curProb *= fwdProb[k];
-						for (size_t k = join + 1; k <= i + j; ++k)
-							curProb *= backProb[k];
-						totProb += curProb;
-						if (join == j)
-							pathProb = curProb;
-					}
-					if (totProb > 0.f)
-						L += Lpath * (pathProb / totProb);
-					delete[] fwdProb;
-					delete[] backProb;
-					delete[] spec;
-				}
+			// Now calc the probability of sampling this path (surely there must be a better way!!!)
+			float totProb = 0.f;
+			float pathProb = 1.f;
+
+			// construct the list of fwd/back probs
+			for (size_t k = 0; k < j; ++k) {
+				fwdProb[k] = lightPdfForward[k + 1];
+				backProb[k] = lightPdfBack[k + 1];
+				spec[k] = (BSDF_SPECULAR & lightType[k + 1]) != 0;
 			}
+			fwdProb[j] = pgapFwd;
+			backProb[j] = pgapBack;
+			spec[j] = false;		// if this is true then the bsdf above will ==0 and cancel it out anyway
+			for (size_t k = 0; k < i; ++k) {	
+				fwdProb[j + i - k] = eyePdfBack[k];
+				backProb[j + i - k] = eyePdfForward[k];
+				spec[j + i - k] = (BSDF_SPECULAR & eyeType[k]) != 0;
+			}
+
+			for (size_t join = 0; join <= i + j; ++join) {
+				if (spec[join]) // can't use it -  if these terms are specular then the delta functions make the L term 0
+					continue;
+				float curProb = 1.f;
+				for (size_t k = 0; k < join; ++k)
+					curProb *= fwdProb[k];
+				for (size_t k = join + 1; k <= i + j; ++k)
+					curProb *= backProb[k];
+				totProb += curProb;
+				if (join == j)
+					pathProb = curProb;
+			}
+			if (totProb > 0.f)
+				L += Lpath * (pathProb / totProb);
 		}
 	}
+	delete[] fwdProb;
+	delete[] backProb;
+	delete[] spec;
 
 	// Apply the geometric correction factor if the result is used for
 	// a light path (reverse=false)
