@@ -33,8 +33,20 @@ void EVOp::Map(vector<XYZColor> &xyz, const vector<float> &alpha,
 {
 	// read data from film
 	const float gamma = luxGetParameterValue(LUX_FILM, LUX_FILM_TORGB_GAMMA);
-	float Y = luxGetFloatAttribute("film", "averageLuminance");
-		
+
+	const u_int numPixels = xRes * yRes;
+
+	float Y = 0.f;
+	u_int nPixels = 0;
+	for (u_int i = 0; i < numPixels; ++i) {
+		if (alpha[i] <= 0.f)
+			continue;
+		if (xyz[i].Y() > 0) 
+			Y += xyz[i].Y();
+		nPixels++;
+	}
+	Y = Y / max(1U, nPixels);
+
 	if (Y <= 0.f)
 		return;
 
@@ -55,7 +67,6 @@ void EVOp::Map(vector<XYZColor> &xyz, const vector<float> &alpha,
 	// substitute exposure, fstop and sensitivity cancel out; collect constants
 	const float factor = (1.25f / Y * powf(118.f / 255.f, gamma));
 
-	const u_int numPixels = xRes * yRes;
 	for (u_int i = 0; i < numPixels; ++i)
 		xyz[i] *= factor;
 }
