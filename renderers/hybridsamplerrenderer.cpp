@@ -397,7 +397,7 @@ void HybridSamplerRenderer::Render(Scene *s) {
         ctx->Start();
 
 		// start the timer
-		rendererStatistics->timer.Start();
+		rendererStatistics->start();
 
 		// Dade - preprocessing done
 		preprocessDone = true;
@@ -443,13 +443,13 @@ void HybridSamplerRenderer::Render(Scene *s) {
 void HybridSamplerRenderer::Pause() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 	state = PAUSE;
-	rendererStatistics->timer.Stop();
+	rendererStatistics->stop();
 }
 
 void HybridSamplerRenderer::Resume() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 	state = RUN;
-	rendererStatistics->timer.Start();
+	rendererStatistics->start();
 }
 
 void HybridSamplerRenderer::Terminate() {

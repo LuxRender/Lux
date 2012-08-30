@@ -171,7 +171,7 @@ void SamplerRenderer::Render(Scene *s) {
 		sampPos = 0;
 		
 		// start the timer
-		rendererStatistics->timer.Start();
+		rendererStatistics->start();
 
 		// Dade - preprocessing done
 		preprocessDone = true;
@@ -211,13 +211,13 @@ void SamplerRenderer::Render(Scene *s) {
 void SamplerRenderer::Pause() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 	state = PAUSE;
-	rendererStatistics->timer.Stop();
+	rendererStatistics->stop();
 }
 
 void SamplerRenderer::Resume() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 	state = RUN;
-	rendererStatistics->timer.Start();
+	rendererStatistics->start();
 }
 
 void SamplerRenderer::Terminate() {

@@ -203,7 +203,7 @@ void SPPMRenderer::Render(Scene *s) {
 		uniformCount = 1.f;
 
 		// start the timer
-		rendererStatistics->timer.Start();
+		rendererStatistics->start();
 
 		Context::GetActive()->SceneReady();
 	}
@@ -220,14 +220,14 @@ void SPPMRenderer::Pause() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 	state = PAUSE;
 	scheduler->Pause();
-	rendererStatistics->timer.Stop();
+	rendererStatistics->stop();
 }
 
 void SPPMRenderer::Resume() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 	state = RUN;
 	scheduler->Resume();
-	rendererStatistics->timer.Start();
+	rendererStatistics->start();
 }
 
 void SPPMRenderer::Terminate() {

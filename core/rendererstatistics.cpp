@@ -64,6 +64,18 @@ void RendererStatistics::reset() {
 	windowCurrentTime = 0.0;
 }
 
+void RendererStatistics::start() {
+	timer.Start();
+}
+
+void RendererStatistics::stop() {
+	timer.Stop();
+}
+
+double RendererStatistics::elapsedTime() const {
+	return timer.Time();
+}
+
 void RendererStatistics::updateStatisticsWindow() {
 	boost::mutex::scoped_lock window_mutex(windowMutex);
 
