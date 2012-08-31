@@ -41,8 +41,7 @@ ReinhardOp::ReinhardOp(float prS, float poS, float b)
 
 // This is the implementation of equation (4) of this paper: http://www.cs.utah.edu/~reinhard/cdrom/tonemap.pdf
 // TODO implement the local operator of equation (9) with reasonable speed
-void ReinhardOp::Map(vector<XYZColor> &xyz, const vector<float> &alpha, 
-	u_int xRes, u_int yRes, float maxDisplayY) const
+void ReinhardOp::Map(vector<XYZColor> &xyz,	u_int xRes, u_int yRes, float maxDisplayY) const
 {
 	const float a = .1f; // alpha parameter
 	const u_int numPixels = xRes * yRes;
@@ -51,10 +50,9 @@ void ReinhardOp::Map(vector<XYZColor> &xyz, const vector<float> &alpha,
 	// Compute world adaptation luminance, _Ywa_
 	u_int nPixels = 0;
 	for (u_int i = 0; i < xRes * yRes; ++i) {
-		if (alpha[i] <= 0.f)
+		if (xyz[i].Y() <= 0.f) 
 			continue;
-		if (xyz[i].Y() > 0) 
-			Ywa += xyz[i].Y();
+		Ywa += xyz[i].Y();
 		nPixels++;
 	}
 	Ywa = (Ywa > 0.f) ? Ywa / max(1U, nPixels) : 1.f;

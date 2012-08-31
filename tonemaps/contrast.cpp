@@ -28,17 +28,15 @@
 using namespace lux;
 
 // ContrastOp Method Definitions
-void ContrastOp::Map(vector<XYZColor> &xyz, const vector<float> &alpha, 
-	u_int xRes, u_int yRes,	float maxDisplayY) const 
+void ContrastOp::Map(vector<XYZColor> &xyz, u_int xRes, u_int yRes,	float maxDisplayY) const 
 {
 	// Compute world adaptation luminance, _Ywa_
 	float Ywa = 0.f;
 	u_int nPixels = 0;
 	for (u_int i = 0; i < xRes * yRes; ++i) {
-		if (alpha[i] <= 0.f)
+		if (xyz[i].Y() <= 0) 
 			continue;
-		if (xyz[i].Y() > 0) 
-			Ywa += logf(xyz[i].Y());
+		Ywa += logf(xyz[i].Y());
 		nPixels++;
 	}
 	Ywa = expf(Ywa / max(1U, nPixels));

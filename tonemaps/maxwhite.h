@@ -33,8 +33,7 @@ class MaxWhiteOp : public ToneMap {
 public:
 	// MaxWhiteOp Public Methods
 	virtual ~MaxWhiteOp() { }
-	virtual void Map(vector<XYZColor> &xyz, const vector<float> &alpha, 
-		u_int xRes, u_int yRes, float maxDisplayY) const;
+	virtual void Map(vector<XYZColor> &xyz, u_int xRes, u_int yRes, float maxDisplayY) const;
 	
 	static ToneMap *CreateToneMap(const ParamSet &ps);
 };

@@ -28,8 +28,7 @@
 using namespace lux;
 
 // EVOp Method Definitions
-void EVOp::Map(vector<XYZColor> &xyz, const vector<float> &alpha, 
-	u_int xRes, u_int yRes, float maxDisplayY) const 
+void EVOp::Map(vector<XYZColor> &xyz, u_int xRes, u_int yRes, float maxDisplayY) const 
 {
 	// read data from film
 	const float gamma = luxGetParameterValue(LUX_FILM, LUX_FILM_TORGB_GAMMA);
@@ -39,10 +38,9 @@ void EVOp::Map(vector<XYZColor> &xyz, const vector<float> &alpha,
 	float Y = 0.f;
 	u_int nPixels = 0;
 	for (u_int i = 0; i < numPixels; ++i) {
-		if (alpha[i] <= 0.f)
+		if (xyz[i].Y() <= 0.f)
 			continue;
-		if (xyz[i].Y() > 0) 
-			Y += xyz[i].Y();
+		Y += xyz[i].Y();
 		nPixels++;
 	}
 	Y = Y / max(1U, nPixels);
@@ -75,8 +73,7 @@ ToneMap * EVOp::CreateToneMap(const ParamSet &ps) {
 }
 
 // LinearOp Method Definitions
-void LinearOp::Map(vector<XYZColor> &xyz, const vector<float> &alpha, 
-	u_int xRes, u_int yRes, float maxDisplayY) const
+void LinearOp::Map(vector<XYZColor> &xyz, u_int xRes, u_int yRes, float maxDisplayY) const
 {
 	const u_int numPixels = xRes * yRes;
 	for (u_int i = 0; i < numPixels; ++i)

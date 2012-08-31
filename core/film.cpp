@@ -187,8 +187,7 @@ static void rotateImage(const vector<XYZColor> &in, vector<XYZColor> &out,
 namespace lux {
 
 // Image Pipeline Function Definitions
-void ApplyImagingPipeline(vector<XYZColor> &xyzpixels, const vector<float> &alpha,
-	u_int xResolution, u_int yResolution,
+void ApplyImagingPipeline(vector<XYZColor> &xyzpixels, u_int xResolution, u_int yResolution,
 	const GREYCStorationParams &GREYCParams, const ChiuParams &chiuParams,
 	const ColorSystem &colorSpace, Histogram *histogram, bool HistogramEnabled,
 	bool &haveBloomImage, XYZColor *&bloomImage, bool bloomUpdate,
@@ -347,7 +346,7 @@ void ApplyImagingPipeline(vector<XYZColor> &xyzpixels, const vector<float> &alph
 		ToneMap *toneMap = MakeToneMap(toneMapName,
 			toneMapParams ? *toneMapParams : ParamSet());
 		if (toneMap)
-			toneMap->Map(xyzpixels, alpha, xResolution, yResolution, 100.f);
+			toneMap->Map(xyzpixels, xResolution, yResolution, 100.f);
 		delete toneMap;
 	}
 
@@ -419,7 +418,7 @@ void ApplyImagingPipeline(vector<XYZColor> &xyzpixels, const vector<float> &alph
 
 	// Calculate histogram (if it is enabled and exists)
 	if (HistogramEnabled && histogram)
-		histogram->Calculate(rgbpixels, alpha, xResolution, yResolution);
+		histogram->Calculate(rgbpixels, xResolution, yResolution);
 
 	// Apply Chiu Noise Reduction Filter
 	if(chiuParams.enabled) {
@@ -1981,7 +1980,7 @@ void Histogram::CheckBucketNr()
 	}
 }
 
-void Histogram::Calculate(vector<RGBColor> &pixels, const vector<float> &alpha, u_int width, u_int height)
+void Histogram::Calculate(vector<RGBColor> &pixels, u_int width, u_int height)
 {
 	boost::mutex::scoped_lock lock(this->m_mutex);
 	if (pixels.empty() || width == 0 || height == 0)
@@ -1997,9 +1996,6 @@ void Histogram::Calculate(vector<RGBColor> &pixels, const vector<float> &alpha, 
 
 	//fill buckets
 	for (u_int i = 0; i < pixelNr; ++i) {
-		if (alpha[i] <= 0.f)
-			continue;
-
 		for (u_int j = 0; j < 3; ++j){ //each color channel
 			value = pixels[i].c[j];
 			if (value > 0.f) {
