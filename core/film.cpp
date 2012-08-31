@@ -2298,6 +2298,231 @@ void Histogram::MakeImage(unsigned char *outPixels, u_int canvasW, u_int canvasH
 	}
 }
 
+//------------------------------------------------------------------------------
+// From Sfera source, for fast filtering
+//------------------------------------------------------------------------------
+
+static void ApplyBoxFilterX(const float *src, float *dest,
+	const unsigned int width, const unsigned int height, const unsigned int radius) {
+    const float scale = 1.0f / (float)((radius << 1) + 1);
+
+    // Do left edge
+    float t = src[0] * radius;
+    for (unsigned int x = 0; x < (radius + 1); ++x)
+        t += src[x];
+    dest[0] = t * scale;
+
+    for (unsigned int x = 1; x < (radius + 1); ++x) {
+        t += src[x + radius];
+        t -= src[0];
+        dest[x] = t * scale;
+    }
+
+    // Main loop
+    for (unsigned int x = (radius + 1); x < width - radius; ++x) {
+        t += src[x + radius];
+        t -= src[x - radius - 1];
+        dest[x] = t * scale;
+    }
+
+    // Do right edge
+    for (unsigned int x = width - radius; x < width; ++x) {
+        t += src[width - 1];
+        t -= src[x - radius - 1];
+        dest[x] = t * scale;
+    }
+}
+
+static void ApplyBoxFilterY(const float *src, float *dst,
+	const unsigned int width, const unsigned int height, const unsigned int radius) {
+    const float scale = 1.0f / (float)((radius << 1) + 1);
+
+    // Do left edge
+    float t = src[0] * radius;
+    for (unsigned int y = 0; y < (radius + 1); ++y) {
+        t += src[y * width];
+    }
+    dst[0] = t * scale;
+
+    for (unsigned int y = 1; y < (radius + 1); ++y) {
+        t += src[(y + radius) * width];
+        t -= src[0];
+        dst[y * width] = t * scale;
+    }
+
+    // Main loop
+    for (unsigned int y = (radius + 1); y < (height - radius); ++y) {
+        t += src[(y + radius) * width];
+        t -= src[((y - radius) * width) - width];
+        dst[y * width] = t * scale;
+    }
+
+    // Do right edge
+    for (unsigned int y = height - radius; y < height; ++y) {
+        t += src[(height - 1) * width];
+        t -= src[((y - radius) * width) - width];
+        dst[y * width] = t * scale;
+    }
+}
+
+static void ApplyBoxFilterXR1(const float *src, float *dest,
+	const unsigned int width, const unsigned int height) {
+    const float scale = 1.f / 3.f;
+
+    // Do left edge
+    float t = 2.f * src[0];
+	t += src[1];
+    dest[0] = t * scale;
+
+	t += src[2];
+	t -= src[0];
+	dest[1] = t * scale;
+
+    // Main loop
+    for (unsigned int x = 2; x < width - 1; ++x) {
+        t += src[x + 1];
+        t -= src[x - 2];
+        dest[x] = t * scale;
+    }
+
+    // Do right edge
+	t += src[width - 1];
+	t -= src[width - 3];
+	dest[width - 1] = t * scale;
+}
+
+static void ApplyBoxFilterYR1(const float *src, float *dst,
+	const unsigned int width, const unsigned int height) {
+    const float scale = 1.f / 3.f;
+
+    // Do left edge
+	float t = 2.f * src[0];
+	t += src[width];
+	dst[0] = t * scale;
+
+	t += src[2 * width];
+	t -= src[0];
+	dst[width] = t * scale;
+
+    // Main loop
+    for (unsigned int y = 2; y < height - 1; ++y) {
+        t += src[(y + 1) * width];
+        t -= src[((y - 1) * width) - width];
+        dst[y * width] = t * scale;
+    }
+
+    // Do right edge
+	t += src[(height - 1) * width];
+	t -= src[((height - 2) * width) - width];
+	dst[(height - 1) * width] = t * scale;
+}
+
+static void ApplyBoxFilter(float *frameBuffer, float *tmpFrameBuffer,
+	const unsigned int width, const unsigned int height, const unsigned int radius) {
+	if (radius == 1) {
+		for (unsigned int i = 0; i < height; ++i)
+			ApplyBoxFilterXR1(&frameBuffer[i * width], &tmpFrameBuffer[i * width], width, height);
+
+		for (unsigned int i = 0; i < width; ++i)
+			ApplyBoxFilterYR1(&tmpFrameBuffer[i], &frameBuffer[i], width, height);
+	} else {
+		for (unsigned int i = 0; i < height; ++i)
+			ApplyBoxFilterX(&frameBuffer[i * width], &tmpFrameBuffer[i * width], width, height, radius);
+
+		for (unsigned int i = 0; i < width; ++i)
+			ApplyBoxFilterY(&tmpFrameBuffer[i], &frameBuffer[i], width, height, radius);
+	}
+}
+
+/*static void ApplyBlurHeavyFilterXR1(const float *src, float *dst,
+	const unsigned int width, const unsigned int height) {
+	const float aF = .35f;
+	const float bF = 1.f;
+	const float cF = .35f;
+
+	// Do left edge
+	float a = 0.f;
+	float b = src[0];
+	float c = src[1];
+
+	const float leftTotF = bF + cF;
+	const float bLeftK = bF / leftTotF;
+	const float cLeftK = cF / leftTotF;
+	dst[0] = bLeftK  * b + cLeftK * c;
+
+    // Main loop
+	const float totF = aF + bF + cF;
+	const float aK = aF / totF;
+	const float bK = bF / totF;
+	const float cK = cF / totF;
+
+	for (unsigned int x = 1; x < width - 1; ++x) {
+		a = b;
+		b = c;
+		c = src[x + 1];
+
+		dst[x] = aK * a + bK * b + cK * c;
+    }
+
+    // Do right edge
+	const float rightTotF = aF + bF;
+	const float aRightK = aF / rightTotF;
+	const float bRightK = bF / rightTotF;
+	a = b;
+	b = c;
+	dst[width - 1] = aRightK * a + bRightK * b;
+}
+
+// From Sfera source, for fast filtering
+static void ApplyBlurHeavyFilterYR1(const float *src, float *dst,
+	const unsigned int width, const unsigned int height) {
+	const float aF = .35f;
+	const float bF = 1.f;
+	const float cF = .35f;
+
+	// Do left edge
+	float a = 0.f;
+	float b = src[0];
+	float c = src[width];
+
+	const float leftTotF = bF + cF;
+	const float bLeftK = bF / leftTotF;
+	const float cLeftK = cF / leftTotF;
+	dst[0] = bLeftK  * b + cLeftK * c;
+
+    // Main loop
+	const float totF = aF + bF + cF;
+	const float aK = aF / totF;
+	const float bK = bF / totF;
+	const float cK = cF / totF;
+
+    for (unsigned int y = 1; y < height - 1; ++y) {
+		a = b;
+		b = c;
+		c = src[(y + 1) * width];
+
+		dst[y * width] = aK * a + bK * b + cK * c;
+    }
+
+    // Do right edge
+	const float rightTotF = aF + bF;
+	const float aRightK = aF / rightTotF;
+	const float bRightK = bF / rightTotF;
+	a = b;
+	b = c;
+	dst[(height - 1) * width] = aRightK * a + bRightK * b;
+}
+
+// From Sfera source, for fast filtering
+static void ApplyBlurHeavyFilter(float *frameBuffer, float *tmpFrameBuffer,
+	const unsigned int width, const unsigned int height) {
+	for (unsigned int i = 0; i < height; ++i)
+		ApplyBlurHeavyFilterXR1(&frameBuffer[i * width], &tmpFrameBuffer[i * width], width, height);
+
+	for (unsigned int i = 0; i < width; ++i)
+		ApplyBlurHeavyFilterYR1(&tmpFrameBuffer[i], &frameBuffer[i], width, height);
+}*/
+
 void GenerateNoiseAwareMap(const VarianceBuffer *varianceBuffer, const float *tviBuffer, float *map) {
 	const u_int xPixelCount = varianceBuffer->pixels.uSize();
 	const u_int yPixelCount = varianceBuffer->pixels.vSize();
@@ -2334,13 +2559,14 @@ void GenerateNoiseAwareMap(const VarianceBuffer *varianceBuffer, const float *tv
 			maxTVI = max(maxTVI, tvi[i]);
 	}
 
-	if (hasPixelsToSample || (maxStandardError <= 0.f) || (maxTVI <= 0.f) || !tvi) {
-		LOG(LUX_DEBUG, LUX_NOERROR) << "Noise aware map based on: sampled pixel";
+	if (hasPixelsToSample || (maxStandardError <= 0.f) || !tvi || (maxTVI <= 0.f)) {
+		LOG(LUX_DEBUG, LUX_NOERROR) << "Noise aware map based on: uniform distribution";
 
 		// Just use a uniform distribution
 		std::fill(map, map + nPix, 1.f);
 	} else {
 		LOG(LUX_DEBUG, LUX_NOERROR) << "Noise aware map based on: noise information";
+
 		const float invMaxStandardError = 1.f / maxStandardError;
 		const float invMaxTVI = 1.f / maxTVI;
 		for (u_int i = 0; i < nPix; ++i) {
@@ -2353,10 +2579,20 @@ void GenerateNoiseAwareMap(const VarianceBuffer *varianceBuffer, const float *tv
 
 			float mapValue = (normalizedTVI == 0.f) ? 0.f : (normalizedStandardError / normalizedTVI);
 			// To be still unbiased
-			mapValue = max(0.01f, mapValue);
+			// Note: this doesn't really follow the paper where is suggested to
+			//  restricts the contrast of the visual error image so
+			//  that the ratio of the 95th percentile to the 5th percentile is no
+			//  greater than 2 (step 1 & 2).
+			mapValue = min(max(0.05f, mapValue), 0.95f);
 
 			map[i] = mapValue;
 		}
+
+		// Apply an heavy filter to smooth the map
+		float *tmpMap = new float[nPix];
+		//ApplyBlurHeavyFilter(map, tmpMap, xPixelCount, yPixelCount);
+		ApplyBoxFilter(map, tmpMap, xPixelCount, yPixelCount, 2);
+		delete []tmpMap;
 	}
 
 	delete []variance;
