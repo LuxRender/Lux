@@ -387,7 +387,7 @@ void SPPMRenderer::RenderMain(Scene *scene)
 	hitPoints->Init();
 
 	// Trace rays: The main loop
-	while (!scene->camera->film->enoughSamplesPerPixel && state != TERMINATE) {
+	while (!scene->camera->film->enoughSamplesPerPixel && hitPoints->GetPassCount() < scene->camera->film->haltSamplesPerPixel && state != TERMINATE) {
 		hitPoints->UpdatePointsInformation();
 
 		hitPoints->RefreshAccel(scheduler);
