@@ -381,7 +381,7 @@ void RenderFarm::start(Scene *scene) {
 void RenderFarm::stop() {
 	boost::mutex::scoped_lock lock(serverListMutex);
 
-	if (!serverInfoList.empty())
+	if (serverInfoList.empty())
 		return;
 
 	if (filmUpdateThread) {
