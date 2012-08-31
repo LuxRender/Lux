@@ -977,12 +977,12 @@ void Context::WorldEnd() {
 	if (!terminated) {
 		// Create scene and render
 		luxCurrentScene = renderOptions->MakeScene();
-		if (luxCurrentScene) {
+		if (luxCurrentScene && !terminated) {
 			luxCurrentScene->camera->SetVolume(graphicsState->exterior);
 
 			luxCurrentRenderer = renderOptions->MakeRenderer();
 
-			if (luxCurrentRenderer) {
+			if (luxCurrentRenderer && !terminated) {
 				// start the network rendering updater thread
 				renderFarm->start(luxCurrentScene);
 

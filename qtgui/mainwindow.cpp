@@ -1132,6 +1132,7 @@ void MainWindow::endRenderingSession(bool abort)
 	statusMessage->setText("");
 	// Clean up if this is not the first rendering
 	if (m_guiRenderState != WAITING) {
+		changeRenderState(ENDING);
 		// at least give user some hints of what's going on
 		activityMessage->setText("Shutting down...");
 		qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
@@ -1165,7 +1166,7 @@ void MainWindow::endRenderingSession(bool abort)
 			m_engineThread->wait();
 		delete m_engineThread;
 		m_engineThread = NULL;
-		changeRenderState (WAITING);
+		changeRenderState(WAITING);
 		renderView->setLogoMode ();
 	}
 	LOG( LUX_INFO,LUX_NOERROR)<< "Freeing resources.";
@@ -1280,7 +1281,7 @@ void MainWindow::EngineThread::run()
 		luxParse(qPrintable(fullPath.absoluteFilePath()));
 	}
 
-	if (luxStatistics("terminated"))
+	if (luxStatistics("terminated") || mainWindow->m_guiRenderState == ENDING)
 		return;
 
 	if(!luxStatistics("sceneIsReady")) {
