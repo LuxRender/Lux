@@ -454,7 +454,7 @@ public:
 
 		// Incremental computation of weighted variance:
 		//  S_n = S_n−1 + weight_n (x_n − mean_n−1)(x_n − mean_n)
-		//  Var = sqrt(S_n / weightSum_n)
+		//  Var = S_n / weightSum_n
 		const float newSn = pixel.Sn + wt * (v - pixel.mean) * (v - newMean);
 
 		pixel.Sn = newSn;
@@ -476,9 +476,9 @@ public:
 	float GetVariance(u_int x, u_int y) const {
 		const VariancePixel &pixel = pixels(x, y);
 
-		// Var = sqrt(S_n / weightSum_n)
+		// Var = S_n / weightSum_n
 		if (pixel.weightSum > 0.f)
-			return sqrtf(fabs(pixel.Sn / pixel.weightSum));
+			return fabs(pixel.Sn / pixel.weightSum);
 		else
 			return -1.f; // -1 means a pixel that have yet to be sampled
 	}
