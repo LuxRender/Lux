@@ -687,6 +687,7 @@ public:
 
 	virtual const VarianceBuffer *GetVarianceBuffer() const { return varianceBuffer; }
 	virtual const vector<bool> &GetConvergenceMap() const { return convergenceDiff; }
+	virtual const float *GetTVIBuffer() const {return convergenceTVI; }
 
 	/*
 	 * Accessor for samplePerPass
@@ -757,6 +758,7 @@ protected: // Put it here for better data alignment
 
 	float *convergenceReference;
 	vector<bool> convergenceDiff;
+	float *convergenceTVI;
 
 	VarianceBuffer *varianceBuffer;
 
@@ -812,6 +814,9 @@ void ApplyImagingPipeline(vector<XYZColor> &pixels,
 	float glareAmount, float glareRadius, u_int glareBlades, float glareThreshold,
 	const char *tonemap, const ParamSet *toneMapParams,
 	const CameraResponse *response, float dither);
+
+extern void GenerateNoiseAwareMap(const VarianceBuffer *varianceBuffer,
+		const float *tviBuffer, float *map);
 
 }//namespace lux;
 

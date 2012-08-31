@@ -1008,13 +1008,24 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 					else
 						framebuffer[3 * i] = framebuffer[3 * i + 1] = framebuffer[3 * i + 2] = 0;*/
 				}
-					
+
+				// Some debug code used to show noise-aware map
+				/*float *map = (float *)alloca(sizeof(float) * nPix);
+				GenerateNoiseAwareMap(varianceBuffer, convergenceTVI, map);
+				for (u_int i = 0; i < nPix; i++) {
+					framebuffer[3 * i] = framebuffer[3 * i + 1] = framebuffer[3 * i + 2] =
+						static_cast<unsigned char>(Clamp(256.f *
+						map[i],
+						0.f, 255.f));
+				}*/
+
 				// Some debug code used to show the variance
 				/*float maxv = 0.f;
 				for (u_int i = 0; i < nPix; i++) {
 					const float v = varianceBuffer->GetVariance(i % xPixelCount, i / xPixelCount);
 					maxv = max(maxv, v);
 				}
+
 				const float invMaxV = 1.f / maxv;
 				for (u_int i = 0; i < nPix; i++) {
 					framebuffer[3 * i] = framebuffer[3 * i + 1] = framebuffer[3 * i + 2] =
@@ -1023,8 +1034,23 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 						0.f, 255.f));
 				}*/
 
+				// Some debug code used to show the tvi
+				/*if (convergenceTVI) {
+					float maxv = 0.f;
+					for (u_int i = 0; i < nPix; i++)
+						maxv = max(maxv, convergenceTVI[i]);
+
+					const float invMaxV = 1.f / maxv;
+					for (u_int i = 0; i < nPix; i++) {
+						framebuffer[3 * i] = framebuffer[3 * i + 1] = framebuffer[3 * i + 2] =
+							static_cast<unsigned char>(Clamp(invMaxV * 256.f *
+							convergenceTVI[i],
+							0.f, 255.f));
+					}
+				}*/
+
 				// Some debug code used to show the pixel sample counts
-				/*float maxv = 0.f;
+				/*float maxSampleCount = 0.f;
 				for (u_int p = 0; p < nPix; p++) {
 					// Merge all buffer results
 					float sampleCount = 0.f;
@@ -1041,10 +1067,9 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 						}
 					}
 
-					maxv = max(maxv, sampleCount);
+					maxSampleCount = max(maxSampleCount, sampleCount);
 				}
-				const float invMaxV = 1.f / maxv;
-				//const float invMaxV = 1.f / 250.f;
+				const float invMaxV = 1.f / maxSampleCount;
 				for (u_int p = 0; p < nPix; p++) {
 					// Merge all buffer results
 					float sampleCount = 0.f;

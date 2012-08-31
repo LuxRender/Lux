@@ -652,7 +652,7 @@ Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop
 	contribPool(NULL), filter(filt), filterTable(NULL), filterLUTs(NULL),
 	filename(filename1),
 	colorSpace(0.63f, 0.34f, 0.31f, 0.595f, 0.155f, 0.07f, 0.314275f, 0.329411f), // default is SMPTE
-	convergenceReference(NULL), varianceBuffer(NULL),
+	convergenceReference(NULL), convergenceTVI(NULL), varianceBuffer(NULL),
 	ZBuffer(NULL), use_Zbuf(useZbuffer),
 	debug_mode(debugmode), premultiplyAlpha(premult),
 	writeResumeFlm(w_resume_FLM), restartResumeFlm(restart_resume_FLM), writeFlmDirect(write_FLM_direct),
@@ -748,6 +748,7 @@ Film::~Film()
 	delete filter;
 	delete ZBuffer;
 	delete []convergenceReference;
+	delete []convergenceTVI;
 	delete varianceBuffer;
 	delete histogram;
 	delete contribPool;
@@ -778,7 +779,7 @@ void Film::CreateBuffers()
 		ZBuffer = new PerPixelNormalizedFloatBuffer(xPixelCount, yPixelCount);
 
 	// Allocate convergence buffers if needed
-	if (haltThreshold > 0.f) {
+	if (haltThreshold >= 0.f) {
 		varianceBuffer = new VarianceBuffer(xPixelCount, yPixelCount);
 		varianceBuffer->Clear();
 	}
@@ -1088,12 +1089,19 @@ void Film::UpdateConvergenceInfo(const float *framebuffer) {
 			convergenceReference = new float[3 * pixelCount];
 			std::copy(framebuffer, framebuffer + 3 * pixelCount, convergenceReference);
 
+			float *buffer = new float[pixelCount];
+			std::fill(buffer, buffer + pixelCount, 0.f);
+			// convergenceTVI is set != NUll only now because of multi-threading
+			convergenceTVI = buffer;
+
 			convergenceDiff.resize(pixelCount, false);
 		} else
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Not enough samples per pixel to start convergence test";
 	} else {
 		// Compare the new buffer with the old one
-		const u_int failedPixels = Yee_Compare(convergenceReference, framebuffer, convergenceDiff,
+		const u_int failedPixels = Yee_Compare(
+				convergenceReference, framebuffer,
+				convergenceDiff, convergenceTVI,
 				xPixelCount, yPixelCount);
 
 		// Make a copy for the new reference image
@@ -2288,6 +2296,71 @@ void Histogram::MakeImage(unsigned char *outPixels, u_int canvasW, u_int canvasH
 			}
 		}
 	}
+}
+
+void GenerateNoiseAwareMap(const VarianceBuffer *varianceBuffer, const float *tviBuffer, float *map) {
+	const u_int xPixelCount = varianceBuffer->pixels.uSize();
+	const u_int yPixelCount = varianceBuffer->pixels.vSize();
+	const u_int nPix = xPixelCount * yPixelCount;
+
+	// Make a copy of variance information (because of multi-threading)
+	float *variance = new float[nPix];
+	u_int index = 0;
+	for (u_int y = 0; y < yPixelCount; ++y)
+		for (u_int x = 0; x < xPixelCount; ++x, ++index)
+			variance[index] = varianceBuffer->GetVariance(x, y);
+
+	// Make a copy of TVI information (because of multi-threading)
+	float *tvi = NULL;
+	if (tviBuffer) {
+		tvi = new float[nPix];
+		std::copy(tviBuffer, tviBuffer + nPix, tvi);
+	}
+
+	bool hasPixelsToSample = false;
+	float maxStandardError = 0.f;
+	float maxTVI = 0.f;
+	for (u_int i = 0; i < nPix; ++i) {
+		// -1 means a pixel that have yet to be sampled
+		if (variance[i] == -1.f) {
+			hasPixelsToSample = true;
+			break;
+		}
+
+		map[i] = sqrtf(variance[i]);
+		maxStandardError = max(maxStandardError, map[i]);
+
+		if (tvi)
+			maxTVI = max(maxTVI, tvi[i]);
+	}
+
+	if (hasPixelsToSample || (maxStandardError <= 0.f) || (maxTVI <= 0.f) || !tvi) {
+		LOG(LUX_DEBUG, LUX_NOERROR) << "Noise aware map based on: sampled pixel";
+
+		// Just use a uniform distribution
+		std::fill(map, map + nPix, 1.f);
+	} else {
+		LOG(LUX_DEBUG, LUX_NOERROR) << "Noise aware map based on: noise information";
+		const float invMaxStandardError = 1.f / maxStandardError;
+		const float invMaxTVI = 1.f / maxTVI;
+		for (u_int i = 0; i < nPix; ++i) {
+			// Normalize standard error
+			const float standardError = map[i];
+			const float normalizedStandardError = standardError * invMaxStandardError;
+
+			// Normalize TVI
+			const float normalizedTVI = invMaxTVI * tvi[i];
+
+			float mapValue = (normalizedTVI == 0.f) ? 0.f : (normalizedStandardError / normalizedTVI);
+			// To be still unbiased
+			mapValue = max(0.01f, mapValue);
+
+			map[i] = mapValue;
+		}
+	}
+
+	delete []variance;
+	delete []tvi;
 }
 
 } // namespace lux

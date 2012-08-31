@@ -33,7 +33,7 @@
 
 namespace lux
 {
-
+	
 class MetropolisSampler : public Sampler {
 public:
 	class MetropolisData {
@@ -80,11 +80,11 @@ public:
 	float *rngSamples;
 	boost::mutex metropolisSamplerMutex;
 
-	Distribution2D *varianceMap;
-	double varianceMapSampleCount;
-	boost::mutex varianceMapMutex;
+	Distribution2D *noiseMap;
+	double noiseMapSampleCount;
+	boost::mutex noiseMapMutex;
 
-	bool useVariance, useCooldown, useVarianceMap;
+	bool useVariance, useCooldown, useNoiseAware;
 };
 
 }//namespace lux

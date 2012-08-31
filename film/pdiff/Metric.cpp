@@ -127,6 +127,7 @@ unsigned int Yee_Compare(
 		const float *rgbA,
 		const float *rgbB,
 		std::vector<bool> &diff,
+		float *tviBuffer,
 		const unsigned int width,
 		const unsigned int height,
 		const bool LuminanceOnly,
@@ -245,15 +246,18 @@ unsigned int Yee_Compare(
 		float delta = fabsf(la->Get_Value(x,y,0) - lb->Get_Value(x,y,0));
 		bool pass = true;
 		// pure luminance test
-		if (delta > factor * tvi(adapt)) {
+		const float tviValue = tvi(adapt);
+		if (tviBuffer)
+			tviBuffer[x + y * width] = tviValue;
+		if (delta > factor * tviValue) {
 			pass = false;
 		} else if (!LuminanceOnly) {
 			// CIE delta E test with modifications
 			float color_scale = ColorFactor;
 			// ramp down the color test in scotopic regions
 			if (adapt < 10.0f) {
-                          // Don't do color test at all.
-                          color_scale = 0.0;
+				// Don't do color test at all.
+				color_scale = 0.0;
 			}
 			float da = aA[index] - bA[index];
 			float db = aB[index] - bB[index];

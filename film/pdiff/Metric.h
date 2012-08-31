@@ -25,6 +25,7 @@ unsigned int Yee_Compare(
 		const float *rgbA,
 		const float *rgbB,
 		std::vector<bool> &diff,
+		float *tviBuffer,
 		const unsigned int width,
 		const unsigned int height,
 		const bool LuminanceOnly = false,
