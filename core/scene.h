@@ -41,8 +41,7 @@ class  Scene {
 public:
 	// Scene Public Methods
 	Scene(Camera *c, SurfaceIntegrator *in, VolumeIntegrator *vi,
-		Sampler *s, vector<boost::shared_ptr<Primitive> >  prims,
-		boost::shared_ptr<Primitive> &accel,
+		Sampler *s, boost::shared_ptr<Primitive> &accel,
 		const vector<Light *> &lts, const vector<string> &lg,
 		Region *vr);
 	Scene(Camera *c);
@@ -158,7 +157,6 @@ public:
 
 	// The following data are used when tracing rays with LuxRays
 	// The list of original primitives. It is required by LuxRays to build the DataSet.
-	vector<boost::shared_ptr<Primitive> > primitives;
 	vector<const Primitive *> tesselatedPrimitives;
 	luxrays::DataSet *dataSet;
 

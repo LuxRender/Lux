@@ -279,6 +279,15 @@ public:
 	}
 
 	/**
+	 * Add a tesselated approximation of current primitive to list passed as
+	 * argument. It can do nothing in case tasselation is not supported.
+	 * @param meshList      The vector where the mesh.
+	 * @param primitiveList The vector of primitive pointers where to add each a pointer to each primitive tesselated in the corresponding mesh.
+	 */
+	virtual void Tesselate(vector<luxrays::TriangleMesh *> *meshList,
+		vector<const Primitive *> *primitiveList) const;
+
+	/**
 	   Fills an array with the primitives
 	   @param prims vector to be filled
 	*/
@@ -364,8 +373,7 @@ protected:
 	   @param primsIndexes
 	   @param vPrims
 	*/
-	void PreSwizzle(int32_t nodeIndex, const u_int *primsIndexes,
-		const vector<boost::shared_ptr<Primitive> > &vPrims);
+	void PreSwizzle(int32_t nodeIndex, const u_int *primsIndexes);
 
 	/**
 	   Create a leaf using the pre-swizzled layout,
@@ -377,7 +385,7 @@ protected:
 	   @param vPrims
 	*/
 	void CreateSwizzledLeaf(int32_t parentIndex, int32_t childIndex, 
-		const u_int *primsIndexes, const vector<boost::shared_ptr<Primitive> > &vPrims);
+		const u_int *primsIndexes);
 
 	float CollectStatistics(const int32_t nodeIndex, const u_int depth,
 		const BBox &nodeBBox);
@@ -388,19 +396,20 @@ protected:
 	u_int nQuads;
 
 	/**
-	   The primitive associated with each triangle. indexed by the number of quad
-	   and the number of triangle in the quad (thus, there might be holes).
-	   no need to be a tesselated primitive, the intersection
-	   test will be redone for the nearest triangle found, to
-	   fill the Intersection structure.
+	   The quad primitives
 	*/
 	boost::shared_ptr<QuadPrimitive> *prims;
 	
 	/**
-	   The number of primitives
+	   The number of real primitives
 	*/
 	u_int nPrims;
 
+	/**
+	   The real primitives
+	*/
+	vector<boost::shared_ptr<Primitive> > primitives;
+	
 	/**
 	   The nodes of the QBVH.
 	*/

@@ -111,10 +111,9 @@ luxrays::DataSet *HybridRenderer::PreprocessGeometry(luxrays::Context *ctx, Scen
 
 	vector<luxrays::TriangleMesh *> meshList;
 
-	LOG(LUX_INFO,LUX_NOERROR) << "Tesselating " << scene->primitives.size() << " primitives";
+	LOG(LUX_INFO,LUX_NOERROR) << "Tesselating primitives...";
 
-	for (size_t i = 0; i < scene->primitives.size(); ++i)
-		scene->primitives[i]->Tesselate(&meshList, &scene->tesselatedPrimitives);
+	scene->aggregate->Tesselate(&meshList, &scene->tesselatedPrimitives);
 
 	// Create the DataSet
 	luxrays::DataSet *dataSet = new luxrays::DataSet(ctx);

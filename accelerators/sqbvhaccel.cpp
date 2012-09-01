@@ -36,17 +36,16 @@ SQBVHAccel::SQBVHAccel(const vector<boost::shared_ptr<Primitive> > &p,
 	skipFactor = sf;
 
 	// Refine all primitives
-	vector<boost::shared_ptr<Primitive> > vPrims;
 	const PrimitiveRefinementHints refineHints(false);
 	for (u_int i = 0; i < p.size(); ++i) {
 		if(p[i]->CanIntersect())
-			vPrims.push_back(p[i]);
+			primitives.push_back(p[i]);
 		else
-			p[i]->Refine(vPrims, refineHints, p[i]);
+			p[i]->Refine(primitives, refineHints, p[i]);
 	}
 
 	// Initialize primitives for _QBVHAccel_
-	nPrims = vPrims.size();
+	nPrims = primitives.size();
 
 	// The number of nodes depends on the number of primitives,
 	// and is bounded by 2 * nPrims - 1.
@@ -76,15 +75,15 @@ SQBVHAccel::SQBVHAccel(const vector<boost::shared_ptr<Primitive> > &p,
 		primsIndexesList[i] = i;
 
 		// Compute the bounding box for the primitive
-		primsBboxes[i] = vPrims[i]->WorldBound();
+		primsBboxes[i] = primitives[i]->WorldBound();
 
 		// Update the global bounding boxes
 		worldBound = Union(worldBound, primsBboxes[i]);
 
 		// SQBVH is able to clip only triangle primitive. Fire a warning if some
 		// other kind of primitive is used.
-		if (!DoesSupportPolygonVertexList(vPrims[i].get())) {
-			LOG(LUX_INFO, LUX_UNIMPLEMENT) << "A primitive of type " << typeid(*(vPrims[i].get())).name() <<
+		if (!DoesSupportPolygonVertexList(primitives[i].get())) {
+			LOG(LUX_INFO, LUX_UNIMPLEMENT) << "A primitive of type " << typeid(*(primitives[i].get())).name() <<
 					", used in a SQBVH, isn't a triangle, falling back to bounding box clipping for building";
 		}
 	}
@@ -97,7 +96,7 @@ SQBVHAccel::SQBVHAccel(const vector<boost::shared_ptr<Primitive> > &p,
 	nQuads = 0;
 	objectSplitCount = 0;
 	spatialSplitCount = 0;
-	BuildTree(nodesPrims, primsIndexesList, vPrims, primsBboxes, worldBound, -1, 0, 0);
+	BuildTree(nodesPrims, primsIndexesList, primsBboxes, worldBound, -1, 0, 0);
 
 	prims = AllocAligned<boost::shared_ptr<QuadPrimitive> >(nQuads);
 	nQuads = 0;
@@ -132,7 +131,7 @@ SQBVHAccel::SQBVHAccel(const vector<boost::shared_ptr<Primitive> > &p,
 	primsIndexes[index++] = nPrims - 1;
 	primsIndexes[index++] = nPrims - 1;
 	
-	PreSwizzle(0, primsIndexes, vPrims);
+	PreSwizzle(0, primsIndexes);
 	LOG(LUX_DEBUG, LUX_NOERROR) << "SQBVH completed with " << nNodes << "/" << maxNodes << " nodes";
 	
 	// Collect statistics
@@ -160,11 +159,11 @@ SQBVHAccel::SQBVHAccel(const vector<boost::shared_ptr<Primitive> > &p,
 }
 
 void SQBVHAccel::BuildTree(vector<vector<u_int> > *nodesPrims,
-		const std::vector<u_int> &primsIndexes,
-		const vector<boost::shared_ptr<Primitive> > &vPrims,
-		const std::vector<BBox> &primsBboxes, const BBox &nodeBbox,
-		const int32_t parentIndex, const int32_t childIndex,
-		const int depth) {
+	const std::vector<u_int> &primsIndexes,
+	const std::vector<BBox> &primsBboxes, const BBox &nodeBbox,
+	const int32_t parentIndex, const int32_t childIndex,
+	const int depth)
+{
 	const u_int nPrimsIndexes = primsIndexes.size();
 
 	// Create a leaf ?
@@ -226,7 +225,7 @@ void SQBVHAccel::BuildTree(vector<vector<u_int> > *nodesPrims,
 			(childIntersectionBbox.SurfaceArea() / worldBound.SurfaceArea() > alpha)) {
 		// It is worth trying a spatial split
 
-		spatialSplitBin = BuildSpatialSplit(primsIndexes, vPrims,
+		spatialSplitBin = BuildSpatialSplit(primsIndexes,
 				primsBboxes, nodeBbox, spatialSplitAxis,
 				spatialLeftChildBbox, spatialRightChildBbox,
 				spatialLeftChildReferences, spatialRightChildReferences);
@@ -257,7 +256,7 @@ void SQBVHAccel::BuildTree(vector<vector<u_int> > *nodesPrims,
 		rightBbox = &objectRightChildBbox;
 	} else {
 		// Do spatial split
-		DoSpatialSplit(primsIndexes, vPrims, primsBboxes, nodeBbox,
+		DoSpatialSplit(primsIndexes, primsBboxes, nodeBbox,
 				spatialSplitBin, spatialSplitAxis,
 				spatialLeftChildReferences, spatialRightChildReferences,
 				leftPrimsIndexes, rightPrimsIndexes,
@@ -296,17 +295,21 @@ void SQBVHAccel::BuildTree(vector<vector<u_int> > *nodesPrims,
 	}
 
 	// Build recursively
-	BuildTree(nodesPrims, leftPrimsIndexes, vPrims, leftPrimsBbox, *leftBbox,
-			currentNode, leftChildIndex, depth + 1);
-	BuildTree(nodesPrims, rightPrimsIndexes, vPrims, rightPrimsBbox, *rightBbox,
-			currentNode, rightChildIndex, depth + 1);
+	BuildTree(nodesPrims, leftPrimsIndexes, leftPrimsBbox, *leftBbox,
+		currentNode, leftChildIndex, depth + 1);
+	BuildTree(nodesPrims, rightPrimsIndexes, rightPrimsBbox, *rightBbox,
+		currentNode, rightChildIndex, depth + 1);
 }
 
-void SQBVHAccel::DoObjectSplit(const std::vector<u_int> &primsIndexes, const std::vector<BBox> &primsBboxes,
-		const int objectSplitBin, const int objectSplitAxis,
-		const u_int objectLeftChildReferences, const u_int objectRightChildReferences,
-		std::vector<u_int> &leftPrimsIndexes, std::vector<u_int> &rightPrimsIndexes,
-		std::vector<BBox> &objectLeftPrimsBbox, std::vector<BBox> &objectRightPrimsBbox) {
+void SQBVHAccel::DoObjectSplit(const std::vector<u_int> &primsIndexes,
+	const std::vector<BBox> &primsBboxes, const int objectSplitBin,
+	const int objectSplitAxis, const u_int objectLeftChildReferences,
+	const u_int objectRightChildReferences,
+	std::vector<u_int> &leftPrimsIndexes,
+	std::vector<u_int> &rightPrimsIndexes,
+	std::vector<BBox> &objectLeftPrimsBbox,
+	std::vector<BBox> &objectRightPrimsBbox)
+{
 	// Build the centroids list and bounding box
 	BBox centroidsBbox;
 	for (u_int i = 0; i < primsBboxes.size(); ++i) {
@@ -345,12 +348,15 @@ void SQBVHAccel::DoObjectSplit(const std::vector<u_int> &primsIndexes, const std
 }
 
 void SQBVHAccel::DoSpatialSplit(const std::vector<u_int> &primsIndexes,
-		const vector<boost::shared_ptr<Primitive> > &vPrims, const std::vector<BBox> &primsBboxes,
-		const BBox &nodeBbox, const int spatialSplitBin, const int spatialSplitAxis,
-		const u_int spatialLeftChildReferences, const u_int spatialRightChildReferences,
-		std::vector<u_int> &leftPrimsIndexes, std::vector<u_int> &rightPrimsIndexes,
-		std::vector<BBox> &leftPrimsBbox, std::vector<BBox> &rightPrimsBbox,
-		BBox &spatialLeftChildBbox, BBox &spatialRightChildBbox) {
+	const std::vector<BBox> &primsBboxes, const BBox &nodeBbox,
+	const int spatialSplitBin, const int spatialSplitAxis,
+	const u_int spatialLeftChildReferences,
+	const u_int spatialRightChildReferences,
+	std::vector<u_int> &leftPrimsIndexes,
+	std::vector<u_int> &rightPrimsIndexes,std::vector<BBox> &leftPrimsBbox,
+	std::vector<BBox> &rightPrimsBbox, BBox &spatialLeftChildBbox,
+	BBox &spatialRightChildBbox)
+{
 	const float k0 = nodeBbox.pMin[spatialSplitAxis];
 	const float k1 = (nodeBbox.pMax[spatialSplitAxis] - k0) / SPATIAL_SPLIT_BINS;
 	const float spatialSplitPos = k0 + k1 * (spatialSplitBin + 1);
@@ -383,7 +389,7 @@ void SQBVHAccel::DoSpatialSplit(const std::vector<u_int> &primsIndexes,
 			leftPrimsIndexes.push_back(primIndex);
 
 			// Clip triangle with left bounding box
-			vector<Point> vertexList = GetPolygonVertexList(vPrims[primIndex].get());
+			vector<Point> vertexList = GetPolygonVertexList(primitives[primIndex].get());
 			BBox primBbox;
 			if (vertexList.size() == 0) {
 				// The primitive isn't a triangle so I'm unable to clip with a
@@ -412,7 +418,7 @@ void SQBVHAccel::DoSpatialSplit(const std::vector<u_int> &primsIndexes,
 			rightPrimsIndexes.push_back(primIndex);
 
 			// Clip triangle with right bounding box
-			vector<Point> vertexList = GetPolygonVertexList(vPrims[primIndex].get());
+			vector<Point> vertexList = GetPolygonVertexList(primitives[primIndex].get());
 			BBox primBbox;
 			if (vertexList.size() == 0) {
 				// The primitive isn't a triangle so I'm unable to clip with a
@@ -444,7 +450,8 @@ void SQBVHAccel::DoSpatialSplit(const std::vector<u_int> &primsIndexes,
 	++spatialSplitCount;
 }
 
-bool SQBVHAccel::DoesSupportPolygonVertexList(const Primitive *prim) const {
+bool SQBVHAccel::DoesSupportPolygonVertexList(const Primitive *prim) const
+{
 	const MeshBaryTriangle *tri = dynamic_cast<const MeshBaryTriangle *>(prim);
 	if (tri != NULL)
 		return true;
@@ -481,10 +488,10 @@ vector<Point> SQBVHAccel::GetPolygonVertexList(const Primitive *prim) const {
 }
 
 int SQBVHAccel::BuildSpatialSplit(const std::vector<u_int> &primsIndexes,
-		const vector<boost::shared_ptr<Primitive> > &vPrims,
-		const std::vector<BBox> &primsBboxes, const BBox &nodeBbox,
-		int &axis, BBox &leftChildBbox, BBox &rightChildBbox,
-		u_int &leftChildReferences, u_int &rightChildReferences) {
+	const std::vector<BBox> &primsBboxes, const BBox &nodeBbox,
+	int &axis, BBox &leftChildBbox, BBox &rightChildBbox,
+	u_int &leftChildReferences, u_int &rightChildReferences)
+{
 	axis = nodeBbox.MaximumExtent();
 	
 	// Precompute values that are constant with respect to the current
@@ -535,7 +542,7 @@ int SQBVHAccel::BuildSpatialSplit(const std::vector<u_int> &primsIndexes,
 				exitFound = true;
 			}
 
-			vector<Point> vertexList = GetPolygonVertexList(vPrims[primsIndexes[i]].get());
+			vector<Point> vertexList = GetPolygonVertexList(primitives[primsIndexes[i]].get());
 			if (vertexList.size() == 0) {
 				BBox binPrimBbox = primsBboxes[i];
 				binPrimBbox.pMax[axis] = min(binPrimBbox.pMax[axis], binsBbox[j].pMax[axis]);
@@ -695,9 +702,10 @@ int SQBVHAccel::BuildSpatialSplit(const std::vector<u_int> &primsIndexes,
 	return minBin;
 }
 
-int SQBVHAccel::BuildObjectSplit(const std::vector<BBox> &primsBboxes, int &axis,
-		BBox &leftChildBbox, BBox &rightChildBbox,
-		u_int &leftChildReferences, u_int &rightChildReferences) {
+int SQBVHAccel::BuildObjectSplit(const std::vector<BBox> &primsBboxes,
+	int &axis, BBox &leftChildBbox, BBox &rightChildBbox,
+	u_int &leftChildReferences, u_int &rightChildReferences)
+{
 	// Build the centroids list and bounding box
 	BBox centroidsBbox;
 	for (u_int i = 0; i < primsBboxes.size(); ++i) {
