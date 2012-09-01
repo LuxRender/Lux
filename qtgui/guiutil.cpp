@@ -95,7 +95,7 @@ void overlayStatistics(QImage *image)
 
 	QString rendererStats = getStringAttribute("renderer_statistics_formatted", "_recommended_string");
 	// fallback statistics
-	if (rendererStats.length() == 0)	// if no renderer stats available
+	if (rendererStats.isEmpty())	// if no renderer stats available
 	{
 		int pixels = luxGetIntAttribute("film", "xResolution") * luxGetIntAttribute("film", "yResolution");
 		double spp = luxGetDoubleAttribute("film", "numberOfResumedSamples") / pixels;
