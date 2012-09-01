@@ -92,7 +92,17 @@ void overlayStatistics(QImage *image)
 
 	stats = "LuxRender " + QString::fromLatin1(luxVersion()) + " ";
 	stats += "|Saved: " + QDateTime::currentDateTime().toString(Qt::DefaultLocaleShortDate) + " ";
-	stats += "|Statistics: " + getStringAttribute("renderer_statistics_formatted", "_recommended_string") + " ";
+
+	QString rendererStats = getStringAttribute("renderer_statistics_formatted", "_recommended_string");
+	// fallback statistics
+	if (rendererStats.length() == 0)	// if no renderer stats available
+	{
+		int pixels = luxGetIntAttribute("film", "xResolution") * luxGetIntAttribute("film", "yResolution");
+		double spp = luxGetDoubleAttribute("film", "numberOfResumedSamples") / pixels;
+
+		rendererStats = QString("%1 %2S/p").arg(luxMagnitudeReduce(spp), 0, 'f', 2).arg(luxMagnitudePrefix(spp));
+	}
+	stats += "|Statistics: " + rendererStats + " ";
 
 	// convert regular spaces to non-breaking spaces, so that it will prefer to wrap
 	// between segments
