@@ -302,13 +302,6 @@ bool BVHAccel::IntersectP(const Ray &ray) const {
 	return false;
 }
 
-void BVHAccel::Tesselate(vector<luxrays::TriangleMesh *> *meshList,
-	vector<const Primitive *> *primitiveList) const
-{
-	for (u_int i = 0; i < nPrims; ++i)
-		prims[i]->Tesselate(meshList, primitiveList);
-}
-
 void BVHAccel::GetPrimitives(vector<boost::shared_ptr<Primitive> > &primitives) const {
 	primitives.reserve(nPrims);
 	for(u_int i=0; i<nPrims; i++) {

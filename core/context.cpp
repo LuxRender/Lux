@@ -1052,7 +1052,7 @@ Scene *Context::RenderOptions::MakeScene() const {
 	}
 
 	Scene *ret = new Scene(camera, surfaceIntegrator, volumeIntegrator,
-		sampler, accelerator, lights, lightGroups, volumeRegion);
+		sampler, primitives, accelerator, lights, lightGroups, volumeRegion);
 	// Erase primitives, lights, volume regions and instances from _RenderOptions_
 	primitives.clear();
 	lights.clear();

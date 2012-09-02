@@ -57,12 +57,14 @@ private:
 	   to end in the primsIndexes array.
 	*/
 	void BuildTree(vector<vector<u_int> > *nodesPrims,
-		const std::vector<u_int> &primsIndexes,
-		const std::vector<BBox> &primsBboxes, const BBox &nodeBbox,
-		const int32_t parentIndex, const int32_t childIndex,
-		const int depth);
+			const std::vector<u_int> &primsIndexes,
+			const vector<boost::shared_ptr<Primitive> > &vPrims,
+			const std::vector<BBox> &primsBboxes, const BBox &nodeBbox,
+			const int32_t parentIndex, const int32_t childIndex,
+			const int depth);
 
 	int BuildSpatialSplit(const std::vector<u_int> &primsIndexes,
+		const vector<boost::shared_ptr<Primitive> > &vPrims,
 		const std::vector<BBox> &primsBboxes, const BBox &nodeBbox,
 		int &axis, BBox &leftChildBbox, BBox &rightChildBbox,
 		u_int &leftChildReferences, u_int &rightChildReferences);
@@ -70,25 +72,17 @@ private:
 		BBox &leftChildBbox, BBox &rightChildBbox,
 		u_int &leftChildReferences, u_int &rightChildReferences);
 
-	void DoObjectSplit(const std::vector<u_int> &primsIndexes,
-		const std::vector<BBox> &primsBboxes,
+	void DoObjectSplit(const std::vector<u_int> &primsIndexes, const std::vector<BBox> &primsBboxes,
 		const int objectSplitBin, const int objectSplitAxis,
-		const u_int objectLeftChildReferences,
-		const u_int objectRightChildReferences,
-		std::vector<u_int> &leftPrimsIndexes,
-		std::vector<u_int> &rightPrimsIndexes,
-		std::vector<BBox> &objectLeftPrimsBbox,
-		std::vector<BBox> &objectRightPrimsBbox);
+		const u_int objectLeftChildReferences, const u_int objectRightChildReferences,
+		std::vector<u_int> &leftPrimsIndexes, std::vector<u_int> &rightPrimsIndexes,
+		std::vector<BBox> &objectLeftPrimsBbox, std::vector<BBox> &objectRightPrimsBbox);
 	void DoSpatialSplit(const std::vector<u_int> &primsIndexes,
-		const std::vector<BBox> &primsBboxes,
-		const BBox &nodeBbox, const int spatialSplitBin,
-		const int spatialSplitAxis,
-		const u_int spatialLeftChildReferences,
-		const u_int spatialRightChildReferences,
-		std::vector<u_int> &leftPrimsIndexes,
-		std::vector<u_int> &rightPrimsIndexes,
-		std::vector<BBox> &leftPrimsBbox,
-		std::vector<BBox> &rightPrimsBbox,
+		const vector<boost::shared_ptr<Primitive> > &vPrims, const std::vector<BBox> &primsBboxes,
+		const BBox &nodeBbox, const int spatialSplitBin, const int spatialSplitAxis,
+		const u_int spatialLeftChildReferences, const u_int spatialRightChildReferences,
+		std::vector<u_int> &leftPrimsIndexes, std::vector<u_int> &rightPrimsIndexes,
+		std::vector<BBox> &leftPrimsBbox, std::vector<BBox> &rightPrimsBbox,
 		BBox &spatialLeftChildBbox, BBox &spatialRightChildBbox);
 
 	bool DoesSupportPolygonVertexList(const Primitive *prim) const;

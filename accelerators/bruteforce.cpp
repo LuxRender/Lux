@@ -76,13 +76,6 @@ bool BruteForceAccel::IntersectP(const Ray &ray) const {
 	return false;
 }
 
-void BruteForceAccel::Tesselate(vector<luxrays::TriangleMesh *> *meshList,
-	vector<const Primitive *> *primitiveList) const
-{
-	for (u_int i = 0; i < prims.size(); ++i)
-		prims[i]->Tesselate(meshList, primitiveList);
-}
-
 void BruteForceAccel::GetPrimitives(vector<boost::shared_ptr<Primitive> > &primitives) const {
 	primitives.reserve(prims.size());
 	for(u_int i=0; i < prims.size(); i++) {

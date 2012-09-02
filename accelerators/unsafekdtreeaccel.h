@@ -127,15 +127,6 @@ public:
 		return Transform();
 	}
 
-	/**
-	 * Add a tesselated approximation of current primitive to list passed as
-	 * argument. It can do nothing in case tasselation is not supported.
-	 * @param meshList      The vector where the mesh.
-	 * @param primitiveList The vector of primitive pointers where to add each a pointer to each primitive tesselated in the corresponding mesh.
-	 */
-	virtual void Tesselate(vector<luxrays::TriangleMesh *> *meshList,
-		vector<const Primitive *> *primitiveList) const;
-
     virtual void GetPrimitives(vector<boost::shared_ptr<Primitive> > &prims) const;
 
     static Aggregate *CreateAccelerator(const vector<boost::shared_ptr<Primitive> > &prims, const ParamSet &ps);

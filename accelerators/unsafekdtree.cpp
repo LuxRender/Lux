@@ -388,13 +388,6 @@ bool UnsafeKdTreeAccel::IntersectP(const Ray &ray) const {
     return false;
 }
 
-void UnsafeKdTreeAccel::Tesselate(vector<luxrays::TriangleMesh *> *meshList,
-	vector<const Primitive *> *primitiveList) const
-{
-	for (u_int i = 0; i < nMailboxes; ++i)
-		mailboxPrims[i].primitive->Tesselate(meshList, primitiveList);
-}
-
 void UnsafeKdTreeAccel::GetPrimitives(vector<boost::shared_ptr<Primitive> > &primitives) const {
 	primitives.reserve(nMailboxes);
 	for(u_int i=0; i < nMailboxes; i++) {

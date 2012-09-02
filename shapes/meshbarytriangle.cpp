@@ -23,8 +23,6 @@
 #include "mesh.h"
 #include "mc.h"
 
-#include "luxrays/core/trianglemesh.h"
-
 using namespace lux;
 
 MeshBaryTriangle::MeshBaryTriangle(const Mesh *m, u_int n) :
@@ -246,82 +244,6 @@ float MeshBaryTriangle::Sample(float u1, float u2, float u3, DifferentialGeometr
 	dg->iData.baryTriangle.coords[1] = b2;
 	dg->iData.baryTriangle.coords[2] = b3;
 	return Pdf(*dg);
-}
-
-void MeshBaryTriangle::Tesselate(vector<luxrays::TriangleMesh *> *meshList,
-	vector<const Primitive *> *primitiveList) const
-{
-	// A little hack with pointers
-	luxrays::TriangleMesh *tm = new luxrays::TriangleMesh(mesh->nverts, 1,
-		(luxrays::Point *)mesh->p, (luxrays::Triangle *)v);
-
-	meshList->push_back(tm);
-	primitiveList->push_back(this);
-}
-
-void MeshBaryTriangle::GetIntersection(const luxrays::RayHit &rayHit, const u_int index, Intersection *isect) const {
-	const Point &p1 = GetP(0);
-	const Point &p2 = GetP(1);
-	const Point &p3 = GetP(2);
-	const Vector e1 = p2 - p1;
-	const Vector e2 = p3 - p1;
-
-	// Fill in _DifferentialGeometry_ from triangle hit
-	// Compute triangle partial derivatives
-	Vector dpdu, dpdv;
-	float uv[3][2];
-	if (mesh->uvs) {
-		uv[0][0] = mesh->uvs[2 * v[0]];
-		uv[0][1] = mesh->uvs[2 * v[0] + 1];
-		uv[1][0] = mesh->uvs[2 * v[1]];
-		uv[1][1] = mesh->uvs[2 * v[1] + 1];
-		uv[2][0] = mesh->uvs[2 * v[2]];
-		uv[2][1] = mesh->uvs[2 * v[2] + 1];
-	} else {
-		uv[0][0] = .5f;//p[v[0]].x;
-		uv[0][1] = .5f;//p[v[0]].y;
-		uv[1][0] = .5f;//p[v[1]].x;
-		uv[1][1] = .5f;//p[v[1]].y;
-		uv[2][0] = .5f;//p[v[2]].x;
-		uv[2][1] = .5f;//p[v[2]].y;
-	}
-
-	// Compute deltas for triangle partial derivatives
-	const float du1 = uv[0][0] - uv[2][0];
-	const float du2 = uv[1][0] - uv[2][0];
-	const float dv1 = uv[0][1] - uv[2][1];
-	const float dv2 = uv[1][1] - uv[2][1];
-	const Vector dp1 = p1 - p3, dp2 = p2 - p3;
-	const float determinant = du1 * dv2 - dv1 * du2;
-	if (determinant == 0.f) {
-		// Handle 0 determinant for triangle partial derivative matrix
-		CoordinateSystem(Normalize(Cross(e1, e2)), &dpdu, &dpdv);
-	} else {
-		const float invdet = 1.f / determinant;
-		dpdu = ( dv2 * dp1 - dv1 * dp2) * invdet;
-		dpdv = (-du2 * dp1 + du1 * dp2) * invdet;
-	}
-
-	const float b0 = 1.f - rayHit.b1 - rayHit.b2;
-	const float b1 = rayHit.b1;
-	const float b2 = rayHit.b2;
-
-	// Interpolate $(u,v)$ triangle parametric coordinates
-	const float tu = b0 * uv[0][0] + b1 * uv[1][0] + b2 * uv[2][0];
-	const float tv = b0 * uv[0][1] + b1 * uv[1][1] + b2 * uv[2][1];
-
-	const Normal nn = Normal(Normalize(Cross(e1, e2)));
-	const Point pp(p1 + b1 * e1 + b2 * e2);
-
-	isect->dg = DifferentialGeometry(pp, nn, dpdu, dpdv,
-		Normal(0, 0, 0), Normal(0, 0, 0), tu, tv, this);
-
-	isect->Set(mesh->WorldToObject, this, mesh->GetMaterial(),
-		GetExterior(), GetInterior());
-	isect->dg.iData.mesh.coords[0] = b0;
-	isect->dg.iData.mesh.coords[1] = b1;
-	isect->dg.iData.mesh.coords[2] = b2;
-	isect->dg.iData.mesh.triIndex = index * 3;
 }
 
 void MeshBaryTriangle::GetShadingGeometry(const Transform &obj2world,

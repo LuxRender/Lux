@@ -57,33 +57,35 @@ public:
 
 class QuadPrimitive : public Aggregate {
 public:
-	QuadPrimitive(const vector<boost::shared_ptr<Primitive> > &prims,
-		u_int p1, u_int p2, u_int p3, u_int p4) : primitives(prims)
-	{
-		indexes[0] = p1;
-		indexes[1] = p2;
-		indexes[2] = p3;
-		indexes[3] = p4;
+	// Don't use references to force temporaries and increase use count
+	QuadPrimitive(boost::shared_ptr<Primitive> p1,
+		boost::shared_ptr<Primitive> p2,
+		boost::shared_ptr<Primitive> p3,
+		boost::shared_ptr<Primitive> p4) {
+		primitives[0] = p1;
+		primitives[1] = p2;
+		primitives[2] = p3;
+		primitives[3] = p4;
 	}
 	virtual ~QuadPrimitive() { }
 	virtual BBox WorldBound() const
 	{
-		return Union(Union(primitives[indexes[0]]->WorldBound(),
-			primitives[indexes[1]]->WorldBound()),
-			Union(primitives[indexes[2]]->WorldBound(),
-			primitives[indexes[3]]->WorldBound()));
+		return Union(Union(primitives[0]->WorldBound(),
+			primitives[1]->WorldBound()),
+			Union(primitives[2]->WorldBound(),
+			primitives[3]->WorldBound()));
 	}
 	virtual bool Intersect(const Ray &ray, Intersection *isect) const
 	{
 		bool hit = false;
 		for (u_int i = 0; i < 4; ++i)
-			hit |= primitives[indexes[i]]->Intersect(ray, isect);
+			hit |= primitives[i]->Intersect(ray, isect);
 		return hit;
 	}
 	virtual bool IntersectP(const Ray &ray) const
 	{
 		for (u_int i = 0; i < 4; ++i)
-			if (primitives[indexes[i]]->IntersectP(ray))
+			if (primitives[i]->IntersectP(ray))
 				return true;
 		return false;
 	}
@@ -94,7 +96,7 @@ public:
 	{
 		prims.reserve(prims.size() + 4);
 		for (u_int i = 0; i < 4; ++i)
-			prims.push_back(primitives[indexes[i]]);
+			prims.push_back(primitives[i]);
 	}
 	virtual bool Intersect(const QuadRay &ray4, const Ray &ray, Intersection *isect) const
 	{
@@ -105,8 +107,7 @@ public:
 		return true;
 	}
 protected:
-	u_int indexes[4];
-	const vector<boost::shared_ptr<Primitive> > &primitives;
+	boost::shared_ptr<Primitive> primitives[4];
 };
 
 static inline __m128 reciprocal(const __m128 x)
@@ -118,12 +119,14 @@ static inline __m128 reciprocal(const __m128 x)
 class QuadTriangle : public QuadPrimitive, public Aligned16
 {
 public:
-	QuadTriangle(const vector<boost::shared_ptr<Primitive> > &prims,
-		u_int p1, u_int p2, u_int p3, u_int p4) :
-		QuadPrimitive(prims, p1, p2, p3, p4)
+	QuadTriangle(const boost::shared_ptr<Primitive> &p1,
+		const boost::shared_ptr<Primitive> &p2,
+		const boost::shared_ptr<Primitive> &p3,
+		const boost::shared_ptr<Primitive> &p4) :
+		QuadPrimitive(p1, p2, p3, p4)
 	{
 		for (u_int i = 0; i < 4; ++i) {
-			const MeshBaryTriangle *t = static_cast<const MeshBaryTriangle *>(primitives[indexes[i]].get());
+			const MeshBaryTriangle *t = static_cast<const MeshBaryTriangle *>(primitives[i].get());
 			reinterpret_cast<float *>(&origx)[i] = t->GetP(0).x;
 			reinterpret_cast<float *>(&origy)[i] = t->GetP(0).y;
 			reinterpret_cast<float *>(&origz)[i] = t->GetP(0).z;
@@ -188,7 +191,7 @@ public:
 			return false;
 		ray4.maxt = _mm_set1_ps(ray.maxt);
 
-		const MeshBaryTriangle *triangle(static_cast<const MeshBaryTriangle *>(primitives[indexes[hit]].get()));
+		const MeshBaryTriangle *triangle(static_cast<const MeshBaryTriangle *>(primitives[hit].get()));
 
 		const Point o(reinterpret_cast<const float *>(&origx)[hit],
 			reinterpret_cast<const float *>(&origy)[hit],
@@ -260,16 +263,17 @@ QBVHAccel::QBVHAccel(const vector<boost::shared_ptr<Primitive> > &p,
 	skipFactor(sf), maxPrimsPerLeaf(mp)
 {
 	// Refine all primitives
+	vector<boost::shared_ptr<Primitive> > vPrims;
 	const PrimitiveRefinementHints refineHints(false);
 	for (u_int i = 0; i < p.size(); ++i) {
 		if(p[i]->CanIntersect())
-			primitives.push_back(p[i]);
+			vPrims.push_back(p[i]);
 		else
-			p[i]->Refine(primitives, refineHints, p[i]);
+			p[i]->Refine(vPrims, refineHints, p[i]);
 	}
 
 	// Initialize primitives for _QBVHAccel_
-	nPrims = primitives.size();
+	nPrims = vPrims.size();
 
 	// Temporary data for building
 	u_int *primsIndexes = new u_int[nPrims + 3]; // For the case where
@@ -302,7 +306,7 @@ QBVHAccel::QBVHAccel(const vector<boost::shared_ptr<Primitive> > &p,
 		primsIndexes[i] = i;
 
 		// Compute the bounding box for the triangle
-		primsBboxes[i] = primitives[i]->WorldBound();
+		primsBboxes[i] = vPrims[i]->WorldBound();
 		primsBboxes[i].Expand(MachineEpsilon::E(primsBboxes[i]));
 		primsCentroids[i] = (primsBboxes[i].pMin +
 			primsBboxes[i].pMax) * .5f;
@@ -325,7 +329,7 @@ QBVHAccel::QBVHAccel(const vector<boost::shared_ptr<Primitive> > &p,
 
 	prims = AllocAligned<boost::shared_ptr<QuadPrimitive> >(nQuads);
 	nQuads = 0;
-	PreSwizzle(0, primsIndexes);
+	PreSwizzle(0, primsIndexes, vPrims);
 	LOG(LUX_DEBUG,LUX_NOERROR) << "QBVH completed with " << nNodes << "/" << maxNodes << " nodes";
 	
 	// Collect statistics
@@ -613,18 +617,19 @@ void QBVHAccel::CreateTempLeaf(int32_t parentIndex, int32_t childIndex,
 	nQuads += quads;
 }
 
-void QBVHAccel::PreSwizzle(int32_t nodeIndex, const u_int *primsIndexes)
+void QBVHAccel::PreSwizzle(int32_t nodeIndex, const u_int *primsIndexes,
+	const vector<boost::shared_ptr<Primitive> > &vPrims)
 {
 	for (int i = 0; i < 4; ++i) {
 		if (nodes[nodeIndex].ChildIsLeaf(i))
-			CreateSwizzledLeaf(nodeIndex, i, primsIndexes);
+			CreateSwizzledLeaf(nodeIndex, i, primsIndexes, vPrims);
 		else
-			PreSwizzle(nodes[nodeIndex].children[i], primsIndexes);
+			PreSwizzle(nodes[nodeIndex].children[i], primsIndexes, vPrims);
 	}
 }
 
 void QBVHAccel::CreateSwizzledLeaf(int32_t parentIndex, int32_t childIndex,
-	const u_int *primsIndexes)
+	const u_int *primsIndexes, const vector<boost::shared_ptr<Primitive> > &vPrims)
 {
 	QBVHNode &node = nodes[parentIndex];
 	if (node.LeafIsEmpty(childIndex))
@@ -638,12 +643,12 @@ void QBVHAccel::CreateSwizzledLeaf(int32_t parentIndex, int32_t childIndex,
 	for (u_int q = 0; q < nbQuads; ++q) {
 		bool allTri = true;
 		for (u_int i = 0; i < 4; ++i)
-			allTri &= dynamic_cast<MeshBaryTriangle *>(primitives[primsIndexes[primOffset + i]].get()) != NULL;
+			allTri &= dynamic_cast<MeshBaryTriangle *>(vPrims[primsIndexes[primOffset + i]].get()) != NULL;
 		if (allTri) {
-			boost::shared_ptr<QuadPrimitive> p(new QuadTriangle(primitives, primsIndexes[primOffset], primsIndexes[primOffset + 1], primsIndexes[primOffset + 2], primsIndexes[primOffset + 3]));
+			boost::shared_ptr<QuadPrimitive> p(new QuadTriangle(vPrims[primsIndexes[primOffset]], vPrims[primsIndexes[primOffset + 1]], vPrims[primsIndexes[primOffset + 2]], vPrims[primsIndexes[primOffset + 3]]));
 			new (&prims[primNum]) boost::shared_ptr<QuadPrimitive>(p);
 		} else {
-			boost::shared_ptr<QuadPrimitive> p(new QuadPrimitive(primitives, primsIndexes[primOffset], primsIndexes[primOffset + 1], primsIndexes[primOffset + 2], primsIndexes[primOffset + 3]));
+			boost::shared_ptr<QuadPrimitive> p(new QuadPrimitive(vPrims[primsIndexes[primOffset]], vPrims[primsIndexes[primOffset + 1]], vPrims[primsIndexes[primOffset + 2]], vPrims[primsIndexes[primOffset + 3]]));
 			new (&prims[primNum]) boost::shared_ptr<QuadPrimitive>(p);
 		}
 		++primNum;
@@ -821,20 +826,13 @@ BBox QBVHAccel::WorldBound() const
 	return worldBound;
 }
 
-void QBVHAccel::Tesselate(vector<luxrays::TriangleMesh *> *meshList,
-	vector<const Primitive *> *primitiveList) const
+void QBVHAccel::GetPrimitives(vector<boost::shared_ptr<Primitive> > &primitives) const
 {
+	primitives.reserve(primitives.size() + nPrims);
+	for(u_int i = 0; i < nPrims; ++i)
+		primitives.push_back(prims[i]);
 	for (u_int i = 0; i < nPrims; ++i)
-		primitives[i]->Tesselate(meshList, primitiveList);
-}
-
-void QBVHAccel::GetPrimitives(vector<boost::shared_ptr<Primitive> > &p) const
-{
-	p.reserve(nPrims + nQuads);
-	for(u_int i = 0; i < nQuads; ++i)
-		p.push_back(prims[i]);
-	for (u_int i = 0; i < nPrims; ++i)
-		p.push_back(primitives[i]);
+		prims[i]->GetPrimitives(primitives);
 }
 
 Aggregate* QBVHAccel::CreateAccelerator(const vector<boost::shared_ptr<Primitive> > &prims, const ParamSet &ps)

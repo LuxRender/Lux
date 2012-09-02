@@ -140,10 +140,6 @@ public:
 	virtual bool Intersect(const Ray &ray, Intersection *isect) const;
 	virtual bool IntersectP(const Ray &ray) const;
 
-	virtual void Tesselate(vector<luxrays::TriangleMesh *> *meshList,
-		vector<const Primitive *> *primitiveList) const;
-	virtual void GetIntersection(const luxrays::RayHit &rayHit,
-		const u_int index, Intersection *isect) const;
 	virtual void GetShadingGeometry(const Transform &obj2world,
 		const DifferentialGeometry &dg,
 		DifferentialGeometry *dgShading) const;
