@@ -78,7 +78,7 @@ bool FresnelBlend::SampleF(const SpectrumWavelengths &sw, const Vector &wo,
 		*wi = CosineSampleHemisphere(u1, u2);
 		if (wo.z < 0.f)
 			wi->z = -wi->z;
-		Vector wh = Normalize(*wi + wo);
+		wh = Normalize(*wi + wo);
 		if (wh.z < 0.f)
 			wh = -wh;
 		d = distribution->D(wh);
