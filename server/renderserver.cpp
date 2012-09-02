@@ -69,7 +69,7 @@ RenderServer::RenderServer(int tCount, const std::string &serverPassword, int po
 
 RenderServer::~RenderServer()
 {
-	if ((state == READY) && (state == BUSY))
+	if ((state == READY) || (state == BUSY))
 		stop();
 }
 
