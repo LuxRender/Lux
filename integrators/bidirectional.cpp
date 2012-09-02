@@ -1788,8 +1788,8 @@ static void InitRay(luxrays::Ray *r, const Point &o, const Vector &d,
 }
 
 bool BidirIntegrator::GenerateRays(const Scene &scene,
-		SurfaceIntegratorState *s, luxrays::RayBuffer *rayBuffer) {
-	BidirPathState *bidirState = (BidirPathState *)s;
+		SurfaceIntegratorState *ss, luxrays::RayBuffer *rayBuffer) {
+	BidirPathState *bidirState = (BidirPathState *)ss;
 
 	const u_int eyePathLength = bidirState->eyePathLength;
 	const u_int lightPathLength = bidirState->lightPathLength ;
@@ -2030,9 +2030,9 @@ bool BidirIntegrator::GenerateRays(const Scene &scene,
 	return true;
 }
 
-bool BidirIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s,
+bool BidirIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *ss,
 		luxrays::RayBuffer *rayBuffer, u_int *nrContribs) {
-	BidirPathState *bidirState = (BidirPathState *)s;
+	BidirPathState *bidirState = (BidirPathState *)ss;
 
 	u_int rayIndex = 0;
 
