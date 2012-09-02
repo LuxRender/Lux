@@ -409,7 +409,9 @@ void HybridSamplerRenderer::Render(Scene *s) {
 		//----------------------------------------------------------------------
 
 		dataSet = HybridRenderer::PreprocessGeometry(ctx, scene);
-        ctx->Start();
+		if (!dataSet)
+			return;
+		ctx->Start();
 
 		// start the timer
 		rendererStatistics->start();
