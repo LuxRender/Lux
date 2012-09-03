@@ -971,11 +971,11 @@
            <bool>true</bool>
           </property>
           <attribute name="horizontalHeaderVisible">
-           <bool>false</bool>
+           <bool>true</bool>
           </attribute>
           <column>
            <property name="text">
-            <string>IP</string>
+            <string>Address</string>
            </property>
           </column>
           <column>
