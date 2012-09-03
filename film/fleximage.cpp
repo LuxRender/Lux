@@ -1010,12 +1010,10 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 				}
 
 				// Some debug code used to show noise-aware map
-				/*float *map = (float *)alloca(sizeof(float) * nPix);
-				GenerateNoiseAwareMap(varianceBuffer, convergenceTVI, map);
-				for (u_int i = 0; i < nPix; i++) {
+				/*for (u_int i = 0; i < nPix; i++) {
 					framebuffer[3 * i] = framebuffer[3 * i + 1] = framebuffer[3 * i + 2] =
 						static_cast<unsigned char>(Clamp(256.f *
-						map[i],
+						noiseAwareMap[i],
 						0.f, 255.f));
 				}*/
 
@@ -1025,7 +1023,6 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 					const float v = varianceBuffer->GetVariance(i % xPixelCount, i / xPixelCount);
 					maxv = max(maxv, v);
 				}
-
 				const float invMaxV = 1.f / maxv;
 				for (u_int i = 0; i < nPix; i++) {
 					framebuffer[3 * i] = framebuffer[3 * i + 1] = framebuffer[3 * i + 2] =
@@ -1087,7 +1084,7 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 					}
 
 					framebuffer[3 * p] = framebuffer[3 * p + 1] = framebuffer[3 * p + 2] = 
-							static_cast<unsigned char>(Clamp(256 * sampleCount * invMaxV, 0.f, 255.f));
+							static_cast<unsigned char>(Clamp(256.f * sampleCount * invMaxV, 0.f, 255.f));
 				}*/
 			}
 

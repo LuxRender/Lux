@@ -80,10 +80,6 @@ public:
 	float *rngSamples;
 	boost::mutex metropolisSamplerMutex;
 
-	Distribution2D *noiseMap;
-	double noiseMapSampleCount;
-	boost::mutex noiseMapMutex;
-
 	bool useVariance, useCooldown, useNoiseAware;
 };
 

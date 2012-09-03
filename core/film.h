@@ -685,9 +685,7 @@ public:
 	virtual void SetStringParameterValue(luxComponentParameters param, const string& value, u_int index) = 0;
 	virtual string GetStringParameterValue(luxComponentParameters param, u_int index) = 0;
 
-	virtual const VarianceBuffer *GetVarianceBuffer() const { return varianceBuffer; }
-	virtual const vector<bool> &GetConvergenceMap() const { return convergenceDiff; }
-	virtual const float *GetTVIBuffer() const {return convergenceTVI; }
+	virtual const float *GetNoiseAwareMap() const { return noiseAwareMap; }
 
 	/*
 	 * Accessor for samplePerPass
@@ -708,6 +706,7 @@ protected:
 	// Gets the extents of a tile, interval is [start, end).
 	void GetTileExtent(u_int tileIndex, int *xstart, int *xend, int *ystart, int *yend) const;
 	void UpdateConvergenceInfo(const float *framebuffer);
+	void GenerateNoiseAwareMap();
 
 public:
 	// Film Public Data
@@ -759,8 +758,8 @@ protected: // Put it here for better data alignment
 	float *convergenceReference;
 	vector<bool> convergenceDiff;
 	float *convergenceTVI;
-
 	VarianceBuffer *varianceBuffer;
+	float *noiseAwareMap;
 
 	PerPixelNormalizedFloatBuffer *ZBuffer;
 	bool use_Zbuf;
@@ -814,9 +813,6 @@ void ApplyImagingPipeline(vector<XYZColor> &pixels,
 	float glareAmount, float glareRadius, u_int glareBlades, float glareThreshold,
 	const char *tonemap, const ParamSet *toneMapParams,
 	const CameraResponse *response, float dither);
-
-extern void GenerateNoiseAwareMap(const VarianceBuffer *varianceBuffer,
-		const float *tviBuffer, float *map);
 
 }//namespace lux;
 

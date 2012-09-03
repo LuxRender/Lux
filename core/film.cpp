@@ -652,7 +652,7 @@ Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop
 	contribPool(NULL), filter(filt), filterTable(NULL), filterLUTs(NULL),
 	filename(filename1),
 	colorSpace(0.63f, 0.34f, 0.31f, 0.595f, 0.155f, 0.07f, 0.314275f, 0.329411f), // default is SMPTE
-	convergenceReference(NULL), convergenceTVI(NULL), varianceBuffer(NULL),
+	convergenceReference(NULL), convergenceTVI(NULL), varianceBuffer(NULL), noiseAwareMap(NULL),
 	ZBuffer(NULL), use_Zbuf(useZbuffer),
 	debug_mode(debugmode), premultiplyAlpha(premult),
 	writeResumeFlm(w_resume_FLM), restartResumeFlm(restart_resume_FLM), writeFlmDirect(write_FLM_direct),
@@ -750,6 +750,7 @@ Film::~Film()
 	delete []convergenceReference;
 	delete []convergenceTVI;
 	delete varianceBuffer;
+	delete noiseAwareMap;
 	delete histogram;
 	delete contribPool;
 }
@@ -782,6 +783,9 @@ void Film::CreateBuffers()
 	if (haltThreshold >= 0.f) {
 		varianceBuffer = new VarianceBuffer(xPixelCount, yPixelCount);
 		varianceBuffer->Clear();
+
+		noiseAwareMap = new float[xPixelCount * yPixelCount];
+		std::fill(noiseAwareMap, noiseAwareMap + xPixelCount * yPixelCount, 1.f);
 	}
 
     // Dade - check if we have to resume a rendering and restore the buffers
@@ -1054,7 +1058,7 @@ void Film::GetTileExtent(u_int tileIndex, int *xstart, int *xend, int *ystart, i
 }
 
 void Film::UpdateConvergenceInfo(const float *framebuffer) {
-	const u_int pixelCount = xPixelCount * yPixelCount;
+	const u_int nPix = xPixelCount * yPixelCount;
 	if (!convergenceReference) {
 		// Check if we have at least a sample per pixel
 		bool missingSamples = false;
@@ -1086,15 +1090,15 @@ void Film::UpdateConvergenceInfo(const float *framebuffer) {
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Enough samples per pixel to start convergence test";
 
 			// Allocate the reference buffer and make a copy
-			convergenceReference = new float[3 * pixelCount];
-			std::copy(framebuffer, framebuffer + 3 * pixelCount, convergenceReference);
+			convergenceReference = new float[3 * nPix];
+			std::copy(framebuffer, framebuffer + 3 * nPix, convergenceReference);
 
-			float *buffer = new float[pixelCount];
-			std::fill(buffer, buffer + pixelCount, 0.f);
+			float *buffer = new float[nPix];
+			std::fill(buffer, buffer + nPix, 0.f);
 			// convergenceTVI is set != NUll only now because of multi-threading
 			convergenceTVI = buffer;
 
-			convergenceDiff.resize(pixelCount, false);
+			convergenceDiff.resize(nPix, false);
 		} else
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Not enough samples per pixel to start convergence test";
 	} else {
@@ -1105,17 +1109,20 @@ void Film::UpdateConvergenceInfo(const float *framebuffer) {
 				xPixelCount, yPixelCount);
 
 		// Make a copy for the new reference image
-		std::copy(framebuffer, framebuffer + 3 * pixelCount, convergenceReference);
+		std::copy(framebuffer, framebuffer + 3 * nPix, convergenceReference);
 
 		// Check if we can stop the rendering
-		const float failedPercentage = failedPixels / (float)pixelCount;
+		const float failedPercentage = failedPixels / (float)nPix;
 		if (failedPercentage <= haltThreshold)
 			enoughSamplesPerPixel = true;
 
 		if (enoughSamplesPerPixel)
 			haltThresholdComplete = 1.f - haltThreshold;
 		else
-			haltThresholdComplete = (pixelCount - failedPixels) / (float)pixelCount;
+			haltThresholdComplete = (nPix - failedPixels) / (float)nPix;
+
+		if (noiseAwareMap)
+			GenerateNoiseAwareMap();
 	}
 }
 
@@ -2434,136 +2441,38 @@ static void ApplyBoxFilter(float *frameBuffer, float *tmpFrameBuffer,
 	}
 }
 
-/*static void ApplyBlurHeavyFilterXR1(const float *src, float *dst,
-	const unsigned int width, const unsigned int height) {
-	const float aF = .35f;
-	const float bF = 1.f;
-	const float cF = .35f;
+//------------------------------------------------------------------------------
+// Update the noise-aware map
+//------------------------------------------------------------------------------
 
-	// Do left edge
-	float a = 0.f;
-	float b = src[0];
-	float c = src[1];
-
-	const float leftTotF = bF + cF;
-	const float bLeftK = bF / leftTotF;
-	const float cLeftK = cF / leftTotF;
-	dst[0] = bLeftK  * b + cLeftK * c;
-
-    // Main loop
-	const float totF = aF + bF + cF;
-	const float aK = aF / totF;
-	const float bK = bF / totF;
-	const float cK = cF / totF;
-
-	for (unsigned int x = 1; x < width - 1; ++x) {
-		a = b;
-		b = c;
-		c = src[x + 1];
-
-		dst[x] = aK * a + bK * b + cK * c;
-    }
-
-    // Do right edge
-	const float rightTotF = aF + bF;
-	const float aRightK = aF / rightTotF;
-	const float bRightK = bF / rightTotF;
-	a = b;
-	b = c;
-	dst[width - 1] = aRightK * a + bRightK * b;
-}
-
-// From Sfera source, for fast filtering
-static void ApplyBlurHeavyFilterYR1(const float *src, float *dst,
-	const unsigned int width, const unsigned int height) {
-	const float aF = .35f;
-	const float bF = 1.f;
-	const float cF = .35f;
-
-	// Do left edge
-	float a = 0.f;
-	float b = src[0];
-	float c = src[width];
-
-	const float leftTotF = bF + cF;
-	const float bLeftK = bF / leftTotF;
-	const float cLeftK = cF / leftTotF;
-	dst[0] = bLeftK  * b + cLeftK * c;
-
-    // Main loop
-	const float totF = aF + bF + cF;
-	const float aK = aF / totF;
-	const float bK = bF / totF;
-	const float cK = cF / totF;
-
-    for (unsigned int y = 1; y < height - 1; ++y) {
-		a = b;
-		b = c;
-		c = src[(y + 1) * width];
-
-		dst[y * width] = aK * a + bK * b + cK * c;
-    }
-
-    // Do right edge
-	const float rightTotF = aF + bF;
-	const float aRightK = aF / rightTotF;
-	const float bRightK = bF / rightTotF;
-	a = b;
-	b = c;
-	dst[(height - 1) * width] = aRightK * a + bRightK * b;
-}
-
-// From Sfera source, for fast filtering
-static void ApplyBlurHeavyFilter(float *frameBuffer, float *tmpFrameBuffer,
-	const unsigned int width, const unsigned int height) {
-	for (unsigned int i = 0; i < height; ++i)
-		ApplyBlurHeavyFilterXR1(&frameBuffer[i * width], &tmpFrameBuffer[i * width], width, height);
-
-	for (unsigned int i = 0; i < width; ++i)
-		ApplyBlurHeavyFilterYR1(&tmpFrameBuffer[i], &frameBuffer[i], width, height);
-}*/
-
-void GenerateNoiseAwareMap(const VarianceBuffer *varianceBuffer, const float *tviBuffer, float *map) {
-	const u_int xPixelCount = varianceBuffer->pixels.uSize();
-	const u_int yPixelCount = varianceBuffer->pixels.vSize();
+void Film::GenerateNoiseAwareMap() {
 	const u_int nPix = xPixelCount * yPixelCount;
-
-	// Make a copy of variance information (because of multi-threading)
-	float *variance = new float[nPix];
-	u_int index = 0;
-	for (u_int y = 0; y < yPixelCount; ++y)
-		for (u_int x = 0; x < xPixelCount; ++x, ++index)
-			variance[index] = varianceBuffer->GetVariance(x, y);
-
-	// Make a copy of TVI information (because of multi-threading)
-	float *tvi = NULL;
-	if (tviBuffer) {
-		tvi = new float[nPix];
-		std::copy(tviBuffer, tviBuffer + nPix, tvi);
-	}
-
 	bool hasPixelsToSample = false;
 	float maxStandardError = 0.f;
 	float maxTVI = 0.f;
-	for (u_int i = 0; i < nPix; ++i) {
-		// -1 means a pixel that have yet to be sampled
-		if (variance[i] == -1.f) {
-			hasPixelsToSample = true;
-			break;
+	u_int index = 0;
+	for (u_int y = 0; y < yPixelCount; ++y) {
+		for (u_int x = 0; x < xPixelCount; ++x, ++index) {
+			const float variance = varianceBuffer->GetVariance(x, y);
+			// -1 means a pixel that have yet to be sampled
+			if (variance == -1.f) {
+				hasPixelsToSample = true;
+				break;
+			}
+
+			noiseAwareMap[index] = sqrtf(variance);
+			maxStandardError = max(maxStandardError, noiseAwareMap[index]);
+
+			if (convergenceTVI)
+				maxTVI = max(maxTVI, convergenceTVI[index]);
 		}
-
-		map[i] = sqrtf(variance[i]);
-		maxStandardError = max(maxStandardError, map[i]);
-
-		if (tvi)
-			maxTVI = max(maxTVI, tvi[i]);
 	}
 
-	if (hasPixelsToSample || (maxStandardError <= 0.f) || !tvi || (maxTVI <= 0.f)) {
+	if (hasPixelsToSample || (maxStandardError <= 0.f) || !convergenceTVI || (maxTVI <= 0.f)) {
 		LOG(LUX_DEBUG, LUX_NOERROR) << "Noise aware map based on: uniform distribution";
 
 		// Just use a uniform distribution
-		std::fill(map, map + nPix, 1.f);
+		std::fill(noiseAwareMap, noiseAwareMap + nPix, 1.f);
 	} else {
 		LOG(LUX_DEBUG, LUX_NOERROR) << "Noise aware map based on: noise information";
 
@@ -2571,11 +2480,11 @@ void GenerateNoiseAwareMap(const VarianceBuffer *varianceBuffer, const float *tv
 		const float invMaxTVI = 1.f / maxTVI;
 		for (u_int i = 0; i < nPix; ++i) {
 			// Normalize standard error
-			const float standardError = map[i];
+			const float standardError = noiseAwareMap[i];
 			const float normalizedStandardError = standardError * invMaxStandardError;
 
 			// Normalize TVI
-			const float normalizedTVI = invMaxTVI * tvi[i];
+			const float normalizedTVI = invMaxTVI * convergenceTVI[i];
 
 			float mapValue = (normalizedTVI == 0.f) ? 0.f : (normalizedStandardError / normalizedTVI);
 			// To be still unbiased
@@ -2583,20 +2492,17 @@ void GenerateNoiseAwareMap(const VarianceBuffer *varianceBuffer, const float *tv
 			//  restricts the contrast of the visual error image so
 			//  that the ratio of the 95th percentile to the 5th percentile is no
 			//  greater than 2 (step 1 & 2).
-			mapValue = min(max(0.05f, mapValue), 0.95f);
+			mapValue = min(max(0.01f, mapValue), 0.99f);
 
-			map[i] = mapValue;
+			noiseAwareMap[i] = mapValue;
 		}
 
 		// Apply an heavy filter to smooth the map
 		float *tmpMap = new float[nPix];
 		//ApplyBlurHeavyFilter(map, tmpMap, xPixelCount, yPixelCount);
-		ApplyBoxFilter(map, tmpMap, xPixelCount, yPixelCount, 2);
+		ApplyBoxFilter(noiseAwareMap, tmpMap, xPixelCount, yPixelCount, 2);
 		delete []tmpMap;
 	}
-
-	delete []variance;
-	delete []tvi;
 }
 
 } // namespace lux

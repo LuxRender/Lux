@@ -133,7 +133,6 @@ MetropolisSampler::MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
 	u_int maxRej, float largeProb, float rng, bool useV, bool useC, bool useNoise) :
 	Sampler(xStart, xEnd, yStart, yEnd, 1), maxRejects(maxRej),
 	pLargeTarget(largeProb), range(rng),
-	noiseMap(NULL), noiseMapSampleCount(0.f),
 	useVariance(useV), useCooldown(useC), useNoiseAware(useNoise)
 {
 	// Allocate and compute all values of the rng
@@ -160,7 +159,6 @@ MetropolisSampler::MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
 
 MetropolisSampler::~MetropolisSampler() {
 	FreeAligned(rngSamples);
-	delete noiseMap;
 }
 
 // interface for new ray/samples from scene
@@ -187,36 +185,8 @@ bool MetropolisSampler::GetNextSample(Sample *sample)
 	if (data->large) {
 		// *** large mutation ***
 		// Initialize all non lazy samples
-		const VarianceBuffer *varianceBuffer = film->GetVarianceBuffer();
-		if (useNoiseAware && varianceBuffer) {
-			// Check if variance information are already available and
-			// variance map is up to date			
-			boost::mutex::scoped_lock lock(noiseMapMutex);
-
-			const u_int xPixelCount = film->GetXPixelCount();
-			const u_int yPixelCount = film->GetYPixelCount();
-			const u_int nPix = xPixelCount * yPixelCount;
-			if (!noiseMap || (film->numberOfLocalSamples - noiseMapSampleCount > 32.0 * nPix)) {
-				LOG(LUX_DEBUG, LUX_NOERROR) << "Updating Metropolis noise map: after " << film->numberOfLocalSamples - noiseMapSampleCount << " samples";
-				noiseMapSampleCount = film->numberOfLocalSamples;
-
-				// It is time to update the map
-				float *map = new float[nPix];
-				GenerateNoiseAwareMap(varianceBuffer, film->GetTVIBuffer(), map);
-
-				delete noiseMap;
-				noiseMap = new Distribution2D(map, xPixelCount, yPixelCount);
-				delete []map;
-			}
-
-			float uv[2], pdf[2];
-			noiseMap->SampleContinuous(rngGet(0), rngGet(1), uv, pdf);
-			data->currentImage[0] = uv[0] * (xPixelEnd - xPixelStart) + xPixelStart;
-			data->currentImage[1] = uv[1] * (yPixelEnd - yPixelStart) + yPixelStart;
-		} else {
-			data->currentImage[0] = rngGet(0) * (xPixelEnd - xPixelStart) + xPixelStart;
-			data->currentImage[1] = rngGet(1) * (yPixelEnd - yPixelStart) + yPixelStart;
-		}
+		data->currentImage[0] = rngGet(0) * (xPixelEnd - xPixelStart) + xPixelStart;
+		data->currentImage[1] = rngGet(1) * (yPixelEnd - yPixelStart) + yPixelStart;
 		for (u_int i = 2; i < data->normalSamples; ++i)
 			data->currentImage[i] = rngGet(i);
 		sample->imageX = data->currentImage[0];
@@ -328,15 +298,30 @@ void MetropolisSampler::AddSample(const Sample &sample)
 	MetropolisData *data = (MetropolisData *)(sample.samplerData);
 	vector<Contribution> &newContributions(sample.contributions);
 	float newLY = 0.f;
-	for(u_int i = 0; i < newContributions.size(); ++i) {
-		const float ly = newContributions[i].color.Y();
-		if (ly > 0.f && !isinf(ly)) {
-			if (useVariance && newContributions[i].variance > 0.f)
-				newLY += ly * newContributions[i].variance;
-			else
-				newLY += ly;
-		} else
-			newContributions[i].color = XYZColor(0.f);
+	if (useNoiseAware) {
+		const float *noiseAwareMap = film->GetNoiseAwareMap();
+
+		const int xPixelCount = film->GetXPixelCount();
+		const int xSize = xPixelCount - 1;
+		const int ySize = film->GetYPixelCount() - 1;
+
+		for(u_int i = 0; i < newContributions.size(); ++i) {
+			const int x = min(max(Ceil2Int(newContributions[i].imageX - .5f), 0), xSize);
+			const int y = min(max(Ceil2Int(newContributions[i].imageY - .5f), 0), ySize);
+
+			newLY += noiseAwareMap[x + y * xPixelCount];
+		}
+	} else {
+		for(u_int i = 0; i < newContributions.size(); ++i) {
+			const float ly = newContributions[i].color.Y();
+			if (ly > 0.f && !isinf(ly)) {
+				if (useVariance && newContributions[i].variance > 0.f)
+					newLY += ly * newContributions[i].variance;
+				else
+					newLY += ly;
+			} else
+				newContributions[i].color = XYZColor(0.f);
+		}
 	}
 	// calculate meanIntensity
 	if (data->large) {
@@ -406,8 +391,7 @@ Sampler* MetropolisSampler::CreateSampler(const ParamSet &params, const Film *fi
 	bool useVariance = params.FindOneBool("usevariance", false);
 	bool useCooldown = params.FindOneBool("usecooldown", true);
 	bool useNoiseAware = params.FindOneBool("noiseaware", false);
-	const float defaultRange = (useNoiseAware) ? 4.0f : ((xEnd - xStart + yEnd - yStart) / 32.f);
-	float range = params.FindOneFloat("mutationrange", defaultRange);	// maximum distance in pixel for a small mutation
+	float range = params.FindOneFloat("mutationrange", (xEnd - xStart + yEnd - yStart) / 32.f);	// maximum distance in pixel for a small mutation
 
 	return new MetropolisSampler(xStart, xEnd, yStart, yEnd, max(maxConsecRejects, 0),
 		largeMutationProb, range, useVariance, useCooldown, useNoiseAware);
