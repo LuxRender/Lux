@@ -639,20 +639,24 @@ bool RenderFarm::sessionReset(const string &serverName, const string &password) 
 	string name, port;
 	decodeServerName(serverName, name, port);
 
-	// check to see if we're already connected, if so disconnect
+	string formattedServerName = name + ":" + port;
+
+	LOG( LUX_INFO,LUX_NOERROR) << "Resetting server: " << formattedServerName;
+
+	// check to see if we're already connected, if so try to reconnect, if failed reset
 	for (vector<ExtRenderingServerInfo>::iterator it = serverInfoList.begin(); it < serverInfoList.end(); it++ ) {
 		if (name.compare(it->name) == 0 && port.compare(it->port) == 0) {			
-			disconnect(*it);
+			LOG( LUX_DEBUG,LUX_NOERROR) << "Attempting to recover existing session with server: " << formattedServerName;
+			if (reconnect(*it) == reconnect_status::success) {
+				LOG( LUX_INFO,LUX_NOERROR) << "Server reconnected successfully, aborting reset of server: " << formattedServerName;
+				return true;
+			}
 			serverInfoList.erase(it);
 			break;
 		}
 	}
 
-	string formattedServerName = name + ":" + port;
-
 	try {
-		LOG( LUX_INFO,LUX_NOERROR) << "Resetting server: " << formattedServerName;
-
 		tcp::iostream stream(name, port);
 		stream << "ServerReset" << std::endl << std::flush;
 
