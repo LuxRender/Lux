@@ -985,6 +985,11 @@
           </column>
           <column>
            <property name="text">
+            <string>Status</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
             <string>Samples</string>
            </property>
           </column>

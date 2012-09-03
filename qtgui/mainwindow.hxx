@@ -58,6 +58,7 @@
 #include <QtGui/QProgressDialog>
 #include <QtGui/QStandardItemModel>
 #include <QThread>
+#include <QTableWidget>
 
 #include "api.h"
 #include "renderview.hxx"
@@ -400,8 +401,7 @@ private:
 
 	void addRemoveSlaves(QVector<QString> slaves, ChangeSlavesAction action);
 
-	QVector<QString> savedNetworkSlaves;
-	void saveNetworkSlaves();
+	QMap<QString, int> networkSlaves;
 
 
 	bool event (QEvent * event);

@@ -1364,6 +1364,7 @@ void MainWindow::BatchProcessThread::run()
 }
 
 void MainWindow::NetworkAddRemoveSlavesThread::run() {
+
 	for (int i = 0; i < slaves.size(); ++i) {
 		switch (action) {
 			case AddSlaves:
@@ -1376,6 +1377,7 @@ void MainWindow::NetworkAddRemoveSlavesThread::run() {
 				break;
 		}
 	}
+
 	qApp->postEvent(mainWindow, new NetworkUpdateTreeEvent());
 }
 
@@ -1947,7 +1949,6 @@ bool MainWindow::event (QEvent *event)
 		ui->button_addServer->setEnabled(true);
 		ui->button_removeServer->setEnabled(true);
 
-		saveNetworkSlaves();
 		UpdateNetworkTree();
 
 		retval = TRUE;
@@ -2094,6 +2095,7 @@ void MainWindow::statsTimeout()
 			// Render threads stopped, do one last render update
 			LOG(LUX_DEBUG,LUX_NOERROR)<< tr("GUI: Updating framebuffer...").toLatin1().data();
 			statusMessage->setText(tr("Tonemapping..."));
+			qApp->postEvent(this, new NetworkUpdateTreeEvent());
 			if (m_updateThread)
 				m_updateThread->wait();
 			delete m_updateThread;
@@ -2124,7 +2126,7 @@ void MainWindow::loadTimeout()
 		gammawidget->resetFromFilm(true);
 
 		if (luxStatistics("sceneIsReady")) {
-			addRemoveSlaves(savedNetworkSlaves, AddSlaves);
+			addRemoveSlaves(QVector<QString>::fromList(networkSlaves.keys()), AddSlaves);
 
 			// Scene file loaded
 			// Add other render threads if necessary
@@ -2352,56 +2354,90 @@ void MainWindow::UpdateNetworkTree()
 
 	int currentrow = ui->table_servers->currentRow();
 
-	ui->table_servers->setRowCount(0);
-
 	int nServers = luxGetServerCount();
 
-	RenderingServerInfo *pInfoList = new RenderingServerInfo[nServers];
-	nServers = luxGetRenderingServersStatus( pInfoList, nServers );
+	vector<RenderingServerInfo> serverInfoList;
 
-	ui->table_servers->setRowCount(nServers);
+	if (nServers > 0) {
+		serverInfoList.resize(nServers);
+		nServers = luxGetRenderingServersStatus( &serverInfoList[0], nServers );
+		serverInfoList.resize(nServers);
+	}
+
+	// temporarily disable sorting while we update the table
+	bool sorted = ui->table_servers->isSortingEnabled();
+	ui->table_servers->setSortingEnabled(false);
+
+	ui->table_servers->setRowCount(static_cast<int>(serverInfoList.size() + networkSlaves.size()));
 
 	double totalpixels = luxGetIntAttribute("film", "xPixelCount") * luxGetIntAttribute("film", "yPixelCount");
 
-	for( int n = 0; n < nServers; n++ ) {
-		QTableWidgetItem *servername = new QTableWidgetItem(QString::fromUtf8(pInfoList[n].name));
-		QTableWidgetItem *port = new QTableWidgetItem(QString::fromUtf8(pInfoList[n].port));
+	int n = 0;
 
-		double spp = pInfoList[n].numberOfSamplesReceived / totalpixels;
-		double sps = pInfoList[n].calculatedSamplesPerSecond;
+	QSet<QString> connectedSlaves;
+
+	for( int i = 0; i < serverInfoList.size(); i++ ) {
+		QTableWidgetItem *status = new QTableWidgetItem(tr("Active session"));
+
+		QTableWidgetItem *servername = new QTableWidgetItem(QString::fromUtf8(serverInfoList[i].name));
+		QTableWidgetItem *port = new QTableWidgetItem(QString::fromUtf8(serverInfoList[i].port));
+
+		connectedSlaves.insert(QString("%1:%2").arg(servername->text(), port->text()).toLower());
+
+		double spp = serverInfoList[i].numberOfSamplesReceived / totalpixels;
+		double sps = serverInfoList[i].calculatedSamplesPerSecond;
 
 		QString spp_string = QString("%1 %2S/p").arg(luxMagnitudeReduce(spp),0,'g',3).arg(luxMagnitudePrefix(spp));
 		QString sps_string = QString("%1 %2S/s").arg(luxMagnitudeReduce(sps),0,'g',3).arg(luxMagnitudePrefix(sps));
 
-		QTableWidgetItem *spp_widget = new QTableWidgetItem(spp_string);
-		QTableWidgetItem *sps_widget = new QTableWidgetItem(sps_string);
+		QTableWidgetItem *spp_widget = new QTableWidgetItem((totalpixels > 0) ? spp_string : "");
+		QTableWidgetItem *sps_widget = new QTableWidgetItem((totalpixels > 0) ? sps_string : "");
 
 		ui->table_servers->setItem(n, 0, servername);
 		ui->table_servers->setItem(n, 1, port);
-		ui->table_servers->setItem(n, 2, spp_widget);
-		ui->table_servers->setItem(n, 3, sps_widget);
+		ui->table_servers->setItem(n, 2, status);
+		ui->table_servers->setItem(n, 3, spp_widget);
+		ui->table_servers->setItem(n, 4, sps_widget);
+		n++;
 	}
+
+	// add saved slaves which aren't in the connected list
+	QVector<QString> disconnectedSlaves;
+
+	QList<QString> slaves = networkSlaves.keys();
+
+	while (!slaves.empty()) {
+		QString s(slaves.takeFirst());
+		if (connectedSlaves.contains(s))
+			continue;
+		disconnectedSlaves.append(s);
+	}
+
+	for( int i = 0; i < disconnectedSlaves.size(); i++ ) {
+		QTableWidgetItem *status = new QTableWidgetItem(tr("No session"));
+
+		// assume saved slaves contain port number
+		int si = disconnectedSlaves[i].lastIndexOf(':');
+		QTableWidgetItem *servername = new QTableWidgetItem(disconnectedSlaves[i].left(si));
+		QTableWidgetItem *port = new QTableWidgetItem(disconnectedSlaves[i].mid(si+1));
+
+		ui->table_servers->setItem(n, 0, servername);
+		ui->table_servers->setItem(n, 1, port);
+		ui->table_servers->setItem(n, 2, status);
+		ui->table_servers->setItem(n, 3, NULL);
+		ui->table_servers->setItem(n, 4, NULL);
+		n++;
+	}
+
+	ui->table_servers->setRowCount(n);
+
+	// enable sorting again
+	ui->table_servers->setSortingEnabled(sorted);
+	ui->table_servers->sortItems(0);
 
 	ui->table_servers->blockSignals (true);
 	ui->table_servers->selectRow(currentrow);
 	ui->table_servers->blockSignals (false);
-
-	delete[] pInfoList;
-}
-
-void MainWindow::saveNetworkSlaves() {
-	int nServers = luxGetServerCount();
-
-	RenderingServerInfo *pInfoList = new RenderingServerInfo[nServers];
-	nServers = luxGetRenderingServersStatus( pInfoList, nServers );
-
-	savedNetworkSlaves.clear();
-
-	for (int i = 0; i < nServers; ++i) {
-		savedNetworkSlaves.push_back(QString("%1:%2").arg(pInfoList[i].name).arg(pInfoList[i].port));
-	}
-
-	delete[] pInfoList;
 }
 
 void MainWindow::addRemoveSlaves(QVector<QString> slaves, ChangeSlavesAction action) {
@@ -2414,6 +2450,28 @@ void MainWindow::addRemoveSlaves(QVector<QString> slaves, ChangeSlavesAction act
 	ui->button_addServer->setEnabled(false);
 	ui->button_removeServer->setEnabled(false);
 
+	// update list of slaves
+	for (int i = 0; i < slaves.size(); i++) {
+		QString slave = slaves[i].toLower();
+		int pi = slave.lastIndexOf(':');
+		int pi6 = slave.lastIndexOf("::");
+		if (pi < 0 || (pi > 0 && pi-1 == pi6)) {
+			// append default port
+			slave.append(":18018");
+		}
+		switch (action) {
+			case AddSlaves:
+				networkSlaves.insert(slave, networkSlaves.size());
+				break;
+			case RemoveSlaves:
+				networkSlaves.remove(slave);
+				break;
+			default:
+				LOG(LUX_SEVERE, LUX_SYSTEM) << "Invalid action in addRemoveSlaves: " << action;
+		}
+	}
+
+	// then update core
 	m_networkAddRemoveSlavesThread = new NetworkAddRemoveSlavesThread(this, slaves, action);
 	m_networkAddRemoveSlavesThread->start();
 }
