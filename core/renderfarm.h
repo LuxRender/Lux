@@ -244,7 +244,7 @@ private:
 	};
 	typedef reconnect_status::type reconnect_status_t;
 
-	static void decodeServerName(const string &serverName, string &name, string &port);
+	static bool decodeServerName(const string &serverName, string &name, string &port);
 	bool connect(ExtRenderingServerInfo &serverInfo);
 	reconnect_status_t reconnect(ExtRenderingServerInfo &serverInfo);
 	void flushImpl();

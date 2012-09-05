@@ -413,20 +413,27 @@ void RenderFarm::stop() {
 	}*/
 }
 
-void RenderFarm::decodeServerName(const string &serverName, string &name, string &port) {
+bool RenderFarm::decodeServerName(const string &serverName, string &name, string &port) {
 	// Dade - check if the server name includes the port
 	size_t idx = serverName.find_last_of(':');
 	size_t idx_v6 = serverName.rfind("::");
 	if (idx != string::npos && idx != idx_v6+1) {
 		// Dade - the server name includes the port number
 
-		name = serverName.substr(0, idx);
-		// convert to int and back to get a standardized representation for comparison
-		port = boost::lexical_cast<std::string>(boost::lexical_cast<int>(serverName.substr(idx + 1)));
+		try {
+			name = serverName.substr(0, idx);
+			// convert to int and back to get a standardized representation for comparison
+			port = boost::lexical_cast<std::string>(boost::lexical_cast<int>(serverName.substr(idx + 1)));
+		} catch (boost::bad_lexical_cast &) {
+			LOG(LUX_ERROR, LUX_SYSTEM) << "Unable to decode server name: '" << serverName << "'";
+			return false;
+		}
 	} else {
 		name = serverName;
 		port = "18018";
 	}
+
+	return true;
 }
 
 bool RenderFarm::connect(ExtRenderingServerInfo &serverInfo) {
@@ -566,7 +573,8 @@ bool RenderFarm::connect(const string &serverName) {
 		stringstream ss;
 		try {
 			string name, port;
-			decodeServerName(serverName, name, port);
+			if (!decodeServerName(serverName, name, port))
+				return false;			
 
 			ExtRenderingServerInfo serverInfo(name, port);
 			if (!connect(serverInfo)) {
@@ -602,7 +610,8 @@ void RenderFarm::disconnect(const string &serverName) {
 	boost::mutex::scoped_lock lock(serverListMutex);
 
 	string name, port;
-	decodeServerName(serverName, name, port);
+	if (!decodeServerName(serverName, name, port))
+		return;
 
 	for (vector<ExtRenderingServerInfo>::iterator it = serverInfoList.begin(); it < serverInfoList.end(); it++ ) {
 		if (it->sameServer(name, port)) {
@@ -647,7 +656,8 @@ bool RenderFarm::sessionReset(const string &serverName, const string &password) 
 	boost::mutex::scoped_lock lock(serverListMutex);
 
 	string name, port;
-	decodeServerName(serverName, name, port);
+	if (!decodeServerName(serverName, name, port))
+		return false;
 
 	string formattedServerName = name + ":" + port;
 
