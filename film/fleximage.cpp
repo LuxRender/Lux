@@ -1047,6 +1047,10 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 				}*/
 
 				// Some debug code used to show the pixel sample counts
+				// Remember to replace also the sample weight in film.cpp form:
+				//  buffer->Add(xPixel, yPixel, xyz, alpha, w);
+				// to
+				//  buffer->Add(xPixel, yPixel, xyz, alpha, filterWt);
 				/*float maxSampleCount = 0.f;
 				for (u_int p = 0; p < nPix; p++) {
 					// Merge all buffer results

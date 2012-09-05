@@ -1066,6 +1066,7 @@ void Film::UpdateConvergenceInfo(const float *framebuffer) {
 			for (u_int xPixel = 0; !missingSamples && (xPixel < xPixelCount); ++xPixel) {
 				// Check if we have enough samples to evaluate convergence speed again
 
+				float sampleCount = 0.f;
 				// Merge all buffer results
 				for(u_int j = 0; j < bufferGroups.size(); ++j) {
 					if (!bufferGroups[j].enable)
@@ -1076,11 +1077,13 @@ void Film::UpdateConvergenceInfo(const float *framebuffer) {
 						if (!(bufferConfigs[i].output & BUF_FRAMEBUFFER))
 							continue;
 
-						if (buffer.pixels(xPixel, yPixel).weightSum <= 0.f) {
-							missingSamples = true;
-							break;
-						}
+						sampleCount += buffer.pixels(xPixel, yPixel).weightSum;
 					}
+				}
+				
+				if (sampleCount <= 0.f) {
+					missingSamples = true;
+					break;
 				}
 			}
 		}
@@ -2499,7 +2502,6 @@ void Film::GenerateNoiseAwareMap() {
 
 		// Apply an heavy filter to smooth the map
 		float *tmpMap = new float[nPix];
-		//ApplyBlurHeavyFilter(map, tmpMap, xPixelCount, yPixelCount);
 		ApplyBoxFilter(noiseAwareMap, tmpMap, xPixelCount, yPixelCount, 2);
 		delete []tmpMap;
 	}
