@@ -129,6 +129,15 @@ void FilmUpdaterThread::updateFilm(FilmUpdaterThread *filmUpdaterThread) {
 	}
 }
 
+
+bool RenderFarm::ExtRenderingServerInfo::sameServer(const std::string &name, const std::string &port) const {
+	return boost::iequals(this->name, name) && boost::equals(this->port, port);
+}
+
+bool RenderFarm::ExtRenderingServerInfo::sameServer(const RenderFarm::ExtRenderingServerInfo &other) const {
+	return sameServer(other.name, other.port);
+}
+
 RenderFarm::CompiledFile::CompiledFile(const std::string &filename) : fname(filename) {
 	fhash = digest_string(file_hash<tigerhash>(filename));
 }
@@ -412,7 +421,8 @@ void RenderFarm::decodeServerName(const string &serverName, string &name, string
 		// Dade - the server name includes the port number
 
 		name = serverName.substr(0, idx);
-		port = serverName.substr(idx + 1);
+		// convert to int and back to get a standardized representation for comparison
+		port = boost::lexical_cast<std::string>(boost::lexical_cast<int>(serverName.substr(idx + 1)));
 	} else {
 		name = serverName;
 		port = "18018";
@@ -423,7 +433,7 @@ bool RenderFarm::connect(ExtRenderingServerInfo &serverInfo) {
 
 	// check to see if we're already connected (active), if so ignore
 	for (vector<ExtRenderingServerInfo>::iterator it = serverInfoList.begin(); it < serverInfoList.end(); it++ ) {
-		if (serverInfo.name.compare(it->name) == 0 && serverInfo.port.compare(it->port) == 0 && it->active) {
+		if (serverInfo.sameServer(*it)) {
 			return false;
 		}
 	}
@@ -595,7 +605,7 @@ void RenderFarm::disconnect(const string &serverName) {
 	decodeServerName(serverName, name, port);
 
 	for (vector<ExtRenderingServerInfo>::iterator it = serverInfoList.begin(); it < serverInfoList.end(); it++ ) {
-		if (name.compare(it->name) == 0 && port.compare(it->port) == 0) {
+		if (it->sameServer(name, port)) {
 			disconnect(*it);
 			serverInfoList.erase(it);
 			break;
@@ -645,7 +655,7 @@ bool RenderFarm::sessionReset(const string &serverName, const string &password) 
 
 	// check to see if we're already connected, if so try to reconnect, if failed reset
 	for (vector<ExtRenderingServerInfo>::iterator it = serverInfoList.begin(); it < serverInfoList.end(); it++ ) {
-		if (name.compare(it->name) == 0 && port.compare(it->port) == 0) {			
+		if (it->sameServer(name, port)) {			
 			LOG( LUX_DEBUG,LUX_NOERROR) << "Attempting to recover existing session with server: " << formattedServerName;
 			if (reconnect(*it) == reconnect_status::success) {
 				LOG( LUX_INFO,LUX_NOERROR) << "Server reconnected successfully, aborting reset of server: " << formattedServerName;

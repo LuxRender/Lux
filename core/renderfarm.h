@@ -129,6 +129,10 @@ private:
 			numberOfSamplesReceived(0.0), calculatedSamplesPerSecond(0.0),
 			name(n), port(p), sid(id), active(false), flushed(false) { }
 
+		// returns true if "other" has the same name and port
+		bool sameServer(const std::string &name, const std::string &port) const;
+		bool sameServer(const ExtRenderingServerInfo &other) const;
+
 		boost::posix_time::ptime timeLastContact;
 		boost::posix_time::ptime timeLastSamples;
 		// to return the max. number of samples among
