@@ -38,7 +38,8 @@ static const u_int rngA = 884;
 
 MetropolisSampler::MetropolisData::MetropolisData(const Sampler &sampler) :
 	consecRejects(0), large(true), stamp(0), currentStamp(0), weight(0.f),
-	LY(0.f), alpha(0.f), totalLY(0.f), sampleCount(0.f)
+	LY(0.f), alpha(0.f), totalLY(0.f), sampleCount(0.f),
+	noiseAwareMap(NULL), noiseAwareMapVersion(0)
 {
 	u_int i;
 	// Compute number of non lazy samples
@@ -78,6 +79,7 @@ MetropolisSampler::MetropolisData::MetropolisData(const Sampler &sampler) :
 	// Allocate memory for the Cranley-Paterson rotation vector
 	rngRotation = AllocAligned<float>(totalSamples);
 }
+
 MetropolisSampler::MetropolisData::~MetropolisData()
 {
 	FreeAligned(rngRotation);
@@ -87,6 +89,7 @@ MetropolisSampler::MetropolisData::~MetropolisData()
 	FreeAligned(sampleImage);
 	delete[] timeOffset;
 	delete[] offset;
+	delete[] noiseAwareMap;
 }
 
 // mutate a value in the range [0-1]
@@ -183,6 +186,19 @@ bool MetropolisSampler::GetNextSample(Sample *sample)
 			data->rngRotation[i] = sample->rng->floatValue();
 	}
 	if (data->large) {
+		if (useNoiseAware) {
+			if (!data->noiseAwareMap)
+				data->noiseAwareMap = new float[film->GetXPixelCount() * film->GetYPixelCount()];
+
+			// Check if there is a new version of the noise map
+			if (film->GetNoiseAwareMap(data->noiseAwareMapVersion, data->noiseAwareMap)) {
+				// There is a new version so reset some data
+				data->totalLY = 0.f; // NOTE: totalLY could be already set to the Sum(noiseAwareMap)
+				data->sampleCount = 0.f;
+				data->consecRejects = 0;
+				data->LY = 0.f;
+			}
+		}
 		// *** large mutation ***
 		// Initialize all non lazy samples
 		data->currentImage[0] = rngGet(0) * (xPixelEnd - xPixelStart) + xPixelStart;
@@ -298,9 +314,7 @@ void MetropolisSampler::AddSample(const Sample &sample)
 	MetropolisData *data = (MetropolisData *)(sample.samplerData);
 	vector<Contribution> &newContributions(sample.contributions);
 	float newLY = 0.f;
-	if (useNoiseAware) {
-		const float *noiseAwareMap = film->GetNoiseAwareMap();
-
+	if (useNoiseAware && data->noiseAwareMapVersion > 0) {
 		const int xPixelCount = film->GetXPixelCount();
 		const int xSize = xPixelCount - 1;
 		const int ySize = film->GetYPixelCount() - 1;
@@ -309,7 +323,7 @@ void MetropolisSampler::AddSample(const Sample &sample)
 			const int x = min(max(Ceil2Int(newContributions[i].imageX - .5f), 0), xSize);
 			const int y = min(max(Ceil2Int(newContributions[i].imageY - .5f), 0), ySize);
 
-			newLY += noiseAwareMap[x + y * xPixelCount];
+			newLY += data->noiseAwareMap[x + y * xPixelCount];
 		}
 	} else {
 		for(u_int i = 0; i < newContributions.size(); ++i) {

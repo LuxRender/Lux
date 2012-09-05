@@ -652,7 +652,8 @@ Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop
 	contribPool(NULL), filter(filt), filterTable(NULL), filterLUTs(NULL),
 	filename(filename1),
 	colorSpace(0.63f, 0.34f, 0.31f, 0.595f, 0.155f, 0.07f, 0.314275f, 0.329411f), // default is SMPTE
-	convergenceReference(NULL), convergenceTVI(NULL), varianceBuffer(NULL), noiseAwareMap(NULL),
+	convergenceReference(NULL), convergenceTVI(NULL), varianceBuffer(NULL),
+	noiseAwareMap(NULL), noiseAwareMapVersion(0),
 	ZBuffer(NULL), use_Zbuf(useZbuffer),
 	debug_mode(debugmode), premultiplyAlpha(premult),
 	writeResumeFlm(w_resume_FLM), restartResumeFlm(restart_resume_FLM), writeFlmDirect(write_FLM_direct),
@@ -747,8 +748,8 @@ Film::~Film()
 	delete filterLUTs;
 	delete filter;
 	delete ZBuffer;
-	delete []convergenceReference;
-	delete []convergenceTVI;
+	delete[] convergenceReference;
+	delete[] convergenceTVI;
 	delete varianceBuffer;
 	delete noiseAwareMap;
 	delete histogram;
@@ -2449,6 +2450,8 @@ static void ApplyBoxFilter(float *frameBuffer, float *tmpFrameBuffer,
 //------------------------------------------------------------------------------
 
 void Film::GenerateNoiseAwareMap() {
+	boost::mutex::scoped_lock(noiseAwareMapMutex);
+
 	const u_int nPix = xPixelCount * yPixelCount;
 	bool hasPixelsToSample = false;
 	float maxStandardError = 0.f;
@@ -2477,7 +2480,9 @@ void Film::GenerateNoiseAwareMap() {
 		// Just use a uniform distribution
 		std::fill(noiseAwareMap, noiseAwareMap + nPix, 1.f);
 	} else {
-		LOG(LUX_DEBUG, LUX_NOERROR) << "Noise aware map based on: noise information";
+		++noiseAwareMapVersion;
+		LOG(LUX_DEBUG, LUX_NOERROR) << "Noise aware map based on: noise information (version: " <<
+				noiseAwareMapVersion << ")";
 
 		const float invMaxStandardError = 1.f / maxStandardError;
 		const float invMaxTVI = 1.f / maxTVI;

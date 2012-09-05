@@ -40,6 +40,7 @@ public:
 	public:
 		MetropolisData(const Sampler &sampler);
 		~MetropolisData();
+
 		u_int normalSamples, totalSamples, totalTimes, consecRejects;
 		float *sampleImage, *currentImage;
 		int *timeImage, *currentTimeImage;
@@ -51,7 +52,11 @@ public:
 		float weight, LY, alpha;
 		vector <Contribution> oldContributions;
 		double totalLY, sampleCount;
+
+		float *noiseAwareMap;
+		u_int noiseAwareMapVersion;
 	};
+
 	MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
 		u_int maxRej, float largeProb, float rng,
 		bool useV, bool useC, bool useConv);

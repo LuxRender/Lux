@@ -685,7 +685,16 @@ public:
 	virtual void SetStringParameterValue(luxComponentParameters param, const string& value, u_int index) = 0;
 	virtual string GetStringParameterValue(luxComponentParameters param, u_int index) = 0;
 
-	virtual const float *GetNoiseAwareMap() const { return noiseAwareMap; }
+	virtual const bool GetNoiseAwareMap(u_int &version, float *map) const {
+		boost::mutex::scoped_lock(noiseAwareMapMutex);
+		
+		if (noiseAwareMapVersion > version) {
+			std::copy(noiseAwareMap, noiseAwareMap + xPixelCount * yPixelCount, map);
+			version = noiseAwareMapVersion;
+			return true;
+		} else
+			return false;
+	}
 
 	/*
 	 * Accessor for samplePerPass
@@ -760,6 +769,8 @@ protected: // Put it here for better data alignment
 	float *convergenceTVI;
 	VarianceBuffer *varianceBuffer;
 	float *noiseAwareMap;
+	u_int noiseAwareMapVersion;
+	boost::mutex noiseAwareMapMutex;
 
 	PerPixelNormalizedFloatBuffer *ZBuffer;
 	bool use_Zbuf;
