@@ -2574,6 +2574,18 @@ void MainWindow::updateIntervalChanged(int value)
 
 void MainWindow::updateIntervalChanged()
 {
+	IntervalCheck(luxGetNetworkServerUpdateInterval());
+}
+
+// this check assures update only happens if interval is changed to a new value
+// updateIntervalChanged() above is triggered on every focus change in combobox !!!
+
+void MainWindow::IntervalCheck(int value)
+{
+	static int acualInterval = luxGetNetworkServerUpdateInterval();
+	if(value != acualInterval)
+		return;
+	
 	setServerUpdateInterval(ui->comboBox_updateInterval->lineEdit()->text().toInt());
 	LOG(LUX_DEBUG,LUX_NOERROR) << "Server requests interval: " << luxGetNetworkServerUpdateInterval() << " seconds";
 }
