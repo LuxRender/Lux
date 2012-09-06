@@ -404,8 +404,6 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	sizes << 500 << 700;
 	ui->splitter->setSizes(sizes);
 
-	//updateWidgetValue(ui->spinBox_updateInterval, luxGetNetworkServerUpdateInterval());
-
 	changeRenderState(WAITING);
 
 	ReadSettings();
@@ -423,6 +421,8 @@ MainWindow::~MainWindow()
 	}
 	m_LightGroupPanes.clear();
 
+	// TODO - figure out why core has been reset on OSX but not Windows
+	updateIntervalChanged();
 	WriteSettings();
 
 	delete ui;
@@ -2569,13 +2569,13 @@ void MainWindow::updateIntervalChanged(int value)
 		return;
 	
 	setServerUpdateInterval(ui->comboBox_updateInterval->itemText(value).toInt());
-	LOG(LUX_INFO,LUX_NOERROR) << "Server requests interval: " << luxGetNetworkServerUpdateInterval() << " seconds";
+	LOG(LUX_DEBUG,LUX_NOERROR) << "Server requests interval: " << luxGetNetworkServerUpdateInterval() << " seconds";
 }
 
 void MainWindow::updateIntervalChanged()
 {
 	setServerUpdateInterval(ui->comboBox_updateInterval->lineEdit()->text().toInt());
-	LOG(LUX_INFO,LUX_NOERROR) << "Server requests interval: " << luxGetNetworkServerUpdateInterval() << " seconds";
+	LOG(LUX_DEBUG,LUX_NOERROR) << "Server requests interval: " << luxGetNetworkServerUpdateInterval() << " seconds";
 }
 
 void MainWindow::networknodeSelectionChanged()
