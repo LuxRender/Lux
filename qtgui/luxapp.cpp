@@ -103,6 +103,10 @@ void LuxGuiApp::init(void)
 	mainwin->SetRenderThreads(m_threads);
 	mainwin->setVerbosity(m_verbosity);
 
+	// Set server interval
+	if (serverInterval > 0)
+		mainwin->setServerUpdateInterval(serverInterval);
+
 	if (!m_inputFile.isEmpty())
 		mainwin->renderScenefile(m_inputFile);
 
@@ -254,12 +258,12 @@ bool LuxGuiApp::ProcessCommandLine(int &argc, char **argv)
 		if (vm.count("fixedseed"))
 			luxDisableRandomMode();
 
-		int serverInterval;
 		if(vm.count("serverinterval")) {
 			serverInterval = vm["serverinterval"].as<int>();
 			luxSetNetworkServerUpdateInterval(serverInterval);
 		} else {
-			serverInterval = luxGetNetworkServerUpdateInterval();
+			// use -1 to indicate user didn't override server interval
+			serverInterval = -1;
 		}
 
 		if(vm.count("useserver")) {
@@ -270,8 +274,6 @@ bool LuxGuiApp::ProcessCommandLine(int &argc, char **argv)
 			for(vector<string>::iterator i = names.begin(); i != names.end(); ++i) {
 				serverList << (*i).c_str();
 			}
-
-			LOG( LUX_INFO,LUX_NOERROR) << "Server requests interval:  " << serverInterval << " secs";
 		}
 
 		if(vm.count("input-file")) {

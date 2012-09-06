@@ -266,12 +266,16 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	connect(ui->lineEdit_server, SIGNAL(returnPressed()), this, SLOT(addServer()));
 	connect(ui->button_removeServer, SIGNAL(clicked()), this, SLOT(removeServer()));
 	connect(ui->button_resetServer, SIGNAL(clicked()), this, SLOT(resetServer()));
-	connect(ui->spinBox_updateInterval, SIGNAL(valueChanged(int)), this, SLOT(updateIntervalChanged(int)));
+	connect(ui->comboBox_updateInterval, SIGNAL(currentIndexChanged(int)), this, SLOT(updateIntervalChanged(int)));
+	connect(ui->comboBox_updateInterval->lineEdit(), SIGNAL(editingFinished()), this, SLOT(updateIntervalChanged()));
 	connect(ui->table_servers, SIGNAL(itemSelectionChanged()), this, SLOT(networknodeSelectionChanged()));
 
 	m_recentServersModel = new QStringMRUListModel(MaxRecentServers, this);
 	ui->lineEdit_server->setCompleter(new QCompleter(m_recentServersModel, this));
 	ui->lineEdit_server->completer()->setCompletionRole(Qt::DisplayRole);
+	ui->comboBox_updateInterval->setValidator(new QIntValidator(1, 86400, this));
+
+	setServerUpdateInterval(luxGetNetworkServerUpdateInterval());
 
 	// Queue tab
 	ui->table_queue->setModel(&renderQueueData);
@@ -400,7 +404,7 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	sizes << 500 << 700;
 	ui->splitter->setSizes(sizes);
 
-	updateWidgetValue(ui->spinBox_updateInterval, luxGetNetworkServerUpdateInterval());
+	//updateWidgetValue(ui->spinBox_updateInterval, luxGetNetworkServerUpdateInterval());
 
 	changeRenderState(WAITING);
 
@@ -490,6 +494,7 @@ void MainWindow::ReadSettings()
 	ui->action_useAlpha->setChecked(settings.value("outputUseAlpha").toBool());
 	ui->action_useAlphaHDR->setChecked(settings.value("outputUseAlphaHDR").toBool());
 	m_recentServersModel->setList(settings.value("recentServers").toStringList());
+	setServerUpdateInterval(settings.value("serverUpdateInterval", luxGetNetworkServerUpdateInterval()).toInt());
 	ui->action_Show_Side_Panel->setChecked(settings.value("outputTabs", 1 ).toBool());
 	ui->outputTabs->setVisible(ui->action_Show_Side_Panel->isChecked());
 	settings.endGroup();
@@ -518,6 +523,7 @@ void MainWindow::WriteSettings()
 	settings.setValue("outputUseAlphaHDR", ui->action_useAlphaHDR->isChecked());
 	settings.setValue("outputTabs", ui->action_Show_Side_Panel->isChecked());
 	settings.setValue("recentServers", QStringList(m_recentServersModel->list()));
+	settings.setValue("serverUpdateInterval", luxGetNetworkServerUpdateInterval());
 	settings.endGroup();
 }
 
@@ -1593,6 +1599,11 @@ void MainWindow::renderScenefile(const QString& sceneFilename, const QString& fl
 		luxOverrideResumeFLM(qPrintable(QFileInfo(flmFilename).absoluteFilePath()));
 	}
 
+	// override server update interval
+	// trigger edit finished slot
+	updateIntervalChanged();
+	LOG(LUX_INFO,LUX_NOERROR) << "Server requests interval: " << luxGetNetworkServerUpdateInterval() << " seconds";
+
 	// Render the scene
 	setCurrentFile(sceneFilename);
 
@@ -2350,8 +2361,6 @@ void MainWindow::setLightGroupSolo( int index )
 
 void MainWindow::UpdateNetworkTree()
 {
-	updateWidgetValue(ui->spinBox_updateInterval, luxGetNetworkServerUpdateInterval());
-
 	int currentrow = ui->table_servers->currentRow();
 
 	int nServers = luxGetServerCount();
@@ -2476,6 +2485,30 @@ void MainWindow::addRemoveSlaves(QVector<QString> slaves, ChangeSlavesAction act
 	m_networkAddRemoveSlavesThread->start();
 }
 
+void MainWindow::setServerUpdateInterval(int interval) {
+
+	if (interval > 0) {
+		// only update if valid interval
+		luxSetNetworkServerUpdateInterval(interval);
+	} else {
+		// invalid interval, update combobox with old value
+		interval = luxGetNetworkServerUpdateInterval();
+	}
+
+	QString s = QString("%0").arg(interval);
+
+	int idx = ui->comboBox_updateInterval->findText(s);
+
+	ui->comboBox_updateInterval->blockSignals(true);
+	if (idx < 0) {
+		ui->comboBox_updateInterval->setCurrentIndex(0);
+		ui->comboBox_updateInterval->lineEdit()->setText(QString("%0").arg(interval));
+	} else {
+		ui->comboBox_updateInterval->setCurrentIndex(idx);
+	}
+	ui->comboBox_updateInterval->blockSignals(false);
+}
+
 void MainWindow::AddNetworkSlaves(const QVector<QString> &slaves) {
 	addRemoveSlaves(slaves, AddSlaves);
 }
@@ -2532,7 +2565,17 @@ void MainWindow::resetServer()
 
 void MainWindow::updateIntervalChanged(int value)
 {
-	luxSetNetworkServerUpdateInterval(value);
+	if (value < 0)
+		return;
+	
+	setServerUpdateInterval(ui->comboBox_updateInterval->itemText(value).toInt());
+	LOG(LUX_INFO,LUX_NOERROR) << "Server requests interval: " << luxGetNetworkServerUpdateInterval() << " seconds";
+}
+
+void MainWindow::updateIntervalChanged()
+{
+	setServerUpdateInterval(ui->comboBox_updateInterval->lineEdit()->text().toInt());
+	LOG(LUX_INFO,LUX_NOERROR) << "Server requests interval: " << luxGetNetworkServerUpdateInterval() << " seconds";
 }
 
 void MainWindow::networknodeSelectionChanged()

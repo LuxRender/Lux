@@ -59,6 +59,7 @@
 #include <QtGui/QStandardItemModel>
 #include <QThread>
 #include <QTableWidget>
+#include <QMap>
 
 #include "api.h"
 #include "renderview.hxx"
@@ -258,6 +259,8 @@ public:
 	void AddNetworkSlaves(const QVector<QString> &slaves);
 	void RemoveNetworkSlaves(const QVector<QString> &slaves);
 
+	void setServerUpdateInterval(int interval);
+
 protected:
 	
 	int getTabIndex(int tabID);
@@ -316,8 +319,8 @@ private:
 	int m_numThreads;
 	bool m_copyLog2Console;
 
-	double m_samplesSec;
-	
+	QRegExp reUpdateInterval;
+
 	LuxGuiRenderState m_guiRenderState;
 	
 	QTimer *m_renderTimer, *m_statsTimer, *m_loadTimer, *m_saveTimer, *m_netTimer, *m_blinkTimer;
@@ -402,7 +405,6 @@ private:
 	void addRemoveSlaves(QVector<QString> slaves, ChangeSlavesAction action);
 
 	QMap<QString, int> networkSlaves;
-
 
 	bool event (QEvent * event);
 
@@ -489,6 +491,7 @@ private slots:
 	void removeServer();
 	void resetServer();
 	void updateIntervalChanged(int value);
+	void updateIntervalChanged();
 	void networknodeSelectionChanged();
 
 	void addQueueHeaders();

@@ -48,6 +48,8 @@ private:
 	QString m_inputFile;
 	// This is the list of servers provided using the --useserver option
 	QStringList serverList;
+	// server interval, or -1 if not specified
+	int serverInterval;
 	// This is the list of files provided using the --file-list option
 	QString renderQueueName;
 #if defined(__APPLE__)
