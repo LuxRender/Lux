@@ -101,6 +101,7 @@ void LuxGuiApp::init(void)
 	mainwin->activateWindow();
 #endif
 	mainwin->SetRenderThreads(m_threads);
+	m_verbosity = 0; // initialize to default
 	mainwin->setVerbosity(m_verbosity);
 
 	// Set server interval
