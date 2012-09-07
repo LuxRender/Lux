@@ -2569,13 +2569,11 @@ void MainWindow::updateIntervalChanged(int value)
 		return;
 	
 	setServerUpdateInterval(ui->comboBox_updateInterval->itemText(value).toInt());
-	LOG(LUX_DEBUG,LUX_NOERROR) << "Server requests interval: " << luxGetNetworkServerUpdateInterval() << " seconds";
 }
 
 void MainWindow::updateIntervalChanged()
 {
 	setServerUpdateInterval(ui->comboBox_updateInterval->lineEdit()->text().toInt());
-	LOG(LUX_DEBUG,LUX_NOERROR) << "Server requests interval: " << luxGetNetworkServerUpdateInterval() << " seconds";
 }
 
 void MainWindow::networknodeSelectionChanged()
