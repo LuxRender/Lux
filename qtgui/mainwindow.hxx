@@ -492,7 +492,6 @@ private slots:
 	void resetServer();
 	void updateIntervalChanged(int value);
 	void updateIntervalChanged();
-	void IntervalCheck(int value);
 	void networknodeSelectionChanged();
 
 	void addQueueHeaders();
