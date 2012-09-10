@@ -37,6 +37,7 @@
 #include "streamio.h"
 #include "filedata.h"
 #include "tigerhash.h"
+#include "timer.h"
 
 #include <algorithm>
 #include <fstream>
@@ -98,34 +99,26 @@ static std::string get_response(std::iostream &stream) {
 }
 
 void FilmUpdaterThread::updateFilm(FilmUpdaterThread *filmUpdaterThread) {
-	// Dade - thread to update the film with data from servers
+	// thread to update the film with data from servers
+	Timer timer;
 
-	boost::xtime reft;
-	boost::xtime_get(&reft, boost::TIME_UTC);
+	try {
+		while (true) {
+			// no-op if already started
+			timer.Start();
 
-	while (filmUpdaterThread->signal == SIG_NONE) {
-		// Dade - check signal every 1 sec
+			// sleep for 1 sec
+			boost::this_thread::sleep(boost::posix_time::seconds(1));
 
-		for(;;) {
-			// Dade - sleep for 1 sec
-			boost::xtime xt;
-			boost::xtime_get(&xt, boost::TIME_UTC);
-			xt.sec += 1;
-			boost::thread::sleep(xt);
-
-			if (filmUpdaterThread->signal == SIG_EXIT)
-				break;
-
-			if (xt.sec - reft.sec > filmUpdaterThread->renderFarm->serverUpdateInterval) {
-				reft = xt;
-				break;
+			if (timer.Time() > filmUpdaterThread->renderFarm->serverUpdateInterval) {
+				filmUpdaterThread->renderFarm->updateFilm(filmUpdaterThread->scene);
+				timer.Reset();
 			}
 		}
-
-		if (filmUpdaterThread->signal == SIG_EXIT)
-			break;
-
-		filmUpdaterThread->renderFarm->updateFilm(filmUpdaterThread->scene);
+	} catch (boost::thread_interrupted &) {
+		// we got interrupted, do nothing
+	} catch (std::runtime_error &e) {
+		LOG(LUX_SEVERE, LUX_SYSTEM) << "Error in network film updater: " << e.what();
 	}
 }
 
@@ -402,7 +395,7 @@ void RenderFarm::stop() {
 
 void RenderFarm::stopImpl() {
 	if (filmUpdateThread) {
-		filmUpdateThread->interrupt();
+		filmUpdateThread->stop();
 		delete filmUpdateThread;
 		filmUpdateThread = NULL;
 	}

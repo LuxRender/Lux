@@ -40,14 +40,14 @@ class RenderFarm;
 class FilmUpdaterThread : public boost::noncopyable {
 public:
     FilmUpdaterThread(RenderFarm *rFarm, Scene *scn) :
-        renderFarm(rFarm), scene(scn), thread(NULL), signal(SIG_NONE) { }
+        renderFarm(rFarm), scene(scn), thread(NULL) { }
 
     ~FilmUpdaterThread() {
         delete thread;
     }
 
-    void interrupt() {
-        signal = SIG_EXIT;
+    void stop() {
+        thread->interrupt();
         thread->join();
     }
 
@@ -58,11 +58,6 @@ private:
     RenderFarm *renderFarm;
     Scene *scene;
     boost::thread *thread; // keep pointer to delete the thread object
-
-    // Dade - used to send signals to the thread
-    int signal;
-    static const int SIG_NONE = 0;
-    static const int SIG_EXIT = 1;
 };
 
 class RenderFarm {
