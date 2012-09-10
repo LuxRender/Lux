@@ -370,11 +370,17 @@ RenderFarm::RenderFarm() : serverUpdateInterval(3 * 60), filmUpdateThread(NULL),
 {
 }
 
+RenderFarm::~RenderFarm()
+{
+	stopImpl();
+}
 
-// Dade - used to periodically update the film
+// used to periodically update the film
 void RenderFarm::start(Scene *scene) {
 	boost::mutex::scoped_lock lock(serverListMutex);
 
+	// no need to start film update thread
+	// since we do not have any servers
 	if (serverInfoList.empty() || !scene)
 		return;
 
@@ -387,12 +393,14 @@ void RenderFarm::start(Scene *scene) {
 		FilmUpdaterThread::updateFilm, filmUpdateThread));
 }
 
+// used to stop the periodic film updater and similar
 void RenderFarm::stop() {
 	boost::mutex::scoped_lock lock(serverListMutex);
 
-	if (serverInfoList.empty())
-		return;
+	stopImpl();
+}
 
+void RenderFarm::stopImpl() {
 	if (filmUpdateThread) {
 		filmUpdateThread->interrupt();
 		delete filmUpdateThread;
@@ -405,12 +413,6 @@ void RenderFarm::stop() {
 		delete flushThread;
 		flushThread = NULL;
 	}
-
-	// Dade - stopFilmUpdater() is called multiple times at the moment (for instance
-	// haltspp + luxconsole)
-	/*else {
-		LOG(LUX_ERROR,LUX_ILLSTATE)<<"RenderFarm::stopFilmUpdater() called but update thread not started.";
-	}*/
 }
 
 bool RenderFarm::decodeServerName(const string &serverName, string &name, string &port) {

@@ -992,10 +992,11 @@ void Context::WorldEnd() {
 				// after this won't start rendering
 				activeContext->renderFarm->renderingDone();
 
+				// Stop the render farm too
+				activeContext->renderFarm->stop();
+
 				// Check if we have to stop the network rendering updater thread
 				if (GetServerCount() > 0) {
-					// Stop the render farm too
-					activeContext->renderFarm->stop();
 					// Update the film for the last time
 					if (!aborted)
 						activeContext->renderFarm->updateFilm(luxCurrentScene);

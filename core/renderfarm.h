@@ -68,7 +68,7 @@ private:
 class RenderFarm {
 public:
 	RenderFarm();
-	~RenderFarm() { delete filmUpdateThread; }
+	~RenderFarm();
 
 	bool connect(const string &serverName); //!< Connects to a new rendering server
 	// Dade - Disconnect from all servers
@@ -250,6 +250,7 @@ private:
 	void flushImpl();
 	void disconnect(const ExtRenderingServerInfo &serverInfo);
 	void reconnectFailed();
+	void stopImpl();
 
 	// Any operation on servers must be synchronized via this mutex
 	mutable boost::mutex serverListMutex;
