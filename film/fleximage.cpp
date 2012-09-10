@@ -1031,6 +1031,10 @@ void FlexImageFilm::WriteImage(ImageType type)
 	// needed since we can't put the pool lock up here
 	boost::mutex::scoped_lock(write_mutex);
 	
+	// check if film is initialized
+	if (!contribPool)
+		return;
+
 	// save the current status of the film if required
 	// do it here instead of in WriteImage2 to reduce
 	// memory usage
@@ -1130,6 +1134,10 @@ void FlexImageFilm::WriteImage(ImageType type)
 
 void FlexImageFilm::SaveEXR(const string &exrFilename, bool useHalfFloats, bool includeZBuf, int compressionType, bool tonemapped)
 {
+	// check if film is initialized
+	if (!contribPool)
+		return;
+
 	//boost::mutex::scoped_lock(write_mutex);
 	// don't need the write mutex since we're just protecting the buffers
 	ScopedPoolLock poolLock(contribPool);
