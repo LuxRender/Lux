@@ -215,6 +215,8 @@ public:
 
 	void SetEpsilon(const float minValue, const float maxValue);
 
+	void SetUserSamplingMap(const float *map);
+
 	//! Registry containing all queryable objects of the current context
 	//! \author jromang
 	QueryableRegistry registry;

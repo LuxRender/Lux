@@ -685,54 +685,12 @@ public:
 	virtual void SetStringParameterValue(luxComponentParameters param, const string& value, u_int index) = 0;
 	virtual string GetStringParameterValue(luxComponentParameters param, u_int index) = 0;
 
-	virtual const bool GetNoiseAwareMap(u_int &version, float *map) const {
-		boost::mutex::scoped_lock(noiseAwareMapMutex);
-		
-		if (noiseAwareMapVersion > version) {
-			std::copy(noiseAwareMap, noiseAwareMap + xPixelCount * yPixelCount, map);
-			version = noiseAwareMapVersion;
-			return true;
-		} else
-			return false;
-	}
-
-	virtual const bool HasUserSamplingMap() const {
-		return (userSamplingMap != NULL);
-	}
-
-	virtual const bool GetUserSamplingMap(u_int &version, float *map) const {
-		boost::mutex::scoped_lock(userSamplingMapMutex);
-		
-		if (userSamplingMapVersion > version) {
-			std::copy(userSamplingMap, userSamplingMap + xPixelCount * yPixelCount, map);
-			version = userSamplingMapVersion;
-			return true;
-		} else
-			return false;
-	}
-
+	virtual const bool GetNoiseAwareMap(u_int &version, float *map) const;
+	virtual const bool HasUserSamplingMap() const { return (userSamplingMap != NULL); }
+	virtual const bool GetUserSamplingMap(u_int &version, float *map) const;
 	// Return noise-aware * user-sampling maps
-	virtual const bool GetSamplingMap(u_int &naVersion,  u_int &usVersion, float *map) const {
-		boost::mutex::scoped_lock(noiseAwareMapMutex);
-		boost::mutex::scoped_lock(userSamplingMapMutex);
-
-		if ((noiseAwareMapVersion == naVersion) && (userSamplingMapVersion == usVersion))
-			return false;
-		else {
-			const u_int nPix = xPixelCount * yPixelCount;
-
-			if (userSamplingMap) {
-				for (u_int i = 0; i < nPix; ++i)
-					map[i] = noiseAwareMap[i] * userSamplingMap[i];
-			} else
-				std::copy(noiseAwareMap, noiseAwareMap + nPix, map);
-			
-			naVersion = noiseAwareMapVersion;
-			usVersion = userSamplingMapVersion;
-
-			return true;
-		}
-	}
+	virtual const bool GetSamplingMap(u_int &naVersion,  u_int &usVersion, float *map) const;
+	virtual void SetUserSamplingMap(const float *map);
 
 	/*
 	 * Accessor for samplePerPass

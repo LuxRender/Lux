@@ -1332,3 +1332,7 @@ int Context::GetNetworkServerUpdateInterval()
 {
 	return activeContext->renderFarm->serverUpdateInterval;
 }
+void Context::SetUserSamplingMap(const float *map)
+{
+	luxCurrentScene->camera->film->SetUserSamplingMap(map);
+}

@@ -2526,4 +2526,57 @@ void Film::GenerateNoiseAwareMap() {
 	}
 }
 
+const bool Film::GetNoiseAwareMap(u_int &version, float *map) const {
+	boost::mutex::scoped_lock(noiseAwareMapMutex);
+
+	if (noiseAwareMapVersion > version) {
+		std::copy(noiseAwareMap, noiseAwareMap + xPixelCount * yPixelCount, map);
+		version = noiseAwareMapVersion;
+		return true;
+	} else
+		return false;
+}
+
+const bool Film::GetUserSamplingMap(u_int &version, float *map) const {
+	boost::mutex::scoped_lock(userSamplingMapMutex);
+
+	if (userSamplingMapVersion > version) {
+		std::copy(userSamplingMap, userSamplingMap + xPixelCount * yPixelCount, map);
+		version = userSamplingMapVersion;
+		return true;
+	} else
+		return false;
+}
+
+// Return noise-aware * user-sampling maps
+const bool Film::GetSamplingMap(u_int &naVersion,  u_int &usVersion, float *map) const {
+	boost::mutex::scoped_lock(noiseAwareMapMutex);
+	boost::mutex::scoped_lock(userSamplingMapMutex);
+
+	if ((noiseAwareMapVersion == naVersion) && (userSamplingMapVersion == usVersion))
+		return false;
+	else {
+		const u_int nPix = xPixelCount * yPixelCount;
+
+		if (userSamplingMap) {
+			for (u_int i = 0; i < nPix; ++i)
+				map[i] = noiseAwareMap[i] * userSamplingMap[i];
+		} else
+			std::copy(noiseAwareMap, noiseAwareMap + nPix, map);
+
+		naVersion = noiseAwareMapVersion;
+		usVersion = userSamplingMapVersion;
+
+		return true;
+	}
+}
+
+void Film::SetUserSamplingMap(const float *map) {
+	boost::mutex::scoped_lock(userSamplingMapMutex);
+
+	const u_int nPix = xPixelCount * yPixelCount;
+	std::copy(map, map + nPix, userSamplingMap);
+	++userSamplingMapVersion;
+}
+
 } // namespace lux

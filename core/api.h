@@ -152,6 +152,9 @@ LUX_EXPORT unsigned char* luxFramebuffer();
 LUX_EXPORT float* luxFloatFramebuffer();
 LUX_EXPORT float* luxAlphaBuffer();
 
+/* User defined sampling */
+LUX_EXPORT void luxSetUserSamplingMap(const float *map);
+
 /* Histogram access */
 LUX_EXPORT void luxGetHistogramImage(unsigned char *outPixels, unsigned int width, unsigned int height, int options);
 //histogram drawing options
