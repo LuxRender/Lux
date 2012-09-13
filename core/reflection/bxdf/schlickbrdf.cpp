@@ -108,6 +108,8 @@ bool SchlickBRDF::SampleF(const SpectrumWavelengths &sw, const Vector &wo,
 		if (anisotropy > 0.f)
 			phi += M_PI * .5f;
 		H = Vector(sintheta * cosf(phi), sintheta * sinf(phi), costheta);
+		if (wo.z < 0.f)
+			H.z = -(H.z);
 		cosWH = Dot(wo, H);
 		*wi = 2.f * cosWH * H - wo;
 	}
@@ -198,12 +200,12 @@ bool SchlickDoubleSidedBRDF::SampleF(const SpectrumWavelengths &sw, const Vector
 	Vector H;
 	float cosWH;
 	u1 *= 2.f;
-	bool back = CosTheta(wo) <= 0.f;
+	const bool back = CosTheta(wo) <= 0.f;
 	if (u1 < 1.f) {
 		// Cosine-sample the hemisphere, flipping the direction if necessary
 		*wi = CosineSampleHemisphere(u1, u2);
-		if (wo.z < 0.f)
-			wi->z *= -1.f;
+		if (back)
+			wi->z *= -(wi->z);
 		H = Normalize(wo + *wi);
 		cosWH = AbsDot(wo, H);
 	} else {
@@ -229,6 +231,8 @@ bool SchlickDoubleSidedBRDF::SampleF(const SpectrumWavelengths &sw, const Vector
 		if (anisotropy > 0.f)
 			phi += M_PI * .5f;
 		H = Vector(sintheta * cosf(phi), sintheta * sinf(phi), costheta);
+		if (back)
+			H.z = -(H.z);
 		cosWH = Dot(wo, H);
 		*wi = 2.f * cosWH * H - wo;
 	}

@@ -423,13 +423,26 @@ void HitPoints::UpdatePointsInformation() {
 	u_int minp, maxp, meanp;
 	u_int surfaceHits, constantHits, zeroHits;
 
-	surfaceHits = constantHits = zeroHits = 0;
-
 	assert((*hitPoints).size() > 0);
 	HitPoint *hp = &(*hitPoints)[0];
 
-	maxr2 = minr2 = meanr2 = hp->accumPhotonRadius2;
-	minp = maxp = meanp = hp->GetPhotonCount();
+	if (hp->IsSurface()) {
+		surfaceHits = 1;
+		constantHits = 0;
+		u_int pc = hp->GetPhotonCount();
+		zeroHits = pc == 0 ? 1 : 0;
+		bbox = hp->GetPosition();
+		maxr2 = minr2 = meanr2 = hp->accumPhotonRadius2;
+		minp = maxp = meanp = pc;
+	} else {
+		constantHits = 1;
+		surfaceHits = 0;
+		zeroHits = 0;
+		maxr2 = 0.f;
+		minr2 = INFINITY;
+		meanr2 = 0.f;
+		minp = maxp = meanp = 0;
+	}
 
 	for (u_int i = 1; i < (*hitPoints).size(); ++i) {
 		hp = &(*hitPoints)[i];
@@ -457,10 +470,12 @@ void HitPoints::UpdatePointsInformation() {
 	}
 
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Hit points stats:";
-	LOG(LUX_DEBUG, LUX_NOERROR) << "\tbounding box: " << bbox;
-	LOG(LUX_DEBUG, LUX_NOERROR) << "\tmin/max radius: " << sqrtf(minr2) << "/" << sqrtf(maxr2);
-	LOG(LUX_DEBUG, LUX_NOERROR) << "\tmin/max photonCount: " << minp << "/" << maxp;
-	LOG(LUX_DEBUG, LUX_NOERROR) << "\tmean radius/photonCount: " << sqrtf(meanr2 / surfaceHits) << "/" << meanp / surfaceHits;
+	if (surfaceHits > 0) {
+		LOG(LUX_DEBUG, LUX_NOERROR) << "\tbounding box: " << bbox;
+		LOG(LUX_DEBUG, LUX_NOERROR) << "\tmin/max radius: " << sqrtf(minr2) << "/" << sqrtf(maxr2);
+		LOG(LUX_DEBUG, LUX_NOERROR) << "\tmin/max photonCount: " << minp << "/" << maxp;
+		LOG(LUX_DEBUG, LUX_NOERROR) << "\tmean radius/photonCount: " << sqrtf(meanr2 / surfaceHits) << "/" << meanp / surfaceHits;
+	}
 	LOG(LUX_DEBUG, LUX_NOERROR) << "\tconstant/zero hits: " << constantHits << "/" << zeroHits;
 
 	hitPointBBox = bbox;

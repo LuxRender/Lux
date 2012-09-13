@@ -88,7 +88,7 @@ bool Sphere::Intersect(const Ray &r, Intersection *isect) const
 	r.maxt = tHit;
 	// Find parametric representation of sphere hit
 	const float u = phi / phiMax;
-	const float theta = acosf(pHit.z / radius);
+	const float theta = acosf(Clamp(pHit.z / radius, -1.f, 1.f));
 	const float v = (theta - thetaMin) / (thetaMax - thetaMin);
 	// Compute sphere \dpdu and \dpdv
 	const float Z = zMax - zMin;

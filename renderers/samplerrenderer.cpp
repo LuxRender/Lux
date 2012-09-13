@@ -124,6 +124,21 @@ void SamplerRenderer::SuspendWhenDone(bool v) {
 	suspendThreadsWhenDone = v;
 }
 
+static void writeIntervalCheck(Film *film) {
+	if (!film)
+		return;
+
+	while (!boost::this_thread::interruption_requested()) {
+		try {
+			boost::this_thread::sleep(boost::posix_time::seconds(1));
+
+			film->CheckWriteOuputInterval();
+		} catch(boost::thread_interrupted&) {
+			break;
+		}
+	}
+}
+
 void SamplerRenderer::Render(Scene *s) {
 	{
 		// Section under mutex
@@ -152,7 +167,7 @@ void SamplerRenderer::Render(Scene *s) {
 
 		// initialize the thread's rangen
 		u_long seed = scene->seedBase - 1;
-		LOG( LUX_INFO,LUX_NOERROR) << "Preprocess thread uses seed: " << seed;
+		LOG( LUX_DEBUG,LUX_NOERROR) << "Preprocess thread uses seed: " << seed;
 
 		RandomGenerator rng(seed);
 
@@ -171,7 +186,7 @@ void SamplerRenderer::Render(Scene *s) {
 		sampPos = 0;
 		
 		// start the timer
-		rendererStatistics->timer.Start();
+		rendererStatistics->start();
 
 		// Dade - preprocessing done
 		preprocessDone = true;
@@ -182,9 +197,15 @@ void SamplerRenderer::Render(Scene *s) {
 	}
 
 	if (renderThreads.size() > 0) {
+		// thread for checking write interval
+		boost::thread writeIntervalThread = boost::thread(boost::bind(writeIntervalCheck, scene->camera->film));
+
 		// The first thread can not be removed
 		// it will terminate when the rendering is finished
 		renderThreads[0]->thread->join();
+
+		// stop write interval checking
+		writeIntervalThread.interrupt();
 
 		// rendering done, now I can remove all rendering threads
 		{
@@ -202,6 +223,9 @@ void SamplerRenderer::Render(Scene *s) {
 			Terminate();
 		}
 
+		// possibly wait for writing to finish
+		writeIntervalThread.join();
+
 		// Flush the contribution pool
 		scene->camera->film->contribPool->Flush();
 		scene->camera->film->contribPool->Delete();
@@ -211,13 +235,13 @@ void SamplerRenderer::Render(Scene *s) {
 void SamplerRenderer::Pause() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 	state = PAUSE;
-	rendererStatistics->timer.Stop();
+	rendererStatistics->stop();
 }
 
 void SamplerRenderer::Resume() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 	state = RUN;
-	rendererStatistics->timer.Start();
+	rendererStatistics->start();
 }
 
 void SamplerRenderer::Terminate() {
@@ -257,11 +281,13 @@ void SamplerRenderer::RemoveRenderThread() {
 // RenderThread methods
 //------------------------------------------------------------------------------
 
+
 SamplerRenderer::RenderThread::RenderThread(u_int index, SamplerRenderer *r) :
 	n(index), renderer(r), thread(NULL), samples(0.), blackSamples(0.), blackSamplePaths(0.) {
 }
 
 SamplerRenderer::RenderThread::~RenderThread() {
+	delete thread;
 }
 
 void SamplerRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
@@ -289,7 +315,7 @@ void SamplerRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 
 	// initialize the thread's rangen
 	u_long seed = scene.seedBase + myThread->n;
-	LOG( LUX_INFO,LUX_NOERROR) << "Thread " << myThread->n << " uses seed: " << seed;
+	LOG( LUX_DEBUG,LUX_NOERROR) << "Thread " << myThread->n << " uses seed: " << seed;
 
 	RandomGenerator rng(seed);
 	sample.camera = scene.camera->Clone();
@@ -356,6 +382,7 @@ void SamplerRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 	}
 
 	scene.camera->film->contribPool->End(sample.contribBuffer);
+	// don't delete contribBuffer as references are held in the pool
 	sample.contribBuffer = NULL;
 
 	//delete myThread->sample->camera; //FIXME deleting the camera clone would delete the film!

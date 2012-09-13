@@ -64,7 +64,8 @@ bool SchlickTranslucentBTDF::SampleF(const SpectrumWavelengths &sw, const Vector
 {
 	// Cosine-sample the hemisphere, flipping the direction if necessary
 	*wi = CosineSampleHemisphere(u1, u2);
-	if (wo.z > 0.f) wi->z = -(wi->z);	// make sure wi is in opposite hemisphere
+	if (wo.z > 0.f)
+		wi->z = -(wi->z);	// make sure wi is in opposite hemisphere
 	// wi may be in the tangent plane, which will 
 	// fail the SameHemisphere test in Pdf()
 	if (SameHemisphere(wo, *wi))

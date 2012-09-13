@@ -139,6 +139,21 @@ void SPPMRenderer::SuspendWhenDone(bool v) {
 	suspendThreadsWhenDone = v;
 }
 
+static void writeIntervalCheck(Film *film) {
+	if (!film)
+		return;
+
+	while (!boost::this_thread::interruption_requested()) {
+		try {
+			boost::this_thread::sleep(boost::posix_time::seconds(1));
+
+			film->CheckWriteOuputInterval();
+		} catch(boost::thread_interrupted&) {
+			break;
+		}
+	}
+}
+
 void SPPMRenderer::Render(Scene *s) {
 	{
 		// Section under mutex
@@ -173,7 +188,7 @@ void SPPMRenderer::Render(Scene *s) {
 
 		// initialize the thread's rangen
 		u_long seed = scene->seedBase - 1;
-		LOG(LUX_INFO, LUX_NOERROR) << "Preprocess thread uses seed: " << seed;
+		LOG(LUX_DEBUG, LUX_NOERROR) << "Preprocess thread uses seed: " << seed;
 
 		rng = new RandomGenerator(seed);
 
@@ -203,7 +218,7 @@ void SPPMRenderer::Render(Scene *s) {
 		uniformCount = 1.f;
 
 		// start the timer
-		rendererStatistics->timer.Start();
+		rendererStatistics->start();
 
 		Context::GetActive()->SceneReady();
 	}
@@ -211,23 +226,31 @@ void SPPMRenderer::Render(Scene *s) {
 	// Add the first thread // TODO: why
 	scheduler->AddThread(new RenderThread(this));
 
+	// thread for checking write interval
+	boost::thread writeIntervalThread = boost::thread(boost::bind(writeIntervalCheck, scene->camera->film));
+
 	RenderMain(scene);
 
 	scheduler->Done();
+
+	// stop write interval checking
+	writeIntervalThread.interrupt();
+	// possibly wait for writing to finish
+	writeIntervalThread.join();
 }
 
 void SPPMRenderer::Pause() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 	state = PAUSE;
 	scheduler->Pause();
-	rendererStatistics->timer.Stop();
+	rendererStatistics->stop();
 }
 
 void SPPMRenderer::Resume() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 	state = RUN;
 	scheduler->Resume();
-	rendererStatistics->timer.Start();
+	rendererStatistics->start();
 }
 
 void SPPMRenderer::Terminate() {
@@ -364,7 +387,7 @@ void SPPMRenderer::RenderMain(Scene *scene)
 	hitPoints->Init();
 
 	// Trace rays: The main loop
-	while (!scene->camera->film->enoughSamplesPerPixel && state != TERMINATE) {
+	while (!scene->camera->film->enoughSamplesPerPixel && hitPoints->GetPassCount() < scene->camera->film->haltSamplesPerPixel && state != TERMINATE) {
 		hitPoints->UpdatePointsInformation();
 
 		hitPoints->RefreshAccel(scheduler);

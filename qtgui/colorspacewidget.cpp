@@ -28,6 +28,7 @@
 #include "api.h"
 
 #include <iostream>
+#include <cmath>
 
 // colorspacepresets and colorspace whitepoints
 static double colorspace_presets[8][NUM_COLORSPACE_PRESETS] = {
@@ -50,7 +51,7 @@ static double whitepoint_presets[2][NUM_WHITEPOINT_PRESETS] = {
 #define DEFAULT_EPSILON_MIN 0.000005f
 static bool EqualDouble(const double a, const double b)
 {
-	return (fabs(a-b) < DEFAULT_EPSILON_MIN);
+	return (std::fabs(a-b) < DEFAULT_EPSILON_MIN);
 }
 
 /* 

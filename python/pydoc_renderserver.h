@@ -38,6 +38,9 @@ const char * ds_pylux_RenderServer_getServerPort =
 const char * ds_pylux_RenderServer_getServerState =
 "Get the state of this server";
 
+const char * ds_pylux_RenderServer_getServerPass =
+"Get the password for this server";
+
 const char * ds_pylux_RenderServer_start = 
 "Start this server";
 

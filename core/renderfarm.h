@@ -40,14 +40,14 @@ class RenderFarm;
 class FilmUpdaterThread : public boost::noncopyable {
 public:
     FilmUpdaterThread(RenderFarm *rFarm, Scene *scn) :
-        renderFarm(rFarm), scene(scn), thread(NULL), signal(SIG_NONE) { }
+        renderFarm(rFarm), scene(scn), thread(NULL) { }
 
     ~FilmUpdaterThread() {
         delete thread;
     }
 
-    void interrupt() {
-        signal = SIG_EXIT;
+    void stop() {
+        thread->interrupt();
         thread->join();
     }
 
@@ -58,24 +58,22 @@ private:
     RenderFarm *renderFarm;
     Scene *scene;
     boost::thread *thread; // keep pointer to delete the thread object
-
-    // Dade - used to send signals to the thread
-    int signal;
-    static const int SIG_NONE = 0;
-    static const int SIG_EXIT = 1;
 };
 
 class RenderFarm {
 public:
 	RenderFarm();
-	~RenderFarm() { delete filmUpdateThread; }
+	~RenderFarm();
 
 	bool connect(const string &serverName); //!< Connects to a new rendering server
 	// Dade - Disconnect from all servers
 	void disconnectAll();
 	void disconnect(const string &serverName);
 	void disconnect(const RenderingServerInfo &serverInfo);
-	
+
+	// Resets server's rendering session
+	bool sessionReset(const string &serverName, const string &password);
+
 	// signal that rendering is done
 	void renderingDone() { netBufferComplete = false; };
 
@@ -102,12 +100,12 @@ public:
 	//!< Sends immediately all commands in the buffer to the servers
 	void flush();
 
-	u_int getServerCount() { return serverInfoList.size(); }
-	u_int getServersStatus(RenderingServerInfo *info, u_int maxInfoCount);
+	u_int getServerCount() const;
+	u_int getServersStatus(RenderingServerInfo *info, u_int maxInfoCount) const;
 
-	// Dade - used to periodically update the film
-	void startFilmUpdater(Scene *scene);
-	void stopFilmUpdater();
+	// Start the rendering server (including the film update thread)
+	void start(Scene *scene);
+	void stop();
 	//!<Gets the films from the network, and merge them to the film given in parameter
 	void updateFilm(Scene *scene);
 
@@ -125,6 +123,10 @@ private:
 			timeLastSamples(boost::posix_time::second_clock::local_time()),
 			numberOfSamplesReceived(0.0), calculatedSamplesPerSecond(0.0),
 			name(n), port(p), sid(id), active(false), flushed(false) { }
+
+		// returns true if "other" has the same name and port
+		bool sameServer(const std::string &name, const std::string &port) const;
+		bool sameServer(const ExtRenderingServerInfo &other) const;
 
 		boost::posix_time::ptime timeLastContact;
 		boost::posix_time::ptime timeLastSamples;
@@ -237,19 +239,23 @@ private:
 	};
 	typedef reconnect_status::type reconnect_status_t;
 
-	static void decodeServerName(const string &serverName, string &name, string &port);
+	static bool decodeServerName(const string &serverName, string &name, string &port);
 	bool connect(ExtRenderingServerInfo &serverInfo);
 	reconnect_status_t reconnect(ExtRenderingServerInfo &serverInfo);
 	void flushImpl();
 	void disconnect(const ExtRenderingServerInfo &serverInfo);
 	void reconnectFailed();
+	void stopImpl();
 
 	// Any operation on servers must be synchronized via this mutex
-	boost::mutex serverListMutex;
+	mutable boost::mutex serverListMutex;
 	std::vector<ExtRenderingServerInfo> serverInfoList;
 
 	// Dade - film update information
 	FilmUpdaterThread *filmUpdateThread;
+
+	// for async flushing
+	boost::thread *flushThread;
 
 	CompiledCommands compiledCommands;
 	CompiledFiles compiledFiles;

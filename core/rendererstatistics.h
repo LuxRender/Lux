@@ -48,7 +48,11 @@ public:
 	void reset();
 	void updateStatisticsWindow();
 
-	Timer timer;
+	void start();
+	void stop();
+
+	// multithread safe while in running state
+	double elapsedTime() const;
 
 	class Formatted : public Queryable {
 	public:
@@ -115,11 +119,12 @@ public:
 	FormattedShort* formattedShort;
 
 protected:
+	Timer timer;
 	boost::mutex windowMutex;
 	double windowStartTime;
 	double windowCurrentTime;
 
-	double getElapsedTime() { return timer.Time(); }
+	double getElapsedTime() { return elapsedTime(); }
 	double getHaltTime();
 	double getPercentHaltTimeComplete();
 	double getHaltThreshold();

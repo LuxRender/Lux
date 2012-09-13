@@ -37,6 +37,7 @@
 #include "streamio.h"
 #include "filedata.h"
 #include "tigerhash.h"
+#include "timer.h"
 
 #include <algorithm>
 #include <fstream>
@@ -98,35 +99,36 @@ static std::string get_response(std::iostream &stream) {
 }
 
 void FilmUpdaterThread::updateFilm(FilmUpdaterThread *filmUpdaterThread) {
-	// Dade - thread to update the film with data from servers
+	// thread to update the film with data from servers
+	Timer timer;
 
-	boost::xtime reft;
-	boost::xtime_get(&reft, boost::TIME_UTC);
+	try {
+		while (true) {
+			// no-op if already started
+			timer.Start();
 
-	while (filmUpdaterThread->signal == SIG_NONE) {
-		// Dade - check signal every 1 sec
+			// sleep for 1 sec
+			boost::this_thread::sleep(boost::posix_time::seconds(1));
 
-		for(;;) {
-			// Dade - sleep for 1 sec
-			boost::xtime xt;
-			boost::xtime_get(&xt, boost::TIME_UTC);
-			xt.sec += 1;
-			boost::thread::sleep(xt);
-
-			if (filmUpdaterThread->signal == SIG_EXIT)
-				break;
-
-			if (xt.sec - reft.sec > filmUpdaterThread->renderFarm->serverUpdateInterval) {
-				reft = xt;
-				break;
+			if (timer.Time() > filmUpdaterThread->renderFarm->serverUpdateInterval) {
+				filmUpdaterThread->renderFarm->updateFilm(filmUpdaterThread->scene);
+				timer.Reset();
 			}
 		}
-
-		if (filmUpdaterThread->signal == SIG_EXIT)
-			break;
-
-		filmUpdaterThread->renderFarm->updateFilm(filmUpdaterThread->scene);
+	} catch (boost::thread_interrupted &) {
+		// we got interrupted, do nothing
+	} catch (std::runtime_error &e) {
+		LOG(LUX_SEVERE, LUX_SYSTEM) << "Error in network film updater: " << e.what();
 	}
+}
+
+
+bool RenderFarm::ExtRenderingServerInfo::sameServer(const std::string &name, const std::string &port) const {
+	return boost::iequals(this->name, name) && boost::equals(this->port, port);
+}
+
+bool RenderFarm::ExtRenderingServerInfo::sameServer(const RenderFarm::ExtRenderingServerInfo &other) const {
+	return sameServer(other.name, other.port);
 }
 
 RenderFarm::CompiledFile::CompiledFile(const std::string &filename) : fname(filename) {
@@ -356,56 +358,84 @@ RenderFarm::CompiledCommand& RenderFarm::CompiledCommands::add(const std::string
 	return commands.back();
 }
 
-RenderFarm::RenderFarm() : serverUpdateInterval(3 * 60), filmUpdateThread(NULL),
+RenderFarm::RenderFarm() : serverUpdateInterval(3 * 60), filmUpdateThread(NULL), flushThread(NULL),
 		netBufferComplete(false), isLittleEndian(osIsLittleEndian())
 {
 }
 
-
-// Dade - used to periodically update the film
-void RenderFarm::startFilmUpdater(Scene *scene) {
-	if (filmUpdateThread == NULL) {
-		filmUpdateThread = new FilmUpdaterThread(this, scene);
-		filmUpdateThread->thread = new boost::thread(boost::bind(
-			FilmUpdaterThread::updateFilm, filmUpdateThread));
-	} else {
-		LOG(LUX_ERROR,LUX_ILLSTATE)<<"RenderFarm::startFilmUpdater() called but update thread already started.";
-	}
+RenderFarm::~RenderFarm()
+{
+	stopImpl();
 }
 
-void RenderFarm::stopFilmUpdater() {
-	if (filmUpdateThread != NULL) {
-		filmUpdateThread->interrupt();
+// used to periodically update the film
+void RenderFarm::start(Scene *scene) {
+	boost::mutex::scoped_lock lock(serverListMutex);
+
+	// no need to start film update thread
+	// since we do not have any servers
+	if (serverInfoList.empty() || !scene)
+		return;
+
+	// already started
+	if (filmUpdateThread)
+		return;
+
+	filmUpdateThread = new FilmUpdaterThread(this, scene);
+	filmUpdateThread->thread = new boost::thread(boost::bind(
+		FilmUpdaterThread::updateFilm, filmUpdateThread));
+}
+
+// used to stop the periodic film updater and similar
+void RenderFarm::stop() {
+	boost::mutex::scoped_lock lock(serverListMutex);
+
+	stopImpl();
+}
+
+void RenderFarm::stopImpl() {
+	if (filmUpdateThread) {
+		filmUpdateThread->stop();
 		delete filmUpdateThread;
 		filmUpdateThread = NULL;
 	}
-	// Dade - stopFilmUpdater() is called multiple times at the moment (for instance
-	// haltspp + luxconsole)
-	/*else {
-		LOG(LUX_ERROR,LUX_ILLSTATE)<<"RenderFarm::stopFilmUpdater() called but update thread not started.";
-	}*/
+
+	if (flushThread) {
+		flushThread->interrupt();
+		flushThread->join();
+		delete flushThread;
+		flushThread = NULL;
+	}
 }
 
-void RenderFarm::decodeServerName(const string &serverName, string &name, string &port) {
+bool RenderFarm::decodeServerName(const string &serverName, string &name, string &port) {
 	// Dade - check if the server name includes the port
 	size_t idx = serverName.find_last_of(':');
 	size_t idx_v6 = serverName.rfind("::");
 	if (idx != string::npos && idx != idx_v6+1) {
 		// Dade - the server name includes the port number
 
-		name = serverName.substr(0, idx);
-		port = serverName.substr(idx + 1);
+		try {
+			name = serverName.substr(0, idx);
+			// convert to int and back to get a standardized representation for comparison
+			port = boost::lexical_cast<std::string>(boost::lexical_cast<int>(serverName.substr(idx + 1)));
+		} catch (boost::bad_lexical_cast &) {
+			LOG(LUX_ERROR, LUX_SYSTEM) << "Unable to decode server name: '" << serverName << "'";
+			return false;
+		}
 	} else {
 		name = serverName;
 		port = "18018";
 	}
+
+	return true;
 }
 
 bool RenderFarm::connect(ExtRenderingServerInfo &serverInfo) {
 
 	// check to see if we're already connected (active), if so ignore
 	for (vector<ExtRenderingServerInfo>::iterator it = serverInfoList.begin(); it < serverInfoList.end(); it++ ) {
-		if (serverInfo.name.compare(it->name) == 0 && serverInfo.port.compare(it->port) == 0 && it->active) {
+		if (serverInfo.sameServer(*it)) {
 			return false;
 		}
 	}
@@ -538,7 +568,8 @@ bool RenderFarm::connect(const string &serverName) {
 		stringstream ss;
 		try {
 			string name, port;
-			decodeServerName(serverName, name, port);
+			if (!decodeServerName(serverName, name, port))
+				return false;			
 
 			ExtRenderingServerInfo serverInfo(name, port);
 			if (!connect(serverInfo)) {
@@ -574,10 +605,11 @@ void RenderFarm::disconnect(const string &serverName) {
 	boost::mutex::scoped_lock lock(serverListMutex);
 
 	string name, port;
-	decodeServerName(serverName, name, port);
+	if (!decodeServerName(serverName, name, port))
+		return;
 
 	for (vector<ExtRenderingServerInfo>::iterator it = serverInfoList.begin(); it < serverInfoList.end(); it++ ) {
-		if (name.compare(it->name) == 0 && port.compare(it->port) == 0) {
+		if (it->sameServer(name, port)) {
 			disconnect(*it);
 			serverInfoList.erase(it);
 			break;
@@ -615,6 +647,90 @@ void RenderFarm::disconnect(const ExtRenderingServerInfo &serverInfo) {
 	}
 }
 
+bool RenderFarm::sessionReset(const string &serverName, const string &password) {
+	boost::mutex::scoped_lock lock(serverListMutex);
+
+	string name, port;
+	if (!decodeServerName(serverName, name, port))
+		return false;
+
+	string formattedServerName = name + ":" + port;
+
+	LOG( LUX_INFO,LUX_NOERROR) << "Resetting server: " << formattedServerName;
+
+	// check to see if we're already connected, if so try to reconnect, if failed reset
+	for (vector<ExtRenderingServerInfo>::iterator it = serverInfoList.begin(); it < serverInfoList.end(); it++ ) {
+		if (it->sameServer(name, port)) {			
+			LOG( LUX_DEBUG,LUX_NOERROR) << "Attempting to recover existing session with server: " << formattedServerName;
+			if (reconnect(*it) == reconnect_status::success) {
+				LOG( LUX_INFO,LUX_NOERROR) << "Server reconnected successfully, aborting reset of server: " << formattedServerName;
+				return true;
+			}
+			serverInfoList.erase(it);
+			break;
+		}
+	}
+
+	try {
+		tcp::iostream stream(name, port);
+		stream << "ServerReset" << std::endl << std::flush;
+
+		// Check if the server accepted the connection
+		string result;
+		if (!getline(stream, result)) {
+			LOG( LUX_ERROR,LUX_SYSTEM) << "Error resetting server: " << formattedServerName;
+			return false;
+		}
+
+		LOG( LUX_DEBUG,LUX_NOERROR) << "Server reset response: " << result;
+		
+		if ("IDLE" == result) {
+			// slave is idle, nothing to reset
+			return true;
+		}
+
+		if ("CHALLENGE" != result) {
+			// unknown response
+			LOG( LUX_ERROR,LUX_SYSTEM) << "Unable to reset server: " << formattedServerName << " (response: '" << result << "')";
+			return false;
+		}
+
+		string salt;
+		if (!getline(stream, salt)) {
+			LOG( LUX_ERROR,LUX_SYSTEM) << "Error resetting server: " << formattedServerName;
+			return false;
+		}
+
+		const string hashedpass = digest_string(string_hash<tigerhash>(
+				salt + password + salt));
+
+		stream << hashedpass << std::endl << std::flush;
+
+		if (!getline(stream, result)) {
+			LOG( LUX_ERROR,LUX_SYSTEM) << "Error resetting server: " << formattedServerName;
+			return false;
+		}
+
+		if ("DENIED" == result) {
+			LOG( LUX_ERROR,LUX_SYSTEM) << "Authentication failed trying to reset server: " << formattedServerName;
+			return false;
+		}
+
+		if ("RESET" != result) {
+			LOG( LUX_ERROR,LUX_SYSTEM) << "Unable to reset server: " << formattedServerName << " (response: '" << result << "')";
+			return false;
+		}
+		
+		LOG( LUX_INFO,LUX_NOERROR) << "Server reset: "  << formattedServerName;
+
+	} catch (exception& e) {
+		LOG(LUX_ERROR,LUX_SYSTEM) << "Unable to reset server: " << formattedServerName;
+		LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
+		return false;
+	}
+
+	return true;
+}
 void RenderFarm::flushImpl() {
 	//flush network buffer
 	for (size_t i = 0; i < serverInfoList.size(); i++) {
@@ -859,12 +975,25 @@ void RenderFarm::updateLog() {
 	reconnectFailed();
 }
 
+// to catch the interrupted exception
+static void flush_thread_func(RenderFarm *renderFarm) {
+	try {
+		renderFarm->flush();
+	} catch (boost::thread_interrupted&) {
+	}
+}
+
 void RenderFarm::send(const string &command) {
 	compiledCommands.add(command);
 
 	// Check if the scene is complete
-	if (command == "luxWorldEnd")
+	if (command == "luxWorldEnd") {
 		netBufferComplete = true;
+		// perform async flush
+		//flushThread = new boost::thread(boost::bind(flush_thread_func, this));
+		// synch flush
+		flush();
+	}
 }
 
 void RenderFarm::send(const string &command, const string &name,
@@ -1024,7 +1153,11 @@ void RenderFarm::send(const string &command, const string &name, float a, float 
 	}
 }
 
-u_int RenderFarm::getServersStatus(RenderingServerInfo *info, u_int maxInfoCount) {
+u_int RenderFarm::getServerCount() const {
+	return serverInfoList.size();
+}
+
+u_int RenderFarm::getServersStatus(RenderingServerInfo *info, u_int maxInfoCount) const {
 	ptime now = second_clock::local_time();
 	for (size_t i = 0; i < min<size_t>(serverInfoList.size(), maxInfoCount); ++i) {
 		info[i].serverIndex = i;

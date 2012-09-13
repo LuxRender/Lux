@@ -109,6 +109,11 @@ extern "C" void luxRemoveServer(const char * name)
 	Context::GetActive()->RemoveServer(string(name));
 }
 
+extern "C" void luxResetServer(const char * name, const char * password)
+{
+	Context::GetActive()->ResetServer(string(name), string(password));
+}
+
 extern "C" unsigned int luxGetServerCount()
 {
 	return Context::GetActive()->GetServerCount();
