@@ -187,13 +187,21 @@ bool MetropolisSampler::GetNextSample(Sample *sample)
 	}
 	if (data->large) {
 		if (useNoiseAware) {
+			const u_int nPix = film->GetXPixelCount() * film->GetYPixelCount();
 			if (!data->noiseAwareMap)
-				data->noiseAwareMap = new float[film->GetXPixelCount() * film->GetYPixelCount()];
+				data->noiseAwareMap = new float[nPix];
 
 			// Check if there is a new version of the noise map
 			if (film->GetNoiseAwareMap(data->noiseAwareMapVersion, data->noiseAwareMap)) {
 				// There is a new version so reset some data
-				data->totalLY = 0.f; // NOTE: totalLY could be already set to the Sum(noiseAwareMap)
+
+				float newTotal = 0.f;
+				for (u_int i = 0; i < nPix; ++i)
+					newTotal += data->noiseAwareMap[i];
+				newTotal /= nPix;
+
+				// NOTE: totalLY store the average target function value (this is usually not known but in this case, it is)
+				data->totalLY = newTotal;
 				data->sampleCount = 0.f;
 				data->consecRejects = 0;
 				data->LY = 0.f;
@@ -313,6 +321,7 @@ void MetropolisSampler::AddSample(const Sample &sample)
 {
 	MetropolisData *data = (MetropolisData *)(sample.samplerData);
 	vector<Contribution> &newContributions(sample.contributions);
+	float meanIntensity;
 	float newLY = 0.f;
 	if (useNoiseAware && data->noiseAwareMapVersion > 0) {
 		const int xPixelCount = film->GetXPixelCount();
@@ -325,6 +334,8 @@ void MetropolisSampler::AddSample(const Sample &sample)
 
 			newLY += data->noiseAwareMap[x + y * xPixelCount];
 		}
+
+		meanIntensity = data->totalLY > 0. ? data->totalLY : 1.f;
 	} else {
 		for(u_int i = 0; i < newContributions.size(); ++i) {
 			const float ly = newContributions[i].color.Y();
@@ -336,13 +347,16 @@ void MetropolisSampler::AddSample(const Sample &sample)
 			} else
 				newContributions[i].color = XYZColor(0.f);
 		}
+		
+		// Calculate meanIntensity. Required only for standard metropolis, it
+		// is a known quantity when noise-aware is enabled
+		if (data->large) {
+			data->totalLY += newLY;
+			++(data->sampleCount);
+		}
+
+		meanIntensity = data->totalLY > 0. ? static_cast<float>(data->totalLY / data->sampleCount) : 1.f;
 	}
-	// calculate meanIntensity
-	if (data->large) {
-		data->totalLY += newLY;
-		++(data->sampleCount);
-	}
-	const float meanIntensity = data->totalLY > 0. ? static_cast<float>(data->totalLY / data->sampleCount) : 1.f;
 
 	sample.contribBuffer->AddSampleCount(1.f);
 
