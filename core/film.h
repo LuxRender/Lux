@@ -696,6 +696,44 @@ public:
 			return false;
 	}
 
+	virtual const bool HasUserSamplingMap() const {
+		return (userSamplingMap != NULL);
+	}
+
+	virtual const bool GetUserSamplingMap(u_int &version, float *map) const {
+		boost::mutex::scoped_lock(userSamplingMapMutex);
+		
+		if (userSamplingMapVersion > version) {
+			std::copy(userSamplingMap, userSamplingMap + xPixelCount * yPixelCount, map);
+			version = userSamplingMapVersion;
+			return true;
+		} else
+			return false;
+	}
+
+	// Return noise-aware * user-sampling maps
+	virtual const bool GetSamplingMap(u_int &naVersion,  u_int &usVersion, float *map) const {
+		boost::mutex::scoped_lock(noiseAwareMapMutex);
+		boost::mutex::scoped_lock(userSamplingMapMutex);
+
+		if ((noiseAwareMapVersion == naVersion) && (userSamplingMapVersion == usVersion))
+			return false;
+		else {
+			const u_int nPix = xPixelCount * yPixelCount;
+
+			if (userSamplingMap) {
+				for (u_int i = 0; i < nPix; ++i)
+					map[i] = noiseAwareMap[i] * userSamplingMap[i];
+			} else
+				std::copy(noiseAwareMap, noiseAwareMap + nPix, map);
+			
+			naVersion = noiseAwareMapVersion;
+			usVersion = userSamplingMapVersion;
+
+			return true;
+		}
+	}
+
 	/*
 	 * Accessor for samplePerPass
 	 * It is only used by SPPM and may disappears once the Buffer API allows for
@@ -768,9 +806,14 @@ protected: // Put it here for better data alignment
 	vector<bool> convergenceDiff;
 	float *convergenceTVI;
 	VarianceBuffer *varianceBuffer;
+
 	float *noiseAwareMap;
 	u_int noiseAwareMapVersion;
 	boost::mutex noiseAwareMapMutex;
+
+	float *userSamplingMap;
+	u_int userSamplingMapVersion;
+	boost::mutex userSamplingMapMutex;
 
 	PerPixelNormalizedFloatBuffer *ZBuffer;
 	bool use_Zbuf;

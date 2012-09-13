@@ -53,8 +53,9 @@ public:
 		vector <Contribution> oldContributions;
 		double totalLY, sampleCount;
 
-		float *noiseAwareMap;
+		float *samplingMap;
 		u_int noiseAwareMapVersion;
+		u_int userSamplingMapVersion;
 	};
 
 	MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,

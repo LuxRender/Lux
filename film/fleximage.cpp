@@ -1017,6 +1017,14 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 						0.f, 255.f));
 				}*/
 
+				// Some debug code used to show user-sampling map
+				/*for (u_int i = 0; i < nPix; i++) {
+					framebuffer[3 * i] = framebuffer[3 * i + 1] = framebuffer[3 * i + 2] =
+						static_cast<unsigned char>(Clamp(256.f *
+						userSamplingMap[i] * noiseAwareMap[i],
+						0.f, 255.f));
+				}*/
+
 				// Some debug code used to show the variance
 				/*float maxv = 0.f;
 				for (u_int i = 0; i < nPix; i++) {

@@ -654,6 +654,7 @@ Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop
 	colorSpace(0.63f, 0.34f, 0.31f, 0.595f, 0.155f, 0.07f, 0.314275f, 0.329411f), // default is SMPTE
 	convergenceReference(NULL), convergenceTVI(NULL), varianceBuffer(NULL),
 	noiseAwareMap(NULL), noiseAwareMapVersion(0),
+	userSamplingMap(NULL), userSamplingMapVersion(0),
 	ZBuffer(NULL), use_Zbuf(useZbuffer),
 	debug_mode(debugmode), premultiplyAlpha(premult),
 	writeResumeFlm(w_resume_FLM), restartResumeFlm(restart_resume_FLM), writeFlmDirect(write_FLM_direct),
@@ -751,7 +752,8 @@ Film::~Film()
 	delete[] convergenceReference;
 	delete[] convergenceTVI;
 	delete varianceBuffer;
-	delete noiseAwareMap;
+	delete[] noiseAwareMap;
+	delete[] userSamplingMap;
 	delete histogram;
 	delete contribPool;
 }
@@ -787,6 +789,18 @@ void Film::CreateBuffers()
 
 		noiseAwareMap = new float[xPixelCount * yPixelCount];
 		std::fill(noiseAwareMap, noiseAwareMap + xPixelCount * yPixelCount, 1.f);
+
+		// DEBUG: for testing the user sampling map functionality
+		/*userSamplingMap = new float[xPixelCount * yPixelCount];
+		for (u_int x = 0; x < xPixelCount; ++x) {
+			for (u_int y = 0; y < yPixelCount; ++y) {
+				const float xx = (x / (float)xPixelCount) - 0.5f;
+				const float yy = (y / (float)yPixelCount) - 0.5f;
+
+				userSamplingMap[x + y * xPixelCount] = (xx * xx + yy * yy < 0.25f * 0.25f) ? 1.f : 0.01f;
+			}
+		}
+		userSamplingMapVersion = 1;*/
 	}
 
     // Dade - check if we have to resume a rendering and restore the buffers
