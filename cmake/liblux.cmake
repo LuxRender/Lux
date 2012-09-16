@@ -242,6 +242,7 @@ SET(lux_lights_src
 	lights/sphericalfunction/sphericalfunction_ies.cpp
 	lights/spot.cpp
 	lights/sky.cpp
+	lights/sky2.cpp
 	lights/sun.cpp
 	)
 SOURCE_GROUP("Source Files\\Lights" FILES ${lux_lights_src})
@@ -669,11 +670,13 @@ SET(lux_lights_hdr
 	lights/pointlight.h
 	lights/projection.h
 	lights/sky.h
+	lights/sky2.h
 	lights/spot.h
 	lights/sun.h
 	)
 SOURCE_GROUP("Header Files\\Lights" FILES ${lux_lights_hdr})
 SET(lux_lights_data_hdr
+	lights/data/ArHosekSkyModelData.h
 	lights/data/lamp_spect.h
 	lights/data/skychroma_spect.h
 	lights/data/sun_spect.h
