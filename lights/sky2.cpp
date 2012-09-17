@@ -127,7 +127,7 @@ static void ComputeModel(float turbidity, float albedo[11], float elevation,
 		powf(1.f - normalizedElevation, 4.f) * normalizedElevation,
 		powf(1.f - normalizedElevation, 3.f) * powf(normalizedElevation, 2.f),
 		powf(1.f - normalizedElevation, 2.f) * powf(normalizedElevation, 3.f),
-		(1.f - normalizedElevation) * powf(elevation, 4.f),
+		(1.f - normalizedElevation) * powf(normalizedElevation, 4.f),
 		powf(normalizedElevation, 5.f)
 	};
 
