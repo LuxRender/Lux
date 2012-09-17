@@ -625,6 +625,44 @@ void Context::LightSource(const string &n, const ParamSet &params) {
 			lt_sky->group = lg;
 			lt_sky->SetVolume(graphicsState->exterior);
 		}
+	} else if (n == "sunsky2") {
+		//SunSky2 light - create both sun & sky2 lightsources
+
+		ParamSet sunparams(params);
+
+		Light *lt_sun = MakeLight("sun", curTransform.StaticTransform(), sunparams);
+		if (lt_sun == NULL) {
+			LOG(LUX_ERROR,LUX_SYNTAX)<< "luxLightSource: light type sun unknown.";
+			graphicsState->currentLightPtr0 = NULL;
+		} else {
+			if (renderOptions->currentLightInstance)
+				renderOptions->currentLightInstance->push_back(boost::shared_ptr<Light>(lt_sun));
+			else
+				renderOptions->lights.push_back(lt_sun);
+			graphicsState->currentLight = n;
+			graphicsState->currentLightPtr0 = lt_sun;
+			lt_sun->group = lg;
+			lt_sun->SetVolume(graphicsState->exterior);
+		}
+
+		// Stop the sky complaining about unused sun params
+		ParamSet skyparams(params);
+		skyparams.EraseFloat("relsize");
+
+		Light *lt_sky = MakeLight("sky2", curTransform.StaticTransform(), skyparams);
+		if (lt_sky == NULL) {
+			LOG(LUX_ERROR,LUX_SYNTAX)<< "luxLightSource: light type sky2 unknown.";
+			graphicsState->currentLightPtr1 = NULL;
+		} else {
+			if (renderOptions->currentLightInstance)
+				renderOptions->currentLightInstance->push_back(boost::shared_ptr<Light>(lt_sky));
+			else
+				renderOptions->lights.push_back(lt_sky);
+			graphicsState->currentLight = n;
+			graphicsState->currentLightPtr1 = lt_sky;
+			lt_sky->group = lg;
+			lt_sky->SetVolume(graphicsState->exterior);
+		}
 	} else {
 		// other lightsource type
 		Light *lt = MakeLight(n, curTransform.StaticTransform(), params);
