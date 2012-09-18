@@ -474,13 +474,13 @@ void PhotonMapPreprocess(const RandomGenerator &rng, const Scene &scene,
 
 	boost::xtime photonShootingStartTime;
 	boost::xtime lastUpdateTime;
-	boost::xtime_get(&photonShootingStartTime, boost::TIME_UTC);
-	boost::xtime_get(&lastUpdateTime, boost::TIME_UTC);
+	boost::xtime_get(&photonShootingStartTime, boost::TIME_UTC_);
+	boost::xtime_get(&lastUpdateTime, boost::TIME_UTC_);
 	u_int nshot = 0;
 	while ((!radianceDone || !directDone || !causticDone || !indirectDone) && !scene.terminated) {
 		// Dade - print some progress information
 		boost::xtime currentTime;
-		boost::xtime_get(&currentTime, boost::TIME_UTC);
+		boost::xtime_get(&currentTime, boost::TIME_UTC_);
 		if (currentTime.sec - lastUpdateTime.sec > 5) {
 			ss.str("");
 			ss << "Photon shooting progress: Direct[" << directPhotons.size();
@@ -686,7 +686,7 @@ void PhotonMapPreprocess(const RandomGenerator &rng, const Scene &scene,
 		return;
 
 	boost::xtime photonShootingEndTime;
-	boost::xtime_get(&photonShootingEndTime, boost::TIME_UTC);
+	boost::xtime_get(&photonShootingEndTime, boost::TIME_UTC_);
 	LOG(LUX_INFO,LUX_NOERROR) << "Photon shooting done (" << ( photonShootingEndTime.sec - photonShootingStartTime.sec ) << "s)";
 
 	if (computeRadianceMap) {
@@ -700,7 +700,7 @@ void PhotonMapPreprocess(const RandomGenerator &rng, const Scene &scene,
 		for (u_int i = 0; i < radiancePhotons.size(); ++i) {
 			// Dade - print some progress info
 			boost::xtime currentTime;
-			boost::xtime_get(&currentTime, boost::TIME_UTC);
+			boost::xtime_get(&currentTime, boost::TIME_UTC_);
 			if (currentTime.sec - lastUpdateTime.sec > 5) {
 				LOG(LUX_INFO,LUX_NOERROR) << "Radiance photon map computation progress: " << i << " (" << (100 * i / radiancePhotons.size()) << "%)";
 
@@ -740,7 +740,7 @@ void PhotonMapPreprocess(const RandomGenerator &rng, const Scene &scene,
 
 
 		boost::xtime radianceComputeEndTime;
-		boost::xtime_get(&radianceComputeEndTime, boost::TIME_UTC);
+		boost::xtime_get(&radianceComputeEndTime, boost::TIME_UTC_);
 		LOG(LUX_INFO,LUX_NOERROR) << "Radiance photon map computed (" << ( radianceComputeEndTime.sec - photonShootingEndTime.sec ) << "s)";
 	}
 

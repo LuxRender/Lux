@@ -669,7 +669,7 @@ Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop
 	int yRealHeight = Floor2Int(yPixelStart + .5f + yPixelCount + filter->yWidth) - Floor2Int(yPixelStart + .5f - filter->yWidth);
 	samplePerPass = xRealWidth * yRealHeight;
 
-	boost::xtime_get(&creationTime, boost::TIME_UTC);
+	boost::xtime_get(&creationTime, boost::TIME_UTC_);
 
 	//Queryable parameters
 	AddIntAttribute(*this, "xResolution", "Horizontal resolution (pixels)", &Film::GetXResolution);
@@ -909,7 +909,7 @@ void Film::AddSampleCount(float count) {
 	if (haltTime > 0) {
 		// Check if we have met the enough rendering time condition
 		boost::xtime t;
-		boost::xtime_get(&t, boost::TIME_UTC);
+		boost::xtime_get(&t, boost::TIME_UTC_);
 		if (t.sec - creationTime.sec > haltTime)
 			enoughSamplesPerPixel = true;
 	}

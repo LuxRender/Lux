@@ -44,6 +44,17 @@ using std::sort;
 
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
+#include <boost/version.hpp>
+
+// boost version starting from 1.50 defined TIME_UTC_ instead of TIME_UTC because of a conflict with libc and c++ 2011
+// https://svn.boost.org/trac/boost/ticket/6940
+// glibc > 1.16 includes a TIME_UTC macro, so boost renamed to TIME_UTC_
+//
+// This hook allows to build with boost < 1.50 and glibc < 1.16
+//
+#if (BOOST_VERSION < 105000)
+#define TIME_UTC_ TIME_UTC
+#endif
 
 // Platform-specific definitions
 #if defined(WIN32) && !defined(__CYGWIN__)
@@ -63,6 +74,7 @@ using std::sort;
 #  pragma warning (disable: 4355) // 'this' used in base member initializer list
 //#define WIN32_LEAN_AND_MEAN //defined in project properties
 #  include <windows.h>
+
 
 namespace w32util
 {

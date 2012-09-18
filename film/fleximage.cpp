@@ -193,7 +193,7 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, u_int filtRes
 	m_CameraResponseEnabled = d_CameraResponseEnabled = m_CameraResponseFile != "";
 
 	// init timer
-	boost::xtime_get(&lastWriteImageTime, boost::TIME_UTC);
+	boost::xtime_get(&lastWriteImageTime, boost::TIME_UTC_);
 	lastWriteFLMTime = lastWriteImageTime;
 }
 
@@ -813,7 +813,7 @@ void FlexImageFilm::CheckWriteOuputInterval()
 {
 	// Check write output interval
 	boost::xtime currentTime;
-	boost::xtime_get(&currentTime, boost::TIME_UTC);
+	boost::xtime_get(&currentTime, boost::TIME_UTC_);
 	bool timeToWriteImage = (currentTime.sec - lastWriteImageTime.sec > writeInterval);
 	bool timeToWriteFLM = (currentTime.sec - lastWriteFLMTime.sec > flmWriteInterval);
 
@@ -835,7 +835,7 @@ void FlexImageFilm::CheckWriteOuputInterval()
 	// WriteImage can take a very long time to be executed (i.e. by saving
 	// the film. It is better to refresh timestamps after the
 	// execution of WriteImage instead than before.
-	boost::xtime_get(&currentTime, boost::TIME_UTC);
+	boost::xtime_get(&currentTime, boost::TIME_UTC_);
 
 	if (timeToWriteImage)
 		lastWriteImageTime = currentTime;
