@@ -48,6 +48,8 @@ enum BxDFType {
 	                        BSDF_ALL_TRANSMISSION
 };
 
+std::ostream& operator <<(std::ostream& stream, const BxDFType& type);
+
 /**
  * The BxDF abstract class represents a simple bidirectional scattering function.
  * BxDF objects will be composed to form more complex BSDF.
