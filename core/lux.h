@@ -134,14 +134,20 @@ class Timer;
 class MemoryArena;
 template<class T, int logBlockSize = 2> class BlockedArray;
 
+namespace luxrays {
+  class Vector;
+  class Point;
+  class Normal;
+}
+
 namespace lux
 {
   class Matrix4x4;
   class ParamSet;
   template <class T> struct ParamSetItem;
-  class Vector;
-  class Point;
-  class Normal;
+  using luxrays::Vector;
+  using luxrays::Point;
+  using luxrays::Normal;
   class Ray;
   class RayDifferential;
   class BBox;

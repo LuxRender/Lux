@@ -25,6 +25,7 @@
 #define LUX_BBOX_H
 
 #include <iostream>
+#include "lux.h"
 #include "vector.h"
 #include "point.h"
 
