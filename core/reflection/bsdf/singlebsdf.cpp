@@ -67,7 +67,14 @@ float SingleBSDF::Pdf(const SpectrumWavelengths &sw, const Vector &woW,
 SWCSpectrum SingleBSDF::F(const SpectrumWavelengths &sw, const Vector &woW,
 	const Vector &wiW, bool reverse, BxDFType flags) const
 {
-	const float sideTest = Dot(wiW, ng) / Dot(woW, ng);
+	const float dotWi = Dot(wiW, ng), dotWo = Dot(woW, ng);
+
+	// If ray is too close to grazing angle, leave BSDF
+	if(dotWi * dotWo == 0)
+		return SWCSpectrum(0.f);
+
+	const float sideTest = dotWi / dotWo;
+
 	if (sideTest > 0.f)
 		// ignore BTDFs
 		flags = BxDFType(flags & ~BSDF_TRANSMISSION);
@@ -82,6 +89,7 @@ SWCSpectrum SingleBSDF::F(const SpectrumWavelengths &sw, const Vector &woW,
 	bxdf->F(sw, WorldToLocal(woW), WorldToLocal(wiW), &f_);
 	if (!reverse)
 		f_ *= fabsf(sideTest);
+
 	return f_;
 }
 SWCSpectrum SingleBSDF::rho(const SpectrumWavelengths &sw, BxDFType flags) const
