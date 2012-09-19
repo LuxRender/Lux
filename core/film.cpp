@@ -263,6 +263,93 @@ struct BloomFilter
 #endif
 };
 
+struct VignettingFilter
+{
+	u_int xResolution;
+	u_int yResolution;
+	bool aberrationEnabled;
+	float aberrationAmount;
+	RGBColor * outp;
+	vector<RGBColor>& rgbpixels;;
+	bool VignettingEnabled;
+	float VignetScale;
+
+	const float invxRes, invyRes;
+
+
+	VignettingFilter(
+		u_int xResolution_,
+		u_int yResolution_,
+		bool aberrationEnabled_,
+		float aberrationAmount_,
+		RGBColor * outp_,
+		vector<RGBColor>& rgbpixels_,
+		bool VignettingEnabled_,
+		float VignetScale_
+	):
+		xResolution(xResolution_),
+		yResolution(yResolution_),
+		aberrationEnabled(aberrationEnabled_),
+		aberrationAmount(aberrationAmount_),
+		outp(outp_),
+		rgbpixels(rgbpixels_),
+		VignettingEnabled(VignettingEnabled_),
+		VignetScale(VignetScale_),
+		invxRes(1.f / xResolution_),
+		invyRes(1.f / yResolution_)
+	{}
+
+	void operator()()
+	{
+	//for each pixel in the source image
+#ifdef __APPLE__
+	dispatch_apply(yResolution, dispatch_get_global_queue(0, 0), ^(size_t y) {
+		dispatch_apply(xResolution, dispatch_get_global_queue(0, 0), ^(size_t x) {
+#else
+	for(u_int y = 0; y < yResolution; ++y) {
+		for(u_int x = 0; x < xResolution; ++x) {
+#endif
+			const float nPx = x * invxRes;
+			const float nPy = y * invyRes;
+			const float xOffset = nPx - 0.5f;
+			const float yOffset = nPy - 0.5f;
+			const float tOffset = sqrtf(xOffset * xOffset + yOffset * yOffset);
+
+			if (aberrationEnabled && aberrationAmount > 0.f) {
+				const float rb_x = (0.5f + xOffset * (1.f + tOffset * aberrationAmount)) * xResolution;
+				const float rb_y = (0.5f + yOffset * (1.f + tOffset * aberrationAmount)) * yResolution;
+				const float g_x =  (0.5f + xOffset * (1.f - tOffset * aberrationAmount)) * xResolution;
+				const float g_y =  (0.5f + yOffset * (1.f - tOffset * aberrationAmount)) * yResolution;
+
+				const float redblue[] = {1.f, 0.f, 1.f};
+				const float green[] = {0.f, 1.f, 0.f};
+
+				outp[xResolution * y + x] += RGBColor(redblue) * bilinearSampleImage<RGBColor>(rgbpixels, xResolution, yResolution, rb_x, rb_y);
+				outp[xResolution * y + x] += RGBColor(green) * bilinearSampleImage<RGBColor>(rgbpixels, xResolution, yResolution, g_x, g_y);
+			}
+
+			// Vignetting
+			if(VignettingEnabled && VignetScale != 0.0f) {
+				// normalize to range [0.f - 1.f]
+				const float invNtOffset = 1.f - (fabsf(tOffset) * 1.42f);
+				float vWeight = Lerp(invNtOffset, 1.f - VignetScale, 1.f);
+				for (u_int i = 0; i < 3; ++i)
+					outp[xResolution*y + x].c[i] *= vWeight;
+			}
+#ifdef __APPLE__
+		});
+	});
+#else
+		}
+	}
+#endif
+
+
+	}
+
+
+};
+
 // Image Pipeline Function Definitions
 void ApplyImagingPipeline(vector<XYZColor> &xyzpixels, u_int xResolution, u_int yResolution,
 	const GREYCStorationParams &GREYCParams, const ChiuParams &chiuParams,
@@ -420,50 +507,9 @@ void ApplyImagingPipeline(vector<XYZColor> &xyzpixels, u_int xResolution, u_int 
 			outp = &aberrationImage[0];
 		}
 
-		const float invxRes = 1.f / xResolution;
-		const float invyRes = 1.f / yResolution;
-		//for each pixel in the source image
-#ifdef __APPLE__
-		dispatch_apply(yResolution, dispatch_get_global_queue(0, 0), ^(size_t y) {
-			dispatch_apply(xResolution, dispatch_get_global_queue(0, 0), ^(size_t x) {
-#else
-		for(u_int y = 0; y < yResolution; ++y) {
-			for(u_int x = 0; x < xResolution; ++x) {
-#endif
-				const float nPx = x * invxRes;
-				const float nPy = y * invyRes;
-				const float xOffset = nPx - 0.5f;
-				const float yOffset = nPy - 0.5f;
-				const float tOffset = sqrtf(xOffset * xOffset + yOffset * yOffset);
-					
-				if (aberrationEnabled && aberrationAmount > 0.f) {
-					const float rb_x = (0.5f + xOffset * (1.f + tOffset * aberrationAmount)) * xResolution;
-					const float rb_y = (0.5f + yOffset * (1.f + tOffset * aberrationAmount)) * yResolution;
-					const float g_x =  (0.5f + xOffset * (1.f - tOffset * aberrationAmount)) * xResolution;
-					const float g_y =  (0.5f + yOffset * (1.f - tOffset * aberrationAmount)) * yResolution;
+		// VignettingFilter
+		VignettingFilter(xResolution, yResolution, aberrationEnabled, aberrationAmount, outp, rgbpixels, VignettingEnabled, VignetScale)();
 
-					const float redblue[] = {1.f, 0.f, 1.f};
-					const float green[] = {0.f, 1.f, 0.f};
-
-					outp[xResolution * y + x] += RGBColor(redblue) * bilinearSampleImage<RGBColor>(rgbpixels, xResolution, yResolution, rb_x, rb_y);
-					outp[xResolution * y + x] += RGBColor(green) * bilinearSampleImage<RGBColor>(rgbpixels, xResolution, yResolution, g_x, g_y);
-				}
-
-				// Vignetting
-				if(VignettingEnabled && VignetScale != 0.0f) {
-					// normalize to range [0.f - 1.f]
-					const float invNtOffset = 1.f - (fabsf(tOffset) * 1.42f);
-					float vWeight = Lerp(invNtOffset, 1.f - VignetScale, 1.f);
-					for (u_int i = 0; i < 3; ++i)
-						outp[xResolution*y + x].c[i] *= vWeight;
-				}
-#ifdef __APPLE__				
-			});
-		});
-#else
-			}
-		}
-#endif
 		if (aberrationEnabled) {
 			for(u_int i = 0; i < nPix; ++i)
 				rgbpixels[i] = aberrationImage[i];
