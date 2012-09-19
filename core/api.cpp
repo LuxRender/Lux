@@ -27,6 +27,7 @@
 #include "paramset.h"
 #include "error.h"
 #include "version.h"
+#include "osfunc.h"
 
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/thread/mutex.hpp>
@@ -508,6 +509,9 @@ extern "C" void luxInit()
 	FreeImage_SetOutputMessage(FreeImageErrorHandler);
 
 	initialized = true;
+
+	// enable floating point exception deping ond FPDEBUG set in core/usfunc.h
+	lux::fpdebug::enable();
 }
 
 bool parseFile(const char *filename) {
