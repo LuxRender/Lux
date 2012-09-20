@@ -264,6 +264,7 @@ SamplerTBBRenderer::LocalStorage SamplerTBBRenderer::LocalStorageCreate(SamplerT
 SamplerTBBRenderer::LocalStorage::~LocalStorage()
 {
 	renderer->scene->camera->film->contribPool->End(sample->contribBuffer);
+	// don't delete contribBuffer as references are held in the pool
 	sample->contribBuffer = NULL;
 
 	//delete myThread->sample->camera; //FIXME deleting the camera clone would delete the film!
