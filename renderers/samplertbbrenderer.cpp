@@ -302,6 +302,7 @@ SamplerTBBRenderer::LocalStorage SamplerTBBRenderer::LocalStorageCreate(Scene *s
 
 	storage.blackSamples = 0.;
 	storage.samples = 0.;
+	storage.blackSamplePaths = 0.;
 
 	return storage;
 }
@@ -363,6 +364,8 @@ void SamplerTBBRenderer::Impl::operator()(unsigned int i, tbb::parallel_do_feede
 			// update samples statistics
 			//fast_mutex::scoped_lock lockStats(local.statLock); // TODO: tbb need this lock ?
 			local.blackSamples += nContribs;
+			if(nContribs > 0)
+				++local.blackSamplePaths;
 			++local.samples;
 		}
 
