@@ -182,6 +182,7 @@ void SamplerTBBRenderer::Render(Scene *s) {
 		}
 
 		// perhaps we must change the number of threads
+		// TBB TODO: put this in the main program
 		if(mustChangeNumberOfThreads)
 		{
 			mustChangeNumberOfThreads = false;
@@ -196,8 +197,7 @@ void SamplerTBBRenderer::Render(Scene *s) {
 	localStoragePool->clear(); // Ends the local storage and ends the Contribution stored inside
 
 	{
-		// of new threads after this point
-			Terminate();
+		Terminate();
 
 		// Flush the contribution pool
 		scene->camera->film->contribPool->Flush();
@@ -323,6 +323,7 @@ void SamplerTBBRenderer::Impl::operator()(unsigned int i, tbb::parallel_do_feede
 		sample.arena.FreeAll();
 
 /*
+ * TBB TODO: is this needed ?
 #ifdef WIN32
 		// Work around Windows bad scheduling -- Jeanphi
 		myThread->thread->yield();
