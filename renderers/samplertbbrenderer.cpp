@@ -166,11 +166,12 @@ void SamplerTBBRenderer::Render(Scene *s) {
 		preprocessDone = true;
 		scene->SetReady();
 	}
-	
-	while(true)
-	{
-		tbb::parallel_for(tbb::blocked_range<u_int>(0, 1000), boost::bind(&SamplerTBBRenderer::RenderImpl, this, _1));
-	}
+
+	// Parallel do needs an iterable to iterate over, value will do the work with only one item
+	// each task will submit more items
+	unsigned int value;
+	tbb::parallel_do(&value, &value + 1, *this);
+
 	{
 		boost::mutex::scoped_lock lock(renderThreadsMutex);
 
@@ -251,8 +252,11 @@ SamplerTBBRenderer::RenderThread::RenderOneRay()
 }
 */
 
-void SamplerTBBRenderer::RenderImpl(tbb::blocked_range<u_int> const &range) {
-	SamplerTBBRenderer *renderer = this;
+void SamplerTBBRenderer::operator()(unsigned int i, tbb::parallel_do_feeder<unsigned int>& feeder) const {
+	// ask the scheduler to launch a new ray
+	feeder.add(0);
+
+	SamplerTBBRenderer const * const renderer = this;
 	Scene &scene(*(renderer->scene));
 	if (scene.IsFilmOnly())
 		return;
@@ -286,11 +290,11 @@ void SamplerTBBRenderer::RenderImpl(tbb::blocked_range<u_int> const &range) {
 	}
 	Sample& sample = *ss;
 	// Trace rays: The main loop
-	for(u_int i = range.begin(); i != range.end(); ++i)
+	// TODO: perhaps here we can make an infinite loop too, this may remove some load on TBB
 	{
 		#if 1
 		if (!sampler->GetNextSample(&sample)) {
-			break;
+			return;
 			/*
 			// Dade - we have done, check what we have to do now
 			if (renderer->suspendThreadsWhenDone) {
@@ -324,7 +328,7 @@ void SamplerTBBRenderer::RenderImpl(tbb::blocked_range<u_int> const &range) {
 			boost::this_thread::sleep(boost::posix_time::seconds(1));
 		}
 		if ((renderer->state == TERMINATE) || boost::this_thread::interruption_requested())
-			break;
+			return;
 
 		// Evaluate radiance along camera ray
 		// Jeanphi - Hijack statistics until volume integrator revamp

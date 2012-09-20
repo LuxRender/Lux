@@ -45,7 +45,7 @@ class Pool
 	public:
 		Pool(){}
 
-		T* Get()
+		T* Get() const
 		{
 			fast_mutex::scoped_lock lockStats(lock);
 		
@@ -58,14 +58,14 @@ class Pool
 			return NULL;
 		}	
 
-		void Release(T* t)
+		void Release(T* t) const
 		{
 			fast_mutex::scoped_lock lockStats(lock);
 			data.push_back(t);
 		}
 	private:
-		std::vector<T*> data;
-		fast_mutex lock;
+		mutable std::vector<T*> data;
+		mutable fast_mutex lock;
 };
 
 //------------------------------------------------------------------------------
@@ -142,7 +142,7 @@ public:
 	friend class SRStatistics;
 
 	static Renderer *CreateRenderer(const ParamSet &params);
-	void RenderImpl(tbb::blocked_range<u_int> const & range);
+	void operator()(unsigned int i, tbb::parallel_do_feeder<unsigned int>& feeder) const;
 
 private:
 	//--------------------------------------------------------------------------
