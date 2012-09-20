@@ -115,6 +115,21 @@ void SamplerTBBRenderer::SuspendWhenDone(bool v) {
 	suspendThreadsWhenDone = v;
 }
 
+static void writeIntervalCheck(Film *film) {
+	if (!film)
+		return;
+
+	while (!boost::this_thread::interruption_requested()) {
+		try {
+			boost::this_thread::sleep(boost::posix_time::seconds(1));
+
+			film->CheckWriteOuputInterval();
+		} catch(boost::thread_interrupted&) {
+			break;
+		}
+	}
+}
+
 void SamplerTBBRenderer::Render(Scene *s) {
 	{
 		// Section under mutex
@@ -164,6 +179,9 @@ void SamplerTBBRenderer::Render(Scene *s) {
 		scene->SetReady();
 	}
 
+	// thread for checking write interval
+	boost::thread writeIntervalThread = boost::thread(boost::bind(writeIntervalCheck, scene->camera->film));
+
 	localStoragePool = new LocalStoragePool(boost::bind(&LocalStorageCreate, this));
 
 	tbb::task_scheduler_init* tsi = new tbb::task_scheduler_init;
@@ -196,6 +214,9 @@ void SamplerTBBRenderer::Render(Scene *s) {
 
 	localStoragePool->clear(); // Ends the local storage and ends the Contribution stored inside
 
+	writeIntervalThread.interrupt();
+	// possibly wait for writing to finish
+	writeIntervalThread.join();
 	{
 		Terminate();
 
@@ -203,6 +224,7 @@ void SamplerTBBRenderer::Render(Scene *s) {
 		scene->camera->film->contribPool->Flush();
 		scene->camera->film->contribPool->Delete();
 	}
+
 }
 
 void SamplerTBBRenderer::Pause() {
