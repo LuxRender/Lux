@@ -141,13 +141,14 @@ private:
 	struct LocalStorage
 	{
 		Sample *sample;
+		SamplerTBBRenderer *renderer;
 
 		double samples, blackSamples, blackSamplePaths;
 
 		~LocalStorage();
 	};
 
-	static LocalStorage LocalStorageCreate(Scene *scene);
+	static LocalStorage LocalStorageCreate(SamplerTBBRenderer *renderer);
 
 
 	// For local storage

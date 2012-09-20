@@ -164,7 +164,7 @@ void SamplerTBBRenderer::Render(Scene *s) {
 		scene->SetReady();
 	}
 
-	localStoragePool = new LocalStoragePool(boost::bind(&LocalStorageCreate, scene));
+	localStoragePool = new LocalStoragePool(boost::bind(&LocalStorageCreate, this));
 
 	tbb::task_scheduler_init* tsi = new tbb::task_scheduler_init;
 
@@ -193,6 +193,8 @@ void SamplerTBBRenderer::Render(Scene *s) {
 	tsi->terminate();
 	delete tsi;;
 
+	localStoragePool->clear(); // Ends the local storage and ends the Contribution stored inside
+
 	{
 		// of new threads after this point
 			Terminate();
@@ -220,12 +222,14 @@ void SamplerTBBRenderer::Terminate() {
 	state = TERMINATE;
 }
 
-SamplerTBBRenderer::LocalStorage SamplerTBBRenderer::LocalStorageCreate(Scene *scene)
+// This create a sample for each thread on runtime
+SamplerTBBRenderer::LocalStorage SamplerTBBRenderer::LocalStorageCreate(SamplerTBBRenderer *renderer)
 {
 	SamplerTBBRenderer::LocalStorage storage;
 	storage.sample = new Sample;
-	std::cout << "alloca" << std::endl;
 
+	Scene* scene = renderer->scene;
+	storage.renderer = renderer;
 	scene->sampler->InitSample(storage.sample);
 
 	// ContribBuffer has to wait until the end of the preprocessing
@@ -250,16 +254,17 @@ SamplerTBBRenderer::LocalStorage SamplerTBBRenderer::LocalStorageCreate(Scene *s
 	return storage;
 }
 
+// Called when the thread local storage is destroy
+// TBB TODO: what happen if someone is limiting the number of threads ? The
+// local storage keeps the Sample and never contribute them until the end of
+// the rendering
 SamplerTBBRenderer::LocalStorage::~LocalStorage()
 {
-	#if 0
-	scene.camera->film->contribPool->End(sample.contribBuffer);
-	delete sample.contribBuffer; // TODO: added for memory sack
-	//sample.contribBuffer = NULL;
+	renderer->scene->camera->film->contribPool->End(sample->contribBuffer);
+	sample->contribBuffer = NULL;
 
 	//delete myThread->sample->camera; //FIXME deleting the camera clone would delete the film!
-	sampler->FreeSample(&sample);
-	#endif
+	renderer->scene->sampler->FreeSample(sample);
 }
 
 
