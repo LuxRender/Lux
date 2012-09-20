@@ -113,7 +113,13 @@ public:
 	friend class SRStatistics;
 
 	static Renderer *CreateRenderer(const ParamSet &params);
-	void operator()(unsigned int i, tbb::parallel_do_feeder<unsigned int>& feeder) const;
+
+	struct Impl
+	{
+		SamplerTBBRenderer *renderer;
+		Impl(SamplerTBBRenderer *renderer_): renderer(renderer_) {}
+		void operator()(unsigned int i, tbb::parallel_do_feeder<unsigned int>& feeder) const;
+	};
 
 private:
 	//--------------------------------------------------------------------------

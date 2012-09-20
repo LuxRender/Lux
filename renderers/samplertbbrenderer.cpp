@@ -171,10 +171,20 @@ void SamplerTBBRenderer::Render(Scene *s) {
 
 	localStoragePool = new LocalStoragePool(boost::bind(&LocalStorageCreate, scene));
 
-	// Parallel do needs an iterable to iterate over, value will do the work with only one item
-	// each task will submit more items
-	unsigned int value;
-	tbb::parallel_do(&value, &value + 1, *this);
+
+	Impl impl(this);
+	while(state != TERMINATE)
+	{
+		// Parallel do needs an iterable to iterate over, value will do the work with only one item
+		// each task will submit more items
+		unsigned int value;
+		tbb::parallel_do(&value, &value + 1, impl);
+
+		// we exited because we must be in pause
+		while (state == PAUSE) {
+			boost::this_thread::sleep(boost::posix_time::seconds(1));
+		}
+	}
 
 	{
 		boost::mutex::scoped_lock lock(renderThreadsMutex);
@@ -295,45 +305,33 @@ SamplerTBBRenderer::LocalStorage::~LocalStorage()
 }
 
 
-void SamplerTBBRenderer::operator()(unsigned int i, tbb::parallel_do_feeder<unsigned int>& feeder) const {
-	// ask the scheduler to launch a new ray
-	feeder.add(0);
+void SamplerTBBRenderer::Impl::operator()(unsigned int i, tbb::parallel_do_feeder<unsigned int>& feeder) const {
+	// ask the scheduler to launch a new ray, only if we are not paused
+	if(renderer->state == RUN)
+		feeder.add(0);
+	else
+		return;
 
-	SamplerTBBRenderer const * const renderer = this;
 	Scene &scene(*(renderer->scene));
 	if (scene.IsFilmOnly())
 		return;
 
 	Sampler *sampler = scene.sampler;
 
-	LocalStoragePool::reference local = localStoragePool->local();
+	LocalStoragePool::reference local = renderer->localStoragePool->local();
 
 	Sample& sample = *local.sample;
 	// Trace rays: The main loop
 	// TODO: perhaps here we can make an infinite loop too, this may remove some load on TBB
 	{
-		#if 1
 		if (!sampler->GetNextSample(&sample)) {
-			return;
-			/*
 			// Dade - we have done, check what we have to do now
-			if (renderer->suspendThreadsWhenDone) {
-				// Dade - wait for a resume rendering or exit
-				renderer->Pause();
-				while (renderer->state == PAUSE) {
-					boost::this_thread::sleep(boost::posix_time::seconds(1));
-				}
-
-				if (renderer->state == TERMINATE)
-					break;
-				else
-					continue;
-			} else {
+			if (renderer->suspendThreadsWhenDone)
+				renderer->Pause(); // This will pause all threads
+			else
 				renderer->Terminate();
-				break;
-			}
-			*/
 
+			return;
 		}
 
 		// save ray time value
@@ -343,12 +341,6 @@ void SamplerTBBRenderer::operator()(unsigned int i, tbb::parallel_do_feeder<unsi
 
 		// Sample new SWC thread wavelengths
 		sample.swl.Sample(sample.wavelengths);
-
-		while (renderer->state == PAUSE && !boost::this_thread::interruption_requested()) {
-			boost::this_thread::sleep(boost::posix_time::seconds(1));
-		}
-		if ((renderer->state == TERMINATE) || boost::this_thread::interruption_requested())
-			return;
 
 		// Evaluate radiance along camera ray
 		// Jeanphi - Hijack statistics until volume integrator revamp
@@ -371,7 +363,6 @@ void SamplerTBBRenderer::operator()(unsigned int i, tbb::parallel_do_feeder<unsi
 		myThread->thread->yield();
 #endif
 */
-	#endif
 	}
 }
 
