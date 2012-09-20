@@ -28,7 +28,7 @@
 #include "samplertbbrenderer.h"
 #include "randomgen.h"
 #include "context.h"
-#include "renderers/statistics/samplerstatistics.h"
+#include "renderers/statistics/samplertbbstatistics.h"
 #include "tbb/tbb.h"
 
 using namespace lux;
@@ -77,7 +77,7 @@ SamplerTBBRenderer::SamplerTBBRenderer() : Renderer() {
 
 	AddStringConstant(*this, "name", "Name of current renderer", "sampler");
 
-	rendererStatistics = new SRStatistics((SamplerRenderer*)this); // TODO: UGLY cast to work with SRStatistcs... This sucks
+	rendererStatistics = new SRTBBStatistics(this);
 	numberOfThreads = 1;
 }
 

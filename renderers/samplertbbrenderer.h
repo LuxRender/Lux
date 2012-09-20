@@ -110,7 +110,7 @@ public:
 
 	friend class SRTBBDeviceDescription;
 	friend class SRTBBHostDescription;
-	friend class SRStatistics;
+	friend class SRTBBStatistics;
 
 	static Renderer *CreateRenderer(const ParamSet &params);
 
@@ -145,11 +145,9 @@ private:
 	//--------------------------------------------------------------------------
 
 	mutable boost::mutex classWideMutex;
-	mutable boost::mutex renderThreadsMutex;
 
 	RendererState state;
 	vector<RendererHostDescription *> hosts;
-	vector<RenderThread *> renderThreads;
 	Scene *scene;
 
 	fast_mutex sampPosMutex;
