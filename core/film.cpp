@@ -188,48 +188,139 @@ static void rotateImage(const vector<XYZColor> &in, vector<XYZColor> &out,
 
 namespace lux {
 
-void BloomBody(
-	u_int const xResolution,
-	u_int const yResolution,
-	u_int const bloomWidth,
-	vector<float> const &bloomFilter,
-	XYZColor * const bloomImage,
-	vector<XYZColor> const &xyzpixels,
-	tbb::blocked_range2d<u_int> const &r
-)
+struct BloomFilter
 {
-	// Apply bloom filter to image pixels
-	//			vector<Color> bloomImage(nPix);
-//			ProgressReporter prog(yResolution, "Bloom filter"); //NOBOOK //intermediate crashfix until imagepipelinerefactor is done - Jens
-	for (u_int y = r.rows().begin(); y < r.rows().end(); ++y) {
-		for (u_int x = r.cols().begin(); x < r.cols().end(); ++x) {
-			// Compute bloom for pixel _(x,y)_
-			// Compute extent of pixels contributing bloom
-			const u_int x0 = max(x, bloomWidth) - bloomWidth;
-			const u_int x1 = min(x + bloomWidth, xResolution - 1);
-			const u_int y0 = max(y, bloomWidth) - bloomWidth;
-			const u_int y1 = min(y + bloomWidth, yResolution - 1);
-			const u_int offset = y * xResolution + x;
-			float sumWt = 0.f;
-			for (u_int by = y0; by <= y1; ++by) {
-				for (u_int bx = x0; bx <= x1; ++bx) {
-					if (bx == x && by == y)
-						continue;
-					// Accumulate bloom from pixel $(bx,by)$
-					const u_int dist2 = (x - bx) * (x - bx) + (y - by) * (y - by);
-					if (dist2 < bloomWidth * bloomWidth) {
-						u_int bloomOffset = bx + by * xResolution;
-						float wt = bloomFilter[dist2];
-						sumWt += wt;
-						bloomImage[offset].AddWeighted(wt, xyzpixels[bloomOffset]);
+	u_int const xResolution;
+	u_int const yResolution;
+	u_int const bloomWidth;
+	vector<float> const &bloomFilter;
+	XYZColor * const bloomImage;
+	vector<XYZColor> const &xyzpixels;
+
+	BloomFilter(
+		u_int const xResolution_,
+		u_int const yResolution_,
+		u_int const bloomWidth_,
+		vector<float> const &bloomFilter_,
+		XYZColor * const bloomImage_,
+		vector<XYZColor> const &xyzpixels_
+	):
+		xResolution(xResolution_),
+		yResolution(yResolution_),
+		bloomWidth(bloomWidth_),
+		bloomFilter(bloomFilter),
+		bloomImage(bloomImage_),
+		xyzpixels(xyzpixels_)
+	{}
+
+	void operator()(tbb::blocked_range2d<u_int> const &r) const
+	{
+		// Apply bloom filter to image pixels
+		//			vector<Color> bloomImage(nPix);
+	//			ProgressReporter prog(yResolution, "Bloom filter"); //NOBOOK //intermediate crashfix until imagepipelinerefactor is done - Jens
+		for (u_int y = r.rows().begin(); y < r.rows().end(); ++y) {
+			for (u_int x = r.cols().begin(); x < r.cols().end(); ++x) {
+				// Compute bloom for pixel _(x,y)_
+				// Compute extent of pixels contributing bloom
+				const u_int x0 = max(x, bloomWidth) - bloomWidth;
+				const u_int x1 = min(x + bloomWidth, xResolution - 1);
+				const u_int y0 = max(y, bloomWidth) - bloomWidth;
+				const u_int y1 = min(y + bloomWidth, yResolution - 1);
+				const u_int offset = y * xResolution + x;
+				float sumWt = 0.f;
+				for (u_int by = y0; by <= y1; ++by) {
+					for (u_int bx = x0; bx <= x1; ++bx) {
+						if (bx == x && by == y)
+							continue;
+						// Accumulate bloom from pixel $(bx,by)$
+						const u_int dist2 = (x - bx) * (x - bx) + (y - by) * (y - by);
+						if (dist2 < bloomWidth * bloomWidth) {
+							u_int bloomOffset = bx + by * xResolution;
+							float wt = bloomFilter[dist2];
+							sumWt += wt;
+							bloomImage[offset].AddWeighted(wt, xyzpixels[bloomOffset]);
+						}
 					}
 				}
+				bloomImage[offset] /= sumWt;
 			}
-			bloomImage[offset] /= sumWt;
+	//				prog.Update(); //NOBOOK //intermediate crashfix until imagepipelinerefactor is done - Jens
 		}
-//				prog.Update(); //NOBOOK //intermediate crashfix until imagepipelinerefactor is done - Jens
 	}
-}
+};
+
+struct VignettingFilter
+{
+	u_int xResolution;
+	u_int yResolution;
+	bool aberrationEnabled;
+	float aberrationAmount;
+	RGBColor * outp;
+	vector<RGBColor>& rgbpixels;;
+	bool VignettingEnabled;
+	float VignetScale;
+
+	const float invxRes, invyRes;
+
+
+	VignettingFilter(
+		u_int xResolution_,
+		u_int yResolution_,
+		bool aberrationEnabled_,
+		float aberrationAmount_,
+		RGBColor * outp_,
+		vector<RGBColor>& rgbpixels_,
+		bool VignettingEnabled_,
+		float VignetScale_
+	):
+		xResolution(xResolution_),
+		yResolution(yResolution_),
+		aberrationEnabled(aberrationEnabled_),
+		aberrationAmount(aberrationAmount_),
+		outp(outp_),
+		rgbpixels(rgbpixels_),
+		VignettingEnabled(VignettingEnabled_),
+		VignetScale(VignetScale_),
+		invxRes(1.f / xResolution_),
+		invyRes(1.f / yResolution_)
+	{}
+
+	void operator()()
+	{
+		//for each pixel in the source image
+		for(u_int y = 0; y < yResolution; ++y) {
+			for(u_int x = 0; x < xResolution; ++x) {
+				const float nPx = x * invxRes;
+				const float nPy = y * invyRes;
+				const float xOffset = nPx - 0.5f;
+				const float yOffset = nPy - 0.5f;
+				const float tOffset = sqrtf(xOffset * xOffset + yOffset * yOffset);
+
+				if (aberrationEnabled && aberrationAmount > 0.f) {
+					const float rb_x = (0.5f + xOffset * (1.f + tOffset * aberrationAmount)) * xResolution;
+					const float rb_y = (0.5f + yOffset * (1.f + tOffset * aberrationAmount)) * yResolution;
+					const float g_x =  (0.5f + xOffset * (1.f - tOffset * aberrationAmount)) * xResolution;
+					const float g_y =  (0.5f + yOffset * (1.f - tOffset * aberrationAmount)) * yResolution;
+
+					const float redblue[] = {1.f, 0.f, 1.f};
+					const float green[] = {0.f, 1.f, 0.f};
+
+					outp[xResolution * y + x] += RGBColor(redblue) * bilinearSampleImage<RGBColor>(rgbpixels, xResolution, yResolution, rb_x, rb_y);
+					outp[xResolution * y + x] += RGBColor(green) * bilinearSampleImage<RGBColor>(rgbpixels, xResolution, yResolution, g_x, g_y);
+				}
+
+				// Vignetting
+				if(VignettingEnabled && VignetScale != 0.0f) {
+					// normalize to range [0.f - 1.f]
+					const float invNtOffset = 1.f - (fabsf(tOffset) * 1.42f);
+					float vWeight = Lerp(invNtOffset, 1.f - VignetScale, 1.f);
+					for (u_int i = 0; i < 3; ++i)
+						outp[xResolution*y + x].c[i] *= vWeight;
+				}
+			}
+		}
+	}
+};
 
 // Image Pipeline Function Definitions
 void ApplyImagingPipeline(vector<XYZColor> &xyzpixels, u_int xResolution, u_int yResolution,
@@ -271,8 +362,8 @@ void ApplyImagingPipeline(vector<XYZColor> &xyzpixels, u_int xResolution, u_int 
 				haveBloomImage = true;
 			}
 
-			tbb::parallel_for(tbb::blocked_range2d<u_int>(0, yResolution, 0, xResolution), boost::bind(
-			&BloomBody, xResolution, yResolution, bloomWidth, bloomFilter, bloomImage, xyzpixels, _1));
+			BloomFilter bf(xResolution, yResolution, bloomWidth, bloomFilter, bloomImage, xyzpixels);
+			tbb::parallel_for(tbb::blocked_range2d<u_int>(0, yResolution, 0, xResolution), bf);
 //			prog.Done(); //NOBOOK //intermediate crashfix until imagepipelinerefactor is done - Jens
 		}
 
@@ -389,50 +480,9 @@ void ApplyImagingPipeline(vector<XYZColor> &xyzpixels, u_int xResolution, u_int 
 			outp = &aberrationImage[0];
 		}
 
-		const float invxRes = 1.f / xResolution;
-		const float invyRes = 1.f / yResolution;
-		//for each pixel in the source image
-#ifdef __APPLE__
-		dispatch_apply(yResolution, dispatch_get_global_queue(0, 0), ^(size_t y) {
-			dispatch_apply(xResolution, dispatch_get_global_queue(0, 0), ^(size_t x) {
-#else
-		for(u_int y = 0; y < yResolution; ++y) {
-			for(u_int x = 0; x < xResolution; ++x) {
-#endif
-				const float nPx = x * invxRes;
-				const float nPy = y * invyRes;
-				const float xOffset = nPx - 0.5f;
-				const float yOffset = nPy - 0.5f;
-				const float tOffset = sqrtf(xOffset * xOffset + yOffset * yOffset);
-					
-				if (aberrationEnabled && aberrationAmount > 0.f) {
-					const float rb_x = (0.5f + xOffset * (1.f + tOffset * aberrationAmount)) * xResolution;
-					const float rb_y = (0.5f + yOffset * (1.f + tOffset * aberrationAmount)) * yResolution;
-					const float g_x =  (0.5f + xOffset * (1.f - tOffset * aberrationAmount)) * xResolution;
-					const float g_y =  (0.5f + yOffset * (1.f - tOffset * aberrationAmount)) * yResolution;
+		// VignettingFilter
+		VignettingFilter(xResolution, yResolution, aberrationEnabled, aberrationAmount, outp, rgbpixels, VignettingEnabled, VignetScale)();
 
-					const float redblue[] = {1.f, 0.f, 1.f};
-					const float green[] = {0.f, 1.f, 0.f};
-
-					outp[xResolution * y + x] += RGBColor(redblue) * bilinearSampleImage<RGBColor>(rgbpixels, xResolution, yResolution, rb_x, rb_y);
-					outp[xResolution * y + x] += RGBColor(green) * bilinearSampleImage<RGBColor>(rgbpixels, xResolution, yResolution, g_x, g_y);
-				}
-
-				// Vignetting
-				if(VignettingEnabled && VignetScale != 0.0f) {
-					// normalize to range [0.f - 1.f]
-					const float invNtOffset = 1.f - (fabsf(tOffset) * 1.42f);
-					float vWeight = Lerp(invNtOffset, 1.f - VignetScale, 1.f);
-					for (u_int i = 0; i < 3; ++i)
-						outp[xResolution*y + x].c[i] *= vWeight;
-				}
-#ifdef __APPLE__				
-			});
-		});
-#else
-			}
-		}
-#endif
 		if (aberrationEnabled) {
 			for(u_int i = 0; i < nPix; ++i)
 				rgbpixels[i] = aberrationImage[i];
