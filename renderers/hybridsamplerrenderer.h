@@ -114,7 +114,7 @@ private:
 
 		// Rendering statistics
 		fast_mutex statLock;
-		double samples, blackSamples;
+		double samples, blackSamples, blackSamplePaths;
 	};
 
 	void CreateRenderThread();

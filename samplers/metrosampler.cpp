@@ -34,9 +34,10 @@ using namespace lux;
 static const u_int rngN = 8191;
 static const u_int rngA = 884;
 
-MetropolisSampler::MetropolisData::MetropolisData(const Sampler &sampler) :
+MetropolisSampler::MetropolisData::MetropolisData(const MetropolisSampler &sampler) :
 	consecRejects(0), large(true), stamp(0), currentStamp(0), weight(0.f),
-	LY(0.f), alpha(0.f), totalLY(0.f), sampleCount(0.f)
+	LY(0.f), alpha(0.f), totalLY(0.f), sampleCount(0.f),
+	cooldown(sampler.cooldownTime > 0)
 {
 	u_int i;
 	// Compute number of non lazy samples
@@ -130,7 +131,7 @@ static float fracf(const float &v) {
 MetropolisSampler::MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
 	u_int maxRej, float largeProb, float rng, bool useV, bool useC) :
 	Sampler(xStart, xEnd, yStart, yEnd, 1), maxRejects(maxRej),
-	pLargeTarget(largeProb), range(rng), useVariance(useV), useCooldown(useC)
+	pLarge(largeProb), range(rng), useVariance(useV)
 {
 	// Allocate and compute all values of the rng
 	rngSamples = AllocAligned<float>(rngN);
@@ -144,12 +145,10 @@ MetropolisSampler::MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
 	RandomGenerator rndg(1);
 	Shuffle(rndg, rngSamples, rngN, 1);
 	// 15 seconds of cooldown time for evey .1 difference from 0.5 in pLarge
-	if(useCooldown) {
-		pLarge = 0.5f;
-		cooldownTime = Ceil2UInt(150.f * fabsf(pLargeTarget - 0.5f));
-		LOG(LUX_INFO, LUX_NOERROR) << "Metropolis cooldown time will be " << cooldownTime << " seconds";
+	if (useC) {
+		cooldownTime = max<u_int>(1U, (xPixelEnd - xPixelStart) * (yPixelEnd - yPixelStart) * pLarge);
+		LOG(LUX_INFO, LUX_NOERROR) << "Metropolis cooldown during first " << cooldownTime << " samples";
 	} else {
-		pLarge = pLargeTarget;
 		cooldownTime = 0;
 	}
 }
@@ -352,12 +351,16 @@ void MetropolisSampler::AddSample(const Sample &sample)
 		++(data->consecRejects);
 	}
 	newContributions.clear();
-	if (useCooldown && luxGetDoubleAttribute("renderer_statistics", "elapsedTime") >= cooldownTime) {
-		pLarge = pLargeTarget;
-		useCooldown = false;
-	}
 	const float mutationSelector = sample.rng->floatValue();
-	data->large = (mutationSelector < pLarge);
+	if (data->cooldown) {
+		if (data->sampleCount >= cooldownTime) {
+			data->cooldown = false;
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Cooldown process has now ended";
+			data->large = (mutationSelector < pLarge);
+		} else
+			data->large = (mutationSelector < .5f);
+	} else
+		data->large = (mutationSelector < pLarge);
 }
 
 Sampler* MetropolisSampler::CreateSampler(const ParamSet &params, const Film *film)
@@ -368,7 +371,7 @@ Sampler* MetropolisSampler::CreateSampler(const ParamSet &params, const Film *fi
 	float largeMutationProb = params.FindOneFloat("largemutationprob", 0.4f);	// probability of generating a large sample mutation
 	float range = params.FindOneFloat("mutationrange", (xEnd - xStart + yEnd - yStart) / 32.f);	// maximum distance in pixel for a small mutation
 	bool useVariance = params.FindOneBool("usevariance", false);
-	bool useCooldown = params.FindOneBool("usecooldown", false);
+	bool useCooldown = params.FindOneBool("usecooldown", true);
 
 	return new MetropolisSampler(xStart, xEnd, yStart, yEnd, max(maxConsecRejects, 0),
 		largeMutationProb, range, useVariance, useCooldown);

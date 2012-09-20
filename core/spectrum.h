@@ -160,16 +160,22 @@ public:
 			if (c[i] != 0.f) return false;
 		return true;
 	}
-	SWCSpectrum Sqrt() const {
+	friend SWCSpectrum Sqrt(const SWCSpectrum &s) {
 		SWCSpectrum ret;
 		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
-			ret.c[i] = sqrtf(c[i]);
+			ret.c[i] = sqrtf(s.c[i]);
 		return ret;
 	}
-	SWCSpectrum Pow(const SWCSpectrum &e) const {
+	friend SWCSpectrum Pow(const SWCSpectrum &s, const SWCSpectrum &e) {
 		SWCSpectrum ret;
 		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
-			ret.c[i] = c[i] > 0.f ? powf(c[i], e.c[i]) : 0.f;
+			ret.c[i] = powf(s.c[i], e.c[i]);
+		return ret;
+	}
+	friend SWCSpectrum Pow(const SWCSpectrum &s, float e) {
+		SWCSpectrum ret;
+		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)
+			ret.c[i] = powf(s.c[i], e);
 		return ret;
 	}
 	SWCSpectrum operator-() const {

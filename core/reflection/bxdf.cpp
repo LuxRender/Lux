@@ -31,6 +31,9 @@
 
 using namespace lux;
 
+namespace lux
+{
+
 static RandomGenerator rng(1);
 
 // BxDF Method Definitions
@@ -122,3 +125,19 @@ float BSDF::ApplyTransform(const Transform &transform) {
 		Vector(dgShading.nn)));
 }
 
+#define IFTYPE(T) if(type & T) stream << #T << "|"
+
+std::ostream& operator <<(std::ostream& stream, const BxDFType& type) {
+	stream << "BxDFType(";
+
+	IFTYPE(BSDF_REFLECTION);
+	IFTYPE(BSDF_TRANSMISSION);
+	IFTYPE(BSDF_DIFFUSE);
+	IFTYPE(BSDF_GLOSSY);
+	IFTYPE(BSDF_SPECULAR);
+
+	stream << ")";
+
+	return stream;
+}
+}//namespace lux

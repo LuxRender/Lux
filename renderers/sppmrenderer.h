@@ -126,7 +126,7 @@ public:
 	{
 		while (state == PAUSE && !boost::this_thread::interruption_requested()) {
 			boost::xtime xt;
-			boost::xtime_get(&xt, boost::TIME_UTC);
+			boost::xtime_get(&xt, boost::TIME_UTC_);
 			xt.sec += 1;
 			boost::thread::sleep(xt);
 		}

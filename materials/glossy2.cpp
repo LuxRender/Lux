@@ -29,6 +29,8 @@
 #include "schlickbsdf.h"
 #include "primitive.h"
 #include "schlickbrdf.h"
+#include "lambertian.h"
+#include "orennayar.h"
 #include "texture.h"
 #include "color.h"
 #include "paramset.h"
@@ -40,7 +42,7 @@
 using namespace lux;
 
 // Glossy Method Definitions
-BSDF *Glossy2::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
+BSDF *GlossyCombined::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 	const Intersection &isect, const DifferentialGeometry &dgs) const
 {
 	// Allocate _BSDF_
@@ -73,6 +75,52 @@ BSDF *Glossy2::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 
 	return bsdf;
 }
+
+BSDF *Glossy2::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
+	const Intersection &isect, const DifferentialGeometry &dgs) const
+{
+	// Allocate _BSDF_
+	// NOTE - lordcrc - changed clamping to 0..1 to avoid >1 reflection
+	SWCSpectrum d(Kd->Evaluate(sw, dgs).Clamp(0.f, 1.f));
+	SWCSpectrum s(Ks->Evaluate(sw, dgs));
+	float i = index->Evaluate(sw, dgs);
+	if (i > 0.f) {
+		const float ti = (i - 1.f) / (i + 1.f);
+		s *= ti * ti;
+	}
+	s = s.Clamp(0.f, 1.f);
+
+	SWCSpectrum a(Ka->Evaluate(sw, dgs).Clamp(0.f, 1.f));
+
+	// Clamp roughness values to avoid artifacts with too small values
+	const float u = Clamp(nu->Evaluate(sw, dgs), 6e-3f, 1.f);
+	const float v = Clamp(nv->Evaluate(sw, dgs), 6e-3f, 1.f);
+	const float u2 = u * u;
+	const float v2 = v * v;
+	float ld = depth->Evaluate(sw, dgs);
+
+	const float anisotropy = u2 < v2 ? 1.f - u2 / v2 : v2 / u2 - 1.f;
+	float sig = Clamp(sigma->Evaluate(sw, dgs), 0.f, 90.f);
+	BxDF *bxdf;
+	if (sig == 0.f)
+		bxdf = ARENA_ALLOC(arena, Lambertian)(d);
+	else
+		bxdf = ARENA_ALLOC(arena, OrenNayar)(d, sig);
+
+	SingleBSDF *base = ARENA_ALLOC(arena, SingleBSDF)(dgs,
+		isect.dg.nn, bxdf, isect.exterior, isect.interior);
+
+	Fresnel *fresnel = ARENA_ALLOC(arena, FresnelSlick)(s, a);
+	MicrofacetDistribution* md = ARENA_ALLOC(arena, SchlickDistribution)(u * v, anisotropy);
+
+	SchlickBSDF *bsdf = ARENA_ALLOC(arena, SchlickBSDF)(dgs, isect.dg.nn, fresnel, md, multibounce, 
+		a, ld, base, isect.exterior, isect.interior);
+
+	// Add ptr to CompositingParams structure
+	bsdf->SetCompositingParams(&compParams);
+
+	return bsdf;
+}
 Material* Glossy2::CreateMaterial(const Transform &xform,
 		const ParamSet &mp) {
 	boost::shared_ptr<Texture<SWCSpectrum> > Kd(mp.GetSWCSpectrumTexture("Kd", RGBColor(1.f)));
@@ -84,7 +132,14 @@ Material* Glossy2::CreateMaterial(const Transform &xform,
 	boost::shared_ptr<Texture<float> > vroughness(mp.GetFloatTexture("vroughness", .1f));
 	bool mb = mp.FindOneBool("multibounce", false);
 
-	return new Glossy2(Kd, Ks, Ka, i, d, uroughness, vroughness, mb, mp);
+	bool separable = mp.FindOneBool("separable", true);
+
+	if (separable) {
+		boost::shared_ptr<Texture<float> > sigma(mp.GetFloatTexture("sigma", .0f));
+		return new Glossy2(Kd, Ks, Ka, i, d, uroughness, vroughness, sigma, mb, mp);
+	} else {
+		return new GlossyCombined(Kd, Ks, Ka, i, d, uroughness, vroughness, mb, mp);
+	}
 }
 
 // GlossyCoating Method Definitions
@@ -119,10 +174,8 @@ BSDF *GlossyCoating::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 	Fresnel *fresnel = ARENA_ALLOC(arena, FresnelSlick)(s, a);
 	MicrofacetDistribution* md = ARENA_ALLOC(arena, SchlickDistribution)(u * v, anisotropy);
 
-	SchlickBSDF *bsdf = ARENA_ALLOC(arena, SchlickBSDF)(dgs, isect.dg.nn, fresnel, md, multibounce, a, ld, base, isect.exterior, isect.interior);
-	//SingleBSDF *bsdf = ARENA_ALLOC(arena, SingleBSDF)(dgs, isect.dg.nn, 
-	//	ARENA_ALLOC(arena, MicrofacetReflection)(SWCSpectrum(1.f), fresnel, md, false), 
-	//	isect.exterior, isect.interior);
+	SchlickBSDF *bsdf = ARENA_ALLOC(arena, SchlickBSDF)(dgs, isect.dg.nn, fresnel, md, multibounce, 
+		a, ld, base, isect.exterior, isect.interior);
 
 	// Add ptr to CompositingParams structure
 	bsdf->SetCompositingParams(&compParams);

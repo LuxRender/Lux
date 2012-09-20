@@ -167,25 +167,26 @@ void Context::AddServer(const string &n) {
 	if (!renderFarm->connect(n))
 		return;
 
-	// NOTE - Ratow - if this is the first server added during rendering, make sure update thread is started
-	if (GetServerCount() == 1 && luxCurrentScene)
-		renderFarm->startFilmUpdater(luxCurrentScene);
+	// if this is the first server added during rendering, make sure update thread is started
+	renderFarm->start(luxCurrentScene);
 }
 
 void Context::RemoveServer(const RenderingServerInfo &rsi) {
 	renderFarm->disconnect(rsi);
 
-	// NOTE - Ratow - if this is the last server, make sure update thread is stopped
-	if (GetServerCount() == 0)
-		renderFarm->stopFilmUpdater();
+	// if this is the last server, make sure update thread is stopped
+	renderFarm->stop();
 }
 
 void Context::RemoveServer(const string &n) {
 	renderFarm->disconnect(n);
 
-	// NOTE - Ratow - if this is the last server, make sure update thread is stopped
-	if (GetServerCount() == 0)
-		renderFarm->stopFilmUpdater();
+	// if this is the last server, make sure update thread is stopped
+	renderFarm->stop();
+}
+
+void Context::ResetServer(const string &n, const string &p) {
+	renderFarm->sessionReset(n, p);
 }
 
 u_int Context::GetServerCount() {
@@ -438,7 +439,7 @@ void Context::TransformBegin() {
 void Context::TransformEnd() {
 	VERIFY_INITIALIZED("TransformEnd");
 	renderFarm->send("luxTransformEnd");
-	if (!pushedTransforms.size()) {
+	if (!(pushedTransforms.size() > pushedGraphicsStates.size())) {
 		LOG(LUX_ERROR,LUX_ILLSTATE)<< "Unmatched luxTransformEnd() encountered. Ignoring it.";
 		return;
 	}
@@ -613,6 +614,44 @@ void Context::LightSource(const string &n, const ParamSet &params) {
 		Light *lt_sky = MakeLight("sky", curTransform.StaticTransform(), skyparams);
 		if (lt_sky == NULL) {
 			LOG(LUX_ERROR,LUX_SYNTAX)<< "luxLightSource: light type sky unknown.";
+			graphicsState->currentLightPtr1 = NULL;
+		} else {
+			if (renderOptions->currentLightInstance)
+				renderOptions->currentLightInstance->push_back(boost::shared_ptr<Light>(lt_sky));
+			else
+				renderOptions->lights.push_back(lt_sky);
+			graphicsState->currentLight = n;
+			graphicsState->currentLightPtr1 = lt_sky;
+			lt_sky->group = lg;
+			lt_sky->SetVolume(graphicsState->exterior);
+		}
+	} else if (n == "sunsky2") {
+		//SunSky2 light - create both sun & sky2 lightsources
+
+		ParamSet sunparams(params);
+
+		Light *lt_sun = MakeLight("sun", curTransform.StaticTransform(), sunparams);
+		if (lt_sun == NULL) {
+			LOG(LUX_ERROR,LUX_SYNTAX)<< "luxLightSource: light type sun unknown.";
+			graphicsState->currentLightPtr0 = NULL;
+		} else {
+			if (renderOptions->currentLightInstance)
+				renderOptions->currentLightInstance->push_back(boost::shared_ptr<Light>(lt_sun));
+			else
+				renderOptions->lights.push_back(lt_sun);
+			graphicsState->currentLight = n;
+			graphicsState->currentLightPtr0 = lt_sun;
+			lt_sun->group = lg;
+			lt_sun->SetVolume(graphicsState->exterior);
+		}
+
+		// Stop the sky complaining about unused sun params
+		ParamSet skyparams(params);
+		skyparams.EraseFloat("relsize");
+
+		Light *lt_sky = MakeLight("sky2", curTransform.StaticTransform(), skyparams);
+		if (lt_sky == NULL) {
+			LOG(LUX_ERROR,LUX_SYNTAX)<< "luxLightSource: light type sky2 unknown.";
 			graphicsState->currentLightPtr1 = NULL;
 		} else {
 			if (renderOptions->currentLightInstance)
@@ -959,8 +998,8 @@ void Context::MotionInstance(const string &n, float startTime, float endTime, co
 
 void Context::WorldEnd() {
 	VERIFY_WORLD("WorldEnd");
+	// renderfarm will flush when detecting WorldEnd
 	renderFarm->send("luxWorldEnd");
-	renderFarm->flush();
 
 	// Dade - get the lock, other thread can use this lock to wait the end
 	// of the rendering
@@ -976,31 +1015,32 @@ void Context::WorldEnd() {
 	if (!terminated) {
 		// Create scene and render
 		luxCurrentScene = renderOptions->MakeScene();
-		if (luxCurrentScene) {
+		if (luxCurrentScene && !terminated) {
 			luxCurrentScene->camera->SetVolume(graphicsState->exterior);
 
 			luxCurrentRenderer = renderOptions->MakeRenderer();
 
-			if (luxCurrentRenderer) {
-				// Dade - check if we have to start the network rendering updater thread
-				if (renderFarm->getServerCount() > 0)
-					renderFarm->startFilmUpdater(luxCurrentScene);
+			if (luxCurrentRenderer && !terminated) {
+				// start the network rendering updater thread
+				renderFarm->start(luxCurrentScene);
 
 				luxCurrentRenderer->Render(luxCurrentScene);
 
+				// Signal that rendering is done, so any slaves connected
+				// after this won't start rendering
+				activeContext->renderFarm->renderingDone();
+
+				// Stop the render farm too
+				activeContext->renderFarm->stop();
+
 				// Check if we have to stop the network rendering updater thread
 				if (GetServerCount() > 0) {
-					// Stop the render farm too
-					activeContext->renderFarm->stopFilmUpdater();
 					// Update the film for the last time
 					if (!aborted)
 						activeContext->renderFarm->updateFilm(luxCurrentScene);
 					// Disconnect from all servers
 					activeContext->renderFarm->disconnectAll();
 				}
-				// Signal that rendering is done, so any slaves connected
-				// after this won't start rendering
-				activeContext->renderFarm->renderingDone();
 
 				// Store final image
 				if (!aborted)
@@ -1153,7 +1193,7 @@ void Context::Wait() {
 void Context::Exit() {
 	if (GetServerCount() > 0) {
 		// Dade - stop the render farm too
-		activeContext->renderFarm->stopFilmUpdater();
+		activeContext->renderFarm->stop();
 		// Dade - update the film for the last time
 		if (!aborted)
 			activeContext->renderFarm->updateFilm(luxCurrentScene);

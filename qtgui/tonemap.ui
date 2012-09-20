@@ -229,7 +229,7 @@
           <item row="0" column="0">
            <widget class="QLabel" name="label_sensitivity">
             <property name="text">
-             <string>Sensitivity</string>
+             <string>Film ISO</string>
             </property>
             <property name="buddy">
              <cstring>slider_prescale</cstring>
@@ -271,7 +271,7 @@
           <item row="1" column="0">
            <widget class="QLabel" name="label_exposure">
             <property name="text">
-             <string>Exposure</string>
+             <string>Shutter</string>
             </property>
             <property name="buddy">
              <cstring>slider_postscale</cstring>
@@ -316,7 +316,7 @@
           <item row="2" column="0">
            <widget class="QLabel" name="label_fstop">
             <property name="text">
-             <string>FStop</string>
+             <string>f-stop</string>
             </property>
             <property name="buddy">
              <cstring>slider_burn</cstring>

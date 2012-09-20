@@ -74,7 +74,19 @@ void infoThread() {
 			luxUpdateStatisticsWindow();
 			luxGetStringAttribute("renderer_statistics_formatted_short", "_recommended_string", &buf[0], static_cast<unsigned int>(buf.size()));
 			LOG(LUX_INFO,LUX_NOERROR) << std::string(buf.begin(), buf.end());
-		} catch(boost::thread_interrupted ex) {
+		} catch(boost::thread_interrupted&) {
+			break;
+		}
+	}
+}
+
+void addNetworkSlavesThread(std::vector<std::string> slaves) {
+	for (std::vector<std::string>::iterator i = slaves.begin(); i < slaves.end(); i++) {
+		try {
+			if (boost::this_thread::interruption_requested())
+				break;
+			luxAddServer((*i).c_str());
+		} catch(boost::thread_interrupted&) {
 			break;
 		}
 	}
@@ -106,6 +118,7 @@ int main(int ac, char *av[]) {
 				("overrideresume,R", po::value< std::string >(), "Resume from specified FLM")
 				("output,o", po::value< std::string >(), "Output filename")
 				("server,s", "Launch in server mode")
+				("resetserver", po::value< std::vector<std::string> >()->composing(), "Force the specified rendering server to reset")
 				("bindump,b", "Dump binary RGB framebuffer to stdout when finished")
 				("debug,d", "Enable debug mode")
 				("fixedseed,f", "Disable random seed mode")
@@ -123,10 +136,11 @@ int main(int ac, char *av[]) {
 		po::options_description config("Configuration");
 		config.add_options()
 				("threads,t", po::value < int >(), "Specify the number of threads that Lux will run in parallel.")
-				("useserver,u", po::value< std::vector<std::string> >()->composing(), "Specify the adress of a rendering server to use.")
+				("useserver,u", po::value< std::vector<std::string> >()->composing(), "Specify the address of a rendering server to use.")
 				("serverinterval,i", po::value < int >(), "Specify the number of seconds between requests to rendering servers.")
 				("serverport,p", po::value < int >(), "Specify the tcp port used in server mode.")
 				("serverwriteflm,W", "Write film to disk before transmitting in server mode.")
+				("password,P", po::value< std::string >()->default_value(""), "Specify the servers reset password.")
 				("cachedir,c", po::value< std::string >(), "Specify the cache directory to use")
 				;
 
@@ -179,6 +193,27 @@ int main(int ac, char *av[]) {
 		if (vm.count("version"))
 			return 0;
 
+		if (vm.count("verbose")) {
+			luxErrorFilter(LUX_DEBUG);
+		}
+
+		if (vm.count("quiet")) {
+			luxErrorFilter(LUX_WARNING);
+		}
+
+		if (vm.count("very-quiet")) {
+			luxErrorFilter(LUX_ERROR);
+		}
+
+		if (vm.count("resetserver")) {
+			std::vector<std::string> slaves = vm["resetserver"].as<std::vector<std::string> >();
+			std::string password = vm["password"].as<std::string>();
+			for (std::vector<std::string>::iterator i = slaves.begin(); i < slaves.end(); i++) {
+				luxResetServer((*i).c_str(), password.c_str());
+			}
+			return 0;
+		}
+
 		if (vm.count("threads"))
 			threads = vm["threads"].as<int>();
 		else {
@@ -195,18 +230,6 @@ int main(int ac, char *av[]) {
 			luxEnableDebugMode();
 		}
 
-		if (vm.count("verbose")) {
-			luxErrorFilter(LUX_DEBUG);
-		}
-
-		if (vm.count("quiet")) {
-			luxErrorFilter(LUX_WARNING);
-		}
-
-		if (vm.count("very-quiet")) {
-			luxErrorFilter(LUX_ERROR);
-		}
-
 		if (vm.count("fixedseed")) {
 			if (!vm.count("server"))
 				luxDisableRandomMode();
@@ -221,13 +244,12 @@ int main(int ac, char *av[]) {
 		} else
 			serverInterval = luxGetNetworkServerUpdateInterval();
 
+		std::vector<std::string> slaves;
 		if (vm.count("useserver")) {
-			std::vector<std::string> names = vm["useserver"].as<std::vector<std::string> >();
+			// add slaves later, so we can start rendering first
+			slaves = vm["useserver"].as<std::vector<std::string> >();
 
-			for (std::vector<std::string>::iterator i = names.begin(); i < names.end(); i++)
-				luxAddServer((*i).c_str());
-
-			LOG(LUX_INFO,LUX_NOERROR) << "Server requests interval: " << serverInterval << " secs";
+			LOG(LUX_INFO,LUX_NOERROR) << "Server request interval: " << serverInterval << " secs";
 		}
 
 		int serverPort = RenderServer::DEFAULT_TCP_PORT;
@@ -303,6 +325,9 @@ int main(int ac, char *av[]) {
 				parseError = false;
 				boost::thread engine(&engineThread);
 
+				// add slaves, need to do this for each scene file
+				boost::thread addSlaves(boost::bind(addNetworkSlavesThread, slaves));
+
 				//wait the scene parsing to finish
 				while (!luxStatistics("sceneIsReady") && !parseError) {
 					boost::this_thread::sleep(boost::posix_time::seconds(1));
@@ -326,7 +351,11 @@ int main(int ac, char *av[]) {
 
 				// We have to stop the info thread before to call luxExit()/luxCleanup()
 				info.interrupt();
+				// Stop adding slaves before proceeding
+				addSlaves.interrupt();
+
 				info.join();
+				addSlaves.join();
 
 				luxExit();
 
@@ -374,12 +403,19 @@ int main(int ac, char *av[]) {
 				LOG(LUX_INFO,LUX_NOERROR) << "Using cache directory '" << cachedir << "'";
 			}
 
-			renderServer = new RenderServer(threads, serverPort, writeFlmFile);
+			std::string password = vm["password"].as<std::string>();
+			renderServer = new RenderServer(threads, password, serverPort, writeFlmFile);
 
 			prevErrorHandler = luxError;
 			luxErrorHandler(serverErrorHandler);
 
 			renderServer->start();
+
+			// add slaves, no need to do this in a separate thread since we're just waiting for
+			// the server to finish
+			for (std::vector<std::string>::iterator i = slaves.begin(); i < slaves.end(); i++)
+				luxAddServer((*i).c_str());
+
 			renderServer->join();
 			delete renderServer;
 		} else {

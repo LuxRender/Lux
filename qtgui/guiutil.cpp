@@ -92,7 +92,17 @@ void overlayStatistics(QImage *image)
 
 	stats = "LuxRender " + QString::fromLatin1(luxVersion()) + " ";
 	stats += "|Saved: " + QDateTime::currentDateTime().toString(Qt::DefaultLocaleShortDate) + " ";
-	stats += "|Statistics: " + getStringAttribute("renderer_statistics_formatted", "_recommended_string") + " ";
+
+	QString rendererStats = getStringAttribute("renderer_statistics_formatted", "_recommended_string");
+	// fallback statistics
+	if (rendererStats.isEmpty())	// if no renderer stats available
+	{
+		int pixels = luxGetIntAttribute("film", "xResolution") * luxGetIntAttribute("film", "yResolution");
+		double spp = luxGetDoubleAttribute("film", "numberOfResumedSamples") / pixels;
+
+		rendererStats = QString("%1 %2S/p").arg(luxMagnitudeReduce(spp), 0, 'f', 2).arg(luxMagnitudePrefix(spp));
+	}
+	stats += "|Statistics: " + rendererStats + " ";
 
 	// convert regular spaces to non-breaking spaces, so that it will prefer to wrap
 	// between segments
@@ -155,8 +165,8 @@ void overlayStatistics(QImage *image)
 QImage getFramebufferImage(bool overlayStats, bool outputAlpha)
 {
 	// Get width, height and pixel buffer
-	int w = luxGetIntAttribute("film", "xPixelCount");
-	int h = luxGetIntAttribute("film", "yPixelCount");
+	int w = luxGetIntAttribute("film", "xResolution");
+	int h = luxGetIntAttribute("film", "yResolution");
 	// pointer needs to be const so QImage doesn't write to it
 	const unsigned char* fb = luxFramebuffer();
 

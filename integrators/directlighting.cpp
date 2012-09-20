@@ -82,10 +82,10 @@ u_int DirectLightingIntegrator::LiInternal(const Scene &scene,
 		Vector wo = -ray.d;
 
 		// Compute emitted light if ray hit an area light source
-		if (isect.arealight) {
-			BSDF *ibsdf;
-			L[isect.arealight->group] += isect.Le(sample, ray,
-				&ibsdf, NULL, NULL);
+		SWCSpectrum Ll(1.f);
+		BSDF *ibsdf;
+		if (isect.Le(sample, ray, &ibsdf, NULL, NULL, &Ll)) {
+			L[isect.arealight->group] += Ll;
 			++nContribs;
 		}
 

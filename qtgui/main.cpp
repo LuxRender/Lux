@@ -37,12 +37,11 @@ int main(int argc, char *argv[])
 	if (translator.load(QString("luxrender_") + locale))
 		application.installTranslator(&translator);
 */
-	application.init();
 
 	// force C locale
 	setlocale(LC_NUMERIC,"C");
-	
-	if (application.mainwin != NULL)
+
+	if (application.mainwin)
 		return application.exec();
 	else
 		return 0;

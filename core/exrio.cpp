@@ -323,10 +323,13 @@ ImageData *StandardImageReader::read(const string &name)
 	switch (fif) {
 		case FIF_ICO:
 			flags = ICO_MAKEALPHA;
+			break;
 		case FIF_JPEG:
 			flags = JPEG_ACCURATE;
+			break;
 		case FIF_PNG:
 			flags = PNG_IGNOREGAMMA;
+			break;
 		default:
 			flags = 0;
 	}

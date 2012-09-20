@@ -27,6 +27,7 @@
 
 #include <iostream>
 #include <algorithm>
+#include <cmath>
 
 static double sensitivity_presets[NUM_SENSITITIVITY_PRESETS] = {6400.0f, 5000.0f, 4000.0f, 3200.0f, 2500.0f, 2000.0f, 1600.0f, 1250.0f, 1000.0f, 800.0f, 640.0f, 500.0f, 400.0f, 320.0f, 250.0f, 200.0f, 160.0f, 125.0f, 100.0f, 80.0f, 64.0f, 50.0f, 40.0f, 32.0f, 25.0f, 20.0f};
 
@@ -37,7 +38,7 @@ static double fstop_presets[NUM_FSTOP_PRESETS] = {128.0, 90.0, 64.0, 45.0, 32.0,
 #define DEFAULT_EPSILON_MIN 1e-7f
 static bool EqualDouble(const double a, const double b)
 {
-	return (fabs(a-b) < DEFAULT_EPSILON_MIN);
+	return (std::fabs(a-b) < DEFAULT_EPSILON_MIN);
 }
 
 using namespace std;
@@ -486,7 +487,7 @@ void ToneMapWidget::estimateLinear ()
 	const float gamma = retrieveParam(false, LUX_FILM, LUX_FILM_TORGB_GAMMA);
 	const float Y =  luxGetFloatAttribute("film", "averageLuminance");
 
-	const double gfactor = powf(118.f / 255.f, gamma);
+	const double gfactor = std::pow(118.f / 255.f, gamma);
 
 	// this is the target factor that autolinear would calculate
 	// we try to get as close as possible to this

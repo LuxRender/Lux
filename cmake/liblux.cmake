@@ -242,6 +242,7 @@ SET(lux_lights_src
 	lights/sphericalfunction/sphericalfunction_ies.cpp
 	lights/spot.cpp
 	lights/sky.cpp
+	lights/sky2.cpp
 	lights/sun.cpp
 	)
 SOURCE_GROUP("Source Files\\Lights" FILES ${lux_lights_src})
@@ -293,6 +294,8 @@ SET(lux_samplers_src
 SOURCE_GROUP("Source Files\\Samplers" FILES ${lux_samplers_src})
 
 SET(lux_renderers_src
+	renderers/hybridrenderer.cpp
+	renderers/hybridsamplerrenderer.cpp
 	renderers/samplerrenderer.cpp
 	renderers/samplertbbrenderer.cpp
 	renderers/sppmrenderer.cpp
@@ -304,13 +307,6 @@ SET(lux_renderers_src
 	renderers/sppm/hybridhashgrid.cpp
 	renderers/sppm/kdtree.cpp
 	)
-IF(NOT LUXRAYS_DISABLE_OPENCL)
-SET(lux_renderers_src
-	${lux_renderers_src}
-	renderers/hybridrenderer.cpp
-	renderers/hybridsamplerrenderer.cpp
-	)
-endif(NOT LUXRAYS_DISABLE_OPENCL)
 SOURCE_GROUP("Source Files\\Renderers" FILES ${lux_renderers_src})
 
 SET(lux_rendererstatistics_src
@@ -675,11 +671,13 @@ SET(lux_lights_hdr
 	lights/pointlight.h
 	lights/projection.h
 	lights/sky.h
+	lights/sky2.h
 	lights/spot.h
 	lights/sun.h
 	)
 SOURCE_GROUP("Header Files\\Lights" FILES ${lux_lights_hdr})
 SET(lux_lights_data_hdr
+	lights/data/ArHosekSkyModelData.h
 	lights/data/lamp_spect.h
 	lights/data/skychroma_spect.h
 	lights/data/sun_spect.h

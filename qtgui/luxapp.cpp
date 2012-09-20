@@ -21,8 +21,6 @@
  ***************************************************************************/
 
 #include <boost/program_options.hpp>
-#include <boost/thread.hpp>
-#include <boost/filesystem.hpp>
 #include <vector>
 using std::vector;
 #include <string>
@@ -38,6 +36,7 @@ using std::stringstream;
 #include <QtGui/QApplication>
 #include <QtGui/QMessageBox>
 #include <QTextStream>
+#include <QThread>
 
 #include "api.h"
 #include "error.h"
@@ -45,7 +44,7 @@ using std::stringstream;
 #include "mainwindow.hxx"
 #include "luxapp.hxx"
 
-#if defined(WIN32) && !defined(__CYGWIN__)
+#if defined(WIN32) && !defined(__CYGWIN__) && (_M_IX86_FP >= 2)
 // for stderr redirection
 #include <windows.h>
 #include <stdio.h>
@@ -65,19 +64,8 @@ void AttachStderr()
 
 namespace po = boost::program_options;
 
-LuxGuiApp::LuxGuiApp(int &argc, char **argv) : QApplication(argc, argv), m_argc(argc)
+LuxGuiApp::LuxGuiApp(int &argc, char **argv) : QApplication(argc, argv), mainwin(NULL)
 {
-	m_argv = argv;
-	mainwin = NULL;
-}
-
-LuxGuiApp::~LuxGuiApp()
-{
-	if (mainwin != NULL)
-		delete mainwin;
-}
-
-void LuxGuiApp::init(void) {
 	// Dade - initialize rand() number generator
 	srand(time(NULL));
 
@@ -86,65 +74,78 @@ void LuxGuiApp::init(void) {
 	
 	luxInit();
 
-	if (ProcessCommandLine()) {
+	if (ProcessCommandLine(argc, argv))
+		init();
+}
 
-// AttachConsole is XP only, restrict to SSE2+
+LuxGuiApp::~LuxGuiApp()
+{
+	delete mainwin;
+}
+
+void LuxGuiApp::init(void)
+{
+	// AttachConsole is XP only, restrict to SSE2+
 #if defined(WIN32) && !defined(__CYGWIN__) && (_M_IX86_FP >= 2)
-		// attach to parent process' console if it exists, otherwise ignore
-		if (m_copyLog2Console) {
-			if (AttachConsole(ATTACH_PARENT_PROCESS)) {
-				AttachStderr();
-				std::cerr << "\nRedirecting log to console...\n";
-			}
-		}
+	// attach to parent process' console if it exists, otherwise ignore
+	if (m_copyLog2Console && AttachConsole(ATTACH_PARENT_PROCESS)) {
+		AttachStderr();
+		std::cerr << "\nRedirecting log to console...\n";
+	}
 #endif
 
-		mainwin = new MainWindow(0,m_copyLog2Console);
-		mainwin->show();
+	mainwin = new MainWindow(0, m_copyLog2Console);
+	mainwin->show();
 #if defined(__APPLE__)
-		mainwin->raise();
-		mainwin->activateWindow();
+	mainwin->raise();
+	mainwin->activateWindow();
 #endif
-		mainwin->SetRenderThreads(m_threads);
-		if (!m_inputFile.isEmpty())
-			mainwin->renderScenefile(m_inputFile);
+	mainwin->SetRenderThreads(m_threads);
+	m_verbosity = 0; // initialize to default
+	mainwin->setVerbosity(m_verbosity);
 
-		// Add files to the render queue
-    if (renderQueueList.count()) {
-      QString renderQueueEntry;
-      foreach( renderQueueEntry, renderQueueList ) {
-        mainwin->addFileToRenderQueue(renderQueueEntry);
-      }
-      mainwin->RenderNextFileInQueue();
-    }
-	} else {
-	}	
+	// Set server interval
+	if (serverInterval > 0)
+		mainwin->setServerUpdateInterval(serverInterval);
+
+	if (!m_inputFile.isEmpty())
+		mainwin->renderScenefile(m_inputFile);
+
+	// Add files to the render queue
+	if (!renderQueueName.isNull())
+		mainwin->openQueueFile(renderQueueName);
+
+	// Add slaves
+	if (!serverList.empty())
+		mainwin->AddNetworkSlaves(serverList.toVector());
 }
 
 #if defined(__APPLE__) // Doubleclick or dragging .lxs in OSX Finder to LuxRender
 bool LuxGuiApp::event(QEvent *event)
 {
 	switch (event->type()) {
-        case QEvent::FileOpen:
-			if (m_inputFile.isEmpty()){
-				mainwin->loadFile(static_cast<QFileOpenEvent *>(event)->file());
-				return true;
-			}
-        default:
-            break;
-    }
+	case QEvent::FileOpen:
+		if (m_inputFile.isEmpty()) {
+			mainwin->loadFile(static_cast<QFileOpenEvent *>(event)->file());
+			return true;
+		}
+		break;
+	default:
+		break;
+	}
 	return QApplication::event(event);
 }
 #endif
 
-void LuxGuiApp::InfoDialogBox(const string &msg, const string &caption = "LuxRender") {
+void LuxGuiApp::InfoDialogBox(const string &msg, const string &caption = "LuxRender")
+{
 	QMessageBox msgBox;
 	msgBox.setIcon(QMessageBox::Information);
 	msgBox.setText(msg.c_str());
 	msgBox.exec();
 }
 
-bool LuxGuiApp::ProcessCommandLine(void)
+bool LuxGuiApp::ProcessCommandLine(int &argc, char **argv)
 {
 	try {
 		const int line_length = 150;
@@ -198,7 +199,7 @@ bool LuxGuiApp::ProcessCommandLine(void)
 
 		po::variables_map vm;
 		
-		store(po::command_line_parser(m_argc, m_argv).
+		store(po::command_line_parser(argc, argv).
 			options(cmdline_options).positional(p).run(), vm);
 
 		std::string configFile("luxconsole.cfg");
@@ -233,8 +234,8 @@ bool LuxGuiApp::ProcessCommandLine(void)
 			m_threads = vm["threads"].as < int >();
 		} else {
 			// Dade - check for the hardware concurrency available
-			m_threads = boost::thread::hardware_concurrency();
-			if (m_threads == 0)
+			m_threads = QThread::idealThreadCount();
+			if (m_threads <= 0)
 				m_threads = 1;
 		}
 
@@ -244,26 +245,26 @@ bool LuxGuiApp::ProcessCommandLine(void)
 		}
 
 		if (vm.count("verbose")) {
-			luxErrorFilter(LUX_DEBUG);
+			m_verbosity = 1;
 		}
 
 		if (vm.count("quiet")) {
-			luxErrorFilter(LUX_WARNING);
+			m_verbosity = 2 ;
 		}
 
 		if (vm.count("very-quiet")) {
-			luxErrorFilter(LUX_ERROR);
+			m_verbosity = 3;
 		}
 
 		if (vm.count("fixedseed"))
 			luxDisableRandomMode();
 
-		int serverInterval;
 		if(vm.count("serverinterval")) {
 			serverInterval = vm["serverinterval"].as<int>();
 			luxSetNetworkServerUpdateInterval(serverInterval);
 		} else {
-			serverInterval = luxGetNetworkServerUpdateInterval();
+			// use -1 to indicate user didn't override server interval
+			serverInterval = -1;
 		}
 
 		if(vm.count("useserver")) {
@@ -271,18 +272,9 @@ bool LuxGuiApp::ProcessCommandLine(void)
 
 			vector<string> names = vm["useserver"].as<vector<string> >();
 
-			for(vector<string>::iterator i = names.begin(); i < names.end(); i++) {
-				LOG(LUX_INFO,LUX_NOERROR) << "Connecting to server '" <<(*i) << "'";
-
-				//TODO jromang : try to connect to the server, and get version number. display message to see if it was successfull
-				luxAddServer((*i).c_str());
+			for(vector<string>::iterator i = names.begin(); i != names.end(); ++i) {
+				serverList << (*i).c_str();
 			}
-
-			m_useServer = true;
-
-			LOG( LUX_INFO,LUX_NOERROR) << "Server requests interval:  " << serverInterval << " secs";
-		} else {
-			m_useServer = false;
 		}
 
 		if(vm.count("input-file")) {
@@ -292,7 +284,7 @@ bool LuxGuiApp::ProcessCommandLine(void)
 			}
 
 			if (v[0] != "-")
-				m_inputFile = QString(boost::filesystem::system_complete(v[0]).string().c_str());
+				m_inputFile = QFileInfo(v[0].c_str()).absoluteFilePath();
 			else
 				m_inputFile = QString(v[0].c_str());
 		} else {
@@ -317,18 +309,7 @@ bool LuxGuiApp::ProcessCommandLine(void)
 
 		// Read file names for the Reander Queue
 		if (vm.count("list-file")) {
-			LOG( LUX_INFO,LUX_NOERROR) << "Reading file list from: " << vm["list-file"].as<string>().c_str();
-			QFile listFile(vm["list-file"].as<string>().c_str());
-			QString renderQueueEntry;
-			if ( listFile.open(QIODevice::ReadOnly) ) {
-        QTextStream lfStream(&listFile);
-				while(!lfStream.atEnd()) {
-					renderQueueEntry = QString(boost::filesystem::system_complete(lfStream.readLine().toStdString()).string().c_str());
-					if (!renderQueueEntry.isNull()) {
-            renderQueueList << renderQueueEntry;
-					}
-				};
-			}
+			renderQueueName = vm["list-file"].as<string>().c_str();
 		}
 
 		return true;

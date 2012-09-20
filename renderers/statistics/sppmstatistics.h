@@ -99,6 +99,9 @@ private:
 	double getPercentHaltPassesComplete();
 
 	double getEfficiency() { return renderer->photonHitEfficiency; }
+	// TODO after 1.0 release: Move renderer->photonHitEfficiency calculation
+	// out of renderer and do it here so we can also calculate the windowed value
+	double getEfficiencyWindow() { return getEfficiency(); }
 
 	double getPhotonCount();
 	double getAveragePhotonsPerSecond();

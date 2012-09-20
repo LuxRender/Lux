@@ -317,7 +317,7 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 
 				break;
 			default: {
-				SHAPE_LOG(name, LUX_ERROR,LUX_CONSISTENCY) << "Unknow subdivision type in a mesh: " << concreteSubdivType;
+				SHAPE_LOG(name, LUX_ERROR,LUX_CONSISTENCY) << "Unknown subdivision type in a mesh: " << concreteSubdivType;
 				break;
 			}
 		}
@@ -395,13 +395,13 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 			}
 			break;
 		default: {
-			SHAPE_LOG(name, LUX_ERROR,LUX_CONSISTENCY) << "Unknow triangle type: " << concreteTriType;
+			SHAPE_LOG(name, LUX_ERROR,LUX_CONSISTENCY) << "Unknown triangle type: " << concreteTriType;
 			break;
 		}
 	}
 
 	if (inconsistentShadingTris > 0) {
-		SHAPE_LOG(name, LUX_WARNING, LUX_CONSISTENCY) <<
+		SHAPE_LOG(name, LUX_DEBUG, LUX_CONSISTENCY) <<
 			"Inconsistent shading normals in " << 
 			inconsistentShadingTris << " triangle" << (inconsistentShadingTris > 1 ? "s" : "");
 	}
@@ -428,7 +428,7 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 			}
 			break;
 		default: {
-			SHAPE_LOG(name, LUX_ERROR,LUX_CONSISTENCY) << "Unknow quad type in a mesh: " << quadType;
+			SHAPE_LOG(name, LUX_ERROR,LUX_CONSISTENCY) << "Unknown quad type in a mesh: " << quadType;
 			break;
 		}
 	}
@@ -516,7 +516,7 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 				accel = MakeAccelerator("bruteforce", refinedPrims, paramset);
 				break;
 			default:
-				SHAPE_LOG(name, LUX_ERROR,LUX_CONSISTENCY) << "Unknow accel type: " << concreteAccelType;
+				SHAPE_LOG(name, LUX_ERROR,LUX_CONSISTENCY) << "Unknown accel type: " << concreteAccelType;
 		}
 		if (refineHints.forSampling)
 			// Lotus - create primitive set to allow sampling
@@ -992,7 +992,7 @@ static Shape *CreateShape( const Transform &o2w, bool reverseOrientation, const 
 		displacementMap = dm;
 
 		if (!displacementMap) {
-			SHAPE_LOG(name, LUX_WARNING,LUX_SYNTAX) << "Unknow float texture '" << displacementMapName << "'.";
+			SHAPE_LOG(name, LUX_WARNING,LUX_SYNTAX) << "Unknown float texture '" << displacementMapName << "'.";
 		}
 	}
 

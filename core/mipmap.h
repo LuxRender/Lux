@@ -1202,8 +1202,8 @@ public:
 	}
 	virtual SWCSpectrum LookupSpectrum(const SpectrumWavelengths &sw,
 		float s, float t, float width = 0.f) const {
-		return (gain * MIPMapFastImpl<T>::LookupSpectrum(sw, s, t,
-			width)).Pow(gamma);
+		return Pow(gain * MIPMapFastImpl<T>::LookupSpectrum(sw, s, t,
+			width), gamma);
 	}
 	virtual float LookupFloat(Channel channel, float s, float t,
 		float ds0, float dt0, float ds1, float dt1) const {
@@ -1212,8 +1212,8 @@ public:
 	}
 	virtual SWCSpectrum LookupSpectrum(const SpectrumWavelengths &sw,
 		float s, float t, float ds0, float dt0, float ds1, float dt1) const {
-		return (gain * MIPMapFastImpl<T>::LookupSpectrum(sw, s, t,
-			ds0, dt0, ds1, dt1)).Pow(gamma);
+		return Pow(gain * MIPMapFastImpl<T>::LookupSpectrum(sw, s, t,
+			ds0, dt0, ds1, dt1), gamma);
 	}
 	virtual void GetDifferentials(Channel channel, float s, float t,
 		float *ds, float *dt) const {

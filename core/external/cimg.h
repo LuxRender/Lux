@@ -2536,7 +2536,7 @@ namespace cimg_library {
     const unsigned int keyPADDIV     = 87U;
 
 #else
-    // Define unknow keycodes when no display
+    // Define unknown keycodes when no display
     const unsigned int keyESC        = 1U;
     const unsigned int keyF1         = 2U;
     const unsigned int keyF2         = 3U;
@@ -10011,7 +10011,7 @@ namespace cimg_library {
               query->sender->paint();
             } break;
             default:
-              cimg::warn("CImgDisplay::_events_thread() : Received unknow code %d.",query->kind);
+              cimg::warn("CImgDisplay::_events_thread() : Received unknown code %d.",query->kind);
             }
             // Signal that the message has been processed
             MPSignalSemaphore(c.sync_event);
@@ -14405,7 +14405,7 @@ namespace cimg_library {
           }
         } break;
         default:
-          throw CImgArgumentException("CImg<%s>::mirror() : unknow axe '%c', must be 'x','y','z' or 'v'",pixel_type(),axe);
+          throw CImgArgumentException("CImg<%s>::mirror() : unknown axe '%c', must be 'x','y','z' or 'v'",pixel_type(),axe);
         }
         if (buf) delete[] buf;
       }
@@ -15209,7 +15209,7 @@ namespace cimg_library {
         res[res.size-1] = get_crop(0,0,0,x,width-1,height-1,depth-1,dim-1);
       } break;
       default:
-        throw CImgArgumentException("CImg<%s>::get_split() : Unknow axe '%c', must be 'x','y','z' or 'v'",pixel_type(),axe);
+        throw CImgArgumentException("CImg<%s>::get_split() : Unknown axe '%c', must be 'x','y','z' or 'v'",pixel_type(),axe);
         break;
       }
       return res;
@@ -25782,7 +25782,7 @@ namespace cimg_library {
       TIFFGetField(tif,TIFFTAG_IMAGELENGTH,&ny);
       TIFFGetField(tif,TIFFTAG_SAMPLESPERPIXEL,&samplesperpixel);
       if (samplesperpixel!=1 && samplesperpixel!=3 && samplesperpixel!=4) {
-	cimg::warn("CImg<%s>::load_tiff() : File '%s', unknow value for tag : TIFFTAG_SAMPLESPERPIXEL, will force it to 1.",
+	cimg::warn("CImg<%s>::load_tiff() : File '%s', unknown value for tag : TIFFTAG_SAMPLESPERPIXEL, will force it to 1.",
                    pixel_type(),filename);
 	samplesperpixel = 1;
       }
@@ -30327,7 +30327,7 @@ namespace cimg_library {
       err = std::sscanf(tmp,"%u%*c%255[A-Za-z_]%*c%255[sA-Za-z_ ]",&N,str_pixeltype,str_endian);
       if (err<2) {
         if (!file) cimg::fclose(nfile);
-        throw CImgIOException("CImgList<%s>::load_cimg() : File '%s', Unknow CImg RAW header.",
+        throw CImgIOException("CImgList<%s>::load_cimg() : File '%s', Unknown CImg RAW header.",
                               pixel_type(),filename?filename:"(FILE*)");
       }
       if (!cimg::strncasecmp("little",str_endian,6)) endian = false;
@@ -30472,7 +30472,7 @@ namespace cimg_library {
       err = std::sscanf(tmp,"%u%*c%255[A-Za-z_]%*c%255[sA-Za-z_ ]",&N,str_pixeltype,str_endian);
       if (err<2) {
         if (!file) cimg::fclose(nfile);
-        throw CImgIOException("CImgList<%s>::load_cimg() : File '%s', Unknow CImg RAW header.",
+        throw CImgIOException("CImgList<%s>::load_cimg() : File '%s', Unknown CImg RAW header.",
                               pixel_type(),filename?filename:"(FILE*)");
       }
       if (!cimg::strncasecmp("little",str_endian,6)) endian = false;
@@ -31114,7 +31114,7 @@ namespace cimg_library {
       err = std::sscanf(tmp,"%u%*c%255[A-Za-z_]%*c%255[sA-Za-z_ ]",&N,str_pixeltype,str_endian);
       if (err<2) {
         if (!file) cimg::fclose(nfile);
-        throw CImgIOException("CImgList<%s>::save_cimg() : File '%s', Unknow CImg RAW header.",
+        throw CImgIOException("CImgList<%s>::save_cimg() : File '%s', Unknown CImg RAW header.",
                               pixel_type(),filename?filename:"(FILE*)");
       }
       if (!cimg::strncasecmp("little",str_endian,6)) endian = false;
@@ -31455,7 +31455,7 @@ namespace cimg_library {
         } break;
         }
       } break;
-      default: throw CImgArgumentException("CImgList<%s>::get_append() : unknow axe '%c', must be 'x','y','z' or 'v'",pixel_type(),axe);
+      default: throw CImgArgumentException("CImgList<%s>::get_append() : unknown axe '%c', must be 'x','y','z' or 'v'",pixel_type(),axe);
       }
       return res;
     }

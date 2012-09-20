@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2010 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -20,34 +20,43 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-// Python doc-strings for pylux.RenderServer*
-// Try to keep within 80 columns
+// sky2.h*
+#include "lux.h"
+#include "light.h"
 
-#ifndef LUX_PYDOC_RENDERSERVER_H
-#define LUX_PYDOC_RENDERSERVER_H
+namespace lux
+{
 
-const char * ds_pylux_RenderServerState =
-"Valid states for LuxRender Network Server";
+// Sky2Light Declarations
+class Sky2Light : public Light {
+public:
+	// Sky2Light Public Methods
+	Sky2Light(const Transform &light2world, float skyscale, u_int ns,
+		Vector sd, float turb);
+	virtual ~Sky2Light();
+	virtual float Power(const Scene &scene) const;
+	virtual bool IsDeltaLight() const { return false; }
+	virtual bool IsEnvironmental() const { return true; }
+	virtual bool Le(const Scene &scene, const Sample &sample, const Ray &r,
+		BSDF **bsdf, float *pdf, float *pdfDirect,
+		SWCSpectrum *L) const;
+	virtual float Pdf(const Point &p, const PartialDifferentialGeometry &dg) const;
+	virtual bool SampleL(const Scene &scene, const Sample &sample,
+		float u1, float u2, float u3, BSDF **bsdf, float *pdf,
+		SWCSpectrum *Le) const;
+	virtual bool SampleL(const Scene &scene, const Sample &sample,
+		const Point &p, float u1, float u2, float u3, BSDF **bsdf,
+		float *pdf, float *pdfDirect, SWCSpectrum *Le) const;
 
-const char * ds_pylux_RenderServer =
-"An instance of a LuxRender Network Server";
+	static Light *CreateLight(const Transform &light2world,
+		const ParamSet &paramSet);
 
-const char * ds_pylux_RenderServer_getServerPort =
-"Get the port that this server is listening on";
+	// Sky2Light Public Data
+	float skyScale;
+	Vector  sundir;
+	float 	turbidity;
+	RegularSPD *model[10];
+};
 
-const char * ds_pylux_RenderServer_getServerState =
-"Get the state of this server";
+}//namespace lux
 
-const char * ds_pylux_RenderServer_getServerPass =
-"Get the password for this server";
-
-const char * ds_pylux_RenderServer_start = 
-"Start this server";
-
-const char * ds_pylux_RenderServer_stop =
-"Stop this server";
-
-const char * ds_pylux_RenderServer_join =
-"Join this server thread";
-
-#endif	// LUX_PYDOC_RENDERSERVER_H

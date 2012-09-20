@@ -138,6 +138,9 @@ static void horizontalGaussianBlur(const vector<XYZColor> &in, vector<XYZColor> 
 
 	const u_int pixel_rad = rad_needed;
 
+	for (u_int x = 0; x <= pixel_rad; ++x)
+		filter_weights[x] *= sweight;
+
 	//------------------------------------------------------------------
 	//blur in x direction
 	//------------------------------------------------------------------
@@ -229,8 +232,7 @@ void BloomBody(
 }
 
 // Image Pipeline Function Definitions
-void ApplyImagingPipeline(vector<XYZColor> &xyzpixels,
-	u_int xResolution, u_int yResolution,
+void ApplyImagingPipeline(vector<XYZColor> &xyzpixels, u_int xResolution, u_int yResolution,
 	const GREYCStorationParams &GREYCParams, const ChiuParams &chiuParams,
 	const ColorSystem &colorSpace, Histogram *histogram, bool HistogramEnabled,
 	bool &haveBloomImage, XYZColor *&bloomImage, bool bloomUpdate,
@@ -390,8 +392,13 @@ void ApplyImagingPipeline(vector<XYZColor> &xyzpixels,
 		const float invxRes = 1.f / xResolution;
 		const float invyRes = 1.f / yResolution;
 		//for each pixel in the source image
+#ifdef __APPLE__
+		dispatch_apply(yResolution, dispatch_get_global_queue(0, 0), ^(size_t y) {
+			dispatch_apply(xResolution, dispatch_get_global_queue(0, 0), ^(size_t x) {
+#else
 		for(u_int y = 0; y < yResolution; ++y) {
 			for(u_int x = 0; x < xResolution; ++x) {
+#endif
 				const float nPx = x * invxRes;
 				const float nPy = y * invyRes;
 				const float xOffset = nPx - 0.5f;
@@ -419,9 +426,13 @@ void ApplyImagingPipeline(vector<XYZColor> &xyzpixels,
 					for (u_int i = 0; i < 3; ++i)
 						outp[xResolution*y + x].c[i] *= vWeight;
 				}
+#ifdef __APPLE__				
+			});
+		});
+#else
 			}
 		}
-
+#endif
 		if (aberrationEnabled) {
 			for(u_int i = 0; i < nPix; ++i)
 				rgbpixels[i] = aberrationImage[i];
@@ -595,6 +606,35 @@ FilterLUTs::FilterLUTs(Filter *filter, const unsigned int size) {
 // OutlierData Definitions
 ColorSystem OutlierData::cs(0.63f, 0.34f, 0.31f, 0.595f, 0.155f, 0.07f, 0.314275f, 0.329411f);
 
+void BufferGroup::CreateBuffers(const vector<BufferConfig> &configs, u_int x, u_int y) {
+	for(vector<BufferConfig>::const_iterator config = configs.begin(); config != configs.end(); ++config) {
+		Buffer *buffer;
+		switch ((*config).type) {
+		case BUF_TYPE_PER_PIXEL:
+			buffer = new PerPixelNormalizedBuffer(x, y);
+			break;
+		case BUF_TYPE_PER_SCREEN:
+			buffer = new PerScreenNormalizedBuffer(x, y, &numberOfSamples);
+			break;
+		case BUF_TYPE_PER_SCREEN_SCALED:
+			buffer = new PerScreenNormalizedBufferScaled(x, y, &numberOfSamples);
+			break;
+		case BUF_TYPE_RAW:
+			buffer = new RawBuffer(x, y);
+			break;
+		default:
+			buffer = NULL;
+			assert(0);
+		}
+		if (buffer && buffer->xPixelCount && buffer->yPixelCount)
+			buffers.push_back(buffer);
+		else {
+			LOG(LUX_SEVERE, LUX_NOMEM) << "Couldn't allocate film buffers, aborting";
+			assert(0);
+		}
+	}
+}
+
 // Film Function Definitions
 
 u_int Film::GetXResolution()
@@ -654,7 +694,7 @@ Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop
 	int yRealHeight = Floor2Int(yPixelStart + .5f + yPixelCount + filter->yWidth) - Floor2Int(yPixelStart + .5f - filter->yWidth);
 	samplePerPass = xRealWidth * yRealHeight;
 
-	boost::xtime_get(&creationTime, boost::TIME_UTC);
+	boost::xtime_get(&creationTime, boost::TIME_UTC_);
 
 	//Queryable parameters
 	AddIntAttribute(*this, "xResolution", "Horizontal resolution (pixels)", &Film::GetXResolution);
@@ -678,9 +718,9 @@ Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop
 	// Precompute filter tables
 	filterLUTs = new FilterLUTs(filt, max(min(filtRes, 64u), 2u));
 
-	outlierCellWidth = Floor2UInt(2 * filter->xWidth);
+	outlierCellWidth = max(1U, Floor2UInt(2 * filter->xWidth));
 	outlierInvCellWidth = 1.f / outlierCellWidth;
-	outlierCellHeight = Floor2UInt(2 * filter->yWidth);
+	outlierCellHeight = max(1U, Floor2UInt(2 * filter->yWidth));
 	outlierInvCellHeight = 1.f / outlierCellHeight;
 
 	const u_int thread_count = boost::thread::hardware_concurrency();
@@ -757,6 +797,10 @@ void Film::CreateBuffers()
 	if(use_Zbuf)
 		ZBuffer = new PerPixelNormalizedFloatBuffer(xPixelCount,yPixelCount);
 
+	// initialize the contribution pool
+	// needs to be done before anyone tries to lock it
+	contribPool = new ContributionPool(this);
+
     // Dade - check if we have to resume a rendering and restore the buffers
     if(writeResumeFlm) {
 		const string fname = filename+".flm";
@@ -780,9 +824,6 @@ void Film::CreateBuffers()
 			ifs.close();
 		}
     }
-
-	// initialize the contribution pool
-	contribPool = new ContributionPool(this);
 }
 
 void Film::ClearBuffers()
@@ -893,7 +934,7 @@ void Film::AddSampleCount(float count) {
 	if (haltTime > 0) {
 		// Check if we have met the enough rendering time condition
 		boost::xtime t;
-		boost::xtime_get(&t, boost::TIME_UTC);
+		boost::xtime_get(&t, boost::TIME_UTC_);
 		if (t.sec - creationTime.sec > haltTime)
 			enoughSamplesPerPixel = true;
 	}
@@ -928,7 +969,7 @@ std::vector<Film::OutlierAccel>& Film::GetOutlierAccelRow(u_int oY, u_int tileIn
 	return outliers[oY];
 }
 
-void Film::RejectTileOutliers(const Contribution* const contribs, u_int num_contribs, u_int tileIndex, int yTilePixelStart, int yTilePixelEnd)
+void Film::RejectTileOutliers(const Contribution &contrib, u_int tileIndex, int yTilePixelStart, int yTilePixelEnd)
 {
 	// outlier rejection
 	const float fnormTileStart = (yTilePixelStart + filter->yWidth) * outlierInvCellHeight;
@@ -937,22 +978,19 @@ void Film::RejectTileOutliers(const Contribution* const contribs, u_int num_cont
 	const u_int tileStart = static_cast<u_int>(max(0, min(Floor2Int(fnormTileStart), static_cast<int>(outliers.size() - 1))));
 	const u_int tileEnd =   static_cast<u_int>(max(0, min(Floor2Int(fnormTileEnd),   static_cast<int>(outliers.size() - 1))));
 
-	for (u_int ci = 0; ci < num_contribs; ++ci) {
-		const Contribution &contrib(contribs[ci]);
+	// filter-normalized pixel coordinates
+	const float fnormX = (contrib.imageX - 0.5f + filter->xWidth) * outlierInvCellWidth;
+	const float fnormY = (contrib.imageY - 0.5f + filter->yWidth) * outlierInvCellHeight;
 
-		// filter-normalized pixel coordinates
-		const float fnormX = (contrib.imageX - 0.5f + filter->xWidth) * outlierInvCellWidth;
-		const float fnormY = (contrib.imageY - 0.5f + filter->yWidth) * outlierInvCellHeight;
+	OutlierData sd(fnormX, fnormY, contrib.color);
 
-		OutlierData sd(fnormX, fnormY, contrib.color);
+	// perform lookup based on original position
+	// constrain to tile only if we need to add the outlier
+	const int oY = max(0, min(Floor2Int(fnormY), static_cast<int>(outliers.size() - 1)));
 
-		// perform lookup based on original position
-		// constrain to tile only if we need to add the outlier
-		const int oY = max(0, min(Floor2Int(fnormY), static_cast<int>(outliers.size() - 1)));
-		const int oX = max(0, min(Floor2Int(fnormX), static_cast<int>(outliers[0].size() - 1)));
-		
-		std::vector<OutlierAccel> &outlierRow = GetOutlierAccelRow(oY, tileIndex, tileStart, tileEnd);
-		OutlierAccel &outlierAccel = outlierRow[oX];
+	std::vector<OutlierAccel> &outlierRow = GetOutlierAccelRow(oY, tileIndex, tileStart, tileEnd);
+	const int oX = max(0, min(Floor2Int(fnormX), static_cast<int>(outlierRow.size() - 1)));
+	OutlierAccel &outlierAccel = outlierRow[oX];
 
 	NearSetPointProcess<OutlierData::Point_t> proc(outlierRejection_k);
 	vector<ClosePoint<OutlierData::Point_t> > closest(outlierRejection_k);
@@ -963,42 +1001,41 @@ void Film::RejectTileOutliers(const Contribution* const contribs, u_int num_cont
 	outlierAccel.Lookup(sd.p, proc, maxDist);
 
 	float kmeandist = 0.f;
-	for (u_int i = 0; i < proc.foundPoints; i++)
+	for (u_int i = 0; i < proc.foundPoints; ++i)
 		kmeandist += proc.points[i].distance;
 	
 	//kmeandist /= proc.foundPoints;
 		
-		if (proc.foundPoints < 1 || kmeandist > proc.foundPoints) { // kmeandist > 1.f
-			// add outlier and return
-			// include surrounding cells so we don't have to
-			// traverse multiple cells for each lookup
-			const u_int oLeft = static_cast<u_int>(max(0, oX - 1));
-			const u_int oRight = static_cast<u_int>(min(static_cast<int>(outliers[0].size() - 1), oX + 1));
-			const u_int oTop = static_cast<u_int>(max(0, oY - 1));
-			const u_int oBottom = static_cast<u_int>(min(static_cast<int>(outliers.size() - 1), oY + 1));
+	if (proc.foundPoints < 1 || kmeandist > proc.foundPoints) { // kmeandist > 1.f
+		// add outlier and return
+		// include surrounding cells so we don't have to
+		// traverse multiple cells for each lookup
+		const u_int oLeft = static_cast<u_int>(max(0, oX - 1));
+		const u_int oRight = static_cast<u_int>(min(static_cast<int>(outliers[0].size() - 1), oX + 1));
+		const u_int oTop = static_cast<u_int>(max(0, oY - 1));
+		const u_int oBottom = static_cast<u_int>(min(static_cast<int>(outliers.size() - 1), oY + 1));
 
-			if (oTop < tileStart || oBottom >= tileEnd) {
-				// outlier spans tile borders
-				for (u_int i = oTop; i <= oBottom; ++i) {
-					std::vector<OutlierAccel> &row = GetOutlierAccelRow(oY, tileIndex, tileStart, tileEnd);
-					for (u_int j = oLeft; j <= oRight; ++j) {
-						row[j].AddNode(sd.p);
-					}
-				}
-			} else {
-				// we're all inside one tile
-				for (u_int i = oTop; i <= oBottom; ++i) {
-					std::vector<OutlierAccel> &row = outliers[oY];
-					for (u_int j = oLeft; j <= oRight; ++j) {
-						row[j].AddNode(sd.p);
-					}
+		if (oTop < tileStart || oBottom >= tileEnd) {
+			// outlier spans tile borders
+			for (u_int i = oTop; i <= oBottom; ++i) {
+				std::vector<OutlierAccel> &row = GetOutlierAccelRow(i, tileIndex, tileStart, tileEnd);
+				for (u_int j = oLeft; j <= oRight; ++j) {
+					row[j].AddNode(sd.p);
 				}
 			}
-			// outlier, reject
-			contrib.variance = -1.f;
+		} else {
+			// we're all inside one tile
+			for (u_int i = oTop; i <= oBottom; ++i) {
+				std::vector<OutlierAccel> &row = outliers[i];
+				for (u_int j = oLeft; j <= oRight; ++j) {
+					row[j].AddNode(sd.p);
+				}
+			}
 		}
-		// not an outlier, splat
+		// outlier, reject
+		contrib.variance = -1.f;
 	}
+	// not an outlier, splat
 }
 
 u_int Film::GetTileCount() const {
@@ -1033,28 +1070,11 @@ void Film::AddTileSamples(const Contribution* const contribs, u_int num_contribs
 	int yTilePixelStart, yTilePixelEnd;
 	GetTileExtent(tileIndex, &xTilePixelStart, &xTilePixelEnd, &yTilePixelStart, &yTilePixelEnd);
 
-	if (outlierRejection_k > 0) {
-		// reject outliers by setting their weight (variance field) to -1
-		RejectTileOutliers(contribs, num_contribs, tileIndex, yTilePixelStart, yTilePixelEnd);
-	}
-
-
 	for (u_int ci = 0; ci < num_contribs; ci++) {
 		const Contribution &contrib(contribs[ci]);
 
 		XYZColor xyz = contrib.color;
 		const float alpha = contrib.alpha;
-		const float weight = contrib.variance;
-
-		// negative weight means sample was rejected
-		// so do this test first
-		if (!(weight >= 0.f) || isinf(weight)) {
-			if(debug_mode && (weight >= 0.f)) {
-				LOG(LUX_WARNING,LUX_LIMIT) << "Out of bound  weight in Film::AddSample: "
-				   << weight << ", sample discarded";
-			}
-			continue;
-		}
 
 		// Issue warning if unexpected radiance value returned
 		if (!(xyz.Y() >= 0.f) || isinf(xyz.Y())) {
@@ -1073,6 +1093,22 @@ void Film::AddTileSamples(const Contribution* const contribs, u_int num_contribs
 			continue;
 		}
 	
+		if (outlierRejection_k > 0) {
+			// reject outliers by setting their weight (variance field) to -1
+			RejectTileOutliers(contrib, tileIndex, yTilePixelStart, yTilePixelEnd);
+		}
+
+		const float weight = contrib.variance;
+
+		// negative weight means sample was rejected
+		if (!(weight >= 0.f) || isinf(weight)) {
+			if(debug_mode && (weight >= 0.f)) {
+				LOG(LUX_WARNING,LUX_LIMIT) << "Out of bound  weight in Film::AddSample: "
+				   << weight << ", sample discarded";
+			}
+			continue;
+		}
+
 		if (premultiplyAlpha)
 			xyz *= alpha;
 
@@ -1185,11 +1221,12 @@ void Film::SetSample(const Contribution *contrib) {
 	BufferGroup &currentGroup = bufferGroups[contrib->bufferGroup];
 	Buffer *buffer = currentGroup.getBuffer(contrib->buffer);
 
-	buffer->Set(x, y, xyz, alpha);
+	buffer->Set(x - xPixelStart, y - yPixelStart, xyz, alpha);
 
 	// Update ZBuffer values with filtered zdepth contribution
 	if(use_Zbuf && contrib->zdepth != 0.f)
-		ZBuffer->Add(x, y, contrib->zdepth, 1.0f);
+		ZBuffer->Add(x - xPixelStart, y - yPixelStart,
+			contrib->zdepth, 1.0f);
 }
 
 void Film::WriteResumeFilm(const string &filename)
@@ -1202,7 +1239,7 @@ void Film::WriteResumeFilm(const string &filename)
 
     std::ofstream filestr(tempfilename.c_str(), std::ios_base::out | std::ios_base::binary);
 	if(!filestr) {
-		LOG(LUX_SEVERE,LUX_SYSTEM) << "Cannot open file '" << tempfilename << "' for writing resume film";
+		LOG(LUX_ERROR,LUX_SYSTEM) << "Cannot open file '" << tempfilename << "' for writing resume film";
 
 		return;
 	}
@@ -1546,6 +1583,8 @@ double Film::DoTransmitFilm(
 		bool clearBuffers,
 		bool transmitParams)
 {
+	ScopedPoolLock lock(contribPool);
+
 	const bool isLittleEndian = osIsLittleEndian();
 
 	LOG(LUX_DEBUG,LUX_NOERROR)<< "Transmitting film (little endian=" <<(isLittleEndian ? "true" : "false") << ")";
@@ -1657,7 +1696,7 @@ double Film::DoTransmitFilm(
 			Buffer* buffer = bufferGroup.getBuffer(j);
 
 			// Write pixels
-			const BlockedArray<Pixel>* pixelBuf = buffer->pixels;
+			const BlockedArray<Pixel>* pixelBuf = &(buffer->pixels);
 			for (u_int y = 0; y < pixelBuf->vSize(); ++y) {
 				for (u_int x = 0; x < pixelBuf->uSize(); ++x) {
 					const Pixel &pixel = (*pixelBuf)(x, y);
@@ -1831,6 +1870,9 @@ double Film::UpdateFilm(std::basic_istream<char> &stream) {
 		for (vector<FlmParameter>::iterator it = header.params.begin(); it != header.params.end(); ++it)
 			it->Set(this);
 
+		// lock the pool
+		ScopedPoolLock poolLock(contribPool);
+
 		// Dade - add all received data
 		for (u_int i = 0; i < bufferGroups.size(); ++i) {
 			BufferGroup &currentGroup = bufferGroups[i];
@@ -1841,7 +1883,7 @@ double Film::UpdateFilm(std::basic_istream<char> &stream) {
 				for (u_int y = 0; y < buffer->yPixelCount; ++y) {
 					for (u_int x = 0; x < buffer->xPixelCount; ++x) {
 						const Pixel &pixel = (*receivedPixels)(x, y);
-						Pixel &pixelResult = (*buffer->pixels)(x, y);
+						Pixel &pixelResult = buffer->pixels(x, y);
 						pixelResult.L.c[0] += pixel.L.c[0];
 						pixelResult.L.c[1] += pixel.L.c[1];
 						pixelResult.L.c[2] += pixel.L.c[2];

@@ -47,7 +47,7 @@ void SchlickTranslucentBTDF::F(const SpectrumWavelengths &sw, const Vector &wo,
 	const float u = AbsDot(wi, H);
 	const SWCSpectrum S1(SchlickFresnel(u, Rs));
 	const SWCSpectrum S2(SchlickFresnel(u, Rs_bf));
-	SWCSpectrum S(((SWCSpectrum(1.f) - S1) * (SWCSpectrum(1.f) - S2)).Sqrt());
+	SWCSpectrum S(Sqrt((SWCSpectrum(1.f) - S1) * (SWCSpectrum(1.f) - S2)));
 	if (CosTheta(wi) > 0.f) {
 		if (depth > 0.f || depth_bf > 0.f)
 			S *= Exp(Alpha * -(depth / cosi) + Alpha_bf * -(depth_bf / coso));
@@ -64,7 +64,8 @@ bool SchlickTranslucentBTDF::SampleF(const SpectrumWavelengths &sw, const Vector
 {
 	// Cosine-sample the hemisphere, flipping the direction if necessary
 	*wi = CosineSampleHemisphere(u1, u2);
-	if (wo.z > 0.f) wi->z = -(wi->z);	// make sure wi is in opposite hemisphere
+	if (wo.z > 0.f)
+		wi->z = -(wi->z);	// make sure wi is in opposite hemisphere
 	// wi may be in the tangent plane, which will 
 	// fail the SameHemisphere test in Pdf()
 	if (SameHemisphere(wo, *wi))

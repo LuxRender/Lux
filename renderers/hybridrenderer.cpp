@@ -115,6 +115,8 @@ luxrays::DataSet *HybridRenderer::PreprocessGeometry(luxrays::Context *ctx, Scen
 
 	for (size_t i = 0; i < scene->primitives.size(); ++i)
 		scene->primitives[i]->Tesselate(&meshList, &scene->tesselatedPrimitives);
+	if (meshList.empty())
+		return NULL;
 
 	// Create the DataSet
 	luxrays::DataSet *dataSet = new luxrays::DataSet(ctx);

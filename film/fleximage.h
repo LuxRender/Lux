@@ -99,6 +99,9 @@ private:
 	void WriteEXRImage(vector<RGBColor> &rgb, vector<float> &alpha, const string &filename, vector<float> &zbuf);
 
 	// FlexImageFilm Private Data
+	// mutex is used for protecting the framebuffer pointer
+	// not reading/writing to the framebuffer
+	boost::mutex framebufferMutex;
 	unsigned char *framebuffer;
 	float *float_framebuffer;
 	float *alpha_buffer;
@@ -113,7 +116,7 @@ private:
 	float m_RGB_X_Blue, d_RGB_X_Blue;
 	float m_RGB_Y_Blue, d_RGB_Y_Blue;
 	float m_Gamma, d_Gamma;
-	int clampMethod;	
+	int clampMethod, d_clampMethod;	
 
 	int m_TonemapKernel, d_TonemapKernel;
 	float m_ReinhardPreScale, d_ReinhardPreScale;

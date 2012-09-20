@@ -235,7 +235,7 @@ bool SchlickBSDF::SampleF(const SpectrumWavelengths &sw, const Vector &woW, Vect
 		// filter base layer, the square root is just a heuristic
 		// so that a sheet coated on both faces gets a filtering factor
 		// of 1-S like a reflection
-		*f_ = a * (SWCSpectrum(1.f) - S).Sqrt() * baseF;
+		*f_ = a * Sqrt(SWCSpectrum(1.f) - S) * baseF;
 	} else
 		return false;
 
@@ -310,7 +310,7 @@ SWCSpectrum SchlickBSDF::F(const SpectrumWavelengths &sw, const Vector &woW,
 		// filter base layer, the square root is just a heuristic
 		// so that a sheet coated on both faces gets a filtering factor
 		// of 1-S like a reflection
-		return a * (SWCSpectrum(1.f) - S).Sqrt() * base->F(sw, woW, wiW, reverse, flags);
+		return a * Sqrt(SWCSpectrum(1.f) - S) * base->F(sw, woW, wiW, reverse, flags);
 	} else
 		return SWCSpectrum(0.f);
 }

@@ -27,6 +27,7 @@
 #include "paramset.h"
 #include "error.h"
 #include "version.h"
+#include "osfunc.h"
 
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/thread/mutex.hpp>
@@ -107,6 +108,11 @@ extern "C" LUX_EXPORT void luxAddServer(const char * name)
 extern "C" void luxRemoveServer(const char * name)
 {
 	Context::GetActive()->RemoveServer(string(name));
+}
+
+extern "C" void luxResetServer(const char * name, const char * password)
+{
+	Context::GetActive()->ResetServer(string(name), string(password));
 }
 
 extern "C" unsigned int luxGetServerCount()
@@ -503,6 +509,9 @@ extern "C" void luxInit()
 	FreeImage_SetOutputMessage(FreeImageErrorHandler);
 
 	initialized = true;
+
+	// enable floating point exception deping ond FPDEBUG set in core/usfunc.h
+	lux::fpdebug::enable();
 }
 
 bool parseFile(const char *filename) {

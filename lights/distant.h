@@ -35,7 +35,7 @@ public:
 	// DistantLight Public Methods
 	DistantLight(const Transform &light2world, 
 		const boost::shared_ptr<Texture<SWCSpectrum> > &L, float gain, 
-		float theta, const Vector &dir);
+		float theta, const Vector &dir, u_int ns);
 	virtual ~DistantLight();
 	virtual bool IsDeltaLight() const { return false; }
 	virtual bool IsEnvironmental() const { return true; }

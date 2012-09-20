@@ -40,6 +40,7 @@ class Thread
 public:
 	virtual void Init() {}
 	virtual void End() {}
+	virtual ~Thread() {};
 
 friend class Scheduler;
 friend class Range;

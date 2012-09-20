@@ -48,7 +48,11 @@ public:
 	void reset();
 	void updateStatisticsWindow();
 
-	Timer timer;
+	void start();
+	void stop();
+
+	// multithread safe while in running state
+	double elapsedTime() const;
 
 	class Formatted : public Queryable {
 	public:
@@ -83,6 +87,7 @@ public:
 		std::string getPercentHaltTimeComplete();
 
 		virtual std::string getEfficiency();
+		virtual std::string getEfficiencyWindow();
 		virtual std::string getThreadCount();
 		virtual std::string getSlaveNodeCount();
 
@@ -102,6 +107,7 @@ public:
 		std::string getPercentHaltTimeComplete();
 
 		virtual std::string getEfficiency();
+		virtual std::string getEfficiencyWindow();
 		virtual std::string getThreadCount();
 		virtual std::string getSlaveNodeCount();
 	};
@@ -110,11 +116,12 @@ public:
 	FormattedShort* formattedShort;
 
 protected:
+	Timer timer;
 	boost::mutex windowMutex;
 	double windowStartTime;
 	double windowCurrentTime;
 
-	double getElapsedTime() { return timer.Time(); }
+	double getElapsedTime() { return elapsedTime(); }
 	double getHaltTime();
 	double getPercentHaltTimeComplete();
 	u_int getSlaveNodeCount();
@@ -125,6 +132,7 @@ protected:
 	virtual double getPercentComplete();
 
 	virtual double getEfficiency() = 0;
+	virtual double getEfficiencyWindow() = 0;
 	virtual u_int getThreadCount() = 0;
 
 	virtual void resetDerived() = 0;
