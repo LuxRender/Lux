@@ -38,11 +38,14 @@ using namespace lux;
 //------------------------------------------------------------------------------
 
 unsigned int SRTBBDeviceDescription::GetUsedUnitsCount() const {
-	return 0; // Not implemented with TBB
+	boost::mutex::scoped_lock lock(host->renderer->classWideMutex);
+	return host->renderer->numberOfThreads;
 }
 
 void SRTBBDeviceDescription::SetUsedUnitsCount(const unsigned int units) {
-	// not implemented with TBB
+	boost::mutex::scoped_lock lock(host->renderer->classWideMutex);
+	host->renderer->numberOfThreads = max(units, 1u);
+	host->renderer->mustChangeNumberOfThreads = true;
 }
 
 //------------------------------------------------------------------------------
@@ -75,6 +78,7 @@ SamplerTBBRenderer::SamplerTBBRenderer() : Renderer() {
 	AddStringConstant(*this, "name", "Name of current renderer", "sampler");
 
 	rendererStatistics = new SRStatistics((SamplerRenderer*)this); // TODO: UGLY cast to work with SRStatistcs... This sucks
+	numberOfThreads = 1;
 }
 
 SamplerTBBRenderer::~SamplerTBBRenderer() {
@@ -84,9 +88,6 @@ SamplerTBBRenderer::~SamplerTBBRenderer() {
 
 	if ((state != TERMINATE) && (state != INIT))
 		throw std::runtime_error("Internal error: called SamplerTBBRenderer::~SamplerTBBRenderer() while not in TERMINATE or INIT state.");
-
-	if (renderThreads.size() > 0)
-		throw std::runtime_error("Internal error: called SamplerTBBRenderer::~SamplerTBBRenderer() while list of renderThread sis not empty.");
 
 	for (size_t i = 0; i < hosts.size(); ++i)
 		delete hosts[i];
@@ -171,6 +172,7 @@ void SamplerTBBRenderer::Render(Scene *s) {
 
 	localStoragePool = new LocalStoragePool(boost::bind(&LocalStorageCreate, scene));
 
+	tbb::task_scheduler_init* tsi = new tbb::task_scheduler_init;
 
 	Impl impl(this);
 	while(state != TERMINATE)
@@ -184,11 +186,20 @@ void SamplerTBBRenderer::Render(Scene *s) {
 		while (state == PAUSE) {
 			boost::this_thread::sleep(boost::posix_time::seconds(1));
 		}
+
+		// perhaps we must change the number of threads
+		if(mustChangeNumberOfThreads)
+		{
+			mustChangeNumberOfThreads = false;
+			tsi->terminate();
+			delete tsi;
+			tsi= new tbb::task_scheduler_init(numberOfThreads);
+		}
 	}
+	tsi->terminate();
+	delete tsi;;
 
 	{
-		boost::mutex::scoped_lock lock(renderThreadsMutex);
-
 		// of new threads after this point
 			Terminate();
 
@@ -307,7 +318,7 @@ SamplerTBBRenderer::LocalStorage::~LocalStorage()
 
 void SamplerTBBRenderer::Impl::operator()(unsigned int i, tbb::parallel_do_feeder<unsigned int>& feeder) const {
 	// ask the scheduler to launch a new ray, only if we are not paused
-	if(renderer->state == RUN)
+	if(renderer->state == RUN && !renderer->mustChangeNumberOfThreads)
 		feeder.add(0);
 	else
 		return;

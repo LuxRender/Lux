@@ -154,6 +154,8 @@ private:
 
 	fast_mutex sampPosMutex;
 	u_int sampPos;
+	unsigned int numberOfThreads;
+	bool mustChangeNumberOfThreads;
 
 	// Put them last for better data alignment
 	// used to suspend render threads until the preprocessing phase is done
