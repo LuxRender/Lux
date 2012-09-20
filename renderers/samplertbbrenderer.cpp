@@ -141,7 +141,7 @@ void SamplerTBBRenderer::Render(Scene *s) {
 
 		// initialize the thread's rangen
 		u_long seed = scene->seedBase - 1;
-		LOG( LUX_INFO,LUX_NOERROR) << "Preprocess thread uses seed: " << seed;
+		LOG( LUX_DEBUG,LUX_NOERROR) << "Preprocess thread uses seed: " << seed;
 
 		rng = new RandomGenerator(seed);
 
@@ -242,7 +242,7 @@ SamplerTBBRenderer::LocalStorage SamplerTBBRenderer::LocalStorageCreate(SamplerT
 	{
 		boost::mutex::scoped_lock lock(renderer->classWideMutex);
 		seed = renderer->rng->uintValue();
-		LOG( LUX_INFO,LUX_NOERROR) << "Thread uses seed: " << seed;
+		LOG( LUX_DEBUG,LUX_NOERROR) << "Thread uses seed: " << seed;
 	}
 
 	storage.sample->camera = scene->camera->Clone();
