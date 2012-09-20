@@ -122,28 +122,6 @@ public:
 	};
 
 private:
-	//--------------------------------------------------------------------------
-	// RenderThread
-	//--------------------------------------------------------------------------
-
-	class RenderThread : public boost::noncopyable {
-	public:
-		RenderThread(u_int index, SamplerTBBRenderer *renderer);
-		~RenderThread();
-
-
-		u_int  n;
-		SamplerTBBRenderer *renderer;
-		boost::thread *thread; // keep pointer to delete the thread object
-		double samples, blackSamples;
-		fast_mutex statLock;
-	};
-
-	void CreateRenderThread();
-	void RemoveRenderThread();
-
-	//--------------------------------------------------------------------------
-
 	mutable boost::mutex classWideMutex;
 
 	RendererState state;

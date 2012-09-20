@@ -72,7 +72,6 @@ SamplerTBBRenderer::SamplerTBBRenderer() : Renderer() {
 	SRTBBHostDescription *host = new SRTBBHostDescription(this, "Localhost");
 	hosts.push_back(host);
 
-	preprocessDone = false;
 	suspendThreadsWhenDone = false;
 
 	AddStringConstant(*this, "name", "Name of current renderer", "sampler");
@@ -139,8 +138,6 @@ void SamplerTBBRenderer::Render(Scene *s) {
 		// Initialize the stats
 		rendererStatistics->reset();
 	
-		// Dade - I have to do initiliaziation here for the current thread.
-		// It can be used by the Preprocess() methods.
 
 		// initialize the thread's rangen
 		u_long seed = scene->seedBase - 1;
@@ -160,13 +157,10 @@ void SamplerTBBRenderer::Render(Scene *s) {
 		// Dade - to support autofocus for some camera model
 		scene->camera->AutoFocus(*scene);
 
-		sampPos = 0;
-		
 		// start the timer
 		rendererStatistics->start();
 
 		// Dade - preprocessing done
-		preprocessDone = true;
 		scene->SetReady();
 	}
 
@@ -225,57 +219,6 @@ void SamplerTBBRenderer::Terminate() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 	state = TERMINATE;
 }
-
-//------------------------------------------------------------------------------
-// Private methods
-//------------------------------------------------------------------------------
-
-void SamplerTBBRenderer::CreateRenderThread() {
-/*
-	if (scene->IsFilmOnly())
-		return;
-
-	// Avoid to create the thread in case signal is EXIT. For instance, it
-	// can happen when the rendering is done.
-	if ((state == RUN) || (state == PAUSE)) {
-		RenderThread *rt = new  RenderThread(renderThreads.size(), this);
-
-		renderThreads.push_back(rt);
-		rt->thread = new boost::thread(boost::bind(RenderThread::RenderImpl, rt));
-	}
-*/
-}
-
-void SamplerTBBRenderer::RemoveRenderThread() {
-/*
-	if (renderThreads.size() == 0)
-		return;
-
-	renderThreads.back()->thread->interrupt();
-	renderThreads.back()->thread->join();
-	delete renderThreads.back();
-	renderThreads.pop_back();
-*/
-}
-
-//------------------------------------------------------------------------------
-// RenderThread methods
-//------------------------------------------------------------------------------
-
-/*
-SamplerTBBRenderer::RenderThread::RenderThread(u_int index, SamplerTBBRenderer *r) :
-	n(index), renderer(r), thread(NULL), samples(0.), blackSamples(0.) {
-}
-
-SamplerTBBRenderer::RenderThread::~RenderThread() {
-}
-
-SamplerTBBRenderer::RenderThread::RenderOneRay()
-{
-
-
-}
-*/
 
 SamplerTBBRenderer::LocalStorage SamplerTBBRenderer::LocalStorageCreate(Scene *scene)
 {
