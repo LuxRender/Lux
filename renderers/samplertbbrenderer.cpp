@@ -90,6 +90,8 @@ SamplerTBBRenderer::~SamplerTBBRenderer() {
 
 	for (size_t i = 0; i < hosts.size(); ++i)
 		delete hosts[i];
+
+	delete localStoragePool;
 }
 
 Renderer::RendererType SamplerTBBRenderer::GetType() const {
@@ -166,6 +168,8 @@ void SamplerTBBRenderer::Render(Scene *s) {
 		preprocessDone = true;
 		scene->SetReady();
 	}
+
+	localStoragePool = new LocalStoragePool(boost::bind(&LocalStorageCreate, scene));
 
 	// Parallel do needs an iterable to iterate over, value will do the work with only one item
 	// each task will submit more items
@@ -252,6 +256,45 @@ SamplerTBBRenderer::RenderThread::RenderOneRay()
 }
 */
 
+SamplerTBBRenderer::LocalStorage SamplerTBBRenderer::LocalStorageCreate(Scene *scene)
+{
+	SamplerTBBRenderer::LocalStorage storage;
+	storage.sample = new Sample;
+	std::cout << "alloca" << std::endl;
+
+	scene->sampler->InitSample(storage.sample);
+
+	// ContribBuffer has to wait until the end of the preprocessing
+	// It depends on the fact that the film buffers have been created
+	// This is done during the preprocessing phase
+	storage.sample->contribBuffer = new ContributionBuffer(scene->camera->film->contribPool);
+
+	// initialize the thread's rangen
+	//u_long seed = scene.seedBase + myThread->n; // TODO: broken
+	//LOG( LUX_INFO,LUX_NOERROR) << "Thread " << myThread->n << " uses seed: " << seed;
+
+	u_long seed = 0;
+	storage.sample->camera = scene->camera->Clone();
+	storage.sample->realTime = 0.f;
+
+	storage.sample->rng = new RandomGenerator(seed); // TODO
+
+	return storage;
+}
+
+SamplerTBBRenderer::LocalStorage::~LocalStorage()
+{
+	#if 0
+	scene.camera->film->contribPool->End(sample.contribBuffer);
+	delete sample.contribBuffer; // TODO: added for memory sack
+	//sample.contribBuffer = NULL;
+
+	//delete myThread->sample->camera; //FIXME deleting the camera clone would delete the film!
+	sampler->FreeSample(&sample);
+	#endif
+}
+
+
 void SamplerTBBRenderer::operator()(unsigned int i, tbb::parallel_do_feeder<unsigned int>& feeder) const {
 	// ask the scheduler to launch a new ray
 	feeder.add(0);
@@ -263,32 +306,9 @@ void SamplerTBBRenderer::operator()(unsigned int i, tbb::parallel_do_feeder<unsi
 
 	Sampler *sampler = scene.sampler;
 
-	Sample *ss = samplePool.Get();
+	LocalStoragePool::reference local = localStoragePool->local();
 
-	if(ss == NULL)
-	{
-		std::cout << "alloca" << std::endl;
-		ss = new Sample;
-		// init a sample
-
-		sampler->InitSample(ss);
-
-		// ContribBuffer has to wait until the end of the preprocessing
-		// It depends on the fact that the film buffers have been created
-		// This is done during the preprocessing phase
-		ss->contribBuffer = new ContributionBuffer(scene.camera->film->contribPool);
-
-		// initialize the thread's rangen
-		//u_long seed = scene.seedBase + myThread->n; // TODO: broken
-		//LOG( LUX_INFO,LUX_NOERROR) << "Thread " << myThread->n << " uses seed: " << seed;
-
-		u_long seed = 0;
-		ss->camera = scene.camera->Clone();
-		ss->realTime = 0.f;
-
-		ss->rng = new RandomGenerator(seed); // TODO
-	}
-	Sample& sample = *ss;
+	Sample& sample = *local.sample;
 	// Trace rays: The main loop
 	// TODO: perhaps here we can make an infinite loop too, this may remove some load on TBB
 	{
@@ -353,16 +373,6 @@ void SamplerTBBRenderer::operator()(unsigned int i, tbb::parallel_do_feeder<unsi
 */
 	#endif
 	}
-
-	samplePool.Release(&sample);
-	#if 0
-	scene.camera->film->contribPool->End(sample.contribBuffer);
-	delete sample.contribBuffer; // TODO: added for memory sack
-	//sample.contribBuffer = NULL;
-
-	//delete myThread->sample->camera; //FIXME deleting the camera clone would delete the film!
-	sampler->FreeSample(&sample);
-	#endif
 }
 
 Renderer *SamplerTBBRenderer::CreateRenderer(const ParamSet &params) {

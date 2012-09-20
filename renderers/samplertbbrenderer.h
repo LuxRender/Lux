@@ -39,35 +39,6 @@ namespace lux
 class SamplerTBBRenderer;
 class SRTBBHostDescription;
 
-template<class T>
-class Pool
-{
-	public:
-		Pool(){}
-
-		T* Get() const
-		{
-			fast_mutex::scoped_lock lockStats(lock);
-		
-			if(data.size() > 0)
-			{
-				T* res = data.back();	
-				data.pop_back();
-				return res;
-			}
-			return NULL;
-		}	
-
-		void Release(T* t) const
-		{
-			fast_mutex::scoped_lock lockStats(lock);
-			data.push_back(t);
-		}
-	private:
-		mutable std::vector<T*> data;
-		mutable fast_mutex lock;
-};
-
 //------------------------------------------------------------------------------
 // SRTBBDeviceDescription
 //------------------------------------------------------------------------------
@@ -183,7 +154,20 @@ private:
 	bool preprocessDone;
 	bool suspendThreadsWhenDone;
 
-	Pool<Sample> samplePool;
+	struct LocalStorage
+	{
+		Sample *sample;
+
+		~LocalStorage();
+	};
+
+	static LocalStorage LocalStorageCreate(Scene *scene);
+
+
+	// For local storage
+	typedef tbb::enumerable_thread_specific<LocalStorage> LocalStoragePool;
+
+	mutable LocalStoragePool *localStoragePool;
 };
 
 }//namespace lux
