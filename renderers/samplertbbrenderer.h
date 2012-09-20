@@ -166,6 +166,8 @@ private:
 	{
 		Sample *sample;
 
+		double samples, blackSamples;
+
 		~LocalStorage();
 	};
 

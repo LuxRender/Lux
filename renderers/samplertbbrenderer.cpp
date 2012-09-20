@@ -300,6 +300,9 @@ SamplerTBBRenderer::LocalStorage SamplerTBBRenderer::LocalStorageCreate(Scene *s
 
 	storage.sample->rng = new RandomGenerator(seed); // TODO
 
+	storage.blackSamples = 0.;
+	storage.samples = 0.;
+
 	return storage;
 }
 
@@ -357,10 +360,10 @@ void SamplerTBBRenderer::Impl::operator()(unsigned int i, tbb::parallel_do_feede
 		// Jeanphi - Hijack statistics until volume integrator revamp
 		{
 			const u_int nContribs = scene.surfaceIntegrator->Li(scene, sample);
-			// update samples statistics TODO
-			//fast_mutex::scoped_lock lockStats(myThread->statLock);
-			//myThread->blackSamples += nContribs;
-			//++(myThread->samples);
+			// update samples statistics
+			//fast_mutex::scoped_lock lockStats(local.statLock); // TODO: tbb need this lock ?
+			local.blackSamples += nContribs;
+			++local.samples;
 		}
 
 		sampler->AddSample(sample);
