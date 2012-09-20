@@ -155,6 +155,8 @@ private:
 	typedef tbb::enumerable_thread_specific<LocalStorage> LocalStoragePool;
 
 	mutable LocalStoragePool *localStoragePool;
+
+	RandomGenerator* rng;
 };
 
 }//namespace lux

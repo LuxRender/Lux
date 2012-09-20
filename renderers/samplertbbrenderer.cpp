@@ -143,12 +143,12 @@ void SamplerTBBRenderer::Render(Scene *s) {
 		u_long seed = scene->seedBase - 1;
 		LOG( LUX_INFO,LUX_NOERROR) << "Preprocess thread uses seed: " << seed;
 
-		RandomGenerator rng(seed);
+		rng = new RandomGenerator(seed);
 
 		// integrator preprocessing
 		scene->sampler->SetFilm(scene->camera->film);
-		scene->surfaceIntegrator->Preprocess(rng, *scene);
-		scene->volumeIntegrator->Preprocess(rng, *scene);
+		scene->surfaceIntegrator->Preprocess(*rng, *scene);
+		scene->volumeIntegrator->Preprocess(*rng, *scene);
 		scene->camera->film->CreateBuffers();
 
 		scene->surfaceIntegrator->RequestSamples(scene->sampler, *scene);
@@ -237,15 +237,18 @@ SamplerTBBRenderer::LocalStorage SamplerTBBRenderer::LocalStorageCreate(SamplerT
 	// This is done during the preprocessing phase
 	storage.sample->contribBuffer = new ContributionBuffer(scene->camera->film->contribPool);
 
+	u_long seed;
 	// initialize the thread's rangen
-	//u_long seed = scene.seedBase + myThread->n; // TODO: broken
-	//LOG( LUX_INFO,LUX_NOERROR) << "Thread " << myThread->n << " uses seed: " << seed;
+	{
+		boost::mutex::scoped_lock lock(renderer->classWideMutex);
+		seed = renderer->rng->uintValue();
+		LOG( LUX_INFO,LUX_NOERROR) << "Thread uses seed: " << seed;
+	}
 
-	u_long seed = 0;
 	storage.sample->camera = scene->camera->Clone();
 	storage.sample->realTime = 0.f;
 
-	storage.sample->rng = new RandomGenerator(seed); // TODO
+	storage.sample->rng = new RandomGenerator(seed);
 
 	storage.blackSamples = 0.;
 	storage.samples = 0.;
