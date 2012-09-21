@@ -32,7 +32,6 @@
 #include "blackbodyspd.h"
 #include "osfunc.h"
 #include "streamio.h"
-#include "film/pdiff/Metric.h"
 
 #include <iostream>
 #include <fstream>
@@ -652,7 +651,7 @@ Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop
 	contribPool(NULL), filter(filt), filterTable(NULL), filterLUTs(NULL),
 	filename(filename1),
 	colorSpace(0.63f, 0.34f, 0.31f, 0.595f, 0.155f, 0.07f, 0.314275f, 0.329411f), // default is SMPTE
-	convergenceReference(NULL), convergenceTVI(NULL), varianceBuffer(NULL),
+	enoughSamplesForConvTest(false), convTest(NULL), varianceBuffer(NULL),
 	noiseAwareMap(NULL), noiseAwareMapVersion(0),
 	userSamplingMap(NULL), userSamplingMapVersion(0),
 	ZBuffer(NULL), use_Zbuf(useZbuffer),
@@ -749,8 +748,7 @@ Film::~Film()
 	delete filterLUTs;
 	delete filter;
 	delete ZBuffer;
-	delete[] convergenceReference;
-	delete[] convergenceTVI;
+	delete convTest;
 	delete varianceBuffer;
 	delete[] noiseAwareMap;
 	delete[] userSamplingMap;
@@ -789,6 +787,9 @@ void Film::CreateBuffers()
 
 		noiseAwareMap = new float[xPixelCount * yPixelCount];
 		std::fill(noiseAwareMap, noiseAwareMap + xPixelCount * yPixelCount, 1.f);
+
+		convTest = new luxrays::utils::ConvergenceTest(xPixelCount, yPixelCount);
+		convTest->NeedTVI();
 
 		// DEBUG: for testing the user sampling map functionality
 		/*userSamplingMap = new float[xPixelCount * yPixelCount];
@@ -1074,7 +1075,7 @@ void Film::GetTileExtent(u_int tileIndex, int *xstart, int *xend, int *ystart, i
 
 void Film::UpdateConvergenceInfo(const float *framebuffer) {
 	const u_int nPix = xPixelCount * yPixelCount;
-	if (!convergenceReference) {
+	if (!enoughSamplesForConvTest) {
 		// Check if we have at least a sample per pixel
 		bool missingSamples = false;
 		for (u_int yPixel = 0; !missingSamples && (yPixel < yPixelCount); ++yPixel) {
@@ -1107,27 +1108,14 @@ void Film::UpdateConvergenceInfo(const float *framebuffer) {
 		if (!missingSamples) {
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Enough samples per pixel to start convergence test";
 
-			// Allocate the reference buffer and make a copy
-			convergenceReference = new float[3 * nPix];
-			std::copy(framebuffer, framebuffer + 3 * nPix, convergenceReference);
-
-			float *buffer = new float[nPix];
-			std::fill(buffer, buffer + nPix, 0.f);
-			// convergenceTVI is set != NUll only now because of multi-threading
-			convergenceTVI = buffer;
-
-			convergenceDiff.resize(nPix, false);
+			enoughSamplesForConvTest = true;
+			// At the first test, ConvergenceTest just stores a copy of the image
+			convTest->Test(framebuffer);
 		} else
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Not enough samples per pixel to start convergence test";
 	} else {
 		// Compare the new buffer with the old one
-		const u_int failedPixels = Yee_Compare(
-				convergenceReference, framebuffer,
-				convergenceDiff, convergenceTVI,
-				xPixelCount, yPixelCount);
-
-		// Make a copy for the new reference image
-		std::copy(framebuffer, framebuffer + 3 * nPix, convergenceReference);
+		const u_int failedPixels = convTest->Test(framebuffer);
 
 		// Check if we can stop the rendering
 		const float failedPercentage = failedPixels / (float)nPix;
@@ -1166,7 +1154,7 @@ void Film::AddTileSamples(const Contribution* const contribs, u_int num_contribs
 		// so do this test first
 		if (!(weight >= 0.f) || isinf(weight)) {
 			if(debug_mode && (weight >= 0.f)) {
-				LOG(LUX_WARNING,LUX_LIMIT) << "Out of bound  weight in Film::AddSample: "
+				LOG(LUX_WARNING,LUX_LIMIT) << "Out of bound  weight in Film::AddTileSamples: "
 				   << weight << ", sample discarded";
 			}
 			continue;
@@ -1175,7 +1163,7 @@ void Film::AddTileSamples(const Contribution* const contribs, u_int num_contribs
 		// Issue warning if unexpected radiance value returned
 		if (!(xyz.Y() >= 0.f) || isinf(xyz.Y())) {
 			if(debug_mode) {
-				LOG(LUX_WARNING,LUX_LIMIT) << "Out of bound intensity in Film::AddSample: "
+				LOG(LUX_WARNING,LUX_LIMIT) << "Out of bound intensity in Film::AddTileSamples: "
 				   << xyz.Y() << ", sample discarded";
 			}
 			continue;
@@ -1183,7 +1171,7 @@ void Film::AddTileSamples(const Contribution* const contribs, u_int num_contribs
 
 		if (!(alpha >= 0.f) || isinf(alpha)) {
 			if(debug_mode) {
-				LOG(LUX_WARNING,LUX_LIMIT) << "Out of bound  alpha in Film::AddSample: "
+				LOG(LUX_WARNING,LUX_LIMIT) << "Out of bound  alpha in Film::AddTileSamples: "
 				   << alpha << ", sample discarded";
 			}
 			continue;
@@ -2467,9 +2455,18 @@ void Film::GenerateNoiseAwareMap() {
 	boost::mutex::scoped_lock(noiseAwareMapMutex);
 
 	const u_int nPix = xPixelCount * yPixelCount;
+	if (!enoughSamplesForConvTest) {
+		LOG(LUX_DEBUG, LUX_NOERROR) << "Noise aware map based on: uniform distribution (not enough samples to start the process)";
+
+		// Just use a uniform distribution
+		std::fill(noiseAwareMap, noiseAwareMap + nPix, 1.f);
+		return;
+	}
+	
 	bool hasPixelsToSample = false;
 	float maxStandardError = 0.f;
 	float maxTVI = 0.f;
+	const float *convergenceTVI = convTest->GetTVI();
 	u_int index = 0;
 	for (u_int y = 0; y < yPixelCount; ++y) {
 		for (u_int x = 0; x < xPixelCount; ++x, ++index) {
@@ -2483,12 +2480,11 @@ void Film::GenerateNoiseAwareMap() {
 			noiseAwareMap[index] = sqrtf(variance);
 			maxStandardError = max(maxStandardError, noiseAwareMap[index]);
 
-			if (convergenceTVI)
-				maxTVI = max(maxTVI, convergenceTVI[index]);
+			maxTVI = max(maxTVI, convergenceTVI[index]);
 		}
 	}
 
-	if (hasPixelsToSample || (maxStandardError <= 0.f) || !convergenceTVI || (maxTVI <= 0.f)) {
+	if (hasPixelsToSample || (maxStandardError <= 0.f) || (maxTVI <= 0.f)) {
 		LOG(LUX_DEBUG, LUX_NOERROR) << "Noise aware map based on: uniform distribution";
 
 		// Just use a uniform distribution

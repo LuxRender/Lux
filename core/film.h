@@ -29,6 +29,7 @@
 #include "memory.h"
 #include "queryable.h"
 #include "bsh.h"
+#include "luxrays/utils/convtest/convtest.h"
 
 #include <boost/serialization/split_member.hpp>
 #include <boost/thread/mutex.hpp>
@@ -760,10 +761,9 @@ protected: // Put it here for better data alignment
 	std::vector<BufferConfig> bufferConfigs;
 	std::vector<BufferGroup> bufferGroups;
 
-	float *convergenceReference;
-	vector<bool> convergenceDiff;
-	float *convergenceTVI;
-	VarianceBuffer *varianceBuffer;
+	bool enoughSamplesForConvTest;
+	luxrays::utils::ConvergenceTest *convTest;
+	VarianceBuffer *varianceBuffer; // Used to build the noise map
 
 	float *noiseAwareMap;
 	u_int noiseAwareMapVersion;
