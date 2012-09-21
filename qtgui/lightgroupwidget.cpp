@@ -28,6 +28,8 @@
 
 #include "api.h"
 
+#include <cmath>
+
 LightGroupWidget::LightGroupWidget(QWidget *parent) : QWidget(parent), ui(new Ui::LightGroupWidget)
 {
 	ui->setupUi(this);
@@ -96,7 +98,7 @@ void LightGroupWidget::bbEnabledChanged(int value)
 float LightGroupWidget::SliderValToScale(int sliderval)
 {
 	float logscale = (float)sliderval * (LG_SCALE_LOG_MAX - LG_SCALE_LOG_MIN) / FLOAT_SLIDER_RES + LG_SCALE_LOG_MIN;
-	return powf(10.f, logscale);
+	return std::pow(10.f, logscale);
 }
 
 int LightGroupWidget::ScaleToSliderVal(float scale)
@@ -119,8 +121,8 @@ void LightGroupWidget::gainChanged(double value)
 {
 	m_LG_scale = value;
 	
-	if (m_LG_scale > powf(10.f, LG_SCALE_LOG_MAX))
-		m_LG_scale = powf(10.f, LG_SCALE_LOG_MAX);
+	if (m_LG_scale > std::pow(10.f, LG_SCALE_LOG_MAX))
+		m_LG_scale = std::pow(10.f, LG_SCALE_LOG_MAX);
 	else if (m_LG_scale < 0.f)
 		m_LG_scale = 0.f;
 	

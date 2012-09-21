@@ -136,6 +136,9 @@ static void horizontalGaussianBlur(const vector<XYZColor> &in, vector<XYZColor> 
 
 	const u_int pixel_rad = rad_needed;
 
+	for (u_int x = 0; x <= pixel_rad; ++x)
+		filter_weights[x] *= sweight;
+
 	//------------------------------------------------------------------
 	//blur in x direction
 	//------------------------------------------------------------------
@@ -184,8 +187,7 @@ static void rotateImage(const vector<XYZColor> &in, vector<XYZColor> &out,
 namespace lux {
 
 // Image Pipeline Function Definitions
-void ApplyImagingPipeline(vector<XYZColor> &xyzpixels,
-	u_int xResolution, u_int yResolution,
+void ApplyImagingPipeline(vector<XYZColor> &xyzpixels, u_int xResolution, u_int yResolution,
 	const GREYCStorationParams &GREYCParams, const ChiuParams &chiuParams,
 	const ColorSystem &colorSpace, Histogram *histogram, bool HistogramEnabled,
 	bool &haveBloomImage, XYZColor *&bloomImage, bool bloomUpdate,
@@ -596,6 +598,7 @@ void BufferGroup::CreateBuffers(const vector<BufferConfig> &configs, u_int x, u_
 			buffer = new RawBuffer(x, y);
 			break;
 		default:
+			buffer = NULL;
 			assert(0);
 		}
 		if (buffer && buffer->xPixelCount && buffer->yPixelCount)
@@ -697,9 +700,9 @@ Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop
 	// Precompute filter tables
 	filterLUTs = new FilterLUTs(filt, max(min(filtRes, 64u), 2u));
 
-	outlierCellWidth = Floor2UInt(2 * filter->xWidth);
+	outlierCellWidth = max(1U, Floor2UInt(2 * filter->xWidth));
 	outlierInvCellWidth = 1.f / outlierCellWidth;
-	outlierCellHeight = Floor2UInt(2 * filter->yWidth);
+	outlierCellHeight = max(1U, Floor2UInt(2 * filter->yWidth));
 	outlierInvCellHeight = 1.f / outlierCellHeight;
 
 	const u_int thread_count = boost::thread::hardware_concurrency();
@@ -804,6 +807,10 @@ void Film::CreateBuffers()
 		userSamplingMapVersion = 1;*/
 	}
 
+	// initialize the contribution pool
+	// needs to be done before anyone tries to lock it
+	contribPool = new ContributionPool(this);
+
     // Dade - check if we have to resume a rendering and restore the buffers
     if(writeResumeFlm) {
 		const string fname = filename+".flm";
@@ -827,9 +834,6 @@ void Film::CreateBuffers()
 			ifs.close();
 		}
     }
-
-	// initialize the contribution pool
-	contribPool = new ContributionPool(this);
 }
 
 void Film::ClearBuffers()
@@ -975,7 +979,7 @@ std::vector<Film::OutlierAccel>& Film::GetOutlierAccelRow(u_int oY, u_int tileIn
 	return outliers[oY];
 }
 
-void Film::RejectTileOutliers(const Contribution* const contribs, u_int num_contribs, u_int tileIndex, int yTilePixelStart, int yTilePixelEnd)
+void Film::RejectTileOutliers(const Contribution &contrib, u_int tileIndex, int yTilePixelStart, int yTilePixelEnd)
 {
 	// outlier rejection
 	const float fnormTileStart = (yTilePixelStart + filter->yWidth) * outlierInvCellHeight;
@@ -984,22 +988,19 @@ void Film::RejectTileOutliers(const Contribution* const contribs, u_int num_cont
 	const u_int tileStart = static_cast<u_int>(max(0, min(Floor2Int(fnormTileStart), static_cast<int>(outliers.size() - 1))));
 	const u_int tileEnd =   static_cast<u_int>(max(0, min(Floor2Int(fnormTileEnd),   static_cast<int>(outliers.size() - 1))));
 
-	for (u_int ci = 0; ci < num_contribs; ++ci) {
-		const Contribution &contrib(contribs[ci]);
+	// filter-normalized pixel coordinates
+	const float fnormX = (contrib.imageX - 0.5f + filter->xWidth) * outlierInvCellWidth;
+	const float fnormY = (contrib.imageY - 0.5f + filter->yWidth) * outlierInvCellHeight;
 
-		// filter-normalized pixel coordinates
-		const float fnormX = (contrib.imageX - 0.5f + filter->xWidth) * outlierInvCellWidth;
-		const float fnormY = (contrib.imageY - 0.5f + filter->yWidth) * outlierInvCellHeight;
+	OutlierData sd(fnormX, fnormY, contrib.color);
 
-		OutlierData sd(fnormX, fnormY, contrib.color);
+	// perform lookup based on original position
+	// constrain to tile only if we need to add the outlier
+	const int oY = max(0, min(Floor2Int(fnormY), static_cast<int>(outliers.size() - 1)));
 
-		// perform lookup based on original position
-		// constrain to tile only if we need to add the outlier
-		const int oY = max(0, min(Floor2Int(fnormY), static_cast<int>(outliers.size() - 1)));
-		const int oX = max(0, min(Floor2Int(fnormX), static_cast<int>(outliers[0].size() - 1)));
-		
-		std::vector<OutlierAccel> &outlierRow = GetOutlierAccelRow(oY, tileIndex, tileStart, tileEnd);
-		OutlierAccel &outlierAccel = outlierRow[oX];
+	std::vector<OutlierAccel> &outlierRow = GetOutlierAccelRow(oY, tileIndex, tileStart, tileEnd);
+	const int oX = max(0, min(Floor2Int(fnormX), static_cast<int>(outlierRow.size() - 1)));
+	OutlierAccel &outlierAccel = outlierRow[oX];
 
 	NearSetPointProcess<OutlierData::Point_t> proc(outlierRejection_k);
 	vector<ClosePoint<OutlierData::Point_t> > closest(outlierRejection_k);
@@ -1010,42 +1011,41 @@ void Film::RejectTileOutliers(const Contribution* const contribs, u_int num_cont
 	outlierAccel.Lookup(sd.p, proc, maxDist);
 
 	float kmeandist = 0.f;
-	for (u_int i = 0; i < proc.foundPoints; i++)
+	for (u_int i = 0; i < proc.foundPoints; ++i)
 		kmeandist += proc.points[i].distance;
 	
 	//kmeandist /= proc.foundPoints;
 		
-		if (proc.foundPoints < 1 || kmeandist > proc.foundPoints) { // kmeandist > 1.f
-			// add outlier and return
-			// include surrounding cells so we don't have to
-			// traverse multiple cells for each lookup
-			const u_int oLeft = static_cast<u_int>(max(0, oX - 1));
-			const u_int oRight = static_cast<u_int>(min(static_cast<int>(outliers[0].size() - 1), oX + 1));
-			const u_int oTop = static_cast<u_int>(max(0, oY - 1));
-			const u_int oBottom = static_cast<u_int>(min(static_cast<int>(outliers.size() - 1), oY + 1));
+	if (proc.foundPoints < 1 || kmeandist > proc.foundPoints) { // kmeandist > 1.f
+		// add outlier and return
+		// include surrounding cells so we don't have to
+		// traverse multiple cells for each lookup
+		const u_int oLeft = static_cast<u_int>(max(0, oX - 1));
+		const u_int oRight = static_cast<u_int>(min(static_cast<int>(outliers[0].size() - 1), oX + 1));
+		const u_int oTop = static_cast<u_int>(max(0, oY - 1));
+		const u_int oBottom = static_cast<u_int>(min(static_cast<int>(outliers.size() - 1), oY + 1));
 
-			if (oTop < tileStart || oBottom >= tileEnd) {
-				// outlier spans tile borders
-				for (u_int i = oTop; i <= oBottom; ++i) {
-					std::vector<OutlierAccel> &row = GetOutlierAccelRow(oY, tileIndex, tileStart, tileEnd);
-					for (u_int j = oLeft; j <= oRight; ++j) {
-						row[j].AddNode(sd.p);
-					}
-				}
-			} else {
-				// we're all inside one tile
-				for (u_int i = oTop; i <= oBottom; ++i) {
-					std::vector<OutlierAccel> &row = outliers[oY];
-					for (u_int j = oLeft; j <= oRight; ++j) {
-						row[j].AddNode(sd.p);
-					}
+		if (oTop < tileStart || oBottom >= tileEnd) {
+			// outlier spans tile borders
+			for (u_int i = oTop; i <= oBottom; ++i) {
+				std::vector<OutlierAccel> &row = GetOutlierAccelRow(i, tileIndex, tileStart, tileEnd);
+				for (u_int j = oLeft; j <= oRight; ++j) {
+					row[j].AddNode(sd.p);
 				}
 			}
-			// outlier, reject
-			contrib.variance = -1.f;
+		} else {
+			// we're all inside one tile
+			for (u_int i = oTop; i <= oBottom; ++i) {
+				std::vector<OutlierAccel> &row = outliers[i];
+				for (u_int j = oLeft; j <= oRight; ++j) {
+					row[j].AddNode(sd.p);
+				}
+			}
 		}
-		// not an outlier, splat
+		// outlier, reject
+		contrib.variance = -1.f;
 	}
+	// not an outlier, splat
 }
 
 u_int Film::GetTileCount() const {
@@ -1138,27 +1138,11 @@ void Film::AddTileSamples(const Contribution* const contribs, u_int num_contribs
 	int yTilePixelStart, yTilePixelEnd;
 	GetTileExtent(tileIndex, &xTilePixelStart, &xTilePixelEnd, &yTilePixelStart, &yTilePixelEnd);
 
-	if (outlierRejection_k > 0) {
-		// reject outliers by setting their weight (variance field) to -1
-		RejectTileOutliers(contribs, num_contribs, tileIndex, yTilePixelStart, yTilePixelEnd);
-	}
-
 	for (u_int ci = 0; ci < num_contribs; ci++) {
 		const Contribution &contrib(contribs[ci]);
 
 		XYZColor xyz = contrib.color;
 		const float alpha = contrib.alpha;
-		const float weight = contrib.variance;
-
-		// negative weight means sample was rejected
-		// so do this test first
-		if (!(weight >= 0.f) || isinf(weight)) {
-			if(debug_mode && (weight >= 0.f)) {
-				LOG(LUX_WARNING,LUX_LIMIT) << "Out of bound  weight in Film::AddTileSamples: "
-				   << weight << ", sample discarded";
-			}
-			continue;
-		}
 
 		// Issue warning if unexpected radiance value returned
 		if (!(xyz.Y() >= 0.f) || isinf(xyz.Y())) {
@@ -1177,6 +1161,22 @@ void Film::AddTileSamples(const Contribution* const contribs, u_int num_contribs
 			continue;
 		}
 	
+		if (outlierRejection_k > 0) {
+			// reject outliers by setting their weight (variance field) to -1
+			RejectTileOutliers(contrib, tileIndex, yTilePixelStart, yTilePixelEnd);
+		}
+
+		const float weight = contrib.variance;
+
+		// negative weight means sample was rejected
+		if (!(weight >= 0.f) || isinf(weight)) {
+			if(debug_mode && (weight >= 0.f)) {
+				LOG(LUX_WARNING,LUX_LIMIT) << "Out of bound  weight in Film::AddTileSamples: "
+				   << weight << ", sample discarded";
+			}
+			continue;
+		}
+
 		if (premultiplyAlpha)
 			xyz *= alpha;
 
@@ -1297,11 +1297,12 @@ void Film::SetSample(const Contribution *contrib) {
 	BufferGroup &currentGroup = bufferGroups[contrib->bufferGroup];
 	Buffer *buffer = currentGroup.getBuffer(contrib->buffer);
 
-	buffer->Set(x, y, xyz, alpha);
+	buffer->Set(x - xPixelStart, y - yPixelStart, xyz, alpha);
 
 	// Update ZBuffer values with filtered zdepth contribution
 	if(use_Zbuf && contrib->zdepth != 0.f)
-		ZBuffer->Add(x, y, contrib->zdepth, 1.0f);
+		ZBuffer->Add(x - xPixelStart, y - yPixelStart,
+			contrib->zdepth, 1.0f);
 }
 
 void Film::WriteResumeFilm(const string &filename)
@@ -1314,7 +1315,7 @@ void Film::WriteResumeFilm(const string &filename)
 
     std::ofstream filestr(tempfilename.c_str(), std::ios_base::out | std::ios_base::binary);
 	if(!filestr) {
-		LOG(LUX_SEVERE,LUX_SYSTEM) << "Cannot open file '" << tempfilename << "' for writing resume film";
+		LOG(LUX_ERROR,LUX_SYSTEM) << "Cannot open file '" << tempfilename << "' for writing resume film";
 
 		return;
 	}
@@ -1658,6 +1659,8 @@ double Film::DoTransmitFilm(
 		bool clearBuffers,
 		bool transmitParams)
 {
+	ScopedPoolLock lock(contribPool);
+
 	const bool isLittleEndian = osIsLittleEndian();
 
 	LOG(LUX_DEBUG,LUX_NOERROR)<< "Transmitting film (little endian=" <<(isLittleEndian ? "true" : "false") << ")";
@@ -1942,6 +1945,9 @@ double Film::UpdateFilm(std::basic_istream<char> &stream) {
 		// Update parameters
 		for (vector<FlmParameter>::iterator it = header.params.begin(); it != header.params.end(); ++it)
 			it->Set(this);
+
+		// lock the pool
+		ScopedPoolLock poolLock(contribPool);
 
 		// Dade - add all received data
 		for (u_int i = 0; i < bufferGroups.size(); ++i) {

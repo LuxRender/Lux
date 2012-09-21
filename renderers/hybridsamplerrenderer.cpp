@@ -64,6 +64,8 @@ SurfaceIntegratorStateBuffer::~SurfaceIntegratorStateBuffer() {
 		integratorState[i]->Free(scene);
 		delete integratorState[i];
 	}
+	// don't delete contribBuffer as references might still be held in the pool
+	delete rayBuffer;
 }
 
 void SurfaceIntegratorStateBuffer::GenerateRays() {
@@ -332,6 +334,21 @@ void HybridSamplerRenderer::SuspendWhenDone(bool v) {
 	suspendThreadsWhenDone = v;
 }
 
+static void writeIntervalCheck(Film *film) {
+	if (!film)
+		return;
+
+	while (!boost::this_thread::interruption_requested()) {
+		try {
+			boost::this_thread::sleep(boost::posix_time::seconds(1));
+
+			film->CheckWriteOuputInterval();
+		} catch(boost::thread_interrupted&) {
+			break;
+		}
+	}
+}
+
 void HybridSamplerRenderer::Render(Scene *s) {
 	luxrays::DataSet *dataSet;
 
@@ -392,10 +409,12 @@ void HybridSamplerRenderer::Render(Scene *s) {
 		//----------------------------------------------------------------------
 
 		dataSet = HybridRenderer::PreprocessGeometry(ctx, scene);
-        ctx->Start();
+		if (!dataSet)
+			return;
+		ctx->Start();
 
 		// start the timer
-		rendererStatistics->timer.Start();
+		rendererStatistics->start();
 
 		// Dade - preprocessing done
 		preprocessDone = true;
@@ -408,9 +427,15 @@ void HybridSamplerRenderer::Render(Scene *s) {
 	}
 
 	if (renderThreads.size() > 0) {
+		// thread for checking write interval
+		boost::thread writeIntervalThread = boost::thread(boost::bind(writeIntervalCheck, scene->camera->film));
+		
 		// The first thread can not be removed
 		// it will terminate when the rendering is finished
 		renderThreads[0]->thread->join();
+
+		// stop write interval checking
+		writeIntervalThread.interrupt();
 
 		// rendering done, now I can remove all rendering threads
 		{
@@ -428,6 +453,9 @@ void HybridSamplerRenderer::Render(Scene *s) {
 			state = TERMINATE;
 		}
 
+		// possibly wait for writing to finish
+		writeIntervalThread.join();
+
 		// Flush the contribution pool
 		scene->camera->film->contribPool->Flush();
 		scene->camera->film->contribPool->Delete();
@@ -441,13 +469,13 @@ void HybridSamplerRenderer::Render(Scene *s) {
 void HybridSamplerRenderer::Pause() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 	state = PAUSE;
-	rendererStatistics->timer.Stop();
+	rendererStatistics->stop();
 }
 
 void HybridSamplerRenderer::Resume() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 	state = RUN;
-	rendererStatistics->timer.Start();
+	rendererStatistics->start();
 }
 
 void HybridSamplerRenderer::Terminate() {
@@ -516,6 +544,7 @@ HybridSamplerRenderer::RenderThread::RenderThread(u_int index, HybridSamplerRend
 }
 
 HybridSamplerRenderer::RenderThread::~RenderThread() {
+	delete thread;
 }
 
 void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread) {
@@ -544,7 +573,7 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 		renderer->lastUsedSeed++;
 		seed = renderer->lastUsedSeed;
 	}
-	LOG(LUX_INFO, LUX_NOERROR) << "Thread " << renderThread->n << " uses seed: " << seed;
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Thread " << renderThread->n << " uses seed: " << seed;
 
 	RandomGenerator rng(seed);
 
@@ -651,10 +680,8 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 	scene.camera->film->contribPool->End(contribBuffer);
 
 	// Free memory
-	for (size_t i = 0; i < stateBuffers.size(); ++i) {
-		delete stateBuffers[i]->GetRayBuffer();
+	for (size_t i = 0; i < stateBuffers.size(); ++i)
 		delete stateBuffers[i];
-	}
 }
 
 Renderer *HybridSamplerRenderer::CreateRenderer(const ParamSet &params) {

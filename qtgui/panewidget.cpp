@@ -216,7 +216,7 @@ void PaneWidget::setWidget(QWidget *widget)
 #if defined(__APPLE__)
 	expandlabel->setStyleSheet(QString::fromUtf8(" QFrame {\n""background-color: rgba(232, 232, 232, 0)\n""}"));
 #endif
-	if (!mainwidget->isEnabled())
+	if (!mainwidget->isEnabledTo(mainwidget->parentWidget()))
 		onofflabel->setPixmap(QPixmap(":/icons/powerofficon.png"));
 	if (expanded)
 		mainwidget->show();

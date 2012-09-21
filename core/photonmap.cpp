@@ -384,7 +384,7 @@ void PhotonMapPreprocess(const RandomGenerator &rng, const Scene &scene,
 			}
 
 			// Dade - read the data
-			if (ok) {
+			if (ok && nRadiancePhotons) {
 				LOG( LUX_INFO,LUX_NOERROR)<< "Reading radiance photon map...";
 				RadiancePhotonMap::load(ifs, radianceMap);
 				LOG(LUX_INFO,LUX_NOERROR) << "Read " << radianceMap->getPhotonCount() << " radiance photons";
@@ -394,7 +394,7 @@ void PhotonMapPreprocess(const RandomGenerator &rng, const Scene &scene,
 					ok = false;
 				}
 			}
-			if (ok) {
+			if (ok && nIndirectPhotons) {
 				LOG( LUX_INFO,LUX_NOERROR)<< "Reading indirect photon map...";
 				LightPhotonMap::load(ifs, indirectMap);
 				LOG(LUX_INFO,LUX_NOERROR) << "Read " << indirectMap->getPhotonCount() << " light photons";
@@ -404,7 +404,7 @@ void PhotonMapPreprocess(const RandomGenerator &rng, const Scene &scene,
 					ok = false;
 				}
 			}
-			if (ok) {
+			if (ok && nCausticPhotons) {
 				LOG( LUX_INFO,LUX_NOERROR)<< "Reading caustic photon map...";
 				LightPhotonMap::load(ifs, causticMap);
 				LOG(LUX_INFO,LUX_NOERROR) << "Read " << causticMap->getPhotonCount() << " light photons";

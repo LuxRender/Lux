@@ -708,7 +708,7 @@ public:
 protected:
 	double DoTransmitFilm(std::basic_ostream<char> &stream, bool clearBuffers = true, bool transmitParams = false);
 	// Reject outliers for a tile. Rejected contributions get their variance set to -1.
-	void RejectTileOutliers(const Contribution* const contribs, u_int num_contribs, u_int tileIndex, int yTilePixelStart, int yTilePixelEnd);
+	void RejectTileOutliers(const Contribution &contrib, u_int tileIndex, int yTilePixelStart, int yTilePixelEnd);
 	// Gets the extents of a tile, interval is [start, end).
 	void GetTileExtent(u_int tileIndex, int *xstart, int *xend, int *ystart, int *yend) const;
 	void UpdateConvergenceInfo(const float *framebuffer);
@@ -813,8 +813,7 @@ private:
 };
 
 // Image Pipeline Declarations
-void ApplyImagingPipeline(vector<XYZColor> &pixels,
-	u_int xResolution, u_int yResolution, 
+void ApplyImagingPipeline(vector<XYZColor> &pixels, u_int xResolution, u_int yResolution, 
 	const GREYCStorationParams &GREYCParams, const ChiuParams &chiuParams,
 	const ColorSystem &colorSpace, Histogram *histogram, bool HistogramEnabled,
 	bool &haveBloomImage, XYZColor *&bloomImage, bool bloomUpdate,

@@ -380,7 +380,7 @@ u_int SurfaceIntegratorRenderingHints::SampleLights(const Scene &scene,
 						const float lsPdf = lsStrategy->Pdf(scene, light);
 						const float lightPdf2 = lightPdf *
 							lsPdf * shadowRayCount * d2 /
-							AbsDot(wi, lightBsdf->dgShading.nn);
+							AbsDot(wi, lightBsdf->ng);
 						const float weight = PowerHeuristic(1,
 							bsdfPdf, 1, lightPdf2);
 						L[light->group] += Li * weight;
@@ -399,7 +399,7 @@ u_int SurfaceIntegratorRenderingHints::SampleLights(const Scene &scene,
 						const float lsPdf = lsStrategy->Pdf(scene, lightIsect.arealight) * shadowRayCount;
 						const float lightPdf2 = lightPdf *
 							lsPdf * d2 /
-							AbsDot(wi, lightBsdf->dgShading.nn);
+							AbsDot(wi, lightBsdf->ng);
 						const float weight = PowerHeuristic(1,
 							bsdfPdf, 1, lightPdf2);
 						L[lightIsect.arealight->group] += Li *
@@ -460,7 +460,7 @@ u_int SurfaceIntegratorRenderingHints::SampleLights(const Scene &scene,
 				const float bsdfPdf = bsdf->Pdf(sample.swl,
 					wo, wi);
 				Li *= PowerHeuristic(1, lightPdf * lsPdf * d2 /
-					AbsDot(wi, lightBsdf->dgShading.nn), 1, bsdfPdf);
+					AbsDot(wi, lightBsdf->ng), 1, bsdfPdf);
 			}
 			// Add light's contribution
 			L[light->group] += Li;

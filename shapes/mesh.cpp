@@ -401,7 +401,7 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 	}
 
 	if (inconsistentShadingTris > 0) {
-		SHAPE_LOG(name, LUX_WARNING, LUX_CONSISTENCY) <<
+		SHAPE_LOG(name, LUX_DEBUG, LUX_CONSISTENCY) <<
 			"Inconsistent shading normals in " << 
 			inconsistentShadingTris << " triangle" << (inconsistentShadingTris > 1 ? "s" : "");
 	}

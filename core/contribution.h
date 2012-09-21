@@ -32,6 +32,7 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <boost/cstdint.hpp>
+#include <boost/noncopyable.hpp>
 
 using boost::uint16_t;
 
@@ -109,8 +110,19 @@ private:
 	ContributionPool *pool;
 };
 
+class ScopedPoolLock : public boost::noncopyable {
+public:
+	ScopedPoolLock(ContributionPool* pool);
+
+	void unlock();
+
+private:
+	boost::mutex::scoped_lock lock;
+};
+
 class ContributionPool {
 	friend class ContributionBuffer;
+	friend class ScopedPoolLock;
 public:
 
 	ContributionPool(Film *f);

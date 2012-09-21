@@ -267,6 +267,9 @@ const char * ds_pylux_Context_removeServer =
 const char * ds_pylux_Context_removeThread =
 "Remove a local rendering thread from the current rendering process.";
 
+const char * ds_pylux_Context_resetServer =
+"Reset the state of a remote rendering slave.";
+
 const char * ds_pylux_Context_reverseOrientation =
 "Causes the orientation in the current scope to be reversed left->right or\n"
 "right->left handed. (Ref: RiSpec 3.2 p.53).";

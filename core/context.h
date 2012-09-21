@@ -200,6 +200,7 @@ public:
 	void AddServer(const string &name);
 	void RemoveServer(const RenderingServerInfo &rsi);
 	void RemoveServer(const string &name);
+	void ResetServer(const string &name, const string &password);
 	u_int GetServerCount();
 	u_int GetRenderingServersStatus(RenderingServerInfo *info, u_int maxInfoCount);
 

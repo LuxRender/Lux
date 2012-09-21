@@ -71,8 +71,8 @@ void RenderView::copyToClipboard()
 
 void RenderView::reload () {
 	if (luxStatistics("sceneIsReady") || luxStatistics("filmIsReady")) {
-		int w = luxGetIntAttribute("film", "xPixelCount");
-		int h = luxGetIntAttribute("film", "yPixelCount");
+		int w = luxGetIntAttribute("film", "xResolution");
+		int h = luxGetIntAttribute("film", "yResolution");
 			
 		QImage image = getFramebufferImage(overlayStats, showAlpha);
 		if (showAlpha == true) {
@@ -169,8 +169,8 @@ void RenderView::mousePressEvent (QMouseEvent *event) {
 				setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
 				fitInView(renderscene->sceneRect(), Qt::KeepAspectRatio);
 				// compute correct zoomfactor
-				origw = (qreal)luxGetIntAttribute("film", "xPixelCount")/(qreal)width();
-				origh = (qreal)luxGetIntAttribute("film", "yPixelCount")/(qreal)height();
+				origw = (qreal)luxGetIntAttribute("film", "xResolution")/(qreal)width();
+				origh = (qreal)luxGetIntAttribute("film", "yResolution")/(qreal)height();
 				if (origh > origw)
 					zoomfactor = 100.0f/(origh);
 				else
