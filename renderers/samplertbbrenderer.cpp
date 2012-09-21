@@ -311,7 +311,9 @@ void SamplerTBBRenderer::Impl::operator()(unsigned int i, tbb::parallel_do_feede
 
 	Sample& sample = *local.sample;
 	// Trace rays: The main loop
-	// TODO: perhaps here we can make an infinite loop too, this may remove some load on TBB
+	// Here we trace rays my pack of *batchSize* which reduce scheduling overhead of TBB
+	unsigned int batchSize = 1000;
+	for(unsigned int i = 0; i < batchSize; i++)
 	{
 		if (!sampler->GetNextSample(&sample)) {
 			// Dade - we have done, check what we have to do now
