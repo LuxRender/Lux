@@ -57,5 +57,9 @@
 		COMMAND mv ${CMAKE_BUILD_TYPE}/luxconsole ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/MacOS/luxconsole
 		COMMAND mv ${CMAKE_BUILD_TYPE}/luxcomp ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/MacOS/luxcomp
 		COMMAND mv ${CMAKE_BUILD_TYPE}/luxmerger ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/MacOS/luxmerger
+		COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/lib/tbb/libtbb.dylib ${CMAKE_BUILD_TYPE}/libtbb.dylib
+		COMMAND install_name_tool -id @loader_path/libtbb.dylib ${CMAKE_BUILD_TYPE}/libtbb.dylib
+		COMMAND install_name_tool -change libtbb.dylib @loader_path/libtbb.dylib ${CMAKE_BUILD_TYPE}/liblux.dylib
 		COMMAND cp ${CMAKE_BUILD_TYPE}/liblux.dylib ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/LuxRender.app/Contents/MacOS/liblux.dylib
+		COMMAND cp ${CMAKE_BUILD_TYPE}/libtbb.dylib ${CMAKE_BUILD_TYPE}/luxrender.app/Contents/MacOS/libtbb.dylib
 		)
