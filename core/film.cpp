@@ -206,7 +206,7 @@ struct BloomFilter
 		xResolution(xResolution_),
 		yResolution(yResolution_),
 		bloomWidth(bloomWidth_),
-		bloomFilter(bloomFilter),
+		bloomFilter(bloomFilter_),
 		bloomImage(bloomImage_),
 		xyzpixels(xyzpixels_)
 	{}
