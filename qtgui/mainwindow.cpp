@@ -2466,7 +2466,7 @@ void MainWindow::addRemoveSlaves(QVector<QString> slaves, ChangeSlavesAction act
 		int pi6 = slave.lastIndexOf("::");
 		if (pi < 0 || (pi > 0 && pi-1 == pi6)) {
 			// append default port
-			slave.append(":18018");
+			slave.append(":").append(QString::number(luxGetIntAttribute("render_farm", "defaultTcpPort")));
 		}
 		switch (action) {
 			case AddSlaves:

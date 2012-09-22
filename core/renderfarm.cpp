@@ -360,9 +360,10 @@ RenderFarm::CompiledCommand& RenderFarm::CompiledCommands::add(const std::string
 
 RenderFarm::RenderFarm() : Queryable("render_farm"), pollingInterval(3 * 60),
 		filmUpdateThread(NULL), flushThread(NULL), netBufferComplete(false),
-		isLittleEndian(osIsLittleEndian())
+		isLittleEndian(osIsLittleEndian()), defaultTcpPort(18018)
 {
-	AddIntAttribute(*this, "pollingInterval", "Polling Interval", &RenderFarm::pollingInterval, ReadWriteAccess);
+	AddIntAttribute(*this, "defaultTcpPort", "Default TCP port", &RenderFarm::defaultTcpPort, ReadWriteAccess);
+	AddIntAttribute(*this, "pollingInterval", "Polling interval", &RenderFarm::pollingInterval, ReadWriteAccess);
 	AddIntAttribute(*this, "slaveNodeCount", "Number of network slave nodes", &RenderFarm::getSlaveNodeCount);
 }
 

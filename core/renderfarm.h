@@ -262,6 +262,7 @@ private:
 	bool netBufferComplete; // Raise this flag if the scene is complete
 	bool isLittleEndian;
 	int pollingInterval;
+	int defaultTcpPort;
 };
 
 }//namespace lux

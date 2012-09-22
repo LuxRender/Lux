@@ -252,7 +252,7 @@ int main(int ac, char *av[]) {
 			LOG(LUX_INFO,LUX_NOERROR) << "Server request interval: " << serverInterval << " secs";
 		}
 
-		int serverPort = RenderServer::DEFAULT_TCP_PORT;
+		int serverPort = luxGetIntAttribute("render_farm", "defaultTcpPort");
 		if (vm.count("serverport"))
 			serverPort = vm["serverport"].as<int>();
 
