@@ -47,3 +47,4 @@ qrc_*.cxx
 *.xcodeproj
 lux.build*
 *.DS_Store
+*-qrc.cpp
