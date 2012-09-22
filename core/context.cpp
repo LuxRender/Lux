@@ -189,10 +189,6 @@ void Context::ResetServer(const string &n, const string &p) {
 	renderFarm->sessionReset(n, p);
 }
 
-u_int Context::GetServerCount() {
-	return renderFarm->getServerCount();
-}
-
 u_int Context::GetRenderingServersStatus(RenderingServerInfo *info, u_int maxInfoCount) {
 	return renderFarm->getServersStatus(info, maxInfoCount);
 }
@@ -1034,7 +1030,7 @@ void Context::WorldEnd() {
 				activeContext->renderFarm->stop();
 
 				// Check if we have to stop the network rendering updater thread
-				if (GetServerCount() > 0) {
+				if (static_cast<u_int>((*(activeContext->renderFarm))["slaveNodeCount"].IntValue()) > 0) {
 					// Update the film for the last time
 					if (!aborted)
 						activeContext->renderFarm->updateFilm(luxCurrentScene);
@@ -1191,7 +1187,7 @@ void Context::Wait() {
 }
 
 void Context::Exit() {
-	if (GetServerCount() > 0) {
+	if (static_cast<u_int>((*(activeContext->renderFarm))["slaveNodeCount"].IntValue()) > 0) {
 		// Dade - stop the render farm too
 		activeContext->renderFarm->stop();
 		// Dade - update the film for the last time
@@ -1363,12 +1359,4 @@ void Context::UpdateFilmFromNetwork() {
 }
 void Context::UpdateLogFromNetwork() {
 	renderFarm->updateLog();
-}
-void Context::SetNetworkServerUpdateInterval(int updateInterval)
-{
-	activeContext->renderFarm->serverUpdateInterval = updateInterval;
-}
-int Context::GetNetworkServerUpdateInterval()
-{
-	return activeContext->renderFarm->serverUpdateInterval;
 }

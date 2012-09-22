@@ -261,7 +261,7 @@ bool LuxGuiApp::ProcessCommandLine(int &argc, char **argv)
 
 		if(vm.count("serverinterval")) {
 			serverInterval = vm["serverinterval"].as<int>();
-			luxSetNetworkServerUpdateInterval(serverInterval);
+			luxSetIntAttribute("render_farm", "pollingInterval", serverInterval);
 		} else {
 			// use -1 to indicate user didn't override server interval
 			serverInterval = -1;

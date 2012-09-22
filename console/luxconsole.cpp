@@ -240,9 +240,9 @@ int main(int ac, char *av[]) {
 		int serverInterval;
 		if (vm.count("serverinterval")) {
 			serverInterval = vm["serverinterval"].as<int>();
-			luxSetNetworkServerUpdateInterval(serverInterval);
+			luxSetIntAttribute("render_farm", "pollingInterval", serverInterval);
 		} else
-			serverInterval = luxGetNetworkServerUpdateInterval();
+			serverInterval = luxGetIntAttribute("render_farm", "pollingInterval");
 
 		std::vector<std::string> slaves;
 		if (vm.count("useserver")) {

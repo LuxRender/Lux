@@ -110,7 +110,7 @@ void FilmUpdaterThread::updateFilm(FilmUpdaterThread *filmUpdaterThread) {
 			// sleep for 1 sec
 			boost::this_thread::sleep(boost::posix_time::seconds(1));
 
-			if (timer.Time() > filmUpdaterThread->renderFarm->serverUpdateInterval) {
+			if (timer.Time() > (*(filmUpdaterThread->renderFarm))["pollingInterval"].IntValue()) {
 				filmUpdaterThread->renderFarm->updateFilm(filmUpdaterThread->scene);
 				timer.Reset();
 			}
@@ -358,9 +358,12 @@ RenderFarm::CompiledCommand& RenderFarm::CompiledCommands::add(const std::string
 	return commands.back();
 }
 
-RenderFarm::RenderFarm() : serverUpdateInterval(3 * 60), filmUpdateThread(NULL), flushThread(NULL),
-		netBufferComplete(false), isLittleEndian(osIsLittleEndian())
+RenderFarm::RenderFarm() : Queryable("render_farm"), pollingInterval(3 * 60),
+		filmUpdateThread(NULL), flushThread(NULL), netBufferComplete(false),
+		isLittleEndian(osIsLittleEndian())
 {
+	AddIntAttribute(*this, "pollingInterval", "Polling Interval", &RenderFarm::pollingInterval, ReadWriteAccess);
+	AddIntAttribute(*this, "slaveNodeCount", "Number of network slave nodes", &RenderFarm::getSlaveNodeCount);
 }
 
 RenderFarm::~RenderFarm()
@@ -1153,7 +1156,7 @@ void RenderFarm::send(const string &command, const string &name, float a, float 
 	}
 }
 
-u_int RenderFarm::getServerCount() const {
+u_int RenderFarm::getSlaveNodeCount() {
 	return serverInfoList.size();
 }
 
