@@ -883,11 +883,11 @@ void MainWindow::outputTonemapped()
 	QString suffix = QFileInfo(fileName).suffix().toLower();
 	if (filter == "PNG Image (*.png)" && suffix != "png")
 		fileName += ".png";
-	else if (filter == "JPEG Image (*.jpg *.jpeg)" && (suffix != "jpg" || suffix != "jpeg"))
+	else if (filter == "JPEG Image (*.jpg *.jpeg)" && suffix != "jpg" && suffix != "jpeg")
 		fileName += ".jpg";
 	else if (filter == "Windows Bitmap (*.bmp)" && suffix != "bmp")
 		fileName += ".bmp";
-	else if (filter == "TIFF Image (*.tif *.tiff)" && (suffix != "tif" || suffix != "tiff"))
+	else if (filter == "TIFF Image (*.tif *.tiff)" && suffix != "tif" && suffix != "tiff")
 		fileName += ".tif";
 
 	if (saveCurrentImageTonemapped(fileName, ui->action_overlayStats->isChecked(), ui->action_useAlpha->isChecked())) {
@@ -2385,7 +2385,7 @@ void MainWindow::UpdateNetworkTree()
 
 	QSet<QString> connectedSlaves;
 
-	for( int i = 0; i < serverInfoList.size(); i++ ) {
+	for (int i = 0; i < serverInfoList.size(); ++i) {
 		QTableWidgetItem *status = new QTableWidgetItem(tr("Active session"));
 
 		QTableWidgetItem *servername = new QTableWidgetItem(QString::fromUtf8(serverInfoList[i].name));
