@@ -138,6 +138,9 @@ namespace luxrays {
   class Vector;
   class Point;
   class Normal;
+  class BBox;
+  class Ray;
+  class MachineEpsilon;
 }
 
 namespace lux
@@ -148,9 +151,10 @@ namespace lux
   using luxrays::Vector;
   using luxrays::Point;
   using luxrays::Normal;
-  class Ray;
+  using luxrays::BBox;
+  using luxrays::Ray;
+  using luxrays::MachineEpsilon;
   class RayDifferential;
-  class BBox;
   class Transform;
   class DifferentialGeometry;
   class Renderer;
@@ -230,7 +234,6 @@ namespace lux
   class Distribution1D;
   class Distribution2D;
   class IrregularDistribution1D;
-  class MachineEpsilon;
   class SampleableSphericalFunction;
 
   class Context;

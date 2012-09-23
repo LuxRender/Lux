@@ -25,6 +25,7 @@
 // texture.h*
 #include "lux.h"
 #include "geometry/transform.h"
+#include "error.h"
 
 namespace lux
 {

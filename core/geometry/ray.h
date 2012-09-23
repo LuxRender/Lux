@@ -23,49 +23,12 @@
 #ifndef LUX_RAY_H
 #define LUX_RAY_H
 
-#include <iostream>
-#include "vector.h"
-#include "point.h"
-#include "epsilon.h"
+#include "luxrays/core/geometry/ray.h"
 
 namespace lux
 {
 
-class  Ray {
-public:
-	// Ray Public Methods
-	Ray(): maxt(INFINITY), time(0.f) {
-		mint = MachineEpsilon::E(1.f);
-	}
-
-	Ray(const Point &origin, const Vector &direction)
-		: o(origin), d(direction), maxt(INFINITY), time(0.f) {
-		mint = MachineEpsilon::E(origin);
-	}
-
-	Ray(const Point &origin, const Vector &direction,
-		float start, float end = INFINITY, float t = 0.f)
-		: o(origin), d(direction), mint(start), maxt(end), time(t) { }
-
-	Point operator()(float t) const { return o + d * t; }
-	void GetDirectionSigns(int signs[3]) const {
-		signs[0] = d.x < 0.f;
-		signs[1] = d.y < 0.f;
-		signs[2] = d.z < 0.f;
-	}
-	// Ray Public Data
-	Point o;
-	Vector d;
-	mutable float mint, maxt;
-	float time;
-};
-
-inline ostream &operator<<(ostream &os, Ray &r) {
-	os << "org: " << r.o << "dir: " << r.d << " range [" <<
-		r.mint << "," << r.maxt << "] time = " <<
-		r.time;
-	return os;
-}
+	using luxrays::Ray;
 
 }//namespace lux
 

@@ -25,6 +25,7 @@
 
 // motionsystem.h*
 #include "lux.h"
+#include "api.h"
 #include "geometry/quaternion.h"
 #include "geometry/bbox.h"
 #include "geometry/matrix4x4.h"

@@ -64,7 +64,6 @@ SET(lux_core_src
 	core/context.cpp
 	core/contribution.cpp
 	core/dynload.cpp
-	core/epsilon.cpp
 	core/exrio.cpp
 	core/filedata.cpp
 	core/film.cpp
@@ -101,7 +100,6 @@ SET(lux_core_src
 SOURCE_GROUP("Source Files\\Core" FILES ${lux_core_src})
 
 SET(lux_core_geometry_src
-	core/geometry/bbox.cpp
 	core/geometry/matrix4x4.cpp
 	core/geometry/quaternion.cpp
 	core/geometry/raydifferential.cpp
