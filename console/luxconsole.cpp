@@ -240,9 +240,9 @@ int main(int ac, char *av[]) {
 		int serverInterval;
 		if (vm.count("serverinterval")) {
 			serverInterval = vm["serverinterval"].as<int>();
-			luxSetNetworkServerUpdateInterval(serverInterval);
+			luxSetIntAttribute("render_farm", "pollingInterval", serverInterval);
 		} else
-			serverInterval = luxGetNetworkServerUpdateInterval();
+			serverInterval = luxGetIntAttribute("render_farm", "pollingInterval");
 
 		std::vector<std::string> slaves;
 		if (vm.count("useserver")) {
@@ -252,7 +252,7 @@ int main(int ac, char *av[]) {
 			LOG(LUX_INFO,LUX_NOERROR) << "Server request interval: " << serverInterval << " secs";
 		}
 
-		int serverPort = RenderServer::DEFAULT_TCP_PORT;
+		int serverPort = luxGetIntAttribute("render_farm", "defaultTcpPort");
 		if (vm.count("serverport"))
 			serverPort = vm["serverport"].as<int>();
 

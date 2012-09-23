@@ -117,7 +117,8 @@ extern "C" void luxResetServer(const char * name, const char * password)
 
 extern "C" unsigned int luxGetServerCount()
 {
-	return Context::GetActive()->GetServerCount();
+	LOG(LUX_WARNING,LUX_NOERROR)<<"'luxGetServerCount' is deprecated. Use 'luxGetIntAttribute' instead.";
+	return luxGetIntAttribute("render_farm", "slaveNodeCount");
 }
 
 extern "C" unsigned int luxGetRenderingServersStatus(RenderingServerInfo *info,
@@ -503,7 +504,10 @@ extern "C" void luxInit()
 	if (initialized)
 		{LOG(LUX_ERROR,LUX_ILLSTATE)<<"luxInit() has already been called.";}
 	else
+	{
 		Context::SetActive(new Context());
+		Context::GetActive()->Init();
+	}
 
 	FreeImage_Initialise(true);
 	FreeImage_SetOutputMessage(FreeImageErrorHandler);
@@ -1125,12 +1129,14 @@ extern "C" void luxUpdateLogFromNetwork()
 
 extern "C" void luxSetNetworkServerUpdateInterval(int updateInterval)
 {
-	Context::GetActive()->SetNetworkServerUpdateInterval(updateInterval);
+	LOG(LUX_WARNING,LUX_NOERROR)<<"'luxSetNetworkServerUpdateInterval' is deprecated. Use 'luxSetIntAttribute' instead.";
+	luxSetIntAttribute("render_farm", "pollingInterval", updateInterval);
 }
 
 extern "C" int luxGetNetworkServerUpdateInterval()
 {
-	return Context::GetActive()->GetNetworkServerUpdateInterval();
+	LOG(LUX_WARNING,LUX_NOERROR)<<"'luxGetNetworkServerUpdateInterval' is deprecated. Use 'luxGetIntAttribute' instead.";
+	return luxGetIntAttribute("render_farm", "pollingInterval");
 }
 
 //error handling

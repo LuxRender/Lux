@@ -90,11 +90,9 @@ public:
 // Dade - network rendering server
 class LUX_EXPORT RenderServer {
 public:
-	static const int DEFAULT_TCP_PORT = 18018;
-
 	enum ServerState { UNSTARTED, READY, BUSY, STOPPED };
 
-	RenderServer(int threadCount, const std::string &serverPassword, int tcpPort = DEFAULT_TCP_PORT, bool writeFlmFile = false);
+	RenderServer(int threadCount, const std::string &serverPassword, int tcpPort = luxGetIntAttribute("render_farm", "defaultTcpPort"), bool writeFlmFile = false);
 	~RenderServer();
 
 	void start();

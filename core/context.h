@@ -46,9 +46,7 @@ namespace lux {
 class LUX_EXPORT Context {
 public:
 
-	Context(std::string n = "Lux default context") : name(n) {
-		Init();
-	}
+	Context(std::string n = "Lux default context") : name(n) {}
 
 	~Context() {
 		Free();
@@ -193,15 +191,12 @@ public:
 	// Dade - network rendering
 	void UpdateFilmFromNetwork();
 	void UpdateLogFromNetwork();
-	void SetNetworkServerUpdateInterval(int updateInterval);
-	int GetNetworkServerUpdateInterval();
 	void TransmitFilm(std::basic_ostream<char> &stream);
 	void TransmitFilm(std::basic_ostream<char> &stream, bool useCompression, bool directWrite);
 	void AddServer(const string &name);
 	void RemoveServer(const RenderingServerInfo &rsi);
 	void RemoveServer(const string &name);
 	void ResetServer(const string &name, const string &password);
-	u_int GetServerCount();
 	u_int GetRenderingServersStatus(RenderingServerInfo *info, u_int maxInfoCount);
 
 	//statistics

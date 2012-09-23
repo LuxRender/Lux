@@ -50,12 +50,6 @@
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
 
-#ifdef __APPLE__
-#include <dispatch/dispatch.h>
-#define max(a, b) ((a) > (b) ? (a) : (b))  // i added these due function was not found inside gcd queue else, needs investigation !
-#define min(a, b) ((a) < (b) ? (a) : (b))
-#endif
-
 #define cimg_display_type  0
 
 #ifdef LUX_USE_CONFIG_H
@@ -212,7 +206,7 @@ struct BloomFilter
 		xResolution(xResolution_),
 		yResolution(yResolution_),
 		bloomWidth(bloomWidth_),
-		bloomFilter(bloomFilter),
+		bloomFilter(bloomFilter_),
 		bloomImage(bloomImage_),
 		xyzpixels(xyzpixels_)
 	{}
@@ -222,13 +216,8 @@ struct BloomFilter
 		// Apply bloom filter to image pixels
 		//			vector<Color> bloomImage(nPix);
 	//			ProgressReporter prog(yResolution, "Bloom filter"); //NOBOOK //intermediate crashfix until imagepipelinerefactor is done - Jens
-	#ifdef __APPLE__
-		dispatch_apply(yResolution, dispatch_get_global_queue(0, 0), ^(size_t y) {
-			dispatch_apply(xResolution, dispatch_get_global_queue(0, 0), ^(size_t x) {
-	#else
 		for (u_int y = 0; y < yResolution; ++y) {
 			for (u_int x = 0; x < xResolution; ++x) {
-	#endif
 				// Compute bloom for pixel _(x,y)_
 				// Compute extent of pixels contributing bloom
 				const u_int x0 = max(x, bloomWidth) - bloomWidth;
@@ -252,15 +241,10 @@ struct BloomFilter
 					}
 				}
 				bloomImage[offset] /= sumWt;
-	#ifdef __APPLE__
-			});
-		});
-	#else
 			}
 	//				prog.Update(); //NOBOOK //intermediate crashfix until imagepipelinerefactor is done - Jens
 		}
 	}
-#endif
 };
 
 struct VignettingFilter
@@ -302,13 +286,8 @@ struct VignettingFilter
 	void operator()()
 	{
 	//for each pixel in the source image
-#ifdef __APPLE__
-	dispatch_apply(yResolution, dispatch_get_global_queue(0, 0), ^(size_t y) {
-		dispatch_apply(xResolution, dispatch_get_global_queue(0, 0), ^(size_t x) {
-#else
 	for(u_int y = 0; y < yResolution; ++y) {
 		for(u_int x = 0; x < xResolution; ++x) {
-#endif
 			const float nPx = x * invxRes;
 			const float nPy = y * invyRes;
 			const float xOffset = nPx - 0.5f;
@@ -336,13 +315,8 @@ struct VignettingFilter
 				for (u_int i = 0; i < 3; ++i)
 					outp[xResolution*y + x].c[i] *= vWeight;
 			}
-#ifdef __APPLE__
-		});
-	});
-#else
 		}
 	}
-#endif
 
 
 	}

@@ -275,7 +275,7 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	ui->lineEdit_server->completer()->setCompletionRole(Qt::DisplayRole);
 	ui->comboBox_updateInterval->setValidator(new QIntValidator(1, 86400, this));
 
-	setServerUpdateInterval(luxGetNetworkServerUpdateInterval());
+	setServerUpdateInterval(luxGetIntAttribute("render_farm", "pollingInterval"));
 
 	// Queue tab
 	ui->table_queue->setModel(&renderQueueData);
@@ -494,7 +494,7 @@ void MainWindow::ReadSettings()
 	ui->action_useAlpha->setChecked(settings.value("outputUseAlpha").toBool());
 	ui->action_useAlphaHDR->setChecked(settings.value("outputUseAlphaHDR").toBool());
 	m_recentServersModel->setList(settings.value("recentServers").toStringList());
-	setServerUpdateInterval(settings.value("serverUpdateInterval", luxGetNetworkServerUpdateInterval()).toInt());
+	luxSetIntAttribute("render_farm", "pollingInterval", settings.value("serverUpdateInterval", luxGetIntAttribute("render_farm", "pollingInterval")).toInt());
 	ui->action_Show_Side_Panel->setChecked(settings.value("outputTabs", 1 ).toBool());
 	ui->outputTabs->setVisible(ui->action_Show_Side_Panel->isChecked());
 	settings.endGroup();
@@ -523,7 +523,7 @@ void MainWindow::WriteSettings()
 	settings.setValue("outputUseAlphaHDR", ui->action_useAlphaHDR->isChecked());
 	settings.setValue("outputTabs", ui->action_Show_Side_Panel->isChecked());
 	settings.setValue("recentServers", QStringList(m_recentServersModel->list()));
-	settings.setValue("serverUpdateInterval", luxGetNetworkServerUpdateInterval());
+	settings.setValue("serverUpdateInterval", luxGetIntAttribute("render_farm", "pollingInterval"));
 	settings.endGroup();
 }
 
@@ -828,7 +828,7 @@ void MainWindow::pauseRender()
 	if (m_guiRenderState != PAUSED && m_guiRenderState != TONEMAPPING) {
 		// We have to check if network rendering is enabled. In this case,
 		// we don't stop timer in order to save the image to the disk, etc.
-		if (luxGetServerCount() < 1) {
+		if (luxGetIntAttribute("render_farm", "slaveNodeCount") < 1) {
 			m_renderTimer->stop();
 			m_statsTimer->stop();
 		}
@@ -1602,7 +1602,7 @@ void MainWindow::renderScenefile(const QString& sceneFilename, const QString& fl
 	// override server update interval
 	// trigger edit finished slot
 	updateIntervalChanged();
-	LOG(LUX_INFO,LUX_NOERROR) << "Server requests interval: " << luxGetNetworkServerUpdateInterval() << " seconds";
+	LOG(LUX_INFO,LUX_NOERROR) << "Server requests interval: " << luxGetIntAttribute("render_farm", "pollingInterval") << " seconds";
 
 	// Render the scene
 	setCurrentFile(sceneFilename);
@@ -2363,7 +2363,7 @@ void MainWindow::UpdateNetworkTree()
 {
 	int currentrow = ui->table_servers->currentRow();
 
-	int nServers = luxGetServerCount();
+	int nServers = luxGetIntAttribute("render_farm", "slaveNodeCount");
 
 	vector<RenderingServerInfo> serverInfoList;
 
@@ -2466,7 +2466,7 @@ void MainWindow::addRemoveSlaves(QVector<QString> slaves, ChangeSlavesAction act
 		int pi6 = slave.lastIndexOf("::");
 		if (pi < 0 || (pi > 0 && pi-1 == pi6)) {
 			// append default port
-			slave.append(":18018");
+			slave.append(":").append(QString::number(luxGetIntAttribute("render_farm", "defaultTcpPort")));
 		}
 		switch (action) {
 			case AddSlaves:
@@ -2489,10 +2489,10 @@ void MainWindow::setServerUpdateInterval(int interval) {
 
 	if (interval > 0) {
 		// only update if valid interval
-		luxSetNetworkServerUpdateInterval(interval);
+		luxSetIntAttribute("render_farm", "pollingInterval", interval);
 	} else {
 		// invalid interval, update combobox with old value
-		interval = luxGetNetworkServerUpdateInterval();
+		interval = luxGetIntAttribute("render_farm", "pollingInterval");
 	}
 
 	QString s = QString("%0").arg(interval);
