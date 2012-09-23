@@ -25,7 +25,8 @@
 // volume.h*
 #include "lux.h"
 #include "geometry/transform.h"
-#include "geometry/bbox.h"
+#include "luxrays/core/geometry/bbox.h"
+using luxrays::BBox;
 #include "primitive.h"
 #include "spectrum.h"
 #include "fresnelgeneral.h"

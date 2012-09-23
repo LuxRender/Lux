@@ -22,6 +22,7 @@
 
 // anisotropic.cpp*
 #include "anisotropic.h"
+using luxrays::SphericalDirection;
 
 using namespace lux;
 

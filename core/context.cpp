@@ -35,7 +35,8 @@
 #include "material.h"
 #include "renderfarm.h"
 #include "film/fleximage.h"
-#include "epsilon.h"
+#include "luxrays/core/epsilon.h"
+using luxrays::MachineEpsilon;
 #include "renderers/samplerrenderer.h"
 
 #include <boost/iostreams/filtering_stream.hpp>

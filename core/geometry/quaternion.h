@@ -24,7 +24,8 @@
 #define LUX_QUATERNION_H
 // quaternion.h*
 #include "lux.h"
-#include "vector.h"
+#include "luxrays/core/geometry/vector.h"
+using luxrays::Vector;
 
 namespace lux
 {

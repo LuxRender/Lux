@@ -26,6 +26,8 @@
 #include "shape.h"
 #include "spectrum.h"
 #include "fresnelgeneral.h"
+#include "luxrays/core/geometry/vector.h"
+using luxrays::SphericalDirection;
 
 namespace lux
 {

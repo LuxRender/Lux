@@ -26,7 +26,8 @@
 #include "lux.h"
 #include "bxdf.h"
 #include "spectrum.h"
-#include "epsilon.h"
+#include "luxrays/core/epsilon.h"
+using luxrays::MachineEpsilon;
 
 namespace lux
 {

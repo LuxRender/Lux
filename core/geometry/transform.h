@@ -25,9 +25,12 @@
 // transform.h*
 #include "lux.h"
 #include "matrix4x4.h"
-#include "point.h"
-#include "normal.h"
-#include "ray.h"
+#include "luxrays/core/geometry/point.h"
+using luxrays::Point;
+#include "luxrays/core/geometry/normal.h"
+using luxrays::Normal;
+#include "luxrays/core/geometry/ray.h"
+using luxrays::Ray;
 #include "raydifferential.h"
 
 namespace lux

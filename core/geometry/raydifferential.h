@@ -24,9 +24,12 @@
 #ifndef LUX_RAYDIFFERENTIAL_H
 #define LUX_RAYDIFFERENTIAL_H
 
-#include "vector.h"
-#include "point.h"
-#include "normal.h"
+#include "luxrays/core/geometry/vector.h"
+using luxrays::Vector;
+#include "luxrays/core/geometry/point.h"
+using luxrays::Point;
+#include "luxrays/core/geometry/normal.h"
+using luxrays::Normal;
 
 namespace lux
 {

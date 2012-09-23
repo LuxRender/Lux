@@ -32,7 +32,8 @@
 #include "paramset.h"
 #include "dynload.h"
 #include "error.h"
-#include "epsilon.h"
+#include "luxrays/core/epsilon.h"
+using luxrays::MachineEpsilon;
 
 using namespace lux;
 

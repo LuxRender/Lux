@@ -485,7 +485,6 @@ SET(lux_core_hdr
 	core/context.h
 	core/contribution.h
 	core/dynload.h
-	core/epsilon.h
 	core/error.h
 	core/exrio.h
 	core/fastmutex.h
@@ -539,21 +538,15 @@ SET(lux_core_external_hdr
 	)
 SOURCE_GROUP("Header Files\\Core\\External" FILES ${lux_core_external_hdr})
 SET(lux_core_geometry_hdr
-	core/geometry/bbox.h
 	core/geometry/matrix2x2.h
 	core/geometry/matrix3x3.h
 	core/geometry/matrix4x4-sse.h
 	core/geometry/matrix4x4.h
-	core/geometry/normal.h
-	core/geometry/point.h
 	core/geometry/quaternion.h
-	core/geometry/ray.h
 	core/geometry/raydifferential.h
 	core/geometry/transform-sse.inl
 	core/geometry/transform.h
 	core/geometry/transform.inl
-	core/geometry/vector.h
-	core/geometry/vector_normal.h
 	)
 SOURCE_GROUP("Header Files\\Core\\Geometry" FILES ${lux_core_geometry_hdr})
 SET(lux_core_queryable_hdr
