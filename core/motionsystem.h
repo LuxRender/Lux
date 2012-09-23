@@ -29,7 +29,6 @@
 #include "geometry/quaternion.h"
 #include "luxrays/core/geometry/bbox.h"
 using luxrays::BBox;
-#include "geometry/matrix4x4.h"
 #include "geometry/transform.h"
 // MotionSystem Declarations
 

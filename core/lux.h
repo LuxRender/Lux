@@ -135,25 +135,26 @@ class MemoryArena;
 template<class T, int logBlockSize = 2> class BlockedArray;
 
 namespace luxrays {
-  class Vector;
-  class Point;
-  class Normal;
   class BBox;
-  class Ray;
   class MachineEpsilon;
+  class Matrix4x4;
+  class Normal;
+  class Point;
+  class Ray;
+  class Vector;
 }
 
 namespace lux
 {
-  class Matrix4x4;
   class ParamSet;
   template <class T> struct ParamSetItem;
-  using luxrays::Vector;
-  using luxrays::Point;
-  using luxrays::Normal;
   using luxrays::BBox;
-  using luxrays::Ray;
   using luxrays::MachineEpsilon;
+  using luxrays::Matrix4x4;
+  using luxrays::Normal;
+  using luxrays::Point;
+  using luxrays::Ray;
+  using luxrays::Vector;
   class RayDifferential;
   class Transform;
   class DifferentialGeometry;

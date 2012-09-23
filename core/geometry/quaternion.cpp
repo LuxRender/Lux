@@ -22,7 +22,8 @@
 
 // quaternion.cpp*
 #include "quaternion.h"
-#include "geometry/matrix4x4.h"
+#include "luxrays/core/geometry/matrix4x4.h"
+using luxrays::Matrix4x4;
 
 #include <cstring>
 using std::memset;

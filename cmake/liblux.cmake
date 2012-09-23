@@ -100,7 +100,6 @@ SET(lux_core_src
 SOURCE_GROUP("Source Files\\Core" FILES ${lux_core_src})
 
 SET(lux_core_geometry_src
-	core/geometry/matrix4x4.cpp
 	core/geometry/quaternion.cpp
 	core/geometry/raydifferential.cpp
 	core/geometry/transform.cpp
@@ -540,8 +539,6 @@ SOURCE_GROUP("Header Files\\Core\\External" FILES ${lux_core_external_hdr})
 SET(lux_core_geometry_hdr
 	core/geometry/matrix2x2.h
 	core/geometry/matrix3x3.h
-	core/geometry/matrix4x4-sse.h
-	core/geometry/matrix4x4.h
 	core/geometry/quaternion.h
 	core/geometry/raydifferential.h
 	core/geometry/transform-sse.inl

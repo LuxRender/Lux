@@ -63,7 +63,7 @@ Transform RotateX(float angle) {
                                  0, cos_t, -sin_t, 0,
                                  0, sin_t,  cos_t, 0,
                                  0,     0,      0, 1));
-	return Transform(m, m->Transpose());
+	return Transform(m, boost::shared_ptr<Matrix4x4>(new Matrix4x4(m->Transpose())));
 }
 Transform RotateY(float angle) {
 	float sin_t = sinf(Radians(angle));
@@ -72,7 +72,7 @@ Transform RotateY(float angle) {
                                       0,   1,     0, 0,
                                  -sin_t,   0, cos_t, 0,
                                       0,   0,     0, 1));
-	return Transform(m, m->Transpose());
+	return Transform(m, boost::shared_ptr<Matrix4x4>(new Matrix4x4(m->Transpose())));
 }
 
 Transform RotateZ(float angle) {
@@ -82,7 +82,7 @@ Transform RotateZ(float angle) {
                                  sin_t,  cos_t, 0, 0,
                                  0,      0, 1, 0,
                                  0,      0, 0, 1));
-	return Transform(m, m->Transpose());
+	return Transform(m, boost::shared_ptr<Matrix4x4>(new Matrix4x4(m->Transpose())));
 }
 Transform Rotate(float angle, const Vector &axis) {
 	Vector a = Normalize(axis);
@@ -111,7 +111,7 @@ Transform Rotate(float angle, const Vector &axis) {
 	m[3][3] = 1;
 
 	boost::shared_ptr<Matrix4x4> o (new Matrix4x4(m));
-	return Transform(o, o->Transpose());
+	return Transform(o, boost::shared_ptr<Matrix4x4>(new Matrix4x4(o->Transpose())));
 }
 Transform LookAt(const Point &pos, const Point &look, const Vector &up) {
 	float m[4][4];
@@ -136,7 +136,7 @@ Transform LookAt(const Point &pos, const Point &look, const Vector &up) {
 	m[2][2] = dir.z;
 	m[3][2] = 0.;
 	boost::shared_ptr<Matrix4x4> camToWorld (new Matrix4x4(m));
-	return Transform(camToWorld->Inverse(), camToWorld);
+	return Transform(boost::shared_ptr<Matrix4x4>(new Matrix4x4(camToWorld->Inverse())), camToWorld);
 }
 bool Transform::HasScale() const {
 	float det = fabsf(m->m[0][0] * (m->m[1][1] * m->m[2][2] - m->m[1][2] * m->m[2][1])) -
@@ -157,9 +157,8 @@ BBox Transform::operator()(const BBox &b) const {
 	return ret;
 }
 Transform Transform::operator*(const Transform &t2) const {
-	boost::shared_ptr<Matrix4x4> m1(Matrix4x4::Mul(m, t2.m));
-	boost::shared_ptr<Matrix4x4> m2(Matrix4x4::Mul(t2.mInv, mInv));
-	return Transform(m1, m2);
+	return Transform(boost::shared_ptr<Matrix4x4>(new Matrix4x4(*m * *t2.m)),
+			boost::shared_ptr<Matrix4x4>(new Matrix4x4(*t2.mInv * *mInv)));
 }
 /*
 #ifndef LUX_USE_SSE
