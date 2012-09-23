@@ -1118,13 +1118,20 @@ void FlexImageFilm::WriteImage(ImageType type)
 			++pix;
 		}
 	}
-	Y /= pcount;
-	averageLuminance = Y;
-	// The relation between EV and luminance in cd.m-2 is:
-	// EV = log2(L * S / K)
-	// where L is the luminance, S is the ISO speed and K is a constant
-	// usually S is taken to be 100 and K to be 12.5
-	EV = logf(Y * 8.f) / logf(2.f);
+	if (pcount > 0) {
+		Y /= pcount;
+		averageLuminance = Y;
+		// The relation between EV and luminance in cd.m-2 is:
+		// EV = log2(L * S / K)
+		// where L is the luminance, S is the ISO speed and K is a constant
+		// usually S is taken to be 100 and K to be 12.5
+		EV = logf(Y * 8.f) / logf(2.f);
+	} else {
+		//Fully black picture with no contribution yet
+		// Y is already set to 0.f
+		averageLuminance = 0.f;
+		EV = -INFINITY;
+	}
 
 	// release pool lock before writing output
 	poolLock.unlock();

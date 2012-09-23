@@ -28,6 +28,8 @@
 #include "sampling.h"
 #include "fresnel.h"
 #include "volume.h"
+#include "luxrays/core/epsilon.h"
+using luxrays::MachineEpsilon;
 
 
 using namespace lux;
@@ -288,8 +290,14 @@ SWCSpectrum LayeredBSDF::F(const SpectrumWavelengths &sw, const Vector &woW,
 
 	// Apply the geometric correction factor if the result is used for
 	// a light path (reverse=false)
-	if (!reverse)
-		L *= fabsf(Dot(wiW, ng) / Dot(woW, ng));
+	if (!reverse) {
+		// If cosWo is too small, discard the result
+		// to avoid numerical instability
+		const float cosWo = Dot(woW, ng);
+		if (fabsf(cosWo) < MachineEpsilon::E(1.f))
+			return SWCSpectrum(0.f);
+		L *= fabsf(Dot(wiW, ng) / cosWo);
+	}
 	return L * AbsDot(woW, dgShading.nn);
 }
 

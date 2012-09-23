@@ -26,6 +26,8 @@
 #include "fresnel.h"
 #include "mc.h"
 #include "sampling.h"
+#include "luxrays/core/epsilon.h"
+using luxrays::MachineEpsilon;
 
 using namespace lux;
 
@@ -202,7 +204,10 @@ bool SchlickBSDF::SampleF(const SpectrumWavelengths &sw, const Vector &woW, Vect
 	const float coso = fabsf(CosTheta(wo));
 	SWCSpectrum a(CoatingAbsorption(cosi, coso, Alpha, depth));	
 
-	const float sideTest = Dot(*wiW, ng) / Dot(woW, ng);
+	// If Dot(woW, ng) is too small, set sideTest to 0 to discard the result
+	// and avoid numerical instability
+	const float cosWo = Dot(woW, ng);
+	const float sideTest = fabsf(cosWo) < MachineEpsilon::E(1.f) ? 0.f : Dot(*wiW, ng) / cosWo;
 	if (sideTest > 0.f) {
 		// Reflection
 		if (!(Dot(woW, ng) > 0.f)) {
@@ -268,8 +273,11 @@ SWCSpectrum SchlickBSDF::F(const SpectrumWavelengths &sw, const Vector &woW,
 	const float cosi = fabsf(CosTheta(wi));
 	const float coso = fabsf(CosTheta(wo));
 	SWCSpectrum a(CoatingAbsorption(cosi, coso, Alpha, depth));
-	
-	const float sideTest = Dot(wiW, ng) / Dot(woW, ng);
+
+	// If Dot(woW, ng) is too small, set sideTest to 0 to discard the result
+	// and avoid numerical instability
+	const float cosWo = Dot(woW, ng);
+	const float sideTest = fabsf(cosWo) < MachineEpsilon::E(1.f) ? 0.f : Dot(wiW, ng) / cosWo;
 	if (sideTest > 0.f) {
 		// Reflection
 		// ignore BTDFs

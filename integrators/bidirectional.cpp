@@ -226,6 +226,7 @@ bool BidirIntegrator::EvalPath(const Scene &scene, const Sample &sample,
 	float pdfLightDirect, bool isLightDirect, float *weight,
 	SWCSpectrum *L) const
 {
+	static const float epsilon = MachineEpsilon::E(1.f);
 	// If each path has at least 1 vertex, connect them
 	if (nLight <= 0 || nEye <= 0)
 		return false;
@@ -269,10 +270,15 @@ bool BidirIntegrator::EvalPath(const Scene &scene, const Sample &sample,
 	const float epdf = eyeV.bsdf->Pdf(sw, ewi, eyeV.wo, eyeV.flags);
 	if (nEye == 1)
 		eyeV.rr = 1.f;
-	else
+	else if (ecosi * epdf > epsilon)
 		eyeV.rr = min(1.f, max(lightThreshold, ef.Filter(sw) *
 			eyeV.coso / (ecosi * epdf)));
-	eyeV.rrR = min(1.f, max(eyeThreshold, ef.Filter(sw) / epdfR));
+	else
+		eyeV.rr = 0.f;
+	if (epdfR > epsilon)
+		eyeV.rrR = min(1.f, max(eyeThreshold, ef.Filter(sw) / epdfR));
+	else
+		eyeV.rrR = 0.f;
 	eyeV.dAWeight = lpdf * ltPdf / d2;
 	if (!eScat)
 		eyeV.dAWeight *= ecosi;
@@ -285,12 +291,17 @@ bool BidirIntegrator::EvalPath(const Scene &scene, const Sample &sample,
 	// Evaluate factors for light path weighting
 	const float lcoso = AbsDot(lwo, lightV.bsdf->ng);
 	const float lpdfR = lightV.bsdf->Pdf(sw, lwo, lightV.wi, lightV.flags);
-	lightV.rr = min(1.f, max(lightThreshold, lf.Filter(sw) / lpdf));
+	if (lpdf > epsilon)
+		lightV.rr = min(1.f, max(lightThreshold, lf.Filter(sw) / lpdf));
+	else
+		lightV.rr = 0.f;
 	if (nLight == 1)
 		lightV.rrR = 1.f;
-	else
+	else if (lcoso * lpdfR > epsilon)
 		lightV.rrR = min(1.f, max(eyeThreshold, lf.Filter(sw) *
 			lightV.cosi / (lcoso * lpdfR)));
+	else
+		lightV.rrR = 0.f;
 	lightV.dARWeight = epdfR * etPdfR / d2;
 	if (!lScat)
 		lightV.dARWeight *= lcoso;
