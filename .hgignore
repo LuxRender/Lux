@@ -48,3 +48,4 @@ qrc_*.cxx
 lux.build*
 *.DS_Store
 *-qrc.cpp
+lto-llvm.o*
