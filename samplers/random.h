@@ -61,7 +61,7 @@ public:
 	virtual u_int RoundSize(u_int sz) const { return sz; }
 	virtual void GetBufferType(BufferType *type) {*type = BUF_TYPE_PER_PIXEL;}
 
-	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
+	static Sampler *CreateSampler(const ParamSet &params, Film *film);
 private:
 	// RandomSampler Private Data
 	bool jitterSamples;

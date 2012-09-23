@@ -759,6 +759,14 @@ Film::~Film()
 	delete contribPool;
 }
 
+void Film::EnableNoiseAwareMap() {
+	varianceBuffer = new VarianceBuffer(xPixelCount, yPixelCount);
+	varianceBuffer->Clear();
+
+	noiseAwareMap = new float[xPixelCount * yPixelCount];
+	std::fill(noiseAwareMap, noiseAwareMap + xPixelCount * yPixelCount, 1.f);
+}
+
 void Film::RequestBufferGroups(const vector<string> &bg)
 {
 	for (u_int i = 0; i < bg.size(); ++i)
@@ -783,29 +791,27 @@ void Film::CreateBuffers()
 	if (use_Zbuf)
 		ZBuffer = new PerPixelNormalizedFloatBuffer(xPixelCount, yPixelCount);
 
-	// Allocate convergence buffers if needed
-	if (haltThreshold >= 0.f) {
-		varianceBuffer = new VarianceBuffer(xPixelCount, yPixelCount);
-		varianceBuffer->Clear();
-
-		noiseAwareMap = new float[xPixelCount * yPixelCount];
-		std::fill(noiseAwareMap, noiseAwareMap + xPixelCount * yPixelCount, 1.f);
-
+	// Enable convergence test if needed
+	// NOTE: TVI is a side product of convergence test so I need to run the
+	// test even if halttreshold is not used
+	if ((haltThreshold >= 0.f) || noiseAwareMap) {
 		convTest = new luxrays::utils::ConvergenceTest(xPixelCount, yPixelCount);
-		convTest->NeedTVI();
 
-		// DEBUG: for testing the user sampling map functionality
-		/*userSamplingMap = new float[xPixelCount * yPixelCount];
-		for (u_int x = 0; x < xPixelCount; ++x) {
-			for (u_int y = 0; y < yPixelCount; ++y) {
-				const float xx = (x / (float)xPixelCount) - 0.5f;
-				const float yy = (y / (float)yPixelCount) - 0.5f;
-
-				userSamplingMap[x + y * xPixelCount] = (xx * xx + yy * yy < 0.25f * 0.25f) ? 1.f : 0.01f;
-			}
-		}
-		userSamplingMapVersion = 1;*/
+		if (noiseAwareMap)
+			convTest->NeedTVI();
 	}
+
+	// DEBUG: for testing the user sampling map functionality
+	/*userSamplingMap = new float[xPixelCount * yPixelCount];
+	for (u_int x = 0; x < xPixelCount; ++x) {
+		for (u_int y = 0; y < yPixelCount; ++y) {
+			const float xx = (x / (float)xPixelCount) - 0.5f;
+			const float yy = (y / (float)yPixelCount) - 0.5f;
+
+			userSamplingMap[x + y * xPixelCount] = (xx * xx + yy * yy < 0.25f * 0.25f) ? 1.f : 0.f;
+		}
+	}
+	userSamplingMapVersion = 1;*/
 
 	// initialize the contribution pool
 	// needs to be done before anyone tries to lock it

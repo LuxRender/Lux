@@ -68,7 +68,7 @@ public:
 		float u[2]);
 	virtual float *GetLazyValues(const Sample &sample, u_int num, u_int pos);
 
-	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
+	static Sampler *CreateSampler(const ParamSet &params, Film *film);
 private:
 	// LDSampler Private Data
 	u_int pixelSamples, totalPixels;

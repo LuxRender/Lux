@@ -64,8 +64,7 @@ boost::shared_ptr<Aggregate> MakeAccelerator(const string &name,
 	const ParamSet &paramSet);
 Camera *MakeCamera(const string &name, const MotionSystem &world2cam, 
 	const ParamSet &paramSet, Film *film);
-Sampler *MakeSampler(const string &name, const ParamSet &paramSet,
-	const Film *film);
+Sampler *MakeSampler(const string &name, const ParamSet &paramSet, Film *film);
 Filter *MakeFilter(const string &name, const ParamSet &paramSet);
 ToneMap *MakeToneMap(const string &name, const ParamSet &paramSet);
 Film *MakeFilm(const string &name, const ParamSet &paramSet, Filter *filt);
@@ -208,7 +207,7 @@ public:
 		virtual ~RegisterCamera<T>() {}
 	};
 
-	typedef Sampler *(*CreateSampler)(const ParamSet&, const Film*);
+	typedef Sampler *(*CreateSampler)(const ParamSet&, Film*);
 	LUX_EXPORT static map<string, CreateSampler> &registeredSamplers();
 	template <class T> class RegisterSampler : public RegisterLoader<CreateSampler> {
 	public:

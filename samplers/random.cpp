@@ -131,7 +131,7 @@ float *RandomSampler::GetLazyValues(const Sample &sample, u_int num, u_int pos)
 	return sd;
 }
 
-Sampler* RandomSampler::CreateSampler(const ParamSet &params, const Film *film)
+Sampler* RandomSampler::CreateSampler(const ParamSet &params, Film *film)
 {
 	// for backwards compatibility
 	int nsamp = params.FindOneInt("pixelsamples", 4);

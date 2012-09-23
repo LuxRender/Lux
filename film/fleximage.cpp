@@ -1225,7 +1225,7 @@ void FlexImageFilm::WriteImage(ImageType type)
 	EV = logf(Y * 8.f) / logf(2.f);
 
 	// Update convergence information if required
-	if ((haltThreshold >= 0.f) && (type & IMAGE_FRAMEBUFFER) && float_framebuffer) {
+	if (noiseAwareMap && (type & IMAGE_FRAMEBUFFER) && float_framebuffer) {
 		// The framebuffer has been update
 		UpdateConvergenceInfo(float_framebuffer);
 	}

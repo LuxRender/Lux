@@ -203,7 +203,7 @@ float *LDSampler::GetLazyValues(const Sample &sample, u_int num, u_int pos)
 	return sd;
 }
 
-Sampler* LDSampler::CreateSampler(const ParamSet &params, const Film *film) {
+Sampler* LDSampler::CreateSampler(const ParamSet &params, Film *film) {
 	// Initialize common sampler parameters
 	int xstart, xend, ystart, yend;
 	film->GetSampleExtent(&xstart, &xend, &ystart, &yend);

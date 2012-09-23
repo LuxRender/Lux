@@ -686,6 +686,7 @@ public:
 	virtual void SetStringParameterValue(luxComponentParameters param, const string& value, u_int index) = 0;
 	virtual string GetStringParameterValue(luxComponentParameters param, u_int index) = 0;
 
+	virtual void EnableNoiseAwareMap();
 	virtual const bool GetNoiseAwareMap(u_int &version, float *map) const;
 	virtual const bool HasUserSamplingMap() const { return (userSamplingMap != NULL); }
 	virtual const bool GetUserSamplingMap(u_int &version, float *map) const;
@@ -761,14 +762,17 @@ protected: // Put it here for better data alignment
 	std::vector<BufferConfig> bufferConfigs;
 	std::vector<BufferGroup> bufferGroups;
 
+	// Enabled by halthtreshold
 	bool enoughSamplesForConvTest;
 	luxrays::utils::ConvergenceTest *convTest;
-	VarianceBuffer *varianceBuffer; // Used to build the noise map
 
+	// May be enabled by the sampler
+	VarianceBuffer *varianceBuffer; // Used to build the noise map
 	float *noiseAwareMap;
 	u_int noiseAwareMapVersion;
 	boost::mutex noiseAwareMapMutex;
 
+	// May be enabled by the user
 	float *userSamplingMap;
 	u_int userSamplingMapVersion;
 	boost::mutex userSamplingMapMutex;

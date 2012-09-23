@@ -190,12 +190,19 @@ bool MetropolisSampler::GetNextSample(Sample *sample)
 			if (!data->samplingMap)
 				data->samplingMap = new float[nPix];
 
-			bool newSamplingMap = false;
+			bool newSamplingMap;
+			// Check if there is a new version of the noise map and/or user-sampling map
 			if (useNoiseAware) {
-				// Check if there is a new version of the noise map and/or user-sampling map
-				newSamplingMap = film->GetSamplingMap(data->noiseAwareMapVersion, data->userSamplingMapVersion, data->samplingMap);
-			} else
-				newSamplingMap = film->GetUserSamplingMap(data->userSamplingMapVersion, data->samplingMap);
+				if (film->HasUserSamplingMap())
+					newSamplingMap = film->GetSamplingMap(data->noiseAwareMapVersion, data->userSamplingMapVersion, data->samplingMap);
+				else
+					newSamplingMap = film->GetNoiseAwareMap(data->noiseAwareMapVersion, data->samplingMap);
+			} else {
+				if (film->HasUserSamplingMap())
+					newSamplingMap = film->GetUserSamplingMap(data->userSamplingMapVersion, data->samplingMap);
+				else 
+					newSamplingMap = false;
+			}
 
 			if (newSamplingMap) {
 				// There is a new version so reset some data
@@ -417,7 +424,7 @@ void MetropolisSampler::AddSample(const Sample &sample)
 		data->large = (mutationSelector < pLarge);
 }
 
-Sampler* MetropolisSampler::CreateSampler(const ParamSet &params, const Film *film)
+Sampler* MetropolisSampler::CreateSampler(const ParamSet &params, Film *film)
 {
 	int xStart, xEnd, yStart, yEnd;
 	film->GetSampleExtent(&xStart, &xEnd, &yStart, &yEnd);
@@ -427,6 +434,11 @@ Sampler* MetropolisSampler::CreateSampler(const ParamSet &params, const Film *fi
 	bool useCooldown = params.FindOneBool("usecooldown", true);
 	bool useNoiseAware = params.FindOneBool("noiseaware", false);
 	float range = params.FindOneFloat("mutationrange", (xEnd - xStart + yEnd - yStart) / 32.f);	// maximum distance in pixel for a small mutation
+
+	if (useNoiseAware) {
+		// Enable Film noise-aware map generation
+		film->EnableNoiseAwareMap();
+	}
 
 	return new MetropolisSampler(xStart, xEnd, yStart, yEnd, max(maxConsecRejects, 0),
 		largeMutationProb, range, useVariance, useCooldown, useNoiseAware);
