@@ -358,9 +358,9 @@ RenderFarm::CompiledCommand& RenderFarm::CompiledCommands::add(const std::string
 	return commands.back();
 }
 
-RenderFarm::RenderFarm() : Queryable("render_farm"), pollingInterval(3 * 60),
+RenderFarm::RenderFarm() : Queryable("render_farm"),
 		filmUpdateThread(NULL), flushThread(NULL), netBufferComplete(false),
-		isLittleEndian(osIsLittleEndian()), defaultTcpPort(18018)
+		isLittleEndian(osIsLittleEndian()), pollingInterval(3 * 60), defaultTcpPort(18018)
 {
 	AddIntAttribute(*this, "defaultTcpPort", "Default TCP port", &RenderFarm::defaultTcpPort, ReadWriteAccess);
 	AddIntAttribute(*this, "pollingInterval", "Polling interval", &RenderFarm::pollingInterval, ReadWriteAccess);
