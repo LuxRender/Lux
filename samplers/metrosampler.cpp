@@ -39,7 +39,8 @@ static const u_int rngA = 884;
 MetropolisSampler::MetropolisData::MetropolisData(const MetropolisSampler &sampler) :
 	consecRejects(0), large(true), stamp(0), currentStamp(0), weight(0.f),
 	LY(0.f), alpha(0.f), totalLY(0.f), sampleCount(0.f),
-	samplingMap(NULL), noiseAwareMapVersion(0), userSamplingMapVersion(0),
+	noiseAwareMap(NULL), noiseAwareMapVersion(0),
+	userSamplingMap(NULL), userSamplingMapVersion(0),
 	cooldown(sampler.cooldownTime > 0)
 {
 	u_int i;
@@ -90,7 +91,6 @@ MetropolisSampler::MetropolisData::~MetropolisData()
 	FreeAligned(sampleImage);
 	delete[] timeOffset;
 	delete[] offset;
-	delete[] samplingMap;
 }
 
 // mutate a value in the range [0-1]
@@ -187,29 +187,35 @@ bool MetropolisSampler::GetNextSample(Sample *sample)
 		if (useNoiseAware || film->HasUserSamplingMap()) {
 			// Noise-aware and/or User Sampling support
 			const u_int nPix = film->GetXPixelCount() * film->GetYPixelCount();
-			if (!data->samplingMap)
-				data->samplingMap = new float[nPix];
 
-			bool newSamplingMap;
+			bool newSamplingMap = false;
 			// Check if there is a new version of the noise map and/or user-sampling map
-			if (useNoiseAware) {
-				if (film->HasUserSamplingMap())
-					newSamplingMap = film->GetSamplingMap(data->noiseAwareMapVersion, data->userSamplingMapVersion, data->samplingMap);
-				else
-					newSamplingMap = film->GetNoiseAwareMap(data->noiseAwareMapVersion, data->samplingMap);
-			} else {
-				if (film->HasUserSamplingMap())
-					newSamplingMap = film->GetUserSamplingMap(data->userSamplingMapVersion, data->samplingMap);
-				else 
-					newSamplingMap = false;
-			}
+			if (useNoiseAware)
+				newSamplingMap |= film->GetNoiseAwareMap(data->noiseAwareMapVersion, data->noiseAwareMap);			
+			if (film->HasUserSamplingMap())
+				newSamplingMap |= film->GetUserSamplingMap(data->userSamplingMapVersion, data->userSamplingMap);
 
 			if (newSamplingMap) {
 				// There is a new version so reset some data
 
 				float newTotal = 0.f;
-				for (u_int i = 0; i < nPix; ++i)
-					newTotal += data->samplingMap[i];
+				if (data->noiseAwareMapVersion > 0) {
+					if (data->userSamplingMapVersion > 0) {
+						for (u_int i = 0; i < nPix; ++i)
+							newTotal += data->noiseAwareMap[i] * data->userSamplingMap[i];
+					} else {
+						for (u_int i = 0; i < nPix; ++i)
+							newTotal += data->noiseAwareMap[i];
+					}
+				} else {
+					if (data->userSamplingMapVersion > 0) {
+						for (u_int i = 0; i < nPix; ++i)
+							newTotal += data->userSamplingMap[i];
+					} else {
+						// This should never happen
+						LOG(LUX_ERROR, LUX_SYSTEM)<< "Internal error in MetropolisSampler::GetNextSample()";
+					}
+				}					
 				newTotal /= nPix;
 
 				// NOTE: totalLY store the average target function value (this is usually not known but in this case, it is)
@@ -336,7 +342,7 @@ void MetropolisSampler::AddSample(const Sample &sample)
 	vector<Contribution> &newContributions(sample.contributions);
 	float meanIntensity;
 	float newLY = 0.f;
-	if (data->samplingMap && ((data->noiseAwareMapVersion > 0) || (data->userSamplingMapVersion > 0))) {
+	if ((data->noiseAwareMapVersion > 0) || (data->userSamplingMapVersion > 0)) {
 		const int xPixelCount = film->GetXPixelCount();
 		const int xSize = xPixelCount - 1;
 		const int ySize = film->GetYPixelCount() - 1;
@@ -344,8 +350,21 @@ void MetropolisSampler::AddSample(const Sample &sample)
 		for(u_int i = 0; i < newContributions.size(); ++i) {
 			const int x = min(max(Ceil2Int(newContributions[i].imageX - .5f), 0), xSize);
 			const int y = min(max(Ceil2Int(newContributions[i].imageY - .5f), 0), ySize);
+			const int index = x + y * xPixelCount;
 
-			newLY += data->samplingMap[x + y * xPixelCount];
+			if (data->noiseAwareMapVersion > 0) {
+				if (data->userSamplingMapVersion > 0)
+					newLY += data->noiseAwareMap[index] * data->userSamplingMap[index];
+				else
+					newLY += data->noiseAwareMap[index];
+			} else {
+				if (data->userSamplingMapVersion > 0)
+					newLY += data->userSamplingMap[index];
+				else {
+					// This should never happen
+					LOG(LUX_ERROR, LUX_SYSTEM)<< "Internal error in MetropolisSampler::AddSample()";
+				}
+			}
 		}
 
 		meanIntensity = data->totalLY > 0. ? data->totalLY : 1.f;

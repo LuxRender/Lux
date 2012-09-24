@@ -25,6 +25,8 @@
 #ifndef LUX_METROSAMPLER_H
 #define LUX_METROSAMPLER_H
 
+#include <boost/shared_array.hpp>
+
 #include "sampling.h"
 #include "paramset.h"
 #include "film.h"
@@ -52,8 +54,9 @@ public:
 		vector <Contribution> oldContributions;
 		double totalLY, sampleCount;
 
-		float *samplingMap;
+		boost::shared_array<float> noiseAwareMap;
 		u_int noiseAwareMapVersion;
+		boost::shared_array<float> userSamplingMap;		
 		u_int userSamplingMapVersion;
 
 		bool cooldown;

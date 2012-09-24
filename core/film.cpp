@@ -753,8 +753,6 @@ Film::~Film()
 	delete ZBuffer;
 	delete convTest;
 	delete varianceBuffer;
-	delete[] noiseAwareMap;
-	delete[] userSamplingMap;
 	delete histogram;
 	delete contribPool;
 }
@@ -763,8 +761,8 @@ void Film::EnableNoiseAwareMap() {
 	varianceBuffer = new VarianceBuffer(xPixelCount, yPixelCount);
 	varianceBuffer->Clear();
 
-	noiseAwareMap = new float[xPixelCount * yPixelCount];
-	std::fill(noiseAwareMap, noiseAwareMap + xPixelCount * yPixelCount, 1.f);
+	noiseAwareMap.reset(new float[xPixelCount * yPixelCount]);
+	std::fill(noiseAwareMap.get(), noiseAwareMap.get() + xPixelCount * yPixelCount, 1.f);
 }
 
 void Film::RequestBufferGroups(const vector<string> &bg)
@@ -2467,11 +2465,15 @@ void Film::GenerateNoiseAwareMap() {
 	boost::mutex::scoped_lock(noiseAwareMapMutex);
 
 	const u_int nPix = xPixelCount * yPixelCount;
+
+	// Free the reference to the old one and allocate a new one
+	noiseAwareMap.reset(new float[nPix]);
+
 	if (!enoughSamplesForConvTest) {
 		LOG(LUX_DEBUG, LUX_NOERROR) << "Noise aware map based on: uniform distribution (not enough samples to start the process)";
 
 		// Just use a uniform distribution
-		std::fill(noiseAwareMap, noiseAwareMap + nPix, 1.f);
+		std::fill(noiseAwareMap.get(), noiseAwareMap.get() + nPix, 1.f);
 		return;
 	}
 	
@@ -2500,7 +2502,7 @@ void Film::GenerateNoiseAwareMap() {
 		LOG(LUX_DEBUG, LUX_NOERROR) << "Noise aware map based on: uniform distribution";
 
 		// Just use a uniform distribution
-		std::fill(noiseAwareMap, noiseAwareMap + nPix, 1.f);
+		std::fill(noiseAwareMap.get(), noiseAwareMap.get() + nPix, 1.f);
 	} else {
 		++noiseAwareMapVersion;
 		LOG(LUX_DEBUG, LUX_NOERROR) << "Noise aware map based on: noise information (version: " <<
@@ -2529,61 +2531,41 @@ void Film::GenerateNoiseAwareMap() {
 
 		// Apply an heavy filter to smooth the map
 		float *tmpMap = new float[nPix];
-		ApplyBoxFilter(noiseAwareMap, tmpMap, xPixelCount, yPixelCount, 2);
+		ApplyBoxFilter(noiseAwareMap.get(), tmpMap, xPixelCount, yPixelCount, 2);
 		delete []tmpMap;
 	}
 }
 
-const bool Film::GetNoiseAwareMap(u_int &version, float *map) const {
+const bool Film::GetNoiseAwareMap(u_int &version, boost::shared_array<float> &map) const {
 	boost::mutex::scoped_lock(noiseAwareMapMutex);
 
 	if (noiseAwareMapVersion > version) {
-		std::copy(noiseAwareMap, noiseAwareMap + xPixelCount * yPixelCount, map);
+		map = noiseAwareMap;
 		version = noiseAwareMapVersion;
 		return true;
 	} else
 		return false;
 }
 
-const bool Film::GetUserSamplingMap(u_int &version, float *map) const {
+const bool Film::GetUserSamplingMap(u_int &version, boost::shared_array<float> &map) const {
 	boost::mutex::scoped_lock(userSamplingMapMutex);
 
 	if (userSamplingMapVersion > version) {
-		std::copy(userSamplingMap, userSamplingMap + xPixelCount * yPixelCount, map);
+		map = userSamplingMap;
 		version = userSamplingMapVersion;
 		return true;
 	} else
 		return false;
 }
 
-// Return noise-aware * user-sampling maps
-const bool Film::GetSamplingMap(u_int &naVersion,  u_int &usVersion, float *map) const {
-	boost::mutex::scoped_lock(noiseAwareMapMutex);
-	boost::mutex::scoped_lock(userSamplingMapMutex);
-
-	if ((noiseAwareMapVersion == naVersion) && (userSamplingMapVersion == usVersion))
-		return false;
-	else {
-		const u_int nPix = xPixelCount * yPixelCount;
-
-		if (userSamplingMap) {
-			for (u_int i = 0; i < nPix; ++i)
-				map[i] = noiseAwareMap[i] * userSamplingMap[i];
-		} else
-			std::copy(noiseAwareMap, noiseAwareMap + nPix, map);
-
-		naVersion = noiseAwareMapVersion;
-		usVersion = userSamplingMapVersion;
-
-		return true;
-	}
-}
-
 void Film::SetUserSamplingMap(const float *map) {
 	boost::mutex::scoped_lock(userSamplingMapMutex);
 
 	const u_int nPix = xPixelCount * yPixelCount;
-	std::copy(map, map + nPix, userSamplingMap);
+	if (!userSamplingMap)
+		userSamplingMap.reset(new float[nPix]);
+
+	std::copy(map, map + nPix, userSamplingMap.get());
 	++userSamplingMapVersion;
 }
 

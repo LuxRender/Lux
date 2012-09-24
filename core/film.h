@@ -34,6 +34,7 @@
 #include <boost/serialization/split_member.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/xtime.hpp>
+#include <boost/shared_array.hpp>
 
 namespace lux {
 
@@ -687,11 +688,10 @@ public:
 	virtual string GetStringParameterValue(luxComponentParameters param, u_int index) = 0;
 
 	virtual void EnableNoiseAwareMap();
-	virtual const bool GetNoiseAwareMap(u_int &version, float *map) const;
-	virtual const bool HasUserSamplingMap() const { return (userSamplingMap != NULL); }
-	virtual const bool GetUserSamplingMap(u_int &version, float *map) const;
-	// Return noise-aware * user-sampling maps
-	virtual const bool GetSamplingMap(u_int &naVersion,  u_int &usVersion, float *map) const;
+	virtual const bool GetNoiseAwareMap(u_int &version, boost::shared_array<float> &map) const;
+	// Using a check on userSamplingMapVersion in order to avoid the usage of userSamplingMapMutex
+	virtual const bool HasUserSamplingMap() const { return (userSamplingMapVersion > 0); }
+	virtual const bool GetUserSamplingMap(u_int &version, boost::shared_array<float> &map) const;
 	virtual void SetUserSamplingMap(const float *map);
 
 	/*
@@ -768,15 +768,18 @@ protected: // Put it here for better data alignment
 
 	// May be enabled by the sampler
 	VarianceBuffer *varianceBuffer; // Used to build the noise map
-	float *noiseAwareMap;
+	// Using boost::shared_array in order to have a garbage collector-like
+	// behavior (i.e. the map is really de-allocated only when all reference are
+	// gone)
+	boost::shared_array<float> noiseAwareMap;
 	u_int noiseAwareMapVersion;
 	boost::mutex noiseAwareMapMutex;
 
 	// May be enabled by the user
-	float *userSamplingMap;
+	boost::shared_array<float> userSamplingMap;
 	u_int userSamplingMapVersion;
 	boost::mutex userSamplingMapMutex;
-
+	
 	PerPixelNormalizedFloatBuffer *ZBuffer;
 	bool use_Zbuf;
 
