@@ -24,7 +24,8 @@
 #define LUX_MATRIX3X3_H
 
 #include <boost/limits.hpp>
-#include "geometry/vector.h"
+#include "luxrays/core/geometry/vector.h"
+using luxrays::Vector;
 
 namespace lux
 {

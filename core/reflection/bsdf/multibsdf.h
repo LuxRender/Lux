@@ -26,6 +26,8 @@
 #include "bxdf.h"
 #include "geometry/raydifferential.h"
 #include "spectrum.h"
+#include "luxrays/core/epsilon.h"
+using luxrays::MachineEpsilon;
 
 namespace lux
 {
@@ -139,7 +141,10 @@ bool MultiBSDF<MAX_BxDFS>::SampleF(const SpectrumWavelengths &sw, const Vector &
 	*wiW = LocalToWorld(wi);
 	// Compute overall PDF with all matching _BxDF_s
 	// Compute value of BSDF for sampled direction
-	const float sideTest = Dot(*wiW, ng) / Dot(woW, ng);
+	// If Dot(woW, ng) is too small, set sideTest to 0 to discard the result
+	// and avoid numerical instability
+	const float cosWo = Dot(woW, ng);
+	const float sideTest = fabsf(cosWo) < MachineEpsilon::E(1.f) ? 0.f : Dot(*wiW, ng) / cosWo;
 	BxDFType flags2;
 	if (sideTest > 0.f)
 		// ignore BTDFs
@@ -219,7 +224,10 @@ template<int MAX_BxDFS>
 SWCSpectrum MultiBSDF<MAX_BxDFS>::F(const SpectrumWavelengths &sw, const Vector &woW,
 		const Vector &wiW, bool reverse, BxDFType flags) const
 {
-	const float sideTest = Dot(wiW, ng) / Dot(woW, ng);
+	// If Dot(woW, ng) is too small, set sideTest to 0 to discard the result
+	// and avoid numerical instability
+	const float cosWo = Dot(woW, ng);
+	const float sideTest = fabsf(cosWo) < MachineEpsilon::E(1.f) ? 0.f : Dot(wiW, ng) / cosWo;
 	if (sideTest > 0.f)
 		// ignore BTDFs
 		flags = BxDFType(flags & ~BSDF_TRANSMISSION);
@@ -227,7 +235,7 @@ SWCSpectrum MultiBSDF<MAX_BxDFS>::F(const SpectrumWavelengths &sw, const Vector 
 		// ignore BRDFs
 		flags = BxDFType(flags & ~BSDF_REFLECTION);
 	else
-		flags = static_cast<BxDFType>(0);
+		return SWCSpectrum(0.f);
 	Vector wi(WorldToLocal(wiW)), wo(WorldToLocal(woW));
 	SWCSpectrum f_(0.f);
 	for (u_int i = 0; i < nBxDFs; ++i)

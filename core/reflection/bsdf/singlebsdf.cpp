@@ -23,6 +23,8 @@
 // singlebsdf.cpp*
 #include "singlebsdf.h"
 #include "spectrum.h"
+#include "luxrays/core/epsilon.h"
+using luxrays::MachineEpsilon;
 
 using namespace lux;
 
@@ -41,7 +43,10 @@ bool SingleBSDF::SampleF(const SpectrumWavelengths &sw, const Vector &woW, Vecto
 	if (sampledType)
 		*sampledType = bxdf->type;
 	*wiW = LocalToWorld(*wiW);
-	const float sideTest = Dot(*wiW, ng) / Dot(woW, ng);
+	// If Dot(woW, ng) is too small, set sideTest to 0 to discard the result
+	// and avoid numerical instability
+	const float cosWo = Dot(woW, ng);
+	const float sideTest = fabsf(cosWo) < MachineEpsilon::E(1.f) ? 0.f : Dot(*wiW, ng) / cosWo;
 	if (sideTest > 0.f) {
 		// ignore BTDFs
 		if (bxdf->type & BSDF_TRANSMISSION)
@@ -67,7 +72,12 @@ float SingleBSDF::Pdf(const SpectrumWavelengths &sw, const Vector &woW,
 SWCSpectrum SingleBSDF::F(const SpectrumWavelengths &sw, const Vector &woW,
 	const Vector &wiW, bool reverse, BxDFType flags) const
 {
-	const float sideTest = Dot(wiW, ng) / Dot(woW, ng);
+	const float dotWi = Dot(wiW, ng), dotWo = Dot(woW, ng);
+
+	// If dotWo is too small, set sideTest to 0 to discard the result
+	// and avoid numerical instability
+	const float sideTest = fabsf(dotWo) < MachineEpsilon::E(1.f) ? 0.f : dotWi / dotWo;
+
 	if (sideTest > 0.f)
 		// ignore BTDFs
 		flags = BxDFType(flags & ~BSDF_TRANSMISSION);
@@ -75,13 +85,14 @@ SWCSpectrum SingleBSDF::F(const SpectrumWavelengths &sw, const Vector &woW,
 		// ignore BRDFs
 		flags = BxDFType(flags & ~BSDF_REFLECTION);
 	else
-		flags = static_cast<BxDFType>(0);
+		return SWCSpectrum(0.f);
 	if (!bxdf->MatchesFlags(flags))
 		return SWCSpectrum(0.f);
 	SWCSpectrum f_(0.f);
 	bxdf->F(sw, WorldToLocal(woW), WorldToLocal(wiW), &f_);
 	if (!reverse)
 		f_ *= fabsf(sideTest);
+
 	return f_;
 }
 SWCSpectrum SingleBSDF::rho(const SpectrumWavelengths &sw, BxDFType flags) const

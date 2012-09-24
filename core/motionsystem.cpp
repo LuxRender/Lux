@@ -22,6 +22,8 @@
 
 // motionsystem.cpp*
 #include "motionsystem.h"
+#include "luxrays/core/geometry/matrix4x4.h"
+using luxrays::Matrix4x4;
 #include "error.h"
 
 #include <cstring>
@@ -213,7 +215,7 @@ InterpolatedTransform::DecomposedTransform::DecomposedTransform(const boost::sha
 		// Solve the equation by inverting pmat and multiplying
 		// prhs by the inverse. This is the easiest way, not
 		// necessarily the best.
-		boost::shared_ptr<Matrix4x4> tinvpmat(pmat->Inverse()->Transpose());
+		boost::shared_ptr<Matrix4x4> tinvpmat(new Matrix4x4(pmat->Inverse().Transpose()));
 		float psol[4];
 		V4MulByMatrix(tinvpmat, prhs, psol);
  

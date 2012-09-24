@@ -23,8 +23,10 @@
 // igi.cpp*
 #include "lux.h"
 #include "transport.h"
-#include "geometry/point.h"
-#include "geometry/normal.h"
+#include "luxrays/core/geometry/point.h"
+using luxrays::Point;
+#include "luxrays/core/geometry/normal.h"
+using luxrays::Normal;
 #include "spectrumwavelengths.h"
 
 namespace lux

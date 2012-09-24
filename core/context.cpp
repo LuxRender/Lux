@@ -35,7 +35,8 @@
 #include "material.h"
 #include "renderfarm.h"
 #include "film/fleximage.h"
-#include "epsilon.h"
+#include "luxrays/core/epsilon.h"
+using luxrays::MachineEpsilon;
 #include "renderers/samplerrenderer.h"
 
 #include <boost/iostreams/filtering_stream.hpp>
@@ -187,10 +188,6 @@ void Context::RemoveServer(const string &n) {
 
 void Context::ResetServer(const string &n, const string &p) {
 	renderFarm->sessionReset(n, p);
-}
-
-u_int Context::GetServerCount() {
-	return renderFarm->getServerCount();
 }
 
 u_int Context::GetRenderingServersStatus(RenderingServerInfo *info, u_int maxInfoCount) {
@@ -625,6 +622,44 @@ void Context::LightSource(const string &n, const ParamSet &params) {
 			lt_sky->group = lg;
 			lt_sky->SetVolume(graphicsState->exterior);
 		}
+	} else if (n == "sunsky2") {
+		//SunSky2 light - create both sun & sky2 lightsources
+
+		ParamSet sunparams(params);
+
+		Light *lt_sun = MakeLight("sun", curTransform.StaticTransform(), sunparams);
+		if (lt_sun == NULL) {
+			LOG(LUX_ERROR,LUX_SYNTAX)<< "luxLightSource: light type sun unknown.";
+			graphicsState->currentLightPtr0 = NULL;
+		} else {
+			if (renderOptions->currentLightInstance)
+				renderOptions->currentLightInstance->push_back(boost::shared_ptr<Light>(lt_sun));
+			else
+				renderOptions->lights.push_back(lt_sun);
+			graphicsState->currentLight = n;
+			graphicsState->currentLightPtr0 = lt_sun;
+			lt_sun->group = lg;
+			lt_sun->SetVolume(graphicsState->exterior);
+		}
+
+		// Stop the sky complaining about unused sun params
+		ParamSet skyparams(params);
+		skyparams.EraseFloat("relsize");
+
+		Light *lt_sky = MakeLight("sky2", curTransform.StaticTransform(), skyparams);
+		if (lt_sky == NULL) {
+			LOG(LUX_ERROR,LUX_SYNTAX)<< "luxLightSource: light type sky2 unknown.";
+			graphicsState->currentLightPtr1 = NULL;
+		} else {
+			if (renderOptions->currentLightInstance)
+				renderOptions->currentLightInstance->push_back(boost::shared_ptr<Light>(lt_sky));
+			else
+				renderOptions->lights.push_back(lt_sky);
+			graphicsState->currentLight = n;
+			graphicsState->currentLightPtr1 = lt_sky;
+			lt_sky->group = lg;
+			lt_sky->SetVolume(graphicsState->exterior);
+		}
 	} else {
 		// other lightsource type
 		Light *lt = MakeLight(n, curTransform.StaticTransform(), params);
@@ -996,7 +1031,7 @@ void Context::WorldEnd() {
 				activeContext->renderFarm->stop();
 
 				// Check if we have to stop the network rendering updater thread
-				if (GetServerCount() > 0) {
+				if (static_cast<u_int>((*(activeContext->renderFarm))["slaveNodeCount"].IntValue()) > 0) {
 					// Update the film for the last time
 					if (!aborted)
 						activeContext->renderFarm->updateFilm(luxCurrentScene);
@@ -1153,7 +1188,7 @@ void Context::Wait() {
 }
 
 void Context::Exit() {
-	if (GetServerCount() > 0) {
+	if (static_cast<u_int>((*(activeContext->renderFarm))["slaveNodeCount"].IntValue()) > 0) {
 		// Dade - stop the render farm too
 		activeContext->renderFarm->stop();
 		// Dade - update the film for the last time
@@ -1323,17 +1358,11 @@ void Context::TransmitFilm(std::basic_ostream<char> &stream, bool useCompression
 void Context::UpdateFilmFromNetwork() {
 	renderFarm->updateFilm(luxCurrentScene);
 }
+
 void Context::UpdateLogFromNetwork() {
 	renderFarm->updateLog();
 }
-void Context::SetNetworkServerUpdateInterval(int updateInterval)
-{
-	activeContext->renderFarm->serverUpdateInterval = updateInterval;
-}
-int Context::GetNetworkServerUpdateInterval()
-{
-	return activeContext->renderFarm->serverUpdateInterval;
-}
+
 void Context::SetUserSamplingMap(const float *map)
 {
 	luxCurrentScene->camera->film->SetUserSamplingMap(map);

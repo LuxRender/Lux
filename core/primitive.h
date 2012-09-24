@@ -26,6 +26,7 @@
 #include "lux.h"
 #include "motionsystem.h"
 #include "geometry/raydifferential.h"
+#include "error.h"
 
 #include "luxrays/luxrays.h"
 

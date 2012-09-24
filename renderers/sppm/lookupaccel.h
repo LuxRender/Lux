@@ -236,7 +236,7 @@ public:
 
 	void TransformToKdTree();
 
-	virtual void AddFlux(Sample &sample, HitPointsLookUpAccel *accel, const PhotonData &photon);
+	void AddFlux(Sample &sample, HitPointsLookUpAccel *accel, const PhotonData &photon);
 
 	u_int GetSize() const { return size; }
 
@@ -246,7 +246,7 @@ private:
 		HCKdTree( std::list<HitPoint *> *hps, const u_int count);
 		~HCKdTree();
 
-	virtual void AddFlux(Sample &sample, HitPointsLookUpAccel *accel, const PhotonData &photon);
+	void AddFlux(Sample &sample, HitPointsLookUpAccel *accel, const PhotonData &photon);
 
 	private:
 		struct KdNode {

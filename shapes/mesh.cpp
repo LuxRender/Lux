@@ -529,8 +529,7 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 void Mesh::Tesselate(vector<luxrays::TriangleMesh *> *meshList, vector<const Primitive *> *primitiveList) const {
 	// A little hack with pointers
 	luxrays::TriangleMesh *tm = new luxrays::TriangleMesh(
-			nverts, ntris,
-			(luxrays::Point *)p, (luxrays::Triangle *)triVertexIndex);
+			nverts, ntris, p, (luxrays::Triangle *)triVertexIndex);
 
 	meshList->push_back(tm);
 	primitiveList->push_back(this);

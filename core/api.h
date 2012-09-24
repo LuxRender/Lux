@@ -287,11 +287,11 @@ LUX_EXPORT void luxSetAttribute(const char * objectName, const char * attributeN
 LUX_EXPORT void luxAddServer(const char * name);
 LUX_EXPORT void luxRemoveServer(const char * name);
 LUX_EXPORT void luxResetServer(const char * name, const char * password);
-LUX_EXPORT unsigned int luxGetServerCount();
+LUX_EXPORT unsigned int luxGetServerCount();	// deprecated
 LUX_EXPORT void luxUpdateFilmFromNetwork();
 LUX_EXPORT void luxUpdateLogFromNetwork();
-LUX_EXPORT void luxSetNetworkServerUpdateInterval(int updateInterval);
-LUX_EXPORT int luxGetNetworkServerUpdateInterval();
+LUX_EXPORT void luxSetNetworkServerUpdateInterval(int updateInterval);	// deprecated
+LUX_EXPORT int luxGetNetworkServerUpdateInterval();	// deprecated
 
 struct RenderingServerInfo {
 	int serverIndex;

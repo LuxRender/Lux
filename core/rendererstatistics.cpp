@@ -132,7 +132,7 @@ double RendererStatistics::getPercentHaltThresholdComplete() {
 }
 
 u_int RendererStatistics::getSlaveNodeCount() {
-	return Context::GetActive()->GetServerCount();
+	return static_cast<u_int>(luxGetIntAttribute("render_farm", "slaveNodeCount"));
 }
 
 RendererStatistics::Formatted::Formatted(RendererStatistics* rs, const std::string& name)

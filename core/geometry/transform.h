@@ -24,10 +24,14 @@
 #define LUX_TRANSFORM_H
 // transform.h*
 #include "lux.h"
-#include "matrix4x4.h"
-#include "point.h"
-#include "normal.h"
-#include "ray.h"
+#include "luxrays/core/geometry/matrix4x4.h"
+using luxrays::Matrix4x4;
+#include "luxrays/core/geometry/point.h"
+using luxrays::Point;
+#include "luxrays/core/geometry/normal.h"
+using luxrays::Normal;
+#include "luxrays/core/geometry/ray.h"
+using luxrays::Ray;
 #include "raydifferential.h"
 
 namespace lux
@@ -47,10 +51,10 @@ public:
 	                	mat[2][0],mat[2][1],mat[2][2],mat[2][3],
 	                	mat[3][0],mat[3][1],mat[3][2],mat[3][3]));
 		m = o;
-		mInv = m->Inverse();
+		mInv = boost::shared_ptr<Matrix4x4>(new Matrix4x4(m->Inverse()));
 	}
 	Transform(const boost::shared_ptr<Matrix4x4> &mat) : m(mat),
-		mInv(mat->Inverse()) { }
+		mInv(new Matrix4x4(mat->Inverse())) { }
 	Transform(const boost::shared_ptr<Matrix4x4> &mat,
 	          const boost::shared_ptr<Matrix4x4> &minv) : m(mat),
 		mInv(minv) { }

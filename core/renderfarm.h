@@ -24,6 +24,7 @@
 #define LUX_RENDERFARM_H
 
 #include "osfunc.h"
+#include "queryable.h"
 
 #include <vector>
 #include <string>
@@ -60,7 +61,7 @@ private:
     boost::thread *thread; // keep pointer to delete the thread object
 };
 
-class RenderFarm {
+class RenderFarm : public Queryable {
 public:
 	RenderFarm();
 	~RenderFarm();
@@ -100,7 +101,6 @@ public:
 	//!< Sends immediately all commands in the buffer to the servers
 	void flush();
 
-	u_int getServerCount() const;
 	u_int getServersStatus(RenderingServerInfo *info, u_int maxInfoCount) const;
 
 	// Start the rendering server (including the film update thread)
@@ -111,10 +111,6 @@ public:
 
 	//!<Gets the log from the network
 	void updateLog();
-
-public:
-	// Dade - film update infromation
-	int serverUpdateInterval;
 
 private:
 	struct ExtRenderingServerInfo {
@@ -247,6 +243,8 @@ private:
 	void reconnectFailed();
 	void stopImpl();
 
+	u_int getSlaveNodeCount();
+
 	// Any operation on servers must be synchronized via this mutex
 	mutable boost::mutex serverListMutex;
 	std::vector<ExtRenderingServerInfo> serverInfoList;
@@ -263,6 +261,8 @@ private:
 	//std::stringstream netBuffer;
 	bool netBufferComplete; // Raise this flag if the scene is complete
 	bool isLittleEndian;
+	int pollingInterval;
+	int defaultTcpPort;
 };
 
 }//namespace lux

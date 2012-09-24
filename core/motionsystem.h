@@ -25,9 +25,10 @@
 
 // motionsystem.h*
 #include "lux.h"
+#include "api.h"
 #include "geometry/quaternion.h"
-#include "geometry/bbox.h"
-#include "geometry/matrix4x4.h"
+#include "luxrays/core/geometry/bbox.h"
+using luxrays::BBox;
 #include "geometry/transform.h"
 // MotionSystem Declarations
 

@@ -20,32 +20,43 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#include "epsilon.h"
-#include "error.h"
+// sky2.h*
+#include "lux.h"
+#include "light.h"
 
-using namespace lux;
+namespace lux
+{
 
-float MachineEpsilon::minEpsilon = DEFAULT_EPSILON_MIN;
-float MachineEpsilon::maxEpsilon = DEFAULT_EPSILON_MAX;
+// Sky2Light Declarations
+class Sky2Light : public Light {
+public:
+	// Sky2Light Public Methods
+	Sky2Light(const Transform &light2world, float skyscale, u_int ns,
+		Vector sd, float turb);
+	virtual ~Sky2Light();
+	virtual float Power(const Scene &scene) const;
+	virtual bool IsDeltaLight() const { return false; }
+	virtual bool IsEnvironmental() const { return true; }
+	virtual bool Le(const Scene &scene, const Sample &sample, const Ray &r,
+		BSDF **bsdf, float *pdf, float *pdfDirect,
+		SWCSpectrum *L) const;
+	virtual float Pdf(const Point &p, const PartialDifferentialGeometry &dg) const;
+	virtual bool SampleL(const Scene &scene, const Sample &sample,
+		float u1, float u2, float u3, BSDF **bsdf, float *pdf,
+		SWCSpectrum *Le) const;
+	virtual bool SampleL(const Scene &scene, const Sample &sample,
+		const Point &p, float u1, float u2, float u3, BSDF **bsdf,
+		float *pdf, float *pdfDirect, SWCSpectrum *Le) const;
 
-void MachineEpsilon::SetMin(const float min) {
-	minEpsilon = min;
-}
+	static Light *CreateLight(const Transform &light2world,
+		const ParamSet &paramSet);
 
-void MachineEpsilon::SetMax(const float max) {
-	maxEpsilon = max;
-}
+	// Sky2Light Public Data
+	float skyScale;
+	Vector  sundir;
+	float 	turbidity;
+	RegularSPD *model[10];
+};
 
-void MachineEpsilon::Test() {
-	MachineFloat mf;
-	mf.f = DEFAULT_EPSILON_STATIC;
-	LOG(LUX_DEBUG, LUX_NOERROR) << "Epsilon.DefaultEpsilonStatic: " << (mf.i & 0x7fffff);
+}//namespace lux
 
-	LOG(LUX_DEBUG, LUX_NOERROR) << "Epsilon.DefaultEpsilonStaticBitAdvance(0.f): " << MachineEpsilon::E(0.f);
-	LOG(LUX_DEBUG, LUX_NOERROR) << "Epsilon.DefaultEpsilonStaticBitAdvance(1.f): " << MachineEpsilon::E(1.f);
-
-	for (float v = 1e-5f; v < 1e5f; v *= 2.0f) {
-		LOG(LUX_DEBUG, LUX_NOERROR) << "Epsilon.Test: " << v << " => " << E(v);
-		LOG(LUX_DEBUG, LUX_NOERROR) << "Epsilon.Test: " << -v << " => " << E(-v);
-	}
-}

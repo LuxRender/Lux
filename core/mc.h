@@ -24,7 +24,8 @@
 #define LUX_MC_H
 // mc.h*
 
-#include "geometry/vector.h"
+#include "luxrays/core/geometry/vector.h"
+using luxrays::Vector;
 
 // MC Utility Declarations
 namespace lux

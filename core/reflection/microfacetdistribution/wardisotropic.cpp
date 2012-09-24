@@ -22,7 +22,9 @@
 
 // wardisotropic.cpp*
 #include "wardisotropic.h"
-#include "geometry/vector.h"
+#include "luxrays/core/geometry/vector.h"
+using luxrays::Vector;
+using luxrays::SphericalDirection;
 
 using namespace lux;
 

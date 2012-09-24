@@ -374,23 +374,17 @@ bool PathIntegrator::GenerateRays(const Scene &,
 			if (1 > leftSpace)
 				return false;
 
-			// A pointer trick
-			luxrays::Ray *ray = (luxrays::Ray *)&pathState->pathRay;
-			pathState->currentPathRayIndex = rayBuffer->AddRay(*ray);
+			pathState->currentPathRayIndex = rayBuffer->AddRay(pathState->pathRay);
 			break;
 		}
 		case PathState::NEXT_VERTEX: {
 			if (1u + pathState->tracedShadowRayCount > leftSpace)
 				return false;
 
-			// A pointer trick
-			luxrays::Ray *ray = (luxrays::Ray *)&pathState->pathRay;
-			pathState->currentPathRayIndex = rayBuffer->AddRay(*ray);
+			pathState->currentPathRayIndex = rayBuffer->AddRay(pathState->pathRay);
 
 			for (u_short i = 0; i < pathState->tracedShadowRayCount; ++i) {
-				// A pointer trick
-				luxrays::Ray *ray = (luxrays::Ray *)&pathState->shadowRay[i];
-				pathState->currentShadowRayIndex[i] = rayBuffer->AddRay(*ray);
+				pathState->currentShadowRayIndex[i] = rayBuffer->AddRay(pathState->shadowRay[i]);
 			}
 			break;
 		}
@@ -399,9 +393,7 @@ bool PathIntegrator::GenerateRays(const Scene &,
 				return false;
 
 			for (u_short i = 0; i < pathState->tracedShadowRayCount; ++i) {
-				// A pointer trick
-				luxrays::Ray *ray = (luxrays::Ray *)&pathState->shadowRay[i];
-				pathState->currentShadowRayIndex[i] = rayBuffer->AddRay(*ray);
+				pathState->currentShadowRayIndex[i] = rayBuffer->AddRay(pathState->shadowRay[i]);
 			}
 			break;
 		}

@@ -22,6 +22,7 @@
 
 // blinn.cpp*
 #include "blinn.h"
+using luxrays::SphericalDirection;
 
 using namespace lux;
 
