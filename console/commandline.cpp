@@ -27,13 +27,25 @@
 #include <iostream>
 #include <exception>
 #include <fstream>
+#include <unistd.h>
 
 #include <boost/thread.hpp>
+#include <boost/lexical_cast.hpp>
 #include <boost/program_options.hpp>
 #include <boost/filesystem/operations.hpp>
 
 using namespace lux;
 namespace po = boost::program_options;
+
+boost::filesystem::path getDefaultWorkingDirectory()
+{
+#if defined(WIN32)
+	boost::filesystem::path workingDirectory = boost::filesystem::temp_directory_path() / "luxrender";
+#else
+	boost::filesystem::path workingDirectory = boost::filesystem::temp_directory_path() / std::string("luxrender-").append(boost::lexical_cast<std::string>(geteuid()));
+#endif
+	return workingDirectory;
+}
 
 bool ProcessCommandLine(int argc, char **argv, clConfig& config, unsigned int features, std::streambuf* infoBuf, std::streambuf* warnBuf)
 {
@@ -91,7 +103,7 @@ bool ProcessCommandLine(int argc, char **argv, clConfig& config, unsigned int fe
 					("server,s",         "Run as a slave node")
 					("serverport,p",     po::value < int >()->default_value(config.tcpPort), "Specify the tcp port to listen on")
 					("serverwriteflm,W", "Write film to disk before transmitting")
-					("cachedir,c",       po::value< std::string >(), "Specify the cache directory to use")
+					("cachedir,c",       po::value< std::string >()->default_value((getDefaultWorkingDirectory() / "cache").string()), "Specify the cache directory to use")
 					;
 		}
 
@@ -333,21 +345,18 @@ bool ProcessCommandLine(int argc, char **argv, clConfig& config, unsigned int fe
 			config.tcpPort = vm["serverport"].as<int>();
 			config.writeFlmFile = vm.count("serverwriteflm") != 0;
 
-			std::string cachedir;
-			if (vm.count("cachedir")) {
-				cachedir = vm["cachedir"].as<std::string>();
-				boost::filesystem::path cachePath(cachedir);
-				try {
-					if (!boost::filesystem::is_directory(cachePath))
-						boost::filesystem::create_directory(cachePath);
+			std::string cachedir = vm["cachedir"].as<std::string>();
+			boost::filesystem::path cachePath(cachedir);
+			try {
+				if (!boost::filesystem::is_directory(cachePath))
+					boost::filesystem::create_directories(cachePath);
 
-					boost::filesystem::current_path(cachePath);
-				} catch (std::exception &e) {
-					LOG(LUX_ERROR,LUX_NOFILE) << "Unable to use cache directory '" << cachedir << "': " << e.what();
-					return false;
-				}
-				LOG(LUX_INFO,LUX_NOERROR) << "Using cache directory '" << cachedir << "'";
+				boost::filesystem::current_path(cachePath);
+			} catch (std::exception &e) {
+				LOG(LUX_ERROR,LUX_NOFILE) << "Unable to use cache directory '" << cachedir << "': " << e.what();
+				return false;
 			}
+			LOG(LUX_INFO,LUX_NOERROR) << "Using cache directory '" << cachedir << "'";
 		}
 		// END Handling slave node options
 

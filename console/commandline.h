@@ -28,6 +28,8 @@
 #include <string>
 #include <vector>
 
+#include <boost/filesystem/operations.hpp>
+
 #include "api.h"
 
 struct clConfig
@@ -61,6 +63,7 @@ namespace featureSet {
 	};
 };
 
+boost::filesystem::path getDefaultWorkingDirectory();
 bool ProcessCommandLine(int argc, char** argv, clConfig& config, unsigned int features, std::streambuf* infoBuf = std::cout.rdbuf(), std::streambuf* warnBuf = std::cerr.rdbuf());
 
 #endif // LUXCOMMANDLINE_H
