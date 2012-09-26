@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2012 by authors (see AUTHORS.txt )                 *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -20,30 +20,47 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#ifndef LUXAPP_H
-#define LUXAPP_H
+#ifndef LUXCOMMANDLINE_H
+#define LUXCOMMANDLINE_H
 
-#include <QtGui/QApplication>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <vector>
 
-#include "console/commandline.h"
+#include "api.h"
 
-#include "mainwindow.hxx"
-
-class LuxGuiApp : public QApplication
+struct clConfig
 {
-	Q_OBJECT
+	clConfig() :
+		slave(false), binDump(false), log2console(false), writeFlmFile(false),
+		verbosity(0), pollInterval(luxGetIntAttribute("render_farm", "pollingInterval")),
+		tcpPort(luxGetIntAttribute("render_farm", "defaultTcpPort")), threadCount(0) {};
 
-public:
-	MainWindow *mainwin;
-
-	LuxGuiApp(int &argc, char **argv);
-	~LuxGuiApp();
-
-	void init(clConfig& config);
-#if defined(__APPLE__)
-protected:
-	bool event(QEvent *);
-#endif
+	bool slave;
+	bool binDump;
+	bool log2console;
+	bool writeFlmFile;
+	int verbosity;
+	int pollInterval;
+	unsigned int tcpPort;
+	unsigned int threadCount;
+	std::string password;
+	std::string queueFile;
+	std::string cacheDir;
+	std::vector< std::string > inputFiles;
+	std::vector< std::string > slaveNodeList;
 };
 
-#endif // LUXAPP_H
+namespace featureSet {
+	enum {
+		RENDERER     = (1u << 0),
+		MASTERNODE   = (1u << 1),
+		SLAVENODE    = (1u << 2),
+		INTERACTIVE  = (1u << 3),
+	};
+};
+
+bool ProcessCommandLine(int argc, char** argv, clConfig& config, unsigned int features, std::streambuf* infoBuf = std::cout.rdbuf(), std::streambuf* warnBuf = std::cerr.rdbuf());
+
+#endif // LUXCOMMANDLINE_H

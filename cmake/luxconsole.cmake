@@ -19,8 +19,19 @@
 #   Lux website: http://www.luxrender.net                                 #
 ###########################################################################
 
-SOURCE_GROUP("Source Files\\Console" FILES console/luxconsole.cpp)
-ADD_EXECUTABLE(luxconsole console/luxconsole.cpp)
+SET(LUXCONSOLE_SRCS
+	console/commandline.cpp
+	console/luxconsole.cpp
+	)
+SOURCE_GROUP("Source Files\\Console" FILES ${LUXCONSOLE_SRCS})
+
+SET(LUXCONSOLE_HDRS
+	console/commandline.h
+	)
+SOURCE_GROUP("Header Files\\Console" FILES ${LUXCONSOLE_HDRS})
+
+ADD_EXECUTABLE(luxconsole ${LUXCONSOLE_SRCS} ${LUXCONSOLE_HDRS})
+
 IF(APPLE)
 	add_dependencies(luxconsole luxShared) # explicitly say that the target depends on corelib build first
 	TARGET_LINK_LIBRARIES(luxconsole ${OSX_SHARED_CORELIB} ${CMAKE_THREAD_LIBS_INIT} ${Boost_LIBRARIES})

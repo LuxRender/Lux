@@ -23,6 +23,8 @@
 #ifndef GUIUTIL_H
 #define GUIUTIL_H
 
+#include <sstream>
+
 #include <QString>
 #include <QImage>
 #include <QFontMetrics>
@@ -56,5 +58,22 @@ typedef QList<QPair<QString, QMessageBox::ButtonRole> > CustomButtonsList;
  */
 int customMessageBox(QWidget *parent, QMessageBox::Icon icon, const QString &title, const QString &text, 
 	const CustomButtonsList &buttons, int defaultButton = 0);
+
+class StrBufDialogBox : public std::stringbuf
+{
+public:
+	StrBufDialogBox(QMessageBox::Icon icon) : icon(icon) {}
+	virtual ~StrBufDialogBox() { if (str().size() > 0) sync(); }
+	virtual int sync()
+	{
+		QMessageBox msgBox;
+		msgBox.setIcon(QMessageBox::Information);
+		msgBox.setText(str().c_str());
+		msgBox.exec();
+		return 0;
+	}
+private:
+	QMessageBox::Icon icon;
+};
 
 #endif //GUIUTIL_H
