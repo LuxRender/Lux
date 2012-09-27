@@ -1506,7 +1506,10 @@ void FlexImageFilm::GetColorspaceParam(const ParamSet &params, const string name
 
 void FlexImageFilm::ConvUpdateThreadImpl(FlexImageFilm *film) {
 	const double nPix = film->xPixelCount * film->yPixelCount;
+
 	double lastCheckSamplesCount = 0.0;
+	double noiseAwareStep = film->convUpdateStep;
+	double lastCheckNoiseAwarwSamplesCount = 0.0;
 	while (!boost::this_thread::interruption_requested()) {
 		boost::this_thread::sleep(boost::posix_time::seconds(1));
 
@@ -1527,8 +1530,15 @@ void FlexImageFilm::ConvUpdateThreadImpl(FlexImageFilm *film) {
 			film->UpdateConvergenceInfo(film->float_framebuffer);
 
 			// Than generate the noise-aware map if required
-			if (film->noiseAwareMap)
-				film->GenerateNoiseAwareMap();
+			if (film->noiseAwareMap) {
+				const double sppNoiseAwareDelta = (totalSamplesCount - lastCheckNoiseAwarwSamplesCount) / nPix;
+				if (sppNoiseAwareDelta > noiseAwareStep) {
+					film->GenerateNoiseAwareMap();
+					lastCheckNoiseAwarwSamplesCount = totalSamplesCount;
+					noiseAwareStep *= 2.0;
+					LOG(LUX_DEBUG, LUX_NOERROR) << "Noise aware map next step update: " << noiseAwareStep << "spp";
+				}
+			}
 		}
 	}
 }
