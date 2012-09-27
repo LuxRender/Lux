@@ -39,7 +39,8 @@ public:
 	LuxGuiApp(int &argc, char **argv);
 	~LuxGuiApp();
 
-	void init(clConfig& config);
+	void init(clConfig* config);
+	clConfig* config;
 #if defined(__APPLE__)
 protected:
 	bool event(QEvent *);
