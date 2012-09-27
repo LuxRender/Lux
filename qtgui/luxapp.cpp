@@ -125,7 +125,7 @@ bool LuxGuiApp::event(QEvent *event)
 {
 	switch (event->type()) {
 	case QEvent::FileOpen:
-		if (config->inputFile.isEmpty()) {
+		if (config->inputFiles.empty()) {
 			mainwin->loadFile(static_cast<QFileOpenEvent *>(event)->file());
 			return true;
 		}
