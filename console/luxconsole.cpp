@@ -133,7 +133,7 @@ int main(int argc, char **argv) {
 				boost::filesystem::path workingDirectory = boost::filesystem::path(sceneFileName).parent_path();
 				try {
 					boost::filesystem::current_path(workingDirectory);
-				} catch (boost::filesystem::filesystem_error) {
+				} catch (boost::filesystem::filesystem_error &) {
 					LOG(LUX_SEVERE,LUX_NOFILE) << "Unable to change to directory '" << workingDirectory.string() << "'";
 					continue;
 				}
