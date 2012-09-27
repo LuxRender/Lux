@@ -32,6 +32,7 @@
 #include "luxrays/utils/convtest/convtest.h"
 
 #include <boost/serialization/split_member.hpp>
+#include <boost/thread.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/xtime.hpp>
 #include <boost/shared_array.hpp>
@@ -712,7 +713,7 @@ protected:
 	void RejectTileOutliers(const Contribution &contrib, u_int tileIndex, int yTilePixelStart, int yTilePixelEnd);
 	// Gets the extents of a tile, interval is [start, end).
 	void GetTileExtent(u_int tileIndex, int *xstart, int *xend, int *ystart, int *yend) const;
-	void UpdateConvergenceInfo(const float *framebuffer);
+	void UpdateConvergenceInfo(const float *frameBuffer);
 	void GenerateNoiseAwareMap();
 
 public:
@@ -762,8 +763,7 @@ protected: // Put it here for better data alignment
 	std::vector<BufferConfig> bufferConfigs;
 	std::vector<BufferGroup> bufferGroups;
 
-	// Enabled by halthtreshold
-	bool enoughSamplesForConvTest;
+	// Enabled by haltthreshold
 	luxrays::utils::ConvergenceTest *convTest;
 
 	// May be enabled by the sampler

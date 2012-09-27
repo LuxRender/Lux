@@ -59,11 +59,11 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, u_int filtRes
 	float p_ReinhardBurn, float p_LinearSensitivity, float p_LinearExposure, float p_LinearFStop, float p_LinearGamma,
 	float p_ContrastYwa, const string &p_response, float p_Gamma,
 	const float cs_red[2], const float cs_green[2], const float cs_blue[2], const float whitepoint[2],
-	bool debugmode, int outlierk, int tilec) :
+	bool debugmode, int outlierk, int tilec, const double convstep) :
 	Film(xres, yres, filt, filtRes, crop, filename1, premult, cw_EXR_ZBuf || cw_PNG_ZBuf || cw_TGA_ZBuf, w_resume_FLM, 
 		restart_resume_FLM, write_FLM_direct, haltspp, halttime, haltthreshold, debugmode, outlierk, tilec), 
 	framebuffer(NULL), float_framebuffer(NULL), alpha_buffer(NULL), z_buffer(NULL),
-	writeInterval(wI), flmWriteInterval(fwI), displayInterval(dI)
+	writeInterval(wI), flmWriteInterval(fwI), displayInterval(dI), convUpdateThread(NULL), convUpdateStep(convstep)
 {
 	colorSpace = ColorSystem(cs_red[0], cs_red[1], cs_green[0], cs_green[1], cs_blue[0], cs_blue[1], whitepoint[0], whitepoint[1], 1.f);
 
@@ -195,6 +195,15 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, u_int filtRes
 	// init timer
 	boost::xtime_get(&lastWriteImageTime, boost::TIME_UTC_);
 	lastWriteFLMTime = lastWriteImageTime;
+}
+
+void FlexImageFilm::CreateBuffers() {
+	Film::CreateBuffers();
+		
+	if ((haltThreshold >= 0.f) || noiseAwareMap) {
+		// Start the convergence test/noise-aware map update thread
+		convUpdateThread = new boost::thread(boost::bind(FlexImageFilm::ConvUpdateThreadImpl, this));
+	}
 }
 
 // Parameter Access functions
@@ -1231,13 +1240,6 @@ void FlexImageFilm::WriteImage(ImageType type)
 		EV = -INFINITY;
 	}
 
-	// Update convergence information if required
-	if (((haltThreshold >= 0.f) || noiseAwareMap) &&
-			(type & IMAGE_FRAMEBUFFER) && float_framebuffer) {
-		// The framebuffer has been update
-		UpdateConvergenceInfo(float_framebuffer);
-	}
-
 	// release pool lock before writing output
 	poolLock.unlock();
 
@@ -1380,9 +1382,8 @@ void FlexImageFilm::createFrameBuffer()
 
 void FlexImageFilm::updateFrameBuffer()
 {
-	if(!framebuffer) {
+	if(!framebuffer)
 		createFrameBuffer();
-	}
 
 	WriteImage(IMAGE_FRAMEBUFFER);
 }
@@ -1500,6 +1501,35 @@ void FlexImageFilm::GetColorspaceParam(const ParamSet &params, const string name
 	if (v && i == 2) {
 		values[0] = v[0];
 		values[1] = v[1];
+	}
+}
+
+void FlexImageFilm::ConvUpdateThreadImpl(FlexImageFilm *film) {
+	const double nPix = film->xPixelCount * film->yPixelCount;
+	double lastCheckSamplesCount = 0.0;
+	while (!boost::this_thread::interruption_requested()) {
+		boost::this_thread::sleep(boost::posix_time::seconds(1));
+
+		// Check the amount of samples per pixel rendered
+		const double totalSamplesCount = film->numberOfLocalSamples + film->numberOfSamplesFromNetwork;
+		const double sppDelta = (totalSamplesCount - lastCheckSamplesCount) / nPix;
+
+		if (sppDelta > film->convUpdateStep) {
+			lastCheckSamplesCount = totalSamplesCount;
+
+			// First of all I have to update the frame buffer
+			film->updateFrameBuffer();
+
+			// Lock the frame buffer
+			boost::mutex::scoped_lock(film->write_mutex);
+
+			// Than run the convergence test
+			film->UpdateConvergenceInfo(film->float_framebuffer);
+
+			// Than generate the noise-aware map if required
+			if (film->noiseAwareMap)
+				film->GenerateNoiseAwareMap();
+		}
 	}
 }
 
@@ -1675,6 +1705,7 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 	const int haltspp = params.FindOneInt("haltspp", -1);
 	const int halttime = params.FindOneInt("halttime", -1);
 	const float haltthreshold = params.FindOneFloat("haltthreshold", -1.f);
+	const double convUpdateStep = max(4.0, (double)params.FindOneFloat("convergencestep", 32.f));
 
 	// Color space primaries and white point
 	// default is SMPTE
@@ -1727,7 +1758,7 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 		w_resume_FLM, restart_resume_FLM, w_FLM_direct, haltspp, halttime, haltthreshold,
 		s_TonemapKernel, s_ReinhardPreScale, s_ReinhardPostScale, s_ReinhardBurn, s_LinearSensitivity,
 		s_LinearExposure, s_LinearFStop, s_LinearGamma, s_ContrastYwa, response, s_Gamma,
-		red, green, blue, white, debug_mode, outlierrejection_k, tilecount);
+		red, green, blue, white, debug_mode, outlierrejection_k, tilecount, convUpdateStep);
 }
 
 

@@ -53,15 +53,22 @@ public:
 		float p_ReinhardBurn, float p_LinearSensitivity, float p_LinearExposure, float p_LinearFStop, float p_LinearGamma,
 		float p_ContrastDisplayAdaptionY, const string &response, float p_Gamma,
 		const float cs_red[2], const float cs_green[2], const float cs_blue[2], const float whitepoint[2],
-		bool debugmode, int outlierk, int tilecount);
+		bool debugmode, int outlierk, int tilecount, const double convstep);
 
 	virtual ~FlexImageFilm() {
+		if (convUpdateThread) {
+			convUpdateThread->interrupt();
+			convUpdateThread->join();
+		}
+
 		delete[] framebuffer;
 		delete[] float_framebuffer;
 		delete[] alpha_buffer;
 		delete[] z_buffer;
+		delete convUpdateThread;
 	}	
 
+	virtual void CreateBuffers();
 	virtual void SaveEXR(const string &exrFilename, bool useHalfFloats, bool includeZBuf, int compressionType, bool tonemapped);
 	virtual void WriteImage(ImageType type);
 	virtual void CheckWriteOuputInterval();
@@ -91,6 +98,7 @@ public:
 
 private:
 	static void GetColorspaceParam(const ParamSet &params, const string name, float values[2]);
+	static void ConvUpdateThreadImpl(FlexImageFilm *film);
 
 	vector<RGBColor>& ApplyPipeline(const ColorSystem &colorSpace, vector<XYZColor> &color);
 	void WriteImage2(ImageType type, vector<XYZColor> &color, vector<float> &alpha, string postfix);
@@ -178,6 +186,10 @@ private:
 	bool m_HaveGlareImage;
 
 	bool m_HistogramEnabled, d_HistogramEnabled;
+	
+	// Thread dedicated to convergence test an noise-aware map update
+	boost::thread *convUpdateThread;
+	double convUpdateStep; // Number of new samples per pixel required to trigger an update
 };
 
 }//namespace lux

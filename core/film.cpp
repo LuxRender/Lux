@@ -730,7 +730,7 @@ Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop
 	contribPool(NULL), filter(filt), filterTable(NULL), filterLUTs(NULL),
 	filename(filename1),
 	colorSpace(0.63f, 0.34f, 0.31f, 0.595f, 0.155f, 0.07f, 0.314275f, 0.329411f), // default is SMPTE
-	enoughSamplesForConvTest(false), convTest(NULL), varianceBuffer(NULL),
+	convTest(NULL), varianceBuffer(NULL),
 	noiseAwareMap(NULL), noiseAwareMapVersion(0),
 	userSamplingMap(NULL), userSamplingMapVersion(0),
 	ZBuffer(NULL), use_Zbuf(useZbuffer),
@@ -865,28 +865,6 @@ void Film::CreateBuffers()
 	if (use_Zbuf)
 		ZBuffer = new PerPixelNormalizedFloatBuffer(xPixelCount, yPixelCount);
 
-	// Enable convergence test if needed
-	// NOTE: TVI is a side product of convergence test so I need to run the
-	// test even if halttreshold is not used
-	if ((haltThreshold >= 0.f) || noiseAwareMap) {
-		convTest = new luxrays::utils::ConvergenceTest(xPixelCount, yPixelCount);
-
-		if (noiseAwareMap)
-			convTest->NeedTVI();
-	}
-
-	// DEBUG: for testing the user sampling map functionality
-	/*userSamplingMap = new float[xPixelCount * yPixelCount];
-	for (u_int x = 0; x < xPixelCount; ++x) {
-		for (u_int y = 0; y < yPixelCount; ++y) {
-			const float xx = (x / (float)xPixelCount) - 0.5f;
-			const float yy = (y / (float)yPixelCount) - 0.5f;
-
-			userSamplingMap[x + y * xPixelCount] = (xx * xx + yy * yy < 0.25f * 0.25f) ? 1.f : 0.f;
-		}
-	}
-	userSamplingMapVersion = 1;*/
-
 	// initialize the contribution pool
 	// needs to be done before anyone tries to lock it
 	contribPool = new ContributionPool(this);
@@ -914,6 +892,28 @@ void Film::CreateBuffers()
 			ifs.close();
 		}
     }
+
+	// Enable convergence test if needed
+	// NOTE: TVI is a side product of convergence test so I need to run the
+	// test even if halttreshold is not used
+	if ((haltThreshold >= 0.f) || noiseAwareMap) {
+		convTest = new luxrays::utils::ConvergenceTest(xPixelCount, yPixelCount);
+
+		if (noiseAwareMap)
+			convTest->NeedTVI();
+	}
+
+	// DEBUG: for testing the user sampling map functionality
+	/*userSamplingMap = new float[xPixelCount * yPixelCount];
+	for (u_int x = 0; x < xPixelCount; ++x) {
+		for (u_int y = 0; y < yPixelCount; ++y) {
+			const float xx = (x / (float)xPixelCount) - 0.5f;
+			const float yy = (y / (float)yPixelCount) - 0.5f;
+
+			userSamplingMap[x + y * xPixelCount] = (xx * xx + yy * yy < 0.25f * 0.25f) ? 1.f : 0.f;
+		}
+	}
+	userSamplingMapVersion = 1;*/
 }
 
 void Film::ClearBuffers()
@@ -1151,65 +1151,6 @@ void Film::GetTileExtent(u_int tileIndex, int *xstart, int *xend, int *ystart, i
 	*xend = xPixelStart + xPixelCount;
 	*ystart = yPixelStart + min(tileIndex * tileHeight, yPixelCount);
 	*yend = yPixelStart + min((tileIndex+1) * tileHeight, yPixelCount);
-}
-
-void Film::UpdateConvergenceInfo(const float *framebuffer) {
-	const u_int nPix = xPixelCount * yPixelCount;
-	if (!enoughSamplesForConvTest) {
-		// Check if we have at least a sample per pixel
-		bool missingSamples = false;
-		for (u_int yPixel = 0; !missingSamples && (yPixel < yPixelCount); ++yPixel) {
-			for (u_int xPixel = 0; !missingSamples && (xPixel < xPixelCount); ++xPixel) {
-				// Check if we have enough samples to evaluate convergence speed again
-
-				float sampleCount = 0.f;
-				// Merge all buffer results
-				for(u_int j = 0; j < bufferGroups.size(); ++j) {
-					if (!bufferGroups[j].enable)
-						continue;
-
-					for(u_int i = 0; i < bufferConfigs.size(); ++i) {
-						const Buffer &buffer = *(bufferGroups[j].buffers[i]);
-						if (!(bufferConfigs[i].output & BUF_FRAMEBUFFER))
-							continue;
-
-						sampleCount += buffer.pixels(xPixel, yPixel).weightSum;
-					}
-				}
-				
-				if (sampleCount <= 0.f) {
-					missingSamples = true;
-					break;
-				}
-			}
-		}
-
-		// Start the convergence test only if we have enough samples per pixel
-		if (!missingSamples) {
-			LOG(LUX_DEBUG, LUX_NOERROR) << "Enough samples per pixel to start convergence test";
-
-			enoughSamplesForConvTest = true;
-			// At the first test, ConvergenceTest just stores a copy of the image
-			convTest->Test(framebuffer);
-		} else
-			LOG(LUX_DEBUG, LUX_NOERROR) << "Not enough samples per pixel to start convergence test";
-	} else {
-		// Compare the new buffer with the old one
-		const u_int failedPixels = convTest->Test(framebuffer);
-
-		// Check if we can stop the rendering
-		const float failedPercentage = failedPixels / (float)nPix;
-		if (failedPercentage <= haltThreshold)
-			enoughSamplesPerPixel = true;
-
-		if (enoughSamplesPerPixel)
-			haltThresholdComplete = 1.f - haltThreshold;
-		else
-			haltThresholdComplete = (nPix - failedPixels) / (float)nPix;
-
-		if (noiseAwareMap)
-			GenerateNoiseAwareMap();
-	}
 }
 
 void Film::AddTileSamples(const Contribution* const contribs, u_int num_contribs,
@@ -2537,6 +2478,22 @@ static void ApplyBoxFilter(float *frameBuffer, float *tmpFrameBuffer,
 // Update the noise-aware map
 //------------------------------------------------------------------------------
 
+void Film::UpdateConvergenceInfo(const float *framebuffer) {
+	// Compare the new buffer with the old one
+	const u_int failedPixels = convTest->Test(framebuffer);
+
+	// Check if we can stop the rendering
+	const u_int nPix = xPixelCount * yPixelCount;
+	const float failedPercentage = failedPixels / (float)nPix;
+	if (failedPercentage <= haltThreshold)
+		enoughSamplesPerPixel = true;
+
+	if (enoughSamplesPerPixel)
+		haltThresholdComplete = 1.f - haltThreshold;
+	else
+		haltThresholdComplete = (nPix - failedPixels) / (float)nPix;
+}
+
 void Film::GenerateNoiseAwareMap() {
 	boost::mutex::scoped_lock(noiseAwareMapMutex);
 
@@ -2544,14 +2501,6 @@ void Film::GenerateNoiseAwareMap() {
 
 	// Free the reference to the old one and allocate a new one
 	noiseAwareMap.reset(new float[nPix]);
-
-	if (!enoughSamplesForConvTest) {
-		LOG(LUX_DEBUG, LUX_NOERROR) << "Noise aware map based on: uniform distribution (not enough samples to start the process)";
-
-		// Just use a uniform distribution
-		std::fill(noiseAwareMap.get(), noiseAwareMap.get() + nPix, 1.f);
-		return;
-	}
 	
 	bool hasPixelsToSample = false;
 	float maxStandardError = 0.f;
