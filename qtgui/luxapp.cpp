@@ -39,7 +39,7 @@
 #include <windows.h>
 #include <stdio.h>
 #include <io.h>
-#include <fcntl.h> 
+#include <fcntl.h>
 
 void AttachStderr()
 {
@@ -66,8 +66,8 @@ LuxGuiApp::LuxGuiApp(int &argc, char **argv) : QApplication(argc, argv), mainwin
 	StrBufDialogBox infoDlg(QMessageBox::Information);
 	StrBufDialogBox warnDlg(QMessageBox::Warning);
 
-	clConfig config;
-	if (ProcessCommandLine(argc, argv, config, featureSet::RENDERER | featureSet::MASTERNODE | featureSet::INTERACTIVE, &infoDlg, &warnDlg))
+	config = new clConfig();
+	if (ProcessCommandLine(argc, argv, *config, featureSet::RENDERER | featureSet::MASTERNODE | featureSet::INTERACTIVE, &infoDlg, &warnDlg))
 		init(config);
 }
 
@@ -76,45 +76,45 @@ LuxGuiApp::~LuxGuiApp()
 	delete mainwin;
 }
 
-void LuxGuiApp::init(clConfig& config)
+void LuxGuiApp::init(clConfig* config)
 {
 	// AttachConsole is XP only, restrict to SSE2+
 #if defined(WIN32) && !defined(__CYGWIN__) && (_M_IX86_FP >= 2)
 	// attach to parent process' console if it exists, otherwise ignore
-	if (config.log2console && AttachConsole(ATTACH_PARENT_PROCESS)) {
+	if (config->log2console && AttachConsole(ATTACH_PARENT_PROCESS)) {
 		AttachStderr();
 		std::cerr << "\nRedirecting log to console...\n";
 	}
 #endif
 
-	mainwin = new MainWindow(0, config.log2console);
+	mainwin = new MainWindow(0, config->log2console);
 	mainwin->show();
 #if defined(__APPLE__)
 	mainwin->raise();
 	mainwin->activateWindow();
 #endif
-	mainwin->SetRenderThreads(config.threadCount);
-	mainwin->setVerbosity(config.verbosity);
+	mainwin->SetRenderThreads(config->threadCount);
+	mainwin->setVerbosity(config->verbosity);
 
 	// Set server interval
-	if (config.pollInterval > 0)
-		mainwin->setServerUpdateInterval(config.pollInterval);
+	if (config->pollInterval > 0)
+		mainwin->setServerUpdateInterval(config->pollInterval);
 
 	// Add files on command line to the render queue
-	for (std::vector<std::string>::const_iterator it = config.inputFiles.begin(); it != config.inputFiles.end(); it++)
+	for (std::vector<std::string>::const_iterator it = config->inputFiles.begin(); it != config->inputFiles.end(); it++)
 		mainwin->addFileToRenderQueue(QString::fromStdString(*it));
-	if (!config.inputFiles.empty() && config.queueFile.empty())
+	if (!config->inputFiles.empty() && config->queueFile.empty())
 		mainwin->RenderNextFileInQueue();
 
 	// Add files in queue file to the render queue
-	if (!config.queueFile.empty())
-		mainwin->openQueueFile(QString::fromStdString(config.queueFile));
+	if (!config->queueFile.empty())
+		mainwin->openQueueFile(QString::fromStdString(config->queueFile));
 
 	// Add slaves
-	if (!config.slaveNodeList.empty())
+	if (!config->slaveNodeList.empty())
 	{
 		QVector<QString> slaveNodes;
-		for (std::vector<std::string>::const_iterator it = config.slaveNodeList.begin(); it != config.slaveNodeList.end(); it++)
+		for (std::vector<std::string>::const_iterator it = config->slaveNodeList.begin(); it != config->slaveNodeList.end(); it++)
 			slaveNodes.push_back(QString::fromStdString(*it));
 		mainwin->AddNetworkSlaves(slaveNodes);
 	}
@@ -125,7 +125,7 @@ bool LuxGuiApp::event(QEvent *event)
 {
 	switch (event->type()) {
 	case QEvent::FileOpen:
-		if (config.inputFile.isEmpty()) {
+		if (config->inputFiles.empty()) {
 			mainwin->loadFile(static_cast<QFileOpenEvent *>(event)->file());
 			return true;
 		}
