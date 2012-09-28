@@ -213,13 +213,16 @@ bool MetropolisSampler::GetNextSample(Sample *sample)
 							newTotal += data->userSamplingMap[i];
 					} else {
 						// This should never happen
-						LOG(LUX_ERROR, LUX_SYSTEM)<< "Internal error in MetropolisSampler::GetNextSample()";
+						LOG(LUX_ERROR, LUX_SYSTEM) << "Internal error in MetropolisSampler::GetNextSample()";
 					}
 				}					
 				newTotal /= nPix;
 
-				// NOTE: totalLY store the average target function value (this is usually not known but in this case, it is)
-				data->totalLY = newTotal;
+				if (useNoiseAware) {
+					// NOTE: totalLY store the average target function value (this is usually not known but in this case, it is)
+					data->totalLY = newTotal;
+				} else
+					data->totalLY = 0.0;
 				data->sampleCount = 0.f;
 				data->consecRejects = 0;
 				data->LY = 0.f;
@@ -360,9 +363,10 @@ void MetropolisSampler::AddSample(const Sample &sample)
 			} else {
 				if (data->userSamplingMapVersion > 0) {
 					const float ly = newContributions[i].color.Y();
-					const float us = data->userSamplingMap[index];
 
 					if (ly > 0.f && !isinf(ly)) {
+						const float us = data->userSamplingMap[index];
+
 						if (useVariance && newContributions[i].variance > 0.f)
 							newLY += ly * newContributions[i].variance * us;
 						else
@@ -371,12 +375,10 @@ void MetropolisSampler::AddSample(const Sample &sample)
 						newContributions[i].color = XYZColor(0.);
 				} else {
 					// This should never happen
-					LOG(LUX_ERROR, LUX_SYSTEM)<< "Internal error in MetropolisSampler::AddSample()";
+					LOG(LUX_ERROR, LUX_SYSTEM) << "Internal error in MetropolisSampler::AddSample()";
 				}
 			}
 		}
-
-		meanIntensity = data->totalLY > 0. ? data->totalLY : 1.f;
 	} else {
 		for(u_int i = 0; i < newContributions.size(); ++i) {
 			const float ly = newContributions[i].color.Y();
@@ -388,7 +390,13 @@ void MetropolisSampler::AddSample(const Sample &sample)
 			} else
 				newContributions[i].color = XYZColor(0.f);
 		}
-		
+	}
+
+	// Calculate meanIntensity. Required only for standard metropolis (and/or user
+	// sampling), it is a known quantity when noise-aware is enabled
+	if (data->noiseAwareMapVersion > 0)
+		meanIntensity = data->totalLY > 0. ? data->totalLY : 1.f;
+	else {
 		// Calculate meanIntensity. Required only for standard metropolis, it
 		// is a known quantity when noise-aware is enabled
 		if (data->large) {
@@ -397,7 +405,7 @@ void MetropolisSampler::AddSample(const Sample &sample)
 		}
 
 		meanIntensity = data->totalLY > 0. ? static_cast<float>(data->totalLY / data->sampleCount) : 1.f;
-	}
+	}	
 
 	sample.contribBuffer->AddSampleCount(1.f);
 

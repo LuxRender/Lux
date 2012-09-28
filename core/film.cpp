@@ -904,13 +904,13 @@ void Film::CreateBuffers()
 	}
 
 	// DEBUG: for testing the user sampling map functionality
-	/*userSamplingMap = new float[xPixelCount * yPixelCount];
+	/*userSamplingMap.reset(new float[xPixelCount * yPixelCount]);
 	for (u_int x = 0; x < xPixelCount; ++x) {
 		for (u_int y = 0; y < yPixelCount; ++y) {
 			const float xx = (x / (float)xPixelCount) - 0.5f;
 			const float yy = (y / (float)yPixelCount) - 0.5f;
 
-			userSamplingMap[x + y * xPixelCount] = (xx * xx + yy * yy < 0.25f * 0.25f) ? 1.f : 0.f;
+			userSamplingMap[x + y * xPixelCount] = (xx * xx + yy * yy < 0.25f * 0.25f) ? 1.f : 0.01f;
 		}
 	}
 	userSamplingMapVersion = 1;*/
