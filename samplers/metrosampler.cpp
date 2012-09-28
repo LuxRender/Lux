@@ -358,9 +358,18 @@ void MetropolisSampler::AddSample(const Sample &sample)
 				else
 					newLY += data->noiseAwareMap[index];
 			} else {
-				if (data->userSamplingMapVersion > 0)
-					newLY += data->userSamplingMap[index];
-				else {
+				if (data->userSamplingMapVersion > 0) {
+					const float ly = newContributions[i].color.Y();
+					const float us = data->userSamplingMap[index];
+
+					if (ly > 0.f && !isinf(ly)) {
+						if (useVariance && newContributions[i].variance > 0.f)
+							newLY += ly * newContributions[i].variance * us;
+						else
+							newLY += ly * us;
+					} else
+						newContributions[i].color = XYZColor(0.);
+				} else {
 					// This should never happen
 					LOG(LUX_ERROR, LUX_SYSTEM)<< "Internal error in MetropolisSampler::AddSample()";
 				}
