@@ -937,7 +937,20 @@ bool MainWindow::saveCurrentImageHDR(const QString &outFile)
 void MainWindow::outputBufferGroupsTonemapped()
 {
 	// Where should these be output
-	QString fileName = QFileDialog::getSaveFileName(this, tr("Select a destination for the images"), m_lastOpendir, tr("PNG Image (*.png);;JPEG Image (*.jpg);;Windows Bitmap (*.bmp);;TIFF Image (*.tif)"));
+	QString filter;
+	QString fileName = QFileDialog::getSaveFileName(this, tr("Save Tonemapped Image"), m_lastOpendir + "/" + m_CurrentFileBaseName, tr("PNG Image (*.png);;JPEG Image (*.jpg *.jpeg);;Windows Bitmap (*.bmp);;TIFF Image (*.tif *.tiff)"), &filter);
+	if (fileName.isEmpty())
+		return;
+	QString suffix = QFileInfo(fileName).suffix().toLower();
+	if (filter == "PNG Image (*.png)" && suffix != "png")
+		fileName += ".png";
+	else if (filter == "JPEG Image (*.jpg *.jpeg)" && suffix != "jpg" && suffix != "jpeg")
+		fileName += ".jpg";
+	else if (filter == "Windows Bitmap (*.bmp)" && suffix != "bmp")
+		fileName += ".bmp";
+	else if (filter == "TIFF Image (*.tif *.tiff)" && suffix != "tif" && suffix != "tiff")
+		fileName += ".tif";
+
 	if (fileName.isEmpty())
 		return;
 
@@ -945,13 +958,7 @@ void MainWindow::outputBufferGroupsTonemapped()
 	QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
 
 	// Output the light groups
-	if (saveAllLightGroups(fileName, false)) {
-		statusMessage->setText(tr("Light group tonemapped images saved"));
-		LOG(LUX_INFO, LUX_NOERROR) << "Light group tonemapped images saved to '" << qPrintable(fileName) << "'";
-	} else {
-		statusMessage->setText(tr("ERROR: Light group tonemapped images NOT saved"));
-		LOG(LUX_WARNING, LUX_SYSTEM) << "Error while saving light group tonemapped images to '" << qPrintable(fileName) << "'";
-	}
+	saveAllLightGroups(fileName, false);
 
 	// Stop showing busy cursor
 	QApplication::restoreOverrideCursor();
@@ -977,13 +984,7 @@ void MainWindow::outputBufferGroupsHDR()
 	QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
 
 	// Output the light groups
-	if (saveAllLightGroups(fileName, true)) {
-		statusMessage->setText(tr("Light group HDR images saved"));
-		LOG(LUX_INFO, LUX_NOERROR) << "Light group HDR images saved to '" << qPrintable(fileName) << "'";
-	} else {
-		statusMessage->setText(tr("ERROR: Light group HDR images NOT saved"));
-		LOG(LUX_WARNING, LUX_SYSTEM) << "Error while saving light group HDR images to '" << qPrintable(fileName) << "'";
-	}
+	saveAllLightGroups(fileName, true);
 
 	// Stop showing busy cursor
 	QApplication::restoreOverrideCursor();
@@ -995,10 +996,11 @@ bool MainWindow::saveAllLightGroups(const QString &outFilename, const bool &asHD
 	int lgCount = (int)luxGetParameterValue(LUX_FILM, LUX_FILM_LG_COUNT);
 
 	// Start by save current light group state and turning off ALL light groups
-	vector<bool> prevLGState(lgCount);
-	for(int i=0; i<lgCount; i++)
+	vector<float> prevLGState(lgCount);
+	for (int i = 0; i < lgCount; ++i)
 	{
-		prevLGState[i] = (luxGetParameterValue(LUX_FILM, LUX_FILM_LG_ENABLE, i) != 0.f);
+		prevLGState[i] = luxGetParameterValue(LUX_FILM,
+			LUX_FILM_LG_ENABLE, i);
 		luxSetParameterValue(LUX_FILM, LUX_FILM_LG_ENABLE, 0.f, i);
 	}
 
@@ -1007,10 +1009,11 @@ bool MainWindow::saveAllLightGroups(const QString &outFilename, const bool &asHD
 
 	// Now, turn one light group on at a time, update the film and save to an image
 	bool result = true;
-	for(int i=0; i<lgCount; i++) {
+	for (int i = 0; i < lgCount; ++i) {
 		// Get light group name
 		char lgName[256];
-		luxGetStringParameterValue(LUX_FILM, LUX_FILM_LG_NAME, lgName, 256, i);
+		luxGetStringParameterValue(LUX_FILM, LUX_FILM_LG_NAME, lgName,
+			256, i);
 
 		// Enable light group (and tonemap if not saving as HDR)
 		luxSetParameterValue(LUX_FILM, LUX_FILM_LG_ENABLE, 1.f, i);
@@ -1020,17 +1023,32 @@ bool MainWindow::saveAllLightGroups(const QString &outFilename, const bool &asHD
 		// Output image
 		QString outputName = QDir(filenamePath.absolutePath()).absoluteFilePath(filenamePath.completeBaseName() + "-" + lgName);
 
-		if (asHDR)
-			if (ui->action_HDR_tonemapped->isChecked())
-				luxSaveEXR(qPrintable(outputName + ".exr"), openExrHalfFloats, openExrDepthBuffer, openExrCompressionType, true);
-			else
-				luxSaveEXR(qPrintable(outputName + ".exr"), openExrHalfFloats, openExrDepthBuffer, openExrCompressionType, false);
-		else {
-			QImage image = getFramebufferImage();
-			if(!image.isNull())
-				result = image.save(outputName + filenamePath.suffix());
-			else
-				result = false;
+		if (asHDR) {
+			outputName += ".exr";
+			luxSaveEXR(qPrintable(outputName),
+				openExrHalfFloats, openExrDepthBuffer,
+				openExrCompressionType,
+				ui->action_HDR_tonemapped->isChecked());
+			statusMessage->setText(tr("HDR image saved"));
+			LOG(LUX_INFO, LUX_NOERROR) <<
+				"Light group HDR image saved to '" <<
+				qPrintable(outputName) << "'";
+		} else {
+			outputName += "." + filenamePath.suffix();
+			result = saveCurrentImageTonemapped(outputName,
+				ui->action_overlayStats->isChecked(),
+				ui->action_useAlpha->isChecked());
+			if (result) {
+				statusMessage->setText(tr("Tonemapped image saved"));
+				LOG(LUX_INFO, LUX_NOERROR) <<
+					"Light group tonemapped image saved to '" <<
+					qPrintable(outputName) << "'";
+			} else {
+				statusMessage->setText(tr("ERROR: Tonemapped image NOT saved."));
+				LOG(LUX_WARNING, LUX_SYSTEM) <<
+					"Error while saving light group tonemapped image to '" <<
+					qPrintable(outputName) << "'";
+			}
 		}
 
 		// Turn group back off
@@ -1040,8 +1058,9 @@ bool MainWindow::saveAllLightGroups(const QString &outFilename, const bool &asHD
 	}
 
 	// Restore previous light group state
-	for(int i=0; i<lgCount; i++)
-		luxSetParameterValue(LUX_FILM, LUX_FILM_LG_ENABLE, (prevLGState[i]?1.f:0.f), i);
+	for (int i = 0; i < lgCount; ++i)
+		luxSetParameterValue(LUX_FILM, LUX_FILM_LG_ENABLE,
+			prevLGState[i], i);
 
 	if (!asHDR)
 		luxUpdateFramebuffer();
