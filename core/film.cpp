@@ -82,6 +82,7 @@
 using namespace cimg_library;
 #if cimg_OS!=2
 #include <pthread.h>
+#include <X11/X.h>
 #endif
 
 using namespace boost::iostreams;
@@ -2533,8 +2534,10 @@ void Film::GenerateNoiseAwareMap() {
 		LOG(LUX_DEBUG, LUX_NOERROR) << "Noise aware map based on: noise information (version: " <<
 				noiseAwareMapVersion << ")";
 
+		// First step, build Standard Error / TVI map
 		const float invMaxStandardError = 1.f / maxStandardError;
 		const float invMaxTVI = 1.f / maxTVI;
+		float maxValue = 0.f;
 		for (u_int i = 0; i < nPix; ++i) {
 			// Normalize standard error
 			const float standardError = noiseAwareMap[i];
@@ -2543,21 +2546,72 @@ void Film::GenerateNoiseAwareMap() {
 			// Normalize TVI
 			const float normalizedTVI = invMaxTVI * convergenceTVI[i];
 
-			float mapValue = (normalizedTVI == 0.f) ? 0.f : (normalizedStandardError / normalizedTVI);
-			// To be still unbiased
-			// Note: this doesn't really follow the paper where is suggested to
-			//  restricts the contrast of the visual error image so
-			//  that the ratio of the 95th percentile to the 5th percentile is no
-			//  greater than 2 (step 1 & 2).
-			mapValue = min(max(0.01f, mapValue), 0.99f);
+			const float value = (normalizedTVI == 0.f) ? 0.f : (normalizedStandardError / normalizedTVI);\
+			maxValue = max(maxValue, value);
 
-			noiseAwareMap[i] = mapValue;
+			noiseAwareMap[i] = value;
 		}
 
-		// Apply an heavy filter to smooth the map
-		float *tmpMap = new float[nPix];
-		ApplyBoxFilter(noiseAwareMap.get(), tmpMap, xPixelCount, yPixelCount, 2);
-		delete []tmpMap;
+		// Normalize the map
+		const float invMaxValue = 1.f / maxValue;
+		for (u_int i = 0; i < nPix; ++i)
+			noiseAwareMap[i] *= invMaxValue;
+		
+		// Than build an histogram of the map
+		const u_int histogramSize = 1000000;
+		float *histogram = new float[histogramSize * sizeof(float)];
+		std::fill(histogram, histogram + histogramSize, 0.f);
+		for (u_int i = 0; i < nPix; ++i) {
+			const u_int binIndex = min(Floor2UInt(noiseAwareMap[i] * histogramSize), histogramSize - 1);
+
+			histogram[binIndex] += 1;
+		}
+
+		// Auto-stretching of the map between 5th percentile value and 95th
+
+		u_int minIndex = 0;
+		float count = 0;
+		for (u_int i = 0; i < histogramSize; ++i) {
+			count += histogram[i];
+		
+			if (count > 5.f * histogramSize / 100.f) {
+				minIndex = i;
+				break;
+			}
+		}
+
+		u_int maxIndex = histogramSize - 1;
+		count = 0;
+		for (u_int i = histogramSize - 1; i >= 0; --i) {
+			count += histogram[i];
+		
+			if (count > 5.f * histogramSize / 100.f) {
+				maxIndex = i;
+				break;
+			}
+		}
+
+		delete[] histogram;
+
+		if (maxIndex <= minIndex) {
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Noise aware map based on: uniform distribution (unable to auto-stretch the map)";
+
+			// Just use a uniform distribution
+			std::fill(noiseAwareMap.get(), noiseAwareMap.get() + nPix, 1.f);
+		} else {
+			const float minAllowedValue = .5f * minIndex / histogramSize;
+			const float maxAllowedValue = .5f * maxIndex / histogramSize;
+
+			// Scale the map in the [minAllowedValue, maxAllowedValue] range
+			for (u_int i = 0; i < nPix; ++i)
+				noiseAwareMap[i] = .95f * max(noiseAwareMap[i] - maxAllowedValue, 0.f) /
+						(maxAllowedValue - minAllowedValue) + .05f;
+
+			// Apply an heavy filter to smooth the map
+			float *tmpMap = new float[nPix];
+			ApplyBoxFilter(noiseAwareMap.get(), tmpMap, xPixelCount, yPixelCount, 6);
+			delete []tmpMap;
+		}
 	}
 }
 

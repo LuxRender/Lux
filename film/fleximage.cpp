@@ -1041,22 +1041,23 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 						0.f, 255.f));
 				}*/
 
-				// Some debug code used to show the variance
+				// Some debug code used to show the variance or RMS (i.e. sqrtf(variance))
 				/*float maxv = 0.f;
 				for (u_int i = 0; i < nPix; i++) {
 					const float v = varianceBuffer->GetVariance(i % xPixelCount, i / xPixelCount);
-					maxv = max(maxv, v);
+					maxv = max(maxv, sqrtf(v));
 				}
 				const float invMaxV = 1.f / maxv;
 				for (u_int i = 0; i < nPix; i++) {
 					framebuffer[3 * i] = framebuffer[3 * i + 1] = framebuffer[3 * i + 2] =
 						static_cast<unsigned char>(Clamp(invMaxV * 256.f *
-						varianceBuffer->GetVariance(i % xPixelCount, i / xPixelCount),
+						sqrtf(varianceBuffer->GetVariance(i % xPixelCount, i / xPixelCount)),
 						0.f, 255.f));
 				}*/
 
 				// Some debug code used to show the tvi
-				/*if (convergenceTVI) {
+				/*const float *convergenceTVI = convTest->GetTVI();
+				if (convergenceTVI) {
 					float maxv = 0.f;
 					for (u_int i = 0; i < nPix; i++)
 						maxv = max(maxv, convergenceTVI[i]);
