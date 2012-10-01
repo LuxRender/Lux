@@ -37,11 +37,10 @@ static const u_int rngN = 8191;
 static const u_int rngA = 884;
 
 MetropolisSampler::MetropolisData::MetropolisData(const MetropolisSampler &sampler) :
-	consecRejects(0), large(true), stamp(0), currentStamp(0), weight(0.f),
+	consecRejects(0), stamp(0), currentStamp(0), weight(0.f),
 	LY(0.f), alpha(0.f), totalLY(0.f), sampleCount(0.f),
-	noiseAwareMap(NULL), noiseAwareMapVersion(0),
-	userSamplingMap(NULL), userSamplingMapVersion(0),
-	cooldown(sampler.cooldownTime > 0)
+	samplingMap(NULL), noiseAwareMapVersion(0), userSamplingMapVersion(0),
+	large(true), cooldown(sampler.cooldownTime > 0)
 {
 	u_int i;
 	// Compute number of non lazy samples
@@ -184,59 +183,61 @@ bool MetropolisSampler::GetNextSample(Sample *sample)
 			data->rngRotation[i] = sample->rng->floatValue();
 	}
 	if (data->large) {
+		// *** large mutation ***
+
 		if (useNoiseAware || film->HasUserSamplingMap()) {
 			// Noise-aware and/or User Sampling support
-			const u_int nPix = film->GetXPixelCount() * film->GetYPixelCount();
 
 			bool newSamplingMap = false;
 			// Check if there is a new version of the noise map and/or user-sampling map
-			if (useNoiseAware)
-				newSamplingMap |= film->GetNoiseAwareMap(data->noiseAwareMapVersion, data->noiseAwareMap);			
-			if (film->HasUserSamplingMap())
-				newSamplingMap |= film->GetUserSamplingMap(data->userSamplingMapVersion, data->userSamplingMap);
+			if (useNoiseAware) {
+				if (film->HasUserSamplingMap()) {
+					newSamplingMap = film->GetSamplingMap(data->noiseAwareMapVersion, data->userSamplingMapVersion,
+							data->samplingMap, data->samplingDistribution2D);
+				} else
+					newSamplingMap = film->GetNoiseAwareMap(data->noiseAwareMapVersion,
+							data->samplingMap, data->samplingDistribution2D);
+			} else {
+				if (film->HasUserSamplingMap()) {
+					newSamplingMap = film->GetUserSamplingMap(data->userSamplingMapVersion,
+							data->samplingMap, data->samplingDistribution2D);
+				} else {
+					// This should never happen
+					LOG(LUX_ERROR, LUX_SYSTEM) << "Internal error in MetropolisSampler::GetNextSample()";
+				}
+			}
 
 			if (newSamplingMap) {
 				// There is a new version so reset some data
 
-				float newTotal = 0.f;
-				if (data->noiseAwareMapVersion > 0) {
-					if (data->userSamplingMapVersion > 0) {
-						for (u_int i = 0; i < nPix; ++i)
-							newTotal += data->noiseAwareMap[i] * data->userSamplingMap[i];
-					} else {
-						for (u_int i = 0; i < nPix; ++i)
-							newTotal += data->noiseAwareMap[i];
-					}
-				} else {
-					if (data->userSamplingMapVersion > 0) {
-						for (u_int i = 0; i < nPix; ++i)
-							newTotal += data->userSamplingMap[i];
-					} else {
-						// This should never happen
-						LOG(LUX_ERROR, LUX_SYSTEM) << "Internal error in MetropolisSampler::GetNextSample()";
-					}
-				}					
-				newTotal /= nPix;
-
 				if (useNoiseAware) {
 					// NOTE: totalLY store the average target function value (this is usually not known but in this case, it is)
-					data->totalLY = newTotal;
+					data->totalLY = data->samplingDistribution2D->Average();
 				} else
 					data->totalLY = 0.0;
 				data->sampleCount = 0.f;
 				data->consecRejects = 0;
 				data->LY = 0.f;
+				data->weight = 0.f;
 			}
+
+			data->currentImage[0] = rngGet(0);
+			data->currentImage[1] = rngGet(1);
+
+			float uv[2];
+			data->samplingDistribution2D->SampleContinuous(data->currentImage[0], data->currentImage[1], uv, &data->largePdf);
+			sample->imageX = uv[0] * (xPixelEnd - xPixelStart) + xPixelStart;
+			sample->imageY = uv[1] * (yPixelEnd - yPixelStart) + yPixelStart;
+		} else {
+			data->currentImage[0] = rngGet(0) * (xPixelEnd - xPixelStart) + xPixelStart;
+			data->currentImage[1] = rngGet(1) * (yPixelEnd - yPixelStart) + yPixelStart;
+			sample->imageX = data->currentImage[0];
+			sample->imageY = data->currentImage[1];
 		}
 
-		// *** large mutation ***
 		// Initialize all non lazy samples
-		data->currentImage[0] = rngGet(0) * (xPixelEnd - xPixelStart) + xPixelStart;
-		data->currentImage[1] = rngGet(1) * (yPixelEnd - yPixelStart) + yPixelStart;
 		for (u_int i = 2; i < data->normalSamples; ++i)
 			data->currentImage[i] = rngGet(i);
-		sample->imageX = data->currentImage[0];
-		sample->imageY = data->currentImage[1];
 		sample->lensU = data->currentImage[2];
 		sample->lensV = data->currentImage[3];
 		sample->time = data->currentImage[4];
@@ -249,12 +250,24 @@ bool MetropolisSampler::GetNextSample(Sample *sample)
 	} else {
 		// *** small mutation ***
 		// Mutation of non lazy samples
-		sample->imageX = data->currentImage[0] =
-			mutateScaled(data->sampleImage[0], rngGet(0),
-			xPixelStart, xPixelEnd, range);
-		sample->imageY = data->currentImage[1] =
-			mutateScaled(data->sampleImage[1], rngGet(1),
-			yPixelStart, yPixelEnd, range);
+		if (useNoiseAware || film->HasUserSamplingMap()) {
+			data->currentImage[0] = mutate(data->sampleImage[0], rngGet(0));
+			data->currentImage[1] = mutate(data->sampleImage[1], rngGet(1));
+
+			float uv[2];
+			data->samplingDistribution2D->SampleContinuous(data->currentImage[0], data->currentImage[1], uv, &data->largePdf);
+			sample->imageX = uv[0] * (xPixelEnd - xPixelStart) + xPixelStart;
+			sample->imageY = uv[1] * (yPixelEnd - yPixelStart) + yPixelStart;
+		} else {
+			sample->imageX = data->currentImage[0] =
+				mutateScaled(data->sampleImage[0], rngGet(0),
+				xPixelStart, xPixelEnd, range);
+			sample->imageY = data->currentImage[1] =
+				mutateScaled(data->sampleImage[1], rngGet(1),
+				yPixelStart, yPixelEnd, range);
+
+			data->largePdf = 1.f;
+		}
 		sample->lensU = data->currentImage[2] =
 			mutateScaled(data->sampleImage[2], rngGet(2),
 			0.f, 1.f, .5f);
@@ -355,28 +368,20 @@ void MetropolisSampler::AddSample(const Sample &sample)
 			const int y = min(max(Ceil2Int(newContributions[i].imageY - .5f), 0), ySize);
 			const int index = x + y * xPixelCount;
 
-			if (data->noiseAwareMapVersion > 0) {
-				if (data->userSamplingMapVersion > 0)
-					newLY += data->noiseAwareMap[index] * data->userSamplingMap[index];
-				else
-					newLY += data->noiseAwareMap[index];
-			} else {
-				if (data->userSamplingMapVersion > 0) {
-					const float ly = newContributions[i].color.Y();
+			if (data->noiseAwareMapVersion > 0)
+				newLY += data->samplingMap[index];
+			else {
+				const float ly = newContributions[i].color.Y();
 
-					if (ly > 0.f && !isinf(ly)) {
-						const float us = data->userSamplingMap[index];
+				if (ly > 0.f && !isinf(ly)) {
+					const float us = data->samplingMap[index];
 
-						if (useVariance && newContributions[i].variance > 0.f)
-							newLY += ly * newContributions[i].variance * us;
-						else
-							newLY += ly * us;
-					} else
-						newContributions[i].color = XYZColor(0.);
-				} else {
-					// This should never happen
-					LOG(LUX_ERROR, LUX_SYSTEM) << "Internal error in MetropolisSampler::AddSample()";
-				}
+					if (useVariance && newContributions[i].variance > 0.f)
+						newLY += ly * newContributions[i].variance * us;
+					else
+						newLY += ly * us;
+				} else
+					newContributions[i].color = XYZColor(0.);
 			}
 		}
 	} else {
@@ -405,7 +410,7 @@ void MetropolisSampler::AddSample(const Sample &sample)
 		}
 
 		meanIntensity = data->totalLY > 0. ? static_cast<float>(data->totalLY / data->sampleCount) : 1.f;
-	}	
+	}
 
 	sample.contribBuffer->AddSampleCount(1.f);
 
@@ -420,7 +425,7 @@ void MetropolisSampler::AddSample(const Sample &sample)
 	// try or force accepting of the new sample
 	if (accProb == 1.f || sample.rng->floatValue() < accProb) {
 		// Add accumulated contribution of previous reference sample
-		const float norm = data->weight / (data->LY / meanIntensity + pLarge);
+		const float norm = data->weight / (data->LY / meanIntensity + pLarge * data->largePdf); // TO FIX
 		if (norm > 0.f) {
 			for(u_int i = 0; i < data->oldContributions.size(); ++i)
 				sample.contribBuffer->Add(data->oldContributions[i], norm);
@@ -436,7 +441,7 @@ void MetropolisSampler::AddSample(const Sample &sample)
 		data->consecRejects = 0;
 	} else {
 		// Add contribution of new sample before rejecting it
-		const float norm = newWeight / (newLY / meanIntensity + pLarge);
+		const float norm = newWeight / (newLY / meanIntensity + pLarge * data->largePdf); // TO FIX
 		if (norm > 0.f) {
 			for(u_int i = 0; i < newContributions.size(); ++i)
 				sample.contribBuffer->Add(newContributions[i], norm);

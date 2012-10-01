@@ -30,6 +30,7 @@
 #include "queryable.h"
 #include "bsh.h"
 #include "luxrays/utils/convtest/convtest.h"
+#include "mcdistribution.h"
 
 #include <boost/serialization/split_member.hpp>
 #include <boost/thread.hpp>
@@ -689,11 +690,17 @@ public:
 	virtual string GetStringParameterValue(luxComponentParameters param, u_int index) = 0;
 
 	virtual void EnableNoiseAwareMap();
-	virtual const bool GetNoiseAwareMap(u_int &version, boost::shared_array<float> &map) const;
+	virtual const bool GetNoiseAwareMap(u_int &version, boost::shared_array<float> &map,
+		boost::shared_ptr<Distribution2D> &distrib);
 	// Using a check on userSamplingMapVersion in order to avoid the usage of userSamplingMapMutex
 	virtual const bool HasUserSamplingMap() const { return (userSamplingMapVersion > 0); }
-	virtual const bool GetUserSamplingMap(u_int &version, boost::shared_array<float> &map) const;
+	virtual const bool GetUserSamplingMap(u_int &version, boost::shared_array<float> &map,
+		boost::shared_ptr<Distribution2D> &distrib);
 	virtual void SetUserSamplingMap(const float *map);
+
+	// Return noise-aware map * user sampling map
+	virtual const bool GetSamplingMap(u_int &naMapVersion, u_int &usMapVersion,
+		boost::shared_array<float> &map, boost::shared_ptr<Distribution2D> &distrib);
 
 	/*
 	 * Accessor for samplePerPass
@@ -773,13 +780,18 @@ protected: // Put it here for better data alignment
 	// gone)
 	boost::shared_array<float> noiseAwareMap;
 	u_int noiseAwareMapVersion;
-	boost::mutex noiseAwareMapMutex;
+	boost::shared_ptr<Distribution2D> noiseAwareDistribution2D;
 
 	// May be enabled by the user
 	boost::shared_array<float> userSamplingMap;
 	u_int userSamplingMapVersion;
-	boost::mutex userSamplingMapMutex;
+	boost::shared_ptr<Distribution2D> userSamplingDistribution2D;
 	
+	// Noise-aware map * user sampling map
+	boost::shared_array<float> samplingMap;
+	boost::shared_ptr<Distribution2D> samplingDistribution2D;
+	boost::mutex samplingMapMutex;
+
 	PerPixelNormalizedFloatBuffer *ZBuffer;
 	bool use_Zbuf;
 

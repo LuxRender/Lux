@@ -905,16 +905,17 @@ void Film::CreateBuffers()
 	}
 
 	// DEBUG: for testing the user sampling map functionality
-	/*userSamplingMap.reset(new float[xPixelCount * yPixelCount]);
+	float *map = (float *)alloca(xPixelCount * yPixelCount * sizeof(float));
 	for (u_int x = 0; x < xPixelCount; ++x) {
 		for (u_int y = 0; y < yPixelCount; ++y) {
-			const float xx = (x / (float)xPixelCount) - 0.5f;
-			const float yy = (y / (float)yPixelCount) - 0.5f;
+			//const float xx = (x / (float)xPixelCount) - 0.5f;
+			//const float yy = (y / (float)yPixelCount) - 0.5f;
+			//map[x + y * xPixelCount] = (xx * xx + yy * yy < .25f * .25f) ? 1.f : 0.0f;
 
-			userSamplingMap[x + y * xPixelCount] = (xx * xx + yy * yy < 0.25f * 0.25f) ? 1.f : 0.01f;
+			map[x + y * xPixelCount] = (x > xPixelCount * 7 / 8 && y > yPixelCount * 7 / 8) ? 1.f : 0.f;
 		}
 	}
-	userSamplingMapVersion = 1;*/
+	SetUserSamplingMap(map);
 }
 
 void Film::ClearBuffers()
@@ -2496,7 +2497,7 @@ void Film::UpdateConvergenceInfo(const float *framebuffer) {
 }
 
 void Film::GenerateNoiseAwareMap() {
-	boost::mutex::scoped_lock(noiseAwareMapMutex);
+	boost::mutex::scoped_lock(samplingMapMutex);
 
 	const u_int nPix = xPixelCount * yPixelCount;
 
@@ -2613,39 +2614,84 @@ void Film::GenerateNoiseAwareMap() {
 			delete []tmpMap;
 		}
 	}
+
+	noiseAwareDistribution2D.reset(new Distribution2D(noiseAwareMap.get(), xPixelCount, yPixelCount));
+
+	// Update noise-aware map * user sampling map
+	samplingMap.reset(new float[nPix]);
+	if (userSamplingMap) {
+		for (u_int i = 0; i < nPix; ++i)
+			samplingMap[i] = noiseAwareMap[i] * userSamplingMap[i];
+	} else
+		std::copy(noiseAwareMap.get(), noiseAwareMap.get() + nPix, samplingMap.get());
+
+	samplingDistribution2D.reset(new Distribution2D(samplingMap.get(), xPixelCount, yPixelCount));
 }
 
-const bool Film::GetNoiseAwareMap(u_int &version, boost::shared_array<float> &map) const {
-	boost::mutex::scoped_lock(noiseAwareMapMutex);
+const bool Film::GetNoiseAwareMap(u_int &version, boost::shared_array<float> &map,
+		boost::shared_ptr<Distribution2D> &distrib) {
+	boost::mutex::scoped_lock(samplingMapMutex);
 
 	if (noiseAwareMapVersion > version) {
 		map = noiseAwareMap;
 		version = noiseAwareMapVersion;
+		distrib = noiseAwareDistribution2D;
+
 		return true;
 	} else
 		return false;
 }
 
-const bool Film::GetUserSamplingMap(u_int &version, boost::shared_array<float> &map) const {
-	boost::mutex::scoped_lock(userSamplingMapMutex);
+const bool Film::GetUserSamplingMap(u_int &version, boost::shared_array<float> &map,
+		boost::shared_ptr<Distribution2D> &distrib) {
+	boost::mutex::scoped_lock(samplingMapMutex);
 
 	if (userSamplingMapVersion > version) {
 		map = userSamplingMap;
 		version = userSamplingMapVersion;
+		distrib = userSamplingDistribution2D;
 		return true;
 	} else
 		return false;
 }
 
 void Film::SetUserSamplingMap(const float *map) {
-	boost::mutex::scoped_lock(userSamplingMapMutex);
+	boost::mutex::scoped_lock(samplingMapMutex);
+	
+	// TODO: reject the map if all values are 0.0
 
 	const u_int nPix = xPixelCount * yPixelCount;
-	if (!userSamplingMap)
-		userSamplingMap.reset(new float[nPix]);
+	userSamplingMap.reset(new float[nPix]);
 
 	std::copy(map, map + nPix, userSamplingMap.get());
 	++userSamplingMapVersion;
+
+	userSamplingDistribution2D.reset(new Distribution2D(userSamplingMap.get(), xPixelCount, yPixelCount));
+
+	// Update noise-aware map * user sampling map
+	samplingMap.reset(new float[nPix]);
+	if (noiseAwareMap) {
+		for (u_int i = 0; i < nPix; ++i)
+			samplingMap[i] = noiseAwareMap[i] * userSamplingMap[i];
+	} else
+		std::copy(userSamplingMap.get(), userSamplingMap.get() + nPix, samplingMap.get());
+
+	samplingDistribution2D.reset(new Distribution2D(samplingMap.get(), xPixelCount, yPixelCount));
+}
+
+const bool Film::GetSamplingMap(u_int &naMapVersion, u_int &usMapVersion,
+		boost::shared_array<float> &map, boost::shared_ptr<Distribution2D> &distrib) {
+	boost::mutex::scoped_lock(samplingMapMutex);
+
+	if ((noiseAwareMapVersion > naMapVersion) || (userSamplingMapVersion > usMapVersion)) {
+		naMapVersion = noiseAwareMapVersion;
+		usMapVersion = userSamplingMapVersion;
+		map = samplingMap;
+		distrib = samplingDistribution2D;
+
+		return true;
+	} else
+		return false;
 }
 
 } // namespace lux

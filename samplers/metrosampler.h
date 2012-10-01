@@ -48,18 +48,18 @@ public:
 		u_int *offset, *timeOffset;
 		float *rngRotation;
 		u_int rngBase, rngOffset;
-		bool large;
 		int stamp, currentStamp;
 		float weight, LY, alpha;
 		vector <Contribution> oldContributions;
 		double totalLY, sampleCount;
 
-		boost::shared_array<float> noiseAwareMap;
+		boost::shared_array<float> samplingMap;		
 		u_int noiseAwareMapVersion;
-		boost::shared_array<float> userSamplingMap;		
 		u_int userSamplingMapVersion;
+		boost::shared_ptr<Distribution2D> samplingDistribution2D;
+		float largePdf;
 
-		bool cooldown;
+		bool large, cooldown;
 	};
 
 	MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
