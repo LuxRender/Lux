@@ -57,7 +57,7 @@ public:
 		u_int noiseAwareMapVersion;
 		u_int userSamplingMapVersion;
 		boost::shared_ptr<Distribution2D> samplingDistribution2D;
-		float largePdf;
+		float samplingDistributionUV[2];
 
 		bool large, cooldown;
 	};

@@ -224,10 +224,10 @@ bool MetropolisSampler::GetNextSample(Sample *sample)
 			data->currentImage[0] = rngGet(0);
 			data->currentImage[1] = rngGet(1);
 
-			float uv[2];
-			data->samplingDistribution2D->SampleContinuous(data->currentImage[0], data->currentImage[1], uv, &data->largePdf);
-			sample->imageX = uv[0] * (xPixelEnd - xPixelStart) + xPixelStart;
-			sample->imageY = uv[1] * (yPixelEnd - yPixelStart) + yPixelStart;
+			float pdf;
+			data->samplingDistribution2D->SampleContinuous(data->currentImage[0], data->currentImage[1], data->samplingDistributionUV, &pdf);
+			sample->imageX = data->samplingDistributionUV[0] * (xPixelEnd - xPixelStart) + xPixelStart;
+			sample->imageY = data->samplingDistributionUV[1] * (yPixelEnd - yPixelStart) + yPixelStart;
 		} else {
 			data->currentImage[0] = rngGet(0) * (xPixelEnd - xPixelStart) + xPixelStart;
 			data->currentImage[1] = rngGet(1) * (yPixelEnd - yPixelStart) + yPixelStart;
@@ -254,10 +254,10 @@ bool MetropolisSampler::GetNextSample(Sample *sample)
 			data->currentImage[0] = mutate(data->sampleImage[0], rngGet(0));
 			data->currentImage[1] = mutate(data->sampleImage[1], rngGet(1));
 
-			float uv[2];
-			data->samplingDistribution2D->SampleContinuous(data->currentImage[0], data->currentImage[1], uv, &data->largePdf);
-			sample->imageX = uv[0] * (xPixelEnd - xPixelStart) + xPixelStart;
-			sample->imageY = uv[1] * (yPixelEnd - yPixelStart) + yPixelStart;
+			float pdf;
+			data->samplingDistribution2D->SampleContinuous(data->currentImage[0], data->currentImage[1], data->samplingDistributionUV, &pdf);
+			sample->imageX = data->samplingDistributionUV[0] * (xPixelEnd - xPixelStart) + xPixelStart;
+			sample->imageY = data->samplingDistributionUV[1] * (yPixelEnd - yPixelStart) + yPixelStart;
 		} else {
 			sample->imageX = data->currentImage[0] =
 				mutateScaled(data->sampleImage[0], rngGet(0),
@@ -265,8 +265,6 @@ bool MetropolisSampler::GetNextSample(Sample *sample)
 			sample->imageY = data->currentImage[1] =
 				mutateScaled(data->sampleImage[1], rngGet(1),
 				yPixelStart, yPixelEnd, range);
-
-			data->largePdf = 1.f;
 		}
 		sample->lensU = data->currentImage[2] =
 			mutateScaled(data->sampleImage[2], rngGet(2),
@@ -359,13 +357,12 @@ void MetropolisSampler::AddSample(const Sample &sample)
 	float meanIntensity;
 	float newLY = 0.f;
 	if ((data->noiseAwareMapVersion > 0) || (data->userSamplingMapVersion > 0)) {
-		const int xPixelCount = film->GetXPixelCount();
-		const int xSize = xPixelCount - 1;
-		const int ySize = film->GetYPixelCount() - 1;
+		const u_int xPixelCount = film->GetXPixelCount();
+		const u_int yPixelCount = film->GetYPixelCount();
 
 		for(u_int i = 0; i < newContributions.size(); ++i) {
-			const int x = min(max(Ceil2Int(newContributions[i].imageX - .5f), 0), xSize);
-			const int y = min(max(Ceil2Int(newContributions[i].imageY - .5f), 0), ySize);
+			const u_int x = min(xPixelCount - 1, Floor2UInt(data->samplingDistributionUV[0] * xPixelCount));
+			const u_int y = min(yPixelCount - 1, Floor2UInt(data->samplingDistributionUV[1] * yPixelCount));
 			const int index = x + y * xPixelCount;
 
 			if (data->noiseAwareMapVersion > 0)
@@ -425,7 +422,7 @@ void MetropolisSampler::AddSample(const Sample &sample)
 	// try or force accepting of the new sample
 	if (accProb == 1.f || sample.rng->floatValue() < accProb) {
 		// Add accumulated contribution of previous reference sample
-		const float norm = data->weight / (data->LY / meanIntensity + pLarge * data->largePdf); // TO FIX
+		const float norm = data->weight / (data->LY / meanIntensity + pLarge);
 		if (norm > 0.f) {
 			for(u_int i = 0; i < data->oldContributions.size(); ++i)
 				sample.contribBuffer->Add(data->oldContributions[i], norm);
@@ -441,7 +438,7 @@ void MetropolisSampler::AddSample(const Sample &sample)
 		data->consecRejects = 0;
 	} else {
 		// Add contribution of new sample before rejecting it
-		const float norm = newWeight / (newLY / meanIntensity + pLarge * data->largePdf); // TO FIX
+		const float norm = newWeight / (newLY / meanIntensity + pLarge);
 		if (norm > 0.f) {
 			for(u_int i = 0; i < newContributions.size(); ++i)
 				sample.contribBuffer->Add(newContributions[i], norm);

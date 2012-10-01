@@ -905,17 +905,18 @@ void Film::CreateBuffers()
 	}
 
 	// DEBUG: for testing the user sampling map functionality
-	float *map = (float *)alloca(xPixelCount * yPixelCount * sizeof(float));
+	/*float *map = (float *)alloca(xPixelCount * yPixelCount * sizeof(float));
 	for (u_int x = 0; x < xPixelCount; ++x) {
 		for (u_int y = 0; y < yPixelCount; ++y) {
-			//const float xx = (x / (float)xPixelCount) - 0.5f;
-			//const float yy = (y / (float)yPixelCount) - 0.5f;
-			//map[x + y * xPixelCount] = (xx * xx + yy * yy < .25f * .25f) ? 1.f : 0.0f;
+			const u_int index = x + y * xPixelCount;
+			const float xx = (x / (float)xPixelCount) - 0.5f;
+			const float yy = (y / (float)yPixelCount) - 0.5f;
+			map[index] = (xx * xx + yy * yy < .25f * .25f) ? 1.f : 0.1f;
 
-			map[x + y * xPixelCount] = (x > xPixelCount * 7 / 8 && y > yPixelCount * 7 / 8) ? 1.f : 0.f;
+			//map[index] = (x > xPixelCount * 7 / 8 && y > yPixelCount * 7 / 8) ? 1.f : 0.01f;
 		}
 	}
-	SetUserSamplingMap(map);
+	SetUserSamplingMap(map);*/
 }
 
 void Film::ClearBuffers()
