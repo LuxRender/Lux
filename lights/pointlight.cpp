@@ -142,7 +142,7 @@ PointLight::PointLight(const Transform &light2world,
 	SampleableSphericalFunction *ssf) :
 	Light(light2world), Lbase(L), gain(g), func(ssf)
 {
-	lightPos = LightToWorld(Point(0,0,0));
+	lightPos = LightToWorld * Point(0,0,0);
 	Lbase->SetIlluminant(); // Illuminant must be set before calling Le->Y()
 	const float gainFactor = power * efficacy / (4.f * M_PI * Lbase->Y());
 	if (gainFactor > 0.f && !isinf(gainFactor))
@@ -165,10 +165,10 @@ bool PointLight::SampleL(const Scene &scene, const Sample &sample,
 	SWCSpectrum *Le) const
 {
 	*pdf = 1.f;
-	const Normal ns(Normalize(LightToWorld(Normal(0, 0, 1))));
+	const Normal ns(Normalize(LightToWorld * Normal(0, 0, 1)));
 	DifferentialGeometry dg(lightPos, ns,
-		Normalize(LightToWorld(Vector(1, 0, 0))),
-		Normalize(LightToWorld(Vector(0, 1, 0))),
+		Normalize(LightToWorld * Vector(1, 0, 0)),
+		Normalize(LightToWorld * Vector(0, 1, 0)),
 		Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
 	dg.time = sample.realTime;
 	const Volume *v = GetVolume();
@@ -185,10 +185,10 @@ bool PointLight::SampleL(const Scene &scene, const Sample &sample,
 	const Point &p, float u1, float u2, float u3, BSDF **bsdf, float *pdf,
 	float *pdfDirect, SWCSpectrum *Le) const
 {
-	const Normal ns(Normalize(LightToWorld(Normal(0, 0, 1))));
+	const Normal ns(Normalize(LightToWorld * Normal(0, 0, 1)));
 	DifferentialGeometry dg(lightPos, ns,
-		Normalize(LightToWorld(Vector(1, 0, 0))),
-		Normalize(LightToWorld(Vector(0, 1, 0))),
+		Normalize(LightToWorld * Vector(1, 0, 0)),
+		Normalize(LightToWorld * Vector(0, 1, 0)),
 		Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
 	dg.time = sample.realTime;
 	*pdfDirect = 1.f;

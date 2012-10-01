@@ -35,12 +35,10 @@ using namespace lux;
 Camera::~Camera() {
 	delete film;
 }
-Camera::Camera(const MotionSystem &w2c,
-               float hither, float yon,
-			   float sopen, float sclose, int sdist, Film *f) 
-			   : Queryable("camera"), CameraMotion(w2c) {
-	WorldToCamera = CameraMotion.Sample(sopen);
-	CameraToWorld = WorldToCamera.GetInverse();
+Camera::Camera(const MotionSystem &w2c, float hither, float yon,
+	float sopen, float sclose, int sdist, Film *f) : Queryable("camera"),
+	CameraMotion(w2c) {
+	CameraToWorld = CameraMotion.Sample(sopen).GetInverse();
 	ClipHither = hither;
 	ClipYon = yon;
 	ShutterOpen = sopen;
@@ -109,8 +107,7 @@ void Camera::SampleMotion(float time) {
 	if (CameraMotion.IsStatic())
 		return;
 
-	WorldToCamera = CameraMotion.Sample(time);
-	CameraToWorld = WorldToCamera.GetInverse();
+	CameraToWorld = CameraMotion.Sample(time).GetInverse();
 }
 
 float Camera::GetTime(float u1) const {
@@ -142,19 +139,14 @@ ProjectiveCamera::ProjectiveCamera(const MotionSystem &w2c,
 	LensRadius = lensr;
 	FocalDistance = focald;
 	// Compute projective camera transformations
-	CameraToScreen = proj;
-	WorldToScreen = CameraToScreen * WorldToCamera;
+	ScreenToCamera = proj.GetInverse();
+	ScreenToWorld = CameraToWorld * ScreenToCamera;
 	// Compute projective camera screen transformations
-	ScreenToRaster = Scale(float(film->xResolution),
-	                       float(film->yResolution), 1.f) *
-		  Scale(1.f / (Screen[1] - Screen[0]),
-				1.f / (Screen[2] - Screen[3]), 1.f) *
-		 Translate(Vector(-Screen[0], -Screen[3], 0.f));
-	RasterToScreen = ScreenToRaster.GetInverse();
-	CameraToRaster = ScreenToRaster * CameraToScreen;
-	RasterToCamera = CameraToRaster.GetInverse();
-	WorldToRaster = ScreenToRaster * WorldToScreen;
-	RasterToWorld = WorldToRaster.GetInverse();
+	RasterToScreen = Translate(Vector(Screen[0], Screen[3], 0.f)) *
+		Scale(Screen[1] - Screen[0], Screen[2] - Screen[3], 1.f) *
+		Scale(1.f / film->xResolution, 1.f / film->yResolution, 1.f);
+	RasterToCamera = ScreenToCamera * RasterToScreen;
+	RasterToWorld = ScreenToWorld * RasterToScreen;
 
 	AddFloatAttribute(*this, "LensRadius", "Lens radius", 0.f, &ProjectiveCamera::LensRadius);
 	AddFloatAttribute(*this, "FocalDistance", "Focal distance", &ProjectiveCamera::FocalDistance);
@@ -167,7 +159,7 @@ void ProjectiveCamera::SampleMotion(float time) {
 	// call base method to sample transform
 	Camera::SampleMotion(time);
 	// then update derivative transforms
-	WorldToScreen = CameraToScreen * WorldToCamera;
-	WorldToRaster = CameraToRaster * WorldToCamera;
-	RasterToWorld = WorldToRaster.GetInverse();
+	ScreenToWorld = CameraToWorld * ScreenToCamera;
+	RasterToCamera = ScreenToCamera * RasterToScreen;
+	RasterToWorld = ScreenToWorld * RasterToScreen;
 }

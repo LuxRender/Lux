@@ -39,10 +39,9 @@ public:
 	// Light Interface
 	virtual ~Light() { }
 	Light(const Transform &l2w, u_int ns = 1U)
-		: nSamples(max(1U, ns)), LightToWorld(l2w),
-		  WorldToLight(l2w.GetInverse()) {
-		if (WorldToLight.HasScale())
-			LOG(LUX_DEBUG,LUX_UNIMPLEMENT)<< "Scaling detected in world-to-light transformation! Some lights might not support it yet.";
+		: nSamples(max(1U, ns)), LightToWorld(l2w) {
+		if (LightToWorld.HasScale())
+			LOG(LUX_DEBUG,LUX_UNIMPLEMENT)<< "Scaling detected in light-to-world transformation! Some lights might not support it yet.";
 		havePortalShape = false;
 		nrPortalShapes = 0;
 		PortalArea = 0;
@@ -80,7 +79,7 @@ public:
 	u_int group;
 protected:
 	// Light Protected Data
-	const Transform LightToWorld, WorldToLight;
+	const Transform LightToWorld;
 	LightRenderingHints hints;
 public: // Put last for better data alignment
 	bool havePortalShape;
@@ -138,9 +137,9 @@ public:
 		BSDF **bsdf, float *pdf, float *pdfDirect,
 		SWCSpectrum *L) const;
 	virtual float Pdf(const Point &p, const PartialDifferentialGeometry &dg) const {
-		const PartialDifferentialGeometry dgi(WorldToLight(dg));
+		const PartialDifferentialGeometry dgi(LightToWorld / dg);
 		const float factor = dgi.Volume() / dg.Volume();
-		return light->Pdf(WorldToLight(p), dgi) * factor;
+		return light->Pdf(LightToWorld / p, dgi) * factor;
 	}
 	virtual bool SampleL(const Scene &scene, const Sample &sample,
 		float u1, float u2, float u3, BSDF **bsdf, float *pdf,
@@ -171,10 +170,10 @@ public:
 		BSDF **bsdf, float *pdf, float *pdfDirect,
 		SWCSpectrum *L) const;
 	virtual float Pdf(const Point &p, const PartialDifferentialGeometry &dg) const {
-		const Transform WorldToLight(motionPath.Sample(dg.time).GetInverse());
-		const PartialDifferentialGeometry dgi(WorldToLight(dg));
+		const Transform LightToWorld(motionPath.Sample(dg.time));
+		const PartialDifferentialGeometry dgi(LightToWorld / dg);
 		const float factor = dgi.Volume() / dg.Volume();
-		return light->Pdf(WorldToLight(p), dgi) * factor;
+		return light->Pdf(LightToWorld / p, dgi) * factor;
 	}
 	virtual bool SampleL(const Scene &scene, const Sample &sample,
 		float u1, float u2, float u3, BSDF **bsdf, float *pdf,

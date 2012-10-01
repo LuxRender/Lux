@@ -44,9 +44,10 @@ public:
 		p.x *= radius;
 		p.y *= radius;
 		p.z = height;
-		*Ns = Normalize(ObjectToWorld(Normal(0,0,1)));
-		if (reverseOrientation) *Ns *= -1.f;
-		return ObjectToWorld(p);
+		*Ns = Normalize(ObjectToWorld * Normal(0,0,1));
+		if (reverseOrientation)
+			*Ns *= -1.f;
+		return ObjectToWorld * p;
 	}
 	
 	static Shape* CreateShape(const Transform &o2w, bool reverseOrientation, const ParamSet &params);

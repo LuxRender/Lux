@@ -48,7 +48,7 @@ private:
 	std::vector<float> density;
 	const int nx, ny, nz;
 	const BBox extent;
-	Transform WorldToVolume;
+	Transform VolumeToWorld;
 };
 
 }//namespace lux

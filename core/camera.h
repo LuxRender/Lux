@@ -222,7 +222,7 @@ public:
 
 	// Camera Public Data
 	Film *film;
-	Transform WorldToCamera, CameraToWorld;
+	Transform CameraToWorld;
 protected:
 	bool GenerateRay(MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Scene &scene, float o1, float o2, float d1, float d2,
@@ -248,11 +248,10 @@ public:
 
 protected:
 	// ProjectiveCamera Protected Data
-	Transform CameraToScreen, WorldToScreen;
-	Transform ScreenToRaster, RasterToScreen;
+	Transform ScreenToCamera, ScreenToWorld;
+	Transform RasterToScreen, RasterToWorld;
 public:
-	Transform CameraToRaster, RasterToCamera;
-	Transform WorldToRaster, RasterToWorld;
+	Transform RasterToCamera;
 	float LensRadius, FocalDistance;
 };
 

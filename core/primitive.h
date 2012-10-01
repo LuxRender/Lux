@@ -172,11 +172,11 @@ public:
 
 	/**
 	 * This methods allows to retrieve the primitive transform from
-	 * world to local coordinates. It is used by textures.
+	 * local to world coordinates. It is used by textures.
 	 * @param time The time to sample the transform (for motion)
-	 * @return The primitive world to local transform
+	 * @return The primitive local to world transform
 	 */
-	virtual Transform GetWorldToLocal(float time) const = 0;
+	virtual Transform GetLocalToWorld(float time) const = 0;
 };
 
 class PrimitiveRefinementHints {
@@ -202,12 +202,12 @@ public:
 		BSDF **bsdf, float *pdf, float *pdfDirect,
 		SWCSpectrum *L) const;
 
-	void Set(const Transform& world2object,
+	void Set(const Transform& object2world,
 			const Primitive* prim, const Material* mat,
 			const Volume *extv, const Volume *intv,
 			const AreaLight* areal = NULL)
 	{
-		WorldToObject = world2object;
+		ObjectToWorld = object2world;
 		primitive = prim;
 		material = mat;
 		exterior = extv;
@@ -216,7 +216,7 @@ public:
 	}
 
 	DifferentialGeometry dg;
-	Transform WorldToObject;
+	Transform ObjectToWorld;
 	const Primitive *primitive;
 	const Material *material;
 	const Volume *exterior;
@@ -286,8 +286,8 @@ public:
 		in->arealight = areaLight; // set the intersected arealight
 	}
 
-	virtual Transform GetWorldToLocal(float time) const {
-		return prim->GetWorldToLocal(time);
+	virtual Transform GetLocalToWorld(float time) const {
+		return prim->GetLocalToWorld(time);
 	}
 private:
 	// AreaLightPrimitive Private Data
@@ -315,12 +315,12 @@ public:
 	InstancePrimitive(boost::shared_ptr<Primitive> &i, const Transform &i2w,
 		boost::shared_ptr<Material> &mat, boost::shared_ptr<Volume> &ex,
 		boost::shared_ptr<Volume> &in) : instance(i),
-		InstanceToWorld(i2w), WorldToInstance(i2w.GetInverse()),
-		material(mat), exterior(ex), interior(in) { }
+		InstanceToWorld(i2w), material(mat), exterior(ex),
+		interior(in) { }
 	virtual ~InstancePrimitive() { }
 
 	virtual BBox WorldBound() const  {
-		return InstanceToWorld(instance->WorldBound());
+		return InstanceToWorld * instance->WorldBound();
 	}
 	virtual const Volume *GetExterior() const {
 		return exterior ? exterior.get() : instance->GetExterior();
@@ -342,40 +342,40 @@ public:
 		DifferentialGeometry *dg) const  {
 		float pdf = instance->Sample(u1, u2, u3, dg);
 		pdf *= dg->Volume();
-		InstanceToWorld(*dg, dg);
+		*dg = InstanceToWorld * *dg;
 		pdf /= dg->Volume();
 		dg->ihandle = dg->handle;
 		dg->handle = this;
 		return pdf;
 	}
 	virtual float Pdf(const PartialDifferentialGeometry &dg) const {
-		const PartialDifferentialGeometry dgi(WorldToInstance(dg));
+		const PartialDifferentialGeometry dgi(InstanceToWorld / dg);
 		const float factor = dgi.Volume() / dg.Volume();
 		return instance->Pdf(dgi) * factor;
 	}
 	virtual float Sample(const Point &P, float u1, float u2, float u3,
 		DifferentialGeometry *dg) const {
-		float pdf = instance->Sample(WorldToInstance(P), u1, u2, u3, dg);
+		float pdf = instance->Sample(InstanceToWorld / P, u1, u2, u3, dg);
 		pdf *= dg->Volume();
-		InstanceToWorld(*dg, dg);
+		*dg = InstanceToWorld * *dg;
 		pdf /= dg->Volume();
 		dg->ihandle = dg->handle;
 		dg->handle = this;
 		return pdf;
 	}
 	virtual float Pdf(const Point &p, const PartialDifferentialGeometry &dg) const {
-		const PartialDifferentialGeometry dgi(WorldToInstance(dg));
+		const PartialDifferentialGeometry dgi(InstanceToWorld / dg);
 		const float factor = dgi.Volume() / dg.Volume();
 		return instance->Pdf(p, dgi) * factor;
 	}
 
-	virtual Transform GetWorldToLocal(float time) const {
-		return instance->GetWorldToLocal(time) * WorldToInstance;
+	virtual Transform GetLocalToWorld(float time) const {
+		return InstanceToWorld * instance->GetLocalToWorld(time);
 	}
 private:
 	// InstancePrimitive Private Data
 	boost::shared_ptr<Primitive> instance;
-	Transform InstanceToWorld, WorldToInstance;
+	Transform InstanceToWorld;
 	boost::shared_ptr<Material> material;
 	boost::shared_ptr<Volume> exterior, interior;
 };
@@ -439,7 +439,7 @@ public:
 		const Transform InstanceToWorld(motionPath.Sample(dg->time));
 		float pdf = instance->Sample(u1, u2, u3, dg);
 		pdf *= dg->Volume();
-		InstanceToWorld(*dg, dg);
+		*dg = InstanceToWorld * *dg;
 		pdf /= dg->Volume();
 		dg->ihandle = dg->handle;
 		dg->handle = this;
@@ -447,16 +447,16 @@ public:
 	}
 	virtual float Pdf(const PartialDifferentialGeometry &dg) const {
 		const Transform InstanceToWorld(motionPath.Sample(dg.time));
-		const PartialDifferentialGeometry dgi(InstanceToWorld.GetInverse()(dg));
+		const PartialDifferentialGeometry dgi(InstanceToWorld / dg);
 		const float factor = dgi.Volume() / dg.Volume();
 		return instance->Pdf(dgi) * factor;
 	}
 	virtual float Sample(const Point &P, float u1, float u2, float u3,
 		DifferentialGeometry *dg) const {
 		const Transform InstanceToWorld(motionPath.Sample(dg->time));
-		float pdf = instance->Sample(InstanceToWorld.GetInverse()(P), u1, u2, u3, dg);
+		float pdf = instance->Sample(InstanceToWorld / P, u1, u2, u3, dg);
 		pdf *= dg->Volume();
-		InstanceToWorld(*dg, dg);
+		*dg = InstanceToWorld * *dg;
 		pdf /= dg->Volume();
 		dg->ihandle = dg->handle;
 		dg->handle = this;
@@ -464,13 +464,12 @@ public:
 	}
 	virtual float Pdf(const Point &p, const PartialDifferentialGeometry &dg) const {
 		const Transform InstanceToWorld(motionPath.Sample(dg.time));
-		const PartialDifferentialGeometry dgi(InstanceToWorld.GetInverse()(dg));
+		const PartialDifferentialGeometry dgi(InstanceToWorld / dg);
 		const float factor = dgi.Volume() / dg.Volume();
 		return instance->Pdf(p, dgi) * factor;
 	}
-	virtual Transform GetWorldToLocal(float time) const {
-		return instance->GetWorldToLocal(time) *
-			motionPath.Sample(time).GetInverse();
+	virtual Transform GetLocalToWorld(float time) const {
+		return motionPath.Sample(time) * instance->GetLocalToWorld(time);
 	}
 private:
 	// MotionPrimitive Private Data
@@ -522,7 +521,7 @@ public:
 	 */
 	virtual bool CanSample() const { return false; }
 
-	virtual Transform GetWorldToLocal(float time) const {
+	virtual Transform GetLocalToWorld(float time) const {
 		return Transform();
 	}
 

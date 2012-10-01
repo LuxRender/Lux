@@ -141,6 +141,7 @@ namespace luxrays {
   class Normal;
   class Point;
   class Ray;
+  class Transform;
   class Vector;
 }
 
@@ -154,9 +155,10 @@ namespace lux
   using luxrays::Normal;
   using luxrays::Point;
   using luxrays::Ray;
+  using luxrays::Transform;
   using luxrays::Vector;
   class RayDifferential;
-  class Transform;
+/*  class Transform;*/
   class DifferentialGeometry;
   class Renderer;
   class Scene;

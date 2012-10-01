@@ -65,7 +65,7 @@ private:
 	Vector Turbulence(const Vector &v, float &noiseScale, u_int &octaves) const;
 	float CloudNoise(const Point &p, const float &omegaValue, u_int octaves) const;
 
-	Transform WorldToVolume;
+	Transform VolumeToWorld;
 	Vector scale;
 	Point *sphereCentre;
 	float inputRadius, radius;
@@ -97,7 +97,7 @@ CloudVolume::CloudVolume(const RGBColor &sa, const RGBColor &ss,
 	const u_int &octaves, const float &o, const float &offSet,
 	const u_int &numspheres, const float &spheresize) :
 	DensityVolume<RGBVolume>(RGBVolume(sa, ss, emit, gg)),
-	WorldToVolume(v2w.GetInverse()), inputRadius(r), numSpheres(numspheres),
+	VolumeToWorld(v2w), inputRadius(r), numSpheres(numspheres),
 	sphereSize(spheresize), sharpness(sharp), baseFlatness(baseflatness),
 	variability(v), omega(o), firstNoiseScale(noiseScale),
 	noiseOffSet(offSet), turbulenceAmount(t), numOctaves(octaves)
@@ -137,7 +137,7 @@ CloudVolume::CloudVolume(const RGBColor &sa, const RGBColor &ss,
 				0.f, 0.f);
 			const float angley = -180.f * CloudRand(1000);
 			const float anglez = 360.f * CloudRand(1000);
-			onEdge = RotateZ(anglez)(RotateY(angley)(onEdge));
+			onEdge = RotateZ(anglez) * (RotateY(angley) * onEdge);
 			Point finalPosition = *sphereCentre + onEdge;
 			finalPosition += Turbulence(finalPosition +
 				Vector(noiseOffSet * 4.f, 0.f, 0.f),
@@ -149,7 +149,7 @@ CloudVolume::CloudVolume(const RGBColor &sa, const RGBColor &ss,
 
 float CloudVolume::Density(const Point &p) const
 {
-	const Point pp(WorldToVolume(p));
+	const Point pp(VolumeToWorld / p);
 	float amount = CloudShape(pp +
 		turbulenceAmount * Turbulence(pp, firstNoiseScale, numOctaves));
 

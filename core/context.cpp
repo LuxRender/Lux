@@ -235,12 +235,10 @@ void Context::Translate(float dx, float dy, float dz) {
 void Context::Transform(float tr[16]) {
 	VERIFY_INITIALIZED_TRANSFORMS("Transform");
 	renderFarm->send("luxTransform", tr);
-	boost::shared_ptr<Matrix4x4> o(new Matrix4x4(
-			tr[0], tr[4], tr[8], tr[12],
-			tr[1], tr[5], tr[9], tr[13],
-			tr[2], tr[6], tr[10], tr[14],
-			tr[3], tr[7], tr[11], tr[15]));
-	lux::Transform t = lux::Transform(o);
+	::Transform t(Matrix4x4(tr[0], tr[4], tr[8], tr[12],
+		tr[1], tr[5], tr[9], tr[13],
+		tr[2], tr[6], tr[10], tr[14],
+		tr[3], tr[7], tr[11], tr[15]));
 	if (inMotionBlock)
 		motionBlockTransforms.push_back(t);
 	else
@@ -249,11 +247,10 @@ void Context::Transform(float tr[16]) {
 void Context::ConcatTransform(float tr[16]) {
 	VERIFY_INITIALIZED_TRANSFORMS("ConcatTransform");
 	renderFarm->send("luxConcatTransform", tr);
-	boost::shared_ptr<Matrix4x4> o(new Matrix4x4(tr[0], tr[4], tr[8], tr[12],
-			tr[1], tr[5], tr[9], tr[13],
-			tr[2], tr[6], tr[10], tr[14],
-			tr[3], tr[7], tr[11], tr[15]));
-	lux::Transform t = lux::Transform(o);
+	::Transform t(Matrix4x4(tr[0], tr[4], tr[8], tr[12],
+		tr[1], tr[5], tr[9], tr[13],
+		tr[2], tr[6], tr[10], tr[14],
+		tr[3], tr[7], tr[11], tr[15]));
 	if (inMotionBlock)
 		motionBlockTransforms.push_back(t);
 	else
@@ -262,7 +259,7 @@ void Context::ConcatTransform(float tr[16]) {
 void Context::Rotate(float angle, float dx, float dy, float dz) {
 	VERIFY_INITIALIZED_TRANSFORMS("Rotate");
 	renderFarm->send("luxRotate", angle, dx, dy, dz);
-	lux::Transform t = lux::Rotate(angle, Vector(dx, dy, dz));
+	::Transform t(::Rotate(angle, Vector(dx, dy, dz)));
 	if (inMotionBlock)
 		motionBlockTransforms.push_back(t);
 	else
@@ -271,7 +268,7 @@ void Context::Rotate(float angle, float dx, float dy, float dz) {
 void Context::Scale(float sx, float sy, float sz) {
 	VERIFY_INITIALIZED_TRANSFORMS("Scale");
 	renderFarm->send("luxScale", sx, sy, sz);
-	lux::Transform t = lux::Scale(sx, sy, sz);
+	::Transform t(::Scale(sx, sy, sz));
 	if (inMotionBlock)
 		motionBlockTransforms.push_back(t);
 	else
@@ -281,8 +278,8 @@ void Context::LookAt(float ex, float ey, float ez, float lx, float ly, float lz,
 	float ux, float uy, float uz) {
 	VERIFY_INITIALIZED_TRANSFORMS("LookAt");
 	renderFarm->send("luxLookAt", ex, ey, ez, lx, ly, lz, ux, uy, uz);
-	lux::Transform t = lux::LookAt(Point(ex, ey, ez),
-		Point(lx, ly, lz), Vector(ux, uy, uz));
+	::Transform t(::LookAt(Point(ex, ey, ez), Point(lx, ly, lz),
+		Vector(ux, uy, uz)));
 	if (inMotionBlock)
 		motionBlockTransforms.push_back(t);
 	else

@@ -83,7 +83,7 @@ SpotLight::SpotLight(const Transform &light2world,
 	float g, float power, float efficacy, float width, float fall)
 	: Light(light2world), Lbase(L), gain(g)
 {
-	lightPos = LightToWorld(Point(0,0,0));
+	lightPos = LightToWorld * Point(0,0,0);
 
 	cosTotalWidth = cosf(Radians(width));
 	cosFalloffStart = cosf(Radians(fall));
@@ -108,7 +108,7 @@ bool SpotLight::SampleL(const Scene &scene, const Sample &sample,
 	float u1, float u2, float u3, BSDF **bsdf, float *pdf,
 	SWCSpectrum *Le) const
 {
-	Normal ns(Normalize(LightToWorld(Normal(0, 0, 1))));
+	Normal ns(Normalize(LightToWorld * Normal(0, 0, 1)));
 	Vector dpdu, dpdv;
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 	DifferentialGeometry dg(lightPos, ns, dpdu, dpdv, Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
@@ -126,7 +126,7 @@ bool SpotLight::SampleL(const Scene &scene, const Sample &sample,
 {
 	const Vector w(p - lightPos);
 	*pdfDirect = 1.f;
-	Normal ns(Normalize(LightToWorld(Normal(0, 0, 1))));
+	Normal ns(Normalize(LightToWorld * Normal(0, 0, 1)));
 	if (pdf)
 		*pdf = 1.f;
 	Vector dpdu, dpdv;
@@ -153,14 +153,13 @@ Light* SpotLight::CreateLight(const Transform &l2w, const ParamSet &paramSet)
 	Vector dir = Normalize(to - from);
 	Vector du, dv;
 	CoordinateSystem(dir, &du, &dv);
-	boost::shared_ptr<Matrix4x4> o (new Matrix4x4( du.x,  du.y,  du.z, 0.,
-	                                 dv.x,  dv.y,  dv.z, 0.,
-	                                dir.x, dir.y, dir.z, 0.,
-	                                    0,     0,     0, 1.));
-	Transform dirToZ = Transform(o);
+	Transform dirToZ(Matrix4x4(du.x, du.y, du.z, 0.,
+		dv.x, dv.y, dv.z, 0.,
+		dir.x, dir.y, dir.z, 0.,
+		0., 0., 0., 1.));
 	Transform light2world = l2w *
-		Translate(Vector(from.x, from.y, from.z)) *
-		dirToZ.GetInverse();
+		Translate(Vector(from.x, from.y, from.z)) /
+		dirToZ;
 
 	SpotLight *l = new SpotLight(light2world, L, g, p, e, coneangle,
 		coneangle-conedelta);

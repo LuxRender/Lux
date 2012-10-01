@@ -72,7 +72,7 @@ BSDF *Intersection::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 	const Ray &ray) const
 {
 	DifferentialGeometry dgShading;
-	primitive->GetShadingGeometry(WorldToObject.GetInverse(), dg,
+	primitive->GetShadingGeometry(ObjectToWorld, dg,
 		&dgShading);
 	material->GetShadingGeometry(sw, dg.nn, &dgShading);
 	return material->GetBSDF(arena, sw, *this, dgShading);
@@ -112,13 +112,13 @@ bool AreaLightPrimitive::Intersect(const Ray &r, Intersection *in) const
 // InstancePrimitive Method Definitions
 bool InstancePrimitive::Intersect(const Ray &r, Intersection *isect) const
 {
-	Ray ray = WorldToInstance(r);
+	Ray ray(InstanceToWorld / r);
 	if (!instance->Intersect(ray, isect))
 		return false;
 	r.maxt = ray.maxt;
-	isect->WorldToObject = isect->WorldToObject * WorldToInstance;
+	isect->ObjectToWorld = InstanceToWorld * isect->ObjectToWorld;
 	// Transform instance's differential geometry to world space
-	InstanceToWorld(isect->dg, &isect->dg);
+	isect->dg = InstanceToWorld * isect->dg;
 	isect->dg.handle = this;
 	isect->primitive = this;
 	if (material)
@@ -132,17 +132,17 @@ bool InstancePrimitive::Intersect(const Ray &r, Intersection *isect) const
 
 bool InstancePrimitive::IntersectP(const Ray &r) const
 {
-	return instance->IntersectP(WorldToInstance(r));
+	return instance->IntersectP(InstanceToWorld / r);
 }
 
 void InstancePrimitive::GetShadingGeometry(const Transform &obj2world,
 	const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const
 {
 	// Transform instance's differential geometry to world space
-	DifferentialGeometry dgl(obj2world.GetInverse()(dg));
+	DifferentialGeometry dgl(obj2world / dg);
 
 	dg.ihandle->GetShadingGeometry(obj2world, dgl, dgShading);
-	obj2world(*dgShading, dgShading);
+	*dgShading = obj2world * *dgShading;
 	dgShading->handle = this;
 	dgShading->ihandle = dg.ihandle;
 }
@@ -151,15 +151,14 @@ void InstancePrimitive::GetShadingGeometry(const Transform &obj2world,
 bool MotionPrimitive::Intersect(const Ray &r, Intersection *isect) const
 {
 	Transform InstanceToWorld = motionPath.Sample(r.time);
-	Transform WorldToInstance = InstanceToWorld.GetInverse();
 
-	Ray ray = WorldToInstance(r);
+	Ray ray(InstanceToWorld / r);
 	if (!instance->Intersect(ray, isect))
 		return false;
 	r.maxt = ray.maxt;
-	isect->WorldToObject = isect->WorldToObject * WorldToInstance;
+	isect->ObjectToWorld = InstanceToWorld * isect->ObjectToWorld;
 	// Transform instance's differential geometry to world space
-	InstanceToWorld(isect->dg, &isect->dg);
+	isect->dg = InstanceToWorld * isect->dg;
 	isect->dg.handle = this;
 	isect->primitive = this;
 	if (material)
@@ -174,18 +173,17 @@ bool MotionPrimitive::Intersect(const Ray &r, Intersection *isect) const
 bool MotionPrimitive::IntersectP(const Ray &r) const
 {
 	Transform InstanceToWorld = motionPath.Sample(r.time);
-	Transform WorldToInstance = InstanceToWorld.GetInverse();
 
-	return instance->IntersectP(WorldToInstance(r));
+	return instance->IntersectP(InstanceToWorld / r);
 }
 void MotionPrimitive::GetShadingGeometry(const Transform &obj2world,
 	const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const
 {
 	// Transform instance's differential geometry to world space
-	DifferentialGeometry dgl(obj2world.GetInverse()(dg));
+	DifferentialGeometry dgl(obj2world / dg);
 
 	dg.ihandle->GetShadingGeometry(obj2world, dgl, dgShading);
-	obj2world(*dgShading, dgShading);
+	*dgShading = obj2world * *dgShading;
 	dgShading->handle = this;
 	dgShading->ihandle = dg.ihandle;
 }

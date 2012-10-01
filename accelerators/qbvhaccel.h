@@ -274,7 +274,7 @@ public:
 	*/
 	virtual bool IntersectP(const Ray &ray) const;
 
-	virtual Transform GetWorldToLocal(float time) const {
+	virtual Transform GetLocalToWorld(float time) const {
 		return Transform();
 	}
 

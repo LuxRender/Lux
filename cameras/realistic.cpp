@@ -73,8 +73,7 @@ RealisticCamera::~RealisticCamera(void) {
 float RealisticCamera::GenerateRay(const Sample &sample, Ray *ray) const {
     // Generate raster and back lens samples
     Point Pras(sample.imageX, sample.imageY, 0.f);
-    Point PCamera;
-    RasterToCamera(Pras, &PCamera);
+    Point PCamera(RasterToCamera * Pras);
     float lensU, lensV;
     ConcentricSampleDisk(sample.lensU, sample.lensV, &lensU, &lensV);
     lensU *= backAperture;
@@ -125,7 +124,7 @@ float RealisticCamera::GenerateRay(const Sample &sample, Ray *ray) const {
         }
     }
     ray->maxt = (ClipYon - ClipHither) / ray->d.z;
-    CameraToWorld(*ray, ray);
+    *ray = CameraToWorld * *ray;
     return cos4 / filmDist2;
 }
 

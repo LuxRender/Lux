@@ -65,7 +65,7 @@ public:
 	virtual const Volume *GetExterior() const { return exterior.get(); }
 	virtual const Volume *GetInterior() const { return interior.get(); }
 
-	virtual BBox WorldBound() const { return ObjectToWorld(ObjectBound()); }
+	virtual BBox WorldBound() const { return ObjectToWorld * ObjectBound(); }
 	virtual void Refine(vector<boost::shared_ptr<Primitive> > &refined,
 		const PrimitiveRefinementHints& refineHints,
 		const boost::shared_ptr<Primitive> &thisPtr) {
@@ -92,7 +92,7 @@ public:
 			return false;
 		isect->dg.AdjustNormal(reverseOrientation,
 			transformSwapsHandedness);
-		isect->Set(WorldToObject, this, material.get(), exterior.get(),
+		isect->Set(ObjectToWorld, this, material.get(), exterior.get(),
 			interior.get());
 		r.maxt = thit;
 		return true;
@@ -143,11 +143,11 @@ public:
 	}
 	virtual Point Sample(const Point &p, float u1, float u2, float u3,
 		Normal *Ns) const { return Sample(u1, u2, u3, Ns); }
-	virtual Transform GetWorldToLocal(float time) const {
-		return WorldToObject;
+	virtual Transform GetLocalToWorld(float time) const {
+		return ObjectToWorld;
 	}
 	// Shape data
-	const Transform ObjectToWorld, WorldToObject;
+	const Transform ObjectToWorld;
 protected:
 	boost::shared_ptr<Material> material;
 	boost::shared_ptr<Volume> exterior, interior;
@@ -193,7 +193,7 @@ public:
 			pdf;
 	}
 	virtual float Area() const { return area; }
-	virtual Transform GetWorldToLocal(float time) const {
+	virtual Transform GetLocalToWorld(float time) const {
 		return Transform();
 	}
 private:

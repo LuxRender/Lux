@@ -55,7 +55,7 @@ void Light::AddPortalShape(boost::shared_ptr<Primitive> &s)
 bool InstanceLight::Le(const Scene &scene, const Sample &sample, const Ray &r,
 	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *L) const
 {
-	if (!light->Le(scene, sample, WorldToLight(r), bsdf,
+	if (!light->Le(scene, sample, LightToWorld / r, bsdf,
 		pdf, pdfDirect, L))
 		return false;
 	float factor = (*bsdf)->dgShading.Volume();
@@ -84,7 +84,7 @@ bool InstanceLight::SampleL(const Scene &scene, const Sample &sample,
 	const Point &p, float u1, float u2, float u3,
 	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *L) const
 {
-	if (!light->SampleL(scene, sample, WorldToLight(p), u1, u2, u3,
+	if (!light->SampleL(scene, sample, LightToWorld / p, u1, u2, u3,
 		bsdf, pdf, pdfDirect, L))
 		return false;
 	float factor = (*bsdf)->dgShading.Volume();
@@ -100,7 +100,7 @@ bool MotionLight::Le(const Scene &scene, const Sample &sample, const Ray &r,
 	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *L) const
 {
 	const Transform LightToWorld(motionPath.Sample(sample.realTime));
-	if (!light->Le(scene, sample, LightToWorld.GetInverse()(r), bsdf,
+	if (!light->Le(scene, sample, LightToWorld / r, bsdf,
 		pdf, pdfDirect, L))
 		return false;
 	float factor = (*bsdf)->dgShading.Volume();
@@ -131,7 +131,7 @@ bool MotionLight::SampleL(const Scene &scene, const Sample &sample,
 	BSDF **bsdf, float *pdf, float *pdfDirect, SWCSpectrum *L) const
 {
 	const Transform LightToWorld(motionPath.Sample(sample.realTime));
-	if (!light->SampleL(scene, sample, LightToWorld.GetInverse()(p), u1, u2, u3,
+	if (!light->SampleL(scene, sample, LightToWorld / p, u1, u2, u3,
 		bsdf, pdf, pdfDirect, L))
 		return false;
 	float factor = (*bsdf)->dgShading.Volume();

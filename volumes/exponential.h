@@ -35,7 +35,7 @@ public:
 			const Transform &v2w, float aa, float bb,
 			const Vector &up)
 		: DensityVolume<RGBVolume>(RGBVolume(sa, ss, emit, gg)),
-		  base(v2w(e.pMin)), dir(Normalize(v2w(up))), a(aa), b(bb) { }
+		  base(v2w * e.pMin), dir(Normalize(v2w * up)), a(aa), b(bb) { }
 	virtual ~ExponentialDensity() { }
 	virtual float Density(const Point &Pobj) const {
 		const float height = Dot(Pobj - base, dir);

@@ -61,7 +61,7 @@ Mesh::Mesh(const Transform &o2w, bool ro, const string &name,
 	p = new Point[nverts];
 	// Dade - transform mesh vertices to world space
 	for (u_int i  = 0; i < nverts; ++i)
-		p[i] = ObjectToWorld(P[i]);
+		p[i] = ObjectToWorld * P[i];
 
 	// Dade - copy UV and N vertex data, if present
 	if (UV) {
@@ -75,9 +75,9 @@ Mesh::Mesh(const Transform &o2w, bool ro, const string &name,
 		// Dade - transform mesh normals to world space
 		for (u_int i  = 0; i < nverts; ++i) {
 			if (ro)
-				n[i] = Normalize(-ObjectToWorld(N[i]));
+				n[i] = Normalize(-(ObjectToWorld * N[i]));
 			else
-				n[i] = Normalize(ObjectToWorld(N[i]));
+				n[i] = Normalize(ObjectToWorld * N[i]);
 		}
 	} else
 		n = NULL;
@@ -224,7 +224,7 @@ BBox Mesh::ObjectBound() const
 {
 	BBox bobj;
 	for (u_int i = 0; i < nverts; ++i)
-		bobj = Union(bobj, WorldToObject(p[i]));
+		bobj = Union(bobj, ObjectToWorld / p[i]);
 	return bobj;
 }
 
@@ -596,7 +596,7 @@ void Mesh::GetIntersection(const luxrays::RayHit &rayHit, const u_int index, Int
 	isect->dg = DifferentialGeometry(pp, nn, dpdu, dpdv,
 		Normal(0, 0, 0), Normal(0, 0, 0), tu, tv, this);
 
-	isect->Set(WorldToObject, this, GetMaterial(),
+	isect->Set(ObjectToWorld, this, GetMaterial(),
 		GetExterior(), GetInterior());
 	isect->dg.iData.mesh.coords[0] = b0;
 	isect->dg.iData.mesh.coords[1] = b1;

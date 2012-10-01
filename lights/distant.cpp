@@ -72,7 +72,7 @@ DistantLight::DistantLight(const Transform &light2world,
 	const boost::shared_ptr<Texture<SWCSpectrum> > &L, 
 	float g, float theta, const Vector &dir, u_int ns)
 	: Light(light2world, ns), Lbase(L) {
-	lightDir = Normalize(LightToWorld(dir));
+	lightDir = Normalize(LightToWorld * dir);
 	CoordinateSystem(lightDir, &x, &y);
 	Lbase->SetIlluminant();
 	gain = g;

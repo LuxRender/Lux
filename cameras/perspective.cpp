@@ -60,11 +60,11 @@ public:
 		// Don't transform directly in world coordinates
 		// this could cause accuracy issues with small hither and
 		// large translation
-		Point pS(camera.RasterToCamera(Point(u1, u2, 0.f)));
+		Point pS(camera.RasterToCamera * Point(u1, u2, 0.f));
 		*wiW = Vector(pS);
 		if (hasLens)
 			*wiW -= Vector(p) * (wiW->z / camera.FocalDistance);
-		*wiW = Normalize(camera.CameraToWorld(*wiW));
+		*wiW = Normalize(camera.CameraToWorld * *wiW);
 		const float cosi = Dot(*wiW, dgShading.nn);
 		const float cosi2 = cosi * cosi;
 		*pdf = 1.f / (camera.Apixel * cosi2 * cosi);
@@ -77,10 +77,10 @@ public:
 	}
 	virtual float Pdf(const SpectrumWavelengths &sw, const Vector &woW,
 		const Vector &wiW, BxDFType flags = BSDF_ALL) const {
-		const Vector wi(camera.WorldToCamera(wiW));
+		const Vector wi(camera.CameraToWorld / wiW);
 		const float cosi = wi.z;
 		if (NumComponents(flags) == 1 && cosi > 0.f) {
-			const Point pO(camera.CameraToRaster(p +
+			const Point pO(camera.RasterToCamera / (p +
 				(hasLens ? wi * (camera.FocalDistance / cosi) :
 				wi)));
 			if (pO.x >= camera.xStart && pO.x < camera.xEnd &&
@@ -93,10 +93,10 @@ public:
 	}
 	virtual SWCSpectrum F(const SpectrumWavelengths &sw, const Vector &woW,
 		const Vector &wiW, bool reverse, BxDFType flags = BSDF_ALL) const {
-		const Vector wo(camera.WorldToCamera(woW));
+		const Vector wo(camera.CameraToWorld / woW);
 		const float coso = wo.z;
 		if (NumComponents(flags) == 1 && coso > 0.f) {
-			const Point pO(camera.CameraToRaster(p +
+			const Point pO(camera.RasterToCamera / (p +
 				(hasLens ? wo * (camera.FocalDistance / coso) :
 				wo)));
 			if (pO.x >= camera.xStart && pO.x < camera.xEnd &&
@@ -134,12 +134,12 @@ PerspectiveCamera::PerspectiveCamera(const MotionSystem &world2cam,
 		lensr, focald, f),
 		distribution(dist), shape(sh), power(pow),
 		autoFocus(autofocus) {
-	pos = CameraToWorld(Point(0,0,0));
-	normal = CameraToWorld(Normal(0,0,1));
+	pos = CameraToWorld * Point(0,0,0);
+	normal = CameraToWorld * Normal(0,0,1);
 	fov = Radians(fov1);
 
 	if (LensRadius > 0.f)
-		posPdf = 1.0f/(M_PI*LensRadius*LensRadius);
+		posPdf = 1.0f / (M_PI * LensRadius * LensRadius);
 	else
 		posPdf = 1.f;
 
@@ -168,8 +168,8 @@ void PerspectiveCamera::SampleMotion(float time)
 	// call base method to sample transform
 	ProjectiveCamera::SampleMotion(time);
 	// then update derivative transforms
-	pos = CameraToWorld(Point(0,0,0));
-	normal = CameraToWorld(Normal(0,0,1));
+	pos = CameraToWorld * Point(0,0,0);
+	normal = CameraToWorld * Normal(0,0,1);
 }
 
 void PerspectiveCamera::AutoFocus(const Scene &scene)
@@ -183,8 +183,7 @@ void PerspectiveCamera::AutoFocus(const Scene &scene)
 		film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
 		Point Pras((xend - xstart) / 2, (yend - ystart) / 2, 0);
 
-		Point Pcamera;
-		RasterToCamera(Pras, &Pcamera);
+		Point Pcamera(RasterToCamera * Pras);
 		Ray ray;
 		ray.o = Pcamera;
 		ray.d = Vector(Pcamera.x, Pcamera.y, Pcamera.z);
@@ -195,7 +194,7 @@ void PerspectiveCamera::AutoFocus(const Scene &scene)
 		
 		ray.mint = 0.f;
 		ray.maxt = (ClipYon - ClipHither) / ray.d.z;
-		CameraToWorld(ray, &ray);
+		ray = CameraToWorld * ray;
 
 		Intersection isect;
 		if (scene.Intersect(ray, &isect))
@@ -220,9 +219,9 @@ bool PerspectiveCamera::SampleW(MemoryArena &arena,
 		psC.x *= LensRadius;
 		psC.y *= LensRadius;
 	}
-	Point ps = CameraToWorld(psC);
-	DifferentialGeometry dg(ps, normal, CameraToWorld(Vector(1, 0, 0)),
-		CameraToWorld(Vector(0, 1, 0)), Normal(0, 0, 0),
+	Point ps = CameraToWorld * psC;
+	DifferentialGeometry dg(ps, normal, CameraToWorld * Vector(1, 0, 0),
+		CameraToWorld * Vector(0, 1, 0), Normal(0, 0, 0),
 		Normal(0, 0, 0), 0, 0, NULL);
 	const Volume *v = GetVolume();
 	*bsdf = ARENA_ALLOC(arena, PerspectiveBSDF)(dg, normal,
@@ -242,8 +241,10 @@ bool PerspectiveCamera::SampleW(MemoryArena &arena,
 		psC.x *= LensRadius;
 		psC.y *= LensRadius;
 	}
-	Point ps = CameraToWorld(psC);
-	DifferentialGeometry dg(ps, normal, CameraToWorld(Vector(1, 0, 0)), CameraToWorld(Vector(0, 1, 0)), Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
+	Point ps = CameraToWorld * psC;
+	DifferentialGeometry dg(ps, normal, CameraToWorld * Vector(1, 0, 0),
+		CameraToWorld * Vector(0, 1, 0), Normal(0, 0, 0),
+		Normal(0, 0, 0), 0, 0, NULL);
 	const Volume *v = GetVolume();
 	*bsdf = ARENA_ALLOC(arena, PerspectiveBSDF)(dg, normal,
 		v, v, *this, LensRadius > 0.f, psC);
@@ -263,7 +264,7 @@ BBox PerspectiveCamera::Bounds() const
 	for (int i = 1024; i >= 0; i--) {
 		// ugly hack, but last thing we do is to sample StartTime, so should be ok
 		const_cast<PerspectiveCamera*>(this)->SampleMotion(Lerp(static_cast<float>(i) / 1024.f, CameraMotion.StartTime(), CameraMotion.EndTime()));
-		bound = Union(bound, CameraToWorld(orig_bound));
+		bound = Union(bound, CameraToWorld * orig_bound);
 	}
 	bound.Expand(MachineEpsilon::E(bound));
 	return bound;
@@ -276,7 +277,7 @@ bool PerspectiveCamera::GetSamplePosition(const Point &p, const Vector &wi,
 	if (cosi <= 0.f || (!isinf(distance) && (distance * cosi < ClipHither ||
 		distance * cosi > ClipYon)))
 		return false;
-	const Point pO(WorldToRaster(p + (LensRadius > 0.f ?
+	const Point pO(RasterToWorld / (p + (LensRadius > 0.f ?
 		wi * (FocalDistance / cosi) : wi)));
 	*x = pO.x;
 	*y = pO.y;

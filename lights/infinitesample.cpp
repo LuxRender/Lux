@@ -38,9 +38,9 @@ public:
 	// InfiniteISBSDF Public Methods
 	InfiniteISBSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
 		const Volume *exterior, const Volume *interior,
-		const InfiniteAreaLightIS &l, const Transform &WL) :
+		const InfiniteAreaLightIS &l, const Transform &LW) :
 		BSDF(dgs, ngeom, exterior, interior), light(l),
-		WorldToLight(WL) { }
+		LightToWorld(LW) { }
 	virtual inline u_int NumComponents() const { return 1; }
 	virtual inline u_int NumComponents(BxDFType flags) const {
 		return (flags & (BSDF_REFLECTION | BSDF_DIFFUSE)) ==
@@ -57,7 +57,7 @@ public:
 		const float cosi = w.z;
 		const Vector wi(w.x * dgShading.dpdu + w.y * dgShading.dpdv +
 			w.z * Vector(dgShading.nn));
-		*wiW = Normalize(WorldToLight.GetInverse()(wi));
+		*wiW = Normalize(LightToWorld * wi);
 		if (sampledType)
 			*sampledType = BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE);
 		*pdf = cosi * INV_PI;
@@ -86,7 +86,7 @@ public:
 			if (light.radianceMap == NULL) {
 				return SWCSpectrum(reverse ? INV_PI : INV_PI * cosi);
 			}
-			const Vector wh = Normalize(WorldToLight(-wiW));
+			const Vector wh = Normalize(LightToWorld / -wiW);
 			float s, t, dummy;
 			light.mapping->Map(wh, &s, &t, &dummy);
 			return light.radianceMap->LookupSpectrum(sw, s, t) *
@@ -105,7 +105,7 @@ protected:
 	// InfiniteISBSDF Private Methods
 	virtual ~InfiniteISBSDF() { }
 	const InfiniteAreaLightIS &light;
-	const Transform &WorldToLight;
+	const Transform &LightToWorld;
 };
 
 // InfiniteAreaLightIS Method Definitions
@@ -202,9 +202,9 @@ bool InfiniteAreaLightIS::Le(const Scene &scene, const Sample &sample,
 	dg.time = sample.realTime;
 	const Volume *v = GetVolume();
 	*bsdf = ARENA_ALLOC(sample.arena, InfiniteISBSDF)(dg, ns,
-		v, v, *this, WorldToLight);
+		v, v, *this, LightToWorld);
 	*L *= SWCSpectrum(sample.swl, SPDbase);
-	const Vector wh = Normalize(WorldToLight(r.d));
+	const Vector wh = Normalize(LightToWorld / r.d);
 	float s, t, pdfMap;
 	mapping->Map(wh, &s, &t, &pdfMap);
 	if (radianceMap != NULL)
@@ -220,7 +220,7 @@ bool InfiniteAreaLightIS::Le(const Scene &scene, const Sample &sample,
 float InfiniteAreaLightIS::Pdf(const Point &p, const PartialDifferentialGeometry &dg) const
 {
 	const Vector d(Normalize(dg.p - p));
-	const Vector wh = Normalize(WorldToLight(d));
+	const Vector wh = Normalize(LightToWorld / d);
 	float s, t, pdf;
 	mapping->Map(wh, &s, &t, &pdf);
 	return uvDistrib->Pdf(s, t) * pdf * AbsDot(d, dg.nn) /
@@ -244,7 +244,7 @@ bool InfiniteAreaLightIS::SampleL(const Scene &scene, const Sample &sample,
 	dg.time = sample.realTime;
 	const Volume *v = GetVolume();
 	*bsdf = ARENA_ALLOC(sample.arena, InfiniteISBSDF)(dg, ns,
-		v, v, *this, WorldToLight);
+		v, v, *this, LightToWorld);
 	*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	*Le = SWCSpectrum(sample.swl, SPDbase) * (M_PI / *pdf);
 	return true;
@@ -264,7 +264,7 @@ bool InfiniteAreaLightIS::SampleL(const Scene &scene, const Sample &sample,
 	Vector wi;
 	float pdfMap;
 	mapping->Map(uv[0], uv[1], &wi, &pdfMap);
-	wi = Normalize(LightToWorld(wi)); 
+	wi = Normalize(LightToWorld * wi); 
 	if (!(pdfMap > 0.f))
 		return false;
 	// Compute PDF for sampled direction
@@ -283,7 +283,7 @@ bool InfiniteAreaLightIS::SampleL(const Scene &scene, const Sample &sample,
 	dg.time = sample.realTime;
 	const Volume *v = GetVolume();
 	*bsdf = ARENA_ALLOC(sample.arena, InfiniteISBSDF)(dg, ns,
-		v, v, *this, WorldToLight);
+		v, v, *this, LightToWorld);
 	if (pdf)
 		*pdf = 1.f / (4.f * M_PI * worldRadius * worldRadius);
 	*pdfDirect *= AbsDot(wi, ns) / (distance * distance);
