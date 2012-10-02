@@ -36,7 +36,7 @@ BSDF *MixMaterial::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 	const Intersection &isect, const DifferentialGeometry &dgShading) const {
 	MixBSDF *bsdf = ARENA_ALLOC(arena, MixBSDF)(dgShading, isect.dg.nn,
 		isect.exterior, isect.interior);
-	float amt = amount->Evaluate(sw, dgShading);
+	float amt = Clamp(amount->Evaluate(sw, dgShading), 0.f, 1.f);
 	DifferentialGeometry dgS = dgShading;
 	mat1->GetShadingGeometry(sw, isect.dg.nn, &dgS);
 	bsdf->Add(1.f - amt, mat1->GetBSDF(arena, sw, isect, dgS));
