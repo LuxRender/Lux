@@ -359,7 +359,7 @@ RenderFarm::CompiledCommand& RenderFarm::CompiledCommands::add(const std::string
 }
 
 RenderFarm::RenderFarm() : Queryable("render_farm"),
-		filmUpdateThread(NULL), flushThread(NULL), netBufferComplete(false),
+		filmUpdateThread(NULL), flushThread(NULL), netBufferComplete(false), doneRendering(false),
 		isLittleEndian(osIsLittleEndian()), pollingInterval(3 * 60), defaultTcpPort(18018)
 {
 	AddIntAttribute(*this, "defaultTcpPort", "Default TCP port", &RenderFarm::defaultTcpPort, ReadWriteAccess);
@@ -394,7 +394,8 @@ void RenderFarm::start(Scene *scene) {
 void RenderFarm::stop() {
 	boost::mutex::scoped_lock lock(serverListMutex);
 
-	stopImpl();
+	if (doneRendering || serverInfoList.empty())
+		stopImpl();
 }
 
 void RenderFarm::stopImpl() {

@@ -1024,10 +1024,9 @@ void Context::WorldEnd() {
 				// after this won't start rendering
 				activeContext->renderFarm->renderingDone();
 
-				// Stop the render farm too
+				// Stop the film updating thread etc
 				activeContext->renderFarm->stop();
 
-				// Check if we have to stop the network rendering updater thread
 				if (static_cast<u_int>((*(activeContext->renderFarm))["slaveNodeCount"].IntValue()) > 0) {
 					// Update the film for the last time
 					if (!aborted)
