@@ -909,10 +909,15 @@ void Film::CreateBuffers()
 	for (u_int x = 0; x < xPixelCount; ++x) {
 		for (u_int y = 0; y < yPixelCount; ++y) {
 			const u_int index = x + y * xPixelCount;
+
 			const float xx = (x / (float)xPixelCount) - 0.5f;
 			const float yy = (y / (float)yPixelCount) - 0.5f;
 			map[index] = (xx * xx + yy * yy < .25f * .25f) ? 1.f : 0.1f;
 
+			//const float xx = ((x % 80) / 80.f) - 0.5f;
+			//const float yy = ((y % 80) / 80.f) - 0.5f;
+			//map[index] = (xx * xx + yy * yy < .4f * .4f) ? 1.f : 0.1f;
+			
 			//map[index] = (x > xPixelCount * 7 / 8 && y > yPixelCount * 7 / 8) ? 1.f : 0.01f;
 		}
 	}
