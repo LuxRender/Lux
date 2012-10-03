@@ -152,7 +152,7 @@ Vector MeshMicroDisplacementTriangle::GetN(u_int i) const
 
 BBox MeshMicroDisplacementTriangle::ObjectBound() const
 {
-	return mesh->WorldToObject(WorldBound());
+	return mesh->ObjectToWorld / WorldBound();
 }
 
 BBox MeshMicroDisplacementTriangle::WorldBound() const
@@ -610,7 +610,7 @@ bool MeshMicroDisplacementTriangle::Intersect(const Ray &ray, Intersection* isec
 				isect->dg = DifferentialGeometry(pp, nn, ss, ts,
 					Normal(0, 0, 0), Normal(0, 0, 0), tu, tv, this);
 
-				isect->Set(mesh->WorldToObject, this, mesh->GetMaterial(),
+				isect->Set(mesh->ObjectToWorld, this, mesh->GetMaterial(),
 					mesh->GetExterior(), mesh->GetInterior());
 				isect->dg.iData.baryTriangle.coords[0] = b0;
 				isect->dg.iData.baryTriangle.coords[1] = b1;

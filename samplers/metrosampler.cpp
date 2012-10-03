@@ -220,7 +220,9 @@ bool MetropolisSampler::GetNextSample(Sample *sample)
 				data->LY = 0.f;
 				data->weight = 0.f;
 			}
-
+		}
+		
+		if ((data->noiseAwareMapVersion > 0) || (data->userSamplingMapVersion > 0)) {
 			data->currentImage[0] = rngGet(0);
 			data->currentImage[1] = rngGet(1);
 
@@ -250,7 +252,7 @@ bool MetropolisSampler::GetNextSample(Sample *sample)
 	} else {
 		// *** small mutation ***
 		// Mutation of non lazy samples
-		if (useNoiseAware || film->HasUserSamplingMap()) {
+		if ((data->noiseAwareMapVersion > 0) || (data->userSamplingMapVersion > 0)) {
 			data->currentImage[0] = mutate(data->sampleImage[0], rngGet(0));
 			data->currentImage[1] = mutate(data->sampleImage[1], rngGet(1));
 

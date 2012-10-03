@@ -149,7 +149,7 @@ public:
     virtual ~TaBRecKdTreeAccel();
     virtual bool Intersect(const Ray &ray, Intersection *isect) const;
     virtual bool IntersectP(const Ray &ray) const;
-	virtual Transform GetWorldToLocal(float time) const {
+	virtual Transform GetLocalToWorld(float time) const {
 		return Transform();
 	}
 

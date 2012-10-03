@@ -67,8 +67,7 @@ bool Cone::Intersect(const Ray &r, float *tHit,
 	float phi;
 	Point phit;
 	// Transform _Ray_ to object space
-	Ray ray;
-	WorldToObject(r, &ray);
+	Ray ray(ObjectToWorld / r);
 
 	// Compute quadratic cone coefficients
 	float k = radius / height;
@@ -146,12 +145,10 @@ bool Cone::Intersect(const Ray &r, float *tHit,
 	const Normal dndv((g*F - f*G) * invEGF2 * dpdu +
 		(f*F - g*E) * invEGF2 * dpdv);
 	// Initialize _DifferentialGeometry_ from parametric information
-	*dg = DifferentialGeometry(ObjectToWorld(phit),
-	                           ObjectToWorld(dpdu),
-							   ObjectToWorld(dpdv),
-	                           ObjectToWorld(dndu),
-							   ObjectToWorld(dndv),
-	                           u, ((radius2 > 0.f) ? (phit.z / height2) : v), this);
+	*dg = DifferentialGeometry(ObjectToWorld * phit,
+		ObjectToWorld * dpdu, ObjectToWorld * dpdv,
+		ObjectToWorld * dndu, ObjectToWorld * dndv,
+		u, ((radius2 > 0.f) ? (phit.z / height2) : v), this);
 	// Update _tHit_ for quadric intersection
 	*tHit = thit;
 
@@ -162,8 +159,7 @@ bool Cone::IntersectP(const Ray &r) const {
 	float phi;
 	Point phit;
 	// Transform _Ray_ to object space
-	Ray ray;
-	WorldToObject(r, &ray);
+	Ray ray(ObjectToWorld / r);
 
 	// Compute quadratic cone coefficients
 	float k = radius / height;

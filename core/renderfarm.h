@@ -76,7 +76,10 @@ public:
 	bool sessionReset(const string &serverName, const string &password);
 
 	// signal that rendering is done
-	void renderingDone() { netBufferComplete = false; };
+	void renderingDone() {
+		netBufferComplete = false;
+		doneRendering = true;
+	}
 
 	void send(const std::string &command);
 	void send(const std::string &command,
@@ -260,6 +263,7 @@ private:
 
 	//std::stringstream netBuffer;
 	bool netBufferComplete; // Raise this flag if the scene is complete
+	bool doneRendering; // true if rendering is done
 	bool isLittleEndian;
 	int pollingInterval;
 	int defaultTcpPort;

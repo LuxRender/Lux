@@ -62,8 +62,7 @@ bool Hyperboloid::Intersect(const Ray &r, float *tHit,
 	float phi, v;
 	Point phit;
 	// Transform _Ray_ to object space
-	Ray ray;
-	WorldToObject(r, &ray);
+	Ray ray(ObjectToWorld / r);
 	// Compute quadratic hyperboloid coefficients
 	float A = a*ray.d.x*ray.d.x +
 	          a*ray.d.y*ray.d.y -
@@ -139,12 +138,10 @@ bool Hyperboloid::Intersect(const Ray &r, float *tHit,
 	Normal dndv((g*F - f*G) * invEGF2 * dpdu +
 		(f*F - g*E) * invEGF2 * dpdv);
 	// Initialize _DifferentialGeometry_ from parametric information
-	*dg = DifferentialGeometry(ObjectToWorld(phit),
-	                           ObjectToWorld(dpdu),
-							   ObjectToWorld(dpdv),
-	                           ObjectToWorld(dndu),
-							   ObjectToWorld(dndv),
-	                           u, v, this);
+	*dg = DifferentialGeometry(ObjectToWorld * phit,
+		ObjectToWorld * dpdu, ObjectToWorld * dpdv,
+		ObjectToWorld * dndu, ObjectToWorld * dndv,
+		u, v, this);
 	// Update _tHit_ for quadric intersection
 	*tHit = thit;
 	return true;
@@ -153,8 +150,7 @@ bool Hyperboloid::IntersectP(const Ray &r) const {
 	float phi, v;
 	Point phit;
 	// Transform _Ray_ to object space
-	Ray ray;
-	WorldToObject(r, &ray);
+	Ray ray(ObjectToWorld / r);
 	// Compute quadratic hyperboloid coefficients
 	float A = a*ray.d.x*ray.d.x +
 	          a*ray.d.y*ray.d.y -

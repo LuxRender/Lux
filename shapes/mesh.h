@@ -148,8 +148,8 @@ public:
 	virtual float Area() const;
 	virtual float Sample(float u1, float u2, float u3,
 		DifferentialGeometry *dg) const;
-	virtual Transform GetWorldToLocal(float time) const {
-		return mesh->GetWorldToLocal(time);
+	virtual Transform GetLocalToWorld(float time) const {
+		return mesh->GetLocalToWorld(time);
 	}
 
 	virtual bool isDegenerate() const {
@@ -238,8 +238,8 @@ public:
 	virtual float Area() const;
 	virtual float Sample(float u1, float u2, float u3,
 		DifferentialGeometry *dg) const;
-	virtual Transform GetWorldToLocal(float time) const {
-		return mesh->GetWorldToLocal(time);
+	virtual Transform GetLocalToWorld(float time) const {
+		return mesh->GetLocalToWorld(time);
 	}
 
 	virtual bool isDegenerate() const {
@@ -331,8 +331,8 @@ public:
 		dg->v = b0*uv[0][1] + b1*uv[1][1] + b2*uv[2][1] + b3*uv[3][1];
 		return Pdf(*dg);
 	}
-	virtual Transform GetWorldToLocal(float time) const {
-		return mesh->GetWorldToLocal(time);
+	virtual Transform GetLocalToWorld(float time) const {
+		return mesh->GetLocalToWorld(time);
 	}
 
 	bool isDegenerate() const {

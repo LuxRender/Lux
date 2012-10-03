@@ -47,7 +47,7 @@ OrthoCamera::OrthoCamera(const MotionSystem &world2cam,
 	screenDx = Screen[1] - Screen[0];
 	screenDy = Screen[3] - Screen[2];
 	posPdf = (film->xResolution * film->yResolution) / (screenDx * screenDy);
-	normal = CameraToWorld(Normal(0, 0, 1));
+	normal = CameraToWorld * Normal(0, 0, 1);
 }
 
 void OrthoCamera::SampleMotion(float time)
@@ -58,7 +58,7 @@ void OrthoCamera::SampleMotion(float time)
 	// call base method to sample transform
 	ProjectiveCamera::SampleMotion(time);
 	// then update derivative transforms
-	normal = CameraToWorld(Normal(0,0,1));
+	normal = CameraToWorld * Normal(0,0,1);
 }
 
 void OrthoCamera::AutoFocus(const Scene &scene)
@@ -72,8 +72,7 @@ void OrthoCamera::AutoFocus(const Scene &scene)
 		film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
 		Point Pras((xend - xstart) / 2, (yend - ystart) / 2, 0);
 
-		Point Pcamera;
-		RasterToCamera(Pras, &Pcamera);
+		Point Pcamera(RasterToCamera * Pras);
 		Ray ray;
 		ray.o = Pcamera;
 		ray.d = Vector(0,0,1);
@@ -83,7 +82,7 @@ void OrthoCamera::AutoFocus(const Scene &scene)
 		
 		ray.mint = 0.f;
 		ray.maxt = ClipYon - ClipHither;
-		CameraToWorld(ray, &ray);
+		ray = CameraToWorld * ray;
 
 		Intersection isect;
 		if (scene.Intersect(ray, &isect))
@@ -101,11 +100,11 @@ bool OrthoCamera::SampleW(MemoryArena &arena, const SpectrumWavelengths &sw,
 	const Scene &scene, float u1, float u2, float u3, BSDF **bsdf,
 	float *pdf, SWCSpectrum *We) const
 {
-	Point psC(RasterToCamera(Point(u1, u2, 0.f)));
+	Point psC(RasterToCamera * Point(u1, u2, 0.f));
 	psC.z = 0.f;
-	const Point ps(CameraToWorld(psC));
-	DifferentialGeometry dg(ps, normal, CameraToWorld(Vector(1, 0, 0)),
-		CameraToWorld(Vector(0, 1, 0)), Normal(0, 0, 0),
+	const Point ps(CameraToWorld * psC);
+	DifferentialGeometry dg(ps, normal, CameraToWorld * Vector(1, 0, 0),
+		CameraToWorld * Vector(0, 1, 0), Normal(0, 0, 0),
 		Normal(0, 0, 0), 0, 0, NULL);
 	const Volume *v = GetVolume();
 	*bsdf = ARENA_ALLOC(arena, SingleBSDF)(dg, normal,
@@ -131,7 +130,7 @@ bool OrthoCamera::GetSamplePosition(const Point &p, const Vector &wi,
 		(!isinf(distance) && (distance < ClipHither ||
 		distance > ClipYon)))
 		return false;
-	Point ps(WorldToRaster(p));
+	Point ps(RasterToWorld / p);
 	*x = ps.x;
 	*y = ps.y;
 	return true;
@@ -151,7 +150,7 @@ BBox OrthoCamera::Bounds() const
 	for (int i = 1024; i >= 0; i--) {
 		// ugly hack, but last thing we do is to sample StartTime, so should be ok
 		const_cast<OrthoCamera*>(this)->SampleMotion(Lerp(static_cast<float>(i) / 1024.f, CameraMotion.StartTime(), CameraMotion.EndTime()));
-		bound = Union(bound, WorldToScreen.GetInverse()(orig_bound));
+		bound = Union(bound, ScreenToWorld * orig_bound);
 	}
 	bound.Expand(MachineEpsilon::E(bound));
 	return bound;

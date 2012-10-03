@@ -45,12 +45,12 @@ public:
 		float t = u2 * phiMax;
 		Point p = Point(cosf(t), sinf(t), z);
 		float nz = radius / sqrtf(radius*radius + height*height);
-		*Ns = Normalize(ObjectToWorld(Normal(p.x, p.y, -nz)));
+		*Ns = Normalize(ObjectToWorld * Normal(p.x, p.y, -nz));
 		p.x *= radius * (1 - u1);
 		p.y *= radius * (1 - u1);
 		if (reverseOrientation) *Ns *= -1.f;
 
-		return ObjectToWorld(p);
+		return ObjectToWorld * p;
 	}
 
 	static Shape* CreateShape(const Transform &o2w, bool reverseOrientation, const ParamSet &params);

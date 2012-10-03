@@ -72,7 +72,7 @@ bool RGBVolume::Scatter(const Sample &sample, bool scatteredStart,
 		isect->dg.nn = Normal(-ray.d);
 		isect->dg.scattered = true;
 		CoordinateSystem(Vector(isect->dg.nn), &(isect->dg.dpdu), &(isect->dg.dpdv));
-		isect->WorldToObject = Transform();
+		isect->ObjectToWorld = Transform();
 		isect->primitive = &primitive;
 		isect->material = &material;
 		isect->interior = this;

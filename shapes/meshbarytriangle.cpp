@@ -73,8 +73,8 @@ BBox MeshBaryTriangle::ObjectBound() const
 	const Point &p1 = mesh->p[v[0]];
 	const Point &p2 = mesh->p[v[1]];
 	const Point &p3 = mesh->p[v[2]];
-	return Union(BBox(mesh->WorldToObject(p1), mesh->WorldToObject(p2)),
-		mesh->WorldToObject(p3));
+	return Union(BBox(mesh->ObjectToWorld / p1, mesh->ObjectToWorld / p2),
+		mesh->ObjectToWorld / p3);
 }
 
 BBox MeshBaryTriangle::WorldBound() const
@@ -150,7 +150,7 @@ bool MeshBaryTriangle::Intersect(const Ray &ray, Intersection* isect) const
 	isect->dg = DifferentialGeometry(pp, nn, dpdu, dpdv,
 		Normal(0, 0, 0), Normal(0, 0, 0), tu, tv, this);
 
-	isect->Set(mesh->WorldToObject, this, mesh->GetMaterial(),
+	isect->Set(mesh->ObjectToWorld, this, mesh->GetMaterial(),
 		mesh->GetExterior(), mesh->GetInterior());
 	isect->dg.iData.baryTriangle.coords[0] = b0;
 	isect->dg.iData.baryTriangle.coords[1] = b1;

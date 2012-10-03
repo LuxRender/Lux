@@ -36,13 +36,13 @@ VolumeGrid::VolumeGrid(const RGBColor &sa, const RGBColor &ss, float gg,
 	const RGBColor &emit, const BBox &e, const Transform &v2w,
 	int x, int y, int z, const float *d)
 	: DensityVolume<RGBVolume>(RGBVolume(sa, ss, emit, gg)),
-	nx(x), ny(y), nz(z), extent(e), WorldToVolume(v2w.GetInverse())
+	nx(x), ny(y), nz(z), extent(e), VolumeToWorld(v2w)
 {
 	density.assign(d, d+(nx*ny*nz));
 }
 float VolumeGrid::Density(const Point &p) const
 {
-	const Point pp(WorldToVolume(p));
+	const Point pp(VolumeToWorld / p);
 	if (!extent.Inside(pp))
 		return 0.f;
 	// Compute voxel coordinates and offsets for _pp_
