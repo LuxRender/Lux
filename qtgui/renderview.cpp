@@ -36,15 +36,21 @@ RenderView::RenderView(QWidget *parent) : QGraphicsView(parent) {
 	luxlogo = renderscene->addPixmap(QPixmap(":/images/luxlogo_bg.png"));
 	luxfb = renderscene->addPixmap(QPixmap(":/images/luxlogo_bg.png"));
 	luxfb->hide ();
+	userSamplingMap = NULL;
+	userSamplingPixmap = renderscene->addPixmap(QPixmap(":/images/luxlogo_bg.png"));
+	userSamplingPixmap->hide ();
 	renderscene->setSceneRect (0.0f, 0.0f, 416, 389);
 	centerOn(luxlogo);
 	setScene(renderscene);
 	zoomfactor = 100.0f;
 	overlayStats = false;
 	showAlpha = false;
+	showUserSamplingMap = false;
 }
 
 RenderView::~RenderView () {
+	delete[] userSamplingMap;
+	delete userSamplingPixmap;
 	delete luxfb;
 	delete luxlogo;
 	delete renderscene;
@@ -97,10 +103,51 @@ void RenderView::reload () {
 			centerOn(luxfb);
 //			fitInView(luxfb, Qt::KeepAspectRatio);
 		}
+
+		/*if (showUserSamplingMap) {
+			// User driven sampling is active
+			delete[]  userSamplingMap;
+			userSamplingMap = luxGetUserSamplingMap();
+			if (!userSamplingMap) {
+				// There isn't an existing map, create the default
+				userSamplingMap = new float[w * h];
+				std::fill(userSamplingMap, userSamplingMap + w * h, .5f);
+
+				// Enable user driven sampling
+				luxSetUserSamplingMap(userSamplingMap);
+			}
+
+			updateUserSamplingPixmap();
+
+			if (!userSamplingPixmap->isVisible())
+				userSamplingPixmap->show();
+		} else {
+			if (userSamplingPixmap->isVisible())
+				userSamplingPixmap->hide();
+		}*/
+		
 		zoomEnabled = true;
 		setDragMode(QGraphicsView::ScrollHandDrag);
 		setInteractive(true);
 	}
+}
+
+void RenderView::updateUserSamplingPixmap() {
+	int w = luxGetIntAttribute("film", "xResolution");
+	int h = luxGetIntAttribute("film", "yResolution");
+
+	// Convert from float to ARGB32
+	QImage samplingMapImage(w, h, QImage::Format_ARGB32);
+	for (int y = 0; y < h; y++) {
+		QRgb *scanline = reinterpret_cast<QRgb*>(samplingMapImage.scanLine(y));
+		for (int x = 0; x < w; x++) {
+			const float value = userSamplingMap[x + y * w] * .5f + .25f;
+			const int fba = static_cast<int>(min(max(255.f * value, 0.f), 255.f));
+			scanline[x] = qRgba(255, 255, 255, fba);
+		}
+	}
+
+	userSamplingPixmap->setPixmap(QPixmap::fromImage(samplingMapImage));
 }
 
 void RenderView::setLogoMode () {

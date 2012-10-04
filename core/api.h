@@ -154,6 +154,8 @@ LUX_EXPORT float* luxAlphaBuffer();
 
 /* User defined sampling */
 LUX_EXPORT void luxSetUserSamplingMap(const float *map);
+// NOTE: returns a copy of the map, it is up to the caller to free the allocated memory !
+LUX_EXPORT float *luxGetUserSamplingMap();
 
 /* Histogram access */
 LUX_EXPORT void luxGetHistogramImage(unsigned char *outPixels, unsigned int width, unsigned int height, int options);

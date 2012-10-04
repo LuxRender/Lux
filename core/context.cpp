@@ -1363,3 +1363,8 @@ void Context::SetUserSamplingMap(const float *map)
 {
 	luxCurrentScene->camera->film->SetUserSamplingMap(map);
 }
+
+float *Context::GetUserSamplingMap()
+{
+	return luxCurrentScene->camera->film->GetUserSamplingMap();
+}

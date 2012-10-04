@@ -465,6 +465,7 @@ private slots:
 	void normalScreen ();
 	void showAlphaChanged (bool);
 	void overlayStatsChanged (bool);
+	void showUserSamplingMapChanged (bool);
 	void aboutDialog ();
 	void openDocumentation ();
 	void openForums ();

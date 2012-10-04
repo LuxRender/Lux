@@ -323,8 +323,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>362</width>
-                  <height>388</height>
+                  <width>376</width>
+                  <height>386</height>
                  </rect>
                 </property>
                 <property name="sizePolicy">
@@ -406,8 +406,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>362</width>
-                  <height>422</height>
+                  <width>100</width>
+                  <height>30</height>
                  </rect>
                 </property>
                 <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -479,8 +479,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>362</width>
-                  <height>422</height>
+                  <width>100</width>
+                  <height>30</height>
                  </rect>
                 </property>
                 <property name="sizePolicy">
@@ -964,17 +964,17 @@
           <property name="editTriggers">
            <set>QAbstractItemView::NoEditTriggers</set>
           </property>
-          <property name="selectionBehavior">
-           <enum>QAbstractItemView::SelectRows</enum>
-          </property>
           <property name="selectionMode">
            <enum>QAbstractItemView::SingleSelection</enum>
+          </property>
+          <property name="selectionBehavior">
+           <enum>QAbstractItemView::SelectRows</enum>
           </property>
           <property name="wordWrap">
            <bool>true</bool>
           </property>
           <attribute name="horizontalHeaderVisible">
-           <bool>true</bool>
+           <bool>false</bool>
           </attribute>
           <attribute name="horizontalHeaderHighlightSections">
            <bool>false</bool>
@@ -1244,7 +1244,7 @@
      <x>0</x>
      <y>0</y>
      <width>840</width>
-     <height>22</height>
+     <height>25</height>
     </rect>
    </property>
    <property name="nativeMenuBar">
@@ -1269,7 +1269,8 @@
     <addaction name="action_fullScreen"/>
     <addaction name="action_normalScreen"/>
     <addaction name="action_overlayStatsView"/>
-    <addaction name="action_showAlpha_view"/>
+    <addaction name="action_showAlphaView"/>
+    <addaction name="action_showUserSamplingMapView"/>
     <addaction name="separator"/>
     <addaction name="action_Show_Side_Panel"/>
    </widget>
@@ -1708,7 +1709,7 @@
     <enum>Qt::ApplicationShortcut</enum>
    </property>
   </action>
-  <action name="action_showAlpha_view">
+  <action name="action_showAlphaView">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -1717,6 +1718,17 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Alt+A</string>
+   </property>
+  </action>
+  <action name="action_showUserSamplingMapView">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show Sampling Map</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Alt+U</string>
    </property>
   </action>
  </widget>

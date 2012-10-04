@@ -696,6 +696,8 @@ public:
 	virtual const bool HasUserSamplingMap() const { return (userSamplingMapVersion > 0); }
 	virtual const bool GetUserSamplingMap(u_int &version, boost::shared_array<float> &map,
 		boost::shared_ptr<Distribution2D> &distrib);
+	// NOTE: returns a copy of the map, it is up to the caller to free the allocated memory !
+	virtual float *GetUserSamplingMap();
 	virtual void SetUserSamplingMap(const float *map);
 
 	// Return noise-aware map * user sampling map
@@ -720,6 +722,7 @@ protected:
 	void RejectTileOutliers(const Contribution &contrib, u_int tileIndex, int yTilePixelStart, int yTilePixelEnd);
 	// Gets the extents of a tile, interval is [start, end).
 	void GetTileExtent(u_int tileIndex, int *xstart, int *xend, int *ystart, int *yend) const;
+	void UpdateSamplingMap();
 	void UpdateConvergenceInfo(const float *frameBuffer);
 	void GenerateNoiseAwareMap();
 

@@ -179,8 +179,9 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	connect(ui->action_clearLog, SIGNAL(triggered()), this, SLOT(clearLog()));
 	connect(ui->action_fullScreen, SIGNAL(triggered()), this, SLOT(fullScreen()));
 	connect(ui->action_normalScreen, SIGNAL(triggered()), this, SLOT(normalScreen()));
-	connect(ui->action_showAlpha_view, SIGNAL(triggered(bool)), this, SLOT(showAlphaChanged(bool)));
+	connect(ui->action_showAlphaView, SIGNAL(triggered(bool)), this, SLOT(showAlphaChanged(bool)));
 	connect(ui->action_overlayStatsView, SIGNAL(triggered(bool)), this, SLOT(overlayStatsChanged(bool)));
+	connect(ui->action_showUserSamplingMapView, SIGNAL(triggered(bool)), this, SLOT(showUserSamplingMapChanged(bool)));
 	connect(ui->action_Show_Side_Panel, SIGNAL(triggered(bool)), this, SLOT(ShowSidePanel(bool)));
 
 	// Help menu slots
@@ -1252,7 +1253,7 @@ void MainWindow::overlayStatsChanged(bool checked)
 
 void MainWindow::showAlphaChanged(bool checked)
 {
-	renderView->setshowAlpha(checked);
+	renderView->setShowAlpha(checked);
 	static const QIcon alphaicon(":/icons/clipboardicon_alpha.png");
 	static const QIcon icon(":/icons/clipboardicon.png");
 	if(checked){
@@ -1260,6 +1261,12 @@ void MainWindow::showAlphaChanged(bool checked)
 	}else{
 		ui->button_copyToClipboard->setIcon(icon);	
 	}
+	renderView->reload();
+}
+
+void MainWindow::showUserSamplingMapChanged(bool checked)
+{
+	renderView->setShowUserSamplingMap(checked);
 	renderView->reload();
 }
 

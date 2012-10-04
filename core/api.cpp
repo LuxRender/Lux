@@ -1270,3 +1270,8 @@ extern "C" void luxSetUserSamplingMap(const float *map)
 {
 	Context::GetActive()->SetUserSamplingMap(map);
 }
+
+extern "C" float *luxGetUserSamplingMap()
+{
+	return Context::GetActive()->GetUserSamplingMap();
+}

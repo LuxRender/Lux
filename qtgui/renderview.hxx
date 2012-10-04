@@ -45,7 +45,8 @@ public:
 
 	void setZoomEnabled (bool enabled = true) { zoomEnabled = enabled; };
 	void setOverlayStatistics (bool value = true) { overlayStats = value; };
-	void setshowAlpha (bool value = true) { showAlpha = value; };
+	void setShowAlpha (bool value = true) { showAlpha = value; };
+	void setShowUserSamplingMap(bool value = true) { showUserSamplingMap = value; };
 	void reload ();
 	void setLogoMode ();
 	int getZoomFactor ();
@@ -62,10 +63,17 @@ private:
 
 	bool overlayStats;
 	bool showAlpha;
+	bool showUserSamplingMap;
 	
 	QGraphicsScene *renderscene;
 	QGraphicsPixmapItem *luxlogo;
 	QGraphicsPixmapItem *luxfb;
+
+	// For user driven sampling
+	float *userSamplingMap;
+	QGraphicsPixmapItem *userSamplingPixmap;
+
+	void updateUserSamplingPixmap();
 
 	void wheelEvent (QWheelEvent *event);
 	void mousePressEvent (QMouseEvent *event);

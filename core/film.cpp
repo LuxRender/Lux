@@ -2623,15 +2623,7 @@ void Film::GenerateNoiseAwareMap() {
 
 	noiseAwareDistribution2D.reset(new Distribution2D(noiseAwareMap.get(), xPixelCount, yPixelCount));
 
-	// Update noise-aware map * user sampling map
-	samplingMap.reset(new float[nPix]);
-	if (userSamplingMap) {
-		for (u_int i = 0; i < nPix; ++i)
-			samplingMap[i] = noiseAwareMap[i] * userSamplingMap[i];
-	} else
-		std::copy(noiseAwareMap.get(), noiseAwareMap.get() + nPix, samplingMap.get());
-
-	samplingDistribution2D.reset(new Distribution2D(samplingMap.get(), xPixelCount, yPixelCount));
+	UpdateSamplingMap();
 }
 
 const bool Film::GetNoiseAwareMap(u_int &version, boost::shared_array<float> &map,
@@ -2661,6 +2653,20 @@ const bool Film::GetUserSamplingMap(u_int &version, boost::shared_array<float> &
 		return false;
 }
 
+// NOTE: returns a copy of the map, it is up to the caller to free the allocated memory !
+float *Film::GetUserSamplingMap() {
+	boost::mutex::scoped_lock(samplingMapMutex);
+
+	if (userSamplingMapVersion == 0)
+		return NULL;
+	
+	const u_int nPix = xPixelCount * yPixelCount;
+	float *map = new float[nPix];
+	std::copy(userSamplingMap.get(), userSamplingMap.get() + nPix, map);
+
+	return map;
+}
+
 void Film::SetUserSamplingMap(const float *map) {
 	boost::mutex::scoped_lock(samplingMapMutex);
 	
@@ -2674,13 +2680,27 @@ void Film::SetUserSamplingMap(const float *map) {
 
 	userSamplingDistribution2D.reset(new Distribution2D(userSamplingMap.get(), xPixelCount, yPixelCount));
 
+	UpdateSamplingMap();
+}
+
+void Film::UpdateSamplingMap() {	
 	// Update noise-aware map * user sampling map
-	samplingMap.reset(new float[nPix]);
-	if (noiseAwareMap) {
-		for (u_int i = 0; i < nPix; ++i)
-			samplingMap[i] = noiseAwareMap[i] * userSamplingMap[i];
-	} else
-		std::copy(userSamplingMap.get(), userSamplingMap.get() + nPix, samplingMap.get());
+
+	const u_int nPix = xPixelCount * yPixelCount;
+	if (noiseAwareMapVersion > 0) {
+		samplingMap.reset(new float[nPix]);
+
+		if (userSamplingMapVersion > 0) {
+			for (u_int i = 0; i < nPix; ++i)
+				samplingMap[i] = noiseAwareMap[i] * userSamplingMap[i];
+		} else
+			std::copy(noiseAwareMap.get(), noiseAwareMap.get() + nPix, samplingMap.get());
+	} else {
+		if (userSamplingMapVersion > 0) {
+			samplingMap.reset(new float[nPix]);
+			std::copy(userSamplingMap.get(), userSamplingMap.get() + nPix, samplingMap.get());
+		}
+	}
 
 	samplingDistribution2D.reset(new Distribution2D(samplingMap.get(), xPixelCount, yPixelCount));
 }
