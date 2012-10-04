@@ -2587,9 +2587,9 @@ void Film::GenerateNoiseAwareMap() {
 			}
 		}
 
-		u_int maxIndex = histogramSize - 1;
+		u_int maxIndex = minIndex;
 		count = 0;
-		for (int i = histogramSize - 1; i >= 0; --i) {
+		for (u_int i = histogramSize - 1; i > minIndex; --i) {
 			count += histogram[i];
 		
 			if (count > 5.f * histogramSize / 100.f) {
