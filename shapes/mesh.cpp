@@ -500,6 +500,9 @@ void Mesh::Refine(vector<boost::shared_ptr<Primitive> > &refined,
 		for(u_int i = 0; i < refinedPrims.size(); ++i)
 			refined[offset+i].swap(refinedPrims[i]);
 	} else  {
+		//FIXME: QBVH doesn't play well with PrimitiveSet
+		if (refineHints.forSampling && concreteAccelType == ACCEL_QBVH)
+			concreteAccelType = ACCEL_KDTREE;
 		ParamSet paramset;
 		boost::shared_ptr<Aggregate> accel;
 		switch (concreteAccelType) {
