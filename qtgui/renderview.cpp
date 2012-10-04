@@ -104,7 +104,7 @@ void RenderView::reload () {
 //			fitInView(luxfb, Qt::KeepAspectRatio);
 		}
 
-		/*if (showUserSamplingMap) {
+		if (showUserSamplingMap) {
 			// User driven sampling is active
 			delete[]  userSamplingMap;
 			userSamplingMap = luxGetUserSamplingMap();
@@ -124,7 +124,7 @@ void RenderView::reload () {
 		} else {
 			if (userSamplingPixmap->isVisible())
 				userSamplingPixmap->hide();
-		}*/
+		}
 		
 		zoomEnabled = true;
 		setDragMode(QGraphicsView::ScrollHandDrag);
