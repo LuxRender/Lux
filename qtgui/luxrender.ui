@@ -508,8 +508,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>376</width>
-                  <height>386</height>
+                  <width>362</width>
+                  <height>388</height>
                  </rect>
                 </property>
                 <property name="sizePolicy">
@@ -591,8 +591,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>100</width>
-                  <height>30</height>
+                  <width>362</width>
+                  <height>422</height>
                  </rect>
                 </property>
                 <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -664,8 +664,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>100</width>
-                  <height>30</height>
+                  <width>362</width>
+                  <height>422</height>
                  </rect>
                 </property>
                 <property name="sizePolicy">
@@ -710,6 +710,10 @@
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
+            <attribute name="icon">
+             <iconset resource="icons.qrc">
+              <normaloff>:/icons/mappainticon.png</normaloff>:/icons/mappainticon.png</iconset>
+            </attribute>
             <attribute name="title">
              <string>User Driven Sampling</string>
             </attribute>
@@ -724,8 +728,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>376</width>
-                  <height>387</height>
+                  <width>356</width>
+                  <height>389</height>
                  </rect>
                 </property>
                 <layout class="QGridLayout" name="gridLayout_2">
@@ -1393,7 +1397,7 @@
      <x>0</x>
      <y>0</y>
      <width>840</width>
-     <height>25</height>
+     <height>22</height>
     </rect>
    </property>
    <property name="nativeMenuBar">
