@@ -297,6 +297,17 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	connect(ui->button_imagingReset, SIGNAL(clicked()), this, SLOT(resetToneMapping()));
 	connect(ui->tabs_main, SIGNAL(currentChanged(int)), this, SLOT(tabChanged(int)));
 
+	// User driven sampling tab
+	connect(ui->button_usAddPenButton, SIGNAL(clicked()), this, SLOT(userSamplingAddPen()));
+	connect(ui->button_usSubPenButton, SIGNAL(clicked()), this, SLOT(userSamplingSubPen()));
+	connect(ui->button_us10px, SIGNAL(clicked()), this, SLOT(userSamplingSetPenSize10px()));
+	connect(ui->button_us50px, SIGNAL(clicked()), this, SLOT(userSamplingSetPenSize50px()));
+	connect(ui->button_us100px, SIGNAL(clicked()), this, SLOT(userSamplingSetPenSize100px()));
+	connect(ui->button_us500px, SIGNAL(clicked()), this, SLOT(userSamplingSetPenSize500px()));
+	connect(ui->button_usApplyButton, SIGNAL(clicked()), this, SLOT(userSamplingApply()));
+	connect(ui->button_usUndoButton, SIGNAL(clicked()), this, SLOT(userSamplingUndo()));
+	connect(ui->button_usResetButton, SIGNAL(clicked()), this, SLOT(userSamplingReset()));
+
 	// Render threads
 	connect(ui->spinBox_Threads, SIGNAL(valueChanged(int)), this, SLOT(ThreadChanged(int)));
 
@@ -1268,6 +1279,11 @@ void MainWindow::showUserSamplingMapChanged(bool checked)
 {
 	renderView->setShowUserSamplingMap(checked);
 	renderView->reload();
+
+	if (checked)
+		ui->outputTabs->setTabEnabled(3, true);
+	else
+		ui->outputTabs->setTabEnabled(3, false);
 }
 
 // Help menu slots
@@ -1297,6 +1313,42 @@ void MainWindow::applyTonemapping(bool withlayercomputation)
 	{
 		m_bTonemapPending = true;
 	}
+}
+
+void MainWindow::userSamplingAddPen() {
+	renderView->setUserSamplingPen(true);
+}
+
+void MainWindow::userSamplingSubPen() {
+	renderView->setUserSamplingPen(false);
+}
+
+void MainWindow::userSamplingSetPenSize10px() {
+	renderView->setUserSamplingPensize(10);
+}
+
+void MainWindow::userSamplingSetPenSize50px() {
+	renderView->setUserSamplingPensize(50);
+}
+
+void MainWindow::userSamplingSetPenSize100px() {
+	renderView->setUserSamplingPensize(100);
+}
+
+void MainWindow::userSamplingSetPenSize500px() {
+	renderView->setUserSamplingPensize(500);
+}
+
+void MainWindow::userSamplingApply() {
+	renderView->applyUserSampling();
+}
+
+void MainWindow::userSamplingUndo() {
+	renderView->undoUserSampling();
+}
+
+void MainWindow::userSamplingReset() {
+	renderView->resetUserSampling();
 }
 
 void MainWindow::EngineThread::run()
@@ -2411,7 +2463,7 @@ void MainWindow::UpdateNetworkTree()
 
 	QSet<QString> connectedSlaves;
 
-	for (int i = 0; i < serverInfoList.size(); ++i) {
+	for (uint i = 0; i < serverInfoList.size(); ++i) {
 		QTableWidgetItem *status = new QTableWidgetItem(tr("Active session"));
 
 		QTableWidgetItem *servername = new QTableWidgetItem(QString::fromUtf8(serverInfoList[i].name));

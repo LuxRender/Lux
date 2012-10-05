@@ -438,6 +438,15 @@ public slots:
 	void resetToneMapping ();
 	void indicateActivity (bool active = true);
 	void setVerbosity(int choice);
+	void userSamplingAddPen();
+	void userSamplingSubPen();
+	void userSamplingSetPenSize10px();
+	void userSamplingSetPenSize50px();
+	void userSamplingSetPenSize100px();
+	void userSamplingSetPenSize500px();
+	void userSamplingApply();
+	void userSamplingUndo();
+	void userSamplingReset();
 
 private slots:
 

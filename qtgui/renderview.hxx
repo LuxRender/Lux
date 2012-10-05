@@ -23,6 +23,8 @@
 #ifndef RENDERVIEW_H
 #define RENDERVIEW_H
 
+#include <algorithm>
+
 #include <QtGui/QGraphicsView>
 #include <QtGui/QGraphicsScene>
 #include <QApplication>
@@ -43,10 +45,18 @@ public:
 	RenderView(QWidget *parent = 0);
 	~RenderView ();
 
-	void setZoomEnabled (bool enabled = true) { zoomEnabled = enabled; };
-	void setOverlayStatistics (bool value = true) { overlayStats = value; };
-	void setShowAlpha (bool value = true) { showAlpha = value; };
-	void setShowUserSamplingMap(bool value = true) { showUserSamplingMap = value; };
+	void setZoomEnabled (bool enabled = true) { zoomEnabled = enabled; }
+	void setOverlayStatistics (bool value = true) { overlayStats = value; }
+	void setShowAlpha (bool value = true) { showAlpha = value; }
+	void setShowUserSamplingMap(bool value = true);
+
+	void setUserSamplingPen(const bool addictive);
+	void setUserSamplingPensize(const uint size);
+
+	void applyUserSampling();
+	void undoUserSampling();
+	void resetUserSampling();
+
 	void reload ();
 	void setLogoMode ();
 	int getZoomFactor ();
@@ -59,7 +69,6 @@ private:
 
 	bool zoomEnabled;
 	float zoomfactor;
-	QPoint currentpos;
 
 	bool overlayStats;
 	bool showAlpha;
@@ -72,11 +81,19 @@ private:
 	// For user driven sampling
 	float *userSamplingMap;
 	QGraphicsPixmapItem *userSamplingPixmap;
+	bool userSamplingAddictivePen;
+	bool userSamplingPenPressed;
+	int userSamplingPenX, userSamplingPenY;
+	uint userSamplingPenSize;
+	
 
 	void updateUserSamplingPixmap();
+	void drawPenOnUserSamplingMap(const int x, const int y);
 
 	void wheelEvent (QWheelEvent *event);
 	void mousePressEvent (QMouseEvent *event);
+	void mouseReleaseEvent (QMouseEvent *event);
+	void mouseMoveEvent (QMouseEvent *event);
 	void resizeEvent(QResizeEvent *event);
 
 signals:
