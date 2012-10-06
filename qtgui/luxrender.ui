@@ -591,8 +591,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>362</width>
-                  <height>422</height>
+                  <width>100</width>
+                  <height>30</height>
                  </rect>
                 </property>
                 <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -664,8 +664,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>362</width>
-                  <height>422</height>
+                  <width>100</width>
+                  <height>30</height>
                  </rect>
                 </property>
                 <property name="sizePolicy">
@@ -715,7 +715,7 @@
               <normaloff>:/icons/mappainticon.png</normaloff>:/icons/mappainticon.png</iconset>
             </attribute>
             <attribute name="title">
-             <string>User Driven Sampling</string>
+             <string>Refine Brush</string>
             </attribute>
             <layout class="QGridLayout" name="gridLayout_3">
              <item row="0" column="1">

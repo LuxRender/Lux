@@ -208,7 +208,6 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	ui->outputTabs->setFont(QFont  ("Lucida Grande", 10));
 	QSize iconSize(12, 12);
 	ui->outputTabs->setIconSize(iconSize);
-	ui->outputTabs->setTabText(3, "Refine Brush");
 #endif
 
 	// Tonemap page
