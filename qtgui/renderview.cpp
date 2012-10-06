@@ -214,11 +214,25 @@ void RenderView::updateUserSamplingPixmap() {
 
 	QPainter painter(&samplingMapImage);
 
+	// Draw pen border
+	QPen penBorder;
+	penBorder.setWidth(4);
+	penBorder.setBrush(Qt::white);
+	painter.setPen(penBorder);
+	painter.drawEllipse(userSamplingPenX - userSamplingPenSize / 2, userSamplingPenY - userSamplingPenSize / 2,
+			userSamplingPenSize, userSamplingPenSize);
+	painter.drawLine(userSamplingPenX - userSamplingPenSize / 4, userSamplingPenY,
+			userSamplingPenX + userSamplingPenSize / 4, userSamplingPenY);
+	if (userSamplingAddictivePen) {
+		painter.drawLine(userSamplingPenX, userSamplingPenY - userSamplingPenSize / 4,
+				userSamplingPenX, userSamplingPenY + userSamplingPenSize / 4);
+	}
+
+	// Draw pen border
 	QPen pen;
-	pen.setWidth(3);
+	pen.setWidth(2);
 	pen.setBrush(Qt::black);
 	painter.setPen(pen);
-
 	painter.drawEllipse(userSamplingPenX - userSamplingPenSize / 2, userSamplingPenY - userSamplingPenSize / 2,
 			userSamplingPenSize, userSamplingPenSize);
 	painter.drawLine(userSamplingPenX - userSamplingPenSize / 4, userSamplingPenY,
