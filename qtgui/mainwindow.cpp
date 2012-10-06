@@ -204,8 +204,11 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 
 	advpanes[0] = new PaneWidget(ui->advancedAreaContents, "Scene information", ":/icons/logtabicon.png");
 
-#if defined(__APPLE__)
-	ui->outputTabs->setFont(QFont  ("Lucida Grande", 11));
+#if defined(__APPLE__) # cosmetical work to have the tabs less crowded
+	ui->outputTabs->setFont(QFont  ("Lucida Grande", 10));
+	QSize iconSize(12, 12);
+	ui->outputTabs->setIconSize(iconSize);
+	ui->outputTabs->setTabText(3, "Refine Brush");
 #endif
 
 	// Tonemap page
