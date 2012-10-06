@@ -702,7 +702,7 @@
            </widget>
            <widget class="QWidget" name="tab_usersampling">
             <property name="enabled">
-             <bool>false</bool>
+             <bool>true</bool>
             </property>
             <property name="sizePolicy">
              <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
