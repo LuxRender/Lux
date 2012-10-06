@@ -125,6 +125,7 @@ void RenderView::reload () {
 			// User driven sampling is active
 
 			setDragMode(QGraphicsView::NoDrag);
+			RenderView::setCursor(QCursor(Qt::CrossCursor));
 			if (!userSamplingMap) {
 				// Get the current sampling map
 
@@ -147,6 +148,7 @@ void RenderView::reload () {
 			if (userSamplingPixmap->isVisible())
 				userSamplingPixmap->hide();
 				setDragMode(QGraphicsView::ScrollHandDrag);
+				RenderView::unsetCursor();
 		}
 		
 		zoomEnabled = true;
