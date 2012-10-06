@@ -309,7 +309,8 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	connect(ui->button_usApplyButton, SIGNAL(clicked()), this, SLOT(userSamplingApply()));
 	connect(ui->button_usUndoButton, SIGNAL(clicked()), this, SLOT(userSamplingUndo()));
 	connect(ui->button_usResetButton, SIGNAL(clicked()), this, SLOT(userSamplingReset()));
-
+	ui->outputTabs->setTabEnabled(3, false); // initialize
+	
 	// Render threads
 	connect(ui->spinBox_Threads, SIGNAL(valueChanged(int)), this, SLOT(ThreadChanged(int)));
 
@@ -503,7 +504,6 @@ void MainWindow::ReadSettings()
 			m_recentFiles.append(QFileInfo(i.next()));
 	}
 	m_lastOpendir = settings.value("lastOpenDir","").toString();
-	ui->action_showUserSamplingMapView->setChecked(settings.value("SamplingMapView").toBool());
 	ui->action_overlayStats->setChecked(settings.value("overlayStatistics").toBool());
 	ui->action_HDR_tonemapped->setChecked(settings.value("tonemappedHDR").toBool());
 	ui->action_useAlpha->setChecked(settings.value("outputUseAlpha").toBool());
@@ -532,7 +532,6 @@ void MainWindow::WriteSettings()
 		settings.setValue("recentFiles", recentFilesList);
 	}
 	settings.setValue("lastOpenDir", m_lastOpendir);
-	settings.setValue("SamplingMapView", ui->action_showUserSamplingMapView->isChecked());
 	settings.setValue("overlayStatistics", ui->action_overlayStats->isChecked());
 	settings.setValue("tonemappedHDR", ui->action_HDR_tonemapped->isChecked());
 	settings.setValue("outputUseAlpha", ui->action_useAlpha->isChecked());
