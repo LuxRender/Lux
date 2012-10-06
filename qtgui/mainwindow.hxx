@@ -469,6 +469,7 @@ private slots:
 	void copyLog ();
 	void clearLog ();
 	void tabChanged (int);
+	void outputTabChanged (int);
 	void viewportChanged ();
 	void fullScreen ();
 	void normalScreen ();

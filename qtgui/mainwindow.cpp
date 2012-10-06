@@ -25,6 +25,11 @@
 #define TAB_ID_NETWORK 3
 #define TAB_ID_LOG     4
 
+#define OUTPUT_TAB_ID_IMAGING		0
+#define OUTPUT_TAB_ID_LIGHTGROUP	1
+#define OUTPUT_TAB_ID_REFINE		2
+#define OUTPUT_TAB_ID_ADVANCED		3
+
 #include <cmath>
 #include <ctime>
 
@@ -297,7 +302,9 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	// Buttons
 	connect(ui->button_imagingApply, SIGNAL(clicked()), this, SLOT(applyTonemapping()));
 	connect(ui->button_imagingReset, SIGNAL(clicked()), this, SLOT(resetToneMapping()));
+
 	connect(ui->tabs_main, SIGNAL(currentChanged(int)), this, SLOT(tabChanged(int)));
+	connect(ui->outputTabs, SIGNAL(currentChanged(int)), this, SLOT(outputTabChanged(int)));
 
 	// User driven sampling tab
 	connect(ui->button_usAddPenButton, SIGNAL(clicked()), this, SLOT(userSamplingAddPen()));
@@ -309,8 +316,7 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	connect(ui->button_usApplyButton, SIGNAL(clicked()), this, SLOT(userSamplingApply()));
 	connect(ui->button_usUndoButton, SIGNAL(clicked()), this, SLOT(userSamplingUndo()));
 	connect(ui->button_usResetButton, SIGNAL(clicked()), this, SLOT(userSamplingReset()));
-	ui->outputTabs->setTabEnabled(3, false); // initialize
-	
+
 	// Render threads
 	connect(ui->spinBox_Threads, SIGNAL(valueChanged(int)), this, SLOT(ThreadChanged(int)));
 
@@ -1284,9 +1290,9 @@ void MainWindow::showUserSamplingMapChanged(bool checked)
 	renderView->reload();
 
 	if (checked)
-		ui->outputTabs->setTabEnabled(3, true);
+		ui->outputTabs->setCurrentIndex(OUTPUT_TAB_ID_REFINE);
 	else
-		ui->outputTabs->setTabEnabled(3, false);
+		ui->outputTabs->setCurrentIndex(OUTPUT_TAB_ID_IMAGING);
 }
 
 // Help menu slots
@@ -2138,11 +2144,28 @@ void MainWindow::closeEvent(QCloseEvent *event)
 void MainWindow::tabChanged(int)
 {
 	int currentIndex = ui->tabs_main->currentIndex();
+
 	if (currentIndex == getTabIndex(TAB_ID_LOG)) {
 		blinkTrigger(false);
 		static const QIcon icon(":/icons/logtabicon.png");
 		ShowTabLogIcon(TAB_ID_LOG, icon);
 		statusMessage->setText("Checking Log acknowledged");
+	}
+}
+
+void MainWindow::outputTabChanged(int) {
+	int currentIndex = ui->outputTabs->currentIndex();
+
+	if (currentIndex == OUTPUT_TAB_ID_REFINE) {
+		// Always show the map when the refine tab is selected
+		ui->action_showUserSamplingMapView->setChecked(true);
+		renderView->setShowUserSamplingMap(true);
+		renderView->reload();
+	} else {
+		// Always hide the map when the refine tab is selected
+		ui->action_showUserSamplingMapView->setChecked(false);
+		renderView->setShowUserSamplingMap(false);
+		renderView->reload();
 	}
 }
 
