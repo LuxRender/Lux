@@ -393,5 +393,5 @@ void RenderView::mouseMoveEvent (QMouseEvent *event) {
 		}
 	}
 
-	QGraphicsView::mousePressEvent(event);
+	QGraphicsView::mouseMoveEvent(event);
 }
