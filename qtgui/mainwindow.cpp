@@ -503,6 +503,7 @@ void MainWindow::ReadSettings()
 			m_recentFiles.append(QFileInfo(i.next()));
 	}
 	m_lastOpendir = settings.value("lastOpenDir","").toString();
+	ui->action_showUserSamplingMapView->setChecked(settings.value("SamplingMapView").toBool());
 	ui->action_overlayStats->setChecked(settings.value("overlayStatistics").toBool());
 	ui->action_HDR_tonemapped->setChecked(settings.value("tonemappedHDR").toBool());
 	ui->action_useAlpha->setChecked(settings.value("outputUseAlpha").toBool());
@@ -531,6 +532,7 @@ void MainWindow::WriteSettings()
 		settings.setValue("recentFiles", recentFilesList);
 	}
 	settings.setValue("lastOpenDir", m_lastOpendir);
+	settings.setValue("SamplingMapView", ui->action_showUserSamplingMapView->isChecked());
 	settings.setValue("overlayStatistics", ui->action_overlayStats->isChecked());
 	settings.setValue("tonemappedHDR", ui->action_HDR_tonemapped->isChecked());
 	settings.setValue("outputUseAlpha", ui->action_useAlpha->isChecked());
