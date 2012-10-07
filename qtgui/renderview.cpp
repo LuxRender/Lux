@@ -258,6 +258,7 @@ void RenderView::updateUserSamplingPixmap() {
 
 void RenderView::updateUserSamplingPixmap(int xStart, int yStart, int xSize, int ySize) {
 	int width = luxGetIntAttribute("film", "xResolution");
+	int height = luxGetIntAttribute("film", "yResolution");
 
 	if (!userSamplingMapImage) {
 		// Convert from float to ARGB32
@@ -267,12 +268,21 @@ void RenderView::updateUserSamplingPixmap(int xStart, int yStart, int xSize, int
 		xStart = 0;
 		yStart = 0;
 		xSize = width;
-		ySize = luxGetIntAttribute("film", "yResolution");
+		ySize = height;
 	}
 
-	for (int y = yStart; y < yStart + ySize; y++) {
+	int xEnd = xStart + xSize;
+	int yEnd = yStart + ySize;
+
+	// Clip the working area
+	xStart = max(0, min(xStart, width - 1));
+	yStart = max(0, min(yStart, height - 1));
+	xEnd = max(0, min(xEnd, width - 1));
+	yEnd = max(0, min(yEnd, height - 1));
+
+	for (int y = yStart; y <= yEnd; y++) {
 		QRgb *scanline = reinterpret_cast<QRgb*>(userSamplingMapImage->scanLine(y));
-		for (int x = xStart; x < xStart + xSize; x++) {
+		for (int x = xStart; x <= xEnd; x++) {
 			const float value = userSamplingMap[x + y * width] * .5f + .25f;
 			const int fba = static_cast<int>(min(max(255.f * value, 0.f), 255.f));
 			scanline[x] = qRgba(255, 255, 255, fba);
