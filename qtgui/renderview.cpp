@@ -40,6 +40,7 @@ RenderView::RenderView(QWidget *parent) : QGraphicsView(parent) {
 	userSamplingMap = NULL;
 	userSamplingPixmap = renderscene->addPixmap(QPixmap(":/images/luxlogo_bg.png"));
 	userSamplingPixmap->hide ();
+	userSamplingMapImage = NULL;
 	renderscene->setSceneRect (0.0f, 0.0f, 416, 389);
 	centerOn(luxlogo);
 	setScene(renderscene);
@@ -58,6 +59,7 @@ RenderView::RenderView(QWidget *parent) : QGraphicsView(parent) {
 
 RenderView::~RenderView () {
 	delete[] userSamplingMap;
+	delete userSamplingMapImage;
 	delete userSamplingPixmap;
 	delete luxfb;
 	delete luxlogo;
@@ -250,19 +252,34 @@ void  RenderView::resetUserSampling() {
 void RenderView::updateUserSamplingPixmap() {
 	int w = luxGetIntAttribute("film", "xResolution");
 	int h = luxGetIntAttribute("film", "yResolution");
+	
+	updateUserSamplingPixmap(0, 0, w, h);
+}
 
-	// Convert from float to ARGB32
-	QImage samplingMapImage(w, h, QImage::Format_ARGB32);
-	for (int y = 0; y < h; y++) {
-		QRgb *scanline = reinterpret_cast<QRgb*>(samplingMapImage.scanLine(y));
-		for (int x = 0; x < w; x++) {
-			const float value = userSamplingMap[x + y * w] * .5f + .25f;
+void RenderView::updateUserSamplingPixmap(int xStart, int yStart, int xSize, int ySize) {
+	int width = luxGetIntAttribute("film", "xResolution");
+
+	if (!userSamplingMapImage) {
+		// Convert from float to ARGB32
+		userSamplingMapImage = new QImage(xSize, ySize, QImage::Format_ARGB32);
+
+		// Initialize all pixels
+		xStart = 0;
+		yStart = 0;
+		xSize = width;
+		ySize = luxGetIntAttribute("film", "yResolution");
+	}
+
+	for (int y = yStart; y < yStart + ySize; y++) {
+		QRgb *scanline = reinterpret_cast<QRgb*>(userSamplingMapImage->scanLine(y));
+		for (int x = xStart; x < xStart + xSize; x++) {
+			const float value = userSamplingMap[x + y * width] * .5f + .25f;
 			const int fba = static_cast<int>(min(max(255.f * value, 0.f), 255.f));
 			scanline[x] = qRgba(255, 255, 255, fba);
 		}
 	}
 
-	userSamplingPixmap->setPixmap(QPixmap::fromImage(samplingMapImage));
+	userSamplingPixmap->setPixmap(QPixmap::fromImage(*userSamplingMapImage));
 }
 
 void RenderView::setLogoMode () {
@@ -425,7 +442,9 @@ void RenderView::mouseMoveEvent (QMouseEvent *event) {
 					userSamplingPenY - userSamplingPenSize / 2);
 
 			drawPenOnUserSamplingMap(userSamplingPenX, userSamplingPenY);
-			updateUserSamplingPixmap();
+			updateUserSamplingPixmap(userSamplingPenX - userSamplingPenSize / 2,
+					userSamplingPenY - userSamplingPenSize / 2,
+					userSamplingPenSize, userSamplingPenSize);
 		}
 	}
 

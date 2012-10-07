@@ -81,6 +81,7 @@ private:
 	// For user driven sampling
 	float *userSamplingMap;
 	QGraphicsPixmapItem *userSamplingPixmap;
+	QImage *userSamplingMapImage;
 	QGraphicsItemGroup *penItemGroup;
 	bool userSamplingAddPenType;
 	bool userSamplingPenPressed;
@@ -92,6 +93,8 @@ private:
 	void removeUserSamplingPen();
 
 	void updateUserSamplingPixmap();
+	void updateUserSamplingPixmap(int x, int y, int width, int height);
+
 	void drawPenOnUserSamplingMap(const int x, const int y);
 
 	void wheelEvent (QWheelEvent *event);
