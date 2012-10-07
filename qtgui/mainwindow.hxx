@@ -440,10 +440,7 @@ public slots:
 	void setVerbosity(int choice);
 	void userSamplingAddPen();
 	void userSamplingSubPen();
-	void userSamplingSetPenSize10px();
-	void userSamplingSetPenSize50px();
-	void userSamplingSetPenSize100px();
-	void userSamplingSetPenSize500px();
+	void userSamplingPenSize(int size);
 	void userSamplingApply();
 	void userSamplingUndo();
 	void userSamplingReset();

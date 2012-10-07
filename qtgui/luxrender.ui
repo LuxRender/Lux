@@ -591,8 +591,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>372</width>
-                  <height>415</height>
+                  <width>100</width>
+                  <height>30</height>
                  </rect>
                 </property>
                 <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -649,17 +649,23 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>376</width>
-                  <height>387</height>
+                  <width>364</width>
+                  <height>403</height>
                  </rect>
                 </property>
                 <layout class="QGridLayout" name="gridLayout_2">
-                 <item row="3" column="2">
-                  <widget class="QPushButton" name="button_us100px">
-                   <property name="text">
-                    <string>100px</string>
+                 <item row="4" column="0" colspan="4">
+                  <spacer name="verticalSpacer">
+                   <property name="orientation">
+                    <enum>Qt::Vertical</enum>
                    </property>
-                  </widget>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>20</width>
+                     <height>40</height>
+                    </size>
+                   </property>
+                  </spacer>
                  </item>
                  <item row="1" column="0" colspan="2">
                   <widget class="QPushButton" name="button_usAddPenButton">
@@ -668,27 +674,6 @@
                    </property>
                    <property name="text">
                     <string>Add Importance Pen</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="3" column="1">
-                  <widget class="QPushButton" name="button_us50px">
-                   <property name="text">
-                    <string>50px</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="3" column="0">
-                  <widget class="QPushButton" name="button_us10px">
-                   <property name="text">
-                    <string>10Px</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="3" column="3">
-                  <widget class="QPushButton" name="button_us500px">
-                   <property name="text">
-                    <string>500px</string>
                    </property>
                   </widget>
                  </item>
@@ -712,7 +697,7 @@
                    </property>
                   </widget>
                  </item>
-                 <item row="6" column="0" colspan="2">
+                 <item row="5" column="0" colspan="2">
                   <widget class="QPushButton" name="button_usResetButton">
                    <property name="toolTip">
                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Reset the sampling map&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -722,7 +707,7 @@
                    </property>
                   </widget>
                  </item>
-                 <item row="7" column="0" colspan="4">
+                 <item row="6" column="0" colspan="4">
                   <widget class="QPushButton" name="button_usApplyButton">
                    <property name="toolTip">
                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Apply changes&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -732,20 +717,7 @@
                    </property>
                   </widget>
                  </item>
-                 <item row="5" column="0" colspan="4">
-                  <spacer name="verticalSpacer">
-                   <property name="orientation">
-                    <enum>Qt::Vertical</enum>
-                   </property>
-                   <property name="sizeHint" stdset="0">
-                    <size>
-                     <width>20</width>
-                     <height>40</height>
-                    </size>
-                   </property>
-                  </spacer>
-                 </item>
-                 <item row="6" column="2" colspan="2">
+                 <item row="5" column="2" colspan="2">
                   <widget class="QPushButton" name="button_usUndoButton">
                    <property name="toolTip">
                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Back to the last applied map&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -762,6 +734,34 @@
                    </property>
                    <property name="alignment">
                     <set>Qt::AlignCenter</set>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="3" column="0" colspan="4">
+                  <widget class="QSlider" name="slider_usPenSize">
+                   <property name="minimum">
+                    <number>8</number>
+                   </property>
+                   <property name="maximum">
+                    <number>512</number>
+                   </property>
+                   <property name="value">
+                    <number>50</number>
+                   </property>
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="invertedAppearance">
+                    <bool>false</bool>
+                   </property>
+                   <property name="invertedControls">
+                    <bool>false</bool>
+                   </property>
+                   <property name="tickPosition">
+                    <enum>QSlider::TicksBelow</enum>
+                   </property>
+                   <property name="tickInterval">
+                    <number>10</number>
                    </property>
                   </widget>
                  </item>
@@ -814,8 +814,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>372</width>
-                  <height>415</height>
+                  <width>100</width>
+                  <height>30</height>
                  </rect>
                 </property>
                 <property name="sizePolicy">

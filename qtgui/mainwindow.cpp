@@ -309,13 +309,10 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	// User driven sampling tab
 	connect(ui->button_usAddPenButton, SIGNAL(clicked()), this, SLOT(userSamplingAddPen()));
 	connect(ui->button_usSubPenButton, SIGNAL(clicked()), this, SLOT(userSamplingSubPen()));
-	connect(ui->button_us10px, SIGNAL(clicked()), this, SLOT(userSamplingSetPenSize10px()));
-	connect(ui->button_us50px, SIGNAL(clicked()), this, SLOT(userSamplingSetPenSize50px()));
-	connect(ui->button_us100px, SIGNAL(clicked()), this, SLOT(userSamplingSetPenSize100px()));
-	connect(ui->button_us500px, SIGNAL(clicked()), this, SLOT(userSamplingSetPenSize500px()));
 	connect(ui->button_usApplyButton, SIGNAL(clicked()), this, SLOT(userSamplingApply()));
 	connect(ui->button_usUndoButton, SIGNAL(clicked()), this, SLOT(userSamplingUndo()));
 	connect(ui->button_usResetButton, SIGNAL(clicked()), this, SLOT(userSamplingReset()));
+	connect(ui->slider_usPenSize, SIGNAL(valueChanged(int)), this, SLOT(userSamplingPenSize(int)));
 
 	// Render threads
 	connect(ui->spinBox_Threads, SIGNAL(valueChanged(int)), this, SLOT(ThreadChanged(int)));
@@ -1332,20 +1329,8 @@ void MainWindow::userSamplingSubPen() {
 	renderView->setUserSamplingPen(false);
 }
 
-void MainWindow::userSamplingSetPenSize10px() {
-	renderView->setUserSamplingPenSize(10);
-}
-
-void MainWindow::userSamplingSetPenSize50px() {
-	renderView->setUserSamplingPenSize(50);
-}
-
-void MainWindow::userSamplingSetPenSize100px() {
-	renderView->setUserSamplingPenSize(100);
-}
-
-void MainWindow::userSamplingSetPenSize500px() {
-	renderView->setUserSamplingPenSize(500);
+void MainWindow::userSamplingPenSize(int size) {
+        renderView->setUserSamplingPenSize(size);
 }
 
 void MainWindow::userSamplingApply() {
