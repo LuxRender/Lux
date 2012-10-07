@@ -48,11 +48,12 @@ RenderView::RenderView(QWidget *parent) : QGraphicsView(parent) {
 	showAlpha = false;
 
 	showUserSamplingMap = false;
-	userSamplingAddictivePen = true;
+	userSamplingAddPenType = true;
 	userSamplingPenPressed = false;
 	userSamplingPenX = 0;
 	userSamplingPenY = 0;
 	userSamplingPenSize = 50;
+	penItemGroup = NULL;
 }
 
 RenderView::~RenderView () {
@@ -61,6 +62,49 @@ RenderView::~RenderView () {
 	delete luxfb;
 	delete luxlogo;
 	delete renderscene;
+}
+
+void RenderView::addUserSamplingPen() {
+	// Remove the old pen
+	removeUserSamplingPen();
+
+	// Create the pen items
+	QList<QGraphicsItem *> penItemList;
+
+	// Draw pen border
+	QPen penBorder;
+	penBorder.setWidth(4);
+	penBorder.setBrush(Qt::white);
+	penItemList.append(renderscene->addEllipse(0, 0,
+			userSamplingPenSize, userSamplingPenSize, penBorder));
+	penItemList.append(renderscene->addLine(userSamplingPenSize / 4, userSamplingPenSize / 2,
+			userSamplingPenSize * 3 / 4, userSamplingPenSize / 2, penBorder));
+	if (userSamplingAddPenType)
+		penItemList.append(renderscene->addLine(userSamplingPenSize / 2, userSamplingPenSize / 4,
+				userSamplingPenSize / 2, userSamplingPenSize * 3 / 4, penBorder));
+
+	// Draw pen
+	QPen pen;
+	pen.setWidth(2);
+	pen.setBrush(Qt::black);
+	penItemList.append(renderscene->addEllipse(0, 0,
+			userSamplingPenSize, userSamplingPenSize, pen));
+	penItemList.append(renderscene->addLine(userSamplingPenSize / 4, userSamplingPenSize / 2,
+			userSamplingPenSize * 3 / 4, userSamplingPenSize / 2, pen));
+	if (userSamplingAddPenType)
+		penItemList.append(renderscene->addLine(userSamplingPenSize / 2, userSamplingPenSize / 4,
+				userSamplingPenSize / 2, userSamplingPenSize * 3 / 4, pen));
+
+	penItemGroup = renderscene->createItemGroup(penItemList);
+	penItemGroup->show();
+
+	penItemGroup->setPos(userSamplingPenX - userSamplingPenSize / 2,
+			userSamplingPenY - userSamplingPenSize / 2);
+}
+
+void RenderView::removeUserSamplingPen() {
+	delete penItemGroup;
+	penItemGroup = NULL;
 }
 
 void RenderView::copyToClipboard()
@@ -123,9 +167,6 @@ void RenderView::reload () {
 
 		if (showUserSamplingMap) {
 			// User driven sampling is active
-
-			setDragMode(QGraphicsView::NoDrag);
-			RenderView::setCursor(QCursor(Qt::CrossCursor));
 			if (!userSamplingMap) {
 				// Get the current sampling map
 
@@ -141,14 +182,21 @@ void RenderView::reload () {
 			}
 
 			updateUserSamplingPixmap();
+			addUserSamplingPen();
 
 			if (!userSamplingPixmap->isVisible())
 				userSamplingPixmap->show();
+			
+			setDragMode(QGraphicsView::NoDrag);
+			RenderView::setCursor(QCursor(Qt::CrossCursor));
 		} else {
 			if (userSamplingPixmap->isVisible())
 				userSamplingPixmap->hide();
-				setDragMode(QGraphicsView::ScrollHandDrag);
-				RenderView::unsetCursor();
+
+			removeUserSamplingPen();
+
+			setDragMode(QGraphicsView::ScrollHandDrag);
+			RenderView::unsetCursor();
 		}
 		
 		zoomEnabled = true;
@@ -156,13 +204,15 @@ void RenderView::reload () {
 	}
 }
 
-void  RenderView::setUserSamplingPen(const bool addictive) {
-	userSamplingAddictivePen = addictive;
+void  RenderView::setUserSamplingPen(const bool addType) {
+	userSamplingAddPenType = addType;
+	addUserSamplingPen();
 	updateUserSamplingPixmap();
 }
 
-void  RenderView::setUserSamplingPensize(const uint size) {
-	userSamplingPenSize = std::max(1u, size);
+void  RenderView::setUserSamplingPenSize(const int size) {
+	userSamplingPenSize = std::max(1, size);
+	addUserSamplingPen();
 	updateUserSamplingPixmap();
 }
 
@@ -212,36 +262,6 @@ void RenderView::updateUserSamplingPixmap() {
 		}
 	}
 
-	QPainter painter(&samplingMapImage);
-
-	// Draw pen border
-	QPen penBorder;
-	penBorder.setWidth(4);
-	penBorder.setBrush(Qt::white);
-	painter.setPen(penBorder);
-	painter.drawEllipse(userSamplingPenX - userSamplingPenSize / 2, userSamplingPenY - userSamplingPenSize / 2,
-			userSamplingPenSize, userSamplingPenSize);
-	painter.drawLine(userSamplingPenX - userSamplingPenSize / 4, userSamplingPenY,
-			userSamplingPenX + userSamplingPenSize / 4, userSamplingPenY);
-	if (userSamplingAddictivePen) {
-		painter.drawLine(userSamplingPenX, userSamplingPenY - userSamplingPenSize / 4,
-				userSamplingPenX, userSamplingPenY + userSamplingPenSize / 4);
-	}
-
-	// Draw pen border
-	QPen pen;
-	pen.setWidth(2);
-	pen.setBrush(Qt::black);
-	painter.setPen(pen);
-	painter.drawEllipse(userSamplingPenX - userSamplingPenSize / 2, userSamplingPenY - userSamplingPenSize / 2,
-			userSamplingPenSize, userSamplingPenSize);
-	painter.drawLine(userSamplingPenX - userSamplingPenSize / 4, userSamplingPenY,
-			userSamplingPenX + userSamplingPenSize / 4, userSamplingPenY);
-	if (userSamplingAddictivePen) {
-		painter.drawLine(userSamplingPenX, userSamplingPenY - userSamplingPenSize / 4,
-				userSamplingPenX, userSamplingPenY + userSamplingPenSize / 4);
-	}
-	
 	userSamplingPixmap->setPixmap(QPixmap::fromImage(samplingMapImage));
 }
 
@@ -308,8 +328,8 @@ void RenderView::wheelEvent (QWheelEvent* event) {
 }
 
 void RenderView::drawPenOnUserSamplingMap(const int xPos, const int yPos) {
-	for (uint y = 0; y <= userSamplingPenSize; ++y) {
-		for (uint x = 0; x <= userSamplingPenSize; ++x) {
+	for (int y = 0; y <= userSamplingPenSize; ++y) {
+		for (int x = 0; x <= userSamplingPenSize; ++x) {
 			// Check if the point is inside the circle
 			const float cx = 2.f * x / userSamplingPenSize - 1.f;
 			const float cy = 2.f * y / userSamplingPenSize - 1.f;
@@ -326,7 +346,7 @@ void RenderView::drawPenOnUserSamplingMap(const int xPos, const int yPos) {
 					const float value = userSamplingMap[px + py * xRes];
 
 					// The * .5 is used to have a spray-like effect
-					if (userSamplingAddictivePen)
+					if (userSamplingAddPenType)
 						userSamplingMap[px + py * xRes] = Clamp(value + (1.f - dist) * .05f, .1f, 1.f);
 					else
 						userSamplingMap[px + py * xRes] = Clamp(value + (dist - 1.f) * .05f, .1f, 1.f);
@@ -346,8 +366,8 @@ void RenderView::mousePressEvent (QMouseEvent *event) {
 					userSamplingPenX = pos.x();
 					userSamplingPenY = pos.y();
 
-					drawPenOnUserSamplingMap(userSamplingPenX, userSamplingPenY);
-					updateUserSamplingPixmap();
+					penItemGroup->setPos(userSamplingPenX - userSamplingPenSize / 2,
+							userSamplingPenY - userSamplingPenSize / 2);
 				}
 				break;
 			case Qt::MidButton:
@@ -401,6 +421,8 @@ void RenderView::mouseMoveEvent (QMouseEvent *event) {
 		if ((userSamplingPenX != x) || (userSamplingPenY != y)) {
 			userSamplingPenX = x;
 			userSamplingPenY = y;
+			penItemGroup->setPos(userSamplingPenX - userSamplingPenSize / 2,
+					userSamplingPenY - userSamplingPenSize / 2);
 
 			drawPenOnUserSamplingMap(userSamplingPenX, userSamplingPenY);
 			updateUserSamplingPixmap();

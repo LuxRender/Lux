@@ -50,8 +50,8 @@ public:
 	void setShowAlpha (bool value = true) { showAlpha = value; }
 	void setShowUserSamplingMap(bool value = true);
 
-	void setUserSamplingPen(const bool addictive);
-	void setUserSamplingPensize(const uint size);
+	void setUserSamplingPen(const bool addType);
+	void setUserSamplingPenSize(const int size);
 
 	void applyUserSampling();
 	void undoUserSampling();
@@ -81,11 +81,15 @@ private:
 	// For user driven sampling
 	float *userSamplingMap;
 	QGraphicsPixmapItem *userSamplingPixmap;
-	bool userSamplingAddictivePen;
+	QGraphicsItemGroup *penItemGroup;
+	bool userSamplingAddPenType;
 	bool userSamplingPenPressed;
 	int userSamplingPenX, userSamplingPenY;
-	uint userSamplingPenSize;
+	int userSamplingPenSize;
 	
+
+	void addUserSamplingPen();
+	void removeUserSamplingPen();
 
 	void updateUserSamplingPixmap();
 	void drawPenOnUserSamplingMap(const int x, const int y);

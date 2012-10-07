@@ -1333,19 +1333,19 @@ void MainWindow::userSamplingSubPen() {
 }
 
 void MainWindow::userSamplingSetPenSize10px() {
-	renderView->setUserSamplingPensize(10);
+	renderView->setUserSamplingPenSize(10);
 }
 
 void MainWindow::userSamplingSetPenSize50px() {
-	renderView->setUserSamplingPensize(50);
+	renderView->setUserSamplingPenSize(50);
 }
 
 void MainWindow::userSamplingSetPenSize100px() {
-	renderView->setUserSamplingPensize(100);
+	renderView->setUserSamplingPenSize(100);
 }
 
 void MainWindow::userSamplingSetPenSize500px() {
-	renderView->setUserSamplingPensize(500);
+	renderView->setUserSamplingPenSize(500);
 }
 
 void MainWindow::userSamplingApply() {
