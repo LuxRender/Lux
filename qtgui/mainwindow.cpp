@@ -314,6 +314,7 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	connect(ui->button_usResetButton, SIGNAL(clicked()), this, SLOT(userSamplingReset()));
 	connect(ui->slider_usPenSize, SIGNAL(valueChanged(int)), this, SLOT(userSamplingPenSize(int)));
 	connect(ui->slider_usOpacity, SIGNAL(valueChanged(int)), this, SLOT(userSamplingMapOpacity(int)));
+	connect(ui->slider_usPenStrength, SIGNAL(valueChanged(int)), this, SLOT(userSamplingPenStrength(int)));
 
 	// Render threads
 	connect(ui->spinBox_Threads, SIGNAL(valueChanged(int)), this, SLOT(ThreadChanged(int)));
@@ -1331,11 +1332,15 @@ void MainWindow::userSamplingSubPen() {
 }
 
 void MainWindow::userSamplingPenSize(int size) {
-        renderView->setUserSamplingPenSize(size);
+	renderView->setUserSamplingPenSize(size);
+}
+
+void MainWindow::userSamplingPenStrength(int s) {
+	renderView->setUserSamplingPenSprayIntensity(s / 100.f);
 }
 
 void MainWindow::userSamplingMapOpacity(int size) {
-        renderView->setUserSamplingMapOpacity(size / 100.f);
+	renderView->setUserSamplingMapOpacity(size / 100.f);
 }
 
 void MainWindow::userSamplingApply() {

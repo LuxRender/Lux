@@ -54,6 +54,7 @@ RenderView::RenderView(QWidget *parent) : QGraphicsView(parent) {
 	userSamplingPenX = 0;
 	userSamplingPenY = 0;
 	userSamplingPenSize = 50;
+	userSamplingPenSprayIntensity = .1f;
 	userSamplingMapOpacity = .5f;
 	penItemGroup = NULL;
 }
@@ -219,6 +220,10 @@ void  RenderView::setUserSamplingPenSize(const int size) {
 	updateUserSamplingPixmap();
 }
 
+void RenderView::setUserSamplingPenSprayIntensity(const float i) {
+	userSamplingPenSprayIntensity = std::max(0.01f, min(1.f, i));
+}
+
 void RenderView::setUserSamplingMapOpacity(const float v) {
 	userSamplingMapOpacity = std::max(0.f, min(1.f, v));
 	updateUserSamplingPixmap();
@@ -379,10 +384,13 @@ void RenderView::drawPenOnUserSamplingMap(const int xPos, const int yPos) {
 					const float value = userSamplingMap[px + py * xRes];
 
 					// The * .5 is used to have a spray-like effect
-					if (userSamplingAddPenType)
-						userSamplingMap[px + py * xRes] = Clamp(value + (1.f - dist) * .05f, .1f, 1.f);
-					else
-						userSamplingMap[px + py * xRes] = Clamp(value + (dist - 1.f) * .05f, .1f, 1.f);
+					if (userSamplingAddPenType) {
+						userSamplingMap[px + py * xRes] = Clamp(
+								value + (1.f - dist) * userSamplingPenSprayIntensity, .1f, 1.f);
+					} else {
+						userSamplingMap[px + py * xRes] = Clamp(
+								value + (dist - 1.f) * userSamplingPenSprayIntensity, .1f, 1.f);
+					}
 				}
 			}
 		}
