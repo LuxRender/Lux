@@ -79,6 +79,7 @@ void RenderView::addUserSamplingPen() {
 	QPen penBorder;
 	penBorder.setWidth(4);
 	penBorder.setBrush(Qt::white);
+	setRenderHint(QPainter::Antialiasing, true);
 	penItemList.append(renderscene->addEllipse(0, 0,
 			userSamplingPenSize, userSamplingPenSize, penBorder));
 	penItemList.append(renderscene->addLine(userSamplingPenSize / 4, userSamplingPenSize / 2,
