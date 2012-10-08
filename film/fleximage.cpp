@@ -1544,7 +1544,8 @@ void FlexImageFilm::ConvUpdateThreadImpl(FlexImageFilm *film) {
 					film->GenerateNoiseAwareMap();
 					lastCheckNoiseAwarwSamplesCount = totalSamplesCount;
 					noiseAwareStep *= 2.0;
-					LOG(LUX_DEBUG, LUX_NOERROR) << "Noise aware map next step update: " << noiseAwareStep << "spp";
+					LOG(LUX_DEBUG, LUX_NOERROR) << "Noise aware map next step update: " <<
+							totalSamplesCount / nPix + noiseAwareStep << "spp (delta: " << noiseAwareStep << "spp)";
 				}
 			}
 		}
