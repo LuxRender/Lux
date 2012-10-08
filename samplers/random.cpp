@@ -103,11 +103,8 @@ bool RandomSampler::GetNextSample(Sample *sample)
 			sample->imageX = uv[0] * (xPixelEnd - xPixelStart) + xPixelStart;
 			sample->imageY = uv[1] * (yPixelEnd - yPixelStart) + yPixelStart;
 
-			if (film->enoughSamplesPerPixel) {
-				// Dade - pixelSampler->renderingDone is shared among all rendering threads
-				pixelSampler->renderingDone = true;
+			if (film->enoughSamplesPerPixel)
 				haveMoreSamples = false;
-			}
 		} else {
 			// Maps aren't yet ready, use pixel sampler
 
