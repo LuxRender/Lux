@@ -1359,12 +1359,15 @@ void Context::UpdateLogFromNetwork() {
 	renderFarm->updateLog();
 }
 
-void Context::SetUserSamplingMap(const float *map)
-{
+void Context::SetUserSamplingMap(const float *map) {
 	luxCurrentScene->camera->film->SetUserSamplingMap(map);
+
+	// Transmit the new map to the slaves
+	renderFarm->updateUserSamplingMap(luxCurrentScene->camera->film->GetXPixelCount() *
+		luxCurrentScene->camera->film->GetYPixelCount(), map);
+	
 }
 
-float *Context::GetUserSamplingMap()
-{
+float *Context::GetUserSamplingMap() {
 	return luxCurrentScene->camera->film->GetUserSamplingMap();
 }
