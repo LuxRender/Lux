@@ -64,7 +64,7 @@ public:
 
 	MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
 		u_int maxRej, float largeProb, float rng,
-		bool useV, bool useC, bool useConv);
+		bool useV, bool useC, bool useNoise);
 	virtual ~MetropolisSampler();
 
 	virtual void InitSample(Sample *sample) const {
