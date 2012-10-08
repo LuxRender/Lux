@@ -441,6 +441,7 @@ public slots:
 	void userSamplingAddPen();
 	void userSamplingSubPen();
 	void userSamplingPenSize(int size);
+	void userSamplingMapOpacity(int size);
 	void userSamplingApply();
 	void userSamplingUndo();
 	void userSamplingReset();

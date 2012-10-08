@@ -52,6 +52,7 @@ public:
 
 	void setUserSamplingPen(const bool addType);
 	void setUserSamplingPenSize(const int size);
+	void setUserSamplingMapOpacity(const float v);
 
 	void applyUserSampling();
 	void undoUserSampling();
@@ -87,6 +88,7 @@ private:
 	bool userSamplingPenPressed;
 	int userSamplingPenX, userSamplingPenY;
 	int userSamplingPenSize;
+	float userSamplingMapOpacity;
 	
 
 	void addUserSamplingPen();

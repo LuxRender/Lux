@@ -54,6 +54,7 @@ RenderView::RenderView(QWidget *parent) : QGraphicsView(parent) {
 	userSamplingPenX = 0;
 	userSamplingPenY = 0;
 	userSamplingPenSize = 50;
+	userSamplingMapOpacity = .5f;
 	penItemGroup = NULL;
 }
 
@@ -218,6 +219,11 @@ void  RenderView::setUserSamplingPenSize(const int size) {
 	updateUserSamplingPixmap();
 }
 
+void RenderView::setUserSamplingMapOpacity(const float v) {
+	userSamplingMapOpacity = std::max(0.f, min(1.f, v));
+	updateUserSamplingPixmap();
+}
+
 void  RenderView::applyUserSampling() {
 	luxSetUserSamplingMap(userSamplingMap);
 }
@@ -283,7 +289,7 @@ void RenderView::updateUserSamplingPixmap(int xStart, int yStart, int xSize, int
 	for (int y = yStart; y <= yEnd; y++) {
 		QRgb *scanline = reinterpret_cast<QRgb*>(userSamplingMapImage->scanLine(y));
 		for (int x = xStart; x <= xEnd; x++) {
-			const float value = userSamplingMap[x + y * width] * .5f + .25f;
+			const float value = userSamplingMap[x + y * width] * .5f + userSamplingMapOpacity * .5f;
 			const int fba = static_cast<int>(min(max(255.f * value, 0.f), 255.f));
 			scanline[x] = qRgba(255, 255, 255, fba);
 		}
