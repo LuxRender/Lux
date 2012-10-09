@@ -980,7 +980,7 @@ void RenderFarm::updateLog() {
 	reconnectFailed();
 }
 
-void RenderFarm::updateUserSamplingMap(const uint size, const float *map) {
+void RenderFarm::updateUserSamplingMap(const u_int size, const float *map) {
 	// Using the mutex in order to not allow server disconnection while
 	// I'm downloading a film
 	boost::mutex::scoped_lock lock(serverListMutex);
@@ -1010,7 +1010,7 @@ void RenderFarm::updateUserSamplingMap(const uint size, const float *map) {
 			stream << serverInfoList[i].sid << endl;
 
 			osWriteLittleEndianUInt(isLittleEndian, stream, size);
-			for (uint j = 0; j < size; ++j)
+			for (u_int j = 0; j < size; ++j)
 				osWriteLittleEndianFloat(isLittleEndian, stream, map[j]);
 			stream.close();
 
