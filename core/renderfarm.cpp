@@ -59,6 +59,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/thread/xtime.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/filesystem.hpp>
 
 using namespace boost::iostreams;
 using namespace boost::posix_time;
@@ -1075,7 +1076,9 @@ void RenderFarm::send(const string &command, const string &name,
 			//send the files
 			string file;
 			file = params.FindOneString(paramName, "");
-			if (file == "" || FileData::present(params, paramName))
+			// usersamplingmap_filename can be ignored if the file doesn't exist
+			if (file == "" || FileData::present(params, paramName) ||
+					((paramName == "usersamplingmap_filename") && !boost::filesystem::exists(file)))
 				continue;
 
 			// silent replacement, since relevant plugin will report replacement
