@@ -453,8 +453,6 @@ ELSE(APPLE)
 	INSTALL(TARGETS luxShared DESTINATION lib${LIB_SUFFIX})
 
 	#Install Desktop files
-	INSTALL(FILES ${CMAKE_SOURCE_DIR}/wxgui/luxrender.svg DESTINATION share/pixmaps/)
-	INSTALL(FILES ${CMAKE_SOURCE_DIR}/wxgui/luxrender.desktop DESTINATION share/applications/)
 
 	#Source package target
 	ADD_CUSTOM_TARGET(package mkdir lux-${VERSION}
