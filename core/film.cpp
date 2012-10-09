@@ -32,6 +32,7 @@
 #include "blackbodyspd.h"
 #include "osfunc.h"
 #include "streamio.h"
+#include "exrio.h"
 
 #include <iostream>
 #include <fstream>
@@ -79,6 +80,7 @@
 #define cimg_plugin "greycstoration.h"
 
 #include "cimg.h"
+#include "imagereader.h"
 using namespace cimg_library;
 #if cimg_OS!=2
 #include <pthread.h>
@@ -723,7 +725,7 @@ Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop
 		   const string &filename1, bool premult, bool useZbuffer,
 		   bool w_resume_FLM, bool restart_resume_FLM, bool write_FLM_direct,
 		   int haltspp, int halttime, float haltthreshold,
-		   bool debugmode, int outlierk, int tilec) :
+		   bool debugmode, int outlierk, int tilec, const string &samplingmapfilename) :
 	Queryable("film"),
 	xResolution(xres), yResolution(yres),
 	EV(0.f), averageLuminance(0.f),
@@ -733,7 +735,7 @@ Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop
 	colorSpace(0.63f, 0.34f, 0.31f, 0.595f, 0.155f, 0.07f, 0.314275f, 0.329411f), // default is SMPTE
 	convTest(NULL), varianceBuffer(NULL),
 	noiseAwareMap(NULL), noiseAwareMapVersion(0),
-	userSamplingMap(NULL), userSamplingMapVersion(0),
+	userSamplingMapFileName(samplingmapfilename), userSamplingMap(NULL), userSamplingMapVersion(0),
 	ZBuffer(NULL), use_Zbuf(useZbuffer),
 	debug_mode(debugmode), premultiplyAlpha(premult),
 	writeResumeFlm(w_resume_FLM), restartResumeFlm(restart_resume_FLM), writeFlmDirect(write_FLM_direct),
@@ -820,6 +822,44 @@ Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop
 		tileborder_outliers.resize(2 * tileCount);
 		for (size_t i = 0; i < tileborder_outliers.size(); ++i)
 			tileborder_outliers[i].resize(outliers_width);
+	}
+
+	//--------------------------------------------------------------------------
+	// Check if there is a user sampling map to load
+	//--------------------------------------------------------------------------
+
+	if (userSamplingMapFileName != "") {
+		if (boost::filesystem::exists(userSamplingMapFileName)) {
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Loading user sampling map from file: " << userSamplingMapFileName;
+
+			ImageData *imgData = ReadImage(userSamplingMapFileName);
+			bool validImageData = true;
+			if ((imgData->getWidth() != xPixelCount) || (imgData->getHeight() != yPixelCount)) {
+				LOG(LUX_WARNING, LUX_BADFILE) << "User sampling map size doesn't match Film size";
+				validImageData = false;
+			}
+			
+			if (imgData->getChannels() != 1) {
+				LOG(LUX_WARNING, LUX_BADFILE) << "User sampling map must be a single channel image";
+				validImageData = false;
+			}
+
+			if (imgData->getPixelDataType() != ImageData::FLOAT_TYPE) {
+				LOG(LUX_WARNING, LUX_BADFILE) << "User sampling map must be an image with float data";
+				validImageData = false;
+			}
+			
+			if (validImageData)
+				SetUserSamplingMap((float *)imgData->getData());	
+			else {
+				// Ignore the map and avoid to overwrite the file
+				userSamplingMapFileName = "";
+			}
+
+			delete imgData;
+		} else {
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Setting user sampling map to file: " << userSamplingMapFileName;
+		}
 	}
 }
 
@@ -2681,6 +2721,13 @@ void Film::SetUserSamplingMap(const float *map) {
 	userSamplingDistribution2D.reset(new Distribution2D(userSamplingMap.get(), xPixelCount, yPixelCount));
 
 	UpdateSamplingMap();
+
+	// Check if I have to write the new map to the file
+	if (userSamplingMapFileName != "") {
+		// Write a single channel EXR file
+		LOG(LUX_DEBUG, LUX_NOERROR) << "Saving user sampling map to file: " << userSamplingMapFileName;
+		WriteOpenEXRImage(userSamplingMapFileName, xPixelCount, yPixelCount, map);
+	}
 }
 
 void Film::UpdateSamplingMap() {	

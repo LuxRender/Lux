@@ -604,7 +604,8 @@ public:
 	Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop[4],
 		const string &filename1, bool premult, bool useZbuffer,
 		bool w_resume_FLM, bool restart_resume_FLM, bool write_FLM_direct,
-		int haltspp, int halttime, float haltthreshold, bool debugmode, int outlierk, int tilecount);
+		int haltspp, int halttime, float haltthreshold, bool debugmode, int outlierk,
+		int tilecount, const string &samplingmapfilename);
 
 	virtual ~Film();
 
@@ -786,6 +787,7 @@ protected: // Put it here for better data alignment
 	boost::shared_ptr<Distribution2D> noiseAwareDistribution2D;
 
 	// May be enabled by the user
+	string userSamplingMapFileName;
 	boost::shared_array<float> userSamplingMap;
 	u_int userSamplingMapVersion;
 	boost::shared_ptr<Distribution2D> userSamplingDistribution2D;

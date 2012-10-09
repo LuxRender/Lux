@@ -59,9 +59,9 @@ FlexImageFilm::FlexImageFilm(u_int xres, u_int yres, Filter *filt, u_int filtRes
 	float p_ReinhardBurn, float p_LinearSensitivity, float p_LinearExposure, float p_LinearFStop, float p_LinearGamma,
 	float p_ContrastYwa, const string &p_response, float p_Gamma,
 	const float cs_red[2], const float cs_green[2], const float cs_blue[2], const float whitepoint[2],
-	bool debugmode, int outlierk, int tilec, const double convstep) :
+	bool debugmode, int outlierk, int tilec, const double convstep, const string &samplingmapfilename) :
 	Film(xres, yres, filt, filtRes, crop, filename1, premult, cw_EXR_ZBuf || cw_PNG_ZBuf || cw_TGA_ZBuf, w_resume_FLM, 
-		restart_resume_FLM, write_FLM_direct, haltspp, halttime, haltthreshold, debugmode, outlierk, tilec), 
+		restart_resume_FLM, write_FLM_direct, haltspp, halttime, haltthreshold, debugmode, outlierk, tilec, samplingmapfilename), 
 	framebuffer(NULL), float_framebuffer(NULL), alpha_buffer(NULL), z_buffer(NULL),
 	writeInterval(wI), flmWriteInterval(fwI), displayInterval(dI), convUpdateThread(NULL), convUpdateStep(convstep)
 {
@@ -1726,6 +1726,11 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 	const float haltthreshold = params.FindOneFloat("haltthreshold", -1.f);
 	const double convUpdateStep = max(4.0, (double)params.FindOneFloat("convergencestep", 32.f));
 
+	// User sampling map
+	string samplingmapfilename = params.FindOneString("usersamplingmap_filename", "");
+	if (samplingmapfilename != "")
+		samplingmapfilename = boost::filesystem::path(samplingmapfilename).string();
+
 	// Color space primaries and white point
 	// default is SMPTE
 	float red[2] = {0.63f, 0.34f};
@@ -1777,7 +1782,7 @@ Film* FlexImageFilm::CreateFilm(const ParamSet &params, Filter *filter)
 		w_resume_FLM, restart_resume_FLM, w_FLM_direct, haltspp, halttime, haltthreshold,
 		s_TonemapKernel, s_ReinhardPreScale, s_ReinhardPostScale, s_ReinhardBurn, s_LinearSensitivity,
 		s_LinearExposure, s_LinearFStop, s_LinearGamma, s_ContrastYwa, response, s_Gamma,
-		red, green, blue, white, debug_mode, outlierrejection_k, tilecount, convUpdateStep);
+		red, green, blue, white, debug_mode, outlierrejection_k, tilecount, convUpdateStep, samplingmapfilename);
 }
 
 

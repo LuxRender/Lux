@@ -1066,6 +1066,7 @@ void RenderFarm::send(const string &command, const string &name,
 		fileParams.push_back("mapname");
 		fileParams.push_back("iesname");
 		fileParams.push_back("configfile");
+		fileParams.push_back("usersamplingmap_filename");
 		if (command != "luxFilm")
 			fileParams.push_back("filename");
 
