@@ -57,6 +57,8 @@ RenderView::RenderView(QWidget *parent) : QGraphicsView(parent) {
 	userSamplingPenSprayIntensity = .1f;
 	userSamplingMapOpacity = .5f;
 	penItemGroup = NULL;
+
+	setMouseTracking(true);
 }
 
 RenderView::~RenderView () {
@@ -77,7 +79,7 @@ void RenderView::addUserSamplingPen() {
 
 	// Draw pen border
 	QPen penBorder;
-	penBorder.setWidth(4);
+	penBorder.setWidth(3);
 	penBorder.setBrush(Qt::white);
 	setRenderHint(QPainter::Antialiasing, true);
 	penItemList.append(renderscene->addEllipse(0, 0,
@@ -90,7 +92,7 @@ void RenderView::addUserSamplingPen() {
 
 	// Draw pen
 	QPen pen;
-	pen.setWidth(2);
+	pen.setWidth(1);
 	pen.setBrush(Qt::black);
 	penItemList.append(renderscene->addEllipse(0, 0,
 			userSamplingPenSize, userSamplingPenSize, pen));
@@ -193,7 +195,7 @@ void RenderView::reload () {
 				userSamplingPixmap->show();
 			
 			setDragMode(QGraphicsView::NoDrag);
-			RenderView::setCursor(QCursor(Qt::CrossCursor));
+			RenderView::setCursor(QCursor(Qt::ClosedHandCursor));
 		} else {
 			if (userSamplingPixmap->isVisible())
 				userSamplingPixmap->hide();
@@ -455,7 +457,7 @@ void RenderView::mouseReleaseEvent (QMouseEvent *event) {
 }
 
 void RenderView::mouseMoveEvent (QMouseEvent *event) {
-	if (luxfb->isVisible() && showUserSamplingMap && userSamplingPenPressed) {
+	if (luxfb->isVisible() && showUserSamplingMap) {
 		QPointF pos = mapToScene(event->pos());
 		int x = pos.x();
 		int y = pos.y();
@@ -466,10 +468,12 @@ void RenderView::mouseMoveEvent (QMouseEvent *event) {
 			penItemGroup->setPos(userSamplingPenX - userSamplingPenSize / 2,
 					userSamplingPenY - userSamplingPenSize / 2);
 
-			drawPenOnUserSamplingMap(userSamplingPenX, userSamplingPenY);
-			updateUserSamplingPixmap(userSamplingPenX - userSamplingPenSize / 2,
-					userSamplingPenY - userSamplingPenSize / 2,
-					userSamplingPenSize, userSamplingPenSize);
+			if (userSamplingPenPressed) {
+				drawPenOnUserSamplingMap(userSamplingPenX, userSamplingPenY);
+				updateUserSamplingPixmap(userSamplingPenX - userSamplingPenSize / 2,
+						userSamplingPenY - userSamplingPenSize / 2,
+						userSamplingPenSize, userSamplingPenSize);
+			}
 		}
 	}
 
