@@ -25,6 +25,11 @@
 #define TAB_ID_NETWORK 3
 #define TAB_ID_LOG     4
 
+#define OUTPUT_TAB_ID_IMAGING		0
+#define OUTPUT_TAB_ID_LIGHTGROUP	1
+#define OUTPUT_TAB_ID_REFINE		2
+#define OUTPUT_TAB_ID_ADVANCED		3
+
 #include <cmath>
 #include <ctime>
 
@@ -179,8 +184,9 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	connect(ui->action_clearLog, SIGNAL(triggered()), this, SLOT(clearLog()));
 	connect(ui->action_fullScreen, SIGNAL(triggered()), this, SLOT(fullScreen()));
 	connect(ui->action_normalScreen, SIGNAL(triggered()), this, SLOT(normalScreen()));
-	connect(ui->action_showAlpha_view, SIGNAL(triggered(bool)), this, SLOT(showAlphaChanged(bool)));
+	connect(ui->action_showAlphaView, SIGNAL(triggered(bool)), this, SLOT(showAlphaChanged(bool)));
 	connect(ui->action_overlayStatsView, SIGNAL(triggered(bool)), this, SLOT(overlayStatsChanged(bool)));
+	connect(ui->action_showUserSamplingMapView, SIGNAL(triggered(bool)), this, SLOT(showUserSamplingMapChanged(bool)));
 	connect(ui->action_Show_Side_Panel, SIGNAL(triggered(bool)), this, SLOT(ShowSidePanel(bool)));
 
 	// Help menu slots
@@ -203,8 +209,10 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 
 	advpanes[0] = new PaneWidget(ui->advancedAreaContents, "Scene information", ":/icons/logtabicon.png");
 
-#if defined(__APPLE__)
-	ui->outputTabs->setFont(QFont  ("Lucida Grande", 11));
+#if defined(__APPLE__) // cosmetical work to have the tabs less crowded
+	ui->outputTabs->setFont(QFont  ("Lucida Grande", 10));
+	QSize iconSize(12, 12);
+	ui->outputTabs->setIconSize(iconSize);
 #endif
 
 	// Tonemap page
@@ -294,7 +302,19 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console) : QMainWindow(pare
 	// Buttons
 	connect(ui->button_imagingApply, SIGNAL(clicked()), this, SLOT(applyTonemapping()));
 	connect(ui->button_imagingReset, SIGNAL(clicked()), this, SLOT(resetToneMapping()));
+
 	connect(ui->tabs_main, SIGNAL(currentChanged(int)), this, SLOT(tabChanged(int)));
+	connect(ui->outputTabs, SIGNAL(currentChanged(int)), this, SLOT(outputTabChanged(int)));
+
+	// User driven sampling tab
+	connect(ui->button_usAddPenButton, SIGNAL(clicked()), this, SLOT(userSamplingAddPen()));
+	connect(ui->button_usSubPenButton, SIGNAL(clicked()), this, SLOT(userSamplingSubPen()));
+	connect(ui->button_usApplyButton, SIGNAL(clicked()), this, SLOT(userSamplingApply()));
+	connect(ui->button_usUndoButton, SIGNAL(clicked()), this, SLOT(userSamplingUndo()));
+	connect(ui->button_usResetButton, SIGNAL(clicked()), this, SLOT(userSamplingReset()));
+	connect(ui->slider_usPenSize, SIGNAL(valueChanged(int)), this, SLOT(userSamplingPenSize(int)));
+	connect(ui->slider_usOpacity, SIGNAL(valueChanged(int)), this, SLOT(userSamplingMapOpacity(int)));
+	connect(ui->slider_usPenStrength, SIGNAL(valueChanged(int)), this, SLOT(userSamplingPenStrength(int)));
 
 	// Render threads
 	connect(ui->spinBox_Threads, SIGNAL(valueChanged(int)), this, SLOT(ThreadChanged(int)));
@@ -1252,7 +1272,7 @@ void MainWindow::overlayStatsChanged(bool checked)
 
 void MainWindow::showAlphaChanged(bool checked)
 {
-	renderView->setshowAlpha(checked);
+	renderView->setShowAlpha(checked);
 	static const QIcon alphaicon(":/icons/clipboardicon_alpha.png");
 	static const QIcon icon(":/icons/clipboardicon.png");
 	if(checked){
@@ -1261,6 +1281,17 @@ void MainWindow::showAlphaChanged(bool checked)
 		ui->button_copyToClipboard->setIcon(icon);	
 	}
 	renderView->reload();
+}
+
+void MainWindow::showUserSamplingMapChanged(bool checked)
+{
+	renderView->setShowUserSamplingMap(checked);
+	renderView->reload();
+
+	if (checked)
+		ui->outputTabs->setCurrentIndex(OUTPUT_TAB_ID_REFINE);
+	else
+		ui->outputTabs->setCurrentIndex(OUTPUT_TAB_ID_IMAGING);
 }
 
 // Help menu slots
@@ -1290,6 +1321,38 @@ void MainWindow::applyTonemapping(bool withlayercomputation)
 	{
 		m_bTonemapPending = true;
 	}
+}
+
+void MainWindow::userSamplingAddPen() {
+	renderView->setUserSamplingPen(true);
+}
+
+void MainWindow::userSamplingSubPen() {
+	renderView->setUserSamplingPen(false);
+}
+
+void MainWindow::userSamplingPenSize(int size) {
+	renderView->setUserSamplingPenSize(size);
+}
+
+void MainWindow::userSamplingPenStrength(int s) {
+	renderView->setUserSamplingPenSprayIntensity(s / 100.f);
+}
+
+void MainWindow::userSamplingMapOpacity(int size) {
+	renderView->setUserSamplingMapOpacity(size / 100.f);
+}
+
+void MainWindow::userSamplingApply() {
+	renderView->applyUserSampling();
+}
+
+void MainWindow::userSamplingUndo() {
+	renderView->undoUserSampling();
+}
+
+void MainWindow::userSamplingReset() {
+	renderView->resetUserSampling();
 }
 
 void MainWindow::EngineThread::run()
@@ -2076,11 +2139,28 @@ void MainWindow::closeEvent(QCloseEvent *event)
 void MainWindow::tabChanged(int)
 {
 	int currentIndex = ui->tabs_main->currentIndex();
+
 	if (currentIndex == getTabIndex(TAB_ID_LOG)) {
 		blinkTrigger(false);
 		static const QIcon icon(":/icons/logtabicon.png");
 		ShowTabLogIcon(TAB_ID_LOG, icon);
 		statusMessage->setText("Checking Log acknowledged");
+	}
+}
+
+void MainWindow::outputTabChanged(int) {
+	int currentIndex = ui->outputTabs->currentIndex();
+
+	if (currentIndex == OUTPUT_TAB_ID_REFINE) {
+		// Always show the map when the refine tab is selected
+		ui->action_showUserSamplingMapView->setChecked(true);
+		renderView->setShowUserSamplingMap(true);
+		renderView->reload();
+	} else {
+		// Always hide the map when the refine tab is selected
+		ui->action_showUserSamplingMapView->setChecked(false);
+		renderView->setShowUserSamplingMap(false);
+		renderView->reload();
 	}
 }
 
@@ -2404,7 +2484,7 @@ void MainWindow::UpdateNetworkTree()
 
 	QSet<QString> connectedSlaves;
 
-	for (int i = 0; i < serverInfoList.size(); ++i) {
+	for (uint i = 0; i < serverInfoList.size(); ++i) {
 		QTableWidgetItem *status = new QTableWidgetItem(tr("Active session"));
 
 		QTableWidgetItem *servername = new QTableWidgetItem(QString::fromUtf8(serverInfoList[i].name));

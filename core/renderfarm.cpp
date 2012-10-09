@@ -980,6 +980,58 @@ void RenderFarm::updateLog() {
 	reconnectFailed();
 }
 
+void RenderFarm::updateUserSamplingMap(const uint size, const float *map) {
+	// Using the mutex in order to not allow server disconnection while
+	// I'm downloading a film
+	boost::mutex::scoped_lock lock(serverListMutex);
+
+	// first try to reconnect to failed servers which may be up now
+	reconnectFailed();
+
+	for (size_t i = 0; i < serverInfoList.size(); i++) {
+		if (!serverInfoList[i].active)
+			// skip servers which are still down
+			continue;
+
+		try {
+			LOG( LUX_DEBUG,LUX_NOERROR) << "Sending user map sampling to: " <<
+					serverInfoList[i].name << ":" << serverInfoList[i].port;
+
+			// Connect to the server
+			tcp::iostream stream;
+			stream.exceptions(tcp::iostream::failbit | tcp::iostream::badbit);
+
+			stream.connect(serverInfoList[i].name, serverInfoList[i].port);
+
+			LOG( LUX_DEBUG,LUX_NOERROR) << "Connected to: " << stream.rdbuf()->remote_endpoint();
+
+			// Send the command to update the map
+			stream << "luxSetUserSamplingMap" << endl;
+			stream << serverInfoList[i].sid << endl;
+
+			osWriteLittleEndianUInt(isLittleEndian, stream, size);
+			for (uint j = 0; j < size; ++j)
+				osWriteLittleEndianFloat(isLittleEndian, stream, map[j]);
+			stream.close();
+
+			serverInfoList[i].timeLastContact = second_clock::local_time();
+		} catch (string s) {
+			LOG(LUX_ERROR,LUX_SYSTEM)<< s.c_str();
+			// Mark as failed (inactive)
+			serverInfoList[i].active = false;
+		} catch (std::exception& e) {
+			LOG( LUX_ERROR,LUX_SYSTEM) << "Error while communicating with server: " <<
+					serverInfoList[i].name << ":" << serverInfoList[i].port << " ( " << e.what() << ")";
+			LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
+			// Mark as failed (inactive)
+			serverInfoList[i].active = false;
+		}
+	}
+
+	// attempt to reconnect
+	reconnectFailed();
+}
+
 // to catch the interrupted exception
 static void flush_thread_func(RenderFarm *renderFarm) {
 	try {

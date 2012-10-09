@@ -39,9 +39,15 @@ public:
 		int xPos, yPos;
 		u_int samplePos, nxD;
 		float **xD;
+
+		boost::shared_array<float> samplingMap;		
+		u_int noiseAwareMapVersion;
+		u_int userSamplingMapVersion;
+		boost::shared_ptr<Distribution2D> samplingDistribution2D;
+
 	};
 	RandomSampler(int xstart, int xend, int ystart, int yend,
-		u_int ps, string pixelsampler);
+		u_int ps, string pixelsampler, bool useNoise);
 	virtual ~RandomSampler();
 
 	virtual void InitSample(Sample *sample) const {
@@ -61,10 +67,10 @@ public:
 	virtual u_int RoundSize(u_int sz) const { return sz; }
 	virtual void GetBufferType(BufferType *type) {*type = BUF_TYPE_PER_PIXEL;}
 
-	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
+	static Sampler *CreateSampler(const ParamSet &params, Film *film);
 private:
 	// RandomSampler Private Data
-	bool jitterSamples;
+	bool jitterSamples, useNoiseAware;
 	u_int pixelSamples;
 	u_int totalPixels;
 	PixelSampler* pixelSampler;

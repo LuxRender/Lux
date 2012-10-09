@@ -949,6 +949,37 @@ void cmd_luxRenderer(bool isLittleEndian, NetworkRenderServerThread *serverThrea
 //case CMD_LUXRENDERER:
 	processCommand(isLittleEndian, &Context::Renderer, tmpFileList, stream);
 }
+void cmd_luxSetUserSamplingMap(bool isLittleEndian, NetworkRenderServerThread *serverThread, tcp::iostream& stream, vector<string> &tmpFileList) {
+//case CMD_LUXSETUSERSAMPLINGMAP:
+	if (serverThread->renderServer->getServerState() == RenderServer::BUSY) {
+		if (!serverThread->renderServer->validateAccess(stream)) {
+			LOG( LUX_ERROR,LUX_SYSTEM)<< "Unknown session ID";
+			stream.close();
+			return;
+		}
+
+		LOG( LUX_DEBUG,LUX_NOERROR)<< "Receiving user sampling map";
+
+		{
+			u_int size = osReadLittleEndianUInt(isLittleEndian, stream);
+
+			vector<float> map(size);
+			for (uint i = 0; i < size; ++i)
+				map[i] = osReadLittleEndianFloat(isLittleEndian, stream);
+			if (!stream.good()) {
+				LOG( LUX_DEBUG,LUX_NOERROR)<< "Error while receiving user sampling map";
+			} else
+				Context::GetActive()->SetUserSamplingMap(&map[0]);
+
+			stream.close();
+		}
+
+		LOG( LUX_DEBUG,LUX_NOERROR)<< "Finished receiving user sampling map";
+	} else {
+		LOG( LUX_ERROR,LUX_SYSTEM)<< "Received a SetUserSamplingMap command after a ServerDisconnect";
+		stream.close();
+	}
+}
 
 // Dade - TODO: support signals
 void NetworkRenderServerThread::run(int ipversion, NetworkRenderServerThread *serverThread)
@@ -1024,6 +1055,7 @@ void NetworkRenderServerThread::run(int ipversion, NetworkRenderServerThread *se
 	INSERT_CMD(luxGetLog);
 	INSERT_CMD(luxSetEpsilon);
 	INSERT_CMD(luxRenderer);
+	INSERT_CMD(luxSetUserSamplingMap);
 
 	#undef INSERT_CMD
 

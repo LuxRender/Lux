@@ -29,10 +29,14 @@
 #include "memory.h"
 #include "queryable.h"
 #include "bsh.h"
+#include "luxrays/utils/convtest/convtest.h"
+#include "mcdistribution.h"
 
 #include <boost/serialization/split_member.hpp>
+#include <boost/thread.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/xtime.hpp>
+#include <boost/shared_array.hpp>
 
 namespace lux {
 
@@ -99,7 +103,6 @@ struct FloatPixel {
 	FloatPixel(): V(0.f), weightSum(0.f) { }
 	float V, weightSum;
 };
-
 
 class Buffer {
 public:
@@ -423,7 +426,69 @@ private:
 	boost::mutex m_mutex;
 };
 
-// SamplePoint
+//------------------------------------------------------------------------------
+// Used to compute variance
+//------------------------------------------------------------------------------
+
+struct VariancePixel {
+	VariancePixel() : Sn(0.f), mean(0.f), weightSum(0.f) { }
+
+	float Sn, mean, weightSum;
+};
+
+class VarianceBuffer {
+public:
+	VarianceBuffer(u_int x, u_int y) : pixels(x, y) {
+	}
+
+	~VarianceBuffer() { }
+
+	void Add(u_int x, u_int y, XYZColor L, float wt) {
+		if (wt == 0.f)
+			return;
+
+		VariancePixel &pixel = pixels(x, y);
+
+		const float v = L.Y();
+		const float newWeightSum = pixel.weightSum + wt;
+
+		// Incremental computation of weighted mean:
+		// mean_n = mean_n-1 + (weight_n / weightSum_n)(x_n − mean_n−1 )
+		const float newMean = pixel.mean + (wt / newWeightSum) * (v - pixel.mean);
+
+		// Incremental computation of weighted variance:
+		//  S_n = S_n−1 + weight_n (x_n − mean_n−1)(x_n − mean_n)
+		//  Var = S_n / weightSum_n
+		const float newSn = pixel.Sn + wt * (v - pixel.mean) * (v - newMean);
+
+		pixel.Sn = newSn;
+		pixel.mean = newMean;
+		pixel.weightSum = newWeightSum;
+	}
+
+	void Clear() {
+		for (u_int y = 0; y < pixels.vSize(); ++y) {
+			for (u_int x = 0; x < pixels.uSize(); ++x) {
+				VariancePixel &pixel = pixels(x, y);
+				pixel.Sn = 0.f;
+				pixel.mean = 0.f;
+				pixel.weightSum = 0.f;
+			}
+		}
+	}
+
+	float GetVariance(u_int x, u_int y) const {
+		const VariancePixel &pixel = pixels(x, y);
+
+		// Var = S_n / weightSum_n
+		if (pixel.weightSum > 0.f)
+			return fabs(pixel.Sn / pixel.weightSum);
+		else
+			return -1.f; // -1 means a pixel that have yet to be sampled
+	}
+
+	BlockedArray<VariancePixel> pixels;
+};
 
 //------------------------------------------------------------------------------
 // Filter Look Up Table
@@ -539,7 +604,7 @@ public:
 	Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop[4],
 		const string &filename1, bool premult, bool useZbuffer,
 		bool w_resume_FLM, bool restart_resume_FLM, bool write_FLM_direct,
-		int haltspp, int halttime, bool debugmode, int outlierk, int tilecount);
+		int haltspp, int halttime, float haltthreshold, bool debugmode, int outlierk, int tilecount);
 
 	virtual ~Film();
 
@@ -555,7 +620,8 @@ public:
 	 * @param num_contribs Number of contributions in the contribs array
 	 * @param tileIndex Index of the tile the contributions should be added to
 	 */
-	virtual void AddTileSamples(const Contribution* const contribs, u_int num_contribs, u_int tileIndex);
+	virtual void AddTileSamples(const Contribution* const contribs, u_int num_contribs,
+		u_int tileIndex);
 	virtual void SetSample(const Contribution *contrib);
 	virtual void AddSampleCount(float count);
 	virtual void SaveEXR(const string &exrFilename, bool useHalfFloats, bool includeZBuf, int compressionType, bool tonemapped) {
@@ -623,6 +689,21 @@ public:
 	virtual void SetStringParameterValue(luxComponentParameters param, const string& value, u_int index) = 0;
 	virtual string GetStringParameterValue(luxComponentParameters param, u_int index) = 0;
 
+	virtual void EnableNoiseAwareMap();
+	virtual const bool GetNoiseAwareMap(u_int &version, boost::shared_array<float> &map,
+		boost::shared_ptr<Distribution2D> &distrib);
+	// Using a check on userSamplingMapVersion in order to avoid the usage of userSamplingMapMutex
+	virtual const bool HasUserSamplingMap() const { return (userSamplingMapVersion > 0); }
+	virtual const bool GetUserSamplingMap(u_int &version, boost::shared_array<float> &map,
+		boost::shared_ptr<Distribution2D> &distrib);
+	// NOTE: returns a copy of the map, it is up to the caller to free the allocated memory !
+	virtual float *GetUserSamplingMap();
+	virtual void SetUserSamplingMap(const float *map);
+
+	// Return noise-aware map * user sampling map
+	virtual const bool GetSamplingMap(u_int &naMapVersion, u_int &usMapVersion,
+		boost::shared_array<float> &map, boost::shared_ptr<Distribution2D> &distrib);
+
 	/*
 	 * Accessor for samplePerPass
 	 * It is only used by SPPM and may disappears once the Buffer API allows for
@@ -641,6 +722,9 @@ protected:
 	void RejectTileOutliers(const Contribution &contrib, u_int tileIndex, int yTilePixelStart, int yTilePixelEnd);
 	// Gets the extents of a tile, interval is [start, end).
 	void GetTileExtent(u_int tileIndex, int *xstart, int *xend, int *ystart, int *yend) const;
+	void UpdateSamplingMap();
+	void UpdateConvergenceInfo(const float *frameBuffer);
+	void GenerateNoiseAwareMap();
 
 public:
 	// Film Public Data
@@ -688,6 +772,29 @@ protected: // Put it here for better data alignment
 
 	std::vector<BufferConfig> bufferConfigs;
 	std::vector<BufferGroup> bufferGroups;
+
+	// Enabled by haltthreshold
+	luxrays::utils::ConvergenceTest *convTest;
+
+	// May be enabled by the sampler
+	VarianceBuffer *varianceBuffer; // Used to build the noise map
+	// Using boost::shared_array in order to have a garbage collector-like
+	// behavior (i.e. the map is really de-allocated only when all reference are
+	// gone)
+	boost::shared_array<float> noiseAwareMap;
+	u_int noiseAwareMapVersion;
+	boost::shared_ptr<Distribution2D> noiseAwareDistribution2D;
+
+	// May be enabled by the user
+	boost::shared_array<float> userSamplingMap;
+	u_int userSamplingMapVersion;
+	boost::shared_ptr<Distribution2D> userSamplingDistribution2D;
+	
+	// Noise-aware map * user sampling map
+	boost::shared_array<float> samplingMap;
+	boost::shared_ptr<Distribution2D> samplingDistribution2D;
+	boost::mutex samplingMapMutex;
+
 	PerPixelNormalizedFloatBuffer *ZBuffer;
 	bool use_Zbuf;
 
@@ -713,6 +820,9 @@ public:
 	int haltSamplesPerPixel;
 	// Seconds to wait before to stop. Any value <= 0 will never stop the rendering
 	int haltTime;
+	// Convergence threshold to reach before to stop the rendering
+	float haltThreshold;
+	float haltThresholdComplete;
 
 	Histogram *histogram;
 	bool enoughSamplesPerPixel; // At the end to get better data alignment

@@ -326,6 +326,12 @@ public:
 			}
 		}
 	}
+	void Fill(const T d) {
+		for (size_t v = 0; v < vRes; ++v) {
+			for (size_t u = 0; u < uRes; ++u)
+				(*this)(u, v) = d;
+		}
+	}
 	size_t BlockSize() const { return 1 << logBlockSize; }
 	size_t RoundUp(size_t x) const {
 		return (x + BlockSize() - 1) & ~(BlockSize() - 1);

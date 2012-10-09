@@ -71,6 +71,7 @@ public:
 		std::string getElapsedTime();
 		std::string getRemainingTime();
 		std::string getHaltTime();
+		std::string getHaltThreshold();
 	};
 
 	class FormattedShort;	// Forward declaration
@@ -85,6 +86,7 @@ public:
 
 		std::string getPercentComplete();
 		std::string getPercentHaltTimeComplete();
+		std::string getPercentHaltThresholdComplete();
 
 		virtual std::string getEfficiency();
 		virtual std::string getEfficiencyWindow();
@@ -105,6 +107,7 @@ public:
 		virtual std::string getRecommendedStringTemplate();
 
 		std::string getPercentHaltTimeComplete();
+		std::string getPercentHaltThresholdComplete();
 
 		virtual std::string getEfficiency();
 		virtual std::string getEfficiencyWindow();
@@ -124,6 +127,8 @@ protected:
 	double getElapsedTime() { return elapsedTime(); }
 	double getHaltTime();
 	double getPercentHaltTimeComplete();
+	double getHaltThreshold();
+	double getPercentHaltThresholdComplete();
 	u_int getSlaveNodeCount();
 
 	// These methods must be overridden for renderers

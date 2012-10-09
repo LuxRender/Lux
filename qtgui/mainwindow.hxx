@@ -438,6 +438,14 @@ public slots:
 	void resetToneMapping ();
 	void indicateActivity (bool active = true);
 	void setVerbosity(int choice);
+	void userSamplingAddPen();
+	void userSamplingSubPen();
+	void userSamplingPenSize(int size);
+	void userSamplingPenStrength(int size);
+	void userSamplingMapOpacity(int size);
+	void userSamplingApply();
+	void userSamplingUndo();
+	void userSamplingReset();
 
 private slots:
 
@@ -460,11 +468,13 @@ private slots:
 	void copyLog ();
 	void clearLog ();
 	void tabChanged (int);
+	void outputTabChanged (int);
 	void viewportChanged ();
 	void fullScreen ();
 	void normalScreen ();
 	void showAlphaChanged (bool);
 	void overlayStatsChanged (bool);
+	void showUserSamplingMapChanged (bool);
 	void aboutDialog ();
 	void openDocumentation ();
 	void openForums ();

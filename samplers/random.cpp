@@ -29,7 +29,8 @@
 using namespace lux;
 
 RandomSampler::RandomData::RandomData(const Sampler &sampler, int xPixelStart,
-	int yPixelStart, u_int pixelSamples)
+	int yPixelStart, u_int pixelSamples) :
+	samplingMap(NULL), noiseAwareMapVersion(0), userSamplingMapVersion(0)
 {
 	xPos = xPixelStart;
 	yPos = yPixelStart;
@@ -47,7 +48,8 @@ RandomSampler::RandomData::~RandomData()
 }
 
 RandomSampler::RandomSampler(int xstart, int xend, int ystart, int yend,
-	u_int ps, string pixelsampler) : Sampler(xstart, xend, ystart, yend, ps)
+	u_int ps, string pixelsampler, bool useNoise) :
+	Sampler(xstart, xend, ystart, yend, ps), useNoiseAware(useNoise)
 {
 	pixelSamples = ps;
 
@@ -74,39 +76,90 @@ bool RandomSampler::GetNextSample(Sample *sample)
 
 	// Compute new set of samples if needed for next pixel
 	bool haveMoreSamples = true;
-	if (data->samplePos == pixelSamples) {
-		u_int sampPixelPosToUse;
-		// Move to the next pixel
-		{
-			fast_mutex::scoped_lock lock(sampPixelPosMutex);
-			sampPixelPosToUse = sampPixelPos;
-			sampPixelPos = (sampPixelPos + 1) % totalPixels;
+	if (useNoiseAware || film->HasUserSamplingMap()) {
+		// Noise-aware and/or user driven sampler
+
+		// Check if there is a new version of the noise map and/or user-sampling map
+		if (useNoiseAware) {
+			if (film->HasUserSamplingMap()) {
+				film->GetSamplingMap(data->noiseAwareMapVersion, data->userSamplingMapVersion,
+						data->samplingMap, data->samplingDistribution2D);
+			} else
+				film->GetNoiseAwareMap(data->noiseAwareMapVersion,
+						data->samplingMap, data->samplingDistribution2D);
+		} else {
+			if (film->HasUserSamplingMap()) {
+				film->GetUserSamplingMap(data->userSamplingMapVersion,
+						data->samplingMap, data->samplingDistribution2D);
+			} else {
+				// This should never happen
+				LOG(LUX_ERROR, LUX_SYSTEM) << "Internal error in RandomSampler::GetNextSample()";
+			}
 		}
 
-		// fetch next pixel from pixelsampler
-		if(!pixelSampler->GetNextPixel(&data->xPos, &data->yPos, sampPixelPosToUse)) {
-			// Dade - we are at a valid checkpoint where we can stop the
-			// rendering. Check if we have enough samples per pixel in the film.
-			if (film->enoughSamplesPerPixel) {
-				// Dade - pixelSampler->renderingDone is shared among all rendering threads
-				pixelSampler->renderingDone = true;
-				haveMoreSamples = false;
-			}
-		} else
-			haveMoreSamples = (!pixelSampler->renderingDone);
+		if ((data->noiseAwareMapVersion > 0) || (data->userSamplingMapVersion > 0)) {
+			float uv[2], pdf;
+			data->samplingDistribution2D->SampleContinuous(sample->rng->floatValue(), sample->rng->floatValue(), uv, &pdf);
+			sample->imageX = uv[0] * (xPixelEnd - xPixelStart) + xPixelStart;
+			sample->imageY = uv[1] * (yPixelEnd - yPixelStart) + yPixelStart;
 
-		data->samplePos = 0;
+			if (film->enoughSamplesPerPixel)
+				haveMoreSamples = false;
+		} else {
+			// Maps aren't yet ready, use pixel sampler
+
+			u_int sampPixelPosToUse;
+			// Move to the next pixel
+			{
+				fast_mutex::scoped_lock lock(sampPixelPosMutex);
+				sampPixelPosToUse = sampPixelPos;
+				sampPixelPos = (sampPixelPos + 1) % totalPixels;
+			}
+
+			pixelSampler->GetNextPixel(&data->xPos, &data->yPos, sampPixelPosToUse);
+			sample->imageX = data->xPos + sample->rng->floatValue();
+			sample->imageY = data->yPos + sample->rng->floatValue();
+			++(data->samplePos);
+
+			haveMoreSamples = true;
+		}
+	} else {
+		// Standard sampler using pixel sampler
+
+		if (data->samplePos == pixelSamples) {
+			u_int sampPixelPosToUse;
+			// Move to the next pixel
+			{
+				fast_mutex::scoped_lock lock(sampPixelPosMutex);
+				sampPixelPosToUse = sampPixelPos;
+				sampPixelPos = (sampPixelPos + 1) % totalPixels;
+			}
+
+			// fetch next pixel from pixelsampler
+			if(!pixelSampler->GetNextPixel(&data->xPos, &data->yPos, sampPixelPosToUse)) {
+				// Dade - we are at a valid checkpoint where we can stop the
+				// rendering. Check if we have enough samples per pixel in the film.
+				if (film->enoughSamplesPerPixel) {
+					// Dade - pixelSampler->renderingDone is shared among all rendering threads
+					pixelSampler->renderingDone = true;
+					haveMoreSamples = false;
+				}
+			} else
+				haveMoreSamples = (!pixelSampler->renderingDone);
+
+			data->samplePos = 0;
+		}
+
+		sample->imageX = data->xPos + sample->rng->floatValue();
+		sample->imageY = data->yPos + sample->rng->floatValue();
+		++(data->samplePos);
 	}
 
 	// Return next \mono{RandomSampler} sample point
-	sample->imageX = data->xPos + sample->rng->floatValue();
-	sample->imageY = data->yPos + sample->rng->floatValue();
 	sample->lensU = sample->rng->floatValue();
 	sample->lensV = sample->rng->floatValue();
 	sample->time = sample->rng->floatValue();
 	sample->wavelengths = sample->rng->floatValue();
-
-	++(data->samplePos);
 
 	return haveMoreSamples;
 }
@@ -131,7 +184,7 @@ float *RandomSampler::GetLazyValues(const Sample &sample, u_int num, u_int pos)
 	return sd;
 }
 
-Sampler* RandomSampler::CreateSampler(const ParamSet &params, const Film *film)
+Sampler* RandomSampler::CreateSampler(const ParamSet &params, Film *film)
 {
 	// for backwards compatibility
 	int nsamp = params.FindOneInt("pixelsamples", 4);
@@ -144,12 +197,18 @@ Sampler* RandomSampler::CreateSampler(const ParamSet &params, const Film *film)
 		nsamp = (xsamp < 0 ? 2 : xsamp) * (ysamp < 0 ? 2 : ysamp);
 	}
 
+	bool useNoiseAware = params.FindOneBool("noiseaware", false);
+	if (useNoiseAware) {
+		// Enable Film noise-aware map generation
+		film->EnableNoiseAwareMap();
+	}
+
 	string pixelsampler = params.FindOneString("pixelsampler", "vegas");
     int xstart, xend, ystart, yend;
     film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
     return new RandomSampler(xstart, xend,
                              ystart, yend,
-                             max(nsamp, 1), pixelsampler);
+                             max(nsamp, 1), pixelsampler, useNoiseAware);
 }
 
 static DynamicLoader::RegisterSampler<RandomSampler> r("random");

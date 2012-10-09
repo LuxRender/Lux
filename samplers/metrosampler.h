@@ -25,34 +25,46 @@
 #ifndef LUX_METROSAMPLER_H
 #define LUX_METROSAMPLER_H
 
+#include <boost/shared_array.hpp>
+
 #include "sampling.h"
 #include "paramset.h"
 #include "film.h"
+#include "timer.h"
 
 namespace lux
 {
-
+	
 class MetropolisSampler : public Sampler {
 public:
 	class MetropolisData {
 	public:
 		MetropolisData(const MetropolisSampler &sampler);
 		~MetropolisData();
+
 		u_int normalSamples, totalSamples, totalTimes, consecRejects;
 		float *sampleImage, *currentImage;
 		int *timeImage, *currentTimeImage;
 		u_int *offset, *timeOffset;
 		float *rngRotation;
 		u_int rngBase, rngOffset;
-		bool large;
 		int stamp, currentStamp;
 		float weight, LY, alpha;
 		vector <Contribution> oldContributions;
 		double totalLY, sampleCount;
-		bool cooldown;
+
+		boost::shared_array<float> samplingMap;		
+		u_int noiseAwareMapVersion;
+		u_int userSamplingMapVersion;
+		boost::shared_ptr<Distribution2D> samplingDistribution2D;
+		float samplingDistributionUV[2];
+
+		bool large, cooldown;
 	};
+
 	MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
-		u_int maxRej, float largeProb, float rng, bool useV, bool useC);
+		u_int maxRej, float largeProb, float rng,
+		bool useV, bool useC, bool useNoise);
 	virtual ~MetropolisSampler();
 
 	virtual void InitSample(Sample *sample) const {
@@ -70,13 +82,13 @@ public:
 		float u[2]);
 	virtual float *GetLazyValues(const Sample &sample, u_int num, u_int pos);
 	virtual void AddSample(const Sample &sample);
-	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
-
+	static Sampler *CreateSampler(const ParamSet &params, Film *film);
+		
 	u_int maxRejects;
 	float pLarge, range;
-	bool useVariance;
 	u_int cooldownTime;
 	float *rngSamples;
+	bool useVariance, useNoiseAware;
 };
 
 }//namespace lux

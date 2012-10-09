@@ -82,6 +82,7 @@
 using namespace cimg_library;
 #if cimg_OS!=2
 #include <pthread.h>
+#include <X11/X.h>
 #endif
 
 using namespace boost::iostreams;
@@ -720,7 +721,8 @@ u_int Film::GetYPixelCount()
 
 Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop[4], 
 		   const string &filename1, bool premult, bool useZbuffer,
-		   bool w_resume_FLM, bool restart_resume_FLM, bool write_FLM_direct, int haltspp, int halttime,
+		   bool w_resume_FLM, bool restart_resume_FLM, bool write_FLM_direct,
+		   int haltspp, int halttime, float haltthreshold,
 		   bool debugmode, int outlierk, int tilec) :
 	Queryable("film"),
 	xResolution(xres), yResolution(yres),
@@ -729,11 +731,15 @@ Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop
 	contribPool(NULL), filter(filt), filterTable(NULL), filterLUTs(NULL),
 	filename(filename1),
 	colorSpace(0.63f, 0.34f, 0.31f, 0.595f, 0.155f, 0.07f, 0.314275f, 0.329411f), // default is SMPTE
+	convTest(NULL), varianceBuffer(NULL),
+	noiseAwareMap(NULL), noiseAwareMapVersion(0),
+	userSamplingMap(NULL), userSamplingMapVersion(0),
 	ZBuffer(NULL), use_Zbuf(useZbuffer),
 	debug_mode(debugmode), premultiplyAlpha(premult),
 	writeResumeFlm(w_resume_FLM), restartResumeFlm(restart_resume_FLM), writeFlmDirect(write_FLM_direct),
 	outlierRejection_k(outlierk), haltSamplesPerPixel(haltspp),
-	haltTime(halttime), histogram(NULL), enoughSamplesPerPixel(false)
+	haltTime(halttime), haltThreshold(haltthreshold), haltThresholdComplete(0.f),
+	histogram(NULL), enoughSamplesPerPixel(false)
 {
 	// Compute film image extent
 	memcpy(cropWindow, crop, 4 * sizeof(float));
@@ -762,6 +768,8 @@ Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop
 	AddBoolAttribute(*this, "enoughSamples", "Indicates if the halt condition been reached", &Film::enoughSamplesPerPixel);
 	AddIntAttribute(*this, "haltSamplesPerPixel", "Halt Samples per Pixel", haltSamplesPerPixel, &Film::haltSamplesPerPixel, Queryable::ReadWriteAccess);
 	AddIntAttribute(*this, "haltTime", "Halt time in seconds", haltTime, &Film::haltTime, Queryable::ReadWriteAccess);
+	AddFloatAttribute(*this, "haltThreshold", "Halt threshold", haltThreshold, &Film::haltThreshold, Queryable::ReadWriteAccess);
+	AddFloatAttribute(*this, "haltThresholdComplete", "Halt threshold complete", &Film::haltThresholdComplete);
 	AddBoolAttribute(*this, "writeResumeFlm", "Write resume file", writeResumeFlm, &Film::writeResumeFlm, Queryable::ReadWriteAccess);
 	AddBoolAttribute(*this, "restartResumeFlm", "Restart (overwrite) resume file", restartResumeFlm, &Film::restartResumeFlm, Queryable::ReadWriteAccess);
 	AddBoolAttribute(*this, "writeFlmDirect", "Write resume file directly to disk", writeFlmDirect, &Film::writeFlmDirect, Queryable::ReadWriteAccess);	
@@ -820,8 +828,18 @@ Film::~Film()
 	delete filterLUTs;
 	delete filter;
 	delete ZBuffer;
+	delete convTest;
+	delete varianceBuffer;
 	delete histogram;
 	delete contribPool;
+}
+
+void Film::EnableNoiseAwareMap() {
+	varianceBuffer = new VarianceBuffer(xPixelCount, yPixelCount);
+	varianceBuffer->Clear();
+
+	noiseAwareMap.reset(new float[xPixelCount * yPixelCount]);
+	std::fill(noiseAwareMap.get(), noiseAwareMap.get() + xPixelCount * yPixelCount, 1.f);
 }
 
 void Film::RequestBufferGroups(const vector<string> &bg)
@@ -842,11 +860,11 @@ void Film::CreateBuffers()
 	if (bufferGroups.size() == 0)
 		bufferGroups.push_back(BufferGroup("default"));
 	for (u_int i = 0; i < bufferGroups.size(); ++i)
-		bufferGroups[i].CreateBuffers(bufferConfigs,xPixelCount,yPixelCount);
+		bufferGroups[i].CreateBuffers(bufferConfigs, xPixelCount, yPixelCount);
 
 	// Allocate ZBuf buffer if needed
-	if(use_Zbuf)
-		ZBuffer = new PerPixelNormalizedFloatBuffer(xPixelCount,yPixelCount);
+	if (use_Zbuf)
+		ZBuffer = new PerPixelNormalizedFloatBuffer(xPixelCount, yPixelCount);
 
 	// initialize the contribution pool
 	// needs to be done before anyone tries to lock it
@@ -875,6 +893,35 @@ void Film::CreateBuffers()
 			ifs.close();
 		}
     }
+
+	// Enable convergence test if needed
+	// NOTE: TVI is a side product of convergence test so I need to run the
+	// test even if halttreshold is not used
+	if ((haltThreshold >= 0.f) || noiseAwareMap) {
+		convTest = new luxrays::utils::ConvergenceTest(xPixelCount, yPixelCount);
+
+		if (noiseAwareMap)
+			convTest->NeedTVI();
+	}
+
+	// DEBUG: for testing the user sampling map functionality
+	/*float *map = (float *)alloca(xPixelCount * yPixelCount * sizeof(float));
+	for (u_int x = 0; x < xPixelCount; ++x) {
+		for (u_int y = 0; y < yPixelCount; ++y) {
+			const u_int index = x + y * xPixelCount;
+
+			const float xx = (x / (float)xPixelCount) - 0.5f;
+			const float yy = (y / (float)yPixelCount) - 0.5f;
+			map[index] = (xx * xx + yy * yy < .25f * .25f) ? 1.f : 0.1f;
+
+			//const float xx = ((x % 80) / 80.f) - 0.5f;
+			//const float yy = ((y % 80) / 80.f) - 0.5f;
+			//map[index] = (xx * xx + yy * yy < .4f * .4f) ? 1.f : 0.1f;
+			
+			//map[index] = (x > xPixelCount * 7 / 8 && y > yPixelCount * 7 / 8) ? 1.f : 0.01f;
+		}
+	}
+	SetUserSamplingMap(map);*/
 }
 
 void Film::ClearBuffers()
@@ -1114,9 +1161,8 @@ void Film::GetTileExtent(u_int tileIndex, int *xstart, int *xend, int *ystart, i
 	*yend = yPixelStart + min((tileIndex+1) * tileHeight, yPixelCount);
 }
 
-
-void Film::AddTileSamples(const Contribution* const contribs, u_int num_contribs, u_int tileIndex) {
-	
+void Film::AddTileSamples(const Contribution* const contribs, u_int num_contribs,
+		u_int tileIndex) {
 	int xTilePixelStart, xTilePixelEnd;
 	int yTilePixelStart, yTilePixelEnd;
 	GetTileExtent(tileIndex, &xTilePixelStart, &xTilePixelEnd, &yTilePixelStart, &yTilePixelEnd);
@@ -1130,7 +1176,7 @@ void Film::AddTileSamples(const Contribution* const contribs, u_int num_contribs
 		// Issue warning if unexpected radiance value returned
 		if (!(xyz.Y() >= 0.f) || isinf(xyz.Y())) {
 			if(debug_mode) {
-				LOG(LUX_WARNING,LUX_LIMIT) << "Out of bound intensity in Film::AddSample: "
+				LOG(LUX_WARNING,LUX_LIMIT) << "Out of bound intensity in Film::AddTileSamples: "
 				   << xyz.Y() << ", sample discarded";
 			}
 			continue;
@@ -1138,7 +1184,7 @@ void Film::AddTileSamples(const Contribution* const contribs, u_int num_contribs
 
 		if (!(alpha >= 0.f) || isinf(alpha)) {
 			if(debug_mode) {
-				LOG(LUX_WARNING,LUX_LIMIT) << "Out of bound  alpha in Film::AddSample: "
+				LOG(LUX_WARNING,LUX_LIMIT) << "Out of bound  alpha in Film::AddTileSamples: "
 				   << alpha << ", sample discarded";
 			}
 			continue;
@@ -1154,7 +1200,7 @@ void Film::AddTileSamples(const Contribution* const contribs, u_int num_contribs
 		// negative weight means sample was rejected
 		if (!(weight >= 0.f) || isinf(weight)) {
 			if(debug_mode && (weight >= 0.f)) {
-				LOG(LUX_WARNING,LUX_LIMIT) << "Out of bound  weight in Film::AddSample: "
+				LOG(LUX_WARNING,LUX_LIMIT) << "Out of bound  weight in Film::AddTileSamples: "
 				   << weight << ", sample discarded";
 			}
 			continue;
@@ -1188,17 +1234,25 @@ void Film::AddTileSamples(const Contribution* const contribs, u_int num_contribs
 		const u_int yEnd = static_cast<u_int>(min(y1, yTilePixelEnd));
 
 		for (u_int y = yStart; y < yEnd; ++y) {
-			const int yoffset = (y-y0) * filterLUT.GetWidth();
+			const int yoffset = (y - y0) * filterLUT.GetWidth();
+			const u_int yPixel = y - yPixelStart;
 			for (u_int x = xStart; x < xEnd; ++x) {
 				// Evaluate filter value at $(x,y)$ pixel
 				const int xoffset = x-x0;
 				const float filterWt = lut[yoffset + xoffset];
+
 				// Update pixel values with filtered sample contribution
-				buffer->Add(x - xPixelStart,y - yPixelStart,
-					xyz, alpha, filterWt * weight);
+				const u_int xPixel = x - xPixelStart;
+				const float w = filterWt * weight;
+				buffer->Add(xPixel, yPixel, xyz, alpha, w);
+
 				// Update ZBuffer values with filtered zdepth contribution
 				if(use_Zbuf && contrib.zdepth != 0.f)
-					ZBuffer->Add(x - xPixelStart, y - yPixelStart, contrib.zdepth, 1.0f);
+					ZBuffer->Add(xPixel, yPixel, contrib.zdepth, 1.0f);
+
+				// Update variance information
+				if (varianceBuffer)
+					varianceBuffer->Add(xPixel, yPixel, xyz, w);
 			}
 		}
 	}
@@ -2290,6 +2344,381 @@ void Histogram::MakeImage(unsigned char *outPixels, u_int canvasW, u_int canvasH
 			}
 		}
 	}
+}
+
+//------------------------------------------------------------------------------
+// From Sfera source, for fast filtering
+//------------------------------------------------------------------------------
+
+static void ApplyBoxFilterX(const float *src, float *dest,
+	const unsigned int width, const unsigned int height, const unsigned int radius) {
+    const float scale = 1.0f / (float)((radius << 1) + 1);
+
+    // Do left edge
+    float t = src[0] * radius;
+    for (unsigned int x = 0; x < (radius + 1); ++x)
+        t += src[x];
+    dest[0] = t * scale;
+
+    for (unsigned int x = 1; x < (radius + 1); ++x) {
+        t += src[x + radius];
+        t -= src[0];
+        dest[x] = t * scale;
+    }
+
+    // Main loop
+    for (unsigned int x = (radius + 1); x < width - radius; ++x) {
+        t += src[x + radius];
+        t -= src[x - radius - 1];
+        dest[x] = t * scale;
+    }
+
+    // Do right edge
+    for (unsigned int x = width - radius; x < width; ++x) {
+        t += src[width - 1];
+        t -= src[x - radius - 1];
+        dest[x] = t * scale;
+    }
+}
+
+static void ApplyBoxFilterY(const float *src, float *dst,
+	const unsigned int width, const unsigned int height, const unsigned int radius) {
+    const float scale = 1.0f / (float)((radius << 1) + 1);
+
+    // Do left edge
+    float t = src[0] * radius;
+    for (unsigned int y = 0; y < (radius + 1); ++y) {
+        t += src[y * width];
+    }
+    dst[0] = t * scale;
+
+    for (unsigned int y = 1; y < (radius + 1); ++y) {
+        t += src[(y + radius) * width];
+        t -= src[0];
+        dst[y * width] = t * scale;
+    }
+
+    // Main loop
+    for (unsigned int y = (radius + 1); y < (height - radius); ++y) {
+        t += src[(y + radius) * width];
+        t -= src[((y - radius) * width) - width];
+        dst[y * width] = t * scale;
+    }
+
+    // Do right edge
+    for (unsigned int y = height - radius; y < height; ++y) {
+        t += src[(height - 1) * width];
+        t -= src[((y - radius) * width) - width];
+        dst[y * width] = t * scale;
+    }
+}
+
+static void ApplyBoxFilterXR1(const float *src, float *dest,
+	const unsigned int width, const unsigned int height) {
+    const float scale = 1.f / 3.f;
+
+    // Do left edge
+    float t = 2.f * src[0];
+	t += src[1];
+    dest[0] = t * scale;
+
+	t += src[2];
+	t -= src[0];
+	dest[1] = t * scale;
+
+    // Main loop
+    for (unsigned int x = 2; x < width - 1; ++x) {
+        t += src[x + 1];
+        t -= src[x - 2];
+        dest[x] = t * scale;
+    }
+
+    // Do right edge
+	t += src[width - 1];
+	t -= src[width - 3];
+	dest[width - 1] = t * scale;
+}
+
+static void ApplyBoxFilterYR1(const float *src, float *dst,
+	const unsigned int width, const unsigned int height) {
+    const float scale = 1.f / 3.f;
+
+    // Do left edge
+	float t = 2.f * src[0];
+	t += src[width];
+	dst[0] = t * scale;
+
+	t += src[2 * width];
+	t -= src[0];
+	dst[width] = t * scale;
+
+    // Main loop
+    for (unsigned int y = 2; y < height - 1; ++y) {
+        t += src[(y + 1) * width];
+        t -= src[((y - 1) * width) - width];
+        dst[y * width] = t * scale;
+    }
+
+    // Do right edge
+	t += src[(height - 1) * width];
+	t -= src[((height - 2) * width) - width];
+	dst[(height - 1) * width] = t * scale;
+}
+
+static void ApplyBoxFilter(float *frameBuffer, float *tmpFrameBuffer,
+	const unsigned int width, const unsigned int height, const unsigned int radius) {
+	if (radius == 1) {
+		for (unsigned int i = 0; i < height; ++i)
+			ApplyBoxFilterXR1(&frameBuffer[i * width], &tmpFrameBuffer[i * width], width, height);
+
+		for (unsigned int i = 0; i < width; ++i)
+			ApplyBoxFilterYR1(&tmpFrameBuffer[i], &frameBuffer[i], width, height);
+	} else {
+		for (unsigned int i = 0; i < height; ++i)
+			ApplyBoxFilterX(&frameBuffer[i * width], &tmpFrameBuffer[i * width], width, height, radius);
+
+		for (unsigned int i = 0; i < width; ++i)
+			ApplyBoxFilterY(&tmpFrameBuffer[i], &frameBuffer[i], width, height, radius);
+	}
+}
+
+//------------------------------------------------------------------------------
+// Update the noise-aware map
+//------------------------------------------------------------------------------
+
+void Film::UpdateConvergenceInfo(const float *framebuffer) {
+	// Compare the new buffer with the old one
+	const u_int failedPixels = convTest->Test(framebuffer);
+
+	// Check if we can stop the rendering
+	const u_int nPix = xPixelCount * yPixelCount;
+	const float failedPercentage = failedPixels / (float)nPix;
+	if (failedPercentage <= haltThreshold)
+		enoughSamplesPerPixel = true;
+
+	if (enoughSamplesPerPixel)
+		haltThresholdComplete = 1.f - haltThreshold;
+	else
+		haltThresholdComplete = (nPix - failedPixels) / (float)nPix;
+}
+
+void Film::GenerateNoiseAwareMap() {
+	boost::mutex::scoped_lock lock(samplingMapMutex);
+
+	const u_int nPix = xPixelCount * yPixelCount;
+
+	// Free the reference to the old one and allocate a new one
+	noiseAwareMap.reset(new float[nPix]);
+	
+	bool hasPixelsToSample = false;
+	float maxStandardError = 0.f;
+	float maxTVI = 0.f;
+	const float *convergenceTVI = convTest->GetTVI();
+	u_int index = 0;
+	for (u_int y = 0; y < yPixelCount; ++y) {
+		for (u_int x = 0; x < xPixelCount; ++x, ++index) {
+			const float variance = varianceBuffer->GetVariance(x, y);
+			// -1 means a pixel that have yet to be sampled
+			if (variance == -1.f) {
+				hasPixelsToSample = true;
+				break;
+			}
+
+			noiseAwareMap[index] = sqrtf(variance);
+			maxStandardError = max(maxStandardError, noiseAwareMap[index]);
+
+			maxTVI = max(maxTVI, convergenceTVI[index]);
+		}
+	}
+
+	if (hasPixelsToSample || (maxStandardError <= 0.f) || (maxTVI <= 0.f)) {
+		LOG(LUX_DEBUG, LUX_NOERROR) << "Noise aware map based on: uniform distribution";
+
+		// Just use a uniform distribution
+		std::fill(noiseAwareMap.get(), noiseAwareMap.get() + nPix, 1.f);
+	} else {
+		++noiseAwareMapVersion;
+		LOG(LUX_DEBUG, LUX_NOERROR) << "Noise aware map based on: noise information (version: " <<
+				noiseAwareMapVersion << ")";
+
+		// First step, build Standard Error / TVI map
+		const float invMaxStandardError = 1.f / maxStandardError;
+		const float invMaxTVI = 1.f / maxTVI;
+		float maxValue = 0.f;
+		for (u_int i = 0; i < nPix; ++i) {
+			// Normalize standard error
+			const float standardError = noiseAwareMap[i];
+			const float normalizedStandardError = standardError * invMaxStandardError;
+
+			// Normalize TVI
+			const float normalizedTVI = invMaxTVI * convergenceTVI[i];
+
+			const float value = (normalizedTVI == 0.f) ? 0.f : (normalizedStandardError / normalizedTVI);\
+			maxValue = max(maxValue, value);
+
+			noiseAwareMap[i] = value;
+		}
+
+		// Normalize the map
+		const float invMaxValue = 1.f / maxValue;
+		for (u_int i = 0; i < nPix; ++i)
+			noiseAwareMap[i] *= invMaxValue;
+		
+		// Than build an histogram of the map
+		const u_int histogramSize = 1000000;
+		float *histogram = new float[histogramSize * sizeof(float)];
+		std::fill(histogram, histogram + histogramSize, 0.f);
+		for (u_int i = 0; i < nPix; ++i) {
+			const u_int binIndex = min(Floor2UInt(noiseAwareMap[i] * histogramSize), histogramSize - 1);
+
+			histogram[binIndex] += 1;
+		}
+
+		// Auto-stretching of the map between 5th percentile value and 95th
+
+		u_int minIndex = 0;
+		float count = 0;
+		for (u_int i = 0; i < histogramSize; ++i) {
+			count += histogram[i];
+		
+			if (count > 5.f * histogramSize / 100.f) {
+				minIndex = i;
+				break;
+			}
+		}
+
+		u_int maxIndex = minIndex;
+		count = 0;
+		for (u_int i = histogramSize - 1; i > minIndex; --i) {
+			count += histogram[i];
+		
+			if (count > 5.f * histogramSize / 100.f) {
+				maxIndex = i;
+				break;
+			}
+		}
+
+		delete[] histogram;
+
+		if (maxIndex <= minIndex) {
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Noise aware map based on: uniform distribution (unable to auto-stretch the map)";
+
+			// Just use a uniform distribution
+			std::fill(noiseAwareMap.get(), noiseAwareMap.get() + nPix, 1.f);
+		} else {
+			const float minAllowedValue = .5f * minIndex / histogramSize;
+			const float maxAllowedValue = .5f * maxIndex / histogramSize;
+
+			// Scale the map in the [minAllowedValue, maxAllowedValue] range
+			for (u_int i = 0; i < nPix; ++i)
+				noiseAwareMap[i] = .95f * max(noiseAwareMap[i] - maxAllowedValue, 0.f) /
+						(maxAllowedValue - minAllowedValue) + .05f;
+
+			// Apply an heavy filter to smooth the map
+			float *tmpMap = new float[nPix];
+			ApplyBoxFilter(noiseAwareMap.get(), tmpMap, xPixelCount, yPixelCount, 6);
+			delete []tmpMap;
+		}
+	}
+
+	noiseAwareDistribution2D.reset(new Distribution2D(noiseAwareMap.get(), xPixelCount, yPixelCount));
+
+	UpdateSamplingMap();
+}
+
+const bool Film::GetNoiseAwareMap(u_int &version, boost::shared_array<float> &map,
+		boost::shared_ptr<Distribution2D> &distrib) {
+	boost::mutex::scoped_lock lock(samplingMapMutex);
+
+	if (noiseAwareMapVersion > version) {
+		map = noiseAwareMap;
+		version = noiseAwareMapVersion;
+		distrib = noiseAwareDistribution2D;
+
+		return true;
+	} else
+		return false;
+}
+
+const bool Film::GetUserSamplingMap(u_int &version, boost::shared_array<float> &map,
+		boost::shared_ptr<Distribution2D> &distrib) {
+	boost::mutex::scoped_lock lock(samplingMapMutex);
+
+	if (userSamplingMapVersion > version) {
+		map = userSamplingMap;
+		version = userSamplingMapVersion;
+		distrib = userSamplingDistribution2D;
+		return true;
+	} else
+		return false;
+}
+
+// NOTE: returns a copy of the map, it is up to the caller to free the allocated memory !
+float *Film::GetUserSamplingMap() {
+	boost::mutex::scoped_lock lock(samplingMapMutex);
+
+	if (userSamplingMapVersion == 0)
+		return NULL;
+	
+	const u_int nPix = xPixelCount * yPixelCount;
+	float *map = new float[nPix];
+	std::copy(userSamplingMap.get(), userSamplingMap.get() + nPix, map);
+
+	return map;
+}
+
+void Film::SetUserSamplingMap(const float *map) {
+	boost::mutex::scoped_lock lock(samplingMapMutex);
+	
+	// TODO: reject the map if all values are 0.0
+
+	const u_int nPix = xPixelCount * yPixelCount;
+	userSamplingMap.reset(new float[nPix]);
+
+	std::copy(map, map + nPix, userSamplingMap.get());
+	++userSamplingMapVersion;
+
+	userSamplingDistribution2D.reset(new Distribution2D(userSamplingMap.get(), xPixelCount, yPixelCount));
+
+	UpdateSamplingMap();
+}
+
+void Film::UpdateSamplingMap() {	
+	// Update noise-aware map * user sampling map
+
+	const u_int nPix = xPixelCount * yPixelCount;
+	if (noiseAwareMapVersion > 0) {
+		samplingMap.reset(new float[nPix]);
+
+		if (userSamplingMapVersion > 0) {
+			for (u_int i = 0; i < nPix; ++i)
+				samplingMap[i] = noiseAwareMap[i] * userSamplingMap[i];
+		} else
+			std::copy(noiseAwareMap.get(), noiseAwareMap.get() + nPix, samplingMap.get());
+
+		samplingDistribution2D.reset(new Distribution2D(samplingMap.get(), xPixelCount, yPixelCount));
+	} else {
+		if (userSamplingMapVersion > 0) {
+			samplingMap.reset(new float[nPix]);
+			std::copy(userSamplingMap.get(), userSamplingMap.get() + nPix, samplingMap.get());
+			samplingDistribution2D.reset(new Distribution2D(samplingMap.get(), xPixelCount, yPixelCount));
+		}
+	}
+}
+
+const bool Film::GetSamplingMap(u_int &naMapVersion, u_int &usMapVersion,
+		boost::shared_array<float> &map, boost::shared_ptr<Distribution2D> &distrib) {
+	boost::mutex::scoped_lock lock(samplingMapMutex);
+
+	if ((noiseAwareMapVersion > naMapVersion) || (userSamplingMapVersion > usMapVersion)) {
+		naMapVersion = noiseAwareMapVersion;
+		usMapVersion = userSamplingMapVersion;
+		map = samplingMap;
+		distrib = samplingDistribution2D;
+
+		return true;
+	} else
+		return false;
 }
 
 } // namespace lux

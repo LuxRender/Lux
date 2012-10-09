@@ -115,6 +115,8 @@ public:
 	//!<Gets the log from the network
 	void updateLog();
 
+	void updateUserSamplingMap(const u_int size, const float *map);
+
 private:
 	struct ExtRenderingServerInfo {
 		ExtRenderingServerInfo(string n, string p, string id = "") :

@@ -211,6 +211,10 @@ public:
 
 	void SetEpsilon(const float minValue, const float maxValue);
 
+	void SetUserSamplingMap(const float *map);
+	// NOTE: returns a copy of the map, it is up to the caller to free the allocated memory !
+	float *GetUserSamplingMap();
+
 	//! Registry containing all queryable objects of the current context
 	//! \author jromang
 	QueryableRegistry registry;
