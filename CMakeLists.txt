@@ -18,7 +18,7 @@
 #                                                                         #
 #   Lux website: http://www.luxrender.net                                 #
 ###########################################################################
-
+SET(LUXRAYS_DISABLE_OPENCL ON)
 MESSAGE(STATUS "CMAKE VERSION DETECTED " ${CMAKE_VERSION})
 IF(MSVC)
 	cmake_minimum_required(VERSION 2.8)
@@ -42,7 +42,7 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
 	"${LUX_CMAKE_DIR}"
 	"${LUX_CMAKE_DIR}/SpecializedConfig"
 )
-option(LUXRAYS_DISABLE_OPENCL "Build without OpenCL support" OFF)
+option(LUXRAYS_DISABLE_OPENCL "Build without OpenCL support" ON)
 option(LUX_DOCUMENTATION "Generate project documentation" ON)
 
 # Dade - uncomment to obtain verbose building output
@@ -453,6 +453,8 @@ ELSE(APPLE)
 	INSTALL(TARGETS luxShared DESTINATION lib${LIB_SUFFIX})
 
 	#Install Desktop files
+	INSTALL(FILES ${CMAKE_SOURCE_DIR}/luxrender.svg DESTINATION share/pixmaps/)
+	INSTALL(FILES ${CMAKE_SOURCE_DIR}/luxrender.desktop DESTINATION share/applications/)
 
 	#Source package target
 	ADD_CUSTOM_TARGET(package mkdir lux-${VERSION}
