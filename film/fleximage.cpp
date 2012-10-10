@@ -417,6 +417,10 @@ void FlexImageFilm::SetParameterValue(luxComponentParameters param, double value
 		 default:
 			break;
 	 }
+
+	 // Reset the convergence test
+	if (convTest)
+		convTest->Reset();
 }
 double FlexImageFilm::GetParameterValue(luxComponentParameters param, u_int index)
 {
@@ -805,6 +809,10 @@ void FlexImageFilm::SetStringParameterValue(luxComponentParameters param, const 
 		default:
 			break;
 	}
+
+	// Reset the convergence test
+	if (convTest)
+		convTest->Reset();
 }
 string FlexImageFilm::GetStringParameterValue(luxComponentParameters param, u_int index) {
 	switch(param) {

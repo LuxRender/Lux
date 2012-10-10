@@ -997,6 +997,10 @@ void Film::SetGroupEnable(u_int index, bool status)
 	if (index >= bufferGroups.size())
 		return;
 	bufferGroups[index].enable = status;
+
+	// Reset the convergence test
+	if (convTest)
+		convTest->Reset();
 }
 bool Film::GetGroupEnable(u_int index) const
 {
@@ -1010,6 +1014,10 @@ void Film::SetGroupScale(u_int index, float value)
 		return;
 	bufferGroups[index].globalScale = value;
 	ComputeGroupScale(index);
+
+	// Reset the convergence test
+	if (convTest)
+		convTest->Reset();
 }
 float Film::GetGroupScale(u_int index) const
 {
@@ -1023,6 +1031,10 @@ void Film::SetGroupRGBScale(u_int index, const RGBColor &value)
 		return;
 	bufferGroups[index].rgbScale = value;
 	ComputeGroupScale(index);
+
+	// Reset the convergence test
+	if (convTest)
+		convTest->Reset();
 }
 RGBColor Film::GetGroupRGBScale(u_int index) const
 {
@@ -1036,6 +1048,10 @@ void Film::SetGroupTemperature(u_int index, float value)
 		return;
 	bufferGroups[index].temperature = value;
 	ComputeGroupScale(index);
+
+	// Reset the convergence test
+	if (convTest)
+		convTest->Reset();
 }
 float Film::GetGroupTemperature(u_int index) const
 {
