@@ -964,7 +964,7 @@ void cmd_luxSetUserSamplingMap(bool isLittleEndian, NetworkRenderServerThread *s
 			u_int size = osReadLittleEndianUInt(isLittleEndian, stream);
 
 			vector<float> map(size);
-			for (uint i = 0; i < size; ++i)
+			for (u_int i = 0; i < size; ++i)
 				map[i] = osReadLittleEndianFloat(isLittleEndian, stream);
 			if (!stream.good()) {
 				LOG( LUX_DEBUG,LUX_NOERROR)<< "Error while receiving user sampling map";
