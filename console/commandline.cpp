@@ -89,7 +89,7 @@ bool ProcessCommandLine(int argc, char **argv, clConfig& config, unsigned int fe
 		if (features & featureSet::MASTERNODE) {
 			optMaster.add_options()
 					("useserver,u",      po::value< std::vector< std::string > >()->composing(), "Specify the address of a slave node to use\n(May be used multiple times)")
-					("serverinterval,i", po::value< int >()->default_value(config.pollInterval), "Specify the number of seconds between update requests to slave nodes")
+					("serverinterval,i", po::value< unsigned int >()->default_value(config.pollInterval), "Specify the number of seconds between update requests to slave nodes")
 					("resetserver",      po::value< std::vector< std::string > >()->composing(), "Specify the address of a slave node to reset\n(May be used multiple times)")
 					;
 		}
@@ -101,7 +101,7 @@ bool ProcessCommandLine(int argc, char **argv, clConfig& config, unsigned int fe
 		if (features & featureSet::SLAVENODE) {
 			optSlave.add_options()
 					("server,s",         "Run as a slave node")
-					("serverport,p",     po::value < int >()->default_value(config.tcpPort), "Specify the tcp port to listen on")
+					("serverport,p",     po::value < unsigned int >()->default_value(config.tcpPort), "Specify the tcp port to listen on")
 					("serverwriteflm,W", "Write film to disk before transmitting")
 					("cachedir,c",       po::value< std::string >()->default_value((getDefaultWorkingDirectory() / "cache").string()), "Specify the cache directory to use")
 					;
@@ -122,7 +122,7 @@ bool ProcessCommandLine(int argc, char **argv, clConfig& config, unsigned int fe
 
 		if (features & featureSet::RENDERER)
 			optConfig.add_options()
-				("threads,t",     po::value< int >(), "Specify the number of threads to run in parallel")
+				("threads,t",     po::value< unsigned int >(), "Specify the number of threads to run in parallel")
 				;
 
 		if (features & (featureSet::MASTERNODE | featureSet::SLAVENODE))
@@ -185,6 +185,7 @@ bool ProcessCommandLine(int argc, char **argv, clConfig& config, unsigned int fe
 		std::ifstream ifs(vm["configfile"].as<std::string>().c_str());
 		store(parse_config_file(ifs, optConfigFile), vm);
 		notify(vm);
+		config.vm = vm;
 
 		// BEGIN Handling generic options
 		if (vm.count("help")) {
@@ -237,7 +238,7 @@ bool ProcessCommandLine(int argc, char **argv, clConfig& config, unsigned int fe
 		}
 
 		if (vm.count("threads"))
-			config.threadCount = vm["threads"].as<int>();
+			config.threadCount = vm["threads"].as<unsigned int>();
 		else
 			config.threadCount = std::max<unsigned int>(1, boost::thread::hardware_concurrency());
 		LOG(LUX_INFO,LUX_NOERROR) << "Threads: " << config.threadCount;
@@ -259,7 +260,7 @@ bool ProcessCommandLine(int argc, char **argv, clConfig& config, unsigned int fe
 					luxResetServer((*it).c_str(), password.c_str());
 			}
 
-			config.pollInterval = vm["serverinterval"].as<int>();
+			config.pollInterval = vm["serverinterval"].as<unsigned int>();
 			luxSetIntAttribute("render_farm", "pollingInterval", config.pollInterval);
 
 			if (vm.count("useserver"))
@@ -342,7 +343,7 @@ bool ProcessCommandLine(int argc, char **argv, clConfig& config, unsigned int fe
 			if (vm.count("input-file"))
 				LOG(LUX_WARNING,LUX_CONSISTENCY) << "Ignoring input file";
 
-			config.tcpPort = vm["serverport"].as<int>();
+			config.tcpPort = vm["serverport"].as<unsigned int>();
 			config.writeFlmFile = vm.count("serverwriteflm") != 0;
 
 			std::string cachedir = vm["cachedir"].as<std::string>();

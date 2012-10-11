@@ -28,6 +28,7 @@
 #include <string>
 #include <vector>
 
+#include <boost/program_options.hpp>
 #include <boost/filesystem/operations.hpp>
 
 #include "api.h"
@@ -39,12 +40,14 @@ struct clConfig
 		verbosity(0), pollInterval(luxGetIntAttribute("render_farm", "pollingInterval")),
 		tcpPort(luxGetIntAttribute("render_farm", "defaultTcpPort")), threadCount(0) {};
 
+	boost::program_options::variables_map vm;
+
 	bool slave;
 	bool binDump;
 	bool log2console;
 	bool writeFlmFile;
 	int verbosity;
-	int pollInterval;
+	unsigned int pollInterval;
 	unsigned int tcpPort;
 	unsigned int threadCount;
 	std::string password;

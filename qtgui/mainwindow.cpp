@@ -514,7 +514,7 @@ void MainWindow::ReadSettings()
 	ui->action_useAlpha->setChecked(settings.value("outputUseAlpha").toBool());
 	ui->action_useAlphaHDR->setChecked(settings.value("outputUseAlphaHDR").toBool());
 	m_recentServersModel->setList(settings.value("recentServers").toStringList());
-	luxSetIntAttribute("render_farm", "pollingInterval", settings.value("serverUpdateInterval", luxGetIntAttribute("render_farm", "pollingInterval")).toInt());
+	setServerUpdateInterval(settings.value("serverUpdateInterval", luxGetIntAttribute("render_farm", "pollingInterval")).toInt());
 	ui->action_Show_Side_Panel->setChecked(settings.value("outputTabs", 1 ).toBool());
 	ui->outputTabs->setVisible(ui->action_Show_Side_Panel->isChecked());
 	settings.endGroup();

@@ -97,7 +97,7 @@ void LuxGuiApp::init(clConfig* config)
 	mainwin->setVerbosity(config->verbosity);
 
 	// Set server interval
-	if (config->pollInterval > 0)
+	if (!config->vm["serverinterval"].defaulted())
 		mainwin->setServerUpdateInterval(config->pollInterval);
 
 	// Add files on command line to the render queue
