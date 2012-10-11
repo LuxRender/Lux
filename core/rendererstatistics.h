@@ -87,6 +87,7 @@ public:
 		std::string getPercentComplete();
 		std::string getPercentHaltTimeComplete();
 		std::string getPercentHaltThresholdComplete();
+		std::string getPercentConvergence();
 
 		virtual std::string getEfficiency();
 		virtual std::string getEfficiencyWindow();
@@ -108,6 +109,7 @@ public:
 
 		std::string getPercentHaltTimeComplete();
 		std::string getPercentHaltThresholdComplete();
+		std::string getPercentConvergence();
 
 		virtual std::string getEfficiency();
 		virtual std::string getEfficiencyWindow();
@@ -129,6 +131,7 @@ protected:
 	double getPercentHaltTimeComplete();
 	double getHaltThreshold();
 	double getPercentHaltThresholdComplete();
+	double getPercentConvergence();
 	u_int getSlaveNodeCount();
 
 	// These methods must be overridden for renderers
