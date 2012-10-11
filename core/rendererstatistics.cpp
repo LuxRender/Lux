@@ -211,9 +211,9 @@ std::string RendererStatistics::FormattedLong::getRecommendedStringTemplate() {
 	std::string stringTemplate = "%elapsedTime%";
 	if (rs->getRemainingTime() != std::numeric_limits<double>::infinity())
 		stringTemplate += " [%remainingTime%]";
-	if (rs->getPercentHaltTimeComplete() != 0.0)
+	if (rs->getHaltTime() != std::numeric_limits<double>::infinity())
 		stringTemplate += " (%percentHaltTimeComplete%)";
-	if (rs->getHaltThreshold() > 0.0)
+	if (rs->getHaltThreshold() != std::numeric_limits<double>::infinity())
 		stringTemplate += " (%percentHaltThresholdComplete%)";
 	stringTemplate += " - %threadCount%";
 	if (rs->getSlaveNodeCount() != 0)
@@ -275,9 +275,9 @@ std::string RendererStatistics::FormattedShort::getRecommendedStringTemplate() {
 	std::string stringTemplate = "%elapsedTime%";
 	if (rs->getRemainingTime() != std::numeric_limits<double>::infinity())
 		stringTemplate += " [%remainingTime%]";
-	if (rs->getPercentHaltTimeComplete() != 0.0)
+	if (rs->getHaltTime() != std::numeric_limits<double>::infinity())
 		stringTemplate += " (%percentHaltTimeComplete%)";
-	if (rs->getHaltThreshold() > 0.0)
+	if (rs->getHaltThreshold() != std::numeric_limits<double>::infinity())
 		stringTemplate += " (%percentHaltThresholdComplete%)";
 	stringTemplate += " - %threadCount%";
 	if (rs->getSlaveNodeCount() != 0)
