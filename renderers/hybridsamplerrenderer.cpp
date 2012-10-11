@@ -285,7 +285,7 @@ HybridSamplerRenderer::HybridSamplerRenderer(const int oclPlatformIndex, bool us
 	// should not be noticiable with hybrid rendering. The default is now 32.
 	for (size_t i = 0; i < hardwareDevices.size(); ++i) {
 		if (hardwareDevices[i]->GetType() == luxrays::DEVICE_TYPE_OPENCL)
-			((luxrays::OpenCLIntersectionDevice *)hardwareDevices[i])->SetQBVHMaxStackSize(qbvhStackSize);
+			((luxrays::OpenCLIntersectionDevice *)hardwareDevices[i])->SetMaxStackSize(qbvhStackSize);
 	}
 #endif
 
