@@ -207,7 +207,7 @@ bool MeshWaldTriangle::Intersect(const Ray &ray, Intersection *isect) const
 
 	const float vv = (hu * cnu + hv * cnv) / det + cnd;
 	if (vv < 0.f)
-                return false;
+		return false;
 
 	const float b0 = 1.f - uu - vv;
 	if (b0 < 0.f)

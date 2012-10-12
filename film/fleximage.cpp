@@ -1544,6 +1544,7 @@ void FlexImageFilm::ConvUpdateThreadImpl(FlexImageFilm *film) {
 
 			// Than run the convergence test
 			film->UpdateConvergenceInfo(film->float_framebuffer);
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Convergence test result: " << film->haltThresholdComplete;
 
 			// Than generate the noise-aware map if required
 			if (film->noiseAwareMap) {

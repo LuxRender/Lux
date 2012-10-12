@@ -116,7 +116,7 @@ double RendererStatistics::getHaltThreshold() {
 	if (filmRegistry)
 		haltThreshold = (*filmRegistry)["haltThreshold"].FloatValue();
 
-	return haltThreshold > 0.0 ? haltThreshold : std::numeric_limits<double>::infinity();
+	return haltThreshold >= 0.0 ? haltThreshold : std::numeric_limits<double>::infinity();
 }
 
 // Returns percent of haltthreshold completed, zero if haltthreshold is not set
