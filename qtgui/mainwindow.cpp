@@ -679,6 +679,7 @@ void MainWindow::openFile()
 
 	if(!fileName.isNull()) {
 		if (fileName.endsWith(".lxs")){
+			ClearRenderingQueue();
 			addFileToRenderQueue(fileName);
 			RenderNextFileInQueue();
 		} else {
@@ -730,6 +731,7 @@ void MainWindow::openRecentFile()
 	QAction *action = qobject_cast<QAction *>(sender());
 
 	if (action) {
+		ClearRenderingQueue();
 		addFileToRenderQueue(action->data().toString());
 		RenderNextFileInQueue();
 	}
@@ -1497,6 +1499,7 @@ void  MainWindow::loadFile(const QString &fileName)
 	if (fileName.endsWith(".lxs")){
 		if (!canStopRendering())
 			return;
+		ClearRenderingQueue();
 		addFileToRenderQueue(fileName);
 		RenderNextFileInQueue();
 	} else if (fileName.endsWith(".flm")){
@@ -2257,9 +2260,11 @@ void MainWindow::loadTimeout()
 					luxSetIntAttribute("film", "haltSamplesPerPixel", ui->spinBox_overrideHaltSpp->value());
 				if (ui->spinBox_overrideHaltTime->value() > 0)
 					luxSetIntAttribute("film", "haltTime", ui->spinBox_overrideHaltTime->value());
-
+				
+				bool lxswriteFlm = luxGetBoolAttributeDefault("film", "writeResumeFlm");
 				bool writeFlm = ui->checkBox_overrideWriteFlm->isChecked();
-				if (luxGetBoolAttributeDefault("film", "writeResumeFlm") == false) // don`t override .lxs settings here
+				ui->checkBox_overrideWriteFlm->setChecked(lxswriteFlm); // first check and set from lxs
+				if (writeFlm == true)
 					luxSetBoolAttribute("film", "writeResumeFlm", writeFlm);
 				if (writeFlm)
 					luxSetBoolAttribute("film", "restartResumeFlm", false);
