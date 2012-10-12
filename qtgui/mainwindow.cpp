@@ -679,7 +679,8 @@ void MainWindow::openFile()
 
 	if(!fileName.isNull()) {
 		if (fileName.endsWith(".lxs")){
-			renderNewScenefile(fileName);
+			addFileToRenderQueue(fileName);
+			RenderNextFileInQueue();
 		} else {
 			// handle queue files
 			openQueueFile(fileName);
@@ -729,7 +730,8 @@ void MainWindow::openRecentFile()
 	QAction *action = qobject_cast<QAction *>(sender());
 
 	if (action) {
-		renderNewScenefile(action->data().toString());
+		addFileToRenderQueue(action->data().toString());
+		RenderNextFileInQueue();
 	}
 }
 
@@ -1495,7 +1497,8 @@ void  MainWindow::loadFile(const QString &fileName)
 	if (fileName.endsWith(".lxs")){
 		if (!canStopRendering())
 			return;
-		renderNewScenefile(fileName);
+		addFileToRenderQueue(fileName);
+		RenderNextFileInQueue();
 	} else if (fileName.endsWith(".flm")){
 		if (!canStopRendering())
 			return;
@@ -2256,7 +2259,8 @@ void MainWindow::loadTimeout()
 					luxSetIntAttribute("film", "haltTime", ui->spinBox_overrideHaltTime->value());
 
 				bool writeFlm = ui->checkBox_overrideWriteFlm->isChecked();
-				luxSetBoolAttribute("film", "writeResumeFlm", writeFlm);
+				if (!luxGetBoolAttributeDefault("film", "writeResumeFlm") == true) // don`t override .lxs settings
+					luxSetBoolAttribute("film", "writeResumeFlm", writeFlm);
 				if (writeFlm)
 					luxSetBoolAttribute("film", "restartResumeFlm", false);
 				else
