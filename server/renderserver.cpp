@@ -963,9 +963,14 @@ void cmd_luxSetUserSamplingMap(bool isLittleEndian, NetworkRenderServerThread *s
 		{
 			u_int size = osReadLittleEndianUInt(isLittleEndian, stream);
 
+			filtering_stream<input> compressedStream;
+			compressedStream.push(gzip_decompressor());
+			compressedStream.push(stream);
+			
 			vector<float> map(size);
 			for (u_int i = 0; i < size; ++i)
-				map[i] = osReadLittleEndianFloat(isLittleEndian, stream);
+				map[i] = osReadLittleEndianFloat(isLittleEndian, compressedStream);
+
 			if (!stream.good()) {
 				LOG( LUX_DEBUG,LUX_NOERROR)<< "Error while receiving user sampling map";
 			} else

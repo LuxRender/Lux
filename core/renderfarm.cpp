@@ -995,7 +995,7 @@ void RenderFarm::updateUserSamplingMap(const u_int size, const float *map) {
 			continue;
 
 		try {
-			LOG( LUX_DEBUG,LUX_NOERROR) << "Sending user map sampling to: " <<
+			LOG( LUX_DEBUG,LUX_NOERROR) << "Sending user sampling map to: " <<
 					serverInfoList[i].name << ":" << serverInfoList[i].port;
 
 			// Connect to the server
@@ -1009,11 +1009,20 @@ void RenderFarm::updateUserSamplingMap(const u_int size, const float *map) {
 			// Send the command to update the map
 			stream << "luxSetUserSamplingMap" << endl;
 			stream << serverInfoList[i].sid << endl;
-
 			osWriteLittleEndianUInt(isLittleEndian, stream, size);
+
+			// Compress the map to send
+			filtering_stream<output> compressedStream;
+			compressedStream.push(gzip_compressor(4));
+			compressedStream.push(stream);
+
 			for (u_int j = 0; j < size; ++j)
-				osWriteLittleEndianFloat(isLittleEndian, stream, map[j]);
-			stream.close();
+				osWriteLittleEndianFloat(isLittleEndian, compressedStream, map[j]);
+
+			compressedStream.flush();
+
+			if (!compressedStream.good())
+				LOG(LUX_SEVERE,LUX_SYSTEM) << "Error while transmitting a user sampling map";
 
 			serverInfoList[i].timeLastContact = second_clock::local_time();
 		} catch (string s) {
