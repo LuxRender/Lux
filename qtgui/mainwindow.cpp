@@ -679,7 +679,9 @@ void MainWindow::openFile()
 
 	if(!fileName.isNull()) {
 		if (fileName.endsWith(".lxs")){
-			renderNewScenefile(fileName);
+			ClearRenderingQueue();
+			addFileToRenderQueue(fileName);
+			RenderNextFileInQueue();
 		} else {
 			// handle queue files
 			openQueueFile(fileName);
@@ -729,7 +731,9 @@ void MainWindow::openRecentFile()
 	QAction *action = qobject_cast<QAction *>(sender());
 
 	if (action) {
-		renderNewScenefile(action->data().toString());
+		ClearRenderingQueue();
+		addFileToRenderQueue(action->data().toString());
+		RenderNextFileInQueue();
 	}
 }
 
@@ -1495,7 +1499,9 @@ void  MainWindow::loadFile(const QString &fileName)
 	if (fileName.endsWith(".lxs")){
 		if (!canStopRendering())
 			return;
-		renderNewScenefile(fileName);
+		ClearRenderingQueue();
+		addFileToRenderQueue(fileName);
+		RenderNextFileInQueue();
 	} else if (fileName.endsWith(".flm")){
 		if (!canStopRendering())
 			return;
@@ -1714,12 +1720,7 @@ void MainWindow::renderNewScenefile(const QString& sceneFilename, const QString&
 {
 	endRenderingSession();
 	ClearRenderingQueue();
-	if(flmFilename.isEmpty()){
-		addFileToRenderQueue(sceneFilename);
-		RenderNextFileInQueue();
-	}else{
-		renderScenefile(sceneFilename, flmFilename);
-	}
+	renderScenefile(sceneFilename, flmFilename);
 }
 
 void MainWindow::setCurrentFile(const QString& filename)
