@@ -2259,7 +2259,7 @@ void MainWindow::loadTimeout()
 					luxSetIntAttribute("film", "haltTime", ui->spinBox_overrideHaltTime->value());
 
 				bool writeFlm = ui->checkBox_overrideWriteFlm->isChecked();
-				if (!luxGetBoolAttributeDefault("film", "writeResumeFlm") == true) // don`t override .lxs settings
+				if (luxGetBoolAttributeDefault("film", "writeResumeFlm") == false) // don`t override .lxs settings here
 					luxSetBoolAttribute("film", "writeResumeFlm", writeFlm);
 				if (writeFlm)
 					luxSetBoolAttribute("film", "restartResumeFlm", false);
