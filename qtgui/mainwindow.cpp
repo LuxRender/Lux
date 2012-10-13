@@ -1532,7 +1532,7 @@ void  MainWindow::loadFile(const QString &fileName)
 		msgBox.setIcon(QMessageBox::Information);
 		QFileInfo fi(fileName);
 		QString name = fi.fileName();
-		msgBox.setText(name +(" is not a supported filetype. Choose a .lxs, .lxm or .lxq"));
+		msgBox.setText(name +(" is not a supported filetype. Choose an .lxs, .lxm or .lxq"));
 		msgBox.exec();
 	}
 }
