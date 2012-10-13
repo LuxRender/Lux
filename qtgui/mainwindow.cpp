@@ -2270,6 +2270,9 @@ void MainWindow::loadTimeout()
 			}
 			else
 			{
+				ui->spinBox_overrideHaltSpp->setValue(0);
+				ui->spinBox_overrideHaltTime->setValue(0);
+
 				bool lxswriteFlm = luxGetBoolAttribute("film", "writeResumeFlm");
 				ui->checkBox_overrideWriteFlm->setChecked(lxswriteFlm);
 			}
