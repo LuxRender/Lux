@@ -1242,6 +1242,9 @@ void MainWindow::fullScreen()
 		renderView->reload();
 		renderView->show ();
 		ui->action_normalScreen->setEnabled (false);
+		showAlphaChanged(ui->action_showAlphaView->isChecked());
+		overlayStatsChanged(ui->action_overlayStats->isChecked());
+		showUserSamplingMapChanged(ui->action_showUserSamplingMapView->isChecked());
 	}
 	else {
 		renderView->setParent( NULL );
