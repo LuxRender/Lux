@@ -2924,7 +2924,7 @@ bool MainWindow::RenderNextFileInQueue(int idx)
 
 	endRenderingSession();
 
-	if (ui->checkBox_overrideWriteFlm->isChecked())
+	if (!m_resetOverrides && ui->checkBox_overrideWriteFlm->isChecked())
 		luxOverrideResumeFLM("");
 
 	renderScenefile(filename, flmname);
