@@ -744,11 +744,10 @@ void MainWindow::resumeFLM()
 	if(lxsFileName.isNull())
 		return;
 
-	setCurrentFile(lxsFileName); // make sure m_lastOpendir stays at lxs-location
-
 	// suggest .flm file with same name if it exists
-	QFileInfo openDirFile(m_lastOpendir + "/" + m_CurrentFileBaseName + ".flm");
-	QString openDirName = openDirFile.exists() ? openDirFile.absoluteFilePath() : m_lastOpendir;
+	QFileInfo info(lxsFileName);
+	QFileInfo openDirFile(info.absolutePath() + "/" + info.completeBaseName() + ".flm");
+	QString openDirName = openDirFile.exists() ? openDirFile.absoluteFilePath() : info.absolutePath();
 
 	QString flmFileName = QFileDialog::getOpenFileName(this, tr("Choose an FLM file to open"), openDirName, tr("LuxRender FLM files (*.flm)"));
 
