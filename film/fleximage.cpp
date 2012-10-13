@@ -1035,12 +1035,20 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 
 				// Some debug code used to show noise-aware map
 				/*if (noiseAwareMapVersion > 0) {
+					float minv = noiseAwareMap[0];
+					float maxv = noiseAwareMap[0];
 					for (u_int i = 0; i < nPix; i++) {
 						framebuffer[3 * i] = framebuffer[3 * i + 1] = framebuffer[3 * i + 2] =
 							static_cast<unsigned char>(Clamp(256.f *
 							noiseAwareMap[i],
 							0.f, 255.f));
+
+						minv = min(minv, noiseAwareMap[i]);
+						maxv = max(maxv, noiseAwareMap[i]);
 					}
+
+					LOG(LUX_DEBUG, LUX_NOERROR) << "Noise-aware map min. value: " << minv;
+					LOG(LUX_DEBUG, LUX_NOERROR) << "Noise-aware map max. value: " << maxv;
 				}*/
 
 				// Some debug code used to show user-sampling map
@@ -1068,9 +1076,12 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 				// Some debug code used to show the tvi
 				/*const float *convergenceTVI = convTest->GetTVI();
 				if (convergenceTVI) {
-					float maxv = 0.f;
-					for (u_int i = 0; i < nPix; i++)
+					float minv = convergenceTVI[0];
+					float maxv = convergenceTVI[0];
+					for (u_int i = 1; i < nPix; i++) {
+						minv = min(minv, convergenceTVI[i]);
 						maxv = max(maxv, convergenceTVI[i]);
+					}
 
 					const float invMaxV = 1.f / maxv;
 					for (u_int i = 0; i < nPix; i++) {
@@ -1079,6 +1090,9 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 							convergenceTVI[i],
 							0.f, 255.f));
 					}
+
+					LOG(LUX_DEBUG, LUX_NOERROR) << "TVI map min. value: " << minv;
+					LOG(LUX_DEBUG, LUX_NOERROR) << "TVI map max. value: " << maxv;
 				}*/
 
 				// Some debug code used to show the pixel sample counts

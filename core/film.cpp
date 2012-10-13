@@ -2565,11 +2565,11 @@ void Film::GenerateNoiseAwareMap() {
 
 	// Free the reference to the old one and allocate a new one
 	noiseAwareMap.reset(new float[nPix]);
-	
-	bool hasPixelsToSample = false;
-	float maxStandardError = 0.f;
-	float maxTVI = 0.f;
+
 	const float *convergenceTVI = convTest->GetTVI();
+	bool hasPixelsToSample = false;
+	bool allZeroVariance = true;
+	bool allZeroTVI = true;
 	u_int index = 0;
 	for (u_int y = 0; y < yPixelCount; ++y) {
 		for (u_int x = 0; x < xPixelCount; ++x, ++index) {
@@ -2579,15 +2579,17 @@ void Film::GenerateNoiseAwareMap() {
 				hasPixelsToSample = true;
 				break;
 			}
+			
+			if (variance > 0.f)
+				allZeroVariance = false;
+			if (convergenceTVI[index] > 0.f)
+				allZeroTVI = false;
 
 			noiseAwareMap[index] = sqrtf(variance);
-			maxStandardError = max(maxStandardError, noiseAwareMap[index]);
-
-			maxTVI = max(maxTVI, convergenceTVI[index]);
 		}
 	}
 
-	if (hasPixelsToSample || (maxStandardError <= 0.f) || (maxTVI <= 0.f)) {
+	if (hasPixelsToSample || allZeroVariance || allZeroTVI) {
 		LOG(LUX_DEBUG, LUX_NOERROR) << "Noise aware map based on: uniform distribution";
 
 		// Just use a uniform distribution
@@ -2598,40 +2600,31 @@ void Film::GenerateNoiseAwareMap() {
 				noiseAwareMapVersion << ")";
 
 		// First step, build Standard Error / TVI map
-		const float invMaxStandardError = 1.f / maxStandardError;
-		const float invMaxTVI = 1.f / maxTVI;
+		float minValue = std::numeric_limits<double>::infinity();
 		float maxValue = 0.f;
 		for (u_int i = 0; i < nPix; ++i) {
-			// Normalize standard error
 			const float standardError = noiseAwareMap[i];
-			const float normalizedStandardError = standardError * invMaxStandardError;
+			//const float value = (convergenceTVI[i] == 0.f) ? 0.f : logf(1.f + (standardError / convergenceTVI[i]));
+			const float value = (convergenceTVI[i] == 0.f) ? 0.f : (standardError / convergenceTVI[i]);
 
-			// Normalize TVI
-			const float normalizedTVI = invMaxTVI * convergenceTVI[i];
-
-			const float value = (normalizedTVI == 0.f) ? 0.f : (normalizedStandardError / normalizedTVI);\
+			minValue = min(minValue, value);
 			maxValue = max(maxValue, value);
-
 			noiseAwareMap[i] = value;
 		}
 
-		// Normalize the map
-		const float invMaxValue = 1.f / maxValue;
-		for (u_int i = 0; i < nPix; ++i)
-			noiseAwareMap[i] *= invMaxValue;
-		
 		// Than build an histogram of the map
 		const u_int histogramSize = 1000000;
 		float *histogram = new float[histogramSize * sizeof(float)];
 		std::fill(histogram, histogram + histogramSize, 0.f);
 		for (u_int i = 0; i < nPix; ++i) {
-			const u_int binIndex = min(Floor2UInt(noiseAwareMap[i] * histogramSize), histogramSize - 1);
+			// Map the value between 0.0 and 1.0
+			const float v = (noiseAwareMap[i] - minValue) / (maxValue - minValue);
 
+			const u_int binIndex = min(Floor2UInt(v * histogramSize), histogramSize - 1);
 			histogram[binIndex] += 1;
 		}
 
-		// Auto-stretching of the map between 5th percentile value and 95th
-
+		// Clamp of the map between 5th percentile value and 95th
 		u_int minIndex = 0;
 		float count = 0;
 		for (u_int i = 0; i < histogramSize; ++i) {
@@ -2662,13 +2655,14 @@ void Film::GenerateNoiseAwareMap() {
 			// Just use a uniform distribution
 			std::fill(noiseAwareMap.get(), noiseAwareMap.get() + nPix, 1.f);
 		} else {
-			const float minAllowedValue = .5f * minIndex / histogramSize;
-			const float maxAllowedValue = .5f * maxIndex / histogramSize;
+			const float minAllowedValue = (maxValue - minValue) * minIndex / histogramSize;
+			const float maxAllowedValue = (maxValue - minValue) * maxIndex / histogramSize;
 
-			// Scale the map in the [minAllowedValue, maxAllowedValue] range
-			for (u_int i = 0; i < nPix; ++i)
-				noiseAwareMap[i] = .95f * max(noiseAwareMap[i] - maxAllowedValue, 0.f) /
-						(maxAllowedValue - minAllowedValue) + .05f;
+			for (u_int i = 0; i < nPix; ++i) {
+				// Clamp the map in the [minAllowedValue, maxAllowedValue] range
+				// and scale between 0.1 and 1.0
+				noiseAwareMap[i] = .9f * Clamp(noiseAwareMap[i], minAllowedValue, maxAllowedValue) / maxAllowedValue + .1f;
+			}
 
 			// Apply an heavy filter to smooth the map
 			float *tmpMap = new float[nPix];
