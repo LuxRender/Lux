@@ -1243,7 +1243,7 @@ void MainWindow::fullScreen()
 		renderView->show ();
 		ui->action_normalScreen->setEnabled (false);
 		showAlphaChanged(ui->action_showAlphaView->isChecked());
-		overlayStatsChanged(ui->action_overlayStats->isChecked());
+		overlayStatsChanged(ui->action_overlayStatsView->isChecked());
 		showUserSamplingMapChanged(ui->action_showUserSamplingMapView->isChecked());
 	}
 	else {
