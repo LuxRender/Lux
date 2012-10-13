@@ -125,7 +125,7 @@ void LuxGuiApp::init(clConfig* config)
 	}
 }
 
-#if defined(__APPLE__) // Doubleclick or dragging .lxs in OSX Finder to LuxRender
+#if defined(__APPLE__) // Doubleclick or dragging .lxs, .lxm or .lxq in OSX Finder to LuxRender
 bool LuxGuiApp::event(QEvent *event)
 {
 	switch (event->type()) {

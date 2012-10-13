@@ -1490,7 +1490,7 @@ void MainWindow::SetRenderThreads(int num)
 	updateWidgetValue(ui->spinBox_Threads, m_numThreads);
 }
 
-#if defined(__APPLE__) // Doubleclick or dragging .lxs in OSX Finder to LuxRender
+#if defined(__APPLE__) // Doubleclick or dragging .lxs, .lxm or .lxq in OSX Finder to LuxRender
 
 void  MainWindow::loadFile(const QString &fileName)
 {
@@ -1529,7 +1529,7 @@ void  MainWindow::loadFile(const QString &fileName)
 		msgBox.setIcon(QMessageBox::Information);
 		QFileInfo fi(fileName);
 		QString name = fi.fileName();
-		msgBox.setText(name +(" is not a renderable scenefile. Please choose an .lxs"));
+		msgBox.setText(name +(" is not a supported filetype. Choose a .lxs, .lxm or .lxq"));
 		msgBox.exec();
 	}
 }
