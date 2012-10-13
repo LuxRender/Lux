@@ -2274,7 +2274,7 @@ void MainWindow::loadTimeout()
 				ui->spinBox_overrideHaltTime->setValue(0);
 
 				bool lxswriteFlm = luxGetBoolAttribute("film", "writeResumeFlm");
-				ui->checkBox_overrideWriteFlm->setChecked(lxswriteFlm);
+				updateWidgetValue(ui->checkBox_overrideWriteFlm, lxswriteFlm);
 			}
 
 			// Start updating the display by faking a resume menu item click.
