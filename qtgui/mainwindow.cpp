@@ -718,7 +718,7 @@ void MainWindow::openQueueFile(const QString& fileName)
 		foreach( renderQueueEntry, renderQueueList ) {
 			addFileToRenderQueue(renderQueueEntry);
 		}
-		RenderNextFileInQueue();
+		RenderNextFileInQueue(false);
 	}
 }	
 	
@@ -2000,7 +2000,7 @@ bool MainWindow::event (QEvent *event)
 			bool renderingNext = false;
 
 			if (IsFileQueued())
-				renderingNext = RenderNextFileInQueue();
+				renderingNext = RenderNextFileInQueue(false);
 
 			if (!renderingNext) {
 				// Stop timers and update output one last time.
@@ -2252,21 +2252,24 @@ void MainWindow::loadTimeout()
 			updateWidgetValue(ui->spinBox_overrideDisplayInterval, luxGetIntAttribute("film", "displayInterval"));
 
 			// override halt conditions if needed
-			if (IsFileInQueue(m_CurrentFile)) {
+			if (!m_resetOverrides)
+			{
 				if (ui->spinBox_overrideHaltSpp->value() > 0)
 					luxSetIntAttribute("film", "haltSamplesPerPixel", ui->spinBox_overrideHaltSpp->value());
 				if (ui->spinBox_overrideHaltTime->value() > 0)
 					luxSetIntAttribute("film", "haltTime", ui->spinBox_overrideHaltTime->value());
 				
-				bool lxswriteFlm = luxGetBoolAttributeDefault("film", "writeResumeFlm");
 				bool writeFlm = ui->checkBox_overrideWriteFlm->isChecked();
-				ui->checkBox_overrideWriteFlm->setChecked(lxswriteFlm); // first check and set from lxs
-				if (writeFlm == true)
-					luxSetBoolAttribute("film", "writeResumeFlm", writeFlm);
+				luxSetBoolAttribute("film", "writeResumeFlm", writeFlm);
 				if (writeFlm)
 					luxSetBoolAttribute("film", "restartResumeFlm", false);
 				else
 					luxSetBoolAttribute("film", "restartResumeFlm", luxGetBoolAttributeDefault("film", "restartResumeFlm"));
+			}
+			else
+			{
+				bool lxswriteFlm = luxGetBoolAttribute("film", "writeResumeFlm");
+				ui->checkBox_overrideWriteFlm->setChecked(lxswriteFlm);
 			}
 
 			// Start updating the display by faking a resume menu item click.
@@ -2768,7 +2771,7 @@ void MainWindow::addQueueFiles()
 
 	if (m_guiRenderState != RENDERING) {
 		LOG(LUX_INFO,LUX_NOERROR) << ">>> " << files.count() << " files added to the Render Queue. Now rendering...";
-		RenderNextFileInQueue();
+		RenderNextFileInQueue(false);
 	}
 }
 
@@ -2797,7 +2800,7 @@ void MainWindow::removeQueueFiles()
 	foreach(row, rows) {
 		renderQueueData.removeRow(row);
 		if (row == currentFileIndex) {
-			RenderNextFileInQueue();      
+			RenderNextFileInQueue(false);
 		}
 	}
 }
@@ -2865,8 +2868,9 @@ bool MainWindow::IsFileQueued()
 	return renderQueueData.rowCount() > 0;
 }
 
-bool MainWindow::RenderNextFileInQueue()
+bool MainWindow::RenderNextFileInQueue(bool resetOverrides)
 {
+	m_resetOverrides = resetOverrides;
 	int idx = -1;
 
 	// update current file

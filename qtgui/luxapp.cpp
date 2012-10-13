@@ -104,7 +104,12 @@ void LuxGuiApp::init(clConfig* config)
 	for (std::vector<std::string>::const_iterator it = config->inputFiles.begin(); it != config->inputFiles.end(); it++)
 		mainwin->addFileToRenderQueue(QString::fromStdString(*it));
 	if (!config->inputFiles.empty() && config->queueFile.empty())
-		mainwin->RenderNextFileInQueue();
+	{
+		if (config->inputFiles.size() == 1)
+			mainwin->RenderNextFileInQueue();
+		else
+			mainwin->RenderNextFileInQueue(false);
+	}
 
 	// Add files in queue file to the render queue
 	if (!config->queueFile.empty())
