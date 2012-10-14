@@ -2841,7 +2841,12 @@ void MainWindow::loopQueueChanged(int state)
 void MainWindow::overrideWriteFlmChanged(bool checked)
 {
 	if (!checked) {
-		if (QMessageBox::question(this, tr("Override resume file settings"),tr("Are you sure you want to disable the resume film setting override?\n\nIf the scene files do not specify usage of resume films you will be unable to use queue looping.\n\nIt is highly recommended that you do not disable this."), QMessageBox::Yes|QMessageBox::No) == QMessageBox::No) {
+		const int rejectButton = 1;
+		if (customMessageBox(this, QMessageBox::Question, tr("Override resume file settings"),tr("Are you sure you want to disable the resume film setting override?\n\nIf the scene files do not specify usage of resume films you will be unable to use queue looping.\n\nIt is highly recommended that you do not disable this."), //QMessageBox::Yes|QMessageBox::No) == QMessageBox::No) {
+			CustomButtonsList()
+			<< qMakePair(tr("Disable FLM"), QMessageBox::AcceptRole)
+			<< qMakePair(tr("Write FLM"), QMessageBox::RejectRole),
+			rejectButton) == rejectButton) {
 			updateWidgetValue(ui->checkBox_overrideWriteFlm, true);
 			return;
 		}
