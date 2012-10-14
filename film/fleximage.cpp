@@ -1556,14 +1556,24 @@ void FlexImageFilm::ConvUpdateThreadImpl(FlexImageFilm *film) {
 			// Lock the frame buffer
 			boost::mutex::scoped_lock(film->write_mutex);
 
-			// Than run the convergence test
-			film->UpdateConvergenceInfo(film->float_framebuffer);
-			LOG(LUX_DEBUG, LUX_NOERROR) << "Convergence test result: " << film->haltThresholdComplete;
+			bool convergenceInfoUpdated = false;
+			if (film->haltThreshold >= 0.f) {
+				// Than run the convergence test
+				film->UpdateConvergenceInfo(film->float_framebuffer);
+				LOG(LUX_DEBUG, LUX_NOERROR) << "Convergence test result: " << film->haltThresholdComplete;
+				convergenceInfoUpdated = true;
+			}
 
 			// Than generate the noise-aware map if required
 			if (film->noiseAwareMap) {
 				const double sppNoiseAwareDelta = (totalSamplesCount - lastCheckNoiseAwarwSamplesCount) / nPix;
 				if (sppNoiseAwareDelta > noiseAwareStep) {
+					if (!convergenceInfoUpdated) {
+						// I have to run the convergence test for TVI information
+						film->UpdateConvergenceInfo(film->float_framebuffer);
+						LOG(LUX_DEBUG, LUX_NOERROR) << "Convergence test result: " << film->haltThresholdComplete;
+					}
+					
 					film->GenerateNoiseAwareMap();
 					lastCheckNoiseAwarwSamplesCount = totalSamplesCount;
 					noiseAwareStep *= 2.0;
