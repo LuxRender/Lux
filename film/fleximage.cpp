@@ -1102,6 +1102,7 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 				//  buffer->Add(xPixel, yPixel, xyz, alpha, filterWt);
 				/*float maxSampleCount = 0.f;
 				float avgSampleCount = 0.f;
+				double totalSampleCount = 0.f;
 				for (u_int p = 0; p < nPix; p++) {
 					// Merge all buffer results
 					float sampleCount = 0.f;
@@ -1119,12 +1120,12 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 					}
 
 					maxSampleCount = max(maxSampleCount, sampleCount);
-					avgSampleCount += sampleCount;
+					totalSampleCount += sampleCount;
 				}
-				avgSampleCount /= nPix;
+				avgSampleCount = totalSampleCount / nPix;
 
 				//const float scale = 1.f / maxSampleCount;
-				const float scale = 1.f / avgSampleCount;
+				//const float scale = 1.f / avgSampleCount;
 				for (u_int p = 0; p < nPix; p++) {
 					// Merge all buffer results
 					float sampleCount = 0.f;
@@ -1141,8 +1142,12 @@ void FlexImageFilm::WriteImage2(ImageType type, vector<XYZColor> &xyzcolor, vect
 						}
 					}
 
+					//framebuffer[3 * p] = framebuffer[3 * p + 1] = framebuffer[3 * p + 2] = 
+					//		static_cast<unsigned char>(Clamp(256.f * sampleCount * scale, 0.f, 255.f));
+					const float v = (Clamp(sampleCount, avgSampleCount * .5f, avgSampleCount * 2.f) - avgSampleCount * .5f) /
+						(avgSampleCount * 2.f - avgSampleCount * .5f);
 					framebuffer[3 * p] = framebuffer[3 * p + 1] = framebuffer[3 * p + 2] = 
-							static_cast<unsigned char>(Clamp(256.f * sampleCount * scale, 0.f, 255.f));
+							static_cast<unsigned char>(Clamp(256.f * v, 0.f, 255.f));
 				}*/
 			}
 
