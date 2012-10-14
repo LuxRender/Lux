@@ -253,8 +253,8 @@ public:
 	bool m_auto_tonemap;
 
 	void loadFile(const QString &fileName);
-	bool addFileToRenderQueue(const QString &sceneFileName);
-	bool RenderNextFileInQueue();
+	bool addFileToRenderQueue(const QString& sceneFileName, const QString& flmFilename = "");
+	bool RenderNextFileInQueue(bool resetOverrides = true);
 
 	void AddNetworkSlaves(const QVector<QString> &slaves);
 	void RemoveNetworkSlaves(const QVector<QString> &slaves);
@@ -394,6 +394,7 @@ private:
 	QString m_lastOpendir;
 	QList<QFileInfo> m_recentFiles;
 	QAction *m_recentFileActions[MaxRecentFiles];
+	bool m_resetOverrides;
 
 	static void LuxGuiErrorHandler(int code, int severity, const char *msg);
 	static QWidget *instance;
