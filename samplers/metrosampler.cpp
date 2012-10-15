@@ -395,6 +395,10 @@ void MetropolisSampler::AddSample(const Sample &sample)
 
 	sample.contribBuffer->AddSampleCount(1.f);
 
+	// Define the probability of large mutations. It is 50% if we are still
+	// inside the cooldown phase.
+	const float largeMutationProb = (data->cooldown) ? .5f : pLarge;
+	
 	// calculate accept probability from old and new image sample
 	float accProb;
 	if (data->LY > 0.f && data->consecRejects < maxRejects)
@@ -406,7 +410,7 @@ void MetropolisSampler::AddSample(const Sample &sample)
 	// try or force accepting of the new sample
 	if (accProb == 1.f || sample.rng->floatValue() < accProb) {
 		// Add accumulated contribution of previous reference sample
-		const float norm = data->weight / (data->LY / meanIntensity + pLarge);
+		const float norm = data->weight / (data->LY / meanIntensity + largeMutationProb);
 		if (norm > 0.f) {
 			for(u_int i = 0; i < data->oldContributions.size(); ++i)
 				sample.contribBuffer->Add(data->oldContributions[i], norm);
@@ -422,7 +426,7 @@ void MetropolisSampler::AddSample(const Sample &sample)
 		data->consecRejects = 0;
 	} else {
 		// Add contribution of new sample before rejecting it
-		const float norm = newWeight / (newLY / meanIntensity + pLarge);
+		const float norm = newWeight / (newLY / meanIntensity + largeMutationProb);
 		if (norm > 0.f) {
 			for(u_int i = 0; i < newContributions.size(); ++i)
 				sample.contribBuffer->Add(newContributions[i], norm);
