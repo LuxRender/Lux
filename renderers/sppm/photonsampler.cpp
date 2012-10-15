@@ -122,6 +122,7 @@ void PhotonSampler::TracePhoton(
 					photon.wi = wi;
 					photon.alpha = alpha;
 					photon.lightGroup = light->group;
+					photon.sw = sw;
 
 					renderer->hitPoints->AddFlux(*sample, photon);
 				}

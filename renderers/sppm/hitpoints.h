@@ -38,6 +38,7 @@ class PhotonData
 public:
 	Point p;
 	Vector wi;
+	SpectrumWavelengths sw;
 	SWCSpectrum alpha;
 	u_int lightGroup;
 };
