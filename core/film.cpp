@@ -2615,12 +2615,13 @@ void Film::GenerateNoiseAwareMap() {
 		}
 
 		// Than build an histogram of the map
+		const float valueRange = maxValue - minValue;
 		const u_int histogramSize = 1000000;
 		float *histogram = new float[histogramSize * sizeof(float)];
 		std::fill(histogram, histogram + histogramSize, 0.f);
 		for (u_int i = 0; i < nPix; ++i) {
 			// Map the value between 0.0 and 1.0
-			const float v = (noiseAwareMap[i] - minValue) / (maxValue - minValue);
+			const float v = (noiseAwareMap[i] - minValue) / valueRange;
 
 			const u_int binIndex = min(Floor2UInt(v * histogramSize), histogramSize - 1);
 			histogram[binIndex] += 1;
@@ -2657,13 +2658,14 @@ void Film::GenerateNoiseAwareMap() {
 			// Just use a uniform distribution
 			std::fill(noiseAwareMap.get(), noiseAwareMap.get() + nPix, 1.f);
 		} else {
-			const float minAllowedValue = (maxValue - minValue) * minIndex / histogramSize;
-			const float maxAllowedValue = (maxValue - minValue) * maxIndex / histogramSize;
+			const float minAllowedValue = valueRange * minIndex / histogramSize + minValue;
+			const float maxAllowedValue = valueRange * maxIndex / histogramSize + minValue;
 
 			for (u_int i = 0; i < nPix; ++i) {
 				// Clamp the map in the [minAllowedValue, maxAllowedValue] range
 				// and scale between 0.1 and 1.0
-				noiseAwareMap[i] = .9f * Clamp(noiseAwareMap[i], minAllowedValue, maxAllowedValue) / maxAllowedValue + .1f;
+				noiseAwareMap[i] = .8f * (Clamp(noiseAwareMap[i], minAllowedValue, maxAllowedValue) - minAllowedValue) /
+						(maxAllowedValue - minAllowedValue) + .2f;
 			}
 
 			// Apply an heavy filter to smooth the map
