@@ -55,11 +55,16 @@ void HitPointsLookUpAccel::AddFluxToHitPoint(Sample &sample, HitPoint *hp, const
 	if ((dist2 >  hp->accumPhotonRadius2))
 		return;
 
-	const SWCSpectrum f = hpep.bsdf->F(photon.sw, photon.wi, hpep.wo, true, hitPoints->store_component);
+	// to enable dispertion we need to take into account the dispertion of the
+	// hitpoint and the photon
+	SpectrumWavelengths sw(sample.swl);
+	sw.single = photon.single || hpep.single;
+
+	const SWCSpectrum f = hpep.bsdf->F(sw, photon.wi, hpep.wo, true, hitPoints->store_component);
 	if (f.Black())
 		return;
 
-	XYZColor flux = XYZColor(photon.sw, photon.alpha * f * hpep.pathThroughput) * Ekernel(dist2, hp->accumPhotonRadius2);
+	XYZColor flux = XYZColor(sw, photon.alpha * f * hpep.pathThroughput) * Ekernel(dist2, hp->accumPhotonRadius2);
 
 	dynamic_cast<PhotonSampler *>(sample.sampler)->AddSample(&sample, photon.lightGroup, hp, flux);
 }

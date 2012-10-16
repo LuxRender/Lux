@@ -38,9 +38,9 @@ class PhotonData
 public:
 	Point p;
 	Vector wi;
-	SpectrumWavelengths sw;
 	SWCSpectrum alpha;
 	u_int lightGroup;
+	bool single;
 };
 
 
@@ -59,6 +59,7 @@ public:
 	float distance;
 
 	Vector wo;
+	bool single;
 };
 
 /*
