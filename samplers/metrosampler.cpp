@@ -218,19 +218,17 @@ bool MetropolisSampler::GetNextSample(Sample *sample)
 		}
 		
 		if ((data->noiseAwareMapVersion > 0) || (data->userSamplingMapVersion > 0)) {
-			data->currentImage[0] = rngGet(0);
-			data->currentImage[1] = rngGet(1);
-
-			float pdf;
-			data->samplingDistribution2D->SampleContinuous(data->currentImage[0], data->currentImage[1], data->samplingDistributionUV, &pdf);
-			sample->imageX = data->samplingDistributionUV[0] * (xPixelEnd - xPixelStart) + xPixelStart;
-			sample->imageY = data->samplingDistributionUV[1] * (yPixelEnd - yPixelStart) + yPixelStart;
+			float uv[2], pdf;
+			data->samplingDistribution2D->SampleContinuous(rngGet(0), rngGet(1), uv, &pdf);
+			data->currentImage[0] = uv[0] * (xPixelEnd - xPixelStart) + xPixelStart;
+			data->currentImage[1] = uv[1] * (yPixelEnd - yPixelStart) + yPixelStart;
 		} else {
 			data->currentImage[0] = rngGet(0) * (xPixelEnd - xPixelStart) + xPixelStart;
 			data->currentImage[1] = rngGet(1) * (yPixelEnd - yPixelStart) + yPixelStart;
-			sample->imageX = data->currentImage[0];
-			sample->imageY = data->currentImage[1];
 		}
+
+		sample->imageX = data->currentImage[0];
+		sample->imageY = data->currentImage[1];
 
 		// Initialize all non lazy samples
 		for (u_int i = 2; i < data->normalSamples; ++i)
@@ -247,22 +245,13 @@ bool MetropolisSampler::GetNextSample(Sample *sample)
 	} else {
 		// *** small mutation ***
 		// Mutation of non lazy samples
-		if ((data->noiseAwareMapVersion > 0) || (data->userSamplingMapVersion > 0)) {
-			data->currentImage[0] = mutate(data->sampleImage[0], rngGet(0));
-			data->currentImage[1] = mutate(data->sampleImage[1], rngGet(1));
+		sample->imageX = data->currentImage[0] =
+			mutateScaled(data->sampleImage[0], rngGet(0),
+			xPixelStart, xPixelEnd, range);
+		sample->imageY = data->currentImage[1] =
+			mutateScaled(data->sampleImage[1], rngGet(1),
+			yPixelStart, yPixelEnd, range);
 
-			float pdf;
-			data->samplingDistribution2D->SampleContinuous(data->currentImage[0], data->currentImage[1], data->samplingDistributionUV, &pdf);
-			sample->imageX = data->samplingDistributionUV[0] * (xPixelEnd - xPixelStart) + xPixelStart;
-			sample->imageY = data->samplingDistributionUV[1] * (yPixelEnd - yPixelStart) + yPixelStart;
-		} else {
-			sample->imageX = data->currentImage[0] =
-				mutateScaled(data->sampleImage[0], rngGet(0),
-				xPixelStart, xPixelEnd, range);
-			sample->imageY = data->currentImage[1] =
-				mutateScaled(data->sampleImage[1], rngGet(1),
-				yPixelStart, yPixelEnd, range);
-		}
 		sample->lensU = data->currentImage[2] =
 			mutateScaled(data->sampleImage[2], rngGet(2),
 			0.f, 1.f, .5f);
@@ -353,23 +342,16 @@ void MetropolisSampler::AddSample(const Sample &sample)
 	vector<Contribution> &newContributions(sample.contributions);
 	float newLY = 0.f;
 	if ((data->noiseAwareMapVersion > 0) || (data->userSamplingMapVersion > 0)) {
-		const u_int xPixelCount = film->GetXPixelCount();
-		const u_int yPixelCount = film->GetYPixelCount();
-
 		for(u_int i = 0; i < newContributions.size(); ++i) {
-			const u_int x = min(xPixelCount - 1, Floor2UInt(data->samplingDistributionUV[0] * xPixelCount));
-			const u_int y = min(yPixelCount - 1, Floor2UInt(data->samplingDistributionUV[1] * yPixelCount));
-			const int index = x + y * xPixelCount;
-
 			const float ly = newContributions[i].color.Y();
 
 			if (ly > 0.f && !isinf(ly)) {
-				const float smValue = data->samplingMap[index];
+				const float samplingMapValue = data->samplingDistribution2D->Pdf(data->currentImage[0], data->currentImage[1]);
 
 				if (useVariance && newContributions[i].variance > 0.f)
-					newLY += ly * newContributions[i].variance * smValue;
+					newLY += ly * newContributions[i].variance * samplingMapValue;
 				else
-					newLY += ly * smValue;
+					newLY += ly * samplingMapValue;
 			} else
 				newContributions[i].color = XYZColor(0.);
 		}
@@ -398,7 +380,7 @@ void MetropolisSampler::AddSample(const Sample &sample)
 	// Define the probability of large mutations. It is 50% if we are still
 	// inside the cooldown phase.
 	const float largeMutationProb = (data->cooldown) ? .5f : pLarge;
-	
+
 	// calculate accept probability from old and new image sample
 	float accProb;
 	if (data->LY > 0.f && data->consecRejects < maxRejects)

@@ -53,11 +53,10 @@ public:
 		vector <Contribution> oldContributions;
 		double totalLY, sampleCount;
 
-		boost::shared_array<float> samplingMap;		
+		boost::shared_array<float> samplingMap;
 		u_int noiseAwareMapVersion;
 		u_int userSamplingMapVersion;
 		boost::shared_ptr<Distribution2D> samplingDistribution2D;
-		float samplingDistributionUV[2];
 
 		bool large, cooldown;
 	};

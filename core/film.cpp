@@ -2721,9 +2721,8 @@ float *Film::GetUserSamplingMap() {
 
 void Film::SetUserSamplingMap(const float *map) {
 	boost::mutex::scoped_lock lock(samplingMapMutex);
-	
-	// TODO: reject the map if all values are 0.0
 
+	// TODO: reject the map if all values are 0.0
 	const u_int nPix = xPixelCount * yPixelCount;
 	userSamplingMap.reset(new float[nPix]);
 
