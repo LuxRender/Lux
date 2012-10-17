@@ -346,7 +346,13 @@ void MetropolisSampler::AddSample(const Sample &sample)
 			const float ly = newContributions[i].color.Y();
 
 			if (ly > 0.f && !isinf(ly)) {
-				const float samplingMapValue = data->samplingDistribution2D->Pdf(data->currentImage[0], data->currentImage[1]);
+				const u_int xPixelCount = film->GetXPixelCount();
+				const u_int yPixelCount = film->GetYPixelCount();
+				const u_int x = min(xPixelCount - 1, Floor2UInt(data->currentImage[0] - xPixelStart));
+				const u_int y = min(yPixelCount - 1, Floor2UInt(data->currentImage[1] - yPixelStart));
+				const int index = x + y * xPixelCount;
+
+				const float samplingMapValue = data->samplingMap[index];
 
 				if (useVariance && newContributions[i].variance > 0.f)
 					newLY += ly * newContributions[i].variance * samplingMapValue;
