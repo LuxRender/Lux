@@ -153,7 +153,7 @@ void Irawan::eval(const Vector &wo, const Vector &wi, const float u_i, const flo
 		modulo((int) xy.x, weave->tileWidth),
 		modulo((int) xy.y, weave->tileHeight));
 
-	int yarnID = weave->pattern[(uint)lookup.x + (uint)lookup.y * weave->tileWidth] - 1;
+	int yarnID = weave->pattern[(u_int)lookup.x + (u_int)lookup.y * weave->tileWidth] - 1;
 
 	Yarn *yarn = weave->yarns.at(yarnID);
 	// store center of the yarn segment

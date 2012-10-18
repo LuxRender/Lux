@@ -70,7 +70,7 @@ boost::shared_ptr<WeavePattern> DenimPattern(const float repeat_u, const float r
 		2, 4, 5
 	};
 
-	for (uint i = 0; i < pattern->tileHeight * pattern->tileWidth; i++)
+	for (u_int i = 0; i < pattern->tileHeight * pattern->tileWidth; i++)
 		pattern->pattern.push_back(patterns[i]);
 
 	pattern->yarns.push_back(new Yarn(Yarn::EWarp, -30, 12, 0, 1, 5, 0.1667, 0.75));
@@ -101,7 +101,7 @@ boost::shared_ptr<WeavePattern> SilkCharmeusePattern(const float repeat_u, const
 		1,  3,  5,  7,  9
 	};
 
-	for (uint i = 0; i < pattern->tileHeight * pattern->tileWidth; i++)
+	for (u_int i = 0; i < pattern->tileHeight * pattern->tileWidth; i++)
 		pattern->pattern.push_back(patterns[i]);
 
 	pattern->yarns.push_back(new Yarn(Yarn::EWarp, 0, 40, 2, 1, 9, 0.1, 0.45));
@@ -136,7 +136,7 @@ boost::shared_ptr<WeavePattern> CottonTwillPattern(const float repeat_u, const f
 		1, 3, 5, 10
 	};
 
-	for (uint i = 0; i < pattern->tileHeight * pattern->tileWidth; i++)
+	for (u_int i = 0; i < pattern->tileHeight * pattern->tileWidth; i++)
 		pattern->pattern.push_back(patterns[i]);
 
 	pattern->yarns.push_back(new Yarn(Yarn::EWarp, -30, 24, 0, 1, 6, 0.125, 0.375));
@@ -168,7 +168,7 @@ boost::shared_ptr<WeavePattern> WoolGabardinePattern(const float repeat_u, const
 		5, 5, 3, 3, 4, 4
 	};
 
-	for (uint i = 0; i < pattern->tileHeight * pattern->tileWidth; i++)
+	for (u_int i = 0; i < pattern->tileHeight * pattern->tileWidth; i++)
 		pattern->pattern.push_back(patterns[i]);
 
 	pattern->yarns.push_back(new Yarn(Yarn::EWarp, 30, 30, 0, 2, 6, 0.167, 0.667));
@@ -190,7 +190,7 @@ boost::shared_ptr<WeavePattern> PolyesterLiningClothPattern(const float repeat_u
 		1, 4
 	};
 
-	for (uint i = 0; i < pattern->tileHeight * pattern->tileWidth; i++)
+	for (u_int i = 0; i < pattern->tileHeight * pattern->tileWidth; i++)
 		pattern->pattern.push_back(patterns[i]);
 
 	pattern->yarns.push_back(new Yarn(Yarn::EWarp, 0, 22, -0.7, 1, 1, 0.25, 0.25));
@@ -215,7 +215,7 @@ boost::shared_ptr<WeavePattern> SilkShantungPattern(const float repeat_u, const 
 		4, 1, 1, 5, 5, 5
 	};
 
-	for (uint i = 0; i < pattern->tileHeight * pattern->tileWidth; i++)
+	for (u_int i = 0; i < pattern->tileHeight * pattern->tileWidth; i++)
 		pattern->pattern.push_back(patterns[i]);
 
 	pattern->yarns.push_back(new Yarn(Yarn::EWarp, 0, 50, -0.5, 2, 4, 0.3333, 0.25));
@@ -238,13 +238,13 @@ Cloth::Cloth(boost::shared_ptr<Texture<SWCSpectrum> > &warp_kd,
 		/* Estimate the average reflectance under diffuse illumination and use it to normalize the specular component */
 
 		RandomGenerator *random = new RandomGenerator();
-		uint nSamples = 10000;
+		u_int nSamples = 10000;
 
 		SWCSpectrum s,result(0.0f);
 
 		Irawan *irawan = new Irawan(s,s,s,s,random->floatValue(), random->floatValue(), 0.0, Pattern);
 
-		for (uint i=0; i < nSamples; ++i) {
+		for (u_int i=0; i < nSamples; ++i) {
 			SWCSpectrum f;
 			const Vector wi = CosineSampleHemisphere(random->floatValue(), random->floatValue());
 			const Vector wo = CosineSampleHemisphere(random->floatValue(), random->floatValue());

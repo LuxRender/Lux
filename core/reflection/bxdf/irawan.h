@@ -103,7 +103,7 @@ public:
 	float warpArea, weftArea;
 
 	// Size of the weave pattern
-	uint tileWidth, tileHeight;
+	u_int tileWidth, tileHeight;
 
 	// Noise-related parameters
 	float dWarpUmaxOverDWarp;
@@ -114,7 +114,7 @@ public:
 	float repeat_u, repeat_v;
 
 	// Detailed weave pattern
-	std::vector<uint> pattern;
+	std::vector<u_int> pattern;
 
 	// List of all yarns referenced in pattern
 	std::vector<Yarn *> yarns;
@@ -126,7 +126,7 @@ public:
 		dWeftUmaxOverDWarp(0), dWeftUmaxOverDWeft(0),
 		fineness(0), period(0) { }
 
-	WeavePattern(std::string w_name, uint w_tileWidth, uint w_tileHeight, float w_alpha, float w_beta, float w_ss, float w_hWidth, float w_warpArea, float w_weftArea, float w_fineness, float w_repeat_u, float w_repeat_v,
+	WeavePattern(std::string w_name, u_int w_tileWidth, u_int w_tileHeight, float w_alpha, float w_beta, float w_ss, float w_hWidth, float w_warpArea, float w_weftArea, float w_fineness, float w_repeat_u, float w_repeat_v,
 				 float w_dWarpUmaxOverDWarp, float w_dWarpUmaxOverDWeft, float w_dWeftUmaxOverDWarp, float w_dWeftUmaxOverDWeft, float w_period) : name(w_name), alpha(w_alpha), beta(w_beta), ss(w_ss), hWidth(w_hWidth),
 		warpArea(w_warpArea), weftArea(w_weftArea), tileWidth(w_tileWidth), tileHeight(w_tileHeight), repeat_u(w_repeat_u), repeat_v(w_repeat_v),
 		dWarpUmaxOverDWarp(w_dWarpUmaxOverDWarp * M_PI / 180.0f), dWarpUmaxOverDWeft(w_dWarpUmaxOverDWeft * M_PI / 180.0f),
@@ -134,7 +134,7 @@ public:
 		fineness(w_fineness), period(w_period) { }
 
 	~WeavePattern() {
-		uint i;
+		u_int i;
 		i = yarns.max_size();
 		while (i--) {
 			Yarn *yarn = yarns.at(i);
