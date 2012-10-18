@@ -130,6 +130,7 @@ SOURCE_GROUP("Source Files\\Core\\Reflection\\BSDF" FILES ${lux_core_reflection_
 
 SET(lux_core_reflection_bxdf_src
 	core/reflection/bxdf/asperity.cpp
+	core/reflection/bxdf/irawan.cpp
 	core/reflection/bxdf/brdftobtdf.cpp
 	core/reflection/bxdf/cooktorrance.cpp
 	core/reflection/bxdf/fresnelblend.cpp
@@ -252,6 +253,7 @@ SOURCE_GROUP("Source Files\\Lights\\Spherical Functions" FILES ${lux_lights_sphe
 
 SET(lux_materials_src
 	materials/carpaint.cpp
+	materials/cloth.cpp
 	materials/glass.cpp
 	materials/glass2.cpp
 	materials/glossy.cpp
