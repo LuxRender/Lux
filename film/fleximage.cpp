@@ -418,9 +418,11 @@ void FlexImageFilm::SetParameterValue(luxComponentParameters param, double value
 			break;
 	 }
 
-	 // Reset the convergence test
-	if (convTest)
+	// Reset the convergence test
+	if (convTest) {
+		boost::mutex::scoped_lock(write_mutex);
 		convTest->Reset();
+	}
 }
 double FlexImageFilm::GetParameterValue(luxComponentParameters param, u_int index)
 {
@@ -811,8 +813,10 @@ void FlexImageFilm::SetStringParameterValue(luxComponentParameters param, const 
 	}
 
 	// Reset the convergence test
-	if (convTest)
+	if (convTest) {
+		boost::mutex::scoped_lock(write_mutex);
 		convTest->Reset();
+	}
 }
 string FlexImageFilm::GetStringParameterValue(luxComponentParameters param, u_int index) {
 	switch(param) {

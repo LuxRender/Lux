@@ -999,8 +999,10 @@ void Film::SetGroupEnable(u_int index, bool status)
 	bufferGroups[index].enable = status;
 
 	// Reset the convergence test
-	if (convTest)
+	if (convTest) {
+		boost::mutex::scoped_lock(write_mutex);
 		convTest->Reset();
+	}
 }
 bool Film::GetGroupEnable(u_int index) const
 {
@@ -1016,8 +1018,10 @@ void Film::SetGroupScale(u_int index, float value)
 	ComputeGroupScale(index);
 
 	// Reset the convergence test
-	if (convTest)
+	if (convTest) {
+		boost::mutex::scoped_lock(write_mutex);
 		convTest->Reset();
+	}
 }
 float Film::GetGroupScale(u_int index) const
 {
@@ -1033,8 +1037,10 @@ void Film::SetGroupRGBScale(u_int index, const RGBColor &value)
 	ComputeGroupScale(index);
 
 	// Reset the convergence test
-	if (convTest)
+	if (convTest) {
+		boost::mutex::scoped_lock(write_mutex);
 		convTest->Reset();
+	}
 }
 RGBColor Film::GetGroupRGBScale(u_int index) const
 {
@@ -1050,8 +1056,10 @@ void Film::SetGroupTemperature(u_int index, float value)
 	ComputeGroupScale(index);
 
 	// Reset the convergence test
-	if (convTest)
+	if (convTest) {
+		boost::mutex::scoped_lock(write_mutex);
 		convTest->Reset();
+	}
 }
 float Film::GetGroupTemperature(u_int index) const
 {

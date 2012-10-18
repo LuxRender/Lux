@@ -216,7 +216,7 @@ bool MetropolisSampler::GetNextSample(Sample *sample)
 				data->weight = 0.f;
 			}
 		}
-		
+
 		if ((data->noiseAwareMapVersion > 0) || (data->userSamplingMapVersion > 0)) {
 			float uv[2], pdf;
 			data->samplingDistribution2D->SampleContinuous(rngGet(0), rngGet(1), uv, &pdf);
@@ -373,7 +373,7 @@ void MetropolisSampler::AddSample(const Sample &sample)
 				newContributions[i].color = XYZColor(0.f);
 		}
 	}
-
+		
 	if (data->large) {
 		data->totalLY += newLY;
 		++(data->sampleCount);

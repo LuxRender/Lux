@@ -136,7 +136,6 @@ private:
 	float m_LinearGamma, d_LinearGamma;
 	float m_ContrastYwa, d_ContrastYwa;
 
-	boost::mutex write_mutex; // WriteImage synchronization
 	int writeInterval;
 	boost::xtime lastWriteImageTime;
 	int flmWriteInterval;

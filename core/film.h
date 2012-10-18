@@ -774,6 +774,8 @@ protected: // Put it here for better data alignment
 	std::vector<BufferConfig> bufferConfigs;
 	std::vector<BufferGroup> bufferGroups;
 
+	boost::mutex write_mutex; // WriteImage/ConvergenceTest (i.e. image pipeline) synchronization
+
 	// Enabled by haltthreshold
 	luxrays::utils::ConvergenceTest *convTest;
 
