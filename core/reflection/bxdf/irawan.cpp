@@ -267,32 +267,6 @@ void Irawan::eval(const Vector &wo, const Vector &wi, const float u_i, const flo
 	*f_ += result * CosTheta(wo);
 }
 
-bool Irawan::SampleF(const SpectrumWavelengths &sw, const Vector &wo,
-	Vector *wi, float u1, float u2, SWCSpectrum *const f_, float *pdf,
-	float *pdfBack, bool reverse) const
-{
-	// Cosine-sample the hemisphere, flipping the direction if necessary
-	*wi = CosineSampleHemisphere(u1, u2);
-	if (wo.z < 0.f) wi->z *= -1.f;
-	// wi may be in the tangent plane, which will
-	// fail the SameHemisphere test in Pdf()
-	if (!SameHemisphere(wo, *wi))
-		return false;
-	*pdf = Pdf(sw, wo, *wi);
-	if (pdfBack)
-		*pdfBack = Pdf(sw, *wi, wo);
-
-	SWCSpectrum result(0.0f);
-	eval(wo,*wi, U, V, &result, false);
-
-	*f_ = result * M_PI / CosTheta(wo);
-
-	if (!reverse)
-		*f_ *= fabsf(wo.z / wi->z);
-
-	return true;
-}
-
 /** parameters:
  *	u	 to be compared to u(v) in texturing
  *	v	 for filament, we compute u(v)

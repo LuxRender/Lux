@@ -154,7 +154,7 @@ boost::shared_ptr<WeavePattern> CottonTwillPattern(const float repeat_u, const f
 }
 
 boost::shared_ptr<WeavePattern> WoolGabardinePattern(const float repeat_u, const float repeat_v) {
-	boost::shared_ptr<WeavePattern> pattern(new WeavePattern((std::string)"Wool gabardine", 6, 9, 0.01f,4.0f, 0.0f, 0.5f, 12.0f, 6.0f, 4.0f, repeat_u,repeat_v, 0.0f,0.0f,0.0f,0.0f, 0.0f));
+	boost::shared_ptr<WeavePattern> pattern(new WeavePattern((std::string)"Wool gabardine", 6, 9, 0.01f,4.0f, 0.0f, 0.5f, 12.0f, 6.0f, 0.0f, repeat_u,repeat_v, 0.0f,0.0f,0.0f,0.0f, 0.0f));
 
 	int patterns[] = {
 		1, 1, 2, 2, 7, 7,
@@ -238,7 +238,7 @@ Cloth::Cloth(boost::shared_ptr<Texture<SWCSpectrum> > &warp_kd,
 		/* Estimate the average reflectance under diffuse illumination and use it to normalize the specular component */
 
 		RandomGenerator *random = new RandomGenerator();
-		u_int nSamples = 10000;
+		u_int nSamples = 100000;
 
 		SWCSpectrum s,result(0.0f);
 

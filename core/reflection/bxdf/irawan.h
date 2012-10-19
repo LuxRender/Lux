@@ -155,9 +155,6 @@ public:
 	virtual void F(const SpectrumWavelengths &sw, const Vector &wo,
 		const Vector &wi, SWCSpectrum *const f) const;
 	virtual void eval(const Vector &wo, const Vector &wi, const float u_i, const float v_i, SWCSpectrum *const f, bool init) const;
-	bool SampleF(const SpectrumWavelengths &sw, const Vector &wo,
-		Vector *wi, float u1, float u2, SWCSpectrum *const f_,
-		float *pdf, float *pdfBack, bool reverse) const;
 
 private:
 	float evalFilamentIntegrand(float u, float v, const Vector &om_i,
