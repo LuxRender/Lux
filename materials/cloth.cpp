@@ -301,7 +301,7 @@ Material* Cloth::CreateMaterial(const Transform &xform, const ParamSet &mp)
 		pattern = DenimPattern(repeat_u, repeat_v);
 	else if (presetname == "cotton_twill")
 		pattern = CottonTwillPattern(repeat_u, repeat_v);
-	else if (presetname == "wool_garbardine")
+	else if (presetname == "wool_gabardine")
 		pattern = WoolGabardinePattern(repeat_u, repeat_v);
 	else if (presetname == "polyester_lining_cloth")
 		pattern = PolyesterLiningClothPattern(repeat_u, repeat_v);
