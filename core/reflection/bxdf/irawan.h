@@ -134,8 +134,7 @@ public:
 		fineness(w_fineness), period(w_period) { }
 
 	~WeavePattern() {
-		u_int i;
-		i = yarns.max_size();
+		u_int i = yarns.size();
 		while (i--) {
 			Yarn *yarn = yarns.at(i);
 			delete yarn;
