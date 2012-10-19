@@ -237,32 +237,31 @@ Cloth::Cloth(boost::shared_ptr<Texture<SWCSpectrum> > &warp_kd,
 
 		/* Estimate the average reflectance under diffuse illumination and use it to normalize the specular component */
 
-		RandomGenerator *random = new RandomGenerator();
+		RandomGenerator random(1);
 		u_int nSamples = 10000;
 
-		SWCSpectrum s,result(0.0f);
+		SWCSpectrum s;
 
-		Irawan *irawan = new Irawan(s,s,s,s,random->floatValue(), random->floatValue(), 0.0, Pattern);
+		Irawan *irawan = new Irawan(s,s,s,s,random.floatValue(),
+			random.floatValue(), 0.0, Pattern);
 
-		for (u_int i=0; i < nSamples; ++i) {
-			SWCSpectrum f;
-			const Vector wi = CosineSampleHemisphere(random->floatValue(), random->floatValue());
-			const Vector wo = CosineSampleHemisphere(random->floatValue(), random->floatValue());
+		float result = 0.f;
+		for (u_int i = 0; i < nSamples; ++i) {
+			const Vector wi = CosineSampleHemisphere(random.floatValue(), random.floatValue());
+			const Vector wo = CosineSampleHemisphere(random.floatValue(), random.floatValue());
 
-			irawan->eval(wo, wi, random->floatValue(), random->floatValue(), &f, true);
-			result += f * (1.0 / CosTheta(wo));
+			result += irawan->evalSpecular(wo, wi, random.floatValue(), random.floatValue(), NULL);
 		}
 
-		if (result.Black())
-			specularNormalization = 0;
+		if (result > 0.f)
+			specularNormalization = nSamples / result;
 		else
-			specularNormalization = nSamples / (result.Max() * M_PI);
+			specularNormalization = 0;
 
 		delete irawan;
-		delete random;
 }
 
-// CarPaint Method Definitions
+// Cloth Method Definitions
 BSDF *Cloth::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 	const Intersection &isect, const DifferentialGeometry &dgs) const
 {
@@ -272,9 +271,11 @@ BSDF *Cloth::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 	SWCSpectrum weft_ks = weft_Ks->Evaluate(sw, dgs).Clamp(0.f, 1.f);
 
 	// Allocate _BSDF_
-	BxDF *bxdf = ARENA_ALLOC(arena, Irawan)(warp_kd, warp_ks, weft_kd, weft_ks, dgs.u, dgs.v, specularNormalization, Pattern);
+	BxDF *bxdf = ARENA_ALLOC(arena, Irawan)(warp_kd, warp_ks,
+		weft_kd, weft_ks, dgs.u, dgs.v, specularNormalization, Pattern);
 
-	SingleBSDF *bsdf = ARENA_ALLOC(arena, SingleBSDF)(dgs, isect.dg.nn, bxdf, isect.exterior, isect.interior);
+	SingleBSDF *bsdf = ARENA_ALLOC(arena, SingleBSDF)(dgs, isect.dg.nn,
+		bxdf, isect.exterior, isect.interior);
 
 	// Add ptr to CompositingParams structure
 	bsdf->SetCompositingParams(&compParams);

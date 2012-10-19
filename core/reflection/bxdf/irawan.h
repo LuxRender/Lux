@@ -79,12 +79,14 @@ public:
 	// v coordinate of the yarn segment center
 	float centerV;
 
-	Yarn() : type(EWarp),
-		psi(0), umax(0), kappa(0), width(0), length(0),
+	Yarn() : type(EWarp), psi(0), umax(0), kappa(0), width(0), length(0),
 		centerU(0), centerV(0) { }
 
-	Yarn(EYarnType y_type, float y_psi, float y_umax, float y_kappa, float y_width, float y_length, float y_centerU, float y_centerV) : type(y_type),
-		psi(y_psi * M_PI / 180.0f), umax(y_umax * M_PI / 180.0f),kappa(y_kappa),width(y_width),length(y_length),centerU(y_centerU),centerV(y_centerV) {  }
+	Yarn(EYarnType y_type, float y_psi, float y_umax, float y_kappa,
+		float y_width, float y_length, float y_centerU,
+		float y_centerV) : type(y_type), psi(y_psi * M_PI / 180.0f),
+		umax(y_umax * M_PI / 180.0f), kappa(y_kappa), width(y_width),
+		length(y_length), centerU(y_centerU), centerV(y_centerV) {  }
 };
 
 class WeavePattern {
@@ -120,55 +122,66 @@ public:
 	std::vector<Yarn *> yarns;
 
 	WeavePattern() : name(""),
-		alpha(0), beta(0), ss(0), hWidth(0), repeat_u(0), repeat_v(0),
-		warpArea(0), weftArea(0), tileWidth(0), tileHeight(0),
+		alpha(0), beta(0), ss(0), hWidth(0), warpArea(0), weftArea(0),
+		tileWidth(0), tileHeight(0),
 		dWarpUmaxOverDWarp(0), dWarpUmaxOverDWeft(0),
 		dWeftUmaxOverDWarp(0), dWeftUmaxOverDWeft(0),
-		fineness(0), period(0) { }
+		fineness(0), period(0), repeat_u(0), repeat_v(0) { }
 
-	WeavePattern(std::string w_name, u_int w_tileWidth, u_int w_tileHeight, float w_alpha, float w_beta, float w_ss, float w_hWidth, float w_warpArea, float w_weftArea, float w_fineness, float w_repeat_u, float w_repeat_v,
-				 float w_dWarpUmaxOverDWarp, float w_dWarpUmaxOverDWeft, float w_dWeftUmaxOverDWarp, float w_dWeftUmaxOverDWeft, float w_period) : name(w_name), alpha(w_alpha), beta(w_beta), ss(w_ss), hWidth(w_hWidth),
-		warpArea(w_warpArea), weftArea(w_weftArea), tileWidth(w_tileWidth), tileHeight(w_tileHeight), repeat_u(w_repeat_u), repeat_v(w_repeat_v),
-		dWarpUmaxOverDWarp(w_dWarpUmaxOverDWarp * M_PI / 180.0f), dWarpUmaxOverDWeft(w_dWarpUmaxOverDWeft * M_PI / 180.0f),
-		dWeftUmaxOverDWarp(w_dWeftUmaxOverDWarp * M_PI / 180.0f), dWeftUmaxOverDWeft(w_dWeftUmaxOverDWeft * M_PI / 180.0f),
-		fineness(w_fineness), period(w_period) { }
+	WeavePattern(std::string w_name, u_int w_tileWidth, u_int w_tileHeight,
+		float w_alpha, float w_beta, float w_ss, float w_hWidth,
+		float w_warpArea, float w_weftArea, float w_fineness,
+		float w_repeat_u, float w_repeat_v,
+		float w_dWarpUmaxOverDWarp, float w_dWarpUmaxOverDWeft,
+		float w_dWeftUmaxOverDWarp, float w_dWeftUmaxOverDWeft,
+		float w_period) : name(w_name), alpha(w_alpha), beta(w_beta),
+		ss(w_ss), hWidth(w_hWidth), warpArea(w_warpArea),
+		weftArea(w_weftArea), tileWidth(w_tileWidth),
+		tileHeight(w_tileHeight),
+		dWarpUmaxOverDWarp(w_dWarpUmaxOverDWarp * M_PI / 180.0f),
+		dWarpUmaxOverDWeft(w_dWarpUmaxOverDWeft * M_PI / 180.0f),
+		dWeftUmaxOverDWarp(w_dWeftUmaxOverDWarp * M_PI / 180.0f),
+		dWeftUmaxOverDWeft(w_dWeftUmaxOverDWeft * M_PI / 180.0f),
+		fineness(w_fineness), period(w_period),
+		repeat_u(w_repeat_u), repeat_v(w_repeat_v) { }
 
 	~WeavePattern() {
-		u_int i = yarns.size();
-		while (i--) {
-			Yarn *yarn = yarns.at(i);
-			delete yarn;
-		}
-		yarns.empty();
+		for (u_int i = 0; i < yarns.size(); ++i)
+			delete yarns.at(i);
 	 }
 };
 
 class  Irawan : public BxDF {
 public:
 	// Irawan Public Methods
-	Irawan(const SWCSpectrum &warp_kd, const SWCSpectrum &warp_ks, const SWCSpectrum &weft_kd, const SWCSpectrum &weft_ks, const float u, const float v, float spec_norm,
-			boost::shared_ptr<WeavePattern> pattern)
-		: BxDF(BxDFType(BSDF_REFLECTION | BSDF_GLOSSY)),
-		  warp_Kd(warp_kd), warp_Ks(warp_ks), weft_Kd(weft_kd), weft_Ks(weft_ks), weave(pattern), U(u), V(v), specularNormalization(spec_norm) {
-	}
+	Irawan(const SWCSpectrum &warp_kd, const SWCSpectrum &warp_ks,
+		const SWCSpectrum &weft_kd, const SWCSpectrum &weft_ks,
+		const float u, const float v, float spec_norm,
+		boost::shared_ptr<WeavePattern> pattern) :
+		BxDF(BxDFType(BSDF_REFLECTION | BSDF_GLOSSY)),
+		warp_Kd(warp_kd), warp_Ks(warp_ks),
+		weft_Kd(weft_kd), weft_Ks(weft_ks), weave(pattern), U(u), V(v),
+		specularNormalization(spec_norm) { }
 	virtual ~Irawan() { }
 	virtual void F(const SpectrumWavelengths &sw, const Vector &wo,
 		const Vector &wi, SWCSpectrum *const f) const;
-	virtual void eval(const Vector &wo, const Vector &wi, const float u_i, const float v_i, SWCSpectrum *const f, bool init) const;
-	bool SampleF(const SpectrumWavelengths &sw, const Vector &wo,
-		Vector *wi, float u1, float u2, SWCSpectrum *const f_,
+	virtual bool SampleF(const SpectrumWavelengths &sw, const Vector &wo,
+		Vector *wi, float u1, float u2, SWCSpectrum *const f,
 		float *pdf, float *pdfBack, bool reverse) const;
+	float evalSpecular(const Vector &wo, const Vector &wi,
+		const float u_i, const float v_i, int *type) const;
 
 private:
 	float evalFilamentIntegrand(float u, float v, const Vector &om_i,
-			const Vector &om_r, float alpha, float beta, float ss,
-			float umax, float kappa, float w, float l) const;
+		const Vector &om_r, float umax, float kappa,
+		float w, float l) const;
 
 	float evalStapleIntegrand(float u, float v, const Vector &om_i,
-			const Vector &om_r, float alpha, float beta, float psi,
-			float umax, float kappa, float w, float l) const;
+		const Vector &om_r, float psi, float umax, float kappa,
+		float w, float l) const;
 
-	float radiusOfCurvature(float u, float umax, float kappa, float w, float l) const;
+	float radiusOfCurvature(float u, float umax, float kappa,
+		float w, float l) const;
 
 	// Irawan Private Data
 	SWCSpectrum warp_Kd, warp_Ks, weft_Kd, weft_Ks;

@@ -130,10 +130,10 @@ SOURCE_GROUP("Source Files\\Core\\Reflection\\BSDF" FILES ${lux_core_reflection_
 
 SET(lux_core_reflection_bxdf_src
 	core/reflection/bxdf/asperity.cpp
-	core/reflection/bxdf/irawan.cpp
 	core/reflection/bxdf/brdftobtdf.cpp
 	core/reflection/bxdf/cooktorrance.cpp
 	core/reflection/bxdf/fresnelblend.cpp
+	core/reflection/bxdf/irawan.cpp
 	core/reflection/bxdf/lafortune.cpp
 	core/reflection/bxdf/lambertian.cpp
 	core/reflection/bxdf/microfacet.cpp
@@ -570,6 +570,7 @@ SET(lux_core_reflection_bxdf_hdr
 	core/reflection/bxdf/brdftobtdf.h
 	core/reflection/bxdf/cooktorrance.h
 	core/reflection/bxdf/fresnelblend.h
+	core/reflection/bxdf/irawan.h
 	core/reflection/bxdf/lafortune.h
 	core/reflection/bxdf/lambertian.h
 	core/reflection/bxdf/microfacet.h
@@ -677,6 +678,7 @@ SET(lux_lights_sphericalfunction_hdr
 SOURCE_GROUP("Header Files\\Lights\\Spherical Functions" FILES ${lux_lights_sphericalfunction_hdr})
 SET(lux_materials_hdr
 	materials/carpaint.h
+	materials/cloth.h
 	materials/glass.h
 	materials/glass2.h
 	materials/glossy.h

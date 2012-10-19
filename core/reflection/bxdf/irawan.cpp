@@ -48,12 +48,12 @@
 #include "textures/blender_noiselib.h"
 
 using namespace lux;
-using namespace blender;
 
-inline uint64_t sampleTEA(uint32_t v0, uint32_t v1, int rounds = 4) {
+static uint64_t sampleTEA(uint32_t v0, uint32_t v1, u_int rounds = 4)
+{
 	uint32_t sum = 0;
 
-	for (int i=0; i<rounds; ++i) {
+	for (u_int i = 0; i < rounds; ++i) {
 		sum += 0x9e3779b9;
 		v0 += ((v1 << 4) + 0xA341316C) ^ (v1 + sum) ^ ((v1 >> 5) + 0xC8013EA4);
 		v1 += ((v0 << 4) + 0xAD90777D) ^ (v0 + sum) ^ ((v0 >> 5) + 0x7E95761E);
@@ -62,7 +62,8 @@ inline uint64_t sampleTEA(uint32_t v0, uint32_t v1, int rounds = 4) {
 	return ((uint64_t) v1 << 32) + v0;
 }
 
-inline float sampleTEAfloat(uint32_t v0, uint32_t v1, int rounds = 4) {
+static float sampleTEAfloat(uint32_t v0, uint32_t v1, u_int rounds = 4)
+{
 	/* Trick from MTGP: generate an uniformly distributed
 	   single precision number in [1,2) and subtract 1. */
 	union {
@@ -73,118 +74,112 @@ inline float sampleTEAfloat(uint32_t v0, uint32_t v1, int rounds = 4) {
 	return x.f - 1.0f;
 }
 
-float perlinNoise(Point p) {
+static float perlinNoise(const Point &p)
+{
 	return blender::newPerlin(p.x, p.y, p.z);
 }
 
-// Always-positive modulo function (assumes b > 0)
-inline int modulo(int a, int b) {
-	int r = a % b;
-	return (r < 0) ? r+b : r;
-}
-
-// Always-positive modulo function, float version (assumes b > 0)
-inline float modulo(float a, float b) {
-	float r = std::fmod(a, b);
-	return (r < 0) ? r+b : r;
-}
-
-inline float atanh(float arg) {
-	return logf((1.0f + arg) / (1.0f - arg)) / 2.0f;
-}
-
 // von Mises Distribution
-float vonMises(float cos_x, float b) {
+static float vonMises(float cos_x, float b)
+{
 	// assumes a = 0, b > 0 is a concentration parameter.
 
-	float I0, absB = std::abs(b);
-	if (std::abs(b) <= 3.75f) {
-		float t = absB / 3.75f;
-		t = t * t;
-		I0 = 1.0f + t*(3.5156229f + t*(3.0899424f + t*(1.2067492f
-				+ t*(0.2659732f + t*(0.0360768f + t*0.0045813f)))));
+	const float factor = expf(b * cos_x) * INV_TWOPI;
+	const float absB = fabsf(b);
+	if (absB <= 3.75f) {
+		const float t0 = absB / 3.75f;
+		const float t = t0 * t0;
+		return factor * (1.0f + t * (3.5156229f + t * (3.0899424f +
+			t * (1.2067492f + t * (0.2659732f + t * (0.0360768f +
+			t * 0.0045813f))))));
 	} else {
-		float t = 3.75f / absB;
-		I0 = expf(absB) / std::sqrt(absB) * (0.39894228f + t*(0.01328592f
-			+ t*(0.00225319f + t*(-0.00157565f + t*(0.00916281f + t*(-0.02057706f
-			+ t*(0.02635537f + t*(-0.01647633f + t*0.00392377f))))))));
+		const float t = 3.75f / absB;
+		return factor * expf(absB) / sqrtf(absB) * (0.39894228f +
+			t * (0.01328592f + t * (0.00225319f +
+			t * (-0.00157565f + t * (0.00916281f +
+			t * (-0.02057706f + t * (0.02635537f +
+			t * (-0.01647633f + t * 0.00392377f))))))));
 	}
-
-	return expf(b * cos_x) / (2 * M_PI * I0);
 }
 
 // Attenuation term
-float seeliger(float cos_th1, float cos_th2, float sg_a, float sg_s) {
-	float al = sg_s / (sg_a + sg_s); // albedo
-	float c1 = std::max((float) 0, cos_th1);
-	float c2 = std::max((float) 0, cos_th2);
+static float seeliger(float cos_th1, float cos_th2, float sg_a, float sg_s)
+{
+	const float al = sg_s / (sg_a + sg_s); // albedo
+	const float c1 = max(0.f, cos_th1);
+	const float c2 = max(0.f, cos_th2);
 	if (c1 == 0.0f || c2 == 0.0f)
 		return 0.0f;
-	return al / (4.0f * M_PI) * c1 * c2 / (c1 + c2);
-}
-
-// S-shaped smoothly varying interpolation between two values
-float smoothStep(float min, float max, float value) {
-	float v = Clamp((value - min) / (max - min), (float) 0, (float) 1);
-	return v * v * (-2 * v  + 3);
-}
-
-// Arccosine variant that gracefully handles arguments > 1 that are due to roundoff errors
-float safe_acos(float value) {
-	return std::acos(std::min(1.0f, std::max(-1.0f, value)));
+	return al * INV_TWOPI * .5f * c1 * c2 / (c1 + c2);
 }
 
 void Irawan::F(const SpectrumWavelengths &sw, const Vector &wo,
 	const Vector &wi, SWCSpectrum *const f_) const
 {
-	eval(wo, wi, U, V, f_, false);
+	int type;
+	const float scale = evalSpecular(wo, wi, U, V, &type);
+	const SWCSpectrum &Kd = type == Yarn::EWarp ? warp_Kd : weft_Kd;
+	const SWCSpectrum &Ks = type == Yarn::EWarp ? warp_Ks : weft_Ks;
+	*f_ += (Ks * (scale * specularNormalization) + Kd) *
+		(fabsf(wo.z) * INV_PI);
 }
 
-void Irawan::eval(const Vector &wo, const Vector &wi, const float u_i, const float v_i, SWCSpectrum *const f_, bool init) const
+bool Irawan::SampleF(const SpectrumWavelengths &sw, const Vector &wo,
+	Vector *wi, float u1, float u2, SWCSpectrum *const f, float *pdf,
+	float *pdfBack, bool reverse) const
 {
-	if (CosTheta(wi) <= 0 ||
-		CosTheta(wo) <= 0)
-		return;
+	// Cosine-sample the hemisphere, flipping the direction if necessary
+	*wi = CosineSampleHemisphere(u1, u2);
+	if (wo.z < 0.f)
+		wi->z = -(wi->z);
+	*pdf = Pdf(sw, wo, *wi);
+	if (pdfBack)
+		*pdfBack = Pdf(sw, *wi, wo);
+	int type;
+	float scale;
+	if (reverse)
+		scale = evalSpecular(*wi, wo, U, V, &type);
+	else
+		scale = evalSpecular(wo, *wi, U, V, &type);
 
-	Point uv = Point(u_i * weave->repeat_u, (1 - v_i) * weave->repeat_v);
+	const SWCSpectrum &Kd = type == Yarn::EWarp ? warp_Kd : weft_Kd;
+	const SWCSpectrum &Ks = type == Yarn::EWarp ? warp_Ks : weft_Ks;
+	*f = Ks * (scale * specularNormalization) + Kd;
+	return true;
+}
+
+float Irawan::evalSpecular(const Vector &wo, const Vector &wi, const float u_i,
+	const float v_i, int *type) const
+{
+	const Point uv(u_i * weave->repeat_u, (1 - v_i) * weave->repeat_v);
 	Point xy(uv.x * weave->tileWidth, uv.y * weave->tileHeight);
 
-	Point lookup(
-		modulo((int) xy.x, weave->tileWidth),
-		modulo((int) xy.y, weave->tileHeight));
+	const Point lookup(Mod(xy.x, weave->tileWidth), Mod(xy.y, weave->tileHeight));
 
-	int yarnID = weave->pattern[(u_int)lookup.x + (u_int)lookup.y * weave->tileWidth] - 1;
+	const int yarnID = weave->pattern[(u_int)lookup.x + (u_int)lookup.y * weave->tileWidth] - 1;
 
-	Yarn *yarn = weave->yarns.at(yarnID);
+	const Yarn * const yarn = weave->yarns.at(yarnID);
 	// store center of the yarn segment
-	Point center
-		(((int) xy.x / weave->tileWidth) * weave->tileWidth
-			+ yarn->centerU * weave->tileWidth,
-		 ((int) xy.y / weave->tileHeight) * weave->tileHeight
-			+ (1 - yarn->centerV) * weave->tileHeight);
+	const Point center(((int) xy.x / weave->tileWidth) * weave->tileWidth +
+		yarn->centerU * weave->tileWidth,
+		((int) xy.y / weave->tileHeight) * weave->tileHeight +
+		(1 - yarn->centerV) * weave->tileHeight);
 
 	// transform x and y to new coordinate system with (0,0) at the
 	// center of the yarn segment
 	xy.x =	  xy.x - center.x;
 	xy.y = - (xy.y - center.y);
 
-	int type = yarn->type;
-	float w = yarn->width;
-	float l = yarn->length;
-
-	SWCSpectrum kd = (yarn->type == Yarn::EWarp) ? warp_Kd : weft_Kd;
-	SWCSpectrum ks = (yarn->type == Yarn::EWarp) ? warp_Ks : weft_Ks;
-
 	// Get incident and exitant directions.
-	Vector om_i = wi;
-	Vector om_r = wo;
-
-	float psi = yarn->psi;
-	float umax = yarn->umax;
-	float kappa = yarn->kappa;
+	Vector om_i(wi);
+	if (om_i.z < 0.f)
+		om_i = -om_i;
+	Vector om_r(wo);
+	if (om_r.z < 0.f)
+		om_r = -om_r;
 
 	float dUmaxOverDWarp, dUmaxOverDWeft;
-	if (type == Yarn::EWarp) {
+	if (yarn->type == Yarn::EWarp) {
 		dUmaxOverDWarp = weave->dWarpUmaxOverDWarp;
 		dUmaxOverDWeft = weave->dWarpUmaxOverDWeft;
 	} else { // type == EWeft
@@ -202,95 +197,66 @@ void Irawan::eval(const Vector &wo, const Vector &wi, const float u_i, const flo
 		om_r.y = tmp;
 	}
 
-	// Correlated (Perlin) noise.
-	float random1 = 1.0f;
-	float random2 = 1.0f;
-
 	/* Number of TEA iterations (the more, the better the
 	   quality of the pseudorandom floats) */
 	const int teaIterations = 8;
 
+	float umax = yarn->umax;
 	if (weave->period > 0.0f) {
+		// Correlated (Perlin) noise.
 		// generate 1 seed per yarn segment
-		Point pos(center);
-
-		random1 = perlinNoise(Point(
-			(center.x * (weave->tileHeight * weave->repeat_v
-				+ sampleTEAfloat(pos.x, 2*pos.y, teaIterations)) + center.y) / weave->period, 0, 0));
-		random2 = perlinNoise(Point(
-			(center.y * (weave->tileWidth * weave->repeat_u
-				+ sampleTEAfloat(pos.x, 2*pos.y+1, teaIterations)) + center.x) / weave->period, 0, 0));
-		umax = umax + random1 * dUmaxOverDWarp + random2 * dUmaxOverDWeft;
+		const float random1 = perlinNoise(Point((center.x *
+			(weave->tileHeight * weave->repeat_v +
+			sampleTEAfloat(center.x, 2.f * center.y,
+			teaIterations)) + center.y) / weave->period, 0, 0));
+		const float random2 = perlinNoise(Point((center.y *
+			(weave->tileWidth * weave->repeat_u +
+			sampleTEAfloat(center.x, 2.f * center.y + 1.f,
+			teaIterations)) + center.x) / weave->period, 0, 0));
+		umax += random1 * dUmaxOverDWarp + random2 * dUmaxOverDWeft;
 	}
 
+	const float w = yarn->width;
+	const float l = yarn->length;
 	// Compute u and v.
 	// See Chapter 6.
 	float u = xy.y / (l / 2.0f) * umax;
 	float v = xy.x * M_PI / w;
 
+	const float psi = yarn->psi;
+	const float kappa = yarn->kappa;
+
 	// Compute specular contribution.
-	SWCSpectrum result(0.0f);
 	float integrand;
 	if (psi != 0.0f)
-		integrand = evalStapleIntegrand(u, v, om_i, om_r, weave->alpha,
-				weave->beta, psi, umax, kappa, w, l);
+		integrand = evalStapleIntegrand(u, v, om_i, om_r,
+			psi, umax, kappa, w, l);
 	else
-		integrand = evalFilamentIntegrand(u, v, om_i, om_r, weave->alpha,
-				weave->beta, weave->ss, umax, kappa, w, l);
+		integrand = evalFilamentIntegrand(u, v, om_i, om_r,
+			umax, kappa, w, l);
 
-	// Initialize random number generator based on texture location.
-	float intensityVariation = 1.0f;
+	// Compute random variation and scale specular component.
 	if (weave->fineness > 0.0f) {
-		// Compute random variation and scale specular component.
+		// Initialize random number generator based on texture location.
 		// Generate fineness^2 seeds per 1 unit of texture.
-		uint32_t index1 = (uint32_t) ((center.x + xy.x) * weave->fineness);
-		uint32_t index2 = (uint32_t) ((center.y + xy.y) * weave->fineness);
+		const uint32_t index1 = (uint32_t) ((center.x + xy.x) * weave->fineness);
+		const uint32_t index2 = (uint32_t) ((center.y + xy.y) * weave->fineness);
 
 		float xi = sampleTEAfloat(index1, index2, teaIterations);
-		intensityVariation = std::min(-logf(xi), (float) 10.0f);
+		integrand *= min(-logf(xi), 10.0f);
 	}
 
-	// Only used when estimating normalization factor
-	if (!init)
-		result = ks * (intensityVariation * integrand * specularNormalization);
+	float scale = integrand;
+
+	if (yarn->type == Yarn::EWarp)
+		scale *= (weave->warpArea + weave->weftArea) / weave->warpArea;
 	else
-		result = SWCSpectrum(intensityVariation * integrand);
+		scale *= (weave->warpArea + weave->weftArea) / weave->weftArea;
 
-	if (type == Yarn::EWarp)
-		result *= (weave->warpArea + weave->weftArea) / weave->warpArea;
-	else
-		result *= (weave->warpArea + weave->weftArea) / weave->weftArea;
+	if (type)
+		*type = yarn->type;
 
-	if (!init)
-		result += kd * INV_PI;
-
-	*f_ += result * CosTheta(wo);
-}
-
-bool Irawan::SampleF(const SpectrumWavelengths &sw, const Vector &wo,
-	Vector *wi, float u1, float u2, SWCSpectrum *const f_, float *pdf,
-	float *pdfBack, bool reverse) const
-{
-	// Cosine-sample the hemisphere, flipping the direction if necessary
-	*wi = CosineSampleHemisphere(u1, u2);
-	if (wo.z < 0.f) wi->z *= -1.f;
-	// wi may be in the tangent plane, which will
-	// fail the SameHemisphere test in Pdf()
-	if (!SameHemisphere(wo, *wi))
-		return false;
-	*pdf = Pdf(sw, wo, *wi);
-	if (pdfBack)
-		*pdfBack = Pdf(sw, *wi, wo);
-
-	SWCSpectrum result(0.0f);
-	eval(wo,*wi, U, V, &result, false);
-
-	*f_ = result * M_PI / CosTheta(wo);
-
-	if (!reverse)
-		*f_ *= fabsf(wo.z / wi->z);
-
-	return true;
+	return scale;
 }
 
 /** parameters:
@@ -298,10 +264,6 @@ bool Irawan::SampleF(const SpectrumWavelengths &sw, const Vector &wo,
  *	v	 for filament, we compute u(v)
  *	om_i  incident direction
  *	om_r  exitant direction
- *	ss	filament smoothing parameter
- *  fiber properties
- *	alpha uniform scattering
- *	beta  forward scattering
  *  yarn geometry
  *	psi   fiber twist angle; because this is filament, psi = pi/2
  *	umax  maximum inclination angle
@@ -311,14 +273,14 @@ bool Irawan::SampleF(const SpectrumWavelengths &sw, const Vector &wo,
  *	l	 length of segment rectangle
  */
 float Irawan::evalFilamentIntegrand(float u, float v, const Vector &om_i,
-		const Vector &om_r, float alpha, float beta, float ss,
-		float umax, float kappa, float w, float l) const {
+	const Vector &om_r, float umax, float kappa, float w, float l) const
+{
 	// 0 <= ss < 1.0
-	if (ss < 0.0f || ss >= 1.0f)
+	if (weave->ss < 0.0f || weave->ss >= 1.0f)
 		return 0.0f;
 
 	// w * sin(umax) < l
-	if (w * std::sin(umax) >= l)
+	if (w * sinf(umax) >= l)
 		return 0.0f;
 
 	// -1 < kappa < inf
@@ -326,63 +288,58 @@ float Irawan::evalFilamentIntegrand(float u, float v, const Vector &om_i,
 		return 0.0f;
 
 	// h is the half vector
-	Vector h = Normalize(om_r + om_i);
+	const Vector h(Normalize(om_r + om_i));
 
 	// u_of_v is location of specular reflection.
-	float u_of_v = std::atan(h.y / h.z);
+	const float u_of_v = atan2f(h.y, h.z);
 
 	// Check if u_of_v within the range of valid u values
-	if (std::abs(u_of_v) < umax) {
-		// n is normal to the yarn surface
-		// t is tangent of the fibers.
-		Normal n = Normalize(Normal(std::sin(v), std::sin(u_of_v) * std::cos(v),
-				std::cos(u_of_v) * std::cos(v)));
-		Vector t = Normalize(Vector(0.0f, std::cos(u_of_v), -std::sin(u_of_v)));
+	if (fabsf(u_of_v) >= umax)
+		return 0.f;
 
-		// R is radius of curvature.
-		float R = radiusOfCurvature(std::min(std::abs(u_of_v),
-			(1-ss)*umax), (1-ss)*umax, kappa, w, l);
+	// n is normal to the yarn surface
+	// t is tangent of the fibers.
+	const Normal n(Normalize(Normal(sinf(v), sinf(u_of_v) * cosf(v),
+		cosf(u_of_v) * cosf(v))));
+	const Vector t(Normalize(Vector(0.0f, cosf(u_of_v), -sinf(u_of_v))));
 
-		// G is geometry factor.
-		float a = 0.5f * w;
-		Vector om_i_plus_om_r = om_i + om_r,
-			   t_cross_h = Cross(t, h);
-		float Gu = a * (R + a * std::cos(v)) /
-			(om_i_plus_om_r.Length() * std::abs(t_cross_h.x));
+	// R is radius of curvature.
+	const float R = radiusOfCurvature(min(fabsf(u_of_v),
+		(1.f - weave->ss) * umax), (1.f - weave->ss) * umax, kappa, w, l);
 
-		// fc is phase function
-		float fc = alpha + vonMises(-Dot(om_i, om_r), beta);
+	// G is geometry factor.
+	const float a = 0.5f * w;
+	const Vector om_i_plus_om_r(om_i + om_r), t_cross_h(Cross(t, h));
+	const float Gu = a * (R + a * cosf(v)) /
+		(om_i_plus_om_r.Length() * fabsf(t_cross_h.x));
 
-		// A is attenuation function without smoothing.
-		// As is attenuation function with smoothing.
-		float A = seeliger(Dot(n, om_i), Dot(n, om_r), 0, 1);
-		float As;
-		if (ss == 0.0f)
-			As = A;
-		else
-			As = A * (1.0f - smoothStep(0, 1, (std::abs(u_of_v)
-				- (1.0f - ss) * umax) / (ss * umax)));
+	// fc is phase function
+	const float fc = weave->alpha + vonMises(-Dot(om_i, om_r), weave->beta);
 
-		// fs is scattering function.
-		float fs = Gu * fc * As;
+	// attenuation function without smoothing.
+	float As = seeliger(Dot(n, om_i), Dot(n, om_r), 0, 1);
+	// As is attenuation function with smoothing.
+	if (weave->ss > 0.0f)
+		As *= SmoothStep(0.f, 1.f, (umax - fabsf(u_of_v)) /
+			(weave->ss * umax));
 
-		// Domain transform.
-		fs = fs * M_PI * l;
+	// fs is scattering function.
+	const float fs = Gu * fc * As;
 
-		// Highlight has constant width delta_y on screen.
-		float delta_y = l * weave->hWidth;
+	// Domain transform.
+	const float fst = fs * M_PI * l;
 
-		// Clamp y_of_v between -(l - delta_y)/2 and (l - delta_y)/2.
-		float y_of_v = u_of_v * 0.5f * l / umax;
-		if (y_of_v > 0.5f * (l - delta_y))
-			y_of_v = 0.5f * (l - delta_y);
-		else if (y_of_v < 0.5f * (delta_y - l))
-			y_of_v = 0.5f * (delta_y - l);
+	// Highlight has constant width delta_y on screen.
+	const float delta_y = l * weave->hWidth;
 
-		// Check if |y(u(v)) - y(u)| < delta_y/2.
-		if (std::abs(y_of_v - u * 0.5f * l / umax) < 0.5f * delta_y)
-			return fs / delta_y;
-	}
+	// Clamp y_of_v between -(l - delta_y)/2 and (l - delta_y)/2.
+	const float y_of_v = .5f * Clamp(u_of_v * l / umax,
+		delta_y - l, l - delta_y);
+
+	// Check if |y(u(v)) - y(u)| < delta_y/2.
+	if (fabsf(y_of_v - u * 0.5f * l / umax) < 0.5f * delta_y)
+		return fst / delta_y;
+
 	return 0.0f;
 }
 
@@ -391,9 +348,6 @@ float Irawan::evalFilamentIntegrand(float u, float v, const Vector &om_i,
  *	v	 to be compared to v(u) in texturing
  *	om_i  incident direction
  *	om_r  exitant direction
- *  fiber properties
- *	alpha uniform scattering
- *	beta  forward scattering
  *  yarn geometry
  *	psi   fiber twist angle
  *	umax  maximum inclination angle
@@ -403,10 +357,11 @@ float Irawan::evalFilamentIntegrand(float u, float v, const Vector &om_i,
  *	l	 length of segment rectangle
  */
 float Irawan::evalStapleIntegrand(float u, float v, const Vector &om_i,
-		const Vector &om_r, float alpha, float beta, float psi,
-		float umax, float kappa, float w, float l) const {
+	const Vector &om_r, float psi, float umax, float kappa, float w,
+	float l) const
+{
 	// w * sin(umax) < l
-	if (w * std::sin(umax) >= l)
+	if (w * sinf(umax) >= l)
 		return 0.0f;
 
 	// -1 < kappa < inf
@@ -414,91 +369,84 @@ float Irawan::evalStapleIntegrand(float u, float v, const Vector &om_i,
 		return 0.0f;
 
 	// h is the half vector
-	Vector h = Normalize(om_i + om_r);
+	const Vector h(Normalize(om_i + om_r));
 
 	// v_of_u is location of specular reflection.
-	float D = (h.y*std::cos(u) - h.z*std::sin(u))
-		/ (std::sqrt(h.x * h.x + std::pow(h.y * std::sin(u) + h.z * std::cos(u), (float) 2.0f)) * std::tan(psi));
-	float v_of_u = std::atan2(-h.y * std::sin(u) - h.z * std::cos(u), h.x) + safe_acos(D);
+	const float D = (h.y * cosf(u) - h.z * sinf(u)) /
+		(sqrtf(h.x * h.x + powf(h.y * sinf(u) + h.z * cosf(u),
+		2.0f)) * tanf(psi));
+	if (!(fabsf(D) < 1.f))
+		return 0.f;
+	const float v_of_u = atan2f(-h.y * sinf(u) - h.z * cosf(u), h.x) +
+		acosf(D);
 
-	// Check if v_of_u within the range of valid v values
-	if (std::abs(D) < 1.0f && std::abs(v_of_u) < M_PI / 2.0f) {
-		// n is normal to the yarn surface.
-		// t is tangent of the fibers.
+	// n is normal to the yarn surface.
+	const Vector n(Normalize(Vector(sinf(v_of_u), sinf(u) * cosf(v_of_u),
+		cosf(u) * cosf(v_of_u))));
 
-		Vector n = Normalize(Vector(std::sin(v_of_u), std::sin(u)
-				* std::cos(v_of_u), std::cos(u) * std::cos(v_of_u)));
+	// R is radius of curvature.
+	const float R = radiusOfCurvature(fabsf(u), umax, kappa, w, l);
 
-		/*Vector t = normalize(Vector(-std::cos(v_of_u) * std::sin(psi),
-				std::cos(u) * std::cos(psi) + std::sin(u) * std::sin(v_of_u) * std::sin(psi),
-				-std::sin(u) * std::cos(psi) + std::cos(u) * std::sin(v_of_u) * std::sin(psi))); */
+	// G is geometry factor.
+	const float a = 0.5f * w;
+	const Vector om_i_plus_om_r(om_i + om_r);
+	const float Gv = a * (R + a * cosf(v_of_u)) /
+		(om_i_plus_om_r.Length() * Dot(n, h) * fabsf(sinf(psi)));
 
-		// R is radius of curvature.
-		float R = radiusOfCurvature(std::abs(u), umax, kappa, w, l);
+	// fc is phase function.
+	const float fc = weave->alpha + vonMises(-Dot(om_i, om_r), weave->beta);
 
-		// G is geometry factor.
-		float a = 0.5f * w;
-		Vector om_i_plus_om_r(om_i + om_r);
-		float Gv = a * (R + a * std::cos(v_of_u))
-			/ (om_i_plus_om_r.Length() * Dot(n, h) * std::abs(std::sin(psi)));
+	// A is attenuation function without smoothing.
+	const float A = seeliger(Dot(n, om_i), Dot(n, om_r), 0, 1);
 
-		// fc is phase function.
-		float fc = alpha + vonMises(-Dot(om_i, om_r), beta);
+	// fs is scattering function.
+	const float fs = Gv * fc * A;
 
-		// A is attenuation function without smoothing.
-		float A = seeliger(Dot(n, om_i), Dot(n, om_r), 0, 1);
+	// Domain transform.
+	const float fst = fs * 2.0f * w * umax;
 
-		// fs is scattering function.
-		float fs = Gv * fc * A;
+	// Highlight has constant width delta_x on screen.
+	const float delta_x = w * weave->hWidth;
 
-		// Domain transform.
-		fs = fs * 2.0f * w * umax;
+	// Clamp x_of_u between (w - delta_x)/2 and -(w - delta_x)/2.
+	const float x_of_u = Clamp(v_of_u * w / M_PI, delta_x - w, w - delta_x);
 
-		// Highlight has constant width delta_x on screen.
-		float delta_x = w * weave->hWidth;
+	// Check if |x(v(u)) - x(v)| < delta_x/2.
+	if (fabsf(x_of_u - v * w / M_PI) < 0.5f * delta_x)
+		return fst / delta_x;
 
-		// Clamp x_of_u between (w - delta_x)/2 and -(w - delta_x)/2.
-		float x_of_u = v_of_u * w / M_PI;
-		if (x_of_u > 0.5f * (w - delta_x))
-			x_of_u = 0.5f * (w - delta_x);
-		else if (x_of_u < 0.5f * (delta_x - w))
-			x_of_u = 0.5f * (delta_x - w);
-
-		// Check if |x(v(u)) - x(v)| < delta_x/2.
-		if (std::abs(x_of_u - v * w / M_PI) < 0.5f * delta_x)
-			return fs / delta_x;
-	}
 	return 0.0f;
 }
 
-float Irawan::radiusOfCurvature(float u, float umax, float kappa, float w, float l) const {
+float Irawan::radiusOfCurvature(float u, float umax, float kappa, float w,
+	float l) const
+{
 	// rhat determines whether the spine is a segment
 	// of an ellipse, a parabole, or a hyperbola.
 	// See Section 5.3.
-	float rhat = 1.0f + kappa * (1.0f + 1.0f / std::tan(umax));
+	const float rhat = 1.0f + kappa * (1.0f + 1.0f / tanf(umax));
 
-	float a = 0.5f * w, R = 0;
+	const float a = 0.5f * w;
 	if (rhat == 1.0f) { // circle; see Subsection 5.3.1.
-		R = (0.5f * l - a * std::sin(umax)) / std::sin(umax);
+		return 0.5f * l / sinf(umax) - a;
 	} else if (rhat > 0.0f) {
-		float tmax = std::atan(rhat * std::tan(umax));
-		float bhat = (0.5f * l - a * std::sin(umax)) / std::sin(tmax);
-		float ahat = bhat / rhat;
-		float t = std::atan(rhat * std::tan(u));
-		R = std::pow(bhat * bhat * std::cos(t) * std::cos(t)
-		  + ahat * ahat * std::sin(t) * std::sin(t),(float) 1.5f) / (ahat * bhat);
+		const float tmax = atanf(rhat * tanf(umax));
+		const float bhat = (0.5f * l - a * sinf(umax)) / sinf(tmax);
+		const float ahat = bhat / rhat;
+		const float t = atanf(rhat * tanf(u));
+		return powf(bhat * bhat * cosf(t) * cosf(t) +
+			ahat * ahat * sinf(t) * sinf(t), 1.5f) / (ahat * bhat);
 	} else if (rhat < 0.0f) { // hyperbola; see Subsection 5.3.3.
-		float tmax = -atanh(rhat * std::tan(umax));
-		float bhat = (0.5f * l - a * std::sin(umax)) / std::sinh(tmax);
-		float ahat = bhat / rhat;
-		float t = -atanh(rhat * std::tan(u));
-		R = -std::pow(bhat * bhat * std::cosh(t) * std::cosh(t)
-			+ ahat * ahat * std::sinh(t) * std::sinh(t), (float) 1.5f) / (ahat * bhat);
+		const float tmax = -atanhf(rhat * tanf(umax));
+		const float bhat = (0.5f * l - a * sinf(umax)) / sinhf(tmax);
+		const float ahat = bhat / rhat;
+		const float t = -atanhf(rhat * tanf(u));
+		return -powf(bhat * bhat * coshf(t) * coshf(t) +
+			ahat * ahat * sinhf(t) * sinhf(t), 1.5f) / (ahat * bhat);
 	} else { // rhat == 0  // parabola; see Subsection 5.3.2.
-		float tmax = std::tan(umax);
-		float ahat = (0.5f * l - a * std::sin(umax)) / (2 * tmax);
-		float t = std::tan(u);
-		R = 2 * ahat * std::pow(1 + t * t, (float) 1.5f);
+		const float tmax = tanf(umax);
+		const float ahat = (0.5f * l - a * sinf(umax)) / (2.f * tmax);
+		const float t = tanf(u);
+		return 2.f * ahat * powf(1.f + t * t, 1.5f);
 	}
-	return R;
 }
