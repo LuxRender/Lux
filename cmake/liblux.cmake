@@ -58,6 +58,7 @@ SOURCE_GROUP("Source Files\\Core\\Generated" FILES ${lux_core_generated_src})
 
 SET(lux_core_src
 	core/api.cpp
+	core/asyncstream.cpp
 	core/camera.cpp
 	core/cameraresponse.cpp
 	core/color.cpp
@@ -478,6 +479,7 @@ SOURCE_GROUP("Source Files\\C++ API" FILES ${lux_cpp_api_src})
 
 SET(lux_core_hdr
 	core/api.h
+	core/asyncstream.h
 	core/bsh.h
 	core/camera.h
 	core/cameraresponse.h
