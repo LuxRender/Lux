@@ -89,12 +89,12 @@ static float vonMises(float cos_x, float b)
 	if (absB <= 3.75f) {
 		const float t0 = absB / 3.75f;
 		const float t = t0 * t0;
-		return factor * (1.0f + t * (3.5156229f + t * (3.0899424f +
+		return factor / (1.0f + t * (3.5156229f + t * (3.0899424f +
 			t * (1.2067492f + t * (0.2659732f + t * (0.0360768f +
 			t * 0.0045813f))))));
 	} else {
 		const float t = 3.75f / absB;
-		return factor * expf(absB) / sqrtf(absB) * (0.39894228f +
+		return factor / expf(absB) / sqrtf(absB) * (0.39894228f +
 			t * (0.01328592f + t * (0.00225319f +
 			t * (-0.00157565f + t * (0.00916281f +
 			t * (-0.02057706f + t * (0.02635537f +
