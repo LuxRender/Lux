@@ -1096,7 +1096,7 @@ Scene *Context::RenderOptions::MakeScene() const {
 
 	// Set a fixed seed for animations or debugging
 	if (debugMode || !randomMode)
-		ret->seedBase = 1000;
+		ret->seedBase = 1001;
 
 	return ret;
 }
