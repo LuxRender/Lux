@@ -115,7 +115,7 @@ protected:
 		if (bytes_transferred < 0)
 			return traits_type::eof();
 
-		setg(&get_buffer[0], &get_buffer[0] + putback_max,
+		this->setg(&get_buffer[0], &get_buffer[0] + putback_max,
 			&get_buffer[0] + putback_max + bytes_transferred);
 
 		return traits_type::to_int_type(*this->gptr());
@@ -141,7 +141,7 @@ protected:
 
 			pb += bytes_transferred;
 		}
-		setp(&put_buffer[0], &put_buffer[0] + put_buffer.size());
+		this->setp(&put_buffer[0], &put_buffer[0] + put_buffer.size());
 
 		if (traits_type::eq_int_type(c, traits_type::eof()))
 			// new character is eof, don't add it to output buffer
