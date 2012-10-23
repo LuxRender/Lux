@@ -96,6 +96,9 @@ void LuxGuiApp::init(clConfig* config)
 	mainwin->SetRenderThreads(config->threadCount);
 	mainwin->setVerbosity(config->verbosity);
 
+	if (config->fixedSeed)
+		mainwin->setFixedSeed();
+
 	// Set server interval
 	if (!config->vm["serverinterval"].defaulted())
 		mainwin->setServerUpdateInterval(config->pollInterval);

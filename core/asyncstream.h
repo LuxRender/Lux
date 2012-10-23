@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2012 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -20,54 +20,65 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#ifndef LUXCOMMANDLINE_H
-#define LUXCOMMANDLINE_H
+#ifndef LUX_ASYNCSTREAM_H
+#define LUX_ASYNCSTREAM_H
+// asyncstream.h*
 
-#include <iostream>
-#include <sstream>
-#include <string>
-#include <vector>
+#include "lux.h"
 
-#include <boost/program_options.hpp>
-#include <boost/filesystem/operations.hpp>
+#include <boost/asio.hpp>
+#include <boost/iostreams/stream.hpp>
 
-#include "api.h"
-
-struct clConfig
+namespace lux 
 {
-	clConfig() :
-		slave(false), binDump(false), log2console(false), writeFlmFile(false),
-		verbosity(0), pollInterval(luxGetIntAttribute("render_farm", "pollingInterval")),
-		tcpPort(luxGetIntAttribute("render_farm", "defaultTcpPort")), threadCount(0) {};
 
-	boost::program_options::variables_map vm;
+class socket_device {
+public:
+	typedef char  char_type;
+	typedef boost::iostreams::seekable_device_tag category;
+	typedef boost::asio::ip::tcp::socket socket_type;
+	typedef boost::posix_time::time_duration duration_type;
 
-	bool slave;
-	bool binDump;
-	bool log2console;
-	bool writeFlmFile;
-	bool fixedSeed;
-	int verbosity;
-	unsigned int pollInterval;
-	unsigned int tcpPort;
-	unsigned int threadCount;
-	std::string password;
-	std::string queueFile;
-	std::string cacheDir;
-	std::vector< std::string > inputFiles;
-	std::vector< std::string > slaveNodeList;
+	socket_device(socket_type& socket_, duration_type timeout_)
+			: socket(socket_), timeout_duration(timeout_) {
+	}
+
+	socket_device(socket_type& socket_)
+			: socket(socket_), timeout_duration() {
+	}
+
+	~socket_device() {
+		close();
+	}
+
+	socket_type& get_socket() {
+		return socket;
+	}
+
+	duration_type timeout() const {
+		return timeout_duration;
+	}
+
+	void timeout(const duration_type& duration) {
+		timeout_duration = duration;
+	}
+
+	std::streamsize read(char* s, std::streamsize n);
+
+	std::streamsize write(const char* s, std::streamsize n);
+
+	boost::iostreams::stream_offset seek(boost::iostreams::stream_offset off, std::ios_base::seekdir way);
+
+	void close();
+
+private:
+
+	socket_type& socket;
+	duration_type timeout_duration;
+	boost::system::error_code timer_error;
 };
 
-namespace featureSet {
-	enum {
-		RENDERER     = (1u << 0),
-		MASTERNODE   = (1u << 1),
-		SLAVENODE    = (1u << 2),
-		INTERACTIVE  = (1u << 3),
-	};
-};
 
-boost::filesystem::path getDefaultWorkingDirectory();
-bool ProcessCommandLine(int argc, char** argv, clConfig& config, unsigned int features, std::streambuf* infoBuf = std::cout.rdbuf(), std::streambuf* warnBuf = std::cerr.rdbuf());
+} // namespace lux
 
-#endif // LUXCOMMANDLINE_H
+#endif // LUX_ASYNCSTREAM
