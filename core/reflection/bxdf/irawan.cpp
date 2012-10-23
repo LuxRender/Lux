@@ -74,9 +74,9 @@ static float sampleTEAfloat(uint32_t v0, uint32_t v1, u_int rounds = 4)
 	return x.f - 1.0f;
 }
 
-static float perlinNoise(const Point &p)
+static float perlinNoise(float x)
 {
-	return blender::newPerlin(p.x, p.y, p.z);
+	return blender::newPerlin(x, 0.f, 0.f);
 }
 
 // von Mises Distribution
@@ -113,13 +113,87 @@ static float seeliger(float cos_th1, float cos_th2, float sg_a, float sg_s)
 	return al * INV_TWOPI * .5f * c1 * c2 / (c1 + c2);
 }
 
+float Warp::EvalIntegrand(const WeavePattern &weave, const Point &center,
+	const Point &xy, Vector &om_i, Vector &om_r) const
+{
+	float umaxMod = umax;
+	if (weave.period > 0.f) {
+		/* Number of TEA iterations (the more, the better the
+		   quality of the pseudorandom floats) */
+		const int teaIterations = 8;
+
+		// Correlated (Perlin) noise.
+		// generate 1 seed per yarn segment
+		const float random1 = perlinNoise((center.x *
+			(weave.tileHeight * weave.repeat_v +
+			sampleTEAfloat(center.x, 2.f * center.y,
+			teaIterations)) + center.y) / weave.period);
+		const float random2 = perlinNoise((center.y *
+			(weave.tileWidth * weave.repeat_u +
+			sampleTEAfloat(center.x, 2.f * center.y + 1.f,
+			teaIterations)) + center.x) / weave.period);
+		umaxMod += random1 * weave.dWarpUmaxOverDWarp +
+			random2 * weave.dWarpUmaxOverDWeft;
+	}
+
+	// Compute u and v.
+	// See Chapter 6.
+	const float u = xy.y / (length / 2.0f) * umaxMod;
+	const float v = xy.x * M_PI / width;
+
+	if (psi != 0.0f)
+		return EvalStapleIntegrand(weave, om_i, om_r, u, v, umaxMod);
+		/* * (weave.warpArea + weave.weftArea) / weave.warpArea;*/
+	else
+		return EvalFilamentIntegrand(weave, om_i, om_r, u, v, umaxMod);
+		/* * (weave.warpArea + weave.weftArea) / weave.warpArea;*/
+}
+
+float Weft::EvalIntegrand(const WeavePattern &weave, const Point &center,
+	const Point &xy, Vector &om_i, Vector &om_r) const
+{
+	float umaxMod = umax;
+	if (weave.period > 0.f) {
+		/* Number of TEA iterations (the more, the better the
+		   quality of the pseudorandom floats) */
+		const int teaIterations = 8;
+
+		// Correlated (Perlin) noise.
+		// generate 1 seed per yarn segment
+		const float random1 = perlinNoise((center.x *
+			(weave.tileHeight * weave.repeat_v +
+			sampleTEAfloat(center.x, 2.f * center.y,
+			teaIterations)) + center.y) / weave.period);
+		const float random2 = perlinNoise((center.y *
+			(weave.tileWidth * weave.repeat_u +
+			sampleTEAfloat(center.x, 2.f * center.y + 1.f,
+			teaIterations)) + center.x) / weave.period);
+		umaxMod += random1 * weave.dWeftUmaxOverDWarp +
+			random2 * weave.dWeftUmaxOverDWeft;
+	}
+
+	// Compute u and v.
+	// See Chapter 6.
+	// Rotate pi/2 radians around z axis
+	const float u = xy.x / (length / 2.0f) * umaxMod;
+	const float v = -xy.y * M_PI / width;
+	swap(om_i.x, om_i.y);
+	om_i.x = -om_i.x;
+	swap(om_r.x, om_r.y);
+	om_r.x = -om_r.x;
+
+	if (psi != 0.0f)
+		return EvalStapleIntegrand(weave, om_i, om_r, u, v, umaxMod);
+		/* * (weave.warpArea + weave.weftArea) / weave.weftArea;*/
+	else
+		return EvalFilamentIntegrand(weave, om_i, om_r, u, v, umaxMod);
+		/* * (weave.warpArea + weave.weftArea) / weave.weftArea;*/
+}
+
 void Irawan::F(const SpectrumWavelengths &sw, const Vector &wo,
 	const Vector &wi, SWCSpectrum *const f_) const
 {
-	int type;
-	const float scale = evalSpecular(wo, wi, U, V, &type);
-	const SWCSpectrum &Kd = type == Yarn::EWarp ? warp_Kd : weft_Kd;
-	const SWCSpectrum &Ks = type == Yarn::EWarp ? warp_Ks : weft_Ks;
+	const float scale = evalSpecular(wo, wi);
 	*f_ += (Ks * (scale * specularNormalization) + Kd) *
 		(fabsf(wo.z) * INV_PI);
 }
@@ -135,41 +209,41 @@ bool Irawan::SampleF(const SpectrumWavelengths &sw, const Vector &wo,
 	*pdf = Pdf(sw, wo, *wi);
 	if (pdfBack)
 		*pdfBack = Pdf(sw, *wi, wo);
-	int type;
 	float scale;
 	if (reverse)
-		scale = evalSpecular(*wi, wo, U, V, &type);
+		scale = evalSpecular(*wi, wo);
 	else
-		scale = evalSpecular(wo, *wi, U, V, &type);
+		scale = evalSpecular(wo, *wi);
 
-	const SWCSpectrum &Kd = type == Yarn::EWarp ? warp_Kd : weft_Kd;
-	const SWCSpectrum &Ks = type == Yarn::EWarp ? warp_Ks : weft_Ks;
 	*f = Ks * (scale * specularNormalization) + Kd;
 	return true;
 }
 
-float Irawan::evalSpecular(const Vector &wo, const Vector &wi, const float u_i,
-	const float v_i, int *type) const
+const Yarn *WeavePattern::GetYarn(float u_i, float v_i, Point *center, Point *xy) const
 {
-	const Point uv(u_i * weave->repeat_u, (1 - v_i) * weave->repeat_v);
-	Point xy(uv.x * weave->tileWidth, uv.y * weave->tileHeight);
+	const float u = u_i * repeat_u;
+	const int bu = Floor2Int(u);
+	const float ou = u - bu;
+	const float v = v_i * repeat_v;
+	const int bv = Floor2Int(v);
+	const float ov = v - bv;
+	const u_int lx = min(tileWidth - 1, Floor2UInt(ou * tileWidth));
+	const u_int ly = tileHeight - 1 -
+		min(tileHeight - 1, Floor2UInt(ov * tileHeight));
 
-	const Point lookup(Mod(xy.x, weave->tileWidth), Mod(xy.y, weave->tileHeight));
+	const int yarnID = pattern[lx + tileWidth * ly] - 1;
+	const Yarn * const yarn = yarns.at(yarnID);
 
-	const int yarnID = weave->pattern[(u_int)lookup.x + (u_int)lookup.y * weave->tileWidth] - 1;
+	center->x = (bu + yarn->centerU) * tileWidth;
+	center->y = (bv + yarn->centerV) * tileHeight;
+	xy->x = (ou - yarn->centerU) * tileWidth;
+	xy->y = (ov - yarn->centerV) * tileHeight;
 
-	const Yarn * const yarn = weave->yarns.at(yarnID);
-	// store center of the yarn segment
-	const Point center(((int) xy.x / weave->tileWidth) * weave->tileWidth +
-		yarn->centerU * weave->tileWidth,
-		((int) xy.y / weave->tileHeight) * weave->tileHeight +
-		(1 - yarn->centerV) * weave->tileHeight);
+	return yarn;
+}
 
-	// transform x and y to new coordinate system with (0,0) at the
-	// center of the yarn segment
-	xy.x =	  xy.x - center.x;
-	xy.y = - (xy.y - center.y);
-
+float Irawan::evalSpecular(const Vector &wo, const Vector &wi) const
+{
 	// Get incident and exitant directions.
 	Vector om_i(wi);
 	if (om_i.z < 0.f)
@@ -178,62 +252,12 @@ float Irawan::evalSpecular(const Vector &wo, const Vector &wi, const float u_i,
 	if (om_r.z < 0.f)
 		om_r = -om_r;
 
-	float dUmaxOverDWarp, dUmaxOverDWeft;
-	if (yarn->type == Yarn::EWarp) {
-		dUmaxOverDWarp = weave->dWarpUmaxOverDWarp;
-		dUmaxOverDWeft = weave->dWarpUmaxOverDWeft;
-	} else { // type == EWeft
-		dUmaxOverDWarp = weave->dWeftUmaxOverDWarp;
-		dUmaxOverDWeft = weave->dWeftUmaxOverDWeft;
-		// Rotate xy, incident, and exitant directions pi/2 radian about z-axis
-		float tmp = xy.x;
-		xy.x = -xy.y;
-		xy.y = tmp;
-		tmp = om_i.x;
-		om_i.x = -om_i.y;
-		om_i.y = tmp;
-		tmp = om_r.x;
-		om_r.x = -om_r.y;
-		om_r.y = tmp;
-	}
-
 	/* Number of TEA iterations (the more, the better the
 	   quality of the pseudorandom floats) */
 	const int teaIterations = 8;
 
-	float umax = yarn->umax;
-	if (weave->period > 0.0f) {
-		// Correlated (Perlin) noise.
-		// generate 1 seed per yarn segment
-		const float random1 = perlinNoise(Point((center.x *
-			(weave->tileHeight * weave->repeat_v +
-			sampleTEAfloat(center.x, 2.f * center.y,
-			teaIterations)) + center.y) / weave->period, 0, 0));
-		const float random2 = perlinNoise(Point((center.y *
-			(weave->tileWidth * weave->repeat_u +
-			sampleTEAfloat(center.x, 2.f * center.y + 1.f,
-			teaIterations)) + center.x) / weave->period, 0, 0));
-		umax += random1 * dUmaxOverDWarp + random2 * dUmaxOverDWeft;
-	}
-
-	const float w = yarn->width;
-	const float l = yarn->length;
-	// Compute u and v.
-	// See Chapter 6.
-	float u = xy.y / (l / 2.0f) * umax;
-	float v = xy.x * M_PI / w;
-
-	const float psi = yarn->psi;
-	const float kappa = yarn->kappa;
-
 	// Compute specular contribution.
-	float integrand;
-	if (psi != 0.0f)
-		integrand = evalStapleIntegrand(u, v, om_i, om_r,
-			psi, umax, kappa, w, l);
-	else
-		integrand = evalFilamentIntegrand(u, v, om_i, om_r,
-			umax, kappa, w, l);
+	const float integrand = yarn->EvalIntegrand(*weave, center, xy, om_i, om_r);
 
 	// Compute random variation and scale specular component.
 	if (weave->fineness > 0.0f) {
@@ -242,21 +266,11 @@ float Irawan::evalSpecular(const Vector &wo, const Vector &wi, const float u_i,
 		const uint32_t index1 = (uint32_t) ((center.x + xy.x) * weave->fineness);
 		const uint32_t index2 = (uint32_t) ((center.y + xy.y) * weave->fineness);
 
-		float xi = sampleTEAfloat(index1, index2, teaIterations);
-		integrand *= min(-logf(xi), 10.0f);
+		const float xi = sampleTEAfloat(index1, index2, teaIterations);
+		return integrand * min(-logf(xi), 10.0f);
 	}
 
-	float scale = integrand;
-
-	if (yarn->type == Yarn::EWarp)
-		scale *= (weave->warpArea + weave->weftArea) / weave->warpArea;
-	else
-		scale *= (weave->warpArea + weave->weftArea) / weave->weftArea;
-
-	if (type)
-		*type = yarn->type;
-
-	return scale;
+	return integrand;
 }
 
 /** parameters:
@@ -272,15 +286,15 @@ float Irawan::evalSpecular(const Vector &wo, const Vector &wi, const float u_i,
  *	w	 width of segment rectangle
  *	l	 length of segment rectangle
  */
-float Irawan::evalFilamentIntegrand(float u, float v, const Vector &om_i,
-	const Vector &om_r, float umax, float kappa, float w, float l) const
+float Yarn::EvalFilamentIntegrand(const WeavePattern &weave, const Vector &om_i,
+	const Vector &om_r, float u, float v, float umaxMod) const
 {
 	// 0 <= ss < 1.0
-	if (weave->ss < 0.0f || weave->ss >= 1.0f)
+	if (weave.ss < 0.0f || weave.ss >= 1.0f)
 		return 0.0f;
 
 	// w * sin(umax) < l
-	if (w * sinf(umax) >= l)
+	if (width * sinf(umaxMod) >= length)
 		return 0.0f;
 
 	// -1 < kappa < inf
@@ -294,7 +308,18 @@ float Irawan::evalFilamentIntegrand(float u, float v, const Vector &om_i,
 	const float u_of_v = atan2f(h.y, h.z);
 
 	// Check if u_of_v within the range of valid u values
-	if (fabsf(u_of_v) >= umax)
+	if (fabsf(u_of_v) >= umaxMod)
+		return 0.f;
+
+	// Highlight has constant width delta_y on screen.
+	const float delta_y = length * weave.hWidth;
+
+	// Clamp y_of_v between -(l - delta_y)/2 and (l - delta_y)/2.
+	const float y_of_v = .5f * Clamp(u_of_v * length / umaxMod,
+		delta_y - length, length - delta_y);
+
+	// Check if |y(u(v)) - y(u)| < delta_y/2.
+	if (fabsf(y_of_v - u * 0.5f * length / umaxMod) >= 0.5f * delta_y)
 		return 0.f;
 
 	// n is normal to the yarn surface
@@ -304,43 +329,30 @@ float Irawan::evalFilamentIntegrand(float u, float v, const Vector &om_i,
 	const Vector t(Normalize(Vector(0.0f, cosf(u_of_v), -sinf(u_of_v))));
 
 	// R is radius of curvature.
-	const float R = radiusOfCurvature(min(fabsf(u_of_v),
-		(1.f - weave->ss) * umax), (1.f - weave->ss) * umax, kappa, w, l);
+	const float R = RadiusOfCurvature(min(fabsf(u_of_v),
+		(1.f - weave.ss) * umaxMod), (1.f - weave.ss) * umaxMod);
 
 	// G is geometry factor.
-	const float a = 0.5f * w;
+	const float a = 0.5f * width;
 	const Vector om_i_plus_om_r(om_i + om_r), t_cross_h(Cross(t, h));
 	const float Gu = a * (R + a * cosf(v)) /
 		(om_i_plus_om_r.Length() * fabsf(t_cross_h.x));
 
 	// fc is phase function
-	const float fc = weave->alpha + vonMises(-Dot(om_i, om_r), weave->beta);
+	const float fc = weave.alpha + vonMises(-Dot(om_i, om_r), weave.beta);
 
 	// attenuation function without smoothing.
 	float As = seeliger(Dot(n, om_i), Dot(n, om_r), 0, 1);
 	// As is attenuation function with smoothing.
-	if (weave->ss > 0.0f)
-		As *= SmoothStep(0.f, 1.f, (umax - fabsf(u_of_v)) /
-			(weave->ss * umax));
+	if (weave.ss > 0.0f)
+		As *= SmoothStep(0.f, 1.f, (umaxMod - fabsf(u_of_v)) /
+			(weave.ss * umaxMod));
 
 	// fs is scattering function.
 	const float fs = Gu * fc * As;
 
 	// Domain transform.
-	const float fst = fs * M_PI * l;
-
-	// Highlight has constant width delta_y on screen.
-	const float delta_y = l * weave->hWidth;
-
-	// Clamp y_of_v between -(l - delta_y)/2 and (l - delta_y)/2.
-	const float y_of_v = .5f * Clamp(u_of_v * l / umax,
-		delta_y - l, l - delta_y);
-
-	// Check if |y(u(v)) - y(u)| < delta_y/2.
-	if (fabsf(y_of_v - u * 0.5f * l / umax) < 0.5f * delta_y)
-		return fst / delta_y;
-
-	return 0.0f;
+	return fs * M_PI * length / delta_y;
 }
 
 /** parameters:
@@ -356,12 +368,11 @@ float Irawan::evalFilamentIntegrand(float u, float v, const Vector &om_i,
  *	w	 width of segment rectangle
  *	l	 length of segment rectangle
  */
-float Irawan::evalStapleIntegrand(float u, float v, const Vector &om_i,
-	const Vector &om_r, float psi, float umax, float kappa, float w,
-	float l) const
+float Yarn::EvalStapleIntegrand(const WeavePattern &weave, const Vector &om_i,
+	const Vector &om_r, float u, float v, float umaxMod) const
 {
 	// w * sin(umax) < l
-	if (w * sinf(umax) >= l)
+	if (width * sinf(umaxMod) >= length)
 		return 0.0f;
 
 	// -1 < kappa < inf
@@ -380,21 +391,32 @@ float Irawan::evalStapleIntegrand(float u, float v, const Vector &om_i,
 	const float v_of_u = atan2f(-h.y * sinf(u) - h.z * cosf(u), h.x) +
 		acosf(D);
 
+	// Highlight has constant width delta_x on screen.
+	const float delta_x = width * weave.hWidth;
+
+	// Clamp x_of_u between (w - delta_x)/2 and -(w - delta_x)/2.
+	const float x_of_u = Clamp(v_of_u * width / M_PI,
+		delta_x - width, width - delta_x);
+
+	// Check if |x(v(u)) - x(v)| < delta_x/2.
+	if (fabsf(x_of_u - v * width / M_PI) >= 0.5f * delta_x)
+		return 0.f;
+
 	// n is normal to the yarn surface.
 	const Vector n(Normalize(Vector(sinf(v_of_u), sinf(u) * cosf(v_of_u),
 		cosf(u) * cosf(v_of_u))));
 
 	// R is radius of curvature.
-	const float R = radiusOfCurvature(fabsf(u), umax, kappa, w, l);
+	const float R = RadiusOfCurvature(fabsf(u), umaxMod);
 
 	// G is geometry factor.
-	const float a = 0.5f * w;
+	const float a = 0.5f * width;
 	const Vector om_i_plus_om_r(om_i + om_r);
 	const float Gv = a * (R + a * cosf(v_of_u)) /
 		(om_i_plus_om_r.Length() * Dot(n, h) * fabsf(sinf(psi)));
 
 	// fc is phase function.
-	const float fc = weave->alpha + vonMises(-Dot(om_i, om_r), weave->beta);
+	const float fc = weave.alpha + vonMises(-Dot(om_i, om_r), weave.beta);
 
 	// A is attenuation function without smoothing.
 	const float A = seeliger(Dot(n, om_i), Dot(n, om_r), 0, 1);
@@ -403,49 +425,36 @@ float Irawan::evalStapleIntegrand(float u, float v, const Vector &om_i,
 	const float fs = Gv * fc * A;
 
 	// Domain transform.
-	const float fst = fs * 2.0f * w * umax;
-
-	// Highlight has constant width delta_x on screen.
-	const float delta_x = w * weave->hWidth;
-
-	// Clamp x_of_u between (w - delta_x)/2 and -(w - delta_x)/2.
-	const float x_of_u = Clamp(v_of_u * w / M_PI, delta_x - w, w - delta_x);
-
-	// Check if |x(v(u)) - x(v)| < delta_x/2.
-	if (fabsf(x_of_u - v * w / M_PI) < 0.5f * delta_x)
-		return fst / delta_x;
-
-	return 0.0f;
+	return fs * 2.0f * width * umaxMod / delta_x;
 }
 
-float Irawan::radiusOfCurvature(float u, float umax, float kappa, float w,
-	float l) const
+float Yarn::RadiusOfCurvature(float u, float umaxMod) const
 {
 	// rhat determines whether the spine is a segment
 	// of an ellipse, a parabole, or a hyperbola.
 	// See Section 5.3.
-	const float rhat = 1.0f + kappa * (1.0f + 1.0f / tanf(umax));
+	const float rhat = 1.0f + kappa * (1.0f + 1.0f / tanf(umaxMod));
 
-	const float a = 0.5f * w;
+	const float a = 0.5f * width;
 	if (rhat == 1.0f) { // circle; see Subsection 5.3.1.
-		return 0.5f * l / sinf(umax) - a;
-	} else if (rhat > 0.0f) {
-		const float tmax = atanf(rhat * tanf(umax));
-		const float bhat = (0.5f * l - a * sinf(umax)) / sinf(tmax);
+		return 0.5f * length / sinf(umaxMod) - a;
+	} else if (rhat > 0.0f) { // ellipsis
+		const float tmax = atanf(rhat * tanf(umaxMod));
+		const float bhat = (0.5f * length - a * sinf(umaxMod)) / sinf(tmax);
 		const float ahat = bhat / rhat;
 		const float t = atanf(rhat * tanf(u));
 		return powf(bhat * bhat * cosf(t) * cosf(t) +
 			ahat * ahat * sinf(t) * sinf(t), 1.5f) / (ahat * bhat);
 	} else if (rhat < 0.0f) { // hyperbola; see Subsection 5.3.3.
-		const float tmax = -atanhf(rhat * tanf(umax));
-		const float bhat = (0.5f * l - a * sinf(umax)) / sinhf(tmax);
+		const float tmax = -atanhf(rhat * tanf(umaxMod));
+		const float bhat = (0.5f * length - a * sinf(umaxMod)) / sinhf(tmax);
 		const float ahat = bhat / rhat;
 		const float t = -atanhf(rhat * tanf(u));
 		return -powf(bhat * bhat * coshf(t) * coshf(t) +
 			ahat * ahat * sinhf(t) * sinhf(t), 1.5f) / (ahat * bhat);
 	} else { // rhat == 0  // parabola; see Subsection 5.3.2.
-		const float tmax = tanf(umax);
-		const float ahat = (0.5f * l - a * sinf(umax)) / (2.f * tmax);
+		const float tmax = tanf(umaxMod);
+		const float ahat = (0.5f * length - a * sinf(umaxMod)) / (2.f * tmax);
 		const float t = tanf(u);
 		return 2.f * ahat * powf(1.f + t * t, 1.5f);
 	}

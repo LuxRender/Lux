@@ -73,14 +73,14 @@ boost::shared_ptr<WeavePattern> DenimPattern(const float repeat_u, const float r
 	for (u_int i = 0; i < pattern->tileHeight * pattern->tileWidth; i++)
 		pattern->pattern.push_back(patterns[i]);
 
-	pattern->yarns.push_back(new Yarn(Yarn::EWarp, -30, 12, 0, 1, 5, 0.1667, 0.75));
-	pattern->yarns.push_back(new Yarn(Yarn::EWarp, -30, 12, 0, 1, 5, 0.1667, -0.25));
-	pattern->yarns.push_back(new Yarn(Yarn::EWarp, -30, 12, 0, 1, 5, 0.5, 1.0833));
-	pattern->yarns.push_back(new Yarn(Yarn::EWarp, -30, 12, 0, 1, 5, 0.5, 0.0833));
-	pattern->yarns.push_back(new Yarn(Yarn::EWarp, -30, 12, 0, 1, 5, 0.8333, 0.4167));
-	pattern->yarns.push_back(new Yarn(Yarn::EWeft, -30, 38, 0, 1, 1, 0.1667, 0.25));
-	pattern->yarns.push_back(new Yarn(Yarn::EWeft, -30, 38, 0, 1, 1, 0.5, 0.5833));
-	pattern->yarns.push_back(new Yarn(Yarn::EWeft, -30, 38, 0, 1, 1, 0.8333, 0.9167));
+	pattern->yarns.push_back(new Warp(-30, 12, 0, 1, 5, 0.1667, 0.75, 0));
+	pattern->yarns.push_back(new Warp(-30, 12, 0, 1, 5, 0.1667, -0.25, 0));
+	pattern->yarns.push_back(new Warp(-30, 12, 0, 1, 5, 0.5, 1.0833, 0));
+	pattern->yarns.push_back(new Warp(-30, 12, 0, 1, 5, 0.5, 0.0833, 0));
+	pattern->yarns.push_back(new Warp(-30, 12, 0, 1, 5, 0.8333, 0.4167, 0));
+	pattern->yarns.push_back(new Weft(-30, 38, 0, 1, 1, 0.1667, 0.25, 1));
+	pattern->yarns.push_back(new Weft(-30, 38, 0, 1, 1, 0.5, 0.5833, 1));
+	pattern->yarns.push_back(new Weft(-30, 38, 0, 1, 1, 0.8333, 0.9167, 1));
 
 	return pattern;
 }
@@ -104,20 +104,20 @@ boost::shared_ptr<WeavePattern> SilkCharmeusePattern(const float repeat_u, const
 	for (u_int i = 0; i < pattern->tileHeight * pattern->tileWidth; i++)
 		pattern->pattern.push_back(patterns[i]);
 
-	pattern->yarns.push_back(new Yarn(Yarn::EWarp, 0, 40, 2, 1, 9, 0.1, 0.45));
-	pattern->yarns.push_back(new Yarn(Yarn::EWarp, 0, 40, 2, 1, 9, 0.3, 1.05));
-	pattern->yarns.push_back(new Yarn(Yarn::EWarp, 0, 40, 2, 1, 9, 0.3, 0.05));
-	pattern->yarns.push_back(new Yarn(Yarn::EWarp, 0, 40, 2, 1, 9, 0.5, 0.65));
-	pattern->yarns.push_back(new Yarn(Yarn::EWarp, 0, 40, 2, 1, 9, 0.5, -0.35));
-	pattern->yarns.push_back(new Yarn(Yarn::EWarp, 0, 40, 2, 1, 9, 0.7, 1.25));
-	pattern->yarns.push_back(new Yarn(Yarn::EWarp, 0, 40, 2, 1, 9, 0.7, 0.25));
-	pattern->yarns.push_back(new Yarn(Yarn::EWarp, 0, 40, 2, 1, 9, 0.9, 0.85));
-	pattern->yarns.push_back(new Yarn(Yarn::EWarp, 0, 40, 2, 1, 9, 0.9, -0.15));
-	pattern->yarns.push_back(new Yarn(Yarn::EWeft, 0, 60, 0, 1, 1, 0.1, 0.95));
-	pattern->yarns.push_back(new Yarn(Yarn::EWeft, 0, 60, 0, 1, 1, 0.3, 0.55));
-	pattern->yarns.push_back(new Yarn(Yarn::EWeft, 0, 60, 0, 1, 1, 0.5, 0.15));
-	pattern->yarns.push_back(new Yarn(Yarn::EWeft, 0, 60, 0, 1, 1, 0.7, 0.75));
-	pattern->yarns.push_back(new Yarn(Yarn::EWeft, 0, 60, 0, 1, 1, 0.9, 0.35));
+	pattern->yarns.push_back(new Warp(0, 40, 2, 1, 9, 0.1, 0.45, 0));
+	pattern->yarns.push_back(new Warp(0, 40, 2, 1, 9, 0.3, 1.05, 0));
+	pattern->yarns.push_back(new Warp(0, 40, 2, 1, 9, 0.3, 0.05, 0));
+	pattern->yarns.push_back(new Warp(0, 40, 2, 1, 9, 0.5, 0.65, 0));
+	pattern->yarns.push_back(new Warp(0, 40, 2, 1, 9, 0.5, -0.35, 0));
+	pattern->yarns.push_back(new Warp(0, 40, 2, 1, 9, 0.7, 1.25, 0));
+	pattern->yarns.push_back(new Warp(0, 40, 2, 1, 9, 0.7, 0.25, 0));
+	pattern->yarns.push_back(new Warp(0, 40, 2, 1, 9, 0.9, 0.85, 0));
+	pattern->yarns.push_back(new Warp(0, 40, 2, 1, 9, 0.9, -0.15, 0));
+	pattern->yarns.push_back(new Weft(0, 60, 0, 1, 1, 0.1, 0.95, 1));
+	pattern->yarns.push_back(new Weft(0, 60, 0, 1, 1, 0.3, 0.55, 1));
+	pattern->yarns.push_back(new Weft(0, 60, 0, 1, 1, 0.5, 0.15, 1));
+	pattern->yarns.push_back(new Weft(0, 60, 0, 1, 1, 0.7, 0.75, 1));
+	pattern->yarns.push_back(new Weft(0, 60, 0, 1, 1, 0.9, 0.35, 1));
 
 	return pattern;
 }
@@ -139,16 +139,16 @@ boost::shared_ptr<WeavePattern> CottonTwillPattern(const float repeat_u, const f
 	for (u_int i = 0; i < pattern->tileHeight * pattern->tileWidth; i++)
 		pattern->pattern.push_back(patterns[i]);
 
-	pattern->yarns.push_back(new Yarn(Yarn::EWarp, -30, 24, 0, 1, 6, 0.125, 0.375));
-	pattern->yarns.push_back(new Yarn(Yarn::EWarp, -30, 24, 0, 1, 6, 0.375, 1.125));
-	pattern->yarns.push_back(new Yarn(Yarn::EWarp, -30, 24, 0, 1, 6, 0.375, 0.125));
-	pattern->yarns.push_back(new Yarn(Yarn::EWarp, -30, 24, 0, 1, 6, 0.625, 0.875));
-	pattern->yarns.push_back(new Yarn(Yarn::EWarp, -30, 24, 0, 1, 6, 0.625, -0.125));
-	pattern->yarns.push_back(new Yarn(Yarn::EWarp, -30, 24, 0, 1, 6, 0.875, 0.625));
-	pattern->yarns.push_back(new Yarn(Yarn::EWeft, -30, 36, 0, 2, 1, 0.125, 0.875));
-	pattern->yarns.push_back(new Yarn(Yarn::EWeft, -30, 36, 0, 2, 1, 0.375, 0.625));
-	pattern->yarns.push_back(new Yarn(Yarn::EWeft, -30, 36, 0, 2, 1, 0.625, 0.375));
-	pattern->yarns.push_back(new Yarn(Yarn::EWeft, -30, 36, 0, 2, 1, 0.875, 0.125));
+	pattern->yarns.push_back(new Warp(-30, 24, 0, 1, 6, 0.125, 0.375, 0));
+	pattern->yarns.push_back(new Warp(-30, 24, 0, 1, 6, 0.375, 1.125, 0));
+	pattern->yarns.push_back(new Warp(-30, 24, 0, 1, 6, 0.375, 0.125, 0));
+	pattern->yarns.push_back(new Warp(-30, 24, 0, 1, 6, 0.625, 0.875, 0));
+	pattern->yarns.push_back(new Warp(-30, 24, 0, 1, 6, 0.625, -0.125, 0));
+	pattern->yarns.push_back(new Warp(-30, 24, 0, 1, 6, 0.875, 0.625, 0));
+	pattern->yarns.push_back(new Weft(-30, 36, 0, 2, 1, 0.125, 0.875, 1));
+	pattern->yarns.push_back(new Weft(-30, 36, 0, 2, 1, 0.375, 0.625, 1));
+	pattern->yarns.push_back(new Weft(-30, 36, 0, 2, 1, 0.625, 0.375, 1));
+	pattern->yarns.push_back(new Weft(-30, 36, 0, 2, 1, 0.875, 0.125, 1));
 
 	return pattern;
 }
@@ -171,13 +171,13 @@ boost::shared_ptr<WeavePattern> WoolGabardinePattern(const float repeat_u, const
 	for (u_int i = 0; i < pattern->tileHeight * pattern->tileWidth; i++)
 		pattern->pattern.push_back(patterns[i]);
 
-	pattern->yarns.push_back(new Yarn(Yarn::EWarp, 30, 30, 0, 2, 6, 0.167, 0.667));
-	pattern->yarns.push_back(new Yarn(Yarn::EWarp, 30, 30, 0, 2, 6, 0.5, 1.0));
-	pattern->yarns.push_back(new Yarn(Yarn::EWarp, 30, 30, 0, 2, 6, 0.5, 0.0));
-	pattern->yarns.push_back(new Yarn(Yarn::EWarp, 30, 30, 0, 2, 6, 0.833, 0.333));
-	pattern->yarns.push_back(new Yarn(Yarn::EWeft, 30, 30, 0, 3, 2, 0.167, 0.167));
-	pattern->yarns.push_back(new Yarn(Yarn::EWeft, 30, 30, 0, 3, 2, 0.5, 0.5));
-	pattern->yarns.push_back(new Yarn(Yarn::EWeft, 30, 30, 0, 3, 2, 0.833, 0.833));
+	pattern->yarns.push_back(new Warp(30, 30, 0, 2, 6, 0.167, 0.667, 0));
+	pattern->yarns.push_back(new Warp(30, 30, 0, 2, 6, 0.5, 1.0, 0));
+	pattern->yarns.push_back(new Warp(30, 30, 0, 2, 6, 0.5, 0.0, 0));
+	pattern->yarns.push_back(new Warp(30, 30, 0, 2, 6, 0.833, 0.333, 0));
+	pattern->yarns.push_back(new Weft(30, 30, 0, 3, 2, 0.167, 0.167, 1));
+	pattern->yarns.push_back(new Weft(30, 30, 0, 3, 2, 0.5, 0.5, 1));
+	pattern->yarns.push_back(new Weft(30, 30, 0, 3, 2, 0.833, 0.833, 1));
 
 	return pattern;
 }
@@ -193,10 +193,10 @@ boost::shared_ptr<WeavePattern> PolyesterLiningClothPattern(const float repeat_u
 	for (u_int i = 0; i < pattern->tileHeight * pattern->tileWidth; i++)
 		pattern->pattern.push_back(patterns[i]);
 
-	pattern->yarns.push_back(new Yarn(Yarn::EWarp, 0, 22, -0.7, 1, 1, 0.25, 0.25));
-	pattern->yarns.push_back(new Yarn(Yarn::EWarp, 0, 22, -0.7, 1, 1, 0.75, 0.75));
-	pattern->yarns.push_back(new Yarn(Yarn::EWeft, 0, 16, -0.7, 1, 1, 0.25, 0.75));
-	pattern->yarns.push_back(new Yarn(Yarn::EWeft, 0, 16, -0.7, 1, 1, 0.75, 0.25));
+	pattern->yarns.push_back(new Warp(0, 22, -0.7, 1, 1, 0.25, 0.25, 0));
+	pattern->yarns.push_back(new Warp(0, 22, -0.7, 1, 1, 0.75, 0.75, 0));
+	pattern->yarns.push_back(new Weft(0, 16, -0.7, 1, 1, 0.25, 0.75, 1));
+	pattern->yarns.push_back(new Weft(0, 16, -0.7, 1, 1, 0.75, 0.25, 1));
 
 	return pattern;
 }
@@ -218,11 +218,11 @@ boost::shared_ptr<WeavePattern> SilkShantungPattern(const float repeat_u, const 
 	for (u_int i = 0; i < pattern->tileHeight * pattern->tileWidth; i++)
 		pattern->pattern.push_back(patterns[i]);
 
-	pattern->yarns.push_back(new Yarn(Yarn::EWarp, 0, 50, -0.5, 2, 4, 0.3333, 0.25));
-	pattern->yarns.push_back(new Yarn(Yarn::EWarp, 0, 50, -0.5, 2, 4, 0.8333, 0.75));
-	pattern->yarns.push_back(new Yarn(Yarn::EWeft, 0, 23, -0.3, 4, 4, 0.3333, 0.75));
-	pattern->yarns.push_back(new Yarn(Yarn::EWeft, 0, 23, -0.3, 4, 4, -0.1667, 0.25));
-	pattern->yarns.push_back(new Yarn(Yarn::EWeft, 0, 23, -0.3, 4, 4, 0.8333, 0.25));
+	pattern->yarns.push_back(new Warp(0, 50, -0.5, 2, 4, 0.3333, 0.25, 0));
+	pattern->yarns.push_back(new Warp(0, 50, -0.5, 2, 4, 0.8333, 0.75, 0));
+	pattern->yarns.push_back(new Weft(0, 23, -0.3, 4, 4, 0.3333, 0.75, 1));
+	pattern->yarns.push_back(new Weft(0, 23, -0.3, 4, 4, -0.1667, 0.25, 1));
+	pattern->yarns.push_back(new Weft(0, 23, -0.3, 4, 4, 0.8333, 0.25, 1));
 
 	return pattern;
 }
@@ -232,47 +232,52 @@ Cloth::Cloth(boost::shared_ptr<Texture<SWCSpectrum> > &warp_kd,
 			boost::shared_ptr<Texture<SWCSpectrum> > &weft_kd,
 			boost::shared_ptr<Texture<SWCSpectrum> > &weft_ks,
 			boost::shared_ptr<WeavePattern> &pattern,
-			const ParamSet &mp) : Material(mp), warp_Kd(warp_kd), warp_Ks(warp_ks), weft_Kd(weft_kd), weft_Ks(weft_ks),
-			Pattern(pattern) {
+			const ParamSet &mp) : Material(mp), Pattern(pattern)
+{
+	// Store warp and weft textures
+	Kds.push_back(warp_kd);
+	Kds.push_back(weft_kd);
+	Kss.push_back(warp_ks);
+	Kss.push_back(weft_ks);
 
-		/* Estimate the average reflectance under diffuse illumination and use it to normalize the specular component */
+	/* Estimate the average reflectance under diffuse illumination and use it to normalize the specular component */
 
-		RandomGenerator random(1);
-		u_int nSamples = 100000;
+	RandomGenerator random(1);
+	u_int nSamples = 100000;
 
-		SWCSpectrum s;
+	SWCSpectrum s;
 
-		Irawan *irawan = new Irawan(s,s,s,s,random.floatValue(),
-			random.floatValue(), 0.0, Pattern);
+	float result = 0.f;
+	for (u_int i = 0; i < nSamples; ++i) {
+		Point center, xy;
+		const Yarn *yarn = Pattern->GetYarn(random.floatValue(),
+			random.floatValue(), &center, &xy);
+		Irawan irawan(s, s, center, xy, yarn, Pattern.get(), 0.f);
+		const Vector wi = CosineSampleHemisphere(random.floatValue(), random.floatValue());
+		const Vector wo = CosineSampleHemisphere(random.floatValue(), random.floatValue());
 
-		float result = 0.f;
-		for (u_int i = 0; i < nSamples; ++i) {
-			const Vector wi = CosineSampleHemisphere(random.floatValue(), random.floatValue());
-			const Vector wo = CosineSampleHemisphere(random.floatValue(), random.floatValue());
+		result += irawan.evalSpecular(wo, wi);
+	}
 
-			result += irawan->evalSpecular(wo, wi, random.floatValue(), random.floatValue(), NULL);
-		}
-
-		if (result > 0.f)
-			specularNormalization = nSamples / result;
-		else
-			specularNormalization = 0;
-
-		delete irawan;
+	if (result > 0.f)
+		specularNormalization = nSamples / result;
+	else
+		specularNormalization = 0;
 }
 
 // Cloth Method Definitions
 BSDF *Cloth::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 	const Intersection &isect, const DifferentialGeometry &dgs) const
 {
-	SWCSpectrum warp_kd = warp_Kd->Evaluate(sw, dgs).Clamp(0.f, 1.f);
-	SWCSpectrum warp_ks = warp_Ks->Evaluate(sw, dgs).Clamp(0.f, 1.f);
-	SWCSpectrum weft_kd = weft_Kd->Evaluate(sw, dgs).Clamp(0.f, 1.f);
-	SWCSpectrum weft_ks = weft_Ks->Evaluate(sw, dgs).Clamp(0.f, 1.f);
+	// Determine cloth coordinates and yarn at current point
+	Point center, xy;
+	const Yarn *yarn = Pattern->GetYarn(dgs.u, dgs.v, &center, &xy);
 
 	// Allocate _BSDF_
-	BxDF *bxdf = ARENA_ALLOC(arena, Irawan)(warp_kd, warp_ks,
-		weft_kd, weft_ks, dgs.u, dgs.v, specularNormalization, Pattern);
+	BxDF *bxdf = ARENA_ALLOC(arena, Irawan)
+		(Kds.at(yarn->index)->Evaluate(sw, dgs).Clamp(0.f, 1.f),
+		Kss.at(yarn->index)->Evaluate(sw, dgs).Clamp(0.f, 1.f),
+		center, xy, yarn, Pattern.get(), specularNormalization);
 
 	SingleBSDF *bsdf = ARENA_ALLOC(arena, SingleBSDF)(dgs, isect.dg.nn,
 		bxdf, isect.exterior, isect.interior);
