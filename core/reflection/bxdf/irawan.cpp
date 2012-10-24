@@ -183,18 +183,18 @@ float Weft::EvalIntegrand(const WeavePattern &weave, const Point &center,
 	om_r.x = -om_r.x;
 
 	if (psi != 0.0f)
-		return EvalStapleIntegrand(weave, om_i, om_r, u, v, umaxMod);
-		/* * (weave.warpArea + weave.weftArea) / weave.weftArea;*/
+		return EvalStapleIntegrand(weave, om_i, om_r, u, v, umaxMod)
+		 * (weave.warpArea + weave.weftArea) / weave.weftArea;
 	else
-		return EvalFilamentIntegrand(weave, om_i, om_r, u, v, umaxMod);
-		/* * (weave.warpArea + weave.weftArea) / weave.weftArea;*/
+		return EvalFilamentIntegrand(weave, om_i, om_r, u, v, umaxMod)
+		  * (weave.warpArea + weave.weftArea) / weave.weftArea;
 }
 
 void Irawan::F(const SpectrumWavelengths &sw, const Vector &wo,
 	const Vector &wi, SWCSpectrum *const f_) const
 {
 	const float scale = evalSpecular(wo, wi);
-	*f_ += (Ks * (scale * specularNormalization) + Kd) *
+	*f_ += Ks * (scale * specularNormalization) *
 		(fabsf(wo.z) * INV_PI);
 }
 
@@ -215,7 +215,7 @@ bool Irawan::SampleF(const SpectrumWavelengths &sw, const Vector &wo,
 	else
 		scale = evalSpecular(wo, *wi);
 
-	*f = Ks * (scale * specularNormalization) + Kd;
+	*f = Ks * (scale * specularNormalization);
 	return true;
 }
 

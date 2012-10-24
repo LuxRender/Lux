@@ -175,11 +175,11 @@ public:
 class  Irawan : public BxDF {
 public:
 	// Irawan Public Methods
-	Irawan(const SWCSpectrum &kd, const SWCSpectrum &ks,
+	Irawan(const SWCSpectrum &ks,
 		const Point &cent, const Point &pos, const Yarn *y,
 		const WeavePattern *pattern, float spec_norm) :
 		BxDF(BxDFType(BSDF_REFLECTION | BSDF_GLOSSY)),
-		Kd(kd), Ks(ks), center(cent), xy(pos), yarn(y), weave(pattern),
+		Ks(ks), center(cent), xy(pos), yarn(y), weave(pattern),
 		specularNormalization(spec_norm) { }
 	virtual ~Irawan() { }
 	virtual void F(const SpectrumWavelengths &sw, const Vector &wo,
@@ -191,7 +191,7 @@ public:
 
 private:
 	// Irawan Private Data
-	SWCSpectrum Kd, Ks;
+	SWCSpectrum Ks;
 	Point center, xy;
 	const Yarn *yarn;
 	const WeavePattern *weave;

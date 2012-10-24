@@ -46,7 +46,7 @@
 
 #include "cloth.h"
 #include "memory.h"
-#include "singlebsdf.h"
+#include "multibsdf.h"
 #include "primitive.h"
 #include "texture.h"
 #include "color.h"
@@ -54,6 +54,7 @@
 #include "dynload.h"
 #include "randomgen.h"
 #include "irawan.h"
+#include "lambertian.h"
 #include "mc.h"
 
 using namespace lux;
@@ -252,7 +253,7 @@ Cloth::Cloth(boost::shared_ptr<Texture<SWCSpectrum> > &warp_kd,
 		Point center, xy;
 		const Yarn *yarn = Pattern->GetYarn(random.floatValue(),
 			random.floatValue(), &center, &xy);
-		Irawan irawan(s, s, center, xy, yarn, Pattern.get(), 0.f);
+		Irawan irawan(s, center, xy, yarn, Pattern.get(), 0.f);
 		const Vector wi = CosineSampleHemisphere(random.floatValue(), random.floatValue());
 		const Vector wo = CosineSampleHemisphere(random.floatValue(), random.floatValue());
 
@@ -274,18 +275,18 @@ BSDF *Cloth::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 	const Yarn *yarn = Pattern->GetYarn(dgs.u, dgs.v, &center, &xy);
 
 	// Allocate _BSDF_
-	BxDF *bxdf = ARENA_ALLOC(arena, Irawan)
-		(Kds.at(yarn->index)->Evaluate(sw, dgs).Clamp(0.f, 1.f),
-		Kss.at(yarn->index)->Evaluate(sw, dgs).Clamp(0.f, 1.f),
-		center, xy, yarn, Pattern.get(), specularNormalization);
+	MultiBSDF<2> *bsdf = ARENA_ALLOC(arena, MultiBSDF<2>)(dgs, isect.dg.nn,
+		isect.exterior, isect.interior);
 
-	SingleBSDF *bsdf = ARENA_ALLOC(arena, SingleBSDF)(dgs, isect.dg.nn,
-		bxdf, isect.exterior, isect.interior);
+	bsdf->Add(ARENA_ALLOC(arena, Lambertian)(Kds.at(yarn->index)->Evaluate(sw, dgs).Clamp(0.f, 1.f)));
+
+	bsdf->Add(ARENA_ALLOC(arena, Irawan)
+		(Kss.at(yarn->index)->Evaluate(sw, dgs).Clamp(0.f, 1.f),
+		center, xy, yarn, Pattern.get(), specularNormalization));
 
 	// Add ptr to CompositingParams structure
 	bsdf->SetCompositingParams(&compParams);
 
-	//return bsdf;
 	return bsdf;
 }
 
