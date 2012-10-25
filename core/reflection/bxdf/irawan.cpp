@@ -113,10 +113,10 @@ static float seeliger(float cos_th1, float cos_th2, float sg_a, float sg_s)
 	return al * INV_TWOPI * .5f * c1 * c2 / (c1 + c2);
 }
 
-float Warp::EvalIntegrand(const WeavePattern &weave, const Point &center,
-	const Point &xy, Vector &om_i, Vector &om_r) const
+void Warp::GetUV(const WeavePattern &weave, const Point &center,
+	const Point &xy, Point *uv, float *umaxMod) const
 {
-	float umaxMod = umax;
+	*umaxMod = umax;
 	if (weave.period > 0.f) {
 		/* Number of TEA iterations (the more, the better the
 		   quality of the pseudorandom floats) */
@@ -132,27 +132,33 @@ float Warp::EvalIntegrand(const WeavePattern &weave, const Point &center,
 			(weave.tileWidth * weave.repeat_u +
 			sampleTEAfloat(center.x, 2.f * center.y + 1.f,
 			teaIterations)) + center.x) / weave.period);
-		umaxMod += random1 * weave.dWarpUmaxOverDWarp +
+		*umaxMod += random1 * weave.dWarpUmaxOverDWarp +
 			random2 * weave.dWarpUmaxOverDWeft;
 	}
 
 	// Compute u and v.
 	// See Chapter 6.
-	const float u = xy.y / (length / 2.0f) * umaxMod;
-	const float v = xy.x * M_PI / width;
-
-	if (psi != 0.0f)
-		return EvalStapleIntegrand(weave, om_i, om_r, u, v, umaxMod)
-		 * (weave.warpArea + weave.weftArea) / weave.warpArea;
-	else
-		return EvalFilamentIntegrand(weave, om_i, om_r, u, v, umaxMod)
-		 * (weave.warpArea + weave.weftArea) / weave.warpArea;
+	uv->x = xy.y * 2.f * *umaxMod / length;
+	uv->y = xy.x * M_PI / width;
 }
 
-float Weft::EvalIntegrand(const WeavePattern &weave, const Point &center,
-	const Point &xy, Vector &om_i, Vector &om_r) const
+float Warp::EvalIntegrand(const WeavePattern &weave, const Point &uv,
+	float umaxMod, Vector &om_i, Vector &om_r) const
 {
-	float umaxMod = umax;
+	if (psi != 0.0f)
+		return EvalStapleIntegrand(weave, om_i, om_r, uv.x, uv.y,
+			umaxMod) * (weave.warpArea + weave.weftArea) /
+			weave.warpArea;
+	else
+		return EvalFilamentIntegrand(weave, om_i, om_r, uv.x, uv.y,
+			umaxMod) * (weave.warpArea + weave.weftArea) /
+			weave.warpArea;
+}
+
+void Weft::GetUV(const WeavePattern &weave, const Point &center,
+	const Point &xy, Point *uv, float *umaxMod) const
+{
+	*umaxMod = umax;
 	if (weave.period > 0.f) {
 		/* Number of TEA iterations (the more, the better the
 		   quality of the pseudorandom floats) */
@@ -168,34 +174,41 @@ float Weft::EvalIntegrand(const WeavePattern &weave, const Point &center,
 			(weave.tileWidth * weave.repeat_u +
 			sampleTEAfloat(center.x, 2.f * center.y + 1.f,
 			teaIterations)) + center.x) / weave.period);
-		umaxMod += random1 * weave.dWeftUmaxOverDWarp +
+		*umaxMod += random1 * weave.dWeftUmaxOverDWarp +
 			random2 * weave.dWeftUmaxOverDWeft;
 	}
 
 	// Compute u and v.
 	// See Chapter 6.
 	// Rotate pi/2 radians around z axis
-	const float u = xy.x / (length / 2.0f) * umaxMod;
-	const float v = -xy.y * M_PI / width;
+	uv->x = xy.x * 2.f * *umaxMod / length;
+	uv->y = -xy.y * M_PI / width;
+}
+
+float Weft::EvalIntegrand(const WeavePattern &weave, const Point &uv,
+	float umaxMod, Vector &om_i, Vector &om_r) const
+{
+	// Rotate pi/2 radians around z axis
 	swap(om_i.x, om_i.y);
 	om_i.x = -om_i.x;
 	swap(om_r.x, om_r.y);
 	om_r.x = -om_r.x;
 
 	if (psi != 0.0f)
-		return EvalStapleIntegrand(weave, om_i, om_r, u, v, umaxMod)
-		 * (weave.warpArea + weave.weftArea) / weave.weftArea;
+		return EvalStapleIntegrand(weave, om_i, om_r, uv.x, uv.y,
+			umaxMod) * (weave.warpArea + weave.weftArea) /
+			weave.weftArea;
 	else
-		return EvalFilamentIntegrand(weave, om_i, om_r, u, v, umaxMod)
-		  * (weave.warpArea + weave.weftArea) / weave.weftArea;
+		return EvalFilamentIntegrand(weave, om_i, om_r, uv.x, uv.y,
+			umaxMod) * (weave.warpArea + weave.weftArea) /
+			weave.weftArea;
 }
 
 void Irawan::F(const SpectrumWavelengths &sw, const Vector &wo,
 	const Vector &wi, SWCSpectrum *const f_) const
 {
 	const float scale = evalSpecular(wo, wi);
-	*f_ += Ks * (scale * specularNormalization) *
-		(fabsf(wo.z) * INV_PI);
+	*f_ += Ks * (scale * specularNormalization * fabsf(wo.z) * INV_PI);
 }
 
 bool Irawan::SampleF(const SpectrumWavelengths &sw, const Vector &wo,
@@ -219,7 +232,8 @@ bool Irawan::SampleF(const SpectrumWavelengths &sw, const Vector &wo,
 	return true;
 }
 
-const Yarn *WeavePattern::GetYarn(float u_i, float v_i, Point *center, Point *xy) const
+const Yarn *WeavePattern::GetYarn(float u_i, float v_i, Point *uv, float *umax,
+	float *scale) const
 {
 	const float u = u_i * repeat_u;
 	const int bu = Floor2Int(u);
@@ -234,10 +248,27 @@ const Yarn *WeavePattern::GetYarn(float u_i, float v_i, Point *center, Point *xy
 	const int yarnID = pattern[lx + tileWidth * ly] - 1;
 	const Yarn * const yarn = yarns.at(yarnID);
 
-	center->x = (bu + yarn->centerU) * tileWidth;
-	center->y = (bv + yarn->centerV) * tileHeight;
-	xy->x = (ou - yarn->centerU) * tileWidth;
-	xy->y = (ov - yarn->centerV) * tileHeight;
+	const Point center((bu + yarn->centerU) * tileWidth,
+		(bv + yarn->centerV) * tileHeight);
+	const Point xy((ou - yarn->centerU) * tileWidth,
+		(ov - yarn->centerV) * tileHeight);
+
+	yarn->GetUV(*this, center, xy, uv, umax);
+
+	/* Number of TEA iterations (the more, the better the
+	   quality of the pseudorandom floats) */
+	const int teaIterations = 8;
+
+	// Compute random variation and scale specular component.
+	if (fineness > 0.0f) {
+		// Initialize random number generator based on texture location.
+		// Generate fineness^2 seeds per 1 unit of texture.
+		const uint32_t index1 = (uint32_t) ((center.x + xy.x) * fineness);
+		const uint32_t index2 = (uint32_t) ((center.y + xy.y) * fineness);
+
+		const float xi = sampleTEAfloat(index1, index2, teaIterations);
+		*scale *= min(-logf(xi), 10.0f);
+	}
 
 	return yarn;
 }
@@ -252,25 +283,8 @@ float Irawan::evalSpecular(const Vector &wo, const Vector &wi) const
 	if (om_r.z < 0.f)
 		om_r = -om_r;
 
-	/* Number of TEA iterations (the more, the better the
-	   quality of the pseudorandom floats) */
-	const int teaIterations = 8;
-
 	// Compute specular contribution.
-	const float integrand = yarn->EvalIntegrand(*weave, center, xy, om_i, om_r);
-
-	// Compute random variation and scale specular component.
-	if (weave->fineness > 0.0f) {
-		// Initialize random number generator based on texture location.
-		// Generate fineness^2 seeds per 1 unit of texture.
-		const uint32_t index1 = (uint32_t) ((center.x + xy.x) * weave->fineness);
-		const uint32_t index2 = (uint32_t) ((center.y + xy.y) * weave->fineness);
-
-		const float xi = sampleTEAfloat(index1, index2, teaIterations);
-		return integrand * min(-logf(xi), 10.0f);
-	}
-
-	return integrand;
+	return yarn->EvalIntegrand(*weave, uv, umax, om_i, om_r);
 }
 
 /** parameters:
@@ -305,21 +319,19 @@ float Yarn::EvalFilamentIntegrand(const WeavePattern &weave, const Vector &om_i,
 	const Vector h(Normalize(om_r + om_i));
 
 	// u_of_v is location of specular reflection.
-	const float u_of_v = atan2f(h.y, h.z);
+	float u_of_v = atan2f(h.y, h.z);
 
 	// Check if u_of_v within the range of valid u values
 	if (fabsf(u_of_v) >= umaxMod)
 		return 0.f;
 
-	// Highlight has constant width delta_y on screen.
-	const float delta_y = length * weave.hWidth;
+	// Highlight has constant width delta_u
+	const float delta_u = umaxMod * weave.hWidth;
 
-	// Clamp y_of_v between -(l - delta_y)/2 and (l - delta_y)/2.
-	const float y_of_v = .5f * Clamp(u_of_v * length / umaxMod,
-		delta_y - length, length - delta_y);
+	u_of_v = Clamp(u_of_v, delta_u - umaxMod, umaxMod - delta_u);
 
-	// Check if |y(u(v)) - y(u)| < delta_y/2.
-	if (fabsf(y_of_v - u * 0.5f * length / umaxMod) >= 0.5f * delta_y)
+	// Check if |u(v) - u| < delta_u.
+	if (fabsf(u_of_v - u) >= delta_u)
 		return 0.f;
 
 	// n is normal to the yarn surface
@@ -352,7 +364,7 @@ float Yarn::EvalFilamentIntegrand(const WeavePattern &weave, const Vector &om_i,
 	const float fs = Gu * fc * As;
 
 	// Domain transform.
-	return fs * M_PI * length / delta_y;
+	return fs * M_PI / weave.hWidth;
 }
 
 /** parameters:
@@ -388,18 +400,16 @@ float Yarn::EvalStapleIntegrand(const WeavePattern &weave, const Vector &om_i,
 		2.0f)) * tanf(psi));
 	if (!(fabsf(D) < 1.f))
 		return 0.f;
-	const float v_of_u = atan2f(-h.y * sinf(u) - h.z * cosf(u), h.x) +
+	float v_of_u = atan2f(-h.y * sinf(u) - h.z * cosf(u), h.x) +
 		acosf(D);
 
 	// Highlight has constant width delta_x on screen.
-	const float delta_x = width * weave.hWidth;
+	const float delta_v = .5f * M_PI * weave.hWidth;
 
-	// Clamp x_of_u between (w - delta_x)/2 and -(w - delta_x)/2.
-	const float x_of_u = Clamp(v_of_u * width / M_PI,
-		delta_x - width, width - delta_x);
+	v_of_u = Clamp(v_of_u, delta_v - .5f * M_PI, .5f * M_PI - delta_v);
 
 	// Check if |x(v(u)) - x(v)| < delta_x/2.
-	if (fabsf(x_of_u - v * width / M_PI) >= 0.5f * delta_x)
+	if (fabsf(v_of_u - v) >= delta_v)
 		return 0.f;
 
 	// n is normal to the yarn surface.
@@ -425,7 +435,7 @@ float Yarn::EvalStapleIntegrand(const WeavePattern &weave, const Vector &om_i,
 	const float fs = Gv * fc * A;
 
 	// Domain transform.
-	return fs * 2.0f * width * umaxMod / delta_x;
+	return fs * 2.0f * umaxMod / weave.hWidth;
 }
 
 float Yarn::RadiusOfCurvature(float u, float umaxMod) const

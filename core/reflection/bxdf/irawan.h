@@ -83,8 +83,10 @@ public:
 		umax(Radians(y_umax)), kappa(y_kappa), width(y_width),
 		length(y_length), centerU(y_centerU), centerV(y_centerV),
 		index(y_index) {  }
-	virtual float EvalIntegrand(const WeavePattern &weave, const Point &center,
-		const Point &xy, Vector &om_i, Vector &om_r) const = 0;
+	virtual void GetUV(const WeavePattern &weave, const Point &center,
+		const Point &xy, Point *uv, float *umaxMod) const = 0;
+	virtual float EvalIntegrand(const WeavePattern &weave, const Point &uv,
+		float umaxMod, Vector &om_i, Vector &om_r) const = 0;
 
 protected:
 	float EvalFilamentIntegrand(const WeavePattern &weave, const Vector &om_i,
@@ -101,8 +103,10 @@ public:
 		float y_length, float y_centerU, float y_centerV,
 		u_int y_index) : Yarn(y_psi, y_umax, y_kappa, y_width, y_length,
 		y_centerU, y_centerV, y_index) { }
-	virtual float EvalIntegrand(const WeavePattern &weave, const Point &center,
-		const Point &xy, Vector &om_i, Vector &om_r) const;
+	virtual void GetUV(const WeavePattern &weave, const Point &center,
+		const Point &xy, Point *uv, float *umaxMod) const;
+	virtual float EvalIntegrand(const WeavePattern &weave, const Point &uv,
+		float umaxMod, Vector &om_i, Vector &om_r) const;
 };
 
 class Weft : public Yarn
@@ -112,8 +116,10 @@ public:
 		float y_length, float y_centerU, float y_centerV,
 		u_int y_index) : Yarn(y_psi, y_umax, y_kappa, y_width, y_length,
 		y_centerU, y_centerV, y_index) { }
-	virtual float EvalIntegrand(const WeavePattern &weave, const Point &center,
-		const Point &xy, Vector &om_i, Vector &om_r) const;
+	virtual void GetUV(const WeavePattern &weave, const Point &center,
+		const Point &xy, Point *uv, float *umaxMod) const;
+	virtual float EvalIntegrand(const WeavePattern &weave, const Point &uv,
+		float umaxMod, Vector &om_i, Vector &om_r) const;
 };
 
 class WeavePattern {
@@ -169,17 +175,18 @@ public:
 		for (u_int i = 0; i < yarns.size(); ++i)
 			delete yarns.at(i);
 	 }
-	const Yarn *GetYarn(float u_i, float v_i, Point *center, Point *xy) const;
+	const Yarn *GetYarn(float u_i, float v_i, Point *uv, float *umax,
+		float *scale) const;
 };
 
 class  Irawan : public BxDF {
 public:
 	// Irawan Public Methods
 	Irawan(const SWCSpectrum &ks,
-		const Point &cent, const Point &pos, const Yarn *y,
+		const Point &pos, float um, const Yarn *y,
 		const WeavePattern *pattern, float spec_norm) :
 		BxDF(BxDFType(BSDF_REFLECTION | BSDF_GLOSSY)),
-		Ks(ks), center(cent), xy(pos), yarn(y), weave(pattern),
+		Ks(ks), uv(pos), umax(um), yarn(y), weave(pattern),
 		specularNormalization(spec_norm) { }
 	virtual ~Irawan() { }
 	virtual void F(const SpectrumWavelengths &sw, const Vector &wo,
@@ -192,7 +199,8 @@ public:
 private:
 	// Irawan Private Data
 	SWCSpectrum Ks;
-	Point center, xy;
+	Point uv;
+	float umax;
 	const Yarn *yarn;
 	const WeavePattern *weave;
 	float specularNormalization;

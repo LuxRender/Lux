@@ -203,7 +203,7 @@ boost::shared_ptr<WeavePattern> PolyesterLiningClothPattern(const float repeat_u
 }
 
 boost::shared_ptr<WeavePattern> SilkShantungPattern(const float repeat_u, const float repeat_v) {
-	boost::shared_ptr<WeavePattern> pattern(new WeavePattern((std::string)"Polyester lining cloth", 6, 8, 0.02f,1.5f, 0.5f, 0.5f, 8.0f, 16.0f, 0.0f, repeat_u,repeat_v, 20.0f,20.0f,10.0f,10.0f, 500.0f));
+	boost::shared_ptr<WeavePattern> pattern(new WeavePattern((std::string)"Silk Shantung", 6, 8, 0.02f,1.5f, 0.5f, 0.5f, 8.0f, 16.0f, 0.0f, repeat_u,repeat_v, 20.0f,20.0f,10.0f,10.0f, 500.0f));
 
 	int patterns[] = {
 		3, 3, 3, 3, 2, 2,
@@ -250,14 +250,15 @@ Cloth::Cloth(boost::shared_ptr<Texture<SWCSpectrum> > &warp_kd,
 
 	float result = 0.f;
 	for (u_int i = 0; i < nSamples; ++i) {
-		Point center, xy;
-		const Yarn *yarn = Pattern->GetYarn(random.floatValue(),
-			random.floatValue(), &center, &xy);
-		Irawan irawan(s, center, xy, yarn, Pattern.get(), 0.f);
 		const Vector wi = CosineSampleHemisphere(random.floatValue(), random.floatValue());
 		const Vector wo = CosineSampleHemisphere(random.floatValue(), random.floatValue());
+		Point uv;
+		float umax, scale = 1.f;
+		const Yarn *yarn = Pattern->GetYarn(random.floatValue(),
+			random.floatValue(), &uv, &umax, &scale);
+		Irawan irawan(s, uv, umax, yarn, Pattern.get(), 0.f);
 
-		result += irawan.evalSpecular(wo, wi);
+		result += irawan.evalSpecular(wo, wi) * scale;
 	}
 
 	if (result > 0.f)
@@ -271,18 +272,20 @@ BSDF *Cloth::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 	const Intersection &isect, const DifferentialGeometry &dgs) const
 {
 	// Determine cloth coordinates and yarn at current point
-	Point center, xy;
-	const Yarn *yarn = Pattern->GetYarn(dgs.u, dgs.v, &center, &xy);
+	Point uv;
+	float umax, scale = specularNormalization;
+	const Yarn *yarn = Pattern->GetYarn(dgs.u, dgs.v, &uv, &umax, &scale);
 
 	// Allocate _BSDF_
 	MultiBSDF<2> *bsdf = ARENA_ALLOC(arena, MultiBSDF<2>)(dgs, isect.dg.nn,
 		isect.exterior, isect.interior);
 
-	bsdf->Add(ARENA_ALLOC(arena, Lambertian)(Kds.at(yarn->index)->Evaluate(sw, dgs).Clamp(0.f, 1.f)));
+	bsdf->Add(ARENA_ALLOC(arena, Lambertian)
+		(Kds.at(yarn->index)->Evaluate(sw, dgs).Clamp(0.f, 1.f)));
 
 	bsdf->Add(ARENA_ALLOC(arena, Irawan)
 		(Kss.at(yarn->index)->Evaluate(sw, dgs).Clamp(0.f, 1.f),
-		center, xy, yarn, Pattern.get(), specularNormalization));
+		uv, umax, yarn, Pattern.get(), scale));
 
 	// Add ptr to CompositingParams structure
 	bsdf->SetCompositingParams(&compParams);
