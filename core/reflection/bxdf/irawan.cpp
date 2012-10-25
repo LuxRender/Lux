@@ -94,11 +94,11 @@ static float vonMises(float cos_x, float b)
 			t * 0.0045813f))))));
 	} else {
 		const float t = 3.75f / absB;
-		return factor / expf(absB) / sqrtf(absB) * (0.39894228f +
+		return factor * sqrtf(absB) / (expf(absB) * (0.39894228f +
 			t * (0.01328592f + t * (0.00225319f +
 			t * (-0.00157565f + t * (0.00916281f +
 			t * (-0.02057706f + t * (0.02635537f +
-			t * (-0.01647633f + t * 0.00392377f))))))));
+			t * (-0.01647633f + t * 0.00392377f)))))))));
 	}
 }
 
@@ -142,11 +142,11 @@ float Warp::EvalIntegrand(const WeavePattern &weave, const Point &center,
 	const float v = xy.x * M_PI / width;
 
 	if (psi != 0.0f)
-		return EvalStapleIntegrand(weave, om_i, om_r, u, v, umaxMod);
-		/* * (weave.warpArea + weave.weftArea) / weave.warpArea;*/
+		return EvalStapleIntegrand(weave, om_i, om_r, u, v, umaxMod)
+		 * (weave.warpArea + weave.weftArea) / weave.warpArea;
 	else
-		return EvalFilamentIntegrand(weave, om_i, om_r, u, v, umaxMod);
-		/* * (weave.warpArea + weave.weftArea) / weave.warpArea;*/
+		return EvalFilamentIntegrand(weave, om_i, om_r, u, v, umaxMod)
+		 * (weave.warpArea + weave.weftArea) / weave.warpArea;
 }
 
 float Weft::EvalIntegrand(const WeavePattern &weave, const Point &center,
