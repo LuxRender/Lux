@@ -1413,7 +1413,7 @@ void Film::WriteResumeFilm(const string &filename)
 		try {
 			boost::filesystem::rename(tempfilename, fullfilename);
 			LOG(LUX_INFO, LUX_NOERROR) << "Resume film written to '" << fullfilename << "'";
-		} catch (std::runtime_error e) {
+		} catch (std::runtime_error &e) {
 			LOG(LUX_ERROR, LUX_SYSTEM) << 
 				"Failed to rename new resume film, leaving new resume film as '" << tempfilename << "' (" << e.what() << ")";
 		}
