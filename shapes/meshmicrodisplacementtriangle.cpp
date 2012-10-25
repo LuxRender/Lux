@@ -152,7 +152,7 @@ Vector MeshMicroDisplacementTriangle::GetN(u_int i) const
 
 BBox MeshMicroDisplacementTriangle::ObjectBound() const
 {
-	return mesh->ObjectToWorld / WorldBound();
+	return Inverse(mesh->ObjectToWorld) * WorldBound();
 }
 
 BBox MeshMicroDisplacementTriangle::WorldBound() const

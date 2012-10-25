@@ -130,7 +130,7 @@ bool OrthoCamera::GetSamplePosition(const Point &p, const Vector &wi,
 		(!isinf(distance) && (distance < ClipHither ||
 		distance > ClipYon)))
 		return false;
-	Point ps(RasterToWorld / p);
+	Point ps(Inverse(RasterToWorld) * p);
 	*x = ps.x;
 	*y = ps.y;
 	return true;

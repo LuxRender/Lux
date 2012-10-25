@@ -30,6 +30,7 @@ namespace lux
 {
 
 	using luxrays::Transform;
+	using luxrays::InvTransform;
 	using luxrays::LookAt;
 	using luxrays::Orthographic;
 	using luxrays::Perspective;
@@ -53,11 +54,11 @@ inline DifferentialGeometry operator*(const Transform &t, const DifferentialGeom
 	return dgt;
 }
 
-inline DifferentialGeometry operator/(const Transform &t, const DifferentialGeometry &dg)
+inline DifferentialGeometry operator*(const InvTransform &t, const DifferentialGeometry &dg)
 {
-	DifferentialGeometry dgt(t / dg.p, Normalize(t / dg.nn),
-		t / dg.dpdu, t / dg.dpdv, t / dg.dndu, t / dg.dndv,
-		t / dg.tangent, t / dg.bitangent, dg.btsign, dg.u, dg.v,
+	DifferentialGeometry dgt(t * dg.p, Normalize(t * dg.nn),
+		t * dg.dpdu, t * dg.dpdv, t * dg.dndu, t * dg.dndv,
+		t * dg.tangent, t * dg.bitangent, dg.btsign, dg.u, dg.v,
 		dg.handle);
 	dgt.ihandle = dg.ihandle;
 	dgt.time = dg.time;
@@ -75,10 +76,10 @@ inline PartialDifferentialGeometry operator*(const Transform &t, const PartialDi
 	return dgt;
 }
 
-inline PartialDifferentialGeometry operator/(const Transform &t, const PartialDifferentialGeometry &dg)
+inline PartialDifferentialGeometry operator*(const InvTransform &t, const PartialDifferentialGeometry &dg)
 {
-	PartialDifferentialGeometry dgt(t / dg.p, Normalize(t / dg.nn),
-		t / dg.dpdu, t / dg.dpdv);
+	PartialDifferentialGeometry dgt(t * dg.p, Normalize(t * dg.nn),
+		t * dg.dpdu, t * dg.dpdv);
 	dgt.time = dg.time;
 	dgt.scattered = dg.scattered;
 	return dgt;

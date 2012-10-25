@@ -86,7 +86,7 @@ public:
 			if (light.radianceMap == NULL) {
 				return SWCSpectrum(reverse ? INV_PI : INV_PI * cosi);
 			}
-			const Vector wh = Normalize(LightToWorld / -wiW);
+			const Vector wh(Normalize(Inverse(LightToWorld) * -wiW));
 			float s, t, dummy;
 			light.mapping->Map(wh, &s, &t, &dummy);
 			return light.radianceMap->LookupSpectrum(sw, s, t) *
@@ -204,7 +204,7 @@ bool InfiniteAreaLightIS::Le(const Scene &scene, const Sample &sample,
 	*bsdf = ARENA_ALLOC(sample.arena, InfiniteISBSDF)(dg, ns,
 		v, v, *this, LightToWorld);
 	*L *= SWCSpectrum(sample.swl, SPDbase);
-	const Vector wh = Normalize(LightToWorld / r.d);
+	const Vector wh(Normalize(Inverse(LightToWorld) * r.d));
 	float s, t, pdfMap;
 	mapping->Map(wh, &s, &t, &pdfMap);
 	if (radianceMap != NULL)
@@ -220,7 +220,7 @@ bool InfiniteAreaLightIS::Le(const Scene &scene, const Sample &sample,
 float InfiniteAreaLightIS::Pdf(const Point &p, const PartialDifferentialGeometry &dg) const
 {
 	const Vector d(Normalize(dg.p - p));
-	const Vector wh = Normalize(LightToWorld / d);
+	const Vector wh(Normalize(Inverse(LightToWorld) * d));
 	float s, t, pdf;
 	mapping->Map(wh, &s, &t, &pdf);
 	return uvDistrib->Pdf(s, t) * pdf * AbsDot(d, dg.nn) /

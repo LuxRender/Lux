@@ -224,7 +224,7 @@ BBox Mesh::ObjectBound() const
 {
 	BBox bobj;
 	for (u_int i = 0; i < nverts; ++i)
-		bobj = Union(bobj, ObjectToWorld / p[i]);
+		bobj = Union(bobj, Inverse(ObjectToWorld) * p[i]);
 	return bobj;
 }
 

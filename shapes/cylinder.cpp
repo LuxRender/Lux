@@ -46,7 +46,7 @@ bool Cylinder::Intersect(const Ray &r, float *tHit,
 	float phi;
 	Point phit;
 	// Transform _Ray_ to object space
-	Ray ray(ObjectToWorld / r);
+	Ray ray(Inverse(ObjectToWorld) * r);
 	// Compute quadratic cylinder coefficients
 	float A = ray.d.x*ray.d.x + ray.d.y*ray.d.y;
 	float B = 2 * (ray.d.x*ray.o.x + ray.d.y*ray.o.y);
@@ -116,7 +116,7 @@ bool Cylinder::IntersectP(const Ray &r) const {
 	float phi;
 	Point phit;
 	// Transform _Ray_ to object space
-	Ray ray(ObjectToWorld / r);
+	Ray ray(Inverse(ObjectToWorld) * r);
 	// Compute quadratic cylinder coefficients
 	float A = ray.d.x*ray.d.x + ray.d.y*ray.d.y;
 	float B = 2 * (ray.d.x*ray.o.x + ray.d.y*ray.o.y);

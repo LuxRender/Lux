@@ -87,7 +87,7 @@ public:
 			if (light.radianceMap == NULL) {
 				return SWCSpectrum(reverse ? INV_PI : INV_PI * cosi);
 			}
-			const Vector wh = Normalize(LightToWorld / -wiW);
+			const Vector wh(Normalize(Inverse(LightToWorld) * -wiW));
 			float s, t, dummy;
 			light.mapping->Map(wh, &s, &t, &dummy);
 			return light.radianceMap->LookupSpectrum(sw, s, t) *
@@ -159,7 +159,8 @@ public:
 		if (pdfBack)
 			*pdfBack = 0.f;
 		if (light.radianceMap != NULL) {
-			const Vector wh = Normalize(LightToWorld / -(*wiW));
+			const Vector wh(Normalize(Inverse(LightToWorld) *
+				-(*wiW)));
 			float s, t, dummy;
 			light.mapping->Map(wh, &s, &t, &dummy);
 			*f_ = light.radianceMap->LookupSpectrum(sw, s, t) *
@@ -193,7 +194,7 @@ public:
 			if (light.radianceMap == NULL) {
 				return SWCSpectrum(reverse ? INV_PI : INV_PI * cosi);
 			}
-			const Vector wh = Normalize(LightToWorld / -wiW);
+			const Vector wh(Normalize(Inverse(LightToWorld) * -wiW));
 			float s, t, dummy;
 			light.mapping->Map(wh, &s, &t, &dummy);
 			return light.radianceMap->LookupSpectrum(sw, s, t) *
@@ -323,7 +324,7 @@ bool InfiniteAreaLight::Le(const Scene &scene, const Sample &sample,
 	}
 	*L *= SWCSpectrum(sample.swl, SPDbase);
 	if (radianceMap != NULL) {
-		const Vector wh = Normalize(LightToWorld / r.d);
+		const Vector wh(Normalize(Inverse(LightToWorld) * r.d));
 		float s, t, dummy;
 		mapping->Map(wh, &s, &t, &dummy);
 		*L *= radianceMap->LookupSpectrum(sample.swl, s, t);

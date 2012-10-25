@@ -47,7 +47,7 @@ BBox Sphere::ObjectBound() const
 bool Sphere::Intersect(const Ray &r, Intersection *isect) const
 {
 	// Transform _Ray_ to object space
-	const Ray ray(ObjectToWorld / r);
+	const Ray ray(Inverse(ObjectToWorld) * r);
 	// Compute quadratic sphere coefficients
 	const float radius2 = radius * radius;
 	const float A = ray.d.LengthSquared();
@@ -113,7 +113,7 @@ bool Sphere::IntersectP(const Ray &r) const
 	float phi;
 	Point phit;
 	// Transform _Ray_ to object space
-	Ray ray(ObjectToWorld / r);
+	Ray ray(Inverse(ObjectToWorld) * r);
 	// Compute quadratic sphere coefficients
 	float A = ray.d.x*ray.d.x + ray.d.y*ray.d.y +
 	          ray.d.z*ray.d.z;

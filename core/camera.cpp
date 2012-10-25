@@ -38,7 +38,7 @@ Camera::~Camera() {
 Camera::Camera(const MotionSystem &w2c, float hither, float yon,
 	float sopen, float sclose, int sdist, Film *f) : Queryable("camera"),
 	CameraMotion(w2c) {
-	CameraToWorld = CameraMotion.Sample(sopen).GetInverse();
+	CameraToWorld = Inverse(CameraMotion.Sample(sopen));
 	ClipHither = hither;
 	ClipYon = yon;
 	ShutterOpen = sopen;
@@ -107,7 +107,7 @@ void Camera::SampleMotion(float time) {
 	if (CameraMotion.IsStatic())
 		return;
 
-	CameraToWorld = CameraMotion.Sample(time).GetInverse();
+	CameraToWorld = Inverse(CameraMotion.Sample(time));
 }
 
 float Camera::GetTime(float u1) const {
@@ -139,7 +139,7 @@ ProjectiveCamera::ProjectiveCamera(const MotionSystem &w2c,
 	LensRadius = lensr;
 	FocalDistance = focald;
 	// Compute projective camera transformations
-	ScreenToCamera = proj.GetInverse();
+	ScreenToCamera = Inverse(proj);
 	ScreenToWorld = CameraToWorld * ScreenToCamera;
 	// Compute projective camera screen transformations
 	RasterToScreen = Translate(Vector(Screen[0], Screen[3], 0.f)) *

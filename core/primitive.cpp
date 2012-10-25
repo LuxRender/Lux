@@ -112,7 +112,7 @@ bool AreaLightPrimitive::Intersect(const Ray &r, Intersection *in) const
 // InstancePrimitive Method Definitions
 bool InstancePrimitive::Intersect(const Ray &r, Intersection *isect) const
 {
-	Ray ray(InstanceToWorld / r);
+	Ray ray(Inverse(InstanceToWorld) * r);
 	if (!instance->Intersect(ray, isect))
 		return false;
 	r.maxt = ray.maxt;
@@ -132,14 +132,14 @@ bool InstancePrimitive::Intersect(const Ray &r, Intersection *isect) const
 
 bool InstancePrimitive::IntersectP(const Ray &r) const
 {
-	return instance->IntersectP(InstanceToWorld / r);
+	return instance->IntersectP(Inverse(InstanceToWorld) * r);
 }
 
 void InstancePrimitive::GetShadingGeometry(const Transform &obj2world,
 	const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const
 {
 	// Transform instance's differential geometry to world space
-	DifferentialGeometry dgl(obj2world / dg);
+	DifferentialGeometry dgl(Inverse(obj2world) * dg);
 
 	dg.ihandle->GetShadingGeometry(obj2world, dgl, dgShading);
 	*dgShading = obj2world * *dgShading;
@@ -152,7 +152,7 @@ bool MotionPrimitive::Intersect(const Ray &r, Intersection *isect) const
 {
 	Transform InstanceToWorld = motionPath.Sample(r.time);
 
-	Ray ray(InstanceToWorld / r);
+	Ray ray(Inverse(InstanceToWorld) * r);
 	if (!instance->Intersect(ray, isect))
 		return false;
 	r.maxt = ray.maxt;
@@ -174,13 +174,13 @@ bool MotionPrimitive::IntersectP(const Ray &r) const
 {
 	Transform InstanceToWorld = motionPath.Sample(r.time);
 
-	return instance->IntersectP(InstanceToWorld / r);
+	return instance->IntersectP(Inverse(InstanceToWorld) * r);
 }
 void MotionPrimitive::GetShadingGeometry(const Transform &obj2world,
 	const DifferentialGeometry &dg, DifferentialGeometry *dgShading) const
 {
 	// Transform instance's differential geometry to world space
-	DifferentialGeometry dgl(obj2world / dg);
+	DifferentialGeometry dgl(Inverse(obj2world) * dg);
 
 	dg.ihandle->GetShadingGeometry(obj2world, dgl, dgShading);
 	*dgShading = obj2world * *dgShading;

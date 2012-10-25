@@ -149,7 +149,7 @@ CloudVolume::CloudVolume(const RGBColor &sa, const RGBColor &ss,
 
 float CloudVolume::Density(const Point &p) const
 {
-	const Point pp(VolumeToWorld / p);
+	const Point pp(Inverse(VolumeToWorld) * p);
 	float amount = CloudShape(pp +
 		turbulenceAmount * Turbulence(pp, firstNoiseScale, numOctaves));
 

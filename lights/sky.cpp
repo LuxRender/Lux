@@ -83,7 +83,7 @@ public:
 		const Vector &wiW, bool reverse, BxDFType flags = BSDF_ALL) const {
 		const float cosi = Dot(wiW, ng);
 		if (NumComponents(flags) == 1 && cosi > 0.f) {
-			const Vector w(Normalize(LightToWorld / -wiW));
+			const Vector w(Normalize(Inverse(LightToWorld) * -wiW));
 			SWCSpectrum L(cosi);
 			light.GetSkySpectralRadiance(sw, w, &L);
 			return L;
@@ -134,7 +134,7 @@ public:
 		const float cosi = Dot(*wiW, ng);
 		if (!(cosi > 0.f))
 			return false;
-		const Vector w(Normalize(LightToWorld / -(*wiW)));
+		const Vector w(Normalize(Inverse(LightToWorld) * -(*wiW)));
 		*f_ = SWCSpectrum(cosi);
 		light.GetSkySpectralRadiance(sw, w, f_);
 		*pdf *= DistanceSquared(ps, dg.p) / AbsDot(*wiW, dg.nn);
@@ -179,7 +179,7 @@ public:
 		const Vector &wiW, bool reverse, BxDFType flags = BSDF_ALL) const {
 		const float cosi = Dot(wiW, ng);
 		if (NumComponents(flags) == 1 && cosi > 0.f) {
-			const Vector w(Normalize(LightToWorld / -wiW));
+			const Vector w(Normalize(Inverse(LightToWorld) * -wiW));
 			SWCSpectrum L(cosi);
 			light.GetSkySpectralRadiance(sw, w, &L);
 			return L;
@@ -381,7 +381,7 @@ bool SkyLight::Le(const Scene &scene, const Sample &sample, const Ray &r,
 			*pdfDirect *= AbsDot(r.d, ns) /
 				(DistanceSquared(r.o, ps) * nrPortalShapes);
 	}
-	const Vector wh(Normalize(LightToWorld / r.d));
+	const Vector wh(Normalize(Inverse(LightToWorld) * r.d));
 	GetSkySpectralRadiance(sample.swl, wh, L);
 	*L *= skyScale;
 	return true;
