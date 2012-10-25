@@ -319,7 +319,7 @@ float Yarn::EvalFilamentIntegrand(const WeavePattern &weave, const Vector &om_i,
 	const Vector h(Normalize(om_r + om_i));
 
 	// u_of_v is location of specular reflection.
-	float u_of_v = atan2f(h.y, h.z);
+	const float u_of_v = atan2f(h.y, h.z);
 
 	// Check if u_of_v within the range of valid u values
 	if (fabsf(u_of_v) >= umaxMod)
@@ -327,8 +327,6 @@ float Yarn::EvalFilamentIntegrand(const WeavePattern &weave, const Vector &om_i,
 
 	// Highlight has constant width delta_u
 	const float delta_u = umaxMod * weave.hWidth;
-
-	u_of_v = Clamp(u_of_v, delta_u - umaxMod, umaxMod - delta_u);
 
 	// Check if |u(v) - u| < delta_u.
 	if (fabsf(u_of_v - u) >= delta_u)
@@ -400,13 +398,11 @@ float Yarn::EvalStapleIntegrand(const WeavePattern &weave, const Vector &om_i,
 		2.0f)) * tanf(psi));
 	if (!(fabsf(D) < 1.f))
 		return 0.f;
-	float v_of_u = atan2f(-h.y * sinf(u) - h.z * cosf(u), h.x) +
+	const float v_of_u = atan2f(-h.y * sinf(u) - h.z * cosf(u), h.x) +
 		acosf(D);
 
 	// Highlight has constant width delta_x on screen.
 	const float delta_v = .5f * M_PI * weave.hWidth;
-
-	v_of_u = Clamp(v_of_u, delta_v - .5f * M_PI, .5f * M_PI - delta_v);
 
 	// Check if |x(v(u)) - x(v)| < delta_x/2.
 	if (fabsf(v_of_u - v) >= delta_v)
