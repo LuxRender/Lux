@@ -73,8 +73,9 @@ BBox MeshBaryTriangle::ObjectBound() const
 	const Point &p1 = mesh->p[v[0]];
 	const Point &p2 = mesh->p[v[1]];
 	const Point &p3 = mesh->p[v[2]];
-	return Union(BBox(mesh->ObjectToWorld / p1, mesh->ObjectToWorld / p2),
-		mesh->ObjectToWorld / p3);
+	return Union(BBox(Inverse(mesh->ObjectToWorld) * p1,
+		Inverse(mesh->ObjectToWorld) * p2),
+		Inverse(mesh->ObjectToWorld) * p3);
 }
 
 BBox MeshBaryTriangle::WorldBound() const

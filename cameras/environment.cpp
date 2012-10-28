@@ -125,7 +125,7 @@ bool EnvironmentCamera::GetSamplePosition(const Point &p, const Vector &wi,
 {
 	if (!isinf(distance) && (distance < ClipHither || distance > ClipYon))
 		return false;
-	const Vector w = CameraToWorld / wi;
+	const Vector w(Inverse(CameraToWorld) * wi);
 	const float cosTheta = w.y;
 	const float theta = acosf(min(1.f, cosTheta));
 	*y = theta * film->yResolution * INV_PI;

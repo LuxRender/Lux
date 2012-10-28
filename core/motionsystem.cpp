@@ -497,7 +497,7 @@ MotionTransform MotionTransform::GetInverse() const {
 	typedef vector<Transform>::iterator trans_it;
 
 	for (trans_it trans = imt.transforms.begin(); trans != imt.transforms.end(); trans++) {
-		*trans = trans->GetInverse();
+		*trans = Inverse(*trans);
 	}
 
 	return imt;

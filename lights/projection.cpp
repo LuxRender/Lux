@@ -65,7 +65,9 @@ public:
 		Vector *wi, float u1, float u2, SWCSpectrum *const f_,
 		float *pdf, float *pdfBack = NULL, bool reverse = false) const
 	{
-		const Point pS(Projection / Point(u1 * (xEnd - xStart) + xStart, u2 * (yEnd - yStart) + yStart, 0.f));
+		const Point pS(Inverse(Projection) *
+			Point(u1 * (xEnd - xStart) + xStart,
+			u2 * (yEnd - yStart) + yStart, 0.f));
 		*wi = Normalize(Vector(pS.x, pS.y, pS.z));
 		const float cos = wi->z;
 		const float cos2 = cos * cos;

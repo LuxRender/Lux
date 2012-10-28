@@ -127,6 +127,9 @@ int main(int argc, char **argv) {
 
 		// process queue
 		for (std::vector<std::string>::iterator it = queue.begin(); it < queue.end(); it++) {
+			if (config.fixedSeed)
+				luxDisableRandomMode();
+
 			sceneFileName = *it;
 			if (sceneFileName != "-") {
 				LOG(LUX_INFO,LUX_NOERROR) << "Loading scene file: '" << sceneFileName << "'...";

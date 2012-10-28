@@ -137,9 +137,10 @@ public:
 		BSDF **bsdf, float *pdf, float *pdfDirect,
 		SWCSpectrum *L) const;
 	virtual float Pdf(const Point &p, const PartialDifferentialGeometry &dg) const {
-		const PartialDifferentialGeometry dgi(LightToWorld / dg);
+		const PartialDifferentialGeometry dgi(Inverse(LightToWorld) *
+			dg);
 		const float factor = dgi.Volume() / dg.Volume();
-		return light->Pdf(LightToWorld / p, dgi) * factor;
+		return light->Pdf(Inverse(LightToWorld) * p, dgi) * factor;
 	}
 	virtual bool SampleL(const Scene &scene, const Sample &sample,
 		float u1, float u2, float u3, BSDF **bsdf, float *pdf,
@@ -171,9 +172,10 @@ public:
 		SWCSpectrum *L) const;
 	virtual float Pdf(const Point &p, const PartialDifferentialGeometry &dg) const {
 		const Transform LightToWorld(motionPath.Sample(dg.time));
-		const PartialDifferentialGeometry dgi(LightToWorld / dg);
+		const PartialDifferentialGeometry dgi(Inverse(LightToWorld) *
+			dg);
 		const float factor = dgi.Volume() / dg.Volume();
-		return light->Pdf(LightToWorld / p, dgi) * factor;
+		return light->Pdf(Inverse(LightToWorld) * p, dgi) * factor;
 	}
 	virtual bool SampleL(const Scene &scene, const Sample &sample,
 		float u1, float u2, float u3, BSDF **bsdf, float *pdf,

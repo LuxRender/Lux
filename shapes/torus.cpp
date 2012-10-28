@@ -357,7 +357,7 @@ bool Torus::Intersect(const Ray &r, float *tHit,
 	float thit;
 	Point phit;
 	// Transform _Ray_ to object space
-	Ray ray(ObjectToWorld / r);
+	Ray ray(Inverse(ObjectToWorld) * r);
 
 	if (!FindIntersection(ray, &thit, &phit, &phi, &theta))
 		return false;
@@ -438,7 +438,7 @@ bool Torus::IntersectP(const Ray &r) const {
 	Point phit;
 
 	// Transform _Ray_ to object space
-	Ray ray(ObjectToWorld / r);
+	Ray ray(Inverse(ObjectToWorld) * r);
 
 	return FindIntersection(ray, &thit, &phit, &phi, &theta);
 }

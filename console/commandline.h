@@ -46,6 +46,7 @@ struct clConfig
 	bool binDump;
 	bool log2console;
 	bool writeFlmFile;
+	bool fixedSeed;
 	int verbosity;
 	unsigned int pollInterval;
 	unsigned int tcpPort;

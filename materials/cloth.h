@@ -71,7 +71,7 @@ public:
 	static Material * CreateMaterial(const Transform &xform, const ParamSet &mp);
 private:
 	// Cloth Private Data
-	boost::shared_ptr<Texture<SWCSpectrum> > warp_Kd, warp_Ks, weft_Kd, weft_Ks;
+	vector<boost::shared_ptr<Texture<SWCSpectrum> > >Kds, Kss;
 	boost::shared_ptr<WeavePattern> Pattern;
 	float specularNormalization;
 };

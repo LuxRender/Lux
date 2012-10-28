@@ -92,8 +92,6 @@ Texture<float> *ImageFloatTexture::CreateFloatTexture(const Transform &tex2world
 	const ParamSet &tp)
 {
 	// Initialize 2D texture mapping _map_ from _tp_
-	TextureMapping2D *map = NULL;
-	
 	string sFilterType = tp.FindOneString("filtertype", "bilinear");
 	ImageTextureFilterType filterType = BILINEAR;
 	if (sFilterType == "bilinear")
@@ -104,35 +102,6 @@ Texture<float> *ImageFloatTexture::CreateFloatTexture(const Transform &tex2world
 		filterType = MIPMAP_EWA;
 	else if (sFilterType == "nearest")
 		filterType = NEAREST;
-
-	string type = tp.FindOneString("mapping", "uv");
-	if (type == "uv") {
-		float su = tp.FindOneFloat("uscale", 1.f);
-		float sv = tp.FindOneFloat("vscale", 1.f);
-		float du = tp.FindOneFloat("udelta", 0.f);
-		float dv = tp.FindOneFloat("vdelta", 0.f);
-		map = new UVMapping2D(su, sv, du, dv);
-	} else if (type == "spherical") {
-		float su = tp.FindOneFloat("uscale", 1.f);
-		float sv = tp.FindOneFloat("vscale", 1.f);
-		float du = tp.FindOneFloat("udelta", 0.f);
-		float dv = tp.FindOneFloat("vdelta", 0.f);
-		map = new SphericalMapping2D(tex2world.GetInverse(),
-		                             su, sv, du, dv);
-	} else if (type == "cylindrical") {
-		float su = tp.FindOneFloat("uscale", 1.f);
-		float du = tp.FindOneFloat("udelta", 0.f);
-		map = new CylindricalMapping2D(tex2world.GetInverse(), su, du);
-	} else if (type == "planar") {
-		map = new PlanarMapping2D(tp.FindOneVector("v1", Vector(1,0,0)),
-			tp.FindOneVector("v2", Vector(0,1,0)),
-			tp.FindOneFloat("udelta", 0.f),
-			tp.FindOneFloat("vdelta", 0.f));
-	} else {
-		LOG(LUX_ERROR, LUX_BADTOKEN) << "2D texture mapping  '" <<
-			type << "' unknown";
-		map = new UVMapping2D;
-	}
 
 	// Initialize _ImageTexture_ parameters
 	float maxAniso = tp.FindOneFloat("maxanisotropy", 8.f);
@@ -174,7 +143,7 @@ Texture<float> *ImageFloatTexture::CreateFloatTexture(const Transform &tex2world
 		ch = CHANNEL_MEAN;
 	}
 
-	ImageFloatTexture *tex = new ImageFloatTexture(map, filterType,
+	ImageFloatTexture *tex = new ImageFloatTexture(TextureMapping2D::Create(tex2world, tp), filterType,
 		filename, discardmm, maxAniso, wrapMode, ch, gain, gamma);
 
 	return tex;
@@ -186,8 +155,6 @@ Texture<SWCSpectrum> *ImageSpectrumTexture::CreateSWCSpectrumTexture(const Trans
 	const ParamSet &tp)
 {
 	// Initialize 2D texture mapping _map_ from _tp_
-	TextureMapping2D *map = NULL;
-	
 	string sFilterType = tp.FindOneString("filtertype", "bilinear");
 	ImageTextureFilterType filterType = BILINEAR;
 	if (sFilterType == "bilinear")
@@ -198,35 +165,6 @@ Texture<SWCSpectrum> *ImageSpectrumTexture::CreateSWCSpectrumTexture(const Trans
 		filterType = MIPMAP_EWA;
 	else if (sFilterType == "nearest")
 		filterType = NEAREST;
-
-	string type = tp.FindOneString("mapping", "uv");
-	if (type == "uv") {
-		float su = tp.FindOneFloat("uscale", 1.f);
-		float sv = tp.FindOneFloat("vscale", 1.f);
-		float du = tp.FindOneFloat("udelta", 0.f);
-		float dv = tp.FindOneFloat("vdelta", 0.f);
-		map = new UVMapping2D(su, sv, du, dv);
-	} else if (type == "spherical") {
-		float su = tp.FindOneFloat("uscale", 1.f);
-		float sv = tp.FindOneFloat("vscale", 1.f);
-		float du = tp.FindOneFloat("udelta", 0.f);
-		float dv = tp.FindOneFloat("vdelta", 0.f);
-		map = new SphericalMapping2D(tex2world.GetInverse(),
-		                             su, sv, du, dv);
-	} else if (type == "cylindrical") {
-		float su = tp.FindOneFloat("uscale", 1.f);
-		float du = tp.FindOneFloat("udelta", 0.f);
-		map = new CylindricalMapping2D(tex2world.GetInverse(), su, du);
-	} else if (type == "planar") {
-		map = new PlanarMapping2D(tp.FindOneVector("v1", Vector(1,0,0)),
-			tp.FindOneVector("v2", Vector(0,1,0)),
-			tp.FindOneFloat("udelta", 0.f),
-			tp.FindOneFloat("vdelta", 0.f));
-	} else {
-		LOG(LUX_ERROR, LUX_BADTOKEN) << "2D texture mapping  '" <<
-			type << "' unknown";
-		map = new UVMapping2D;
-	}
 
 	// Initialize _ImageTexture_ parameters
 	float maxAniso = tp.FindOneFloat("maxanisotropy", 8.f);
@@ -248,7 +186,7 @@ Texture<SWCSpectrum> *ImageSpectrumTexture::CreateSWCSpectrumTexture(const Trans
 	string filename = tp.FindOneString("filename", "");
 	int discardmm = tp.FindOneInt("discardmipmaps", 0);
 
-	ImageSpectrumTexture *tex = new ImageSpectrumTexture(map, filterType,
+	ImageSpectrumTexture *tex = new ImageSpectrumTexture(TextureMapping2D::Create(tex2world, tp), filterType,
 		filename, discardmm, maxAniso, wrapMode, gain, gamma);
 
 	return tex;
@@ -258,8 +196,6 @@ Texture<float> *NormalMapTexture::CreateFloatTexture(const Transform &tex2world,
 	const ParamSet &tp)
 {
 	// Initialize 2D texture mapping _map_ from _tp_
-	TextureMapping2D *map = NULL;
-	
 	string sFilterType = tp.FindOneString("filtertype", "bilinear");
 	ImageTextureFilterType filterType = BILINEAR;
 	if (sFilterType == "bilinear")
@@ -270,35 +206,6 @@ Texture<float> *NormalMapTexture::CreateFloatTexture(const Transform &tex2world,
 		filterType = MIPMAP_EWA;
 	else if (sFilterType == "nearest")
 		filterType = NEAREST;
-
-	string type = tp.FindOneString("mapping", "uv");
-	if (type == "uv") {
-		float su = tp.FindOneFloat("uscale", 1.f);
-		float sv = tp.FindOneFloat("vscale", 1.f);
-		float du = tp.FindOneFloat("udelta", 0.f);
-		float dv = tp.FindOneFloat("vdelta", 0.f);
-		map = new UVMapping2D(su, sv, du, dv);
-	} else if (type == "spherical") {
-		float su = tp.FindOneFloat("uscale", 1.f);
-		float sv = tp.FindOneFloat("vscale", 1.f);
-		float du = tp.FindOneFloat("udelta", 0.f);
-		float dv = tp.FindOneFloat("vdelta", 0.f);
-		map = new SphericalMapping2D(tex2world.GetInverse(),
-		                             su, sv, du, dv);
-	} else if (type == "cylindrical") {
-		float su = tp.FindOneFloat("uscale", 1.f);
-		float du = tp.FindOneFloat("udelta", 0.f);
-		map = new CylindricalMapping2D(tex2world.GetInverse(), su, du);
-	} else if (type == "planar") {
-		map = new PlanarMapping2D(tp.FindOneVector("v1", Vector(1,0,0)),
-			tp.FindOneVector("v2", Vector(0,1,0)),
-			tp.FindOneFloat("udelta", 0.f),
-			tp.FindOneFloat("vdelta", 0.f));
-	} else {
-		LOG(LUX_ERROR, LUX_BADTOKEN) << "2D texture mapping  '" <<
-			type << "' unknown";
-		map = new UVMapping2D;
-	}
 
 	// Initialize _ImageTexture_ parameters
 	float maxAniso = tp.FindOneFloat("maxanisotropy", 8.f);
@@ -320,7 +227,7 @@ Texture<float> *NormalMapTexture::CreateFloatTexture(const Transform &tex2world,
 	string filename = tp.FindOneString("filename", "");
 	int discardmm = tp.FindOneInt("discardmipmaps", 0);
 
-	NormalMapTexture *tex = new NormalMapTexture(map, filterType,
+	NormalMapTexture *tex = new NormalMapTexture(TextureMapping2D::Create(tex2world, tp), filterType,
 		filename, discardmm, maxAniso, wrapMode, gain, gamma);
 
 	return tex;

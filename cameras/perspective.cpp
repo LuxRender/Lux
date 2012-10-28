@@ -77,10 +77,10 @@ public:
 	}
 	virtual float Pdf(const SpectrumWavelengths &sw, const Vector &woW,
 		const Vector &wiW, BxDFType flags = BSDF_ALL) const {
-		const Vector wi(camera.CameraToWorld / wiW);
+		const Vector wi(Inverse(camera.CameraToWorld) * wiW);
 		const float cosi = wi.z;
 		if (NumComponents(flags) == 1 && cosi > 0.f) {
-			const Point pO(camera.RasterToCamera / (p +
+			const Point pO(Inverse(camera.RasterToCamera) * (p +
 				(hasLens ? wi * (camera.FocalDistance / cosi) :
 				wi)));
 			if (pO.x >= camera.xStart && pO.x < camera.xEnd &&
@@ -93,10 +93,10 @@ public:
 	}
 	virtual SWCSpectrum F(const SpectrumWavelengths &sw, const Vector &woW,
 		const Vector &wiW, bool reverse, BxDFType flags = BSDF_ALL) const {
-		const Vector wo(camera.CameraToWorld / woW);
+		const Vector wo(Inverse(camera.CameraToWorld) * woW);
 		const float coso = wo.z;
 		if (NumComponents(flags) == 1 && coso > 0.f) {
-			const Point pO(camera.RasterToCamera / (p +
+			const Point pO(Inverse(camera.RasterToCamera) * (p +
 				(hasLens ? wo * (camera.FocalDistance / coso) :
 				wo)));
 			if (pO.x >= camera.xStart && pO.x < camera.xEnd &&
@@ -277,7 +277,7 @@ bool PerspectiveCamera::GetSamplePosition(const Point &p, const Vector &wi,
 	if (cosi <= 0.f || (!isinf(distance) && (distance * cosi < ClipHither ||
 		distance * cosi > ClipYon)))
 		return false;
-	const Point pO(RasterToWorld / (p + (LensRadius > 0.f ?
+	const Point pO(Inverse(RasterToWorld) * (p + (LensRadius > 0.f ?
 		wi * (FocalDistance / cosi) : wi)));
 	*x = pO.x;
 	*y = pO.y;

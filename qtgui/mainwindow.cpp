@@ -1685,6 +1685,9 @@ void MainWindow::renderScenefile(const QString& sceneFilename, const QString& fl
 		luxOverrideResumeFLM(qPrintable(QFileInfo(flmFilename).absoluteFilePath()));
 	}
 
+	if (m_fixedSeed)
+		luxDisableRandomMode();
+
 	// override server update interval
 	// trigger edit finished slot
 	updateIntervalChanged();
@@ -2443,6 +2446,11 @@ void MainWindow::ResetLightGroupsFromFilm( bool useDefaults )
 
 	// Update
 	UpdateLightGroupWidgetValues();
+}
+
+void MainWindow::setFixedSeed()
+{
+	m_fixedSeed = true;
 }
 
 void MainWindow::setLightGroupSolo( int index )

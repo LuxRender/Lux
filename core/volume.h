@@ -145,26 +145,26 @@ public:
 		Region(v2w * b), VolumeToWorld(v2w), region(b), volume(v) { }
 	virtual ~VolumeRegion() { }
 	virtual bool IntersectP(const Ray &ray, float *t0, float *t1) const {
-		return region.IntersectP(VolumeToWorld / ray, t0, t1);
+		return region.IntersectP(Inverse(VolumeToWorld) * ray, t0, t1);
 	}
 	virtual SWCSpectrum SigmaA(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
-		return region.Inside(VolumeToWorld / dg.p) ?
+		return region.Inside(Inverse(VolumeToWorld) * dg.p) ?
 			volume.SigmaA(sw, dg) : SWCSpectrum(0.f);
 	}
 	virtual SWCSpectrum SigmaS(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
-		return region.Inside(VolumeToWorld / dg.p) ?
+		return region.Inside(Inverse(VolumeToWorld) * dg.p) ?
 			volume.SigmaS(sw, dg) : SWCSpectrum(0.f);
 	}
 	virtual SWCSpectrum SigmaT(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
-		return region.Inside(VolumeToWorld / dg.p) ?
+		return region.Inside(Inverse(VolumeToWorld) * dg.p) ?
 			volume.SigmaT(sw, dg) : SWCSpectrum(0.f);
 	}
 	virtual SWCSpectrum Lve(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
-		return region.Inside(VolumeToWorld / dg.p) ?
+		return region.Inside(Inverse(VolumeToWorld) * dg.p) ?
 			volume.Lve(sw, dg) : SWCSpectrum(0.f);
 	}
 	virtual float P(const SpectrumWavelengths &sw,
@@ -186,7 +186,7 @@ public:
 	virtual bool Scatter(const Sample &sample, bool scatteredStart,
 		const Ray &ray, float u, Intersection *isect, float *pdf,
 		float *pdfBack, SWCSpectrum *L) const {
-		Ray r(VolumeToWorld / ray);
+		Ray r(Inverse(VolumeToWorld) * ray);
 		if (!region.IntersectP(r, &r.mint, &r.maxt))
 			return false;
 		if (r.maxt <= r.mint)

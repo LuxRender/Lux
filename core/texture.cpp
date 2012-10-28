@@ -68,6 +68,37 @@ static int NoisePerm[2 * NOISE_PERM_SIZE] = {
 	   138, 236, 205, 93, 222, 114, 67, 29, 24, 72, 243, 141, 128, 195, 78, 66, 215, 61, 156, 180
 };
 // Texture Method Definitions
+TextureMapping2D *TextureMapping2D::Create(const Transform &tex2world, const ParamSet &tp)
+{
+	// Initialize 2D texture mapping _map_ from _tp_
+	const string type = tp.FindOneString("mapping", "uv");
+	if (type == "uv") {
+		float su = tp.FindOneFloat("uscale", 1.f);
+		float sv = tp.FindOneFloat("vscale", 1.f);
+		float du = tp.FindOneFloat("udelta", 0.f);
+		float dv = tp.FindOneFloat("vdelta", 0.f);
+		return new UVMapping2D(su, sv, du, dv);
+	} else if (type == "spherical") {
+		float su = tp.FindOneFloat("uscale", 1.f);
+		float sv = tp.FindOneFloat("vscale", 1.f);
+		float du = tp.FindOneFloat("udelta", 0.f);
+		float dv = tp.FindOneFloat("vdelta", 0.f);
+		return new SphericalMapping2D(Transform(Inverse(tex2world)), su, sv, du, dv);
+	} else if (type == "cylindrical") {
+		float su = tp.FindOneFloat("uscale", 1.f);
+		float du = tp.FindOneFloat("udelta", 0.f);
+		return new CylindricalMapping2D(Transform(Inverse(tex2world)), su, du);
+	} else if (type == "planar") {
+		return new PlanarMapping2D(tp.FindOneVector("v1", Vector(1,0,0)),
+			tp.FindOneVector("v2", Vector(0,1,0)),
+			tp.FindOneFloat("udelta", 0.f),
+			tp.FindOneFloat("vdelta", 0.f));
+	} else {
+		LOG( LUX_ERROR,LUX_UNIMPLEMENT) << "2D texture mapping '" << type << "' unknown";
+		return new UVMapping2D;
+	}
+}
+
 UVMapping2D::UVMapping2D(float _su, float _sv, float _du, float _dv)
 {
 	su = _su;

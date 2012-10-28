@@ -63,7 +63,7 @@ bool LensComponent::Intersect(const Ray &r, float *tHit,
 	float phi;
 	Point phit;
 	// Transform _Ray_ to object space
-	Ray ray(ObjectToWorld / r);
+	Ray ray(Inverse(ObjectToWorld) * r);
 	// Compute quadratic LensComponent coefficients
 	float A = Dot(ray.d, ray.d);
 	float B = 2.f * (ray.d.x * ray.o.x + ray.d.y * ray.o.y + ray.d.z * ray.o.z);
@@ -138,7 +138,7 @@ bool LensComponent::IntersectP(const Ray &r) const
 	//float phi;
 	Point phit;
 	// Transform _Ray_ to object space
-	Ray ray(ObjectToWorld / r);
+	Ray ray(Inverse(ObjectToWorld) * r);
 	// Compute quadratic LensComponent coefficients
 	float A = Dot(ray.d, ray.d);
 	float B = 2.f * (ray.d.x * ray.o.x + ray.d.y * ray.o.y + ray.d.z * ray.o.z);

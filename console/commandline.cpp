@@ -268,8 +268,7 @@ bool ProcessCommandLine(int argc, char **argv, clConfig& config, unsigned int fe
 			// END Handling master node options
 
 			// BEGIN Handling standalone / master node options
-			if (vm.count("fixedseed"))
-				luxDisableRandomMode();
+			config.fixedSeed = vm.count("fixedseed") != 0;
 
 			// Any call to Lux API must be done _after_ luxAddServer
 			luxSetEpsilon(vm["minepsilon"].as<float>(), vm["maxepsilon"].as<float>());

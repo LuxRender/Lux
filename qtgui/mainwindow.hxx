@@ -260,6 +260,7 @@ public:
 	void RemoveNetworkSlaves(const QVector<QString> &slaves);
 
 	void setServerUpdateInterval(int interval);
+	void setFixedSeed();
 
 protected:
 	
@@ -318,6 +319,7 @@ private:
 
 	int m_numThreads;
 	bool m_copyLog2Console;
+	bool m_fixedSeed;
 
 	QRegExp reUpdateInterval;
 

@@ -64,7 +64,7 @@ RealisticCamera::RealisticCamera(const MotionSystem &world2cam,
     Transform FilmToRaster = 
         Scale(-scale, scale, 1.f) *
         Translate(Vector(-w/2.0f, h/2.0f, 0.f));
-    RasterToFilm = FilmToRaster.GetInverse();
+    RasterToFilm = Inverse(FilmToRaster);
     FilmToCamera = Translate(Vector(0.f, 0.f, -filmDistance - distToBack));
     RasterToCamera =  FilmToCamera * RasterToFilm;
 }   

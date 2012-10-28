@@ -349,13 +349,15 @@ public:
 		return pdf;
 	}
 	virtual float Pdf(const PartialDifferentialGeometry &dg) const {
-		const PartialDifferentialGeometry dgi(InstanceToWorld / dg);
+		const PartialDifferentialGeometry dgi(Inverse(InstanceToWorld) *
+			dg);
 		const float factor = dgi.Volume() / dg.Volume();
 		return instance->Pdf(dgi) * factor;
 	}
 	virtual float Sample(const Point &P, float u1, float u2, float u3,
 		DifferentialGeometry *dg) const {
-		float pdf = instance->Sample(InstanceToWorld / P, u1, u2, u3, dg);
+		float pdf = instance->Sample(Inverse(InstanceToWorld) * P,
+			u1, u2, u3, dg);
 		pdf *= dg->Volume();
 		*dg = InstanceToWorld * *dg;
 		pdf /= dg->Volume();
@@ -364,7 +366,8 @@ public:
 		return pdf;
 	}
 	virtual float Pdf(const Point &p, const PartialDifferentialGeometry &dg) const {
-		const PartialDifferentialGeometry dgi(InstanceToWorld / dg);
+		const PartialDifferentialGeometry dgi(Inverse(InstanceToWorld) *
+			dg);
 		const float factor = dgi.Volume() / dg.Volume();
 		return instance->Pdf(p, dgi) * factor;
 	}
@@ -447,14 +450,16 @@ public:
 	}
 	virtual float Pdf(const PartialDifferentialGeometry &dg) const {
 		const Transform InstanceToWorld(motionPath.Sample(dg.time));
-		const PartialDifferentialGeometry dgi(InstanceToWorld / dg);
+		const PartialDifferentialGeometry dgi(Inverse(InstanceToWorld) *
+			dg);
 		const float factor = dgi.Volume() / dg.Volume();
 		return instance->Pdf(dgi) * factor;
 	}
 	virtual float Sample(const Point &P, float u1, float u2, float u3,
 		DifferentialGeometry *dg) const {
 		const Transform InstanceToWorld(motionPath.Sample(dg->time));
-		float pdf = instance->Sample(InstanceToWorld / P, u1, u2, u3, dg);
+		float pdf = instance->Sample(Inverse(InstanceToWorld) * P,
+			u1, u2, u3, dg);
 		pdf *= dg->Volume();
 		*dg = InstanceToWorld * *dg;
 		pdf /= dg->Volume();
@@ -464,7 +469,8 @@ public:
 	}
 	virtual float Pdf(const Point &p, const PartialDifferentialGeometry &dg) const {
 		const Transform InstanceToWorld(motionPath.Sample(dg.time));
-		const PartialDifferentialGeometry dgi(InstanceToWorld / dg);
+		const PartialDifferentialGeometry dgi(Inverse(InstanceToWorld) *
+			dg);
 		const float factor = dgi.Volume() / dg.Volume();
 		return instance->Pdf(p, dgi) * factor;
 	}

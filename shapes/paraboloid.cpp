@@ -47,7 +47,7 @@ bool Paraboloid::Intersect(const Ray &r, float *tHit,
 	float phi;
 	Point phit;
 	// Transform _Ray_ to object space
-	Ray ray(ObjectToWorld / r);
+	Ray ray(Inverse(ObjectToWorld) * r);
 	// Compute quadratic paraboloid coefficients
 	float k = zmax/(radius*radius);
 	float A =   k*(ray.d.x * ray.d.x + ray.d.y * ray.d.y);
@@ -129,7 +129,7 @@ bool Paraboloid::IntersectP(const Ray &r) const {
 	float phi;
 	Point phit;
 	// Transform _Ray_ to object space
-	Ray ray(ObjectToWorld / r);
+	Ray ray(Inverse(ObjectToWorld) * r);
 	// Compute quadratic paraboloid coefficients
 	float k = zmax/(radius*radius);
 	float A =   k*(ray.d.x * ray.d.x + ray.d.y * ray.d.y);

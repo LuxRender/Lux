@@ -42,7 +42,7 @@ VolumeGrid::VolumeGrid(const RGBColor &sa, const RGBColor &ss, float gg,
 }
 float VolumeGrid::Density(const Point &p) const
 {
-	const Point pp(VolumeToWorld / p);
+	const Point pp(Inverse(VolumeToWorld) * p);
 	if (!extent.Inside(pp))
 		return 0.f;
 	// Compute voxel coordinates and offsets for _pp_

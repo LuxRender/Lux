@@ -62,7 +62,7 @@ bool Hyperboloid::Intersect(const Ray &r, float *tHit,
 	float phi, v;
 	Point phit;
 	// Transform _Ray_ to object space
-	Ray ray(ObjectToWorld / r);
+	Ray ray(Inverse(ObjectToWorld) * r);
 	// Compute quadratic hyperboloid coefficients
 	float A = a*ray.d.x*ray.d.x +
 	          a*ray.d.y*ray.d.y -
@@ -150,7 +150,7 @@ bool Hyperboloid::IntersectP(const Ray &r) const {
 	float phi, v;
 	Point phit;
 	// Transform _Ray_ to object space
-	Ray ray(ObjectToWorld / r);
+	Ray ray(Inverse(ObjectToWorld) * r);
 	// Compute quadratic hyperboloid coefficients
 	float A = a*ray.d.x*ray.d.x +
 	          a*ray.d.y*ray.d.y -

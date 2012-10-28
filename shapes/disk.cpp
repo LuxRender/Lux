@@ -43,7 +43,7 @@ BBox Disk::ObjectBound() const {
 bool Disk::Intersect(const Ray &r, float *tHit,
 		DifferentialGeometry *dg) const {
 	// Transform _Ray_ to object space
-	Ray ray(ObjectToWorld / r);
+	Ray ray(Inverse(ObjectToWorld) * r);
 	// Compute plane intersection for disk
 	if (fabsf(ray.d.z) < 1e-7) return false;
 	float thit = (height - ray.o.z) / ray.d.z;
@@ -81,7 +81,7 @@ bool Disk::Intersect(const Ray &r, float *tHit,
 }
 bool Disk::IntersectP(const Ray &r) const {
 	// Transform _Ray_ to object space
-	Ray ray(ObjectToWorld / r);
+	Ray ray(Inverse(ObjectToWorld) * r);
 	// Compute plane intersection for disk
 	if (fabsf(ray.d.z) < 1e-7) return false;
 	float thit = (height - ray.o.z) / ray.d.z;
