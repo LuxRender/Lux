@@ -300,7 +300,7 @@ ImageData *createImageData(const std::string &name, FIBITMAP *image) {
 
 ImageData *StandardImageReader::read(const string &name)
 {
-	LOG(LUX_INFO, LUX_NOERROR) << "Loading FreeImage Texture: '" <<
+	LOG(LUX_INFO, LUX_NOERROR) << "Loading texture: '" <<
 		name << "'...";
 
 	FREE_IMAGE_FORMAT fif = FIF_UNKNOWN;
