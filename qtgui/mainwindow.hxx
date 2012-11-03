@@ -72,6 +72,7 @@
 #include "noisereductionwidget.hxx"
 #include "histogramwidget.hxx"
 #include "advancedinfowidget.hxx"
+#include "queue.hxx"
 
 #define FLOAT_SLIDER_RES 512.f
 
@@ -236,10 +237,8 @@ public:
 	void updateStatistics();
 	void showRenderresolution();
 	void showZoomfactor();
-	void renderScenefile(const QString& sceneFilename, const QString& flmFilename = "");
-	void renderNewScenefile(const QString& sceneFilename, const QString& flmFilename = "");
-	void openQueueFile(const QString& fileName);
 	void changeRenderState (LuxGuiRenderState state);
+	void beginRenderingSession(const QPersistentModelIndex& sceneIndex);
 	void endRenderingSession(bool abort = true);
 	
 	void updateTonemapWidgetValues ();
@@ -252,15 +251,18 @@ public:
 	
 	bool m_auto_tonemap;
 
-	void loadFile(const QString &fileName);
-	bool addFileToRenderQueue(const QString& sceneFileName, const QString& flmFilename = "");
-	bool RenderNextFileInQueue(bool resetOverrides = true);
-
 	void AddNetworkSlaves(const QVector<QString> &slaves);
 	void RemoveNetworkSlaves(const QVector<QString> &slaves);
 
 	void setServerUpdateInterval(int interval);
 	void setFixedSeed();
+
+	bool renderScene(const QPersistentModelIndex& sceneIndex);
+	bool renderNextScene();
+	void clearQueue();
+
+	void openFiles(const QStringList& files, bool clearQueueFirst = false);
+	void loadFile(const QString& fileName);
 
 protected:
 	
@@ -269,6 +271,7 @@ protected:
 	bool saveCurrentImageHDR(const QString &outFile);
 	bool saveAllLightGroups(const QString &outFilename, const bool &asHDR);
 	void setCurrentFile(const QString& filename);
+	void updateRecentFiles(const QString& fileName);
 	void updateRecentFileActions();
 	void createActions();
 	void closeEvent(QCloseEvent *event);
@@ -294,8 +297,6 @@ private:
 	QHBoxLayout *statsBoxLayout;
 
 	RenderView *renderView;
-	QString m_CurrentFile;
-	QString m_CurrentFileBaseName;
 
 	enum { NumPanes = 6 };
 
@@ -396,7 +397,6 @@ private:
 	QString m_lastOpendir;
 	QList<QFileInfo> m_recentFiles;
 	QAction *m_recentFileActions[MaxRecentFiles];
-	bool m_resetOverrides;
 
 	static void LuxGuiErrorHandler(int code, int severity, const char *msg);
 	static QWidget *instance;
@@ -428,12 +428,7 @@ private:
 	void WriteSettings();
 
 	// The Data Model for the Render Queue
-	QStandardItemModel renderQueueData;
-	bool IsFileInQueue(const QString &filename);
-	bool IsFileQueued();
-	bool RenderNextFileInQueue(int idx);
-	void ClearRenderingQueue();
-	QStringList renderQueueList;
+	Queue renderQueue;
 
 public slots:
 
@@ -507,8 +502,7 @@ private slots:
 	void updateIntervalChanged();
 	void networknodeSelectionChanged();
 
-	void addQueueHeaders();
-	void addQueueFiles();  
+	void addQueueFiles();
 	void removeQueueFiles();
 	void overrideHaltSppChanged(int value);
 	void overrideHaltTimeChanged(int value);

@@ -102,11 +102,14 @@ int main(int argc, char **argv) {
 	if (!config.slave) {
 		// build queue
 		std::vector<std::string> queue(config.inputFiles);
-		if (!config.queueFile.empty()) {
-			std::string sceneFile;
-			std::ifstream queueFile(config.queueFile.c_str());
-			while (std::getline (queueFile, sceneFile))
-				queue.push_back(sceneFile);
+		if (!config.queueFiles.empty()) {
+			for (std::vector<std::string>::iterator it = config.queueFiles.begin(); it < config.queueFiles.end(); it++)
+			{
+				std::string sceneFile;
+				std::ifstream queueFile(it->c_str());
+				while (std::getline (queueFile, sceneFile))
+					queue.push_back(sceneFile);
+			}
 		}
 
 		// sanitize filenames in queue

@@ -52,8 +52,8 @@ struct clConfig
 	unsigned int tcpPort;
 	unsigned int threadCount;
 	std::string password;
-	std::string queueFile;
 	std::string cacheDir;
+	std::vector< std::string > queueFiles;
 	std::vector< std::string > inputFiles;
 	std::vector< std::string > slaveNodeList;
 };

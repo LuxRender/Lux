@@ -31,6 +31,7 @@
 
 #include "mainwindow.hxx"
 #include "luxapp.hxx"
+#include "queue.hxx"
 #include "guiutil.h"
 #include "console/commandline.h"
 
@@ -104,19 +105,22 @@ void LuxGuiApp::init(clConfig* config)
 		mainwin->setServerUpdateInterval(config->pollInterval);
 
 	// Add files on command line to the render queue
-	for (std::vector<std::string>::const_iterator it = config->inputFiles.begin(); it != config->inputFiles.end(); it++)
-		mainwin->addFileToRenderQueue(QString::fromStdString(*it));
-	if (!config->inputFiles.empty() && config->queueFile.empty())
+	if (!config->inputFiles.empty())
 	{
-		if (config->inputFiles.size() == 1)
-			mainwin->RenderNextFileInQueue();
-		else
-			mainwin->RenderNextFileInQueue(false);
+		QStringList files;
+		for (std::vector<std::string>::const_iterator it = config->inputFiles.begin(); it != config->inputFiles.end(); it++)
+			files.append(QString::fromStdString(*it));
+		mainwin->openFiles(files);
 	}
 
-	// Add files in queue file to the render queue
-	if (!config->queueFile.empty())
-		mainwin->openQueueFile(QString::fromStdString(config->queueFile));
+	// Add files in queue files to the render queue
+	if (!config->queueFiles.empty())
+	{
+		QStringList files;
+		for (std::vector<std::string>::const_iterator it = config->queueFiles.begin(); it != config->queueFiles.end(); it++)
+			files.append(QString::fromStdString(*it));
+		mainwin->openFiles(files);
+	}
 
 	// Add slaves
 	if (!config->slaveNodeList.empty())

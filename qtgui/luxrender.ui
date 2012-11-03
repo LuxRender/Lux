@@ -1141,19 +1141,10 @@
          </layout>
         </item>
         <item row="2" column="0">
-         <widget class="QTableView" name="table_queue">
+         <widget class="QTreeView" name="tree_queue">
           <property name="editTriggers">
            <set>QAbstractItemView::NoEditTriggers</set>
           </property>
-          <property name="selectionBehavior">
-           <enum>QAbstractItemView::SelectRows</enum>
-          </property>
-          <property name="wordWrap">
-           <bool>true</bool>
-          </property>
-          <attribute name="verticalHeaderVisible">
-           <bool>false</bool>
-          </attribute>
          </widget>
         </item>
        </layout>
