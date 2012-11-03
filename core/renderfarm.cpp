@@ -1235,8 +1235,8 @@ u_int RenderFarm::getServersStatus(RenderingServerInfo *info, u_int maxInfoCount
 		info[i].port = serverInfoList[i].port.c_str();
 		info[i].sid = serverInfoList[i].sid.c_str();
 
-		info[i].secsSinceLastContact = time_duration(now - serverInfoList[i].timeLastContact).seconds();
-		info[i].secsSinceLastSamples = time_duration(now - serverInfoList[i].timeLastSamples).seconds();
+		info[i].secsSinceLastContact = time_duration(now - serverInfoList[i].timeLastContact).total_seconds();
+		info[i].secsSinceLastSamples = time_duration(now - serverInfoList[i].timeLastSamples).total_seconds();
 		info[i].numberOfSamplesReceived = serverInfoList[i].numberOfSamplesReceived;
 		info[i].calculatedSamplesPerSecond = serverInfoList[i].calculatedSamplesPerSecond;
 	}
