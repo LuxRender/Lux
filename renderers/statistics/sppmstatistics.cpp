@@ -237,7 +237,7 @@ std::string SPPMRStatistics::FormattedShort::getRecommendedStringTemplate()
 	return stringTemplate;
 }
 
-std::string SPPMRStatistics::FormattedShort::getConvergenceProgress() { 
+std::string SPPMRStatistics::FormattedShort::getProgress() { 
 	return static_cast<SPPMRStatistics::FormattedLong*>(rs->formattedLong)->getPassCount();
 }
 

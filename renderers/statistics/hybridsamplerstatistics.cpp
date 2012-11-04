@@ -486,7 +486,7 @@ std::string HSRStatistics::FormattedShort::getRecommendedStringTemplate()
 	return stringTemplate;
 }
 
-std::string HSRStatistics::FormattedShort::getConvergenceProgress() { 
+std::string HSRStatistics::FormattedShort::getProgress() { 
 	return static_cast<HSRStatistics::FormattedLong*>(rs->formattedLong)->getTotalAverageSamplesPerPixel();
 }
 

@@ -447,7 +447,7 @@ std::string SRStatistics::FormattedShort::getRecommendedStringTemplate()
 	return stringTemplate;
 }
 
-std::string SRStatistics::FormattedShort::getConvergenceProgress() { 
+std::string SRStatistics::FormattedShort::getProgress() { 
 	return static_cast<SRStatistics::FormattedLong*>(rs->formattedLong)->getTotalAverageSamplesPerPixel();
 }
 
