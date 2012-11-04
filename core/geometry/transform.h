@@ -54,6 +54,19 @@ inline DifferentialGeometry operator*(const Transform &t, const DifferentialGeom
 	return dgt;
 }
 
+inline DifferentialGeometry &operator*=(DifferentialGeometry &dg, const Transform &t)
+{
+	dg.p *= t;
+	dg.nn = Normalize(t * dg.nn);
+	dg.dpdu *= t;
+	dg.dpdv *= t;
+	dg.dndu *= t;
+	dg.dndv *= t;
+	dg.tangent *= t;
+	dg.bitangent *= t;
+	return dg;
+}
+
 inline DifferentialGeometry operator*(const InvTransform &t, const DifferentialGeometry &dg)
 {
 	DifferentialGeometry dgt(t * dg.p, Normalize(t * dg.nn),
@@ -74,6 +87,15 @@ inline PartialDifferentialGeometry operator*(const Transform &t, const PartialDi
 	dgt.time = dg.time;
 	dgt.scattered = dg.scattered;
 	return dgt;
+}
+
+inline PartialDifferentialGeometry &operator*=(PartialDifferentialGeometry &dg, const Transform &t)
+{
+	dg.p *= t;
+	dg.nn = Normalize(t * dg.nn);
+	dg.dpdu *= t;
+	dg.dpdv *= t;
+	return dg;
 }
 
 inline PartialDifferentialGeometry operator*(const InvTransform &t, const PartialDifferentialGeometry &dg)

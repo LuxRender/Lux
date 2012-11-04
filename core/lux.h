@@ -177,7 +177,6 @@ namespace lux
   using luxrays::Transform;
   using luxrays::Vector;
   class RayDifferential;
-/*  class Transform;*/
   class DifferentialGeometry;
   class Renderer;
   class Scene;

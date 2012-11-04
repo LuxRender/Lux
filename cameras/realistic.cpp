@@ -124,7 +124,7 @@ float RealisticCamera::GenerateRay(const Sample &sample, Ray *ray) const {
         }
     }
     ray->maxt = (ClipYon - ClipHither) / ray->d.z;
-    *ray = CameraToWorld * *ray;
+    *ray *= CameraToWorld;
     return cos4 / filmDist2;
 }
 

@@ -75,7 +75,7 @@ bool EnvironmentCamera::SampleW(MemoryArena &arena,
 	const float phi = 2 * M_PI * u1 / film->xResolution;
 	Normal ns(-sinf(theta) * sinf(phi), cosf(theta),
 		-sinf(theta) * cosf(phi));
-	ns = CameraToWorld * ns;
+	ns *= CameraToWorld;
 	Vector dpdu, dpdv;
 	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
 	DifferentialGeometry dg(pos, ns, dpdu, dpdv, Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);

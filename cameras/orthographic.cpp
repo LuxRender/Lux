@@ -82,7 +82,7 @@ void OrthoCamera::AutoFocus(const Scene &scene)
 		
 		ray.mint = 0.f;
 		ray.maxt = ClipYon - ClipHither;
-		ray = CameraToWorld * ray;
+		ray *= CameraToWorld;
 
 		Intersection isect;
 		if (scene.Intersect(ray, &isect))

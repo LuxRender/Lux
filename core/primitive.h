@@ -342,7 +342,7 @@ public:
 		DifferentialGeometry *dg) const  {
 		float pdf = instance->Sample(u1, u2, u3, dg);
 		pdf *= dg->Volume();
-		*dg = InstanceToWorld * *dg;
+		*dg *= InstanceToWorld;
 		pdf /= dg->Volume();
 		dg->ihandle = dg->handle;
 		dg->handle = this;
@@ -359,7 +359,7 @@ public:
 		float pdf = instance->Sample(Inverse(InstanceToWorld) * P,
 			u1, u2, u3, dg);
 		pdf *= dg->Volume();
-		*dg = InstanceToWorld * *dg;
+		*dg *= InstanceToWorld;
 		pdf /= dg->Volume();
 		dg->ihandle = dg->handle;
 		dg->handle = this;
@@ -442,7 +442,7 @@ public:
 		const Transform InstanceToWorld(motionPath.Sample(dg->time));
 		float pdf = instance->Sample(u1, u2, u3, dg);
 		pdf *= dg->Volume();
-		*dg = InstanceToWorld * *dg;
+		*dg *= InstanceToWorld;
 		pdf /= dg->Volume();
 		dg->ihandle = dg->handle;
 		dg->handle = this;
@@ -461,7 +461,7 @@ public:
 		float pdf = instance->Sample(Inverse(InstanceToWorld) * P,
 			u1, u2, u3, dg);
 		pdf *= dg->Volume();
-		*dg = InstanceToWorld * *dg;
+		*dg *= InstanceToWorld;
 		pdf /= dg->Volume();
 		dg->ihandle = dg->handle;
 		dg->handle = this;

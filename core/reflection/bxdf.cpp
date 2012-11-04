@@ -118,7 +118,7 @@ BSDF::BSDF(const DifferentialGeometry &dg, const Normal &ngeom,
 
 float BSDF::ApplyTransform(const Transform &transform) {
 	ng = Normalize(transform * ng);
-	dgShading = transform * dgShading;
+	dgShading *= transform;
 	sn = Normalize(dgShading.dpdu);
 	tn = Cross(dgShading.nn, sn);
 	return fabsf(Dot(Cross(dgShading.dpdu, dgShading.dpdv),

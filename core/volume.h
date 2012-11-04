@@ -195,7 +195,7 @@ public:
 			pdfBack, L))
 			return false;
 		ray.maxt = r.maxt;
-		isect->dg = VolumeToWorld * isect->dg;
+		isect->dg *= VolumeToWorld;
 		return true;
 	}
 protected:

@@ -194,7 +194,7 @@ void PerspectiveCamera::AutoFocus(const Scene &scene)
 		
 		ray.mint = 0.f;
 		ray.maxt = (ClipYon - ClipHither) / ray.d.z;
-		ray = CameraToWorld * ray;
+		ray *= CameraToWorld;
 
 		Intersection isect;
 		if (scene.Intersect(ray, &isect))
@@ -219,7 +219,7 @@ bool PerspectiveCamera::SampleW(MemoryArena &arena,
 		psC.x *= LensRadius;
 		psC.y *= LensRadius;
 	}
-	Point ps = CameraToWorld * psC;
+	const Point ps(CameraToWorld * psC);
 	DifferentialGeometry dg(ps, normal, CameraToWorld * Vector(1, 0, 0),
 		CameraToWorld * Vector(0, 1, 0), Normal(0, 0, 0),
 		Normal(0, 0, 0), 0, 0, NULL);
@@ -241,7 +241,7 @@ bool PerspectiveCamera::SampleW(MemoryArena &arena,
 		psC.x *= LensRadius;
 		psC.y *= LensRadius;
 	}
-	Point ps = CameraToWorld * psC;
+	const Point ps(CameraToWorld * psC);
 	DifferentialGeometry dg(ps, normal, CameraToWorld * Vector(1, 0, 0),
 		CameraToWorld * Vector(0, 1, 0), Normal(0, 0, 0),
 		Normal(0, 0, 0), 0, 0, NULL);
