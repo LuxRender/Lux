@@ -237,6 +237,10 @@ std::string SPPMRStatistics::FormattedShort::getRecommendedStringTemplate()
 	return stringTemplate;
 }
 
+std::string SPPMRStatistics::FormattedShort::getConvergenceProgress() { 
+	return static_cast<SPPMRStatistics::FormattedLong*>(rs->formattedLong)->getPassCount();
+}
+
 std::string SPPMRStatistics::FormattedShort::getPassCount() {
 	return boost::str(boost::format("%1% Pass") % rs->getPassCount());
 }

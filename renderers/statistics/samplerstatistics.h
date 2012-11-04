@@ -44,6 +44,7 @@ public:
 		SRStatistics* rs;
 
 		virtual std::string getRecommendedStringTemplate();
+		virtual std::string getConvergenceProgress() { return getTotalAverageSamplesPerPixel(); }
 
 		std::string getHaltSpp();
 		std::string getRemainingSamplesPerPixel();
@@ -78,6 +79,7 @@ public:
 		SRStatistics* rs;
 
 		virtual std::string getRecommendedStringTemplate();
+		virtual std::string getConvergenceProgress();
 
 		std::string getPathEfficiency();
 		std::string getPathEfficiencyWindow();

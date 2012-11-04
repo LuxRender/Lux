@@ -447,6 +447,10 @@ std::string SRStatistics::FormattedShort::getRecommendedStringTemplate()
 	return stringTemplate;
 }
 
+std::string SRStatistics::FormattedShort::getConvergenceProgress() { 
+	return static_cast<SRStatistics::FormattedLong*>(rs->formattedLong)->getTotalAverageSamplesPerPixel();
+}
+
 std::string SRStatistics::FormattedShort::getPathEfficiency() {
 	return boost::str(boost::format("%1$0.0f%% PEff") % rs->getPathEfficiency());
 }
