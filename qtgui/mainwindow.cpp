@@ -1262,10 +1262,14 @@ void MainWindow::endRenderingSession(bool abort)
 	statusProgress->setValue(0);
 
 	// clear statistics box
-	for (QLayoutItem* item = statsBoxLayout->takeAt(0); item != NULL; item = statsBoxLayout->takeAt(0))
+	for (int i = 0; statsBoxLayout->itemAt(i) != NULL; ++i)
 	{
-		delete item->widget();
-		delete item;
+		QLabel* label = qobject_cast<QLabel*>(statsBoxLayout->itemAt(i)->widget());
+		if (label)
+		{
+			label->setText("");
+			label->setToolTip("");
+		}
 	}
 
 	// Clean up if this is not the first rendering
