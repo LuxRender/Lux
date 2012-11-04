@@ -44,6 +44,7 @@ public:
 		SPPMRStatistics* rs;
 
 		virtual std::string getRecommendedStringTemplate();
+		virtual std::string getConvergenceProgress() { return getPassCount(); }
 
 		std::string getPassCount();
 		std::string getHaltPass();
@@ -68,6 +69,7 @@ public:
 		SPPMRStatistics* rs;
 
 		virtual std::string getRecommendedStringTemplate();
+		virtual std::string getConvergenceProgress();
 
 		std::string getPassCount();
 		std::string getHaltPass();

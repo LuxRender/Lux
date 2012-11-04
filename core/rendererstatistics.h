@@ -67,6 +67,7 @@ public:
 		std::string getStringFromTemplate(const std::string& t);
 
 		virtual std::string getRecommendedStringTemplate() = 0;
+		virtual std::string getConvergenceProgress() = 0;
 
 		std::string getElapsedTime();
 		std::string getRemainingTime();

@@ -486,6 +486,10 @@ std::string HSRStatistics::FormattedShort::getRecommendedStringTemplate()
 	return stringTemplate;
 }
 
+std::string HSRStatistics::FormattedShort::getConvergenceProgress() { 
+	return static_cast<HSRStatistics::FormattedLong*>(rs->formattedLong)->getTotalAverageSamplesPerPixel();
+}
+
 std::string HSRStatistics::FormattedShort::getGpuCount() {
 	return boost::str(boost::format("%1% G") % rs->getGpuCount());
 }

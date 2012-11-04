@@ -150,6 +150,7 @@ RendererStatistics::Formatted::Formatted(RendererStatistics* rs, const std::stri
 	AddStringAttribute(*this, "_recommended_string", "Recommended statistics string", &RendererStatistics::Formatted::getRecommendedString);
 	AddStringAttribute(*this, "_recommended_string_template", "Recommended statistics string template", &RendererStatistics::Formatted::getRecommendedStringTemplate);
 
+	AddStringAttribute(*this, "convergenceProgress", "Convergence progress", &RendererStatistics::Formatted::getConvergenceProgress);
 	AddStringAttribute(*this, "elapsedTime", "Elapsed rendering time", &RendererStatistics::Formatted::getElapsedTime);
 	AddStringAttribute(*this, "remainingTime", "Remaining rendering time", &RendererStatistics::Formatted::getRemainingTime);
 	AddStringAttribute(*this, "haltTime", "Halt rendering after time", &RendererStatistics::Formatted::getHaltTime);
