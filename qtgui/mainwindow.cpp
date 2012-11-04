@@ -1222,7 +1222,7 @@ void MainWindow::beginRenderingSession(const QPersistentModelIndex& sceneIndex)
 	if (m_fixedSeed)
 		luxDisableRandomMode();
 
-	if (!renderQueue.getFlmFilename(sceneIndex).isEmpty())
+	if (ui->checkBox_overrideWriteFlm->checkState() == Qt::Checked || !renderQueue.getFlmFilename(sceneIndex).isEmpty())
 		// Set the FLM filename
 		luxOverrideResumeFLM(qPrintable(renderQueue.getFlmFilename(sceneIndex)));
 
