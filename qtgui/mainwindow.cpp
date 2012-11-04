@@ -737,6 +737,8 @@ void MainWindow::openFiles(const QStringList& files, bool clearQueueFirst)
 
 	if (fileCount > 0)
 	{
+		ui->tree_queue->resizeColumnToContents(renderQueue.COLUMN_LXSFILENAME);
+
 		if (ui->spinBox_overrideHaltTime->value() == 0 && ui->spinBox_overrideHaltSpp->value() == 0 && renderQueue.getSceneCount() > 1)
 		{
 			ui->tabs_main->setCurrentIndex(getTabIndex(TAB_ID_QUEUE));
@@ -1219,6 +1221,9 @@ void MainWindow::batchProcess()
 
 void MainWindow::beginRenderingSession(const QPersistentModelIndex& sceneIndex)
 {
+	ui->tree_queue->resizeColumnToContents(renderQueue.COLUMN_STATUS);
+	ui->tree_queue->resizeColumnToContents(renderQueue.COLUMN_PROGRESS);
+
 	if (m_fixedSeed)
 		luxDisableRandomMode();
 
@@ -1261,6 +1266,8 @@ void MainWindow::endRenderingSession(bool abort)
 {
 	statusMessage->setText("");
 	statusProgress->setValue(0);
+	ui->tree_queue->resizeColumnToContents(renderQueue.COLUMN_STATUS);
+	ui->tree_queue->resizeColumnToContents(renderQueue.COLUMN_PROGRESS);
 
 	// clear statistics box
 	for (int i = 0; statsBoxLayout->itemAt(i) != NULL; ++i)
