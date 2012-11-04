@@ -1681,10 +1681,12 @@ private:
 
 void MainWindow::updateStatistics()
 {
+	luxUpdateStatisticsWindow();
+
+	renderQueue.setConvergence(renderQueue.getCurrentScene(), getStringAttribute("renderer_statistics_formatted", "convergenceProgress"));
+
 	// prevent redraws while updating
 	statsBox->setUpdatesEnabled(false);
-
-	luxUpdateStatisticsWindow();
 
 	QString st(getStringAttribute("renderer_statistics_formatted", "_recommended_string_template"));
 

@@ -53,15 +53,18 @@ public:
 	QString getFilename(const QPersistentModelIndex& index);
 	QString getFlmFilename(const QPersistentModelIndex& index);
 	QString getStatus(const QPersistentModelIndex& index);
+	QString getConvergence(const QPersistentModelIndex& index);
 	unsigned int getPasses(const QPersistentModelIndex& index);
 
 	void setFlmFilename(const QPersistentModelIndex& index, const QString& flmFilename);
+	void setConvergence(const QPersistentModelIndex& index, const QString& text);
 
 	enum Columns {
 		COLUMN_LXSFILENAME,
 		COLUMN_FLMFILENAME,
 		COLUMN_STATUS,
-		COLUMN_PASSES
+		COLUMN_CONVERGENCE,
+		COLUMN_PASSES,
 	};
 
 private:

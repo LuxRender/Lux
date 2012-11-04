@@ -180,11 +180,16 @@ void Queue::setFlmFilename(const QPersistentModelIndex& index, const QString& fl
 		flm->setData(fi.canonicalFilePath());
 	}
 }
+void Queue::setConvergence(const QPersistentModelIndex& index, const QString& text)
+{
+	if (index.isValid() && index.parent() != invisibleRootItem()->index())
+		itemFromIndex(index)->parent()->child(index.row(), COLUMN_CONVERGENCE)->setText(text);
+}
 
 void Queue::init()
 {
 	defaultGroupIndex = addGroup(defaultGroupName);
-	setHorizontalHeaderLabels(QStringList() << "Name" << "FLM" << "Status" << "Pass #");
+	setHorizontalHeaderLabels(QStringList() << "Name" << "FLM" << "Status" << "Convergence" << "Pass #");
 }
 
 void Queue::stopRendering()
@@ -247,9 +252,10 @@ QPersistentModelIndex Queue::addLxsFile(const QString& lxsFilename, QStandardIte
 	}
 	QStandardItem* flmFilename = new QStandardItem();
 	QStandardItem* status = new QStandardItem("Waiting");
+	QStandardItem* convergence = new QStandardItem("Unknown");
 	QStandardItem* passes = new QStandardItem(QString().setNum(0));
 
-	group->appendRow(QList<QStandardItem*>() << filename << flmFilename << status << passes);
+	group->appendRow(QList<QStandardItem*>() << filename << flmFilename << status << convergence << passes);
 	return group->child(group->rowCount() - 1)->index();
 }
 
