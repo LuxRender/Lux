@@ -1222,8 +1222,9 @@ void MainWindow::beginRenderingSession(const QPersistentModelIndex& sceneIndex)
 	if (m_fixedSeed)
 		luxDisableRandomMode();
 
-	if (ui->checkBox_overrideWriteFlm->checkState() == Qt::Checked || !renderQueue.getFlmFilename(sceneIndex).isEmpty())
-		// Set the FLM filename
+	// Set the FLM filename
+	if (ui->checkBox_overrideWriteFlm->checkState() == Qt::Checked || 
+		(ui->checkBox_overrideWriteFlm->checkState() == Qt::PartiallyChecked && !renderQueue.getFlmFilename(sceneIndex).isEmpty()))
 		luxOverrideResumeFLM(qPrintable(renderQueue.getFlmFilename(sceneIndex)));
 
 	// override server update interval
@@ -2778,6 +2779,7 @@ void MainWindow::loopQueueChanged(int state)
 	if (loop && ui->checkBox_overrideWriteFlm->checkState() != Qt::Checked) {
 		// looping makes little sense without resume films, so just enabled it
 		ui->checkBox_overrideWriteFlm->setCheckState(Qt::Checked);
+		overrideWriteFlmChanged(true);
 	}
 }
 
@@ -2801,6 +2803,10 @@ void MainWindow::overrideWriteFlmChanged(bool checked)
 			luxSetBoolAttribute("film", "restartResumeFlm", false);
 		else
 			luxSetBoolAttribute("film", "restartResumeFlm", luxGetBoolAttributeDefault("film", "restartResumeFlm"));
+
+		if (ui->checkBox_overrideWriteFlm->checkState() == Qt::Checked || 
+			(ui->checkBox_overrideWriteFlm->checkState() == Qt::PartiallyChecked && !renderQueue.getFlmFilename(renderQueue.getCurrentScene()).isEmpty()))
+			luxOverrideResumeFLM(qPrintable(renderQueue.getFlmFilename(renderQueue.getCurrentScene())));
 	}
 }
 
