@@ -1683,7 +1683,7 @@ void MainWindow::updateStatistics()
 {
 	luxUpdateStatisticsWindow();
 
-	renderQueue.setConvergence(renderQueue.getCurrentScene(), getStringAttribute("renderer_statistics_formatted", "convergenceProgress"));
+	renderQueue.setProgress(renderQueue.getCurrentScene(), getStringAttribute("renderer_statistics_formatted", "progress"));
 
 	// prevent redraws while updating
 	statsBox->setUpdatesEnabled(false);
