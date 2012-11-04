@@ -1601,11 +1601,11 @@ void  MainWindow::loadFile(const QString &fileName)
 	if (fileName.endsWith(".lxs") || fileName.endsWith(".lxq"))
 	{
 		if (canStopRendering())
-			openFiles(fileName, true);
+			openFiles(QStringList(fileName), true);
 	}
 	else if (fileName.endsWith(".flm"))
 	{
-		loadFlm(fileName);
+		loadFLM(fileName);
 	}
 	else
 	{
