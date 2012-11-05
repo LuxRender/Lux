@@ -335,9 +335,6 @@
             <property name="layoutDirection">
              <enum>Qt::LeftToRight</enum>
             </property>
-            <property name="frame">
-             <bool>false</bool>
-            </property>
             <property name="alignment">
              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
             </property>
@@ -1271,7 +1268,7 @@
                   <enum>Qt::RightToLeft</enum>
                  </property>
                  <property name="text">
-                  <string>Loop:</string>
+                  <string>Loop</string>
                  </property>
                 </widget>
                </item>
@@ -1284,7 +1281,7 @@
                   <enum>Qt::RightToLeft</enum>
                  </property>
                  <property name="text">
-                  <string>Write FLM:</string>
+                  <string>Write FLM</string>
                  </property>
                 </widget>
                </item>
