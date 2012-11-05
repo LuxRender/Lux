@@ -251,7 +251,7 @@ QPersistentModelIndex Queue::addLxsFile(const QString& lxsFilename, QStandardIte
 		filename->setData(fi.canonicalFilePath());
 	}
 	QStandardItem* flmFilename = new QStandardItem();
-	QStandardItem* status = new QStandardItem("Waiting");
+	QStandardItem* status = new QStandardItem("Pending");
 	QStandardItem* progress = new QStandardItem("Unknown");
 	QStandardItem* passes = new QStandardItem(QString().setNum(0));
 
