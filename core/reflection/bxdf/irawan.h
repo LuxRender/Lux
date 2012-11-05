@@ -83,6 +83,7 @@ public:
 		umax(Radians(y_umax)), kappa(y_kappa), width(y_width),
 		length(y_length), centerU(y_centerU), centerV(y_centerV),
 		index(y_index) {  }
+	virtual ~Yarn() { }
 	virtual void GetUV(const WeavePattern &weave, const Point &center,
 		const Point &xy, Point *uv, float *umaxMod) const = 0;
 	virtual float EvalIntegrand(const WeavePattern &weave, const Point &uv,
@@ -103,6 +104,7 @@ public:
 		float y_length, float y_centerU, float y_centerV,
 		u_int y_index) : Yarn(y_psi, y_umax, y_kappa, y_width, y_length,
 		y_centerU, y_centerV, y_index) { }
+	virtual ~Warp() { }
 	virtual void GetUV(const WeavePattern &weave, const Point &center,
 		const Point &xy, Point *uv, float *umaxMod) const;
 	virtual float EvalIntegrand(const WeavePattern &weave, const Point &uv,
@@ -116,6 +118,7 @@ public:
 		float y_length, float y_centerU, float y_centerV,
 		u_int y_index) : Yarn(y_psi, y_umax, y_kappa, y_width, y_length,
 		y_centerU, y_centerV, y_index) { }
+	virtual ~Weft() { }
 	virtual void GetUV(const WeavePattern &weave, const Point &center,
 		const Point &xy, Point *uv, float *umaxMod) const;
 	virtual float EvalIntegrand(const WeavePattern &weave, const Point &uv,
