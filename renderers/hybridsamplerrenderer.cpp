@@ -87,9 +87,6 @@ void SurfaceIntegratorStateBuffer::GenerateRays() {
 			break;
 		}
 	}
-	/*LOG(LUX_DEBUG, LUX_NOERROR) << "Used IntegratorStates: " <<
-			(lastStateIndex > firstStateIndex ? (lastStateIndex - firstStateIndex) : (lastStateIndex + integratorState.size() - firstStateIndex)) <<
-			"/" << integratorState.size();*/
 
 	//--------------------------------------------------------------------------
 	// Check if I need to add more SurfaceIntegratorState
@@ -196,30 +193,19 @@ HybridSamplerRenderer::HybridSamplerRenderer(const int oclPlatformIndex, bool us
 
 	std::vector<luxrays::DeviceDescription *> hwDeviceDescs;
 
-#if defined(LUXRAYS_DISABLE_OPENCL)
-	// only native mode without OpenCL
-	if (useGPUs)
-		LOG(LUX_INFO, LUX_NOERROR) << "GPU assisted rendering requires an OpenCL enabled version of LuxRender, using CPU instead";
-
-	useGPUs = false;
-	useNative = true;
-#else
 	if (useGPUs) {
 		// Find OpenCL GPU devices
 		hwDeviceDescs = deviceDescs;
-		luxrays::DeviceDescription::Filter(luxrays::DEVICE_TYPE_OPENCL, hwDeviceDescs);
-		luxrays::OpenCLDeviceDescription::Filter(luxrays::OCL_DEVICE_TYPE_GPU, hwDeviceDescs);
+		luxrays::DeviceDescription::Filter(luxrays::DEVICE_TYPE_OPENCL_GPU, hwDeviceDescs);
 
 		if (forceGPUWorkGroupSize > 0) {
 			for (u_int i = 0; i < hwDeviceDescs.size(); ++i) {
-				luxrays::OpenCLDeviceDescription *desc = (luxrays::OpenCLDeviceDescription *)hwDeviceDescs[i];
-				desc->SetForceWorkGroupSize(forceGPUWorkGroupSize);
+				hwDeviceDescs[i]->SetForceWorkGroupSize(forceGPUWorkGroupSize);
 			}
 		}
 	}
 	if (!useGPUs || hwDeviceDescs.size() == 0)
 		useNative = true;
-#endif
 
 	if (useNative) {
 		if (useGPUs)
@@ -279,16 +265,11 @@ HybridSamplerRenderer::HybridSamplerRenderer(const int oclPlatformIndex, bool us
 		virtualIM2MDevice = NULL;
 	}
 
-#if !defined(LUXRAYS_DISABLE_OPENCL)
 	// The default QBVH stack size (i.e. 24) is too small for the average
 	// LuxRender scene and the slight slow down caused by a bigger stack
-	// should not be noticiable with hybrid rendering. The default is now 32.
 	for (size_t i = 0; i < hardwareDevices.size(); ++i) {
-		if (hardwareDevices[i]->GetType() == luxrays::DEVICE_TYPE_OPENCL)
-			((luxrays::OpenCLIntersectionDevice *)hardwareDevices[i])->SetMaxStackSize(qbvhStackSize);
+		hardwareDevices[i]->SetMaxStackSize(qbvhStackSize);
 	}
-#endif
-
 
 	preprocessDone = false;
 	suspendThreadsWhenDone = false;
@@ -307,7 +288,7 @@ HybridSamplerRenderer::~HybridSamplerRenderer() {
 		throw std::runtime_error("Internal error: called HybridSamplerRenderer::~HybridSamplerRenderer() while not in TERMINATE or INIT state.");
 
 	if (renderThreads.size() > 0)
-		throw std::runtime_error("Internal error: called HybridSamplerRenderer::~HybridSamplerRenderer() while list of renderThread sis not empty.");
+		throw std::runtime_error("Internal error: called HybridSamplerRenderer::~HybridSamplerRenderer() while list of renderThread is not empty.");
 
 	delete ctx;
 
@@ -614,8 +595,6 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 		// Advance the next step
 		//----------------------------------------------------------------------
 
-		//const double t1 = luxrays::WallClockTime();
-
 		bool renderIsOver = false;
 		u_int nrContribs = 0;
 		u_int nrSamples = 0;
@@ -659,18 +638,12 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 			break;
 		}
 
-		//LOG(LUX_DEBUG, LUX_NOERROR) << "NextState() time: " << int((luxrays::WallClockTime() - t1) * 1000.0) << "ms";
-
 		//----------------------------------------------------------------------
-		// File the RayBuffer with the generated rays
+		// Fill the RayBuffer with the generated rays
 		//----------------------------------------------------------------------
-
-		//const double t2 = luxrays::WallClockTime();
 
 		rayBuffer->Reset();
 		stateBuffer->GenerateRays();
-
-		//LOG(LUX_DEBUG, LUX_NOERROR) << "GenerateRays() time: " << (luxrays::WallClockTime() - t2) * 1000.0 << "ms";
 
 		//----------------------------------------------------------------------
 		// Trace the RayBuffer
