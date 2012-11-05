@@ -505,7 +505,7 @@ private slots:
 	void addQueueFiles();
 	void removeQueueFiles();
 	void loopQueueChanged(int state);
-	void overrideWriteFlmChanged(bool checked);
+	void overrideWriteFlmChanged(int);
 
 	void overrideHaltTimeChanged(int state);
 	void overrideHaltProgressChanged(int state);

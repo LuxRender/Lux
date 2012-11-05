@@ -2853,9 +2853,9 @@ void MainWindow::loopQueueChanged(int state)
 	}
 }
 
-void MainWindow::overrideWriteFlmChanged(bool checked)
+void MainWindow::overrideWriteFlmChanged(int)
 {
-	if (!checked) {
+	if (!Qt::Checked) {
 		const int rejectButton = 1;
 		if (customMessageBox(this, QMessageBox::Question, tr("Override resume file settings"),tr("Are you sure you want to disable the resume film setting override?\n\nIf the scene files do not specify usage of resume films you will be unable to use queue looping.\n\nIt is highly recommended that you do not disable this."),
 			CustomButtonsList()
@@ -2868,8 +2868,8 @@ void MainWindow::overrideWriteFlmChanged(bool checked)
 	}
 
 	if (m_guiRenderState == RENDERING) {
-		luxSetBoolAttribute("film", "writeResumeFlm", checked);
-		if (checked)
+		luxSetBoolAttribute("film", "writeResumeFlm", Qt::Checked);
+		if (Qt::Checked)
 			luxSetBoolAttribute("film", "restartResumeFlm", false);
 		else
 			luxSetBoolAttribute("film", "restartResumeFlm", luxGetBoolAttributeDefault("film", "restartResumeFlm"));
