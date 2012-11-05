@@ -302,6 +302,12 @@
           </item>
           <item>
            <widget class="QSpinBox" name="spinBox_Threads">
+            <property name="minimumSize">
+             <size>
+              <width>44</width>
+              <height>0</height>
+             </size>
+            </property>
             <property name="layoutDirection">
              <enum>Qt::LeftToRight</enum>
             </property>
@@ -333,6 +339,18 @@
           </item>
           <item>
            <widget class="Line" name="line_2">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>40</width>
+              <height>0</height>
+             </size>
+            </property>
             <property name="orientation">
              <enum>Qt::Vertical</enum>
             </property>
@@ -364,6 +382,12 @@
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>768</width>
+            <height>0</height>
+           </size>
           </property>
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
@@ -591,8 +615,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>100</width>
-                  <height>30</height>
+                  <width>362</width>
+                  <height>393</height>
                  </rect>
                 </property>
                 <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -650,7 +674,7 @@
                   <x>0</x>
                   <y>0</y>
                   <width>356</width>
-                  <height>336</height>
+                  <height>360</height>
                  </rect>
                 </property>
                 <layout class="QGridLayout" name="gridLayout_2">
@@ -875,8 +899,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>100</width>
-                  <height>30</height>
+                  <width>362</width>
+                  <height>393</height>
                  </rect>
                 </property>
                 <property name="sizePolicy">
@@ -1094,7 +1118,7 @@
                   <enum>Qt::RightToLeft</enum>
                  </property>
                  <property name="text">
-                  <string>Progress</string>
+                  <string>spp/</string>
                  </property>
                 </widget>
                </item>
