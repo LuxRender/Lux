@@ -32,7 +32,7 @@
 #include "mc.h"
 #include "context.h"
 
-#include "luxrays/core/dataset.h"
+#include "luxrays/core/geometry/raybuffer.h"
 
 using namespace lux;
 

@@ -29,6 +29,7 @@
 #include "scene.h"
 #include "paramset.h"
 #include "dynload.h"
+#include "luxrays/core/geometry/raybuffer.h"
 
 using namespace lux;
 
