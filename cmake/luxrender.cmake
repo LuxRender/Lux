@@ -44,6 +44,7 @@ IF(QT4_FOUND)
 		qtgui/noisereductionwidget.cpp
 		qtgui/openexroptionsdialog.cpp
 		qtgui/panewidget.cpp
+		qtgui/queue.cpp
 		qtgui/renderview.cpp
 		qtgui/tonemapwidget.cpp
 		console/commandline.cpp
@@ -65,6 +66,7 @@ IF(QT4_FOUND)
 		qtgui/noisereductionwidget.hxx
 		qtgui/openexroptionsdialog.hxx
 		qtgui/panewidget.hxx
+		qtgui/queue.hxx
 		qtgui/renderview.hxx
 		qtgui/tonemapwidget.hxx
 		)

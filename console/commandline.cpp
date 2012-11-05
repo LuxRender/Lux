@@ -73,7 +73,7 @@ bool ProcessCommandLine(int argc, char **argv, clConfig& config, unsigned int fe
 					("fixedseed,f",      "Disable random seed mode")
 					("minepsilon,e",     po::value< float >()->default_value(-1.f), "Set minimum epsilon")
 					("maxepsilon,E",     po::value< float >()->default_value(-1.f), "Set maximum epsilon")
-					("list-file,L",      po::value< std::string >(), "Specify the queue list file")
+					("list-file,L",      po::value< std::vector< std::string > >(), "Specify queue list files")
 					;
 
 			if (!(features & featureSet::INTERACTIVE))
@@ -137,7 +137,7 @@ bool ProcessCommandLine(int argc, char **argv, clConfig& config, unsigned int fe
 		po::options_description optHidden("Hidden options");
 		if (features & featureSet::RENDERER) {
 			optHidden.add_options()
-				("input-file", po::value< std::vector< std::string > >(), "Specify the input file")
+				("input-file", po::value< std::vector< std::string > >(), "Specify input files")
 				("test", "Debug test mode")
 				;
 		}
@@ -297,17 +297,20 @@ bool ProcessCommandLine(int argc, char **argv, clConfig& config, unsigned int fe
 			}
 
 			if (vm.count("list-file")) {
-				std::string queueFile = vm["list-file"].as<std::string>();
-
-				if (queueFile != "-")
+				std::vector<std::string> queueFiles = vm["list-file"].as< std::vector<std::string> >();
+				for (std::vector<std::string>::iterator it = queueFiles.begin(); it < queueFiles.end(); it++)
 				{
-					boost::filesystem::path queueFileComplete(boost::filesystem::system_complete(queueFile));
-					if (!queueFileComplete.empty())
-						config.queueFile = queueFileComplete.string();
+					if (*it != "-")
+					{
+						boost::filesystem::path queueFileComplete(boost::filesystem::system_complete(*it));
+						if (!queueFileComplete.empty() && boost::filesystem::exists(queueFileComplete))
+							config.queueFiles.push_back(queueFileComplete.string());
+						else
+							LOG(LUX_ERROR,LUX_NOFILE) << "Could not find queue file '" << *it << "'";
+					}
 					else
-						LOG(LUX_ERROR,LUX_NOFILE) << "Could not find queue file '" << queueFile << "'";
-				} else
-					config.queueFile = "-";
+						config.queueFiles.push_back("-");
+				}
 			}
 
 			if (vm.count("input-file")) {
