@@ -256,13 +256,13 @@ QPersistentModelIndex Queue::addLxsFile(const QString& lxsFilename, QStandardIte
 	QStandardItem* passes = new QStandardItem(QString().setNum(0));
 
 	group->appendRow(QList<QStandardItem*>() << filename << flmFilename << status << progress << passes);
-	return group->child(group->rowCount() - 1)->index();
+	return indexFromItem(filename);
 }
 
 QPersistentModelIndex Queue::addGroup(QStandardItem* group)
 {
 	appendRow(group);
-	return item(rowCount() - 1)->index();
+	return indexFromItem(group);
 }
 
 void Queue::removeGroup(const QPersistentModelIndex& groupIndex)
