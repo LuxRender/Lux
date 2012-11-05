@@ -504,10 +504,15 @@ private slots:
 
 	void addQueueFiles();
 	void removeQueueFiles();
-	void overrideHaltSppChanged(int value);
-	void overrideHaltTimeChanged(int value);
 	void loopQueueChanged(int state);
 	void overrideWriteFlmChanged(bool checked);
+
+	void overrideHaltTimeChanged(int state);
+	void overrideHaltProgressChanged(int state);
+	void overrideHaltThresholdChanged(int state);
+	void overrideHaltTimeValueChanged(const QTime& value);
+	void overrideHaltProgressValueChanged(int value);
+	void overrideHaltThresholdValueChanged(double value);
 
 	void copyToClipboard ();
 

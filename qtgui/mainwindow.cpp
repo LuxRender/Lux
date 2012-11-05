@@ -293,12 +293,20 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console)
 	ui->tree_queue->setModel(&renderQueue);
 	ui->checkBox_overrideWriteFlm->setTristate();
 	ui->checkBox_overrideWriteFlm->setCheckState(Qt::PartiallyChecked);
+
 	connect(ui->button_addQueueFiles, SIGNAL(clicked()), this, SLOT(addQueueFiles()));
 	connect(ui->button_removeQueueFiles, SIGNAL(clicked()), this, SLOT(removeQueueFiles()));
-	connect(ui->spinBox_overrideHaltSpp, SIGNAL(valueChanged(int)), this, SLOT(overrideHaltSppChanged(int)));
-	connect(ui->spinBox_overrideHaltTime, SIGNAL(valueChanged(int)), this, SLOT(overrideHaltTimeChanged(int)));
+
 	connect(ui->checkBox_loopQueue, SIGNAL(stateChanged(int)), this, SLOT(loopQueueChanged(int)));
-	connect(ui->checkBox_overrideWriteFlm, SIGNAL(toggled(bool)), this, SLOT(overrideWriteFlmChanged(bool)));
+	connect(ui->checkBox_overrideWriteFlm, SIGNAL(stateChanged(int)), this, SLOT(overrideWriteFlmChanged(int)));
+
+	connect(ui->checkBox_haltTime, SIGNAL(stateChanged(int)), this, SLOT(overrideHaltTimeChanged(int)));
+	connect(ui->checkBox_haltProgress, SIGNAL(stateChanged(int)), this, SLOT(overrideHaltProgressChanged(int)));
+	connect(ui->checkBox_haltThreshold, SIGNAL(stateChanged(int)), this, SLOT(overrideHaltThresholdChanged(int)));
+
+	connect(ui->timeEdit_overrideHaltTime, SIGNAL(timeChanged(const QTime&)), this, SLOT(overrideHaltTimeValueChanged(const QTime&)));
+	connect(ui->spinBox_overrideHaltProgress, SIGNAL(valueChanged(int)), this, SLOT(overrideHaltProgressValueChanged(int)));
+	connect(ui->doubleSpinBox_overrideHaltThreshold, SIGNAL(valueChanged(double)), this, SLOT(overrideHaltThresholdValueChanged(double)));
 	
 	// Log tab
 	connect(ui->comboBox_verbosity, SIGNAL(currentIndexChanged(int)), this, SLOT(setVerbosity(int)));
@@ -739,12 +747,15 @@ void MainWindow::openFiles(const QStringList& files, bool clearQueueFirst)
 	{
 		ui->tree_queue->resizeColumnToContents(renderQueue.COLUMN_LXSFILENAME);
 
-		if (ui->spinBox_overrideHaltTime->value() == 0 && ui->spinBox_overrideHaltSpp->value() == 0 && renderQueue.getSceneCount() > 1)
+		if (ui->checkBox_haltTime->checkState() == Qt::Unchecked &&
+			ui->checkBox_haltProgress->checkState() == Qt::Unchecked &&
+			ui->checkBox_haltThreshold->checkState() == Qt::Unchecked &&
+			renderQueue.getSceneCount() > 1)
 		{
 			ui->tabs_main->setCurrentIndex(getTabIndex(TAB_ID_QUEUE));
 			QMessageBox msgBox;
 			msgBox.setIcon(QMessageBox::Information);
-			msgBox.setText("Please select the desired halttime or haltspp for the queue");
+			msgBox.setText("Please set a halt condition for advancing the queue");
 			msgBox.exec();
 		}
 
@@ -2289,16 +2300,24 @@ void MainWindow::loadTimeout()
 
 			updateWidgetValue(ui->spinBox_overrideDisplayInterval, luxGetIntAttribute("film", "displayInterval"));
 
-			if (ui->spinBox_overrideHaltSpp->value() > 0)
+			if (ui->checkBox_haltTime->checkState() == Qt::Checked)
 			{
-				LOG(LUX_DEBUG, LUX_NOERROR) << "Overriding haltSamplesPerPixel: " << ui->spinBox_overrideHaltSpp->value();
-				luxSetIntAttribute("film", "haltSamplesPerPixel", ui->spinBox_overrideHaltSpp->value());
+				int seconds = QTime().secsTo(ui->timeEdit_overrideHaltTime->time());
+				LOG(LUX_DEBUG, LUX_NOERROR) << "Overriding haltTime: " << seconds;
+				luxSetIntAttribute("film", "haltTime", seconds);
 			}
-			if (ui->spinBox_overrideHaltTime->value() > 0)
+			if (ui->checkBox_haltProgress->checkState() == Qt::Checked)
 			{
-				LOG(LUX_DEBUG, LUX_NOERROR) << "Overriding haltTime: " << ui->spinBox_overrideHaltTime->value();
-				luxSetIntAttribute("film", "haltTime", ui->spinBox_overrideHaltTime->value());
+				LOG(LUX_DEBUG, LUX_NOERROR) << "Overriding haltSamplesPerPixel: " << ui->spinBox_overrideHaltProgress->value();
+				luxSetIntAttribute("film", "haltSamplesPerPixel", ui->spinBox_overrideHaltProgress->value());
 			}
+			if (ui->checkBox_haltThreshold->checkState() == Qt::Checked)
+			{
+				double threshold = 1.0 - ui->doubleSpinBox_overrideHaltThreshold->value() / 100.0;
+				LOG(LUX_DEBUG, LUX_NOERROR) << "Overriding haltThreshold: " << threshold;
+				luxSetFloatAttribute("film", "haltThreshold", threshold);
+			}
+
 			if (ui->checkBox_overrideWriteFlm->checkState() == Qt::Checked)
 			{
 				LOG(LUX_DEBUG, LUX_NOERROR) << "Overriding writeResumeFlm: true";
@@ -2759,22 +2778,61 @@ void MainWindow::removeQueueFiles()
 		renderQueue.remove(index);
 }
 
-void MainWindow::overrideHaltSppChanged(int value)
+void MainWindow::overrideHaltTimeChanged(int state)
 {
-	if (value <= 0)
-		value = luxGetIntAttributeDefault("film", "haltSamplesPerPixel");
+	ui->timeEdit_overrideHaltTime->setEnabled(state == Qt::Checked);
 
 	if (m_guiRenderState == RENDERING)
+	{
+		if (state == Qt::Checked)
+			luxSetIntAttribute("film", "haltTime", QTime().secsTo(ui->timeEdit_overrideHaltTime->time()));
+		else
+			luxSetIntAttribute("film", "haltTime", luxGetIntAttributeDefault("film", "haltTime"));
+	}
+}
+
+void MainWindow::overrideHaltProgressChanged(int state)
+{
+	ui->spinBox_overrideHaltProgress->setEnabled(state == Qt::Checked);
+
+	if (m_guiRenderState == RENDERING)
+	{
+		if (state == Qt::Checked)
+			luxSetIntAttribute("film", "haltSamplesPerPixel", ui->spinBox_overrideHaltProgress->value());
+		else
+			luxSetIntAttribute("film", "haltSamplesPerPixel", luxGetIntAttributeDefault("film", "haltSamplesPerPixel"));
+	}
+}
+
+void MainWindow::overrideHaltThresholdChanged(int state)
+{
+	ui->doubleSpinBox_overrideHaltThreshold->setEnabled(state == Qt::Checked);
+
+	if (m_guiRenderState == RENDERING)
+	{
+		if (state == Qt::Checked)
+			luxSetFloatAttribute("film", "haltThreshold", 1.0 - ui->doubleSpinBox_overrideHaltThreshold->value() / 100.0);
+		else
+			luxSetFloatAttribute("film", "haltThreshold", luxGetFloatAttributeDefault("film", "haltThreshold"));
+	}
+}
+
+void MainWindow::overrideHaltTimeValueChanged(const QTime& value)
+{
+	if (m_guiRenderState == RENDERING && ui->checkBox_haltTime->checkState() == Qt::Checked)
+		luxSetIntAttribute("film", "haltTime", QTime().secsTo(value));
+}
+
+void MainWindow::overrideHaltProgressValueChanged(int value)
+{
+	if (m_guiRenderState == RENDERING && ui->checkBox_haltProgress->checkState() == Qt::Checked)
 		luxSetIntAttribute("film", "haltSamplesPerPixel", value);
 }
 
-void MainWindow::overrideHaltTimeChanged(int value)
+void MainWindow::overrideHaltThresholdValueChanged(double value)
 {
-	if (value <= 0)
-		value = luxGetIntAttributeDefault("film", "haltTime");
-
-	if (m_guiRenderState == RENDERING)
-		luxSetIntAttribute("film", "haltTime", value);
+	if (m_guiRenderState == RENDERING && ui->checkBox_haltThreshold->checkState() == Qt::Checked)
+		luxSetFloatAttribute("film", "haltThreshold", 1.0 - value / 100.0);
 }
 
 void MainWindow::loopQueueChanged(int state)
