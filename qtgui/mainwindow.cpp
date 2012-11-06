@@ -315,10 +315,10 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console)
 	connect(ui->doubleSpinBox_overrideHaltThreshold, SIGNAL(valueChanged(double)), this, SLOT(overrideHaltThresholdValueChanged(double)));
 	
 #if defined(__APPLE__) // cosmetical work
-	ui->tab_queue->setFont(QFont  ("Lucida Grande", 11));
+	ui->tab_queue->setFont(QFont  ("Lucida Grande", 12));
 	ui->horizontalLayout_queueControls->setSpacing(6);
-	
 #endif
+	
 	// Log tab
 	connect(ui->comboBox_verbosity, SIGNAL(currentIndexChanged(int)), this, SLOT(setVerbosity(int)));
 
