@@ -72,7 +72,7 @@ private:
 	void stopRendering();
 
 	QPersistentModelIndex addLxqFile(const QString& lxqFilename);
-	QPersistentModelIndex addLxsFile(const QString& lxsFilename, QStandardItem* group = NULL);
+	QPersistentModelIndex addLxsFile(const QString& lxsFilename, QStandardItem* group = NULL, const QString& directory = "");
 
 	QPersistentModelIndex addGroup(QStandardItem* group);
 	void removeGroup(const QPersistentModelIndex& groupIndex);

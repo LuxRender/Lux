@@ -204,19 +204,21 @@ QPersistentModelIndex Queue::addLxqFile(const QString& lxqFilename)
 	if (lxqFilename.isEmpty())
 		return QModelIndex();
 
+	QFileInfo fi(lxqFilename);
+
 	for (int i = 0; i < rowCount(); ++i)
-		if(getFilename(this->index(i, 0)) == lxqFilename)
+		if(getFilename(this->index(i, 0)) == fi.canonicalFilePath())
 			return QModelIndex();
 
-	QStandardItem* group = new QStandardItem(QDir::toNativeSeparators(lxqFilename));
-	group->setData(lxqFilename);
+	QStandardItem* group = new QStandardItem(QDir::toNativeSeparators(fi.canonicalFilePath()));
+	group->setData(fi.canonicalFilePath());
 
-	QFile file(lxqFilename);
+	QFile file(fi.canonicalFilePath());
 	if (file.open(QIODevice::ReadOnly | QIODevice::Text))
 	{
 		QTextStream in(&file);
 		while (!in.atEnd())
-			addLxsFile(in.readLine(), group);
+			addLxsFile(in.readLine(), group, fi.canonicalPath());
 	}
 
 	if (!group->rowCount())
@@ -228,9 +230,9 @@ QPersistentModelIndex Queue::addLxqFile(const QString& lxqFilename)
 	return addGroup(group);
 }
 
-QPersistentModelIndex Queue::addLxsFile(const QString& lxsFilename, QStandardItem* group)
+QPersistentModelIndex Queue::addLxsFile(const QString& lxsFilename, QStandardItem* group, const QString& directory)
 {
-	QFileInfo fi(lxsFilename);
+	QFileInfo fi(directory, lxsFilename);
 
 	if (group == NULL)
 		group = itemFromIndex(getDefaultGroup());
