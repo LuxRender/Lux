@@ -256,11 +256,16 @@ QPersistentModelIndex Queue::addLxsFile(const QString& lxsFilename, QStandardIte
 	QStandardItem* passes = new QStandardItem(QString().setNum(0));
 
 	group->appendRow(QList<QStandardItem*>() << filename << flmFilename << status << progress << passes);
+
+	for (int i = 0; i < group->columnCount(); ++i)
+		group->child(filename->row(), i)->setEditable(false);
+
 	return indexFromItem(filename);
 }
 
 QPersistentModelIndex Queue::addGroup(QStandardItem* group)
 {
+	group->setEditable(false);
 	appendRow(group);
 	return indexFromItem(group);
 }
@@ -273,6 +278,7 @@ void Queue::removeGroup(const QPersistentModelIndex& groupIndex)
 		{
 			removeRow(groupIndex.row());
 			insertRow(0, new QStandardItem(defaultGroupName));
+			item(0)->setEditable(false);
 			defaultGroupIndex = item(0)->index();
 		}
 		else

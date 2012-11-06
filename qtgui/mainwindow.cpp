@@ -701,6 +701,7 @@ void MainWindow::clearQueue()
 {
 	renderQueue.clear();
 	ui->tree_queue->hideColumn(renderQueue.COLUMN_FLMFILENAME);
+	ui->tree_queue->setFirstColumnSpanned(0, renderQueue.invisibleRootItem()->index(), true);
 	for (int i = 0; i < renderQueue.columnCount(); ++i)
 		ui->tree_queue->resizeColumnToContents(i);
 }
@@ -750,6 +751,9 @@ void MainWindow::openFiles(const QStringList& files, bool clearQueueFirst)
 
 	if (fileCount > 0)
 	{
+		for (int i = 0; i < renderQueue.rowCount(); ++i)
+			ui->tree_queue->setFirstColumnSpanned(i, renderQueue.invisibleRootItem()->index(), true);
+
 		ui->tree_queue->resizeColumnToContents(renderQueue.COLUMN_LXSFILENAME);
 
 		if (ui->checkBox_haltTime->checkState() == Qt::Unchecked &&
@@ -2781,6 +2785,8 @@ void MainWindow::removeQueueFiles()
 
 	foreach(QPersistentModelIndex index, indexes)
 		renderQueue.remove(index);
+
+	ui->tree_queue->setFirstColumnSpanned(0, renderQueue.invisibleRootItem()->index(), true);
 }
 
 void MainWindow::overrideHaltTimeChanged(int state)
