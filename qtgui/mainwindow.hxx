@@ -502,6 +502,7 @@ private slots:
 	void updateIntervalChanged();
 	void networknodeSelectionChanged();
 
+	void queueContextMenu(const QPoint&);
 	void addQueueFiles();
 	void removeQueueFiles();
 	void loopQueueChanged(int state);

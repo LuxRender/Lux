@@ -38,6 +38,9 @@
 
 #include <QList>
 
+#include <QMenu>
+#include <QAction>
+
 #include <QDateTime>
 #include <QTextStream>
 
@@ -291,8 +294,11 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console)
 
 	// Queue tab
 	ui->tree_queue->setModel(&renderQueue);
+	ui->tree_queue->setContextMenuPolicy(Qt::CustomContextMenu);
 	ui->checkBox_overrideWriteFlm->setTristate();
 	ui->checkBox_overrideWriteFlm->setCheckState(Qt::PartiallyChecked);
+
+	connect(ui->tree_queue, SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(queueContextMenu(const QPoint&)));
 
 	connect(ui->button_addQueueFiles, SIGNAL(clicked()), this, SLOT(addQueueFiles()));
 	connect(ui->button_removeQueueFiles, SIGNAL(clicked()), this, SLOT(removeQueueFiles()));
@@ -2766,6 +2772,50 @@ void MainWindow::networknodeSelectionChanged()
 		ui->table_servers->blockSignals (true);
 		ui->lineEdit_server->setText(QString("%1:%2").arg(server->text()).arg(port->text()));
 		ui->table_servers->blockSignals (false);
+	}
+}
+
+void MainWindow::queueContextMenu(const QPoint& widgetPoint)
+{
+	QModelIndex index = ui->tree_queue->indexAt(widgetPoint);
+	if (index.isValid())
+	{
+		QMenu queueMenu;
+
+		bool isGroup = index.parent() == renderQueue.invisibleRootItem()->index();
+		if (isGroup)
+		{
+			if (renderQueue.itemFromIndex(index)->rowCount())
+				queueMenu.addAction("Render Group");
+			queueMenu.addAction("Remove Group");
+		}
+		else
+		{
+			queueMenu.addAction("Render Scene");
+			queueMenu.addAction("Remove Scene");
+		}
+
+		QAction* selectedAction = queueMenu.exec(ui->tree_queue->viewport()->mapToGlobal(widgetPoint));
+		if (selectedAction != NULL)
+		{
+			if (selectedAction->text().startsWith("Render"))
+			{
+				if (isGroup)
+					index = index.child(0,0);
+
+				if (renderQueue.getCurrentScene() == index && m_guiRenderState == RENDERING)
+					return;
+				else if (renderQueue.getCurrentScene() == index && m_guiRenderState == PAUSED)
+					resumeRender();
+				else
+					renderQueue.renderScene(index);
+			}
+			else if (selectedAction->text().startsWith("Remove"))
+			{
+				renderQueue.remove(index);
+				ui->tree_queue->setFirstColumnSpanned(0, renderQueue.invisibleRootItem()->index(), true);
+			}
+		}
 	}
 }
 
