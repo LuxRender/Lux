@@ -267,6 +267,7 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console)
 	advancedinfowidget = new AdvancedInfoWidget(advpanes[0]);
 	advpanes[0]->setWidget(advancedinfowidget);
 	ui->advancedLayout->addWidget(advpanes[0]);
+	advpanes[0]->setMinimumHeight(300);
 	advpanes[0]->expand();
 	//connect(noisereductionwidget, SIGNAL(valuesChanged()), this, SLOT(toneMapParamsChanged()));
 
