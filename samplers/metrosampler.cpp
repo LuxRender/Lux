@@ -149,10 +149,11 @@ MetropolisSampler::MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
 	}
 	RandomGenerator rndg(1);
 	Shuffle(rndg, rngSamples, rngN, 1);
-	// 15 seconds of cooldown time for evey .1 difference from 0.5 in pLarge
+	// Cooldown samples are computed to minimize start-up bias
 	if (useC) {
-		cooldownTime = max<u_int>(1U, (xPixelEnd - xPixelStart) * (yPixelEnd - yPixelStart) * pLarge);
-		LOG(LUX_INFO, LUX_NOERROR) << "Metropolis cooldown during first " << cooldownTime << " samples";
+		float pLarge_factor = (pLarge < 0.5) ? 1.5 * fabs(pLarge - 0.5) : 0;
+		cooldownTime = max<u_int>(0U, (xPixelEnd - xPixelStart) * (yPixelEnd - yPixelStart) * pLarge_factor);
+		if(cooldownTime > 0) LOG(LUX_INFO, LUX_NOERROR) << "Metropolis cooldown during first " << cooldownTime << " samples";
 	} else
 		cooldownTime = 0;
 }
