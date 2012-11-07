@@ -1339,15 +1339,12 @@
           <property name="wordWrap">
            <bool>true</bool>
           </property>
-          <attribute name="horizontalHeaderVisible">
-           <bool>false</bool>
-          </attribute>
           <attribute name="horizontalHeaderHighlightSections">
            <bool>false</bool>
           </attribute>
           <column>
            <property name="text">
-            <string>Address</string>
+            <string>Host</string>
            </property>
           </column>
           <column>
@@ -1362,7 +1359,7 @@
           </column>
           <column>
            <property name="text">
-            <string>Samples</string>
+            <string>Progress</string>
            </property>
           </column>
           <column>
