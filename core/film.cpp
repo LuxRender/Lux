@@ -1401,6 +1401,10 @@ void Film::SetSample(const Contribution *contrib) {
 void Film::WriteResumeFilm(const string &filename)
 {
 	string fullfilename = boost::filesystem::system_complete(filename).string();
+	//boost::filesystem::path fullfilenamePath(boost::filesystem::system_complete(filename).string());
+	//string fullfilename = fullfilenamePath.replace_extension("").string();
+	//fullfilename.append("-"+boost::lexical_cast<std::string>((int)luxGetDoubleAttribute("renderer_statistics", "elapsedTime"))+"s"+".flm");
+
 	// Dade - save the status of the film to the file
 	LOG(LUX_INFO, LUX_NOERROR) << "Writing resume film file";
 
