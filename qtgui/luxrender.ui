@@ -1511,6 +1511,13 @@
           </item>
          </layout>
         </item>
+        <item row="3" column="0">
+         <widget class="QLabel" name="label_serversStatus">
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
        </layout>
       </widget>
       <widget class="QWidget" name="tab_log">

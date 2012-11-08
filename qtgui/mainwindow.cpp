@@ -51,6 +51,7 @@
 #include <QPersistentModelIndex>
 
 #include <boost/bind.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 #include "error.h"
 
@@ -1759,6 +1760,21 @@ void MainWindow::updateStatistics()
 	statusProgress->setValue(static_cast<int>(min(percentComplete, 100.0)));
 
 	statsBox->setUpdatesEnabled(true);
+
+	// update network tab
+	if ((m_guiRenderState == RENDERING || m_guiRenderState == PAUSED) && luxGetIntAttribute("render_farm", "slaveNodeCount") > 0)
+	{
+		double updateTimeRemaining = luxGetDoubleAttribute("render_farm", "updateTimeRemaining");
+		if (updateTimeRemaining > 0)
+		{
+			std::string timeRemaining(boost::posix_time::to_simple_string(boost::posix_time::time_duration(0, 0, updateTimeRemaining, 0)));
+			ui->label_serversStatus->setText(QString::fromStdString(timeRemaining).prepend("Next update in "));
+		}
+		else
+			ui->label_serversStatus->setText("Next update in progress");
+	}
+	else
+		ui->label_serversStatus->clear();
 }
 
 // show the render-resolution

@@ -25,6 +25,7 @@
 
 #include "osfunc.h"
 #include "queryable.h"
+#include "timer.h"
 
 #include <vector>
 #include <string>
@@ -47,6 +48,8 @@ public:
         delete thread;
     }
 
+	double getUpdateTimeRemaining();
+
     void stop() {
         thread->interrupt();
         thread->join();
@@ -59,6 +62,7 @@ private:
     RenderFarm *renderFarm;
     Scene *scene;
     boost::thread *thread; // keep pointer to delete the thread object
+	Timer timer;
 };
 
 class RenderFarm : public Queryable {
@@ -116,6 +120,8 @@ public:
 	void updateLog();
 
 	void updateUserSamplingMap(const u_int size, const float *map);
+
+	double getUpdateTimeRemaining();
 
 private:
 	struct ExtRenderingServerInfo {

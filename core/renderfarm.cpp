@@ -37,7 +37,6 @@
 #include "streamio.h"
 #include "filedata.h"
 #include "tigerhash.h"
-#include "timer.h"
 
 #include <algorithm>
 #include <fstream>
@@ -99,21 +98,26 @@ static std::string get_response(std::iostream &stream) {
 	return response;
 }
 
+double FilmUpdaterThread::getUpdateTimeRemaining()
+{
+	double timeLeft = (*renderFarm)["pollingInterval"].IntValue() - timer.Time();
+	return timeLeft < 0 ? 0 : timeLeft;
+}
+
 void FilmUpdaterThread::updateFilm(FilmUpdaterThread *filmUpdaterThread) {
 	// thread to update the film with data from servers
-	Timer timer;
 
 	try {
 		while (true) {
 			// no-op if already started
-			timer.Start();
+			filmUpdaterThread->timer.Start();
 
 			// sleep for 1 sec
 			boost::this_thread::sleep(boost::posix_time::seconds(1));
 
-			if (timer.Time() > (*(filmUpdaterThread->renderFarm))["pollingInterval"].IntValue()) {
+			if (filmUpdaterThread->getUpdateTimeRemaining() == 0) {
 				filmUpdaterThread->renderFarm->updateFilm(filmUpdaterThread->scene);
-				timer.Reset();
+				filmUpdaterThread->timer.Reset();
 			}
 		}
 	} catch (boost::thread_interrupted &) {
@@ -366,6 +370,7 @@ RenderFarm::RenderFarm() : Queryable("render_farm"),
 	AddIntAttribute(*this, "defaultTcpPort", "Default TCP port", &RenderFarm::defaultTcpPort, ReadWriteAccess);
 	AddIntAttribute(*this, "pollingInterval", "Polling interval", &RenderFarm::pollingInterval, ReadWriteAccess);
 	AddIntAttribute(*this, "slaveNodeCount", "Number of network slave nodes", &RenderFarm::getSlaveNodeCount);
+	AddDoubleAttribute(*this, "updateTimeRemaining", "Time remaining until next update", &RenderFarm::getUpdateTimeRemaining);
 }
 
 RenderFarm::~RenderFarm()
@@ -1040,6 +1045,11 @@ void RenderFarm::updateUserSamplingMap(const u_int size, const float *map) {
 
 	// attempt to reconnect
 	reconnectFailed();
+}
+
+double RenderFarm::getUpdateTimeRemaining()
+{
+	return filmUpdateThread ? filmUpdateThread->getUpdateTimeRemaining() : 0;
 }
 
 // to catch the interrupted exception
