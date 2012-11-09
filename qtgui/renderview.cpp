@@ -42,7 +42,8 @@
 
 using namespace std;
 
-RenderView::RenderView(QWidget *parent) : QGraphicsView(parent) {
+RenderView::RenderView(QWidget *parent) : QGraphicsView(parent)
+{
 	renderscene = new QGraphicsScene();
 	renderscene->setBackgroundBrush(QColor(127,127,127));
 	luxlogo = renderscene->addPixmap(QPixmap(":/images/luxlogo_bg.png"));
@@ -72,7 +73,8 @@ RenderView::RenderView(QWidget *parent) : QGraphicsView(parent) {
 	setMouseTracking(true);
 }
 
-RenderView::~RenderView () {
+RenderView::~RenderView ()
+{
 	delete[] userSamplingMap;
 	delete userSamplingMapImage;
 	delete userSamplingPixmap;
@@ -81,7 +83,8 @@ RenderView::~RenderView () {
 	delete renderscene;
 }
 
-void RenderView::addUserSamplingPen() {
+void RenderView::addUserSamplingPen()
+{
 	// Remove the old pen
 	removeUserSamplingPen();
 
@@ -120,7 +123,8 @@ void RenderView::addUserSamplingPen() {
 			userSamplingPenY - userSamplingPenSize / 2);
 }
 
-void RenderView::removeUserSamplingPen() {
+void RenderView::removeUserSamplingPen()
+{
 	delete penItemGroup;
 	penItemGroup = NULL;
 }
@@ -144,7 +148,8 @@ void RenderView::copyToClipboard()
 	}
 }
 
-void RenderView::setShowUserSamplingMap(bool value) {
+void RenderView::setShowUserSamplingMap(bool value)
+{
 	if (showUserSamplingMap == value)
 		return;
 
@@ -154,7 +159,8 @@ void RenderView::setShowUserSamplingMap(bool value) {
 	userSamplingPenY = 0;
 }
 
-void RenderView::reload () {
+void RenderView::reload()
+{
 	if (luxStatistics("sceneIsReady") || luxStatistics("filmIsReady")) {
 		int w = luxGetIntAttribute("film", "xResolution");
 		int h = luxGetIntAttribute("film", "yResolution");
@@ -222,32 +228,38 @@ void RenderView::reload () {
 	}
 }
 
-void  RenderView::setUserSamplingPen(const bool addType) {
+void  RenderView::setUserSamplingPen(const bool addType)
+{
 	userSamplingAddPenType = addType;
 	addUserSamplingPen();
 	updateUserSamplingPixmap();
 }
 
-void  RenderView::setUserSamplingPenSize(const int size) {
+void  RenderView::setUserSamplingPenSize(const int size)
+{
 	userSamplingPenSize = std::max(1, size);
 	addUserSamplingPen();
 	updateUserSamplingPixmap();
 }
 
-void RenderView::setUserSamplingPenSprayIntensity(const float i) {
+void RenderView::setUserSamplingPenSprayIntensity(const float i)
+{
 	userSamplingPenSprayIntensity = std::max(0.01f, min(1.f, i));
 }
 
-void RenderView::setUserSamplingMapOpacity(const float v) {
+void RenderView::setUserSamplingMapOpacity(const float v)
+{
 	userSamplingMapOpacity = std::max(0.f, min(1.f, v));
 	updateUserSamplingPixmap();
 }
 
-void  RenderView::applyUserSampling() {
+void  RenderView::applyUserSampling()
+{
 	luxSetUserSamplingMap(userSamplingMap);
 }
 
-void  RenderView::undoUserSampling() {
+void  RenderView::undoUserSampling()
+{
 	delete[] userSamplingMap;
 	userSamplingMap = luxGetUserSamplingMap();
 	if (!userSamplingMap) {
@@ -261,7 +273,8 @@ void  RenderView::undoUserSampling() {
 	updateUserSamplingPixmap();
 }
 
-void  RenderView::resetUserSampling() {
+void  RenderView::resetUserSampling()
+{
 	int w = luxGetIntAttribute("film", "xResolution");
 	int h = luxGetIntAttribute("film", "yResolution");
 
@@ -274,14 +287,16 @@ void  RenderView::resetUserSampling() {
 	updateUserSamplingPixmap();
 }
 
-void RenderView::updateUserSamplingPixmap() {
+void RenderView::updateUserSamplingPixmap()
+{
 	int w = luxGetIntAttribute("film", "xResolution");
 	int h = luxGetIntAttribute("film", "yResolution");
 	
 	updateUserSamplingPixmap(0, 0, w, h);
 }
 
-void RenderView::updateUserSamplingPixmap(int xStart, int yStart, int xSize, int ySize) {
+void RenderView::updateUserSamplingPixmap(int xStart, int yStart, int xSize, int ySize)
+{
 	int width = luxGetIntAttribute("film", "xResolution");
 	int height = luxGetIntAttribute("film", "yResolution");
 
@@ -317,7 +332,8 @@ void RenderView::updateUserSamplingPixmap(int xStart, int yStart, int xSize, int
 	userSamplingPixmap->setPixmap(QPixmap::fromImage(*userSamplingMapImage));
 }
 
-void RenderView::setLogoMode () {
+void RenderView::setLogoMode()
+{
 	resetTransform ();
 	if (luxfb->isVisible()) {
 		luxfb->hide ();
@@ -340,24 +356,29 @@ void RenderView::setLogoMode () {
 	setInteractive(false);
 }
 
-void RenderView::resizeEvent(QResizeEvent *event) {
+void RenderView::resizeEvent(QResizeEvent *event)
+{
 	QGraphicsView::resizeEvent(event);
 	emit viewChanged ();
 }
 
-int RenderView::getZoomFactor () {
+int RenderView::getZoomFactor()
+{
 	return zoomfactor;
 }
 
-int RenderView::getWidth () {
+int RenderView::getWidth()
+{
 	return width();
 }
 
-int RenderView::getHeight () {
+int RenderView::getHeight()
+{
 	return height();
 }
 
-void RenderView::wheelEvent (QWheelEvent* event) {
+void RenderView::wheelEvent(QWheelEvent* event)
+{
    if (!zoomEnabled)
 	   return;
 
@@ -379,7 +400,8 @@ void RenderView::wheelEvent (QWheelEvent* event) {
 	emit viewChanged ();
 }
 
-void RenderView::drawPenOnUserSamplingMap(const int xPos, const int yPos) {
+void RenderView::drawPenOnUserSamplingMap(const int xPos, const int yPos)
+{
 	for (int y = 0; y <= userSamplingPenSize; ++y) {
 		for (int x = 0; x <= userSamplingPenSize; ++x) {
 			// Check if the point is inside the circle
@@ -411,7 +433,8 @@ void RenderView::drawPenOnUserSamplingMap(const int xPos, const int yPos) {
 	}
 }
 
-void RenderView::mousePressEvent (QMouseEvent *event) {
+void RenderView::mousePressEvent(QMouseEvent *event)
+{
 	if (luxfb->isVisible()) {
 		switch (event->button()) {
 			case Qt::LeftButton:
@@ -453,7 +476,8 @@ void RenderView::mousePressEvent (QMouseEvent *event) {
 	QGraphicsView::mousePressEvent(event);
 }
 
-void RenderView::mouseReleaseEvent (QMouseEvent *event) {
+void RenderView::mouseReleaseEvent (QMouseEvent *event)
+{
 	if (luxfb->isVisible() && showUserSamplingMap) {
 		switch (event->button()) {
 			case Qt::LeftButton:
@@ -467,7 +491,8 @@ void RenderView::mouseReleaseEvent (QMouseEvent *event) {
 	QGraphicsView::mouseReleaseEvent(event);
 }
 
-void RenderView::mouseMoveEvent (QMouseEvent *event) {
+void RenderView::mouseMoveEvent (QMouseEvent *event)
+{
 	if (luxfb->isVisible() && showUserSamplingMap) {
 		QPointF pos = mapToScene(event->pos());
 		int x = pos.x();

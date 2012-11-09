@@ -27,7 +27,8 @@
 
 #include "histogramview.hxx"
 
-HistogramView::HistogramView(QWidget *parent) : QGraphicsView(parent) {
+HistogramView::HistogramView(QWidget *parent) : QGraphicsView(parent)
+{
 	frame = parent;
 	scene = new QGraphicsScene();
 	scene->setBackgroundBrush(QColor(0,0,0));
@@ -49,7 +50,8 @@ HistogramView::HistogramView(QWidget *parent) : QGraphicsView(parent) {
 	setScene(scene);
 }
 
-HistogramView::~HistogramView () {
+HistogramView::~HistogramView ()
+{
 	if (imagebuffer != NULL)
 		delete imagebuffer;
 	delete pixmap;

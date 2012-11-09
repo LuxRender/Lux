@@ -77,7 +77,6 @@
 #define LG_TEMPERATURE_MIN 1000.f
 #define LG_TEMPERATURE_MAX 10000.f
 
-
 enum LuxGuiRenderState
 {
 	WAITING,
@@ -136,8 +135,7 @@ public:
 	QMRUListModel() : QAbstractListModel(), maxCount(0) { }
 	QMRUListModel(int count, QObject *parent = 0) : QAbstractListModel(parent), maxCount(count)  { }
 	QMRUListModel(const QMRUListModel<T> &other) 
-		: maxCount(other.maxCount), mruList(other.mruList), QAbstractListModel(other.parent()) {
-	}
+		: maxCount(other.maxCount), mruList(other.mruList), QAbstractListModel(other.parent()) { }
 
 	int count() const {
 		return maxCount;
@@ -258,7 +256,6 @@ public:
 	void loadFile(const QString& fileName);
 
 protected:
-	
 	int getTabIndex(int tabID);
 
 	bool saveCurrentImageHDR(const QString &outFile);
@@ -270,7 +267,6 @@ protected:
 	void closeEvent(QCloseEvent *event);
 
 private:
-	
 	Ui::MainWindow *thorizontalLayout_5, *thorizontalLayout_log;
 	
 	QLabel *resinfoLabel;
@@ -394,7 +390,6 @@ private:
 	static void LuxGuiErrorHandler(int code, int severity, const char *msg);
 	static QWidget *instance;
 	
-
 	enum { MaxRecentServers = 20 };
 	QStringMRUListModel *m_recentServersModel;
 
@@ -424,7 +419,6 @@ private:
 	Queue renderQueue;
 
 public slots:
-
 	void applyTonemapping (bool withlayercomputation = false);
 	void resetToneMapping ();
 	void indicateActivity (bool active = true);
@@ -439,7 +433,6 @@ public slots:
 	void userSamplingReset();
 
 private slots:
-
 	void exitAppSave ();
 	void exitApp ();
 	void openFile ();

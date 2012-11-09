@@ -39,7 +39,6 @@ class GammaWidget : public QWidget
 	Q_OBJECT
 
 public:
-
 	GammaWidget(QWidget *parent = 0);
 	~GammaWidget();
 
@@ -59,11 +58,11 @@ public:
 	QString m_CRF_file;
 	
 	void Update();
+
 signals:
 	void valuesChanged();
 
 private:
-
 	Ui::GammaWidget *ui;
 	QString m_lastOpendir;
 	void activateCRF();
@@ -72,18 +71,14 @@ private:
 	void addPreset( QString listName, QString realName );
 
 protected:
-
 	void changeEvent(QEvent * event);
 
 private slots:
-
 	void gammaChanged (int value);
 	void gammaChanged (double value);
 	void CRFChanged (int value);
 	void SetCRFPreset(QString sOption);
 	void loadCRF();
-
 };
 
 #endif // GAMMAWIDGET_H
-

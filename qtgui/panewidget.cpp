@@ -29,8 +29,7 @@
 
 using namespace std;
 
-ClickableLabel::ClickableLabel(const QString& label, QWidget *parent) : QLabel(label,parent) {
-}
+ClickableLabel::ClickableLabel(const QString& label, QWidget *parent) : QLabel(label,parent) { }
 
 void ClickableLabel::mouseReleaseEvent(QMouseEvent* event) 
 {
@@ -56,7 +55,6 @@ PaneWidget::PaneWidget(QWidget *parent, const QString& label, const QString& ico
 	if (!label.isEmpty())
 		ui->labelPaneName->setText(label);
 		ui->labelPaneName->setStyleSheet(QString::fromUtf8(" QFrame {\n""background-color: rgba(232, 232, 232, 0)\n""}"));
-
 
 #if defined(__APPLE__)
 	ui->frame->setLineWidth(2);

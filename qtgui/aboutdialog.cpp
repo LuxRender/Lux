@@ -42,7 +42,8 @@ AboutDialog::~AboutDialog()
 	delete ui;
 }
 
-AboutImage::AboutImage(QWidget *parent) : QGraphicsView(parent) {
+AboutImage::AboutImage(QWidget *parent) : QGraphicsView(parent)
+{
 	scene = new QGraphicsScene;
 	scene->setSceneRect(0, 0, 550, 330);
 	this->setScene(scene);

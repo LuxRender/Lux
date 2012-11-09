@@ -49,7 +49,6 @@ class LensEffectsWidget : public QWidget
 	Q_OBJECT
 
 public:
-
 	LensEffectsWidget(QWidget *parent = 0);
 	~LensEffectsWidget();
 
@@ -66,11 +65,9 @@ signals:
 	void forceUpdate();
 
 protected:
-
 	void changeEvent(QEvent * event);
 
 private:
-
 	Ui::LensEffectsWidget *ui;
 
 	double m_bloomradius, m_bloomweight;
@@ -86,7 +83,6 @@ private:
 	double m_Glare_threshold;
 
 private slots:
-
 	// Lens effects slots
 	void gaussianAmountChanged (int value);
 	void gaussianAmountChanged (double value);
@@ -109,8 +105,6 @@ private slots:
 	void glareThresholdSpinBoxChanged (double value);
 	void computeGlareLayer ();
 	void deleteGlareLayer ();
-
 };
 
 #endif // LENSEFFECTSWIDGET_H
-

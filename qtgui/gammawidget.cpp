@@ -41,7 +41,6 @@ GammaWidget::GammaWidget(QWidget *parent) : QWidget(parent), ui(new Ui::GammaWid
 	connect(ui->checkBox_CRF, SIGNAL(stateChanged(int)), this, SLOT(CRFChanged(int)));
 	connect(ui->combo_CRF_List, SIGNAL(activated(QString)), this, SLOT(SetCRFPreset(QString)));
 
-
 	ui->combo_CRF_List->addItem(tr("External..."));
 
 	addPreset("Advantix 100", "Advantix_100CD");
@@ -94,7 +93,6 @@ GammaWidget::GammaWidget(QWidget *parent) : QWidget(parent), ui(new Ui::GammaWid
 	addPreset("Kodak Portra 400NC", "Portra_400NCCD");
 	addPreset("Kodak Portra 400VC", "Portra_400VCCD");
 	addPreset("Kodak Portra 800", "Portra_800CD");
-
 }
 
 GammaWidget::~GammaWidget()
@@ -172,7 +170,6 @@ void GammaWidget::gammaChanged (double value)
 	emit valuesChanged ();
 }
  
-
 void GammaWidget::CRFChanged(int value)
 {
 	if (value == Qt::Checked)
@@ -240,9 +237,8 @@ void GammaWidget::deactivateCRF()
 
 void GammaWidget::loadCRF()
 {
-	
 	m_CRF_file = QFileDialog::getOpenFileName(this, tr("Choose a CRF file to open"), m_lastOpendir, tr("Camera Response Files (*.crf *.txt)"));
-    
+
 	if(!m_CRF_file.isEmpty()) {
 		QFileInfo info(m_CRF_file);
 		m_lastOpendir = info.absolutePath();
@@ -330,7 +326,3 @@ void GammaWidget::LoadSettings( QString fName )
 
 	emit valuesChanged();
 }
-
-
-
-

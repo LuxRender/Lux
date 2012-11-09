@@ -40,7 +40,6 @@ class RenderView : public QGraphicsView
 	Q_OBJECT
 
 public:
-
 	RenderView(QWidget *parent = 0);
 	~RenderView ();
 
@@ -66,8 +65,8 @@ public:
 	void copyToClipboard ();
 	float origh;
 	float origw;
-private:
 
+private:
 	bool zoomEnabled;
 	float zoomfactor;
 
@@ -90,7 +89,6 @@ private:
 	int userSamplingPenSize;
 	float userSamplingPenSprayIntensity;
 	float userSamplingMapOpacity;
-	
 
 	void addUserSamplingPen();
 	void removeUserSamplingPen();
@@ -107,9 +105,7 @@ private:
 	void resizeEvent(QResizeEvent *event);
 
 signals:
-
 	void viewChanged ();
-
 };
 
 #endif // RENDERVIEW_H

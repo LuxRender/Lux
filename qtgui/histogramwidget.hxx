@@ -37,7 +37,6 @@ class HistogramWidget : public QWidget
 	Q_OBJECT
 
 public:
-
 	HistogramWidget(QWidget *parent = 0);
 	~HistogramWidget();
 
@@ -45,16 +44,12 @@ public:
 	void SetEnabled(bool enabled);
 
 private:
-
 	Ui::HistogramWidget *ui;
 	HistogramView *histogramView;
 
 private slots:
-
 	void SetOption(int option);
 	void LogChanged(int value);
-
 };
 
 #endif // HISTOGRAMWIDGET_H
-

@@ -48,6 +48,7 @@ static double whitepoint_presets[2][NUM_WHITEPOINT_PRESETS] = {
 	{0.44757f, 0.34842f, 0.31006f, 0.34567f, 0.33242f, 0.31271f, 0.29902f, 0.33333f, 0.37208f, 0.31292f, 0.38052f, 0.28480f, 0.314275f}, //xwhite
 	{0.40745f, 0.35161f, 0.31616f, 0.35850f, 0.34743f, 0.32902f, 0.31485f, 0.33333f, 0.37529f, 0.32933f, 0.37713f, 0.29320f, 0.329411f}  //ywhite
 };
+
 #define DEFAULT_EPSILON_MIN 0.000005f
 static bool EqualDouble(const double a, const double b)
 {
@@ -175,7 +176,7 @@ void ColorSpaceWidget::precisionChanged(int value)
 		ui->spinBox_blueX->setDecimals(5);ui->spinBox_blueX->setSingleStep(0.0001);
 		ui->spinBox_blueY->setDecimals(5);ui->spinBox_blueY->setSingleStep(0.0001);
 		ui->spinBox_temperature->setDecimals(1);ui->spinBox_temperature->setSingleStep(1);
-	}else {
+	} else {
 		ui->spinBox_whitePointX->setDecimals(3);ui->spinBox_whitePointX->setSingleStep(0.010);
 		ui->spinBox_whitePointY->setDecimals(3);ui->spinBox_whitePointY->setSingleStep(0.010);
 		ui->spinBox_redX->setDecimals(3);ui->spinBox_redX->setSingleStep(0.010);
@@ -186,8 +187,6 @@ void ColorSpaceWidget::precisionChanged(int value)
 		ui->spinBox_blueY->setDecimals(3);ui->spinBox_blueY->setSingleStep(0.010);
 		ui->spinBox_temperature->setDecimals(0);ui->spinBox_temperature->setSingleStep(100);
 	}
-
-
 }
 
 void ColorSpaceWidget::updateWidgetValues()

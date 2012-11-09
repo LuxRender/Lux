@@ -81,7 +81,8 @@
 #define OUTPUT_TAB_ID_REFINE		2
 #define OUTPUT_TAB_ID_ADVANCED		3
 
-inline int Floor2Int(float val) {
+inline int Floor2Int(float val)
+{
 	return static_cast<int>(std::floor(val));
 }
 
@@ -1623,7 +1624,6 @@ void MainWindow::NetworkAddRemoveSlavesThread::run() {
 	qApp->postEvent(mainWindow, new NetworkUpdateTreeEvent());
 }
 
-
 void MainWindow::SetRenderThreads(int num)
 {
 	if(luxStatistics("sceneIsReady")) {
@@ -1732,7 +1732,6 @@ private:
 
 		return label;
 	}
-
 
 	QBoxLayout* layout;
 	int& count;
@@ -2105,7 +2104,6 @@ bool MainWindow::event (QEvent *event)
 			if (!renderNextScene()) {
 				// Stop timers and update output one last time.
 				stopRender();
-
 				changeRenderState(FINISHED);
 			}
 		}
@@ -2671,7 +2669,8 @@ void MainWindow::UpdateNetworkTree()
 	ui->table_servers->blockSignals (false);
 }
 
-void MainWindow::addRemoveSlaves(QVector<QString> slaves, ChangeSlavesAction action) {
+void MainWindow::addRemoveSlaves(QVector<QString> slaves, ChangeSlavesAction action)
+{
 
 	if (m_networkAddRemoveSlavesThread != NULL) {
 		m_networkAddRemoveSlavesThread->wait();
@@ -2707,8 +2706,8 @@ void MainWindow::addRemoveSlaves(QVector<QString> slaves, ChangeSlavesAction act
 	m_networkAddRemoveSlavesThread->start();
 }
 
-void MainWindow::setServerUpdateInterval(int interval) {
-
+void MainWindow::setServerUpdateInterval(int interval)
+{
 	if (interval > 0) {
 		// only update if valid interval
 		luxSetIntAttribute("render_farm", "pollingInterval", interval);
@@ -2731,11 +2730,13 @@ void MainWindow::setServerUpdateInterval(int interval) {
 	ui->comboBox_updateInterval->blockSignals(false);
 }
 
-void MainWindow::AddNetworkSlaves(const QVector<QString> &slaves) {
+void MainWindow::AddNetworkSlaves(const QVector<QString> &slaves)
+{
 	addRemoveSlaves(slaves, AddSlaves);
 }
 
-void MainWindow::RemoveNetworkSlaves(const QVector<QString> &slaves) {
+void MainWindow::RemoveNetworkSlaves(const QVector<QString> &slaves)
+{
 	addRemoveSlaves(slaves, RemoveSlaves);
 }
 
@@ -3056,4 +3057,3 @@ void MainWindow::setVerbosity(int choice)
 			break;
 	}
 }
-

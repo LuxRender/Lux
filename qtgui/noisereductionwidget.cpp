@@ -67,7 +67,6 @@ NoiseReductionWidget::NoiseReductionWidget(QWidget *parent) : QWidget(parent), u
 	ui->groupBox_integration->setFont(QFont  ("Lucida Grande", 11));
 	ui->tab_filter->setFont(QFont  ("Lucida Grande", 11));
 #endif
-
 }
 
 NoiseReductionWidget::~NoiseReductionWidget()
@@ -194,8 +193,6 @@ void NoiseReductionWidget::resetFromFilm (bool useDefaults)
 	luxSetParameterValue(LUX_FILM, LUX_FILM_NOISE_CHIU_ENABLED, m_Chiu_enabled);
 	luxSetParameterValue(LUX_FILM, LUX_FILM_NOISE_CHIU_INCLUDECENTER, m_Chiu_includecenter);
 	luxSetParameterValue(LUX_FILM, LUX_FILM_NOISE_CHIU_RADIUS, m_Chiu_radius);
-	
-
 }
 
 void NoiseReductionWidget::regularizationEnabledChanged(int value)
@@ -461,4 +458,3 @@ void NoiseReductionWidget::chiuRadiusChanged(double value)
 	if (m_Chiu_enabled)
 		emit valuesChanged();
 }
-

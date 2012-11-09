@@ -107,7 +107,8 @@ void AdvancedInfoWidget::updateWidgetValues()
 	ui->textAdvancedInfo->setHtml(info.join("\n"));
 }
 
-void AdvancedInfoWidget::showEvent(QShowEvent *event) {
+void AdvancedInfoWidget::showEvent(QShowEvent *event)
+{
 	updateWidgetValues();
 
 	QWidget::showEvent(event);

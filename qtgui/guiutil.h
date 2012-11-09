@@ -73,6 +73,7 @@ public:
 		msgBox.exec();
 		return 0;
 	}
+
 private:
 	QMessageBox::Icon icon;
 };

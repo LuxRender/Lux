@@ -89,12 +89,9 @@ ToneMapWidget::ToneMapWidget(QWidget *parent) : QWidget(parent), ui(new Ui::Tone
 	ui->frame_toneMapLinear->setFont(QFont  ("Lucida Grande", 11));
 	ui->frame_toneMapContrast->setFont(QFont  ("Lucida Grande", 11));
 #endif
-	
 }
 
-ToneMapWidget::~ToneMapWidget()
-{
-}
+ToneMapWidget::~ToneMapWidget() { }
 
 void ToneMapWidget::updateWidgetValues()
 {
@@ -630,5 +627,3 @@ void ToneMapWidget::LoadSettings( QString fName )
 
 	emit valuesChanged();
 }
-
-

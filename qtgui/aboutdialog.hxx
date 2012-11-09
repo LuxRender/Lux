@@ -51,7 +51,6 @@ private:
 	Ui::AboutDialog *ui;
     
 private slots:
-
 //	void exitApp ();
 
 };
@@ -73,13 +72,10 @@ private:
 	QTimer *scrolltimer;
 
 private slots:
-
 	void scrollTimeout();
 
 signals:
-
 	void clicked();
-
 };
 
 #endif // ABOUTDIALOG_H

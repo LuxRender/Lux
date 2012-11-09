@@ -54,7 +54,6 @@ class ToneMapWidget : public QWidget
 	Q_OBJECT
 
 public:
-
 	ToneMapWidget(QWidget *parent = 0);
 	~ToneMapWidget();
 
@@ -69,7 +68,6 @@ public:
 	void LoadSettings( QString fName );
 
 private:
-
 	Ui::ToneMapWidget *ui;
 
 	int m_TM_kernel;
@@ -93,7 +91,6 @@ signals:
 	void valuesChanged();
 
 private slots:
-
 	void setTonemapKernel (int choice);
 	void setClampMethod (int choice);
 	void setSensitivityPreset (int choice);
@@ -118,8 +115,6 @@ private slots:
 
 	void ywaChanged (int value);
 	void ywaChanged (double value);
-
 };
 
 #endif // TONEMAPWIDGET_H
-

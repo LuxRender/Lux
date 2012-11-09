@@ -237,6 +237,7 @@ void LightGroupWidget::UpdateWidgetValues()
 					Clamp(int(m_LG_scaleBlue * 255.0), 0, 255));
 	m_LG_rgbPicker->SetColour(colour);*/
 }
+
 void LightGroupWidget::ResetValues()
 {
 	title = QString("lightgroup");
@@ -358,6 +359,3 @@ void LightGroupWidget::LoadSettings( QString fName )
 
 	emit valuesChanged();
 }
-
-
-

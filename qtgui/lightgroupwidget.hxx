@@ -38,7 +38,6 @@ class LightGroupWidget : public QWidget
 	Q_OBJECT
 
 public:
-
 	LightGroupWidget(QWidget *parent = 0);
 	~LightGroupWidget();
 
@@ -58,11 +57,9 @@ signals:
 	void valuesChanged();
 
 protected:
-
 	void changeEvent(QEvent * event);
 
 private:
-
 	Ui::LightGroupWidget *ui;
 	
 	QString title;
@@ -81,7 +78,6 @@ private:
 	int ScaleToSliderVal(float scale);
 
 private slots:
-
 	void rgbEnabledChanged(int);
 	void bbEnabledChanged(int);
 
@@ -95,4 +91,3 @@ private slots:
 };
 
 #endif // LIGHTGROUPWIDGET_H
-

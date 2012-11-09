@@ -40,18 +40,14 @@ class ClickableLabel : public QLabel
     Q_OBJECT
 
 public:
-
 	ClickableLabel(const QString& label = "", QWidget *parent = 0);
 	~ClickableLabel() {};
 
 protected:
-
 	void mouseReleaseEvent(QMouseEvent* event);
 
 signals:
-
 	void clicked();
-
 };
 
 enum SoloState
@@ -66,7 +62,6 @@ class PaneWidget : public QWidget
 	Q_OBJECT
 
 public:
-
 	PaneWidget(QWidget *parent, const QString& label = "", const QString& icon = "", bool onoffbutton=false, bool solobutton=false);
 	~PaneWidget();
 
@@ -92,7 +87,6 @@ public:
 	inline void SetIndex( int Index ) { m_Index = Index; }
 
 private:
-
 	Ui::PaneWidget *ui;
 
 	QWidget *mainwidget;
@@ -104,7 +98,6 @@ private:
 	bool expanded;
 
 signals:
-
 	void valuesChanged();
 
 	void turnedOn();
@@ -113,12 +106,9 @@ signals:
 	void signalLightGroupSolo(int index);
 
 private slots:
-
 	void expandClicked();
 	void onoffClicked();
 	void soloClicked();
-  
 };
 
 #endif // PANEWIDGET_H
-

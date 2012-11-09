@@ -46,7 +46,6 @@ class NoiseReductionWidget : public QWidget
 	Q_OBJECT
 
 public:
-
 	NoiseReductionWidget(QWidget *parent = 0);
 	~NoiseReductionWidget();
 
@@ -70,15 +69,12 @@ signals:
 	void valuesChanged();
 
 protected:
-
 	void changeEvent(QEvent * event);
 
 private:
-
 	Ui::NoiseReductionWidget *ui;
 
 private slots:
-
 	void regularizationEnabledChanged(int value);
 	void fastApproximationEnabledChanged(int value);
 	void chiuEnabledChanged(int value);
@@ -104,8 +100,6 @@ private slots:
 	void setInterpolType(int value);
 	void chiuRadiusChanged(int value);
 	void chiuRadiusChanged(double value);
-
 };
 
 #endif // NOISEREDUCTIONWIDGET_H
-

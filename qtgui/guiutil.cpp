@@ -45,7 +45,6 @@ using std::max;
 
 int ValueToLogSliderVal(float value, const float logLowerBound, const float logUpperBound, const float slider_resolution)
 {
-
 	if (value <= 0)
 		return 0;
 
@@ -53,20 +52,20 @@ int ValueToLogSliderVal(float value, const float logLowerBound, const float logU
 
 	const int val = static_cast<int>((logvalue - logLowerBound) / 
 		(logUpperBound - logLowerBound) * slider_resolution);
+
 	return val;
 }
 
 float LogSliderValToValue(int sliderval, const float logLowerBound, const float logUpperBound, const float slider_resolution)
 {
-
 	float logvalue = (float)sliderval * (logUpperBound - logLowerBound) / 
 		slider_resolution + logLowerBound;
 
 	return powf(10.f, logvalue);
 }
 
-QString pathElidedText(const QFontMetrics &fm, const QString &text, int width, int flags) {
-
+QString pathElidedText(const QFontMetrics &fm, const QString &text, int width, int flags)
+{
 	const QString filename = "/" + QFileInfo(text).fileName();
 	const QString path = QFileInfo(text).absolutePath();
 
@@ -79,13 +78,15 @@ QString pathElidedText(const QFontMetrics &fm, const QString &text, int width, i
 	return fm.elidedText(path, Qt::ElideMiddle, width - fwidth, flags) + filename;
 }
 
-QString getStringAttribute(const char *objectName, const char *attributeName) {
+QString getStringAttribute(const char *objectName, const char *attributeName)
+{
 	std::vector<char> buf(1 << 16, '\0');
 	luxGetStringAttribute(objectName, attributeName, &buf[0], static_cast<unsigned int>(buf.size()));
 	return QString::fromUtf8(&buf[0]);
 }
 
-QString getAttributeDescription(const char *objectName, const char *attributeName) {
+QString getAttributeDescription(const char *objectName, const char *attributeName)
+{
 	std::vector<char> buf(1 << 16, '\0');
 	luxGetAttributeDescription(objectName, attributeName, &buf[0], static_cast<unsigned int>(buf.size()));
 	return QString::fromUtf8(&buf[0]);

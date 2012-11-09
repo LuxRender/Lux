@@ -26,7 +26,6 @@
 #include <QShowEvent>
 #include <QWidget>
 
-
 namespace Ui
 {
 	class AdvancedInfoWidget;
@@ -37,7 +36,6 @@ class AdvancedInfoWidget : public QWidget
 	Q_OBJECT
 
 public:
-
 	AdvancedInfoWidget(QWidget *parent = 0);
 	~AdvancedInfoWidget();
 
@@ -49,8 +47,8 @@ public:
 
 protected:
 	virtual void showEvent(QShowEvent *event);
-private:
 
+private:
 	Ui::AdvancedInfoWidget *ui;
 
 	int m_TM_kernel;
@@ -60,8 +58,6 @@ signals:
 
 private slots:
 
-
 };
 
 #endif // AdvancedInfoWidget_H
-
