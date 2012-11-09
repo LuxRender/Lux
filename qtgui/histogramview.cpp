@@ -21,7 +21,7 @@
  ***************************************************************************/
 
 #include <QImage>
-#include <QPixMap>
+#include <QPixmap>
 
 #include "api.h"
 

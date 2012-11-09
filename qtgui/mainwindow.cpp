@@ -49,7 +49,7 @@
 #include <QMessageBox>
 #include <QMutableListIterator>
 #include <QPair>
-#include <QPixMap>
+#include <QPixmap>
 #include <QSet>
 #include <QSettings>
 #include <QSize>
