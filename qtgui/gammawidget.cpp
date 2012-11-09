@@ -20,13 +20,17 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#include "ui_gamma.h"
-#include "gammawidget.hxx"
-
-#include "mainwindow.hxx"
+#include <QFileDialog>
+#include <QFileInfo>
+#include <QSettings>
+#include <QVariant>
 
 #include "api.h"
+
+#include "gammawidget.hxx"
 #include "guiutil.h"
+#include "mainwindow.hxx"
+#include "ui_gamma.h"
 
 GammaWidget::GammaWidget(QWidget *parent) : QWidget(parent), ui(new Ui::GammaWidget)
 {

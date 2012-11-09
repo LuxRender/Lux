@@ -22,18 +22,19 @@
 
 #include <ctime>
 #include <iostream>
+#include <string>
+#include <vector>
 
+#include <QFileOpenEvent>
 #include <QString>
+#include <QStringList>
 #include <QVector>
-#include <QtGui/QApplication>
 
 #include "api.h"
 
-#include "mainwindow.hxx"
+#include "guiutil.h"
 #include "luxapp.hxx"
 #include "queue.hxx"
-#include "guiutil.h"
-#include "console/commandline.h"
 
 #if defined(WIN32) && !defined(__CYGWIN__) && (_M_IX86_FP >= 2)
 // for stderr redirection

@@ -20,12 +20,13 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#include "ui_noisereduction.h"
-#include "noisereductionwidget.hxx"
-
-#include "mainwindow.hxx"
+#include <QFont>
 
 #include "api.h"
+
+#include "mainwindow.hxx"
+#include "noisereductionwidget.hxx"
+#include "ui_noisereduction.h"
 
 NoiseReductionWidget::NoiseReductionWidget(QWidget *parent) : QWidget(parent), ui(new Ui::NoiseReductionWidget)
 {

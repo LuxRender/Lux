@@ -23,9 +23,9 @@
 #ifndef GAMMAWIDGET_H
 #define GAMMAWIDGET_H
 
-#include <QtGui/QWidget>
 #include <QEvent>
-#include <QtGui/QFileDialog>
+#include <QString>
+#include <QWidget>
 
 #define TORGB_GAMMA_RANGE 5.0f
 

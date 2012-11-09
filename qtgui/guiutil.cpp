@@ -20,17 +20,25 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#include <algorithm>
-#include <math.h>
+#include <cmath>
 #include <vector>
 
-#include "guiutil.h"
-
-#include <QFileInfo>
+#include <QAbstractButton>
+#include <QChar>
+#include <QColor>
 #include <QDateTime>
-#include <QTextLayout>
+#include <QFileInfo>
+#include <QFont>
 #include <QPainter>
 #include <QPushButton>
+#include <QRectF>
+#include <QTextLayout>
+#include <QTextLine>
+#include <QTextOption>
+
+#include "api.h"
+
+#include "guiutil.h"
 
 using std::min;
 using std::max;

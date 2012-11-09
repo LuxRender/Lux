@@ -23,8 +23,10 @@
 #ifndef LIGHTGROUPWIDGET_H
 #define LIGHTGROUPWIDGET_H
 
-#include <QtGui/QWidget>
-#include <QtGui/QColorDialog>
+#include <QColor>
+#include <QEvent>
+#include <QString>
+#include <QWidget>
 
 namespace Ui
 {

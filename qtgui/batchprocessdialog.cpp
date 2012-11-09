@@ -1,8 +1,7 @@
+#include <QFileDialog>
+
 #include "batchprocessdialog.hxx"
 #include "ui_batchprocessdialog.h"
-
-#include <QFileDialog>
-#include <QMetaObject>
 
 BatchProcessDialog::BatchProcessDialog(const QString &startingDir, QWidget *parent) :
     QDialog(parent),

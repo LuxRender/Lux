@@ -20,14 +20,25 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#include "renderview.hxx"
+#include <cmath>
+#include <iostream>
+
+#include <QApplication>
+#include <QClipboard>
+#include <QColor>
+#include <QCursor>
+#include <QGraphicsItem>
+#include <QList>
+#include <QPainter>
+#include <QPen>
+#include <QPixmap>
+#include <QPointF>
+
 #include "api.h"
 #include "error.h"
-#include "guiutil.h"
 
-#include <math.h>
-#include <iostream>
-#include <algorithm>
+#include "guiutil.h"
+#include "renderview.hxx"
 
 using namespace std;
 

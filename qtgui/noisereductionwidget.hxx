@@ -23,7 +23,8 @@
 #ifndef NOISEREDUCTIONWIDGET_H
 #define NOISEREDUCTIONWIDGET_H
 
-#include <QtGui/QWidget>
+#include <QEvent>
+#include <QWidget>
 
 #define GREYC_AMPLITUDE_RANGE 200.0f
 #define GREYC_SHARPNESS_RANGE 2.0f

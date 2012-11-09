@@ -1,5 +1,5 @@
-#include "openexroptionsdialog.hxx"
 #include "ui_openexroptionsdialog.h"
+#include "openexroptionsdialog.hxx"
 
 OpenEXROptionsDialog::OpenEXROptionsDialog(QWidget *parent, const bool halfFloats, const bool depthBuffer,
                                            const int compressionType) :

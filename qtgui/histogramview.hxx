@@ -23,18 +23,10 @@
 #ifndef HISTOGRAMVIEW_H
 #define HISTOGRAMVIEW_H
 
-#include <QtGui/QGraphicsView>
-#include <QtGui/QGraphicsScene>
-#include <QApplication>
-#include <QEvent>
 #include <QGraphicsPixmapItem>
-#include <QWheelEvent>
-#include <QMouseEvent>
-#include <QMatrix>
-#include <QPoint>
-#include <QClipboard>
-
-#include "api.h"
+#include <QGraphicsScene>
+#include <QGraphicsView>
+#include <QWidget>
 
 class HistogramView : public QGraphicsView
 {

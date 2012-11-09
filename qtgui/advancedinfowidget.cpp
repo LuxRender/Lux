@@ -20,13 +20,14 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#include "ui_advancedinfo.h"
-#include "advancedinfowidget.hxx"
-//#include "mainwindow.hxx"
-#include "guiutil.h"
+#include <QString>
+#include <QStringList>
 
-#include <iostream>
-#include <algorithm>
+#include "api.h"
+
+#include "advancedinfowidget.hxx"
+#include "guiutil.h"
+#include "ui_advancedinfo.h"
 
 using namespace std;
 

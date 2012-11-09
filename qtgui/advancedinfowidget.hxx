@@ -23,7 +23,8 @@
 #ifndef ADVANCEDINFOWIDGET_H
 #define ADVANCEDINFOWIDGET_H
 
-#include <QtGui/QWidget>
+#include <QShowEvent>
+#include <QWidget>
 
 
 namespace Ui

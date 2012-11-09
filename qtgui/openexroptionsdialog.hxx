@@ -2,6 +2,7 @@
 #define OPENEXROPTIONSDIALOG_H
 
 #include <QDialog>
+#include <QWidget>
 
 namespace Ui {
     class OpenEXROptionsDialog;

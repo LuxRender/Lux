@@ -20,8 +20,6 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#include "queue.hxx"
-
 #include <QDateTime>
 #include <QDir>
 #include <QFile>
@@ -29,6 +27,8 @@
 #include <QList>
 #include <QModelIndex>
 #include <QTextStream>
+
+#include "queue.hxx"
 
 const QString Queue::defaultGroupName = "Default Queue Group";
 

@@ -20,6 +20,11 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
+#include <QImage>
+#include <QPixMap>
+
+#include "api.h"
+
 #include "histogramview.hxx"
 
 HistogramView::HistogramView(QWidget *parent) : QGraphicsView(parent) {

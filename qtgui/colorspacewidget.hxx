@@ -23,7 +23,7 @@
 #ifndef COLORSPACEWIDGET_H
 #define COLORSPACEWIDGET_H
 
-#include <QtGui/QWidget>
+#include <QWidget>
 
 #define TORGB_XWHITE_RANGE 1.0f
 #define TORGB_YWHITE_RANGE 1.0f

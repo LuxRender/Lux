@@ -23,7 +23,7 @@
 #ifndef HISTOGRAMWIDGET_H
 #define HISTOGRAMWIDGET_H
 
-#include <QtGui/QWidget>
+#include <QWidget>
 
 #include "histogramview.hxx"
 

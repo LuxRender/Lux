@@ -20,15 +20,15 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#include "ui_colorspace.h"
-#include "colorspacewidget.hxx"
+#include <cmath>
 
-#include "mainwindow.hxx"
+#include <QFont>
 
 #include "api.h"
 
-#include <iostream>
-#include <cmath>
+#include "colorspacewidget.hxx"
+#include "mainwindow.hxx"
+#include "ui_colorspace.h"
 
 // colorspacepresets and colorspace whitepoints
 static double colorspace_presets[8][NUM_COLORSPACE_PRESETS] = {

@@ -20,12 +20,12 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#include "ui_histogram.h"
-#include "histogramwidget.hxx"
-
-#include "mainwindow.hxx"
+#include <QFont>
 
 #include "api.h"
+
+#include "histogramwidget.hxx"
+#include "ui_histogram.h"
 
 HistogramWidget::HistogramWidget(QWidget *parent) : QWidget(parent), ui(new Ui::HistogramWidget)
 {

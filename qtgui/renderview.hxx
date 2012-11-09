@@ -25,16 +25,15 @@
 
 #include <algorithm>
 
-#include <QtGui/QGraphicsView>
-#include <QtGui/QGraphicsScene>
-#include <QApplication>
-#include <QEvent>
+#include <QGraphicsItemGroup>
 #include <QGraphicsPixmapItem>
-#include <QWheelEvent>
+#include <QGraphicsScene>
+#include <QGraphicsView>
+#include <QImage>
 #include <QMouseEvent>
-#include <QMatrix>
-#include <QPoint>
-#include <QClipboard>
+#include <QResizeEvent>
+#include <QWheelEvent>
+#include <QWidget>
 
 class RenderView : public QGraphicsView
 {

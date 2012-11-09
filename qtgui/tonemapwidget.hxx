@@ -23,7 +23,8 @@
 #ifndef TONEMAPWIDGET_H
 #define TONEMAPWIDGET_H
 
-#include <QtGui/QWidget>
+#include <QString>
+#include <QWidget>
 
 #define TM_REINHARD_YWA_RANGE 1.0f
 #define TM_REINHARD_PRESCALE_RANGE 8.0f

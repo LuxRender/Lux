@@ -23,7 +23,8 @@
 #ifndef LENSEFFECTSWIDGET_H
 #define LENSEFFECTSWIDGET_H
 
-#include <QtGui/QWidget>
+#include <QEvent>
+#include <QWidget>
 
 #define BLOOMRADIUS_RANGE 1.0f
 #define BLOOMWEIGHT_RANGE 1.0f

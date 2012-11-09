@@ -20,8 +20,9 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#include <QTranslator>
 #include <clocale>
+
+//#include <QTranslator>
 
 #include "luxapp.hxx"
 

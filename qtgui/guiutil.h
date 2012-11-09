@@ -25,12 +25,13 @@
 
 #include <sstream>
 
-#include <QString>
-#include <QImage>
 #include <QFontMetrics>
+#include <QImage>
+#include <QList>
 #include <QMessageBox>
-
-#include "api.h"
+#include <QPair>
+#include <QString>
+#include <QWidget>
 
 template<class T> inline T Clamp(T val, T low, T high) {
 	return val > low ? (val < high ? val : high) : low;

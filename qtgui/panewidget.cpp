@@ -20,10 +20,12 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#include "ui_pane.h"
-#include "panewidget.hxx"
-
 #include <iostream>
+
+#include <QFont>
+
+#include "panewidget.hxx"
+#include "ui_pane.h"
 
 using namespace std;
 

@@ -20,15 +20,19 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#include "ui_lightgroup.h"
-#include "lightgroupwidget.hxx"
+#include <cmath>
 
-#include "mainwindow.hxx"
-#include "guiutil.h"
+#include <QColorDialog>
+#include <QFont>
+#include <QPalette>
+#include <QSettings>
 
 #include "api.h"
 
-#include <cmath>
+#include "lightgroupwidget.hxx"
+#include "guiutil.h"
+#include "mainwindow.hxx"
+#include "ui_lightgroup.h"
 
 LightGroupWidget::LightGroupWidget(QWidget *parent) : QWidget(parent), ui(new Ui::LightGroupWidget)
 {

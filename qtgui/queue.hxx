@@ -23,12 +23,12 @@
 #ifndef QUEUE_H
 #define QUEUE_H
 
+#include <boost/function.hpp>
+
 #include <QPersistentModelIndex>
 #include <QStandardItem>
 #include <QStandardItemModel>
 #include <QString>
-
-#include <boost/function.hpp>
 
 class Queue : public QStandardItemModel
 {

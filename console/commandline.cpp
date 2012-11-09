@@ -20,10 +20,6 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#include "api.h"
-#include "error.h"
-#include "commandline.h"
-
 #include <iostream>
 #include <exception>
 #include <fstream>
@@ -33,6 +29,10 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/program_options.hpp>
 #include <boost/filesystem/operations.hpp>
+
+#include "api.h"
+#include "error.h"
+#include "commandline.h"
 
 using namespace lux;
 namespace po = boost::program_options;

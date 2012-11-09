@@ -20,6 +20,57 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
+#include <cmath>
+#include <ctime>
+#include <string>
+#include <vector>
+
+#include <boost/bind.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
+
+#include <QApplication>
+#include <QClipboard>
+#include <QColor>
+#include <QCompleter>
+#include <QCursor>
+#include <QDateTime>
+#include <QDesktopServices>
+#include <QDir>
+#include <QDialog>
+#include <QFileDialog>
+#include <QFont>
+#include <QFontMetrics>
+#include <QInputDialog>
+#include <QIntValidator>
+#include <QLayoutItem>
+#include <QLineEdit>
+#include <QListIterator>
+#include <QMenu>
+#include <QMessageBox>
+#include <QMutableListIterator>
+#include <QPair>
+#include <QPixMap>
+#include <QSet>
+#include <QSettings>
+#include <QSize>
+#include <QSizePolicy>
+#include <QStringListIterator>
+#include <QTableWidgetItem>
+#include <QTextCharFormat>
+#include <QTextCursor>
+#include <QTextStream>
+#include <QUrl>
+
+#include "error.h"
+
+#include "aboutdialog.hxx"
+#include "batchprocessdialog.hxx"
+#include "lightgroupwidget.hxx"
+#include "guiutil.h"
+#include "mainwindow.hxx"
+#include "openexroptionsdialog.hxx"
+#include "ui_luxrender.h"
+
 #define TAB_ID_RENDER  1
 #define TAB_ID_QUEUE   2
 #define TAB_ID_NETWORK 3
@@ -29,38 +80,6 @@
 #define OUTPUT_TAB_ID_LIGHTGROUP	1
 #define OUTPUT_TAB_ID_REFINE		2
 #define OUTPUT_TAB_ID_ADVANCED		3
-
-#include <cmath>
-#include <ctime>
-
-#include <QProgressDialog>
-#include <QInputDialog>
-
-#include <QList>
-
-#include <QMenu>
-#include <QAction>
-
-#include <QDateTime>
-#include <QTextStream>
-
-#include <QTextLayout>
-#include <QFontMetrics>
-
-#include <QStringListModel>
-#include <QPersistentModelIndex>
-
-#include <boost/bind.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
-
-#include "error.h"
-
-#include "mainwindow.hxx"
-#include "ui_luxrender.h"
-#include "aboutdialog.hxx"
-#include "batchprocessdialog.hxx"
-#include "openexroptionsdialog.hxx"
-#include "guiutil.h"
 
 inline int Floor2Int(float val) {
 	return static_cast<int>(std::floor(val));

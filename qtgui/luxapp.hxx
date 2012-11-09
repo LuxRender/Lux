@@ -23,7 +23,8 @@
 #ifndef LUXAPP_H
 #define LUXAPP_H
 
-#include <QtGui/QApplication>
+#include <QApplication>
+#include <QEvent>
 
 #include "console/commandline.h"
 

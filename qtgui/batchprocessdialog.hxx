@@ -2,6 +2,8 @@
 #define BATCHPROCESSDIALOG_H
 
 #include <QDialog>
+#include <QString>
+#include <QWidget>
 
 namespace Ui {
     class BatchProcessDialog;

@@ -1,15 +1,13 @@
 #ifndef ABOUTDIALOG_H
 #define ABOUTDIALOG_H
 
-#include <QtGui/QDialog>
-#include <QtGui/QGraphicsView>
-#include <QtGui/QGraphicsScene>
-#include <QtGui/QFrame>
-#include <QtGui/QImage>
+#include <QDialog>
+#include <QGraphicsScene>
 #include <QGraphicsTextItem>
+#include <QGraphicsView>
+#include <QMouseEvent>
 #include <QTimer>
-
-#include <iostream>
+#include <QWidget>
 
 using namespace std;
 
