@@ -2088,17 +2088,21 @@ double Film::WriteFilmDataToStream(
 
 bool Film::LoadResumeFilm(const string &filename)
 {
-	// Read the FLM header
-	std::ifstream stream(filename.c_str(), std::ios_base::in | std::ios_base::binary);
-	boost::iostreams::filtering_stream<boost::iostreams::input> in;
-	in.push(boost::iostreams::gzip_decompressor());
-	in.push(stream);
 	const bool isLittleEndian = osIsLittleEndian();
+	LOG(LUX_DEBUG,LUX_NOERROR) << "Loading film (little endian=" << boost::lexical_cast<std::string>(isLittleEndian) << ")";
+	std::ifstream is(filename.c_str(), std::ios_base::in | std::ios_base::binary);
+
+	// Enable compression
+	// TODO Move this below header when implementing FILM VERSION 2
+	boost::iostreams::filtering_stream<boost::iostreams::input> fs;
+	fs.push(boost::iostreams::gzip_decompressor());
+	fs.push(is);
+
 	FlmHeader header;
-	bool headerOk = header.Read(in, isLittleEndian, NULL);
-	stream.close();
-	if (!headerOk)
+	if (!header.Read(fs, isLittleEndian, NULL))
 		return false;
+	is.close();
+
 	xResolution = static_cast<int>(header.xResolution);
 	yResolution = static_cast<int>(header.yResolution);
 	xPixelStart = 0; // by default use full resolution
@@ -2121,7 +2125,6 @@ bool Film::LoadResumeFilm(const string &filename)
 
 	return true;
 }
-
 
 void Film::getHistogramImage(unsigned char *outPixels, u_int width, u_int height, int options)
 {
