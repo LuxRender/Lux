@@ -113,7 +113,6 @@ public:
 	float* GetFloatFramebuffer();
 	float* GetAlphaBuffer();
 	float* GetZBuffer();
-	void SaveFLM(const string& filename);
 	void SaveEXR(const string& filename, bool useHalfFloat, bool includeZBuffer, int compressionType, bool tonemapped);
 
 	//histogram access

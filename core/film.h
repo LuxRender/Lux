@@ -629,7 +629,6 @@ public:
 		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SaveEXR not implemented";
 	}
 	virtual void WriteImage(ImageType type) = 0;
-	virtual void WriteFilm(const string &fname) { WriteResumeFilm(fname); }
 	virtual void CheckWriteOuputInterval() { }
 	// Dade - method useful for transmitting the samples to a client
 	bool TransmitFilm(std::basic_ostream<char> &stream, bool clearBuffers = true, bool transmitParams = false, 

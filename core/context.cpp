@@ -1126,7 +1126,7 @@ void Context::LoadFLM(const string &flmFileName) {
 	luxCurrentScene->SetReady();
 }
 void Context::SaveFLM(const string &flmFileName) {
-	luxCurrentScene->SaveFLM(flmFileName);
+	luxCurrentScene->camera->film->WriteResumeFilm(flmFileName);
 }
 
 // Save current film to OpenEXR image
