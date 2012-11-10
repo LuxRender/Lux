@@ -919,18 +919,8 @@ void Film::CreateBuffers()
 					remove(oldfname.c_str());
 				rename(fname.c_str(), oldfname.c_str());
 			}
-		} else {
-			// Dade - check if the film file exists
-			std::ifstream ifs(fname.c_str(), std::ios_base::in | std::ios_base::binary);
-
-			if(ifs.good()) {
-				// Dade - read the data
-				LOG(LUX_INFO,LUX_NOERROR)<< "Reading film status from file " << fname;
-				numberOfResumedSamples = MergeFilmFromStream(ifs);
-			}
-
-			ifs.close();
-		}
+		} else
+			numberOfResumedSamples = MergeFilmFromFile(fname);
     }
 
 	// Enable convergence test if needed
@@ -1821,6 +1811,18 @@ bool Film::WriteFilmToStream(
 	return true;
 }
 
+double Film::MergeFilmFromFile(const std::string& filename)
+{
+	LOG(LUX_INFO, LUX_NOERROR) << "Reading resume film from file " << filename;
+	std::ifstream ifs(filename.c_str(), std::ios_base::in | std::ios_base::binary);
+	if (!ifs.good())
+	{
+		LOG(LUX_ERROR, LUX_SYSTEM) << "Cannot open file '" << filename << "' for reading resume film";
+		return 0;
+	}
+
+	return MergeFilmFromStream(ifs);
+}
 
 double Film::MergeFilmFromStream(std::basic_istream<char> &stream) {
 	const bool isLittleEndian = osIsLittleEndian();

@@ -635,6 +635,7 @@ public:
 
 	virtual bool WriteFilmToFile(const string &filename);
 	virtual bool WriteFilmToStream(std::basic_ostream<char> &stream, bool clearBuffers = true, bool transmitParams = false, bool useCompression = true, bool directWrite = false);
+	virtual double MergeFilmFromFile(const std::string& filename);
 	virtual double MergeFilmFromStream(std::basic_istream<char> &stream);
 	virtual bool LoadResumeFilm(const string &filename);
 
