@@ -1824,12 +1824,13 @@ double Film::MergeFilmFromFile(const std::string& filename)
 
 double Film::MergeFilmFromStream(std::basic_istream<char> &stream) {
 	const bool isLittleEndian = osIsLittleEndian();
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Receiving film (little endian=" << boost::lexical_cast<std::string>(isLittleEndian) << ")";
 
+	// Enable compression
+	// TODO Move this below header when implementing FILM VERSION 2
 	boost::iostreams::filtering_stream<boost::iostreams::input> in;
 	in.push(boost::iostreams::gzip_decompressor());
 	in.push(stream);
-
-	LOG(LUX_DEBUG,LUX_NOERROR) << "Receiving film (little endian=" << (isLittleEndian ? "true" : "false") << ")";
 
 	// Read header
 	FlmHeader header;
