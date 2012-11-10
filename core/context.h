@@ -192,7 +192,7 @@ public:
 	void UpdateFilmFromNetwork();
 	void UpdateLogFromNetwork();
 	void WriteFilmToStream(std::basic_ostream<char> &stream);
-	void WriteFilmToStream(std::basic_ostream<char> &stream, bool useCompression, bool directWrite);
+	void WriteFilmToStream(std::basic_ostream<char> &stream, bool directWrite);
 	void AddServer(const string &name);
 	void RemoveServer(const RenderingServerInfo &rsi);
 	void RemoveServer(const string &name);

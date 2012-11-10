@@ -1718,7 +1718,7 @@ bool Film::WriteFilmToFile(const string &filename)
 		return false;
 	}
 
-	bool writeSuccessful = WriteFilmToStream(ofs, false, true, true, writeFlmDirect);
+	bool writeSuccessful = WriteFilmToStream(ofs, false, true, writeFlmDirect);
 	ofs.close();
 
 	if (writeSuccessful)
@@ -1743,69 +1743,36 @@ bool Film::WriteFilmToStream(
         std::basic_ostream<char> &stream,
         bool clearBuffers,
 		bool transmitParams,
-		bool useCompression, 
 		bool directWrite)
 {
-	std::streamsize size;
-
-	double totNumberOfSamples = 0;
-
-	bool transmitError = false;
+	bool writeSuccess;
 
 	if (!directWrite) {
 		//std::stringstream ss(std::stringstream::in | std::stringstream::out | std::stringstream::binary);
 		multibuffer_device mbdev;
 		boost::iostreams::stream<multibuffer_device> ms(mbdev);
 
-		totNumberOfSamples = WriteFilmDataToStream(ms, clearBuffers, transmitParams);
-
-		transmitError = !ms.good();
-		
-		ms.seekg(0, BOOST_IOS::beg);
-
-		if (!transmitError) {
-			if (useCompression) {
-				boost::iostreams::filtering_streambuf<boost::iostreams::input> in;
-				in.push(boost::iostreams::gzip_compressor(4));
-				in.push(ms);
-				size = boost::iostreams::copy(in, stream);
-			} else {
-				size = boost::iostreams::copy(ms, stream);
-			}
-			// ignore how the copy to stream goes for now, as
-			// direct writing won't help with that
-		} else {
-			LOG(LUX_SEVERE,LUX_SYSTEM) << "Error while preparing film data for transmission, retrying without buffering.";
+		writeSuccess = WriteFilmDataToStream(ms, clearBuffers, transmitParams);
+		if (writeSuccess)
+		{
+			ms.seekg(0, BOOST_IOS::beg);
+			boost::iostreams::copy(ms, stream);
 		}
+		else
+			LOG(LUX_SEVERE,LUX_SYSTEM) << "Error while preparing film data for transmission, retrying without buffering.";
 	}
 
 	// if the memory buffered method fails it's most likely due
 	// to low memory conditions, so fall back to direct writing
-	if (directWrite || transmitError) {
-		std::streampos stream_startpos = stream.tellp();
-		if (useCompression) {
-			boost::iostreams::filtering_stream<boost::iostreams::output> fs;
-			fs.push(boost::iostreams::gzip_compressor(4));
-			fs.push(stream);
-			totNumberOfSamples = WriteFilmDataToStream(fs, clearBuffers, transmitParams);
-
-			boost::iostreams::flush(fs);
-
-			transmitError = !fs.good();
-		} else {
-			totNumberOfSamples = WriteFilmDataToStream(stream, clearBuffers, transmitParams);
-			transmitError = !stream.good();
-		}
-		size = stream.tellp() - stream_startpos;
-	}
+	if (directWrite || !writeSuccess)
+		writeSuccess = WriteFilmDataToStream(stream, clearBuffers, transmitParams);
 	
-	if (transmitError || !stream.good()) {
-		LOG(LUX_SEVERE,LUX_SYSTEM) << "Error while transmitting film";
+	if (!writeSuccess || !stream.good())
+	{
+		LOG(LUX_SEVERE, LUX_SYSTEM) << "Error while writing film to stream";
 		return false;
-	} else
-		LOG(LUX_DEBUG,LUX_NOERROR) << "Transmitted a film with " << totNumberOfSamples << " samples";
+	}
 
-	LOG(LUX_INFO,LUX_NOERROR) << "Film transmission done (" << (size / 1024) << " Kbytes sent)";
 	return true;
 }
 
@@ -1926,7 +1893,7 @@ double Film::MergeFilmFromStream(std::basic_istream<char> &stream) {
 	return maxTotNumberOfSamples;
 }
 
-double Film::WriteFilmDataToStream(
+bool Film::WriteFilmDataToStream(
 		std::basic_ostream<char> &os,
 		bool clearBuffers,
 		bool transmitParams)
@@ -1934,7 +1901,15 @@ double Film::WriteFilmDataToStream(
 	const bool isLittleEndian = osIsLittleEndian();
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Transmitting film (little endian=" << boost::lexical_cast<std::string>(isLittleEndian) << ")";
 
+	std::streampos osStartPosition = os.tellp();
+
 	ScopedPoolLock lock(contribPool);
+
+	// Enable compression
+	// TODO Move this below header when implementing FILM VERSION 2
+	boost::iostreams::filtering_stream<boost::iostreams::output> fs;
+	fs.push(boost::iostreams::gzip_compressor(4));
+	fs.push(os);
 
 	// Write the header
 	FlmHeader header;
@@ -2029,14 +2004,14 @@ double Film::WriteFilmDataToStream(
 	} else {
 		header.numParams = 0;
 	}
-	header.Write(os, isLittleEndian);
+	header.Write(fs, isLittleEndian);
 
 	// Write each buffer group
 	double totNumberOfSamples = 0.;
 	for (u_int i = 0; i < bufferGroups.size(); ++i) {
 		BufferGroup& bufferGroup = bufferGroups[i];
 		// Write number of samples
-		osWriteLittleEndianDouble(isLittleEndian, os, bufferGroup.numberOfSamples);
+		osWriteLittleEndianDouble(isLittleEndian, fs, bufferGroup.numberOfSamples);
 
 		// Write each buffer
 		for (u_int j = 0; j < bufferConfigs.size(); ++j) {
@@ -2047,15 +2022,15 @@ double Film::WriteFilmDataToStream(
 			for (u_int y = 0; y < pixelBuf->vSize(); ++y) {
 				for (u_int x = 0; x < pixelBuf->uSize(); ++x) {
 					const Pixel &pixel = (*pixelBuf)(x, y);
-					osWriteLittleEndianFloat(isLittleEndian, os, pixel.L.c[0]);
-					osWriteLittleEndianFloat(isLittleEndian, os, pixel.L.c[1]);
-					osWriteLittleEndianFloat(isLittleEndian, os, pixel.L.c[2]);
-					osWriteLittleEndianFloat(isLittleEndian, os, pixel.alpha);
-					osWriteLittleEndianFloat(isLittleEndian, os, pixel.weightSum);
+					osWriteLittleEndianFloat(isLittleEndian, fs, pixel.L.c[0]);
+					osWriteLittleEndianFloat(isLittleEndian, fs, pixel.L.c[1]);
+					osWriteLittleEndianFloat(isLittleEndian, fs, pixel.L.c[2]);
+					osWriteLittleEndianFloat(isLittleEndian, fs, pixel.alpha);
+					osWriteLittleEndianFloat(isLittleEndian, fs, pixel.weightSum);
 				}
-				if (!os.good())
+				if (!fs.good())
 					// error during transmission, abort
-					return 0;
+					return false;
 			}
 		}
 
@@ -2064,12 +2039,18 @@ double Film::WriteFilmDataToStream(
 			" (buffer config size: " << bufferConfigs.size() << ")";
 	}
 
+	flush(fs);
+	int size = os.tellp() - osStartPosition;
+
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Transmitted film with " << totNumberOfSamples << " samples";
+	LOG(LUX_INFO, LUX_NOERROR) << "Film transmission done (" << (size / 1024) << " Kbytes sent)";
+
 	// Clear buffers here if requested,
 	// because the saved contribPool will unlock at end of scope
 	if (clearBuffers)
 		ClearBuffers();
 
-	return totNumberOfSamples;
+	return true;
 }
 
 bool Film::LoadResumeFilm(const string &filename)

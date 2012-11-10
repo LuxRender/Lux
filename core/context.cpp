@@ -1347,8 +1347,8 @@ void Context::WriteFilmToStream(std::basic_ostream<char> &stream) {
 	luxCurrentScene->camera->film->WriteFilmToStream(stream);
 }
 
-void Context::WriteFilmToStream(std::basic_ostream<char> &stream, bool useCompression, bool directWrite) {
-	luxCurrentScene->camera->film->WriteFilmToStream(stream, true, false, useCompression, directWrite);
+void Context::WriteFilmToStream(std::basic_ostream<char> &stream, bool directWrite) {
+	luxCurrentScene->camera->film->WriteFilmToStream(stream, true, false, directWrite);
 }
 
 void Context::UpdateFilmFromNetwork() {

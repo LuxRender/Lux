@@ -634,7 +634,7 @@ public:
 	virtual void CheckWriteOuputInterval() { }
 
 	virtual bool WriteFilmToFile(const string &filename);
-	virtual bool WriteFilmToStream(std::basic_ostream<char> &stream, bool clearBuffers = true, bool transmitParams = false, bool useCompression = true, bool directWrite = false);
+	virtual bool WriteFilmToStream(std::basic_ostream<char> &stream, bool clearBuffers = true, bool transmitParams = false, bool directWrite = false);
 	virtual double MergeFilmFromFile(const std::string& filename);
 	virtual double MergeFilmFromStream(std::basic_istream<char> &stream);
 	virtual bool LoadResumeFilm(const string &filename);
@@ -718,7 +718,7 @@ public:
 	}
 
 protected:
-	double WriteFilmDataToStream(std::basic_ostream<char> &stream, bool clearBuffers = true, bool transmitParams = false);
+	bool WriteFilmDataToStream(std::basic_ostream<char> &stream, bool clearBuffers = true, bool transmitParams = false);
 	// Reject outliers for a tile. Rejected contributions get their variance set to -1.
 	void RejectTileOutliers(const Contribution &contrib, u_int tileIndex, int yTilePixelStart, int yTilePixelEnd);
 	// Gets the extents of a tile, interval is [start, end).

@@ -196,7 +196,7 @@ static bool writeTransmitFilm(string &filename)
 	LOG( LUX_DEBUG,LUX_NOERROR) << "Writing film samples to file '" << tempfile << "'";
 
 	ofstream out(tempfile.c_str(), ios::out | ios::binary);
-	Context::GetActive()->WriteFilmToStream(out, true, false);
+	Context::GetActive()->WriteFilmToStream(out, false);
 	out.close();
 
 	if (out.fail()) {
