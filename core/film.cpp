@@ -1716,167 +1716,6 @@ void FlmHeader::Write(std::basic_ostream<char> &os, bool isLittleEndian) const
 	}
 }
 
-double Film::DoTransmitFilm(
-		std::basic_ostream<char> &os,
-		bool clearBuffers,
-		bool transmitParams)
-{
-	ScopedPoolLock lock(contribPool);
-
-	const bool isLittleEndian = osIsLittleEndian();
-
-	LOG(LUX_DEBUG,LUX_NOERROR)<< "Transmitting film (little endian=" <<(isLittleEndian ? "true" : "false") << ")";
-
-	// Write the header
-	FlmHeader header;
-	header.magicNumber = FLM_MAGIC_NUMBER;
-	header.versionNumber = FLM_VERSION;
-	header.xResolution = xPixelCount;
-	header.yResolution = yPixelCount;
-	header.numBufferGroups = bufferGroups.size();
-	header.numBufferConfigs = bufferConfigs.size();
-	for (u_int i = 0; i < bufferConfigs.size(); ++i)
-		header.bufferTypes.push_back(bufferConfigs[i].type);
-	// Write parameters
-	if (transmitParams) {
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TM_TONEMAPKERNEL, 0));
-
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TM_REINHARD_PRESCALE, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TM_REINHARD_POSTSCALE, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TM_REINHARD_BURN, 0));
-
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TM_LINEAR_SENSITIVITY, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TM_LINEAR_EXPOSURE, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TM_LINEAR_FSTOP, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TM_LINEAR_GAMMA, 0));
-
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TM_CONTRAST_YWA, 0));
-
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_LDR_CLAMP_METHOD, 0));		
-
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TORGB_X_WHITE, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TORGB_Y_WHITE, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TORGB_X_RED, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TORGB_Y_RED, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TORGB_X_GREEN, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TORGB_Y_GREEN, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TORGB_X_BLUE, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TORGB_Y_BLUE, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TORGB_GAMMA, 0));
-
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_CAMERA_RESPONSE_ENABLED, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_STRING, LUX_FILM_CAMERA_RESPONSE_FILE, 0));
-
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_UPDATEBLOOMLAYER, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_DELETEBLOOMLAYER, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_BLOOMRADIUS, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_BLOOMWEIGHT, 0));
-
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_VIGNETTING_ENABLED, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_VIGNETTING_SCALE, 0));
-
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_ABERRATION_ENABLED, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_ABERRATION_AMOUNT, 0));
-
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_UPDATEGLARELAYER, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_DELETEGLARELAYER, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_GLARE_AMOUNT, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_GLARE_RADIUS, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_GLARE_BLADES, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_GLARE_THRESHOLD, 0));
-
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_CHIU_ENABLED, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_CHIU_RADIUS, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_CHIU_INCLUDECENTER, 0));
-
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_ENABLED, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_AMPLITUDE, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_NBITER, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_SHARPNESS, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_ANISOTROPY, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_ALPHA, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_SIGMA, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_FASTAPPROX, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_GAUSSPREC, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_DL, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_DA, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_INTERP, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_TILE, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_BTILE, 0));
-		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_THREADS, 0));
-
-		for(u_int i = 0; i < GetNumBufferGroups(); ++i) {
-			header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_LG_SCALE, i));
-			header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_LG_ENABLE, i));
-			header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_LG_SCALE_RED, i));
-			header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_LG_SCALE_GREEN, i));
-			header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_LG_SCALE_BLUE, i));
-			header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_LG_TEMPERATURE, i));
-
-			header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_STRING, LUX_FILM_LG_NAME, i));
-		}
-
-		header.numParams = header.params.size();
-	} else {
-		header.numParams = 0;
-	}
-	header.Write(os, isLittleEndian);
-
-	// Write each buffer group
-	double totNumberOfSamples = 0.;
-	for (u_int i = 0; i < bufferGroups.size(); ++i) {
-		BufferGroup& bufferGroup = bufferGroups[i];
-		// Write number of samples
-		osWriteLittleEndianDouble(isLittleEndian, os, bufferGroup.numberOfSamples);
-
-		// Write each buffer
-		for (u_int j = 0; j < bufferConfigs.size(); ++j) {
-			Buffer* buffer = bufferGroup.getBuffer(j);
-
-			// Write pixels
-			const BlockedArray<Pixel>* pixelBuf = &(buffer->pixels);
-			for (u_int y = 0; y < pixelBuf->vSize(); ++y) {
-				for (u_int x = 0; x < pixelBuf->uSize(); ++x) {
-					const Pixel &pixel = (*pixelBuf)(x, y);
-					osWriteLittleEndianFloat(isLittleEndian, os, pixel.L.c[0]);
-					osWriteLittleEndianFloat(isLittleEndian, os, pixel.L.c[1]);
-					osWriteLittleEndianFloat(isLittleEndian, os, pixel.L.c[2]);
-					osWriteLittleEndianFloat(isLittleEndian, os, pixel.alpha);
-					osWriteLittleEndianFloat(isLittleEndian, os, pixel.weightSum);
-				}
-				if (!os.good())
-					// error during transmission, abort
-					return 0;
-			}
-		}
-
-		totNumberOfSamples += bufferGroup.numberOfSamples;
-		LOG(LUX_DEBUG,LUX_NOERROR) << "Transmitted " << bufferGroup.numberOfSamples << " samples for buffer group " << i <<
-			" (buffer config size: " << bufferConfigs.size() << ")";
-	}
-
-	// transmitted everything, now we can clear buffers if needed
-	if (clearBuffers) {
-		for (u_int i = 0; i < bufferGroups.size(); ++i) {
-
-			BufferGroup& bufferGroup = bufferGroups[i];
-
-			for (u_int j = 0; j < bufferConfigs.size(); ++j) {
-				Buffer* buffer = bufferGroup.getBuffer(j);
-
-				// Dade - reset the rendering buffer
-				buffer->Clear();
-			}
-
-			// Dade - reset the rendering buffer
-			bufferGroup.numberOfSamples = 0;
-		}
-	}
-
-	return totNumberOfSamples;
-
-}
-
 void Film::WriteResumeFilm(const string &filename)
 {
 	string fullfilename = boost::filesystem::system_complete(filename).string();
@@ -2083,6 +1922,167 @@ double Film::UpdateFilm(std::basic_istream<char> &stream) {
 		delete tmpPixelArrays[i];
 
 	return maxTotNumberOfSamples;
+}
+
+double Film::DoTransmitFilm(
+		std::basic_ostream<char> &os,
+		bool clearBuffers,
+		bool transmitParams)
+{
+	ScopedPoolLock lock(contribPool);
+
+	const bool isLittleEndian = osIsLittleEndian();
+
+	LOG(LUX_DEBUG,LUX_NOERROR)<< "Transmitting film (little endian=" <<(isLittleEndian ? "true" : "false") << ")";
+
+	// Write the header
+	FlmHeader header;
+	header.magicNumber = FLM_MAGIC_NUMBER;
+	header.versionNumber = FLM_VERSION;
+	header.xResolution = xPixelCount;
+	header.yResolution = yPixelCount;
+	header.numBufferGroups = bufferGroups.size();
+	header.numBufferConfigs = bufferConfigs.size();
+	for (u_int i = 0; i < bufferConfigs.size(); ++i)
+		header.bufferTypes.push_back(bufferConfigs[i].type);
+	// Write parameters
+	if (transmitParams) {
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TM_TONEMAPKERNEL, 0));
+
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TM_REINHARD_PRESCALE, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TM_REINHARD_POSTSCALE, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TM_REINHARD_BURN, 0));
+
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TM_LINEAR_SENSITIVITY, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TM_LINEAR_EXPOSURE, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TM_LINEAR_FSTOP, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TM_LINEAR_GAMMA, 0));
+
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TM_CONTRAST_YWA, 0));
+
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_LDR_CLAMP_METHOD, 0));		
+
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TORGB_X_WHITE, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TORGB_Y_WHITE, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TORGB_X_RED, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TORGB_Y_RED, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TORGB_X_GREEN, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TORGB_Y_GREEN, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TORGB_X_BLUE, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TORGB_Y_BLUE, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_TORGB_GAMMA, 0));
+
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_CAMERA_RESPONSE_ENABLED, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_STRING, LUX_FILM_CAMERA_RESPONSE_FILE, 0));
+
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_UPDATEBLOOMLAYER, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_DELETEBLOOMLAYER, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_BLOOMRADIUS, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_BLOOMWEIGHT, 0));
+
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_VIGNETTING_ENABLED, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_VIGNETTING_SCALE, 0));
+
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_ABERRATION_ENABLED, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_ABERRATION_AMOUNT, 0));
+
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_UPDATEGLARELAYER, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_DELETEGLARELAYER, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_GLARE_AMOUNT, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_GLARE_RADIUS, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_GLARE_BLADES, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_GLARE_THRESHOLD, 0));
+
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_CHIU_ENABLED, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_CHIU_RADIUS, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_CHIU_INCLUDECENTER, 0));
+
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_ENABLED, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_AMPLITUDE, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_NBITER, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_SHARPNESS, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_ANISOTROPY, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_ALPHA, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_SIGMA, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_FASTAPPROX, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_GAUSSPREC, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_DL, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_DA, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_INTERP, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_TILE, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_BTILE, 0));
+		header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_NOISE_GREYC_THREADS, 0));
+
+		for(u_int i = 0; i < GetNumBufferGroups(); ++i) {
+			header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_LG_SCALE, i));
+			header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_LG_ENABLE, i));
+			header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_LG_SCALE_RED, i));
+			header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_LG_SCALE_GREEN, i));
+			header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_LG_SCALE_BLUE, i));
+			header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_FLOAT, LUX_FILM_LG_TEMPERATURE, i));
+
+			header.params.push_back(FlmParameter(this, FLM_PARAMETER_TYPE_STRING, LUX_FILM_LG_NAME, i));
+		}
+
+		header.numParams = header.params.size();
+	} else {
+		header.numParams = 0;
+	}
+	header.Write(os, isLittleEndian);
+
+	// Write each buffer group
+	double totNumberOfSamples = 0.;
+	for (u_int i = 0; i < bufferGroups.size(); ++i) {
+		BufferGroup& bufferGroup = bufferGroups[i];
+		// Write number of samples
+		osWriteLittleEndianDouble(isLittleEndian, os, bufferGroup.numberOfSamples);
+
+		// Write each buffer
+		for (u_int j = 0; j < bufferConfigs.size(); ++j) {
+			Buffer* buffer = bufferGroup.getBuffer(j);
+
+			// Write pixels
+			const BlockedArray<Pixel>* pixelBuf = &(buffer->pixels);
+			for (u_int y = 0; y < pixelBuf->vSize(); ++y) {
+				for (u_int x = 0; x < pixelBuf->uSize(); ++x) {
+					const Pixel &pixel = (*pixelBuf)(x, y);
+					osWriteLittleEndianFloat(isLittleEndian, os, pixel.L.c[0]);
+					osWriteLittleEndianFloat(isLittleEndian, os, pixel.L.c[1]);
+					osWriteLittleEndianFloat(isLittleEndian, os, pixel.L.c[2]);
+					osWriteLittleEndianFloat(isLittleEndian, os, pixel.alpha);
+					osWriteLittleEndianFloat(isLittleEndian, os, pixel.weightSum);
+				}
+				if (!os.good())
+					// error during transmission, abort
+					return 0;
+			}
+		}
+
+		totNumberOfSamples += bufferGroup.numberOfSamples;
+		LOG(LUX_DEBUG,LUX_NOERROR) << "Transmitted " << bufferGroup.numberOfSamples << " samples for buffer group " << i <<
+			" (buffer config size: " << bufferConfigs.size() << ")";
+	}
+
+	// transmitted everything, now we can clear buffers if needed
+	if (clearBuffers) {
+		for (u_int i = 0; i < bufferGroups.size(); ++i) {
+
+			BufferGroup& bufferGroup = bufferGroups[i];
+
+			for (u_int j = 0; j < bufferConfigs.size(); ++j) {
+				Buffer* buffer = bufferGroup.getBuffer(j);
+
+				// Dade - reset the rendering buffer
+				buffer->Clear();
+			}
+
+			// Dade - reset the rendering buffer
+			bufferGroup.numberOfSamples = 0;
+		}
+	}
+
+	return totNumberOfSamples;
+
 }
 
 bool Film::LoadResumeFilm(const string &filename)
