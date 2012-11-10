@@ -882,7 +882,7 @@ void RenderFarm::updateFilm(Scene *scene) {
 			compressedStream.seekg(0, BOOST_IOS::beg);
 
 			// Decopress and merge the film
-			const double sampleCount = film->UpdateFilm(compressedStream);
+			const double sampleCount = film->MergeFilmFromStream(compressedStream);
 			if (sampleCount == 0.)
 				throw string("Received 0 samples from server");
 			film->numberOfSamplesFromNetwork += sampleCount;

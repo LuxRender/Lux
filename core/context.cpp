@@ -1126,7 +1126,7 @@ void Context::LoadFLM(const string &flmFileName) {
 	luxCurrentScene->SetReady();
 }
 void Context::SaveFLM(const string &flmFileName) {
-	luxCurrentScene->camera->film->WriteResumeFilm(flmFileName);
+	luxCurrentScene->camera->film->WriteFilmToFile(flmFileName);
 }
 
 // Save current film to OpenEXR image
@@ -1343,12 +1343,12 @@ bool Context::IsRendering() {
 	return luxCurrentRenderer != NULL && luxCurrentRenderer->GetState() == Renderer::RUN;
 }
 
-void Context::TransmitFilm(std::basic_ostream<char> &stream) {
-	luxCurrentScene->camera->film->TransmitFilm(stream);
+void Context::WriteFilmToStream(std::basic_ostream<char> &stream) {
+	luxCurrentScene->camera->film->WriteFilmToStream(stream);
 }
 
-void Context::TransmitFilm(std::basic_ostream<char> &stream, bool useCompression, bool directWrite) {
-	luxCurrentScene->camera->film->TransmitFilm(stream, true, false, useCompression, directWrite);
+void Context::WriteFilmToStream(std::basic_ostream<char> &stream, bool useCompression, bool directWrite) {
+	luxCurrentScene->camera->film->WriteFilmToStream(stream, true, false, useCompression, directWrite);
 }
 
 void Context::UpdateFilmFromNetwork() {

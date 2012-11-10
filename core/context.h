@@ -191,8 +191,8 @@ public:
 	// Dade - network rendering
 	void UpdateFilmFromNetwork();
 	void UpdateLogFromNetwork();
-	void TransmitFilm(std::basic_ostream<char> &stream);
-	void TransmitFilm(std::basic_ostream<char> &stream, bool useCompression, bool directWrite);
+	void WriteFilmToStream(std::basic_ostream<char> &stream);
+	void WriteFilmToStream(std::basic_ostream<char> &stream, bool useCompression, bool directWrite);
 	void AddServer(const string &name);
 	void RemoveServer(const RenderingServerInfo &rsi);
 	void RemoveServer(const string &name);

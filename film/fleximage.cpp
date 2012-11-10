@@ -1184,11 +1184,11 @@ void FlexImageFilm::WriteImage(ImageType type)
 	// save the current status of the film if required
 	// do it here instead of in WriteImage2 to reduce
 	// memory usage
-	// perform before pool locking, as WriteResumeFilm will
+	// perform before pool locking, as WriteFilmToFile will
 	// do its own pool locking internally
 	if (type & IMAGE_FLMOUTPUT) {
 		if (writeResumeFlm)
-			WriteResumeFilm(filename + ".flm");
+			WriteFilmToFile(filename + ".flm");
 	}
 
 	if (!framebuffer || !float_framebuffer || !alpha_buffer || !z_buffer)

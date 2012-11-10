@@ -633,11 +633,9 @@ public:
 	virtual void WriteImage(ImageType type) = 0;
 	virtual void CheckWriteOuputInterval() { }
 
-	virtual bool WriteResumeFilm(const string &filename);
-	// Dade - method useful for transmitting the samples to a client
-	bool TransmitFilm(std::basic_ostream<char> &stream, bool clearBuffers = true, bool transmitParams = false, 
-		bool useCompression = true, bool directWrite = false);
-	virtual double UpdateFilm(std::basic_istream<char> &stream);
+	virtual bool WriteFilmToFile(const string &filename);
+	virtual bool WriteFilmToStream(std::basic_ostream<char> &stream, bool clearBuffers = true, bool transmitParams = false, bool useCompression = true, bool directWrite = false);
+	virtual double MergeFilmFromStream(std::basic_istream<char> &stream);
 	virtual bool LoadResumeFilm(const string &filename);
 
 	virtual void RequestBufferGroups(const vector<string> &bg);
@@ -719,7 +717,7 @@ public:
 	}
 
 protected:
-	double DoTransmitFilm(std::basic_ostream<char> &stream, bool clearBuffers = true, bool transmitParams = false);
+	double WriteFilmDataToStream(std::basic_ostream<char> &stream, bool clearBuffers = true, bool transmitParams = false);
 	// Reject outliers for a tile. Rejected contributions get their variance set to -1.
 	void RejectTileOutliers(const Contribution &contrib, u_int tileIndex, int yTilePixelStart, int yTilePixelEnd);
 	// Gets the extents of a tile, interval is [start, end).

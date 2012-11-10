@@ -139,7 +139,7 @@ int main(int ac, char *av[]) {
 					if(ifs.good()) {
 						// read the data
 						LOG( LUX_INFO,LUX_NOERROR)<< "Merging FLM file " << flmFileName;
-						float newSamples = film->UpdateFilm(ifs);
+						float newSamples = film->MergeFilmFromStream(ifs);
 						if (newSamples <= 0) {
 							LOG( LUX_SEVERE,LUX_NOFILE) << "Error reading FLM file '" << flmFileName << "'";
 							ifs.close();
@@ -164,7 +164,7 @@ int main(int ac, char *av[]) {
 
 			LOG( LUX_INFO,LUX_NOERROR) << "Merged " << mergedCount << " FLM files, writing merged FLM to " << outputFileName;
 
-			film->WriteFilm(outputFileName);
+			film->WriteFilmToFile(outputFileName);
 		} else {
 			LOG( LUX_ERROR,LUX_SYSTEM) << "luxmerger: no input file";
 		}

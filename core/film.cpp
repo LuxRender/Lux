@@ -926,7 +926,7 @@ void Film::CreateBuffers()
 			if(ifs.good()) {
 				// Dade - read the data
 				LOG(LUX_INFO,LUX_NOERROR)<< "Reading film status from file " << fname;
-				numberOfResumedSamples = UpdateFilm(ifs);
+				numberOfResumedSamples = MergeFilmFromStream(ifs);
 			}
 
 			ifs.close();
@@ -1715,7 +1715,7 @@ void FlmHeader::Write(std::basic_ostream<char> &os, bool isLittleEndian) const
 	}
 }
 
-bool Film::WriteResumeFilm(const string &filename)
+bool Film::WriteFilmToFile(const string &filename)
 {
 	string fullfilename = boost::filesystem::system_complete(filename).string();
 	//boost::filesystem::path fullfilenamePath(boost::filesystem::system_complete(filename).string());
@@ -1734,7 +1734,7 @@ bool Film::WriteResumeFilm(const string &filename)
 		return false;
 	}
 
-	bool writeSuccessful = TransmitFilm(filestr,false,true, true, writeFlmDirect);
+	bool writeSuccessful = WriteFilmToStream(filestr,false,true, true, writeFlmDirect);
 
     filestr.close();
 
@@ -1751,7 +1751,7 @@ bool Film::WriteResumeFilm(const string &filename)
 	return writeSuccessful;
 }
 
-bool Film::TransmitFilm(
+bool Film::WriteFilmToStream(
         std::basic_ostream<char> &stream,
         bool clearBuffers,
 		bool transmitParams,
@@ -1769,7 +1769,7 @@ bool Film::TransmitFilm(
 		multibuffer_device mbdev;
 		boost::iostreams::stream<multibuffer_device> ms(mbdev);
 
-		totNumberOfSamples = DoTransmitFilm(ms, clearBuffers, transmitParams);
+		totNumberOfSamples = WriteFilmDataToStream(ms, clearBuffers, transmitParams);
 
 		transmitError = !ms.good();
 		
@@ -1799,13 +1799,13 @@ bool Film::TransmitFilm(
 			boost::iostreams::filtering_stream<boost::iostreams::output> fs;
 			fs.push(boost::iostreams::gzip_compressor(4));
 			fs.push(stream);
-			totNumberOfSamples = DoTransmitFilm(fs, clearBuffers, transmitParams);
+			totNumberOfSamples = WriteFilmDataToStream(fs, clearBuffers, transmitParams);
 
 			boost::iostreams::flush(fs);
 
 			transmitError = !fs.good();
 		} else {
-			totNumberOfSamples = DoTransmitFilm(stream, clearBuffers, transmitParams);
+			totNumberOfSamples = WriteFilmDataToStream(stream, clearBuffers, transmitParams);
 			transmitError = !stream.good();
 		}
 		size = stream.tellp() - stream_startpos;
@@ -1822,7 +1822,7 @@ bool Film::TransmitFilm(
 }
 
 
-double Film::UpdateFilm(std::basic_istream<char> &stream) {
+double Film::MergeFilmFromStream(std::basic_istream<char> &stream) {
 	const bool isLittleEndian = osIsLittleEndian();
 
 	boost::iostreams::filtering_stream<boost::iostreams::input> in;
@@ -1925,7 +1925,7 @@ double Film::UpdateFilm(std::basic_istream<char> &stream) {
 	return maxTotNumberOfSamples;
 }
 
-double Film::DoTransmitFilm(
+double Film::WriteFilmDataToStream(
 		std::basic_ostream<char> &os,
 		bool clearBuffers,
 		bool transmitParams)
