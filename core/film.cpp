@@ -1715,7 +1715,7 @@ void FlmHeader::Write(std::basic_ostream<char> &os, bool isLittleEndian) const
 	}
 }
 
-void Film::WriteResumeFilm(const string &filename)
+bool Film::WriteResumeFilm(const string &filename)
 {
 	string fullfilename = boost::filesystem::system_complete(filename).string();
 	//boost::filesystem::path fullfilenamePath(boost::filesystem::system_complete(filename).string());
@@ -1731,7 +1731,7 @@ void Film::WriteResumeFilm(const string &filename)
 	if(!filestr) {
 		LOG(LUX_ERROR,LUX_SYSTEM) << "Cannot open file '" << tempfilename << "' for writing resume film";
 
-		return;
+		return false;
 	}
 
 	bool writeSuccessful = TransmitFilm(filestr,false,true, true, writeFlmDirect);
@@ -1747,6 +1747,8 @@ void Film::WriteResumeFilm(const string &filename)
 				"Failed to rename new resume film, leaving new resume film as '" << tempfilename << "' (" << e.what() << ")";
 		}
 	}
+
+	return writeSuccessful;
 }
 
 bool Film::TransmitFilm(

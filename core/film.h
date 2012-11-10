@@ -633,7 +633,7 @@ public:
 	virtual void WriteImage(ImageType type) = 0;
 	virtual void CheckWriteOuputInterval() { }
 
-	virtual void WriteResumeFilm(const string &filename);
+	virtual bool WriteResumeFilm(const string &filename);
 	// Dade - method useful for transmitting the samples to a client
 	bool TransmitFilm(std::basic_ostream<char> &stream, bool clearBuffers = true, bool transmitParams = false, 
 		bool useCompression = true, bool directWrite = false);
