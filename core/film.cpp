@@ -280,43 +280,39 @@ struct VignettingFilter
 
 	void operator()()
 	{
-	//for each pixel in the source image
-	for(u_int y = 0; y < yResolution; ++y) {
-		for(u_int x = 0; x < xResolution; ++x) {
-			const float nPx = x * invxRes;
-			const float nPy = y * invyRes;
-			const float xOffset = nPx - 0.5f;
-			const float yOffset = nPy - 0.5f;
-			const float tOffset = sqrtf(xOffset * xOffset + yOffset * yOffset);
+		//for each pixel in the source image
+		for(u_int y = 0; y < yResolution; ++y) {
+			for(u_int x = 0; x < xResolution; ++x) {
+				const float nPx = x * invxRes;
+				const float nPy = y * invyRes;
+				const float xOffset = nPx - 0.5f;
+				const float yOffset = nPy - 0.5f;
+				const float tOffset = sqrtf(xOffset * xOffset + yOffset * yOffset);
 
-			if (aberrationEnabled && aberrationAmount > 0.f) {
-				const float rb_x = (0.5f + xOffset * (1.f + tOffset * aberrationAmount)) * xResolution;
-				const float rb_y = (0.5f + yOffset * (1.f + tOffset * aberrationAmount)) * yResolution;
-				const float g_x =  (0.5f + xOffset * (1.f - tOffset * aberrationAmount)) * xResolution;
-				const float g_y =  (0.5f + yOffset * (1.f - tOffset * aberrationAmount)) * yResolution;
+				if (aberrationEnabled && aberrationAmount > 0.f) {
+					const float rb_x = (0.5f + xOffset * (1.f + tOffset * aberrationAmount)) * xResolution;
+					const float rb_y = (0.5f + yOffset * (1.f + tOffset * aberrationAmount)) * yResolution;
+					const float g_x =  (0.5f + xOffset * (1.f - tOffset * aberrationAmount)) * xResolution;
+					const float g_y =  (0.5f + yOffset * (1.f - tOffset * aberrationAmount)) * yResolution;
 
-				const float redblue[] = {1.f, 0.f, 1.f};
-				const float green[] = {0.f, 1.f, 0.f};
+					const float redblue[] = {1.f, 0.f, 1.f};
+					const float green[] = {0.f, 1.f, 0.f};
 
-				outp[xResolution * y + x] += RGBColor(redblue) * bilinearSampleImage<RGBColor>(rgbpixels, xResolution, yResolution, rb_x, rb_y);
-				outp[xResolution * y + x] += RGBColor(green) * bilinearSampleImage<RGBColor>(rgbpixels, xResolution, yResolution, g_x, g_y);
-			}
+					outp[xResolution * y + x] += RGBColor(redblue) * bilinearSampleImage<RGBColor>(rgbpixels, xResolution, yResolution, rb_x, rb_y);
+					outp[xResolution * y + x] += RGBColor(green) * bilinearSampleImage<RGBColor>(rgbpixels, xResolution, yResolution, g_x, g_y);
+				}
 
-			// Vignetting
-			if(VignettingEnabled && VignetScale != 0.0f) {
-				// normalize to range [0.f - 1.f]
-				const float invNtOffset = 1.f - (fabsf(tOffset) * 1.42f);
-				float vWeight = Lerp(invNtOffset, 1.f - VignetScale, 1.f);
-				for (u_int i = 0; i < 3; ++i)
-					outp[xResolution*y + x].c[i] *= vWeight;
+				// Vignetting
+				if(VignettingEnabled && VignetScale != 0.0f) {
+					// normalize to range [0.f - 1.f]
+					const float invNtOffset = 1.f - (fabsf(tOffset) * 1.42f);
+					float vWeight = Lerp(invNtOffset, 1.f - VignetScale, 1.f);
+					for (u_int i = 0; i < 3; ++i)
+						outp[xResolution*y + x].c[i] *= vWeight;
+				}
 			}
 		}
 	}
-
-
-	}
-
-
 };
 
 // Image Pipeline Function Definitions
