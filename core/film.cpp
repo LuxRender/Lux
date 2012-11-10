@@ -34,21 +34,14 @@
 #include "streamio.h"
 #include "exrio.h"
 
-#include <iostream>
+#include <algorithm>
 #include <fstream>
 
-#include <boost/archive/text_oarchive.hpp>
-#include <boost/archive/text_iarchive.hpp>
-#include <boost/archive/binary_oarchive.hpp>
-#include <boost/archive/binary_iarchive.hpp>
-#include <boost/serialization/split_member.hpp>
-#include <boost/iostreams/filtering_stream.hpp>
-#include <boost/iostreams/filtering_streambuf.hpp>
-#include <boost/iostreams/copy.hpp>
-#include <boost/iostreams/filter/zlib.hpp>
-#include <boost/iostreams/filter/bzip2.hpp>
-#include <boost/iostreams/filter/gzip.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/iostreams/copy.hpp>
+#include <boost/iostreams/filtering_stream.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
+#include <boost/lexical_cast.hpp>
 #include <boost/thread.hpp>
 
 #define cimg_display_type  0

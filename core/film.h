@@ -32,8 +32,6 @@
 #include "luxrays/utils/convtest/convtest.h"
 #include "mcdistribution.h"
 
-#include <boost/serialization/split_member.hpp>
-#include <boost/thread.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/xtime.hpp>
 #include <boost/shared_array.hpp>
