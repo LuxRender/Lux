@@ -1707,34 +1707,32 @@ void FlmHeader::Write(std::basic_ostream<char> &os, bool isLittleEndian) const
 
 bool Film::WriteFilmToFile(const string &filename)
 {
-	string fullfilename = boost::filesystem::system_complete(filename).string();
-	//boost::filesystem::path fullfilenamePath(boost::filesystem::system_complete(filename).string());
-	//string fullfilename = fullfilenamePath.replace_extension("").string();
-	//fullfilename.append("-"+boost::lexical_cast<std::string>((int)luxGetDoubleAttribute("renderer_statistics", "elapsedTime"))+"s"+".flm");
+	const string tempFilename = filename + ".temp";
 
-	// Dade - save the status of the film to the file
 	LOG(LUX_INFO, LUX_NOERROR) << "Writing resume film file";
 
-	const string tempfilename = fullfilename + ".temp";
-
-    std::ofstream filestr(tempfilename.c_str(), std::ios_base::out | std::ios_base::binary);
-	if(!filestr) {
-		LOG(LUX_ERROR,LUX_SYSTEM) << "Cannot open file '" << tempfilename << "' for writing resume film";
-
+    std::ofstream ofs(tempFilename.c_str(), std::ios_base::out | std::ios_base::binary);
+	if(!ofs.good())
+	{
+		LOG(LUX_ERROR, LUX_SYSTEM) << "Cannot open file '" << tempFilename << "' for writing resume film";
 		return false;
 	}
 
-	bool writeSuccessful = WriteFilmToStream(filestr,false,true, true, writeFlmDirect);
+	bool writeSuccessful = WriteFilmToStream(ofs, false, true, true, writeFlmDirect);
+	ofs.close();
 
-    filestr.close();
-
-	if (writeSuccessful) {
+	if (writeSuccessful)
+	{
 		try {
-			boost::filesystem::rename(tempfilename, fullfilename);
-			LOG(LUX_INFO, LUX_NOERROR) << "Resume film written to '" << fullfilename << "'";
+			std::string fullFilename = boost::filesystem::system_complete(filename).string();
+			//boost::filesystem::path fullFilenamePath(boost::filesystem::system_complete(filename).string());
+			//std::string fullFilename = fullFilenamePath.replace_extension("").string();
+			//fullFilename.append("-"+boost::lexical_cast<std::string>((int)luxGetDoubleAttribute("renderer_statistics", "elapsedTime"))+"s"+".flm");
+
+			boost::filesystem::rename(tempFilename, fullFilename);
+			LOG(LUX_INFO, LUX_NOERROR) << "Resume film written to '" << fullFilename << "'";
 		} catch (std::runtime_error &e) {
-			LOG(LUX_ERROR, LUX_SYSTEM) << 
-				"Failed to rename new resume film, leaving new resume film as '" << tempfilename << "' (" << e.what() << ")";
+			LOG(LUX_ERROR, LUX_SYSTEM) << "Failed to rename new resume film, leaving new resume film as '" << tempFilename << "' (" << e.what() << ")";
 		}
 	}
 
