@@ -625,18 +625,20 @@ public:
 		u_int tileIndex);
 	virtual void SetSample(const Contribution *contrib);
 	virtual void AddSampleCount(float count);
+	virtual void GetSampleExtent(int *xstart, int *xend, int *ystart, int *yend) const;
+
 	virtual void SaveEXR(const string &exrFilename, bool useHalfFloats, bool includeZBuf, int compressionType, bool tonemapped) {
 		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SaveEXR not implemented";
 	}
 	virtual void WriteImage(ImageType type) = 0;
 	virtual void CheckWriteOuputInterval() { }
+
+	virtual void WriteResumeFilm(const string &filename);
 	// Dade - method useful for transmitting the samples to a client
 	bool TransmitFilm(std::basic_ostream<char> &stream, bool clearBuffers = true, bool transmitParams = false, 
 		bool useCompression = true, bool directWrite = false);
 	virtual double UpdateFilm(std::basic_istream<char> &stream);
-	virtual void WriteResumeFilm(const string &filename);
 	virtual bool LoadResumeFilm(const string &filename);
-	virtual void GetSampleExtent(int *xstart, int *xend, int *ystart, int *yend) const;
 
 	virtual void RequestBufferGroups(const vector<string> &bg);
 	virtual u_int RequestBuffer(BufferType type, BufferOutputConfig output, const string& filePostfix);
