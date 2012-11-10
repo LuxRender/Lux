@@ -87,7 +87,6 @@ using namespace cimg_library;
 #include <X11/X.h>
 #endif
 
-using namespace boost::iostreams;
 using namespace lux;
 
 
@@ -1578,7 +1577,7 @@ private:
 class FlmHeader {
 public:
 	FlmHeader() {}
-	bool Read(filtering_stream<input> &in, bool isLittleEndian, Film *film );
+	bool Read(boost::iostreams::filtering_stream<boost::iostreams::input> &in, bool isLittleEndian, Film *film );
 	void Write(std::basic_ostream<char> &os, bool isLittleEndian) const;
 
 	int magicNumber;
@@ -1592,7 +1591,7 @@ public:
 	vector<FlmParameter> params;
 };
 
-bool FlmHeader::Read(filtering_stream<input> &in, bool isLittleEndian, Film *film ) {
+bool FlmHeader::Read(boost::iostreams::filtering_stream<boost::iostreams::input> &in, bool isLittleEndian, Film *film ) {
 	// Read and verify magic number and version
 	magicNumber = osReadLittleEndianInt(isLittleEndian, in);
 	if (!in.good()) {
@@ -1776,8 +1775,8 @@ bool Film::TransmitFilm(
 
 		if (!transmitError) {
 			if (useCompression) {
-				filtering_streambuf<input> in;
-				in.push(gzip_compressor(4));
+				boost::iostreams::filtering_streambuf<boost::iostreams::input> in;
+				in.push(boost::iostreams::gzip_compressor(4));
 				in.push(ms);
 				size = boost::iostreams::copy(in, stream);
 			} else {
@@ -1795,12 +1794,12 @@ bool Film::TransmitFilm(
 	if (directWrite || transmitError) {
 		std::streampos stream_startpos = stream.tellp();
 		if (useCompression) {
-			filtering_stream<output> fs;
-			fs.push(gzip_compressor(4));
+			boost::iostreams::filtering_stream<boost::iostreams::output> fs;
+			fs.push(boost::iostreams::gzip_compressor(4));
 			fs.push(stream);
 			totNumberOfSamples = DoTransmitFilm(fs, clearBuffers, transmitParams);
 
-			flush(fs);
+			boost::iostreams::flush(fs);
 
 			transmitError = !fs.good();
 		} else {
@@ -1824,8 +1823,8 @@ bool Film::TransmitFilm(
 double Film::UpdateFilm(std::basic_istream<char> &stream) {
 	const bool isLittleEndian = osIsLittleEndian();
 
-	filtering_stream<input> in;
-	in.push(gzip_decompressor());
+	boost::iostreams::filtering_stream<boost::iostreams::input> in;
+	in.push(boost::iostreams::gzip_decompressor());
 	in.push(stream);
 
 	LOG(LUX_DEBUG,LUX_NOERROR) << "Receiving film (little endian=" << (isLittleEndian ? "true" : "false") << ")";
@@ -2089,8 +2088,8 @@ bool Film::LoadResumeFilm(const string &filename)
 {
 	// Read the FLM header
 	std::ifstream stream(filename.c_str(), std::ios_base::in | std::ios_base::binary);
-	filtering_stream<input> in;
-	in.push(gzip_decompressor());
+	boost::iostreams::filtering_stream<boost::iostreams::input> in;
+	in.push(boost::iostreams::gzip_decompressor());
 	in.push(stream);
 	const bool isLittleEndian = osIsLittleEndian();
 	FlmHeader header;
