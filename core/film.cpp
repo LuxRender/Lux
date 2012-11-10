@@ -1931,11 +1931,10 @@ double Film::WriteFilmDataToStream(
 		bool clearBuffers,
 		bool transmitParams)
 {
-	ScopedPoolLock lock(contribPool);
-
 	const bool isLittleEndian = osIsLittleEndian();
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Transmitting film (little endian=" << boost::lexical_cast<std::string>(isLittleEndian) << ")";
 
-	LOG(LUX_DEBUG,LUX_NOERROR)<< "Transmitting film (little endian=" <<(isLittleEndian ? "true" : "false") << ")";
+	ScopedPoolLock lock(contribPool);
 
 	// Write the header
 	FlmHeader header;
@@ -2065,26 +2064,12 @@ double Film::WriteFilmDataToStream(
 			" (buffer config size: " << bufferConfigs.size() << ")";
 	}
 
-	// transmitted everything, now we can clear buffers if needed
-	if (clearBuffers) {
-		for (u_int i = 0; i < bufferGroups.size(); ++i) {
-
-			BufferGroup& bufferGroup = bufferGroups[i];
-
-			for (u_int j = 0; j < bufferConfigs.size(); ++j) {
-				Buffer* buffer = bufferGroup.getBuffer(j);
-
-				// Dade - reset the rendering buffer
-				buffer->Clear();
-			}
-
-			// Dade - reset the rendering buffer
-			bufferGroup.numberOfSamples = 0;
-		}
-	}
+	// Clear buffers here if requested,
+	// because the saved contribPool will unlock at end of scope
+	if (clearBuffers)
+		ClearBuffers();
 
 	return totNumberOfSamples;
-
 }
 
 bool Film::LoadResumeFilm(const string &filename)
