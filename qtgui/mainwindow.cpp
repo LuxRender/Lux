@@ -796,7 +796,7 @@ void MainWindow::openFiles(const QStringList& files, bool clearQueueFirst)
 			msgBox.exec();
 		}
 
-		if (!renderQueue.getCurrentScene().isValid())
+		if (!renderQueue.isRendering())
 			renderScene(firstAddedSceneIndex);
 	}
 }
@@ -2840,9 +2840,9 @@ void MainWindow::queueContextMenu(const QPoint& widgetPoint)
 				if (isGroup)
 					index = index.child(0,0);
 
-				if (renderQueue.getCurrentScene() == index && m_guiRenderState == RENDERING)
+				if (renderQueue.isRendering() && renderQueue.getCurrentScene() == index && m_guiRenderState == RENDERING)
 					return;
-				else if (renderQueue.getCurrentScene() == index && m_guiRenderState == PAUSED)
+				else if (renderQueue.isRendering() && renderQueue.getCurrentScene() == index && m_guiRenderState == PAUSED)
 					resumeRender();
 				else
 					renderQueue.renderScene(index);

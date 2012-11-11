@@ -33,7 +33,8 @@
 const QString Queue::defaultGroupName = "Default Queue Group";
 
 Queue::Queue(boost::function<void(const QPersistentModelIndex&)> startRenderingCallback, boost::function<void()> stopRenderingCallback)
-	: QStandardItemModel(), startRenderingCallback(startRenderingCallback), stopRenderingCallback(stopRenderingCallback), restartWhenFinished(false)
+	: QStandardItemModel(), startRenderingCallback(startRenderingCallback), stopRenderingCallback(stopRenderingCallback),
+	  restartWhenFinished(false), rendering(false)
 {
 	init();
 }
@@ -90,12 +91,18 @@ void Queue::clear()
 	init();
 }
 
+bool Queue::isRendering()
+{
+	return rendering;
+}
+
 bool Queue::renderScene(const QPersistentModelIndex& sceneIndex)
 {
 	stopRendering();
 
 	if (sceneIndex.isValid())
 	{
+		rendering = true;
 		currentSceneIndex = sceneIndex;
 		incrementPasses(currentSceneIndex);
 		setStatus(currentSceneIndex, "Rendering");
@@ -112,8 +119,7 @@ bool Queue::renderNextScene()
 	if (index.isValid())
 		return renderScene(index);
 
-	stopRendering();
-	currentSceneIndex = QModelIndex();
+	stopRendering(false);
 
 	return false;
 }
@@ -192,11 +198,15 @@ void Queue::init()
 	setHorizontalHeaderLabels(QStringList() << "Name" << "FLM" << "Status" << "Progress" << "Pass #");
 }
 
-void Queue::stopRendering()
+void Queue::stopRendering(bool callback)
 {
-	if (currentSceneIndex.isValid())
+	if (rendering && currentSceneIndex.isValid())
 		setStatus(currentSceneIndex, "Completed " + QDateTime::currentDateTime().toString(Qt::DefaultLocaleShortDate));
-	stopRenderingCallback();
+
+	if (callback)
+		stopRenderingCallback();
+
+	rendering = false;
 }
 
 QPersistentModelIndex Queue::addLxqFile(const QString& lxqFilename)

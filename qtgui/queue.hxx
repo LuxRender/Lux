@@ -41,6 +41,7 @@ public:
 	void remove(const QPersistentModelIndex& index);
 	virtual void clear();
 
+	bool isRendering();
 	bool renderScene(const QPersistentModelIndex& sceneIndex);
 	bool renderNextScene();
 
@@ -69,7 +70,7 @@ public:
 
 private:
 	void init();
-	void stopRendering();
+	void stopRendering(bool callback = true);
 
 	QPersistentModelIndex addLxqFile(const QString& lxqFilename);
 	QPersistentModelIndex addLxsFile(const QString& lxsFilename, QStandardItem* group = NULL, const QString& directory = "");
@@ -90,6 +91,7 @@ private:
 	QPersistentModelIndex currentSceneIndex;
 	QPersistentModelIndex defaultGroupIndex;
 	bool restartWhenFinished;
+	bool rendering;
 
 	static const QString defaultGroupName;
 };
