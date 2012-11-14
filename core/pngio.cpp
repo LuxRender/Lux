@@ -26,6 +26,7 @@
 #include "error.h"
 #include "osfunc.h"
 #include <limits>
+#include <string>
 #include <boost/cstdint.hpp>
 #ifdef LUX_NO_LIBPNG
 #include <FreeImage.h>
@@ -151,6 +152,18 @@ void WritePngImage(int channeltype, bool ubit, bool savezbuf, const string &name
 		} else {
 			FillRow(i, reinterpret_cast<uint8_t*>(bits), xPixelCount, bpp, bmpChannelMapping, output_grayscale, output_alpha, pixels, alpha);
 		}
+	}
+
+	FITAG *tag = FreeImage_CreateTag();
+	if(tag) {
+		std::string tagValue("LuxRender");
+		FreeImage_SetTagType(tag, FIDT_ASCII);
+		FreeImage_SetTagLength(tag, tagValue.size());
+		FreeImage_SetTagCount(tag, tagValue.size());
+		FreeImage_SetTagValue(tag, tagValue.c_str());
+		FreeImage_SetTagKey(tag, “Software”);
+		FreeImage_SetMetadata(FIMD_COMMENTS, dib, FreeImage_GetTagKey(tag), tag);
+		FreeImage_DeleteTag(tag);
 	}
 
 	if (!FreeImage_Save(FIF_PNG, dib, name.c_str(), PNG_DEFAULT)) {
