@@ -161,7 +161,7 @@ void WritePngImage(int channeltype, bool ubit, bool savezbuf, const string &name
 		FreeImage_SetTagLength(tag, tagValue.size());
 		FreeImage_SetTagCount(tag, tagValue.size());
 		FreeImage_SetTagValue(tag, tagValue.c_str());
-		FreeImage_SetTagKey(tag, “Software”);
+		FreeImage_SetTagKey(tag, "Software");
 		FreeImage_SetMetadata(FIMD_COMMENTS, dib, FreeImage_GetTagKey(tag), tag);
 		FreeImage_DeleteTag(tag);
 	}
