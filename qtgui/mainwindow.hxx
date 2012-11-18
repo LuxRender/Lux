@@ -286,6 +286,7 @@ private:
 	QHBoxLayout *statsBoxLayout;
 
 	RenderView *renderView;
+	QString m_CurrentFile;
 
 	enum { NumPanes = 6 };
 

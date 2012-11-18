@@ -889,7 +889,7 @@ void MainWindow::saveFLM()
 		return;
 
 	// add filename suggestion
-	QFileInfo fi(renderQueue.itemFromIndex(renderQueue.getCurrentScene())->text());
+	QFileInfo fi(m_CurrentFile);
 	QString saveDirName = (fi.fileName().isEmpty() || fi.fileName() == "-") ? m_lastOpendir : m_lastOpendir + "/" + fi.baseName() + ".flm";
 	QString flmFileName = QFileDialog::getSaveFileName(this, tr("Choose an FLM file to save to"), saveDirName, tr("LuxRender FLM files (*.flm)"));
 
@@ -991,10 +991,11 @@ void MainWindow::endRender()
 void MainWindow::outputTonemapped()
 {
 	QString filter;
-	QFileInfo fi(renderQueue.itemFromIndex(renderQueue.getCurrentScene())->text());
+	QFileInfo fi(m_CurrentFile);
 	QString fileName = QFileDialog::getSaveFileName(this, tr("Save Tonemapped Image"), m_lastOpendir + "/" + fi.baseName(), tr("PNG Image (*.png);;JPEG Image (*.jpg *.jpeg);;Windows Bitmap (*.bmp);;TIFF Image (*.tif *.tiff)"), &filter);
 	if (fileName.isEmpty())
 		return;
+
 	QString suffix = QFileInfo(fileName).suffix().toLower();
 	if (filter == "PNG Image (*.png)" && suffix != "png")
 		fileName += ".png";
@@ -1017,7 +1018,7 @@ void MainWindow::outputTonemapped()
 
 void MainWindow::outputHDR()
 {
-	QFileInfo fi(renderQueue.itemFromIndex(renderQueue.getCurrentScene())->text());
+	QFileInfo fi(m_CurrentFile);
 	QString fileName = QFileDialog::getSaveFileName(this, tr("Save High Dynamic Range Image"), m_lastOpendir + "/" + fi.baseName(), tr("OpenEXR Image (*.exr)"));
 	if (fileName.isEmpty())
 		return;
@@ -1054,7 +1055,7 @@ void MainWindow::outputBufferGroupsTonemapped()
 {
 	// Where should these be output
 	QString filter;
-	QFileInfo fi(renderQueue.itemFromIndex(renderQueue.getCurrentScene())->text());
+	QFileInfo fi(m_CurrentFile);
 	QString fileName = QFileDialog::getSaveFileName(this, tr("Save Tonemapped Image"), m_lastOpendir + "/" + fi.baseName(), tr("PNG Image (*.png);;JPEG Image (*.jpg *.jpeg);;Windows Bitmap (*.bmp);;TIFF Image (*.tif *.tiff)"), &filter);
 	if (fileName.isEmpty())
 		return;
@@ -1362,6 +1363,7 @@ void MainWindow::endRenderingSession(bool abort)
 			m_engineThread->wait();
 		delete m_engineThread;
 		m_engineThread = NULL;
+		m_CurrentFile.clear();
 		changeRenderState(WAITING);
 		renderView->setLogoMode ();
 	}
@@ -1825,6 +1827,7 @@ void MainWindow::viewportChanged() {
 
 void MainWindow::setCurrentFile(const QString& filename)
 {
+	m_CurrentFile = filename;
 	setWindowModified(false);
 	QString showName;
 
