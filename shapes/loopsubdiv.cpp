@@ -476,7 +476,7 @@ void LoopSubdiv::ApplyDisplacementMap(const vector<SDVertex *> verts) const
 				face = face->nextFace(v->P);
 			} while (face != v->startFace);
 		}
-		dl = -(dl * displacementMapScale / nf + displacementMapOffset);
+		dl = (dl * displacementMapScale / nf + displacementMapOffset);
 		// Average the displacement
 		displacement *= dl;
 
