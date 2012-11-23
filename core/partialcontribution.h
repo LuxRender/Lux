@@ -30,6 +30,22 @@
 
 namespace lux
 {
+struct ContextSingle
+{
+	ContextSingle(const SpectrumWavelengths &sw_)
+		:sw(sw_),
+		single(sw.single)
+	{
+	}
+	~ContextSingle()
+	{
+		sw.single = single;
+	}
+
+	const SpectrumWavelengths& sw;
+	bool single;
+};
+
 class PartialContribution {
 	struct contrib
 	{
@@ -51,13 +67,23 @@ public:
 
 	void Add(const SpectrumWavelengths &sw, SWCSpectrum L, u_int group, float weight)
 	{
-		AddUnFiltered(sw, L, group, L.Filter(sw) * weight);
+		AddUnFiltered(sw, L, group, L.Filter(sw) * weight, sw.single);
+	}
+
+	void Add(const SpectrumWavelengths &sw, SWCSpectrum L, u_int group, float weight, bool single)
+	{
+		AddUnFiltered(sw, L, group, L.Filter(sw) * weight, single);
 	}
 
 	void AddUnFiltered(const SpectrumWavelengths &sw, SWCSpectrum L, u_int group, float V)
 	{
+		AddUnFiltered(sw, L, group, V, sw.single);
+	}
+
+	void AddUnFiltered(const SpectrumWavelengths &sw, SWCSpectrum L, u_int group, float V, bool single)
+	{
 		contrib *c;
-		if(!sw.single)
+		if(!single)
 		{
 			c = &vecNotSingle[group];
 		}
@@ -65,6 +91,9 @@ public:
 		{
 			c = &vecSingle[group];
 		}
+
+		ContextSingle ctx(sw);
+		sw.single = single;
 
 		c->L += L;
 		c->V += V;
@@ -79,6 +108,14 @@ public:
 			float alpha,
 			u_int bufferId,
 			float weight=1.f);
+
+	static XYZColor toXYZColor(const SpectrumWavelengths &sw, SWCSpectrum &s, bool single)
+	{
+		ContextSingle ctx(sw);
+
+		sw.single = single;
+		return XYZColor(sw, s);
+	}
 
 private:
 	void SplatW(

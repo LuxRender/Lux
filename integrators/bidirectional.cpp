@@ -60,6 +60,7 @@ public:
 	BxDFType flags;
 	Vector wi, wo;
 	Point p;
+	bool single;
 };
 
 // Bidirectional Method Definitions
@@ -226,7 +227,7 @@ bool BidirIntegrator::EvalPath(const Scene &scene, const Sample &sample,
 	vector<BidirVertex> &eye, u_int nEye,
 	vector<BidirVertex> &light, u_int nLight,
 	float pdfLightDirect, bool isLightDirect, float *weight,
-	SWCSpectrum *L) const
+	SWCSpectrum *L, bool &single) const
 {
 	static const float epsilon = MachineEpsilon::E(1.f);
 	// If each path has at least 1 vertex, connect them
@@ -237,6 +238,16 @@ bool BidirIntegrator::EvalPath(const Scene &scene, const Sample &sample,
 	// Be carefull, eye and light last vertex can be modified here
 	BidirVertex &eyeV(eye[nEye - 1]);
 	BidirVertex &lightV(light[nLight - 1]);
+
+	// Locally revert the single flag
+	// This function may change it (by doing the bidirectional connections) and
+	// this have an influence on future evaluation of the single flag.
+	//
+	// This context manager ensure that the flag will be restored to its
+	// current state at the end of the function
+	ContextSingle ctx(sw);
+	sw.single = false;
+
 	// Check Connectability
 	eyeV.flags = BxDFType(~BSDF_SPECULAR);
 	const Vector ewi(Normalize(lightV.p - eyeV.p));
@@ -322,6 +333,11 @@ bool BidirIntegrator::EvalPath(const Scene &scene, const Sample &sample,
 	// return back some eye data
 	eyeV.wi = ewi;
 	eyeV.d2 = d2;
+
+	// The state depends on the state of both vertices + the flag of the F
+	// function evaluation (which is stored on sw.single)
+	single = sw.single || eyeV.single || lightV.single;
+
 	return true;
 }
 
@@ -346,8 +362,9 @@ bool BidirIntegrator::GetDirectLight(const Scene &scene, const Sample &sample,
 		vL.dAWeight = -vL.dAWeight;
 	ePdfDirect *= directWeight;
 	vL.flux = SWCSpectrum(1.f / directWeight);
+	bool single; // TODO: where is this used
 	if (!EvalPath(scene, sample, eyePath, length, lightPath, 1,
-		ePdfDirect, true, weight, Ld))
+		ePdfDirect, true, weight, Ld, single))
 		return false;
 	return true;
 }
@@ -389,6 +406,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 	eye0.coso = AbsDot(eye0.wo, eye0.bsdf->ng);
 	// Light path cannot intersect camera (FIXME)
 	eye0.dARWeight = 0.f;
+	eye0.single = sw.single;
 	u_int nEye = 1;
 
 	// Do eye vertex direct lighting
@@ -405,6 +423,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 			lightPathStrategy->Pdf(scene, light), dPdf, &Ld,
 			&dWeight)) {
 			if (light->IsEnvironmental()) {
+				// Here sw.single is correct
 				if (eye0.EyeConnect(sample, XYZColor(sw, Ld),
 					0.f, INFINITY, dWeight, lightBufferId,
 					light->group))
@@ -526,6 +545,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 			v.dARWeight = vp.pdfR * vp.tPdfR / vp.d2;
 			if (!scattered)
 				v.dARWeight *= v.coso;
+			v.single = sw.single;
 			++nEye;
 
 			// Test intersection with a light source
@@ -624,8 +644,12 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 	}
 	const float d = sqrtf(eye0.d2);
 
+
 	// Choose light
 	for (u_int l = 0; l < pathSamplingCount; ++l) {
+		// initialise a new sw, to restore the single flag
+		sw.single = false;
+
 		float component = sample.sampler->GetOneD(sample,
 			lightNumOffset, l);
 		float lPdf;
@@ -657,11 +681,13 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 			// Initialize tPdf and tPdfR in case of multiple paths
 			light0.tPdf = 1.f;
 			light0.tPdfR = 1.f;
+			light0.single = sw.single;
 
 			// Trick to tell subsequent functions that the light is delta
 			if (light->IsDeltaLight())
 				light0.dAWeight = -light0.dAWeight;
 			nLight = 1;
+
 
 			// Connect eye subpath to light vertex
 			// Go through all eye vertices
@@ -683,15 +709,16 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 					const float edAWeight = vE.dAWeight;
 					const Vector ewi(vE.wi);
 					const float ed2 = vE.d2;
+					bool single;
 					if (EvalPath(scene, sample, eyePath,
 						j + 1, lightPath, nLight,
 						directPdf, false, &weight,
-						&Ll)) {
+						&Ll, single)) {
 						if (j > 0) {
-							partialContribution.Add(sw, Ll, lightGroup, weight);
+							partialContribution.Add(sw, Ll, lightGroup, weight, single);
 							++nrContribs;
 						} else if (vE.EyeConnect(sample,
-							XYZColor(sw, Ll),
+							PartialContribution::toXYZColor(sw, Ll, single),
 							light->IsEnvironmental() ? 0.f : 1.f,
 							light->IsEnvironmental() ? INFINITY : sqrtf(vE.d2),
 							weight, lightBufferId,
@@ -754,6 +781,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 					v.cosi = AbsDot(v.wi, v.bsdf->ng);
 					v.tPdfR *= spdfR;
 					v.flux /= spdf;
+					v.single = sw.single;
 					++nLight;
 
 					vp.tPdf *= spdf;
@@ -785,6 +813,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 							const float edAWeight = vE.dAWeight;
 							const Vector ewi(vE.wi);
 							const float ed2 = vE.d2;
+							bool single;
 							if (EvalPath(scene,
 								sample, eyePath,
 								j + 1,
@@ -792,12 +821,12 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 								nLight,
 								lightDirectPdf,
 								false, &weight,
-								&Ll)) {
+								&Ll, single)) {
 								if (j > 0) {
-									partialContribution.Add(sw, Ll, lightGroup, weight);
+									partialContribution.Add(sw, Ll, lightGroup, weight, single);
 									++nrContribs;
 								} else if (eye0.EyeConnect(sample,
-									XYZColor(sw, Ll),
+									PartialContribution::toXYZColor(sw, Ll, single),
 									1.f, sqrtf(eye0.d2),
 									weight, lightBufferId,
 									lightGroup))

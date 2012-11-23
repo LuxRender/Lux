@@ -39,6 +39,8 @@ namespace lux
 			u_int bufferId,
 			float weight)
 	{
+		ContextSingle ctx(sw);
+
 		sw.single = true;
 		SplatW(sw, sample, vecSingle, xl, yl, d, alpha, bufferId, weight);
 
