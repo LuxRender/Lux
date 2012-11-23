@@ -44,7 +44,8 @@ class PartialContribution {
 
 public:
 	PartialContribution(const u_int nGroups)
-		:vec(nGroups)
+		:vecNotSingle(nGroups),
+		 vecSingle(nGroups)
 	{
 	}
 
@@ -55,8 +56,18 @@ public:
 
 	void AddUnFiltered(const SpectrumWavelengths &sw, SWCSpectrum L, u_int group, float V)
 	{
-		vec[group].L += L;
-		vec[group].V += V;
+		contrib *c;
+		if(!sw.single)
+		{
+			c = &vecNotSingle[group];
+		}
+		else
+		{
+			c = &vecSingle[group];
+		}
+
+		c->L += L;
+		c->V += V;
 	}
 
 	void Splat(
@@ -70,7 +81,19 @@ public:
 			float weight=1.f);
 
 private:
-	std::vector<contrib> vec;
+	void SplatW(
+			const SpectrumWavelengths &sw,
+			const Sample &sample,
+			vector<contrib> &vec,
+			float xl,
+			float yl,
+			float d,
+			float alpha,
+			u_int bufferId,
+			float weight=1.f);
+
+	std::vector<contrib> vecNotSingle;
+	std::vector<contrib> vecSingle;
 };
 }
 #endif

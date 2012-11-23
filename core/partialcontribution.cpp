@@ -39,6 +39,25 @@ namespace lux
 			u_int bufferId,
 			float weight)
 	{
+		sw.single = true;
+		SplatW(sw, sample, vecSingle, xl, yl, d, alpha, bufferId, weight);
+
+		sw.single = false;
+		SplatW(sw, sample, vecNotSingle, xl, yl, d, alpha, bufferId, weight);
+	}
+
+	void PartialContribution::SplatW(
+			const SpectrumWavelengths &sw,
+			const Sample &sample,
+			vector<contrib> &vec,
+			float xl,
+			float yl,
+			float d,
+			float alpha,
+			u_int bufferId,
+			float weight)
+
+	{
 		const u_int nGroups = vec.size();
 		for (u_int i = 0; i < nGroups; ++i) {
 			if (!vec[i].L.Black())
@@ -48,5 +67,4 @@ namespace lux
 				color * weight, alpha, d, vec[i].V, bufferId, i);
 		}
 	}
-
 }
