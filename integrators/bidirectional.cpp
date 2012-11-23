@@ -30,6 +30,7 @@
 #include "paramset.h"
 #include "dynload.h"
 #include "luxrays/core/geometry/raybuffer.h"
+#include "core/partialcontribution.h"
 
 using namespace lux;
 
@@ -367,8 +368,8 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 	if (numberOfLights == 0)
 		return nrContribs;
 	const SpectrumWavelengths &sw(sample.swl);
-	vector<SWCSpectrum> vecL(nGroups, SWCSpectrum(0.f));
-	vector<float> vecV(nGroups, 0.f);
+
+	PartialContribution partialContribution(nGroups);
 	float alpha = 1.f;
 
 	// Sample eye subpath origin
@@ -498,10 +499,8 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 					const float w = WeightPath(eyePath,
 						nEye + 1, path, 0,
 						ePdfDirect, false);
-					const u_int eGroup = light->group;
 					Le /= w;
-					vecV[eGroup] += Le.Filter(sw) / w;
-					vecL[eGroup] += Le;
+					partialContribution.Add(sw, Le, light->group, 1.0f / w);
 					++nrContribs;
 				}
 				if (nEye == 1) {
@@ -553,10 +552,8 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 				vector<BidirVertex> path(0);
 				const float w = WeightPath(eyePath, nEye, path,
 					0, ePdfDirect, false);
-				const u_int eGroup = isect.arealight->group;
 				Ll /= w;
-				vecV[eGroup] += Ll.Filter(sw) / w;
-				vecL[eGroup] += Ll;
+				partialContribution.Add(sw, Ll, isect.arealight->group, 1.0f / w);
 				++nrContribs;
 			}
 
@@ -574,9 +571,9 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 					directLight, directData[1], directData[2],
 					portal, lightPathStrategy->Pdf(scene,
 					directLight), dPdf, &Ld, &dWeight)) {
-					vecL[directLight->group] +=Ld;
-					vecV[directLight->group] += Ld.Filter(sw) *
-						dWeight;
+
+					partialContribution.Add(sw, Ld, directLight->group, dWeight);
+
 					++nrContribs;
 				}
 				directData += 3;
@@ -666,9 +663,6 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 				light0.dAWeight = -light0.dAWeight;
 			nLight = 1;
 
-			SWCSpectrum &L(vecL[lightGroup]);
-			float &variance(vecV[lightGroup]);
-
 			// Connect eye subpath to light vertex
 			// Go through all eye vertices
 			if (light0.bsdf->NumComponents(BxDFType(~BSDF_SPECULAR)) != 0) {
@@ -694,9 +688,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 						directPdf, false, &weight,
 						&Ll)) {
 						if (j > 0) {
-							L += Ll;
-							variance += weight *
-								Ll.Filter(sw);
+							partialContribution.Add(sw, Ll, lightGroup, weight);
 							++nrContribs;
 						} else if (vE.EyeConnect(sample,
 							XYZColor(sw, Ll),
@@ -802,8 +794,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 								false, &weight,
 								&Ll)) {
 								if (j > 0) {
-									L += Ll;
-									variance += weight * Ll.Filter(sw);
+									partialContribution.Add(sw, Ll, lightGroup, weight);
 									++nrContribs;
 								} else if (eye0.EyeConnect(sample,
 									XYZColor(sw, Ll),
@@ -878,13 +869,8 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 		float xl, yl;
 		if (!sample.camera->GetSamplePosition(eyePath[0].p, eyePath[0].wi, d, &xl, &yl))
 			return nrContribs;
-		for (u_int i = 0; i < nGroups; ++i) {
-			if (!vecL[i].Black())
-				vecV[i] /= vecL[i].Filter(sw);
-			XYZColor color(sw, vecL[i]);
-			sample.AddContribution(xl, yl,
-				color, alpha, d, vecV[i], eyeBufferId, i);
-		}
+
+		partialContribution.Splat(sw, sample, xl, yl, d, alpha, eyeBufferId);
 	}
 	return nrContribs;
 }

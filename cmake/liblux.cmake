@@ -64,6 +64,7 @@ SET(lux_core_src
 	core/color.cpp
 	core/context.cpp
 	core/contribution.cpp
+	core/partialcontribution.cpp
 	core/dynload.cpp
 	core/exrio.cpp
 	core/filedata.cpp
@@ -486,6 +487,7 @@ SET(lux_core_hdr
 	core/color.h
 	core/context.h
 	core/contribution.h
+	core/partialcontribution.h
 	core/dynload.h
 	core/error.h
 	core/exrio.h
