@@ -317,6 +317,7 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console)
 	// Queue tab
 	ui->tree_queue->setModel(&renderQueue);
 	ui->tree_queue->setContextMenuPolicy(Qt::CustomContextMenu);
+	ui->tree_queue->header()->setMovable(false);
 	ui->checkBox_overrideWriteFlm->setTristate();
 	ui->checkBox_overrideWriteFlm->setCheckState(Qt::PartiallyChecked);
 
