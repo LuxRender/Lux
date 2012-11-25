@@ -1767,14 +1767,11 @@ bool Film::WriteFilmToStream(
 
 double Film::MergeFilmFromFile(const std::string& filename)
 {
-	LOG(LUX_INFO, LUX_NOERROR) << "Reading resume film from file " << filename;
 	std::ifstream ifs(filename.c_str(), std::ios_base::in | std::ios_base::binary);
 	if (!ifs.good())
-	{
-		LOG(LUX_ERROR, LUX_SYSTEM) << "Cannot open file '" << filename << "' for reading resume film";
 		return 0;
-	}
 
+	LOG(LUX_INFO, LUX_NOERROR) << "Reading resume film from file " << filename;
 	return MergeFilmFromStream(ifs);
 }
 
