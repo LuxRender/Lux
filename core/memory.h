@@ -39,6 +39,7 @@
 #  define memalign(a,b) malloc(b)
 #endif
 
+#include <vector>
 #include <boost/serialization/split_member.hpp>
 #include <boost/cstdint.hpp>
 using boost::int8_t;
@@ -276,7 +277,7 @@ private:
 	size_t curBlockPos, blockSize, beginBlockPos, endBlockPos;
 
 	unsigned int currentBlockIdx, beginBlockIdx, endBlockIdx;
-	vector<int8_t *> blocks;
+	std::vector<int8_t *> blocks;
 };
 #define ARENA_ALLOC(ARENA,T)  new ((ARENA).Alloc(sizeof(T))) T
 
