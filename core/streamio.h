@@ -96,6 +96,7 @@ public:
 	}
 
 	void close() {
+		sync();
 		device.close();
 	}
 
@@ -114,7 +115,6 @@ protected:
 		std::streamsize bytes_transferred = device.read(&get_buffer[0] + putback_max, get_buffer.size() - putback_max);
 		if (bytes_transferred < 0)
 			return traits_type::eof();
-
 		this->setg(&get_buffer[0], &get_buffer[0] + putback_max,
 			&get_buffer[0] + putback_max + bytes_transferred);
 
