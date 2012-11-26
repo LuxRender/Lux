@@ -66,7 +66,7 @@ using boost::asio::ip::tcp;
 //#define USE_SOCKET_DEVICE 1
 
 #ifdef USE_SOCKET_DEVICE
-//typedef boost::iostreams::stream<socket_device> socket_stream;
+//typedef boost::iostreams::stream<socket_device> socket_stream_t;
 //typedef socket_stream socket_stream_t;
 typedef device_iostream<socket_device> socket_stream_t;
 #else

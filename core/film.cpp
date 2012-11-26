@@ -43,6 +43,7 @@
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/thread.hpp>
+#include <boost/math/special_functions/bessel.hpp>
 
 #define cimg_display_type  0
 
@@ -223,21 +224,143 @@ struct BloomFilter
 				float sumWt = 0.f;
 				for (u_int by = y0; by <= y1; ++by) {
 					for (u_int bx = x0; bx <= x1; ++bx) {
-						if (bx == x && by == y)
-							continue;
 						// Accumulate bloom from pixel $(bx,by)$
 						const u_int dist2 = (x - bx) * (x - bx) + (y - by) * (y - by);
-						if (dist2 < bloomWidth * bloomWidth) {
-							u_int bloomOffset = bx + by * xResolution;
-							float wt = bloomFilter[dist2];
-							sumWt += wt;
-							bloomImage[offset].AddWeighted(wt, xyzpixels[bloomOffset]);
-						}
+						u_int bloomOffset = bx + by * xResolution;
+						const float wt = bloomFilter[dist2];
+						if (wt == 0.f)
+							continue;
+						sumWt += wt;
+						bloomImage[offset].AddWeighted(wt, xyzpixels[bloomOffset]);
 					}
 				}
 				bloomImage[offset] /= sumWt;
 			}
 	//				prog.Update(); //NOBOOK //intermediate crashfix until imagepipelinerefactor is done - Jens
+		}
+	}
+};
+
+struct BloomFilterX
+{
+	u_int const xResolution;
+	u_int const yResolution;
+	u_int const bloomWidth;
+	vector<float> const &bloomFilter;
+	XYZColor * const bloomImage;
+	XYZColor * const xyzpixels;
+
+	BloomFilterX(
+		u_int const xResolution_,
+		u_int const yResolution_,
+		u_int const bloomWidth_,
+		vector<float> const &bloomFilter_,
+		XYZColor * const bloomImage_,
+		XYZColor * const xyzpixels_
+	):
+		xResolution(xResolution_),
+		yResolution(yResolution_),
+		bloomWidth(bloomWidth_),
+		bloomFilter(bloomFilter_),
+		bloomImage(bloomImage_),
+		xyzpixels(xyzpixels_)
+	{}
+
+	void operator()()
+	{
+		// working row
+		std::vector<XYZColor> row(xResolution, XYZColor(0.f));
+		// Apply bloom filter to image pixels
+		for (u_int y = 0; y < yResolution; ++y) {
+			for (u_int x = 0; x < xResolution; ++x) {
+				// Compute bloom for pixel _(x,y)_
+				// Compute extent of pixels contributing bloom
+				const u_int x0 = max(x, bloomWidth) - bloomWidth;
+				const u_int x1 = min(x + bloomWidth, xResolution - 1);
+				const u_int y0 = max(y, bloomWidth) - bloomWidth;
+				const u_int y1 = min(y + bloomWidth, yResolution - 1);
+				const u_int offset = y * xResolution + x;
+				float sumWt = 0.f;
+				const u_int by = y;
+				XYZColor &pixel(row[x]);
+				for (u_int bx = x0; bx <= x1; ++bx) {
+					// Accumulate bloom from pixel $(bx,by)$
+					const u_int dist2 = (x - bx) * (x - bx) + (y - by) * (y - by);
+					const float wt = bloomFilter[dist2];
+					if (wt == 0.f)
+						continue;
+					u_int bloomOffset = bx + by * xResolution;
+					sumWt += wt;
+					pixel.AddWeighted(wt, xyzpixels[bloomOffset]);
+				}
+				pixel /= sumWt;
+			}
+			// copy working row back into bloomImage
+			for (u_int x = 0; x < xResolution; ++x) {
+				bloomImage[y * xResolution + x] = row[x]; 
+			}
+		}
+	}
+};
+
+struct BloomFilterY
+{
+	u_int const xResolution;
+	u_int const yResolution;
+	u_int const bloomWidth;
+	vector<float> const &bloomFilter;
+	XYZColor * const bloomImage;
+	XYZColor * const xyzpixels;
+
+	BloomFilterY(
+		u_int const xResolution_,
+		u_int const yResolution_,
+		u_int const bloomWidth_,
+		vector<float> const &bloomFilter_,
+		XYZColor * const bloomImage_,
+		XYZColor * const xyzpixels_
+	):
+		xResolution(xResolution_),
+		yResolution(yResolution_),
+		bloomWidth(bloomWidth_),
+		bloomFilter(bloomFilter_),
+		bloomImage(bloomImage_),
+		xyzpixels(xyzpixels_)
+	{}
+
+	void operator()()
+	{
+		// working column
+		std::vector<XYZColor> col(yResolution, XYZColor(0.f));
+		// Apply bloom filter to image pixels
+		for (u_int x = 0; x < xResolution; ++x) {
+			for (u_int y = 0; y < yResolution; ++y) {
+				// Compute bloom for pixel _(x,y)_
+				// Compute extent of pixels contributing bloom
+				const u_int x0 = max(x, bloomWidth) - bloomWidth;
+				const u_int x1 = min(x + bloomWidth, xResolution - 1);
+				const u_int y0 = max(y, bloomWidth) - bloomWidth;
+				const u_int y1 = min(y + bloomWidth, yResolution - 1);
+				const u_int offset = y * xResolution + x;
+				float sumWt = 0.f;
+				XYZColor &pixel(col[y]);
+				for (u_int by = y0; by <= y1; ++by) {
+					const u_int bx = x;
+					// Accumulate bloom from pixel $(bx,by)$
+					const u_int dist2 = (x - bx) * (x - bx) + (y - by) * (y - by);
+					const float wt = bloomFilter[dist2];
+					if (wt == 0.f)
+						continue;
+					u_int bloomOffset = bx + by * xResolution;
+					sumWt += wt;
+					pixel.AddWeighted(wt, xyzpixels[bloomOffset]);
+				}
+				pixel /= sumWt;
+			}
+			// copy working column back into bloomImage
+			for (u_int y = 0; y < yResolution; ++y) {
+				bloomImage[y * xResolution + x] = col[y]; 
+			}
 		}
 	}
 };
@@ -343,10 +466,28 @@ void ApplyImagingPipeline(vector<XYZColor> &xyzpixels, u_int xResolution, u_int 
 				max(xResolution, yResolution));
 			const u_int bloomWidth = bloomSupport / 2;
 			// Initialize bloom filter table
-			vector<float> bloomFilter(bloomWidth * bloomWidth);
+			vector<float> bloomFilter(2*bloomWidth * bloomWidth+1);
 			for (u_int i = 0; i < bloomWidth * bloomWidth; ++i) {
-				float dist = sqrtf(i) / bloomWidth;
-				bloomFilter[i] = powf(max(0.f, 1.f - dist), 4.f);
+				// zeros of J_1
+				const float z0 = 3.8317f;
+				//const float z1 = 7.0156f;
+				//const float z2 = 10.1735;
+				const float dist = z0 * sqrtf(i) / bloomWidth;
+				if (dist == 0.f)
+					bloomFilter[i] = 1.f;
+				else if (dist >= z0)
+					bloomFilter[i] = 0.f;
+				else {
+					// airy function
+					//const float b = boost::math::cyl_bessel_j(1, dist);
+					//bloomFilter[i] = powf(2*b/dist, 2.f);
+
+					// gaussian approximation
+					// best-fit sigma^2 for above airy function, based on RMSE
+					// depends on choice of zero
+					const float sigma2 = 1.698022698724f; 
+					bloomFilter[i] = exp(-dist*dist/sigma2);
+				}
 			}
 
 			// Allocate persisting bloom image layer if unallocated
@@ -355,8 +496,14 @@ void ApplyImagingPipeline(vector<XYZColor> &xyzpixels, u_int xResolution, u_int 
 				haveBloomImage = true;
 			}
 
-			BloomFilter(xResolution, yResolution, bloomWidth, bloomFilter, bloomImage, xyzpixels)();
-//			prog.Done(); //NOBOOK //intermediate crashfix until imagepipelinerefactor is done - Jens
+			for (u_int i = 0; i < nPix; ++i)
+				bloomImage[i] = XYZColor(0.f);
+
+			//BloomFilter(xResolution, yResolution, bloomWidth, bloomFilter, bloomImage, xyzpixels)();
+
+			// apply separable filter
+			BloomFilterX(xResolution, yResolution, bloomWidth, bloomFilter, bloomImage, &xyzpixels[0])();
+			BloomFilterY(xResolution, yResolution, bloomWidth, bloomFilter, bloomImage, bloomImage)();
 		}
 
 		// Mix bloom effect into each pixel
