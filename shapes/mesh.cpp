@@ -538,6 +538,16 @@ void Mesh::Tesselate(vector<luxrays::TriangleMesh *> *meshList, vector<const Pri
 	primitiveList->push_back(this);
 }
 
+void Mesh::ExtTesselate(vector<luxrays::ExtTriangleMesh *> *meshList, vector<const Primitive *> *primitiveList) const {
+	// A little hack with pointers
+	luxrays::ExtTriangleMesh *tm = new luxrays::ExtTriangleMesh(
+			nverts, ntris, p, (luxrays::Triangle *)triVertexIndex,
+			n, (luxrays::UV *)uvs);
+
+	meshList->push_back(tm);
+	primitiveList->push_back(this);
+}
+
 void Mesh::GetIntersection(const luxrays::RayHit &rayHit, const u_int index, Intersection *isect) const {
 	const u_int triIndex = index * 3;
 	const u_int v0 = triVertexIndex[triIndex];

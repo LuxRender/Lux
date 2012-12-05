@@ -66,7 +66,18 @@ public:
 	Point pos;
 	float Apixel, xStart, xEnd, yStart, yEnd;
 private:
-	Normal normal;
+	// Used by Query interface
+	float GetPositionX() { return pos.x; }
+	float GetPositionY() { return pos.y; }
+	float GetPositionZ() { return pos.z; }
+	float GetNormalX() { return normal.x; }
+	float GetNormalY() { return normal.y; }
+	float GetNormalZ() { return normal.z; }
+	float GetUpX() { return up.x; }
+	float GetUpY() { return up.y; }
+	float GetUpZ() { return up.z; }
+
+	Normal normal, up;
 	float fov;
 	float posPdf;
 	int distribution, shape, power;

@@ -32,8 +32,10 @@
 #include "renderers/statistics/slgstatistics.h"
 
 #include "luxrays/core/context.h"
-#include "luxrays/core/virtualdevice.h"
+#include "luxrays/utils/core/exttrianglemesh.h"
+#include "luxrays/opencl/utils.h"
 #include "rendersession.h"
+#include "cameras/perspective.h"
 
 #include <boost/lexical_cast.hpp>
 #include <boost/regex.hpp>
@@ -106,169 +108,99 @@ void SLGRenderer::SuspendWhenDone(bool v) {
 	suspendThreadsWhenDone = v;
 }
 
-static void CreateBox(luxrays::sdl::Scene *scene, const string &objName, const string &matName,
-		const string &texName, const BBox &bbox) {
-	Point *p = new Point[24];
-	// Bottom face
-	p[0] = Point(bbox.pMin.x, bbox.pMin.y, bbox.pMin.z);
-	p[1] = Point(bbox.pMin.x, bbox.pMax.y, bbox.pMin.z);
-	p[2] = Point(bbox.pMax.x, bbox.pMax.y, bbox.pMin.z);
-	p[3] = Point(bbox.pMax.x, bbox.pMin.y, bbox.pMin.z);
-	// Top face
-	p[4] = Point(bbox.pMin.x, bbox.pMin.y, bbox.pMax.z);
-	p[5] = Point(bbox.pMax.x, bbox.pMin.y, bbox.pMax.z);
-	p[6] = Point(bbox.pMax.x, bbox.pMax.y, bbox.pMax.z);
-	p[7] = Point(bbox.pMin.x, bbox.pMax.y, bbox.pMax.z);
-	// Side left
-	p[8] = Point(bbox.pMin.x, bbox.pMin.y, bbox.pMin.z);
-	p[9] = Point(bbox.pMin.x, bbox.pMin.y, bbox.pMax.z);
-	p[10] = Point(bbox.pMin.x, bbox.pMax.y, bbox.pMax.z);
-	p[11] = Point(bbox.pMin.x, bbox.pMax.y, bbox.pMin.z);
-	// Side right
-	p[12] = Point(bbox.pMax.x, bbox.pMin.y, bbox.pMin.z);
-	p[13] = Point(bbox.pMax.x, bbox.pMax.y, bbox.pMin.z);
-	p[14] = Point(bbox.pMax.x, bbox.pMax.y, bbox.pMax.z);
-	p[15] = Point(bbox.pMax.x, bbox.pMin.y, bbox.pMax.z);
-	// Side back
-	p[16] = Point(bbox.pMin.x, bbox.pMin.y, bbox.pMin.z);
-	p[17] = Point(bbox.pMax.x, bbox.pMin.y, bbox.pMin.z);
-	p[18] = Point(bbox.pMax.x, bbox.pMin.y, bbox.pMax.z);
-	p[19] = Point(bbox.pMin.x, bbox.pMin.y, bbox.pMax.z);
-	// Side front
-	p[20] = Point(bbox.pMin.x, bbox.pMax.y, bbox.pMin.z);
-	p[21] = Point(bbox.pMin.x, bbox.pMax.y, bbox.pMax.z);
-	p[22] = Point(bbox.pMax.x, bbox.pMax.y, bbox.pMax.z);
-	p[23] = Point(bbox.pMax.x, bbox.pMax.y, bbox.pMin.z);
-
-	luxrays::Triangle *vi = new luxrays::Triangle[12];
-	// Bottom face
-	vi[0] = luxrays::Triangle(0, 1, 2);
-	vi[1] = luxrays::Triangle(2, 3, 0);
-	// Top face
-	vi[2] = luxrays::Triangle(4, 5, 6);
-	vi[3] = luxrays::Triangle(6, 7, 4);
-	// Side left
-	vi[4] = luxrays::Triangle(8, 9, 10);
-	vi[5] = luxrays::Triangle(10, 11, 8);
-	// Side right
-	vi[6] = luxrays::Triangle(12, 13, 14);
-	vi[7] = luxrays::Triangle(14, 15, 12);
-	// Side back
-	vi[8] = luxrays::Triangle(16, 17, 18);
-	vi[9] = luxrays::Triangle(18, 19, 16);
-	// Side back
-	vi[10] = luxrays::Triangle(20, 21, 22);
-	vi[11] = luxrays::Triangle(22, 23, 20);
-
-	if (texName == "") {
-		// Define the object
-		scene->DefineObject(objName, 24, 12, p, vi, NULL, NULL, false);
-
-		// Add the object to the scene
-		scene->AddObject(objName, matName,
-				"scene.objects." + matName + "." + objName + ".useplynormals = 0\n"
-			);
-	} else {
-		luxrays::UV *uv = new luxrays::UV[24];
-		// Bottom face
-		uv[0] = luxrays::UV(0.f, 0.f);
-		uv[1] = luxrays::UV(1.f, 0.f);
-		uv[2] = luxrays::UV(1.f, 1.f);
-		uv[3] = luxrays::UV(0.f, 1.f);
-		// Top face
-		uv[4] = luxrays::UV(0.f, 0.f);
-		uv[5] = luxrays::UV(1.f, 0.f);
-		uv[6] = luxrays::UV(1.f, 1.f);
-		uv[7] = luxrays::UV(0.f, 1.f);
-		// Side left
-		uv[8] = luxrays::UV(0.f, 0.f);
-		uv[9] = luxrays::UV(1.f, 0.f);
-		uv[10] = luxrays::UV(1.f, 1.f);
-		uv[11] = luxrays::UV(0.f, 1.f);
-		// Side right
-		uv[12] = luxrays::UV(0.f, 0.f);
-		uv[13] = luxrays::UV(1.f, 0.f);
-		uv[14] = luxrays::UV(1.f, 1.f);
-		uv[15] = luxrays::UV(0.f, 1.f);
-		// Side back
-		uv[16] = luxrays::UV(0.f, 0.f);
-		uv[17] = luxrays::UV(1.f, 0.f);
-		uv[18] = luxrays::UV(1.f, 1.f);
-		uv[19] = luxrays::UV(0.f, 1.f);
-		// Side front
-		uv[20] = luxrays::UV(0.f, 0.f);
-		uv[21] = luxrays::UV(1.f, 0.f);
-		uv[22] = luxrays::UV(1.f, 1.f);
-		uv[23] = luxrays::UV(0.f, 1.f);
-
-		// Define the object
-		scene->DefineObject(objName, 24, 12, p, vi, NULL, uv, false);
-
-		// Add the object to the scene
-		scene->AddObject(objName, matName,
-				"scene.objects." + matName + "." + objName + ".useplynormals = 0\n"
-				"scene.objects." + matName + "." + objName + ".texmap = " + texName + "\n"
-			);
-	}
-}
-
 luxrays::sdl::Scene *SLGRenderer::CreateSLGScene() {
 	luxrays::sdl::Scene *slgScene = new luxrays::sdl::Scene();
 
+	PerspectiveCamera *perpCamera = dynamic_cast<PerspectiveCamera *>(scene->camera);
+	if (!perpCamera)
+		throw std::runtime_error("SLGRenderer supports only PerspectiveCamera");
+
+	//--------------------------------------------------------------------------
 	// Setup the camera
+	//--------------------------------------------------------------------------
+
+	const Point orig(
+			(*perpCamera)["Position.x"].FloatValue(),
+			(*perpCamera)["Position.y"].FloatValue(),
+			(*perpCamera)["Position.z"].FloatValue());
+	const Point target= orig + Vector(
+			(*perpCamera)["Normal.x"].FloatValue(),
+			(*perpCamera)["Normal.y"].FloatValue(),
+			(*perpCamera)["Normal.z"].FloatValue());
+	const Vector up(
+			(*perpCamera)["Up.x"].FloatValue(),
+			(*perpCamera)["Up.y"].FloatValue(),
+			(*perpCamera)["Up.z"].FloatValue());
+
 	slgScene->CreateCamera(
-		"scene.camera.lookat = 1.0 6.0 3.0  0.0 0.0 0.5\n"
-		"scene.camera.fieldofview = 60.0\n"
+		"scene.camera.lookat = " + 
+			boost::lexical_cast<string>(orig.x) + " " +
+			boost::lexical_cast<string>(orig.y) + " " +
+			boost::lexical_cast<string>(orig.z) + " " +
+			boost::lexical_cast<string>(target.x) + " " +
+			boost::lexical_cast<string>(target.y) + " " +
+			boost::lexical_cast<string>(target.z) + "\n"
+		"scene.camera.up = " +
+			boost::lexical_cast<string>(up.x) + " " +
+			boost::lexical_cast<string>(up.y) + " " +
+			boost::lexical_cast<string>(up.z) + "\n"
+		"scene.camera.fieldofview = " + boost::lexical_cast<string>(Degrees((*perpCamera)["fov"].FloatValue())) + "\n"
+		"scene.camera.lensradius = " + boost::lexical_cast<string>(Degrees((*perpCamera)["LensRadius"].FloatValue())) + "\n"
+		"scene.camera.focaldistance = " + boost::lexical_cast<string>(Degrees((*perpCamera)["FocalDistance"].FloatValue())) + "\n"
 		);
 
-	// Define texture maps
-	const u_int size = 500;
-	luxrays::Spectrum *tm = new luxrays::Spectrum[size * size];
-	for (u_int y = 0; y < size; ++y) {
-		for (u_int x = 0; x < size; ++x) {
-			if ((x % 50 < 25) ^ (y % 50 < 25))
-				tm[x + y * size] = luxrays::Spectrum(1.f, 0.f, 0.f);
-			else
-				tm[x + y * size] = luxrays::Spectrum(1.f, 1.f, 0.f);
-		}
-	}
-	slgScene->DefineTexMap("check_texmap", tm, size, size);
-
+	//--------------------------------------------------------------------------
 	// Setup materials
+	//--------------------------------------------------------------------------
+
 	slgScene->AddMaterials(
-		"scene.materials.light.whitelight = 300.0 300.0 300.0\n"
 		"scene.materials.matte.mat_white = 0.75 0.75 0.75\n"
-		"scene.materials.matte.mat_red = 0.75 0.0 0.0\n"
-		"scene.materials.glass.mat_glass = 0.9 0.9 0.9 0.9 0.9 0.9 1 1.4 1 1\n"
 		);
 
-	// Create the ground
-	CreateBox(slgScene, "ground", "mat_white", "check_texmap", BBox(Point(-3.f,-3.f,-.1f), Point(3.f, 3.f, 0.f)));
-	// Create the red box
-	CreateBox(slgScene, "box01", "mat_red", "", BBox(Point(-.5f,-.5f, .2f), Point(.5f, .5f, 0.7f)));
-	// Create the glass box
-	CreateBox(slgScene, "box02", "mat_glass", "", BBox(Point(1.5f, 1.5f, .3f), Point(2.f, 1.75f, 1.5f)));
-	// Create the light
-	CreateBox(slgScene, "box03", "whitelight", "", BBox(Point(-1.75f, 1.5f, .75f), Point(-1.5f, 1.75f, .5f)));
-
-	/*// Create an InfiniteLight loaded from file
-	scene->AddInfiniteLight(
-			"scene.infinitelight.file = scenes/simple-mat/arch.exr\n"
-			"scene.infinitelight.gamma = 1.0\n"
-			"scene.infinitelight.gain = 3.0 3.0 3.0\n"
-			);*/
+	//--------------------------------------------------------------------------
+	// Setup lights
+	//--------------------------------------------------------------------------
 
 	// Create a SkyLight & SunLight
 	slgScene->AddSkyLight(
-			"scene.skylight.dir = 0.166974 0.59908 0.783085\n"
+			"scene.skylight.dir = 0.0 0.0 1.0\n"
 			"scene.skylight.turbidity = 2.2\n"
 			"scene.skylight.gain = 0.8 0.8 0.8\n"
 			);
 	slgScene->AddSunLight(
-			"scene.sunlight.dir = 0.166974 0.59908 0.783085\n"
+			"scene.sunlight.dir = 0.0 0.0 1.0\n"
 			"scene.sunlight.turbidity = 2.2\n"
 			"scene.sunlight.gain = 0.8 0.8 0.8\n"
 			);
+
+	//--------------------------------------------------------------------------
+	// Convert geometry
+	//--------------------------------------------------------------------------
+
+	LOG(LUX_INFO, LUX_NOERROR) << "Tesselating " << scene->primitives.size() << " primitives";
+
+	u_int objNumber = 0;
+	for (size_t i = 0; i < scene->primitives.size(); ++i) {
+		vector<luxrays::ExtTriangleMesh *> meshList;
+		scene->primitives[i]->ExtTesselate(&meshList, &scene->tesselatedPrimitives);
+
+		for (vector<luxrays::ExtTriangleMesh *>::const_iterator mesh = meshList.begin(); mesh != meshList.end(); ++mesh) {
+			if (!(*mesh)->HasNormals()) {
+				// SLG requires shading normals
+				(*mesh)->ComputeNormals();
+			}
+
+			const string objName = "Object" + boost::lexical_cast<string>(objNumber);
+			slgScene->DefineObject(objName, *mesh);
+			slgScene->AddObject(objName, "mat_white",
+					"scene.objects.mat_white." + objName + ".useplynormals = 1\n"
+					);
+			++objNumber;
+		}
+	}
+
+	if (slgScene->objects.size() == 0)
+		throw std::runtime_error("SLGRenderer can not render an empty scene");
 
 	return slgScene;
 }
@@ -288,7 +220,7 @@ void SLGRenderer::Render(Scene *s) {
 		}
 
 		if (scene->lights.size() == 0) {
-			LOG( LUX_SEVERE,LUX_MISSINGDATA)<< "No light sources defined in scene; nothing to render.";
+			LOG(LUX_SEVERE, LUX_MISSINGDATA) << "No light sources defined in scene; nothing to render.";
 			state = TERMINATE;
 			return;
 		}
@@ -303,7 +235,7 @@ void SLGRenderer::Render(Scene *s) {
 
 		// initialize the thread's rangen
 		u_long seed = scene->seedBase - 1;
-		LOG( LUX_DEBUG,LUX_NOERROR) << "Preprocess thread uses seed: " << seed;
+		LOG(LUX_DEBUG, LUX_NOERROR) << "Preprocess thread uses seed: " << seed;
 
 		RandomGenerator rng(seed);
 
@@ -322,8 +254,24 @@ void SLGRenderer::Render(Scene *s) {
 		// TODO: extend SLG library to accept an handler for each rendering session
 		luxrays::sdl::LuxRaysSDLDebugHandler = SDLDebugHandler;
 
-		// Build the SLG scene to render
-		slgScene = CreateSLGScene();
+		try {
+			// Build the SLG scene to render
+			slgScene = CreateSLGScene();
+#if !defined(LUXRAYS_DISABLE_OPENCL)
+		} catch (cl::Error err) {
+			LOG(LUX_SEVERE, LUX_SYSTEM) << "OpenCL ERROR: " << err.what() << "(" << luxrays::utils::oclErrorString(err.err()) << ")";
+			state = TERMINATE;
+			return;
+#endif
+		} catch (std::runtime_error err) {
+			LOG(LUX_SEVERE, LUX_SYSTEM) << "RUNTIME ERROR: " << err.what();
+			state = TERMINATE;
+			return;
+		} catch (std::exception err) {
+			LOG(LUX_SEVERE, LUX_SYSTEM) << "ERROR: " << err.what();
+			state = TERMINATE;
+			return;
+		}
 
 		// start the timer
 		rendererStatistics->start();
@@ -348,15 +296,16 @@ void SLGRenderer::Render(Scene *s) {
 			"opencl.platform.index = -1\n"
 			"opencl.cpu.use = 0\n"
 			"opencl.gpu.use = 1\n"
+			//"opencl.devices.select = 1101\n"
 			"image.width = " + boost::lexical_cast<string>(imageWidth) + "\n"
 			"image.height = " + boost::lexical_cast<string>(imageHeight) + "\n",
 			*slgScene);
 	slg::RenderSession *session = new slg::RenderSession(config);
 	slg::RenderEngine *engine = session->renderEngine;
 
-	const unsigned int haltTime = config->cfg.GetInt("batch.halttime", 0);
-	const unsigned int haltSpp = config->cfg.GetInt("batch.haltspp", 0);
-	const float haltThreshold = config->cfg.GetFloat("batch.haltthreshold", -1.f);
+	unsigned int haltTime = config->cfg.GetInt("batch.halttime", 0);
+	unsigned int haltSpp = config->cfg.GetInt("batch.haltspp", 0);
+	float haltThreshold = config->cfg.GetFloat("batch.haltthreshold", -1.f);
 
 	// Start the rendering
 	session->Start();
@@ -406,17 +355,34 @@ void SLGRenderer::Render(Scene *s) {
 
 		const double now = luxrays::WallClockTime();
 		const double elapsedTime = now - startTime;
-		if ((haltTime > 0) && (elapsedTime >= haltTime))
-			break;
-
 		const unsigned int pass = engine->GetPass();
-		if ((haltSpp > 0) && (pass >= haltSpp))
-			break;
-
 		// Convergence test is update inside UpdateFilm()
 		const float convergence = engine->GetConvergence();
-		if ((haltThreshold >= 0.f) && (1.f - convergence <= haltThreshold))
+		if (((film->enoughSamplesPerPixel)) ||
+				((haltTime > 0) && (elapsedTime >= haltTime)) ||
+				((haltSpp > 0) && (pass >= haltSpp)) ||
+				((haltThreshold >= 0.f) && (1.f - convergence <= haltThreshold))) {
+			
+			if (suspendThreadsWhenDone) {
+				// Dade - wait for a resume rendering or exit
+				Pause();
+				while (state == PAUSE)
+					boost::this_thread::sleep(boost::posix_time::millisec(1000));
+
+				if (state == TERMINATE)
+					break;
+				else {
+					// Cancel all halt conditions
+					haltTime = 0;
+					haltSpp = 0;
+					haltThreshold = -1.f;
+				}
+			} else {
+				Terminate();
+				break;
+			}
 			break;
+		}
 
 		// Print some information about the rendering progress
 		sprintf(buf, "[Elapsed time: %3d/%dsec][Samples %4d/%d][Convergence %f%%][Avg. samples/sec % 3.2fM on %.1fK tris]",

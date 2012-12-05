@@ -58,6 +58,8 @@ public:
 
 	virtual void Tesselate(vector<luxrays::TriangleMesh *> *meshList,
 		vector<const Primitive *> *primitiveList) const;
+	virtual void ExtTesselate(vector<luxrays::ExtTriangleMesh *> *meshList,
+		vector<const Primitive *> *primitiveList) const;
 	virtual void GetIntersection(const luxrays::RayHit &rayHit,
 		const u_int index, Intersection *isect) const;
 	virtual void GetShadingGeometry(const Transform &obj2world,

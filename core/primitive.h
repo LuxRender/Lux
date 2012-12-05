@@ -29,6 +29,7 @@
 #include "error.h"
 
 #include "luxrays/luxrays.h"
+#include "luxrays/utils/core/exttrianglemesh.h"
 
 namespace lux
 {
@@ -151,13 +152,23 @@ public:
 	}
 	/**
 	 * Add a tesselated approximation of current primitive to list passed as
-	 * argument. It can do nothing in case tasselation is not supported.
+	 * argument. It can do nothing in case tesselation is not supported.
 	 * @param meshList      The vector where the mesh.
 	 * @param primitiveList The vector of primitive pointers where to add each a pointer to each primitive tesselated in the corresponding mesh.
 	 */
 	virtual void Tesselate(vector<luxrays::TriangleMesh *> *meshList,
 		vector<const Primitive *> *primitiveList) const {
 		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "Primitive doesn't support Tesselation";
+	}
+	/**
+	 * Add a tesselated approximation of current primitive to list passed as
+	 * argument. It can do nothing in case tesselation is not supported.
+	 * @param meshList      The vector where the mesh.
+	 * @param primitiveList The vector of primitive pointers where to add each a pointer to each primitive tesselated in the corresponding mesh.
+	 */
+	virtual void ExtTesselate(vector<luxrays::ExtTriangleMesh *> *meshList,
+		vector<const Primitive *> *primitiveList) const {
+		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "Primitive doesn't support ExtTesselate";
 	}
 	/**
 	 * This must be implemented if Tesselate() is supported. Translate a LuxRays hit
@@ -276,6 +287,16 @@ public:
 		vector<const Primitive *> plist;
 
 		prim->Tesselate(meshList, &plist);
+
+		for (u_int i = 0; i < plist.size(); ++i)
+			primitiveList->push_back(this);
+	}
+
+	virtual void ExtTesselate(vector<luxrays::ExtTriangleMesh *> *meshList,
+		vector<const Primitive *> *primitiveList) const {
+		vector<const Primitive *> plist;
+
+		prim->ExtTesselate(meshList, &plist);
 
 		for (u_int i = 0; i < plist.size(); ++i)
 			primitiveList->push_back(this);

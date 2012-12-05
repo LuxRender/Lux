@@ -134,8 +134,9 @@ PerspectiveCamera::PerspectiveCamera(const MotionSystem &world2cam,
 		lensr, focald, f),
 		distribution(dist), shape(sh), power(pow),
 		autoFocus(autofocus) {
-	pos = CameraToWorld * Point(0,0,0);
-	normal = CameraToWorld * Normal(0,0,1);
+	pos = CameraToWorld * Point(0.f, 0.f, 0.f);
+	normal = CameraToWorld * Normal(0.f, 0.f, 1.f);
+	up = CameraToWorld * Normal(0.f, 1.f, 0.f);
 	fov = Radians(fov1);
 
 	if (LensRadius > 0.f)
@@ -157,7 +158,17 @@ PerspectiveCamera::PerspectiveCamera(const MotionSystem &world2cam,
 		(yEnd - yStart) / f->yResolution;
 	Apixel = xPixelWidth * yPixelHeight;
 
+	AddStringConstant(*this, "name", "Name of current camera", "perspective");
 	AddFloatAttribute(*this, "fov", "Field of View in radians", M_PI / 2.f, &PerspectiveCamera::fov);
+	AddFloatAttribute(*this, "Position.x", "Perspective camera X", &PerspectiveCamera::GetPositionX);
+	AddFloatAttribute(*this, "Position.y", "Perspective camera Y", &PerspectiveCamera::GetPositionY);
+	AddFloatAttribute(*this, "Position.z", "Perspective camera Z", &PerspectiveCamera::GetPositionZ);
+	AddFloatAttribute(*this, "Normal.x", "Perspective camera normal X", &PerspectiveCamera::GetNormalX);
+	AddFloatAttribute(*this, "Normal.y", "Perspective camera normal Y", &PerspectiveCamera::GetNormalY);
+	AddFloatAttribute(*this, "Normal.z", "Perspective camera normal Z", &PerspectiveCamera::GetNormalZ);
+	AddFloatAttribute(*this, "Up.x", "Perspective camera up X", &PerspectiveCamera::GetUpX);
+	AddFloatAttribute(*this, "Up.y", "Perspective camera up Y", &PerspectiveCamera::GetUpY);
+	AddFloatAttribute(*this, "Up.z", "Perspective camera up Z", &PerspectiveCamera::GetUpZ);
 }
 
 void PerspectiveCamera::SampleMotion(float time)

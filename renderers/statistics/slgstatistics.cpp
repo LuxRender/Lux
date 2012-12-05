@@ -80,6 +80,18 @@ void SLGStatistics::resetDerived() {
 }
 
 void SLGStatistics::updateStatisticsWindowDerived() {
+	// Get local sample count
+	double sampleCount = getSampleCount();
+	double elapsedTime = windowCurrentTime - windowStartTime;
+
+	if (elapsedTime != 0.0) {
+		double sps = (sampleCount - windowSampleCount) / elapsedTime;
+
+		if (exponentialMovingAverage == 0.0)
+			exponentialMovingAverage = sps;
+		exponentialMovingAverage += min(1.0, elapsedTime / statisticsWindowSize) * (sps - exponentialMovingAverage);
+	}
+	windowSampleCount = sampleCount;
 }
 
 double SLGStatistics::getRemainingTime() {
@@ -219,7 +231,7 @@ std::string SLGStatistics::FormattedLong::getRecommendedStringTemplate()
 	stringTemplate += ": %samplesPerPixel%";
 	if (rs->getHaltSpp() != std::numeric_limits<double>::infinity())
 		stringTemplate += " (%percentHaltSppComplete%)";
-	stringTemplate += " %samplesPerSecondWindow% %contributionsPerSecondWindow% %efficiency%";
+	stringTemplate += " %samplesPerSecond%";
 
 	if (rs->getNetworkSampleCount() != 0.0)
 	{
@@ -230,9 +242,9 @@ std::string SLGStatistics::FormattedLong::getRecommendedStringTemplate()
 	}
 
 	if (rs->getNetworkSampleCount() != 0.0 && rs->getSlaveNodeCount())
-		stringTemplate += " | Tot: ~%totalSamplesPerPixel% ~%totalSamplesPerSecondWindow%";
+		stringTemplate += " | Tot: ~%totalSamplesPerPixel% ~%totalSamplesPerSecond%";
 	else if (rs->getResumedSampleCount() != 0.0)
-		stringTemplate += " | Tot: %totalSamplesPerPixel% %totalSamplesPerSecondWindow%";
+		stringTemplate += " | Tot: %totalSamplesPerPixel% %totalSamplesPerSecond%";
 
 	return stringTemplate;
 }
@@ -336,7 +348,7 @@ std::string SLGStatistics::FormattedShort::getRecommendedStringTemplate() {
 	stringTemplate += ": %samplesPerPixel%";
 	if (rs->getHaltSpp() != std::numeric_limits<double>::infinity())
 		stringTemplate += " (%percentHaltSppComplete%)";
-	stringTemplate += " %samplesPerSecondWindow% %contributionsPerSecondWindow% %efficiency%";
+	stringTemplate += " %samplesPerSecond%";
 
 	if (rs->getNetworkSampleCount() != 0.0)
 	{
@@ -347,9 +359,9 @@ std::string SLGStatistics::FormattedShort::getRecommendedStringTemplate() {
 	}
 
 	if (rs->getNetworkSampleCount() != 0.0 && rs->getSlaveNodeCount())
-		stringTemplate += " | Tot: ~%totalSamplesPerPixel% ~%totalSamplesPerSecondWindow%";
+		stringTemplate += " | Tot: ~%totalSamplesPerPixel% ~%totalSamplesPerSecond%";
 	else if (rs->getResumedSampleCount() != 0.0)
-		stringTemplate += " | Tot: %totalSamplesPerPixel% %totalSamplesPerSecondWindow%";
+		stringTemplate += " | Tot: %totalSamplesPerPixel% %totalSamplesPerSecond%";
 
 	return stringTemplate;
 }
