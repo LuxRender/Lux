@@ -715,6 +715,8 @@ public:
 		return samplePerPass;
 	}
 
+	ColorSystem GetColorSpace() const { return colorSpace; }
+
 protected:
 	bool WriteFilmDataToStream(std::basic_ostream<char> &stream, bool clearBuffers = true, bool transmitParams = false);
 	// Reject outliers for a tile. Rejected contributions get their variance set to -1.

@@ -31,10 +31,17 @@
 #include "fastmutex.h"
 #include "timer.h"
 #include "dynload.h"
+#include "hybridrenderer.h"
 
 #include "luxrays/luxrays.h"
 #include "luxrays/core/device.h"
 #include "luxrays/core/intersectiondevice.h"
+#include "slg.h"
+#include "luxrays/utils/sdl/scene.h"
+
+extern void DebugHandler(const char *msg);
+extern void SDLDebugHandler(const char *msg);
+extern void SLGDebugHandler(const char *msg);
 
 namespace lux
 {
@@ -116,6 +123,8 @@ public:
 	static Renderer *CreateRenderer(const ParamSet &params);
 
 private:
+	luxrays::sdl::Scene *CreateSLGScene();
+
 	mutable boost::mutex classWideMutex;
 
 	RendererState state;
@@ -128,8 +137,6 @@ private:
 	bool preprocessDone;
 	bool suspendThreadsWhenDone;
 };
-
-extern void LuxRaysDebugHandler(const char *msg);
 
 }//namespace lux
 
