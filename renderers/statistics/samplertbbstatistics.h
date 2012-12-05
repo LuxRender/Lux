@@ -20,8 +20,8 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#ifndef LUX_SAMPLERSTATISTICS_H
-#define LUX_SAMPLERSTATISTICS_H
+#ifndef LUX_SAMPLERTBBSTATISTICS_H
+#define LUX_SAMPLERTBBSTATISTICS_H
 
 #include "rendererstatistics.h"
 #include "renderers/samplertbbrenderer.h"
