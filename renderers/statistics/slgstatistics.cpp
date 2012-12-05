@@ -79,22 +79,7 @@ void SLGStatistics::resetDerived() {
 	windowPEffBlackSampleCount = 0.0;
 }
 
-void SLGStatistics::updateStatisticsWindowDerived()
-{
-	// Get local sample count
-	double sampleCount = getSampleCount();
-	double elapsedTime = windowCurrentTime - windowStartTime;
-
-	if (elapsedTime != 0.0)
-	{
-		double sps = (sampleCount - windowSampleCount) / elapsedTime;
-
-		if (exponentialMovingAverage == 0.0)
-			exponentialMovingAverage = sps;
-
-		exponentialMovingAverage += min(1.0, elapsedTime / statisticsWindowSize) * (sps - exponentialMovingAverage);
-	}
-	windowSampleCount = sampleCount;
+void SLGStatistics::updateStatisticsWindowDerived() {
 }
 
 double SLGStatistics::getRemainingTime() {
@@ -137,7 +122,7 @@ double SLGStatistics::getAverageSamplesPerSecond() {
 
 double SLGStatistics::getAverageSamplesPerSecondWindow() {
 	boost::mutex::scoped_lock window_mutex(windowMutex);
-	return exponentialMovingAverage;
+	return getAverageSamplesPerSecond();
 }
 
 double SLGStatistics::getNetworkAverageSamplesPerSecond() {

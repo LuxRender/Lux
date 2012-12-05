@@ -1217,7 +1217,7 @@ void Film::GetSampleExtent(int *xstart, int *xend,
 	*yend   = Floor2Int(yPixelStart + .5f + yPixelCount + filter->yWidth);
 }
 
-void Film::AddSampleCount(float count) {
+void Film::AddSampleCount(const float count) {
 	if (haltTime > 0) {
 		// Check if we have met the enough rendering time condition
 		boost::xtime t;
@@ -1515,7 +1515,7 @@ void Film::SetSample(const Contribution *contrib) {
 	BufferGroup &currentGroup = bufferGroups[contrib->bufferGroup];
 	Buffer *buffer = currentGroup.getBuffer(contrib->buffer);
 
-	buffer->Set(x - xPixelStart, y - yPixelStart, xyz, alpha);
+	buffer->Set(x - xPixelStart, y - yPixelStart, xyz, alpha, weight);
 
 	// Update ZBuffer values with filtered zdepth contribution
 	if(use_Zbuf && contrib->zdepth != 0.f)

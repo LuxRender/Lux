@@ -118,11 +118,11 @@ public:
 		pixel.weightSum += wt;
 	}
 
-	void Set(u_int x, u_int y, XYZColor L, float alpha) {
+	void Set(u_int x, u_int y, XYZColor L, float alpha, float wt = 1.f) {
 		Pixel &pixel = pixels(x, y);
 		pixel.L = L;
 		pixel.alpha = alpha;
-		pixel.weightSum = 1.f;
+		pixel.weightSum = wt;
 	}
 
 	void Clear() {
@@ -622,7 +622,8 @@ public:
 	virtual void AddTileSamples(const Contribution* const contribs, u_int num_contribs,
 		u_int tileIndex);
 	virtual void SetSample(const Contribution *contrib);
-	virtual void AddSampleCount(float count);
+	virtual void AddSampleCount(const float count);
+	virtual void SetSampleCount(const double count) { numberOfLocalSamples = count; }
 	virtual void GetSampleExtent(int *xstart, int *xend, int *ystart, int *yend) const;
 
 	virtual void SaveEXR(const string &exrFilename, bool useHalfFloats, bool includeZBuf, int compressionType, bool tonemapped) {

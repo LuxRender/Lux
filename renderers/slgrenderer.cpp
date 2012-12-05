@@ -384,6 +384,7 @@ void SLGRenderer::Render(Scene *s) {
 			session->renderEngine->UpdateFilm();
 
 			// Update LuxRender film too
+			// TODO: use Film write mutex
 			ColorSystem colorSpace = film->GetColorSpace();
 			for (int y = yStart; y <= yEnd; ++y) {
 				for (int x = xStart; x <= xEnd; ++x) {
@@ -392,12 +393,13 @@ void SLGRenderer::Render(Scene *s) {
 					const float alpha = slgFilm->IsAlphaChannelEnabled() ?
 						(slgFilm->GetAlphaPixel(x - xStart, y - yStart)->alpha) : 0.f;
 
-					luxrays::Spectrum rgb = sp->radiance / sp->weight;
-					XYZColor xyz = colorSpace.ToXYZ(RGBColor(rgb.r, rgb.g, rgb.b));
-					Contribution contrib(x, imageHeight - 1 - y + yStart, xyz, alpha);
+					XYZColor xyz = colorSpace.ToXYZ(RGBColor(sp->radiance.r, sp->radiance.g, sp->radiance.b));
+					// Flip the image upside down
+					Contribution contrib(x, imageHeight - 1 - y + yStart, xyz, alpha, 0.f, sp->weight);
 					film->SetSample(&contrib);
 				}
 			}
+			film->SetSampleCount(session->renderEngine->GetTotalSampleCount());
 
 			lastFilmUpdate =  luxrays::WallClockTime();
 		}
