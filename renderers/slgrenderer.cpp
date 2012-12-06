@@ -280,8 +280,8 @@ luxrays::sdl::Scene *SLGRenderer::CreateSLGScene() {
 			boost::lexical_cast<string>(up.y) + " " +
 			boost::lexical_cast<string>(up.z) + "\n"
 		"scene.camera.fieldofview = " + boost::lexical_cast<string>(Degrees((*perpCamera)["fov"].FloatValue())) + "\n"
-		"scene.camera.lensradius = " + boost::lexical_cast<string>(Degrees((*perpCamera)["LensRadius"].FloatValue())) + "\n"
-		"scene.camera.focaldistance = " + boost::lexical_cast<string>(Degrees((*perpCamera)["FocalDistance"].FloatValue())) + "\n"
+		"scene.camera.lensradius = " + boost::lexical_cast<string>((*perpCamera)["LensRadius"].FloatValue()) + "\n"
+		"scene.camera.focaldistance = " + boost::lexical_cast<string>((*perpCamera)["FocalDistance"].FloatValue()) + "\n"
 		);
 
 	//--------------------------------------------------------------------------
@@ -354,9 +354,8 @@ luxrays::Properties SLGRenderer::CreateSLGConfig() {
 	ss << "renderengine.type = PATHOCL\n"
 			"sampler.type = INLINED_RANDOM\n"
 			"opencl.platform.index = -1\n"
-			"opencl.cpu.use = 0\n"
+			"opencl.cpu.use = 1\n"
 			"opencl.gpu.use = 1\n"
-			//"opencl.devices.select = 1101\n"
 			;
 
 	Film *film = scene->camera->film;
