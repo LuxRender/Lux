@@ -282,6 +282,8 @@ public:
 		return prim;
 	}
 
+	AreaLight *GetAreaLight() const { return areaLight; }
+
 	virtual void Tesselate(vector<luxrays::TriangleMesh *> *meshList,
 		vector<const Primitive *> *primitiveList) const {
 		vector<const Primitive *> plist;
@@ -310,6 +312,7 @@ public:
 	virtual Transform GetLocalToWorld(float time) const {
 		return prim->GetLocalToWorld(time);
 	}
+
 private:
 	// AreaLightPrimitive Private Data
 	boost::shared_ptr<Primitive> prim;

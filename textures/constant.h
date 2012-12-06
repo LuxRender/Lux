@@ -27,6 +27,7 @@
 #include "rgbillum.h"
 #include "fresnelgeneral.h"
 #include "paramset.h"
+#include "queryable.h"
 
 namespace lux
 {
@@ -53,11 +54,17 @@ private:
 	float value;
 };
 
-class ConstantRGBColorTexture : public Texture<SWCSpectrum> {
+class ConstantRGBColorTexture : public Texture<SWCSpectrum>, public Queryable {
 public:
 	// ConstantTexture Public Methods
-	ConstantRGBColorTexture(const RGBColor &s) : color(s) {
+	ConstantRGBColorTexture(const RGBColor &s) :
+		Queryable("ConstantRGBColorTexture-" + boost::lexical_cast<string>(this)),
+		color(s) {
 		RGBSPD = new RGBReflSPD(color);
+
+		AddFloatAttribute(*this, "color.r", "ConstantRGBColorTexture color R", &ConstantRGBColorTexture::GetColorR);
+		AddFloatAttribute(*this, "color.g", "ConstantRGBColorTexture color G", &ConstantRGBColorTexture::GetColorG);
+		AddFloatAttribute(*this, "color.b", "ConstantRGBColorTexture color B", &ConstantRGBColorTexture::GetColorB);
 	}
 	virtual ~ConstantRGBColorTexture() { delete RGBSPD; }
 	virtual SWCSpectrum Evaluate(const SpectrumWavelengths &sw,
@@ -73,7 +80,13 @@ public:
 		delete RGBSPD;
 		RGBSPD = new RGBIllumSPD(color);
 	}
+
 private:
+	// Used by Query interface
+	float GetColorR() { return color.c[0]; }
+	float GetColorG() { return color.c[1]; }
+	float GetColorB() { return color.c[2]; }
+
 	SPD* RGBSPD;
 	RGBColor color;
 };

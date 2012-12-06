@@ -110,14 +110,18 @@ public:
 		const Point &p, float u1, float u2, float u3,
 		BSDF **bsdf, float *pdf, float *pdfDirect,
 		SWCSpectrum *Le) const;
+
+	Texture<SWCSpectrum> *GetTexture() { return Le.get(); }
+
 	static AreaLight *CreateAreaLight(const Transform &light2world,
 		const ParamSet &paramSet,
 		const boost::shared_ptr<Primitive> &prim);
+
 protected:
 	// AreaLight Protected Data
 	boost::shared_ptr<Texture<SWCSpectrum> > Le;
 	boost::shared_ptr<Primitive> prim;
-	float gain, power, efficacy, area;
+	float paramGain, gain, power, efficacy, area;
 	SampleableSphericalFunction *func;
 };
 

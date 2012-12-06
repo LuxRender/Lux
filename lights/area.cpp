@@ -160,8 +160,8 @@ AreaLight::AreaLight(const Transform &light2world,
 	boost::shared_ptr<Texture<SWCSpectrum> > &le, float g, float pow,
 	float e, SampleableSphericalFunction *ssf, u_int ns,
 	const boost::shared_ptr<Primitive> &p)
-	: Light(light2world, ns), Queryable("arealight-" + boost::lexical_cast<string>(this)),
-		Le(le), gain(g), power(pow), efficacy(e), func(ssf)
+	: Light(light2world, ns), Queryable("AreaLight-" + boost::lexical_cast<string>(this)),
+		Le(le), paramGain(g), gain(g), power(pow), efficacy(e), func(ssf)
 {
 	if (p->CanIntersect() && p->CanSample()) {
 		// Create a temporary to increase shared count
@@ -184,6 +184,11 @@ AreaLight::AreaLight(const Transform &light2world,
 		(area * M_PI * Le->Y());
 	if (gainFactor > 0.f && !isinf(gainFactor))
 		gain *= gainFactor;
+
+	AddFloatAttribute(*this, "gain", "AreaLight gain", &AreaLight::paramGain);
+	AddFloatAttribute(*this, "power", "AreaLight power", &AreaLight::power);
+	AddFloatAttribute(*this, "efficacy", "AreaLight efficacy", &AreaLight::efficacy);
+	AddFloatAttribute(*this, "area", "AreaLight area", &AreaLight::area);
 }
 
 AreaLight::~AreaLight()
