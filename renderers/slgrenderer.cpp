@@ -113,6 +113,10 @@ void SLGRenderer::SuspendWhenDone(bool v) {
 luxrays::sdl::Scene *SLGRenderer::CreateSLGScene() {
 	luxrays::sdl::Scene *slgScene = new luxrays::sdl::Scene();
 
+	// Tell to the cache to not delete mesh data (they are pointed by Lux
+	// primitives too and they will be deleted by Lux Context)
+	slgScene->extMeshCache->SetDeleteMeshData(false);
+
 	PerspectiveCamera *perpCamera = dynamic_cast<PerspectiveCamera *>(scene->camera);
 	if (!perpCamera)
 		throw std::runtime_error("SLGRenderer supports only PerspectiveCamera");
@@ -189,7 +193,13 @@ luxrays::sdl::Scene *SLGRenderer::CreateSLGScene() {
 		for (vector<luxrays::ExtTriangleMesh *>::const_iterator mesh = meshList.begin(); mesh != meshList.end(); ++mesh) {
 			if (!(*mesh)->HasNormals()) {
 				// SLG requires shading normals
-				(*mesh)->ComputeNormals();
+				Normal *normals = (*mesh)->ComputeNormals();
+
+				if (normals) {
+					// I have to keep track of memory allocated for normals so, later, it
+					// can be deleted
+					alloctedMeshNormals.push_back(normals);
+				}
 			}
 
 			const string objName = "Object" + boost::lexical_cast<string>(objNumber);
@@ -429,8 +439,12 @@ void SLGRenderer::Render(Scene *s) {
 
 	// Stop the rendering
 	session->Stop();
-
 	delete session;
+
+	// Free allocated normals
+	for (u_int i = 0; i < alloctedMeshNormals.size(); ++i)
+		delete[] alloctedMeshNormals[i];
+
 	SLG_LOG("Done.");
 
 	// I change the current signal to exit in order to disable the creation

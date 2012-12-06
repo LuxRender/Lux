@@ -133,6 +133,7 @@ private:
 
 	luxrays::Properties overwriteConfig;
 	Scene *scene;
+	vector<Normal *> alloctedMeshNormals;
 
 	// Put them last for better data alignment
 	// used to suspend render threads until the preprocessing phase is done
