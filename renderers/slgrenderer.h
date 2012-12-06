@@ -101,7 +101,7 @@ private:
 
 class SLGRenderer : public Renderer {
 public:
-	SLGRenderer();
+	SLGRenderer(const luxrays::Properties &overwriteConfig);
 	~SLGRenderer();
 
 	RendererType GetType() const { return SLG_TYPE; }
@@ -124,12 +124,14 @@ public:
 
 private:
 	luxrays::sdl::Scene *CreateSLGScene();
+	luxrays::Properties CreateSLGConfig();
 
 	mutable boost::mutex classWideMutex;
 
 	RendererState state;
 	vector<RendererHostDescription *> hosts;
 
+	luxrays::Properties overwriteConfig;
 	Scene *scene;
 
 	// Put them last for better data alignment

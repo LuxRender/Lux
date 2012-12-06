@@ -29,6 +29,7 @@
 #include "spectrum.h"
 #include "error.h"
 #include "renderinghints.h"
+#include "queryable.h"
 // Light Declarations
 
 namespace lux
@@ -87,7 +88,7 @@ protected:
 	boost::shared_ptr<Volume> volume;
 };
 
-class AreaLight : public Light {
+class AreaLight : public Light, public Queryable {
 public:
 	// AreaLight Interface
 	AreaLight(const Transform &light2world,

@@ -33,6 +33,7 @@
 #include "sphericalfunction.h"
 #include "sampling.h"
 #include "dynload.h"
+#include "queryable.h"
 
 using namespace lux;
 
@@ -159,8 +160,8 @@ AreaLight::AreaLight(const Transform &light2world,
 	boost::shared_ptr<Texture<SWCSpectrum> > &le, float g, float pow,
 	float e, SampleableSphericalFunction *ssf, u_int ns,
 	const boost::shared_ptr<Primitive> &p)
-	: Light(light2world, ns), Le(le), gain(g), power(pow), efficacy(e),
-	func(ssf)
+	: Light(light2world, ns), Queryable("arealight-" + boost::lexical_cast<string>(this)),
+		Le(le), gain(g), power(pow), efficacy(e), func(ssf)
 {
 	if (p->CanIntersect() && p->CanSample()) {
 		// Create a temporary to increase shared count

@@ -833,6 +833,12 @@ public:
 	bool enoughSamplesPerPixel; // At the end to get better data alignment
 
 private:
+	// Used by Query interface
+	float GetCropWindow0() { return cropWindow[0]; }
+	float GetCropWindow1() { return cropWindow[1]; }
+	float GetCropWindow2() { return cropWindow[2]; }
+	float GetCropWindow3() { return cropWindow[3]; }
+
 	// Gets a reference to the appropriate outlier row data for a given position and tile index.
 	std::vector<OutlierAccel>& GetOutlierAccelRow(u_int oY, u_int tileIndex, u_int tileStart, u_int tileEnd);
 	

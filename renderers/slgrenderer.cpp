@@ -65,7 +65,7 @@ void SLGHostDescription::AddDevice(SLGDeviceDescription *devDesc) {
 // SLGRenderer
 //------------------------------------------------------------------------------
 
-SLGRenderer::SLGRenderer() : Renderer() {
+SLGRenderer::SLGRenderer(const luxrays::Properties &config) : Renderer() {
 	state = INIT;
 
 	SLGHostDescription *host = new SLGHostDescription(this, "Localhost");
@@ -77,6 +77,8 @@ SLGRenderer::SLGRenderer() : Renderer() {
 	AddStringConstant(*this, "name", "Name of current renderer", "slg");
 
 	rendererStatistics = new SLGStatistics(this);
+
+	overwriteConfig = config;
 }
 
 SLGRenderer::~SLGRenderer() {
@@ -205,8 +207,48 @@ luxrays::sdl::Scene *SLGRenderer::CreateSLGScene() {
 	return slgScene;
 }
 
+luxrays::Properties SLGRenderer::CreateSLGConfig() {
+	std::stringstream ss;
+
+	ss << "renderengine.type = PATHOCL\n"
+			"sampler.type = INLINED_RANDOM\n"
+			"opencl.platform.index = -1\n"
+			"opencl.cpu.use = 0\n"
+			"opencl.gpu.use = 1\n"
+			//"opencl.devices.select = 1101\n"
+			;
+
+	Film *film = scene->camera->film;
+	int xStart, xEnd, yStart, yEnd;
+	film->GetSampleExtent(&xStart, &xEnd, &yStart, &yEnd);
+	const int imageWidth = xEnd - xStart;
+	const int imageHeight = yEnd - yStart;
+
+	float cropWindow[4] = {
+		(*film)["cropWindow.0"].FloatValue(),
+		(*film)["cropWindow.1"].FloatValue(),
+		(*film)["cropWindow.2"].FloatValue(),
+		(*film)["cropWindow.3"].FloatValue()
+	};
+	if ((cropWindow[0] != 0.f) || (cropWindow[1] != 1.f) ||
+			(cropWindow[2] != 0.f) || (cropWindow[3] != 1.f))
+		throw std::runtime_error("SLGRenderer doesn't yet support border rendering");
+
+	ss << "image.width = " + boost::lexical_cast<string>(imageWidth) + "\n"
+			"image.height = " + boost::lexical_cast<string>(imageHeight) + "\n";
+
+	luxrays::Properties config;
+	config.LoadFromString(ss.str());
+
+	// Add overwrite properties
+	config.Load(overwriteConfig);
+
+	return config;
+}
+
 void SLGRenderer::Render(Scene *s) {
 	luxrays::sdl::Scene *slgScene = NULL;
+	luxrays::Properties slgConfigProps;
 
 	{
 		// Section under mutex
@@ -257,6 +299,9 @@ void SLGRenderer::Render(Scene *s) {
 		try {
 			// Build the SLG scene to render
 			slgScene = CreateSLGScene();
+
+			// Build the SLG rendering configuration
+			slgConfigProps.Load(CreateSLGConfig());
 #if !defined(LUXRAYS_DISABLE_OPENCL)
 		} catch (cl::Error err) {
 			LOG(LUX_SEVERE, LUX_SYSTEM) << "OpenCL ERROR: " << err.what() << "(" << luxrays::utils::oclErrorString(err.err()) << ")";
@@ -285,21 +330,7 @@ void SLGRenderer::Render(Scene *s) {
 	// Do the render
 	//----------------------------------------------------------------------
 
-	int xStart, xEnd, yStart, yEnd;
-	scene->camera->film->GetSampleExtent(&xStart, &xEnd, &yStart, &yEnd);
-	const int imageWidth = xEnd - xStart;
-	const int imageHeight = yEnd - yStart;
-
-	slg::RenderConfig *config = new slg::RenderConfig(
-			"renderengine.type = PATHOCL\n"
-			"sampler.type = INLINED_RANDOM\n"
-			"opencl.platform.index = -1\n"
-			"opencl.cpu.use = 0\n"
-			"opencl.gpu.use = 1\n"
-			//"opencl.devices.select = 1101\n"
-			"image.width = " + boost::lexical_cast<string>(imageWidth) + "\n"
-			"image.height = " + boost::lexical_cast<string>(imageHeight) + "\n",
-			*slgScene);
+	slg::RenderConfig *config = new slg::RenderConfig(slgConfigProps, *slgScene);
 	slg::RenderSession *session = new slg::RenderSession(config);
 	slg::RenderEngine *engine = session->renderEngine;
 
@@ -314,6 +345,8 @@ void SLGRenderer::Render(Scene *s) {
 	double lastFilmUpdate = startTime;
 	char buf[512];
 	Film *film = scene->camera->film;
+	int xStart, xEnd, yStart, yEnd;
+	film->GetSampleExtent(&xStart, &xEnd, &yStart, &yEnd);
 	const luxrays::utils::Film *slgFilm = session->film; 
 	for (;;) {
 		if (state == PAUSE) {
@@ -344,7 +377,7 @@ void SLGRenderer::Render(Scene *s) {
 
 					XYZColor xyz = colorSpace.ToXYZ(RGBColor(sp->radiance.r, sp->radiance.g, sp->radiance.b));
 					// Flip the image upside down
-					Contribution contrib(x, imageHeight - 1 - y + yStart, xyz, alpha, 0.f, sp->weight);
+					Contribution contrib(x, yEnd - 1 - y, xyz, alpha, 0.f, sp->weight);
 					film->SetSample(&contrib);
 				}
 			}
@@ -441,7 +474,23 @@ void SLGDebugHandler(const char *msg) {
 }
 
 Renderer *SLGRenderer::CreateRenderer(const ParamSet &params) {
-	return new SLGRenderer();
+	luxrays::Properties config;
+
+	// Local (for network rendering) host configuration file. It is a properties
+	// file that can be used overwrite settings.
+	const string configFile = params.FindOneString("configfile", "");
+	if (configFile != "")
+		config.LoadFromFile(configFile);
+
+	// A list of properties that can be used to overwrite generated properties
+	u_int nItems;
+	const string *items = params.FindString("config", &nItems);
+	if (items) {
+		for (u_int i = 0; i < nItems; ++i)
+			config.LoadFromString(items[i] + "\n");
+	}
+
+	return new SLGRenderer(config);
 }
 
 static DynamicLoader::RegisterRenderer<SLGRenderer> r("slg");
