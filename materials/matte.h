@@ -23,22 +23,27 @@
 // matte.cpp*
 #include "lux.h"
 #include "material.h"
+#include "queryable.h"
 
 namespace lux
 {
 
 // Matte Class Declarations
-class Matte : public Material {
+class Matte : public Material, public Queryable {
 public:
 	// Matte Public Methods
 	Matte(boost::shared_ptr<Texture<SWCSpectrum> > &kd,
 		boost::shared_ptr<Texture<float> > &sig,
-		const ParamSet &mp) : Material(mp), Kd(kd), sigma(sig) { }
+		const ParamSet &mp) : Material(mp),
+			Queryable("Matte-" + boost::lexical_cast<string>(this)),
+			Kd(kd), sigma(sig) { }
 	virtual ~Matte() { }
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,
 		const DifferentialGeometry &dgShading) const;
-	              
+
+	Texture<SWCSpectrum> *GetTexture() { return Kd.get(); }
+
 	static Material * CreateMaterial(const Transform &xform,
 		const ParamSet &mp);
 private:

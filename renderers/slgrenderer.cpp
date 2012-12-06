@@ -38,12 +38,14 @@
 #include "renderers/statistics/slgstatistics.h"
 #include "cameras/perspective.h"
 #include "textures/constant.h"
+#include "materials/matte.h"
 
 #include "luxrays/core/context.h"
 #include "luxrays/utils/core/exttrianglemesh.h"
 #include "luxrays/opencl/utils.h"
 #include "rendersession.h"
 #include "textures/blackbody.h"
+#include "shape.h"
 
 using namespace lux;
 
@@ -115,10 +117,13 @@ void SLGRenderer::SuspendWhenDone(bool v) {
 }
 
 string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, Primitive *prim) {
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Primitive type: " << typeid(*prim).name();
+
 	string matName;
 
 	// Check if it is an AreaLightPrimitive
 	AreaLightPrimitive *alPrim = dynamic_cast<AreaLightPrimitive *>(prim);
+
 	if (alPrim) {
 		AreaLight *al = alPrim->GetAreaLight();
 		matName = al->GetName();
@@ -127,7 +132,7 @@ string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, Primitive 
 		if (slgScene->materialIndices.count(matName) < 1) {
 			// Define a new area light material
 
-			Texture<SWCSpectrum> *lightTex = al->GetTexture();
+			Texture<SWCSpectrum> *tex = al->GetTexture();
 
 			const float gain = (*al)["gain"].FloatValue();
 			const float power = (*al)["power"].FloatValue();
@@ -135,15 +140,15 @@ string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, Primitive 
 			const float area = (*al)["area"].FloatValue();
 
 			// Check the type of texture used
-			LOG(LUX_DEBUG, LUX_NOERROR) << "AreaLight texture type: " << typeid(*lightTex).name();
-			ConstantRGBColorTexture *rgbLightTex = dynamic_cast<ConstantRGBColorTexture *>(lightTex);
-			BlackBodyTexture *blackBodyTexture = dynamic_cast<BlackBodyTexture *>(lightTex);
+			LOG(LUX_DEBUG, LUX_NOERROR) << "AreaLight texture type: " << typeid(*tex).name();
+			ConstantRGBColorTexture *constRGBTex = dynamic_cast<ConstantRGBColorTexture *>(tex);
+			BlackBodyTexture *blackBodyTexture = dynamic_cast<BlackBodyTexture *>(tex);
 
-			if (rgbLightTex) {
+			if (constRGBTex) {
 				luxrays::Spectrum rgb(
-						(*rgbLightTex)["color.r"].FloatValue(),
-						(*rgbLightTex)["color.g"].FloatValue(),
-						(*rgbLightTex)["color.b"].FloatValue());
+						(*constRGBTex)["color.r"].FloatValue(),
+						(*constRGBTex)["color.g"].FloatValue(),
+						(*constRGBTex)["color.b"].FloatValue());
 
 				const float gainFactor = power * efficacy /
 					(area * M_PI * rgb.Y());
@@ -174,12 +179,61 @@ string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, Primitive 
 						boost::lexical_cast<string>(rgb.b) + "\n"
 					);
 			} else {
-				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only area lights with constant ConstantRGBColorTexture or BlackBodyTexture. Replacing an unsupported area light material with matte.";
+				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only area lights with constant ConstantRGBColorTexture or BlackBodyTexture (i.e. not " <<
+					typeid(*tex).name() << "). Replacing an unsupported area light material with matte.";
 				matName = "mat_default";
 			}
 		}
-	} else
-		matName = "mat_default";
+	} else {
+		// Check if it is a Shape
+		Shape *shape = dynamic_cast<Shape *>(prim);
+		if (shape) {
+			// Get the material a try a conversion
+			Material *mat = shape->GetMaterial();
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Material type: " << typeid(*mat).name();
+
+			// Check if it is material Matte
+			Matte *matte = dynamic_cast<Matte *>(mat);
+			if (matte) {
+				matName = matte->GetName();
+
+				// Check if the material has already been defined
+				if (slgScene->materialIndices.count(matName) < 1) {
+					// Define the material
+
+					// Check the type of texture
+					Texture<SWCSpectrum> *tex = matte->GetTexture();
+					LOG(LUX_DEBUG, LUX_NOERROR) << "Texture type: " << typeid(*tex).name();
+					ConstantRGBColorTexture *rgbTex = dynamic_cast<ConstantRGBColorTexture *>(tex);
+
+					if (rgbTex) {
+						luxrays::Spectrum rgb(
+								(*rgbTex)["color.r"].FloatValue(),
+								(*rgbTex)["color.g"].FloatValue(),
+								(*rgbTex)["color.b"].FloatValue());
+
+						slgScene->AddMaterials(
+							"scene.materials.matte." + matName +" = " +
+								boost::lexical_cast<string>(rgb.r) + " " +
+								boost::lexical_cast<string>(rgb.g) + " " +
+								boost::lexical_cast<string>(rgb.b) + "\n"
+							);
+					} else {
+						LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only Matte material with ConstantRGBColorTexture (i.e. not " <<
+							typeid(*tex).name() << "). Replacing an unsupported material with matte.";
+						matName = "mat_default";
+					}
+				}
+			} else {
+				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only Matte material (i.e. not " <<
+					typeid(*mat).name() << "). Replacing an unsupported material with matte.";
+				matName = "mat_default";
+			}
+		} else {
+			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer doesn't support material conversion for " << typeid(*prim).name();
+			matName = "mat_default";
+		}
+	}
 
 	return matName;
 }
