@@ -123,6 +123,7 @@ public:
 	static Renderer *CreateRenderer(const ParamSet &params);
 
 private:
+	string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, Primitive *prim);
 	luxrays::sdl::Scene *CreateSLGScene();
 	luxrays::Properties CreateSLGConfig();
 

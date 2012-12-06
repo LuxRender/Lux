@@ -114,6 +114,76 @@ void SLGRenderer::SuspendWhenDone(bool v) {
 	suspendThreadsWhenDone = v;
 }
 
+string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, Primitive *prim) {
+	string matName;
+
+	// Check if it is an AreaLightPrimitive
+	AreaLightPrimitive *alPrim = dynamic_cast<AreaLightPrimitive *>(prim);
+	if (alPrim) {
+		AreaLight *al = alPrim->GetAreaLight();
+		matName = al->GetName();
+
+		// Check if I haven't already defined this AreaLight
+		if (slgScene->materialIndices.count(matName) < 1) {
+			// Define a new area light material
+
+			Texture<SWCSpectrum> *lightTex = al->GetTexture();
+
+			const float gain = (*al)["gain"].FloatValue();
+			const float power = (*al)["power"].FloatValue();
+			const float efficacy = (*al)["efficacy"].FloatValue();
+			const float area = (*al)["area"].FloatValue();
+
+			// Check the type of texture used
+			LOG(LUX_DEBUG, LUX_NOERROR) << "AreaLight texture type: " << typeid(*lightTex).name();
+			ConstantRGBColorTexture *rgbLightTex = dynamic_cast<ConstantRGBColorTexture *>(lightTex);
+			BlackBodyTexture *blackBodyTexture = dynamic_cast<BlackBodyTexture *>(lightTex);
+
+			if (rgbLightTex) {
+				luxrays::Spectrum rgb(
+						(*rgbLightTex)["color.r"].FloatValue(),
+						(*rgbLightTex)["color.g"].FloatValue(),
+						(*rgbLightTex)["color.b"].FloatValue());
+
+				const float gainFactor = power * efficacy /
+					(area * M_PI * rgb.Y());
+				if (gainFactor > 0.f && !isinf(gainFactor))
+					rgb *= gain * gainFactor * M_PI;
+				else
+					rgb *= gain * area * M_PI * rgb.Y();
+
+				slgScene->AddMaterials(
+					"scene.materials.light." + matName +" = " +
+						boost::lexical_cast<string>(rgb.r) + " " +
+						boost::lexical_cast<string>(rgb.g) + " " +
+						boost::lexical_cast<string>(rgb.b) + "\n"
+					);
+			} else if (blackBodyTexture) {
+				luxrays::Spectrum rgb(1.f);
+
+				const float gainFactor = power * efficacy;
+				if (gainFactor > 0.f && !isinf(gainFactor))
+					rgb *= gain * gainFactor * M_PI;
+				else
+					rgb *= gain * area * M_PI * blackBodyTexture->Y();
+
+				slgScene->AddMaterials(
+					"scene.materials.light." + matName +" = " +
+						boost::lexical_cast<string>(rgb.r) + " " +
+						boost::lexical_cast<string>(rgb.g) + " " +
+						boost::lexical_cast<string>(rgb.b) + "\n"
+					);
+			} else {
+				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only area lights with constant ConstantRGBColorTexture or BlackBodyTexture. Replacing an unsupported area light material with matte.";
+				matName = "mat_default";
+			}
+		}
+	} else
+		matName = "mat_default";
+
+	return matName;
+}
+
 luxrays::sdl::Scene *SLGRenderer::CreateSLGScene() {
 	luxrays::sdl::Scene *slgScene = new luxrays::sdl::Scene();
 
@@ -195,70 +265,7 @@ luxrays::sdl::Scene *SLGRenderer::CreateSLGScene() {
 		vector<luxrays::ExtTriangleMesh *> meshList;
 		scene->primitives[i]->ExtTesselate(&meshList, &scene->tesselatedPrimitives);
 
-		string matName;
-		// Check if it is an AreaLightPrimitive
-		AreaLightPrimitive *alPrim = dynamic_cast<AreaLightPrimitive *>(scene->primitives[i].get());
-		if (alPrim) {
-			AreaLight *al = alPrim->GetAreaLight();
-			matName = al->GetName();
-
-			// Check if I haven't already defined this AreaLight
-			if (slgScene->materialIndices.count(matName) < 1) {
-				// Define a new area light material
-
-				Texture<SWCSpectrum> *lightTex = al->GetTexture();
-
-				const float gain = (*al)["gain"].FloatValue();
-				const float power = (*al)["power"].FloatValue();
-				const float efficacy = (*al)["efficacy"].FloatValue();
-				const float area = (*al)["area"].FloatValue();
-
-				// Check the type of texture used
-				LOG(LUX_DEBUG, LUX_NOERROR) << "AreaLight texture type: " << typeid(*lightTex).name();
-				ConstantRGBColorTexture *rgbLightTex = dynamic_cast<ConstantRGBColorTexture *>(lightTex);
-				BlackBodyTexture *blackBodyTexture = dynamic_cast<BlackBodyTexture *>(lightTex);
-
-				if (rgbLightTex) {
-					luxrays::Spectrum rgb(
-							(*rgbLightTex)["color.r"].FloatValue(),
-							(*rgbLightTex)["color.g"].FloatValue(),
-							(*rgbLightTex)["color.b"].FloatValue());
-
-					const float gainFactor = power * efficacy /
-						(area * M_PI * rgb.Y());
-					if (gainFactor > 0.f && !isinf(gainFactor))
-						rgb *= gain * gainFactor * M_PI;
-					else
-						rgb *= gain * area * M_PI * rgb.Y();
-
-					slgScene->AddMaterials(
-						"scene.materials.light." + matName +" = " +
-							boost::lexical_cast<string>(rgb.r) + " " +
-							boost::lexical_cast<string>(rgb.g) + " " +
-							boost::lexical_cast<string>(rgb.b) + "\n"
-						);
-				} else if (blackBodyTexture) {
-					luxrays::Spectrum rgb(1.f);
-
-					const float gainFactor = power * efficacy;
-					if (gainFactor > 0.f && !isinf(gainFactor))
-						rgb *= gain * gainFactor * M_PI;
-					else
-						rgb *= gain * area * M_PI * blackBodyTexture->Y();
-
-					slgScene->AddMaterials(
-						"scene.materials.light." + matName +" = " +
-							boost::lexical_cast<string>(rgb.r) + " " +
-							boost::lexical_cast<string>(rgb.g) + " " +
-							boost::lexical_cast<string>(rgb.b) + "\n"
-						);
-				} else {
-					LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only area lights with constant ConstantRGBColorTexture or BlackBodyTexture. Replacing an unsupported area light material with matte.";
-					matName = "mat_default";
-				}
-			}
-		} else
-			matName = "mat_default";
+		const string matName = GetSLGMaterialName(slgScene, scene->primitives[i].get());
 
 		for (vector<luxrays::ExtTriangleMesh *>::const_iterator mesh = meshList.begin(); mesh != meshList.end(); ++mesh) {
 			if (!(*mesh)->HasNormals()) {
