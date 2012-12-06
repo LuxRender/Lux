@@ -362,8 +362,8 @@ luxrays::Properties SLGRenderer::CreateSLGConfig() {
 	Film *film = scene->camera->film;
 	int xStart, xEnd, yStart, yEnd;
 	film->GetSampleExtent(&xStart, &xEnd, &yStart, &yEnd);
-	const int imageWidth = xEnd - xStart;
-	const int imageHeight = yEnd - yStart;
+	const int imageWidth = xEnd - xStart + 1;
+	const int imageHeight = yEnd - yStart + 1;
 
 	float cropWindow[4] = {
 		(*film)["cropWindow.0"].FloatValue(),
