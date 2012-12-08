@@ -23,12 +23,13 @@
 // sky.h*
 #include "lux.h"
 #include "light.h"
+#include "queryable.h"
 
 namespace lux
 {
 
 // SkyLight Declarations
-class SkyLight : public Light {
+class SkyLight : public Light, public Queryable {
 public:
 	// SkyLight Public Methods
 	SkyLight(const Transform &light2world, float skyscale, u_int ns,
@@ -55,6 +56,11 @@ public:
 		const ParamSet &paramSet);
 
 private:
+	// Used by Queryable interface
+	float GetDirectionX() { return sundir.x; }
+	float GetDirectionY() { return sundir.y; }
+	float GetDirectionZ() { return sundir.z; }
+
 	// internal methods
 	Vector GetSunPosition() const;
 	void SunThetaPhi(float &theta, float &phi) const;

@@ -36,6 +36,7 @@
 #include "context.h"
 #include "light.h"
 #include "lights/sun.h"
+#include "lights/sky2.h"
 #include "renderers/statistics/slgstatistics.h"
 #include "cameras/perspective.h"
 #include "textures/constant.h"
@@ -47,6 +48,7 @@
 #include "luxrays/opencl/utils.h"
 #include "rendersession.h"
 #include "textures/blackbody.h"
+#include "lights/sky.h"
 
 
 using namespace lux;
@@ -308,9 +310,9 @@ luxrays::sdl::Scene *SLGRenderer::CreateSLGScene() {
 
 	if (sunLight) {
 		// Add a SunLight to the scene
-		const float sunDirX = (*sunLight)["dir.x"].FloatValue();
-		const float sunDirY = (*sunLight)["dir.y"].FloatValue();
-		const float sunDirZ = (*sunLight)["dir.z"].FloatValue();
+		const float dirX = (*sunLight)["dir.x"].FloatValue();
+		const float dirY = (*sunLight)["dir.y"].FloatValue();
+		const float dirZ = (*sunLight)["dir.z"].FloatValue();
 		const float turbidity = (*sunLight)["turbidity"].FloatValue();
 		const float relSize = (*sunLight)["relSize"].FloatValue();
 		// Note: (1000000000.0f / (M_PI * 100.f * 100.f)) is in SLG code
@@ -319,9 +321,9 @@ luxrays::sdl::Scene *SLGRenderer::CreateSLGScene() {
 
 		slgScene->AddSunLight(
 			"scene.sunlight.dir = " +
-				boost::lexical_cast<string>(sunDirX) + " " +
-				boost::lexical_cast<string>(sunDirY) + " " +
-				boost::lexical_cast<string>(sunDirZ) + "\n"
+				boost::lexical_cast<string>(dirX) + " " +
+				boost::lexical_cast<string>(dirY) + " " +
+				boost::lexical_cast<string>(dirZ) + "\n"
 			"scene.sunlight.turbidity = " + boost::lexical_cast<string>(turbidity) + "\n"
 			"scene.sunlight.relsize = " + boost::lexical_cast<string>(relSize) + "\n"
 			"scene.sunlight.gain = " +
@@ -331,16 +333,61 @@ luxrays::sdl::Scene *SLGRenderer::CreateSLGScene() {
 			);
 	}
 
-//	slgScene->AddSkyLight(
-//			"scene.skylight.dir = 0.0 0.0 1.0\n"
-//			"scene.skylight.turbidity = 2.2\n"
-//			"scene.skylight.gain = 0.8 0.8 0.8\n"
-//			);
-//	slgScene->AddSunLight(
-//			"scene.sunlight.dir = 0.0 0.0 1.0\n"
-//			"scene.sunlight.turbidity = 2.2\n"
-//			"scene.sunlight.gain = 0.8 0.8 0.8\n"
-//			);
+	// Check if there is a sky or sky2 light source
+	SkyLight *skyLight = NULL;
+	Sky2Light *sky2Light = NULL;
+	for (size_t i = 0; i < scene->lights.size(); ++i) {
+		skyLight = dynamic_cast<SkyLight *>(scene->lights[i]);
+		sky2Light = dynamic_cast<Sky2Light *>(scene->lights[i]);
+		if (skyLight || sky2Light)
+			break;
+	}
+
+	if (skyLight || sky2Light) {
+		// Add a SkyLight to the scene
+
+		if (sky2Light) {
+			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer doesn't support Sky2 light. It will use Sky instead.";
+
+			const float dirX = (*sky2Light)["dir.x"].FloatValue();
+			const float dirY = (*sky2Light)["dir.y"].FloatValue();
+			const float dirZ = (*sky2Light)["dir.z"].FloatValue();
+			const float turbidity = (*sky2Light)["turbidity"].FloatValue();
+			// Note: (1000000000.0f / (M_PI * 100.f * 100.f)) is in SLG code
+			// for compatibility with past scene
+			const float gain = (*sky2Light)["gain"].FloatValue() * (1000000000.0f / (M_PI * 100.f * 100.f));
+
+			slgScene->AddSkyLight(
+				"scene.skylight.dir = " +
+					boost::lexical_cast<string>(dirX) + " " +
+					boost::lexical_cast<string>(dirY) + " " +
+					boost::lexical_cast<string>(dirZ) + "\n"
+				"scene.skylight.turbidity = " + boost::lexical_cast<string>(turbidity) + "\n"
+				"scene.skylight.gain = " +
+					boost::lexical_cast<string>(gain) + " " +
+					boost::lexical_cast<string>(gain) + " " +
+					boost::lexical_cast<string>(gain) + "\n");
+		} else {
+			const float dirX = (*skyLight)["dir.x"].FloatValue();
+			const float dirY = (*skyLight)["dir.y"].FloatValue();
+			const float dirZ = (*skyLight)["dir.z"].FloatValue();
+			const float turbidity = (*skyLight)["turbidity"].FloatValue();
+			// Note: (1000000000.0f / (M_PI * 100.f * 100.f)) is in SLG code
+			// for compatibility with past scene
+			const float gain = (*skyLight)["gain"].FloatValue() * (1000000000.0f / (M_PI * 100.f * 100.f));
+
+			slgScene->AddSkyLight(
+				"scene.skylight.dir = " +
+					boost::lexical_cast<string>(dirX) + " " +
+					boost::lexical_cast<string>(dirY) + " " +
+					boost::lexical_cast<string>(dirZ) + "\n"
+				"scene.skylight.turbidity = " + boost::lexical_cast<string>(turbidity) + "\n"
+				"scene.skylight.gain = " +
+					boost::lexical_cast<string>(gain) + " " +
+					boost::lexical_cast<string>(gain) + " " +
+					boost::lexical_cast<string>(gain) + "\n");
+		}
+	}
 
 	//--------------------------------------------------------------------------
 	// Convert geometry
@@ -504,106 +551,116 @@ void SLGRenderer::Render(Scene *s) {
 	// Do the render
 	//----------------------------------------------------------------------
 
-	slg::RenderConfig *config = new slg::RenderConfig(slgConfigProps, *slgScene);
-	slg::RenderSession *session = new slg::RenderSession(config);
-	slg::RenderEngine *engine = session->renderEngine;
+	try {
+		slg::RenderConfig *config = new slg::RenderConfig(slgConfigProps, *slgScene);
+		slg::RenderSession *session = new slg::RenderSession(config);
+		slg::RenderEngine *engine = session->renderEngine;
 
-	unsigned int haltTime = config->cfg.GetInt("batch.halttime", 0);
-	unsigned int haltSpp = config->cfg.GetInt("batch.haltspp", 0);
-	float haltThreshold = config->cfg.GetFloat("batch.haltthreshold", -1.f);
+		unsigned int haltTime = config->cfg.GetInt("batch.halttime", 0);
+		unsigned int haltSpp = config->cfg.GetInt("batch.haltspp", 0);
+		float haltThreshold = config->cfg.GetFloat("batch.haltthreshold", -1.f);
 
-	// Start the rendering
-	session->Start();
-	const double startTime = luxrays::WallClockTime();
+		// Start the rendering
+		session->Start();
+		const double startTime = luxrays::WallClockTime();
 
-	double lastFilmUpdate = startTime;
-	char buf[512];
-	Film *film = scene->camera->film;
-	int xStart, xEnd, yStart, yEnd;
-	film->GetSampleExtent(&xStart, &xEnd, &yStart, &yEnd);
-	const luxrays::utils::Film *slgFilm = session->film; 
-	for (;;) {
-		if (state == PAUSE) {
-			session->BeginEdit();
-			while (state == PAUSE && !boost::this_thread::interruption_requested())
-				boost::this_thread::sleep(boost::posix_time::seconds(1));
-			session->EndEdit();
-		}
-		if ((state == TERMINATE) || boost::this_thread::interruption_requested())
-			break;
-
-		boost::this_thread::sleep(boost::posix_time::millisec(1000));
-
-		// Film update may be required by some render engine to
-		// update statistics, convergence test and more
-		if (luxrays::WallClockTime() - lastFilmUpdate > film->getldrDisplayInterval()) {
-			session->renderEngine->UpdateFilm();
-
-			// Update LuxRender film too
-			// TODO: use Film write mutex
-			ColorSystem colorSpace = film->GetColorSpace();
-			for (int y = yStart; y <= yEnd; ++y) {
-				for (int x = xStart; x <= xEnd; ++x) {
-					const luxrays::utils::SamplePixel *sp = slgFilm->GetSamplePixel(
-						luxrays::utils::PER_PIXEL_NORMALIZED, x - xStart, y - yStart);
-					const float alpha = slgFilm->IsAlphaChannelEnabled() ?
-						(slgFilm->GetAlphaPixel(x - xStart, y - yStart)->alpha) : 0.f;
-
-					XYZColor xyz = colorSpace.ToXYZ(RGBColor(sp->radiance.r, sp->radiance.g, sp->radiance.b));
-					// Flip the image upside down
-					Contribution contrib(x, yEnd - 1 - y, xyz, alpha, 0.f, sp->weight);
-					film->SetSample(&contrib);
-				}
+		double lastFilmUpdate = startTime;
+		char buf[512];
+		Film *film = scene->camera->film;
+		int xStart, xEnd, yStart, yEnd;
+		film->GetSampleExtent(&xStart, &xEnd, &yStart, &yEnd);
+		const luxrays::utils::Film *slgFilm = session->film; 
+		for (;;) {
+			if (state == PAUSE) {
+				session->BeginEdit();
+				while (state == PAUSE && !boost::this_thread::interruption_requested())
+					boost::this_thread::sleep(boost::posix_time::seconds(1));
+				session->EndEdit();
 			}
-			film->SetSampleCount(session->renderEngine->GetTotalSampleCount());
+			if ((state == TERMINATE) || boost::this_thread::interruption_requested())
+				break;
 
-			lastFilmUpdate =  luxrays::WallClockTime();
-		}
+			boost::this_thread::sleep(boost::posix_time::millisec(1000));
 
-		const double now = luxrays::WallClockTime();
-		const double elapsedTime = now - startTime;
-		const unsigned int pass = engine->GetPass();
-		// Convergence test is update inside UpdateFilm()
-		const float convergence = engine->GetConvergence();
-		if (((film->enoughSamplesPerPixel)) ||
-				((haltTime > 0) && (elapsedTime >= haltTime)) ||
-				((haltSpp > 0) && (pass >= haltSpp)) ||
-				((haltThreshold >= 0.f) && (1.f - convergence <= haltThreshold))) {
-			
-			if (suspendThreadsWhenDone) {
-				// Dade - wait for a resume rendering or exit
-				Pause();
-				while (state == PAUSE)
-					boost::this_thread::sleep(boost::posix_time::millisec(1000));
+			// Film update may be required by some render engine to
+			// update statistics, convergence test and more
+			if (luxrays::WallClockTime() - lastFilmUpdate > film->getldrDisplayInterval()) {
+				session->renderEngine->UpdateFilm();
 
-				if (state == TERMINATE)
-					break;
-				else {
-					// Cancel all halt conditions
-					haltTime = 0;
-					haltSpp = 0;
-					haltThreshold = -1.f;
+				// Update LuxRender film too
+				// TODO: use Film write mutex
+				ColorSystem colorSpace = film->GetColorSpace();
+				for (int y = yStart; y <= yEnd; ++y) {
+					for (int x = xStart; x <= xEnd; ++x) {
+						const luxrays::utils::SamplePixel *sp = slgFilm->GetSamplePixel(
+							luxrays::utils::PER_PIXEL_NORMALIZED, x - xStart, y - yStart);
+						const float alpha = slgFilm->IsAlphaChannelEnabled() ?
+							(slgFilm->GetAlphaPixel(x - xStart, y - yStart)->alpha) : 0.f;
+
+						XYZColor xyz = colorSpace.ToXYZ(RGBColor(sp->radiance.r, sp->radiance.g, sp->radiance.b));
+						// Flip the image upside down
+						Contribution contrib(x, yEnd - 1 - y, xyz, alpha, 0.f, sp->weight);
+						film->SetSample(&contrib);
+					}
 				}
-			} else {
-				Terminate();
+				film->SetSampleCount(session->renderEngine->GetTotalSampleCount());
+
+				lastFilmUpdate =  luxrays::WallClockTime();
+			}
+
+			const double now = luxrays::WallClockTime();
+			const double elapsedTime = now - startTime;
+			const unsigned int pass = engine->GetPass();
+			// Convergence test is update inside UpdateFilm()
+			const float convergence = engine->GetConvergence();
+			if (((film->enoughSamplesPerPixel)) ||
+					((haltTime > 0) && (elapsedTime >= haltTime)) ||
+					((haltSpp > 0) && (pass >= haltSpp)) ||
+					((haltThreshold >= 0.f) && (1.f - convergence <= haltThreshold))) {
+
+				if (suspendThreadsWhenDone) {
+					// Dade - wait for a resume rendering or exit
+					Pause();
+					while (state == PAUSE)
+						boost::this_thread::sleep(boost::posix_time::millisec(1000));
+
+					if (state == TERMINATE)
+						break;
+					else {
+						// Cancel all halt conditions
+						haltTime = 0;
+						haltSpp = 0;
+						haltThreshold = -1.f;
+					}
+				} else {
+					Terminate();
+					break;
+				}
 				break;
 			}
-			break;
+
+			// Print some information about the rendering progress
+			sprintf(buf, "[Elapsed time: %3d/%dsec][Samples %4d/%d][Convergence %f%%][Avg. samples/sec % 3.2fM on %.1fK tris]",
+					int(elapsedTime), int(haltTime), pass, haltSpp, 100.f * convergence, engine->GetTotalSamplesSec() / 1000000.0,
+					config->scene->dataSet->GetTotalTriangleCount() / 1000.0);
+
+			SLG_LOG(buf);
+
+			film->CheckWriteOuputInterval();
 		}
 
-		// Print some information about the rendering progress
-		sprintf(buf, "[Elapsed time: %3d/%dsec][Samples %4d/%d][Convergence %f%%][Avg. samples/sec % 3.2fM on %.1fK tris]",
-				int(elapsedTime), int(haltTime), pass, haltSpp, 100.f * convergence, engine->GetTotalSamplesSec() / 1000000.0,
-				config->scene->dataSet->GetTotalTriangleCount() / 1000.0);
-
-		SLG_LOG(buf);
-
-		film->CheckWriteOuputInterval();
+		// Stop the rendering
+		session->Stop();
+		delete session;
+#if !defined(LUXRAYS_DISABLE_OPENCL)
+	} catch (cl::Error err) {
+		LOG(LUX_SEVERE, LUX_SYSTEM) << "OpenCL ERROR: " << err.what() << "(" << luxrays::utils::oclErrorString(err.err()) << ")";
+#endif
+	} catch (std::runtime_error err) {
+		LOG(LUX_SEVERE, LUX_SYSTEM) << "RUNTIME ERROR: " << err.what();
+	} catch (std::exception err) {
+		LOG(LUX_SEVERE, LUX_SYSTEM) << "ERROR: " << err.what();
 	}
-
-	// Stop the rendering
-	session->Stop();
-	delete session;
 
 	// Free allocated normals
 	for (u_int i = 0; i < alloctedMeshNormals.size(); ++i)

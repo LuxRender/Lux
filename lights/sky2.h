@@ -23,12 +23,13 @@
 // sky2.h*
 #include "lux.h"
 #include "light.h"
+#include "queryable.h"
 
 namespace lux
 {
 
 // Sky2Light Declarations
-class Sky2Light : public Light {
+class Sky2Light : public Light, public Queryable {
 public:
 	// Sky2Light Public Methods
 	Sky2Light(const Transform &light2world, float skyscale, u_int ns,
@@ -56,6 +57,13 @@ public:
 	Vector  sundir;
 	float 	turbidity;
 	RegularSPD *model[10];
+
+private:
+	// Used by Queryable interface
+	float GetDirectionX() { return sundir.x; }
+	float GetDirectionY() { return sundir.y; }
+	float GetDirectionZ() { return sundir.z; }
+
 };
 
 }//namespace lux

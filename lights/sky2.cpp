@@ -344,7 +344,7 @@ Sky2Light::~Sky2Light()
 
 Sky2Light::Sky2Light(const Transform &light2world, float skyscale, u_int ns,
 	Vector sd, float turb)
-	: Light(light2world, ns) {
+	: Light(light2world, ns), Queryable("Sky2Light-" + boost::lexical_cast<string>(this)) {
 	skyScale = skyscale;
 	sundir = sd;
 	turbidity = turb;
@@ -353,6 +353,12 @@ Sky2Light::Sky2Light(const Transform &light2world, float skyscale, u_int ns,
 		model[i] = NULL;
 
 	ComputeModel(turbidity, albedo, M_PI * .5f - SphericalTheta(sd), model);
+
+	AddFloatAttribute(*this, "dir.x", "Sky light direction X", &Sky2Light::GetDirectionX);
+	AddFloatAttribute(*this, "dir.y", "Sky light direction Y", &Sky2Light::GetDirectionY);
+	AddFloatAttribute(*this, "dir.z", "Sky light direction Z", &Sky2Light::GetDirectionZ);
+	AddFloatAttribute(*this, "turbidity", "Sky light turbidity", &Sky2Light::turbidity);
+	AddFloatAttribute(*this, "gain", "Sun light gain", &Sky2Light::skyScale);
 }
 
 float Sky2Light::Power(const Scene &scene) const
