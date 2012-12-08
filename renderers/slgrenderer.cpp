@@ -35,17 +35,19 @@
 #include "slgrenderer.h"
 #include "context.h"
 #include "light.h"
+#include "lights/sun.h"
 #include "renderers/statistics/slgstatistics.h"
 #include "cameras/perspective.h"
 #include "textures/constant.h"
 #include "materials/matte.h"
+#include "shape.h"
 
 #include "luxrays/core/context.h"
 #include "luxrays/utils/core/exttrianglemesh.h"
 #include "luxrays/opencl/utils.h"
 #include "rendersession.h"
 #include "textures/blackbody.h"
-#include "shape.h"
+
 
 using namespace lux;
 
@@ -296,7 +298,39 @@ luxrays::sdl::Scene *SLGRenderer::CreateSLGScene() {
 	// Setup lights
 	//--------------------------------------------------------------------------
 
-	// Create a SkyLight & SunLight
+	// Check if there is a sun light source
+	SunLight *sunLight = NULL;
+	for (size_t i = 0; i < scene->lights.size(); ++i) {
+		sunLight = dynamic_cast<SunLight *>(scene->lights[i]);
+		if (sunLight)
+			break;
+	}
+
+	if (sunLight) {
+		// Add a SunLight to the scene
+		const float sunDirX = (*sunLight)["dir.x"].FloatValue();
+		const float sunDirY = (*sunLight)["dir.y"].FloatValue();
+		const float sunDirZ = (*sunLight)["dir.z"].FloatValue();
+		const float turbidity = (*sunLight)["turbidity"].FloatValue();
+		const float relSize = (*sunLight)["relSize"].FloatValue();
+		// Note: (1000000000.0f / (M_PI * 100.f * 100.f)) is in SLG code
+		// for compatibility with past scene
+		const float gain = (*sunLight)["gain"].FloatValue() * (1000000000.0f / (M_PI * 100.f * 100.f));
+
+		slgScene->AddSunLight(
+			"scene.sunlight.dir = " +
+				boost::lexical_cast<string>(sunDirX) + " " +
+				boost::lexical_cast<string>(sunDirY) + " " +
+				boost::lexical_cast<string>(sunDirZ) + "\n"
+			"scene.sunlight.turbidity = " + boost::lexical_cast<string>(turbidity) + "\n"
+			"scene.sunlight.relsize = " + boost::lexical_cast<string>(relSize) + "\n"
+			"scene.sunlight.gain = " +
+				boost::lexical_cast<string>(gain) + " " +
+				boost::lexical_cast<string>(gain) + " " +
+				boost::lexical_cast<string>(gain) + "\n"
+			);
+	}
+
 //	slgScene->AddSkyLight(
 //			"scene.skylight.dir = 0.0 0.0 1.0\n"
 //			"scene.skylight.turbidity = 2.2\n"

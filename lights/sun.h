@@ -25,12 +25,13 @@
 #include "light.h"
 #include "scene.h"
 #include "spd.h"
+#include "queryable.h"
 
 namespace lux
 {
 
 // SunLight Declarations
-class SunLight : public Light {
+class SunLight : public Light, public Queryable {
 public:
 	// SunLight Public Methods
 	SunLight(const Transform &light2world, const float sunscale,
@@ -60,11 +61,19 @@ public:
 		const ParamSet &paramSet);
 
 private:
+	// Used by Queryable interface
+	float GetDirectionX() { return dir.x; }
+	float GetDirectionY() { return dir.y; }
+	float GetDirectionZ() { return dir.z; }
+
+	// Creation parameters
+	Vector dir;
+	float turbidity, relSize, gain;
+	
 	// SunLight Private Data
 	Vector sundir;
 	// XY Vectors for cone sampling
 	Vector x, y;
-	float turbidity;
 	float thetaS, phiS, V;
 	float cosThetaMax, sin2ThetaMax;
 	SPD *LSPD;
