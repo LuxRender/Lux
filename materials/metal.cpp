@@ -45,7 +45,8 @@ using namespace lux;
 Metal::Metal(boost::shared_ptr<SPD > &n, boost::shared_ptr<SPD > &k, 
 	boost::shared_ptr<Texture<float> > &u,
 	boost::shared_ptr<Texture<float> > &v,
-	const ParamSet &mp) : Material(mp), N(n), K(k), nu(u), nv(v)
+	const ParamSet &mp) : Material("Metal-" + boost::lexical_cast<string>(this), mp),
+	N(n), K(k), nu(u), nv(v)
 {
 }
 

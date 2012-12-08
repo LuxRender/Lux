@@ -31,7 +31,7 @@ namespace lux
 class Glass2 : public Material {
 public:
 	// Glass Public Methods
-	Glass2(bool archi, bool disp, const ParamSet &mp) : Material(mp), 
+	Glass2(bool archi, bool disp, const ParamSet &mp) : Material("Glass2-" + boost::lexical_cast<string>(this), mp), 
 		architectural(archi), dispersion(disp) { }
 	virtual ~Glass2() { }
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,

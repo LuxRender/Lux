@@ -49,6 +49,7 @@
 #include "rendersession.h"
 #include "textures/blackbody.h"
 #include "lights/sky.h"
+#include "materials/mirror.h"
 
 
 using namespace lux;
@@ -132,7 +133,10 @@ string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, Primitive 
 		AreaLight *al = alPrim->GetAreaLight();
 		matName = al->GetName();
 
+		//----------------------------------------------------------------------
 		// Check if I haven't already defined this AreaLight
+		//----------------------------------------------------------------------
+
 		if (slgScene->materialIndices.count(matName) < 1) {
 			// Define a new area light material
 
@@ -196,14 +200,18 @@ string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, Primitive 
 			Material *mat = shape->GetMaterial();
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Material type: " << typeid(*mat).name();
 
-			// Check if it is material Matte
-			Matte *matte = dynamic_cast<Matte *>(mat);
-			if (matte) {
-				matName = matte->GetName();
+			matName = mat->GetName();
+			// Check if the material has already been defined
+			if (slgScene->materialIndices.count(matName) < 1) {
+				// I have to create a new material definition
 
-				// Check if the material has already been defined
-				if (slgScene->materialIndices.count(matName) < 1) {
+				//------------------------------------------------------------------
+				// Check if it is material Matte
+				//------------------------------------------------------------------
+				if (dynamic_cast<Matte *>(mat)) {
 					// Define the material
+					Matte *matte = dynamic_cast<Matte *>(mat);
+					matName = matte->GetName();
 
 					// Check the type of texture
 					Texture<SWCSpectrum> *tex = matte->GetTexture();
@@ -227,11 +235,46 @@ string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, Primitive 
 							typeid(*tex).name() << "). Replacing an unsupported material with matte.";
 						matName = "mat_default";
 					}
+				} else
+				//------------------------------------------------------------------
+				// Check if it is material Mirror
+				//------------------------------------------------------------------
+				if(dynamic_cast<Mirror *>(mat)) {
+					// Define the material
+					Mirror *mirror = dynamic_cast<Mirror *>(mat);
+					matName = mirror->GetName();
+
+					// Check the type of texture
+					Texture<SWCSpectrum> *tex = mirror->GetTexture();
+					LOG(LUX_DEBUG, LUX_NOERROR) << "Texture type: " << typeid(*tex).name();
+					ConstantRGBColorTexture *rgbTex = dynamic_cast<ConstantRGBColorTexture *>(tex);
+
+					if (rgbTex) {
+						luxrays::Spectrum rgb(
+								(*rgbTex)["color.r"].FloatValue(),
+								(*rgbTex)["color.g"].FloatValue(),
+								(*rgbTex)["color.b"].FloatValue());
+
+						slgScene->AddMaterials(
+							"scene.materials.mirror." + matName +" = " +
+								boost::lexical_cast<string>(rgb.r) + " " +
+								boost::lexical_cast<string>(rgb.g) + " " +
+								boost::lexical_cast<string>(rgb.b) + " 1\n"
+							);
+					} else {
+						LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only Mirror material with ConstantRGBColorTexture (i.e. not " <<
+							typeid(*tex).name() << "). Replacing an unsupported material with matte.";
+						matName = "mat_default";
+					}
+				} else
+				//------------------------------------------------------------------
+				// Material is not supported, use the default one
+				//------------------------------------------------------------------
+				{
+					LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only Matte material (i.e. not " <<
+						typeid(*mat).name() << "). Replacing an unsupported material with matte.";
+					matName = "mat_default";
 				}
-			} else {
-				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only Matte material (i.e. not " <<
-					typeid(*mat).name() << "). Replacing an unsupported material with matte.";
-				matName = "mat_default";
 			}
 		} else {
 			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer doesn't support material conversion for " << typeid(*prim).name();
@@ -317,7 +360,8 @@ luxrays::sdl::Scene *SLGRenderer::CreateSLGScene() {
 		const float relSize = (*sunLight)["relSize"].FloatValue();
 		// Note: (1000000000.0f / (M_PI * 100.f * 100.f)) is in SLG code
 		// for compatibility with past scene
-		const float gain = (*sunLight)["gain"].FloatValue() * (1000000000.0f / (M_PI * 100.f * 100.f));
+		const float gain = (*sunLight)["gain"].FloatValue() * (1000000000.0f / (M_PI * 100.f * 100.f)) *
+			INV_PI;
 
 		slgScene->AddSunLight(
 			"scene.sunlight.dir = " +
@@ -355,7 +399,8 @@ luxrays::sdl::Scene *SLGRenderer::CreateSLGScene() {
 			const float turbidity = (*sky2Light)["turbidity"].FloatValue();
 			// Note: (1000000000.0f / (M_PI * 100.f * 100.f)) is in SLG code
 			// for compatibility with past scene
-			const float gain = (*sky2Light)["gain"].FloatValue() * (1000000000.0f / (M_PI * 100.f * 100.f));
+			const float gain = (*sky2Light)["gain"].FloatValue() * (1000000000.0f / (M_PI * 100.f * 100.f)) *
+				INV_PI;
 
 			slgScene->AddSkyLight(
 				"scene.skylight.dir = " +
@@ -374,7 +419,8 @@ luxrays::sdl::Scene *SLGRenderer::CreateSLGScene() {
 			const float turbidity = (*skyLight)["turbidity"].FloatValue();
 			// Note: (1000000000.0f / (M_PI * 100.f * 100.f)) is in SLG code
 			// for compatibility with past scene
-			const float gain = (*skyLight)["gain"].FloatValue() * (1000000000.0f / (M_PI * 100.f * 100.f));
+			const float gain = (*skyLight)["gain"].FloatValue() * (1000000000.0f / (M_PI * 100.f * 100.f)) *
+				INV_PI;
 
 			slgScene->AddSkyLight(
 				"scene.skylight.dir = " +

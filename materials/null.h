@@ -31,7 +31,7 @@ namespace lux
 class Null : public Material {
 public:
 	// Null Public Methods
-	Null(const ParamSet &mp) : Material(mp, false) { }
+	Null(const ParamSet &mp) : Material("Null-" + boost::lexical_cast<string>(this), mp, false) { }
 	virtual ~Null() { }
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,

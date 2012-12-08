@@ -35,7 +35,7 @@ public:
 		boost::shared_ptr<Texture<SWCSpectrum> > &kt,
 		boost::shared_ptr<Texture<float> > &sig,
 		bool conserving,
-		const ParamSet &mp) : Material(mp), Kr(kr), Kt(kt), sigma(sig),
+		const ParamSet &mp) : Material("MatteTranslucent-" + boost::lexical_cast<string>(this), mp), Kr(kr), Kt(kt), sigma(sig),
 		energyConserving(conserving) { }
 	virtual ~MatteTranslucent() { }
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,

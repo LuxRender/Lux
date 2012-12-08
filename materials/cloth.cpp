@@ -233,7 +233,7 @@ Cloth::Cloth(boost::shared_ptr<Texture<SWCSpectrum> > &warp_kd,
 			boost::shared_ptr<Texture<SWCSpectrum> > &weft_kd,
 			boost::shared_ptr<Texture<SWCSpectrum> > &weft_ks,
 			boost::shared_ptr<WeavePattern> &pattern,
-			const ParamSet &mp) : Material(mp), Pattern(pattern)
+			const ParamSet &mp) : Material("Cloth-" + boost::lexical_cast<string>(this), mp), Pattern(pattern)
 {
 	// Store warp and weft textures
 	Kds.push_back(warp_kd);

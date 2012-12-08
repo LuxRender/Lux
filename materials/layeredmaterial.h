@@ -37,7 +37,7 @@ public:
 		  boost::shared_ptr<Material> &m4,
 		  boost::shared_ptr<Texture<float> > &op1, boost::shared_ptr<Texture<float> > &op2,
 		  boost::shared_ptr<Texture<float> > &op3, boost::shared_ptr<Texture<float> > &op4
-		  ) : Material(mp), mat1(m1),mat2(m2),
+		  ) : Material("LayeredMaterial-" + boost::lexical_cast<string>(this), mp), mat1(m1),mat2(m2),
 		  mat3(m3),mat4(m4), opacity1(op1),opacity2(op2),opacity3(op3),opacity4(op4) {}
 
 	void addMat(MemoryArena &arena, const SpectrumWavelengths &sw, const Intersection &isect, 

@@ -36,8 +36,8 @@ public:
 		boost::shared_ptr<Texture<float> > &p2,
 		boost::shared_ptr<Texture<float> > &p3,
 		boost::shared_ptr<Texture<float> > &thickness,
-		const ParamSet &mp) : Material(mp), Kd(kd), P1(p1), P2(p2),
-		P3(p3), Thickness(thickness) { }
+		const ParamSet &mp) : Material("Velvet-" + boost::lexical_cast<string>(this), mp),
+		Kd(kd), P1(p1), P2(p2), P3(p3), Thickness(thickness) { }
 	virtual ~Velvet() { }
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,

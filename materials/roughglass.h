@@ -38,7 +38,8 @@ public:
 		boost::shared_ptr<Texture<float> > &i,
 		boost::shared_ptr<Texture<float> > &cbf,
 		bool disp,
-		const ParamSet &mp) : Material(mp), Kr(r), Kt(t), index(i),
+		const ParamSet &mp) : Material("RoughGlass-" + boost::lexical_cast<string>(this), mp),
+		Kr(r), Kt(t), index(i),
 		cauchyb(cbf), uroughness(urough), vroughness(vrough),
 		dispersion(disp) { }
 	virtual ~RoughGlass() { }
