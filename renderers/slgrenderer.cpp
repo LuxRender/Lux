@@ -54,6 +54,8 @@
 #include "materials/mirror.h"
 #include "integrators/path.h"
 #include "integrators/bidirectional.h"
+#include "samplers/metrosampler.h"
+#include "samplers/random.h"
 
 
 using namespace lux;
@@ -602,9 +604,7 @@ luxrays::sdl::Scene *SLGRenderer::CreateSLGScene() {
 luxrays::Properties SLGRenderer::CreateSLGConfig() {
 	std::stringstream ss;
 
-	ss << "renderengine.type = PATHOCL\n"
-			"sampler.type = INLINED_RANDOM\n"
-			"opencl.platform.index = -1\n"
+	ss << "opencl.platform.index = -1\n"
 			"opencl.cpu.use = 1\n"
 			"opencl.gpu.use = 1\n"
 			;
@@ -635,7 +635,7 @@ luxrays::Properties SLGRenderer::CreateSLGConfig() {
 		throw std::runtime_error("SLGRenderer doesn't support the SurfaceIntegrator, falling back to path tracing");
 		ss << "renderengine.type = PATHOCL\n";
 	}
-	
+
 	//--------------------------------------------------------------------------
 	// Film related settings
 	//--------------------------------------------------------------------------
@@ -658,6 +658,29 @@ luxrays::Properties SLGRenderer::CreateSLGConfig() {
 
 	ss << "image.width = " + boost::lexical_cast<string>(imageWidth) + "\n"
 			"image.height = " + boost::lexical_cast<string>(imageHeight) + "\n";
+
+	//--------------------------------------------------------------------------
+	// Sampler related settings
+	//--------------------------------------------------------------------------
+
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Sampler type: " << typeid(*(scene->sampler)).name();
+	if (dynamic_cast<MetropolisSampler *>(scene->sampler)) {
+		MetropolisSampler *sampler = dynamic_cast<MetropolisSampler *>(scene->sampler);
+		const int maxRejects = (*sampler)["maxRejects"].IntValue();
+		const float pLarge = (*sampler)["pLarge"].FloatValue();
+		const float range = (*sampler)["range"].FloatValue() * 2.f / (xEnd - xStart);
+
+		ss << "sampler.type = METROPOLIS\n"
+				"sampler.maxconsecutivereject = " + boost::lexical_cast<string>(maxRejects) + "\n"
+				"sampler.largesteprate = " + boost::lexical_cast<string>(pLarge) + "\n"
+				"sampler.imagemutationrate = " + boost::lexical_cast<string>(range) + "\n";
+	} else if (dynamic_cast<RandomSampler *>(scene->sampler)) {
+		ss << "sampler.type = INLINED_RANDOM\n";
+	} else {
+		// Unmapped sampler, just use random
+		throw std::runtime_error("SLGRenderer doesn't support the Sampler, falling back to random sampler");
+		ss << "sampler.type = INLINED_RANDOM\n";
+	}
 
 	//--------------------------------------------------------------------------
 

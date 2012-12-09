@@ -28,6 +28,7 @@
 #include "contribution.h"
 #include "spectrumwavelengths.h"
 #include "film.h"
+#include "queryable.h"
 
 namespace lux
 {
@@ -61,7 +62,7 @@ public:
 	mutable vector<Contribution> contributions;
 };
 
-class  Sampler {
+class  Sampler : public Queryable {
 public:
 	// Sampler Interface
 	Sampler(int xstart, int xend, int ystart, int yend, u_int spp);

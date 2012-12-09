@@ -87,6 +87,8 @@ LDSampler::LDSampler(int xstart, int xend,
 	} else
 		pixelSamples = ps;
 	sampPixelPos = 0;
+
+	AddStringConstant(*this, "name", "Name of current sampler", "lowdiscrepancy");
 }
 
 LDSampler::~LDSampler() {

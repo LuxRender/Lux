@@ -32,7 +32,7 @@
 using namespace lux;
 
 // Sampler Method Definitions
-Sampler::Sampler(int xstart, int xend, int ystart, int yend, u_int spp)
+Sampler::Sampler(int xstart, int xend, int ystart, int yend, u_int spp) : Queryable("sampler")
 {
 	xPixelStart = min(xstart, xend);
 	xPixelEnd = max(xstart, xend);

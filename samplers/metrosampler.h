@@ -81,8 +81,12 @@ public:
 		float u[2]);
 	virtual float *GetLazyValues(const Sample &sample, u_int num, u_int pos);
 	virtual void AddSample(const Sample &sample);
+
+	// Used by Queryable interface
+	u_int GetMaxRejects() { return maxRejects; }
+
 	static Sampler *CreateSampler(const ParamSet &params, Film *film);
-		
+
 	u_int maxRejects;
 	float pLarge, range;
 	u_int cooldownTime;

@@ -58,6 +58,8 @@ RandomSampler::RandomSampler(int xstart, int xend, int ystart, int yend,
 
 	totalPixels = pixelSampler->GetTotalPixels();
 	sampPixelPos = 0;
+
+	AddStringConstant(*this, "name", "Name of current sampler", "random");
 }
 
 RandomSampler::~RandomSampler()
