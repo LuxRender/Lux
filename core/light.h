@@ -35,18 +35,18 @@
 namespace lux
 {
 
-class  Light {
+class  Light : public Queryable {
 public:
 	// Light Interface
-	virtual ~Light() { }
-	Light(const Transform &l2w, u_int ns = 1U)
-		: nSamples(max(1U, ns)), LightToWorld(l2w) {
+	Light(const string &name, const Transform &l2w, u_int ns = 1U)
+		: Queryable(name), nSamples(max(1U, ns)), LightToWorld(l2w) {
 		if (LightToWorld.HasScale())
 			LOG(LUX_DEBUG,LUX_UNIMPLEMENT)<< "Scaling detected in light-to-world transformation! Some lights might not support it yet.";
 		havePortalShape = false;
 		nrPortalShapes = 0;
 		PortalArea = 0;
 	}
+	virtual ~Light() { }
 	const Volume *GetVolume() const { return volume.get(); }
 	void SetVolume(boost::shared_ptr<Volume> &v) {
 		// Create a temporary to increase shared count
@@ -88,7 +88,7 @@ protected:
 	boost::shared_ptr<Volume> volume;
 };
 
-class AreaLight : public Light, public Queryable {
+class AreaLight : public Light {
 public:
 	// AreaLight Interface
 	AreaLight(const Transform &light2world,
@@ -128,9 +128,9 @@ protected:
 class  InstanceLight : public Light {
 public:
 	// Light Interface
-	virtual ~InstanceLight() { }
 	InstanceLight(const Transform &l2w, boost::shared_ptr<Light> &l)
-		: Light(l2w, l->nSamples), light(l) { }
+		: Light("InstanceLight-" + boost::lexical_cast<string>(this), l2w, l->nSamples), light(l) { }
+	virtual ~InstanceLight() { }
 	virtual float Power(const Scene &scene) const {
 		return light->Power(scene);
 	}
@@ -162,9 +162,10 @@ protected:
 class  MotionLight : public Light {
 public:
 	// Light Interface
-	virtual ~MotionLight() { }
 	MotionLight(const MotionSystem &mp, boost::shared_ptr<Light> &l)
-		: Light(Transform(), l->nSamples), light(l), motionPath(mp) { }
+		: Light("MotionLight-" + boost::lexical_cast<string>(this), Transform(), l->nSamples),
+		light(l), motionPath(mp) { }
+	virtual ~MotionLight() { }
 	virtual float Power(const Scene &scene) const {
 		return light->Power(scene);
 	}

@@ -55,9 +55,19 @@ public:
 	static Light *CreateLight(const Transform &light2world,
 		const ParamSet &paramSet);
 
+	MIPMap *GetRadianceMap() { return radianceMap; }
+
 	MIPMap *radianceMap;
 	EnvironmentMapping *mapping;
 private:
+	// Used by Queryable interface
+	float GetColorR() { return lightColor.c[0]; }
+	float GetColorG() { return lightColor.c[1]; }
+	float GetColorB() { return lightColor.c[2]; }
+
+	RGBColor lightColor;
+	float gain, gamma;
+
 	// InfiniteAreaLight Private Data
 	RGBIllumSPD SPDbase;
 };

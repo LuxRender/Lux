@@ -56,12 +56,22 @@ public:
 		const Point &p, float u1, float u2, float u3, BSDF **bsdf,
 		float *pdf, float *pdfDirect, SWCSpectrum *Le) const;
 
+	MIPMap *GetRadianceMap() { return radianceMap; }
+
 	static Light *CreateLight(const Transform &light2world,
 		const ParamSet &paramSet);
 
 	MIPMap *radianceMap;
 	EnvironmentMapping *mapping;
 private:
+	// Used by Queryable interface
+	float GetColorR() { return lightColor.c[0]; }
+	float GetColorG() { return lightColor.c[1]; }
+	float GetColorB() { return lightColor.c[2]; }
+
+	RGBColor lightColor;
+	float gain, gamma;
+
 	// InfiniteAreaLightIS Private Data
 	RGBIllumSPD SPDbase;
 	Distribution2D *uvDistrib;

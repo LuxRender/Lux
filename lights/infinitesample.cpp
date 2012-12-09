@@ -116,9 +116,13 @@ InfiniteAreaLightIS::~InfiniteAreaLightIS() {
 }
 InfiniteAreaLightIS::InfiniteAreaLightIS(const Transform &light2world,
 	const RGBColor &l, u_int ns, const string &texmap, u_int immaxres,
-	EnvironmentMapping *m, float gain, float gamma)
-	: Light(light2world, ns), SPDbase(l)
+	EnvironmentMapping *m, float g, float gm)
+	: Light("InfiniteAreaLightIS-" + boost::lexical_cast<string>(this), light2world, ns), SPDbase(l)
 {
+	lightColor = l;
+	gain = g;
+	gamma = gm;
+
 	// Base illuminant SPD
 	SPDbase.Scale(gain);
 
@@ -179,6 +183,12 @@ InfiniteAreaLightIS::InfiniteAreaLightIS(const Transform &light2world,
 	mean_y /= dnu*samples * dnv*samples;
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Finished computing importance sampling map";
 	uvDistrib = new Distribution2D(&img[0], dnu, dnv);
+
+	AddFloatAttribute(*this, "gain", "InfiniteAreaLightIS gain", &InfiniteAreaLightIS::gain);
+	AddFloatAttribute(*this, "gamma", "InfiniteAreaLightIS gamma", &InfiniteAreaLightIS::gamma);
+	AddFloatAttribute(*this, "color.r", "InfiniteAreaLightIS color R", &InfiniteAreaLightIS::GetColorR);
+	AddFloatAttribute(*this, "color.g", "InfiniteAreaLightIS color G", &InfiniteAreaLightIS::GetColorG);
+	AddFloatAttribute(*this, "color.b", "InfiniteAreaLightIS color B", &InfiniteAreaLightIS::GetColorB);
 }
 
 bool InfiniteAreaLightIS::Le(const Scene &scene, const Sample &sample,

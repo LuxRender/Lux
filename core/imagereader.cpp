@@ -61,6 +61,8 @@ ImageData::~ImageData()
 MIPMap *ImageData::createMIPMap(ImageTextureFilterType filterType,
 	float maxAniso, ImageWrap wrapMode, float gain, float gamma)
 {
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Defining a mipmap with " << noChannels_ << " channels of type " << pixel_type_;
+
 	MIPMap *mipmap = NULL;
 
 	// Dade - added support for 1 channel maps

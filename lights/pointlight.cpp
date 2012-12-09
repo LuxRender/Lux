@@ -140,7 +140,8 @@ PointLight::PointLight(const Transform &light2world,
 	const boost::shared_ptr< Texture<SWCSpectrum> > &L,
 	float g, float power, float efficacy,
 	SampleableSphericalFunction *ssf) :
-	Light(light2world), Lbase(L), gain(g), func(ssf)
+	Light("PointLight-" + boost::lexical_cast<string>(this), light2world),
+	Lbase(L), gain(g), func(ssf)
 {
 	lightPos = LightToWorld * Point(0,0,0);
 	Lbase->SetIlluminant(); // Illuminant must be set before calling Le->Y()

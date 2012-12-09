@@ -37,6 +37,8 @@
 #include "light.h"
 #include "lights/sun.h"
 #include "lights/sky2.h"
+#include "lights/infinite.h"
+#include "lights/infinitesample.h"
 #include "renderers/statistics/slgstatistics.h"
 #include "cameras/perspective.h"
 #include "textures/constant.h"
@@ -119,6 +121,63 @@ vector<RendererHostDescription *> &SLGRenderer::GetHostDescs() {
 void SLGRenderer::SuspendWhenDone(bool v) {
 	boost::mutex::scoped_lock lock(classWideMutex);
 	suspendThreadsWhenDone = v;
+}
+
+void SLGRenderer::DefineSLGDefaultTexMap(luxrays::sdl::Scene *slgScene) {
+	if (!slgScene->texMapCache->FindTextureMap("tex_default", 1.f)) {
+		luxrays::Spectrum *defaultTexMap = new luxrays::Spectrum[1];
+		defaultTexMap[0].r = 1.f;
+		defaultTexMap[0].g = 1.f;
+		defaultTexMap[0].b = 1.f;
+		slgScene->DefineTexMap("tex_default", defaultTexMap, 1.f, 1, 1);
+	}
+}
+
+string SLGRenderer::GetSLGTexName(luxrays::sdl::Scene *slgScene,
+		MIPMap *mipMap, const float gamma) {
+	if (!mipMap) {
+		DefineSLGDefaultTexMap(slgScene);
+		return "tex_default";
+	}
+
+	// Check if the texture map has already been defined
+	const string texName = mipMap->GetName();
+	if (slgScene->texMapCache->FindTextureMap(texName, gamma))
+		return texName;
+	
+	if (dynamic_cast<const MIPMapFastImpl<TextureColor<float, 4> > *>(mipMap))
+		return GetSLGTexName(slgScene, (MIPMapImpl<TextureColor<float, 4> > *)mipMap, gamma);
+	else {
+		// Unsupported type
+		DefineSLGDefaultTexMap(slgScene);
+		return "tex_default";
+	}
+}
+
+string SLGRenderer::GetSLGTexName(luxrays::sdl::Scene *slgScene,
+		MIPMapFastImpl<TextureColor<float, 4> > *mipMap, const float gamma) {
+	const BlockedArray<TextureColor<float, 4> > *map = mipMap->GetSingleMap();
+
+	luxrays::Spectrum *slgRGBMap = new luxrays::Spectrum[map->uSize() * map->vSize()];
+	float *slgAlphaMap = new float[map->uSize() * map->vSize()];
+
+	for (u_int y = 0; y < map->vSize(); ++y) {
+		for (u_int x = 0; x < map->uSize(); ++x) {
+			const TextureColor<float, 4> &col = (*map)(x, y);
+
+			const u_int index = (x + y * map->uSize());
+			slgRGBMap[index].r = col.c[0];
+			slgRGBMap[index].g = col.c[1];
+			slgRGBMap[index].b = col.c[2];
+			slgAlphaMap[index] = col.c[3];
+		}
+	}
+
+	const string texName = mipMap->GetName();
+	slgScene->DefineTexMap(texName,
+			slgRGBMap, slgAlphaMap, gamma, (u_int)map->uSize(), (u_int)map->vSize());
+
+	return texName;
 }
 
 string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, Primitive *prim) {
@@ -285,64 +344,7 @@ string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, Primitive 
 	return matName;
 }
 
-luxrays::sdl::Scene *SLGRenderer::CreateSLGScene() {
-	luxrays::sdl::Scene *slgScene = new luxrays::sdl::Scene();
-
-	// Tell to the cache to not delete mesh data (they are pointed by Lux
-	// primitives too and they will be deleted by Lux Context)
-	slgScene->extMeshCache->SetDeleteMeshData(false);
-
-	LOG(LUX_DEBUG, LUX_NOERROR) << "Camera type: " << typeid(*(scene->camera)).name();
-	PerspectiveCamera *perpCamera = dynamic_cast<PerspectiveCamera *>(scene->camera);
-	if (!perpCamera)
-		throw std::runtime_error("SLGRenderer supports only PerspectiveCamera");
-
-	//--------------------------------------------------------------------------
-	// Setup the camera
-	//--------------------------------------------------------------------------
-
-	const Point orig(
-			(*perpCamera)["Position.x"].FloatValue(),
-			(*perpCamera)["Position.y"].FloatValue(),
-			(*perpCamera)["Position.z"].FloatValue());
-	const Point target= orig + Vector(
-			(*perpCamera)["Normal.x"].FloatValue(),
-			(*perpCamera)["Normal.y"].FloatValue(),
-			(*perpCamera)["Normal.z"].FloatValue());
-	const Vector up(
-			(*perpCamera)["Up.x"].FloatValue(),
-			(*perpCamera)["Up.y"].FloatValue(),
-			(*perpCamera)["Up.z"].FloatValue());
-
-	slgScene->CreateCamera(
-		"scene.camera.lookat = " + 
-			boost::lexical_cast<string>(orig.x) + " " +
-			boost::lexical_cast<string>(orig.y) + " " +
-			boost::lexical_cast<string>(orig.z) + " " +
-			boost::lexical_cast<string>(target.x) + " " +
-			boost::lexical_cast<string>(target.y) + " " +
-			boost::lexical_cast<string>(target.z) + "\n"
-		"scene.camera.up = " +
-			boost::lexical_cast<string>(up.x) + " " +
-			boost::lexical_cast<string>(up.y) + " " +
-			boost::lexical_cast<string>(up.z) + "\n"
-		"scene.camera.fieldofview = " + boost::lexical_cast<string>(Degrees((*perpCamera)["fov"].FloatValue())) + "\n"
-		"scene.camera.lensradius = " + boost::lexical_cast<string>((*perpCamera)["LensRadius"].FloatValue()) + "\n"
-		"scene.camera.focaldistance = " + boost::lexical_cast<string>((*perpCamera)["FocalDistance"].FloatValue()) + "\n"
-		);
-
-	//--------------------------------------------------------------------------
-	// Setup materials
-	//--------------------------------------------------------------------------
-
-	slgScene->AddMaterials(
-		"scene.materials.matte.mat_default = 0.75 0.75 0.75\n"
-		);
-
-	//--------------------------------------------------------------------------
-	// Setup lights
-	//--------------------------------------------------------------------------
-
+void SLGRenderer::ConvertEnvLights(luxrays::sdl::Scene *slgScene) {
 	// Check if there is a sun light source
 	SunLight *sunLight = NULL;
 	for (size_t i = 0; i < scene->lights.size(); ++i) {
@@ -390,6 +392,10 @@ luxrays::sdl::Scene *SLGRenderer::CreateSLGScene() {
 	if (skyLight || sky2Light) {
 		// Add a SkyLight to the scene
 
+		// Note: (1000000000.0f / (M_PI * 100.f * 100.f)) is in SLG code
+		// for compatibility with past scene
+		const float gainAdjustFactor = (1000000000.0f / (M_PI * 100.f * 100.f)) * INV_PI;
+
 		if (sky2Light) {
 			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer doesn't support Sky2 light. It will use Sky instead.";
 
@@ -399,8 +405,7 @@ luxrays::sdl::Scene *SLGRenderer::CreateSLGScene() {
 			const float turbidity = (*sky2Light)["turbidity"].FloatValue();
 			// Note: (1000000000.0f / (M_PI * 100.f * 100.f)) is in SLG code
 			// for compatibility with past scene
-			const float gain = (*sky2Light)["gain"].FloatValue() * (1000000000.0f / (M_PI * 100.f * 100.f)) *
-				INV_PI;
+			const float gain = (*sky2Light)["gain"].FloatValue() * gainAdjustFactor;
 
 			slgScene->AddSkyLight(
 				"scene.skylight.dir = " +
@@ -419,8 +424,7 @@ luxrays::sdl::Scene *SLGRenderer::CreateSLGScene() {
 			const float turbidity = (*skyLight)["turbidity"].FloatValue();
 			// Note: (1000000000.0f / (M_PI * 100.f * 100.f)) is in SLG code
 			// for compatibility with past scene
-			const float gain = (*skyLight)["gain"].FloatValue() * (1000000000.0f / (M_PI * 100.f * 100.f)) *
-				INV_PI;
+			const float gain = (*skyLight)["gain"].FloatValue() * gainAdjustFactor;
 
 			slgScene->AddSkyLight(
 				"scene.skylight.dir = " +
@@ -434,6 +438,124 @@ luxrays::sdl::Scene *SLGRenderer::CreateSLGScene() {
 					boost::lexical_cast<string>(gain) + "\n");
 		}
 	}
+	
+	// Check if there is a sky or sky2 light source
+	InfiniteAreaLight *infiniteAreaLight = NULL;
+	InfiniteAreaLightIS *infiniteAreaLightIS = NULL;
+	for (size_t i = 0; i < scene->lights.size(); ++i) {
+		infiniteAreaLight = dynamic_cast<InfiniteAreaLight *>(scene->lights[i]);
+		infiniteAreaLightIS = dynamic_cast<InfiniteAreaLightIS *>(scene->lights[i]);
+		if (infiniteAreaLight || infiniteAreaLightIS)
+			break;
+	}
+
+	if (infiniteAreaLight || infiniteAreaLightIS) {
+		// Check if I have already a sky light
+		if (skyLight || sky2Light)
+			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only one single environmental light. Using sky light and ignoring infinite lights";
+		else {
+			const float gainAdjustFactor = INV_PI;
+
+			if (infiniteAreaLight) {
+				const float colorR = (*infiniteAreaLight)["color.r"].FloatValue();
+				const float colorG = (*infiniteAreaLight)["color.g"].FloatValue();
+				const float colorB = (*infiniteAreaLight)["color.b"].FloatValue();
+				const float gain = (*infiniteAreaLight)["gain"].FloatValue() * gainAdjustFactor;
+
+				const float gamma = (*infiniteAreaLight)["gamma"].FloatValue();
+
+				MIPMap *mipMap = infiniteAreaLight->GetRadianceMap();
+				const string texName = GetSLGTexName(slgScene, mipMap, gamma);
+
+				slgScene->AddInfiniteLight(
+					"scene.infinitelight.file = " + texName + "\n"
+					"scene.infinitelight.gamma = " + boost::lexical_cast<string>(gamma) + "\n"
+					"scene.infinitelight.gain = " +
+						boost::lexical_cast<string>(gain * colorR) + " " +
+						boost::lexical_cast<string>(gain * colorG) + " " +
+						boost::lexical_cast<string>(gain * colorB) + "\n");
+			} else {
+				const float colorR = (*infiniteAreaLightIS)["color.r"].FloatValue();
+				const float colorG = (*infiniteAreaLightIS)["color.g"].FloatValue();
+				const float colorB = (*infiniteAreaLightIS)["color.b"].FloatValue();
+				const float gain = (*infiniteAreaLightIS)["gain"].FloatValue() * gainAdjustFactor;
+
+				const float gamma = (*infiniteAreaLightIS)["gamma"].FloatValue();
+
+				MIPMap *mipMap = infiniteAreaLightIS->GetRadianceMap();
+				const string texName = GetSLGTexName(slgScene, mipMap, gamma);
+
+				slgScene->AddInfiniteLight(
+					"scene.infinitelight.file = " + texName + "\n"
+					"scene.infinitelight.gamma = " + boost::lexical_cast<string>(gamma) + "\n"
+					"scene.infinitelight.gain = " +
+						boost::lexical_cast<string>(gain * colorR) + " " +
+						boost::lexical_cast<string>(gain * colorG) + " " +
+						boost::lexical_cast<string>(gain * colorB) + "\n");
+			}
+		}
+	}
+}
+
+luxrays::sdl::Scene *SLGRenderer::CreateSLGScene() {
+	luxrays::sdl::Scene *slgScene = new luxrays::sdl::Scene();
+
+	// Tell to the cache to not delete mesh data (they are pointed by Lux
+	// primitives too and they will be deleted by Lux Context)
+	slgScene->extMeshCache->SetDeleteMeshData(false);
+
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Camera type: " << typeid(*(scene->camera)).name();
+	PerspectiveCamera *perpCamera = dynamic_cast<PerspectiveCamera *>(scene->camera);
+	if (!perpCamera)
+		throw std::runtime_error("SLGRenderer supports only PerspectiveCamera");
+
+	//--------------------------------------------------------------------------
+	// Setup the camera
+	//--------------------------------------------------------------------------
+
+	const Point orig(
+			(*perpCamera)["Position.x"].FloatValue(),
+			(*perpCamera)["Position.y"].FloatValue(),
+			(*perpCamera)["Position.z"].FloatValue());
+	const Point target= orig + Vector(
+			(*perpCamera)["Normal.x"].FloatValue(),
+			(*perpCamera)["Normal.y"].FloatValue(),
+			(*perpCamera)["Normal.z"].FloatValue());
+	const Vector up(
+			(*perpCamera)["Up.x"].FloatValue(),
+			(*perpCamera)["Up.y"].FloatValue(),
+			(*perpCamera)["Up.z"].FloatValue());
+
+	slgScene->CreateCamera(
+		"scene.camera.lookat = " + 
+			boost::lexical_cast<string>(orig.x) + " " +
+			boost::lexical_cast<string>(orig.y) + " " +
+			boost::lexical_cast<string>(orig.z) + " " +
+			boost::lexical_cast<string>(target.x) + " " +
+			boost::lexical_cast<string>(target.y) + " " +
+			boost::lexical_cast<string>(target.z) + "\n"
+		"scene.camera.up = " +
+			boost::lexical_cast<string>(up.x) + " " +
+			boost::lexical_cast<string>(up.y) + " " +
+			boost::lexical_cast<string>(up.z) + "\n"
+		"scene.camera.fieldofview = " + boost::lexical_cast<string>(Degrees((*perpCamera)["fov"].FloatValue())) + "\n"
+		"scene.camera.lensradius = " + boost::lexical_cast<string>((*perpCamera)["LensRadius"].FloatValue()) + "\n"
+		"scene.camera.focaldistance = " + boost::lexical_cast<string>((*perpCamera)["FocalDistance"].FloatValue()) + "\n"
+		);
+
+	//--------------------------------------------------------------------------
+	// Setup default material
+	//--------------------------------------------------------------------------
+
+	slgScene->AddMaterials(
+		"scene.materials.matte.mat_default = 0.75 0.75 0.75\n"
+		);
+
+	//--------------------------------------------------------------------------
+	// Setup lights
+	//--------------------------------------------------------------------------
+
+	ConvertEnvLights(slgScene);
 
 	//--------------------------------------------------------------------------
 	// Convert geometry

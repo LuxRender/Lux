@@ -32,6 +32,7 @@
 #include "timer.h"
 #include "dynload.h"
 #include "hybridrenderer.h"
+#include "mipmap.h"
 
 #include "luxrays/luxrays.h"
 #include "luxrays/core/device.h"
@@ -123,7 +124,12 @@ public:
 	static Renderer *CreateRenderer(const ParamSet &params);
 
 private:
+	void DefineSLGDefaultTexMap(luxrays::sdl::Scene *slgScene);
+	string GetSLGTexName(luxrays::sdl::Scene *slgScene, MIPMap *mipMap, const float gamma);
+	string GetSLGTexName(luxrays::sdl::Scene *slgScene, MIPMapFastImpl<TextureColor<float, 4> > *mipMap, const float gamma);
 	string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, Primitive *prim);
+
+	void ConvertEnvLights(luxrays::sdl::Scene *slgScene);
 	luxrays::sdl::Scene *CreateSLGScene();
 	luxrays::Properties CreateSLGConfig();
 

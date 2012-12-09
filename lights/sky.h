@@ -23,13 +23,12 @@
 // sky.h*
 #include "lux.h"
 #include "light.h"
-#include "queryable.h"
 
 namespace lux
 {
 
 // SkyLight Declarations
-class SkyLight : public Light, public Queryable {
+class SkyLight : public Light {
 public:
 	// SkyLight Public Methods
 	SkyLight(const Transform &light2world, float skyscale, u_int ns,

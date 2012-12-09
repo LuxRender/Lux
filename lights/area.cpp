@@ -160,7 +160,7 @@ AreaLight::AreaLight(const Transform &light2world,
 	boost::shared_ptr<Texture<SWCSpectrum> > &le, float g, float pow,
 	float e, SampleableSphericalFunction *ssf, u_int ns,
 	const boost::shared_ptr<Primitive> &p)
-	: Light(light2world, ns), Queryable("AreaLight-" + boost::lexical_cast<string>(this)),
+	: Light("AreaLight-" + boost::lexical_cast<string>(this), light2world, ns),
 		Le(le), paramGain(g), gain(g), power(pow), efficacy(e), func(ssf)
 {
 	if (p->CanIntersect() && p->CanSample()) {

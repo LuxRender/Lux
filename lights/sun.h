@@ -25,13 +25,12 @@
 #include "light.h"
 #include "scene.h"
 #include "spd.h"
-#include "queryable.h"
 
 namespace lux
 {
 
 // SunLight Declarations
-class SunLight : public Light, public Queryable {
+class SunLight : public Light {
 public:
 	// SunLight Public Methods
 	SunLight(const Transform &light2world, const float sunscale,

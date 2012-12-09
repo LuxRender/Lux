@@ -344,7 +344,7 @@ Sky2Light::~Sky2Light()
 
 Sky2Light::Sky2Light(const Transform &light2world, float skyscale, u_int ns,
 	Vector sd, float turb)
-	: Light(light2world, ns), Queryable("Sky2Light-" + boost::lexical_cast<string>(this)) {
+	: Light("Sky2Light-" + boost::lexical_cast<string>(this), light2world, ns) {
 	skyScale = skyscale;
 	sundir = sd;
 	turbidity = turb;
