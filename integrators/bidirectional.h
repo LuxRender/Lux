@@ -147,6 +147,8 @@ public:
 		eyeBufferId = 0;
 		lightBufferId = 0;
 		AddStringConstant(*this, "name", "Name of current surface integrator", "bidirectional");
+		AddIntAttribute(*this, "maxEyeDepth", "Eye path max. depth", &BidirIntegrator::GetMaxEyeDepth);
+		AddIntAttribute(*this, "maxLightDepth", "Light path max. depth", &BidirIntegrator::GetMaxLightDepth);
 	}
 	virtual ~BidirIntegrator() { }
 	// BidirIntegrator Public Methods
@@ -186,6 +188,10 @@ public:
 	vector<u_int> sampleLightOffsets;
 
 private:
+	// Used by Queryable interface
+	u_int GetMaxEyeDepth() { return maxEyeDepth; }
+	u_int GetMaxLightDepth() { return maxLightDepth; }
+
 	/**
 	 * Compute the weight of the given path for MIS.
 	 * @param eye The eye path

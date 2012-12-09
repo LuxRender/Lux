@@ -137,6 +137,7 @@ public:
 		hints(), rrStrategy(rst), maxDepth(md), continueProbability(cp),
 		sampleOffset(0), bufferId(0), includeEnvironment(ie), enableDirectLightSampling(dls) {
 		AddStringConstant(*this, "name", "Name of current surface integrator", "path");
+		AddIntAttribute(*this, "maxDepth", "Path max. depth", &PathIntegrator::GetMaxDepth);
 	}
 
 	virtual u_int Li(const Scene &scene, const Sample &sample) const;
@@ -161,6 +162,9 @@ public:
 	friend class PathState;
 
 private:
+	// Used by Queryable interface
+	u_int GetMaxDepth() { return maxDepth; }
+
 	// Used by DataParallel methods
 	void BuildShadowRays(const Scene &scene, PathState *pathState, BSDF *bsdf);
 

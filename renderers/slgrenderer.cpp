@@ -52,6 +52,8 @@
 #include "textures/blackbody.h"
 #include "lights/sky.h"
 #include "materials/mirror.h"
+#include "integrators/path.h"
+#include "integrators/bidirectional.h"
 
 
 using namespace lux;
@@ -607,6 +609,37 @@ luxrays::Properties SLGRenderer::CreateSLGConfig() {
 			"opencl.gpu.use = 1\n"
 			;
 
+	//--------------------------------------------------------------------------
+	// Surface integrator related settings
+	//--------------------------------------------------------------------------
+
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Surface integrator type: " << typeid(*(scene->surfaceIntegrator)).name();
+	if (dynamic_cast<PathIntegrator *>(scene->surfaceIntegrator)) {
+		// Path tracing
+		PathIntegrator *path = dynamic_cast<PathIntegrator *>(scene->surfaceIntegrator);
+		const int maxDepth = (*path)["maxDepth"].IntValue();
+
+		ss << "renderengine.type = PATHOCL\n" <<
+				"path.maxdepth = " << maxDepth << "\n";
+	} else if (dynamic_cast<BidirIntegrator *>(scene->surfaceIntegrator)) {
+		// Bidirectional path tracing
+		BidirIntegrator *bidir = dynamic_cast<BidirIntegrator *>(scene->surfaceIntegrator);
+		const int maxEyeDepth = (*bidir)["maxEyeDepth"].IntValue();
+		const int maxLightDepth = (*bidir)["maxLightDepth"].IntValue();
+
+		ss << "renderengine.type = BIDIRVMCPU\n" <<
+			"path.maxdepth = " << maxLightDepth << "\n" <<
+			"path.maxdepth = " << maxEyeDepth << "\n";
+	} else {
+		// Unmapped surface integrator, just use path tracing
+		throw std::runtime_error("SLGRenderer doesn't support the SurfaceIntegrator, falling back to path tracing");
+		ss << "renderengine.type = PATHOCL\n";
+	}
+	
+	//--------------------------------------------------------------------------
+	// Film related settings
+	//--------------------------------------------------------------------------
+
 	Film *film = scene->camera->film;
 	int xStart, xEnd, yStart, yEnd;
 	film->GetSampleExtent(&xStart, &xEnd, &yStart, &yEnd);
@@ -625,6 +658,8 @@ luxrays::Properties SLGRenderer::CreateSLGConfig() {
 
 	ss << "image.width = " + boost::lexical_cast<string>(imageWidth) + "\n"
 			"image.height = " + boost::lexical_cast<string>(imageHeight) + "\n";
+
+	//--------------------------------------------------------------------------
 
 	luxrays::Properties config;
 	config.LoadFromString(ss.str());
