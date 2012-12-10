@@ -126,6 +126,7 @@ public:
 private:
 	void DefineSLGDefaultTexMap(luxrays::sdl::Scene *slgScene);
 	string GetSLGTexName(luxrays::sdl::Scene *slgScene, MIPMap *mipMap, const float gamma);
+	string GetSLGTexName(luxrays::sdl::Scene *slgScene, MIPMapFastImpl<TextureColor<float, 3> > *mipMap, const float gamma);
 	string GetSLGTexName(luxrays::sdl::Scene *slgScene, MIPMapFastImpl<TextureColor<float, 4> > *mipMap, const float gamma);
 	string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive *prim);
 

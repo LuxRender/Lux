@@ -149,13 +149,41 @@ string SLGRenderer::GetSLGTexName(luxrays::sdl::Scene *slgScene,
 	if (slgScene->texMapCache->FindTextureMap(texName, gamma))
 		return texName;
 	
-	if (dynamic_cast<const MIPMapFastImpl<TextureColor<float, 4> > *>(mipMap))
+	if (dynamic_cast<const MIPMapFastImpl<TextureColor<float, 3> > *>(mipMap))
+		return GetSLGTexName(slgScene, (MIPMapImpl<TextureColor<float, 3> > *)mipMap, gamma);
+	else if (dynamic_cast<const MIPMapFastImpl<TextureColor<float, 4> > *>(mipMap))
 		return GetSLGTexName(slgScene, (MIPMapImpl<TextureColor<float, 4> > *)mipMap, gamma);
 	else {
 		// Unsupported type
+		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only RGB(A) float texture maps (i.e. not " <<
+					typeid(*mipMap).name() << "). Replacing an unsupported texture map with a white texture.";
 		DefineSLGDefaultTexMap(slgScene);
 		return "tex_default";
 	}
+}
+
+string SLGRenderer::GetSLGTexName(luxrays::sdl::Scene *slgScene,
+		MIPMapFastImpl<TextureColor<float, 3> > *mipMap, const float gamma) {
+	const BlockedArray<TextureColor<float, 3> > *map = mipMap->GetSingleMap();
+
+	luxrays::Spectrum *slgRGBMap = new luxrays::Spectrum[map->uSize() * map->vSize()];
+
+	for (u_int y = 0; y < map->vSize(); ++y) {
+		for (u_int x = 0; x < map->uSize(); ++x) {
+			const TextureColor<float, 3> &col = (*map)(x, y);
+
+			const u_int index = (x + y * map->uSize());
+			slgRGBMap[index].r = col.c[0];
+			slgRGBMap[index].g = col.c[1];
+			slgRGBMap[index].b = col.c[2];
+		}
+	}
+
+	const string texName = mipMap->GetName();
+	slgScene->DefineTexMap(texName,
+			slgRGBMap, gamma, (u_int)map->uSize(), (u_int)map->vSize());
+
+	return texName;
 }
 
 string SLGRenderer::GetSLGTexName(luxrays::sdl::Scene *slgScene,
