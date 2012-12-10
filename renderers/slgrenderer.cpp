@@ -148,7 +148,7 @@ string SLGRenderer::GetSLGTexName(luxrays::sdl::Scene *slgScene,
 	const string texName = mipMap->GetName();
 	if (slgScene->texMapCache->FindTextureMap(texName, gamma))
 		return texName;
-	
+
 	if (dynamic_cast<const MIPMapFastImpl<TextureColor<float, 3> > *>(mipMap))
 		return GetSLGTexName(slgScene, (MIPMapImpl<TextureColor<float, 3> > *)mipMap, gamma);
 	else if (dynamic_cast<const MIPMapFastImpl<TextureColor<float, 4> > *>(mipMap))
@@ -224,6 +224,8 @@ string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Prim
 	if (dynamic_cast<const Shape *>(prim)) {
 		const Shape *shape = dynamic_cast<const Shape *>(prim);
 		mat = shape->GetMaterial();
+		if (!mat)
+			return "mat_default";
 		matName = mat->GetName();
 	} else
 	//----------------------------------------------------------------------
@@ -232,6 +234,8 @@ string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Prim
 	if (dynamic_cast<const InstancePrimitive *>(prim)) {
 		const InstancePrimitive *instance = dynamic_cast<const InstancePrimitive *>(prim);
 		mat = instance->GetMaterial();
+		if (!mat)
+			return "mat_default";
 		matName = mat->GetName();
 	} else
 	//----------------------------------------------------------------------
