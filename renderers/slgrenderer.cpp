@@ -184,22 +184,37 @@ string SLGRenderer::GetSLGTexName(luxrays::sdl::Scene *slgScene,
 	return texName;
 }
 
-string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, Primitive *prim) {
-	LOG(LUX_DEBUG, LUX_NOERROR) << "Primitive type: " << typeid(*prim).name();
+string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive *prim) {
+	//LOG(LUX_DEBUG, LUX_NOERROR) << "Primitive type: " << typeid(*prim).name();
 
+	Material *mat = NULL;
 	string matName;
 
-	// Check if it is an AreaLightPrimitive
-	AreaLightPrimitive *alPrim = dynamic_cast<AreaLightPrimitive *>(prim);
-
-	if (alPrim) {
+	//----------------------------------------------------------------------
+	// Check if it is a Shape
+	//----------------------------------------------------------------------
+	if (dynamic_cast<const Shape *>(prim)) {
+		const Shape *shape = dynamic_cast<const Shape *>(prim);
+		mat = shape->GetMaterial();
+		matName = mat->GetName();
+	} else
+	//----------------------------------------------------------------------
+	// Check if it is an InstancePrimitive
+	//----------------------------------------------------------------------
+	if (dynamic_cast<const InstancePrimitive *>(prim)) {
+		const InstancePrimitive *instance = dynamic_cast<const InstancePrimitive *>(prim);
+		mat = instance->GetMaterial();
+		matName = mat->GetName();
+	} else
+	//----------------------------------------------------------------------
+	// Check if it is an AreaLight
+	//----------------------------------------------------------------------
+	if (dynamic_cast<const AreaLightPrimitive *>(prim)) {
+		const AreaLightPrimitive *alPrim = dynamic_cast<const AreaLightPrimitive *>(prim);
 		AreaLight *al = alPrim->GetAreaLight();
 		matName = al->GetName();
 
-		//----------------------------------------------------------------------
 		// Check if I haven't already defined this AreaLight
-		//----------------------------------------------------------------------
-
 		if (slgScene->materialIndices.count(matName) < 1) {
 			// Define a new area light material
 
@@ -252,96 +267,95 @@ string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, Primitive 
 			} else {
 				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only area lights with constant ConstantRGBColorTexture or BlackBodyTexture (i.e. not " <<
 					typeid(*tex).name() << "). Replacing an unsupported area light material with matte.";
-				matName = "mat_default";
+				return "mat_default";
 			}
 		}
-	} else {
-		// Check if it is a Shape
-		Shape *shape = dynamic_cast<Shape *>(prim);
-		if (shape) {
-			// Get the material a try a conversion
-			Material *mat = shape->GetMaterial();
-			LOG(LUX_DEBUG, LUX_NOERROR) << "Material type: " << typeid(*mat).name();
 
-			matName = mat->GetName();
-			// Check if the material has already been defined
-			if (slgScene->materialIndices.count(matName) < 1) {
-				// I have to create a new material definition
+		return matName;
+	} else
+	//----------------------------------------------------------------------
+	// Primitive is not supported, use the default material
+	//----------------------------------------------------------------------
+	{
+		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer doesn't support material conversion for primitive " << typeid(*prim).name();
+		return "mat_default";
+	}
 
-				//------------------------------------------------------------------
-				// Check if it is material Matte
-				//------------------------------------------------------------------
-				if (dynamic_cast<Matte *>(mat)) {
-					// Define the material
-					Matte *matte = dynamic_cast<Matte *>(mat);
-					matName = matte->GetName();
+	//LOG(LUX_DEBUG, LUX_NOERROR) << "Material type: " << typeid(*mat).name();
 
-					// Check the type of texture
-					Texture<SWCSpectrum> *tex = matte->GetTexture();
-					LOG(LUX_DEBUG, LUX_NOERROR) << "Texture type: " << typeid(*tex).name();
-					ConstantRGBColorTexture *rgbTex = dynamic_cast<ConstantRGBColorTexture *>(tex);
+	// Check if the material has already been defined
+	if (slgScene->materialIndices.count(matName) < 1) {
+		// I have to create a new material definition
 
-					if (rgbTex) {
-						luxrays::Spectrum rgb(
-								(*rgbTex)["color.r"].FloatValue(),
-								(*rgbTex)["color.g"].FloatValue(),
-								(*rgbTex)["color.b"].FloatValue());
+		//------------------------------------------------------------------
+		// Check if it is material Matte
+		//------------------------------------------------------------------
+		if (dynamic_cast<Matte *>(mat)) {
+			// Define the material
+			Matte *matte = dynamic_cast<Matte *>(mat);
+			matName = matte->GetName();
 
-						slgScene->AddMaterials(
-							"scene.materials.matte." + matName +" = " +
-								boost::lexical_cast<string>(rgb.r) + " " +
-								boost::lexical_cast<string>(rgb.g) + " " +
-								boost::lexical_cast<string>(rgb.b) + "\n"
-							);
-					} else {
-						LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only Matte material with ConstantRGBColorTexture (i.e. not " <<
-							typeid(*tex).name() << "). Replacing an unsupported material with matte.";
-						matName = "mat_default";
-					}
-				} else
-				//------------------------------------------------------------------
-				// Check if it is material Mirror
-				//------------------------------------------------------------------
-				if(dynamic_cast<Mirror *>(mat)) {
-					// Define the material
-					Mirror *mirror = dynamic_cast<Mirror *>(mat);
-					matName = mirror->GetName();
+			// Check the type of texture
+			Texture<SWCSpectrum> *tex = matte->GetTexture();
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Texture type: " << typeid(*tex).name();
+			ConstantRGBColorTexture *rgbTex = dynamic_cast<ConstantRGBColorTexture *>(tex);
 
-					// Check the type of texture
-					Texture<SWCSpectrum> *tex = mirror->GetTexture();
-					LOG(LUX_DEBUG, LUX_NOERROR) << "Texture type: " << typeid(*tex).name();
-					ConstantRGBColorTexture *rgbTex = dynamic_cast<ConstantRGBColorTexture *>(tex);
+			if (rgbTex) {
+				luxrays::Spectrum rgb(
+						(*rgbTex)["color.r"].FloatValue(),
+						(*rgbTex)["color.g"].FloatValue(),
+						(*rgbTex)["color.b"].FloatValue());
 
-					if (rgbTex) {
-						luxrays::Spectrum rgb(
-								(*rgbTex)["color.r"].FloatValue(),
-								(*rgbTex)["color.g"].FloatValue(),
-								(*rgbTex)["color.b"].FloatValue());
-
-						slgScene->AddMaterials(
-							"scene.materials.mirror." + matName +" = " +
-								boost::lexical_cast<string>(rgb.r) + " " +
-								boost::lexical_cast<string>(rgb.g) + " " +
-								boost::lexical_cast<string>(rgb.b) + " 1\n"
-							);
-					} else {
-						LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only Mirror material with ConstantRGBColorTexture (i.e. not " <<
-							typeid(*tex).name() << "). Replacing an unsupported material with matte.";
-						matName = "mat_default";
-					}
-				} else
-				//------------------------------------------------------------------
-				// Material is not supported, use the default one
-				//------------------------------------------------------------------
-				{
-					LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only Matte material (i.e. not " <<
-						typeid(*mat).name() << "). Replacing an unsupported material with matte.";
-					matName = "mat_default";
-				}
+				slgScene->AddMaterials(
+					"scene.materials.matte." + matName +" = " +
+						boost::lexical_cast<string>(rgb.r) + " " +
+						boost::lexical_cast<string>(rgb.g) + " " +
+						boost::lexical_cast<string>(rgb.b) + "\n"
+					);
+			} else {
+				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only Matte material with ConstantRGBColorTexture (i.e. not " <<
+					typeid(*tex).name() << "). Replacing an unsupported material with matte.";
+				return "mat_default";
 			}
-		} else {
-			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer doesn't support material conversion for " << typeid(*prim).name();
-			matName = "mat_default";
+		} else
+		//------------------------------------------------------------------
+		// Check if it is material Mirror
+		//------------------------------------------------------------------
+		if(dynamic_cast<Mirror *>(mat)) {
+			// Define the material
+			Mirror *mirror = dynamic_cast<Mirror *>(mat);
+			matName = mirror->GetName();
+
+			// Check the type of texture
+			Texture<SWCSpectrum> *tex = mirror->GetTexture();
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Texture type: " << typeid(*tex).name();
+			ConstantRGBColorTexture *rgbTex = dynamic_cast<ConstantRGBColorTexture *>(tex);
+
+			if (rgbTex) {
+				luxrays::Spectrum rgb(
+						(*rgbTex)["color.r"].FloatValue(),
+						(*rgbTex)["color.g"].FloatValue(),
+						(*rgbTex)["color.b"].FloatValue());
+
+				slgScene->AddMaterials(
+					"scene.materials.mirror." + matName +" = " +
+						boost::lexical_cast<string>(rgb.r) + " " +
+						boost::lexical_cast<string>(rgb.g) + " " +
+						boost::lexical_cast<string>(rgb.b) + " 1\n"
+					);
+			} else {
+				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only Mirror material with ConstantRGBColorTexture (i.e. not " <<
+					typeid(*tex).name() << "). Replacing an unsupported material with matte.";
+				return "mat_default";
+			}
+		} else
+		//------------------------------------------------------------------
+		// Material is not supported, use the default one
+		//------------------------------------------------------------------
+		{
+			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only Matte material (i.e. not " <<
+				typeid(*mat).name() << "). Replacing an unsupported material with matte.";
+			return "mat_default";
 		}
 	}
 
@@ -501,8 +515,115 @@ void SLGRenderer::ConvertEnvLights(luxrays::sdl::Scene *slgScene) {
 	}
 }
 
-luxrays::sdl::Scene *SLGRenderer::CreateSLGScene() {
-	luxrays::sdl::Scene *slgScene = new luxrays::sdl::Scene();
+vector<luxrays::ExtTriangleMesh *> SLGRenderer::DefinePrimitive(luxrays::sdl::Scene *slgScene, const Primitive *prim) {
+	//LOG(LUX_DEBUG, LUX_NOERROR) << "Define primitive type: " << typeid(*prim).name();
+
+	vector<luxrays::ExtTriangleMesh *> meshList;
+	prim->ExtTesselate(&meshList, &scene->tesselatedPrimitives);
+
+	for (vector<luxrays::ExtTriangleMesh *>::const_iterator mesh = meshList.begin(); mesh != meshList.end(); ++mesh) {
+		if (!(*mesh)->HasNormals()) {
+			// SLG requires shading normals
+			Normal *normals = (*mesh)->ComputeNormals();
+
+			if (normals) {
+				// I have to keep track of memory allocated for normals so, later, it
+				// can be deleted
+				alloctedMeshNormals.push_back(normals);
+			}
+		}
+
+		const string meshName = "Mesh-" + boost::lexical_cast<string>(*mesh);
+		slgScene->DefineObject(meshName, *mesh);
+	}
+
+	return meshList;
+}
+
+void SLGRenderer::ConvertGeometry(luxrays::sdl::Scene *slgScene) {
+	LOG(LUX_INFO, LUX_NOERROR) << "Tesselating " << scene->primitives.size() << " primitives";
+
+	// To keep track of all primitive mesh lists
+	map<const Primitive *, vector<luxrays::ExtTriangleMesh *> > primMeshLists;
+
+	for (size_t i = 0; i < scene->primitives.size(); ++i) {
+		const Primitive *prim = scene->primitives[i].get();
+		//LOG(LUX_DEBUG, LUX_NOERROR) << "Primitive type: " << typeid(*prim).name();
+
+		// Instances require special care
+		if (dynamic_cast<const InstancePrimitive *>(prim)) {
+			const InstancePrimitive *instance = dynamic_cast<const InstancePrimitive *>(prim);
+			const string matName = GetSLGMaterialName(slgScene, instance);
+
+			const vector<boost::shared_ptr<Primitive> > &instanceSources = instance->GetInstanceSources();
+
+			for (u_int i = 0; i < instanceSources.size(); ++i) {
+				const Primitive *instancedSource = instanceSources[i].get();
+
+				vector<luxrays::ExtTriangleMesh *> meshList;
+				// Check if I have already defined one of the original primitive
+				if (primMeshLists.count(instancedSource) < 1) {
+					// I have to define the instanced primitive
+					meshList = DefinePrimitive(slgScene, instancedSource);
+					primMeshLists[instancedSource] = meshList;
+				} else
+					meshList = primMeshLists[instancedSource];
+
+				if (meshList.size() == 0)
+					continue;
+
+				// Build transformation string
+				const Transform trans = instance->GetTransform();
+				std::stringstream ss;
+				for (int j = 0; j < 4; ++j)
+					for (int i = 0; i < 4; ++i)
+						ss << trans.m.m[i][j] << " ";
+				string transString = ss.str();
+	
+				// Add the object
+				for (vector<luxrays::ExtTriangleMesh *>::const_iterator mesh = meshList.begin(); mesh != meshList.end(); ++mesh) {
+					// Define an instance of the mesh
+					const string objName = "InstanceObject-" + boost::lexical_cast<string>(prim) + "-" +
+						boost::lexical_cast<string>(*mesh);
+					const string meshName = "Mesh-" + boost::lexical_cast<string>(*mesh);
+
+					slgScene->AddObject(objName, matName, meshName,
+							"scene.objects." + matName + "." + objName + ".transformation = " + transString + "\n"
+							"scene.objects." + matName + "." + objName + ".useplynormals = 1\n"
+							);
+				}
+			}
+		} else {
+			vector<luxrays::ExtTriangleMesh *> meshList;
+			if (primMeshLists.count(prim) < 1) {
+				meshList = DefinePrimitive(slgScene, prim);
+				primMeshLists[prim] = meshList;
+			} else
+				meshList = primMeshLists[prim];
+
+			if (meshList.size() == 0)
+				continue;
+
+			// Add the object
+			const string matName = GetSLGMaterialName(slgScene, prim);
+			for (vector<luxrays::ExtTriangleMesh *>::const_iterator mesh = meshList.begin(); mesh != meshList.end(); ++mesh) {
+				const string objName = "Object-" + boost::lexical_cast<string>(prim) + "-" +
+					boost::lexical_cast<string>(*mesh);
+				const string meshName = "Mesh-" + boost::lexical_cast<string>(*mesh);
+				slgScene->AddObject(objName, matName, meshName,
+						"scene.objects." + matName + "." + objName + ".useplynormals = 1\n"
+						);
+			}
+		}
+	}
+
+	if (slgScene->objects.size() == 0)
+		throw std::runtime_error("SLGRenderer can not render an empty scene");
+}
+
+luxrays::sdl::Scene *SLGRenderer::CreateSLGScene(const luxrays::Properties &slgConfigProps) {
+	const int accelType = slgConfigProps.GetInt("accelerator.type", -1);
+	luxrays::sdl::Scene *slgScene = new luxrays::sdl::Scene(accelType);
 
 	// Tell to the cache to not delete mesh data (they are pointed by Lux
 	// primitives too and they will be deleted by Lux Context)
@@ -565,38 +686,7 @@ luxrays::sdl::Scene *SLGRenderer::CreateSLGScene() {
 	// Convert geometry
 	//--------------------------------------------------------------------------
 
-	LOG(LUX_INFO, LUX_NOERROR) << "Tesselating " << scene->primitives.size() << " primitives";
-
-	u_int objNumber = 0;
-	for (size_t i = 0; i < scene->primitives.size(); ++i) {
-		vector<luxrays::ExtTriangleMesh *> meshList;
-		scene->primitives[i]->ExtTesselate(&meshList, &scene->tesselatedPrimitives);
-
-		const string matName = GetSLGMaterialName(slgScene, scene->primitives[i].get());
-
-		for (vector<luxrays::ExtTriangleMesh *>::const_iterator mesh = meshList.begin(); mesh != meshList.end(); ++mesh) {
-			if (!(*mesh)->HasNormals()) {
-				// SLG requires shading normals
-				Normal *normals = (*mesh)->ComputeNormals();
-
-				if (normals) {
-					// I have to keep track of memory allocated for normals so, later, it
-					// can be deleted
-					alloctedMeshNormals.push_back(normals);
-				}
-			}
-
-			const string objName = "Object" + boost::lexical_cast<string>(objNumber);
-			slgScene->DefineObject(objName, *mesh);
-			slgScene->AddObject(objName, matName,
-					"scene.objects." + matName + "." + objName + ".useplynormals = 1\n"
-					);
-			++objNumber;
-		}
-	}
-
-	if (slgScene->objects.size() == 0)
-		throw std::runtime_error("SLGRenderer can not render an empty scene");
+	ConvertGeometry(slgScene);
 
 	return slgScene;
 }
@@ -744,11 +834,11 @@ void SLGRenderer::Render(Scene *s) {
 		luxrays::sdl::LuxRaysSDLDebugHandler = SDLDebugHandler;
 
 		try {
-			// Build the SLG scene to render
-			slgScene = CreateSLGScene();
-
 			// Build the SLG rendering configuration
 			slgConfigProps.Load(CreateSLGConfig());
+
+			// Build the SLG scene to render
+			slgScene = CreateSLGScene(slgConfigProps);
 #if !defined(LUXRAYS_DISABLE_OPENCL)
 		} catch (cl::Error err) {
 			LOG(LUX_SEVERE, LUX_SYSTEM) << "OpenCL ERROR: " << err.what() << "(" << luxrays::utils::oclErrorString(err.err()) << ")";

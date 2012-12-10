@@ -735,7 +735,7 @@ void Context::Shape(const string &n, const ParamSet &params) {
 	sh->SetInterior(graphicsState->interior);
 
 	// Create primitive and add to scene or current instance
-	if (renderOptions->currentInstance) {
+	if (renderOptions->currentInstanceRefined) {
 		if (graphicsState->areaLight != "") {
 			LOG(LUX_WARNING,LUX_UNIMPLEMENT)<<"Area lights not supported with object instancing";
 /*			// Lotus - add a decorator to set the arealight field
@@ -749,11 +749,12 @@ void Context::Shape(const string &n, const ParamSet &params) {
 			// Add area light for primitive to light vector
 			renderOptions->currentLightInstance->push_back(area);*/
 		} /*else*/ {
+			renderOptions->currentInstanceSource->push_back(sh);
 			if (!sh->CanIntersect())
-				sh->Refine(*(renderOptions->currentInstance),
+				sh->Refine(*(renderOptions->currentInstanceRefined),
 					PrimitiveRefinementHints(false), sh);
 			else
-				renderOptions->currentInstance->push_back(sh);
+				renderOptions->currentInstanceRefined->push_back(sh);
 		}
 	} else if (graphicsState->areaLight != "") {
 		u_int lg = GetLightGroup();
@@ -828,25 +829,28 @@ void Context::ObjectBegin(const string &n) {
 	VERIFY_WORLD("ObjectBegin");
 	renderFarm->send("luxObjectBegin", n);
 	AttributeBegin();
-	if (renderOptions->currentInstance) {
+	if (renderOptions->currentInstanceRefined) {
 		LOG(LUX_ERROR,LUX_NESTING) <<
 			"ObjectBegin called inside of instance definition";
 		return;
 	}
-	renderOptions->instances[n] = vector<boost::shared_ptr<Primitive> >();
-	renderOptions->currentInstance = &renderOptions->instances[n];
+	renderOptions->instancesSource[n] = vector<boost::shared_ptr<Primitive> >();
+	renderOptions->instancesRefined[n] = vector<boost::shared_ptr<Primitive> >();
+	renderOptions->currentInstanceSource = &renderOptions->instancesSource[n];
+	renderOptions->currentInstanceRefined = &renderOptions->instancesRefined[n];
 	renderOptions->lightInstances[n] = vector<boost::shared_ptr<Light> >();
 	renderOptions->currentLightInstance = &renderOptions->lightInstances[n];
 }
 void Context::ObjectEnd() {
 	VERIFY_WORLD("ObjectEnd");
 	renderFarm->send("luxObjectEnd");
-	if (!renderOptions->currentInstance) {
+	if (!renderOptions->currentInstanceRefined) {
 		LOG(LUX_ERROR,LUX_NESTING) <<
 			"ObjectEnd called outside of instance definition";
 		return;
 	}
-	renderOptions->currentInstance = NULL;
+	renderOptions->currentInstanceSource = NULL;
+	renderOptions->currentInstanceRefined = NULL;
 	renderOptions->currentLightInstance = NULL;
 	AttributeEnd();
 }
@@ -854,12 +858,14 @@ void Context::ObjectInstance(const string &n) {
 	VERIFY_WORLD("ObjectInstance");
 	renderFarm->send("luxObjectInstance", n);
 	// Object instance error checking
-	if (renderOptions->instances.find(n) == renderOptions->instances.end()) {
+	if (renderOptions->instancesRefined.find(n) == renderOptions->instancesRefined.end()) {
 		LOG(LUX_ERROR,LUX_BADTOKEN) << "Unable to find instance named '" << n << "'";
 		return;
 	}
-	vector<boost::shared_ptr<Primitive> > &in = renderOptions->instances[n];
-	if (renderOptions->currentInstance == &in) {
+
+	vector<boost::shared_ptr<Primitive> > &inSource = renderOptions->instancesSource[n];
+	vector<boost::shared_ptr<Primitive> > &in = renderOptions->instancesRefined[n];
+	if (renderOptions->currentInstanceRefined == &in) {
 		LOG(LUX_ERROR,LUX_NESTING) << "ObjectInstance '" << n << "' self reference";
 		return;
 	}
@@ -881,7 +887,7 @@ void Context::ObjectInstance(const string &n) {
 
 		boost::shared_ptr<Primitive> o;
 		if (curTransform.IsStatic()) {
-			o = boost::shared_ptr<Primitive>(new InstancePrimitive(in[0],
+			o = boost::shared_ptr<Primitive>(new InstancePrimitive(inSource, in[0],
 				curTransform.StaticTransform(),
 				graphicsState->material,
 				graphicsState->exterior,
@@ -893,9 +899,10 @@ void Context::ObjectInstance(const string &n) {
 				graphicsState->exterior,
 				graphicsState->interior));
 		}
-		if (renderOptions->currentInstance)
-			renderOptions->currentInstance->push_back(o);
-		else
+		if (renderOptions->currentInstanceRefined) {
+			// Instance of instances case
+			renderOptions->currentInstanceRefined->push_back(o);
+		} else
 			renderOptions->primitives.push_back(o);
 	}
 	vector<boost::shared_ptr<Light> > &li = renderOptions->lightInstances[n];
@@ -917,12 +924,12 @@ void Context::PortalInstance(const string &n) {
 	VERIFY_WORLD("PortalInstance");
 	renderFarm->send("luxPortalInstance", n);
 	// Portal instance error checking
-	if (renderOptions->instances.find(n) == renderOptions->instances.end()) {
+	if (renderOptions->instancesRefined.find(n) == renderOptions->instancesRefined.end()) {
 		LOG(LUX_ERROR,LUX_BADTOKEN) << "Unable to find instance named '" << n << "'";
 		return;
 	}
-	vector<boost::shared_ptr<Primitive> > &in = renderOptions->instances[n];
-	if (renderOptions->currentInstance == &in) {
+	vector<boost::shared_ptr<Primitive> > &in = renderOptions->instancesRefined[n];
+	if (renderOptions->currentInstanceRefined == &in) {
 		LOG(LUX_ERROR,LUX_NESTING) << "PortalInstance '" << n << "' self reference";
 		return;
 	}
@@ -943,12 +950,12 @@ void Context::MotionInstance(const string &n, float startTime, float endTime, co
 	renderFarm->send("luxMotionInstance", n, startTime, endTime, toTransform);
 	LOG(LUX_WARNING, LUX_SYNTAX) << "MotionInstance '" << n << "' is deprecated, use a MotionBegin/MotionEnd block with an ObjectInstance inside";
 	// Object instance error checking
-	if (renderOptions->instances.find(n) == renderOptions->instances.end()) {
+	if (renderOptions->instancesRefined.find(n) == renderOptions->instancesRefined.end()) {
 		LOG(LUX_ERROR,LUX_BADTOKEN) << "Unable to find instance named '" << n << "'";
 		return;
 	}
-	vector<boost::shared_ptr<Primitive> > &in = renderOptions->instances[n];
-	if (renderOptions->currentInstance == &in) {
+	vector<boost::shared_ptr<Primitive> > &in = renderOptions->instancesRefined[n];
+	if (renderOptions->currentInstanceRefined == &in) {
 		LOG(LUX_ERROR,LUX_NESTING) << "MotionInstance '" << n << "' self reference";
 		return;
 	}
@@ -1089,9 +1096,11 @@ Scene *Context::RenderOptions::MakeScene() const {
 	primitives.clear();
 	lights.clear();
 	volumeRegions.clear();
-	currentInstance = NULL;
+	currentInstanceSource = NULL;
+	currentInstanceRefined = NULL;
 	currentLightInstance = NULL;
-	instances.clear();
+	instancesSource.clear();
+	instancesRefined.clear();
 	lightInstances.clear();
 
 	// Set a fixed seed for animations or debugging

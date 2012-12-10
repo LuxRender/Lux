@@ -235,7 +235,8 @@ private:
 			volIntegratorName = "emission";
 			cameraName = "perspective";
 			rendererName = "sampler";
-			currentInstance = NULL;
+			currentInstanceRefined = NULL;
+			currentInstanceSource = NULL;
 			currentLightInstance = NULL;
 			debugMode = false;
 			randomMode = true;
@@ -263,10 +264,16 @@ private:
 		mutable vector<Light *> lights;
 		mutable vector<boost::shared_ptr<Primitive> > primitives;
 		mutable vector<Region *> volumeRegions;
-		mutable map<string, vector<boost::shared_ptr<Primitive> > > instances;
+		// Unrefined primitives
+		mutable map<string, vector<boost::shared_ptr<Primitive> > > instancesSource;
+		// Refined primitives
+		mutable map<string, vector<boost::shared_ptr<Primitive> > > instancesRefined;
 		mutable map<string, vector<boost::shared_ptr<Light> > > lightInstances;
 		mutable vector<string> lightGroups;
-		mutable vector<boost::shared_ptr<Primitive> > *currentInstance;
+		// Refined primitives
+		mutable vector<boost::shared_ptr<Primitive> > *currentInstanceSource;
+		// Unrefined primitives
+		mutable vector<boost::shared_ptr<Primitive> > *currentInstanceRefined;
 		mutable vector<boost::shared_ptr<Light> > *currentLightInstance;
 		bool gotSearchPath;
 		bool debugMode;

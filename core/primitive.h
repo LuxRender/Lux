@@ -55,7 +55,7 @@ public:
 	 * If this primitive should not be deallocated after refinement, it must
 	 * make sure that one of the refined primitives has a shared pointer to
 	 * this primitive (i.e. a copy of thisPtr)
-	 * @param refined     The destenation list for the result.
+	 * @param refined     The destination list for the result.
 	 * @param refineHints The hints for the refinement.
 	 * @param thisPtr     The shared pointer to this primitive.
 	 */
@@ -336,9 +336,10 @@ public:
 	 * @param mat The material this instance or NULL to use the
 	 *            instanced primitive's material.
 	 */
-	InstancePrimitive(boost::shared_ptr<Primitive> &i, const Transform &i2w,
+	InstancePrimitive(const vector<boost::shared_ptr<Primitive> > &instSources,
+		boost::shared_ptr<Primitive> &i, const Transform &i2w,
 		boost::shared_ptr<Material> &mat, boost::shared_ptr<Volume> &ex,
-		boost::shared_ptr<Volume> &in) : instance(i),
+		boost::shared_ptr<Volume> &in) : instanceSources(instSources), instance(i),
 		InstanceToWorld(i2w), material(mat), exterior(ex),
 		interior(in) { }
 	virtual ~InstancePrimitive() { }
@@ -399,8 +400,14 @@ public:
 	virtual Transform GetLocalToWorld(float time) const {
 		return InstanceToWorld * instance->GetLocalToWorld(time);
 	}
+
+	const vector<boost::shared_ptr<Primitive> > &GetInstanceSources() const { return instanceSources; }
+	Material *GetMaterial() const { return material.get(); }
+	const Transform &GetTransform() const { return InstanceToWorld; }
+
 private:
 	// InstancePrimitive Private Data
+	vector<boost::shared_ptr<Primitive> > instanceSources;
 	boost::shared_ptr<Primitive> instance;
 	Transform InstanceToWorld;
 	boost::shared_ptr<Material> material;

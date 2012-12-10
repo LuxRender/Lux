@@ -127,10 +127,12 @@ private:
 	void DefineSLGDefaultTexMap(luxrays::sdl::Scene *slgScene);
 	string GetSLGTexName(luxrays::sdl::Scene *slgScene, MIPMap *mipMap, const float gamma);
 	string GetSLGTexName(luxrays::sdl::Scene *slgScene, MIPMapFastImpl<TextureColor<float, 4> > *mipMap, const float gamma);
-	string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, Primitive *prim);
+	string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive *prim);
 
 	void ConvertEnvLights(luxrays::sdl::Scene *slgScene);
-	luxrays::sdl::Scene *CreateSLGScene();
+	vector<luxrays::ExtTriangleMesh *> DefinePrimitive(luxrays::sdl::Scene *slgScene, const Primitive *prim);
+	void ConvertGeometry(luxrays::sdl::Scene *slgScene);
+	luxrays::sdl::Scene *CreateSLGScene(const luxrays::Properties &slgConfigProps);
 	luxrays::Properties CreateSLGConfig();
 
 	mutable boost::mutex classWideMutex;
