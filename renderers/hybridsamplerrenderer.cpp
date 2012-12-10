@@ -334,6 +334,7 @@ static void writeIntervalCheck(Film *film) {
 
 void HybridSamplerRenderer::Render(Scene *s) {
 	luxrays::DataSet *dataSet;
+	vector<HybridInstancePrimitive *> hybridPrims;
 
 	{
 		// Section under mutex
@@ -391,7 +392,7 @@ void HybridSamplerRenderer::Render(Scene *s) {
 		// Compile the scene geometries in a LuxRays compatible format
 		//----------------------------------------------------------------------
 
-		dataSet = HybridRenderer::PreprocessGeometry(ctx, scene);
+		dataSet = HybridRenderer::PreprocessGeometry(ctx, scene, hybridPrims);
 		if (!dataSet)
 			return;
 		ctx->Start();
@@ -447,6 +448,11 @@ void HybridSamplerRenderer::Render(Scene *s) {
 	ctx->Stop();
 	delete dataSet;
 	scene->dataSet = NULL;
+
+	// Free memory allocated inside HybridRenderer::PreprocessGeometry()
+	for (u_int i = 0; i < hybridPrims.size(); ++i)
+		delete hybridPrims[i];
+		
 }
 
 void HybridSamplerRenderer::Pause() {

@@ -402,8 +402,10 @@ public:
 	}
 
 	const vector<boost::shared_ptr<Primitive> > &GetInstanceSources() const { return instanceSources; }
-	Material *GetMaterial() const { return material.get(); }
 	const Transform &GetTransform() const { return InstanceToWorld; }
+	Material *GetMaterial() const { return material.get(); }
+	Volume *GetVolumeExterior() const { return exterior.get(); }
+	Volume *GetvolumeInterior() const { return interior.get(); }
 
 private:
 	// InstancePrimitive Private Data

@@ -31,6 +31,7 @@
 #include "fastmutex.h"
 #include "timer.h"
 #include "dynload.h"
+#include "primitive.h"
 
 #include "luxrays/luxrays.h"
 #include "luxrays/core/device.h"
@@ -133,9 +134,52 @@ private:
 // HybridRenderer
 //------------------------------------------------------------------------------
 
+// A dummy primitive used for instance support
+class HybridInstancePrimitive : public Primitive {
+public:
+	HybridInstancePrimitive(const InstancePrimitive *instPrim, const Primitive *basePrim) : instance(instPrim), base(basePrim) { }
+	~HybridInstancePrimitive() { }
+
+	BBox WorldBound() const {
+		throw std::runtime_error("Internal error: called HybridInstancePrimitive::WorldBound().");
+	}
+	bool CanIntersect() const {
+		throw std::runtime_error("Internal error: called HybridInstancePrimitive::CanIntersect().");
+	}
+	bool CanSample() const {
+		throw std::runtime_error("Internal error: called HybridInstancePrimitive::CanSample().");
+	}
+	void GetIntersection(const luxrays::RayHit &rayHit, const u_int index, Intersection *in) const {
+		base->GetIntersection(rayHit, index, in);
+
+		const Transform &InstanceToWorld = instance->GetTransform();
+		in->ObjectToWorld = InstanceToWorld * in->ObjectToWorld;
+		// Transform instance's differential geometry to world space
+		in->dg *= InstanceToWorld;
+		in->dg.handle = instance;
+		in->primitive = instance;
+		if (instance->GetMaterial())
+			in->material = instance->GetMaterial();
+		if (instance->GetVolumeExterior())
+			in->exterior = instance->GetVolumeExterior();
+		if (instance->GetvolumeInterior())
+			in->interior = instance->GetvolumeInterior();
+	}
+
+	virtual Transform GetLocalToWorld(float time) const  {
+		throw std::runtime_error("Internal error: called HybridInstancePrimitive::GetLocalToWorld().");
+	}
+
+private:
+	const InstancePrimitive *instance;
+	const Primitive *base;
+};
+
 class HybridRenderer : public Renderer {
 public:
-	static luxrays::DataSet *PreprocessGeometry(luxrays::Context *ctx, Scene *scene);
+	static luxrays::DataSet *PreprocessGeometry(luxrays::Context *ctx, Scene *scene,
+			// Used later to free allocated memory
+			vector<HybridInstancePrimitive *> &hybridPrims);
 
 	static void LoadCfgParams(const string &configFile, ParamSet *params);
 protected:
