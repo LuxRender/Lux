@@ -454,7 +454,7 @@ void PhotonMapPreprocess(const RandomGenerator &rng, const Scene &scene,
 	Sample sample;
 	sample.rng = &rng;
 	SpectrumWavelengths &sw(sample.swl);
-	sample.camera = scene.camera->Clone();
+	sample.camera = scene.camera()->Clone();
 	sample.realTime = sample.camera->GetTime(.5f); //FIXME sample it
 	sample.camera->SampleMotion(sample.realTime);
 

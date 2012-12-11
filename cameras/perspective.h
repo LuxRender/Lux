@@ -37,6 +37,7 @@ public:
 		int distribution, int shape, int power,
 		Film *film);
 	virtual ~PerspectiveCamera() { }
+	virtual void AddAttributes(Queryable *q) const;
 
 	virtual void SampleMotion(float time);
 

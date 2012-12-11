@@ -86,7 +86,7 @@ void PhotonSampler::TracePhoton(
 	alpha /= lightPdf;
 
 	// The weight of the photon of the pass should be one, see ContribSample.
-	alpha /= renderer->sppmi->photonPerPass / renderer->scene->camera->film->GetSamplePerPass();
+	alpha /= renderer->sppmi->photonPerPass / renderer->scene->camera()->film->GetSamplePerPass();
 
 	const bool directLightSampling = renderer->sppmi->directLightSampling;
 
@@ -184,7 +184,7 @@ void PhotonSampler::ContribSample(Sample *sample)
 	//
 	// WARNING: this is link to AMCMC weighting
 	// (SPPMRenderer::ScaleUpdaterSPPM) and alpha in TracePhoton.
-	sample->contribBuffer->AddSampleCount(-1.0 + 1.0 / renderer->sppmi->photonPerPass * renderer->scene->camera->film->GetSamplePerPass());
+	sample->contribBuffer->AddSampleCount(-1.0 + 1.0 / renderer->sppmi->photonPerPass * renderer->scene->camera()->film->GetSamplePerPass());
 	dynamic_cast<Sampler*>(this)->AddSample(*sample);
 }
 

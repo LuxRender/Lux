@@ -27,6 +27,7 @@
 #include "api.h"
 #include "primitive.h"
 #include "transport.h"
+#include "camera.h"
 
 #include <boost/thread/thread.hpp>
 #include <boost/noncopyable.hpp>
@@ -146,7 +147,7 @@ public:
 	boost::shared_ptr<Primitive> aggregate;
 	vector<Light *> lights;
 	vector<string> lightGroups;
-	Camera *camera;
+	SceneCamera camera;
 	Region *volumeRegion;
 	SurfaceIntegrator *surfaceIntegrator;
 	VolumeIntegrator *volumeIntegrator;

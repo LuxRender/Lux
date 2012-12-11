@@ -91,7 +91,7 @@ void IGIIntegrator::Preprocess(const RandomGenerator &rng, const Scene &scene)
 	BufferOutputConfig config = BUF_FRAMEBUFFER;
 	BufferType type = BUF_TYPE_PER_PIXEL;
 	scene.sampler->GetBufferType(&type);
-	bufferId = scene.camera->film->RequestBuffer(type, config, "eye");
+	bufferId = scene.camera()->film->RequestBuffer(type, config, "eye");
 
 	if (scene.lights.size() == 0)
 		return;
