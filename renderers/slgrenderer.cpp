@@ -520,9 +520,7 @@ string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Prim
 				uroughness = .1f;
 			}
 			const float exponent = 10.f / uroughness;
-LOG(LUX_WARNING, LUX_UNIMPLEMENT)<<"===================="<<kdRGB;
-LOG(LUX_WARNING, LUX_UNIMPLEMENT)<<"===================="<<ksRGB;
-LOG(LUX_WARNING, LUX_UNIMPLEMENT)<<"===================="<<exponent;
+
 			slgScene->AddMaterials(
 					"scene.materials.mattemetal." + matName +" = " +
 						boost::lexical_cast<string>(kdRGB.r) + " " +
