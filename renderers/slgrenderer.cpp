@@ -32,31 +32,37 @@
 #include "camera.h"
 #include "film.h"
 #include "sampling.h"
-#include "slgrenderer.h"
 #include "context.h"
+#include "slgrenderer.h"
+#include "renderers/statistics/slgstatistics.h"
+#include "cameras/perspective.h"
+#include "shape.h"
+
+#include "samplers/metrosampler.h"
+#include "samplers/random.h"
+
+#include "integrators/path.h"
+#include "integrators/bidirectional.h"
+
+#include "textures/blackbody.h"
+#include "textures/constant.h"
+
 #include "light.h"
 #include "lights/sun.h"
+#include "lights/sky.h"
 #include "lights/sky2.h"
 #include "lights/infinite.h"
 #include "lights/infinitesample.h"
-#include "renderers/statistics/slgstatistics.h"
-#include "cameras/perspective.h"
-#include "textures/constant.h"
+
 #include "materials/matte.h"
 #include "materials/mirror.h"
 #include "materials/glass.h"
-#include "shape.h"
+#include "materials/glossy2.h"
 
 #include "luxrays/core/context.h"
 #include "luxrays/utils/core/exttrianglemesh.h"
 #include "luxrays/opencl/utils.h"
 #include "rendersession.h"
-#include "textures/blackbody.h"
-#include "lights/sky.h"
-#include "integrators/path.h"
-#include "integrators/bidirectional.h"
-#include "samplers/metrosampler.h"
-#include "samplers/random.h"
 
 
 using namespace lux;
@@ -455,10 +461,84 @@ string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Prim
 					);
 		} else
 		//------------------------------------------------------------------
+		// Check if it is material Glossy2
+		//------------------------------------------------------------------
+		if (dynamic_cast<Glossy2 *>(mat)) {
+			// Define the material
+			Glossy2 *glossy2 = dynamic_cast<Glossy2 *>(mat);
+			matName = glossy2->GetName();
+
+			// Check the type of texture
+
+			// Kd
+			Texture<SWCSpectrum> *kdTex = glossy2->GetKdTexture();
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Kd Texture type: " << typeid(*kdTex).name();
+			ConstantRGBColorTexture *kdRGBTex = dynamic_cast<ConstantRGBColorTexture *>(kdTex);
+
+			luxrays::Spectrum kdRGB;
+			if (kdRGBTex) {
+				kdRGB.r = (*kdRGBTex)["color.r"].FloatValue();
+				kdRGB.g = (*kdRGBTex)["color.g"].FloatValue();
+				kdRGB.b = (*kdRGBTex)["color.b"].FloatValue();
+			} else {
+				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only Glossy2 material with ConstantRGBColorTexture (i.e. not " <<
+					typeid(*kdRGBTex).name() << "). Ignoring unsupported texture.";
+				kdRGB.r = 1.f;
+				kdRGB.g = 1.f;
+				kdRGB.b = 1.f;
+			}
+
+			// Ks
+			Texture<SWCSpectrum> *ksTex = glossy2->GetKsTexture();
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Ks Texture type: " << typeid(*ksTex).name();
+			ConstantRGBColorTexture *ksRGBTex = dynamic_cast<ConstantRGBColorTexture *>(ksTex);
+
+			luxrays::Spectrum ksRGB;
+			if (ksRGBTex) {
+				ksRGB.r = (*ksRGBTex)["color.r"].FloatValue();
+				ksRGB.g = (*ksRGBTex)["color.g"].FloatValue();
+				ksRGB.b = (*ksRGBTex)["color.b"].FloatValue();
+			} else {
+				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only Glossy2 material with ConstantRGBColorTexture (i.e. not " <<
+					typeid(*ksRGBTex).name() << "). Ignoring unsupported texture.";
+				ksRGB.r = 1.f;
+				ksRGB.g = 1.f;
+				ksRGB.b = 1.f;
+			}
+
+			// Try to guess the exponent from the roughness of the surface in the u direction
+			Texture<float> *uroughnessTex = glossy2->GetNuTexture();
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Nu Texture type: " << typeid(*uroughnessTex).name();
+			ConstantFloatTexture *uroughnessFloatTex = dynamic_cast<ConstantFloatTexture *>(uroughnessTex);
+
+			float uroughness;
+			if (uroughnessFloatTex)
+				uroughness = Clamp((*uroughnessFloatTex)["value"].FloatValue(), 6e-3f, 1.f);
+			else {
+				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only Glossy2 material with ConstantFloatTexture (i.e. not " <<
+					typeid(*uroughnessFloatTex).name() << "). Ignoring unsupported texture and using 0.1 value.";
+				uroughness = .1f;
+			}
+			const float exponent = 10.f / uroughness;
+LOG(LUX_WARNING, LUX_UNIMPLEMENT)<<"===================="<<kdRGB;
+LOG(LUX_WARNING, LUX_UNIMPLEMENT)<<"===================="<<ksRGB;
+LOG(LUX_WARNING, LUX_UNIMPLEMENT)<<"===================="<<exponent;
+			slgScene->AddMaterials(
+					"scene.materials.mattemetal." + matName +" = " +
+						boost::lexical_cast<string>(kdRGB.r) + " " +
+						boost::lexical_cast<string>(kdRGB.g) + " " +
+						boost::lexical_cast<string>(kdRGB.b) + " " +
+						boost::lexical_cast<string>(ksRGB.r) + " " +
+						boost::lexical_cast<string>(ksRGB.g) + " " +
+						boost::lexical_cast<string>(ksRGB.b) + " " +
+						boost::lexical_cast<string>(exponent) + " 1\n"
+					);
+		} else
+		//------------------------------------------------------------------
 		// Material is not supported, use the default one
 		//------------------------------------------------------------------
 		{
-			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only Matte material (i.e. not " <<
+			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only Matte, Mirror, Glass and Glossy2 material (i.e. not " <<
 				typeid(*mat).name() << "). Replacing an unsupported material with matte.";
 			return "mat_default";
 		}

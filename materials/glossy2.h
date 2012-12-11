@@ -74,7 +74,12 @@ public:
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,
 		const DifferentialGeometry &dgShading) const;
-	
+
+	Texture<SWCSpectrum> *GetKdTexture() { return Kd.get(); }
+	Texture<SWCSpectrum> *GetKsTexture() { return Ks.get(); }
+	Texture<float> *GetNuTexture() { return nu.get(); }
+	Texture<float> *GetNvTexture() { return nv.get(); }
+
 	static Material * CreateMaterial(const Transform &xform,
 		const ParamSet &mp);
 private:
