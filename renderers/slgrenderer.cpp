@@ -67,6 +67,13 @@
 
 using namespace lux;
 
+template <class T> static std::string ToClassName(T *ptr) {
+	if (ptr)
+		return typeid(*ptr).name();
+	else
+		return "NULL";
+}
+
 //------------------------------------------------------------------------------
 // SLGHostDescription
 //------------------------------------------------------------------------------
@@ -163,7 +170,7 @@ string SLGRenderer::GetSLGTexName(luxrays::sdl::Scene *slgScene,
 	else {
 		// Unsupported type
 		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only RGB(A) float texture maps (i.e. not " <<
-					typeid(*mipMap).name() << "). Replacing an unsupported texture map with a white texture.";
+					ToClassName(mipMap) << "). Replacing an unsupported texture map with a white texture.";
 		DefineSLGDefaultTexMap(slgScene);
 		return "tex_default";
 	}
@@ -220,7 +227,7 @@ string SLGRenderer::GetSLGTexName(luxrays::sdl::Scene *slgScene,
 }
 
 string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive *prim) {
-	//LOG(LUX_DEBUG, LUX_NOERROR) << "Primitive type: " << typeid(*prim).name();
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Primitive type: " << ToClassName(prim);
 
 	Material *mat = NULL;
 	string matName;
@@ -265,7 +272,7 @@ string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Prim
 			const float area = (*al)["area"].FloatValue();
 
 			// Check the type of texture used
-			LOG(LUX_DEBUG, LUX_NOERROR) << "AreaLight texture type: " << typeid(*tex).name();
+			LOG(LUX_DEBUG, LUX_NOERROR) << "AreaLight texture type: " << ToClassName(tex);
 			ConstantRGBColorTexture *constRGBTex = dynamic_cast<ConstantRGBColorTexture *>(tex);
 			BlackBodyTexture *blackBodyTexture = dynamic_cast<BlackBodyTexture *>(tex);
 
@@ -305,7 +312,7 @@ string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Prim
 					);
 			} else {
 				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only area lights with constant ConstantRGBColorTexture or BlackBodyTexture (i.e. not " <<
-					typeid(*tex).name() << "). Replacing an unsupported area light material with matte.";
+					ToClassName(tex) << "). Replacing an unsupported area light material with matte.";
 				return "mat_default";
 			}
 		}
@@ -316,11 +323,11 @@ string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Prim
 	// Primitive is not supported, use the default material
 	//----------------------------------------------------------------------
 	{
-		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer doesn't support material conversion for primitive " << typeid(*prim).name();
+		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer doesn't support material conversion for primitive " << ToClassName(prim);
 		return "mat_default";
 	}
 
-	//LOG(LUX_DEBUG, LUX_NOERROR) << "Material type: " << typeid(*mat).name();
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Material type: " << ToClassName(mat);
 
 	// Check if the material has already been defined
 	if (slgScene->materialIndices.count(matName) < 1) {
@@ -336,7 +343,7 @@ string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Prim
 
 			// Check the type of texture
 			Texture<SWCSpectrum> *tex = matte->GetTexture();
-			LOG(LUX_DEBUG, LUX_NOERROR) << "Texture type: " << typeid(*tex).name();
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Texture type: " << ToClassName(tex);
 			ConstantRGBColorTexture *rgbTex = dynamic_cast<ConstantRGBColorTexture *>(tex);
 
 			if (rgbTex) {
@@ -353,7 +360,7 @@ string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Prim
 					);
 			} else {
 				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only Matte material with ConstantRGBColorTexture (i.e. not " <<
-					typeid(*tex).name() << "). Replacing an unsupported material with matte.";
+					ToClassName(tex) << "). Replacing an unsupported material with matte.";
 				return "mat_default";
 			}
 		} else
@@ -367,7 +374,7 @@ string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Prim
 
 			// Check the type of texture
 			Texture<SWCSpectrum> *tex = mirror->GetTexture();
-			LOG(LUX_DEBUG, LUX_NOERROR) << "Texture type: " << typeid(*tex).name();
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Texture type: " << ToClassName(tex);
 			ConstantRGBColorTexture *rgbTex = dynamic_cast<ConstantRGBColorTexture *>(tex);
 
 			if (rgbTex) {
@@ -384,7 +391,7 @@ string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Prim
 					);
 			} else {
 				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only Mirror material with ConstantRGBColorTexture (i.e. not " <<
-					typeid(*tex).name() << "). Ignoring unsupported texture.";
+					ToClassName(tex) << "). Ignoring unsupported texture.";
 				slgScene->AddMaterials(
 					"scene.materials.mirror." + matName +" = 1.0 1.0 1.0 1\n");
 			}
@@ -401,7 +408,7 @@ string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Prim
 
 			// Kr
 			Texture<SWCSpectrum> *krTex = glass->GetKrTexture();
-			LOG(LUX_DEBUG, LUX_NOERROR) << "Kr Texture type: " << typeid(*krTex).name();
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Kr Texture type: " << ToClassName(krTex);
 			ConstantRGBColorTexture *krRGBTex = dynamic_cast<ConstantRGBColorTexture *>(krTex);
 
 			luxrays::Spectrum krRGB;
@@ -411,7 +418,7 @@ string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Prim
 				krRGB.b = (*krRGBTex)["color.b"].FloatValue();
 			} else {
 				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only Glass material with ConstantRGBColorTexture (i.e. not " <<
-					typeid(*krRGBTex).name() << "). Ignoring unsupported texture.";
+					ToClassName(krRGBTex) << "). Ignoring unsupported texture.";
 				krRGB.r = 1.f;
 				krRGB.g = 1.f;
 				krRGB.b = 1.f;
@@ -419,7 +426,7 @@ string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Prim
 
 			// Kt
 			Texture<SWCSpectrum> *ktTex = glass->GetKtTexture();
-			LOG(LUX_DEBUG, LUX_NOERROR) << "Kt Texture type: " << typeid(*ktTex).name();
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Kt Texture type: " << ToClassName(ktTex);
 			ConstantRGBColorTexture *ktRGBTex = dynamic_cast<ConstantRGBColorTexture *>(ktTex);
 
 			luxrays::Spectrum ktRGB;
@@ -429,7 +436,7 @@ string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Prim
 				ktRGB.b = (*ktRGBTex)["color.b"].FloatValue();
 			} else {
 				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only Glass material with ConstantRGBColorTexture (i.e. not " <<
-					typeid(*ktRGBTex).name() << "). Ignoring unsupported texture.";
+					ToClassName(ktRGBTex) << "). Ignoring unsupported texture.";
 				ktRGB.r = 1.f;
 				ktRGB.g = 1.f;
 				ktRGB.b = 1.f;
@@ -437,7 +444,7 @@ string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Prim
 
 			// Index
 			Texture<float> *indexTex = glass->GetIndexTexture();
-			LOG(LUX_DEBUG, LUX_NOERROR) << "Index Texture type: " << typeid(*indexTex).name();
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Index Texture type: " << ToClassName(indexTex);
 			ConstantFloatTexture *indexFloatTex = dynamic_cast<ConstantFloatTexture *>(indexTex);
 
 			float index;
@@ -445,7 +452,7 @@ string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Prim
 				index = (*indexFloatTex)["value"].FloatValue();
 			else {
 				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only Glass material with ConstantFloatTexture (i.e. not " <<
-					typeid(*indexFloatTex).name() << "). Ignoring unsupported texture and using 1.41 value.";
+					ToClassName(indexFloatTex) << "). Ignoring unsupported texture and using 1.41 value.";
 				index = 1.41f;
 			}
 
@@ -472,7 +479,7 @@ string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Prim
 
 			// Kd
 			Texture<SWCSpectrum> *kdTex = glossy2->GetKdTexture();
-			LOG(LUX_DEBUG, LUX_NOERROR) << "Kd Texture type: " << typeid(*kdTex).name();
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Kd Texture type: " << ToClassName(kdTex);
 			ConstantRGBColorTexture *kdRGBTex = dynamic_cast<ConstantRGBColorTexture *>(kdTex);
 
 			luxrays::Spectrum kdRGB;
@@ -482,7 +489,7 @@ string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Prim
 				kdRGB.b = (*kdRGBTex)["color.b"].FloatValue();
 			} else {
 				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only Glossy2 material with ConstantRGBColorTexture (i.e. not " <<
-					typeid(*kdRGBTex).name() << "). Ignoring unsupported texture.";
+					ToClassName(kdRGBTex) << "). Ignoring unsupported texture.";
 				kdRGB.r = 1.f;
 				kdRGB.g = 1.f;
 				kdRGB.b = 1.f;
@@ -490,7 +497,7 @@ string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Prim
 
 			// Ks
 			Texture<SWCSpectrum> *ksTex = glossy2->GetKsTexture();
-			LOG(LUX_DEBUG, LUX_NOERROR) << "Ks Texture type: " << typeid(*ksTex).name();
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Ks Texture type: " << ToClassName(ksTex);
 			ConstantRGBColorTexture *ksRGBTex = dynamic_cast<ConstantRGBColorTexture *>(ksTex);
 
 			luxrays::Spectrum ksRGB;
@@ -500,7 +507,7 @@ string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Prim
 				ksRGB.b = (*ksRGBTex)["color.b"].FloatValue();
 			} else {
 				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only Glossy2 material with ConstantRGBColorTexture (i.e. not " <<
-					typeid(*ksRGBTex).name() << "). Ignoring unsupported texture.";
+					ToClassName(ksRGBTex) << "). Ignoring unsupported texture.";
 				ksRGB.r = 1.f;
 				ksRGB.g = 1.f;
 				ksRGB.b = 1.f;
@@ -508,7 +515,7 @@ string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Prim
 
 			// Try to guess the exponent from the roughness of the surface in the u direction
 			Texture<float> *uroughnessTex = glossy2->GetNuTexture();
-			LOG(LUX_DEBUG, LUX_NOERROR) << "Nu Texture type: " << typeid(*uroughnessTex).name();
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Nu Texture type: " << ToClassName(uroughnessTex);
 			ConstantFloatTexture *uroughnessFloatTex = dynamic_cast<ConstantFloatTexture *>(uroughnessTex);
 
 			float uroughness;
@@ -516,7 +523,7 @@ string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Prim
 				uroughness = Clamp((*uroughnessFloatTex)["value"].FloatValue(), 6e-3f, 1.f);
 			else {
 				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only Glossy2 material with ConstantFloatTexture (i.e. not " <<
-					typeid(*uroughnessFloatTex).name() << "). Ignoring unsupported texture and using 0.1 value.";
+					ToClassName(uroughnessFloatTex) << "). Ignoring unsupported texture and using 0.1 value.";
 				uroughness = .1f;
 			}
 			const float exponent = 10.f / uroughness;
@@ -537,7 +544,7 @@ string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Prim
 		//------------------------------------------------------------------
 		{
 			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only Matte, Mirror, Glass and Glossy2 material (i.e. not " <<
-				typeid(*mat).name() << "). Replacing an unsupported material with matte.";
+				ToClassName(mat) << "). Replacing an unsupported material with matte.";
 			return "mat_default";
 		}
 	}
@@ -699,7 +706,7 @@ void SLGRenderer::ConvertEnvLights(luxrays::sdl::Scene *slgScene) {
 }
 
 vector<luxrays::ExtTriangleMesh *> SLGRenderer::DefinePrimitive(luxrays::sdl::Scene *slgScene, const Primitive *prim) {
-	//LOG(LUX_DEBUG, LUX_NOERROR) << "Define primitive type: " << typeid(*prim).name();
+	//LOG(LUX_DEBUG, LUX_NOERROR) << "Define primitive type: " << ToClassName(prim);
 
 	vector<luxrays::ExtTriangleMesh *> meshList;
 	prim->ExtTesselate(&meshList, &scene->tesselatedPrimitives);
@@ -731,7 +738,7 @@ void SLGRenderer::ConvertGeometry(luxrays::sdl::Scene *slgScene) {
 
 	for (size_t i = 0; i < scene->primitives.size(); ++i) {
 		const Primitive *prim = scene->primitives[i].get();
-		//LOG(LUX_DEBUG, LUX_NOERROR) << "Primitive type: " << typeid(*prim).name();
+		//LOG(LUX_DEBUG, LUX_NOERROR) << "Primitive type: " << ToClassName(prim);
 
 		// Instances require special care
 		if (dynamic_cast<const InstancePrimitive *>(prim)) {
@@ -812,7 +819,7 @@ luxrays::sdl::Scene *SLGRenderer::CreateSLGScene(const luxrays::Properties &slgC
 	// primitives too and they will be deleted by Lux Context)
 	slgScene->extMeshCache->SetDeleteMeshData(false);
 
-	LOG(LUX_DEBUG, LUX_NOERROR) << "Camera type: " << typeid(*(scene->camera)).name();
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Camera type: " << ToClassName(scene->camera);
 	PerspectiveCamera *perpCamera = dynamic_cast<PerspectiveCamera *>(scene->camera);
 	if (!perpCamera)
 		throw std::runtime_error("SLGRenderer supports only PerspectiveCamera");
@@ -886,7 +893,7 @@ luxrays::Properties SLGRenderer::CreateSLGConfig() {
 	// Surface integrator related settings
 	//--------------------------------------------------------------------------
 
-	LOG(LUX_DEBUG, LUX_NOERROR) << "Surface integrator type: " << typeid(*(scene->surfaceIntegrator)).name();
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Surface integrator type: " << ToClassName(scene->surfaceIntegrator);
 	if (dynamic_cast<PathIntegrator *>(scene->surfaceIntegrator)) {
 		// Path tracing
 		PathIntegrator *path = dynamic_cast<PathIntegrator *>(scene->surfaceIntegrator);
@@ -936,7 +943,7 @@ luxrays::Properties SLGRenderer::CreateSLGConfig() {
 	// Sampler related settings
 	//--------------------------------------------------------------------------
 
-	LOG(LUX_DEBUG, LUX_NOERROR) << "Sampler type: " << typeid(*(scene->sampler)).name();
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Sampler type: " << ToClassName(scene->sampler);
 	if (dynamic_cast<MetropolisSampler *>(scene->sampler)) {
 		MetropolisSampler *sampler = dynamic_cast<MetropolisSampler *>(scene->sampler);
 		const int maxRejects = (*sampler)["maxRejects"].IntValue();
@@ -1032,11 +1039,11 @@ void SLGRenderer::Render(Scene *s) {
 			LOG(LUX_SEVERE, LUX_SYSTEM) << "RUNTIME ERROR: " << err.what();
 			state = TERMINATE;
 			return;
-		} catch (std::exception err) {
+		} /*catch (std::exception err) {
 			LOG(LUX_SEVERE, LUX_SYSTEM) << "ERROR: " << err.what();
 			state = TERMINATE;
 			return;
-		}
+		}*/
 
 		// start the timer
 		rendererStatistics->start();
