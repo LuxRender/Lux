@@ -39,7 +39,7 @@ public:
 	// MarbleTexture Public Methods
 	virtual ~MarbleTexture() { delete mapping; }
 	MarbleTexture(int oct, float roughness, float sc, float var,
-		TextureMapping3D *map) {
+		TextureMapping3D *map) : Texture("MarbleTexture-" + boost::lexical_cast<string>(this)) {
 		omega = roughness;
 		octaves = oct;
 		mapping = map;

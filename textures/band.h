@@ -42,7 +42,9 @@ public:
 	// MixTexture Public Methods
 	BandTexture(u_int n, const float *o,
 		vector<boost::shared_ptr<Texture<T> > > &t,
-		boost::shared_ptr<Texture<float> > &a) : offsets(o, o + n),
+		boost::shared_ptr<Texture<float> > &a) :
+		Texture<T>("BandTexture-" + boost::lexical_cast<string>(this)),
+		offsets(o, o + n),
 		tex(t), amount(a) { }
 	virtual ~BandTexture() { }
 	virtual T Evaluate(const SpectrumWavelengths &sw,

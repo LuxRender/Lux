@@ -115,6 +115,7 @@ public:
 	ImageFloatTexture(TextureMapping2D *m, ImageTextureFilterType type,
 		const string &filename, int discardmm, float maxAniso,
 		ImageWrap wrapMode, Channel ch, float gain, float gamma) :
+		Texture("ImageFloatTexture-" + boost::lexical_cast<string>(this)),
 		ImageTexture(m, type, filename, discardmm, maxAniso, wrapMode,
 			gain, gamma) { channel = ch; }
 
@@ -157,6 +158,7 @@ public:
 	ImageSpectrumTexture(TextureMapping2D *m, ImageTextureFilterType type,
 		const string &filename, int discardmm, float maxAniso,
 		ImageWrap wrapMode, float gain, float gamma) :
+		Texture("ImageSpectrumTexture-" + boost::lexical_cast<string>(this)),
 		ImageTexture(m, type, filename, discardmm, maxAniso, wrapMode,
 			gain, gamma), isIlluminant(false) { }
 
@@ -207,6 +209,7 @@ public:
 	NormalMapTexture(TextureMapping2D *m, ImageTextureFilterType type,
 		const string &filename, int discardmm, float maxAniso,
 		ImageWrap wrapMode, float gain, float gamma) :
+		Texture("NormalMapTexture-" + boost::lexical_cast<string>(this)),
 		ImageTexture(m, type, filename, discardmm, maxAniso, wrapMode,
 			gain, gamma) { }
 

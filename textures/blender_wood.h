@@ -35,7 +35,7 @@ public:
 
 	BlenderWoodTexture3D(const Transform &tex2world,
 		const ParamSet &tp) :
-		BlenderTexture3D(tex2world, tp, TEX_WOOD) {
+		BlenderTexture3D("BlenderWoodTexture3D-" + boost::lexical_cast<string>(this), tex2world, tp, TEX_WOOD) {
 		tex.stype = GetWoodType(tp.FindOneString("type", "bands"));
 		tex.noisetype = GetNoiseType(tp.FindOneString("noisetype",
 			"soft_noise"));

@@ -42,7 +42,8 @@ public:
 		boost::shared_ptr<Texture<T> > &c3,
 		float brickw, float brickh, float brickd, float mortar,
 		float r, float bev, const string &b,
-		TextureMapping3D *map) : brickwidth(brickw),
+		TextureMapping3D *map) :
+		Texture<T>("BrickTexture3D-" + boost::lexical_cast<string>(this)), brickwidth(brickw),
 		brickheight(brickh), brickdepth(brickd), mortarsize(mortar),
 		run(r), mapping(map), tex1(c1), tex2(c2), tex3(c3) {
 		if (b == "stacked") {

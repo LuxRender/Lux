@@ -41,7 +41,9 @@ class ScaleTexture : public Texture<T2> {
 public:
 	// ScaleTexture Public Methods
 	ScaleTexture(boost::shared_ptr<Texture<T1> > &t1,
-		boost::shared_ptr<Texture<T2> > &t2) : tex1(t1), tex2(t2) { }
+		boost::shared_ptr<Texture<T2> > &t2) :
+		Texture<T2>("ScaleTexture-" + boost::lexical_cast<string>(this)),
+		tex1(t1), tex2(t2) { }
 	virtual ~ScaleTexture() { }
 	virtual T2 Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {

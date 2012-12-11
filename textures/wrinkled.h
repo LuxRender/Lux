@@ -36,7 +36,8 @@ namespace lux
 class WrinkledTexture : public Texture<float> {
 public:
 	// WrinkledTexture Public Methods
-	WrinkledTexture(int oct, float roughness, TextureMapping3D *map) {
+	WrinkledTexture(int oct, float roughness, TextureMapping3D *map) :
+		Texture("WrinkledTexture-" + boost::lexical_cast<string>(this)) {
 		omega = roughness;
 		octaves = oct;
 		mapping = map;

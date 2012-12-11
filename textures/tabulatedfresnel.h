@@ -37,6 +37,7 @@ public:
 	// TabulatedFresnel Public Methods
 	TabulatedFresnel(const vector<float> &wl, const vector<float> &n,
 		const vector<float> &k) :
+		Texture("TabulatedFresnel-" + boost::lexical_cast<string>(this)),
 		N(&wl[0], &n[0], wl.size()), K(&wl[0], &k[0], wl.size()),
 		index(N.Filter()) { }
 	virtual ~TabulatedFresnel() { }

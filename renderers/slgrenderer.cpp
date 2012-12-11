@@ -43,6 +43,8 @@
 #include "cameras/perspective.h"
 #include "textures/constant.h"
 #include "materials/matte.h"
+#include "materials/mirror.h"
+#include "materials/glass.h"
 #include "shape.h"
 
 #include "luxrays/core/context.h"
@@ -51,7 +53,6 @@
 #include "rendersession.h"
 #include "textures/blackbody.h"
 #include "lights/sky.h"
-#include "materials/mirror.h"
 #include "integrators/path.h"
 #include "integrators/bidirectional.h"
 #include "samplers/metrosampler.h"
@@ -377,9 +378,81 @@ string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Prim
 					);
 			} else {
 				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only Mirror material with ConstantRGBColorTexture (i.e. not " <<
-					typeid(*tex).name() << "). Replacing an unsupported material with matte.";
-				return "mat_default";
+					typeid(*tex).name() << "). Ignoring unsupported texture.";
+				slgScene->AddMaterials(
+					"scene.materials.mirror." + matName +" = 1.0 1.0 1.0 1\n");
 			}
+		} else
+		//------------------------------------------------------------------
+		// Check if it is material Glass
+		//------------------------------------------------------------------
+		if(dynamic_cast<Glass *>(mat)) {
+			// Define the material
+			Glass *glass = dynamic_cast<Glass *>(mat);
+			matName = glass->GetName();
+
+			// Check the type of textures
+
+			// Kr
+			Texture<SWCSpectrum> *krTex = glass->GetKrTexture();
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Kr Texture type: " << typeid(*krTex).name();
+			ConstantRGBColorTexture *krRGBTex = dynamic_cast<ConstantRGBColorTexture *>(krTex);
+
+			luxrays::Spectrum krRGB;
+			if (krRGBTex) {
+				krRGB.r = (*krRGBTex)["color.r"].FloatValue();
+				krRGB.g = (*krRGBTex)["color.g"].FloatValue();
+				krRGB.b = (*krRGBTex)["color.b"].FloatValue();
+			} else {
+				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only Glass material with ConstantRGBColorTexture (i.e. not " <<
+					typeid(*krRGBTex).name() << "). Ignoring unsupported texture.";
+				krRGB.r = 1.f;
+				krRGB.g = 1.f;
+				krRGB.b = 1.f;
+			}
+
+			// Kt
+			Texture<SWCSpectrum> *ktTex = glass->GetKtTexture();
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Kt Texture type: " << typeid(*ktTex).name();
+			ConstantRGBColorTexture *ktRGBTex = dynamic_cast<ConstantRGBColorTexture *>(ktTex);
+
+			luxrays::Spectrum ktRGB;
+			if (ktRGBTex) {
+				ktRGB.r = (*ktRGBTex)["color.r"].FloatValue();
+				ktRGB.g = (*ktRGBTex)["color.g"].FloatValue();
+				ktRGB.b = (*ktRGBTex)["color.b"].FloatValue();
+			} else {
+				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only Glass material with ConstantRGBColorTexture (i.e. not " <<
+					typeid(*ktRGBTex).name() << "). Ignoring unsupported texture.";
+				ktRGB.r = 1.f;
+				ktRGB.g = 1.f;
+				ktRGB.b = 1.f;
+			}
+
+			// Index
+			Texture<float> *indexTex = glass->GetIndexTexture();
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Index Texture type: " << typeid(*indexTex).name();
+			ConstantFloatTexture *indexFloatTex = dynamic_cast<ConstantFloatTexture *>(indexTex);
+
+			float index;
+			if (indexFloatTex)
+				index = (*indexFloatTex)["value"].FloatValue();
+			else {
+				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only Glass material with ConstantFloatTexture (i.e. not " <<
+					typeid(*indexFloatTex).name() << "). Ignoring unsupported texture and using 1.41 value.";
+				index = 1.41f;
+			}
+
+			slgScene->AddMaterials(
+					"scene.materials.glass." + matName +" = " +
+						boost::lexical_cast<string>(ktRGB.r) + " " +
+						boost::lexical_cast<string>(ktRGB.g) + " " +
+						boost::lexical_cast<string>(ktRGB.b) + " " +
+						boost::lexical_cast<string>(krRGB.r) + " " +
+						boost::lexical_cast<string>(krRGB.g) + " " +
+						boost::lexical_cast<string>(krRGB.b) + " " +
+						" 1.0 " + boost::lexical_cast<string>(index) + " 1 1\n"
+					);
 		} else
 		//------------------------------------------------------------------
 		// Material is not supported, use the default one

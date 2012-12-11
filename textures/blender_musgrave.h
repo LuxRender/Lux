@@ -34,7 +34,7 @@ public:
 
 	BlenderMusgraveTexture3D(const Transform &tex2world,
 		const ParamSet &tp) :
-		BlenderTexture3D(tex2world, tp, TEX_MUSGRAVE) {
+		BlenderTexture3D("BlenderMusgraveTexture3D-" + boost::lexical_cast<string>(this), tex2world, tp, TEX_MUSGRAVE) {
 		tex.stype = GetMusgraveType(tp.FindOneString("type",
 			"multifractal"));
 		tex.noisebasis = GetNoiseBasis(tp.FindOneString("noisebasis",

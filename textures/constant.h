@@ -27,7 +27,6 @@
 #include "rgbillum.h"
 #include "fresnelgeneral.h"
 #include "paramset.h"
-#include "queryable.h"
 
 namespace lux
 {
@@ -36,7 +35,10 @@ namespace lux
 class ConstantFloatTexture : public Texture<float> {
 public:
 	// ConstantTexture Public Methods
-	ConstantFloatTexture(float v) : value(v) { }
+	ConstantFloatTexture(float v) :
+		Texture("ConstantFloatTexture-" + boost::lexical_cast<string>(this)), value(v) {
+			AddFloatAttribute(*this, "value", "ConstantFloatTexture value", &ConstantFloatTexture::value);
+		}
 	virtual ~ConstantFloatTexture() { }
 	virtual float Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &) const {
@@ -54,11 +56,11 @@ private:
 	float value;
 };
 
-class ConstantRGBColorTexture : public Texture<SWCSpectrum>, public Queryable {
+class ConstantRGBColorTexture : public Texture<SWCSpectrum> {
 public:
 	// ConstantTexture Public Methods
 	ConstantRGBColorTexture(const RGBColor &s) :
-		Queryable("ConstantRGBColorTexture-" + boost::lexical_cast<string>(this)),
+		Texture("ConstantRGBColorTexture-" + boost::lexical_cast<string>(this)),
 		color(s) {
 		RGBSPD = new RGBReflSPD(color);
 
@@ -95,6 +97,7 @@ class ConstantFresnelTexture : public Texture<FresnelGeneral> {
 public:
 	// ConstantTexture Public Methods
 	ConstantFresnelTexture(float v) :
+		Texture("ConstantFresnelTexture-" + boost::lexical_cast<string>(this)),
 		value(DIELECTRIC_FRESNEL, SWCSpectrum(v), 0.f), val(v) { }
 	virtual ~ConstantFresnelTexture() { }
 	virtual FresnelGeneral Evaluate(const SpectrumWavelengths &sw,

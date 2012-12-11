@@ -33,8 +33,8 @@ public:
 
 	virtual ~BlenderTexture3D() { }
 
-	BlenderTexture3D(const Transform &tex2world, const ParamSet &tp,
-		short type) {
+	BlenderTexture3D(const std::string &name, const Transform &tex2world, const ParamSet &tp,
+		short type) : Texture(name) {
 		// Read mapping coordinates
 		string coords = tp.FindOneString("coordinates", "global");
 		if (coords == "global")

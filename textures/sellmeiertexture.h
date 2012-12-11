@@ -36,6 +36,7 @@ class SellmeierTexture : public Texture<FresnelGeneral> {
 public:
 	// SellmeierTexture Public Methods
 	SellmeierTexture(float a_, u_int n, const float *b_, const float *c_) :
+		Texture("SellmeierTexture-" + boost::lexical_cast<string>(this)),
 		b(b_, b_ + n), c(c_, c_ + n), a(a_) {
 		// Sellmeier expects wavelength in µm but we have it in nm
 		for (u_int i = 0; i < n; ++i)

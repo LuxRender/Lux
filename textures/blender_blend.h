@@ -33,7 +33,7 @@ public:
 
 	BlenderBlendTexture3D(const Transform &tex2world,
 		const ParamSet &tp) :
-		BlenderTexture3D(tex2world, tp, TEX_BLEND) {
+		BlenderTexture3D("BlenderBlendTexture3D-" + boost::lexical_cast<string>(this), tex2world, tp, TEX_BLEND) {
 		tex.stype = GetBlendType(tp.FindOneString("type", "lin"));
 		tex.flag = tp.FindOneBool("flipxy", false) ? TEX_FLIPBLEND : 0;
 	}

@@ -44,7 +44,8 @@ template <class T1, class T2>
 class AddTexture : public Texture<T2> {
 public:
 	// AddTexture Public Methods
-	AddTexture(boost::shared_ptr<Texture<T1> > &t1, boost::shared_ptr<Texture<T2> > &t2) : tex1(t1), tex2(t2) { 
+	AddTexture(boost::shared_ptr<Texture<T1> > &t1, boost::shared_ptr<Texture<T2> > &t2) :
+		Texture<T2>("AddTexture-" + boost::lexical_cast<string>(this)), tex1(t1), tex2(t2) { 
 		// Nothing
 	}
 	virtual ~AddTexture() { 

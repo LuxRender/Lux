@@ -39,8 +39,9 @@ public:
 	// UVMaskFloatTexture Public Methods
 	UVMaskTexture(TextureMapping2D *m,
 	              boost::shared_ptr<Texture<T> > &_innerTex,
-	              boost::shared_ptr<Texture<T> > &_outerTex)
-	: innerTex(_innerTex), outerTex(_outerTex) { mapping = m; }
+	              boost::shared_ptr<Texture<T> > &_outerTex) :
+		Texture<T>("UVMaskTexture-" + boost::lexical_cast<string>(this)),
+		innerTex(_innerTex), outerTex(_outerTex) { mapping = m; }
 
 	virtual ~UVMaskTexture() { delete mapping; }
 

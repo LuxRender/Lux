@@ -44,9 +44,14 @@ public:
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,
 		const DifferentialGeometry &dgShading) const;
-	
+
+	Texture<SWCSpectrum> *GetKrTexture() { return Kr.get(); }
+	Texture<SWCSpectrum> *GetKtTexture() { return Kt.get(); }
+	Texture<float> *GetIndexTexture() { return index.get(); }
+
 	static Material * CreateMaterial(const Transform &xform,
 		const ParamSet &mp);
+
 private:
 	// Glass Private Data
 	boost::shared_ptr<Texture<SWCSpectrum> > Kr, Kt;

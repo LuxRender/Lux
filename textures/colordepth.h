@@ -33,7 +33,9 @@ namespace lux
 class ColorDepthTexture : public Texture<SWCSpectrum> {
 public:
 	// ColorDepthTexture Public Methods
-	ColorDepthTexture(float t, boost::shared_ptr<Texture<SWCSpectrum> > &c) : d(-max(1e-3f, t)), color(c) { }
+	ColorDepthTexture(float t, boost::shared_ptr<Texture<SWCSpectrum> > &c) :
+		Texture("ColorDepthTexture-" + boost::lexical_cast<string>(this)),
+		d(-max(1e-3f, t)), color(c) { }
 	virtual ~ColorDepthTexture() { }
 	virtual SWCSpectrum Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {

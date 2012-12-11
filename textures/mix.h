@@ -38,8 +38,9 @@ public:
 	// MixTexture Public Methods
 	MixTexture(boost::shared_ptr<Texture<T> > &t1,
 		boost::shared_ptr<Texture<T> > &t2,
-		boost::shared_ptr<Texture<float> > &amt) : tex1(t1), tex2(t2),
-		amount(amt) { }
+		boost::shared_ptr<Texture<float> > &amt) :
+		Texture<T>("MixTexture-" + boost::lexical_cast<string>(this)),
+		tex1(t1), tex2(t2),	amount(amt) { }
 	virtual ~MixTexture() { }
 	virtual T Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {

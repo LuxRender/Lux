@@ -36,7 +36,8 @@ namespace lux
 class WindyTexture : public Texture<float> {
 public:
 	// WindyTexture Public Methods
-	WindyTexture(TextureMapping3D *map) { mapping = map; }
+	WindyTexture(TextureMapping3D *map) :
+		Texture("WindyTexture-" + boost::lexical_cast<string>(this)) { mapping = map; }
 	virtual ~WindyTexture() { delete mapping; }
 	virtual float Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {

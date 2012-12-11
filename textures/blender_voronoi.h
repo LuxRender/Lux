@@ -33,7 +33,7 @@ public:
 
 	BlenderVoronoiTexture3D(const Transform &tex2world,
 		const ParamSet &tp) :
-		BlenderTexture3D(tex2world, tp, TEX_VORONOI) {
+		BlenderTexture3D("BlenderVoronoiTexture3D-" + boost::lexical_cast<string>(this), tex2world, tp, TEX_VORONOI) {
 		tex.vn_distm = GetVoronoiType(tp.FindOneString("distmetric",
 			"actual_distance"));
 		tex.vn_coltype = tp.FindOneInt("coltype", 0);

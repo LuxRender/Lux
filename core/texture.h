@@ -26,6 +26,7 @@
 #include "lux.h"
 #include "geometry/transform.h"
 #include "error.h"
+#include "queryable.h"
 
 namespace lux
 {
@@ -201,8 +202,9 @@ public:
 	virtual void Map(float s, float t, Vector *wh, float *pdf = NULL) const;
 };
 
-template <class T> class Texture {
+template <class T> class Texture : public Queryable {
 public:
+	Texture(const std::string &name) : Queryable(name) { }
 	//typedef boost::shared_ptr<Texture> TexturePtr; <<! Not working with GCC
 	// Texture Interface
 	virtual T Evaluate(const SpectrumWavelengths &sw,

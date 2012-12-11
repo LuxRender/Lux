@@ -31,7 +31,7 @@ public:
 
 	BlenderNoiseTexture3D(const Transform &tex2world,
 		const ParamSet &tp) :
-		BlenderTexture3D(tex2world, tp, TEX_NOISE) {
+		BlenderTexture3D("BlenderNoiseTexture3D-" + boost::lexical_cast<string>(this), tex2world, tp, TEX_NOISE) {
 		tex.noisedepth = tp.FindOneInt("noisedepth", 2);
 	}
 

@@ -35,7 +35,7 @@ public:
 
 	BlenderMarbleTexture3D(const Transform &tex2world,
 		const ParamSet &tp) :
-		BlenderTexture3D(tex2world, tp, TEX_MARBLE) {
+		BlenderTexture3D("BlenderMarbleTexture3D-" + boost::lexical_cast<string>(this), tex2world, tp, TEX_MARBLE) {
 		tex.stype = GetMarbleType(tp.FindOneString("type", "soft"));
 		tex.noisetype = GetNoiseType(tp.FindOneString("noisetype",
 			"soft_noise"));

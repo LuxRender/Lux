@@ -40,7 +40,9 @@ class MultiMixTexture : public Texture<T> {
 public:
 	// MultiMixTexture Public Methods
 	MultiMixTexture(u_int n, const float *w,
-			vector<boost::shared_ptr<Texture<T> > > &t) : weights(w, w + n),
+			vector<boost::shared_ptr<Texture<T> > > &t) :
+			Texture<T>("MultiMixTexture-" + boost::lexical_cast<string>(this)),
+			weights(w, w + n),
 			tex(t) { }
 	virtual ~MultiMixTexture() { }
 
