@@ -39,7 +39,9 @@ public:
 		boost::shared_ptr<Texture<float> > &flmindex,
 		bool archi, const ParamSet &mp) : Material("Glass-" + boost::lexical_cast<string>(this), mp),
 		Kr(r), Kt(t), index(i),
-		cauchyb(cbf), film(flm), filmindex(flmindex), architectural(archi) { }
+		cauchyb(cbf), film(flm), filmindex(flmindex), architectural(archi) {
+		AddBoolAttribute(*this, "architectural", "Glass architectural flag", &Glass::architectural);
+	}
 	virtual ~Glass() { }
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,
