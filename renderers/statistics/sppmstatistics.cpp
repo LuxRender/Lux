@@ -270,5 +270,5 @@ double SPPMRStatistics::getPhotonCount() {
 		sampleCount = (*filmRegistry)["numberOfLocalSamples"].DoubleValue();
 
 	// The amount of photon is stored "by pass"
-	return sampleCount * (renderer->sppmi->photonPerPass) / renderer->scene->camera->film->GetSamplePerPass();
+	return sampleCount * (renderer->sppmi->photonPerPass) / renderer->scene->camera()->film->GetSamplePerPass();
 }

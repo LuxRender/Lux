@@ -157,18 +157,21 @@ PerspectiveCamera::PerspectiveCamera(const MotionSystem &world2cam,
 	const float yPixelHeight = templength * (Screen[3] - Screen[2]) / 2.f *
 		(yEnd - yStart) / f->yResolution;
 	Apixel = xPixelWidth * yPixelHeight;
+}
 
-	AddStringConstant(*this, "name", "Name of current camera", "perspective");
-	AddFloatAttribute(*this, "fov", "Field of View in radians", M_PI / 2.f, &PerspectiveCamera::fov);
-	AddFloatAttribute(*this, "Position.x", "Perspective camera X", &PerspectiveCamera::GetPositionX);
-	AddFloatAttribute(*this, "Position.y", "Perspective camera Y", &PerspectiveCamera::GetPositionY);
-	AddFloatAttribute(*this, "Position.z", "Perspective camera Z", &PerspectiveCamera::GetPositionZ);
-	AddFloatAttribute(*this, "Normal.x", "Perspective camera normal X", &PerspectiveCamera::GetNormalX);
-	AddFloatAttribute(*this, "Normal.y", "Perspective camera normal Y", &PerspectiveCamera::GetNormalY);
-	AddFloatAttribute(*this, "Normal.z", "Perspective camera normal Z", &PerspectiveCamera::GetNormalZ);
-	AddFloatAttribute(*this, "Up.x", "Perspective camera up X", &PerspectiveCamera::GetUpX);
-	AddFloatAttribute(*this, "Up.y", "Perspective camera up Y", &PerspectiveCamera::GetUpY);
-	AddFloatAttribute(*this, "Up.z", "Perspective camera up Z", &PerspectiveCamera::GetUpZ);
+void PerspectiveCamera::AddAttributes(Queryable *q) const
+{
+	ProjectiveCamera::AddAttributes(q);
+	AddFloatConstant(*q, "fov", "Field of View in radians", fov);
+	AddFloatConstant(*q, "position.x", "Perspective camera X", pos.x);
+	AddFloatConstant(*q, "position.y", "Perspective camera Y", pos.y);
+	AddFloatConstant(*q, "position.z", "Perspective camera Z", pos.z);
+	AddFloatConstant(*q, "normal.x", "Perspective camera normal X", normal.x);
+	AddFloatConstant(*q, "normal.y", "Perspective camera normal Y", normal.y);
+	AddFloatConstant(*q, "normal.z", "Perspective camera normal Z", normal.z);
+	AddFloatConstant(*q, "up.x", "Perspective camera up X", up.x);
+	AddFloatConstant(*q, "up.y", "Perspective camera up Y", up.y);
+	AddFloatConstant(*q, "up.z", "Perspective camera up Z", up.z);
 }
 
 void PerspectiveCamera::SampleMotion(float time)

@@ -845,17 +845,17 @@ luxrays::sdl::Scene *SLGRenderer::CreateSLGScene(const luxrays::Properties &slgC
 	//--------------------------------------------------------------------------
 
 	const Point orig(
-			(*perpCamera)["Position.x"].FloatValue(),
-			(*perpCamera)["Position.y"].FloatValue(),
-			(*perpCamera)["Position.z"].FloatValue());
+			(*perpCamera)["position.x"].FloatValue(),
+			(*perpCamera)["position.y"].FloatValue(),
+			(*perpCamera)["position.z"].FloatValue());
 	const Point target= orig + Vector(
-			(*perpCamera)["Normal.x"].FloatValue(),
-			(*perpCamera)["Normal.y"].FloatValue(),
-			(*perpCamera)["Normal.z"].FloatValue());
+			(*perpCamera)["normal.x"].FloatValue(),
+			(*perpCamera)["normal.y"].FloatValue(),
+			(*perpCamera)["normal.z"].FloatValue());
 	const Vector up(
-			(*perpCamera)["Up.x"].FloatValue(),
-			(*perpCamera)["Up.y"].FloatValue(),
-			(*perpCamera)["Up.z"].FloatValue());
+			(*perpCamera)["up.x"].FloatValue(),
+			(*perpCamera)["up.y"].FloatValue(),
+			(*perpCamera)["up.z"].FloatValue());
 
 	slgScene->CreateCamera(
 		"scene.camera.lookat = " + 

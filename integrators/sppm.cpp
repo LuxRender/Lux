@@ -44,9 +44,9 @@ void SPPMIntegrator::Preprocess(const RandomGenerator &rng, const Scene &scene) 
 	BufferOutputConfig config = BUF_FRAMEBUFFER;
 	if (debug)
 		config = BufferOutputConfig(config | BUF_STANDALONE);
-	bufferPhotonId = scene.camera->film->RequestBuffer(BUF_TYPE_PER_SCREEN_SCALED, config, "photons");
-	bufferEyeId = scene.camera->film->RequestBuffer(BUF_TYPE_PER_PIXEL, config, "eye");
-	scene.camera->film->CreateBuffers();
+	bufferPhotonId = scene.camera()->film->RequestBuffer(BUF_TYPE_PER_SCREEN_SCALED, config, "photons");
+	bufferEyeId = scene.camera()->film->RequestBuffer(BUF_TYPE_PER_PIXEL, config, "eye");
+	scene.camera()->film->CreateBuffers();
 
 	hints.InitStrategies(scene);
 }

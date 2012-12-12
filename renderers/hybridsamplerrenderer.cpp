@@ -377,16 +377,16 @@ void HybridSamplerRenderer::Render(Scene *s) {
 		RandomGenerator rng(lastUsedSeed);
 
 		// integrator preprocessing
-		scene->sampler->SetFilm(scene->camera->film);
+		scene->sampler->SetFilm(scene->camera()->film);
 		scene->surfaceIntegrator->Preprocess(rng, *scene);
 		scene->volumeIntegrator->Preprocess(rng, *scene);
-		scene->camera->film->CreateBuffers();
+		scene->camera()->film->CreateBuffers();
 
 		scene->surfaceIntegrator->RequestSamples(scene->sampler, *scene);
 		scene->volumeIntegrator->RequestSamples(scene->sampler, *scene);
 
 		// Dade - to support autofocus for some camera model
-		scene->camera->AutoFocus(*scene);
+		scene->camera()->AutoFocus(*scene);
 
 		//----------------------------------------------------------------------
 		// Compile the scene geometries in a LuxRays compatible format
@@ -412,7 +412,7 @@ void HybridSamplerRenderer::Render(Scene *s) {
 
 	if (renderThreads.size() > 0) {
 		// thread for checking write interval
-		boost::thread writeIntervalThread = boost::thread(boost::bind(writeIntervalCheck, scene->camera->film));
+		boost::thread writeIntervalThread = boost::thread(boost::bind(writeIntervalCheck, scene->camera()->film));
 		
 		// The first thread can not be removed
 		// it will terminate when the rendering is finished
@@ -441,8 +441,8 @@ void HybridSamplerRenderer::Render(Scene *s) {
 		writeIntervalThread.join();
 
 		// Flush the contribution pool
-		scene->camera->film->contribPool->Flush();
-		scene->camera->film->contribPool->Delete();
+		scene->camera()->film->contribPool->Flush();
+		scene->camera()->film->contribPool->Delete();
 	}
 
 	ctx->Stop();
@@ -553,7 +553,7 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 	// ContribBuffer has to wait until the end of the preprocessing
 	// It depends on the fact that the film buffers have been created
 	// This is done during the preprocessing phase
-	ContributionBuffer *contribBuffer = new ContributionBuffer(scene.camera->film->contribPool);
+	ContributionBuffer *contribBuffer = new ContributionBuffer(scene.camera()->film->contribPool);
 
 	// initialize the thread's rangen
 	u_long seed;
@@ -658,7 +658,7 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 		renderThread->iDevice->PushRayBuffer(rayBuffer);
 	}
 
-	scene.camera->film->contribPool->End(contribBuffer);
+	scene.camera()->film->contribPool->End(contribBuffer);
 
 	// Free memory
 	for (size_t i = 0; i < stateBuffers.size(); ++i)

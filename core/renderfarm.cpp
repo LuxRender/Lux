@@ -826,7 +826,7 @@ void RenderFarm::updateFilm(Scene *scene) {
 	boost::mutex::scoped_lock lock(serverListMutex);
 
 	// Dade - network rendering supports only FlexImageFilm
-	Film *film = scene->camera->film;
+	Film *film = scene->camera()->film;
 
 	// first try to reconnect to failed servers which may be up now
 	reconnectFailed();

@@ -37,6 +37,7 @@ public:
 		int distribution, int shape, int power,
 		Film *film);
 	virtual ~PerspectiveCamera() { }
+	virtual void AddAttributes(Queryable *q) const;
 
 	virtual void SampleMotion(float time);
 
@@ -65,18 +66,8 @@ public:
 
 	Point pos;
 	float Apixel, xStart, xEnd, yStart, yEnd;
-private:
-	// Used by Query interface
-	float GetPositionX() { return pos.x; }
-	float GetPositionY() { return pos.y; }
-	float GetPositionZ() { return pos.z; }
-	float GetNormalX() { return normal.x; }
-	float GetNormalY() { return normal.y; }
-	float GetNormalZ() { return normal.z; }
-	float GetUpX() { return up.x; }
-	float GetUpY() { return up.y; }
-	float GetUpZ() { return up.z; }
 
+private:
 	Normal normal, up;
 	float fov;
 	float posPdf;

@@ -156,7 +156,7 @@ double SLGStatistics::getNetworkAverageSamplesPerSecond() {
 u_int SLGStatistics::getPixelCount() {
 	int xstart, xend, ystart, yend;
 
-	renderer->scene->camera->film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
+	renderer->scene->camera()->film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
 
 	return ((xend - xstart) * (yend - ystart));
 }
