@@ -98,7 +98,9 @@ public:
 	// ConstantTexture Public Methods
 	ConstantFresnelTexture(float v) :
 		Texture("ConstantFresnelTexture-" + boost::lexical_cast<string>(this)),
-		value(DIELECTRIC_FRESNEL, SWCSpectrum(v), 0.f), val(v) { }
+		value(DIELECTRIC_FRESNEL, SWCSpectrum(v), 0.f), val(v) {
+		AddFloatAttribute(*this, "value", "ConstantFresnelTexture value", &ConstantFresnelTexture::val);
+	}
 	virtual ~ConstantFresnelTexture() { }
 	virtual FresnelGeneral Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &) const {

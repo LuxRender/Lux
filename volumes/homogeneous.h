@@ -35,6 +35,7 @@ public:
 		boost::shared_ptr<Texture<SWCSpectrum> > &a,
 		boost::shared_ptr<Texture<SWCSpectrum> > &s,
 		boost::shared_ptr<Texture<SWCSpectrum> > &g_) :
+		Volume("HomogeneousVolume-"  + boost::lexical_cast<string>(this)),
 		fresnel(fr), sigmaA(a), sigmaS(s), g(g_),
 		primitive(&material, this, this), material(this, g_) { }
 	virtual ~HomogeneousVolume() { }
