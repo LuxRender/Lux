@@ -835,8 +835,8 @@ luxrays::sdl::Scene *SLGRenderer::CreateSLGScene(const luxrays::Properties &slgC
 	// primitives too and they will be deleted by Lux Context)
 	slgScene->extMeshCache->SetDeleteMeshData(false);
 
-	LOG(LUX_DEBUG, LUX_NOERROR) << "Camera type: " << ToClassName(scene->camera);
-	PerspectiveCamera *perpCamera = dynamic_cast<PerspectiveCamera *>(scene->camera);
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Camera type: " << ToClassName(scene->camera());
+	PerspectiveCamera *perpCamera = dynamic_cast<PerspectiveCamera *>(scene->camera());
 	if (!perpCamera)
 		throw std::runtime_error("SLGRenderer supports only PerspectiveCamera");
 
@@ -845,17 +845,17 @@ luxrays::sdl::Scene *SLGRenderer::CreateSLGScene(const luxrays::Properties &slgC
 	//--------------------------------------------------------------------------
 
 	const Point orig(
-			(*perpCamera)["position.x"].FloatValue(),
-			(*perpCamera)["position.y"].FloatValue(),
-			(*perpCamera)["position.z"].FloatValue());
+			(scene->camera)["position.x"].FloatValue(),
+			(scene->camera)["position.y"].FloatValue(),
+			(scene->camera)["position.z"].FloatValue());
 	const Point target= orig + Vector(
-			(*perpCamera)["normal.x"].FloatValue(),
-			(*perpCamera)["normal.y"].FloatValue(),
-			(*perpCamera)["normal.z"].FloatValue());
+			(scene->camera)["normal.x"].FloatValue(),
+			(scene->camera)["normal.y"].FloatValue(),
+			(scene->camera)["normal.z"].FloatValue());
 	const Vector up(
-			(*perpCamera)["up.x"].FloatValue(),
-			(*perpCamera)["up.y"].FloatValue(),
-			(*perpCamera)["up.z"].FloatValue());
+			(scene->camera)["up.x"].FloatValue(),
+			(scene->camera)["up.y"].FloatValue(),
+			(scene->camera)["up.z"].FloatValue());
 
 	slgScene->CreateCamera(
 		"scene.camera.lookat = " + 
@@ -869,9 +869,9 @@ luxrays::sdl::Scene *SLGRenderer::CreateSLGScene(const luxrays::Properties &slgC
 			boost::lexical_cast<string>(up.x) + " " +
 			boost::lexical_cast<string>(up.y) + " " +
 			boost::lexical_cast<string>(up.z) + "\n"
-		"scene.camera.fieldofview = " + boost::lexical_cast<string>(Degrees((*perpCamera)["fov"].FloatValue())) + "\n"
-		"scene.camera.lensradius = " + boost::lexical_cast<string>((*perpCamera)["LensRadius"].FloatValue()) + "\n"
-		"scene.camera.focaldistance = " + boost::lexical_cast<string>((*perpCamera)["FocalDistance"].FloatValue()) + "\n"
+		"scene.camera.fieldofview = " + boost::lexical_cast<string>(Degrees((scene->camera)["fov"].FloatValue())) + "\n"
+		"scene.camera.lensradius = " + boost::lexical_cast<string>((scene->camera)["LensRadius"].FloatValue()) + "\n"
+		"scene.camera.focaldistance = " + boost::lexical_cast<string>((scene->camera)["FocalDistance"].FloatValue()) + "\n"
 		);
 
 	//--------------------------------------------------------------------------
@@ -936,7 +936,7 @@ luxrays::Properties SLGRenderer::CreateSLGConfig() {
 	// Film related settings
 	//--------------------------------------------------------------------------
 
-	Film *film = scene->camera->film;
+	Film *film = scene->camera()->film;
 	int xStart, xEnd, yStart, yEnd;
 	film->GetSampleExtent(&xStart, &xEnd, &yStart, &yEnd);
 	const int imageWidth = xEnd - xStart + 1;
@@ -1025,16 +1025,16 @@ void SLGRenderer::Render(Scene *s) {
 		RandomGenerator rng(seed);
 
 		// integrator preprocessing
-		scene->sampler->SetFilm(scene->camera->film);
+		scene->sampler->SetFilm(scene->camera()->film);
 		scene->surfaceIntegrator->Preprocess(rng, *scene);
 		scene->volumeIntegrator->Preprocess(rng, *scene);
-		scene->camera->film->CreateBuffers();
+		scene->camera()->film->CreateBuffers();
 
 		scene->surfaceIntegrator->RequestSamples(scene->sampler, *scene);
 		scene->volumeIntegrator->RequestSamples(scene->sampler, *scene);
 
 		// Dade - to support autofocus for some camera model
-		scene->camera->AutoFocus(*scene);
+		scene->camera()->AutoFocus(*scene);
 
 		// TODO: extend SLG library to accept an handler for each rendering session
 		luxrays::sdl::LuxRaysSDLDebugHandler = SDLDebugHandler;
@@ -1088,7 +1088,7 @@ void SLGRenderer::Render(Scene *s) {
 
 		double lastFilmUpdate = startTime;
 		char buf[512];
-		Film *film = scene->camera->film;
+		Film *film = scene->camera()->film;
 		int xStart, xEnd, yStart, yEnd;
 		film->GetSampleExtent(&xStart, &xEnd, &yStart, &yEnd);
 		const luxrays::utils::Film *slgFilm = session->film; 
@@ -1195,8 +1195,8 @@ void SLGRenderer::Render(Scene *s) {
 	Terminate();
 
 	// Flush the contribution pool
-	scene->camera->film->contribPool->Flush();
-	scene->camera->film->contribPool->Delete();
+	scene->camera()->film->contribPool->Flush();
+	scene->camera()->film->contribPool->Delete();
 }
 
 void SLGRenderer::Pause() {

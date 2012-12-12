@@ -160,10 +160,10 @@ public:
 		in->primitive = instance;
 		if (instance->GetMaterial())
 			in->material = instance->GetMaterial();
-		if (instance->GetVolumeExterior())
-			in->exterior = instance->GetVolumeExterior();
-		if (instance->GetvolumeInterior())
-			in->interior = instance->GetvolumeInterior();
+		if (instance->GetExterior())
+			in->exterior = instance->GetExterior();
+		if (instance->GetInterior())
+			in->interior = instance->GetInterior();
 	}
 
 	virtual Transform GetLocalToWorld(float time) const  {
