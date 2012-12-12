@@ -520,9 +520,18 @@ string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Prim
 				const ConstantRGBColorTexture *absorbRGBTex = dynamic_cast<const ConstantRGBColorTexture *>(absorbTex);
 
 				if (absorbRGBTex) {
-					ktRGB.r = 1.f - (*absorbRGBTex)["color.r"].FloatValue();
-					ktRGB.g = 1.f - (*absorbRGBTex)["color.g"].FloatValue();
-					ktRGB.b = 1.f - (*absorbRGBTex)["color.b"].FloatValue();
+					ktRGB.r = (*absorbRGBTex)["color.r"].FloatValue();
+					ktRGB.g = (*absorbRGBTex)["color.g"].FloatValue();
+					ktRGB.b = (*absorbRGBTex)["color.b"].FloatValue();
+
+					ktRGB = ktRGB * ktRGB;
+					ktRGB.r = Clamp(ktRGB.r, 0.f, 20.f) / 20.f;
+					ktRGB.g = Clamp(ktRGB.g, 0.f, 20.f) / 20.f;
+					ktRGB.b = Clamp(ktRGB.b, 0.f, 20.f) / 20.f;
+
+					ktRGB.r = 1.f - ktRGB.r;
+					ktRGB.g = 1.f - ktRGB.g;
+					ktRGB.b = 1.f - ktRGB.b;
 				} else {
 					LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only Glass2 material with ConstantRGBColorTexture (i.e. not " <<
 						ToClassName(absorbRGBTex) << "). Ignoring unsupported texture.";
