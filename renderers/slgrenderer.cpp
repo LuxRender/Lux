@@ -462,23 +462,23 @@ string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Prim
 			if (architectural) {
 				slgScene->AddMaterials(
 						"scene.materials.archglass." + matName +" = " +
-							boost::lexical_cast<string>(ktRGB.r) + " " +
-							boost::lexical_cast<string>(ktRGB.g) + " " +
-							boost::lexical_cast<string>(ktRGB.b) + " " +
 							boost::lexical_cast<string>(krRGB.r) + " " +
 							boost::lexical_cast<string>(krRGB.g) + " " +
 							boost::lexical_cast<string>(krRGB.b) + " " +
+							boost::lexical_cast<string>(ktRGB.r) + " " +
+							boost::lexical_cast<string>(ktRGB.g) + " " +
+							boost::lexical_cast<string>(ktRGB.b) + " " +
 							" 1 1\n"
 						);
 			} else {
 				slgScene->AddMaterials(
 						"scene.materials.glass." + matName +" = " +
-							boost::lexical_cast<string>(ktRGB.r) + " " +
-							boost::lexical_cast<string>(ktRGB.g) + " " +
-							boost::lexical_cast<string>(ktRGB.b) + " " +
 							boost::lexical_cast<string>(krRGB.r) + " " +
 							boost::lexical_cast<string>(krRGB.g) + " " +
 							boost::lexical_cast<string>(krRGB.b) + " " +
+							boost::lexical_cast<string>(ktRGB.r) + " " +
+							boost::lexical_cast<string>(ktRGB.g) + " " +
+							boost::lexical_cast<string>(ktRGB.b) + " " +
 							" 1.0 " + boost::lexical_cast<string>(index) + " 1 1\n"
 						);
 			}
