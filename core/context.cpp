@@ -1010,7 +1010,7 @@ void Context::WorldEnd() {
 		// Create scene and render
 		luxCurrentScene = renderOptions->MakeScene();
 		if (luxCurrentScene && !terminated) {
-			luxCurrentScene->camera->SetVolume(graphicsState->exterior);
+			luxCurrentScene->camera()->SetVolume(graphicsState->exterior);
 
 			luxCurrentRenderer = renderOptions->MakeRenderer();
 
@@ -1037,7 +1037,7 @@ void Context::WorldEnd() {
 
 				// Store final image
 				if (!aborted)
-					luxCurrentScene->camera->film->WriteImage((ImageType)(IMAGE_FILE_ALL|IMAGE_FRAMEBUFFER));
+					luxCurrentScene->camera()->film->WriteImage((ImageType)(IMAGE_FILE_ALL|IMAGE_FRAMEBUFFER));
 			}
 		}
 	}
@@ -1126,7 +1126,7 @@ void Context::LoadFLM(const string &flmFileName) {
 	luxCurrentScene->SetReady();
 }
 void Context::SaveFLM(const string &flmFileName) {
-	luxCurrentScene->camera->film->WriteFilmToFile(flmFileName);
+	luxCurrentScene->camera()->film->WriteFilmToFile(flmFileName);
 }
 
 // Save current film to OpenEXR image
@@ -1168,7 +1168,7 @@ void Context::Pause() {
 
 void Context::SetHaltSamplesPerPixel(int haltspp, bool haveEnoughSamplesPerPixel,
 	bool suspendThreadsWhenDone) {
-	lux::Film *film = luxCurrentScene->camera->film;
+	lux::Film *film = luxCurrentScene->camera()->film;
 	film->haltSamplesPerPixel = haltspp;
 	film->enoughSamplesPerPixel = haveEnoughSamplesPerPixel;
 	luxCurrentRenderer->SuspendWhenDone(suspendThreadsWhenDone);
@@ -1344,11 +1344,11 @@ bool Context::IsRendering() {
 }
 
 void Context::WriteFilmToStream(std::basic_ostream<char> &stream) {
-	luxCurrentScene->camera->film->WriteFilmToStream(stream);
+	luxCurrentScene->camera()->film->WriteFilmToStream(stream);
 }
 
 void Context::WriteFilmToStream(std::basic_ostream<char> &stream, bool directWrite) {
-	luxCurrentScene->camera->film->WriteFilmToStream(stream, true, false, directWrite);
+	luxCurrentScene->camera()->film->WriteFilmToStream(stream, true, false, directWrite);
 }
 
 void Context::UpdateFilmFromNetwork() {
@@ -1360,14 +1360,14 @@ void Context::UpdateLogFromNetwork() {
 }
 
 void Context::SetUserSamplingMap(const float *map) {
-	luxCurrentScene->camera->film->SetUserSamplingMap(map);
+	luxCurrentScene->camera()->film->SetUserSamplingMap(map);
 
 	// Transmit the new map to the slaves
-	renderFarm->updateUserSamplingMap(luxCurrentScene->camera->film->GetXPixelCount() *
-		luxCurrentScene->camera->film->GetYPixelCount(), map);
+	renderFarm->updateUserSamplingMap(luxCurrentScene->camera()->film->GetXPixelCount() *
+		luxCurrentScene->camera()->film->GetYPixelCount(), map);
 	
 }
 
 float *Context::GetUserSamplingMap() {
-	return luxCurrentScene->camera->film->GetUserSamplingMap();
+	return luxCurrentScene->camera()->film->GetUserSamplingMap();
 }

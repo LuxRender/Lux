@@ -161,16 +161,16 @@ void SamplerTBBRenderer::Render(Scene *s) {
 		rng = new RandomGenerator(seed);
 
 		// integrator preprocessing
-		scene->sampler->SetFilm(scene->camera->film);
+		scene->sampler->SetFilm(scene->camera()->film);
 		scene->surfaceIntegrator->Preprocess(*rng, *scene);
 		scene->volumeIntegrator->Preprocess(*rng, *scene);
-		scene->camera->film->CreateBuffers();
+		scene->camera()->film->CreateBuffers();
 
 		scene->surfaceIntegrator->RequestSamples(scene->sampler, *scene);
 		scene->volumeIntegrator->RequestSamples(scene->sampler, *scene);
 
 		// Dade - to support autofocus for some camera model
-		scene->camera->AutoFocus(*scene);
+		scene->camera()->AutoFocus(*scene);
 
 		// start the timer
 		rendererStatistics->start();
@@ -180,7 +180,7 @@ void SamplerTBBRenderer::Render(Scene *s) {
 	}
 
 	// thread for checking write interval
-	boost::thread writeIntervalThread = boost::thread(boost::bind(writeIntervalCheck, scene->camera->film));
+	boost::thread writeIntervalThread = boost::thread(boost::bind(writeIntervalCheck, scene->camera()->film));
 
 	localStoragePool = new LocalStoragePool(boost::bind(&LocalStorageCreate, this));
 
@@ -221,8 +221,8 @@ void SamplerTBBRenderer::Render(Scene *s) {
 		Terminate();
 
 		// Flush the contribution pool
-		scene->camera->film->contribPool->Flush();
-		scene->camera->film->contribPool->Delete();
+		scene->camera()->film->contribPool->Flush();
+		scene->camera()->film->contribPool->Delete();
 	}
 
 }
@@ -257,7 +257,7 @@ SamplerTBBRenderer::LocalStorage SamplerTBBRenderer::LocalStorageCreate(SamplerT
 	// ContribBuffer has to wait until the end of the preprocessing
 	// It depends on the fact that the film buffers have been created
 	// This is done during the preprocessing phase
-	storage.sample->contribBuffer = new ContributionBuffer(scene->camera->film->contribPool);
+	storage.sample->contribBuffer = new ContributionBuffer(scene->camera()->film->contribPool);
 
 	u_long seed;
 	// initialize the thread's rangen
@@ -267,7 +267,7 @@ SamplerTBBRenderer::LocalStorage SamplerTBBRenderer::LocalStorageCreate(SamplerT
 		LOG( LUX_DEBUG,LUX_NOERROR) << "Thread uses seed: " << seed;
 	}
 
-	storage.sample->camera = scene->camera->Clone();
+	storage.sample->camera = scene->camera()->Clone();
 	storage.sample->realTime = 0.f;
 
 	storage.sample->rng = new RandomGenerator(seed);
@@ -285,11 +285,10 @@ SamplerTBBRenderer::LocalStorage SamplerTBBRenderer::LocalStorageCreate(SamplerT
 // the rendering
 SamplerTBBRenderer::LocalStorage::~LocalStorage()
 {
-	renderer->scene->camera->film->contribPool->End(sample->contribBuffer);
+	renderer->scene->camera()->film->contribPool->End(sample->contribBuffer);
 	// don't delete contribBuffer as references are held in the pool
 	sample->contribBuffer = NULL;
 
-	//delete myThread->sample->camera; //FIXME deleting the camera clone would delete the film!
 	renderer->scene->sampler->FreeSample(sample);
 }
 

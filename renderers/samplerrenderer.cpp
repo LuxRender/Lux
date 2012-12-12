@@ -172,16 +172,16 @@ void SamplerRenderer::Render(Scene *s) {
 		RandomGenerator rng(seed);
 
 		// integrator preprocessing
-		scene->sampler->SetFilm(scene->camera->film);
+		scene->sampler->SetFilm(scene->camera()->film);
 		scene->surfaceIntegrator->Preprocess(rng, *scene);
 		scene->volumeIntegrator->Preprocess(rng, *scene);
-		scene->camera->film->CreateBuffers();
+		scene->camera()->film->CreateBuffers();
 
 		scene->surfaceIntegrator->RequestSamples(scene->sampler, *scene);
 		scene->volumeIntegrator->RequestSamples(scene->sampler, *scene);
 
 		// Dade - to support autofocus for some camera model
-		scene->camera->AutoFocus(*scene);
+		scene->camera()->AutoFocus(*scene);
 
 		sampPos = 0;
 		
@@ -198,7 +198,7 @@ void SamplerRenderer::Render(Scene *s) {
 
 	if (renderThreads.size() > 0) {
 		// thread for checking write interval
-		boost::thread writeIntervalThread = boost::thread(boost::bind(writeIntervalCheck, scene->camera->film));
+		boost::thread writeIntervalThread = boost::thread(boost::bind(writeIntervalCheck, scene->camera()->film));
 
 		// The first thread can not be removed
 		// it will terminate when the rendering is finished
@@ -227,8 +227,8 @@ void SamplerRenderer::Render(Scene *s) {
 		writeIntervalThread.join();
 
 		// Flush the contribution pool
-		scene->camera->film->contribPool->Flush();
-		scene->camera->film->contribPool->Delete();
+		scene->camera()->film->contribPool->Flush();
+		scene->camera()->film->contribPool->Delete();
 	}
 }
 
@@ -311,14 +311,14 @@ void SamplerRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 	// ContribBuffer has to wait until the end of the preprocessing
 	// It depends on the fact that the film buffers have been created
 	// This is done during the preprocessing phase
-	sample.contribBuffer = new ContributionBuffer(scene.camera->film->contribPool);
+	sample.contribBuffer = new ContributionBuffer(scene.camera()->film->contribPool);
 
 	// initialize the thread's rangen
 	u_long seed = scene.seedBase + myThread->n;
 	LOG( LUX_DEBUG,LUX_NOERROR) << "Thread " << myThread->n << " uses seed: " << seed;
 
 	RandomGenerator rng(seed);
-	sample.camera = scene.camera->Clone();
+	sample.camera = scene.camera()->Clone();
 	sample.realTime = 0.f;
 
 	sample.rng = &rng;
@@ -381,11 +381,10 @@ void SamplerRenderer::RenderThread::RenderImpl(RenderThread *myThread) {
 #endif
 	}
 
-	scene.camera->film->contribPool->End(sample.contribBuffer);
+	scene.camera()->film->contribPool->End(sample.contribBuffer);
 	// don't delete contribBuffer as references are held in the pool
 	sample.contribBuffer = NULL;
 
-	//delete myThread->sample->camera; //FIXME deleting the camera clone would delete the film!
 	sampler->FreeSample(&sample);
 }
 

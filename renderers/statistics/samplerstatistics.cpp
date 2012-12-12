@@ -317,7 +317,7 @@ template<typename Renderer>
 u_int SRStatistics<Renderer>::getPixelCount() {
 	int xstart, xend, ystart, yend;
 
-	renderer->scene->camera->film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
+	renderer->scene->camera()->film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
 
 	return ((xend - xstart) * (yend - ystart));
 }

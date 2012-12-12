@@ -108,8 +108,8 @@ void BidirIntegrator::Preprocess(const RandomGenerator &rng, const Scene &scene)
 		config = BufferOutputConfig(config | BUF_STANDALONE);
 	BufferType type = BUF_TYPE_PER_PIXEL;
 	scene.sampler->GetBufferType(&type);
-	eyeBufferId = scene.camera->film->RequestBuffer(type, config, "eye");
-	lightBufferId = scene.camera->film->RequestBuffer(BUF_TYPE_PER_SCREEN,
+	eyeBufferId = scene.camera()->film->RequestBuffer(type, config, "eye");
+	lightBufferId = scene.camera()->film->RequestBuffer(BUF_TYPE_PER_SCREEN,
 		config, "light");
 	lightDirectStrategy->Init(scene);
 	lightPathStrategy->Init(scene);
@@ -918,7 +918,7 @@ BidirPathState::BidirPathState(const Scene &scene, ContributionBuffer *contribBu
 
 	scene.sampler->InitSample(&sample);
 	sample.contribBuffer = contribBuffer;
-	sample.camera = scene.camera->Clone();
+	sample.camera = scene.camera()->Clone();
 	sample.realTime = 0.f;
 	sample.rng = rng;
 

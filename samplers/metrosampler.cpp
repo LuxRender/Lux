@@ -22,8 +22,6 @@
 
 // TODO: add scaling of output image samples
 
-//#define nolazy
-
 // metrosampler.cpp*
 #include "metrosampler.h"
 #include "memory.h"
@@ -130,11 +128,7 @@ static float fracf(const float &v) {
 }
 
 #define rngGet(__pos) (fracf(rngSamples[(data->rngBase + (__pos)) % rngN] + data->rngRotation[(__pos)]))
-#ifdef nolazy
-#define rngGet2(__pos,__off) (fracf(rngSamples[(data->rngBase + (__pos) + (__off) + 2*rngN) % rngN] + data->rngRotation[(__pos)]))
-#else
 #define rngGet2(__pos,__off) (fracf(rngSamples[(data->rngBase + (__pos) + (__off)) % rngN] + data->rngRotation[(__pos)]))
-#endif
 
 
 // Metropolis method definitions
@@ -245,11 +239,6 @@ bool MetropolisSampler::GetNextSample(Sample *sample)
 		sample->time = data->currentImage[4];
 		sample->wavelengths = data->currentImage[5];
 		// Reset number of mutations for lazy samples
-#ifdef nolazy
-		// don't be lazy, get all needed sample values here
-		for (u_int i = data->normalSamples; i < data->totalSamples; ++i)
-			data->currentImage[i] = rngGet(i);
-#endif
 		for (u_int i = 0; i < data->totalTimes; ++i)
 			data->currentTimeImage[i] = -1;
 		// Reset number of mutations for whole sample
@@ -283,12 +272,6 @@ bool MetropolisSampler::GetNextSample(Sample *sample)
 				mutate(data->sampleImage[i], rngGet(i));
 		for (u_int i = 0; i < data->totalTimes; ++i)
 			data->currentTimeImage[i] = data->timeImage[i];
-#ifdef nolazy
-		// don't be lazy, mutate all needed sample values here
-		for (u_int i = data->normalSamples; i < data->totalSamples; ++i)
-			data->currentImage[i] = 
-				mutate(data->sampleImage[i], rngGet(i));
-#endif
 		// Increase reference mutation count
 		data->currentStamp = data->stamp + 1;
 	}
@@ -325,7 +308,6 @@ float *MetropolisSampler::GetLazyValues(const Sample &sample, u_int num, u_int p
 	const u_int timeOffset = data->timeOffset[num] + pos;
 	// If we are at the target, don't do anything
 	int &currentTime(data->currentTimeImage[timeOffset]);
-#ifndef nolazy
 	if (data->large) {
 		for (u_int i = offset; i < offset + size; ++i)
 			data->currentImage[i] = rngGet(i);
@@ -354,34 +336,6 @@ float *MetropolisSampler::GetLazyValues(const Sample &sample, u_int num, u_int p
 				data->currentImage[i] = mutate(data->currentImage[i], rngGet2(i, roffs));
 		}
 	}
-#else
-	// don't be lazy
-	if (data->large) {
-		// we've already got the random numbers
-		currentTime = 0;
-	} else {
-		// Get the reference number of mutations
-		const int stampLimit = data->currentStamp;
-		if (currentTime != stampLimit) {
-			int &time(data->timeImage[timeOffset]);
-			//if (time < stampLimit-1)
-			//	time = currentTime;
-
-			// If the node has not yet been initialized, do it now
-			// otherwise get the last known value from the sample image
-			if (time == -1) {
-				time = 0;
-			}
-			currentTime = time;
-		}
-		// Mutate as needed 
-		// ie just advance currentTime sufficiencly, as we've already 
-		// generated the mutations
-		for (; currentTime < stampLimit; ++currentTime) {
-		}
-	}
-
-#endif
 	return data->currentImage + offset;
 }
 

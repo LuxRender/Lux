@@ -72,7 +72,7 @@ HitPoints::HitPoints(SPPMRenderer *engine, RandomGenerator *rng)  {
 
 	// Get the count of hit points required
 	int xstart, xend, ystart, yend;
-	scene->camera->film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
+	scene->camera()->film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
 
 	// Set the sampler
 	eyeSampler = new HaltonEyeSampler(xstart, xend, ystart, yend,

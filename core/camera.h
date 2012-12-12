@@ -34,7 +34,7 @@ namespace lux
 /**
  * The base Camera class, all camera models should be derived from this class
  */
-class  Camera : public Queryable {
+class  Camera {
 public:
 	// Camera Interface
 	/**
@@ -49,7 +49,8 @@ public:
 	 */
 	Camera(const MotionSystem &w2c, float hither, float yon, 
 		float sopen, float sclose, int sdist, Film *film);
-	virtual ~Camera();
+	virtual ~Camera() { }
+	virtual void AddAttributes(Queryable *q) const;
 	/**
 	 * Returns the volume the camera is in.
 	 */
@@ -243,6 +244,7 @@ public:
 		float sopen, float sclose, int sdist,
 		float lensr, float focald, Film *film);
 	virtual ~ProjectiveCamera() { }
+	virtual void AddAttributes(Queryable *q) const;
 
 	virtual void SampleMotion(float time);
 
@@ -253,6 +255,16 @@ protected:
 public:
 	Transform RasterToCamera;
 	float LensRadius, FocalDistance;
+};
+
+class SceneCamera : public Queryable {
+public:
+	SceneCamera(Camera *cam);
+	~SceneCamera();
+	Camera *operator()() const { return camera; }
+
+private:
+	Camera *camera;
 };
 
 }//namespace lux

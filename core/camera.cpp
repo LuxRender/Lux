@@ -32,12 +32,9 @@
 using namespace lux;
 
 // Camera Method Definitions
-Camera::~Camera() {
-	delete film;
-}
 Camera::Camera(const MotionSystem &w2c, float hither, float yon,
-	float sopen, float sclose, int sdist, Film *f) : Queryable("camera"),
-	CameraMotion(w2c) {
+	float sopen, float sclose, int sdist, Film *f) : CameraMotion(w2c)
+{
 	CameraToWorld = Inverse(CameraMotion.Sample(sopen));
 	ClipHither = hither;
 	ClipYon = yon;
@@ -45,9 +42,14 @@ Camera::Camera(const MotionSystem &w2c, float hither, float yon,
 	ShutterClose = sclose;
 	ShutterDistribution = sdist;
 	film = f;
+}
 
-	AddFloatAttribute(*this, "ShutterOpen", "Time when shutter opens", 0.f, &Camera::ShutterOpen);
-	AddFloatAttribute(*this, "ShutterClose", "Time when shutter closes", 1.f, &Camera::ShutterClose);
+void Camera::AddAttributes(Queryable *q) const
+{
+/*	AddFloatAttribute(*q, "ShutterOpen", "Time when shutter opens", 0.f, &Camera::ShutterOpen);
+	AddFloatAttribute(*q, "ShutterClose", "Time when shutter closes", 1.f, &Camera::ShutterClose);*/
+	AddFloatConstant(*q, "ShutterOpen", "Time when shutter opens", ShutterOpen);
+	AddFloatConstant(*q, "ShutterClose", "Time when shutter closes", ShutterClose);
 }
 
 float Camera::GenerateRay(const Scene &scene, const Sample &sample,
@@ -147,10 +149,17 @@ ProjectiveCamera::ProjectiveCamera(const MotionSystem &w2c,
 		Scale(1.f / film->xResolution, 1.f / film->yResolution, 1.f);
 	RasterToCamera = ScreenToCamera * RasterToScreen;
 	RasterToWorld = ScreenToWorld * RasterToScreen;
-
-	AddFloatAttribute(*this, "LensRadius", "Lens radius", 0.f, &ProjectiveCamera::LensRadius);
-	AddFloatAttribute(*this, "FocalDistance", "Focal distance", &ProjectiveCamera::FocalDistance);
 }
+
+void ProjectiveCamera::AddAttributes(Queryable *q) const
+{
+	Camera::AddAttributes(q);
+/*	AddFloatAttribute(*q, "LensRadius", "Lens radius", 0.f, &ProjectiveCamera::LensRadius);
+	AddFloatAttribute(*q, "FocalDistance", "Focal distance", &ProjectiveCamera::FocalDistance);*/
+	AddFloatConstant(*q, "LensRadius", "Lens radius", LensRadius);
+	AddFloatConstant(*q, "FocalDistance", "Focal distance", FocalDistance);
+}
+
 void ProjectiveCamera::SampleMotion(float time) {
 
 	if (CameraMotion.IsStatic())
@@ -162,4 +171,15 @@ void ProjectiveCamera::SampleMotion(float time) {
 	ScreenToWorld = CameraToWorld * ScreenToCamera;
 	RasterToCamera = ScreenToCamera * RasterToScreen;
 	RasterToWorld = ScreenToWorld * RasterToScreen;
+}
+
+SceneCamera::SceneCamera(Camera *cam) : Queryable("camera"), camera(cam)
+{
+	camera->AddAttributes(this);
+}
+
+SceneCamera::~SceneCamera()
+{
+	delete camera->film;
+	delete camera;
 }

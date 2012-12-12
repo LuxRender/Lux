@@ -156,8 +156,13 @@ PerspectiveCamera::PerspectiveCamera(const MotionSystem &world2cam,
 	const float yPixelHeight = templength * (Screen[3] - Screen[2]) / 2.f *
 		(yEnd - yStart) / f->yResolution;
 	Apixel = xPixelWidth * yPixelHeight;
+}
 
-	AddFloatAttribute(*this, "fov", "Field of View in radians", M_PI / 2.f, &PerspectiveCamera::fov);
+void PerspectiveCamera::AddAttributes(Queryable *q) const
+{
+	ProjectiveCamera::AddAttributes(q);
+/*	AddFloatAttribute(*this, "fov", "Field of View in radians", M_PI / 2.f, &PerspectiveCamera::fov);*/
+	AddFloatConstant(*q, "fov", "Field of View in radians", fov);
 }
 
 void PerspectiveCamera::SampleMotion(float time)

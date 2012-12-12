@@ -32,6 +32,9 @@
 
 class Queue : public QStandardItemModel
 {
+
+	Q_OBJECT
+	
 public:
 	Queue(boost::function<void(const QPersistentModelIndex&)> functionToStartRenderingScene, boost::function<void()> functionToStopRenderingScene);
 	virtual ~Queue() {}
