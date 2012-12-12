@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2012 by authors (see AUTHORS.txt )                 *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -20,8 +20,9 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#include <QTranslator>
 #include <clocale>
+
+//#include <QTranslator>
 
 #include "luxapp.hxx"
 
@@ -46,4 +47,3 @@ int main(int argc, char *argv[])
 	else
 		return 0;
 }
-

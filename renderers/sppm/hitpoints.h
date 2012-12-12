@@ -40,6 +40,7 @@ public:
 	Vector wi;
 	SWCSpectrum alpha;
 	u_int lightGroup;
+	bool single;
 };
 
 
@@ -58,6 +59,7 @@ public:
 	float distance;
 
 	Vector wo;
+	bool single;
 };
 
 /*

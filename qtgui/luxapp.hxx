@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2012 by authors (see AUTHORS.txt )                 *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -23,7 +23,10 @@
 #ifndef LUXAPP_H
 #define LUXAPP_H
 
-#include <QtGui/QApplication>
+#include <QApplication>
+#include <QEvent>
+
+#include "console/commandline.h"
 
 #include "mainwindow.hxx"
 
@@ -37,21 +40,9 @@ public:
 	LuxGuiApp(int &argc, char **argv);
 	~LuxGuiApp();
 
-	void init(void);
-	void InfoDialogBox(const std::string &msg, const std::string &caption);
+	void init(clConfig* config);
+	clConfig* config;
 
-private:
-	int m_threads;
-	int m_verbosity;
-	bool m_copyLog2Console;
-	bool ProcessCommandLine (int &argc, char **argv);
-	QString m_inputFile;
-	// This is the list of servers provided using the --useserver option
-	QStringList serverList;
-	// server interval, or -1 if not specified
-	int serverInterval;
-	// This is the list of files provided using the --file-list option
-	QString renderQueueName;
 #if defined(__APPLE__)
 protected:
 	bool event(QEvent *);

@@ -24,6 +24,8 @@
 #define LUX_RENDERFARM_H
 
 #include "osfunc.h"
+#include "queryable.h"
+#include "timer.h"
 
 #include <vector>
 #include <string>
@@ -46,6 +48,8 @@ public:
         delete thread;
     }
 
+	double getUpdateTimeRemaining();
+
     void stop() {
         thread->interrupt();
         thread->join();
@@ -58,9 +62,10 @@ private:
     RenderFarm *renderFarm;
     Scene *scene;
     boost::thread *thread; // keep pointer to delete the thread object
+	Timer timer;
 };
 
-class RenderFarm {
+class RenderFarm : public Queryable {
 public:
 	RenderFarm();
 	~RenderFarm();
@@ -75,7 +80,10 @@ public:
 	bool sessionReset(const string &serverName, const string &password);
 
 	// signal that rendering is done
-	void renderingDone() { netBufferComplete = false; };
+	void renderingDone() {
+		netBufferComplete = false;
+		doneRendering = true;
+	}
 
 	void send(const std::string &command);
 	void send(const std::string &command,
@@ -100,7 +108,6 @@ public:
 	//!< Sends immediately all commands in the buffer to the servers
 	void flush();
 
-	u_int getServerCount() const;
 	u_int getServersStatus(RenderingServerInfo *info, u_int maxInfoCount) const;
 
 	// Start the rendering server (including the film update thread)
@@ -112,9 +119,9 @@ public:
 	//!<Gets the log from the network
 	void updateLog();
 
-public:
-	// Dade - film update infromation
-	int serverUpdateInterval;
+	void updateUserSamplingMap(const u_int size, const float *map);
+
+	double getUpdateTimeRemaining();
 
 private:
 	struct ExtRenderingServerInfo {
@@ -247,6 +254,8 @@ private:
 	void reconnectFailed();
 	void stopImpl();
 
+	u_int getSlaveNodeCount();
+
 	// Any operation on servers must be synchronized via this mutex
 	mutable boost::mutex serverListMutex;
 	std::vector<ExtRenderingServerInfo> serverInfoList;
@@ -262,7 +271,10 @@ private:
 
 	//std::stringstream netBuffer;
 	bool netBufferComplete; // Raise this flag if the scene is complete
+	bool doneRendering; // true if rendering is done
 	bool isLittleEndian;
+	int pollingInterval;
+	int defaultTcpPort;
 };
 
 }//namespace lux

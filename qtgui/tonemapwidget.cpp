@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2012 by authors (see AUTHORS.txt )                 *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -20,14 +20,17 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#include "ui_tonemap.h"
-#include "tonemapwidget.hxx"
-#include "mainwindow.hxx"
-#include "guiutil.h"
-
-#include <iostream>
-#include <algorithm>
 #include <cmath>
+
+#include <QFont>
+#include <QSettings>
+
+#include "api.h"
+
+#include "guiutil.h"
+#include "mainwindow.hxx"
+#include "tonemapwidget.hxx"
+#include "ui_tonemap.h"
 
 static double sensitivity_presets[NUM_SENSITITIVITY_PRESETS] = {6400.0f, 5000.0f, 4000.0f, 3200.0f, 2500.0f, 2000.0f, 1600.0f, 1250.0f, 1000.0f, 800.0f, 640.0f, 500.0f, 400.0f, 320.0f, 250.0f, 200.0f, 160.0f, 125.0f, 100.0f, 80.0f, 64.0f, 50.0f, 40.0f, 32.0f, 25.0f, 20.0f};
 
@@ -86,12 +89,9 @@ ToneMapWidget::ToneMapWidget(QWidget *parent) : QWidget(parent), ui(new Ui::Tone
 	ui->frame_toneMapLinear->setFont(QFont  ("Lucida Grande", 11));
 	ui->frame_toneMapContrast->setFont(QFont  ("Lucida Grande", 11));
 #endif
-	
 }
 
-ToneMapWidget::~ToneMapWidget()
-{
-}
+ToneMapWidget::~ToneMapWidget() { }
 
 void ToneMapWidget::updateWidgetValues()
 {
@@ -627,5 +627,3 @@ void ToneMapWidget::LoadSettings( QString fName )
 
 	emit valuesChanged();
 }
-
-

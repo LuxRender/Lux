@@ -567,6 +567,11 @@ std::string SRStatistics<Renderer>::FormattedShort::getRecommendedStringTemplate
 }
 
 template<typename Renderer>
+std::string SRStatistics<Renderer>::FormattedShort::getProgress() { 
+	return static_cast<SRStatistics::FormattedLong*>(rs->formattedLong)->getTotalAverageSamplesPerPixel();
+}
+
+template<typename Renderer>
 std::string SRStatistics<Renderer>::FormattedShort::getPathEfficiency() {
 	return boost::str(boost::format("%1$0.0f%% PEff") % rs->getPathEfficiency());
 }

@@ -160,6 +160,18 @@ public:
 			if (c[i] != 0.f) return false;
 		return true;
 	}
+    Scalar Max() const {
+        Scalar result = c[0];
+        for (int i = 1; i < WAVELENGTH_SAMPLES; i++)
+            result = std::max(result, c[i]);
+        return result;
+    }
+    Scalar Min() const {
+        Scalar result = c[0];
+        for (int i = 1; i < WAVELENGTH_SAMPLES; i++)
+            result = std::min(result, c[i]);
+        return result;
+    }
 	friend SWCSpectrum Sqrt(const SWCSpectrum &s) {
 		SWCSpectrum ret;
 		for (int i = 0; i < WAVELENGTH_SAMPLES; ++i)

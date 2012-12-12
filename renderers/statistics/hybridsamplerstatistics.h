@@ -44,6 +44,7 @@ public:
 		HSRStatistics* rs;
 
 		virtual std::string getRecommendedStringTemplate();
+		virtual std::string getProgress() { return getTotalAverageSamplesPerPixel(); }
 
 		std::string getHaltSpp();
 		std::string getRemainingSamplesPerPixel();
@@ -81,6 +82,7 @@ public:
 		HSRStatistics* rs;
 
 		virtual std::string getRecommendedStringTemplate();
+		virtual std::string getProgress();
 
 		std::string getGpuCount();
 		std::string getAverageGpuEfficiency();

@@ -42,11 +42,16 @@ public:
 			*wavelengthsSamples, *singleWavelengthSamples;
 		float **xD, **oneDSamples, **twoDSamples, **xDSamples;
 		u_int n1D, n2D, nxD;
+
+		boost::shared_array<float> samplingMap;		
+		u_int noiseAwareMapVersion;
+		u_int userSamplingMapVersion;
+		boost::shared_ptr<Distribution2D> samplingDistribution2D;
 	};
 	// LDSampler Public Methods
 	LDSampler(int xstart, int xend,
 	          int ystart, int yend,
-			  u_int nsamp, string pixelsampler);
+			  u_int nsamp, string pixelsampler, bool useNoise);
 	virtual ~LDSampler();
 
 	virtual void InitSample(Sample *sample) const {
@@ -68,7 +73,7 @@ public:
 		float u[2]);
 	virtual float *GetLazyValues(const Sample &sample, u_int num, u_int pos);
 
-	static Sampler *CreateSampler(const ParamSet &params, const Film *film);
+	static Sampler *CreateSampler(const ParamSet &params, Film *film);
 private:
 	// LDSampler Private Data
 	u_int pixelSamples, totalPixels;
@@ -76,6 +81,8 @@ private:
 
 	fast_mutex sampPixelPosMutex;
 	u_int sampPixelPos;
+	
+	bool useNoiseAware;
 };
 
 }//namespace lux

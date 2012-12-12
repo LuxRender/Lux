@@ -46,9 +46,7 @@ namespace lux {
 class LUX_EXPORT Context {
 public:
 
-	Context(std::string n = "Lux default context") : name(n) {
-		Init();
-	}
+	Context(std::string n = "Lux default context") : name(n) {}
 
 	~Context() {
 		Free();
@@ -193,15 +191,12 @@ public:
 	// Dade - network rendering
 	void UpdateFilmFromNetwork();
 	void UpdateLogFromNetwork();
-	void SetNetworkServerUpdateInterval(int updateInterval);
-	int GetNetworkServerUpdateInterval();
-	void TransmitFilm(std::basic_ostream<char> &stream);
-	void TransmitFilm(std::basic_ostream<char> &stream, bool useCompression, bool directWrite);
+	void WriteFilmToStream(std::basic_ostream<char> &stream);
+	void WriteFilmToStream(std::basic_ostream<char> &stream, bool directWrite);
 	void AddServer(const string &name);
 	void RemoveServer(const RenderingServerInfo &rsi);
 	void RemoveServer(const string &name);
 	void ResetServer(const string &name, const string &password);
-	u_int GetServerCount();
 	u_int GetRenderingServersStatus(RenderingServerInfo *info, u_int maxInfoCount);
 
 	//statistics
@@ -215,6 +210,10 @@ public:
 	void DisableRandomMode();
 
 	void SetEpsilon(const float minValue, const float maxValue);
+
+	void SetUserSamplingMap(const float *map);
+	// NOTE: returns a copy of the map, it is up to the caller to free the allocated memory !
+	float *GetUserSamplingMap();
 
 	//! Registry containing all queryable objects of the current context
 	//! \author jromang

@@ -373,6 +373,7 @@ void HitPoints::TraceEyePath(HitPoint *hp, const Sample &sample, float const inv
 			hpep->wo = wo;
 
 			hpep->bsdf = bsdf;
+			hpep->single = sw.single;
 			sample.arena.Commit();
 			break;
 		}

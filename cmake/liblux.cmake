@@ -58,13 +58,14 @@ SOURCE_GROUP("Source Files\\Core\\Generated" FILES ${lux_core_generated_src})
 
 SET(lux_core_src
 	core/api.cpp
+	core/asyncstream.cpp
 	core/camera.cpp
 	core/cameraresponse.cpp
 	core/color.cpp
 	core/context.cpp
 	core/contribution.cpp
+	core/partialcontribution.cpp
 	core/dynload.cpp
-	core/epsilon.cpp
 	core/exrio.cpp
 	core/filedata.cpp
 	core/film.cpp
@@ -101,11 +102,8 @@ SET(lux_core_src
 SOURCE_GROUP("Source Files\\Core" FILES ${lux_core_src})
 
 SET(lux_core_geometry_src
-	core/geometry/bbox.cpp
-	core/geometry/matrix4x4.cpp
 	core/geometry/quaternion.cpp
 	core/geometry/raydifferential.cpp
-	core/geometry/transform.cpp
 	)
 SOURCE_GROUP("Source Files\\Core\\Geometry" FILES ${lux_core_geometry_src})
 
@@ -137,6 +135,7 @@ SET(lux_core_reflection_bxdf_src
 	core/reflection/bxdf/brdftobtdf.cpp
 	core/reflection/bxdf/cooktorrance.cpp
 	core/reflection/bxdf/fresnelblend.cpp
+	core/reflection/bxdf/irawan.cpp
 	core/reflection/bxdf/lafortune.cpp
 	core/reflection/bxdf/lambertian.cpp
 	core/reflection/bxdf/microfacet.cpp
@@ -256,6 +255,7 @@ SOURCE_GROUP("Source Files\\Lights\\Spherical Functions" FILES ${lux_lights_sphe
 
 SET(lux_materials_src
 	materials/carpaint.cpp
+	materials/cloth.cpp
 	materials/glass.cpp
 	materials/glass2.cpp
 	materials/glossy.cpp
@@ -481,14 +481,15 @@ SOURCE_GROUP("Source Files\\C++ API" FILES ${lux_cpp_api_src})
 
 SET(lux_core_hdr
 	core/api.h
+	core/asyncstream.h
 	core/bsh.h
 	core/camera.h
 	core/cameraresponse.h
 	core/color.h
 	core/context.h
 	core/contribution.h
+	core/partialcontribution.h
 	core/dynload.h
-	core/epsilon.h
 	core/error.h
 	core/exrio.h
 	core/fastmutex.h
@@ -542,21 +543,11 @@ SET(lux_core_external_hdr
 	)
 SOURCE_GROUP("Header Files\\Core\\External" FILES ${lux_core_external_hdr})
 SET(lux_core_geometry_hdr
-	core/geometry/bbox.h
 	core/geometry/matrix2x2.h
 	core/geometry/matrix3x3.h
-	core/geometry/matrix4x4-sse.h
-	core/geometry/matrix4x4.h
-	core/geometry/normal.h
-	core/geometry/point.h
 	core/geometry/quaternion.h
-	core/geometry/ray.h
 	core/geometry/raydifferential.h
-	core/geometry/transform-sse.inl
 	core/geometry/transform.h
-	core/geometry/transform.inl
-	core/geometry/vector.h
-	core/geometry/vector_normal.h
 	)
 SOURCE_GROUP("Header Files\\Core\\Geometry" FILES ${lux_core_geometry_hdr})
 SET(lux_core_queryable_hdr
@@ -584,6 +575,7 @@ SET(lux_core_reflection_bxdf_hdr
 	core/reflection/bxdf/brdftobtdf.h
 	core/reflection/bxdf/cooktorrance.h
 	core/reflection/bxdf/fresnelblend.h
+	core/reflection/bxdf/irawan.h
 	core/reflection/bxdf/lafortune.h
 	core/reflection/bxdf/lambertian.h
 	core/reflection/bxdf/microfacet.h
@@ -691,6 +683,7 @@ SET(lux_lights_sphericalfunction_hdr
 SOURCE_GROUP("Header Files\\Lights\\Spherical Functions" FILES ${lux_lights_sphericalfunction_hdr})
 SET(lux_materials_hdr
 	materials/carpaint.h
+	materials/cloth.h
 	materials/glass.h
 	materials/glass2.h
 	materials/glossy.h

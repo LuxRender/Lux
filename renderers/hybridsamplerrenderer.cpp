@@ -87,9 +87,6 @@ void SurfaceIntegratorStateBuffer::GenerateRays() {
 			break;
 		}
 	}
-	/*LOG(LUX_DEBUG, LUX_NOERROR) << "Used IntegratorStates: " <<
-			(lastStateIndex > firstStateIndex ? (lastStateIndex - firstStateIndex) : (lastStateIndex + integratorState.size() - firstStateIndex)) <<
-			"/" << integratorState.size();*/
 
 	//--------------------------------------------------------------------------
 	// Check if I need to add more SurfaceIntegratorState
@@ -186,7 +183,7 @@ HybridSamplerRenderer::HybridSamplerRenderer(const int oclPlatformIndex, bool us
 	host->AddDevice(new HRVirtualDeviceDescription(host, "VirtualGPU"));
 
 	// Get the list of devices available
-	std::vector<luxrays::DeviceDescription *> deviceDescs = std::vector<luxrays::DeviceDescription *>(ctx->GetAvailableDeviceDescriptions());
+	std::vector<luxrays::DeviceDescription *> deviceDescs = ctx->GetAvailableDeviceDescriptions();
 
 	// Add all the OpenCL devices
 	for (size_t i = 0; i < deviceDescs.size(); ++i)
@@ -194,31 +191,47 @@ HybridSamplerRenderer::HybridSamplerRenderer(const int oclPlatformIndex, bool us
 
 	bool useNative = false;
 
-#if !defined(LUXRAYS_DISABLE_OPENCL)
+	std::vector<luxrays::DeviceDescription *> hwDeviceDescs;
+
+	if (useGPUs) {
+		// Find OpenCL GPU devices
+		hwDeviceDescs = deviceDescs;
+		luxrays::DeviceDescription::Filter(luxrays::DEVICE_TYPE_OPENCL_GPU, hwDeviceDescs);
+
+		if (forceGPUWorkGroupSize > 0) {
+			for (u_int i = 0; i < hwDeviceDescs.size(); ++i) {
+				hwDeviceDescs[i]->SetForceWorkGroupSize(forceGPUWorkGroupSize);
+			}
+		}
+	}
+	if (!useGPUs || hwDeviceDescs.size() == 0)
+		useNative = true;
+
+	if (useNative) {
+		if (useGPUs)
+			LOG(LUX_WARNING, LUX_SYSTEM) << "Unable to find an OpenCL GPU device, falling back to CPU";
+
+		// Find native devices
+		hwDeviceDescs = deviceDescs;
+		luxrays::DeviceDescription::Filter(luxrays::DEVICE_TYPE_NATIVE_THREAD, hwDeviceDescs);
+	}
+
 	// Create the virtual device to feed all hardware devices
-	std::vector<luxrays::DeviceDescription *> hwDeviceDescs = deviceDescs;
-	luxrays::DeviceDescription::Filter(luxrays::DEVICE_TYPE_OPENCL, hwDeviceDescs);
-	luxrays::OpenCLDeviceDescription::Filter(luxrays::OCL_DEVICE_TYPE_GPU, hwDeviceDescs);
-
-	if (useGPUs && (hwDeviceDescs.size() >= 1)) {
+	if (hwDeviceDescs.size() >= 1) {
 		if (hwDeviceDescs.size() == 1) {
-			// Only one GPU available
-			luxrays::OpenCLDeviceDescription *desc = (luxrays::OpenCLDeviceDescription *)hwDeviceDescs[0];
-			if (forceGPUWorkGroupSize > 0)
-				desc->SetForceWorkGroupSize(forceGPUWorkGroupSize);
-
+			// Only one device available
 			hardwareDevices = ctx->AddVirtualM2OIntersectionDevices(0, hwDeviceDescs);
 			virtualIM2ODevice = ctx->GetVirtualM2OIntersectionDevices()[0];
 			virtualIM2MDevice = NULL;
 		} else {
-			// Multiple GPUs available
+			// Multiple devices available
 
 			// Select the devices to use
 			std::vector<luxrays::DeviceDescription *> selectedDescs;
 			bool haveSelectionString = (deviceSelection.length() > 0);
 			if (haveSelectionString) {
 				if (deviceSelection.length() != hwDeviceDescs.size()) {
-					LOG(LUX_WARNING, LUX_MISSINGDATA) << "OpenCL device selection string has the wrong length, must be " <<
+					LOG(LUX_WARNING, LUX_MISSINGDATA) << "Device selection string has the wrong length, must be " <<
 							hwDeviceDescs.size() << " instead of " << deviceSelection.length() << ", ignored";
 
 					selectedDescs = hwDeviceDescs;
@@ -231,15 +244,8 @@ HybridSamplerRenderer::HybridSamplerRenderer(const int oclPlatformIndex, bool us
 			} else
 				selectedDescs = hwDeviceDescs;
 
-			if (forceGPUWorkGroupSize > 0) {
-				for (size_t i = 0; i < selectedDescs.size(); ++i) {
-					luxrays::OpenCLDeviceDescription *desc = (luxrays::OpenCLDeviceDescription *)selectedDescs[i];
-					desc->SetForceWorkGroupSize(forceGPUWorkGroupSize);
-				}
-			}
-
 			if (selectedDescs.size() == 1) {
-				// Multiple GPUs are available but only one is selected
+				// Multiple devices are available but only one is selected
 				hardwareDevices = ctx->AddVirtualM2OIntersectionDevices(0, selectedDescs);
 				virtualIM2ODevice = ctx->GetVirtualM2OIntersectionDevices()[0];
 				virtualIM2MDevice = NULL;
@@ -250,43 +256,20 @@ HybridSamplerRenderer::HybridSamplerRenderer(const int oclPlatformIndex, bool us
 			}
 		}
 
-		// The default QBVH stack size (i.e. 24) is too small for the average
-		// LuxRender scene and the slight slow down caused by a bigger stack
-		// should not be noticiable with hybrid rendering. The default is now 32.
-		for (size_t i = 0; i < hardwareDevices.size(); ++i) {
-			if (hardwareDevices[i]->GetType() == luxrays::DEVICE_TYPE_OPENCL)
-				((luxrays::OpenCLIntersectionDevice *)hardwareDevices[i])->SetQBVHMaxStackSize(qbvhStackSize);
-		}
-
-		LOG(LUX_INFO, LUX_NOERROR) << "OpenCL Devices used:";
+		LOG(LUX_INFO, LUX_NOERROR) << "Devices used:";
 		for (size_t i = 0; i < hardwareDevices.size(); ++i)
 			LOG(LUX_INFO, LUX_NOERROR) << " [" << hardwareDevices[i]->GetName() << "]";
-	} else
-		// don't want GPU or no hardware available, use native
-		useNative = true;
-#else
-	// only native mode without OpenCL
-	if (useGPUs)
-		LOG(LUX_INFO, LUX_NOERROR) << "GPU assisted rendering requires an OpenCL enabled version of LuxRender, using CPU instead";
-
-	useGPUs = false;
-	useNative = true;
-#endif
-
-	if (useNative) {
-		if (useGPUs)
-			LOG(LUX_WARNING, LUX_SYSTEM) << "Unable to find an OpenCL GPU device, falling back to CPU";
-
+	} else {
+		// No device found
 		virtualIM2ODevice = NULL;
 		virtualIM2MDevice = NULL;
-
-		// allocate native threads
-		std::vector<luxrays::DeviceDescription *> nativeDeviceDescs = deviceDescs;
-		luxrays::DeviceDescription::Filter(luxrays::DEVICE_TYPE_NATIVE_THREAD, nativeDeviceDescs);
-
-		nativeDevices = ctx->AddIntersectionDevices(nativeDeviceDescs);
 	}
 
+	// The default QBVH stack size (i.e. 24) is too small for the average
+	// LuxRender scene and the slight slow down caused by a bigger stack
+	for (size_t i = 0; i < hardwareDevices.size(); ++i) {
+		hardwareDevices[i]->SetMaxStackSize(qbvhStackSize);
+	}
 
 	preprocessDone = false;
 	suspendThreadsWhenDone = false;
@@ -305,7 +288,7 @@ HybridSamplerRenderer::~HybridSamplerRenderer() {
 		throw std::runtime_error("Internal error: called HybridSamplerRenderer::~HybridSamplerRenderer() while not in TERMINATE or INIT state.");
 
 	if (renderThreads.size() > 0)
-		throw std::runtime_error("Internal error: called HybridSamplerRenderer::~HybridSamplerRenderer() while list of renderThread sis not empty.");
+		throw std::runtime_error("Internal error: called HybridSamplerRenderer::~HybridSamplerRenderer() while list of renderThread is not empty.");
 
 	delete ctx;
 
@@ -503,8 +486,8 @@ void HybridSamplerRenderer::CreateRenderThread() {
 			// Add an instance to the LuxRays virtual device
 			idev = virtualIM2MDevice->AddVirtualDevice();
 		} else {
-			// Add a nativethread device
-			idev = nativeDevices[renderThreads.size() % nativeDevices.size()];
+			// No device found
+			return;
 		}
 
 		RenderThread *rt = new  RenderThread(renderThreads.size(), this, idev);
@@ -612,8 +595,6 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 		// Advance the next step
 		//----------------------------------------------------------------------
 
-		//const double t1 = luxrays::WallClockTime();
-
 		bool renderIsOver = false;
 		u_int nrContribs = 0;
 		u_int nrSamples = 0;
@@ -657,18 +638,12 @@ void HybridSamplerRenderer::RenderThread::RenderImpl(RenderThread *renderThread)
 			break;
 		}
 
-		//LOG(LUX_DEBUG, LUX_NOERROR) << "NextState() time: " << int((luxrays::WallClockTime() - t1) * 1000.0) << "ms";
-
 		//----------------------------------------------------------------------
-		// File the RayBuffer with the generated rays
+		// Fill the RayBuffer with the generated rays
 		//----------------------------------------------------------------------
-
-		//const double t2 = luxrays::WallClockTime();
 
 		rayBuffer->Reset();
 		stateBuffer->GenerateRays();
-
-		//LOG(LUX_DEBUG, LUX_NOERROR) << "GenerateRays() time: " << (luxrays::WallClockTime() - t2) * 1000.0 << "ms";
 
 		//----------------------------------------------------------------------
 		// Trace the RayBuffer

@@ -235,7 +235,7 @@ Camera *MakeCamera(const string &name,
 }
 
 Sampler *MakeSampler(const string &name,
-	const ParamSet &paramSet, const Film *film)
+	const ParamSet &paramSet, Film *film)
 {
 	if (DynamicLoader::registeredSamplers().find(name) !=
 		DynamicLoader::registeredSamplers().end()) {

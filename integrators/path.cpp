@@ -31,8 +31,9 @@
 #include "path.h"
 #include "mc.h"
 #include "context.h"
+#include "core/partialcontribution.h"
 
-#include "luxrays/core/dataset.h"
+#include "luxrays/core/geometry/raybuffer.h"
 
 using namespace lux;
 
@@ -106,8 +107,9 @@ u_int PathIntegrator::Li(const Scene &scene, const Sample &sample) const
 	// Direct lighting samples variance
 	vector<float> Vd(lightGroupCount, 0.f);
 	SWCSpectrum pathThroughput(1.0f);
-	vector<SWCSpectrum> L(lightGroupCount, 0.f);
-	vector<float> V(lightGroupCount, 0.f);
+
+	PartialContribution partialContribution(lightGroupCount);
+
 	float VContrib = .1f;
 	bool specularBounce = true, specular = true, scattered = false;
 	float alpha = 1.f;
@@ -132,8 +134,7 @@ u_int PathIntegrator::Li(const Scene &scene, const Sample &sample) const
 				&Lv, &alpha);
 			if (!Lv.Black()) {
 				Lv *= prevThroughput;
-				L[g] += Lv;
-				V[g] += Lv.Filter(sw) * VContrib;
+				partialContribution.Add(sw, Lv, g, VContrib);
 				++nrContribs;
 			}
 
@@ -146,8 +147,7 @@ u_int PathIntegrator::Li(const Scene &scene, const Sample &sample) const
 					SWCSpectrum Le(pathThroughput);
 					if (scene.lights[i]->Le(scene, sample,
 						ray, &ibsdf, NULL, NULL, &Le)) {
-						L[scene.lights[i]->group] += Le;
-						V[scene.lights[i]->group] += Le.Filter(sw) * VContrib;
+						partialContribution.Add(sw, Le, scene.lights[i]->group, VContrib);
 						++nrContribs;
 					}
 				}
@@ -169,8 +169,7 @@ u_int PathIntegrator::Li(const Scene &scene, const Sample &sample) const
 			&Lv, &alpha);
 		if (!Lv.Black()) {
 			Lv *= prevThroughput;
-			L[g] += Lv;
-			V[g] += Lv.Filter(sw) * VContrib;
+			partialContribution.Add(sw, Lv, g, VContrib);
 			++nrContribs;
 		}
 
@@ -180,8 +179,7 @@ u_int PathIntegrator::Li(const Scene &scene, const Sample &sample) const
 			SWCSpectrum Le(pathThroughput);
 			BSDF *ibsdf;
 			if (isect.Le(sample, ray, &ibsdf, NULL, NULL, &Le)) {
-				L[isect.arealight->group] += Le;
-				V[isect.arealight->group] += Le.Filter(sw) * VContrib;
+				partialContribution.Add(sw, Le, isect.arealight->group, VContrib);
 				++nrContribs;
 			}
 		}
@@ -202,8 +200,7 @@ u_int PathIntegrator::Li(const Scene &scene, const Sample &sample) const
 				wo, bsdf, pathLength, pathThroughput, Ld, &Vd);
 
 			for (u_int i = 0; i < lightGroupCount; ++i) {
-				L[i] += Ld[i];
-				V[i] += Vd[i] * VContrib;
+				partialContribution.AddUnFiltered(sw, Ld[i], i, Vd[i] * VContrib);
 			}
 		}
 
@@ -246,13 +243,7 @@ u_int PathIntegrator::Li(const Scene &scene, const Sample &sample) const
 		ray.time = sample.realTime;
 		volume = bsdf->GetVolume(wi);
 	}
-	for (u_int i = 0; i < lightGroupCount; ++i) {
-		if (!L[i].Black())
-			V[i] /= L[i].Filter(sw);
-		sample.AddContribution(xi, yi,
-			XYZColor(sw, L[i]) * rayWeight, alpha, distance,
-			V[i], bufferId, i);
-	}
+	partialContribution.Splat(sw, sample, xi, yi, distance, alpha, bufferId, rayWeight);
 
 	return nrContribs;
 }
@@ -374,23 +365,17 @@ bool PathIntegrator::GenerateRays(const Scene &,
 			if (1 > leftSpace)
 				return false;
 
-			// A pointer trick
-			luxrays::Ray *ray = (luxrays::Ray *)&pathState->pathRay;
-			pathState->currentPathRayIndex = rayBuffer->AddRay(*ray);
+			pathState->currentPathRayIndex = rayBuffer->AddRay(pathState->pathRay);
 			break;
 		}
 		case PathState::NEXT_VERTEX: {
 			if (1u + pathState->tracedShadowRayCount > leftSpace)
 				return false;
 
-			// A pointer trick
-			luxrays::Ray *ray = (luxrays::Ray *)&pathState->pathRay;
-			pathState->currentPathRayIndex = rayBuffer->AddRay(*ray);
+			pathState->currentPathRayIndex = rayBuffer->AddRay(pathState->pathRay);
 
 			for (u_short i = 0; i < pathState->tracedShadowRayCount; ++i) {
-				// A pointer trick
-				luxrays::Ray *ray = (luxrays::Ray *)&pathState->shadowRay[i];
-				pathState->currentShadowRayIndex[i] = rayBuffer->AddRay(*ray);
+				pathState->currentShadowRayIndex[i] = rayBuffer->AddRay(pathState->shadowRay[i]);
 			}
 			break;
 		}
@@ -399,9 +384,7 @@ bool PathIntegrator::GenerateRays(const Scene &,
 				return false;
 
 			for (u_short i = 0; i < pathState->tracedShadowRayCount; ++i) {
-				// A pointer trick
-				luxrays::Ray *ray = (luxrays::Ray *)&pathState->shadowRay[i];
-				pathState->currentShadowRayIndex[i] = rayBuffer->AddRay(*ray);
+				pathState->currentShadowRayIndex[i] = rayBuffer->AddRay(pathState->shadowRay[i]);
 			}
 			break;
 		}

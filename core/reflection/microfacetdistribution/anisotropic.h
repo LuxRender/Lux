@@ -25,7 +25,8 @@
 // anisotropic.h*
 #include "lux.h"
 #include "microfacetdistribution.h"
-#include "geometry/vector.h"
+#include "luxrays/core/geometry/vector.h"
+using luxrays::Vector;
 
 namespace lux
 {

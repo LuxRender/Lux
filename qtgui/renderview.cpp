@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2012 by authors (see AUTHORS.txt )                 *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -20,34 +20,113 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#include "renderview.hxx"
+#include <cmath>
+#include <iostream>
+
+#include <QApplication>
+#include <QClipboard>
+#include <QColor>
+#include <QCursor>
+#include <QGraphicsItem>
+#include <QList>
+#include <QPainter>
+#include <QPen>
+#include <QPixmap>
+#include <QPointF>
+
 #include "api.h"
 #include "error.h"
-#include "guiutil.h"
 
-#include <iostream>
-#include <algorithm>
+#include "guiutil.h"
+#include "renderview.hxx"
 
 using namespace std;
 
-RenderView::RenderView(QWidget *parent) : QGraphicsView(parent) {
+RenderView::RenderView(QWidget *parent) : QGraphicsView(parent)
+{
 	renderscene = new QGraphicsScene();
 	renderscene->setBackgroundBrush(QColor(127,127,127));
 	luxlogo = renderscene->addPixmap(QPixmap(":/images/luxlogo_bg.png"));
 	luxfb = renderscene->addPixmap(QPixmap(":/images/luxlogo_bg.png"));
 	luxfb->hide ();
+	userSamplingMap = NULL;
+	userSamplingPixmap = renderscene->addPixmap(QPixmap(":/images/luxlogo_bg.png"));
+	userSamplingPixmap->hide ();
+	userSamplingMapImage = NULL;
 	renderscene->setSceneRect (0.0f, 0.0f, 416, 389);
 	centerOn(luxlogo);
 	setScene(renderscene);
 	zoomfactor = 100.0f;
 	overlayStats = false;
 	showAlpha = false;
+
+	showUserSamplingMap = false;
+	userSamplingAddPenType = true;
+	userSamplingPenPressed = false;
+	userSamplingPenX = 0;
+	userSamplingPenY = 0;
+	userSamplingPenSize = 50;
+	userSamplingPenSprayIntensity = .1f;
+	userSamplingMapOpacity = .5f;
+	penItemGroup = NULL;
+
+	setMouseTracking(true);
 }
 
-RenderView::~RenderView () {
+RenderView::~RenderView ()
+{
+	delete[] userSamplingMap;
+	delete userSamplingMapImage;
+	delete userSamplingPixmap;
 	delete luxfb;
 	delete luxlogo;
 	delete renderscene;
+}
+
+void RenderView::addUserSamplingPen()
+{
+	// Remove the old pen
+	removeUserSamplingPen();
+
+	// Create the pen items
+	QList<QGraphicsItem *> penItemList;
+
+	// Draw pen border
+	QPen penBorder;
+	penBorder.setWidth(3);
+	penBorder.setBrush(Qt::white);
+	setRenderHint(QPainter::Antialiasing, true);
+	penItemList.append(renderscene->addEllipse(0, 0,
+			userSamplingPenSize, userSamplingPenSize, penBorder));
+	penItemList.append(renderscene->addLine(userSamplingPenSize / 4, userSamplingPenSize / 2,
+			userSamplingPenSize * 3 / 4, userSamplingPenSize / 2, penBorder));
+	if (userSamplingAddPenType)
+		penItemList.append(renderscene->addLine(userSamplingPenSize / 2, userSamplingPenSize / 4,
+				userSamplingPenSize / 2, userSamplingPenSize * 3 / 4, penBorder));
+
+	// Draw pen
+	QPen pen;
+	pen.setWidth(1);
+	pen.setBrush(Qt::black);
+	penItemList.append(renderscene->addEllipse(0, 0,
+			userSamplingPenSize, userSamplingPenSize, pen));
+	penItemList.append(renderscene->addLine(userSamplingPenSize / 4, userSamplingPenSize / 2,
+			userSamplingPenSize * 3 / 4, userSamplingPenSize / 2, pen));
+	if (userSamplingAddPenType)
+		penItemList.append(renderscene->addLine(userSamplingPenSize / 2, userSamplingPenSize / 4,
+				userSamplingPenSize / 2, userSamplingPenSize * 3 / 4, pen));
+
+	penItemGroup = renderscene->createItemGroup(penItemList);
+	penItemGroup->show();
+
+	penItemGroup->setPos(userSamplingPenX - userSamplingPenSize / 2,
+			userSamplingPenY - userSamplingPenSize / 2);
+}
+
+void RenderView::removeUserSamplingPen()
+{
+	delete penItemGroup;
+	penItemGroup = NULL;
 }
 
 void RenderView::copyToClipboard()
@@ -69,7 +148,19 @@ void RenderView::copyToClipboard()
 	}
 }
 
-void RenderView::reload () {
+void RenderView::setShowUserSamplingMap(bool value)
+{
+	if (showUserSamplingMap == value)
+		return;
+
+	showUserSamplingMap = value;
+	userSamplingPenPressed = false;
+	userSamplingPenX = 0;
+	userSamplingPenY = 0;
+}
+
+void RenderView::reload()
+{
 	if (luxStatistics("sceneIsReady") || luxStatistics("filmIsReady")) {
 		int w = luxGetIntAttribute("film", "xResolution");
 		int h = luxGetIntAttribute("film", "yResolution");
@@ -95,20 +186,167 @@ void RenderView::reload () {
 			luxfb->show ();
 			renderscene->setSceneRect (0.0f, 0.0f, w, h);
 			centerOn(luxfb);
-//			fitInView(luxfb, Qt::KeepAspectRatio);
+			//fitInView(luxfb, Qt::KeepAspectRatio);
 		}
+
+		if (showUserSamplingMap) {
+			// User driven sampling is active
+			if (!userSamplingMap) {
+				// Get the current sampling map
+
+				userSamplingMap = luxGetUserSamplingMap();
+				if (!userSamplingMap) {
+					// There isn't an existing map, create the default
+					userSamplingMap = new float[w * h];
+					std::fill(userSamplingMap, userSamplingMap + w * h, .1f);
+
+					// Enable user driven sampling
+					luxSetUserSamplingMap(userSamplingMap);
+				}
+			}
+
+			updateUserSamplingPixmap();
+			addUserSamplingPen();
+
+			if (!userSamplingPixmap->isVisible())
+				userSamplingPixmap->show();
+			
+			setDragMode(QGraphicsView::NoDrag);
+			RenderView::setCursor(QCursor(Qt::ClosedHandCursor));
+		} else {
+			if (userSamplingPixmap->isVisible())
+				userSamplingPixmap->hide();
+
+			removeUserSamplingPen();
+
+			setDragMode(QGraphicsView::ScrollHandDrag);
+			RenderView::unsetCursor();
+		}
+		
 		zoomEnabled = true;
-		setDragMode(QGraphicsView::ScrollHandDrag);
 		setInteractive(true);
 	}
 }
 
-void RenderView::setLogoMode () {
+void  RenderView::setUserSamplingPen(const bool addType)
+{
+	userSamplingAddPenType = addType;
+	addUserSamplingPen();
+	updateUserSamplingPixmap();
+}
+
+void  RenderView::setUserSamplingPenSize(const int size)
+{
+	userSamplingPenSize = std::max(1, size);
+	addUserSamplingPen();
+	updateUserSamplingPixmap();
+}
+
+void RenderView::setUserSamplingPenSprayIntensity(const float i)
+{
+	userSamplingPenSprayIntensity = std::max(0.01f, min(1.f, i));
+}
+
+void RenderView::setUserSamplingMapOpacity(const float v)
+{
+	userSamplingMapOpacity = std::max(0.f, min(1.f, v));
+	updateUserSamplingPixmap();
+}
+
+void  RenderView::applyUserSampling()
+{
+	luxSetUserSamplingMap(userSamplingMap);
+}
+
+void  RenderView::undoUserSampling()
+{
+	delete[] userSamplingMap;
+	userSamplingMap = luxGetUserSamplingMap();
+	if (!userSamplingMap) {
+		int w = luxGetIntAttribute("film", "xResolution");
+		int h = luxGetIntAttribute("film", "yResolution");
+		// There isn't an existing map, create the default
+		userSamplingMap = new float[w * h];
+		std::fill(userSamplingMap, userSamplingMap + w * h, .1f);
+	}
+
+	updateUserSamplingPixmap();
+}
+
+void  RenderView::resetUserSampling()
+{
+	int w = luxGetIntAttribute("film", "xResolution");
+	int h = luxGetIntAttribute("film", "yResolution");
+
+	if (!userSamplingMap) {
+		// There isn't an existing map, create the default
+		userSamplingMap = new float[w * h];
+	}
+	std::fill(userSamplingMap, userSamplingMap + w * h, .1f);
+
+	updateUserSamplingPixmap();
+}
+
+void RenderView::updateUserSamplingPixmap()
+{
+	int w = luxGetIntAttribute("film", "xResolution");
+	int h = luxGetIntAttribute("film", "yResolution");
+	
+	updateUserSamplingPixmap(0, 0, w, h);
+}
+
+void RenderView::updateUserSamplingPixmap(int xStart, int yStart, int xSize, int ySize)
+{
+	int width = luxGetIntAttribute("film", "xResolution");
+	int height = luxGetIntAttribute("film", "yResolution");
+
+	if (!userSamplingMapImage) {
+		// Convert from float to ARGB32
+		userSamplingMapImage = new QImage(xSize, ySize, QImage::Format_ARGB32);
+
+		// Initialize all pixels
+		xStart = 0;
+		yStart = 0;
+		xSize = width;
+		ySize = height;
+	}
+
+	int xEnd = xStart + xSize;
+	int yEnd = yStart + ySize;
+
+	// Clip the working area
+	xStart = max(0, min(xStart, width - 1));
+	yStart = max(0, min(yStart, height - 1));
+	xEnd = max(0, min(xEnd, width - 1));
+	yEnd = max(0, min(yEnd, height - 1));
+
+	for (int y = yStart; y <= yEnd; y++) {
+		QRgb *scanline = reinterpret_cast<QRgb*>(userSamplingMapImage->scanLine(y));
+		for (int x = xStart; x <= xEnd; x++) {
+			const float value = userSamplingMap[x + y * width] * .5f + userSamplingMapOpacity * .5f;
+			const int fba = static_cast<int>(min(max(255.f * value, 0.f), 255.f));
+			scanline[x] = qRgba(255, 255, 255, fba);
+		}
+	}
+
+	userSamplingPixmap->setPixmap(QPixmap::fromImage(*userSamplingMapImage));
+}
+
+void RenderView::setLogoMode()
+{
 	resetTransform ();
 	if (luxfb->isVisible()) {
 		luxfb->hide ();
 		zoomEnabled = false;
 		zoomfactor = 100.0f;
+	}
+	if (userSamplingPixmap->isVisible()) {
+		userSamplingPixmap->hide();
+		delete[] userSamplingMap;
+		userSamplingMap = NULL;
+		userSamplingPenPressed = false;
+		userSamplingPenX = 0;
+		userSamplingPenY = 0;
 	}
 	if (!luxlogo->isVisible ()) {
 		luxlogo->show ();
@@ -118,24 +356,29 @@ void RenderView::setLogoMode () {
 	setInteractive(false);
 }
 
-void RenderView::resizeEvent(QResizeEvent *event) {
+void RenderView::resizeEvent(QResizeEvent *event)
+{
 	QGraphicsView::resizeEvent(event);
 	emit viewChanged ();
 }
 
-int RenderView::getZoomFactor () {
+int RenderView::getZoomFactor()
+{
 	return zoomfactor;
 }
 
-int RenderView::getWidth () {
+int RenderView::getWidth()
+{
 	return width();
 }
 
-int RenderView::getHeight () {
+int RenderView::getHeight()
+{
 	return height();
 }
 
-void RenderView::wheelEvent (QWheelEvent* event) {
+void RenderView::wheelEvent(QWheelEvent* event)
+{
    if (!zoomEnabled)
 	   return;
 
@@ -157,12 +400,53 @@ void RenderView::wheelEvent (QWheelEvent* event) {
 	emit viewChanged ();
 }
 
-void RenderView::mousePressEvent (QMouseEvent *event) {
-	
+void RenderView::drawPenOnUserSamplingMap(const int xPos, const int yPos)
+{
+	for (int y = 0; y <= userSamplingPenSize; ++y) {
+		for (int x = 0; x <= userSamplingPenSize; ++x) {
+			// Check if the point is inside the circle
+			const float cx = 2.f * x / userSamplingPenSize - 1.f;
+			const float cy = 2.f * y / userSamplingPenSize - 1.f;
+
+			const float dist = sqrtf(cx * cx + cy * cy);
+			if (dist <= 1.f) {
+				// We are inside the circle
+				int xRes = luxGetIntAttribute("film", "xResolution");
+				int yRes = luxGetIntAttribute("film", "yResolution");
+				int px = xPos + x - userSamplingPenSize / 2;
+				int py = yPos + y - userSamplingPenSize / 2;
+
+				if ((px >= 0) && (px < xRes) && (py >= 0) && (py < yRes)) {
+					const float value = userSamplingMap[px + py * xRes];
+
+					// The * .5 is used to have a spray-like effect
+					if (userSamplingAddPenType) {
+						userSamplingMap[px + py * xRes] = Clamp(
+								value + (1.f - dist) * userSamplingPenSprayIntensity, .1f, 1.f);
+					} else {
+						userSamplingMap[px + py * xRes] = Clamp(
+								value + (dist - 1.f) * userSamplingPenSprayIntensity, .1f, 1.f);
+					}
+				}
+			}
+		}
+	}
+}
+
+void RenderView::mousePressEvent(QMouseEvent *event)
+{
 	if (luxfb->isVisible()) {
 		switch (event->button()) {
 			case Qt::LeftButton:
-				currentpos = event->pos();
+				if (showUserSamplingMap) {
+					userSamplingPenPressed = true;
+					QPointF pos = mapToScene(event->pos());
+					userSamplingPenX = pos.x();
+					userSamplingPenY = pos.y();
+
+					penItemGroup->setPos(userSamplingPenX - userSamplingPenSize / 2,
+							userSamplingPenY - userSamplingPenSize / 2);
+				}
 				break;
 			case Qt::MidButton:
 				setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
@@ -188,5 +472,46 @@ void RenderView::mousePressEvent (QMouseEvent *event) {
 				break;
 		}
 	}
+
 	QGraphicsView::mousePressEvent(event);
+}
+
+void RenderView::mouseReleaseEvent (QMouseEvent *event)
+{
+	if (luxfb->isVisible() && showUserSamplingMap) {
+		switch (event->button()) {
+			case Qt::LeftButton:
+				userSamplingPenPressed = false;
+				break;
+			default:
+				break;
+		}
+	}
+
+	QGraphicsView::mouseReleaseEvent(event);
+}
+
+void RenderView::mouseMoveEvent (QMouseEvent *event)
+{
+	if (luxfb->isVisible() && showUserSamplingMap) {
+		QPointF pos = mapToScene(event->pos());
+		int x = pos.x();
+		int y = pos.y();
+		
+		if ((userSamplingPenX != x) || (userSamplingPenY != y)) {
+			userSamplingPenX = x;
+			userSamplingPenY = y;
+			penItemGroup->setPos(userSamplingPenX - userSamplingPenSize / 2,
+					userSamplingPenY - userSamplingPenSize / 2);
+
+			if (userSamplingPenPressed) {
+				drawPenOnUserSamplingMap(userSamplingPenX, userSamplingPenY);
+				updateUserSamplingPixmap(userSamplingPenX - userSamplingPenSize / 2,
+						userSamplingPenY - userSamplingPenSize / 2,
+						userSamplingPenSize, userSamplingPenSize);
+			}
+		}
+	}
+
+	QGraphicsView::mouseMoveEvent(event);
 }

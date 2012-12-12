@@ -207,7 +207,7 @@ bool MeshWaldTriangle::Intersect(const Ray &ray, Intersection *isect) const
 
 	const float vv = (hu * cnu + hv * cnv) / det + cnd;
 	if (vv < 0.f)
-                return false;
+		return false;
 
 	const float b0 = 1.f - uu - vv;
 	if (b0 < 0.f)
@@ -225,7 +225,7 @@ bool MeshWaldTriangle::Intersect(const Ray &ray, Intersection *isect) const
 
 	isect->dg = DifferentialGeometry(pp, normalizedNormal, dpdu, dpdv,
 		Normal(0, 0, 0), Normal(0, 0, 0), tu, tv, this);
-	isect->Set(mesh->WorldToObject, this, mesh->GetMaterial(),
+	isect->Set(mesh->ObjectToWorld, this, mesh->GetMaterial(),
 		mesh->GetExterior(), mesh->GetInterior());
 	isect->dg.iData.baryTriangle.coords[0] = b0;
 	isect->dg.iData.baryTriangle.coords[1] = uu;

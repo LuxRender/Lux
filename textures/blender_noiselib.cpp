@@ -213,7 +213,7 @@ static float grad(int hash, float x, float y, float z)
 }
 
 /* instead of adding another permutation array, just use hash table defined above */
-static float newPerlin(float x, float y, float z)
+float newPerlin(float x, float y, float z)
 {
 	int A, AA, AB, B, BA, BB;
 	float u=floor(x), v=floor(y), w=floor(z);

@@ -21,6 +21,7 @@
  ***************************************************************************/
 
 #include "sphericalfunction.h"
+using luxrays::SphericalDirection;
 #include "sphericalfunction_ies.h"
 #include "mipmap.h"
 #include "mcdistribution.h"

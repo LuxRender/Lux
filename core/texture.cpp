@@ -26,6 +26,8 @@
 #include "shape.h"
 #include "spectrum.h"
 #include "fresnelgeneral.h"
+#include "luxrays/core/geometry/vector.h"
+using luxrays::SphericalDirection;
 
 namespace lux
 {
@@ -66,6 +68,37 @@ static int NoisePerm[2 * NOISE_PERM_SIZE] = {
 	   138, 236, 205, 93, 222, 114, 67, 29, 24, 72, 243, 141, 128, 195, 78, 66, 215, 61, 156, 180
 };
 // Texture Method Definitions
+TextureMapping2D *TextureMapping2D::Create(const Transform &tex2world, const ParamSet &tp)
+{
+	// Initialize 2D texture mapping _map_ from _tp_
+	const string type = tp.FindOneString("mapping", "uv");
+	if (type == "uv") {
+		float su = tp.FindOneFloat("uscale", 1.f);
+		float sv = tp.FindOneFloat("vscale", 1.f);
+		float du = tp.FindOneFloat("udelta", 0.f);
+		float dv = tp.FindOneFloat("vdelta", 0.f);
+		return new UVMapping2D(su, sv, du, dv);
+	} else if (type == "spherical") {
+		float su = tp.FindOneFloat("uscale", 1.f);
+		float sv = tp.FindOneFloat("vscale", 1.f);
+		float du = tp.FindOneFloat("udelta", 0.f);
+		float dv = tp.FindOneFloat("vdelta", 0.f);
+		return new SphericalMapping2D(Transform(Inverse(tex2world)), su, sv, du, dv);
+	} else if (type == "cylindrical") {
+		float su = tp.FindOneFloat("uscale", 1.f);
+		float du = tp.FindOneFloat("udelta", 0.f);
+		return new CylindricalMapping2D(Transform(Inverse(tex2world)), su, du);
+	} else if (type == "planar") {
+		return new PlanarMapping2D(tp.FindOneVector("v1", Vector(1,0,0)),
+			tp.FindOneVector("v2", Vector(0,1,0)),
+			tp.FindOneFloat("udelta", 0.f),
+			tp.FindOneFloat("vdelta", 0.f));
+	} else {
+		LOG( LUX_ERROR,LUX_UNIMPLEMENT) << "2D texture mapping '" << type << "' unknown";
+		return new UVMapping2D;
+	}
+}
+
 UVMapping2D::UVMapping2D(float _su, float _sv, float _du, float _dv)
 {
 	su = _su;
@@ -92,7 +125,7 @@ void UVMapping2D::MapDuv(const DifferentialGeometry &dg, float *s, float *t,
 void SphericalMapping2D::Map(const DifferentialGeometry &dg,
 	float *s, float *t) const
 {
-	const Vector p(Normalize(Vector(WorldToTexture(dg.p))));
+	const Vector p(Normalize(Vector(WorldToTexture * dg.p)));
 	*s = SphericalPhi(p)   * scaledInvTwoPi + du;
 	*t = SphericalTheta(p) * scaledInvPi    + dv;
 }
@@ -100,12 +133,12 @@ void SphericalMapping2D::MapDuv(const DifferentialGeometry &dg,
 	float *s, float *t,
 	float *dsdu, float *dtdu, float *dsdv, float *dtdv) const
 {
-	const Vector p(Normalize(Vector(WorldToTexture(dg.p))));
+	const Vector p(Normalize(Vector(WorldToTexture * dg.p)));
 	*s = SphericalPhi(p)   * scaledInvTwoPi + du;
 	*t = SphericalTheta(p) * scaledInvPi    + dv;
 	// Compute texture coordinate differentials for sphere $(u,v)$ mapping
-	const Vector dpdu(WorldToTexture(dg.dpdu));
-	const Vector dpdv(WorldToTexture(dg.dpdv));
+	const Vector dpdu(WorldToTexture * dg.dpdu);
+	const Vector dpdv(WorldToTexture * dg.dpdv);
 	const float scaledInvTwoPiOverXY2 = scaledInvTwoPi / (p.x * p.x + p.y * p.y);
 	*dsdu = (dpdu.y * p.x - p.y * dpdu.x) * scaledInvTwoPiOverXY2;
 	*dsdv = (dpdv.y * p.x - p.y * dpdv.x) * scaledInvTwoPiOverXY2;
@@ -117,7 +150,7 @@ void SphericalMapping2D::MapDuv(const DifferentialGeometry &dg,
 void CylindricalMapping2D::Map(const DifferentialGeometry &dg,
 	float *s, float *t) const
 {
-	Vector p(WorldToTexture(dg.p));
+	Vector p(WorldToTexture * dg.p);
 	const float lenXY = sqrtf(p.x * p.x + p.y * p.y);
 	p.x /= lenXY;
 	p.y /= lenXY;
@@ -128,15 +161,15 @@ void CylindricalMapping2D::MapDuv(const DifferentialGeometry &dg,
 	float *s, float *t,
 	float *dsdu, float *dtdu, float *dsdv, float *dtdv) const
 {
-	Vector p(WorldToTexture(dg.p));
+	Vector p(WorldToTexture * dg.p);
 	const float lenXY = sqrtf(p.x * p.x + p.y * p.y);
 	p.x /= lenXY;
 	p.y /= lenXY;
 	*s = SphericalPhi(p) * scaledInvTwoPi + du;
 	*t = 0.5f - 0.5f * p.z;
 	// Compute texture coordinate differentials for cylinder $(u,v)$ mapping
-	const Vector dpdu(WorldToTexture(dg.dpdu));
-	const Vector dpdv(WorldToTexture(dg.dpdv));
+	const Vector dpdu(WorldToTexture * dg.dpdu);
+	const Vector dpdv(WorldToTexture * dg.dpdv);
 	*dsdu = (dpdu.y * p.x - p.y * dpdu.x) * scaledInvTwoPi;
 	*dsdv = (dpdv.y * p.x - p.y * dpdv.x) * scaledInvTwoPi;
 	*dtdu = -0.5f * dpdu.z;
@@ -185,68 +218,68 @@ void TextureMapping3D::Apply3DTextureMappingOptions(const ParamSet &tp)
 }
 Point GlobalMapping3D::Map(const DifferentialGeometry &dg) const
 {
-	return WorldToTexture(dg.p);
+	return WorldToTexture * dg.p;
 }
 Point GlobalMapping3D::MapDuv(const DifferentialGeometry &dg,
 	Vector *dpdu, Vector *dpdv) const
 {
-	*dpdu = WorldToTexture(dg.dpdu);
-	*dpdv = WorldToTexture(dg.dpdv);
+	*dpdu = WorldToTexture * dg.dpdu;
+	*dpdv = WorldToTexture * dg.dpdv;
 	return Map(dg);
 }
 Point LocalMapping3D::Map(const DifferentialGeometry &dg) const
 {
-	const Transform W2T(WorldToTexture *
-		dg.handle->GetWorldToLocal(dg.time));
-	return W2T(dg.p);
+	const Transform W2T(WorldToTexture /
+		dg.handle->GetLocalToWorld(dg.time));
+	return W2T * dg.p;
 }
 Point LocalMapping3D::MapDuv(const DifferentialGeometry &dg,
 	Vector *dpdu, Vector *dpdv) const
 {
-	const Transform W2T(WorldToTexture *
-		dg.handle->GetWorldToLocal(dg.time));
-	*dpdu = W2T(dg.dpdu);
-	*dpdv = W2T(dg.dpdv);
-	return W2T(dg.p);
+	const Transform W2T(WorldToTexture /
+		dg.handle->GetLocalToWorld(dg.time));
+	*dpdu = W2T * dg.dpdu;
+	*dpdv = W2T * dg.dpdv;
+	return W2T * dg.p;
 }
 Point UVMapping3D::Map(const DifferentialGeometry &dg) const
 {
-	return WorldToTexture(Point(dg.u, dg.v, 0.f));
+	return WorldToTexture * Point(dg.u, dg.v, 0.f);
 }
 Point UVMapping3D::MapDuv(const DifferentialGeometry &dg,
 	Vector *dpdu, Vector *dpdv) const
 {
-	*dpdu = WorldToTexture(Vector(1.f, 0.f, 0.f));
-	*dpdv = WorldToTexture(Vector(0.f, 1.f, 0.f));
+	*dpdu = WorldToTexture * Vector(1.f, 0.f, 0.f);
+	*dpdv = WorldToTexture * Vector(0.f, 1.f, 0.f);
 	return Map(dg);
 }
 Point GlobalNormalMapping3D::Map(const DifferentialGeometry &dg) const
 {
-	const Normal n(WorldToTexture(dg.nn));
+	const Normal n(WorldToTexture * dg.nn);
 	return Point(n.x, n.y, n.z);
 }
 Point GlobalNormalMapping3D::MapDuv(const DifferentialGeometry &dg,
 	Vector *dpdu, Vector *dpdv) const
 {
-	*dpdu = Vector(WorldToTexture(dg.dndu));
-	*dpdv = Vector(WorldToTexture(dg.dndv));
+	*dpdu = Vector(WorldToTexture * dg.dndu);
+	*dpdv = Vector(WorldToTexture * dg.dndv);
 	return Map(dg);
 }
 Point LocalNormalMapping3D::Map(const DifferentialGeometry &dg) const
 {
-	const Transform W2T(WorldToTexture *
-		dg.handle->GetWorldToLocal(dg.time));
-	const Normal n(W2T(dg.nn));
+	const Transform W2T(WorldToTexture /
+		dg.handle->GetLocalToWorld(dg.time));
+	const Normal n(W2T * dg.nn);
 	return Point(n.x, n.y, n.z);
 }
 Point LocalNormalMapping3D::MapDuv(const DifferentialGeometry &dg,
 	Vector *dpdu, Vector *dpdv) const
 {
-	const Transform W2T(WorldToTexture *
-		dg.handle->GetWorldToLocal(dg.time));
-	*dpdu = Vector(W2T(dg.dndu));
-	*dpdv = Vector(W2T(dg.dndv));
-	const Normal n(W2T(dg.nn));
+	const Transform W2T(WorldToTexture /
+		dg.handle->GetLocalToWorld(dg.time));
+	*dpdu = Vector(W2T * dg.dndu);
+	*dpdv = Vector(W2T * dg.dndv);
+	const Normal n(W2T * dg.nn);
 	return Point(n.x, n.y, n.z);
 }
 

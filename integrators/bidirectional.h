@@ -223,13 +223,14 @@ private:
 	 * @param isLightDirect Compute the weight for next event estimation when true
 	 * @param weight A pointer to a float to return the path weight
 	 * @param L A pointer to a SWCSpectrum to return the path contribution
+	 * @param single is true if the evaluated path is dispersed, false otherwise
 	 * @return True if the path brings a contribution, false otherwise
 	 */
 	bool EvalPath(const Scene &scene, const Sample &sample,
 		vector<BidirVertex> &eye, u_int nEye,
 		vector<BidirVertex> &light, u_int nLight,
 		float pdfLightDirect, bool isLightDirect, float *weight,
-		SWCSpectrum *L) const;
+		SWCSpectrum *L, bool &single) const;
 	/**
 	 * Next event estimation to light an eye path
 	 * @param scene The scene being rendered

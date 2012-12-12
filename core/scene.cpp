@@ -48,10 +48,6 @@ boost::mutex scene_rand_mutex;
 
 using namespace lux;
 
-void Scene::SaveFLM( const string& filename ) {
-	camera->film->WriteFilm(filename);
-}
-
 void Scene::SaveEXR(const string& filename, bool useHalfFloat, bool includeZBuffer, int compressionType, bool tonemapped) {
 	camera->film->SaveEXR(filename, useHalfFloat, includeZBuffer, compressionType, tonemapped);
 }

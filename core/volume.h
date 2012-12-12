@@ -25,7 +25,8 @@
 // volume.h*
 #include "lux.h"
 #include "geometry/transform.h"
-#include "geometry/bbox.h"
+#include "luxrays/core/geometry/bbox.h"
+using luxrays::BBox;
 #include "primitive.h"
 #include "spectrum.h"
 #include "fresnelgeneral.h"
@@ -141,30 +142,29 @@ protected:
 template<class T> class VolumeRegion : public Region {
 public:
 	VolumeRegion(const Transform &v2w, const BBox &b, const T &v) :
-		Region(v2w(b)), WorldToVolume(v2w.GetInverse()), region(b),
-		volume(v) { }
+		Region(v2w * b), VolumeToWorld(v2w), region(b), volume(v) { }
 	virtual ~VolumeRegion() { }
 	virtual bool IntersectP(const Ray &ray, float *t0, float *t1) const {
-		return region.IntersectP(WorldToVolume(ray), t0, t1);
+		return region.IntersectP(Inverse(VolumeToWorld) * ray, t0, t1);
 	}
 	virtual SWCSpectrum SigmaA(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
-		return region.Inside(WorldToVolume(dg.p)) ?
+		return region.Inside(Inverse(VolumeToWorld) * dg.p) ?
 			volume.SigmaA(sw, dg) : SWCSpectrum(0.f);
 	}
 	virtual SWCSpectrum SigmaS(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
-		return region.Inside(WorldToVolume(dg.p)) ?
+		return region.Inside(Inverse(VolumeToWorld) * dg.p) ?
 			volume.SigmaS(sw, dg) : SWCSpectrum(0.f);
 	}
 	virtual SWCSpectrum SigmaT(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
-		return region.Inside(WorldToVolume(dg.p)) ?
+		return region.Inside(Inverse(VolumeToWorld) * dg.p) ?
 			volume.SigmaT(sw, dg) : SWCSpectrum(0.f);
 	}
 	virtual SWCSpectrum Lve(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
-		return region.Inside(WorldToVolume(dg.p)) ?
+		return region.Inside(Inverse(VolumeToWorld) * dg.p) ?
 			volume.Lve(sw, dg) : SWCSpectrum(0.f);
 	}
 	virtual float P(const SpectrumWavelengths &sw,
@@ -186,7 +186,7 @@ public:
 	virtual bool Scatter(const Sample &sample, bool scatteredStart,
 		const Ray &ray, float u, Intersection *isect, float *pdf,
 		float *pdfBack, SWCSpectrum *L) const {
-		Ray r(WorldToVolume(ray));
+		Ray r(Inverse(VolumeToWorld) * ray);
 		if (!region.IntersectP(r, &r.mint, &r.maxt))
 			return false;
 		if (r.maxt <= r.mint)
@@ -195,17 +195,11 @@ public:
 			pdfBack, L))
 			return false;
 		ray.maxt = r.maxt;
-		Transform VolumeToWorld(WorldToVolume.GetInverse());
-		isect->dg.p = VolumeToWorld(isect->dg.p);
-		isect->dg.nn = VolumeToWorld(isect->dg.nn);
-		isect->dg.dpdu = VolumeToWorld(isect->dg.dpdu);
-		isect->dg.dpdv = VolumeToWorld(isect->dg.dpdv);
-		isect->dg.dndu = VolumeToWorld(isect->dg.dndu);
-		isect->dg.dndv = VolumeToWorld(isect->dg.dndv);
+		isect->dg *= VolumeToWorld;
 		return true;
 	}
 protected:
-	Transform WorldToVolume;
+	Transform VolumeToWorld;
 	BBox region;
 	T volume;
 };

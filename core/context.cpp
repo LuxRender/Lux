@@ -35,7 +35,8 @@
 #include "material.h"
 #include "renderfarm.h"
 #include "film/fleximage.h"
-#include "epsilon.h"
+#include "luxrays/core/epsilon.h"
+using luxrays::MachineEpsilon;
 #include "renderers/samplerrenderer.h"
 
 #include <boost/iostreams/filtering_stream.hpp>
@@ -189,10 +190,6 @@ void Context::ResetServer(const string &n, const string &p) {
 	renderFarm->sessionReset(n, p);
 }
 
-u_int Context::GetServerCount() {
-	return renderFarm->getServerCount();
-}
-
 u_int Context::GetRenderingServersStatus(RenderingServerInfo *info, u_int maxInfoCount) {
 	return renderFarm->getServersStatus(info, maxInfoCount);
 }
@@ -238,12 +235,10 @@ void Context::Translate(float dx, float dy, float dz) {
 void Context::Transform(float tr[16]) {
 	VERIFY_INITIALIZED_TRANSFORMS("Transform");
 	renderFarm->send("luxTransform", tr);
-	boost::shared_ptr<Matrix4x4> o(new Matrix4x4(
-			tr[0], tr[4], tr[8], tr[12],
-			tr[1], tr[5], tr[9], tr[13],
-			tr[2], tr[6], tr[10], tr[14],
-			tr[3], tr[7], tr[11], tr[15]));
-	lux::Transform t = lux::Transform(o);
+	::Transform t(Matrix4x4(tr[0], tr[4], tr[8], tr[12],
+		tr[1], tr[5], tr[9], tr[13],
+		tr[2], tr[6], tr[10], tr[14],
+		tr[3], tr[7], tr[11], tr[15]));
 	if (inMotionBlock)
 		motionBlockTransforms.push_back(t);
 	else
@@ -252,11 +247,10 @@ void Context::Transform(float tr[16]) {
 void Context::ConcatTransform(float tr[16]) {
 	VERIFY_INITIALIZED_TRANSFORMS("ConcatTransform");
 	renderFarm->send("luxConcatTransform", tr);
-	boost::shared_ptr<Matrix4x4> o(new Matrix4x4(tr[0], tr[4], tr[8], tr[12],
-			tr[1], tr[5], tr[9], tr[13],
-			tr[2], tr[6], tr[10], tr[14],
-			tr[3], tr[7], tr[11], tr[15]));
-	lux::Transform t = lux::Transform(o);
+	::Transform t(Matrix4x4(tr[0], tr[4], tr[8], tr[12],
+		tr[1], tr[5], tr[9], tr[13],
+		tr[2], tr[6], tr[10], tr[14],
+		tr[3], tr[7], tr[11], tr[15]));
 	if (inMotionBlock)
 		motionBlockTransforms.push_back(t);
 	else
@@ -265,7 +259,7 @@ void Context::ConcatTransform(float tr[16]) {
 void Context::Rotate(float angle, float dx, float dy, float dz) {
 	VERIFY_INITIALIZED_TRANSFORMS("Rotate");
 	renderFarm->send("luxRotate", angle, dx, dy, dz);
-	lux::Transform t = lux::Rotate(angle, Vector(dx, dy, dz));
+	::Transform t(::Rotate(angle, Vector(dx, dy, dz)));
 	if (inMotionBlock)
 		motionBlockTransforms.push_back(t);
 	else
@@ -274,7 +268,7 @@ void Context::Rotate(float angle, float dx, float dy, float dz) {
 void Context::Scale(float sx, float sy, float sz) {
 	VERIFY_INITIALIZED_TRANSFORMS("Scale");
 	renderFarm->send("luxScale", sx, sy, sz);
-	lux::Transform t = lux::Scale(sx, sy, sz);
+	::Transform t(::Scale(sx, sy, sz));
 	if (inMotionBlock)
 		motionBlockTransforms.push_back(t);
 	else
@@ -284,8 +278,8 @@ void Context::LookAt(float ex, float ey, float ez, float lx, float ly, float lz,
 	float ux, float uy, float uz) {
 	VERIFY_INITIALIZED_TRANSFORMS("LookAt");
 	renderFarm->send("luxLookAt", ex, ey, ez, lx, ly, lz, ux, uy, uz);
-	lux::Transform t = lux::LookAt(Point(ex, ey, ez),
-		Point(lx, ly, lz), Vector(ux, uy, uz));
+	::Transform t(::LookAt(Point(ex, ey, ez), Point(lx, ly, lz),
+		Vector(ux, uy, uz)));
 	if (inMotionBlock)
 		motionBlockTransforms.push_back(t);
 	else
@@ -1030,11 +1024,10 @@ void Context::WorldEnd() {
 				// after this won't start rendering
 				activeContext->renderFarm->renderingDone();
 
-				// Stop the render farm too
+				// Stop the film updating thread etc
 				activeContext->renderFarm->stop();
 
-				// Check if we have to stop the network rendering updater thread
-				if (GetServerCount() > 0) {
+				if (static_cast<u_int>((*(activeContext->renderFarm))["slaveNodeCount"].IntValue()) > 0) {
 					// Update the film for the last time
 					if (!aborted)
 						activeContext->renderFarm->updateFilm(luxCurrentScene);
@@ -1103,7 +1096,7 @@ Scene *Context::RenderOptions::MakeScene() const {
 
 	// Set a fixed seed for animations or debugging
 	if (debugMode || !randomMode)
-		ret->seedBase = 1000;
+		ret->seedBase = 1001;
 
 	return ret;
 }
@@ -1133,7 +1126,7 @@ void Context::LoadFLM(const string &flmFileName) {
 	luxCurrentScene->SetReady();
 }
 void Context::SaveFLM(const string &flmFileName) {
-	luxCurrentScene->SaveFLM(flmFileName);
+	luxCurrentScene->camera->film->WriteFilmToFile(flmFileName);
 }
 
 // Save current film to OpenEXR image
@@ -1191,7 +1184,7 @@ void Context::Wait() {
 }
 
 void Context::Exit() {
-	if (GetServerCount() > 0) {
+	if (static_cast<u_int>((*(activeContext->renderFarm))["slaveNodeCount"].IntValue()) > 0) {
 		// Dade - stop the render farm too
 		activeContext->renderFarm->stop();
 		// Dade - update the film for the last time
@@ -1350,25 +1343,31 @@ bool Context::IsRendering() {
 	return luxCurrentRenderer != NULL && luxCurrentRenderer->GetState() == Renderer::RUN;
 }
 
-void Context::TransmitFilm(std::basic_ostream<char> &stream) {
-	luxCurrentScene->camera->film->TransmitFilm(stream);
+void Context::WriteFilmToStream(std::basic_ostream<char> &stream) {
+	luxCurrentScene->camera->film->WriteFilmToStream(stream);
 }
 
-void Context::TransmitFilm(std::basic_ostream<char> &stream, bool useCompression, bool directWrite) {
-	luxCurrentScene->camera->film->TransmitFilm(stream, true, false, useCompression, directWrite);
+void Context::WriteFilmToStream(std::basic_ostream<char> &stream, bool directWrite) {
+	luxCurrentScene->camera->film->WriteFilmToStream(stream, true, false, directWrite);
 }
 
 void Context::UpdateFilmFromNetwork() {
 	renderFarm->updateFilm(luxCurrentScene);
 }
+
 void Context::UpdateLogFromNetwork() {
 	renderFarm->updateLog();
 }
-void Context::SetNetworkServerUpdateInterval(int updateInterval)
-{
-	activeContext->renderFarm->serverUpdateInterval = updateInterval;
+
+void Context::SetUserSamplingMap(const float *map) {
+	luxCurrentScene->camera->film->SetUserSamplingMap(map);
+
+	// Transmit the new map to the slaves
+	renderFarm->updateUserSamplingMap(luxCurrentScene->camera->film->GetXPixelCount() *
+		luxCurrentScene->camera->film->GetYPixelCount(), map);
+	
 }
-int Context::GetNetworkServerUpdateInterval()
-{
-	return activeContext->renderFarm->serverUpdateInterval;
+
+float *Context::GetUserSamplingMap() {
+	return luxCurrentScene->camera->film->GetUserSamplingMap();
 }

@@ -50,11 +50,11 @@ public:
 		const float factor = -Z * z / (r * r);
 		const Vector dpdu(factor * p.x, factor * p.y, Z);
 		const Vector dpdv(-phiMax * p.y, phiMax * p.x, 0.f);
-		*dg = DifferentialGeometry(ObjectToWorld(p),
-			Normalize(ObjectToWorld(Normal(p.x, p.y, p.z))),
-			ObjectToWorld(dpdu), ObjectToWorld(dpdv),
-			ObjectToWorld(Normal(dpdu / radius)),
-			ObjectToWorld(Normal(dpdv / radius)),
+		*dg = DifferentialGeometry(ObjectToWorld * p,
+			Normalize(ObjectToWorld * Normal(p.x, p.y, p.z)),
+			ObjectToWorld * dpdu, ObjectToWorld * dpdv,
+			ObjectToWorld * Normal(dpdu / radius),
+			ObjectToWorld * Normal(dpdv / radius),
 			u1, u2, this);
 		dg->AdjustNormal(reverseOrientation, transformSwapsHandedness);
 		return fabsf(1.f / Dot(Cross(dg->dpdu, dg->dpdv), dg->nn));

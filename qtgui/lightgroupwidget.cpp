@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2012 by authors (see AUTHORS.txt )                 *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -20,15 +20,19 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#include "ui_lightgroup.h"
-#include "lightgroupwidget.hxx"
+#include <cmath>
 
-#include "mainwindow.hxx"
-#include "guiutil.h"
+#include <QColorDialog>
+#include <QFont>
+#include <QPalette>
+#include <QSettings>
 
 #include "api.h"
 
-#include <cmath>
+#include "lightgroupwidget.hxx"
+#include "guiutil.h"
+#include "mainwindow.hxx"
+#include "ui_lightgroup.h"
 
 LightGroupWidget::LightGroupWidget(QWidget *parent) : QWidget(parent), ui(new Ui::LightGroupWidget)
 {
@@ -233,6 +237,7 @@ void LightGroupWidget::UpdateWidgetValues()
 					Clamp(int(m_LG_scaleBlue * 255.0), 0, 255));
 	m_LG_rgbPicker->SetColour(colour);*/
 }
+
 void LightGroupWidget::ResetValues()
 {
 	title = QString("lightgroup");
@@ -354,6 +359,3 @@ void LightGroupWidget::LoadSettings( QString fName )
 
 	emit valuesChanged();
 }
-
-
-

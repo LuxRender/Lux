@@ -235,7 +235,7 @@ public:
 
 		//Here we create a new context
 		name = _name;
-		context = new Context(_name);
+		createNewContext(_name);
 		// LOG(LUX_INFO,LUX_NOERROR)<<"Created new context : '"<<name<<"'";
 	}
 
@@ -1003,7 +1003,7 @@ public:
 	unsigned int getServerCount()
 	{
 		checkActiveContext();
-		return context->GetServerCount();
+		return luxGetIntAttribute("render_farm", "slaveNodeCount");
 	}
 
 	void updateFilmFromNetwork()
@@ -1015,19 +1015,19 @@ public:
 	void setNetworkServerUpdateInterval(int updateInterval)
 	{
 		checkActiveContext();
-		context->SetNetworkServerUpdateInterval(updateInterval);
+		luxSetIntAttribute("render_farm", "pollingInterval", updateInterval);
 	}
 
 	int getNetworkServerUpdateInterval()
 	{
 		checkActiveContext();
-		return context->GetNetworkServerUpdateInterval();
+		return luxGetIntAttribute("render_farm", "pollingInterval");
 	}
 
 	boost::python::tuple getRenderingServersStatus()
 	{
 		checkActiveContext();
-		int nServers = context->GetServerCount();
+		int nServers = luxGetIntAttribute("render_farm", "slaveNodeCount");
 
 		RenderingServerInfo *pInfoList = new RenderingServerInfo[nServers];
 		nServers = context->GetRenderingServersStatus( pInfoList, nServers );
@@ -1090,9 +1090,16 @@ private:
 	{
 		if (context == NULL)
 		{
-			context = new Context(name);
+			createNewContext();
 		}
 		Context::SetActive(context);
+	}
+
+	void createNewContext(std::string _name = "PyLux context")
+	{
+		context = new Context(name);
+		Context::SetActive(context);
+		context->Init();
 	}
 };
 

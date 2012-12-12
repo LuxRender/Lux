@@ -25,6 +25,7 @@
 // texture.h*
 #include "lux.h"
 #include "geometry/transform.h"
+#include "error.h"
 
 namespace lux
 {
@@ -39,6 +40,7 @@ public:
 	virtual void MapDuv(const DifferentialGeometry &dg,
 		float *s, float *t, float *dsdu, float *dtdu,
 		float *dsdv, float *dtdv) const = 0;
+	static TextureMapping2D *Create(const Transform &tex2world, const ParamSet &tp);
 };
 class  UVMapping2D : public TextureMapping2D {
 public:

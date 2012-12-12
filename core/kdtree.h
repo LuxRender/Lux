@@ -25,7 +25,8 @@
 // kdtree.h*
 #include "lux.h"
 #include "memory.h"
-#include "geometry/bbox.h"
+#include "luxrays/core/geometry/bbox.h"
+using luxrays::BBox;
 // KdTree Declarations
 
 namespace lux

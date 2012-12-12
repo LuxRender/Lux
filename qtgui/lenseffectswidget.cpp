@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2012 by authors (see AUTHORS.txt )                 *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -20,14 +20,15 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#include "ui_lenseffects.h"
-#include "lenseffectswidget.hxx"
+#include <cmath>
 
-#include "mainwindow.hxx"
+#include <QFont>
 
 #include "api.h"
 
-#include <cmath>
+#include "lenseffectswidget.hxx"
+#include "mainwindow.hxx"
+#include "ui_lenseffects.h"
 
 LensEffectsWidget::LensEffectsWidget(QWidget *parent) : QWidget(parent), ui(new Ui::LensEffectsWidget)
 {

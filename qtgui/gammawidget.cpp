@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2012 by authors (see AUTHORS.txt )                 *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -20,13 +20,17 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#include "ui_gamma.h"
-#include "gammawidget.hxx"
-
-#include "mainwindow.hxx"
+#include <QFileDialog>
+#include <QFileInfo>
+#include <QSettings>
+#include <QVariant>
 
 #include "api.h"
+
+#include "gammawidget.hxx"
 #include "guiutil.h"
+#include "mainwindow.hxx"
+#include "ui_gamma.h"
 
 GammaWidget::GammaWidget(QWidget *parent) : QWidget(parent), ui(new Ui::GammaWidget)
 {
@@ -36,7 +40,6 @@ GammaWidget::GammaWidget(QWidget *parent) : QWidget(parent), ui(new Ui::GammaWid
 	connect(ui->spinBox_gamma, SIGNAL(valueChanged(double)), this, SLOT(gammaChanged(double)));
 	connect(ui->checkBox_CRF, SIGNAL(stateChanged(int)), this, SLOT(CRFChanged(int)));
 	connect(ui->combo_CRF_List, SIGNAL(activated(QString)), this, SLOT(SetCRFPreset(QString)));
-
 
 	ui->combo_CRF_List->addItem(tr("External..."));
 
@@ -90,7 +93,6 @@ GammaWidget::GammaWidget(QWidget *parent) : QWidget(parent), ui(new Ui::GammaWid
 	addPreset("Kodak Portra 400NC", "Portra_400NCCD");
 	addPreset("Kodak Portra 400VC", "Portra_400VCCD");
 	addPreset("Kodak Portra 800", "Portra_800CD");
-
 }
 
 GammaWidget::~GammaWidget()
@@ -168,7 +170,6 @@ void GammaWidget::gammaChanged (double value)
 	emit valuesChanged ();
 }
  
-
 void GammaWidget::CRFChanged(int value)
 {
 	if (value == Qt::Checked)
@@ -236,9 +237,8 @@ void GammaWidget::deactivateCRF()
 
 void GammaWidget::loadCRF()
 {
-	
 	m_CRF_file = QFileDialog::getOpenFileName(this, tr("Choose a CRF file to open"), m_lastOpendir, tr("Camera Response Files (*.crf *.txt)"));
-    
+
 	if(!m_CRF_file.isEmpty()) {
 		QFileInfo info(m_CRF_file);
 		m_lastOpendir = info.absolutePath();
@@ -326,7 +326,3 @@ void GammaWidget::LoadSettings( QString fName )
 
 	emit valuesChanged();
 }
-
-
-
-

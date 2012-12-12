@@ -335,7 +335,7 @@ void ERPTSampler::AddSample(const Sample &sample)
 	newContributions.clear();
 }
 
-Sampler* ERPTSampler::CreateSampler(const ParamSet &params, const Film *film)
+Sampler* ERPTSampler::CreateSampler(const ParamSet &params, Film *film)
 {
 	int xStart, xEnd, yStart, yEnd;
 	film->GetSampleExtent(&xStart, &xEnd, &yStart, &yEnd);

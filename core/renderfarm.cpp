@@ -37,7 +37,6 @@
 #include "streamio.h"
 #include "filedata.h"
 #include "tigerhash.h"
-#include "timer.h"
 
 #include <algorithm>
 #include <fstream>
@@ -59,6 +58,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/thread/xtime.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/filesystem.hpp>
 
 using namespace boost::iostreams;
 using namespace boost::posix_time;
@@ -98,21 +98,26 @@ static std::string get_response(std::iostream &stream) {
 	return response;
 }
 
+double FilmUpdaterThread::getUpdateTimeRemaining()
+{
+	double timeLeft = (*renderFarm)["pollingInterval"].IntValue() - timer.Time();
+	return timeLeft < 0 ? 0 : timeLeft;
+}
+
 void FilmUpdaterThread::updateFilm(FilmUpdaterThread *filmUpdaterThread) {
 	// thread to update the film with data from servers
-	Timer timer;
 
 	try {
 		while (true) {
 			// no-op if already started
-			timer.Start();
+			filmUpdaterThread->timer.Start();
 
 			// sleep for 1 sec
 			boost::this_thread::sleep(boost::posix_time::seconds(1));
 
-			if (timer.Time() > filmUpdaterThread->renderFarm->serverUpdateInterval) {
+			if (filmUpdaterThread->getUpdateTimeRemaining() == 0) {
 				filmUpdaterThread->renderFarm->updateFilm(filmUpdaterThread->scene);
-				timer.Reset();
+				filmUpdaterThread->timer.Reset();
 			}
 		}
 	} catch (boost::thread_interrupted &) {
@@ -358,9 +363,14 @@ RenderFarm::CompiledCommand& RenderFarm::CompiledCommands::add(const std::string
 	return commands.back();
 }
 
-RenderFarm::RenderFarm() : serverUpdateInterval(3 * 60), filmUpdateThread(NULL), flushThread(NULL),
-		netBufferComplete(false), isLittleEndian(osIsLittleEndian())
+RenderFarm::RenderFarm() : Queryable("render_farm"),
+		filmUpdateThread(NULL), flushThread(NULL), netBufferComplete(false), doneRendering(false),
+		isLittleEndian(osIsLittleEndian()), pollingInterval(3 * 60), defaultTcpPort(18018)
 {
+	AddIntAttribute(*this, "defaultTcpPort", "Default TCP port", &RenderFarm::defaultTcpPort, ReadWriteAccess);
+	AddIntAttribute(*this, "pollingInterval", "Polling interval", &RenderFarm::pollingInterval, ReadWriteAccess);
+	AddIntAttribute(*this, "slaveNodeCount", "Number of network slave nodes", &RenderFarm::getSlaveNodeCount);
+	AddDoubleAttribute(*this, "updateTimeRemaining", "Time remaining until next update", &RenderFarm::getUpdateTimeRemaining);
 }
 
 RenderFarm::~RenderFarm()
@@ -390,7 +400,8 @@ void RenderFarm::start(Scene *scene) {
 void RenderFarm::stop() {
 	boost::mutex::scoped_lock lock(serverListMutex);
 
-	stopImpl();
+	if (doneRendering || serverInfoList.empty())
+		stopImpl();
 }
 
 void RenderFarm::stopImpl() {
@@ -435,7 +446,7 @@ bool RenderFarm::connect(ExtRenderingServerInfo &serverInfo) {
 
 	// check to see if we're already connected (active), if so ignore
 	for (vector<ExtRenderingServerInfo>::iterator it = serverInfoList.begin(); it < serverInfoList.end(); it++ ) {
-		if (serverInfo.sameServer(*it)) {
+		if (serverInfo.sameServer(*it) && it->active) {
 			return false;
 		}
 	}
@@ -871,7 +882,7 @@ void RenderFarm::updateFilm(Scene *scene) {
 			compressedStream.seekg(0, BOOST_IOS::beg);
 
 			// Decopress and merge the film
-			const double sampleCount = film->UpdateFilm(compressedStream);
+			const double sampleCount = film->MergeFilmFromStream(compressedStream);
 			if (sampleCount == 0.)
 				throw string("Received 0 samples from server");
 			film->numberOfSamplesFromNetwork += sampleCount;
@@ -975,6 +986,72 @@ void RenderFarm::updateLog() {
 	reconnectFailed();
 }
 
+void RenderFarm::updateUserSamplingMap(const u_int size, const float *map) {
+	// Using the mutex in order to not allow server disconnection while
+	// I'm downloading a film
+	boost::mutex::scoped_lock lock(serverListMutex);
+
+	// first try to reconnect to failed servers which may be up now
+	reconnectFailed();
+
+	for (size_t i = 0; i < serverInfoList.size(); i++) {
+		if (!serverInfoList[i].active)
+			// skip servers which are still down
+			continue;
+
+		try {
+			LOG( LUX_DEBUG,LUX_NOERROR) << "Sending user sampling map to: " <<
+					serverInfoList[i].name << ":" << serverInfoList[i].port;
+
+			// Connect to the server
+			tcp::iostream stream;
+			stream.exceptions(tcp::iostream::failbit | tcp::iostream::badbit);
+
+			stream.connect(serverInfoList[i].name, serverInfoList[i].port);
+
+			LOG( LUX_DEBUG,LUX_NOERROR) << "Connected to: " << stream.rdbuf()->remote_endpoint();
+
+			// Send the command to update the map
+			stream << "luxSetUserSamplingMap" << endl;
+			stream << serverInfoList[i].sid << endl;
+			osWriteLittleEndianUInt(isLittleEndian, stream, size);
+
+			// Compress the map to send
+			filtering_stream<output> compressedStream;
+			compressedStream.push(gzip_compressor(4));
+			compressedStream.push(stream);
+
+			for (u_int j = 0; j < size; ++j)
+				osWriteLittleEndianFloat(isLittleEndian, compressedStream, map[j]);
+
+			compressedStream.flush();
+
+			if (!compressedStream.good())
+				LOG(LUX_SEVERE,LUX_SYSTEM) << "Error while transmitting a user sampling map";
+
+			serverInfoList[i].timeLastContact = second_clock::local_time();
+		} catch (string s) {
+			LOG(LUX_ERROR,LUX_SYSTEM)<< s.c_str();
+			// Mark as failed (inactive)
+			serverInfoList[i].active = false;
+		} catch (std::exception& e) {
+			LOG( LUX_ERROR,LUX_SYSTEM) << "Error while communicating with server: " <<
+					serverInfoList[i].name << ":" << serverInfoList[i].port << " ( " << e.what() << ")";
+			LOG(LUX_ERROR,LUX_SYSTEM)<< e.what();
+			// Mark as failed (inactive)
+			serverInfoList[i].active = false;
+		}
+	}
+
+	// attempt to reconnect
+	reconnectFailed();
+}
+
+double RenderFarm::getUpdateTimeRemaining()
+{
+	return filmUpdateThread ? filmUpdateThread->getUpdateTimeRemaining() : 0;
+}
+
 // to catch the interrupted exception
 static void flush_thread_func(RenderFarm *renderFarm) {
 	try {
@@ -1009,6 +1086,7 @@ void RenderFarm::send(const string &command, const string &name,
 		fileParams.push_back("mapname");
 		fileParams.push_back("iesname");
 		fileParams.push_back("configfile");
+		fileParams.push_back("usersamplingmap_filename");
 		if (command != "luxFilm")
 			fileParams.push_back("filename");
 
@@ -1017,7 +1095,9 @@ void RenderFarm::send(const string &command, const string &name,
 			//send the files
 			string file;
 			file = params.FindOneString(paramName, "");
-			if (file == "" || FileData::present(params, paramName))
+			// usersamplingmap_filename can be ignored if the file doesn't exist
+			if (file == "" || FileData::present(params, paramName) ||
+					((paramName == "usersamplingmap_filename") && !boost::filesystem::exists(file)))
 				continue;
 
 			// silent replacement, since relevant plugin will report replacement
@@ -1153,7 +1233,7 @@ void RenderFarm::send(const string &command, const string &name, float a, float 
 	}
 }
 
-u_int RenderFarm::getServerCount() const {
+u_int RenderFarm::getSlaveNodeCount() {
 	return serverInfoList.size();
 }
 
@@ -1165,8 +1245,8 @@ u_int RenderFarm::getServersStatus(RenderingServerInfo *info, u_int maxInfoCount
 		info[i].port = serverInfoList[i].port.c_str();
 		info[i].sid = serverInfoList[i].sid.c_str();
 
-		info[i].secsSinceLastContact = time_duration(now - serverInfoList[i].timeLastContact).seconds();
-		info[i].secsSinceLastSamples = time_duration(now - serverInfoList[i].timeLastSamples).seconds();
+		info[i].secsSinceLastContact = time_duration(now - serverInfoList[i].timeLastContact).total_seconds();
+		info[i].secsSinceLastSamples = time_duration(now - serverInfoList[i].timeLastSamples).total_seconds();
 		info[i].numberOfSamplesReceived = serverInfoList[i].numberOfSamplesReceived;
 		info[i].calculatedSamplesPerSecond = serverInfoList[i].calculatedSamplesPerSecond;
 	}

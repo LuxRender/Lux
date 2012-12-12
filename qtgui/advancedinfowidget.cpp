@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2012 by authors (see AUTHORS.txt )                 *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -20,13 +20,14 @@
  *   Lux Renderer website : http://www.luxrender.net                       *
  ***************************************************************************/
 
-#include "ui_advancedinfo.h"
-#include "advancedinfowidget.hxx"
-//#include "mainwindow.hxx"
-#include "guiutil.h"
+#include <QString>
+#include <QStringList>
 
-#include <iostream>
-#include <algorithm>
+#include "api.h"
+
+#include "advancedinfowidget.hxx"
+#include "guiutil.h"
+#include "ui_advancedinfo.h"
 
 using namespace std;
 
@@ -106,7 +107,8 @@ void AdvancedInfoWidget::updateWidgetValues()
 	ui->textAdvancedInfo->setHtml(info.join("\n"));
 }
 
-void AdvancedInfoWidget::showEvent(QShowEvent *event) {
+void AdvancedInfoWidget::showEvent(QShowEvent *event)
+{
 	updateWidgetValues();
 
 	QWidget::showEvent(event);

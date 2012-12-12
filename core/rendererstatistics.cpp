@@ -46,6 +46,9 @@ RendererStatistics::RendererStatistics()
 	AddDoubleAttribute(*this, "remainingTime", "Remaining rendering time", &RendererStatistics::getRemainingTime);
 	AddDoubleAttribute(*this, "haltTime", "Halt rendering after time", &RendererStatistics::getHaltTime);
 	AddDoubleAttribute(*this, "percentHaltTimeComplete", "Percent of halt time completed", &RendererStatistics::getPercentHaltTimeComplete);
+	AddDoubleAttribute(*this, "haltThreshold", "Halt rendering when convergence drops below threshold", &RendererStatistics::getHaltThreshold);
+	AddDoubleAttribute(*this, "percentHaltThresholdComplete", "Percent of halt threshold completed", &RendererStatistics::getPercentHaltThresholdComplete);
+	AddDoubleAttribute(*this, "percentConvergence", "Percent of convergence between last consecutive updates", &RendererStatistics::getPercentConvergence);
 	AddDoubleAttribute(*this, "percentComplete", "Percent of render completed", &RendererStatistics::getPercentComplete);
 	AddDoubleAttribute(*this, "efficiency", "Efficiency of renderer", &RendererStatistics::getEfficiency);
 	AddDoubleAttribute(*this, "efficiencyWindow", "Efficiency of renderer", &RendererStatistics::getEfficiencyWindow);
@@ -105,12 +108,39 @@ double RendererStatistics::getRemainingTime() {
 	return std::max(0.0, getHaltTime() - getElapsedTime());
 }
 
+// Returns haltthreshold if set, otherwise infinity
+double RendererStatistics::getHaltThreshold() {
+	float haltThreshold = 0;
+
+	Queryable* filmRegistry = Context::GetActive()->registry["film"];
+	if (filmRegistry)
+		haltThreshold = (*filmRegistry)["haltThreshold"].FloatValue();
+
+	return haltThreshold >= 0.0 ? haltThreshold : std::numeric_limits<double>::infinity();
+}
+
+// Returns percent of haltthreshold completed, zero if haltthreshold is not set
+double RendererStatistics::getPercentHaltThresholdComplete() {
+	return (getPercentConvergence() / (1.0 - getHaltThreshold()));
+}
+
+// Returns percent of convergence between last consecutive updates
+double RendererStatistics::getPercentConvergence() {
+	double convergence = 0;
+
+	Queryable* filmRegistry = Context::GetActive()->registry["film"];
+	if (filmRegistry)
+		convergence = (*filmRegistry)["haltThresholdComplete"].FloatValue();
+
+	return convergence * 100.0;
+}
+
 double RendererStatistics::getPercentComplete() {
-	return getPercentHaltTimeComplete();
+	return std::max(getPercentHaltTimeComplete(), getPercentHaltThresholdComplete());
 }
 
 u_int RendererStatistics::getSlaveNodeCount() {
-	return Context::GetActive()->GetServerCount();
+	return static_cast<u_int>(luxGetIntAttribute("render_farm", "slaveNodeCount"));
 }
 
 RendererStatistics::Formatted::Formatted(RendererStatistics* rs, const std::string& name)
@@ -120,9 +150,11 @@ RendererStatistics::Formatted::Formatted(RendererStatistics* rs, const std::stri
 	AddStringAttribute(*this, "_recommended_string", "Recommended statistics string", &RendererStatistics::Formatted::getRecommendedString);
 	AddStringAttribute(*this, "_recommended_string_template", "Recommended statistics string template", &RendererStatistics::Formatted::getRecommendedStringTemplate);
 
+	AddStringAttribute(*this, "progress", "Progress", &RendererStatistics::Formatted::getProgress);
 	AddStringAttribute(*this, "elapsedTime", "Elapsed rendering time", &RendererStatistics::Formatted::getElapsedTime);
 	AddStringAttribute(*this, "remainingTime", "Remaining rendering time", &RendererStatistics::Formatted::getRemainingTime);
 	AddStringAttribute(*this, "haltTime", "Halt rendering after time", &RendererStatistics::Formatted::getHaltTime);
+	AddStringAttribute(*this, "haltThreshold", "Halt rendering when convergence drops below threshold", &RendererStatistics::Formatted::getHaltThreshold);
 }
 
 // Helper class for RendererStatistics::Formatted::getStringFromTemplate()
@@ -164,12 +196,18 @@ std::string RendererStatistics::Formatted::getHaltTime() {
 	return boost::posix_time::to_simple_string(time_duration(0, 0, Round2UInt(rs->getHaltTime()), 0));
 }
 
+std::string RendererStatistics::Formatted::getHaltThreshold() {
+	return boost::str(boost::format("%1$0.0f%%") % rs->getHaltThreshold());
+}
+
 RendererStatistics::FormattedLong::FormattedLong(RendererStatistics* rs)
 	: Formatted(rs, "renderer_statistics_formatted")
 {
 	typedef RendererStatistics::FormattedLong FL;
 
 	AddStringAttribute(*this, "percentHaltTimeComplete", "Percent of halt time completed", &FL::getPercentHaltTimeComplete);
+	AddStringAttribute(*this, "percentHaltThresholdComplete", "Percent of halt threshold completed", &FL::getPercentHaltThresholdComplete);
+	AddStringAttribute(*this, "percentConvergence", "Percent of convergence between last consecutive updates", &FL::getPercentConvergence);
 	AddStringAttribute(*this, "percentComplete", "Percent of render completed", &FL::getPercentComplete);
 
 	AddStringAttribute(*this, "efficiency", "Efficiency of renderer", &FL::getEfficiency);
@@ -183,8 +221,10 @@ std::string RendererStatistics::FormattedLong::getRecommendedStringTemplate() {
 	std::string stringTemplate = "%elapsedTime%";
 	if (rs->getRemainingTime() != std::numeric_limits<double>::infinity())
 		stringTemplate += " [%remainingTime%]";
-	if (rs->getPercentHaltTimeComplete() != 0.0)
+	if (rs->getHaltTime() != std::numeric_limits<double>::infinity())
 		stringTemplate += " (%percentHaltTimeComplete%)";
+	if (rs->getHaltThreshold() != std::numeric_limits<double>::infinity())
+		stringTemplate += " (%percentHaltThresholdComplete%) %percentConvergence%";
 	stringTemplate += " - %threadCount%";
 	if (rs->getSlaveNodeCount() != 0)
 		stringTemplate += " %slaveNodeCount%";
@@ -198,6 +238,14 @@ std::string RendererStatistics::FormattedLong::getPercentComplete() {
 
 std::string RendererStatistics::FormattedLong::getPercentHaltTimeComplete() {
 	return boost::str(boost::format("%1$0.0f%% Time") % rs->getPercentHaltTimeComplete());
+}
+
+std::string RendererStatistics::FormattedLong::getPercentHaltThresholdComplete() {
+	return boost::str(boost::format("%1$0.0f%% Threshold") % rs->getPercentHaltThresholdComplete());
+}
+
+std::string RendererStatistics::FormattedLong::getPercentConvergence() {
+	return boost::str(boost::format("%1$0f%% Convergence") % rs->getPercentConvergence());
 }
 
 std::string RendererStatistics::FormattedLong::getEfficiency() {
@@ -226,8 +274,10 @@ RendererStatistics::FormattedShort::FormattedShort(RendererStatistics* rs)
 	typedef RendererStatistics::FormattedLong FL;
 	typedef RendererStatistics::FormattedShort FS;
 
-	AddStringAttribute(*this, "percentComplete", "Percent of render completed", boost::bind(boost::mem_fn(&FL::getPercentComplete), fl));
 	AddStringAttribute(*this, "percentHaltTimeComplete", "Percent of halt time completed", &FS::getPercentHaltTimeComplete);
+	AddStringAttribute(*this, "percentHaltThresholdComplete", "Percent of halt threshold completed", &FS::getPercentHaltThresholdComplete);
+	AddStringAttribute(*this, "percentConvergence", "Percent of convergence between last consecutive updates", &FS::getPercentConvergence);
+	AddStringAttribute(*this, "percentComplete", "Percent of render completed", boost::bind(boost::mem_fn(&FL::getPercentComplete), fl));
 
 	AddStringAttribute(*this, "efficiency", "Efficiency of renderer", &FS::getEfficiency);
 	AddStringAttribute(*this, "efficiencyWindow", "Efficiency of renderer", &FS::getEfficiencyWindow);
@@ -240,8 +290,10 @@ std::string RendererStatistics::FormattedShort::getRecommendedStringTemplate() {
 	std::string stringTemplate = "%elapsedTime%";
 	if (rs->getRemainingTime() != std::numeric_limits<double>::infinity())
 		stringTemplate += " [%remainingTime%]";
-	if (rs->getPercentHaltTimeComplete() != 0.0)
+	if (rs->getHaltTime() != std::numeric_limits<double>::infinity())
 		stringTemplate += " (%percentHaltTimeComplete%)";
+	if (rs->getHaltThreshold() != std::numeric_limits<double>::infinity())
+		stringTemplate += " (%percentHaltThresholdComplete%) %percentConvergence%";
 	stringTemplate += " - %threadCount%";
 	if (rs->getSlaveNodeCount() != 0)
 		stringTemplate += " %slaveNodeCount%";
@@ -251,6 +303,14 @@ std::string RendererStatistics::FormattedShort::getRecommendedStringTemplate() {
 
 std::string RendererStatistics::FormattedShort::getPercentHaltTimeComplete() {
 	return boost::str(boost::format("%1$0.0f%% T") % rs->getPercentHaltTimeComplete());
+}
+
+std::string RendererStatistics::FormattedShort::getPercentHaltThresholdComplete() {
+	return boost::str(boost::format("%1$0.0f%% Thld") % rs->getPercentHaltThresholdComplete());
+}
+
+std::string RendererStatistics::FormattedShort::getPercentConvergence() {
+	return boost::str(boost::format("%1$0f%% Conv") % rs->getPercentConvergence());
 }
 
 std::string RendererStatistics::FormattedShort::getEfficiency() {

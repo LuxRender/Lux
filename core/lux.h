@@ -75,6 +75,25 @@ using std::sort;
 //#define WIN32_LEAN_AND_MEAN //defined in project properties
 #  include <windows.h>
 
+#include <boost/cstdint.hpp>
+using boost::int8_t;
+using boost::int16_t;
+using boost::int32_t;
+using boost::int64_t;
+using boost::uint8_t;
+using boost::uint16_t;
+using boost::uint32_t;
+using boost::uint64_t;
+
+inline float atanhf(float x) {
+	// if outside of domain, return NaN
+	// not 100% correct but should be good for now
+	if(x <= -1.f || x >= 1.f) 
+		return sqrtf(-1.f); 
+  
+	return logf((1.f + x) / (1.f - x)) / 2.f;
+}
+
 
 namespace w32util
 {
@@ -135,23 +154,29 @@ class MemoryArena;
 template<class T, int logBlockSize = 2> class BlockedArray;
 
 namespace luxrays {
-  class Vector;
-  class Point;
+  class BBox;
+  class MachineEpsilon;
+  class Matrix4x4;
   class Normal;
+  class Point;
+  class Ray;
+  class Transform;
+  class Vector;
 }
 
 namespace lux
 {
-  class Matrix4x4;
   class ParamSet;
   template <class T> struct ParamSetItem;
-  using luxrays::Vector;
-  using luxrays::Point;
+  using luxrays::BBox;
+  using luxrays::MachineEpsilon;
+  using luxrays::Matrix4x4;
   using luxrays::Normal;
-  class Ray;
+  using luxrays::Point;
+  using luxrays::Ray;
+  using luxrays::Transform;
+  using luxrays::Vector;
   class RayDifferential;
-  class BBox;
-  class Transform;
   class DifferentialGeometry;
   class Renderer;
   class Scene;
@@ -230,7 +255,6 @@ namespace lux
   class Distribution1D;
   class Distribution2D;
   class IrregularDistribution1D;
-  class MachineEpsilon;
   class SampleableSphericalFunction;
 
   class Context;
