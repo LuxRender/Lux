@@ -85,7 +85,7 @@ SamplerRenderer::SamplerRenderer() : Renderer() {
 
 	AddStringConstant(*this, "name", "Name of current renderer", "sampler");
 
-	rendererStatistics = new SRStatistics(this);
+	rendererStatistics = new SRStatistics<SamplerRenderer>(this);
 }
 
 SamplerRenderer::~SamplerRenderer() {

@@ -111,6 +111,7 @@ public:
 
 	friend class SRDeviceDescription;
 	friend class SRHostDescription;
+	template<class T>
 	friend class SRStatistics;
 
 	static Renderer *CreateRenderer(const ParamSet &params);

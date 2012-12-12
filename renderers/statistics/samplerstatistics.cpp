@@ -35,45 +35,50 @@
 #include <boost/format.hpp>
 #include <boost/thread/mutex.hpp>
 
+#include <renderers/samplerrenderer.h>
+
 using namespace lux;
 
-SRStatistics::SRStatistics(SamplerRenderer* renderer)
+template<typename Renderer>
+SRStatistics<Renderer>::SRStatistics(Renderer* renderer)
 	: renderer(renderer)
 {
 	resetDerived();
 
-	formattedLong = new SRStatistics::FormattedLong(this);
-	formattedShort = new SRStatistics::FormattedShort(this);
+	formattedLong = new SRStatistics<Renderer>::FormattedLong(this);
+	formattedShort = new SRStatistics<Renderer>::FormattedShort(this);
 
-	AddDoubleAttribute(*this, "haltSamplesPerPixel", "Average number of samples per pixel to complete before halting", &SRStatistics::getHaltSpp);
-	AddDoubleAttribute(*this, "remainingSamplesPerPixel", "Average number of samples per pixel remaining", &SRStatistics::getRemainingSamplesPerPixel);
-	AddDoubleAttribute(*this, "percentHaltSppComplete", "Percent of halt S/p completed", &SRStatistics::getPercentHaltSppComplete);
-	AddDoubleAttribute(*this, "resumedSamplesPerPixel", "Average number of samples per pixel loaded from FLM", &SRStatistics::getResumedAverageSamplesPerPixel);
+	AddDoubleAttribute(*this, "haltSamplesPerPixel", "Average number of samples per pixel to complete before halting", &SRStatistics<Renderer>::getHaltSpp);
+	AddDoubleAttribute(*this, "remainingSamplesPerPixel", "Average number of samples per pixel remaining", &SRStatistics<Renderer>::getRemainingSamplesPerPixel);
+	AddDoubleAttribute(*this, "percentHaltSppComplete", "Percent of halt S/p completed", &SRStatistics<Renderer>::getPercentHaltSppComplete);
+	AddDoubleAttribute(*this, "resumedSamplesPerPixel", "Average number of samples per pixel loaded from FLM", &SRStatistics<Renderer>::getResumedAverageSamplesPerPixel);
 
-	AddDoubleAttribute(*this, "pathEfficiency", "Efficiency of generated paths", &SRStatistics::getPathEfficiency);
-	AddDoubleAttribute(*this, "pathEfficiencyWindow", "Efficiency of generated paths", &SRStatistics::getPathEfficiencyWindow);
+	AddDoubleAttribute(*this, "pathEfficiency", "Efficiency of generated paths", &SRStatistics<Renderer>::getPathEfficiency);
+	AddDoubleAttribute(*this, "pathEfficiencyWindow", "Efficiency of generated paths", &SRStatistics<Renderer>::getPathEfficiencyWindow);
 
-	AddDoubleAttribute(*this, "samplesPerPixel", "Average number of samples per pixel by local node", &SRStatistics::getAverageSamplesPerPixel);
-	AddDoubleAttribute(*this, "samplesPerSecond", "Average number of samples per second by local node", &SRStatistics::getAverageSamplesPerSecond);
-	AddDoubleAttribute(*this, "samplesPerSecondWindow", "Average number of samples per second by local node in current time window", &SRStatistics::getAverageSamplesPerSecondWindow);
-	AddDoubleAttribute(*this, "contributionsPerSecond", "Average number of contributions per second by local node", &SRStatistics::getAverageContributionsPerSecond);
-	AddDoubleAttribute(*this, "contributionsPerSecondWindow", "Average number of contributions per second by local node in current time window", &SRStatistics::getAverageContributionsPerSecondWindow);
+	AddDoubleAttribute(*this, "samplesPerPixel", "Average number of samples per pixel by local node", &SRStatistics<Renderer>::getAverageSamplesPerPixel);
+	AddDoubleAttribute(*this, "samplesPerSecond", "Average number of samples per second by local node", &SRStatistics<Renderer>::getAverageSamplesPerSecond);
+	AddDoubleAttribute(*this, "samplesPerSecondWindow", "Average number of samples per second by local node in current time window", &SRStatistics<Renderer>::getAverageSamplesPerSecondWindow);
+	AddDoubleAttribute(*this, "contributionsPerSecond", "Average number of contributions per second by local node", &SRStatistics<Renderer>::getAverageContributionsPerSecond);
+	AddDoubleAttribute(*this, "contributionsPerSecondWindow", "Average number of contributions per second by local node in current time window", &SRStatistics<Renderer>::getAverageContributionsPerSecondWindow);
 
-	AddDoubleAttribute(*this, "netSamplesPerPixel", "Average number of samples per pixel by slave nodes", &SRStatistics::getNetworkAverageSamplesPerPixel);
-	AddDoubleAttribute(*this, "netSamplesPerSecond", "Average number of samples per second by slave nodes", &SRStatistics::getNetworkAverageSamplesPerSecond);
+	AddDoubleAttribute(*this, "netSamplesPerPixel", "Average number of samples per pixel by slave nodes", &SRStatistics<Renderer>::getNetworkAverageSamplesPerPixel);
+	AddDoubleAttribute(*this, "netSamplesPerSecond", "Average number of samples per second by slave nodes", &SRStatistics<Renderer>::getNetworkAverageSamplesPerSecond);
 
-	AddDoubleAttribute(*this, "totalSamplesPerPixel", "Average number of samples per pixel", &SRStatistics::getTotalAverageSamplesPerPixel);
-	AddDoubleAttribute(*this, "totalSamplesPerSecond", "Average number of samples per second", &SRStatistics::getTotalAverageSamplesPerSecond);
-	AddDoubleAttribute(*this, "totalSamplesPerSecondWindow", "Average number of samples per second in current time window", &SRStatistics::getTotalAverageSamplesPerSecondWindow);
+	AddDoubleAttribute(*this, "totalSamplesPerPixel", "Average number of samples per pixel", &SRStatistics<Renderer>::getTotalAverageSamplesPerPixel);
+	AddDoubleAttribute(*this, "totalSamplesPerSecond", "Average number of samples per second", &SRStatistics<Renderer>::getTotalAverageSamplesPerSecond);
+	AddDoubleAttribute(*this, "totalSamplesPerSecondWindow", "Average number of samples per second in current time window", &SRStatistics<Renderer>::getTotalAverageSamplesPerSecondWindow);
 }
 
-SRStatistics::~SRStatistics()
+template<typename Renderer>
+SRStatistics<Renderer>::~SRStatistics()
 {
 	delete formattedLong;
 	delete formattedShort;
 }
 
-void SRStatistics::resetDerived() {
+template<typename Renderer>
+void SRStatistics<Renderer>::resetDerived() {
 	windowSampleCount = 0.0;
 	exponentialMovingAverage = 0.0;
 	windowEffSampleCount = 0.0;
@@ -82,7 +87,8 @@ void SRStatistics::resetDerived() {
 	windowPEffBlackSampleCount = 0.0;
 }
 
-void SRStatistics::updateStatisticsWindowDerived()
+template<typename Renderer>
+void SRStatistics<Renderer>::updateStatisticsWindowDerived()
 {
 	// Get local sample count
 	double sampleCount = getSampleCount();
@@ -99,7 +105,8 @@ void SRStatistics::updateStatisticsWindowDerived()
 	windowSampleCount = sampleCount;
 }
 
-double SRStatistics::getRemainingTime() {
+template<typename Renderer>
+double SRStatistics<Renderer>::getRemainingTime() {
 	double remainingTime = RendererStatistics::getRemainingTime();
 	double remainingSamples = std::max(0.0, getHaltSpp() - getTotalAverageSamplesPerPixel()) * getPixelCount();
 
@@ -107,7 +114,8 @@ double SRStatistics::getRemainingTime() {
 }
 
 // Returns haltSamplesPerPixel if set, otherwise infinity
-double SRStatistics::getHaltSpp() {
+template<typename Renderer>
+double SRStatistics<Renderer>::getHaltSpp() {
 	double haltSpp = 0.0;
 
 	Queryable* filmRegistry = Context::GetActive()->registry["film"];
@@ -118,11 +126,13 @@ double SRStatistics::getHaltSpp() {
 }
 
 // Returns percent of haltSamplesPerPixel completed, zero if haltSamplesPerPixel is not set
-double SRStatistics::getPercentHaltSppComplete() {
+template<typename Renderer>
+double SRStatistics<Renderer>::getPercentHaltSppComplete() {
 	return (getTotalAverageSamplesPerPixel() / getHaltSpp()) * 100.0;
 }
 
-double SRStatistics::getEfficiency() {
+template<typename Renderer>
+double SRStatistics<Renderer>::getEfficiency() {
 	double sampleCount = 0.0;
 	double blackSampleCount = 0.0;
 
@@ -138,7 +148,8 @@ double SRStatistics::getEfficiency() {
 	return sampleCount ? (100.0 * blackSampleCount) / sampleCount : 0.0;
 }
 
-double SRStatistics::getEfficiencyWindow() {
+template<typename Renderer>
+double SRStatistics<Renderer>::getEfficiencyWindow() {
 	double sampleCount = 0.0 - windowEffSampleCount;
 	double blackSampleCount = 0.0 - windowEffBlackSampleCount;
 
@@ -157,7 +168,8 @@ double SRStatistics::getEfficiencyWindow() {
 	return sampleCount ? (100.0 * blackSampleCount) / sampleCount : 0.0;
 }
 
-double SRStatistics::getPathEfficiency() {
+template<typename Renderer>
+double SRStatistics<Renderer>::getPathEfficiency() {
 	double sampleCount = 0.0;
 	double blackSamplePathCount = 0.0;
 
@@ -173,7 +185,8 @@ double SRStatistics::getPathEfficiency() {
 	return sampleCount ? (100.0 * blackSamplePathCount) / sampleCount : 0.0;
 }
 
-double SRStatistics::getPathEfficiencyWindow() {
+template<typename Renderer>
+double SRStatistics<Renderer>::getPathEfficiencyWindow() {
 	double sampleCount = 0.0 - windowPEffSampleCount;
 	double blackSamplePathCount = 0.0 - windowPEffBlackSampleCount;
 
@@ -192,17 +205,20 @@ double SRStatistics::getPathEfficiencyWindow() {
 	return sampleCount ? (100.0 * blackSamplePathCount) / sampleCount : 0.0;
 }
 
-double SRStatistics::getAverageSamplesPerSecond() {
+template<typename Renderer>
+double SRStatistics<Renderer>::getAverageSamplesPerSecond() {
 	double et = getElapsedTime();
 	return (et == 0.0) ? 0.0 : getSampleCount() / et;
 }
 
-double SRStatistics::getAverageSamplesPerSecondWindow() {
+template<typename Renderer>
+double SRStatistics<Renderer>::getAverageSamplesPerSecondWindow() {
 	boost::mutex::scoped_lock window_mutex(windowMutex);
 	return exponentialMovingAverage;
 }
 
-double SRStatistics::getNetworkAverageSamplesPerSecond() {
+template<typename Renderer>
+double SRStatistics<Renderer>::getNetworkAverageSamplesPerSecond() {
 	double nsps = 0.0;
 
 	size_t nServers = getSlaveNodeCount();
@@ -218,7 +234,8 @@ double SRStatistics::getNetworkAverageSamplesPerSecond() {
 	return nsps;
 }
 
-u_int SRStatistics::getPixelCount() {
+template<typename Renderer>
+u_int SRStatistics<Renderer>::getPixelCount() {
 	int xstart, xend, ystart, yend;
 
 	renderer->scene->camera->film->GetSampleExtent(&xstart, &xend, &ystart, &yend);
@@ -226,7 +243,8 @@ u_int SRStatistics::getPixelCount() {
 	return ((xend - xstart) * (yend - ystart));
 }
 
-double SRStatistics::getResumedSampleCount() {
+template<typename Renderer>
+double SRStatistics<Renderer>::getResumedSampleCount() {
 	double resumedSampleCount = 0.0;
 
 	Queryable* filmRegistry = Context::GetActive()->registry["film"];
@@ -236,7 +254,8 @@ double SRStatistics::getResumedSampleCount() {
 	return resumedSampleCount;
 }
 
-double SRStatistics::getSampleCount() {
+template<typename Renderer>
+double SRStatistics<Renderer>::getSampleCount() {
 	double sampleCount = 0.0;
 
 	Queryable* filmRegistry = Context::GetActive()->registry["film"];
@@ -246,7 +265,8 @@ double SRStatistics::getSampleCount() {
 	return sampleCount;
 }
 
-double SRStatistics::getNetworkSampleCount(bool estimate) {
+template<typename Renderer>
+double SRStatistics<Renderer>::getNetworkSampleCount(bool estimate) {
 	double networkSampleCount = 0.0;
 
 	Queryable* filmRegistry = Context::GetActive()->registry["film"];
@@ -266,10 +286,11 @@ double SRStatistics::getNetworkSampleCount(bool estimate) {
 	return networkSampleCount;
 }
 
-SRStatistics::FormattedLong::FormattedLong(SRStatistics* rs)
+template<typename Renderer>
+SRStatistics<Renderer>::FormattedLong::FormattedLong(SRStatistics<Renderer>* rs)
 	: RendererStatistics::FormattedLong(rs), rs(rs)
 {
-	typedef SRStatistics::FormattedLong FL;
+	typedef SRStatistics<Renderer>::FormattedLong FL;
 
 	AddStringAttribute(*this, "haltSamplesPerPixel", "Average number of samples per pixel to complete before halting", &FL::getHaltSpp);
 	AddStringAttribute(*this, "remainingSamplesPerPixel", "Average number of samples per pixel remaining", &FL::getRemainingSamplesPerPixel);
@@ -293,7 +314,8 @@ SRStatistics::FormattedLong::FormattedLong(SRStatistics* rs)
 	AddStringAttribute(*this, "totalSamplesPerSecondWindow", "Average number of samples per second in current time window", &FL::getTotalAverageSamplesPerSecondWindow);
 }
 
-std::string SRStatistics::FormattedLong::getRecommendedStringTemplate()
+template<typename Renderer>
+std::string SRStatistics<Renderer>::FormattedLong::getRecommendedStringTemplate()
 {
 	std::string stringTemplate = RendererStatistics::FormattedLong::getRecommendedStringTemplate();
 	stringTemplate += ": %samplesPerPixel%";
@@ -317,89 +339,106 @@ std::string SRStatistics::FormattedLong::getRecommendedStringTemplate()
 	return stringTemplate;
 }
 
-std::string SRStatistics::FormattedLong::getHaltSpp() {
+template<typename Renderer>
+std::string SRStatistics<Renderer>::FormattedLong::getHaltSpp() {
 	return boost::str(boost::format("%1% S/p") % rs->getHaltSpp());
 }
 
-std::string SRStatistics::FormattedLong::getRemainingSamplesPerPixel() {
+template<typename Renderer>
+std::string SRStatistics<Renderer>::FormattedLong::getRemainingSamplesPerPixel() {
 	double rspp = rs->getRemainingSamplesPerPixel();
 	return boost::str(boost::format("%1$0.2f %2%S/p") % MagnitudeReduce(rspp) % MagnitudePrefix(rspp));
 }
 
-std::string SRStatistics::FormattedLong::getPercentHaltSppComplete() {
+template<typename Renderer>
+std::string SRStatistics<Renderer>::FormattedLong::getPercentHaltSppComplete() {
 	return boost::str(boost::format("%1$0.0f%% S/p") % rs->getPercentHaltSppComplete());
 }
 
-std::string SRStatistics::FormattedLong::getResumedAverageSamplesPerPixel() {
+template<typename Renderer>
+std::string SRStatistics<Renderer>::FormattedLong::getResumedAverageSamplesPerPixel() {
 	double spp = rs->getResumedAverageSamplesPerPixel();
 	return boost::str(boost::format("%1$0.2f %2%S/p") % MagnitudeReduce(spp) % MagnitudePrefix(spp));
 }
 
-std::string SRStatistics::FormattedLong::getPathEfficiency() {
+template<typename Renderer>
+std::string SRStatistics<Renderer>::FormattedLong::getPathEfficiency() {
 	return boost::str(boost::format("%1$0.0f%% Path Efficiency") % rs->getPathEfficiency());
 }
 
-std::string SRStatistics::FormattedLong::getPathEfficiencyWindow() {
+template<typename Renderer>
+std::string SRStatistics<Renderer>::FormattedLong::getPathEfficiencyWindow() {
 	return boost::str(boost::format("%1$0.0f%% Path Efficiency") % rs->getPathEfficiencyWindow());
 }
 
-std::string SRStatistics::FormattedLong::getAverageSamplesPerPixel() {
+template<typename Renderer>
+std::string SRStatistics<Renderer>::FormattedLong::getAverageSamplesPerPixel() {
 	double spp = rs->getAverageSamplesPerPixel();
 	return boost::str(boost::format("%1$0.2f %2%S/p") % MagnitudeReduce(spp) % MagnitudePrefix(spp));
 }
 
-std::string SRStatistics::FormattedLong::getAverageSamplesPerSecond() {
+template<typename Renderer>
+std::string SRStatistics<Renderer>::FormattedLong::getAverageSamplesPerSecond() {
 	double sps = rs->getAverageSamplesPerSecond();
 	return boost::str(boost::format("%1$0.2f %2%S/s") % MagnitudeReduce(sps) % MagnitudePrefix(sps));
 }
 
-std::string SRStatistics::FormattedLong::getAverageSamplesPerSecondWindow() {
+template<typename Renderer>
+std::string SRStatistics<Renderer>::FormattedLong::getAverageSamplesPerSecondWindow() {
 	double spsw = rs->getAverageSamplesPerSecondWindow();
 	return boost::str(boost::format("%1$0.2f %2%S/s") % MagnitudeReduce(spsw) % MagnitudePrefix(spsw));
 }
 
-std::string SRStatistics::FormattedLong::getAverageContributionsPerSecond() {
+template<typename Renderer>
+std::string SRStatistics<Renderer>::FormattedLong::getAverageContributionsPerSecond() {
 	double cps = rs->getAverageContributionsPerSecond();
 	return boost::str(boost::format("%1$0.2f %2%C/s") % MagnitudeReduce(cps) % MagnitudePrefix(cps));
 }
 
-std::string SRStatistics::FormattedLong::getAverageContributionsPerSecondWindow() {
+template<typename Renderer>
+std::string SRStatistics<Renderer>::FormattedLong::getAverageContributionsPerSecondWindow() {
 	double cpsw = rs->getAverageContributionsPerSecondWindow();
 	return boost::str(boost::format("%1$0.2f %2%C/s") % MagnitudeReduce(cpsw) % MagnitudePrefix(cpsw));
 }
 
-std::string SRStatistics::FormattedLong::getNetworkAverageSamplesPerPixel() {
+template<typename Renderer>
+std::string SRStatistics<Renderer>::FormattedLong::getNetworkAverageSamplesPerPixel() {
 	double spp = rs->getNetworkAverageSamplesPerPixel();
 	return boost::str(boost::format("%1$0.2f %2%S/p") % MagnitudeReduce(spp) % MagnitudePrefix(spp));
 }
 
-std::string SRStatistics::FormattedLong::getNetworkAverageSamplesPerSecond() {
+template<typename Renderer>
+std::string SRStatistics<Renderer>::FormattedLong::getNetworkAverageSamplesPerSecond() {
 	double sps = rs->getNetworkAverageSamplesPerSecond();
 	return boost::str(boost::format("%1$0.2f %2%S/s") % MagnitudeReduce(sps) % MagnitudePrefix(sps));
 }
 
-std::string SRStatistics::FormattedLong::getTotalAverageSamplesPerPixel() {
+template<typename Renderer>
+std::string SRStatistics<Renderer>::FormattedLong::getTotalAverageSamplesPerPixel() {
 	double spp = rs->getTotalAverageSamplesPerPixel();
 	return boost::str(boost::format("%1$0.2f %2%S/p") % MagnitudeReduce(spp) % MagnitudePrefix(spp));
 }
 
-std::string SRStatistics::FormattedLong::getTotalAverageSamplesPerSecond() {
+template<typename Renderer>
+std::string SRStatistics<Renderer>::FormattedLong::getTotalAverageSamplesPerSecond() {
 	double sps = rs->getTotalAverageSamplesPerSecond();
 	return boost::str(boost::format("%1$0.2f %2%S/s") % MagnitudeReduce(sps) % MagnitudePrefix(sps));
 }
 
-std::string SRStatistics::FormattedLong::getTotalAverageSamplesPerSecondWindow() {
+template<typename Renderer>
+std::string SRStatistics<Renderer>::FormattedLong::getTotalAverageSamplesPerSecondWindow() {
 	double spsw = rs->getTotalAverageSamplesPerSecondWindow();
 	return boost::str(boost::format("%1$0.2f %2%S/s") % MagnitudeReduce(spsw) % MagnitudePrefix(spsw));
 }
 
-SRStatistics::FormattedShort::FormattedShort(SRStatistics* rs)
+template<typename Renderer>
+SRStatistics<Renderer>::FormattedShort::FormattedShort(SRStatistics<Renderer>* rs)
 	: RendererStatistics::FormattedShort(rs), rs(rs)
 {
-	FormattedLong* fl = static_cast<SRStatistics::FormattedLong*>(rs->formattedLong);
+	FormattedLong* fl = static_cast<SRStatistics<Renderer>::FormattedLong*>(rs->formattedLong);
 
-	typedef SRStatistics::FormattedLong FL;
-	typedef SRStatistics::FormattedShort FS;
+	typedef SRStatistics<Renderer>::FormattedLong FL;
+	typedef SRStatistics<Renderer>::FormattedShort FS;
 
 	AddStringAttribute(*this, "haltSamplesPerPixel", "Average number of samples per pixel to complete before halting", boost::bind(boost::mem_fn(&FL::getHaltSpp), fl));
 	AddStringAttribute(*this, "remainingSamplesPerPixel", "Average number of samples per pixel remaining", boost::bind(boost::mem_fn(&FL::getRemainingSamplesPerPixel), fl));
@@ -423,7 +462,8 @@ SRStatistics::FormattedShort::FormattedShort(SRStatistics* rs)
 	AddStringAttribute(*this, "totalSamplesPerSecondWindow", "Average number of samples per second in current time window", boost::bind(boost::mem_fn(&FL::getTotalAverageSamplesPerSecondWindow), fl));
 }
 
-std::string SRStatistics::FormattedShort::getRecommendedStringTemplate()
+template<typename Renderer>
+std::string SRStatistics<Renderer>::FormattedShort::getRecommendedStringTemplate()
 {
 	std::string stringTemplate = RendererStatistics::FormattedShort::getRecommendedStringTemplate();
 	stringTemplate += ": %samplesPerPixel%";
@@ -447,10 +487,14 @@ std::string SRStatistics::FormattedShort::getRecommendedStringTemplate()
 	return stringTemplate;
 }
 
-std::string SRStatistics::FormattedShort::getPathEfficiency() {
+template<typename Renderer>
+std::string SRStatistics<Renderer>::FormattedShort::getPathEfficiency() {
 	return boost::str(boost::format("%1$0.0f%% PEff") % rs->getPathEfficiency());
 }
 
-std::string SRStatistics::FormattedShort::getPathEfficiencyWindow() {
+template<typename Renderer>
+std::string SRStatistics<Renderer>::FormattedShort::getPathEfficiencyWindow() {
 	return boost::str(boost::format("%1$0.0f%% PEff") % rs->getPathEfficiencyWindow());
 }
+
+template class SRStatistics<SamplerRenderer>;
