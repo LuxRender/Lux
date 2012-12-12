@@ -99,7 +99,8 @@ private:
 
 	virtual double getRemainingTime();
 	virtual double getPercentComplete() { return std::max(getPercentHaltTimeComplete(), getPercentHaltSppComplete()); }
-	virtual u_int getThreadCount() { return renderer->renderThreads.size(); }
+
+	virtual u_int getThreadCount();
 
 	double getHaltSpp();
 	double getRemainingSamplesPerPixel() { return std::max(0.0, getHaltSpp() - getTotalAverageSamplesPerPixel()); }

@@ -36,8 +36,10 @@
 #include <boost/thread/mutex.hpp>
 
 #include <renderers/samplerrenderer.h>
+#include <renderers/samplertbbrenderer.h>
 
-using namespace lux;
+namespace lux
+{
 
 template<typename Renderer>
 SRStatistics<Renderer>::SRStatistics(Renderer* renderer)
@@ -204,6 +206,83 @@ double SRStatistics<Renderer>::getPathEfficiencyWindow() {
 	
 	return sampleCount ? (100.0 * blackSamplePathCount) / sampleCount : 0.0;
 }
+
+// template specialisation for SamplerTBBRenderer
+
+template<>
+double SRStatistics<SamplerTBBRenderer>::getEfficiency() {
+	double sampleCount = 0.0;
+	double blackSampleCount = 0.0;
+
+	// Get the current counts from the renderthreads
+	// Cannot just use getSampleCount() because the blackSampleCount is necessary
+	// boost::mutex::scoped_lock lock(renderer->localStoragePoolMutex); // TBB TODO: is this needed ?
+	for (SamplerTBBRenderer::LocalStoragePool::iterator i = renderer->localStoragePool->begin(); i < renderer->localStoragePool->end(); ++i) {
+		// fast_mutex::scoped_lock lockStats(i->statLock); // TBB TODO: is this needed ?
+		sampleCount += i->samples;
+		blackSampleCount += i->blackSamples;
+	}
+
+	return sampleCount ? (100.0 * blackSampleCount) / sampleCount : 0.0;
+}
+
+template<>
+double SRStatistics<SamplerTBBRenderer>::getEfficiencyWindow() {
+	double sampleCount = 0.0 - windowEffSampleCount;
+	double blackSampleCount = 0.0 - windowEffBlackSampleCount;
+
+	// Get the current counts from the renderthreads
+	// Cannot just use getSampleCount() because the blackSampleCount is necessary
+	// boost::mutex::scoped_lock lock(renderer->localStoragePoolMutex); // TBB TODO: is this needed ?
+	for (SamplerTBBRenderer::LocalStoragePool::iterator i = renderer->localStoragePool->begin(); i < renderer->localStoragePool->end(); ++i) {
+		// fast_mutex::scoped_lock lockStats(i->statLock); // TBB TODO: is this needed ?
+		sampleCount += i->samples;
+		blackSampleCount += i->blackSamples;
+	}
+
+	windowPEffSampleCount += sampleCount;
+	windowPEffBlackSampleCount += blackSampleCount;
+
+	return sampleCount ? (100.0 * blackSampleCount) / sampleCount : 0.0;
+}
+
+template<>
+double SRStatistics<SamplerTBBRenderer>::getPathEfficiency() {
+	double sampleCount = 0.0;
+	double blackSamplePathCount = 0.0;
+
+	// Get the current counts from the renderthreads
+	// Cannot just use getSampleCount() because the blackSamplePathCount is necessary
+	// boost::mutex::scoped_lock lock(renderer->localStoragePoolMutex); // TBB TODO: is this needed ?
+	for (SamplerTBBRenderer::LocalStoragePool::iterator i = renderer->localStoragePool->begin(); i < renderer->localStoragePool->end(); ++i) {
+		// fast_mutex::scoped_lock lockStats(i->statLock); // TBB TODO: is this needed ?
+		sampleCount += i->samples;
+		blackSamplePathCount += i->blackSamplePaths;
+	}
+
+	return sampleCount ? (100.0 * blackSamplePathCount) / sampleCount : 0.0;
+}
+
+template<>
+double SRStatistics<SamplerTBBRenderer>::getPathEfficiencyWindow() {
+	double sampleCount = 0.0 - windowPEffSampleCount;
+	double blackSamplePathCount = 0.0 - windowPEffBlackSampleCount;
+
+	// Get the current counts from the renderthreads
+	// Cannot just use getSampleCount() because the blackSamplePathCount is necessary
+	// boost::mutex::scoped_lock lock(renderer->localStoragePoolMutex); // TBB TODO: is this needed ?
+	for (SamplerTBBRenderer::LocalStoragePool::iterator i = renderer->localStoragePool->begin(); i < renderer->localStoragePool->end(); ++i) {
+		// fast_mutex::scoped_lock lockStats(i->statLock); // TBB TODO: is this needed ?
+		sampleCount += i->samples;
+		blackSamplePathCount += i->blackSamplePaths;
+	}
+
+	windowPEffSampleCount += sampleCount;
+	windowPEffBlackSampleCount += blackSamplePathCount;
+
+	return sampleCount ? (100.0 * blackSamplePathCount) / sampleCount : 0.0;
+}
+
 
 template<typename Renderer>
 double SRStatistics<Renderer>::getAverageSamplesPerSecond() {
@@ -497,4 +576,18 @@ std::string SRStatistics<Renderer>::FormattedShort::getPathEfficiencyWindow() {
 	return boost::str(boost::format("%1$0.0f%% PEff") % rs->getPathEfficiencyWindow());
 }
 
+template<>
+u_int SRStatistics<SamplerRenderer>::getThreadCount()
+{
+	return renderer->renderThreads.size();
+}
+
+template<>
+u_int SRStatistics<SamplerTBBRenderer>::getThreadCount()
+{
+	return renderer->numberOfThreads;
+}
+
 template class SRStatistics<SamplerRenderer>;
+template class SRStatistics<SamplerTBBRenderer>;
+}

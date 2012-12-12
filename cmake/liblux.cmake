@@ -311,7 +311,6 @@ SOURCE_GROUP("Source Files\\Renderers" FILES ${lux_renderers_src})
 
 SET(lux_rendererstatistics_src
 	renderers/statistics/samplerstatistics.cpp
-	renderers/statistics/samplertbbstatistics.cpp
 	renderers/statistics/hybridsamplerstatistics.cpp
 	renderers/statistics/sppmstatistics.cpp
 	)
@@ -729,7 +728,6 @@ SET(lux_renderers_hdr
 SOURCE_GROUP("Header Files\\Renderers" FILES ${lux_renderers_hdr})
 SET(lux_rendererstatistics_hdr
 	renderers/statistics/samplerstatistics.h
-	renderers/statistics/samplertbbstatistics.h
 	renderers/statistics/hybridsamplerstatistics.h
 	renderers/statistics/sppmstatistics.h
 	)

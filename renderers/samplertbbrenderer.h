@@ -110,7 +110,8 @@ public:
 
 	friend class SRTBBDeviceDescription;
 	friend class SRTBBHostDescription;
-	friend class SRTBBStatistics;
+	template<class T>
+	friend class SRStatistics;
 
 	static Renderer *CreateRenderer(const ParamSet &params);
 
