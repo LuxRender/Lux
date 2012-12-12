@@ -154,9 +154,10 @@ bool ProjectionLight::SampleL(const Scene &scene, const Sample &sample,
 	SWCSpectrum *Le) const
 {
 	Normal ns(Normalize(LightToWorld * Normal(0, 0, 1)));
-	Vector dpdu, dpdv;
-	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
-	DifferentialGeometry dg(lightPos, ns, dpdu, dpdv, Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
+	DifferentialGeometry dg(lightPos, ns,
+		Normalize(LightToWorld * Vector(1, 0, 0)),
+		Normalize(LightToWorld * Vector(0, 1, 0)),
+		Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
 	dg.time = sample.realTime;
 	const Volume *v = GetVolume();
 	*bsdf = ARENA_ALLOC(sample.arena, SingleBSDF)(dg, ns,
@@ -172,12 +173,13 @@ bool ProjectionLight::SampleL(const Scene &scene, const Sample &sample,
 {
 	const Vector w(p - lightPos);
 	*pdfDirect = 1.f;
-	Normal ns(Normalize(LightToWorld * Normal(0, 0, 1)));
 	if (pdf)
 		*pdf = 1.f;
-	Vector dpdu, dpdv;
-	CoordinateSystem(Vector(ns), &dpdu, &dpdv);
-	DifferentialGeometry dg(lightPos, ns, dpdu, dpdv, Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
+	Normal ns(Normalize(LightToWorld * Normal(0, 0, 1)));
+	DifferentialGeometry dg(lightPos, ns,
+		Normalize(LightToWorld * Vector(1, 0, 0)),
+		Normalize(LightToWorld * Vector(0, 1, 0)),
+		Normal(0, 0, 0), Normal(0, 0, 0), 0, 0, NULL);
 	dg.time = sample.realTime;
 	const Volume *v = GetVolume();
 	*bsdf = ARENA_ALLOC(sample.arena, SingleBSDF)(dg, ns,
