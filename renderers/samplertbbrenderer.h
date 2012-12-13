@@ -119,7 +119,7 @@ public:
 	{
 		SamplerTBBRenderer *renderer;
 		Impl(SamplerTBBRenderer *renderer_): renderer(renderer_) {}
-		void operator()(unsigned int i, tbb::parallel_do_feeder<unsigned int>& feeder) const;
+		void operator()(const tbb::blocked_range<unsigned int> &r) const;
 	};
 
 private:
@@ -131,6 +131,7 @@ private:
 
 	fast_mutex sampPosMutex;
 	u_int sampPos;
+	unsigned int chunkSize;
 	unsigned int numberOfThreads;
 	bool mustChangeNumberOfThreads;
 

@@ -189,10 +189,11 @@ void SamplerTBBRenderer::Render(Scene *s) {
 	Impl impl(this);
 	while(state != TERMINATE)
 	{
-		// Parallel do needs an iterable to iterate over, value will do the work with only one item
-		// each task will submit more items
-		unsigned int value;
-		tbb::parallel_do(&value, &value + 1, impl);
+		// Submit a small bunch of item
+		// this is not interuptable, so if chunkSize is small, overhead will cost a lot
+		// in the other hand, overhead will be reduced by chunkSize, at the cost of latency
+		// when pausing
+		tbb::parallel_for(tbb::blocked_range<unsigned int>(0, chunkSize), impl);
 
 		// we exited because we must be in pause
 		while (state == PAUSE) {
@@ -293,13 +294,7 @@ SamplerTBBRenderer::LocalStorage::~LocalStorage()
 }
 
 
-void SamplerTBBRenderer::Impl::operator()(unsigned int i, tbb::parallel_do_feeder<unsigned int>& feeder) const {
-	// ask the scheduler to launch a new ray, only if we are not paused
-	if(renderer->state == RUN && !renderer->mustChangeNumberOfThreads)
-		feeder.add(0);
-	else
-		return;
-
+void SamplerTBBRenderer::Impl::operator()(const tbb::blocked_range<unsigned int> &r) const {
 	Scene &scene(*(renderer->scene));
 	if (scene.IsFilmOnly())
 		return;
@@ -310,9 +305,7 @@ void SamplerTBBRenderer::Impl::operator()(unsigned int i, tbb::parallel_do_feede
 
 	Sample& sample = *local.sample;
 	// Trace rays: The main loop
-	// Here we trace rays my pack of *batchSize* which reduce scheduling overhead of TBB
-	unsigned int batchSize = 1000;
-	for(unsigned int i = 0; i < batchSize; i++)
+	for(unsigned int i = r.begin(); i < r.end(); ++i)
 	{
 		if (!sampler->GetNextSample(&sample)) {
 			// Dade - we have done, check what we have to do now
@@ -360,7 +353,10 @@ void SamplerTBBRenderer::Impl::operator()(unsigned int i, tbb::parallel_do_feede
 }
 
 Renderer *SamplerTBBRenderer::CreateRenderer(const ParamSet &params) {
-	return new SamplerTBBRenderer();
+	SamplerTBBRenderer *renderer = new SamplerTBBRenderer();
+
+	renderer->chunkSize = params.FindOneInt("chunksize", 10000);
+	return renderer;
 }
 
 static DynamicLoader::RegisterRenderer<SamplerTBBRenderer> r("samplertbb");
