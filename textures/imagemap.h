@@ -91,6 +91,7 @@ public:
 	}
 
 	const MIPMap *GetMIPMap() const { return mipmap.get(); }
+	const TextureMapping2D *GetTextureMapping2D() const { return mapping; }
 	const TexInfo &GetInfo() const { return info; }
 
 private:

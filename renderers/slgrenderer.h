@@ -127,6 +127,8 @@ private:
 	void DefineSLGDefaultTexMap(luxrays::sdl::Scene *slgScene);
 	bool GetSLGMaterialColorAndTex(luxrays::sdl::Scene *slgScene,
 		luxrays::Spectrum *color, string *texName,
+		float *uScale, float *vScale,
+		float *uDelta, float *vDelta,
 		Texture<SWCSpectrum> *tex0, Texture<SWCSpectrum> *tex1 = NULL);
 	string GetSLGTexName(luxrays::sdl::Scene *slgScene, const MIPMap *mipMap, const float gamma);
 	string GetSLGTexName(luxrays::sdl::Scene *slgScene, const MIPMapFastImpl<TextureColor<unsigned char, 1> > *mipMap, const float gamma);
@@ -139,7 +141,9 @@ private:
 	string GetSLGTexName(luxrays::sdl::Scene *slgScene, const MIPMapFastImpl<TextureColor<float, 3> > *mipMap, const float gamma);
 	string GetSLGTexName(luxrays::sdl::Scene *slgScene, const MIPMapFastImpl<TextureColor<float, 4> > *mipMap, const float gamma);
 	bool GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive *prim,
-		string *matName, string *texName);
+		string *matName, string *texName,
+		float *uScale, float *vScale,
+		float *uDelta, float *vDelta);
 
 	void ConvertEnvLights(luxrays::sdl::Scene *slgScene);
 	vector<luxrays::ExtTriangleMesh *> DefinePrimitive(luxrays::sdl::Scene *slgScene, const Primitive *prim);

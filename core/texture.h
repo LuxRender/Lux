@@ -54,6 +54,12 @@ public:
 	virtual void MapDuv(const DifferentialGeometry &dg,
 		float *s, float *t, float *dsdu, float *dtdu,
 		float *dsdv, float *dtdv) const;
+
+	const float GetUScale() const { return su; }
+	const float GetVScale() const { return sv; }
+	const float GetUDelta() const { return du; }
+	const float GetVDelta() const { return dv; }
+
 private:
 	float su, sv, du, dv;
 };

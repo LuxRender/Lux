@@ -444,6 +444,8 @@ string SLGRenderer::GetSLGTexName(luxrays::sdl::Scene *slgScene,
 
 bool SLGRenderer::GetSLGMaterialColorAndTex(luxrays::sdl::Scene *slgScene,
 		luxrays::Spectrum *color, string *texName,
+		float *uScale, float *vScale,
+		float *uDelta, float *vDelta,
 		Texture<SWCSpectrum> *tex0, Texture<SWCSpectrum> *tex1) {
 
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Texture 0 type: " << ToClassName(tex0);
@@ -453,18 +455,32 @@ bool SLGRenderer::GetSLGMaterialColorAndTex(luxrays::sdl::Scene *slgScene,
 	ConstantRGBColorTexture *constRGBTex1 = dynamic_cast<ConstantRGBColorTexture *>(tex1);
 	ImageSpectrumTexture *imgTex1 = dynamic_cast<ImageSpectrumTexture *>(tex1);
 
+	if (!imgTex0 && imgTex1)
+		imgTex0 = imgTex1;
+
 	if (imgTex0) {
 		color->r = 1.f;
 		color->g = 1.f;
 		color->b = 1.f;
 
-		*texName = GetSLGTexName(slgScene, imgTex0->GetMIPMap(), imgTex0->GetInfo().gamma);
-
-		return true;
-	} else if (imgTex1) {
-		color->r = 1.f;
-		color->g = 1.f;
-		color->b = 1.f;
+		// Check the mapping
+		*uScale = 1.f;
+		*vScale = 1.f;
+		*uDelta = 0.f;
+		*vDelta = 0.f;
+		const TextureMapping2D *mapping = imgTex0->GetTextureMapping2D();
+		if (mapping) {
+			if (dynamic_cast<const UVMapping2D *>(mapping)) {
+				const UVMapping2D *uvMapping2D = dynamic_cast<const UVMapping2D *>(mapping);
+				*uScale = uvMapping2D->GetUScale();
+				*vScale = uvMapping2D->GetVScale();
+				*uDelta = uvMapping2D->GetUDelta();
+				*vDelta = uvMapping2D->GetVDelta();
+			} else {
+				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only image maps with UVMapping2D (i.e. not " <<
+						ToClassName(mapping) << "). Ignoring the mapping.";				
+			}
+		}
 
 		*texName = GetSLGTexName(slgScene, imgTex0->GetMIPMap(), imgTex0->GetInfo().gamma);
 
@@ -473,14 +489,24 @@ bool SLGRenderer::GetSLGMaterialColorAndTex(luxrays::sdl::Scene *slgScene,
 		color->r = (*constRGBTex0)["color.r"].FloatValue();
 		color->g = (*constRGBTex0)["color.g"].FloatValue();
 		color->b = (*constRGBTex0)["color.b"].FloatValue();
+
 		*texName = "";
+		*uScale = 1.f;
+		*vScale = 1.f;
+		*uDelta = 0.f;
+		*vDelta = 0.f;
 
 		return true;
 	} else if (constRGBTex1) {
 		color->r = (*constRGBTex0)["color.r"].FloatValue();
 		color->g = (*constRGBTex0)["color.g"].FloatValue();
 		color->b = (*constRGBTex0)["color.b"].FloatValue();
+
 		*texName = "";
+		*uScale = 1.f;
+		*vScale = 1.f;
+		*uDelta = 0.f;
+		*vDelta = 0.f;
 
 		return true;
 	}
@@ -492,7 +518,9 @@ bool SLGRenderer::GetSLGMaterialColorAndTex(luxrays::sdl::Scene *slgScene,
 }
 
 bool SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive *prim,
-		string *resMatName, string *resTexName) {
+		string *resMatName, string *resTexName,
+		float *uScale, float *vScale,
+		float *uDelta, float *vDelta) {
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Primitive type: " << ToClassName(prim);
 
 	*resMatName = "mat_default";
@@ -612,7 +640,9 @@ bool SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primit
 
 			// Check the type of texture
 			luxrays::Spectrum color;
-			if (GetSLGMaterialColorAndTex(slgScene, &color, &texName, matte->GetTexture())) {
+			if (GetSLGMaterialColorAndTex(slgScene, &color, &texName,
+					uScale, vScale, uDelta, vDelta,
+					matte->GetTexture())) {
 				slgScene->AddMaterials(
 					"scene.materials.matte." + matName +" = " +
 						boost::lexical_cast<string>(color.r) + " " +
@@ -1156,7 +1186,9 @@ void SLGRenderer::ConvertGeometry(luxrays::sdl::Scene *slgScene) {
 		if (dynamic_cast<const InstancePrimitive *>(prim)) {
 			const InstancePrimitive *instance = dynamic_cast<const InstancePrimitive *>(prim);
 			string matName, texName;
-			GetSLGMaterialName(slgScene, instance, &matName, &texName);
+			float uScale, vScale, uDelta, vDelta;
+			GetSLGMaterialName(slgScene, instance, &matName, &texName,
+					&uScale, &vScale, &uDelta, &vDelta);
 
 			const vector<boost::shared_ptr<Primitive> > &instanceSources = instance->GetInstanceSources();
 
@@ -1191,9 +1223,15 @@ void SLGRenderer::ConvertGeometry(luxrays::sdl::Scene *slgScene) {
 					const string meshName = "Mesh-" + boost::lexical_cast<string>(*mesh);
 
 					std::stringstream ss;
-					ss << "scene.objects." << matName << "." << objName << ".transformation = " << transString << "\n" <<
-						((texName != "") ? ("scene.objects." + matName + "." + objName + ".texmap = " + texName + "\n") : "") <<
-						"scene.objects." << matName << "." << objName << ".useplynormals = 1\n";
+					ss << "scene.objects." << matName << "." << objName << ".transformation = " << transString << "\n";
+					if (texName != "") {
+						ss << "scene.objects." << matName << "." << objName << ".texmap = " << texName << "\n";
+						ss << "scene.objects." << matName << "." << objName << ".texmap.uscale = " << uScale << "\n";
+						ss << "scene.objects." << matName << "." << objName << ".texmap.vscale = " << vScale << "\n";
+						ss << "scene.objects." << matName << "." << objName << ".texmap.udelta = " << uDelta << "\n";
+						ss << "scene.objects." << matName << "." << objName << ".texmap.vdelta = " << vDelta << "\n";
+					}
+					ss << "scene.objects." << matName << "." << objName << ".useplynormals = 1\n";
 					slgScene->AddObject(objName, matName, meshName, ss.str());
 				}
 			}
@@ -1210,15 +1248,24 @@ void SLGRenderer::ConvertGeometry(luxrays::sdl::Scene *slgScene) {
 
 			// Add the object
 			string matName, texName;
-			GetSLGMaterialName(slgScene, prim, &matName, &texName);
+			float uScale, vScale, uDelta, vDelta;
+			GetSLGMaterialName(slgScene, prim, &matName, &texName,
+					&uScale, &vScale, &uDelta, &vDelta);
+
 			for (vector<luxrays::ExtTriangleMesh *>::const_iterator mesh = meshList.begin(); mesh != meshList.end(); ++mesh) {
 				const string objName = "Object-" + boost::lexical_cast<string>(prim) + "-" +
 					boost::lexical_cast<string>(*mesh);
 				const string meshName = "Mesh-" + boost::lexical_cast<string>(*mesh);
 				
 				std::stringstream ss;
-				ss << ((texName != "") ? ("scene.objects." + matName + "." + objName + ".texmap = " + texName + "\n") : "") <<
-					"scene.objects." << matName << "." << objName << ".useplynormals = 1\n";
+				if (texName != "") {
+					ss << "scene.objects." << matName << "." << objName << ".texmap = " << texName << "\n";
+					ss << "scene.objects." << matName << "." << objName << ".texmap.uscale = " << uScale << "\n";
+					ss << "scene.objects." << matName << "." << objName << ".texmap.vscale = " << vScale << "\n";
+					ss << "scene.objects." << matName << "." << objName << ".texmap.udelta = " << uDelta << "\n";
+					ss << "scene.objects." << matName << "." << objName << ".texmap.vdelta = " << vDelta << "\n";
+				}
+				ss << "scene.objects." << matName << "." << objName << ".useplynormals = 1\n";
 				slgScene->AddObject(objName, matName, meshName, ss.str());
 			}
 		}
