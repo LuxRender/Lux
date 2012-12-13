@@ -134,6 +134,7 @@ private:
 	unsigned int chunkSize;
 	unsigned int numberOfThreads;
 	bool mustChangeNumberOfThreads;
+	float pauseLatency;
 
 	// Put them last for better data alignment
 	// used to suspend render threads until the preprocessing phase is done

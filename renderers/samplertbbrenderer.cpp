@@ -62,6 +62,64 @@ SRTBBHostDescription::~SRTBBHostDescription() {
 		delete devs[i];
 }
 
+class ChunkTimer
+{
+/* A container which stores a chunkSize for any tbb parallel_for
+ *
+ * the value is set in the constructor and read by the *chunkSize* attribute.
+ *
+ * call Start() / Stop() around your parallel_for using the *chunkSize* value.
+ * if latency is != 0, the chunkSize value will be automatically adjusted to
+ * ensure that the next execution of the parallel_for will run for approximatly
+ * *latency* seconds.
+ */
+public:
+	ChunkTimer(unsigned int initialChunkSize, float latency_):
+		chunkSize(initialChunkSize),
+		latency(latency_)
+	{
+	}
+
+	void Start()
+	{
+		if(latency > 0)
+		{
+			timer.Reset();
+			timer.Start();
+		}
+	}
+
+	void Stop()
+	{
+		if(latency > 0)
+		{
+			timer.Stop();
+			double ellapsed = timer.Time();
+
+			if(ellapsed != 0)
+			{
+				double ratio_target = latency / ellapsed;
+				chunkSize *= ratio_target;
+			}
+			else
+			{
+				// if the chunksize value is too small, elapsed time may be 0
+				// depending on the clock resolution.
+				//
+				// in this case, higly increase the chunkSize. +1 here is to
+				// ensure than chuckSize is not 0.
+				//
+				chunkSize = (chunkSize + 1) * 1000;
+			}
+			//std::cout << "Elapsed:" << ellapsed << " ChunkSize:" << chunkSize << std::endl;
+		}
+	}
+
+	Timer timer;
+	unsigned int chunkSize;
+	float latency;
+};
+
 //------------------------------------------------------------------------------
 // SamplerTBBRenderer
 //------------------------------------------------------------------------------
@@ -187,13 +245,12 @@ void SamplerTBBRenderer::Render(Scene *s) {
 	tbb::task_scheduler_init* tsi = new tbb::task_scheduler_init;
 
 	Impl impl(this);
+	ChunkTimer timer(chunkSize, pauseLatency);
 	while(state != TERMINATE)
 	{
-		// Submit a small bunch of item
-		// this is not interuptable, so if chunkSize is small, overhead will cost a lot
-		// in the other hand, overhead will be reduced by chunkSize, at the cost of latency
-		// when pausing
-		tbb::parallel_for(tbb::blocked_range<unsigned int>(0, chunkSize), impl);
+		timer.Start();
+		tbb::parallel_for(tbb::blocked_range<unsigned int>(0, timer.chunkSize), impl);
+		timer.Stop();
 
 		// we exited because we must be in pause
 		while (state == PAUSE) {
@@ -355,7 +412,12 @@ void SamplerTBBRenderer::Impl::operator()(const tbb::blocked_range<unsigned int>
 Renderer *SamplerTBBRenderer::CreateRenderer(const ParamSet &params) {
 	SamplerTBBRenderer *renderer = new SamplerTBBRenderer();
 
+	// chunksize is the number of ray launched between pauses. An high value
+	// reduce threading overhead but increase pause latency.
 	renderer->chunkSize = params.FindOneInt("chunksize", 10000);
+	// Targeted pause latency, if different from 0, the chunk size will be
+	// automatically adapted to target this latency.
+	renderer->pauseLatency = params.FindOneFloat("pauselatency", 1.0);
 	return renderer;
 }
 
