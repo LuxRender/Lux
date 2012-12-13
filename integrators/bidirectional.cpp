@@ -2123,14 +2123,10 @@ SurfaceIntegrator* BidirIntegrator::CreateSurfaceIntegrator(const ParamSet &para
 	// once MIS code is complete
 	bool mis = params.FindOneBool("hybridusemis", false);
 	bool debug = params.FindOneBool("debug", false);
-	float startRadius = params.FindOneFloat("startradius", .003f);
-	float alpha = params.FindOneFloat("alpha", .95f);
-	int lightPathCount = params.FindOneInt("lightpathcount", 16 * 1024);
 
 
 	return new BidirIntegrator(max(eyeDepth, 0), max(lightDepth, 0),
-		eyeThreshold, lightThreshold, lds, lps, mis, debug,
-		startRadius, alpha, lightPathCount);
+		eyeThreshold, lightThreshold, lds, lps, mis, debug);
 }
 
 static DynamicLoader::RegisterSurfaceIntegrator<BidirIntegrator> r("bidirectional");
