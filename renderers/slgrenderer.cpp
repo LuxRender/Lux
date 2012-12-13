@@ -23,6 +23,7 @@
 #include <iomanip>
 #include <fstream>
 #include <typeinfo>
+#include <sstream>
 
 #include <boost/lexical_cast.hpp>
 #include <boost/regex.hpp>
@@ -68,6 +69,7 @@
 #include "luxrays/opencl/utils.h"
 #include "rendersession.h"
 #include "volume.h"
+#include "textures/imagemap.h"
 
 
 using namespace lux;
@@ -157,7 +159,7 @@ void SLGRenderer::DefineSLGDefaultTexMap(luxrays::sdl::Scene *slgScene) {
 }
 
 string SLGRenderer::GetSLGTexName(luxrays::sdl::Scene *slgScene,
-		MIPMap *mipMap, const float gamma) {
+		const MIPMap *mipMap, const float gamma) {
 	if (!mipMap) {
 		DefineSLGDefaultTexMap(slgScene);
 		return "tex_default";
@@ -168,7 +170,30 @@ string SLGRenderer::GetSLGTexName(luxrays::sdl::Scene *slgScene,
 	if (slgScene->texMapCache->FindTextureMap(texName, gamma))
 		return texName;
 
-	if (dynamic_cast<const MIPMapFastImpl<TextureColor<float, 3> > *>(mipMap))
+	//--------------------------------------------------------------------------
+	// Channels: unsigned char
+	//--------------------------------------------------------------------------
+	if (dynamic_cast<const MIPMapFastImpl<TextureColor<unsigned char, 1> > *>(mipMap))
+		return GetSLGTexName(slgScene, (MIPMapImpl<TextureColor<unsigned char, 1> > *)mipMap, gamma);
+	if (dynamic_cast<const MIPMapFastImpl<TextureColor<unsigned char, 3> > *>(mipMap))
+		return GetSLGTexName(slgScene, (MIPMapImpl<TextureColor<unsigned char, 3> > *)mipMap, gamma);
+	if (dynamic_cast<const MIPMapFastImpl<TextureColor<unsigned short, 4> > *>(mipMap))
+		return GetSLGTexName(slgScene, (MIPMapImpl<TextureColor<unsigned char, 4> > *)mipMap, gamma);
+	//--------------------------------------------------------------------------
+	// Channels: unsigned short
+	//--------------------------------------------------------------------------
+	if (dynamic_cast<const MIPMapFastImpl<TextureColor<unsigned short, 1> > *>(mipMap))
+		return GetSLGTexName(slgScene, (MIPMapImpl<TextureColor<unsigned short, 1> > *)mipMap, gamma);
+	if (dynamic_cast<const MIPMapFastImpl<TextureColor<unsigned short, 3> > *>(mipMap))
+		return GetSLGTexName(slgScene, (MIPMapImpl<TextureColor<unsigned short, 3> > *)mipMap, gamma);
+	if (dynamic_cast<const MIPMapFastImpl<TextureColor<unsigned short, 4> > *>(mipMap))
+		return GetSLGTexName(slgScene, (MIPMapImpl<TextureColor<unsigned short, 4> > *)mipMap, gamma);
+	//--------------------------------------------------------------------------
+	// Channels: float
+	//--------------------------------------------------------------------------
+	else if (dynamic_cast<const MIPMapFastImpl<TextureColor<float, 1> > *>(mipMap))
+		return GetSLGTexName(slgScene, (MIPMapImpl<TextureColor<float, 1> > *)mipMap, gamma);
+	else if (dynamic_cast<const MIPMapFastImpl<TextureColor<float, 3> > *>(mipMap))
 		return GetSLGTexName(slgScene, (MIPMapImpl<TextureColor<float, 3> > *)mipMap, gamma);
 	else if (dynamic_cast<const MIPMapFastImpl<TextureColor<float, 4> > *>(mipMap))
 		return GetSLGTexName(slgScene, (MIPMapImpl<TextureColor<float, 4> > *)mipMap, gamma);
@@ -181,8 +206,192 @@ string SLGRenderer::GetSLGTexName(luxrays::sdl::Scene *slgScene,
 	}
 }
 
+//------------------------------------------------------------------------------
+// Channels: unsigned char
+//------------------------------------------------------------------------------
+
 string SLGRenderer::GetSLGTexName(luxrays::sdl::Scene *slgScene,
-		MIPMapFastImpl<TextureColor<float, 3> > *mipMap, const float gamma) {
+		const MIPMapFastImpl<TextureColor<unsigned char, 1> > *mipMap, const float gamma) {
+	const BlockedArray<TextureColor<unsigned char, 1> > *map = mipMap->GetSingleMap();
+
+	luxrays::Spectrum *slgRGBMap = new luxrays::Spectrum[map->uSize() * map->vSize()];
+
+	for (u_int y = 0; y < map->vSize(); ++y) {
+		for (u_int x = 0; x < map->uSize(); ++x) {
+			const TextureColor<unsigned char, 1> &col = (*map)(x, y);
+
+			const u_int index = (x + y * map->uSize());
+			slgRGBMap[index].r = col.c[0] / 255.f;
+			slgRGBMap[index].g = col.c[0] / 255.f;
+			slgRGBMap[index].b = col.c[0] / 255.f;
+		}
+	}
+
+	const string texName = mipMap->GetName();
+	slgScene->DefineTexMap(texName,
+			slgRGBMap, gamma, (u_int)map->uSize(), (u_int)map->vSize());
+
+	return texName;
+}
+
+string SLGRenderer::GetSLGTexName(luxrays::sdl::Scene *slgScene,
+		const MIPMapFastImpl<TextureColor<unsigned char, 3> > *mipMap, const float gamma) {
+	const BlockedArray<TextureColor<unsigned char, 3> > *map = mipMap->GetSingleMap();
+
+	luxrays::Spectrum *slgRGBMap = new luxrays::Spectrum[map->uSize() * map->vSize()];
+
+	for (u_int y = 0; y < map->vSize(); ++y) {
+		for (u_int x = 0; x < map->uSize(); ++x) {
+			const TextureColor<unsigned char, 3> &col = (*map)(x, y);
+
+			const u_int index = (x + y * map->uSize());
+			slgRGBMap[index].r = col.c[0] / 255.f;
+			slgRGBMap[index].g = col.c[1] / 255.f;
+			slgRGBMap[index].b = col.c[2] / 255.f;
+		}
+	}
+
+	const string texName = mipMap->GetName();
+	slgScene->DefineTexMap(texName,
+			slgRGBMap, gamma, (u_int)map->uSize(), (u_int)map->vSize());
+
+	return texName;
+}
+
+string SLGRenderer::GetSLGTexName(luxrays::sdl::Scene *slgScene,
+		const MIPMapFastImpl<TextureColor<unsigned char, 4> > *mipMap, const float gamma) {
+	const BlockedArray<TextureColor<unsigned char, 4> > *map = mipMap->GetSingleMap();
+
+	luxrays::Spectrum *slgRGBMap = new luxrays::Spectrum[map->uSize() * map->vSize()];
+	float *slgAlphaMap = new float[map->uSize() * map->vSize()];
+
+	for (u_int y = 0; y < map->vSize(); ++y) {
+		for (u_int x = 0; x < map->uSize(); ++x) {
+			const TextureColor<unsigned char, 4> &col = (*map)(x, y);
+
+			const u_int index = (x + y * map->uSize());
+			slgRGBMap[index].r = col.c[0];
+			slgRGBMap[index].g = col.c[1];
+			slgRGBMap[index].b = col.c[2];
+			slgAlphaMap[index] = col.c[3];
+		}
+	}
+
+	const string texName = mipMap->GetName();
+	slgScene->DefineTexMap(texName,
+			slgRGBMap, slgAlphaMap, gamma, (u_int)map->uSize(), (u_int)map->vSize());
+
+	return texName;
+}
+
+//------------------------------------------------------------------------------
+// Channels: unsigned short
+//------------------------------------------------------------------------------
+
+string SLGRenderer::GetSLGTexName(luxrays::sdl::Scene *slgScene,
+		const MIPMapFastImpl<TextureColor<unsigned short, 1> > *mipMap, const float gamma) {
+	const BlockedArray<TextureColor<unsigned short, 1> > *map = mipMap->GetSingleMap();
+
+	luxrays::Spectrum *slgRGBMap = new luxrays::Spectrum[map->uSize() * map->vSize()];
+
+	for (u_int y = 0; y < map->vSize(); ++y) {
+		for (u_int x = 0; x < map->uSize(); ++x) {
+			const TextureColor<unsigned short, 1> &col = (*map)(x, y);
+
+			const u_int index = (x + y * map->uSize());
+			slgRGBMap[index].r = col.c[0] / 255.f;
+			slgRGBMap[index].g = col.c[0] / 255.f;
+			slgRGBMap[index].b = col.c[0] / 255.f;
+		}
+	}
+
+	const string texName = mipMap->GetName();
+	slgScene->DefineTexMap(texName,
+			slgRGBMap, gamma, (u_int)map->uSize(), (u_int)map->vSize());
+
+	return texName;
+}
+
+string SLGRenderer::GetSLGTexName(luxrays::sdl::Scene *slgScene,
+		const MIPMapFastImpl<TextureColor<unsigned short, 3> > *mipMap, const float gamma) {
+	const BlockedArray<TextureColor<unsigned short, 3> > *map = mipMap->GetSingleMap();
+
+	luxrays::Spectrum *slgRGBMap = new luxrays::Spectrum[map->uSize() * map->vSize()];
+
+	for (u_int y = 0; y < map->vSize(); ++y) {
+		for (u_int x = 0; x < map->uSize(); ++x) {
+			const TextureColor<unsigned short, 3> &col = (*map)(x, y);
+
+			const u_int index = (x + y * map->uSize());
+			slgRGBMap[index].r = col.c[0] / 255.f;
+			slgRGBMap[index].g = col.c[1] / 255.f;
+			slgRGBMap[index].b = col.c[2] / 255.f;
+		}
+	}
+
+	const string texName = mipMap->GetName();
+	slgScene->DefineTexMap(texName,
+			slgRGBMap, gamma, (u_int)map->uSize(), (u_int)map->vSize());
+
+	return texName;
+}
+
+string SLGRenderer::GetSLGTexName(luxrays::sdl::Scene *slgScene,
+		const MIPMapFastImpl<TextureColor<unsigned short, 4> > *mipMap, const float gamma) {
+	const BlockedArray<TextureColor<unsigned short, 4> > *map = mipMap->GetSingleMap();
+
+	luxrays::Spectrum *slgRGBMap = new luxrays::Spectrum[map->uSize() * map->vSize()];
+	float *slgAlphaMap = new float[map->uSize() * map->vSize()];
+
+	for (u_int y = 0; y < map->vSize(); ++y) {
+		for (u_int x = 0; x < map->uSize(); ++x) {
+			const TextureColor<unsigned short, 4> &col = (*map)(x, y);
+
+			const u_int index = (x + y * map->uSize());
+			slgRGBMap[index].r = col.c[0];
+			slgRGBMap[index].g = col.c[1];
+			slgRGBMap[index].b = col.c[2];
+			slgAlphaMap[index] = col.c[3];
+		}
+	}
+
+	const string texName = mipMap->GetName();
+	slgScene->DefineTexMap(texName,
+			slgRGBMap, slgAlphaMap, gamma, (u_int)map->uSize(), (u_int)map->vSize());
+
+	return texName;
+}
+
+//------------------------------------------------------------------------------
+// Channels: unsigned float
+//------------------------------------------------------------------------------
+
+string SLGRenderer::GetSLGTexName(luxrays::sdl::Scene *slgScene,
+		const MIPMapFastImpl<TextureColor<float, 1> > *mipMap, const float gamma) {
+	const BlockedArray<TextureColor<float, 1> > *map = mipMap->GetSingleMap();
+
+	luxrays::Spectrum *slgRGBMap = new luxrays::Spectrum[map->uSize() * map->vSize()];
+
+	for (u_int y = 0; y < map->vSize(); ++y) {
+		for (u_int x = 0; x < map->uSize(); ++x) {
+			const TextureColor<float, 1> &col = (*map)(x, y);
+
+			const u_int index = (x + y * map->uSize());
+			slgRGBMap[index].r = col.c[0];
+			slgRGBMap[index].g = col.c[0];
+			slgRGBMap[index].b = col.c[0];
+		}
+	}
+
+	const string texName = mipMap->GetName();
+	slgScene->DefineTexMap(texName,
+			slgRGBMap, gamma, (u_int)map->uSize(), (u_int)map->vSize());
+
+	return texName;
+}
+
+string SLGRenderer::GetSLGTexName(luxrays::sdl::Scene *slgScene,
+		const MIPMapFastImpl<TextureColor<float, 3> > *mipMap, const float gamma) {
 	const BlockedArray<TextureColor<float, 3> > *map = mipMap->GetSingleMap();
 
 	luxrays::Spectrum *slgRGBMap = new luxrays::Spectrum[map->uSize() * map->vSize()];
@@ -206,7 +415,7 @@ string SLGRenderer::GetSLGTexName(luxrays::sdl::Scene *slgScene,
 }
 
 string SLGRenderer::GetSLGTexName(luxrays::sdl::Scene *slgScene,
-		MIPMapFastImpl<TextureColor<float, 4> > *mipMap, const float gamma) {
+		const MIPMapFastImpl<TextureColor<float, 4> > *mipMap, const float gamma) {
 	const BlockedArray<TextureColor<float, 4> > *map = mipMap->GetSingleMap();
 
 	luxrays::Spectrum *slgRGBMap = new luxrays::Spectrum[map->uSize() * map->vSize()];
@@ -231,11 +440,67 @@ string SLGRenderer::GetSLGTexName(luxrays::sdl::Scene *slgScene,
 	return texName;
 }
 
-string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive *prim) {
+//------------------------------------------------------------------------------
+
+bool SLGRenderer::GetSLGMaterialColorAndTex(luxrays::sdl::Scene *slgScene,
+		luxrays::Spectrum *color, string *texName,
+		Texture<SWCSpectrum> *tex0, Texture<SWCSpectrum> *tex1) {
+
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Texture 0 type: " << ToClassName(tex0);
+	ConstantRGBColorTexture *constRGBTex0 = dynamic_cast<ConstantRGBColorTexture *>(tex0);
+	ImageSpectrumTexture *imgTex0 = dynamic_cast<ImageSpectrumTexture *>(tex0);
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Texture 1 type: " << ToClassName(tex1);
+	ConstantRGBColorTexture *constRGBTex1 = dynamic_cast<ConstantRGBColorTexture *>(tex1);
+	ImageSpectrumTexture *imgTex1 = dynamic_cast<ImageSpectrumTexture *>(tex1);
+
+	if (imgTex0) {
+		color->r = 1.f;
+		color->g = 1.f;
+		color->b = 1.f;
+
+		*texName = GetSLGTexName(slgScene, imgTex0->GetMIPMap(), imgTex0->GetInfo().gamma);
+
+		return true;
+	} else if (imgTex1) {
+		color->r = 1.f;
+		color->g = 1.f;
+		color->b = 1.f;
+
+		*texName = GetSLGTexName(slgScene, imgTex0->GetMIPMap(), imgTex0->GetInfo().gamma);
+
+		return true;
+	} else if (constRGBTex0) {
+		color->r = (*constRGBTex0)["color.r"].FloatValue();
+		color->g = (*constRGBTex0)["color.g"].FloatValue();
+		color->b = (*constRGBTex0)["color.b"].FloatValue();
+		*texName = "";
+
+		return true;
+	} else if (constRGBTex1) {
+		color->r = (*constRGBTex0)["color.r"].FloatValue();
+		color->g = (*constRGBTex0)["color.g"].FloatValue();
+		color->b = (*constRGBTex0)["color.b"].FloatValue();
+		*texName = "";
+
+		return true;
+	}
+
+	LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only materials with ConstantRGBColorTexture (i.e. not " <<
+		ToClassName(tex0) << " or " << ToClassName(tex1) << ").";
+
+	return false;
+}
+
+bool SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive *prim,
+		string *resMatName, string *resTexName) {
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Primitive type: " << ToClassName(prim);
 
+	*resMatName = "mat_default";
+	*resTexName = "";
+	
 	Material *mat = NULL;
-	string matName;
+	string matName = "mat_default";
+	string texName = "";
 
 	//----------------------------------------------------------------------
 	// Check if it is a Shape
@@ -244,7 +509,7 @@ string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Prim
 		const Shape *shape = dynamic_cast<const Shape *>(prim);
 		mat = shape->GetMaterial();
 		if (!mat)
-			return "mat_default";
+			return false;
 		matName = mat->GetName();
 	} else
 	//----------------------------------------------------------------------
@@ -254,7 +519,7 @@ string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Prim
 		const InstancePrimitive *instance = dynamic_cast<const InstancePrimitive *>(prim);
 		mat = instance->GetMaterial();
 		if (!mat)
-			return "mat_default";
+			return false;
 		matName = mat->GetName();
 	} else
 	//----------------------------------------------------------------------
@@ -315,21 +580,20 @@ string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Prim
 						boost::lexical_cast<string>(rgb.g) + " " +
 						boost::lexical_cast<string>(rgb.b) + "\n"
 					);
+				
 			} else {
 				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only area lights with constant ConstantRGBColorTexture or BlackBodyTexture (i.e. not " <<
 					ToClassName(tex) << "). Replacing an unsupported area light material with matte.";
-				return "mat_default";
+				return false;
 			}
 		}
-
-		return matName;
 	} else
 	//----------------------------------------------------------------------
 	// Primitive is not supported, use the default material
 	//----------------------------------------------------------------------
 	{
 		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer doesn't support material conversion for primitive " << ToClassName(prim);
-		return "mat_default";
+		return false;
 	}
 
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Material type: " << ToClassName(mat);
@@ -347,26 +611,17 @@ string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Prim
 			matName = matte->GetName();
 
 			// Check the type of texture
-			Texture<SWCSpectrum> *tex = matte->GetTexture();
-			LOG(LUX_DEBUG, LUX_NOERROR) << "Texture type: " << ToClassName(tex);
-			ConstantRGBColorTexture *rgbTex = dynamic_cast<ConstantRGBColorTexture *>(tex);
-
-			if (rgbTex) {
-				luxrays::Spectrum rgb(
-						(*rgbTex)["color.r"].FloatValue(),
-						(*rgbTex)["color.g"].FloatValue(),
-						(*rgbTex)["color.b"].FloatValue());
-
+			luxrays::Spectrum color;
+			if (GetSLGMaterialColorAndTex(slgScene, &color, &texName, matte->GetTexture())) {
 				slgScene->AddMaterials(
 					"scene.materials.matte." + matName +" = " +
-						boost::lexical_cast<string>(rgb.r) + " " +
-						boost::lexical_cast<string>(rgb.g) + " " +
-						boost::lexical_cast<string>(rgb.b) + "\n"
+						boost::lexical_cast<string>(color.r) + " " +
+						boost::lexical_cast<string>(color.g) + " " +
+						boost::lexical_cast<string>(color.b) + "\n"
 					);
 			} else {
-				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only Matte material with ConstantRGBColorTexture (i.e. not " <<
-					ToClassName(tex) << "). Replacing an unsupported material with matte.";
-				return "mat_default";
+				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "Replacing an unsupported material with white matte.";
+				return false;
 			}
 		} else
 		//------------------------------------------------------------------
@@ -699,11 +954,14 @@ string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Prim
 		{
 			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only Matte, Mirror, Glass, Glass2, Glossy2 and Metal material (i.e. not " <<
 				ToClassName(mat) << "). Replacing an unsupported material with matte.";
-			return "mat_default";
+			return false;
 		}
 	}
 
-	return matName;
+	*resMatName = matName;
+	*resTexName = texName;
+
+	return true;
 }
 
 void SLGRenderer::ConvertEnvLights(luxrays::sdl::Scene *slgScene) {
@@ -897,7 +1155,8 @@ void SLGRenderer::ConvertGeometry(luxrays::sdl::Scene *slgScene) {
 		// Instances require special care
 		if (dynamic_cast<const InstancePrimitive *>(prim)) {
 			const InstancePrimitive *instance = dynamic_cast<const InstancePrimitive *>(prim);
-			const string matName = GetSLGMaterialName(slgScene, instance);
+			string matName, texName;
+			GetSLGMaterialName(slgScene, instance, &matName, &texName);
 
 			const vector<boost::shared_ptr<Primitive> > &instanceSources = instance->GetInstanceSources();
 
@@ -931,10 +1190,11 @@ void SLGRenderer::ConvertGeometry(luxrays::sdl::Scene *slgScene) {
 						boost::lexical_cast<string>(*mesh);
 					const string meshName = "Mesh-" + boost::lexical_cast<string>(*mesh);
 
-					slgScene->AddObject(objName, matName, meshName,
-							"scene.objects." + matName + "." + objName + ".transformation = " + transString + "\n"
-							"scene.objects." + matName + "." + objName + ".useplynormals = 1\n"
-							);
+					std::stringstream ss;
+					ss << "scene.objects." << matName << "." << objName << ".transformation = " << transString << "\n" <<
+						((texName != "") ? ("scene.objects." + matName + "." + objName + ".texmap = " + texName + "\n") : "") <<
+						"scene.objects." << matName << "." << objName << ".useplynormals = 1\n";
+					slgScene->AddObject(objName, matName, meshName, ss.str());
 				}
 			}
 		} else {
@@ -949,14 +1209,17 @@ void SLGRenderer::ConvertGeometry(luxrays::sdl::Scene *slgScene) {
 				continue;
 
 			// Add the object
-			const string matName = GetSLGMaterialName(slgScene, prim);
+			string matName, texName;
+			GetSLGMaterialName(slgScene, prim, &matName, &texName);
 			for (vector<luxrays::ExtTriangleMesh *>::const_iterator mesh = meshList.begin(); mesh != meshList.end(); ++mesh) {
 				const string objName = "Object-" + boost::lexical_cast<string>(prim) + "-" +
 					boost::lexical_cast<string>(*mesh);
 				const string meshName = "Mesh-" + boost::lexical_cast<string>(*mesh);
-				slgScene->AddObject(objName, matName, meshName,
-						"scene.objects." + matName + "." + objName + ".useplynormals = 1\n"
-						);
+				
+				std::stringstream ss;
+				ss << ((texName != "") ? ("scene.objects." + matName + "." + objName + ".texmap = " + texName + "\n") : "") <<
+					"scene.objects." << matName << "." << objName << ".useplynormals = 1\n";
+				slgScene->AddObject(objName, matName, meshName, ss.str());
 			}
 		}
 	}

@@ -37,21 +37,48 @@ using std::map;
 namespace lux
 {
 
+class TexInfo {
+public:
+	TexInfo(ImageTextureFilterType type, const string &f, int dm,
+		float ma, ImageWrap wm, float ga, float gam) :
+		filterType(type), filename(f), discardmm(dm),
+		maxAniso(ma), wrapMode(wm), gain(ga), gamma(gam) { }
+
+	ImageTextureFilterType filterType;
+	string filename;
+	int discardmm;
+	float maxAniso;
+	ImageWrap wrapMode;
+	float gain;
+	float gamma;
+
+	bool operator<(const TexInfo &t2) const {
+		if (filterType != t2.filterType)
+			return filterType < t2.filterType;
+		if (filename != t2.filename)
+			return filename < t2.filename;
+		if (discardmm != t2.discardmm)
+			return discardmm < t2.discardmm;
+		if (maxAniso != t2.maxAniso)
+			return maxAniso < t2.maxAniso;
+		if (wrapMode != t2.wrapMode)
+			return wrapMode < t2.wrapMode;
+		if (gain != t2.gain)
+			return gain < t2.gain;
+		return gamma < t2.gamma;
+	}
+};
+
 class ImageTexture {
 public:
 	// ImageTexture Public Methods
-	ImageTexture(TextureMapping2D *m, ImageTextureFilterType type,
-		const string &filename, int discardmm, float maxAniso,
-		ImageWrap wrapMode, float gain, float gamma) {
-		filterType = type;
-		mapping = m;
-		mipmap = GetTexture(filterType, filename, discardmm, maxAniso,
-			wrapMode, gain, gamma);
+	ImageTexture(const TexInfo &texInfo, TextureMapping2D *m) : info(texInfo) {
+		mipmap = GetTexture(info);
 	}
 	virtual ~ImageTexture() {
 		// If the map isn't used anymore, remove it from the cache
 		// The last user still has 2 references:
-		// 1 from the texture and 1 from the dictionnary
+		// 1 from the texture and 1 from the dictionary
 		for (map<TexInfo, boost::shared_ptr<MIPMap> >::iterator t = textures.begin(); t != textures.end(); ++t) {
 			if ((*t).second.get() == mipmap.get() &&
 				(*t).second.use_count() == 2) {
@@ -62,62 +89,29 @@ public:
 		delete mapping;
 	}
 
+	const MIPMap *GetMIPMap() const { return mipmap.get(); }
+	const TexInfo &GetInfo() const { return info; }
+
 private:
-	class TexInfo {
-	public:
-		TexInfo(ImageTextureFilterType type, const string &f, int dm,
-			float ma, ImageWrap wm, float ga, float gam) :
-			filterType(type), filename(f), discardmm(dm),
-			maxAniso(ma), wrapMode(wm), gain(ga), gamma(gam) { }
-
-		ImageTextureFilterType filterType;
-		string filename;
-		int discardmm;
-		float maxAniso;
-		ImageWrap wrapMode;
-		float gain;
-		float gamma;
-
-		bool operator<(const TexInfo &t2) const {
-			if (filterType != t2.filterType)
-				return filterType < t2.filterType;
-			if (filename != t2.filename)
-				return filename < t2.filename;
-			if (discardmm != t2.discardmm)
-				return discardmm < t2.discardmm;
-			if (maxAniso != t2.maxAniso)
-				return maxAniso < t2.maxAniso;
-			if (wrapMode != t2.wrapMode)
-				return wrapMode < t2.wrapMode;
-			if (gain != t2.gain)
-				return gain < t2.gain;
-			return gamma < t2.gamma;
-		}
-	};
 	static map<TexInfo, boost::shared_ptr<MIPMap> > textures;
 
 	// ImageTexture Private Methods
-	static boost::shared_ptr<MIPMap> GetTexture(ImageTextureFilterType filterType,
-		const string &filename, int discardmm, float maxAniso,
-		ImageWrap wrap, float gain, float gamma);
+	static boost::shared_ptr<MIPMap> GetTexture(const TexInfo &texInfo);
 
 protected:
 	// ImageTexture Protected Data
-	ImageTextureFilterType filterType;
 	boost::shared_ptr<MIPMap> mipmap;
 	TextureMapping2D *mapping;
+	TexInfo info;
 };
 
 // ImageTexture Declarations
 class ImageFloatTexture : public Texture<float>, public ImageTexture {
 public:
 	// ImageFloatTexture Public Methods
-	ImageFloatTexture(TextureMapping2D *m, ImageTextureFilterType type,
-		const string &filename, int discardmm, float maxAniso,
-		ImageWrap wrapMode, Channel ch, float gain, float gamma) :
+	ImageFloatTexture(const TexInfo &texInfo, TextureMapping2D *m, Channel ch) :
 		Texture("ImageFloatTexture-" + boost::lexical_cast<string>(this)),
-		ImageTexture(m, type, filename, discardmm, maxAniso, wrapMode,
-			gain, gamma) { channel = ch; }
+		ImageTexture(texInfo, m) { channel = ch; }
 
 	virtual ~ImageFloatTexture() { }
 
@@ -155,12 +149,9 @@ private:
 class ImageSpectrumTexture : public Texture<SWCSpectrum>, public ImageTexture {
 public:
 	// ImageSpectrumTexture Public Methods
-	ImageSpectrumTexture(TextureMapping2D *m, ImageTextureFilterType type,
-		const string &filename, int discardmm, float maxAniso,
-		ImageWrap wrapMode, float gain, float gamma) :
+	ImageSpectrumTexture(const TexInfo &texInfo, TextureMapping2D *m) :
 		Texture("ImageSpectrumTexture-" + boost::lexical_cast<string>(this)),
-		ImageTexture(m, type, filename, discardmm, maxAniso, wrapMode,
-			gain, gamma), isIlluminant(false) { }
+		ImageTexture(texInfo, m), isIlluminant(false) { }
 
 	virtual ~ImageSpectrumTexture() { }
 
@@ -206,12 +197,9 @@ private:
 class NormalMapTexture : public Texture<float>, public ImageTexture {
 public:
 	// NormalMapTexture Public Methods
-	NormalMapTexture(TextureMapping2D *m, ImageTextureFilterType type,
-		const string &filename, int discardmm, float maxAniso,
-		ImageWrap wrapMode, float gain, float gamma) :
+	NormalMapTexture(const TexInfo &texInfo, TextureMapping2D *m) :
 		Texture("NormalMapTexture-" + boost::lexical_cast<string>(this)),
-		ImageTexture(m, type, filename, discardmm, maxAniso, wrapMode,
-			gain, gamma) { }
+		ImageTexture(texInfo, m) { }
 
 	virtual ~NormalMapTexture() { }
 
@@ -238,44 +226,42 @@ private:
 };
 
 // ImageTexture Method Definitions
-inline boost::shared_ptr<MIPMap> ImageTexture::GetTexture(ImageTextureFilterType filterType,
-	const string &filename, int discardmm, float maxAniso, ImageWrap wrap, float gain,
-	float gamma)
-{
+inline boost::shared_ptr<MIPMap> ImageTexture::GetTexture(const TexInfo &texInfo) {
 	// Look for texture in texture cache
-	TexInfo texInfo(filterType, filename, discardmm, maxAniso, wrap, gain, gamma);
 	if (textures.find(texInfo) != textures.end()) {
 		LOG(LUX_INFO, LUX_NOERROR) << "Reusing data for imagemap '" <<
-			filename << "'";
+			texInfo.filename << "'";
 		return textures[texInfo];
 	}
-	std::auto_ptr<ImageData> imgdata(ReadImage(filename));
+	std::auto_ptr<ImageData> imgdata(ReadImage(texInfo.filename));
 	boost::shared_ptr<MIPMap> ret;
 	if (imgdata.get() != NULL) {
-		ret = boost::shared_ptr<MIPMap>(imgdata->createMIPMap(filterType, maxAniso, wrap, gain, gamma));
+		ret = boost::shared_ptr<MIPMap>(imgdata->createMIPMap(
+				texInfo.filterType, texInfo.maxAniso, texInfo.wrapMode, texInfo.gain, texInfo.gamma));
 	} else {
 		// Create one-valued _MIPMap_
 		TextureColor<float, 1> oneVal(1.f);
 
-		ret = boost::shared_ptr<MIPMap>(new MIPMapFastImpl<TextureColor<float, 1> >(filterType, 1, 1, &oneVal));
+		ret = boost::shared_ptr<MIPMap>(new MIPMapFastImpl<TextureColor<float, 1> >(
+				texInfo.filterType, 1, 1, &oneVal));
 	}
 	if (ret) {
-		if (discardmm > 0 && (filterType == MIPMAP_TRILINEAR ||
-			filterType == MIPMAP_EWA)) {
-			ret->DiscardMipmaps(discardmm);
+		if (texInfo.discardmm > 0 && (texInfo.filterType == MIPMAP_TRILINEAR ||
+			texInfo.filterType == MIPMAP_EWA)) {
+			ret->DiscardMipmaps(texInfo.discardmm);
 
 			LOG(LUX_INFO, LUX_NOERROR) << "Discarded " <<
-				discardmm << " mipmap levels";
+				texInfo.discardmm << " mipmap levels";
 		}
 
 		LOG(LUX_INFO, LUX_NOERROR) << "Memory used for imagemap '" <<
-			filename << "': " << (ret->GetMemoryUsed() / 1024) <<
+			texInfo.filename << "': " << (ret->GetMemoryUsed() / 1024) <<
 			"KBytes";
 
 		textures[texInfo] = ret;
 		return textures[texInfo];
 	}
-	LOG(LUX_ERROR, LUX_SYSTEM) << "Creation of imagemap '" << filename <<
+	LOG(LUX_ERROR, LUX_SYSTEM) << "Creation of imagemap '" << texInfo.filename <<
 		"' failed";
 
 	return boost::shared_ptr<MIPMap>();
