@@ -1004,10 +1004,16 @@ luxrays::Properties SLGRenderer::CreateSLGConfig() {
 		BidirIntegrator *bidir = dynamic_cast<BidirIntegrator *>(scene->surfaceIntegrator);
 		const int maxEyeDepth = (*bidir)["maxEyeDepth"].IntValue();
 		const int maxLightDepth = (*bidir)["maxLightDepth"].IntValue();
+		const float startRadius = (*bidir)["startRadius"].FloatValue();
+		const float alpha = (*bidir)["alpha"].FloatValue();
+		const int lightPathCount = (*bidir)["lightPathCount"].IntValue();
 
 		ss << "renderengine.type = BIDIRVMCPU\n" <<
 			"path.maxdepth = " << maxLightDepth << "\n" <<
-			"path.maxdepth = " << maxEyeDepth << "\n";
+			"path.maxdepth = " << maxEyeDepth << "\n" <<
+			"bidirvm.startradius.scale = " << startRadius << "\n" <<
+			"bidirvm.alpha = " << alpha << "\n" <<
+			"bidirvm.lightpath.count = " << lightPathCount << "\n";
 	} else {
 		// Unmapped surface integrator, just use path tracing
 		throw std::runtime_error("SLGRenderer doesn't support the SurfaceIntegrator, falling back to path tracing");
