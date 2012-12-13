@@ -33,7 +33,8 @@ namespace lux
 class Metal : public Material {
 public:
 	// Metal Public Methods
-	Metal(boost::shared_ptr<SPD > &n, boost::shared_ptr<SPD > &k,
+	Metal(const std::string &metalName,
+		boost::shared_ptr<SPD > &n, boost::shared_ptr<SPD > &k,
 		boost::shared_ptr<Texture<float> > &u,
 		boost::shared_ptr<Texture<float> > &v,
 		const ParamSet &mp);
@@ -45,6 +46,9 @@ public:
 
 	static Material * CreateMaterial(const Transform &xform,
 		const ParamSet &mp);
+
+	Texture<float> *GetNuTexture() { return nu.get(); }
+	Texture<float> *GetNvTexture() { return nv.get(); }
 
 private:
 	// Metal Private Data

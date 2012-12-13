@@ -59,6 +59,7 @@
 #include "materials/glass.h"
 #include "materials/glass2.h"
 #include "materials/glossy2.h"
+#include "materials/metal.h"
 
 #include "volumes/clearvolume.h"
 
@@ -638,10 +639,65 @@ string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Prim
 					);
 		} else
 		//------------------------------------------------------------------
+		// Check if it is material Metal
+		//------------------------------------------------------------------
+		if (dynamic_cast<Metal *>(mat)) {
+			// Define the material
+			Metal *metal = dynamic_cast<Metal *>(mat);
+			matName = metal->GetName();
+
+			// Try to guess the exponent from the roughness of the surface in the u direction
+			Texture<float> *uroughnessTex = metal->GetNuTexture();
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Nu Texture type: " << ToClassName(uroughnessTex);
+			ConstantFloatTexture *uroughnessFloatTex = dynamic_cast<ConstantFloatTexture *>(uroughnessTex);
+
+			float uroughness;
+			if (uroughnessFloatTex)
+				uroughness = Clamp((*uroughnessFloatTex)["value"].FloatValue(), 6e-3f, 1.f);
+			else {
+				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only Metal material with ConstantFloatTexture (i.e. not " <<
+					ToClassName(uroughnessFloatTex) << "). Ignoring unsupported texture and using 0.1 value.";
+				uroughness = .1f;
+			}
+			const float exponent = 10.f / uroughness;
+
+			// Retrieve the metal name
+			const string metalName = (*metal)["metalName"].StringValue();
+			if (metalName == "amorphous carbon")
+				slgScene->AddMaterials(
+					"scene.materials.metal." + matName +" = 0.1 0.1 0.1 " +
+					boost::lexical_cast<string>(exponent) + " 1\n"
+				);
+			else if (metalName == "silver")
+				slgScene->AddMaterials(
+					"scene.materials.mattemetal." + matName +" = 0.075 0.075 0.075 0.9 0.9 0.9 " +
+					boost::lexical_cast<string>(exponent) + " 1\n"
+				);
+			else if (metalName == "gold")
+				slgScene->AddMaterials(
+					"scene.materials.mattemetal." + matName +" = 0.09 0.055 0.005 0.9 0.55 0.05 " +
+					boost::lexical_cast<string>(exponent) + " 1\n"
+				);
+			else if (metalName == "copper")
+				slgScene->AddMaterials(
+					"scene.materials.mattemetal." + matName +" = 0.2 0.125 0.1 0.9 0.7 0.6 " +
+					boost::lexical_cast<string>(exponent) + " 1\n"
+				);
+			else {
+				slgScene->AddMaterials(
+					"scene.materials.mattemetal." + matName +" = 0.025 0.025 0.025 0.9 0.9 0.9 " +
+					boost::lexical_cast<string>(exponent) + " 1\n"
+				);
+
+				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only Metal material of name 'amorphous carbon', 'silver', 'gold', 'copper' and 'aluminium' (i.e. not " <<
+					metalName << "). Replacing an unsupported material with metal 'aluminium'.";
+			}
+		} else
+		//------------------------------------------------------------------
 		// Material is not supported, use the default one
 		//------------------------------------------------------------------
 		{
-			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only Matte, Mirror, Glass, Glass2 and Glossy2 material (i.e. not " <<
+			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only Matte, Mirror, Glass, Glass2, Glossy2 and Metal material (i.e. not " <<
 				ToClassName(mat) << "). Replacing an unsupported material with matte.";
 			return "mat_default";
 		}
