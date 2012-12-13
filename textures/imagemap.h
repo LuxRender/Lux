@@ -73,6 +73,7 @@ class ImageTexture {
 public:
 	// ImageTexture Public Methods
 	ImageTexture(const TexInfo &texInfo, TextureMapping2D *m) : info(texInfo) {
+		mapping = m;
 		mipmap = GetTexture(info);
 	}
 	virtual ~ImageTexture() {
