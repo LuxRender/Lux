@@ -639,7 +639,7 @@ bool SLGRenderer::GetSLGMaterialInfo(luxrays::sdl::Scene *slgScene, const Primit
 						boost::lexical_cast<string>(matInfo.color.b) + "\n"
 					);
 			} else {
-				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "Replacing an unsupported material with white matte.";
+				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "Ignoring unsupported texture.";
 				return false;
 			}
 		} else
@@ -652,25 +652,15 @@ bool SLGRenderer::GetSLGMaterialInfo(luxrays::sdl::Scene *slgScene, const Primit
 			matInfo.matName = mirror->GetName();
 
 			// Check the type of texture
-			Texture<SWCSpectrum> *tex = mirror->GetTexture();
-			LOG(LUX_DEBUG, LUX_NOERROR) << "Texture type: " << ToClassName(tex);
-			ConstantRGBColorTexture *rgbTex = dynamic_cast<ConstantRGBColorTexture *>(tex);
-
-			if (rgbTex) {
-				luxrays::Spectrum rgb(
-						(*rgbTex)["color.r"].FloatValue(),
-						(*rgbTex)["color.g"].FloatValue(),
-						(*rgbTex)["color.b"].FloatValue());
-
+			if (GetSLGMaterialTexInfo(slgScene, &matInfo, mirror->GetTexture())) {
 				slgScene->AddMaterials(
 					"scene.materials.mirror." + matInfo.matName +" = " +
-						boost::lexical_cast<string>(rgb.r) + " " +
-						boost::lexical_cast<string>(rgb.g) + " " +
-						boost::lexical_cast<string>(rgb.b) + " 1\n"
+						boost::lexical_cast<string>(matInfo.color.r) + " " +
+						boost::lexical_cast<string>(matInfo.color.g) + " " +
+						boost::lexical_cast<string>(matInfo.color.b) + " 1\n"
 					);
 			} else {
-				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only Mirror material with ConstantRGBColorTexture (i.e. not " <<
-					ToClassName(tex) << "). Ignoring unsupported texture.";
+				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "Ignoring unsupported texture.";
 				slgScene->AddMaterials(
 					"scene.materials.mirror." + matInfo.matName +" = 1.0 1.0 1.0 1\n");
 			}
