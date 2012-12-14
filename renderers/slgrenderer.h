@@ -127,11 +127,11 @@ private:
 	class SLGMaterialInfo {
 	public:
 		SLGMaterialInfo() : matName("mat_default"), texName(""),
-			uScale(1.f), vScale(1.f), uDelta(1.f), vDelta(1.f), color(1.f) { }
+			uScale(1.f), vScale(1.f), uDelta(1.f), vDelta(1.f), color0(1.f), color1(1.f) { }
 
 		string matName, texName;
 		float uScale, vScale, uDelta, vDelta;
-		luxrays::Spectrum color;
+		luxrays::Spectrum color0, color1;
 	};
 
 	void DefineSLGDefaultTexMap(luxrays::sdl::Scene *slgScene);
@@ -146,7 +146,9 @@ private:
 	string GetSLGTexName(luxrays::sdl::Scene *slgScene, const MIPMapFastImpl<TextureColor<float, 3> > *mipMap, const float gamma);
 	string GetSLGTexName(luxrays::sdl::Scene *slgScene, const MIPMapFastImpl<TextureColor<float, 4> > *mipMap, const float gamma);
 	bool GetSLGMaterialTexInfo(luxrays::sdl::Scene *slgScene, SLGMaterialInfo *matInfo,
-		Texture<SWCSpectrum> *tex0, Texture<SWCSpectrum> *tex1 = NULL);
+		Texture<SWCSpectrum> *tex0);
+	bool GetSLGMaterialTexInfo(luxrays::sdl::Scene *slgScene, SLGMaterialInfo *matInfo,
+		Texture<SWCSpectrum> *tex0, Texture<SWCSpectrum> *tex1);
 	bool GetSLGMaterialInfo(luxrays::sdl::Scene *slgScene, const Primitive *prim, SLGMaterialInfo *matInfo);
 
 	void ConvertEnvLights(luxrays::sdl::Scene *slgScene);
