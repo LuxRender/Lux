@@ -443,16 +443,17 @@ string SLGRenderer::GetSLGTexName(luxrays::sdl::Scene *slgScene,
 
 //------------------------------------------------------------------------------
 
-bool SLGRenderer::GetSLGBumpMapInfo(luxrays::sdl::Scene *slgScene, SLGMaterialInfo *matInfo,
-		const Texture<float> *bumpTex) {
-	LOG(LUX_DEBUG, LUX_NOERROR) << "Bump map type: " << ToClassName(bumpTex);
+bool SLGRenderer::GetSLGBumpNormalMapInfo(luxrays::sdl::Scene *slgScene, SLGMaterialInfo *matInfo,
+		const Texture<float> *tex) {
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Bump/Normal map type: " << ToClassName(tex);
 
-	if (!bumpTex)
+	if (!tex)
 		return true;
 
-	const ScaleTexture<float, float> *scaleTex = dynamic_cast<const ScaleTexture<float, float> *>(bumpTex);
+	if (dynamic_cast<const ScaleTexture<float, float> *>(tex)) {
+		// ScaleTexture<float, float> is for bump mapping
+		const ScaleTexture<float, float> *scaleTex = dynamic_cast<const ScaleTexture<float, float> *>(tex);
 
-	if (scaleTex) {
 		LOG(LUX_DEBUG, LUX_NOERROR) << "Bump map scale type: " << ToClassName(scaleTex->GetTex1());
 		const ConstantFloatTexture *constFloatTex = dynamic_cast<const ConstantFloatTexture *>(scaleTex->GetTex1());
 		LOG(LUX_DEBUG, LUX_NOERROR) << "Bump map bump type: " << ToClassName(scaleTex->GetTex2());
@@ -482,10 +483,39 @@ bool SLGRenderer::GetSLGBumpMapInfo(luxrays::sdl::Scene *slgScene, SLGMaterialIn
 				ToClassName(constFloatTex) << " and " << ToClassName(imgTex) << ").";
 			return false;
 		}
+	} else if (dynamic_cast<const NormalMapTexture *>(tex)) {
+		// NormalMapTexture is for normal mapping
+		const NormalMapTexture *normalTex = dynamic_cast<const NormalMapTexture *>(tex);
+
+		LOG(LUX_DEBUG, LUX_NOERROR) << "Normal map type: " << ToClassName(normalTex);
+
+		if (normalTex) {
+			// Check the mapping
+			const TextureMapping2D *mapping = normalTex->GetTextureMapping2D();
+			if (mapping) {
+				if (dynamic_cast<const UVMapping2D *>(mapping)) {
+					const UVMapping2D *uvMapping2D = dynamic_cast<const UVMapping2D *>(mapping);
+					matInfo->normalMap.uScale = uvMapping2D->GetUScale();
+					matInfo->normalMap.vScale = uvMapping2D->GetVScale();
+					matInfo->normalMap.uDelta = uvMapping2D->GetUDelta();
+					matInfo->normalMap.vDelta = uvMapping2D->GetVDelta();
+				} else {
+					LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only normal maps with UVMapping2D (i.e. not " <<
+							ToClassName(mapping) << "). Ignoring the mapping.";				
+				}
+			}
+
+			matInfo->normalMap.name = GetSLGTexName(slgScene, normalTex->GetMIPMap(), normalTex->GetInfo().gamma);
+			return true;
+		} else {
+			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only normal mapping with NormalMapTexture (i.e. not " <<
+				ToClassName(normalTex) << ").";
+			return false;
+		}
 	}
 
-	LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only bump mapping with ScaleTexture<float, float> (i.e. not " <<
-		ToClassName(bumpTex) << ").";
+	LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only bump mapping with ScaleTexture<float, float> and normal mapping with NormalMapTexture (i.e. not " <<
+		ToClassName(tex) << ").";
 
 	return false;
 }
@@ -706,9 +736,9 @@ bool SLGRenderer::GetSLGMaterialInfo(luxrays::sdl::Scene *slgScene, const Primit
 		return false;
 	}
 
-	// Retrieve bump mapping information too
+	// Retrieve bump/normal mapping information too
 	if (mat)
-		GetSLGBumpMapInfo(slgScene, &matInfo, mat->bumpMap.get());
+		GetSLGBumpNormalMapInfo(slgScene, &matInfo, mat->bumpMap.get());
 
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Material type: " << ToClassName(mat);
 
@@ -1249,6 +1279,13 @@ void SLGRenderer::ConvertGeometry(luxrays::sdl::Scene *slgScene) {
 						ss << prefix << ".bumpmap.vdelta = " << matInfo.bumpMap.vDelta << "\n";
 						ss << prefix << ".bumpmap.scale = " << matInfo.bumpMap.scale << "\n";
 					}
+					if (matInfo.normalMap.name != "") {
+						ss << prefix << ".normalmap = " << matInfo.normalMap.name << "\n";
+						ss << prefix << ".normalmap.uscale = " << matInfo.normalMap.uScale << "\n";
+						ss << prefix << ".normalmap.vscale = " << matInfo.normalMap.vScale << "\n";
+						ss << prefix << ".normalmap.udelta = " << matInfo.normalMap.uDelta << "\n";
+						ss << prefix << ".normalmap.vdelta = " << matInfo.normalMap.vDelta << "\n";
+					}
 					ss << prefix << ".useplynormals = 1\n";
 					slgScene->AddObject(objName, matInfo.matName, meshName, ss.str());
 				}
@@ -1289,6 +1326,13 @@ void SLGRenderer::ConvertGeometry(luxrays::sdl::Scene *slgScene) {
 					ss << prefix << ".bumpmap.udelta = " << matInfo.bumpMap.uDelta << "\n";
 					ss << prefix << ".bumpmap.vdelta = " << matInfo.bumpMap.vDelta << "\n";
 					ss << prefix << ".bumpmap.scale = " << matInfo.bumpMap.scale << "\n";
+				}
+				if (matInfo.normalMap.name != "") {
+					ss << prefix << ".normalmap = " << matInfo.normalMap.name << "\n";
+					ss << prefix << ".normalmap.uscale = " << matInfo.normalMap.uScale << "\n";
+					ss << prefix << ".normalmap.vscale = " << matInfo.normalMap.vScale << "\n";
+					ss << prefix << ".normalmap.udelta = " << matInfo.normalMap.uDelta << "\n";
+					ss << prefix << ".normalmap.vdelta = " << matInfo.normalMap.vDelta << "\n";
 				}
 				ss << prefix << ".useplynormals = 1\n";
 				slgScene->AddObject(objName, matInfo.matName, meshName, ss.str());
