@@ -849,44 +849,6 @@ bool SLGRenderer::GetSLGMaterialInfo(luxrays::sdl::Scene *slgScene, const Primit
 			Glossy2 *glossy2 = dynamic_cast<Glossy2 *>(mat);
 			matInfo.matName = glossy2->GetName();
 
-			// Check the type of texture
-
-			// Kd
-			Texture<SWCSpectrum> *kdTex = glossy2->GetKdTexture();
-			LOG(LUX_DEBUG, LUX_NOERROR) << "Kd Texture type: " << ToClassName(kdTex);
-			ConstantRGBColorTexture *kdRGBTex = dynamic_cast<ConstantRGBColorTexture *>(kdTex);
-
-			luxrays::Spectrum kdRGB;
-			if (kdRGBTex) {
-				kdRGB.r = (*kdRGBTex)["color.r"].FloatValue();
-				kdRGB.g = (*kdRGBTex)["color.g"].FloatValue();
-				kdRGB.b = (*kdRGBTex)["color.b"].FloatValue();
-			} else {
-				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only Glossy2 material with ConstantRGBColorTexture (i.e. not " <<
-					ToClassName(kdRGBTex) << "). Ignoring unsupported texture.";
-				kdRGB.r = 1.f;
-				kdRGB.g = 1.f;
-				kdRGB.b = 1.f;
-			}
-
-			// Ks
-			Texture<SWCSpectrum> *ksTex = glossy2->GetKsTexture();
-			LOG(LUX_DEBUG, LUX_NOERROR) << "Ks Texture type: " << ToClassName(ksTex);
-			ConstantRGBColorTexture *ksRGBTex = dynamic_cast<ConstantRGBColorTexture *>(ksTex);
-
-			luxrays::Spectrum ksRGB;
-			if (ksRGBTex) {
-				ksRGB.r = (*ksRGBTex)["color.r"].FloatValue();
-				ksRGB.g = (*ksRGBTex)["color.g"].FloatValue();
-				ksRGB.b = (*ksRGBTex)["color.b"].FloatValue();
-			} else {
-				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only Glossy2 material with ConstantRGBColorTexture (i.e. not " <<
-					ToClassName(ksRGBTex) << "). Ignoring unsupported texture.";
-				ksRGB.r = 1.f;
-				ksRGB.g = 1.f;
-				ksRGB.b = 1.f;
-			}
-
 			// Try to guess the exponent from the roughness of the surface in the u direction
 			Texture<float> *uroughnessTex = glossy2->GetNuTexture();
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Nu Texture type: " << ToClassName(uroughnessTex);
@@ -902,16 +864,22 @@ bool SLGRenderer::GetSLGMaterialInfo(luxrays::sdl::Scene *slgScene, const Primit
 			}
 			const float exponent = 10.f / uroughness;
 
-			slgScene->AddMaterials(
-					"scene.materials.mattemetal." + matInfo.matName +" = " +
-						boost::lexical_cast<string>(kdRGB.r) + " " +
-						boost::lexical_cast<string>(kdRGB.g) + " " +
-						boost::lexical_cast<string>(kdRGB.b) + " " +
-						boost::lexical_cast<string>(ksRGB.r) + " " +
-						boost::lexical_cast<string>(ksRGB.g) + " " +
-						boost::lexical_cast<string>(ksRGB.b) + " " +
-						boost::lexical_cast<string>(exponent) + " 1\n"
-					);
+			// Check the type of texture
+			if (GetSLGMaterialTexInfo(slgScene, &matInfo, glossy2->GetKdTexture(), glossy2->GetKsTexture())) {
+				slgScene->AddMaterials(
+						"scene.materials.mattemetal." + matInfo.matName +" = " +
+							boost::lexical_cast<string>(matInfo.color0.r) + " " +
+							boost::lexical_cast<string>(matInfo.color0.g) + " " +
+							boost::lexical_cast<string>(matInfo.color0.b) + " " +
+							boost::lexical_cast<string>(matInfo.color1.r) + " " +
+							boost::lexical_cast<string>(matInfo.color1.g) + " " +
+							boost::lexical_cast<string>(matInfo.color1.b) + " " +
+							boost::lexical_cast<string>(exponent) + " 1\n"
+						);
+			} else {
+				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "Ignoring unsupported texture.";
+				return false;
+			}			
 		} else
 		//------------------------------------------------------------------
 		// Check if it is material Metal
