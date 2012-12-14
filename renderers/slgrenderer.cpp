@@ -442,10 +442,8 @@ string SLGRenderer::GetSLGTexName(luxrays::sdl::Scene *slgScene,
 
 //------------------------------------------------------------------------------
 
-bool SLGRenderer::GetSLGMaterialColorAndTex(luxrays::sdl::Scene *slgScene,
-		luxrays::Spectrum *color, string *texName,
-		float *uScale, float *vScale,
-		float *uDelta, float *vDelta,
+bool SLGRenderer::GetSLGMaterialTexInfo(luxrays::sdl::Scene *slgScene,
+		SLGMaterialInfo *matInfo,
 		Texture<SWCSpectrum> *tex0, Texture<SWCSpectrum> *tex1) {
 
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Texture 0 type: " << ToClassName(tex0);
@@ -459,54 +457,54 @@ bool SLGRenderer::GetSLGMaterialColorAndTex(luxrays::sdl::Scene *slgScene,
 		imgTex0 = imgTex1;
 
 	if (imgTex0) {
-		color->r = 1.f;
-		color->g = 1.f;
-		color->b = 1.f;
+		matInfo->color.r = 1.f;
+		matInfo->color.g = 1.f;
+		matInfo->color.b = 1.f;
 
 		// Check the mapping
-		*uScale = 1.f;
-		*vScale = 1.f;
-		*uDelta = 0.f;
-		*vDelta = 0.f;
+		matInfo->uScale = 1.f;
+		matInfo->vScale = 1.f;
+		matInfo->uDelta = 0.f;
+		matInfo->vDelta = 0.f;
 		const TextureMapping2D *mapping = imgTex0->GetTextureMapping2D();
 		if (mapping) {
 			if (dynamic_cast<const UVMapping2D *>(mapping)) {
 				const UVMapping2D *uvMapping2D = dynamic_cast<const UVMapping2D *>(mapping);
-				*uScale = uvMapping2D->GetUScale();
-				*vScale = uvMapping2D->GetVScale();
-				*uDelta = uvMapping2D->GetUDelta();
-				*vDelta = uvMapping2D->GetVDelta();
+				matInfo->uScale = uvMapping2D->GetUScale();
+				matInfo->vScale = uvMapping2D->GetVScale();
+				matInfo->uDelta = uvMapping2D->GetUDelta();
+				matInfo->vDelta = uvMapping2D->GetVDelta();
 			} else {
 				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only image maps with UVMapping2D (i.e. not " <<
 						ToClassName(mapping) << "). Ignoring the mapping.";				
 			}
 		}
 
-		*texName = GetSLGTexName(slgScene, imgTex0->GetMIPMap(), imgTex0->GetInfo().gamma);
+		matInfo->texName = GetSLGTexName(slgScene, imgTex0->GetMIPMap(), imgTex0->GetInfo().gamma);
 
 		return true;
 	} else if (constRGBTex0) {
-		color->r = (*constRGBTex0)["color.r"].FloatValue();
-		color->g = (*constRGBTex0)["color.g"].FloatValue();
-		color->b = (*constRGBTex0)["color.b"].FloatValue();
+		matInfo->color.r = (*constRGBTex0)["color.r"].FloatValue();
+		matInfo->color.g = (*constRGBTex0)["color.g"].FloatValue();
+		matInfo->color.b = (*constRGBTex0)["color.b"].FloatValue();
 
-		*texName = "";
-		*uScale = 1.f;
-		*vScale = 1.f;
-		*uDelta = 0.f;
-		*vDelta = 0.f;
+		matInfo->texName = "";
+		matInfo->uScale = 1.f;
+		matInfo->vScale = 1.f;
+		matInfo->uDelta = 0.f;
+		matInfo->vDelta = 0.f;
 
 		return true;
 	} else if (constRGBTex1) {
-		color->r = (*constRGBTex0)["color.r"].FloatValue();
-		color->g = (*constRGBTex0)["color.g"].FloatValue();
-		color->b = (*constRGBTex0)["color.b"].FloatValue();
+		matInfo->color.r = (*constRGBTex0)["color.r"].FloatValue();
+		matInfo->color.g = (*constRGBTex0)["color.g"].FloatValue();
+		matInfo->color.b = (*constRGBTex0)["color.b"].FloatValue();
 
-		*texName = "";
-		*uScale = 1.f;
-		*vScale = 1.f;
-		*uDelta = 0.f;
-		*vDelta = 0.f;
+		matInfo->texName = "";
+		matInfo->uScale = 1.f;
+		matInfo->vScale = 1.f;
+		matInfo->uDelta = 0.f;
+		matInfo->vDelta = 0.f;
 
 		return true;
 	}
@@ -517,18 +515,12 @@ bool SLGRenderer::GetSLGMaterialColorAndTex(luxrays::sdl::Scene *slgScene,
 	return false;
 }
 
-bool SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive *prim,
-		string *resMatName, string *resTexName,
-		float *uScale, float *vScale,
-		float *uDelta, float *vDelta) {
+bool SLGRenderer::GetSLGMaterialInfo(luxrays::sdl::Scene *slgScene, const Primitive *prim,
+		SLGMaterialInfo *info) {
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Primitive type: " << ToClassName(prim);
-
-	*resMatName = "mat_default";
-	*resTexName = "";
 	
 	Material *mat = NULL;
-	string matName = "mat_default";
-	string texName = "";
+	SLGMaterialInfo matInfo;
 
 	//----------------------------------------------------------------------
 	// Check if it is a Shape
@@ -538,7 +530,7 @@ bool SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primit
 		mat = shape->GetMaterial();
 		if (!mat)
 			return false;
-		matName = mat->GetName();
+		matInfo.matName = mat->GetName();
 	} else
 	//----------------------------------------------------------------------
 	// Check if it is an InstancePrimitive
@@ -548,7 +540,7 @@ bool SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primit
 		mat = instance->GetMaterial();
 		if (!mat)
 			return false;
-		matName = mat->GetName();
+		matInfo.matName = mat->GetName();
 	} else
 	//----------------------------------------------------------------------
 	// Check if it is an AreaLight
@@ -556,10 +548,10 @@ bool SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primit
 	if (dynamic_cast<const AreaLightPrimitive *>(prim)) {
 		const AreaLightPrimitive *alPrim = dynamic_cast<const AreaLightPrimitive *>(prim);
 		AreaLight *al = alPrim->GetAreaLight();
-		matName = al->GetName();
+		matInfo.matName = al->GetName();
 
 		// Check if I haven't already defined this AreaLight
-		if (slgScene->materialIndices.count(matName) < 1) {
+		if (slgScene->materialIndices.count(matInfo.matName) < 1) {
 			// Define a new area light material
 
 			Texture<SWCSpectrum> *tex = al->GetTexture();
@@ -588,7 +580,7 @@ bool SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primit
 					rgb *= gain * area * M_PI * rgb.Y();
 
 				slgScene->AddMaterials(
-					"scene.materials.light." + matName +" = " +
+					"scene.materials.light." + matInfo.matName +" = " +
 						boost::lexical_cast<string>(rgb.r) + " " +
 						boost::lexical_cast<string>(rgb.g) + " " +
 						boost::lexical_cast<string>(rgb.b) + "\n"
@@ -603,7 +595,7 @@ bool SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primit
 					rgb *= gain * area * M_PI * blackBodyTexture->Y();
 
 				slgScene->AddMaterials(
-					"scene.materials.light." + matName +" = " +
+					"scene.materials.light." + matInfo.matName +" = " +
 						boost::lexical_cast<string>(rgb.r) + " " +
 						boost::lexical_cast<string>(rgb.g) + " " +
 						boost::lexical_cast<string>(rgb.b) + "\n"
@@ -627,7 +619,7 @@ bool SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primit
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Material type: " << ToClassName(mat);
 
 	// Check if the material has already been defined
-	if (slgScene->materialIndices.count(matName) < 1) {
+	if (slgScene->materialIndices.count(matInfo.matName) < 1) {
 		// I have to create a new material definition
 
 		//------------------------------------------------------------------
@@ -636,18 +628,15 @@ bool SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primit
 		if (dynamic_cast<Matte *>(mat)) {
 			// Define the material
 			Matte *matte = dynamic_cast<Matte *>(mat);
-			matName = matte->GetName();
+			matInfo.matName = matte->GetName();
 
 			// Check the type of texture
-			luxrays::Spectrum color;
-			if (GetSLGMaterialColorAndTex(slgScene, &color, &texName,
-					uScale, vScale, uDelta, vDelta,
-					matte->GetTexture())) {
+			if (GetSLGMaterialTexInfo(slgScene, &matInfo, matte->GetTexture())) {
 				slgScene->AddMaterials(
-					"scene.materials.matte." + matName +" = " +
-						boost::lexical_cast<string>(color.r) + " " +
-						boost::lexical_cast<string>(color.g) + " " +
-						boost::lexical_cast<string>(color.b) + "\n"
+					"scene.materials.matte." + matInfo.matName +" = " +
+						boost::lexical_cast<string>(matInfo.color.r) + " " +
+						boost::lexical_cast<string>(matInfo.color.g) + " " +
+						boost::lexical_cast<string>(matInfo.color.b) + "\n"
 					);
 			} else {
 				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "Replacing an unsupported material with white matte.";
@@ -660,7 +649,7 @@ bool SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primit
 		if (dynamic_cast<Mirror *>(mat)) {
 			// Define the material
 			Mirror *mirror = dynamic_cast<Mirror *>(mat);
-			matName = mirror->GetName();
+			matInfo.matName = mirror->GetName();
 
 			// Check the type of texture
 			Texture<SWCSpectrum> *tex = mirror->GetTexture();
@@ -674,7 +663,7 @@ bool SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primit
 						(*rgbTex)["color.b"].FloatValue());
 
 				slgScene->AddMaterials(
-					"scene.materials.mirror." + matName +" = " +
+					"scene.materials.mirror." + matInfo.matName +" = " +
 						boost::lexical_cast<string>(rgb.r) + " " +
 						boost::lexical_cast<string>(rgb.g) + " " +
 						boost::lexical_cast<string>(rgb.b) + " 1\n"
@@ -683,7 +672,7 @@ bool SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primit
 				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only Mirror material with ConstantRGBColorTexture (i.e. not " <<
 					ToClassName(tex) << "). Ignoring unsupported texture.";
 				slgScene->AddMaterials(
-					"scene.materials.mirror." + matName +" = 1.0 1.0 1.0 1\n");
+					"scene.materials.mirror." + matInfo.matName +" = 1.0 1.0 1.0 1\n");
 			}
 		} else
 		//------------------------------------------------------------------
@@ -692,7 +681,7 @@ bool SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primit
 		if (dynamic_cast<Glass *>(mat)) {
 			// Define the material
 			Glass *glass = dynamic_cast<Glass *>(mat);
-			matName = glass->GetName();
+			matInfo.matName = glass->GetName();
 
 			// Check the type of textures
 
@@ -751,7 +740,7 @@ bool SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primit
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Architectural glass: " << architectural;
 			if (architectural) {
 				slgScene->AddMaterials(
-						"scene.materials.archglass." + matName +" = " +
+						"scene.materials.archglass." + matInfo.matName +" = " +
 							boost::lexical_cast<string>(krRGB.r) + " " +
 							boost::lexical_cast<string>(krRGB.g) + " " +
 							boost::lexical_cast<string>(krRGB.b) + " " +
@@ -762,7 +751,7 @@ bool SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primit
 						);
 			} else {
 				slgScene->AddMaterials(
-						"scene.materials.glass." + matName +" = " +
+						"scene.materials.glass." + matInfo.matName +" = " +
 							boost::lexical_cast<string>(krRGB.r) + " " +
 							boost::lexical_cast<string>(krRGB.g) + " " +
 							boost::lexical_cast<string>(krRGB.b) + " " +
@@ -779,7 +768,7 @@ bool SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primit
 		if (dynamic_cast<Glass2 *>(mat)) {
 			// Define the material
 			Glass2 *glass2 = dynamic_cast<Glass2 *>(mat);
-			matName = glass2->GetName();
+			matInfo.matName = glass2->GetName();
 
 			luxrays::Spectrum krRGB(1.f);
 			luxrays::Spectrum ktRGB(1.f);
@@ -829,7 +818,7 @@ bool SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primit
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Architectural glass: " << architectural;
 			if (architectural) {
 				slgScene->AddMaterials(
-						"scene.materials.archglass." + matName +" = " +
+						"scene.materials.archglass." + matInfo.matName +" = " +
 							boost::lexical_cast<string>(krRGB.r) + " " +
 							boost::lexical_cast<string>(krRGB.g) + " " +
 							boost::lexical_cast<string>(krRGB.b) + " " +
@@ -840,7 +829,7 @@ bool SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primit
 						);
 			} else {
 				slgScene->AddMaterials(
-						"scene.materials.glass." + matName +" = " +
+						"scene.materials.glass." + matInfo.matName +" = " +
 							boost::lexical_cast<string>(krRGB.r) + " " +
 							boost::lexical_cast<string>(krRGB.g) + " " +
 							boost::lexical_cast<string>(krRGB.b) + " " +
@@ -857,7 +846,7 @@ bool SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primit
 		if (dynamic_cast<Glossy2 *>(mat)) {
 			// Define the material
 			Glossy2 *glossy2 = dynamic_cast<Glossy2 *>(mat);
-			matName = glossy2->GetName();
+			matInfo.matName = glossy2->GetName();
 
 			// Check the type of texture
 
@@ -913,7 +902,7 @@ bool SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primit
 			const float exponent = 10.f / uroughness;
 
 			slgScene->AddMaterials(
-					"scene.materials.mattemetal." + matName +" = " +
+					"scene.materials.mattemetal." + matInfo.matName +" = " +
 						boost::lexical_cast<string>(kdRGB.r) + " " +
 						boost::lexical_cast<string>(kdRGB.g) + " " +
 						boost::lexical_cast<string>(kdRGB.b) + " " +
@@ -929,7 +918,7 @@ bool SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primit
 		if (dynamic_cast<Metal *>(mat)) {
 			// Define the material
 			Metal *metal = dynamic_cast<Metal *>(mat);
-			matName = metal->GetName();
+			matInfo.matName = metal->GetName();
 
 			// Try to guess the exponent from the roughness of the surface in the u direction
 			Texture<float> *uroughnessTex = metal->GetNuTexture();
@@ -950,27 +939,27 @@ bool SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primit
 			const string metalName = (*metal)["metalName"].StringValue();
 			if (metalName == "amorphous carbon")
 				slgScene->AddMaterials(
-					"scene.materials.metal." + matName +" = 0.1 0.1 0.1 " +
+					"scene.materials.metal." + matInfo.matName +" = 0.1 0.1 0.1 " +
 					boost::lexical_cast<string>(exponent) + " 1\n"
 				);
 			else if (metalName == "silver")
 				slgScene->AddMaterials(
-					"scene.materials.mattemetal." + matName +" = 0.075 0.075 0.075 0.9 0.9 0.9 " +
+					"scene.materials.mattemetal." + matInfo.matName +" = 0.075 0.075 0.075 0.9 0.9 0.9 " +
 					boost::lexical_cast<string>(exponent) + " 1\n"
 				);
 			else if (metalName == "gold")
 				slgScene->AddMaterials(
-					"scene.materials.mattemetal." + matName +" = 0.09 0.055 0.005 0.9 0.55 0.05 " +
+					"scene.materials.mattemetal." + matInfo.matName +" = 0.09 0.055 0.005 0.9 0.55 0.05 " +
 					boost::lexical_cast<string>(exponent) + " 1\n"
 				);
 			else if (metalName == "copper")
 				slgScene->AddMaterials(
-					"scene.materials.mattemetal." + matName +" = 0.2 0.125 0.1 0.9 0.7 0.6 " +
+					"scene.materials.mattemetal." + matInfo.matName +" = 0.2 0.125 0.1 0.9 0.7 0.6 " +
 					boost::lexical_cast<string>(exponent) + " 1\n"
 				);
 			else {
 				slgScene->AddMaterials(
-					"scene.materials.mattemetal." + matName +" = 0.025 0.025 0.025 0.9 0.9 0.9 " +
+					"scene.materials.mattemetal." + matInfo.matName +" = 0.025 0.025 0.025 0.9 0.9 0.9 " +
 					boost::lexical_cast<string>(exponent) + " 1\n"
 				);
 
@@ -988,8 +977,7 @@ bool SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primit
 		}
 	}
 
-	*resMatName = matName;
-	*resTexName = texName;
+	*info = matInfo;
 
 	return true;
 }
@@ -1185,10 +1173,8 @@ void SLGRenderer::ConvertGeometry(luxrays::sdl::Scene *slgScene) {
 		// Instances require special care
 		if (dynamic_cast<const InstancePrimitive *>(prim)) {
 			const InstancePrimitive *instance = dynamic_cast<const InstancePrimitive *>(prim);
-			string matName, texName;
-			float uScale, vScale, uDelta, vDelta;
-			GetSLGMaterialName(slgScene, instance, &matName, &texName,
-					&uScale, &vScale, &uDelta, &vDelta);
+			SLGMaterialInfo matInfo;
+			GetSLGMaterialInfo(slgScene, instance, &matInfo);
 
 			const vector<boost::shared_ptr<Primitive> > &instanceSources = instance->GetInstanceSources();
 
@@ -1223,16 +1209,17 @@ void SLGRenderer::ConvertGeometry(luxrays::sdl::Scene *slgScene) {
 					const string meshName = "Mesh-" + boost::lexical_cast<string>(*mesh);
 
 					std::stringstream ss;
-					ss << "scene.objects." << matName << "." << objName << ".transformation = " << transString << "\n";
-					if (texName != "") {
-						ss << "scene.objects." << matName << "." << objName << ".texmap = " << texName << "\n";
-						ss << "scene.objects." << matName << "." << objName << ".texmap.uscale = " << uScale << "\n";
-						ss << "scene.objects." << matName << "." << objName << ".texmap.vscale = " << vScale << "\n";
-						ss << "scene.objects." << matName << "." << objName << ".texmap.udelta = " << uDelta << "\n";
-						ss << "scene.objects." << matName << "." << objName << ".texmap.vdelta = " << vDelta << "\n";
+					const string prefix = "scene.objects." + matInfo.matName + "." + objName;
+					ss << prefix << ".transformation = " << transString << "\n";
+					if (matInfo.texName != "") {
+						ss << prefix << ".texmap = " << matInfo.texName << "\n";
+						ss << prefix << ".texmap.uscale = " << matInfo.uScale << "\n";
+						ss << prefix << ".texmap.vscale = " << matInfo.vScale << "\n";
+						ss << prefix << ".texmap.udelta = " << matInfo.uDelta << "\n";
+						ss << prefix << ".texmap.vdelta = " << matInfo.vDelta << "\n";
 					}
-					ss << "scene.objects." << matName << "." << objName << ".useplynormals = 1\n";
-					slgScene->AddObject(objName, matName, meshName, ss.str());
+					ss << prefix << ".useplynormals = 1\n";
+					slgScene->AddObject(objName, matInfo.matName, meshName, ss.str());
 				}
 			}
 		} else {
@@ -1247,10 +1234,8 @@ void SLGRenderer::ConvertGeometry(luxrays::sdl::Scene *slgScene) {
 				continue;
 
 			// Add the object
-			string matName, texName;
-			float uScale, vScale, uDelta, vDelta;
-			GetSLGMaterialName(slgScene, prim, &matName, &texName,
-					&uScale, &vScale, &uDelta, &vDelta);
+			SLGMaterialInfo matInfo;
+			GetSLGMaterialInfo(slgScene, prim, &matInfo);
 
 			for (vector<luxrays::ExtTriangleMesh *>::const_iterator mesh = meshList.begin(); mesh != meshList.end(); ++mesh) {
 				const string objName = "Object-" + boost::lexical_cast<string>(prim) + "-" +
@@ -1258,15 +1243,16 @@ void SLGRenderer::ConvertGeometry(luxrays::sdl::Scene *slgScene) {
 				const string meshName = "Mesh-" + boost::lexical_cast<string>(*mesh);
 				
 				std::stringstream ss;
-				if (texName != "") {
-					ss << "scene.objects." << matName << "." << objName << ".texmap = " << texName << "\n";
-					ss << "scene.objects." << matName << "." << objName << ".texmap.uscale = " << uScale << "\n";
-					ss << "scene.objects." << matName << "." << objName << ".texmap.vscale = " << vScale << "\n";
-					ss << "scene.objects." << matName << "." << objName << ".texmap.udelta = " << uDelta << "\n";
-					ss << "scene.objects." << matName << "." << objName << ".texmap.vdelta = " << vDelta << "\n";
+				const string prefix = "scene.objects." + matInfo.matName + "." + objName;
+				if (matInfo.texName != "") {
+					ss << prefix << ".texmap = " << matInfo.texName << "\n";
+					ss << prefix << ".texmap.uscale = " << matInfo.uScale << "\n";
+					ss << prefix << ".texmap.vscale = " << matInfo.vScale << "\n";
+					ss << prefix << ".texmap.udelta = " << matInfo.uDelta << "\n";
+					ss << prefix << ".texmap.vdelta = " << matInfo.vDelta << "\n";
 				}
-				ss << "scene.objects." << matName << "." << objName << ".useplynormals = 1\n";
-				slgScene->AddObject(objName, matName, meshName, ss.str());
+				ss << prefix << ".useplynormals = 1\n";
+				slgScene->AddObject(objName, matInfo.matName, meshName, ss.str());
 			}
 		}
 	}

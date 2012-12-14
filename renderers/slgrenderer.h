@@ -124,12 +124,17 @@ public:
 	static Renderer *CreateRenderer(const ParamSet &params);
 
 private:
+	class SLGMaterialInfo {
+	public:
+		SLGMaterialInfo() : matName("mat_default"), texName(""),
+			uScale(1.f), vScale(1.f), uDelta(1.f), vDelta(1.f), color(1.f) { }
+
+		string matName, texName;
+		float uScale, vScale, uDelta, vDelta;
+		luxrays::Spectrum color;
+	};
+
 	void DefineSLGDefaultTexMap(luxrays::sdl::Scene *slgScene);
-	bool GetSLGMaterialColorAndTex(luxrays::sdl::Scene *slgScene,
-		luxrays::Spectrum *color, string *texName,
-		float *uScale, float *vScale,
-		float *uDelta, float *vDelta,
-		Texture<SWCSpectrum> *tex0, Texture<SWCSpectrum> *tex1 = NULL);
 	string GetSLGTexName(luxrays::sdl::Scene *slgScene, const MIPMap *mipMap, const float gamma);
 	string GetSLGTexName(luxrays::sdl::Scene *slgScene, const MIPMapFastImpl<TextureColor<unsigned char, 1> > *mipMap, const float gamma);
 	string GetSLGTexName(luxrays::sdl::Scene *slgScene, const MIPMapFastImpl<TextureColor<unsigned char, 3> > *mipMap, const float gamma);
@@ -140,10 +145,9 @@ private:
 	string GetSLGTexName(luxrays::sdl::Scene *slgScene, const MIPMapFastImpl<TextureColor<float, 1> > *mipMap, const float gamma);
 	string GetSLGTexName(luxrays::sdl::Scene *slgScene, const MIPMapFastImpl<TextureColor<float, 3> > *mipMap, const float gamma);
 	string GetSLGTexName(luxrays::sdl::Scene *slgScene, const MIPMapFastImpl<TextureColor<float, 4> > *mipMap, const float gamma);
-	bool GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive *prim,
-		string *matName, string *texName,
-		float *uScale, float *vScale,
-		float *uDelta, float *vDelta);
+	bool GetSLGMaterialTexInfo(luxrays::sdl::Scene *slgScene, SLGMaterialInfo *matInfo,
+		Texture<SWCSpectrum> *tex0, Texture<SWCSpectrum> *tex1 = NULL);
+	bool GetSLGMaterialInfo(luxrays::sdl::Scene *slgScene, const Primitive *prim, SLGMaterialInfo *matInfo);
 
 	void ConvertEnvLights(luxrays::sdl::Scene *slgScene);
 	vector<luxrays::ExtTriangleMesh *> DefinePrimitive(luxrays::sdl::Scene *slgScene, const Primitive *prim);
