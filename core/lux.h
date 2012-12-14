@@ -155,8 +155,6 @@ typedef vector<int> SampleGrid[BC_GRID_SIZE][BC_GRID_SIZE];
 
 // Global Forward Declarations
 class Timer;
-class MemoryArena;
-template<class T, int logBlockSize = 2> class BlockedArray;
 
 namespace luxrays {
   class BBox;
