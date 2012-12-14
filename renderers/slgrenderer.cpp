@@ -695,9 +695,9 @@ bool SLGRenderer::GetSLGMaterialInfo(luxrays::sdl::Scene *slgScene, const Primit
 				const float gainFactor = power * efficacy /
 					(area * M_PI * rgb.Y());
 				if (gainFactor > 0.f && !isinf(gainFactor))
-					rgb *= gain * gainFactor * M_PI;
+					rgb *= gain * gainFactor;
 				else
-					rgb *= gain * area * M_PI * rgb.Y();
+					rgb *= gain;
 
 				slgScene->AddMaterials(
 					"scene.materials.light." + matInfo.matName +" = " +
@@ -710,9 +710,9 @@ bool SLGRenderer::GetSLGMaterialInfo(luxrays::sdl::Scene *slgScene, const Primit
 
 				const float gainFactor = power * efficacy;
 				if (gainFactor > 0.f && !isinf(gainFactor))
-					rgb *= gain * gainFactor * M_PI;
+					rgb *= gain * gainFactor;
 				else
-					rgb *= gain * area * M_PI * blackBodyTexture->Y();
+					rgb *= gain;
 
 				slgScene->AddMaterials(
 					"scene.materials.light." + matInfo.matName +" = " +
@@ -1143,13 +1143,11 @@ void SLGRenderer::ConvertEnvLights(luxrays::sdl::Scene *slgScene) {
 		if (skyLight || sky2Light)
 			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only one single environmental light. Using sky light and ignoring infinite lights";
 		else {
-			const float gainAdjustFactor = INV_PI;
-
 			if (infiniteAreaLight) {
 				const float colorR = (*infiniteAreaLight)["color.r"].FloatValue();
 				const float colorG = (*infiniteAreaLight)["color.g"].FloatValue();
 				const float colorB = (*infiniteAreaLight)["color.b"].FloatValue();
-				const float gain = (*infiniteAreaLight)["gain"].FloatValue() * gainAdjustFactor;
+				const float gain = (*infiniteAreaLight)["gain"].FloatValue();
 
 				const float gamma = (*infiniteAreaLight)["gamma"].FloatValue();
 
@@ -1168,7 +1166,7 @@ void SLGRenderer::ConvertEnvLights(luxrays::sdl::Scene *slgScene) {
 				const float colorR = (*infiniteAreaLightIS)["color.r"].FloatValue();
 				const float colorG = (*infiniteAreaLightIS)["color.g"].FloatValue();
 				const float colorB = (*infiniteAreaLightIS)["color.b"].FloatValue();
-				const float gain = (*infiniteAreaLightIS)["gain"].FloatValue() * gainAdjustFactor;
+				const float gain = (*infiniteAreaLightIS)["gain"].FloatValue();
 
 				const float gamma = (*infiniteAreaLightIS)["gamma"].FloatValue();
 
