@@ -50,6 +50,8 @@ void Camera::AddAttributes(Queryable *q) const
 	AddFloatAttribute(*q, "ShutterClose", "Time when shutter closes", 1.f, &Camera::ShutterClose);*/
 	AddFloatConstant(*q, "ShutterOpen", "Time when shutter opens", ShutterOpen);
 	AddFloatConstant(*q, "ShutterClose", "Time when shutter closes", ShutterClose);
+	AddFloatConstant(*q, "ClipHither", "Near clip plane", ClipHither);
+	AddFloatConstant(*q, "ClipYon", "Far clip plane", ClipYon);
 }
 
 float Camera::GenerateRay(const Scene &scene, const Sample &sample,

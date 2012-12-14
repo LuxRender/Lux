@@ -1374,8 +1374,7 @@ luxrays::sdl::Scene *SLGRenderer::CreateSLGScene(const luxrays::Properties &slgC
 			(scene->camera)["up.y"].FloatValue(),
 			(scene->camera)["up.z"].FloatValue());
 
-	slgScene->CreateCamera(
-		"scene.camera.lookat = " + 
+	const string createCameraProp = "scene.camera.lookat = " + 
 			boost::lexical_cast<string>(orig.x) + " " +
 			boost::lexical_cast<string>(orig.y) + " " +
 			boost::lexical_cast<string>(orig.z) + " " +
@@ -1389,7 +1388,10 @@ luxrays::sdl::Scene *SLGRenderer::CreateSLGScene(const luxrays::Properties &slgC
 		"scene.camera.fieldofview = " + boost::lexical_cast<string>(Degrees((scene->camera)["fov"].FloatValue())) + "\n"
 		"scene.camera.lensradius = " + boost::lexical_cast<string>((scene->camera)["LensRadius"].FloatValue()) + "\n"
 		"scene.camera.focaldistance = " + boost::lexical_cast<string>((scene->camera)["FocalDistance"].FloatValue()) + "\n"
-		);
+		"scene.camera.cliphither = " + boost::lexical_cast<string>((scene->camera)["ClipHither"].FloatValue()) + "\n"
+		"scene.camera.clipyon = " + boost::lexical_cast<string>((scene->camera)["ClipYon"].FloatValue()) + "\n";
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Creating camera : [\n" << createCameraProp << "]";
+	slgScene->CreateCamera(createCameraProp);
 
 	//--------------------------------------------------------------------------
 	// Setup default material
@@ -1572,11 +1574,11 @@ void SLGRenderer::Render(Scene *s) {
 			LOG(LUX_SEVERE, LUX_SYSTEM) << "RUNTIME ERROR: " << err.what();
 			state = TERMINATE;
 			return;
-		} /*catch (std::exception err) {
+		} catch (std::exception err) {
 			LOG(LUX_SEVERE, LUX_SYSTEM) << "ERROR: " << err.what();
 			state = TERMINATE;
 			return;
-		}*/
+		}
 
 		// start the timer
 		rendererStatistics->start();
