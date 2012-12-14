@@ -1077,6 +1077,7 @@ void SLGRenderer::ConvertEnvLights(luxrays::sdl::Scene *slgScene) {
 				slgScene->AddInfiniteLight(
 					"scene.infinitelight.file = " + texName + "\n"
 					"scene.infinitelight.gamma = " + boost::lexical_cast<string>(gamma) + "\n"
+					"scene.infinitelight.shift = 0.5 0.0\n"
 					"scene.infinitelight.gain = " +
 						boost::lexical_cast<string>(gain * colorR) + " " +
 						boost::lexical_cast<string>(gain * colorG) + " " +
@@ -1095,6 +1096,7 @@ void SLGRenderer::ConvertEnvLights(luxrays::sdl::Scene *slgScene) {
 				slgScene->AddInfiniteLight(
 					"scene.infinitelight.file = " + texName + "\n"
 					"scene.infinitelight.gamma = " + boost::lexical_cast<string>(gamma) + "\n"
+					"scene.infinitelight.shift = 0.5 0.0\n"
 					"scene.infinitelight.gain = " +
 						boost::lexical_cast<string>(gain * colorR) + " " +
 						boost::lexical_cast<string>(gain * colorG) + " " +
