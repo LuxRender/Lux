@@ -281,7 +281,7 @@ private:
 };
 #define ARENA_ALLOC(ARENA,T)  new ((ARENA).Alloc(sizeof(T))) T
 
-template<class T, int logBlockSize> class BlockedArray {
+template<class T, int logBlockSize = 2> class BlockedArray {
 public:
 	friend class boost::serialization::access;
 	// BlockedArray Public Methods
