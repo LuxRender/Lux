@@ -277,9 +277,9 @@ struct BloomFilterX
 				// Compute extent of pixels contributing bloom
 				const u_int x0 = max(x, bloomWidth) - bloomWidth;
 				const u_int x1 = min(x + bloomWidth, xResolution - 1);
-				const u_int y0 = max(y, bloomWidth) - bloomWidth;
-				const u_int y1 = min(y + bloomWidth, yResolution - 1);
-				const u_int offset = y * xResolution + x;
+				//const u_int y0 = max(y, bloomWidth) - bloomWidth;
+				//const u_int y1 = min(y + bloomWidth, yResolution - 1);
+				//const u_int offset = y * xResolution + x;
 				float sumWt = 0.f;
 				const u_int by = y;
 				XYZColor &pixel(row[x]);
@@ -337,11 +337,11 @@ struct BloomFilterY
 			for (u_int y = 0; y < yResolution; ++y) {
 				// Compute bloom for pixel _(x,y)_
 				// Compute extent of pixels contributing bloom
-				const u_int x0 = max(x, bloomWidth) - bloomWidth;
-				const u_int x1 = min(x + bloomWidth, xResolution - 1);
+				//const u_int x0 = max(x, bloomWidth) - bloomWidth;
+				//const u_int x1 = min(x + bloomWidth, xResolution - 1);
 				const u_int y0 = max(y, bloomWidth) - bloomWidth;
 				const u_int y1 = min(y + bloomWidth, yResolution - 1);
-				const u_int offset = y * xResolution + x;
+				//const u_int offset = y * xResolution + x;
 				float sumWt = 0.f;
 				XYZColor &pixel(col[y]);
 				for (u_int by = y0; by <= y1; ++by) {

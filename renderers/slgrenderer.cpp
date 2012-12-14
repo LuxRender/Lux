@@ -70,6 +70,7 @@
 #include "rendersession.h"
 #include "volume.h"
 #include "textures/imagemap.h"
+#include "textures/scale.h"
 
 
 using namespace lux;
@@ -199,7 +200,7 @@ string SLGRenderer::GetSLGTexName(luxrays::sdl::Scene *slgScene,
 		return GetSLGTexName(slgScene, (MIPMapImpl<TextureColor<float, 4> > *)mipMap, gamma);
 	else {
 		// Unsupported type
-		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only RGB(A) float texture maps (i.e. not " <<
+		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only RGB(A) float texture maps (i.e. not " <<
 					ToClassName(mipMap) << "). Replacing an unsupported texture map with a white texture.";
 		DefineSLGDefaultTexMap(slgScene);
 		return "tex_default";
@@ -442,12 +443,59 @@ string SLGRenderer::GetSLGTexName(luxrays::sdl::Scene *slgScene,
 
 //------------------------------------------------------------------------------
 
+bool SLGRenderer::GetSLGBumpMapInfo(luxrays::sdl::Scene *slgScene, SLGMaterialInfo *matInfo,
+		const Texture<float> *bumpTex) {
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Bump map type: " << ToClassName(bumpTex);
+
+	if (!bumpTex)
+		return true;
+
+	const ScaleTexture<float, float> *scaleTex = dynamic_cast<const ScaleTexture<float, float> *>(bumpTex);
+
+	if (scaleTex) {
+		LOG(LUX_DEBUG, LUX_NOERROR) << "Bump map scale type: " << ToClassName(scaleTex->GetTex1());
+		const ConstantFloatTexture *constFloatTex = dynamic_cast<const ConstantFloatTexture *>(scaleTex->GetTex1());
+		LOG(LUX_DEBUG, LUX_NOERROR) << "Bump map bump type: " << ToClassName(scaleTex->GetTex2());
+		const ImageFloatTexture *imgTex = dynamic_cast<const ImageFloatTexture *>(scaleTex->GetTex2());
+
+		if (constFloatTex && imgTex) {
+			// Check the mapping
+			const TextureMapping2D *mapping = imgTex->GetTextureMapping2D();
+			if (mapping) {
+				if (dynamic_cast<const UVMapping2D *>(mapping)) {
+					const UVMapping2D *uvMapping2D = dynamic_cast<const UVMapping2D *>(mapping);
+					matInfo->bumpMap.uScale = uvMapping2D->GetUScale();
+					matInfo->bumpMap.vScale = uvMapping2D->GetVScale();
+					matInfo->bumpMap.uDelta = uvMapping2D->GetUDelta();
+					matInfo->bumpMap.vDelta = uvMapping2D->GetVDelta();
+				} else {
+					LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only bump maps with UVMapping2D (i.e. not " <<
+							ToClassName(mapping) << "). Ignoring the mapping.";				
+				}
+			}
+
+			matInfo->bumpMap.name = GetSLGTexName(slgScene, imgTex->GetMIPMap(), imgTex->GetInfo().gamma);
+			matInfo->bumpMap.scale = 500.f * (*constFloatTex)["value"].FloatValue();
+			return true;
+		} else {
+			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only bump mapping with ScaleTexture<float, float> of ConstantFloatTexture and ImageFloatTexture (i.e. not " <<
+				ToClassName(constFloatTex) << " and " << ToClassName(imgTex) << ").";
+			return false;
+		}
+	}
+
+	LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only bump mapping with ScaleTexture<float, float> (i.e. not " <<
+		ToClassName(bumpTex) << ").";
+
+	return false;
+}
+
 bool SLGRenderer::GetSLGMaterialTexInfo(luxrays::sdl::Scene *slgScene,
-		SLGMaterialInfo *matInfo, Texture<SWCSpectrum> *tex0) {
+		SLGMaterialInfo *matInfo, const Texture<SWCSpectrum> *tex0) {
 
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Texture 0 type: " << ToClassName(tex0);
-	ConstantRGBColorTexture *constRGBTex0 = dynamic_cast<ConstantRGBColorTexture *>(tex0);
-	ImageSpectrumTexture *imgTex0 = dynamic_cast<ImageSpectrumTexture *>(tex0);
+	const ConstantRGBColorTexture *constRGBTex0 = dynamic_cast<const ConstantRGBColorTexture *>(tex0);
+	const ImageSpectrumTexture *imgTex0 = dynamic_cast<const ImageSpectrumTexture *>(tex0);
 
 	if (imgTex0) {
 		// Check the mapping
@@ -455,17 +503,17 @@ bool SLGRenderer::GetSLGMaterialTexInfo(luxrays::sdl::Scene *slgScene,
 		if (mapping) {
 			if (dynamic_cast<const UVMapping2D *>(mapping)) {
 				const UVMapping2D *uvMapping2D = dynamic_cast<const UVMapping2D *>(mapping);
-				matInfo->uScale = uvMapping2D->GetUScale();
-				matInfo->vScale = uvMapping2D->GetVScale();
-				matInfo->uDelta = uvMapping2D->GetUDelta();
-				matInfo->vDelta = uvMapping2D->GetVDelta();
+				matInfo->texMap.uScale = uvMapping2D->GetUScale();
+				matInfo->texMap.vScale = uvMapping2D->GetVScale();
+				matInfo->texMap.uDelta = uvMapping2D->GetUDelta();
+				matInfo->texMap.vDelta = uvMapping2D->GetVDelta();
 			} else {
-				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only image maps with UVMapping2D (i.e. not " <<
+				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only image maps with UVMapping2D (i.e. not " <<
 						ToClassName(mapping) << "). Ignoring the mapping.";				
 			}
 		}
 
-		matInfo->texName = GetSLGTexName(slgScene, imgTex0->GetMIPMap(), imgTex0->GetInfo().gamma);
+		matInfo->texMap.name = GetSLGTexName(slgScene, imgTex0->GetMIPMap(), imgTex0->GetInfo().gamma);
 
 		return true;
 	} else if (constRGBTex0) {
@@ -476,7 +524,7 @@ bool SLGRenderer::GetSLGMaterialTexInfo(luxrays::sdl::Scene *slgScene,
 		return true;
 	}
 
-	LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only materials with ConstantRGBColorTexture or ImageSpectrumTexture (i.e. not " <<
+	LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only materials with ConstantRGBColorTexture or ImageSpectrumTexture (i.e. not " <<
 		ToClassName(tex0) << ").";
 
 	return false;
@@ -484,13 +532,13 @@ bool SLGRenderer::GetSLGMaterialTexInfo(luxrays::sdl::Scene *slgScene,
 
 bool SLGRenderer::GetSLGMaterialTexInfo(luxrays::sdl::Scene *slgScene,
 		SLGMaterialInfo *matInfo,
-		Texture<SWCSpectrum> *tex0, Texture<SWCSpectrum> *tex1) {
+		const Texture<SWCSpectrum> *tex0, const Texture<SWCSpectrum> *tex1) {
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Texture 0 type: " << ToClassName(tex0);
-	ConstantRGBColorTexture *constRGBTex0 = dynamic_cast<ConstantRGBColorTexture *>(tex0);
-	ImageSpectrumTexture *imgTex0 = dynamic_cast<ImageSpectrumTexture *>(tex0);
+	const ConstantRGBColorTexture *constRGBTex0 = dynamic_cast<const ConstantRGBColorTexture *>(tex0);
+	const ImageSpectrumTexture *imgTex0 = dynamic_cast<const ImageSpectrumTexture *>(tex0);
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Texture 1 type: " << ToClassName(tex1);
-	ConstantRGBColorTexture *constRGBTex1 = dynamic_cast<ConstantRGBColorTexture *>(tex1);
-	ImageSpectrumTexture *imgTex1 = dynamic_cast<ImageSpectrumTexture *>(tex1);
+	const ConstantRGBColorTexture *constRGBTex1 = dynamic_cast<const ConstantRGBColorTexture *>(tex1);
+	const ImageSpectrumTexture *imgTex1 = dynamic_cast<const ImageSpectrumTexture *>(tex1);
 
 	if (imgTex0 && !imgTex1)
 		return GetSLGMaterialTexInfo(slgScene, matInfo, tex0);
@@ -503,17 +551,17 @@ bool SLGRenderer::GetSLGMaterialTexInfo(luxrays::sdl::Scene *slgScene,
 			if (mapping) {
 				if (dynamic_cast<const UVMapping2D *>(mapping)) {
 					const UVMapping2D *uvMapping2D = dynamic_cast<const UVMapping2D *>(mapping);
-					matInfo->uScale = uvMapping2D->GetUScale();
-					matInfo->vScale = uvMapping2D->GetVScale();
-					matInfo->uDelta = uvMapping2D->GetUDelta();
-					matInfo->vDelta = uvMapping2D->GetVDelta();
+					matInfo->texMap.uScale = uvMapping2D->GetUScale();
+					matInfo->texMap.vScale = uvMapping2D->GetVScale();
+					matInfo->texMap.uDelta = uvMapping2D->GetUDelta();
+					matInfo->texMap.vDelta = uvMapping2D->GetVDelta();
 				} else {
-					LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only image maps with UVMapping2D (i.e. not " <<
+					LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only image maps with UVMapping2D (i.e. not " <<
 							ToClassName(mapping) << "). Ignoring the mapping.";				
 				}
 			}
 
-			matInfo->texName = GetSLGTexName(slgScene, imgTex0->GetMIPMap(), imgTex0->GetInfo().gamma);
+			matInfo->texMap.name = GetSLGTexName(slgScene, imgTex0->GetMIPMap(), imgTex0->GetInfo().gamma);
 			return true;
 		} else if (imgTex1) {
 			// Check the mapping
@@ -521,21 +569,21 @@ bool SLGRenderer::GetSLGMaterialTexInfo(luxrays::sdl::Scene *slgScene,
 			if (mapping) {
 				if (dynamic_cast<const UVMapping2D *>(mapping)) {
 					const UVMapping2D *uvMapping2D = dynamic_cast<const UVMapping2D *>(mapping);
-					matInfo->uScale = uvMapping2D->GetUScale();
-					matInfo->vScale = uvMapping2D->GetVScale();
-					matInfo->uDelta = uvMapping2D->GetUDelta();
-					matInfo->vDelta = uvMapping2D->GetVDelta();
+					matInfo->texMap.uScale = uvMapping2D->GetUScale();
+					matInfo->texMap.vScale = uvMapping2D->GetVScale();
+					matInfo->texMap.uDelta = uvMapping2D->GetUDelta();
+					matInfo->texMap.vDelta = uvMapping2D->GetVDelta();
 				} else {
-					LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only image maps with UVMapping2D (i.e. not " <<
+					LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only image maps with UVMapping2D (i.e. not " <<
 							ToClassName(mapping) << "). Ignoring the mapping.";				
 				}
 			}
 
-			matInfo->texName = GetSLGTexName(slgScene, imgTex1->GetMIPMap(), imgTex1->GetInfo().gamma);
+			matInfo->texMap.name = GetSLGTexName(slgScene, imgTex1->GetMIPMap(), imgTex1->GetInfo().gamma);
 			return true;
 		} else {
 			if (!constRGBTex0 && !constRGBTex1) {
-				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only materials with ConstantRGBColorTexture or ImageSpectrumTexture (i.e. not " <<
+				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only materials with ConstantRGBColorTexture or ImageSpectrumTexture (i.e. not " <<
 					ToClassName(tex0) << " or " << ToClassName(tex1) << ").";
 				return false;
 			}
@@ -644,7 +692,7 @@ bool SLGRenderer::GetSLGMaterialInfo(luxrays::sdl::Scene *slgScene, const Primit
 					);
 				
 			} else {
-				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only area lights with constant ConstantRGBColorTexture or BlackBodyTexture (i.e. not " <<
+				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only area lights with constant ConstantRGBColorTexture or BlackBodyTexture (i.e. not " <<
 					ToClassName(tex) << "). Replacing an unsupported area light material with matte.";
 				return false;
 			}
@@ -654,9 +702,13 @@ bool SLGRenderer::GetSLGMaterialInfo(luxrays::sdl::Scene *slgScene, const Primit
 	// Primitive is not supported, use the default material
 	//----------------------------------------------------------------------
 	{
-		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer doesn't support material conversion for primitive " << ToClassName(prim);
+		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer doesn't support material conversion for primitive " << ToClassName(prim);
 		return false;
 	}
+
+	// Retrieve bump mapping information too
+	if (mat)
+		GetSLGBumpMapInfo(slgScene, &matInfo, mat->bumpMap.get());
 
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Material type: " << ToClassName(mat);
 
@@ -724,7 +776,7 @@ bool SLGRenderer::GetSLGMaterialInfo(luxrays::sdl::Scene *slgScene, const Primit
 			if (indexFloatTex)
 				index = (*indexFloatTex)["value"].FloatValue();
 			else {
-				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only Glass material with ConstantFloatTexture (i.e. not " <<
+				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Glass material with ConstantFloatTexture (i.e. not " <<
 					ToClassName(indexFloatTex) << "). Ignoring unsupported texture and using 1.41 value.";
 				index = 1.41f;
 			}
@@ -809,7 +861,7 @@ bool SLGRenderer::GetSLGMaterialInfo(luxrays::sdl::Scene *slgScene, const Primit
 					ktRGB.g = 1.f - ktRGB.g;
 					ktRGB.b = 1.f - ktRGB.b;
 				} else {
-					LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only Glass2 material with ConstantRGBColorTexture (i.e. not " <<
+					LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Glass2 material with ConstantRGBColorTexture (i.e. not " <<
 						ToClassName(absorbRGBTex) << "). Ignoring unsupported texture.";
 				}
 			}
@@ -858,7 +910,7 @@ bool SLGRenderer::GetSLGMaterialInfo(luxrays::sdl::Scene *slgScene, const Primit
 			if (uroughnessFloatTex)
 				uroughness = Clamp((*uroughnessFloatTex)["value"].FloatValue(), 6e-3f, 1.f);
 			else {
-				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only Glossy2 material with ConstantFloatTexture (i.e. not " <<
+				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Glossy2 material with ConstantFloatTexture (i.e. not " <<
 					ToClassName(uroughnessFloatTex) << "). Ignoring unsupported texture and using 0.1 value.";
 				uroughness = .1f;
 			}
@@ -898,7 +950,7 @@ bool SLGRenderer::GetSLGMaterialInfo(luxrays::sdl::Scene *slgScene, const Primit
 			if (uroughnessFloatTex)
 				uroughness = Clamp((*uroughnessFloatTex)["value"].FloatValue(), 6e-3f, 1.f);
 			else {
-				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only Metal material with ConstantFloatTexture (i.e. not " <<
+				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Metal material with ConstantFloatTexture (i.e. not " <<
 					ToClassName(uroughnessFloatTex) << "). Ignoring unsupported texture and using 0.1 value.";
 				uroughness = .1f;
 			}
@@ -932,7 +984,7 @@ bool SLGRenderer::GetSLGMaterialInfo(luxrays::sdl::Scene *slgScene, const Primit
 					boost::lexical_cast<string>(exponent) + " 1\n"
 				);
 
-				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only Metal material of name 'amorphous carbon', 'silver', 'gold', 'copper' and 'aluminium' (i.e. not " <<
+				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Metal material of name 'amorphous carbon', 'silver', 'gold', 'copper' and 'aluminium' (i.e. not " <<
 					metalName << "). Replacing an unsupported material with metal 'aluminium'.";
 			}
 		} else
@@ -940,7 +992,7 @@ bool SLGRenderer::GetSLGMaterialInfo(luxrays::sdl::Scene *slgScene, const Primit
 		// Material is not supported, use the default one
 		//------------------------------------------------------------------
 		{
-			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only Matte, Mirror, Glass, Glass2, Glossy2 and Metal material (i.e. not " <<
+			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Matte, Mirror, Glass, Glass2, Glossy2 and Metal material (i.e. not " <<
 				ToClassName(mat) << "). Replacing an unsupported material with matte.";
 			return false;
 		}
@@ -1004,7 +1056,7 @@ void SLGRenderer::ConvertEnvLights(luxrays::sdl::Scene *slgScene) {
 		const float gainAdjustFactor = (1000000000.0f / (M_PI * 100.f * 100.f)) * INV_PI;
 
 		if (sky2Light) {
-			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer doesn't support Sky2 light. It will use Sky instead.";
+			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer doesn't support Sky2 light. It will use Sky instead.";
 
 			const float dirX = (*sky2Light)["dir.x"].FloatValue();
 			const float dirY = (*sky2Light)["dir.y"].FloatValue();
@@ -1059,7 +1111,7 @@ void SLGRenderer::ConvertEnvLights(luxrays::sdl::Scene *slgScene) {
 	if (infiniteAreaLight || infiniteAreaLightIS) {
 		// Check if I have already a sky light
 		if (skyLight || sky2Light)
-			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGrenderer supports only one single environmental light. Using sky light and ignoring infinite lights";
+			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only one single environmental light. Using sky light and ignoring infinite lights";
 		else {
 			const float gainAdjustFactor = INV_PI;
 
@@ -1182,12 +1234,20 @@ void SLGRenderer::ConvertGeometry(luxrays::sdl::Scene *slgScene) {
 					std::stringstream ss;
 					const string prefix = "scene.objects." + matInfo.matName + "." + objName;
 					ss << prefix << ".transformation = " << transString << "\n";
-					if (matInfo.texName != "") {
-						ss << prefix << ".texmap = " << matInfo.texName << "\n";
-						ss << prefix << ".texmap.uscale = " << matInfo.uScale << "\n";
-						ss << prefix << ".texmap.vscale = " << matInfo.vScale << "\n";
-						ss << prefix << ".texmap.udelta = " << matInfo.uDelta << "\n";
-						ss << prefix << ".texmap.vdelta = " << matInfo.vDelta << "\n";
+					if (matInfo.texMap.name != "") {
+						ss << prefix << ".texmap = " << matInfo.texMap.name << "\n";
+						ss << prefix << ".texmap.uscale = " << matInfo.texMap.uScale << "\n";
+						ss << prefix << ".texmap.vscale = " << matInfo.texMap.vScale << "\n";
+						ss << prefix << ".texmap.udelta = " << matInfo.texMap.uDelta << "\n";
+						ss << prefix << ".texmap.vdelta = " << matInfo.texMap.vDelta << "\n";
+					}
+					if (matInfo.bumpMap.name != "") {
+						ss << prefix << ".bumpmap = " << matInfo.bumpMap.name << "\n";
+						ss << prefix << ".bumpmap.uscale = " << matInfo.bumpMap.uScale << "\n";
+						ss << prefix << ".bumpmap.vscale = " << matInfo.bumpMap.vScale << "\n";
+						ss << prefix << ".bumpmap.udelta = " << matInfo.bumpMap.uDelta << "\n";
+						ss << prefix << ".bumpmap.vdelta = " << matInfo.bumpMap.vDelta << "\n";
+						ss << prefix << ".bumpmap.scale = " << matInfo.bumpMap.scale << "\n";
 					}
 					ss << prefix << ".useplynormals = 1\n";
 					slgScene->AddObject(objName, matInfo.matName, meshName, ss.str());
@@ -1215,12 +1275,20 @@ void SLGRenderer::ConvertGeometry(luxrays::sdl::Scene *slgScene) {
 				
 				std::stringstream ss;
 				const string prefix = "scene.objects." + matInfo.matName + "." + objName;
-				if (matInfo.texName != "") {
-					ss << prefix << ".texmap = " << matInfo.texName << "\n";
-					ss << prefix << ".texmap.uscale = " << matInfo.uScale << "\n";
-					ss << prefix << ".texmap.vscale = " << matInfo.vScale << "\n";
-					ss << prefix << ".texmap.udelta = " << matInfo.uDelta << "\n";
-					ss << prefix << ".texmap.vdelta = " << matInfo.vDelta << "\n";
+				if (matInfo.texMap.name != "") {
+					ss << prefix << ".texmap = " << matInfo.texMap.name << "\n";
+					ss << prefix << ".texmap.uscale = " << matInfo.texMap.uScale << "\n";
+					ss << prefix << ".texmap.vscale = " << matInfo.texMap.vScale << "\n";
+					ss << prefix << ".texmap.udelta = " << matInfo.texMap.uDelta << "\n";
+					ss << prefix << ".texmap.vdelta = " << matInfo.texMap.vDelta << "\n";
+				}
+				if (matInfo.bumpMap.name != "") {
+					ss << prefix << ".bumpmap = " << matInfo.bumpMap.name << "\n";
+					ss << prefix << ".bumpmap.uscale = " << matInfo.bumpMap.uScale << "\n";
+					ss << prefix << ".bumpmap.vscale = " << matInfo.bumpMap.vScale << "\n";
+					ss << prefix << ".bumpmap.udelta = " << matInfo.bumpMap.uDelta << "\n";
+					ss << prefix << ".bumpmap.vdelta = " << matInfo.bumpMap.vDelta << "\n";
+					ss << prefix << ".bumpmap.scale = " << matInfo.bumpMap.scale << "\n";
 				}
 				ss << prefix << ".useplynormals = 1\n";
 				slgScene->AddObject(objName, matInfo.matName, meshName, ss.str());
