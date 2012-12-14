@@ -177,7 +177,7 @@ string SLGRenderer::GetSLGTexName(luxrays::sdl::Scene *slgScene,
 		return GetSLGTexName(slgScene, (MIPMapImpl<TextureColor<unsigned char, 1> > *)mipMap, gamma);
 	if (dynamic_cast<const MIPMapFastImpl<TextureColor<unsigned char, 3> > *>(mipMap))
 		return GetSLGTexName(slgScene, (MIPMapImpl<TextureColor<unsigned char, 3> > *)mipMap, gamma);
-	if (dynamic_cast<const MIPMapFastImpl<TextureColor<unsigned short, 4> > *>(mipMap))
+	if (dynamic_cast<const MIPMapFastImpl<TextureColor<unsigned char, 4> > *>(mipMap))
 		return GetSLGTexName(slgScene, (MIPMapImpl<TextureColor<unsigned char, 4> > *)mipMap, gamma);
 	//--------------------------------------------------------------------------
 	// Channels: unsigned short
@@ -270,10 +270,10 @@ string SLGRenderer::GetSLGTexName(luxrays::sdl::Scene *slgScene,
 			const TextureColor<unsigned char, 4> &col = (*map)(x, y);
 
 			const u_int index = (x + y * map->uSize());
-			slgRGBMap[index].r = col.c[0];
-			slgRGBMap[index].g = col.c[1];
-			slgRGBMap[index].b = col.c[2];
-			slgAlphaMap[index] = col.c[3];
+			slgRGBMap[index].r = col.c[0] / 255.f;
+			slgRGBMap[index].g = col.c[1] / 255.f;
+			slgRGBMap[index].b = col.c[2] / 255.f;
+			slgAlphaMap[index] = col.c[3] / 255.f;
 		}
 	}
 
@@ -348,10 +348,10 @@ string SLGRenderer::GetSLGTexName(luxrays::sdl::Scene *slgScene,
 			const TextureColor<unsigned short, 4> &col = (*map)(x, y);
 
 			const u_int index = (x + y * map->uSize());
-			slgRGBMap[index].r = col.c[0];
-			slgRGBMap[index].g = col.c[1];
-			slgRGBMap[index].b = col.c[2];
-			slgAlphaMap[index] = col.c[3];
+			slgRGBMap[index].r = col.c[0] / 255.f;
+			slgRGBMap[index].g = col.c[1] / 255.f;
+			slgRGBMap[index].b = col.c[2] / 255.f;
+			slgAlphaMap[index] = col.c[3] / 255.f;
 		}
 	}
 
