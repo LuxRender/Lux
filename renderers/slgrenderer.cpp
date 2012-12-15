@@ -491,7 +491,7 @@ bool SLGRenderer::GetSLGBumpNormalMapInfo(luxrays::sdl::Scene *slgScene, SLGMate
 			return true;
 		} else {
 			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only bump mapping with ScaleTexture<float, float> of ConstantFloatTexture and ImageFloatTexture (i.e. not " <<
-				ToClassName(constFloatTex) << " and " << ToClassName(imgTex) << ").";
+				ToClassName(scaleTex->GetTex1()) << " and " << ToClassName(scaleTex->GetTex2()) << ").";
 			return false;
 		}
 	} else if (dynamic_cast<const NormalMapTexture *>(tex)) {
@@ -1020,13 +1020,14 @@ bool SLGRenderer::GetSLGMaterialInfo(luxrays::sdl::Scene *slgScene, const Primit
 					ToString(exponent) + " 1\n"
 				);
 			else {
+				if (metalName != "aluminium")
+					LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Metal material of name 'amorphous carbon', 'silver', 'gold', 'copper' and 'aluminium' (i.e. not " <<
+						metalName << "). Replacing an unsupported material with metal 'aluminium'.";
+
 				slgScene->AddMaterials(
 					"scene.materials.mattemetal." + matInfo.matName +" = 0.025 0.025 0.025 0.9 0.9 0.9 " +
 					ToString(exponent) + " 1\n"
 				);
-
-				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Metal material of name 'amorphous carbon', 'silver', 'gold', 'copper' and 'aluminium' (i.e. not " <<
-					metalName << "). Replacing an unsupported material with metal 'aluminium'.";
 			}
 		} else
 		//------------------------------------------------------------------
