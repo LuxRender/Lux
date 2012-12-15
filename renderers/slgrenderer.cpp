@@ -75,11 +75,22 @@
 
 using namespace lux;
 
-template <class T> static std::string ToClassName(T *ptr) {
+template <class T> static string ToClassName(T *ptr) {
 	if (ptr)
 		return typeid(*ptr).name();
 	else
 		return "NULL";
+}
+
+template <class T> static string ToString(T &v) {
+	return boost::lexical_cast<string>(v);
+}
+
+static string ToString(float v) {
+	std::ostringstream ss;
+    ss << std::setprecision(24) << v;
+
+	return ss.str();
 }
 
 //------------------------------------------------------------------------------
@@ -701,9 +712,9 @@ bool SLGRenderer::GetSLGMaterialInfo(luxrays::sdl::Scene *slgScene, const Primit
 
 				slgScene->AddMaterials(
 					"scene.materials.light." + matInfo.matName +" = " +
-						boost::lexical_cast<string>(rgb.r) + " " +
-						boost::lexical_cast<string>(rgb.g) + " " +
-						boost::lexical_cast<string>(rgb.b) + "\n"
+						ToString(rgb.r) + " " +
+						ToString(rgb.g) + " " +
+						ToString(rgb.b) + "\n"
 					);
 			} else if (blackBodyTexture) {
 				luxrays::Spectrum rgb(1.f);
@@ -716,9 +727,9 @@ bool SLGRenderer::GetSLGMaterialInfo(luxrays::sdl::Scene *slgScene, const Primit
 
 				slgScene->AddMaterials(
 					"scene.materials.light." + matInfo.matName +" = " +
-						boost::lexical_cast<string>(rgb.r) + " " +
-						boost::lexical_cast<string>(rgb.g) + " " +
-						boost::lexical_cast<string>(rgb.b) + "\n"
+						ToString(rgb.r) + " " +
+						ToString(rgb.g) + " " +
+						ToString(rgb.b) + "\n"
 					);
 				
 			} else {
@@ -758,9 +769,9 @@ bool SLGRenderer::GetSLGMaterialInfo(luxrays::sdl::Scene *slgScene, const Primit
 			if (GetSLGMaterialTexInfo(slgScene, &matInfo, matte->GetTexture())) {
 				slgScene->AddMaterials(
 					"scene.materials.matte." + matInfo.matName +" = " +
-						boost::lexical_cast<string>(matInfo.color0.r) + " " +
-						boost::lexical_cast<string>(matInfo.color0.g) + " " +
-						boost::lexical_cast<string>(matInfo.color0.b) + "\n"
+						ToString(matInfo.color0.r) + " " +
+						ToString(matInfo.color0.g) + " " +
+						ToString(matInfo.color0.b) + "\n"
 					);
 			} else {
 				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "Ignoring unsupported texture.";
@@ -779,9 +790,9 @@ bool SLGRenderer::GetSLGMaterialInfo(luxrays::sdl::Scene *slgScene, const Primit
 			if (GetSLGMaterialTexInfo(slgScene, &matInfo, mirror->GetTexture())) {
 				slgScene->AddMaterials(
 					"scene.materials.mirror." + matInfo.matName +" = " +
-						boost::lexical_cast<string>(matInfo.color0.r) + " " +
-						boost::lexical_cast<string>(matInfo.color0.g) + " " +
-						boost::lexical_cast<string>(matInfo.color0.b) + " 1\n"
+						ToString(matInfo.color0.r) + " " +
+						ToString(matInfo.color0.g) + " " +
+						ToString(matInfo.color0.b) + " 1\n"
 					);
 			} else {
 				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "Ignoring unsupported texture.";
@@ -819,24 +830,24 @@ bool SLGRenderer::GetSLGMaterialInfo(luxrays::sdl::Scene *slgScene, const Primit
 				if (architectural) {
 					slgScene->AddMaterials(
 							"scene.materials.archglass." + matInfo.matName +" = " +
-								boost::lexical_cast<string>(matInfo.color1.r) + " " +
-								boost::lexical_cast<string>(matInfo.color1.g) + " " +
-								boost::lexical_cast<string>(matInfo.color1.b) + " " +
-								boost::lexical_cast<string>(matInfo.color0.r) + " " +
-								boost::lexical_cast<string>(matInfo.color0.g) + " " +
-								boost::lexical_cast<string>(matInfo.color0.b) + " " +
+								ToString(matInfo.color1.r) + " " +
+								ToString(matInfo.color1.g) + " " +
+								ToString(matInfo.color1.b) + " " +
+								ToString(matInfo.color0.r) + " " +
+								ToString(matInfo.color0.g) + " " +
+								ToString(matInfo.color0.b) + " " +
 								" 1 1\n"
 							);
 				} else {
 					slgScene->AddMaterials(
 							"scene.materials.glass." + matInfo.matName +" = " +
-								boost::lexical_cast<string>(matInfo.color1.r) + " " +
-								boost::lexical_cast<string>(matInfo.color1.g) + " " +
-								boost::lexical_cast<string>(matInfo.color1.b) + " " +
-								boost::lexical_cast<string>(matInfo.color0.r) + " " +
-								boost::lexical_cast<string>(matInfo.color0.g) + " " +
-								boost::lexical_cast<string>(matInfo.color0.b) + " " +
-								" 1.0 " + boost::lexical_cast<string>(index) + " 1 1\n"
+								ToString(matInfo.color1.r) + " " +
+								ToString(matInfo.color1.g) + " " +
+								ToString(matInfo.color1.b) + " " +
+								ToString(matInfo.color0.r) + " " +
+								ToString(matInfo.color0.g) + " " +
+								ToString(matInfo.color0.b) + " " +
+								" 1.0 " + ToString(index) + " 1 1\n"
 							);
 				}
 			} else {
@@ -902,24 +913,24 @@ bool SLGRenderer::GetSLGMaterialInfo(luxrays::sdl::Scene *slgScene, const Primit
 			if (architectural) {
 				slgScene->AddMaterials(
 						"scene.materials.archglass." + matInfo.matName +" = " +
-							boost::lexical_cast<string>(krRGB.r) + " " +
-							boost::lexical_cast<string>(krRGB.g) + " " +
-							boost::lexical_cast<string>(krRGB.b) + " " +
-							boost::lexical_cast<string>(ktRGB.r) + " " +
-							boost::lexical_cast<string>(ktRGB.g) + " " +
-							boost::lexical_cast<string>(ktRGB.b) + " " +
+							ToString(krRGB.r) + " " +
+							ToString(krRGB.g) + " " +
+							ToString(krRGB.b) + " " +
+							ToString(ktRGB.r) + " " +
+							ToString(ktRGB.g) + " " +
+							ToString(ktRGB.b) + " " +
 							" 1 1\n"
 						);
 			} else {
 				slgScene->AddMaterials(
 						"scene.materials.glass." + matInfo.matName +" = " +
-							boost::lexical_cast<string>(krRGB.r) + " " +
-							boost::lexical_cast<string>(krRGB.g) + " " +
-							boost::lexical_cast<string>(krRGB.b) + " " +
-							boost::lexical_cast<string>(ktRGB.r) + " " +
-							boost::lexical_cast<string>(ktRGB.g) + " " +
-							boost::lexical_cast<string>(ktRGB.b) + " " +
-							" 1.0 " + boost::lexical_cast<string>(index) + " 1 1\n"
+							ToString(krRGB.r) + " " +
+							ToString(krRGB.g) + " " +
+							ToString(krRGB.b) + " " +
+							ToString(ktRGB.r) + " " +
+							ToString(ktRGB.g) + " " +
+							ToString(ktRGB.b) + " " +
+							" 1.0 " + ToString(index) + " 1 1\n"
 						);
 			}
 		} else
@@ -950,13 +961,13 @@ bool SLGRenderer::GetSLGMaterialInfo(luxrays::sdl::Scene *slgScene, const Primit
 			if (GetSLGMaterialTexInfo(slgScene, &matInfo, glossy2->GetKdTexture(), glossy2->GetKsTexture())) {
 				slgScene->AddMaterials(
 						"scene.materials.mattemetal." + matInfo.matName +" = " +
-							boost::lexical_cast<string>(matInfo.color0.r) + " " +
-							boost::lexical_cast<string>(matInfo.color0.g) + " " +
-							boost::lexical_cast<string>(matInfo.color0.b) + " " +
-							boost::lexical_cast<string>(matInfo.color1.r) + " " +
-							boost::lexical_cast<string>(matInfo.color1.g) + " " +
-							boost::lexical_cast<string>(matInfo.color1.b) + " " +
-							boost::lexical_cast<string>(exponent) + " 1\n"
+							ToString(matInfo.color0.r) + " " +
+							ToString(matInfo.color0.g) + " " +
+							ToString(matInfo.color0.b) + " " +
+							ToString(matInfo.color1.r) + " " +
+							ToString(matInfo.color1.g) + " " +
+							ToString(matInfo.color1.b) + " " +
+							ToString(exponent) + " 1\n"
 						);
 			} else {
 				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "Ignoring unsupported texture.";
@@ -991,27 +1002,27 @@ bool SLGRenderer::GetSLGMaterialInfo(luxrays::sdl::Scene *slgScene, const Primit
 			if (metalName == "amorphous carbon")
 				slgScene->AddMaterials(
 					"scene.materials.metal." + matInfo.matName +" = 0.1 0.1 0.1 " +
-					boost::lexical_cast<string>(exponent) + " 1\n"
+					ToString(exponent) + " 1\n"
 				);
 			else if (metalName == "silver")
 				slgScene->AddMaterials(
 					"scene.materials.mattemetal." + matInfo.matName +" = 0.075 0.075 0.075 0.9 0.9 0.9 " +
-					boost::lexical_cast<string>(exponent) + " 1\n"
+					ToString(exponent) + " 1\n"
 				);
 			else if (metalName == "gold")
 				slgScene->AddMaterials(
 					"scene.materials.mattemetal." + matInfo.matName +" = 0.09 0.055 0.005 0.9 0.55 0.05 " +
-					boost::lexical_cast<string>(exponent) + " 1\n"
+					ToString(exponent) + " 1\n"
 				);
 			else if (metalName == "copper")
 				slgScene->AddMaterials(
 					"scene.materials.mattemetal." + matInfo.matName +" = 0.2 0.125 0.1 0.9 0.7 0.6 " +
-					boost::lexical_cast<string>(exponent) + " 1\n"
+					ToString(exponent) + " 1\n"
 				);
 			else {
 				slgScene->AddMaterials(
 					"scene.materials.mattemetal." + matInfo.matName +" = 0.025 0.025 0.025 0.9 0.9 0.9 " +
-					boost::lexical_cast<string>(exponent) + " 1\n"
+					ToString(exponent) + " 1\n"
 				);
 
 				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Metal material of name 'amorphous carbon', 'silver', 'gold', 'copper' and 'aluminium' (i.e. not " <<
@@ -1056,15 +1067,15 @@ void SLGRenderer::ConvertEnvLights(luxrays::sdl::Scene *slgScene) {
 
 		slgScene->AddSunLight(
 			"scene.sunlight.dir = " +
-				boost::lexical_cast<string>(dirX) + " " +
-				boost::lexical_cast<string>(dirY) + " " +
-				boost::lexical_cast<string>(dirZ) + "\n"
-			"scene.sunlight.turbidity = " + boost::lexical_cast<string>(turbidity) + "\n"
-			"scene.sunlight.relsize = " + boost::lexical_cast<string>(relSize) + "\n"
+				ToString(dirX) + " " +
+				ToString(dirY) + " " +
+				ToString(dirZ) + "\n"
+			"scene.sunlight.turbidity = " + ToString(turbidity) + "\n"
+			"scene.sunlight.relsize = " + ToString(relSize) + "\n"
 			"scene.sunlight.gain = " +
-				boost::lexical_cast<string>(gain) + " " +
-				boost::lexical_cast<string>(gain) + " " +
-				boost::lexical_cast<string>(gain) + "\n"
+				ToString(gain) + " " +
+				ToString(gain) + " " +
+				ToString(gain) + "\n"
 			);
 	}
 
@@ -1098,14 +1109,14 @@ void SLGRenderer::ConvertEnvLights(luxrays::sdl::Scene *slgScene) {
 
 			slgScene->AddSkyLight(
 				"scene.skylight.dir = " +
-					boost::lexical_cast<string>(dirX) + " " +
-					boost::lexical_cast<string>(dirY) + " " +
-					boost::lexical_cast<string>(dirZ) + "\n"
-				"scene.skylight.turbidity = " + boost::lexical_cast<string>(turbidity) + "\n"
+					ToString(dirX) + " " +
+					ToString(dirY) + " " +
+					ToString(dirZ) + "\n"
+				"scene.skylight.turbidity = " + ToString(turbidity) + "\n"
 				"scene.skylight.gain = " +
-					boost::lexical_cast<string>(gain) + " " +
-					boost::lexical_cast<string>(gain) + " " +
-					boost::lexical_cast<string>(gain) + "\n");
+					ToString(gain) + " " +
+					ToString(gain) + " " +
+					ToString(gain) + "\n");
 		} else {
 			const float dirX = (*skyLight)["dir.x"].FloatValue();
 			const float dirY = (*skyLight)["dir.y"].FloatValue();
@@ -1117,14 +1128,14 @@ void SLGRenderer::ConvertEnvLights(luxrays::sdl::Scene *slgScene) {
 
 			slgScene->AddSkyLight(
 				"scene.skylight.dir = " +
-					boost::lexical_cast<string>(dirX) + " " +
-					boost::lexical_cast<string>(dirY) + " " +
-					boost::lexical_cast<string>(dirZ) + "\n"
-				"scene.skylight.turbidity = " + boost::lexical_cast<string>(turbidity) + "\n"
+					ToString(dirX) + " " +
+					ToString(dirY) + " " +
+					ToString(dirZ) + "\n"
+				"scene.skylight.turbidity = " + ToString(turbidity) + "\n"
 				"scene.skylight.gain = " +
-					boost::lexical_cast<string>(gain) + " " +
-					boost::lexical_cast<string>(gain) + " " +
-					boost::lexical_cast<string>(gain) + "\n");
+					ToString(gain) + " " +
+					ToString(gain) + " " +
+					ToString(gain) + "\n");
 		}
 	}
 	
@@ -1156,12 +1167,12 @@ void SLGRenderer::ConvertEnvLights(luxrays::sdl::Scene *slgScene) {
 
 				slgScene->AddInfiniteLight(
 					"scene.infinitelight.file = " + texName + "\n"
-					"scene.infinitelight.gamma = " + boost::lexical_cast<string>(gamma) + "\n"
+					"scene.infinitelight.gamma = " + ToString(gamma) + "\n"
 					"scene.infinitelight.shift = 0.5 0.0\n"
 					"scene.infinitelight.gain = " +
-						boost::lexical_cast<string>(gain * colorR) + " " +
-						boost::lexical_cast<string>(gain * colorG) + " " +
-						boost::lexical_cast<string>(gain * colorB) + "\n");
+						ToString(gain * colorR) + " " +
+						ToString(gain * colorG) + " " +
+						ToString(gain * colorB) + "\n");
 			} else {
 				const float colorR = (*infiniteAreaLightIS)["color.r"].FloatValue();
 				const float colorG = (*infiniteAreaLightIS)["color.g"].FloatValue();
@@ -1175,12 +1186,12 @@ void SLGRenderer::ConvertEnvLights(luxrays::sdl::Scene *slgScene) {
 
 				slgScene->AddInfiniteLight(
 					"scene.infinitelight.file = " + texName + "\n"
-					"scene.infinitelight.gamma = " + boost::lexical_cast<string>(gamma) + "\n"
+					"scene.infinitelight.gamma = " + ToString(gamma) + "\n"
 					"scene.infinitelight.shift = 0.5 0.0\n"
 					"scene.infinitelight.gain = " +
-						boost::lexical_cast<string>(gain * colorR) + " " +
-						boost::lexical_cast<string>(gain * colorG) + " " +
-						boost::lexical_cast<string>(gain * colorB) + "\n");
+						ToString(gain * colorR) + " " +
+						ToString(gain * colorG) + " " +
+						ToString(gain * colorB) + "\n");
 			}
 		}
 	}
@@ -1204,7 +1215,7 @@ vector<luxrays::ExtTriangleMesh *> SLGRenderer::DefinePrimitive(luxrays::sdl::Sc
 			}
 		}
 
-		const string meshName = "Mesh-" + boost::lexical_cast<string>(*mesh);
+		const string meshName = "Mesh-" + ToString(*mesh);
 		slgScene->DefineObject(meshName, *mesh);
 	}
 
@@ -1246,7 +1257,7 @@ void SLGRenderer::ConvertGeometry(luxrays::sdl::Scene *slgScene) {
 
 				// Build transformation string
 				const Transform trans = instance->GetTransform();
-				std::stringstream ss;
+				std::ostringstream ss;
 				for (int j = 0; j < 4; ++j)
 					for (int i = 0; i < 4; ++i)
 						ss << trans.m.m[i][j] << " ";
@@ -1255,11 +1266,11 @@ void SLGRenderer::ConvertGeometry(luxrays::sdl::Scene *slgScene) {
 				// Add the object
 				for (vector<luxrays::ExtTriangleMesh *>::const_iterator mesh = meshList.begin(); mesh != meshList.end(); ++mesh) {
 					// Define an instance of the mesh
-					const string objName = "InstanceObject-" + boost::lexical_cast<string>(prim) + "-" +
-						boost::lexical_cast<string>(*mesh);
-					const string meshName = "Mesh-" + boost::lexical_cast<string>(*mesh);
+					const string objName = "InstanceObject-" + ToString(prim) + "-" +
+						ToString(*mesh);
+					const string meshName = "Mesh-" + ToString(*mesh);
 
-					std::stringstream ss;
+					std::ostringstream ss;
 					const string prefix = "scene.objects." + matInfo.matName + "." + objName;
 					ss << prefix << ".transformation = " << transString << "\n";
 					if (matInfo.texMap.name != "") {
@@ -1304,11 +1315,11 @@ void SLGRenderer::ConvertGeometry(luxrays::sdl::Scene *slgScene) {
 			GetSLGMaterialInfo(slgScene, prim, &matInfo);
 
 			for (vector<luxrays::ExtTriangleMesh *>::const_iterator mesh = meshList.begin(); mesh != meshList.end(); ++mesh) {
-				const string objName = "Object-" + boost::lexical_cast<string>(prim) + "-" +
-					boost::lexical_cast<string>(*mesh);
-				const string meshName = "Mesh-" + boost::lexical_cast<string>(*mesh);
+				const string objName = "Object-" + ToString(prim) + "-" +
+					ToString(*mesh);
+				const string meshName = "Mesh-" + ToString(*mesh);
 				
-				std::stringstream ss;
+				std::ostringstream ss;
 				const string prefix = "scene.objects." + matInfo.matName + "." + objName;
 				if (matInfo.texMap.name != "") {
 					ss << prefix << ".texmap = " << matInfo.texMap.name << "\n";
@@ -1373,30 +1384,30 @@ luxrays::sdl::Scene *SLGRenderer::CreateSLGScene(const luxrays::Properties &slgC
 			(scene->camera)["up.z"].FloatValue());
 
 	const string createCameraProp = "scene.camera.lookat = " + 
-			boost::lexical_cast<string>(orig.x) + " " +
-			boost::lexical_cast<string>(orig.y) + " " +
-			boost::lexical_cast<string>(orig.z) + " " +
-			boost::lexical_cast<string>(target.x) + " " +
-			boost::lexical_cast<string>(target.y) + " " +
-			boost::lexical_cast<string>(target.z) + "\n"
+			ToString(orig.x) + " " +
+			ToString(orig.y) + " " +
+			ToString(orig.z) + " " +
+			ToString(target.x) + " " +
+			ToString(target.y) + " " +
+			ToString(target.z) + "\n"
 		"scene.camera.up = " +
-			boost::lexical_cast<string>(up.x) + " " +
-			boost::lexical_cast<string>(up.y) + " " +
-			boost::lexical_cast<string>(up.z) + "\n"
+			ToString(up.x) + " " +
+			ToString(up.y) + " " +
+			ToString(up.z) + "\n"
 		"scene.camera.up = " +
-			boost::lexical_cast<string>(up.x) + " " +
-			boost::lexical_cast<string>(up.y) + " " +
-			boost::lexical_cast<string>(up.z) + "\n"
+			ToString(up.x) + " " +
+			ToString(up.y) + " " +
+			ToString(up.z) + "\n"
 		"scene.camera.screenwindow = " +
-			boost::lexical_cast<string>((scene->camera)["ScreenWindow.0"].FloatValue()) + " " +
-			boost::lexical_cast<string>((scene->camera)["ScreenWindow.1"].FloatValue()) + " " +
-			boost::lexical_cast<string>((scene->camera)["ScreenWindow.2"].FloatValue()) + " " +
-			boost::lexical_cast<string>((scene->camera)["ScreenWindow.3"].FloatValue()) + "\n" +
-		"scene.camera.fieldofview = " + boost::lexical_cast<string>(Degrees((scene->camera)["fov"].FloatValue())) + "\n"
-		"scene.camera.lensradius = " + boost::lexical_cast<string>((scene->camera)["LensRadius"].FloatValue()) + "\n"
-		"scene.camera.focaldistance = " + boost::lexical_cast<string>((scene->camera)["FocalDistance"].FloatValue()) + "\n"
-		"scene.camera.cliphither = " + boost::lexical_cast<string>((scene->camera)["ClipHither"].FloatValue()) + "\n"
-		"scene.camera.clipyon = " + boost::lexical_cast<string>((scene->camera)["ClipYon"].FloatValue()) + "\n";
+			ToString((scene->camera)["ScreenWindow.0"].FloatValue()) + " " +
+			ToString((scene->camera)["ScreenWindow.1"].FloatValue()) + " " +
+			ToString((scene->camera)["ScreenWindow.2"].FloatValue()) + " " +
+			ToString((scene->camera)["ScreenWindow.3"].FloatValue()) + "\n" +
+		"scene.camera.fieldofview = " + ToString(Degrees((scene->camera)["fov"].FloatValue())) + "\n"
+		"scene.camera.lensradius = " + ToString((scene->camera)["LensRadius"].FloatValue()) + "\n"
+		"scene.camera.focaldistance = " + ToString((scene->camera)["FocalDistance"].FloatValue()) + "\n"
+		"scene.camera.cliphither = " + ToString((scene->camera)["ClipHither"].FloatValue()) + "\n"
+		"scene.camera.clipyon = " + ToString((scene->camera)["ClipYon"].FloatValue()) + "\n";
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Creating camera : [\n" << createCameraProp << "]";
 	slgScene->CreateCamera(createCameraProp);
 
@@ -1424,7 +1435,7 @@ luxrays::sdl::Scene *SLGRenderer::CreateSLGScene(const luxrays::Properties &slgC
 }
 
 luxrays::Properties SLGRenderer::CreateSLGConfig() {
-	std::stringstream ss;
+	std::ostringstream ss;
 
 	ss << "opencl.platform.index = -1\n"
 			"opencl.cpu.use = 1\n"
@@ -1478,8 +1489,8 @@ luxrays::Properties SLGRenderer::CreateSLGConfig() {
 			(cropWindow[2] != 0.f) || (cropWindow[3] != 1.f))
 		throw std::runtime_error("SLGRenderer doesn't yet support border rendering");
 
-	ss << "image.width = " + boost::lexical_cast<string>(imageWidth) + "\n"
-			"image.height = " + boost::lexical_cast<string>(imageHeight) + "\n";
+	ss << "image.width = " + ToString(imageWidth) + "\n"
+			"image.height = " + ToString(imageHeight) + "\n";
 
 	//--------------------------------------------------------------------------
 	// Sampler related settings
@@ -1493,9 +1504,9 @@ luxrays::Properties SLGRenderer::CreateSLGConfig() {
 		const float range = (*sampler)["range"].FloatValue() * 2.f / (xEnd - xStart);
 
 		ss << "sampler.type = METROPOLIS\n"
-				"sampler.maxconsecutivereject = " + boost::lexical_cast<string>(maxRejects) + "\n"
-				"sampler.largesteprate = " + boost::lexical_cast<string>(pLarge) + "\n"
-				"sampler.imagemutationrate = " + boost::lexical_cast<string>(range) + "\n";
+				"sampler.maxconsecutivereject = " + ToString(maxRejects) + "\n"
+				"sampler.largesteprate = " + ToString(pLarge) + "\n"
+				"sampler.imagemutationrate = " + ToString(range) + "\n";
 	} else if (dynamic_cast<RandomSampler *>(scene->sampler)) {
 		ss << "sampler.type = INLINED_RANDOM\n";
 	} else {
