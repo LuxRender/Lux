@@ -1383,6 +1383,15 @@ luxrays::sdl::Scene *SLGRenderer::CreateSLGScene(const luxrays::Properties &slgC
 			boost::lexical_cast<string>(up.x) + " " +
 			boost::lexical_cast<string>(up.y) + " " +
 			boost::lexical_cast<string>(up.z) + "\n"
+		"scene.camera.up = " +
+			boost::lexical_cast<string>(up.x) + " " +
+			boost::lexical_cast<string>(up.y) + " " +
+			boost::lexical_cast<string>(up.z) + "\n"
+		"scene.camera.screenwindow = " +
+			boost::lexical_cast<string>((scene->camera)["ScreenWindow.0"].FloatValue()) + " " +
+			boost::lexical_cast<string>((scene->camera)["ScreenWindow.1"].FloatValue()) + " " +
+			boost::lexical_cast<string>((scene->camera)["ScreenWindow.2"].FloatValue()) + " " +
+			boost::lexical_cast<string>((scene->camera)["ScreenWindow.3"].FloatValue()) + "\n" +
 		"scene.camera.fieldofview = " + boost::lexical_cast<string>(Degrees((scene->camera)["fov"].FloatValue())) + "\n"
 		"scene.camera.lensradius = " + boost::lexical_cast<string>((scene->camera)["LensRadius"].FloatValue()) + "\n"
 		"scene.camera.focaldistance = " + boost::lexical_cast<string>((scene->camera)["FocalDistance"].FloatValue()) + "\n"

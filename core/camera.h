@@ -239,7 +239,7 @@ class  ProjectiveCamera : public Camera {
 public:
 	// ProjectiveCamera Public Methods
 	ProjectiveCamera(const MotionSystem &world2cam,
-		const Transform &proj, const float Screen[4],
+		const Transform &proj, const float screen[4],
 		float hither, float yon,
 		float sopen, float sclose, int sdist,
 		float lensr, float focald, Film *film);
@@ -252,6 +252,9 @@ protected:
 	// ProjectiveCamera Protected Data
 	Transform ScreenToCamera, ScreenToWorld;
 	Transform RasterToScreen, RasterToWorld;
+
+	float ScreenWindow[4];
+
 public:
 	Transform RasterToCamera;
 	float LensRadius, FocalDistance;

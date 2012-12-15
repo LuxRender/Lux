@@ -135,10 +135,15 @@ float Camera::GetTime(float u1) const {
 }
 
 ProjectiveCamera::ProjectiveCamera(const MotionSystem &w2c,
-		const Transform &proj, const float Screen[4],
+		const Transform &proj, const float screen[4],
 		float hither, float yon, float sopen,
 		float sclose, int sdist, float lensr, float focald, Film *f)
 	: Camera(w2c, hither, yon, sopen, sclose, sdist, f) {
+	ScreenWindow[0] = screen[0];
+	ScreenWindow[1] = screen[1];
+	ScreenWindow[2] = screen[2];
+	ScreenWindow[3] = screen[3];
+
 	// Initialize depth of field parameters
 	LensRadius = lensr;
 	FocalDistance = focald;
@@ -146,8 +151,8 @@ ProjectiveCamera::ProjectiveCamera(const MotionSystem &w2c,
 	ScreenToCamera = Inverse(proj);
 	ScreenToWorld = CameraToWorld * ScreenToCamera;
 	// Compute projective camera screen transformations
-	RasterToScreen = Translate(Vector(Screen[0], Screen[3], 0.f)) *
-		Scale(Screen[1] - Screen[0], Screen[2] - Screen[3], 1.f) *
+	RasterToScreen = Translate(Vector(ScreenWindow[0], ScreenWindow[3], 0.f)) *
+		Scale(ScreenWindow[1] - ScreenWindow[0], ScreenWindow[2] - ScreenWindow[3], 1.f) *
 		Scale(1.f / film->xResolution, 1.f / film->yResolution, 1.f);
 	RasterToCamera = ScreenToCamera * RasterToScreen;
 	RasterToWorld = ScreenToWorld * RasterToScreen;
@@ -156,10 +161,12 @@ ProjectiveCamera::ProjectiveCamera(const MotionSystem &w2c,
 void ProjectiveCamera::AddAttributes(Queryable *q) const
 {
 	Camera::AddAttributes(q);
-/*	AddFloatAttribute(*q, "LensRadius", "Lens radius", 0.f, &ProjectiveCamera::LensRadius);
-	AddFloatAttribute(*q, "FocalDistance", "Focal distance", &ProjectiveCamera::FocalDistance);*/
 	AddFloatConstant(*q, "LensRadius", "Lens radius", LensRadius);
 	AddFloatConstant(*q, "FocalDistance", "Focal distance", FocalDistance);
+	AddFloatConstant(*q, "ScreenWindow.0", "Screen window 0", ScreenWindow[0]);
+	AddFloatConstant(*q, "ScreenWindow.1", "Screen window 1", ScreenWindow[1]);
+	AddFloatConstant(*q, "ScreenWindow.2", "Screen window 2", ScreenWindow[2]);
+	AddFloatConstant(*q, "ScreenWindow.3", "Screen window 3", ScreenWindow[3]);
 }
 
 void ProjectiveCamera::SampleMotion(float time) {
