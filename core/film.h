@@ -716,6 +716,7 @@ public:
 		return samplePerPass;
 	}
 
+	const Filter *GetFilter() const { return filter; }
 	ColorSystem GetColorSpace() const { return colorSpace; }
 
 protected:

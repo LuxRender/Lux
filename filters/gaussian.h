@@ -39,6 +39,8 @@ public:
 		alpha = a;
 		expX = expf(-alpha * xWidth * xWidth);
 		expY = expf(-alpha * yWidth * yWidth);
+
+		AddStringConstant(*this, "type", "Filter type", "gaussian");
 	}
 	virtual ~GaussianFilter() { }
 	virtual float Evaluate(float x, float y) const;

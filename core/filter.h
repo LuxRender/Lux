@@ -24,16 +24,23 @@
 #define LUX_FILTER_H
 // filter.h*
 
+#include "queryable.h"
+
 namespace lux
 {
 
-class Filter {
+class Filter : public Queryable {
 public:
 	// Filter Interface
+	Filter(float xw, float yw) : Queryable("filter"), xWidth(xw), yWidth(yw),
+		invXWidth(1.f / xw), invYWidth(1.f / yw) {
+		AddFloatConstant(*this, "width", "Filter width", xWidth);
+		AddFloatConstant(*this, "height", "Filter height", yWidth);
+	}
 	virtual ~Filter() { }
-	Filter(float xw, float yw) : xWidth(xw), yWidth(yw),
-		invXWidth(1.f / xw), invYWidth(1.f / yw) {}
+
 	virtual float Evaluate(float x, float y) const = 0;
+
 	// Filter Public Data
 	const float xWidth, yWidth;
 	const float invXWidth, invYWidth;

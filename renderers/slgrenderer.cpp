@@ -71,6 +71,7 @@
 #include "volume.h"
 #include "textures/imagemap.h"
 #include "textures/scale.h"
+#include "filter.h"
 
 
 using namespace lux;
@@ -1354,14 +1355,7 @@ void SLGRenderer::ConvertGeometry(luxrays::sdl::Scene *slgScene) {
 		throw std::runtime_error("SLGRenderer can not render an empty scene");
 }
 
-luxrays::sdl::Scene *SLGRenderer::CreateSLGScene(const luxrays::Properties &slgConfigProps) {
-	const int accelType = slgConfigProps.GetInt("accelerator.type", -1);
-	luxrays::sdl::Scene *slgScene = new luxrays::sdl::Scene(accelType);
-
-	// Tell to the cache to not delete mesh data (they are pointed by Lux
-	// primitives too and they will be deleted by Lux Context)
-	slgScene->extMeshCache->SetDeleteMeshData(false);
-
+void SLGRenderer::ConvertCamera(luxrays::sdl::Scene *slgScene) {
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Camera type: " << ToClassName(scene->camera());
 	PerspectiveCamera *perpCamera = dynamic_cast<PerspectiveCamera *>(scene->camera());
 	if (!perpCamera)
@@ -1409,8 +1403,23 @@ luxrays::sdl::Scene *SLGRenderer::CreateSLGScene(const luxrays::Properties &slgC
 		"scene.camera.focaldistance = " + ToString((scene->camera)["FocalDistance"].FloatValue()) + "\n"
 		"scene.camera.cliphither = " + ToString((scene->camera)["ClipHither"].FloatValue()) + "\n"
 		"scene.camera.clipyon = " + ToString((scene->camera)["ClipYon"].FloatValue()) + "\n";
-	LOG(LUX_DEBUG, LUX_NOERROR) << "Creating camera : [\n" << createCameraProp << "]";
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Creating camera: [\n" << createCameraProp << "]";
 	slgScene->CreateCamera(createCameraProp);
+}
+
+luxrays::sdl::Scene *SLGRenderer::CreateSLGScene(const luxrays::Properties &slgConfigProps) {
+	const int accelType = slgConfigProps.GetInt("accelerator.type", -1);
+	luxrays::sdl::Scene *slgScene = new luxrays::sdl::Scene(accelType);
+
+	// Tell to the cache to not delete mesh data (they are pointed by Lux
+	// primitives too and they will be deleted by Lux Context)
+	slgScene->extMeshCache->SetDeleteMeshData(false);
+
+	//--------------------------------------------------------------------------
+	// Setup the camera
+	//--------------------------------------------------------------------------
+
+	ConvertCamera(slgScene);
 
 	//--------------------------------------------------------------------------
 	// Setup default material
@@ -1466,7 +1475,7 @@ luxrays::Properties SLGRenderer::CreateSLGConfig() {
 			"path.maxdepth = " << maxEyeDepth << "\n";
 	} else {
 		// Unmapped surface integrator, just use path tracing
-		throw std::runtime_error("SLGRenderer doesn't support the SurfaceIntegrator, falling back to path tracing");
+		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer doesn't support the SurfaceIntegrator, falling back to path tracing";
 		ss << "renderengine.type = PATHOCL\n";
 	}
 
@@ -1512,14 +1521,36 @@ luxrays::Properties SLGRenderer::CreateSLGConfig() {
 		ss << "sampler.type = INLINED_RANDOM\n";
 	} else {
 		// Unmapped sampler, just use random
-		throw std::runtime_error("SLGRenderer doesn't support the Sampler, falling back to random sampler");
+		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer doesn't support the Sampler, falling back to random sampler";
 		ss << "sampler.type = INLINED_RANDOM\n";
 	}
 
 	//--------------------------------------------------------------------------
+	// Pixel filter related settings
+	//--------------------------------------------------------------------------
 
+	const Filter *filter = film->GetFilter();
+	const string filterType = (*filter)["type"].StringValue();
+	if (filterType == "box")
+		ss << "film.filter.type = BOX\n";
+	else if (filterType == "gaussian")
+		ss << "film.filter.type = GAUSSIAN\n";
+	else if (filterType == "mitchell")
+		ss << "film.filter.type = MITCHELL\n";
+	else if (filterType == "mitchell_ss")
+		ss << "film.filter.type = MITCHELL_SS\n";
+	else {
+		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer doesn't support the filter type " << filterType <<
+				", using MITCHELL filter instead";
+		ss << "film.filter.type = MITCHELL\n";
+	}
+
+	//--------------------------------------------------------------------------
+
+	const string configString = ss.str();
+	LOG(LUX_DEBUG, LUX_NOERROR) << "SLG configuration: [\n" << configString << "]";
 	luxrays::Properties config;
-	config.LoadFromString(ss.str());
+	config.LoadFromString(configString);
 
 	// Add overwrite properties
 	config.Load(overwriteConfig);

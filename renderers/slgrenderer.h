@@ -174,6 +174,7 @@ private:
 		const Texture<SWCSpectrum> *tex0, const Texture<SWCSpectrum> *tex1);
 	bool GetSLGMaterialInfo(luxrays::sdl::Scene *slgScene, const Primitive *prim, SLGMaterialInfo *matInfo);
 
+	void ConvertCamera(luxrays::sdl::Scene *slgScene);
 	void ConvertEnvLights(luxrays::sdl::Scene *slgScene);
 	vector<luxrays::ExtTriangleMesh *> DefinePrimitive(luxrays::sdl::Scene *slgScene, const Primitive *prim);
 	void ConvertGeometry(luxrays::sdl::Scene *slgScene);

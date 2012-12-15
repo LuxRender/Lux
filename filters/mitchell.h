@@ -37,7 +37,12 @@ public:
 	MitchellFilter(bool sup, float b, float c, float xw, float yw)
 		: Filter(sup ? xw * 5.f / 3.f : xw, sup ? yw * 5.f / 3.f : yw),
 		super(sup), B(b), C(c),
-		a0((76.f - 16.f * B + 8.f * C) / 81.f), a1((1.f - a0)/ 2.f) { }
+		a0((76.f - 16.f * B + 8.f * C) / 81.f), a1((1.f - a0)/ 2.f) {
+		if (super)
+			AddStringConstant(*this, "type", "Filter type", "mitchell_ss");
+		else
+			AddStringConstant(*this, "type", "Filter type", "mitchell");
+	}
 	virtual ~MitchellFilter() { }
 	virtual float Evaluate(float x, float y) const;
 	
