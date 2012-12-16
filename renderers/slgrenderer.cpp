@@ -38,6 +38,8 @@
 #include "renderers/statistics/slgstatistics.h"
 #include "cameras/perspective.h"
 #include "shape.h"
+#include "volume.h"
+#include "filter.h"
 
 #include "samplers/metrosampler.h"
 #include "samplers/random.h"
@@ -47,6 +49,8 @@
 
 #include "textures/blackbody.h"
 #include "textures/constant.h"
+#include "textures/imagemap.h"
+#include "textures/scale.h"
 
 #include "light.h"
 #include "lights/sun.h"
@@ -67,12 +71,9 @@
 #include "luxrays/core/context.h"
 #include "luxrays/utils/core/exttrianglemesh.h"
 #include "luxrays/opencl/utils.h"
+#include "luxrays/opencl/utils.h"
 #include "rendersession.h"
-#include "volume.h"
-#include "textures/imagemap.h"
-#include "textures/scale.h"
-#include "filter.h"
-
+//#include "luxrays/utils/film/framebuffer.h"
 
 using namespace lux;
 
@@ -1468,11 +1469,15 @@ luxrays::Properties SLGRenderer::CreateSLGConfig() {
 		// Bidirectional path tracing
 		BidirIntegrator *bidir = dynamic_cast<BidirIntegrator *>(scene->surfaceIntegrator);
 		const int maxEyeDepth = (*bidir)["maxEyeDepth"].IntValue();
-		const int maxLightDepth = (*bidir)["maxLightDepth"].IntValue();
+		/*const int maxLightDepth = (*bidir)["maxLightDepth"].IntValue();
 
 		ss << "renderengine.type = BIDIRVMCPU\n" <<
 			"path.maxdepth = " << maxLightDepth << "\n" <<
-			"path.maxdepth = " << maxEyeDepth << "\n";
+			"light.maxdepth = " << maxEyeDepth << "\n";*/
+
+		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer doesn't support the Bidirectional SurfaceIntegrator, falling back to path tracing";
+		ss << "renderengine.type = PATHOCL\n" <<
+				"path.maxdepth = " << maxEyeDepth << "\n";
 	} else {
 		// Unmapped surface integrator, just use path tracing
 		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer doesn't support the SurfaceIntegrator, falling back to path tracing";
@@ -1661,6 +1666,9 @@ void SLGRenderer::Render(Scene *s) {
 		int xStart, xEnd, yStart, yEnd;
 		film->GetSampleExtent(&xStart, &xEnd, &yStart, &yEnd);
 		const luxrays::utils::Film *slgFilm = session->film; 
+
+		// Used to feed LuxRender film with only the delta information from the previous update
+		//luxrays::SampleBuffer previousFilm(session->film->GetWidth(), session->film->GetHeight());
 		for (;;) {
 			if (state == PAUSE) {
 				session->BeginEdit();
