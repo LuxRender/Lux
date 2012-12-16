@@ -46,9 +46,6 @@ using std::sort;
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/version.hpp>
 
-#include "luxrays/core/utils.h"
-#include "memory.h"
-
 // boost version starting from 1.50 defined TIME_UTC_ instead of TIME_UTC because of a conflict with libc and c++ 2011
 // https://svn.boost.org/trac/boost/ticket/6940
 // glibc > 1.16 includes a TIME_UTC macro, so boost renamed to TIME_UTC_
