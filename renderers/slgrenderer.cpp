@@ -73,7 +73,7 @@
 #include "luxrays/opencl/utils.h"
 #include "luxrays/opencl/utils.h"
 #include "rendersession.h"
-//#include "luxrays/utils/film/framebuffer.h"
+#include "luxrays/utils/film/framebuffer.h"
 
 using namespace lux;
 
@@ -1651,6 +1651,7 @@ void SLGRenderer::Render(Scene *s) {
 		slg::RenderConfig *config = new slg::RenderConfig(slgConfigProps, *slgScene);
 		slg::RenderSession *session = new slg::RenderSession(config);
 		slg::RenderEngine *engine = session->renderEngine;
+		engine->SetSeed(scene->seedBase);
 
 		unsigned int haltTime = config->cfg.GetInt("batch.halttime", 0);
 		unsigned int haltSpp = config->cfg.GetInt("batch.haltspp", 0);
@@ -1668,7 +1669,12 @@ void SLGRenderer::Render(Scene *s) {
 		const luxrays::utils::Film *slgFilm = session->film; 
 
 		// Used to feed LuxRender film with only the delta information from the previous update
-		//luxrays::SampleBuffer previousFilm(session->film->GetWidth(), session->film->GetHeight());
+		luxrays::utils::SampleFrameBuffer previousSampleBuffer(session->film->GetWidth(), session->film->GetHeight());
+		previousSampleBuffer.Clear();
+		luxrays::utils::AlphaFrameBuffer previousAlphaBuffer(session->film->GetWidth(), session->film->GetHeight());
+		previousAlphaBuffer.Clear();
+		double previousSampleCount = 0.0;
+
 		for (;;) {
 			if (state == PAUSE) {
 				session->BeginEdit();
@@ -1687,22 +1693,45 @@ void SLGRenderer::Render(Scene *s) {
 				session->renderEngine->UpdateFilm();
 
 				// Update LuxRender film too
-				// TODO: use Film write mutex
 				ColorSystem colorSpace = film->GetColorSpace();
+				// Lock the contribution pool in order to have exclusive
+				// access to the film
+				ScopedPoolLock poolLock(film->contribPool);
 				for (int y = yStart; y <= yEnd; ++y) {
 					for (int x = xStart; x <= xEnd; ++x) {
-						const luxrays::utils::SamplePixel *sp = slgFilm->GetSamplePixel(
-							luxrays::utils::PER_PIXEL_NORMALIZED, x - xStart, y - yStart);
-						const float alpha = slgFilm->IsAlphaChannelEnabled() ?
-							(slgFilm->GetAlphaPixel(x - xStart, y - yStart)->alpha) : 0.f;
+						// I have to update LuxRender Film only with the new samples
+						const u_int pixelX = x - xStart;
+						const u_int pixelY = y - yStart;
 
-						XYZColor xyz = colorSpace.ToXYZ(RGBColor(sp->radiance.r, sp->radiance.g, sp->radiance.b));
+						luxrays::utils::SamplePixel *spOld = previousSampleBuffer.GetPixel(pixelX, pixelY);
+						const luxrays::utils::SamplePixel *spNew = slgFilm->GetSamplePixel(
+							luxrays::utils::PER_PIXEL_NORMALIZED, pixelX, pixelY);
+
+						luxrays::Spectrum deltaRadiance = spNew->radiance - spOld->radiance;
+						const float deltaWeight = spNew->weight - spOld->weight;
+
+						*spOld = *spNew;
+						
+						const float alphaNew = slgFilm->IsAlphaChannelEnabled() ?
+							(slgFilm->GetAlphaPixel(pixelX, pixelY)->alpha) : 0.f;
+						luxrays::utils::AlphaPixel *alphaOldPixel = previousAlphaBuffer.GetPixel(pixelX, pixelY);
+						float deltaAlpha = alphaNew - alphaOldPixel->alpha;
+
+						alphaOldPixel->alpha = alphaNew;
+
+						if (deltaWeight > 0.f) {
+							deltaRadiance /= deltaWeight;
+							deltaAlpha /= deltaWeight;
+						}
+						XYZColor xyz = colorSpace.ToXYZ(RGBColor(deltaRadiance.r, deltaRadiance.g, deltaRadiance.b));
 						// Flip the image upside down
-						Contribution contrib(x, yEnd - 1 - y, xyz, alpha, 0.f, sp->weight);
-						film->SetSample(&contrib);
+						Contribution contrib(x, yEnd - 1 - y, xyz, deltaAlpha, 0.f, deltaWeight);
+						film->AddSampleNoFiltering(&contrib);
 					}
 				}
-				film->SetSampleCount(session->renderEngine->GetTotalSampleCount());
+				const float newSampleCount = session->renderEngine->GetTotalSampleCount(); 
+				film->AddSampleCount(newSampleCount - previousSampleCount);
+				previousSampleCount = newSampleCount;
 
 				lastFilmUpdate =  luxrays::WallClockTime();
 			}
@@ -1812,7 +1841,7 @@ Renderer *SLGRenderer::CreateRenderer(const ParamSet &params) {
 
 	// Local (for network rendering) host configuration file. It is a properties
 	// file that can be used overwrite settings.
-	const string configFile = params.FindOneString("configfile", "");
+	const string configFile = params.FindOneString("localconfigfile", "");
 	if (configFile != "")
 		config.LoadFromFile(configFile);
 

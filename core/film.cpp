@@ -1221,7 +1221,7 @@ void Film::GetSampleExtent(int *xstart, int *xend,
 	*yend   = Floor2Int(yPixelStart + .5f + yPixelCount + filter->yWidth);
 }
 
-void Film::AddSampleCount(const float count) {
+void Film::AddSampleCount(const double count) {
 	if (haltTime > 0) {
 		// Check if we have met the enough rendering time condition
 		boost::xtime t;
@@ -1520,6 +1520,76 @@ void Film::SetSample(const Contribution *contrib) {
 	Buffer *buffer = currentGroup.getBuffer(contrib->buffer);
 
 	buffer->Set(x - xPixelStart, y - yPixelStart, xyz, alpha, weight);
+
+	// Update ZBuffer values with filtered zdepth contribution
+	if(use_Zbuf && contrib->zdepth != 0.f)
+		ZBuffer->Set(x - xPixelStart, y - yPixelStart,
+			contrib->zdepth, 1.0f);
+}
+
+// This is used to add a sample without pixel filtering. It is mostly used by
+//SLGRender to update Luxrender Film
+void Film::AddSampleNoFiltering(const Contribution *contrib) {
+	XYZColor xyz = contrib->color;
+	const float alpha = contrib->alpha;
+	const float weight = contrib->variance;
+	const int x = static_cast<int>(contrib->imageX);
+	const int y = static_cast<int>(contrib->imageY);
+
+	if (x < static_cast<int>(xPixelStart) || x >= static_cast<int>(xPixelStart + xPixelCount) ||
+		y < static_cast<int>(yPixelStart) || y >= static_cast<int>(yPixelStart + yPixelCount)) {
+		if(debug_mode) {
+			LOG(LUX_WARNING, LUX_LIMIT) << "Out of bound pixel coordinates in Film::SetSample: ("
+					<< x << ", " << y << "), sample discarded";
+		}
+		return;
+	}
+
+	// Issue warning if unexpected radiance value returned
+	if (!(xyz.Y() >= 0.f) || isinf(xyz.Y())) {
+		if(debug_mode) {
+			LOG(LUX_WARNING, LUX_LIMIT) << "Out of bound intensity in Film::SetSample: "
+			   << xyz.Y() << ", sample discarded";
+		}
+		return;
+	}
+
+	if (!(alpha >= 0.f) || isinf(alpha)) {
+		if(debug_mode) {
+			LOG(LUX_WARNING, LUX_LIMIT) << "Out of bound  alpha in Film::SetSample: "
+			   << alpha << ", sample discarded";
+		}
+		return;
+	}
+
+	if (!(weight >= 0.f) || isinf(weight)) {
+		if(debug_mode) {
+			LOG(LUX_WARNING, LUX_LIMIT) << "Out of bound  weight in Film::SetSample: "
+			   << weight << ", sample discarded";
+		}
+		return;
+	}
+
+/*FIXME restore the functionality
+	// Reject samples higher than max Y() after warmup period
+	if (warmupComplete) {
+		if (xyz.Y() > maxY)
+			return;
+	} else {
+		maxY = max(maxY, xyz.Y());
+		++warmupSamples;
+		if (warmupSamples >= reject_warmup_samples)
+			warmupComplete = true;
+	}
+*/
+
+	if (premultiplyAlpha)
+		xyz *= alpha;
+
+	BufferGroup &currentGroup = bufferGroups[contrib->bufferGroup];
+	Buffer *buffer = currentGroup.getBuffer(contrib->buffer);
+
+	buffer->Add(x - xPixelStart, y - yPixelStart, xyz, alpha, weight);
 
 	// Update ZBuffer values with filtered zdepth contribution
 	if(use_Zbuf && contrib->zdepth != 0.f)

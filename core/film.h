@@ -622,7 +622,8 @@ public:
 	virtual void AddTileSamples(const Contribution* const contribs, u_int num_contribs,
 		u_int tileIndex);
 	virtual void SetSample(const Contribution *contrib);
-	virtual void AddSampleCount(const float count);
+	virtual void AddSampleNoFiltering(const Contribution *contrib);
+	virtual void AddSampleCount(const double count);
 	virtual void SetSampleCount(const double count) { numberOfLocalSamples = count; }
 	virtual void GetSampleExtent(int *xstart, int *xend, int *ystart, int *yend) const;
 
