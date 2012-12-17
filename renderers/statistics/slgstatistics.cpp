@@ -38,9 +38,10 @@
 using namespace lux;
 
 SLGStatistics::SLGStatistics(SLGRenderer* renderer)
-	: renderer(renderer)
-{
+	: renderer(renderer) {
 	resetDerived();
+
+	averageSampleSec = 0.0;
 
 	formattedLong = new SLGStatistics::FormattedLong(this);
 	formattedShort = new SLGStatistics::FormattedShort(this);
@@ -52,53 +53,26 @@ SLGStatistics::SLGStatistics(SLGRenderer* renderer)
 
 	AddDoubleAttribute(*this, "samplesPerPixel", "Average number of samples per pixel by local node", &SLGStatistics::getAverageSamplesPerPixel);
 	AddDoubleAttribute(*this, "samplesPerSecond", "Average number of samples per second by local node", &SLGStatistics::getAverageSamplesPerSecond);
-	AddDoubleAttribute(*this, "samplesPerSecondWindow", "Average number of samples per second by local node in current time window", &SLGStatistics::getAverageSamplesPerSecondWindow);
-	AddDoubleAttribute(*this, "contributionsPerSecond", "Average number of contributions per second by local node", &SLGStatistics::getAverageContributionsPerSecond);
-	AddDoubleAttribute(*this, "contributionsPerSecondWindow", "Average number of contributions per second by local node in current time window", &SLGStatistics::getAverageContributionsPerSecondWindow);
 
 	AddDoubleAttribute(*this, "netSamplesPerPixel", "Average number of samples per pixel by slave nodes", &SLGStatistics::getNetworkAverageSamplesPerPixel);
 	AddDoubleAttribute(*this, "netSamplesPerSecond", "Average number of samples per second by slave nodes", &SLGStatistics::getNetworkAverageSamplesPerSecond);
 
 	AddDoubleAttribute(*this, "totalSamplesPerPixel", "Average number of samples per pixel", &SLGStatistics::getTotalAverageSamplesPerPixel);
 	AddDoubleAttribute(*this, "totalSamplesPerSecond", "Average number of samples per second", &SLGStatistics::getTotalAverageSamplesPerSecond);
-	AddDoubleAttribute(*this, "totalSamplesPerSecondWindow", "Average number of samples per second in current time window", &SLGStatistics::getTotalAverageSamplesPerSecondWindow);
+
+	AddIntAttribute(*this, "gpuCount", "Number of GPUs in use", &SLGStatistics::getGpuCount);
 }
 
-SLGStatistics::~SLGStatistics()
-{
+SLGStatistics::~SLGStatistics() {
 	delete formattedLong;
 	delete formattedShort;
-}
-
-void SLGStatistics::resetDerived() {
-	windowSampleCount = 0.0;
-	exponentialMovingAverage = 0.0;
-	windowEffSampleCount = 0.0;
-	windowEffBlackSampleCount = 0.0;
-	windowPEffSampleCount = 0.0;
-	windowPEffBlackSampleCount = 0.0;
-}
-
-void SLGStatistics::updateStatisticsWindowDerived() {
-	// Get local sample count
-	double sampleCount = getSampleCount();
-	double elapsedTime = windowCurrentTime - windowStartTime;
-
-	if (elapsedTime != 0.0) {
-		double sps = (sampleCount - windowSampleCount) / elapsedTime;
-
-		if (exponentialMovingAverage == 0.0)
-			exponentialMovingAverage = sps;
-		exponentialMovingAverage += min(1.0, elapsedTime / statisticsWindowSize) * (sps - exponentialMovingAverage);
-	}
-	windowSampleCount = sampleCount;
 }
 
 double SLGStatistics::getRemainingTime() {
 	double remainingTime = RendererStatistics::getRemainingTime();
 	double remainingSamples = std::max(0.0, getHaltSpp() - getTotalAverageSamplesPerPixel()) * getPixelCount();
 
-	return std::min(remainingTime, remainingSamples / getTotalAverageSamplesPerSecondWindow());
+	return std::min(remainingTime, remainingSamples / getTotalAverageSamplesPerSecond());
 }
 
 // Returns haltSamplesPerPixel if set, otherwise infinity
@@ -117,24 +91,8 @@ double SLGStatistics::getPercentHaltSppComplete() {
 	return (getTotalAverageSamplesPerPixel() / getHaltSpp()) * 100.0;
 }
 
-double SLGStatistics::getEfficiency() {
-	boost::mutex::scoped_lock lock(renderer->classWideMutex);
-
-	return 0.0;
-}
-
-double SLGStatistics::getEfficiencyWindow() {
-	return 0.0;
-}
-
 double SLGStatistics::getAverageSamplesPerSecond() {
-	double et = getElapsedTime();
-	return (et == 0.0) ? 0.0 : getSampleCount() / et;
-}
-
-double SLGStatistics::getAverageSamplesPerSecondWindow() {
-	boost::mutex::scoped_lock window_mutex(windowMutex);
-	return getAverageSamplesPerSecond();
+	return averageSampleSec;
 }
 
 double SLGStatistics::getNetworkAverageSamplesPerSecond() {
@@ -213,16 +171,12 @@ SLGStatistics::FormattedLong::FormattedLong(SLGStatistics* rs)
 
 	AddStringAttribute(*this, "samplesPerPixel", "Average number of samples per pixel by local node", &FL::getAverageSamplesPerPixel);
 	AddStringAttribute(*this, "samplesPerSecond", "Average number of samples per second by local node", &FL::getAverageSamplesPerSecond);
-	AddStringAttribute(*this, "samplesPerSecondWindow", "Average number of samples per second by local node in current time window", &FL::getAverageSamplesPerSecondWindow);
-	AddStringAttribute(*this, "contributionsPerSecond", "Average number of contributions per second by local node", &FL::getAverageContributionsPerSecond);
-	AddStringAttribute(*this, "contributionsPerSecondWindow", "Average number of contributions per second by local node in current time window", &FL::getAverageContributionsPerSecondWindow);
 
 	AddStringAttribute(*this, "netSamplesPerPixel", "Average number of samples per pixel by slave nodes", &FL::getNetworkAverageSamplesPerPixel);
 	AddStringAttribute(*this, "netSamplesPerSecond", "Average number of samples per second by slave nodes", &FL::getNetworkAverageSamplesPerSecond);
 
 	AddStringAttribute(*this, "totalSamplesPerPixel", "Average number of samples per pixel", &FL::getTotalAverageSamplesPerPixel);
 	AddStringAttribute(*this, "totalSamplesPerSecond", "Average number of samples per second", &FL::getTotalAverageSamplesPerSecond);
-	AddStringAttribute(*this, "totalSamplesPerSecondWindow", "Average number of samples per second in current time window", &FL::getTotalAverageSamplesPerSecondWindow);
 }
 
 std::string SLGStatistics::FormattedLong::getRecommendedStringTemplate()
@@ -277,21 +231,6 @@ std::string SLGStatistics::FormattedLong::getAverageSamplesPerSecond() {
 	return boost::str(boost::format("%1$0.2f %2%S/s") % MagnitudeReduce(sps) % MagnitudePrefix(sps));
 }
 
-std::string SLGStatistics::FormattedLong::getAverageSamplesPerSecondWindow() {
-	double spsw = rs->getAverageSamplesPerSecondWindow();
-	return boost::str(boost::format("%1$0.2f %2%S/s") % MagnitudeReduce(spsw) % MagnitudePrefix(spsw));
-}
-
-std::string SLGStatistics::FormattedLong::getAverageContributionsPerSecond() {
-	double cps = rs->getAverageContributionsPerSecond();
-	return boost::str(boost::format("%1$0.2f %2%C/s") % MagnitudeReduce(cps) % MagnitudePrefix(cps));
-}
-
-std::string SLGStatistics::FormattedLong::getAverageContributionsPerSecondWindow() {
-	double cpsw = rs->getAverageContributionsPerSecondWindow();
-	return boost::str(boost::format("%1$0.2f %2%C/s") % MagnitudeReduce(cpsw) % MagnitudePrefix(cpsw));
-}
-
 std::string SLGStatistics::FormattedLong::getNetworkAverageSamplesPerPixel() {
 	double spp = rs->getNetworkAverageSamplesPerPixel();
 	return boost::str(boost::format("%1$0.2f %2%S/p") % MagnitudeReduce(spp) % MagnitudePrefix(spp));
@@ -312,17 +251,11 @@ std::string SLGStatistics::FormattedLong::getTotalAverageSamplesPerSecond() {
 	return boost::str(boost::format("%1$0.2f %2%S/s") % MagnitudeReduce(sps) % MagnitudePrefix(sps));
 }
 
-std::string SLGStatistics::FormattedLong::getTotalAverageSamplesPerSecondWindow() {
-	double spsw = rs->getTotalAverageSamplesPerSecondWindow();
-	return boost::str(boost::format("%1$0.2f %2%S/s") % MagnitudeReduce(spsw) % MagnitudePrefix(spsw));
-}
-
 SLGStatistics::FormattedShort::FormattedShort(SLGStatistics* rs)
 	: RendererStatistics::FormattedShort(rs), rs(rs) {
 	FormattedLong* fl = static_cast<SLGStatistics::FormattedLong*>(rs->formattedLong);
 
 	typedef SLGStatistics::FormattedLong FL;
-	typedef SLGStatistics::FormattedShort FS;
 
 	AddStringAttribute(*this, "haltSamplesPerPixel", "Average number of samples per pixel to complete before halting", boost::bind(boost::mem_fn(&FL::getHaltSpp), fl));
 	AddStringAttribute(*this, "remainingSamplesPerPixel", "Average number of samples per pixel remaining", boost::bind(boost::mem_fn(&FL::getRemainingSamplesPerPixel), fl));
@@ -331,16 +264,12 @@ SLGStatistics::FormattedShort::FormattedShort(SLGStatistics* rs)
 
 	AddStringAttribute(*this, "samplesPerPixel", "Average number of samples per pixel by local node", boost::bind(boost::mem_fn(&FL::getAverageSamplesPerPixel), fl));
 	AddStringAttribute(*this, "samplesPerSecond", "Average number of samples per second by local node", boost::bind(boost::mem_fn(&FL::getAverageSamplesPerSecond), fl));
-	AddStringAttribute(*this, "samplesPerSecondWindow", "Average number of samples per second by local node in current time window", boost::bind(boost::mem_fn(&FL::getAverageSamplesPerSecondWindow), fl));
-	AddStringAttribute(*this, "contributionsPerSecond", "Average number of contributions per second by local node", boost::bind(boost::mem_fn(&FL::getAverageContributionsPerSecond), fl));
-	AddStringAttribute(*this, "contributionsPerSecondWindow", "Average number of contributions per second by local node in current time window", boost::bind(boost::mem_fn(&FL::getAverageContributionsPerSecondWindow), fl));
 
 	AddStringAttribute(*this, "netSamplesPerPixel", "Average number of samples per pixel by slave nodes", boost::bind(boost::mem_fn(&FL::getNetworkAverageSamplesPerPixel), fl));
 	AddStringAttribute(*this, "netSamplesPerSecond", "Average number of samples per second by slave nodes", boost::bind(boost::mem_fn(&FL::getNetworkAverageSamplesPerSecond), fl));
 
 	AddStringAttribute(*this, "totalSamplesPerPixel", "Average number of samples per pixel", boost::bind(boost::mem_fn(&FL::getTotalAverageSamplesPerPixel), fl));
 	AddStringAttribute(*this, "totalSamplesPerSecond", "Average number of samples per second", boost::bind(boost::mem_fn(&FL::getTotalAverageSamplesPerSecond), fl));
-	AddStringAttribute(*this, "totalSamplesPerSecondWindow", "Average number of samples per second in current time window", boost::bind(boost::mem_fn(&FL::getTotalAverageSamplesPerSecondWindow), fl));
 }
 
 std::string SLGStatistics::FormattedShort::getRecommendedStringTemplate() {

@@ -1748,13 +1748,6 @@ void SLGRenderer::Render(Scene *s) {
 			state = TERMINATE;
 			return;
 		}
-
-		// start the timer
-		rendererStatistics->start();
-
-		// Dade - preprocessing done
-		preprocessDone = true;
-		scene->SetReady();
 	}
 
 	//----------------------------------------------------------------------
@@ -1762,10 +1755,19 @@ void SLGRenderer::Render(Scene *s) {
 	//----------------------------------------------------------------------
 
 	try {
+		SLGStatistics *slgStats = static_cast<SLGStatistics *>(rendererStatistics);
+
 		slg::RenderConfig *config = new slg::RenderConfig(slgConfigProps, *slgScene);
 		slg::RenderSession *session = new slg::RenderSession(config);
 		slg::RenderEngine *engine = session->renderEngine;
 		engine->SetSeed(scene->seedBase);
+
+		// start the timer
+		rendererStatistics->start();
+
+		// Dade - preprocessing done
+		preprocessDone = true;
+		scene->SetReady();
 
 		unsigned int haltTime = config->cfg.GetInt("batch.halttime", 0);
 		unsigned int haltSpp = config->cfg.GetInt("batch.haltspp", 0);
@@ -1775,7 +1777,7 @@ void SLGRenderer::Render(Scene *s) {
 		session->Start();
 		const double startTime = luxrays::WallClockTime();
 
-		double lastFilmUpdate = startTime;
+		double lastFilmUpdate = startTime - 2.0; // -2.0 is to anticipate the first display update by 2 secs
 		char buf[512];
 		Film *film = scene->camera()->film;
 		int xStart, xEnd, yStart, yEnd;
@@ -1797,7 +1799,7 @@ void SLGRenderer::Render(Scene *s) {
 				}
 			}
 		}
-		
+
 		if (session->film->HasPerScreenNormalizedBuffer()) {
 			previousLightBufferRadiance = new BlockedArray<luxrays::Spectrum>(slgFilmWidth, slgFilmHeight);
 			previousLightWeight = new BlockedArray<float>(slgFilmWidth, slgFilmHeight);
@@ -1864,9 +1866,12 @@ void SLGRenderer::Render(Scene *s) {
 				break;
 			}
 
+			// Update statistics
+			slgStats->averageSampleSec = engine->GetTotalSamplesSec();
+
 			// Print some information about the rendering progress
 			sprintf(buf, "[Elapsed time: %3d/%dsec][Samples %4d/%d][Convergence %f%%][Avg. samples/sec % 3.2fM on %.1fK tris]",
-					int(elapsedTime), int(haltTime), pass, haltSpp, 100.f * convergence, engine->GetTotalSamplesSec() / 1000000.0,
+					int(elapsedTime), int(haltTime), pass, haltSpp, 100.f * convergence, slgStats->averageSampleSec / 1000000.0,
 					config->scene->dataSet->GetTotalTriangleCount() / 1000.0);
 
 			SLG_LOG(buf);

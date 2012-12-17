@@ -51,24 +51,19 @@ public:
 		std::string getPercentHaltSppComplete();
 		std::string getResumedAverageSamplesPerPixel();
 
-		std::string getGpuCount();
-		std::string getAverageGpuEfficiency();
+		std::string getGpuCount() { return "1"; };
 
 		std::string getPathEfficiency();
 		std::string getPathEfficiencyWindow();
 
 		std::string getAverageSamplesPerPixel();
 		std::string getAverageSamplesPerSecond();
-		std::string getAverageSamplesPerSecondWindow();
-		std::string getAverageContributionsPerSecond();
-		std::string getAverageContributionsPerSecondWindow();
 
 		std::string getNetworkAverageSamplesPerPixel();
 		std::string getNetworkAverageSamplesPerSecond();
 
 		std::string getTotalAverageSamplesPerPixel();
 		std::string getTotalAverageSamplesPerSecond();
-		std::string getTotalAverageSamplesPerSecondWindow();
 
 		friend class SLGStatistics;
 		friend class SLGStatistics::FormattedShort;
@@ -84,50 +79,39 @@ public:
 		virtual std::string getRecommendedStringTemplate();
 		virtual std::string getProgress();
 
-		std::string getGpuCount();
-		std::string getAverageGpuEfficiency();
-
-		std::string getPathEfficiency();
-		std::string getPathEfficiencyWindow();
+		std::string getGpuCount() { return "1"; };
 	};
+
+	friend class SLGRenderer;
+
+protected:
+	double averageSampleSec;
 
 private:
 	SLGRenderer *renderer;
 
-	double windowSampleCount;
-	double exponentialMovingAverage;
-	double windowEffSampleCount;
-	double windowEffBlackSampleCount;
-	double windowPEffSampleCount;
-	double windowPEffBlackSampleCount;
-
-	virtual void resetDerived();
-	virtual void updateStatisticsWindowDerived();
+	virtual void resetDerived() { }
+	virtual void updateStatisticsWindowDerived() { }
 
 	virtual double getRemainingTime();
 	virtual double getPercentComplete() { return std::max(getPercentHaltTimeComplete(), getPercentHaltSppComplete()); }
-	virtual u_int getThreadCount() { return 1; }
+	virtual u_int getThreadCount() { return getGpuCount(); }
 
 	double getHaltSpp();
 	double getRemainingSamplesPerPixel() { return std::max(0.0, getHaltSpp() - getTotalAverageSamplesPerPixel()); }
 	double getPercentHaltSppComplete();
 	double getResumedAverageSamplesPerPixel() { return getResumedSampleCount() / getPixelCount(); }
 
-	double getEfficiency();
-	double getEfficiencyWindow();
+	u_int getGpuCount() { return 1; };
 
 	double getAverageSamplesPerPixel() { return getSampleCount() / getPixelCount(); }
 	double getAverageSamplesPerSecond();
-	double getAverageSamplesPerSecondWindow();
-	double getAverageContributionsPerSecond() { return getAverageSamplesPerSecond() * (getEfficiency() / 100.0); }
-	double getAverageContributionsPerSecondWindow() { return getAverageSamplesPerSecondWindow() * (getEfficiency() / 100.0); }
 
 	double getNetworkAverageSamplesPerPixel() { return getNetworkSampleCount() / getPixelCount(); }
 	double getNetworkAverageSamplesPerSecond();
 
 	double getTotalAverageSamplesPerPixel() { return (getResumedSampleCount() + getSampleCount() + getNetworkSampleCount()) / getPixelCount(); }
 	double getTotalAverageSamplesPerSecond() { return getAverageSamplesPerSecond() + getNetworkAverageSamplesPerSecond(); }
-	double getTotalAverageSamplesPerSecondWindow() { return getAverageSamplesPerSecondWindow() + getNetworkAverageSamplesPerSecond(); }
 
 	u_int getPixelCount();
 	double getResumedSampleCount();
