@@ -1748,6 +1748,8 @@ void SLGRenderer::Render(Scene *s) {
 			state = TERMINATE;
 			return;
 		}
+		
+		throw std::runtime_error("Internal error: AAAAAAAAAAAAAAA");
 	}
 
 	//----------------------------------------------------------------------
