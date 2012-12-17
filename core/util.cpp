@@ -134,7 +134,7 @@ std::streamsize multibuffer_device::write(const char* s, std::streamsize n)
 				grow();
 		}
 
-	} catch (std::bad_alloc &e) {
+	} catch (std::bad_alloc&) {
 		// ignore
 	}
 	return static_cast<std::streamsize>(io::position_to_offset(pos) - start);
