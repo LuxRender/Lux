@@ -134,8 +134,8 @@ public:
 
 	// PathIntegrator Public Methods
 	PathIntegrator(RRStrategy rst, u_int md, float cp, bool ie, bool dls) : SurfaceIntegrator(),
-		hints(), rrStrategy(rst), maxDepth(md), continueProbability(cp),
-		sampleOffset(0), bufferId(0), includeEnvironment(ie), enableDirectLightSampling(dls) {
+		bufferId(0), hints(), rrStrategy(rst), maxDepth(md), continueProbability(cp),
+		sampleOffset(0), includeEnvironment(ie), enableDirectLightSampling(dls) {
 		AddStringConstant(*this, "name", "Name of current surface integrator", "path");
 		AddIntAttribute(*this, "maxDepth", "Path max. depth", &PathIntegrator::GetMaxDepth);
 	}
@@ -161,6 +161,8 @@ public:
 
 	friend class PathState;
 
+	u_int bufferId;
+
 private:
 	// Used by Queryable interface
 	u_int GetMaxDepth() { return maxDepth; }
@@ -175,7 +177,7 @@ private:
 	u_int maxDepth;
 	float continueProbability;
 	// Declare sample parameters for light source sampling
-	u_int sampleOffset, bufferId;
+	u_int sampleOffset;
 
 	// Used only for HybridSampler
 	u_int hybridRendererLightSampleOffset;

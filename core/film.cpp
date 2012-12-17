@@ -1528,7 +1528,7 @@ void Film::SetSample(const Contribution *contrib) {
 }
 
 // This is used to add a sample without pixel filtering. It is mostly used by
-//SLGRender to update Luxrender Film
+// SLGRender to update Luxrender Film
 void Film::AddSampleNoFiltering(const Contribution *contrib) {
 	XYZColor xyz = contrib->color;
 	const float alpha = contrib->alpha;

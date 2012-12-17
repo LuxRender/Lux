@@ -39,6 +39,7 @@
 #include "luxrays/core/intersectiondevice.h"
 #include "slg.h"
 #include "luxrays/utils/sdl/scene.h"
+#include "luxrays/utils/film/framebuffer.h"
 
 extern void DebugHandler(const char *msg);
 extern void SDLDebugHandler(const char *msg);
@@ -181,6 +182,8 @@ private:
 	luxrays::sdl::Scene *CreateSLGScene(const luxrays::Properties &slgConfigProps);
 	luxrays::Properties CreateSLGConfig();
 
+	void UpdateLuxFilm(slg::RenderSession *session);
+
 	mutable boost::mutex classWideMutex;
 
 	RendererState state;
@@ -189,6 +192,13 @@ private:
 	luxrays::Properties overwriteConfig;
 	Scene *scene;
 	vector<Normal *> alloctedMeshNormals;
+	// Used to feed LuxRender film with only the delta information from the previous update
+	BlockedArray<luxrays::Spectrum> *previousEyeBufferRadiance;
+	BlockedArray<float> *previousEyeWeight;
+	BlockedArray<luxrays::Spectrum> *previousLightBufferRadiance;
+	BlockedArray<float> *previousLightWeight;
+	BlockedArray<float> *previousAlphaBuffer;
+	double previousSampleCount;
 
 	// Put them last for better data alignment
 	// used to suspend render threads until the preprocessing phase is done

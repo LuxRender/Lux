@@ -73,7 +73,6 @@
 #include "luxrays/opencl/utils.h"
 #include "luxrays/opencl/utils.h"
 #include "rendersession.h"
-#include "luxrays/utils/film/framebuffer.h"
 
 using namespace lux;
 
@@ -126,6 +125,12 @@ SLGRenderer::SLGRenderer(const luxrays::Properties &config) : Renderer() {
 	preprocessDone = false;
 	suspendThreadsWhenDone = false;
 
+	previousEyeBufferRadiance = NULL;
+	previousEyeWeight = NULL;
+	previousLightBufferRadiance = NULL;
+	previousLightWeight = NULL;
+	previousAlphaBuffer = NULL;
+
 	AddStringConstant(*this, "name", "Name of current renderer", "slg");
 
 	rendererStatistics = new SLGStatistics(this);
@@ -136,10 +141,15 @@ SLGRenderer::SLGRenderer(const luxrays::Properties &config) : Renderer() {
 SLGRenderer::~SLGRenderer() {
 	boost::mutex::scoped_lock lock(classWideMutex);
 
-	delete rendererStatistics;
-
 	if ((state != TERMINATE) && (state != INIT))
 		throw std::runtime_error("Internal error: called SLGRenderer::~SLGRenderer() while not in TERMINATE or INIT state.");
+
+	delete rendererStatistics;
+	delete previousEyeBufferRadiance;
+	delete previousEyeWeight;
+	delete previousLightBufferRadiance;
+	delete previousLightWeight;
+	delete previousAlphaBuffer;
 
 	for (size_t i = 0; i < hosts.size(); ++i)
 		delete hosts[i];
@@ -1469,15 +1479,11 @@ luxrays::Properties SLGRenderer::CreateSLGConfig() {
 		// Bidirectional path tracing
 		BidirIntegrator *bidir = dynamic_cast<BidirIntegrator *>(scene->surfaceIntegrator);
 		const int maxEyeDepth = (*bidir)["maxEyeDepth"].IntValue();
-		/*const int maxLightDepth = (*bidir)["maxLightDepth"].IntValue();
+		const int maxLightDepth = (*bidir)["maxLightDepth"].IntValue();
 
 		ss << "renderengine.type = BIDIRVMCPU\n" <<
 			"path.maxdepth = " << maxLightDepth << "\n" <<
-			"light.maxdepth = " << maxEyeDepth << "\n";*/
-
-		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer doesn't support the Bidirectional SurfaceIntegrator, falling back to path tracing";
-		ss << "renderengine.type = PATHOCL\n" <<
-				"path.maxdepth = " << maxEyeDepth << "\n";
+			"light.maxdepth = " << maxEyeDepth << "\n";
 	} else {
 		// Unmapped surface integrator, just use path tracing
 		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer doesn't support the SurfaceIntegrator, falling back to path tracing";
@@ -1560,7 +1566,115 @@ luxrays::Properties SLGRenderer::CreateSLGConfig() {
 	// Add overwrite properties
 	config.Load(overwriteConfig);
 
+	// Check if light buffer is needed and required
+	slg::RenderEngineType type = slg::RenderEngine::String2RenderEngineType(config.GetString("renderengine.type", "PATHOCL"));
+	if (((type == slg::LIGHTCPU) ||
+		(type == slg::BIDIRCPU) ||
+		(type == slg::BIDIRHYBRID) ||
+		(type == slg::CBIDIRHYBRID) ||
+		(type == slg::BIDIRVMCPU)) && !dynamic_cast<BidirIntegrator *>(scene->surfaceIntegrator)) {
+		throw std::runtime_error("You have to select bidirectional surface integrator in order to use the selected render engine");
+	}
+
 	return config;
+}
+
+void SLGRenderer::UpdateLuxFilm(slg::RenderSession *session) {
+	luxrays::utils::Film *slgFilm = session->film;
+
+	Film *film = scene->camera()->film;
+	ColorSystem colorSpace = film->GetColorSpace();
+	int xStart, xEnd, yStart, yEnd;
+	film->GetSampleExtent(&xStart, &xEnd, &yStart, &yEnd);
+
+	// Recover the ID of buffers
+	const PathIntegrator *path = dynamic_cast<const PathIntegrator *>(scene->surfaceIntegrator);
+	const BidirIntegrator *bidir = dynamic_cast<const BidirIntegrator *>(scene->surfaceIntegrator);
+	u_int eyeBufferId, lightBufferId;
+	if (path) {
+		eyeBufferId = path->bufferId;
+		lightBufferId = eyeBufferId;
+	} else if (bidir) {
+		eyeBufferId = bidir->eyeBufferId;
+		lightBufferId = bidir->lightBufferId;		
+	} else
+		throw std::runtime_error("Internal error: surfaceIntegretor is not PathIntegrator or BidirIntegrator");
+
+	// Lock the contribution pool in order to have exclusive
+	// access to the film
+	ScopedPoolLock poolLock(film->contribPool);
+
+	if (slgFilm->HasPerPixelNormalizedBuffer()) {
+		// Copy the information from PER_PIXEL_NORMALIZED buffer
+
+		for (int y = yStart; y <= yEnd; ++y) {
+			for (int x = xStart; x <= xEnd; ++x) {
+				// I have to update LuxRender Film only with the new samples
+				const u_int pixelX = x - xStart;
+				const u_int pixelY = y - yStart;
+
+				const luxrays::utils::SamplePixel *spNew = slgFilm->GetSamplePixel(
+					luxrays::utils::PER_PIXEL_NORMALIZED, pixelX, pixelY);
+
+				luxrays::Spectrum deltaRadiance = spNew->radiance - (*previousEyeBufferRadiance)(pixelX, pixelY);
+				const float deltaWeight = spNew->weight - (*previousEyeWeight)(pixelX, pixelY);
+
+				(*previousEyeBufferRadiance)(pixelX, pixelY) = spNew->radiance;
+				(*previousEyeWeight)(pixelX, pixelY) = spNew->weight;
+
+				const float alphaNew = slgFilm->IsAlphaChannelEnabled() ?
+					(slgFilm->GetAlphaPixel(pixelX, pixelY)->alpha) : 0.f;
+				float deltaAlpha = alphaNew - (*previousAlphaBuffer)(pixelX, pixelY);
+
+				(*previousAlphaBuffer)(pixelX, pixelY) = alphaNew;
+
+				if (deltaWeight > 0.f) {
+					deltaRadiance /= deltaWeight;
+					deltaAlpha /= deltaWeight;
+
+					XYZColor xyz = colorSpace.ToXYZ(RGBColor(deltaRadiance.r, deltaRadiance.g, deltaRadiance.b));
+					// Flip the image upside down
+					Contribution contrib(x, yEnd - 1 - y, xyz, deltaAlpha, 0.f, deltaWeight, eyeBufferId);
+					film->AddSampleNoFiltering(&contrib);
+				}
+			}
+		}
+	}
+
+	if (slgFilm->HasPerScreenNormalizedBuffer()) {
+		// Copy the information from PER_SCREEN_NORMALIZED buffer
+
+		for (int y = yStart; y <= yEnd; ++y) {
+			for (int x = xStart; x <= xEnd; ++x) {
+				// I have to update LuxRender Film only with the new samples
+				const u_int pixelX = x - xStart;
+				const u_int pixelY = y - yStart;
+
+				const luxrays::utils::SamplePixel *spNew = slgFilm->GetSamplePixel(
+					luxrays::utils::PER_SCREEN_NORMALIZED, pixelX, pixelY);
+
+				luxrays::Spectrum deltaRadiance = spNew->radiance - (*previousLightBufferRadiance)(pixelX, pixelY);
+				const float deltaWeight = spNew->weight - (*previousLightWeight)(pixelX, pixelY);
+
+				(*previousLightBufferRadiance)(pixelX, pixelY) = spNew->radiance;
+				(*previousLightWeight)(pixelX, pixelY) = spNew->weight;
+
+				if (deltaWeight > 0.f) {
+					// This is required to cancel the "* weight" inside AddSampleNoFiltering()
+					deltaRadiance /= deltaWeight;
+
+					XYZColor xyz = colorSpace.ToXYZ(RGBColor(deltaRadiance.r, deltaRadiance.g, deltaRadiance.b));
+					// Flip the image upside down
+					Contribution contrib(x, yEnd - 1 - y, xyz, 1.f, 0.f, deltaWeight, lightBufferId);
+					film->AddSampleNoFiltering(&contrib);
+				}
+			}
+		}
+	}
+
+	const float newSampleCount = session->renderEngine->GetTotalSampleCount(); 
+	film->AddSampleCount(newSampleCount - previousSampleCount);
+	previousSampleCount = newSampleCount;
 }
 
 void SLGRenderer::Render(Scene *s) {
@@ -1666,14 +1780,35 @@ void SLGRenderer::Render(Scene *s) {
 		Film *film = scene->camera()->film;
 		int xStart, xEnd, yStart, yEnd;
 		film->GetSampleExtent(&xStart, &xEnd, &yStart, &yEnd);
-		const luxrays::utils::Film *slgFilm = session->film; 
 
 		// Used to feed LuxRender film with only the delta information from the previous update
-		luxrays::utils::SampleFrameBuffer previousSampleBuffer(session->film->GetWidth(), session->film->GetHeight());
-		previousSampleBuffer.Clear();
-		luxrays::utils::AlphaFrameBuffer previousAlphaBuffer(session->film->GetWidth(), session->film->GetHeight());
-		previousAlphaBuffer.Clear();
-		double previousSampleCount = 0.0;
+		const u_int slgFilmWidth = session->film->GetWidth();
+		const u_int slgFilmHeight = session->film->GetHeight();
+
+		if (session->film->HasPerPixelNormalizedBuffer()) {
+			previousEyeBufferRadiance = new BlockedArray<luxrays::Spectrum>(slgFilmWidth, slgFilmHeight);
+			previousEyeWeight = new BlockedArray<float>(slgFilmWidth, slgFilmHeight);
+			previousAlphaBuffer = new BlockedArray<float>(slgFilmWidth, slgFilmHeight);
+
+			for (u_int y = 0; y < slgFilmHeight; ++y) {
+				for (u_int x = 0; x < slgFilmWidth; ++x) {
+					(*previousEyeWeight)(x, y) = 0.f;
+					(*previousAlphaBuffer)(x, y) = 0.f;
+				}
+			}
+		}
+		
+		if (session->film->HasPerScreenNormalizedBuffer()) {
+			previousLightBufferRadiance = new BlockedArray<luxrays::Spectrum>(slgFilmWidth, slgFilmHeight);
+			previousLightWeight = new BlockedArray<float>(slgFilmWidth, slgFilmHeight);
+
+			for (u_int y = 0; y < slgFilmHeight; ++y) {
+				for (u_int x = 0; x < slgFilmWidth; ++x)
+					(*previousLightWeight)(x, y) = 0.f;
+			}
+		}
+
+		previousSampleCount = 0.0;
 
 		for (;;) {
 			if (state == PAUSE) {
@@ -1693,45 +1828,7 @@ void SLGRenderer::Render(Scene *s) {
 				session->renderEngine->UpdateFilm();
 
 				// Update LuxRender film too
-				ColorSystem colorSpace = film->GetColorSpace();
-				// Lock the contribution pool in order to have exclusive
-				// access to the film
-				ScopedPoolLock poolLock(film->contribPool);
-				for (int y = yStart; y <= yEnd; ++y) {
-					for (int x = xStart; x <= xEnd; ++x) {
-						// I have to update LuxRender Film only with the new samples
-						const u_int pixelX = x - xStart;
-						const u_int pixelY = y - yStart;
-
-						luxrays::utils::SamplePixel *spOld = previousSampleBuffer.GetPixel(pixelX, pixelY);
-						const luxrays::utils::SamplePixel *spNew = slgFilm->GetSamplePixel(
-							luxrays::utils::PER_PIXEL_NORMALIZED, pixelX, pixelY);
-
-						luxrays::Spectrum deltaRadiance = spNew->radiance - spOld->radiance;
-						const float deltaWeight = spNew->weight - spOld->weight;
-
-						*spOld = *spNew;
-						
-						const float alphaNew = slgFilm->IsAlphaChannelEnabled() ?
-							(slgFilm->GetAlphaPixel(pixelX, pixelY)->alpha) : 0.f;
-						luxrays::utils::AlphaPixel *alphaOldPixel = previousAlphaBuffer.GetPixel(pixelX, pixelY);
-						float deltaAlpha = alphaNew - alphaOldPixel->alpha;
-
-						alphaOldPixel->alpha = alphaNew;
-
-						if (deltaWeight > 0.f) {
-							deltaRadiance /= deltaWeight;
-							deltaAlpha /= deltaWeight;
-						}
-						XYZColor xyz = colorSpace.ToXYZ(RGBColor(deltaRadiance.r, deltaRadiance.g, deltaRadiance.b));
-						// Flip the image upside down
-						Contribution contrib(x, yEnd - 1 - y, xyz, deltaAlpha, 0.f, deltaWeight);
-						film->AddSampleNoFiltering(&contrib);
-					}
-				}
-				const float newSampleCount = session->renderEngine->GetTotalSampleCount(); 
-				film->AddSampleCount(newSampleCount - previousSampleCount);
-				previousSampleCount = newSampleCount;
+				UpdateLuxFilm(session);
 
 				lastFilmUpdate =  luxrays::WallClockTime();
 			}
@@ -1789,6 +1886,15 @@ void SLGRenderer::Render(Scene *s) {
 	} catch (std::exception err) {
 		LOG(LUX_SEVERE, LUX_SYSTEM) << "ERROR: " << err.what();
 	}
+
+	delete previousEyeBufferRadiance;
+	previousEyeBufferRadiance = NULL;
+	delete previousEyeWeight;
+	previousEyeWeight = NULL;
+	delete previousLightBufferRadiance;
+	previousLightBufferRadiance = NULL;
+	delete previousLightWeight;
+	previousLightWeight = NULL;
 
 	// Free allocated normals
 	for (u_int i = 0; i < alloctedMeshNormals.size(); ++i)
