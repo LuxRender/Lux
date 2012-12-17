@@ -1678,85 +1678,83 @@ void SLGRenderer::UpdateLuxFilm(slg::RenderSession *session) {
 }
 
 void SLGRenderer::Render(Scene *s) {
-	luxrays::sdl::Scene *slgScene = NULL;
-	luxrays::Properties slgConfigProps;
-
-	{
-		// Section under mutex
-		boost::mutex::scoped_lock lock(classWideMutex);
-
-		scene = s;
-
-		if (scene->IsFilmOnly()) {
-			state = TERMINATE;
-			return;
-		}
-
-		if (scene->lights.size() == 0) {
-			LOG(LUX_SEVERE, LUX_MISSINGDATA) << "No light sources defined in scene; nothing to render.";
-			state = TERMINATE;
-			return;
-		}
-
-		state = RUN;
-
-		// Initialize the stats
-		rendererStatistics->reset();
-	
-		// Dade - I have to do initiliaziation here for the current thread.
-		// It can be used by the Preprocess() methods.
-
-		// initialize the thread's rangen
-		u_long seed = scene->seedBase - 1;
-		LOG(LUX_DEBUG, LUX_NOERROR) << "Preprocess thread uses seed: " << seed;
-
-		RandomGenerator rng(seed);
-
-		// integrator preprocessing
-		scene->sampler->SetFilm(scene->camera()->film);
-		scene->surfaceIntegrator->Preprocess(rng, *scene);
-		scene->volumeIntegrator->Preprocess(rng, *scene);
-		scene->camera()->film->CreateBuffers();
-
-		scene->surfaceIntegrator->RequestSamples(scene->sampler, *scene);
-		scene->volumeIntegrator->RequestSamples(scene->sampler, *scene);
-
-		// Dade - to support autofocus for some camera model
-		scene->camera()->AutoFocus(*scene);
-
-		// TODO: extend SLG library to accept an handler for each rendering session
-		luxrays::sdl::LuxRaysSDLDebugHandler = SDLDebugHandler;
-
-		try {
-			// Build the SLG rendering configuration
-			slgConfigProps.Load(CreateSLGConfig());
-
-			// Build the SLG scene to render
-			slgScene = CreateSLGScene(slgConfigProps);
-#if !defined(LUXRAYS_DISABLE_OPENCL)
-		} catch (cl::Error err) {
-			LOG(LUX_SEVERE, LUX_SYSTEM) << "OpenCL ERROR: " << err.what() << "(" << luxrays::utils::oclErrorString(err.err()) << ")";
-			state = TERMINATE;
-			return;
-#endif
-		} catch (std::runtime_error err) {
-			LOG(LUX_SEVERE, LUX_SYSTEM) << "RUNTIME ERROR: " << err.what();
-			state = TERMINATE;
-			return;
-		} catch (std::exception err) {
-			LOG(LUX_SEVERE, LUX_SYSTEM) << "ERROR: " << err.what();
-			state = TERMINATE;
-			return;
-		}
-		
-		throw std::runtime_error("Internal error: AAAAAAAAAAAAAAA");
-	}
-
-	//----------------------------------------------------------------------
-	// Do the render
-	//----------------------------------------------------------------------
-
 	try {
+		luxrays::sdl::Scene *slgScene = NULL;
+		luxrays::Properties slgConfigProps;
+
+		{
+			// Section under mutex
+			boost::mutex::scoped_lock lock(classWideMutex);
+
+			scene = s;
+
+			if (scene->IsFilmOnly()) {
+				state = TERMINATE;
+				return;
+			}
+
+			if (scene->lights.size() == 0) {
+				LOG(LUX_SEVERE, LUX_MISSINGDATA) << "No light sources defined in scene; nothing to render.";
+				state = TERMINATE;
+				return;
+			}
+
+			state = RUN;
+
+			// Initialize the stats
+			rendererStatistics->reset();
+
+			// Dade - I have to do initiliaziation here for the current thread.
+			// It can be used by the Preprocess() methods.
+
+			// initialize the thread's rangen
+			u_long seed = scene->seedBase - 1;
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Preprocess thread uses seed: " << seed;
+
+			RandomGenerator rng(seed);
+
+			// integrator preprocessing
+			scene->sampler->SetFilm(scene->camera()->film);
+			scene->surfaceIntegrator->Preprocess(rng, *scene);
+			scene->volumeIntegrator->Preprocess(rng, *scene);
+			scene->camera()->film->CreateBuffers();
+
+			scene->surfaceIntegrator->RequestSamples(scene->sampler, *scene);
+			scene->volumeIntegrator->RequestSamples(scene->sampler, *scene);
+
+			// Dade - to support autofocus for some camera model
+			scene->camera()->AutoFocus(*scene);
+
+			// TODO: extend SLG library to accept an handler for each rendering session
+			luxrays::sdl::LuxRaysSDLDebugHandler = SDLDebugHandler;
+
+			try {
+				// Build the SLG rendering configuration
+				slgConfigProps.Load(CreateSLGConfig());
+
+				// Build the SLG scene to render
+				slgScene = CreateSLGScene(slgConfigProps);
+		#if !defined(LUXRAYS_DISABLE_OPENCL)
+			} catch (cl::Error err) {
+				LOG(LUX_SEVERE, LUX_SYSTEM) << "OpenCL ERROR: " << err.what() << "(" << luxrays::utils::oclErrorString(err.err()) << ")";
+				state = TERMINATE;
+				return;
+		#endif
+			} catch (std::runtime_error err) {
+				LOG(LUX_SEVERE, LUX_SYSTEM) << "RUNTIME ERROR: " << err.what();
+				state = TERMINATE;
+				return;
+			} catch (std::exception err) {
+				LOG(LUX_SEVERE, LUX_SYSTEM) << "ERROR: " << err.what();
+				state = TERMINATE;
+				return;
+			}
+		}
+
+		//----------------------------------------------------------------------
+		// Initialize the render session
+		//----------------------------------------------------------------------
+
 		SLGStatistics *slgStats = static_cast<SLGStatistics *>(rendererStatistics);
 
 		slg::RenderConfig *config = new slg::RenderConfig(slgConfigProps, *slgScene);
@@ -1771,13 +1769,16 @@ void SLGRenderer::Render(Scene *s) {
 		preprocessDone = true;
 		scene->SetReady();
 
+		//----------------------------------------------------------------------
+		// Start the rendering
+		//----------------------------------------------------------------------
+
+		session->Start();
+		const double startTime = luxrays::WallClockTime();
+
 		unsigned int haltTime = config->cfg.GetInt("batch.halttime", 0);
 		unsigned int haltSpp = config->cfg.GetInt("batch.haltspp", 0);
 		float haltThreshold = config->cfg.GetFloat("batch.haltthreshold", -1.f);
-
-		// Start the rendering
-		session->Start();
-		const double startTime = luxrays::WallClockTime();
 
 		double lastFilmUpdate = startTime - 2.0; // -2.0 is to anticipate the first display update by 2 secs
 		char buf[512];
