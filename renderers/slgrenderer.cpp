@@ -743,13 +743,15 @@ bool SLGRenderer::GetSLGMaterialInfo(luxrays::sdl::Scene *slgScene, const Primit
 						ToString(rgb.g) + " " +
 						ToString(rgb.b) + "\n"
 					);
-				
 			} else {
 				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only area lights with constant ConstantRGBColorTexture or BlackBodyTexture (i.e. not " <<
 					ToClassName(tex) << "). Replacing an unsupported area light material with matte.";
 				return false;
 			}
 		}
+
+		*info = matInfo;
+		return true;
 	} else
 	//----------------------------------------------------------------------
 	// Primitive is not supported, use the default material
@@ -765,80 +767,83 @@ bool SLGRenderer::GetSLGMaterialInfo(luxrays::sdl::Scene *slgScene, const Primit
 
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Material type: " << ToClassName(mat);
 
-	// Check if the material has already been defined
-	if (slgScene->materialIndices.count(matInfo.matName) < 1) {
-		// I have to create a new material definition
+	//------------------------------------------------------------------
+	// Check if it is material Matte
+	//------------------------------------------------------------------
+	if (dynamic_cast<Matte *>(mat)) {
+		// Define the material
+		Matte *matte = dynamic_cast<Matte *>(mat);
+		matInfo.matName = matte->GetName();
 
-		//------------------------------------------------------------------
-		// Check if it is material Matte
-		//------------------------------------------------------------------
-		if (dynamic_cast<Matte *>(mat)) {
-			// Define the material
-			Matte *matte = dynamic_cast<Matte *>(mat);
-			matInfo.matName = matte->GetName();
-
-			// Check the type of texture
-			if (GetSLGMaterialTexInfo(slgScene, &matInfo, matte->GetTexture())) {
+		// Check the type of texture
+		if (GetSLGMaterialTexInfo(slgScene, &matInfo, matte->GetTexture())) {
+			// Check if the material has already been defined
+			if (slgScene->materialIndices.count(matInfo.matName) < 1) {
 				slgScene->AddMaterials(
 					"scene.materials.matte." + matInfo.matName +" = " +
 						ToString(matInfo.color0.r) + " " +
 						ToString(matInfo.color0.g) + " " +
 						ToString(matInfo.color0.b) + "\n"
 					);
-			} else {
-				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "Ignoring unsupported texture.";
-				return false;
 			}
-		} else
-		//------------------------------------------------------------------
-		// Check if it is material Mirror
-		//------------------------------------------------------------------
-		if (dynamic_cast<Mirror *>(mat)) {
-			// Define the material
-			Mirror *mirror = dynamic_cast<Mirror *>(mat);
-			matInfo.matName = mirror->GetName();
+		} else {
+			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "Ignoring unsupported texture.";
+			return false;
+		}
+	} else
+	//------------------------------------------------------------------
+	// Check if it is material Mirror
+	//------------------------------------------------------------------
+	if (dynamic_cast<Mirror *>(mat)) {
+		// Define the material
+		Mirror *mirror = dynamic_cast<Mirror *>(mat);
+		matInfo.matName = mirror->GetName();
 
-			// Check the type of texture
-			if (GetSLGMaterialTexInfo(slgScene, &matInfo, mirror->GetTexture())) {
+		// Check the type of texture
+		if (GetSLGMaterialTexInfo(slgScene, &matInfo, mirror->GetTexture())) {
+			// Check if the material has already been defined
+			if (slgScene->materialIndices.count(matInfo.matName) < 1) {
 				slgScene->AddMaterials(
 					"scene.materials.mirror." + matInfo.matName +" = " +
 						ToString(matInfo.color0.r) + " " +
 						ToString(matInfo.color0.g) + " " +
 						ToString(matInfo.color0.b) + " 1\n"
 					);
-			} else {
-				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "Ignoring unsupported texture.";
-				slgScene->AddMaterials(
-					"scene.materials.mirror." + matInfo.matName +" = 1.0 1.0 1.0 1\n");
 			}
-		} else
-		//------------------------------------------------------------------
-		// Check if it is material Glass
-		//------------------------------------------------------------------
-		if (dynamic_cast<Glass *>(mat)) {
-			// Define the material
-			Glass *glass = dynamic_cast<Glass *>(mat);
-			matInfo.matName = glass->GetName();
+		} else {
+			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "Ignoring unsupported texture.";
+			return false;
+		}
+	} else
+	//------------------------------------------------------------------
+	// Check if it is material Glass
+	//------------------------------------------------------------------
+	if (dynamic_cast<Glass *>(mat)) {
+		// Define the material
+		Glass *glass = dynamic_cast<Glass *>(mat);
+		matInfo.matName = glass->GetName();
 
-			// Index
-			Texture<float> *indexTex = glass->GetIndexTexture();
-			LOG(LUX_DEBUG, LUX_NOERROR) << "Index Texture type: " << ToClassName(indexTex);
-			ConstantFloatTexture *indexFloatTex = dynamic_cast<ConstantFloatTexture *>(indexTex);
+		// Index
+		Texture<float> *indexTex = glass->GetIndexTexture();
+		LOG(LUX_DEBUG, LUX_NOERROR) << "Index Texture type: " << ToClassName(indexTex);
+		ConstantFloatTexture *indexFloatTex = dynamic_cast<ConstantFloatTexture *>(indexTex);
 
-			float index;
-			if (indexFloatTex)
-				index = (*indexFloatTex)["value"].FloatValue();
-			else {
-				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Glass material with ConstantFloatTexture (i.e. not " <<
-					ToClassName(indexFloatTex) << "). Ignoring unsupported texture and using 1.41 value.";
-				index = 1.41f;
-			}
+		float index;
+		if (indexFloatTex)
+			index = (*indexFloatTex)["value"].FloatValue();
+		else {
+			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Glass material with ConstantFloatTexture (i.e. not " <<
+				ToClassName(indexFloatTex) << "). Ignoring unsupported texture and using 1.41 value.";
+			index = 1.41f;
+		}
 
-			// Check the type of textures
-			if (GetSLGMaterialTexInfo(slgScene, &matInfo, glass->GetKtTexture(), glass->GetKrTexture())) {
-				// Check if it is architectural glass
-				const bool architectural = (*glass)["architectural"].BoolValue();
-				LOG(LUX_DEBUG, LUX_NOERROR) << "Architectural glass: " << architectural;
+		// Check the type of textures
+		if (GetSLGMaterialTexInfo(slgScene, &matInfo, glass->GetKtTexture(), glass->GetKrTexture())) {
+			// Check if it is architectural glass
+			const bool architectural = (*glass)["architectural"].BoolValue();
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Architectural glass: " << architectural;
+			// Check if the material has already been defined
+			if (slgScene->materialIndices.count(matInfo.matName) < 1) {
 				if (architectural) {
 					slgScene->AddMaterials(
 							"scene.materials.archglass." + matInfo.matName +" = " +
@@ -862,66 +867,68 @@ bool SLGRenderer::GetSLGMaterialInfo(luxrays::sdl::Scene *slgScene, const Primit
 								" 1.0 " + ToString(index) + " 1 1\n"
 							);
 				}
+			}
+		} else {
+			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "Ignoring unsupported texture.";
+			return false;
+		}
+	} else
+	//------------------------------------------------------------------
+	// Check if it is material Glass2
+	//------------------------------------------------------------------
+	if (dynamic_cast<Glass2 *>(mat)) {
+		// Define the material
+		Glass2 *glass2 = dynamic_cast<Glass2 *>(mat);
+		matInfo.matName = glass2->GetName();
+
+		luxrays::Spectrum krRGB(1.f);
+		luxrays::Spectrum ktRGB(1.f);
+		float index = 1.41f;
+
+		const Volume *intVol = prim->GetInterior();
+		LOG(LUX_DEBUG, LUX_NOERROR) << "Glass2 interior volume type: " << ToClassName(intVol);
+
+		if (dynamic_cast<const ClearVolume *>(intVol)) {
+			const ClearVolume *clrVol = dynamic_cast<const ClearVolume *>(intVol);
+
+			// Try to extract the index from Volume information
+			const Texture<FresnelGeneral> *fresnelTex = clrVol->GetFresnelTexture();
+			LOG(LUX_DEBUG, LUX_NOERROR) << "FresnelGeneral Texture type: " << ToClassName(fresnelTex);
+			if (dynamic_cast<const ConstantFresnelTexture *>(fresnelTex)) {
+				const ConstantFresnelTexture *constFresnelTex = 
+					dynamic_cast<const ConstantFresnelTexture *>(fresnelTex);
+				index = (*constFresnelTex)["value"].FloatValue();
+			}
+
+			// Kt
+			const Texture<SWCSpectrum> *absorbTex = clrVol->GetAbsorptionTexture();
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Absorption Texture type: " << ToClassName(absorbTex);
+			const ConstantRGBColorTexture *absorbRGBTex = dynamic_cast<const ConstantRGBColorTexture *>(absorbTex);
+
+			if (absorbRGBTex) {
+				ktRGB.r = (*absorbRGBTex)["color.r"].FloatValue();
+				ktRGB.g = (*absorbRGBTex)["color.g"].FloatValue();
+				ktRGB.b = (*absorbRGBTex)["color.b"].FloatValue();
+
+				ktRGB = ktRGB * ktRGB;
+				ktRGB.r = Clamp(ktRGB.r, 0.f, 20.f) / 20.f;
+				ktRGB.g = Clamp(ktRGB.g, 0.f, 20.f) / 20.f;
+				ktRGB.b = Clamp(ktRGB.b, 0.f, 20.f) / 20.f;
+
+				ktRGB.r = 1.f - ktRGB.r;
+				ktRGB.g = 1.f - ktRGB.g;
+				ktRGB.b = 1.f - ktRGB.b;
 			} else {
-				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "Ignoring unsupported texture.";
-				slgScene->AddMaterials(
-					"scene.materials.mirror." + matInfo.matName +" = 1.0 1.0 1.0 1\n");
+				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Glass2 material with ConstantRGBColorTexture (i.e. not " <<
+					ToClassName(absorbRGBTex) << "). Ignoring unsupported texture.";
 			}
-		} else
-		//------------------------------------------------------------------
-		// Check if it is material Glass2
-		//------------------------------------------------------------------
-		if (dynamic_cast<Glass2 *>(mat)) {
-			// Define the material
-			Glass2 *glass2 = dynamic_cast<Glass2 *>(mat);
-			matInfo.matName = glass2->GetName();
+		}
 
-			luxrays::Spectrum krRGB(1.f);
-			luxrays::Spectrum ktRGB(1.f);
-			float index = 1.41f;
-
-			const Volume *intVol = prim->GetInterior();
-			LOG(LUX_DEBUG, LUX_NOERROR) << "Glass2 interior volume type: " << ToClassName(intVol);
-
-			if (dynamic_cast<const ClearVolume *>(intVol)) {
-				const ClearVolume *clrVol = dynamic_cast<const ClearVolume *>(intVol);
-
-				// Try to extract the index from Volume information
-				const Texture<FresnelGeneral> *fresnelTex = clrVol->GetFresnelTexture();
-				LOG(LUX_DEBUG, LUX_NOERROR) << "FresnelGeneral Texture type: " << ToClassName(fresnelTex);
-				if (dynamic_cast<const ConstantFresnelTexture *>(fresnelTex)) {
-					const ConstantFresnelTexture *constFresnelTex = 
-						dynamic_cast<const ConstantFresnelTexture *>(fresnelTex);
-					index = (*constFresnelTex)["value"].FloatValue();
-				}
-
-				// Kt
-				const Texture<SWCSpectrum> *absorbTex = clrVol->GetAbsorptionTexture();
-				LOG(LUX_DEBUG, LUX_NOERROR) << "Absorption Texture type: " << ToClassName(absorbTex);
-				const ConstantRGBColorTexture *absorbRGBTex = dynamic_cast<const ConstantRGBColorTexture *>(absorbTex);
-
-				if (absorbRGBTex) {
-					ktRGB.r = (*absorbRGBTex)["color.r"].FloatValue();
-					ktRGB.g = (*absorbRGBTex)["color.g"].FloatValue();
-					ktRGB.b = (*absorbRGBTex)["color.b"].FloatValue();
-
-					ktRGB = ktRGB * ktRGB;
-					ktRGB.r = Clamp(ktRGB.r, 0.f, 20.f) / 20.f;
-					ktRGB.g = Clamp(ktRGB.g, 0.f, 20.f) / 20.f;
-					ktRGB.b = Clamp(ktRGB.b, 0.f, 20.f) / 20.f;
-
-					ktRGB.r = 1.f - ktRGB.r;
-					ktRGB.g = 1.f - ktRGB.g;
-					ktRGB.b = 1.f - ktRGB.b;
-				} else {
-					LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Glass2 material with ConstantRGBColorTexture (i.e. not " <<
-						ToClassName(absorbRGBTex) << "). Ignoring unsupported texture.";
-				}
-			}
-			
-			// Check if it is architectural glass
-			const bool architectural = (*glass2)["architectural"].BoolValue();
-			LOG(LUX_DEBUG, LUX_NOERROR) << "Architectural glass: " << architectural;
+		// Check if it is architectural glass
+		const bool architectural = (*glass2)["architectural"].BoolValue();
+		LOG(LUX_DEBUG, LUX_NOERROR) << "Architectural glass: " << architectural;
+		// Check if the material has already been defined
+		if (slgScene->materialIndices.count(matInfo.matName) < 1) {
 			if (architectural) {
 				slgScene->AddMaterials(
 						"scene.materials.archglass." + matInfo.matName +" = " +
@@ -945,32 +952,35 @@ bool SLGRenderer::GetSLGMaterialInfo(luxrays::sdl::Scene *slgScene, const Primit
 							" 1.0 " + ToString(index) + " 1 1\n"
 						);
 			}
-		} else
-		//------------------------------------------------------------------
-		// Check if it is material Glossy2
-		//------------------------------------------------------------------
-		if (dynamic_cast<Glossy2 *>(mat)) {
-			// Define the material
-			Glossy2 *glossy2 = dynamic_cast<Glossy2 *>(mat);
-			matInfo.matName = glossy2->GetName();
+		}
+	} else
+	//------------------------------------------------------------------
+	// Check if it is material Glossy2
+	//------------------------------------------------------------------
+	if (dynamic_cast<Glossy2 *>(mat)) {
+		// Define the material
+		Glossy2 *glossy2 = dynamic_cast<Glossy2 *>(mat);
+		matInfo.matName = glossy2->GetName();
 
-			// Try to guess the exponent from the roughness of the surface in the u direction
-			Texture<float> *uroughnessTex = glossy2->GetNuTexture();
-			LOG(LUX_DEBUG, LUX_NOERROR) << "Nu Texture type: " << ToClassName(uroughnessTex);
-			ConstantFloatTexture *uroughnessFloatTex = dynamic_cast<ConstantFloatTexture *>(uroughnessTex);
+		// Try to guess the exponent from the roughness of the surface in the u direction
+		Texture<float> *uroughnessTex = glossy2->GetNuTexture();
+		LOG(LUX_DEBUG, LUX_NOERROR) << "Nu Texture type: " << ToClassName(uroughnessTex);
+		ConstantFloatTexture *uroughnessFloatTex = dynamic_cast<ConstantFloatTexture *>(uroughnessTex);
 
-			float uroughness;
-			if (uroughnessFloatTex)
-				uroughness = Clamp((*uroughnessFloatTex)["value"].FloatValue(), 6e-3f, 1.f);
-			else {
-				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Glossy2 material with ConstantFloatTexture (i.e. not " <<
-					ToClassName(uroughnessFloatTex) << "). Ignoring unsupported texture and using 0.1 value.";
-				uroughness = .1f;
-			}
-			const float exponent = 10.f / uroughness;
+		float uroughness;
+		if (uroughnessFloatTex)
+			uroughness = Clamp((*uroughnessFloatTex)["value"].FloatValue(), 6e-3f, 1.f);
+		else {
+			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Glossy2 material with ConstantFloatTexture (i.e. not " <<
+				ToClassName(uroughnessFloatTex) << "). Ignoring unsupported texture and using 0.1 value.";
+			uroughness = .1f;
+		}
+		const float exponent = 10.f / uroughness;
 
-			// Check the type of texture
-			if (GetSLGMaterialTexInfo(slgScene, &matInfo, glossy2->GetKdTexture(), glossy2->GetKsTexture())) {
+		// Check the type of texture
+		if (GetSLGMaterialTexInfo(slgScene, &matInfo, glossy2->GetKdTexture(), glossy2->GetKsTexture())) {
+			// Check if the material has already been defined
+			if (slgScene->materialIndices.count(matInfo.matName) < 1) {
 				slgScene->AddMaterials(
 						"scene.materials.mattemetal." + matInfo.matName +" = " +
 							ToString(matInfo.color0.r) + " " +
@@ -981,19 +991,22 @@ bool SLGRenderer::GetSLGMaterialInfo(luxrays::sdl::Scene *slgScene, const Primit
 							ToString(matInfo.color1.b) + " " +
 							ToString(exponent) + " 1\n"
 						);
-			} else {
-				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "Ignoring unsupported texture.";
-				return false;
-			}			
-		} else
-		//------------------------------------------------------------------
-		// Check if it is material Metal
-		//------------------------------------------------------------------
-		if (dynamic_cast<Metal *>(mat)) {
-			// Define the material
-			Metal *metal = dynamic_cast<Metal *>(mat);
-			matInfo.matName = metal->GetName();
+			}
+		} else {
+			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "Ignoring unsupported texture.";
+			return false;
+		}			
+	} else
+	//------------------------------------------------------------------
+	// Check if it is material Metal
+	//------------------------------------------------------------------
+	if (dynamic_cast<Metal *>(mat)) {
+		// Define the material
+		Metal *metal = dynamic_cast<Metal *>(mat);
+		matInfo.matName = metal->GetName();
 
+		// Check if the material has already been defined
+		if (slgScene->materialIndices.count(matInfo.matName) < 1) {
 			// Try to guess the exponent from the roughness of the surface in the u direction
 			Texture<float> *uroughnessTex = metal->GetNuTexture();
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Nu Texture type: " << ToClassName(uroughnessTex);
@@ -1041,15 +1054,15 @@ bool SLGRenderer::GetSLGMaterialInfo(luxrays::sdl::Scene *slgScene, const Primit
 					ToString(exponent) + " 1\n"
 				);
 			}
-		} else
-		//------------------------------------------------------------------
-		// Material is not supported, use the default one
-		//------------------------------------------------------------------
-		{
-			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Matte, Mirror, Glass, Glass2, Glossy2 and Metal material (i.e. not " <<
-				ToClassName(mat) << "). Replacing an unsupported material with matte.";
-			return false;
 		}
+	} else
+	//------------------------------------------------------------------
+	// Material is not supported, use the default one
+	//------------------------------------------------------------------
+	{
+		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Matte, Mirror, Glass, Glass2, Glossy2 and Metal material (i.e. not " <<
+			ToClassName(mat) << "). Replacing an unsupported material with matte.";
+		return false;
 	}
 
 	*info = matInfo;
@@ -1078,8 +1091,7 @@ void SLGRenderer::ConvertEnvLights(luxrays::sdl::Scene *slgScene) {
 		const float gain = (*sunLight)["gain"].FloatValue() * (1000000000.0f / (M_PI * 100.f * 100.f)) *
 			INV_PI;
 
-		slgScene->AddSunLight(
-			"scene.sunlight.dir = " +
+		const std::string createSunLightProp = "scene.sunlight.dir = " +
 				ToString(dirX) + " " +
 				ToString(dirY) + " " +
 				ToString(dirZ) + "\n"
@@ -1088,8 +1100,9 @@ void SLGRenderer::ConvertEnvLights(luxrays::sdl::Scene *slgScene) {
 			"scene.sunlight.gain = " +
 				ToString(gain) + " " +
 				ToString(gain) + " " +
-				ToString(gain) + "\n"
-			);
+				ToString(gain) + "\n";
+		LOG(LUX_DEBUG, LUX_NOERROR) << "Creating sunlight: [\n" << createSunLightProp << "]";
+		slgScene->AddSunLight(createSunLightProp);
 	}
 
 	// Check if there is a sky or sky2 light source
@@ -1120,8 +1133,7 @@ void SLGRenderer::ConvertEnvLights(luxrays::sdl::Scene *slgScene) {
 			// for compatibility with past scene
 			const float gain = (*sky2Light)["gain"].FloatValue() * gainAdjustFactor;
 
-			slgScene->AddSkyLight(
-				"scene.skylight.dir = " +
+			const std::string createSkyLightProp = "scene.skylight.dir = " +
 					ToString(dirX) + " " +
 					ToString(dirY) + " " +
 					ToString(dirZ) + "\n"
@@ -1129,7 +1141,9 @@ void SLGRenderer::ConvertEnvLights(luxrays::sdl::Scene *slgScene) {
 				"scene.skylight.gain = " +
 					ToString(gain) + " " +
 					ToString(gain) + " " +
-					ToString(gain) + "\n");
+					ToString(gain) + "\n";
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Creating skylight: [\n" << createSkyLightProp << "]";
+			slgScene->AddSkyLight(createSkyLightProp);
 		} else {
 			const float dirX = (*skyLight)["dir.x"].FloatValue();
 			const float dirY = (*skyLight)["dir.y"].FloatValue();
@@ -1139,8 +1153,7 @@ void SLGRenderer::ConvertEnvLights(luxrays::sdl::Scene *slgScene) {
 			// for compatibility with past scene
 			const float gain = (*skyLight)["gain"].FloatValue() * gainAdjustFactor;
 
-			slgScene->AddSkyLight(
-				"scene.skylight.dir = " +
+			const std::string createSkyLightProp = "scene.skylight.dir = " +
 					ToString(dirX) + " " +
 					ToString(dirY) + " " +
 					ToString(dirZ) + "\n"
@@ -1148,7 +1161,9 @@ void SLGRenderer::ConvertEnvLights(luxrays::sdl::Scene *slgScene) {
 				"scene.skylight.gain = " +
 					ToString(gain) + " " +
 					ToString(gain) + " " +
-					ToString(gain) + "\n");
+					ToString(gain) + "\n";
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Creating skylight: [\n" << createSkyLightProp << "]";
+			slgScene->AddSkyLight(createSkyLightProp);
 		}
 	}
 	
@@ -1178,14 +1193,15 @@ void SLGRenderer::ConvertEnvLights(luxrays::sdl::Scene *slgScene) {
 				MIPMap *mipMap = infiniteAreaLight->GetRadianceMap();
 				const string texName = GetSLGTexName(slgScene, mipMap, gamma);
 
-				slgScene->AddInfiniteLight(
-					"scene.infinitelight.file = " + texName + "\n"
+				const std::string createInfiniteLightProp = "scene.infinitelight.file = " + texName + "\n"
 					"scene.infinitelight.gamma = " + ToString(gamma) + "\n"
 					"scene.infinitelight.shift = 0.5 0.0\n"
 					"scene.infinitelight.gain = " +
 						ToString(gain * colorR) + " " +
 						ToString(gain * colorG) + " " +
-						ToString(gain * colorB) + "\n");
+						ToString(gain * colorB) + "\n";
+				LOG(LUX_DEBUG, LUX_NOERROR) << "Creating infinitelight: [\n" << createInfiniteLightProp << "]";
+				slgScene->AddInfiniteLight(createInfiniteLightProp);
 			} else {
 				const float colorR = (*infiniteAreaLightIS)["color.r"].FloatValue();
 				const float colorG = (*infiniteAreaLightIS)["color.g"].FloatValue();
@@ -1197,14 +1213,15 @@ void SLGRenderer::ConvertEnvLights(luxrays::sdl::Scene *slgScene) {
 				MIPMap *mipMap = infiniteAreaLightIS->GetRadianceMap();
 				const string texName = GetSLGTexName(slgScene, mipMap, gamma);
 
-				slgScene->AddInfiniteLight(
-					"scene.infinitelight.file = " + texName + "\n"
+				const std::string createInfiniteLightProp = "scene.infinitelight.file = " + texName + "\n"
 					"scene.infinitelight.gamma = " + ToString(gamma) + "\n"
 					"scene.infinitelight.shift = 0.5 0.0\n"
 					"scene.infinitelight.gain = " +
 						ToString(gain * colorR) + " " +
 						ToString(gain * colorG) + " " +
-						ToString(gain * colorB) + "\n");
+						ToString(gain * colorB) + "\n";
+				LOG(LUX_DEBUG, LUX_NOERROR) << "Creating infinitelight: [\n" << createInfiniteLightProp << "]";
+				slgScene->AddInfiniteLight(createInfiniteLightProp);
 			}
 		}
 	}
@@ -1309,7 +1326,10 @@ void SLGRenderer::ConvertGeometry(luxrays::sdl::Scene *slgScene) {
 						ss << prefix << ".normalmap.vdelta = " << matInfo.normalMap.vDelta << "\n";
 					}
 					ss << prefix << ".useplynormals = 1\n";
-					slgScene->AddObject(objName, matInfo.matName, meshName, ss.str());
+
+					const std::string createObjProp = ss.str();
+					LOG(LUX_DEBUG, LUX_NOERROR) << "Creating object: [\n" << createObjProp << "]";
+					slgScene->AddObject(objName, matInfo.matName, meshName, createObjProp);
 				}
 			}
 		} else {
@@ -1357,7 +1377,10 @@ void SLGRenderer::ConvertGeometry(luxrays::sdl::Scene *slgScene) {
 					ss << prefix << ".normalmap.vdelta = " << matInfo.normalMap.vDelta << "\n";
 				}
 				ss << prefix << ".useplynormals = 1\n";
-				slgScene->AddObject(objName, matInfo.matName, meshName, ss.str());
+
+				const std::string createObjProp = ss.str();
+				LOG(LUX_DEBUG, LUX_NOERROR) << "Creating object: [\n" << createObjProp << "]";
+				slgScene->AddObject(objName, matInfo.matName, meshName, createObjProp);
 			}
 		}
 	}
@@ -1414,6 +1437,7 @@ void SLGRenderer::ConvertCamera(luxrays::sdl::Scene *slgScene) {
 		"scene.camera.focaldistance = " + ToString((scene->camera)["FocalDistance"].FloatValue()) + "\n"
 		"scene.camera.cliphither = " + ToString((scene->camera)["ClipHither"].FloatValue()) + "\n"
 		"scene.camera.clipyon = " + ToString((scene->camera)["ClipYon"].FloatValue()) + "\n";
+
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Creating camera: [\n" << createCameraProp << "]";
 	slgScene->CreateCamera(createCameraProp);
 }
