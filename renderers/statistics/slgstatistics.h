@@ -51,7 +51,7 @@ public:
 		std::string getPercentHaltSppComplete();
 		std::string getResumedAverageSamplesPerPixel();
 
-		std::string getGpuCount() { return "1"; };
+		std::string getDeviceCount();
 
 		std::string getPathEfficiency();
 		std::string getPathEfficiencyWindow();
@@ -79,13 +79,14 @@ public:
 		virtual std::string getRecommendedStringTemplate();
 		virtual std::string getProgress();
 
-		std::string getGpuCount() { return "1"; };
+		std::string getDeviceCount();
 	};
 
 	friend class SLGRenderer;
 
 protected:
 	double averageSampleSec;
+	u_int deviceCount;
 
 private:
 	SLGRenderer *renderer;
@@ -95,14 +96,14 @@ private:
 
 	virtual double getRemainingTime();
 	virtual double getPercentComplete() { return std::max(getPercentHaltTimeComplete(), getPercentHaltSppComplete()); }
-	virtual u_int getThreadCount() { return getGpuCount(); }
+	virtual u_int getThreadCount() { return getDeviceCount(); }
 
 	double getHaltSpp();
 	double getRemainingSamplesPerPixel() { return std::max(0.0, getHaltSpp() - getTotalAverageSamplesPerPixel()); }
 	double getPercentHaltSppComplete();
 	double getResumedAverageSamplesPerPixel() { return getResumedSampleCount() / getPixelCount(); }
 
-	u_int getGpuCount() { return 1; };
+	u_int getDeviceCount() { return deviceCount; }
 
 	double getAverageSamplesPerPixel() { return getSampleCount() / getPixelCount(); }
 	double getAverageSamplesPerSecond();

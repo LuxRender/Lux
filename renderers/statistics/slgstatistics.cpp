@@ -42,6 +42,7 @@ SLGStatistics::SLGStatistics(SLGRenderer* renderer)
 	resetDerived();
 
 	averageSampleSec = 0.0;
+	deviceCount = 0;
 
 	formattedLong = new SLGStatistics::FormattedLong(this);
 	formattedShort = new SLGStatistics::FormattedShort(this);
@@ -60,7 +61,7 @@ SLGStatistics::SLGStatistics(SLGRenderer* renderer)
 	AddDoubleAttribute(*this, "totalSamplesPerPixel", "Average number of samples per pixel", &SLGStatistics::getTotalAverageSamplesPerPixel);
 	AddDoubleAttribute(*this, "totalSamplesPerSecond", "Average number of samples per second", &SLGStatistics::getTotalAverageSamplesPerSecond);
 
-	AddIntAttribute(*this, "gpuCount", "Number of GPUs in use", &SLGStatistics::getGpuCount);
+	AddIntAttribute(*this, "deviceCount", "Number of OpenCL devices in use", &SLGStatistics::getDeviceCount);
 }
 
 SLGStatistics::~SLGStatistics() {
@@ -177,6 +178,8 @@ SLGStatistics::FormattedLong::FormattedLong(SLGStatistics* rs)
 
 	AddStringAttribute(*this, "totalSamplesPerPixel", "Average number of samples per pixel", &FL::getTotalAverageSamplesPerPixel);
 	AddStringAttribute(*this, "totalSamplesPerSecond", "Average number of samples per second", &FL::getTotalAverageSamplesPerSecond);
+
+	AddStringAttribute(*this, "deviceCount", "Number of LuxRays devices in use", &FL::getDeviceCount);
 }
 
 std::string SLGStatistics::FormattedLong::getRecommendedStringTemplate()
@@ -186,6 +189,8 @@ std::string SLGStatistics::FormattedLong::getRecommendedStringTemplate()
 	if (rs->getHaltSpp() != std::numeric_limits<double>::infinity())
 		stringTemplate += " (%percentHaltSppComplete%)";
 	stringTemplate += " %samplesPerSecond%";
+
+	stringTemplate += " %deviceCount%";
 
 	if (rs->getNetworkSampleCount() != 0.0)
 	{
@@ -251,9 +256,14 @@ std::string SLGStatistics::FormattedLong::getTotalAverageSamplesPerSecond() {
 	return boost::str(boost::format("%1$0.2f %2%S/s") % MagnitudeReduce(sps) % MagnitudePrefix(sps));
 }
 
+std::string SLGStatistics::FormattedLong::getDeviceCount() {
+	const u_int dc = rs->deviceCount;
+	return boost::str(boost::format(boost::format("%1% %2%") % dc % Pluralize("Device", dc)));
+}
+
 SLGStatistics::FormattedShort::FormattedShort(SLGStatistics* rs)
 	: RendererStatistics::FormattedShort(rs), rs(rs) {
-	FormattedLong* fl = static_cast<SLGStatistics::FormattedLong*>(rs->formattedLong);
+	FormattedLong* fl = static_cast<SLGStatistics::FormattedLong *>(rs->formattedLong);
 
 	typedef SLGStatistics::FormattedLong FL;
 
@@ -270,6 +280,8 @@ SLGStatistics::FormattedShort::FormattedShort(SLGStatistics* rs)
 
 	AddStringAttribute(*this, "totalSamplesPerPixel", "Average number of samples per pixel", boost::bind(boost::mem_fn(&FL::getTotalAverageSamplesPerPixel), fl));
 	AddStringAttribute(*this, "totalSamplesPerSecond", "Average number of samples per second", boost::bind(boost::mem_fn(&FL::getTotalAverageSamplesPerSecond), fl));
+
+	AddStringAttribute(*this, "deviceCount", "Number of LuxRays devices in use", boost::bind(boost::mem_fn(&FL::getDeviceCount), fl));
 }
 
 std::string SLGStatistics::FormattedShort::getRecommendedStringTemplate() {
@@ -279,6 +291,8 @@ std::string SLGStatistics::FormattedShort::getRecommendedStringTemplate() {
 		stringTemplate += " (%percentHaltSppComplete%)";
 	stringTemplate += " %samplesPerSecond%";
 
+	stringTemplate += " %deviceCount%";
+	
 	if (rs->getNetworkSampleCount() != 0.0)
 	{
 		if (rs->getSlaveNodeCount() != 0)

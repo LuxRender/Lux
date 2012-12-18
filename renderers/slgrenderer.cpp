@@ -1762,8 +1762,10 @@ void SLGRenderer::Render(Scene *s) {
 		slg::RenderEngine *engine = session->renderEngine;
 		engine->SetSeed(scene->seedBase);
 
+		slgStats->deviceCount = engine->GetIntersectionDevices().size();
+
 		// start the timer
-		rendererStatistics->start();
+		slgStats->start();
 
 		// Dade - preprocessing done
 		preprocessDone = true;
