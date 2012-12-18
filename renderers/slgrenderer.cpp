@@ -1762,7 +1762,14 @@ void SLGRenderer::Render(Scene *s) {
 		slg::RenderEngine *engine = session->renderEngine;
 		engine->SetSeed(scene->seedBase);
 
-		slgStats->deviceCount = engine->GetIntersectionDevices().size();
+		const vector<luxrays::IntersectionDevice *> &devices = engine->GetIntersectionDevices();
+		slgStats->deviceCount = devices.size();
+		if (slgStats->deviceCount) {
+			// I assume the amount of used memory is the same on all devices. It is
+			// always true for the moment.
+			slgStats->deviceMemoryUsed = devices[0]->GetUsedMemory();
+		}
+		
 
 		// start the timer
 		slgStats->start();

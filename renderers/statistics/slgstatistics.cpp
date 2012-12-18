@@ -180,6 +180,7 @@ SLGStatistics::FormattedLong::FormattedLong(SLGStatistics* rs)
 	AddStringAttribute(*this, "totalSamplesPerSecond", "Average number of samples per second", &FL::getTotalAverageSamplesPerSecond);
 
 	AddStringAttribute(*this, "deviceCount", "Number of LuxRays devices in use", &FL::getDeviceCount);
+	AddStringAttribute(*this, "memoryUsage", "LuxRays devices memory usage", &FL::getDeviceMemoryUsage);
 }
 
 std::string SLGStatistics::FormattedLong::getRecommendedStringTemplate()
@@ -191,6 +192,8 @@ std::string SLGStatistics::FormattedLong::getRecommendedStringTemplate()
 	stringTemplate += " %samplesPerSecond%";
 
 	stringTemplate += " %deviceCount%";
+	if (rs->deviceMemoryUsed > 0)
+		stringTemplate += " %memoryUsage%";
 
 	if (rs->getNetworkSampleCount() != 0.0)
 	{
@@ -261,6 +264,11 @@ std::string SLGStatistics::FormattedLong::getDeviceCount() {
 	return boost::str(boost::format(boost::format("%1% %2%") % dc % Pluralize("Device", dc)));
 }
 
+std::string SLGStatistics::FormattedLong::getDeviceMemoryUsage() {
+	const size_t m = rs->deviceMemoryUsed;
+	return boost::str(boost::format(boost::format("%1$0.2f %2%bytes") % MagnitudeReduce(m) % MagnitudePrefix(m)));
+}
+
 SLGStatistics::FormattedShort::FormattedShort(SLGStatistics* rs)
 	: RendererStatistics::FormattedShort(rs), rs(rs) {
 	FormattedLong* fl = static_cast<SLGStatistics::FormattedLong *>(rs->formattedLong);
@@ -282,6 +290,7 @@ SLGStatistics::FormattedShort::FormattedShort(SLGStatistics* rs)
 	AddStringAttribute(*this, "totalSamplesPerSecond", "Average number of samples per second", boost::bind(boost::mem_fn(&FL::getTotalAverageSamplesPerSecond), fl));
 
 	AddStringAttribute(*this, "deviceCount", "Number of LuxRays devices in use", boost::bind(boost::mem_fn(&FL::getDeviceCount), fl));
+	AddStringAttribute(*this, "memoryUsage", "LuxRays devices memory usage", boost::bind(boost::mem_fn(&FL::getDeviceMemoryUsage), fl));
 }
 
 std::string SLGStatistics::FormattedShort::getRecommendedStringTemplate() {
@@ -292,6 +301,8 @@ std::string SLGStatistics::FormattedShort::getRecommendedStringTemplate() {
 	stringTemplate += " %samplesPerSecond%";
 
 	stringTemplate += " %deviceCount%";
+	if (rs->deviceMemoryUsed > 0)
+		stringTemplate += " %memoryUsage%";
 	
 	if (rs->getNetworkSampleCount() != 0.0)
 	{

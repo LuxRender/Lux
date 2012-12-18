@@ -52,9 +52,7 @@ public:
 		std::string getResumedAverageSamplesPerPixel();
 
 		std::string getDeviceCount();
-
-		std::string getPathEfficiency();
-		std::string getPathEfficiencyWindow();
+		std::string getDeviceMemoryUsage();
 
 		std::string getAverageSamplesPerPixel();
 		std::string getAverageSamplesPerSecond();
@@ -78,8 +76,6 @@ public:
 
 		virtual std::string getRecommendedStringTemplate();
 		virtual std::string getProgress();
-
-		std::string getDeviceCount();
 	};
 
 	friend class SLGRenderer;
@@ -87,6 +83,7 @@ public:
 protected:
 	double averageSampleSec;
 	u_int deviceCount;
+	size_t deviceMemoryUsed;
 
 private:
 	SLGRenderer *renderer;
