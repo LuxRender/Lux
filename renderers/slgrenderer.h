@@ -157,16 +157,16 @@ private:
 	};
 
 	void DefineSLGDefaultTexMap(luxrays::sdl::Scene *slgScene);
-	string GetSLGTexName(luxrays::sdl::Scene *slgScene, const MIPMap *mipMap, const float gamma);
+	string GetSLGTexName(luxrays::sdl::Scene *slgScene, const MIPMap *mipMap, const float gamma, const bool enableAlpha);
 	string GetSLGTexName(luxrays::sdl::Scene *slgScene, const MIPMapFastImpl<TextureColor<unsigned char, 1> > *mipMap, const float gamma);
 	string GetSLGTexName(luxrays::sdl::Scene *slgScene, const MIPMapFastImpl<TextureColor<unsigned char, 3> > *mipMap, const float gamma);
-	string GetSLGTexName(luxrays::sdl::Scene *slgScene, const MIPMapFastImpl<TextureColor<unsigned char, 4> > *mipMap, const float gamma);
+	string GetSLGTexName(luxrays::sdl::Scene *slgScene, const MIPMapFastImpl<TextureColor<unsigned char, 4> > *mipMap, const float gamma, const bool enableAlpha);
 	string GetSLGTexName(luxrays::sdl::Scene *slgScene, const MIPMapFastImpl<TextureColor<unsigned short, 1> > *mipMap, const float gamma);
 	string GetSLGTexName(luxrays::sdl::Scene *slgScene, const MIPMapFastImpl<TextureColor<unsigned short, 3> > *mipMap, const float gamma);
-	string GetSLGTexName(luxrays::sdl::Scene *slgScene, const MIPMapFastImpl<TextureColor<unsigned short, 4> > *mipMap, const float gamma);
+	string GetSLGTexName(luxrays::sdl::Scene *slgScene, const MIPMapFastImpl<TextureColor<unsigned short, 4> > *mipMap, const float gamma, const bool enableAlpha);
 	string GetSLGTexName(luxrays::sdl::Scene *slgScene, const MIPMapFastImpl<TextureColor<float, 1> > *mipMap, const float gamma);
 	string GetSLGTexName(luxrays::sdl::Scene *slgScene, const MIPMapFastImpl<TextureColor<float, 3> > *mipMap, const float gamma);
-	string GetSLGTexName(luxrays::sdl::Scene *slgScene, const MIPMapFastImpl<TextureColor<float, 4> > *mipMap, const float gamma);
+	string GetSLGTexName(luxrays::sdl::Scene *slgScene, const MIPMapFastImpl<TextureColor<float, 4> > *mipMap, const float gamma, const bool enableAlpha);
 	bool GetSLGBumpNormalMapInfo(luxrays::sdl::Scene *slgScene, SLGMaterialInfo *matInfo,
 		const Texture<float> *tex);
 	bool GetSLGMaterialTexInfo(luxrays::sdl::Scene *slgScene, SLGMaterialInfo *matInfo,
