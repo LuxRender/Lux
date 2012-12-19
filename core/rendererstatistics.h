@@ -90,6 +90,8 @@ public:
 		std::string getPercentHaltThresholdComplete();
 		std::string getPercentConvergence();
 
+		virtual std::string getEfficiency();
+		virtual std::string getEfficiencyWindow();
 		virtual std::string getThreadCount();
 		virtual std::string getSlaveNodeCount();
 
@@ -110,6 +112,8 @@ public:
 		std::string getPercentHaltThresholdComplete();
 		std::string getPercentConvergence();
 
+		virtual std::string getEfficiency();
+		virtual std::string getEfficiencyWindow();
 		virtual std::string getThreadCount();
 		virtual std::string getSlaveNodeCount();
 	};
@@ -136,6 +140,8 @@ protected:
 	virtual double getRemainingTime();
 	virtual double getPercentComplete();
 
+	virtual double getEfficiency() = 0;
+	virtual double getEfficiencyWindow() = 0;
 	virtual u_int getThreadCount() = 0;
 
 	virtual void resetDerived() = 0;

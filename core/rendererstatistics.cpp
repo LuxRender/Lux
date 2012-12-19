@@ -50,6 +50,8 @@ RendererStatistics::RendererStatistics()
 	AddDoubleAttribute(*this, "percentHaltThresholdComplete", "Percent of halt threshold completed", &RendererStatistics::getPercentHaltThresholdComplete);
 	AddDoubleAttribute(*this, "percentConvergence", "Percent of convergence between last consecutive updates", &RendererStatistics::getPercentConvergence);
 	AddDoubleAttribute(*this, "percentComplete", "Percent of render completed", &RendererStatistics::getPercentComplete);
+	AddDoubleAttribute(*this, "efficiency", "Efficiency of renderer", &RendererStatistics::getEfficiency);
+	AddDoubleAttribute(*this, "efficiencyWindow", "Efficiency of renderer", &RendererStatistics::getEfficiencyWindow);
 
 	AddIntAttribute(*this, "threadCount", "Number of rendering threads on local node", &RendererStatistics::getThreadCount);
 	AddIntAttribute(*this, "slaveNodeCount", "Number of network slave nodes", &RendererStatistics::getSlaveNodeCount);
@@ -208,6 +210,9 @@ RendererStatistics::FormattedLong::FormattedLong(RendererStatistics* rs)
 	AddStringAttribute(*this, "percentConvergence", "Percent of convergence between last consecutive updates", &FL::getPercentConvergence);
 	AddStringAttribute(*this, "percentComplete", "Percent of render completed", &FL::getPercentComplete);
 
+	AddStringAttribute(*this, "efficiency", "Efficiency of renderer", &FL::getEfficiency);
+	AddStringAttribute(*this, "efficiencyWindow", "Efficiency of renderer", &FL::getEfficiencyWindow);
+
 	AddStringAttribute(*this, "threadCount", "Number of rendering threads on local node", &FL::getThreadCount);
 	AddStringAttribute(*this, "slaveNodeCount", "Number of network slave nodes", &FL::getSlaveNodeCount);
 }
@@ -243,6 +248,14 @@ std::string RendererStatistics::FormattedLong::getPercentConvergence() {
 	return boost::str(boost::format("%1$0f%% Convergence") % rs->getPercentConvergence());
 }
 
+std::string RendererStatistics::FormattedLong::getEfficiency() {
+	return boost::str(boost::format("%1$0.0f%% Efficiency") % rs->getEfficiency());
+}
+
+std::string RendererStatistics::FormattedLong::getEfficiencyWindow() {
+	return boost::str(boost::format("%1$0.0f%% Efficiency") % rs->getEfficiencyWindow());
+}
+
 std::string RendererStatistics::FormattedLong::getThreadCount() {
 	u_int tc = rs->getThreadCount();
 	return boost::str(boost::format("%1% %2%") % tc % Pluralize("Thread", tc));
@@ -265,6 +278,9 @@ RendererStatistics::FormattedShort::FormattedShort(RendererStatistics* rs)
 	AddStringAttribute(*this, "percentHaltThresholdComplete", "Percent of halt threshold completed", &FS::getPercentHaltThresholdComplete);
 	AddStringAttribute(*this, "percentConvergence", "Percent of convergence between last consecutive updates", &FS::getPercentConvergence);
 	AddStringAttribute(*this, "percentComplete", "Percent of render completed", boost::bind(boost::mem_fn(&FL::getPercentComplete), fl));
+
+	AddStringAttribute(*this, "efficiency", "Efficiency of renderer", &FS::getEfficiency);
+	AddStringAttribute(*this, "efficiencyWindow", "Efficiency of renderer", &FS::getEfficiencyWindow);
 
 	AddStringAttribute(*this, "threadCount", "Number of rendering threads on local node", &FS::getThreadCount);
 	AddStringAttribute(*this, "slaveNodeCount", "Number of network slave nodes", &FS::getSlaveNodeCount);
@@ -295,6 +311,14 @@ std::string RendererStatistics::FormattedShort::getPercentHaltThresholdComplete(
 
 std::string RendererStatistics::FormattedShort::getPercentConvergence() {
 	return boost::str(boost::format("%1$0f%% Conv") % rs->getPercentConvergence());
+}
+
+std::string RendererStatistics::FormattedShort::getEfficiency() {
+	return boost::str(boost::format("%1$0.0f%% Eff") % rs->getEfficiency());
+}
+
+std::string RendererStatistics::FormattedShort::getEfficiencyWindow() {
+	return boost::str(boost::format("%1$0.0f%% Eff") % rs->getEfficiencyWindow());
 }
 
 std::string RendererStatistics::FormattedShort::getThreadCount() {

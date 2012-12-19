@@ -102,6 +102,8 @@ private:
 
 	u_int getDeviceCount() { return deviceCount; }
 
+	double getEfficiency() { return 0.0; }
+	double getEfficiencyWindow() { return 0.0; }
 	double getAverageSamplesPerPixel() { return getSampleCount() / getPixelCount(); }
 	double getAverageSamplesPerSecond();
 
