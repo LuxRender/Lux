@@ -1850,7 +1850,6 @@ void SLGRenderer::Render(Scene *s) {
 			// always true for the moment.
 			slgStats->deviceMemoryUsed = devices[0]->GetUsedMemory();
 		}
-		
 
 		// start the timer
 		slgStats->start();

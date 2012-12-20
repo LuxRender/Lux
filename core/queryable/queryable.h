@@ -79,6 +79,7 @@ namespace queryable {
 class LUX_EXPORT Queryable
 {
 public:
+	Queryable(const Queryable &q);
 	Queryable(std::string _name);
 	virtual ~Queryable();
 

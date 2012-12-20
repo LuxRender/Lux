@@ -74,7 +74,7 @@ public:
 	// VolumeScatterMaterial Public Methods
 	VolumeScatterMaterial(const Volume *v,
 		boost::shared_ptr<Texture<SWCSpectrum> > &g)
-		: Material("UniformRGBScatterMaterial-" + boost::lexical_cast<string>(this), ParamSet(), false),
+		: Material("VolumeScatterMaterial-" + boost::lexical_cast<string>(this), ParamSet(), false),
 		volume(v), G(g) { }
 	virtual ~VolumeScatterMaterial() { }
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,

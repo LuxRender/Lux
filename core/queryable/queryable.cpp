@@ -27,9 +27,19 @@
 namespace lux
 {
 
+Queryable::Queryable(const Queryable &q) : attributes(q.attributes),
+		name(q.name + "-copied-to-" + boost::lexical_cast<string>(this)),
+		nullAttribute(q.nullAttribute) {
+	// Add this object to the registry
+	if (Context::GetActive())
+		Context::GetActive()->registry.Insert(this);
+	else
+		LOG(LUX_ERROR, LUX_NOTSTARTED) << "luxInit() not called";
+}
+
 Queryable::Queryable(std::string _name) : name(_name)
 {
-	//add this object to the registry
+	// Add this object to the registry
 	if (Context::GetActive())
 		Context::GetActive()->registry.Insert(this);
 	else
