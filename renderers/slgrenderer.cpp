@@ -623,7 +623,7 @@ bool SLGRenderer::GetSLGMaterialTexInfo(luxrays::sdl::Scene *slgScene,
 			}
 		}
 
-		matInfo->texMap.name = GetSLGTexName(slgScene, imgTex0->GetMIPMap(), imgTex0->GetInfo().gamma, false);
+		matInfo->texMap.name = GetSLGTexName(slgScene, imgTex0->GetMIPMap(), imgTex0->GetInfo().gamma, true);
 
 		return true;
 	} else if (constRGBTex0) {
@@ -671,7 +671,7 @@ bool SLGRenderer::GetSLGMaterialTexInfo(luxrays::sdl::Scene *slgScene,
 				}
 			}
 
-			matInfo->texMap.name = GetSLGTexName(slgScene, imgTex0->GetMIPMap(), imgTex0->GetInfo().gamma, false);
+			matInfo->texMap.name = GetSLGTexName(slgScene, imgTex0->GetMIPMap(), imgTex0->GetInfo().gamma, true);
 			return true;
 		} else if (imgTex1) {
 			// Check the mapping
@@ -689,7 +689,7 @@ bool SLGRenderer::GetSLGMaterialTexInfo(luxrays::sdl::Scene *slgScene,
 				}
 			}
 
-			matInfo->texMap.name = GetSLGTexName(slgScene, imgTex1->GetMIPMap(), imgTex1->GetInfo().gamma, false);
+			matInfo->texMap.name = GetSLGTexName(slgScene, imgTex1->GetMIPMap(), imgTex1->GetInfo().gamma, true);
 			return true;
 		} else {
 			if (!constRGBTex0 && !constRGBTex1) {
@@ -1815,12 +1815,12 @@ void SLGRenderer::Render(Scene *s) {
 
 				// Build the SLG scene to render
 				slgScene = CreateSLGScene(slgConfigProps);
-		#if !defined(LUXRAYS_DISABLE_OPENCL)
+#if !defined(LUXRAYS_DISABLE_OPENCL)
 			} catch (cl::Error err) {
 				LOG(LUX_SEVERE, LUX_SYSTEM) << "OpenCL ERROR: " << err.what() << "(" << luxrays::utils::oclErrorString(err.err()) << ")";
 				state = TERMINATE;
 				return;
-		#endif
+#endif
 			} catch (std::runtime_error err) {
 				LOG(LUX_SEVERE, LUX_SYSTEM) << "RUNTIME ERROR: " << err.what();
 				state = TERMINATE;
