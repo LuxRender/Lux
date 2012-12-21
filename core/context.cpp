@@ -1223,21 +1223,24 @@ void Context::Abort() {
 
 //controlling number of threads
 u_int Context::AddThread() {
-	const vector<RendererHostDescription *> &hosts = luxCurrentRenderer->GetHostDescs();
+	if (dynamic_cast<SamplerRenderer *>(luxCurrentRenderer)) {
+		const vector<RendererHostDescription *> &hosts = luxCurrentRenderer->GetHostDescs();
 
-	//FIXME
-	SRDeviceDescription *desc = (SRDeviceDescription *)hosts[0]->GetDeviceDescs()[0];
-	desc->SetUsedUnitsCount(desc->GetUsedUnitsCount() + 1);
+		SRDeviceDescription *desc = (SRDeviceDescription *)hosts[0]->GetDeviceDescs()[0];
+		desc->SetUsedUnitsCount(desc->GetUsedUnitsCount() + 1);
 
-	return desc->GetUsedUnitsCount();
+		return desc->GetUsedUnitsCount();
+	} else
+		return 1;
 }
 
 void Context::RemoveThread() {
-	const vector<RendererHostDescription *> &hosts = luxCurrentRenderer->GetHostDescs();
+	if (dynamic_cast<SamplerRenderer *>(luxCurrentRenderer)) {
+		const vector<RendererHostDescription *> &hosts = luxCurrentRenderer->GetHostDescs();
 
-	//FIXME
-	SRDeviceDescription *desc = (SRDeviceDescription *)hosts[0]->GetDeviceDescs()[0];
-	desc->SetUsedUnitsCount(max(desc->GetUsedUnitsCount() - 1, 1u));
+		SRDeviceDescription *desc = (SRDeviceDescription *)hosts[0]->GetDeviceDescs()[0];
+		desc->SetUsedUnitsCount(max(desc->GetUsedUnitsCount() - 1, 1u));
+	}
 }
 
 //framebuffer access
