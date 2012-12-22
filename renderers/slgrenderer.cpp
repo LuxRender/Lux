@@ -624,12 +624,17 @@ bool SLGRenderer::GetSLGMaterialTexInfo(luxrays::sdl::Scene *slgScene,
 		}
 
 		matInfo->texMap.name = GetSLGTexName(slgScene, imgTex0->GetMIPMap(), imgTex0->GetInfo().gamma, true);
+		matInfo->color0.r = imgTex0->GetInfo().gain;
+		matInfo->color0.g = imgTex0->GetInfo().gain;
+		matInfo->color0.b = imgTex0->GetInfo().gain;
+		matInfo->color1 = matInfo->color0;
 
 		return true;
 	} else if (constRGBTex0) {
 		matInfo->color0.r = (*constRGBTex0)["color.r"].FloatValue();
 		matInfo->color0.g = (*constRGBTex0)["color.g"].FloatValue();
 		matInfo->color0.b = (*constRGBTex0)["color.b"].FloatValue();
+		matInfo->color1 = matInfo->color0;
 
 		return true;
 	}
@@ -672,6 +677,11 @@ bool SLGRenderer::GetSLGMaterialTexInfo(luxrays::sdl::Scene *slgScene,
 			}
 
 			matInfo->texMap.name = GetSLGTexName(slgScene, imgTex0->GetMIPMap(), imgTex0->GetInfo().gamma, true);
+			matInfo->color0.r = imgTex0->GetInfo().gain;
+			matInfo->color0.g = imgTex0->GetInfo().gain;
+			matInfo->color0.b = imgTex0->GetInfo().gain;
+			matInfo->color1 = matInfo->color0;
+
 			return true;
 		} else if (imgTex1) {
 			// Check the mapping
@@ -690,6 +700,11 @@ bool SLGRenderer::GetSLGMaterialTexInfo(luxrays::sdl::Scene *slgScene,
 			}
 
 			matInfo->texMap.name = GetSLGTexName(slgScene, imgTex1->GetMIPMap(), imgTex1->GetInfo().gamma, true);
+			matInfo->color0.r = imgTex1->GetInfo().gain;
+			matInfo->color0.g = imgTex1->GetInfo().gain;
+			matInfo->color0.b = imgTex1->GetInfo().gain;
+			matInfo->color1 = matInfo->color0;
+
 			return true;
 		} else {
 			if (!constRGBTex0 && !constRGBTex1) {
