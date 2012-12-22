@@ -1771,9 +1771,16 @@ void MainWindow::updateStatistics()
 		int pixels = luxGetIntAttribute("film", "xResolution") * luxGetIntAttribute("film", "yResolution");
 		double spp = luxGetDoubleAttribute("film", "numberOfResumedSamples") / pixels;
 
-		QLabel* label = new QLabel(QString("%1 %2S/p").arg(luxMagnitudeReduce(spp), 0, 'f', 2).arg(luxMagnitudePrefix(spp)));
+		QLayoutItem* item = statsBoxLayout->itemAt(0);
+		QLabel* label = item ? qobject_cast<QLabel*>(item->widget()) : NULL;
+		if (!label) {
+			// no existing label, create new
+			label = new QLabel("");
+			statsBoxLayout->insertWidget(0, label);
+			label->setVisible(true);
+		}
+		label->setText(QString("%1 %2S/p").arg(luxMagnitudeReduce(spp), 0, 'f', 2).arg(luxMagnitudePrefix(spp)));
 		label->setToolTip("Average number of samples per pixel");
-		statsBoxLayout->insertWidget(0, label);
 	}
 
 	// update progress bar
