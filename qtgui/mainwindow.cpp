@@ -1755,6 +1755,8 @@ void MainWindow::updateStatistics()
 	AttributeFormatter fmt(statsBoxLayout, active_label_count);
 	fmt(st);
 
+	bool useFallbackStatistics = active_label_count == 0;
+
 	// clear remaining labels
 	QLayoutItem* item;
 	while ((item = statsBoxLayout->itemAt(active_label_count++)) != NULL) {
@@ -1766,7 +1768,7 @@ void MainWindow::updateStatistics()
 	}
 
 	// fallback statistics
-	if (active_label_count == 2)	// if only the spacer exists
+	if (useFallbackStatistics)
 	{
 		int pixels = luxGetIntAttribute("film", "xResolution") * luxGetIntAttribute("film", "yResolution");
 		double spp = luxGetDoubleAttribute("film", "numberOfResumedSamples") / pixels;
