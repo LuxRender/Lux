@@ -152,7 +152,7 @@ BBox OrthoCamera::Bounds() const
 		const_cast<OrthoCamera*>(this)->SampleMotion(Lerp(static_cast<float>(i) / 1024.f, CameraMotion.StartTime(), CameraMotion.EndTime()));
 		bound = Union(bound, ScreenToWorld * orig_bound);
 	}
-	bound.Expand(MachineEpsilon::E(bound));
+	bound.Expand(max(1.f, MachineEpsilon::E(bound)));
 	return bound;
 }
 
