@@ -49,21 +49,15 @@ struct ContextSingle
 class PartialContribution {
 	struct contrib
 	{
-		contrib()
-			:L(0.f), V(0.f)
-		{
-		}
+		contrib() :L(0.f), V(0.f), active(false) { }
 
 		SWCSpectrum L;
 		float V;
+		bool active;
 	};
 
 public:
-	PartialContribution(const u_int nGroups)
-		:vecNotSingle(nGroups),
-		 vecSingle(nGroups)
-	{
-	}
+	PartialContribution(const u_int nGroups) : vecNotSingle(nGroups) { }
 
 	void Add(const SpectrumWavelengths &sw, SWCSpectrum L, u_int group, float weight)
 	{
@@ -82,21 +76,16 @@ public:
 
 	void AddUnFiltered(const SpectrumWavelengths &sw, SWCSpectrum L, u_int group, float V, bool single)
 	{
-		contrib *c;
-		if(!single)
-		{
-			c = &vecNotSingle[group];
-		}
-		else
-		{
-			c = &vecSingle[group];
+		if (!single) {
+			vecNotSingle[group].L += L;
+		} else {
+			// Dispersion, only add the selected wavelength
+			// Compensate for the wavelength selection probability
+			vecNotSingle[group].L.c[sw.single_w] += L.c[sw.single_w] * WAVELENGTH_SAMPLES;
 		}
 
-		ContextSingle ctx(sw);
-		sw.single = single;
-
-		c->L += L;
-		c->V += V;
+		vecNotSingle[group].V += V;
+		vecNotSingle[group].active = true;
 	}
 
 	void Splat(
@@ -121,7 +110,7 @@ private:
 	void SplatW(
 			const SpectrumWavelengths &sw,
 			const Sample &sample,
-			vector<contrib> &vec,
+			vector<struct contrib> &vec,
 			float xl,
 			float yl,
 			float d,
@@ -129,8 +118,7 @@ private:
 			u_int bufferId,
 			float weight=1.f);
 
-	std::vector<contrib> vecNotSingle;
-	std::vector<contrib> vecSingle;
+	std::vector<struct contrib> vecNotSingle;
 };
 }
 #endif
