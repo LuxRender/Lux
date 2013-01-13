@@ -172,570 +172,332 @@ void SLGRenderer::SuspendWhenDone(bool v) {
 	suspendThreadsWhenDone = v;
 }
 
-void SLGRenderer::DefineSLGDefaultTexMap(luxrays::sdl::Scene *slgScene) {
-	if (!slgScene->texMapCache->FindTextureMap("tex_default", 1.f)) {
-		luxrays::Spectrum *defaultTexMap = new luxrays::Spectrum[1];
-		defaultTexMap[0].r = 1.f;
-		defaultTexMap[0].g = 1.f;
-		defaultTexMap[0].b = 1.f;
-		slgScene->DefineTexMap("tex_default", defaultTexMap, 1.f, 1, 1);
+//------------------------------------------------------------------------------
+// Channels: integer types
+//------------------------------------------------------------------------------
+
+template <typename T, u_int channels> string GetSLGImageMapNameImpl(luxrays::sdl::Scene *slgScene,
+		const MIPMapFastImpl<TextureColor<T, channels> > *mipMap,
+		const float gamma) {
+	// Check if the image map has already been defined
+	const string imageMapName = mipMap->GetName();
+	if (slgScene->imgMapCache.IsImageMapDefined(imageMapName))
+		return imageMapName;
+
+	const BlockedArray<TextureColor<T, channels> > *map = mipMap->GetSingleMap();
+
+	float *slgMap = new float[map->uSize() * map->vSize() * channels];
+	float *mapPtr = slgMap;
+	for (u_int y = 0; y < map->vSize(); ++y) {
+		for (u_int x = 0; x < map->uSize(); ++x) {
+			const TextureColor<T, channels> &col = (*map)(x, y);
+
+			for (u_int i = 0; i < channels; ++i)
+				*mapPtr++ = col.c[i] / 255.f;
+		}
 	}
+
+	luxrays::sdl::ImageMap *imageMap = new luxrays::sdl::ImageMap(slgMap, gamma, channels, (u_int)map->uSize(), (u_int)map->vSize());
+	slgScene->DefineImageMap(imageMapName, imageMap);
+
+	return imageMapName;
 }
 
-string SLGRenderer::GetSLGTexName(luxrays::sdl::Scene *slgScene,
-		const MIPMap *mipMap, const float gamma, const bool enableAlpha) {
-	if (!mipMap) {
-		DefineSLGDefaultTexMap(slgScene);
-		return "tex_default";
+//------------------------------------------------------------------------------
+// Channels: floats
+// 
+// Partial function specialization are not allowed in C++
+//------------------------------------------------------------------------------
+
+template <> string GetSLGImageMapNameImpl<float, 1>(luxrays::sdl::Scene *slgScene,
+		const MIPMapFastImpl<TextureColor<float, 1> > *mipMap,
+		const float gamma) {
+	// Check if the image map has already been defined
+	const string imageMapName = mipMap->GetName();
+	if (slgScene->imgMapCache.IsImageMapDefined(imageMapName))
+		return imageMapName;
+
+	const BlockedArray<TextureColor<float, 1> > *map = mipMap->GetSingleMap();
+
+	float *slgMap = new float[map->uSize() * map->vSize() * 1];
+	float *mapPtr = slgMap;
+	for (u_int y = 0; y < map->vSize(); ++y) {
+		for (u_int x = 0; x < map->uSize(); ++x) {
+			const TextureColor<float, 1> &col = (*map)(x, y);
+
+			*mapPtr++ = col.c[0];
+		}
 	}
 
-	// Check if the texture map has already been defined
-	const string texName = mipMap->GetName();
-	if (slgScene->texMapCache->FindTextureMap(texName, gamma))
-		return texName;
+	luxrays::sdl::ImageMap *imageMap = new luxrays::sdl::ImageMap(slgMap, gamma, 1, (u_int)map->uSize(), (u_int)map->vSize());
+	slgScene->DefineImageMap(imageMapName, imageMap);
+
+	return imageMapName;
+}
+
+template <> string GetSLGImageMapNameImpl<float, 3>(luxrays::sdl::Scene *slgScene,
+		const MIPMapFastImpl<TextureColor<float, 3> > *mipMap,
+		const float gamma) {
+	// Check if the image map has already been defined
+	const string imageMapName = mipMap->GetName();
+	if (slgScene->imgMapCache.IsImageMapDefined(imageMapName))
+		return imageMapName;
+
+	const BlockedArray<TextureColor<float, 3> > *map = mipMap->GetSingleMap();
+
+	float *slgMap = new float[map->uSize() * map->vSize() * 3];
+	float *mapPtr = slgMap;
+	for (u_int y = 0; y < map->vSize(); ++y) {
+		for (u_int x = 0; x < map->uSize(); ++x) {
+			const TextureColor<float, 3> &col = (*map)(x, y);
+
+			*mapPtr++ = col.c[0];
+			*mapPtr++ = col.c[1];
+			*mapPtr++ = col.c[2];
+		}
+	}
+
+	luxrays::sdl::ImageMap *imageMap = new luxrays::sdl::ImageMap(slgMap, gamma, 3, (u_int)map->uSize(), (u_int)map->vSize());
+	slgScene->DefineImageMap(imageMapName, imageMap);
+
+	return imageMapName;
+}
+
+template <> string GetSLGImageMapNameImpl<float, 4>(luxrays::sdl::Scene *slgScene,
+		const MIPMapFastImpl<TextureColor<float, 4> > *mipMap,
+		const float gamma) {
+	// Check if the image map has already been defined
+	const string imageMapName = mipMap->GetName();
+	if (slgScene->imgMapCache.IsImageMapDefined(imageMapName))
+		return imageMapName;
+
+	const BlockedArray<TextureColor<float, 4> > *map = mipMap->GetSingleMap();
+
+	float *slgMap = new float[map->uSize() * map->vSize() * 4];
+	float *mapPtr = slgMap;
+	for (u_int y = 0; y < map->vSize(); ++y) {
+		for (u_int x = 0; x < map->uSize(); ++x) {
+			const TextureColor<float, 4> &col = (*map)(x, y);
+
+			*mapPtr++ = col.c[0];
+			*mapPtr++ = col.c[1];
+			*mapPtr++ = col.c[2];
+			*mapPtr++ = col.c[3];
+		}
+	}
+
+	luxrays::sdl::ImageMap *imageMap = new luxrays::sdl::ImageMap(slgMap, gamma, 4, (u_int)map->uSize(), (u_int)map->vSize());
+	slgScene->DefineImageMap(imageMapName, imageMap);
+
+	return imageMapName;
+}
+
+//------------------------------------------------------------------------------
+
+static string GetSLGDefaultImageMap(luxrays::sdl::Scene *slgScene) {
+	if (!slgScene->imgMapCache.IsImageMapDefined("imagemap_default")) {
+		float *map = new float[1];
+		map[0] = 1.f;
+		luxrays::sdl::ImageMap *imageMap = new luxrays::sdl::ImageMap(map, 1.f, 1, 1, 1);
+		slgScene->DefineImageMap("imagemap_default", imageMap);
+	}
+
+	return "imagemap_default";
+}
+
+string SLGRenderer::GetSLGImageMapName(luxrays::sdl::Scene *slgScene,
+		const MIPMap *mipMap, const float gamma) {
+	if (!mipMap)
+		return GetSLGDefaultImageMap(slgScene);
 
 	//--------------------------------------------------------------------------
 	// Channels: unsigned char
 	//--------------------------------------------------------------------------
 	if (dynamic_cast<const MIPMapFastImpl<TextureColor<unsigned char, 1> > *>(mipMap))
-		return GetSLGTexName(slgScene, (MIPMapImpl<TextureColor<unsigned char, 1> > *)mipMap, gamma);
+		return GetSLGImageMapNameImpl(slgScene, (MIPMapImpl<TextureColor<unsigned char, 1> > *)mipMap, gamma);
 	if (dynamic_cast<const MIPMapFastImpl<TextureColor<unsigned char, 3> > *>(mipMap))
-		return GetSLGTexName(slgScene, (MIPMapImpl<TextureColor<unsigned char, 3> > *)mipMap, gamma);
+		return GetSLGImageMapNameImpl(slgScene, (MIPMapImpl<TextureColor<unsigned char, 3> > *)mipMap, gamma);
 	if (dynamic_cast<const MIPMapFastImpl<TextureColor<unsigned char, 4> > *>(mipMap))
-		return GetSLGTexName(slgScene, (MIPMapImpl<TextureColor<unsigned char, 4> > *)mipMap, gamma, enableAlpha);
+		return GetSLGImageMapNameImpl(slgScene, (MIPMapImpl<TextureColor<unsigned char, 4> > *)mipMap, gamma);
 	//--------------------------------------------------------------------------
 	// Channels: unsigned short
 	//--------------------------------------------------------------------------
 	if (dynamic_cast<const MIPMapFastImpl<TextureColor<unsigned short, 1> > *>(mipMap))
-		return GetSLGTexName(slgScene, (MIPMapImpl<TextureColor<unsigned short, 1> > *)mipMap, gamma);
+		return GetSLGImageMapNameImpl(slgScene, (MIPMapImpl<TextureColor<unsigned short, 1> > *)mipMap, gamma);
 	if (dynamic_cast<const MIPMapFastImpl<TextureColor<unsigned short, 3> > *>(mipMap))
-		return GetSLGTexName(slgScene, (MIPMapImpl<TextureColor<unsigned short, 3> > *)mipMap, gamma);
+		return GetSLGImageMapNameImpl(slgScene, (MIPMapImpl<TextureColor<unsigned short, 3> > *)mipMap, gamma);
 	if (dynamic_cast<const MIPMapFastImpl<TextureColor<unsigned short, 4> > *>(mipMap))
-		return GetSLGTexName(slgScene, (MIPMapImpl<TextureColor<unsigned short, 4> > *)mipMap, gamma, enableAlpha);
+		return GetSLGImageMapNameImpl(slgScene, (MIPMapImpl<TextureColor<unsigned short, 4> > *)mipMap, gamma);
 	//--------------------------------------------------------------------------
 	// Channels: float
 	//--------------------------------------------------------------------------
 	else if (dynamic_cast<const MIPMapFastImpl<TextureColor<float, 1> > *>(mipMap))
-		return GetSLGTexName(slgScene, (MIPMapImpl<TextureColor<float, 1> > *)mipMap, gamma);
+		return GetSLGImageMapNameImpl(slgScene, (MIPMapImpl<TextureColor<float, 1> > *)mipMap, gamma);
 	else if (dynamic_cast<const MIPMapFastImpl<TextureColor<float, 3> > *>(mipMap))
-		return GetSLGTexName(slgScene, (MIPMapImpl<TextureColor<float, 3> > *)mipMap, gamma);
+		return GetSLGImageMapNameImpl(slgScene, (MIPMapImpl<TextureColor<float, 3> > *)mipMap, gamma);
 	else if (dynamic_cast<const MIPMapFastImpl<TextureColor<float, 4> > *>(mipMap))
-		return GetSLGTexName(slgScene, (MIPMapImpl<TextureColor<float, 4> > *)mipMap, gamma, enableAlpha);
+		return GetSLGImageMapNameImpl(slgScene, (MIPMapImpl<TextureColor<float, 4> > *)mipMap, gamma);
 	else {
 		// Unsupported type
 		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only RGB(A) float texture maps (i.e. not " <<
 					ToClassName(mipMap) << "). Replacing an unsupported texture map with a white texture.";
-		DefineSLGDefaultTexMap(slgScene);
-		return "tex_default";
+		return GetSLGDefaultImageMap(slgScene);
 	}
 }
 
 //------------------------------------------------------------------------------
-// Channels: unsigned char
-//------------------------------------------------------------------------------
+
+//bool SLGRenderer::GetSLGBumpNormalMapInfo(luxrays::sdl::Scene *slgScene, SLGMaterialInfo *matInfo,
+//		const Texture<float> *tex) {
+//	LOG(LUX_DEBUG, LUX_NOERROR) << "Bump/Normal map type: " << ToClassName(tex);
+//
+//	if (!tex)
+//		return true;
+//
+//	if (dynamic_cast<const ScaleTexture<float, float> *>(tex)) {
+//		// ScaleTexture<float, float> is for bump mapping
+//		const ScaleTexture<float, float> *scaleTex = dynamic_cast<const ScaleTexture<float, float> *>(tex);
+//
+//		LOG(LUX_DEBUG, LUX_NOERROR) << "Bump map scale type: " << ToClassName(scaleTex->GetTex1());
+//		const ConstantFloatTexture *constFloatTex = dynamic_cast<const ConstantFloatTexture *>(scaleTex->GetTex1());
+//		LOG(LUX_DEBUG, LUX_NOERROR) << "Bump map bump type: " << ToClassName(scaleTex->GetTex2());
+//		const ImageFloatTexture *imgTex = dynamic_cast<const ImageFloatTexture *>(scaleTex->GetTex2());
+//
+//		if (constFloatTex && imgTex) {
+//			// Check the mapping
+//			const TextureMapping2D *mapping = imgTex->GetTextureMapping2D();
+//			if (mapping) {
+//				if (dynamic_cast<const UVMapping2D *>(mapping)) {
+//					const UVMapping2D *uvMapping2D = dynamic_cast<const UVMapping2D *>(mapping);
+//					matInfo->bumpMap.uScale = uvMapping2D->GetUScale();
+//					matInfo->bumpMap.vScale = uvMapping2D->GetVScale();
+//					matInfo->bumpMap.uDelta = uvMapping2D->GetUDelta();
+//					matInfo->bumpMap.vDelta = uvMapping2D->GetVDelta();
+//				} else {
+//					LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only bump maps with UVMapping2D (i.e. not " <<
+//							ToClassName(mapping) << "). Ignoring the mapping.";				
+//				}
+//			}
+//
+//			matInfo->bumpMap.name = GetSLGImageMapName(slgScene, imgTex->GetMIPMap(), imgTex->GetInfo().gamma, false);
+//			matInfo->bumpMap.scale = 500.f * (*constFloatTex)["value"].FloatValue();
+//			return true;
+//		} else {
+//			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only bump mapping with ScaleTexture<float, float> of ConstantFloatTexture and ImageFloatTexture (i.e. not " <<
+//				ToClassName(scaleTex->GetTex1()) << " and " << ToClassName(scaleTex->GetTex2()) << ").";
+//			return false;
+//		}
+//	} else if (dynamic_cast<const NormalMapTexture *>(tex)) {
+//		// NormalMapTexture is for normal mapping
+//		const NormalMapTexture *normalTex = dynamic_cast<const NormalMapTexture *>(tex);
+//
+//		LOG(LUX_DEBUG, LUX_NOERROR) << "Normal map type: " << ToClassName(normalTex);
+//
+//		if (normalTex) {
+//			// Check the mapping
+//			const TextureMapping2D *mapping = normalTex->GetTextureMapping2D();
+//			if (mapping) {
+//				if (dynamic_cast<const UVMapping2D *>(mapping)) {
+//					const UVMapping2D *uvMapping2D = dynamic_cast<const UVMapping2D *>(mapping);
+//					matInfo->normalMap.uScale = uvMapping2D->GetUScale();
+//					matInfo->normalMap.vScale = uvMapping2D->GetVScale();
+//					matInfo->normalMap.uDelta = uvMapping2D->GetUDelta();
+//					matInfo->normalMap.vDelta = uvMapping2D->GetVDelta();
+//				} else {
+//					LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only normal maps with UVMapping2D (i.e. not " <<
+//							ToClassName(mapping) << "). Ignoring the mapping.";				
+//				}
+//			}
+//
+//			matInfo->normalMap.name = GetSLGImageMapName(slgScene, normalTex->GetMIPMap(), normalTex->GetInfo().gamma, false);
+//			return true;
+//		} else {
+//			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only normal mapping with NormalMapTexture (i.e. not " <<
+//				ToClassName(normalTex) << ").";
+//			return false;
+//		}
+//	}
+//
+//	LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only bump mapping with ScaleTexture<float, float> and normal mapping with NormalMapTexture (i.e. not " <<
+//		ToClassName(tex) << ").";
+//
+//	return false;
+//}
 
 string SLGRenderer::GetSLGTexName(luxrays::sdl::Scene *slgScene,
-		const MIPMapFastImpl<TextureColor<unsigned char, 1> > *mipMap, const float gamma) {
-	const BlockedArray<TextureColor<unsigned char, 1> > *map = mipMap->GetSingleMap();
+		const Texture<SWCSpectrum> *tex) {
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Texture type: " << ToClassName(tex);
+
+	const string texName = tex->GetName();
+	// Check if the texture has already been defined
+	if (!slgScene->texDefs.IsTextureDefined(texName)) {
+		const ConstantRGBColorTexture *constRGBTex = dynamic_cast<const ConstantRGBColorTexture *>(tex);
+		const ImageSpectrumTexture *imgTex = dynamic_cast<const ImageSpectrumTexture *>(tex);
+		if (imgTex) {
+			float uScale = 1.f;
+			float vScale = 1.f;
+			float uDelta = 0.f;
+			float vDelta = 0.f;
 
-	luxrays::Spectrum *slgRGBMap = new luxrays::Spectrum[map->uSize() * map->vSize()];
-
-	for (u_int y = 0; y < map->vSize(); ++y) {
-		for (u_int x = 0; x < map->uSize(); ++x) {
-			const TextureColor<unsigned char, 1> &col = (*map)(x, y);
-
-			const u_int index = (x + y * map->uSize());
-			slgRGBMap[index].r = col.c[0] / 255.f;
-			slgRGBMap[index].g = col.c[0] / 255.f;
-			slgRGBMap[index].b = col.c[0] / 255.f;
-		}
-	}
-
-	const string texName = mipMap->GetName();
-	slgScene->DefineTexMap(texName,
-			slgRGBMap, gamma, (u_int)map->uSize(), (u_int)map->vSize());
-
-	return texName;
-}
-
-string SLGRenderer::GetSLGTexName(luxrays::sdl::Scene *slgScene,
-		const MIPMapFastImpl<TextureColor<unsigned char, 3> > *mipMap, const float gamma) {
-	const BlockedArray<TextureColor<unsigned char, 3> > *map = mipMap->GetSingleMap();
-
-	luxrays::Spectrum *slgRGBMap = new luxrays::Spectrum[map->uSize() * map->vSize()];
-
-	for (u_int y = 0; y < map->vSize(); ++y) {
-		for (u_int x = 0; x < map->uSize(); ++x) {
-			const TextureColor<unsigned char, 3> &col = (*map)(x, y);
-
-			const u_int index = (x + y * map->uSize());
-			slgRGBMap[index].r = col.c[0] / 255.f;
-			slgRGBMap[index].g = col.c[1] / 255.f;
-			slgRGBMap[index].b = col.c[2] / 255.f;
-		}
-	}
-
-	const string texName = mipMap->GetName();
-	slgScene->DefineTexMap(texName,
-			slgRGBMap, gamma, (u_int)map->uSize(), (u_int)map->vSize());
-
-	return texName;
-}
-
-string SLGRenderer::GetSLGTexName(luxrays::sdl::Scene *slgScene,
-		const MIPMapFastImpl<TextureColor<unsigned char, 4> > *mipMap,
-		const float gamma, const bool enableAlpha) {
-	const BlockedArray<TextureColor<unsigned char, 4> > *map = mipMap->GetSingleMap();
-	const string texName = mipMap->GetName() + "_" + ToString(enableAlpha);
-
-	if (enableAlpha) {
-		luxrays::Spectrum *slgRGBMap = new luxrays::Spectrum[map->uSize() * map->vSize()];
-		float *slgAlphaMap = new float[map->uSize() * map->vSize()];
-
-		for (u_int y = 0; y < map->vSize(); ++y) {
-			for (u_int x = 0; x < map->uSize(); ++x) {
-				const TextureColor<unsigned char, 4> &col = (*map)(x, y);
-
-				const u_int index = (x + y * map->uSize());
-				slgRGBMap[index].r = col.c[0] / 255.f;
-				slgRGBMap[index].g = col.c[1] / 255.f;
-				slgRGBMap[index].b = col.c[2] / 255.f;
-				slgAlphaMap[index] = col.c[3] / 255.f;
-			}
-		}
-
-		slgScene->DefineTexMap(texName,
-				slgRGBMap, slgAlphaMap, gamma, (u_int)map->uSize(), (u_int)map->vSize());
-	} else {
-		luxrays::Spectrum *slgRGBMap = new luxrays::Spectrum[map->uSize() * map->vSize()];
-
-		for (u_int y = 0; y < map->vSize(); ++y) {
-			for (u_int x = 0; x < map->uSize(); ++x) {
-				const TextureColor<unsigned char, 4> &col = (*map)(x, y);
-
-				const u_int index = (x + y * map->uSize());
-				slgRGBMap[index].r = col.c[0] / 255.f;
-				slgRGBMap[index].g = col.c[1] / 255.f;
-				slgRGBMap[index].b = col.c[2] / 255.f;
-			}
-		}
-
-		slgScene->DefineTexMap(texName,
-				slgRGBMap, gamma, (u_int)map->uSize(), (u_int)map->vSize());
-	}
-
-	return texName;
-}
-
-//------------------------------------------------------------------------------
-// Channels: unsigned short
-//------------------------------------------------------------------------------
-
-string SLGRenderer::GetSLGTexName(luxrays::sdl::Scene *slgScene,
-		const MIPMapFastImpl<TextureColor<unsigned short, 1> > *mipMap, const float gamma) {
-	const BlockedArray<TextureColor<unsigned short, 1> > *map = mipMap->GetSingleMap();
-
-	luxrays::Spectrum *slgRGBMap = new luxrays::Spectrum[map->uSize() * map->vSize()];
-
-	for (u_int y = 0; y < map->vSize(); ++y) {
-		for (u_int x = 0; x < map->uSize(); ++x) {
-			const TextureColor<unsigned short, 1> &col = (*map)(x, y);
-
-			const u_int index = (x + y * map->uSize());
-			slgRGBMap[index].r = col.c[0] / 255.f;
-			slgRGBMap[index].g = col.c[0] / 255.f;
-			slgRGBMap[index].b = col.c[0] / 255.f;
-		}
-	}
-
-	const string texName = mipMap->GetName();
-	slgScene->DefineTexMap(texName,
-			slgRGBMap, gamma, (u_int)map->uSize(), (u_int)map->vSize());
-
-	return texName;
-}
-
-string SLGRenderer::GetSLGTexName(luxrays::sdl::Scene *slgScene,
-		const MIPMapFastImpl<TextureColor<unsigned short, 3> > *mipMap, const float gamma) {
-	const BlockedArray<TextureColor<unsigned short, 3> > *map = mipMap->GetSingleMap();
-
-	luxrays::Spectrum *slgRGBMap = new luxrays::Spectrum[map->uSize() * map->vSize()];
-
-	for (u_int y = 0; y < map->vSize(); ++y) {
-		for (u_int x = 0; x < map->uSize(); ++x) {
-			const TextureColor<unsigned short, 3> &col = (*map)(x, y);
-
-			const u_int index = (x + y * map->uSize());
-			slgRGBMap[index].r = col.c[0] / 255.f;
-			slgRGBMap[index].g = col.c[1] / 255.f;
-			slgRGBMap[index].b = col.c[2] / 255.f;
-		}
-	}
-
-	const string texName = mipMap->GetName();
-	slgScene->DefineTexMap(texName,
-			slgRGBMap, gamma, (u_int)map->uSize(), (u_int)map->vSize());
-
-	return texName;
-}
-
-string SLGRenderer::GetSLGTexName(luxrays::sdl::Scene *slgScene,
-		const MIPMapFastImpl<TextureColor<unsigned short, 4> > *mipMap,
-		const float gamma, const bool enableAlpha) {
-	const BlockedArray<TextureColor<unsigned short, 4> > *map = mipMap->GetSingleMap();
-	const string texName = mipMap->GetName() + "_" + ToString(enableAlpha);
-
-	if (enableAlpha) {
-		luxrays::Spectrum *slgRGBMap = new luxrays::Spectrum[map->uSize() * map->vSize()];
-		float *slgAlphaMap = new float[map->uSize() * map->vSize()];
-
-		for (u_int y = 0; y < map->vSize(); ++y) {
-			for (u_int x = 0; x < map->uSize(); ++x) {
-				const TextureColor<unsigned short, 4> &col = (*map)(x, y);
-
-				const u_int index = (x + y * map->uSize());
-				slgRGBMap[index].r = col.c[0] / 255.f;
-				slgRGBMap[index].g = col.c[1] / 255.f;
-				slgRGBMap[index].b = col.c[2] / 255.f;
-				slgAlphaMap[index] = col.c[3] / 255.f;
-			}
-		}
-
-		slgScene->DefineTexMap(texName,
-				slgRGBMap, slgAlphaMap, gamma, (u_int)map->uSize(), (u_int)map->vSize());
-	} else {
-		luxrays::Spectrum *slgRGBMap = new luxrays::Spectrum[map->uSize() * map->vSize()];
-
-		for (u_int y = 0; y < map->vSize(); ++y) {
-			for (u_int x = 0; x < map->uSize(); ++x) {
-				const TextureColor<unsigned short, 4> &col = (*map)(x, y);
-
-				const u_int index = (x + y * map->uSize());
-				slgRGBMap[index].r = col.c[0] / 255.f;
-				slgRGBMap[index].g = col.c[1] / 255.f;
-				slgRGBMap[index].b = col.c[2] / 255.f;
-			}
-		}
-
-		slgScene->DefineTexMap(texName,
-				slgRGBMap, gamma, (u_int)map->uSize(), (u_int)map->vSize());
-	}
-
-	return texName;
-}
-
-//------------------------------------------------------------------------------
-// Channels: unsigned float
-//------------------------------------------------------------------------------
-
-string SLGRenderer::GetSLGTexName(luxrays::sdl::Scene *slgScene,
-		const MIPMapFastImpl<TextureColor<float, 1> > *mipMap, const float gamma) {
-	const BlockedArray<TextureColor<float, 1> > *map = mipMap->GetSingleMap();
-
-	luxrays::Spectrum *slgRGBMap = new luxrays::Spectrum[map->uSize() * map->vSize()];
-
-	for (u_int y = 0; y < map->vSize(); ++y) {
-		for (u_int x = 0; x < map->uSize(); ++x) {
-			const TextureColor<float, 1> &col = (*map)(x, y);
-
-			const u_int index = (x + y * map->uSize());
-			slgRGBMap[index].r = col.c[0];
-			slgRGBMap[index].g = col.c[0];
-			slgRGBMap[index].b = col.c[0];
-		}
-	}
-
-	const string texName = mipMap->GetName();
-	slgScene->DefineTexMap(texName,
-			slgRGBMap, gamma, (u_int)map->uSize(), (u_int)map->vSize());
-
-	return texName;
-}
-
-string SLGRenderer::GetSLGTexName(luxrays::sdl::Scene *slgScene,
-		const MIPMapFastImpl<TextureColor<float, 3> > *mipMap, const float gamma) {
-	const BlockedArray<TextureColor<float, 3> > *map = mipMap->GetSingleMap();
-
-	luxrays::Spectrum *slgRGBMap = new luxrays::Spectrum[map->uSize() * map->vSize()];
-
-	for (u_int y = 0; y < map->vSize(); ++y) {
-		for (u_int x = 0; x < map->uSize(); ++x) {
-			const TextureColor<float, 3> &col = (*map)(x, y);
-
-			const u_int index = (x + y * map->uSize());
-			slgRGBMap[index].r = col.c[0];
-			slgRGBMap[index].g = col.c[1];
-			slgRGBMap[index].b = col.c[2];
-		}
-	}
-
-	const string texName = mipMap->GetName();
-	slgScene->DefineTexMap(texName,
-			slgRGBMap, gamma, (u_int)map->uSize(), (u_int)map->vSize());
-
-	return texName;
-}
-
-string SLGRenderer::GetSLGTexName(luxrays::sdl::Scene *slgScene,
-		const MIPMapFastImpl<TextureColor<float, 4> > *mipMap,
-		const float gamma, const bool enableAlpha) {
-	const BlockedArray<TextureColor<float, 4> > *map = mipMap->GetSingleMap();
-	const string texName = mipMap->GetName() + "_" + ToString(enableAlpha);
-
-	if (enableAlpha) {
-		luxrays::Spectrum *slgRGBMap = new luxrays::Spectrum[map->uSize() * map->vSize()];
-		float *slgAlphaMap = new float[map->uSize() * map->vSize()];
-
-		for (u_int y = 0; y < map->vSize(); ++y) {
-			for (u_int x = 0; x < map->uSize(); ++x) {
-				const TextureColor<float, 4> &col = (*map)(x, y);
-
-				const u_int index = (x + y * map->uSize());
-				slgRGBMap[index].r = col.c[0];
-				slgRGBMap[index].g = col.c[1];
-				slgRGBMap[index].b = col.c[2];
-				slgAlphaMap[index] = col.c[3];
-			}
-		}
-
-		slgScene->DefineTexMap(texName,
-				slgRGBMap, slgAlphaMap, gamma, (u_int)map->uSize(), (u_int)map->vSize());
-	} else {
-		luxrays::Spectrum *slgRGBMap = new luxrays::Spectrum[map->uSize() * map->vSize()];
-
-		for (u_int y = 0; y < map->vSize(); ++y) {
-			for (u_int x = 0; x < map->uSize(); ++x) {
-				const TextureColor<float, 4> &col = (*map)(x, y);
-
-				const u_int index = (x + y * map->uSize());
-				slgRGBMap[index].r = col.c[0];
-				slgRGBMap[index].g = col.c[1];
-				slgRGBMap[index].b = col.c[2];
-			}
-		}
-
-		slgScene->DefineTexMap(texName,
-				slgRGBMap, gamma, (u_int)map->uSize(), (u_int)map->vSize());
-	}
-
-	return texName;
-}
-
-//------------------------------------------------------------------------------
-
-bool SLGRenderer::GetSLGBumpNormalMapInfo(luxrays::sdl::Scene *slgScene, SLGMaterialInfo *matInfo,
-		const Texture<float> *tex) {
-	LOG(LUX_DEBUG, LUX_NOERROR) << "Bump/Normal map type: " << ToClassName(tex);
-
-	if (!tex)
-		return true;
-
-	if (dynamic_cast<const ScaleTexture<float, float> *>(tex)) {
-		// ScaleTexture<float, float> is for bump mapping
-		const ScaleTexture<float, float> *scaleTex = dynamic_cast<const ScaleTexture<float, float> *>(tex);
-
-		LOG(LUX_DEBUG, LUX_NOERROR) << "Bump map scale type: " << ToClassName(scaleTex->GetTex1());
-		const ConstantFloatTexture *constFloatTex = dynamic_cast<const ConstantFloatTexture *>(scaleTex->GetTex1());
-		LOG(LUX_DEBUG, LUX_NOERROR) << "Bump map bump type: " << ToClassName(scaleTex->GetTex2());
-		const ImageFloatTexture *imgTex = dynamic_cast<const ImageFloatTexture *>(scaleTex->GetTex2());
-
-		if (constFloatTex && imgTex) {
 			// Check the mapping
 			const TextureMapping2D *mapping = imgTex->GetTextureMapping2D();
 			if (mapping) {
 				if (dynamic_cast<const UVMapping2D *>(mapping)) {
 					const UVMapping2D *uvMapping2D = dynamic_cast<const UVMapping2D *>(mapping);
-					matInfo->bumpMap.uScale = uvMapping2D->GetUScale();
-					matInfo->bumpMap.vScale = uvMapping2D->GetVScale();
-					matInfo->bumpMap.uDelta = uvMapping2D->GetUDelta();
-					matInfo->bumpMap.vDelta = uvMapping2D->GetVDelta();
-				} else {
-					LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only bump maps with UVMapping2D (i.e. not " <<
-							ToClassName(mapping) << "). Ignoring the mapping.";				
-				}
-			}
-
-			matInfo->bumpMap.name = GetSLGTexName(slgScene, imgTex->GetMIPMap(), imgTex->GetInfo().gamma, false);
-			matInfo->bumpMap.scale = 500.f * (*constFloatTex)["value"].FloatValue();
-			return true;
-		} else {
-			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only bump mapping with ScaleTexture<float, float> of ConstantFloatTexture and ImageFloatTexture (i.e. not " <<
-				ToClassName(scaleTex->GetTex1()) << " and " << ToClassName(scaleTex->GetTex2()) << ").";
-			return false;
-		}
-	} else if (dynamic_cast<const NormalMapTexture *>(tex)) {
-		// NormalMapTexture is for normal mapping
-		const NormalMapTexture *normalTex = dynamic_cast<const NormalMapTexture *>(tex);
-
-		LOG(LUX_DEBUG, LUX_NOERROR) << "Normal map type: " << ToClassName(normalTex);
-
-		if (normalTex) {
-			// Check the mapping
-			const TextureMapping2D *mapping = normalTex->GetTextureMapping2D();
-			if (mapping) {
-				if (dynamic_cast<const UVMapping2D *>(mapping)) {
-					const UVMapping2D *uvMapping2D = dynamic_cast<const UVMapping2D *>(mapping);
-					matInfo->normalMap.uScale = uvMapping2D->GetUScale();
-					matInfo->normalMap.vScale = uvMapping2D->GetVScale();
-					matInfo->normalMap.uDelta = uvMapping2D->GetUDelta();
-					matInfo->normalMap.vDelta = uvMapping2D->GetVDelta();
-				} else {
-					LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only normal maps with UVMapping2D (i.e. not " <<
-							ToClassName(mapping) << "). Ignoring the mapping.";				
-				}
-			}
-
-			matInfo->normalMap.name = GetSLGTexName(slgScene, normalTex->GetMIPMap(), normalTex->GetInfo().gamma, false);
-			return true;
-		} else {
-			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only normal mapping with NormalMapTexture (i.e. not " <<
-				ToClassName(normalTex) << ").";
-			return false;
-		}
-	}
-
-	LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only bump mapping with ScaleTexture<float, float> and normal mapping with NormalMapTexture (i.e. not " <<
-		ToClassName(tex) << ").";
-
-	return false;
-}
-
-bool SLGRenderer::GetSLGMaterialTexInfo(luxrays::sdl::Scene *slgScene,
-		SLGMaterialInfo *matInfo, const Texture<SWCSpectrum> *tex0) {
-
-	LOG(LUX_DEBUG, LUX_NOERROR) << "Texture 0 type: " << ToClassName(tex0);
-	const ConstantRGBColorTexture *constRGBTex0 = dynamic_cast<const ConstantRGBColorTexture *>(tex0);
-	const ImageSpectrumTexture *imgTex0 = dynamic_cast<const ImageSpectrumTexture *>(tex0);
-
-	if (imgTex0) {
-		// Check the mapping
-		const TextureMapping2D *mapping = imgTex0->GetTextureMapping2D();
-		if (mapping) {
-			if (dynamic_cast<const UVMapping2D *>(mapping)) {
-				const UVMapping2D *uvMapping2D = dynamic_cast<const UVMapping2D *>(mapping);
-				matInfo->texMap.uScale = uvMapping2D->GetUScale();
-				matInfo->texMap.vScale = uvMapping2D->GetVScale();
-				matInfo->texMap.uDelta = uvMapping2D->GetUDelta();
-				matInfo->texMap.vDelta = uvMapping2D->GetVDelta();
-			} else {
-				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only image maps with UVMapping2D (i.e. not " <<
-						ToClassName(mapping) << "). Ignoring the mapping.";				
-			}
-		}
-
-		matInfo->texMap.name = GetSLGTexName(slgScene, imgTex0->GetMIPMap(), imgTex0->GetInfo().gamma, true);
-		matInfo->color0.r = imgTex0->GetInfo().gain;
-		matInfo->color0.g = imgTex0->GetInfo().gain;
-		matInfo->color0.b = imgTex0->GetInfo().gain;
-		matInfo->color1 = matInfo->color0;
-
-		return true;
-	} else if (constRGBTex0) {
-		matInfo->color0.r = (*constRGBTex0)["color.r"].FloatValue();
-		matInfo->color0.g = (*constRGBTex0)["color.g"].FloatValue();
-		matInfo->color0.b = (*constRGBTex0)["color.b"].FloatValue();
-		matInfo->color1 = matInfo->color0;
-
-		return true;
-	}
-
-	LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only materials with ConstantRGBColorTexture or ImageSpectrumTexture (i.e. not " <<
-		ToClassName(tex0) << ").";
-
-	return false;
-}
-
-bool SLGRenderer::GetSLGMaterialTexInfo(luxrays::sdl::Scene *slgScene,
-		SLGMaterialInfo *matInfo,
-		const Texture<SWCSpectrum> *tex0, const Texture<SWCSpectrum> *tex1) {
-	LOG(LUX_DEBUG, LUX_NOERROR) << "Texture 0 type: " << ToClassName(tex0);
-	const ConstantRGBColorTexture *constRGBTex0 = dynamic_cast<const ConstantRGBColorTexture *>(tex0);
-	const ImageSpectrumTexture *imgTex0 = dynamic_cast<const ImageSpectrumTexture *>(tex0);
-	LOG(LUX_DEBUG, LUX_NOERROR) << "Texture 1 type: " << ToClassName(tex1);
-	const ConstantRGBColorTexture *constRGBTex1 = dynamic_cast<const ConstantRGBColorTexture *>(tex1);
-	const ImageSpectrumTexture *imgTex1 = dynamic_cast<const ImageSpectrumTexture *>(tex1);
-
-	if (imgTex0 && !imgTex1)
-		return GetSLGMaterialTexInfo(slgScene, matInfo, tex0);
-	else if (!imgTex0 && imgTex1)
-		return GetSLGMaterialTexInfo(slgScene, matInfo, tex1);
-	else {
-		if (imgTex0) {
-			// Check the mapping
-			const TextureMapping2D *mapping = imgTex0->GetTextureMapping2D();
-			if (mapping) {
-				if (dynamic_cast<const UVMapping2D *>(mapping)) {
-					const UVMapping2D *uvMapping2D = dynamic_cast<const UVMapping2D *>(mapping);
-					matInfo->texMap.uScale = uvMapping2D->GetUScale();
-					matInfo->texMap.vScale = uvMapping2D->GetVScale();
-					matInfo->texMap.uDelta = uvMapping2D->GetUDelta();
-					matInfo->texMap.vDelta = uvMapping2D->GetVDelta();
+					uScale = uvMapping2D->GetUScale();
+					vScale = uvMapping2D->GetVScale();
+					uDelta = uvMapping2D->GetUDelta();
+					vDelta = uvMapping2D->GetVDelta();
 				} else {
 					LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only image maps with UVMapping2D (i.e. not " <<
 							ToClassName(mapping) << "). Ignoring the mapping.";				
 				}
 			}
 
-			matInfo->texMap.name = GetSLGTexName(slgScene, imgTex0->GetMIPMap(), imgTex0->GetInfo().gamma, true);
-			matInfo->color0.r = imgTex0->GetInfo().gain;
-			matInfo->color0.g = imgTex0->GetInfo().gain;
-			matInfo->color0.b = imgTex0->GetInfo().gain;
-			matInfo->color1 = matInfo->color0;
+			const TexInfo &texInfo = imgTex->GetInfo();
+			const string imageMapName = GetSLGImageMapName(slgScene, imgTex->GetMIPMap(), texInfo.gamma);
 
-			return true;
-		} else if (imgTex1) {
-			// Check the mapping
-			const TextureMapping2D *mapping = imgTex1->GetTextureMapping2D();
-			if (mapping) {
-				if (dynamic_cast<const UVMapping2D *>(mapping)) {
-					const UVMapping2D *uvMapping2D = dynamic_cast<const UVMapping2D *>(mapping);
-					matInfo->texMap.uScale = uvMapping2D->GetUScale();
-					matInfo->texMap.vScale = uvMapping2D->GetVScale();
-					matInfo->texMap.uDelta = uvMapping2D->GetUDelta();
-					matInfo->texMap.vDelta = uvMapping2D->GetVDelta();
-				} else {
-					LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only image maps with UVMapping2D (i.e. not " <<
-							ToClassName(mapping) << "). Ignoring the mapping.";				
-				}
-			}
+			slgScene->DefineTextures(
+					"scene.textures." + texName + ".type = imagemap\n"
+					"scene.textures." + texName + ".file = " + imageMapName + "\n"
+					"scene.textures." + texName + ".gamma = " + ToString(texInfo.gamma) + "\n"
+					"scene.textures." + texName + ".gain = " + ToString(texInfo.gain) + "\n"
+					"scene.textures." + texName + ".uvscale = " +
+						ToString(uScale) + " " +
+						ToString(vScale) + "\n"
+					"scene.textures." + texName + ".uvdelta = " +
+						ToString(uDelta) + " " +
+						ToString(vDelta) + "\n"
 
-			matInfo->texMap.name = GetSLGTexName(slgScene, imgTex1->GetMIPMap(), imgTex1->GetInfo().gamma, true);
-			matInfo->color0.r = imgTex1->GetInfo().gain;
-			matInfo->color0.g = imgTex1->GetInfo().gain;
-			matInfo->color0.b = imgTex1->GetInfo().gain;
-			matInfo->color1 = matInfo->color0;
-
-			return true;
+					);
+		} else if (constRGBTex) {
+			slgScene->DefineTextures(
+					"scene.textures." + texName + ".type = constfloat3\n"
+					"scene.textures." + texName + ".value = " +
+						ToString((*constRGBTex)["color.r"].FloatValue()) + " " +
+						ToString((*constRGBTex)["color.g"].FloatValue()) + " " +
+						ToString((*constRGBTex)["color.b"].FloatValue()) + "\n"
+					);
 		} else {
-			if (!constRGBTex0 && !constRGBTex1) {
-				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only materials with ConstantRGBColorTexture or ImageSpectrumTexture (i.e. not " <<
-					ToClassName(tex0) << " or " << ToClassName(tex1) << ").";
-				return false;
-			}
+			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only materials with ConstantRGBColorTexture or ImageSpectrumTexture (i.e. not " <<
+					ToClassName(tex) << ").";
 
-			if (constRGBTex0) {
-				matInfo->color0.r = (*constRGBTex0)["color.r"].FloatValue();
-				matInfo->color0.g = (*constRGBTex0)["color.g"].FloatValue();
-				matInfo->color0.b = (*constRGBTex0)["color.b"].FloatValue();
-			}
-
-			if (constRGBTex1) {
-				matInfo->color1.r = (*constRGBTex1)["color.r"].FloatValue();
-				matInfo->color1.g = (*constRGBTex1)["color.g"].FloatValue();
-				matInfo->color1.b = (*constRGBTex1)["color.b"].FloatValue();
-			}
-
-			return true;
+			slgScene->DefineTextures(
+					"scene.textures." + texName + ".type = constfloat1\n"
+					"scene.textures." + texName + ".value = 1.0\n"
+					);
 		}
 	}
+
+	return texName;
 }
 
-bool SLGRenderer::GetSLGMaterialInfo(luxrays::sdl::Scene *slgScene, const Primitive *prim,
-		SLGMaterialInfo *info) {
+string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive *prim) {
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Primitive type: " << ToClassName(prim);
 	
 	Material *mat = NULL;
-	SLGMaterialInfo matInfo;
+	string matName = "mat_default";
+	string emissionTexName = "0.0 0.0 0.0";
 
 	//----------------------------------------------------------------------
 	// Check if it is a Shape
@@ -743,9 +505,6 @@ bool SLGRenderer::GetSLGMaterialInfo(luxrays::sdl::Scene *slgScene, const Primit
 	if (dynamic_cast<const Shape *>(prim)) {
 		const Shape *shape = dynamic_cast<const Shape *>(prim);
 		mat = shape->GetMaterial();
-		if (!mat)
-			return false;
-		matInfo.matName = mat->GetName();
 	} else
 	//----------------------------------------------------------------------
 	// Check if it is an InstancePrimitive
@@ -753,9 +512,6 @@ bool SLGRenderer::GetSLGMaterialInfo(luxrays::sdl::Scene *slgScene, const Primit
 	if (dynamic_cast<const InstancePrimitive *>(prim)) {
 		const InstancePrimitive *instance = dynamic_cast<const InstancePrimitive *>(prim);
 		mat = instance->GetMaterial();
-		if (!mat)
-			return false;
-		matInfo.matName = mat->GetName();
 	} else
 	//----------------------------------------------------------------------
 	// Check if it is an AreaLight
@@ -763,79 +519,73 @@ bool SLGRenderer::GetSLGMaterialInfo(luxrays::sdl::Scene *slgScene, const Primit
 	if (dynamic_cast<const AreaLightPrimitive *>(prim)) {
 		const AreaLightPrimitive *alPrim = dynamic_cast<const AreaLightPrimitive *>(prim);
 		AreaLight *al = alPrim->GetAreaLight();
-		matInfo.matName = al->GetName();
 
-		// Check if I haven't already defined this AreaLight
-		if (slgScene->materialIndices.count(matInfo.matName) < 1) {
-			// Define a new area light material
+		Texture<SWCSpectrum> *tex = al->GetTexture();
 
-			Texture<SWCSpectrum> *tex = al->GetTexture();
+		const float gain = (*al)["gain"].FloatValue();
+		const float power = (*al)["power"].FloatValue();
+		const float efficacy = (*al)["efficacy"].FloatValue();
+		const float area = (*al)["area"].FloatValue();
 
-			const float gain = (*al)["gain"].FloatValue();
-			const float power = (*al)["power"].FloatValue();
-			const float efficacy = (*al)["efficacy"].FloatValue();
-			const float area = (*al)["area"].FloatValue();
+		// Check the type of texture used
+		LOG(LUX_DEBUG, LUX_NOERROR) << "AreaLight texture type: " << ToClassName(tex);
+		ConstantRGBColorTexture *constRGBTex = dynamic_cast<ConstantRGBColorTexture *>(tex);
+		BlackBodyTexture *blackBodyTexture = dynamic_cast<BlackBodyTexture *>(tex);
 
-			// Check the type of texture used
-			LOG(LUX_DEBUG, LUX_NOERROR) << "AreaLight texture type: " << ToClassName(tex);
-			ConstantRGBColorTexture *constRGBTex = dynamic_cast<ConstantRGBColorTexture *>(tex);
-			BlackBodyTexture *blackBodyTexture = dynamic_cast<BlackBodyTexture *>(tex);
+		luxrays::Spectrum emission;
+		if (constRGBTex) {
+			emission = luxrays::Spectrum(
+					(*constRGBTex)["color.r"].FloatValue(),
+					(*constRGBTex)["color.g"].FloatValue(),
+					(*constRGBTex)["color.b"].FloatValue());
 
-			if (constRGBTex) {
-				luxrays::Spectrum rgb(
-						(*constRGBTex)["color.r"].FloatValue(),
-						(*constRGBTex)["color.g"].FloatValue(),
-						(*constRGBTex)["color.b"].FloatValue());
+			const float gainFactor = power * efficacy /
+				(area * M_PI * emission.Y());
+			if (gainFactor > 0.f && !isinf(gainFactor))
+				emission *= gain * gainFactor;
+			else
+				emission *= gain;
+		} else if (blackBodyTexture) {
+			luxrays::Spectrum emission(1.f);
 
-				const float gainFactor = power * efficacy /
-					(area * M_PI * rgb.Y());
-				if (gainFactor > 0.f && !isinf(gainFactor))
-					rgb *= gain * gainFactor;
-				else
-					rgb *= gain;
-
-				slgScene->AddMaterials(
-					"scene.materials.light." + matInfo.matName +" = " +
-						ToString(rgb.r) + " " +
-						ToString(rgb.g) + " " +
-						ToString(rgb.b) + "\n"
-					);
-			} else if (blackBodyTexture) {
-				luxrays::Spectrum rgb(1.f);
-
-				const float gainFactor = power * efficacy;
-				if (gainFactor > 0.f && !isinf(gainFactor))
-					rgb *= gain * gainFactor;
-				else
-					rgb *= gain;
-
-				slgScene->AddMaterials(
-					"scene.materials.light." + matInfo.matName +" = " +
-						ToString(rgb.r) + " " +
-						ToString(rgb.g) + " " +
-						ToString(rgb.b) + "\n"
-					);
-			} else {
-				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only area lights with constant ConstantRGBColorTexture or BlackBodyTexture (i.e. not " <<
-					ToClassName(tex) << "). Replacing an unsupported area light material with matte.";
-				return false;
-			}
+			const float gainFactor = power * efficacy;
+			if (gainFactor > 0.f && !isinf(gainFactor))
+				emission *= gain * gainFactor;
+			else
+				emission *= gain;
+		} else {
+			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only area lights with constant ConstantRGBColorTexture or BlackBodyTexture (i.e. not " <<
+				ToClassName(tex) << "). Ignoring emission of unsupported area light.";
 		}
 
-		*info = matInfo;
-		return true;
+		emissionTexName = ToString(emission.r) + " " + ToString(emission.g) + " " + ToString(emission.b);
+
+		const Primitive *p = alPrim->GetPrimitive().get();
+		if (dynamic_cast<const Shape *>(p)) {
+			const Shape *shape = dynamic_cast<const Shape *>(p);
+			mat = shape->GetMaterial();
+		} else if (dynamic_cast<const InstancePrimitive *>(p)) {
+			const InstancePrimitive *instance = dynamic_cast<const InstancePrimitive *>(p);
+			mat = instance->GetMaterial();
+		} else {
+			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer doesn't support material conversion for area light primitive " << ToClassName(prim);
+			return "mat_default";
+		}
 	} else
 	//----------------------------------------------------------------------
 	// Primitive is not supported, use the default material
 	//----------------------------------------------------------------------
 	{
 		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer doesn't support material conversion for primitive " << ToClassName(prim);
-		return false;
+		return "mat_default";
 	}
 
+	if (!mat)
+		return "mat_default";
+
 	// Retrieve bump/normal mapping information too
-	if (mat)
-		GetSLGBumpNormalMapInfo(slgScene, &matInfo, mat->bumpMap.get());
+//	if (mat)
+//		GetSLGBumpNormalMapInfo(slgScene, &matInfo, mat->bumpMap.get());
 
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Material type: " << ToClassName(mat);
 
@@ -845,22 +595,17 @@ bool SLGRenderer::GetSLGMaterialInfo(luxrays::sdl::Scene *slgScene, const Primit
 	if (dynamic_cast<Matte *>(mat)) {
 		// Define the material
 		Matte *matte = dynamic_cast<Matte *>(mat);
-		matInfo.matName = matte->GetName();
+		matName = matte->GetName();
 
-		// Check the type of texture
-		if (GetSLGMaterialTexInfo(slgScene, &matInfo, matte->GetTexture())) {
-			// Check if the material has already been defined
-			if (slgScene->materialIndices.count(matInfo.matName) < 1) {
-				slgScene->AddMaterials(
-					"scene.materials.matte." + matInfo.matName +" = " +
-						ToString(matInfo.color0.r) + " " +
-						ToString(matInfo.color0.g) + " " +
-						ToString(matInfo.color0.b) + "\n"
-					);
-			}
-		} else {
-			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "Ignoring unsupported texture.";
-			return false;
+		// Check if the material has already been defined
+		if (!slgScene->matDefs.IsMaterialDefined(matName)) {
+			const string texName = GetSLGTexName(slgScene, matte->GetTexture());
+
+			const string matProp = "scene.materials." + matName +".type = matte\n" +
+				"scene.materials." + matName +".emission = " + emissionTexName + "\n"
+				"scene.materials." + matName +".kd = " + texName + "\n";
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProp << "]";
+			slgScene->DefineMaterials(matProp);
 		}
 	} else
 	//------------------------------------------------------------------
@@ -869,277 +614,270 @@ bool SLGRenderer::GetSLGMaterialInfo(luxrays::sdl::Scene *slgScene, const Primit
 	if (dynamic_cast<Mirror *>(mat)) {
 		// Define the material
 		Mirror *mirror = dynamic_cast<Mirror *>(mat);
-		matInfo.matName = mirror->GetName();
-
-		// Check the type of texture
-		if (GetSLGMaterialTexInfo(slgScene, &matInfo, mirror->GetTexture())) {
-			// Check if the material has already been defined
-			if (slgScene->materialIndices.count(matInfo.matName) < 1) {
-				slgScene->AddMaterials(
-					"scene.materials.mirror." + matInfo.matName +" = " +
-						ToString(matInfo.color0.r) + " " +
-						ToString(matInfo.color0.g) + " " +
-						ToString(matInfo.color0.b) + " 1\n"
-					);
-			}
-		} else {
-			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "Ignoring unsupported texture.";
-			return false;
-		}
-	} else
-	//------------------------------------------------------------------
-	// Check if it is material Glass
-	//------------------------------------------------------------------
-	if (dynamic_cast<Glass *>(mat)) {
-		// Define the material
-		Glass *glass = dynamic_cast<Glass *>(mat);
-		matInfo.matName = glass->GetName();
-
-		// Index
-		Texture<float> *indexTex = glass->GetIndexTexture();
-		LOG(LUX_DEBUG, LUX_NOERROR) << "Index Texture type: " << ToClassName(indexTex);
-		ConstantFloatTexture *indexFloatTex = dynamic_cast<ConstantFloatTexture *>(indexTex);
-
-		float index;
-		if (indexFloatTex)
-			index = (*indexFloatTex)["value"].FloatValue();
-		else {
-			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Glass material with ConstantFloatTexture (i.e. not " <<
-				ToClassName(indexFloatTex) << "). Ignoring unsupported texture and using 1.41 value.";
-			index = 1.41f;
-		}
-
-		// Check the type of textures
-		if (GetSLGMaterialTexInfo(slgScene, &matInfo, glass->GetKtTexture(), glass->GetKrTexture())) {
-			// Check if it is architectural glass
-			const bool architectural = (*glass)["architectural"].BoolValue();
-			LOG(LUX_DEBUG, LUX_NOERROR) << "Architectural glass: " << architectural;
-			// Check if the material has already been defined
-			if (slgScene->materialIndices.count(matInfo.matName) < 1) {
-				if (architectural) {
-					slgScene->AddMaterials(
-							"scene.materials.archglass." + matInfo.matName +" = " +
-								ToString(matInfo.color1.r) + " " +
-								ToString(matInfo.color1.g) + " " +
-								ToString(matInfo.color1.b) + " " +
-								ToString(matInfo.color0.r) + " " +
-								ToString(matInfo.color0.g) + " " +
-								ToString(matInfo.color0.b) + " " +
-								" 1 1\n"
-							);
-				} else {
-					slgScene->AddMaterials(
-							"scene.materials.glass." + matInfo.matName +" = " +
-								ToString(matInfo.color1.r) + " " +
-								ToString(matInfo.color1.g) + " " +
-								ToString(matInfo.color1.b) + " " +
-								ToString(matInfo.color0.r) + " " +
-								ToString(matInfo.color0.g) + " " +
-								ToString(matInfo.color0.b) + " " +
-								" 1.0 " + ToString(index) + " 1 1\n"
-							);
-				}
-			}
-		} else {
-			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "Ignoring unsupported texture.";
-			return false;
-		}
-	} else
-	//------------------------------------------------------------------
-	// Check if it is material Glass2
-	//------------------------------------------------------------------
-	if (dynamic_cast<Glass2 *>(mat)) {
-		// Define the material
-		Glass2 *glass2 = dynamic_cast<Glass2 *>(mat);
-		matInfo.matName = glass2->GetName();
-
-		luxrays::Spectrum krRGB(1.f);
-		luxrays::Spectrum ktRGB(1.f);
-		float index = 1.41f;
-
-		const Volume *intVol = prim->GetInterior();
-		LOG(LUX_DEBUG, LUX_NOERROR) << "Glass2 interior volume type: " << ToClassName(intVol);
-
-		if (dynamic_cast<const ClearVolume *>(intVol)) {
-			const ClearVolume *clrVol = dynamic_cast<const ClearVolume *>(intVol);
-
-			// Try to extract the index from Volume information
-			const Texture<FresnelGeneral> *fresnelTex = clrVol->GetFresnelTexture();
-			LOG(LUX_DEBUG, LUX_NOERROR) << "FresnelGeneral Texture type: " << ToClassName(fresnelTex);
-			if (dynamic_cast<const ConstantFresnelTexture *>(fresnelTex)) {
-				const ConstantFresnelTexture *constFresnelTex = 
-					dynamic_cast<const ConstantFresnelTexture *>(fresnelTex);
-				index = (*constFresnelTex)["value"].FloatValue();
-			}
-
-			// Kt
-			const Texture<SWCSpectrum> *absorbTex = clrVol->GetAbsorptionTexture();
-			LOG(LUX_DEBUG, LUX_NOERROR) << "Absorption Texture type: " << ToClassName(absorbTex);
-			const ConstantRGBColorTexture *absorbRGBTex = dynamic_cast<const ConstantRGBColorTexture *>(absorbTex);
-
-			if (absorbRGBTex) {
-				ktRGB.r = (*absorbRGBTex)["color.r"].FloatValue();
-				ktRGB.g = (*absorbRGBTex)["color.g"].FloatValue();
-				ktRGB.b = (*absorbRGBTex)["color.b"].FloatValue();
-
-				ktRGB = ktRGB * ktRGB;
-				ktRGB.r = Clamp(ktRGB.r, 0.f, 20.f) / 20.f;
-				ktRGB.g = Clamp(ktRGB.g, 0.f, 20.f) / 20.f;
-				ktRGB.b = Clamp(ktRGB.b, 0.f, 20.f) / 20.f;
-
-				ktRGB.r = 1.f - ktRGB.r;
-				ktRGB.g = 1.f - ktRGB.g;
-				ktRGB.b = 1.f - ktRGB.b;
-			} else {
-				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Glass2 material with ConstantRGBColorTexture (i.e. not " <<
-					ToClassName(absorbRGBTex) << "). Ignoring unsupported texture.";
-			}
-		}
-
-		// Check if it is architectural glass
-		const bool architectural = (*glass2)["architectural"].BoolValue();
-		LOG(LUX_DEBUG, LUX_NOERROR) << "Architectural glass: " << architectural;
-		// Check if the material has already been defined
-		if (slgScene->materialIndices.count(matInfo.matName) < 1) {
-			if (architectural) {
-				slgScene->AddMaterials(
-						"scene.materials.archglass." + matInfo.matName +" = " +
-							ToString(krRGB.r) + " " +
-							ToString(krRGB.g) + " " +
-							ToString(krRGB.b) + " " +
-							ToString(ktRGB.r) + " " +
-							ToString(ktRGB.g) + " " +
-							ToString(ktRGB.b) + " " +
-							" 1 1\n"
-						);
-			} else {
-				slgScene->AddMaterials(
-						"scene.materials.glass." + matInfo.matName +" = " +
-							ToString(krRGB.r) + " " +
-							ToString(krRGB.g) + " " +
-							ToString(krRGB.b) + " " +
-							ToString(ktRGB.r) + " " +
-							ToString(ktRGB.g) + " " +
-							ToString(ktRGB.b) + " " +
-							" 1.0 " + ToString(index) + " 1 1\n"
-						);
-			}
-		}
-	} else
-	//------------------------------------------------------------------
-	// Check if it is material Glossy2
-	//------------------------------------------------------------------
-	if (dynamic_cast<Glossy2 *>(mat)) {
-		// Define the material
-		Glossy2 *glossy2 = dynamic_cast<Glossy2 *>(mat);
-		matInfo.matName = glossy2->GetName();
-
-		// Try to guess the exponent from the roughness of the surface in the u direction
-		Texture<float> *uroughnessTex = glossy2->GetNuTexture();
-		LOG(LUX_DEBUG, LUX_NOERROR) << "Nu Texture type: " << ToClassName(uroughnessTex);
-		ConstantFloatTexture *uroughnessFloatTex = dynamic_cast<ConstantFloatTexture *>(uroughnessTex);
-
-		float uroughness;
-		if (uroughnessFloatTex)
-			uroughness = Clamp((*uroughnessFloatTex)["value"].FloatValue(), 6e-3f, 1.f);
-		else {
-			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Glossy2 material with ConstantFloatTexture (i.e. not " <<
-				ToClassName(uroughnessFloatTex) << "). Ignoring unsupported texture and using 0.1 value.";
-			uroughness = .1f;
-		}
-		const float exponent = 10.f / uroughness;
-
-		// Check the type of texture
-		if (GetSLGMaterialTexInfo(slgScene, &matInfo, glossy2->GetKdTexture(), glossy2->GetKsTexture())) {
-			// Check if the material has already been defined
-			if (slgScene->materialIndices.count(matInfo.matName) < 1) {
-				slgScene->AddMaterials(
-						"scene.materials.mattemetal." + matInfo.matName +" = " +
-							ToString(matInfo.color0.r) + " " +
-							ToString(matInfo.color0.g) + " " +
-							ToString(matInfo.color0.b) + " " +
-							ToString(matInfo.color1.r) + " " +
-							ToString(matInfo.color1.g) + " " +
-							ToString(matInfo.color1.b) + " " +
-							ToString(exponent) + " 1\n"
-						);
-			}
-		} else {
-			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "Ignoring unsupported texture.";
-			return false;
-		}			
-	} else
-	//------------------------------------------------------------------
-	// Check if it is material Metal
-	//------------------------------------------------------------------
-	if (dynamic_cast<Metal *>(mat)) {
-		// Define the material
-		Metal *metal = dynamic_cast<Metal *>(mat);
-		matInfo.matName = metal->GetName();
+		matName = mirror->GetName();
 
 		// Check if the material has already been defined
-		if (slgScene->materialIndices.count(matInfo.matName) < 1) {
-			// Try to guess the exponent from the roughness of the surface in the u direction
-			Texture<float> *uroughnessTex = metal->GetNuTexture();
-			LOG(LUX_DEBUG, LUX_NOERROR) << "Nu Texture type: " << ToClassName(uroughnessTex);
-			ConstantFloatTexture *uroughnessFloatTex = dynamic_cast<ConstantFloatTexture *>(uroughnessTex);
+		if (!slgScene->matDefs.IsMaterialDefined(matName)) {
+			const string texName = GetSLGTexName(slgScene, mirror->GetTexture());
 
-			float uroughness;
-			if (uroughnessFloatTex)
-				uroughness = Clamp((*uroughnessFloatTex)["value"].FloatValue(), 6e-3f, 1.f);
-			else {
-				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Metal material with ConstantFloatTexture (i.e. not " <<
-					ToClassName(uroughnessFloatTex) << "). Ignoring unsupported texture and using 0.1 value.";
-				uroughness = .1f;
-			}
-			const float exponent = 10.f / uroughness;
-
-			// Retrieve the metal name
-			const string metalName = (*metal)["metalName"].StringValue();
-			if (metalName == "amorphous carbon")
-				slgScene->AddMaterials(
-					"scene.materials.metal." + matInfo.matName +" = 0.1 0.1 0.1 " +
-					ToString(exponent) + " 1\n"
-				);
-			else if (metalName == "silver")
-				slgScene->AddMaterials(
-					"scene.materials.mattemetal." + matInfo.matName +" = 0.075 0.075 0.075 0.9 0.9 0.9 " +
-					ToString(exponent) + " 1\n"
-				);
-			else if (metalName == "gold")
-				slgScene->AddMaterials(
-					"scene.materials.mattemetal." + matInfo.matName +" = 0.09 0.055 0.005 0.9 0.55 0.05 " +
-					ToString(exponent) + " 1\n"
-				);
-			else if (metalName == "copper")
-				slgScene->AddMaterials(
-					"scene.materials.mattemetal." + matInfo.matName +" = 0.2 0.125 0.1 0.9 0.7 0.6 " +
-					ToString(exponent) + " 1\n"
-				);
-			else {
-				if (metalName != "aluminium")
-					LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Metal material of name 'amorphous carbon', 'silver', 'gold', 'copper' and 'aluminium' (i.e. not " <<
-						metalName << "). Replacing an unsupported material with metal 'aluminium'.";
-
-				slgScene->AddMaterials(
-					"scene.materials.mattemetal." + matInfo.matName +" = 0.025 0.025 0.025 0.9 0.9 0.9 " +
-					ToString(exponent) + " 1\n"
-				);
-			}
+			const string matProp = "scene.materials." + matName +".type = mirror\n" +
+				"scene.materials." + matName +".emission = " + emissionTexName + "\n"
+				"scene.materials." + matName +".kd = " + texName + "\n";
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProp << "]";
+			slgScene->DefineMaterials(matProp);
 		}
 	} else
+//	//------------------------------------------------------------------
+//	// Check if it is material Glass
+//	//------------------------------------------------------------------
+//	if (dynamic_cast<Glass *>(mat)) {
+//		// Define the material
+//		Glass *glass = dynamic_cast<Glass *>(mat);
+//		matInfo.matName = glass->GetName();
+//
+//		// Index
+//		Texture<float> *indexTex = glass->GetIndexTexture();
+//		LOG(LUX_DEBUG, LUX_NOERROR) << "Index Texture type: " << ToClassName(indexTex);
+//		ConstantFloatTexture *indexFloatTex = dynamic_cast<ConstantFloatTexture *>(indexTex);
+//
+//		float index;
+//		if (indexFloatTex)
+//			index = (*indexFloatTex)["value"].FloatValue();
+//		else {
+//			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Glass material with ConstantFloatTexture (i.e. not " <<
+//				ToClassName(indexFloatTex) << "). Ignoring unsupported texture and using 1.41 value.";
+//			index = 1.41f;
+//		}
+//
+//		// Check the type of textures
+//		if (GetSLGMaterialTexInfo(slgScene, &matInfo, glass->GetKtTexture(), glass->GetKrTexture())) {
+//			// Check if it is architectural glass
+//			const bool architectural = (*glass)["architectural"].BoolValue();
+//			LOG(LUX_DEBUG, LUX_NOERROR) << "Architectural glass: " << architectural;
+//			// Check if the material has already been defined
+//			if (slgScene->materialIndices.count(matInfo.matName) < 1) {
+//				if (architectural) {
+//					slgScene->AddMaterials(
+//							"scene.materials.archglass." + matInfo.matName +" = " +
+//								ToString(matInfo.color1.r) + " " +
+//								ToString(matInfo.color1.g) + " " +
+//								ToString(matInfo.color1.b) + " " +
+//								ToString(matInfo.color0.r) + " " +
+//								ToString(matInfo.color0.g) + " " +
+//								ToString(matInfo.color0.b) + " " +
+//								" 1 1\n"
+//							);
+//				} else {
+//					slgScene->AddMaterials(
+//							"scene.materials.glass." + matInfo.matName +" = " +
+//								ToString(matInfo.color1.r) + " " +
+//								ToString(matInfo.color1.g) + " " +
+//								ToString(matInfo.color1.b) + " " +
+//								ToString(matInfo.color0.r) + " " +
+//								ToString(matInfo.color0.g) + " " +
+//								ToString(matInfo.color0.b) + " " +
+//								" 1.0 " + ToString(index) + " 1 1\n"
+//							);
+//				}
+//			}
+//		} else {
+//			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "Ignoring unsupported texture.";
+//			return false;
+//		}
+//	} else
+//	//------------------------------------------------------------------
+//	// Check if it is material Glass2
+//	//------------------------------------------------------------------
+//	if (dynamic_cast<Glass2 *>(mat)) {
+//		// Define the material
+//		Glass2 *glass2 = dynamic_cast<Glass2 *>(mat);
+//		matInfo.matName = glass2->GetName();
+//
+//		luxrays::Spectrum krRGB(1.f);
+//		luxrays::Spectrum ktRGB(1.f);
+//		float index = 1.41f;
+//
+//		const Volume *intVol = prim->GetInterior();
+//		LOG(LUX_DEBUG, LUX_NOERROR) << "Glass2 interior volume type: " << ToClassName(intVol);
+//
+//		if (dynamic_cast<const ClearVolume *>(intVol)) {
+//			const ClearVolume *clrVol = dynamic_cast<const ClearVolume *>(intVol);
+//
+//			// Try to extract the index from Volume information
+//			const Texture<FresnelGeneral> *fresnelTex = clrVol->GetFresnelTexture();
+//			LOG(LUX_DEBUG, LUX_NOERROR) << "FresnelGeneral Texture type: " << ToClassName(fresnelTex);
+//			if (dynamic_cast<const ConstantFresnelTexture *>(fresnelTex)) {
+//				const ConstantFresnelTexture *constFresnelTex = 
+//					dynamic_cast<const ConstantFresnelTexture *>(fresnelTex);
+//				index = (*constFresnelTex)["value"].FloatValue();
+//			}
+//
+//			// Kt
+//			const Texture<SWCSpectrum> *absorbTex = clrVol->GetAbsorptionTexture();
+//			LOG(LUX_DEBUG, LUX_NOERROR) << "Absorption Texture type: " << ToClassName(absorbTex);
+//			const ConstantRGBColorTexture *absorbRGBTex = dynamic_cast<const ConstantRGBColorTexture *>(absorbTex);
+//
+//			if (absorbRGBTex) {
+//				ktRGB.r = (*absorbRGBTex)["color.r"].FloatValue();
+//				ktRGB.g = (*absorbRGBTex)["color.g"].FloatValue();
+//				ktRGB.b = (*absorbRGBTex)["color.b"].FloatValue();
+//
+//				ktRGB = ktRGB * ktRGB;
+//				ktRGB.r = Clamp(ktRGB.r, 0.f, 20.f) / 20.f;
+//				ktRGB.g = Clamp(ktRGB.g, 0.f, 20.f) / 20.f;
+//				ktRGB.b = Clamp(ktRGB.b, 0.f, 20.f) / 20.f;
+//
+//				ktRGB.r = 1.f - ktRGB.r;
+//				ktRGB.g = 1.f - ktRGB.g;
+//				ktRGB.b = 1.f - ktRGB.b;
+//			} else {
+//				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Glass2 material with ConstantRGBColorTexture (i.e. not " <<
+//					ToClassName(absorbRGBTex) << "). Ignoring unsupported texture.";
+//			}
+//		}
+//
+//		// Check if it is architectural glass
+//		const bool architectural = (*glass2)["architectural"].BoolValue();
+//		LOG(LUX_DEBUG, LUX_NOERROR) << "Architectural glass: " << architectural;
+//		// Check if the material has already been defined
+//		if (slgScene->materialIndices.count(matInfo.matName) < 1) {
+//			if (architectural) {
+//				slgScene->AddMaterials(
+//						"scene.materials.archglass." + matInfo.matName +" = " +
+//							ToString(krRGB.r) + " " +
+//							ToString(krRGB.g) + " " +
+//							ToString(krRGB.b) + " " +
+//							ToString(ktRGB.r) + " " +
+//							ToString(ktRGB.g) + " " +
+//							ToString(ktRGB.b) + " " +
+//							" 1 1\n"
+//						);
+//			} else {
+//				slgScene->AddMaterials(
+//						"scene.materials.glass." + matInfo.matName +" = " +
+//							ToString(krRGB.r) + " " +
+//							ToString(krRGB.g) + " " +
+//							ToString(krRGB.b) + " " +
+//							ToString(ktRGB.r) + " " +
+//							ToString(ktRGB.g) + " " +
+//							ToString(ktRGB.b) + " " +
+//							" 1.0 " + ToString(index) + " 1 1\n"
+//						);
+//			}
+//		}
+//	} else
+//	//------------------------------------------------------------------
+//	// Check if it is material Glossy2
+//	//------------------------------------------------------------------
+//	if (dynamic_cast<Glossy2 *>(mat)) {
+//		// Define the material
+//		Glossy2 *glossy2 = dynamic_cast<Glossy2 *>(mat);
+//		matInfo.matName = glossy2->GetName();
+//
+//		// Try to guess the exponent from the roughness of the surface in the u direction
+//		Texture<float> *uroughnessTex = glossy2->GetNuTexture();
+//		LOG(LUX_DEBUG, LUX_NOERROR) << "Nu Texture type: " << ToClassName(uroughnessTex);
+//		ConstantFloatTexture *uroughnessFloatTex = dynamic_cast<ConstantFloatTexture *>(uroughnessTex);
+//
+//		float uroughness;
+//		if (uroughnessFloatTex)
+//			uroughness = Clamp((*uroughnessFloatTex)["value"].FloatValue(), 6e-3f, 1.f);
+//		else {
+//			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Glossy2 material with ConstantFloatTexture (i.e. not " <<
+//				ToClassName(uroughnessFloatTex) << "). Ignoring unsupported texture and using 0.1 value.";
+//			uroughness = .1f;
+//		}
+//		const float exponent = 10.f / uroughness;
+//
+//		// Check the type of texture
+//		if (GetSLGMaterialTexInfo(slgScene, &matInfo, glossy2->GetKdTexture(), glossy2->GetKsTexture())) {
+//			// Check if the material has already been defined
+//			if (slgScene->materialIndices.count(matInfo.matName) < 1) {
+//				slgScene->AddMaterials(
+//						"scene.materials.mattemetal." + matInfo.matName +" = " +
+//							ToString(matInfo.color0.r) + " " +
+//							ToString(matInfo.color0.g) + " " +
+//							ToString(matInfo.color0.b) + " " +
+//							ToString(matInfo.color1.r) + " " +
+//							ToString(matInfo.color1.g) + " " +
+//							ToString(matInfo.color1.b) + " " +
+//							ToString(exponent) + " 1\n"
+//						);
+//			}
+//		} else {
+//			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "Ignoring unsupported texture.";
+//			return false;
+//		}			
+//	} else
+//	//------------------------------------------------------------------
+//	// Check if it is material Metal
+//	//------------------------------------------------------------------
+//	if (dynamic_cast<Metal *>(mat)) {
+//		// Define the material
+//		Metal *metal = dynamic_cast<Metal *>(mat);
+//		matInfo.matName = metal->GetName();
+//
+//		// Check if the material has already been defined
+//		if (slgScene->materialIndices.count(matInfo.matName) < 1) {
+//			// Try to guess the exponent from the roughness of the surface in the u direction
+//			Texture<float> *uroughnessTex = metal->GetNuTexture();
+//			LOG(LUX_DEBUG, LUX_NOERROR) << "Nu Texture type: " << ToClassName(uroughnessTex);
+//			ConstantFloatTexture *uroughnessFloatTex = dynamic_cast<ConstantFloatTexture *>(uroughnessTex);
+//
+//			float uroughness;
+//			if (uroughnessFloatTex)
+//				uroughness = Clamp((*uroughnessFloatTex)["value"].FloatValue(), 6e-3f, 1.f);
+//			else {
+//				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Metal material with ConstantFloatTexture (i.e. not " <<
+//					ToClassName(uroughnessFloatTex) << "). Ignoring unsupported texture and using 0.1 value.";
+//				uroughness = .1f;
+//			}
+//			const float exponent = 10.f / uroughness;
+//
+//			// Retrieve the metal name
+//			const string metalName = (*metal)["metalName"].StringValue();
+//			if (metalName == "amorphous carbon")
+//				slgScene->AddMaterials(
+//					"scene.materials.metal." + matInfo.matName +" = 0.1 0.1 0.1 " +
+//					ToString(exponent) + " 1\n"
+//				);
+//			else if (metalName == "silver")
+//				slgScene->AddMaterials(
+//					"scene.materials.mattemetal." + matInfo.matName +" = 0.075 0.075 0.075 0.9 0.9 0.9 " +
+//					ToString(exponent) + " 1\n"
+//				);
+//			else if (metalName == "gold")
+//				slgScene->AddMaterials(
+//					"scene.materials.mattemetal." + matInfo.matName +" = 0.09 0.055 0.005 0.9 0.55 0.05 " +
+//					ToString(exponent) + " 1\n"
+//				);
+//			else if (metalName == "copper")
+//				slgScene->AddMaterials(
+//					"scene.materials.mattemetal." + matInfo.matName +" = 0.2 0.125 0.1 0.9 0.7 0.6 " +
+//					ToString(exponent) + " 1\n"
+//				);
+//			else {
+//				if (metalName != "aluminium")
+//					LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Metal material of name 'amorphous carbon', 'silver', 'gold', 'copper' and 'aluminium' (i.e. not " <<
+//						metalName << "). Replacing an unsupported material with metal 'aluminium'.";
+//
+//				slgScene->AddMaterials(
+//					"scene.materials.mattemetal." + matInfo.matName +" = 0.025 0.025 0.025 0.9 0.9 0.9 " +
+//					ToString(exponent) + " 1\n"
+//				);
+//			}
+//		}
+//	} else
 	//------------------------------------------------------------------
 	// Material is not supported, use the default one
 	//------------------------------------------------------------------
 	{
 		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Matte, Mirror, Glass, Glass2, Glossy2 and Metal material (i.e. not " <<
 			ToClassName(mat) << "). Replacing an unsupported material with matte.";
-		return false;
+		return "mat_default";
 	}
 
-	*info = matInfo;
-
-	return true;
+	return matName;
 }
 
 void SLGRenderer::ConvertEnvLights(luxrays::sdl::Scene *slgScene) {
@@ -1263,7 +1001,7 @@ void SLGRenderer::ConvertEnvLights(luxrays::sdl::Scene *slgScene) {
 				const float gamma = (*infiniteAreaLight)["gamma"].FloatValue();
 
 				MIPMap *mipMap = infiniteAreaLight->GetRadianceMap();
-				const string texName = GetSLGTexName(slgScene, mipMap, gamma, false);
+				const string texName = GetSLGImageMapName(slgScene, mipMap, gamma);
 
 				const std::string createInfiniteLightProp = "scene.infinitelight.file = " + texName + "\n"
 					"scene.infinitelight.gamma = " + ToString(gamma) + "\n"
@@ -1283,7 +1021,7 @@ void SLGRenderer::ConvertEnvLights(luxrays::sdl::Scene *slgScene) {
 				const float gamma = (*infiniteAreaLightIS)["gamma"].FloatValue();
 
 				MIPMap *mipMap = infiniteAreaLightIS->GetRadianceMap();
-				const string texName = GetSLGTexName(slgScene, mipMap, gamma, false);
+				const string texName = GetSLGImageMapName(slgScene, mipMap, gamma);
 
 				const std::string createInfiniteLightProp = "scene.infinitelight.file = " + texName + "\n"
 					"scene.infinitelight.gamma = " + ToString(gamma) + "\n"
@@ -1337,8 +1075,7 @@ void SLGRenderer::ConvertGeometry(luxrays::sdl::Scene *slgScene) {
 		// Instances require special care
 		if (dynamic_cast<const InstancePrimitive *>(prim)) {
 			const InstancePrimitive *instance = dynamic_cast<const InstancePrimitive *>(prim);
-			SLGMaterialInfo matInfo;
-			GetSLGMaterialInfo(slgScene, instance, &matInfo);
+			const string matName = GetSLGMaterialName(slgScene, instance);
 
 			const vector<boost::shared_ptr<Primitive> > &instanceSources = instance->GetInstanceSources();
 
@@ -1373,35 +1110,36 @@ void SLGRenderer::ConvertGeometry(luxrays::sdl::Scene *slgScene) {
 					const string meshName = "Mesh-" + ToString(*mesh);
 
 					std::ostringstream ss;
-					const string prefix = "scene.objects." + matInfo.matName + "." + objName;
+					const string prefix = "scene.objects." + objName;
+					ss << prefix << ".material = " << matName << "\n";
 					ss << prefix << ".transformation = " << transString << "\n";
-					if (matInfo.texMap.name != "") {
-						ss << prefix << ".texmap = " << matInfo.texMap.name << "\n";
-						ss << prefix << ".texmap.uscale = " << matInfo.texMap.uScale << "\n";
-						ss << prefix << ".texmap.vscale = " << matInfo.texMap.vScale << "\n";
-						ss << prefix << ".texmap.udelta = " << matInfo.texMap.uDelta << "\n";
-						ss << prefix << ".texmap.vdelta = " << matInfo.texMap.vDelta << "\n";
-					}
-					if (matInfo.bumpMap.name != "") {
-						ss << prefix << ".bumpmap = " << matInfo.bumpMap.name << "\n";
-						ss << prefix << ".bumpmap.uscale = " << matInfo.bumpMap.uScale << "\n";
-						ss << prefix << ".bumpmap.vscale = " << matInfo.bumpMap.vScale << "\n";
-						ss << prefix << ".bumpmap.udelta = " << matInfo.bumpMap.uDelta << "\n";
-						ss << prefix << ".bumpmap.vdelta = " << matInfo.bumpMap.vDelta << "\n";
-						ss << prefix << ".bumpmap.scale = " << matInfo.bumpMap.scale << "\n";
-					}
-					if (matInfo.normalMap.name != "") {
-						ss << prefix << ".normalmap = " << matInfo.normalMap.name << "\n";
-						ss << prefix << ".normalmap.uscale = " << matInfo.normalMap.uScale << "\n";
-						ss << prefix << ".normalmap.vscale = " << matInfo.normalMap.vScale << "\n";
-						ss << prefix << ".normalmap.udelta = " << matInfo.normalMap.uDelta << "\n";
-						ss << prefix << ".normalmap.vdelta = " << matInfo.normalMap.vDelta << "\n";
-					}
+//					if (matInfo.texMap.name != "") {
+//						ss << prefix << ".texmap = " << matInfo.texMap.name << "\n";
+//						ss << prefix << ".texmap.uscale = " << matInfo.texMap.uScale << "\n";
+//						ss << prefix << ".texmap.vscale = " << matInfo.texMap.vScale << "\n";
+//						ss << prefix << ".texmap.udelta = " << matInfo.texMap.uDelta << "\n";
+//						ss << prefix << ".texmap.vdelta = " << matInfo.texMap.vDelta << "\n";
+//					}
+//					if (matInfo.bumpMap.name != "") {
+//						ss << prefix << ".bumpmap = " << matInfo.bumpMap.name << "\n";
+//						ss << prefix << ".bumpmap.uscale = " << matInfo.bumpMap.uScale << "\n";
+//						ss << prefix << ".bumpmap.vscale = " << matInfo.bumpMap.vScale << "\n";
+//						ss << prefix << ".bumpmap.udelta = " << matInfo.bumpMap.uDelta << "\n";
+//						ss << prefix << ".bumpmap.vdelta = " << matInfo.bumpMap.vDelta << "\n";
+//						ss << prefix << ".bumpmap.scale = " << matInfo.bumpMap.scale << "\n";
+//					}
+//					if (matInfo.normalMap.name != "") {
+//						ss << prefix << ".normalmap = " << matInfo.normalMap.name << "\n";
+//						ss << prefix << ".normalmap.uscale = " << matInfo.normalMap.uScale << "\n";
+//						ss << prefix << ".normalmap.vscale = " << matInfo.normalMap.vScale << "\n";
+//						ss << prefix << ".normalmap.udelta = " << matInfo.normalMap.uDelta << "\n";
+//						ss << prefix << ".normalmap.vdelta = " << matInfo.normalMap.vDelta << "\n";
+//					}
 					ss << prefix << ".useplynormals = 1\n";
 
 					const std::string createObjProp = ss.str();
 					LOG(LUX_DEBUG, LUX_NOERROR) << "Creating object: [\n" << createObjProp << "]";
-					slgScene->AddObject(objName, matInfo.matName, meshName, createObjProp);
+					slgScene->AddObject(objName, meshName, createObjProp);
 				}
 			}
 		} else {
@@ -1416,8 +1154,7 @@ void SLGRenderer::ConvertGeometry(luxrays::sdl::Scene *slgScene) {
 				continue;
 
 			// Add the object
-			SLGMaterialInfo matInfo;
-			GetSLGMaterialInfo(slgScene, prim, &matInfo);
+			const string matName = GetSLGMaterialName(slgScene, prim);
 
 			for (vector<luxrays::ExtTriangleMesh *>::const_iterator mesh = meshList.begin(); mesh != meshList.end(); ++mesh) {
 				const string objName = "Object-" + ToString(prim) + "-" +
@@ -1425,39 +1162,40 @@ void SLGRenderer::ConvertGeometry(luxrays::sdl::Scene *slgScene) {
 				const string meshName = "Mesh-" + ToString(*mesh);
 				
 				std::ostringstream ss;
-				const string prefix = "scene.objects." + matInfo.matName + "." + objName;
-				if (matInfo.texMap.name != "") {
-					ss << prefix << ".texmap = " << matInfo.texMap.name << "\n";
-					ss << prefix << ".texmap.uscale = " << matInfo.texMap.uScale << "\n";
-					ss << prefix << ".texmap.vscale = " << matInfo.texMap.vScale << "\n";
-					ss << prefix << ".texmap.udelta = " << matInfo.texMap.uDelta << "\n";
-					ss << prefix << ".texmap.vdelta = " << matInfo.texMap.vDelta << "\n";
-				}
-				if (matInfo.bumpMap.name != "") {
-					ss << prefix << ".bumpmap = " << matInfo.bumpMap.name << "\n";
-					ss << prefix << ".bumpmap.uscale = " << matInfo.bumpMap.uScale << "\n";
-					ss << prefix << ".bumpmap.vscale = " << matInfo.bumpMap.vScale << "\n";
-					ss << prefix << ".bumpmap.udelta = " << matInfo.bumpMap.uDelta << "\n";
-					ss << prefix << ".bumpmap.vdelta = " << matInfo.bumpMap.vDelta << "\n";
-					ss << prefix << ".bumpmap.scale = " << matInfo.bumpMap.scale << "\n";
-				}
-				if (matInfo.normalMap.name != "") {
-					ss << prefix << ".normalmap = " << matInfo.normalMap.name << "\n";
-					ss << prefix << ".normalmap.uscale = " << matInfo.normalMap.uScale << "\n";
-					ss << prefix << ".normalmap.vscale = " << matInfo.normalMap.vScale << "\n";
-					ss << prefix << ".normalmap.udelta = " << matInfo.normalMap.uDelta << "\n";
-					ss << prefix << ".normalmap.vdelta = " << matInfo.normalMap.vDelta << "\n";
-				}
+				const string prefix = "scene.objects." + objName;
+				ss << prefix << ".material = " << matName << "\n";
+//				if (matInfo.texMap.name != "") {
+//					ss << prefix << ".texmap = " << matInfo.texMap.name << "\n";
+//					ss << prefix << ".texmap.uscale = " << matInfo.texMap.uScale << "\n";
+//					ss << prefix << ".texmap.vscale = " << matInfo.texMap.vScale << "\n";
+//					ss << prefix << ".texmap.udelta = " << matInfo.texMap.uDelta << "\n";
+//					ss << prefix << ".texmap.vdelta = " << matInfo.texMap.vDelta << "\n";
+//				}
+//				if (matInfo.bumpMap.name != "") {
+//					ss << prefix << ".bumpmap = " << matInfo.bumpMap.name << "\n";
+//					ss << prefix << ".bumpmap.uscale = " << matInfo.bumpMap.uScale << "\n";
+//					ss << prefix << ".bumpmap.vscale = " << matInfo.bumpMap.vScale << "\n";
+//					ss << prefix << ".bumpmap.udelta = " << matInfo.bumpMap.uDelta << "\n";
+//					ss << prefix << ".bumpmap.vdelta = " << matInfo.bumpMap.vDelta << "\n";
+//					ss << prefix << ".bumpmap.scale = " << matInfo.bumpMap.scale << "\n";
+//				}
+//				if (matInfo.normalMap.name != "") {
+//					ss << prefix << ".normalmap = " << matInfo.normalMap.name << "\n";
+//					ss << prefix << ".normalmap.uscale = " << matInfo.normalMap.uScale << "\n";
+//					ss << prefix << ".normalmap.vscale = " << matInfo.normalMap.vScale << "\n";
+//					ss << prefix << ".normalmap.udelta = " << matInfo.normalMap.uDelta << "\n";
+//					ss << prefix << ".normalmap.vdelta = " << matInfo.normalMap.vDelta << "\n";
+//				}
 				ss << prefix << ".useplynormals = 1\n";
 
 				const std::string createObjProp = ss.str();
 				LOG(LUX_DEBUG, LUX_NOERROR) << "Creating object: [\n" << createObjProp << "]";
-				slgScene->AddObject(objName, matInfo.matName, meshName, createObjProp);
+				slgScene->AddObject(objName, meshName, createObjProp);
 			}
 		}
 	}
 
-	if (slgScene->objects.size() == 0)
+	if (slgScene->meshDefs.GetSize() == 0)
 		throw std::runtime_error("SLGRenderer can not render an empty scene");
 }
 
@@ -1495,10 +1233,6 @@ void SLGRenderer::ConvertCamera(luxrays::sdl::Scene *slgScene) {
 			ToString(up.x) + " " +
 			ToString(up.y) + " " +
 			ToString(up.z) + "\n"
-		"scene.camera.up = " +
-			ToString(up.x) + " " +
-			ToString(up.y) + " " +
-			ToString(up.z) + "\n"
 		"scene.camera.screenwindow = " +
 			ToString((scene->camera)["ScreenWindow.0"].FloatValue()) + " " +
 			ToString((scene->camera)["ScreenWindow.1"].FloatValue()) + " " +
@@ -1520,7 +1254,7 @@ luxrays::sdl::Scene *SLGRenderer::CreateSLGScene(const luxrays::Properties &slgC
 
 	// Tell to the cache to not delete mesh data (they are pointed by Lux
 	// primitives too and they will be deleted by Lux Context)
-	slgScene->extMeshCache->SetDeleteMeshData(false);
+	slgScene->extMeshCache.SetDeleteMeshData(false);
 
 	//--------------------------------------------------------------------------
 	// Setup the camera
@@ -1532,8 +1266,9 @@ luxrays::sdl::Scene *SLGRenderer::CreateSLGScene(const luxrays::Properties &slgC
 	// Setup default material
 	//--------------------------------------------------------------------------
 
-	slgScene->AddMaterials(
-		"scene.materials.matte.mat_default = 0.75 0.75 0.75\n"
+	slgScene->DefineMaterials(
+		"scene.materials.mat_default.type = matte\n"
+		"scene.materials.mat_default.kd = 0.75 0.75 0.75\n"
 		);
 
 	//--------------------------------------------------------------------------

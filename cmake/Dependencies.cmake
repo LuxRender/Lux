@@ -50,10 +50,10 @@ ENDIF (LUXRAYS_INCLUDE_DIRS AND LUXRAYS_LIBRARY)
 
 IF(APPLE)
 	FIND_PATH(SLG_INCLUDE_DIRS NAMES slg.h PATHS ${OSX_DEPENDENCY_ROOT})
-	FIND_LIBRARY(SLG_LIBRARY libsmallluxgpu3.a ${OSX_DEPENDENCY_ROOT}/lib/LuxRays)
+	FIND_LIBRARY(SLG_LIBRARY libsmallluxgpu4.a ${OSX_DEPENDENCY_ROOT}/lib/LuxRays)
 ELSE(APPLE)
-	FIND_PATH(SLG_INCLUDE_DIRS NAMES slg.h PATHS ../luxrays/include ${LuxRays_HOME}/samples/smallluxgpu3 )
-	FIND_LIBRARY(SLG_LIBRARY smallluxgpu3 PATHS ../luxrays/lib ${LuxRays_HOME}/lib PATH_SUFFIXES "" release relwithdebinfo minsizerel dist )
+	FIND_PATH(SLG_INCLUDE_DIRS NAMES slg.h PATHS ../luxrays/include ${LuxRays_HOME}/samples/smallluxgpu4 )
+	FIND_LIBRARY(SLG_LIBRARY smallluxgpu4 PATHS ../luxrays/lib ${LuxRays_HOME}/lib PATH_SUFFIXES "" release relwithdebinfo minsizerel dist )
 ENDIF(APPLE)
 
 IF (SLG_INCLUDE_DIRS AND SLG_LIBRARY)
