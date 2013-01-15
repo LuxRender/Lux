@@ -42,6 +42,9 @@ public:
 		const Intersection &isect,
 		const DifferentialGeometry &dgShading) const;
 
+	Texture<SWCSpectrum> *GetKrTexture() { return Kr.get(); }
+	Texture<SWCSpectrum> *GetKtTexture() { return Kt.get(); }
+
 	static Material * CreateMaterial(const Transform &xform,
 		const ParamSet &mp);
 private:

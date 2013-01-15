@@ -65,6 +65,7 @@
 #include "materials/glass2.h"
 #include "materials/glossy2.h"
 #include "materials/metal.h"
+#include "materials/mattetranslucent.h"
 
 #include "volumes/clearvolume.h"
 
@@ -696,11 +697,13 @@ string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive *prim) 
 			string matProp;
 			if (architectural) {
 				matProp = "scene.materials." + matName +".type = archglass\n"
+						"scene.materials." + matName +".emission = " + emissionTexName + "\n"
 						"scene.materials." + matName +".kr = " + krTexName + "\n"
 						"scene.materials." + matName +".kt = " + ktTexName + "\n";
 			} else {
 				const string indexTexName = GetSLGTexName(slgScene, glass->GetIndexTexture());
 				matProp = "scene.materials." + matName +".type = glass\n"
+						"scene.materials." + matName +".emission = " + emissionTexName + "\n"
 						"scene.materials." + matName +".kr = " + krTexName + "\n"
 						"scene.materials." + matName +".kt = " + ktTexName + "\n"
 						"scene.materials." + matName +".ioroutside = 1.0\n"
@@ -769,6 +772,7 @@ string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive *prim) 
 			string matProp;
 			if (architectural) {
 				matProp = "scene.materials." + matName +".type = archglass\n"
+						"scene.materials." + matName +".emission = " + emissionTexName + "\n"
 						"scene.materials." + matName +".kr = " +
 							ToString(krRGB.r) + " " +
 							ToString(krRGB.g) + " " +
@@ -779,6 +783,7 @@ string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive *prim) 
 							ToString(ktRGB.b) + "\n";
 			} else {
 				matProp = "scene.materials." + matName +".type = glass\n"
+						"scene.materials." + matName +".emission = " + emissionTexName + "\n"
 						"scene.materials." + matName +".kr = " +
 							ToString(krRGB.r) + " " +
 							ToString(krRGB.g) + " " +
@@ -827,6 +832,7 @@ string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive *prim) 
 			if (metalName == "amorphous carbon")
 				matProp =
 					"scene.materials." + matName +".type = metal\n"
+					"scene.materials." + matName +".emission = " + emissionTexName + "\n"
 					"scene.materials." + matName +".kr = 0.1 0.1 0.1\n"
 					"scene.materials." + matName +".exp = " +ToString(exponent) + "\n";
 			else if (metalName == "silver")
@@ -837,6 +843,7 @@ string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive *prim) 
 					"scene.materials." + matName + "_mat2.type = matte\n"
 					"scene.materials." + matName + "_mat2.kd = 0.75 0.75 0.75\n"
 					"scene.materials." + matName +".type = mix\n"
+					"scene.materials." + matName +".emission = " + emissionTexName + "\n"
 					"scene.materials." + matName +".material1 = " + matName + "_mat1\n"
 					"scene.materials." + matName +".material2 = " + matName + "_mat2\n"
 					"scene.materials." + matName +".amount = 0.5\n";
@@ -848,6 +855,7 @@ string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive *prim) 
 					"scene.materials." + matName + "_mat2.type = matte\n"
 					"scene.materials." + matName + "_mat2.kd = 0.09 0.055 0.005\n"
 					"scene.materials." + matName +".type = mix\n"
+					"scene.materials." + matName +".emission = " + emissionTexName + "\n"
 					"scene.materials." + matName +".material1 = " + matName + "_mat1\n"
 					"scene.materials." + matName +".material2 = " + matName + "_mat2\n"
 					"scene.materials." + matName +".amount = 0.5\n";
@@ -859,6 +867,7 @@ string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive *prim) 
 					"scene.materials." + matName + "_mat2.type = matte\n"
 					"scene.materials." + matName + "_mat2.kd = 0.4 0.25 0.2\n"
 					"scene.materials." + matName +".type = mix\n"
+					"scene.materials." + matName +".emission = " + emissionTexName + "\n"
 					"scene.materials." + matName +".material1 = " + matName + "_mat1\n"
 					"scene.materials." + matName +".material2 = " + matName + "_mat2\n"
 					"scene.materials." + matName +".amount = 0.5\n";
@@ -874,6 +883,7 @@ string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive *prim) 
 					"scene.materials." + matName + "_mat2.type = matte\n"
 					"scene.materials." + matName + "_mat2.kd = 0.75 0.75 0.75\n"
 					"scene.materials." + matName +".type = mix\n"
+					"scene.materials." + matName +".emission = " + emissionTexName + "\n"
 					"scene.materials." + matName +".material1 = " + matName + "_mat1\n"
 					"scene.materials." + matName +".material2 = " + matName + "_mat2\n"
 					"scene.materials." + matName +".amount = 0.5\n";
@@ -886,10 +896,31 @@ string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive *prim) 
 		}
 	} else
 	//------------------------------------------------------------------
+	// Check if it is material MatteTranslucent
+	//------------------------------------------------------------------
+	if (dynamic_cast<MatteTranslucent *>(mat)) {
+		// Define the material
+		MatteTranslucent *matteTranslucent = dynamic_cast<MatteTranslucent *>(mat);
+		matName = matteTranslucent->GetName();
+
+		// Check if the material has already been defined
+		if (!slgScene->matDefs.IsMaterialDefined(matName)) {
+			const string krTexName = GetSLGTexName(slgScene, matteTranslucent->GetKrTexture());
+			const string ktTexName = GetSLGTexName(slgScene, matteTranslucent->GetKtTexture());
+
+			const string matProp = "scene.materials." + matName +".type = mattetranslucent\n"
+				"scene.materials." + matName +".emission = " + emissionTexName + "\n"
+				"scene.materials." + matName +".kr = " + krTexName + "\n"
+				"scene.materials." + matName +".kt = " + ktTexName + "\n";
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProp << "]";
+			slgScene->DefineMaterials(matProp);
+		}
+	} else
+	//------------------------------------------------------------------
 	// Material is not supported, use the default one
 	//------------------------------------------------------------------
 	{
-		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Matte, Mirror, Glass, Glass2, Glossy2 and Metal material (i.e. not " <<
+		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Matte, Mirror, Glass, Glass2, Metal and MatteTranslucent material (i.e. not " <<
 			ToClassName(mat) << "). Replacing an unsupported material with matte.";
 		return "mat_default";
 	}
