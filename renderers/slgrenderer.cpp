@@ -793,68 +793,98 @@ string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive *prim) 
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProp << "]";
 			slgScene->DefineMaterials(matProp);
 
-			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer doesn't support Glass2, trying an emulation with Glass1 material.";
+			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer doesn't support Glass2 material, trying an emulation with Glass1.";
 		}
 	} else
-//	//------------------------------------------------------------------
-//	// Check if it is material Metal
-//	//------------------------------------------------------------------
-//	if (dynamic_cast<Metal *>(mat)) {
-//		// Define the material
-//		Metal *metal = dynamic_cast<Metal *>(mat);
-//		matInfo.matName = metal->GetName();
-//
-//		// Check if the material has already been defined
-//		if (slgScene->materialIndices.count(matInfo.matName) < 1) {
-//			// Try to guess the exponent from the roughness of the surface in the u direction
-//			Texture<float> *uroughnessTex = metal->GetNuTexture();
-//			LOG(LUX_DEBUG, LUX_NOERROR) << "Nu Texture type: " << ToClassName(uroughnessTex);
-//			ConstantFloatTexture *uroughnessFloatTex = dynamic_cast<ConstantFloatTexture *>(uroughnessTex);
-//
-//			float uroughness;
-//			if (uroughnessFloatTex)
-//				uroughness = Clamp((*uroughnessFloatTex)["value"].FloatValue(), 6e-3f, 1.f);
-//			else {
-//				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Metal material with ConstantFloatTexture (i.e. not " <<
-//					ToClassName(uroughnessFloatTex) << "). Ignoring unsupported texture and using 0.1 value.";
-//				uroughness = .1f;
-//			}
-//			const float exponent = 10.f / uroughness;
-//
-//			// Retrieve the metal name
-//			const string metalName = (*metal)["metalName"].StringValue();
-//			if (metalName == "amorphous carbon")
-//				slgScene->AddMaterials(
-//					"scene.materials.metal." + matInfo.matName +" = 0.1 0.1 0.1 " +
-//					ToString(exponent) + " 1\n"
-//				);
-//			else if (metalName == "silver")
-//				slgScene->AddMaterials(
-//					"scene.materials.mattemetal." + matInfo.matName +" = 0.075 0.075 0.075 0.9 0.9 0.9 " +
-//					ToString(exponent) + " 1\n"
-//				);
-//			else if (metalName == "gold")
-//				slgScene->AddMaterials(
-//					"scene.materials.mattemetal." + matInfo.matName +" = 0.09 0.055 0.005 0.9 0.55 0.05 " +
-//					ToString(exponent) + " 1\n"
-//				);
-//			else if (metalName == "copper")
-//				slgScene->AddMaterials(
-//					"scene.materials.mattemetal." + matInfo.matName +" = 0.2 0.125 0.1 0.9 0.7 0.6 " +
-//					ToString(exponent) + " 1\n"
-//				);
-//			else {
-//				if (metalName != "aluminium")
-//					LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Metal material of name 'amorphous carbon', 'silver', 'gold', 'copper' and 'aluminium' (i.e. not " <<
-//						metalName << "). Replacing an unsupported material with metal 'aluminium'.";
-//
-//				slgScene->AddMaterials(
-//					"scene.materials.mattemetal." + matInfo.matName +" = 0.025 0.025 0.025 0.9 0.9 0.9 " +
-//					ToString(exponent) + " 1\n"
-//				);
-//			}
-//		}
-//	} else
+	//------------------------------------------------------------------
+	// Check if it is material Metal
+	//------------------------------------------------------------------
+	if (dynamic_cast<Metal *>(mat)) {
+		// Define the material
+		Metal *metal = dynamic_cast<Metal *>(mat);
+		matName = metal->GetName();
+
+		// Check if the material has already been defined
+		if (!slgScene->matDefs.IsMaterialDefined(matName)) {
+			// Try to guess the exponent from the roughness of the surface in the u direction
+			Texture<float> *uroughnessTex = metal->GetNuTexture();
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Nu Texture type: " << ToClassName(uroughnessTex);
+			ConstantFloatTexture *uroughnessFloatTex = dynamic_cast<ConstantFloatTexture *>(uroughnessTex);
+
+			float uroughness;
+			if (uroughnessFloatTex)
+				uroughness = Clamp((*uroughnessFloatTex)["value"].FloatValue(), 6e-3f, 1.f);
+			else {
+				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Metal material with ConstantFloatTexture (i.e. not " <<
+					ToClassName(uroughnessFloatTex) << "). Ignoring unsupported texture and using 0.1 value.";
+				uroughness = .1f;
+			}
+			const float exponent = 1.f / uroughness;
+
+			string matProp;
+			// Retrieve the metal name
+			const string metalName = (*metal)["metalName"].StringValue();
+			if (metalName == "amorphous carbon")
+				matProp =
+					"scene.materials." + matName +".type = metal\n"
+					"scene.materials." + matName +".kr = 0.1 0.1 0.1\n"
+					"scene.materials." + matName +".exp = " +ToString(exponent) + "\n";
+			else if (metalName == "silver")
+				matProp =
+					"scene.materials." + matName + "_mat1.type = metal\n"
+					"scene.materials." + matName + "_mat1.kr = 0.9 0.9 0.9\n"
+					"scene.materials." + matName + "_mat1.exp = " +ToString(exponent) + "\n"
+					"scene.materials." + matName + "_mat2.type = matte\n"
+					"scene.materials." + matName + "_mat2.kd = 0.75 0.75 0.75\n"
+					"scene.materials." + matName +".type = mix\n"
+					"scene.materials." + matName +".material1 = " + matName + "_mat1\n"
+					"scene.materials." + matName +".material2 = " + matName + "_mat2\n"
+					"scene.materials." + matName +".amount = 0.5\n";
+			else if (metalName == "gold")
+				matProp =
+					"scene.materials." + matName + "_mat1.type = metal\n"
+					"scene.materials." + matName + "_mat1.kr = 0.9 0.55 0.05\n"
+					"scene.materials." + matName + "_mat1.exp = " +ToString(exponent) + "\n"
+					"scene.materials." + matName + "_mat2.type = matte\n"
+					"scene.materials." + matName + "_mat2.kd = 0.09 0.055 0.005\n"
+					"scene.materials." + matName +".type = mix\n"
+					"scene.materials." + matName +".material1 = " + matName + "_mat1\n"
+					"scene.materials." + matName +".material2 = " + matName + "_mat2\n"
+					"scene.materials." + matName +".amount = 0.5\n";
+			else if (metalName == "copper")
+				matProp =
+					"scene.materials." + matName + "_mat1.type = metal\n"
+					"scene.materials." + matName + "_mat1.kr = 0.9 0.7 0.6\n"
+					"scene.materials." + matName + "_mat1.exp = " +ToString(exponent) + "\n"
+					"scene.materials." + matName + "_mat2.type = matte\n"
+					"scene.materials." + matName + "_mat2.kd = 0.4 0.25 0.2\n"
+					"scene.materials." + matName +".type = mix\n"
+					"scene.materials." + matName +".material1 = " + matName + "_mat1\n"
+					"scene.materials." + matName +".material2 = " + matName + "_mat2\n"
+					"scene.materials." + matName +".amount = 0.5\n";
+			else {
+				if (metalName != "aluminium")
+					LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Metal material of name 'amorphous carbon', 'silver', 'gold', 'copper' and 'aluminium' (i.e. not " <<
+						metalName << "). Replacing an unsupported material with metal 'aluminium'.";
+
+				matProp =
+					"scene.materials." + matName + "_mat1.type = metal\n"
+					"scene.materials." + matName + "_mat1.kr = 0.9 0.9 0.9\n"
+					"scene.materials." + matName + "_mat1.exp = " +ToString(exponent) + "\n"
+					"scene.materials." + matName + "_mat2.type = matte\n"
+					"scene.materials." + matName + "_mat2.kd = 0.75 0.75 0.75\n"
+					"scene.materials." + matName +".type = mix\n"
+					"scene.materials." + matName +".material1 = " + matName + "_mat1\n"
+					"scene.materials." + matName +".material2 = " + matName + "_mat2\n"
+					"scene.materials." + matName +".amount = 0.5\n";
+			}
+
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProp << "]";
+			slgScene->DefineMaterials(matProp);
+
+			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer doesn't support Metal material, trying an emulation with SLG Metal.";
+		}
+	} else
 	//------------------------------------------------------------------
 	// Material is not supported, use the default one
 	//------------------------------------------------------------------
