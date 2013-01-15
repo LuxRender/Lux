@@ -305,7 +305,7 @@ static string GetSLGDefaultImageMap(luxrays::sdl::Scene *slgScene) {
 	return "imagemap_default";
 }
 
-string SLGRenderer::GetSLGImageMapName(luxrays::sdl::Scene *slgScene,
+string GetSLGImageMapName(luxrays::sdl::Scene *slgScene,
 		const MIPMap *mipMap, const float gamma) {
 	if (!mipMap)
 		return GetSLGDefaultImageMap(slgScene);
@@ -424,16 +424,16 @@ string SLGRenderer::GetSLGImageMapName(luxrays::sdl::Scene *slgScene,
 //	return false;
 //}
 
-string SLGRenderer::GetSLGTexName(luxrays::sdl::Scene *slgScene,
-		const Texture<SWCSpectrum> *tex) {
+template<class T> string GetSLGTexName(luxrays::sdl::Scene *slgScene,
+		const Texture<T> *tex) {
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Texture type: " << ToClassName(tex);
 
 	const string texName = tex->GetName();
 	// Check if the texture has already been defined
 	if (!slgScene->texDefs.IsTextureDefined(texName)) {
-		const ConstantRGBColorTexture *constRGBTex = dynamic_cast<const ConstantRGBColorTexture *>(tex);
-		const ImageSpectrumTexture *imgTex = dynamic_cast<const ImageSpectrumTexture *>(tex);
-		if (imgTex) {
+		if (dynamic_cast<const ImageSpectrumTexture *>(tex)) {
+			const ImageSpectrumTexture *imgTex = dynamic_cast<const ImageSpectrumTexture *>(tex);
+
 			float uScale = 1.f;
 			float vScale = 1.f;
 			float uDelta = 0.f;
@@ -470,7 +470,48 @@ string SLGRenderer::GetSLGTexName(luxrays::sdl::Scene *slgScene,
 						ToString(vDelta) + "\n"
 
 					);
-		} else if (constRGBTex) {
+		} else if (dynamic_cast<const ImageFloatTexture *>(tex)) {
+			const ImageFloatTexture *imgTex = dynamic_cast<const ImageFloatTexture *>(tex);
+
+			float uScale = 1.f;
+			float vScale = 1.f;
+			float uDelta = 0.f;
+			float vDelta = 0.f;
+
+			// Check the mapping
+			const TextureMapping2D *mapping = imgTex->GetTextureMapping2D();
+			if (mapping) {
+				if (dynamic_cast<const UVMapping2D *>(mapping)) {
+					const UVMapping2D *uvMapping2D = dynamic_cast<const UVMapping2D *>(mapping);
+					uScale = uvMapping2D->GetUScale();
+					vScale = uvMapping2D->GetVScale();
+					uDelta = uvMapping2D->GetUDelta();
+					vDelta = uvMapping2D->GetVDelta();
+				} else {
+					LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only image maps with UVMapping2D (i.e. not " <<
+							ToClassName(mapping) << "). Ignoring the mapping.";				
+				}
+			}
+
+			const TexInfo &texInfo = imgTex->GetInfo();
+			const string imageMapName = GetSLGImageMapName(slgScene, imgTex->GetMIPMap(), texInfo.gamma);
+
+			slgScene->DefineTextures(
+					"scene.textures." + texName + ".type = imagemap\n"
+					"scene.textures." + texName + ".file = " + imageMapName + "\n"
+					"scene.textures." + texName + ".gamma = " + ToString(texInfo.gamma) + "\n"
+					"scene.textures." + texName + ".gain = " + ToString(texInfo.gain) + "\n"
+					"scene.textures." + texName + ".uvscale = " +
+						ToString(uScale) + " " +
+						ToString(vScale) + "\n"
+					"scene.textures." + texName + ".uvdelta = " +
+						ToString(uDelta) + " " +
+						ToString(vDelta) + "\n"
+
+					);
+		} else if (dynamic_cast<const ConstantRGBColorTexture *>(tex)) {
+			const ConstantRGBColorTexture *constRGBTex = dynamic_cast<const ConstantRGBColorTexture *>(tex);
+
 			slgScene->DefineTextures(
 					"scene.textures." + texName + ".type = constfloat3\n"
 					"scene.textures." + texName + ".value = " +
@@ -478,8 +519,16 @@ string SLGRenderer::GetSLGTexName(luxrays::sdl::Scene *slgScene,
 						ToString((*constRGBTex)["color.g"].FloatValue()) + " " +
 						ToString((*constRGBTex)["color.b"].FloatValue()) + "\n"
 					);
+		} else if (dynamic_cast<const ConstantFloatTexture *>(tex)) {
+			const ConstantFloatTexture *constFloatTex = dynamic_cast<const ConstantFloatTexture *>(tex);
+
+			slgScene->DefineTextures(
+					"scene.textures." + texName + ".type = constfloat1\n"
+					"scene.textures." + texName + ".value = " +
+						ToString((*constFloatTex)["value"].FloatValue()) + "\n"
+					);
 		} else {
-			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only materials with ConstantRGBColorTexture or ImageSpectrumTexture (i.e. not " <<
+			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only materials with ImageSpectrumTexture, ImageFloatTexture, ConstantRGBColorTexture or ConstantFloatTexture (i.e. not " <<
 					ToClassName(tex) << ").";
 
 			slgScene->DefineTextures(
@@ -492,7 +541,7 @@ string SLGRenderer::GetSLGTexName(luxrays::sdl::Scene *slgScene,
 	return texName;
 }
 
-string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive *prim) {
+string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive *prim) {
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Primitive type: " << ToClassName(prim);
 	
 	Material *mat = NULL;
@@ -620,71 +669,47 @@ string SLGRenderer::GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Prim
 		if (!slgScene->matDefs.IsMaterialDefined(matName)) {
 			const string texName = GetSLGTexName(slgScene, mirror->GetTexture());
 
-			const string matProp = "scene.materials." + matName +".type = mirror\n" +
+			const string matProp = "scene.materials." + matName +".type = mirror\n"
 				"scene.materials." + matName +".emission = " + emissionTexName + "\n"
 				"scene.materials." + matName +".kd = " + texName + "\n";
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProp << "]";
 			slgScene->DefineMaterials(matProp);
 		}
 	} else
-//	//------------------------------------------------------------------
-//	// Check if it is material Glass
-//	//------------------------------------------------------------------
-//	if (dynamic_cast<Glass *>(mat)) {
-//		// Define the material
-//		Glass *glass = dynamic_cast<Glass *>(mat);
-//		matInfo.matName = glass->GetName();
-//
-//		// Index
-//		Texture<float> *indexTex = glass->GetIndexTexture();
-//		LOG(LUX_DEBUG, LUX_NOERROR) << "Index Texture type: " << ToClassName(indexTex);
-//		ConstantFloatTexture *indexFloatTex = dynamic_cast<ConstantFloatTexture *>(indexTex);
-//
-//		float index;
-//		if (indexFloatTex)
-//			index = (*indexFloatTex)["value"].FloatValue();
-//		else {
-//			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Glass material with ConstantFloatTexture (i.e. not " <<
-//				ToClassName(indexFloatTex) << "). Ignoring unsupported texture and using 1.41 value.";
-//			index = 1.41f;
-//		}
-//
-//		// Check the type of textures
-//		if (GetSLGMaterialTexInfo(slgScene, &matInfo, glass->GetKtTexture(), glass->GetKrTexture())) {
-//			// Check if it is architectural glass
-//			const bool architectural = (*glass)["architectural"].BoolValue();
-//			LOG(LUX_DEBUG, LUX_NOERROR) << "Architectural glass: " << architectural;
-//			// Check if the material has already been defined
-//			if (slgScene->materialIndices.count(matInfo.matName) < 1) {
-//				if (architectural) {
-//					slgScene->AddMaterials(
-//							"scene.materials.archglass." + matInfo.matName +" = " +
-//								ToString(matInfo.color1.r) + " " +
-//								ToString(matInfo.color1.g) + " " +
-//								ToString(matInfo.color1.b) + " " +
-//								ToString(matInfo.color0.r) + " " +
-//								ToString(matInfo.color0.g) + " " +
-//								ToString(matInfo.color0.b) + " " +
-//								" 1 1\n"
-//							);
-//				} else {
-//					slgScene->AddMaterials(
-//							"scene.materials.glass." + matInfo.matName +" = " +
-//								ToString(matInfo.color1.r) + " " +
-//								ToString(matInfo.color1.g) + " " +
-//								ToString(matInfo.color1.b) + " " +
-//								ToString(matInfo.color0.r) + " " +
-//								ToString(matInfo.color0.g) + " " +
-//								ToString(matInfo.color0.b) + " " +
-//								" 1.0 " + ToString(index) + " 1 1\n"
-//							);
-//				}
-//			}
-//		} else {
-//			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "Ignoring unsupported texture.";
-//			return false;
-//		}
-//	} else
+	//------------------------------------------------------------------
+	// Check if it is material Glass
+	//------------------------------------------------------------------
+	if (dynamic_cast<Glass *>(mat)) {
+		// Define the material
+		Glass *glass = dynamic_cast<Glass *>(mat);
+		matName = glass->GetName();
+
+		// Textures
+		const string ktTexName = GetSLGTexName(slgScene, glass->GetKtTexture());
+		const string krTexName = GetSLGTexName(slgScene, glass->GetKrTexture());
+
+		// Check if it is architectural glass
+		const bool architectural = (*glass)["architectural"].BoolValue();
+		LOG(LUX_DEBUG, LUX_NOERROR) << "Architectural glass: " << architectural;
+		// Check if the material has already been defined
+		if (!slgScene->matDefs.IsMaterialDefined(matName)) {
+			string matProp;
+			if (architectural) {
+				matProp = "scene.materials." + matName +".type = archglass\n"
+						"scene.materials." + matName +".kr = " + krTexName + "\n"
+						"scene.materials." + matName +".kt = " + ktTexName + "\n";
+			} else {
+				const string indexTexName = GetSLGTexName(slgScene, glass->GetIndexTexture());
+				matProp = "scene.materials." + matName +".type = glass\n"
+						"scene.materials." + matName +".kr = " + krTexName + "\n"
+						"scene.materials." + matName +".kt = " + ktTexName + "\n"
+						"scene.materials." + matName +".ioroutside = 1.0\n"
+						"scene.materials." + matName +".iorinside = " + indexTexName + "\n";
+			}
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProp << "]";
+			slgScene->DefineMaterials(matProp);
+		}
+	} else
 //	//------------------------------------------------------------------
 //	// Check if it is material Glass2
 //	//------------------------------------------------------------------

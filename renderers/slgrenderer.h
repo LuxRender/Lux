@@ -125,10 +125,6 @@ public:
 	static Renderer *CreateRenderer(const ParamSet &params);
 
 private:
-	string GetSLGImageMapName(luxrays::sdl::Scene *slgScene, const MIPMap *mipMap, const float gamma);
-	string GetSLGTexName(luxrays::sdl::Scene *slgScene, const Texture<SWCSpectrum> *tex);
-	string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive *prim);
-
 	void ConvertCamera(luxrays::sdl::Scene *slgScene);
 	void ConvertEnvLights(luxrays::sdl::Scene *slgScene);
 	vector<luxrays::ExtTriangleMesh *> DefinePrimitive(luxrays::sdl::Scene *slgScene, const Primitive *prim);
