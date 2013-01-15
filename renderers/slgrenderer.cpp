@@ -579,11 +579,10 @@ string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive *prim) 
 
 		// Check the type of texture used
 		LOG(LUX_DEBUG, LUX_NOERROR) << "AreaLight texture type: " << ToClassName(tex);
-		ConstantRGBColorTexture *constRGBTex = dynamic_cast<ConstantRGBColorTexture *>(tex);
-		BlackBodyTexture *blackBodyTexture = dynamic_cast<BlackBodyTexture *>(tex);
-
 		luxrays::Spectrum emission;
-		if (constRGBTex) {
+		if (dynamic_cast<ConstantRGBColorTexture *>(tex)) {
+			ConstantRGBColorTexture *constRGBTex = dynamic_cast<ConstantRGBColorTexture *>(tex);
+
 			emission = luxrays::Spectrum(
 					(*constRGBTex)["color.r"].FloatValue(),
 					(*constRGBTex)["color.g"].FloatValue(),
@@ -595,8 +594,8 @@ string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive *prim) 
 				emission *= gain * gainFactor;
 			else
 				emission *= gain;
-		} else if (blackBodyTexture) {
-			luxrays::Spectrum emission(1.f);
+		} else if (dynamic_cast<BlackBodyTexture *>(tex)) {
+			emission = luxrays::Spectrum(1.f);
 
 			const float gainFactor = power * efficacy;
 			if (gainFactor > 0.f && !isinf(gainFactor))
@@ -609,6 +608,7 @@ string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive *prim) 
 		}
 
 		emissionTexName = ToString(emission.r) + " " + ToString(emission.g) + " " + ToString(emission.b);
+		LOG(LUX_DEBUG, LUX_NOERROR) << "AreaLight emission: " << emissionTexName;
 
 		const Primitive *p = alPrim->GetPrimitive().get();
 		if (dynamic_cast<const Shape *>(p)) {
