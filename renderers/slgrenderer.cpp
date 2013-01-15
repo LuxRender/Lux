@@ -797,49 +797,6 @@ string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive *prim) 
 		}
 	} else
 //	//------------------------------------------------------------------
-//	// Check if it is material Glossy2
-//	//------------------------------------------------------------------
-//	if (dynamic_cast<Glossy2 *>(mat)) {
-//		// Define the material
-//		Glossy2 *glossy2 = dynamic_cast<Glossy2 *>(mat);
-//		matInfo.matName = glossy2->GetName();
-//
-//		// Try to guess the exponent from the roughness of the surface in the u direction
-//		Texture<float> *uroughnessTex = glossy2->GetNuTexture();
-//		LOG(LUX_DEBUG, LUX_NOERROR) << "Nu Texture type: " << ToClassName(uroughnessTex);
-//		ConstantFloatTexture *uroughnessFloatTex = dynamic_cast<ConstantFloatTexture *>(uroughnessTex);
-//
-//		float uroughness;
-//		if (uroughnessFloatTex)
-//			uroughness = Clamp((*uroughnessFloatTex)["value"].FloatValue(), 6e-3f, 1.f);
-//		else {
-//			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Glossy2 material with ConstantFloatTexture (i.e. not " <<
-//				ToClassName(uroughnessFloatTex) << "). Ignoring unsupported texture and using 0.1 value.";
-//			uroughness = .1f;
-//		}
-//		const float exponent = 10.f / uroughness;
-//
-//		// Check the type of texture
-//		if (GetSLGMaterialTexInfo(slgScene, &matInfo, glossy2->GetKdTexture(), glossy2->GetKsTexture())) {
-//			// Check if the material has already been defined
-//			if (slgScene->materialIndices.count(matInfo.matName) < 1) {
-//				slgScene->AddMaterials(
-//						"scene.materials.mattemetal." + matInfo.matName +" = " +
-//							ToString(matInfo.color0.r) + " " +
-//							ToString(matInfo.color0.g) + " " +
-//							ToString(matInfo.color0.b) + " " +
-//							ToString(matInfo.color1.r) + " " +
-//							ToString(matInfo.color1.g) + " " +
-//							ToString(matInfo.color1.b) + " " +
-//							ToString(exponent) + " 1\n"
-//						);
-//			}
-//		} else {
-//			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "Ignoring unsupported texture.";
-//			return false;
-//		}			
-//	} else
-//	//------------------------------------------------------------------
 //	// Check if it is material Metal
 //	//------------------------------------------------------------------
 //	if (dynamic_cast<Metal *>(mat)) {
