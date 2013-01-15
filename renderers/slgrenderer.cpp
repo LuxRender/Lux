@@ -710,87 +710,92 @@ string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive *prim) 
 			slgScene->DefineMaterials(matProp);
 		}
 	} else
-//	//------------------------------------------------------------------
-//	// Check if it is material Glass2
-//	//------------------------------------------------------------------
-//	if (dynamic_cast<Glass2 *>(mat)) {
-//		// Define the material
-//		Glass2 *glass2 = dynamic_cast<Glass2 *>(mat);
-//		matInfo.matName = glass2->GetName();
-//
-//		luxrays::Spectrum krRGB(1.f);
-//		luxrays::Spectrum ktRGB(1.f);
-//		float index = 1.41f;
-//
-//		const Volume *intVol = prim->GetInterior();
-//		LOG(LUX_DEBUG, LUX_NOERROR) << "Glass2 interior volume type: " << ToClassName(intVol);
-//
-//		if (dynamic_cast<const ClearVolume *>(intVol)) {
-//			const ClearVolume *clrVol = dynamic_cast<const ClearVolume *>(intVol);
-//
-//			// Try to extract the index from Volume information
-//			const Texture<FresnelGeneral> *fresnelTex = clrVol->GetFresnelTexture();
-//			LOG(LUX_DEBUG, LUX_NOERROR) << "FresnelGeneral Texture type: " << ToClassName(fresnelTex);
-//			if (dynamic_cast<const ConstantFresnelTexture *>(fresnelTex)) {
-//				const ConstantFresnelTexture *constFresnelTex = 
-//					dynamic_cast<const ConstantFresnelTexture *>(fresnelTex);
-//				index = (*constFresnelTex)["value"].FloatValue();
-//			}
-//
-//			// Kt
-//			const Texture<SWCSpectrum> *absorbTex = clrVol->GetAbsorptionTexture();
-//			LOG(LUX_DEBUG, LUX_NOERROR) << "Absorption Texture type: " << ToClassName(absorbTex);
-//			const ConstantRGBColorTexture *absorbRGBTex = dynamic_cast<const ConstantRGBColorTexture *>(absorbTex);
-//
-//			if (absorbRGBTex) {
-//				ktRGB.r = (*absorbRGBTex)["color.r"].FloatValue();
-//				ktRGB.g = (*absorbRGBTex)["color.g"].FloatValue();
-//				ktRGB.b = (*absorbRGBTex)["color.b"].FloatValue();
-//
-//				ktRGB = ktRGB * ktRGB;
-//				ktRGB.r = Clamp(ktRGB.r, 0.f, 20.f) / 20.f;
-//				ktRGB.g = Clamp(ktRGB.g, 0.f, 20.f) / 20.f;
-//				ktRGB.b = Clamp(ktRGB.b, 0.f, 20.f) / 20.f;
-//
-//				ktRGB.r = 1.f - ktRGB.r;
-//				ktRGB.g = 1.f - ktRGB.g;
-//				ktRGB.b = 1.f - ktRGB.b;
-//			} else {
-//				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Glass2 material with ConstantRGBColorTexture (i.e. not " <<
-//					ToClassName(absorbRGBTex) << "). Ignoring unsupported texture.";
-//			}
-//		}
-//
-//		// Check if it is architectural glass
-//		const bool architectural = (*glass2)["architectural"].BoolValue();
-//		LOG(LUX_DEBUG, LUX_NOERROR) << "Architectural glass: " << architectural;
-//		// Check if the material has already been defined
-//		if (slgScene->materialIndices.count(matInfo.matName) < 1) {
-//			if (architectural) {
-//				slgScene->AddMaterials(
-//						"scene.materials.archglass." + matInfo.matName +" = " +
-//							ToString(krRGB.r) + " " +
-//							ToString(krRGB.g) + " " +
-//							ToString(krRGB.b) + " " +
-//							ToString(ktRGB.r) + " " +
-//							ToString(ktRGB.g) + " " +
-//							ToString(ktRGB.b) + " " +
-//							" 1 1\n"
-//						);
-//			} else {
-//				slgScene->AddMaterials(
-//						"scene.materials.glass." + matInfo.matName +" = " +
-//							ToString(krRGB.r) + " " +
-//							ToString(krRGB.g) + " " +
-//							ToString(krRGB.b) + " " +
-//							ToString(ktRGB.r) + " " +
-//							ToString(ktRGB.g) + " " +
-//							ToString(ktRGB.b) + " " +
-//							" 1.0 " + ToString(index) + " 1 1\n"
-//						);
-//			}
-//		}
-//	} else
+	//------------------------------------------------------------------
+	// Check if it is material Glass2
+	//------------------------------------------------------------------
+	if (dynamic_cast<Glass2 *>(mat)) {
+		// Define the material
+		Glass2 *glass2 = dynamic_cast<Glass2 *>(mat);
+		matName = glass2->GetName();
+
+		luxrays::Spectrum krRGB(1.f);
+		luxrays::Spectrum ktRGB(1.f);
+		float index = 1.41f;
+
+		const Volume *intVol = prim->GetInterior();
+		LOG(LUX_DEBUG, LUX_NOERROR) << "Glass2 interior volume type: " << ToClassName(intVol);
+
+		if (dynamic_cast<const ClearVolume *>(intVol)) {
+			const ClearVolume *clrVol = dynamic_cast<const ClearVolume *>(intVol);
+
+			// Try to extract the index from Volume information
+			const Texture<FresnelGeneral> *fresnelTex = clrVol->GetFresnelTexture();
+			LOG(LUX_DEBUG, LUX_NOERROR) << "FresnelGeneral Texture type: " << ToClassName(fresnelTex);
+			if (dynamic_cast<const ConstantFresnelTexture *>(fresnelTex)) {
+				const ConstantFresnelTexture *constFresnelTex = 
+					dynamic_cast<const ConstantFresnelTexture *>(fresnelTex);
+				index = (*constFresnelTex)["value"].FloatValue();
+			}
+
+			// Kt
+			const Texture<SWCSpectrum> *absorbTex = clrVol->GetAbsorptionTexture();
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Absorption Texture type: " << ToClassName(absorbTex);
+			const ConstantRGBColorTexture *absorbRGBTex = dynamic_cast<const ConstantRGBColorTexture *>(absorbTex);
+
+			if (absorbRGBTex) {
+				ktRGB.r = (*absorbRGBTex)["color.r"].FloatValue();
+				ktRGB.g = (*absorbRGBTex)["color.g"].FloatValue();
+				ktRGB.b = (*absorbRGBTex)["color.b"].FloatValue();
+
+				ktRGB = ktRGB * ktRGB;
+				ktRGB.r = Clamp(ktRGB.r, 0.f, 20.f) / 20.f;
+				ktRGB.g = Clamp(ktRGB.g, 0.f, 20.f) / 20.f;
+				ktRGB.b = Clamp(ktRGB.b, 0.f, 20.f) / 20.f;
+
+				ktRGB.r = 1.f - ktRGB.r;
+				ktRGB.g = 1.f - ktRGB.g;
+				ktRGB.b = 1.f - ktRGB.b;
+			} else {
+				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Glass2 material with ConstantRGBColorTexture (i.e. not " <<
+					ToClassName(absorbRGBTex) << "). Ignoring unsupported texture.";
+			}
+		}
+
+		// Check if it is architectural glass
+		const bool architectural = (*glass2)["architectural"].BoolValue();
+		LOG(LUX_DEBUG, LUX_NOERROR) << "Architectural glass: " << architectural;
+		// Check if the material has already been defined
+		if (!slgScene->matDefs.IsMaterialDefined(matName)) {
+			string matProp;
+			if (architectural) {
+				matProp = "scene.materials." + matName +".type = archglass\n"
+						"scene.materials." + matName +".kr = " +
+							ToString(krRGB.r) + " " +
+							ToString(krRGB.g) + " " +
+							ToString(krRGB.b) + "\n"
+						"scene.materials." + matName +".kt = " +
+							ToString(ktRGB.r) + " " +
+							ToString(ktRGB.g) + " " +
+							ToString(ktRGB.b) + "\n";
+			} else {
+				matProp = "scene.materials." + matName +".type = glass\n"
+						"scene.materials." + matName +".kr = " +
+							ToString(krRGB.r) + " " +
+							ToString(krRGB.g) + " " +
+							ToString(krRGB.b) + "\n"
+						"scene.materials." + matName +".kt = " +
+							ToString(ktRGB.r) + " " +
+							ToString(ktRGB.g) + " " +
+							ToString(ktRGB.b) + "\n"
+						"scene.materials." + matName +".ioroutside = 1.0\n"
+						"scene.materials." + matName +".iorinside = " + ToString(index) + "\n";
+			}
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProp << "]";
+			slgScene->DefineMaterials(matProp);
+
+			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer doesn't support Glass2, trying an emulation with Glass1 material.";
+		}
+	} else
 //	//------------------------------------------------------------------
 //	// Check if it is material Glossy2
 //	//------------------------------------------------------------------
