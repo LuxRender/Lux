@@ -348,83 +348,6 @@ string GetSLGImageMapName(luxrays::sdl::Scene *slgScene,
 
 //------------------------------------------------------------------------------
 
-//bool SLGRenderer::GetSLGBumpNormalMapInfo(luxrays::sdl::Scene *slgScene, SLGMaterialInfo *matInfo,
-//		const Texture<float> *tex) {
-//	LOG(LUX_DEBUG, LUX_NOERROR) << "Bump/Normal map type: " << ToClassName(tex);
-//
-//	if (!tex)
-//		return true;
-//
-//	if (dynamic_cast<const ScaleTexture<float, float> *>(tex)) {
-//		// ScaleTexture<float, float> is for bump mapping
-//		const ScaleTexture<float, float> *scaleTex = dynamic_cast<const ScaleTexture<float, float> *>(tex);
-//
-//		LOG(LUX_DEBUG, LUX_NOERROR) << "Bump map scale type: " << ToClassName(scaleTex->GetTex1());
-//		const ConstantFloatTexture *constFloatTex = dynamic_cast<const ConstantFloatTexture *>(scaleTex->GetTex1());
-//		LOG(LUX_DEBUG, LUX_NOERROR) << "Bump map bump type: " << ToClassName(scaleTex->GetTex2());
-//		const ImageFloatTexture *imgTex = dynamic_cast<const ImageFloatTexture *>(scaleTex->GetTex2());
-//
-//		if (constFloatTex && imgTex) {
-//			// Check the mapping
-//			const TextureMapping2D *mapping = imgTex->GetTextureMapping2D();
-//			if (mapping) {
-//				if (dynamic_cast<const UVMapping2D *>(mapping)) {
-//					const UVMapping2D *uvMapping2D = dynamic_cast<const UVMapping2D *>(mapping);
-//					matInfo->bumpMap.uScale = uvMapping2D->GetUScale();
-//					matInfo->bumpMap.vScale = uvMapping2D->GetVScale();
-//					matInfo->bumpMap.uDelta = uvMapping2D->GetUDelta();
-//					matInfo->bumpMap.vDelta = uvMapping2D->GetVDelta();
-//				} else {
-//					LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only bump maps with UVMapping2D (i.e. not " <<
-//							ToClassName(mapping) << "). Ignoring the mapping.";				
-//				}
-//			}
-//
-//			matInfo->bumpMap.name = GetSLGImageMapName(slgScene, imgTex->GetMIPMap(), imgTex->GetInfo().gamma, false);
-//			matInfo->bumpMap.scale = 500.f * (*constFloatTex)["value"].FloatValue();
-//			return true;
-//		} else {
-//			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only bump mapping with ScaleTexture<float, float> of ConstantFloatTexture and ImageFloatTexture (i.e. not " <<
-//				ToClassName(scaleTex->GetTex1()) << " and " << ToClassName(scaleTex->GetTex2()) << ").";
-//			return false;
-//		}
-//	} else if (dynamic_cast<const NormalMapTexture *>(tex)) {
-//		// NormalMapTexture is for normal mapping
-//		const NormalMapTexture *normalTex = dynamic_cast<const NormalMapTexture *>(tex);
-//
-//		LOG(LUX_DEBUG, LUX_NOERROR) << "Normal map type: " << ToClassName(normalTex);
-//
-//		if (normalTex) {
-//			// Check the mapping
-//			const TextureMapping2D *mapping = normalTex->GetTextureMapping2D();
-//			if (mapping) {
-//				if (dynamic_cast<const UVMapping2D *>(mapping)) {
-//					const UVMapping2D *uvMapping2D = dynamic_cast<const UVMapping2D *>(mapping);
-//					matInfo->normalMap.uScale = uvMapping2D->GetUScale();
-//					matInfo->normalMap.vScale = uvMapping2D->GetVScale();
-//					matInfo->normalMap.uDelta = uvMapping2D->GetUDelta();
-//					matInfo->normalMap.vDelta = uvMapping2D->GetVDelta();
-//				} else {
-//					LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only normal maps with UVMapping2D (i.e. not " <<
-//							ToClassName(mapping) << "). Ignoring the mapping.";				
-//				}
-//			}
-//
-//			matInfo->normalMap.name = GetSLGImageMapName(slgScene, normalTex->GetMIPMap(), normalTex->GetInfo().gamma, false);
-//			return true;
-//		} else {
-//			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only normal mapping with NormalMapTexture (i.e. not " <<
-//				ToClassName(normalTex) << ").";
-//			return false;
-//		}
-//	}
-//
-//	LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only bump mapping with ScaleTexture<float, float> and normal mapping with NormalMapTexture (i.e. not " <<
-//		ToClassName(tex) << ").";
-//
-//	return false;
-//}
-
 template<class T> string GetSLGTexName(luxrays::sdl::Scene *slgScene,
 		const Texture<T> *tex) {
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Texture type: " << ToClassName(tex);
@@ -432,6 +355,7 @@ template<class T> string GetSLGTexName(luxrays::sdl::Scene *slgScene,
 	const string texName = tex->GetName();
 	// Check if the texture has already been defined
 	if (!slgScene->texDefs.IsTextureDefined(texName)) {
+		string texProp;
 		if (dynamic_cast<const ImageSpectrumTexture *>(tex)) {
 			const ImageSpectrumTexture *imgTex = dynamic_cast<const ImageSpectrumTexture *>(tex);
 
@@ -458,8 +382,7 @@ template<class T> string GetSLGTexName(luxrays::sdl::Scene *slgScene,
 			const TexInfo &texInfo = imgTex->GetInfo();
 			const string imageMapName = GetSLGImageMapName(slgScene, imgTex->GetMIPMap(), texInfo.gamma);
 
-			slgScene->DefineTextures(
-					"scene.textures." + texName + ".type = imagemap\n"
+			texProp = "scene.textures." + texName + ".type = imagemap\n"
 					"scene.textures." + texName + ".file = " + imageMapName + "\n"
 					"scene.textures." + texName + ".gamma = " + ToString(texInfo.gamma) + "\n"
 					"scene.textures." + texName + ".gain = " + ToString(texInfo.gain) + "\n"
@@ -468,9 +391,7 @@ template<class T> string GetSLGTexName(luxrays::sdl::Scene *slgScene,
 						ToString(vScale) + "\n"
 					"scene.textures." + texName + ".uvdelta = " +
 						ToString(uDelta) + " " +
-						ToString(vDelta) + "\n"
-
-					);
+						ToString(vDelta) + "\n";
 		} else if (dynamic_cast<const ImageFloatTexture *>(tex)) {
 			const ImageFloatTexture *imgTex = dynamic_cast<const ImageFloatTexture *>(tex);
 
@@ -497,8 +418,7 @@ template<class T> string GetSLGTexName(luxrays::sdl::Scene *slgScene,
 			const TexInfo &texInfo = imgTex->GetInfo();
 			const string imageMapName = GetSLGImageMapName(slgScene, imgTex->GetMIPMap(), texInfo.gamma);
 
-			slgScene->DefineTextures(
-					"scene.textures." + texName + ".type = imagemap\n"
+			texProp = "scene.textures." + texName + ".type = imagemap\n"
 					"scene.textures." + texName + ".file = " + imageMapName + "\n"
 					"scene.textures." + texName + ".gamma = " + ToString(texInfo.gamma) + "\n"
 					"scene.textures." + texName + ".gain = " + ToString(texInfo.gain) + "\n"
@@ -507,36 +427,83 @@ template<class T> string GetSLGTexName(luxrays::sdl::Scene *slgScene,
 						ToString(vScale) + "\n"
 					"scene.textures." + texName + ".uvdelta = " +
 						ToString(uDelta) + " " +
-						ToString(vDelta) + "\n"
-
-					);
+						ToString(vDelta) + "\n";
 		} else if (dynamic_cast<const ConstantRGBColorTexture *>(tex)) {
 			const ConstantRGBColorTexture *constRGBTex = dynamic_cast<const ConstantRGBColorTexture *>(tex);
 
-			slgScene->DefineTextures(
-					"scene.textures." + texName + ".type = constfloat3\n"
+			texProp = "scene.textures." + texName + ".type = constfloat3\n"
 					"scene.textures." + texName + ".value = " +
 						ToString((*constRGBTex)["color.r"].FloatValue()) + " " +
 						ToString((*constRGBTex)["color.g"].FloatValue()) + " " +
-						ToString((*constRGBTex)["color.b"].FloatValue()) + "\n"
-					);
+						ToString((*constRGBTex)["color.b"].FloatValue()) + "\n";
 		} else if (dynamic_cast<const ConstantFloatTexture *>(tex)) {
 			const ConstantFloatTexture *constFloatTex = dynamic_cast<const ConstantFloatTexture *>(tex);
 
-			slgScene->DefineTextures(
-					"scene.textures." + texName + ".type = constfloat1\n"
+			texProp = "scene.textures." + texName + ".type = constfloat1\n"
 					"scene.textures." + texName + ".value = " +
-						ToString((*constFloatTex)["value"].FloatValue()) + "\n"
-					);
+						ToString((*constFloatTex)["value"].FloatValue()) + "\n";
+		} else if (dynamic_cast<const ScaleTexture<float, T> *>(tex)) {
+			const ScaleTexture<float, T> *scaleTex = dynamic_cast<const ScaleTexture<float, T> *>(tex);
+			const string tex1Name = GetSLGTexName(slgScene, scaleTex->GetTex1());
+			const string tex2Name = GetSLGTexName(slgScene, scaleTex->GetTex2());
+
+			texProp = "scene.textures." + texName + ".type = scale\n"
+					"scene.textures." + texName + ".texture1 = " + tex1Name + "\n"
+					"scene.textures." + texName + ".texture2 = " + tex2Name + "\n";
+		} else if (dynamic_cast<const ScaleTexture<SWCSpectrum, T> *>(tex)) {
+			const ScaleTexture<SWCSpectrum, T> *scaleTex = dynamic_cast<const ScaleTexture<SWCSpectrum, T> *>(tex);
+			const string tex1Name = GetSLGTexName(slgScene, scaleTex->GetTex1());
+			const string tex2Name = GetSLGTexName(slgScene, scaleTex->GetTex2());
+
+			texProp = "scene.textures." + texName + ".type = scale\n"
+					"scene.textures." + texName + ".texture1 = " + tex1Name + "\n"
+					"scene.textures." + texName + ".texture2 = " + tex2Name + "\n";
+		} else if (dynamic_cast<const NormalMapTexture *>(tex)) {
+			const NormalMapTexture *normalTex = dynamic_cast<const NormalMapTexture *>(tex);
+
+			float uScale = 1.f;
+			float vScale = 1.f;
+			float uDelta = 0.f;
+			float vDelta = 0.f;
+
+			// Check the mapping
+			const TextureMapping2D *mapping = normalTex->GetTextureMapping2D();
+			if (mapping) {
+				if (dynamic_cast<const UVMapping2D *>(mapping)) {
+					const UVMapping2D *uvMapping2D = dynamic_cast<const UVMapping2D *>(mapping);
+					uScale = uvMapping2D->GetUScale();
+					vScale = uvMapping2D->GetVScale();
+					uDelta = uvMapping2D->GetUDelta();
+					vDelta = uvMapping2D->GetVDelta();
+				} else {
+					LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only image maps with UVMapping2D (i.e. not " <<
+							ToClassName(mapping) << "). Ignoring the mapping.";				
+				}
+			}
+
+			const TexInfo &texInfo = normalTex->GetInfo();
+			const string imageMapName = GetSLGImageMapName(slgScene, normalTex->GetMIPMap(), texInfo.gamma);
+
+			texProp = "scene.textures." + texName + ".type = imagemap\n"
+					"scene.textures." + texName + ".file = " + imageMapName + "\n"
+					"scene.textures." + texName + ".gamma = " + ToString(texInfo.gamma) + "\n"
+					"scene.textures." + texName + ".gain = " + ToString(texInfo.gain) + "\n"
+					"scene.textures." + texName + ".uvscale = " +
+						ToString(uScale) + " " +
+						ToString(vScale) + "\n"
+					"scene.textures." + texName + ".uvdelta = " +
+						ToString(uDelta) + " " +
+						ToString(vDelta) + "\n";
 		} else {
-			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only materials with ImageSpectrumTexture, ImageFloatTexture, ConstantRGBColorTexture or ConstantFloatTexture (i.e. not " <<
+			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only materials with ImageSpectrumTexture, ImageFloatTexture, ConstantRGBColorTexture, ConstantFloatTexture or ScaleTexture (i.e. not " <<
 					ToClassName(tex) << ").";
 
-			slgScene->DefineTextures(
-					"scene.textures." + texName + ".type = constfloat1\n"
-					"scene.textures." + texName + ".value = 1.0\n"
-					);
+			texProp = "scene.textures." + texName + ".type = constfloat1\n"
+					"scene.textures." + texName + ".value = 1.0\n";
 		}
+
+		LOG(LUX_DEBUG, LUX_NOERROR) << "Defining texture " << texName << ": [\n" << texProp << "]";
+		slgScene->DefineTextures(texProp);
 	}
 
 	return texName;
@@ -549,23 +516,23 @@ string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive *prim) 
 	string matName = "mat_default";
 	string emissionTexName = "0.0 0.0 0.0";
 
-	//----------------------------------------------------------------------
+	//--------------------------------------------------------------------------
 	// Check if it is a Shape
-	//----------------------------------------------------------------------
+	//--------------------------------------------------------------------------
 	if (dynamic_cast<const Shape *>(prim)) {
 		const Shape *shape = dynamic_cast<const Shape *>(prim);
 		mat = shape->GetMaterial();
 	} else
-	//----------------------------------------------------------------------
+	//--------------------------------------------------------------------------
 	// Check if it is an InstancePrimitive
-	//----------------------------------------------------------------------
+	//--------------------------------------------------------------------------
 	if (dynamic_cast<const InstancePrimitive *>(prim)) {
 		const InstancePrimitive *instance = dynamic_cast<const InstancePrimitive *>(prim);
 		mat = instance->GetMaterial();
 	} else
-	//----------------------------------------------------------------------
+	//--------------------------------------------------------------------------
 	// Check if it is an AreaLight
-	//----------------------------------------------------------------------
+	//--------------------------------------------------------------------------
 	if (dynamic_cast<const AreaLightPrimitive *>(prim)) {
 		const AreaLightPrimitive *alPrim = dynamic_cast<const AreaLightPrimitive *>(prim);
 		AreaLight *al = alPrim->GetAreaLight();
@@ -622,9 +589,9 @@ string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive *prim) 
 			return "mat_default";
 		}
 	} else
-	//----------------------------------------------------------------------
+	//--------------------------------------------------------------------------
 	// Primitive is not supported, use the default material
-	//----------------------------------------------------------------------
+	//--------------------------------------------------------------------------
 	{
 		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer doesn't support material conversion for primitive " << ToClassName(prim);
 		return "mat_default";
@@ -633,9 +600,23 @@ string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive *prim) 
 	if (!mat)
 		return "mat_default";
 
+	//--------------------------------------------------------------------------
 	// Retrieve bump/normal mapping information too
-//	if (mat)
-//		GetSLGBumpNormalMapInfo(slgScene, &matInfo, mat->bumpMap.get());
+	//--------------------------------------------------------------------------
+	string bumpTex = "";
+	string normalTex = "";
+	const Texture<float> *bumpNormalTex = mat->bumpMap.get();
+	if (bumpNormalTex) {
+		LOG(LUX_DEBUG, LUX_NOERROR) << "Bump/Normal map type: " << ToClassName(bumpNormalTex);
+
+		if (dynamic_cast<const NormalMapTexture *>(bumpNormalTex)) {
+			// NormalMapTexture is for normal mapping
+			normalTex = GetSLGTexName(slgScene, bumpNormalTex);
+		} else {
+			// Anything else (i.e. ScaleTexture<float, float>) is for bump mapping
+			bumpTex = GetSLGTexName(slgScene, bumpNormalTex);
+		}
+	}
 
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Material type: " << ToClassName(mat);
 
@@ -651,8 +632,10 @@ string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive *prim) 
 		if (!slgScene->matDefs.IsMaterialDefined(matName)) {
 			const string texName = GetSLGTexName(slgScene, matte->GetTexture());
 
-			const string matProp = "scene.materials." + matName +".type = matte\n" +
+			const string matProp = "scene.materials." + matName +".type = matte\n"
 				"scene.materials." + matName +".emission = " + emissionTexName + "\n"
+				+ ((bumpTex != "") ? ("scene.materials." + matName +".bumptex = " + bumpTex + "\n") : "") +
+				((normalTex != "") ? ("scene.materials." + matName +".normaltex = " + normalTex + "\n") : "") +
 				"scene.materials." + matName +".kd = " + texName + "\n";
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProp << "]";
 			slgScene->DefineMaterials(matProp);
@@ -1161,28 +1144,6 @@ void SLGRenderer::ConvertGeometry(luxrays::sdl::Scene *slgScene) {
 					const string prefix = "scene.objects." + objName;
 					ss << prefix << ".material = " << matName << "\n";
 					ss << prefix << ".transformation = " << transString << "\n";
-//					if (matInfo.texMap.name != "") {
-//						ss << prefix << ".texmap = " << matInfo.texMap.name << "\n";
-//						ss << prefix << ".texmap.uscale = " << matInfo.texMap.uScale << "\n";
-//						ss << prefix << ".texmap.vscale = " << matInfo.texMap.vScale << "\n";
-//						ss << prefix << ".texmap.udelta = " << matInfo.texMap.uDelta << "\n";
-//						ss << prefix << ".texmap.vdelta = " << matInfo.texMap.vDelta << "\n";
-//					}
-//					if (matInfo.bumpMap.name != "") {
-//						ss << prefix << ".bumpmap = " << matInfo.bumpMap.name << "\n";
-//						ss << prefix << ".bumpmap.uscale = " << matInfo.bumpMap.uScale << "\n";
-//						ss << prefix << ".bumpmap.vscale = " << matInfo.bumpMap.vScale << "\n";
-//						ss << prefix << ".bumpmap.udelta = " << matInfo.bumpMap.uDelta << "\n";
-//						ss << prefix << ".bumpmap.vdelta = " << matInfo.bumpMap.vDelta << "\n";
-//						ss << prefix << ".bumpmap.scale = " << matInfo.bumpMap.scale << "\n";
-//					}
-//					if (matInfo.normalMap.name != "") {
-//						ss << prefix << ".normalmap = " << matInfo.normalMap.name << "\n";
-//						ss << prefix << ".normalmap.uscale = " << matInfo.normalMap.uScale << "\n";
-//						ss << prefix << ".normalmap.vscale = " << matInfo.normalMap.vScale << "\n";
-//						ss << prefix << ".normalmap.udelta = " << matInfo.normalMap.uDelta << "\n";
-//						ss << prefix << ".normalmap.vdelta = " << matInfo.normalMap.vDelta << "\n";
-//					}
 					ss << prefix << ".useplynormals = 1\n";
 
 					const std::string createObjProp = ss.str();
@@ -1212,28 +1173,6 @@ void SLGRenderer::ConvertGeometry(luxrays::sdl::Scene *slgScene) {
 				std::ostringstream ss;
 				const string prefix = "scene.objects." + objName;
 				ss << prefix << ".material = " << matName << "\n";
-//				if (matInfo.texMap.name != "") {
-//					ss << prefix << ".texmap = " << matInfo.texMap.name << "\n";
-//					ss << prefix << ".texmap.uscale = " << matInfo.texMap.uScale << "\n";
-//					ss << prefix << ".texmap.vscale = " << matInfo.texMap.vScale << "\n";
-//					ss << prefix << ".texmap.udelta = " << matInfo.texMap.uDelta << "\n";
-//					ss << prefix << ".texmap.vdelta = " << matInfo.texMap.vDelta << "\n";
-//				}
-//				if (matInfo.bumpMap.name != "") {
-//					ss << prefix << ".bumpmap = " << matInfo.bumpMap.name << "\n";
-//					ss << prefix << ".bumpmap.uscale = " << matInfo.bumpMap.uScale << "\n";
-//					ss << prefix << ".bumpmap.vscale = " << matInfo.bumpMap.vScale << "\n";
-//					ss << prefix << ".bumpmap.udelta = " << matInfo.bumpMap.uDelta << "\n";
-//					ss << prefix << ".bumpmap.vdelta = " << matInfo.bumpMap.vDelta << "\n";
-//					ss << prefix << ".bumpmap.scale = " << matInfo.bumpMap.scale << "\n";
-//				}
-//				if (matInfo.normalMap.name != "") {
-//					ss << prefix << ".normalmap = " << matInfo.normalMap.name << "\n";
-//					ss << prefix << ".normalmap.uscale = " << matInfo.normalMap.uScale << "\n";
-//					ss << prefix << ".normalmap.vscale = " << matInfo.normalMap.vScale << "\n";
-//					ss << prefix << ".normalmap.udelta = " << matInfo.normalMap.uDelta << "\n";
-//					ss << prefix << ".normalmap.vdelta = " << matInfo.normalMap.vDelta << "\n";
-//				}
 				ss << prefix << ".useplynormals = 1\n";
 
 				const std::string createObjProp = ss.str();
