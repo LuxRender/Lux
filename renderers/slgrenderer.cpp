@@ -66,6 +66,7 @@
 #include "materials/glossy2.h"
 #include "materials/metal.h"
 #include "materials/mattetranslucent.h"
+#include "materials/null.h"
 
 #include "volumes/clearvolume.h"
 
@@ -655,7 +656,7 @@ string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive *prim) 
 
 			const string matProp = "scene.materials." + matName +".type = mirror\n"
 				"scene.materials." + matName +".emission = " + emissionTexName + "\n"
-				"scene.materials." + matName +".kd = " + texName + "\n";
+				"scene.materials." + matName +".kr = " + texName + "\n";
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProp << "]";
 			slgScene->DefineMaterials(matProp);
 		}
@@ -895,6 +896,22 @@ string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive *prim) 
 				"scene.materials." + matName +".emission = " + emissionTexName + "\n"
 				"scene.materials." + matName +".kr = " + krTexName + "\n"
 				"scene.materials." + matName +".kt = " + ktTexName + "\n";
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProp << "]";
+			slgScene->DefineMaterials(matProp);
+		}
+	} else
+	//------------------------------------------------------------------
+	// Check if it is material Null
+	//------------------------------------------------------------------
+	if (dynamic_cast<Null *>(mat)) {
+		// Define the material
+		Null *matteTranslucent = dynamic_cast<Null *>(mat);
+		matName = matteTranslucent->GetName();
+
+		// Check if the material has already been defined
+		if (!slgScene->matDefs.IsMaterialDefined(matName)) {
+			const string matProp = "scene.materials." + matName +".type = null\n"
+				"scene.materials." + matName +".emission = " + emissionTexName + "\n";
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProp << "]";
 			slgScene->DefineMaterials(matProp);
 		}
