@@ -67,6 +67,7 @@
 #include "materials/metal.h"
 #include "materials/mattetranslucent.h"
 #include "materials/null.h"
+#include "materials/mixmaterial.h"
 
 #include "volumes/clearvolume.h"
 
@@ -307,7 +308,7 @@ static string GetSLGDefaultImageMap(luxrays::sdl::Scene *slgScene) {
 	return "imagemap_default";
 }
 
-string GetSLGImageMapName(luxrays::sdl::Scene *slgScene,
+static string GetSLGImageMapName(luxrays::sdl::Scene *slgScene,
 		const MIPMap *mipMap, const float gamma) {
 	if (!mipMap)
 		return GetSLGDefaultImageMap(slgScene);
@@ -510,94 +511,8 @@ template<class T> string GetSLGTexName(luxrays::sdl::Scene *slgScene,
 	return texName;
 }
 
-string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive *prim) {
-	LOG(LUX_DEBUG, LUX_NOERROR) << "Primitive type: " << ToClassName(prim);
-	
-	Material *mat = NULL;
-	string matName = "mat_default";
-	string emissionTexName = "0.0 0.0 0.0";
-
-	//--------------------------------------------------------------------------
-	// Check if it is a Shape
-	//--------------------------------------------------------------------------
-	if (dynamic_cast<const Shape *>(prim)) {
-		const Shape *shape = dynamic_cast<const Shape *>(prim);
-		mat = shape->GetMaterial();
-	} else
-	//--------------------------------------------------------------------------
-	// Check if it is an InstancePrimitive
-	//--------------------------------------------------------------------------
-	if (dynamic_cast<const InstancePrimitive *>(prim)) {
-		const InstancePrimitive *instance = dynamic_cast<const InstancePrimitive *>(prim);
-		mat = instance->GetMaterial();
-	} else
-	//--------------------------------------------------------------------------
-	// Check if it is an AreaLight
-	//--------------------------------------------------------------------------
-	if (dynamic_cast<const AreaLightPrimitive *>(prim)) {
-		const AreaLightPrimitive *alPrim = dynamic_cast<const AreaLightPrimitive *>(prim);
-		AreaLight *al = alPrim->GetAreaLight();
-
-		Texture<SWCSpectrum> *tex = al->GetTexture();
-
-		const float gain = (*al)["gain"].FloatValue();
-		const float power = (*al)["power"].FloatValue();
-		const float efficacy = (*al)["efficacy"].FloatValue();
-		const float area = (*al)["area"].FloatValue();
-
-		// Check the type of texture used
-		LOG(LUX_DEBUG, LUX_NOERROR) << "AreaLight texture type: " << ToClassName(tex);
-		luxrays::Spectrum emission;
-		if (dynamic_cast<ConstantRGBColorTexture *>(tex)) {
-			ConstantRGBColorTexture *constRGBTex = dynamic_cast<ConstantRGBColorTexture *>(tex);
-
-			emission = luxrays::Spectrum(
-					(*constRGBTex)["color.r"].FloatValue(),
-					(*constRGBTex)["color.g"].FloatValue(),
-					(*constRGBTex)["color.b"].FloatValue());
-
-			const float gainFactor = power * efficacy /
-				(area * M_PI * emission.Y());
-			if (gainFactor > 0.f && !isinf(gainFactor))
-				emission *= gain * gainFactor;
-			else
-				emission *= gain;
-		} else if (dynamic_cast<BlackBodyTexture *>(tex)) {
-			emission = luxrays::Spectrum(1.f);
-
-			const float gainFactor = power * efficacy;
-			if (gainFactor > 0.f && !isinf(gainFactor))
-				emission *= gain * gainFactor;
-			else
-				emission *= gain;
-		} else {
-			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only area lights with constant ConstantRGBColorTexture or BlackBodyTexture (i.e. not " <<
-				ToClassName(tex) << "). Ignoring emission of unsupported area light.";
-		}
-
-		emissionTexName = ToString(emission.r) + " " + ToString(emission.g) + " " + ToString(emission.b);
-		LOG(LUX_DEBUG, LUX_NOERROR) << "AreaLight emission: " << emissionTexName;
-
-		const Primitive *p = alPrim->GetPrimitive().get();
-		if (dynamic_cast<const Shape *>(p)) {
-			const Shape *shape = dynamic_cast<const Shape *>(p);
-			mat = shape->GetMaterial();
-		} else if (dynamic_cast<const InstancePrimitive *>(p)) {
-			const InstancePrimitive *instance = dynamic_cast<const InstancePrimitive *>(p);
-			mat = instance->GetMaterial();
-		} else {
-			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer doesn't support material conversion for area light primitive " << ToClassName(prim);
-			return "mat_default";
-		}
-	} else
-	//--------------------------------------------------------------------------
-	// Primitive is not supported, use the default material
-	//--------------------------------------------------------------------------
-	{
-		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer doesn't support material conversion for primitive " << ToClassName(prim);
-		return "mat_default";
-	}
-
+static string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, Material *mat,
+		const Primitive *prim, const string &emissionTexName) {
 	if (!mat)
 		return "mat_default";
 
@@ -620,6 +535,7 @@ string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive *prim) 
 	}
 
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Material type: " << ToClassName(mat);
+	string matName = "mat_default";
 
 	//------------------------------------------------------------------
 	// Check if it is material Matte
@@ -943,19 +859,29 @@ string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive *prim) 
 	//------------------------------------------------------------------
 	// Check if it is material Mix
 	//------------------------------------------------------------------
-//	if (dynamic_cast<MixMaterial *>(mat)) {
-//		// Define the material
-//		MixMaterial *mix = dynamic_cast<MixMaterial *>(mat);
-//		matName = mix->GetName();
-//
-//		// Check if the material has already been defined
-//		if (!slgScene->matDefs.IsMaterialDefined(matName)) {
-//			const string matProp = "scene.materials." + matName +".type = null\n"
-//				+ commonProp +;
-//			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProp << "]";
-//			slgScene->DefineMaterials(matProp);
-//		}
-//	} else
+	if (dynamic_cast<MixMaterial *>(mat)) {
+		// Define the material
+		MixMaterial *mix = dynamic_cast<MixMaterial *>(mat);
+		matName = mix->GetName();
+
+		// Check if the material has already been defined
+		if (!slgScene->matDefs.IsMaterialDefined(matName)) {
+			Texture<float> *amount = mix->GetAmmountTexture();
+			Material *mat1 = mix->GetMaterial1();
+			Material *mat2 = mix->GetMaterial2();
+
+			const string matProp = "scene.materials." + matName +".type = mix\n"
+				"scene.materials." + matName +".emission = " + emissionTexName + "\n"
+				+ ((bumpTex != "") ? ("scene.materials." + matName +".bumptex = " + bumpTex + "\n") : "") +
+				((normalTex != "") ? ("scene.materials." + matName +".normaltex = " + normalTex + "\n") : "") +
+				"scene.materials." + matName +".amount = " + GetSLGTexName(slgScene, amount) + "\n"
+				"scene.materials." + matName +".material1 = " + GetSLGMaterialName(slgScene, mat1, prim, "0.0 0.0 0.0") + "\n"
+				"scene.materials." + matName +".material2 = " + GetSLGMaterialName(slgScene, mat2, prim, "0.0 0.0 0.0") + "\n"
+				;
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProp << "]";
+			slgScene->DefineMaterials(matProp);
+		}
+	} else
 	//------------------------------------------------------------------
 	// Material is not supported, use the default one
 	//------------------------------------------------------------------
@@ -966,6 +892,96 @@ string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive *prim) 
 	}
 
 	return matName;
+}
+
+static string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive *prim) {
+	LOG(LUX_DEBUG, LUX_NOERROR) << "Primitive type: " << ToClassName(prim);
+	
+	Material *mat = NULL;
+	string emissionTexName = "0.0 0.0 0.0";
+
+	//--------------------------------------------------------------------------
+	// Check if it is a Shape
+	//--------------------------------------------------------------------------
+	if (dynamic_cast<const Shape *>(prim)) {
+		const Shape *shape = dynamic_cast<const Shape *>(prim);
+		mat = shape->GetMaterial();
+	} else
+	//--------------------------------------------------------------------------
+	// Check if it is an InstancePrimitive
+	//--------------------------------------------------------------------------
+	if (dynamic_cast<const InstancePrimitive *>(prim)) {
+		const InstancePrimitive *instance = dynamic_cast<const InstancePrimitive *>(prim);
+		mat = instance->GetMaterial();
+	} else
+	//--------------------------------------------------------------------------
+	// Check if it is an AreaLight
+	//--------------------------------------------------------------------------
+	if (dynamic_cast<const AreaLightPrimitive *>(prim)) {
+		const AreaLightPrimitive *alPrim = dynamic_cast<const AreaLightPrimitive *>(prim);
+		AreaLight *al = alPrim->GetAreaLight();
+
+		Texture<SWCSpectrum> *tex = al->GetTexture();
+
+		const float gain = (*al)["gain"].FloatValue();
+		const float power = (*al)["power"].FloatValue();
+		const float efficacy = (*al)["efficacy"].FloatValue();
+		const float area = (*al)["area"].FloatValue();
+
+		// Check the type of texture used
+		LOG(LUX_DEBUG, LUX_NOERROR) << "AreaLight texture type: " << ToClassName(tex);
+		luxrays::Spectrum emission;
+		if (dynamic_cast<ConstantRGBColorTexture *>(tex)) {
+			ConstantRGBColorTexture *constRGBTex = dynamic_cast<ConstantRGBColorTexture *>(tex);
+
+			emission = luxrays::Spectrum(
+					(*constRGBTex)["color.r"].FloatValue(),
+					(*constRGBTex)["color.g"].FloatValue(),
+					(*constRGBTex)["color.b"].FloatValue());
+
+			const float gainFactor = power * efficacy /
+				(area * M_PI * emission.Y());
+			if (gainFactor > 0.f && !isinf(gainFactor))
+				emission *= gain * gainFactor;
+			else
+				emission *= gain;
+		} else if (dynamic_cast<BlackBodyTexture *>(tex)) {
+			emission = luxrays::Spectrum(1.f);
+
+			const float gainFactor = power * efficacy;
+			if (gainFactor > 0.f && !isinf(gainFactor))
+				emission *= gain * gainFactor;
+			else
+				emission *= gain;
+		} else {
+			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only area lights with constant ConstantRGBColorTexture or BlackBodyTexture (i.e. not " <<
+				ToClassName(tex) << "). Ignoring emission of unsupported area light.";
+		}
+
+		emissionTexName = ToString(emission.r) + " " + ToString(emission.g) + " " + ToString(emission.b);
+		LOG(LUX_DEBUG, LUX_NOERROR) << "AreaLight emission: " << emissionTexName;
+
+		const Primitive *p = alPrim->GetPrimitive().get();
+		if (dynamic_cast<const Shape *>(p)) {
+			const Shape *shape = dynamic_cast<const Shape *>(p);
+			mat = shape->GetMaterial();
+		} else if (dynamic_cast<const InstancePrimitive *>(p)) {
+			const InstancePrimitive *instance = dynamic_cast<const InstancePrimitive *>(p);
+			mat = instance->GetMaterial();
+		} else {
+			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer doesn't support material conversion for area light primitive " << ToClassName(prim);
+			return "mat_default";
+		}
+	} else
+	//--------------------------------------------------------------------------
+	// Primitive is not supported, use the default material
+	//--------------------------------------------------------------------------
+	{
+		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer doesn't support material conversion for primitive " << ToClassName(prim);
+		return "mat_default";
+	}
+
+	return GetSLGMaterialName(slgScene, mat, prim, emissionTexName);
 }
 
 void SLGRenderer::ConvertEnvLights(luxrays::sdl::Scene *slgScene) {

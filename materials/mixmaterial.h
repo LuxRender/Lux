@@ -41,6 +41,10 @@ public:
 		const Intersection &isect,
 		const DifferentialGeometry &dgShading) const;
 
+	Texture<float> *GetAmmountTexture() { return amount.get(); }
+	Material *GetMaterial1() { return mat1.get(); }
+	Material *GetMaterial2() { return mat2.get(); }
+
 	static Material * CreateMaterial(const Transform &xform,
 		const ParamSet &mp);
 private:
