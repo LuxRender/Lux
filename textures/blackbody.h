@@ -46,6 +46,9 @@ public:
 	virtual void GetDuv(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg, float delta,
 		float *du, float *dv) const { *du = *dv = 0.f; }
+
+	BlackbodySPD &GetBlackBodySPD() { return BBSPD; }
+
 	static Texture<SWCSpectrum> *CreateSWCSpectrumTexture(const Transform &tex2world, const ParamSet &tp);
 
 private:

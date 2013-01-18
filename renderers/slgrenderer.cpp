@@ -894,7 +894,8 @@ static string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, Material *mat,
 	return matName;
 }
 
-static string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive *prim) {
+static string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive *prim,
+		ColorSystem &colorSpace) {
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Primitive type: " << ToClassName(prim);
 	
 	Material *mat = NULL;
@@ -931,6 +932,7 @@ static string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive 
 		// Check the type of texture used
 		LOG(LUX_DEBUG, LUX_NOERROR) << "AreaLight texture type: " << ToClassName(tex);
 		luxrays::Spectrum emission;
+		float emissionY;
 		if (dynamic_cast<ConstantRGBColorTexture *>(tex)) {
 			ConstantRGBColorTexture *constRGBTex = dynamic_cast<ConstantRGBColorTexture *>(tex);
 
@@ -939,24 +941,26 @@ static string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive 
 					(*constRGBTex)["color.g"].FloatValue(),
 					(*constRGBTex)["color.b"].FloatValue());
 
-			const float gainFactor = power * efficacy /
-				(area * M_PI * emission.Y());
-			if (gainFactor > 0.f && !isinf(gainFactor))
-				emission *= gain * gainFactor;
-			else
-				emission *= gain;
+			emissionY = emission.Y();
 		} else if (dynamic_cast<BlackBodyTexture *>(tex)) {
-			emission = luxrays::Spectrum(1.f);
+			BlackBodyTexture *bb = dynamic_cast<BlackBodyTexture *>(tex);
+			BlackbodySPD &bbSPD = bb->GetBlackBodySPD();
 
-			const float gainFactor = power * efficacy;
-			if (gainFactor > 0.f && !isinf(gainFactor))
-				emission *= gain * gainFactor;
-			else
-				emission *= gain;
+			const RGBColor rgb = colorSpace.ToRGBConstrained(bbSPD.ToXYZ());
+			emission = luxrays::Spectrum(rgb.c[0], rgb.c[1], rgb.c[2]);
+			emissionY = bb->Y();
 		} else {
 			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only area lights with constant ConstantRGBColorTexture or BlackBodyTexture (i.e. not " <<
 				ToClassName(tex) << "). Ignoring emission of unsupported area light.";
+			emissionY = 0.f;
 		}
+
+		const float gainFactor = power * efficacy /
+			(area * M_PI * emissionY);
+		if (gainFactor > 0.f && !isinf(gainFactor))
+			emission *= gain * gainFactor;
+		else
+			emission *= gain;
 
 		emissionTexName = ToString(emission.r) + " " + ToString(emission.g) + " " + ToString(emission.b);
 		LOG(LUX_DEBUG, LUX_NOERROR) << "AreaLight emission: " << emissionTexName;
@@ -1166,7 +1170,7 @@ vector<luxrays::ExtTriangleMesh *> SLGRenderer::DefinePrimitive(luxrays::sdl::Sc
 	return meshList;
 }
 
-void SLGRenderer::ConvertGeometry(luxrays::sdl::Scene *slgScene) {
+void SLGRenderer::ConvertGeometry(luxrays::sdl::Scene *slgScene, ColorSystem &colorSpace) {
 	LOG(LUX_INFO, LUX_NOERROR) << "Tesselating " << scene->primitives.size() << " primitives";
 
 	// To keep track of all primitive mesh lists
@@ -1179,7 +1183,7 @@ void SLGRenderer::ConvertGeometry(luxrays::sdl::Scene *slgScene) {
 		// Instances require special care
 		if (dynamic_cast<const InstancePrimitive *>(prim)) {
 			const InstancePrimitive *instance = dynamic_cast<const InstancePrimitive *>(prim);
-			const string matName = GetSLGMaterialName(slgScene, instance);
+			const string matName = GetSLGMaterialName(slgScene, instance, colorSpace);
 
 			const vector<boost::shared_ptr<Primitive> > &instanceSources = instance->GetInstanceSources();
 
@@ -1236,7 +1240,7 @@ void SLGRenderer::ConvertGeometry(luxrays::sdl::Scene *slgScene) {
 				continue;
 
 			// Add the object
-			const string matName = GetSLGMaterialName(slgScene, prim);
+			const string matName = GetSLGMaterialName(slgScene, prim, colorSpace);
 
 			for (vector<luxrays::ExtTriangleMesh *>::const_iterator mesh = meshList.begin(); mesh != meshList.end(); ++mesh) {
 				const string objName = "Object-" + ToString(prim) + "-" +
@@ -1308,7 +1312,7 @@ void SLGRenderer::ConvertCamera(luxrays::sdl::Scene *slgScene) {
 	slgScene->CreateCamera(createCameraProp);
 }
 
-luxrays::sdl::Scene *SLGRenderer::CreateSLGScene(const luxrays::Properties &slgConfigProps) {
+luxrays::sdl::Scene *SLGRenderer::CreateSLGScene(const luxrays::Properties &slgConfigProps, ColorSystem &colorSpace) {
 	const int accelType = slgConfigProps.GetInt("accelerator.type", -1);
 	luxrays::sdl::Scene *slgScene = new luxrays::sdl::Scene(accelType);
 
@@ -1341,7 +1345,7 @@ luxrays::sdl::Scene *SLGRenderer::CreateSLGScene(const luxrays::Properties &slgC
 	// Convert geometry
 	//--------------------------------------------------------------------------
 
-	ConvertGeometry(slgScene);
+	ConvertGeometry(slgScene, colorSpace);
 
 	return slgScene;
 }
@@ -1624,7 +1628,8 @@ void SLGRenderer::Render(Scene *s) {
 				slgConfigProps.Load(CreateSLGConfig());
 
 				// Build the SLG scene to render
-				slgScene = CreateSLGScene(slgConfigProps);
+				ColorSystem colorSpace = scene->camera()->film->GetColorSpace();
+				slgScene = CreateSLGScene(slgConfigProps, colorSpace);
 #if !defined(LUXRAYS_DISABLE_OPENCL)
 			} catch (cl::Error err) {
 				LOG(LUX_SEVERE, LUX_SYSTEM) << "OpenCL ERROR: " << err.what() << "(" << luxrays::utils::oclErrorString(err.err()) << ")";

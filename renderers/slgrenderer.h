@@ -128,8 +128,8 @@ private:
 	void ConvertCamera(luxrays::sdl::Scene *slgScene);
 	void ConvertEnvLights(luxrays::sdl::Scene *slgScene);
 	vector<luxrays::ExtTriangleMesh *> DefinePrimitive(luxrays::sdl::Scene *slgScene, const Primitive *prim);
-	void ConvertGeometry(luxrays::sdl::Scene *slgScene);
-	luxrays::sdl::Scene *CreateSLGScene(const luxrays::Properties &slgConfigProps);
+	void ConvertGeometry(luxrays::sdl::Scene *slgScene, ColorSystem &colorSpace);
+	luxrays::sdl::Scene *CreateSLGScene(const luxrays::Properties &slgConfigProps, ColorSystem &colorSpace);
 	luxrays::Properties CreateSLGConfig();
 
 	void UpdateLuxFilm(slg::RenderSession *session);
