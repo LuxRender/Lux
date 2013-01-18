@@ -933,27 +933,22 @@ static string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive 
 		LOG(LUX_DEBUG, LUX_NOERROR) << "AreaLight texture type: " << ToClassName(tex);
 		luxrays::Spectrum emission;
 		float emissionY;
+		SPD *spd = NULL;
 		if (dynamic_cast<ConstantRGBColorTexture *>(tex)) {
 			ConstantRGBColorTexture *constRGBTex = dynamic_cast<ConstantRGBColorTexture *>(tex);
-
-			emission = luxrays::Spectrum(
-					(*constRGBTex)["color.r"].FloatValue(),
-					(*constRGBTex)["color.g"].FloatValue(),
-					(*constRGBTex)["color.b"].FloatValue());
-
-			emissionY = emission.Y();
+			spd = constRGBTex->GetRGBSPD();
 		} else if (dynamic_cast<BlackBodyTexture *>(tex)) {
 			BlackBodyTexture *bb = dynamic_cast<BlackBodyTexture *>(tex);
-			BlackbodySPD &bbSPD = bb->GetBlackBodySPD();
-
-			const RGBColor rgb = colorSpace.ToRGBConstrained(bbSPD.ToXYZ());
-			emission = luxrays::Spectrum(rgb.c[0], rgb.c[1], rgb.c[2]);
-			emissionY = bb->Y();
+			spd = bb->GetBlackBodySPD();
 		} else {
 			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only area lights with constant ConstantRGBColorTexture or BlackBodyTexture (i.e. not " <<
 				ToClassName(tex) << "). Ignoring emission of unsupported area light.";
 			emissionY = 0.f;
 		}
+
+		const RGBColor rgb = colorSpace.ToRGBConstrained(spd->ToXYZ());
+		emission = luxrays::Spectrum(rgb.c[0], rgb.c[1], rgb.c[2]);
+		emissionY = spd->Y();
 
 		const float gainFactor = power * efficacy /
 			(area * M_PI * emissionY);
@@ -1109,9 +1104,9 @@ void SLGRenderer::ConvertEnvLights(luxrays::sdl::Scene *slgScene) {
 				const float gamma = (*infiniteAreaLight)["gamma"].FloatValue();
 
 				MIPMap *mipMap = infiniteAreaLight->GetRadianceMap();
-				const string texName = GetSLGImageMapName(slgScene, mipMap, gamma);
+				const string imageMapName = GetSLGImageMapName(slgScene, mipMap, gamma);
 
-				const std::string createInfiniteLightProp = "scene.infinitelight.file = " + texName + "\n"
+				const std::string createInfiniteLightProp = "scene.infinitelight.file = " + imageMapName + "\n"
 					"scene.infinitelight.gamma = " + ToString(gamma) + "\n"
 					"scene.infinitelight.shift = 0.5 0.0\n"
 					"scene.infinitelight.gain = " +
@@ -1129,9 +1124,9 @@ void SLGRenderer::ConvertEnvLights(luxrays::sdl::Scene *slgScene) {
 				const float gamma = (*infiniteAreaLightIS)["gamma"].FloatValue();
 
 				MIPMap *mipMap = infiniteAreaLightIS->GetRadianceMap();
-				const string texName = GetSLGImageMapName(slgScene, mipMap, gamma);
+				const string imageMapName = GetSLGImageMapName(slgScene, mipMap, gamma);
 
-				const std::string createInfiniteLightProp = "scene.infinitelight.file = " + texName + "\n"
+				const std::string createInfiniteLightProp = "scene.infinitelight.file = " + imageMapName + "\n"
 					"scene.infinitelight.gamma = " + ToString(gamma) + "\n"
 					"scene.infinitelight.shift = 0.5 0.0\n"
 					"scene.infinitelight.gain = " +

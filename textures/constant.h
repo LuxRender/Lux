@@ -83,6 +83,8 @@ public:
 		RGBSPD = new RGBIllumSPD(color);
 	}
 
+	SPD *GetRGBSPD() { return RGBSPD; }
+
 private:
 	// Used by Query interface
 	float GetColorR() { return color.c[0]; }
