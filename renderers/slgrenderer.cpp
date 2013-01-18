@@ -196,7 +196,7 @@ template <typename T, u_int channels> string GetSLGImageMapNameImpl(luxrays::sdl
 			const TextureColor<T, channels> &col = (*map)(x, y);
 
 			for (u_int i = 0; i < channels; ++i)
-				*mapPtr++ = col.c[i] / 255.f;
+				*mapPtr++ = powf(col.c[i] / 255.f, gamma);
 		}
 	}
 
@@ -228,7 +228,7 @@ template <> string GetSLGImageMapNameImpl<float, 1>(luxrays::sdl::Scene *slgScen
 		for (u_int x = 0; x < map->uSize(); ++x) {
 			const TextureColor<float, 1> &col = (*map)(x, y);
 
-			*mapPtr++ = col.c[0];
+			*mapPtr++ = powf(col.c[0], gamma);
 		}
 	}
 
@@ -254,9 +254,9 @@ template <> string GetSLGImageMapNameImpl<float, 3>(luxrays::sdl::Scene *slgScen
 		for (u_int x = 0; x < map->uSize(); ++x) {
 			const TextureColor<float, 3> &col = (*map)(x, y);
 
-			*mapPtr++ = col.c[0];
-			*mapPtr++ = col.c[1];
-			*mapPtr++ = col.c[2];
+			*mapPtr++ = powf(col.c[0], gamma);
+			*mapPtr++ = powf(col.c[1], gamma);
+			*mapPtr++ = powf(col.c[2], gamma);
 		}
 	}
 
@@ -282,9 +282,9 @@ template <> string GetSLGImageMapNameImpl<float, 4>(luxrays::sdl::Scene *slgScen
 		for (u_int x = 0; x < map->uSize(); ++x) {
 			const TextureColor<float, 4> &col = (*map)(x, y);
 
-			*mapPtr++ = col.c[0];
-			*mapPtr++ = col.c[1];
-			*mapPtr++ = col.c[2];
+			*mapPtr++ = powf(col.c[0], gamma);
+			*mapPtr++ = powf(col.c[1], gamma);
+			*mapPtr++ = powf(col.c[2], gamma);
 			*mapPtr++ = col.c[3];
 		}
 	}
