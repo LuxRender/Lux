@@ -387,7 +387,8 @@ template<class T> string GetSLGTexName(luxrays::sdl::Scene *slgScene,
 			texProp = "scene.textures." + texName + ".type = imagemap\n"
 					"scene.textures." + texName + ".file = " + imageMapName + "\n"
 					"scene.textures." + texName + ".gamma = " + ToString(texInfo.gamma) + "\n"
-					"scene.textures." + texName + ".gain = " + ToString(texInfo.gain) + "\n"
+					// LuxRender applies gain before gamma correction
+					"scene.textures." + texName + ".gain = " + ToString(powf(texInfo.gain, texInfo.gamma)) + "\n"
 					"scene.textures." + texName + ".uvscale = " +
 						ToString(uScale) + " " +
 						ToString(vScale) + "\n"

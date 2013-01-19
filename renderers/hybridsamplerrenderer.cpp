@@ -33,6 +33,7 @@
 
 #include "luxrays/core/context.h"
 #include "luxrays/core/device.h"
+#include "luxrays/opencl/device.h"
 #include "luxrays/core/virtualdevice.h"
 
 using namespace lux;
@@ -200,7 +201,8 @@ HybridSamplerRenderer::HybridSamplerRenderer(const int oclPlatformIndex, bool us
 
 		if (forceGPUWorkGroupSize > 0) {
 			for (u_int i = 0; i < hwDeviceDescs.size(); ++i) {
-				hwDeviceDescs[i]->SetForceWorkGroupSize(forceGPUWorkGroupSize);
+				luxrays::OpenCLDeviceDescription *desc = static_cast<luxrays::OpenCLDeviceDescription *>(hwDeviceDescs[i]);
+				desc->SetForceWorkGroupSize(forceGPUWorkGroupSize);
 			}
 		}
 	}
