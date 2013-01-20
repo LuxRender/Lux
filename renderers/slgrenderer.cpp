@@ -1386,10 +1386,8 @@ luxrays::Properties SLGRenderer::CreateSLGConfig() {
 	//--------------------------------------------------------------------------
 
 	Film *film = scene->camera()->film;
-	int xStart, xEnd, yStart, yEnd;
-	film->GetSampleExtent(&xStart, &xEnd, &yStart, &yEnd);
-	const int imageWidth = xEnd - xStart + 1;
-	const int imageHeight = yEnd - yStart + 1;
+	const int imageWidth = film->GetXPixelCount();
+	const int imageHeight = film->GetYPixelCount();
 
 	float cropWindow[4] = {
 		(*film)["cropWindow.0"].FloatValue(),
@@ -1413,14 +1411,14 @@ luxrays::Properties SLGRenderer::CreateSLGConfig() {
 		MetropolisSampler *sampler = dynamic_cast<MetropolisSampler *>(scene->sampler);
 		const int maxRejects = (*sampler)["maxRejects"].IntValue();
 		const float pLarge = (*sampler)["pLarge"].FloatValue();
-		const float range = (*sampler)["range"].FloatValue() * 2.f / (xEnd - xStart);
+		const float range = (*sampler)["range"].FloatValue() * 2.f / imageHeight;
 
 		ss << "sampler.type = METROPOLIS\n"
 				"sampler.maxconsecutivereject = " + ToString(maxRejects) + "\n"
 				"sampler.largesteprate = " + ToString(pLarge) + "\n"
 				"sampler.imagemutationrate = " + ToString(range) + "\n";
 	} else if (dynamic_cast<RandomSampler *>(scene->sampler)) {
-		ss << "sampler.type = INLINED_RANDOM\n";
+		ss << "sampler.type = RANDOM\n";
 	} else {
 		// Unmapped sampler, just use random
 		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer doesn't support the Sampler, falling back to random sampler";
@@ -1475,8 +1473,8 @@ void SLGRenderer::UpdateLuxFilm(slg::RenderSession *session) {
 
 	Film *film = scene->camera()->film;
 	ColorSystem colorSpace = film->GetColorSpace();
-	int xStart, xEnd, yStart, yEnd;
-	film->GetSampleExtent(&xStart, &xEnd, &yStart, &yEnd);
+	const u_int width = film->GetXPixelCount();
+	const u_int height = film->GetYPixelCount();
 
 	// Recover the ID of buffers
 	const PathIntegrator *path = dynamic_cast<const PathIntegrator *>(scene->surfaceIntegrator);
@@ -1498,12 +1496,8 @@ void SLGRenderer::UpdateLuxFilm(slg::RenderSession *session) {
 	if (slgFilm->HasPerPixelNormalizedBuffer()) {
 		// Copy the information from PER_PIXEL_NORMALIZED buffer
 
-		for (int y = yStart; y <= yEnd; ++y) {
-			for (int x = xStart; x <= xEnd; ++x) {
-				// I have to update LuxRender Film only with the new samples
-				const u_int pixelX = x - xStart;
-				const u_int pixelY = y - yStart;
-
+		for (u_int pixelY = 0; pixelY < height; ++pixelY) {
+			for (u_int pixelX = 0; pixelX < width; ++pixelX) {
 				const luxrays::utils::SamplePixel *spNew = slgFilm->GetSamplePixel(
 					luxrays::utils::PER_PIXEL_NORMALIZED, pixelX, pixelY);
 
@@ -1525,7 +1519,7 @@ void SLGRenderer::UpdateLuxFilm(slg::RenderSession *session) {
 
 					XYZColor xyz = colorSpace.ToXYZ(RGBColor(deltaRadiance.r, deltaRadiance.g, deltaRadiance.b));
 					// Flip the image upside down
-					Contribution contrib(x, yEnd - 1 - y, xyz, deltaAlpha, 0.f, deltaWeight, eyeBufferId);
+					Contribution contrib(pixelX, height - 1 - pixelY, xyz, deltaAlpha, 0.f, deltaWeight, eyeBufferId);
 					film->AddSampleNoFiltering(&contrib);
 				}
 			}
@@ -1535,12 +1529,8 @@ void SLGRenderer::UpdateLuxFilm(slg::RenderSession *session) {
 	if (slgFilm->HasPerScreenNormalizedBuffer()) {
 		// Copy the information from PER_SCREEN_NORMALIZED buffer
 
-		for (int y = yStart; y <= yEnd; ++y) {
-			for (int x = xStart; x <= xEnd; ++x) {
-				// I have to update LuxRender Film only with the new samples
-				const u_int pixelX = x - xStart;
-				const u_int pixelY = y - yStart;
-
+		for (u_int pixelY = 0; pixelY < height; ++pixelY) {
+			for (u_int pixelX = 0; pixelX < width; ++pixelX) {
 				const luxrays::utils::SamplePixel *spNew = slgFilm->GetSamplePixel(
 					luxrays::utils::PER_SCREEN_NORMALIZED, pixelX, pixelY);
 
@@ -1556,7 +1546,7 @@ void SLGRenderer::UpdateLuxFilm(slg::RenderSession *session) {
 
 					XYZColor xyz = colorSpace.ToXYZ(RGBColor(deltaRadiance.r, deltaRadiance.g, deltaRadiance.b));
 					// Flip the image upside down
-					Contribution contrib(x, yEnd - 1 - y, xyz, 1.f, 0.f, deltaWeight, lightBufferId);
+					Contribution contrib(pixelX, height - 1 - pixelY, xyz, 1.f, 0.f, deltaWeight, lightBufferId);
 					film->AddSampleNoFiltering(&contrib);
 				}
 			}
