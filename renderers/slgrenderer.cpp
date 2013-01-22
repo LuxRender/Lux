@@ -884,6 +884,41 @@ static string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, Material *mat,
 		}
 	} else
 	//------------------------------------------------------------------
+	// Check if it is material Glossy2
+	//------------------------------------------------------------------
+	if (dynamic_cast<Glossy2 *>(mat)) {
+		// Define the material
+		Glossy2 *glossy2 = dynamic_cast<Glossy2 *>(mat);
+		matName = glossy2->GetName();
+
+		// Check if the material has already been defined
+		if (!slgScene->matDefs.IsMaterialDefined(matName)) {
+			const string kdTexName = GetSLGTexName(slgScene, glossy2->GetKdTexture());
+			const string ksTexName = GetSLGTexName(slgScene, glossy2->GetKsTexture());
+			const string kaTexName = GetSLGTexName(slgScene, glossy2->GetKaTexture());
+			const string nuTexName = GetSLGTexName(slgScene, glossy2->GetNuTexture());
+			const string nvTexName = GetSLGTexName(slgScene, glossy2->GetNvTexture());
+			const string depthTexName = GetSLGTexName(slgScene, glossy2->GetDepthTexture());
+			const string indexTexName = GetSLGTexName(slgScene, glossy2->GetIndexTexture());
+			const bool isMultibounce = glossy2->IsMultiBounce();
+
+			const string matProp = "scene.materials." + matName +".type = glossy2\n"
+				"scene.materials." + matName +".emission = " + emissionTexName + "\n"
+				+ ((bumpTex != "") ? ("scene.materials." + matName +".bumptex = " + bumpTex + "\n") : "") +
+				((normalTex != "") ? ("scene.materials." + matName +".normaltex = " + normalTex + "\n") : "") +
+				"scene.materials." + matName +".kd = " + kdTexName + "\n"
+				"scene.materials." + matName +".ks = " + ksTexName + "\n"
+				"scene.materials." + matName +".ka = " + kaTexName + "\n"
+				"scene.materials." + matName +".uroughness = " + nuTexName + "\n"
+				"scene.materials." + matName +".vroughness = " + nvTexName + "\n"
+				"scene.materials." + matName +".d = " + depthTexName + "\n"
+				"scene.materials." + matName +".index = " + indexTexName + "\n"
+				"scene.materials." + matName +".multibounce = " + (isMultibounce ? "1" : "0") + "\n";
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProp << "]";
+			slgScene->DefineMaterials(matProp);
+		}
+	} else
+	//------------------------------------------------------------------
 	// Material is not supported, use the default one
 	//------------------------------------------------------------------
 	{
