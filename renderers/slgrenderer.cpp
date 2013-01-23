@@ -445,16 +445,32 @@ template<class T> string GetSLGTexName(luxrays::sdl::Scene *slgScene,
 			texProp = "scene.textures." + texName + ".type = constfloat1\n"
 					"scene.textures." + texName + ".value = " +
 						ToString((*constFloatTex)["value"].FloatValue()) + "\n";
-		} else if (dynamic_cast<const ScaleTexture<float, T> *>(tex)) {
-			const ScaleTexture<float, T> *scaleTex = dynamic_cast<const ScaleTexture<float, T> *>(tex);
+		} else if (dynamic_cast<const ScaleTexture<float, float> *>(tex)) {
+			const ScaleTexture<float, float> *scaleTex = dynamic_cast<const ScaleTexture<float, float> *>(tex);
 			const string tex1Name = GetSLGTexName(slgScene, scaleTex->GetTex1());
 			const string tex2Name = GetSLGTexName(slgScene, scaleTex->GetTex2());
 
 			texProp = "scene.textures." + texName + ".type = scale\n"
 					"scene.textures." + texName + ".texture1 = " + tex1Name + "\n"
 					"scene.textures." + texName + ".texture2 = " + tex2Name + "\n";
-		} else if (dynamic_cast<const ScaleTexture<SWCSpectrum, T> *>(tex)) {
-			const ScaleTexture<SWCSpectrum, T> *scaleTex = dynamic_cast<const ScaleTexture<SWCSpectrum, T> *>(tex);
+		} else if (dynamic_cast<const ScaleTexture<float, float> *>(tex)) {
+			const ScaleTexture<float, float> *scaleTex = dynamic_cast<const ScaleTexture<float, float> *>(tex);
+			const string tex1Name = GetSLGTexName(slgScene, scaleTex->GetTex1());
+			const string tex2Name = GetSLGTexName(slgScene, scaleTex->GetTex2());
+
+			texProp = "scene.textures." + texName + ".type = scale\n"
+					"scene.textures." + texName + ".texture1 = " + tex1Name + "\n"
+					"scene.textures." + texName + ".texture2 = " + tex2Name + "\n";
+		} else if (dynamic_cast<const ScaleTexture<SWCSpectrum, SWCSpectrum> *>(tex)) {
+			const ScaleTexture<SWCSpectrum, SWCSpectrum> *scaleTex = dynamic_cast<const ScaleTexture<SWCSpectrum, SWCSpectrum> *>(tex);
+			const string tex1Name = GetSLGTexName(slgScene, scaleTex->GetTex1());
+			const string tex2Name = GetSLGTexName(slgScene, scaleTex->GetTex2());
+
+			texProp = "scene.textures." + texName + ".type = scale\n"
+					"scene.textures." + texName + ".texture1 = " + tex1Name + "\n"
+					"scene.textures." + texName + ".texture2 = " + tex2Name + "\n";
+		} else if (dynamic_cast<const ScaleTexture<float, SWCSpectrum> *>(tex)) {
+			const ScaleTexture<float, SWCSpectrum> *scaleTex = dynamic_cast<const ScaleTexture<float, SWCSpectrum> *>(tex);
 			const string tex1Name = GetSLGTexName(slgScene, scaleTex->GetTex1());
 			const string tex2Name = GetSLGTexName(slgScene, scaleTex->GetTex2());
 
