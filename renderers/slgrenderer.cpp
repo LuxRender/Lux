@@ -76,6 +76,7 @@
 #include "luxrays/opencl/utils.h"
 #include "luxrays/opencl/utils.h"
 #include "rendersession.h"
+#include "samplers/lowdiscrepancy.h"
 
 using namespace lux;
 
@@ -1468,12 +1469,14 @@ luxrays::Properties SLGRenderer::CreateSLGConfig() {
 				"sampler.maxconsecutivereject = " + ToString(maxRejects) + "\n"
 				"sampler.largesteprate = " + ToString(pLarge) + "\n"
 				"sampler.imagemutationrate = " + ToString(range) + "\n";
+	} else if (dynamic_cast<LDSampler *>(scene->sampler)) {
+		ss << "sampler.type = SOBOL\n";
 	} else if (dynamic_cast<RandomSampler *>(scene->sampler)) {
 		ss << "sampler.type = RANDOM\n";
 	} else {
 		// Unmapped sampler, just use random
 		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer doesn't support the Sampler, falling back to random sampler";
-		ss << "sampler.type = INLINED_RANDOM\n";
+		ss << "sampler.type = RANDOM\n";
 	}
 
 	//--------------------------------------------------------------------------
