@@ -33,8 +33,10 @@
 
 #include "luxrays/core/context.h"
 #include "luxrays/core/device.h"
-#include "luxrays/opencl/device.h"
 #include "luxrays/core/virtualdevice.h"
+#if !defined(LUXRAYS_DISABLE_OPENCL)
+#include "luxrays/opencl/device.h"
+#endif
 
 using namespace lux;
 
@@ -199,12 +201,14 @@ HybridSamplerRenderer::HybridSamplerRenderer(const int oclPlatformIndex, bool us
 		hwDeviceDescs = deviceDescs;
 		luxrays::DeviceDescription::Filter(luxrays::DEVICE_TYPE_OPENCL_GPU, hwDeviceDescs);
 
+#if !defined(LUXRAYS_DISABLE_OPENCL)
 		if (forceGPUWorkGroupSize > 0) {
 			for (u_int i = 0; i < hwDeviceDescs.size(); ++i) {
 				luxrays::OpenCLDeviceDescription *desc = static_cast<luxrays::OpenCLDeviceDescription *>(hwDeviceDescs[i]);
 				desc->SetForceWorkGroupSize(forceGPUWorkGroupSize);
 			}
 		}
+#endif
 	}
 	if (!useGPUs || hwDeviceDescs.size() == 0)
 		useNative = true;
