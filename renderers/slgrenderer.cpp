@@ -529,6 +529,19 @@ template<class T> string GetSLGTexName(luxrays::sdl::Scene *slgScene,
 	return texName;
 }
 
+static string GetSLGCommonMatProps(const string &matName, const string &emissionTexName,
+		const string &bumpTex, const string &normalTex) {
+	std::ostringstream ss;
+	if (emissionTexName != "0.0 0.0 0.0")
+		ss << "scene.materials." << matName << ".emission = " << emissionTexName + "\n";
+	if (bumpTex != "")
+		ss << "scene.materials." << matName << ".bumptex = " + bumpTex << "\n";
+	if (normalTex != "")
+		ss << "scene.materials." << matName << ".normaltex = " + normalTex << "\n";
+
+	return ss.str();
+}
+
 static string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, Material *mat,
 		const Primitive *prim, const string &emissionTexName) {
 	if (!mat)
@@ -568,9 +581,7 @@ static string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, Material *mat,
 			const string texName = GetSLGTexName(slgScene, matte->GetTexture());
 
 			const string matProp = "scene.materials." + matName +".type = matte\n"
-				"scene.materials." + matName +".emission = " + emissionTexName + "\n"
-				+ ((bumpTex != "") ? ("scene.materials." + matName +".bumptex = " + bumpTex + "\n") : "") +
-				((normalTex != "") ? ("scene.materials." + matName +".normaltex = " + normalTex + "\n") : "") +
+				 + GetSLGCommonMatProps(matName, emissionTexName, bumpTex, normalTex) +
 				"scene.materials." + matName +".kd = " + texName + "\n";
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProp << "]";
 			slgScene->DefineMaterials(matProp);
@@ -589,9 +600,7 @@ static string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, Material *mat,
 			const string texName = GetSLGTexName(slgScene, mirror->GetTexture());
 
 			const string matProp = "scene.materials." + matName +".type = mirror\n"
-				"scene.materials." + matName +".emission = " + emissionTexName + "\n"
-				+ ((bumpTex != "") ? ("scene.materials." + matName +".bumptex = " + bumpTex + "\n") : "") +
-				((normalTex != "") ? ("scene.materials." + matName +".normaltex = " + normalTex + "\n") : "") +
+				+ GetSLGCommonMatProps(matName, emissionTexName, bumpTex, normalTex) +
 				"scene.materials." + matName +".kr = " + texName + "\n";
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProp << "]";
 			slgScene->DefineMaterials(matProp);
@@ -617,17 +626,13 @@ static string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, Material *mat,
 			string matProp;
 			if (architectural) {
 				matProp = "scene.materials." + matName +".type = archglass\n"
-						"scene.materials." + matName +".emission = " + emissionTexName + "\n"
-						+ ((bumpTex != "") ? ("scene.materials." + matName +".bumptex = " + bumpTex + "\n") : "") +
-						((normalTex != "") ? ("scene.materials." + matName +".normaltex = " + normalTex + "\n") : "") +
+						+ GetSLGCommonMatProps(matName, emissionTexName, bumpTex, normalTex) +
 						"scene.materials." + matName +".kr = " + krTexName + "\n"
 						"scene.materials." + matName +".kt = " + ktTexName + "\n";
 			} else {
 				const string indexTexName = GetSLGTexName(slgScene, glass->GetIndexTexture());
 				matProp = "scene.materials." + matName +".type = glass\n"
-						"scene.materials." + matName +".emission = " + emissionTexName + "\n"
-						+ ((bumpTex != "") ? ("scene.materials." + matName +".bumptex = " + bumpTex + "\n") : "") +
-						((normalTex != "") ? ("scene.materials." + matName +".normaltex = " + normalTex + "\n") : "") +
+						+ GetSLGCommonMatProps(matName, emissionTexName, bumpTex, normalTex) +
 						"scene.materials." + matName +".kr = " + krTexName + "\n"
 						"scene.materials." + matName +".kt = " + ktTexName + "\n"
 						"scene.materials." + matName +".ioroutside = 1.0\n"
@@ -696,9 +701,7 @@ static string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, Material *mat,
 			string matProp;
 			if (architectural) {
 				matProp = "scene.materials." + matName +".type = archglass\n"
-						"scene.materials." + matName +".emission = " + emissionTexName + "\n"
-						+ ((bumpTex != "") ? ("scene.materials." + matName +".bumptex = " + bumpTex + "\n") : "") +
-						((normalTex != "") ? ("scene.materials." + matName +".normaltex = " + normalTex + "\n") : "") +
+						+ GetSLGCommonMatProps(matName, emissionTexName, bumpTex, normalTex) +
 						"scene.materials." + matName +".kr = " +
 							ToString(krRGB.r) + " " +
 							ToString(krRGB.g) + " " +
@@ -709,9 +712,7 @@ static string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, Material *mat,
 							ToString(ktRGB.b) + "\n";
 			} else {
 				matProp = "scene.materials." + matName +".type = glass\n"
-						"scene.materials." + matName +".emission = " + emissionTexName + "\n"
-						+ ((bumpTex != "") ? ("scene.materials." + matName +".bumptex = " + bumpTex + "\n") : "") +
-						((normalTex != "") ? ("scene.materials." + matName +".normaltex = " + normalTex + "\n") : "") +
+						+ GetSLGCommonMatProps(matName, emissionTexName, bumpTex, normalTex) +
 						"scene.materials." + matName +".kr = " +
 							ToString(krRGB.r) + " " +
 							ToString(krRGB.g) + " " +
@@ -760,9 +761,7 @@ static string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, Material *mat,
 			if (metalName == "amorphous carbon")
 				matProp =
 					"scene.materials." + matName +".type = metal\n"
-					"scene.materials." + matName +".emission = " + emissionTexName + "\n"
-					+ ((bumpTex != "") ? ("scene.materials." + matName +".bumptex = " + bumpTex + "\n") : "") +
-					((normalTex != "") ? ("scene.materials." + matName +".normaltex = " + normalTex + "\n") : "") +
+					+ GetSLGCommonMatProps(matName, emissionTexName, bumpTex, normalTex) +
 					"scene.materials." + matName +".kr = 0.1 0.1 0.1\n"
 					"scene.materials." + matName +".exp = " +ToString(exponent) + "\n";
 			else if (metalName == "silver")
@@ -773,9 +772,7 @@ static string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, Material *mat,
 					"scene.materials." + matName + "_mat2.type = matte\n"
 					"scene.materials." + matName + "_mat2.kd = 0.75 0.75 0.75\n"
 					"scene.materials." + matName +".type = mix\n"
-					"scene.materials." + matName +".emission = " + emissionTexName + "\n"
-					+ ((bumpTex != "") ? ("scene.materials." + matName +".bumptex = " + bumpTex + "\n") : "") +
-					((normalTex != "") ? ("scene.materials." + matName +".normaltex = " + normalTex + "\n") : "") +
+					+ GetSLGCommonMatProps(matName, emissionTexName, bumpTex, normalTex) +
 					"scene.materials." + matName +".material1 = " + matName + "_mat1\n"
 					"scene.materials." + matName +".material2 = " + matName + "_mat2\n"
 					"scene.materials." + matName +".amount = 0.5\n";
@@ -787,9 +784,7 @@ static string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, Material *mat,
 					"scene.materials." + matName + "_mat2.type = matte\n"
 					"scene.materials." + matName + "_mat2.kd = 0.09 0.055 0.005\n"
 					"scene.materials." + matName +".type = mix\n"
-					"scene.materials." + matName +".emission = " + emissionTexName + "\n"
-					+ ((bumpTex != "") ? ("scene.materials." + matName +".bumptex = " + bumpTex + "\n") : "") +
-					((normalTex != "") ? ("scene.materials." + matName +".normaltex = " + normalTex + "\n") : "") +
+					+ GetSLGCommonMatProps(matName, emissionTexName, bumpTex, normalTex) +
 					"scene.materials." + matName +".material1 = " + matName + "_mat1\n"
 					"scene.materials." + matName +".material2 = " + matName + "_mat2\n"
 					"scene.materials." + matName +".amount = 0.5\n";
@@ -801,9 +796,7 @@ static string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, Material *mat,
 					"scene.materials." + matName + "_mat2.type = matte\n"
 					"scene.materials." + matName + "_mat2.kd = 0.4 0.25 0.2\n"
 					"scene.materials." + matName +".type = mix\n"
-					"scene.materials." + matName +".emission = " + emissionTexName + "\n"
-					+ ((bumpTex != "") ? ("scene.materials." + matName +".bumptex = " + bumpTex + "\n") : "") +
-					((normalTex != "") ? ("scene.materials." + matName +".normaltex = " + normalTex + "\n") : "") +
+					+ GetSLGCommonMatProps(matName, emissionTexName, bumpTex, normalTex) +
 					"scene.materials." + matName +".material1 = " + matName + "_mat1\n"
 					"scene.materials." + matName +".material2 = " + matName + "_mat2\n"
 					"scene.materials." + matName +".amount = 0.5\n";
@@ -819,9 +812,7 @@ static string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, Material *mat,
 					"scene.materials." + matName + "_mat2.type = matte\n"
 					"scene.materials." + matName + "_mat2.kd = 0.75 0.75 0.75\n"
 					"scene.materials." + matName +".type = mix\n"
-					"scene.materials." + matName +".emission = " + emissionTexName + "\n"
-					+ ((bumpTex != "") ? ("scene.materials." + matName +".bumptex = " + bumpTex + "\n") : "") +
-					((normalTex != "") ? ("scene.materials." + matName +".normaltex = " + normalTex + "\n") : "") +
+					+ GetSLGCommonMatProps(matName, emissionTexName, bumpTex, normalTex) +
 					"scene.materials." + matName +".material1 = " + matName + "_mat1\n"
 					"scene.materials." + matName +".material2 = " + matName + "_mat2\n"
 					"scene.materials." + matName +".amount = 0.5\n";
@@ -847,9 +838,7 @@ static string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, Material *mat,
 			const string ktTexName = GetSLGTexName(slgScene, matteTranslucent->GetKtTexture());
 
 			const string matProp = "scene.materials." + matName +".type = mattetranslucent\n"
-				"scene.materials." + matName +".emission = " + emissionTexName + "\n"
-				+ ((bumpTex != "") ? ("scene.materials." + matName +".bumptex = " + bumpTex + "\n") : "") +
-				((normalTex != "") ? ("scene.materials." + matName +".normaltex = " + normalTex + "\n") : "") +
+				+ GetSLGCommonMatProps(matName, emissionTexName, bumpTex, normalTex) +
 				"scene.materials." + matName +".kr = " + krTexName + "\n"
 				"scene.materials." + matName +".kt = " + ktTexName + "\n";
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProp << "]";
@@ -867,9 +856,7 @@ static string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, Material *mat,
 		// Check if the material has already been defined
 		if (!slgScene->matDefs.IsMaterialDefined(matName)) {
 			const string matProp = "scene.materials." + matName +".type = null\n"
-				"scene.materials." + matName +".emission = " + emissionTexName + "\n"
-				+ ((bumpTex != "") ? ("scene.materials." + matName +".bumptex = " + bumpTex + "\n") : "") +
-				((normalTex != "") ? ("scene.materials." + matName +".normaltex = " + normalTex + "\n") : "");
+				+ GetSLGCommonMatProps(matName, emissionTexName, bumpTex, normalTex);
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProp << "]";
 			slgScene->DefineMaterials(matProp);
 		}
@@ -889,9 +876,7 @@ static string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, Material *mat,
 			Material *mat2 = mix->GetMaterial2();
 
 			const string matProp = "scene.materials." + matName +".type = mix\n"
-				"scene.materials." + matName +".emission = " + emissionTexName + "\n"
-				+ ((bumpTex != "") ? ("scene.materials." + matName +".bumptex = " + bumpTex + "\n") : "") +
-				((normalTex != "") ? ("scene.materials." + matName +".normaltex = " + normalTex + "\n") : "") +
+				+ GetSLGCommonMatProps(matName, emissionTexName, bumpTex, normalTex) +
 				"scene.materials." + matName +".amount = " + GetSLGTexName(slgScene, amount) + "\n"
 				"scene.materials." + matName +".material1 = " + GetSLGMaterialName(slgScene, mat1, prim, "0.0 0.0 0.0") + "\n"
 				"scene.materials." + matName +".material2 = " + GetSLGMaterialName(slgScene, mat2, prim, "0.0 0.0 0.0") + "\n"
@@ -920,9 +905,7 @@ static string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, Material *mat,
 			const bool isMultibounce = glossy2->IsMultiBounce();
 
 			const string matProp = "scene.materials." + matName +".type = glossy2\n"
-				"scene.materials." + matName +".emission = " + emissionTexName + "\n"
-				+ ((bumpTex != "") ? ("scene.materials." + matName +".bumptex = " + bumpTex + "\n") : "") +
-				((normalTex != "") ? ("scene.materials." + matName +".normaltex = " + normalTex + "\n") : "") +
+				+ GetSLGCommonMatProps(matName, emissionTexName, bumpTex, normalTex) +
 				"scene.materials." + matName +".kd = " + kdTexName + "\n"
 				"scene.materials." + matName +".ks = " + ksTexName + "\n"
 				"scene.materials." + matName +".ka = " + kaTexName + "\n"
