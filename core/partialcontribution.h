@@ -49,11 +49,10 @@ struct ContextSingle
 class PartialContribution {
 	struct contrib
 	{
-		contrib() :L(0.f), V(0.f), active(false) { }
+		contrib() :L(0.f), V(0.f) { }
 
 		SWCSpectrum L;
 		float V;
-		bool active;
 	};
 
 public:
@@ -85,7 +84,6 @@ public:
 		}
 
 		vecNotSingle[group].V += V;
-		vecNotSingle[group].active = true;
 	}
 
 	void Splat(

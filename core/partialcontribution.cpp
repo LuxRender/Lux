@@ -59,18 +59,15 @@ namespace lux
 	{
 		const u_int nGroups = vec.size();
 		for (u_int i = 0; i < nGroups; ++i) {
-			if (vec[i].active) {
-				SWCSpectrum L(vec[i].L.Clamp());
-				if (!L.Black())
-					vec[i].V /= L.Filter(sw);
-				XYZColor color(sw, L);
-				sample.AddContribution(xl, yl,
-					color * weight, alpha, d, vec[i].V,
-					bufferId, i);
-			}
+			const SWCSpectrum L(vec[i].L.Clamp());
+			if (!L.Black())
+				vec[i].V /= L.Filter(sw);
+			const XYZColor color(sw, L);
+			sample.AddContribution(xl, yl,
+				color * weight, alpha, d, vec[i].V,
+				bufferId, i);
 			vec[i].L = SWCSpectrum(0.f);
 			vec[i].V = 0.f;
-			vec[i].active = false;
 		}
 	}
 }
