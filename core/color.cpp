@@ -210,7 +210,7 @@ RGBColor ColorSystem::Limit(const RGBColor &rgb, int method) const
 	if (HighGamut(rgb)) {
 		if (method == 2)
 			return rgb.Clamp(0.f, 1.f);
-		const float lum = method == 0 ? RGBToXYZ[1][0] * rgb.c[0] + RGBToXYZ[1][1] * rgb.c[1] + RGBToXYZ[1][2] * rgb.c[2] : luminance / 3.f;
+		const float lum = (method == 0) ? (RGBToXYZ[1][0] * rgb.c[0] + RGBToXYZ[1][1] * rgb.c[1] + RGBToXYZ[1][2] * rgb.c[2]) : (luminance / 3.f);
 		if (lum > luminance)
 			return RGBColor(1.f);
 

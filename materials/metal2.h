@@ -44,6 +44,10 @@ public:
 		const Intersection &isect, 
 		const DifferentialGeometry &dgShading) const;
 
+	Texture<FresnelGeneral> *GetFresnelTexture() { return fresnel.get(); }
+	Texture<float> *GetNuTexture() { return nu.get(); }
+	Texture<float> *GetNvTexture() { return nv.get(); }
+
 	static Material * CreateMaterial(const Transform &xform,
 		const ParamSet &mp);
 

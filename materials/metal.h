@@ -47,12 +47,14 @@ public:
 	static Material * CreateMaterial(const Transform &xform,
 		const ParamSet &mp);
 
+	SPD *GetNSPD() { return N.get(); }
+	SPD *GetKSPD() { return K.get(); }
 	Texture<float> *GetNuTexture() { return nu.get(); }
 	Texture<float> *GetNvTexture() { return nv.get(); }
 
 private:
 	// Metal Private Data
-	boost::shared_ptr<SPD > N, K;
+	boost::shared_ptr<SPD> N, K;
 	boost::shared_ptr<Texture<float> > nu, nv;
 };
 

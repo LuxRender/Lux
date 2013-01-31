@@ -53,6 +53,9 @@ public:
 		const DifferentialGeometry &dg, float delta,
 		float *du, float *dv) const { *du = *dv = 0.f; }
 
+	IrregularSPD *GetNSPD() { return &N; }
+	IrregularSPD *GetKSPD() { return &K; }
+
 private:
 	IrregularSPD N, K;
 	float index;

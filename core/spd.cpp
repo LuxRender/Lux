@@ -113,3 +113,17 @@ XYZColor SPD::ToXYZ() const {
 	}
 	return c * 683.f;
 }
+
+XYZColor SPD::ToNormalizedXYZ() const {
+	XYZColor c(0.f);
+	float yint  = 0.f;
+	for (u_int i = 0; i < nCIE; ++i) {
+		yint += CIE_Y[i];
+
+		const float s = Sample(i + CIEstart);
+		c.c[0] += s * CIE_X[i];
+		c.c[1] += s * CIE_Y[i];
+		c.c[2] += s * CIE_Z[i];
+	}
+	return c * (683.f / yint);
+}

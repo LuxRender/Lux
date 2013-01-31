@@ -95,6 +95,7 @@ public:
 	float Y() const;
 	float Filter() const;
 	XYZColor ToXYZ() const;
+	XYZColor ToNormalizedXYZ() const;
 	void AllocateSamples(u_int n);
 	void FreeSamples();
 	void Normalize();

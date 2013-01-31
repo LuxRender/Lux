@@ -68,6 +68,7 @@
 #include "materials/mattetranslucent.h"
 #include "materials/null.h"
 #include "materials/mixmaterial.h"
+#include "materials/metal2.h"
 
 #include "volumes/clearvolume.h"
 
@@ -77,6 +78,7 @@
 #include "luxrays/opencl/utils.h"
 #include "rendersession.h"
 #include "samplers/lowdiscrepancy.h"
+#include "textures/tabulatedfresnel.h"
 
 using namespace lux;
 
@@ -543,7 +545,7 @@ static string GetSLGCommonMatProps(const string &matName, const string &emission
 }
 
 static string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, Material *mat,
-		const Primitive *prim, const string &emissionTexName) {
+		const Primitive *prim, const string &emissionTexName, ColorSystem &colorSpace) {
 	if (!mat)
 		return "mat_default";
 
@@ -740,88 +742,27 @@ static string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, Material *mat,
 
 		// Check if the material has already been defined
 		if (!slgScene->matDefs.IsMaterialDefined(matName)) {
-			// Try to guess the exponent from the roughness of the surface in the u direction
-			Texture<float> *uroughnessTex = metal->GetNuTexture();
-			LOG(LUX_DEBUG, LUX_NOERROR) << "Nu Texture type: " << ToClassName(uroughnessTex);
-			ConstantFloatTexture *uroughnessFloatTex = dynamic_cast<ConstantFloatTexture *>(uroughnessTex);
+			SPD *N = metal->GetNSPD();
+			SPD *K = metal->GetKSPD();
 
-			float uroughness;
-			if (uroughnessFloatTex)
-				uroughness = Clamp((*uroughnessFloatTex)["value"].FloatValue(), 6e-3f, 1.f);
-			else {
-				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Metal material with ConstantFloatTexture (i.e. not " <<
-					ToClassName(uroughnessFloatTex) << "). Ignoring unsupported texture and using 0.1 value.";
-				uroughness = .1f;
-			}
-			const float exponent = 1.f / uroughness;
+			const RGBColor Nrgb = colorSpace.Limit(colorSpace.ToRGBConstrained(N->ToNormalizedXYZ()), 1);
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Metal N color: " << Nrgb;
 
-			string matProp;
-			// Retrieve the metal name
-			const string metalName = (*metal)["metalName"].StringValue();
-			if (metalName == "amorphous carbon")
-				matProp =
-					"scene.materials." + matName +".type = metal\n"
-					+ GetSLGCommonMatProps(matName, emissionTexName, bumpTex, normalTex) +
-					"scene.materials." + matName +".kr = 0.1 0.1 0.1\n"
-					"scene.materials." + matName +".exp = " +ToString(exponent) + "\n";
-			else if (metalName == "silver")
-				matProp =
-					"scene.materials." + matName + "_mat1.type = metal\n"
-					"scene.materials." + matName + "_mat1.kr = 0.9 0.9 0.9\n"
-					"scene.materials." + matName + "_mat1.exp = " +ToString(exponent) + "\n"
-					"scene.materials." + matName + "_mat2.type = matte\n"
-					"scene.materials." + matName + "_mat2.kd = 0.75 0.75 0.75\n"
-					"scene.materials." + matName +".type = mix\n"
-					+ GetSLGCommonMatProps(matName, emissionTexName, bumpTex, normalTex) +
-					"scene.materials." + matName +".material1 = " + matName + "_mat1\n"
-					"scene.materials." + matName +".material2 = " + matName + "_mat2\n"
-					"scene.materials." + matName +".amount = 0.5\n";
-			else if (metalName == "gold")
-				matProp =
-					"scene.materials." + matName + "_mat1.type = metal\n"
-					"scene.materials." + matName + "_mat1.kr = 0.9 0.55 0.05\n"
-					"scene.materials." + matName + "_mat1.exp = " +ToString(exponent) + "\n"
-					"scene.materials." + matName + "_mat2.type = matte\n"
-					"scene.materials." + matName + "_mat2.kd = 0.09 0.055 0.005\n"
-					"scene.materials." + matName +".type = mix\n"
-					+ GetSLGCommonMatProps(matName, emissionTexName, bumpTex, normalTex) +
-					"scene.materials." + matName +".material1 = " + matName + "_mat1\n"
-					"scene.materials." + matName +".material2 = " + matName + "_mat2\n"
-					"scene.materials." + matName +".amount = 0.5\n";
-			else if (metalName == "copper")
-				matProp =
-					"scene.materials." + matName + "_mat1.type = metal\n"
-					"scene.materials." + matName + "_mat1.kr = 0.9 0.7 0.6\n"
-					"scene.materials." + matName + "_mat1.exp = " +ToString(exponent) + "\n"
-					"scene.materials." + matName + "_mat2.type = matte\n"
-					"scene.materials." + matName + "_mat2.kd = 0.4 0.25 0.2\n"
-					"scene.materials." + matName +".type = mix\n"
-					+ GetSLGCommonMatProps(matName, emissionTexName, bumpTex, normalTex) +
-					"scene.materials." + matName +".material1 = " + matName + "_mat1\n"
-					"scene.materials." + matName +".material2 = " + matName + "_mat2\n"
-					"scene.materials." + matName +".amount = 0.5\n";
-			else {
-				if (metalName != "aluminium")
-					LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Metal material of name 'amorphous carbon', 'silver', 'gold', 'copper' and 'aluminium' (i.e. not " <<
-						metalName << "). Replacing an unsupported material with metal 'aluminium'.";
+			const RGBColor Krgb = colorSpace.Limit(colorSpace.ToRGBConstrained(K->ToNormalizedXYZ()), 1);
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Metal K color: " << Krgb;
 
-				matProp =
-					"scene.materials." + matName + "_mat1.type = metal\n"
-					"scene.materials." + matName + "_mat1.kr = 0.9 0.9 0.9\n"
-					"scene.materials." + matName + "_mat1.exp = " +ToString(exponent) + "\n"
-					"scene.materials." + matName + "_mat2.type = matte\n"
-					"scene.materials." + matName + "_mat2.kd = 0.75 0.75 0.75\n"
-					"scene.materials." + matName +".type = mix\n"
-					+ GetSLGCommonMatProps(matName, emissionTexName, bumpTex, normalTex) +
-					"scene.materials." + matName +".material1 = " + matName + "_mat1\n"
-					"scene.materials." + matName +".material2 = " + matName + "_mat2\n"
-					"scene.materials." + matName +".amount = 0.5\n";
-			}
+			const string nuTexName = GetSLGTexName(slgScene, metal->GetNuTexture());
+			const string nvTexName = GetSLGTexName(slgScene, metal->GetNvTexture());
 
+			// Emulating Metal with Metal2 material
+			const string matProp = "scene.materials." + matName +".type = metal2\n"
+				+ GetSLGCommonMatProps(matName, emissionTexName, bumpTex, normalTex) +
+				"scene.materials." + matName +".eta = " + ToString(Nrgb.c[0]) + " " +  ToString(Nrgb.c[1]) + " " +  ToString(Nrgb.c[2]) + "\n"
+				"scene.materials." + matName +".k = " + ToString(Krgb.c[0]) + " " +  ToString(Krgb.c[1]) + " " +  ToString(Krgb.c[2]) + "\n"
+				"scene.materials." + matName +".uroughness = " + nuTexName + "\n"
+				"scene.materials." + matName +".vroughness = " + nvTexName + "\n";
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProp << "]";
 			slgScene->DefineMaterials(matProp);
-
-			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer doesn't support Metal material, trying an emulation with SLG Metal.";
 		}
 	} else
 	//------------------------------------------------------------------
@@ -878,8 +819,8 @@ static string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, Material *mat,
 			const string matProp = "scene.materials." + matName +".type = mix\n"
 				+ GetSLGCommonMatProps(matName, emissionTexName, bumpTex, normalTex) +
 				"scene.materials." + matName +".amount = " + GetSLGTexName(slgScene, amount) + "\n"
-				"scene.materials." + matName +".material1 = " + GetSLGMaterialName(slgScene, mat1, prim, "0.0 0.0 0.0") + "\n"
-				"scene.materials." + matName +".material2 = " + GetSLGMaterialName(slgScene, mat2, prim, "0.0 0.0 0.0") + "\n"
+				"scene.materials." + matName +".material1 = " + GetSLGMaterialName(slgScene, mat1, prim, "0.0 0.0 0.0", colorSpace) + "\n"
+				"scene.materials." + matName +".material2 = " + GetSLGMaterialName(slgScene, mat2, prim, "0.0 0.0 0.0", colorSpace) + "\n"
 				;
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProp << "]";
 			slgScene->DefineMaterials(matProp);
@@ -919,10 +860,54 @@ static string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, Material *mat,
 		}
 	} else
 	//------------------------------------------------------------------
+	// Check if it is material Metal2
+	//------------------------------------------------------------------
+	if (dynamic_cast<Metal2 *>(mat)) {
+		// Define the material
+		Metal2 *metal2 = dynamic_cast<Metal2 *>(mat);
+		matName = metal2->GetName();
+
+		// Check if the material has already been defined
+		if (!slgScene->matDefs.IsMaterialDefined(matName)) {
+			Texture<FresnelGeneral> *fresnelTex = metal2->GetFresnelTexture();
+
+			if (dynamic_cast<TabulatedFresnel *>(fresnelTex)) {
+				TabulatedFresnel *tabFresnelTex = dynamic_cast<TabulatedFresnel *>(fresnelTex);
+
+				IrregularSPD *N = tabFresnelTex->GetNSPD();
+				IrregularSPD *K = tabFresnelTex->GetKSPD();
+
+				const RGBColor Nrgb = colorSpace.Limit(colorSpace.ToRGBConstrained(N->ToNormalizedXYZ()), 1);
+				LOG(LUX_DEBUG, LUX_NOERROR) << "Metal2 N color: " << Nrgb;
+
+				const RGBColor Krgb = colorSpace.Limit(colorSpace.ToRGBConstrained(K->ToNormalizedXYZ()), 1);
+				LOG(LUX_DEBUG, LUX_NOERROR) << "Metal2 K color: " << Krgb;
+
+				const string nuTexName = GetSLGTexName(slgScene, metal2->GetNuTexture());
+				const string nvTexName = GetSLGTexName(slgScene, metal2->GetNvTexture());
+
+				const string matProp = "scene.materials." + matName +".type = metal2\n"
+					+ GetSLGCommonMatProps(matName, emissionTexName, bumpTex, normalTex) +
+					"scene.materials." + matName +".eta = " + ToString(Nrgb.c[0]) + " " +  ToString(Nrgb.c[1]) + " " +  ToString(Nrgb.c[2]) + "\n"
+					"scene.materials." + matName +".k = " + ToString(Krgb.c[0]) + " " +  ToString(Krgb.c[1]) + " " +  ToString(Krgb.c[2]) + "\n"
+					"scene.materials." + matName +".uroughness = " + nuTexName + "\n"
+					"scene.materials." + matName +".vroughness = " + nvTexName + "\n";
+				LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProp << "]";
+				slgScene->DefineMaterials(matProp);
+//			} else if (dynamic_cast<FresnelColorTexture *>(fresnelTex)) {
+//					FresnelColorTexture *fresnelCol = dynamic_cast<FresnelColorTexture *>(fresnelTex);
+			} else {
+				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Metal2 material with tabular data (i.e. not " <<
+						ToClassName(fresnelTex) << "). Replacing an unsupported material with matte.";
+				return "mat_default";
+			}
+		}
+	} else
+	//------------------------------------------------------------------
 	// Material is not supported, use the default one
 	//------------------------------------------------------------------
 	{
-		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Matte, Mirror, Glass, Glass2, Metal, MatteTranslucent and Null material (i.e. not " <<
+		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Matte, Mirror, Glass, Glass2, Metal, MatteTranslucent, Null, Mix, Glossy2 and Metal material (i.e. not " <<
 			ToClassName(mat) << "). Replacing an unsupported material with matte.";
 		return "mat_default";
 	}
@@ -1016,7 +1001,7 @@ static string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive 
 		return "mat_default";
 	}
 
-	return GetSLGMaterialName(slgScene, mat, prim, emissionTexName);
+	return GetSLGMaterialName(slgScene, mat, prim, emissionTexName, colorSpace);
 }
 
 void SLGRenderer::ConvertEnvLights(luxrays::sdl::Scene *slgScene) {
