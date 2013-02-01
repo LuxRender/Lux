@@ -757,7 +757,7 @@ static string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, Material *mat,
 			// Emulating Metal with Metal2 material
 			const string matProp = "scene.materials." + matName +".type = metal2\n"
 				+ GetSLGCommonMatProps(matName, emissionTexName, bumpTex, normalTex) +
-				"scene.materials." + matName +".eta = " + ToString(Nrgb.c[0]) + " " +  ToString(Nrgb.c[1]) + " " +  ToString(Nrgb.c[2]) + "\n"
+				"scene.materials." + matName +".n = " + ToString(Nrgb.c[0]) + " " +  ToString(Nrgb.c[1]) + " " +  ToString(Nrgb.c[2]) + "\n"
 				"scene.materials." + matName +".k = " + ToString(Krgb.c[0]) + " " +  ToString(Krgb.c[1]) + " " +  ToString(Krgb.c[2]) + "\n"
 				"scene.materials." + matName +".uroughness = " + nuTexName + "\n"
 				"scene.materials." + matName +".vroughness = " + nvTexName + "\n";
@@ -888,7 +888,7 @@ static string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, Material *mat,
 
 				const string matProp = "scene.materials." + matName +".type = metal2\n"
 					+ GetSLGCommonMatProps(matName, emissionTexName, bumpTex, normalTex) +
-					"scene.materials." + matName +".eta = " + ToString(Nrgb.c[0]) + " " +  ToString(Nrgb.c[1]) + " " +  ToString(Nrgb.c[2]) + "\n"
+					"scene.materials." + matName +".n = " + ToString(Nrgb.c[0]) + " " +  ToString(Nrgb.c[1]) + " " +  ToString(Nrgb.c[2]) + "\n"
 					"scene.materials." + matName +".k = " + ToString(Krgb.c[0]) + " " +  ToString(Krgb.c[1]) + " " +  ToString(Krgb.c[2]) + "\n"
 					"scene.materials." + matName +".uroughness = " + nuTexName + "\n"
 					"scene.materials." + matName +".vroughness = " + nvTexName + "\n";
