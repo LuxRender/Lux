@@ -50,6 +50,8 @@ public:
 		color->GetDuv(sw, dg, delta, du, dv);
 	}
 
+	Texture<SWCSpectrum> *GetColorTexture() { return color.get(); }
+
 	static Texture<FresnelGeneral> *CreateFresnelTexture(const Transform &tex2world, const ParamSet &tp);
 private:
 	const boost::shared_ptr<Texture<SWCSpectrum> > color;

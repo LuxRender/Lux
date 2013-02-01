@@ -79,6 +79,7 @@
 #include "rendersession.h"
 #include "samplers/lowdiscrepancy.h"
 #include "textures/tabulatedfresnel.h"
+#include "textures/fresnelcolor.h"
 
 using namespace lux;
 
@@ -871,6 +872,9 @@ static string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, Material *mat,
 		if (!slgScene->matDefs.IsMaterialDefined(matName)) {
 			Texture<FresnelGeneral> *fresnelTex = metal2->GetFresnelTexture();
 
+			const string nuTexName = GetSLGTexName(slgScene, metal2->GetNuTexture());
+			const string nvTexName = GetSLGTexName(slgScene, metal2->GetNvTexture());
+
 			if (dynamic_cast<TabulatedFresnel *>(fresnelTex)) {
 				TabulatedFresnel *tabFresnelTex = dynamic_cast<TabulatedFresnel *>(fresnelTex);
 
@@ -883,9 +887,6 @@ static string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, Material *mat,
 				const RGBColor Krgb = colorSpace.Limit(colorSpace.ToRGBConstrained(K->ToNormalizedXYZ()), 1);
 				LOG(LUX_DEBUG, LUX_NOERROR) << "Metal2 K color: " << Krgb;
 
-				const string nuTexName = GetSLGTexName(slgScene, metal2->GetNuTexture());
-				const string nvTexName = GetSLGTexName(slgScene, metal2->GetNvTexture());
-
 				const string matProp = "scene.materials." + matName +".type = metal2\n"
 					+ GetSLGCommonMatProps(matName, emissionTexName, bumpTex, normalTex) +
 					"scene.materials." + matName +".n = " + ToString(Nrgb.c[0]) + " " +  ToString(Nrgb.c[1]) + " " +  ToString(Nrgb.c[2]) + "\n"
@@ -894,10 +895,29 @@ static string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, Material *mat,
 					"scene.materials." + matName +".vroughness = " + nvTexName + "\n";
 				LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProp << "]";
 				slgScene->DefineMaterials(matProp);
-//			} else if (dynamic_cast<FresnelColorTexture *>(fresnelTex)) {
-//					FresnelColorTexture *fresnelCol = dynamic_cast<FresnelColorTexture *>(fresnelTex);
+			} else if (dynamic_cast<FresnelColorTexture *>(fresnelTex)) {
+				FresnelColorTexture *fresnelCol = dynamic_cast<FresnelColorTexture *>(fresnelTex);
+
+				const string colTexName = GetSLGTexName(slgScene, fresnelCol->GetColorTexture());
+
+				// Define FresnellApproxN and FresnellApproxK textures
+				const string texProp = "scene.textures.fresnelapproxn-" + matName + ".type = fresnelapproxn\n"
+					"scene.textures.fresnelapproxn-" + matName + ".texture = " + colTexName + "\n"
+					"scene.textures.fresnelapproxk-" + matName + ".type = fresnelapproxk\n"
+					"scene.textures.fresnelapproxk-" + matName + ".texture = " + colTexName + "\n";
+				LOG(LUX_DEBUG, LUX_NOERROR) << "Defining textures for material " << matName << ": [\n" << texProp << "]";
+				slgScene->DefineTextures(texProp);
+
+				const string matProp = "scene.materials." + matName +".type = metal2\n"
+					+ GetSLGCommonMatProps(matName, emissionTexName, bumpTex, normalTex) +
+					"scene.materials." + matName +".n = fresnelapproxn-" + matName + "\n"
+					"scene.materials." + matName +".k = fresnelapproxk-" + matName + "\n"
+					"scene.materials." + matName +".uroughness = " + nuTexName + "\n"
+					"scene.materials." + matName +".vroughness = " + nvTexName + "\n";
+				LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProp << "]";
+				slgScene->DefineMaterials(matProp);
 			} else {
-				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Metal2 material with tabular data (i.e. not " <<
+				LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Metal2 material with tabular data or fresnel color texture (i.e. not " <<
 						ToClassName(fresnelTex) << "). Replacing an unsupported material with matte.";
 				return "mat_default";
 			}

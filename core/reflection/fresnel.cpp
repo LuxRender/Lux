@@ -72,7 +72,7 @@ SWCSpectrum FresnelApproxEta(const SWCSpectrum &Fr) {
 	return (SWCSpectrum(1.f) + sqrtReflectance) /
 		(SWCSpectrum(1.f) - sqrtReflectance);
 }
- SWCSpectrum FresnelApproxK(const SWCSpectrum &Fr) {
+SWCSpectrum FresnelApproxK(const SWCSpectrum &Fr) {
 	SWCSpectrum reflectance = Fr.Clamp(0.f, .999f);
 	return 2.f * Sqrt(reflectance /
 		(SWCSpectrum(1.f) - reflectance));
