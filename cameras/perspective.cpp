@@ -280,7 +280,7 @@ BBox PerspectiveCamera::Bounds() const
 		const_cast<PerspectiveCamera*>(this)->SampleMotion(Lerp(static_cast<float>(i) / 1024.f, CameraMotion.StartTime(), CameraMotion.EndTime()));
 		bound = Union(bound, CameraToWorld * orig_bound);
 	}
-	bound.Expand(MachineEpsilon::E(bound));
+	bound.Expand(max(1.f, MachineEpsilon::E(bound)));
 	return bound;
 }
 

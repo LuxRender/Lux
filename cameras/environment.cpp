@@ -115,7 +115,7 @@ BBox EnvironmentCamera::Bounds() const
 		bound = Union(bound, BBox(pos));
 	}
 
-	bound.Expand(MachineEpsilon::E(bound));
+	bound.Expand(max(1.f, MachineEpsilon::E(bound)));
 
 	return bound;
 }

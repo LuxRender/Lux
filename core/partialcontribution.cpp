@@ -41,9 +41,6 @@ namespace lux
 	{
 		ContextSingle ctx(sw);
 
-		sw.single = true;
-		SplatW(sw, sample, vecSingle, xl, yl, d, alpha, bufferId, weight);
-
 		sw.single = false;
 		SplatW(sw, sample, vecNotSingle, xl, yl, d, alpha, bufferId, weight);
 	}
@@ -62,11 +59,15 @@ namespace lux
 	{
 		const u_int nGroups = vec.size();
 		for (u_int i = 0; i < nGroups; ++i) {
-			if (!vec[i].L.Black())
-				vec[i].V /= vec[i].L.Filter(sw);
-			XYZColor color(sw, vec[i].L);
+			const SWCSpectrum L(vec[i].L.Clamp());
+			if (!L.Black())
+				vec[i].V /= L.Filter(sw);
+			const XYZColor color(sw, L);
 			sample.AddContribution(xl, yl,
-				color * weight, alpha, d, vec[i].V, bufferId, i);
+				color * weight, alpha, d, vec[i].V,
+				bufferId, i);
+			vec[i].L = SWCSpectrum(0.f);
+			vec[i].V = 0.f;
 		}
 	}
 }

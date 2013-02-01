@@ -40,8 +40,10 @@ void ComputeStep1dCDF(const float *f, u_int nSteps, float *c, float *cdf)
 		cdf[i] = cdf[i - 1] + f[i - 1] / nSteps;
 	// Transform step function integral into cdf
 	*c = cdf[nSteps];
-	for (u_int i = 1; i < nSteps + 1; ++i)
-		cdf[i] /= *c;
+	if (*c > 0.f) {
+		for (u_int i = 1; i < nSteps + 1; ++i)
+			cdf[i] /= *c;
+	}
 }
 float SampleStep1d(const float *f, const float *cdf, float c, u_int nSteps,
 	float u, float *pdf)
