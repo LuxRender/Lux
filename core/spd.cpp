@@ -125,5 +125,5 @@ XYZColor SPD::ToNormalizedXYZ() const {
 		c.c[1] += s * CIE_Y[i];
 		c.c[2] += s * CIE_Z[i];
 	}
-	return c * (683.f / yint);
+	return c / yint;
 }

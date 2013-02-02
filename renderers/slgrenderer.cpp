@@ -746,10 +746,10 @@ static string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, Material *mat,
 			SPD *N = metal->GetNSPD();
 			SPD *K = metal->GetKSPD();
 
-			const RGBColor Nrgb = colorSpace.Limit(colorSpace.ToRGBConstrained(N->ToNormalizedXYZ()), 1);
+			const RGBColor Nrgb = colorSpace.ToRGBConstrained(N->ToNormalizedXYZ());
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Metal N color: " << Nrgb;
 
-			const RGBColor Krgb = colorSpace.Limit(colorSpace.ToRGBConstrained(K->ToNormalizedXYZ()), 1);
+			const RGBColor Krgb = colorSpace.ToRGBConstrained(K->ToNormalizedXYZ());
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Metal K color: " << Krgb;
 
 			const string nuTexName = GetSLGTexName(slgScene, metal->GetNuTexture());
@@ -881,10 +881,10 @@ static string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, Material *mat,
 				IrregularSPD *N = tabFresnelTex->GetNSPD();
 				IrregularSPD *K = tabFresnelTex->GetKSPD();
 
-				const RGBColor Nrgb = colorSpace.Limit(colorSpace.ToRGBConstrained(N->ToNormalizedXYZ()), 1);
+				const RGBColor Nrgb = colorSpace.ToRGBConstrained(N->ToNormalizedXYZ());
 				LOG(LUX_DEBUG, LUX_NOERROR) << "Metal2 N color: " << Nrgb;
 
-				const RGBColor Krgb = colorSpace.Limit(colorSpace.ToRGBConstrained(K->ToNormalizedXYZ()), 1);
+				const RGBColor Krgb = colorSpace.ToRGBConstrained(K->ToNormalizedXYZ());
 				LOG(LUX_DEBUG, LUX_NOERROR) << "Metal2 K color: " << Krgb;
 
 				const string matProp = "scene.materials." + matName +".type = metal2\n"
