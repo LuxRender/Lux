@@ -626,21 +626,15 @@ static string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, Material *mat,
 		LOG(LUX_DEBUG, LUX_NOERROR) << "Architectural glass: " << architectural;
 		// Check if the material has already been defined
 		if (!slgScene->matDefs.IsMaterialDefined(matName)) {
+			const string indexTexName = GetSLGTexName(slgScene, glass->GetIndexTexture());
+
 			string matProp;
-			if (architectural) {
-				matProp = "scene.materials." + matName +".type = archglass\n"
-						+ GetSLGCommonMatProps(matName, emissionTexName, bumpTex, normalTex) +
-						"scene.materials." + matName +".kr = " + krTexName + "\n"
-						"scene.materials." + matName +".kt = " + ktTexName + "\n";
-			} else {
-				const string indexTexName = GetSLGTexName(slgScene, glass->GetIndexTexture());
-				matProp = "scene.materials." + matName +".type = glass\n"
-						+ GetSLGCommonMatProps(matName, emissionTexName, bumpTex, normalTex) +
-						"scene.materials." + matName +".kr = " + krTexName + "\n"
-						"scene.materials." + matName +".kt = " + ktTexName + "\n"
-						"scene.materials." + matName +".ioroutside = 1.0\n"
-						"scene.materials." + matName +".iorinside = " + indexTexName + "\n";
-			}
+			matProp = "scene.materials." + matName +".type = " + (architectural ? "archglass" : "glass") + "\n"
+					+ GetSLGCommonMatProps(matName, emissionTexName, bumpTex, normalTex) +
+					"scene.materials." + matName +".kr = " + krTexName + "\n"
+					"scene.materials." + matName +".kt = " + ktTexName + "\n"
+					"scene.materials." + matName +".ioroutside = 1.0\n"
+					"scene.materials." + matName +".iorinside = " + indexTexName + "\n";
 			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProp << "]";
 			slgScene->DefineMaterials(matProp);
 		}
