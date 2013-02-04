@@ -54,12 +54,29 @@ public:
 		return true;
 	}
 
+	// cosi: cosine of the angle between the shading normal and the direction towards the light
+	// coso: cosine of the angle between the shading normal and the direction towards the eye
+	// pdf: probability of sampling wo knowing wi
+	// pdfR: probability of sampling wi knowing wo
+	// tPdf: probability of reaching the next vertex towards the eye without scattering
+	// tPdfR: probability of reaching the next vertex towards the light without scattering
+	// dAWeight, dARWeight: weighting factors for MIS
+	// rr: russian roulette probability in direction wo
+	// rrR: russian roulette probability in direction wi
+	// d2: squared distance towards the next vertex (depends on the direction)
 	float cosi, coso, pdf, pdfR, tPdf, tPdfR, dAWeight, dARWeight, rr, rrR, d2, padding;
+	// flux: flux from the beginning of the path up to this vertex, excluding scattering at this vertex, probability weighted
 	SWCSpectrum flux;
+	// bsdf: the BSDF at that vertex
 	BSDF *bsdf;
+	// flags: scattering flags at this vertex describing the direction sampling process
 	BxDFType flags;
+	// wi: direction towards the light
+	// wo: direcion towards the eye
 	Vector wi, wo;
+	// p: the location of this vertex
 	Point p;
+	// single: flag indicating if only a single wavelength remains at this vertex due to dispersion
 	bool single;
 };
 
@@ -358,10 +375,13 @@ bool BidirIntegrator::GetDirectLight(const Scene &scene, const Sample &sample,
 	vL.wi = Vector(vL.bsdf->dgShading.nn);
 	vL.cosi = AbsDot(vL.wi, vL.bsdf->ng);
 	vL.dAWeight *= lightWeight;
+	vL.flux = SWCSpectrum(1.f / directWeight);
+	vL.tPdf = 1.f;
+	vL.tPdfR = 1.f;
+	vL.single = sample.swl.single;
 	if (light->IsDeltaLight())
 		vL.dAWeight = -vL.dAWeight;
 	ePdfDirect *= directWeight;
-	vL.flux = SWCSpectrum(1.f / directWeight);
 	bool single; // TODO: where is this used
 	if (!EvalPath(scene, sample, eyePath, length, lightPath, 1,
 		ePdfDirect, true, weight, Ld, single))
@@ -451,7 +471,6 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 			&f0, &eye0.pdfR, BSDF_ALL, &eye0.flags,
 			&eye0.pdf, true))
 				return nrContribs;
-		eye0.flux *= f0;
 		eye0.cosi = AbsDot(eye0.wi, eye0.bsdf->ng);
 		eye0.rr = min(1.f, max(lightThreshold,
 			f0.Filter(sw) * eye0.coso / eye0.cosi));
@@ -460,7 +479,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 		ray.time = sample.realTime;
 		sample.camera->ClampRay(ray);
 		Intersection isect;
-		eyePath[nEye].flux = eye0.flux;
+		eyePath[nEye].flux = eye0.flux * f0;
 
 		// Trace eye subpath and do direct lighting
 		const Volume *volume = eye0.bsdf->GetVolume(ray.d);
@@ -618,16 +637,15 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 				v.rr = min(1.f, max(lightThreshold,
 					f.Filter(sw) * v.coso / v.cosi));
 				v.rrR = min(1.f, max(eyeThreshold, f.Filter(sw)));
-				v.flux *= f;
+				eyePath[nEye].flux = v.flux * f;
 				if (nEye > rrStart) {
 					if (v.rrR < data[0])
 						break;
-					v.flux /= v.rrR;
+					eyePath[nEye].flux /= v.rrR;
 				}
-				eyePath[nEye].flux = v.flux;
 			} else {
+				eyePath[nEye].flux *= f;
 				--nEye;
-				v.flux *= f;
 				vp.tPdfR *= v.pdfR;
 				v.tPdf *= v.pdf;
 				if (sampleIndex + 1 >= maxEyeDepth) {
@@ -738,20 +756,21 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 			// Sample light subpath initial direction and
 			// finish vertex initialization if needed
 			const float *data = sample.sampler->GetLazyValues(sample, sampleLightOffsets[l], 0);
+			SWCSpectrum f0;
 			if (maxLightDepth > 1 && light0.bsdf->SampleF(sw, light0.wi,
 				&light0.wo, data[1], data[2], data[3],
-				&light0.flux, &light0.pdf, BSDF_ALL, &light0.flags,
+				&f0, &light0.pdf, BSDF_ALL, &light0.flags,
 				&light0.pdfR)) {
 				light0.coso = AbsDot(light0.wo, light0.bsdf->ng);
 				light0.rrR = min(1.f, max(eyeThreshold,
-					light0.flux.Filter(sw) * light0.cosi /
+					f0.Filter(sw) * light0.cosi /
 					light0.coso));
 				light0.rr = min(1.f, max(lightThreshold,
-					light0.flux.Filter(sw)));
+					f0.Filter(sw)));
 				Ray ray(light0.p, light0.wo);
 				ray.time = sample.realTime;
 				Intersection isect;
-				lightPath[nLight].flux = light0.flux;
+				lightPath[nLight].flux = light0.flux * f0;
 
 				// Trace light subpath and connect to eye subpath
 				const Volume *volume = light0.bsdf->GetVolume(ray.d);
@@ -867,16 +886,15 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 						v.rr = min(1.f,
 							max(lightThreshold,
 							f.Filter(sw)));
-						v.flux *= f;
+						lightPath[nLight].flux = v.flux * f;
 						if (nLight > rrStart) {
 							if (v.rr < data[0])
 								break;
-							v.flux /= v.rr;
+							lightPath[nLight].flux /= v.rr;
 						}
-						lightPath[nLight].flux = v.flux;
 					} else {
+						lightPath[nLight].flux *= f;
 						--nLight;
-						v.flux *= f;
 						vp.tPdf *= v.pdf;
 						v.tPdfR *= v.pdfR;
 						if (sampleIndex + 1 >= maxLightDepth) {

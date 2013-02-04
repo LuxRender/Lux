@@ -40,7 +40,7 @@ public:
 	virtual ~NullTransmission() { }
 	virtual void F(const SpectrumWavelengths &sw, const Vector &wo,
 		const Vector &wi, SWCSpectrum *const f_) const {
-		if (Dot(wo, wi) <= -1.f + MachineEpsilon::E(1.f))
+		if (wo == -wi/*Dot(wo, wi) <= -1.f + MachineEpsilon::E(1.f)*/)
 			*f_ += SWCSpectrum(1.f);
 	}
 	virtual bool SampleF(const SpectrumWavelengths &sw, const Vector &wo,
@@ -48,7 +48,7 @@ public:
 		float *pdf, float *pdfBack = NULL, bool reverse = false) const;
 	virtual float Pdf(const SpectrumWavelengths &sw, const Vector &wo,
 		const Vector &wi) const {
-		return Dot(wo, wi) <= -1.f + MachineEpsilon::E(1.f) ? 1.f : 0.f;
+		return wo == -wi/*Dot(wo, wi) <= -1.f + MachineEpsilon::E(1.f)*/ ? 1.f : 0.f;
 	}
 private:
 	// NullTransmission Private Data
@@ -62,7 +62,7 @@ public:
 	virtual ~FilteredTransmission() { }
 	virtual void F(const SpectrumWavelengths &sw, const Vector &wo,
 		const Vector &wi, SWCSpectrum *const f_) const {
-		if (Dot(wo, wi) <= -1.f + MachineEpsilon::E(1.f))
+		if (wo == -wi/*Dot(wo, wi) <= -1.f + MachineEpsilon::E(1.f)*/)
 			*f_ += R;
 	}
 	virtual bool SampleF(const SpectrumWavelengths &sw, const Vector &wo,
@@ -70,7 +70,7 @@ public:
 		float *pdf, float *pdfBack = NULL, bool reverse = false) const;
 	virtual float Pdf(const SpectrumWavelengths &sw, const Vector &wo,
 		const Vector &wi) const {
-		return Dot(wo, wi) <= -1.f + MachineEpsilon::E(1.f) ? 1.f : 0.f;
+		return wo == -wi/*Dot(wo, wi) <= -1.f + MachineEpsilon::E(1.f)*/ ? 1.f : 0.f;
 	}
 private:
 	// FilteredTransmission Private Data
