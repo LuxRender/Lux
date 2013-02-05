@@ -57,6 +57,7 @@ private:
 #define PATHSTATE_FLAGS_SPECULARBOUNCE (1<<0)
 #define PATHSTATE_FLAGS_SPECULAR (1<<1)
 #define PATHSTATE_FLAGS_SCATTERED (1<<2)
+#define PATHSTATE_FLAGS_TERMINATE (1<<3)
 
 	bool GetSpecularBounce() const {
 		return (flags & PATHSTATE_FLAGS_SPECULARBOUNCE) != 0;
@@ -82,6 +83,14 @@ private:
 		flags = v ? (flags | PATHSTATE_FLAGS_SCATTERED) : (flags & ~PATHSTATE_FLAGS_SCATTERED);
 	}
 
+	bool GetTerminate() const {
+		return (flags & PATHSTATE_FLAGS_TERMINATE) != 0;
+	}
+
+	void SetTerminate() {
+		flags = flags | PATHSTATE_FLAGS_TERMINATE;
+	}
+
 	// NOTE: the size of this class is extremely important for the total
 	// amount of memory required for hybrid rendering.
 
@@ -104,6 +113,7 @@ private:
 	SWCSpectrum *Ld;
 	float *Vd;
 	u_int *LdGroup;
+	float *lightPdfd, *bsdfPdfd;
 
 	// Direct light sampling rays
 	Ray *shadowRay;
@@ -114,6 +124,7 @@ private:
 	Point lastBounce;
 
 	u_short pathLength;
+	u_short vertexIndex;
 	// Use Get/SetState to access this
 	u_short pathState;
 	u_short tracedShadowRayCount;

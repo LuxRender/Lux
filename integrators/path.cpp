@@ -272,6 +272,8 @@ PathState::PathState(const Scene &scene, ContributionBuffer *contribBuffer, Rand
 	Ld = new SWCSpectrum[shadowRaysCount];
 	Vd = new float[shadowRaysCount];
 	LdGroup = new u_int[shadowRaysCount];
+	lightPdfd = new float[shadowRaysCount];
+	bsdfPdfd = new float[shadowRaysCount];
 	shadowRay = new Ray[shadowRaysCount];
 	currentShadowRayIndex = new u_int[shadowRaysCount];
 	shadowVolume = new const Volume *[shadowRaysCount];
@@ -292,6 +294,7 @@ bool PathState::Init(const Scene &scene) {
 	sample.swl.Sample(sample.wavelengths);
 
 	pathLength = 0;
+	vertexIndex = 0;
 	distance = INFINITY;
 	VContrib = .1f;
 	volume = NULL;
@@ -325,6 +328,8 @@ void PathState::Free(const Scene &scene) {
 	delete[] Ld;
 	delete[] Vd;
 	delete[] LdGroup;
+	delete[] lightPdfd;
+	delete[] bsdfPdfd;
 	delete[] shadowRay;
 	delete[] currentShadowRayIndex;
 	delete[] shadowVolume;
@@ -457,9 +462,19 @@ void PathIntegrator::BuildShadowRays(const Scene &scene, PathState *pathState, B
 
 			if (Li.Black())
 				continue;
-			if (!light->IsDeltaLight())
-				Li *= PowerHeuristic(1, lightPdf * d2 / AbsDot(wi, lightBsdf->ng),
-					1, bsdf->Pdf(sw, wo, wi));
+			if (!light->IsDeltaLight()) {
+				pathState->lightPdfd[pathState->tracedShadowRayCount] = lightPdf * d2 / AbsDot(wi, lightBsdf->ng);
+				pathState->bsdfPdfd[pathState->tracedShadowRayCount] = bsdf->Pdf(sw, wo, wi);
+				if (pathState->vertexIndex > 3) {
+					if (rrStrategy == RR_EFFICIENCY) // use efficiency optimized RR
+						pathState->bsdfPdfd[pathState->tracedShadowRayCount] *= min(1.f, bsdf->F(sw, wi, wo, true).Filter(sw) / pathState->bsdfPdfd[pathState->tracedShadowRayCount]);
+					else if (rrStrategy == RR_PROBABILITY) // use normal/probability RR
+						pathState->bsdfPdfd[pathState->tracedShadowRayCount] *= continueProbability;
+				}
+			} else {
+				pathState->lightPdfd[pathState->tracedShadowRayCount] = 0.f;
+				pathState->bsdfPdfd[pathState->tracedShadowRayCount] = 0.f;
+			}
 
 			// Store light's contribution
 			pathState->Ld[pathState->tracedShadowRayCount] = Li;
@@ -489,11 +504,17 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 		u_short leftShadowRaysToTrace = 0;
 
 		for (u_short i = 0; i < pathState->tracedShadowRayCount; ++i) {
+			float spdf;
 			int result = scene.Connect(pathState->sample, pathState->shadowVolume + i,
 				pathState->GetScattered(), false, pathState->shadowRay[i],
 				*(rayBuffer->GetRayHit(pathState->currentShadowRayIndex[i])),
-				&pathState->Ld[i], NULL, NULL);
+				&pathState->Ld[i], &spdf, NULL);
 			if (result == 1) {
+				if (pathState->lightPdfd[i] > 0.f) {
+					const float weight = PowerHeuristic(1, pathState->lightPdfd[i], 1, pathState->bsdfPdfd[i] * spdf);
+					pathState->Ld[i] *= weight;
+					pathState->Vd[i] *= weight;
+				}
 				const u_int group = pathState->LdGroup[i];
 				pathState->L[group] += pathState->Ld[i];
 				pathState->V[group] += pathState->Vd[i];
@@ -502,6 +523,11 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 				// I have to continue to trace the ray
 				pathState->shadowRay[leftShadowRaysToTrace] = pathState->shadowRay[i];
 				pathState->shadowVolume[leftShadowRaysToTrace] = pathState->shadowVolume[i];
+				pathState->Ld[leftShadowRaysToTrace] = pathState->Ld[i];
+				pathState->LdGroup[leftShadowRaysToTrace] = pathState->LdGroup[i];
+				pathState->Vd[leftShadowRaysToTrace] = pathState->Vd[i];
+				pathState->lightPdfd[leftShadowRaysToTrace] = pathState->lightPdfd[i];
+				pathState->bsdfPdfd[leftShadowRaysToTrace] = pathState->bsdfPdfd[i] * spdf;
 				++leftShadowRaysToTrace;
 			}
 		}
@@ -514,6 +540,10 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 			pathState->tracedShadowRayCount = leftShadowRaysToTrace;
 
 			return false;
+		}
+		if (pathState->GetTerminate()) {
+			pathState->Terminate(scene, bufferId);
+			return true;
 		}
 	}
 
@@ -540,8 +570,9 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 		&pathState->pathThroughput)) {
 		// Stop path sampling since no intersection was found
 		// Possibly add horizon in render & reflections
-		if ((includeEnvironment || pathState->pathLength > 0)) {
+		if ((includeEnvironment || pathState->vertexIndex > 0)) {
 			pathState->pathThroughput /= spdf;
+			pathState->bouncePdf *= spdf;
 			// Reset ray origin
 			pathState->pathRay.o = pathState->lastBounce;
 			BSDF *ibsdf;
@@ -564,7 +595,7 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 		}
 
 		// Set alpha channel
-		const float alpha = (pathState->pathLength == 0) ? 0.f : 1.f;
+		const float alpha = (pathState->vertexIndex == 0) ? 0.f : 1.f;
 
 		// The path is finished
 		pathState->Terminate(scene, bufferId, alpha);
@@ -573,7 +604,8 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 	}
 	pathState->SetScattered(bsdf->dgShading.scattered);
 	pathState->pathThroughput /= spdf;
-	if (pathState->pathLength == 0)
+	pathState->bouncePdf *= spdf;
+	if (pathState->vertexIndex == 0)
 		pathState->distance = pathState->pathRay.maxt * pathState->pathRay.d.Length();
 
 	// Possibly add emitted light at path vertex
@@ -614,6 +646,10 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 	SWCSpectrum f;
 	if (!bsdf->SampleF(sw, wo, &wi, data[0], data[1], data[2], &f,
 		&pdf, BSDF_ALL, &flags, NULL, true)) {
+/* FIXME The following should work but somehow doesn't
+		pathState->SetTerminate();
+		pathState->SetState(PathState::CONTINUE_SHADOWRAY);
+		return false;*/
 		pathState->Terminate(scene, bufferId);
 		return true;
 	}
@@ -621,29 +657,43 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 	if (flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) ||
 		!(bsdf->Pdf(sw, wi, wo, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) > 0.f)) {
 		// Possibly terminate the path
-		if (pathState->pathLength > 3) {
+		if (pathState->vertexIndex > 3) {
 			if (rrStrategy == RR_EFFICIENCY) { // use efficiency optimized RR
 				const float q = min<float>(1.f, f.Filter(sw));
 				if (q < data[4]) {
+/* FIXME The following should work but somehow doesn't
+					pathState->SetTerminate();
+					pathState->SetState(PathState::CONTINUE_SHADOWRAY);
+					return false;*/
 					pathState->Terminate(scene, bufferId);
 					return true;
 				}
 				// increase path contribution
 				f /= q;
+				pdf *= q;
 			} else if (rrStrategy == RR_PROBABILITY) { // use normal/probability RR
 				if (continueProbability < data[4]) {
+/* FIXME The following should work but somehow doesn't
+					pathState->SetTerminate();
+					pathState->SetState(PathState::CONTINUE_SHADOWRAY);
+					return false;*/
 					pathState->Terminate(scene, bufferId);
 					return true;
 				}
 				// increase path contribution
 				f /= continueProbability;
+				pdf *= continueProbability;
 			}
 		}
 		pathState->lastBounce = p;
 		pathState->bouncePdf = pdf;
 		pathState->SetSpecularBounce((flags & BSDF_SPECULAR) != 0);
 		pathState->SetSpecular(pathState->GetSpecular() && pathState->GetSpecularBounce());
+		++(pathState->vertexIndex);
+	} else {
+		pathState->bouncePdf *= pdf;
 	}
+
 	pathState->pathRay = Ray(p, wi);
 	pathState->pathRay.time = pathState->sample.realTime;
 	++(pathState->pathLength);
