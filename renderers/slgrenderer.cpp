@@ -80,6 +80,7 @@
 #include "samplers/lowdiscrepancy.h"
 #include "textures/tabulatedfresnel.h"
 #include "textures/fresnelcolor.h"
+#include "filesaver/filesaver.h"
 
 using namespace lux;
 
@@ -1700,113 +1701,119 @@ void SLGRenderer::Render(Scene *s) {
 		//----------------------------------------------------------------------
 
 		session->Start();
-		const double startTime = luxrays::WallClockTime();
 
-		unsigned int haltTime = config->cfg.GetInt("batch.halttime", 0);
-		unsigned int haltSpp = config->cfg.GetInt("batch.haltspp", 0);
-		float haltThreshold = config->cfg.GetFloat("batch.haltthreshold", -1.f);
+		// I don't really need to run the rendering if I'm using the FileSaverRenderEngine
+		if (!dynamic_cast<slg::FileSaverRenderEngine *>(session->renderEngine)) {
+			const double startTime = luxrays::WallClockTime();
 
-		double lastFilmUpdate = startTime - 2.0; // -2.0 is to anticipate the first display update by 2 secs
-		char buf[512];
-		Film *film = scene->camera()->film;
-		int xStart, xEnd, yStart, yEnd;
-		film->GetSampleExtent(&xStart, &xEnd, &yStart, &yEnd);
+			// Not declared const because they can be overwritten
+			unsigned int haltTime = config->cfg.GetInt("batch.halttime", 0);
+			unsigned int haltSpp = config->cfg.GetInt("batch.haltspp", 0);
+			float haltThreshold = config->cfg.GetFloat("batch.haltthreshold", -1.f);
 
-		// Used to feed LuxRender film with only the delta information from the previous update
-		const u_int slgFilmWidth = session->film->GetWidth();
-		const u_int slgFilmHeight = session->film->GetHeight();
+			double lastFilmUpdate = startTime - 2.0; // -2.0 is to anticipate the first display update by 2 secs
+			char buf[512];
+			Film *film = scene->camera()->film;
+			int xStart, xEnd, yStart, yEnd;
+			film->GetSampleExtent(&xStart, &xEnd, &yStart, &yEnd);
 
-		if (session->film->HasPerPixelNormalizedBuffer()) {
-			previousEyeBufferRadiance = new BlockedArray<luxrays::Spectrum>(slgFilmWidth, slgFilmHeight);
-			previousEyeWeight = new BlockedArray<float>(slgFilmWidth, slgFilmHeight);
-			previousAlphaBuffer = new BlockedArray<float>(slgFilmWidth, slgFilmHeight);
+			// Used to feed LuxRender film with only the delta information from the previous update
+			const u_int slgFilmWidth = session->film->GetWidth();
+			const u_int slgFilmHeight = session->film->GetHeight();
 
-			for (u_int y = 0; y < slgFilmHeight; ++y) {
-				for (u_int x = 0; x < slgFilmWidth; ++x) {
-					(*previousEyeWeight)(x, y) = 0.f;
-					(*previousAlphaBuffer)(x, y) = 0.f;
+			if (session->film->HasPerPixelNormalizedBuffer()) {
+				previousEyeBufferRadiance = new BlockedArray<luxrays::Spectrum>(slgFilmWidth, slgFilmHeight);
+				previousEyeWeight = new BlockedArray<float>(slgFilmWidth, slgFilmHeight);
+				previousAlphaBuffer = new BlockedArray<float>(slgFilmWidth, slgFilmHeight);
+
+				for (u_int y = 0; y < slgFilmHeight; ++y) {
+					for (u_int x = 0; x < slgFilmWidth; ++x) {
+						(*previousEyeWeight)(x, y) = 0.f;
+						(*previousAlphaBuffer)(x, y) = 0.f;
+					}
 				}
 			}
-		}
 
-		if (session->film->HasPerScreenNormalizedBuffer()) {
-			previousLightBufferRadiance = new BlockedArray<luxrays::Spectrum>(slgFilmWidth, slgFilmHeight);
-			previousLightWeight = new BlockedArray<float>(slgFilmWidth, slgFilmHeight);
+			if (session->film->HasPerScreenNormalizedBuffer()) {
+				previousLightBufferRadiance = new BlockedArray<luxrays::Spectrum>(slgFilmWidth, slgFilmHeight);
+				previousLightWeight = new BlockedArray<float>(slgFilmWidth, slgFilmHeight);
 
-			for (u_int y = 0; y < slgFilmHeight; ++y) {
-				for (u_int x = 0; x < slgFilmWidth; ++x)
-					(*previousLightWeight)(x, y) = 0.f;
-			}
-		}
-
-		previousSampleCount = 0.0;
-
-		for (;;) {
-			if (state == PAUSE) {
-				session->BeginEdit();
-				while (state == PAUSE && !boost::this_thread::interruption_requested())
-					boost::this_thread::sleep(boost::posix_time::seconds(1));
-				session->EndEdit();
-			}
-			if ((state == TERMINATE) || boost::this_thread::interruption_requested())
-				break;
-
-			boost::this_thread::sleep(boost::posix_time::millisec(1000));
-
-			// Film update may be required by some render engine to
-			// update statistics, convergence test and more
-			if (luxrays::WallClockTime() - lastFilmUpdate > film->getldrDisplayInterval()) {
-				session->renderEngine->UpdateFilm();
-
-				// Update LuxRender film too
-				UpdateLuxFilm(session);
-
-				lastFilmUpdate =  luxrays::WallClockTime();
+				for (u_int y = 0; y < slgFilmHeight; ++y) {
+					for (u_int x = 0; x < slgFilmWidth; ++x)
+						(*previousLightWeight)(x, y) = 0.f;
+				}
 			}
 
-			const double now = luxrays::WallClockTime();
-			const double elapsedTime = now - startTime;
-			const unsigned int pass = engine->GetPass();
-			// Convergence test is update inside UpdateFilm()
-			const float convergence = engine->GetConvergence();
-			if (((film->enoughSamplesPerPixel)) ||
-					((haltTime > 0) && (elapsedTime >= haltTime)) ||
-					((haltSpp > 0) && (pass >= haltSpp)) ||
-					((haltThreshold >= 0.f) && (1.f - convergence <= haltThreshold))) {
+			previousSampleCount = 0.0;
 
-				if (suspendThreadsWhenDone) {
-					// Dade - wait for a resume rendering or exit
-					Pause();
-					while (state == PAUSE)
-						boost::this_thread::sleep(boost::posix_time::millisec(1000));
+			for (;;) {
+				if (state == PAUSE) {
+					session->BeginEdit();
+					while (state == PAUSE && !boost::this_thread::interruption_requested())
+						boost::this_thread::sleep(boost::posix_time::seconds(1));
+					session->EndEdit();
+				}
+				if ((state == TERMINATE) || boost::this_thread::interruption_requested())
+					break;
 
-					if (state == TERMINATE)
+				boost::this_thread::sleep(boost::posix_time::millisec(1000));
+
+				// Film update may be required by some render engine to
+				// update statistics, convergence test and more
+				if (luxrays::WallClockTime() - lastFilmUpdate > film->getldrDisplayInterval()) {
+					session->renderEngine->UpdateFilm();
+
+					// Update LuxRender film too
+					UpdateLuxFilm(session);
+
+					lastFilmUpdate =  luxrays::WallClockTime();
+				}
+
+				const double now = luxrays::WallClockTime();
+				const double elapsedTime = now - startTime;
+				const unsigned int pass = engine->GetPass();
+				// Convergence test is update inside UpdateFilm()
+				const float convergence = engine->GetConvergence();
+				if (((film->enoughSamplesPerPixel)) ||
+						((haltTime > 0) && (elapsedTime >= haltTime)) ||
+						((haltSpp > 0) && (pass >= haltSpp)) ||
+						((haltThreshold >= 0.f) && (1.f - convergence <= haltThreshold))) {
+
+					if (suspendThreadsWhenDone) {
+						// Dade - wait for a resume rendering or exit
+						Pause();
+						while (state == PAUSE)
+							boost::this_thread::sleep(boost::posix_time::millisec(1000));
+
+						if (state == TERMINATE)
+							break;
+						else {
+							// Cancel all halt conditions
+							haltTime = 0;
+							haltSpp = 0;
+							haltThreshold = -1.f;
+						}
+					} else {
+						Terminate();
 						break;
-					else {
-						// Cancel all halt conditions
-						haltTime = 0;
-						haltSpp = 0;
-						haltThreshold = -1.f;
 					}
-				} else {
-					Terminate();
 					break;
 				}
-				break;
+
+				// Update statistics
+				slgStats->averageSampleSec = engine->GetTotalSamplesSec();
+
+				// Print some information about the rendering progress
+				sprintf(buf, "[Elapsed time: %3d/%dsec][Samples %4d/%d][Convergence %f%%][Avg. samples/sec % 3.2fM on %.1fK tris]",
+						int(elapsedTime), int(haltTime), pass, haltSpp, 100.f * convergence, slgStats->averageSampleSec / 1000000.0,
+						config->scene->dataSet->GetTotalTriangleCount() / 1000.0);
+
+				SLG_LOG(buf);
+
+				film->CheckWriteOuputInterval();
 			}
-
-			// Update statistics
-			slgStats->averageSampleSec = engine->GetTotalSamplesSec();
-
-			// Print some information about the rendering progress
-			sprintf(buf, "[Elapsed time: %3d/%dsec][Samples %4d/%d][Convergence %f%%][Avg. samples/sec % 3.2fM on %.1fK tris]",
-					int(elapsedTime), int(haltTime), pass, haltSpp, 100.f * convergence, slgStats->averageSampleSec / 1000000.0,
-					config->scene->dataSet->GetTotalTriangleCount() / 1000.0);
-
-			SLG_LOG(buf);
-
-			film->CheckWriteOuputInterval();
-		}
+		} else
+			Terminate();
 
 		// Stop the rendering
 		session->Stop();
