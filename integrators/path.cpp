@@ -504,7 +504,7 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 		u_short leftShadowRaysToTrace = 0;
 
 		for (u_short i = 0; i < pathState->tracedShadowRayCount; ++i) {
-			float spdf;
+			float spdf = 1.f; // Scene.Connect() requires to initialize the variable
 			int result = scene.Connect(pathState->sample, pathState->shadowVolume + i,
 				pathState->GetScattered(), false, pathState->shadowRay[i],
 				*(rayBuffer->GetRayHit(pathState->currentShadowRayIndex[i])),
