@@ -45,6 +45,8 @@ public:
 private:
 	void Terminate(const Scene &scene, const u_int bufferId,
 			const float alpha = 1.f);
+	bool TerminatePath(const Scene &scene, const u_int bufferId,
+			const float alpha = 1.f);
 
 	PathStateType GetState() const {
 		return (PathStateType)pathState;

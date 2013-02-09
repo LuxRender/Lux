@@ -280,6 +280,8 @@ PathState::PathState(const Scene &scene, ContributionBuffer *contribBuffer, Rand
 }
 
 bool PathState::Init(const Scene &scene) {
+	flags = 0;
+
 	// Free BSDF memory from computing image sample value
 	sample.arena.FreeAll();
 
@@ -349,6 +351,19 @@ void PathState::Terminate(const Scene &scene, const u_int bufferId,
 	}
 	sample.sampler->AddSample(sample);
 	SetState(PathState::TERMINATE);
+}
+
+bool PathState::TerminatePath(const Scene &scene, const u_int bufferId,
+			const float alpha) {
+	// Check I if I have still to trace last direct light rays
+	if (tracedShadowRayCount > 0) {
+		SetTerminate();
+		SetState(PathState::CONTINUE_SHADOWRAY);
+		return false;
+	} else {
+		Terminate(scene, bufferId, alpha);
+		return true;
+	}
 }
 
 //------------------------------------------------------------------------------
@@ -541,6 +556,7 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 
 			return false;
 		}
+
 		if (pathState->GetTerminate()) {
 			pathState->Terminate(scene, bufferId);
 			return true;
@@ -645,14 +661,8 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 	BxDFType flags;
 	SWCSpectrum f;
 	if (!bsdf->SampleF(sw, wo, &wi, data[0], data[1], data[2], &f,
-		&pdf, BSDF_ALL, &flags, NULL, true)) {
-/* FIXME The following should work but somehow doesn't
-		pathState->SetTerminate();
-		pathState->SetState(PathState::CONTINUE_SHADOWRAY);
-		return false;*/
-		pathState->Terminate(scene, bufferId);
-		return true;
-	}
+		&pdf, BSDF_ALL, &flags, NULL, true))
+		return pathState->TerminatePath(scene, bufferId);
 
 	if (flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) ||
 		!(bsdf->Pdf(sw, wi, wo, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) > 0.f)) {
@@ -660,26 +670,16 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 		if (pathState->vertexIndex > 3) {
 			if (rrStrategy == RR_EFFICIENCY) { // use efficiency optimized RR
 				const float q = min<float>(1.f, f.Filter(sw));
-				if (q < data[4]) {
-/* FIXME The following should work but somehow doesn't
-					pathState->SetTerminate();
-					pathState->SetState(PathState::CONTINUE_SHADOWRAY);
-					return false;*/
-					pathState->Terminate(scene, bufferId);
-					return true;
-				}
+				if (q < data[4])
+					return pathState->TerminatePath(scene, bufferId);
+
 				// increase path contribution
 				f /= q;
 				pdf *= q;
 			} else if (rrStrategy == RR_PROBABILITY) { // use normal/probability RR
-				if (continueProbability < data[4]) {
-/* FIXME The following should work but somehow doesn't
-					pathState->SetTerminate();
-					pathState->SetState(PathState::CONTINUE_SHADOWRAY);
-					return false;*/
-					pathState->Terminate(scene, bufferId);
-					return true;
-				}
+				if (continueProbability < data[4])
+					return pathState->TerminatePath(scene, bufferId);
+
 				// increase path contribution
 				f /= continueProbability;
 				pdf *= continueProbability;
@@ -690,9 +690,8 @@ bool PathIntegrator::NextState(const Scene &scene, SurfaceIntegratorState *s, lu
 		pathState->SetSpecularBounce((flags & BSDF_SPECULAR) != 0);
 		pathState->SetSpecular(pathState->GetSpecular() && pathState->GetSpecularBounce());
 		++(pathState->vertexIndex);
-	} else {
+	} else
 		pathState->bouncePdf *= pdf;
-	}
 
 	pathState->pathRay = Ray(p, wi);
 	pathState->pathRay.time = pathState->sample.realTime;
