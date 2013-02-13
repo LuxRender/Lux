@@ -618,6 +618,10 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 				directData += 3;
 			}
 
+			// Possibly terminate path sampling
+			if (nEye == maxEyeDepth)
+				break;
+
 			SWCSpectrum f;
 			if (!v.bsdf->SampleF(sw, v.wo, &v.wi, data[1], data[2],
 				data[3], &f, &v.pdfR, BSDF_ALL, &v.flags, &v.pdf, true))
@@ -626,9 +630,6 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 			// Check if the scattering is a passthrough event
 			if (v.flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) ||
 				!(v.bsdf->Pdf(sw, v.wo, v.wi, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) > 0.f)) {
-				// Possibly terminate path sampling
-				if (nEye == maxEyeDepth)
-					break;
 				vp.dAWeight = v.pdf * v.tPdf /
 					vp.d2;
 				if (!vp.bsdf->dgShading.scattered)
@@ -861,6 +862,10 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 						}
 					}
 
+					// Possibly terminate path sampling
+					if (nLight == maxLightDepth)
+						break;
+
 					SWCSpectrum f;
 					if (!v.bsdf->SampleF(sw, v.wi, &v.wo,
 						data[1], data[2], data[3], &f,
@@ -871,9 +876,6 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 					// Check if the scattering is a passthrough event
 					if (v.flags != (BSDF_TRANSMISSION | BSDF_SPECULAR) ||
 						!(v.bsdf->Pdf(sw, v.wi, v.wo, BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR)) > 0.f)) {
-						// Possibly terminate path sampling
-						if (nLight == maxLightDepth)
-							break;
 						vp.dARWeight = v.pdfR *
 							v.tPdfR / vp.d2;
 						if (!vp.bsdf->dgShading.scattered)
