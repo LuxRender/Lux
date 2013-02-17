@@ -206,6 +206,11 @@ public:
 		tex1->SetIlluminant();
 		tex2->SetIlluminant();
 	}
+
+	const Texture<float> *GetTex1() const { return tex1.get(); }
+	const Texture<float> *GetTex2() const { return tex2.get(); }
+	const TextureMapping2D *GetTextureMapping2D() const { return mapping; }
+
 private:
 	// Checkerboard2D Private Types
 	typedef enum { NONE, SUPERSAMPLE, CLOSEDFORM } MethodType;
@@ -362,6 +367,11 @@ public:
 		tex1->SetIlluminant();
 		tex2->SetIlluminant();
 	}
+
+	const Texture<float> *GetTex1() const { return tex1.get(); }
+	const Texture<float> *GetTex2() const { return tex2.get(); }
+	const TextureMapping3D *GetTextureMapping3D() const { return mapping; }
+
 private:
 	// Checkerboard3D Private Data
 	boost::shared_ptr<Texture<float> > tex1, tex2;

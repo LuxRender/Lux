@@ -117,7 +117,13 @@ public:
 		dgTemp.nn = Normalize(origN + vv * dgTemp.dndv);
 		*dv = (EvalFloat(sw, dgTemp) - base) / vv;
 	}
-	
+
+	int GetOctaves() const { return octaves; }
+	float GetOmega() const { return omega; }
+	float GetScale() const { return scale; }
+	float GetVariation() const { return variation; }
+	const TextureMapping3D *GetTextureMapping3D() const { return mapping; }
+
 	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const ParamSet &tp);
 private:
 	// MarbleTexture Private Data
