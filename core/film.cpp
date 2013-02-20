@@ -753,26 +753,47 @@ FilterLUT::FilterLUT(Filter *filter, const float offsetX, const float offsetY) {
 	const int x1 = Floor2Int(offsetX + filter->xWidth);
 	const int y0 = Ceil2Int(offsetY - filter->yWidth);
 	const int y1 = Floor2Int(offsetY + filter->yWidth);
-	lutWidth = x1 - x0 + 1;
-	lutHeight = y1 - y0 + 1;
+	lutWidth = max(1, x1 - x0 + 1);
+	lutHeight = max(1, y1 - y0 + 1);
 	//lut = new float[lutWidth * lutHeight];
 	lut.resize(lutWidth * lutHeight);
 
 	float totalWeight = 0.f;
 	unsigned int index = 0;
-	for (int iy = y0; iy <= y1; ++iy) {
-		for (int ix = x0; ix <= x1; ++ix) {
-			const float filterVal = filter->Evaluate(fabsf(ix - offsetX), fabsf(iy - offsetY));
+	// if the whole filter support lies within the pixel
+	// x0>x1 or y0>y1, this requires special treatment to avoid blackness
+	if (y1 >= y0) {
+		for (int iy = y0; iy <= y1; ++iy) {
+			if (x1 >= x0) {
+				for (int ix = x0; ix <= x1; ++ix) {
+					const float filterVal = filter->Evaluate(fabsf(ix - offsetX), fabsf(iy - offsetY));
+					totalWeight += filterVal;
+					lut[index++] = filterVal;
+				}
+			} else {
+				const float filterVal = filter->Evaluate(0.f, fabsf(iy - offsetY));
+				totalWeight += filterVal;
+				lut[index++] = filterVal;
+			}
+		}
+	} else {
+		if (x1 >= x0) {
+			for (int ix = x0; ix <= x1; ++ix) {
+				const float filterVal = filter->Evaluate(fabsf(ix - offsetX), 0.f);
+				totalWeight += filterVal;
+				lut[index++] = filterVal;
+			}
+		} else {
+			const float filterVal = filter->Evaluate(0.f, 0.f);
 			totalWeight += filterVal;
 			lut[index++] = filterVal;
 		}
 	}
 
 	// Normalize LUT
-	index = 0;
-	for (int iy = y0; iy <= y1; ++iy) {
-		for (int ix = x0; ix <= x1; ++ix)
-			lut[index++] /= totalWeight;
+	if (totalWeight > 0.f) {
+		for (u_int i = 0; i < lut.size(); ++i)
+			lut[i] /= totalWeight;
 	}
 }
 
