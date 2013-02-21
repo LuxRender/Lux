@@ -364,15 +364,19 @@ template<class T> string GetSLGTexMapping(const T *mapping, const string &prefix
 	if (mapping) {
 		if (dynamic_cast<const UVMapping2D *>(mapping)) {
 			const UVMapping2D *uvMapping2D = dynamic_cast<const UVMapping2D *>(mapping);
-			return prefix + ".mapping.type = uvmapping\n" +
+			return prefix + ".mapping.type = uvmapping2d\n" +
 					prefix + ".mapping.uvscale = " + ToString(uvMapping2D->GetUScale()) + " " + ToString(uvMapping2D->GetVScale()) + "\n" +
 					prefix + ".mapping.uvdelta = " + ToString(uvMapping2D->GetUDelta()) + " " + ToString(uvMapping2D->GetVDelta()) + "\n";
+		} else if (dynamic_cast<const UVMapping3D *>(mapping)) {
+			const UVMapping3D *uvMapping3D = dynamic_cast<const UVMapping3D *>(mapping);
+			return prefix + ".mapping.type = uvmapping3d\n" +
+					prefix + ".mapping.transformation = " + ToString(uvMapping3D->WorldToTexture.m) + "\n";
 		} else if (dynamic_cast<const GlobalMapping3D *>(mapping)) {
 			const GlobalMapping3D *globalMapping3D = dynamic_cast<const GlobalMapping3D *>(mapping);
 			return prefix + ".mapping.type = globalmapping3d\n" +
 					prefix + ".mapping.transformation = " + ToString(globalMapping3D->WorldToTexture.m) + "\n";
 		} else {
-			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only texture coordinate mapping with UVMapping2D and GlobalMapping3D (i.e. not " <<
+			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only texture coordinate mapping with UVMapping2D, UVMapping3D and GlobalMapping3D (i.e. not " <<
 					ToClassName(mapping) << "). Ignoring the mapping.";
 		}
 	}
