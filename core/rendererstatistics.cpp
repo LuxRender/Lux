@@ -338,16 +338,16 @@ double MagnitudeReduce(double number) {
 	if (isnan(number) || isinf(number))
 		return number;
 
-	if (number < 1e3)
+	if (fabs(number) < 1e3)
 		return number;
 
-	if (number < 1e6)
+	if (fabs(number) < 1e6)
 		return number / 1e3;
 
-	if (number < 1e9)
+	if (fabs(number) < 1e9)
 		return number / 1e6;
 
-	if (number < 1e12)
+	if (fabs(number) < 1e12)
 		return number / 1e9;
 
 	return number / 1e12;
@@ -357,16 +357,16 @@ const char* MagnitudePrefix(double number) {
 	if (isnan(number) || isinf(number))
 		return "";
 
-	if (number < 1e3)
+	if (fabs(number) < 1e3)
 		return "";
 
-	if (number < 1e6)
+	if (fabs(number) < 1e6)
 		return "k";
 
-	if (number < 1e9)
+	if (fabs(number) < 1e9)
 		return "M";
 
-	if (number < 1e12)
+	if (fabs(number) < 1e12)
 		return "G";
 
 	return "T";
