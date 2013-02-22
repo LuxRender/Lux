@@ -735,66 +735,64 @@ void MainWindow::clearQueue()
 		ui->tree_queue->resizeColumnToContents(i);
 }
 
+void MainWindow::openOneQueueFile(const QString& file)
+{
+	QPersistentModelIndex queueIndex = renderQueue.addFile(file);
+	if(queueIndex.isValid()) {
+		updateRecentFiles(renderQueue.getFilename(queueIndex));
+
+		ui->tree_queue->expand(queueIndex);
+
+		updateQueueList();
+
+		if (!renderQueue.isRendering())
+			renderScene(queueIndex.child(0, 0));
+	}
+}
+
+void MainWindow::openOneSceneFile(const QString& file)
+{
+	QPersistentModelIndex sceneIndex = renderQueue.addFile(file);
+	if(sceneIndex.isValid()) {
+		if (file != "-")
+			updateRecentFiles(renderQueue.getFilename(sceneIndex));
+
+		ui->tree_queue->expand(sceneIndex.parent());
+
+		updateQueueList();
+
+		if (!renderQueue.isRendering())
+			renderScene(sceneIndex);
+	}
+}
+
+void MainWindow::updateQueueList()
+{
+	for (int i = 0; i < renderQueue.rowCount(); ++i)
+		ui->tree_queue->setFirstColumnSpanned(i,
+			renderQueue.invisibleRootItem()->index(), true);
+
+	ui->tree_queue->resizeColumnToContents(renderQueue.COLUMN_LXSFILENAME);
+
+	if (ui->checkBox_haltTime->checkState() == Qt::Unchecked &&
+		ui->checkBox_haltProgress->checkState() == Qt::Unchecked &&
+		ui->checkBox_haltThreshold->checkState() == Qt::Unchecked &&
+		renderQueue.getSceneCount() > 1)
+		ui->tabs_main->setCurrentIndex(getTabIndex(TAB_ID_QUEUE));
+}
+
 void MainWindow::openFiles(const QStringList& files, bool clearQueueFirst)
 {
-	QPersistentModelIndex firstAddedSceneIndex;
-	int fileCount = 0;
-
 	if (clearQueueFirst)
 		clearQueue();
 
-	for (int i = 0; i < files.count(); i++)
-	{
+	for (int i = 0; i < files.count(); i++) {
 		if (files[i].endsWith(".lxq"))
-		{
-			QPersistentModelIndex queueIndex = renderQueue.addFile(files[i]);
-			if(queueIndex.isValid())
-			{
-				fileCount += renderQueue.itemFromIndex(queueIndex)->rowCount();
-				updateRecentFiles(renderQueue.getFilename(queueIndex));
-
-				if (!firstAddedSceneIndex.isValid())
-					firstAddedSceneIndex = queueIndex.child(0, 0);
-
-				ui->tree_queue->expand(queueIndex);
-			}
-		}
+			openOneQueueFile(files[i]);
 		else if (files[i].endsWith(".lxs") || files[i] == "-")
-		{
-			QPersistentModelIndex sceneIndex = renderQueue.addFile(files[i]);
-			if(sceneIndex.isValid())
-			{
-				++fileCount;
-				if (files[i] != "-")
-					updateRecentFiles(renderQueue.getFilename(sceneIndex));
-
-				if (!firstAddedSceneIndex.isValid())
-					firstAddedSceneIndex = sceneIndex;
-
-				ui->tree_queue->expand(sceneIndex.parent());
-			}
-		}
+			openOneSceneFile(files[i]);
 		else
 			return;
-	}
-
-	if (fileCount > 0)
-	{
-		for (int i = 0; i < renderQueue.rowCount(); ++i)
-			ui->tree_queue->setFirstColumnSpanned(i, renderQueue.invisibleRootItem()->index(), true);
-
-		ui->tree_queue->resizeColumnToContents(renderQueue.COLUMN_LXSFILENAME);
-
-		if (ui->checkBox_haltTime->checkState() == Qt::Unchecked &&
-			ui->checkBox_haltProgress->checkState() == Qt::Unchecked &&
-			ui->checkBox_haltThreshold->checkState() == Qt::Unchecked &&
-			renderQueue.getSceneCount() > 1)
-		{
-			ui->tabs_main->setCurrentIndex(getTabIndex(TAB_ID_QUEUE));
-		}
-
-		if (!renderQueue.isRendering())
-			renderScene(firstAddedSceneIndex);
 	}
 }
 
@@ -1641,7 +1639,7 @@ void MainWindow::SetRenderThreads(int num)
 	updateWidgetValue(ui->spinBox_Threads, m_numThreads);
 }
 
-#if defined(__APPLE__) // Doubleclick or dragging .lxs, .lxm or .lxq in OSX Finder to LuxRender
+#if defined(__APPLE__) // Doubleclick or dragging .lxs, .flm or .lxq in OSX Finder to LuxRender
 void  MainWindow::loadFile(const QString &fileName)
 {
 	if (fileName.endsWith(".lxs") || fileName.endsWith(".lxq"))
@@ -1659,7 +1657,7 @@ void  MainWindow::loadFile(const QString &fileName)
 		msgBox.setIcon(QMessageBox::Information);
 		QFileInfo fi(fileName);
 		QString name = fi.fileName();
-		msgBox.setText(name +(" is not a supported filetype. Choose an .lxs, .lxm or .lxq"));
+		msgBox.setText(name +(" is not a supported filetype. Choose an .lxs, .flm or .lxq"));
 		msgBox.exec();
 	}
 }
