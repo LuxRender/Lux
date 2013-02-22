@@ -791,10 +791,6 @@ void MainWindow::openFiles(const QStringList& files, bool clearQueueFirst)
 			renderQueue.getSceneCount() > 1)
 		{
 			ui->tabs_main->setCurrentIndex(getTabIndex(TAB_ID_QUEUE));
-			QMessageBox msgBox;
-			msgBox.setIcon(QMessageBox::Information);
-			msgBox.setText("Please set a halt condition for advancing the queue");
-			msgBox.exec();
 		}
 
 		if (!renderQueue.isRendering())
