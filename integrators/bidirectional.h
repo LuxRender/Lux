@@ -137,12 +137,12 @@ class BidirIntegrator : public SurfaceIntegrator {
 public:
 	BidirIntegrator(u_int ed, u_int ld, float et, float lt,
 		LightsSamplingStrategy *lds, u_int src,
-		LightsSamplingStrategy *lps,
+		LightsSamplingStrategy *lps, u_int lrc,
 		bool mis, bool d) : SurfaceIntegrator(),
 		maxEyeDepth(ed), maxLightDepth(ld),
 		eyeThreshold(et), lightThreshold(lt),
 		lightDirectStrategy(lds), lightPathStrategy(lps),
-		shadowRayCount(src),
+		shadowRayCount(src), lightRayCount(lrc),
 		hybridUseMIS(mis), debug(d) {
 		directSamplingCount = 0;
 		pathSamplingCount = 0;
@@ -255,10 +255,10 @@ private:
 		float directWeight, SWCSpectrum *Ld, float *weight) const;
 	// BidirIntegrator Data
 	LightsSamplingStrategy *lightDirectStrategy, *lightPathStrategy;
-	u_int shadowRayCount;
+	u_int shadowRayCount, lightRayCount;
 	u_int directSamplingCount, pathSamplingCount;
-	u_int lightNumOffset;
-	u_int lightPosOffset, lightDirOffset, sampleDirectOffset;
+	u_int lightNumOffset, lightPortalOffset;
+	u_int lightPosOffset, sampleDirectOffset;
 	bool hybridUseMIS, debug;
 };
 
