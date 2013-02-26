@@ -91,8 +91,11 @@ void BidirIntegrator::RequestSamples(Sampler *sampler, const Scene &scene)
 	vector<u_int> structure;
 	// Direct lighting samples
 	for (u_int i = 0; i < directSamplingCount; ++i) {
-		structure.push_back(1);	//light number or portal
-		structure.push_back(2);	//light position
+		structure.push_back(1); // light source sample
+		for (u_int j = 0; j < shadowRayCount; ++j) {
+			structure.push_back(2);	//light position
+			structure.push_back(1);	//light portal
+		}
 	}
 	sampleDirectOffset = sampler->AddxD(structure, maxEyeDepth);
 	structure.clear();
@@ -433,29 +436,38 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 	const float *directData0 = sample.sampler->GetLazyValues(sample,
 		sampleDirectOffset, 0);
 	for (u_int l = 0; l < directSamplingCount; ++l) {
+		const u_int offset = l * (1 + shadowRayCount * 3);
 		SWCSpectrum Ld;
 		float dWeight, dPdf;
-		float portal = directData0[0];
+		float portal = directData0[offset];
 		const Light *light = lightDirectStrategy->SampleLight(scene, l,
 			&portal, &dPdf);
-		if (GetDirectLight(scene, sample, eyePath, 1, light,
-			directData0[1], directData0[2], portal,
-			lightPathStrategy->Pdf(scene, light), dPdf, &Ld,
-			&dWeight)) {
-			if (light->IsEnvironmental()) {
-				// Here sw.single is correct
-				if (eye0.EyeConnect(sample, XYZColor(sw, Ld),
-					0.f, INFINITY, dWeight, lightBufferId,
-					light->group))
-					++nrContribs;
-			} else {
-				if (eye0.EyeConnect(sample, XYZColor(sw, Ld),
-					1.f, sqrtf(eye0.d2), dWeight,
-					lightBufferId, light->group))
-					++nrContribs;
+		if (!light)
+			break;
+		dPdf *= shadowRayCount;
+		for (u_int s = 0;s < shadowRayCount; ++s) {
+			const u_int offset2 = offset + s * 3 + 1;
+			if (GetDirectLight(scene, sample, eyePath, 1, light,
+				directData0[offset2], directData0[offset2 + 1],
+				directData0[offset2 + 2],
+				lightPathStrategy->Pdf(scene, light), dPdf, &Ld,
+				&dWeight)) {
+				if (light->IsEnvironmental()) {
+					// Here sw.single is correct
+					if (eye0.EyeConnect(sample,
+						XYZColor(sw, Ld), 0.f, INFINITY,
+						dWeight, lightBufferId,
+						light->group))
+						++nrContribs;
+				} else {
+					if (eye0.EyeConnect(sample,
+						XYZColor(sw, Ld), 1.f,
+						sqrtf(eye0.d2), dWeight,
+						lightBufferId, light->group))
+						++nrContribs;
+				}
 			}
 		}
-		directData0 += 3;
 	}
 
 	// Sample eye subpath initial direction and finish vertex initialization
@@ -513,8 +525,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 					v.flags = BxDFType(~BSDF_SPECULAR);
 					v.p = v.bsdf->dgShading.p;
 					v.coso = AbsDot(v.wo, v.bsdf->ng);
-					vp.d2 =
-						DistanceSquared(vp.p, v.p);
+					vp.d2 = DistanceSquared(vp.p, v.p);
 					// Evaluate factors for path weighting
 					v.dARWeight = vp.pdfR * vp.tPdfR *
 						spdfR / vp.d2;
@@ -528,7 +539,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 					v.dAWeight *= lightPathStrategy->Pdf(scene,
 						lightNumber);
 					ePdfDirect *= lightDirectStrategy->Pdf(scene,
-						lightNumber);
+						lightNumber) * shadowRayCount;
 					vp.dAWeight = v.pdf * v.tPdf *
 						spdf / vp.d2;
 					if (!vp.bsdf->dgShading.scattered)
@@ -584,7 +595,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 				v.dAWeight *= lightPathStrategy->Pdf(scene,
 					isect.arealight);
 				ePdfDirect *= lightDirectStrategy->Pdf(scene,
-					isect.arealight);
+					isect.arealight) * shadowRayCount;
 				vp.dAWeight = v.pdf * v.tPdf / vp.d2;
 				if (!vp.bsdf->dgShading.scattered)
 					vp.dAWeight *= vp.cosi;
@@ -600,22 +611,30 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 			const float *directData = sample.sampler->GetLazyValues(sample,
 				sampleDirectOffset, sampleIndex);
 			for (u_int l = 0; l < directSamplingCount; ++l) {
+				const u_int offset = l * (1 + shadowRayCount * 3);
 				SWCSpectrum Ld;
 				float dWeight, dPdf;
-				float portal = directData[0];
+				float portal = directData[offset];
 				const Light *directLight =
-					lightDirectStrategy->SampleLight(scene, l,
-					&portal, &dPdf);
-				if (GetDirectLight(scene, sample, eyePath, nEye,
-					directLight, directData[1], directData[2],
-					portal, lightPathStrategy->Pdf(scene,
-					directLight), dPdf, &Ld, &dWeight)) {
-
-					partialContribution.Add(sw, Ld, directLight->group, dWeight);
-
-					++nrContribs;
+					lightDirectStrategy->SampleLight(scene,
+					l, &portal, &dPdf);
+				if (!directLight)
+					break;
+				dPdf *= shadowRayCount;
+				for (u_int s = 0; s < shadowRayCount; ++s) {
+					const u_int offset2 = offset + s * 3 + 1;
+					if (GetDirectLight(scene, sample,
+						eyePath, nEye, directLight,
+						directData[offset2],
+						directData[offset2 + 1],
+						directData[offset2 + 2],
+						lightPathStrategy->Pdf(scene,
+						directLight), dPdf, &Ld,
+						&dWeight)) {
+						partialContribution.Add(sw, Ld, directLight->group, dWeight);
+						++nrContribs;
+					}
 				}
-				directData += 3;
 			}
 
 			// Possibly terminate path sampling
@@ -674,7 +693,7 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 		float lPdf;
 		const Light *light = lightPathStrategy->SampleLight(scene, l, &component, &lPdf);
 		const u_int lightGroup = light->group;
-		const float directWeight = lightDirectStrategy->Pdf(scene, light);
+		const float directWeight = lightDirectStrategy->Pdf(scene, light) * shadowRayCount;
 		float lightPos[2];
 		sample.sampler->GetTwoD(sample, lightPosOffset, l, lightPos);
 		SWCSpectrum Le;
@@ -2138,6 +2157,7 @@ SurfaceIntegrator* BidirIntegrator::CreateSurfaceIntegrator(const ParamSet &para
 	float eyeThreshold = params.FindOneFloat("eyerrthreshold", 0.f);
 	float lightThreshold = params.FindOneFloat("lightrrthreshold", 0.f);
 	LightsSamplingStrategy *lds = LightsSamplingStrategy::Create("lightstrategy", params);
+	int shadowRay = params.FindOneInt("shadowraycount", 1);
 	LightsSamplingStrategy *lps = LightsSamplingStrategy::Create("lightpathstrategy", params);
 	// This parameter works only with hybrid BiDir, it will be removed
 	// once MIS code is complete
@@ -2145,7 +2165,8 @@ SurfaceIntegrator* BidirIntegrator::CreateSurfaceIntegrator(const ParamSet &para
 	bool debug = params.FindOneBool("debug", false);
 
 	return new BidirIntegrator(max(eyeDepth, 0), max(lightDepth, 0),
-		eyeThreshold, lightThreshold, lds, lps, mis, debug);
+		eyeThreshold, lightThreshold, lds, max(1, shadowRay),
+		lps, mis, debug);
 }
 
 static DynamicLoader::RegisterSurfaceIntegrator<BidirIntegrator> r("bidirectional");
