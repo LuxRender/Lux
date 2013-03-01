@@ -1,5 +1,5 @@
 /***************************************************************************
- *	 Copyright (C) 1998-2009 by authors (see AUTHORS.txt )								 *
+ *	 Copyright (C) 1998-2013 by authors (see AUTHORS.txt )								 *
  *																																				 *
  *	 This file is part of LuxRender.																			 *
  *																																				 *
@@ -43,7 +43,8 @@ template <class T1, class T2>
 class SubtractTexture : public Texture<T2> {
 public:
 	// SubtractTexture Public Methods
-	SubtractTexture(boost::shared_ptr<Texture<T1> > &t1, boost::shared_ptr<Texture<T2> > &t2) : tex1(t1), tex2(t2) { 
+	SubtractTexture(boost::shared_ptr<Texture<T1> > &t1, boost::shared_ptr<Texture<T2> > &t2) :
+		Texture<T2>("SubtractTexture-" + boost::lexical_cast<string>(this)), tex1(t1), tex2(t2) { 
 		// Nothing
 	}
 	virtual ~SubtractTexture() { 

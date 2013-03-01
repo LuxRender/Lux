@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -156,6 +156,11 @@ MetropolisSampler::MetropolisSampler(int xStart, int xEnd, int yStart, int yEnd,
 		if(cooldownTime > 0) LOG(LUX_INFO, LUX_NOERROR) << "Metropolis cooldown during first " << cooldownTime << " samples";
 	} else
 		cooldownTime = 0;
+
+	AddStringConstant(*this, "name", "Name of current sampler", "metropolis");
+	AddIntAttribute(*this, "maxRejects", "Metropolis max. rejections", &MetropolisSampler::GetMaxRejects);
+	AddFloatAttribute(*this, "pLarge", "Metropolis probability of a large mutation", &MetropolisSampler::pLarge);
+	AddFloatAttribute(*this, "range", "Metropolis image mutation range", &MetropolisSampler::range);
 }
 
 MetropolisSampler::~MetropolisSampler() {

@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -33,8 +33,9 @@ namespace lux
 // Sinc Filter Declarations
 class LanczosSincFilter : public Filter {
 public:
-	LanczosSincFilter(float xw, float yw, float t) : Filter(xw, yw), tau(t)
-	{}
+	LanczosSincFilter(float xw, float yw, float t) : Filter(xw, yw), tau(t) {
+		AddStringConstant(*this, "type", "Filter type", "sinc");
+	}
 	virtual ~LanczosSincFilter() { }
 	virtual float Evaluate(float x, float y) const;
 	

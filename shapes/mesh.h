@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -57,6 +57,8 @@ public:
 	virtual bool CanSample() const { return false; }
 
 	virtual void Tesselate(vector<luxrays::TriangleMesh *> *meshList,
+		vector<const Primitive *> *primitiveList) const;
+	virtual void ExtTesselate(vector<luxrays::ExtTriangleMesh *> *meshList,
 		vector<const Primitive *> *primitiveList) const;
 	virtual void GetIntersection(const luxrays::RayHit &rayHit,
 		const u_int index, Intersection *isect) const;

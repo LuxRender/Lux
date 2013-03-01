@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -42,7 +42,9 @@ public:
 	// MixTexture Public Methods
 	BandTexture(u_int n, const float *o,
 		vector<boost::shared_ptr<Texture<T> > > &t,
-		boost::shared_ptr<Texture<float> > &a) : offsets(o, o + n),
+		boost::shared_ptr<Texture<float> > &a) :
+		Texture<T>("BandTexture-" + boost::lexical_cast<string>(this)),
+		offsets(o, o + n),
 		tex(t), amount(a) { }
 	virtual ~BandTexture() { }
 	virtual T Evaluate(const SpectrumWavelengths &sw,

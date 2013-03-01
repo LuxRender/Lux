@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -35,7 +35,8 @@ class RegularDataTexture : public Texture<SWCSpectrum> {
 public:
 	// RegularDataSpectrumTexture Public Methods
 	RegularDataTexture(float s, float e, u_int n, const float *data)
-		: SPD(data, s, e, n) { }
+		: Texture("RegularDataTexture-" + boost::lexical_cast<string>(this)),
+		SPD(data, s, e, n) { }
 	virtual ~RegularDataTexture() { }
 	virtual SWCSpectrum Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &) const {

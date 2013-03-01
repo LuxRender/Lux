@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -95,8 +95,8 @@ bool RGBVolume::Scatter(const Sample &sample, bool scatteredStart,
 		*L *= Exp(-Tau(sample.swl, ray));
 	return scatter;
 }
-AggregateRegion::AggregateRegion(const vector<Region *> &r)
-{
+AggregateRegion::AggregateRegion(const vector<Region *> &r) :
+	Region("AggregateRegion-" + boost::lexical_cast<string>(this)) {
 	regions = r;
 	for (u_int i = 0; i < regions.size(); ++i)
 		bound = Union(bound, regions[i]->WorldBound());

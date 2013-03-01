@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -31,8 +31,10 @@ namespace lux
 class Glass2 : public Material {
 public:
 	// Glass Public Methods
-	Glass2(bool archi, bool disp, const ParamSet &mp) : Material(mp), 
-		architectural(archi), dispersion(disp) { }
+	Glass2(bool archi, bool disp, const ParamSet &mp) : Material("Glass2-" + boost::lexical_cast<string>(this), mp), 
+		architectural(archi), dispersion(disp) {
+		AddBoolAttribute(*this, "architectural", "Glass architectural flag", &Glass2::architectural);
+	}
 	virtual ~Glass2() { }
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,

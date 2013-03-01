@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -46,6 +46,9 @@ using std::sort;
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/version.hpp>
 
+#include "luxrays/core/utils.h"
+#include "memory.h"
+
 // boost version starting from 1.50 defined TIME_UTC_ instead of TIME_UTC because of a conflict with libc and c++ 2011
 // https://svn.boost.org/trac/boost/ticket/6940
 // glibc > 1.16 includes a TIME_UTC macro, so boost renamed to TIME_UTC_
@@ -59,8 +62,10 @@ using std::sort;
 // Platform-specific definitions
 #if defined(WIN32) && !defined(__CYGWIN__)
 #  include <float.h>
-#  define isnan(a) (_isnan(a))
 #  define isinf(f) (!_finite((f)))
+#  if !defined(isnan)
+#    define isnan(a) (_isnan(a))
+#  endif
 #  pragma warning (disable: 4244) // conversion from double to float (VS2005) - Radiance
 #  pragma warning (disable: 4305) // truncation from double to float (VS2005) - Radiance
 #  pragma warning (disable: 4996) // deprecated functions (VS2005) - Radiance
@@ -150,8 +155,6 @@ typedef vector<int> SampleGrid[BC_GRID_SIZE][BC_GRID_SIZE];
 
 // Global Forward Declarations
 class Timer;
-class MemoryArena;
-template<class T, int logBlockSize = 2> class BlockedArray;
 
 namespace luxrays {
   class BBox;

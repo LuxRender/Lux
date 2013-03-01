@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -34,12 +34,15 @@ public:
 	Mirror(boost::shared_ptr<Texture<SWCSpectrum> > &r, 
 		boost::shared_ptr<Texture<float> > &flm,
 		boost::shared_ptr<Texture<float> > &flmindex, 
-		const ParamSet &mp) : Material(mp), Kr(r), film(flm),
+		const ParamSet &mp) : Material("Mirror-" + boost::lexical_cast<string>(this), mp),
+		Kr(r), film(flm),
 		filmindex(flmindex) { }
 	virtual ~Mirror() { }
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,
 		const DifferentialGeometry &dgShading) const;
+
+	Texture<SWCSpectrum> *GetTexture() { return Kr.get(); }
 
 	static Material * CreateMaterial(const Transform &xform,
 		const ParamSet &mp);

@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -147,9 +147,10 @@ public:
 
 	// PathIntegrator Public Methods
 	PathIntegrator(RRStrategy rst, u_int md, float cp, bool ie, bool dls) : SurfaceIntegrator(),
-		hints(), rrStrategy(rst), maxDepth(md), continueProbability(cp),
-		sampleOffset(0), bufferId(0), includeEnvironment(ie), enableDirectLightSampling(dls) {
+		bufferId(0), hints(), rrStrategy(rst), maxDepth(md), continueProbability(cp),
+		sampleOffset(0), includeEnvironment(ie), enableDirectLightSampling(dls) {
 		AddStringConstant(*this, "name", "Name of current surface integrator", "path");
+		AddIntAttribute(*this, "maxDepth", "Path max. depth", &PathIntegrator::GetMaxDepth);
 	}
 
 	virtual u_int Li(const Scene &scene, const Sample &sample) const;
@@ -173,7 +174,12 @@ public:
 
 	friend class PathState;
 
+	u_int bufferId;
+
 private:
+	// Used by Queryable interface
+	u_int GetMaxDepth() { return maxDepth; }
+
 	// Used by DataParallel methods
 	void BuildShadowRays(const Scene &scene, PathState *pathState, BSDF *bsdf);
 
@@ -184,7 +190,7 @@ private:
 	u_int maxDepth;
 	float continueProbability;
 	// Declare sample parameters for light source sampling
-	u_int sampleOffset, bufferId;
+	u_int sampleOffset;
 
 	// Used only for HybridSampler
 	u_int hybridRendererLightSampleOffset;

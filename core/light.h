@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -29,23 +29,24 @@
 #include "spectrum.h"
 #include "error.h"
 #include "renderinghints.h"
+#include "queryable.h"
 // Light Declarations
 
 namespace lux
 {
 
-class  Light {
+class  Light : public Queryable {
 public:
 	// Light Interface
-	virtual ~Light() { }
-	Light(const Transform &l2w, u_int ns = 1U)
-		: nSamples(max(1U, ns)), LightToWorld(l2w) {
+	Light(const string &name, const Transform &l2w, u_int ns = 1U)
+		: Queryable(name), nSamples(max(1U, ns)), LightToWorld(l2w) {
 		if (LightToWorld.HasScale())
 			LOG(LUX_DEBUG,LUX_UNIMPLEMENT)<< "Scaling detected in light-to-world transformation! Some lights might not support it yet.";
 		havePortalShape = false;
 		nrPortalShapes = 0;
 		PortalArea = 0;
 	}
+	virtual ~Light() { }
 	const Volume *GetVolume() const { return volume.get(); }
 	void SetVolume(boost::shared_ptr<Volume> &v) {
 		// Create a temporary to increase shared count
@@ -109,23 +110,27 @@ public:
 		const Point &p, float u1, float u2, float u3,
 		BSDF **bsdf, float *pdf, float *pdfDirect,
 		SWCSpectrum *Le) const;
+
+	Texture<SWCSpectrum> *GetTexture() { return Le.get(); }
+
 	static AreaLight *CreateAreaLight(const Transform &light2world,
 		const ParamSet &paramSet,
 		const boost::shared_ptr<Primitive> &prim);
+
 protected:
 	// AreaLight Protected Data
 	boost::shared_ptr<Texture<SWCSpectrum> > Le;
 	boost::shared_ptr<Primitive> prim;
-	float gain, power, efficacy, area;
+	float paramGain, gain, power, efficacy, area;
 	SampleableSphericalFunction *func;
 };
 
 class  InstanceLight : public Light {
 public:
 	// Light Interface
-	virtual ~InstanceLight() { }
 	InstanceLight(const Transform &l2w, boost::shared_ptr<Light> &l)
-		: Light(l2w, l->nSamples), light(l) { }
+		: Light("InstanceLight-" + boost::lexical_cast<string>(this), l2w, l->nSamples), light(l) { }
+	virtual ~InstanceLight() { }
 	virtual float Power(const Scene &scene) const {
 		return light->Power(scene);
 	}
@@ -157,9 +162,10 @@ protected:
 class  MotionLight : public Light {
 public:
 	// Light Interface
-	virtual ~MotionLight() { }
 	MotionLight(const MotionSystem &mp, boost::shared_ptr<Light> &l)
-		: Light(Transform(), l->nSamples), light(l), motionPath(mp) { }
+		: Light("MotionLight-" + boost::lexical_cast<string>(this), Transform(), l->nSamples),
+		light(l), motionPath(mp) { }
+	virtual ~MotionLight() { }
 	virtual float Power(const Scene &scene) const {
 		return light->Power(scene);
 	}

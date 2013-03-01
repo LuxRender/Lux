@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -42,6 +42,7 @@ public:
 	Checkerboard2D(TextureMapping2D *m,
 		boost::shared_ptr<Texture<float> > &c1,
 		boost::shared_ptr<Texture<float> > &c2, const string &aa) :
+		Texture("Checkerboard2D-" + boost::lexical_cast<string>(this)),
 		tex1(c1), tex2(c2), mapping(m) {
 		// Select anti-aliasing method for _Checkerboard2D_
 		if (aa == "none")
@@ -205,6 +206,11 @@ public:
 		tex1->SetIlluminant();
 		tex2->SetIlluminant();
 	}
+
+	const Texture<float> *GetTex1() const { return tex1.get(); }
+	const Texture<float> *GetTex2() const { return tex2.get(); }
+	const TextureMapping2D *GetTextureMapping2D() const { return mapping; }
+
 private:
 	// Checkerboard2D Private Types
 	typedef enum { NONE, SUPERSAMPLE, CLOSEDFORM } MethodType;
@@ -220,6 +226,7 @@ public:
 	Checkerboard3D(TextureMapping3D *m,
 		boost::shared_ptr<Texture<float> > &c1,
 		boost::shared_ptr<Texture<float> > &c2) :
+		Texture("Checkerboard3D-" + boost::lexical_cast<string>(this)),
 		tex1(c1), tex2(c2), mapping(m) { }
 	virtual ~Checkerboard3D() { delete mapping; }
 	virtual float Evaluate(const SpectrumWavelengths &sw,
@@ -360,6 +367,11 @@ public:
 		tex1->SetIlluminant();
 		tex2->SetIlluminant();
 	}
+
+	const Texture<float> *GetTex1() const { return tex1.get(); }
+	const Texture<float> *GetTex2() const { return tex2.get(); }
+	const TextureMapping3D *GetTextureMapping3D() const { return mapping; }
+
 private:
 	// Checkerboard3D Private Data
 	boost::shared_ptr<Texture<float> > tex1, tex2;

@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -38,7 +38,8 @@ public:
 		boost::shared_ptr<Texture<float> > &d,
 		boost::shared_ptr<Texture<float> > &u,
 		boost::shared_ptr<Texture<float> > &v,
-		const ParamSet &mp) : Material(mp), Kd(kd), Ks(ks), Ka(ka),
+		const ParamSet &mp) : Material("Glossy-" + boost::lexical_cast<string>(this), mp),
+		Kd(kd), Ks(ks), Ka(ka),
 		depth(d), index(i), nu(u), nv(v) { }
 	virtual ~Glossy() { }
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,

@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -35,7 +35,8 @@ class FrequencyTexture : public Texture<SWCSpectrum> {
 public:
 	// FrequencyTexture Public Methods
 	FrequencyTexture(float w, float p, float r)
-		: FSPD(w, p, r) { }
+		: Texture("FrequencyTexture-" + boost::lexical_cast<string>(this)),
+		FSPD(w, p, r) { }
 	virtual ~FrequencyTexture() { }
 	virtual SWCSpectrum Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &) const {

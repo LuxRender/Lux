@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -34,6 +34,7 @@ class FresnelColorTexture : public Texture<FresnelGeneral> {
 public:
 	// FresnelColorTexture Public Methods
 	FresnelColorTexture(const boost::shared_ptr<Texture<SWCSpectrum> > &c) :
+		Texture("FresnelColorTexture-" + boost::lexical_cast<string>(this)),
 		color(c) { }
 	virtual ~FresnelColorTexture() { }
 	virtual FresnelGeneral Evaluate(const SpectrumWavelengths &sw,
@@ -48,6 +49,8 @@ public:
 		float *du, float *dv) const {
 		color->GetDuv(sw, dg, delta, du, dv);
 	}
+
+	Texture<SWCSpectrum> *GetColorTexture() { return color.get(); }
 
 	static Texture<FresnelGeneral> *CreateFresnelTexture(const Transform &tex2world, const ParamSet &tp);
 private:

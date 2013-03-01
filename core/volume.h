@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -32,6 +32,7 @@ using luxrays::BBox;
 #include "fresnelgeneral.h"
 #include "color.h"
 #include "materials/scattermaterial.h"
+#include "queryable.h"
 
 namespace lux
 {
@@ -44,8 +45,9 @@ float PhaseMieMurky(const Vector &w, const Vector &wp);
 float PhaseHG(const Vector &w, const Vector &wp, float g);
 float PhaseSchlick(const Vector &w, const Vector &wp, float g);
 
-class Volume {
+class Volume : public Queryable {
 public:
+	Volume(const string &name) : Queryable(name) { }
 	// Volume Interface
 	virtual ~Volume() { }
 	virtual SWCSpectrum SigmaA(const SpectrumWavelengths &sw,
@@ -73,7 +75,7 @@ public:
 class RGBVolume : public Volume {
 public:
 	RGBVolume(const RGBColor &sA, const RGBColor &sS, const RGBColor &l,
-		float gg) : sigA(sA), sigS(sS), le(l), g(gg),
+		float gg) : Volume("RGBVolume-" + boost::lexical_cast<string>(this)), sigA(sA), sigS(sS), le(l), g(gg),
 		material(sS, sA, gg), primitive(&material, this, this) { }
 	virtual ~RGBVolume() { }
 	virtual SWCSpectrum SigmaA(const SpectrumWavelengths &sw,
@@ -128,8 +130,8 @@ private:
 class  Region : public Volume {
 public:
 	// VolumeRegion Interface
-	Region() { }
-	Region(const BBox &b) : bound(b) { }
+	Region(const string &name) : Volume(name) { }
+	Region(const string &name, const BBox &b) : Volume(name), bound(b) { }
 	virtual ~Region() { }
 	virtual BBox WorldBound() const { return bound; };
 	virtual bool IntersectP(const Ray &ray, float *t0, float *t1) const {
@@ -142,7 +144,8 @@ protected:
 template<class T> class VolumeRegion : public Region {
 public:
 	VolumeRegion(const Transform &v2w, const BBox &b, const T &v) :
-		Region(v2w * b), VolumeToWorld(v2w), region(b), volume(v) { }
+		Region("VolumeRegion-" + boost::lexical_cast<string>(this), v2w * b),
+		VolumeToWorld(v2w), region(b), volume(v) { }
 	virtual ~VolumeRegion() { }
 	virtual bool IntersectP(const Ray &ray, float *t0, float *t1) const {
 		return region.IntersectP(Inverse(VolumeToWorld) * ray, t0, t1);
@@ -207,7 +210,7 @@ protected:
 template<class T> class  DensityVolume : public Volume {
 public:
 	// DensityVolume Public Methods
-	DensityVolume(const T &v) : volume(v) { }
+	DensityVolume(const string &name, const T &v) : Volume(name), volume(v) { }
 	virtual ~DensityVolume() { }
 	virtual float Density(const Point &Pobj) const = 0;
 	virtual SWCSpectrum SigmaA(const SpectrumWavelengths &sw,

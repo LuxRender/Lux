@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -71,7 +71,8 @@ private:
 DistantLight::DistantLight(const Transform &light2world,
 	const boost::shared_ptr<Texture<SWCSpectrum> > &L, 
 	float g, float theta, const Vector &dir, u_int ns)
-	: Light(light2world, ns), Lbase(L) {
+	: Light("DistantLight-" + boost::lexical_cast<string>(this), light2world, ns),
+	Lbase(L) {
 	lightDir = Normalize(LightToWorld * dir);
 	CoordinateSystem(lightDir, &x, &y);
 	Lbase->SetIlluminant();

@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -81,7 +81,7 @@ private:
 SpotLight::SpotLight(const Transform &light2world,
 	const boost::shared_ptr< Texture<SWCSpectrum> > &L, 
 	float g, float power, float efficacy, float width, float fall)
-	: Light(light2world), Lbase(L), gain(g)
+	: Light("SpotLight-" + boost::lexical_cast<string>(this), light2world), Lbase(L), gain(g)
 {
 	lightPos = LightToWorld * Point(0,0,0);
 

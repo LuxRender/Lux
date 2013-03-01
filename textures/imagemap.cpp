@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -143,8 +143,8 @@ Texture<float> *ImageFloatTexture::CreateFloatTexture(const Transform &tex2world
 		ch = CHANNEL_MEAN;
 	}
 
-	ImageFloatTexture *tex = new ImageFloatTexture(TextureMapping2D::Create(tex2world, tp), filterType,
-		filename, discardmm, maxAniso, wrapMode, ch, gain, gamma);
+	TexInfo texInfo(filterType, filename, discardmm, maxAniso, wrapMode, gain, gamma);
+	ImageFloatTexture *tex = new ImageFloatTexture(texInfo, TextureMapping2D::Create(tex2world, tp), ch);
 
 	return tex;
 }
@@ -186,8 +186,8 @@ Texture<SWCSpectrum> *ImageSpectrumTexture::CreateSWCSpectrumTexture(const Trans
 	string filename = tp.FindOneString("filename", "");
 	int discardmm = tp.FindOneInt("discardmipmaps", 0);
 
-	ImageSpectrumTexture *tex = new ImageSpectrumTexture(TextureMapping2D::Create(tex2world, tp), filterType,
-		filename, discardmm, maxAniso, wrapMode, gain, gamma);
+	TexInfo texInfo(filterType, filename, discardmm, maxAniso, wrapMode, gain, gamma);
+	ImageSpectrumTexture *tex = new ImageSpectrumTexture(texInfo, TextureMapping2D::Create(tex2world, tp));
 
 	return tex;
 }
@@ -227,13 +227,13 @@ Texture<float> *NormalMapTexture::CreateFloatTexture(const Transform &tex2world,
 	string filename = tp.FindOneString("filename", "");
 	int discardmm = tp.FindOneInt("discardmipmaps", 0);
 
-	NormalMapTexture *tex = new NormalMapTexture(TextureMapping2D::Create(tex2world, tp), filterType,
-		filename, discardmm, maxAniso, wrapMode, gain, gamma);
+	TexInfo texInfo(filterType, filename, discardmm, maxAniso, wrapMode, gain, gamma);
+	NormalMapTexture *tex = new NormalMapTexture(texInfo, TextureMapping2D::Create(tex2world, tp));
 
 	return tex;
 }
 
-map<ImageTexture::TexInfo, boost::shared_ptr<MIPMap> > ImageTexture::textures;
+map<TexInfo, boost::shared_ptr<MIPMap> > ImageTexture::textures;
 
 static DynamicLoader::RegisterFloatTexture<ImageFloatTexture> r1("imagemap");
 static DynamicLoader::RegisterSWCSpectrumTexture<ImageSpectrumTexture> r2("imagemap");

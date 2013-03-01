@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -32,7 +32,7 @@ public:
 
 	BlenderMagicTexture3D(const Transform &tex2world,
 		const ParamSet &tp) :
-		BlenderTexture3D(tex2world, tp, TEX_MAGIC) {
+		BlenderTexture3D("BlenderMagicTexture3D-" + boost::lexical_cast<string>(this), tex2world, tp, TEX_MAGIC) {
 		tex.noisedepth = tp.FindOneInt("noisedepth", 2);
 		tex.turbul = tp.FindOneFloat("turbulence", 5.0f);
 	}

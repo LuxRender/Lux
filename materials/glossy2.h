@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -39,7 +39,8 @@ public:
 		boost::shared_ptr<Texture<float> > &u,
 		boost::shared_ptr<Texture<float> > &v,
 		bool mb,
-		const ParamSet &mp) : Material(mp), Kd(kd), Ks(ks), Ka(ka),
+		const ParamSet &mp) : Material("GlossyCombined-" + boost::lexical_cast<string>(this), mp),
+		Kd(kd), Ks(ks), Ka(ka),
 		depth(d), index(i), nu(u), nv(v), multibounce(mb) { }
 	virtual ~GlossyCombined() { }
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
@@ -66,14 +67,23 @@ public:
 		boost::shared_ptr<Texture<float> > &v,
 		boost::shared_ptr<Texture<float> > &s,
 		bool mb,
-		const ParamSet &mp) : Material(mp), Kd(kd), Ks(ks), Ka(ka),	
+		const ParamSet &mp) : Material("Glossy2-" + boost::lexical_cast<string>(this), mp), Kd(kd), Ks(ks), Ka(ka),	
 		depth(d), index(i), nu(u), nv(v), sigma(s), 
 		multibounce(mb) { }
 	virtual ~Glossy2() { }
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,
 		const DifferentialGeometry &dgShading) const;
-	
+
+	Texture<SWCSpectrum> *GetKdTexture() { return Kd.get(); }
+	Texture<SWCSpectrum> *GetKsTexture() { return Ks.get(); }
+	Texture<SWCSpectrum> *GetKaTexture() { return Ka.get(); }
+	Texture<float> *GetNuTexture() { return nu.get(); }
+	Texture<float> *GetNvTexture() { return nv.get(); }
+	Texture<float> *GetDepthTexture() { return depth.get(); }
+	Texture<float> *GetIndexTexture() { return index.get(); }
+	bool IsMultiBounce() const { return multibounce; }
+
 	static Material * CreateMaterial(const Transform &xform,
 		const ParamSet &mp);
 private:
@@ -96,8 +106,8 @@ public:
 		boost::shared_ptr<Texture<float> > &u,
 		boost::shared_ptr<Texture<float> > &v,
 		bool mb,
-		const ParamSet &mp) : Material(mp), basemat(bmat), Ks(ks), Ka(ka),
-		depth(d), index(i), nu(u), nv(v), multibounce(mb) { }
+		const ParamSet &mp) : Material("GlossyCoating-" + boost::lexical_cast<string>(this), mp),
+		basemat(bmat), Ks(ks), Ka(ka), depth(d), index(i), nu(u), nv(v), multibounce(mb) { }
 	virtual ~GlossyCoating() { }
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,

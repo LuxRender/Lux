@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -29,6 +29,7 @@
 #include "error.h"
 
 #include "luxrays/luxrays.h"
+#include "luxrays/core/exttrianglemesh.h"
 
 namespace lux
 {
@@ -54,7 +55,7 @@ public:
 	 * If this primitive should not be deallocated after refinement, it must
 	 * make sure that one of the refined primitives has a shared pointer to
 	 * this primitive (i.e. a copy of thisPtr)
-	 * @param refined     The destenation list for the result.
+	 * @param refined     The destination list for the result.
 	 * @param refineHints The hints for the refinement.
 	 * @param thisPtr     The shared pointer to this primitive.
 	 */
@@ -151,13 +152,23 @@ public:
 	}
 	/**
 	 * Add a tesselated approximation of current primitive to list passed as
-	 * argument. It can do nothing in case tasselation is not supported.
+	 * argument. It can do nothing in case tesselation is not supported.
 	 * @param meshList      The vector where the mesh.
 	 * @param primitiveList The vector of primitive pointers where to add each a pointer to each primitive tesselated in the corresponding mesh.
 	 */
 	virtual void Tesselate(vector<luxrays::TriangleMesh *> *meshList,
 		vector<const Primitive *> *primitiveList) const {
 		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "Primitive doesn't support Tesselation";
+	}
+	/**
+	 * Add a tesselated approximation of current primitive to list passed as
+	 * argument. It can do nothing in case tesselation is not supported.
+	 * @param meshList      The vector where the mesh.
+	 * @param primitiveList The vector of primitive pointers where to add each a pointer to each primitive tesselated in the corresponding mesh.
+	 */
+	virtual void ExtTesselate(vector<luxrays::ExtTriangleMesh *> *meshList,
+		vector<const Primitive *> *primitiveList) const {
+		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "Primitive doesn't support ExtTesselate";
 	}
 	/**
 	 * This must be implemented if Tesselate() is supported. Translate a LuxRays hit
@@ -271,11 +282,23 @@ public:
 		return prim;
 	}
 
+	AreaLight *GetAreaLight() const { return areaLight; }
+
 	virtual void Tesselate(vector<luxrays::TriangleMesh *> *meshList,
 		vector<const Primitive *> *primitiveList) const {
 		vector<const Primitive *> plist;
 
 		prim->Tesselate(meshList, &plist);
+
+		for (u_int i = 0; i < plist.size(); ++i)
+			primitiveList->push_back(this);
+	}
+
+	virtual void ExtTesselate(vector<luxrays::ExtTriangleMesh *> *meshList,
+		vector<const Primitive *> *primitiveList) const {
+		vector<const Primitive *> plist;
+
+		prim->ExtTesselate(meshList, &plist);
 
 		for (u_int i = 0; i < plist.size(); ++i)
 			primitiveList->push_back(this);
@@ -289,6 +312,7 @@ public:
 	virtual Transform GetLocalToWorld(float time) const {
 		return prim->GetLocalToWorld(time);
 	}
+
 private:
 	// AreaLightPrimitive Private Data
 	boost::shared_ptr<Primitive> prim;
@@ -312,9 +336,10 @@ public:
 	 * @param mat The material this instance or NULL to use the
 	 *            instanced primitive's material.
 	 */
-	InstancePrimitive(boost::shared_ptr<Primitive> &i, const Transform &i2w,
+	InstancePrimitive(const vector<boost::shared_ptr<Primitive> > &instSources,
+		boost::shared_ptr<Primitive> &i, const Transform &i2w,
 		boost::shared_ptr<Material> &mat, boost::shared_ptr<Volume> &ex,
-		boost::shared_ptr<Volume> &in) : instance(i),
+		boost::shared_ptr<Volume> &in) : instanceSources(instSources), instance(i),
 		InstanceToWorld(i2w), material(mat), exterior(ex),
 		interior(in) { }
 	virtual ~InstancePrimitive() { }
@@ -375,8 +400,14 @@ public:
 	virtual Transform GetLocalToWorld(float time) const {
 		return InstanceToWorld * instance->GetLocalToWorld(time);
 	}
+
+	const vector<boost::shared_ptr<Primitive> > &GetInstanceSources() const { return instanceSources; }
+	const Transform &GetTransform() const { return InstanceToWorld; }
+	Material *GetMaterial() const { return material.get(); }
+
 private:
 	// InstancePrimitive Private Data
+	vector<boost::shared_ptr<Primitive> > instanceSources;
 	boost::shared_ptr<Primitive> instance;
 	Transform InstanceToWorld;
 	boost::shared_ptr<Material> material;

@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -29,8 +29,9 @@
 #include "memory.h"
 #include "queryable.h"
 #include "bsh.h"
-#include "luxrays/utils/convtest/convtest.h"
 #include "mcdistribution.h"
+
+#include "slg/utils/convtest/convtest.h"
 
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/xtime.hpp>
@@ -118,11 +119,11 @@ public:
 		pixel.weightSum += wt;
 	}
 
-	void Set(u_int x, u_int y, XYZColor L, float alpha) {
+	void Set(u_int x, u_int y, XYZColor L, float alpha, float wt = 1.f) {
 		Pixel &pixel = pixels(x, y);
 		pixel.L = L;
 		pixel.alpha = alpha;
-		pixel.weightSum = 1.f;
+		pixel.weightSum = wt;
 	}
 
 	void Clear() {
@@ -622,7 +623,9 @@ public:
 	virtual void AddTileSamples(const Contribution* const contribs, u_int num_contribs,
 		u_int tileIndex);
 	virtual void SetSample(const Contribution *contrib);
-	virtual void AddSampleCount(float count);
+	virtual void AddSampleNoFiltering(const Contribution *contrib);
+	virtual void AddSampleCount(const double count);
+	virtual void SetSampleCount(const double count) { numberOfLocalSamples = count; }
 	virtual void GetSampleExtent(int *xstart, int *xend, int *ystart, int *yend) const;
 
 	virtual void SaveEXR(const string &exrFilename, bool useHalfFloats, bool includeZBuf, int compressionType, bool tonemapped) {
@@ -715,6 +718,9 @@ public:
 		return samplePerPass;
 	}
 
+	const Filter *GetFilter() const { return filter; }
+	ColorSystem GetColorSpace() const { return colorSpace; }
+
 protected:
 	bool WriteFilmDataToStream(std::basic_ostream<char> &stream, bool clearBuffers = true, bool transmitParams = false);
 	// Reject outliers for a tile. Rejected contributions get their variance set to -1.
@@ -775,7 +781,7 @@ protected: // Put it here for better data alignment
 	boost::mutex write_mutex; // WriteImage/ConvergenceTest (i.e. image pipeline) synchronization
 
 	// Enabled by haltthreshold
-	luxrays::utils::ConvergenceTest *convTest;
+	slg::ConvergenceTest *convTest;
 
 	// May be enabled by the sampler
 	VarianceBuffer *varianceBuffer; // Used to build the noise map
@@ -830,6 +836,12 @@ public:
 	bool enoughSamplesPerPixel; // At the end to get better data alignment
 
 private:
+	// Used by Query interface
+	float GetCropWindow0() { return cropWindow[0]; }
+	float GetCropWindow1() { return cropWindow[1]; }
+	float GetCropWindow2() { return cropWindow[2]; }
+	float GetCropWindow3() { return cropWindow[3]; }
+
 	// Gets a reference to the appropriate outlier row data for a given position and tile index.
 	std::vector<OutlierAccel>& GetOutlierAccelRow(u_int oY, u_int tileIndex, u_int tileStart, u_int tileEnd);
 	

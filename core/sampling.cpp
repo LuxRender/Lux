@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -32,7 +32,7 @@
 using namespace lux;
 
 // Sampler Method Definitions
-Sampler::Sampler(int xstart, int xend, int ystart, int yend, u_int spp)
+Sampler::Sampler(int xstart, int xend, int ystart, int yend, u_int spp) : Queryable("sampler")
 {
 	xPixelStart = min(xstart, xend);
 	xPixelEnd = max(xstart, xend);

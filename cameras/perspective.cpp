@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -134,8 +134,9 @@ PerspectiveCamera::PerspectiveCamera(const MotionSystem &world2cam,
 		lensr, focald, f),
 		distribution(dist), shape(sh), power(pow),
 		autoFocus(autofocus) {
-	pos = CameraToWorld * Point(0,0,0);
-	normal = CameraToWorld * Normal(0,0,1);
+	pos = CameraToWorld * Point(0.f, 0.f, 0.f);
+	normal = CameraToWorld * Normal(0.f, 0.f, 1.f);
+	up = CameraToWorld * Normal(0.f, 1.f, 0.f);
 	fov = Radians(fov1);
 
 	if (LensRadius > 0.f)
@@ -161,8 +162,16 @@ PerspectiveCamera::PerspectiveCamera(const MotionSystem &world2cam,
 void PerspectiveCamera::AddAttributes(Queryable *q) const
 {
 	ProjectiveCamera::AddAttributes(q);
-/*	AddFloatAttribute(*this, "fov", "Field of View in radians", M_PI / 2.f, &PerspectiveCamera::fov);*/
 	AddFloatConstant(*q, "fov", "Field of View in radians", fov);
+	AddFloatConstant(*q, "position.x", "Perspective camera X", pos.x);
+	AddFloatConstant(*q, "position.y", "Perspective camera Y", pos.y);
+	AddFloatConstant(*q, "position.z", "Perspective camera Z", pos.z);
+	AddFloatConstant(*q, "normal.x", "Perspective camera normal X", normal.x);
+	AddFloatConstant(*q, "normal.y", "Perspective camera normal Y", normal.y);
+	AddFloatConstant(*q, "normal.z", "Perspective camera normal Z", normal.z);
+	AddFloatConstant(*q, "up.x", "Perspective camera up X", up.x);
+	AddFloatConstant(*q, "up.y", "Perspective camera up Y", up.y);
+	AddFloatConstant(*q, "up.z", "Perspective camera up Z", up.z);
 }
 
 void PerspectiveCamera::SampleMotion(float time)

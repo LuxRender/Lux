@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -66,8 +66,9 @@ public:
 
 	Point pos;
 	float Apixel, xStart, xEnd, yStart, yEnd;
+
 private:
-	Normal normal;
+	Normal normal, up;
 	float fov;
 	float posPdf;
 	int distribution, shape, power;

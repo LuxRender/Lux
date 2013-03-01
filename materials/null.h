@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -31,7 +31,7 @@ namespace lux
 class Null : public Material {
 public:
 	// Null Public Methods
-	Null(const ParamSet &mp) : Material(mp, false) { }
+	Null(const ParamSet &mp) : Material("Null-" + boost::lexical_cast<string>(this), mp, false) { }
 	virtual ~Null() { }
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect,

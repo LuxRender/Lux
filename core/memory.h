@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -281,7 +281,7 @@ private:
 };
 #define ARENA_ALLOC(ARENA,T)  new ((ARENA).Alloc(sizeof(T))) T
 
-template<class T, int logBlockSize> class BlockedArray {
+template<class T, int logBlockSize = 2> class BlockedArray {
 public:
 	friend class boost::serialization::access;
 	// BlockedArray Public Methods

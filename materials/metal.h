@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -33,7 +33,8 @@ namespace lux
 class Metal : public Material {
 public:
 	// Metal Public Methods
-	Metal(boost::shared_ptr<SPD > &n, boost::shared_ptr<SPD > &k,
+	Metal(const std::string &metalName,
+		boost::shared_ptr<SPD > &n, boost::shared_ptr<SPD > &k,
 		boost::shared_ptr<Texture<float> > &u,
 		boost::shared_ptr<Texture<float> > &v,
 		const ParamSet &mp);
@@ -46,9 +47,14 @@ public:
 	static Material * CreateMaterial(const Transform &xform,
 		const ParamSet &mp);
 
+	SPD *GetNSPD() { return N.get(); }
+	SPD *GetKSPD() { return K.get(); }
+	Texture<float> *GetNuTexture() { return nu.get(); }
+	Texture<float> *GetNvTexture() { return nv.get(); }
+
 private:
 	// Metal Private Data
-	boost::shared_ptr<SPD > N, K;
+	boost::shared_ptr<SPD> N, K;
 	boost::shared_ptr<Texture<float> > nu, nv;
 };
 

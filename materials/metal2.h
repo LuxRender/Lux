@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -43,6 +43,10 @@ public:
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
 		const Intersection &isect, 
 		const DifferentialGeometry &dgShading) const;
+
+	Texture<FresnelGeneral> *GetFresnelTexture() { return fresnel.get(); }
+	Texture<float> *GetNuTexture() { return nu.get(); }
+	Texture<float> *GetNvTexture() { return nv.get(); }
 
 	static Material * CreateMaterial(const Transform &xform,
 		const ParamSet &mp);

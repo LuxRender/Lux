@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -228,9 +228,13 @@ InfiniteAreaLight::~InfiniteAreaLight()
 
 InfiniteAreaLight::InfiniteAreaLight(const Transform &light2world,
 	const RGBColor &l, u_int ns, const string &texmap,
-	EnvironmentMapping *m, float gain, float gamma)
-	: Light(light2world, ns), SPDbase(l)
+	EnvironmentMapping *m, float g, float gm)
+	: Light("InfiniteAreaLight-" + boost::lexical_cast<string>(this), light2world, ns), SPDbase(l)
 {
+	lightColor = l;
+	gain = g;
+	gamma = gm;
+
 	// Base illuminant SPD
 	SPDbase.Scale(gain);
 
@@ -242,6 +246,12 @@ InfiniteAreaLight::InfiniteAreaLight(const Transform &light2world,
 			radianceMap = imgdata->createMIPMap(BILINEAR, 8.f,
 				TEXTURE_REPEAT, 1.f, gamma);
 	}
+
+	AddFloatAttribute(*this, "gain", "InfiniteAreaLight gain", &InfiniteAreaLight::gain);
+	AddFloatAttribute(*this, "gamma", "InfiniteAreaLight gamma", &InfiniteAreaLight::gamma);
+	AddFloatAttribute(*this, "color.r", "InfiniteAreaLight color R", &InfiniteAreaLight::GetColorR);
+	AddFloatAttribute(*this, "color.g", "InfiniteAreaLight color G", &InfiniteAreaLight::GetColorG);
+	AddFloatAttribute(*this, "color.b", "InfiniteAreaLight color B", &InfiniteAreaLight::GetColorB);
 }
 
 float InfiniteAreaLight::Power(const Scene &scene) const

@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -34,7 +34,9 @@ namespace lux
 class GaussianTexture : public Texture<SWCSpectrum> {
 public:
 	// GaussianTexture Public Methods
-	GaussianTexture(float m, float w, float r) : GSPD(m, w, r) { }
+	GaussianTexture(float m, float w, float r) :
+		Texture("GaussianTexture-" + boost::lexical_cast<string>(this)),
+		GSPD(m, w, r) { }
 	virtual ~GaussianTexture() { }
 	virtual SWCSpectrum Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &) const {

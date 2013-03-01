@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -34,7 +34,8 @@ namespace lux
 class BlackBodyTexture : public Texture<SWCSpectrum> {
 public:
 	// BlackBodyTexture Public Methods
-	BlackBodyTexture(float t) : BBSPD(t) { }
+	BlackBodyTexture(float t) : Texture("BlackBodyTexture-" + boost::lexical_cast<string>(this)),
+			BBSPD(t) { }
 	virtual ~BlackBodyTexture() { }
 	virtual SWCSpectrum Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &) const {
@@ -45,6 +46,9 @@ public:
 	virtual void GetDuv(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg, float delta,
 		float *du, float *dv) const { *du = *dv = 0.f; }
+
+	BlackbodySPD *GetBlackBodySPD() { return &BBSPD; }
+
 	static Texture<SWCSpectrum> *CreateSWCSpectrumTexture(const Transform &tex2world, const ParamSet &tp);
 
 private:

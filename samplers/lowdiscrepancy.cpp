@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -87,6 +87,8 @@ LDSampler::LDSampler(int xstart, int xend,
 	} else
 		pixelSamples = ps;
 	sampPixelPos = 0;
+
+	AddStringConstant(*this, "name", "Name of current sampler", "lowdiscrepancy");
 }
 
 LDSampler::~LDSampler() {

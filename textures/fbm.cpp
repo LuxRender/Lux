@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -25,5 +25,30 @@
 #include "dynload.h"
 
 using namespace lux;
+
+// FBmTexture Method Definitions
+Texture<float> * FBmTexture::CreateFloatTexture(const Transform &tex2world,
+	const ParamSet &tp) {
+	TextureMapping3D *imap;
+	// Read mapping coordinates
+	string coords = tp.FindOneString("coordinates", "global");
+	if (coords == "global")
+		imap = new GlobalMapping3D(tex2world);
+	else if (coords == "local")
+		imap = new LocalMapping3D(tex2world);
+	else if (coords == "uv")
+		imap = new UVMapping3D(tex2world);
+	else if (coords == "globalnormal")
+		imap = new GlobalNormalMapping3D(tex2world);
+	else if (coords == "localnormal")
+		imap = new LocalNormalMapping3D(tex2world);
+	else
+		imap = new GlobalMapping3D(tex2world);
+	// Apply texture specified transformation option for 3D mapping
+	imap->Apply3DTextureMappingOptions(tp);
+
+	return new FBmTexture(tp.FindOneInt("octaves", 8),
+		tp.FindOneFloat("roughness", .5f), imap);
+}
 
 static DynamicLoader::RegisterFloatTexture<FBmTexture> r("fbm");

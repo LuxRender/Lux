@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -244,7 +244,7 @@ SkyLight::~SkyLight()
 SkyLight::SkyLight(const Transform &light2world, float skyscale, u_int ns,
 	Vector sd, float turb,
 	float aconst, float bconst, float cconst, float dconst, float econst)
-	: Light(light2world, ns) {
+	: Light("SkyLight-" + boost::lexical_cast<string>(this), light2world, ns) {
 	skyScale = skyscale;
 	sundir = sd;
 	turbidity = turb;
@@ -291,6 +291,12 @@ SkyLight::SkyLight(const Transform &light2world, float skyscale, u_int ns,
 	zenith_Y /= PerezBase(perez_Y, 0, thetaS);
 	zenith_x /= PerezBase(perez_x, 0, thetaS);
 	zenith_y /= PerezBase(perez_y, 0, thetaS);
+
+	AddFloatAttribute(*this, "dir.x", "Sky light direction X", &SkyLight::GetDirectionX);
+	AddFloatAttribute(*this, "dir.y", "Sky light direction Y", &SkyLight::GetDirectionY);
+	AddFloatAttribute(*this, "dir.z", "Sky light direction Z", &SkyLight::GetDirectionZ);
+	AddFloatAttribute(*this, "turbidity", "Sky light turbidity", &SkyLight::turbidity);
+	AddFloatAttribute(*this, "gain", "Sun light gain", &SkyLight::skyScale);
 }
 
 float SkyLight::Power(const Scene &scene) const

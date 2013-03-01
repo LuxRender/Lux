@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -34,6 +34,9 @@
 #include "luxrays/core/context.h"
 #include "luxrays/core/device.h"
 #include "luxrays/core/virtualdevice.h"
+#if !defined(LUXRAYS_DISABLE_OPENCL)
+#include "luxrays/core/ocldevice.h"
+#endif
 
 using namespace lux;
 
@@ -198,11 +201,14 @@ HybridSamplerRenderer::HybridSamplerRenderer(const int oclPlatformIndex, bool us
 		hwDeviceDescs = deviceDescs;
 		luxrays::DeviceDescription::Filter(luxrays::DEVICE_TYPE_OPENCL_GPU, hwDeviceDescs);
 
+#if !defined(LUXRAYS_DISABLE_OPENCL)
 		if (forceGPUWorkGroupSize > 0) {
 			for (u_int i = 0; i < hwDeviceDescs.size(); ++i) {
-				hwDeviceDescs[i]->SetForceWorkGroupSize(forceGPUWorkGroupSize);
+				luxrays::OpenCLDeviceDescription *desc = static_cast<luxrays::OpenCLDeviceDescription *>(hwDeviceDescs[i]);
+				desc->SetForceWorkGroupSize(forceGPUWorkGroupSize);
 			}
 		}
+#endif
 	}
 	if (!useGPUs || hwDeviceDescs.size() == 0)
 		useNative = true;
@@ -334,6 +340,7 @@ static void writeIntervalCheck(Film *film) {
 
 void HybridSamplerRenderer::Render(Scene *s) {
 	luxrays::DataSet *dataSet;
+	vector<HybridInstancePrimitive *> hybridPrims;
 
 	{
 		// Section under mutex
@@ -389,7 +396,7 @@ void HybridSamplerRenderer::Render(Scene *s) {
 		// Compile the scene geometries in a LuxRays compatible format
 		//----------------------------------------------------------------------
 
-		dataSet = HybridRenderer::PreprocessGeometry(ctx, scene);
+		dataSet = HybridRenderer::PreprocessGeometry(ctx, scene, hybridPrims);
 		if (!dataSet)
 			return;
 		ctx->Start();
@@ -447,6 +454,11 @@ void HybridSamplerRenderer::Render(Scene *s) {
 	ctx->Stop();
 	delete dataSet;
 	scene->dataSet = NULL;
+
+	// Free memory allocated inside HybridRenderer::PreprocessGeometry()
+	for (u_int i = 0; i < hybridPrims.size(); ++i)
+		delete hybridPrims[i];
+		
 }
 
 void HybridSamplerRenderer::Pause() {

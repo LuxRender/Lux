@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -36,7 +36,8 @@ namespace lux
 class WindyTexture : public Texture<float> {
 public:
 	// WindyTexture Public Methods
-	WindyTexture(TextureMapping3D *map) { mapping = map; }
+	WindyTexture(TextureMapping3D *map) :
+		Texture("WindyTexture-" + boost::lexical_cast<string>(this)) { mapping = map; }
 	virtual ~WindyTexture() { delete mapping; }
 	virtual float Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {

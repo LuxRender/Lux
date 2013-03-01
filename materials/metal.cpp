@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -42,11 +42,13 @@
 
 using namespace lux;
 
-Metal::Metal(boost::shared_ptr<SPD > &n, boost::shared_ptr<SPD > &k, 
+Metal::Metal(const std::string &metalName,
+	boost::shared_ptr<SPD > &n, boost::shared_ptr<SPD > &k, 
 	boost::shared_ptr<Texture<float> > &u,
 	boost::shared_ptr<Texture<float> > &v,
-	const ParamSet &mp) : Material(mp), N(n), K(k), nu(u), nv(v)
-{
+	const ParamSet &mp) : Material("Metal-" + boost::lexical_cast<string>(this), mp),
+	N(n), K(k), nu(u), nv(v) {
+	AddStringConstant(*this, "metalName", " Name of the metal", metalName);
 }
 
 BSDF *Metal::GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
@@ -390,7 +392,7 @@ Material *Metal::CreateMaterial(const Transform &xform, const ParamSet &tp) {
 	boost::shared_ptr<Texture<float> > uroughness(tp.GetFloatTexture("uroughness", .1f));
 	boost::shared_ptr<Texture<float> > vroughness(tp.GetFloatTexture("vroughness", .1f));
 
-	return new Metal(n, k, uroughness, vroughness, tp);
+	return new Metal(metalname, n, k, uroughness, vroughness, tp);
 }
 
 static DynamicLoader::RegisterMaterial<Metal> r("metal");

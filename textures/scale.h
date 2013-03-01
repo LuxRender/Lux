@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -41,7 +41,9 @@ class ScaleTexture : public Texture<T2> {
 public:
 	// ScaleTexture Public Methods
 	ScaleTexture(boost::shared_ptr<Texture<T1> > &t1,
-		boost::shared_ptr<Texture<T2> > &t2) : tex1(t1), tex2(t2) { }
+		boost::shared_ptr<Texture<T2> > &t2) :
+		Texture<T2>("ScaleTexture-" + boost::lexical_cast<string>(this)),
+		tex1(t1), tex2(t2) { }
 	virtual ~ScaleTexture() { }
 	virtual T2 Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg) const {
@@ -78,8 +80,13 @@ public:
 		tex1->SetIlluminant();
 		tex2->SetIlluminant();
 	}
+
+	const Texture<T1> *GetTex1() const { return tex1.get(); }
+	const Texture<T2> *GetTex2() const { return tex2.get(); }
+
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const ParamSet &tp);
 	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const ParamSet &tp);
+
 private:
 	boost::shared_ptr<Texture<T1> > tex1;
 	boost::shared_ptr<Texture<T2> > tex2;

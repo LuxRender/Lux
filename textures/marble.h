@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -39,7 +39,7 @@ public:
 	// MarbleTexture Public Methods
 	virtual ~MarbleTexture() { delete mapping; }
 	MarbleTexture(int oct, float roughness, float sc, float var,
-		TextureMapping3D *map) {
+		TextureMapping3D *map) : Texture("MarbleTexture-" + boost::lexical_cast<string>(this)) {
 		omega = roughness;
 		octaves = oct;
 		mapping = map;
@@ -117,7 +117,13 @@ public:
 		dgTemp.nn = Normalize(origN + vv * dgTemp.dndv);
 		*dv = (EvalFloat(sw, dgTemp) - base) / vv;
 	}
-	
+
+	int GetOctaves() const { return octaves; }
+	float GetOmega() const { return omega; }
+	float GetScale() const { return scale; }
+	float GetVariation() const { return variation; }
+	const TextureMapping3D *GetTextureMapping3D() const { return mapping; }
+
 	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const ParamSet &tp);
 private:
 	// MarbleTexture Private Data

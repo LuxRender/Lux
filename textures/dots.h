@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -37,6 +37,7 @@ public:
 	// DotsTexture Public Methods
 	DotsTexture(TextureMapping2D *m, boost::shared_ptr<Texture<float> > &c1,
 		boost::shared_ptr<Texture<float> > &c2) :
+		Texture("DotsTexture-" + boost::lexical_cast<string>(this)),
 		outsideDot(c1), insideDot(c2), mapping(m) { }
 	virtual ~DotsTexture() { delete mapping; }
 	virtual float Evaluate(const SpectrumWavelengths &sw,

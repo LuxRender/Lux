@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -48,7 +48,8 @@ public:
 		boost::shared_ptr<Texture<float> > &v2,
 		bool mb,
 		bool mb2,
-		const ParamSet &mp) : Material(mp), Kd(kd), Kt(kt),
+		const ParamSet &mp) : Material("GlossyTranslucent-" + boost::lexical_cast<string>(this), mp),
+		Kd(kd), Kt(kt),
 		Ks(ks), Ks_bf(ks2), Ka(ka), Ka_bf(ka2), depth(d), depth_bf(d2),
 		index(i), index_bf(i2), nu(u), nu_bf(u2), nv(v), nv_bf(v2),
 		multibounce(mb), multibounce_bf(mb2) { }

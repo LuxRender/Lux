@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -33,7 +33,9 @@ namespace lux
 // Triangle Filter Declarations
 class TriangleFilter : public Filter {
 public:
-	TriangleFilter(float xw, float yw) : Filter(xw, yw) { }
+	TriangleFilter(float xw, float yw) : Filter(xw, yw) {
+		AddStringConstant(*this, "type", "Filter type", "triangle");
+	}
 	virtual ~TriangleFilter() { }
 	virtual float Evaluate(float x, float y) const;
 	

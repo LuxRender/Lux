@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -31,7 +31,7 @@ public:
 
 	BlenderNoiseTexture3D(const Transform &tex2world,
 		const ParamSet &tp) :
-		BlenderTexture3D(tex2world, tp, TEX_NOISE) {
+		BlenderTexture3D("BlenderNoiseTexture3D-" + boost::lexical_cast<string>(this), tex2world, tp, TEX_NOISE) {
 		tex.noisedepth = tp.FindOneInt("noisedepth", 2);
 	}
 

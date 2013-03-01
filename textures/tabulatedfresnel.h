@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -37,6 +37,7 @@ public:
 	// TabulatedFresnel Public Methods
 	TabulatedFresnel(const vector<float> &wl, const vector<float> &n,
 		const vector<float> &k) :
+		Texture("TabulatedFresnel-" + boost::lexical_cast<string>(this)),
 		N(&wl[0], &n[0], wl.size()), K(&wl[0], &k[0], wl.size()),
 		index(N.Filter()) { }
 	virtual ~TabulatedFresnel() { }
@@ -51,6 +52,9 @@ public:
 	virtual void GetDuv(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &dg, float delta,
 		float *du, float *dv) const { *du = *dv = 0.f; }
+
+	IrregularSPD *GetNSPD() { return &N; }
+	IrregularSPD *GetKSPD() { return &K; }
 
 private:
 	IrregularSPD N, K;

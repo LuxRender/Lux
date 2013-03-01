@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -533,6 +533,16 @@ void Mesh::Tesselate(vector<luxrays::TriangleMesh *> *meshList, vector<const Pri
 	// A little hack with pointers
 	luxrays::TriangleMesh *tm = new luxrays::TriangleMesh(
 			nverts, ntris, p, (luxrays::Triangle *)triVertexIndex);
+
+	meshList->push_back(tm);
+	primitiveList->push_back(this);
+}
+
+void Mesh::ExtTesselate(vector<luxrays::ExtTriangleMesh *> *meshList, vector<const Primitive *> *primitiveList) const {
+	// A little hack with pointers
+	luxrays::ExtTriangleMesh *tm = new luxrays::ExtTriangleMesh(
+			nverts, ntris, p, (luxrays::Triangle *)triVertexIndex,
+			n, (luxrays::UV *)uvs);
 
 	meshList->push_back(tm);
 	primitiveList->push_back(this);

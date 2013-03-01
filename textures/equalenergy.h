@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -34,7 +34,8 @@ namespace lux
 class EqualEnergyTexture : public Texture<SWCSpectrum> {
 public:
 	// EqualEnergyTexture Public Methods
-	EqualEnergyTexture(float t) : e(t) { }
+	EqualEnergyTexture(float t) :
+		Texture("EqualEnergyTexture-" + boost::lexical_cast<string>(this)), e(t) { }
 	virtual ~EqualEnergyTexture() { }
 	virtual SWCSpectrum Evaluate(const SpectrumWavelengths &sw,
 		const DifferentialGeometry &) const {

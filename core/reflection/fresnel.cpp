@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -72,7 +72,7 @@ SWCSpectrum FresnelApproxEta(const SWCSpectrum &Fr) {
 	return (SWCSpectrum(1.f) + sqrtReflectance) /
 		(SWCSpectrum(1.f) - sqrtReflectance);
 }
- SWCSpectrum FresnelApproxK(const SWCSpectrum &Fr) {
+SWCSpectrum FresnelApproxK(const SWCSpectrum &Fr) {
 	SWCSpectrum reflectance = Fr.Clamp(0.f, .999f);
 	return 2.f * Sqrt(reflectance /
 		(SWCSpectrum(1.f) - reflectance));

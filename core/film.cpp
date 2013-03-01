@@ -1,5 +1,5 @@
 /***************************************************************************
-*   Copyright (C) 1998-2008 by authors (see AUTHORS.txt )                 *
+*   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
 *                                                                         *
 *   This file is part of LuxRender.                                       *
 *                                                                         *
@@ -277,9 +277,9 @@ struct BloomFilterX
 				// Compute extent of pixels contributing bloom
 				const u_int x0 = max(x, bloomWidth) - bloomWidth;
 				const u_int x1 = min(x + bloomWidth, xResolution - 1);
-				const u_int y0 = max(y, bloomWidth) - bloomWidth;
-				const u_int y1 = min(y + bloomWidth, yResolution - 1);
-				const u_int offset = y * xResolution + x;
+				//const u_int y0 = max(y, bloomWidth) - bloomWidth;
+				//const u_int y1 = min(y + bloomWidth, yResolution - 1);
+				//const u_int offset = y * xResolution + x;
 				float sumWt = 0.f;
 				const u_int by = y;
 				XYZColor &pixel(row[x]);
@@ -337,11 +337,11 @@ struct BloomFilterY
 			for (u_int y = 0; y < yResolution; ++y) {
 				// Compute bloom for pixel _(x,y)_
 				// Compute extent of pixels contributing bloom
-				const u_int x0 = max(x, bloomWidth) - bloomWidth;
-				const u_int x1 = min(x + bloomWidth, xResolution - 1);
+				//const u_int x0 = max(x, bloomWidth) - bloomWidth;
+				//const u_int x1 = min(x + bloomWidth, xResolution - 1);
 				const u_int y0 = max(y, bloomWidth) - bloomWidth;
 				const u_int y1 = min(y + bloomWidth, yResolution - 1);
-				const u_int offset = y * xResolution + x;
+				//const u_int offset = y * xResolution + x;
 				float sumWt = 0.f;
 				XYZColor &pixel(col[y]);
 				for (u_int by = y0; by <= y1; ++by) {
@@ -931,6 +931,10 @@ Film::Film(u_int xres, u_int yres, Filter *filt, u_int filtRes, const float crop
 	AddBoolAttribute(*this, "writeResumeFlm", "Write resume file", writeResumeFlm, &Film::writeResumeFlm, Queryable::ReadWriteAccess);
 	AddBoolAttribute(*this, "restartResumeFlm", "Restart (overwrite) resume file", restartResumeFlm, &Film::restartResumeFlm, Queryable::ReadWriteAccess);
 	AddBoolAttribute(*this, "writeFlmDirect", "Write resume file directly to disk", writeFlmDirect, &Film::writeFlmDirect, Queryable::ReadWriteAccess);	
+	AddFloatAttribute(*this, "cropWindow.0", "Crop window 0", &Film::GetCropWindow0);
+	AddFloatAttribute(*this, "cropWindow.1", "Crop window 1", &Film::GetCropWindow1);
+	AddFloatAttribute(*this, "cropWindow.2", "Crop window 2", &Film::GetCropWindow2);
+	AddFloatAttribute(*this, "cropWindow.3", "Crop window 3", &Film::GetCropWindow3);
 
 	// Precompute filter tables
 	filterLUTs = new FilterLUTs(filt, max(min(filtRes, 64u), 2u));
@@ -1084,7 +1088,7 @@ void Film::CreateBuffers()
 	// NOTE: TVI is a side product of convergence test so I need to run the
 	// test even if halttreshold is not used
 	if ((haltThreshold >= 0.f) || noiseAwareMap) {
-		convTest = new luxrays::utils::ConvergenceTest(xPixelCount, yPixelCount);
+		convTest = new slg::ConvergenceTest(xPixelCount, yPixelCount);
 
 		if (noiseAwareMap)
 			convTest->NeedTVI();
@@ -1238,7 +1242,7 @@ void Film::GetSampleExtent(int *xstart, int *xend,
 	*yend   = Floor2Int(yPixelStart + .5f + yPixelCount + filter->yWidth);
 }
 
-void Film::AddSampleCount(float count) {
+void Film::AddSampleCount(const double count) {
 	if (haltTime > 0) {
 		// Check if we have met the enough rendering time condition
 		boost::xtime t;
@@ -1536,7 +1540,77 @@ void Film::SetSample(const Contribution *contrib) {
 	BufferGroup &currentGroup = bufferGroups[contrib->bufferGroup];
 	Buffer *buffer = currentGroup.getBuffer(contrib->buffer);
 
-	buffer->Set(x - xPixelStart, y - yPixelStart, xyz, alpha);
+	buffer->Set(x - xPixelStart, y - yPixelStart, xyz, alpha, weight);
+
+	// Update ZBuffer values with filtered zdepth contribution
+	if(use_Zbuf && contrib->zdepth != 0.f)
+		ZBuffer->Set(x - xPixelStart, y - yPixelStart,
+			contrib->zdepth, 1.0f);
+}
+
+// This is used to add a sample without pixel filtering. It is mostly used by
+// SLGRender to update Luxrender Film
+void Film::AddSampleNoFiltering(const Contribution *contrib) {
+	XYZColor xyz = contrib->color;
+	const float alpha = contrib->alpha;
+	const float weight = contrib->variance;
+	const int x = static_cast<int>(contrib->imageX);
+	const int y = static_cast<int>(contrib->imageY);
+
+	if (x < static_cast<int>(xPixelStart) || x >= static_cast<int>(xPixelStart + xPixelCount) ||
+		y < static_cast<int>(yPixelStart) || y >= static_cast<int>(yPixelStart + yPixelCount)) {
+		if(debug_mode) {
+			LOG(LUX_WARNING, LUX_LIMIT) << "Out of bound pixel coordinates in Film::SetSample: ("
+					<< x << ", " << y << "), sample discarded";
+		}
+		return;
+	}
+
+	// Issue warning if unexpected radiance value returned
+	if (!(xyz.Y() >= 0.f) || isinf(xyz.Y())) {
+		if(debug_mode) {
+			LOG(LUX_WARNING, LUX_LIMIT) << "Out of bound intensity in Film::SetSample: "
+			   << xyz.Y() << ", sample discarded";
+		}
+		return;
+	}
+
+	if (!(alpha >= 0.f) || isinf(alpha)) {
+		if(debug_mode) {
+			LOG(LUX_WARNING, LUX_LIMIT) << "Out of bound  alpha in Film::SetSample: "
+			   << alpha << ", sample discarded";
+		}
+		return;
+	}
+
+	if (!(weight >= 0.f) || isinf(weight)) {
+		if(debug_mode) {
+			LOG(LUX_WARNING, LUX_LIMIT) << "Out of bound  weight in Film::SetSample: "
+			   << weight << ", sample discarded";
+		}
+		return;
+	}
+
+/*FIXME restore the functionality
+	// Reject samples higher than max Y() after warmup period
+	if (warmupComplete) {
+		if (xyz.Y() > maxY)
+			return;
+	} else {
+		maxY = max(maxY, xyz.Y());
+		++warmupSamples;
+		if (warmupSamples >= reject_warmup_samples)
+			warmupComplete = true;
+	}
+*/
+
+	if (premultiplyAlpha)
+		xyz *= alpha;
+
+	BufferGroup &currentGroup = bufferGroups[contrib->bufferGroup];
+	Buffer *buffer = currentGroup.getBuffer(contrib->buffer);
+
+	buffer->Add(x - xPixelStart, y - yPixelStart, xyz, alpha, weight);
 
 	// Update ZBuffer values with filtered zdepth contribution
 	if(use_Zbuf && contrib->zdepth != 0.f)

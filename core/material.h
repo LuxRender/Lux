@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 1998-2009 by authors (see AUTHORS.txt )                 *
+ *   Copyright (C) 1998-2013 by authors (see AUTHORS.txt)                  *
  *                                                                         *
  *   This file is part of LuxRender.                                       *
  *                                                                         *
@@ -24,6 +24,7 @@
 #define LUX_MATERIAL_H
 // material.h*
 #include "lux.h"
+#include "queryable.h"
 
 namespace lux
 {
@@ -42,10 +43,10 @@ struct CompositingParams {
 };
 
 // Material Class Declarations
-class Material  {
+class Material : public Queryable {
 public:
 	// Material Interface
-	Material(const ParamSet &mp, const bool hasBumpMap = true);
+	Material(const string &name, const ParamSet &mp, const bool hasBumpMap = true);
 	virtual ~Material() { }
 
 	virtual BSDF *GetBSDF(MemoryArena &arena, const SpectrumWavelengths &sw,
