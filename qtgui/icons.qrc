@@ -30,5 +30,9 @@
     <file>icons/stopicon.png</file>
     <file>icons/tonemapicon.png</file>
     <file>icons/zoomicon.png</file>
+    <file>icons/analogclockicon.png</file>
+    <file>icons/arrowicon.png</file>
+    <file>icons/imageicon.png</file>
+    <file>icons/viewicon.png</file>
   </qresource>
 </RCC>

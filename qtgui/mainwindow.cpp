@@ -226,6 +226,7 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console)
 
 	connect(ui->checkBox_imagingAuto, SIGNAL(stateChanged(int)), this, SLOT(autoEnabledChanged(int)));
 	connect(ui->spinBox_overrideDisplayInterval, SIGNAL(valueChanged(int)), this, SLOT(overrideDisplayIntervalChanged(int)));
+	connect(ui->spinBox_overrideWriteInterval, SIGNAL(valueChanged(int)), this, SLOT(overrideWriteIntervalChanged(int)));
 
 	// Panes
 	panes[0] = new PaneWidget(ui->panesAreaContents, "Tone Mapping", ":/icons/tonemapicon.png");
@@ -675,6 +676,17 @@ void MainWindow::overrideDisplayIntervalChanged(int value)
 
 	if (m_renderTimer->isActive())
 		m_renderTimer->setInterval(1000*luxGetIntAttribute("film", "displayInterval"));
+}
+
+void MainWindow::overrideWriteIntervalChanged(int value)
+{
+	if (m_guiRenderState != RENDERING)
+		return;
+
+	if (value > 0)
+		luxSetIntAttribute("film", "writeInterval", value);
+	else
+		luxSetIntAttribute("film", "writeInterval", luxGetIntAttributeDefault("film", "writeInterval"));
 }
 
 void MainWindow::LuxGuiErrorHandler(int code, int severity, const char *msg)
@@ -2355,6 +2367,7 @@ void MainWindow::loadTimeout()
 			}
 
 			updateWidgetValue(ui->spinBox_overrideDisplayInterval, luxGetIntAttribute("film", "displayInterval"));
+			updateWidgetValue(ui->spinBox_overrideWriteInterval, luxGetIntAttribute("film", "writeInterval"));
 
 			if (ui->checkBox_haltTime->checkState() == Qt::Checked)
 			{

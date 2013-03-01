@@ -484,6 +484,7 @@ private slots:
 
 	void autoEnabledChanged (int value);
 	void overrideDisplayIntervalChanged(int value);
+	void overrideWriteIntervalChanged(int value);
 
 	void addServer();
 	void removeServer();
