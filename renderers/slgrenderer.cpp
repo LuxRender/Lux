@@ -28,6 +28,12 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/regex.hpp>
 
+#include "luxrays/core/context.h"
+#include "luxrays/core/exttrianglemesh.h"
+#include "luxrays/utils/ocl.h"
+#include "slg/rendersession.h"
+#include "slg/engines/filesaver/filesaver.h"
+
 #include "api.h"
 #include "scene.h"
 #include "camera.h"
@@ -79,13 +85,6 @@
 #include "textures/marble.h"
 
 #include "volumes/clearvolume.h"
-
-#include "luxrays/core/context.h"
-#include "luxrays/utils/core/exttrianglemesh.h"
-#include "luxrays/opencl/utils.h"
-#include "luxrays/opencl/utils.h"
-#include "rendersession.h"
-#include "filesaver/filesaver.h"
 
 using namespace lux;
 
@@ -189,7 +188,7 @@ void SLGRenderer::SuspendWhenDone(bool v) {
 // Channels: integer types
 //------------------------------------------------------------------------------
 
-template <typename T, u_int channels> string GetSLGImageMapNameImpl(luxrays::sdl::Scene *slgScene,
+template <typename T, u_int channels> string GetSLGImageMapNameImpl(slg::Scene *slgScene,
 		const MIPMapFastImpl<TextureColor<T, channels> > *mipMap,
 		const float gamma) {
 	// Check if the image map has already been defined
@@ -210,7 +209,7 @@ template <typename T, u_int channels> string GetSLGImageMapNameImpl(luxrays::sdl
 		}
 	}
 
-	luxrays::sdl::ImageMap *imageMap = new luxrays::sdl::ImageMap(slgMap, gamma, channels, (u_int)map->uSize(), (u_int)map->vSize());
+	slg::ImageMap *imageMap = new slg::ImageMap(slgMap, gamma, channels, (u_int)map->uSize(), (u_int)map->vSize());
 	slgScene->DefineImageMap(imageMapName, imageMap);
 
 	return imageMapName;
@@ -222,7 +221,7 @@ template <typename T, u_int channels> string GetSLGImageMapNameImpl(luxrays::sdl
 // Partial function specialization are not allowed in C++
 //------------------------------------------------------------------------------
 
-template <> string GetSLGImageMapNameImpl<float, 1>(luxrays::sdl::Scene *slgScene,
+template <> string GetSLGImageMapNameImpl<float, 1>(slg::Scene *slgScene,
 		const MIPMapFastImpl<TextureColor<float, 1> > *mipMap,
 		const float gamma) {
 	// Check if the image map has already been defined
@@ -242,13 +241,13 @@ template <> string GetSLGImageMapNameImpl<float, 1>(luxrays::sdl::Scene *slgScen
 		}
 	}
 
-	luxrays::sdl::ImageMap *imageMap = new luxrays::sdl::ImageMap(slgMap, gamma, 1, (u_int)map->uSize(), (u_int)map->vSize());
+	slg::ImageMap *imageMap = new slg::ImageMap(slgMap, gamma, 1, (u_int)map->uSize(), (u_int)map->vSize());
 	slgScene->DefineImageMap(imageMapName, imageMap);
 
 	return imageMapName;
 }
 
-template <> string GetSLGImageMapNameImpl<float, 3>(luxrays::sdl::Scene *slgScene,
+template <> string GetSLGImageMapNameImpl<float, 3>(slg::Scene *slgScene,
 		const MIPMapFastImpl<TextureColor<float, 3> > *mipMap,
 		const float gamma) {
 	// Check if the image map has already been defined
@@ -270,13 +269,13 @@ template <> string GetSLGImageMapNameImpl<float, 3>(luxrays::sdl::Scene *slgScen
 		}
 	}
 
-	luxrays::sdl::ImageMap *imageMap = new luxrays::sdl::ImageMap(slgMap, gamma, 3, (u_int)map->uSize(), (u_int)map->vSize());
+	slg::ImageMap *imageMap = new slg::ImageMap(slgMap, gamma, 3, (u_int)map->uSize(), (u_int)map->vSize());
 	slgScene->DefineImageMap(imageMapName, imageMap);
 
 	return imageMapName;
 }
 
-template <> string GetSLGImageMapNameImpl<float, 4>(luxrays::sdl::Scene *slgScene,
+template <> string GetSLGImageMapNameImpl<float, 4>(slg::Scene *slgScene,
 		const MIPMapFastImpl<TextureColor<float, 4> > *mipMap,
 		const float gamma) {
 	// Check if the image map has already been defined
@@ -299,7 +298,7 @@ template <> string GetSLGImageMapNameImpl<float, 4>(luxrays::sdl::Scene *slgScen
 		}
 	}
 
-	luxrays::sdl::ImageMap *imageMap = new luxrays::sdl::ImageMap(slgMap, gamma, 4, (u_int)map->uSize(), (u_int)map->vSize());
+	slg::ImageMap *imageMap = new slg::ImageMap(slgMap, gamma, 4, (u_int)map->uSize(), (u_int)map->vSize());
 	slgScene->DefineImageMap(imageMapName, imageMap);
 
 	return imageMapName;
@@ -307,18 +306,18 @@ template <> string GetSLGImageMapNameImpl<float, 4>(luxrays::sdl::Scene *slgScen
 
 //------------------------------------------------------------------------------
 
-static string GetSLGDefaultImageMap(luxrays::sdl::Scene *slgScene) {
+static string GetSLGDefaultImageMap(slg::Scene *slgScene) {
 	if (!slgScene->imgMapCache.IsImageMapDefined("imagemap_default")) {
 		float *map = new float[1];
 		map[0] = 1.f;
-		luxrays::sdl::ImageMap *imageMap = new luxrays::sdl::ImageMap(map, 1.f, 1, 1, 1);
+		slg::ImageMap *imageMap = new slg::ImageMap(map, 1.f, 1, 1, 1);
 		slgScene->DefineImageMap("imagemap_default", imageMap);
 	}
 
 	return "imagemap_default";
 }
 
-static string GetSLGImageMapName(luxrays::sdl::Scene *slgScene,
+static string GetSLGImageMapName(slg::Scene *slgScene,
 		const MIPMap *mipMap, const float gamma) {
 	if (!mipMap)
 		return GetSLGDefaultImageMap(slgScene);
@@ -384,7 +383,7 @@ template<class T> string GetSLGTexMapping(const T *mapping, const string &prefix
 	return "";
 }
 
-template<class T> string GetSLGTexName(luxrays::sdl::Scene *slgScene,
+template<class T> string GetSLGTexName(slg::Scene *slgScene,
 		const Texture<T> *tex) {
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Texture type: " << ToClassName(tex);
 
@@ -561,7 +560,7 @@ static string GetSLGCommonMatProps(const string &matName, const string &emission
 	return ss.str();
 }
 
-static string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, Material *mat,
+static string GetSLGMaterialName(slg::Scene *slgScene, Material *mat,
 		const Primitive *prim, const string &emissionTexName, ColorSystem &colorSpace) {
 	if (!mat)
 		return "mat_default";
@@ -663,8 +662,8 @@ static string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, Material *mat,
 		Glass2 *glass2 = dynamic_cast<Glass2 *>(mat);
 		matName = glass2->GetName();
 
-		luxrays::Spectrum krRGB(1.f);
-		luxrays::Spectrum ktRGB(1.f);
+		slg::Spectrum krRGB(1.f);
+		slg::Spectrum ktRGB(1.f);
 		float index = 1.41f;
 
 		const Volume *intVol = prim->GetInterior();
@@ -945,7 +944,7 @@ static string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, Material *mat,
 	return matName;
 }
 
-static string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive *prim,
+static string GetSLGMaterialName(slg::Scene *slgScene, const Primitive *prim,
 		ColorSystem &colorSpace) {
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Primitive type: " << ToClassName(prim);
 	
@@ -982,7 +981,7 @@ static string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive 
 
 		// Check the type of texture used
 		LOG(LUX_DEBUG, LUX_NOERROR) << "AreaLight texture type: " << ToClassName(tex);
-		luxrays::Spectrum emission;
+		slg::Spectrum emission;
 		float emissionY;
 		SPD *spd = NULL;
 		if (dynamic_cast<ConstantRGBColorTexture *>(tex)) {
@@ -998,7 +997,7 @@ static string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive 
 		}
 
 		const RGBColor rgb = colorSpace.ToRGBConstrained(spd->ToXYZ());
-		emission = luxrays::Spectrum(rgb.c[0], rgb.c[1], rgb.c[2]);
+		emission = slg::Spectrum(rgb.c[0], rgb.c[1], rgb.c[2]);
 		emissionY = spd->Y();
 
 		const float gainFactor = power * efficacy /
@@ -1034,7 +1033,7 @@ static string GetSLGMaterialName(luxrays::sdl::Scene *slgScene, const Primitive 
 	return GetSLGMaterialName(slgScene, mat, prim, emissionTexName, colorSpace);
 }
 
-void SLGRenderer::ConvertEnvLights(luxrays::sdl::Scene *slgScene) {
+void SLGRenderer::ConvertEnvLights(slg::Scene *slgScene) {
 	// Check if there is a sun light source
 	SunLight *sunLight = NULL;
 	for (size_t i = 0; i < scene->lights.size(); ++i) {
@@ -1191,7 +1190,7 @@ void SLGRenderer::ConvertEnvLights(luxrays::sdl::Scene *slgScene) {
 	}
 }
 
-vector<luxrays::ExtTriangleMesh *> SLGRenderer::DefinePrimitive(luxrays::sdl::Scene *slgScene, const Primitive *prim) {
+vector<luxrays::ExtTriangleMesh *> SLGRenderer::DefinePrimitive(slg::Scene *slgScene, const Primitive *prim) {
 	//LOG(LUX_DEBUG, LUX_NOERROR) << "Define primitive type: " << ToClassName(prim);
 
 	vector<luxrays::ExtTriangleMesh *> meshList;
@@ -1216,7 +1215,7 @@ vector<luxrays::ExtTriangleMesh *> SLGRenderer::DefinePrimitive(luxrays::sdl::Sc
 	return meshList;
 }
 
-void SLGRenderer::ConvertGeometry(luxrays::sdl::Scene *slgScene, ColorSystem &colorSpace) {
+void SLGRenderer::ConvertGeometry(slg::Scene *slgScene, ColorSystem &colorSpace) {
 	LOG(LUX_INFO, LUX_NOERROR) << "Tesselating " << scene->primitives.size() << " primitives";
 
 	// To keep track of all primitive mesh lists
@@ -1304,7 +1303,7 @@ void SLGRenderer::ConvertGeometry(luxrays::sdl::Scene *slgScene, ColorSystem &co
 		throw std::runtime_error("SLGRenderer can not render an empty scene");
 }
 
-void SLGRenderer::ConvertCamera(luxrays::sdl::Scene *slgScene) {
+void SLGRenderer::ConvertCamera(slg::Scene *slgScene) {
 	LOG(LUX_DEBUG, LUX_NOERROR) << "Camera type: " << ToClassName(scene->camera());
 	PerspectiveCamera *perpCamera = dynamic_cast<PerspectiveCamera *>(scene->camera());
 	if (!perpCamera)
@@ -1353,9 +1352,9 @@ void SLGRenderer::ConvertCamera(luxrays::sdl::Scene *slgScene) {
 	slgScene->CreateCamera(createCameraProp);
 }
 
-luxrays::sdl::Scene *SLGRenderer::CreateSLGScene(const luxrays::Properties &slgConfigProps, ColorSystem &colorSpace) {
+slg::Scene *SLGRenderer::CreateSLGScene(const luxrays::Properties &slgConfigProps, ColorSystem &colorSpace) {
 	const int accelType = slgConfigProps.GetInt("accelerator.type", -1);
-	luxrays::sdl::Scene *slgScene = new luxrays::sdl::Scene(accelType);
+	slg::Scene *slgScene = new slg::Scene(accelType);
 
 	// Tell to the cache to not delete mesh data (they are pointed by Lux
 	// primitives too and they will be deleted by Lux Context)
@@ -1516,7 +1515,7 @@ luxrays::Properties SLGRenderer::CreateSLGConfig() {
 }
 
 void SLGRenderer::UpdateLuxFilm(slg::RenderSession *session) {
-	luxrays::utils::Film *slgFilm = session->film;
+	slg::Film *slgFilm = session->film;
 
 	Film *film = scene->camera()->film;
 	ColorSystem colorSpace = film->GetColorSpace();
@@ -1545,10 +1544,10 @@ void SLGRenderer::UpdateLuxFilm(slg::RenderSession *session) {
 
 		for (u_int pixelY = 0; pixelY < height; ++pixelY) {
 			for (u_int pixelX = 0; pixelX < width; ++pixelX) {
-				const luxrays::utils::SamplePixel *spNew = slgFilm->GetSamplePixel(
-					luxrays::utils::PER_PIXEL_NORMALIZED, pixelX, pixelY);
+				const slg::SamplePixel *spNew = slgFilm->GetSamplePixel(
+					slg::PER_PIXEL_NORMALIZED, pixelX, pixelY);
 
-				luxrays::Spectrum deltaRadiance = spNew->radiance - (*previousEyeBufferRadiance)(pixelX, pixelY);
+				slg::Spectrum deltaRadiance = spNew->radiance - (*previousEyeBufferRadiance)(pixelX, pixelY);
 				const float deltaWeight = spNew->weight - (*previousEyeWeight)(pixelX, pixelY);
 
 				(*previousEyeBufferRadiance)(pixelX, pixelY) = spNew->radiance;
@@ -1578,10 +1577,10 @@ void SLGRenderer::UpdateLuxFilm(slg::RenderSession *session) {
 
 		for (u_int pixelY = 0; pixelY < height; ++pixelY) {
 			for (u_int pixelX = 0; pixelX < width; ++pixelX) {
-				const luxrays::utils::SamplePixel *spNew = slgFilm->GetSamplePixel(
-					luxrays::utils::PER_SCREEN_NORMALIZED, pixelX, pixelY);
+				const slg::SamplePixel *spNew = slgFilm->GetSamplePixel(
+					slg::PER_SCREEN_NORMALIZED, pixelX, pixelY);
 
-				luxrays::Spectrum deltaRadiance = spNew->radiance - (*previousLightBufferRadiance)(pixelX, pixelY);
+				slg::Spectrum deltaRadiance = spNew->radiance - (*previousLightBufferRadiance)(pixelX, pixelY);
 				const float deltaWeight = spNew->weight - (*previousLightWeight)(pixelX, pixelY);
 
 				(*previousLightBufferRadiance)(pixelX, pixelY) = spNew->radiance;
@@ -1607,7 +1606,7 @@ void SLGRenderer::UpdateLuxFilm(slg::RenderSession *session) {
 
 void SLGRenderer::Render(Scene *s) {
 	try {
-		luxrays::sdl::Scene *slgScene = NULL;
+		slg::Scene *slgScene = NULL;
 		luxrays::Properties slgConfigProps;
 
 		{
@@ -1654,7 +1653,9 @@ void SLGRenderer::Render(Scene *s) {
 			scene->camera()->AutoFocus(*scene);
 
 			// TODO: extend SLG library to accept an handler for each rendering session
-			luxrays::sdl::LuxRaysSDLDebugHandler = SDLDebugHandler;
+			slg::LuxRays_DebugHandler = ::LuxRaysDebugHandler;
+			slg::SLG_DebugHandler = ::SLGDebugHandler;
+			slg::SLG_SDLDebugHandler = ::SDLDebugHandler;
 
 			try {
 				// Build the SLG rendering configuration
@@ -1665,7 +1666,7 @@ void SLGRenderer::Render(Scene *s) {
 				slgScene = CreateSLGScene(slgConfigProps, colorSpace);
 #if !defined(LUXRAYS_DISABLE_OPENCL)
 			} catch (cl::Error err) {
-				LOG(LUX_SEVERE, LUX_SYSTEM) << "OpenCL ERROR: " << err.what() << "(" << luxrays::utils::oclErrorString(err.err()) << ")";
+				LOG(LUX_SEVERE, LUX_SYSTEM) << "OpenCL ERROR: " << err.what() << "(" << luxrays::oclErrorString(err.err()) << ")";
 				state = TERMINATE;
 				return;
 #endif
@@ -1732,7 +1733,7 @@ void SLGRenderer::Render(Scene *s) {
 			const u_int slgFilmHeight = session->film->GetHeight();
 
 			if (session->film->HasPerPixelNormalizedBuffer()) {
-				previousEyeBufferRadiance = new BlockedArray<luxrays::Spectrum>(slgFilmWidth, slgFilmHeight);
+				previousEyeBufferRadiance = new BlockedArray<slg::Spectrum>(slgFilmWidth, slgFilmHeight);
 				previousEyeWeight = new BlockedArray<float>(slgFilmWidth, slgFilmHeight);
 				previousAlphaBuffer = new BlockedArray<float>(slgFilmWidth, slgFilmHeight);
 
@@ -1745,7 +1746,7 @@ void SLGRenderer::Render(Scene *s) {
 			}
 
 			if (session->film->HasPerScreenNormalizedBuffer()) {
-				previousLightBufferRadiance = new BlockedArray<luxrays::Spectrum>(slgFilmWidth, slgFilmHeight);
+				previousLightBufferRadiance = new BlockedArray<slg::Spectrum>(slgFilmWidth, slgFilmHeight);
 				previousLightWeight = new BlockedArray<float>(slgFilmWidth, slgFilmHeight);
 
 				for (u_int y = 0; y < slgFilmHeight; ++y) {
@@ -1830,7 +1831,7 @@ void SLGRenderer::Render(Scene *s) {
 		delete session;
 #if !defined(LUXRAYS_DISABLE_OPENCL)
 	} catch (cl::Error err) {
-		LOG(LUX_SEVERE, LUX_SYSTEM) << "OpenCL ERROR: " << err.what() << "(" << luxrays::utils::oclErrorString(err.err()) << ")";
+		LOG(LUX_SEVERE, LUX_SYSTEM) << "OpenCL ERROR: " << err.what() << "(" << luxrays::oclErrorString(err.err()) << ")";
 #endif
 	} catch (std::runtime_error err) {
 		LOG(LUX_SEVERE, LUX_SYSTEM) << "RUNTIME ERROR: " << err.what();
@@ -1881,12 +1882,12 @@ void SLGRenderer::Terminate() {
 
 //------------------------------------------------------------------------------
 
-void DebugHandler(const char *msg) {
+void LuxRaysDebugHandler(const char *msg) {
 	LOG(LUX_DEBUG, LUX_NOERROR) << "[LuxRays] " << msg;
 }
 
 void SDLDebugHandler(const char *msg) {
-	LOG(LUX_DEBUG, LUX_NOERROR) << "[LuxRays::SDL] " << msg;
+	LOG(LUX_DEBUG, LUX_NOERROR) << "[SLG::SDL] " << msg;
 }
 
 void SLGDebugHandler(const char *msg) {

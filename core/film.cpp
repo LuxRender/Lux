@@ -1067,7 +1067,7 @@ void Film::CreateBuffers()
 	// NOTE: TVI is a side product of convergence test so I need to run the
 	// test even if halttreshold is not used
 	if ((haltThreshold >= 0.f) || noiseAwareMap) {
-		convTest = new luxrays::utils::ConvergenceTest(xPixelCount, yPixelCount);
+		convTest = new slg::ConvergenceTest(xPixelCount, yPixelCount);
 
 		if (noiseAwareMap)
 			convTest->NeedTVI();

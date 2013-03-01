@@ -23,8 +23,8 @@
 #ifndef LUX_SLGSTATISTICS_H
 #define LUX_SLGSTATISTICS_H
 
-#include "rendererstatistics.h"
 #include "renderers/slgrenderer.h"
+#include "rendererstatistics.h"
 
 #include <algorithm>
 

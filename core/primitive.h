@@ -29,7 +29,7 @@
 #include "error.h"
 
 #include "luxrays/luxrays.h"
-#include "luxrays/utils/core/exttrianglemesh.h"
+#include "luxrays/core/exttrianglemesh.h"
 
 namespace lux
 {

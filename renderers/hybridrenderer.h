@@ -26,16 +26,16 @@
 #include <vector>
 #include <boost/thread.hpp>
 
+#include "luxrays/luxrays.h"
+#include "luxrays/core/device.h"
+#include "luxrays/core/intersectiondevice.h"
+
 #include "lux.h"
 #include "renderer.h"
 #include "fastmutex.h"
 #include "timer.h"
 #include "dynload.h"
 #include "primitive.h"
-
-#include "luxrays/luxrays.h"
-#include "luxrays/core/device.h"
-#include "luxrays/core/intersectiondevice.h"
 
 namespace lux
 {

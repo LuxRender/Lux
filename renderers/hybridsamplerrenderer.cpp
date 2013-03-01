@@ -35,7 +35,7 @@
 #include "luxrays/core/device.h"
 #include "luxrays/core/virtualdevice.h"
 #if !defined(LUXRAYS_DISABLE_OPENCL)
-#include "luxrays/opencl/device.h"
+#include "luxrays/core/ocldevice.h"
 #endif
 
 using namespace lux;

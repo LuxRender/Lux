@@ -26,6 +26,13 @@
 #include <vector>
 #include <boost/thread.hpp>
 
+#include "luxrays/luxrays.h"
+#include "luxrays/core/device.h"
+#include "luxrays/core/intersectiondevice.h"
+#include "slg/slg.h"
+#include "slg/sdl/scene.h"
+#include "slg/film/framebuffer.h"
+
 #include "lux.h"
 #include "renderer.h"
 #include "fastmutex.h"
@@ -34,14 +41,7 @@
 #include "hybridrenderer.h"
 #include "mipmap.h"
 
-#include "luxrays/luxrays.h"
-#include "luxrays/core/device.h"
-#include "luxrays/core/intersectiondevice.h"
-#include "slg.h"
-#include "luxrays/utils/sdl/scene.h"
-#include "luxrays/utils/film/framebuffer.h"
-
-extern void DebugHandler(const char *msg);
+extern void LuxRaysDebugHandler(const char *msg);
 extern void SDLDebugHandler(const char *msg);
 extern void SLGDebugHandler(const char *msg);
 
@@ -125,11 +125,11 @@ public:
 	static Renderer *CreateRenderer(const ParamSet &params);
 
 private:
-	void ConvertCamera(luxrays::sdl::Scene *slgScene);
-	void ConvertEnvLights(luxrays::sdl::Scene *slgScene);
-	vector<luxrays::ExtTriangleMesh *> DefinePrimitive(luxrays::sdl::Scene *slgScene, const Primitive *prim);
-	void ConvertGeometry(luxrays::sdl::Scene *slgScene, ColorSystem &colorSpace);
-	luxrays::sdl::Scene *CreateSLGScene(const luxrays::Properties &slgConfigProps, ColorSystem &colorSpace);
+	void ConvertCamera(slg::Scene *slgScene);
+	void ConvertEnvLights(slg::Scene *slgScene);
+	vector<luxrays::ExtTriangleMesh *> DefinePrimitive(slg::Scene *slgScene, const Primitive *prim);
+	void ConvertGeometry(slg::Scene *slgScene, ColorSystem &colorSpace);
+	slg::Scene *CreateSLGScene(const luxrays::Properties &slgConfigProps, ColorSystem &colorSpace);
 	luxrays::Properties CreateSLGConfig();
 
 	void UpdateLuxFilm(slg::RenderSession *session);
@@ -143,9 +143,9 @@ private:
 	Scene *scene;
 	vector<Normal *> alloctedMeshNormals;
 	// Used to feed LuxRender film with only the delta information from the previous update
-	BlockedArray<luxrays::Spectrum> *previousEyeBufferRadiance;
+	BlockedArray<slg::Spectrum> *previousEyeBufferRadiance;
 	BlockedArray<float> *previousEyeWeight;
-	BlockedArray<luxrays::Spectrum> *previousLightBufferRadiance;
+	BlockedArray<slg::Spectrum> *previousLightBufferRadiance;
 	BlockedArray<float> *previousLightWeight;
 	BlockedArray<float> *previousAlphaBuffer;
 	double previousSampleCount;
