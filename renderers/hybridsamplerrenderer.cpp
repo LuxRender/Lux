@@ -368,8 +368,6 @@ void HybridSamplerRenderer::Render(Scene *s) {
 		// scene->surfaceIntegrator->CheckLightStrategy() can not been used before
 		// preprocess anymore.
 
-		state = RUN;
-
 		// Initialize the stats
 		rendererStatistics->reset();
 	
@@ -411,6 +409,8 @@ void HybridSamplerRenderer::Render(Scene *s) {
 		scene->SetReady();
 
 		if (scene->surfaceIntegrator->CheckLightStrategy(*scene)) {
+			// now we're ready to run
+			state = RUN;
 			// add a thread
 			CreateRenderThread();
 		}

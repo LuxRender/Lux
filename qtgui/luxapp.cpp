@@ -108,19 +108,15 @@ void LuxGuiApp::init(clConfig* config)
 	// Add files on command line to the render queue
 	if (!config->inputFiles.empty())
 	{
-		QStringList files;
 		for (std::vector<std::string>::const_iterator it = config->inputFiles.begin(); it != config->inputFiles.end(); it++)
-			files.append(QString::fromStdString(*it));
-		mainwin->openFiles(files);
+			mainwin->openOneSceneFile(QString::fromStdString(*it));
 	}
 
 	// Add files in queue files to the render queue
 	if (!config->queueFiles.empty())
 	{
-		QStringList files;
 		for (std::vector<std::string>::const_iterator it = config->queueFiles.begin(); it != config->queueFiles.end(); it++)
-			files.append(QString::fromStdString(*it));
-		mainwin->openFiles(files);
+			mainwin->openOneQueueFile(QString::fromStdString(*it));
 	}
 
 	// Add slaves
@@ -133,7 +129,7 @@ void LuxGuiApp::init(clConfig* config)
 	}
 }
 
-#if defined(__APPLE__) // Doubleclick or dragging .lxs, .lxm or .lxq in OSX Finder to LuxRender
+#if defined(__APPLE__) // Doubleclick or dragging .lxs, .flm or .lxq in OSX Finder to LuxRender
 bool LuxGuiApp::event(QEvent *event)
 {
 	switch (event->type()) {

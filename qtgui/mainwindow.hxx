@@ -252,6 +252,8 @@ public:
 	bool renderNextScene();
 	void clearQueue();
 
+	void openOneQueueFile(const QString &file);
+	void openOneSceneFile(const QString &file);
 	void openFiles(const QStringList& files, bool clearQueueFirst = false);
 	void loadFile(const QString& fileName);
 
@@ -261,6 +263,7 @@ protected:
 	bool saveCurrentImageHDR(const QString &outFile);
 	bool saveAllLightGroups(const QString &outFilename, const bool &asHDR);
 	void setCurrentFile(const QString& filename);
+	void updateQueueList();
 	void updateRecentFiles(const QString& fileName);
 	void updateRecentFileActions();
 	void createActions();
@@ -481,6 +484,7 @@ private slots:
 
 	void autoEnabledChanged (int value);
 	void overrideDisplayIntervalChanged(int value);
+	void overrideWriteIntervalChanged(int value);
 
 	void addServer();
 	void removeServer();

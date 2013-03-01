@@ -226,6 +226,7 @@ MainWindow::MainWindow(QWidget *parent, bool copylog2console)
 
 	connect(ui->checkBox_imagingAuto, SIGNAL(stateChanged(int)), this, SLOT(autoEnabledChanged(int)));
 	connect(ui->spinBox_overrideDisplayInterval, SIGNAL(valueChanged(int)), this, SLOT(overrideDisplayIntervalChanged(int)));
+	connect(ui->spinBox_overrideWriteInterval, SIGNAL(valueChanged(int)), this, SLOT(overrideWriteIntervalChanged(int)));
 
 	// Panes
 	panes[0] = new PaneWidget(ui->panesAreaContents, "Tone Mapping", ":/icons/tonemapicon.png");
@@ -677,6 +678,17 @@ void MainWindow::overrideDisplayIntervalChanged(int value)
 		m_renderTimer->setInterval(1000*luxGetIntAttribute("film", "displayInterval"));
 }
 
+void MainWindow::overrideWriteIntervalChanged(int value)
+{
+	if (m_guiRenderState != RENDERING)
+		return;
+
+	if (value > 0)
+		luxSetIntAttribute("film", "writeInterval", value);
+	else
+		luxSetIntAttribute("film", "writeInterval", luxGetIntAttributeDefault("film", "writeInterval"));
+}
+
 void MainWindow::LuxGuiErrorHandler(int code, int severity, const char *msg)
 {
 	if (copyLog2Console)
@@ -735,70 +747,64 @@ void MainWindow::clearQueue()
 		ui->tree_queue->resizeColumnToContents(i);
 }
 
+void MainWindow::openOneQueueFile(const QString& file)
+{
+	QPersistentModelIndex queueIndex = renderQueue.addFile(file);
+	if(queueIndex.isValid()) {
+		updateRecentFiles(renderQueue.getFilename(queueIndex));
+
+		ui->tree_queue->expand(queueIndex);
+
+		updateQueueList();
+
+		if (!renderQueue.isRendering())
+			renderScene(queueIndex.child(0, 0));
+	}
+}
+
+void MainWindow::openOneSceneFile(const QString& file)
+{
+	QPersistentModelIndex sceneIndex = renderQueue.addFile(file);
+	if(sceneIndex.isValid()) {
+		if (file != "-")
+			updateRecentFiles(renderQueue.getFilename(sceneIndex));
+
+		ui->tree_queue->expand(sceneIndex.parent());
+
+		updateQueueList();
+
+		if (!renderQueue.isRendering())
+			renderScene(sceneIndex);
+	}
+}
+
+void MainWindow::updateQueueList()
+{
+	for (int i = 0; i < renderQueue.rowCount(); ++i)
+		ui->tree_queue->setFirstColumnSpanned(i,
+			renderQueue.invisibleRootItem()->index(), true);
+
+	ui->tree_queue->resizeColumnToContents(renderQueue.COLUMN_LXSFILENAME);
+
+	if (ui->checkBox_haltTime->checkState() == Qt::Unchecked &&
+		ui->checkBox_haltProgress->checkState() == Qt::Unchecked &&
+		ui->checkBox_haltThreshold->checkState() == Qt::Unchecked &&
+		renderQueue.getSceneCount() > 1)
+		ui->tabs_main->setCurrentIndex(getTabIndex(TAB_ID_QUEUE));
+}
+
 void MainWindow::openFiles(const QStringList& files, bool clearQueueFirst)
 {
-	QPersistentModelIndex firstAddedSceneIndex;
-	int fileCount = 0;
-
 	if (clearQueueFirst)
 		clearQueue();
 
-	for (int i = 0; i < files.count(); i++)
-	{
+	for (int i = 0; i < files.count(); i++) {
 		if (files[i].endsWith(".lxq"))
-		{
-			QPersistentModelIndex queueIndex = renderQueue.addFile(files[i]);
-			if(queueIndex.isValid())
-			{
-				fileCount += renderQueue.itemFromIndex(queueIndex)->rowCount();
-				updateRecentFiles(renderQueue.getFilename(queueIndex));
-
-				if (!firstAddedSceneIndex.isValid())
-					firstAddedSceneIndex = queueIndex.child(0, 0);
-
-				ui->tree_queue->expand(queueIndex);
-			}
-		}
+			openOneQueueFile(files[i]);
 		else if (files[i].endsWith(".lxs") || files[i] == "-")
-		{
-			QPersistentModelIndex sceneIndex = renderQueue.addFile(files[i]);
-			if(sceneIndex.isValid())
-			{
-				++fileCount;
-				if (files[i] != "-")
-					updateRecentFiles(renderQueue.getFilename(sceneIndex));
-
-				if (!firstAddedSceneIndex.isValid())
-					firstAddedSceneIndex = sceneIndex;
-
-				ui->tree_queue->expand(sceneIndex.parent());
-			}
-		}
+			openOneSceneFile(files[i]);
 		else
 			return;
-	}
-
-	if (fileCount > 0)
-	{
-		for (int i = 0; i < renderQueue.rowCount(); ++i)
-			ui->tree_queue->setFirstColumnSpanned(i, renderQueue.invisibleRootItem()->index(), true);
-
-		ui->tree_queue->resizeColumnToContents(renderQueue.COLUMN_LXSFILENAME);
-
-		if (ui->checkBox_haltTime->checkState() == Qt::Unchecked &&
-			ui->checkBox_haltProgress->checkState() == Qt::Unchecked &&
-			ui->checkBox_haltThreshold->checkState() == Qt::Unchecked &&
-			renderQueue.getSceneCount() > 1)
-		{
-			ui->tabs_main->setCurrentIndex(getTabIndex(TAB_ID_QUEUE));
-			QMessageBox msgBox;
-			msgBox.setIcon(QMessageBox::Information);
-			msgBox.setText("Please set a halt condition for advancing the queue");
-			msgBox.exec();
-		}
-
-		if (!renderQueue.isRendering())
-			renderScene(firstAddedSceneIndex);
 	}
 }
 
@@ -1645,7 +1651,7 @@ void MainWindow::SetRenderThreads(int num)
 	updateWidgetValue(ui->spinBox_Threads, m_numThreads);
 }
 
-#if defined(__APPLE__) // Doubleclick or dragging .lxs, .lxm or .lxq in OSX Finder to LuxRender
+#if defined(__APPLE__) // Doubleclick or dragging .lxs, .flm or .lxq in OSX Finder to LuxRender
 void  MainWindow::loadFile(const QString &fileName)
 {
 	if (fileName.endsWith(".lxs") || fileName.endsWith(".lxq"))
@@ -1663,7 +1669,7 @@ void  MainWindow::loadFile(const QString &fileName)
 		msgBox.setIcon(QMessageBox::Information);
 		QFileInfo fi(fileName);
 		QString name = fi.fileName();
-		msgBox.setText(name +(" is not a supported filetype. Choose an .lxs, .lxm or .lxq"));
+		msgBox.setText(name +(" is not a supported filetype. Choose an .lxs, .flm or .lxq"));
 		msgBox.exec();
 	}
 }
@@ -2361,6 +2367,7 @@ void MainWindow::loadTimeout()
 			}
 
 			updateWidgetValue(ui->spinBox_overrideDisplayInterval, luxGetIntAttribute("film", "displayInterval"));
+			updateWidgetValue(ui->spinBox_overrideWriteInterval, luxGetIntAttribute("film", "writeInterval"));
 
 			if (ui->checkBox_haltTime->checkState() == Qt::Checked)
 			{

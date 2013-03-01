@@ -60,43 +60,6 @@
         <property name="margin">
          <number>12</number>
         </property>
-        <item row="0" column="4">
-         <widget class="QSpinBox" name="spinBox_overrideDisplayInterval">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="minimumSize">
-           <size>
-            <width>75</width>
-            <height>0</height>
-           </size>
-          </property>
-          <property name="toolTip">
-           <string>Override display interval (seconds)</string>
-          </property>
-          <property name="suffix">
-           <string> sec</string>
-          </property>
-          <property name="prefix">
-           <string/>
-          </property>
-          <property name="minimum">
-           <number>3</number>
-          </property>
-          <property name="maximum">
-           <number>3600</number>
-          </property>
-          <property name="singleStep">
-           <number>10</number>
-          </property>
-          <property name="value">
-           <number>3</number>
-          </property>
-         </widget>
-        </item>
         <item row="0" column="2">
          <spacer name="horizontalSpacer_2">
           <property name="orientation">
@@ -121,6 +84,147 @@
           <property name="rightMargin">
            <number>0</number>
           </property>
+          <item>
+           <widget class="QLabel" name="writeIntervalLabel_1">
+            <property name="pixmap">
+             <pixmap resource="icons.qrc">:/icons/analogclockicon.png</pixmap>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="writeIntervalLabel_2">
+            <property name="pixmap">
+             <pixmap resource="icons.qrc">:/icons/arrowicon.png</pixmap>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="writeIntervalLabel_3">
+            <property name="minimumSize">
+             <size>
+              <width>22</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="pixmap">
+             <pixmap resource="icons.qrc">:/icons/imageicon.png</pixmap>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSpinBox" name="spinBox_overrideWriteInterval">
+            <property name="minimumSize">
+             <size>
+              <width>75</width>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string>Override write interval (seconds)</string>
+            </property>
+            <property name="suffix">
+             <string> sec</string>
+            </property>
+            <property name="minimum">
+             <number>3</number>
+            </property>
+            <property name="maximum">
+             <number>3600</number>
+            </property>
+            <property name="singleStep">
+             <number>60</number>
+            </property>
+            <property name="value">
+             <number>300</number>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="writeIntervalHorizontalSpacer">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeType">
+             <enum>QSizePolicy::Fixed</enum>
+            </property>
+            <property name="sizeHint">
+             <size>
+              <width>7</width>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QLabel" name="displayIntervalLabel_1">
+            <property name="pixmap">
+             <pixmap resource="icons.qrc">:/icons/analogclockicon.png</pixmap>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="displayIntervalLabel_2">
+            <property name="pixmap">
+             <pixmap resource="icons.qrc">:/icons/arrowicon.png</pixmap>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="displayIntervalLabel_3">
+            <property name="minimumSize">
+             <size>
+              <width>22</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="pixmap">
+             <pixmap resource="icons.qrc">:/icons/viewicon.png</pixmap>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSpinBox" name="spinBox_overrideDisplayInterval">
+            <property name="minimumSize">
+             <size>
+              <width>75</width>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string>Override display interval (seconds)</string>
+            </property>
+            <property name="suffix">
+             <string> sec</string>
+            </property>
+            <property name="minimum">
+             <number>3</number>
+            </property>
+            <property name="maximum">
+             <number>3600</number>
+            </property>
+            <property name="singleStep">
+             <number>10</number>
+            </property>
+            <property name="value">
+             <number>3</number>
+            </property>
+           </widget>
+          </item>
           <item>
            <widget class="QLabel" name="resolutioniconLabel">
             <property name="sizePolicy">
@@ -234,13 +338,6 @@
            </widget>
           </item>
          </layout>
-        </item>
-        <item row="0" column="3">
-         <widget class="QLabel" name="label">
-          <property name="text">
-           <string>Display Interval:</string>
-          </property>
-         </widget>
         </item>
         <item row="0" column="0">
          <layout class="QGridLayout" name="gridLayout_4" columnminimumwidth="0,0,0,0,90,0,0,0">
@@ -427,6 +524,12 @@
             <size>
              <width>380</width>
              <height>0</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>500</width>
+             <height>16777215</height>
             </size>
            </property>
            <property name="currentIndex">
@@ -636,8 +739,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>100</width>
-                  <height>30</height>
+                  <width>362</width>
+                  <height>396</height>
                  </rect>
                 </property>
                 <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -695,7 +798,7 @@
                   <x>0</x>
                   <y>0</y>
                   <width>356</width>
-                  <height>336</height>
+                  <height>363</height>
                  </rect>
                 </property>
                 <layout class="QGridLayout" name="gridLayout_2">
@@ -920,8 +1023,8 @@
                  <rect>
                   <x>0</x>
                   <y>0</y>
-                  <width>100</width>
-                  <height>30</height>
+                  <width>362</width>
+                  <height>396</height>
                  </rect>
                 </property>
                 <property name="sizePolicy">

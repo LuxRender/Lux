@@ -270,8 +270,6 @@ bool MetropolisSampler::GetNextSample(Sample *sample)
 		sample->wavelengths = data->currentImage[5] =
 			mutateScaled(data->sampleImage[5], rngGet(5),
 			0.f, 1.f, .5f);
-		sample->wavelengths = data->currentImage[5] =
-			data->sampleImage[5];
 		for (u_int i = SAMPLE_FLOATS; i < data->normalSamples; ++i)
 			data->currentImage[i] =
 				mutate(data->sampleImage[i], rngGet(i));
