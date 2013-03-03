@@ -62,6 +62,7 @@
 #include "textures/brick.h"
 #include "textures/add.h"
 #include "textures/windy.h"
+#include "textures/wrinkled.h"
 
 #include "light.h"
 #include "lights/sun.h"
@@ -588,6 +589,13 @@ template<class T> string GetSLGTexName(slg::Scene *slgScene,
 
 			texProp = "scene.textures." + texName + ".type = windy\n"
 					+ GetSLGTexMapping(windy->GetTextureMapping3D(), "scene.textures." + texName);
+		} else if (dynamic_cast<const WrinkledTexture *>(tex)) {
+			const WrinkledTexture *wrinkTex = dynamic_cast<const WrinkledTexture *>(tex);
+
+			texProp = "scene.textures." + texName + ".type = wrinkled\n"
+					"scene.textures." + texName + ".octaves = " + ToString(wrinkTex->GetOctaves()) + "\n"
+					"scene.textures." + texName + ".roughness = " + ToString(wrinkTex->GetOmega()) + "\n"
+					+ GetSLGTexMapping(wrinkTex->GetTextureMapping3D(), "scene.textures." + texName);
 		} else {
 			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only materials with ImageSpectrumTexture, ImageFloatTexture, ConstantRGBColorTexture, ConstantFloatTexture, ScaleTexture, MixTexture, Checkerboard2D, Checkerboard3D, FBmTexture and Marble (i.e. not " <<
 					ToClassName(tex) << ").";

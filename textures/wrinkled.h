@@ -85,7 +85,11 @@ public:
 		*minValue = 0.f;
 		*maxValue = max(1.f, geomsum * (3.f/5.f));
 	}
-	
+
+	int GetOctaves() const { return octaves; }
+	float GetOmega() const { return omega; }
+	const TextureMapping3D *GetTextureMapping3D() const { return mapping; }
+
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const ParamSet &tp);
 private:
 	// WrinkledTexture Private Data
