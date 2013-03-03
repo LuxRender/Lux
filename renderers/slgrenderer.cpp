@@ -60,6 +60,7 @@
 #include "textures/scale.h"
 #include "textures/dots.h"
 #include "textures/brick.h"
+#include "textures/add.h"
 
 #include "light.h"
 #include "lights/sun.h"
@@ -442,6 +443,18 @@ template<class T> string GetSLGTexName(slg::Scene *slgScene,
 					"scene.textures." + texName + ".gamma = " + ToString(texInfo.gamma) + "\n"
 					"scene.textures." + texName + ".gain = " + ToString(texInfo.gain) + "\n"
 					+ GetSLGTexMapping(normalTex->GetTextureMapping2D(), "scene.textures." + texName);
+		} else
+		//----------------------------------------------------------------------
+		// Add texture
+		//----------------------------------------------------------------------
+		if (dynamic_cast<const AddTexture<T, T> *>(tex)) {
+			const AddTexture<T, T> *scaleTex = dynamic_cast<const AddTexture<T, T> *>(tex);
+			const string tex1Name = GetSLGTexName(slgScene, scaleTex->GetTex1());
+			const string tex2Name = GetSLGTexName(slgScene, scaleTex->GetTex2());
+
+			texProp = "scene.textures." + texName + ".type = add\n"
+					"scene.textures." + texName + ".texture1 = " + tex1Name + "\n"
+					"scene.textures." + texName + ".texture2 = " + tex2Name + "\n";
 		} else
 		//----------------------------------------------------------------------
 		// Scale texture

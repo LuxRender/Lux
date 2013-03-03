@@ -92,7 +92,10 @@ public:
 		tex1->SetIlluminant();
 		tex2->SetIlluminant();
 	}
-	
+
+	const Texture<T1> *GetTex1() const { return tex1.get(); }
+	const Texture<T2> *GetTex2() const { return tex2.get(); }
+
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const ParamSet &tp);
 	
 	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const ParamSet &tp);
@@ -100,7 +103,6 @@ public:
 private:
 	boost::shared_ptr<Texture<T1> > tex1;
 	boost::shared_ptr<Texture<T2> > tex2;
-
 };
 
 // AddTexture Method Definitions
