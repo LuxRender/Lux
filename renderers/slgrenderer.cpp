@@ -59,6 +59,7 @@
 #include "textures/imagemap.h"
 #include "textures/scale.h"
 #include "textures/dots.h"
+#include "textures/brick.h"
 
 #include "light.h"
 #include "lights/sun.h"
@@ -445,24 +446,16 @@ template<class T> string GetSLGTexName(slg::Scene *slgScene,
 		//----------------------------------------------------------------------
 		// Scale texture
 		//----------------------------------------------------------------------
-		if (dynamic_cast<const ScaleTexture<float, float> *>(tex)) {
-			const ScaleTexture<float, float> *scaleTex = dynamic_cast<const ScaleTexture<float, float> *>(tex);
+		if (dynamic_cast<const ScaleTexture<T, float> *>(tex)) {
+			const ScaleTexture<T, float> *scaleTex = dynamic_cast<const ScaleTexture<T, float> *>(tex);
 			const string tex1Name = GetSLGTexName(slgScene, scaleTex->GetTex1());
 			const string tex2Name = GetSLGTexName(slgScene, scaleTex->GetTex2());
 
 			texProp = "scene.textures." + texName + ".type = scale\n"
 					"scene.textures." + texName + ".texture1 = " + tex1Name + "\n"
 					"scene.textures." + texName + ".texture2 = " + tex2Name + "\n";
-		} else if (dynamic_cast<const ScaleTexture<SWCSpectrum, SWCSpectrum> *>(tex)) {
-			const ScaleTexture<SWCSpectrum, SWCSpectrum> *scaleTex = dynamic_cast<const ScaleTexture<SWCSpectrum, SWCSpectrum> *>(tex);
-			const string tex1Name = GetSLGTexName(slgScene, scaleTex->GetTex1());
-			const string tex2Name = GetSLGTexName(slgScene, scaleTex->GetTex2());
-
-			texProp = "scene.textures." + texName + ".type = scale\n"
-					"scene.textures." + texName + ".texture1 = " + tex1Name + "\n"
-					"scene.textures." + texName + ".texture2 = " + tex2Name + "\n";
-		} else if (dynamic_cast<const ScaleTexture<float, SWCSpectrum> *>(tex)) {
-			const ScaleTexture<float, SWCSpectrum> *scaleTex = dynamic_cast<const ScaleTexture<float, SWCSpectrum> *>(tex);
+		} else if (dynamic_cast<const ScaleTexture<T, SWCSpectrum> *>(tex)) {
+			const ScaleTexture<T, SWCSpectrum> *scaleTex = dynamic_cast<const ScaleTexture<T, SWCSpectrum> *>(tex);
 			const string tex1Name = GetSLGTexName(slgScene, scaleTex->GetTex1());
 			const string tex2Name = GetSLGTexName(slgScene, scaleTex->GetTex2());
 
@@ -473,18 +466,8 @@ template<class T> string GetSLGTexName(slg::Scene *slgScene,
 		//----------------------------------------------------------------------
 		// Mix texture
 		//----------------------------------------------------------------------
-		if (dynamic_cast<const MixTexture<float> *>(tex)) {
-			const MixTexture<float> *mixTex = dynamic_cast<const MixTexture<float> *>(tex);
-			const string amountTexName = GetSLGTexName(slgScene, mixTex->GetAmountTex());
-			const string tex1Name = GetSLGTexName(slgScene, mixTex->GetTex1());
-			const string tex2Name = GetSLGTexName(slgScene, mixTex->GetTex2());
-
-			texProp = "scene.textures." + texName + ".type = mix\n"
-					"scene.textures." + texName + ".amount = " + amountTexName + "\n"
-					"scene.textures." + texName + ".texture1 = " + tex1Name + "\n"
-					"scene.textures." + texName + ".texture2 = " + tex2Name + "\n";
-		} else if (dynamic_cast<const MixTexture<SWCSpectrum> *>(tex)) {
-			const MixTexture<SWCSpectrum> *mixTex = dynamic_cast<const MixTexture<SWCSpectrum> *>(tex);
+		if (dynamic_cast<const MixTexture<T> *>(tex)) {
+			const MixTexture<T> *mixTex = dynamic_cast<const MixTexture<T> *>(tex);
 			const string amountTexName = GetSLGTexName(slgScene, mixTex->GetAmountTex());
 			const string tex1Name = GetSLGTexName(slgScene, mixTex->GetTex1());
 			const string tex2Name = GetSLGTexName(slgScene, mixTex->GetTex2());
