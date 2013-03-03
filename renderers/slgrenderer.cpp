@@ -58,6 +58,7 @@
 #include "textures/constant.h"
 #include "textures/imagemap.h"
 #include "textures/scale.h"
+#include "textures/dots.h"
 
 #include "light.h"
 #include "lights/sun.h"
@@ -532,6 +533,15 @@ template<class T> string GetSLGTexName(slg::Scene *slgScene,
 					"scene.textures." + texName + ".scale = " + ToString(marble->GetScale()) + "\n"
 					"scene.textures." + texName + ".variation = " + ToString(marble->GetVariation()) + "\n"
 					+ GetSLGTexMapping(marble->GetTextureMapping3D(), "scene.textures." + texName);
+		} else if (dynamic_cast<const DotsTexture *>(tex)) {
+			const DotsTexture *dotsTex = dynamic_cast<const DotsTexture *>(tex);
+			const string insideName = GetSLGTexName(slgScene, dotsTex->GetInsideTex());
+			const string outsideName = GetSLGTexName(slgScene, dotsTex->GetOutsideTex());
+
+			texProp = "scene.textures." + texName + ".type = dots\n"
+					"scene.textures." + texName + ".inside = " + insideName + "\n"
+					"scene.textures." + texName + ".outside = " + outsideName + "\n"
+					+ GetSLGTexMapping(dotsTex->GetTextureMapping2D(), "scene.textures." + texName);
 		} else {
 			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only materials with ImageSpectrumTexture, ImageFloatTexture, ConstantRGBColorTexture, ConstantFloatTexture, ScaleTexture, MixTexture, Checkerboard2D, Checkerboard3D, FBmTexture and Marble (i.e. not " <<
 					ToClassName(tex) << ").";

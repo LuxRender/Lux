@@ -132,6 +132,11 @@ public:
 		outsideDot->SetIlluminant();
 		insideDot->SetIlluminant();
 	}
+
+	const Texture<float> *GetInsideTex() const { return insideDot.get(); }
+	const Texture<float> *GetOutsideTex() const { return outsideDot.get(); }
+	const TextureMapping2D *GetTextureMapping2D() const { return mapping; }
+
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const ParamSet &tp);
 	
 private:

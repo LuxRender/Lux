@@ -87,6 +87,7 @@ public:
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const ParamSet &tp);
 	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const ParamSet &tp);
 	static Texture<FresnelGeneral> * CreateFresnelTexture(const Transform &tex2world, const ParamSet &tp);
+
 private:
 	boost::shared_ptr<Texture<T> > tex1, tex2;
 	boost::shared_ptr<Texture<float> > amount;
