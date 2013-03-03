@@ -461,16 +461,8 @@ template<class T> string GetSLGTexName(slg::Scene *slgScene,
 		//----------------------------------------------------------------------
 		// Scale texture
 		//----------------------------------------------------------------------
-		if (dynamic_cast<const ScaleTexture<T, float> *>(tex)) {
-			const ScaleTexture<T, float> *scaleTex = dynamic_cast<const ScaleTexture<T, float> *>(tex);
-			const string tex1Name = GetSLGTexName(slgScene, scaleTex->GetTex1());
-			const string tex2Name = GetSLGTexName(slgScene, scaleTex->GetTex2());
-
-			texProp = "scene.textures." + texName + ".type = scale\n"
-					"scene.textures." + texName + ".texture1 = " + tex1Name + "\n"
-					"scene.textures." + texName + ".texture2 = " + tex2Name + "\n";
-		} else if (dynamic_cast<const ScaleTexture<T, SWCSpectrum> *>(tex)) {
-			const ScaleTexture<T, SWCSpectrum> *scaleTex = dynamic_cast<const ScaleTexture<T, SWCSpectrum> *>(tex);
+		if (dynamic_cast<const ScaleTexture<T, T> *>(tex)) {
+			const ScaleTexture<T, T> *scaleTex = dynamic_cast<const ScaleTexture<T, T> *>(tex);
 			const string tex1Name = GetSLGTexName(slgScene, scaleTex->GetTex1());
 			const string tex2Name = GetSLGTexName(slgScene, scaleTex->GetTex2());
 
