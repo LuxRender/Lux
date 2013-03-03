@@ -45,7 +45,8 @@ public:
 		TextureMapping3D *map) :
 		Texture<T>("BrickTexture3D-" + boost::lexical_cast<string>(this)), brickwidth(brickw),
 		brickheight(brickh), brickdepth(brickd), mortarsize(mortar),
-		run(r), mapping(map), tex1(c1), tex2(c2), tex3(c3) {
+		run(r), mapping(map), tex1(c1), tex2(c2), tex3(c3),
+		initialbrickwidth(brickw), initialbrickheight(brickh), initialbrickdepth(brickd) {
 		if (b == "stacked") {
 			bond = RUNNING;
 			run = 0.f;
@@ -207,8 +208,22 @@ public:
 		tex1->SetIlluminant();
 		tex2->SetIlluminant();
 	}
+
+	MasonryBond GetBond() const { return bond; }
+	float GetBrickWidth() const { return initialbrickwidth; }
+	float GetBrickHeight() const { return initialbrickheight; }
+	float GetBrickDepth() const { return initialbrickdepth; }
+	float GetMortarSize() const { return mortarsize; }
+	float GetBrickRun() const { return run; }
+	float GetBrickBevel() const { return bevelwidth * brickwidth; }
+	const Texture<T> *GetTex1() const { return tex1.get(); }
+	const Texture<T> *GetTex2() const { return tex2.get(); }
+	const Texture<T> *GetTex3() const { return tex3.get(); }
+	const TextureMapping3D *GetTextureMapping3D() const { return mapping; }
+
 	static Texture<float> *CreateFloatTexture(const Transform &tex2world, const ParamSet &tp);
 	static Texture<SWCSpectrum> *CreateSWCSpectrumTexture(const Transform &tex2world, const ParamSet &tp);
+
 private:
 	bool RunningAlternate(const Point &p, Point &i, Point &b,
 		int nWhole) const {
@@ -307,6 +322,10 @@ private:
 	bool usebevel;
 	TextureMapping3D *mapping;
 	boost::shared_ptr<Texture<T> > tex1, tex2, tex3;
+
+	// brickwidth, brickheight, brickdepth are modified by HERRINGBONE
+	// and BASKET brick types. I need to save the initial values here.
+	float initialbrickwidth, initialbrickheight, initialbrickdepth;
 };
 
 template <class T> Texture<float> *BrickTexture3D<T>::CreateFloatTexture(

@@ -525,6 +525,50 @@ template<class T> string GetSLGTexName(slg::Scene *slgScene,
 					"scene.textures." + texName + ".inside = " + insideName + "\n"
 					"scene.textures." + texName + ".outside = " + outsideName + "\n"
 					+ GetSLGTexMapping(dotsTex->GetTextureMapping2D(), "scene.textures." + texName);
+		} else if (dynamic_cast<const BrickTexture3D<T> *>(tex)) {
+			const BrickTexture3D<T> *brickTex = dynamic_cast<const BrickTexture3D<T> *>(tex);
+
+			string brickbond = "running";
+			switch (brickTex->GetBond()) {
+				case FLEMISH:
+					brickbond = "flemish";
+					break;
+				case RUNNING:
+					brickbond = "running";
+					break;
+				case ENGLISH:
+					brickbond = "english";
+					break;
+				case HERRINGBONE:
+					brickbond = "herringbone";
+					break;
+				case BASKET:
+					brickbond = "basket";
+					break;
+				case KETTING:
+					brickbond = "ketting";
+					break;
+				default:
+					brickbond = "running";
+					break;
+			}
+
+			const string tex1Name = GetSLGTexName(slgScene, brickTex->GetTex1());
+			const string tex2Name = GetSLGTexName(slgScene, brickTex->GetTex2());
+			const string tex3Name = GetSLGTexName(slgScene, brickTex->GetTex3());
+
+			texProp = "scene.textures." + texName + ".type = brick\n"
+					"scene.textures." + texName + ".brickbond = " + brickbond + "\n"
+					"scene.textures." + texName + ".brickwidth = " + ToString(brickTex->GetBrickWidth()) + "\n"
+					"scene.textures." + texName + ".brickheight = " + ToString(brickTex->GetBrickHeight()) + "\n"
+					"scene.textures." + texName + ".brickdepth = " + ToString(brickTex->GetBrickDepth()) + "\n"
+					"scene.textures." + texName + ".mortarsize = " + ToString(brickTex->GetMortarSize()) + "\n"
+					"scene.textures." + texName + ".brickrun = " + ToString(brickTex->GetBrickRun()) + "\n"
+					"scene.textures." + texName + ".brickbevel = " + ToString(brickTex->GetBrickBevel()) + "\n"
+					"scene.textures." + texName + ".bricktex = " + tex1Name + "\n"
+					"scene.textures." + texName + ".mortartex = " + tex2Name + "\n"
+					"scene.textures." + texName + ".brickmodtex = " + tex3Name + "\n"
+					+ GetSLGTexMapping(brickTex->GetTextureMapping3D(), "scene.textures." + texName);
 		} else {
 			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only materials with ImageSpectrumTexture, ImageFloatTexture, ConstantRGBColorTexture, ConstantFloatTexture, ScaleTexture, MixTexture, Checkerboard2D, Checkerboard3D, FBmTexture and Marble (i.e. not " <<
 					ToClassName(tex) << ").";
