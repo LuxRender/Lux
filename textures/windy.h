@@ -83,7 +83,9 @@ public:
 		*maxValue = geomsum_wind * geomsum_wave / 4.f;
 		*minValue = -*maxValue;
 	}
-	
+
+	const TextureMapping3D *GetTextureMapping3D() const { return mapping; }
+
 	static Texture<float> * CreateFloatTexture(const Transform &tex2world, const ParamSet &tp);
 private:
 	// WindyTexture Private Data

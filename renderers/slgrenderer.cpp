@@ -61,6 +61,7 @@
 #include "textures/dots.h"
 #include "textures/brick.h"
 #include "textures/add.h"
+#include "textures/windy.h"
 
 #include "light.h"
 #include "lights/sun.h"
@@ -582,6 +583,11 @@ template<class T> string GetSLGTexName(slg::Scene *slgScene,
 					"scene.textures." + texName + ".mortartex = " + tex2Name + "\n"
 					"scene.textures." + texName + ".brickmodtex = " + tex3Name + "\n"
 					+ GetSLGTexMapping(brickTex->GetTextureMapping3D(), "scene.textures." + texName);
+		} else if (dynamic_cast<const WindyTexture *>(tex)) {
+			const WindyTexture *windy = dynamic_cast<const WindyTexture *>(tex);
+
+			texProp = "scene.textures." + texName + ".type = windy\n"
+					+ GetSLGTexMapping(windy->GetTextureMapping3D(), "scene.textures." + texName);
 		} else {
 			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only materials with ImageSpectrumTexture, ImageFloatTexture, ConstantRGBColorTexture, ConstantFloatTexture, ScaleTexture, MixTexture, Checkerboard2D, Checkerboard3D, FBmTexture and Marble (i.e. not " <<
 					ToClassName(tex) << ").";
