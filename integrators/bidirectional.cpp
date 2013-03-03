@@ -665,8 +665,8 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 					eyePath[nEye].flux /= v.rrR;
 				}
 			} else {
-				eyePath[nEye].flux *= f;
 				--nEye;
+				v.flux *= f;
 				vp.tPdfR *= v.pdfR;
 				v.tPdf *= v.pdf;
 				if (sampleIndex + 1 >= maxEyeDepth) {
@@ -923,8 +923,8 @@ u_int BidirIntegrator::Li(const Scene &scene, const Sample &sample) const
 								lightPath[nLight].flux /= v.rr;
 							}
 						} else {
-							lightPath[nLight].flux *= f;
 							--nLight;
+							v.flux *= f;
 							vp.tPdf *= v.pdf;
 							v.tPdfR *= v.pdfR;
 							if (sampleIndex + 1 >= maxLightDepth) {
