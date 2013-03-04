@@ -460,9 +460,21 @@ template<class T> string GetSLGTexName(slg::Scene *slgScene,
 		} else
 		//----------------------------------------------------------------------
 		// Scale texture
+		//
+		// The following check are required because VC++ seems unable to handle
+		// two "if" with ScaleTexture<T, float>/ScaleTexture<T, SWCSpectrum>
+		// conditions.
 		//----------------------------------------------------------------------
 		if (dynamic_cast<const ScaleTexture<T, T> *>(tex)) {
 			const ScaleTexture<T, T> *scaleTex = dynamic_cast<const ScaleTexture<T, T> *>(tex);
+			const string tex1Name = GetSLGTexName(slgScene, scaleTex->GetTex1());
+			const string tex2Name = GetSLGTexName(slgScene, scaleTex->GetTex2());
+
+			texProp = "scene.textures." + texName + ".type = scale\n"
+					"scene.textures." + texName + ".texture1 = " + tex1Name + "\n"
+					"scene.textures." + texName + ".texture2 = " + tex2Name + "\n";
+		} else if (dynamic_cast<const ScaleTexture<float, SWCSpectrum> *>(tex)) {
+			const ScaleTexture<float, SWCSpectrum> *scaleTex = dynamic_cast<const ScaleTexture<float, SWCSpectrum> *>(tex);
 			const string tex1Name = GetSLGTexName(slgScene, scaleTex->GetTex1());
 			const string tex2Name = GetSLGTexName(slgScene, scaleTex->GetTex2());
 
