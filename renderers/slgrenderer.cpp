@@ -63,6 +63,7 @@
 #include "textures/add.h"
 #include "textures/windy.h"
 #include "textures/wrinkled.h"
+#include "textures/uv.h"
 
 #include "light.h"
 #include "lights/sun.h"
@@ -600,12 +601,17 @@ template<class T> string GetSLGTexName(slg::Scene *slgScene,
 					"scene.textures." + texName + ".octaves = " + ToString(wrinkTex->GetOctaves()) + "\n"
 					"scene.textures." + texName + ".roughness = " + ToString(wrinkTex->GetOmega()) + "\n"
 					+ GetSLGTexMapping(wrinkTex->GetTextureMapping3D(), "scene.textures." + texName);
+		} else if (dynamic_cast<const UVTexture *>(tex)) {
+			const UVTexture *uvTex = dynamic_cast<const UVTexture *>(tex);
+
+			texProp = "scene.textures." + texName + ".type = uv\n"
+					+ GetSLGTexMapping(uvTex->GetTextureMapping2D(), "scene.textures." + texName);
 		} else {
-			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only materials with ImageSpectrumTexture, ImageFloatTexture, ConstantRGBColorTexture, ConstantFloatTexture, ScaleTexture, MixTexture, Checkerboard2D, Checkerboard3D, FBmTexture and Marble (i.e. not " <<
+			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only ImageSpectrumTexture, ImageFloatTexture, ConstantRGBColorTexture, ConstantFloatTexture, ScaleTexture, MixTexture, Checkerboard2D, Checkerboard3D, FBmTexture, Marble, Dots, Brick, Windy, Wrinkled and UV textures (i.e. not " <<
 					ToClassName(tex) << ").";
 
 			texProp = "scene.textures." + texName + ".type = constfloat1\n"
-					"scene.textures." + texName + ".value = 1.0\n";
+					"scene.textures." + texName + ".value = 0.7\n";
 		}
 
 		LOG(LUX_DEBUG, LUX_NOERROR) << "Defining texture " << texName << ": [\n" << texProp << "]";

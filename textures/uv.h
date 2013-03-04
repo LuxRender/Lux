@@ -62,7 +62,9 @@ public:
 		*du = dsdu + dtdu;
 		*dv = dsdv + dtdv;
 	}
-	
+
+	const TextureMapping2D *GetTextureMapping2D() const { return mapping; }
+
 	static Texture<SWCSpectrum> * CreateSWCSpectrumTexture(const Transform &tex2world, const ParamSet &tp);
 private:
 	TextureMapping2D *mapping;
