@@ -130,6 +130,11 @@ SWCSpectrum EnvEstimateDirect(const Scene &scene, const Light &light,
 	BSDF *bsdf, float ls1, float ls2, float ls3,
 	float bs1, float bs2, float bcs, int rayDepth, bool from_IsSup,
 	bool to_IsSup, bool path_type);
+SWCSpectrum CombEstimateDirect(const Scene &scene, const Light &light,
+    const Sample &sample, const Point &p, const Normal &n, const Vector &wo,
+    BSDF *bsdf, float ls1, float ls2, float ls3,
+    float bs1, float bs2, float bcs, int rayDepth, bool from_IsSup,
+    bool to_IsSup, bool path_type);
 SWCSpectrum UniformSampleAllLights(const Scene &scene, const Sample &sample,
 	const Point &p, const Normal &n, const Vector &wo, BSDF *bsdf,
 	const float *lightSample, const float *lightNum,

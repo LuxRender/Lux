@@ -737,4 +737,217 @@ SWCSpectrum EnvEstimateDirect(const Scene &scene, const Light &light,
 	return Ld;
 }
 
+SWCSpectrum CombEstimateDirect(const Scene &scene, const Light &light,
+    const Sample &sample, const Point &p, const Normal &n, const Vector &wo,
+    BSDF *bsdf, float ls1, float ls2, float ls3,
+    float bs1, float bs2, float bcs, int rayDepth, bool from_IsSup,
+    bool to_IsSup, bool path_type)
+{
+    SWCSpectrum Ld(0.f);
+
+    if ( to_IsSup ) {
+        if ( path_type || rayDepth == 0 ) {
+            // Check if MIS is needed
+            const BxDFType noDiffuse = BxDFType(BSDF_ALL & ~(BSDF_DIFFUSE));
+            const bool mis = !(light.IsDeltaLight()) &&
+                (bsdf->NumComponents(noDiffuse) > 0);
+            // Trace a shadow ray by sampling the light source
+            float lightPdf;
+            SWCSpectrum Li;
+            SWCSpectrum SupLi(1.f);
+            BSDF *lightBsdf;
+            if (light.SampleL(scene, sample, p, n, ls1, ls2, ls3,
+                &lightBsdf, NULL, &lightPdf, &Li)) {
+                const Point &pL(lightBsdf->dgShading.p);
+                const Vector wi0(pL - p);
+                const Volume *volume = bsdf->GetVolume(wi0);
+                if (!volume)
+                    volume = lightBsdf->GetVolume(-wi0);
+                if(!mis) {
+                    if (scene.Connect(sample, volume, bsdf->dgShading.scattered,
+                        false, p, pL, false, &Li, NULL, NULL, true)) {
+                        const float d2 = wi0.LengthSquared();
+                        const Vector wi(wi0 / sqrtf(d2));
+                        Li *= lightBsdf->F(sample.swl, Vector(lightBsdf->dgShading.nn), -wi, false);
+                        Li *= bsdf->F(sample.swl, wi, wo, true);
+                        if (!Li.Black() ) {
+                            if( rayDepth == 0 )
+                                Ld += bsdf->ScaledBcolor() * AbsDot (wi, n);
+                            else {
+                                // Add light's contribution
+                                if( light.LeSupport(scene, sample, bsdf->dgShading.wuv, &SupLi) )
+                                    Ld +=  SupLi * AbsDot (wi, n);
+                                else
+                                    Ld += bsdf->GetBscale() * SupLi * AbsDot (wi, n);
+                            }
+                            //Ld += bsdf->ScaledBcolor() * AbsDot (wi, n);
+                        }
+                    }
+                } else {
+                    if (rayDepth > 0) {
+                        if (scene.Connect(sample, volume, bsdf->dgShading.scattered,
+                            false, p, pL, false, &Li, NULL, NULL, false)) {
+                            const float d2 = wi0.LengthSquared();
+                            const Vector wi(wi0 / sqrtf(d2));
+                            Li *= lightBsdf->F(sample.swl, Vector(lightBsdf->dgShading.nn), -wi, false);
+                            Li *= bsdf->F(sample.swl, wi, wo, true);
+                            if (!Li.Black()) {
+                                const float bsdfPdf = bsdf->Pdf(sample.swl,wo, wi);
+                                Li *= PowerHeuristic(1, lightPdf * d2 /
+                                    AbsDot(wi, lightBsdf->dgShading.nn), 1, bsdfPdf);
+
+                                // Add light's contribution
+                                Ld += bsdf->ScaledBcolor() * AbsDot (wi, n);
+                                Ld += Li / d2;
+                            }
+                        }
+                    } else {
+                        if (scene.Connect(sample, volume, bsdf->dgShading.scattered,
+                            false, p, pL, false, &Li, NULL, NULL, true)) {
+                            const float d2 = wi0.LengthSquared();
+                            const Vector wi(wi0 / sqrtf(d2));
+                            Li *= lightBsdf->F(sample.swl, Vector(lightBsdf->dgShading.nn), -wi, false);
+                            Li = bsdf->F(sample.swl, wi, wo, true);
+                            if (!Li.Black()) {
+                                const float bsdfPdf = bsdf->Pdf(sample.swl, wo, wi);
+                                Li *= PowerHeuristic(1, lightPdf * d2 / AbsDot(wi, lightBsdf->dgShading.nn), 1, bsdfPdf);
+
+                                // Add light's contribution
+                                if( light.LeSupport(scene, sample, bsdf->dgShading.wuv, &SupLi) )
+                                    Ld +=  SupLi * AbsDot (wi, n);
+                                else
+                                    Ld += bsdf->GetBscale() * SupLi * AbsDot (wi, n);
+                            }
+                        }
+                    }
+                }
+            }
+            if (mis) {
+                // Trace a second shadow ray by sampling the BSDF
+                Vector wi;
+                float bsdfPdf;
+                BxDFType sampledType;
+                if (bsdf->SampleF(sample.swl, wo, &wi, bs1, bs2, bcs,
+                    &Li, &bsdfPdf, BSDF_ALL, &sampledType, NULL, true) &&
+                    (sampledType & BSDF_SPECULAR) == 0) {
+                    // Add light contribution from BSDF sampling
+                    Intersection lightIsect;
+                    Ray ray(p, wi);
+                    ray.time = sample.time;
+                    BSDF *ibsdf;
+                    const Volume *volume = bsdf->GetVolume(wi);
+                    bool lit = false;
+                    if (!scene.Intersect(sample, volume,
+                        bsdf->dgShading.scattered, ray, 1.f,
+                        &lightIsect, &ibsdf, NULL, NULL, &Li)) {
+                        lit = light.Le(scene, sample, ray, &lightBsdf,
+                        NULL, &lightPdf, &Li);
+                        if (rayDepth == 0)
+                            Li *= 0.f;
+                    }
+                    else if (lightIsect.arealight == &light) {
+                        Li *= lightIsect.Le(sample, ray, &lightBsdf, NULL, &lightPdf);
+                        lit = !Li.Black();
+                    }
+                    else if (lightIsect.primitive) {
+                        if ( lightIsect.primitive->GetPrimitiveType() == ShapeType(ENV_SHAPE) && rayDepth > 0 ) {
+
+                            light.Le(scene, sample, ibsdf->dgShading.wuv, &lightBsdf,
+                                 NULL, &lightPdf, &Li);
+                            //float d2 = DistanceSquared(p, lightBsdf->dgShading.p);
+                            //float lightPdf2 = lightPdf ;
+                            float weight = PowerHeuristic(1, bsdfPdf, 1, lightPdf);
+                            Ld += Li * weight;
+                        }
+                    }
+                    if (lit) {
+                        const float d2 = DistanceSquared(p, lightBsdf->dgShading.p);
+                        const float lightPdf2 = lightPdf * d2 /	AbsDot(wi, lightBsdf->dgShading.nn);
+                        const float weight = PowerHeuristic(1, bsdfPdf,	1, lightPdf2);
+                        Ld += Li * weight;
+                    }
+                }
+            }
+        }
+    } else {
+        // Check if MIS is needed
+        const BxDFType noDiffuse = BxDFType(BSDF_ALL & ~(BSDF_DIFFUSE));
+        const bool mis = !(light.IsDeltaLight()) &&
+            (bsdf->NumComponents(noDiffuse) > 0);
+        // Trace a shadow ray by sampling the light source
+        float lightPdf;
+        SWCSpectrum Li;
+        BSDF *lightBsdf;
+        if (light.SampleL(scene, sample, p, ls1, ls2, ls3,
+            &lightBsdf, NULL, &lightPdf, &Li)) {
+            const Point &pL(lightBsdf->dgShading.p);
+            const Vector wi0(pL);
+            const Volume *volume = bsdf->GetVolume(wi0);
+            if (!volume)
+                volume = lightBsdf->GetVolume(-wi0);
+            if (scene.Connect(sample, volume, bsdf->dgShading.scattered,
+                false, p, pL, false, &Li, NULL, NULL)) {
+                const float d2 = wi0.LengthSquared();
+                const Vector wi(wi0 / sqrtf(d2));
+                Li *= lightBsdf->F(sample.swl, Vector(lightBsdf->dgShading.nn), -wi, false);
+                Li *= bsdf->F(sample.swl, wi, wo, true);
+                if (!Li.Black()) {
+                    if (mis) {
+                        const float bsdfPdf = bsdf->Pdf(sample.swl, wo, wi);
+                        Li *= PowerHeuristic(1, lightPdf * d2, 1, bsdfPdf);
+                    }
+                    // Add light's contribution
+                    Ld += Li / d2;
+                }
+            }
+        }
+        if (mis) {
+            // Trace a second shadow ray by sampling the BSDF
+            Vector wi;
+            float bsdfPdf;
+            BxDFType sampledType;
+            if (bsdf->SampleF(sample.swl, wo, &wi, bs1, bs2, bcs,
+                      &Li, &bsdfPdf, BSDF_ALL, &sampledType, NULL, true) &&
+                    (sampledType & BSDF_SPECULAR) == 0) {
+                // Add light contribution from BSDF sampling
+                Intersection lightIsect;
+                Ray ray(p, wi);
+                ray.time = sample.time;
+                BSDF *ibsdf;
+                const Volume *volume = bsdf->GetVolume(wi);
+                bool lit = false;
+                if (!scene.Intersect(sample, volume,
+                    bsdf->dgShading.scattered, ray, 1.f,
+                    &lightIsect, &ibsdf, NULL, NULL, &Li))
+                    lit = light.Le(scene, sample, ray, &lightBsdf,
+                        NULL, &lightPdf, &Li);
+                else if (lightIsect.arealight == &light) {
+                    Li *= lightIsect.Le(sample, ray, &lightBsdf,
+                        NULL, &lightPdf);
+                    lit = !Li.Black();
+                }
+                else if (lightIsect.primitive) {
+                    if ( lightIsect.primitive->GetPrimitiveType() == ShapeType(ENV_SHAPE) ) {
+                        //Ray ray2(Point(0.f), Vector(lightIsect.dg.p - cam));
+                        light.Le(scene, sample, ibsdf->dgShading.wuv, &lightBsdf,
+                             NULL, &lightPdf, &Li);
+                        //float d2 = DistanceSquared(p, lightBsdf->dgShading.p);
+                        //float lightPdf2 = lightPdf ;
+                        float weight = PowerHeuristic(1, bsdfPdf, 1, lightPdf);
+                        Ld += Li * weight;
+                    }
+                }
+                if (lit) {
+                    const float d2 = DistanceSquared(p, lightBsdf->dgShading.p);
+                    const float lightPdf2 = lightPdf * d2 /
+                            AbsDot(wi, lightBsdf->dgShading.nn);
+                    const float weight = PowerHeuristic(1, bsdfPdf, 1, lightPdf2);
+                    Ld += Li * weight;
+                }
+            }
+        }
+    }
+    return Ld;
+}
+
 }//namespace lux

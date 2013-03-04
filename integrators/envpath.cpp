@@ -273,8 +273,12 @@ u_int ENVPathIntegrator::Li(const Scene &scene, const Sample &sample) const
 				Vd[i] = 0.f;
 			}
 
-			nrContribs += hints.EnvSampleLights(scene, sample, p, n,
+            if(ReflectionMethod)
+                nrContribs += hints.EnvSampleLights(scene, sample, p, n,
 				wo, bsdf, pathLength, pathThroughput, Ld, pathLength, from_IsSup, to_IsSup, path_type, &Vd);
+            else
+                nrContribs += hints.CombSampleLights(scene, sample, p, n,
+                    wo, bsdf, pathLength, pathThroughput, Ld, pathLength, from_IsSup, to_IsSup, path_type, &Vd);
 
 			for (u_int i = 0; i < lightGroupCount; ++i) {
 				L[i] += Ld[i];
@@ -796,9 +800,10 @@ SurfaceIntegrator* ENVPathIntegrator::CreateSurfaceIntegrator(const ParamSet &pa
 	}
 	bool include_environment = params.FindOneBool("includeenvironment", true);
 	bool directLightSampling = params.FindOneBool("directlightsampling", true);
+    bool reflections_method = params.FindOneBool("reflections", true);
 
 	ENVPathIntegrator *pi = new ENVPathIntegrator(rstrategy, max(maxDepth, 0), RRcontinueProb,
-			include_environment, directLightSampling);
+            include_environment, directLightSampling, reflections_method);
 	// Initialize the rendering hints
 	pi->hints.InitParam(params);
 

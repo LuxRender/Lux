@@ -962,3 +962,45 @@ u_int SurfaceIntegratorRenderingHints::EnvSampleLights(const Scene &scene,
 }
 */
 
+u_int SurfaceIntegratorRenderingHints::CombSampleLights(const Scene &scene,
+    const Sample &sample, const Point &p, const Normal &n, const Vector &wo,
+    BSDF *bsdf, u_int depth, const SWCSpectrum &scale,
+    vector<SWCSpectrum> &L, int rayDepth, bool from_IsSup, bool to_IsSup, bool path_type, vector<float> *V) const
+{
+
+    if (nLights == 0)
+        return 0;
+
+    const float *data = scene.sampler->GetLazyValues(sample,
+        lightSampleOffset, depth);
+    u_int nContribs = 0;
+    const u_int sampleCount = lsStrategy->GetSamplingLimit(scene);
+    for (u_int i = 0; i < sampleCount; ++i) {
+        const u_int offset = i * (1 + shadowRayCount * 5);
+        float lc = data[offset + 2];
+        float pdf;
+        const Light *light = lsStrategy->SampleLight(scene, i, &lc, &pdf);
+        if (!light)
+            break;
+        for (u_int j = 0; j < shadowRayCount; ++j) {
+            const u_int offset2 = offset + j * 5;
+            const SWCSpectrum Ll(scale *
+                CombEstimateDirect(scene, *light, sample,
+                p, n, wo, bsdf, data[offset2 + 0],
+                data[offset2 + 1], lc, data[offset2 + 2],
+                data[offset2 + 3], data[offset2 + 4], rayDepth, from_IsSup, to_IsSup, path_type));
+
+            if (!Ll.Black()) {
+                L[light->group] += Ll / pdf;
+                ++nContribs;
+            }
+        }
+    }
+
+    if (V) {
+        for (u_int i = 0; i < scene.lightGroups.size(); ++i)
+            (*V)[i] += L[i].Filter(sample.swl);
+    }
+
+    return nContribs;
+}

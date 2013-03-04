@@ -137,9 +137,9 @@ public:
 	enum RRStrategy { RR_EFFICIENCY, RR_PROBABILITY, RR_NONE };
 
 	// ENVPathIntegrator Public Methods
-	ENVPathIntegrator(RRStrategy rst, u_int md, float cp, bool ie, bool dls) : SurfaceIntegrator(),
+    ENVPathIntegrator(RRStrategy rst, u_int md, float cp, bool ie, bool dls, bool rflm) : SurfaceIntegrator(),
 		hints(), rrStrategy(rst), maxDepth(md), continueProbability(cp),
-		sampleOffset(0), bufferId(0), includeEnvironment(ie), enableDirectLightSampling(dls) {
+        sampleOffset(0), bufferId(0), includeEnvironment(ie), enableDirectLightSampling(dls), ReflectionMethod(rflm) {
 		AddStringConstant(*this, "name", "Name of current surface integrator", "envpath");
 	}
 
@@ -188,7 +188,7 @@ private:
 	u_int hybridRendererLightSampleOffset;
 	LightsSamplingStrategy::LightStrategyType hybridRendererLightStrategy;
 
-	bool includeEnvironment, enableDirectLightSampling;
+    bool includeEnvironment, enableDirectLightSampling, ReflectionMethod;
 };
 
 }//namespace lux
