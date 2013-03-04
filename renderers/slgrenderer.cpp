@@ -461,7 +461,7 @@ template<class T> string GetSLGTexName(slg::Scene *slgScene,
 		//----------------------------------------------------------------------
 		// Scale texture
 		//
-		// The following check are required because VC++ seems unable to handle
+		// The following checks are required because VC++ seems unable to handle
 		// two "if" with ScaleTexture<T, float>/ScaleTexture<T, SWCSpectrum>
 		// conditions.
 		//----------------------------------------------------------------------
@@ -1732,6 +1732,9 @@ void SLGRenderer::Render(Scene *s) {
 				// Build the SLG scene to render
 				ColorSystem colorSpace = scene->camera()->film->GetColorSpace();
 				slgScene = CreateSLGScene(slgConfigProps, colorSpace);
+
+				if (!slgScene->envLight && !slgScene->sunLight && (slgScene->triLightDefs.size() == 0))
+					throw std::runtime_error("The scene doesn't include any light source");
 #if !defined(LUXRAYS_DISABLE_OPENCL)
 			} catch (cl::Error err) {
 				LOG(LUX_SEVERE, LUX_SYSTEM) << "OpenCL ERROR: " << err.what() << "(" << luxrays::oclErrorString(err.err()) << ")";
