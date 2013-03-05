@@ -54,17 +54,6 @@
 #include "integrators/path.h"
 #include "integrators/bidirectional.h"
 
-#include "textures/blackbody.h"
-#include "textures/constant.h"
-#include "textures/imagemap.h"
-#include "textures/scale.h"
-#include "textures/dots.h"
-#include "textures/brick.h"
-#include "textures/add.h"
-#include "textures/windy.h"
-#include "textures/wrinkled.h"
-#include "textures/uv.h"
-
 #include "light.h"
 #include "lights/sun.h"
 #include "lights/sky.h"
@@ -89,6 +78,17 @@
 #include "textures/mix.h"
 #include "textures/fbm.h"
 #include "textures/marble.h"
+#include "textures/blackbody.h"
+#include "textures/constant.h"
+#include "textures/imagemap.h"
+#include "textures/scale.h"
+#include "textures/dots.h"
+#include "textures/brick.h"
+#include "textures/add.h"
+#include "textures/windy.h"
+#include "textures/wrinkled.h"
+#include "textures/uv.h"
+#include "textures/band.h"
 
 #include "volumes/clearvolume.h"
 
@@ -397,6 +397,9 @@ template<class T> string GetSLGTexName(slg::Scene *slgScene,
 	// Check if the texture has already been defined
 	if (!slgScene->texDefs.IsTextureDefined(texName)) {
 		string texProp;
+		//----------------------------------------------------------------------
+		// ImageMap texture
+		//----------------------------------------------------------------------
 		if (dynamic_cast<const ImageSpectrumTexture *>(tex)) {
 			const ImageSpectrumTexture *imgTex = dynamic_cast<const ImageSpectrumTexture *>(tex);
 
@@ -421,7 +424,11 @@ template<class T> string GetSLGTexName(slg::Scene *slgScene,
 					// LuxRender applies gain before gamma correction
 					"scene.textures." + texName + ".gain = " + ToString(powf(texInfo.gain, texInfo.gamma)) + "\n"
 					+ GetSLGTexMapping(imgTex->GetTextureMapping2D(), "scene.textures." + texName);
-		} else if (dynamic_cast<const ConstantRGBColorTexture *>(tex)) {
+		} else
+		//----------------------------------------------------------------------
+		// Constant texture
+		//----------------------------------------------------------------------
+		if (dynamic_cast<const ConstantRGBColorTexture *>(tex)) {
 			const ConstantRGBColorTexture *constRGBTex = dynamic_cast<const ConstantRGBColorTexture *>(tex);
 
 			texProp = "scene.textures." + texName + ".type = constfloat3\n"
@@ -435,7 +442,11 @@ template<class T> string GetSLGTexName(slg::Scene *slgScene,
 			texProp = "scene.textures." + texName + ".type = constfloat1\n"
 					"scene.textures." + texName + ".value = " +
 						ToString((*constFloatTex)["value"].FloatValue()) + "\n";
-		} else if (dynamic_cast<const NormalMapTexture *>(tex)) {
+		} else
+		//----------------------------------------------------------------------
+		// NormalMap texture
+		//----------------------------------------------------------------------
+		if (dynamic_cast<const NormalMapTexture *>(tex)) {
 			const NormalMapTexture *normalTex = dynamic_cast<const NormalMapTexture *>(tex);
 
 			const TexInfo &texInfo = normalTex->GetInfo();
@@ -606,8 +617,41 @@ template<class T> string GetSLGTexName(slg::Scene *slgScene,
 
 			texProp = "scene.textures." + texName + ".type = uv\n"
 					+ GetSLGTexMapping(uvTex->GetTextureMapping2D(), "scene.textures." + texName);
+		} else if (dynamic_cast<const BandTexture<T> *>(tex)) {
+			const BandTexture<T> *bandTex = dynamic_cast<const BandTexture<T> *>(tex);
+			const string amountTexName = GetSLGTexName(slgScene, bandTex->GetAmountTex());
+			const vector<float> &offsets = bandTex->GetOffsets();
+			const vector<boost::shared_ptr<Texture<T> > > &texs = bandTex->GetTextures();
+			
+
+			texProp = "scene.textures." + texName + ".type = band\n"
+					"scene.textures." + texName + ".amount = " + amountTexName + "\n";
+
+			for (u_int i = 0; i < offsets.size(); ++i) {
+				const ConstantRGBColorTexture *constRGBTex = dynamic_cast<const ConstantRGBColorTexture *>(texs[i].get());
+				const ConstantFloatTexture *constFloatTex = dynamic_cast<const ConstantFloatTexture *>(texs[i].get());
+				if (!constRGBTex && !constFloatTex) {
+					LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only BandTexture with constant values (i.e. not " <<
+						ToClassName(texs[i].get()) << ").";
+					texProp = "scene.textures." + texName + ".type = constfloat1\n"
+							"scene.textures." + texName + ".value = 0.7\n";
+					break;
+				}
+
+				texProp += "scene.textures." + texName + ".offset" + ToString(i) + " = " + ToString(offsets[i]) + "\n";
+				if (constRGBTex)
+					texProp += "scene.textures." + texName + ".value" + ToString(i) + " = " +
+							ToString((*constRGBTex)["color.r"].FloatValue()) + " " +
+							ToString((*constRGBTex)["color.g"].FloatValue()) + " " +
+							ToString((*constRGBTex)["color.b"].FloatValue()) + "\n";
+				if (constFloatTex) {
+					const string val = ToString((*constFloatTex)["value"].FloatValue()) + "\n";
+					texProp += "scene.textures." + texName + ".value" + ToString(i) + " = " +
+							val + " " + val + " " + "\n";
+				}
+			}
 		} else {
-			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only ImageSpectrumTexture, ImageFloatTexture, ConstantRGBColorTexture, ConstantFloatTexture, ScaleTexture, MixTexture, Checkerboard2D, Checkerboard3D, FBmTexture, Marble, Dots, Brick, Windy, Wrinkled and UV textures (i.e. not " <<
+			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only ImageSpectrumTexture, ImageFloatTexture, ConstantRGBColorTexture, ConstantFloatTexture, ScaleTexture, MixTexture, Checkerboard2D, Checkerboard3D, FBmTexture, Marble, Dots, Brick, Windy, Wrinkled, UVTexture and BandTexture (i.e. not " <<
 					ToClassName(tex) << ").";
 
 			texProp = "scene.textures." + texName + ".type = constfloat1\n"
