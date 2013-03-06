@@ -190,6 +190,8 @@ int main(int argc, char **argv) {
 		outfile << changed;
 		outfile.close();
 
+		// TODO: transport SLG renderer options
+		
 		//----------------------------------------------------------------------
 		// Create the directory where to export the SLG scene
 		//----------------------------------------------------------------------
@@ -221,7 +223,12 @@ int main(int argc, char **argv) {
 		// Execute SLG GUI
 		//----------------------------------------------------------------------
 
-		const string slgCmd = slg + " -d " + slgScene + " render.cfg 2>&1";
+		const string slgCmd = slg +
+			" -D renderengine.type RTPATHOCL"
+			" -D sampler.type RANDOM"
+			" -D film.tonemap.linear.scale 0.001" // TODO
+			" -d " + slgScene +
+			" render.cfg 2>&1";
 		LOG(LUX_DEBUG, LUX_NOERROR) << "SLG command: " << slgCmd;
 		const string slgOuput = exec(slgCmd);
 		LOG(LUX_DEBUG, LUX_NOERROR) << "SLG output:" << endl << slgOuput;
