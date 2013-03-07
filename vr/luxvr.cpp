@@ -32,6 +32,7 @@
 #include <boost/regex.hpp>
 #include <boost/foreach.hpp>
 
+#include "lux.h"
 #include "api.h"
 #include "error.h"
 
