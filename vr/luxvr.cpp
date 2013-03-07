@@ -45,20 +45,29 @@ using namespace lux;
 #define PCLOSE pclose
 #endif
 
-static std::string exec(const string &cmd) {
+static void exec(const string &cmd) {
 	FILE *pipe = POPEN(cmd.c_str(), "r");
 	if (!pipe)
-		return "ERROR";
+		throw runtime_error("Unable to execute command: " + cmd);
 
-	char buffer[128];
-	std::string result = "";
-	while (!feof(pipe)) {
-		if (fgets(buffer, 128, pipe) != NULL)
-			result += buffer;
+	LOG(LUX_INFO, LUX_NOERROR) << "Command output:";
+
+	string line = "";
+	for (;;) {
+		int c = fgetc(pipe);
+		if (c == EOF) {
+			LOG(LUX_INFO, LUX_NOERROR) << line;
+			break;
+		} else if (c == '\r') {
+			// Nothing to do
+		} else if (c == '\n') {
+			LOG(LUX_INFO, LUX_NOERROR) << line;
+			line = "";
+		} else
+			line += boost::lexical_cast<unsigned char>((unsigned char)c);
+		
 	}
 	PCLOSE(pipe);
-
-	return result;
 }
 
 int main(int argc, char **argv) {
@@ -210,8 +219,7 @@ int main(int argc, char **argv) {
 
 		const string luxconsoleCmd = luxconsole + " " + lxsCopy + " 2>&1";
 		LOG(LUX_DEBUG, LUX_NOERROR) << "LuxConsole command: " << luxconsoleCmd;
-		const string luxconsoleOuput = exec(luxconsoleCmd);
-		LOG(LUX_DEBUG, LUX_NOERROR) << "LuxConsole output:" << endl << luxconsoleOuput;
+		exec(luxconsoleCmd);
 
 		//----------------------------------------------------------------------
 		// Delete temporary LXS copy
@@ -230,9 +238,9 @@ int main(int argc, char **argv) {
 			" -d " + slgScene +
 			" render.cfg 2>&1";
 		LOG(LUX_DEBUG, LUX_NOERROR) << "SLG command: " << slgCmd;
-		const string slgOuput = exec(slgCmd);
-		LOG(LUX_DEBUG, LUX_NOERROR) << "SLG output:" << endl << slgOuput;
+		exec(slgCmd);
 
+		LOG(LUX_INFO, LUX_NOERROR) << "Done.";
 	} catch (exception err) {
 		LOG(LUX_ERROR, LUX_SYSTEM) << "ERROR: " << err.what();
 		return EXIT_FAILURE;
