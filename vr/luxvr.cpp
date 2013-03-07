@@ -152,7 +152,7 @@ int main(int argc, char **argv) {
 		if (!boost::filesystem::exists(slgPath))
 			slgPath = exePath / "slg";
 		if (!boost::filesystem::exists(slgPath))
-			throw runtime_error("Unable to find luxconsole executable");
+			throw runtime_error("Unable to find slg executable");
 		LOG(LUX_DEBUG, LUX_NOERROR) << "SLG path: [" << slgPath << "]";
 		const string slg = slgPath.make_preferred().string();
 		LOG(LUX_DEBUG, LUX_NOERROR) << "SLG native path: [" << slg << "]";
