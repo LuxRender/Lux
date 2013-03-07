@@ -91,6 +91,7 @@
 #include "textures/band.h"
 
 #include "volumes/clearvolume.h"
+#include "film/fleximage.h"
 
 using namespace lux;
 
@@ -1627,6 +1628,36 @@ luxrays::Properties SLGRenderer::CreateSLGConfig() {
 		(type == slg::CBIDIRHYBRID) ||
 		(type == slg::BIDIRVMCPU)) && !dynamic_cast<BidirIntegrator *>(scene->surfaceIntegrator)) {
 		throw std::runtime_error("You have to select bidirectional surface integrator in order to use the selected render engine");
+	}
+
+	//--------------------------------------------------------------------------
+	// Tone mapping related settings
+	//
+	// They are exported only if using FILESAVER rendering engine otherwise SLG
+	// uses Lux image pipeline and it is not in charge of tone mapping. I handle
+	// only linear tone mapping because it is the only one supported by
+	// RTPATHOCL (i.e. LuxVR)
+	//--------------------------------------------------------------------------
+
+	// Avoid to overwrite an "overwrite" setting
+	if ((type == slg::FILESAVER) && !overwriteConfig.IsDefined("film.tonemap.linear.scale")) {
+		const int type = (*film)["TonemapKernel"].IntValue();
+
+		if (type != FlexImageFilm::TMK_Linear)
+			LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "LuxVR supports only linear tone mapping, ignoring tone mapping settings";
+		else {
+			// Translate linear tone mapping settings
+
+			const float sensitivity = (*film)["LinearSensitivity"].FloatValue();
+			const float exposure = (*film)["LinearExposure"].FloatValue();
+			const float fstop = (*film)["LinearFStop"].FloatValue();
+			const float gamma = (*film)["LinearGamma"].FloatValue();
+
+			// Check LinearOp class for an explanation of the following formula
+			const float factor = exposure / (fstop * fstop) * sensitivity * 0.65f / 10.f * powf(118.f / 255.f, gamma);
+
+			config.SetString("film.tonemap.linear.scale", ToString(factor));
+		}
 	}
 
 	return config;
