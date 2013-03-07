@@ -155,6 +155,7 @@ SLGRenderer::SLGRenderer(const luxrays::Properties &config) : Renderer() {
 	rendererStatistics = new SLGStatistics(this);
 
 	overwriteConfig = config;
+	renderEngineType = slg::PATHOCL;
 }
 
 SLGRenderer::~SLGRenderer() {
@@ -1440,10 +1441,17 @@ void SLGRenderer::ConvertCamera(slg::Scene *slgScene) {
 			(scene->camera)["normal.x"].FloatValue(),
 			(scene->camera)["normal.y"].FloatValue(),
 			(scene->camera)["normal.z"].FloatValue());
-	const Vector up(
+	Vector up(
 			(scene->camera)["up.x"].FloatValue(),
 			(scene->camera)["up.y"].FloatValue(),
 			(scene->camera)["up.z"].FloatValue());
+	if (renderEngineType == slg::FILESAVER) {
+		// I snap the up vector to the Z axis so moving inside LuxVR
+		// is a lot easier and work as expected
+		up.x = 0.f;
+		up.y = 0.f;
+		up.z = 1.f;
+	}
 
 	const string createCameraProp = "scene.camera.lookat = " + 
 			ToString(orig.x) + " " +
@@ -1621,12 +1629,12 @@ luxrays::Properties SLGRenderer::CreateSLGConfig() {
 	config.Load(overwriteConfig);
 
 	// Check if light buffer is needed and required
-	slg::RenderEngineType type = slg::RenderEngine::String2RenderEngineType(config.GetString("renderengine.type", "PATHOCL"));
-	if (((type == slg::LIGHTCPU) ||
-		(type == slg::BIDIRCPU) ||
-		(type == slg::BIDIRHYBRID) ||
-		(type == slg::CBIDIRHYBRID) ||
-		(type == slg::BIDIRVMCPU)) && !dynamic_cast<BidirIntegrator *>(scene->surfaceIntegrator)) {
+	renderEngineType = slg::RenderEngine::String2RenderEngineType(config.GetString("renderengine.type", "PATHOCL"));
+	if (((renderEngineType == slg::LIGHTCPU) ||
+		(renderEngineType == slg::BIDIRCPU) ||
+		(renderEngineType == slg::BIDIRHYBRID) ||
+		(renderEngineType == slg::CBIDIRHYBRID) ||
+		(renderEngineType == slg::BIDIRVMCPU)) && !dynamic_cast<BidirIntegrator *>(scene->surfaceIntegrator)) {
 		throw std::runtime_error("You have to select bidirectional surface integrator in order to use the selected render engine");
 	}
 
@@ -1640,7 +1648,7 @@ luxrays::Properties SLGRenderer::CreateSLGConfig() {
 	//--------------------------------------------------------------------------
 
 	// Avoid to overwrite an "overwrite" setting
-	if ((type == slg::FILESAVER) && !overwriteConfig.IsDefined("film.tonemap.linear.scale")) {
+	if ((renderEngineType == slg::FILESAVER) && !overwriteConfig.IsDefined("film.tonemap.linear.scale")) {
 		const int type = (*film)["TonemapKernel"].IntValue();
 
 		if (type != FlexImageFilm::TMK_Linear)
