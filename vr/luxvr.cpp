@@ -30,6 +30,7 @@
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/regex.hpp>
+#include <boost/foreach.hpp>
 
 #include "api.h"
 #include "error.h"
@@ -189,17 +190,84 @@ int main(int argc, char **argv) {
 
 		string filetext((istreambuf_iterator<char>(infile)),
 				istreambuf_iterator<char>());
-		string changed(boost::regex_replace(filetext,
-				boost::regex("Renderer \"sampler\""),
-				"Renderer \"slg\" \"string config\" [\"renderengine.type = FILESAVER\" \"filesaver.directory = luxvr-scene\"]"));
 		infile.close();
+
+		//----------------------------------------------------------------------
+		// Forward all Renderer command configuration options
+		//----------------------------------------------------------------------
+
+		// Check if there is a Renderer command
+		string rendererName;
+		string rendererOptions;
+		boost::regex rendererExpression("Renderer[\\s\\R]+\"([[:lower:]]+)\""
+			"([\\s\\R]+\"string[\\s]+config\"[\\s\\R]+\\[(.+?)\\])?");
+		{		
+			std::string::const_iterator start = filetext.begin();
+			std::string::const_iterator end = filetext.end();
+			boost::match_results<std::string::const_iterator> what;
+			boost::match_flag_type flags = boost::match_default;
+
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Looking for LXS Renderer command";
+			while (boost::regex_search(start, end, what, rendererExpression, flags)) {
+				LOG(LUX_DEBUG, LUX_NOERROR) << "LXS Renderer command match:";
+				for (u_int i = 1; i < what.size(); ++i)
+					LOG(LUX_DEBUG, LUX_NOERROR) << "  [" << what[i] << "]";
+
+				rendererName = what[1];
+				rendererOptions = what[3];
+
+				// Update search position: 
+				start = what[0].second; 
+				// Update flags:
+				flags |= boost::match_prev_avail;
+				flags |= boost::match_not_bob;
+			}
+		}
+
+		string changed;
+		if (rendererName == "") {
+			// There isn't a Renderer command, just add one
+			changed = filetext + "\nRenderer \"slg\" \"string config\" [\"renderengine.type = FILESAVER\" \"filesaver.directory = luxvr-scene\"]\n";
+		} else {
+			// Get the list of options 
+			std::string::const_iterator start = rendererOptions.begin();
+			std::string::const_iterator end = rendererOptions.end();
+			boost::match_results<std::string::const_iterator> what;
+			boost::regex expression("(\".+?\")");
+			boost::match_flag_type flags = boost::match_default;
+
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Looking for Renderer options";
+			vector<string> opts;
+			while (boost::regex_search(start, end, what, expression, flags)) {
+				LOG(LUX_DEBUG, LUX_NOERROR) << "Renderer options match:";
+				for (u_int i = 1; i < what.size(); ++i)
+					LOG(LUX_DEBUG, LUX_NOERROR) << "  [" << what[i] << "]";
+
+				opts.push_back(what[1]);
+
+				// Update search position: 
+				start = what[0].second; 
+				// Update flags:
+				flags |= boost::match_prev_avail;
+				flags |= boost::match_not_bob;
+			}
+
+			string luxvrRenderer = "Renderer \"slg\" \"string config\" [\"renderengine.type = FILESAVER\" \"filesaver.directory = luxvr-scene\" ";
+			if (opts.size() > 0) {
+				BOOST_FOREACH(string &opt, opts) {
+					luxvrRenderer += opt + " ";
+				}
+			}
+			luxvrRenderer += "]";
+			LOG(LUX_DEBUG, LUX_NOERROR) << "New Renderer command: " << luxvrRenderer;
+			changed = boost::regex_replace(filetext, rendererExpression, luxvrRenderer, boost::match_default | boost::format_all);
+		}
+
 		ofstream outfile(lxsCopy.c_str(), ios_base::out | ios_base::trunc);
 		if (!outfile.is_open())
 			throw runtime_error("Unable to write temporary copy of LXS file: " + lxsCopy);
 		outfile << changed;
 		outfile.close();
-
-		// TODO: transport SLG renderer options
 		
 		//----------------------------------------------------------------------
 		// Create the directory where to export the SLG scene
