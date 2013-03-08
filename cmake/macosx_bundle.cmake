@@ -46,6 +46,7 @@
 	ADD_CUSTOM_COMMAND(
 		TARGET DYNAMIC_BUILD POST_BUILD
 		COMMAND rm -rf ${CMAKE_BUILD_TYPE}/luxrender.app/Contents/Resources
+		COMMAND rm -rf ${CMAKE_BUILD_TYPE}/SmallluxGPU
 		COMMAND mkdir ${CMAKE_BUILD_TYPE}/luxrender.app/Contents/Resources
 		COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/icons/luxrender.icns ${CMAKE_BUILD_TYPE}/luxrender.app/Contents/Resources
 		COMMAND cp ${OSX_BUNDLE_COMPONENTS_ROOT}/icons/luxscene.icns ${CMAKE_BUILD_TYPE}/luxrender.app/Contents/Resources
