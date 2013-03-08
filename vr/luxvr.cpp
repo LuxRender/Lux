@@ -162,6 +162,9 @@ int main(int argc, char **argv) {
 			slgPath = exePath / "slg.exe";
 		if (!boost::filesystem::exists(slgPath))
 			slgPath = exePath / "slg";
+		// On Apple slg inside bundle has nasty sideeefects, so we use default release location
+		if (!boost::filesystem::exists(slgPath))
+			slgPath = exePath / "../../../SmallluxGPU/slg4";
 		if (!boost::filesystem::exists(slgPath))
 			throw runtime_error("Unable to find slg executable");
 		LOG(LUX_DEBUG, LUX_NOERROR) << "SLG path: [" << slgPath << "]";
