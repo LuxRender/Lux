@@ -800,7 +800,10 @@ public:
 
 	/**
 	 * Format framebuffers into a bottom-up format required
-	 * by Blender 2.5's RenderLayer type
+	 * by Blender 2.66's RenderLayer type
+	 * Blender expects now always premultiplied alpha
+	 * for showing sky/bg, alpha 1.0 is needed then
+	 * We reuse lux premultiplyAlpha flag for condition
 	 */
 	boost::python::tuple blenderCombinedDepthRects()
 	{
