@@ -807,6 +807,7 @@ public:
 		updateFramebuffer();
 		boost::python::list combined;
 		boost::python::list depth;
+		bool preMult = luxGetBoolAttribute("film", "premultiplyAlpha");
 
 		checkActiveContext();
 		int xres = luxGetIntAttribute("film", "xResolution");
@@ -825,7 +826,7 @@ public:
 				rect_item.append( color[j] );
 				rect_item.append( color[j+1] );
 				rect_item.append( color[j+2] );
-				rect_item.append( alpha[i] );
+				rect_item.append( preMult == true ? alpha[i] : alpha[i] + (1 - alpha[i]));
 				combined.append( rect_item );
 				boost::python::list depth_item;
 				depth_item.append( z[i] );
