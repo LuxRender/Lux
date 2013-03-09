@@ -829,7 +829,7 @@ public:
 				rect_item.append( color[j] );
 				rect_item.append( color[j+1] );
 				rect_item.append( color[j+2] );
-				rect_item.append( preMult == true ? alpha[i] : alpha[i] + (1 - alpha[i]));
+				rect_item.append( preMult == true ? alpha[i] : 1.0 );
 				combined.append( rect_item );
 				boost::python::list depth_item;
 				depth_item.append( z[i] );
