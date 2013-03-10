@@ -811,6 +811,7 @@ public:
 		boost::python::list combined;
 		boost::python::list depth;
 		bool preMult = luxGetBoolAttribute("film", "premultiplyAlpha");
+		const float c_gamma = luxGetParameterValue(LUX_FILM, LUX_FILM_TORGB_GAMMA);
 
 		checkActiveContext();
 		int xres = luxGetIntAttribute("film", "xResolution");
@@ -826,9 +827,9 @@ public:
 				int i = (y*xres + x);
 				int j = i*3;
 				boost::python::list rect_item;
-				rect_item.append( powf(color[j], 2.2f));
-				rect_item.append( powf(color[j+1], 2.2f));
-				rect_item.append( powf(color[j+2], 2.2f));
+				rect_item.append( powf(color[j], c_gamma));
+				rect_item.append( powf(color[j+1], c_gamma));
+				rect_item.append( powf(color[j+2], c_gamma));
 				rect_item.append( preMult == true ? alpha[i] : 1.0 );
 				combined.append( rect_item );
 				boost::python::list depth_item;
