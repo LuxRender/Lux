@@ -826,9 +826,9 @@ public:
 				int i = (y*xres + x);
 				int j = i*3;
 				boost::python::list rect_item;
-				rect_item.append( color[j] );
-				rect_item.append( color[j+1] );
-				rect_item.append( color[j+2] );
+				rect_item.append( powf(color[j], 2.2f));
+				rect_item.append( powf(color[j+1], 2.2f));
+				rect_item.append( powf(color[j+2], 2.2f));
 				rect_item.append( preMult == true ? alpha[i] : 1.0 );
 				combined.append( rect_item );
 				boost::python::list depth_item;
