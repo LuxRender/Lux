@@ -71,6 +71,7 @@
 #include "materials/null.h"
 #include "materials/mixmaterial.h"
 #include "materials/metal2.h"
+#include "materials/roughglass.h"
 
 #include "textures/tabulatedfresnel.h"
 #include "textures/fresnelcolor.h"
@@ -1053,10 +1054,40 @@ static string GetSLGMaterialName(slg::Scene *slgScene, Material *mat,
 		}
 	} else
 	//------------------------------------------------------------------
+	// Check if it is material RoughGlass
+	//------------------------------------------------------------------
+	if (dynamic_cast<RoughGlass *>(mat)) {
+		// Define the material
+		RoughGlass *roughglass = dynamic_cast<RoughGlass *>(mat);
+		matName = roughglass->GetName();
+
+		// Check if the material has already been defined
+		if (!slgScene->matDefs.IsMaterialDefined(matName)) {
+			// Textures
+			const string ktTexName = GetSLGTexName(slgScene, roughglass->GetKtTexture());
+			const string krTexName = GetSLGTexName(slgScene, roughglass->GetKrTexture());
+			const string indexTexName = GetSLGTexName(slgScene, roughglass->GetIndexTexture());
+			const string nuTexName = GetSLGTexName(slgScene, roughglass->GetNuTexture());
+			const string nvTexName = GetSLGTexName(slgScene, roughglass->GetNvTexture());
+
+			string matProp;
+			matProp = "scene.materials." + matName +".type = roughglass\n"
+					+ GetSLGCommonMatProps(matName, emissionTexName, bumpTex, normalTex) +
+					"scene.materials." + matName +".kr = " + krTexName + "\n"
+					"scene.materials." + matName +".kt = " + ktTexName + "\n"
+					"scene.materials." + matName +".ioroutside = 1.0\n"
+					"scene.materials." + matName +".iorinside = " + indexTexName + "\n"
+					"scene.materials." + matName +".uroughness = " + nuTexName + "\n"
+					"scene.materials." + matName +".vroughness = " + nvTexName + "\n";
+			LOG(LUX_DEBUG, LUX_NOERROR) << "Defining material " << matName << ": [\n" << matProp << "]";
+			slgScene->DefineMaterials(matProp);
+		}
+	} else
+	//------------------------------------------------------------------
 	// Material is not supported, use the default one
 	//------------------------------------------------------------------
 	{
-		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Matte, Mirror, Glass, Glass2, Metal, MatteTranslucent, Null, Mix, Glossy2 and Metal material (i.e. not " <<
+		LOG(LUX_WARNING, LUX_UNIMPLEMENT) << "SLGRenderer supports only Matte, Mirror, Glass, Glass2, Metal, MatteTranslucent, Null, Mix, Glossy2, Metal2 and RoughGlass material (i.e. not " <<
 			ToClassName(mat) << "). Replacing an unsupported material with matte.";
 		return "mat_default";
 	}
