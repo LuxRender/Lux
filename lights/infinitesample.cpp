@@ -199,7 +199,7 @@ InfiniteAreaLightIS::InfiniteAreaLightIS(const Transform &light2world,
 
 }
 
-float InfiniteAreaLightIS::DirProb(Vector N) const
+float InfiniteAreaLightIS::DirProb(Vector N, Point P = Point(0.f)) const
 {
 	Vector w = N;
 	// Compute infinite light radiance for direction

@@ -43,7 +43,7 @@ public:
 		scene.WorldBound().BoundingSphere(&worldCenter, &worldRadius);
 		return SPDbase.Y() * mean_y * M_PI * worldRadius * worldRadius;
 	}
-	virtual float DirProb(Vector N) const;
+	virtual float DirProb(Vector N, Point P) const;
 	virtual bool IsSupport() const { return support; }
 	virtual bool IsDeltaLight() const { return false; }
 	virtual bool IsEnvironmental() const { return true; }
